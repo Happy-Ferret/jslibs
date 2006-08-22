@@ -1,5 +1,9 @@
 #define XP_WIN
 #include <jsapi.h>
+#include <jsdbgapi.h>
+#include <jscntxt.h>
+#include <jsscript.h>
+
 #include <nspr.h>
 
 #include "nsprError.h"
@@ -43,7 +47,16 @@ JSBool NSPRError_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv
 
 JSBool ThrowNSPRError( JSContext *cx, PRErrorCode errorCode ) {
 
-	JS_ReportError( cx, "error" );	return JS_FALSE;
+	const char * filename = NULL;
+	uintN lineno;
+  for (JSStackFrame *fp = cx->fp; fp; fp = fp->down)
+      if (fp->script && fp->pc) {
+
+          filename = fp->script->filename;
+          lineno = JS_PCToLineNumber(cx, fp->script, fp->pc);
+          break;
+      }
+	JS_ReportWarning( cx, "ThrowNSPRError %s:%d", filename, lineno );
 
 	JSObject *error = JS_NewObject( cx, &NSPRError_class, NULL, NULL );
 	JS_SetPrivate( cx, error, (void*)errorCode );
