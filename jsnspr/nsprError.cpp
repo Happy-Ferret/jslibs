@@ -1,8 +1,8 @@
 #define XP_WIN
 #include <jsapi.h>
-#include <jsdbgapi.h>
-#include <jscntxt.h>
-#include <jsscript.h>
+//#include <jsdbgapi.h>
+//#include <jscntxt.h>
+//#include <jsscript.h>
 
 #include <nspr.h>
 
@@ -47,6 +47,7 @@ JSBool NSPRError_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv
 
 JSBool ThrowNSPRError( JSContext *cx, PRErrorCode errorCode ) {
 
+/*
 	const char * filename = NULL;
 	uintN lineno;
   for (JSStackFrame *fp = cx->fp; fp; fp = fp->down)
@@ -57,6 +58,9 @@ JSBool ThrowNSPRError( JSContext *cx, PRErrorCode errorCode ) {
           break;
       }
 	JS_ReportWarning( cx, "ThrowNSPRError %s:%d", filename, lineno );
+*/
+
+	JS_ReportWarning( cx, "NSPRError exception" );
 
 	JSObject *error = JS_NewObject( cx, &NSPRError_class, NULL, NULL );
 	JS_SetPrivate( cx, error, (void*)errorCode );
