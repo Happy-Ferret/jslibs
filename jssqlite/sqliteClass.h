@@ -1,0 +1,1 @@
+JSObject *InitSqliteClass( JSContext *cx, JSObject *obj );
