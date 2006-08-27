@@ -1,0 +1,321 @@
+#define XP_WIN
+#include <jsapi.h>
+#include <nspr.h>
+
+#include "nsprError.h"
+#include "nsprFile.h"
+
+void File_Finalize(JSContext *cx, JSObject *obj) {
+
+	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
+	if ( fd != NULL ) {
+
+		PRStatus status = PR_Close( fd ); // what to do on error ??
+		if ( status == PR_FAILURE )
+			JS_ReportError( cx, "a file descriptor cannot be closed while Finalize" );
+		JS_SetPrivate( cx, obj, NULL );
+	}
+}
+
+
+JSClass File_class = {
+	"File", JSCLASS_HAS_PRIVATE,
+  JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub,
+  JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, File_Finalize
+};
+
+
+JSBool File_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+
+	if ( !JS_IsConstructing(cx) ) {
+
+		JS_ReportError( cx, "need to be construct" );
+		return JS_FALSE;
+	}
+
+	if ( argc < 1 ) {
+
+		JS_ReportError( cx, "missing argument" );
+		return JS_FALSE;
+	}
+
+	JS_SetProperty( cx, obj, "fileName", &(argv[0]) );
+	return JS_TRUE;
+}
+
+
+JSBool File_open(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+
+	if ( argc < 1 ) {
+
+		JS_ReportError( cx, "missing argument" );
+		return JS_FALSE;
+	}
+
+	jsval jsvalFileName;
+	JS_GetProperty( cx, obj, "fileName", &jsvalFileName );
+	if ( jsvalFileName == JSVAL_VOID ) {
+
+		JS_ReportError( cx, "unable to get the file name" );
+		return JS_FALSE;
+	}
+
+	JSString *jsStringFileName = JS_ValueToString( cx, jsvalFileName );
+	if ( jsStringFileName == NULL ) {
+
+		JS_ReportError( cx, "unable to get the file name" );
+		return JS_FALSE;
+	}
+	jsvalFileName = STRING_TO_JSVAL( jsStringFileName ); // protect form GC ??? ( is this ok, is this needed, ... ? )
+	char *fileName = JS_GetStringBytes( jsStringFileName );
+
+	PRIntn flags;
+	int32 tmp;
+	JS_ValueToInt32( cx, argv[0], &tmp );
+	flags = tmp;
+
+	PRFileDesc *fd;
+	
+	fd = PR_Open( fileName, flags, 0 ); // The mode parameter is currently applicable only on Unix platforms.
+	if ( fd == NULL )
+		return ThrowNSPRError( cx, PR_GetError() );
+
+	JS_SetPrivate( cx, obj, fd );
+
+	return JS_TRUE;
+}
+
+
+JSBool File_close(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+
+	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
+	if ( fd != NULL ) {
+
+		PRStatus status = PR_Close( fd );
+		if ( status == PR_FAILURE )
+			return ThrowNSPRError( cx, PR_GetError() );
+		JS_SetPrivate( cx, obj, NULL );
+	}
+	return JS_TRUE;
+}
+
+
+JSBool File_read(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+
+	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
+	if ( fd == NULL ) {
+
+		JS_ReportError( cx, "file is closed" );
+		return JS_FALSE;
+	}
+
+	PRInt32 amount;
+	if ( argc >= 1 ) {
+
+		int32 val;
+		JS_ValueToInt32( cx, argv[0], &val );
+		amount = val;
+	} else { // no amount specified
+
+		amount = PR_Available( fd ); // For a normal file, these are the bytes beyond the current file pointer.
+		if ( amount == -1 )
+			return ThrowNSPRError( cx, PR_GetError() );
+	}
+
+	void *buf = JS_malloc( cx, amount );
+
+	PRInt32 res = PR_Read( fd, buf, amount );
+	if (res == -1) { // failure. The reason for the failure can be obtained by calling PR_GetError.
+
+		JS_free( cx, buf );
+		return ThrowNSPRError( cx, PR_GetError() );
+	}
+
+	JSString *str = JS_NewString( cx, (char*)buf, res );
+	if (str == NULL) {
+
+		JS_ReportError( cx, "JS_NewString error" );
+		return JS_FALSE;
+	}
+
+	*rval = STRING_TO_JSVAL(str); // GC protection is ok with this ?
+	return JS_TRUE;
+}
+
+
+JSBool File_write(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+
+	if ( argc < 1 ) {
+
+		JS_ReportError( cx, "missing argument" );
+		return JS_FALSE;
+	}
+
+	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
+	if ( fd == NULL ) {
+
+		JS_ReportError( cx, "file is closed" );
+		return JS_FALSE;
+	}
+
+	JSString *jsstr = JS_ValueToString( cx, argv[0] );
+	argv[0] = STRING_TO_JSVAL( jsstr ); // protect from GC
+
+	PRInt32 length = JS_GetStringLength( jsstr );
+
+	if ( argc >= 2 ) { // length is specified
+
+		int32 userLength;
+		JS_ValueToInt32( cx, argv[1], &userLength );
+		
+		if ( userLength <= length && userLength >= 0 ) // security
+			length = userLength;
+	}
+
+	void *buf = JS_GetStringBytes( jsstr );
+
+	PRInt32 bytesSent = PR_Write( fd, buf, length );
+
+	if ( bytesSent == -1 )
+		return ThrowNSPRError( cx, PR_GetError() );
+
+	if ( bytesSent < length ) {
+
+		JS_ReportError( cx, "unable to send all datas" );
+		return JS_FALSE;
+	}
+	return JS_TRUE;
+}
+
+
+JSBool File_seek(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+
+	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
+	if ( fd == NULL ) {
+
+		JS_ReportError( cx, "file is closed" );
+		return JS_FALSE;
+	}
+
+	PRInt64 offset = 0; // default is arg is missing
+	if ( argc >= 1 ) {
+
+		jsdouble doubleOffset;
+		JS_ValueToNumber( cx, argv[0], &doubleOffset );
+		offset = doubleOffset;
+	}
+
+	PRSeekWhence whence = PR_SEEK_CUR; // default is arg is missing
+	if ( argc >= 2 ) {
+
+		int32 tmp;
+		JS_ValueToInt32( cx, argv[1], &tmp );
+		whence = (PRSeekWhence)tmp;
+	}
+
+	PRInt64 ret = PR_Seek64( fd, offset, whence );
+	if ( ret == -1 )
+		return ThrowNSPRError( cx, PR_GetError() );
+
+	jsdouble newLocation = ret;
+	JS_NewDoubleValue( cx, newLocation, rval );
+	return JS_TRUE;
+}
+
+
+JSFunctionSpec File_FunctionSpec[] = { // { *name, call, nargs, flags, extra }
+ { "Open"     , File_open   , 1, 0, 0 },
+ { "Close"    , File_close  , 0, 0, 0 },
+ { "Read"     , File_read   , 0, 0, 0 },
+ { "Write"    , File_write  , 1, 0, 0 },
+ { "Seek"     , File_seek   , 2, 0, 0 },
+ { 0 }
+};
+
+
+JSBool File_getter_size( JSContext *cx, JSObject *obj, jsval id, jsval *vp ) {
+
+	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
+	if ( fd == NULL ) {
+
+		JS_ReportError( cx, "file is closed" );
+		return JS_FALSE;
+	}
+
+	PRInt32 available = PR_Available( fd ); // For a normal file, these are the bytes beyond the current file pointer.
+	if ( available == -1 )
+		return ThrowNSPRError( cx, PR_GetError() );
+
+	*vp = INT_TO_JSVAL(available);
+
+	return JS_TRUE;
+}
+
+
+JSBool File_getter_exist( JSContext *cx, JSObject *obj, jsval id, jsval *vp ) {
+
+	jsval jsvalFileName;
+	JS_GetProperty( cx, obj, "fileName", &jsvalFileName );
+
+	if ( jsvalFileName == JSVAL_VOID ) {
+
+		JS_ReportError( cx, "unable to get the file name" );
+		return JS_FALSE;
+	}
+
+	JSString *jsStringFileName = JS_ValueToString( cx, jsvalFileName );
+	if ( jsStringFileName == NULL ) {
+
+		JS_ReportError( cx, "unable to get the file name" );
+		return JS_FALSE;
+	}
+	jsvalFileName = STRING_TO_JSVAL( jsStringFileName ); // protect form GC ??? ( is this ok, is this needed, ... ? )
+
+	char *fileName = JS_GetStringBytes( jsStringFileName );
+
+	PRStatus status = PR_Access( fileName, PR_ACCESS_EXISTS );
+	*vp = BOOLEAN_TO_JSVAL( status == PR_SUCCESS );
+
+	return JS_TRUE;
+}
+
+
+JSPropertySpec File_PropertySpec[] = { // *name, tinyid, flags, getter, setter
+//  { "linger"   , PR_SockOpt_Linger, JSPROP_PERMANENT, Socket_getOption, Socket_setOption },
+	{ "size", 0, JSPROP_PERMANENT|JSPROP_READONLY, File_getter_size, NULL },
+	{ "exist", 0, JSPROP_PERMANENT|JSPROP_READONLY, File_getter_exist, NULL },
+  { 0 }
+};
+
+    
+JSBool File_static_setConst( JSContext *cx, JSObject *obj, jsval id, jsval *vp ) {
+
+	*vp = id;
+	return JS_TRUE;
+}
+
+
+JSPropertySpec File_static_PropertySpec[] = { // *name, tinyid, flags, getter, setter
+// PR_Open flags
+	{ "RDONLY"      ,PR_RDONLY      ,JSPROP_PERMANENT|JSPROP_READONLY, File_static_setConst, NULL },
+	{ "WRONLY"			,PR_WRONLY      ,JSPROP_PERMANENT|JSPROP_READONLY, File_static_setConst, NULL },
+	{ "RDWR"				,PR_RDWR        ,JSPROP_PERMANENT|JSPROP_READONLY, File_static_setConst, NULL },
+	{ "CREATE_FILE"	,PR_CREATE_FILE ,JSPROP_PERMANENT|JSPROP_READONLY, File_static_setConst, NULL },
+	{ "APPEND"			,PR_APPEND      ,JSPROP_PERMANENT|JSPROP_READONLY, File_static_setConst, NULL },
+	{ "TRUNCATE"		,PR_TRUNCATE    ,JSPROP_PERMANENT|JSPROP_READONLY, File_static_setConst, NULL },
+	{ "SYNC"				,PR_SYNC        ,JSPROP_PERMANENT|JSPROP_READONLY, File_static_setConst, NULL },
+	{ "EXCL"				,PR_EXCL        ,JSPROP_PERMANENT|JSPROP_READONLY, File_static_setConst, NULL },
+// PRSeekWhence enum
+	{ "SEEK_SET"				,PR_SEEK_SET        ,JSPROP_PERMANENT|JSPROP_READONLY, File_static_setConst, NULL },
+	{ "SEEK_CUR"				,PR_SEEK_CUR        ,JSPROP_PERMANENT|JSPROP_READONLY, File_static_setConst, NULL },
+	{ "SEEK_END"				,PR_SEEK_END        ,JSPROP_PERMANENT|JSPROP_READONLY, File_static_setConst, NULL },
+//
+	{ 0 }
+};
+
+JSObject *InitFileClass( JSContext *cx, JSObject *obj ) {
+
+	JSObject *fileClass = JS_InitClass( cx, obj, NULL, &File_class, File_construct, 1, File_PropertySpec, File_FunctionSpec, File_static_PropertySpec, NULL );
+//	JS_DefineConstDoubles( cx, fileClass, &File_const);
+	return fileClass;
+}
