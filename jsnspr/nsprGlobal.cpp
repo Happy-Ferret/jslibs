@@ -99,7 +99,7 @@ JSBool Poll(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) 
 
 		jsval prop, ret;
 
-		if ( result > 0 ) { // timeout
+		if ( result > 0 ) { // no timeout
 
 			JS_GetProperty( cx, o, "readable", &prop );
 			if ( pollDesc[i].out_flags & PR_POLL_READ && JS_TypeOfValue( cx, prop ) == JSTYPE_FUNCTION )

@@ -5,6 +5,7 @@
 #include <nspr.h>
 
 #include "nsprError.h"
+#include "nsprFile.h"
 #include "nsprSocket.h"
 #include "nsprGlobal.h"
 
@@ -14,6 +15,7 @@
 
 extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
+	InitFileClass(cx, obj);
 	InitSocketClass(cx, obj);
 	InitErrorClass(cx, obj);
 	InitGlobal(cx, obj);
