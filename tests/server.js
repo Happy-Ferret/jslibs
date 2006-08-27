@@ -63,6 +63,11 @@ function SendHttpResponse( s, status, headers, data ) {
 var list = [];
 
 function Client(s) {
+	
+	s.linger = -1;
+
+	print('['+ s.peerName +']\n');
+
 
 //	timeout.Add( 1000, function() { print('timeout-\n'); } );
 	
@@ -92,18 +97,18 @@ function Client(s) {
 		var uri = status[1];
 		var proto = status[2];
 
-		print( method + ' ' + uri + '\n');
+		print( buf + '\n');
 
 		s.writable = function() {
 		
 			delete s.writable;
-			SendHttpResponse( s, 200, { 'Content-Type':'text/html' }, buf );
+			//SendHttpResponse( s, 200, { 'Content-Type':'text/html' }, buf );
 		}
 
 	}
 }
 
-try {
+//try {
 
 	var serverSocket = new Socket();
 	serverSocket.recvBufferSize = 10000;
@@ -115,15 +120,14 @@ try {
 		list.push(clientSocket);
 	}
 
-
-
 	serverSocket.Listen( '', 80 );
 	list.push(serverSocket);
-	for(;;) {
+	for(;!endSignal;) {
 		Poll(list,timeout.Next() || 1000);
 		timeout.Process();
 	}
+	print('end.');
 
-} catch ( ex if ex instanceof NSPRError ) { 
-	print( ex.text + ' ('+ex.code+')', '\n' );
-}
+//} catch ( ex if ex instanceof NSPRError ) { 
+//	print( ex.text + ' ('+ex.code+')', '\n' );
+//}
