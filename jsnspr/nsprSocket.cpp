@@ -389,7 +389,7 @@ JSBool Socket_getOption( JSContext *cx, JSObject *obj, jsval id, jsval *vp ) {
 }
 
 
-JSBool Socket_getPeerName( JSContext *cx, JSObject *obj, jsval id, jsval *vp ) {
+JSBool Socket_getter_peerName( JSContext *cx, JSObject *obj, jsval id, jsval *vp ) {
 
 	PRStatus status;
 
@@ -411,15 +411,26 @@ JSBool Socket_getPeerName( JSContext *cx, JSObject *obj, jsval id, jsval *vp ) {
 	return JS_TRUE;
 }
 
+/*
+JSBool Socket_getter_closed( JSContext *cx, JSObject *obj, jsval id, jsval *vp ) {
+
+	*vp = JS_GetPrivate( cx, obj ) == NULL ? JSVAL_TRUE : JSVAL_FALSE;
+	return JS_TRUE;
+}
+*/
 
 JSPropertySpec Socket_PropertySpec[] = { // *name, tinyid, flags, getter, setter
-  { "linger"   , PR_SockOpt_Linger, JSPROP_PERMANENT, Socket_getOption, Socket_setOption },
-  { "noDelay"  , PR_SockOpt_NoDelay, JSPROP_PERMANENT, Socket_getOption, Socket_setOption },
-  { "reuseAddr", PR_SockOpt_Reuseaddr, JSPROP_PERMANENT, Socket_getOption, Socket_setOption },
-  { "keepAlive", PR_SockOpt_Keepalive, JSPROP_PERMANENT, Socket_getOption, Socket_setOption },
+// PR SocketOption
+	{ "linger"        , PR_SockOpt_Linger        , JSPROP_PERMANENT, Socket_getOption, Socket_setOption },
+  { "noDelay"       , PR_SockOpt_NoDelay       , JSPROP_PERMANENT, Socket_getOption, Socket_setOption },
+  { "reuseAddr"     , PR_SockOpt_Reuseaddr     , JSPROP_PERMANENT, Socket_getOption, Socket_setOption },
+  { "keepAlive"     , PR_SockOpt_Keepalive     , JSPROP_PERMANENT, Socket_getOption, Socket_setOption },
   { "recvBufferSize", PR_SockOpt_RecvBufferSize, JSPROP_PERMANENT, Socket_getOption, Socket_setOption },
   { "sendBufferSize", PR_SockOpt_SendBufferSize, JSPROP_PERMANENT, Socket_getOption, Socket_setOption },
-	{ "peerName", 0, JSPROP_PERMANENT|JSPROP_READONLY, Socket_getPeerName, NULL },
+// properties	
+	{ "peerName", 0, JSPROP_PERMANENT|JSPROP_READONLY, Socket_getter_peerName, NULL },
+//	{ "closed"  , 0, JSPROP_PERMANENT|JSPROP_READONLY, Socket_getter_closed  , NULL },
+//
   { 0 }
 };
 
