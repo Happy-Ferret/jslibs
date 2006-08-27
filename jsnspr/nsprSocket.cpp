@@ -5,18 +5,21 @@
 #include "nsprError.h"
 #include "nsprSocket.h"
 
-void Socket_Finalize(JSContext *cx, JSObject *obj) { 
+void Socket_Finalize(JSContext *cx, JSObject *obj) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
-	if ( fd != NULL )
-		PR_Close( fd );
+	if ( fd != NULL ) { // check if not already closed
+		PRStatus status = PR_Close( fd ); // what to do on error ??
+		if ( status == PR_FAILURE )
+			JS_ReportError( cx, "a socket descriptor cannot be closed while Finalize" );
+	}
 	JS_SetPrivate( cx, obj, NULL );
 }
 
 
-JSClass Socket_class = { 
-  "Socket", JSCLASS_HAS_PRIVATE, 
-  JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, 
+JSClass Socket_class = {
+  "Socket", JSCLASS_HAS_PRIVATE,
+  JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub,
   JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, Socket_Finalize
 };
 
@@ -31,7 +34,7 @@ JSBool Socket_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, j
 	PRFileDesc *fd = PR_NewTCPSocket(); // PR_NewTCPSocket();
 	if ( fd == NULL )
 		return ThrowNSPRError( cx, PR_GetError() );
-		
+
 	PRSocketOptionData sod = { PR_SockOpt_Nonblocking, PR_TRUE };
 	PR_SetSocketOption(fd, &sod); // Make the socket nonblocking
 
@@ -40,7 +43,10 @@ JSBool Socket_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, j
 	return JS_TRUE;
 }
 
-
+// Graceful Shutdown, Linger Options, and Socket Closure
+//   http://windowssdk.msdn.microsoft.com/en-us/library/ms738547.aspx
+// PRLinger ... PR_Close
+// 	http://developer.mozilla.org/en/docs/PRLinger
 JSBool Socket_close(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
@@ -51,11 +57,12 @@ JSBool Socket_close(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval
 	}
 
 	PRStatus status;
-	status = PR_Shutdown( fd, PR_SHUTDOWN_RCV );
+/*
+	status = PR_Shutdown( fd, PR_SHUTDOWN_BOTH );
 	if (status == PR_FAILURE)
 		return ThrowNSPRError( cx, PR_GetError() );
-
-	status = PR_Close( fd );
+*/
+	status = PR_Close( fd ); // cf. linger option
 	if (status == PR_FAILURE) {
 
 		PRErrorCode errorCode = PR_GetError();
@@ -111,7 +118,7 @@ JSBool Socket_listen(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsva
 	status = PR_Bind(fd, &addr);
 	if ( status == PR_FAILURE )
 		return ThrowNSPRError( cx, PR_GetError() );
-	
+
 	status = PR_Listen(fd, 32);
 	if ( status == PR_FAILURE )
 		return ThrowNSPRError( cx, PR_GetError() );
@@ -140,28 +147,6 @@ JSBool Socket_accept(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsva
 	return JS_TRUE;
 }
 
-JSBool Socket_peerName(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
-
-	PRStatus status;
-
-	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
-	if ( fd == NULL ) {
-
-		JS_ReportError( cx, "descriptor is NULL" );
-		return JS_FALSE;
-	}
-
-	PRNetAddr peerAddr;
-	status = PR_GetPeerName( fd, &peerAddr );
-	if ( status == PR_FAILURE )
-		return ThrowNSPRError( cx, PR_GetError() );
-
-	char buf[16]; // If addr is an IPv4 address, size needs to be at least 16. If addr is an IPv6 address, size needs to be at least 46.
-	PR_NetAddrToString( &peerAddr, buf, sizeof(buf) );
-	*rval = STRING_TO_JSVAL( JS_NewStringCopyZ( cx, buf ) );
-	return JS_TRUE;
-}
-
 
 JSBool Socket_connect(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
@@ -183,7 +168,7 @@ JSBool Socket_connect(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsv
 	JSString *jsstr = JS_ValueToString( cx, argv[0] );
 	argv[0] = STRING_TO_JSVAL( jsstr );
 	char *hostName = JS_GetStringBytes( jsstr );
-  
+
 	uint16 intval;
 	JS_ValueToUint16( cx, argv[1], &intval );
 	PRUint16 port = intval;
@@ -241,7 +226,7 @@ JSBool Socket_send(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval 
 //	printf( "%d<%d ?", byteSent, length ); // 		PR_WOULD_BLOCK_ERROR;
 	if ( byteSent == -1 )
 		return ThrowNSPRError( cx, PR_GetError() );
- 
+
 	if ( byteSent < length ) {
 
 		JS_ReportError( cx, "unable to send datas" );
@@ -261,7 +246,7 @@ JSBool Socket_recv(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval 
 		return JS_FALSE;
 	}
 
-	//If PR_Poll() reports that the socket is readable (i.e., PR_POLL_READ is set in out_flags), 
+	//If PR_Poll() reports that the socket is readable (i.e., PR_POLL_READ is set in out_flags),
 	//and PR_Available() returns 0, this means that the socket connection is closed.
 	//see http://www.mozilla.org/projects/nspr/tech-notes/nonblockingio.html
 
@@ -298,189 +283,16 @@ JSBool Socket_recv(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval 
 	return JS_TRUE;
 }
 
+
 JSFunctionSpec Socket_FunctionSpec[] = { // *name, call, nargs, flags, extra
  { "Listen"     , Socket_listen     , 2, 0, 0 },
  { "Accept"     , Socket_accept     , 0, 0, 0 },
- { "PeerName"   , Socket_peerName   , 0, 0, 0 },
  { "Connect"    , Socket_connect    , 2, 0, 0 },
  { "Close"      , Socket_close      , 0, 0, 0 },
  { "Send"       , Socket_send       , 1, 0, 0 },
  { "Recv"       , Socket_recv       , 0, 0, 0 },
  { 0 }
 };
-
-/*
-
-// http://developer.mozilla.org/en/docs/PRLinger
-JSBool Socket_getter_linger(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
-
-	PRStatus status;
-	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
-	if ( fd == NULL ) {
-
-		JS_ReportError( cx, "descriptor is NULL" );
-		return JS_FALSE;
-	}
-	PRSocketOptionData sod;
-	sod.option = PR_SockOpt_Linger;
-	status = PR_GetSocketOption(fd, &sod);
-	if ( status == PR_FAILURE )
-		return ThrowNSPRError( cx, PR_GetError() );
-
-	if ( sod.value.linger.polarity == PR_TRUE )
-		JS_NewNumberValue( cx, PR_IntervalToMilliseconds(sod.value.linger.linger), vp );
-	else
-		*vp = JSVAL_ZERO;
-
-	return JS_TRUE;
-}
-
-
-JSBool Socket_setter_linger(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
-
-	PRStatus status;
-	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
-	if ( fd == NULL ) {
-
-		JS_ReportError( cx, "descriptor is NULL" );
-		return JS_FALSE;
-	}
-
-	uint32 timeout;
-	JS_ValueToECMAUint32( cx, *vp, &timeout );
-
-	PRSocketOptionData sod;
-	sod.option = PR_SockOpt_Linger;
-	
-	if ( timeout > 0 ) {
-		sod.value.linger.polarity = PR_TRUE;
-		sod.value.linger.linger = PR_MillisecondsToInterval(timeout);
-	} else {
-		sod.value.linger.polarity = PR_FALSE;
-	}
-	
-	status = PR_SetSocketOption(fd, &sod);
-	if ( status == PR_FAILURE )
-		return ThrowNSPRError( cx, PR_GetError() );
-
-	return JS_TRUE;
-}
-
-JSBool Socket_getter_noDelay(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
-
-	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
-	if ( fd == NULL ) {
-
-		JS_ReportError( cx, "descriptor is NULL" );
-		return JS_FALSE;
-	}
-	PRSocketOptionData sod;
-	sod.option = PR_SockOpt_NoDelay;
-	if ( PR_GetSocketOption(fd, &sod) == PR_FAILURE )
-		return ThrowNSPRError( cx, PR_GetError() );
-	*vp = sod.value.no_delay == PR_TRUE ? JSVAL_TRUE : JSVAL_FALSE;
-	return JS_TRUE;
-}
-
-
-JSBool Socket_setter_noDelay(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
-
-	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
-	if ( fd == NULL ) {
-
-		JS_ReportError( cx, "descriptor is NULL" );
-		return JS_FALSE;
-	}
-	JSBool boolValue;
-	JS_ValueToBoolean( cx, *vp, &boolValue );
-	PRSocketOptionData sod;
-	sod.option = PR_SockOpt_NoDelay;
-	sod.value.no_delay = boolValue == JS_TRUE;
-	if ( PR_SetSocketOption(fd, &sod) == PR_FAILURE )
-		return ThrowNSPRError( cx, PR_GetError() );
-	return JS_TRUE;
-}
-
-JSBool Socket_getter_reuseAddr(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
-
-	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
-	if ( fd == NULL ) {
-
-		JS_ReportError( cx, "descriptor is NULL" );
-		return JS_FALSE;
-	}
-	PRSocketOptionData sod;
-	sod.option = PR_SockOpt_Reuseaddr;
-	if ( PR_GetSocketOption(fd, &sod) == PR_FAILURE )
-		return ThrowNSPRError( cx, PR_GetError() );
-	*vp = sod.value.no_delay == PR_TRUE ? JSVAL_TRUE : JSVAL_FALSE;
-	return JS_TRUE;
-}
-
-
-JSBool Socket_setter_reuseAddr(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
-
-	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
-	if ( fd == NULL ) {
-
-		JS_ReportError( cx, "descriptor is NULL" );
-		return JS_FALSE;
-	}
-	JSBool boolValue;
-	JS_ValueToBoolean( cx, *vp, &boolValue );
-	PRSocketOptionData sod;
-	sod.option = PR_SockOpt_Reuseaddr;
-	sod.value.no_delay = boolValue == JS_TRUE;
-	if ( PR_SetSocketOption(fd, &sod) == PR_FAILURE )
-		return ThrowNSPRError( cx, PR_GetError() );
-	return JS_TRUE;
-}
-
-
-JSBool Socket_getter_keepAlive(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
-
-	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
-	if ( fd == NULL ) {
-
-		JS_ReportError( cx, "descriptor is NULL" );
-		return JS_FALSE;
-	}
-	PRSocketOptionData sod;
-	sod.option = PR_SockOpt_Keepalive;
-	if ( PR_GetSocketOption(fd, &sod) == PR_FAILURE )
-		return ThrowNSPRError( cx, PR_GetError() );
-	*vp = sod.value.no_delay == PR_TRUE ? JSVAL_TRUE : JSVAL_FALSE;
-	return JS_TRUE;
-}
-
-
-JSBool Socket_setter_keepAlive(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
-
-	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
-	if ( fd == NULL ) {
-
-		JS_ReportError( cx, "descriptor is NULL" );
-		return JS_FALSE;
-	}
-	JSBool boolValue;
-	JS_ValueToBoolean( cx, *vp, &boolValue );
-	PRSocketOptionData sod;
-	sod.option = PR_SockOpt_Keepalive;
-	sod.value.no_delay = boolValue == JS_TRUE;
-	if ( PR_SetSocketOption(fd, &sod) == PR_FAILURE )
-		return ThrowNSPRError( cx, PR_GetError() );
-	return JS_TRUE;
-}
-
-
-JSPropertySpec Socket_PropertySpec[] = { // *name, tinyid, flags, getter, setter
-  { "linger"   , 0, JSPROP_PERMANENT, Socket_getter_linger , Socket_setter_linger },
-  { "noDelay"  , 0, JSPROP_PERMANENT, Socket_getter_noDelay, Socket_setter_noDelay },
-  { "reuseAddr", 0, JSPROP_PERMANENT, Socket_getter_reuseAddr, Socket_setter_reuseAddr },
-  { "keepAlive", 0, JSPROP_PERMANENT, Socket_getter_keepAlive, Socket_setter_keepAlive },
-  { 0 }
-};
-*/
 
 
 JSBool Socket_setOption( JSContext *cx, JSObject *obj, jsval id, jsval *vp ) {
@@ -495,10 +307,10 @@ JSBool Socket_setOption( JSContext *cx, JSObject *obj, jsval id, jsval *vp ) {
 	sod.option = (PRSockOption)JSVAL_TO_INT( id );
 
 	switch ( sod.option ) {
-		case PR_SockOpt_Linger: {
+		case PR_SockOpt_Linger: { // http://developer.mozilla.org/en/docs/PRLinger
 				uint32 timeout;
 				JS_ValueToECMAUint32( cx, *vp, &timeout );
-				if ( timeout > 0 ) {
+				if ( timeout >= 0 ) {
 					sod.value.linger.polarity = PR_TRUE;
 					sod.value.linger.linger = PR_MillisecondsToInterval(timeout);
 				} else {
@@ -577,6 +389,29 @@ JSBool Socket_getOption( JSContext *cx, JSObject *obj, jsval id, jsval *vp ) {
 }
 
 
+JSBool Socket_getPeerName( JSContext *cx, JSObject *obj, jsval id, jsval *vp ) {
+
+	PRStatus status;
+
+	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
+	if ( fd == NULL ) {
+
+		JS_ReportError( cx, "descriptor is NULL" );
+		return JS_FALSE;
+	}
+
+	PRNetAddr peerAddr;
+	status = PR_GetPeerName( fd, &peerAddr );
+	if ( status == PR_FAILURE )
+		return ThrowNSPRError( cx, PR_GetError() );
+
+	char buf[16]; // If addr is an IPv4 address, size needs to be at least 16. If addr is an IPv6 address, size needs to be at least 46.
+	PR_NetAddrToString( &peerAddr, buf, sizeof(buf) );
+	*vp = STRING_TO_JSVAL( JS_NewStringCopyZ( cx, buf ) );
+	return JS_TRUE;
+}
+
+
 JSPropertySpec Socket_PropertySpec[] = { // *name, tinyid, flags, getter, setter
   { "linger"   , PR_SockOpt_Linger, JSPROP_PERMANENT, Socket_getOption, Socket_setOption },
   { "noDelay"  , PR_SockOpt_NoDelay, JSPROP_PERMANENT, Socket_getOption, Socket_setOption },
@@ -584,12 +419,13 @@ JSPropertySpec Socket_PropertySpec[] = { // *name, tinyid, flags, getter, setter
   { "keepAlive", PR_SockOpt_Keepalive, JSPROP_PERMANENT, Socket_getOption, Socket_setOption },
   { "recvBufferSize", PR_SockOpt_RecvBufferSize, JSPROP_PERMANENT, Socket_getOption, Socket_setOption },
   { "sendBufferSize", PR_SockOpt_SendBufferSize, JSPROP_PERMANENT, Socket_getOption, Socket_setOption },
+	{ "peerName", 0, JSPROP_PERMANENT|JSPROP_READONLY, Socket_getPeerName, NULL },
   { 0 }
 };
 
 
 
 JSObject *InitSocketClass( JSContext *cx, JSObject *obj ) {
-	
+
 	return JS_InitClass( cx, obj, NULL, &Socket_class, Socket_construct, 1, Socket_PropertySpec, Socket_FunctionSpec, NULL, NULL );
 }
