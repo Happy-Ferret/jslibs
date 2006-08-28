@@ -5,21 +5,21 @@
 #include "SqliteError.h"
 
 JSClass SqliteError_class = { 
-  "SqliteError", JSCLASS_HAS_PRIVATE, 
+  "SqliteError", JSCLASS_HAS_RESERVED_SLOTS(2),
   JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, 
   JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, JS_FinalizeStub
 };
 
 
 JSBool SqliteError_getter_code(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
-
+	
+	JS_GetReservedSlot( cx, obj, 0, vp );
   return JS_TRUE;
 }
 
 JSBool SqliteError_getter_text(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 
-//	sqlite3ErrStr(1);
-
+	JS_GetReservedSlot( cx, obj, 1, vp );
   return JS_TRUE;
 }
 
@@ -36,12 +36,13 @@ JSBool SqliteError_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *ar
 }
 
 
-JSBool SqliteThrowError( JSContext *cx, int errorCode ) {
+JSBool SqliteThrowError( JSContext *cx, int errorCode, const char *errorMsg ) {
 
-	JS_ReportError( cx, "error" );	return JS_FALSE;
+	JS_ReportWarning( cx, "SqliteError exception" );
 
 	JSObject *error = JS_NewObject( cx, &SqliteError_class, NULL, NULL );
-	JS_SetPrivate( cx, error, (void*)errorCode );
+	JS_SetReservedSlot( cx, error, 0, INT_TO_JSVAL(errorCode) );
+	JS_SetReservedSlot( cx, error, 1, STRING_TO_JSVAL(JS_NewStringCopyZ( cx, errorMsg )) );
 	JS_SetPendingException( cx, OBJECT_TO_JSVAL( error ) );
   return JS_FALSE;
 }

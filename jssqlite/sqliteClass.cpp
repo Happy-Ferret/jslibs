@@ -39,35 +39,20 @@ JSBool Result_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, j
 	return JS_FALSE;
 }
 
-JSBool Result_row(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+
+JSBool Result_step(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
 	sqlite3_stmt *pStmt = (sqlite3_stmt *)JS_GetPrivate( cx, obj );
 	if ( pStmt == NULL ) {
+
 		JS_ReportError( cx, "Invalid statment" );
 		return JS_FALSE;
 	}
 
 	int status = sqlite3_step( pStmt ); // The return value will be either SQLITE_BUSY, SQLITE_DONE, SQLITE_ROW, SQLITE_ERROR, or SQLITE_MISUSE.
-	if ( status == SQLITE_ERROR ) {
-		
-		JSObject *parent = JS_GetParent( cx, obj );
-		if ( _safeMode ) {
 
-			if ( JS_GetClass(parent) != &Database_class ) {
-
-				JS_ReportError( cx, "Invalid parent object" );
-				return JS_FALSE;
-			}
-		}
-
-		sqlite3 *db = (sqlite3 *)JS_GetPrivate( cx, obj );
-		if ( db == NULL ) {
-
-			JS_ReportError( cx, "invalid database object" );
-			return JS_FALSE;
-		}
-		return SqliteThrowError( cx, sqlite3_errcode(db) );
-	}
+	if ( status == SQLITE_ERROR )
+		return SqliteThrowError( cx, sqlite3_errcode(sqlite3_db_handle( pStmt )), sqlite3_errmsg(sqlite3_db_handle( pStmt )));
 
 	if ( status == SQLITE_MISUSE ) { // means that the this routine was called inappropriately. Perhaps it was called on a virtual machine that had already been finalized or on one that had previously returned SQLITE_ERROR or SQLITE_DONE. Or it could be the case that a database connection is being used by a different thread than the one it was created it.
 
@@ -77,66 +62,109 @@ JSBool Result_row(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *
 
 	if ( status == SQLITE_DONE ) { // means that the statement has finished executing successfully. sqlite3_step() should not be called again on this virtual machine without first calling sqlite3_reset() to reset the virtual machine back to its initial state.
 		
-		*rval = JSVAL_VOID;
-		return JS_TRUE;
+		*rval = JSVAL_FALSE;
+		return JS_FALSE;
 	}
 
 	if ( status != SQLITE_ROW ) {
 
 		JS_ReportError( cx, "uncautch error (%d)", status );
+		return JS_TRUE;
+	}
+
+	*rval = JSVAL_TRUE;
+	return JS_TRUE;
+}
+
+
+JSBool Result_col(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+
+	sqlite3_stmt *pStmt = (sqlite3_stmt *)JS_GetPrivate( cx, obj );
+	if ( pStmt == NULL ) {
+
+		JS_ReportError( cx, "Invalid statment" );
 		return JS_FALSE;
 	}
 
+	if ( argc < 1 ) {
 
-	JSBool namedRows = JS_FALSE; // returns an array [ row1Data, row2Data, ... ] else return an object { row1Name:row1Data, row2Name:row2Data,  ... }
-	if ( argc >= 1 ) {
-		
-		JS_ValueToBoolean( cx, argv[0], &namedRows );
+		JS_ReportError( cx, "argument is missing" );
+		return JS_FALSE;
 	}
+
+	int32 col;
+	JS_ValueToInt32( cx, argv[0], &col );
+
+	switch ( sqlite3_column_type( pStmt, col ) ) {
+
+		case SQLITE_INTEGER:
+			*rval = INT_TO_JSVAL( sqlite3_column_int( pStmt, col ) );
+			break;
+
+		case SQLITE_FLOAT:
+			JS_NewNumberValue( cx, sqlite3_column_double( pStmt, col ), rval );
+			break;
+
+		case SQLITE_BLOB:
+			*rval = STRING_TO_JSVAL( JS_NewStringCopyN( cx,(const char *)sqlite3_column_blob( pStmt, col ), sqlite3_column_bytes( pStmt, col ) ) );
+			break;
+
+		case SQLITE_NULL:
+			*rval = JSVAL_NULL;
+			break;
+
+		case SQLITE_TEXT:
+		default: // by default, if type is unknown, use TEXT cast
+			*rval = STRING_TO_JSVAL(JS_NewStringCopyZ(cx,(const char *)sqlite3_column_text( pStmt, col )));
+	}
+	return JS_TRUE;
+}
+
+
+JSBool Result_row(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+
+	sqlite3_stmt *pStmt = (sqlite3_stmt *)JS_GetPrivate( cx, obj );
+	if ( pStmt == NULL ) {
+
+		JS_ReportError( cx, "Invalid statment" );
+		return JS_FALSE;
+	}
+
+	if ( Result_step( cx, obj, 0, NULL, rval ) == JS_FALSE ) // if something goes wrong!
+		return JS_FALSE;
+
+	if ( *rval == JSVAL_FALSE ) { // the statement has finished executing successfully
+
+		*rval = JSVAL_VOID; // return undefined
+		return JS_TRUE;
+	}
+
+	// returns an array [ row1Data, row2Data, ... ] else return an object { row1Name:row1Data, row2Name:row2Data,  ... }
+	JSBool namedRows = JS_FALSE;
+	if ( argc >= 1 )
+		JS_ValueToBoolean( cx, argv[0], &namedRows );
 
 	JSObject *row = namedRows ? JS_NewObject(cx, NULL, NULL, NULL) : JS_NewArrayObject(cx, 0, NULL); // If length is 0, JS_NewArrayObject creates an array object of length 0 and ignores vector.
 	*rval = OBJECT_TO_JSVAL(row); // now, row is protectef fom GC ??
-
 	
 	// If the previous call to sqlite3_step() returned SQLITE_DONE or an error code, 
 	// then sqlite3_data_count() will return 0 whereas sqlite3_column_count() will continue to return the number of columns in the result set.
 	int columnCount = sqlite3_data_count( pStmt ); // This routine returns 0 if pStmt is an SQL statement that does not return data (for example an UPDATE).
 
-	jsval colJsValue;
+	jsval colJsValue, jsvCol;
 	for ( int col = 0; col < columnCount; ++col ) {
-
-		switch ( sqlite3_column_type( pStmt, col ) ) {
-			case SQLITE_INTEGER:
-				colJsValue = INT_TO_JSVAL( sqlite3_column_int( pStmt, col ) );
-				break;
-
-			case SQLITE_FLOAT:
-				JS_NewNumberValue( cx, sqlite3_column_double( pStmt, col ), &colJsValue );
-				break;
-
-			case SQLITE_BLOB:
-				colJsValue = STRING_TO_JSVAL( JS_NewStringCopyN( cx, (const char *)sqlite3_column_blob( pStmt, col ), sqlite3_column_bytes( pStmt, col ) ) );
-				break;
-
-			case SQLITE_NULL:
-				colJsValue = JSVAL_NULL;
-				break;
-
-			case SQLITE_TEXT:
-			default: // by default, if type is unknown, use TEXT cast
-				jsval colJsValue = STRING_TO_JSVAL(JS_NewStringCopyZ(cx,(const char *)sqlite3_column_text( pStmt, col )));
-		}
+		
+		jsvCol = INT_TO_JSVAL(col);
+		if ( Result_col( cx, obj, 1, &jsvCol, &colJsValue ) == JS_FALSE )
+			return JS_FALSE;
 
 		if ( namedRows )
 			JS_SetProperty( cx, row, sqlite3_column_name( pStmt, col ), &colJsValue );
 		else
 			JS_DefineElement( cx, row, col, colJsValue, NULL, NULL, JSPROP_ENUMERATE );
 	}
-
 	return JS_TRUE;
 }
-
-
 
 
 JSBool Result_reset(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
@@ -149,36 +177,15 @@ JSBool Result_reset(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval
 	}
 
 	int status = sqlite3_reset(pStmt);
-
-	if ( status != SQLITE_OK ) {
-		
-		JSObject *parent = JS_GetParent( cx, obj );
-		if ( _safeMode ) {
-
-			if ( JS_GetClass(parent) != &Database_class ) {
-
-				JS_ReportError( cx, "Invalid parent object" );
-				return JS_FALSE;
-			}
-		}
-
-		sqlite3 *db = (sqlite3 *)JS_GetPrivate( cx, obj );
-		if ( db == NULL ) {
-
-			JS_ReportError( cx, "Invalid database object" );
-			return JS_FALSE;
-		}
-
-		return SqliteThrowError( cx, sqlite3_errcode(db) );
-	}
-
+	if ( status != SQLITE_OK )
+		return SqliteThrowError( cx, sqlite3_errcode(sqlite3_db_handle(pStmt)), sqlite3_errmsg(sqlite3_db_handle(pStmt)) );
 	return JS_TRUE;
 }
+
 
 JSBool Result_close(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
 	sqlite3_stmt *pStmt = (sqlite3_stmt *)JS_GetPrivate( cx, obj );
-
 	if ( pStmt == NULL ) {
 
 		JS_ReportError( cx, "Invalid statment" );
@@ -186,28 +193,9 @@ JSBool Result_close(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval
 	}
 
 	int status = sqlite3_finalize( pStmt );
+	if ( status != SQLITE_OK )
+		return SqliteThrowError( cx, sqlite3_errcode(sqlite3_db_handle( pStmt )), sqlite3_errmsg(sqlite3_db_handle(pStmt)) );
 
-	if ( status != SQLITE_OK ) {
-		
-		JSObject *parent = JS_GetParent( cx, obj );
-		if ( _safeMode ) {
-
-			if ( JS_GetClass(parent) != &Database_class ) {
-
-				JS_ReportError( cx, "Invalid parent object" );
-				return JS_FALSE;
-			}
-		}
-
-		sqlite3 *db = (sqlite3 *)JS_GetPrivate( cx, obj );
-		if ( db == NULL ) {
-
-			JS_ReportError( cx, "Invalid database object" );
-			return JS_FALSE;
-		}
-
-		return SqliteThrowError( cx, sqlite3_errcode(db) );
-	}
 	JS_SetPrivate( cx, obj, NULL );
 	return JS_TRUE;
 }
@@ -215,15 +203,19 @@ JSBool Result_close(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval
 
 JSFunctionSpec Result_FunctionSpec[] = { // *name, call, nargs, flags, extra
  { "Row"   , Result_row   , 1, 0, 0 },
+ { "Step"  , Result_step  , 0, 0, 0 },
  { "Reset" , Result_reset , 0, 0, 0 },
  { "Close" , Result_close , 0, 0, 0 },
+ { "Col"   , Result_col   , 0, 0, 0 },
  { 0 }
 };
+
 
 JSBool Result_getter_columnNames(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 
 	sqlite3_stmt *pStmt = (sqlite3_stmt *)JS_GetPrivate( cx, obj );
 	if ( pStmt == NULL ) {
+
 		JS_ReportError( cx, "Invalid statment" );
 		return JS_FALSE;
 	}
@@ -244,8 +236,34 @@ JSBool Result_getter_columnNames(JSContext *cx, JSObject *obj, jsval id, jsval *
 }
 
 
+JSBool Result_getter_columnIndex(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
+
+	sqlite3_stmt *pStmt = (sqlite3_stmt *)JS_GetPrivate( cx, obj );
+	if ( pStmt == NULL ) {
+
+		JS_ReportError( cx, "Invalid statment" );
+		return JS_FALSE;
+	}
+
+	JSObject *columnIndexes = JS_NewObject( cx, NULL, NULL, NULL );
+	*vp = OBJECT_TO_JSVAL( columnIndexes );
+
+	int columnCount = sqlite3_column_count( pStmt );
+
+	jsval colJsValue;
+	for ( int col = 0; col < columnCount; ++col ) {
+
+		colJsValue = INT_TO_JSVAL(col);
+		JS_SetProperty( cx, columnIndexes, sqlite3_column_name( pStmt, col ), &colJsValue );
+	}
+
+  return JS_TRUE;
+}
+
+
 JSPropertySpec Result_PropertySpec[] = { // *name, tinyid, flags, getter, setter
 	{ "columnNames"   , 0, JSPROP_PERMANENT|JSPROP_READONLY, Result_getter_columnNames, NULL },
+	{ "columnIndexes" , 0, JSPROP_PERMANENT|JSPROP_READONLY, Result_getter_columnIndex, NULL },
   { 0 }
 };
 
@@ -298,7 +316,7 @@ JSBool Database_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv,
 	int status = sqlite3_open( fileName, &db );
 
 	if ( status != SQLITE_OK )
-		return SqliteThrowError( cx, sqlite3_errcode(db) );
+		return SqliteThrowError( cx, sqlite3_errcode(db), sqlite3_errmsg(db) );
 
 	JS_SetPrivate( cx, obj, db );
 
@@ -313,9 +331,7 @@ JSBool Database_query(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsv
 		return JS_FALSE;
 	}
 
-	JSString *jssSqlQuery = JS_ValueToString( cx, argv[0] );
-
-	char *sqlQuery = JS_GetStringBytes( jssSqlQuery );
+	char *sqlQuery = JS_GetStringBytes( JS_ValueToString( cx, argv[0] ) );
 
 	sqlite3 *db = (sqlite3 *)JS_GetPrivate( cx, obj );
 	if ( db == NULL ) {
@@ -330,7 +346,7 @@ JSBool Database_query(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsv
 	int status = sqlite3_prepare( db, sqlQuery, -1, &pStmt, &szTail ); // If the next argument, "nBytes", is less than zero, then zSql is read up to the first nul terminator. 
 
 	if ( status != SQLITE_OK )
-		return SqliteThrowError( cx, sqlite3_errcode(db) );
+		return SqliteThrowError( cx, sqlite3_errcode(db), sqlite3_errmsg(db) );
 
 	if ( *szTail != '\0' ) { // for the moment, do not support multiple statements
 
@@ -361,7 +377,7 @@ JSBool Database_close(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsv
 
 	int status = sqlite3_close( db ); // All prepared statements must finalized before sqlite3_close() is called or else the close will fail with a return code of SQLITE_BUSY.
 	if ( status != SQLITE_OK )
-		return SqliteThrowError( cx, sqlite3_errcode(db) );
+		return SqliteThrowError( cx, sqlite3_errcode(db), sqlite3_errmsg(db) );
 			
 	JS_SetPrivate( cx, obj, NULL );
 
@@ -410,8 +426,8 @@ JSBool Database_getter_changes(JSContext *cx, JSObject *obj, jsval id, jsval *vp
 
 
 JSPropertySpec Database_PropertySpec[] = { // *name, tinyid, flags, getter, setter
-	{ "lastInsertRowid"   , 0, JSPROP_PERMANENT|JSPROP_READONLY, Database_getter_lastInsertRowid, NULL },
-	{ "changes"      , 0, JSPROP_PERMANENT|JSPROP_READONLY, Database_getter_changes, NULL },
+	{ "lastInsertRowid" , 0, JSPROP_PERMANENT|JSPROP_READONLY, Database_getter_lastInsertRowid, NULL },
+	{ "changes"         , 0, JSPROP_PERMANENT|JSPROP_READONLY, Database_getter_changes, NULL },
   { 0 }
 };
 
