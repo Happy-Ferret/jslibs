@@ -277,7 +277,7 @@ void Database_Finalize(JSContext *cx, JSObject *obj) {
 	if ( db != NULL ) {
 		int status = sqlite3_close( db ); // All prepared statements must finalized before sqlite3_close() is called or else the close will fail with a return code of SQLITE_BUSY.
 		if ( status != SQLITE_OK )
-				JS_ReportError( cx, "unable to finalize the database (%d)", status );
+			JS_ReportError( cx, "unable to finalize the database (error:%d) ", status );
 		JS_SetPrivate( cx, obj, NULL );
 	}
 }
@@ -400,8 +400,7 @@ JSBool Database_getter_lastInsertRowid(JSContext *cx, JSObject *obj, jsval id, j
 		return JS_FALSE;
 	}
 
-	double lastInsertRowid = sqlite3_last_insert_rowid(db);
-	JS_NewNumberValue( cx, lastInsertRowid, vp );
+	JS_NewNumberValue( cx, sqlite3_last_insert_rowid(db), vp ); // use JS_NewNumberValue because sqlite3_last_insert_rowid returns int64
   return JS_TRUE;
 }
 
@@ -418,9 +417,8 @@ JSBool Database_getter_changes(JSContext *cx, JSObject *obj, jsval id, jsval *vp
 
 	// This function returns the number of database rows that were changed (or inserted or deleted) by the most recently completed INSERT, UPDATE, or DELETE statement. 
 	// Only changes that are directly specified by the INSERT, UPDATE, or DELETE statement are counted. Auxiliary changes caused by triggers are not counted. Use the sqlite3_total_changes() function to find the total number of changes including changes caused by triggers.
-	int changes = sqlite3_changes(db);
-
-	JS_NewNumberValue( cx, changes, vp );
+	//JS_NewNumberValue( cx, sqlite3_changes(db), vp );
+	*vp = INT_TO_JSVAL( sqlite3_changes(db) );
   return JS_TRUE;
 }
 
