@@ -1,2 +1,2 @@
 JSObject *SqliteInitErrorClass( JSContext *cx, JSObject *obj );
-JSBool SqliteThrowError( JSContext *cx, PRErrorCode errorCode );
+JSBool SqliteThrowError( JSContext *cx, int errorCode );

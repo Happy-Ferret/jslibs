@@ -4,11 +4,14 @@
 #include <jsapi.h>
 #include <sqlite3.h>
 
+#include "sqliteClass.h"
+#include "sqliteError.h"
 
 
 extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
-
+	SqliteInitErrorClass( cx, obj );
+	SqliteInitClass( cx, obj );
   return JS_TRUE;
 }
 

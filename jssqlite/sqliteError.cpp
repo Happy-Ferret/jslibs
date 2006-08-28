@@ -1,6 +1,6 @@
+#include "stdafx.h"
 #define XP_WIN
 #include <jsapi.h>
-#include <nspr.h>
 
 #include "SqliteError.h"
 
@@ -18,6 +18,8 @@ JSBool SqliteError_getter_code(JSContext *cx, JSObject *obj, jsval id, jsval *vp
 
 JSBool SqliteError_getter_text(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 
+//	sqlite3ErrStr(1);
+
   return JS_TRUE;
 }
 
@@ -34,7 +36,7 @@ JSBool SqliteError_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *ar
 }
 
 
-JSBool ThrowSqliteError( JSContext *cx, PRErrorCode errorCode ) {
+JSBool SqliteThrowError( JSContext *cx, int errorCode ) {
 
 	JS_ReportError( cx, "error" );	return JS_FALSE;
 
@@ -44,7 +46,7 @@ JSBool ThrowSqliteError( JSContext *cx, PRErrorCode errorCode ) {
   return JS_FALSE;
 }
 
-JSObject *InitErrorClass( JSContext *cx, JSObject *obj ) {
+JSObject *SqliteInitErrorClass( JSContext *cx, JSObject *obj ) {
 
 	return JS_InitClass( cx, obj, NULL, &SqliteError_class, SqliteError_construct, 0, SqliteError_PropertySpec, NULL, NULL, NULL );
 }

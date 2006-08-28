@@ -1,1 +1,1 @@
-JSObject *InitSqliteClass( JSContext *cx, JSObject *obj );
+JSObject *SqliteInitClass( JSContext *cx, JSObject *obj );
