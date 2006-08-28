@@ -9,6 +9,7 @@ try {
 	var result = db.Query(arguments[1]);
 
 	print( 'last insert row ID :'+db.lastInsertRowid ,'\n' );
+	print( 'changes            :'+db.changes ,'\n' );
 	print( 'col names          :'+result.columnNames.toSource() ,'\n' );
 	print( 'col indexes        :'+result.columnIndexes.toSource() ,'\n' );
 	print( 'first row          :'+result.Row().toSource() ,'\n' );
