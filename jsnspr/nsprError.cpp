@@ -9,7 +9,7 @@
 #include "nsprError.h"
 
 JSClass NSPRError_class = { 
-  "NSPRError", JSCLASS_HAS_PRIVATE, 
+  "NSPRError", JSCLASS_HAS_RESERVED_SLOTS(1), 
   JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, 
   JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, JS_FinalizeStub
 };
@@ -17,17 +17,15 @@ JSClass NSPRError_class = {
 
 JSBool NSPRError_getter_code(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 
-	PRErrorCode errorCode = (PRErrorCode)JS_GetPrivate( cx, obj );
-	*vp = INT_TO_JSVAL( errorCode ); //	JS_NewNumberValue( cx, 
+	JS_GetReservedSlot( cx, obj, 0, vp );
   return JS_TRUE;
 }
 
 JSBool NSPRError_getter_text(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 
-	PRErrorCode errorCode = (PRErrorCode)JS_GetPrivate( cx, obj );
-
+	JS_GetReservedSlot( cx, obj, 0, vp );
+	PRErrorCode errorCode = JSVAL_TO_INT(*vp);
 	JSString *str = JS_NewStringCopyZ( cx, PR_ErrorToString( errorCode, PR_LANGUAGE_EN ) );
-	
 	*vp = STRING_TO_JSVAL( str );
   return JS_TRUE;
 }
@@ -63,7 +61,7 @@ JSBool ThrowNSPRError( JSContext *cx, PRErrorCode errorCode ) {
 	JS_ReportWarning( cx, "NSPRError exception" );
 
 	JSObject *error = JS_NewObject( cx, &NSPRError_class, NULL, NULL );
-	JS_SetPrivate( cx, error, (void*)errorCode );
+	JS_SetReservedSlot( cx, error, 0, INT_TO_JSVAL(errorCode) );
 	JS_SetPendingException( cx, OBJECT_TO_JSVAL( error ) );
   return JS_FALSE;
 }
