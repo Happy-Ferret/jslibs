@@ -59,7 +59,12 @@ JSBool Socket_close(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval
 
 	PRStatus status;
 
-	status = PR_Shutdown( fd, PR_SHUTDOWN_BOTH );
+// man page
+//	Sets or gets the SO_LINGER option. The argument is a linger structure. 
+//	When enabled, a close(2) or shutdown(2) will not return until all queued messages for the socket have been successfully sent 
+//	or the linger timeout has been reached. Otherwise, the call returns immediately and the closing is done in the background. 
+//	When the socket is closed as part of exit(2), it always lingers in the background.
+	status = PR_Shutdown( fd, PR_SHUTDOWN_BOTH ); // is this compatible with linger ??
 	if (status == PR_FAILURE)
 		return ThrowNSPRError( cx, PR_GetError() );
 
@@ -67,7 +72,6 @@ JSBool Socket_close(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval
 	if (status == PR_FAILURE) {
 
 		PRErrorCode errorCode = PR_GetError();
-
 //		if ( errorCode == PR_WOULD_BLOCK_ERROR ) {
 //		} else
 		return ThrowNSPRError( cx, PR_GetError() );
@@ -109,7 +113,7 @@ JSBool Socket_listen(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsva
 	argv[0] = STRING_TO_JSVAL( jsstr );
 	char *hostName = JS_GetStringBytes( jsstr );
 
-	if ( *hostName != 0 ) {
+	if ( hostName[0] != '\0' ) { // else, by default: PR_IpAddrAny ( see PR_InitializeNetAddr )
 
 		status = PR_StringToNetAddr( hostName, &addr ); // see PR_GetHostByName
 		if ( status == PR_FAILURE )
@@ -199,7 +203,6 @@ JSBool Socket_connect(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsv
 	if ( status == PR_FAILURE ) {
 
 		PRErrorCode errorCode = PR_GetError();
-
 		if ( errorCode != PR_IN_PROGRESS_ERROR ) // not nonblocking-error
 			return ThrowNSPRError( cx, errorCode );
 	}
@@ -433,7 +436,7 @@ JSBool Socket_getter_connectContinue( JSContext *cx, JSObject *obj, jsval id, js
 		return JS_FALSE;
 	}
 
-/*
+/* !! PR_GetConnectStatus is DEPRECATED !!
 	// A pointer to a PRPollDesc structure whose fd field is the socket and whose in_flags field must contain PR_POLL_WRITE and PR_POLL_EXCEPT.
 	PRPollDesc desc;// = { fd, PR_POLL_WRITE | PR_POLL_EXCEPT, 0 }; // <-- This kind of initialization DO NOT WORK !!
 	desc.fd=fd;
@@ -456,8 +459,17 @@ JSBool Socket_getter_connectContinue( JSContext *cx, JSObject *obj, jsval id, js
 */
 
 	PRStatus status;
-	PRPollDesc desc = { fd, PR_POLL_READ|PR_POLL_WRITE|PR_POLL_EXCEPT, 0 };
-	PR_Poll( &desc, 1, PR_INTERVAL_NO_WAIT );
+	PRPollDesc desc = { fd, PR_POLL_WRITE | PR_POLL_EXCEPT, 0 };
+	PRInt32 result = PR_Poll( &desc, 1, PR_INTERVAL_NO_WAIT );
+	if ( result == -1 )
+		return ThrowNSPRError( cx, PR_GetError() );
+
+	if ( result == 0 ) {
+
+		JS_ReportError( cx, "no connection are pending" );
+		return JS_FALSE;
+	}
+
 	status = PR_ConnectContinue( fd, desc.out_flags );
 //	printf( "status: %d\n", status );
 

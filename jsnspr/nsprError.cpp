@@ -37,6 +37,7 @@ JSPropertySpec NSPRError_PropertySpec[] = { // *name, tinyid, flags, getter, set
   { 0 }
 };
 
+
 JSBool NSPRError_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
 	return JS_TRUE;
