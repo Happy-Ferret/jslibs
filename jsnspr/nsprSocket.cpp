@@ -43,6 +43,7 @@ JSBool Socket_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, j
 	return JS_TRUE;
 }
 
+
 // Graceful Shutdown, Linger Options, and Socket Closure
 //   http://windowssdk.msdn.microsoft.com/en-us/library/ms738547.aspx
 // PRLinger ... PR_Close
@@ -57,11 +58,11 @@ JSBool Socket_close(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval
 	}
 
 	PRStatus status;
-/*
+
 	status = PR_Shutdown( fd, PR_SHUTDOWN_BOTH );
 	if (status == PR_FAILURE)
 		return ThrowNSPRError( cx, PR_GetError() );
-*/
+
 	status = PR_Close( fd ); // cf. linger option
 	if (status == PR_FAILURE) {
 
@@ -118,8 +119,15 @@ JSBool Socket_listen(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsva
 	status = PR_Bind(fd, &addr);
 	if ( status == PR_FAILURE )
 		return ThrowNSPRError( cx, PR_GetError() );
+	PRIntn backlog = 16;
+	if ( argc >= 3 ) {
 
-	status = PR_Listen(fd, 32);
+		int32 val;
+		JS_ValueToInt32( cx, argv[2], &val );
+		backlog = val;
+	}
+
+	status = PR_Listen(fd, backlog);
 	if ( status == PR_FAILURE )
 		return ThrowNSPRError( cx, PR_GetError() );
 
@@ -136,7 +144,7 @@ JSBool Socket_accept(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsva
 		return JS_FALSE;
 	}
 
-	PRFileDesc *newFd = PR_Accept( fd, NULL, PR_INTERVAL_NO_WAIT );
+	PRFileDesc *newFd = PR_Accept( fd, NULL, PR_INTERVAL_NO_TIMEOUT );
 
 	if ( newFd == NULL )
 		return ThrowNSPRError( cx, PR_GetError() );
@@ -195,7 +203,7 @@ JSBool Socket_connect(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsv
 		if ( errorCode != PR_IN_PROGRESS_ERROR ) // not nonblocking-error
 			return ThrowNSPRError( cx, errorCode );
 	}
-	// see PR_ConnectContinue
+	// see 	PR_GetConnectStatus or PR_ConnectContinue INSTEAD ???
 	return JS_TRUE;
 }
 
@@ -411,13 +419,57 @@ JSBool Socket_getter_peerName( JSContext *cx, JSObject *obj, jsval id, jsval *vp
 	return JS_TRUE;
 }
 
-/*
-JSBool Socket_getter_closed( JSContext *cx, JSObject *obj, jsval id, jsval *vp ) {
 
-	*vp = JS_GetPrivate( cx, obj ) == NULL ? JSVAL_TRUE : JSVAL_FALSE;
+// http://developer.mozilla.org/en/docs/PR_GetConnectStatus
+// After PR_Connect on a nonblocking socket fails with PR_IN_PROGRESS_ERROR, 
+// you may wait for the connection to complete by calling PR_Poll on the socket with the in_flags PR_POLL_WRITE | PR_POLL_EXCEPT.
+// When PR_Poll returns, call PR_GetConnectStatus on the socket to determine whether the nonblocking connect has succeeded or failed.
+JSBool Socket_getter_connectContinue( JSContext *cx, JSObject *obj, jsval id, jsval *vp ) {
+
+	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
+	if ( fd == NULL ) {
+
+		JS_ReportError( cx, "descriptor is NULL" );
+		return JS_FALSE;
+	}
+
+/*
+	// A pointer to a PRPollDesc structure whose fd field is the socket and whose in_flags field must contain PR_POLL_WRITE and PR_POLL_EXCEPT.
+	PRPollDesc desc;// = { fd, PR_POLL_WRITE | PR_POLL_EXCEPT, 0 }; // <-- This kind of initialization DO NOT WORK !!
+	desc.fd=fd;
+	desc.in_flags = PR_POLL_WRITE | PR_POLL_EXCEPT;
+	desc.out_flags = 0;
+	PRStatus status = PR_GetConnectStatus( &desc );
+
+	// The function returns one of these values:
+	// - If successful, PR_SUCCESS.
+	// - If unsuccessful, PR_FAILURE. The reason for the failure can be retrieved via PR_GetError. 
+	// If PR_GetError returns PR_IN_PROGRESS_ERROR, the nonblocking connection is still in progress and has not completed yet.Other errors indicate that the connection has failed. 
+
+	if ( status == PR_FAILURE )
+		return ThrowNSPRError( cx, PR_GetError() );
+
+	if ( status == PR_FAILURE )
+		*vp = PR_GetError() == PR_IN_PROGRESS_ERROR ? JSVAL_VOID : JSVAL_FALSE;
+	else
+		*vp = JSVAL_TRUE;
+*/
+
+	PRStatus status;
+	PRPollDesc desc = { fd, PR_POLL_READ|PR_POLL_WRITE|PR_POLL_EXCEPT, 0 };
+	PR_Poll( &desc, 1, PR_INTERVAL_NO_WAIT );
+	status = PR_ConnectContinue( fd, desc.out_flags );
+//	printf( "status: %d\n", status );
+
+	if ( status == PR_FAILURE )
+		*vp = PR_GetError() == PR_IN_PROGRESS_ERROR ? JSVAL_VOID : JSVAL_FALSE;
+	else
+		*vp = JSVAL_TRUE;
+
 	return JS_TRUE;
 }
-*/
+
+
 
 JSPropertySpec Socket_PropertySpec[] = { // *name, tinyid, flags, getter, setter
 // PR SocketOption
@@ -428,8 +480,8 @@ JSPropertySpec Socket_PropertySpec[] = { // *name, tinyid, flags, getter, setter
   { "recvBufferSize", PR_SockOpt_RecvBufferSize, JSPROP_PERMANENT, Socket_getOption, Socket_setOption },
   { "sendBufferSize", PR_SockOpt_SendBufferSize, JSPROP_PERMANENT, Socket_getOption, Socket_setOption },
 // properties	
-	{ "peerName", 0, JSPROP_PERMANENT|JSPROP_READONLY, Socket_getter_peerName, NULL },
-//	{ "closed"  , 0, JSPROP_PERMANENT|JSPROP_READONLY, Socket_getter_closed  , NULL },
+	{ "peerName"       , 0, JSPROP_PERMANENT|JSPROP_READONLY, Socket_getter_peerName          , NULL },
+	{ "connectContinue"  , 0, JSPROP_PERMANENT|JSPROP_READONLY, Socket_getter_connectContinue , NULL },
 //
   { 0 }
 };

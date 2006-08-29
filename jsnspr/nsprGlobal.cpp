@@ -60,6 +60,7 @@ JSBool Poll(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) 
 
 		pollDesc[i].fd = fd;
 		pollDesc[i].in_flags = 0;
+		pollDesc[i].out_flags = 0;
 
 		jsval prop;
 
