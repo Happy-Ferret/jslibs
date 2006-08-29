@@ -37,18 +37,34 @@ s.writable = function() {
 	s.Send('GET / HTTP/1.x\r\n\r\n');
 	
 	print('connectStatus='+s.connectContinue ,'\n' );
+	
+	switch (s.connectContinue) {
+		case undefined:
+			return; // connecting
+		case false: // failed
+			print('connection failed!\n');
+			break;
+		case true: // connected
+			print('connection done.\n');
+			break;
+	}
+		
 	delete s.writable;
+	  
 };
 
-/*
+
 s.readable = function() {
 	
 	var buf = s.Recv();
 	print('readable event','\n');
 	print('size:'+buf.length, '\n' );
-	buf.length || delete s.readable;
+	if ( buf.length == 0 ) {
+		delete s.readable;
+		print('connection remotely closed','\n');
+	}
 }
-*/
+
 
 s.exception = function() {
 

@@ -115,9 +115,8 @@ function Client(s) {
 
 	serverSocket.readable = function() { // after Listen, readable mean incoming connexion
 
-
-//		var clientSocket = serverSocket.Accept();
-//		clientSocket.Close();
+		var clientSocket = serverSocket.Accept();
+		clientSocket.Close();
 //		var client = new Client(clientSocket);
 //		list.push(clientSocket);
 	}
