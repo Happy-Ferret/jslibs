@@ -20,8 +20,8 @@ void File_Finalize(JSContext *cx, JSObject *obj) {
 
 JSClass File_class = {
 	"File", JSCLASS_HAS_PRIVATE,
-  JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub,
-  JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, File_Finalize
+	JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub,
+	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, File_Finalize
 };
 
 
@@ -224,11 +224,11 @@ JSBool File_seek(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *r
 
 
 JSFunctionSpec File_FunctionSpec[] = { // { *name, call, nargs, flags, extra }
- { "Open"     , File_open   , 1, 0, 0 },
+ { "Open"     , File_open   , 0, 0, 0 },
  { "Close"    , File_close  , 0, 0, 0 },
  { "Read"     , File_read   , 0, 0, 0 },
- { "Write"    , File_write  , 1, 0, 0 },
- { "Seek"     , File_seek   , 2, 0, 0 },
+ { "Write"    , File_write  , 0, 0, 0 },
+ { "Seek"     , File_seek   , 0, 0, 0 },
  { 0 }
 };
 
@@ -282,7 +282,7 @@ JSBool File_getter_exist( JSContext *cx, JSObject *obj, jsval id, jsval *vp ) {
 
 JSPropertySpec File_PropertySpec[] = { // *name, tinyid, flags, getter, setter
 //  { "linger"   , PR_SockOpt_Linger, JSPROP_PERMANENT, Socket_getOption, Socket_setOption },
-	{ "size", 0, JSPROP_PERMANENT|JSPROP_READONLY, File_getter_size, NULL },
+	{ "size" , 0, JSPROP_PERMANENT|JSPROP_READONLY, File_getter_size, NULL },
 	{ "exist", 0, JSPROP_PERMANENT|JSPROP_READONLY, File_getter_exist, NULL },
   { 0 }
 };
@@ -306,9 +306,9 @@ JSPropertySpec File_static_PropertySpec[] = { // *name, tinyid, flags, getter, s
 	{ "SYNC"				,PR_SYNC        ,JSPROP_PERMANENT|JSPROP_READONLY, File_static_setConst, NULL },
 	{ "EXCL"				,PR_EXCL        ,JSPROP_PERMANENT|JSPROP_READONLY, File_static_setConst, NULL },
 // PRSeekWhence enum
-	{ "SEEK_SET"				,PR_SEEK_SET        ,JSPROP_PERMANENT|JSPROP_READONLY, File_static_setConst, NULL },
-	{ "SEEK_CUR"				,PR_SEEK_CUR        ,JSPROP_PERMANENT|JSPROP_READONLY, File_static_setConst, NULL },
-	{ "SEEK_END"				,PR_SEEK_END        ,JSPROP_PERMANENT|JSPROP_READONLY, File_static_setConst, NULL },
+	{ "SEEK_SET"		,PR_SEEK_SET    ,JSPROP_PERMANENT|JSPROP_READONLY, File_static_setConst, NULL },
+	{ "SEEK_CUR"		,PR_SEEK_CUR    ,JSPROP_PERMANENT|JSPROP_READONLY, File_static_setConst, NULL },
+	{ "SEEK_END"		,PR_SEEK_END    ,JSPROP_PERMANENT|JSPROP_READONLY, File_static_setConst, NULL },
 //
 	{ 0 }
 };
