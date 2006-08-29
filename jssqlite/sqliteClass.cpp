@@ -50,30 +50,22 @@ JSBool Result_step(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval 
 	}
 
 	int status = sqlite3_step( pStmt ); // The return value will be either SQLITE_BUSY, SQLITE_DONE, SQLITE_ROW, SQLITE_ERROR, or SQLITE_MISUSE.
-
-	if ( status == SQLITE_ERROR )
-		return SqliteThrowError( cx, sqlite3_errcode(sqlite3_db_handle( pStmt )), sqlite3_errmsg(sqlite3_db_handle( pStmt )));
-
-	if ( status == SQLITE_MISUSE ) { // means that the this routine was called inappropriately. Perhaps it was called on a virtual machine that had already been finalized or on one that had previously returned SQLITE_ERROR or SQLITE_DONE. Or it could be the case that a database connection is being used by a different thread than the one it was created it.
-
-		JS_ReportError( cx, "this routine was called inappropriately" );
-		return JS_FALSE;
+	switch (status) {
+		case SQLITE_ERROR:
+			return SqliteThrowError( cx, sqlite3_errcode(sqlite3_db_handle( pStmt )), sqlite3_errmsg(sqlite3_db_handle( pStmt )));
+		case SQLITE_MISUSE: // means that the this routine was called inappropriately. Perhaps it was called on a virtual machine that had already been finalized or on one that had previously returned SQLITE_ERROR or SQLITE_DONE. Or it could be the case that a database connection is being used by a different thread than the one it was created it.
+			JS_ReportError( cx, "this routine was called inappropriately" );
+			return JS_FALSE;
+		case SQLITE_DONE: // means that the statement has finished executing successfully. sqlite3_step() should not be called again on this virtual machine without first calling sqlite3_reset() to reset the virtual machine back to its initial state.
+			*rval = JSVAL_FALSE;
+			return JS_TRUE;
+		case SQLITE_ROW: // SQLITE_ROW is returned each time a new row of data is ready for processing by the caller
+			*rval = JSVAL_TRUE;
+			return JS_TRUE;
+		default:
+			JS_ReportError( cx, "uncautch error (%d)", status );
+			return JS_FALSE;
 	}
-
-	if ( status == SQLITE_DONE ) { // means that the statement has finished executing successfully. sqlite3_step() should not be called again on this virtual machine without first calling sqlite3_reset() to reset the virtual machine back to its initial state.
-		
-		*rval = JSVAL_FALSE;
-		return JS_FALSE;
-	}
-
-	if ( status != SQLITE_ROW ) {
-
-		JS_ReportError( cx, "uncautch error (%d)", status );
-		return JS_TRUE;
-	}
-
-	*rval = JSVAL_TRUE;
-	return JS_TRUE;
 }
 
 
@@ -96,23 +88,18 @@ JSBool Result_col(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *
 	JS_ValueToInt32( cx, argv[0], &col );
 
 	switch ( sqlite3_column_type( pStmt, col ) ) {
-
 		case SQLITE_INTEGER:
 			*rval = INT_TO_JSVAL( sqlite3_column_int( pStmt, col ) );
 			break;
-
 		case SQLITE_FLOAT:
 			JS_NewNumberValue( cx, sqlite3_column_double( pStmt, col ), rval );
 			break;
-
 		case SQLITE_BLOB:
 			*rval = STRING_TO_JSVAL( JS_NewStringCopyN( cx,(const char *)sqlite3_column_blob( pStmt, col ), sqlite3_column_bytes( pStmt, col ) ) );
 			break;
-
 		case SQLITE_NULL:
 			*rval = JSVAL_NULL;
 			break;
-
 		case SQLITE_TEXT:
 		default: // by default, if type is unknown, use TEXT cast
 			*rval = STRING_TO_JSVAL(JS_NewStringCopyZ(cx,(const char *)sqlite3_column_text( pStmt, col )));
@@ -130,7 +117,7 @@ JSBool Result_row(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *
 		return JS_FALSE;
 	}
 
-	if ( Result_step( cx, obj, 0, NULL, rval ) == JS_FALSE ) // if something goes wrong!
+	if ( Result_step( cx, obj, 0, NULL, rval ) == JS_FALSE ) // if something goes wrong in Result_step ( error report has already been set )
 		return JS_FALSE;
 
 	if ( *rval == JSVAL_FALSE ) { // the statement has finished executing successfully
@@ -155,7 +142,7 @@ JSBool Result_row(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *
 	for ( int col = 0; col < columnCount; ++col ) {
 		
 		jsvCol = INT_TO_JSVAL(col);
-		if ( Result_col( cx, obj, 1, &jsvCol, &colJsValue ) == JS_FALSE )
+		if ( Result_col( cx, obj, 1, &jsvCol, &colJsValue ) == JS_FALSE ) // if something goes wrong in Result_col ( error report has already been set )
 			return JS_FALSE;
 
 		if ( namedRows )
@@ -194,7 +181,7 @@ JSBool Result_close(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval
 
 	int status = sqlite3_finalize( pStmt );
 	if ( status != SQLITE_OK )
-		return SqliteThrowError( cx, sqlite3_errcode(sqlite3_db_handle( pStmt )), sqlite3_errmsg(sqlite3_db_handle(pStmt)) );
+		return SqliteThrowError( cx, sqlite3_errcode(sqlite3_db_handle(pStmt)), sqlite3_errmsg(sqlite3_db_handle(pStmt)) );
 
 	JS_SetPrivate( cx, obj, NULL );
 	return JS_TRUE;
@@ -211,6 +198,19 @@ JSFunctionSpec Result_FunctionSpec[] = { // *name, call, nargs, flags, extra
 };
 
 
+JSBool Result_getter_columnCount(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
+
+	sqlite3_stmt *pStmt = (sqlite3_stmt *)JS_GetPrivate( cx, obj );
+	if ( pStmt == NULL ) {
+
+		JS_ReportError( cx, "Invalid statment" );
+		return JS_FALSE;
+	}
+	*vp = INT_TO_JSVAL(sqlite3_column_count(pStmt));
+	return JS_TRUE;
+}
+
+
 JSBool Result_getter_columnNames(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 
 	sqlite3_stmt *pStmt = (sqlite3_stmt *)JS_GetPrivate( cx, obj );
@@ -223,12 +223,12 @@ JSBool Result_getter_columnNames(JSContext *cx, JSObject *obj, jsval id, jsval *
 	JSObject *columnNames = JS_NewArrayObject(cx, 0, NULL);
 	*vp = OBJECT_TO_JSVAL( columnNames );
 
-	int columnCount = sqlite3_column_count( pStmt );
+	int columnCount = sqlite3_column_count( pStmt ); // sqlite3_column_count AND NOT sqlite3_data_count because this function can be called before sqlite3_step
 
 	jsval colJsValue;
 	for ( int col = 0; col < columnCount; ++col ) {
 
-		colJsValue = STRING_TO_JSVAL(JS_NewStringCopyZ(cx,(const char *)sqlite3_column_name( pStmt, col )));
+		colJsValue = STRING_TO_JSVAL(JS_NewStringCopyZ(cx,(const char *)sqlite3_column_name( pStmt, col ))); // sqlite3_column_name can be called BEFORE sqlite3_step
 		JS_DefineElement(cx, columnNames, col, colJsValue, NULL, NULL, JSPROP_ENUMERATE);
 	}
 
@@ -256,12 +256,12 @@ JSBool Result_getter_columnIndex(JSContext *cx, JSObject *obj, jsval id, jsval *
 		colJsValue = INT_TO_JSVAL(col);
 		JS_SetProperty( cx, columnIndexes, sqlite3_column_name( pStmt, col ), &colJsValue );
 	}
-
   return JS_TRUE;
 }
 
 
 JSPropertySpec Result_PropertySpec[] = { // *name, tinyid, flags, getter, setter
+	{ "columnCount"   , 0, JSPROP_PERMANENT|JSPROP_READONLY, Result_getter_columnCount, NULL },
 	{ "columnNames"   , 0, JSPROP_PERMANENT|JSPROP_READONLY, Result_getter_columnNames, NULL },
 	{ "columnIndexes" , 0, JSPROP_PERMANENT|JSPROP_READONLY, Result_getter_columnIndex, NULL },
   { 0 }
@@ -460,4 +460,12 @@ JSObject *SqliteInitClass( JSContext *cx, JSObject *obj ) {
 SqLite API:
 	http://www.sqlite.org/capi3ref.html
 
+
+sqlite3_column_count
+	Return the number of columns in the result set returned by the prepared SQL statement. This routine returns 0 if pStmt is an SQL statement that does not return data (for example an UPDATE).
+sqlite3_data_count
+	Return the number of values in the current row of the result set.
+	After a call to sqlite3_step() that returns SQLITE_ROW, this routine will return the same value as the sqlite3_column_count() function. 
+	After sqlite3_step() has returned an SQLITE_DONE, SQLITE_BUSY or error code, or before sqlite3_step() has been called on a prepared SQL statement, this routine returns zero. 
 */
+
