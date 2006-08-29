@@ -102,7 +102,7 @@ function Client(s) {
 		s.writable = function() {
 		
 			delete s.writable;
-			//SendHttpResponse( s, 200, { 'Content-Type':'text/html' }, buf );
+			SendHttpResponse( s, 200, { 'Content-Type':'text/html' }, buf );
 		}
 
 	}
@@ -111,13 +111,15 @@ function Client(s) {
 //try {
 
 	var serverSocket = new Socket();
-	serverSocket.recvBufferSize = 10000;
+//	serverSocket.recvBufferSize = 10000;
 
 	serverSocket.readable = function() { // after Listen, readable mean incoming connexion
 
-		var clientSocket = serverSocket.Accept();
-		var client = new Client(clientSocket);
-		list.push(clientSocket);
+
+//		var clientSocket = serverSocket.Accept();
+//		clientSocket.Close();
+//		var client = new Client(clientSocket);
+//		list.push(clientSocket);
 	}
 
 	serverSocket.Listen( '', 80 );

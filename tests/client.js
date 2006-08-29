@@ -30,13 +30,37 @@ while (list.length > 0) Poll(list,1000);
 */
 
 var s = new Socket();
-s.Connect( '127.0.0.1', 80 );
-s.sendBufferSize = 1000000;
-for ( var buf='x'; buf.length<10000000; buf+=buf );
+s.Connect( 'localhost', 80 );
 s.writable = function() {
-  print('sending '+buf.length+' bytes...')
-  s.Send(buf);
-  print('done.\n');
-};
-Poll([s],1000);
 
+	print('writable event','\n');
+	s.Send('GET / HTTP/1.x\r\n\r\n');
+	
+	print('connectStatus='+s.connectContinue ,'\n' );
+	delete s.writable;
+};
+
+/*
+s.readable = function() {
+	
+	var buf = s.Recv();
+	print('readable event','\n');
+	print('size:'+buf.length, '\n' );
+	buf.length || delete s.readable;
+}
+*/
+
+s.exception = function() {
+
+	print('exception event','\n');
+	delete s.exception;
+}
+
+try {
+	while(!endSignal) {
+		print('.');
+		Poll([s],250);
+	}
+} catch ( ex if ex instanceof NSPRError ) { 
+	print( ex.text + ' ('+ex.code+')', '\n' );
+}
