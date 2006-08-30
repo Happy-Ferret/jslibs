@@ -1,0 +1,1 @@
+JSObject *myClassInitClass( JSContext *cx, JSObject *obj );
