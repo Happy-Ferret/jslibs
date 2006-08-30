@@ -121,7 +121,7 @@ function Client(s) {
 //		list.push(clientSocket);
 	}
 
-	serverSocket.Listen( '', 80 );
+	serverSocket.Listen( 80 );
 	list.push(serverSocket);
 	for(;!endSignal;) {
 		Poll(list,timeout.Next() || 1000);
