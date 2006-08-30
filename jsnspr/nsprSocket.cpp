@@ -200,6 +200,18 @@ JSBool Socket_accept(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsva
 ///////////////////////////////////////////////////////////////////////////////
 // Non-blocking BSD socket connections
 //   http://cr.yp.to/docs/connect.html
+//
+// Why client is writable before server accept the connection ? :
+//http://groups.google.fr/group/comp.protocols.tcp-ip/browse_thread/thread/a30f95414eb63c62/cbcdc9f240f2eb6b?lnk=st&q=socket+writable+%2Bbefore+accept&rnum=4&hl=fr#cbcdc9f240f2eb6b
+//	The connection is accomplished independently of the application, at
+//	the TCP level, (calling accept() just makes an already-established
+//	connection available to the application). The client side descriptor
+//	becomes writeable when the three-way handshake has completed.
+//
+//	Since the client side has no way of telling when the server has called
+//	accept() it can't wait for the server to do that before making the
+//	descriptor writeable. 
+
 JSBool Socket_connect(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
 	if ( argc < 2 ) {
@@ -341,10 +353,10 @@ JSFunctionSpec Socket_FunctionSpec[] = { // *name, call, nargs, flags, extra
  { "Listen"     , Socket_listen     , 0, 0, 0 },
  { "Accept"     , Socket_accept     , 0, 0, 0 },
  { "Connect"    , Socket_connect    , 0, 0, 0 },
+ { "Shutdown"   , Socket_shutdown   , 0, 0, 0 },
  { "Close"      , Socket_close      , 0, 0, 0 },
  { "Send"       , Socket_send       , 0, 0, 0 },
  { "Recv"       , Socket_recv       , 0, 0, 0 },
- { "Shutdown"   , Socket_shutdown   , 0, 0, 0 },
  { 0 }
 };
 
