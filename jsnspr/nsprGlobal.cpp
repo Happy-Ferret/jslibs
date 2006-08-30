@@ -52,13 +52,15 @@ JSBool Poll(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) 
 		*rval = OBJECT_TO_JSVAL( o ); // protect from GC
 
 		PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, o );
-		if ( fd == NULL ) {
 
-			JS_ReportError( cx, "descriptor is NULL" );
-			goto failed;
-		}
+		// not needed, see below
+//   if ( fd == NULL ) {
+//
+//			JS_ReportError( cx, "descriptor is NULL" );
+//			goto failed;
+//		}
 
-		pollDesc[i].fd = fd;
+		pollDesc[i].fd = fd; // fd is A pointer to a PRFileDesc object representing a socket or a pollable event.  This field can be set to NULL to indicate to PR_Poll that this PRFileDesc object should be ignored.
 		pollDesc[i].in_flags = 0;
 		pollDesc[i].out_flags = 0;
 
