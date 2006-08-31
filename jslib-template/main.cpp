@@ -3,7 +3,7 @@
 #define XP_WIN
 #include <jsapi.h>
 
-#include "myClassClass.h"
+#include "myClass.h"
 
 extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
