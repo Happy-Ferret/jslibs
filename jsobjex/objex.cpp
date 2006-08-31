@@ -85,9 +85,28 @@ JSBool objex_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, js
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+JSBool objex_static_aux(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+
+	if ( argc < 1 ) {
+		JS_ReportError( cx, "missing argument" );
+		return JS_FALSE;
+	}
+
+	JSObject *object = JSVAL_TO_OBJECT( argv[0] );
+  JS_GetReservedSlot( cx, object, AUX_SLOT, rval );
+	return JS_TRUE;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+JSFunctionSpec objex_static_FunctionSpec[] = { // *name, call, nargs, flags, extra
+ { "Aux"          , objex_static_aux       , 0, 0, 0 },
+ { 0 }
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 JSObject *objexInitClass( JSContext *cx, JSObject *obj ) {
 
-	return JS_InitClass( cx, obj, NULL, &objex_class, objex_construct, 0, NULL, NULL, NULL, NULL );
+	return JS_InitClass( cx, obj, NULL, &objex_class, objex_construct, 0, NULL, NULL, NULL, objex_static_FunctionSpec );
 }
 
 
