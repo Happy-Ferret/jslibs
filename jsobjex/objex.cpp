@@ -24,7 +24,7 @@ JSBool objex_addProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 		return JS_TRUE;
 	jsval aux;
   JS_GetReservedSlot( cx, obj, AUX_SLOT, &aux );
-	jsval args[] = { OBJECT_TO_JSVAL(obj), id, *vp, aux };
+	jsval args[] = { INT_TO_JSVAL(ADD_SLOT), OBJECT_TO_JSVAL(obj), id, *vp, aux };
 	return JS_CallFunctionValue( cx, obj, slot, sizeof(args)/sizeof(jsval), args, vp );
 }
 
@@ -36,7 +36,7 @@ JSBool objex_delProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 		return JS_TRUE;
 	jsval aux;
   JS_GetReservedSlot( cx, obj, AUX_SLOT, &aux );
-	jsval args[] = { OBJECT_TO_JSVAL(obj), id, *vp, aux };
+	jsval args[] = { INT_TO_JSVAL(DEL_SLOT), OBJECT_TO_JSVAL(obj), id, *vp, aux };
 	return JS_CallFunctionValue( cx, obj, slot, sizeof(args)/sizeof(jsval), args, vp );
 }
 
@@ -48,7 +48,7 @@ JSBool objex_getProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 		return JS_TRUE;
 	jsval aux;
   JS_GetReservedSlot( cx, obj, AUX_SLOT, &aux );
-	jsval args[] = { OBJECT_TO_JSVAL(obj), id, *vp, aux };
+	jsval args[] = { INT_TO_JSVAL(GET_SLOT), OBJECT_TO_JSVAL(obj), id, *vp, aux };
 	return JS_CallFunctionValue( cx, obj, slot, sizeof(args)/sizeof(jsval), args, vp );
 }
 
@@ -60,7 +60,7 @@ JSBool objex_setProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 		return JS_TRUE;
 	jsval aux;
   JS_GetReservedSlot( cx, obj, AUX_SLOT, &aux );
-	jsval args[] = { OBJECT_TO_JSVAL(obj), id, *vp, aux };
+	jsval args[] = { INT_TO_JSVAL(SET_SLOT), OBJECT_TO_JSVAL(obj), id, *vp, aux };
 	return JS_CallFunctionValue( cx, obj, slot, sizeof(args)/sizeof(jsval), args, vp );
 }
 
