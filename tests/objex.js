@@ -1,92 +1,80 @@
 exec('deflib.js');
 LoadModule('jsobjex');
 
-function basicTest() {
 
-	function setter(id,val,aux) {
-		print('setter: '+id+','+val+','+aux+'\n');
-		return val;
-	}
+/*
+function add( what, obj, id, val, aux ) {
 
-
-	function getter(id,val,aux) {
-		print('getter: '+id+','+val+','+aux+'\n');
-		return val;
-	}
-
-	function add(id,val,aux) {
-		print('add: '+id+','+val+','+aux+'\n');
-		return val;
-	}
-
-
-	function del(id,val,aux) {
-		print('add: '+id+','+val+','+aux+'\n');
-		return val;
-	}
-
-
-	var o = new objex(add,del,getter, setter, {});
-
-	o.a = 123;
-
-	print('write o.a = 123\n');
-	o.a = 123;
-	print( 'read a.o:'+o.a, '\n' )
-
-
-	print('list:');
-	for ( i in o ) 
-		print(i);
-}
-
-
-
-
-
-function add(obj, id, val, aux) {
-
-	id != 'add' && id != 'del' && id != 'set' && 'add' in obj && obj['add'](id);
+	id != 'add' && id != 'del' && id != 'set' && 'add' in obj && obj.add(id);
 	return val;
 }
 
-function set(obj, id, val, aux) {
+function set( what, obj, id, val, aux ) {
 
-	id != 'add' && id != 'del' && id != 'set' && 'set' in obj && obj['set'](id);
+	id != 'add' && id != 'del' && id != 'set' && 'set' in obj && obj.set(id);
 	return val;
 }
 
-function del(obj, id, val, aux) {
+function del( what, obj, id, val, aux ) {
 
-	id != 'add' && id != 'del' && id != 'set' && 'del' in obj && obj['del'](id);
+	id != 'add' && id != 'del' && id != 'set' && 'del' in obj && obj.del(id);
 	return val;
 }
 
+function get( what, obj, id, val, aux ) {
 
-function get(obj, id, val, aux) {
-
-	return id in obj ? val : obj[id] = new objex( add,del,get,set,{} );
+	return id in obj ? val : obj[id] = new objex( add,del,get,set );
 }
-
-
-
 
 var o = new objex( add,del,get,set,{} );
+*/
 
 
-//o.a = 4;
+var handlerName = '__handler';
 
+function handler( what, obj, id, val, aux ) {
+//print('('+id+' '+val+')');
+
+	if ( id != handlerName && handlerName in obj && !(obj instanceof objex)  )
+		for ( var [i,v] in obj[handlerName] )
+			v.apply( this, arguments)
+	return val;
+}
+
+function get( what, obj, id, val, aux ) {
+
+	return id in obj ? val : obj[id] = new objex( handler,handler,get,handler );
+}
+
+function listen( obj, callback ) {
+	
+	handlerName in obj || ( obj[handlerName] = []);
+	obj[handlerName].push( callback );
+	hideProperties( obj, handlerName );
+}
+
+
+var root = new objex( handler,handler,get,handler );
+
+listen( root.server, function( what, obj, id, val, aux ) { print('event '+val+'!\n'); } );
+
+root.server.port = 654;
+
+print(root.server.ip);
+root.server.ip = 6667;
+
+/*
 o.a.b.c.d.e.add = function(v) { print('add'+v+'\n') }
 o.a.b.c.d.e.del = function(v) { print('del'+v+'\n') }
 o.a.b.c.d.e.set = function(v) { print('set'+v+'\n') }
 
+hideProperties( o.a.b.c.d.e, 'add', 'del', 'set' );
+
 o.a.b.c.d.e.toto = 123;
-o.a.b.c.d.e.tata = 123;
-o.a.b.c.d.e.tata = 123;
+o.a.b.c.d.e.tata = 555;
+o.a.b.c.d.e.tata = 555;
 delete o.a.b.c.d.e.toto
 
 
-
-
-//for ( var [k,v] in o.a.b.c.d.e ) print( v );
-
+for ( var [k,v] in o.a.b.c.d.e ) print( v );
+*/
