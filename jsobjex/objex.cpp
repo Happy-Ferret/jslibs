@@ -88,12 +88,31 @@ JSBool objex_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, js
 JSBool objex_static_aux(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
 	if ( argc < 1 ) {
+		
 		JS_ReportError( cx, "missing argument" );
 		return JS_FALSE;
 	}
 
-	JSObject *object = JSVAL_TO_OBJECT( argv[0] );
+	JSObject *object;
+	JSBool status;
+	status = JS_ValueToObject( cx, argv[0], &object );
+	if ( status == JS_FALSE || object == NULL ) {
+
+		JS_ReportError( cx, "not an object" );
+		return JS_FALSE;
+	}
+
+	if ( JS_GetClass(object) != &objex_class  ) {
+
+		JS_ReportError( cx, "not an %s object", objex_class.name );
+		return JS_FALSE;
+	}
+
   JS_GetReservedSlot( cx, object, AUX_SLOT, rval );
+
+	if ( argc >= 2 )
+	  JS_SetReservedSlot( cx, object, AUX_SLOT, argv[1] );
+
 	return JS_TRUE;
 }
 
