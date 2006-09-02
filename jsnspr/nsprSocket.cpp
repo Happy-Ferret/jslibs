@@ -52,7 +52,7 @@ JSBool Socket_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, j
 // Graceful Shutdown, Linger Options, and Socket Closure
 //   http://windowssdk.msdn.microsoft.com/en-us/library/ms738547.aspx
 // PRLinger ... PR_Close
-// 	http://developer.mozilla.org/en/docs/PRLinger
+//   http://developer.mozilla.org/en/docs/PRLinger
 JSBool Socket_close(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
@@ -63,21 +63,34 @@ JSBool Socket_close(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval
 	}
 
 /*
-// man page
-//	Sets or gets the SO_LINGER option. The argument is a linger structure. 
-//	When enabled, a close(2) or shutdown(2) will not return until all queued messages for the socket have been successfully sent 
-//	or the linger timeout has been reached. Otherwise, the call returns immediately and the closing is done in the background. 
-//	When the socket is closed as part of exit(2), it always lingers in the background.
-	status = PR_Shutdown( fd, PR_SHUTDOWN_BOTH ); // is this compatible with linger ??
-	if (status != PR_SUCCESS) // need to check PR_WOULD_BLOCK_ERROR ???
-		return ThrowNSPRError( cx, PR_GetError() );
-*/
+man page:
+	Sets or gets the SO_LINGER option. The argument is a linger structure. 
+	When enabled, a close(2) or shutdown(2) will not return until all queued messages for the socket have been successfully sent 
+	or the linger timeout has been reached. Otherwise, the call returns immediately and the closing is done in the background. 
+	When the socket is closed as part of exit(2), it always lingers in the background.
 
+MSDN: (http://windowssdk.msdn.microsoft.com/en-us/library/ms737582.aspx)
+	Enabling SO_LINGER with a nonzero time-out interval on a nonblocking socket is not recommended. In this case,
+	the call to closesocket will fail with an error of WSAEWOULDBLOCK if the close operation cannot be completed immediately.
+	If closesocket fails with WSAEWOULDBLOCK the socket handle is still valid, and a disconnect is not initiated.
+	The application must call closesocket again to close the socket. 
+
+Closing non-blocking network sockets
+	http://www.squid-cache.org/mail-archive/squid-dev/199805/0065.html
+
+
+status = PR_Shutdown( fd, PR_SHUTDOWN_BOTH ); // is this compatible with linger ??
+if (status != PR_SUCCESS) // need to check PR_WOULD_BLOCK_ERROR ???
+	return ThrowNSPRError( cx, PR_GetError() );
+*/
 	PRStatus status;
 	status = PR_Close( fd ); // cf. linger option
-	if (status != PR_SUCCESS)
-		return ThrowNSPRError( cx, PR_GetError() );
+	if (status != PR_SUCCESS) {
 
+		PRErrorCode errorCode = PR_GetError();
+		if ( errorCode != PR_WOULD_BLOCK_ERROR ) // non-blocking socket  +  linger > 0  +  pr_close  =  non-fatal error PR_WOULD_BLOCK_ERROR
+			return ThrowNSPRError( cx, errorCode );
+	}
 	JS_SetPrivate( cx, obj, NULL );
 	return JS_TRUE;
 }
