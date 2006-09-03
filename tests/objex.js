@@ -28,7 +28,7 @@ function setData( path, data ) {
 
 function getData( path, data ) {
 
-	return objex.Aux( path ).data || undefined;
+	return objex.Aux( path ).data || undefined; //  || undefined avoids strict warning
 }
 
 function moveData( path, newPath ) {
