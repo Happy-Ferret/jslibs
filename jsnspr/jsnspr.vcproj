@@ -160,6 +160,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\nsprDirectory.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\nsprError.cpp"
 				>
 			</File>
@@ -181,6 +185,10 @@
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
+			<File
+				RelativePath=".\nsprDirectory.h"
+				>
+			</File>
 			<File
 				RelativePath=".\nsprError.h"
 				>

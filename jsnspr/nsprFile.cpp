@@ -76,7 +76,8 @@ JSBool File_open(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *r
 
 	PRFileDesc *fd;
 	
-	fd = PR_Open( fileName, flags, 0 ); // The mode parameter is currently applicable only on Unix platforms.
+	PRIntn mode = 0666;	
+	fd = PR_Open( fileName, flags, mode ); // The mode parameter is currently applicable only on Unix platforms.
 	if ( fd == NULL )
 		return ThrowNSPRError( cx, PR_GetError() );
 
@@ -89,13 +90,18 @@ JSBool File_open(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *r
 JSBool File_close(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
-	if ( fd != NULL ) {
+	if ( fd == NULL ) {
+
+		JS_ReportError( cx, "file is closed" );
+		return JS_FALSE;
+	}
+//	if ( fd != NULL ) {
 
 		PRStatus status = PR_Close( fd );
 		if ( status == PR_FAILURE )
 			return ThrowNSPRError( cx, PR_GetError() );
 		JS_SetPrivate( cx, obj, NULL );
-	}
+//	}
 	return JS_TRUE;
 }
 
@@ -280,17 +286,69 @@ JSBool File_getter_exist( JSContext *cx, JSObject *obj, jsval id, jsval *vp ) {
 }
 
 
+
+JSBool File_getter_info( JSContext *cx, JSObject *obj, jsval id, jsval *vp ) {
+
+	jsval jsvalFileName;
+	JS_GetProperty( cx, obj, "fileName", &jsvalFileName );
+
+	if ( jsvalFileName == JSVAL_VOID ) {
+
+		JS_ReportError( cx, "unable to get the file name" );
+		return JS_FALSE;
+	}
+
+	JSString *jsStringFileName = JS_ValueToString( cx, jsvalFileName );
+	if ( jsStringFileName == NULL ) {
+
+		JS_ReportError( cx, "unable to get the file name" );
+		return JS_FALSE;
+	}
+	jsvalFileName = STRING_TO_JSVAL( jsStringFileName ); // protect form GC ??? ( is this ok, is this needed, ... ? )
+
+	char *fileName = JS_GetStringBytes( jsStringFileName );
+
+	PRFileInfo fileInfo;
+	PRStatus status;
+
+	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
+	if ( fd == NULL )
+		status = PR_GetFileInfo( fileName, &fileInfo );
+	else
+		status = PR_GetOpenFileInfo( fd, &fileInfo );
+
+	if ( status != PR_SUCCESS )
+		return ThrowNSPRError( cx, PR_GetError() ); // ??? Doc do not say it is possible to read PR_GetError after an error on PR_GetFileInfo !!! [TBD] check
+
+	JSObject *fileTypeObj = JS_NewObject( cx, NULL, NULL, NULL );
+	*vp = OBJECT_TO_JSVAL( fileTypeObj );
+
+	jsval jsvalType = INT_TO_JSVAL((int)fileInfo.type);
+	JS_SetProperty( cx, fileTypeObj, "type", &jsvalType );
+	
+	jsval jsvalSize = INT_TO_JSVAL(fileInfo.size);
+	JS_SetProperty( cx, fileTypeObj, "size", &jsvalSize );
+
+	PRTime creationTime = fileInfo.creationTime;
+	PRTime modifyTime = fileInfo.modifyTime;
+
+	return JS_TRUE;
+}
+
 JSPropertySpec File_PropertySpec[] = { // *name, tinyid, flags, getter, setter
 //  { "linger"   , PR_SockOpt_Linger, JSPROP_PERMANENT, Socket_getOption, Socket_setOption },
-	{ "size" , 0, JSPROP_PERMANENT|JSPROP_READONLY, File_getter_size, NULL },
+	{ "size" , 0, JSPROP_PERMANENT|JSPROP_READONLY, File_getter_size , NULL },
 	{ "exist", 0, JSPROP_PERMANENT|JSPROP_READONLY, File_getter_exist, NULL },
+	{ "info" , 0, JSPROP_PERMANENT|JSPROP_READONLY, File_getter_info, NULL },
   { 0 }
 };
 
     
 JSBool File_static_setConst( JSContext *cx, JSObject *obj, jsval id, jsval *vp ) {
 
-	*vp = id;
+	int32 i;
+	JS_ValueToInt32( cx, id, &i );
+	*vp = INT_TO_JSVAL(i);
 	return JS_TRUE;
 }
 
@@ -309,6 +367,10 @@ JSPropertySpec File_static_PropertySpec[] = { // *name, tinyid, flags, getter, s
 	{ "SEEK_SET"		,PR_SEEK_SET    ,JSPROP_PERMANENT|JSPROP_READONLY, File_static_setConst, NULL },
 	{ "SEEK_CUR"		,PR_SEEK_CUR    ,JSPROP_PERMANENT|JSPROP_READONLY, File_static_setConst, NULL },
 	{ "SEEK_END"		,PR_SEEK_END    ,JSPROP_PERMANENT|JSPROP_READONLY, File_static_setConst, NULL },
+// PRFileType enum
+	{ "FILE_FILE"		    ,PR_FILE_FILE         ,JSPROP_PERMANENT|JSPROP_READONLY, File_static_setConst, NULL },
+	{ "FILE_DIRECTORY"	,PR_FILE_DIRECTORY    ,JSPROP_PERMANENT|JSPROP_READONLY, File_static_setConst, NULL },
+	{ "FILE_OTHER"		  ,PR_FILE_OTHER        ,JSPROP_PERMANENT|JSPROP_READONLY, File_static_setConst, NULL },
 //
 	{ 0 }
 };
