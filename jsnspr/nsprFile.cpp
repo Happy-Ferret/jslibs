@@ -19,7 +19,7 @@ void File_Finalize(JSContext *cx, JSObject *obj) {
 
 
 JSClass File_class = {
-	"File", JSCLASS_HAS_PRIVATE,
+	"File", JSCLASS_HAS_PRIVATE | JSCLASS_HAS_RESERVED_SLOTS(1),
 	JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub,
 	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, File_Finalize
 };
@@ -39,7 +39,7 @@ JSBool File_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsv
 		return JS_FALSE;
 	}
 
-	JS_SetProperty( cx, obj, "fileName", &(argv[0]) );
+	JS_SetReservedSlot( cx, obj, 0, argv[0] );
 	return JS_TRUE;
 }
 
@@ -53,7 +53,8 @@ JSBool File_open(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *r
 	}
 
 	jsval jsvalFileName;
-	JS_GetProperty( cx, obj, "fileName", &jsvalFileName );
+//	JS_GetProperty( cx, obj, "fileName", &jsvalFileName );
+	JS_GetReservedSlot( cx, obj, 0, &jsvalFileName );
 	if ( jsvalFileName == JSVAL_VOID ) {
 
 		JS_ReportError( cx, "unable to get the file name" );
@@ -239,6 +240,13 @@ JSFunctionSpec File_FunctionSpec[] = { // { *name, call, nargs, flags, extra }
 };
 
 
+JSBool File_getter_name( JSContext *cx, JSObject *obj, jsval id, jsval *vp ) {
+
+	JS_GetReservedSlot( cx, obj, 0, vp );
+	return JS_TRUE;
+}
+
+
 JSBool File_getter_size( JSContext *cx, JSObject *obj, jsval id, jsval *vp ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
@@ -261,7 +269,8 @@ JSBool File_getter_size( JSContext *cx, JSObject *obj, jsval id, jsval *vp ) {
 JSBool File_getter_exist( JSContext *cx, JSObject *obj, jsval id, jsval *vp ) {
 
 	jsval jsvalFileName;
-	JS_GetProperty( cx, obj, "fileName", &jsvalFileName );
+//	JS_GetProperty( cx, obj, "fileName", &jsvalFileName );
+	JS_GetReservedSlot( cx, obj, 0, &jsvalFileName );
 
 	if ( jsvalFileName == JSVAL_VOID ) {
 
@@ -290,7 +299,8 @@ JSBool File_getter_exist( JSContext *cx, JSObject *obj, jsval id, jsval *vp ) {
 JSBool File_getter_info( JSContext *cx, JSObject *obj, jsval id, jsval *vp ) {
 
 	jsval jsvalFileName;
-	JS_GetProperty( cx, obj, "fileName", &jsvalFileName );
+//	JS_GetProperty( cx, obj, "fileName", &jsvalFileName );
+	JS_GetReservedSlot( cx, obj, 0, &jsvalFileName );
 
 	if ( jsvalFileName == JSVAL_VOID ) {
 
@@ -336,7 +346,7 @@ JSBool File_getter_info( JSContext *cx, JSObject *obj, jsval id, jsval *vp ) {
 }
 
 JSPropertySpec File_PropertySpec[] = { // *name, tinyid, flags, getter, setter
-//  { "linger"   , PR_SockOpt_Linger, JSPROP_PERMANENT, Socket_getOption, Socket_setOption },
+  { "name" , 0, JSPROP_PERMANENT|JSPROP_READONLY, File_getter_name, NULL },
 	{ "size" , 0, JSPROP_PERMANENT|JSPROP_READONLY, File_getter_size , NULL },
 	{ "exist", 0, JSPROP_PERMANENT|JSPROP_READONLY, File_getter_exist, NULL },
 	{ "info" , 0, JSPROP_PERMANENT|JSPROP_READONLY, File_getter_info, NULL },

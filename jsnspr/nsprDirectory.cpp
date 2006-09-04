@@ -40,8 +40,6 @@ JSBool Directory_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv
 	}
 
 	JS_SetReservedSlot( cx, obj, 0, argv[0] );
-
-//	JS_SetProperty( cx, obj, "directoryName", &(argv[0]) );
 	return JS_TRUE;
 }
 
