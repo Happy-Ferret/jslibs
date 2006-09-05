@@ -3,6 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8,00"
 	Name="jsz"
+	ProjectGUID="{F00B77DF-185B-4F30-B71C-5D9786D76D94}"
 	RootNamespace="jsz"
 	Keyword="Win32Proj"
 	>
@@ -39,7 +40,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\mozilla\js\src"
+				AdditionalIncludeDirectories="..\mozilla\js\src; ..\zlib\src"
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -117,7 +118,7 @@
 				Name="VCCLCompilerTool"
 				InlineFunctionExpansion="2"
 				FavorSizeOrSpeed="1"
-				AdditionalIncludeDirectories="..\mozilla\js\src"
+				AdditionalIncludeDirectories="..\mozilla\js\src; ..\zlib\src"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB"
 				RuntimeLibrary="0"
 				BufferSecurityCheck="false"
@@ -183,10 +184,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\z.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\stdafx.cpp"
 				>
 				<FileConfiguration
@@ -206,6 +203,14 @@
 					/>
 				</FileConfiguration>
 			</File>
+			<File
+				RelativePath=".\z.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\zError.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -213,11 +218,15 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
+				RelativePath=".\stdafx.h"
+				>
+			</File>
+			<File
 				RelativePath=".\z.h"
 				>
 			</File>
 			<File
-				RelativePath=".\stdafx.h"
+				RelativePath=".\zError.h"
 				>
 			</File>
 		</Filter>
