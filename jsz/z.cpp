@@ -96,7 +96,6 @@ JSBool z_transform(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval 
 	}
 
 	int flushType;
-
 	if ( argc == 0 )
 		flushType = Z_FINISH;
 	else
@@ -108,35 +107,32 @@ JSBool z_transform(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval 
 		void* data;
 	} queueItemType;
 
-  int queueSize = 16;
-	
+  int queueSize = 8;
 	queueItemType *queue = (queueItemType*)malloc( queueSize * sizeof(queueItemType) );
-
-	int totalLength = 0;
 	int queueEndIndex = 0;
 
-	int status; // Z_STREAM_END, Z_OK
+	int totalLength = 0;
+	int status;
 	do {
 	//for ( ; stream->avail_in > 0; queueEndIndex++ ) { // while the input data are not exhausted ...
 
 // check if the queue can contain more elements
 		if ( queueEndIndex >= queueSize ) {
-
 			queueSize *= 2;
-			queue = (queueItemType*)realloc( queue, queueSize * sizeof(queueItemType) );
+			queue = (queueItemType*)realloc( queue, sizeof(queueItemType) * queueSize );
 		}
 
-// compute the length of the next chunk
+// compute the length of the next output chunk
 		int chunkSize;
 		if ( method == DEFLATE )
-			chunkSize = 12 + stream->avail_in + stream->avail_in / 10;
+			chunkSize = 12 + stream->avail_in + stream->avail_in / 1000; // dest. buffer must be at least 0.1% larger than sourceLen plus 12 bytes
 		else
-			chunkSize = stream->avail_in * ( stream->total_out / stream->total_in ) + 100;
+			chunkSize = 100 + stream->avail_in * stream->total_out / (stream->total_in + 1);
 //			chunkSize = inputLength * 2; // can be more accurate using total_in and total_out ratio
 
 // store these infos in the structures
-		queue[queueEndIndex].data   = stream->next_out  = (Bytef *)malloc( chunkSize );
 		queue[queueEndIndex].length = stream->avail_out = chunkSize;
+		queue[queueEndIndex].data   = stream->next_out  = (Bytef*)malloc( chunkSize );
 
 // compress or uncompress
 		if ( method == DEFLATE )
@@ -145,7 +141,7 @@ JSBool z_transform(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval 
 			status = inflate( stream, flushType );
 
 		if ( status < 0 ) {
-			// free the queue !! and queue data !!
+			// free the queue !! and queue data !!!!!!!!!!!!!!!!!!!!!!
 			return ThrowZError( cx, status, stream->msg );
 		}
 
@@ -154,7 +150,7 @@ JSBool z_transform(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval 
 
 		queueEndIndex++;
 
-	} while( status == Z_OK && stream->avail_out == 0  );
+	} while( stream->avail_out == 0 && status == Z_OK ); // Z_STREAM_END  <- check all of this
 
 
 // assamble chunks 
