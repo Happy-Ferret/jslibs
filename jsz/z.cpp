@@ -81,6 +81,8 @@ JSBool z_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 JSBool z_transform(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
+	char staticBuffer[8192];
+
 	z_streamp stream = (z_streamp)JS_GetPrivate( cx, obj );
 	if ( stream == NULL ) {
 
@@ -95,34 +97,41 @@ JSBool z_transform(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval 
 	method = JSVAL_TO_INT(jsvalMethod);
 
 // prepare input data
+	int inputLength;
 	int flushType;
 	if ( argc != 0 ) {
 
 		JSString *jssData = JS_ValueToString( cx, argv[0] );
+		inputLength = JS_GetStringLength( jssData );
 		stream->next_in = (Bytef *)JS_GetStringBytes( jssData ); // no copy is done, we read directly in the string hold by SM
-		stream->avail_in = JS_GetStringLength( jssData );
 		flushType = Z_SYNC_FLUSH; // Z_SYNC_FLUSH ensure that input datas will be entierly consumed
 	} else {
 		
 		stream->next_in = NULL;
-		stream->avail_in = 0;
+		inputLength = 0;
 		flushType = Z_FINISH;
 	}
 
+
+	stream->avail_in = inputLength;
+
+
+// queue management
 	typedef struct {
 
 		int length;
 		void* data;
 	} queueItemType;
 
-  int queueSize = 8;
+	int queueSize = 8;
 	queueItemType *queue = (queueItemType*)malloc( queueSize * sizeof(queueItemType) ); // [TBD] make the first buffer static ( 4096 bytes ) to avoid the first malloc
-	int queueEndIndex = 0;
+	int queueEndIndex = 0; // must be signed ( see. assamble chunks )
 
+
+// main loop
 	int resultLength = 0;
 	int status;
 	do {
-
 		// check if the queue can contain more elements, else enlarge the queue
 		if ( queueEndIndex >= queueSize ) {
 			queueSize *= 2;
@@ -131,49 +140,69 @@ JSBool z_transform(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval 
 
 		// compute the length of the next output chunk
 		int chunkSize; // this should contain an estimation of the output size
-		if ( method == DEFLATE )
-			chunkSize = 12 + stream->avail_in + stream->avail_in / 1000; // dest. buffer must be at least 0.1% larger than sourceLen plus 12 bytes
-		else
-			chunkSize = 100 + stream->avail_in * stream->total_out / (stream->total_in +1); // +1 to avoid div by zero ( when last == true  only? )
+
+//		if ( queueEndIndex == 0 ) {
+//
+//			chunkSize = sizeof(staticBuffer);
+//		} else
+
+			if ( method == DEFLATE )
+				chunkSize = 12 + stream->avail_in + stream->avail_in / 1000; // dest. buffer must be at least 0.1% larger than sourceLen plus 12 bytes
+			else {
+//				chunkSize = 100 + (float)stream->avail_in * (float)stream->total_out / (float)(stream->total_in+1); // +1 to avoid div by zero
+
+				chunkSize = stream->avail_in;
+			}
 
 		ASSERT( chunkSize > 0 ); // Before the call of inflate()/deflate(), the application should ensure that at least one of the actions is possible, by providing more input and/or consuming more output,
 
 		// store these infos in the structures
-		queue[queueEndIndex].length  =  stream->avail_out  =  chunkSize;
-		queue[queueEndIndex].data    =  stream->next_out   =  (Bytef*)malloc( chunkSize );
+		//if ( queueEndIndex == 0 ) {
+
+		//	queue[queueEndIndex].length  =  stream->avail_out  =  chunkSize;
+		//	queue[queueEndIndex].data    =  stream->next_out   =  (Bytef*)staticBuffer;
+		//} else {
+
+			queue[queueEndIndex].length  =  stream->avail_out  =  chunkSize;
+			queue[queueEndIndex].data    =  stream->next_out   =  (Bytef*)malloc( chunkSize );
+		//}
 
 		// compress or uncompress
-		if ( method == DEFLATE )
-			status = deflate( stream, flushType ); // compress
-		else
-			status = inflate( stream, flushType ); // decompress
+		status = method == DEFLATE ? deflate( stream, flushType ) : inflate( stream, flushType );
+
+if ( method == DEFLATE )
+	printf("DE=%d, i=%d, lost= %d / %d, in=%d, avail_in=%d, avail_out=%d, totalIn=%d, totalOut=%d, ratio=%.2f \n", method == DEFLATE, queueEndIndex, stream->avail_out, chunkSize, inputLength, stream->avail_in, stream->avail_out, stream->total_in, stream->total_out, (float)stream->total_in / (float)stream->total_out );
+
 
 		if ( status < 0 ) {
 			// [TBD] free the queue !! 
 			// [TBD] free the queue data !!
 			return ThrowZError( cx, status, stream->msg );
 		}
+		
 		// compute the effective memory used  ( it is possible that the buffer is not completely fill )
 
-		//		if (last) printf("lost:%d/%d (i=%d)\n", stream->avail_out, chunkSize, queueEndIndex );
+
+
 		resultLength += queue[queueEndIndex].length = chunkSize - stream->avail_out; // if avail_out == 0, all the chunk space has been used. operator precedence: http://www.cppreference.com/operator_precedence.html
 
 		queueEndIndex++; // go to the next free chunk
 
 //	} while( stream->avail_out == 0 && status == Z_OK );
-	} while ( ( flushType != Z_FINISH && stream->avail_in != 0 )  ||  ( flushType == Z_FINISH && status != Z_STREAM_END ) ); // while the input data are not exhausted or the last datas are not read
+	} while ( ( flushType != Z_FINISH && stream->avail_in > 0 )  ||  ( flushType == Z_FINISH && status != Z_STREAM_END ) ); // while the input data are not exhausted or the last datas are not read
 
 
 // assamble chunks
-/*
 	char *data = (char*)JS_malloc( cx, resultLength ) + resultLength;
-	
-	for ( ; queueEndIndex >= 0; --queueEndIndex ) {
+	for ( --queueEndIndex ; queueEndIndex >= 0 ; --queueEndIndex ) {
+
 		data -= queue[queueEndIndex].length;
 		memcpy( data, queue[queueEndIndex].data, queue[queueEndIndex].length );
-		free( queue[queueEndIndex].data );
+//		if ( queueEndIndex > 0 ) // queue[queueEndIndex].data points to a static area ( see. staticBuffer )
+			free( queue[queueEndIndex].data );
 	}
-*/
+
+/*
 	char *data = (char*)JS_malloc( cx, resultLength );
 	char *dataPtr = data;
 
@@ -183,6 +212,8 @@ JSBool z_transform(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval 
 		free( queue[i].data ); // chunk is processed, now it is useless
 		dataPtr += queue[i].length; // advance in the destination buffer
 	}
+*/
+
 
 	free( queue ); // queue is processed, now it is useless
 
@@ -287,5 +318,10 @@ JSObject *zInitClass( JSContext *cx, JSObject *obj ) {
 
 
 /****************************************************************
+
+API doc.
+	http://www.zlib.net/manual.html
+
+
 
 */
