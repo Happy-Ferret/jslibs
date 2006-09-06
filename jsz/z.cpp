@@ -1,5 +1,7 @@
 #include "stdafx.h"
 
+#define ASSERT(e)
+
 #define XP_WIN
 #include <jsapi.h>
 #include <zlib.h>
@@ -13,6 +15,13 @@
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void z_Finalize(JSContext *cx, JSObject *obj) {
+
+	z_streamp stream = (z_streamp)JS_GetPrivate( cx, obj );
+	if ( stream == NULL ) {
+
+		free(stream);
+		JS_SetPrivate(cx,obj,NULL);
+	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -43,7 +52,7 @@ JSBool z_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval 
 	int32 method;
 	JS_ValueToInt32( cx, argv[0], &method );
 
-	int32 level = Z_DEFAULT_COMPRESSION;
+	int32 level = Z_DEFAULT_COMPRESSION; // default value
 	if ( argc >= 2 ) {
 
 		JS_ValueToInt32( cx, argv[1], &level );
@@ -79,27 +88,26 @@ JSBool z_transform(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval 
 		return JS_FALSE;
 	}
 
+// get the action to do
 	jsval jsvalMethod;
 	int method;
 	JS_GetReservedSlot( cx, obj, 0, &jsvalMethod );
 	method = JSVAL_TO_INT(jsvalMethod);
 
-	if ( argc >= 1 ) {
+// prepare input data
+	int flushType;
+	if ( argc != 0 ) {
 
 		JSString *jssData = JS_ValueToString( cx, argv[0] );
 		stream->next_in = (Bytef *)JS_GetStringBytes( jssData ); // no copy is done, we read directly in the string hold by SM
 		stream->avail_in = JS_GetStringLength( jssData );
+		flushType = Z_SYNC_FLUSH; // Z_SYNC_FLUSH ensure that input datas will be entierly consumed
 	} else {
-
+		
 		stream->next_in = NULL;
 		stream->avail_in = 0;
-	}
-
-	int flushType;
-	if ( argc == 0 )
 		flushType = Z_FINISH;
-	else
-		flushType = Z_SYNC_FLUSH;
+	}
 
 	typedef struct {
 
@@ -108,78 +116,82 @@ JSBool z_transform(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval 
 	} queueItemType;
 
   int queueSize = 8;
-	queueItemType *queue = (queueItemType*)malloc( queueSize * sizeof(queueItemType) );
+	queueItemType *queue = (queueItemType*)malloc( queueSize * sizeof(queueItemType) ); // [TBD] make the first buffer static ( 4096 bytes ) to avoid the first malloc
 	int queueEndIndex = 0;
 
-	int totalLength = 0;
+	int resultLength = 0;
 	int status;
 	do {
-	//for ( ; stream->avail_in > 0; queueEndIndex++ ) { // while the input data are not exhausted ...
 
-// check if the queue can contain more elements
+		// check if the queue can contain more elements, else enlarge the queue
 		if ( queueEndIndex >= queueSize ) {
 			queueSize *= 2;
 			queue = (queueItemType*)realloc( queue, sizeof(queueItemType) * queueSize );
 		}
 
-// compute the length of the next output chunk
-		int chunkSize;
+		// compute the length of the next output chunk
+		int chunkSize; // this should contain an estimation of the output size
 		if ( method == DEFLATE )
 			chunkSize = 12 + stream->avail_in + stream->avail_in / 1000; // dest. buffer must be at least 0.1% larger than sourceLen plus 12 bytes
 		else
-			chunkSize = 100 + stream->avail_in * stream->total_out / (stream->total_in + 1);
-//			chunkSize = inputLength * 2; // can be more accurate using total_in and total_out ratio
+			chunkSize = 100 + stream->avail_in * stream->total_out / (stream->total_in +1); // +1 to avoid div by zero ( when last == true  only? )
 
-// store these infos in the structures
-		queue[queueEndIndex].length = stream->avail_out = chunkSize;
-		queue[queueEndIndex].data   = stream->next_out  = (Bytef*)malloc( chunkSize );
+		ASSERT( chunkSize > 0 ); // Before the call of inflate()/deflate(), the application should ensure that at least one of the actions is possible, by providing more input and/or consuming more output,
 
-// compress or uncompress
+		// store these infos in the structures
+		queue[queueEndIndex].length  =  stream->avail_out  =  chunkSize;
+		queue[queueEndIndex].data    =  stream->next_out   =  (Bytef*)malloc( chunkSize );
+
+		// compress or uncompress
 		if ( method == DEFLATE )
-			status = deflate( stream, flushType );
+			status = deflate( stream, flushType ); // compress
 		else
-			status = inflate( stream, flushType );
+			status = inflate( stream, flushType ); // decompress
 
 		if ( status < 0 ) {
-			// free the queue !! and queue data !!!!!!!!!!!!!!!!!!!!!!
+			// [TBD] free the queue !! 
+			// [TBD] free the queue data !!
 			return ThrowZError( cx, status, stream->msg );
 		}
+		// compute the effective memory used  ( it is possible that the buffer is not completely fill )
 
-// compute the effective memory used
-		totalLength += queue[queueEndIndex].length = chunkSize - stream->avail_out; // if avail_out == 0, all the chunk space has been used ( help: http://www.cppreference.com/operator_precedence.html )
+		//		if (last) printf("lost:%d/%d (i=%d)\n", stream->avail_out, chunkSize, queueEndIndex );
+		resultLength += queue[queueEndIndex].length = chunkSize - stream->avail_out; // if avail_out == 0, all the chunk space has been used. operator precedence: http://www.cppreference.com/operator_precedence.html
 
-		queueEndIndex++;
+		queueEndIndex++; // go to the next free chunk
 
-	} while( stream->avail_out == 0 && status == Z_OK ); // Z_STREAM_END  <- check all of this
+//	} while( stream->avail_out == 0 && status == Z_OK );
+	} while ( ( flushType != Z_FINISH && stream->avail_in != 0 )  ||  ( flushType == Z_FINISH && status != Z_STREAM_END ) ); // while the input data are not exhausted or the last datas are not read
 
 
-// assamble chunks 
-//	int totalSize = stream->total_out; // total_out = total nb of bytes output so far
-
-	char *data = (char*)JS_malloc( cx, totalLength );
-	char *buf = data;
+// assamble chunks
+/*
+	char *data = (char*)JS_malloc( cx, resultLength ) + resultLength;
+	
+	for ( ; queueEndIndex >= 0; --queueEndIndex ) {
+		data -= queue[queueEndIndex].length;
+		memcpy( data, queue[queueEndIndex].data, queue[queueEndIndex].length );
+		free( queue[queueEndIndex].data );
+	}
+*/
+	char *data = (char*)JS_malloc( cx, resultLength );
+	char *dataPtr = data;
 
 	for ( int i=0; i<queueEndIndex; ++i ) {
 
-		memcpy( buf, queue[i].data, queue[i].length );
+		memcpy( dataPtr, queue[i].data, queue[i].length );
 		free( queue[i].data ); // chunk is processed, now it is useless
-		buf += queue[i].length;
+		dataPtr += queue[i].length; // advance in the destination buffer
 	}
 
 	free( queue ); // queue is processed, now it is useless
 
-	*rval = STRING_TO_JSVAL(JS_NewString( cx, data, totalLength ));
+	*rval = STRING_TO_JSVAL(JS_NewString( cx, data, resultLength ));
 
-	if ( argc == 0 ) {
-
-		if ( method == DEFLATE )
-			status = deflateEnd(stream);
-		else
-			status = inflateEnd(stream);
-
-		free(stream);
-		JS_SetPrivate(cx,obj,NULL);
-
+// close the stream and free resources
+	if ( flushType == Z_FINISH ) {
+		
+		status = method == DEFLATE ? deflateEnd(stream) : inflateEnd(stream); // free(stream) is done the Finalize
 		if ( status < 0 )
 			return ThrowZError( cx, status, stream->msg );
 	}
@@ -201,22 +213,52 @@ JSFunctionSpec z_FunctionSpec[] = { // *name, call, nargs, flags, extra
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//JSBool z_getter_myProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
-//
-//  return JS_TRUE;
-//}
+JSBool z_getter_adler32(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
+
+	z_streamp stream = (z_streamp)JS_GetPrivate( cx, obj );
+	if ( stream == NULL ) {
+
+		JS_ReportError( cx, "descriptor is NULL" );
+		return JS_FALSE;
+	}
+
+	jsdouble adler32 = stream->adler;
+	JS_NewNumberValue( cx, adler32, vp );
+
+	return JS_TRUE;
+}
+
+#define LENGTH_IN 1
+#define LENGTH_OUT 2
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+JSBool z_getter_length(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
+
+	z_streamp stream = (z_streamp)JS_GetPrivate( cx, obj );
+	if ( stream == NULL ) {
+
+		JS_ReportError( cx, "descriptor is NULL" );
+		return JS_FALSE;
+	}
+
+	jsdouble length = JSVAL_TO_INT(id) == LENGTH_IN ? stream->total_in : stream->total_out;
+	JS_NewNumberValue( cx, length, vp );
+
+	return JS_TRUE;
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 JSPropertySpec z_PropertySpec[] = { // *name, tinyid, flags, getter, setter
-//	{ "myProperty"    , 0, JSPROP_PERMANENT|JSPROP_READONLY, z_getter_myProperty    , NULL },
+	{ "adler32"    , 0, JSPROP_PERMANENT|JSPROP_READONLY, z_getter_adler32    , NULL },
+	{ "lengthIn"   , LENGTH_IN , JSPROP_PERMANENT|JSPROP_READONLY, z_getter_length    , NULL },
+	{ "lengthOut"  , LENGTH_OUT, JSPROP_PERMANENT|JSPROP_READONLY, z_getter_length    , NULL },
   { 0 }
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSBool z_static_getter_myStatic(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
-
-  return JS_TRUE;
-}
+//JSBool z_static_getter_myStatic(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
+//
+//  return JS_TRUE;
+//}
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -231,7 +273,7 @@ JSBool z_static_getter_constant(JSContext *cx, JSObject *obj, jsval id, jsval *v
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 JSPropertySpec z_static_PropertySpec[] = { // *name, tinyid, flags, getter, setter
-	{ "myStatic"   , 0, JSPROP_PERMANENT|JSPROP_READONLY, z_static_getter_myStatic         , NULL },
+//	{ "myStatic"   , 0, JSPROP_PERMANENT|JSPROP_READONLY, z_static_getter_myStatic         , NULL },
 	{ "INFLATE" ,    INFLATE, JSPROP_PERMANENT|JSPROP_READONLY, z_static_getter_constant   , NULL },
 	{ "DEFLATE" ,    DEFLATE, JSPROP_PERMANENT|JSPROP_READONLY, z_static_getter_constant   , NULL },
   { 0 }
