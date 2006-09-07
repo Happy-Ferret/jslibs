@@ -3,26 +3,26 @@
 #define STATIC_BUFFER_LENGTH 8192
 #define INITIAL_QUEUE_LENGTH 8
 
+
 struct BufferChunk {
 friend class Buffer;
 
-	size_t total;
-	int useCount;
+	unsigned char *mem;
 public:
-	char *data;
+	unsigned char *data;
 	size_t avail;
 };
 
 
 class Buffer {
 
-	char _staticMem[STATIC_BUFFER_LENGTH];
+	unsigned char _staticMem[STATIC_BUFFER_LENGTH];
 	bool _hasStaticMem;
 
 	size_t _defaultLength;
 
 	BufferChunk *_queue;
-	int _endIndex;
+	int _currentIndex;
 	int _queueLength;
 	int _useCount;
 
@@ -33,9 +33,9 @@ public:
 
 	~Buffer() {
 
-		for ( int i=0; i<_endIndex; i++ )
-			if ( _queue[i].data != _staticMem )
-				free(_queue[i].data);
+		for ( int i=0; i<=_currentIndex; i++ )
+			if ( _queue[i].mem != _staticMem )
+				free(_queue[i].mem);
 	}
 
 	Buffer( size_t defaultLength ) {
@@ -46,12 +46,11 @@ public:
 
 		_queueLength = INITIAL_QUEUE_LENGTH;
 		_queue = (BufferChunk*)malloc( _queueLength * sizeof BufferChunk );
-		_endIndex = 0;
+		_currentIndex = 0;
 
+		_queue[0].mem = NULL;
 		_queue[0].data = NULL;
-		_queue[0].total = 0;
 		_queue[0].avail = 0;
-		_queue[0].useCount = 0;
 
 		_prevAvail = 0;
 		_prevRequest = 0;
@@ -60,7 +59,7 @@ public:
 
 	size_t OptimalLength() {
 		
-		size_t length = _queue[_endIndex].avail;
+		size_t length = _queue[_currentIndex].avail;
 
 		if ( length > 0 )
 			return length;
@@ -80,12 +79,12 @@ public:
 			 length = sizeof _staticMem;
 		} else {
 	
-			float prevUsedRatio = (float)(_prevAvail - _queue[_endIndex].avail) / (float)(_prevRequest +1);
+			float prevUsedRatio = (float)(_prevAvail - _queue[_currentIndex].avail) / (float)(_prevRequest +1);
 
-			if ( prevUsedRatio > 0.99f ) {
-				length = _prevRequest * 2;
+			if ( prevUsedRatio >= 1.f ) {
+				length = (float)_prevRequest * 1.5f;
 			} else if ( prevUsedRatio < 0.5f ) {
-				length = _prevRequest / 2 + 1;
+				length = 1+ (float)_prevRequest / 1.5f;
 			} else {
 				length = _prevRequest;
 			}
@@ -96,51 +95,47 @@ public:
 	BufferChunk *Next( size_t length ) {
 
 		_useCount++;
-
-		if ( _queue[_endIndex].avail <= 0 ) { // if not enough space in the current ckunk
+		if ( _queue[_currentIndex].avail <= 0 ) { // if not enough space in the current ckunk
 			
-			_endIndex++;
-			if ( _endIndex >= _queueLength ) {
+			_currentIndex++;
+			if ( _currentIndex >= _queueLength ) {
 
 				_queueLength *= 2;
 				_queue = (BufferChunk*)realloc( _queue, _queueLength * sizeof BufferChunk );
 			}
 			
-			_queue[_endIndex].useCount = 0;
 			if ( _hasStaticMem && length <= sizeof _staticMem ) {
 
-				_queue[_endIndex].total = _queue[_endIndex].avail = sizeof _staticMem;
-				_queue[_endIndex].data = _staticMem;
-				_hasStaticMem = false;
+				_queue[_currentIndex].avail = sizeof _staticMem;
+				_queue[_currentIndex].mem = _queue[_currentIndex].data = _staticMem;
+				_hasStaticMem = false; // it is no more available
 			} else {
 
-				_queue[_endIndex].total = _queue[_endIndex].avail = length;
-				_queue[_endIndex].data = (char*)malloc(length);
+				_queue[_currentIndex].avail = length;
+				_queue[_currentIndex].mem = _queue[_currentIndex].data = (unsigned char*)malloc(length);
 			}
-		} else {
-			_queue[_endIndex].useCount++;
 		}
-		
-		_prevRequest = length;
-		_prevAvail = _queue[_endIndex].avail;
 
-		return &_queue[_endIndex];
+		_prevRequest = length;
+		_prevAvail = _queue[_currentIndex].avail;
+
+		return &_queue[_currentIndex];
 	}
 
 	size_t MergeLength() {
 
 		size_t totalLength=0;
-		for ( int i=0; i<_endIndex; ++i )
-			totalLength += _queue[i].total - _queue[i].avail;
+		for ( int i=0; i<=_currentIndex; ++i )
+			totalLength += _queue[i].data - _queue[i].mem;
 		return totalLength;
 	}
 
-	void Merge( char *data ) { // alloc is made by the caller
+	void Merge( unsigned char *data ) { // alloc is made by the caller
 
-		for ( int i=0; i<_endIndex; ++i ) {
+		for ( int i=0; i<=_currentIndex; ++i ) {
 			
-			size_t length = _queue[i].total - _queue[i].avail;
-			memcpy( data, _queue[i].data, length );
+			size_t length = _queue[i].data - _queue[i].mem;
+			memcpy( data, _queue[i].mem, length );
 			data += length;
 		}
 	}
@@ -148,7 +143,7 @@ public:
 	size_t _WasteSpace() {
 
 		size_t waste=0;
-		for ( int i=0; i<_endIndex; ++i )
+		for ( int i=0; i<_currentIndex; ++i )
 			waste += _queue[i].avail;
 		return waste;
 	}
