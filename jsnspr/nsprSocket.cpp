@@ -341,7 +341,8 @@ JSBool Socket_recv(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval 
 		return JS_TRUE;
 	}
 
-	void *buf = JS_malloc( cx, available );
+	void *buf = JS_malloc( cx, available +1 );
+	buf[available] = 0;
 
 	PRInt32 res = PR_Recv( fd, buf, available, 0 /*must always be zero*/, PR_INTERVAL_NO_WAIT );
 	if (res == -1) { // failure. The reason for the failure can be obtained by calling PR_GetError.

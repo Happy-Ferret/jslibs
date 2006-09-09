@@ -129,7 +129,8 @@ JSBool File_read(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *r
 			return ThrowNSPRError( cx, PR_GetError() );
 	}
 
-	void *buf = JS_malloc( cx, amount );
+	void *buf = JS_malloc( cx, amount +1 );
+	buf[amount] = 0;
 
 	PRInt32 res = PR_Read( fd, buf, amount );
 	if (res == -1) { // failure. The reason for the failure can be obtained by calling PR_GetError.
