@@ -75,7 +75,7 @@ JSBool z_call(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval
 
 	int flushType = inputLength == 0 || forceFinish == JS_TRUE ? Z_FINISH : Z_SYNC_FLUSH;
 
-	Buffer buffer( method == DEFLATE ? 12 + 1.001f * stream->avail_in : 1.25f * stream->avail_in ); // if DEFLATE, dest. buffer must be at least 0.1% larger than sourceLen plus 12 bytes
+	Buffer buffer( method == DEFLATE ? 12 + 1.001f * stream->avail_in : 1.5f * stream->avail_in ); // if DEFLATE, dest. buffer must be at least 0.1% larger than sourceLen plus 12 bytes
 
 // deflate / inflate loop
 	size_t outputLength;
@@ -85,23 +85,31 @@ JSBool z_call(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval
 		BufferChunk *chunk = buffer.Next(buffer.SmartLength());
 		stream->avail_out = chunk->avail;
 		stream->next_out = chunk->data;
-//		printf("D%d, ca%d ai%d ao%d ti%d to%d", method == DEFLATE, chunk->avail, stream->avail_in, stream->avail_out, stream->total_in, stream->total_out );
+		printf("D%d, ca%d ai%d ao%d ti%d to%d", method == DEFLATE, chunk->avail, stream->avail_in, stream->avail_out, stream->total_in, stream->total_out );
 		xflateStatus = method == DEFLATE ? deflate( stream, flushType ) : inflate( stream, flushType ); // Before the call of inflate()/deflate(), the application should ensure that at least one of the actions is possible, by providing more input and/or consuming more output, ...
-//		printf("..ai%d ca%d ao%d ti%d to%d\n", 			method == DEFLATE, 			chunk->avail,			stream->avail_in, 			stream->avail_out, 			stream->total_in, 			stream->total_out		);
+		printf("..ai%d ca%d ao%d ti%d to%d\n", 			method == DEFLATE, 			chunk->avail,			stream->avail_in, 			stream->avail_out, 			stream->total_in, 			stream->total_out		);
 		chunk->avail = stream->avail_out;
 		chunk->data = stream->next_out;
 		outputLength = buffer.Length();
 		if ( xflateStatus < 0 )
 			return ThrowZError( cx, xflateStatus, stream->msg );
-	} while ( ( flushType != Z_FINISH && stream->avail_in > 0 ) || 
-						( flushType == Z_FINISH && xflateStatus != Z_STREAM_END ) ||
-						( xflateStatus == Z_OK && outputLength == 0 ) // we need to output something
-					); // while the input data are not exhausted or the last datas are not read
+	} while ( ( flushType != Z_FINISH && stream->avail_in > 0 ) || // the input data is not exhausted
+	          ( flushType == Z_FINISH && xflateStatus != Z_STREAM_END ) || // the last datas are not read
+	          ( xflateStatus == Z_OK && outputLength == 0 ) // we need to output something
+	        );
 
 // assamble chunks
-	unsigned char *stringData = (unsigned char*)JS_malloc( cx, outputLength );
-	buffer.Read(stringData);
-	*rval = STRING_TO_JSVAL(JS_NewString( cx, (char*)stringData, outputLength ));
+	unsigned char *outputData = (unsigned char*)JS_malloc( cx, outputLength +1 ); // +1 for '\0' char
+	outputData[outputLength] = 0; // [TBD] understand WHY !? outputLength info is not enough ??
+	buffer.Read(outputData);
+	JSString *jssOutputData = JS_NewString( cx, (char*)outputData, outputLength );
+	if ( jssOutputData == NULL ) {
+
+		JS_free( cx, outputData ); // JS_NewString takes ownership of bytes on success, avoiding a copy; but on error (signified by null return), it leaves bytes owned by the caller. So the caller must free bytes in the error case, if it has no use for them.
+		JS_ReportError( cx, "out of memory" );
+		return JS_FALSE;
+	}
+	*rval = STRING_TO_JSVAL(jssOutputData);
 
 // close the stream and free resources
 	if ( xflateStatus == Z_STREAM_END ) {
@@ -157,9 +165,9 @@ JSBool z_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval 
 
 	int status;
 	if ( method == DEFLATE )
-		status = deflateInit( stream, level );
+		status = deflateInit2( stream, level, Z_DEFLATED, MAX_WBITS, MAX_MEM_LEVEL, Z_DEFAULT_STRATEGY ); //  int level, int method, int windowBits, int memLevel, int strategy
 	else
-		status = inflateInit( stream );
+		status = inflateInit2( stream, MAX_WBITS );
 
 	if ( status < 0 )
 		return ThrowZError( cx, status, stream->msg );
