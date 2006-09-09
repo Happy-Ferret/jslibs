@@ -599,18 +599,17 @@ JSBool Socket_getter_closed( JSContext *cx, JSObject *obj, jsval id, jsval *vp )
 
 JSPropertySpec Socket_PropertySpec[] = { // *name, tinyid, flags, getter, setter
 // PR SocketOption
-	{ "linger"        , PR_SockOpt_Linger        , JSPROP_PERMANENT, Socket_getOption, Socket_setOption },
-  { "noDelay"       , PR_SockOpt_NoDelay       , JSPROP_PERMANENT, Socket_getOption, Socket_setOption },
-  { "reuseAddr"     , PR_SockOpt_Reuseaddr     , JSPROP_PERMANENT, Socket_getOption, Socket_setOption },
-  { "keepAlive"     , PR_SockOpt_Keepalive     , JSPROP_PERMANENT, Socket_getOption, Socket_setOption },
-  { "recvBufferSize", PR_SockOpt_RecvBufferSize, JSPROP_PERMANENT, Socket_getOption, Socket_setOption },
-  { "sendBufferSize", PR_SockOpt_SendBufferSize, JSPROP_PERMANENT, Socket_getOption, Socket_setOption },
+	{ "linger"        , PR_SockOpt_Linger        , JSPROP_SHARED | JSPROP_PERMANENT, Socket_getOption, Socket_setOption },
+	{ "noDelay"       , PR_SockOpt_NoDelay       , JSPROP_SHARED | JSPROP_PERMANENT, Socket_getOption, Socket_setOption },
+	{ "reuseAddr"     , PR_SockOpt_Reuseaddr     , JSPROP_SHARED | JSPROP_PERMANENT, Socket_getOption, Socket_setOption },
+	{ "keepAlive"     , PR_SockOpt_Keepalive     , JSPROP_SHARED | JSPROP_PERMANENT, Socket_getOption, Socket_setOption },
+	{ "recvBufferSize", PR_SockOpt_RecvBufferSize, JSPROP_SHARED | JSPROP_PERMANENT, Socket_getOption, Socket_setOption },
+	{ "sendBufferSize", PR_SockOpt_SendBufferSize, JSPROP_SHARED | JSPROP_PERMANENT, Socket_getOption, Socket_setOption },
 // properties	
-	{ "peerName"         , 0, JSPROP_PERMANENT|JSPROP_READONLY, Socket_getter_peerName        , NULL },
-	{ "sockName"         , 0, JSPROP_PERMANENT|JSPROP_READONLY, Socket_getter_sockName        , NULL },
-	{ "connectContinue"  , 0, JSPROP_PERMANENT|JSPROP_READONLY, Socket_getter_connectContinue , NULL },
-	{ "closed"           , 0, JSPROP_PERMANENT|JSPROP_READONLY, Socket_getter_closed , NULL },
-//	{ "connectionStatus" , 0, JSPROP_PERMANENT|JSPROP_READONLY, Socket_getter_connectionStatus , NULL },
+	{ "peerName"         , 0, JSPROP_SHARED | JSPROP_PERMANENT|JSPROP_READONLY, Socket_getter_peerName        , NULL },
+	{ "sockName"         , 0, JSPROP_SHARED | JSPROP_PERMANENT|JSPROP_READONLY, Socket_getter_sockName        , NULL },
+	{ "connectContinue"  , 0, JSPROP_SHARED | JSPROP_PERMANENT|JSPROP_READONLY, Socket_getter_connectContinue , NULL },
+	{ "closed"           , 0, JSPROP_SHARED | JSPROP_PERMANENT|JSPROP_READONLY, Socket_getter_closed          , NULL },
 //
   { 0 }
 };

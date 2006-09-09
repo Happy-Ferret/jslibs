@@ -223,11 +223,11 @@ JSBool Directory_static_setConst( JSContext *cx, JSObject *obj, jsval id, jsval 
 
 JSPropertySpec Directory_static_PropertySpec[] = { // *name, tinyid, flags, getter, setter
 // PR_ReadDir flags
-	{ "SKIP_NONE"     ,PR_SKIP_NONE     ,JSPROP_PERMANENT|JSPROP_READONLY, Directory_static_setConst, NULL },
-	{ "SKIP_DOT"			,PR_SKIP_DOT      ,JSPROP_PERMANENT|JSPROP_READONLY, Directory_static_setConst, NULL },
-	{ "SKIP_DOT_DOT"  ,PR_SKIP_DOT_DOT  ,JSPROP_PERMANENT|JSPROP_READONLY, Directory_static_setConst, NULL },
-	{ "SKIP_BOTH"   	,PR_SKIP_BOTH     ,JSPROP_PERMANENT|JSPROP_READONLY, Directory_static_setConst, NULL },
-	{ "SKIP_HIDDEN"	  ,PR_APPEND        ,JSPROP_PERMANENT|JSPROP_READONLY, Directory_static_setConst, NULL },
+	{ "SKIP_NONE"     ,PR_SKIP_NONE     ,JSPROP_SHARED | JSPROP_PERMANENT | JSPROP_READONLY, Directory_static_setConst, NULL },
+	{ "SKIP_DOT"		,PR_SKIP_DOT      ,JSPROP_SHARED | JSPROP_PERMANENT | JSPROP_READONLY, Directory_static_setConst, NULL },
+	{ "SKIP_DOT_DOT"  ,PR_SKIP_DOT_DOT  ,JSPROP_SHARED | JSPROP_PERMANENT | JSPROP_READONLY, Directory_static_setConst, NULL },
+	{ "SKIP_BOTH"     ,PR_SKIP_BOTH     ,JSPROP_SHARED | JSPROP_PERMANENT | JSPROP_READONLY, Directory_static_setConst, NULL },
+	{ "SKIP_HIDDEN"   ,PR_APPEND        ,JSPROP_SHARED | JSPROP_PERMANENT | JSPROP_READONLY, Directory_static_setConst, NULL },
 //
 	{ 0 }
 };

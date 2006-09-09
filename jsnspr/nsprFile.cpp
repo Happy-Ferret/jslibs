@@ -122,7 +122,7 @@ JSBool File_read(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *r
 		int32 val;
 		JS_ValueToInt32( cx, argv[0], &val );
 		amount = val;
-	} else { // no amount specified
+	} else { // no amount specified : read the whole file
 
 		amount = PR_Available( fd ); // For a normal file, these are the bytes beyond the current file pointer.
 		if ( amount == -1 )
@@ -240,6 +240,24 @@ JSFunctionSpec File_FunctionSpec[] = { // { *name, call, nargs, flags, extra }
 };
 
 
+JSBool File_getter_eof( JSContext *cx, JSObject *obj, jsval id, jsval *vp ) {
+
+	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
+	if ( fd == NULL ) {
+
+		JS_ReportError( cx, "file is closed" );
+		return JS_FALSE;
+	}
+
+	PRInt32 available = PR_Available( fd ); // For a normal file, these are the bytes beyond the current file pointer.
+	if ( available == -1 )
+		return ThrowNSPRError( cx, PR_GetError() );
+
+	*vp = BOOLEAN_TO_JSVAL(available == 0);
+	return JS_TRUE;
+}
+
+
 JSBool File_getter_name( JSContext *cx, JSObject *obj, jsval id, jsval *vp ) {
 
 	JS_GetReservedSlot( cx, obj, 0, vp );
@@ -247,7 +265,7 @@ JSBool File_getter_name( JSContext *cx, JSObject *obj, jsval id, jsval *vp ) {
 }
 
 
-JSBool File_getter_size( JSContext *cx, JSObject *obj, jsval id, jsval *vp ) {
+JSBool File_getter_available( JSContext *cx, JSObject *obj, jsval id, jsval *vp ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
 	if ( fd == NULL ) {
@@ -346,10 +364,11 @@ JSBool File_getter_info( JSContext *cx, JSObject *obj, jsval id, jsval *vp ) {
 }
 
 JSPropertySpec File_PropertySpec[] = { // *name, tinyid, flags, getter, setter
-  { "name" , 0, JSPROP_PERMANENT|JSPROP_READONLY, File_getter_name, NULL },
-	{ "size" , 0, JSPROP_PERMANENT|JSPROP_READONLY, File_getter_size , NULL },
-	{ "exist", 0, JSPROP_PERMANENT|JSPROP_READONLY, File_getter_exist, NULL },
-	{ "info" , 0, JSPROP_PERMANENT|JSPROP_READONLY, File_getter_info, NULL },
+	{ "eof"       , 0, JSPROP_SHARED | JSPROP_PERMANENT|JSPROP_READONLY, File_getter_eof       , NULL },
+	{ "name"      , 0, JSPROP_SHARED | JSPROP_PERMANENT|JSPROP_READONLY, File_getter_name      , NULL },
+	{ "available" , 0, JSPROP_SHARED | JSPROP_PERMANENT|JSPROP_READONLY, File_getter_available , NULL },
+	{ "exist"     , 0, JSPROP_SHARED | JSPROP_PERMANENT|JSPROP_READONLY, File_getter_exist     , NULL },
+	{ "info"      , 0, JSPROP_SHARED | JSPROP_PERMANENT|JSPROP_READONLY, File_getter_info      , NULL },
   { 0 }
 };
 
@@ -365,22 +384,22 @@ JSBool File_static_setConst( JSContext *cx, JSObject *obj, jsval id, jsval *vp )
 
 JSPropertySpec File_static_PropertySpec[] = { // *name, tinyid, flags, getter, setter
 // PR_Open flags
-	{ "RDONLY"      ,PR_RDONLY      ,JSPROP_PERMANENT|JSPROP_READONLY, File_static_setConst, NULL },
-	{ "WRONLY"			,PR_WRONLY      ,JSPROP_PERMANENT|JSPROP_READONLY, File_static_setConst, NULL },
-	{ "RDWR"				,PR_RDWR        ,JSPROP_PERMANENT|JSPROP_READONLY, File_static_setConst, NULL },
-	{ "CREATE_FILE"	,PR_CREATE_FILE ,JSPROP_PERMANENT|JSPROP_READONLY, File_static_setConst, NULL },
-	{ "APPEND"			,PR_APPEND      ,JSPROP_PERMANENT|JSPROP_READONLY, File_static_setConst, NULL },
-	{ "TRUNCATE"		,PR_TRUNCATE    ,JSPROP_PERMANENT|JSPROP_READONLY, File_static_setConst, NULL },
-	{ "SYNC"				,PR_SYNC        ,JSPROP_PERMANENT|JSPROP_READONLY, File_static_setConst, NULL },
-	{ "EXCL"				,PR_EXCL        ,JSPROP_PERMANENT|JSPROP_READONLY, File_static_setConst, NULL },
+	{ "RDONLY"        ,PR_RDONLY      ,JSPROP_SHARED | JSPROP_PERMANENT|JSPROP_READONLY, File_static_setConst, NULL },
+	{ "WRONLY"			,PR_WRONLY      ,JSPROP_SHARED | JSPROP_PERMANENT|JSPROP_READONLY, File_static_setConst, NULL },
+	{ "RDWR"				,PR_RDWR        ,JSPROP_SHARED | JSPROP_PERMANENT|JSPROP_READONLY, File_static_setConst, NULL },
+	{ "CREATE_FILE"	,PR_CREATE_FILE ,JSPROP_SHARED | JSPROP_PERMANENT|JSPROP_READONLY, File_static_setConst, NULL },
+	{ "APPEND"			,PR_APPEND      ,JSPROP_SHARED | JSPROP_PERMANENT|JSPROP_READONLY, File_static_setConst, NULL },
+	{ "TRUNCATE"		,PR_TRUNCATE    ,JSPROP_SHARED | JSPROP_PERMANENT|JSPROP_READONLY, File_static_setConst, NULL },
+	{ "SYNC"				,PR_SYNC        ,JSPROP_SHARED | JSPROP_PERMANENT|JSPROP_READONLY, File_static_setConst, NULL },
+	{ "EXCL"				,PR_EXCL        ,JSPROP_SHARED | JSPROP_PERMANENT|JSPROP_READONLY, File_static_setConst, NULL },
 // PRSeekWhence enum
-	{ "SEEK_SET"		,PR_SEEK_SET    ,JSPROP_PERMANENT|JSPROP_READONLY, File_static_setConst, NULL },
-	{ "SEEK_CUR"		,PR_SEEK_CUR    ,JSPROP_PERMANENT|JSPROP_READONLY, File_static_setConst, NULL },
-	{ "SEEK_END"		,PR_SEEK_END    ,JSPROP_PERMANENT|JSPROP_READONLY, File_static_setConst, NULL },
+	{ "SEEK_SET"		,PR_SEEK_SET    ,JSPROP_SHARED | JSPROP_PERMANENT|JSPROP_READONLY, File_static_setConst, NULL },
+	{ "SEEK_CUR"		,PR_SEEK_CUR    ,JSPROP_SHARED | JSPROP_PERMANENT|JSPROP_READONLY, File_static_setConst, NULL },
+	{ "SEEK_END"		,PR_SEEK_END    ,JSPROP_SHARED | JSPROP_PERMANENT|JSPROP_READONLY, File_static_setConst, NULL },
 // PRFileType enum
-	{ "FILE_FILE"		    ,PR_FILE_FILE         ,JSPROP_PERMANENT|JSPROP_READONLY, File_static_setConst, NULL },
-	{ "FILE_DIRECTORY"	,PR_FILE_DIRECTORY    ,JSPROP_PERMANENT|JSPROP_READONLY, File_static_setConst, NULL },
-	{ "FILE_OTHER"		  ,PR_FILE_OTHER        ,JSPROP_PERMANENT|JSPROP_READONLY, File_static_setConst, NULL },
+	{ "FILE_FILE"		 ,PR_FILE_FILE         ,JSPROP_SHARED | JSPROP_PERMANENT|JSPROP_READONLY, File_static_setConst, NULL },
+	{ "FILE_DIRECTORY" ,PR_FILE_DIRECTORY    ,JSPROP_SHARED | JSPROP_PERMANENT|JSPROP_READONLY, File_static_setConst, NULL },
+	{ "FILE_OTHER"		 ,PR_FILE_OTHER        ,JSPROP_SHARED | JSPROP_PERMANENT|JSPROP_READONLY, File_static_setConst, NULL },
 //
 	{ 0 }
 };
