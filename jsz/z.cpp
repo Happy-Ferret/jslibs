@@ -12,8 +12,13 @@
 
 #include "buffer.h"
 
+// current method
 #define INFLATE 0
 #define DEFLATE 1
+
+// used slots
+#define SLOT_METHOD 0
+//#define SLOT_EOF 1
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void z_Finalize(JSContext *cx, JSObject *obj) {
@@ -27,9 +32,93 @@ void z_Finalize(JSContext *cx, JSObject *obj) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSClass z_class = { "Z", JSCLASS_HAS_PRIVATE | JSCLASS_HAS_RESERVED_SLOTS(1),
+JSBool z_call(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+
+	JSObject *thisObj = JSVAL_TO_OBJECT(argv[-2]); // get 'this' object of the current object ... [TBD]: check JS_InstanceOf( cx, thisObj, &NativeProc, NULL )
+
+	z_streamp stream = (z_streamp)JS_GetPrivate( cx, thisObj );
+	if ( stream == NULL ) {
+
+		JS_ReportError( cx, "descriptor is NULL" );
+		return JS_FALSE;
+	}
+
+// manage this call if eof is already reach : return an empty string
+	if ( (bool)stream->opaque == true ) {
+
+		*rval = JS_GetEmptyStringValue(cx);
+		return JS_TRUE;
+	}
+
+// get the action to do
+	jsval jsvalMethod;
+	int method;
+	JS_GetReservedSlot( cx, thisObj, SLOT_METHOD, &jsvalMethod );
+	method = JSVAL_TO_INT(jsvalMethod);
+
+// prepare input data
+	char *inputData = NULL;
+	size_t inputLength = 0;
+	if ( argc >= 1 ) {
+
+		JSString *jssData = JS_ValueToString( cx, argv[0] );
+		inputLength = JS_GetStringLength( jssData );
+		inputData = JS_GetStringBytes( jssData ); // no copy is done, we read directly in the string hold by SM
+	}
+	stream->avail_in = inputLength;
+	stream->next_in = (Bytef*)inputData;
+
+// force finish
+	JSBool forceFinish = JS_FALSE; 
+	if ( argc >= 2 )
+		JS_ValueToBoolean( cx, argv[1], &forceFinish );
+
+	int flushType = inputLength == 0 || forceFinish == JS_TRUE ? Z_FINISH : Z_SYNC_FLUSH;
+
+	Buffer buffer( method == DEFLATE ? 12 + 1.001f * stream->avail_in : 1.25f * stream->avail_in ); // if DEFLATE, dest. buffer must be at least 0.1% larger than sourceLen plus 12 bytes
+
+// deflate / inflate loop
+	size_t outputLength;
+	int xflateStatus;
+	do {
+
+		BufferChunk *chunk = buffer.Next(buffer.SmartLength());
+		stream->avail_out = chunk->avail;
+		stream->next_out = chunk->data;
+//		printf("D%d, ca%d ai%d ao%d ti%d to%d", method == DEFLATE, chunk->avail, stream->avail_in, stream->avail_out, stream->total_in, stream->total_out );
+		xflateStatus = method == DEFLATE ? deflate( stream, flushType ) : inflate( stream, flushType ); // Before the call of inflate()/deflate(), the application should ensure that at least one of the actions is possible, by providing more input and/or consuming more output, ...
+//		printf("..ai%d ca%d ao%d ti%d to%d\n", 			method == DEFLATE, 			chunk->avail,			stream->avail_in, 			stream->avail_out, 			stream->total_in, 			stream->total_out		);
+		chunk->avail = stream->avail_out;
+		chunk->data = stream->next_out;
+		outputLength = buffer.Length();
+		if ( xflateStatus < 0 )
+			return ThrowZError( cx, xflateStatus, stream->msg );
+	} while ( ( flushType != Z_FINISH && stream->avail_in > 0 ) || 
+						( flushType == Z_FINISH && xflateStatus != Z_STREAM_END ) ||
+						( xflateStatus == Z_OK && outputLength == 0 ) // we need to output something
+					); // while the input data are not exhausted or the last datas are not read
+
+// assamble chunks
+	unsigned char *stringData = (unsigned char*)JS_malloc( cx, outputLength );
+	buffer.Read(stringData);
+	*rval = STRING_TO_JSVAL(JS_NewString( cx, (char*)stringData, outputLength ));
+
+// close the stream and free resources
+	if ( xflateStatus == Z_STREAM_END ) {
+
+		stream->opaque = (voidp)true; // store the eof status
+		int status = method == DEFLATE ? deflateEnd(stream) : inflateEnd(stream); // free(stream) is done the Finalize
+		if ( status < 0 )
+			return ThrowZError( cx, status, stream->msg );
+	}
+	return JS_TRUE;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+JSClass z_class = { "Z", JSCLASS_HAS_PRIVATE | JSCLASS_HAS_RESERVED_SLOTS(1), // SLOT_METHOD
   JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub,
-  JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, z_Finalize
+  JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, z_Finalize,
+  0,0, z_call
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -50,6 +139,7 @@ JSBool z_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval 
 	z_streamp stream = (z_streamp)malloc( sizeof z_stream );
 	stream->zalloc = Z_NULL;
 	stream->zfree = Z_NULL;
+	stream->opaque = (voidpf) false; // use this private member to store the "stream_end" status (eof)
 
 	int32 method;
 	JS_ValueToInt32( cx, argv[0], &method );
@@ -75,13 +165,24 @@ JSBool z_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval 
 		return ThrowZError( cx, status, stream->msg );
 
 	JS_SetPrivate( cx, obj, stream );
-	JS_SetReservedSlot( cx, obj, 0, INT_TO_JSVAL( method ) );
-
+	JS_SetReservedSlot( cx, obj, SLOT_METHOD, INT_TO_JSVAL( method ) );
+//	JS_SetReservedSlot( cx, obj, SLOT_EOF, BOOLEAN_TO_JSVAL( JS_FALSE ) ); // eof
 	return JS_TRUE;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSBool z_transform(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+//JSBool z_transform(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+//
+//}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+JSFunctionSpec z_FunctionSpec[] = { // *name, call, nargs, flags, extra
+// { "Transform"   , z_transform  , 0, 0, 0 },
+ { 0 }
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+JSBool z_getter_eof(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 
 	z_streamp stream = (z_streamp)JS_GetPrivate( cx, obj );
 	if ( stream == NULL ) {
@@ -89,69 +190,13 @@ JSBool z_transform(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval 
 		JS_ReportError( cx, "descriptor is NULL" );
 		return JS_FALSE;
 	}
-// get the action to do
-	jsval jsvalMethod;
-	int method;
-	JS_GetReservedSlot( cx, obj, 0, &jsvalMethod );
-	method = JSVAL_TO_INT(jsvalMethod);
 
-// prepare input data
-	char *inputData = NULL;
-	size_t inputLength = 0;
-	if ( argc >= 1 ) {
+	*vp = BOOLEAN_TO_JSVAL( (bool)stream->opaque );
 
-		JSString *jssData = JS_ValueToString( cx, argv[0] );
-		inputLength = JS_GetStringLength( jssData );
-		inputData = JS_GetStringBytes( jssData ); // no copy is done, we read directly in the string hold by SM
-	}
-	stream->avail_in = inputLength;
-	stream->next_in = (Bytef*)inputData;
-	
-	int flushType = inputLength == 0 ? Z_FINISH : Z_SYNC_FLUSH;
-	Buffer buffer( method == DEFLATE ? 12 + 1.001f * stream->avail_in : 1.25f * stream->avail_in ); // if DEFLATE, dest. buffer must be at least 0.1% larger than sourceLen plus 12 bytes
-// deflate / inflate loop
-	int status;
-	do {
-		BufferChunk *chunk = buffer.Next(buffer.SmartLength());
-		stream->avail_out = chunk->avail;
-		stream->next_out = chunk->data;
-		status = method == DEFLATE ? deflate( stream, flushType ) : inflate( stream, flushType ); // Before the call of inflate()/deflate(), the application should ensure that at least one of the actions is possible, by providing more input and/or consuming more output, ...
-		chunk->avail = stream->avail_out;
-		chunk->data = stream->next_out;
-//		printf("D%d, ca%d ai%d ao%d ti%d to%d", method == DEFLATE, chunk->avail, stream->avail_in, stream->avail_out, stream->total_in, stream->total_out );
-//		printf("..ai%d ca%d ao%d ti%d to%d\n", 			method == DEFLATE, 			chunk->avail,			stream->avail_in, 			stream->avail_out, 			stream->total_in, 			stream->total_out		);
-		if ( status < 0 )
-			return ThrowZError( cx, status, stream->msg );
-	} while ( ( flushType != Z_FINISH && stream->avail_in > 0 ) || ( flushType == Z_FINISH && status != Z_STREAM_END ) ); // while the input data are not exhausted or the last datas are not read
+//	JS_GetReservedSlot( cx, obj, SLOT_EOF, vp ); // eof
 
-// assamble chunks
-	size_t resultLength = buffer.MergeLength();
-	unsigned char *stringData = (unsigned char*)JS_malloc( cx, resultLength );
-	buffer.Merge(stringData);
-	*rval = STRING_TO_JSVAL(JS_NewString( cx, (char*)stringData, resultLength ));
-
-// close the stream and free resources
-	if ( flushType == Z_FINISH ) {
-		
-		status = method == DEFLATE ? deflateEnd(stream) : inflateEnd(stream); // free(stream) is done the Finalize
-		if ( status < 0 )
-			return ThrowZError( cx, status, stream->msg );
-	}
 	return JS_TRUE;
 }
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//JSBool z_finalize(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
-//
-//	return JS_TRUE;
-//}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSFunctionSpec z_FunctionSpec[] = { // *name, call, nargs, flags, extra
- { "Transform"   , z_transform  , 0, 0, 0 },
-// { "Finalize"    , z_finalize   , 0, 0, 0 },
- { 0 }
-};
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 JSBool z_getter_adler32(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
@@ -189,9 +234,10 @@ JSBool z_getter_length(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 JSPropertySpec z_PropertySpec[] = { // *name, tinyid, flags, getter, setter
-	{ "adler32"    , 0, JSPROP_PERMANENT|JSPROP_READONLY, z_getter_adler32    , NULL },
-	{ "lengthIn"   , LENGTH_IN , JSPROP_PERMANENT|JSPROP_READONLY, z_getter_length    , NULL },
-	{ "lengthOut"  , LENGTH_OUT, JSPROP_PERMANENT|JSPROP_READONLY, z_getter_length    , NULL },
+	{ "eof"        , 0         , JSPROP_SHARED | JSPROP_PERMANENT | JSPROP_READONLY, z_getter_eof        , NULL },
+	{ "adler32"    , 0         , JSPROP_SHARED | JSPROP_PERMANENT | JSPROP_READONLY, z_getter_adler32    , NULL },
+	{ "lengthIn"   , LENGTH_IN , JSPROP_SHARED | JSPROP_PERMANENT | JSPROP_READONLY, z_getter_length     , NULL },
+	{ "lengthOut"  , LENGTH_OUT, JSPROP_SHARED | JSPROP_PERMANENT | JSPROP_READONLY, z_getter_length     , NULL },
   { 0 }
 };
 
@@ -208,15 +254,14 @@ JSBool z_static_getter_constant(JSContext *cx, JSObject *obj, jsval id, jsval *v
 	int32 i;
 	JS_ValueToInt32( cx, id, &i );
 	*vp = INT_TO_JSVAL(i);
-
-  return JS_TRUE;
+	return JS_TRUE;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 JSPropertySpec z_static_PropertySpec[] = { // *name, tinyid, flags, getter, setter
 //	{ "myStatic"   , 0, JSPROP_PERMANENT|JSPROP_READONLY, z_static_getter_myStatic         , NULL },
-	{ "INFLATE" ,    INFLATE, JSPROP_PERMANENT|JSPROP_READONLY, z_static_getter_constant   , NULL },
-	{ "DEFLATE" ,    DEFLATE, JSPROP_PERMANENT|JSPROP_READONLY, z_static_getter_constant   , NULL },
+	{ "INFLATE" ,    INFLATE, JSPROP_SHARED | JSPROP_PERMANENT | JSPROP_READONLY, z_static_getter_constant   , NULL },
+	{ "DEFLATE" ,    DEFLATE, JSPROP_SHARED | JSPROP_PERMANENT | JSPROP_READONLY, z_static_getter_constant   , NULL },
   { 0 }
 };
 
