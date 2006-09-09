@@ -25,6 +25,7 @@ class Buffer {
 	int _currentIndex;
 	int _queueLength;
 	int _useCount;
+	size_t _length;
 
 	size_t _prevAvail;
 	size_t _prevRequest;
@@ -55,6 +56,7 @@ public:
 		_prevAvail = 0;
 		_prevRequest = 0;
 		_useCount = 0;
+		_length = 0;
 	}
 
 	size_t OptimalLength() {
@@ -97,6 +99,8 @@ public:
 		_useCount++;
 		if ( _queue[_currentIndex].avail <= 0 ) { // if not enough space in the current ckunk
 			
+			_length += _queue[_currentIndex].data - _queue[_currentIndex].mem;
+
 			_currentIndex++;
 			if ( _currentIndex >= _queueLength ) {
 
@@ -122,15 +126,16 @@ public:
 		return &_queue[_currentIndex];
 	}
 
-	size_t MergeLength() {
+	size_t Length() {
 
-		size_t totalLength=0;
-		for ( int i=0; i<=_currentIndex; ++i )
-			totalLength += _queue[i].data - _queue[i].mem;
-		return totalLength;
+//		size_t totalLength=0;
+//		for ( int i=0; i<=_currentIndex; ++i )
+//			totalLength += _queue[i].data - _queue[i].mem;
+//		return totalLength;
+		return _length + _queue[_currentIndex].data - _queue[_currentIndex].mem;
 	}
 
-	void Merge( unsigned char *data ) { // alloc is made by the caller
+	void Read( unsigned char *data ) { // alloc is made by the caller
 
 		for ( int i=0; i<=_currentIndex; ++i ) {
 			
