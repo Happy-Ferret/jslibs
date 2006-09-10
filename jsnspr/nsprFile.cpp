@@ -116,20 +116,22 @@ JSBool File_read(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *r
 		return JS_FALSE;
 	}
 
+	PRInt32 available = PR_Available(fd); // For a normal file, these are the bytes beyond the current file pointer.
+	if ( available == -1 )
+		return ThrowNSPRError( cx, PR_GetError() );
+
 	PRInt32 amount;
 	if ( argc >= 1 ) {
 
 		int32 val;
 		JS_ValueToInt32( cx, argv[0], &val );
 		amount = val;
-	} else { // no amount specified : read the whole file
+		if ( amount > available )
+			amount = available;
+	} else // no amount specified : read the whole file
+		amount = available;
 
-		amount = PR_Available( fd ); // For a normal file, these are the bytes beyond the current file pointer.
-		if ( amount == -1 )
-			return ThrowNSPRError( cx, PR_GetError() );
-	}
-
-	void *buf = JS_malloc( cx, amount +1 );
+	char *buf = (char*)JS_malloc( cx, amount +1 );
 	buf[amount] = 0;
 
 	PRInt32 res = PR_Read( fd, buf, amount );

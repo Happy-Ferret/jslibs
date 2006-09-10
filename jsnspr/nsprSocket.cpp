@@ -92,6 +92,7 @@ if (status != PR_SUCCESS) // need to check PR_WOULD_BLOCK_ERROR ???
 			return ThrowNSPRError( cx, errorCode );
 	}
 	JS_SetPrivate( cx, obj, NULL );
+	JS_ClearScope( cx, obj ); // help to clear readable, writable, exception
 	return JS_TRUE;
 }
 
@@ -224,7 +225,6 @@ JSBool Socket_accept(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsva
 //	Since the client side has no way of telling when the server has called
 //	accept() it can't wait for the server to do that before making the
 //	descriptor writeable. 
-
 JSBool Socket_connect(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
 	if ( argc < 2 ) {
@@ -329,7 +329,7 @@ JSBool Socket_recv(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval 
 	//and PR_Available() returns 0, this means that the socket connection is closed.
 	//see http://www.mozilla.org/projects/nspr/tech-notes/nonblockingio.html
 
-  // the following code is needed when IE is connected then closed. does not happens with Moz.
+	// the following code is needed when IE is connected then closed. does not happens with Moz.
 	// else PR_Recv will return with -1 and error -5962 ( PR_BUFFER_OVERFLOW_ERROR (WSAEMSGSIZE for win32) )
 	PRInt32 available = PR_Available( fd );
 	if ( available == -1 )
@@ -341,10 +341,20 @@ JSBool Socket_recv(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval 
 		return JS_TRUE;
 	}
 
-	void *buf = JS_malloc( cx, available +1 );
-	buf[available] = 0;
+	PRInt32 amount;
+	if ( argc >= 1 ) {
+		int32 val;
+		JS_ValueToInt32( cx, argv[0], &val );
+		amount = val;
+		if ( amount > available )
+			amount = available;
+	} else
+		amount = available;
 
-	PRInt32 res = PR_Recv( fd, buf, available, 0 /*must always be zero*/, PR_INTERVAL_NO_WAIT );
+	char *buf = (char*)JS_malloc( cx, amount +1 );
+	buf[amount] = 0; // useful ? remember that datas can contain '\0' char !
+
+	PRInt32 res = PR_Recv( fd, buf, amount, 0 /*must always be zero*/, PR_INTERVAL_NO_WAIT );
 	if (res == -1) { // failure. The reason for the failure can be obtained by calling PR_GetError.
 
 		JS_free( cx, buf );
