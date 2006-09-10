@@ -102,44 +102,105 @@ function SendHttpHeaders( s, status, headers ) {
 var list = [];
 
 function Client(s) {
-	
-	print('['+ s.peerName +']\n');
 
-//	timeout.Add( 1000, function() { print('timeout-\n'); } );
-	
-	function closeConnexion() {
+	var _buffer = '';
+	var _status = { peerName:s.peerName };
+	var _headers = {};
 
-		print('localy close!\n');
+	function CloseConnexion() {
+
 		s.Close();
 		list.splice( list.indexOf(s), 1 );
 	}
+
+	function ParseHeaders(buffer) {
 	
-	s.readable = function() {
-
-//		delete s.readable;
- 		var buf = s.Recv();
- 		log.Write(buf);
- 		log.WriteLn('==========');
-	  
-		if ( buf.length == 0 ) {
-		
-			print('[remotly-closed]\n');
-			s.Close();
-			list.splice( list.indexOf(s), 1 );
-			return;
-		}
-
-		var lines = buf.split(CRLF);
+		var lines = buffer.split(CRLF);
 		var [method,url,proto] = lines[0].split(SP);
 		var [path,query] = url.split('?');
-//		print('['+path+']\n');		
-		var headers = {};
 		for ( var i=1; lines[i].length; i++ ) {
-			var [name,data] = lines[i].split(': ');
-			headers[name] = data;
+			var [name,value] = lines[i].split(': ');
+			_headers[name] = value;
 		}
-//		print( headers.toSource() + '\n');
+		_status.method = method;
+		_status.url = url;
+		_status.proto = proto;
+		_status.path = path;
+		_status.query = query;
+		
+		print( _status.toSource(), '\n' );
+		
+	}
 
+	function ParseBody( data ) {
+
+		if ( _status.method == 'GET' ) {
+
+
+			var file = new File( root + _status.path );
+			if ( file.exist ) {
+
+				file.Open( File.RDONLY );
+				var respondeHeaders = {};
+				respondeHeaders['Content-Length'] = file.available;
+				respondeHeaders['Connection'] = 'Keep-Alive';
+				SendHttpHeaders( s, 200, respondeHeaders );
+
+				s.writable = function() {
+
+					var data = file.Read();
+					if ( data.length == 0 ) {
+
+						file.Close();
+						delete s.writable;
+						if ( respondeHeaders['Connection'] == 'Close' ) {
+
+							list.splice( list.indexOf(s), 1 );
+							s.Close();
+						}
+						return;
+					}
+
+					s.Send( data );
+				}
+
+			
+			} else {
+
+				var message = 'file not found';
+				SendHttpHeaders( s, 404, {'Content-Length':message.length, 'Content-Type':'text/plain'} );
+				s.Send(message);
+			}
+		}
+	}
+
+	s.readable = function() {
+		
+		var buf = s.Recv();
+		if ( buf.length == 0 ) {
+			CloseConnexion();
+			return;
+		}
+		_buffer += buf;
+		var eoh = _buffer.indexOf( CRLF+CRLF );
+		if ( eoh == -1 ) 
+			return;
+
+		eoh += 4;
+		ParseHeaders( _buffer.substr(0,eoh) );
+		ParseBody( _buffer.substr(eoh) );
+		s.readable = function() {
+
+			var buf = s.Recv();
+			if ( buf.length == 0 ) {
+				CloseConnexion();
+				return;
+			}
+			ParseBody( buf );
+		}
+	}
+	
+/*
 
 		var deflate = ( headers['Accept-Encoding'].indexOf('deflate') != -1 );
 
@@ -197,6 +258,8 @@ function Client(s) {
 		}
 
 	}
+*/	
+	
 }
 
 //try {
@@ -207,7 +270,7 @@ function Client(s) {
 
 		var clientSocket = serverSocket.Accept();
 		var client = new Client(clientSocket);
-		client.noDelay = true;
+//		client.noDelay = true;
 		list.push(clientSocket);
 	}
 
