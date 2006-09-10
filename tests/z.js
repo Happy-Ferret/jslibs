@@ -11,60 +11,66 @@ function randomString(size) {
 	return res;
 }
 
-function test(count) {
+function test1() {
 
-	while(count--) {
 
-		var compressor = new Z(Z.DEFLATE,9);
+		var deflate = new Z(Z.DEFLATE,9);
 		
 		var str = '';
 		var res = '';
 		for ( var i=100; i>=0; --i ) {
 			var chunk = randomString(10000);
-			res += compressor.Transform( chunk );
+			res += deflate( chunk );
 			str += chunk;
 		}
-		res += compressor.Transform();
+		res += deflate();
 
-		var compressor2 = new Z(Z.INFLATE);
-		var res2 = compressor2.Transform( res );
-		res2 += compressor2.Transform();
+		var inflate = new Z(Z.INFLATE);
+		var res2 = inflate( res );
+		res2 += inflate();
 		
 		print( 'ratio:'+ res.length + ': ' + Math.round( 100 * res.length / str.length ) + '%','\n');
 		if ( res2 != str ) {
 			print('error\n');
 		}
 	
-	}
 }
 
 
 
 function test2() {
 
-		var compressor = new Z(Z.DEFLATE,0);
-		var compressor2 = new Z(Z.INFLATE);
+		var deflate = new Z(Z.DEFLATE,9);
+		var inflate = new Z(Z.INFLATE);
 		
 		var str = '';
 		var str2 = '';
 		for ( var i=10; i>=0; --i ) {
 		
 		
-			str = compressor.Transform( randomString( i*10000 +1 ) );
-			str2 += compressor2.Transform(str);
+			str = deflate( randomString( i*1000 +1 ) );
+			str2 += inflate(str);
 		}
 		
-		str2 += compressor2.Transform( compressor.Transform() );
-		compressor2.Transform();
+		str2 += inflate( deflate() );
+		inflate();
 
-		print( 'adler32:' + (compressor2.adler32 == compressor.adler32) ,'\n');
-		
-		
-		
+		print( 'adler32:' + (deflate.adler32 == inflate.adler32) ,'\n');
 }
 
 
-try {
+function test3() {
+
+		var deflate = new Z(Z.DEFLATE);
+		var inflate = new Z(Z.INFLATE);
+		var str = deflate('x');
+		print( inflate(str) );
+}
+
+
+
+
+//try {
 
 /*
 var compressor = new Z(Z.DEFLATE);
@@ -80,10 +86,10 @@ res2 += compressor2.Transform();
 print( '['+res2+']' );
 */
 
-test2();
-
-} catch (ex if ex instanceof ZError) {
-	print( ex.const + ' ' + ex.text, '\n' );
-}
-
+test1();
 print('done')
+
+//} catch (ex if ex instanceof ZError) {
+//	print( ex.const + ' ' + ex.text, '\n' );
+//}
+
