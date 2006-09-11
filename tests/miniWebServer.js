@@ -101,35 +101,33 @@ function SendHttpHeaders( s, status, headers ) {
 
 var list = [];
 
+function CloseConnexion(s) {
+
+	s.Close();
+	list.splice( list.indexOf(s), 1 );
+}
+
+
 function Client(s) {
 
-	var _buffer = '';
-	var _status = { peerName:s.peerName };
-	var _headers = {};
+//	var _buffer = '';
 
-	function CloseConnexion() {
 
-		s.Close();
-		list.splice( list.indexOf(s), 1 );
-	}
+
 
 	function ParseHeaders(buffer) {
 	
 		var lines = buffer.split(CRLF);
 		var [method,url,proto] = lines[0].split(SP);
 		var [path,query] = url.split('?');
+		var status = { method:method, url:url, proto:proto, path:path, query:query, peerName:s.peerName };
+		var headers = {};
 		for ( var i=1; lines[i].length; i++ ) {
 			var [name,value] = lines[i].split(': ');
-			_headers[name] = value;
+			headers[name.toLowerCase()] = value;
 		}
-		_status.method = method;
-		_status.url = url;
-		_status.proto = proto;
-		_status.path = path;
-		_status.query = query;
 		
-		print( _status.toSource(), '\n' );
-		
+		return [ status, headers ];
 	}
 
 	function ParseBody( data ) {
@@ -174,8 +172,84 @@ function Client(s) {
 		}
 	}
 
+
+	function ProcessRequest( status, headers, body ) {
+		
+		print( body.length );
+	
+	}
+	
+	var process = function() {
+	
+		var buffer = '',eoh;
+		for (;;) {
+
+			do {
+			
+				buffer += yield;
+				eoh = buffer.indexOf( CRLF+CRLF );
+			} while ( eoh == -1 );
+			eoh += 4;
+			var [status,headers] = ParseHeaders( buffer.substr(0,eoh) );
+			
+//			print( headers.toSource() );
+			
+			if ( status.method == 'GET' ) {
+			
+				ProcessRequest( status, headers, '' );
+				continue;
+			}
+			
+			buffer = buffer.substr(eoh);
+
+			var length = headers['content-length'];
+			
+			if ( length ) {
+			
+				while ( buffer.length < length ) {
+
+					buffer += yield;
+				}
+				ProcessRequest( status, headers, buffer.substring(0,length) );
+			} else {
+				do {
+
+					var buf = yield;
+					buffer += buf;
+				} while ( buf != 0 );
+				ProcessRequest( status, headers, buffer );
+				return;
+			}
+			
+			
+			
+			
+
+			buffer = buffer.substring(length);
+		}
+	}();
+	
+	process.next(); // start the process and wait for the first yield
+
+
 	s.readable = function() {
 		
+		try {
+			var buf = s.Recv();
+			if ( buf.length == 0 ) {
+//				process.close();
+				process.send( buf );
+				CloseConnexion(s);
+			}
+			process.send( buf );
+		} catch( ex if ex instanceof StopIteration ) {
+			CloseConnexion(s);
+		}
+	}
+	
+/*
+	function ReceiveHeaders(s) {
+	
 		var buf = s.Recv();
 		if ( buf.length == 0 ) {
 			CloseConnexion();
@@ -186,19 +260,42 @@ function Client(s) {
 		if ( eoh == -1 ) 
 			return;
 
-		eoh += 4;
-		ParseHeaders( _buffer.substr(0,eoh) );
-		ParseBody( _buffer.substr(eoh) );
-		s.readable = function() {
-
-			var buf = s.Recv();
-			if ( buf.length == 0 ) {
-				CloseConnexion();
-				return;
-			}
-			ParseBody( buf );
+		eoh += 4; // CRLF+CRLF
+		var [status,headers] = ParseHeaders( _buffer.substr(0,eoh) );
+		
+		if ( status.method == 'GET' ) {
+			
+			ProcessRequest( status, headers );
+			return;
 		}
+
+		if ( status.method == 'POST' ) {
+		
+			var length = _headers['content-length'];
+		
+		_buffer = _buffer.substr(eoh);
+		ParseBody(  );
+		
+		
+		s.readable = ReceiveBody;
 	}
+
+
+	function ReceiveBody(s) {
+	
+		var buf = s.Recv();
+		if ( buf.length == 0 ) {
+			CloseConnexion();
+			return;
+		}
+		ParseBody( buf );
+	}
+*/	
+
+
+		
+
+
 	
 /*
 
