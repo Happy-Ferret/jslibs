@@ -242,19 +242,19 @@ JSBool z_getter_length(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 JSPropertySpec z_PropertySpec[] = { // *name, tinyid, flags, getter, setter
-	{ "eof"        , 0         , JSPROP_SHARED | JSPROP_PERMANENT | JSPROP_READONLY, z_getter_eof        , NULL },
-	{ "adler32"    , 0         , JSPROP_SHARED | JSPROP_PERMANENT | JSPROP_READONLY, z_getter_adler32    , NULL },
-	{ "lengthIn"   , LENGTH_IN , JSPROP_SHARED | JSPROP_PERMANENT | JSPROP_READONLY, z_getter_length     , NULL },
-	{ "lengthOut"  , LENGTH_OUT, JSPROP_SHARED | JSPROP_PERMANENT | JSPROP_READONLY, z_getter_length     , NULL },
+	{ "eof"              , 0         , JSPROP_SHARED | JSPROP_PERMANENT | JSPROP_READONLY, z_getter_eof              , NULL },
+	{ "adler32"          , 0         , JSPROP_SHARED | JSPROP_PERMANENT | JSPROP_READONLY, z_getter_adler32          , NULL },
+	{ "lengthIn"         , LENGTH_IN , JSPROP_SHARED | JSPROP_PERMANENT | JSPROP_READONLY, z_getter_length           , NULL },
+	{ "lengthOut"        , LENGTH_OUT, JSPROP_SHARED | JSPROP_PERMANENT | JSPROP_READONLY, z_getter_length           , NULL },
   { 0 }
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//JSBool z_static_getter_myStatic(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
-//
-//  return JS_TRUE;
-//}
+JSBool z_static_getter_idealInputLength(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 
+	JS_NewNumberValue( cx, Buffer.staticBufferLength, vp );
+	return JS_TRUE;
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 JSBool z_static_getter_constant(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
@@ -267,9 +267,9 @@ JSBool z_static_getter_constant(JSContext *cx, JSObject *obj, jsval id, jsval *v
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 JSPropertySpec z_static_PropertySpec[] = { // *name, tinyid, flags, getter, setter
-//	{ "myStatic"   , 0, JSPROP_PERMANENT|JSPROP_READONLY, z_static_getter_myStatic         , NULL },
-	{ "INFLATE" ,    INFLATE, JSPROP_SHARED | JSPROP_PERMANENT | JSPROP_READONLY, z_static_getter_constant   , NULL },
-	{ "DEFLATE" ,    DEFLATE, JSPROP_SHARED | JSPROP_PERMANENT | JSPROP_READONLY, z_static_getter_constant   , NULL },
+	{ "idealInputLength" , 0      , JSPROP_SHARED | JSPROP_PERMANENT | JSPROP_READONLY, z_static_getter_idealInputLength  , NULL },
+	{ "INFLATE"          , INFLATE, JSPROP_SHARED | JSPROP_PERMANENT | JSPROP_READONLY, z_static_getter_constant          , NULL },
+	{ "DEFLATE"          , DEFLATE, JSPROP_SHARED | JSPROP_PERMANENT | JSPROP_READONLY, z_static_getter_constant          , NULL },
   { 0 }
 };
 

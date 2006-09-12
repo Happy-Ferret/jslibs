@@ -1,6 +1,6 @@
 #include <stdlib.h>
 
-#define STATIC_BUFFER_LENGTH 8192
+#define STATIC_BUFFER_LENGTH 16384 -1;
 #define INITIAL_QUEUE_LENGTH 8
 
 
@@ -31,6 +31,8 @@ class Buffer {
 	size_t _prevRequest;
 
 public:
+
+	static const size_t staticBufferLength = STATIC_BUFFER_LENGTH;
 
 	~Buffer() {
 
