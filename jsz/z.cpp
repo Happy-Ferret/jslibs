@@ -85,9 +85,9 @@ JSBool z_call(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval
 		BufferChunk *chunk = buffer.Next(buffer.SmartLength());
 		stream->avail_out = chunk->avail;
 		stream->next_out = chunk->data;
-		printf("D%d, ca%d ai%d ao%d ti%d to%d", method == DEFLATE, chunk->avail, stream->avail_in, stream->avail_out, stream->total_in, stream->total_out );
+//		printf("D%d, ca%d ai%d ao%d ti%d to%d", method == DEFLATE, chunk->avail, stream->avail_in, stream->avail_out, stream->total_in, stream->total_out );
 		xflateStatus = method == DEFLATE ? deflate( stream, flushType ) : inflate( stream, flushType ); // Before the call of inflate()/deflate(), the application should ensure that at least one of the actions is possible, by providing more input and/or consuming more output, ...
-		printf("..ai%d ca%d ao%d ti%d to%d\n", 			method == DEFLATE, 			chunk->avail,			stream->avail_in, 			stream->avail_out, 			stream->total_in, 			stream->total_out		);
+//		printf("..ai%d ca%d ao%d ti%d to%d\n", 			method == DEFLATE, 			chunk->avail,			stream->avail_in, 			stream->avail_out, 			stream->total_in, 			stream->total_out		);
 		chunk->avail = stream->avail_out;
 		chunk->data = stream->next_out;
 		outputLength = buffer.Length();
@@ -284,6 +284,20 @@ JSObject *zInitClass( JSContext *cx, JSObject *obj ) {
 
 API doc.
 	http://www.zlib.net/manual.html
+
+About JS_NewString:
+	You should let length be strlen() and add 1 here in the malloc call.
+
+	> ::strcpy(buffer, pDoc->getName());
+	> JSString *str = ::JS_NewString(cx, buffer, length);
+
+	because you need to pass the length, not the size, here to JS_NewString.
+	  What you are doing now wrongly informs the JS engine that the string
+	has a NUL included in its characters, at the end.  That crops printing
+	in the JS shell and any other 8-bit environment.
+
+	/be 
+
 
 
 
