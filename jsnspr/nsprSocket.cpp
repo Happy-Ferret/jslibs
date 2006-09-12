@@ -564,7 +564,7 @@ JSBool Socket_getter_connectContinue( JSContext *cx, JSObject *obj, jsval id, js
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-JSBool Socket_getter_closed( JSContext *cx, JSObject *obj, jsval id, jsval *vp ) {
+JSBool Socket_getter_connectionClosed( JSContext *cx, JSObject *obj, jsval id, jsval *vp ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
 	if ( fd == NULL ) {
@@ -617,10 +617,10 @@ JSPropertySpec Socket_PropertySpec[] = { // *name, tinyid, flags, getter, setter
 	{ "recvBufferSize", PR_SockOpt_RecvBufferSize, JSPROP_SHARED | JSPROP_PERMANENT, Socket_getOption, Socket_setOption },
 	{ "sendBufferSize", PR_SockOpt_SendBufferSize, JSPROP_SHARED | JSPROP_PERMANENT, Socket_getOption, Socket_setOption },
 // properties	
-	{ "peerName"         , 0, JSPROP_SHARED | JSPROP_PERMANENT|JSPROP_READONLY, Socket_getter_peerName        , NULL },
-	{ "sockName"         , 0, JSPROP_SHARED | JSPROP_PERMANENT|JSPROP_READONLY, Socket_getter_sockName        , NULL },
-	{ "connectContinue"  , 0, JSPROP_SHARED | JSPROP_PERMANENT|JSPROP_READONLY, Socket_getter_connectContinue , NULL },
-	{ "closed"           , 0, JSPROP_SHARED | JSPROP_PERMANENT|JSPROP_READONLY, Socket_getter_closed          , NULL },
+	{ "peerName"         , 0, JSPROP_SHARED | JSPROP_PERMANENT|JSPROP_READONLY, Socket_getter_peerName         , NULL },
+	{ "sockName"         , 0, JSPROP_SHARED | JSPROP_PERMANENT|JSPROP_READONLY, Socket_getter_sockName         , NULL },
+	{ "connectContinue"  , 0, JSPROP_SHARED | JSPROP_PERMANENT|JSPROP_READONLY, Socket_getter_connectContinue  , NULL },
+	{ "connectionClosed" , 0, JSPROP_SHARED | JSPROP_PERMANENT|JSPROP_READONLY, Socket_getter_connectionClosed , NULL },
 //
   { 0 }
 };
