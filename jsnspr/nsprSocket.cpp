@@ -301,15 +301,25 @@ JSBool Socket_send(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval 
 	PRInt32 byteSent = PR_Send( fd, data, length, 0 /*must always be zero*/, PR_INTERVAL_NO_WAIT ); // timeout is ignored in nonblocking mode
 
 //	printf( "%d<%d ?", byteSent, length ); // 		PR_WOULD_BLOCK_ERROR;
-	if ( byteSent == -1 )
-		return ThrowNSPRError( cx, PR_GetError() );
+	if ( byteSent == -1 ) {
+		
+		PRErrorCode errorCode = PR_GetError();
 
-	if ( byteSent < length ) {
+		if ( errorCode == PR_WOULD_BLOCK_ERROR ) { // [TBD] manage PR_WOULD_BLOCK_ERROR in a better way !
 
-		JS_ReportError( cx, "unable to send datas" );
-		return JS_FALSE;
+			*rval = JSVAL_FALSE;
+			return JS_TRUE;
+		}
+		return ThrowNSPRError( cx, errorCode );
 	}
 
+	//if ( byteSent < length ) { // same case that PR_WOULD_BLOCK_ERROR
+
+	//	JS_ReportError( cx, "unable to send datas" );
+	//	return JS_FALSE;
+	//}
+
+	*rval = JSVAL_TRUE;
 	return JS_TRUE;
 }
 
