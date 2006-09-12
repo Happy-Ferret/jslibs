@@ -2,7 +2,9 @@ exec('deflib.js');
 LoadModule('jsnspr');
 LoadModule('jsz');
 
-const CRLF = '\r\n';
+const CR = '\r';
+const LF = '\n';
+const CRLF = CR+LF;
 const SP = ' ';
 const DOT = '.';
 
@@ -29,12 +31,12 @@ var log = new function() {
 	this.Write = function( data ) {
 		
 		var t = IntervalNow() - _time0;
-		_file.Write( t + ' : ' +data );
+		_file.Write( data );
 	}
 	
 	this.WriteLn = function( data ) {
 		
-		this.Write( data + '\n' );
+		this.Write( data + LF );
 	}
 
 	this.Close = function() {
@@ -89,6 +91,9 @@ var timeout = new function() {
 
 var root='.';
 
+var list = [];
+
+
 function SendHttpHeaders( s, status, headers ) {
 
 	var buf = 'HTTP/1.1' + SP + status + SP + statusText[status] + CRLF;
@@ -98,16 +103,16 @@ function SendHttpHeaders( s, status, headers ) {
 	s.Send( buf + CRLF );
 }
 
-
-var list = [];
-
 function CloseConnection(s) {
 
 	s.Close();
 	list.splice( list.indexOf(s), 1 );
 }
 
+
 function ParseHeaders(buffer) {
+	
+	log.WriteLn(buffer);
 
 	var lines = buffer.split(CRLF);
 	var [method,url,proto] = lines[0].split(SP);
@@ -122,52 +127,78 @@ function ParseHeaders(buffer) {
 }
 
 
-function Client(s) {
+
+function SocketWriterHelper(s,starved) {
+	
+	var _chunkQueue = [];
+
+	function feed() {
+	
+		for ( var i=0; i<arguments.length; i++ )
+			_chunkQueue.push(arguments[i]);
+	}
+	
+	function Next() {
+		
+		if (!starved(feed))
+			Next = function() {
+				delete s.writable;
+				CloseConnection(s);
+			}
+	}
+	
+	s.writable = function(s) {
+		
+		if ( _chunkQueue.length ) {
+			var data = _chunkQueue.shift();
+			log.Write( data );
+			s.Send(data);
+		} else
+			Next();
+	}
+}
+
+
+function Connection(s) {
 
 	var status,headers;
 
 	function ProcessRequest( status, headers, body ) {
 	
 		var file = new File( root + status.path );
-		if ( file.exist ) {
+		if ( !file.exist ) {
 		
-			file.Open( File.RDONLY );
-
-			var respondeHeaders = {};
-			respondeHeaders['Content-Type'] = mimeType[status.path.substr(status.path.lastIndexOf(DOT)+1)] || 'text/html; charset=iso-8859-1';
-//			respondeHeaders['Content-Length'] = file.available;
-			respondeHeaders['Transfer-Encoding'] = 'chunked';
-//			respondeHeaders['Content-Encoding'] = 'deflate';
-			respondeHeaders['Connection'] = 'Keep-Alive';
-			SendHttpHeaders( s, 200, respondeHeaders );
-			
-			var deflate = new Z(Z.DEFLATE);
-
-			s.writable = function() {
-				
-//				var data = file.Read(65535);
-				
-				data = deflate(data);
-				
-				if ( data.length == 0 ) {
-
-					s.Send( '0' + CRLF + CRLF );
-
-					file.Close();
-					delete s.writable;
-					return;
-				}
-
-				s.Send( (data.length).toString(16) + CRLF );
-				s.Send( data );
-			}
-			
-		} else {
-
 			var message = 'file not found';
 			SendHttpHeaders( s, 404, {'Content-Length':message.length, 'Content-Type':'text/plain'} );
 			s.Send(message);
-		}
+			return;
+		}		
+		
+		file.Open( File.RDONLY );
+
+		var respondeHeaders = {};
+		respondeHeaders['Content-Type'] = mimeType[status.path.substr(status.path.lastIndexOf(DOT)+1)] || 'text/html; charset=iso-8859-1';
+//		respondeHeaders['Content-Length'] = file.available;
+		respondeHeaders['Transfer-Encoding'] = 'chunked';
+		respondeHeaders['Content-Encoding'] = 'deflate';
+		respondeHeaders['Connection'] = 'Keep-Alive';
+		SendHttpHeaders( s, 200, respondeHeaders );
+
+		var deflate = new Z(Z.DEFLATE);
+
+		SocketWriterHelper( s, function(write) {
+
+			var data = file.Read(Z.idealInputLength);
+			data = deflate(data);
+
+			if ( data.length ) {
+				write( data.length.toString(16) + CRLF, data, CRLF );
+				return true;
+			}
+			write( '0' + CRLF + CRLF );
+			file.Close();
+			return false;
+		});
 	}
 
 	var _buffer = '';
@@ -232,33 +263,36 @@ function Client(s) {
 		_buffer = _buffer.substring(length);
 		ReadHeaders();
 	}
-
 }
 
-//try {
+
+
+
+try {
 
 	var serverSocket = new Socket();
 
 	serverSocket.readable = function() { // after Listen, readable mean incoming connexion
 
 		var clientSocket = serverSocket.Accept();
-		clientSocket.noDelay = true;
-		var client = new Client(clientSocket);
-//		client.noDelay = true;
+//		clientSocket.noDelay = true;
+		Connection(clientSocket);
 		list.push(clientSocket);
 	}
 
 	serverSocket.Listen( 80, undefined, 10 );
 	list.push(serverSocket);
 	for(;!endSignal;) {
-		Poll(list,timeout.Next() || 1000);
+		Poll(list,timeout.Next() || 500);
 		timeout.Process();
 	}
 	print('end.');
 
-//} catch ( ex if ex instanceof NSPRError ) { 
-//	print( ex.text + ' ('+ex.code+')', '\n' );
-//}
+} catch ( ex if ex instanceof NSPRError ) {
+	print( ex.text + ' ('+ex.code+')', '\n' );
+} catch(ex) {
+	throw(ex);
+}
 
 
 /*
