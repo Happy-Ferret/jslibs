@@ -87,7 +87,7 @@ var timeout = new function() {
 	}
 }
 
-var root='./miniWebServerRoot';
+var root='.';
 
 function SendHttpHeaders( s, status, headers ) {
 
@@ -101,249 +101,64 @@ function SendHttpHeaders( s, status, headers ) {
 
 var list = [];
 
-function CloseConnexion(s) {
+function CloseConnection(s) {
 
 	s.Close();
 	list.splice( list.indexOf(s), 1 );
 }
 
+function ParseHeaders(buffer) {
+
+	var lines = buffer.split(CRLF);
+	var [method,url,proto] = lines[0].split(SP);
+	var [path,query] = url.split('?');
+	var status = { method:method, url:url, proto:proto, path:path, query:query };
+	var headers = {};
+	for ( var i=1; lines[i].length; i++ ) {
+		var [name,value] = lines[i].split(': ');
+		headers[name.toLowerCase()] = value;
+	}
+	return [ status, headers ];
+}
+
 
 function Client(s) {
 
-//	var _buffer = '';
-
-
-
-
-	function ParseHeaders(buffer) {
-	
-		var lines = buffer.split(CRLF);
-		var [method,url,proto] = lines[0].split(SP);
-		var [path,query] = url.split('?');
-		var status = { method:method, url:url, proto:proto, path:path, query:query, peerName:s.peerName };
-		var headers = {};
-		for ( var i=1; lines[i].length; i++ ) {
-			var [name,value] = lines[i].split(': ');
-			headers[name.toLowerCase()] = value;
-		}
-		
-		return [ status, headers ];
-	}
-
-	function ParseBody( data ) {
-
-		if ( _status.method == 'GET' ) {
-
-
-			var file = new File( root + _status.path );
-			if ( file.exist ) {
-
-				file.Open( File.RDONLY );
-				var respondeHeaders = {};
-				respondeHeaders['Content-Length'] = file.available;
-				respondeHeaders['Connection'] = 'Keep-Alive';
-				SendHttpHeaders( s, 200, respondeHeaders );
-
-				s.writable = function() {
-
-					var data = file.Read();
-					if ( data.length == 0 ) {
-
-						file.Close();
-						delete s.writable;
-						if ( respondeHeaders['Connection'] == 'Close' ) {
-
-							list.splice( list.indexOf(s), 1 );
-							s.Close();
-						}
-						return;
-					}
-
-					s.Send( data );
-				}
-
-			
-			} else {
-
-				var message = 'file not found';
-				SendHttpHeaders( s, 404, {'Content-Length':message.length, 'Content-Type':'text/plain'} );
-				s.Send(message);
-			}
-		}
-	}
-
+	var status,headers;
 
 	function ProcessRequest( status, headers, body ) {
-		
-		print( body.length );
 	
-	}
-	
-	var process = function() {
-	
-		var buffer = '',eoh;
-		for (;;) {
-
-			do {
-			
-				buffer += yield;
-				eoh = buffer.indexOf( CRLF+CRLF );
-			} while ( eoh == -1 );
-			eoh += 4;
-			var [status,headers] = ParseHeaders( buffer.substr(0,eoh) );
-			
-//			print( headers.toSource() );
-			
-			if ( status.method == 'GET' ) {
-			
-				ProcessRequest( status, headers, '' );
-				continue;
-			}
-			
-			buffer = buffer.substr(eoh);
-
-			var length = headers['content-length'];
-			
-			if ( length ) {
-			
-				while ( buffer.length < length ) {
-
-					buffer += yield;
-				}
-				ProcessRequest( status, headers, buffer.substring(0,length) );
-			} else {
-				do {
-
-					var buf = yield;
-					buffer += buf;
-				} while ( buf != 0 );
-				ProcessRequest( status, headers, buffer );
-				return;
-			}
-			
-			
-			
-			
-
-			buffer = buffer.substring(length);
-		}
-	}();
-	
-	process.next(); // start the process and wait for the first yield
-
-
-	s.readable = function() {
-		
-		try {
-			var buf = s.Recv();
-			if ( buf.length == 0 ) {
-//				process.close();
-				process.send( buf );
-				CloseConnexion(s);
-			}
-			process.send( buf );
-		} catch( ex if ex instanceof StopIteration ) {
-			CloseConnexion(s);
-		}
-	}
-	
-/*
-	function ReceiveHeaders(s) {
-	
-		var buf = s.Recv();
-		if ( buf.length == 0 ) {
-			CloseConnexion();
-			return;
-		}
-		_buffer += buf;
-		var eoh = _buffer.indexOf( CRLF+CRLF );
-		if ( eoh == -1 ) 
-			return;
-
-		eoh += 4; // CRLF+CRLF
-		var [status,headers] = ParseHeaders( _buffer.substr(0,eoh) );
-		
-		if ( status.method == 'GET' ) {
-			
-			ProcessRequest( status, headers );
-			return;
-		}
-
-		if ( status.method == 'POST' ) {
-		
-			var length = _headers['content-length'];
-		
-		_buffer = _buffer.substr(eoh);
-		ParseBody(  );
-		
-		
-		s.readable = ReceiveBody;
-	}
-
-
-	function ReceiveBody(s) {
-	
-		var buf = s.Recv();
-		if ( buf.length == 0 ) {
-			CloseConnexion();
-			return;
-		}
-		ParseBody( buf );
-	}
-*/	
-
-
-		
-
-
-	
-/*
-
-		var deflate = ( headers['Accept-Encoding'].indexOf('deflate') != -1 );
-
-//		SendHttpResponse( s, 200, { 'Content-Type':'text/html' }, buf );
-
-		var file = new File( root + path );
+		var file = new File( root + status.path );
 		if ( file.exist ) {
 		
 			file.Open( File.RDONLY );
 
 			var respondeHeaders = {};
-			respondeHeaders['Content-Type'] = mimeType[path.substr(path.lastIndexOf(DOT)+1)] || 'text/html; charset=iso-8859-1';
-//			respondeHeaders['Keep-Alive'] = 'timeout=15, max=100';
-//			respondeHeaders['Accept-Ranges'] = 'bytes';
-			
-			if ( deflate ) {
-				respondeHeaders['Content-Encoding'] = 'deflate';
-				respondeHeaders['Connection'] = 'Close';
-				var z = new Z(Z.DEFLATE,9);
-			} else {
-				respondeHeaders['Content-Length'] = file.available;
-				respondeHeaders['Connection'] = 'Keep-Alive';
-			}
-			
-
+			respondeHeaders['Content-Type'] = mimeType[status.path.substr(status.path.lastIndexOf(DOT)+1)] || 'text/html; charset=iso-8859-1';
+//			respondeHeaders['Content-Length'] = file.available;
+			respondeHeaders['Transfer-Encoding'] = 'chunked';
+//			respondeHeaders['Content-Encoding'] = 'deflate';
+			respondeHeaders['Connection'] = 'Keep-Alive';
 			SendHttpHeaders( s, 200, respondeHeaders );
+			
+			var deflate = new Z(Z.DEFLATE);
 
 			s.writable = function() {
 				
-				var data = file.Read();
-
-				if ( deflate )
-					data = z( data );
+//				var data = file.Read(65535);
+				
+				data = deflate(data);
 				
 				if ( data.length == 0 ) {
 
+					s.Send( '0' + CRLF + CRLF );
+
 					file.Close();
 					delete s.writable;
-					if ( respondeHeaders['Connection'] == 'Close' ) {
-						
-						list.splice( list.indexOf(s), 1 );
-						s.Close();
-					}
 					return;
 				}
-				
+
+				s.Send( (data.length).toString(16) + CRLF );
 				s.Send( data );
 			}
 			
@@ -353,10 +168,71 @@ function Client(s) {
 			SendHttpHeaders( s, 404, {'Content-Length':message.length, 'Content-Type':'text/plain'} );
 			s.Send(message);
 		}
-
 	}
-*/	
+
+	var _buffer = '';
+	var _state = ReadHeaders;
 	
+	s.readable = function() {
+
+		_buffer += s.Recv();
+		_state();
+		if ( s.connectionClosed )
+			CloseConnection(s);
+	}	
+	
+	function ReadHeaders() {
+		
+		_state = ReadHeaders;
+
+		var eoh = _buffer.indexOf( CRLF+CRLF );
+		if ( eoh == -1 )
+			return;
+
+		[status,headers] = ParseHeaders( _buffer.substr(0,eoh+4) );
+		_buffer = _buffer.substr(eoh+4);
+
+		status.peerName = s.peerName;
+		
+		switch (status.method) {
+			case 'GET':
+				ProcessRequest( status, headers, '' );
+				break;
+				
+			case 'POST':
+				var connection = headers['connection'];
+				if ( connection == 'close' )
+					ReadBodyClose();
+				else
+					ReadBodyLength();
+				break;
+		}
+	}
+
+	function ReadBodyClose() {
+		
+		_state = ReadBodyClose;
+
+		if ( !s.connectionClosed )
+			return;
+		CloseConnection(s);
+		ProcessRequest( status, headers, _buffer );
+	}
+
+	function ReadBodyLength() {
+
+		_state = ReadBodyLength;
+
+		var length = Number(headers['content-length']);
+		
+		if ( _buffer.length < length )
+			return;
+
+		ProcessRequest( status, headers, _buffer.substring(0,length) );
+		_buffer = _buffer.substring(length);
+		ReadHeaders();
+	}
+
 }
 
 //try {
@@ -366,12 +242,13 @@ function Client(s) {
 	serverSocket.readable = function() { // after Listen, readable mean incoming connexion
 
 		var clientSocket = serverSocket.Accept();
+		clientSocket.noDelay = true;
 		var client = new Client(clientSocket);
 //		client.noDelay = true;
 		list.push(clientSocket);
 	}
 
-	serverSocket.Listen( 80 );
+	serverSocket.Listen( 80, undefined, 10 );
 	list.push(serverSocket);
 	for(;!endSignal;) {
 		Poll(list,timeout.Next() || 1000);
@@ -382,3 +259,14 @@ function Client(s) {
 //} catch ( ex if ex instanceof NSPRError ) { 
 //	print( ex.text + ' ('+ex.code+')', '\n' );
 //}
+
+
+/*
+
+Key Differences between HTTP/1.0 and HTTP/1.1:
+	http://www.research.att.com/~bala/papers/h0vh1.html
+
+http 1.1 rfc
+	http://www.w3.org/Protocols/rfc2616/rfc2616-sec3.html
+
+*/
