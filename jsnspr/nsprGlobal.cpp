@@ -5,9 +5,12 @@
 #include "nsprError.h"
 #include "nsprSocket.h"
 
-JSBool Poll(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+JSBool g_poll(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
-  // http://developer.mozilla.org/en/docs/PR_Poll
+	// NSPR Poll Method:
+	//   http://www.mozilla.org/projects/nspr/tech-notes/poll-method.html
+
+	// http://developer.mozilla.org/en/docs/PR_Poll
 
 	PRPollDesc pollDesc[1024];
 
@@ -49,7 +52,7 @@ JSBool Poll(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) 
 		JS_IdToValue( cx, idArray->vector[i], &propVal );
 		JS_GetElement(cx, JSVAL_TO_OBJECT(argv[0]), JSVAL_TO_INT(propVal), &propVal );
 		JSObject *o = JSVAL_TO_OBJECT( propVal ); //JS_ValueToObject
-		*rval = OBJECT_TO_JSVAL( o ); // protect from GC
+		*rval = OBJECT_TO_JSVAL( o ); // protect from GC [TBD] is it useful ? I don't use JS_ValueToObject
 
 		PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, o );
 
@@ -133,6 +136,66 @@ failed: // goto is the cheaper solution
 }
 
 
+JSBool g_isReadable(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+
+	if ( argc < 1 ) {
+
+		JS_ReportError( cx, "argument is missing" );
+		return JS_FALSE;
+	}
+
+	JSObject *o = JSVAL_TO_OBJECT( argv[0] ); //JS_ValueToObject
+	*rval = OBJECT_TO_JSVAL( o ); // protect from GC [TBD] is it useful ? I don't use JS_ValueToObject
+	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, o );
+	PRPollDesc desc;
+	desc.fd = fd;
+	desc.in_flags = PR_POLL_READ;
+	desc.out_flags = 0;
+
+	PRInt32 result = PR_Poll( &desc, 1, PR_INTERVAL_NO_WAIT );
+	if ( result == -1 ) // error
+		return ThrowNSPRError( cx, PR_GetError() );
+
+	if ( result == 1 && (desc.out_flags & PR_POLL_READ) != 0 ) {
+
+		*rval = JSVAL_TRUE;
+		return JS_TRUE;
+	}
+	*rval = JSVAL_FALSE;
+	return JS_TRUE;
+}
+
+
+JSBool g_isWritable(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+
+	if ( argc < 1 ) {
+
+		JS_ReportError( cx, "argument is missing" );
+		return JS_FALSE;
+	}
+
+	JSObject *o = JSVAL_TO_OBJECT( argv[0] ); //JS_ValueToObject
+	*rval = OBJECT_TO_JSVAL( o ); // protect from GC [TBD] is it useful ? I don't use JS_ValueToObject
+	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, o );
+	PRPollDesc desc;
+	desc.fd = fd;
+	desc.in_flags = PR_POLL_WRITE;
+	desc.out_flags = 0;
+
+	PRInt32 result = PR_Poll( &desc, 1, PR_INTERVAL_NO_WAIT );
+	if ( result == -1 ) // error
+		return ThrowNSPRError( cx, PR_GetError() );
+
+	if ( result == 1 && (desc.out_flags & PR_POLL_WRITE) != 0 ) {
+
+		*rval = JSVAL_TRUE;
+		return JS_TRUE;
+	}
+	*rval = JSVAL_FALSE;
+	return JS_TRUE;
+}
+
+
 JSBool g_IntervalNow(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
 	PRUint32 interval = PR_IntervalToMilliseconds( PR_IntervalNow() );
@@ -150,10 +213,17 @@ JSBool g_Sleep(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rva
 }
 
 
+JSFunctionSpec Global_FunctionSpec[] = { // *name, call, nargs, flags, extra
+ { "Poll"         , g_poll         , 0, 0, 0 },
+ { "IsReadable"   , g_isReadable   , 0, 0, 0 },
+ { "IsWritable"   , g_isWritable   , 0, 0, 0 },
+ { "IntervalNow"  , g_IntervalNow  , 0, 0, 0 },
+ { "Sleep"        , g_Sleep        , 0, 0, 0 },
+ { 0 }
+};
+
+
 JSBool InitGlobal( JSContext *cx, JSObject *obj ) {
 
-  JS_DefineFunction( cx, obj, "Poll", Poll, 1, 0 );
-  JS_DefineFunction( cx, obj, "IntervalNow", g_IntervalNow, 0, 0 );
-  JS_DefineFunction( cx, obj, "Sleep", g_Sleep, 1, 0 );
-	return JS_TRUE;
+	return JS_DefineFunctions( cx, obj, Global_FunctionSpec );
 }

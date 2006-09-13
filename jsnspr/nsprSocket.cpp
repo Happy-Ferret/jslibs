@@ -298,28 +298,44 @@ JSBool Socket_send(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval 
 	PRInt32 length = JS_GetStringLength( jsstr );
 	void *data = JS_GetStringBytes( jsstr );
 
-	PRInt32 byteSent = PR_Send( fd, data, length, 0 /*must always be zero*/, PR_INTERVAL_NO_WAIT ); // timeout is ignored in nonblocking mode
+	PRInt32 result = PR_Send( fd, data, length, 0 /*must always be zero*/, PR_INTERVAL_NO_WAIT ); // timeout is ignored in nonblocking mode
 
-//	printf( "%d<%d ?", byteSent, length ); // 		PR_WOULD_BLOCK_ERROR;
-	if ( byteSent == -1 ) {
+	//If a partial write occurred, send() returns the number of bytes that were
+	//written.  If it returns -1 with errno == EWOULDBLOCK, *no* bytes were
+	//written.
+
+	//"With a nonblocking TCP socket, if there is no room at all in the socket
+	//send buffer, return is made immediately with an error of EWOULDBLOCK.
+	//If there is some room in the socket send buffer, the return value will
+	//be the number of bytes that the kernel was able to copy into the buffer."
+	//
+	//page 398, UNIX Network Programming, Second Edition, W. Richard Stevens 
+
+
+	// return value : A positive number indicates the number of bytes successfully sent. If the parameter fd is a blocking socket, this number must always equal amount.
+	// PR_Write(), PR_Send(), PR_Writev() in blocking mode block until the entire buffer is sent. In nonblocking mode, they cannot block, so they may return with just sending part of the buffer.
+
+	
+	//	printf( "%d<%d ?", byteSent, length ); // 		PR_WOULD_BLOCK_ERROR;
+	if ( result == -1 ) {
 		
 		PRErrorCode errorCode = PR_GetError();
 
-		if ( errorCode == PR_WOULD_BLOCK_ERROR ) { // [TBD] manage PR_WOULD_BLOCK_ERROR in a better way !
+		if ( errorCode == PR_WOULD_BLOCK_ERROR ) {
 
-			*rval = JSVAL_FALSE;
+			*rval = argv[0]; // if there is no room at all in the socket send buffer, return is made immediately with an error of EWOULDBLOCK.  Then the datas need to be send again later
 			return JS_TRUE;
 		}
 		return ThrowNSPRError( cx, errorCode );
 	}
 
-	//if ( byteSent < length ) { // same case that PR_WOULD_BLOCK_ERROR
+	if ( result < length ) {
 
-	//	JS_ReportError( cx, "unable to send datas" );
-	//	return JS_FALSE;
-	//}
+		JSString *jssRemaining = JS_NewDependentString( cx, jsstr, result, length - result ); // JSString jssRemaining = JS_NewStringCopyN( cx, data + result, length - result );
+		*rval = STRING_TO_JSVAL(jssRemaining);
+	}
 
-	*rval = JSVAL_TRUE;
+	*rval = JS_GetEmptyStringValue( cx );
 	return JS_TRUE;
 }
 
