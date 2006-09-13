@@ -1,16 +1,6 @@
-exec('jsni.js');
+Exec('jsni.js');
 
-function execOnce( file ) {
 
-	if ( !execOnce.alreadyLoaded ) {
-		execOnce.alreadyLoaded = {};
-	}
-
-	if ( !execOnce.alreadyLoaded[file] ) {
-		exec(file);
-		execOnce.alreadyLoaded[file] = true;
-	}
-}
 
 function LoadModule( fileName ) {
 

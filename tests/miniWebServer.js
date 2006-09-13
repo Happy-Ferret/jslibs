@@ -1,4 +1,4 @@
-exec('deflib.js');
+Exec('deflib.js');
 LoadModule('jsnspr');
 LoadModule('jsz');
 
@@ -128,7 +128,7 @@ function ParseHeaders(buffer) {
 
 
 
-function SocketWriterHelper(s,starved) {
+function SocketWriterHelper(s,starved,end) {
 	
 	var _chunkQueue = [];
 
@@ -140,23 +140,25 @@ function SocketWriterHelper(s,starved) {
 	
 	function Next() {
 		
-		if (!starved(feed))
+		if (!starved(feed)) // continue or exit ?
 			Next = function() {
-				delete s.writable;
-				CloseConnection(s);
+				
+				delete s.writable
+				end && end();
 			}
 	}
 	
 	s.writable = function(s) {
 		
 		if ( _chunkQueue.length ) {
-			var data = _chunkQueue.shift();
-			log.Write( data );
-			s.Send(data);
+		
+			var unsent = s.Send(_chunkQueue.shift());
+			unsent.length && _chunkQueue.unshift(unsent);				
 		} else
 			Next();
 	}
 }
+
 
 
 function Connection(s) {
@@ -166,34 +168,47 @@ function Connection(s) {
 	function ProcessRequest( status, headers, body ) {
 	
 		var file = new File( root + status.path );
-		if ( !file.exist ) {
+		if ( !file.exist || file.info.type != File.FILE_FILE ) {
 		
 			var message = 'file not found';
 			SendHttpHeaders( s, 404, {'Content-Length':message.length, 'Content-Type':'text/plain'} );
 			s.Send(message);
 			return;
-		}		
-		
-		file.Open( File.RDONLY );
+		}
 
 		var respondeHeaders = {};
 		respondeHeaders['Content-Type'] = mimeType[status.path.substr(status.path.lastIndexOf(DOT)+1)] || 'text/html; charset=iso-8859-1';
-//		respondeHeaders['Content-Length'] = file.available;
-		respondeHeaders['Transfer-Encoding'] = 'chunked';
-		respondeHeaders['Content-Encoding'] = 'deflate';
-		respondeHeaders['Connection'] = 'Keep-Alive';
-		SendHttpHeaders( s, 200, respondeHeaders );
 
-		var deflate = new Z(Z.DEFLATE);
+		respondeHeaders['Transfer-Encoding'] = 'chunked';
+		respondeHeaders['Connection'] = 'Keep-Alive';
+
+		var ContentEncoding = function(data) {
+			
+			return data; // identity filter
+		}
+		
+		if ( headers['accept-encoding'].indexOf('deflate') != -1 ) {
+		
+			respondeHeaders['Content-Encoding'] = 'deflate';
+			var deflate = new Z(Z.DEFLATE);
+			ContentEncoding = function(data) {
+
+				return deflate(data);
+			}
+		}
+		
+		SendHttpHeaders( s, 200, respondeHeaders );
+		file.Open( File.RDONLY );
 
 		SocketWriterHelper( s, function(write) {
 
 			var data = file.Read(Z.idealInputLength);
-			data = deflate(data);
+			data = ContentEncoding(data);
 
 			if ( data.length ) {
+			
 				write( data.length.toString(16) + CRLF, data, CRLF );
-				return true;
+				return true; // continue
 			}
 			write( '0' + CRLF + CRLF );
 			file.Close();
@@ -286,10 +301,10 @@ try {
 		Poll(list,timeout.Next() || 500);
 		timeout.Process();
 	}
-	print('end.');
+	Print('end.');
 
 } catch ( ex if ex instanceof NSPRError ) {
-	print( ex.text + ' ('+ex.code+')', '\n' );
+	Print( ex.text + ' ('+ex.code+')', '\n' );
 } catch(ex) {
 	throw(ex);
 }
