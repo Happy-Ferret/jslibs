@@ -94,13 +94,12 @@ var root='.';
 var list = [];
 
 
-function SendHttpHeaders( s, status, headers ) {
+function CreateHttpHeaders( status, headers ) {
 
 	var buf = 'HTTP/1.1' + SP + status + SP + statusText[status] + CRLF;
-	
 	for ( var [h,v] in headers )
 		buf += h + ': ' + v + CRLF;
-	s.Send( buf + CRLF );
+	return buf + CRLF;
 }
 
 function CloseConnection(s) {
@@ -161,10 +160,8 @@ function SocketWriterHelper(s,starved,end) {
 
 
 
-function Connection(s) {
 
-	var status,headers;
-
+/*
 	function ProcessRequest( status, headers, body ) {
 	
 		var file = new File( root + status.path );
@@ -215,71 +212,175 @@ function Connection(s) {
 			return false;
 		});
 	}
+*/
 
-	var _buffer = '';
-	var _state = ReadHeaders;
-	
-	s.readable = function() {
 
-		_buffer += s.Recv();
-		_state();
-		if ( s.connectionClosed )
-			CloseConnection(s);
-	}	
-	
-	function ReadHeaders() {
+function Identity(arg) { return arg; }
+function Noop() {}
+
+
+function ProcessRequest( status, headers, output ) {
+
+	var data = '';
+
+	var file = new File( root + status.path );
+	if ( !file.exist || file.info.type != File.FILE_FILE ) {
+
+		var message = 'file not found';
+		output(CreateHttpHeaders( 404, {'Content-Length':message.length, 'Content-Type':'text/plain'} ));
+		output(message);
+		return Noop;
+	}
+
+
+	return function(chunk) {
 		
-		_state = ReadHeaders;
+		if ( !chunk ) {
 
-		var eoh = _buffer.indexOf( CRLF+CRLF );
-		if ( eoh == -1 )
-			return;
+			var respondeHeaders = {};
+			respondeHeaders['Content-Type'] = mimeType[status.path.substr(status.path.lastIndexOf(DOT)+1)] || 'text/html; charset=iso-8859-1';
+			respondeHeaders['Transfer-Encoding'] = 'chunked';
+			respondeHeaders['Connection'] = 'Keep-Alive';
 
-		[status,headers] = ParseHeaders( _buffer.substr(0,eoh+4) );
-		_buffer = _buffer.substr(eoh+4);
+			var ContentEncoding = Identity;
 
-		status.peerName = s.peerName;
-		
-		switch (status.method) {
-			case 'GET':
-				ProcessRequest( status, headers, '' );
-				break;
-				
-			case 'POST':
-				var connection = headers['connection'];
-				if ( connection == 'close' )
-					ReadBodyClose();
-				else
-					ReadBodyLength();
-				break;
+			if ( headers['accept-encoding'].indexOf('deflate') != -1 ) {
+
+				respondeHeaders['Content-Encoding'] = 'deflate';
+				var deflate = new Z(Z.DEFLATE);
+				ContentEncoding = function(data) {
+
+					return deflate(data);
+				}
+			}
+
+			output( CreateHttpHeaders( 200, respondeHeaders ) );
+			
+			file.Open( File.RDONLY );
+
+			output( function(chunks) {
+
+				var data = file.Read(Z.idealInputLength);
+				data = ContentEncoding(data);
+
+				if ( data.length ) {
+
+					chunks.push( data.length.toString(16) + CRLF, data, CRLF );
+					return true; // continue
+				}
+				file.Close();
+				return false;
+			});
+			
+			output( '0' + CRLF + CRLF );
 		}
-	}
-
-	function ReadBodyClose() {
-		
-		_state = ReadBodyClose;
-
-		if ( !s.connectionClosed )
-			return;
-		CloseConnection(s);
-		ProcessRequest( status, headers, _buffer );
-	}
-
-	function ReadBodyLength() {
-
-		_state = ReadBodyLength;
-
-		var length = Number(headers['content-length']);
-		
-		if ( _buffer.length < length )
-			return;
-
-		ProcessRequest( status, headers, _buffer.substring(0,length) );
-		_buffer = _buffer.substring(length);
-		ReadHeaders();
 	}
 }
 
+
+
+
+function Connection(s) {
+
+	var _output = [];
+	
+	function ProcessOutput() {
+	
+		if ( _output.length ) {
+
+			var dataInfo = _output[0];
+			if ( dataInfo instanceof Function ) {
+				var chunks = [];
+				dataInfo(chunks) || _output.shift(); // ''exhausted'' function
+				if ( chunks.length == 0 )
+					return; // cannot shift here because the next item may be a Function
+				_output = chunks.concat(_output);
+			} 
+			s.Send(_output.shift());
+		} else
+			delete(s.writable);
+	}
+	
+	function Output( dataInfo ) {
+		
+		_output.push(dataInfo);
+		s.writable = ProcessOutput;
+	}
+
+
+
+	var _input = '';
+
+	function ProcessHeaders() {
+	
+		_input && Next('');
+		s.readable = function() { 
+			
+			var data = s.Recv();
+			Next( data );
+			data.length || CloseConnection(s);
+		}
+
+
+		function Next(chunk) {
+
+			_input += chunk;
+			var eoh = _input.indexOf( CRLF+CRLF );				
+			if ( eoh == -1 )
+				return;
+			var [status,headers] = ParseHeaders( _input.substr(0,eoh+4) );
+			status.peerName = s.peerName;
+			
+			_input = _input.substr(eoh+4);
+			if( status.method == 'POST' )
+				ProcessBody( status, headers );
+			else
+				ProcessRequest( status, headers, Output )('');
+		}
+	}
+
+	
+	function ProcessBody( status, headers ) {
+	
+		var processRequest = ProcessRequest( status, headers, Output );
+		var length = headers['content-length'];
+		_input && Next('');
+
+		s.readable = function() { 
+			
+			var data = s.Recv();
+			Next( data );
+			data.length || CloseConnection(s);
+		}
+
+		function Next(chunk) {
+
+			_input += chunk;
+	
+			if ( length == undefined ) {
+				
+				processRequest(_input);
+				_input = '';
+				return;
+			}
+
+			if ( _input.length < length ) {
+				
+				length -= _input.length;
+				processRequest(_input);
+				_input = '';
+			} else {
+			
+				processRequest(_input.substr(0,length));
+				_input = _input.substr(length);
+				processRequest();
+				ProcessHeaders();
+			}
+		}
+	}
+	
+	ProcessHeaders();
+}
 
 
 
@@ -290,12 +391,11 @@ try {
 	serverSocket.readable = function() { // after Listen, readable mean incoming connexion
 
 		var clientSocket = serverSocket.Accept();
-//		clientSocket.noDelay = true;
 		Connection(clientSocket);
 		list.push(clientSocket);
 	}
 
-	serverSocket.Listen( 80, undefined, 10 );
+	serverSocket.Listen( 80, undefined, 100 );
 	list.push(serverSocket);
 	for(;!endSignal;) {
 		Poll(list,timeout.Next() || 500);
