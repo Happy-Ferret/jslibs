@@ -2,12 +2,25 @@ Exec('deflib.js');
 LoadModule('jsnspr');
 LoadModule('jsz');
 
+// protocol constants
 const CR = '\r';
 const LF = '\n';
 const CRLF = CR+LF;
 const SP = ' ';
 const DOT = '.';
+const SLASH = '/';
 
+// mini tools
+Trim.regexp=/^ *(.*?) *$/;
+function Trim(string) {
+	return Trim.regexp(string)[1];
+}
+
+
+function Identity(arg) { return arg }
+function Noop() {}
+
+//
 const mimeType = {
 	html:'text/html',
 	gif:'image/gif',
@@ -20,6 +33,17 @@ const statusText = {
 	200:'OK', 
 	404:'Not Found' 
 };
+
+
+function MimeTypeByFileName(fileName) {
+
+	return mimeType[fileName.substr(fileName.lastIndexOf(DOT)+1)] || 'text/html; charset=iso-8859-1';
+}
+
+function Halt(message) {
+
+	this.message = message;
+}
 
 
 var log = new function() {
@@ -89,8 +113,6 @@ var timeout = new function() {
 	}
 }
 
-var root='.';
-
 var list = [];
 
 
@@ -108,25 +130,34 @@ function CloseConnection(s) {
 	list.splice( list.indexOf(s), 1 );
 }
 
+function NormalizeHeaderName(rawName) {
+
+	return rawName.toLowerCase().split('-').join('');
+}
 
 function ParseHeaders(buffer) {
 	
 	log.WriteLn(buffer);
-
-	var lines = buffer.split(CRLF);
-	var [method,url,proto] = lines[0].split(SP);
-	var [path,query] = url.split('?');
-	var status = { method:method, url:url, proto:proto, path:path, query:query };
-	var headers = {};
-	for ( var i=1; lines[i].length; i++ ) {
-		var [name,value] = lines[i].split(': ');
-		headers[name.toLowerCase()] = value;
+	try {
+		var lines = buffer.split(CRLF);
+		var [method,url,proto] = lines[0].split(SP);
+		var httpVersion = Number(proto.split(SLASH)[1]);
+		var [path,query] = url.split('?');
+		var status = { method:method, url:url, httpVersion:httpVersion, path:path, query:query };
+		var headers = {};
+		for ( var i=1; lines[i].length; i++ ) {
+			var [name,value] = lines[i].split(':');
+			headers[NormalizeHeaderName(name)] = Trim(value);
+		}
+	} catch(error) {
+		log.WriteLn('Error while parsing headers :\n'+buffer);
+		throw new Halt( 'header parsing error (see log file)' );
 	}
 	return [ status, headers ];
 }
 
 
-
+/*
 function SocketWriterHelper(s,starved,end) {
 	
 	var _chunkQueue = [];
@@ -157,73 +188,35 @@ function SocketWriterHelper(s,starved,end) {
 			Next();
 	}
 }
-
-
-
-
-/*
-	function ProcessRequest( status, headers, body ) {
-	
-		var file = new File( root + status.path );
-		if ( !file.exist || file.info.type != File.FILE_FILE ) {
-		
-			var message = 'file not found';
-			SendHttpHeaders( s, 404, {'Content-Length':message.length, 'Content-Type':'text/plain'} );
-			s.Send(message);
-			return;
-		}
-
-		var respondeHeaders = {};
-		respondeHeaders['Content-Type'] = mimeType[status.path.substr(status.path.lastIndexOf(DOT)+1)] || 'text/html; charset=iso-8859-1';
-
-		respondeHeaders['Transfer-Encoding'] = 'chunked';
-		respondeHeaders['Connection'] = 'Keep-Alive';
-
-		var ContentEncoding = function(data) {
-			
-			return data; // identity filter
-		}
-		
-		if ( headers['accept-encoding'].indexOf('deflate') != -1 ) {
-		
-			respondeHeaders['Content-Encoding'] = 'deflate';
-			var deflate = new Z(Z.DEFLATE);
-			ContentEncoding = function(data) {
-
-				return deflate(data);
-			}
-		}
-		
-		SendHttpHeaders( s, 200, respondeHeaders );
-		file.Open( File.RDONLY );
-
-		SocketWriterHelper( s, function(write) {
-
-			var data = file.Read(Z.idealInputLength);
-			data = ContentEncoding(data);
-
-			if ( data.length ) {
-			
-				write( data.length.toString(16) + CRLF, data, CRLF );
-				return true; // continue
-			}
-			write( '0' + CRLF + CRLF );
-			file.Close();
-			return false;
-		});
-	}
 */
 
 
-function Identity(arg) { return arg; }
-function Noop() {}
+function NormalizePath( path ) {
+	
+	var epath = path.split('/');
+	var newPath = [];
+	for each ( var name in epath )
+		switch (name) {
+		case '..':
+			newPath.splice(-1);
+			break;
+		case '.':
+		case '':
+			break;
+		default:
+			newPath.push(name);
+		}
+	return newPath.join('/');
+}
 
 
-function ProcessRequest( status, headers, output ) {
+function ProcessRequest( status, headers, output, close ) {
 
+	var root='./';
+	
 	var data = '';
 
-	var file = new File( root + status.path );
+	var file = new File( root + NormalizePath(status.path) );
 	if ( !file.exist || file.info.type != File.FILE_FILE ) {
 
 		var message = 'file not found';
@@ -234,45 +227,66 @@ function ProcessRequest( status, headers, output ) {
 
 
 	return function(chunk) {
+	
+		data += chunk;
 		
 		if ( !chunk ) {
 
 			var respondeHeaders = {};
-			respondeHeaders['Content-Type'] = mimeType[status.path.substr(status.path.lastIndexOf(DOT)+1)] || 'text/html; charset=iso-8859-1';
-			respondeHeaders['Transfer-Encoding'] = 'chunked';
-			respondeHeaders['Connection'] = 'Keep-Alive';
+			respondeHeaders['Content-Type'] = MimeTypeByFileName( status.path );
 
+
+			var useChunksEncoding = false;
+			var useKeepAliveConnection = false;
+			
+			
+			if (status.httpVersion == 1.1) {
+				useKeepAliveConnection = true;
+				useChunksEncoding = true;				
+			}
+			
+			if (useKeepAliveConnection)
+				respondeHeaders['Connection'] = 'Keep-Alive';
+
+			if (useChunksEncoding)
+				respondeHeaders['Transfer-Encoding'] = 'chunked';
+
+
+			var SendChunk = Identity;
 			var ContentEncoding = Identity;
 
-			if ( headers['accept-encoding'].indexOf('deflate') != -1 ) {
+			if ( headers.acceptencoding && headers.acceptencoding.indexOf('deflate') != -1 ) {
 
 				respondeHeaders['Content-Encoding'] = 'deflate';
-				var deflate = new Z(Z.DEFLATE);
-				ContentEncoding = function(data) {
-
-					return deflate(data);
-				}
+				ContentEncoding = new Z(Z.DEFLATE);
 			}
 
-			output( CreateHttpHeaders( 200, respondeHeaders ) );
-			
 			file.Open( File.RDONLY );
 
+			output( CreateHttpHeaders( 200, respondeHeaders ) );
 			output( function(chunks) {
 
 				var data = file.Read(Z.idealInputLength);
 				data = ContentEncoding(data);
 
 				if ( data.length ) {
-
-					chunks.push( data.length.toString(16) + CRLF, data, CRLF );
+					
+					if ( useChunksEncoding )
+						chunks.push( data.length.toString(16) + CRLF, data, CRLF );
+					else
+						chunks.push( data );
+						
 					return true; // continue
 				}
 				file.Close();
 				return false;
 			});
+
+			if ( useChunksEncoding )
+				output( '0' + CRLF + CRLF );
 			
-			output( '0' + CRLF + CRLF );
+			if ( !useKeepAliveConnection )
+				output(close); // close the socket
 		}
 	}
 }
@@ -282,6 +296,7 @@ function ProcessRequest( status, headers, output ) {
 
 function Connection(s) {
 
+	var _input = '';
 	var _output = [];
 	
 	function ProcessOutput() {
@@ -307,9 +322,10 @@ function Connection(s) {
 		s.writable = ProcessOutput;
 	}
 
+	function Close() {
 
-
-	var _input = '';
+		CloseConnection(s);
+	}
 
 	function ProcessHeaders() {
 	
@@ -330,20 +346,27 @@ function Connection(s) {
 				return;
 			var [status,headers] = ParseHeaders( _input.substr(0,eoh+4) );
 			status.peerName = s.peerName;
-			
 			_input = _input.substr(eoh+4);
-			if( status.method == 'POST' )
+			
+			Print( status.peerName + ': ' + status.method + ' ' + status.path, '\n' );
+			
+			switch (status.method) {
+			case 'POST':
 				ProcessBody( status, headers );
-			else
-				ProcessRequest( status, headers, Output )('');
+				break;
+			case 'GET':
+				ProcessRequest( status, headers, Output, Close )('');
+				break;
+			}
 		}
 	}
 
 	
 	function ProcessBody( status, headers ) {
 	
-		var processRequest = ProcessRequest( status, headers, Output );
-		var length = headers['content-length'];
+		var pr = ProcessRequest( status, headers, Output, Close );
+		var length = headers.contentlength;//['content-length'];
+
 		_input && Next('');
 
 		s.readable = function() { 
@@ -359,7 +382,7 @@ function Connection(s) {
 	
 			if ( length == undefined ) {
 				
-				processRequest(_input);
+				pr(_input);
 				_input = '';
 				return;
 			}
@@ -367,13 +390,13 @@ function Connection(s) {
 			if ( _input.length < length ) {
 				
 				length -= _input.length;
-				processRequest(_input);
+				pr(_input);
 				_input = '';
 			} else {
 			
-				processRequest(_input.substr(0,length));
+				pr(_input.substr(0,length));
 				_input = _input.substr(length);
-				processRequest();
+				pr(); // end
 				ProcessHeaders();
 			}
 		}
@@ -405,6 +428,8 @@ try {
 
 } catch ( ex if ex instanceof NSPRError ) {
 	Print( ex.text + ' ('+ex.code+')', '\n' );
+} catch( ex if ex instanceof Halt ) {
+	Print( 'Halt: '+ex.message,'\n' );
 } catch(ex) {
 	throw(ex);
 }
