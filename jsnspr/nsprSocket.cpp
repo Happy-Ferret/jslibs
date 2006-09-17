@@ -660,6 +660,15 @@ JSObject *InitSocketClass( JSContext *cx, JSObject *obj ) {
 
 
 /*
+
+
+
+winsock:
+	http://www.sockets.com/winsock.htm
+
+
+
+
 post to mozilla.dev.tech.nspr
 
 Issue with NON-BLOCKING sockets
