@@ -1,6 +1,6 @@
 #include <stdlib.h>
 
-#define STATIC_BUFFER_LENGTH 16384 -1;
+#define STATIC_BUFFER_LENGTH (16384 -1)
 #define INITIAL_QUEUE_LENGTH 8
 
 
