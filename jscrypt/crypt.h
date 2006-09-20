@@ -1,0 +1,1 @@
+JSObject *cryptInitClass( JSContext *cx, JSObject *obj );

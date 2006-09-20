@@ -1,0 +1,29 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 9.00
+# Visual C++ Express 2005
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jscrypt", "jscrypt.vcproj", "{A3794FD9-62E8-4B2C-8C9F-AF1A1DD97CB7}"
+	ProjectSection(ProjectDependencies) = postProject
+		{A313FEE1-C052-491B-80A4-07559D95AF84} = {A313FEE1-C052-491B-80A4-07559D95AF84}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libtomcrypt", "..\libtomcrypt\libtomcrypt.vcproj", "{A313FEE1-C052-491B-80A4-07559D95AF84}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A3794FD9-62E8-4B2C-8C9F-AF1A1DD97CB7}.Debug|Win32.ActiveCfg = Debug|Win32
+		{A3794FD9-62E8-4B2C-8C9F-AF1A1DD97CB7}.Debug|Win32.Build.0 = Debug|Win32
+		{A3794FD9-62E8-4B2C-8C9F-AF1A1DD97CB7}.Release|Win32.ActiveCfg = Release|Win32
+		{A3794FD9-62E8-4B2C-8C9F-AF1A1DD97CB7}.Release|Win32.Build.0 = Release|Win32
+		{A313FEE1-C052-491B-80A4-07559D95AF84}.Debug|Win32.ActiveCfg = Debug|Win32
+		{A313FEE1-C052-491B-80A4-07559D95AF84}.Debug|Win32.Build.0 = Debug|Win32
+		{A313FEE1-C052-491B-80A4-07559D95AF84}.Release|Win32.ActiveCfg = Release|Win32
+		{A313FEE1-C052-491B-80A4-07559D95AF84}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
