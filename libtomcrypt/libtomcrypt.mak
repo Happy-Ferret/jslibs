@@ -5,7 +5,13 @@ include makefile.msvc
 CFLAGS = 
 
 .c.obj:
-    cl /Isrc/headers/ /Itestprof/ /Ox /DWIN32 /DLTC_SOURCE /W3 /Fo$@ /c $<
+    cl /Isrc/headers/ /I../libtommath/ /Ox /DWIN32 /DLTC_SOURCE /DLTM_DESC /W3 /Fo$@ /c $<
 
 libonly: $(OBJECTS)
 	lib /out:tomcrypt.lib $(OBJECTS)
+
+clean:
+	del tomcrypt.lib
+	del /s *.obj
+
+rebuild: clean libonly
