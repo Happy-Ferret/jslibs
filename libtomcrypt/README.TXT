@@ -34,3 +34,7 @@ another way to build
 			lib /out:tomcrypt.lib $(OBJECTS)
 
 	...
+	
+Symmetric-key algorithm
+	http://en.wikipedia.org/wiki/Symmetric_key
+	
