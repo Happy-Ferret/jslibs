@@ -124,6 +124,15 @@ JSBool Socket_shutdown(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, js
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+//Q. PR_ConnectContinue() returns PR_SUCCESS whereas the server socket didn't PR_Accept() the connection.
+//A. This behavior is reasonable if you have called PR_Listen on the
+//   server socket.  After PR_Listen socket is called, the OS will
+//   accept the connection for you as long as the listen queue is
+//   not full.  This is why the client side gets a connection success
+//   indication before the server side has called PR_Accept.
+//   Since your call sequence shows that the SERVER called Listen()
+//   and the SERVER socket was readable, the above is what happened.
+//    Wan-Teh 
 JSBool Socket_listen(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
 	PRStatus status;
