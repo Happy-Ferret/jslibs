@@ -9,3 +9,9 @@ CFLAGS =
 
 libonly: $(OBJECTS)
 	lib /out:tommath.lib $(OBJECTS)
+
+clean:
+	del tommath.lib
+	del /s *.obj
+
+rebuild: clean libonly
