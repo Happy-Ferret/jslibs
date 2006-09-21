@@ -38,3 +38,6 @@ another way to build
 Symmetric-key algorithm
 	http://en.wikipedia.org/wiki/Symmetric_key
 	
+Misc:
+	- Under win32, this library seems to need advapi32.lib to work ! ( thanks to -zi )
+	- FAQ: http://libtomcrypt.com/faq.txt
