@@ -61,7 +61,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="..\mozilla\js\src\WINNT5.1_DBG.OBJ\js32.lib ..\libtomcrypt\tomcrypt.lib"
+				AdditionalDependencies="..\mozilla\js\src\WINNT5.1_DBG.OBJ\js32.lib ..\libtomcrypt\tomcrypt.lib ..\libtommath\tommath.lib"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				TargetMachine="1"
@@ -138,7 +138,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="..\mozilla\js\src\WINNT5.1_OPT.OBJ\js32.lib ..\libtomcrypt\tomcrypt.lib"
+				AdditionalDependencies="..\mozilla\js\src\WINNT5.1_OPT.OBJ\js32.lib ..\libtomcrypt\tomcrypt.lib ..\libtommath\tommath.lib"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				OptimizeReferences="2"
@@ -180,7 +180,15 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
+				RelativePath=".\cipher.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\crypt.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\cryptError.cpp"
 				>
 			</File>
 			<File
@@ -214,7 +222,15 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
+				RelativePath=".\cipher.h"
+				>
+			</File>
+			<File
 				RelativePath=".\crypt.h"
+				>
+			</File>
+			<File
+				RelativePath=".\cryptError.h"
 				>
 			</File>
 			<File
