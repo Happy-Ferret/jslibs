@@ -2,16 +2,19 @@
 
 include makefile.msvc
 
-CFLAGS = 
+CFLAGS = /Isrc/headers/ /I../libtommath/ /Ox /DWIN32 /DLTC_SOURCE /DLTM_DESC /W3
+LIBNAME = tomcrypt.lib
 
 .c.obj:
-    cl /Isrc/headers/ /I../libtommath/ /Ox /DWIN32 /DLTC_SOURCE /DLTM_DESC /W3 /Fo$@ /c $<
+    cl /nologo $(CFLAGS) /Fo$@ /c $<
 
-libonly: $(OBJECTS)
-	lib /out:tomcrypt.lib $(OBJECTS)
+$(LIBNAME): $(OBJECTS)
+	lib /nologo /out:$(LIBNAME) $(OBJECTS)
+
+build: $(LIBNAME)
 
 clean:
-	del tomcrypt.lib
+	del $(LIBNAME)
 	del /s *.obj
 
-rebuild: clean libonly
+rebuild: clean build
