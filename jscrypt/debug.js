@@ -1,13 +1,33 @@
 Exec('deflib.js');
 LoadModule('jscrypt');
 
-//var cr = new Cipher("blowfish","test_key");
-//cr.encrypt('123456');
+try {
 
-//var h = new Hash("sha256");
-//Print( h.hash('azuyvrzuivyozuiyvriouazyruioazvyrovazuiryvuioazyrvoazerhtoguizerhgtozeuigtoeurgtozeuriozeruighzerughzeoruithgozeiruhozeiruziruthgozeruizruhoziuzuivryuioazryvoazuivryoazuiryvioazuryuioazvryoazuivryuioazvryoazuivryoazuivryoazuivryuioazvryoazuivryoazuivryoazuivryuioazuvryoaziuvryazoevr').length );
+	var hkey = new Hash("sha256")('this is a secret key',true);
 
-var r = new Prng('yarrow', '546531s213584514');
-r.AddEntropy(155651);
+	
+	var r = new Prng('yarrow');
+	r.AddEntropy('something random');
+	r.AutoEntropy(128); // give more entropy
+	
+	var key = hkey;
+	var IV = r(Crypt.BlockLength('twofish'));
 
-Print( r.name );
+// encrypt:
+	var crypt = new Crypt( 'ctr', 'twofish', key, IV );
+	var plainText = 'secret string';
+	var cipherData = crypt.Encrypt(plainText);
+
+// decrypt:
+	crypt.IV = IV;
+	var decipheredData = crypt.Decrypt( cipherData );
+	Print( 'decrypted data: '+decipheredData, '\n' );
+	
+	
+	
+	
+} catch( ex if ex instanceof CryptError ) {
+	Print( ex.text );
+} catch( ex ) {
+	throw(ex);
+}
