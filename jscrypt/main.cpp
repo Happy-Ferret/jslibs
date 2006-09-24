@@ -3,11 +3,15 @@
 #define XP_WIN
 #include <jsapi.h>
 
-#include "crypt.h"
+#include "prng.h"
+#include "hash.h"
+#include "cipher.h"
 
 extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
-	cryptInitClass( cx, obj );
+	prngInitClass( cx, obj );
+	hashInitClass( cx, obj );
+	cipherInitClass( cx, obj );
 	return JS_TRUE;
 }
 
