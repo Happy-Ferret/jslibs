@@ -1,0 +1,1 @@
+JSObject *prngInitClass( JSContext *cx, JSObject *obj );
