@@ -41,7 +41,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\mozilla\js\src,..\libtomcrypt\src\headers"
-				PreprocessorDefinitions="WIN32;_DEBUG;_LIB"
+				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;LTM_DESC"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -119,7 +119,7 @@
 				InlineFunctionExpansion="2"
 				FavorSizeOrSpeed="1"
 				AdditionalIncludeDirectories="..\mozilla\js\src,..\libtomcrypt\src\headers"
-				PreprocessorDefinitions="WIN32;NDEBUG;_LIB"
+				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;LTM_DESC"
 				RuntimeLibrary="0"
 				BufferSecurityCheck="false"
 				UsePrecompiledHeader="2"
@@ -192,7 +192,15 @@
 				>
 			</File>
 			<File
+				RelativePath=".\hash.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\main.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\prng.cpp"
 				>
 			</File>
 			<File
@@ -234,10 +242,22 @@
 				>
 			</File>
 			<File
+				RelativePath=".\hash.h"
+				>
+			</File>
+			<File
+				RelativePath=".\prng.h"
+				>
+			</File>
+			<File
 				RelativePath=".\stdafx.h"
 				>
 			</File>
 		</Filter>
+		<File
+			RelativePath=".\debug.js"
+			>
+		</File>
 	</Files>
 	<Globals>
 	</Globals>
