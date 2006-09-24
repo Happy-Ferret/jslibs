@@ -77,7 +77,7 @@ JSBool crypt_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, js
 
 	PrivateData *privateData = (PrivateData*)malloc( sizeof(PrivateData) );
 	RT_ASSERT( privateData != NULL, RT_ERROR_OUT_OF_MEMORY );
-	
+
 	int cipherIndex = find_cipher(cipherName);
 	RT_ASSERT_1( cipherIndex != -1, "cipher %s is not registred", cipherName );
 
@@ -357,6 +357,9 @@ JSObject *cryptInitClass( JSContext *cx, JSObject *obj ) {
   register_cipher (&anubis_desc);
 #endif
 
+// if register_cipher failed but the cipher will not be used, it is acceptable because further check is done on find_cipher call
+
+
 /*
 	// you must register a cipher before you use it
 	if ( register_cipher(&blowfish_desc) == -1 ) {
@@ -371,5 +374,8 @@ JSObject *cryptInitClass( JSContext *cx, JSObject *obj ) {
 
 
 /****************************************************************
+
+CTR ( Counter Mode )
+	http://en.wikipedia.org/wiki/Counter_mode (fr: http://fr.wikipedia.org/wiki/Mode_d%27op%C3%A9ration_%28cryptographie%29 )
 
 */
