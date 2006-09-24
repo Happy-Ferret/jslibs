@@ -1,1 +1,0 @@
-JSObject *cipherInitClass( JSContext *cx, JSObject *obj );
