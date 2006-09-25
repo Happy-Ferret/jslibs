@@ -72,7 +72,6 @@ static JSBool misc_hex64Encode(JSContext *cx, JSObject *obj, uintN argc, jsval *
 	char *out = (char *)JS_malloc( cx, outLength );
 	RT_ASSERT( out != NULL, RT_ERROR_OUT_OF_MEMORY );
 
-
 	for ( int i=0; i<inLength; ++i ) {
 		
 		unsigned char c = in[i];
@@ -87,7 +86,7 @@ static JSBool misc_hex64Encode(JSContext *cx, JSObject *obj, uintN argc, jsval *
 	return JS_TRUE;
 }
 
-#define XX 16
+#define XX 0
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 static JSBool misc_hex64Decode(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
@@ -99,6 +98,8 @@ static JSBool misc_hex64Decode(JSContext *cx, JSObject *obj, uintN argc, jsval *
 		XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX,
 		 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, XX, XX, XX, XX, XX, XX,
 		XX, 10, 11, 12, 13, 14, 15, XX, XX, XX, XX, XX, XX, XX, XX, XX,
+		XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX,
+		XX, 10, 11, 12, 13, 14, 15, XX, XX, XX, XX, XX, XX, XX, XX, XX
 	};
 
 	RT_ASSERT_ARGC( 1 );
@@ -110,10 +111,8 @@ static JSBool misc_hex64Decode(JSContext *cx, JSObject *obj, uintN argc, jsval *
 	char *out = (char *)JS_malloc( cx, outLength );
 	RT_ASSERT( out != NULL, RT_ERROR_OUT_OF_MEMORY );
 
-	for ( int i=0; i<outLength; ++i ) {
-		
-		out[i] = (unhex[ in[i*2] ] << 4) | unhex[ in[i*2+1] ];
-	}
+	for ( int i=0; i<outLength; ++i )
+		out[i] = unhex[ in[i*2] ] << 4 | unhex[ in[i*2+1] ];
 
 	JSString *jssOutData = JS_NewString( cx, out, outLength );
 	RT_ASSERT( jssOutData != NULL, "unable to create the plaintext string." );
