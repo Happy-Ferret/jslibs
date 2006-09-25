@@ -2,7 +2,7 @@
 
 include makefile.msvc
 
-CFLAGS = /Isrc/headers/ /I../libtommath/ /Ox /DWIN32 /DLTC_SOURCE /DLTM_DESC /W3
+CFLAGS = /Isrc/headers/ /I../libtommath/ /Ox /DWIN32 /DLTC_SOURCE /DLTM_DESC /DNO_FILE /W3
 LIBNAME = tomcrypt.lib
 
 .c.obj:
