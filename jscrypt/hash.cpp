@@ -11,7 +11,7 @@
 
 #include "../common/jshelper.h"
 
-typedef struct PrivateData {
+struct PrivateData {
 	ltc_hash_descriptor hash;
 	hash_state state;
 };

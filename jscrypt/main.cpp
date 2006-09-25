@@ -6,6 +6,7 @@
 #include <tomcrypt.h>
 
 #include "cryptError.h"
+#include "misc.h"
 
 #include "prng.h"
 #include "hash.h"
@@ -17,6 +18,7 @@ extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj)
 	ltc_mp = ltm_desc;
 
 	InitErrorClass( cx, obj );
+	miscInitClass( cx, obj );
 	prngInitClass( cx, obj );
 	hashInitClass( cx, obj );
 //	cipherInitClass( cx, obj );

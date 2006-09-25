@@ -11,7 +11,7 @@
 
 #include "../common/jshelper.h"
 
-typedef struct PrivateData {
+struct PrivateData {
 	ltc_prng_descriptor prng;
 	prng_state state;
 };

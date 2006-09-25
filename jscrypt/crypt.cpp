@@ -19,7 +19,7 @@ enum Mode {
 	mode_cfb
 };
 
-typedef struct PrivateData {
+struct PrivateData {
 
 	Mode mode;
 	void *symmetric_XXX;
@@ -41,10 +41,10 @@ void crypt_Finalize(JSContext *cx, JSObject *obj) {
 		return;
 
 	switch ( privateData->mode ) {
-		case Mode::mode_ctr:
+		case mode_ctr:
 			ctr_done((symmetric_CTR *)privateData->symmetric_XXX);
 			break;
-		case Mode::mode_cfb:
+		case mode_cfb:
 			cfb_done((symmetric_CFB *)privateData->symmetric_XXX);
 			break;
 	}
@@ -86,17 +86,17 @@ JSBool crypt_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, js
 	RT_ASSERT_1( IVLength == cipher.block_length, "IV must have the same size as cipher block length (%d bytes)", cipher.block_length );
 
 	int err;
-	if ( stricmp( modeName, MODE_CTR ) == 0 ) {
+	if ( _stricmp( modeName, MODE_CTR ) == 0 ) {
 
-		privateData->mode = Mode::mode_ctr;
+		privateData->mode = mode_ctr;
 		symmetric_CTR *psctr = (symmetric_CTR *)malloc( sizeof(symmetric_CTR) );
 		RT_ASSERT( psctr != NULL, RT_ERROR_OUT_OF_MEMORY );
 		if ((err = ctr_start( cipherIndex, (const unsigned char *)IV, (const unsigned char *)key, keyLength, 0, CTR_COUNTER_LITTLE_ENDIAN, psctr )) != CRYPT_OK)
 			return ThrowCryptError(cx, err); // [TBD] free privateData and psctr
 		privateData->symmetric_XXX = psctr;
-	} else if ( stricmp( modeName, MODE_CFB ) == 0 ) {
+	} else if ( _stricmp( modeName, MODE_CFB ) == 0 ) {
 
-		privateData->mode = Mode::mode_cfb;
+		privateData->mode = mode_cfb;
 		symmetric_CFB *symmetric_XXX = (symmetric_CFB *)malloc( sizeof(symmetric_CFB) );
 		RT_ASSERT( symmetric_XXX != NULL, RT_ERROR_OUT_OF_MEMORY );
 		if ((err = cfb_start( cipherIndex, (const unsigned char *)IV, (const unsigned char *)key, keyLength, 0, symmetric_XXX )) != CRYPT_OK)
@@ -128,11 +128,11 @@ JSBool crypt_encrypt(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsva
 	int err;
 	switch ( privateData->mode ) {
 
-		case Mode::mode_ctr:
+		case mode_ctr:
 			if ( (err = ctr_encrypt( (const unsigned char *)pt, (unsigned char *)ct, ptLength, (symmetric_CTR *)privateData->symmetric_XXX )) != CRYPT_OK )
 				return ThrowCryptError(cx, err);
 			break;
-		case Mode::mode_cfb:
+		case mode_cfb:
 			if ( (err = cfb_encrypt( (const unsigned char *)pt, (unsigned char *)ct, ptLength, (symmetric_CFB *)privateData->symmetric_XXX )) != CRYPT_OK )
 				return ThrowCryptError(cx, err);
 			break;
@@ -165,11 +165,11 @@ JSBool crypt_decrypt(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsva
 	int err;
 	switch ( privateData->mode ) {
 
-		case Mode::mode_ctr:
+		case mode_ctr:
 			if ( (err = ctr_decrypt( (const unsigned char *)ct, (unsigned char *)pt, ctLength, (symmetric_CTR *)privateData->symmetric_XXX )) != CRYPT_OK )
 				return ThrowCryptError(cx, err);
 			break;
-		case Mode::mode_cfb:
+		case mode_cfb:
 			if ( (err = cfb_decrypt( (const unsigned char *)ct, (unsigned char *)pt, ctLength, (symmetric_CFB *)privateData->symmetric_XXX )) != CRYPT_OK )
 				return ThrowCryptError(cx, err);
 			break;
@@ -205,11 +205,11 @@ JSBool crypt_setter_IV(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 
 	int err;
 	switch ( privateData->mode ) {
-		case Mode::mode_ctr:
+		case mode_ctr:
 			if ( (err=ctr_setiv( (const unsigned char *)IV, IVLength, (symmetric_CTR *)privateData->symmetric_XXX )) != CRYPT_OK )
 				return ThrowCryptError(cx, err);
 			break;
-		case Mode::mode_cfb:
+		case mode_cfb:
 			if ( (err=cfb_setiv( (const unsigned char *)IV, IVLength, (symmetric_CFB *)privateData->symmetric_XXX )) != CRYPT_OK )
 				return ThrowCryptError(cx, err);
 			break;
@@ -232,7 +232,7 @@ JSBool crypt_getter_IV(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 
 	int err;
 	switch ( privateData->mode ) {
-		case Mode::mode_ctr: {
+		case mode_ctr: {
 			symmetric_CTR *psctr = (symmetric_CTR *)privateData->symmetric_XXX;
 			IVLength = psctr->blocklen;
 			IV = (char*)JS_malloc( cx, IVLength );
@@ -241,7 +241,7 @@ JSBool crypt_getter_IV(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 				return ThrowCryptError(cx, err);
 			break;
 		}
-		case Mode::mode_cfb: {
+		case mode_cfb: {
 			symmetric_CFB *psctr = (symmetric_CFB *)privateData->symmetric_XXX;
 			IVLength = psctr->blocklen;
 			IV = (char*)JS_malloc( cx, IVLength );

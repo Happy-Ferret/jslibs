@@ -1,0 +1,1 @@
+JSObject *miscInitClass( JSContext *cx, JSObject *obj );

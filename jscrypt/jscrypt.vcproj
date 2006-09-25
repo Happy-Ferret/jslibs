@@ -196,6 +196,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\misc.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\prng.cpp"
 				>
 			</File>
@@ -235,6 +239,10 @@
 			</File>
 			<File
 				RelativePath=".\hash.h"
+				>
+			</File>
+			<File
+				RelativePath=".\misc.h"
 				>
 			</File>
 			<File

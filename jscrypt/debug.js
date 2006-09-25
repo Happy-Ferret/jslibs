@@ -3,6 +3,9 @@ LoadModule('jscrypt');
 
 try {
 
+	Print( HexEncode(new Hash("sha256")('',true)) ,'\n');
+
+
 	var hkey = new Hash("sha256")('this is a secret key',true);
 
 	
