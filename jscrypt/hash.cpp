@@ -9,9 +9,7 @@
 
 #include "cryptError.h"
 
-
 #include "../common/jshelper.h"
-
 
 JSBool hash_call(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval);
 void hash_Finalize(JSContext *cx, JSObject *obj);

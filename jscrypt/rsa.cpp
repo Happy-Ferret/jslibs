@@ -31,7 +31,6 @@ void rsa_Finalize(JSContext *cx, JSObject *obj) {
 		return;
 
 	rsa_free(&rsaPrivate->key);
-
 	free(rsaPrivate);
 }
 
@@ -40,6 +39,16 @@ void rsa_Finalize(JSContext *cx, JSObject *obj) {
 JSBool rsa_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
 	RT_ASSERT( JS_IsConstructing(cx), RT_ERROR_NEED_CONSTRUCTION );
+	RsaPrivate *rsaPrivate = (RsaPrivate *)malloc( sizeof(RsaPrivate) );
+	RT_ASSERT( rsaPrivate != NULL, RT_ERROR_OUT_OF_MEMORY );
+	JS_SetPrivate( cx, obj, rsaPrivate );
+
+	return JS_TRUE;
+}
+
+
+JSBool rsa_createKeys(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+
 	RT_ASSERT_ARGC( 2 );
 	RT_ASSERT_CLASS( obj, &rsa_class );
 	
@@ -55,17 +64,16 @@ JSBool rsa_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsva
 	int prngIndex = find_prng(prngPrivate->prng.name);
 	RT_ASSERT_1( prngIndex != -1, "prng %s is not registred", prngPrivate->prng.name );
 
-	RsaPrivate *rsaPrivate = (RsaPrivate *)malloc( sizeof(RsaPrivate) );
+	RsaPrivate *rsaPrivate = (RsaPrivate *)JS_GetPrivate( cx, obj );
 
 	int err;
 	if ((err=rsa_make_key( &prngPrivate->state, prngIndex, keySize/8, 65537, &rsaPrivate->key )) != CRYPT_OK)
-		return ThrowCryptError(cx, err); // [TBD] free rsaPrivate
-
-
-	JS_SetPrivate( cx, obj, rsaPrivate );
+		return ThrowCryptError(cx, err); // [TBD] should free rsaPrivate or Finalize is called ?
 
 	return JS_TRUE;
 }
+
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 JSBool rsa_encryptKey(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
@@ -159,7 +167,13 @@ JSBool rsa_decryptKey(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsv
 	if ( (err=rsa_decrypt_key( (const unsigned char *)in, inLength, (unsigned char *)out, &outLength, NULL, 0, hashIndex, &stat, &privateData->key )) != CRYPT_OK )
 		return ThrowCryptError(cx, err); // [TBD] free rsaPrivate ?
 
-	RT_ASSERT( stat == 1, "invalid OAEP packet" );
+
+	// RT_ASSERT( stat == 1, "invalid decryption" );
+	if ( stat != 1 ) {
+
+		*rval = JSVAL_VOID;
+		return JS_TRUE;
+	}
 
 	JSString *jssOut = JS_NewString( cx, out, outLength );
 	RT_ASSERT( jssOut != NULL, "unable to create the string." );
@@ -171,6 +185,7 @@ JSBool rsa_decryptKey(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsv
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 JSFunctionSpec rsa_FunctionSpec[] = { // *name, call, nargs, flags, extra
+ { "CreateKeys"        , rsa_createKeys },
  { "EncryptKey"        , rsa_encryptKey },
  { "DecryptKey"        , rsa_decryptKey },
  { 0 }
