@@ -32,11 +32,11 @@
 
 #define RT_JSVAL_TO_STRING_AND_LENGTH( jsvalString, stringVariable, lengthVariable ) \
 	{ \
-		JSString *jssTmp = JS_ValueToString(cx,jsvalString); \
-		RT_ASSERT( jssTmp != NULL, RT_ERROR_STRING_CONVERSION_FAILED ); \
-		stringVariable = JS_GetStringBytes( jssTmp ); \
+		JSString *__jssTmp = JS_ValueToString(cx,jsvalString); \
+		RT_ASSERT( __jssTmp != NULL, RT_ERROR_STRING_CONVERSION_FAILED ); \
+		stringVariable = JS_GetStringBytes( __jssTmp ); \
 		RT_ASSERT( stringVariable != NULL, RT_ERROR_STRING_CONVERSION_FAILED ); \
-		lengthVariable = JS_GetStringLength( jssTmp ); \
+		lengthVariable = JS_GetStringLength( __jssTmp ); \
 	}
 
 #define RT_ASSERT_CLASS( jsObject, jsClass ) \
