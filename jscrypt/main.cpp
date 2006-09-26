@@ -8,6 +8,7 @@
 #include "cryptError.h"
 #include "misc.h"
 
+#include "rsa.h"
 #include "prng.h"
 #include "hash.h"
 //#include "cipher.h"
@@ -19,6 +20,7 @@ extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj)
 
 	InitErrorClass( cx, obj );
 	miscInitClass( cx, obj );
+	rsaInitClass( cx, obj );
 	prngInitClass( cx, obj );
 	hashInitClass( cx, obj );
 //	cipherInitClass( cx, obj );

@@ -40,7 +40,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\mozilla\js\src,..\libtomcrypt\src\headers"
+				AdditionalIncludeDirectories="..\mozilla\js\src,..\libtomcrypt\src\headers,..\libtommath"
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;LTM_DESC"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
