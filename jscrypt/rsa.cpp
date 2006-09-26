@@ -83,7 +83,7 @@ JSBool rsa_encryptKey(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsv
 	RT_ASSERT_CLASS( obj, &rsa_class );
 	RsaPrivate *privateData = (RsaPrivate *)JS_GetPrivate( cx, obj );
 
-	JSObject *objPrng JSVAL_TO_OBJECT(argv[0]);
+	JSObject *objPrng = JSVAL_TO_OBJECT(argv[0]);
 	RT_ASSERT_CLASS( objPrng, &prng_class );
 	PrngPrivate *prngPrivate = (PrngPrivate *)JS_GetPrivate( cx, objPrng );
 	RT_ASSERT( prngPrivate != NULL, "prng is not initialized." );
@@ -96,7 +96,7 @@ JSBool rsa_encryptKey(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsv
 	RT_ASSERT_1( hashIndex != -1, "hash %s is not registred", hashName );
 
 /*
-	JSObject *objHash JSVAL_TO_OBJECT(argv[1]);
+	JSObject *objHash = JSVAL_TO_OBJECT(argv[1]);
 	RT_ASSERT_CLASS( objHash, &hash_class );
 	HashPrivate *hashPrivate = (HashPrivate *)JS_GetPrivate( cx, objHash );
 	RT_ASSERT( hashPrivate != NULL, "hash is not initialized." );
@@ -132,14 +132,13 @@ JSBool rsa_decryptKey(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsv
 	RT_ASSERT_CLASS( obj, &rsa_class );
 	RsaPrivate *privateData = (RsaPrivate *)JS_GetPrivate( cx, obj );
 
-
 	char *hashName;
 	RT_JSVAL_TO_STRING( argv[0], hashName );
 	int hashIndex = find_hash(hashName);
 	RT_ASSERT_1( hashIndex != -1, "hash %s is not registred", hashName );
 
 /*
-	JSObject *objHash JSVAL_TO_OBJECT(argv[0]);
+	JSObject *objHash = JSVAL_TO_OBJECT(argv[0]);
 	RT_ASSERT_CLASS( objHash, &hash_class );
 	HashPrivate *hashPrivate = (HashPrivate *)JS_GetPrivate( cx, objHash );
 	RT_ASSERT( hashPrivate != NULL, "hash is not initialized." );
@@ -166,7 +165,6 @@ JSBool rsa_decryptKey(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsv
 	int err;
 	if ( (err=rsa_decrypt_key( (const unsigned char *)in, inLength, (unsigned char *)out, &outLength, NULL, 0, hashIndex, &stat, &privateData->key )) != CRYPT_OK )
 		return ThrowCryptError(cx, err); // [TBD] free rsaPrivate ?
-
 
 	// RT_ASSERT( stat == 1, "invalid decryption" );
 	if ( stat != 1 ) {

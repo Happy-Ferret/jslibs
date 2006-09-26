@@ -16,7 +16,6 @@ try {
 	
 	var rsaPubKey = rsa.publicKey;
 	
-
 	var rsa1 = new Rsa();
 	rsa1.publicKey = rsaPubKey;
 	var rsaEncryptedData = rsa1.EncryptKey( r ,'md5', plainText );
