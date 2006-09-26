@@ -5,17 +5,15 @@
 
 #include "rsa.h"
 #include "prng.h"
+#include "hash.h"
 
 #include <tomcrypt.h>
+#include <tommath.h>
 
 #include "cryptError.h"
 
 #include "../common/jshelper.h"
 
-
-struct RsaPrivate {
-	rsa_key key;
-};
 
 void rsa_Finalize(JSContext *cx, JSObject *obj);
 
@@ -61,250 +59,186 @@ JSBool rsa_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsva
 
 	int err;
 	if ((err=rsa_make_key( &prngPrivate->state, prngIndex, keySize/8, 65537, &rsaPrivate->key )) != CRYPT_OK)
-		return ThrowCryptError(cx, err); // [TBD] free privateData and psctr
-
-	return JS_TRUE;
-}
+		return ThrowCryptError(cx, err); // [TBD] free rsaPrivate
 
 
+	JS_SetPrivate( cx, obj, rsaPrivate );
 
-//
-
-/*
-	char *modeName;
-	RT_JSVAL_TO_STRING( argv[0], modeName );
-
-	char *cipherName;
-	RT_JSVAL_TO_STRING( argv[1], cipherName );
-
-	char *key;
-	int keyLength;
-	RT_JSVAL_TO_STRING_AND_LENGTH( argv[2], key, keyLength );
-
-	char *IV;
-	int IVLength;
-	RT_JSVAL_TO_STRING_AND_LENGTH( argv[3], IV, IVLength );
-
-	PrivateData *privateData = (PrivateData*)malloc( sizeof(PrivateData) );
-	RT_ASSERT( privateData != NULL, RT_ERROR_OUT_OF_MEMORY );
-
-	int cipherIndex = find_cipher(cipherName);
-	RT_ASSERT_1( cipherIndex != -1, "cipher %s is not registred", cipherName );
-
-	ltc_cipher_descriptor cipher = cipher_descriptor[cipherIndex];
-
-	RT_ASSERT_1( cipher.test() == rsa_OK, "%s cipher test failed.", cipherName );
-
-//	RT_ASSERT_1( IVLength == cipher.block_length, "IV must have the same size as cipher block length (%d bytes)", cipher.block_length );
-
-	int err;
-	if ( _stricmp( modeName, MODE_CTR ) == 0 ) {
-
-		privateData->mode = mode_ctr;
-		symmetric_CTR *psctr = (symmetric_CTR *)malloc( sizeof(symmetric_CTR) );
-		RT_ASSERT( psctr != NULL, RT_ERROR_OUT_OF_MEMORY );
-		if ((err = ctr_start( cipherIndex, (const unsigned char *)IV, (const unsigned char *)key, keyLength, 0, CTR_COUNTER_LITTLE_ENDIAN, psctr )) != rsa_OK)
-			return ThrowrsaError(cx, err); // [TBD] free privateData and psctr
-		privateData->symmetric_XXX = psctr;
-	} else if ( _stricmp( modeName, MODE_CFB ) == 0 ) {
-
-		privateData->mode = mode_cfb;
-		symmetric_CFB *symmetric_XXX = (symmetric_CFB *)malloc( sizeof(symmetric_CFB) );
-		RT_ASSERT( symmetric_XXX != NULL, RT_ERROR_OUT_OF_MEMORY );
-		if ((err = cfb_start( cipherIndex, (const unsigned char *)IV, (const unsigned char *)key, keyLength, 0, symmetric_XXX )) != rsa_OK)
-			return ThrowrsaError(cx, err); // [TBD] free privateData and psctr
-		privateData->symmetric_XXX = symmetric_XXX;
-	} else
-		RT_ASSERT_1( false, "unsupported %s mode.", modeName );
-
-	JS_SetPrivate( cx, obj, privateData );
-*/
 	return JS_TRUE;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSBool rsa_encrypt(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+JSBool rsa_encryptKey(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
-	RT_ASSERT_ARGC( 1 );
+	RT_ASSERT_ARGC( 3 );
+
 	RT_ASSERT_CLASS( obj, &rsa_class );
+	RsaPrivate *privateData = (RsaPrivate *)JS_GetPrivate( cx, obj );
+
+	JSObject *objPrng JSVAL_TO_OBJECT(argv[0]);
+	RT_ASSERT_CLASS( objPrng, &prng_class );
+	PrngPrivate *prngPrivate = (PrngPrivate *)JS_GetPrivate( cx, objPrng );
+	RT_ASSERT( prngPrivate != NULL, "prng is not initialized." );
+	int prngIndex = find_prng(prngPrivate->prng.name);
+	RT_ASSERT_1( prngIndex != -1, "prng %s is not registred", prngPrivate->prng.name );
+
+	char *hashName;
+	RT_JSVAL_TO_STRING( argv[1], hashName );
+	int hashIndex = find_hash(hashName);
+	RT_ASSERT_1( hashIndex != -1, "hash %s is not registred", hashName );
 
 /*
-	PrivateData *privateData = (PrivateData *)JS_GetPrivate( cx, obj );
-	RT_ASSERT( privateData != NULL, RT_ERROR_NOT_INITIALIZED );
+	JSObject *objHash JSVAL_TO_OBJECT(argv[1]);
+	RT_ASSERT_CLASS( objHash, &hash_class );
+	HashPrivate *hashPrivate = (HashPrivate *)JS_GetPrivate( cx, objHash );
+	RT_ASSERT( hashPrivate != NULL, "hash is not initialized." );
+	int hashIndex = find_hash(hashPrivate->hash.name);
+	RT_ASSERT_1( hashIndex != -1, "hash %s is not registred", hashPrivate->hash.name );
+*/
 
-	char *pt;
-	int ptLength;
-	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], pt, ptLength );
+	char *in;
+	int inLength;
+	RT_JSVAL_TO_STRING_AND_LENGTH( argv[2], in, inLength );
 
-	char *ct = (char *)JS_malloc( cx, ptLength );
-	RT_ASSERT( ct != NULL, RT_ERROR_OUT_OF_MEMORY );
+	unsigned long outLength = inLength + mp_unsigned_bin_size((mp_int*)privateData->key.N) - hash_descriptor[hashIndex].hashsize - 2; // length = message + (modulus length - 2 * hash size - 2)
+
+	char *out = (char *)JS_malloc( cx, outLength );
+	RT_ASSERT( out != NULL, RT_ERROR_OUT_OF_MEMORY );
 
 	int err;
-	switch ( privateData->mode ) {
+	if ( (err=rsa_encrypt_key( (const unsigned char *)in, inLength, (unsigned char *)out, &outLength, NULL, 0, &prngPrivate->state, prngIndex, hashIndex, &privateData->key )) != CRYPT_OK )
+		return ThrowCryptError(cx, err); // [TBD] free rsaPrivate ?
 
-		case mode_ctr:
-			if ( (err = ctr_enrsa( (const unsigned char *)pt, (unsigned char *)ct, ptLength, (symmetric_CTR *)privateData->symmetric_XXX )) != rsa_OK )
-				return ThrowrsaError(cx, err);
-			break;
-		case mode_cfb:
-			if ( (err = cfb_enrsa( (const unsigned char *)pt, (unsigned char *)ct, ptLength, (symmetric_CFB *)privateData->symmetric_XXX )) != rsa_OK )
-				return ThrowrsaError(cx, err);
-			break;
-		default:
-			RT_ASSERT( false, "unsupported mode." );
-	}
+	JSString *jssOut = JS_NewString( cx, out, outLength );
+	RT_ASSERT( jssOut != NULL, "unable to create the string." );
+	*rval = STRING_TO_JSVAL(jssOut);
 
-	JSString *jssCt = JS_NewString( cx, ct, ptLength );
-	RT_ASSERT( jssCt != NULL, "unable to create the cipher string." );
-	*rval = STRING_TO_JSVAL(jssCt);
-
-*/
 	return JS_TRUE;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSBool rsa_decrypt(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+JSBool rsa_decryptKey(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
-	RT_ASSERT_ARGC( 1 );
+	RT_ASSERT_ARGC( 2 );
+
 	RT_ASSERT_CLASS( obj, &rsa_class );
-	
-/*	
-	PrivateData *privateData = (PrivateData *)JS_GetPrivate( cx, obj );
-	RT_ASSERT( privateData != NULL, RT_ERROR_NOT_INITIALIZED );
+	RsaPrivate *privateData = (RsaPrivate *)JS_GetPrivate( cx, obj );
 
-	char *ct;
-	int ctLength;
-	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], ct, ctLength );
 
-	char *pt = (char *)JS_malloc( cx, ctLength );
-	RT_ASSERT( pt != NULL, RT_ERROR_OUT_OF_MEMORY );
+	char *hashName;
+	RT_JSVAL_TO_STRING( argv[0], hashName );
+	int hashIndex = find_hash(hashName);
+	RT_ASSERT_1( hashIndex != -1, "hash %s is not registred", hashName );
+
+/*
+	JSObject *objHash JSVAL_TO_OBJECT(argv[0]);
+	RT_ASSERT_CLASS( objHash, &hash_class );
+	HashPrivate *hashPrivate = (HashPrivate *)JS_GetPrivate( cx, objHash );
+	RT_ASSERT( hashPrivate != NULL, "hash is not initialized." );
+	int hashIndex = find_hash(hashPrivate->hash.name);
+	RT_ASSERT_1( hashIndex != -1, "hash %s is not registred", hashPrivate->hash.name );
+*/
+
+	char *in;
+	int inLength;
+	RT_JSVAL_TO_STRING_AND_LENGTH( argv[1], in, inLength );
+
+//	int modulusSize = mp_unsigned_bin_size((mp_int*)privateData->key.N);
+//	unsigned long outLength = inLength - ( modulusSize - hash_descriptor[hashIndex].hashsize - 2 );
+//	if ( outLength < modulusSize )
+//		outLength = modulusSize;
+
+	unsigned long outLength = inLength;
+
+	char *out = (char *)JS_malloc( cx, outLength );
+	RT_ASSERT( out != NULL, RT_ERROR_OUT_OF_MEMORY );
+
+	int stat;
 
 	int err;
-	switch ( privateData->mode ) {
+	if ( (err=rsa_decrypt_key( (const unsigned char *)in, inLength, (unsigned char *)out, &outLength, NULL, 0, hashIndex, &stat, &privateData->key )) != CRYPT_OK )
+		return ThrowCryptError(cx, err); // [TBD] free rsaPrivate ?
 
-		case mode_ctr:
-			if ( (err = ctr_dersa( (const unsigned char *)ct, (unsigned char *)pt, ctLength, (symmetric_CTR *)privateData->symmetric_XXX )) != rsa_OK )
-				return ThrowrsaError(cx, err);
-			break;
-		case mode_cfb:
-			if ( (err = cfb_dersa( (const unsigned char *)ct, (unsigned char *)pt, ctLength, (symmetric_CFB *)privateData->symmetric_XXX )) != rsa_OK )
-				return ThrowrsaError(cx, err);
-			break;
-		default:
-			RT_ASSERT( false, "unsupported mode." );
-	}
+	RT_ASSERT( stat == 1, "invalid OAEP packet" );
 
-	JSString *jssCt = JS_NewString( cx, pt, ctLength );
-	RT_ASSERT( jssCt != NULL, "unable to create the cipher string." );
-	*rval = STRING_TO_JSVAL(jssCt);
+	JSString *jssOut = JS_NewString( cx, out, outLength );
+	RT_ASSERT( jssOut != NULL, "unable to create the string." );
+	*rval = STRING_TO_JSVAL(jssOut);
 
-*/
 	return JS_TRUE;
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 JSFunctionSpec rsa_FunctionSpec[] = { // *name, call, nargs, flags, extra
- { "Encrypt"        , rsa_encrypt     , 0, 0, 0 },
- { "Decrypt"        , rsa_decrypt     , 0, 0, 0 },
+ { "EncryptKey"        , rsa_encryptKey },
+ { "DecryptKey"        , rsa_decryptKey },
  { 0 }
 };
 
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSBool rsa_setter_IV(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
-/*
+JSBool rsa_setter_key(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
+
 	RT_ASSERT_CLASS( obj, &rsa_class );
-	PrivateData *privateData = (PrivateData *)JS_GetPrivate( cx, obj );
+	RsaPrivate *privateData = (RsaPrivate *)JS_GetPrivate( cx, obj );
 	RT_ASSERT( privateData != NULL, RT_ERROR_NOT_INITIALIZED );
 
-	char *IV;
-	int IVLength;
-	RT_JSVAL_TO_STRING_AND_LENGTH( *vp, IV, IVLength );
+	char *key;
+	int keyLength;
+	RT_JSVAL_TO_STRING_AND_LENGTH( *vp, key, keyLength );
 
 	int err;
-	switch ( privateData->mode ) {
-		case mode_ctr:
-			if ( (err=ctr_setiv( (const unsigned char *)IV, IVLength, (symmetric_CTR *)privateData->symmetric_XXX )) != rsa_OK )
-				return ThrowrsaError(cx, err);
-			break;
-		case mode_cfb:
-			if ( (err=cfb_setiv( (const unsigned char *)IV, IVLength, (symmetric_CFB *)privateData->symmetric_XXX )) != rsa_OK )
-				return ThrowrsaError(cx, err);
-			break;
-		default:
-			RT_ASSERT( false, "unsupported mode." );
-	}
-*/
+	if ( (err=rsa_import( (const unsigned char *)key, keyLength, &privateData->key )) != CRYPT_OK )
+		return ThrowCryptError(cx, err); // [TBD] free rsaPrivate ?
+
 	return JS_TRUE;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSBool rsa_getter_IV(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
-/*
+JSBool rsa_getter_key(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
+
 	RT_ASSERT_CLASS( obj, &rsa_class );
-	PrivateData *privateData = (PrivateData *)JS_GetPrivate( cx, obj );
+	RsaPrivate *privateData = (RsaPrivate *)JS_GetPrivate( cx, obj );
 	RT_ASSERT( privateData != NULL, RT_ERROR_NOT_INITIALIZED );
 
-	char *IV;
-	unsigned long IVLength;
+	JSBool jsErr;
+	int32 type;
+	jsErr = JS_ValueToInt32( cx, id, &type );
+	RT_ASSERT( jsErr == JS_TRUE, "unable to get what to do." );
+
+	char key[4096];
+	unsigned long keyLength = sizeof(key);
 
 	int err;
-	switch ( privateData->mode ) {
-		case mode_ctr: {
-			symmetric_CTR *psctr = (symmetric_CTR *)privateData->symmetric_XXX;
-			IVLength = psctr->blocklen;
-			IV = (char*)JS_malloc( cx, IVLength );
-			RT_ASSERT( IV != NULL, RT_ERROR_OUT_OF_MEMORY );
-			if ( (err=ctr_getiv( (unsigned char *)IV, &IVLength, psctr )) != rsa_OK )
-				return ThrowrsaError(cx, err);
-			break;
-		}
-		case mode_cfb: {
-			symmetric_CFB *psctr = (symmetric_CFB *)privateData->symmetric_XXX;
-			IVLength = psctr->blocklen;
-			IV = (char*)JS_malloc( cx, IVLength );
-			RT_ASSERT( IV != NULL, RT_ERROR_OUT_OF_MEMORY );
-			if ( (err=cfb_getiv( (unsigned char *)IV, &IVLength, psctr )) != rsa_OK )
-				return ThrowrsaError(cx, err);
-			break;
-		}
-		default:
-			RT_ASSERT( false, "unsupported mode." );
-	}
+	if ( (err=rsa_export( (unsigned char *)key, &keyLength, type, &privateData->key )) != CRYPT_OK )
+		return ThrowCryptError(cx, err); // [TBD] free rsaPrivate ?
 
-	JSString *jssIV = JS_NewString( cx, IV, IVLength );
-	RT_ASSERT( jssIV != NULL, "unable to create the IV string." );
-	*vp = STRING_TO_JSVAL(jssIV);
-*/
+	JSString *jssKey = JS_NewStringCopyN( cx, key, keyLength );
+	RT_ASSERT( jssKey != NULL, "unable to create the key string." );
+	*vp = STRING_TO_JSVAL(jssKey);
+
 	return JS_TRUE;
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 JSPropertySpec rsa_PropertySpec[] = { // *name, tinyid, flags, getter, setter
-	{ "IV"            , 0, JSPROP_PERMANENT, rsa_getter_IV, rsa_setter_IV },
-  { 0 }
+	{ "privateKey"     , PK_PRIVATE, JSPROP_PERMANENT, rsa_getter_key , rsa_setter_key },
+	{ "publicKey"      , PK_PUBLIC , JSPROP_PERMANENT, rsa_getter_key , rsa_setter_key  },
+	{ 0 }
 };
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 JSBool rsa_static_blockLength(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
-/*
-	RT_ASSERT_ARGC( 1 );
-	char *cipherName;
-	RT_JSVAL_TO_STRING( argv[0], cipherName );
 
-	int cipherIndex = find_cipher(cipherName);
-	RT_ASSERT_1( cipherIndex != -1, "cipher %s is not registred", cipherName );
-
-	*rval = INT_TO_JSVAL(cipher_descriptor[cipherIndex].block_length);
-*/
 	return JS_TRUE;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 JSFunctionSpec rsa_static_FunctionSpec[] = { // *name, call, nargs, flags, extra
-	{ "BlockLength"        , rsa_static_blockLength  , 0, 0, 0 },
+//	{ "BlockLength"        , rsa_static_blockLength  , 0, 0, 0 },
 	{ 0 }
 };
 
@@ -317,9 +251,10 @@ JSBool rsa_static_getter_cipherList(JSContext *cx, JSObject *obj, jsval id, jsva
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 JSPropertySpec rsa_static_PropertySpec[] = { // *name, tinyid, flags, getter, setter
-	{ "cipherList"   , 0, JSPROP_PERMANENT|JSPROP_READONLY, rsa_static_getter_cipherList , NULL },
+//	{ "cipherList"   , 0, JSPROP_PERMANENT|JSPROP_READONLY, rsa_static_getter_cipherList , NULL },
 	{ 0 }
 };
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 JSObject *rsaInitClass( JSContext *cx, JSObject *obj ) {
@@ -329,5 +264,31 @@ JSObject *rsaInitClass( JSContext *cx, JSObject *obj ) {
 
 
 /****************************************************************
+
+We let
+p = 61 	— first prime number (to be kept secret or deleted securely)
+q = 53 	— second prime number (to be kept secret or deleted securely)
+n = pq = 3233 	— modulus (to be made public)
+e = 17 	— public exponent (to be made public)
+d = 2753 	— private exponent (to be kept secret)
+
+The public key is (e, n). The private key is d. The encryption function is:
+
+    encrypt(m) = me mod n = m17 mod 3233
+
+where m is the plaintext. The decryption function is:
+
+    decrypt(c) = cd mod n = c2753 mod 3233
+
+where c is the ciphertext.
+
+To encrypt the plaintext value 123, we calculate
+
+    encrypt(123) = 12317 mod 3233 = 855
+
+To decrypt the ciphertext value 855, we calculate
+
+    decrypt(855) = 8552753 mod 3233 = 123 
+
 
 */
