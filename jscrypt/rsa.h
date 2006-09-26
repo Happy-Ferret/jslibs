@@ -1,0 +1,1 @@
+JSObject *rsaInitClass( JSContext *cx, JSObject *obj );

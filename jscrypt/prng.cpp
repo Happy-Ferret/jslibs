@@ -7,29 +7,13 @@
 
 #include "cryptError.h"
 
-#include <tomcrypt.h>
-
 #include "../common/jshelper.h"
 
-struct PrivateData {
-	ltc_prng_descriptor prng;
-	prng_state state;
-};
-
-JSBool prng_call(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval);
-void prng_Finalize(JSContext *cx, JSObject *obj);
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSClass prng_class = { "Prng", JSCLASS_HAS_PRIVATE,
-	JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub,
-	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, prng_Finalize,
-	0,0, prng_call
-};
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void prng_Finalize(JSContext *cx, JSObject *obj) {
 
-	PrivateData *privateData = (PrivateData *)JS_GetPrivate( cx, obj );
+	PrngPrivate *privateData = (PrngPrivate *)JS_GetPrivate( cx, obj );
 	if ( privateData != NULL ) {
 
 		privateData->prng.done( &privateData->state );
@@ -44,7 +28,7 @@ JSBool prng_call(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *r
 
 	RT_ASSERT_ARGC( 1 );
 	RT_ASSERT_CLASS( thisObj, &prng_class );
-	PrivateData *privateData = (PrivateData *)JS_GetPrivate( cx, thisObj );
+	PrngPrivate *privateData = (PrngPrivate *)JS_GetPrivate( cx, thisObj );
 	RT_ASSERT( privateData, RT_ERROR_NOT_INITIALIZED );
 
 	int32 readCount;
@@ -74,10 +58,12 @@ JSBool prng_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsv
 	int prngIndex = find_prng(prngName);
 	RT_ASSERT_1( prngIndex != -1, "prng %s is not registred", prngName );
 
-	PrivateData *privateData = (PrivateData*)malloc( sizeof(PrivateData) );
+	PrngPrivate *privateData = (PrngPrivate*)malloc( sizeof(PrngPrivate) );
 	RT_ASSERT( privateData != NULL, RT_ERROR_OUT_OF_MEMORY );
 
 	privateData->prng = prng_descriptor[prngIndex];
+
+	RT_ASSERT_1( privateData->prng.test() == CRYPT_OK, "%s prng test failed.", prngName );
 
 	int err;
 	if ( (err = privateData->prng.start( &privateData->state )) != CRYPT_OK )
@@ -95,7 +81,7 @@ JSBool prng_addEntropy(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, js
 
 	RT_ASSERT_ARGC( 1 );
 	RT_ASSERT_CLASS( obj, &prng_class );
-	PrivateData *privateData = (PrivateData *)JS_GetPrivate( cx, obj );
+	PrngPrivate *privateData = (PrngPrivate *)JS_GetPrivate( cx, obj );
 	RT_ASSERT( privateData != NULL, RT_ERROR_NOT_INITIALIZED );
 
 	char *entropy;
@@ -117,7 +103,7 @@ JSBool prng_autoEntropy(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, j
 
 	RT_ASSERT_ARGC( 1 );
 	RT_ASSERT_CLASS( obj, &prng_class );
-	PrivateData *privateData = (PrivateData *)JS_GetPrivate( cx, obj );
+	PrngPrivate *privateData = (PrngPrivate *)JS_GetPrivate( cx, obj );
 	RT_ASSERT( privateData != NULL, RT_ERROR_NOT_INITIALIZED );
 
 	int32 bits;
@@ -145,7 +131,7 @@ JSFunctionSpec prng_FunctionSpec[] = { // *name, call, nargs, flags, extra
 JSBool prng_getter_name(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 
 	RT_ASSERT_CLASS( obj, &prng_class );
-	PrivateData *privateData = (PrivateData *)JS_GetPrivate( cx, obj );
+	PrngPrivate *privateData = (PrngPrivate *)JS_GetPrivate( cx, obj );
 	RT_ASSERT( privateData != NULL, RT_ERROR_NOT_INITIALIZED );
 	
 	*vp = STRING_TO_JSVAL( JS_NewStringCopyZ(cx,privateData->prng.name) );
