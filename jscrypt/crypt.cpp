@@ -3,29 +3,16 @@
 #define XP_WIN
 #include <jsapi.h>
 
-#include "crypt.h"
-
 #include <tomcrypt.h>
+
+#include "crypt.h"
 
 #include "cryptError.h"
 
 #include "../common/jshelper.h"
 
-#define MODE_CTR "CTR"
-#define MODE_CFB "CFB"
-
-enum Mode {
-	mode_ctr,
-	mode_cfb
-};
-
-struct PrivateData {
-
-	Mode mode;
-	void *symmetric_XXX;
-};
-
 void crypt_Finalize(JSContext *cx, JSObject *obj);
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 JSClass crypt_class = { "Crypt", JSCLASS_HAS_PRIVATE,
@@ -36,7 +23,7 @@ JSClass crypt_class = { "Crypt", JSCLASS_HAS_PRIVATE,
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void crypt_Finalize(JSContext *cx, JSObject *obj) {
 
-	PrivateData *privateData = (PrivateData *)JS_GetPrivate( cx, obj );
+	CryptPrivate *privateData = (CryptPrivate *)JS_GetPrivate( cx, obj );
 	if ( privateData == NULL )
 		return;
 
@@ -75,7 +62,7 @@ JSBool crypt_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, js
 	int IVLength;
 	RT_JSVAL_TO_STRING_AND_LENGTH( argv[3], IV, IVLength );
 
-	PrivateData *privateData = (PrivateData*)malloc( sizeof(PrivateData) );
+	CryptPrivate *privateData = (CryptPrivate*)malloc( sizeof(CryptPrivate) );
 	RT_ASSERT( privateData != NULL, RT_ERROR_OUT_OF_MEMORY );
 
 	int cipherIndex = find_cipher(cipherName);
@@ -117,7 +104,7 @@ JSBool crypt_encrypt(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsva
 
 	RT_ASSERT_ARGC( 1 );
 	RT_ASSERT_CLASS( obj, &crypt_class );
-	PrivateData *privateData = (PrivateData *)JS_GetPrivate( cx, obj );
+	CryptPrivate *privateData = (CryptPrivate *)JS_GetPrivate( cx, obj );
 	RT_ASSERT( privateData != NULL, RT_ERROR_NOT_INITIALIZED );
 
 	char *pt;
@@ -154,7 +141,7 @@ JSBool crypt_decrypt(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsva
 
 	RT_ASSERT_ARGC( 1 );
 	RT_ASSERT_CLASS( obj, &crypt_class );
-	PrivateData *privateData = (PrivateData *)JS_GetPrivate( cx, obj );
+	CryptPrivate *privateData = (CryptPrivate *)JS_GetPrivate( cx, obj );
 	RT_ASSERT( privateData != NULL, RT_ERROR_NOT_INITIALIZED );
 
 	char *ct;
@@ -198,7 +185,7 @@ JSFunctionSpec crypt_FunctionSpec[] = { // *name, call, nargs, flags, extra
 JSBool crypt_setter_IV(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 
 	RT_ASSERT_CLASS( obj, &crypt_class );
-	PrivateData *privateData = (PrivateData *)JS_GetPrivate( cx, obj );
+	CryptPrivate *privateData = (CryptPrivate *)JS_GetPrivate( cx, obj );
 	RT_ASSERT( privateData != NULL, RT_ERROR_NOT_INITIALIZED );
 
 	char *IV;
@@ -226,7 +213,7 @@ JSBool crypt_setter_IV(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 JSBool crypt_getter_IV(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 
 	RT_ASSERT_CLASS( obj, &crypt_class );
-	PrivateData *privateData = (PrivateData *)JS_GetPrivate( cx, obj );
+	CryptPrivate *privateData = (CryptPrivate *)JS_GetPrivate( cx, obj );
 	RT_ASSERT( privateData != NULL, RT_ERROR_NOT_INITIALIZED );
 
 	char *IV;
@@ -395,7 +382,7 @@ JSObject *cryptInitClass( JSContext *cx, JSObject *obj ) {
 
 /****************************************************************
 
-CTR ( Counter Mode )
-	http://en.wikipedia.org/wiki/Counter_mode (fr: http://fr.wikipedia.org/wiki/Mode_d%27op%C3%A9ration_%28cryptographie%29 )
+CTR ( Counter CryptMode )
+	http://en.wikipedia.org/wiki/Counter_mode (fr: http://fr.wikipedia.org/wiki/CryptMode_d%27op%C3%A9ration_%28cryptographie%29 )
 
 */
