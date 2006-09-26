@@ -3,11 +3,25 @@
 #define XP_WIN
 #include <jsapi.h>
 
+#include <tomcrypt.h>
+
+
 #include "prng.h"
 
 #include "cryptError.h"
 
 #include "../common/jshelper.h"
+
+JSBool prng_call(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval);
+void prng_Finalize(JSContext *cx, JSObject *obj);
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+JSClass prng_class = { "Prng", JSCLASS_HAS_PRIVATE,
+	JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub,
+	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, prng_Finalize,
+	0,0, prng_call
+};
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -37,6 +51,7 @@ JSBool prng_call(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *r
 	char *pr = (char*)JS_malloc( cx, readCount );
 	RT_ASSERT( pr != NULL, RT_ERROR_OUT_OF_MEMORY );
 	unsigned long hasRead = privateData->prng.read( (unsigned char*)pr, readCount, &privateData->state );
+	RT_ASSERT( hasRead == readCount, "unable to read prng." );
 
 	JSString *randomString = JS_NewString( cx, pr, hasRead );
 	RT_ASSERT( randomString != NULL, "unable to create the random string." );
@@ -133,7 +148,7 @@ JSBool prng_getter_name(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 	RT_ASSERT_CLASS( obj, &prng_class );
 	PrngPrivate *privateData = (PrngPrivate *)JS_GetPrivate( cx, obj );
 	RT_ASSERT( privateData != NULL, RT_ERROR_NOT_INITIALIZED );
-	
+
 	*vp = STRING_TO_JSVAL( JS_NewStringCopyZ(cx,privateData->prng.name) );
 	return JS_TRUE;
 }
@@ -168,6 +183,7 @@ JSPropertySpec prng_static_PropertySpec[] = { // *name, tinyid, flags, getter, s
 //	{ "myStatic"                , 0, JSPROP_PERMANENT|JSPROP_READONLY, prng_static_getter_myStatic         , NULL },
 	{ 0 }
 };
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 JSObject *prngInitClass( JSContext *cx, JSObject *obj ) {
