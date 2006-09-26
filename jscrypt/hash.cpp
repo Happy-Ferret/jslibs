@@ -3,18 +3,14 @@
 #define XP_WIN
 #include <jsapi.h>
 
+#include <tomcrypt.h>
+
 #include "hash.h"
 
 #include "cryptError.h"
 
-#include <tomcrypt.h>
 
 #include "../common/jshelper.h"
-
-struct PrivateData {
-	ltc_hash_descriptor hash;
-	hash_state state;
-};
 
 
 JSBool hash_call(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval);
@@ -30,7 +26,7 @@ JSClass hash_class = { "Hash", JSCLASS_HAS_PRIVATE,
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void hash_Finalize(JSContext *cx, JSObject *obj) {
 
-	PrivateData *privateData = (PrivateData *)JS_GetPrivate( cx, obj );
+	HashPrivate *privateData = (HashPrivate *)JS_GetPrivate( cx, obj );
 	if ( privateData != NULL ) {
 
 		free(privateData);
@@ -43,7 +39,7 @@ JSBool hash_call(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *r
 	JSObject *thisObj = JSVAL_TO_OBJECT(argv[-2]); // get 'this' object of the current object ... [TBD]: check JS_InstanceOf( cx, thisObj, &NativeProc, NULL )
 	RT_ASSERT_CLASS( thisObj, &hash_class );
 	RT_ASSERT_ARGC( 1 );
-	PrivateData *privateData = (PrivateData *)JS_GetPrivate( cx, thisObj );
+	HashPrivate *privateData = (HashPrivate *)JS_GetPrivate( cx, thisObj );
 	RT_ASSERT( privateData != NULL, RT_ERROR_NOT_INITIALIZED );
 
 	char *in;
@@ -84,7 +80,7 @@ JSBool hash_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsv
 	int hashIndex = find_hash(hashName);
 	RT_ASSERT_1( hashIndex != -1, "hash %s is not registred", hashName );
 
-	PrivateData *privateData = (PrivateData*)malloc( sizeof(PrivateData) );
+	HashPrivate *privateData = (HashPrivate*)malloc( sizeof(HashPrivate) );
 	RT_ASSERT( privateData != NULL, RT_ERROR_OUT_OF_MEMORY );
 
 	privateData->hash = hash_descriptor[hashIndex];
