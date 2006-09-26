@@ -204,6 +204,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\rsa.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\stdafx.cpp"
 				>
 				<FileConfiguration
@@ -247,6 +251,10 @@
 			</File>
 			<File
 				RelativePath=".\prng.h"
+				>
+			</File>
+			<File
+				RelativePath=".\rsa.h"
 				>
 			</File>
 			<File

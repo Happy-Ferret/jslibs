@@ -20,7 +20,7 @@
 				HttpUrl=""
 				PDBPath=""
 				SQLDebugging=""
-				Environment="PATH=%PATH%;..\jshost\debug;..\jsnspr\debug;..\nspr\lib;..\mozilla\js\src\WINNT5.1_OPT.OBJ;..\jssqlite\debug;..\jsobjex\debug;..\jsz\debug;..\jscrypt\debug"
+				Environment="PATH=%PATH%;..\mozilla\js\src\WINNT5.1_OPT.OBJ;..\jscrypt\debug"
 				EnvironmentMerge="true"
 				DebuggerFlavor="0"
 				MPIRunCommand=""

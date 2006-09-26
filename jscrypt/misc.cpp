@@ -72,9 +72,10 @@ static JSBool misc_hex64Encode(JSContext *cx, JSObject *obj, uintN argc, jsval *
 	char *out = (char *)JS_malloc( cx, outLength );
 	RT_ASSERT( out != NULL, RT_ERROR_OUT_OF_MEMORY );
 
+	unsigned char c;
 	for ( int i=0; i<inLength; ++i ) {
 		
-		unsigned char c = in[i];
+		c = in[i];
 		out[i*2+0] = hex[ c >> 4 ];
 		out[i*2+1] = hex[ c & 0xF ];
 	}

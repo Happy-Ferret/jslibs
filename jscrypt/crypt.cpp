@@ -83,7 +83,9 @@ JSBool crypt_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, js
 
 	ltc_cipher_descriptor cipher = cipher_descriptor[cipherIndex];
 
-	RT_ASSERT_1( IVLength == cipher.block_length, "IV must have the same size as cipher block length (%d bytes)", cipher.block_length );
+	RT_ASSERT_1( cipher.test() == CRYPT_OK, "%s cipher test failed.", cipherName );
+
+//	RT_ASSERT_1( IVLength == cipher.block_length, "IV must have the same size as cipher block length (%d bytes)", cipher.block_length );
 
 	int err;
 	if ( _stricmp( modeName, MODE_CTR ) == 0 ) {
@@ -292,15 +294,33 @@ JSFunctionSpec crypt_static_FunctionSpec[] = { // *name, call, nargs, flags, ext
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSBool crypt_static_getter_myStatic(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
+JSBool crypt_static_getter_cipherList(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 
-  return JS_TRUE;
+	JSObject *list = JS_NewObject( cx, NULL, NULL, NULL );
+	RT_ASSERT( list != NULL, "unable to create cipher list." );
+
+	const char *cipherName;
+	int keySize;
+	int x;
+	LTC_MUTEX_LOCK(&ltc_cipher_mutex);
+	for (x = 0; x < TAB_SIZE; x++)
+		if ( (cipherName = cipher_descriptor[x].name) != NULL) {
+		  //JS_DefineProperty(cx, list, cipherName, JSVAL_TRUE, NULL, NULL, 0);
+			keySize = INT_MAX;
+			cipher_descriptor[x].keysize(&keySize);
+			jsval value = INT_TO_JSVAL( keySize );
+			JS_SetProperty( cx, list, cipherName, &value );
+		}
+	LTC_MUTEX_UNLOCK(&ltc_cipher_mutex);
+
+	*vp = OBJECT_TO_JSVAL(list);
+	return JS_TRUE;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 JSPropertySpec crypt_static_PropertySpec[] = { // *name, tinyid, flags, getter, setter
-//	{ "myStatic"                , 0, JSPROP_PERMANENT|JSPROP_READONLY, crypt_static_getter_myStatic         , NULL },
-  { 0 }
+	{ "cipherList"   , 0, JSPROP_PERMANENT|JSPROP_READONLY, crypt_static_getter_cipherList , NULL },
+	{ 0 }
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
