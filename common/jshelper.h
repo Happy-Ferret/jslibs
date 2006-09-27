@@ -39,6 +39,8 @@
 		lengthVariable = JS_GetStringLength( __jssTmp ); \
 	}
 
+
+// try JS_GetInstancePrivate ??
 #define RT_ASSERT_CLASS( jsObject, jsClass ) \
 	RT_ASSERT( JS_GetClass(jsObject) == (jsClass), RT_ERROR_INVALID_CLASS );
 
