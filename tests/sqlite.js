@@ -1,4 +1,4 @@
-exec('deflib.js');
+LoadModule('jsstd');
 LoadModule('jssqlite');
 
 //try {

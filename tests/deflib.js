@@ -1,3 +1,5 @@
+LoadModule('jsstd');
+/*
 Exec('jsni.js');
 
 
@@ -10,3 +12,4 @@ function LoadModule( fileName ) {
 	if ( ret[0] == 0 )
 		throw( new Error('unable to load '+fileName) );
 }
+*/

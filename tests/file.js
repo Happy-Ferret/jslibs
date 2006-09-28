@@ -1,4 +1,4 @@
-exec('deflib.js');
+LoadModule('jsstd');
 LoadModule('jsnspr');
 
 var file = new File('file_test.txt');
