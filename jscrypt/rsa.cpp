@@ -1,8 +1,5 @@
 #include "stdafx.h"
 
-#define XP_WIN
-#include <jsapi.h>
-
 #include "rsa.h"
 #include "prng.h"
 #include "hash.h"
@@ -14,14 +11,6 @@
 
 #include "../common/jshelper.h"
 
-
-void rsa_Finalize(JSContext *cx, JSObject *obj);
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSClass rsa_class = { "Rsa", JSCLASS_HAS_PRIVATE,
-	JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub,
-	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, rsa_Finalize
-};
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void rsa_Finalize(JSContext *cx, JSObject *obj) {
@@ -266,6 +255,12 @@ JSBool rsa_static_getter_cipherList(JSContext *cx, JSObject *obj, jsval id, jsva
 JSPropertySpec rsa_static_PropertySpec[] = { // *name, tinyid, flags, getter, setter
 //	{ "cipherList"   , 0, JSPROP_PERMANENT|JSPROP_READONLY, rsa_static_getter_cipherList , NULL },
 	{ 0 }
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+JSClass rsa_class = { "Rsa", JSCLASS_HAS_PRIVATE,
+	JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub,
+	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, rsa_Finalize
 };
 
 

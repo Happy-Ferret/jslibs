@@ -9,6 +9,6 @@ struct RsaPrivate {
 	rsa_key key;
 };
 
-struct rsa_class;
+extern JSClass rsa_class;
 
 #endif // RSA_H_

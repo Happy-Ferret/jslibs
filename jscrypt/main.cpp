@@ -1,17 +1,10 @@
 #include "stdafx.h"
 
-#define XP_WIN
-#include <jsapi.h>
-
-#include <tomcrypt.h>
-
-#include "cryptError.h"
 #include "misc.h"
 
 #include "rsa.h"
 #include "prng.h"
 #include "hash.h"
-//#include "cipher.h"
 #include "crypt.h"
 
 extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj) {

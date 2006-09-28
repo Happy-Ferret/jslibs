@@ -1,10 +1,4 @@
 #include "stdafx.h"
-
-#define XP_WIN
-#include <jsapi.h>
-
-#include <tomcrypt.h>
-
 #include "cryptError.h"
 
 JSClass CryptError_class = { 

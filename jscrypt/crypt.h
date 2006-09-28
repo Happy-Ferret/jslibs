@@ -1,7 +1,6 @@
 #ifndef CRYPT_H_
 #define CRYPT_H_
 
-
 JSObject *cryptInitClass( JSContext *cx, JSObject *obj );
 
 #define MODE_CTR "CTR"
@@ -19,6 +18,6 @@ struct CryptPrivate {
 };
 
 
-struct crypt_class;
+extern JSClass crypt_class;
 
 #endif // CRYPT_H_

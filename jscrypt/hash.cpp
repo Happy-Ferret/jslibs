@@ -1,25 +1,5 @@
 #include "stdafx.h"
-
-#define XP_WIN
-#include <jsapi.h>
-
-#include <tomcrypt.h>
-
 #include "hash.h"
-
-#include "cryptError.h"
-
-#include "../common/jshelper.h"
-
-JSBool hash_call(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval);
-void hash_Finalize(JSContext *cx, JSObject *obj);
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSClass hash_class = { "Hash", JSCLASS_HAS_PRIVATE,
-	JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub,
-	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, hash_Finalize,
-	0,0, hash_call
-};
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void hash_Finalize(JSContext *cx, JSObject *obj) {
@@ -169,6 +149,12 @@ JSPropertySpec hash_static_PropertySpec[] = { // *name, tinyid, flags, getter, s
 	{ 0 }
 };
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+JSClass hash_class = { "Hash", JSCLASS_HAS_PRIVATE,
+	JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub,
+	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, hash_Finalize,
+	0,0, hash_call
+};
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 JSObject *hashInitClass( JSContext *cx, JSObject *obj ) {

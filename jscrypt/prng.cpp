@@ -1,27 +1,5 @@
 #include "stdafx.h"
-
-#define XP_WIN
-#include <jsapi.h>
-
-#include <tomcrypt.h>
-
-
 #include "prng.h"
-
-#include "cryptError.h"
-
-#include "../common/jshelper.h"
-
-JSBool prng_call(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval);
-void prng_Finalize(JSContext *cx, JSObject *obj);
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSClass prng_class = { "Prng", JSCLASS_HAS_PRIVATE,
-	JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub,
-	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, prng_Finalize,
-	0,0, prng_call
-};
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -184,6 +162,13 @@ JSPropertySpec prng_static_PropertySpec[] = { // *name, tinyid, flags, getter, s
 	{ 0 }
 };
 
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+JSClass prng_class = { "Prng", JSCLASS_HAS_PRIVATE,
+	JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub,
+	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, prng_Finalize,
+	0,0, prng_call
+};
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 JSObject *prngInitClass( JSContext *cx, JSObject *obj ) {

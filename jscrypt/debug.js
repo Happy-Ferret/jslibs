@@ -1,4 +1,4 @@
-Exec('deflib.js');
+LoadModule('jsstd');
 LoadModule('jscrypt');
 
 try {

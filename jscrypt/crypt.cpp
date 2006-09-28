@@ -1,24 +1,5 @@
 #include "stdafx.h"
-
-#define XP_WIN
-#include <jsapi.h>
-
-#include <tomcrypt.h>
-
 #include "crypt.h"
-
-#include "cryptError.h"
-
-#include "../common/jshelper.h"
-
-void crypt_Finalize(JSContext *cx, JSObject *obj);
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSClass crypt_class = { "Crypt", JSCLASS_HAS_PRIVATE,
-	JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub,
-	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, crypt_Finalize
-};
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void crypt_Finalize(JSContext *cx, JSObject *obj) {
@@ -311,8 +292,13 @@ JSPropertySpec crypt_static_PropertySpec[] = { // *name, tinyid, flags, getter, 
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSObject *cryptInitClass( JSContext *cx, JSObject *obj ) {
+JSClass crypt_class = { "Crypt", JSCLASS_HAS_PRIVATE,
+	JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub,
+	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, crypt_Finalize
+};
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+JSObject *cryptInitClass( JSContext *cx, JSObject *obj ) {
 
 #ifdef RIJNDAEL
   register_cipher (&aes_desc);

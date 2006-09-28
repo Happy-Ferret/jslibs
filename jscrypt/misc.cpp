@@ -1,15 +1,5 @@
 #include "stdafx.h"
-
-#define XP_WIN
-#include <jsapi.h>
-
 #include "misc.h"
-
-#include "cryptError.h"
-
-#include <tomcrypt.h>
-
-#include "../common/jshelper.h"
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 static JSBool misc_base64Encode(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {

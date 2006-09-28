@@ -11,3 +11,9 @@
 // TODO: reference additional headers your program requires here
 #include <windows.h>
 
+#define XP_WIN
+#include <jsapi.h>
+
+#include "../common/jshelper.h"
+#include <tomcrypt.h>
+#include "cryptError.h"
