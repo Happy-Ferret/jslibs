@@ -14,6 +14,5 @@ struct Configuration {
 
 extern JSClass configuration_class;
 
-//Configuration *CreateConfigurationObject( JSContext *cx );
 Configuration *GetConfiguration( JSContext *cx );
 
