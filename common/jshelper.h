@@ -7,13 +7,20 @@
 #define RT_ERROR_NEED_CONSTRUCTION "construction is needed for this object."
 #define RT_ERROR_MISSING_ARGUMENT "this function require more arguments."
 #define RT_ERROR_MISSING_N_ARGUMENT "this function require %d more argument(s)."
-#define RT_ERROR_INVALID_CLASS "this object do not support this function call."
+#define RT_ERROR_INVALID_CLASS "wrong object type."
 #define RT_ERROR_STRING_CONVERSION_FAILED "unable to convert this argument to string."
 #define RT_ERROR_INT_CONVERSION_FAILED "unable to convert this argument to integer."
 #define RT_ERROR_OUT_OF_MEMORY "not enough memory to complete the allocation."
 #define RT_ERROR_NOT_INITIALIZED "the object is not proprely initialized."
 
 // helper macros
+
+#define RT_SAFE(code) \
+	if (true) {code;}
+
+#define RT_UNSAFE(code) \
+	if (false) {code;}
+
 #define RT_ASSERT_1( condition, errorMessage, arg ) \
 	if ( !(condition) ) { JS_ReportError( cx, (errorMessage), (arg) ); return JS_FALSE; }
 
@@ -39,10 +46,17 @@
 		lengthVariable = JS_GetStringLength( __jssTmp ); \
 	}
 
+#define RT_ASSERT_ALLOC( pointer ) \
+	RT_ASSERT( (pointer) != NULL, RT_ERROR_OUT_OF_MEMORY );
 
 // try JS_GetInstancePrivate ??
+
 #define RT_ASSERT_CLASS( jsObject, jsClass ) \
 	RT_ASSERT( JS_GetClass(jsObject) == (jsClass), RT_ERROR_INVALID_CLASS );
 
 #define RT_ASSERT_ARGC( minCount ) \
 	RT_ASSERT_1( argc >= (minCount), RT_ERROR_MISSING_N_ARGUMENT, (minCount)-argc );
+
+#define RT_ASSERT_CONSTRUCTING(jsClass) \
+	RT_ASSERT( JS_IsConstructing(cx) == JS_TRUE, RT_ERROR_NEED_CONSTRUCTION ); \
+	RT_ASSERT_CLASS( obj, (jsClass) );
