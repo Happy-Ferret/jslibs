@@ -21,12 +21,10 @@ JSBool GetBodyAndMass(JSContext *cx, JSObject *massObject, ode::dBodyID *bodyID,
 JSBool mass_translate(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
 	RT_ASSERT_ARGC(1);
-
 	ode::dBodyID bodyID;
 	ode::dMass mass;
 	if ( GetBodyAndMass(cx, obj, &bodyID, &mass) == JS_FALSE)
 		return JS_FALSE;
-
 	jsdouble translation[3];
 	if (ArrayToVector(cx, 3, &argv[0], translation) == JS_FALSE)
 		return JS_FALSE;
@@ -39,7 +37,6 @@ JSBool mass_translate(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsv
 JSBool mass_adjust(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
 	RT_ASSERT_ARGC(1);
-
 	ode::dBodyID bodyID;
 	ode::dMass mass;
 	if ( GetBodyAndMass(cx, obj, &bodyID, &mass) == JS_FALSE)
@@ -51,10 +48,35 @@ JSBool mass_adjust(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval 
 	return JS_TRUE;
 }
 
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+JSBool mass_setBoxTotal(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+
+	RT_ASSERT_ARGC(2);
+// get mass object
+	ode::dBodyID bodyID;
+	ode::dMass mass;
+	if ( GetBodyAndMass(cx, obj, &bodyID, &mass) == JS_FALSE)
+		return JS_FALSE;
+// arg 0
+	jsdouble totalMass;
+	JS_ValueToNumber(cx, argv[0], &totalMass);
+// arg 1
+	jsdouble dimensions[3];
+	if (ArrayToVector(cx, 3, &argv[1], dimensions) == JS_FALSE)
+		return JS_FALSE;
+// apply the formulae
+	ode::dMassSetBoxTotal(&mass, totalMass, dimensions[0], dimensions[0], dimensions[0]);
+// set mass object
+	ode::dBodySetMass(bodyID, &mass);
+	return JS_TRUE;
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 JSFunctionSpec mass_FunctionSpec[] = { // *name, call, nargs, flags, extra
 	{ "Translate" , mass_translate, 0, 0, 0 },
 	{ "Adjust" , mass_adjust, 0, 0, 0 },
+	{ "SetBoxTotal" , mass_setBoxTotal, 0, 0, 0 },
 	{ 0 }
 };
 

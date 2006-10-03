@@ -29,7 +29,6 @@ JSPropertySpec joint_PropertySpec[] = { // *name, tinyid, flags, getter, setter
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 JSBool joint_destroy(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
-
 	JSBool res = JS_InstanceOf(cx, JS_GetPrototype(cx, obj), &joint_class, NULL);
 
 
@@ -87,11 +86,12 @@ JSClass joint_class = { "Joint", 0,
 	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, JS_FinalizeStub
 };
 
-
+//==============================================================================================================================================
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void jointBall_Finalize(JSContext *cx, JSObject *obj) {
+	// [TBD] ???
 }
 
 
@@ -119,6 +119,54 @@ JSBool jointBall_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv
 	return JS_TRUE;
 }
 
+enum { anchor, anchor2 };
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+JSBool joint_get_vector(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
+
+	ode::dJointID jointID = (ode::dJointID)JS_GetPrivate(cx, obj);
+	RT_ASSERT(jointID != NULL, RT_ERROR_NOT_INITIALIZED);
+	ode::dVector3 vector;
+	switch(JSVAL_TO_INT(id)) {
+		case anchor:
+			ode::dJointGetBallAnchor(jointID,vector);
+			break;
+		case anchor2:
+			ode::dJointGetBallAnchor2(jointID,vector);
+			break;
+	}
+	VectorToArray(cx, 3, vector, vp);
+	return JS_TRUE;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+JSBool joint_set_vector(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
+
+	ode::dJointID jointID = (ode::dJointID)JS_GetPrivate( cx, obj );
+	RT_ASSERT( jointID != NULL, RT_ERROR_NOT_INITIALIZED );
+	ode::dVector3 vector;
+	switch(JSVAL_TO_INT(id)) {
+		case anchor:
+			ArrayToVector(cx, 3, vp, vector);
+			ode::dJointSetBallAnchor( jointID, vector[0], vector[1], vector[2] );
+			break;
+	}
+	return JS_TRUE;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+JSPropertySpec jointBall_PropertySpec[] = { // *name, tinyid, flags, getter, setter
+	{ "anchor"   , anchor, JSPROP_PERMANENT|JSPROP_SHARED, joint_get_vector, joint_set_vector },
+	{ "anchor2"  , anchor2, JSPROP_PERMANENT|JSPROP_SHARED|JSPROP_READONLY, joint_get_vector, NULL },
+	{ 0 }
+};
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+JSFunctionSpec jointBall_FunctionSpec[] = { // *name, tinyid, flags, getter, setter
+//	{ "Attach" , joint_attach },
+	{ 0 }
+};
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 JSClass jointBall_class = { "JointBall", JSCLASS_HAS_PRIVATE | JSCLASS_HAS_RESERVED_SLOTS(2),
@@ -132,7 +180,7 @@ JSObject *jointInitClass( JSContext *cx, JSObject *obj ) {
 
 	joint = JS_InitClass( cx, obj, NULL, &joint_class, NULL, 0, joint_PropertySpec, joint_FunctionSpec, NULL, NULL );
 
-	jointBall = JS_InitClass( cx, obj, joint, &jointBall_class, jointBall_construct, 0, NULL, joint_FunctionSpec, NULL, NULL );
+	jointBall = JS_InitClass( cx, obj, joint, &jointBall_class, jointBall_construct, 0, jointBall_PropertySpec, jointBall_FunctionSpec, NULL, NULL );
 
 	return joint;
 }

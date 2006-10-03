@@ -11,6 +11,8 @@ var world = new World;
 var body = new Body(world);
 var body1 = new Body(world);
 
+body1.mass.SetBoxTotal(10,[1,1,100]);
+
 //body.mass.mass = 1;
 //body.mass.Translate([2,1,0]);
 //body.mass.center = [2,0,0];
@@ -18,6 +20,7 @@ var body1 = new Body(world);
 
 var joint = new JointBall(world);
 joint.Attach(body,body1);
+joint.anchor = [10,0,0];
 //joint.Destroy();
 
 //body.linearVel = [0,0,15];
