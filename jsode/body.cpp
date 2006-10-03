@@ -7,6 +7,8 @@
 
 JSObject *body;
 
+#define SLOT_PARENT 0
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void body_Finalize(JSContext *cx, JSObject *obj) {
 
@@ -23,6 +25,23 @@ void body_Finalize(JSContext *cx, JSObject *obj) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 JSBool body_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
+// with new operator	
+//  argv[-1] : Body
+//  argv[-2] : Function
+//  argv[-3] : global
+//  JS_GetParent : global
+
+
+// without new operator
+//  argv[-1] : World
+//  argv[-2] : Function
+//  argv[-3] : global
+
+
+	JSObject *o = JS_GetScopeChain(cx);
+
+	JSClass *cl = JS_GetClass(o);
+
 	RT_ASSERT_CONSTRUCTING(&body_class);
 	RT_ASSERT_ARGC(1);
 	RT_ASSERT_CLASS(JSVAL_TO_OBJECT(argv[0]),&world_class);
@@ -33,7 +52,7 @@ JSBool body_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsv
 	ode::dBodyID bodyID = ode::dBodyCreate(worldID);
 	RT_ASSERT( bodyID != NULL, "unable to create the body." );
 	JS_SetPrivate(cx, obj, bodyID);
-	JS_SetParent(cx, obj, worldObject); // protect from GC
+	JS_SetReservedSlot(cx, obj, SLOT_PARENT, OBJECT_TO_JSVAL(worldObject)); // 
 //	ode::dBodySetData(bodyID,worldObject);
 	return JS_TRUE;
 }
@@ -54,7 +73,7 @@ JSBool body_destroy(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval
 //	if ( bodyId != NULL ) {
 		dBodyDestroy(bodyId);
 		JS_SetPrivate(cx, obj, NULL); 
-		JS_SetParent(cx, obj, NULL); // no more protection from GC needed
+		JS_SetReservedSlot(cx, obj, SLOT_PARENT, JSVAL_VOID);
 //	}
 	return JS_TRUE;
 }
@@ -217,7 +236,7 @@ JSPropertySpec body_static_PropertySpec[] = { // *name, tinyid, flags, getter, s
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSClass body_class = { "Body", JSCLASS_HAS_PRIVATE,
+JSClass body_class = { "Body", JSCLASS_HAS_PRIVATE | JSCLASS_HAS_RESERVED_SLOTS(1),
 	JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub,
 	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, body_Finalize,
 	NULL, NULL, body_call
@@ -232,5 +251,7 @@ JSObject *bodyInitClass( JSContext *cx, JSObject *obj ) {
 
 
 /****************************************************************
+
+on-line doc. : http://www.ode.org/ode-latest-userguide.html
 
 */

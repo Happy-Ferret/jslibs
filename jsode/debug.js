@@ -2,6 +2,15 @@ LoadModule('jsstd');
 LoadModule('jsode');
 
 var world = new World;
+
+world.Body = Body;
+
+
+var b = new world.Body();
+
+/*
+
+
 world.gravity = [0,0,-9.81];
 
 var body = new Body(world);
@@ -9,8 +18,7 @@ var body1 = new Body(world);
 
 var joint = new JointBall(world);
 
-body.toto = 123;
-joint.Attach(body, body1);
+joint.Attach(world.static, body);
 
 Print( joint.body1.toto );
 
@@ -32,3 +40,5 @@ for ( var i = 0; i<20; i++ ) {
 //	Print( ' Force:', body.force , '\n' );
 	world.Step(1,true);
 }
+
+*/

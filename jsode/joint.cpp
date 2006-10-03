@@ -29,6 +29,10 @@ JSPropertySpec joint_PropertySpec[] = { // *name, tinyid, flags, getter, setter
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 JSBool joint_destroy(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
+
+	JSBool res = JS_InstanceOf(cx, JS_GetPrototype(cx, obj), &joint_class, NULL);
+
+
 	RT_ASSERT_CLASS(JS_GetPrototype(cx,JS_GetPrototype(cx, obj)), &joint_class);
 
 	ode::dJointID jointID = (ode::dJointID)JS_GetPrivate( cx, obj );

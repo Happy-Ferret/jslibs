@@ -128,12 +128,27 @@ JSBool world_getter_real(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+JSBool world_get_static(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
+	
+	if ( *vp == JSVAL_VOID ) {
+
+		JSObject *staticBody = JS_NewObject(cx, &body_class, NULL, NULL);
+		RT_ASSERT_ALLOC(staticBody);
+		JS_SetPrivate(cx, staticBody, (ode::dBodyID)0);
+		*vp = OBJECT_TO_JSVAL(staticBody);	
+	}
+
+	return JS_TRUE;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 JSPropertySpec world_PropertySpec[] = { // *name, tinyid, flags, getter, setter
 	{ "gravity"               , 0, JSPROP_PERMANENT|JSPROP_SHARED, world_getter_gravity, world_setter_gravity },
 	{ "ERP"                   , ERP, JSPROP_PERMANENT|JSPROP_SHARED, world_getter_real, world_setter_real },
 	{ "CFM"                   , CFM, JSPROP_PERMANENT|JSPROP_SHARED, world_getter_real, world_setter_real },
 	{ "quickStepNumIterations", quickStepNumIterations, JSPROP_PERMANENT|JSPROP_SHARED, world_getter_real, world_setter_real },
 	{ "contactSurfaceLayer"   , contactSurfaceLayer, JSPROP_PERMANENT|JSPROP_SHARED, world_getter_real, world_setter_real },
+	{ "static"                , 0, JSPROP_PERMANENT|JSPROP_READONLY, world_get_static, NULL },
 	{ 0 }
 };
 
