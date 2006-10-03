@@ -4,14 +4,15 @@
 #include "body.h"
 #include "joint.h"
 
+
 extern "C" void messageHandler(int errnum, const char *msg, va_list ap) {
 }
 
 extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
-	ode::dSetErrorHandler(messageHandler);
-	ode::dSetDebugHandler(messageHandler);
-	ode::dSetMessageHandler(messageHandler);
+//	ode::dSetErrorHandler(messageHandler);
+//	ode::dSetDebugHandler(messageHandler);
+//	ode::dSetMessageHandler(messageHandler);
 
 	jointInitClass( cx, obj );
 	massInitClass( cx, obj );
@@ -28,6 +29,8 @@ extern "C" __declspec(dllexport) JSBool ModuleFinalize(JSContext *cx, JSObject *
 
 
 BOOL APIENTRY DllMain( HANDLE hModule, DWORD  ul_reason_for_call, LPVOID lpReserved ) {
+
+//	configuration = GetConfiguration( cx );
 
   switch (ul_reason_for_call) {
 

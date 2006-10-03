@@ -130,7 +130,7 @@ JSBool world_getter_real(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 JSBool world_get_static(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 	
-	if ( *vp == JSVAL_VOID ) {
+	if ( *vp == JSVAL_VOID ) { //  create it if it does not exist
 
 		JSObject *staticBody = JS_NewObject(cx, &body_class, NULL, NULL);
 		RT_ASSERT_ALLOC(staticBody);

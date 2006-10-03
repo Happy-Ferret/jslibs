@@ -3,42 +3,38 @@ LoadModule('jsode');
 
 var world = new World;
 
-world.Body = Body;
+//world.Body = Body;
+//var b = new world.Body();
 
-
-var b = new world.Body();
-
-/*
-
-
-world.gravity = [0,0,-9.81];
+//world.gravity = [0,0,-9.81];
 
 var body = new Body(world);
 var body1 = new Body(world);
 
+//body.mass.mass = 1;
+//body.mass.Translate([2,1,0]);
+//body.mass.center = [2,0,0];
+//body.mass.Adjust(10);
+
 var joint = new JointBall(world);
-
-joint.Attach(world.static, body);
-
-Print( joint.body1.toto );
-
-joint.Destroy();
-
-//body.mass = new Mass(10);
-
-Print( body.mass );
+joint.Attach(body,body1);
+//joint.Destroy();
 
 //body.linearVel = [0,0,15];
-	body.force = [ 0,1,1 ];
+body.force = [0,0,100];
+
+//body.linearVel = [10,10,10];
+
+body.angularVel = [10,0,0];
+
+
+Print(body.torque);
 
 
 
-
-for ( var i = 0; i<20; i++ ) {
+for ( var i = 0; i<10; i++ ) {
 //	Print( 'Step:', i,  '\n' );
 	Print( ' Position:', body.position , '\n' );
 //	Print( ' Force:', body.force , '\n' );
 	world.Step(1,true);
 }
-
-*/

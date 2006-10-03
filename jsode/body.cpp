@@ -12,6 +12,8 @@ JSObject *body;
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void body_Finalize(JSContext *cx, JSObject *obj) {
 
+	// [TBD] manage Mass object (body.mass)
+
 /*
 	ode::dBodyID bodyId = (ode::dBodyID)JS_GetPrivate( cx, obj );
 //	JSObject *parent = JS_GetParent(cx,obj); // If the object does not have a parent, or the object finalize function is active, JS_GetParent returns NULL.
@@ -25,6 +27,7 @@ void body_Finalize(JSContext *cx, JSObject *obj) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 JSBool body_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
+/*
 // with new operator	
 //  argv[-1] : Body
 //  argv[-2] : Function
@@ -41,7 +44,7 @@ JSBool body_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsv
 	JSObject *o = JS_GetScopeChain(cx);
 
 	JSClass *cl = JS_GetClass(o);
-
+*/
 	RT_ASSERT_CONSTRUCTING(&body_class);
 	RT_ASSERT_ARGC(1);
 	RT_ASSERT_CLASS(JSVAL_TO_OBJECT(argv[0]),&world_class);
@@ -182,20 +185,19 @@ JSBool body_setter_vector(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 JSBool body_get_mass(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 
-	ode::dBodyID bodyID = (ode::dBodyID)JS_GetPrivate( cx, obj );
-	RT_ASSERT( bodyID != NULL, RT_ERROR_NOT_INITIALIZED );
+	if ( *vp == JSVAL_VOID ) {
 
-	JSObject *massObject = JS_NewObject(cx, &mass_class, NULL, NULL);
-	RT_ASSERT(massObject != NULL, "unable to construct Mass object.");
-	
-	ode::dMass *mass = (ode::dMass*)malloc(sizeof(ode::dMass));
-	RT_ASSERT_ALLOC(mass);
-	ode::dBodyGetMass(bodyID, mass);
-	JS_SetPrivate(cx, massObject, mass);
+		JSObject *massObject = JS_NewObject(cx, &mass_class, NULL, NULL);
+		RT_ASSERT(massObject != NULL, "unable to construct Mass object.");
+		JS_SetReservedSlot(cx, massObject, MASS_SLOT_BODY, OBJECT_TO_JSVAL(obj));
+		*vp = OBJECT_TO_JSVAL(massObject);
+	}
 	return JS_TRUE;
 }
 
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/*
 JSBool body_set_mass(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 
 	ode::dBodyID bodyID = (ode::dBodyID)JS_GetPrivate( cx, obj );
@@ -209,6 +211,7 @@ JSBool body_set_mass(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 	ode::dBodySetMass(bodyID, mass);
 	return JS_TRUE;
 }
+*/
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 JSPropertySpec body_PropertySpec[] = { // *name, tinyid, flags, getter, setter
@@ -219,7 +222,7 @@ JSPropertySpec body_PropertySpec[] = { // *name, tinyid, flags, getter, setter
 	{ "force"      , force      , JSPROP_PERMANENT|JSPROP_SHARED, body_getter_vector, body_setter_vector },
 	{ "torque"     , torque     , JSPROP_PERMANENT|JSPROP_SHARED, body_getter_vector, body_setter_vector },
 
-	{ "mass"       , 0 , JSPROP_PERMANENT|JSPROP_SHARED, body_get_mass, body_set_mass },
+	{ "mass"       , 0 , JSPROP_PERMANENT|JSPROP_READONLY, body_get_mass, NULL },
 	{ 0 }
 };
 
