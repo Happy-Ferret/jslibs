@@ -6,8 +6,8 @@
 
 #include "tools.h"
 
-JSObject *joint;
-JSObject *jointBall;
+//JSObject *joint;
+//JSObject *jointBall;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 enum { body1=0, body2=1 };
@@ -30,7 +30,6 @@ JSPropertySpec joint_PropertySpec[] = { // *name, tinyid, flags, getter, setter
 JSBool joint_destroy(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
 	JSBool res = JS_InstanceOf(cx, JS_GetPrototype(cx, obj), &joint_class, NULL);
-
 
 	RT_ASSERT_CLASS(JS_GetPrototype(cx,JS_GetPrototype(cx, obj)), &joint_class);
 
@@ -88,38 +87,28 @@ JSClass joint_class = { "Joint", 0,
 
 //==============================================================================================================================================
 
+/*
+struct jointStruct {
+	enum type;
+	ode::dJointID (*create)(ode::dWorldID, ode::dJointGroupID);
+};
+ode::dJointID (*create)(ode::dWorldID, ode::dJointGroupID);
+typedef void (*setVector)(ode::dJointID, ode::dReal x, ode::dReal y, ode::dReal z);
+setVectorFunctions[] = {
+*/
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void jointBall_Finalize(JSContext *cx, JSObject *obj) {
-	// [TBD] ???
-}
+
+//{ ode::dJointTypeBall, ode::dJointCreateBall 
 
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSBool jointBall_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
-	RT_ASSERT_CONSTRUCTING(&jointBall_class);
-	RT_ASSERT_ARGC(1);
 
-	JSObject *worldObject;
-	
-	RT_SAFE(JS_ValueToObject(cx, argv[0], &worldObject));
-	RT_UNSAFE(worldObject = JSVAL_TO_OBJECT(argv[0]));
+enum { 
+	ballAnchor, ballAnchor2, 
+	hingeAnchor, hingeAnchor2, hingeAxis, hingeAngle, hingeAngleRate, 
+	sliderAxis, sliderPosition, sliderPositionRate
 
-	RT_ASSERT_CLASS(worldObject,&world_class);
-	ode::dWorldID worldID = (ode::dWorldID)JS_GetPrivate(cx,worldObject);
-	RT_ASSERT_1(worldID != NULL, "%s object not initialized", world_class.name );
-
-	ode::dJointID jointID = ode::dJointCreateBall(worldID, 0); // The joint group ID is 0 to allocate the joint normally.
-
-//	RT_ASSERT( bodyID != NULL, "unable to create the body." );
-	JS_SetPrivate(cx, obj, jointID);
-//	JS_SetParent(cx, obj, worldObject); // protect from GC
-//	ode::dBodySetData(bodyID,worldObject);
-	return JS_TRUE;
-}
-
-enum { anchor, anchor2 };
+};
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 JSBool joint_get_vector(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
@@ -128,11 +117,20 @@ JSBool joint_get_vector(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 	RT_ASSERT(jointID != NULL, RT_ERROR_NOT_INITIALIZED);
 	ode::dVector3 vector;
 	switch(JSVAL_TO_INT(id)) {
-		case anchor:
+		case ballAnchor:
 			ode::dJointGetBallAnchor(jointID,vector);
 			break;
-		case anchor2:
+		case ballAnchor2:
 			ode::dJointGetBallAnchor2(jointID,vector);
+			break;
+		case hingeAnchor:
+			ode::dJointGetHingeAnchor(jointID,vector);
+			break;
+		case hingeAxis:
+			ode::dJointGetHingeAxis(jointID,vector);
+			break;
+		case sliderAxis:
+			ode::dJointGetSliderAxis(jointID,vector);
 			break;
 	}
 	VectorToArray(cx, 3, vector, vp);
@@ -145,42 +143,213 @@ JSBool joint_set_vector(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 	ode::dJointID jointID = (ode::dJointID)JS_GetPrivate( cx, obj );
 	RT_ASSERT( jointID != NULL, RT_ERROR_NOT_INITIALIZED );
 	ode::dVector3 vector;
+	ArrayToVector(cx, 3, vp, vector);
 	switch(JSVAL_TO_INT(id)) {
-		case anchor:
-			ArrayToVector(cx, 3, vp, vector);
+		case ballAnchor:
 			ode::dJointSetBallAnchor( jointID, vector[0], vector[1], vector[2] );
+			break;
+		case hingeAnchor:
+			ode::dJointSetHingeAnchor( jointID, vector[0], vector[1], vector[2] );
+			break;
+		case hingeAxis:
+			ode::dJointSetHingeAxis( jointID, vector[0], vector[1], vector[2] );
+			break;
+		case sliderAxis:
+			ode::dJointSetSliderAxis( jointID, vector[0], vector[1], vector[2] );
 			break;
 	}
 	return JS_TRUE;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+JSBool joint_get_real(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
+
+	ode::dJointID jointID = (ode::dJointID)JS_GetPrivate(cx, obj);
+	RT_ASSERT(jointID != NULL, RT_ERROR_NOT_INITIALIZED);
+	ode::dReal real;
+	switch(JSVAL_TO_INT(id)) {
+		case hingeAngle:
+			real = ode::dJointGetHingeAngle(jointID);
+			break;
+		case hingeAngleRate:
+			real = ode::dJointGetHingeAngleRate(jointID);
+			break;
+		case sliderPosition:
+			real = ode::dJointGetSliderPosition(jointID);
+			break;
+		case sliderPositionRate:
+			real = ode::dJointGetSliderPositionRate(jointID);
+			break;
+	}
+	JS_NewDoubleValue(cx, real, vp);
+	return JS_TRUE;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+JSBool joint_set_real(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
+
+	ode::dJointID jointID = (ode::dJointID)JS_GetPrivate( cx, obj );
+	RT_ASSERT( jointID != NULL, RT_ERROR_NOT_INITIALIZED );
+
+	jsdouble real;
+	JS_ValueToNumber(cx, *vp, &real);
+
+	switch(JSVAL_TO_INT(id)) {
+
+
+
+	}
+	return JS_TRUE;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+JSBool jointBall_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+
+	RT_ASSERT_CONSTRUCTING(&jointBall_class);
+	RT_ASSERT_ARGC(1);
+	JSObject *worldObject;
+	RT_SAFE(JS_ValueToObject(cx, argv[0], &worldObject));
+	RT_UNSAFE(worldObject = JSVAL_TO_OBJECT(argv[0]));
+	RT_ASSERT_CLASS(worldObject,&world_class);
+	ode::dWorldID worldID = (ode::dWorldID)JS_GetPrivate(cx,worldObject);
+	RT_ASSERT_1(worldID != NULL, "%s object not initialized", world_class.name );
+	JS_SetReservedSlot(cx, obj, 0, argv[0]);
+	ode::dJointID jointID = ode::dJointCreateBall(worldID, 0); // The joint group ID is 0 to allocate the joint normally.
+	JS_SetPrivate(cx, obj, jointID);
+	return JS_TRUE;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 JSPropertySpec jointBall_PropertySpec[] = { // *name, tinyid, flags, getter, setter
-	{ "anchor"   , anchor, JSPROP_PERMANENT|JSPROP_SHARED, joint_get_vector, joint_set_vector },
-	{ "anchor2"  , anchor2, JSPROP_PERMANENT|JSPROP_SHARED|JSPROP_READONLY, joint_get_vector, NULL },
+	{ "anchor"   , ballAnchor, JSPROP_PERMANENT|JSPROP_SHARED, joint_get_vector, joint_set_vector },
+	{ "anchor2"  , ballAnchor2, JSPROP_PERMANENT|JSPROP_SHARED|JSPROP_READONLY, joint_get_vector, NULL },
 	{ 0 }
 };
 
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSFunctionSpec jointBall_FunctionSpec[] = { // *name, tinyid, flags, getter, setter
-//	{ "Attach" , joint_attach },
-	{ 0 }
-};
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSClass jointBall_class = { "JointBall", JSCLASS_HAS_PRIVATE | JSCLASS_HAS_RESERVED_SLOTS(2),
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+JSClass jointBall_class = { "JointBall", JSCLASS_HAS_PRIVATE | JSCLASS_HAS_RESERVED_SLOTS(1),
 	JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub,
-	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, jointBall_Finalize
+	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, JS_FinalizeStub
+};
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+JSBool jointHinge_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+
+	RT_ASSERT_CONSTRUCTING(&jointHinge_class);
+	RT_ASSERT_ARGC(1);
+	JSObject *worldObject;
+	RT_SAFE(JS_ValueToObject(cx, argv[0], &worldObject));
+	RT_UNSAFE(worldObject = JSVAL_TO_OBJECT(argv[0]));
+	RT_ASSERT_CLASS(worldObject,&world_class);
+	ode::dWorldID worldID = (ode::dWorldID)JS_GetPrivate(cx,worldObject);
+	RT_ASSERT_1(worldID != NULL, "%s object not initialized", world_class.name );
+	JS_SetReservedSlot(cx, obj, 0, argv[0]);
+	ode::dJointID jointID = ode::dJointCreateHinge(worldID, 0); // The joint group ID is 0 to allocate the joint normally.
+	JS_SetPrivate(cx, obj, jointID);
+	return JS_TRUE;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+JSPropertySpec jointHinge_PropertySpec[] = { // *name, tinyid, flags, getter, setter
+	{ "anchor"     , hingeAnchor    , JSPROP_PERMANENT | JSPROP_SHARED                   , joint_get_vector , joint_set_vector },
+	{ "anchor2"    , hingeAnchor2   , JSPROP_PERMANENT | JSPROP_SHARED | JSPROP_READONLY , joint_get_vector , NULL },
+	{ "axis"       , hingeAxis      , JSPROP_PERMANENT | JSPROP_SHARED                   , joint_get_vector , joint_set_vector },
+	{ "angle"      , hingeAngle     , JSPROP_PERMANENT | JSPROP_SHARED | JSPROP_READONLY , joint_get_real   , NULL },
+	{ "angleRate"  , hingeAngleRate , JSPROP_PERMANENT | JSPROP_SHARED | JSPROP_READONLY , joint_get_real   , NULL },
+	{ 0 }
+};
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+JSClass jointHinge_class = { "JointHinge", JSCLASS_HAS_PRIVATE | JSCLASS_HAS_RESERVED_SLOTS(1),
+	JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub,
+	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, JS_FinalizeStub
+};
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+JSBool jointSlider_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+
+	RT_ASSERT_CONSTRUCTING(&jointSlider_class);
+	RT_ASSERT_ARGC(1);
+	JSObject *worldObject;
+	RT_SAFE(JS_ValueToObject(cx, argv[0], &worldObject));
+	RT_UNSAFE(worldObject = JSVAL_TO_OBJECT(argv[0]));
+	RT_ASSERT_CLASS(worldObject,&world_class);
+	ode::dWorldID worldID = (ode::dWorldID)JS_GetPrivate(cx,worldObject);
+	RT_ASSERT_1(worldID != NULL, "%s object not initialized", world_class.name );
+	JS_SetReservedSlot(cx, obj, 0, argv[0]);
+	ode::dJointID jointID = ode::dJointCreateSlider(worldID, 0); // The joint group ID is 0 to allocate the joint normally.
+	JS_SetPrivate(cx, obj, jointID);
+	return JS_TRUE;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+JSPropertySpec jointSlider_PropertySpec[] = { // *name, tinyid, flags, getter, setter
+	{ "axis"          , sliderAxis         , JSPROP_PERMANENT | JSPROP_SHARED                   , joint_get_vector , joint_set_vector },
+	{ "position"      , sliderPosition     , JSPROP_PERMANENT | JSPROP_SHARED | JSPROP_READONLY , joint_get_real   , NULL },
+	{ "positionRate"  , sliderPositionRate , JSPROP_PERMANENT | JSPROP_SHARED | JSPROP_READONLY , joint_get_real   , NULL },
+	{ 0 }
+};
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+JSClass jointSlider_class = { "JointSlider", JSCLASS_HAS_PRIVATE | JSCLASS_HAS_RESERVED_SLOTS(1),
+	JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub,
+	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, JS_FinalizeStub
+};
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+JSBool jointFixed_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+
+	RT_ASSERT_CONSTRUCTING(&jointFixed_class);
+	RT_ASSERT_ARGC(1);
+	JSObject *worldObject;
+	RT_SAFE(JS_ValueToObject(cx, argv[0], &worldObject));
+	RT_UNSAFE(worldObject = JSVAL_TO_OBJECT(argv[0]));
+	RT_ASSERT_CLASS(worldObject,&world_class);
+	ode::dWorldID worldID = (ode::dWorldID)JS_GetPrivate(cx,worldObject);
+	RT_ASSERT_1(worldID != NULL, "%s object not initialized", world_class.name );
+	JS_SetReservedSlot(cx, obj, 0, argv[0]);
+	ode::dJointID jointID = ode::dJointCreateFixed(worldID, 0); // The joint group ID is 0 to allocate the joint normally.
+	JS_SetPrivate(cx, obj, jointID);
+	return JS_TRUE;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+JSBool jointFixed_set(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+
+	RT_ASSERT_CLASS(obj, &jointFixed_class);
+	ode::dJointID jointID = (ode::dJointID)JS_GetPrivate(cx, obj);
+	RT_ASSERT(jointID != NULL, RT_ERROR_NOT_INITIALIZED);
+	ode::dJointSetFixed(jointID);
+	return JS_TRUE;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+JSFunctionSpec jointFixed_FunctionSpec[] = { // *name, tinyid, flags, getter, setter
+	{ "Set"    , jointFixed_set },
+	{ 0 }
+};
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+JSClass jointFixed_class = { "JointFixed", JSCLASS_HAS_PRIVATE | JSCLASS_HAS_RESERVED_SLOTS(1),
+	JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub,
+	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, JS_FinalizeStub
 };
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 JSObject *jointInitClass( JSContext *cx, JSObject *obj ) {
 
-	joint = JS_InitClass( cx, obj, NULL, &joint_class, NULL, 0, joint_PropertySpec, joint_FunctionSpec, NULL, NULL );
+	JSObject *joint = JS_InitClass( cx, obj, NULL, &joint_class, NULL, 0, joint_PropertySpec, joint_FunctionSpec, NULL, NULL );
 
-	jointBall = JS_InitClass( cx, obj, joint, &jointBall_class, jointBall_construct, 0, jointBall_PropertySpec, jointBall_FunctionSpec, NULL, NULL );
+	JS_InitClass( cx, obj, joint, &jointBall_class   , jointBall_construct   , 0, jointBall_PropertySpec   , NULL, NULL, NULL );
+	JS_InitClass( cx, obj, joint, &jointHinge_class  , jointHinge_construct  , 0, jointHinge_PropertySpec  , NULL, NULL, NULL );
+	JS_InitClass( cx, obj, joint, &jointSlider_class , jointSlider_construct , 0, jointSlider_PropertySpec , NULL, NULL, NULL );
+	JS_InitClass( cx, obj, joint, &jointFixed_class  , jointFixed_construct  , 0, NULL                     , jointFixed_FunctionSpec, NULL, NULL );
 
 	return joint;
 }

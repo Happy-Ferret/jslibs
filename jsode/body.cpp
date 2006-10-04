@@ -255,6 +255,4 @@ JSObject *bodyInitClass( JSContext *cx, JSObject *obj ) {
 
 /****************************************************************
 
-on-line doc. : http://www.ode.org/ode-latest-userguide.html
-
 */
