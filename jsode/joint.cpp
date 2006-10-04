@@ -6,12 +6,6 @@
 
 #include "tools.h"
 
-//JSObject *joint;
-//JSObject *jointBall;
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-enum { body1=0, body2=1 };
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 JSBool joint_get_body(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 
@@ -21,23 +15,20 @@ JSBool joint_get_body(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 JSPropertySpec joint_PropertySpec[] = { // *name, tinyid, flags, getter, setter
-	{ "body1"   , body1, JSPROP_PERMANENT|JSPROP_SHARED|JSPROP_READONLY, joint_get_body, NULL },
-	{ "body2"   , body2, JSPROP_PERMANENT|JSPROP_SHARED|JSPROP_READONLY, joint_get_body, NULL },
+	{ "body1"   , JOINT_SLOT_BODY1, JSPROP_PERMANENT|JSPROP_SHARED|JSPROP_READONLY, joint_get_body, NULL },
+	{ "body2"   , JOINT_SLOT_BODY2, JSPROP_PERMANENT|JSPROP_SHARED|JSPROP_READONLY, joint_get_body, NULL },
 	{ 0 }
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 JSBool joint_destroy(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
-	JSBool res = JS_InstanceOf(cx, JS_GetPrototype(cx, obj), &joint_class, NULL);
-
 	RT_ASSERT_CLASS(JS_GetPrototype(cx,JS_GetPrototype(cx, obj)), &joint_class);
-
 	ode::dJointID jointID = (ode::dJointID)JS_GetPrivate( cx, obj );
 	RT_ASSERT( jointID != NULL, RT_ERROR_NOT_INITIALIZED );
 
-	JS_SetReservedSlot(cx, obj, body1, JSVAL_VOID);
-	JS_SetReservedSlot(cx, obj, body2, JSVAL_VOID);
+	JS_SetReservedSlot(cx, obj, JOINT_SLOT_BODY1, JSVAL_VOID);
+	JS_SetReservedSlot(cx, obj, JOINT_SLOT_BODY2, JSVAL_VOID);
 
 	JS_SetPrivate(cx, obj, NULL); 
 
@@ -58,13 +49,13 @@ JSBool joint_attach(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval
 
 	JS_ValueToObject(cx, argv[0], &body1Object);
 	RT_ASSERT_CLASS(body1Object, &body_class);
-	JS_SetReservedSlot(cx, obj, body1, argv[0]);
+	JS_SetReservedSlot(cx, obj, JOINT_SLOT_BODY1, argv[0]);
 	ode::dBodyID bodyID1 = (ode::dBodyID)JS_GetPrivate(cx, body1Object);
 //	RT_ASSERT(bodyID != NULL, RT_ERROR_NOT_INITIALIZED);
 
 	JS_ValueToObject(cx, argv[1], &body2Object);
 	RT_ASSERT_CLASS(body2Object, &body_class);
-	JS_SetReservedSlot(cx, obj, body2, argv[1]);
+	JS_SetReservedSlot(cx, obj, JOINT_SLOT_BODY2, argv[1]);
 	ode::dBodyID bodyID2 = (ode::dBodyID)JS_GetPrivate(cx, body2Object);
 //	RT_ASSERT(bodyID != NULL, RT_ERROR_NOT_INITIALIZED);
 
@@ -214,7 +205,7 @@ JSBool jointBall_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv
 	RT_ASSERT_CLASS(worldObject,&world_class);
 	ode::dWorldID worldID = (ode::dWorldID)JS_GetPrivate(cx,worldObject);
 	RT_ASSERT_1(worldID != NULL, "%s object not initialized", world_class.name );
-	JS_SetReservedSlot(cx, obj, 0, argv[0]);
+//	JS_SetReservedSlot(cx, obj, 0, argv[0]);
 	ode::dJointID jointID = ode::dJointCreateBall(worldID, 0); // The joint group ID is 0 to allocate the joint normally.
 	JS_SetPrivate(cx, obj, jointID);
 	return JS_TRUE;
@@ -228,7 +219,7 @@ JSPropertySpec jointBall_PropertySpec[] = { // *name, tinyid, flags, getter, set
 };
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSClass jointBall_class = { "JointBall", JSCLASS_HAS_PRIVATE | JSCLASS_HAS_RESERVED_SLOTS(1),
+JSClass jointBall_class = { "JointBall", JSCLASS_HAS_PRIVATE | JSCLASS_HAS_RESERVED_SLOTS(2),
 	JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub,
 	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, JS_FinalizeStub
 };
@@ -245,7 +236,7 @@ JSBool jointHinge_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *arg
 	RT_ASSERT_CLASS(worldObject,&world_class);
 	ode::dWorldID worldID = (ode::dWorldID)JS_GetPrivate(cx,worldObject);
 	RT_ASSERT_1(worldID != NULL, "%s object not initialized", world_class.name );
-	JS_SetReservedSlot(cx, obj, 0, argv[0]);
+//	JS_SetReservedSlot(cx, obj, 0, argv[0]);
 	ode::dJointID jointID = ode::dJointCreateHinge(worldID, 0); // The joint group ID is 0 to allocate the joint normally.
 	JS_SetPrivate(cx, obj, jointID);
 	return JS_TRUE;
@@ -262,7 +253,7 @@ JSPropertySpec jointHinge_PropertySpec[] = { // *name, tinyid, flags, getter, se
 };
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSClass jointHinge_class = { "JointHinge", JSCLASS_HAS_PRIVATE | JSCLASS_HAS_RESERVED_SLOTS(1),
+JSClass jointHinge_class = { "JointHinge", JSCLASS_HAS_PRIVATE | JSCLASS_HAS_RESERVED_SLOTS(2),
 	JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub,
 	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, JS_FinalizeStub
 };
@@ -279,7 +270,7 @@ JSBool jointSlider_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *ar
 	RT_ASSERT_CLASS(worldObject,&world_class);
 	ode::dWorldID worldID = (ode::dWorldID)JS_GetPrivate(cx,worldObject);
 	RT_ASSERT_1(worldID != NULL, "%s object not initialized", world_class.name );
-	JS_SetReservedSlot(cx, obj, 0, argv[0]);
+//	JS_SetReservedSlot(cx, obj, 0, argv[0]);
 	ode::dJointID jointID = ode::dJointCreateSlider(worldID, 0); // The joint group ID is 0 to allocate the joint normally.
 	JS_SetPrivate(cx, obj, jointID);
 	return JS_TRUE;
@@ -294,7 +285,7 @@ JSPropertySpec jointSlider_PropertySpec[] = { // *name, tinyid, flags, getter, s
 };
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSClass jointSlider_class = { "JointSlider", JSCLASS_HAS_PRIVATE | JSCLASS_HAS_RESERVED_SLOTS(1),
+JSClass jointSlider_class = { "JointSlider", JSCLASS_HAS_PRIVATE | JSCLASS_HAS_RESERVED_SLOTS(2),
 	JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub,
 	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, JS_FinalizeStub
 };
@@ -312,7 +303,7 @@ JSBool jointFixed_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *arg
 	RT_ASSERT_CLASS(worldObject,&world_class);
 	ode::dWorldID worldID = (ode::dWorldID)JS_GetPrivate(cx,worldObject);
 	RT_ASSERT_1(worldID != NULL, "%s object not initialized", world_class.name );
-	JS_SetReservedSlot(cx, obj, 0, argv[0]);
+//	JS_SetReservedSlot(cx, obj, 0, argv[0]);
 	ode::dJointID jointID = ode::dJointCreateFixed(worldID, 0); // The joint group ID is 0 to allocate the joint normally.
 	JS_SetPrivate(cx, obj, jointID);
 	return JS_TRUE;
@@ -335,7 +326,7 @@ JSFunctionSpec jointFixed_FunctionSpec[] = { // *name, tinyid, flags, getter, se
 };
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSClass jointFixed_class = { "JointFixed", JSCLASS_HAS_PRIVATE | JSCLASS_HAS_RESERVED_SLOTS(1),
+JSClass jointFixed_class = { "JointFixed", JSCLASS_HAS_PRIVATE | JSCLASS_HAS_RESERVED_SLOTS(2),
 	JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub,
 	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, JS_FinalizeStub
 };
