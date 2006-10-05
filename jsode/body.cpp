@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <jscntxt.h>
 #include "mass.h"
 #include "body.h"
 #include "world.h"
@@ -45,6 +46,12 @@ JSBool body_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsv
 
 	JSClass *cl = JS_GetClass(o);
 */
+
+//	JSObject *o;
+//	JS_ValueToObject(cx, cx->lastInternalResult, &o);
+//	JSClass *cl = JS_GetClass(o);
+
+
 	RT_ASSERT_CONSTRUCTING(&body_class);
 	RT_ASSERT_ARGC(1);
 	RT_ASSERT_CLASS(JSVAL_TO_OBJECT(argv[0]),&world_class);
