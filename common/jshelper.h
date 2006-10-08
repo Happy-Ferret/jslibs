@@ -1,5 +1,17 @@
 #pragma once
 
+#ifdef JSHELPER_UNSAFE_DEFINED
+extern bool _unsafeMode;
+#else //JSHELPER_UNSAFE_DEFINED
+static bool _unsafeMode = false;
+#endif //JSHELPER_UNSAFE_DEFINED
+
+
+#define DEFINE_UNSAFE_MODE	extern bool _unsafeMode = false;
+
+#define SET_UNSAFE_MODE(polarity) _unsafeMode = polarity;
+
+
 // RunTime helper macros
 //   A set of very simple macro to help embeded spidermonkey do be more simple to read.
 
@@ -16,22 +28,42 @@
 // helper macros
 
 #define RT_SAFE(code) \
-	if (true) {code;}
+	if (!_unsafeMode) {code;}
 
 #define RT_UNSAFE(code) \
-	if (false) {code;}
+	if (_unsafeMode) {code;}
+
+// assert
 
 #define RT_ASSERT_1( condition, errorMessage, arg ) \
-	if ( !(condition) ) { JS_ReportError( cx, (errorMessage), (arg) ); return JS_FALSE; }
+	if ( !_unsafeMode && !(condition) ) { JS_ReportError( cx, (errorMessage), (arg) ); return JS_FALSE; }
 
 #define RT_ASSERT( condition, errorMessage ) \
-	if ( !(condition) ) { JS_ReportError( cx, (errorMessage) ); return JS_FALSE; }
+	if ( !_unsafeMode && !(condition) ) { JS_ReportError( cx, (errorMessage) ); return JS_FALSE; }
+
+// advanced assert
+
+#define RT_ASSERT_ALLOC( pointer ) \
+	RT_ASSERT( (pointer) != NULL, RT_ERROR_OUT_OF_MEMORY );
+
+#define RT_ASSERT_CLASS( jsObject, jsClass ) \
+	RT_ASSERT( JS_GetClass(jsObject) == (jsClass), RT_ERROR_INVALID_CLASS );
+
+#define RT_ASSERT_ARGC( minCount ) \
+	RT_ASSERT_1( argc >= (minCount), RT_ERROR_MISSING_N_ARGUMENT, (minCount)-argc );
+
+#define RT_ASSERT_CONSTRUCTING(jsClass) \
+	RT_ASSERT( JS_IsConstructing(cx) == JS_TRUE, RT_ERROR_NEED_CONSTRUCTION ); \
+	RT_ASSERT_CLASS( obj, (jsClass) );
+
+// conversion macros
 
 #define RT_JSVAL_TO_INT32( jsvalInt, intVariable ) \
-	RT_ASSERT( JS_ValueToInt32( cx, jsvalInt, &intVariable ) != JS_FALSE, RT_ERROR_INT_CONVERSION_FAILED );
-
-//#define RT_STRING_TO_JSVAL( string, jsvalVariable ) \
-
+	if ( _unsafeMode ) { \
+		intVariable = JSVAL_TO_INT(jsvalInt); \
+	} else { \
+		RT_ASSERT( JS_ValueToInt32( cx, jsvalInt, &intVariable ) != JS_FALSE, RT_ERROR_INT_CONVERSION_FAILED ); \
+	}
 
 #define RT_JSVAL_TO_STRING( jsvalString, stringVariable ) \
 	stringVariable = JS_GetStringBytes( JS_ValueToString(cx,jsvalString) ); \
@@ -46,17 +78,3 @@
 		lengthVariable = JS_GetStringLength( __jssTmp ); \
 	}
 
-#define RT_ASSERT_ALLOC( pointer ) \
-	RT_ASSERT( (pointer) != NULL, RT_ERROR_OUT_OF_MEMORY );
-
-// try JS_GetInstancePrivate ??
-
-#define RT_ASSERT_CLASS( jsObject, jsClass ) \
-	RT_ASSERT( JS_GetClass(jsObject) == (jsClass), RT_ERROR_INVALID_CLASS );
-
-#define RT_ASSERT_ARGC( minCount ) \
-	RT_ASSERT_1( argc >= (minCount), RT_ERROR_MISSING_N_ARGUMENT, (minCount)-argc );
-
-#define RT_ASSERT_CONSTRUCTING(jsClass) \
-	RT_ASSERT( JS_IsConstructing(cx) == JS_TRUE, RT_ERROR_NEED_CONSTRUCTION ); \
-	RT_ASSERT_CLASS( obj, (jsClass) );
