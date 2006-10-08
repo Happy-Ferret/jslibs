@@ -32,12 +32,9 @@ body.force = [0,0,100];
 
 //body.angularVel = [10,0,0];
 
-
 Print(body.torque);
 
-
-
-for ( var i = 0; i<10; i++ ) {
+for ( var i = 0; i<100; i++ ) {
 //	Print( 'Step:', i,  '\n' );
 	Print( ' Position:', body.position , '\n' );
 //	Print( ' Force:', body.force , '\n' );

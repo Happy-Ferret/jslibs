@@ -4,6 +4,7 @@
 #include "body.h"
 #include "joint.h"
 
+DEFINE_UNSAFE_MODE;
 
 extern "C" void messageHandler(int errnum, const char *msg, va_list ap) {
 }
