@@ -11,15 +11,14 @@
 
 #define XP_WIN
 #include <jsapi.h>
-
 #include "jsxdrapi.h"
-
+#define JSHELPER_UNSAFE_DEFINED
 #include "../common/jshelper.h"
+#include "../configuration/configuration.h"
 
-#include "configuration.h"
+DEFINE_UNSAFE_MODE;
 
-Configuration *configuration;
-
+extern JSFunction *stdoutFunction = NULL;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 static JSBool global_seal(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
@@ -67,7 +66,7 @@ static JSBool global_hideProperties(JSContext *cx, JSObject *obj, uintN argc, js
 	const char *propertyName;
 	uintN attributes;
 	JSBool found;
-	for ( int i=1; i<argc; i++ ) {
+	for ( uintN i=1; i<argc; i++ ) {
 
 		propertyName = JS_GetStringBytes( JS_ValueToString( cx, argv[i] ) );
 		RT_ASSERT( propertyName != NULL, "invalid property." );
@@ -87,8 +86,8 @@ static JSBool global_warning(JSContext *cx, JSObject *obj, uintN argc, jsval *ar
 
 	JSString *jssMesage = JS_ValueToString(cx, argv[0]);
 	argv[0] = STRING_TO_JSVAL(jssMesage);
-  JS_ReportWarning( cx, "%s", JS_GetStringBytes(jssMesage) );
-  return JS_TRUE;
+	JS_ReportWarning( cx, "%s", JS_GetStringBytes(jssMesage) );
+	return JS_TRUE;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -110,15 +109,12 @@ static JSBool global_collectGarbage(JSContext *cx, JSObject *obj, uintN argc, js
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 static JSBool global_print(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
-	JSString *str;
-	uintN i;
-	for (i = 0; i < argc; i++) {
+	if ( stdoutFunction == NULL )
+		return JS_TRUE; // nowhere to write, but don't failed
 
-		str = JS_ValueToString(cx, argv[i]);
-		RT_ASSERT_1( str != NULL, "Unable to convert argument %d to string.", i );
-		argv[i] = STRING_TO_JSVAL(str); // [TBD] needed ?
-		configuration->stdOut( JS_GetStringBytes(str), JS_GetStringLength(str) );
-	}
+	for (uintN i = 0; i<argc; i++)
+		if (JS_CallFunction(cx, obj, stdoutFunction, 1, &argv[i], rval) == JS_FALSE)
+			return JS_FALSE;
 	return JS_TRUE;
 }
 
@@ -222,12 +218,12 @@ static JSScript* LoadScript(JSContext *cx, JSObject *obj, const char *fileName, 
 // function copied from mozilla/js/src/js.c
 static JSBool global_exec(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
-  uintN i;
+//  uintN i;
   JSString *str;
   const char *filename;
   JSScript *script;
   JSBool ok;
-  JSErrorReporter older;
+//  JSErrorReporter older;
   uint32 oldopts;
 
   RT_ASSERT_ARGC(1);
@@ -260,7 +256,7 @@ static JSBool global_exec(JSContext *cx, JSObject *obj, uintN argc, jsval *argv,
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSFunctionSpec Global_FunctionSpec[] = { // *name, call, nargs, flags, extra
+JSFunctionSpec Std_FunctionSpec[] = { // *name, call, nargs, flags, extra
 	{ "Seal"            , global_seal            , 0, 0, 0 },
 	{ "Clear"           , global_clear           , 0, 0, 0 },
 	{ "HideProperties"  , global_hideProperties  , 0, 0, 0 },
@@ -274,9 +270,12 @@ JSFunctionSpec Global_FunctionSpec[] = { // *name, call, nargs, flags, extra
 
 extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
-	configuration = GetConfiguration( cx );
-	RT_ASSERT( configuration != NULL, "unable to read the configuration." );
-	JS_DefineFunctions( cx, obj, Global_FunctionSpec );
+	JS_DefineFunctions( cx, obj, Std_FunctionSpec );
+// read configuration
+	stdoutFunction = JS_ValueToFunction(cx, GetConfigurationValue(cx, "stdout")); // returns NULL if the function is not defined
+//	_unsafeMode = JSVAL_TO_BOOLEAN(GetConfigurationValue(cx, "unsafeMode")) == JS_TRUE;
+	SET_UNSAFE_MODE( JSVAL_TO_BOOLEAN(GetConfigurationValue(cx, "unsafeMode")) == JS_TRUE );
+
 	return JS_TRUE;
 }
 
