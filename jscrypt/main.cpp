@@ -7,7 +7,13 @@
 #include "hash.h"
 #include "crypt.h"
 
+#include "../configuration/configuration.h"
+
+DEFINE_UNSAFE_MODE;
+
 extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj) {
+
+	SET_UNSAFE_MODE( JSVAL_TO_BOOLEAN(GetConfigurationValue(cx, "unsafeMode")) == JS_TRUE );
 
 	ltc_mp = ltm_desc;
 

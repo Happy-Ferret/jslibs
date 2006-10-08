@@ -4,12 +4,15 @@ Microsoft Visual Studio Solution File, Format Version 9.00
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jscrypt", "jscrypt.vcproj", "{A3794FD9-62E8-4B2C-8C9F-AF1A1DD97CB7}"
 	ProjectSection(ProjectDependencies) = postProject
 		{986623D2-6B30-4F35-B08E-89FA00E9582D} = {986623D2-6B30-4F35-B08E-89FA00E9582D}
+		{35128DFB-6C49-4E4C-AC5E-9948F01282B3} = {35128DFB-6C49-4E4C-AC5E-9948F01282B3}
 		{A313FEE1-C052-491B-80A4-07559D95AF84} = {A313FEE1-C052-491B-80A4-07559D95AF84}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libtomcrypt", "..\libtomcrypt\libtomcrypt.vcproj", "{A313FEE1-C052-491B-80A4-07559D95AF84}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libtommath", "..\libtommath\libtommath.vcproj", "{986623D2-6B30-4F35-B08E-89FA00E9582D}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "configuration", "..\configuration\configuration.vcproj", "{35128DFB-6C49-4E4C-AC5E-9948F01282B3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -29,6 +32,10 @@ Global
 		{986623D2-6B30-4F35-B08E-89FA00E9582D}.Debug|Win32.Build.0 = Debug|Win32
 		{986623D2-6B30-4F35-B08E-89FA00E9582D}.Release|Win32.ActiveCfg = Release|Win32
 		{986623D2-6B30-4F35-B08E-89FA00E9582D}.Release|Win32.Build.0 = Release|Win32
+		{35128DFB-6C49-4E4C-AC5E-9948F01282B3}.Debug|Win32.ActiveCfg = Debug|Win32
+		{35128DFB-6C49-4E4C-AC5E-9948F01282B3}.Debug|Win32.Build.0 = Debug|Win32
+		{35128DFB-6C49-4E4C-AC5E-9948F01282B3}.Release|Win32.ActiveCfg = Release|Win32
+		{35128DFB-6C49-4E4C-AC5E-9948F01282B3}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
