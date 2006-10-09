@@ -20,7 +20,7 @@ void body_Finalize(JSContext *cx, JSObject *obj) {
 //	JSObject *parent = JS_GetParent(cx,obj); // If the object does not have a parent, or the object finalize function is active, JS_GetParent returns NULL.
 	if ( bodyId != NULL ) {
 		dBodyDestroy(bodyId);
-		JS_SetPrivate(cx, obj, NULL); 
+		JS_SetPrivate(cx, obj, NULL);
 	}
 */
 }
@@ -29,7 +29,7 @@ void body_Finalize(JSContext *cx, JSObject *obj) {
 JSBool body_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
 /*
-// with new operator	
+// with new operator
 //  argv[-1] : Body
 //  argv[-2] : Function
 //  argv[-3] : global
@@ -47,11 +47,22 @@ JSBool body_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsv
 	JSClass *cl = JS_GetClass(o);
 */
 
+/*
+JSObject *o;
+jsval *sp = cx->fp->sp;
+JS_ValueToObject(cx, *(sp-1) , &o);
+JSClass *cl = JS_GetClass(o);
+*/
+
+
+//	cx.lastInternalResult
+
+
 //	JSObject *o;
 //	JS_ValueToObject(cx, cx->lastInternalResult, &o);
 //	JSClass *cl = JS_GetClass(o);
 
-	
+
 
 	RT_ASSERT_CONSTRUCTING(&body_class);
 	RT_ASSERT_ARGC(1);
@@ -63,7 +74,7 @@ JSBool body_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsv
 	ode::dBodyID bodyID = ode::dBodyCreate(worldID);
 	RT_ASSERT( bodyID != NULL, "unable to create the body." );
 	JS_SetPrivate(cx, obj, bodyID);
-	JS_SetReservedSlot(cx, obj, SLOT_PARENT, OBJECT_TO_JSVAL(worldObject)); // 
+	JS_SetReservedSlot(cx, obj, SLOT_PARENT, OBJECT_TO_JSVAL(worldObject)); //
 //	ode::dBodySetData(bodyID,worldObject);
 	return JS_TRUE;
 }
@@ -76,14 +87,14 @@ JSBool body_call(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *r
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 JSBool body_destroy(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
-	
+
 	RT_ASSERT_CLASS(obj, &body_class);
 	ode::dBodyID bodyId = (ode::dBodyID)JS_GetPrivate( cx, obj );
 	RT_ASSERT( bodyId != NULL, RT_ERROR_NOT_INITIALIZED ); // [TBD] manage world-connected
 
 //	if ( bodyId != NULL ) {
 		dBodyDestroy(bodyId);
-		JS_SetPrivate(cx, obj, NULL); 
+		JS_SetPrivate(cx, obj, NULL);
 		JS_SetReservedSlot(cx, obj, SLOT_PARENT, JSVAL_VOID);
 //	}
 	return JS_TRUE;
@@ -102,7 +113,7 @@ JSBool body_isConnectedTo(JSContext *cx, JSObject *obj, uintN argc, jsval *argv,
 	JS_ValueToObject(cx, argv[0], &bodyObject);
 	RT_ASSERT_CLASS(bodyObject, &body_class);
 	ode::dBodyID bodyID = (ode::dBodyID)JS_GetPrivate(cx, bodyObject);
-	
+
 	ode::dAreConnected(thisBodyID, bodyID);
 
 	return JS_TRUE;
