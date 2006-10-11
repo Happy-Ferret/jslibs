@@ -82,4 +82,59 @@
 		lengthVariable = JS_GetStringLength( ___jssTmp ); \
 	}
 
+
+
+///////////////////////////////////////////////////////////
+// This set of macros help js class creation
+////////////////////////////////////////////
+// variables: thisClass, thisClassObject; constructor, finalize, call, proto
+//
+// example:
+//
+//BEGIN_CLASS
+//	< define properties and functions here >
+//	BEGIN_FUNCTION_MAP
+//		FUNCTION(foo)
+//	END_MAP
+//	BEGIN_PROPERTY_MAP
+//		READONLY(bar)
+//	END_MAP
+//	BEGIN_STATIC_FUNCTION_MAP
+//	END_MAP
+//	BEGIN_STATIC_PROPERTY_MAP 
+//	END_MAP
+//	NO_CONSTRUCTOR
+//	NO_FINALIZE
+//	NO_CALL
+//	NO_PROTOTYPE
+//END_CLASS(test, NO_SLOTS)
+
+#define BEGIN_CLASS static JSClass *thisClass; extern JSObject *thisClassObject=NULL;
+
+#define NO_SLOTS 0
+#define NO_PROTOTYPE JSObject *prototype = NULL;
+#define NO_CONSTRUCTOR JSNative constructor = NULL;
+#define NO_FINALIZE JSFinalizeOp finalize = JS_FinalizeStub;
+#define NO_CALL JSNative call = NULL;
+
+#define END_MAP {0}};
+
+#define BEGIN_FUNCTION_MAP JSFunctionSpec _functionMap[] = { // *name, call, nargs, flags, extra
+#define BEGIN_STATIC_FUNCTION_MAP JSFunctionSpec _functionStaticMap[] = {
+#define FUNCTION(name) { #name, name },
+
+#define BEGIN_PROPERTY_MAP JSPropertySpec _propertyMap[] = { // *name, tinyid, flags, getter, setter
+#define BEGIN_STATIC_PROPERTY_MAP JSPropertySpec _propertyStaticMap[] = {
+#define PROPERTY(name,id,flags,getname,setname) { #name, id, flags, getname, setname },
+#define READONLY(name) { #name, 0, JSPROP_PERMANENT|JSPROP_SHARED|JSPROP_READONLY, name, NULL },
+
+#define END_CLASS(name,slotCount) \
+	extern JSClass class##name = { #name, JSCLASS_HAS_PRIVATE | JSCLASS_HAS_RESERVED_SLOTS(slotCount), \
+	JS_PropertyStub , JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_EnumerateStub, JS_ResolveStub , JS_ConvertStub , finalize, 0, 0, call, constructor }; \
+	extern void InitClass##name(JSContext *cx, JSObject *obj) { \
+		thisClass = &class##name; \
+		thisClassObject = JS_InitClass( cx, obj, prototype, thisClass, NULL, 0, _propertyMap, _functionMap, _propertyStaticMap, _functionStaticMap ); \
+	}
+
+
 #endif // _JSHELPER_H_
