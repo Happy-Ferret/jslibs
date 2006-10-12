@@ -87,10 +87,14 @@
 ///////////////////////////////////////////////////////////
 // This set of macros help js class creation
 ////////////////////////////////////////////
-// variables: thisClass, thisClassObject; constructor, finalize, call, proto
+// thisClass
+// thisClassObject
+// Constructor
+// Finalize
+// Call
+// prototype
 //
-// example:
-//
+//example:
 //BEGIN_CLASS
 //	< define properties and functions here >
 //	BEGIN_FUNCTION_MAP
@@ -109,13 +113,15 @@
 //	NO_PROTOTYPE
 //END_CLASS(test, NO_SLOTS)
 
-#define BEGIN_CLASS static JSClass *thisClass; static JSObject *thisClassObject=NULL;
+#define BEGIN_CLASS \
+	static JSClass *thisClass; \
+	static JSObject *thisClassObject=NULL;
 
-#define NO_SLOTS 0
+#define NO_RESERVED_SLOTS 0
 #define NO_PROTOTYPE JSObject *prototype = NULL;
-#define NO_CONSTRUCTOR JSNative constructor = NULL;
-#define NO_FINALIZE JSFinalizeOp finalize = JS_FinalizeStub;
-#define NO_CALL JSNative call = NULL;
+#define NO_CONSTRUCT JSNative Construct = NULL;
+#define NO_FINALIZE JSFinalizeOp Finalize = JS_FinalizeStub;
+#define NO_CALL JSNative Call = NULL;
 
 #define END_MAP {0}};
 
@@ -129,13 +135,16 @@
 #define READONLY(name) { #name, 0, JSPROP_PERMANENT|JSPROP_SHARED|JSPROP_READONLY, name, NULL },
 
 #define END_CLASS(name,slotCount) \
-	extern JSObject *classObject##name = thisClassObject;
-	extern JSClass class##name = { #name, JSCLASS_HAS_PRIVATE | JSCLASS_HAS_RESERVED_SLOTS(slotCount), \
-	JS_PropertyStub , JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_EnumerateStub, JS_ResolveStub , JS_ConvertStub , finalize, 0, 0, call, constructor }; \
+	extern JSObject *classObject##name = thisClassObject; \
+	extern JSClass class##name = { #name, JSCLASS_HAS_PRIVATE | JSCLASS_HAS_RESERVED_SLOTS(slotCount), JS_PropertyStub , JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_EnumerateStub, JS_ResolveStub , JS_ConvertStub , Finalize, 0, 0, Call, Construct }; \
 	extern void InitClass##name(JSContext *cx, JSObject *obj) { \
 		thisClass = &class##name; \
 		thisClassObject = JS_InitClass( cx, obj, prototype, thisClass, NULL, 0, _propertyMap, _functionMap, _propertyStaticMap, _functionStaticMap ); \
 	}
 
+#define DECLARE_CLASS(name) \
+	void InitClass##name( JSContext *cx, JSObject *obj ); \
+	extern JSObject *classObject##name; \
+	extern JSClass class##name;
 
 #endif // _JSHELPER_H_
