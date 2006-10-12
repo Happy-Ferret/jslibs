@@ -7,8 +7,8 @@
 
 extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
-	myClassInitClass( cx, obj );
-  return JS_TRUE;
+	InitClassTest( cx, obj );
+	return JS_TRUE;
 }
 
 

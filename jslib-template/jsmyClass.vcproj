@@ -3,6 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8,00"
 	Name="jsmyClass"
+	ProjectGUID="{53CE344E-6EBC-47CE-B111-3CD943A66D28}"
 	RootNamespace="jsmyClass"
 	Keyword="Win32Proj"
 	>
