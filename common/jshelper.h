@@ -87,31 +87,34 @@
 ///////////////////////////////////////////////////////////
 // This set of macros help js class creation
 ////////////////////////////////////////////
-// thisClass
-// thisClassObject
-// Constructor
-// Finalize
-// Call
-// prototype
-//
+// symbols:
+//   JSClass *thisClass
+//   JSObject *thisClassObject
+//   JSObject *prototype
+//   JSNative Constructor
+//   JSFinalizeOp Finalize
+//   JSNative Call
+////////////////////////////////////////////
 //example:
-//BEGIN_CLASS
-//	< define properties and functions here >
-//	BEGIN_FUNCTION_MAP
-//		FUNCTION(foo)
-//	END_MAP
-//	BEGIN_PROPERTY_MAP
-//		READONLY(bar)
-//	END_MAP
-//	BEGIN_STATIC_FUNCTION_MAP
-//	END_MAP
-//	BEGIN_STATIC_PROPERTY_MAP
-//	END_MAP
-//	NO_CONSTRUCTOR
-//	NO_FINALIZE
-//	NO_CALL
-//	NO_PROTOTYPE
-//END_CLASS(test, NO_SLOTS)
+//  BEGIN_CLASS
+//    << define properties and functions here >>
+//	 BEGIN_FUNCTION_MAP
+//    FUNCTION(foo)
+//  END_MAP
+//  BEGIN_PROPERTY_MAP
+//    READONLY(bar)
+//    READWRITE(bar)
+//    CONST(bar,value)
+//  END_MAP
+//  BEGIN_STATIC_FUNCTION_MAP
+//  END_MAP
+//  BEGIN_STATIC_PROPERTY_MAP
+//  END_MAP
+//  NO_CONSTRUCTOR
+//  NO_FINALIZE
+//  NO_CALL
+//  NO_PROTOTYPE
+//  END_CLASS(test, NO_SLOTS)
 
 #define BEGIN_CLASS \
 	static JSClass *thisClass; \
@@ -131,15 +134,15 @@
 
 #define BEGIN_PROPERTY_MAP JSPropertySpec _propertyMap[] = { // *name, tinyid, flags, getter, setter
 #define BEGIN_STATIC_PROPERTY_MAP JSPropertySpec _propertyStaticMap[] = {
-#define PROPERTY(name,id,flags,getname,setname) { #name, id, flags, getname, setname },
+#define READWRITE(name) { #name, 0, JSPROP_PERMANENT|JSPROP_SHARED, name##Getter, name##Setter },
 #define READONLY(name) { #name, 0, JSPROP_PERMANENT|JSPROP_SHARED|JSPROP_READONLY, name, NULL },
-
+#define PROPERTY(name,id,flags,getter,setter) { #name, id, flags, getter, setter },
 #define END_CLASS(name,slotCount) \
 	extern JSObject *classObject##name = thisClassObject; \
 	extern JSClass class##name = { #name, JSCLASS_HAS_PRIVATE | JSCLASS_HAS_RESERVED_SLOTS(slotCount), JS_PropertyStub , JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_EnumerateStub, JS_ResolveStub , JS_ConvertStub , Finalize, 0, 0, Call, Construct }; \
 	extern void InitClass##name(JSContext *cx, JSObject *obj) { \
 		thisClass = &class##name; \
-		thisClassObject = JS_InitClass( cx, obj, prototype, thisClass, NULL, 0, _propertyMap, _functionMap, _propertyStaticMap, _functionStaticMap ); \
+		thisClassObject = JS_InitClass( cx, obj, prototype, thisClass, Construct, 0, _propertyMap, _functionMap, _propertyStaticMap, _functionStaticMap ); \
 	}
 
 #define DECLARE_CLASS(name) \
