@@ -1,5 +1,9 @@
 #include "stdafx.h"
 
+#define XP_WIN
+#include <jsapi.h>
+#include "../common/jshelper.h"
+
 #include "myClass.h"
 
 BEGIN_CLASS
