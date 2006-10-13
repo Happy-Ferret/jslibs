@@ -8,20 +8,43 @@
 
 #include <stdio.h>
 
+
+/* TIPS
+
+Prototypes are not constructed by default. If you want your class's
+prototype object to be constructed (where the constructor you pass to
+JS_InitClass, the |JSNative constructor| parameter, gives the |obj|
+passed to it private data, use the JSCLASS_CONSTRUCT_PROTOTYPE . 
+
+
+
+'Archetype' is a JSClass defined natively.
+// this works fine
+var dog_type = new Archetype("dog", ...);
+// need to make this work too, and be able to run a native function.
+var dog = new dog_type( .... ); 
+
+=> You need to initialize JSClass.construct
+
+*/
+
 BEGIN_CLASS
 
 	void Finalize(JSContext *cx, JSObject *obj) {
 	}
 
-	JSBool Construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+	JSBool ClassConstruct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
+		printf("constructing...");
 		if ( !JS_IsConstructing(cx) || JS_GetClass(obj) != thisClass ) {
+
+			JSClass *o = JS_GetClass(obj);
 			// error
-//			return JS_FALSE;
-			printf("construct error\n");	
+			printf("error\n");	
+			return JS_FALSE;
 		}
 
-		printf("construct\n");
+		printf("ok\n");	
 		return JS_TRUE;
 	}
 
@@ -55,9 +78,10 @@ BEGIN_CLASS
 	END_MAP
 	BEGIN_STATIC_PROPERTY_MAP
 	END_MAP
-	//	NO_CONSTRUCT
-	//	NO_FINALIZE
-	//	NO_CALL
+	NO_OBJECT_CONSTRUCT
+//	NO_CLASS_CONSTRUCT
+//	NO_FINALIZE
+//	NO_CALL
 	NO_PROTOTYPE
 
-END_CLASS(Test, NO_RESERVED_SLOTS)
+END_CLASS(Test, NO_PRIVATE, NO_RESERVED_SLOT)

@@ -9,6 +9,7 @@ a.prop;
 
 a();
 
+var aa = new a();
 
 
 Print('Done.');
