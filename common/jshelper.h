@@ -99,12 +99,12 @@
 //  BEGIN_CLASS
 //    << define properties and functions here >>
 //	 BEGIN_FUNCTION_MAP
-//    FUNCTION(foo)
+//    FUNCTION(name) // need name()
 //  END_MAP
 //  BEGIN_PROPERTY_MAP
-//    READONLY(bar)
-//    READWRITE(bar)
-//    CONST(bar,value)
+//    READONLY(name) // need nameGetter(), nameSetter()
+//    READWRITE(name) // need name()
+//    PROPERTY(name,id,flags,getter,setter)
 //  END_MAP
 //  BEGIN_STATIC_FUNCTION_MAP
 //  END_MAP
@@ -114,15 +114,18 @@
 //  NO_FINALIZE
 //  NO_CALL
 //  NO_PROTOTYPE
-//  END_CLASS(test, NO_SLOTS)
+//  END_CLASS(test, NO_PRIVATE, NO_RESERVED_SLOT)
 
 #define BEGIN_CLASS \
 	static JSClass *thisClass; \
 	static JSObject *thisClassObject=NULL;
 
-#define NO_RESERVED_SLOTS 0
+#define NO_PRIVATE 0
+#define HAS_PRIVATE JSCLASS_HAS_PRIVATE
+#define NO_RESERVED_SLOT 0
 #define NO_PROTOTYPE JSObject *prototype = NULL;
-#define NO_CONSTRUCT JSNative Construct = NULL;
+#define NO_CLASS_CONSTRUCT JSNative ClassConstruct = NULL;
+#define NO_OBJECT_CONSTRUCT JSNative ObjectConstruct = NULL;
 #define NO_FINALIZE JSFinalizeOp Finalize = JS_FinalizeStub;
 #define NO_CALL JSNative Call = NULL;
 
@@ -137,12 +140,12 @@
 #define READWRITE(name) { #name, 0, JSPROP_PERMANENT|JSPROP_SHARED, name##Getter, name##Setter },
 #define READONLY(name) { #name, 0, JSPROP_PERMANENT|JSPROP_SHARED|JSPROP_READONLY, name, NULL },
 #define PROPERTY(name,id,flags,getter,setter) { #name, id, flags, getter, setter },
-#define END_CLASS(name,slotCount) \
+#define END_CLASS(name,privateSlot,reservedSlotCount) \
 	extern JSObject *classObject##name = thisClassObject; \
-	extern JSClass class##name = { #name, JSCLASS_HAS_PRIVATE | JSCLASS_HAS_RESERVED_SLOTS(slotCount), JS_PropertyStub , JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_EnumerateStub, JS_ResolveStub , JS_ConvertStub , Finalize, 0, 0, Call, Construct }; \
+	extern JSClass class##name = { #name, JSCLASS_CONSTRUCT_PROTOTYPE | privateSlot | JSCLASS_HAS_RESERVED_SLOTS(reservedSlotCount), JS_PropertyStub , JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_EnumerateStub, JS_ResolveStub , JS_ConvertStub , Finalize, 0, 0, Call, ObjectConstruct }; \
 	extern void InitClass##name(JSContext *cx, JSObject *obj) { \
 		thisClass = &class##name; \
-		thisClassObject = JS_InitClass( cx, obj, prototype, thisClass, Construct, 0, _propertyMap, _functionMap, _propertyStaticMap, _functionStaticMap ); \
+		thisClassObject = JS_InitClass( cx, obj, prototype, thisClass, ClassConstruct, 0, _propertyMap, _functionMap, _propertyStaticMap, _functionStaticMap ); \
 	}
 
 #define DECLARE_CLASS(name) \
