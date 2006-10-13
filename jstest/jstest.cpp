@@ -11,20 +11,22 @@
 
 /* TIPS
 
-Prototypes are not constructed by default. If you want your class's
-prototype object to be constructed (where the constructor you pass to
-JS_InitClass, the |JSNative constructor| parameter, gives the |obj|
-passed to it private data, use the JSCLASS_CONSTRUCT_PROTOTYPE . 
+	Prototypes are not constructed by default. If you want your class's
+	prototype object to be constructed (where the constructor you pass to
+	JS_InitClass, the |JSNative constructor| parameter, gives the |obj|
+	passed to it private data, use the JSCLASS_CONSTRUCT_PROTOTYPE . 
 
 
+JSClass.construct
+-----------------
 
-'Archetype' is a JSClass defined natively.
-// this works fine
-var dog_type = new Archetype("dog", ...);
-// need to make this work too, and be able to run a native function.
-var dog = new dog_type( .... ); 
+	'Archetype' is a JSClass defined natively.
+	// this works fine
+	var dog_type = new Archetype("dog", ...);
+	// need to make this work too, and be able to run a native function.
+	var dog = new dog_type( .... ); 
 
-=> You need to initialize JSClass.construct
+	=> You need to initialize JSClass.construct
 
 */
 
@@ -40,11 +42,11 @@ BEGIN_CLASS
 
 			JSClass *o = JS_GetClass(obj);
 			// error
-			printf("error\n");	
+			printf("error\n");
 			return JS_FALSE;
 		}
 
-		printf("ok\n");	
+		printf("ok\n");
 		return JS_TRUE;
 	}
 
