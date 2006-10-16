@@ -3,7 +3,6 @@
 	ProjectType="Visual C++"
 	Version="8,00"
 	Name="jstemplate"
-	ProjectGUID="{E25FD76B-3D64-4981-9335-9D8BEBAD9BC4}"
 	RootNamespace="jstemplate"
 	Keyword="Win32Proj"
 	>
