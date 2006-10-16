@@ -1,0 +1,2 @@
+LoadModule('jsstd');
+LoadModule('jstemplate');

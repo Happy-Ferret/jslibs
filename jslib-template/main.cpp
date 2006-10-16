@@ -1,14 +1,12 @@
 #include "stdafx.h"
 
-#define XP_WIN
-#include <jsapi.h>
-#include "../common/jshelper.h"
-
-#include "myClass.h"
-
 extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
-	InitClassTest( cx, obj );
+	return JS_TRUE;
+}
+
+extern "C" __declspec(dllexport) JSBool ModuleRelease(JSContext *cx, JSObject *obj) {
+
 	return JS_TRUE;
 }
 
