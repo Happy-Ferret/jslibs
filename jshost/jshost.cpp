@@ -271,7 +271,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	unsigned long maxbytes = 4L * 1024L * 1024L;
 	unsigned long stackSize = 32L * 1024L;
 
-	
+
 	for ( argv++; argv[0] && argv[0][0] == '-'; argv++ )
 		switch ( argv[0][1] ) {
 			case 'w': // report warnings
@@ -446,6 +446,7 @@ Spidermonkey configuration:
 		#define JS_HAS_XDR_FREEZE_THAW  1
 
 	"If you are on windows make sure you also define JS_USE_ONLY_NSPR_LOCKS in your js builds. That solved a lock hang problem for me."
+		cf. http://groups.google.fr/group/mozilla.dev.tech.js-engine/browse_thread/thread/c59a6b91bd072c1e
 
 
 Spidermonkey compilation:
