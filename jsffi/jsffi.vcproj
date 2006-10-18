@@ -56,7 +56,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="..\mozilla\js\src\WINNT5.1_DBG.OBJ\js32.lib"
+				AdditionalDependencies="..\js\src\WINNT5.1_DBG.OBJ\js32.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -124,7 +124,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="..\mozilla\js\src\WINNT5.1_OPT.OBJ\js32.lib"
+				AdditionalDependencies="..\js\src\WINNT5.1_OPT.OBJ\js32.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"

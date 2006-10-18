@@ -40,7 +40,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\mozilla\js\src"
+				AdditionalIncludeDirectories="..\js\src"
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB"
 				GeneratePreprocessedFile="0"
 				MinimalRebuild="true"
@@ -62,7 +62,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="..\mozilla\js\src\WINNT5.1_DBG.OBJ\js32.lib"
+				AdditionalDependencies="..\js\src\WINNT5.1_DBG.OBJ\js32.lib"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				TargetMachine="1"
@@ -119,7 +119,7 @@
 				Name="VCCLCompilerTool"
 				InlineFunctionExpansion="2"
 				FavorSizeOrSpeed="1"
-				AdditionalIncludeDirectories="..\mozilla\js\src"
+				AdditionalIncludeDirectories="..\js\src"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB"
 				RuntimeLibrary="0"
 				BufferSecurityCheck="false"
@@ -139,7 +139,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="..\mozilla\js\src\WINNT5.1_OPT.OBJ\js32.lib"
+				AdditionalDependencies="..\js\src\WINNT5.1_OPT.OBJ\js32.lib"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				OptimizeReferences="2"
