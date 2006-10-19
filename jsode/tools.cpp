@@ -9,6 +9,7 @@ JSBool ArrayToVector( JSContext *cx, int dim, jsval *vp, real *vector ) {
 	jsval value;
 	jsdouble d;
 	for (int i=0; i<dim; ++i) {
+
 		JS_GetElement(cx, jsArray, i, &value );
 		JS_ValueToNumber(cx, value, &d);
 		vector[i] = d;
@@ -22,6 +23,7 @@ JSBool VectorToArray( JSContext *cx, int dim, const real *vector, jsval *vp ) {
 	*vp = OBJECT_TO_JSVAL(jsArray);
 	jsval value;
 	for (int i=0; i<dim; ++i) {
+
 		JS_NewDoubleValue(cx, vector[i], &value);
 		JS_SetElement(cx, jsArray, i, &value);
 	}

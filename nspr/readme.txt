@@ -10,3 +10,4 @@ directory structure
 
 misc:
 	static link: define _NSPR_BUILD_, link  with  ...\nspr-4.6\lib\libnspr4_s.lib
+	API reference: http://developer.mozilla.org/en/docs/NSPR_API_Reference
