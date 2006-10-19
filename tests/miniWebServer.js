@@ -26,7 +26,8 @@ const mimeType = {
 	gif:'image/gif',
 	jpeg:'image/jpeg',
 	jpg:'image/jpeg',
-	jpe:'image/jpeg'
+	jpe:'image/jpeg',
+	svg:'image/svg+xml'
 };
 
 const statusText = { 
