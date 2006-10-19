@@ -1,4 +1,5 @@
 set prevDir=%CD%
+set prevPath=%PATH%
 
 call "C:\Program Files\Microsoft Platform SDK\SetEnv.Cmd" /XP32 /RETAIL
 call "C:\Program Files\Microsoft Visual Studio 8\VC\vcvarsall.bat" x86
@@ -16,4 +17,5 @@ make -f Makefile.ref clean all BUILD_OPT=1 XCFLAGS=/MT
 
 rem cat: ../../dist/WINNT5.1_OPT.OBJ/nspr/Version
 
+set PATH=%prevPath%
 cd %prevDir%
