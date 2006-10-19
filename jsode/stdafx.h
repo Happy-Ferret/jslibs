@@ -18,4 +18,7 @@
 namespace ode {
 	#include <ode/ode.h>
 }
+
+typedef ode::dReal real; // see tools.h
+
 // #pragma comment( user, "Compiled on " __DATE__ " at " __TIME__ )

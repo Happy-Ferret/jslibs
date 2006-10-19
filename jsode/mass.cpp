@@ -25,7 +25,7 @@ JSBool mass_translate(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsv
 	ode::dMass mass;
 	if ( GetBodyAndMass(cx, obj, &bodyID, &mass) == JS_FALSE)
 		return JS_FALSE;
-	jsdouble translation[3];
+	real translation[3];
 	if (ArrayToVector(cx, 3, &argv[0], translation) == JS_FALSE)
 		return JS_FALSE;
 	ode::dMassTranslate(&mass, translation[0], translation[1], translation[2]);
@@ -62,7 +62,7 @@ JSBool mass_setBoxTotal(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, j
 	jsdouble totalMass;
 	JS_ValueToNumber(cx, argv[0], &totalMass);
 // arg 1
-	jsdouble dimensions[3];
+	real dimensions[3];
 	if (ArrayToVector(cx, 3, &argv[1], dimensions) == JS_FALSE)
 		return JS_FALSE;
 // apply the formulae

@@ -162,7 +162,7 @@ JSBool body_getter_vector(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 			dim = 3;
 			break;
 	}
-	VectorToArray(cx, 3, vector, vp);
+	VectorToArray(cx, dim, vector, vp);
 	return JS_TRUE;
 }
 
