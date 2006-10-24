@@ -23,7 +23,7 @@
 #define RT_ERROR_STRING_CONVERSION_FAILED "unable to convert this argument to string."
 #define RT_ERROR_INT_CONVERSION_FAILED "unable to convert this argument to integer."
 #define RT_ERROR_OUT_OF_MEMORY "not enough memory to complete the allocation."
-#define RT_ERROR_NOT_INITIALIZED "the object is not proprely initialized."
+#define RT_ERROR_NOT_INITIALIZED "the object or resource is not proprely initialized."
 
 ////////////////
 // helper macros
@@ -96,26 +96,32 @@
 //   JSNative Call
 ////////////////////////////////////////////
 //example:
-//  BEGIN_CLASS
-//    << define properties and functions here >>
-//	 BEGIN_FUNCTION_MAP
-//    FUNCTION(name) // need name()
-//  END_MAP
-//  BEGIN_PROPERTY_MAP
-//    READONLY(name) // need nameGetter(), nameSetter()
-//    READWRITE(name) // need name()
-//    PROPERTY(name,id,flags,getter,setter)
-//  END_MAP
-//  BEGIN_STATIC_FUNCTION_MAP
-//  END_MAP
-//  BEGIN_STATIC_PROPERTY_MAP
-//  END_MAP
-//  NO_CONSTRUCTOR
-//  NO_FINALIZE
-//  NO_CALL
-//  NO_PROTOTYPE
-//  END_CLASS(test, NO_PRIVATE, NO_RESERVED_SLOT)
-
+/*
+	BEGIN_CLASS
+	<< define properties and functions here >>
+	BEGIN_FUNCTION_MAP
+		FUNCTION(name) // need name()
+	END_MAP
+	BEGIN_PROPERTY_MAP
+		READONLY(name) // need nameGetter(), nameSetter()
+		READWRITE(name) // need name()
+		PROPERTY(name,id,flags,getter,setter)
+		CONSTANT(func, name, value)
+	END_MAP
+	BEGIN_STATIC_FUNCTION_MAP
+	END_MAP
+	BEGIN_STATIC_PROPERTY_MAP
+	END_MAP
+	BEGIN_CONSTANT_MAP
+		CONSTANT_DOUBLE( toto, 123 )
+	END_MAP
+	NO_CONSTRUCTOR
+	NO_FINALIZE
+	NO_CALL
+	NO_PROTOTYPE
+	END_CLASS(test, NO_PRIVATE, NO_RESERVED_SLOT)
+*/
+//
 #define BEGIN_CLASS \
 	static JSClass *thisClass; \
 	static JSObject *thisClassObject=NULL;
@@ -123,29 +129,58 @@
 #define NO_PRIVATE 0
 #define HAS_PRIVATE JSCLASS_HAS_PRIVATE
 #define NO_RESERVED_SLOT 0
-#define NO_PROTOTYPE JSObject *prototype = NULL;
-#define NO_CLASS_CONSTRUCT JSNative ClassConstruct = NULL;
-#define NO_OBJECT_CONSTRUCT JSNative ObjectConstruct = NULL;
-#define NO_FINALIZE JSFinalizeOp Finalize = JS_FinalizeStub;
-#define NO_CALL JSNative Call = NULL;
+#define NO_PROTOTYPE static JSObject *prototype = NULL;
+#define NO_CLASS_CONSTRUCT static JSNative ClassConstruct = NULL;
+#define NO_OBJECT_CONSTRUCT static JSNative ObjectConstruct = NULL;
+#define NO_FINALIZE static JSFinalizeOp Finalize = JS_FinalizeStub;
+#define NO_CALL static JSNative Call = NULL;
+#define NO_INITCLASSAUX static void InitClassAux(JSContext *cx, JSObject *obj) {};
 
+#define NO_FUNCTION_MAP static JSFunctionSpec *_functionMap = NULL;
+#define NO_STATIC_FUNCTION_MAP static JSFunctionSpec *_functionStaticMap = NULL;
+#define NO_PROPERTY_MAP static JSPropertySpec *_propertyMap = NULL;
+#define NO_STATIC_PROPERTY_MAP static JSPropertySpec *_propertyStaticMap = NULL;
+#define NO_CONSTANT_MAP static JSConstDoubleSpec *_constantMap = NULL;
+
+// maps
 #define END_MAP {0}};
+#define BEGIN_FUNCTION_MAP static JSFunctionSpec _functionMap[] = { // *name, call, nargs, flags, extra
+#define BEGIN_STATIC_FUNCTION_MAP static JSFunctionSpec _functionStaticMap[] = {
+#define BEGIN_PROPERTY_MAP static JSPropertySpec _propertyMap[] = { // *name, tinyid, flags, getter, setter
+#define BEGIN_STATIC_PROPERTY_MAP static JSPropertySpec _propertyStaticMap[] = {
+#define BEGIN_CONSTANT_MAP JSConstDoubleSpec _constantMap[] = { // dval; *name; flags; spare[3];
 
-#define BEGIN_FUNCTION_MAP JSFunctionSpec _functionMap[] = { // *name, call, nargs, flags, extra
-#define BEGIN_STATIC_FUNCTION_MAP JSFunctionSpec _functionStaticMap[] = {
+//
+#define DEFINE_FUNCTION(name) static JSBool name##(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+#define DEFINE_PROPERTY(name) static JSBool name##(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
+
+// Declares a function for the FUNCTION_MAP
 #define FUNCTION(name) { #name, name },
-
-#define BEGIN_PROPERTY_MAP JSPropertySpec _propertyMap[] = { // *name, tinyid, flags, getter, setter
-#define BEGIN_STATIC_PROPERTY_MAP JSPropertySpec _propertyStaticMap[] = {
+// Allows to specify the native name too
+#define FUNCTION_ALIAS(name,nativeName) { #name, nativeName },
+// Declares a read/write property. Yous muse define xxxxGetter and xxxxSetter native functions
 #define READWRITE(name) { #name, 0, JSPROP_PERMANENT|JSPROP_SHARED, name##Getter, name##Setter },
+// Need setter function to be defined. The resulting value is stored in the object. When the prop is read (get) the stored value is used
+#define SET_AND_STORE(name) { #name, 0, JSPROP_PERMANENT, NULL, name },
+// Declares a read-only property
 #define READONLY(name) { #name, 0, JSPROP_PERMANENT|JSPROP_SHARED|JSPROP_READONLY, name, NULL },
+// Allows a full definition of a property
 #define PROPERTY(name,id,flags,getter,setter) { #name, id, flags, getter, setter },
+// use in PROPERTY_MAP only. 'func' centralize all values. WARNING: 0 <= value <= 255
+#define CONSTANT(func, name, value) { #name, value, JSPROP_PERMANENT|JSPROP_READONLY, func, NULL },
+// use in CONSTANT_MAP only
+#define CONSTANT_DOUBLE(name,value) { value, #name },
+
+
 #define END_CLASS(name,privateSlot,reservedSlotCount) \
 	extern JSObject *classObject##name = thisClassObject; \
-	extern JSClass class##name = { #name, JSCLASS_CONSTRUCT_PROTOTYPE | privateSlot | JSCLASS_HAS_RESERVED_SLOTS(reservedSlotCount), JS_PropertyStub , JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_EnumerateStub, JS_ResolveStub , JS_ConvertStub , Finalize, 0, 0, Call, ObjectConstruct }; \
+	extern JSClass class##name = { #name, /*JSCLASS_CONSTRUCT_PROTOTYPE | */privateSlot | JSCLASS_HAS_RESERVED_SLOTS(reservedSlotCount), JS_PropertyStub , JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_EnumerateStub, JS_ResolveStub , JS_ConvertStub , Finalize, 0, 0, Call, ObjectConstruct }; \
 	extern void InitClass##name(JSContext *cx, JSObject *obj) { \
 		thisClass = &class##name; \
-		thisClassObject = JS_InitClass( cx, obj, prototype, thisClass, ClassConstruct, 0, _propertyMap, _functionMap, _propertyStaticMap, _functionStaticMap ); \
+		classObject##name = thisClassObject = JS_InitClass( cx, obj, prototype, thisClass, ClassConstruct, 0, _propertyMap, _functionMap, _propertyStaticMap, _functionStaticMap ); \
+		if ( _constantMap != NULL) \
+			JS_DefineConstDoubles( cx, thisClassObject, _constantMap ); \
+		InitClassAux(cx, obj); \
 	}
 
 #define DECLARE_CLASS(name) \
