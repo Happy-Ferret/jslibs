@@ -1,9 +1,4 @@
 #include "stdafx.h"
-
-#define XP_WIN
-#include <jsapi.h>
-#include "../common/jshelper.h"
-
 #include "jstest.h"
 
 #include <stdio.h>
@@ -14,7 +9,7 @@
 	Prototypes are not constructed by default. If you want your class's
 	prototype object to be constructed (where the constructor you pass to
 	JS_InitClass, the |JSNative constructor| parameter, gives the |obj|
-	passed to it private data, use the JSCLASS_CONSTRUCT_PROTOTYPE . 
+	passed to it private data, use the JSCLASS_CONSTRUCT_PROTOTYPE .
 
 
 JSClass.construct
@@ -24,7 +19,7 @@ JSClass.construct
 	// this works fine
 	var dog_type = new Archetype("dog", ...);
 	// need to make this work too, and be able to run a native function.
-	var dog = new dog_type( .... ); 
+	var dog = new dog_type( .... );
 
 	=> You need to initialize JSClass.construct
 
@@ -64,7 +59,7 @@ BEGIN_CLASS
 	}
 
 	JSBool Func(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
-	  
+
 		printf("call Func\n");
 		return JS_TRUE;
 	}
