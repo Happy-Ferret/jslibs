@@ -43,6 +43,9 @@ w.onidle = function() {
 w.onmousemove = function( x,y,b1,b2 ) {
 
 	Print( 'x:'+x+' y:'+y+' button1:'+b1+' button1:'+b2, '\n' );
+	
+	if ( x != 5 && y != 5 )
+		w.SetCursorPosition( 5,5 );	
 }
 
 w.onchar = function( c, l ) {

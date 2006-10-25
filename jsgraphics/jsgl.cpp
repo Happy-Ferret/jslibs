@@ -55,6 +55,11 @@ static JSBool ClassConstruct(JSContext *cx, JSObject *obj, uintN argc, jsval *ar
 	int PixelFormat = ChoosePixelFormat(hDC, &pfd);
 	RT_ASSERT( PixelFormat != 0, "Could not Find A Suitable OpenGL PixelFormat." );
 
+	// If you are using the Win32 interface (as opposed to GLUT), call DescribePixelFormat() and check the returned dwFlags bitfield. 
+	// If PFD_GENERIC_ACCELERATED is clear and PFD_GENERIC_FORMAT is set, then the pixel format is only supported by the generic implementation. 
+	// Hardware acceleration is not possible for this format. For hardware acceleration, you need to choose a different format.
+
+
 	res = SetPixelFormat(hDC,PixelFormat,&pfd);
 	RT_ASSERT( res, "Could not Set The PixelFormat." );
 
@@ -181,6 +186,8 @@ DEFINE_FUNCTION( Test ) {
 	return JS_TRUE;
 }
 
+
+
 BEGIN_FUNCTION_MAP
 	FUNCTION_ALIAS(SwapBuffers, _SwapBuffers)
 	FUNCTION(Clear)
@@ -209,3 +216,11 @@ NO_CONSTANT_MAP
 NO_INITCLASSAUX
 
 END_CLASS(Gl, HAS_PRIVATE, 1/*NO_RESERVED_SLOT*/)
+
+/*
+
+
+Manage GL extensions:
+	http://www.libsdl.org/cgi/viewvc.cgi/trunk/SDL/src/video/win32/SDL_win32opengl.c?view=markup&sortby=date
+
+*/

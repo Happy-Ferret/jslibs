@@ -122,6 +122,11 @@
 	END_CLASS(test, NO_PRIVATE, NO_RESERVED_SLOT)
 */
 //
+
+/* comment
+ *
+ *
+ */
 #define BEGIN_CLASS \
 	static JSClass *thisClass; \
 	static JSObject *thisClassObject=NULL;

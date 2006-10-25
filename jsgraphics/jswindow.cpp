@@ -1,18 +1,26 @@
 #include "stdafx.h"
 #include "jswindow.h"
 
-JSContext *_cx;
+#include "stdlib.h"
 
 #define WINDOW_CLASS_NAME "jswindow"
 
-#define MSG_JS_CALL_ERROR 1
+// #define MSG_JS_CALL_ERROR 1
 
 #define SLOT_PREV_WINDOW_INFO 0
 
+typedef struct {
+	JSContext *cx;
+	JSObject *obj;
+} CxObj;
+	
+
 BEGIN_CLASS
 
-//	void Finalize(JSContext *cx, JSObject *obj) {
-//	}
+void Finalize(JSContext *cx, JSObject *obj) {
+
+	JS_GetPrivate(cx, obj);
+}
 
 static JSBool ClassConstruct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
@@ -37,12 +45,14 @@ HINSTANCE GetInst() {
 
 static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 
-	JSObject *obj = (JSObject*)GetWindowLong(hWnd, GWL_USERDATA);
-	if ( obj == NULL )
+	CxObj *cxobj = (CxObj*)GetWindowLong(hWnd, GWL_USERDATA);
+	if ( cxobj == NULL )
 		return DefWindowProc(hWnd, message, wParam, lParam);
-	JSContext *cx = _cx;
 
-	JSBool jsNoError = JS_TRUE;
+	JSContext *cx = cxobj->cx;
+	JSObject *obj = cxobj->obj;
+
+	JSBool callStatus = JS_TRUE;
 
 	switch (message) {
 
@@ -67,7 +77,7 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 			jsval functionVal;
 			JS_GetProperty(cx, obj, "onchar", &functionVal);
 			if ( functionVal != JSVAL_VOID )
-				jsNoError = JS_CallFunctionValue(cx, obj, functionVal, sizeof(argv) / sizeof(jsval), argv, &rval);
+				callStatus = JS_CallFunctionValue(cx, obj, functionVal, sizeof(argv) / sizeof(jsval), argv, &rval);
 			break;
 		}
 
@@ -79,7 +89,7 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 			jsval functionVal;
 			JS_GetProperty(cx, obj, message == WM_KEYUP ? "onkeydown" : "onkeyup", &functionVal);
 			if ( functionVal != JSVAL_VOID )
-				jsNoError = JS_CallFunctionValue(cx, obj, functionVal, sizeof(argv) / sizeof(jsval), argv, &rval);
+				callStatus = JS_CallFunctionValue(cx, obj, functionVal, sizeof(argv) / sizeof(jsval), argv, &rval);
 			break;
 		}
 
@@ -95,7 +105,7 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 			jsval functionVal;
 			JS_GetProperty(cx, obj, "onresize", &functionVal);
 			if ( functionVal != JSVAL_VOID )
-				jsNoError = JS_CallFunctionValue(cx, obj, functionVal, sizeof(argv) / sizeof(jsval), argv, &rval);
+				callStatus = JS_CallFunctionValue(cx, obj, functionVal, sizeof(argv) / sizeof(jsval), argv, &rval);
 			break;
 		}
 						  
@@ -115,7 +125,7 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 			jsval functionVal;
 			JS_GetProperty(cx, obj, "onmousemove", &functionVal);
 			if ( functionVal != JSVAL_VOID )
-				jsNoError = JS_CallFunctionValue(_cx, obj, functionVal, sizeof(argv) / sizeof(jsval), argv, &rval);
+				callStatus = JS_CallFunctionValue(cx, obj, functionVal, sizeof(argv) / sizeof(jsval), argv, &rval);
 			break;
 		}
 
@@ -123,8 +133,8 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 			return DefWindowProc(hWnd, message, wParam, lParam); // We do not want to handle this message so pass back to Windows to handle it in a default way
 	}
 
-	if ( jsNoError == JS_FALSE )
-		PostMessage(hWnd, WM_USER + MSG_JS_CALL_ERROR, 0, 0);
+//	if ( callStatus == JS_FALSE )
+//		PostMessage(hWnd, WM_USER + MSG_JS_CALL_ERROR, 0, 0);
 
 	return 0;
 }
@@ -171,7 +181,11 @@ static JSBool Create(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsva
 	
 	JS_SetPrivate(cx, obj, hWnd);
 	SetLastError(0);
-	LONG prevWindowLong = SetWindowLong(hWnd, GWL_USERDATA, (LONG)obj );
+
+	CxObj *cxobj = (CxObj*)malloc(sizeof(CxObj));
+	cxobj->cx = cx;
+	cxobj->obj = obj;
+	LONG prevWindowLong = SetWindowLong(hWnd, GWL_USERDATA, (LONG)cxobj );
 	DWORD err;
 	RT_ASSERT_1( prevWindowLong != 0 || (err=GetLastError()) == 0, "Unable to SetWindowLong. (error %d)", err );
 	return JS_TRUE;
@@ -195,11 +209,14 @@ static JSBool ProcessEvents(JSContext *cx, JSObject *obj, uintN argc, jsval *arg
 		jsval functionVal;
 		JS_GetProperty(cx, obj, "onidle", &functionVal);
 		if ( functionVal != JSVAL_VOID )
-			JSBool ret = JS_CallFunctionValue(_cx, obj, functionVal, 0, NULL, rval);
+			JSBool ret = JS_CallFunctionValue(cx, obj, functionVal, 0, NULL, rval);
 
 		while(PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) { //GetInputState() // determines whether there are mouse-button or keyboard messages in the calling thread's message queue.
 
-			if ( msg.message == WM_USER + MSG_JS_CALL_ERROR )
+//			if ( msg.message == WM_USER + MSG_JS_CALL_ERROR )
+//				return JS_FALSE;
+
+			if ( JS_IsExceptionPending(cx) ) // need JS_ErrorFromException(...) ??
 				return JS_FALSE;
 
 			TranslateMessage(&msg);
@@ -208,6 +225,11 @@ static JSBool ProcessEvents(JSContext *cx, JSObject *obj, uintN argc, jsval *arg
 				quit = true;
 		}
 	} while(!quit);
+
+	CxObj *cxobj = (CxObj*)GetWindowLong(hWnd, GWL_USERDATA);
+
+//	if ( cxobj != NULL ) // invalid case
+	free(cxobj);
 
 	DestroyWindow(hWnd);
 	UnregisterClass(WINDOW_CLASS_NAME, GetModuleHandle(NULL));
@@ -225,7 +247,8 @@ static JSBool Exit(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval 
 
 static JSBool WaitForMessage(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
-	MsgWaitForMultipleObjects(0, NULL, FALSE, 0, QS_ALLEVENTS);
+	DWORD status = MsgWaitForMultipleObjects(0, NULL, FALSE, 1, QS_ALLEVENTS);
+	*rval = (status == WAIT_TIMEOUT) ? JSVAL_FALSE : JSVAL_TRUE;
 	return JS_TRUE;
 }
 
@@ -239,7 +262,7 @@ JSBool fullScreenGetter(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 }
 */
 
-JSBool fullScreen(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
+DEFINE_PROPERTY( fullScreen ) {
 
 	HWND hWnd = (HWND)JS_GetPrivate(cx, obj);
 
@@ -315,23 +338,48 @@ DEFINE_PROPERTY( showCursor ) {
 	return JS_TRUE;
 }
 
-///////////
 
-void InitClassAux(JSContext *cx, JSObject *obj) {
+DEFINE_FUNCTION( SetCursorPosition ) {
 
-	_cx = cx;
+	HWND hWnd = (HWND)JS_GetPrivate(cx, obj);
+	RT_ASSERT( hWnd != NULL, RT_ERROR_NOT_INITIALIZED );
+
+	RT_ASSERT_ARGC(2);
+	int32 x, y;
+	JS_ValueToInt32(cx, argv[0], &x);
+	JS_ValueToInt32(cx, argv[0], &y);
+	POINT pt = { x, y };
+	ClientToScreen( hWnd, &pt );
+	SetCursorPos(pt.x, pt.y); // http://windowssdk.msdn.microsoft.com/en-us/library/ms648394.aspx
+	return JS_TRUE;
 }
+
+
+DEFINE_PROPERTY( title ) {
+
+	HWND hWnd = (HWND)JS_GetPrivate(cx, obj);
+	RT_ASSERT( hWnd != NULL, RT_ERROR_NOT_INITIALIZED );
+	char *title;
+	RT_JSVAL_TO_STRING( *vp, title );
+    SetWindowText(hWnd, title); // TEXT("")
+	return JS_TRUE;
+}
+
+
+///////////
 
 BEGIN_FUNCTION_MAP
 	FUNCTION(Create)
 	FUNCTION(ProcessEvents)
 	FUNCTION(Exit)
 	FUNCTION(WaitForMessage)
+	FUNCTION(SetCursorPosition)
 END_MAP
 
 BEGIN_PROPERTY_MAP
 	SET_AND_STORE(fullScreen)
 	SET_AND_STORE(showCursor)
+	SET_AND_STORE(title)
 	//		READONLY(prop)
 END_MAP
 
@@ -346,11 +394,11 @@ NO_STATIC_PROPERTY_MAP
 
 NO_OBJECT_CONSTRUCT
 //	NO_CLASS_CONSTRUCT
-NO_FINALIZE
+//NO_FINALIZE
 NO_CALL
 NO_PROTOTYPE
 NO_CONSTANT_MAP
-//	NO_INITCLASSAUX
+NO_INITCLASSAUX
 
 END_CLASS(Window, HAS_PRIVATE, 1/*NO_RESERVED_SLOT*/)
 
