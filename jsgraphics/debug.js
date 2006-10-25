@@ -26,7 +26,6 @@ const GL_ALL_ATTRIB_BITS    =0x000fffff
 var i = 0;
 
 var w = new Window("Test");
-w.Create("test");
 var gl = new Gl(w);
 
 w.onidle = function() {
@@ -44,13 +43,26 @@ w.onmousemove = function( x,y,b1,b2 ) {
 
 	Print( 'x:'+x+' y:'+y+' button1:'+b1+' button1:'+b2, '\n' );
 	
-	if ( x != 5 && y != 5 )
-		w.SetCursorPosition( 5,5 );	
+	var r = w.rect;
+	var cx = Math.round((r[2]-r[0])/2);
+	var cy = Math.round((r[3]-r[1])/2);
+	
+	//Print( 'xy: '+x+' '+y+'  cxcy: '+cx+' '+cy, '\n');
+	Print( r, '\n');
+	if ( x != cx || y != cy )
+	w.SetCursorPosition( cx,cy );	
 }
 
 w.onchar = function( c, l ) {
 
 	Print( 'c:'+c+' l:'+l.toString(16), '\n' );
+	
+	if ( c == 'r' ) {
+		var r = w.rect;
+		r[0]++;
+		w.rect = r;
+	}
+	
 	if ( c.charCodeAt(0) == 27  )
 		w.Exit();
 		
@@ -65,11 +77,18 @@ w.onchar = function( c, l ) {
 			Window.Mode();
 		}
 	}
-		
-		
 }
 
-w.onresize = function( w, h ) {
+w.onmove = function() {
+/*
+	var r = w.rect;
+	var x = (r[2]-r[0])/2 + r[0];
+	var y = (r[3]-r[1])/2 + r[1];
+	w.SetCursorPosition( x,y );	
+*/	
+}
+
+w.onsize = function( w, h ) {
 
 	gl.Viewport(0,0,w,h);
 	Print('resize ' +w +' '+ h, '\n')
@@ -77,6 +96,7 @@ w.onresize = function( w, h ) {
 //	gl.SwapBuffers();
 }
 
+w.rect = [100,100,500,500];
 w.ProcessEvents();
 
 Print('Done.'+i);

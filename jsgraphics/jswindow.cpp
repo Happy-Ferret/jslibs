@@ -1,7 +1,9 @@
 #include "stdafx.h"
 #include "jswindow.h"
+#include "../smtools/smtools.h"
 
 #include "stdlib.h"
+
 
 #define WINDOW_CLASS_NAME "jswindow"
 
@@ -22,26 +24,34 @@ void Finalize(JSContext *cx, JSObject *obj) {
 	JS_GetPrivate(cx, obj);
 }
 
-static JSBool ClassConstruct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
-	RT_ASSERT( JS_IsConstructing(cx) && JS_GetClass(obj) == thisClass, RT_ERROR_INVALID_CLASS );
-	return JS_TRUE;
-}
+//static JSBool ClassConstruct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+//
+//	RT_ASSERT( JS_IsConstructing(cx) && JS_GetClass(obj) == thisClass, RT_ERROR_INVALID_CLASS );
+//	return JS_TRUE;
+//}
 
 //	JSBool Call(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 //		return JS_TRUE;
 //	}
 
 
-/*
-HINSTANCE GetInst() {
+//HINSTANCE GetInst() {
+//
+//	MEMORY_BASIC_INFORMATION mbi;
+//	VirtualQuery(GetInst, &mbi, sizeof(mbi));
+//	return (HINSTANCE)mbi.AllocationBase;
+//}
 
-	MEMORY_BASIC_INFORMATION mbi;
-	VirtualQuery(GetInst, &mbi, sizeof(mbi));
-	return (HINSTANCE)mbi.AllocationBase;
+JSBool FireEvent( JSContext *cx, JSObject *obj, const char *name, int argc, jsval *argv) {
+
+	jsval rval;
+	jsval functionVal;
+	JS_GetProperty(cx, obj, name, &functionVal);
+	if ( functionVal != JSVAL_VOID )
+		return JS_CallFunctionValue(cx, obj, functionVal, argc, argv, &rval);
+	return JS_TRUE;
 }
-*/
-
 
 static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 
@@ -52,95 +62,60 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 	JSContext *cx = cxobj->cx;
 	JSObject *obj = cxobj->obj;
 
-	JSBool callStatus = JS_TRUE;
-
 	switch (message) {
 
 //		 case WM_COMMAND:
 //		  // handle menu selections etc.
 //		 break;
 
-//		 case WM_PAINT:
-//		  // draw our window - note: must do something here or not trap it
-//		 break;
-
 		case WM_DESTROY:
 			PostQuitMessage(0);
-		break;
+			break;
 
 		case WM_CHAR: {
-
-			jsval rval;
 			char c = wParam;
-			JSString *str = JS_NewStringCopyN(cx, &c, 1);
-			jsval argv[] = { STRING_TO_JSVAL(str), INT_TO_JSVAL(lParam) };
-			jsval functionVal;
-			JS_GetProperty(cx, obj, "onchar", &functionVal);
-			if ( functionVal != JSVAL_VOID )
-				callStatus = JS_CallFunctionValue(cx, obj, functionVal, sizeof(argv) / sizeof(jsval), argv, &rval);
+			jsval argv[] = { STRING_TO_JSVAL(JS_NewStringCopyN(cx, &c, 1)), INT_TO_JSVAL(lParam) };
+			FireEvent(cx, obj, "onchar", 2, argv );
 			break;
 		}
-
-		case WM_KEYUP:
-		case WM_KEYDOWN: {
-
-			jsval rval;
+		case WM_KEYUP: {
 			jsval argv[] = { INT_TO_JSVAL(wParam), INT_TO_JSVAL(lParam) };
-			jsval functionVal;
-			JS_GetProperty(cx, obj, message == WM_KEYUP ? "onkeydown" : "onkeyup", &functionVal);
-			if ( functionVal != JSVAL_VOID )
-				callStatus = JS_CallFunctionValue(cx, obj, functionVal, sizeof(argv) / sizeof(jsval), argv, &rval);
+			FireEvent(cx, obj, "onkeyup", 2, argv );
 			break;
 		}
-
+		case WM_KEYDOWN: {
+			jsval argv[] = { INT_TO_JSVAL(wParam), INT_TO_JSVAL(lParam) };
+			FireEvent(cx, obj, "onkeydown", 2, argv );
+			break;
+		}
 //		case WM_PAINT:
-
-		case WM_SIZE: {
-
-			int width = (short)LOWORD(lParam);
-			int height = (short)HIWORD(lParam);
-
-			jsval rval;
-			jsval argv[] = { INT_TO_JSVAL(width), INT_TO_JSVAL(height) };
-			jsval functionVal;
-			JS_GetProperty(cx, obj, "onresize", &functionVal);
-			if ( functionVal != JSVAL_VOID )
-				callStatus = JS_CallFunctionValue(cx, obj, functionVal, sizeof(argv) / sizeof(jsval), argv, &rval);
+		case WM_MOVE: {
+			jsval argv[] = { INT_TO_JSVAL((short)LOWORD(lParam)), INT_TO_JSVAL((short)HIWORD(lParam)) };
+			FireEvent(cx, obj, "onmove", 2, argv );
 			break;
 		}
-						  
+		case WM_SIZE: {
+			jsval argv[] = { INT_TO_JSVAL((short)LOWORD(lParam)), INT_TO_JSVAL((short)HIWORD(lParam)) };
+			FireEvent(cx, obj, "onsize", 2, argv );
+			break;
+		}
 		//case WM_MOUSEWHEEL: {
 		//	break;
 		//}
-
 		case WM_MOUSEMOVE: {
-
-			// Retrieve mouse screen position
-			int x = (short)LOWORD(lParam);
-			int y = (short)HIWORD(lParam);
-			bool leftButtonDown = wParam & MK_LBUTTON; // Check if left button down
-			bool rightButtonDown = wParam & MK_RBUTTON; // Check if right button down
-			jsval rval;
-			jsval argv[] = { INT_TO_JSVAL(x), INT_TO_JSVAL(y), BOOLEAN_TO_JSVAL(leftButtonDown), BOOLEAN_TO_JSVAL(rightButtonDown) };
-			jsval functionVal;
-			JS_GetProperty(cx, obj, "onmousemove", &functionVal);
-			if ( functionVal != JSVAL_VOID )
-				callStatus = JS_CallFunctionValue(cx, obj, functionVal, sizeof(argv) / sizeof(jsval), argv, &rval);
+			jsval argv[] = { INT_TO_JSVAL((short)LOWORD(lParam)), INT_TO_JSVAL((short)HIWORD(lParam)), BOOLEAN_TO_JSVAL(wParam & MK_LBUTTON), BOOLEAN_TO_JSVAL(wParam & MK_RBUTTON) };
+			FireEvent(cx, obj, "onmousemove", 4, argv );
 			break;
 		}
 
 		default:
 			return DefWindowProc(hWnd, message, wParam, lParam); // We do not want to handle this message so pass back to Windows to handle it in a default way
 	}
-
-//	if ( callStatus == JS_FALSE )
-//		PostMessage(hWnd, WM_USER + MSG_JS_CALL_ERROR, 0, 0);
-
 	return 0;
 }
 
 
-static JSBool Create(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+static JSBool ClassConstruct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
 	RT_ASSERT( JS_GetClass(obj) == thisClass, RT_ERROR_INVALID_CLASS );
 
@@ -265,6 +240,7 @@ JSBool fullScreenGetter(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 DEFINE_PROPERTY( fullScreen ) {
 
 	HWND hWnd = (HWND)JS_GetPrivate(cx, obj);
+	RT_ASSERT( hWnd != NULL, RT_ERROR_NOT_INITIALIZED );
 
 	typedef struct {
 		RECT prevRect;
@@ -339,6 +315,29 @@ DEFINE_PROPERTY( showCursor ) {
 }
 
 
+DEFINE_PROPERTY( rectGetter ) {
+
+	HWND hWnd = (HWND)JS_GetPrivate(cx, obj);
+	RT_ASSERT( hWnd != NULL, RT_ERROR_NOT_INITIALIZED );
+	RECT r;
+	GetWindowRect(hWnd, &r);
+	int vector[] = { r.left, r.top, r.right, r.bottom };
+	IntVectorToArray(cx, 4, vector, vp);
+	return JS_TRUE;
+}
+
+
+DEFINE_PROPERTY( rectSetter ) {
+
+	HWND hWnd = (HWND)JS_GetPrivate(cx, obj);
+	RT_ASSERT( hWnd != NULL, RT_ERROR_NOT_INITIALIZED );
+	int v[4];
+	IntArrayToVector(cx, 4, vp, v);
+	SetWindowPos(hWnd, 0, v[0], v[1], v[2] - v[0], v[3] - v[1], SWP_NOZORDER | SWP_NOACTIVATE);
+	return JS_TRUE;
+}
+
+
 DEFINE_FUNCTION( SetCursorPosition ) {
 
 	HWND hWnd = (HWND)JS_GetPrivate(cx, obj);
@@ -369,7 +368,7 @@ DEFINE_PROPERTY( title ) {
 ///////////
 
 BEGIN_FUNCTION_MAP
-	FUNCTION(Create)
+//	FUNCTION(Create)
 	FUNCTION(ProcessEvents)
 	FUNCTION(Exit)
 	FUNCTION(WaitForMessage)
@@ -380,7 +379,9 @@ BEGIN_PROPERTY_MAP
 	SET_AND_STORE(fullScreen)
 	SET_AND_STORE(showCursor)
 	SET_AND_STORE(title)
+	READWRITE( rect )
 	//		READONLY(prop)
+
 END_MAP
 
 //NO_STATIC_FUNCTION_MAP

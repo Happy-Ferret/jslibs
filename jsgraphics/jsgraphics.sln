@@ -2,6 +2,11 @@
 Microsoft Visual Studio Solution File, Format Version 9.00
 # Visual C++ Express 2005
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jsgraphics", "jsgraphics.vcproj", "{851DCD7A-4730-4FA5-82E8-38A7EFED8064}"
+	ProjectSection(ProjectDependencies) = postProject
+		{04AA1E04-21DE-4681-A277-7A46DA84E37A} = {04AA1E04-21DE-4681-A277-7A46DA84E37A}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "smtools", "..\smtools\smtools.vcproj", "{04AA1E04-21DE-4681-A277-7A46DA84E37A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -13,6 +18,10 @@ Global
 		{851DCD7A-4730-4FA5-82E8-38A7EFED8064}.Debug|Win32.Build.0 = Debug|Win32
 		{851DCD7A-4730-4FA5-82E8-38A7EFED8064}.Release|Win32.ActiveCfg = Release|Win32
 		{851DCD7A-4730-4FA5-82E8-38A7EFED8064}.Release|Win32.Build.0 = Release|Win32
+		{04AA1E04-21DE-4681-A277-7A46DA84E37A}.Debug|Win32.ActiveCfg = Debug|Win32
+		{04AA1E04-21DE-4681-A277-7A46DA84E37A}.Debug|Win32.Build.0 = Debug|Win32
+		{04AA1E04-21DE-4681-A277-7A46DA84E37A}.Release|Win32.ActiveCfg = Release|Win32
+		{04AA1E04-21DE-4681-A277-7A46DA84E37A}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
