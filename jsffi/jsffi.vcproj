@@ -40,7 +40,7 @@
 				Name="VCCLCompilerTool"
 				UseUnicodeResponseFiles="false"
 				Optimization="0"
-				AdditionalIncludeDirectories="../libffi/libffi_msvc;../mozilla/js/src"
+				AdditionalIncludeDirectories="../libffi/libffi_msvc;../js/src"
 				PreprocessorDefinitions="_WINDOWS;WIN32;_DEBUG;_CRT_SECURE_NO_DEPRECATE;XP_WIN"
 				WarningLevel="4"
 				DebugInformationFormat="4"
@@ -109,7 +109,7 @@
 				UseUnicodeResponseFiles="false"
 				FavorSizeOrSpeed="1"
 				WholeProgramOptimization="true"
-				AdditionalIncludeDirectories="../libffi/libffi_msvc;../mozilla/js/src"
+				AdditionalIncludeDirectories="../libffi/libffi_msvc;../js/src"
 				PreprocessorDefinitions="_WINDOWS;WIN32;NDEBUG;_CRT_SECURE_NO_DEPRECATE;XP_WIN"
 				WarningLevel="4"
 			/>
