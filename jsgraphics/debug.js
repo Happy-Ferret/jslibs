@@ -25,67 +25,95 @@ const GL_ALL_ATTRIB_BITS    =0x000fffff
 
 var i = 0;
 
-var w = new Window("Test");
+var mousex, mousey;
+var totalx=0, totaly=0;
+
+var w = new Window();
 var gl = new Gl(w);
+w.title = "Test";
 
 w.onidle = function() {
 
-	gl.Test();
+	gl.Test([totalx, 0,Math.sin(totaly/100),1]);
 	gl.SwapBuffers();	
 
 	i++;
-	(i % 100) || Print( 'i='+i, '\n');
-	
-//	w.WaitForMessage();	
+	if (i % 100 == 0) {
+		Print( w.active, '\n');
+	}
 }
 
-w.onmousemove = function( x,y,b1,b2 ) {
+var savedMousePosition;
 
-	Print( 'x:'+x+' y:'+y+' button1:'+b1+' button1:'+b2, '\n' );
+w.onmouseup = w.onmousedown = function(button, polarity) {
 	
+	if ( button == 1 ) {
+		if (polarity)
+			savedMousePosition = w.cursorPosition;
+		else {
+			w.cursorPosition = savedMousePosition;
+			mousex = mousey = undefined;
+		}
+		Window.showCursor = !polarity;
+		w.captureMouse = polarity;
+	}
+}
+
+
+w.onmousemove = function( x,y, b1,b2,b3 ) {
+
+	if ( !b1 )
+		return;
+//	Print( 'x:'+x+' y:'+y+' button1:'+b1+' button2:'+b2+' button3:'+b3, '\n' );
 	var r = w.rect;
-	var cx = Math.round((r[2]-r[0])/2);
+	var cx = Math.round((r[2]-r[0])/2); // cx & cy must be integer else comparaison will failed
 	var cy = Math.round((r[3]-r[1])/2);
-	
-	//Print( 'xy: '+x+' '+y+'  cxcy: '+cx+' '+cy, '\n');
-	Print( r, '\n');
-	if ( x != cx || y != cy )
-	w.SetCursorPosition( cx,cy );	
+	if ( x != cx || y != cy ) {
+		if ( mousex != undefined && mousey != undefined ) {
+			totalx += x - mousex;
+			totaly += y - mousey;
+			Print( totalx+' '+totaly, '\n' );
+		}
+		w.cursorPosition = [cx,cy];
+	}
+	mousex = x;
+	mousey = y;
 }
 
+
+var fullscreen = false;
+var preferedrect;
 w.onchar = function( c, l ) {
 
 	Print( 'c:'+c+' l:'+l.toString(16), '\n' );
 	
-	if ( c == 'r' ) {
-		var r = w.rect;
-		r[0]++;
-		w.rect = r;
-	}
-	
-	if ( c.charCodeAt(0) == 27  )
-		w.Exit();
-		
-	if ( c.charCodeAt(0) == 13 ) {
-		if ( !w.fullScreen ) {
-			Window.Mode( 800, 600, 32 );
-			w.fullScreen = true;
-			w.showCursor = false;
-		} else {
-			w.showCursor = true;
-			w.fullScreen = false;
-			Window.Mode();
+	switch (c) {
+		case 'r':
+			var r = w.rect;
+			r[0]++;
+			w.rect = r;
+			break;
+		case '\x1B':
+			w.Exit();
+			break;
+		case '\x0D':
+			fullscreen = !fullscreen;
+			if ( fullscreen ) {
+			
+				preferedrect = w.rect;
+				Window.Mode( [640, 480], 32, true );
+				w.rect = Window.desktopRect;
+				w.showFrame = false;
+				w.showCursor = false;
+			} else {
+			
+				w.rect = preferedrect;
+				w.showCursor = true;
+				w.showFrame = true;
+				Window.Mode();
+			}
+			break;
 		}
-	}
-}
-
-w.onmove = function() {
-/*
-	var r = w.rect;
-	var x = (r[2]-r[0])/2 + r[0];
-	var y = (r[3]-r[1])/2 + r[1];
-	w.SetCursorPosition( x,y );	
-*/	
 }
 
 w.onsize = function( w, h ) {
@@ -96,7 +124,7 @@ w.onsize = function( w, h ) {
 //	gl.SwapBuffers();
 }
 
-w.rect = [100,100,500,500];
+w.rect = [500,100,1000,500];
 w.ProcessEvents();
 
 Print('Done.'+i);

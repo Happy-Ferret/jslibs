@@ -93,7 +93,8 @@ JSBool Clear(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 	RT_ASSERT( JS_GetClass(obj) == thisClass, RT_ERROR_INVALID_CLASS );
 	RT_ASSERT_ARGC(1);
 	int32 bitfield;
-	JS_ValueToInt32(cx, argv[0], &bitfield);
+	RT_SAFE( JS_ValueToInt32(cx, argv[0], &bitfield) );
+	RT_UNSAFE( bitfield = INT_TO_JSVAL(argv[0]) );
 	glClear(bitfield); // GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT
 	return JS_TRUE;
 }
@@ -101,18 +102,15 @@ JSBool Clear(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 DEFINE_FUNCTION( Viewport ) {
 
 	RT_ASSERT_ARGC(4);
-
 	int32 x, y, width, height;
 	JS_ValueToInt32(cx, argv[0], &x);
 	JS_ValueToInt32(cx, argv[1], &y);
 	JS_ValueToInt32(cx, argv[2], &width);
 	JS_ValueToInt32(cx, argv[3], &height);
-
 	glViewport(x, y, width, height);
 	return JS_TRUE;
 }
 
-float i =0;
 
 DEFINE_FUNCTION( Test ) {
 
@@ -160,8 +158,12 @@ DEFINE_FUNCTION( Test ) {
 
 	glTranslatef(0.0, 0, -10.0);
 
-	i += 1;
-	glRotatef( i, 1.0, 1.0, 1.0);
+	RT_ASSERT_ARGC(1);
+
+	float vec[4];
+	FloatArrayToVector(cx, 4, argv, vec);
+
+	glRotatef( vec[0], vec[1], vec[2], vec[3]);
 
 	glBegin(GL_TRIANGLES);
 
