@@ -23,70 +23,70 @@ const GL_TEXTURE_BIT        =0x00040000
 const GL_SCISSOR_BIT        =0x00080000
 const GL_ALL_ATTRIB_BITS    =0x000fffff
 
-var i = 0;
+///////////////////////////////////////
 
-var mousex, mousey;
-var totalx=0, totaly=0;
+var prevMouseX, prevMouseY;
+var totalx=0, totaly=0, totalWheel=0;
 
 var w = new Window();
-var gl = new Gl(w);
 w.title = "Test";
+w.rect = [500,100,1000,500];
+var gl = new Gl(w);
 
 w.onidle = function() {
 
-	gl.Test([totalx, 0,Math.sin(totaly/100),1]);
-	gl.SwapBuffers();	
-
-	i++;
-	if (i % 100 == 0) {
-		Print( w.active, '\n');
-	}
+	gl.Test([totaly,totalx,wheel*10]);
+	gl.SwapBuffers();
 }
 
-var savedMousePosition;
+var _savedMousePosition;
 
 w.onmouseup = w.onmousedown = function(button, polarity) {
 	
 	if ( button == 1 ) {
 		if (polarity)
-			savedMousePosition = w.cursorPosition;
+			_savedMousePosition = w.cursorPosition;
 		else {
-			w.cursorPosition = savedMousePosition;
-			mousex = mousey = undefined;
+			w.cursorPosition = _savedMousePosition;
+			prevMouseX = prevMouseY = undefined;
 		}
 		Window.showCursor = !polarity;
 		w.captureMouse = polarity;
 	}
 }
 
+w.onmousewheel = function(delta) {
 
-w.onmousemove = function( x,y, b1,b2,b3 ) {
-
-	if ( !b1 )
-		return;
-//	Print( 'x:'+x+' y:'+y+' button1:'+b1+' button2:'+b2+' button3:'+b3, '\n' );
-	var r = w.rect;
-	var cx = Math.round((r[2]-r[0])/2); // cx & cy must be integer else comparaison will failed
-	var cy = Math.round((r[3]-r[1])/2);
-	if ( x != cx || y != cy ) {
-		if ( mousex != undefined && mousey != undefined ) {
-			totalx += x - mousex;
-			totaly += y - mousey;
-			Print( totalx+' '+totaly, '\n' );
-		}
-		w.cursorPosition = [cx,cy];
-	}
-	mousex = x;
-	mousey = y;
+	totalWheel += delta;
 }
 
+w.onmousemove = function( x,y, b1,b2,b3 ) { // mouse X, mouse Y, left, right, middle
 
-var fullscreen = false;
-var preferedrect;
+	if ( b1 ) {
+
+	//	Print( 'x:'+x+' y:'+y+' button1:'+b1+' button2:'+b2+' button3:'+b3, '\n' );
+		var r = w.rect;
+		var cx = Math.round((r[2]-r[0])/2); // cx & cy must be integer else comparaison will failed
+		var cy = Math.round((r[3]-r[1])/2);
+		if ( x != cx || y != cy ) {
+			if ( prevMouseX != undefined && prevMouseY != undefined ) {
+				totalx += x - prevMouseX;
+				totaly += y - prevMouseY;
+				Print( totalx+' '+totaly, '\n' );
+			}
+			w.cursorPosition = [cx,cy];
+		}
+		prevMouseX = x;
+		prevMouseY = y;
+	}
+}
+
+var _fullscreenState = false;
+var _savedWindowSize;
+
 w.onchar = function( c, l ) {
 
-	Print( 'c:'+c+' l:'+l.toString(16), '\n' );
-	
+//	Print( 'c:'+c+' l:'+l.toString(16), '\n' );
 	switch (c) {
 		case 'r':
 			var r = w.rect;
@@ -97,20 +97,20 @@ w.onchar = function( c, l ) {
 			w.Exit();
 			break;
 		case '\x0D':
-			fullscreen = !fullscreen;
-			if ( fullscreen ) {
+			_fullscreenState = !_fullscreenState;
+			if ( _fullscreenState ) {
 			
-				preferedrect = w.rect;
-				Window.Mode( [640, 480], 32, true );
-				w.rect = Window.desktopRect;
-				w.showFrame = false;
-				w.showCursor = false;
+				_savedWindowSize = w.rect; // save current window rectangle
+				Window.Mode( [640, 480], 32, true ); // change mode 640x480, 32bits, temporarily fullscreen
+				w.showFrame = false; // hide window frame ( remove all borders )
+				w.rect = Window.desktopRect; // extends the window to the screen size
+				w.showCursor = false; // hide the cursor
 			} else {
 			
-				w.rect = preferedrect;
+				w.rect = _savedWindowSize;
 				w.showCursor = true;
 				w.showFrame = true;
-				Window.Mode();
+				Window.Mode(); // revert to default
 			}
 			break;
 		}
@@ -119,14 +119,9 @@ w.onchar = function( c, l ) {
 w.onsize = function( w, h ) {
 
 	gl.Viewport(0,0,w,h);
-	Print('resize ' +w +' '+ h, '\n')
-//	gl.Clear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-//	gl.SwapBuffers();
 }
 
-w.rect = [500,100,1000,500];
 w.ProcessEvents();
-
-Print('Done.'+i);
+Print('Done.', '\n');
 
 

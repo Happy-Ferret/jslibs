@@ -3,36 +3,13 @@
 
 #include "stdlib.h"
 
-
 #define WINDOW_CLASS_NAME "jswindow"
-
-// #define MSG_JS_CALL_ERROR 1
-
-#define SLOT_PREV_WINDOW_INFO 0
 
 typedef struct {
 	JSContext *cx;
 	JSObject *obj;
 } CxObj;
 	
-
-BEGIN_CLASS
-
-//void Finalize(JSContext *cx, JSObject *obj) {
-//	JS_GetPrivate(cx, obj);
-//}
-
-
-//static JSBool ClassConstruct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
-//
-//	RT_ASSERT( JS_IsConstructing(cx) && JS_GetClass(obj) == thisClass, RT_ERROR_INVALID_CLASS );
-//	return JS_TRUE;
-//}
-
-//	JSBool Call(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
-//		return JS_TRUE;
-//	}
-
 
 //HINSTANCE GetInst() {
 //
@@ -41,6 +18,19 @@ BEGIN_CLASS
 //	return (HINSTANCE)mbi.AllocationBase;
 //}
 
+
+BEGIN_CLASS
+
+//void Finalize(JSContext *cx, JSObject *obj) {
+//	JS_GetPrivate(cx, obj);
+//}
+//static JSBool ClassConstruct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+//	RT_ASSERT( JS_IsConstructing(cx) && JS_GetClass(obj) == thisClass, RT_ERROR_INVALID_CLASS );
+//	return JS_TRUE;
+//}
+//	JSBool Call(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+//		return JS_TRUE;
+//	}
 
 static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 
@@ -57,7 +47,6 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 	switch (message) {
 
 		//case WM_COMMAND:
-		//case WM_MOUSEWHEEL:
 		//case WM_PAINT
 
 		case WM_DESTROY:
@@ -122,7 +111,13 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 				JS_CallFunctionValue(cx, obj, functionVal, sizeof(argv)/sizeof(*argv), argv, &rval);
 			}
 			break;
+		case WM_MOUSEWHEEL:
+			JS_GetProperty(cx, obj, "onmousewheel", &functionVal);
+			if ( functionVal != JSVAL_VOID ) {
 
+				jsval argv[] = { INT_TO_JSVAL( GET_WHEEL_DELTA_WPARAM(wParam)/WHEEL_DELTA ) };
+				JS_CallFunctionValue(cx, obj, functionVal, sizeof(argv)/sizeof(*argv), argv, &rval);
+			}
 		case WM_LBUTTONDOWN:
 		case WM_MBUTTONDOWN:
 		case WM_RBUTTONDOWN:
@@ -144,12 +139,8 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 				JS_CallFunctionValue(cx, obj, functionVal, sizeof(argv)/sizeof(*argv), argv, &rval);
 			}
 			break;
-			
 
-			break;
-
-
-		//case WM_MOUSELEAVE:
+		//case WM_MOUSELEAVE: // need TrackMouseEvent() ...
 		//	JS_GetProperty(cx, obj, "onmouseleave", &functionVal);
 		//	if ( functionVal != JSVAL_VOID ) {
 
@@ -166,26 +157,12 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 static JSBool ClassConstruct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
 	RT_ASSERT( JS_GetClass(obj) == thisClass, RT_ERROR_INVALID_CLASS );
-//	RT_ASSERT_ARGC(1);
 	HINSTANCE hInst = (HINSTANCE)GetModuleHandle(NULL);
 
-	WNDCLASS wc;
-	wc.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC; // OWNDC:Allocates a unique device context for each window in the class.
-	wc.lpfnWndProc = (WNDPROC)WndProc;
-	wc.cbClsExtra = 0;
-	wc.cbWndExtra = 0;
-	wc.hInstance = hInst;
-	wc.hIcon = LoadIcon((HINSTANCE)NULL, IDI_APPLICATION);
-	wc.hCursor = LoadCursor((HINSTANCE) NULL, IDC_ARROW); // doc: To use a predefined cursors, the application must set the hInstance parameter to NULL and the lpCursorName parameter to one the cursor values.
-	wc.hbrBackground = NULL; //(HBRUSH) (COLOR_WINDOW +1); //(HBRUSH)GetStockObject(WHITE_BRUSH);
-	wc.lpszMenuName = NULL;// "MainMenu";
-	wc.lpszClassName = WINDOW_CLASS_NAME;
-
+	// hCursor doc: To use a predefined cursors, the application must set the hInstance parameter to NULL and the lpCursorName parameter to one the cursor values.
+	WNDCLASS wc = { CS_HREDRAW | CS_VREDRAW | CS_OWNDC, (WNDPROC)WndProc, 0, 0, hInst, LoadIcon((HINSTANCE)NULL, IDI_APPLICATION), LoadCursor((HINSTANCE) NULL, IDC_ARROW), NULL, NULL, WINDOW_CLASS_NAME };
 	ATOM rc = RegisterClass(&wc);
 	RT_ASSERT( rc != 0, "Unable to RegisterClass." );
-
-//	char *windowName;
-//	RT_JSVAL_TO_STRING(argv[0], windowName);
 
 // http://nehe.gamedev.net/data/lessons/lesson.asp?lesson=01
 //	AdjustWindowRectEx(&WindowRect, dwStyle, FALSE, dwExStyle);
@@ -210,8 +187,17 @@ static JSBool ClassConstruct(JSContext *cx, JSObject *obj, uintN argc, jsval *ar
 	return JS_TRUE;
 }
 
+bool TrackMouseLeave( HWND hWnd ) {
 
-static JSBool ProcessEvents(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+	TRACKMOUSEEVENT trackMouseEvent;
+	trackMouseEvent.cbSize = sizeof(TRACKMOUSEEVENT);
+	trackMouseEvent.dwFlags = TME_LEAVE;
+	trackMouseEvent.hwndTrack = hWnd;
+	return TrackMouseEvent(&trackMouseEvent) != 0;
+//	RT_ASSERT_1( status != 0, "Unable to TrackMouseEvent.(%d)", GetLastError() );
+}
+
+DEFINE_FUNCTION( ProcessEvents ) {
 
 	HWND hWnd = (HWND)JS_GetPrivate(cx, obj);
 	RT_ASSERT( hWnd != NULL, RT_ERROR_NOT_INITIALIZED );
@@ -220,13 +206,6 @@ static JSBool ProcessEvents(JSContext *cx, JSObject *obj, uintN argc, jsval *arg
 	SetForegroundWindow(hWnd);
 	UpdateWindow(hWnd);
 	SetFocus(hWnd);
-
-	//TRACKMOUSEEVENT trackMouseEvent;
-	//trackMouseEvent.cbSize = sizeof(TRACKMOUSEEVENT);
-	//trackMouseEvent.dwFlags = TME_LEAVE;
-	//trackMouseEvent.hwndTrack = hWnd;
-	//BOOL status = TrackMouseEvent(&trackMouseEvent);
-	//RT_ASSERT_1( status != 0, "Unable to TrackMouseEvent.(%d)", GetLastError() );
 
 	jsval functionVal;
 	int msgCount;
@@ -251,15 +230,16 @@ static JSBool ProcessEvents(JSContext *cx, JSObject *obj, uintN argc, jsval *arg
 				*rval = INT_TO_JSVAL((int)msg.wParam);
 				quit = true;
 			}
-			RT_ASSERT( ++msgCount < 10000, "Message loop dead lock detected." );
+			RT_ASSERT( ++msgCount < 10000, "Message loop deadlock detected." );
 		}
 	} while(!quit);
 
+	// some events can occur after this point, then we NUST keep cxobj as long as possible
+
 	CxObj *cxobj = (CxObj*)GetWindowLong(hWnd, GWL_USERDATA);
-	RT_ASSERT( cxobj != NULL, "Logical error." );
-	free(cxobj);
-	SetWindowLong(hWnd, GWL_USERDATA, (LONG)NULL ); // some events can occur after this point !
 	DestroyWindow(hWnd);
+//	LONG status = SetWindowLong(hWnd, GWL_USERDATA, (LONG)NULL );  // If the function fails, the return value is zero.
+	free(cxobj);
 	UnregisterClass(WINDOW_CLASS_NAME, GetModuleHandle(NULL));
 	return JS_TRUE;
 }
@@ -267,16 +247,18 @@ static JSBool ProcessEvents(JSContext *cx, JSObject *obj, uintN argc, jsval *arg
 
 static JSBool Exit(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
-//	HWND hWnd = (HWND)JS_GetPrivate(cx, obj);
-//	RT_ASSERT( hWnd != NULL, RT_ERROR_NOT_INITIALIZED );
 	PostQuitMessage(0);
 	return JS_TRUE;
 }
 
 
-static JSBool WaitForMessage(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+DEFINE_FUNCTION( WaitForMessage){
 
-	DWORD status = MsgWaitForMultipleObjects(0, NULL, FALSE, 1, QS_ALLEVENTS);
+	RT_ASSERT_ARGC(1);
+	int32 val;
+	JS_ValueToInt32(cx, argv[0], &val);
+
+	DWORD status = MsgWaitForMultipleObjects(0, NULL, FALSE, val, QS_ALLEVENTS);
 	*rval = (status == WAIT_TIMEOUT) ? JSVAL_FALSE : JSVAL_TRUE;
 	return JS_TRUE;
 }
@@ -293,10 +275,6 @@ DEFINE_FUNCTION( Mode ) {
 
 		int size[2];
 		IntArrayToVector(cx, 2, argv, size);
-
-//		JS_ValueToInt32(cx, argv[0], &width);
-//		JS_ValueToInt32(cx, argv[1], &height);
-
 		JS_ValueToInt32(cx, argv[1], &bits);
 		JS_ValueToBoolean(cx, argv[2], &fullscreen);
 		
@@ -429,6 +407,9 @@ DEFINE_PROPERTY( captureMouse ) {
 	JSBool capture;
 	RT_SAFE( JS_ValueToBoolean(cx, *vp, &capture) );
 	RT_UNSAFE( capture = JSVAL_TO_BOOLEAN(*vp) );
+
+	// Only the foreground window can capture the mouse. 
+	// When a background window attempts to do so, the window receives messages only for mouse events that occur when the cursor hot spot is within the visible portion of the window.
 	if ( capture )
 		SetCapture(hWnd);
 	else
@@ -493,7 +474,7 @@ NO_PROTOTYPE
 NO_CONSTANT_MAP
 NO_INITCLASSAUX
 
-END_CLASS(Window, HAS_PRIVATE, 1/*NO_RESERVED_SLOT*/)
+END_CLASS(Window, HAS_PRIVATE, NO_RESERVED_SLOT)
 
 /*
 win32, System Error Codes

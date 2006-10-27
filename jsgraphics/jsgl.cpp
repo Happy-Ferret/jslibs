@@ -161,9 +161,11 @@ DEFINE_FUNCTION( Test ) {
 	RT_ASSERT_ARGC(1);
 
 	float vec[4];
-	FloatArrayToVector(cx, 4, argv, vec);
+	FloatArrayToVector(cx, 3, argv, vec);
 
-	glRotatef( vec[0], vec[1], vec[2], vec[3]);
+	glRotatef( vec[0], 1,0,0);
+	glRotatef( vec[1], 0,1,0);
+	glRotatef( vec[2], 0,0,1);
 
 	glBegin(GL_TRIANGLES);
 
@@ -174,7 +176,7 @@ DEFINE_FUNCTION( Test ) {
 		glColor3f( 0, 0, 1 );
 		glVertex3f( 1.0f,-1.0f, 0.0f);
 
-		glColor3f( 1, 0, 0 );
+		glColor3f( 0, 0, 1 );
 		glVertex3f( 0.0f, 1.0f, 0.0f);
 		glColor3f( 0, 1, 0 );
 		glVertex3f(-1.0f,-1.0f, 0.0f);
