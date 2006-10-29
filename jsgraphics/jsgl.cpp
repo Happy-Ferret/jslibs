@@ -138,7 +138,11 @@ DEFINE_FUNCTION( Test ) {
 
   glMatrixMode (GL_PROJECTION);
   glLoadIdentity();
-  gluPerspective (45.0, 1, 0.1, 1000.0);
+
+	GLint viewport[4];
+	glGetIntegerv( GL_VIEWPORT, viewport );
+	gluPerspective(45.0, float(viewport[2]) / float(viewport[3]), 0.01, 1000);
+
 
 /*
 	float fovy = 45.0;
@@ -156,16 +160,18 @@ DEFINE_FUNCTION( Test ) {
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 
-	glTranslatef(0.0, 0, -10.0);
 
 	RT_ASSERT_ARGC(1);
 
 	float vec[4];
-	FloatArrayToVector(cx, 3, argv, vec);
+	FloatArrayToVector(cx, 4, argv, vec);
+
+	glTranslatef(0.0, 0, vec[3]);
 
 	glRotatef( vec[0], 1,0,0);
 	glRotatef( vec[1], 0,1,0);
 	glRotatef( vec[2], 0,0,1);
+
 
 	glBegin(GL_TRIANGLES);
 
@@ -182,8 +188,8 @@ DEFINE_FUNCTION( Test ) {
 		glVertex3f(-1.0f,-1.0f, 0.0f);
 		glColor3f( 0, 0, 1 );
 		glVertex3f( 0.0f, 0.0f, 1.0f);
-
 	glEnd();
+
 
 	glFlush();
 

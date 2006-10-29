@@ -44,6 +44,8 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 	jsval rval;
 	jsval functionVal;
 
+	LRESULT returnValue = 0;
+
 	switch (message) {
 
 		//case WM_COMMAND:
@@ -51,92 +53,101 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 
 		case WM_DESTROY:
 			PostQuitMessage(0);
-			break;
+			return 0;
 		case WM_CHAR:
 			JS_GetProperty(cx, obj, "onchar", &functionVal);
 			if ( functionVal != JSVAL_VOID ) {
 
+				RT_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." );
 				char c = wParam;
 				jsval argv[] = { STRING_TO_JSVAL(JS_NewStringCopyN(cx, &c, 1)), INT_TO_JSVAL(lParam) };
 				JS_CallFunctionValue(cx, obj, functionVal, sizeof(argv)/sizeof(*argv), argv, &rval);
+				return 0;
 			}
 			break;
 		case WM_KEYUP:
 			JS_GetProperty(cx, obj, "onkeyup", &functionVal);
 			if ( functionVal != JSVAL_VOID ) {
 
+				RT_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." );
 				jsval argv[] = { INT_TO_JSVAL(wParam), INT_TO_JSVAL(lParam) };
 				JS_CallFunctionValue(cx, obj, functionVal, sizeof(argv)/sizeof(*argv), argv, &rval);
+				return 0;
 			}
 			break;
 		case WM_KEYDOWN:
 			JS_GetProperty(cx, obj, "onkeydown", &functionVal);
 			if ( functionVal != JSVAL_VOID ) {
 
+				RT_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." );
 				jsval argv[] = { INT_TO_JSVAL(wParam), INT_TO_JSVAL(lParam) };
 				JS_CallFunctionValue(cx, obj, functionVal, sizeof(argv)/sizeof(*argv), argv, &rval);
+				return 0;
 			}
 			break;
-
 		case WM_ACTIVATE:
 			JS_GetProperty(cx, obj, "onactivate", &functionVal);
 			if ( functionVal != JSVAL_VOID ) {
 
+				RT_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." );
 				jsval argv[] = { BOOLEAN_TO_JSVAL(wParam != WA_INACTIVE) };
 				JS_CallFunctionValue(cx, obj, functionVal, sizeof(argv)/sizeof(*argv), argv, &rval);
+				return 0;
 			}
 			break;
-
-		//case WM_MOVE: // not really needed
-		//	JS_GetProperty(cx, obj, "onmove", &functionVal);
-		//	if ( functionVal != JSVAL_VOID ) {
-
-		//		jsval argv[] = { INT_TO_JSVAL((short)LOWORD(lParam)), INT_TO_JSVAL((short)HIWORD(lParam)) };
-		//		JS_CallFunctionValue(cx, obj, functionVal, sizeof(argv)/sizeof(*argv), argv, &rval);
-		//	}
-		//	break;
+//		case WM_SIZING:
 		case WM_SIZE:
 			JS_GetProperty(cx, obj, "onsize", &functionVal);
 			if ( functionVal != JSVAL_VOID ) {
 
+				RT_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." );
 				jsval argv[] = { INT_TO_JSVAL((short)LOWORD(lParam)), INT_TO_JSVAL((short)HIWORD(lParam)) };
 				JS_CallFunctionValue(cx, obj, functionVal, sizeof(argv)/sizeof(*argv), argv, &rval);
+				return 0;
 			}
 			break;
 		case WM_MOUSEMOVE:
 			JS_GetProperty(cx, obj, "onmousemove", &functionVal);
 			if ( functionVal != JSVAL_VOID ) {
 
+				RT_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." );
 				jsval argv[] = { INT_TO_JSVAL(MAKEPOINTS(lParam).x), INT_TO_JSVAL(MAKEPOINTS(lParam).y), BOOLEAN_TO_JSVAL(wParam & MK_LBUTTON), BOOLEAN_TO_JSVAL(wParam & MK_RBUTTON), BOOLEAN_TO_JSVAL(wParam & MK_MBUTTON) };
 				JS_CallFunctionValue(cx, obj, functionVal, sizeof(argv)/sizeof(*argv), argv, &rval);
+				return 0;
 			}
 			break;
 		case WM_MOUSEWHEEL:
 			JS_GetProperty(cx, obj, "onmousewheel", &functionVal);
 			if ( functionVal != JSVAL_VOID ) {
 
+				RT_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." );
 				jsval argv[] = { INT_TO_JSVAL( GET_WHEEL_DELTA_WPARAM(wParam)/WHEEL_DELTA ) };
 				JS_CallFunctionValue(cx, obj, functionVal, sizeof(argv)/sizeof(*argv), argv, &rval);
+				return 0;
 			}
+			break;
 		case WM_LBUTTONDOWN:
 		case WM_MBUTTONDOWN:
 		case WM_RBUTTONDOWN:
 			JS_GetProperty(cx, obj, "onmousedown", &functionVal);
 			if ( functionVal != JSVAL_VOID ) {
 
+				RT_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." );
 				jsval argv[] = { INT_TO_JSVAL( message==WM_LBUTTONDOWN ? 1 : message==WM_RBUTTONDOWN ? 2 : 3 ), JSVAL_TRUE };
 				JS_CallFunctionValue(cx, obj, functionVal, sizeof(argv)/sizeof(*argv), argv, &rval);
+				return 0;
 			}
 			break;
-
 		case WM_LBUTTONUP:
 		case WM_MBUTTONUP:
 		case WM_RBUTTONUP:
 			JS_GetProperty(cx, obj, "onmouseup", &functionVal);
 			if ( functionVal != JSVAL_VOID ) {
 
+				RT_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." );
 				jsval argv[] = { INT_TO_JSVAL( message==WM_LBUTTONUP ? 1 : message==WM_RBUTTONUP ? 2 : 3 ), JSVAL_FALSE };
 				JS_CallFunctionValue(cx, obj, functionVal, sizeof(argv)/sizeof(*argv), argv, &rval);
+				return 0;
 			}
 			break;
 
@@ -147,10 +158,8 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 		//		JS_CallFunctionValue(cx, obj, functionVal, 0, NULL, &rval);
 		//	}
 		//	break;
-		default:
-			return DefWindowProc(hWnd, message, wParam, lParam); // We do not want to handle this message so pass back to Windows to handle it in a default way
 	}
-	return 0;
+	return DefWindowProc(hWnd, message, wParam, lParam); // We do not want to handle this message so pass back to Windows to handle it in a default way
 }
 
 
@@ -214,23 +223,26 @@ DEFINE_FUNCTION( ProcessEvents ) {
 	do {
 
 		JS_GetProperty(cx, obj, "onidle", &functionVal);
-		if ( functionVal != JSVAL_VOID )
+		if ( functionVal != JSVAL_VOID ) {
+			RT_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." );
 			if ( JS_CallFunctionValue(cx, obj, functionVal, 0, NULL, rval) == JS_FALSE )
 				return JS_FALSE;
+		}
 
 		RT_SAFE( msgCount = 0 );
 		while(PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) { //GetInputState() // determines whether there are mouse-button or keyboard messages in the calling thread's message queue.
 
-			TranslateMessage(&msg);
-			DispatchMessage(&msg);
 			if (JS_IsExceptionPending(cx)) // need JS_ErrorFromException(...) ??
 				return JS_FALSE;
+
+			TranslateMessage(&msg);
+			DispatchMessage(&msg);
 			if (msg.message == WM_QUIT) {
 
 				*rval = INT_TO_JSVAL((int)msg.wParam);
 				quit = true;
 			}
-			RT_ASSERT( ++msgCount < 10000, "Message loop deadlock detected." );
+			RT_ASSERT( ++msgCount < 1000, "Message loop deadlock detected." );
 		}
 	} while(!quit);
 
