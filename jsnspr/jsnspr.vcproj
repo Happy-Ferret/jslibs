@@ -39,7 +39,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				InlineFunctionExpansion="0"
-				AdditionalIncludeDirectories="../mozilla/js/src;../nspr/include"
+				AdditionalIncludeDirectories="../js/src;../nspr/include"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL"
 				DebugInformationFormat="3"
 			/>
@@ -54,7 +54,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="../mozilla/js/src/WINNT5.1_DBG.OBJ/js32.lib ../nspr/lib/libnspr4.lib"
+				AdditionalDependencies="../js/src/WINNT5.1_DBG.OBJ/js32.lib ../nspr/lib/libnspr4.lib"
 				GenerateDebugInformation="true"
 			/>
 			<Tool
@@ -105,7 +105,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="../mozilla/js/src;../nspr/include"
+				AdditionalIncludeDirectories="../js/src;../nspr/include"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL"
 			/>
 			<Tool
@@ -119,7 +119,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="../mozilla/js/src/WINNT5.1_OPT.OBJ/js32.lib ../nspr/lib/libnspr4.lib"
+				AdditionalDependencies="../js/src/WINNT5.1_OPT.OBJ/js32.lib ../nspr/lib/libnspr4.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
