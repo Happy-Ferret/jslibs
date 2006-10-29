@@ -63,3 +63,4 @@ JSBool FloatVectorToArray( JSContext *cx, int count, const float *vector, jsval 
 	}
 	return JS_TRUE;
 }
+

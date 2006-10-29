@@ -60,8 +60,8 @@ Global
 		{A526C299-DBA5-47FD-BA2A-19EB92497CBA}.LIB Debug|Win32.Build.0 = LIB Debug|Win32
 		{A526C299-DBA5-47FD-BA2A-19EB92497CBA}.LIB Release|Win32.ActiveCfg = LIB Release|Win32
 		{A526C299-DBA5-47FD-BA2A-19EB92497CBA}.LIB Release|Win32.Build.0 = LIB Release|Win32
-		{A526C299-DBA5-47FD-BA2A-19EB92497CBA}.Release|Win32.ActiveCfg = LIB ASM Release|Win32
-		{A526C299-DBA5-47FD-BA2A-19EB92497CBA}.Release|Win32.Build.0 = LIB ASM Release|Win32
+		{A526C299-DBA5-47FD-BA2A-19EB92497CBA}.Release|Win32.ActiveCfg = LIB Release|Win32
+		{A526C299-DBA5-47FD-BA2A-19EB92497CBA}.Release|Win32.Build.0 = LIB Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
