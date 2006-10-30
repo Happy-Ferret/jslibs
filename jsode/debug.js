@@ -11,7 +11,7 @@ world.gravity = [0,0,-9.81];
 var body = new Body(world);
 var body1 = new Body(world);
 
-body1.mass.SetBoxTotal(10,[1,1,100]);
+//body1.mass.SetBoxTotal(10,[1,1,100]);
 
 //body.mass.mass = 1;
 body.mass.Translate([2,1,0]);

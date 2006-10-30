@@ -4,15 +4,15 @@
 
 #include "tools.h"
 
-JSBool GetBodyAndMass(JSContext *cx, JSObject *massObject, ode::dBodyID *bodyID, ode::dMass *mass) {
+JSBool GetBodyAndMass(JSContext *cx, JSObject *massObject, ode::dBodyID *pBodyID, ode::dMass *pMass) {
 
 	jsval bodyVal;
 	JS_GetReservedSlot(cx, massObject, MASS_SLOT_BODY, &bodyVal);
 	JSObject *bodyObject;
 	JS_ValueToObject(cx, bodyVal, &bodyObject);
 	RT_ASSERT_CLASS(bodyObject, &body_class);
-	*bodyID = (ode::dBodyID)JS_GetPrivate(cx, bodyObject);
-	ode::dBodyGetMass(*bodyID, mass);
+	*pBodyID = (ode::dBodyID)JS_GetPrivate(cx, bodyObject);
+	ode::dBodyGetMass(*pBodyID, pMass);
 	return JS_TRUE;
 }
 
