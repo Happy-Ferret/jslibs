@@ -5,6 +5,9 @@
 #include "nsprError.h"
 #include "nsprFile.h"
 
+#include "../smtools/nativeresource.h"
+
+
 void File_Finalize(JSContext *cx, JSObject *obj) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
@@ -43,6 +46,14 @@ JSBool File_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsv
 	return JS_TRUE;
 }
 
+void _Read( void *pv, unsigned char *buf, unsigned int *amount ) {
+
+	PRInt32 status = PR_Read( (PRFileDesc *)pv, buf, *amount );
+	if ( status == -1 ) {
+			// Error
+	}
+	*amount = status;
+}
 
 JSBool File_open(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
@@ -84,6 +95,8 @@ JSBool File_open(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *r
 
 	JS_SetPrivate( cx, obj, fd );
 
+	SetNativeResource(cx, obj, fd, _Read, NULL );
+
 	return JS_TRUE;
 }
 
@@ -105,7 +118,6 @@ JSBool File_close(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *
 //	}
 	return JS_TRUE;
 }
-
 
 JSBool File_read(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
