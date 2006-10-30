@@ -59,7 +59,7 @@ DEFINE_FUNCTION( ClassConstruct ) {
    png_read_info(desc->png, desc->info);
 	RT_ASSERT( desc->info->height <= PNG_UINT_32_MAX/png_sizeof(png_bytep), "Image is too high to process with png_read_png()");
 
-	RT_ASSERT( !desc->png->interlaced, "Cannot read interlaced image." );
+	RT_ASSERT( png_set_interlace_handling(desc->png) == 1, "Cannot read interlaced image." );
 	return JS_TRUE;
 }
 
@@ -85,18 +85,21 @@ DEFINE_FUNCTION( Load ) {
 	png_bytep data = (png_bytep)JS_malloc(cx, height * bytePerRow);
 	png_bytep buffer = data;
 
-	for( unsigned int y = 0; y < height; ++y ) {
+//	int number_of_passes = png_set_interlace_handling(desc->png);
 
-		png_read_row(desc->png, buffer, png_bytep_NULL);
-		buffer += bytePerRow;
-	}
+//	for ( int p = 0; p < number_of_passes; p++ )
+		for( unsigned int y = 0; y < height; ++y ) {
+
+			png_read_row(desc->png, buffer, png_bytep_NULL);
+			buffer += bytePerRow;
+		}
 
    png_read_end(desc->png, desc->info); // read rest of file, and get additional chunks in desc->info - REQUIRED
 
 // return
 	JSString *str = JS_NewString( cx, (char*)data, size );
 	RT_ASSERT( str != NULL, "Unable to create the inage string." );
-	if ( str != NULL )
+	if ( str == NULL )
 		JS_free(cx, str);
 	*rval = STRING_TO_JSVAL(str); // GC protection is ok with this ?
 	return JS_TRUE;
