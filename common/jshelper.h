@@ -156,6 +156,7 @@
 #define BEGIN_CONSTANT_MAP JSConstDoubleSpec _constantMap[] = { // dval; *name; flags; spare[3];
 
 //
+#define DEFINE_FINALIZE() static void Finalize(JSContext *cx, JSObject *obj)
 #define DEFINE_FUNCTION(name) static JSBool name##(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 #define DEFINE_PROPERTY(name) static JSBool name##(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
 

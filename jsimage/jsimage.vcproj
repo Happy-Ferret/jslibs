@@ -40,7 +40,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\js\src;..\libpng\src;..\zlib\src"
+				AdditionalIncludeDirectories="..\js\src"
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -118,7 +118,7 @@
 				Name="VCCLCompilerTool"
 				InlineFunctionExpansion="2"
 				FavorSizeOrSpeed="1"
-				AdditionalIncludeDirectories="..\js\src;..\libpng\src;..\zlib\src"
+				AdditionalIncludeDirectories="..\js\src"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB"
 				BasicRuntimeChecks="0"
 				RuntimeLibrary="2"
@@ -186,8 +186,44 @@
 				>
 			</File>
 			<File
+				RelativePath=".\jsjpeg.cpp"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="..\libjpeg\src"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="..\libjpeg\src"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
 				RelativePath=".\jspng.cpp"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="..\libpng\src;..\zlib\src"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="..\libpng\src;..\zlib\src"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\main.cpp"
@@ -221,6 +257,10 @@
 			>
 			<File
 				RelativePath=".\jsimage.h"
+				>
+			</File>
+			<File
+				RelativePath=".\jsjpeg.h"
 				>
 			</File>
 			<File

@@ -1,0 +1,251 @@
+#include "stdafx.h"
+#include "../smtools/nativeresource.h"
+
+#include "jsimage.h"
+
+#include <jpeglib.h>
+#include <jerror.h>
+
+#include <stdlib.h>
+#include <memory.h>
+
+//#include <setjmp.h>
+
+#define INPUT_BUF_SIZE 4096
+
+typedef struct {
+  struct jpeg_source_mgr pub;	// public fields
+  JOCTET * buffer;
+  void *pv;
+  NativeResourceFunction read;
+} SourceMgr;
+typedef SourceMgr *SourceMgrPtr;
+
+METHODDEF(void) init_source(j_decompress_ptr cinfo) {
+}
+
+METHODDEF(boolean) fill_input_buffer(j_decompress_ptr cinfo) {
+
+	SourceMgrPtr src = (SourceMgrPtr) cinfo->src;
+
+	unsigned int amount = INPUT_BUF_SIZE;
+	src->read(src->pv, src->buffer, &amount);
+	// [TBD] manage errors
+
+	if ( amount == 0 ) {
+		WARNMS(cinfo, JWRN_JPEG_EOF);
+		src->buffer[0] = (JOCTET) 0xFF;
+		src->buffer[1] = (JOCTET) JPEG_EOI;
+		amount = 2;
+	}
+	src->pub.bytes_in_buffer = amount;
+	src->pub.next_input_byte = src->buffer;
+	return TRUE;
+}
+
+METHODDEF(void) skip_input_data(j_decompress_ptr cinfo, long num_bytes) {
+
+	SourceMgrPtr src = (SourceMgrPtr) cinfo->src;
+
+	if (num_bytes > 0) {
+
+		while (num_bytes > (long) src->pub.bytes_in_buffer) {
+
+			num_bytes -= (long) src->pub.bytes_in_buffer;
+			fill_input_buffer(cinfo); // [TBD] change this
+		}
+		src->pub.next_input_byte += (size_t) num_bytes;
+		src->pub.bytes_in_buffer -= (size_t) num_bytes;
+	}
+}
+
+//METHODDEF(boolean) resync_to_restart(j_decompress_ptr cinfo, int desired) {
+//
+//	return TRUE;
+//}
+
+METHODDEF(void) term_source(j_decompress_ptr cinfo) {
+}
+
+
+//typedef struct {
+//  struct jpeg_error_mgr pub;	// public fields
+//  jmp_buf setjmp_buffer;	/* for return to caller */
+//} ErrorMgr;
+//typedef ErrorMgr *ErrorMgrPtr;
+
+
+
+BEGIN_CLASS
+
+DEFINE_FINALIZE() {
+
+	j_decompress_ptr cinfo = (j_decompress_ptr)JS_GetPrivate(cx, obj);
+	if ( cinfo != NULL ) {
+		free(cinfo->err);
+		free(cinfo);
+	}
+}
+
+DEFINE_FUNCTION( ClassConstruct ) {
+
+	RT_ASSERT_CONSTRUCTING(thisClass);
+	RT_ASSERT_ARGC(1);
+
+	j_decompress_ptr cinfo = (j_decompress_ptr)malloc(sizeof(jpeg_decompress_struct)); // [TBD] free
+	RT_ASSERT_ALLOC(cinfo);
+
+	jpeg_error_mgr *err = (jpeg_error_mgr *)malloc(sizeof(jpeg_error_mgr));
+	cinfo->err = jpeg_std_error(err);
+
+	jpeg_create_decompress(cinfo);
+
+// alloc reader structure & buffer ( both are freed by jpeg_destroy_decompress )
+	cinfo->src = (struct jpeg_source_mgr *) (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_PERMANENT, sizeof(SourceMgr));
+	SourceMgrPtr src = (SourceMgrPtr)cinfo->src;
+	src->buffer = (JOCTET *)(*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_PERMANENT, INPUT_BUF_SIZE * sizeof(JOCTET));
+
+// setup reader structure
+	src = (SourceMgrPtr) cinfo->src;
+	src->pub.init_source = init_source;
+	src->pub.fill_input_buffer = fill_input_buffer;
+	src->pub.skip_input_data = skip_input_data;
+	src->pub.resync_to_restart = jpeg_resync_to_restart; // use default method
+	src->pub.term_source = term_source;
+
+	src->pub.bytes_in_buffer = 0; // forces fill_input_buffer on first read
+	src->pub.next_input_byte = NULL; // until buffer loaded
+
+	JSBool status = GetNativeResource(cx, JSVAL_TO_OBJECT(argv[0]), &src->pv, &src->read, NULL );
+	RT_ASSERT( status == JS_TRUE, "Unable to GetNativeResource." );
+// read image headers
+	jpeg_read_header(cinfo, TRUE); //we passed TRUE to reject a tables-only JPEG file as an error.
+	
+	// the default is to produce full color output from a color file.
+	jpeg_calc_output_dimensions(cinfo);
+
+	JS_SetPrivate(cx, obj, cinfo);
+	
+	return JS_TRUE;
+}
+
+
+DEFINE_FUNCTION( Load ) {
+
+	j_decompress_ptr cinfo = (j_decompress_ptr)JS_GetPrivate(cx, obj);
+	RT_ASSERT( cinfo != NULL, RT_ERROR_NOT_INITIALIZED );
+
+// read the image
+	jpeg_start_decompress(cinfo);
+
+	int height = cinfo->output_height;
+	int bytePerRow = cinfo->output_width * cinfo->output_components;
+	int size = height * bytePerRow;
+
+	JOCTET *data = (JOCTET *)JS_malloc(cx, size);
+	JOCTET *buffer = data;
+
+	// cinfo->rec_outbuf_height : recomanded scanline height ( 1, 2 or 4 )
+
+	while (cinfo->output_scanline < cinfo->output_height) {
+		
+		jpeg_read_scanlines(cinfo, &buffer, 1);
+		buffer += bytePerRow;
+	}
+
+	jpeg_finish_decompress(cinfo);
+	jpeg_destroy_decompress(cinfo);
+	// jpeg_destroy(); ??
+
+// return
+	JSString *str = JS_NewString( cx, (char*)data, size );
+	RT_ASSERT( str != NULL, "Unable to create the inage string." );
+	if ( str == NULL )
+		JS_free(cx, str);
+	*rval = STRING_TO_JSVAL(str);
+	return JS_TRUE;
+}
+
+
+
+DEFINE_PROPERTY( width ) {
+
+	j_decompress_ptr cinfo = (j_decompress_ptr)JS_GetPrivate(cx, obj);
+	RT_ASSERT( cinfo != NULL, RT_ERROR_NOT_INITIALIZED );
+	int value = cinfo->output_width;
+	RT_ASSERT( value != 0, RT_ERROR_NOT_INITIALIZED );
+	*vp = INT_TO_JSVAL(value);
+	return JS_TRUE;
+}
+
+DEFINE_PROPERTY( height ) {
+
+	j_decompress_ptr cinfo = (j_decompress_ptr)JS_GetPrivate(cx, obj);
+	RT_ASSERT( cinfo != NULL, RT_ERROR_NOT_INITIALIZED );
+	int value = cinfo->output_height;
+	RT_ASSERT( value != 0, RT_ERROR_NOT_INITIALIZED );
+	*vp = INT_TO_JSVAL(value);
+	return JS_TRUE;
+}
+
+DEFINE_PROPERTY( channels ) {
+
+	j_decompress_ptr cinfo = (j_decompress_ptr)JS_GetPrivate(cx, obj);
+	RT_ASSERT( cinfo != NULL, RT_ERROR_NOT_INITIALIZED );
+	int value = cinfo->output_components;
+	RT_ASSERT( value != 0, RT_ERROR_NOT_INITIALIZED );
+	*vp = INT_TO_JSVAL(value);
+	return JS_TRUE;
+}
+
+// output_gamma
+
+
+
+	BEGIN_FUNCTION_MAP
+		FUNCTION(Load)
+	END_MAP
+	BEGIN_PROPERTY_MAP
+		READONLY(width)
+		READONLY(height)
+		READONLY(channels)
+	END_MAP
+	NO_STATIC_FUNCTION_MAP
+	//BEGIN_STATIC_FUNCTION_MAP
+	//END_MAP
+	NO_STATIC_PROPERTY_MAP
+	//BEGIN_STATIC_PROPERTY_MAP
+	//END_MAP
+//	NO_CLASS_CONSTRUCT
+	NO_OBJECT_CONSTRUCT
+//	NO_FINALIZE
+	NO_CALL
+	NO_PROTOTYPE
+	NO_CONSTANT_MAP
+	NO_INITCLASSAUX
+
+END_CLASS(Jpeg, HAS_PRIVATE, NO_RESERVED_SLOT)
+
+/*
+
+API:
+	http://refspecs.freestandards.org/LSB_3.1.0/LSB-Desktop-generic/LSB-Desktop-generic/libjpegman.html
+
+example:
+	.\src\example.c
+
+steps:
+
+	Allocate and initialize a JPEG decompression object
+	Specify the source of the compressed data (eg, a file)
+	Call jpeg_read_header() to obtain image info
+	Set parameters for decompression
+	jpeg_start_decompress(...);
+	while (scan lines remain to be read)
+		jpeg_read_scanlines(...);
+	jpeg_finish_decompress(...);
+	Release the JPEG decompression object
+
+*/
+
+

@@ -6,22 +6,16 @@
 #define NATIVE_RESOURCE_READ_FUNCTION "_nativeResourceReadFunction"
 #define NATIVE_RESOURCE_WRITE_FUNCTION "_nativeResourceWriteFunction"
 
+#define PROPERTIES_FLAGS JSPROP_READONLY | JSPROP_PERMANENT
+
 JSBool SetNativeResource( JSContext *cx, JSObject *obj, void *pv, NativeResourceFunction read, NativeResourceFunction write ) {
 
-	JSBool status;
-	jsval tmp;
-	tmp = PRIVATE_TO_JSVAL(pv);
-	status = JS_SetProperty(cx, obj, NATIVE_RESOURCE_PRIVATE, &tmp); // [TBD] set hidden + readonly
-	if ( status == JS_FALSE )
-			return JS_FALSE;
-	tmp = PRIVATE_TO_JSVAL(read);
-	status = JS_SetProperty(cx, obj, NATIVE_RESOURCE_READ_FUNCTION, &tmp); // [TBD] set hidden + readonly
-	if ( status == JS_FALSE )
-			return JS_FALSE;
-	tmp = PRIVATE_TO_JSVAL(write);
-	status = JS_SetProperty(cx, obj, NATIVE_RESOURCE_WRITE_FUNCTION, &tmp); // [TBD] set hidden + readonly
-	if ( status == JS_FALSE )
-			return JS_FALSE;
+	if ( JS_DefineProperty(cx, obj, NATIVE_RESOURCE_PRIVATE, PRIVATE_TO_JSVAL(pv), NULL, NULL, PROPERTIES_FLAGS ) == JS_FALSE )
+		return JS_FALSE;
+	if ( JS_DefineProperty(cx, obj, NATIVE_RESOURCE_READ_FUNCTION, PRIVATE_TO_JSVAL(read), NULL, NULL, PROPERTIES_FLAGS ) == JS_FALSE )
+		return JS_FALSE;
+	if ( JS_DefineProperty(cx, obj, NATIVE_RESOURCE_WRITE_FUNCTION, PRIVATE_TO_JSVAL(write), NULL, NULL, PROPERTIES_FLAGS ) == JS_FALSE )
+		return JS_FALSE;
 	return JS_TRUE;
 }
 
