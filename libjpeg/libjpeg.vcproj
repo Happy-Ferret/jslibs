@@ -22,7 +22,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="copy $(ProjectDir)\src\jconfig.vc $(ProjectDir)\src\jconfig.h"
+				CommandLine="copy &quot;$(ProjectDir)src\jconfig.vc&quot; &quot;$(ProjectDir)src\jconfig.h&quot;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -79,7 +79,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="copy $(ProjectDir)\src\jconfig.vc $(ProjectDir)\src\jconfig.h"
+				CommandLine="copy &quot;$(ProjectDir)src\jconfig.vc&quot; &quot;$(ProjectDir)src\jconfig.h&quot;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
