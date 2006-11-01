@@ -1,6 +1,9 @@
 #include "stdafx.h"
+#include "template.h"
 
 extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj) {
+
+	INIT_CLASS( Template );
 
 	return JS_TRUE;
 }
