@@ -281,6 +281,8 @@ JSBool Socket_connect(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsv
 			return ThrowNSPRError( cx, errorCode );
 	}
 	// see 	PR_GetConnectStatus or PR_ConnectContinue INSTEAD ???
+
+	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 }
 

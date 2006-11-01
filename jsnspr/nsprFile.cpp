@@ -46,6 +46,7 @@ JSBool File_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsv
 	return JS_TRUE;
 }
 
+
 void _Read( void *pv, unsigned char *buf, unsigned int *amount ) {
 
 	PRInt32 status = PR_Read( (PRFileDesc *)pv, buf, *amount );
@@ -96,6 +97,8 @@ JSBool File_open(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *r
 	JS_SetPrivate( cx, obj, fd );
 
 	SetNativeResource(cx, obj, fd, _Read, NULL );
+
+	*rval = OBJECT_TO_JSVAL(obj);
 
 	return JS_TRUE;
 }

@@ -5,7 +5,6 @@
 #include "png.h"
 
 #include <stdlib.h>
-#include <memory.h>
 
 
 typedef struct {
@@ -74,29 +73,46 @@ DEFINE_FUNCTION( Load ) {
 		png_set_expand(desc->png);
    png_read_update_info(desc->png, desc->info); // optional call to update the users info_ptr structure
 
+	png_uint_32 width = png_get_image_width(desc->png, desc->info);
 	png_uint_32 height = png_get_image_height(desc->png, desc->info);
 	png_uint_32 bytePerRow = png_get_rowbytes(desc->png, desc->info);
+	png_byte channels = png_get_channels(desc->png, desc->info);
 
 // read & store
-	unsigned int size = height * bytePerRow;
-	png_bytep data = (png_bytep)JS_malloc(cx, height * bytePerRow);
-	png_bytep buffer = data;
+
+	JSObject *image = JS_NewObject(cx, &classImage, NULL, NULL);
+//	JSObject *image = JS_ConstructObjectWithArguments(cx, &classImage, NULL, NULL, 0, NULL);
+	RT_ASSERT( image != NULL, "Unable to create the resulting image." );
+	*rval = OBJECT_TO_JSVAL(image); // GC protection is ok with this ?
+
+	JS_DefineProperty(cx, image, "width", INT_TO_JSVAL(width), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
+	JS_DefineProperty(cx, image, "height", INT_TO_JSVAL(height), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
+	JS_DefineProperty(cx, image, "channels", INT_TO_JSVAL(channels), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
+	//JS_DefineProperty(cx, image, "pixelSize", INT_TO_JSVAL(bytePerRow/width), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
+
+	//jsval tmp;
+	//tmp = INT_TO_JSVAL(width);
+	//JS_SetProperty(cx, image, "width", &tmp );
+	//tmp = INT_TO_JSVAL(height);
+	//JS_SetProperty(cx, image, "height", &tmp );
+	//tmp = INT_TO_JSVAL(channels);
+	//JS_SetProperty(cx, image, "channels", &tmp );
+//	tmp = INT_TO_JSVAL(bytePerRow/width);
+//	JS_SetProperty(cx, image, "pixelSize", &tmp );
+	
+	png_bytep data = (png_bytep)malloc(height * bytePerRow);
+	RT_ASSERT_ALLOC(data);
+	JS_SetPrivate(cx, image, data);
 
 // int number_of_passes = png_set_interlace_handling(desc->png);
 // for ( int p = 0; p < number_of_passes; p++ )
 	for( unsigned int y = 0; y < height; ++y ) {
 
-		png_read_row(desc->png, buffer, png_bytep_NULL);
-		buffer += bytePerRow;
+		png_read_row(desc->png, data, png_bytep_NULL);
+		data += bytePerRow;
 	}
    png_read_end(desc->png, desc->info); // read rest of file, and get additional chunks in desc->info - REQUIRED
 
-// return
-	JSString *str = JS_NewString( cx, (char*)data, size );
-	RT_ASSERT( str != NULL, "Unable to create the inage string." );
-	if ( str == NULL )
-		JS_free(cx, str);
-	*rval = STRING_TO_JSVAL(str); // GC protection is ok with this ?
 	return JS_TRUE;
 }
 

@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "../smtools/nativeresource.h"
+#include "../smtools/object.h"
 
 #include "jsimage.h"
 
@@ -74,6 +75,23 @@ METHODDEF(void) term_source(j_decompress_ptr cinfo) {
 //} ErrorMgr;
 //typedef ErrorMgr *ErrorMgrPtr;
 
+typedef struct {
+	JSContext *cx;
+	JSObject *obj;
+} CxObj;
+
+
+void ReadUsingJsMethod( void *pv, unsigned char *data, unsigned int *length ) {
+
+	jsval rval, len = INT_TO_JSVAL(*length);
+	JS_CallFunctionName(((CxObj*)pv)->cx, ((CxObj*)pv)->obj, "Read", 1, &len, &rval ); // [TBD] check if function exists
+	//if ( !JSVAL_IS_STRING(rval) ) [TBD] manage this error
+	JSString *str = JSVAL_TO_STRING(rval);
+	*length = JS_GetStringLength(str);
+	char *stringData = JS_GetStringBytes(str);
+	// [TBD] check if not NULL
+	memcpy(data, stringData, *length); // [TBD] hard but try to avoid the useless copy of data
+}
 
 
 BEGIN_CLASS
@@ -116,8 +134,22 @@ DEFINE_FUNCTION( ClassConstruct ) {
 	src->pub.bytes_in_buffer = 0; // forces fill_input_buffer on first read
 	src->pub.next_input_byte = NULL; // until buffer loaded
 
-	JSBool status = GetNativeResource(cx, JSVAL_TO_OBJECT(argv[0]), &src->pv, &src->read, NULL );
-	RT_ASSERT( status == JS_TRUE, "Unable to GetNativeResource." );
+// try to use a fast way to read the data
+	JSObject *resourceObject = JSVAL_TO_OBJECT(argv[0]);
+	GetNamedPrivate(cx, resourceObject, NATIVE_RESOURCE_READ_FUNCTION_STRING, (void**)&src->read );
+	GetNamedPrivate(cx, resourceObject, NATIVE_RESOURCE_PRIVATE_STRING, (void**)&src->pv );
+
+// else use a 'classic' method to read the data ( like var data = resourceObject.Read(amount); )
+	if ( src->read == NULL || src->pv == NULL ) {
+		RT_ASSERT( false, "[TBD]" );
+//		CxObj
+//		src->pv = resourceObject;
+//		src->read = ReadUsingJsMethod;
+	}
+
+//	JSBool status = GetNativeResource(cx, JSVAL_TO_OBJECT(argv[0]), &src->pv, &src->read, NULL );
+//	RT_ASSERT( status == JS_TRUE, "Unable to GetNativeResource." );
+
 // read image headers
 	jpeg_read_header(cinfo, TRUE); //we passed TRUE to reject a tables-only JPEG file as an error.
 	
@@ -138,31 +170,50 @@ DEFINE_FUNCTION( Load ) {
 // read the image
 	jpeg_start_decompress(cinfo);
 
+	int width = cinfo->output_width;
 	int height = cinfo->output_height;
 	int bytePerRow = cinfo->output_width * cinfo->output_components;
 	int size = height * bytePerRow;
+	int channels = cinfo->output_components;
 
-	JOCTET *data = (JOCTET *)JS_malloc(cx, size);
-	JOCTET *buffer = data;
+	JSObject *image = JS_NewObject(cx, &classImage, NULL, NULL);
+//	JSObject *image = JS_ConstructObject(cx, &classImage, NULL, NULL);
+	RT_ASSERT( image != NULL, "Unable to create the resulting image." );
+
+
+	*rval = OBJECT_TO_JSVAL(image); // GC protection is ok with this ?
+	JS_DefineProperty(cx, image, "width", INT_TO_JSVAL(width), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
+	JS_DefineProperty(cx, image, "height", INT_TO_JSVAL(height), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
+	JS_DefineProperty(cx, image, "channels", INT_TO_JSVAL(channels), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ); // R G B
+	//JS_DefineProperty(cx, image, "pixelSize", INT_TO_JSVAL(channels), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ); // R*8bits G*8bits B*8bits = channels byte
+
+
+	//jsval tmp;
+	//tmp = INT_TO_JSVAL(width);
+	//JS_SetProperty(cx, image, "width", &tmp );
+	//tmp = INT_TO_JSVAL(height);
+	//JS_SetProperty(cx, image, "height", &tmp );
+	//tmp = INT_TO_JSVAL(channels);
+	//JS_SetProperty(cx, image, "channels", &tmp );
+//	tmp = INT_TO_JSVAL(channels);
+//	JS_SetProperty(cx, image, "pixelSize", &tmp );
+
+
+	JOCTET *data = (JOCTET *)malloc(size);
+	RT_ASSERT_ALLOC(data);
+	JS_SetPrivate(cx, image, data);
 
 	// cinfo->rec_outbuf_height : recomanded scanline height ( 1, 2 or 4 )
-
 	while (cinfo->output_scanline < cinfo->output_height) {
 		
-		jpeg_read_scanlines(cinfo, &buffer, 1);
-		buffer += bytePerRow;
+		jpeg_read_scanlines(cinfo, &data, 1);
+		data += bytePerRow;
 	}
 
 	jpeg_finish_decompress(cinfo);
 	jpeg_destroy_decompress(cinfo);
 	// jpeg_destroy(); ??
 
-// return
-	JSString *str = JS_NewString( cx, (char*)data, size );
-	RT_ASSERT( str != NULL, "Unable to create the inage string." );
-	if ( str == NULL )
-		JS_free(cx, str);
-	*rval = STRING_TO_JSVAL(str);
 	return JS_TRUE;
 }
 

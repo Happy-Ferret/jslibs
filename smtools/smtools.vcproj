@@ -151,6 +151,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\object.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\smtools.cpp"
 				>
 			</File>
@@ -182,6 +186,10 @@
 			>
 			<File
 				RelativePath=".\nativeresource.h"
+				>
+			</File>
+			<File
+				RelativePath=".\object.h"
 				>
 			</File>
 			<File

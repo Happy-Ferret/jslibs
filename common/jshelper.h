@@ -24,6 +24,8 @@
 #define RT_ERROR_INT_CONVERSION_FAILED "unable to convert this argument to integer."
 #define RT_ERROR_OUT_OF_MEMORY "not enough memory to complete the allocation."
 #define RT_ERROR_NOT_INITIALIZED "the object or resource is not proprely initialized."
+#define RT_ERROR_CLASS_CREATION_FAILED "unable to create the class."
+#define RT_ERROR_UNEXPECTED_TYPE "unexpected data type."
 
 ////////////////
 // helper macros
@@ -46,11 +48,17 @@
 //////////////////
 // advanced assert
 
+#define RT_ASSERT_TYPE(value,jsType) \
+	RT_ASSERT( JS_TypeOfValue(cx, (value)) == (jsType), RT_ERROR_UNEXPECTED_TYPE );
+
 #define RT_ASSERT_ALLOC(pointer) \
 	RT_ASSERT( (pointer) != NULL, RT_ERROR_OUT_OF_MEMORY );
 
 #define RT_ASSERT_CLASS(jsObject, jsClass) \
 	RT_ASSERT( JS_GetClass(jsObject) == (jsClass), RT_ERROR_INVALID_CLASS );
+
+#define RT_ASSERT_CLASS_NAME(jsObject, className) \
+	RT_ASSERT( strcmp(JS_GetClass(jsObject)->name, (className)) == 0,  RT_ERROR_INVALID_CLASS );
 
 #define RT_ASSERT_ARGC(minCount) \
 	RT_ASSERT_1( argc >= (minCount), RT_ERROR_MISSING_N_ARGUMENT, (minCount)-argc );
@@ -174,24 +182,31 @@
 #define PROPERTY(name,id,flags,getter,setter) { #name, id, flags, getter, setter },
 // use in PROPERTY_MAP only. 'func' centralize all values. WARNING: 0 <= value <= 255
 #define CONSTANT(func, name, value) { #name, value, JSPROP_PERMANENT|JSPROP_READONLY, func, NULL },
+// just defines a property
+#define CREATE(name) { #name, 0, JSPROP_PERMANENT|JSPROP_READONLY, NULL, NULL },
 // use in CONSTANT_MAP only
 #define CONSTANT_DOUBLE(name,value) { value, #name },
-
 
 #define END_CLASS(name,privateSlot,reservedSlotCount) \
 	extern JSObject *classObject##name = thisClassObject; \
 	extern JSClass class##name = { #name, /*JSCLASS_CONSTRUCT_PROTOTYPE | */privateSlot | JSCLASS_HAS_RESERVED_SLOTS(reservedSlotCount), JS_PropertyStub , JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_EnumerateStub, JS_ResolveStub , JS_ConvertStub , Finalize, 0, 0, Call, ObjectConstruct }; \
-	extern void InitClass##name(JSContext *cx, JSObject *obj) { \
+	extern JSBool InitClass##name(JSContext *cx, JSObject *obj) { \
 		thisClass = &class##name; \
 		classObject##name = thisClassObject = JS_InitClass( cx, obj, prototype, thisClass, ClassConstruct, 0, _propertyMap, _functionMap, _propertyStaticMap, _functionStaticMap ); \
 		if ( _constantMap != NULL) \
 			JS_DefineConstDoubles( cx, thisClassObject, _constantMap ); \
 		InitClassAux(cx, obj); \
+		return thisClassObject != NULL; \
 	}
 
 #define DECLARE_CLASS(name) \
-	void InitClass##name( JSContext *cx, JSObject *obj ); \
+	JSBool InitClass##name( JSContext *cx, JSObject *obj ); \
 	extern JSObject *classObject##name; \
 	extern JSClass class##name;
+
+#define INIT_CLASS(name) { \
+	JSBool status = InitClass##name(cx, obj); \
+	RT_ASSERT( status == JS_TRUE, RT_ERROR_CLASS_CREATION_FAILED " (" #name ")" ); \
+}
 
 #endif // _JSHELPER_H_

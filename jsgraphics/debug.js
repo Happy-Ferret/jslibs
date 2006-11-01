@@ -1,4 +1,6 @@
 LoadModule('jsstd');
+LoadModule('jsnspr');
+LoadModule('jsimage');
 LoadModule('jsgraphics');
 
 Exec('OpenGL.js');
@@ -107,6 +109,18 @@ w.onsize = function( w, h ) {
 	gl.Viewport(0,0,w,h);
 	Render();
 }
+
+//var f = new File('R0010235.JPG');
+var f = new File('R0010235.png');
+f.Open( File.RDONLY );
+//var img = new Jpeg(f);
+var texture = new Png(f).Load();
+
+var x=100, y=100; // offset
+texture.Trim([0+x,0+y,64+x,64+y], true);
+
+gl.Texture( texture );
+
 
 w.ProcessEvents();
 Print('Done.', '\n');

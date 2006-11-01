@@ -2,6 +2,8 @@
 #include "jsgl.h"
 #include "jswindow.h"
 
+#include "../jsimage/jsimage.h"
+
 #define _USE_MATH_DEFINES
 #include "math.h"
 
@@ -111,6 +113,12 @@ DEFINE_FUNCTION( Viewport ) {
 	return JS_TRUE;
 }
 
+DEFINE_FUNCTION( InitTest ) {
+
+
+	return JS_TRUE;
+}
+
 
 DEFINE_FUNCTION( Test ) {
 
@@ -157,6 +165,11 @@ DEFINE_FUNCTION( Test ) {
 	xmax = ymax * aspect;
 	glFrustum(xmin, xmax, ymin, ymax, zNear, zFar);
 */
+
+	glMatrixMode(GL_TEXTURE);
+	glLoadIdentity();
+
+
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 
@@ -173,21 +186,32 @@ DEFINE_FUNCTION( Test ) {
 	glRotatef( vec[2], 0,0,1);
 
 
-	glBegin(GL_TRIANGLES);
+	glBegin(GL_QUADS);
 
-		glColor3f( 1, 0, 0 );
-		glVertex3f( 0.0f, 1.0f, 0.0f);
-		glColor3f( 0, 1, 0 );
-		glVertex3f(-1.0f,-1.0f, 0.0f);
-		glColor3f( 0, 0, 1 );
-		glVertex3f( 1.0f,-1.0f, 0.0f);
+		glTexCoord2f( 0, 0 ); 
+//		glColor3f( 1, 0, 0 );
+		glVertex2i( -1, -1 );
 
+		glTexCoord2f( 1, 0 ); 
+//		glColor3f( 0, 1, 0 );
+		glVertex2i( 1, -1 );
+
+		glTexCoord2f( 1, 1 ); 
+//		glColor3f( 0, 0, 1 );
+		glVertex2i( 1, 1 );
+
+		glTexCoord2f( 0, 1 ); 
+//		glColor3f( 1, 0, 1 );
+		glVertex2i( -1, 1 );
+		
+/*
 		glColor3f( 0, 0, 1 );
 		glVertex3f( 0.0f, 1.0f, 0.0f);
 		glColor3f( 0, 1, 0 );
 		glVertex3f(-1.0f,-1.0f, 0.0f);
 		glColor3f( 0, 0, 1 );
 		glVertex3f( 0.0f, 0.0f, 1.0f);
+*/
 	glEnd();
 
 
@@ -196,12 +220,50 @@ DEFINE_FUNCTION( Test ) {
 	return JS_TRUE;
 }
 
+DEFINE_FUNCTION( Texture ) {
+
+	RT_ASSERT_ARGC(1);
+	JSObject *image;
+	JSBool status = JS_ValueToObject(cx, argv[0], &image);
+
+	RT_ASSERT_CLASS_NAME(image, "Image");
+
+	void *data = JS_GetPrivate(cx, image);
+
+	jsval tmp;
+	JS_GetProperty(cx, image, "width", &tmp);
+	RT_ASSERT( tmp != JSVAL_VOID, "image width not specified.");
+	int width = JSVAL_TO_INT(tmp);
+	JS_GetProperty(cx, image, "height", &tmp);
+	RT_ASSERT( tmp != JSVAL_VOID, "image height not specified.");
+	int height = JSVAL_TO_INT(tmp);
+	JS_GetProperty(cx, image, "channels", &tmp);
+	RT_ASSERT( tmp != JSVAL_VOID, "image channels not specified.");
+	int channels = JSVAL_TO_INT(tmp);
+
+	GLuint texture;
+	glGenTextures( 1, &texture );
+	glBindTexture( GL_TEXTURE_2D, texture );
+	glEnable( GL_TEXTURE_2D );
+    
+	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB8, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data );
+
+	glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	*rval = JSVAL_TO_INT(texture);
+
+	return JS_TRUE;
+}
 
 
 BEGIN_FUNCTION_MAP
 	FUNCTION_ALIAS(SwapBuffers, _SwapBuffers)
 	FUNCTION(Clear)
 	FUNCTION(Viewport)
+	FUNCTION(Texture)
+
+	FUNCTION(InitTest)
 	FUNCTION(Test)
 END_MAP
 

@@ -6,4 +6,10 @@ typedef void (*NativeResourceFunction)( void *pv, unsigned char *data, unsigned 
 JSBool SetNativeResource( JSContext *cx, JSObject *obj, void *pv, NativeResourceFunction read, NativeResourceFunction write );
 JSBool GetNativeResource( JSContext *cx, JSObject *obj, void **pv, NativeResourceFunction *read, NativeResourceFunction *write );
 
+#define NATIVE_RESOURCE_PRIVATE _nativeResourcePrivate
+#define NATIVE_RESOURCE_READ_FUNCTION _nativeResourceReadFunction
+#define NATIVE_RESOURCE_WRITE_FUNCTION _nativeResourceWriteFunction
 
+#define NATIVE_RESOURCE_PRIVATE_STRING "_nativeResourcePrivate"
+#define NATIVE_RESOURCE_READ_FUNCTION_STRING "_nativeResourceReadFunction"
+#define NATIVE_RESOURCE_WRITE_FUNCTION_STRING "_nativeResourceWriteFunction"

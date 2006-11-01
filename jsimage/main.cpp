@@ -1,14 +1,14 @@
 #include "stdafx.h"
-//#include "jsimage.h"
+#include "jsimage.h"
 #include "jspng.h"
 #include "jsjpeg.h"
 
 
 extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
-//	InitClassImage(cx,obj);
-	InitClassPng(cx,obj);
-	InitClassJpeg(cx,obj);
+	INIT_CLASS( Image );
+	INIT_CLASS( Png );
+	INIT_CLASS( Jpeg );
 
 	return JS_TRUE;
 }

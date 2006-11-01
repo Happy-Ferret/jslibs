@@ -10,10 +10,8 @@ Print( img.width+'x'+img.height+'x'+img.channels, '\n' );
 Print( img.Load().length , '\n' );
 */
 
-var f = new File('testimg.jpg');
-f.Open( File.RDONLY );
-var img = new Jpeg(f);
 
-Print( img.width+'x'+img.height+'x'+img.channels, '\n' );
-Print( img.Load().length , '\n' );
+var texture = new Jpeg(new File('R0010235.JPG').Open( File.RDONLY )).Load().Trim([10,10,20,20]);
+
+Print( texture.width+'x'+texture.height+'x'+texture.channels, '\n' );
 

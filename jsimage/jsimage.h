@@ -1,1 +1,3 @@
 DECLARE_CLASS(Image)
+
+#define SLOT_FUNCTION_ALLOC 0
