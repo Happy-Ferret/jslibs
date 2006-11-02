@@ -113,6 +113,7 @@ DEFINE_FUNCTION( ClassConstruct ) {
 	j_decompress_ptr cinfo = (j_decompress_ptr)malloc(sizeof(jpeg_decompress_struct)); // [TBD] free
 	RT_ASSERT_ALLOC(cinfo);
 
+// setup error structure
 	jpeg_error_mgr *err = (jpeg_error_mgr *)malloc(sizeof(jpeg_error_mgr));
 	cinfo->err = jpeg_std_error(err);
 
@@ -154,6 +155,7 @@ DEFINE_FUNCTION( ClassConstruct ) {
 	jpeg_read_header(cinfo, TRUE); //we passed TRUE to reject a tables-only JPEG file as an error.
 	
 	// the default is to produce full color output from a color file.
+
 	jpeg_calc_output_dimensions(cinfo);
 
 	JS_SetPrivate(cx, obj, cinfo);

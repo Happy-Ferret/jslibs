@@ -6,6 +6,7 @@
 #include "nsprFile.h"
 
 #include "../smtools/nativeresource.h"
+#include "../smtools/object.h"
 
 
 void File_Finalize(JSContext *cx, JSObject *obj) {
@@ -56,6 +57,7 @@ void _Read( void *pv, unsigned char *buf, unsigned int *amount ) {
 	*amount = status;
 }
 
+
 JSBool File_open(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
 	if ( argc < 1 ) {
@@ -96,7 +98,8 @@ JSBool File_open(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *r
 
 	JS_SetPrivate( cx, obj, fd );
 
-	SetNativeResource(cx, obj, fd, _Read, NULL );
+	SetNamedPrivate(cx, obj, NATIVE_RESOURCE_PRIVATE_STRING, fd); 
+	SetNamedPrivate(cx, obj, NATIVE_RESOURCE_READ_FUNCTION_STRING, _Read); 
 
 	*rval = OBJECT_TO_JSVAL(obj);
 
