@@ -32,3 +32,4 @@ JSBool SetNamedPrivate( JSContext *cx, JSObject *obj, const char *name, const vo
 	return JS_TRUE;
 }
 
+

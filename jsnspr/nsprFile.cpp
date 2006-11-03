@@ -48,13 +48,13 @@ JSBool File_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsv
 }
 
 
-void _Read( void *pv, unsigned char *buf, unsigned int *amount ) {
+bool _Read( void *pv, unsigned char *buf, unsigned int *amount ) {
 
 	PRInt32 status = PR_Read( (PRFileDesc *)pv, buf, *amount );
-	if ( status == -1 ) {
-			// Error
-	}
+	if ( status == -1 )
+		return false;
 	*amount = status;
+	return true;
 }
 
 

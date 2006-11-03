@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "jsgl.h"
 #include "jswindow.h"
+#include "../smtools/object.h"
 
 #include "../jsimage/jsimage.h"
 
@@ -13,6 +14,29 @@
 #define SLOT_WINDOW_OBJECT 0
 
 BEGIN_CLASS
+
+
+/*
+void SetupBitmapDC() {
+
+	PIXELFORMATDESCRIPTOR pfd ;
+	memset(&pfd,0,sizeof(PIXELFORMATDESCRIPTOR)) ;
+	pfd.nSize = sizeof(PIXELFORMATDESCRIPTOR) ;
+	pfd.nVersion = 1 ;
+	pfd.dwFlags = PFD_DRAW_TO_BITMAP | // replaces PFD_DRAW_TO_WINDOW
+					  PFD_SUPPORT_OPENGL |
+					  PFD_SUPPORT_GDI ;
+	pfd.iPixelType = PFD_TYPE_RGBA ; 
+	pfd.cColorBits = 8 ;
+	pfd.cDepthBits = 16 ;
+	pfd.iLayerType = PFD_MAIN_PLANE ; 
+
+
+// ChoosePixelFormat  : gives you the number of bits per pixel you asked for
+
+}
+*/
+
 
 static JSBool ClassConstruct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
@@ -90,186 +114,221 @@ static JSBool _SwapBuffers(JSContext *cx, JSObject *obj, uintN argc, jsval *argv
 }
 
 
-JSBool Clear(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+DEFINE_FUNCTION( Viewport ) {
+
+	RT_ASSERT_ARGC(1);
+	int view[4];
+	IntArrayToVector(cx, 4, argv, view);
+	glViewport(view[0], view[1], view[2], view[3]);
+	return JS_TRUE;
+}
+
+
+DEFINE_FUNCTION( Init ) {
+
+	glEnable( GL_TEXTURE_2D );
+	glShadeModel(GL_SMOOTH);
+	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LESS); // GL_LEQUAL
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
+	glFrontFace(GL_CCW);
+	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST); // Really Nice Perspective Calculations
+	return JS_TRUE;
+}
+
+
+DEFINE_FUNCTION( Perspective ) {
+
+	RT_ASSERT_ARGC(3);
+	jsdouble fovy, zNear, zFar;
+	JS_ValueToNumber(cx, argv[0], &fovy);
+	JS_ValueToNumber(cx, argv[1], &zNear);
+	JS_ValueToNumber(cx, argv[2], &zFar);
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	GLint viewport[4];
+	glGetIntegerv( GL_VIEWPORT, viewport );
+
+	//float xmin, xmax, ymin, ymax;
+	//ymax = zNear * tan(fovy * M_PI / 360.0f);
+	//ymin = -ymax;
+	//xmin = ymin * aspect;
+	//xmax = ymax * aspect;
+	//glFrustum(xmin, xmax, ymin, ymax, zNear, zFar);
+	gluPerspective(fovy, float(viewport[2]) / float(viewport[3]), zNear, zFar);
+	return JS_TRUE;
+}
+
+
+DEFINE_FUNCTION( Clear ) {
 
 	RT_ASSERT( JS_GetClass(obj) == thisClass, RT_ERROR_INVALID_CLASS );
 	RT_ASSERT_ARGC(1);
 	int32 bitfield;
 	RT_SAFE( JS_ValueToInt32(cx, argv[0], &bitfield) );
 	RT_UNSAFE( bitfield = INT_TO_JSVAL(argv[0]) );
+	
+	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+	glClearDepth(1.0f);
 	glClear(bitfield); // GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT
+
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+
 	return JS_TRUE;
 }
 
-DEFINE_FUNCTION( Viewport ) {
 
-	RT_ASSERT_ARGC(4);
-	int32 x, y, width, height;
-	JS_ValueToInt32(cx, argv[0], &x);
-	JS_ValueToInt32(cx, argv[1], &y);
-	JS_ValueToInt32(cx, argv[2], &width);
-	JS_ValueToInt32(cx, argv[3], &height);
-	glViewport(x, y, width, height);
+DEFINE_FUNCTION( Rotate ) {
+	
+	RT_ASSERT_ARGC(2);
+	jsdouble angle;
+	JS_ValueToNumber(cx, argv[0], &angle);
+	float vec[3];
+	FloatArrayToVector(cx, 3, &argv[1], vec);
+	glRotatef(angle, vec[0], vec[1], vec[2]);
 	return JS_TRUE;
 }
 
-DEFINE_FUNCTION( InitTest ) {
+
+DEFINE_FUNCTION( Translate ) {
+	
+	RT_ASSERT_ARGC(1);
+	float vec[3];
+	FloatArrayToVector(cx, 3, &argv[0], vec);
+	glTranslatef(vec[0], vec[1], vec[2]);
+	return JS_TRUE;
+}
 
 
+DEFINE_FUNCTION( Axis ) {
+
+	glBegin(GL_LINES);
+	glColor3f( 1,0,0 );
+	glVertex3i( 0,0,0 );
+	glVertex3i( 1,0,0 );
+	glColor3f( 0,1,0 );
+	glVertex3i( 0,0,0 );
+	glVertex3i( 0,1,0 );
+	glColor3f( 0,0,1 );
+	glVertex3i( 0,0,0 );
+	glVertex3i( 0,0,1 );
+	glEnd();
+	return JS_TRUE;
+}
+
+
+DEFINE_FUNCTION( Quad ) {
+
+	glBegin(GL_QUADS);
+	glTexCoord2f( 0, 0 ); 
+	glVertex2i( -1, -1 );
+	glTexCoord2f( 1, 0 ); 
+	glVertex2i( 1, -1 );
+	glTexCoord2f( 1, 1 ); 
+	glVertex2i( 1, 1 );
+	glTexCoord2f( 0, 1 ); 
+	glVertex2i( -1, 1 );
+	glEnd();
+	return JS_TRUE;
+}
+
+/*
+DEFINE_FUNCTION( Color ) {
+
+	GLfloat color[3];
+	FloatArrayToVector(cx, 3, argv, color);
+	glColor3fv(color);
+
+//	GLint color[3];
+//	IntArrayToVector(cx, 3, argv, color);
+//	glColor3iv(color);
+	return JS_TRUE;
+}
+*/
+
+DEFINE_PROPERTY( color  ) {
+
+	GLfloat color[3];
+	FloatArrayToVector(cx, 3, vp, color);
+	glColor3fv(color);
+	return JS_TRUE;
+}
+
+
+DEFINE_FUNCTION( Line ) {
+
+	RT_ASSERT_ARGC(2);
+	float point0[3], point1[3];
+	FloatArrayToVector(cx, 3, &argv[0], point0);
+	FloatArrayToVector(cx, 3, &argv[1], point1);
+
+	glBegin(GL_LINES);
+	glVertex3i( point0[0], point0[1], point0[2] );
+	glVertex3i( point1[0], point1[1], point1[2] );
+	glEnd();
+	return JS_TRUE;
+}
+
+
+DEFINE_FUNCTION( Texture ) {
+
+	RT_ASSERT_ARGC(1);
+
+	// get Image object
+	JSObject *image;
+	JSBool status = JS_ValueToObject(cx, argv[0], &image);
+	RT_ASSERT_CLASS_NAME(image, "Image");
+	void *data = JS_GetPrivate(cx, image);
+	RT_ASSERT_RESOURCE(data);
+	
+	int width, height, channels;
+	GetIntProperty(cx, image, "width", &width);
+	GetIntProperty(cx, image, "height", &height);
+	GetIntProperty(cx, image, "channels", &channels);
+
+	GLuint texture;
+	glGenTextures( 1, &texture ); // [TBD] free with glDeleteTextures
+	glBindTexture( GL_TEXTURE_2D, texture ); // Doc: glBindTexture is included in display lists.
+   
+	glTexImage2D( GL_TEXTURE_2D, 0, 3, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data );
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	*rval = JSVAL_TO_INT(texture);
 	return JS_TRUE;
 }
 
 
 DEFINE_FUNCTION( Test ) {
-
-/*
-	glShadeModel(GL_SMOOTH);
-	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-	glClearDepth(1.0f);							// Depth Buffer Setup
-	glEnable(GL_DEPTH_TEST);						// Enables Depth Testing
-	glDepthFunc(GL_LEQUAL);							// The Type Of Depth Test To Do
-
-//	glViewport(0, 0, 100, 100);
-*/
-
-//	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);			// Really Nice Perspective Calculations
-
-	glClearColor( 0, 0, 0, 0 );
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glShadeModel(GL_SMOOTH);
-
-	glEnable(GL_DEPTH_TEST);
-	glDepthFunc(GL_LESS);
-//	glEnable(GL_CULL_FACE);
-	glCullFace(GL_BACK);
-	glFrontFace(GL_CCW);
-
-  glMatrixMode (GL_PROJECTION);
-  glLoadIdentity();
-
-	GLint viewport[4];
-	glGetIntegerv( GL_VIEWPORT, viewport );
-	gluPerspective(45.0, float(viewport[2]) / float(viewport[3]), 0.01, 1000);
-
-
-/*
-	float fovy = 45.0;
-	float zNear = 0.01;
-	float zFar = 1000;
-	float aspect = 1;
-
-	float xmin, xmax, ymin, ymax;
-	ymax = zNear * tan(fovy * M_PI / 360.0f);
-	ymin = -ymax;
-	xmin = ymin * aspect;
-	xmax = ymax * aspect;
-	glFrustum(xmin, xmax, ymin, ymax, zNear, zFar);
-*/
-
-	glMatrixMode(GL_TEXTURE);
-	glLoadIdentity();
-
-
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-
-
-	RT_ASSERT_ARGC(1);
-
-	float vec[4];
-	FloatArrayToVector(cx, 4, argv, vec);
-
-	glTranslatef(0.0, 0, vec[3]);
-
-	glRotatef( vec[0], 1,0,0);
-	glRotatef( vec[1], 0,1,0);
-	glRotatef( vec[2], 0,0,1);
-
-
-	glBegin(GL_QUADS);
-
-		glTexCoord2f( 0, 0 ); 
-//		glColor3f( 1, 0, 0 );
-		glVertex2i( -1, -1 );
-
-		glTexCoord2f( 1, 0 ); 
-//		glColor3f( 0, 1, 0 );
-		glVertex2i( 1, -1 );
-
-		glTexCoord2f( 1, 1 ); 
-//		glColor3f( 0, 0, 1 );
-		glVertex2i( 1, 1 );
-
-		glTexCoord2f( 0, 1 ); 
-//		glColor3f( 1, 0, 1 );
-		glVertex2i( -1, 1 );
-		
-/*
-		glColor3f( 0, 0, 1 );
-		glVertex3f( 0.0f, 1.0f, 0.0f);
-		glColor3f( 0, 1, 0 );
-		glVertex3f(-1.0f,-1.0f, 0.0f);
-		glColor3f( 0, 0, 1 );
-		glVertex3f( 0.0f, 0.0f, 1.0f);
-*/
-	glEnd();
-
-
-	glFlush();
-
-	return JS_TRUE;
-}
-
-DEFINE_FUNCTION( Texture ) {
-
-	RT_ASSERT_ARGC(1);
-	JSObject *image;
-	JSBool status = JS_ValueToObject(cx, argv[0], &image);
-
-	RT_ASSERT_CLASS_NAME(image, "Image");
-
-	void *data = JS_GetPrivate(cx, image);
-
-	jsval tmp;
-	JS_GetProperty(cx, image, "width", &tmp);
-	RT_ASSERT( tmp != JSVAL_VOID, "image width not specified.");
-	int width = JSVAL_TO_INT(tmp);
-	JS_GetProperty(cx, image, "height", &tmp);
-	RT_ASSERT( tmp != JSVAL_VOID, "image height not specified.");
-	int height = JSVAL_TO_INT(tmp);
-	JS_GetProperty(cx, image, "channels", &tmp);
-	RT_ASSERT( tmp != JSVAL_VOID, "image channels not specified.");
-	int channels = JSVAL_TO_INT(tmp);
-
-	GLuint texture;
-	glGenTextures( 1, &texture );
-	glBindTexture( GL_TEXTURE_2D, texture );
-	glEnable( GL_TEXTURE_2D );
-    
-	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB8, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data );
-
-	glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-	*rval = JSVAL_TO_INT(texture);
-
+	
 	return JS_TRUE;
 }
 
 
 BEGIN_FUNCTION_MAP
 	FUNCTION_ALIAS(SwapBuffers, _SwapBuffers)
-	FUNCTION(Clear)
 	FUNCTION(Viewport)
+	FUNCTION(Perspective)
+	FUNCTION(Clear)
 	FUNCTION(Texture)
+	FUNCTION(Axis)
+	FUNCTION(Quad)
+	FUNCTION(Line)
+//	FUNCTION(Color)
 
-	FUNCTION(InitTest)
+	FUNCTION(Rotate)
+	FUNCTION(Translate)
+
+	FUNCTION(Init)
 	FUNCTION(Test)
 END_MAP
 
-NO_PROPERTY_MAP
-//	BEGIN_PROPERTY_MAP
-//	END_MAP
+//NO_PROPERTY_MAP
+BEGIN_PROPERTY_MAP
+	SET_AND_STORE(color)
+END_MAP
 
 NO_STATIC_FUNCTION_MAP
 //	BEGIN_STATIC_FUNCTION_MAP

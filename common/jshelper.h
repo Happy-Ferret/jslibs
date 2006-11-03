@@ -24,6 +24,7 @@
 #define RT_ERROR_INT_CONVERSION_FAILED "unable to convert this argument to integer."
 #define RT_ERROR_OUT_OF_MEMORY "not enough memory to complete the allocation."
 #define RT_ERROR_NOT_INITIALIZED "the object or resource is not proprely initialized."
+#define RT_ERROR_INVALID_RESOURCE "the resource is invalid or not proprely initialized."
 #define RT_ERROR_CLASS_CREATION_FAILED "unable to create the class."
 #define RT_ERROR_UNEXPECTED_TYPE "unexpected data type."
 
@@ -53,6 +54,9 @@
 
 #define RT_ASSERT_ALLOC(pointer) \
 	RT_ASSERT( (pointer) != NULL, RT_ERROR_OUT_OF_MEMORY );
+
+#define RT_ASSERT_RESOURCE(resourcePointer) \
+	RT_ASSERT( (resourcePointer) != NULL, RT_ERROR_INVALID_RESOURCE );
 
 #define RT_ASSERT_CLASS(jsObject, jsClass) \
 	RT_ASSERT( JS_GetClass(jsObject) == (jsClass), RT_ERROR_INVALID_CLASS );
@@ -170,6 +174,7 @@
 
 // Declares a function for the FUNCTION_MAP
 #define FUNCTION(name) { #name, name },
+#define FUNCTION_ARGC(name,nargs) { #name, name, nargs },
 // Allows to specify the native name too
 #define FUNCTION_ALIAS(name,nativeName) { #name, nativeName },
 // Declares a read/write property. Yous muse define xxxxGetter and xxxxSetter native functions

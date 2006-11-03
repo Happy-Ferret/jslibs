@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "jsimage.h"
+#include "../smtools/object.h"
 #include "../smtools/nativeresource.h"
 
 #include "png.h"
@@ -50,9 +51,14 @@ DEFINE_FUNCTION( ClassConstruct ) {
 	desc->info = png_create_info_struct(desc->png);
 	RT_ASSERT( desc->info != NULL, "Unable to png_create_info_struct.");
 
-	JSBool status = GetNativeResource(cx, JSVAL_TO_OBJECT(argv[0]), &desc->pv, &desc->read, NULL );
-	RT_ASSERT( status == JS_TRUE, "Unable to GetNativeResource." );
-	
+//	JSBool status = GetNativeResource(cx, JSVAL_TO_OBJECT(argv[0]), &desc->pv, &desc->read, NULL );
+//	RT_ASSERT( status == JS_TRUE, "Unable to GetNativeResource." );
+	JSObject *resourceObject = JSVAL_TO_OBJECT(argv[0]);
+	GetNamedPrivate(cx, resourceObject, NATIVE_RESOURCE_READ_FUNCTION_STRING, (void**)&desc->read );
+	GetNamedPrivate(cx, resourceObject, NATIVE_RESOURCE_PRIVATE_STRING, (void**)&desc->pv );
+
+
+
 	png_set_read_fn( desc->png, (voidp)desc, _png_read );
    png_read_info(desc->png, desc->info);
 	RT_ASSERT( desc->info->height <= PNG_UINT_32_MAX/png_sizeof(png_bytep), "Image is too high to process with png_read_png()");

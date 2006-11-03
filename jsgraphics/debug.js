@@ -17,7 +17,17 @@ var gl = new Gl(w);
 function Render() {
 
 //	Print('Rendering image '+image++, '\n');
-	gl.Test([totaly,totalx,0,-totalz/50-5]);
+
+	gl.Clear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+	gl.Translate([0,0, -totalz/50-5]);
+	gl.Rotate( totaly, [1,0,0] );
+	gl.Rotate( totalx, [0,1,0] );
+//	gl.Rotate( 0, [0,0,1] );
+	gl.color = [1, 1, 1];
+	gl.Quad();
+	gl.Axis();
+	gl.color = [0,5, 1, 1];
+	gl.Line([0,0,0],[1,1,1]);
 	gl.SwapBuffers();
 }
 
@@ -106,21 +116,22 @@ w.onchar = function( c, l ) {
 
 w.onsize = function( w, h ) {
 
-	gl.Viewport(0,0,w,h);
+	gl.Viewport([0,0,w,h]);
 	Render();
 }
 
-//var f = new File('R0010235.JPG');
-var f = new File('R0010235.png');
+var f = new File('R0010235.JPG');
+//var f = new File('R0010235.png');
 f.Open( File.RDONLY );
 //var img = new Jpeg(f);
-var texture = new Png(f).Load();
+var texture = new Jpeg(f).Load();
 
 var x=100, y=100; // offset
 texture.Trim([0+x,0+y,64+x,64+y], true);
 
+gl.Init();
+gl.Perspective( 60, 0.01, 1000 );
 gl.Texture( texture );
-
 
 w.ProcessEvents();
 Print('Done.', '\n');

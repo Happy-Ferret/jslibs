@@ -2,6 +2,7 @@
 #include "smtools.h"
 #include "nativeresource.h"
 
+/*
 #define PROPERTIES_FLAGS JSPROP_READONLY | JSPROP_PERMANENT
 
 JSBool SetNativeResource( JSContext *cx, JSObject *obj, void *pv, NativeResourceFunction read, NativeResourceFunction write ) {
@@ -44,3 +45,4 @@ void UseObjectReadFunction( void *pv, unsigned char *data, unsigned int *length 
 
 
 }
+*/
