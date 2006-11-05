@@ -15,7 +15,6 @@
 
 BEGIN_CLASS
 
-
 /*
 void SetupBitmapDC() {
 
@@ -85,7 +84,6 @@ static JSBool ClassConstruct(JSContext *cx, JSObject *obj, uintN argc, jsval *ar
 	// If PFD_GENERIC_ACCELERATED is clear and PFD_GENERIC_FORMAT is set, then the pixel format is only supported by the generic implementation. 
 	// Hardware acceleration is not possible for this format. For hardware acceleration, you need to choose a different format.
 
-
 	res = SetPixelFormat(hDC,PixelFormat,&pfd);
 	RT_ASSERT( res, "Could not Set The PixelFormat." );
 
@@ -100,6 +98,7 @@ static JSBool ClassConstruct(JSContext *cx, JSObject *obj, uintN argc, jsval *ar
 
 	return JS_TRUE;
 }
+
 
 // The Effects of Double Buffering on Animation Frame Rates
 //		http://www.futuretech.blinkenlights.nl/dbuffer.html
@@ -129,7 +128,7 @@ DEFINE_FUNCTION( Init ) {
 	glEnable( GL_TEXTURE_2D );
 	glShadeModel(GL_SMOOTH);
 	glEnable(GL_DEPTH_TEST);
-	glDepthFunc(GL_LESS); // GL_LEQUAL
+	glDepthFunc(GL_LEQUAL); // GL_LESS
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
 	glFrontFace(GL_CCW);
@@ -163,11 +162,10 @@ DEFINE_FUNCTION( Perspective ) {
 
 DEFINE_FUNCTION( Clear ) {
 
-	RT_ASSERT( JS_GetClass(obj) == thisClass, RT_ERROR_INVALID_CLASS );
+//	RT_ASSERT( JS_GetClass(obj) == thisClass, RT_ERROR_INVALID_CLASS );
 	RT_ASSERT_ARGC(1);
 	int32 bitfield;
-	RT_SAFE( JS_ValueToInt32(cx, argv[0], &bitfield) );
-	RT_UNSAFE( bitfield = INT_TO_JSVAL(argv[0]) );
+	JS_ValueToInt32(cx, argv[0], &bitfield);
 	
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	glClearDepth(1.0f);
@@ -182,22 +180,35 @@ DEFINE_FUNCTION( Clear ) {
 
 DEFINE_FUNCTION( Rotate ) {
 	
-	RT_ASSERT_ARGC(2);
+	RT_ASSERT_ARGC(4);
 	jsdouble angle;
 	JS_ValueToNumber(cx, argv[0], &angle);
-	float vec[3];
-	FloatArrayToVector(cx, 3, &argv[1], vec);
-	glRotatef(angle, vec[0], vec[1], vec[2]);
+	jsdouble x;
+	JS_ValueToNumber(cx, argv[1], &x);
+	jsdouble y;
+	JS_ValueToNumber(cx, argv[2], &y);
+	jsdouble z;
+	JS_ValueToNumber(cx, argv[3], &z);
+
+//	float vec[3];
+//	FloatArrayToVector(cx, 3, &argv[1], vec);
+//	glRotatef(angle, vec[0], vec[1], vec[2]);
+	glRotatef(angle, x, y, z);
 	return JS_TRUE;
 }
 
 
 DEFINE_FUNCTION( Translate ) {
 	
-	RT_ASSERT_ARGC(1);
-	float vec[3];
-	FloatArrayToVector(cx, 3, &argv[0], vec);
-	glTranslatef(vec[0], vec[1], vec[2]);
+	RT_ASSERT_ARGC(3);
+//	float vec[3];
+//	FloatArrayToVector(cx, 3, &argv[0], vec);
+//	glTranslatef(vec[0], vec[1], vec[2]);
+	jsdouble x,y,z;
+	JS_ValueToNumber(cx, argv[0], &x);
+	JS_ValueToNumber(cx, argv[1], &y);
+	JS_ValueToNumber(cx, argv[2], &z);
+	glTranslatef(x,y,z);
 	return JS_TRUE;
 }
 
@@ -221,15 +232,23 @@ DEFINE_FUNCTION( Axis ) {
 
 DEFINE_FUNCTION( Quad ) {
 
+	RT_ASSERT_ARGC(4);
+
+	jsdouble x0,y0,z0, x1,y1,z1;
+	JS_ValueToNumber(cx, argv[0], &x0);
+	JS_ValueToNumber(cx, argv[1], &y0);
+	JS_ValueToNumber(cx, argv[2], &x1);
+	JS_ValueToNumber(cx, argv[3], &y1);
+
 	glBegin(GL_QUADS);
 	glTexCoord2f( 0, 0 ); 
-	glVertex2i( -1, -1 );
+	glVertex2f( x0, y0 );
 	glTexCoord2f( 1, 0 ); 
-	glVertex2i( 1, -1 );
+	glVertex2f( x1, y0 );
 	glTexCoord2f( 1, 1 ); 
-	glVertex2i( 1, 1 );
+	glVertex2f( x1, y1 );
 	glTexCoord2f( 0, 1 ); 
-	glVertex2i( -1, 1 );
+	glVertex2f( x0, y1 );
 	glEnd();
 	return JS_TRUE;
 }
@@ -248,26 +267,43 @@ DEFINE_FUNCTION( Color ) {
 }
 */
 
-DEFINE_PROPERTY( color  ) {
+DEFINE_FUNCTION( Color ) {
 
-	GLfloat color[3];
-	FloatArrayToVector(cx, 3, vp, color);
-	glColor3fv(color);
+	jsdouble r;
+	JS_ValueToNumber(cx, argv[0], &r);
+	jsdouble g;
+	JS_ValueToNumber(cx, argv[1], &g);
+	jsdouble b;
+	JS_ValueToNumber(cx, argv[2], &b);
+	glColor3f(r,g,b);
 	return JS_TRUE;
 }
 
 
 DEFINE_FUNCTION( Line ) {
 
-	RT_ASSERT_ARGC(2);
-	float point0[3], point1[3];
-	FloatArrayToVector(cx, 3, &argv[0], point0);
-	FloatArrayToVector(cx, 3, &argv[1], point1);
+	jsdouble x0,y0, x1,y1;
+	JS_ValueToNumber(cx, argv[0], &x0);
+	JS_ValueToNumber(cx, argv[1], &y0);
+//	JS_ValueToNumber(cx, argv[2], &z0);
+	JS_ValueToNumber(cx, argv[3], &x1);
+	JS_ValueToNumber(cx, argv[4], &y1);
+//	JS_ValueToNumber(cx, argv[5], &z1);
 
 	glBegin(GL_LINES);
-	glVertex3i( point0[0], point0[1], point0[2] );
-	glVertex3i( point1[0], point1[1], point1[2] );
+	glVertex2f( x0,y0 );
+	glVertex2f( x1,y1 );
 	glEnd();
+
+	//RT_ASSERT_ARGC(2);
+	//float point0[3], point1[3];
+	//FloatArrayToVector(cx, 3, &argv[0], point0);
+	//FloatArrayToVector(cx, 3, &argv[1], point1);
+
+	//glBegin(GL_LINES);
+	//glVertex3i( point0[0], point0[1], point0[2] );
+	//glVertex3i( point1[0], point1[1], point1[2] );
+	//glEnd();
 	return JS_TRUE;
 }
 
@@ -312,23 +348,20 @@ BEGIN_FUNCTION_MAP
 	FUNCTION(Viewport)
 	FUNCTION(Perspective)
 	FUNCTION(Clear)
+	FUNCTION(Color)
 	FUNCTION(Texture)
 	FUNCTION(Axis)
 	FUNCTION(Quad)
 	FUNCTION(Line)
-//	FUNCTION(Color)
-
 	FUNCTION(Rotate)
 	FUNCTION(Translate)
-
 	FUNCTION(Init)
 	FUNCTION(Test)
 END_MAP
 
-//NO_PROPERTY_MAP
 BEGIN_PROPERTY_MAP
-	SET_AND_STORE(color)
 END_MAP
+
 
 NO_STATIC_FUNCTION_MAP
 //	BEGIN_STATIC_FUNCTION_MAP

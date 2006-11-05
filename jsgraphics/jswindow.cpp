@@ -132,8 +132,15 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 			JS_GetProperty(cx, obj, "onmousedown", &functionVal);
 			if ( functionVal != JSVAL_VOID ) {
 
+				// xPos = GET_X_LPARAM(lParam); 
+				// yPos = GET_Y_LPARAM(lParam); 
+
 				RT_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." );
-				jsval argv[] = { INT_TO_JSVAL( message==WM_LBUTTONDOWN ? 1 : message==WM_RBUTTONDOWN ? 2 : 3 ), JSVAL_TRUE };
+				jsval argv[] = { 
+					INT_TO_JSVAL( message==WM_LBUTTONDOWN ? 1 : message==WM_RBUTTONDOWN ? 2 : message==WM_MBUTTONDOWN ? 3 : 0 ), JSVAL_TRUE };
+//					BOOLEAN_TO_JSVAL(wParam & MK_LBUTTON), 
+//					BOOLEAN_TO_JSVAL(wParam & MK_RBUTTON), 
+//					BOOLEAN_TO_JSVAL(wParam & MK_MBUTTON) };
 				JS_CallFunctionValue(cx, obj, functionVal, sizeof(argv)/sizeof(*argv), argv, &rval);
 				return 0;
 			}
@@ -144,9 +151,12 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 			JS_GetProperty(cx, obj, "onmouseup", &functionVal);
 			if ( functionVal != JSVAL_VOID ) {
 
+				// xPos = GET_X_LPARAM(lParam); 
+				// yPos = GET_Y_LPARAM(lParam); 
+
 				RT_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." );
-				jsval argv[] = { INT_TO_JSVAL( message==WM_LBUTTONUP ? 1 : message==WM_RBUTTONUP ? 2 : 3 ), JSVAL_FALSE };
-				JS_CallFunctionValue(cx, obj, functionVal, sizeof(argv)/sizeof(*argv), argv, &rval);
+				jsval argv[] = { INT_TO_JSVAL( message==WM_LBUTTONUP ? 1 : message==WM_RBUTTONUP ? 2 : message==WM_MBUTTONUP ? 3 : 0 ), JSVAL_FALSE };
+					JS_CallFunctionValue(cx, obj, functionVal, sizeof(argv)/sizeof(*argv), argv, &rval);
 				return 0;
 			}
 			break;
@@ -309,6 +319,48 @@ DEFINE_FUNCTION( Mode ) {
 }
 
 
+DEFINE_PROPERTY( clipCursor ) {
+
+	HWND hWnd = (HWND)JS_GetPrivate(cx, obj);
+	RT_ASSERT( hWnd != NULL, RT_ERROR_NOT_INITIALIZED );
+	JSBool clip;
+	RT_SAFE( JS_ValueToBoolean(cx, *vp, &clip) );
+	RT_UNSAFE( clip = JSVAL_TO_BOOLEAN(*vp) );
+	RECT r;
+	GetWindowRect(hWnd, &r);
+	BOOL sysStatus = ClipCursor( clip ? &r : NULL );
+	RT_ASSERT( sysStatus != 0, "Unable to ClipCursor." );
+	return JS_TRUE;
+}
+
+
+DEFINE_PROPERTY( absoluteClipCursor ) {
+
+	BOOL sysStatus;
+	if ( *vp != JSVAL_VOID ) {
+
+		int v[4];
+		IntArrayToVector(cx, 4, vp, v);
+
+		JSBool clip;
+		RT_SAFE( JS_ValueToBoolean(cx, *vp, &clip) );
+		RT_UNSAFE( clip = JSVAL_TO_BOOLEAN(*vp) );
+
+		RECT r;
+		r.left = v[0];
+		r.top = v[1];
+		r.right = v[2];
+		r.bottom = v[3];
+		sysStatus = ClipCursor( &r );
+	} else {
+		sysStatus = ClipCursor( NULL );
+	}
+	RT_ASSERT( sysStatus != 0, "Unable to ClipCursor." );
+	return JS_TRUE;
+}
+
+
+
 DEFINE_PROPERTY( showCursor ) {
 
 	JSBool show;
@@ -342,6 +394,28 @@ DEFINE_PROPERTY( rectSetter ) {
 }
 
 
+DEFINE_PROPERTY( cursorAbsolutePositionSetter ) {
+
+	HWND hWnd = (HWND)JS_GetPrivate(cx, obj);
+	RT_ASSERT( hWnd != NULL, RT_ERROR_NOT_INITIALIZED );
+	int vec[2];
+	IntArrayToVector(cx, 2, vp, vec);
+	BOOL sysStatus = SetCursorPos(vec[0], vec[1]); // http://windowssdk.msdn.microsoft.com/en-us/library/ms648394.aspx
+	RT_ASSERT( sysStatus != 0, "Unable to SetCursorPos." );
+	return JS_TRUE;
+}
+
+DEFINE_PROPERTY( cursorAbsolutePositionGetter ) {
+
+	HWND hWnd = (HWND)JS_GetPrivate(cx, obj);
+	RT_ASSERT( hWnd != NULL, RT_ERROR_NOT_INITIALIZED );
+	POINT pt;
+	GetCursorPos( &pt );
+	int vector[] = { pt.x, pt.y };
+	IntVectorToArray(cx, 4, vector, vp);
+	return JS_TRUE;
+}
+
 DEFINE_PROPERTY( cursorPositionSetter ) {
 
 	HWND hWnd = (HWND)JS_GetPrivate(cx, obj);
@@ -350,7 +424,8 @@ DEFINE_PROPERTY( cursorPositionSetter ) {
 	IntArrayToVector(cx, 2, vp, vec);
 	POINT pt = { vec[0], vec[1] };
 	ClientToScreen(hWnd, &pt);
-	SetCursorPos(pt.x, pt.y); // http://windowssdk.msdn.microsoft.com/en-us/library/ms648394.aspx
+	BOOL sysStatus = SetCursorPos(pt.x, pt.y); // http://windowssdk.msdn.microsoft.com/en-us/library/ms648394.aspx
+	RT_ASSERT( sysStatus != 0, "Unable to SetCursorPos." );
 	return JS_TRUE;
 }
 
@@ -462,6 +537,7 @@ BEGIN_PROPERTY_MAP
 	SET_AND_STORE(title)
 	SET_AND_STORE(showFrame)
 	SET_AND_STORE(captureMouse)
+	SET_AND_STORE(clipCursor)
 	READWRITE(rect)
 	READWRITE(active)
 	READWRITE(cursorPosition)
@@ -476,6 +552,8 @@ END_MAP
 BEGIN_STATIC_PROPERTY_MAP
 	SET_AND_STORE(showCursor)
 	READONLY(desktopRect)
+	READWRITE(cursorAbsolutePosition)
+	SET_AND_STORE(absoluteClipCursor)
 END_MAP
 
 NO_OBJECT_CONSTRUCT

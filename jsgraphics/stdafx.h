@@ -26,6 +26,8 @@
 
 #define XP_WIN
 #include <jsapi.h>
+
+#define JSHELPER_UNSAFE_DEFINED
 #include "../common/jshelper.h"
 #include "../smtools/smtools.h"
 

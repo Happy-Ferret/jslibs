@@ -2,11 +2,11 @@ LoadModule('jsstd');
 LoadModule('jsnspr');
 LoadModule('jsimage');
 LoadModule('jsgraphics');
+var glc = Exec('OpenGL.js');
+var vk = Exec('WindowsKeys.js');
 
-Exec('OpenGL.js');
+Exec('winTools.js');
 
-var prevMouseX, prevMouseY;
-var totalx=0, totaly=0,totalz=0, totalWheel=0;
 var image=0;
 
 var w = new Window();
@@ -14,87 +14,67 @@ w.title = "Test";
 w.rect = [500,100,1000,500];
 var gl = new Gl(w);
 
+var mouse = new MouseMotion(w);
+
+var button = [0,0,0];
+w.onmouseup = w.onmousedown = function(b, polarity) { // onmouseup AND onmousedown
+
+	button[b] = polarity;
+	mouse.infiniteMode = button[0] || button[1] || button[2];
+}
+
+var tw=0, tx=0, ty=0, tz=0; 
+
+w.onmousewheel = function(delta) {
+
+	tw += delta;
+}
+
+mouse.delta = function( dx,dy, b1,b2,b3 ) {
+	
+	if ( b1 ) {
+	
+		tx += dx;
+		ty += dy;
+	} else if ( b2 ) {
+
+		tz += dy;
+	}
+}
+
 function Render() {
 
-//	Print('Rendering image '+image++, '\n');
+	//Print('Rendering image '+image++, '\n');
 
-	gl.Clear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-	gl.Translate([0,0, -totalz/50-5]);
-	gl.Rotate( totaly, [1,0,0] );
-	gl.Rotate( totalx, [0,1,0] );
-//	gl.Rotate( 0, [0,0,1] );
-	gl.color = [1, 1, 1];
-	gl.Quad();
+	gl.Clear( glc.COLOR_BUFFER_BIT | glc.DEPTH_BUFFER_BIT );
+	gl.Translate(0,0, -tz/50-5);
+	gl.Rotate( ty/2, 1,0,0 );
+	gl.Rotate( tx/2, 0,1,0 );
+	gl.Rotate( tw*10, 0,0,1 );
+	gl.Color(1,1,1);
+	
+	for ( var x = -100; x<100; x++ )
+		for ( var y = -100; y<100; y++ )
+			gl.Quad(x,y,x+1,y+1-0.001);
+	
 	gl.Axis();
-	gl.color = [0,5, 1, 1];
-	gl.Line([0,0,0],[1,1,1]);
+	gl.Color( 0,5, 1, 1 );
 	gl.SwapBuffers();
+	gcByte > 1000000 && CollectGarbage();
 }
 
 w.onidle = Render;
 
-var _savedMousePosition;
-
-w.onmouseup = w.onmousedown = function(button, polarity) { // onmouseup AND onmousedown
-	
-	if (polarity)
-		_savedMousePosition = w.cursorPosition;
-	else {
-		w.cursorPosition = _savedMousePosition;
-		prevMouseX = prevMouseY = undefined;
-	}
-	Window.showCursor = !polarity;
-	w.captureMouse = polarity;
-}
-
-w.onmousewheel = function(delta) {
-
-	totalWheel += delta;
-}
-
-w.onmousemove = function( x,y, b1,b2,b3 ) { // mouse X, mouse Y, left, right, middle
-
-	if ( b1 || b2 ) {
-
-	//	Print( 'x:'+x+' y:'+y+' button1:'+b1+' button2:'+b2+' button3:'+b3, '\n' );
-		var r = w.rect;
-		var cx = Math.round((r[2]-r[0])/2); // cx & cy must be integer else comparaison will failed
-		var cy = Math.round((r[3]-r[1])/2);
-		if ( x != cx || y != cy ) {
-			if ( prevMouseX != undefined && prevMouseY != undefined ) {
-				
-				if ( b2 ) { // Z-mode
-				
-					totalz += y - prevMouseY;
-				} else {
-				
-					totalx += x - prevMouseX;
-					totaly += y - prevMouseY;
-				}
-				w.cursorPosition = [cx,cy];
-			}
-		}
-		prevMouseX = x;
-		prevMouseY = y;
-	}
-}
-
 var _fullscreenState = false;
-var _savedWindowSize;
 
-w.onchar = function( c, l ) {
+w.onkeydown = function( key, l ) {
 
-//	Print( 'c:'+c+' l:'+l.toString(16), '\n' );
-	switch (c) {
-		case 'r':
-			var r = w.rect;
-			r[0]++;
-			w.rect = r;
-			break;
-		case '\x1B':
+	switch (key) {
+		case vk.ESC:
 			w.Exit();
 			break;
-		case '\x0D':
+		case vk.ENTER:
+			// toggle fullscreen
 			_fullscreenState = !_fullscreenState;
 			if ( _fullscreenState ) {
 			
@@ -117,23 +97,20 @@ w.onchar = function( c, l ) {
 w.onsize = function( w, h ) {
 
 	gl.Viewport([0,0,w,h]);
+	gl.Perspective( 60, 0.01, 1000 );	
 	Render();
 }
 
-var f = new File('R0010235.JPG');
-//var f = new File('R0010235.png');
-f.Open( File.RDONLY );
-//var img = new Jpeg(f);
-var texture = new Jpeg(f).Load();
-
-var x=100, y=100; // offset
-texture.Trim([0+x,0+y,64+x,64+y], true);
+var x=0, y=0; // offset
+var texture = new Jpeg(new File('R0010235.JPG').Open( File.RDONLY )).Load().Trim([0+x,0+y,256+x,256+y], true);
 
 gl.Init();
 gl.Perspective( 60, 0.01, 1000 );
 gl.Texture( texture );
 
+//Window.absoluteClipCursor = [100,100, 200, 200 ]
 w.ProcessEvents();
+//Window.absoluteClipCursor = undefined;
 Print('Done.', '\n');
 
 
