@@ -1,33 +1,33 @@
 #include "stdafx.h"
-
 #include "configuration.h"
 
-JSClass configuration_class = { "Configuration", JSCLASS_HAS_PRIVATE,
-	JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub,
-	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, JS_FinalizeStub
-};
+//JSClass configuration_class = { "Configuration", JSCLASS_HAS_PRIVATE,
+//	JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub,
+//	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, JS_FinalizeStub
+//};
 
-
-JSObject *GetConfigurationObject( JSContext *cx ) {
+// returns JS_FALSE on fatal errors only
+JSBool GetConfigurationObject(JSContext *cx, JSObject **configurationObject ) {
 
 	JSObject *globalObject = JS_GetGlobalObject(cx);
 	if ( globalObject == NULL )
-		return NULL;
+		return JS_FALSE;
+
 	jsval configurationValue;
-	JS_GetProperty( cx, globalObject, CONFIGURATION_OBJECT_NAME, &configurationValue );
+	JS_GetProperty(cx, globalObject, CONFIGURATION_OBJECT_NAME, &configurationValue);
 
-	JSObject *configObject;
-	if ( configurationValue == JSVAL_VOID ) {
+	if ( configurationValue == JSVAL_VOID ) { // if configuration object do not exist, we build one
 
-		configObject = JS_NewObject( cx, &configuration_class, NULL, NULL );
-		if ( configObject == NULL )
-			return NULL;
-		configurationValue = OBJECT_TO_JSVAL(configObject);
-		JS_SetProperty( cx, globalObject, CONFIGURATION_OBJECT_NAME, &configurationValue );
+		*configurationObject = JS_DefineObject(cx, globalObject, CONFIGURATION_OBJECT_NAME, NULL, NULL, 0 );
+		if ( *configurationObject == NULL ) // Doc: If the property already exists, or cannot be created, JS_DefineObject returns NULL.
+			return JS_FALSE; // cannot be created
 	} else {
-		configObject = JSVAL_TO_OBJECT(configurationValue);
+
+		if ( JS_ValueToObject(cx, configurationValue, configurationObject) == JS_FALSE )
+			return JS_FALSE;
+		// [TBD] check if it is the right object
 	}
-	return globalObject;
+	return JS_TRUE;
 }
 
 /*
@@ -44,15 +44,33 @@ JSObject *GetConfigurationObject( JSContext *cx ) {
 }
 */
 
+/*
 jsval GetConfigurationValue( JSContext *cx, const char *name ) {
 
 	JSObject *configurationObject = GetConfigurationObject(cx);
-	if (configurationObject == NULL)
-		return JSVAL_VOID;
-	jsval value;
-	JS_GetProperty(cx, configurationObject, name, &value);
-	return value;
+	if (configurationObject != NULL) {
+		jsval value;
+		JS_GetProperty(cx, configurationObject, name, &value);
+		return value;
+	}
+	return JSVAL_VOID;
 }
+*/
+
+
+// returns JS_FALSE on fatal errors only
+JSBool GetConfigurationValue( JSContext *cx, const char *name, jsval *value ) {
+
+	JSObject *configurationObject;
+	if ( GetConfigurationObject(cx, &configurationObject) == JS_FALSE )
+		return JS_FALSE;
+	if (configurationObject == NULL)
+		return JS_FALSE;
+	if ( JS_GetProperty(cx, configurationObject, name, value) == JS_FALSE )
+		return JS_FALSE;
+	return JS_TRUE;
+}
+
 
 /*
 void SetConfigurationValue( JSContext *cx, const char *name, jsval value ) {
