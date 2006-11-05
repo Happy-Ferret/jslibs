@@ -186,13 +186,9 @@ static JSBool ClassConstruct(JSContext *cx, JSObject *obj, uintN argc, jsval *ar
 // http://nehe.gamedev.net/data/lessons/lesson.asp?lesson=01
 //	AdjustWindowRectEx(&WindowRect, dwStyle, FALSE, dwExStyle);
 
-	HWND hWnd = CreateWindow( WINDOW_CLASS_NAME, NULL,
-		WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN | WS_CLIPSIBLINGS,
-		CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
-		(HWND)NULL, (HMENU)NULL, hInst, (LPVOID)NULL);
-
+	HWND hWnd = CreateWindow( WINDOW_CLASS_NAME, NULL,    WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN | WS_CLIPSIBLINGS,
+		CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,    (HWND)NULL, (HMENU)NULL, hInst, (LPVOID)NULL);
 	RT_ASSERT( hWnd != NULL, "Unable to CreateWindow." );
-	
 	JS_SetPrivate(cx, obj, hWnd);
 	
 	CxObj *cxobj = (CxObj*)malloc(sizeof(CxObj));
@@ -274,7 +270,7 @@ static JSBool Exit(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval 
 }
 
 
-DEFINE_FUNCTION( WaitForMessage){
+DEFINE_FUNCTION( WaitForMessage ){
 
 	RT_ASSERT_ARGC(1);
 	int32 val;
@@ -324,8 +320,7 @@ DEFINE_PROPERTY( clipCursor ) {
 	HWND hWnd = (HWND)JS_GetPrivate(cx, obj);
 	RT_ASSERT( hWnd != NULL, RT_ERROR_NOT_INITIALIZED );
 	JSBool clip;
-	RT_SAFE( JS_ValueToBoolean(cx, *vp, &clip) );
-	RT_UNSAFE( clip = JSVAL_TO_BOOLEAN(*vp) );
+	JS_ValueToBoolean(cx, *vp, &clip);
 	RECT r;
 	GetWindowRect(hWnd, &r);
 	BOOL sysStatus = ClipCursor( clip ? &r : NULL );
@@ -343,14 +338,8 @@ DEFINE_PROPERTY( absoluteClipCursor ) {
 		IntArrayToVector(cx, 4, vp, v);
 
 		JSBool clip;
-		RT_SAFE( JS_ValueToBoolean(cx, *vp, &clip) );
-		RT_UNSAFE( clip = JSVAL_TO_BOOLEAN(*vp) );
-
-		RECT r;
-		r.left = v[0];
-		r.top = v[1];
-		r.right = v[2];
-		r.bottom = v[3];
+		JS_ValueToBoolean(cx, *vp, &clip);
+		RECT r = { v[0], v[1], v[2], v[3] };
 		sysStatus = ClipCursor( &r );
 	} else {
 		sysStatus = ClipCursor( NULL );
@@ -364,8 +353,7 @@ DEFINE_PROPERTY( absoluteClipCursor ) {
 DEFINE_PROPERTY( showCursor ) {
 
 	JSBool show;
-	RT_SAFE( JS_ValueToBoolean(cx, *vp, &show) );
-	RT_UNSAFE( show = JSVAL_TO_BOOLEAN(*vp) );
+	JS_ValueToBoolean(cx, *vp, &show);
 	ShowCursor( show ? TRUE : FALSE );
 	return JS_TRUE;
 }
@@ -458,8 +446,7 @@ DEFINE_PROPERTY( showFrame ) {
 	RT_ASSERT( hWnd != NULL, RT_ERROR_NOT_INITIALIZED );
 
 	JSBool show;
-	RT_SAFE( JS_ValueToBoolean(cx, *vp, &show) );
-	RT_UNSAFE( show = JSVAL_TO_BOOLEAN(*vp) );
+	JS_ValueToBoolean(cx, *vp, &show);
 
 	DWORD s = GetWindowLong(hWnd, GWL_STYLE);
 	if ( show ) {
@@ -492,8 +479,7 @@ DEFINE_PROPERTY( captureMouse ) {
 	HWND hWnd = (HWND)JS_GetPrivate(cx, obj);
 	RT_ASSERT( hWnd != NULL, RT_ERROR_NOT_INITIALIZED );
 	JSBool capture;
-	RT_SAFE( JS_ValueToBoolean(cx, *vp, &capture) );
-	RT_UNSAFE( capture = JSVAL_TO_BOOLEAN(*vp) );
+	JS_ValueToBoolean(cx, *vp, &capture);
 
 	// Only the foreground window can capture the mouse. 
 	// When a background window attempts to do so, the window receives messages only for mouse events that occur when the cursor hot spot is within the visible portion of the window.
@@ -517,8 +503,7 @@ DEFINE_PROPERTY( activeSetter ) {
 	HWND hWnd = (HWND)JS_GetPrivate(cx, obj);
 	RT_ASSERT( hWnd != NULL, RT_ERROR_NOT_INITIALIZED );
 	JSBool active;
-	RT_SAFE( JS_ValueToBoolean(cx, *vp, &active) );
-	RT_UNSAFE( active = JSVAL_TO_BOOLEAN(*vp) );
+	JS_ValueToBoolean(cx, *vp, &active);
 	if ( active )
 		SetActiveWindow(hWnd);
 	return JS_TRUE;

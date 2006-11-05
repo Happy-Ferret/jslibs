@@ -37,7 +37,7 @@ JSBool IntVectorToArray( JSContext *cx, int count, const int *vector, jsval *vp 
 	int32 i32;
 	for (int i=0; i<count; ++i) {
 
-		RT_SAFE( JS_NewNumberValue(cx, vector[i], &value) );
+		RT_SAFE( JS_NewNumberValue(cx, vector[i], &value) ); // [TBD] useful ??
 		RT_UNSAFE( value = INT_TO_JSVAL(vector[i]) );
 		JS_SetElement(cx, jsArray, i, &value);
 	}
@@ -48,8 +48,7 @@ JSBool IntVectorToArray( JSContext *cx, int count, const int *vector, jsval *vp 
 JSBool FloatArrayToVector( JSContext *cx, int count, const jsval *vp, float *vector ) {
 
 	JSObject *jsArray;
-	RT_SAFE( JS_ValueToObject(cx, *vp, &jsArray) );
-	RT_UNSAFE( jsArray = JSVAL_TO_OBJECT(*vp) );
+	JS_ValueToObject(cx, *vp, &jsArray);
 	RT_ASSERT( JS_IsArrayObject(cx,jsArray), "value must be an array." );
 	jsval value;
 	jsdouble d;
@@ -78,3 +77,10 @@ JSBool FloatVectorToArray( JSContext *cx, int count, const float *vector, jsval 
 	return JS_TRUE;
 }
 
+double TimeNow() {
+	
+	LARGE_INTEGER frequency, performanceCount;
+	QueryPerformanceFrequency(&frequency);
+	QueryPerformanceCounter(&performanceCount);
+	return 1000 * double(performanceCount.QuadPart) / double(frequency.QuadPart);
+}

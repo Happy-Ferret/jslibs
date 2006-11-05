@@ -200,8 +200,7 @@ JSBool jointBall_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv
 	RT_ASSERT_CONSTRUCTING(&jointBall_class);
 	RT_ASSERT_ARGC(1);
 	JSObject *worldObject;
-	RT_SAFE(JS_ValueToObject(cx, argv[0], &worldObject));
-	RT_UNSAFE(worldObject = JSVAL_TO_OBJECT(argv[0]));
+	JS_ValueToObject(cx, argv[0], &worldObject);
 	RT_ASSERT_CLASS(worldObject,&world_class);
 	ode::dWorldID worldID = (ode::dWorldID)JS_GetPrivate(cx,worldObject);
 	RT_ASSERT_1(worldID != NULL, "%s object not initialized", world_class.name );
@@ -231,8 +230,7 @@ JSBool jointHinge_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *arg
 	RT_ASSERT_CONSTRUCTING(&jointHinge_class);
 	RT_ASSERT_ARGC(1);
 	JSObject *worldObject;
-	RT_SAFE(JS_ValueToObject(cx, argv[0], &worldObject));
-	RT_UNSAFE(worldObject = JSVAL_TO_OBJECT(argv[0]));
+	JS_ValueToObject(cx, argv[0], &worldObject);
 	RT_ASSERT_CLASS(worldObject,&world_class);
 	ode::dWorldID worldID = (ode::dWorldID)JS_GetPrivate(cx,worldObject);
 	RT_ASSERT_1(worldID != NULL, "%s object not initialized", world_class.name );
@@ -265,8 +263,7 @@ JSBool jointSlider_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *ar
 	RT_ASSERT_CONSTRUCTING(&jointSlider_class);
 	RT_ASSERT_ARGC(1);
 	JSObject *worldObject;
-	RT_SAFE(JS_ValueToObject(cx, argv[0], &worldObject));
-	RT_UNSAFE(worldObject = JSVAL_TO_OBJECT(argv[0]));
+	JS_ValueToObject(cx, argv[0], &worldObject);
 	RT_ASSERT_CLASS(worldObject,&world_class);
 	ode::dWorldID worldID = (ode::dWorldID)JS_GetPrivate(cx,worldObject);
 	RT_ASSERT_1(worldID != NULL, "%s object not initialized", world_class.name );
@@ -298,8 +295,7 @@ JSBool jointFixed_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *arg
 	RT_ASSERT_CONSTRUCTING(&jointFixed_class);
 	RT_ASSERT_ARGC(1);
 	JSObject *worldObject;
-	RT_SAFE(JS_ValueToObject(cx, argv[0], &worldObject));
-	RT_UNSAFE(worldObject = JSVAL_TO_OBJECT(argv[0]));
+	JS_ValueToObject(cx, argv[0], &worldObject);
 	RT_ASSERT_CLASS(worldObject,&world_class);
 	ode::dWorldID worldID = (ode::dWorldID)JS_GetPrivate(cx,worldObject);
 	RT_ASSERT_1(worldID != NULL, "%s object not initialized", world_class.name );

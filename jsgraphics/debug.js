@@ -53,19 +53,24 @@ function Render() {
 	gl.Rotate( tw*10, 0,0,1 );
 	gl.Color(1,1,1);
 	
-	for ( var x = -100; x<100; x++ )
-		for ( var y = -100; y<100; y++ )
+	for ( var x = -100; x<10; x++ )
+		for ( var y = -10; y<10; y++ )
 			gl.Quad(x,y,x+1,y+1-0.001);
 	
 	gl.Axis();
 	gl.Color( 0,5, 1, 1 );
+//	
+	var t0 = IntervalNow();
+//	CollectGarbage();
 	gl.SwapBuffers();
-	gcByte > 1000000 && CollectGarbage();
+
+	Print( 'SwapBuffers time: '+(IntervalNow()-t0)+'ms', '\n');
 }
 
 w.onidle = Render;
 
 var _fullscreenState = false;
+var _savedWindowSize;
 
 w.onkeydown = function( key, l ) {
 
@@ -79,7 +84,7 @@ w.onkeydown = function( key, l ) {
 			if ( _fullscreenState ) {
 			
 				_savedWindowSize = w.rect;           // save current window rectangle
-				Window.Mode( [640, 480], 32, true ); // change mode 640x480, 32bits, temporarily fullscreen
+				//Window.Mode( [640, 480], 32, true ); // change mode 640x480, 32bits, temporarily fullscreen
 				w.showFrame = false;                 // hide window frame ( remove all borders )
 				w.rect = Window.desktopRect;         // extends the window to the screen size
 				w.showCursor = false;                // hide the cursor
@@ -88,7 +93,7 @@ w.onkeydown = function( key, l ) {
 				w.rect = _savedWindowSize;
 				w.showCursor = true;
 				w.showFrame = true;
-				Window.Mode();              // revert to default
+				//Window.Mode();              // revert to default
 			}
 			break;
 		}
