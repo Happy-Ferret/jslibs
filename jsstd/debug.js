@@ -1,0 +1,3 @@
+LoadModule('jsstd');
+
+Print('toto');

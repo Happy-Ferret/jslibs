@@ -1,17 +1,11 @@
 #include "stdafx.h"
 
-//#include <stdio.h>
-//#include <stdlib.h>
-//#include <sys/types.h>
 #include <sys/stat.h>
-//#include <string.h>
-//#include <time.h>
-//#include <errno.h>
-//#include <windows.h>
 
-#define XP_WIN
-#include <jsapi.h>
 #include "jsxdrapi.h"
+
+#include "jscntxt.h"
+
 #define JSHELPER_UNSAFE_DEFINED
 #include "../common/jshelper.h"
 #include "../configuration/configuration.h"
@@ -21,7 +15,7 @@ DEFINE_UNSAFE_MODE;
 extern JSFunction *stdoutFunction = NULL;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-static JSBool global_seal(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+DEFINE_FUNCTION( Seal ) {
 
 	RT_ASSERT_ARGC(1);
 
@@ -44,7 +38,7 @@ static JSBool global_seal(JSContext *cx, JSObject *obj, uintN argc, jsval *argv,
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-static JSBool global_clear(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+DEFINE_FUNCTION( Clear ) {
 
 	RT_ASSERT_ARGC(1);
 	JSBool err;
@@ -55,7 +49,7 @@ static JSBool global_clear(JSContext *cx, JSObject *obj, uintN argc, jsval *argv
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-static JSBool global_hideProperties(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+DEFINE_FUNCTION( HideProperties ) {
 
 	RT_ASSERT_ARGC(2);
 	JSObject *object;
@@ -82,7 +76,7 @@ static JSBool global_hideProperties(JSContext *cx, JSObject *obj, uintN argc, js
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // note:
 //  warning is reported on stderr ( jshost.exe test.js 2>NUL ) [TBD] update this note ?
-static JSBool global_warning(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+DEFINE_FUNCTION( Warning ) {
 
 	JSString *jssMesage = JS_ValueToString(cx, argv[0]);
 	argv[0] = STRING_TO_JSVAL(jssMesage);
@@ -90,8 +84,16 @@ static JSBool global_warning(JSContext *cx, JSObject *obj, uintN argc, jsval *ar
 	return JS_TRUE;
 }
 
+
+DEFINE_PROPERTY( gcByte ) {
+
+    JSRuntime *rt = cx->runtime;
+	*vp = INT_TO_JSVAL(rt->gcBytes); 
+	return JS_TRUE;
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-static JSBool global_collectGarbage(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+DEFINE_FUNCTION( CollectGarbage ) {
 /* needed ???
   #ifdef JS_THREADSAFE
 	JS_BeginRequest( cx );
@@ -107,7 +109,7 @@ static JSBool global_collectGarbage(JSContext *cx, JSObject *obj, uintN argc, js
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-static JSBool global_print(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+DEFINE_FUNCTION( Print ) {
 
 	if ( stdoutFunction == NULL )
 		return JS_TRUE; // nowhere to write, but don't failed
@@ -216,7 +218,7 @@ static JSScript* LoadScript(JSContext *cx, JSObject *obj, const char *fileName, 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // function copied from mozilla/js/src/js.c
-static JSBool global_exec(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+DEFINE_FUNCTION( Exec ) {
 
 //  uintN i;
   JSString *str;
@@ -256,25 +258,45 @@ static JSBool global_exec(JSContext *cx, JSObject *obj, uintN argc, jsval *argv,
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSFunctionSpec Std_FunctionSpec[] = { // *name, call, nargs, flags, extra
-	{ "Seal"            , global_seal            , 0, 0, 0 },
-	{ "Clear"           , global_clear           , 0, 0, 0 },
-	{ "HideProperties"  , global_hideProperties  , 0, 0, 0 },
-	{ "Exec"            , global_exec            , 0, 0, 0 },
-	{ "Print"           , global_print           , 0, 0, 0 },
-	{ "CollectGarbage"  , global_collectGarbage  , 0, 0, 0 },
-	{ "Warning"         , global_warning         , 0, 0, 0 },
-	{ 0 }
-};
+BEGIN_STATIC_FUNCTION_MAP
+	FUNCTION( Seal )
+	FUNCTION( Clear )
+	FUNCTION( HideProperties )
+	FUNCTION( Exec )
+	FUNCTION( Print )
+	FUNCTION( CollectGarbage )
+	FUNCTION( Warning )
+END_MAP
+
+BEGIN_STATIC_PROPERTY_MAP
+	READONLY( gcByte )
+END_MAP
+
+
 
 
 extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
-	JS_DefineFunctions( cx, obj, Std_FunctionSpec );
+	BIND_STATIC_FUNCTIONS( obj );
+	BIND_STATIC_PROPERTIES( obj );
+
+
+
 // read configuration
-	stdoutFunction = JS_ValueToFunction(cx, GetConfigurationValue(cx, "stdout")); // returns NULL if the function is not defined
+
+	jsval stdoutFunctionValue;
+	JSBool jsStatus = GetConfigurationValue(cx, "stdout", &stdoutFunctionValue );
+	RT_ASSERT( jsStatus != JS_FALSE, "Unable to read stdout function from configuration object." );
+
+	stdoutFunction = JS_ValueToFunction(cx, stdoutFunctionValue); // returns NULL if the function is not defined
 //	_unsafeMode = JSVAL_TO_BOOLEAN(GetConfigurationValue(cx, "unsafeMode")) == JS_TRUE;
-	SET_UNSAFE_MODE( JSVAL_TO_BOOLEAN(GetConfigurationValue(cx, "unsafeMode")) == JS_TRUE );
+	
+	jsval unsafeModeValue;
+	jsStatus = GetConfigurationValue(cx, "unsafeMode", &unsafeModeValue);
+	RT_ASSERT( jsStatus != JS_FALSE, "Unable to read unsafeMode state from configuration object." );
+
+	if ( unsafeModeValue != JSVAL_VOID && JSVAL_IS_BOOLEAN(unsafeModeValue) )
+		SET_UNSAFE_MODE( JSVAL_TO_BOOLEAN(unsafeModeValue) == JS_TRUE );
 
 	return JS_TRUE;
 }
