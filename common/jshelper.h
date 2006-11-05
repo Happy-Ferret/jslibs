@@ -4,7 +4,7 @@
 #ifdef JSHELPER_UNSAFE_DEFINED
 	extern bool _unsafeMode;
 #else
-	static bool _unsafeMode = false;
+	static bool _unsafeMode = false; // by default, we are in SAFE mode
 #endif
 
 #define DEFINE_UNSAFE_MODE	extern bool _unsafeMode = false;
@@ -39,6 +39,9 @@
 
 /////////
 // assert
+
+#define RT_ASSERT_2( condition, errorMessage, arg1, arg2 ) \
+	if ( !_unsafeMode && !(condition) ) { JS_ReportError( cx, (errorMessage), (arg1), (arg2) ); return JS_FALSE; }
 
 #define RT_ASSERT_1( condition, errorMessage, arg ) \
 	if ( !_unsafeMode && !(condition) ) { JS_ReportError( cx, (errorMessage), (arg) ); return JS_FALSE; }
@@ -171,6 +174,13 @@
 #define DEFINE_FINALIZE() static void Finalize(JSContext *cx, JSObject *obj)
 #define DEFINE_FUNCTION(name) static JSBool name##(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 #define DEFINE_PROPERTY(name) static JSBool name##(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
+
+#define BIND_STATIC_FUNCTIONS(obj) \
+	JS_DefineFunctions(cx, obj, _functionStaticMap);
+
+#define BIND_STATIC_PROPERTIES(obj) \
+	JS_DefineProperties(cx, obj, _propertyStaticMap);
+
 
 // Declares a function for the FUNCTION_MAP
 #define FUNCTION(name) { #name, name },
