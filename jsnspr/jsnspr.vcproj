@@ -41,6 +41,7 @@
 				InlineFunctionExpansion="0"
 				AdditionalIncludeDirectories="../js/src;../nspr/include"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL"
+				RuntimeLibrary="1"
 				DebugInformationFormat="3"
 			/>
 			<Tool
