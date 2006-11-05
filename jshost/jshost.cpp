@@ -33,7 +33,8 @@
 #include "../common/jshelper.h"
 #include "../configuration/configuration.h"
 
-#define RT_HOST_ASSERT( condition, errorMessage ) \
+// to be used in the main() function only
+#define RT_HOST_MAIN_ASSERT( condition, errorMessage ) \
 	if ( !(condition) ) { consoleStdErr( errorMessage, sizeof(errorMessage)-1 ); return -1; }
 
 //#include "../objectEx/objetEx.h"
@@ -188,7 +189,7 @@ static JSBool global_loadModule(JSContext *cx, JSObject *obj, uintN argc, jsval 
 	strcpy( libFileName, fileName );
 	strcat( libFileName, DLL_EXT );
 	HMODULE module = ::LoadLibrary(libFileName);
-	RT_ASSERT_1( module != NULL, "Unable to load the library %s.", libFileName );
+	RT_ASSERT_2( module != NULL, "Unable to load the library %s (error:%d).", libFileName, GetLastError() );
 	int i;
 	for ( i = 0; _moduleList[i]; ++i ); // find a free module slot
 	RT_ASSERT( i < 32, "unable to load more libraries" );
@@ -251,9 +252,8 @@ BOOL Interrupt(DWORD CtrlType) {
 static JSBool stdoutFunction(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
 	JSString *str;
-	uintN i;
 	str = JS_ValueToString(cx, argv[0]);
-	RT_ASSERT_1( str != NULL, "Unable to convert argument %d to string.", i );
+	RT_ASSERT( str != NULL, "Unable to convert argument to string.");
 	argv[0] = STRING_TO_JSVAL(str); // [TBD] needed ?
 	consoleStdOut( JS_GetStringBytes(str), JS_GetStringLength(str) );
 	return JS_TRUE;
@@ -268,8 +268,8 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 
 	char* scriptName;
 
-	unsigned long maxbytes = 4L * 1024L * 1024L;
-	unsigned long stackSize = 32L * 1024L;
+	unsigned long maxbytes = 32L * 1024L * 1024L;
+	unsigned long stackSize = 1L * 1024L * 1024L;
 
 
 	for ( argv++; argv[0] && argv[0][0] == '-'; argv++ )
@@ -303,14 +303,14 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 #ifdef _CONSOLE
 #ifdef WIN32
 	BOOL status = SetConsoleCtrlHandler((PHANDLER_ROUTINE)&Interrupt, true);
-	RT_HOST_ASSERT( status == TRUE, "Unable to set console handler" );
+	RT_HOST_MAIN_ASSERT( status == TRUE, "Unable to set console handler" );
 #endif // WIN32
 #endif // _CONSOLE
 
 	rt = JS_NewRuntime(maxbytes); // maxbytes specifies the number of allocated bytes after which garbage collection is run.
-	RT_HOST_ASSERT( rt != NULL, "unable to create the runtime." );
+	RT_HOST_MAIN_ASSERT( rt != NULL, "unable to create the runtime." );
 	cx = JS_NewContext(rt, stackSize); // A context specifies a stack size for the script, the amount, in bytes, of private memory to allocate to the execution stack for the script.
-	RT_HOST_ASSERT( cx != NULL, "unable to create the context." );
+	RT_HOST_MAIN_ASSERT( cx != NULL, "unable to create the context." );
 
 	JS_SetVersion( cx, JSVERSION_1_7 );
 	//	[TBD] set into configuration file
@@ -326,11 +326,11 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 // global object
 	JSClass global_class = { "global", 0, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, JS_FinalizeStub };
 	globalObject = JS_NewObject(cx, &global_class, NULL, NULL);
-	RT_HOST_ASSERT( globalObject != NULL, "unable to create the global object." );
+	RT_HOST_MAIN_ASSERT( globalObject != NULL, "unable to create the global object." );
 
 // Standard classes
 	jsStatus = JS_InitStandardClasses(cx, globalObject);
-	RT_HOST_ASSERT( jsStatus == JS_TRUE, "unable to initialize standard classes." );
+	RT_HOST_MAIN_ASSERT( jsStatus == JS_TRUE, "unable to initialize standard classes." );
 
 // global functions & properties
 	JS_DefineProperties( cx, globalObject, Global_PropertySpec );
@@ -339,32 +339,36 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 // JS_DefineFunction( cx, globalObject, "Module", _Module, 0, 0 );
 
 // Global configuration object
-	JSObject *configObject = GetConfigurationObject(cx);
-	RT_HOST_ASSERT( configObject != NULL, "unable to create the configuration data." );
+	JSObject *configObject;
+	jsStatus = GetConfigurationObject(cx, &configObject);
+	RT_HOST_MAIN_ASSERT( jsStatus != JS_FALSE, "failed to get configuration object." );
+	RT_HOST_MAIN_ASSERT( configObject != NULL, "unable to create the configuration data." );
 	jsval value = OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunction(cx, stdoutFunction, 1, 0, NULL, NULL))); // If you do not assign a name to the function, it is assigned the name "anonymous".
-	JS_SetProperty(cx, configObject, "stdout", &value);
+	jsStatus = JS_SetProperty(cx, configObject, "stdout", &value);
+	RT_HOST_MAIN_ASSERT( jsStatus != JS_FALSE, "Unable to set store stdout into configuration." );
 	value = BOOLEAN_TO_JSVAL(unsafeMode);
-	JS_SetProperty(cx, configObject, "unsafeMode", &value);
+	jsStatus = JS_SetProperty(cx, configObject, "unsafeMode", &value);
+	RT_HOST_MAIN_ASSERT( jsStatus != JS_FALSE, "Unable to set store unsafeMode into configuration." );
 
 
 
 // script name
   scriptName = *argv;
-  RT_HOST_ASSERT( scriptName != NULL, "no script specified" );
+  RT_HOST_MAIN_ASSERT( scriptName != NULL, "no script specified" );
 
 // arguments
 	JSObject *argsObj = JS_NewArrayObject(cx, 0, NULL);
-	RT_HOST_ASSERT( argsObj != NULL, "unable to create argument array." );
+	RT_HOST_MAIN_ASSERT( argsObj != NULL, "unable to create argument array." );
 
 	jsStatus = JS_DefineProperty(cx, globalObject, "arguments", OBJECT_TO_JSVAL(argsObj), NULL, NULL, 0);
-	RT_HOST_ASSERT( jsStatus == JS_TRUE, "unable to store the argument array." );
+	RT_HOST_MAIN_ASSERT( jsStatus == JS_TRUE, "unable to store the argument array." );
 	int index = 0;
 	for ( ; *argv; argv++ ) {
 
 		JSString *str = JS_NewStringCopyZ(cx, *argv);
-		RT_HOST_ASSERT( str != NULL, "unable to store the argument." );
+		RT_HOST_MAIN_ASSERT( str != NULL, "unable to store the argument." );
 		jsStatus = JS_DefineElement(cx, argsObj, index++, STRING_TO_JSVAL(str), NULL, NULL, JSPROP_ENUMERATE);
-		RT_HOST_ASSERT( str != NULL, "unable to store the argument." );
+		RT_HOST_MAIN_ASSERT( str != NULL, "unable to store the argument." );
 	}
 
 // language options
@@ -393,12 +397,12 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 // compile & executes the script
 	JSScript *script = JS_CompileFile( cx, globalObject, scriptName );
 //  JSScript *script = LoadScript( cx, globalObject, scriptName, saveCompiledScripts );
-	RT_HOST_ASSERT( script != NULL, "unable to compile the script." );
+	RT_HOST_MAIN_ASSERT( script != NULL, "unable to compile the script." );
 
 	// You need to protect a JSScript (via a rooted script object) if and only if a garbage collection can occur between compilation and the start of execution.
 	jsval rval;
 	jsStatus = JS_ExecuteScript( cx, globalObject, script, &rval ); // MUST be executed only once ( JSOPTION_COMPILE_N_GO )
-//	RT_HOST_ASSERT( jsStatus == JS_TRUE, "unable to execute the script." );
+	// if jsStatus != JS_TRUE, an error has been throw while the execution, so there is no need to throw another error
 
 //		printf( "Last executed line %s:%d", script->filename, JS_PCToLineNumber( cx, script, script->code ) ); // if it right ? [TBD] enhance this
 

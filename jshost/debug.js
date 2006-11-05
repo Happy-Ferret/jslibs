@@ -1,3 +1,3 @@
-LoadModule('..\\jsstd\\Debug\\jsstd');
+LoadModule('jsstd');
+Print( 'Unsafe mode: '+configuration.unsafeMode, '\n' );
 
-Print('toto');
