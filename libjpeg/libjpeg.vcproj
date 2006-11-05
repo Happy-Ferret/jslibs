@@ -40,6 +40,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="src"
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB"
+				RuntimeLibrary="1"
 				UsePrecompiledHeader="0"
 				ForcedIncludeFiles="$(ProjectDir)stdafx.h"
 			/>
