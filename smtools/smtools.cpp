@@ -1,20 +1,29 @@
 #include "stdafx.h"
 #include "smtools.h"
 
+JSBool IntArgvToVector( JSContext *cx, int count, const jsval *argv, int *vector ) {
+
+	for (int i=0; i<count; ++i) {
+
+		RT_ASSERT( JSVAL_IS_INT(argv[i]), "Must be an integer." );
+		RT_SAFE( jsdouble d; JS_ValueToNumber(cx, argv[i], &d); vector[i] = d; );
+		RT_UNSAFE( vector[i] = JSVAL_TO_INT(argv[i]) );
+	}
+	return JS_TRUE;
+}
+
 JSBool IntArrayToVector( JSContext *cx, int count, const jsval *vp, int *vector ) {
 
 	JSObject *jsArray;
-	RT_SAFE( JS_ValueToObject(cx, *vp, &jsArray) );
-	RT_UNSAFE( jsArray = JSVAL_TO_OBJECT(*vp) );
-	RT_ASSERT( JS_IsArrayObject(cx,jsArray), "value must be an array." );
+	if ( JS_ValueToObject(cx, *vp, &jsArray) == JS_FALSE )
+		return JS_FALSE;
+	RT_ASSERT( jsArray != NULL && JS_IsArrayObject(cx,jsArray), "value must be an array." );
 	jsval value;
-	int32 i32;
 	for (int i=0; i<count; ++i) {
 
 		JS_GetElement(cx, jsArray, i, &value );
-		RT_SAFE( jsdouble d; JS_ValueToNumber(cx, value, &d); i32=d; );
-		RT_UNSAFE( i32 = JSVAL_TO_INT(value) );
-		vector[i] = i32;
+		RT_SAFE( jsdouble d; JS_ValueToNumber(cx, value, &d); vector[i] = d; );
+		RT_UNSAFE( vector[i] = JSVAL_TO_INT(value) );
 	}
 	return JS_TRUE;
 }
