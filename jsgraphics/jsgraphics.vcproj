@@ -185,6 +185,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\jstransformation.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\jswindow.cpp"
 				>
 				<FileConfiguration
@@ -231,11 +235,23 @@
 				>
 			</File>
 			<File
+				RelativePath=".\jstransformation.h"
+				>
+			</File>
+			<File
 				RelativePath=".\jswindow.h"
 				>
 			</File>
 			<File
+				RelativePath=".\matrix44.h"
+				>
+			</File>
+			<File
 				RelativePath=".\stdafx.h"
+				>
+			</File>
+			<File
+				RelativePath=".\vector3.h"
 				>
 			</File>
 		</Filter>

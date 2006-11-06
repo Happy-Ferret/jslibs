@@ -15,13 +15,15 @@ int WINAPI MessageBoxA(__in_opt HWND hWnd, __in_opt LPCSTR lpText, __in_opt LPCS
  
 
 extern "C" void messageHandler(int errnum, const char *msg, va_list ap) {
+
+//	abort(); // http://msdn2.microsoft.com/en-us/library/k089yyh0(VS.80).aspx
 }
 
 extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
-//	ode::dSetErrorHandler(messageHandler);
-//	ode::dSetDebugHandler(messageHandler);
-//	ode::dSetMessageHandler(messageHandler);
+	ode::dSetErrorHandler(messageHandler);
+	ode::dSetDebugHandler(messageHandler);
+	ode::dSetMessageHandler(messageHandler);
 
 	jointInitClass( cx, obj );
 	massInitClass( cx, obj );

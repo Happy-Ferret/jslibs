@@ -24,6 +24,8 @@
 
 #include <windows.h>
 
+#include "stdlib.h"
+
 #define XP_WIN
 #include <jsapi.h>
 

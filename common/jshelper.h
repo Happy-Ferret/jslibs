@@ -37,6 +37,9 @@
 #define RT_UNSAFE(code) \
 	if (_unsafeMode) {code;}
 
+#define REPORT_ERROR(errorMessage) \
+	JS_ReportError( cx, (errorMessage) );
+
 /////////
 // assert
 

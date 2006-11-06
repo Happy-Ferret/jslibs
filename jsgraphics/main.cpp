@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "jswindow.h"
 #include "jsgl.h"
+#include "jstransformation.h"
 #include "../configuration/configuration.h"
 
 DEFINE_UNSAFE_MODE
@@ -12,11 +13,11 @@ extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj)
 		return JS_FALSE;
 	SET_UNSAFE_MODE( value != JSVAL_VOID && JSVAL_IS_BOOLEAN(value) && JSVAL_TO_BOOLEAN(value) == JS_TRUE );
 
-
-
-	if ( InitClassWindow( cx, obj ) == JS_FALSE )
+	if ( InitClassTransformation( cx, obj ) == JS_FALSE ) 
 		return JS_FALSE;
-	if ( InitClassGl( cx, obj ) == JS_FALSE )
+	if ( InitClassWindow( cx, obj ) == JS_FALSE ) 
+		return JS_FALSE;
+	if ( InitClassGl( cx, obj ) == JS_FALSE ) 
 		return JS_FALSE;
 	return JS_TRUE;
 }

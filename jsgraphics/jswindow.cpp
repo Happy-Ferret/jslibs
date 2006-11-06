@@ -1,8 +1,6 @@
 #include "stdafx.h"
 #include "jswindow.h"
 
-#include "stdlib.h"
-
 #define WINDOW_CLASS_NAME "jswindow"
 
 typedef struct {
