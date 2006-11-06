@@ -2,7 +2,7 @@
 #include "world.h"
 #include "body.h"
 
-#include "tools.h"
+#include "../smtools/smtools.h"
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void world_Finalize(JSContext *cx, JSObject *obj) {
@@ -62,7 +62,7 @@ JSBool world_getter_gravity(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 	RT_ASSERT( worldID != NULL, RT_ERROR_NOT_INITIALIZED );
 	ode::dVector3 gravity;
 	ode::dWorldGetGravity(worldID, gravity);
-	VectorToArray(cx, 3, gravity, vp);
+	FloatVectorToArray(cx, 3, gravity, vp);
 	return JS_TRUE;
 }
 
@@ -72,7 +72,7 @@ JSBool world_setter_gravity(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 	ode::dWorldID worldID = (ode::dWorldID)JS_GetPrivate( cx, obj );
 	RT_ASSERT( worldID != NULL, RT_ERROR_NOT_INITIALIZED );
 	ode::dVector3 gravity;
-	ArrayToVector(cx, 3, vp, gravity);
+	FloatArrayToVector(cx, 3, vp, gravity);
 	ode::dWorldSetGravity( worldID, gravity[0], gravity[1], gravity[2] );
 	return JS_TRUE;
 }

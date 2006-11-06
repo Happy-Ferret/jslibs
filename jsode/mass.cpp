@@ -2,7 +2,7 @@
 #include "body.h"
 #include "mass.h"
 
-#include "tools.h"
+#include "../smtools/smtools.h"
 
 JSBool GetBodyAndMass(JSContext *cx, JSObject *massObject, ode::dBodyID *pBodyID, ode::dMass *pMass) {
 
@@ -26,7 +26,7 @@ JSBool mass_translate(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsv
 	if ( GetBodyAndMass(cx, obj, &bodyID, &mass) == JS_FALSE)
 		return JS_FALSE;
 	real translation[3];
-	if (ArrayToVector(cx, 3, &argv[0], translation) == JS_FALSE)
+	if (FloatArrayToVector(cx, 3, &argv[0], translation) == JS_FALSE)
 		return JS_FALSE;
 	ode::dMassTranslate(&mass, translation[0], translation[1], translation[2]);
 	ode::dBodySetMass(bodyID, &mass);
@@ -63,7 +63,7 @@ JSBool mass_setBoxTotal(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, j
 	JS_ValueToNumber(cx, argv[0], &totalMass);
 // arg 1
 	real dimensions[3];
-	if (ArrayToVector(cx, 3, &argv[1], dimensions) == JS_FALSE)
+	if (FloatArrayToVector(cx, 3, &argv[1], dimensions) == JS_FALSE)
 		return JS_FALSE;
 // apply the formulae
 	ode::dMassSetBoxTotal(&mass, totalMass, dimensions[0], dimensions[0], dimensions[0]);
@@ -116,7 +116,7 @@ JSBool mass_set_center(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 		return JS_FALSE;
 	jsdouble massValue;
 //	jsdouble translation[3];
-	if (ArrayToVector(cx, 3, vp, mass.c) == JS_FALSE)
+	if (FloatArrayToVector(cx, 3, vp, mass.c) == JS_FALSE)
 		return JS_FALSE;
 	ode::dBodySetMass(bodyID, &mass);
 
@@ -130,7 +130,7 @@ JSBool mass_get_center(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 	ode::dMass mass;
 	if ( GetBodyAndMass(cx, obj, &bodyID, &mass) == JS_FALSE)
 		return JS_FALSE;
-	if (VectorToArray(cx, 3, mass.c, vp) == JS_FALSE)
+	if (FloatVectorToArray(cx, 3, mass.c, vp) == JS_FALSE)
 		return JS_FALSE;
 	return JS_TRUE;
 }

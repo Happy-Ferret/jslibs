@@ -6,6 +6,14 @@
 
 DEFINE_UNSAFE_MODE;
 
+
+// the following avoid ODE to be linked with User32.lib ( MessageBox* symbol is used in ../ode/src/ode/src/error.cpp )
+int WINAPI MessageBoxA(__in_opt HWND hWnd, __in_opt LPCSTR lpText, __in_opt LPCSTR lpCaption, __in UINT uType) {
+
+	return IDCANCEL;
+}
+ 
+
 extern "C" void messageHandler(int errnum, const char *msg, va_list ap) {
 }
 

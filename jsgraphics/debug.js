@@ -61,9 +61,8 @@ function Render() {
 	gl.Color( 0,5, 1, 1 );
 //	
 	var t0 = IntervalNow();
-//	CollectGarbage();
+	CollectGarbage();
 	gl.SwapBuffers();
-
 	Print( 'SwapBuffers time: '+(IntervalNow()-t0)+'ms', '\n');
 }
 

@@ -103,11 +103,13 @@ static JSBool ClassConstruct(JSContext *cx, JSObject *obj, uintN argc, jsval *ar
 // The Effects of Double Buffering on Animation Frame Rates
 //		http://www.futuretech.blinkenlights.nl/dbuffer.html
 static JSBool _SwapBuffers(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
-
+	
+	glFlush();
+	glFinish();
 	RT_ASSERT( JS_GetClass(obj) == thisClass, RT_ERROR_INVALID_CLASS );
 	HDC hDC = wglGetCurrentDC();
 	RT_ASSERT( hDC != NULL, "Could not get the Current Device Context." );
-	BOOL res = SwapBuffers(hDC);
+	BOOL res = SwapBuffers(hDC); // Doc: With multithread applications, flush the drawing commands in any other threads drawing to the same window before calling SwapBuffers.
 	RT_ASSERT_1( res, "Unable to SwapBuffers.(%x)", GetLastError());
 	return JS_TRUE;
 }

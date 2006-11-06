@@ -4,11 +4,48 @@
 #include "body.h"
 #include "world.h"
 
-#include "tools.h"
+#include "../smtools/smtools.h"
+#include "../smtools/object.h"
+#include "../tools3d/nativeTransform.h"
 
 JSObject *body;
 
 #define SLOT_PARENT 0
+
+
+int BodyReadTransformationMatrix(void *pv, float *m) {
+
+	ode::dBodyID id = (ode::dBodyID)pv;
+
+	const ode::dReal * m43 = dBodyGetRotation( id );
+	const ode::dReal * pos = dBodyGetPosition( id );
+
+// [TBD] center of mass ajustement ?
+	float comx = 0;
+	float comy = 0;
+	float comz = 0;
+
+	m[0]  = m43[0];
+	m[1]  = m43[4];
+	m[2]  = m43[8];
+	m[3]  = 0;
+	m[4]  = m43[1];
+	m[5]  = m43[5];
+	m[6]  = m43[9];
+	m[7]  = 0;
+	m[8]  = m43[2];
+	m[9]  = m43[6];
+	m[10] = m43[10];
+	m[11] = 0;
+	m[12] = pos[0] - comx;
+	m[13] = pos[1] - comy;
+	m[14] = pos[2] - comz;
+	m[15] = 1;
+
+	return true;
+}
+
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void body_Finalize(JSContext *cx, JSObject *obj) {
@@ -62,8 +99,6 @@ JSClass *cl = JS_GetClass(o);
 //	JS_ValueToObject(cx, cx->lastInternalResult, &o);
 //	JSClass *cl = JS_GetClass(o);
 
-
-
 	RT_ASSERT_CONSTRUCTING(&body_class);
 	RT_ASSERT_ARGC(1);
 	RT_ASSERT_CLASS(JSVAL_TO_OBJECT(argv[0]),&world_class);
@@ -76,6 +111,10 @@ JSClass *cl = JS_GetClass(o);
 	JS_SetPrivate(cx, obj, bodyID);
 	JS_SetReservedSlot(cx, obj, SLOT_PARENT, OBJECT_TO_JSVAL(worldObject)); //
 //	ode::dBodySetData(bodyID,worldObject);
+
+	SetNamedPrivate(cx, obj, NATIVE_READ_TRANSFORMATION_MATRIX, (FPReadTransformationMatrix)BodyReadTransformationMatrix); // [TBD] check return status
+	SetNamedPrivate(cx, obj, NATIVE_TRANSFORMATION_MATRIX_PRIVATE, bodyID); // [TBD] check return status
+
 	return JS_TRUE;
 }
 
@@ -162,7 +201,7 @@ JSBool body_getter_vector(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 			dim = 3;
 			break;
 	}
-	VectorToArray(cx, dim, vector, vp);
+	FloatVectorToArray(cx, dim, vector, vp);
 	return JS_TRUE;
 }
 
@@ -174,27 +213,27 @@ JSBool body_setter_vector(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 	ode::dVector3 vector;
 	switch(JSVAL_TO_INT(id)) {
 		case position:
-			ArrayToVector(cx, 3, vp, vector);
+			FloatArrayToVector(cx, 3, vp, vector);
 			ode::dBodySetPosition( bodyID, vector[0], vector[1], vector[2] );
 			break;
 		case quaternion:
-			ArrayToVector(cx, 4, vp, vector);
+			FloatArrayToVector(cx, 4, vp, vector);
 			ode::dBodySetQuaternion( bodyID, vector );
 			break;
 		case linearVel:
-			ArrayToVector(cx, 3, vp, vector);
+			FloatArrayToVector(cx, 3, vp, vector);
 			ode::dBodySetLinearVel( bodyID, vector[0], vector[1], vector[2] );
 			break;
 		case angularVel:
-			ArrayToVector(cx, 3, vp, vector);
+			FloatArrayToVector(cx, 3, vp, vector);
 			ode::dBodySetAngularVel( bodyID, vector[0], vector[1], vector[2] );
 			break;
 		case force:
-			ArrayToVector(cx, 3, vp, vector);
+			FloatArrayToVector(cx, 3, vp, vector);
 			ode::dBodySetForce( bodyID, vector[0], vector[1], vector[2] );
 			break;
 		case torque:
-			ArrayToVector(cx, 3, vp, vector);
+			FloatArrayToVector(cx, 3, vp, vector);
 			ode::dBodySetTorque( bodyID, vector[0], vector[1], vector[2] );
 			break;
 	}

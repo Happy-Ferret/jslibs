@@ -4,7 +4,7 @@
 #include "body.h"
 #include "world.h"
 
-#include "tools.h"
+#include "../smtools/smtools.h"
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 JSBool joint_get_body(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
@@ -124,7 +124,7 @@ JSBool joint_get_vector(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 			ode::dJointGetSliderAxis(jointID,vector);
 			break;
 	}
-	VectorToArray(cx, 3, vector, vp);
+	FloatVectorToArray(cx, 3, vector, vp);
 	return JS_TRUE;
 }
 
@@ -134,7 +134,7 @@ JSBool joint_set_vector(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 	ode::dJointID jointID = (ode::dJointID)JS_GetPrivate( cx, obj );
 	RT_ASSERT( jointID != NULL, RT_ERROR_NOT_INITIALIZED );
 	ode::dVector3 vector;
-	ArrayToVector(cx, 3, vp, vector);
+	FloatArrayToVector(cx, 3, vp, vector);
 	switch(JSVAL_TO_INT(id)) {
 		case ballAnchor:
 			ode::dJointSetBallAnchor( jointID, vector[0], vector[1], vector[2] );
