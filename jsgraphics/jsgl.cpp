@@ -198,11 +198,11 @@ DEFINE_FUNCTION( LoadMatrix ) {
 
 	Matrix44 m;
 	float *fa = &(m.m[0][0]);
-	void *fp;
-	GetNamedPrivate(cx, argObj, NATIVE_READ_TRANSFORMATION_MATRIX, &fp);
+	FPReadTransformationMatrix *pReadMatrix;
+	GetNamedPrivate(cx, argObj, NATIVE_READ_TRANSFORMATION_MATRIX, (void**)&pReadMatrix);
 
 	
-	((FPReadTransformationMatrix)fp)(mtp, fa); // [TBD] avoid copy
+	(*pReadMatrix)(mtp, fa); // [TBD] avoid copy
 
 	glLoadMatrixf(fa);
 	return JS_TRUE;

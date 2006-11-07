@@ -15,6 +15,17 @@ typedef union {
 } Vector3;
 
 
+inline void Vector3Free( Vector3 *m ) {
+
+	return _aligned_free(m);
+}
+
+inline Vector3 *Vector3Alloc() {
+
+	return (Vector3*)_aligned_malloc(sizeof(Vector3),16);
+}
+
+
 inline void Vector3Set( Vector3 *v, const float _x, const float _y, const float _z ) {
 
     v->m128 = _mm_set_ps(0.0f, _z, _y, _x);

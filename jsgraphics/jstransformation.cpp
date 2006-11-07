@@ -6,9 +6,7 @@
 #include "vector3.h"
 #include "matrix44.h"
 
-// __declspec(align(2))
-
-int ReadTransformationMatrix(void *pv, float *m) {
+int ReadMatrix(void *pv, float *m) {
 
 	float* src = &(((Matrix44*)pv)->m[0][0]);
 	if (src == NULL)
@@ -17,11 +15,15 @@ int ReadTransformationMatrix(void *pv, float *m) {
 	return true;
 }
 
+__declspec(align(2)) static FPReadTransformationMatrix pReadMatrix = ReadMatrix; // pReadMatrix MUST be 2Bytes aligned to be stored in PRIVATE_TO_JSVAL
 
 BEGIN_CLASS
 
 DEFINE_FINALIZE() {
 
+	// Doc: For example, if you use malloc, the result depends on the operand size. If arg >= 8, 
+	//      alignment will be 8 byte aligned. If arg < 8, alignment will be the first power of 2 less than arg. 
+	//      For example, if you use malloc(7), alignment is 4 bytes.
 	Matrix44 *m = (Matrix44*)JS_GetPrivate(cx, obj);
 	if ( m != NULL ) {
 
@@ -38,11 +40,11 @@ DEFINE_FUNCTION( ClassConstruct ) {
 	
 	JS_SetPrivate(cx, obj, m);
 
-	FPReadTransformationMatrix fp = ReadTransformationMatrix; // this lina allows the compiler to check if the function prototype is good
+//	FPReadTransformationMatrix fp = pReadMatrix; // this lina allows the compiler to check if the function prototype is good
 
 //	void *x = JSVAL_TO_PRIVATE( PRIVATE_TO_JSVAL( fp ) );
 
-	if ( SetNamedPrivate(cx, obj, NATIVE_READ_TRANSFORMATION_MATRIX, fp) == JS_FALSE )
+	if ( SetNamedPrivate(cx, obj, NATIVE_READ_TRANSFORMATION_MATRIX, pReadMatrix) == JS_FALSE )
 		return JS_FALSE;
 	if ( SetNamedPrivate(cx, obj, NATIVE_TRANSFORMATION_MATRIX_PRIVATE, m)  == JS_FALSE )
 		return JS_FALSE;
@@ -117,9 +119,9 @@ DEFINE_FUNCTION( Mult ) {
 	if ( mtp != NULL ) {
 
 		Matrix44 mx;
-		FPReadTransformationMatrix fp;
+		FPReadTransformationMatrix *fp;
 		GetNamedPrivate(cx, argObj, NATIVE_READ_TRANSFORMATION_MATRIX, (void**)&fp);
-		fp(mtp, (float*)mx.m); // [TBD] avoid copy
+		(*fp)(mtp, (float*)mx.m); // [TBD] avoid copy
 		Matrix44Mult(m, &mx); // <- mult
 		return JS_TRUE;
 	}
