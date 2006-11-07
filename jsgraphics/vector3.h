@@ -1,15 +1,17 @@
+#pragma once
 /*
 source: http://nebuladevice.svn.sourceforge.net/viewvc/nebuladevice/trunk/nebula2/code/nebula2/inc/mathlib/_vector3_sse.h?view=markup
 */
-
 #include <xmmintrin.h>
+
+static const int X = 0;
+static const int Y = 1;
+static const int Z = 2;
+static const int W = 3;
 
 typedef union {
     __m128 m128;
-    struct
-    {
-        float x, y, z, pad;
-    };
+    struct { float x, y, z, pad; };
 } Vector3;
 
 
@@ -21,11 +23,6 @@ inline void Vector3Set( Vector3 *v, const float _x, const float _y, const float 
 
 inline float Vector3Len( Vector3 *v ) {
 
-    static const int X = 0;
-    static const int Y = 1;
-    static const int Z = 2;
-    static const int W = 3;
-
     __m128 a = _mm_mul_ps(v->m128, v->m128);
 
     // horizontal add
@@ -36,11 +33,6 @@ inline float Vector3Len( Vector3 *v ) {
 
 
 inline void Vector3Normalize( Vector3 *v ) {
-
-    static const int X = 0;
-    static const int Y = 1;
-    static const int Z = 2;
-    static const int W = 3;
 
 	__m128 m128 = v->m128;
     __m128 a = _mm_mul_ps(m128, m128);
@@ -55,21 +47,25 @@ inline void Vector3Normalize( Vector3 *v ) {
     v->m128 = _mm_mul_ps(m128, oneDivLen);
 }
 
+
 inline void Vector3Add( Vector3 *v, Vector3 *v1 ) {
 
 	v->m128 = _mm_add_ps(v->m128, v1->m128);
 }
 
-inline void Vector3Sub( Vector3 *v, Vector3 *v1 ) {
+
+inline void Vector3Sub( Vector3 *v, const Vector3 *v1 ) {
 
 	v->m128 = _mm_sub_ps(v->m128, v1->m128);
 }
+
 
 inline void Vector3Mult( Vector3 *v, float s ) {
 
 	__m128 packed = _mm_set1_ps(s);
     v->m128 = _mm_mul_ps(v->m128, packed);
 }
+
 
 inline float Vector3Dot(const Vector3 *v0, const Vector3 *v1) { // Dot Product
 
@@ -78,13 +74,9 @@ inline float Vector3Dot(const Vector3 *v0, const Vector3 *v1) { // Dot Product
 	return b.m128_f32[0];
 }
 
+
 inline void Vector3Cross(Vector3 *v, const Vector3 *v0, const Vector3 *v1) { // Cross Product
 
-	static const int X = 0;
-	static const int Y = 1;
-	static const int Z = 2;
-	static const int W = 3;
-	
 	__m128 a = _mm_shuffle_ps(v0->m128, v0->m128, _MM_SHUFFLE(W, X, Z, Y));
 	__m128 b = _mm_shuffle_ps(v1->m128, v1->m128, _MM_SHUFFLE(W, Y, X, Z));
 	__m128 c = _mm_shuffle_ps(v0->m128, v0->m128, _MM_SHUFFLE(W, Y, X, Z));

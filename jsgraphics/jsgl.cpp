@@ -1,12 +1,17 @@
 #include "stdafx.h"
+//#include "jsobj.h"
+
 #include "jsgl.h"
 #include "jswindow.h"
 #include "../smtools/object.h"
+#include "../tools3d/nativeTransform.h"
 
 #include "../jsimage/jsimage.h"
 
 #define _USE_MATH_DEFINES
 #include "math.h"
+
+#include "matrix44.h"
 
 #include "gl/gl.h"
 #include "gl/glu.h"
@@ -37,7 +42,7 @@ void SetupBitmapDC() {
 */
 
 
-static JSBool ClassConstruct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+DEFINE_FUNCTION( ClassConstruct ) {
 
 	RT_ASSERT( JS_IsConstructing(cx) && JS_GetClass(obj) == thisClass, RT_ERROR_INVALID_CLASS );
 	RT_ASSERT_ARGC(1);
@@ -179,6 +184,30 @@ DEFINE_FUNCTION( Clear ) {
 	return JS_TRUE;
 }
 
+DEFINE_FUNCTION( LoadMatrix ) {
+
+	RT_ASSERT_ARGC(1);
+	RT_ASSERT( JSVAL_IS_OBJECT(argv[0]), "Argument must be an object." );
+	JSObject *argObj;// = JSVAL_TO_OBJECT(argv[0]);
+
+	JS_ValueToObject(cx, argv[0], &argObj);
+
+	void *mtp;
+	GetNamedPrivate(cx, argObj, NATIVE_TRANSFORMATION_MATRIX_PRIVATE, &mtp);
+	RT_ASSERT( mtp != NULL, "Unable to read a matrix." );
+
+	Matrix44 m;
+	float *fa = &(m.m[0][0]);
+	void *fp;
+	GetNamedPrivate(cx, argObj, NATIVE_READ_TRANSFORMATION_MATRIX, &fp);
+
+	
+	((FPReadTransformationMatrix)fp)(mtp, fa); // [TBD] avoid copy
+
+	glLoadMatrixf(fa);
+	return JS_TRUE;
+}
+
 
 DEFINE_FUNCTION( Rotate ) {
 	
@@ -236,7 +265,7 @@ DEFINE_FUNCTION( Quad ) {
 
 	RT_ASSERT_ARGC(4);
 
-	jsdouble x0,y0,z0, x1,y1,z1;
+	jsdouble x0,y0, x1,y1;
 	JS_ValueToNumber(cx, argv[0], &x0);
 	JS_ValueToNumber(cx, argv[1], &y0);
 	JS_ValueToNumber(cx, argv[2], &x1);
@@ -355,6 +384,7 @@ BEGIN_FUNCTION_MAP
 	FUNCTION(Axis)
 	FUNCTION(Quad)
 	FUNCTION(Line)
+	FUNCTION(LoadMatrix)
 	FUNCTION(Rotate)
 	FUNCTION(Translate)
 	FUNCTION(Init)

@@ -1,24 +1,72 @@
+#pragma once
 /*
-source: http://nebuladevice.svn.sourceforge.net/viewvc/nebuladevice/trunk/nebula2/code/nebula2/inc/mathlib/_matrix44_sse.h?view=markup
-*/
+	source:
+		http://nebuladevice.svn.sourceforge.net/viewvc/nebuladevice/trunk/nebula2/code/nebula2/inc/mathlib/_matrix44_sse.h?view=markup
 
-#include "vector3.h"
+	SSE Intro:
+		http://www.codeproject.com/cpp/sseintro.asp
+*/
 
 #include <xmmintrin.h>
 
+#include <stdlib.h>
+#include <math.h>
+
+#include "vector3.h"
+
+
+#define M11 m[0][0]
+#define M12 m[0][1]
+#define M13 m[0][2]
+#define M14 m[0][3]
+#define M21 m[1][0]
+#define M22 m[1][1]
+#define M23 m[1][2]
+#define M24 m[1][3]
+#define M31 m[2][0]
+#define M32 m[2][1]
+#define M33 m[2][2]
+#define M34 m[2][3]
+#define M41 m[3][0]
+#define M42 m[3][1]
+#define M43 m[3][2]
+#define M44 m[3][3]
+
 typedef union {
-    struct
-    {
+    struct {
         __m128 m1;
         __m128 m2;
         __m128 m3;
         __m128 m4;
     };
-    struct
-    {
+    struct {
         float m[4][4];
     };
 } Matrix44;
+
+static float Matrix44IdentityValue[] = {
+
+    1.0f, 0.0f, 0.0f, 0.0f,
+    0.0f, 1.0f, 0.0f, 0.0f,
+    0.0f, 0.0f, 1.0f, 0.0f,
+    0.0f, 0.0f, 0.0f, 1.0f 
+};
+
+inline void Matrix44Free( Matrix44 *m ) {
+
+	return _aligned_free(m);
+}
+
+inline Matrix44 *Matrix44Alloc() {
+
+	return (Matrix44*)_aligned_malloc(sizeof(Matrix44),16);
+}
+
+inline void Matrix44Identity( Matrix44 *m ) {
+
+	memcpy(&(m->m[0][0]), Matrix44IdentityValue, sizeof(Matrix44IdentityValue));
+}
+
 
 inline void Matrix44Mult( Matrix44 *m, const Matrix44 *mx ) {
 
@@ -146,4 +194,83 @@ inline void Matrix44Invert( Matrix44 *m ) {
     minor3 = _mm_mul_ps(det, minor3);
     _mm_storel_pi((__m64*)(src+12), minor3);
     _mm_storeh_pi((__m64*)(src+14), minor3);
+}
+
+
+inline void Matrix44Rotate( Matrix44 *m, const Vector3 *axis, float a ) {
+
+	Vector3 v = *axis;
+	Vector3Normalize(&v);
+	float sa = (float) sinf(a);
+	float ca = (float) cosf(a);
+	Matrix44 rotM;
+	Matrix44Identity(&rotM);
+	rotM.M11 = ca + (1.0f - ca) * v.x * v.x;
+	rotM.M12 = (1.0f - ca) * v.x * v.y - sa * v.z;
+	rotM.M13 = (1.0f - ca) * v.z * v.x + sa * v.y;
+	rotM.M21 = (1.0f - ca) * v.x * v.y + sa * v.z;
+	rotM.M22 = ca + (1.0f - ca) * v.y * v.y;
+	rotM.M23 = (1.0f - ca) * v.y * v.z - sa * v.x;
+	rotM.M31 = (1.0f - ca) * v.z * v.x - sa * v.y;
+	rotM.M32 = (1.0f - ca) * v.y * v.z + sa * v.x;
+	rotM.M33 = ca + (1.0f - ca) * v.z * v.z;
+	Matrix44Mult(m, &rotM);
+}
+
+
+inline void Matrix44Translate( Matrix44 *m, const Vector3 *t ) {
+	 
+	m->m4 = _mm_add_ps(m->m4, t->m128);
+}
+
+
+inline void Matrix44Scale( Matrix44 *m, const Vector3 *s ) {
+
+	// _vector3_sse have the w element set to zero, we need it at 1...
+	__m128 scale = _mm_add_ps(_mm_set_ps(1.0f, 0.0f, 0.0f, 0.0f), s->m128);
+	m->m1 = _mm_mul_ps(m->m1, scale);
+	m->m2 = _mm_mul_ps(m->m2, scale);
+	m->m3 = _mm_mul_ps(m->m3, scale);
+	m->m4 = _mm_mul_ps(m->m4, scale);
+}
+
+
+inline void Matrix44LookAt( Matrix44 *m, const Vector3 *to, const Vector3 *up ) {
+
+	Vector3 z;
+	z.x = m->M41;
+	z.y = m->M42;
+	z.z = m->M43;
+	Vector3Sub(&z, to); // z = z - to
+	Vector3Normalize(&z); // z = |z|
+	Vector3 y = *up;
+	Vector3 x;
+	Vector3Cross(&x, &y, &z); // x = y cross z
+	Vector3Cross(&y, &z, &x); // y = z cross x
+	Vector3Normalize(&x); // x =|x|
+	Vector3Normalize(&y); // y = |y|
+	m->m1 = x.m128;
+	m->m2 = y.m128;
+	m->m3 = z.m128;
+}
+
+
+inline void Matrix44Billboard( Matrix44 *m, const Vector3 *to, const Vector3 *up ) {
+
+	Vector3 z;
+	z.x = m->M41;
+	z.y = m->M42;
+	z.z = m->M43;
+	Vector3Sub(&z, to); // z = z - to
+	Vector3Normalize(&z); // z = |z|
+	Vector3 y = *up;
+	Vector3 x;
+	Vector3Cross(&x, &y, &z); // x = y cross z
+	Vector3Cross(&z, &x, &y); // z = x cross y
+	Vector3Normalize(&x); // x = |x|
+	Vector3Normalize(&y); // y = |y|
+	Vector3Normalize(&z); // z = |z|
+	m->m1 = x.m128;
+	m->m2 = y.m128;
+	m->m3 = z.m128;
 }

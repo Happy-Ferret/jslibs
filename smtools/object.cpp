@@ -27,6 +27,9 @@ JSBool GetNamedPrivate( JSContext *cx, JSObject *obj, const char *name, void **p
 
 JSBool SetNamedPrivate( JSContext *cx, JSObject *obj, const char *name, const void *pv ) {
 
+//	if ( !INT_FITS_IN_JSVAL((int)pv) )
+//		return JS_FALSE;
+
 	if ( JS_DefineProperty(cx, obj, name, PRIVATE_TO_JSVAL(pv), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ) == JS_FALSE )
 		return JS_FALSE;
 	return JS_TRUE;
