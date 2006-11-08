@@ -13,7 +13,7 @@ cd .\src
 rem BUILD_OPT=1 produce a Release version, and ommiting this will produce a Debug version
 rem XCFLAGS=/MT allows to produce a .exe with staticaly linked msvcrt ( then msvcr80.dll is not needed )
 
-make -f Makefile.ref clean all BUILD_OPT=1 XCFLAGS=/MT
+make -f Makefile.ref clean all BUILD_OPT=1 XCFLAGS="/MT /arch:SSE"
 
 rem cat: ../../dist/WINNT5.1_OPT.OBJ/nspr/Version
 
