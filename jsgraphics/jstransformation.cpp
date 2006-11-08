@@ -9,6 +9,7 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 
+
 int ReadMatrix(void *pv, float *m) {
 
 	float* src = ((Matrix44*)pv)->raw;
@@ -51,6 +52,36 @@ DEFINE_FUNCTION( ClassConstruct ) {
 	return JS_TRUE;
 }
 
+DEFINE_FUNCTION( Load ) {
+
+	// [TBD] check if arg is Transformation
+
+
+	RT_ASSERT_ARGC(1)
+
+	Matrix44 *m = (Matrix44*)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE(m);
+	RT_ASSERT( JSVAL_IS_OBJECT(argv[0]), "Argument must be an object." );
+
+	JSObject *argObj = JSVAL_TO_OBJECT(argv[0]);
+
+	void *mtp;
+	GetNamedPrivate(cx, argObj, NATIVE_TRANSFORMATION_MATRIX_PRIVATE, &mtp);
+	if ( mtp != NULL ) {
+
+		Matrix44 mx;
+
+		ReadMatrix44 *ReadMatrix;
+		GetNamedPrivate(cx, argObj, NATIVE_READ_TRANSFORMATION_MATRIX, (void**)&ReadMatrix);
+		(*ReadMatrix)(mtp, (float*)mx.m); // [TBD] avoid copy
+		Matrix44Multiply(m, &mx); // <- mult
+
+		return JS_TRUE;
+	}
+
+}
+
+
 DEFINE_FUNCTION( Translate ) {
 
 	RT_ASSERT_ARGC(3); // x, y, z
@@ -62,9 +93,13 @@ DEFINE_FUNCTION( Translate ) {
 	JS_ValueToNumber(cx, argv[2], &z);
 	Vector3 vector;
 	Vector3Set(&vector, x,y,z);
-	Matrix44Translate(m, &vector);
+	Matrix44 t;
+	Matrix44Identity(&t);
+	Matrix44Translation(&t, &vector);
+	Matrix44Multiply(m, &t);
 	return JS_TRUE;
 }
+
 
 DEFINE_FUNCTION( Rotate ) {
 
@@ -78,7 +113,10 @@ DEFINE_FUNCTION( Rotate ) {
 	JS_ValueToNumber(cx, argv[3], &z);
 	Vector3 axis;
 	Vector3Set(&axis, x,y,z);
-	Matrix44Rotate(m, &axis, angle*M_PI/360.0f);
+	Matrix44 r;
+	Matrix44Identity(&r);
+	Matrix44Rotation(&r, &axis, -angle*M_PI/360.0f);
+	Matrix44Multiply(m, &r);
 	return JS_TRUE;
 }
 
@@ -91,7 +129,9 @@ DEFINE_FUNCTION( Invert ) {
 	return JS_TRUE;
 }
 
-DEFINE_FUNCTION( Mult ) {
+
+
+DEFINE_FUNCTION( Multiply ) {
 	
 	RT_ASSERT_ARGC(1)
 
@@ -104,13 +144,13 @@ DEFINE_FUNCTION( Mult ) {
 
 		Matrix44 *mx = (Matrix44*)JS_GetPrivate(cx, argObj);
 		RT_ASSERT_RESOURCE(mx);
-		Matrix44Mult(m,mx); // <- mult
+		Matrix44Multiply(m,mx); // <- mult
 		return JS_TRUE;
 	}
 
 	// if it is not an jsransformation object, try if object provide an interface to read matrix
 	void *mtp;
-	GetNamedPrivate(cx, obj, NATIVE_TRANSFORMATION_MATRIX_PRIVATE, &mtp);
+	GetNamedPrivate(cx, argObj, NATIVE_TRANSFORMATION_MATRIX_PRIVATE, &mtp);
 	if ( mtp != NULL ) {
 
 		Matrix44 mx;
@@ -118,8 +158,7 @@ DEFINE_FUNCTION( Mult ) {
 		ReadMatrix44 *ReadMatrix;
 		GetNamedPrivate(cx, argObj, NATIVE_READ_TRANSFORMATION_MATRIX, (void**)&ReadMatrix);
 		(*ReadMatrix)(mtp, (float*)mx.m); // [TBD] avoid copy
-		Matrix44Mult(m, &mx); // <- mult
-
+		Matrix44Multiply(m, &mx); // <- mult
 
 		return JS_TRUE;
 	}
@@ -132,8 +171,10 @@ DEFINE_FUNCTION( Mult ) {
 
 
 BEGIN_FUNCTION_MAP
+	FUNCTION( Load )
 	FUNCTION( Translate )
 	FUNCTION( Rotate )
+	FUNCTION( Multiply )
 END_MAP
 
 BEGIN_PROPERTY_MAP

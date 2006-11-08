@@ -70,18 +70,17 @@ inline void Matrix44Identity( Matrix44 *m ) {
 	memcpy(m->raw, Matrix44IdentityValue, sizeof(Matrix44IdentityValue));
 }
 
+inline void Matrix44Multiply( Matrix44 *m, const Matrix44 *mx ) {
 
-inline void Matrix44Mult( Matrix44 *m, const Matrix44 *mx ) {
+	__m128 sm1 = mx->m1;
+	__m128 sm2 = mx->m2;
+	__m128 sm3 = mx->m3;
+	__m128 sm4 = mx->m4;
 
-	__m128 sm1 = m->m1;
-	__m128 sm2 = m->m2;
-	__m128 sm3 = m->m3;
-	__m128 sm4 = m->m4;
-
-	__m128 mx1 = mx->m1;
-	__m128 mx2 = mx->m2;
-	__m128 mx3 = mx->m3;
-	__m128 mx4 = mx->m4;
+	__m128 mx1 = m->m1;
+	__m128 mx2 = m->m2;
+	__m128 mx3 = m->m3;
+	__m128 mx4 = m->m4;
 
 	m->m1 = _mm_add_ps(_mm_add_ps(_mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(sm1, sm1, _MM_SHUFFLE(0,0,0,0)), mx1), _mm_mul_ps(_mm_shuffle_ps(sm1, sm1, _MM_SHUFFLE(1,1,1,1)), mx2)), _mm_mul_ps(_mm_shuffle_ps(sm1, sm1, _MM_SHUFFLE(2,2,2,2)), mx3)), _mm_mul_ps(_mm_shuffle_ps(sm1, sm1, _MM_SHUFFLE(3,3,3,3)), mx4));
 	m->m2 = _mm_add_ps(_mm_add_ps(_mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(sm2, sm2, _MM_SHUFFLE(0,0,0,0)), mx1), _mm_mul_ps(_mm_shuffle_ps(sm2, sm2, _MM_SHUFFLE(1,1,1,1)), mx2)), _mm_mul_ps(_mm_shuffle_ps(sm2, sm2, _MM_SHUFFLE(2,2,2,2)), mx3)), _mm_mul_ps(_mm_shuffle_ps(sm2, sm2, _MM_SHUFFLE(3,3,3,3)), mx4));
@@ -89,7 +88,7 @@ inline void Matrix44Mult( Matrix44 *m, const Matrix44 *mx ) {
 	m->m4 = _mm_add_ps(_mm_add_ps(_mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(sm4, sm4, _MM_SHUFFLE(0,0,0,0)), mx1), _mm_mul_ps(_mm_shuffle_ps(sm4, sm4, _MM_SHUFFLE(1,1,1,1)), mx2)), _mm_mul_ps(_mm_shuffle_ps(sm4, sm4, _MM_SHUFFLE(2,2,2,2)), mx3)), _mm_mul_ps(_mm_shuffle_ps(sm4, sm4, _MM_SHUFFLE(3,3,3,3)), mx4));
 }
 
-inline void Matrix44MultSlow( Matrix44 *m, const Matrix44 *mx ) {
+inline void Matrix44MultiplyWithoutSSE( Matrix44 *m, const Matrix44 *mx ) {
 
 	float _tmp[16];
 
@@ -118,27 +117,26 @@ inline void Matrix44MultSlow( Matrix44 *m, const Matrix44 *mx ) {
 
 
 
-inline void Matrix44Rotate( Matrix44 *m, const Vector3 *axis, float radAngle ) {
-
+inline void Matrix44Rotation( Matrix44 *m, const Vector3 *axis, float radAngle ) {
 
 	Vector3 v = *axis;
 	// Opt: check if already normalized
 	Vector3Normalize(&v);
 	float sa = (float) sinf(radAngle);
 	float ca = (float) cosf(radAngle);
-	Matrix44 rot;
-	Matrix44Identity(&rot);
+//	Matrix44 rot;
+//	Matrix44Identity(&rot);
 //	rot.m1 = _mm_set1_ps( 
-	rot.M11 = ca + (1.0f - ca) * v.x * v.x;
-	rot.M12 = (1.0f - ca) * v.x * v.y - sa * v.z;
-	rot.M13 = (1.0f - ca) * v.z * v.x + sa * v.y;
-	rot.M21 = (1.0f - ca) * v.x * v.y + sa * v.z;
-	rot.M22 = ca + (1.0f - ca) * v.y * v.y;
-	rot.M23 = (1.0f - ca) * v.y * v.z - sa * v.x;
-	rot.M31 = (1.0f - ca) * v.z * v.x - sa * v.y;
-	rot.M32 = (1.0f - ca) * v.y * v.z + sa * v.x;
-	rot.M33 = ca + (1.0f - ca) * v.z * v.z;
-	Matrix44Mult(m, &rot);
+	m->M11 = ca + (1.0f - ca) * v.x * v.x;
+	m->M12 = (1.0f - ca) * v.x * v.y - sa * v.z;
+	m->M13 = (1.0f - ca) * v.z * v.x + sa * v.y;
+	m->M21 = (1.0f - ca) * v.x * v.y + sa * v.z;
+	m->M22 = ca + (1.0f - ca) * v.y * v.y;
+	m->M23 = (1.0f - ca) * v.y * v.z - sa * v.x;
+	m->M31 = (1.0f - ca) * v.z * v.x - sa * v.y;
+	m->M32 = (1.0f - ca) * v.y * v.z + sa * v.x;
+	m->M33 = ca + (1.0f - ca) * v.z * v.z;
+//	Matrix44Mult(m, &rot);
 
 
 /*
@@ -151,9 +149,9 @@ inline void Matrix44Rotate( Matrix44 *m, const Vector3 *axis, float radAngle ) {
 	float l = ax*ax + ay*ay + az*az;
 	if (l > 0.f) {
 
-		angle /= 20;
-		w = cos(angle);
-		l = sin(angle) / sqrtf(l);
+		radAngle /= 2;
+		w = cos(radAngle);
+		l = sin(radAngle) / sqrtf(l);
 		x = ax*l;
 		y = ay*l;
 		z = az*l;
@@ -177,27 +175,27 @@ inline void Matrix44Rotate( Matrix44 *m, const Vector3 *axis, float radAngle ) {
 	float zz = z * z;
 	float zw = z * w;
 
-	Matrix44 rot;
-	Matrix44Identity(&rot);
+//	Matrix44 rot;
+//	Matrix44Identity(&rot);
 
-	rot.raw[0]  = 1 - 2 * ( yy + zz );
-	rot.raw[1]  =     2 * ( xy - zw );
-	rot.raw[2]  =     2 * ( xz + yw );
-	rot.raw[4]  =     2 * ( xy + zw );
-	rot.raw[5]  = 1 - 2 * ( xx + zz );
-	rot.raw[6]  =     2 * ( yz - xw );
-	rot.raw[8]  =     2 * ( xz - yw );
-	rot.raw[9]  =     2 * ( yz + xw );
-	rot.raw[10] = 1 - 2 * ( xx + yy );
-
-	Matrix44Mult(m, &rot);
+	m->raw[0]  = 1 - 2 * ( yy + zz );
+	m->raw[1]  =     2 * ( xy - zw );
+	m->raw[2]  =     2 * ( xz + yw );
+	m->raw[4]  =     2 * ( xy + zw );
+	m->raw[5]  = 1 - 2 * ( xx + zz );
+	m->raw[6]  =     2 * ( yz - xw );
+	m->raw[8]  =     2 * ( xz - yw );
+	m->raw[9]  =     2 * ( yz + xw );
+	m->raw[10] = 1 - 2 * ( xx + yy );
+//	Matrix44Multiply(m, &rot);
 */
 }
 
 
-inline void Matrix44Translate( Matrix44 *m, const Vector3 *t ) {
+inline void Matrix44Translation( Matrix44 *m, const Vector3 *t ) {
 	 
-	m->m4 = _mm_add_ps(m->m4, t->m128);
+	m->m4 = t->m128;
+	//m->m4 = _mm_add_ps(m->m4, t->m128);
 }
 
 

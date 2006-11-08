@@ -13,7 +13,7 @@ JSObject *body;
 #define SLOT_PARENT 0
 
 
-int BodyReadTransformationMatrix(void *pv, float *m) {
+int ReadMatrix(void *pv, float *m) {
 
 	ode::dBodyID id = (ode::dBodyID)pv;
 
@@ -44,6 +44,8 @@ int BodyReadTransformationMatrix(void *pv, float *m) {
 
 	return true;
 }
+
+static ReadMatrix44 pReadMatrix = ReadMatrix;
 
 
 
@@ -112,8 +114,7 @@ JSClass *cl = JS_GetClass(o);
 	JS_SetReservedSlot(cx, obj, SLOT_PARENT, OBJECT_TO_JSVAL(worldObject)); //
 //	ode::dBodySetData(bodyID,worldObject);
 
-	FPReadTransformationMatrix fp = BodyReadTransformationMatrix; // this lina allows the compiler to check if the function prototype is good
-	SetNamedPrivate(cx, obj, NATIVE_READ_TRANSFORMATION_MATRIX, fp); // [TBD] check return status
+	SetNamedPrivate(cx, obj, NATIVE_READ_TRANSFORMATION_MATRIX, &pReadMatrix); // [TBD] check return status
 	SetNamedPrivate(cx, obj, NATIVE_TRANSFORMATION_MATRIX_PRIVATE, bodyID); // [TBD] check return status
 
 	return JS_TRUE;

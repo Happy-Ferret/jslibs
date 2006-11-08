@@ -1,6 +1,7 @@
 LoadModule('jsstd');
 LoadModule('jsnspr');
 LoadModule('jsimage');
+LoadModule('jsode');
 LoadModule('jsgraphics');
 var glc = Exec('OpenGL.js');
 var vk = Exec('WindowsKeys.js');
@@ -9,10 +10,28 @@ Exec('winTools.js');
 
 var image=0;
 
+
+var world = new World;
+world.gravity = [0,0,-9.81];
+
+var body1 = new Body(world);
+var body2 = new Body(world);
+var joint = new JointHinge(world);
+
+joint.Attach(body1,body2);
+joint.anchor = [0,1,0];
+joint.axis = [1,0,0];
+
+body1.linearVel = [0,0,19];
+//body1.angularVel = [1,1,0];
+
+
+
+
 var w = new Window();
 w.title = "Test";
-//w.rect = [500,500,1000,1000];
-w.rect = [500,500,600,600];
+w.rect = [100,100,500,500];
+//w.rect = [500,500,600,600];
 var gl = new Gl(w);
 
 var mouse = new MouseMotion(w);
@@ -45,36 +64,56 @@ mouse.delta = function( dx,dy, b1,b2,b3 ) {
 
 function Render() {
 
+//	world.Step(0.1,true);
+
+	var t0 = IntervalNow();
+
 	//Print('Rendering image '+image++, '\n');
 
 	gl.Clear( glc.COLOR_BUFFER_BIT | glc.DEPTH_BUFFER_BIT );
-
+/*
 	gl.Translate(0,0, -tz/50-5);
 	gl.Rotate( ty/2, 1,0,0 );
-//	gl.Rotate( tx/2, 0,1,0 );
-//	gl.Rotate( tw*10, 0,0,1 );
+	gl.Rotate( tx/2, 0,1,0 );
+	gl.Rotate( tw*10, 0,0,1 );
+*/
 
-	var t = new Transformation();
-	
-	t.Translate(0,0, -tz/50-5);
-	t.Rotate( ty/2, 1,0,0 );
-//	t.Rotate( tx/2, 0,1,0 );
-//	t.Rotate( tw*10, 0,0,1 );
-	gl.LoadMatrix(t);
+
+	var camera = new Transformation();
+	camera.Translate(0,0, -tz/50-5);
+	camera.Rotate( ty/2, 1,0,0 );
+	camera.Rotate( tx/2, 0,1,0 );
+	camera.Rotate( tw*10, 0,0,1 );
+
+	gl.LoadMatrix(camera);
 
 	gl.Color(1,1,1);
+
+	for ( var x = -100; x<100; x++ )
+		for ( var y = -100; y<10; y++ ) {
+			gl.Quad(x,y,x+1,y+1);
+		}
 	
-	for ( var x = -100; x<10; x++ )
-		for ( var y = -10; y<10; y++ )
-			gl.Quad(x,y,x+1,y+1-0.001);
-	
+	var m = new Transformation();
+	m.Load( camera );
+	m.Multiply( body1 );
+	gl.LoadMatrix(m);
+	gl.Cube();
+
+	var m = new Transformation();
+	m.Load( camera );
+	m.Multiply( body2 );
+	gl.LoadMatrix(m);
+	gl.Cube();
+
+
 	gl.Axis();
-	gl.Color( 0,5, 1, 1 );
-//	
-	var t0 = IntervalNow();
-	CollectGarbage();
+
+//	CollectGarbage();
+
+	Print( 'Rendering time: '+(IntervalNow()-t0)+'ms', '\n');
 	gl.SwapBuffers();
-	Print( 'SwapBuffers time: '+(IntervalNow()-t0)+'ms', '\n');
+	world.Step(0.05,true);
 }
 
 w.onidle = Render;

@@ -132,14 +132,27 @@ DEFINE_FUNCTION( Viewport ) {
 
 DEFINE_FUNCTION( Init ) {
 
-	glEnable( GL_TEXTURE_2D );
+	glEnable(GL_TEXTURE_2D);
 	glShadeModel(GL_SMOOTH);
+
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LEQUAL); // GL_LESS
+	glClearDepth(1.0f);
+//	glDepthRange( 0.01, 1000 );
+
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
 	glFrontFace(GL_CCW);
+
+//	glEnable(GL_LIGHTING);
+//	glEnable(GL_LIGHT0);
+
+
 	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST); // Really Nice Perspective Calculations
+
+	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+
+//    glBlendFunc(GL_SRC_ALPHA,GL_ONE); 
 	return JS_TRUE;
 }
 
@@ -174,8 +187,6 @@ DEFINE_FUNCTION( Clear ) {
 	int32 bitfield;
 	JS_ValueToInt32(cx, argv[0], &bitfield);
 	
-	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-	glClearDepth(1.0f);
 	glClear(bitfield); // GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT
 
 	glMatrixMode(GL_MODELVIEW);
@@ -211,11 +222,9 @@ DEFINE_FUNCTION( Rotate ) {
 	RT_ASSERT_ARGC(4);
 	jsdouble angle;
 	JS_ValueToNumber(cx, argv[0], &angle);
-	jsdouble x;
+	jsdouble x, y, z;
 	JS_ValueToNumber(cx, argv[1], &x);
-	jsdouble y;
 	JS_ValueToNumber(cx, argv[2], &y);
-	jsdouble z;
 	JS_ValueToNumber(cx, argv[3], &z);
 
 //	float vec[3];
@@ -232,7 +241,7 @@ DEFINE_FUNCTION( Translate ) {
 //	float vec[3];
 //	FloatArrayToVector(cx, 3, &argv[0], vec);
 //	glTranslatef(vec[0], vec[1], vec[2]);
-	jsdouble x,y,z;
+	jsdouble x, y, z;
 	JS_ValueToNumber(cx, argv[0], &x);
 	JS_ValueToNumber(cx, argv[1], &y);
 	JS_ValueToNumber(cx, argv[2], &z);
@@ -278,6 +287,7 @@ DEFINE_FUNCTION( Quad ) {
 	glTexCoord2f( 0, 1 ); 
 	glVertex2f( x0, y1 );
 	glEnd();
+
 	return JS_TRUE;
 }
 
@@ -297,18 +307,59 @@ DEFINE_FUNCTION( Color ) {
 
 DEFINE_FUNCTION( Color ) {
 
-	jsdouble r;
+	RT_ASSERT_ARGC(3);
+
+	jsdouble r, g, b;
 	JS_ValueToNumber(cx, argv[0], &r);
-	jsdouble g;
 	JS_ValueToNumber(cx, argv[1], &g);
-	jsdouble b;
 	JS_ValueToNumber(cx, argv[2], &b);
 	glColor3f(r,g,b);
 	return JS_TRUE;
 }
 
+DEFINE_FUNCTION( Cube ) {
 
-DEFINE_FUNCTION( Line ) {
+//	RT_ASSERT_ARGC(1);
+//	jsdouble len;
+//	JS_ValueToNumber(cx, argv[0], &len);
+
+ glBegin(GL_QUADS);		// Draw The Cube Using quads
+    glColor3f(0.0f,1.0f,0.0f);	// Color Blue
+    glVertex3f( 1.0f, 1.0f,-1.0f);	// Top Right Of The Quad (Top)
+    glVertex3f(-1.0f, 1.0f,-1.0f);	// Top Left Of The Quad (Top)
+    glVertex3f(-1.0f, 1.0f, 1.0f);	// Bottom Left Of The Quad (Top)
+    glVertex3f( 1.0f, 1.0f, 1.0f);	// Bottom Right Of The Quad (Top)
+    glColor3f(1.0f,0.5f,0.0f);	// Color Orange
+    glVertex3f( 1.0f,-1.0f, 1.0f);	// Top Right Of The Quad (Bottom)
+    glVertex3f(-1.0f,-1.0f, 1.0f);	// Top Left Of The Quad (Bottom)
+    glVertex3f(-1.0f,-1.0f,-1.0f);	// Bottom Left Of The Quad (Bottom)
+    glVertex3f( 1.0f,-1.0f,-1.0f);	// Bottom Right Of The Quad (Bottom)
+    glColor3f(1.0f,0.0f,0.0f);	// Color Red	
+    glVertex3f( 1.0f, 1.0f, 1.0f);	// Top Right Of The Quad (Front)
+    glVertex3f(-1.0f, 1.0f, 1.0f);	// Top Left Of The Quad (Front)
+    glVertex3f(-1.0f,-1.0f, 1.0f);	// Bottom Left Of The Quad (Front)
+    glVertex3f( 1.0f,-1.0f, 1.0f);	// Bottom Right Of The Quad (Front)
+    glColor3f(1.0f,1.0f,0.0f);	// Color Yellow
+    glVertex3f( 1.0f,-1.0f,-1.0f);	// Top Right Of The Quad (Back)
+    glVertex3f(-1.0f,-1.0f,-1.0f);	// Top Left Of The Quad (Back)
+    glVertex3f(-1.0f, 1.0f,-1.0f);	// Bottom Left Of The Quad (Back)
+    glVertex3f( 1.0f, 1.0f,-1.0f);	// Bottom Right Of The Quad (Back)
+    glColor3f(0.0f,0.0f,1.0f);	// Color Blue
+    glVertex3f(-1.0f, 1.0f, 1.0f);	// Top Right Of The Quad (Left)
+    glVertex3f(-1.0f, 1.0f,-1.0f);	// Top Left Of The Quad (Left)
+    glVertex3f(-1.0f,-1.0f,-1.0f);	// Bottom Left Of The Quad (Left)
+    glVertex3f(-1.0f,-1.0f, 1.0f);	// Bottom Right Of The Quad (Left)
+    glColor3f(1.0f,0.0f,1.0f);	// Color Violet
+    glVertex3f( 1.0f, 1.0f,-1.0f);	// Top Right Of The Quad (Right)
+    glVertex3f( 1.0f, 1.0f, 1.0f);	// Top Left Of The Quad (Right)
+    glVertex3f( 1.0f,-1.0f, 1.0f);	// Bottom Left Of The Quad (Right)
+    glVertex3f( 1.0f,-1.0f,-1.0f);	// Bottom Right Of The Quad (Right)
+  glEnd();	
+
+	return JS_TRUE;
+}
+
+DEFINE_FUNCTION( Line ) { // 2D
 
 	jsdouble x0,y0, x1,y1;
 	JS_ValueToNumber(cx, argv[0], &x0);
@@ -379,6 +430,7 @@ BEGIN_FUNCTION_MAP
 	FUNCTION(Color)
 	FUNCTION(Texture)
 	FUNCTION(Axis)
+	FUNCTION(Cube)
 	FUNCTION(Quad)
 	FUNCTION(Line)
 	FUNCTION(LoadMatrix)

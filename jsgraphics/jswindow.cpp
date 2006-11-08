@@ -227,6 +227,7 @@ DEFINE_FUNCTION( ProcessEvents ) {
 	do {
 
 		JS_GetProperty(cx, obj, "onidle", &functionVal);
+		
 		if ( functionVal != JSVAL_VOID ) {
 			RT_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." );
 			if ( JS_CallFunctionValue(cx, obj, functionVal, 0, NULL, rval) == JS_FALSE )
@@ -246,7 +247,7 @@ DEFINE_FUNCTION( ProcessEvents ) {
 				*rval = INT_TO_JSVAL((int)msg.wParam);
 				quit = true;
 			}
-			RT_ASSERT( ++msgCount < 1000, "Message loop deadlock detected." );
+			RT_ASSERT( ++msgCount < 100, "Message loop deadlock detected." );
 		}
 	} while(!quit);
 
