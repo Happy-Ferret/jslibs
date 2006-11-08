@@ -26,6 +26,12 @@ inline Vector3 *Vector3Alloc() {
 }
 
 
+inline void Vector3Identity( Vector3 *v ) {
+	
+	v->m128 = _mm_set_ps(0.0f,0.0f,0.0f,0.0f);
+}
+
+
 inline void Vector3Set( Vector3 *v, const float _x, const float _y, const float _z ) {
 
     v->m128 = _mm_set_ps(0.0f, _z, _y, _x);

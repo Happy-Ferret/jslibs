@@ -11,7 +11,8 @@ var image=0;
 
 var w = new Window();
 w.title = "Test";
-w.rect = [500,100,600,200];
+//w.rect = [500,500,1000,1000];
+w.rect = [500,500,600,600];
 var gl = new Gl(w);
 
 var mouse = new MouseMotion(w);
@@ -47,19 +48,20 @@ function Render() {
 	//Print('Rendering image '+image++, '\n');
 
 	gl.Clear( glc.COLOR_BUFFER_BIT | glc.DEPTH_BUFFER_BIT );
-/*	
+
 	gl.Translate(0,0, -tz/50-5);
 	gl.Rotate( ty/2, 1,0,0 );
-	gl.Rotate( tx/2, 0,1,0 );
-	gl.Rotate( tw*10, 0,0,1 );
-*/
+//	gl.Rotate( tx/2, 0,1,0 );
+//	gl.Rotate( tw*10, 0,0,1 );
+
 	var t = new Transformation();
 	
 	t.Translate(0,0, -tz/50-5);
 	t.Rotate( ty/2, 1,0,0 );
-	t.Rotate( ty/2, 0,1,0 );
-	t.Rotate( tw*10, 0,0,1 );
+//	t.Rotate( tx/2, 0,1,0 );
+//	t.Rotate( tw*10, 0,0,1 );
 	gl.LoadMatrix(t);
+
 	gl.Color(1,1,1);
 	
 	for ( var x = -100; x<10; x++ )

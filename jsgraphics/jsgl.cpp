@@ -197,14 +197,11 @@ DEFINE_FUNCTION( LoadMatrix ) {
 	RT_ASSERT( mtp != NULL, "Unable to read a matrix." );
 
 	Matrix44 m;
-	float *fa = &(m.m[0][0]);
-	FPReadTransformationMatrix *pReadMatrix;
-	GetNamedPrivate(cx, argObj, NATIVE_READ_TRANSFORMATION_MATRIX, (void**)&pReadMatrix);
+	ReadMatrix44 *ReadMatrix;
+	GetNamedPrivate(cx, argObj, NATIVE_READ_TRANSFORMATION_MATRIX, (void**)&ReadMatrix);
+	(*ReadMatrix)(mtp, m.raw); // [TBD] avoid copy
 
-	
-	(*pReadMatrix)(mtp, fa); // [TBD] avoid copy
-
-	glLoadMatrixf(fa);
+	glLoadMatrixf(	m.raw );
 	return JS_TRUE;
 }
 

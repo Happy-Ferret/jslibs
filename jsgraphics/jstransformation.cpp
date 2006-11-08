@@ -6,16 +6,19 @@
 #include "vector3.h"
 #include "matrix44.h"
 
+#define _USE_MATH_DEFINES
+#include <math.h>
+
 int ReadMatrix(void *pv, float *m) {
 
-	float* src = &(((Matrix44*)pv)->m[0][0]);
+	float* src = ((Matrix44*)pv)->raw;
 	if (src == NULL)
 		return false;
 	memcpy( m, src, sizeof(float)*16 );
 	return true;
 }
 
-__declspec(align(2)) static FPReadTransformationMatrix pReadMatrix = ReadMatrix; // pReadMatrix MUST be 2Bytes aligned to be stored in PRIVATE_TO_JSVAL
+static ReadMatrix44 pReadMatrix = ReadMatrix;
 
 BEGIN_CLASS
 
@@ -40,11 +43,7 @@ DEFINE_FUNCTION( ClassConstruct ) {
 	
 	JS_SetPrivate(cx, obj, m);
 
-//	FPReadTransformationMatrix fp = pReadMatrix; // this lina allows the compiler to check if the function prototype is good
-
-//	void *x = JSVAL_TO_PRIVATE( PRIVATE_TO_JSVAL( fp ) );
-
-	if ( SetNamedPrivate(cx, obj, NATIVE_READ_TRANSFORMATION_MATRIX, pReadMatrix) == JS_FALSE )
+	if ( SetNamedPrivate(cx, obj, NATIVE_READ_TRANSFORMATION_MATRIX, &pReadMatrix) == JS_FALSE ) // store the address of static pReadMatrix
 		return JS_FALSE;
 	if ( SetNamedPrivate(cx, obj, NATIVE_TRANSFORMATION_MATRIX_PRIVATE, m)  == JS_FALSE )
 		return JS_FALSE;
@@ -61,11 +60,9 @@ DEFINE_FUNCTION( Translate ) {
 	JS_ValueToNumber(cx, argv[0], &x);
 	JS_ValueToNumber(cx, argv[1], &y);
 	JS_ValueToNumber(cx, argv[2], &z);
-	Vector3 axis;
-	axis.x = x;
-	axis.y = y;
-	axis.z = z;
-	Matrix44Translate(m, &axis);
+	Vector3 vector;
+	Vector3Set(&vector, x,y,z);
+	Matrix44Translate(m, &vector);
 	return JS_TRUE;
 }
 
@@ -80,10 +77,8 @@ DEFINE_FUNCTION( Rotate ) {
 	JS_ValueToNumber(cx, argv[2], &y);
 	JS_ValueToNumber(cx, argv[3], &z);
 	Vector3 axis;
-	axis.x = x;
-	axis.y = y;
-	axis.z = z;
-	Matrix44Rotate(m, &axis, angle);
+	Vector3Set(&axis, x,y,z);
+	Matrix44Rotate(m, &axis, angle*M_PI/360.0f);
 	return JS_TRUE;
 }
 
@@ -119,10 +114,13 @@ DEFINE_FUNCTION( Mult ) {
 	if ( mtp != NULL ) {
 
 		Matrix44 mx;
-		FPReadTransformationMatrix *fp;
-		GetNamedPrivate(cx, argObj, NATIVE_READ_TRANSFORMATION_MATRIX, (void**)&fp);
-		(*fp)(mtp, (float*)mx.m); // [TBD] avoid copy
+
+		ReadMatrix44 *ReadMatrix;
+		GetNamedPrivate(cx, argObj, NATIVE_READ_TRANSFORMATION_MATRIX, (void**)&ReadMatrix);
+		(*ReadMatrix)(mtp, (float*)mx.m); // [TBD] avoid copy
 		Matrix44Mult(m, &mx); // <- mult
+
+
 		return JS_TRUE;
 	}
 

@@ -42,6 +42,9 @@ typedef union {
     struct {
         float m[4][4];
     };
+	 struct {
+		float raw[16];
+	 };
 } Matrix44;
 
 static float Matrix44IdentityValue[] = {
@@ -64,26 +67,199 @@ inline Matrix44 *Matrix44Alloc() {
 
 inline void Matrix44Identity( Matrix44 *m ) {
 
-	memcpy(&(m->m[0][0]), Matrix44IdentityValue, sizeof(Matrix44IdentityValue));
+	memcpy(m->raw, Matrix44IdentityValue, sizeof(Matrix44IdentityValue));
 }
 
 
 inline void Matrix44Mult( Matrix44 *m, const Matrix44 *mx ) {
 
-	__m128 m1 = m->m1;
-	__m128 m2 = m->m2;
-	__m128 m3 = m->m3;
-	__m128 m4 = m->m4;
-	m->m1 = _mm_add_ps(_mm_add_ps(_mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(m1, m1, _MM_SHUFFLE(0,0,0,0)), mx->m1), _mm_mul_ps(_mm_shuffle_ps(m1, m1, _MM_SHUFFLE(1,1,1,1)), mx->m2)), _mm_mul_ps(_mm_shuffle_ps(m1, m1, _MM_SHUFFLE(2,2,2,2)), mx->m3)), _mm_mul_ps(_mm_shuffle_ps(m1, m1, _MM_SHUFFLE(3,3,3,3)), mx->m4));
-	m->m2 = _mm_add_ps(_mm_add_ps(_mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(m2, m2, _MM_SHUFFLE(0,0,0,0)), mx->m1), _mm_mul_ps(_mm_shuffle_ps(m2, m2, _MM_SHUFFLE(1,1,1,1)), mx->m2)), _mm_mul_ps(_mm_shuffle_ps(m2, m2, _MM_SHUFFLE(2,2,2,2)), mx->m3)), _mm_mul_ps(_mm_shuffle_ps(m2, m2, _MM_SHUFFLE(3,3,3,3)), mx->m4));
-	m->m3 = _mm_add_ps(_mm_add_ps(_mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(m3, m3, _MM_SHUFFLE(0,0,0,0)), mx->m1), _mm_mul_ps(_mm_shuffle_ps(m3, m3, _MM_SHUFFLE(1,1,1,1)), mx->m2)), _mm_mul_ps(_mm_shuffle_ps(m3, m3, _MM_SHUFFLE(2,2,2,2)), mx->m3)), _mm_mul_ps(_mm_shuffle_ps(m3, m3, _MM_SHUFFLE(3,3,3,3)), mx->m4));
-	m->m4 = _mm_add_ps(_mm_add_ps(_mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(m4, m4, _MM_SHUFFLE(0,0,0,0)), mx->m1), _mm_mul_ps(_mm_shuffle_ps(m4, m4, _MM_SHUFFLE(1,1,1,1)), mx->m2)), _mm_mul_ps(_mm_shuffle_ps(m4, m4, _MM_SHUFFLE(2,2,2,2)), mx->m3)), _mm_mul_ps(_mm_shuffle_ps(m4, m4, _MM_SHUFFLE(3,3,3,3)), mx->m4));
+	__m128 sm1 = m->m1;
+	__m128 sm2 = m->m2;
+	__m128 sm3 = m->m3;
+	__m128 sm4 = m->m4;
+
+	__m128 mx1 = mx->m1;
+	__m128 mx2 = mx->m2;
+	__m128 mx3 = mx->m3;
+	__m128 mx4 = mx->m4;
+
+	m->m1 = _mm_add_ps(_mm_add_ps(_mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(sm1, sm1, _MM_SHUFFLE(0,0,0,0)), mx1), _mm_mul_ps(_mm_shuffle_ps(sm1, sm1, _MM_SHUFFLE(1,1,1,1)), mx2)), _mm_mul_ps(_mm_shuffle_ps(sm1, sm1, _MM_SHUFFLE(2,2,2,2)), mx3)), _mm_mul_ps(_mm_shuffle_ps(sm1, sm1, _MM_SHUFFLE(3,3,3,3)), mx4));
+	m->m2 = _mm_add_ps(_mm_add_ps(_mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(sm2, sm2, _MM_SHUFFLE(0,0,0,0)), mx1), _mm_mul_ps(_mm_shuffle_ps(sm2, sm2, _MM_SHUFFLE(1,1,1,1)), mx2)), _mm_mul_ps(_mm_shuffle_ps(sm2, sm2, _MM_SHUFFLE(2,2,2,2)), mx3)), _mm_mul_ps(_mm_shuffle_ps(sm2, sm2, _MM_SHUFFLE(3,3,3,3)), mx4));
+	m->m3 = _mm_add_ps(_mm_add_ps(_mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(sm3, sm3, _MM_SHUFFLE(0,0,0,0)), mx1), _mm_mul_ps(_mm_shuffle_ps(sm3, sm3, _MM_SHUFFLE(1,1,1,1)), mx2)), _mm_mul_ps(_mm_shuffle_ps(sm3, sm3, _MM_SHUFFLE(2,2,2,2)), mx3)), _mm_mul_ps(_mm_shuffle_ps(sm3, sm3, _MM_SHUFFLE(3,3,3,3)), mx4));
+	m->m4 = _mm_add_ps(_mm_add_ps(_mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(sm4, sm4, _MM_SHUFFLE(0,0,0,0)), mx1), _mm_mul_ps(_mm_shuffle_ps(sm4, sm4, _MM_SHUFFLE(1,1,1,1)), mx2)), _mm_mul_ps(_mm_shuffle_ps(sm4, sm4, _MM_SHUFFLE(2,2,2,2)), mx3)), _mm_mul_ps(_mm_shuffle_ps(sm4, sm4, _MM_SHUFFLE(3,3,3,3)), mx4));
 }
+
+inline void Matrix44MultSlow( Matrix44 *m, const Matrix44 *mx ) {
+
+	float _tmp[16];
+
+	_tmp[0]  = m->raw[0]*mx->raw[0]  + m->raw[4]*mx->raw[1]  + m->raw[8] *mx->raw[2]  + m->raw[12]*mx->raw[3];
+	_tmp[1]  = m->raw[1]*mx->raw[0]  + m->raw[5]*mx->raw[1]  + m->raw[9] *mx->raw[2]  + m->raw[13]*mx->raw[3];
+	_tmp[2]  = m->raw[2]*mx->raw[0]  + m->raw[6]*mx->raw[1]  + m->raw[10]*mx->raw[2]  + m->raw[14]*mx->raw[3];
+	_tmp[3]  = m->raw[3]*mx->raw[0]  + m->raw[7]*mx->raw[1]  + m->raw[11]*mx->raw[2]  + m->raw[15]*mx->raw[3];
+
+	_tmp[4]  = m->raw[0]*mx->raw[4]  + m->raw[4]*mx->raw[5]  + m->raw[8] *mx->raw[6]  + m->raw[12]*mx->raw[7];
+	_tmp[5]  = m->raw[1]*mx->raw[4]  + m->raw[5]*mx->raw[5]  + m->raw[9] *mx->raw[6]  + m->raw[13]*mx->raw[7];
+	_tmp[6]  = m->raw[2]*mx->raw[4]  + m->raw[6]*mx->raw[5]  + m->raw[10]*mx->raw[6]  + m->raw[14]*mx->raw[7];
+	_tmp[7]  = m->raw[3]*mx->raw[4]  + m->raw[7]*mx->raw[5]  + m->raw[11]*mx->raw[6]  + m->raw[15]*mx->raw[7];
+
+	_tmp[8]  = m->raw[0]*mx->raw[8]  + m->raw[4]*mx->raw[9]  + m->raw[8] *mx->raw[10] + m->raw[12]*mx->raw[11];
+	_tmp[9]  = m->raw[1]*mx->raw[8]  + m->raw[5]*mx->raw[9]  + m->raw[9] *mx->raw[10] + m->raw[13]*mx->raw[11];
+	_tmp[10] = m->raw[2]*mx->raw[8]  + m->raw[6]*mx->raw[9]  + m->raw[10]*mx->raw[10] + m->raw[14]*mx->raw[11];
+	_tmp[11] = m->raw[3]*mx->raw[8]  + m->raw[7]*mx->raw[9]  + m->raw[11]*mx->raw[10] + m->raw[15]*mx->raw[11];
+
+	_tmp[12] = m->raw[0]*mx->raw[12] + m->raw[4]*mx->raw[13] + m->raw[8] *mx->raw[14] + m->raw[12]*mx->raw[15];
+	_tmp[13] = m->raw[1]*mx->raw[12] + m->raw[5]*mx->raw[13] + m->raw[9] *mx->raw[14] + m->raw[13]*mx->raw[15];
+	_tmp[14] = m->raw[2]*mx->raw[12] + m->raw[6]*mx->raw[13] + m->raw[10]*mx->raw[14] + m->raw[14]*mx->raw[15];
+	_tmp[15] = m->raw[3]*mx->raw[12] + m->raw[7]*mx->raw[13] + m->raw[11]*mx->raw[14] + m->raw[15]*mx->raw[15];
+
+	memcpy(m->raw, _tmp, sizeof(_tmp) );
+}
+
+
+
+inline void Matrix44Rotate( Matrix44 *m, const Vector3 *axis, float radAngle ) {
+
+
+	Vector3 v = *axis;
+	// Opt: check if already normalized
+	Vector3Normalize(&v);
+	float sa = (float) sinf(radAngle);
+	float ca = (float) cosf(radAngle);
+	Matrix44 rot;
+	Matrix44Identity(&rot);
+//	rot.m1 = _mm_set1_ps( 
+	rot.M11 = ca + (1.0f - ca) * v.x * v.x;
+	rot.M12 = (1.0f - ca) * v.x * v.y - sa * v.z;
+	rot.M13 = (1.0f - ca) * v.z * v.x + sa * v.y;
+	rot.M21 = (1.0f - ca) * v.x * v.y + sa * v.z;
+	rot.M22 = ca + (1.0f - ca) * v.y * v.y;
+	rot.M23 = (1.0f - ca) * v.y * v.z - sa * v.x;
+	rot.M31 = (1.0f - ca) * v.z * v.x - sa * v.y;
+	rot.M32 = (1.0f - ca) * v.y * v.z + sa * v.x;
+	rot.M33 = ca + (1.0f - ca) * v.z * v.z;
+	Matrix44Mult(m, &rot);
+
+
+/*
+	float w,x,y,z;
+
+	float ax = axis->x;
+	float ay = axis->y;
+	float az = axis->z;
+
+	float l = ax*ax + ay*ay + az*az;
+	if (l > 0.f) {
+
+		angle /= 20;
+		w = cos(angle);
+		l = sin(angle) / sqrtf(l);
+		x = ax*l;
+		y = ay*l;
+		z = az*l;
+	} else {
+
+		w = 1;
+		x = 0;
+		y = 0;
+		z = 0;
+	}
+
+	float xx = x * x;
+	float xy = x * y;
+	float xz = x * z;
+	float xw = x * w;
+
+	float yy = y * y;
+	float yz = y * z;
+	float yw = y * w;
+
+	float zz = z * z;
+	float zw = z * w;
+
+	Matrix44 rot;
+	Matrix44Identity(&rot);
+
+	rot.raw[0]  = 1 - 2 * ( yy + zz );
+	rot.raw[1]  =     2 * ( xy - zw );
+	rot.raw[2]  =     2 * ( xz + yw );
+	rot.raw[4]  =     2 * ( xy + zw );
+	rot.raw[5]  = 1 - 2 * ( xx + zz );
+	rot.raw[6]  =     2 * ( yz - xw );
+	rot.raw[8]  =     2 * ( xz - yw );
+	rot.raw[9]  =     2 * ( yz + xw );
+	rot.raw[10] = 1 - 2 * ( xx + yy );
+
+	Matrix44Mult(m, &rot);
+*/
+}
+
+
+inline void Matrix44Translate( Matrix44 *m, const Vector3 *t ) {
+	 
+	m->m4 = _mm_add_ps(m->m4, t->m128);
+}
+
+
+inline void Matrix44Scale( Matrix44 *m, const Vector3 *s ) {
+
+	// _vector3_sse have the w element set to zero, we need it at 1...
+	__m128 scale = _mm_add_ps(_mm_set_ps(1.0f, 0.0f, 0.0f, 0.0f), s->m128);
+	m->m1 = _mm_mul_ps(m->m1, scale);
+	m->m2 = _mm_mul_ps(m->m2, scale);
+	m->m3 = _mm_mul_ps(m->m3, scale);
+	m->m4 = _mm_mul_ps(m->m4, scale);
+}
+
+
+inline void Matrix44LookAt( Matrix44 *m, const Vector3 *to, const Vector3 *up ) {
+
+	Vector3 z;
+	z.x = m->M41;
+	z.y = m->M42;
+	z.z = m->M43;
+	Vector3Sub(&z, to); // z = z - to
+	Vector3Normalize(&z); // z = |z|
+	Vector3 y = *up;
+	Vector3 x;
+	Vector3Cross(&x, &y, &z); // x = y cross z
+	Vector3Cross(&y, &z, &x); // y = z cross x
+	Vector3Normalize(&x); // x =|x|
+	Vector3Normalize(&y); // y = |y|
+	m->m1 = x.m128;
+	m->m2 = y.m128;
+	m->m3 = z.m128;
+}
+
+
+inline void Matrix44Billboard( Matrix44 *m, const Vector3 *to, const Vector3 *up ) {
+
+	Vector3 z;
+	z.x = m->M41;
+	z.y = m->M42;
+	z.z = m->M43;
+	Vector3Sub(&z, to); // z = z - to
+	Vector3Normalize(&z); // z = |z|
+	Vector3 y = *up;
+	Vector3 x;
+	Vector3Cross(&x, &y, &z); // x = y cross z
+	Vector3Cross(&z, &x, &y); // z = x cross y
+	Vector3Normalize(&x); // x = |x|
+	Vector3Normalize(&y); // y = |y|
+	Vector3Normalize(&z); // z = |z|
+	m->m1 = x.m128;
+	m->m2 = y.m128;
+	m->m3 = z.m128;
+}
+
+
+
+
 
 
 inline void Matrix44Invert( Matrix44 *m ) {
 
-    float* src = &(m->m[0][0]);
+	float* src = m->raw;
 
     __m128 minor0, minor1, minor2, minor3;
     __m128 row0, row1, row2, row3;
@@ -196,81 +372,3 @@ inline void Matrix44Invert( Matrix44 *m ) {
     _mm_storeh_pi((__m64*)(src+14), minor3);
 }
 
-
-inline void Matrix44Rotate( Matrix44 *m, const Vector3 *axis, float a ) {
-
-	Vector3 v = *axis;
-	Vector3Normalize(&v);
-	float sa = (float) sinf(a);
-	float ca = (float) cosf(a);
-	Matrix44 rotM;
-	Matrix44Identity(&rotM);
-	rotM.M11 = ca + (1.0f - ca) * v.x * v.x;
-	rotM.M12 = (1.0f - ca) * v.x * v.y - sa * v.z;
-	rotM.M13 = (1.0f - ca) * v.z * v.x + sa * v.y;
-	rotM.M21 = (1.0f - ca) * v.x * v.y + sa * v.z;
-	rotM.M22 = ca + (1.0f - ca) * v.y * v.y;
-	rotM.M23 = (1.0f - ca) * v.y * v.z - sa * v.x;
-	rotM.M31 = (1.0f - ca) * v.z * v.x - sa * v.y;
-	rotM.M32 = (1.0f - ca) * v.y * v.z + sa * v.x;
-	rotM.M33 = ca + (1.0f - ca) * v.z * v.z;
-	Matrix44Mult(m, &rotM);
-}
-
-
-inline void Matrix44Translate( Matrix44 *m, const Vector3 *t ) {
-	 
-	m->m4 = _mm_add_ps(m->m4, t->m128);
-}
-
-
-inline void Matrix44Scale( Matrix44 *m, const Vector3 *s ) {
-
-	// _vector3_sse have the w element set to zero, we need it at 1...
-	__m128 scale = _mm_add_ps(_mm_set_ps(1.0f, 0.0f, 0.0f, 0.0f), s->m128);
-	m->m1 = _mm_mul_ps(m->m1, scale);
-	m->m2 = _mm_mul_ps(m->m2, scale);
-	m->m3 = _mm_mul_ps(m->m3, scale);
-	m->m4 = _mm_mul_ps(m->m4, scale);
-}
-
-
-inline void Matrix44LookAt( Matrix44 *m, const Vector3 *to, const Vector3 *up ) {
-
-	Vector3 z;
-	z.x = m->M41;
-	z.y = m->M42;
-	z.z = m->M43;
-	Vector3Sub(&z, to); // z = z - to
-	Vector3Normalize(&z); // z = |z|
-	Vector3 y = *up;
-	Vector3 x;
-	Vector3Cross(&x, &y, &z); // x = y cross z
-	Vector3Cross(&y, &z, &x); // y = z cross x
-	Vector3Normalize(&x); // x =|x|
-	Vector3Normalize(&y); // y = |y|
-	m->m1 = x.m128;
-	m->m2 = y.m128;
-	m->m3 = z.m128;
-}
-
-
-inline void Matrix44Billboard( Matrix44 *m, const Vector3 *to, const Vector3 *up ) {
-
-	Vector3 z;
-	z.x = m->M41;
-	z.y = m->M42;
-	z.z = m->M43;
-	Vector3Sub(&z, to); // z = z - to
-	Vector3Normalize(&z); // z = |z|
-	Vector3 y = *up;
-	Vector3 x;
-	Vector3Cross(&x, &y, &z); // x = y cross z
-	Vector3Cross(&z, &x, &y); // z = x cross y
-	Vector3Normalize(&x); // x = |x|
-	Vector3Normalize(&y); // y = |y|
-	Vector3Normalize(&z); // z = |z|
-	m->m1 = x.m128;
-	m->m2 = y.m128;
-	m->m3 = z.m128;
-}
