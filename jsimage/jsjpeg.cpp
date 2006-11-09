@@ -1,6 +1,5 @@
 #include "stdafx.h"
-#include "../smtools/nativeresource.h"
-#include "../smtools/object.h"
+#include "../common/jsNativeInterface.h"
 
 #include "jsimage.h"
 
@@ -18,7 +17,7 @@ typedef struct {
   struct jpeg_source_mgr pub;	// public fields
   JOCTET * buffer;
   void *pv;
-  NativeResourceFunction read;
+  NativeInterfaceRead read;
 } SourceMgr;
 typedef SourceMgr *SourceMgrPtr;
 
@@ -136,9 +135,8 @@ DEFINE_FUNCTION( ClassConstruct ) {
 	src->pub.next_input_byte = NULL; // until buffer loaded
 
 // try to use a fast way to read the data
-	JSObject *resourceObject = JSVAL_TO_OBJECT(argv[0]);
-	GetNamedPrivate(cx, resourceObject, NATIVE_RESOURCE_READ_FUNCTION_STRING, (void**)&src->read );
-	GetNamedPrivate(cx, resourceObject, NATIVE_RESOURCE_PRIVATE_STRING, (void**)&src->pv );
+	GetNativeInterface(cx, JSVAL_TO_OBJECT(argv[0]), NI_READ_RESOURCE, (void**)&src->read, (void**)&src->pv);
+	RT_ASSERT( src->read != NULL && src->pv != NULL, "Unable to GetNativeResource." );
 
 // else use a 'classic' method to read the data ( like var data = resourceObject.Read(amount); )
 	if ( src->read == NULL || src->pv == NULL ) {

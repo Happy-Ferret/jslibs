@@ -31,7 +31,7 @@
 
 #define JSHELPER_UNSAFE_DEFINED
 #include "../common/jshelper.h"
-#include "../smtools/smtools.h"
+#include "../common/jsConversionHelper.h"
 
 
 //#include <stdio.h>

@@ -4,18 +4,16 @@
 #include "body.h"
 #include "world.h"
 
-#include "../smtools/smtools.h"
-#include "../smtools/object.h"
-#include "../tools3d/nativeTransform.h"
+#include "../common/jsNativeInterface.h"
+
 
 JSObject *body;
 
 #define SLOT_PARENT 0
 
-int __declspec(noinline) ReadMatrix(void *pv, float *m) { // Doc: __declspec(noinline) tells the compiler to never inline a particular function.
+static int ReadMatrix(void *pv, float **pm) { // Doc: __declspec(noinline) tells the compiler to never inline a particular function.
 
 	ode::dBodyID id = (ode::dBodyID)pv;
-
 	const ode::dReal * m43 = dBodyGetRotation( id );
 	const ode::dReal * pos = dBodyGetPosition( id );
 
@@ -23,6 +21,8 @@ int __declspec(noinline) ReadMatrix(void *pv, float *m) { // Doc: __declspec(noi
 	float comx = 0;
 	float comy = 0;
 	float comz = 0;
+
+	float *m = *pm;
 
 	m[0]  = m43[0];
 	m[1]  = m43[4];
@@ -43,10 +43,6 @@ int __declspec(noinline) ReadMatrix(void *pv, float *m) { // Doc: __declspec(noi
 
 	return true;
 }
-
-static ReadMatrix44 pReadMatrix = ReadMatrix;
-
-
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void body_Finalize(JSContext *cx, JSObject *obj) {
@@ -112,10 +108,7 @@ JSClass *cl = JS_GetClass(o);
 	JS_SetPrivate(cx, obj, bodyID);
 	JS_SetReservedSlot(cx, obj, SLOT_PARENT, OBJECT_TO_JSVAL(worldObject)); //
 //	ode::dBodySetData(bodyID,worldObject);
-
-	SetNamedPrivate(cx, obj, NATIVE_READ_TRANSFORMATION_MATRIX, &pReadMatrix); // [TBD] check return status
-	SetNamedPrivate(cx, obj, NATIVE_TRANSFORMATION_MATRIX_PRIVATE, bodyID); // [TBD] check return status
-
+	SetNativeInterface(cx, obj, NI_READ_MATRIX44, ReadMatrix, bodyID); // [TBD] check return status
 	return JS_TRUE;
 }
 

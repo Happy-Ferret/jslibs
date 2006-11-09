@@ -11,7 +11,7 @@ Print( img.Load().length , '\n' );
 */
 
 
-var texture = new Jpeg(new File('shiphull.jpg').Open( File.RDONLY )).Load().Trim([10,10,20,20]);
+var texture = new Jpeg(new File('R0010235.JPG').Open( File.RDONLY )).Load().Trim([10,10,20,20]);
 
 Print( texture.width+'x'+texture.height+'x'+texture.channels, '\n' );
 

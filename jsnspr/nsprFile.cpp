@@ -5,8 +5,8 @@
 #include "nsprError.h"
 #include "nsprFile.h"
 
-#include "../smtools/nativeresource.h"
-#include "../smtools/object.h"
+#include "../common/jshelper.h"
+#include "../common/jsNativeInterface.h"
 
 
 void File_Finalize(JSContext *cx, JSObject *obj) {
@@ -48,7 +48,7 @@ JSBool File_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsv
 }
 
 
-bool _Read( void *pv, unsigned char *buf, unsigned int *amount ) {
+static bool NativeInterfaceReadFile( void *pv, unsigned char *buf, unsigned int *amount ) {
 
 	PRInt32 status = PR_Read( (PRFileDesc *)pv, buf, *amount );
 	if ( status == -1 )
@@ -97,12 +97,8 @@ JSBool File_open(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *r
 		return ThrowNSPRError( cx, PR_GetError() );
 
 	JS_SetPrivate( cx, obj, fd );
-
-	SetNamedPrivate(cx, obj, NATIVE_RESOURCE_PRIVATE_STRING, fd); 
-	SetNamedPrivate(cx, obj, NATIVE_RESOURCE_READ_FUNCTION_STRING, _Read); 
-
+	SetNativeInterface(cx, obj, NI_READ_RESOURCE, (NativeInterfaceRead)NativeInterfaceReadFile, fd);
 	*rval = OBJECT_TO_JSVAL(obj);
-
 	return JS_TRUE;
 }
 

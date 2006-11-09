@@ -12,18 +12,18 @@ var image=0;
 
 
 var world = new World;
-world.gravity = [0,0,-9.81];
+world.gravity = [0,0,-1.81];
 
 var body1 = new Body(world);
 var body2 = new Body(world);
-var joint = new JointHinge(world);
+var joint = new JointBall(world);
 
 joint.Attach(body1,body2);
-joint.anchor = [0,1,0];
-joint.axis = [1,0,0];
+joint.anchor = [4,4,0];
+//joint.axis = [1,0,0];
 
 body1.linearVel = [0,0,19];
-//body1.angularVel = [1,1,0];
+body1.angularVel = [1,1,0];
 
 
 
@@ -75,19 +75,21 @@ function Render() {
 //	gl.Rotate( tw*10, 0,0,1 );
 
 	var camera = new Transformation();
-	camera.Translate(0,0, -tz/50);
 	camera.Rotate( ty/2, 1,0,0 );
 	camera.Rotate( tx/2, 0,1,0 );
 	camera.Rotate( tw*10, 0,0,1 );
+	camera.Translate(0,0, -tz/50);
 
 	gl.LoadMatrix(camera);
 
 	gl.Color(1,1,1);
 
+/*
 	for ( var x = -100; x<100; x++ )
 		for ( var y = -100; y<10; y++ ) {
 			gl.Quad(x,y,x+1,y+1);
 		}
+*/
 
 	var m = new Transformation();
 	m.Load( camera );
@@ -95,7 +97,6 @@ function Render() {
 	gl.LoadMatrix(m);
 	gl.Cube();
 
-	var m = new Transformation();
 	m.Load( camera );
 	m.Multiply( body2 );
 	gl.LoadMatrix(m);

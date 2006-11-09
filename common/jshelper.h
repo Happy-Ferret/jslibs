@@ -1,5 +1,9 @@
 #ifndef _JSHELPER_H_
 #define _JSHELPER_H_
+#ifdef WIN32
+#include <windows.h>
+#endif // WIN32
+
 
 #ifdef JSHELPER_UNSAFE_DEFINED
 	extern bool _unsafeMode;
@@ -38,7 +42,7 @@
 	if (_unsafeMode) {code;}
 
 #define REPORT_ERROR(errorMessage) \
-	JS_ReportError( cx, (errorMessage) );
+	JS_ReportError( cx, (errorMessage) ); return JS_FALSE;
 
 /////////
 // assert
@@ -226,5 +230,82 @@
 	JSBool status = InitClass##name(cx, obj); \
 	RT_ASSERT( status == JS_TRUE, RT_ERROR_CLASS_CREATION_FAILED " (" #name ")" ); \
 }
+
+///////////
+
+inline double TimeNow() {
+	
+#ifdef WIN32
+	LARGE_INTEGER frequency, performanceCount;
+	QueryPerformanceFrequency(&frequency);
+	QueryPerformanceCounter(&performanceCount);
+	return 1000 * double(performanceCount.QuadPart) / double(frequency.QuadPart);
+#endif // WIN32
+}
+
+
+inline JSBool SetNativeInterface( JSContext *cx, JSObject *obj, const char *name, void *function, void *descriptor ) {
+
+	// the following must work because spidermonkey will never call the getter or setter if it is not explicitly required by the script
+	if ( JS_DefineProperty(cx, obj, name, JSVAL_VOID, (JSPropertyOp)function, (JSPropertyOp)descriptor, JSPROP_READONLY | JSPROP_PERMANENT) == JS_FALSE )
+		return JS_FALSE;
+	return JS_TRUE;
+}
+
+inline JSBool GetNativeInterface( JSContext *cx, JSObject *obj, const char *name, void **function, void **descriptor ) {
+
+	uintN attrs;
+	JSBool found;
+	if ( JS_GetPropertyAttrsGetterAndSetter(cx, obj, name, &attrs, &found, (JSPropertyOp*)function, (JSPropertyOp*)descriptor) == JS_FALSE )
+		return JS_FALSE;
+	return JS_TRUE;
+}
+
+////
+
+inline bool IsInstanceOf( JSContext *cx, JSObject *obj, JSClass *clasp ) {
+
+	while( obj != NULL ) {
+
+		obj = JS_GetPrototype(cx, obj);
+		if ( JS_GetClass(obj) == clasp )
+			return true;
+	}
+	return false;
+}
+
+
+inline JSBool GetNamedPrivate( JSContext *cx, JSObject *obj, const char *name, void **pv ) {
+
+	jsval tmp;
+	if ( JS_GetProperty(cx, obj, name, &tmp) == JS_FALSE )
+		return JS_FALSE;
+	*pv = tmp == JSVAL_VOID ? NULL : JSVAL_TO_PRIVATE(tmp);
+	return JS_TRUE;
+}
+
+
+inline JSBool SetNamedPrivate( JSContext *cx, JSObject *obj, const char *name, const void *pv ) {
+
+//	RT_SAFE(	if ( (int)pv % 2 ) return JS_FALSE; ); // check if *vp is 2-byte aligned
+	if ( JS_DefineProperty(cx, obj, name, PRIVATE_TO_JSVAL(pv), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ) == JS_FALSE )
+		return JS_FALSE;
+	return JS_TRUE;
+}
+
+
+inline JSBool GetIntProperty( JSContext *cx, JSObject *obj, const char *propertyName, int *value ) {
+
+	jsval tmp;
+	int32 int32Value;
+	if ( JS_GetProperty(cx, obj, propertyName, &tmp) == JS_FALSE )
+		return JS_FALSE;
+	JS_ValueToInt32(cx, tmp, &int32Value);
+	*value = int32Value;
+	return JS_TRUE;
+}
+
+
+
 
 #endif // _JSHELPER_H_

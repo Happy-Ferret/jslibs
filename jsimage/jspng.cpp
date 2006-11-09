@@ -1,7 +1,6 @@
 #include "stdafx.h"
 #include "jsimage.h"
-#include "../smtools/object.h"
-#include "../smtools/nativeresource.h"
+#include "../common/jsNativeInterface.h"
 
 #include "png.h"
 
@@ -12,7 +11,7 @@ typedef struct {
 	png_structp png;
 	png_infop info;
 	void *pv;
-	NativeResourceFunction read;
+	NativeInterfaceRead read;
 } PngDescriptor;
 
 
@@ -51,13 +50,8 @@ DEFINE_FUNCTION( ClassConstruct ) {
 	desc->info = png_create_info_struct(desc->png);
 	RT_ASSERT( desc->info != NULL, "Unable to png_create_info_struct.");
 
-//	JSBool status = GetNativeResource(cx, JSVAL_TO_OBJECT(argv[0]), &desc->pv, &desc->read, NULL );
-//	RT_ASSERT( status == JS_TRUE, "Unable to GetNativeResource." );
-	JSObject *resourceObject = JSVAL_TO_OBJECT(argv[0]);
-	GetNamedPrivate(cx, resourceObject, NATIVE_RESOURCE_READ_FUNCTION_STRING, (void**)&desc->read );
-	GetNamedPrivate(cx, resourceObject, NATIVE_RESOURCE_PRIVATE_STRING, (void**)&desc->pv );
-
-
+	GetNativeInterface(cx, JSVAL_TO_OBJECT(argv[0]), NI_READ_RESOURCE, (void**)&desc->read, (void**)&desc->pv);
+	RT_ASSERT( desc->read != NULL && desc->pv != NULL, "Unable to GetNativeResource." );
 
 	png_set_read_fn( desc->png, (voidp)desc, _png_read );
    png_read_info(desc->png, desc->info);

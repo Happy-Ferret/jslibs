@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "jstransformation.h"
 #include "../smtools/object.h"
-#include "../tools3d/nativeTransform.h"
+#include "../common/jsNativeInterface.h"
 
 #include "vector3.h"
 #include "matrix44.h"
@@ -10,16 +10,11 @@
 #include <math.h>
 
 
-int __declspec(noinline) ReadMatrix(void *pv, float *m) { // Doc: __declspec(noinline) tells the compiler to never inline a particular function.
+static int ReadMatrix(void *pv, float **m) { // Doc: __declspec(noinline) tells the compiler to never inline a particular function.
 
-	float* src = ((Matrix44*)pv)->raw;
-	if (src == NULL)
-		return false;
-	memcpy( m, src, sizeof(float)*16 );
+	*m = ((Matrix44*)pv)->raw;
 	return true;
 }
-
-static ReadMatrix44 pReadMatrix = ReadMatrix;
 
 BEGIN_CLASS
 
@@ -41,41 +36,35 @@ DEFINE_FUNCTION( ClassConstruct ) {
 	Matrix44 *m = Matrix44Alloc();
 	RT_ASSERT_ALLOC(m);
 	Matrix44Identity(m);
-	
+	JSBool status;
 	JS_SetPrivate(cx, obj, m);
-
-	if ( SetNamedPrivate(cx, obj, NATIVE_READ_TRANSFORMATION_MATRIX, &pReadMatrix) == JS_FALSE ) // store the address of static pReadMatrix
-		return JS_FALSE;
-	if ( SetNamedPrivate(cx, obj, NATIVE_TRANSFORMATION_MATRIX_PRIVATE, m)  == JS_FALSE )
-		return JS_FALSE;
-
+	status = SetNativeInterface(cx, obj, NI_READ_MATRIX44, ReadMatrix, m); // [TBD] check return status
+	RT_ASSERT( status == JS_TRUE, "Unable SetNativeInterface." );
 	return JS_TRUE;
 }
 
 DEFINE_FUNCTION( Load ) {
 
-	// [TBD] check if arg is Transformation
 	RT_ASSERT_ARGC(1)
-
 	Matrix44 *m = (Matrix44*)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(m);
 	RT_ASSERT( JSVAL_IS_OBJECT(argv[0]), "Argument must be an object." );
 
+	// [TBD] here check if arg is Transformation ( and then read it )
+
 	JSObject *argObj = JSVAL_TO_OBJECT(argv[0]);
-
-	void *mtp;
-	GetNamedPrivate(cx, argObj, NATIVE_TRANSFORMATION_MATRIX_PRIVATE, &mtp);
-	if ( mtp != NULL ) {
-
-		Matrix44 mx;
-
-		ReadMatrix44 *ReadMatrix;
-		GetNamedPrivate(cx, argObj, NATIVE_READ_TRANSFORMATION_MATRIX, (void**)&ReadMatrix);
-		(*ReadMatrix)(mtp, (float*)mx.m); // [TBD] avoid copy
-		Matrix44Multiply(m, &mx); // <- mult
-
+	NIMatrix44Read ReadMatrix;
+	void *descriptor;
+	GetNativeInterface(cx, argObj, NI_READ_MATRIX44, (void**)&ReadMatrix, &descriptor); // NI is for NativeInterface, nothing to see with Monty Python
+	if ( ReadMatrix != NULL && descriptor != NULL ) {
+		
+		float *tmp = m->raw; // prepare a 'modifiable' pointer
+		ReadMatrix(descriptor, &tmp ); // ReadMatrix will copy data into tmp OR replace tmp by its own float pointer
+		if ( tmp != m->raw ) // check if the pointer has been modified
+			memcpy(m->raw,tmp, sizeof(Matrix44) ); // if it is, copy the data
 		return JS_TRUE;
 	}
+	REPORT_ERROR( "Unable to read a matrix." );
 }
 
 
@@ -127,14 +116,11 @@ DEFINE_FUNCTION( Invert ) {
 }
 
 
-
 DEFINE_FUNCTION( Multiply ) {
 	
 	RT_ASSERT_ARGC(1)
-
 	Matrix44 *m = (Matrix44*)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(m);
-
 	RT_ASSERT( JSVAL_IS_OBJECT(argv[0]), "Argument must be an object." );
 
 	JSObject *argObj = JSVAL_TO_OBJECT(argv[0]);
@@ -146,27 +132,18 @@ DEFINE_FUNCTION( Multiply ) {
 		return JS_TRUE;
 	}
 
-	// if it is not an jsransformation object, try if object provide an interface to read matrix
-	void *mtp;
-	GetNamedPrivate(cx, argObj, NATIVE_TRANSFORMATION_MATRIX_PRIVATE, &mtp);
-	if ( mtp != NULL ) {
+	NIMatrix44Read ReadMatrix;
+	void *descriptor;
+	GetNativeInterface(cx, argObj, NI_READ_MATRIX44, (void**)&ReadMatrix, &descriptor);
+	if ( ReadMatrix != NULL && descriptor != NULL ) {
 
 		Matrix44 mx;
-		ReadMatrix44 *pReadMatrix;
-		if ( GetNamedPrivate(cx, argObj, NATIVE_READ_TRANSFORMATION_MATRIX, (void**)&pReadMatrix) == JS_FALSE )
-			return JS_FALSE;
-
-//		ReadMatrix44 f = *((ReadMatrix44*)ptr);
-
-		(*pReadMatrix)(mtp, mx.raw); // [TBD] avoid copy
-		Matrix44Multiply(m, &mx); // <- mult
-
+		float *tmp = mx.raw;
+		ReadMatrix(descriptor, &tmp );
+		Matrix44Multiply(m, (Matrix44*)tmp); // <- mult
 		return JS_TRUE;
 	}
-
 	REPORT_ERROR( "Unable to read a matrix." );
-
-	return JS_FALSE;
 }
 
 

@@ -3,8 +3,7 @@
 
 #include "jsgl.h"
 #include "jswindow.h"
-#include "../smtools/object.h"
-#include "../tools3d/nativeTransform.h"
+#include "../common/jsNativeInterface.h"
 
 #include "../jsimage/jsimage.h"
 
@@ -90,7 +89,7 @@ DEFINE_FUNCTION( ClassConstruct ) {
 	// If PFD_GENERIC_ACCELERATED is clear and PFD_GENERIC_FORMAT is set, then the pixel format is only supported by the generic implementation. 
 	// Hardware acceleration is not possible for this format. For hardware acceleration, you need to choose a different format.
 	DescribePixelFormat(hDC, pixelFormat, sizeof(PIXELFORMATDESCRIPTOR), &pfd); // [TBD] check return value for error
-	bool hasNoAccel = (pfd.dwFlags & PFD_GENERIC_FORMAT != 0) && (pfd.dwFlags & PFD_GENERIC_ACCELERATED == 0);
+	bool hasNoAccel = (pfd.dwFlags & PFD_GENERIC_FORMAT) != 0 && (pfd.dwFlags & PFD_GENERIC_ACCELERATED) == 0;
 	RT_ASSERT( hasNoAccel == false, "Hardware acceleration is not possible for this format." );
 
 	res = SetPixelFormat(hDC,pixelFormat,&pfd);
@@ -203,23 +202,18 @@ DEFINE_FUNCTION( LoadMatrix ) {
 
 	RT_ASSERT_ARGC(1);
 	RT_ASSERT( JSVAL_IS_OBJECT(argv[0]), "Argument must be an object." );
-	JSObject *argObj;// = JSVAL_TO_OBJECT(argv[0]);
+	NIMatrix44Read ReadMatrix;
+	void *descriptor;
+	GetNativeInterface(cx, JSVAL_TO_OBJECT(argv[0]), NI_READ_MATRIX44, (void**)&ReadMatrix, &descriptor);
+	if ( ReadMatrix != NULL && descriptor != NULL ) {
 
-	JS_ValueToObject(cx, argv[0], &argObj);
-
-	void *mtp;
-	GetNamedPrivate(cx, argObj, NATIVE_TRANSFORMATION_MATRIX_PRIVATE, &mtp);
-	RT_ASSERT( mtp != NULL, "Unable to read a matrix." );
-
-	Matrix44 m;
-	ReadMatrix44 *ReadMatrix;
-	GetNamedPrivate(cx, argObj, NATIVE_READ_TRANSFORMATION_MATRIX, (void**)&ReadMatrix);
-	(*ReadMatrix)(mtp, m.raw); // [TBD] avoid copy
-
-//	float f[16];
-//	glGetFloatv(GL_MODELVIEW_MATRIX, f);
-	glLoadMatrixf(	m.raw );
-	return JS_TRUE;
+		Matrix44 m;
+		float *tmp = m.raw;
+		ReadMatrix(descriptor, &tmp);
+		glLoadMatrixf(	tmp );
+		return JS_TRUE;
+	}
+	REPORT_ERROR( "Unable to read a matrix." );
 }
 
 
