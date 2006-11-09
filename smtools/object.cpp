@@ -28,6 +28,7 @@ JSBool GetNamedPrivate( JSContext *cx, JSObject *obj, const char *name, void **p
 JSBool SetNamedPrivate( JSContext *cx, JSObject *obj, const char *name, const void *pv ) {
 
 //	RT_SAFE(	if ( (int)pv % 2 ) return JS_FALSE; ); // check if *vp is 2-byte aligned
+
 	if ( JS_DefineProperty(cx, obj, name, PRIVATE_TO_JSVAL(pv), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ) == JS_FALSE )
 		return JS_FALSE;
 	return JS_TRUE;

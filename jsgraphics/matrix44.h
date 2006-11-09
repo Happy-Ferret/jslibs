@@ -193,8 +193,11 @@ inline void Matrix44Rotation( Matrix44 *m, const Vector3 *axis, float radAngle )
 
 
 inline void Matrix44Translation( Matrix44 *m, const Vector3 *t ) {
-	 
-	m->m4 = t->m128;
+
+	m->M41 = t->x;
+	m->M42 = t->y;
+	m->M43 = t->z;
+	//	m->m4 = t->m128;
 	//m->m4 = _mm_add_ps(m->m4, t->m128);
 }
 

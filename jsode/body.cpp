@@ -12,8 +12,7 @@ JSObject *body;
 
 #define SLOT_PARENT 0
 
-
-int ReadMatrix(void *pv, float *m) {
+int __declspec(noinline) ReadMatrix(void *pv, float *m) { // Doc: __declspec(noinline) tells the compiler to never inline a particular function.
 
 	ode::dBodyID id = (ode::dBodyID)pv;
 

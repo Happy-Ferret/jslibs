@@ -116,6 +116,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				InlineFunctionExpansion="2"
+				EnableIntrinsicFunctions="false"
 				FavorSizeOrSpeed="1"
 				AdditionalIncludeDirectories="..\js\src,../ode/src/include"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB"

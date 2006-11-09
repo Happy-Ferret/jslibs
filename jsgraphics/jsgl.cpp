@@ -53,7 +53,11 @@ DEFINE_FUNCTION( ClassConstruct ) {
 
 	JS_SetReservedSlot(cx, obj, SLOT_WINDOW_OBJECT, argv[0]); // avoid being GC while Gl is in use
 
-	int colorDepth = 32;
+	BOOL res;
+	HDC hDC = GetDC(hWnd);
+	RT_ASSERT( hDC != NULL, "Could not get window Device Context." );
+
+	int colorDepth = 16;
 
 	// PFD_DRAW_TO_BITMAP : http://msdn.microsoft.com/library/default.asp?url=/library/en-us/dnopen/html/msdn_gl6.asp
 
@@ -70,7 +74,7 @@ DEFINE_FUNCTION( ClassConstruct ) {
 		0,                               // Shift Bit Ignored
 		0,                               // No Accumulation Buffer
 		0, 0, 0, 0,                      // Accumulation Bits Ignored
-		32,                              // 16Bit Z-Buffer (Depth Buffer)  
+		16,                              // 16Bit Z-Buffer (Depth Buffer)  
 		0,                               // No Stencil Buffer
 		0,                               // No Auxiliary Buffer
 		PFD_MAIN_PLANE,                  // Main Drawing Layer
@@ -78,18 +82,18 @@ DEFINE_FUNCTION( ClassConstruct ) {
 		0, 0, 0                          // Layer Masks Ignored
 	};
 
-	BOOL res;
-	HDC hDC = GetDC(hWnd);
-	RT_ASSERT( hDC != NULL, "Could not get window Device Context." );
 
-	int PixelFormat = ChoosePixelFormat(hDC, &pfd);
-	RT_ASSERT( PixelFormat != 0, "Could not Find A Suitable OpenGL PixelFormat." );
+	int pixelFormat = ChoosePixelFormat(hDC, &pfd);
+	RT_ASSERT( pixelFormat != 0, "Could not Find A Suitable OpenGL PixelFormat." );
 
 	// If you are using the Win32 interface (as opposed to GLUT), call DescribePixelFormat() and check the returned dwFlags bitfield. 
 	// If PFD_GENERIC_ACCELERATED is clear and PFD_GENERIC_FORMAT is set, then the pixel format is only supported by the generic implementation. 
 	// Hardware acceleration is not possible for this format. For hardware acceleration, you need to choose a different format.
+	DescribePixelFormat(hDC, pixelFormat, sizeof(PIXELFORMATDESCRIPTOR), &pfd); // [TBD] check return value for error
+	bool hasNoAccel = (pfd.dwFlags & PFD_GENERIC_FORMAT != 0) && (pfd.dwFlags & PFD_GENERIC_ACCELERATED == 0);
+	RT_ASSERT( hasNoAccel == false, "Hardware acceleration is not possible for this format." );
 
-	res = SetPixelFormat(hDC,PixelFormat,&pfd);
+	res = SetPixelFormat(hDC,pixelFormat,&pfd);
 	RT_ASSERT( res, "Could not Set The PixelFormat." );
 
 	HGLRC hRC = wglCreateContext(hDC);
@@ -136,7 +140,7 @@ DEFINE_FUNCTION( Init ) {
 	glShadeModel(GL_SMOOTH);
 
 	glEnable(GL_DEPTH_TEST);
-	glDepthFunc(GL_LEQUAL); // GL_LESS
+	glDepthFunc(GL_LESS); // GL_LEQUAL
 	glClearDepth(1.0f);
 //	glDepthRange( 0.01, 1000 );
 
@@ -212,6 +216,8 @@ DEFINE_FUNCTION( LoadMatrix ) {
 	GetNamedPrivate(cx, argObj, NATIVE_READ_TRANSFORMATION_MATRIX, (void**)&ReadMatrix);
 	(*ReadMatrix)(mtp, m.raw); // [TBD] avoid copy
 
+//	float f[16];
+//	glGetFloatv(GL_MODELVIEW_MATRIX, f);
 	glLoadMatrixf(	m.raw );
 	return JS_TRUE;
 }

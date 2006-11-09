@@ -35,7 +35,6 @@ w.rect = [100,100,500,500];
 var gl = new Gl(w);
 
 var mouse = new MouseMotion(w);
-
 var button = [0,0,0];
 w.onmouseup = w.onmousedown = function(b, polarity) { // onmouseup AND onmousedown
 
@@ -43,11 +42,11 @@ w.onmouseup = w.onmousedown = function(b, polarity) { // onmouseup AND onmousedo
 	mouse.infiniteMode = button[0] || button[1] || button[2];
 }
 
-var tw=0, tx=0, ty=0, tz=0; 
 
-w.onmousewheel = function(delta) {
+var tw=0, tx=0, ty=0, tz=1000; 
+w.onmousewheel = function(delta) { 
 
-	tw += delta;
+	tw += delta 
 }
 
 mouse.delta = function( dx,dy, b1,b2,b3 ) {
@@ -62,25 +61,21 @@ mouse.delta = function( dx,dy, b1,b2,b3 ) {
 	}
 }
 
+
 function Render() {
 
-//	world.Step(0.1,true);
-
 	var t0 = IntervalNow();
-
 	//Print('Rendering image '+image++, '\n');
 
 	gl.Clear( glc.COLOR_BUFFER_BIT | glc.DEPTH_BUFFER_BIT );
-/*
-	gl.Translate(0,0, -tz/50-5);
-	gl.Rotate( ty/2, 1,0,0 );
-	gl.Rotate( tx/2, 0,1,0 );
-	gl.Rotate( tw*10, 0,0,1 );
-*/
 
+//	gl.Translate(0,0, -tz/50);
+//	gl.Rotate( ty/2, 1,0,0 );
+//	gl.Rotate( tx/2, 0,1,0 );
+//	gl.Rotate( tw*10, 0,0,1 );
 
 	var camera = new Transformation();
-	camera.Translate(0,0, -tz/50-5);
+	camera.Translate(0,0, -tz/50);
 	camera.Rotate( ty/2, 1,0,0 );
 	camera.Rotate( tx/2, 0,1,0 );
 	camera.Rotate( tw*10, 0,0,1 );
@@ -93,7 +88,7 @@ function Render() {
 		for ( var y = -100; y<10; y++ ) {
 			gl.Quad(x,y,x+1,y+1);
 		}
-	
+
 	var m = new Transformation();
 	m.Load( camera );
 	m.Multiply( body1 );

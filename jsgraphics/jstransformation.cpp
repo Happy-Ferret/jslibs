@@ -10,7 +10,7 @@
 #include <math.h>
 
 
-int ReadMatrix(void *pv, float *m) {
+int __declspec(noinline) ReadMatrix(void *pv, float *m) { // Doc: __declspec(noinline) tells the compiler to never inline a particular function.
 
 	float* src = ((Matrix44*)pv)->raw;
 	if (src == NULL)
@@ -55,8 +55,6 @@ DEFINE_FUNCTION( ClassConstruct ) {
 DEFINE_FUNCTION( Load ) {
 
 	// [TBD] check if arg is Transformation
-
-
 	RT_ASSERT_ARGC(1)
 
 	Matrix44 *m = (Matrix44*)JS_GetPrivate(cx, obj);
@@ -78,7 +76,6 @@ DEFINE_FUNCTION( Load ) {
 
 		return JS_TRUE;
 	}
-
 }
 
 
@@ -137,6 +134,7 @@ DEFINE_FUNCTION( Multiply ) {
 
 	Matrix44 *m = (Matrix44*)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(m);
+
 	RT_ASSERT( JSVAL_IS_OBJECT(argv[0]), "Argument must be an object." );
 
 	JSObject *argObj = JSVAL_TO_OBJECT(argv[0]);
@@ -154,10 +152,13 @@ DEFINE_FUNCTION( Multiply ) {
 	if ( mtp != NULL ) {
 
 		Matrix44 mx;
+		ReadMatrix44 *pReadMatrix;
+		if ( GetNamedPrivate(cx, argObj, NATIVE_READ_TRANSFORMATION_MATRIX, (void**)&pReadMatrix) == JS_FALSE )
+			return JS_FALSE;
 
-		ReadMatrix44 *ReadMatrix;
-		GetNamedPrivate(cx, argObj, NATIVE_READ_TRANSFORMATION_MATRIX, (void**)&ReadMatrix);
-		(*ReadMatrix)(mtp, (float*)mx.m); // [TBD] avoid copy
+//		ReadMatrix44 f = *((ReadMatrix44*)ptr);
+
+		(*pReadMatrix)(mtp, mx.raw); // [TBD] avoid copy
 		Matrix44Multiply(m, &mx); // <- mult
 
 		return JS_TRUE;
