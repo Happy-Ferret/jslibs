@@ -42,21 +42,32 @@ w.onmouseup = w.onmousedown = function(b, polarity) { // onmouseup AND onmousedo
 	mouse.infiniteMode = button[0] || button[1] || button[2];
 }
 
+var camera = new Transformation();
+//camera.Translate( 0,0,-10 );
+
+var cameraPosition = new Transformation();
+var cameraAngle = new Transformation();
 
 var tw=0, tx=0, ty=0, tz=1000; 
-w.onmousewheel = function(delta) { 
+w.onmousewheel = function(delta) {
 
-	tw += delta 
+	tw += delta;
 }
 
 mouse.delta = function( dx,dy, b1,b2,b3 ) {
 	
 	if ( b1 ) {
-	
+		
+		cameraAngle.LookAt( Math.sin(tx), Math.cos(ty), Math.cos(tx) );
+//		cameraAngle.Rotate( dx, 0,1, );
+//		cameraAngle.Rotate( dy, 1,0,0 );
+		
 		tx += dx;
 		ty += dy;
 	} else if ( b2 ) {
-
+		
+		camera.Translate( 0,0,-dy/10 );
+		
 		tz += dy;
 	}
 }
@@ -64,7 +75,6 @@ mouse.delta = function( dx,dy, b1,b2,b3 ) {
 
 function Render() {
 
-	var t0 = IntervalNow();
 	//Print('Rendering image '+image++, '\n');
 
 	gl.Clear( glc.COLOR_BUFFER_BIT | glc.DEPTH_BUFFER_BIT );
@@ -74,22 +84,29 @@ function Render() {
 //	gl.Rotate( tx/2, 0,1,0 );
 //	gl.Rotate( tw*10, 0,0,1 );
 
-	var camera = new Transformation();
-	camera.Rotate( ty/2, 1,0,0 );
-	camera.Rotate( tx/2, 0,1,0 );
-	camera.Rotate( tw*10, 0,0,1 );
-	camera.Translate(0,0, -tz/50);
+
+	camera.Multiply( cameraAngle );
+//	camera.Multiply( cameraPosition );
+
+
+//	camera.Rotate( ty/2, 1,0,0 );
+//	camera.Rotate( tx/2, 0,1,0 );
+//	camera.Rotate( tw*10, 0,0,1 );
+//	camera.Translate(0,0, -tz/50);
+
+
+
 
 	gl.LoadMatrix(camera);
 
 	gl.Color(1,1,1);
 
-/*
-	for ( var x = -100; x<100; x++ )
+
+	for ( var x = -10; x<100; x++ )
 		for ( var y = -100; y<10; y++ ) {
 			gl.Quad(x,y,x+1,y+1);
 		}
-*/
+
 
 	var m = new Transformation();
 	m.Load( camera );
@@ -102,14 +119,18 @@ function Render() {
 	gl.LoadMatrix(m);
 	gl.Cube();
 
-
+	m.Load( camera );
+	m.Translate( joint.anchor[0], joint.anchor[1], joint.anchor[2] );
+	gl.LoadMatrix(m);
 	gl.Axis();
 
-//	CollectGarbage();
 
-	Print( 'Rendering time: '+(IntervalNow()-t0)+'ms', '\n');
+//	CollectGarbage();
+//	var t0 = IntervalNow();
+Sleep(1)
 	gl.SwapBuffers();
-	world.Step(0.05,true);
+//	Print( 'Rendering time: '+(IntervalNow()-t0)+'ms', '\n');
+	world.Step(0.005,true);
 }
 
 w.onidle = Render;

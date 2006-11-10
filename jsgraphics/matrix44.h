@@ -12,27 +12,11 @@
 #include <stdlib.h>
 #include <math.h>
 
+//#include <fvec.h>
+
 #include "vector3.h"
 
-
-#define M11 m[0][0]
-#define M12 m[0][1]
-#define M13 m[0][2]
-#define M14 m[0][3]
-#define M21 m[1][0]
-#define M22 m[1][1]
-#define M23 m[1][2]
-#define M24 m[1][3]
-#define M31 m[2][0]
-#define M32 m[2][1]
-#define M33 m[2][2]
-#define M34 m[2][3]
-#define M41 m[3][0]
-#define M42 m[3][1]
-#define M43 m[3][2]
-#define M44 m[3][3]
-
-typedef union {
+typedef __declspec(align(16)) union {
     struct {
         __m128 m1;
         __m128 m2;
@@ -46,6 +30,7 @@ typedef union {
 		float raw[16];
 	 };
 } Matrix44;
+
 
 static float Matrix44IdentityValue[] = {
 
@@ -127,15 +112,15 @@ inline void Matrix44Rotation( Matrix44 *m, const Vector3 *axis, float radAngle )
 //	Matrix44 rot;
 //	Matrix44Identity(&rot);
 //	rot.m1 = _mm_set1_ps( 
-	m->M11 = ca + (1.0f - ca) * v.x * v.x;
-	m->M12 = (1.0f - ca) * v.x * v.y - sa * v.z;
-	m->M13 = (1.0f - ca) * v.z * v.x + sa * v.y;
-	m->M21 = (1.0f - ca) * v.x * v.y + sa * v.z;
-	m->M22 = ca + (1.0f - ca) * v.y * v.y;
-	m->M23 = (1.0f - ca) * v.y * v.z - sa * v.x;
-	m->M31 = (1.0f - ca) * v.z * v.x - sa * v.y;
-	m->M32 = (1.0f - ca) * v.y * v.z + sa * v.x;
-	m->M33 = ca + (1.0f - ca) * v.z * v.z;
+	m->m[0][0] = ca + (1.0f - ca) * v.x * v.x;
+	m->m[0][1] = (1.0f - ca) * v.x * v.y - sa * v.z;
+	m->m[0][2] = (1.0f - ca) * v.z * v.x + sa * v.y;
+	m->m[1][0] = (1.0f - ca) * v.x * v.y + sa * v.z;
+	m->m[1][1] = ca + (1.0f - ca) * v.y * v.y;
+	m->m[1][2] = (1.0f - ca) * v.y * v.z - sa * v.x;
+	m->m[2][0] = (1.0f - ca) * v.z * v.x - sa * v.y;
+	m->m[2][1] = (1.0f - ca) * v.y * v.z + sa * v.x;
+	m->m[2][2] = ca + (1.0f - ca) * v.z * v.z;
 //	Matrix44Mult(m, &rot);
 
 
@@ -192,40 +177,92 @@ inline void Matrix44Rotation( Matrix44 *m, const Vector3 *axis, float radAngle )
 }
 
 
+/*
+
+
+
+  void RotationSpherical( float latitude, float longitude, float angle ) {
+
+    float sin_a    = sin( angle / 2 );
+    float cos_a    = cos( angle / 2 );
+
+    float sin_lat  = sin( latitude );
+    float cos_lat  = cos( latitude );
+
+    float sin_long = sin( longitude );
+    float cos_long = cos( longitude );
+
+    float x = sin_a * cos_lat * sin_long;
+    float y = sin_a * sin_lat;
+    float z = sin_a * sin_lat * cos_long;
+    float w = cos_a;
+
+    float xx = x * x;
+    float xy = x * y;
+    float xz = x * z;
+    float xw = x * w;
+
+    float yy = y * y;
+    float yz = y * z;
+    float yw = y * w;
+
+    float zz = z * z;
+    float zw = z * w;
+
+    _m[0]  = 1 - 2 * ( yy + zz );
+    _m[1]  =     2 * ( xy - zw );
+    _m[2]  =     2 * ( xz + yw );
+
+    _m[4]  =     2 * ( xy + zw );
+    _m[5]  = 1 - 2 * ( xx + zz );
+    _m[6]  =     2 * ( yz - xw );
+
+    _m[8]  =     2 * ( xz - yw );
+    _m[9]  =     2 * ( yz + xw );
+    _m[10] = 1 - 2 * ( xx + yy );
+
+    _type |= ROTATION;
+    ++updateIndex;
+    _crc = 0;
+  }
+
+
+*/
+
 inline void Matrix44Translation( Matrix44 *m, const Vector3 *t ) {
 
-	m->M41 = t->x;
-	m->M42 = t->y;
-	m->M43 = t->z;
+	m->m[3][0] = t->x;
+	m->m[3][1] = t->y;
+	m->m[3][2] = t->z;
 	//	m->m4 = t->m128;
 	//m->m4 = _mm_add_ps(m->m4, t->m128);
 }
 
 
-inline void Matrix44Scale( Matrix44 *m, const Vector3 *s ) {
-
-	// _vector3_sse have the w element set to zero, we need it at 1...
-	__m128 scale = _mm_add_ps(_mm_set_ps(1.0f, 0.0f, 0.0f, 0.0f), s->m128);
-	m->m1 = _mm_mul_ps(m->m1, scale);
-	m->m2 = _mm_mul_ps(m->m2, scale);
-	m->m3 = _mm_mul_ps(m->m3, scale);
-	m->m4 = _mm_mul_ps(m->m4, scale);
-}
+//inline void Matrix44Scale( Matrix44 *m, const Vector3 *s ) {
+//
+//	// _vector3_sse have the w element set to zero, we need it at 1...
+//	__m128 scale = _mm_add_ps(_mm_set_ps(1.0f, 0.0f, 0.0f, 0.0f), s->m128);
+//	m->m1 = _mm_mul_ps(m->m1, scale);
+//	m->m2 = _mm_mul_ps(m->m2, scale);
+//	m->m3 = _mm_mul_ps(m->m3, scale);
+//	m->m4 = _mm_mul_ps(m->m4, scale);
+//}
 
 
 inline void Matrix44LookAt( Matrix44 *m, const Vector3 *to, const Vector3 *up ) {
 
 	Vector3 z;
-	z.x = m->M41;
-	z.y = m->M42;
-	z.z = m->M43;
+	z.x = m->m[3][0];
+	z.y = m->m[3][1];
+	z.z = m->m[3][2];
 	Vector3Sub(&z, to); // z = z - to
 	Vector3Normalize(&z); // z = |z|
 	Vector3 y = *up;
 	Vector3 x;
 	Vector3Cross(&x, &y, &z); // x = y cross z
 	Vector3Cross(&y, &z, &x); // y = z cross x
-	Vector3Normalize(&x); // x =|x|
+	Vector3Normalize(&x); // x = |x|
 	Vector3Normalize(&y); // y = |y|
 	m->m1 = x.m128;
 	m->m2 = y.m128;
@@ -236,9 +273,9 @@ inline void Matrix44LookAt( Matrix44 *m, const Vector3 *to, const Vector3 *up ) 
 inline void Matrix44Billboard( Matrix44 *m, const Vector3 *to, const Vector3 *up ) {
 
 	Vector3 z;
-	z.x = m->M41;
-	z.y = m->M42;
-	z.z = m->M43;
+	z.x = m->m[3][0];
+	z.y = m->m[3][1];
+	z.z = m->m[3][2];
 	Vector3Sub(&z, to); // z = z - to
 	Vector3Normalize(&z); // z = |z|
 	Vector3 y = *up;

@@ -67,6 +67,21 @@ DEFINE_FUNCTION( Load ) {
 	REPORT_ERROR( "Unable to read a matrix." );
 }
 
+DEFINE_FUNCTION( Translation ) {
+
+	RT_ASSERT_ARGC(3); // x, y, z
+	Matrix44 *m = (Matrix44*)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE(m);
+	jsdouble x, y, z;
+	JS_ValueToNumber(cx, argv[0], &x);
+	JS_ValueToNumber(cx, argv[1], &y);
+	JS_ValueToNumber(cx, argv[2], &z);
+	Vector3 vector;
+	Vector3Set(&vector, x,y,z);
+	Matrix44Translation(m, &vector);
+	return JS_TRUE;
+}
+
 
 DEFINE_FUNCTION( Translate ) {
 
@@ -87,6 +102,22 @@ DEFINE_FUNCTION( Translate ) {
 }
 
 
+DEFINE_FUNCTION( Rotation ) {
+
+	RT_ASSERT_ARGC(4); // angle, x, y, z
+	Matrix44 *m = (Matrix44*)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE(m);
+	jsdouble angle, x, y, z;
+	JS_ValueToNumber(cx, argv[0], &angle);
+	JS_ValueToNumber(cx, argv[1], &x);
+	JS_ValueToNumber(cx, argv[2], &y);
+	JS_ValueToNumber(cx, argv[3], &z);
+	Vector3 axis;
+	Vector3Set(&axis, x,y,z);
+	Matrix44Rotation(m, &axis, -angle*M_PI/360.0f);
+	return JS_TRUE;
+}
+
 DEFINE_FUNCTION( Rotate ) {
 
 	RT_ASSERT_ARGC(4); // angle, x, y, z
@@ -103,6 +134,24 @@ DEFINE_FUNCTION( Rotate ) {
 	Matrix44Identity(&r);
 	Matrix44Rotation(&r, &axis, -angle*M_PI/360.0f);
 	Matrix44Multiply(m, &r);
+	return JS_TRUE;
+}
+
+
+DEFINE_FUNCTION( LookAt ) {
+
+	RT_ASSERT_ARGC(3); // x, y, z
+	Matrix44 *m = (Matrix44*)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE(m);
+	jsdouble x, y, z;
+	JS_ValueToNumber(cx, argv[0], &x);
+	JS_ValueToNumber(cx, argv[1], &y);
+	JS_ValueToNumber(cx, argv[2], &z);
+	Vector3 up;
+	Vector3Set(&up, 0,0,1);
+	Vector3 to;
+	Vector3Set(&to, x,y,z);
+	Matrix44LookAt(m, &to, &up);
 	return JS_TRUE;
 }
 
@@ -150,9 +199,12 @@ DEFINE_FUNCTION( Multiply ) {
 
 BEGIN_FUNCTION_MAP
 	FUNCTION( Load )
-	FUNCTION( Translate )
-	FUNCTION( Rotate )
 	FUNCTION( Multiply )
+	FUNCTION( Translate )
+	FUNCTION( Translation )
+	FUNCTION( Rotate )
+	FUNCTION( Rotation )
+	FUNCTION( LookAt )
 END_MAP
 
 BEGIN_PROPERTY_MAP
@@ -175,3 +227,12 @@ NO_CONSTANT_MAP
 NO_INITCLASSAUX
 
 END_CLASS(Transformation, HAS_PRIVATE, NO_RESERVED_SLOT)
+
+
+/*
+
+	First Person Shooter tricks:
+		http://www.delphi3d.net/articles/printarticle.php?article=viewing.htm
+
+
+*/

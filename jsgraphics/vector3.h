@@ -4,12 +4,14 @@ source: http://nebuladevice.svn.sourceforge.net/viewvc/nebuladevice/trunk/nebula
 */
 #include <xmmintrin.h>
 
+#include <ivec.h>
+
 static const int X = 0;
 static const int Y = 1;
 static const int Z = 2;
 static const int W = 3;
 
-typedef union {
+typedef __declspec(align(4)) union {
     __m128 m128;
     struct { float x, y, z, pad; };
 } Vector3;
@@ -48,9 +50,16 @@ inline float Vector3Len( Vector3 *v ) {
     return l.m128_f32[X];
 }
 
+static FORCEINLINE __m128 rsqrt_nr(const __m128& x) {
+	static const __m128 v0pt5 = { 0.5f, 0.5f, 0.5f, 0.5f };
+	static const __m128 v3pt0 = { 3.0f, 3.0f, 3.0f, 3.0f };
+	__m128 t = _mm_rsqrt_ps(x);
+	return _mm_mul_ps(_mm_mul_ps(v0pt5, t), _mm_sub_ps(v3pt0, _mm_mul_ps(_mm_mul_ps(x, t), t)));
+}
 
 inline void Vector3Normalize( Vector3 *v ) {
 
+/*
 	__m128 m128 = v->m128;
     __m128 a = _mm_mul_ps(m128, m128);
 
@@ -62,6 +71,18 @@ inline void Vector3Normalize( Vector3 *v ) {
     __m128 oneDivLen = _mm_shuffle_ps(f, f, _MM_SHUFFLE(X,X,X,X));
 
     v->m128 = _mm_mul_ps(m128, oneDivLen);
+*/
+	__m128 vec = v->m128;
+
+	__m128 r = _mm_mul_ps(vec,vec);
+	r = _mm_add_ps(_mm_movehl_ps(r,r),r);
+	__m128 t = _mm_add_ss(_mm_shuffle_ps(r,r,1), r);
+	#ifdef ZERO_VECTOR
+		t = _mm_cmpneq_ss(t, _mm_setzero_ps()) & rsqrt_nr(t);
+	#else
+		t = rsqrt_nr(t);
+	#endif
+	v->m128 = _mm_mul_ps(vec, _mm_shuffle_ps(t,t,0x00));
 }
 
 
