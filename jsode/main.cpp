@@ -4,6 +4,10 @@
 #include "body.h"
 #include "joint.h"
 
+#include "geom.h"
+#include "geomSphere.h"
+
+
 DEFINE_UNSAFE_MODE;
 
 
@@ -13,7 +17,6 @@ int WINAPI MessageBoxA(__in_opt HWND hWnd, __in_opt LPCSTR lpText, __in_opt LPCS
 	return IDCANCEL;
 }
  
-
 extern "C" void messageHandler(int errnum, const char *msg, va_list ap) {
 
 //	abort(); // http://msdn2.microsoft.com/en-us/library/k089yyh0(VS.80).aspx
@@ -27,8 +30,11 @@ extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj)
 
 	jointInitClass( cx, obj );
 	massInitClass( cx, obj );
-	bodyInitClass( cx, obj );
-	worldInitClass( cx, obj );
+
+	INIT_CLASS( Body );
+	INIT_CLASS( Geom );
+	INIT_CLASS( GeomSphere );
+	INIT_CLASS( World );
 	return JS_TRUE;
 }
 

@@ -2,41 +2,41 @@
 #include "world.h"
 #include "body.h"
 
-#include "../smtools/smtools.h"
+BEGIN_CLASS
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void world_Finalize(JSContext *cx, JSObject *obj) {
+DEFINE_FINALIZE() {
 
 	ode::dWorldID worldId = (ode::dWorldID)JS_GetPrivate( cx, obj );
-	if ( worldId != NULL ) {
-		ode::dWorldDestroy(worldId); // Destroy a world and everything in it.
-		JS_SetPrivate(cx,obj,NULL);
-	}
+	if ( worldId != NULL )
+		ode::dWorldDestroy(worldId); // [TBD] Destroy a world and everything in it.
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSBool world_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
-	RT_ASSERT_CONSTRUCTING(&world_class);
+DEFINE_FUNCTION( ClassConstruct ) {
+
+	RT_ASSERT_CONSTRUCTING(&classWorld);
 	ode::dWorldID worldId = ode::dWorldCreate();
 	JS_SetPrivate(cx, obj, worldId); 
 	return JS_TRUE;
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSBool world_destroy(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+
+DEFINE_FUNCTION( Destroy ) {
 	
-	world_Finalize(cx, obj);
+	ode::dWorldID worldId = (ode::dWorldID)JS_GetPrivate( cx, obj );
+	RT_ASSERT_RESOURCE( worldId );
+	ode::dWorldDestroy(worldId); // [TBD] Destroy a world and everything in it.
+	JS_SetPrivate(cx,obj,NULL);
 	return JS_TRUE;
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSBool world_step(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+
+DEFINE_FUNCTION( Step ) {
 
 	RT_ASSERT_ARGC(1);
-	RT_ASSERT_CLASS(obj, &world_class);
+	RT_ASSERT_CLASS(obj, &classWorld);
 	ode::dWorldID worldID = (ode::dWorldID)JS_GetPrivate( cx, obj );
-	RT_ASSERT( worldID != NULL, RT_ERROR_NOT_INITIALIZED );
+	RT_ASSERT_RESOURCE(worldID);
 	jsdouble value;
 	JS_ValueToNumber(cx, argv[0], &value);
 	if ( argc >= 2 && argv[1] == JSVAL_TRUE ) // quick ?
@@ -46,17 +46,7 @@ JSBool world_step(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *
 	return JS_TRUE;
 }
 
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSFunctionSpec world_FunctionSpec[] = { // *name, call, nargs, flags, extra
-	{ "Destroy" , world_destroy, 0, 0, 0 },
-	{ "Step"    , world_step   , 0, 0, 0 },
-	{ 0 }
-};
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSBool world_getter_gravity(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
+DEFINE_PROPERTY( gravityGetter ) {
 
 	ode::dWorldID worldID = (ode::dWorldID)JS_GetPrivate( cx, obj );
 	RT_ASSERT( worldID != NULL, RT_ERROR_NOT_INITIALIZED );
@@ -66,8 +56,7 @@ JSBool world_getter_gravity(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 	return JS_TRUE;
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSBool world_setter_gravity(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
+DEFINE_PROPERTY( gravitySetter ) {
 
 	ode::dWorldID worldID = (ode::dWorldID)JS_GetPrivate( cx, obj );
 	RT_ASSERT( worldID != NULL, RT_ERROR_NOT_INITIALIZED );
@@ -77,11 +66,10 @@ JSBool world_setter_gravity(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 	return JS_TRUE;
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 enum { ERP, CFM, quickStepNumIterations, contactSurfaceLayer };
 
-JSBool world_setter_real(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
+DEFINE_PROPERTY( realSetter ) {
 
 	ode::dWorldID worldID = (ode::dWorldID)JS_GetPrivate( cx, obj );
 	RT_ASSERT( worldID != NULL, RT_ERROR_NOT_INITIALIZED );
@@ -104,7 +92,8 @@ JSBool world_setter_real(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 	return JS_TRUE;
 }
 
-JSBool world_getter_real(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
+
+DEFINE_PROPERTY( realGetter ) {
 
 	ode::dWorldID worldID = (ode::dWorldID)JS_GetPrivate( cx, obj );
 	RT_ASSERT( worldID != NULL, RT_ERROR_NOT_INITIALIZED );
@@ -127,44 +116,43 @@ JSBool world_getter_real(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 	return JS_TRUE;
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSBool world_get_static(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
-	
+
+DEFINE_PROPERTY( body ) {
+
 	if ( *vp == JSVAL_VOID ) { //  create it if it does not exist
 
-		JSObject *staticBody = JS_NewObject(cx, &body_class, NULL, NULL);
+		JSObject *staticBody = JS_NewObject(cx, &classBody, NULL, NULL);
 		RT_ASSERT_ALLOC(staticBody);
 		JS_SetPrivate(cx, staticBody, (ode::dBodyID)0);
 		*vp = OBJECT_TO_JSVAL(staticBody);	
 	}
-
-	return JS_TRUE;
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSPropertySpec world_PropertySpec[] = { // *name, tinyid, flags, getter, setter
-	{ "gravity"               , 0, JSPROP_PERMANENT|JSPROP_SHARED, world_getter_gravity, world_setter_gravity },
-	{ "ERP"                   , ERP, JSPROP_PERMANENT|JSPROP_SHARED, world_getter_real, world_setter_real },
-	{ "CFM"                   , CFM, JSPROP_PERMANENT|JSPROP_SHARED, world_getter_real, world_setter_real },
-	{ "quickStepNumIterations", quickStepNumIterations, JSPROP_PERMANENT|JSPROP_SHARED, world_getter_real, world_setter_real },
-	{ "contactSurfaceLayer"   , contactSurfaceLayer, JSPROP_PERMANENT|JSPROP_SHARED, world_getter_real, world_setter_real },
-	{ "static"                , 0, JSPROP_PERMANENT|JSPROP_READONLY, world_get_static, NULL },
-	{ 0 }
-};
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSClass world_class = { "World", JSCLASS_HAS_PRIVATE,
-	JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub,
-	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, world_Finalize,
-};
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSObject *worldInitClass( JSContext *cx, JSObject *obj ) {
-
-	return JS_InitClass( cx, obj, NULL, &world_class, world_construct, 0, world_PropertySpec, world_FunctionSpec, NULL, NULL );
 }
 
 
-/****************************************************************
+BEGIN_FUNCTION_MAP
+	FUNCTION( Step )
+	FUNCTION( Destroy )
+END_MAP
 
-*/
+BEGIN_PROPERTY_MAP
+	READWRITE( gravity )
+	READONLY( body )
+	PROPERTY_TABLE( ERP, real )
+	PROPERTY_TABLE( CFM, real )
+	PROPERTY_TABLE( quickStepNumIterations, real )
+	PROPERTY_TABLE( contactSurfaceLayer, real )
+END_MAP
+
+
+NO_STATIC_FUNCTION_MAP
+NO_STATIC_PROPERTY_MAP
+
+//NO_CLASS_CONSTRUCT
+NO_OBJECT_CONSTRUCT
+//NO_FINALIZE
+NO_CALL
+NO_PROTOTYPE
+NO_CONSTANT_MAP
+NO_INITCLASSAUX
+
+END_CLASS( World, HAS_PRIVATE, NO_RESERVED_SLOT)

@@ -166,6 +166,7 @@
 #define HAS_PRIVATE JSCLASS_HAS_PRIVATE
 #define NO_RESERVED_SLOT 0
 #define NO_PROTOTYPE static JSObject *prototype = NULL;
+#define PROTOTYPE(prototypeObject) static JSObject *prototype = prototypeObject;
 #define NO_CLASS_CONSTRUCT static JSNative ClassConstruct = NULL;
 #define NO_OBJECT_CONSTRUCT static JSNative ObjectConstruct = NULL;
 #define NO_FINALIZE static JSFinalizeOp Finalize = JS_FinalizeStub;
@@ -211,6 +212,8 @@
 #define READONLY(name) { #name, 0, JSPROP_PERMANENT|JSPROP_SHARED|JSPROP_READONLY, name, NULL },
 // Allows a full definition of a property
 #define PROPERTY(name,id,flags,getter,setter) { #name, id, flags, getter, setter },
+// Used to define multiple properties with only one pari of getter/setter functions ( an enum has to be defiend ... less than 256 items ! )
+#define PROPERTY_TABLE(name, function) { #name, name, JSPROP_PERMANENT|JSPROP_SHARED, function##Getter, function##Setter },
 // use in PROPERTY_MAP only. 'func' centralize all values. WARNING: 0 <= value <= 255
 #define CONSTANT(func, name, value) { #name, value, JSPROP_PERMANENT|JSPROP_READONLY, func, NULL },
 // just defines a property

@@ -184,6 +184,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\geom.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\geomSphere.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\joint.cpp"
 				>
 			</File>
@@ -193,6 +201,10 @@
 			</File>
 			<File
 				RelativePath=".\mass.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\space.cpp"
 				>
 			</File>
 			<File
@@ -230,11 +242,23 @@
 				>
 			</File>
 			<File
+				RelativePath=".\geom.h"
+				>
+			</File>
+			<File
+				RelativePath=".\geomSphere.h"
+				>
+			</File>
+			<File
 				RelativePath=".\joint.h"
 				>
 			</File>
 			<File
 				RelativePath=".\mass.h"
+				>
+			</File>
+			<File
+				RelativePath=".\space.h"
 				>
 			</File>
 			<File

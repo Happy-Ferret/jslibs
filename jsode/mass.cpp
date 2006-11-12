@@ -2,7 +2,6 @@
 #include "body.h"
 #include "mass.h"
 
-#include "../smtools/smtools.h"
 
 JSBool GetBodyAndMass(JSContext *cx, JSObject *massObject, ode::dBodyID *pBodyID, ode::dMass *pMass) {
 
@@ -10,7 +9,7 @@ JSBool GetBodyAndMass(JSContext *cx, JSObject *massObject, ode::dBodyID *pBodyID
 	JS_GetReservedSlot(cx, massObject, MASS_SLOT_BODY, &bodyVal);
 	JSObject *bodyObject;
 	JS_ValueToObject(cx, bodyVal, &bodyObject);
-	RT_ASSERT_CLASS(bodyObject, &body_class);
+	RT_ASSERT_CLASS(bodyObject, &classBody);
 	*pBodyID = (ode::dBodyID)JS_GetPrivate(cx, bodyObject);
 	ode::dBodyGetMass(*pBodyID, pMass);
 	return JS_TRUE;

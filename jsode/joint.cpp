@@ -1,10 +1,7 @@
 #include "stdafx.h"
-
 #include "joint.h"
 #include "body.h"
 #include "world.h"
-
-#include "../smtools/smtools.h"
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 JSBool joint_get_body(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
@@ -48,13 +45,13 @@ JSBool joint_attach(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval
 	JSObject *body1Object, *body2Object;
 
 	JS_ValueToObject(cx, argv[0], &body1Object);
-	RT_ASSERT_CLASS(body1Object, &body_class);
+	RT_ASSERT_CLASS(body1Object, &classBody);
 	JS_SetReservedSlot(cx, obj, JOINT_SLOT_BODY1, argv[0]);
 	ode::dBodyID bodyID1 = (ode::dBodyID)JS_GetPrivate(cx, body1Object);
 //	RT_ASSERT(bodyID != NULL, RT_ERROR_NOT_INITIALIZED);
 
 	JS_ValueToObject(cx, argv[1], &body2Object);
-	RT_ASSERT_CLASS(body2Object, &body_class);
+	RT_ASSERT_CLASS(body2Object, &classBody);
 	JS_SetReservedSlot(cx, obj, JOINT_SLOT_BODY2, argv[1]);
 	ode::dBodyID bodyID2 = (ode::dBodyID)JS_GetPrivate(cx, body2Object);
 //	RT_ASSERT(bodyID != NULL, RT_ERROR_NOT_INITIALIZED);
@@ -98,7 +95,6 @@ enum {
 	ballAnchor, ballAnchor2, 
 	hingeAnchor, hingeAnchor2, hingeAxis, hingeAngle, hingeAngleRate, 
 	sliderAxis, sliderPosition, sliderPositionRate
-
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -187,8 +183,6 @@ JSBool joint_set_real(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 
 	switch(JSVAL_TO_INT(id)) {
 
-
-
 	}
 	return JS_TRUE;
 }
@@ -201,9 +195,9 @@ JSBool jointBall_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv
 	RT_ASSERT_ARGC(1);
 	JSObject *worldObject;
 	JS_ValueToObject(cx, argv[0], &worldObject);
-	RT_ASSERT_CLASS(worldObject,&world_class);
+	RT_ASSERT_CLASS(worldObject,&classWorld);
 	ode::dWorldID worldID = (ode::dWorldID)JS_GetPrivate(cx,worldObject);
-	RT_ASSERT_1(worldID != NULL, "%s object not initialized", world_class.name );
+	RT_ASSERT_1(worldID != NULL, "%s object not initialized", classWorld.name );
 //	JS_SetReservedSlot(cx, obj, 0, argv[0]);
 	ode::dJointID jointID = ode::dJointCreateBall(worldID, 0); // The joint group ID is 0 to allocate the joint normally.
 	JS_SetPrivate(cx, obj, jointID);
@@ -231,9 +225,9 @@ JSBool jointHinge_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *arg
 	RT_ASSERT_ARGC(1);
 	JSObject *worldObject;
 	JS_ValueToObject(cx, argv[0], &worldObject);
-	RT_ASSERT_CLASS(worldObject,&world_class);
+	RT_ASSERT_CLASS(worldObject,&classWorld);
 	ode::dWorldID worldID = (ode::dWorldID)JS_GetPrivate(cx,worldObject);
-	RT_ASSERT_1(worldID != NULL, "%s object not initialized", world_class.name );
+	RT_ASSERT_1(worldID != NULL, "%s object not initialized", classWorld.name );
 //	JS_SetReservedSlot(cx, obj, 0, argv[0]);
 	ode::dJointID jointID = ode::dJointCreateHinge(worldID, 0); // The joint group ID is 0 to allocate the joint normally.
 	JS_SetPrivate(cx, obj, jointID);
@@ -264,9 +258,9 @@ JSBool jointSlider_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *ar
 	RT_ASSERT_ARGC(1);
 	JSObject *worldObject;
 	JS_ValueToObject(cx, argv[0], &worldObject);
-	RT_ASSERT_CLASS(worldObject,&world_class);
+	RT_ASSERT_CLASS(worldObject,&classWorld);
 	ode::dWorldID worldID = (ode::dWorldID)JS_GetPrivate(cx,worldObject);
-	RT_ASSERT_1(worldID != NULL, "%s object not initialized", world_class.name );
+	RT_ASSERT_1(worldID != NULL, "%s object not initialized", classWorld.name );
 //	JS_SetReservedSlot(cx, obj, 0, argv[0]);
 	ode::dJointID jointID = ode::dJointCreateSlider(worldID, 0); // The joint group ID is 0 to allocate the joint normally.
 	JS_SetPrivate(cx, obj, jointID);
@@ -296,9 +290,9 @@ JSBool jointFixed_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *arg
 	RT_ASSERT_ARGC(1);
 	JSObject *worldObject;
 	JS_ValueToObject(cx, argv[0], &worldObject);
-	RT_ASSERT_CLASS(worldObject,&world_class);
+	RT_ASSERT_CLASS(worldObject,&classWorld);
 	ode::dWorldID worldID = (ode::dWorldID)JS_GetPrivate(cx,worldObject);
-	RT_ASSERT_1(worldID != NULL, "%s object not initialized", world_class.name );
+	RT_ASSERT_1(worldID != NULL, "%s object not initialized", classWorld.name );
 //	JS_SetReservedSlot(cx, obj, 0, argv[0]);
 	ode::dJointID jointID = ode::dJointCreateFixed(worldID, 0); // The joint group ID is 0 to allocate the joint normally.
 	JS_SetPrivate(cx, obj, jointID);
