@@ -119,7 +119,7 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 			if ( functionVal != JSVAL_VOID ) {
 
 				RT_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." );
-				jsval argv[] = { INT_TO_JSVAL( GET_WHEEL_DELTA_WPARAM(wParam)/WHEEL_DELTA ) };
+				jsval argv[] = { INT_TO_JSVAL( GET_WHEEL_DELTA_WPARAM(wParam)/WHEEL_DELTA ), BOOLEAN_TO_JSVAL(wParam & MK_LBUTTON), BOOLEAN_TO_JSVAL(wParam & MK_RBUTTON), BOOLEAN_TO_JSVAL(wParam & MK_MBUTTON) };
 				JS_CallFunctionValue(cx, obj, functionVal, sizeof(argv)/sizeof(*argv), argv, &rval);
 				return 0;
 			}

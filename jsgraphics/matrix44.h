@@ -5,6 +5,15 @@
 
 	SSE Intro:
 		http://www.codeproject.com/cpp/sseintro.asp
+
+	INTEL Approximate Math Library:
+		http://www.intel.com/design/pentiumiii/devtools/AMaths.zip
+
+	Some asm math code snippets:
+		http://www.caustik.com/cxbx/download/Cxbx-0.7.8c-Source.zip/Cxbx-0.7.8c-Source/OpenXDK/src/xlibc/math/
+		http://ftp.osuosl.org/pub/FreeBSD/distfiles/egl-v0.2.5-src.zip/shared/
+		:pserver:anonymous@cvs.ogre3d.org:/cvsroot/ogre ogrenew/OgreMain/include/
+		http://glide64.emuxhaven.net/files/Glide64_WonderPlus_src.zip/
 */
 
 #include <xmmintrin.h>
@@ -12,7 +21,8 @@
 #include <stdlib.h>
 #include <math.h>
 
-//#include <fvec.h>
+//
+#include <fvec.h>
 
 #include "vector3.h"
 
@@ -42,12 +52,15 @@ static float Matrix44IdentityValue[] = {
 
 inline void Matrix44Free( Matrix44 *m ) {
 
-	return _aligned_free(m);
+	 _aligned_free(m);
 }
 
 inline Matrix44 *Matrix44Alloc() {
 
-	return (Matrix44*)_aligned_malloc(sizeof(Matrix44),16);
+	// Doc: For example, if you use malloc, the result depends on the operand size. If arg >= 8, 
+	//      alignment will be 8 byte aligned. If arg < 8, alignment will be the first power of 2 less than arg. 
+	//      For example, if you use malloc(7), alignment is 4 bytes.
+	return (Matrix44*)_aligned_malloc(sizeof(Matrix44), __alignof(Matrix44));
 }
 
 inline void Matrix44Identity( Matrix44 *m ) {
@@ -55,7 +68,12 @@ inline void Matrix44Identity( Matrix44 *m ) {
 	memcpy(m->raw, Matrix44IdentityValue, sizeof(Matrix44IdentityValue));
 }
 
-inline void Matrix44Multiply( Matrix44 *m, const Matrix44 *mx ) {
+inline void Matrix44Load( Matrix44 *m, Matrix44 *m1 ) {
+
+	memcpy(m->raw, m1->raw, sizeof(Matrix44));
+}
+
+inline void Matrix44Product( Matrix44 *m, const Matrix44 *mx ) { // m = m * mx
 
 	__m128 sm1 = mx->m1;
 	__m128 sm2 = mx->m2;
@@ -72,6 +90,28 @@ inline void Matrix44Multiply( Matrix44 *m, const Matrix44 *mx ) {
 	m->m3 = _mm_add_ps(_mm_add_ps(_mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(sm3, sm3, _MM_SHUFFLE(0,0,0,0)), mx1), _mm_mul_ps(_mm_shuffle_ps(sm3, sm3, _MM_SHUFFLE(1,1,1,1)), mx2)), _mm_mul_ps(_mm_shuffle_ps(sm3, sm3, _MM_SHUFFLE(2,2,2,2)), mx3)), _mm_mul_ps(_mm_shuffle_ps(sm3, sm3, _MM_SHUFFLE(3,3,3,3)), mx4));
 	m->m4 = _mm_add_ps(_mm_add_ps(_mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(sm4, sm4, _MM_SHUFFLE(0,0,0,0)), mx1), _mm_mul_ps(_mm_shuffle_ps(sm4, sm4, _MM_SHUFFLE(1,1,1,1)), mx2)), _mm_mul_ps(_mm_shuffle_ps(sm4, sm4, _MM_SHUFFLE(2,2,2,2)), mx3)), _mm_mul_ps(_mm_shuffle_ps(sm4, sm4, _MM_SHUFFLE(3,3,3,3)), mx4));
 }
+
+// [TBD] optimize it, try to base it on Matrix44Multiply()
+inline void Matrix44InverseProduct( Matrix44 *m, const Matrix44 *mx ) { // m = mx * m
+
+	__m128 sm1 = m->m1;
+	__m128 sm2 = m->m2;
+	__m128 sm3 = m->m3;
+	__m128 sm4 = m->m4;
+
+	__m128 mx1 = mx->m1;
+	__m128 mx2 = mx->m2;
+	__m128 mx3 = mx->m3;
+	__m128 mx4 = mx->m4;
+
+	m->m1 = _mm_add_ps(_mm_add_ps(_mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(sm1, sm1, _MM_SHUFFLE(0,0,0,0)), mx1), _mm_mul_ps(_mm_shuffle_ps(sm1, sm1, _MM_SHUFFLE(1,1,1,1)), mx2)), _mm_mul_ps(_mm_shuffle_ps(sm1, sm1, _MM_SHUFFLE(2,2,2,2)), mx3)), _mm_mul_ps(_mm_shuffle_ps(sm1, sm1, _MM_SHUFFLE(3,3,3,3)), mx4));
+	m->m2 = _mm_add_ps(_mm_add_ps(_mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(sm2, sm2, _MM_SHUFFLE(0,0,0,0)), mx1), _mm_mul_ps(_mm_shuffle_ps(sm2, sm2, _MM_SHUFFLE(1,1,1,1)), mx2)), _mm_mul_ps(_mm_shuffle_ps(sm2, sm2, _MM_SHUFFLE(2,2,2,2)), mx3)), _mm_mul_ps(_mm_shuffle_ps(sm2, sm2, _MM_SHUFFLE(3,3,3,3)), mx4));
+	m->m3 = _mm_add_ps(_mm_add_ps(_mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(sm3, sm3, _MM_SHUFFLE(0,0,0,0)), mx1), _mm_mul_ps(_mm_shuffle_ps(sm3, sm3, _MM_SHUFFLE(1,1,1,1)), mx2)), _mm_mul_ps(_mm_shuffle_ps(sm3, sm3, _MM_SHUFFLE(2,2,2,2)), mx3)), _mm_mul_ps(_mm_shuffle_ps(sm3, sm3, _MM_SHUFFLE(3,3,3,3)), mx4));
+	m->m4 = _mm_add_ps(_mm_add_ps(_mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(sm4, sm4, _MM_SHUFFLE(0,0,0,0)), mx1), _mm_mul_ps(_mm_shuffle_ps(sm4, sm4, _MM_SHUFFLE(1,1,1,1)), mx2)), _mm_mul_ps(_mm_shuffle_ps(sm4, sm4, _MM_SHUFFLE(2,2,2,2)), mx3)), _mm_mul_ps(_mm_shuffle_ps(sm4, sm4, _MM_SHUFFLE(3,3,3,3)), mx4));
+}
+
+
+
 
 inline void Matrix44MultiplyWithoutSSE( Matrix44 *m, const Matrix44 *mx ) {
 
@@ -101,12 +141,107 @@ inline void Matrix44MultiplyWithoutSSE( Matrix44 *m, const Matrix44 *mx ) {
 }
 
 
+inline void Matrix44SetXRotation( Matrix44 *m, float radAngle ) {
 
-inline void Matrix44Rotation( Matrix44 *m, const Vector3 *axis, float radAngle ) {
+	__asm { // Intel's copyright notice: the content of the following __asm if provided by Intel (matlib)
+		xorps	xmm0,xmm0
+		mov 	eax, m;
+		fld		float ptr radAngle
+		movaps	[eax+0x10], xmm0		// clear line _L2
+		fsincos
+		fst		float ptr [eax+0x14]	// set element _22
+		movaps	[eax+0x20], xmm0		// clear line _L3
+		fstp	float ptr [eax+0x28]	// set element _33
+		fst		float ptr [eax+0x18]	// set element _23
+		fchs
+		movaps	[eax+0x00], xmm0		// clear line _L1
+		fstp	float ptr [eax+0x24]	// set element _32
+		fld1
+		fst		float ptr [eax+0x00]	// set element _11
+		movaps	[eax+0x30], xmm0		// clear line _L4
+		fstp	float ptr [eax+0x3C]	// set element _44
+	}
+}
 
+inline void Matrix44SetYRotation( Matrix44 *m, float radAngle ) {
+
+	__asm { // Intel's copyright notice: the content of the following __asm if provided by Intel (matlib)
+		xorps	xmm0,xmm0
+		mov 	eax, m
+		fld		float ptr radAngle
+		movaps	[eax+0x00], xmm0		// clear line _L1
+		fsincos
+		fst		float ptr [eax+0x00]	// set element _11
+		movaps	[eax+0x20], xmm0		// clear line _L3
+		fstp	float ptr [eax+0x28]	// set element _33
+		fst		float ptr [eax+0x20]	// set element _31
+		fchs
+		movaps	[eax+0x10], xmm0		// clear line _L2
+		fstp	float ptr [eax+0x08]	// set element _13
+		fld1
+		fst		float ptr [eax+0x14]	// set element _22
+		movaps	[eax+0x30], xmm0		// clear line _L4
+		fstp	float ptr [eax+0x3C]	// set element _44
+	}
+}
+
+
+inline void Matrix44SetZRotation( Matrix44 *m, float radAngle ) {
+
+	__asm { // Intel's copyright notice: the content of the following __asm if provided by Intel (matlib)
+		xorps	xmm0,xmm0
+		mov 	eax, m
+		fld		float ptr radAngle
+		movaps	[eax+0x00], xmm0		// clear line _L1
+		fsincos
+		fst		float ptr [eax+0x00]	// set element _11
+		movaps	[eax+0x10], xmm0		// clear line _L2
+		fstp	float ptr [eax+0x14]	// set element _22
+		fst		float ptr [eax+0x04]	// set element _12
+		fchs
+		movaps	[eax+0x20], xmm0		// clear line _L3
+		fstp	float ptr [eax+0x10]	// set element _21
+		fld1
+		fst		float ptr [eax+0x28]	// set element _33
+		movaps	[eax+0x30], xmm0		// clear line _L4
+		fstp	float ptr [eax+0x3C]	// set element _44
+	}
+}
+
+
+inline FORCEINLINE float Sin(float angle) {
+
+	__asm fld	angle
+	__asm fsin
+}
+
+inline FORCEINLINE float Cos(float angle)	{
+
+	__asm fld	angle
+	__asm fcos
+}
+
+inline FORCEINLINE void SinCos(float angle, float *sinVal, float *cosVal) {
+
+	__asm fld		[angle]
+	__asm fsincos
+	__asm mov		eax,cosVal
+	__asm fstp		dword ptr [eax]
+	__asm mov		eax,sinVal
+	__asm fstp		dword ptr [eax]
+}
+
+inline FORCEINLINE float Sqrt(float val) {
+
+	__asm fld		val
+	__asm fsqrt
+}
+
+inline void Matrix44SetRotation( Matrix44 *m, const Vector3 *axis, float radAngle ) {
+
+/*
 	Vector3 v = *axis;
-	// Opt: check if already normalized
-	Vector3Normalize(&v);
+	Vector3Normalize(&v); // [TBD] Opt: check if already normalized
 	float sa = (float) sinf(radAngle);
 	float ca = (float) cosf(radAngle);
 //	Matrix44 rot;
@@ -122,21 +257,21 @@ inline void Matrix44Rotation( Matrix44 *m, const Vector3 *axis, float radAngle )
 	m->m[2][1] = (1.0f - ca) * v.y * v.z + sa * v.x;
 	m->m[2][2] = ca + (1.0f - ca) * v.z * v.z;
 //	Matrix44Mult(m, &rot);
+*/
 
-
-/*
 	float w,x,y,z;
-
 	float ax = axis->x;
 	float ay = axis->y;
 	float az = axis->z;
-
 	float l = ax*ax + ay*ay + az*az;
 	if (l > 0.f) {
 
-		radAngle /= 2;
-		w = cos(radAngle);
-		l = sin(radAngle) / sqrtf(l);
+		float s;
+		SinCos(radAngle/2, &s, &w);
+		l = s / Sqrt(l);
+//		radAngle /= 2;
+//		w = cos(radAngle);
+//		l = sin(radAngle) / sqrtf(l);
 		x = ax*l;
 		y = ay*l;
 		z = az*l;
@@ -160,22 +295,33 @@ inline void Matrix44Rotation( Matrix44 *m, const Vector3 *axis, float radAngle )
 	float zz = z * z;
 	float zw = z * w;
 
-//	Matrix44 rot;
-//	Matrix44Identity(&rot);
-
 	m->raw[0]  = 1 - 2 * ( yy + zz );
 	m->raw[1]  =     2 * ( xy - zw );
 	m->raw[2]  =     2 * ( xz + yw );
+
 	m->raw[4]  =     2 * ( xy + zw );
 	m->raw[5]  = 1 - 2 * ( xx + zz );
 	m->raw[6]  =     2 * ( yz - xw );
+
 	m->raw[8]  =     2 * ( xz - yw );
 	m->raw[9]  =     2 * ( yz + xw );
 	m->raw[10] = 1 - 2 * ( xx + yy );
-//	Matrix44Multiply(m, &rot);
-*/
 }
 
+inline void Matrix44ClearRotation( Matrix44 *m ) {
+
+	m->raw[0]  = 1;
+	m->raw[1]  = 0;
+	m->raw[2]  = 0;
+
+	m->raw[4]  = 0;
+	m->raw[5]  = 1;
+	m->raw[6]  = 0;
+
+	m->raw[8]  = 0;
+	m->raw[9]  = 0;
+	m->raw[10] = 1;
+}
 
 /*
 
@@ -229,14 +375,21 @@ inline void Matrix44Rotation( Matrix44 *m, const Vector3 *axis, float radAngle )
 
 */
 
-inline void Matrix44Translation( Matrix44 *m, const Vector3 *t ) {
+inline void Matrix44SetTranslation( Matrix44 *m, const float x, const float y, const float z ) {
 
-	m->m[3][0] = t->x;
-	m->m[3][1] = t->y;
-	m->m[3][2] = t->z;
-	//	m->m4 = t->m128;
-	//m->m4 = _mm_add_ps(m->m4, t->m128);
+	m->m[3][0] = x;
+	m->m[3][1] = y;
+	m->m[3][2] = z;
+	//	m->m4 = t->m128; m->m4 = _mm_add_ps(m->m4, t->m128);
 }
+
+inline void Matrix44ClearTranslation( Matrix44 *m ) {
+
+	m->m[3][0] = 0;
+	m->m[3][1] = 0;
+	m->m[3][2] = 0;
+}
+
 
 
 //inline void Matrix44Scale( Matrix44 *m, const Vector3 *s ) {
@@ -291,26 +444,23 @@ inline void Matrix44Billboard( Matrix44 *m, const Vector3 *to, const Vector3 *up
 }
 
 
-
-
-
-
 inline void Matrix44Invert( Matrix44 *m ) {
 
-	float* src = m->raw;
+	static __m128 undef = {0,0,0,0};
+	register float* src = m->raw;
 
     __m128 minor0, minor1, minor2, minor3;
     __m128 row0, row1, row2, row3;
     __m128 det, tmp1;
 
-    tmp1 = _mm_loadh_pi(_mm_loadl_pi(tmp1, (__m64*)(src)), (__m64*)(src+ 4));
-    row1 = _mm_loadh_pi(_mm_loadl_pi(row1, (__m64*)(src+8)), (__m64*)(src+12));
+    tmp1 = _mm_loadh_pi(_mm_loadl_pi(undef, (__m64*)(src)), (__m64*)(src+ 4));
+    row1 = _mm_loadh_pi(_mm_loadl_pi(undef, (__m64*)(src+8)), (__m64*)(src+12));
 
     row0 = _mm_shuffle_ps(tmp1, row1, 0x88);
     row1 = _mm_shuffle_ps(row1, tmp1, 0xDD);
 
-    tmp1 = _mm_loadh_pi(_mm_loadl_pi(tmp1, (__m64*)(src+ 2)), (__m64*)(src+ 6));
-    row3 = _mm_loadh_pi(_mm_loadl_pi(row3, (__m64*)(src+10)), (__m64*)(src+14));
+    tmp1 = _mm_loadh_pi(_mm_loadl_pi(undef, (__m64*)(src+ 2)), (__m64*)(src+ 6));
+    row3 = _mm_loadh_pi(_mm_loadl_pi(undef, (__m64*)(src+10)), (__m64*)(src+14));
 
     row2 = _mm_shuffle_ps(tmp1, row3, 0x88);
     row3 = _mm_shuffle_ps(row3, tmp1, 0xDD);

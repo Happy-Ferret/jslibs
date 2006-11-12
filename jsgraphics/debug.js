@@ -12,7 +12,7 @@ var image=0;
 
 
 var world = new World;
-world.gravity = [0,0,-1.81];
+world.gravity = [0,0,-0.81];
 
 var body1 = new Body(world);
 var body2 = new Body(world);
@@ -28,147 +28,159 @@ body1.angularVel = [1,1,0];
 
 
 
-var w = new Window();
-w.title = "Test";
-w.rect = [100,100,500,500];
-//w.rect = [500,500,600,600];
-var gl = new Gl(w);
+var win = new Window();
+win.title = "Test";
+var x = 600;
+var y = 300;
+var w = 500;
+var h = 500;
+win.rect = [x,y,x+w,y+h];
+var gl = new Gl(win);
 
-var mouse = new MouseMotion(w);
-var button = [0,0,0];
-w.onmouseup = w.onmousedown = function(b, polarity) { // onmouseup AND onmousedown
+	gl.LoadIdentity();
+	var list1 = gl.StartList();
+	var tmp = new Transformation();
+	for ( let x = -2000; x <= 2000; x += 100 )
+		for ( let y = -2000; y <= 2000; y += 100 ) {
+			
+			gl.PushMatrix();
+			gl.Translate(Math.random()*2000-1000, Math.random()*2000-1000, Math.random()*2000-1000 );
+			gl.Cube();
+			gl.PopMatrix();
+		}
+	gl.EndList();
 
-	button[b] = polarity;
-	mouse.infiniteMode = button[0] || button[1] || button[2];
-}
 
+var mouse = new MouseMotion(win);
 var camera = new Transformation();
-//camera.Translate( 0,0,-10 );
 
-var cameraPosition = new Transformation();
-var cameraAngle = new Transformation();
-
-var tw=0, tx=0, ty=0, tz=1000; 
-w.onmousewheel = function(delta) {
-
-	tw += delta;
+Transformation.prototype.toString = function() {
+	
+	var mat = camera.Dump();
+	
+	var str = '';
+	for ( var i = 0; i<4; i++) {
+		for ( var j = 0; j<4; j++) {
+			str += (String(mat[4*j+i]).substr(0,5)) + '  ';
+		}
+		str += '\n';
+	}
+	return str
 }
 
-mouse.delta = function( dx,dy, b1,b2,b3 ) {
+var tw=0, tx=0, ty=0, tz=0;
+var speed = 1, run = 0;
+
+mouse.button = function( b, polarity, b1, b2, b3 ) {
+
+	mouse.infiniteMode = b1 || b2 || b3;
+	if ( b == 2 )
+	  run = polarity ? 1 : 0;
+	if ( b == 3 )
+		speed = 1;
+}
+
+mouse.delta = function( dx,dy,dw, b1,b2,b3 ) {
+
+	if (dw != 0) {
 	
-	if ( b1 ) {
-		
-		cameraAngle.LookAt( Math.sin(tx), Math.cos(ty), Math.cos(tx) );
-//		cameraAngle.Rotate( dx, 0,1, );
-//		cameraAngle.Rotate( dy, 1,0,0 );
-		
+		camera.Product(new Transformation().Translation( 0,0, -dw*10 ));
+	}
+	
+	if ( b1 || b2 ) {
+
 		tx += dx;
 		ty += dy;
-	} else if ( b2 ) {
-		
-		camera.Translate( 0,0,-dy/10 );
-		
-		tz += dy;
+
+		camera.LoadRotation(new Transformation().RotationZ(tx/2).Product( new Transformation().RotationX(-ty/2) ));
 	}
 }
 
+var move = 0;
 
 function Render() {
 
-	//Print('Rendering image '+image++, '\n');
+	var cameraPosition = new Transformation();
+	cameraPosition.Translation( 0,0, -speed * run );
+	camera.Product(cameraPosition);
+	
 
 	gl.Clear( glc.COLOR_BUFFER_BIT | glc.DEPTH_BUFFER_BIT );
 
-//	gl.Translate(0,0, -tz/50);
-//	gl.Rotate( ty/2, 1,0,0 );
-//	gl.Rotate( tx/2, 0,1,0 );
-//	gl.Rotate( tw*10, 0,0,1 );
+//	for ( var x = -10; x<10; x++ )
+//		for ( var y = -10; y<10; y++ )
+//			gl.Quad(x,y,x+1,y+1);
 
 
-	camera.Multiply( cameraAngle );
-//	camera.Multiply( cameraPosition );
+	var m = new Transformation().Load(camera).Invert();
 
-
-//	camera.Rotate( ty/2, 1,0,0 );
-//	camera.Rotate( tx/2, 0,1,0 );
-//	camera.Rotate( tw*10, 0,0,1 );
-//	camera.Translate(0,0, -tz/50);
-
-
-
-
-	gl.LoadMatrix(camera);
-
-	gl.Color(1,1,1);
-
-
-	for ( var x = -10; x<100; x++ )
-		for ( var y = -100; y<10; y++ ) {
-			gl.Quad(x,y,x+1,y+1);
-		}
-
-
-	var m = new Transformation();
-	m.Load( camera );
-	m.Multiply( body1 );
-	gl.LoadMatrix(m);
+	gl.LoadMatrix(new Transformation().Load(m).Product(body1));
 	gl.Cube();
 
-	m.Load( camera );
-	m.Multiply( body2 );
-	gl.LoadMatrix(m);
+	gl.LoadMatrix(new Transformation().Load(m).Product(body2));
 	gl.Cube();
 
-	m.Load( camera );
-	m.Translate( joint.anchor[0], joint.anchor[1], joint.anchor[2] );
-	gl.LoadMatrix(m);
+	gl.LoadMatrix(new Transformation().Translation(joint.anchor[0], joint.anchor[1], joint.anchor[2]).InverseProduct(m));
 	gl.Axis();
 
+	gl.LoadMatrix(m);
+	gl.CallList(list1);
 
-//	CollectGarbage();
+//	move += 0.1;
+//			tmp.Load(m);
+//			tmp.Translate( x, y, -50 );
+//			tmp.Translate( x, y, Math.cos(move+(x*x+y*y)/5000)-10 );
+//	}
+
+
+	Sleep(1)
 //	var t0 = IntervalNow();
-Sleep(1)
-	gl.SwapBuffers();
 //	Print( 'Rendering time: '+(IntervalNow()-t0)+'ms', '\n');
+	CollectGarbage();
+	gl.SwapBuffers();
 	world.Step(0.005,true);
 }
 
-w.onidle = Render;
+
+
+
+
+win.onidle = Render;
 
 var _fullscreenState = false;
 var _savedWindowSize;
 
-w.onkeydown = function( key, l ) {
+win.onkeydown = function( key, l ) {
 
 	switch (key) {
 		case vk.ESC:
-			w.Exit();
+			win.Exit();
 			break;
 		case vk.ENTER:
 			// toggle fullscreen
 			_fullscreenState = !_fullscreenState;
 			if ( _fullscreenState ) {
 			
-				_savedWindowSize = w.rect;           // save current window rectangle
+				_savedWindowSize = win.rect;           // save current window rectangle
 				//Window.Mode( [640, 480], 32, true ); // change mode 640x480, 32bits, temporarily fullscreen
-				w.showFrame = false;                 // hide window frame ( remove all borders )
-				w.rect = Window.desktopRect;         // extends the window to the screen size
-				w.showCursor = false;                // hide the cursor
+				win.showFrame = false;                 // hide window frame ( remove all borders )
+				win.rect = Window.desktopRect;         // extends the window to the screen size
+				win.showCursor = false;                // hide the cursor
 			} else {
 			
-				w.rect = _savedWindowSize;
-				w.showCursor = true;
-				w.showFrame = true;
+				win.rect = _savedWindowSize;
+				win.showCursor = true;
+				win.showFrame = true;
 				//Window.Mode();              // revert to default
 			}
 			break;
 		}
 }
 
-w.onsize = function( w, h ) {
+win.onsize = function( w, h ) {
 
 	gl.Viewport([0,0,w,h]);
-	gl.Perspective( 60, 0.01, 1000 );	
+	gl.Perspective( 60, 0.01, 10000 );	
 	Render();
 }
 
@@ -176,11 +188,11 @@ var x=0, y=0; // offset
 var texture = new Jpeg(new File('R0010235.JPG').Open( File.RDONLY )).Load().Trim([0+x,0+y,256+x,256+y], true);
 
 gl.Init();
-gl.Perspective( 60, 0.01, 1000 );
-gl.Texture( texture );
+gl.Perspective( 60, 0.01, 10000 );
+//gl.Texture( texture );
 
 //Window.absoluteClipCursor = [100,100, 200, 200 ]
-w.ProcessEvents();
+win.ProcessEvents();
 //Window.absoluteClipCursor = undefined;
 Print('Done.', '\n');
 

@@ -5,6 +5,7 @@
 #include "jswindow.h"
 #include "../common/jsNativeInterface.h"
 
+#include "jstransformation.h"
 #include "../jsimage/jsimage.h"
 
 #define _USE_MATH_DEFINES
@@ -41,12 +42,21 @@ void SetupBitmapDC() {
 */
 
 
+DEFINE_FINALIZE() {
+
+	JS_SetReservedSlot(cx, obj, SLOT_WINDOW_OBJECT, JSVAL_VOID);
+
+	// [TBD] ? wglDeleteContext 
+	// [TBD] ? ReleaseDC
+
+}
+
 DEFINE_FUNCTION( ClassConstruct ) {
 
 	RT_ASSERT( JS_IsConstructing(cx) && JS_GetClass(obj) == thisClass, RT_ERROR_INVALID_CLASS );
 	RT_ASSERT_ARGC(1);
+	RT_ASSERT_OBJECT(argv[0]);
 	RT_ASSERT_CLASS(JSVAL_TO_OBJECT(argv[0]), &classWindow);
-
 	HWND hWnd = (HWND)JS_GetPrivate(cx, JSVAL_TO_OBJECT(argv[0]));
 	RT_ASSERT( hWnd != NULL, RT_ERROR_NOT_INITIALIZED );
 
@@ -55,8 +65,6 @@ DEFINE_FUNCTION( ClassConstruct ) {
 	BOOL res;
 	HDC hDC = GetDC(hWnd);
 	RT_ASSERT( hDC != NULL, "Could not get window Device Context." );
-
-	int colorDepth = 16;
 
 	// PFD_DRAW_TO_BITMAP : http://msdn.microsoft.com/library/default.asp?url=/library/en-us/dnopen/html/msdn_gl6.asp
 
@@ -67,7 +75,7 @@ DEFINE_FUNCTION( ClassConstruct ) {
 		PFD_SUPPORT_OPENGL |             // Format Must Support OpenGL
 		PFD_DOUBLEBUFFER,                // Must Support Double Buffering
 		PFD_TYPE_RGBA,                   // Request An RGBA Format
-		colorDepth,                      // Select Our Color Depth
+		24,                              // Select Our Color Depth
 		0, 0, 0, 0, 0, 0,                // Color Bits Ignored
 		0,                               // No Alpha Buffer
 		0,                               // Shift Bit Ignored
@@ -80,7 +88,6 @@ DEFINE_FUNCTION( ClassConstruct ) {
 		0,                               // Reserved
 		0, 0, 0                          // Layer Masks Ignored
 	};
-
 
 	int pixelFormat = ChoosePixelFormat(hDC, &pfd);
 	RT_ASSERT( pixelFormat != 0, "Could not Find A Suitable OpenGL PixelFormat." );
@@ -136,10 +143,10 @@ DEFINE_FUNCTION( Viewport ) {
 DEFINE_FUNCTION( Init ) {
 
 	glEnable(GL_TEXTURE_2D);
-	glShadeModel(GL_SMOOTH);
+	glShadeModel(GL_FLAT);
 
 	glEnable(GL_DEPTH_TEST);
-	glDepthFunc(GL_LESS); // GL_LEQUAL
+	glDepthFunc(GL_LEQUAL); // GL_LESS cause some z-conflict on far objects ! [TBD] understand why
 	glClearDepth(1.0f);
 //	glDepthRange( 0.01, 1000 );
 
@@ -194,26 +201,35 @@ DEFINE_FUNCTION( Clear ) {
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
+	return JS_TRUE;
+}
 
+DEFINE_FUNCTION( LoadIdentity ) {
+
+	glLoadIdentity();
+	return JS_TRUE;
+}
+
+DEFINE_FUNCTION( PushMatrix ) {
+
+	glPushMatrix();
+	return JS_TRUE;
+}
+
+DEFINE_FUNCTION( PopMatrix ) {
+
+	glPopMatrix();
 	return JS_TRUE;
 }
 
 DEFINE_FUNCTION( LoadMatrix ) {
 
 	RT_ASSERT_ARGC(1);
-	RT_ASSERT( JSVAL_IS_OBJECT(argv[0]), "Argument must be an object." );
-	NIMatrix44Read ReadMatrix;
-	void *descriptor;
-	GetNativeInterface(cx, JSVAL_TO_OBJECT(argv[0]), NI_READ_MATRIX44, (void**)&ReadMatrix, &descriptor);
-	if ( ReadMatrix != NULL && descriptor != NULL ) {
-
-		Matrix44 m;
-		float *tmp = m.raw;
-		ReadMatrix(descriptor, &tmp);
-		glLoadMatrixf(	tmp );
-		return JS_TRUE;
-	}
-	REPORT_ERROR( "Unable to read a matrix." );
+	Matrix44 tmp, *m = &tmp;
+	if (GetMatrixHelper(cx, argv[0], &m) == JS_FALSE)
+		return JS_FALSE;
+	glLoadMatrixf(m->raw);
+	return JS_TRUE;
 }
 
 
@@ -246,6 +262,32 @@ DEFINE_FUNCTION( Translate ) {
 	JS_ValueToNumber(cx, argv[1], &y);
 	JS_ValueToNumber(cx, argv[2], &z);
 	glTranslatef(x,y,z);
+	return JS_TRUE;
+}
+
+
+DEFINE_FUNCTION( StartList ) {
+
+	GLuint list = glGenLists(1);
+	glNewList(list,GL_COMPILE);
+	*rval = INT_TO_JSVAL(list);
+	return JS_TRUE;
+}
+
+
+DEFINE_FUNCTION( EndList ) {
+
+	glEndList();
+	return JS_TRUE;
+}
+
+
+DEFINE_FUNCTION( CallList ) {
+
+	RT_ASSERT_ARGC(1);
+	RT_ASSERT_INT(argv[0]);
+	GLuint list = JSVAL_TO_INT(argv[0]);
+	glCallList(list);
 	return JS_TRUE;
 }
 
@@ -323,39 +365,44 @@ DEFINE_FUNCTION( Cube ) {
 //	jsdouble len;
 //	JS_ValueToNumber(cx, argv[0], &len);
 
- glBegin(GL_QUADS);		// Draw The Cube Using quads
-    glColor3f(0.0f,1.0f,0.0f);	// Color Blue
-    glVertex3f( 1.0f, 1.0f,-1.0f);	// Top Right Of The Quad (Top)
-    glVertex3f(-1.0f, 1.0f,-1.0f);	// Top Left Of The Quad (Top)
-    glVertex3f(-1.0f, 1.0f, 1.0f);	// Bottom Left Of The Quad (Top)
-    glVertex3f( 1.0f, 1.0f, 1.0f);	// Bottom Right Of The Quad (Top)
-    glColor3f(1.0f,0.5f,0.0f);	// Color Orange
-    glVertex3f( 1.0f,-1.0f, 1.0f);	// Top Right Of The Quad (Bottom)
-    glVertex3f(-1.0f,-1.0f, 1.0f);	// Top Left Of The Quad (Bottom)
-    glVertex3f(-1.0f,-1.0f,-1.0f);	// Bottom Left Of The Quad (Bottom)
-    glVertex3f( 1.0f,-1.0f,-1.0f);	// Bottom Right Of The Quad (Bottom)
-    glColor3f(1.0f,0.0f,0.0f);	// Color Red	
-    glVertex3f( 1.0f, 1.0f, 1.0f);	// Top Right Of The Quad (Front)
-    glVertex3f(-1.0f, 1.0f, 1.0f);	// Top Left Of The Quad (Front)
-    glVertex3f(-1.0f,-1.0f, 1.0f);	// Bottom Left Of The Quad (Front)
-    glVertex3f( 1.0f,-1.0f, 1.0f);	// Bottom Right Of The Quad (Front)
-    glColor3f(1.0f,1.0f,0.0f);	// Color Yellow
-    glVertex3f( 1.0f,-1.0f,-1.0f);	// Top Right Of The Quad (Back)
-    glVertex3f(-1.0f,-1.0f,-1.0f);	// Top Left Of The Quad (Back)
-    glVertex3f(-1.0f, 1.0f,-1.0f);	// Bottom Left Of The Quad (Back)
-    glVertex3f( 1.0f, 1.0f,-1.0f);	// Bottom Right Of The Quad (Back)
-    glColor3f(0.0f,0.0f,1.0f);	// Color Blue
-    glVertex3f(-1.0f, 1.0f, 1.0f);	// Top Right Of The Quad (Left)
-    glVertex3f(-1.0f, 1.0f,-1.0f);	// Top Left Of The Quad (Left)
-    glVertex3f(-1.0f,-1.0f,-1.0f);	// Bottom Left Of The Quad (Left)
-    glVertex3f(-1.0f,-1.0f, 1.0f);	// Bottom Right Of The Quad (Left)
-    glColor3f(1.0f,0.0f,1.0f);	// Color Violet
-    glVertex3f( 1.0f, 1.0f,-1.0f);	// Top Right Of The Quad (Right)
-    glVertex3f( 1.0f, 1.0f, 1.0f);	// Top Left Of The Quad (Right)
-    glVertex3f( 1.0f,-1.0f, 1.0f);	// Bottom Left Of The Quad (Right)
-    glVertex3f( 1.0f,-1.0f,-1.0f);	// Bottom Right Of The Quad (Right)
-  glEnd();	
+	glBegin(GL_QUADS);		// Draw The Cube Using quads
 
+	glColor3f(1,0,0);
+	glVertex3f( 1.0f, 1.0f,-1.0f);	// Top Right Of The Quad (Right)
+	glVertex3f( 1.0f, 1.0f, 1.0f);	// Top Left Of The Quad (Right)
+	glVertex3f( 1.0f,-1.0f, 1.0f);	// Bottom Left Of The Quad (Right)
+	glVertex3f( 1.0f,-1.0f,-1.0f);	// Bottom Right Of The Quad (Right)
+
+	glColor3f(0.5,0,0);
+	glVertex3f(-1.0f, 1.0f, 1.0f);	// Top Right Of The Quad (Left)
+	glVertex3f(-1.0f, 1.0f,-1.0f);	// Top Left Of The Quad (Left)
+	glVertex3f(-1.0f,-1.0f,-1.0f);	// Bottom Left Of The Quad (Left)
+	glVertex3f(-1.0f,-1.0f, 1.0f);	// Bottom Right Of The Quad (Left)
+
+	glColor3f(0,1,0);
+	glVertex3f( 1.0f, 1.0f,-1.0f);	// Top Right Of The Quad (Top)
+	glVertex3f(-1.0f, 1.0f,-1.0f);	// Top Left Of The Quad (Top)
+	glVertex3f(-1.0f, 1.0f, 1.0f);	// Bottom Left Of The Quad (Top)
+	glVertex3f( 1.0f, 1.0f, 1.0f);	// Bottom Right Of The Quad (Top)
+
+	glColor3f(0,0.5,0);
+	glVertex3f( 1.0f,-1.0f, 1.0f);	// Top Right Of The Quad (Bottom)
+	glVertex3f(-1.0f,-1.0f, 1.0f);	// Top Left Of The Quad (Bottom)
+	glVertex3f(-1.0f,-1.0f,-1.0f);	// Bottom Left Of The Quad (Bottom)
+	glVertex3f( 1.0f,-1.0f,-1.0f);	// Bottom Right Of The Quad (Bottom)
+
+	glColor3f(0,0,1);
+	glVertex3f( 1.0f, 1.0f, 1.0f);	// Top Right Of The Quad (Front)
+	glVertex3f(-1.0f, 1.0f, 1.0f);	// Top Left Of The Quad (Front)
+	glVertex3f(-1.0f,-1.0f, 1.0f);	// Bottom Left Of The Quad (Front)
+	glVertex3f( 1.0f,-1.0f, 1.0f);	// Bottom Right Of The Quad (Front)
+
+	glColor3f(0,0,0.5);
+	glVertex3f( 1.0f,-1.0f,-1.0f);	// Top Right Of The Quad (Back)
+	glVertex3f(-1.0f,-1.0f,-1.0f);	// Top Left Of The Quad (Back)
+	glVertex3f(-1.0f, 1.0f,-1.0f);	// Bottom Left Of The Quad (Back)
+	glVertex3f( 1.0f, 1.0f,-1.0f);	// Bottom Right Of The Quad (Back)
+	glEnd();	
 	return JS_TRUE;
 }
 
@@ -424,9 +471,15 @@ DEFINE_FUNCTION( Test ) {
 
 BEGIN_FUNCTION_MAP
 	FUNCTION_ALIAS(SwapBuffers, _SwapBuffers)
+	FUNCTION(StartList)
+	FUNCTION(EndList)
+	FUNCTION(CallList)
 	FUNCTION(Viewport)
 	FUNCTION(Perspective)
 	FUNCTION(Clear)
+	FUNCTION(LoadIdentity)
+	FUNCTION(PushMatrix)
+	FUNCTION(PopMatrix)
 	FUNCTION(Color)
 	FUNCTION(Texture)
 	FUNCTION(Axis)
@@ -454,7 +507,7 @@ NO_STATIC_PROPERTY_MAP
 
 //	NO_CLASS_CONSTRUCT
 NO_OBJECT_CONSTRUCT
-NO_FINALIZE
+//NO_FINALIZE
 NO_CALL
 NO_PROTOTYPE
 NO_CONSTANT_MAP

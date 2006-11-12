@@ -62,6 +62,15 @@
 #define RT_ASSERT_TYPE(value,jsType) \
 	RT_ASSERT( JS_TypeOfValue(cx, (value)) == (jsType), RT_ERROR_UNEXPECTED_TYPE );
 
+#define RT_ASSERT_OBJECT(value) \
+	RT_ASSERT( JSVAL_IS_OBJECT(value), RT_ERROR_UNEXPECTED_TYPE " Object expected." );
+
+#define RT_ASSERT_INT(value) \
+	RT_ASSERT( JSVAL_IS_INT(value), RT_ERROR_UNEXPECTED_TYPE " integer expected." );
+
+#define RT_ASSERT_NUMBER(value) \
+	RT_ASSERT( JSVAL_IS_NUMBER(value), RT_ERROR_UNEXPECTED_TYPE " number expected." );
+
 #define RT_ASSERT_ALLOC(pointer) \
 	RT_ASSERT( (pointer) != NULL, RT_ERROR_OUT_OF_MEMORY );
 
@@ -243,8 +252,9 @@ inline double TimeNow() {
 #endif // WIN32
 }
 
+typedef void (*FunctionPointer)(void);
 
-inline JSBool SetNativeInterface( JSContext *cx, JSObject *obj, const char *name, void *function, void *descriptor ) {
+inline JSBool SetNativeInterface( JSContext *cx, JSObject *obj, const char *name, FunctionPointer function, void *descriptor ) {
 
 	// the following must work because spidermonkey will never call the getter or setter if it is not explicitly required by the script
 	if ( JS_DefineProperty(cx, obj, name, JSVAL_VOID, (JSPropertyOp)function, (JSPropertyOp)descriptor, JSPROP_READONLY | JSPROP_PERMANENT) == JS_FALSE )
@@ -252,7 +262,7 @@ inline JSBool SetNativeInterface( JSContext *cx, JSObject *obj, const char *name
 	return JS_TRUE;
 }
 
-inline JSBool GetNativeInterface( JSContext *cx, JSObject *obj, const char *name, void **function, void **descriptor ) {
+inline JSBool GetNativeInterface( JSContext *cx, JSObject *obj, const char *name, FunctionPointer *function, void **descriptor ) {
 
 	uintN attrs;
 	JSBool found;

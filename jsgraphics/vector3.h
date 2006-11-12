@@ -50,7 +50,7 @@ inline float Vector3Len( Vector3 *v ) {
     return l.m128_f32[X];
 }
 
-static FORCEINLINE __m128 rsqrt_nr(const __m128& x) {
+static __forceinline __m128 rsqrt_nr(const __m128& x) {
 	static const __m128 v0pt5 = { 0.5f, 0.5f, 0.5f, 0.5f };
 	static const __m128 v3pt0 = { 3.0f, 3.0f, 3.0f, 3.0f };
 	__m128 t = _mm_rsqrt_ps(x);

@@ -6,6 +6,23 @@ function MouseMotion( win ) {
 	var cx, cy;
 	var _this = this;
 	
+	var button = [0,0,0];
+
+	var prev_onmousedown = win.onmousedown;
+	var prev_onmouseup = win.onmouseup;
+	win.onmousedown = win.onmouseup = function(b, polarity) {
+		
+		button[b] = polarity;
+		
+		_this.button(b, polarity, button[0], button[1], button[2]);
+	}
+
+	var prev_onmousewheel = win.onmousewheel;
+	win.onmousewheel = function(delta, b1,b2,b3) {
+		
+		_this.delta && _this.delta( 0, 0, delta, b1,b2,b3 );
+	}
+	
 	var prev_onmousemove = win.onmousemove;
 	win.onmousemove = function( x,y, b1,b2,b3 ) { // mouse X, mouse Y, left, right, middle
 		
@@ -20,7 +37,7 @@ function MouseMotion( win ) {
 		
 		if ( (x != cx || y != cy) && prevMouseX != undefined && prevMouseY != undefined ) {
 
-			_this.delta && _this.delta( x - prevMouseX, y - prevMouseY, b1,b2,b3 );
+			_this.delta && _this.delta( x - prevMouseX, y - prevMouseY, 0, b1,b2,b3 );
 			win.cursorPosition = [cx,cy];
 		}
 		prevMouseX = x;
