@@ -2,6 +2,7 @@
 #include "body.h"
 #include "mass.h"
 
+BEGIN_CLASS
 
 JSBool GetBodyAndMass(JSContext *cx, JSObject *massObject, ode::dBodyID *pBodyID, ode::dMass *pMass) {
 
@@ -16,8 +17,7 @@ JSBool GetBodyAndMass(JSContext *cx, JSObject *massObject, ode::dBodyID *pBodyID
 }
 
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSBool mass_translate(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+DEFINE_FUNCTION( Translate ) {
 
 	RT_ASSERT_ARGC(1);
 	ode::dBodyID bodyID;
@@ -32,8 +32,8 @@ JSBool mass_translate(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsv
 	return JS_TRUE;
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSBool mass_adjust(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+
+DEFINE_FUNCTION( Adjust ) {
 
 	RT_ASSERT_ARGC(1);
 	ode::dBodyID bodyID;
@@ -48,8 +48,7 @@ JSBool mass_adjust(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval 
 }
 
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSBool mass_setBoxTotal(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+DEFINE_FUNCTION( SetBoxTotal ) {
 
 	RT_ASSERT_ARGC(2);
 // get mass object
@@ -71,28 +70,8 @@ JSBool mass_setBoxTotal(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, j
 	return JS_TRUE;
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSFunctionSpec mass_FunctionSpec[] = { // *name, call, nargs, flags, extra
-	{ "Translate" , mass_translate, 0, 0, 0 },
-	{ "Adjust" , mass_adjust, 0, 0, 0 },
-	{ "SetBoxTotal" , mass_setBoxTotal, 0, 0, 0 },
-	{ 0 }
-};
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSBool mass_get_mass(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
-
-	ode::dBodyID bodyID;
-	ode::dMass mass;
-	if ( GetBodyAndMass(cx, obj, &bodyID, &mass) == JS_FALSE)
-		return JS_FALSE;
-	JS_NewDoubleValue(cx, mass.mass, vp);
-	return JS_TRUE;
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSBool mass_set_mass(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
+DEFINE_PROPERTY( massSetter ) {
 
 	ode::dBodyID bodyID;
 	ode::dMass mass;
@@ -106,8 +85,18 @@ JSBool mass_set_mass(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 }
 
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSBool mass_set_center(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
+DEFINE_PROPERTY( massGetter ) {
+
+	ode::dBodyID bodyID;
+	ode::dMass mass;
+	if ( GetBodyAndMass(cx, obj, &bodyID, &mass) == JS_FALSE)
+		return JS_FALSE;
+	JS_NewDoubleValue(cx, mass.mass, vp);
+	return JS_TRUE;
+}
+
+
+DEFINE_PROPERTY( centerSetter ) {
 
 	ode::dBodyID bodyID;
 	ode::dMass mass;
@@ -118,12 +107,11 @@ JSBool mass_set_center(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 	if (FloatArrayToVector(cx, 3, vp, mass.c) == JS_FALSE)
 		return JS_FALSE;
 	ode::dBodySetMass(bodyID, &mass);
-
-
 	return JS_TRUE;
 }
 
-JSBool mass_get_center(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
+
+DEFINE_PROPERTY( centerGetter ) {
 
 	ode::dBodyID bodyID;
 	ode::dMass mass;
@@ -135,25 +123,30 @@ JSBool mass_get_center(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 }
 
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSPropertySpec mass_PropertySpec[] = { // *name, tinyid, flags, getter, setter
-	{ "mass"  , 0, JSPROP_PERMANENT|JSPROP_SHARED, mass_get_mass, mass_set_mass },
-	{ "center", 0, JSPROP_PERMANENT|JSPROP_SHARED, mass_get_center, mass_set_center },
-	{ 0 }
-};
+BEGIN_FUNCTION_MAP
+	FUNCTION( Translate )
+	FUNCTION( Adjust )
+	FUNCTION( SetBoxTotal )
+END_MAP
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSClass mass_class = { "Mass", JSCLASS_HAS_RESERVED_SLOTS(1),
-	JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub,
-	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, JS_FinalizeStub
-};
+BEGIN_PROPERTY_MAP
+	READWRITE( mass )
+	READWRITE( center )
+END_MAP
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSObject *massInitClass( JSContext *cx, JSObject *obj ) {
 
-	return JS_InitClass( cx, obj, NULL, &mass_class, NULL, 0, mass_PropertySpec, mass_FunctionSpec, NULL, NULL );
-}
+NO_STATIC_FUNCTION_MAP
+NO_STATIC_PROPERTY_MAP
 
+NO_PROTOTYPE
+NO_CLASS_CONSTRUCT
+NO_OBJECT_CONSTRUCT
+NO_FINALIZE
+NO_CALL
+NO_CONSTANT_MAP
+NO_INITCLASSAUX
+
+END_CLASS( Mass, NO_PRIVATE, NO_RESERVED_SLOT ) // [TBD] Mass object seems to be useless. Try to merge Body with Mass
 
 /****************************************************************
 

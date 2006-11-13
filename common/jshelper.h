@@ -207,7 +207,7 @@
 // Declares a read/write property. Yous muse define xxxxGetter and xxxxSetter native functions
 #define READWRITE(name) { #name, 0, JSPROP_PERMANENT|JSPROP_SHARED, name##Getter, name##Setter },
 // Need setter function to be defined. The resulting value is stored in the object. When the prop is read (get) the stored value is used
-#define SET_AND_STORE(name) { #name, 0, JSPROP_PERMANENT, NULL, name },
+#define PROPERTY_STORE(name) { #name, 0, JSPROP_PERMANENT, NULL, name },
 // Declares a read-only property
 #define READONLY(name) { #name, 0, JSPROP_PERMANENT|JSPROP_SHARED|JSPROP_READONLY, name, NULL },
 // Allows a full definition of a property

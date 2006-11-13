@@ -17,7 +17,7 @@ DEFINE_FUNCTION( ClassConstruct ) {
 	if ( argc >= 1 )
 		if ( ValToSpaceID(cx, argv[0], &parentSpace) == JS_FALSE )
 			return JS_FALSE;
-	JS_SetPrivate(cx, obj, ode::dSimpleSpaceCreate(parentSpace));
+	JS_SetPrivate(cx, obj, ode::dHashSpaceCreate(parentSpace)); // dSimpleSpaceCreate
 	return JS_TRUE;
 }
 

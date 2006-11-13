@@ -1,5 +1,5 @@
-extern JSClass mass_class;
-
-JSObject *massInitClass( JSContext *cx, JSObject *obj );
+DECLARE_CLASS( Mass );
 
 #define MASS_SLOT_BODY 0
+
+

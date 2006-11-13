@@ -37,7 +37,6 @@ BEGIN_CLASS
 DEFINE_FINALIZE() {
 
 	// [TBD] manage Mass object (body.mass)
-
 /*
 	ode::dBodyID bodyId = (ode::dBodyID)JS_GetPrivate( cx, obj );
 //	JSObject *parent = JS_GetParent(cx,obj); // If the object does not have a parent, or the object finalize function is active, JS_GetParent returns NULL.
@@ -50,38 +49,6 @@ DEFINE_FINALIZE() {
 
 DEFINE_FUNCTION( ClassConstruct ) {
 
-// with new operator
-//  argv[-1] : Body
-//  argv[-2] : Function
-//  argv[-3] : global
-//  JS_GetParent : global
-
-
-// without new operator
-//  argv[-1] : World
-//  argv[-2] : Function
-//  argv[-3] : global
-
-
-/*
-	JSObject *o = JS_GetScopeChain(cx);
-	JSClass *cl = JS_GetClass(o);
-*/
-
-/*
-JSObject *o;
-jsval *sp = cx->fp->sp;
-JS_ValueToObject(cx, *(sp-1) , &o);
-JSClass *cl = JS_GetClass(o);
-*/
-
-
-//	cx.lastInternalResult
-
-
-//	JSObject *o;
-//	JS_ValueToObject(cx, cx->lastInternalResult, &o);
-//	JSClass *cl = JS_GetClass(o);
 
 	RT_ASSERT_CONSTRUCTING(&classBody);
 	RT_ASSERT_ARGC(1);
@@ -204,7 +171,7 @@ DEFINE_PROPERTY( mass ) {
 
 	if ( *vp == JSVAL_VOID ) { // mass do not exist, we have to create it and store it
 
-		JSObject *massObject = JS_NewObject(cx, &mass_class, NULL, NULL);
+		JSObject *massObject = JS_NewObject(cx, &classMass, NULL, NULL);
 		RT_ASSERT(massObject != NULL, "unable to construct Mass object.");
 		JS_SetReservedSlot(cx, massObject, MASS_SLOT_BODY, OBJECT_TO_JSVAL(obj));
 		*vp = OBJECT_TO_JSVAL(massObject);
@@ -257,5 +224,29 @@ END_CLASS(Body, HAS_PRIVATE, 1) // private: BodyID
 
 
 /****************************************************************
+
+
+// with new operator
+//  argv[-1] : Body
+//  argv[-2] : Function
+//  argv[-3] : global
+//  JS_GetParent : global
+
+
+// without new operator
+//  argv[-1] : World
+//  argv[-2] : Function
+//  argv[-3] : global
+
+JSObject *o;
+jsval *sp = cx->fp->sp;
+JS_ValueToObject(cx, *(sp-1) , &o);
+JSClass *cl = JS_GetClass(o);
+
+
+//	cx.lastInternalResult
+//	JSObject *o;
+//	JS_ValueToObject(cx, cx->lastInternalResult, &o);
+//	JSClass *cl = JS_GetClass(o);
 
 */

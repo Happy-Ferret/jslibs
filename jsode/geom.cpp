@@ -18,15 +18,13 @@ DEFINE_PROPERTY( body ) {
 	//RT_ASSERT_RESOURCE( geom );
 	//ode::dBodyID bodyId = dGeomGetBody(geom);
 
-	if ( *vp == JSVAL_VOID ) {
+	ode::dGeomID geom = (ode::dGeomID)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE( geom );
+	ode::dBodyID bodyId;
+	if ( ValToBodyID(cx, *vp, &bodyId) == JS_FALSE )
+		return JS_FALSE;
+	ode::dGeomSetBody(geom, bodyId);
 
-		ode::dGeomID geom = (ode::dGeomID)JS_GetPrivate(cx, obj);
-		RT_ASSERT_RESOURCE( geom );
-		ode::dBodyID bodyId;
-		if ( ValToBodyID(cx, *vp, &bodyId) == JS_FALSE )
-			return JS_FALSE;
-		ode::dGeomSetBody(geom, bodyId);
-	}
 	return JS_TRUE;
 }
 
@@ -46,7 +44,7 @@ BEGIN_FUNCTION_MAP
 END_MAP
 
 BEGIN_PROPERTY_MAP
-	SET_AND_STORE( body )
+	PROPERTY_STORE( body )
 END_MAP
 
 

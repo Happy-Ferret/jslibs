@@ -69,7 +69,7 @@ inline JSBool FloatVectorToArray( JSContext *cx, int count, const float *vector,
 	jsval value;
 	for (int i=0; i<count; ++i) {
 
-		JS_NewDoubleValue(cx, vector[i], &value);
+		JS_NewNumberValue(cx, vector[i], &value); // JS_NewDoubleValue(cx, vector[i], &value);
 		JS_SetElement(cx, jsArray, i, &value);
 	}
 	return JS_TRUE;

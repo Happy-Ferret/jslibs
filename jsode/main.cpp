@@ -29,8 +29,7 @@ extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj)
 	ode::dSetMessageHandler(messageHandler);
 
 	jointInitClass( cx, obj );
-	massInitClass( cx, obj );
-
+	INIT_CLASS( Mass );
 	INIT_CLASS( Body );
 	INIT_CLASS( Geom );
 	INIT_CLASS( GeomSphere );
