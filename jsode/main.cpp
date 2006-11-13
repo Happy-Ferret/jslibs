@@ -7,6 +7,7 @@
 #include "geom.h"
 #include "geomSphere.h"
 
+#include "../configuration/configuration.h"
 
 DEFINE_UNSAFE_MODE;
 
@@ -28,12 +29,26 @@ extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj)
 	ode::dSetDebugHandler(messageHandler);
 	ode::dSetMessageHandler(messageHandler);
 
-	jointInitClass( cx, obj );
+	jsval unsafeModeValue;
+	JSBool jsStatus = GetConfigurationValue(cx, "unsafeMode", &unsafeModeValue);
+	RT_ASSERT( jsStatus != JS_FALSE, "Unable to read unsafeMode state from configuration object." );
+	if ( unsafeModeValue != JSVAL_VOID && JSVAL_IS_BOOLEAN(unsafeModeValue) )
+		SET_UNSAFE_MODE( JSVAL_TO_BOOLEAN(unsafeModeValue) == JS_TRUE );
+
+	INIT_CLASS( Joint );
+	INIT_CLASS( JointBall );
+	INIT_CLASS( JointHinge );
+	INIT_CLASS( JointSlider );
+	INIT_CLASS( JointFixed );
 	INIT_CLASS( Mass );
 	INIT_CLASS( Body );
 	INIT_CLASS( Geom );
 	INIT_CLASS( GeomSphere );
 	INIT_CLASS( World );
+
+//	JSObject *p = JS_GetPrototype(cx, classObjectJointHinge);
+//	JSObject *q = JS_GetPrototype(cx, p);
+
 	return JS_TRUE;
 }
 

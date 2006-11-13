@@ -102,7 +102,7 @@ DEFINE_PROPERTY( centerSetter ) {
 	ode::dMass mass;
 	if ( GetBodyAndMass(cx, obj, &bodyID, &mass) == JS_FALSE)
 		return JS_FALSE;
-	jsdouble massValue;
+//	jsdouble massValue;
 //	jsdouble translation[3];
 	if (FloatArrayToVector(cx, 3, vp, mass.c) == JS_FALSE)
 		return JS_FALSE;
@@ -146,7 +146,7 @@ NO_CALL
 NO_CONSTANT_MAP
 NO_INITCLASSAUX
 
-END_CLASS( Mass, NO_PRIVATE, NO_RESERVED_SLOT ) // [TBD] Mass object seems to be useless. Try to merge Body with Mass
+END_CLASS( Mass, NO_PRIVATE, 1 ) // [TBD] Mass object seems to be useless. Try to merge Body with Mass
 
 /****************************************************************
 

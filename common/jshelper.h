@@ -1,9 +1,13 @@
 #ifndef _JSHELPER_H_
 #define _JSHELPER_H_
+
 #ifdef WIN32
 #include <windows.h>
 #endif // WIN32
 
+#ifdef _MSC_VER
+#pragma warning(disable:4244 4305)  // for VC++, no precision loss complaints
+#endif
 
 #ifdef JSHELPER_UNSAFE_DEFINED
 	extern bool _unsafeMode;
@@ -165,8 +169,8 @@
 #define NO_PRIVATE 0
 #define HAS_PRIVATE JSCLASS_HAS_PRIVATE
 #define NO_RESERVED_SLOT 0
-#define NO_PROTOTYPE static JSObject *prototype = NULL;
-#define PROTOTYPE(prototypeObject) static JSObject *prototype = prototypeObject;
+#define NO_PROTOTYPE static JSObject *no_prototype = NULL; static JSObject **prototype = &no_prototype;
+#define PROTOTYPE(prototypeObject) static JSObject **prototype = &prototypeObject;
 #define NO_CLASS_CONSTRUCT static JSNative ClassConstruct = NULL;
 #define NO_OBJECT_CONSTRUCT static JSNative ObjectConstruct = NULL;
 #define NO_FINALIZE static JSFinalizeOp Finalize = JS_FinalizeStub;
@@ -221,16 +225,19 @@
 // use in CONSTANT_MAP only
 #define CONSTANT_DOUBLE(name,value) { value, #name },
 
-#define END_CLASS(name,privateSlot,reservedSlotCount) \
-	extern JSObject *classObject##name = thisClassObject; \
-	extern JSClass class##name = { #name, /*JSCLASS_CONSTRUCT_PROTOTYPE | */privateSlot | JSCLASS_HAS_RESERVED_SLOTS(reservedSlotCount), JS_PropertyStub , JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_EnumerateStub, JS_ResolveStub , JS_ConvertStub , Finalize, 0, 0, Call, ObjectConstruct }; \
-	extern JSBool InitClass##name(JSContext *cx, JSObject *obj) { \
-		thisClass = &class##name; \
-		classObject##name = thisClassObject = JS_InitClass( cx, obj, prototype, thisClass, ClassConstruct, 0, _propertyMap, _functionMap, _propertyStaticMap, _functionStaticMap ); \
-		if ( _constantMap != NULL) \
-			JS_DefineConstDoubles( cx, thisClassObject, _constantMap ); \
+// [TBD] create a real inline function from  InitClass##className
+#define END_CLASS(className,privateSlot,reservedSlotCount) \
+	extern JSObject *classObject##className = thisClassObject; \
+	extern JSClass class##className = { #className, /*JSCLASS_CONSTRUCT_PROTOTYPE |*/ privateSlot | JSCLASS_HAS_RESERVED_SLOTS(reservedSlotCount), JS_PropertyStub , JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_EnumerateStub, JS_ResolveStub , JS_ConvertStub , Finalize, 0, 0, Call, ObjectConstruct }; \
+	extern JSBool InitClass##className(JSContext *cx, JSObject *obj) { \
+		thisClass = &class##className; \
+		classObject##className = thisClassObject = JS_InitClass( cx, obj, *prototype, thisClass, ClassConstruct, 0, _propertyMap, _functionMap, _propertyStaticMap, _functionStaticMap ); \
+		RT_ASSERT_1( thisClassObject != NULL, "Unable to InitClass %s", thisClass->name ); \
+		if ( _constantMap != NULL ) \
+			if ( JS_DefineConstDoubles( cx, thisClassObject, _constantMap ) == JS_FALSE ) \
+				return JS_FALSE; \
 		InitClassAux(cx, obj); \
-		return thisClassObject != NULL; \
+		return JS_TRUE; \
 	}
 
 #define DECLARE_CLASS(name) \

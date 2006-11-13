@@ -126,6 +126,7 @@ DEFINE_PROPERTY( body ) {
 		JS_SetPrivate(cx, staticBody, (ode::dBodyID)0);
 		*vp = OBJECT_TO_JSVAL(staticBody);	
 	}
+	return JS_TRUE;
 }
 
 

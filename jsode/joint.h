@@ -1,10 +1,8 @@
-extern JSClass joint_class;
-extern JSClass jointBall_class;
-extern JSClass jointHinge_class;
-extern JSClass jointSlider_class;
-extern JSClass jointFixed_class;
-
-JSObject *jointInitClass( JSContext *cx, JSObject *obj );
+DECLARE_CLASS( Joint );
+DECLARE_CLASS( JointBall );
+DECLARE_CLASS( JointHinge );
+DECLARE_CLASS( JointSlider );
+DECLARE_CLASS( JointFixed );
 
 #define JOINT_SLOT_BODY1 0
 #define JOINT_SLOT_BODY2 1

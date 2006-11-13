@@ -32,8 +32,7 @@ inline JSBool IntVectorToArray( JSContext *cx, int count, const int *vector, jsv
 	JSObject *jsArray = JS_NewArrayObject(cx, 0, NULL);
 	*vp = OBJECT_TO_JSVAL(jsArray);
 	jsval value;
-	int32 i32;
-	for (int i=0; i<count; ++i) {
+	for (jsint i=0; i<count; ++i) {
 
 		RT_SAFE( JS_NewNumberValue(cx, vector[i], &value) ); // [TBD] useful ??
 		RT_UNSAFE( value = INT_TO_JSVAL(vector[i]) );

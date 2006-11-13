@@ -196,6 +196,22 @@
 				>
 			</File>
 			<File
+				RelativePath=".\jointBall.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\jointFixed.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\jointHinge.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\jointSlider.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\main.cpp"
 				>
 			</File>

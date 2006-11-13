@@ -49,7 +49,6 @@ DEFINE_FINALIZE() {
 
 DEFINE_FUNCTION( ClassConstruct ) {
 
-
 	RT_ASSERT_CONSTRUCTING(&classBody);
 	RT_ASSERT_ARGC(1);
 	

@@ -3,9 +3,7 @@
 #include "geom.h"
 #include "geomSphere.h"
 
-
 BEGIN_CLASS
-
 
 DEFINE_FINALIZE() {
 	 // [TBD] manage destruction dependency: geom - space, body - world, but how to ?
@@ -20,7 +18,6 @@ DEFINE_FINALIZE() {
 	//       in the case we use geom as a property of Body ??
 }
 
-
 DEFINE_FUNCTION( ClassConstruct ) {
 
 	RT_ASSERT_CONSTRUCTING(&classGeomSphere);
@@ -33,7 +30,6 @@ DEFINE_FUNCTION( ClassConstruct ) {
 	return JS_TRUE;
 }
 
-
 DEFINE_PROPERTY( radiusSetter ) {
 	
 	ode::dGeomID geom = (ode::dGeomID)JS_GetPrivate(cx, obj);
@@ -45,7 +41,6 @@ DEFINE_PROPERTY( radiusSetter ) {
 	return JS_TRUE;
 }
 
-
 DEFINE_PROPERTY( radiusGetter ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JS_GetPrivate(cx, obj);
@@ -53,7 +48,6 @@ DEFINE_PROPERTY( radiusGetter ) {
 	JS_NewDoubleValue(cx, ode::dGeomSphereGetRadius(geom), vp); // see JS_NewNumberValue and JS_NewDouble
 	return JS_TRUE;
 }
-
 
 BEGIN_FUNCTION_MAP
 END_MAP
