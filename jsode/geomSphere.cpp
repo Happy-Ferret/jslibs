@@ -9,10 +9,11 @@ BEGIN_CLASS
 
 DEFINE_FINALIZE() {
 	 // [TBD] manage destruction dependency: geom - space, body - world, but how to ?
-	 
-	ode::dGeomID GeomId = (ode::dGeomID)JS_GetPrivate(cx,obj);
-	if ( GeomId != NULL )
-		ode::dGeomDestroy(GeomId);
+
+	// read the next comment !!
+//	ode::dGeomID GeomId = (ode::dGeomID)JS_GetPrivate(cx,obj);
+//	if ( GeomId != NULL )
+//		ode::dGeomDestroy(GeomId);
 
 	// [TBD] really destroy the geom when finalise ? think that even if there is no more references to this object, 
 	//       the geom remain managed by ODE, so what to do ??? ...
@@ -73,4 +74,4 @@ NO_CALL
 NO_CONSTANT_MAP
 NO_INITCLASSAUX
 
-END_CLASS( GeomSphere, HAS_PRIVATE, NO_RESERVED_SLOT)
+END_CLASS( GeomSphere, HAS_PRIVATE, NO_RESERVED_SLOT )
