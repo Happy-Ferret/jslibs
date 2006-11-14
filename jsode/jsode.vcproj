@@ -188,6 +188,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\geomBox.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\geomSphere.cpp"
 				>
 			</File>
@@ -259,10 +263,6 @@
 			</File>
 			<File
 				RelativePath=".\geom.h"
-				>
-			</File>
-			<File
-				RelativePath=".\geomSphere.h"
 				>
 			</File>
 			<File

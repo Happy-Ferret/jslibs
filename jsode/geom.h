@@ -1,2 +1,3 @@
 DECLARE_CLASS( Geom )
-
+DECLARE_CLASS( GeomSphere )
+DECLARE_CLASS( GeomBox )

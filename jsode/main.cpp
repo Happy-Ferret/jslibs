@@ -5,7 +5,6 @@
 #include "joint.h"
 
 #include "geom.h"
-#include "geomSphere.h"
 
 #include "../configuration/configuration.h"
 
@@ -44,6 +43,7 @@ extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj)
 	INIT_CLASS( Body );
 	INIT_CLASS( Geom );
 	INIT_CLASS( GeomSphere );
+	INIT_CLASS( GeomBox );
 	INIT_CLASS( World );
 
 //	JSObject *p = JS_GetPrototype(cx, classObjectJointHinge);

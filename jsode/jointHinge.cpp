@@ -4,6 +4,7 @@
 
 BEGIN_CLASS
 
+
 DEFINE_FUNCTION( ClassConstruct ) {
 
 	RT_ASSERT_CONSTRUCTING(thisClass);
@@ -81,6 +82,18 @@ DEFINE_PROPERTY( angleRate ) {
 	JS_NewDoubleValue(cx, ode::dJointGetHingeAngleRate(jointId), vp);
 	return JS_TRUE;
 }
+
+DEFINE_FUNCTION( AddTorque ) {
+
+	RT_ASSERT_ARGC(1)
+	ode::dJointID jointId = (ode::dJointID)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE(jointId);
+	jsdouble torque;
+	JS_ValueToNumber(cx, argv[0], &torque);
+	ode::dJointAddHingeTorque(jointId, torque);
+	return JS_TRUE;
+}
+
 
 BEGIN_PROPERTY_MAP
 	READWRITE( anchor )

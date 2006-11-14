@@ -1,6 +1,33 @@
 LoadModule('jsstd');
 LoadModule('jsode');
 
+
+
+var world = new World;
+world.gravity = [0,0,-0.81];
+
+var body1 = new Body(world);
+var body2 = new Body(world);
+var joint = new JointHinge(world);
+
+Print( joint.velocity);
+Print( joint.maxForce);
+
+joint.Attach(body1,body2);
+joint.anchor = [4,4,0];
+joint.axis = [1,0,0];
+joint.loStop = 1;
+joint.hiStop = 1.5;
+
+body1.linearVel = [0,0,19];
+body1.angularVel = [1,1,0];
+
+
+
+
+
+/*
+
 var world = new World;
 
 //world.Body = Body;
@@ -23,6 +50,7 @@ var joint = new JointHinge(world);
 joint.Attach(body,body1);
 joint.anchor = [10,0,0];
 joint.axis = [1,1,1];
+//joint.loStop = 0;
 //joint.Destroy();
 
 //body.linearVel = [0,0,15];
@@ -42,3 +70,5 @@ for ( var i = 0; i<100; i++ ) {
 }
 
 Print( 'joint angle rate:'+joint.angleRate ,'\n');
+
+*/
