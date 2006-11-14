@@ -417,7 +417,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 
 // cleanup
   // For each context you've created
-  JS_DestroyContext(cx);
+  JS_DestroyContext(cx); // [TBD] is JS_DestroyContextNoGC faster ?
 
   // For each runtime
   JS_DestroyRuntime(rt);
