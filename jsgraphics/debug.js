@@ -10,26 +10,60 @@ Exec('winTools.js');
 
 var image=0;
 
-
+/*
 var world = new World;
 //world.gravity = [0,0,-0.81];
-
 var body1 = new Body(world);
 var body2 = new Body(world);
 var joint = new JointHinge(world);
-
 joint.Attach(body1,body2);
 joint.anchor = [4,4,0];
 joint.axis = [0,0,1];
-
 //joint.loStop = 0;
 //joint.hiStop = -1;
 //joint.bounce = 0.5;
 //Print('bounce: '+ joint.bounce);
-
 body1.linearVel = [0,10,0];
 body2.linearVel = [0,-10,0];
 //body1.angularVel = [0,0,5];
+*/
+
+
+var world = new World;
+//world.Body = Body;
+//var b = new world.Body();
+
+world.gravity = [0,0,-9.81];
+
+var body1 = new Body(world);
+var geom1 = new GeomBox( world.space )
+geom1.body = body1;
+
+var body2 = new Body(world);
+var geom2 = new GeomBox( world.space );
+geom2.body = body2;
+
+
+
+//body1.mass.SetBoxTotal(10,[1,1,100]);
+//body.mass.mass = 1;
+//body.mass.Translate([2,1,0]);
+//body.mass.center = [2,0,0];
+//body.mass.Adjust(10);
+
+//var joint = new JointHinge(world);
+
+//joint.Attach(body,body1);
+//joint.anchor = [10,0,0];
+//joint.axis = [1,1,1];
+
+body1.position = [0,0,0]
+body1.linearVel = [0,0,5];
+
+body2.position = [0,0,5]
+body2.linearVel = [0,0,-5];
+
+new GeomPlane(world.space);
 
 
 
@@ -50,7 +84,7 @@ var gl = new Gl(win);
 		for ( let y = -2000; y <= 2000; y += 100 ) {
 			
 			gl.PushMatrix();
-			gl.Translate(Math.random()*2000-1000, Math.random()*2000-1000, Math.random()*2000-1000 );
+			gl.Translate(Math.random()*1000-500, Math.random()*1000-500, Math.random()*1000-500 );
 			gl.Cube();
 			gl.PopMatrix();
 		}
@@ -59,20 +93,20 @@ var gl = new Gl(win);
 
 var mouse = new MouseMotion(win);
 var camera = new Transformation();
-camera.Product( new Transformation().Translation(0,0,10) );
+camera.Product( new Transformation().Translation(-1,-1,10) );
+//camera.Rotate( 90, 1,0,0);
+//camera.LookAt(0,0,0);
 
 Transformation.prototype.toString = function() {
 	
 	var mat = camera.Dump();
-	
 	var str = '';
 	for ( var i = 0; i<4; i++) {
-		for ( var j = 0; j<4; j++) {
+		for ( var j = 0; j<4; j++)
 			str += (String(mat[4*j+i]).substr(0,5)) + '  ';
-		}
 		str += '\n';
 	}
-	return str
+	return str;
 }
 
 var tw=0, tx=0, ty=0, tz=0;
@@ -114,9 +148,12 @@ function Render() {
 
 	gl.Clear( glc.COLOR_BUFFER_BIT | glc.DEPTH_BUFFER_BIT );
 
+	gl.LoadIdentity();
+	gl.Color( 1,1,1 );
 	for ( var x = -10; x<10; x++ )
 		for ( var y = -10; y<10; y++ )
 			gl.Quad(x,y,x+1,y+1);
+
 
 
 	var m = new Transformation().Load(camera).Invert();
@@ -127,8 +164,10 @@ function Render() {
 	gl.LoadMatrix(new Transformation().Load(m).Product(body2));
 	gl.Cube();
 
-	gl.LoadMatrix(new Transformation().Translation(joint.anchor[0], joint.anchor[1], joint.anchor[2]).InverseProduct(m));
-	gl.Axis();
+
+
+//	gl.LoadMatrix(new Transformation().Translation(joint.anchor[0], joint.anchor[1], joint.anchor[2]).InverseProduct(m));
+//	gl.Axis();
 
 	gl.LoadMatrix(m);
 	gl.CallList(list1);

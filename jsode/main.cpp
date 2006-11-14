@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "mass.h"
+#include "space.h"
 #include "world.h"
 #include "body.h"
 #include "joint.h"
@@ -34,6 +35,7 @@ extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj)
 	if ( unsafeModeValue != JSVAL_VOID && JSVAL_IS_BOOLEAN(unsafeModeValue) )
 		SET_UNSAFE_MODE( JSVAL_TO_BOOLEAN(unsafeModeValue) == JS_TRUE );
 
+	INIT_CLASS( Space );
 	INIT_CLASS( Joint );
 	INIT_CLASS( JointBall );
 	INIT_CLASS( JointHinge );
@@ -44,6 +46,7 @@ extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj)
 	INIT_CLASS( Geom );
 	INIT_CLASS( GeomSphere );
 	INIT_CLASS( GeomBox );
+	INIT_CLASS( GeomPlane );
 	INIT_CLASS( World );
 
 //	JSObject *p = JS_GetPrototype(cx, classObjectJointHinge);
