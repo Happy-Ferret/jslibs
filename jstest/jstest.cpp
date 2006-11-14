@@ -3,7 +3,6 @@
 
 #include <stdio.h>
 
-
 /* TIPS
 
 	Prototypes are not constructed by default. If you want your class's
