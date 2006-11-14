@@ -12,18 +12,24 @@ var image=0;
 
 
 var world = new World;
-world.gravity = [0,0,-0.81];
+//world.gravity = [0,0,-0.81];
 
 var body1 = new Body(world);
 var body2 = new Body(world);
-var joint = new JointBall(world);
+var joint = new JointHinge(world);
 
 joint.Attach(body1,body2);
 joint.anchor = [4,4,0];
-//joint.axis = [1,0,0];
+joint.axis = [0,0,1];
 
-body1.linearVel = [0,0,19];
-body1.angularVel = [1,1,0];
+//joint.loStop = 0;
+//joint.hiStop = -1;
+//joint.bounce = 0.5;
+//Print('bounce: '+ joint.bounce);
+
+body1.linearVel = [0,10,0];
+body2.linearVel = [0,-10,0];
+//body1.angularVel = [0,0,5];
 
 
 
@@ -53,6 +59,7 @@ var gl = new Gl(win);
 
 var mouse = new MouseMotion(win);
 var camera = new Transformation();
+camera.Product( new Transformation().Translation(0,0,10) );
 
 Transformation.prototype.toString = function() {
 	
@@ -107,9 +114,9 @@ function Render() {
 
 	gl.Clear( glc.COLOR_BUFFER_BIT | glc.DEPTH_BUFFER_BIT );
 
-//	for ( var x = -10; x<10; x++ )
-//		for ( var y = -10; y<10; y++ )
-//			gl.Quad(x,y,x+1,y+1);
+	for ( var x = -10; x<10; x++ )
+		for ( var y = -10; y<10; y++ )
+			gl.Quad(x,y,x+1,y+1);
 
 
 	var m = new Transformation().Load(camera).Invert();

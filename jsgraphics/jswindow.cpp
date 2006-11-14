@@ -287,7 +287,7 @@ DEFINE_FUNCTION( Mode ) {
 	if ( argc > 0 ) {
 		
 		RT_ASSERT_ARGC(3);
-		int32 width, height, bits;
+		int32 bits;
 		JSBool fullscreen;
 
 		int size[2];
@@ -518,10 +518,10 @@ BEGIN_FUNCTION_MAP
 END_MAP
 
 BEGIN_PROPERTY_MAP
-	SET_AND_STORE(title)
-	SET_AND_STORE(showFrame)
-	SET_AND_STORE(captureMouse)
-	SET_AND_STORE(clipCursor)
+	PROPERTY_STORE(title)
+	PROPERTY_STORE(showFrame)
+	PROPERTY_STORE(captureMouse)
+	PROPERTY_STORE(clipCursor)
 	READWRITE(rect)
 	READWRITE(active)
 	READWRITE(cursorPosition)
@@ -534,10 +534,10 @@ END_MAP
 
 //NO_STATIC_PROPERTY_MAP
 BEGIN_STATIC_PROPERTY_MAP
-	SET_AND_STORE(showCursor)
+	PROPERTY_STORE(showCursor)
 	READONLY(desktopRect)
 	READWRITE(cursorAbsolutePosition)
-	SET_AND_STORE(absoluteClipCursor)
+	PROPERTY_STORE(absoluteClipCursor)
 END_MAP
 
 NO_OBJECT_CONSTRUCT

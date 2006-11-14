@@ -292,6 +292,7 @@ DEFINE_FUNCTION( Product ) {
 	return JS_TRUE;
 }
 
+
 DEFINE_FUNCTION( InverseProduct ) {
 
 	RT_ASSERT_ARGC(1)
