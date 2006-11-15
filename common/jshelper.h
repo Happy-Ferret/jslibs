@@ -210,8 +210,13 @@
 #define FUNCTION_ALIAS(name,nativeName) { #name, nativeName },
 // Declares a read/write property. Yous muse define xxxxGetter and xxxxSetter native functions
 #define READWRITE(name) { #name, 0, JSPROP_PERMANENT|JSPROP_SHARED, name##Getter, name##Setter },
-// Need setter function to be defined. The resulting value is stored in the object. When the prop is read (get) the stored value is used
+
+#define READWRITE_STORE(name) { #name, 0, JSPROP_PERMANENT, name##Getter, name##Setter },
+
+// Need setter function to be defined. The resulting value is stored in the object. When the prop is read (get) the stored value is used ( see. Geom.body )
 #define PROPERTY_STORE(name) { #name, 0, JSPROP_PERMANENT, NULL, name },
+// same as READONLY but stores the resulting value in property's slot
+#define PROPERTY_READONLY_STORE( name ) { #name, 0, JSPROP_PERMANENT|JSPROP_READONLY, name, NULL },
 // Declares a read-only property
 #define READONLY(name) { #name, 0, JSPROP_PERMANENT|JSPROP_SHARED|JSPROP_READONLY, name, NULL },
 // Allows a full definition of a property

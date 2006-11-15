@@ -44,7 +44,6 @@ var geom2 = new GeomBox( world.space );
 geom2.body = body2;
 
 
-
 //body1.mass.SetBoxTotal(10,[1,1,100]);
 //body.mass.mass = 1;
 //body.mass.Translate([2,1,0]);
@@ -62,6 +61,7 @@ body1.linearVel = [0,0,5];
 
 body2.position = [0,0,5]
 body2.linearVel = [0,0,-5];
+body2.angularVel = [1,1,1];
 
 new GeomPlane(world.space);
 
@@ -94,7 +94,8 @@ var gl = new Gl(win);
 var mouse = new MouseMotion(win);
 var camera = new Transformation();
 camera.Product( new Transformation().Translation(-1,-1,10) );
-//camera.Rotate( 90, 1,0,0);
+var cameraRotation = new Transformation();
+cameraRotation.Rotate( 90, 1,0,0);
 //camera.LookAt(0,0,0);
 
 Transformation.prototype.toString = function() {
@@ -132,12 +133,13 @@ mouse.delta = function( dx,dy,dw, b1,b2,b3 ) {
 
 		tx += dx;
 		ty += dy;
-
+		
 		camera.LoadRotation(new Transformation().RotationZ(tx/2).Product( new Transformation().RotationX(-ty/2) ));
 	}
 }
 
-var move = 0;
+
+
 
 function Render() {
 

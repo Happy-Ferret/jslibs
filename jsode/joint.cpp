@@ -5,16 +5,65 @@
 
 BEGIN_CLASS
 
+	// Api: dBodyID dJointGetBody (dJointID, int index);
+	// Api: int dAreConnected (dBodyID b1, dBodyID b2);
+
+	
+	// [TBD] replace Attach with body1 and body2 setter
+
+/*
 DEFINE_PROPERTY( body1 ) {
 
 	JS_GetReservedSlot(cx, obj, JOINT_SLOT_BODY1, vp);
+	return JS_TRUE;
+}
+DEFINE_PROPERTY( body2 ) {
+
+	JS_GetReservedSlot(cx, obj, JOINT_SLOT_BODY2, vp);
+	return JS_TRUE;
+}
+*/
+
+inline JSBool SetJoint( JSContext *cx, JSObject *obj, jsval *b1, jsval *b2 ) {
+
+	ode::dJointID jointID = (ode::dJointID)JS_GetPrivate( cx, obj );
+	RT_ASSERT( jointID != NULL, RT_ERROR_NOT_INITIALIZED );
+
+	if ( *b1 == JSVAL_VOID || *b2 == JSVAL_VOID )
+		ode::dJointAttach(jointID, 0, 0); // detach it
+
+	ode::dBodyID bId1 = 0;
+	ode::dBodyID bId2 = 0;
+
+	if ( *b1 != JSVAL_VOID )
+		if ( ValToBodyID(cx, *b1, &bId1) == JS_FALSE )
+			return JS_FALSE;
+	
+	if ( *b2 != JSVAL_VOID )
+		if ( ValToBodyID(cx, *b2, &bId2) == JS_FALSE )
+			return JS_FALSE;
+
+	ode::dJointAttach(jointID, bId1, bId2);
+	return JS_TRUE;
+}
+
+
+DEFINE_PROPERTY( body1 ) {
+
+	jsval b2;
+	JS_GetProperty(cx, obj, "body2", &b2);
+	if ( SetJoint(cx, obj, vp, &b2) == JS_FALSE )
+		return JS_FALSE;
 	return JS_TRUE;
 }
 
 
 DEFINE_PROPERTY( body2 ) {
 
-	JS_GetReservedSlot(cx, obj, JOINT_SLOT_BODY2, vp);
+	jsval b1;
+	JS_GetProperty(cx, obj, "body1", &b1);
+	if ( SetJoint(cx, obj, &b1, vp) == JS_FALSE )
+		return JS_FALSE;
 	return JS_TRUE;
 }
 
@@ -24,14 +73,16 @@ DEFINE_FUNCTION( Destroy ) {
 	RT_ASSERT( IsInstanceOf(cx, obj, thisClass), RT_ERROR_INVALID_CLASS );
 	ode::dJointID jointId = (ode::dJointID)JS_GetPrivate( cx, obj );
 	RT_ASSERT_RESOURCE( jointId );
-	JS_SetReservedSlot(cx, obj, JOINT_SLOT_BODY1, JSVAL_VOID);
-	JS_SetReservedSlot(cx, obj, JOINT_SLOT_BODY2, JSVAL_VOID);
+	// remove references to bodies
+	jsval val = JSVAL_VOID;
+	JS_SetProperty(cx, obj, "body1", &val); // [TBD] find why to not use JS_DeleteProperty
+	JS_SetProperty(cx, obj, "body2", &val);
 	JS_SetPrivate(cx, obj, NULL); 
 	ode::dJointDestroy(jointId);
 	return JS_TRUE;
 }
 
-
+/*
 DEFINE_FUNCTION( Attach ) {
 
 	RT_ASSERT_ARGC(2);
@@ -54,10 +105,10 @@ DEFINE_FUNCTION( Attach ) {
 	ode::dBodyID bodyID2 = (ode::dBodyID)JS_GetPrivate(cx, body2Object);
 //	RT_ASSERT(bodyID != NULL, RT_ERROR_NOT_INITIALIZED);
 
-	dJointAttach(jointID, bodyID1, bodyID2);
+	ode::dJointAttach(jointID, bodyID1, bodyID2);
 	return JS_TRUE;
 }
-
+*/
 
 	//dJointTypeBall 	A ball-and-socket joint.
 	//dJointTypeHinge 	A hinge joint.
@@ -277,13 +328,15 @@ DEFINE_PROPERTY( maxForceGetter ) {
 
 
 BEGIN_FUNCTION_MAP
-	FUNCTION( Attach )
+//	FUNCTION( Attach )
 	FUNCTION( Destroy )
 END_MAP
 
 BEGIN_PROPERTY_MAP
-	READONLY( body1 )
-	READONLY( body2 )
+//	PROPERTY_READONLY_STORE( body1 )
+//	PROPERTY_READONLY_STORE( body2 )
+	PROPERTY_STORE( body1 )
+	PROPERTY_STORE( body2 )
 
 	READWRITE( loStop )
 	READWRITE( hiStop )

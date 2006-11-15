@@ -3,12 +3,17 @@
 
 BEGIN_CLASS
 
+
+/* This class cannot have a Finalize ( see readme.txt )
 DEFINE_FINALIZE() {
 
 	ode::dSpaceID spaceId = (ode::dSpaceID)JS_GetPrivate(cx,obj);
 	if ( spaceId != NULL )
 		ode::dSpaceDestroy(spaceId);
 }
+*/
+
+
 
 DEFINE_FUNCTION( ClassConstruct ) {
 
@@ -34,7 +39,7 @@ NO_STATIC_PROPERTY_MAP
 
 //NO_CLASS_CONSTRUCT
 NO_OBJECT_CONSTRUCT
-//NO_FINALIZE
+NO_FINALIZE
 NO_CALL
 NO_PROTOTYPE
 NO_CONSTANT_MAP

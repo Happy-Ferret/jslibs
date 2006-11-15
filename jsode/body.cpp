@@ -47,6 +47,7 @@ DEFINE_FINALIZE() {
 */
 }
 
+
 DEFINE_FUNCTION( ClassConstruct ) {
 
 	RT_ASSERT_CONSTRUCTING(&classBody);
@@ -59,7 +60,10 @@ DEFINE_FUNCTION( ClassConstruct ) {
 	RT_ASSERT( bodyID != NULL, "unable to create the body." );
 
 	JS_SetPrivate(cx, obj, bodyID);
-	JS_SetReservedSlot(cx, obj, BODY_SLOT_PARENT, argv[0]);
+	JS_SetReservedSlot(cx, obj, BODY_SLOT_WORLD, argv[0]);
+
+//	JS_AddRoot(cx, obj);
+//	ode::dBodySetData(bodyID, obj);
 
 //	ode::dBodySetData(bodyID,worldObject);
 	SetNativeInterface(cx, obj, NI_READ_MATRIX44, (FunctionPointer)ReadMatrix, bodyID); // [TBD] check return status
@@ -74,7 +78,7 @@ DEFINE_FUNCTION( Destroy ) {
 	RT_ASSERT_RESOURCE( bodyId ); // [TBD] manage world-connected ( when bodyId == 0 )
 	dBodyDestroy(bodyId);
 	JS_SetPrivate(cx, obj, NULL);
-	JS_SetReservedSlot(cx, obj, BODY_SLOT_PARENT, JSVAL_VOID);
+	JS_SetReservedSlot(cx, obj, BODY_SLOT_WORLD, JSVAL_VOID);
 	return JS_TRUE;
 }
 
@@ -168,7 +172,7 @@ DEFINE_PROPERTY( vectorSetter ) {
 
 DEFINE_PROPERTY( mass ) {
 
-	if ( *vp == JSVAL_VOID ) { // mass do not exist, we have to create it and store it
+	if ( *vp == JSVAL_VOID ) { // if mass do not exist, we have to create it and store it
 
 		JSObject *massObject = JS_NewObject(cx, &classMass, NULL, NULL);
 		RT_ASSERT(massObject != NULL, "unable to construct Mass object.");
@@ -205,7 +209,7 @@ BEGIN_PROPERTY_MAP
 	PROPERTY_TABLE( angularVel, vector )
 	PROPERTY_TABLE( force     , vector )
 	PROPERTY_TABLE( torque    , vector )
-	READONLY( mass )
+	PROPERTY_READONLY_STORE( mass ) // mass is only a wrapper to dBodyGetMass and dBodySetMass
 END_MAP
 
 NO_STATIC_FUNCTION_MAP

@@ -5,7 +5,9 @@
 #include "../common/jshelper.h"
 
 #include "jstest.h"
-//#include "jsobj.h"
+#include "jsobj.h"
+#include "jsatom.h"
+
 
 /* recycle array objects instead of GC them
 Hello,
@@ -15,6 +17,28 @@ This make the GC running very often, and causes big lags in my application.
 Is it possible to tell SpiderMonkey to reuse unreferenced array objects instead of create new ones ?
 
 Franck.
+
+-------------------
+
+
+Thanks for your response.
+
+But I wondering if there is a way to workaround the lake of recycling :
+
+My first idea is to create a Vector class then :
+- detect in a GC callback ( in state JSGC_MARK_END ) Vector objects that are about to be finalized (JS_IsAboutToBeFinalized)
+- unmark these Vecor for being GC
+- store these object in a list
+Later, when I need a new Vector object, I just have to pop it from the list.
+
+My second idea is to create a pool of Vector in a js object ( this create a reference to the object and avoid it from being GC ),
+an then, when I need a new (or unused) vector object, I just have to get a Vector from the pool and check if its reference counter is 1.
+
+how to unmark an object from being GC ?
+how to get the reference counter of an object ( obj->map->nrefs ?? )
+
+Franck
+
 
 */
 
@@ -68,10 +92,35 @@ DEFINE_FUNCTION( V ) {
 	st = JS_SetElement(cx, o, 1, &value);
 
 //	st = JS_DefineProperty(cx, o, (const char *)1, INT_TO_JSVAL(12345), NULL, NULL, JSPROP_INDEX);
-	*rval = OBJECT_TO_JSVAL(o);
+
+	
+	//	*rval = OBJECT_TO_JSVAL(o);
+
+	int r;
+	r = o->map->nrefs;
+	JS_GC(cx);
+	r = o->map->nrefs;
+/*
+	char * name = "toto";
+    JSAtom *atom;
+
+    atom = js_Atomize(cx, name, strlen(name), 0);
+    if (!atom)
+        return JS_FALSE;
+	(obj)->map->ops->setProperty(cx,obj,ATOM_TO_JSID(atom),rval);
+*/
+//	 JS_PropertyStub
 
 
-//	JS_SetProperty(cx, JS_GetGlobalObject(cx), "toto", &ov);
+
+
+	JSObject *p = JS_GetParent(cx, JS_GetGlobalObject(cx));
+
+
+
+	r = o->map->nrefs;
+	JS_GC(cx);
+	r = o->map->nrefs;
 	
 
 
@@ -117,14 +166,7 @@ extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj)
 
 	BIND_STATIC_FUNCTIONS(obj);
 
-
-	
-	
-
-
-
-
-	prevCallback = JS_SetGCCallback( cx, newJSGCCallback );
+//	prevCallback = JS_SetGCCallback( cx, newJSGCCallback );
 
 
 //	InitClassTest( cx, obj );

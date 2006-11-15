@@ -16,13 +16,13 @@ typedef struct ColideContextPrivate {
 static void nearCallback (void *data, ode::dGeomID o1, ode::dGeomID o2) {
 
 	// Doc: http://opende.sourceforge.net/wiki/index.php/Manual_%28Joint_Types_and_Functions%29
-	ColideContextPrivate *ccp = (ColideContextPrivate*)data;
+	ColideContextPrivate *ccp = (ColideContextPrivate*)data; // beware: *data is local to Step function
 
 	// ignore collisions between bodies that are connected by the same joint
 	ode::dBodyID Body1 = NULL, Body2 = NULL;
-	if (o1) Body1 = dGeomGetBody (o1);
-	if (o2) Body2 = dGeomGetBody (o2);
-	if (Body1 && Body2 && dAreConnected (Body1, Body2))
+	if (o1) Body1 = dGeomGetBody(o1);
+	if (o2) Body2 = dGeomGetBody(o2);
+	if (Body1 && Body2 && dAreConnected(Body1, Body2))
 		return;
 
 
@@ -43,23 +43,21 @@ static void nearCallback (void *data, ode::dGeomID o1, ode::dGeomID o2) {
 */
 			contact[i].surface.mode = ode::dContactBounce;
 			contact[i].surface.mu = dInfinity;
-			contact[i].surface.bounce = 1;
+			contact[i].surface.bounce = 0.2;
 			contact[i].surface.bounce_vel = 0;
-			contact[i].surface.slip1 = 0.1;
-			contact[i].surface.slip2 = 0.1;
+//			contact[i].surface.slip1 = 0.1;
+//			contact[i].surface.slip2 = 0.1;
 				
 			ode::dJointID c = ode::dJointCreateContact(ccp->worldId,ccp->contactGroupId,&contact[i]);
 			ode::dJointAttach(c, dGeomGetBody(contact[i].geom.g1), dGeomGetBody(contact[i].geom.g2));
 		}
 	}
-
 }
 
 
 BEGIN_CLASS
 
 DEFINE_FINALIZE() {
-
 
 	ode::dWorldID worldId = (ode::dWorldID)JS_GetPrivate( cx, obj );
 	if ( worldId != NULL ) {
@@ -121,6 +119,7 @@ DEFINE_FUNCTION( Step ) {
 
 	JS_GetReservedSlot(cx, obj, WORLD_SLOT_CONTACTGROUP, &val);
 	ode::dJointGroupID contactgroup = (ode::dJointGroupID)JSVAL_TO_PRIVATE(val);
+
 	ColideContextPrivate ccp = { contactgroup, worldID, 0 };
 	ode::dSpaceCollide(spaceId, (void*)&ccp, &nearCallback);
 
@@ -129,7 +128,7 @@ DEFINE_FUNCTION( Step ) {
 	else
 		ode::dWorldStep(worldID, value);
 
-	if ( ccp.contactCount > 0 )
+	if ( ccp.contactCount > 0 ) // do not empty if not needed
 		ode::dJointGroupEmpty(contactgroup);
 
 	return JS_TRUE;
@@ -226,7 +225,7 @@ END_MAP
 
 BEGIN_PROPERTY_MAP
 	READWRITE( gravity )
-	READONLY( body )
+	PROPERTY_READONLY_STORE( body )
 	PROPERTY_TABLE( ERP, real )
 	PROPERTY_TABLE( CFM, real )
 	PROPERTY_TABLE( quickStepNumIterations, real )

@@ -10,10 +10,9 @@ var body1 = new Body(world);
 var body2 = new Body(world);
 var joint = new JointHinge(world);
 
-Print( joint.velocity);
-Print( joint.maxForce);
 
-joint.Attach(body1,body2);
+joint.body1 = body1;
+joint.body2 = body2;
 joint.anchor = [4,4,0];
 joint.axis = [1,0,0];
 joint.loStop = 1;
@@ -45,11 +44,13 @@ new GeomBox( world.space ).body = body2;
 //body.mass.center = [2,0,0];
 //body.mass.Adjust(10);
 
-//var joint = new JointHinge(world);
+var joint = new JointHinge(world);
 
 //joint.Attach(body,body1);
-//joint.anchor = [10,0,0];
-//joint.axis = [1,1,1];
+joint.body1 = body1;
+joint.body2 = body2;
+joint.anchor = [10,0,0];
+joint.axis = [1,1,1];
 
 body1.position = [0,0,0]
 new JointHinge(world)
