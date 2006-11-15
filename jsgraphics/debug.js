@@ -30,6 +30,7 @@ body2.linearVel = [0,-10,0];
 
 
 var world = new World;
+//world.quickStepNumIterations = 20;
 //world.Body = Body;
 //var b = new world.Body();
 
@@ -43,29 +44,22 @@ var body2 = new Body(world);
 var geom2 = new GeomBox( world.space );
 geom2.body = body2;
 
-
 //body1.mass.SetBoxTotal(10,[1,1,100]);
 //body.mass.mass = 1;
 //body.mass.Translate([2,1,0]);
 //body.mass.center = [2,0,0];
 //body.mass.Adjust(10);
 
-//var joint = new JointHinge(world);
-
-//joint.Attach(body,body1);
-//joint.anchor = [10,0,0];
-//joint.axis = [1,1,1];
-
-body1.position = [0,0,0]
-body1.linearVel = [0,0,5];
-
-body2.position = [0,0,5]
-body2.linearVel = [0,0,-5];
-body2.angularVel = [1,1,1];
+body1.position = [0,99,100]
+body1.mass.value = 1;
+var joint = new JointHinge(world);
+joint.body1 = world.env;
+joint.body2 = body1;
+joint.anchor = [0,0,100]; 
+joint.axis = [1,0,0];
+body2.position = [0.5,0.5,0.5]
 
 new GeomPlane(world.space);
-
-
 
 
 var win = new Window();
@@ -139,7 +133,7 @@ mouse.delta = function( dx,dy,dw, b1,b2,b3 ) {
 }
 
 
-
+var time;
 
 function Render() {
 
@@ -149,13 +143,13 @@ function Render() {
 	
 
 	gl.Clear( glc.COLOR_BUFFER_BIT | glc.DEPTH_BUFFER_BIT );
-
+/*
 	gl.LoadIdentity();
 	gl.Color( 1,1,1 );
 	for ( var x = -10; x<10; x++ )
 		for ( var y = -10; y<10; y++ )
 			gl.Quad(x,y,x+1,y+1);
-
+*/
 
 
 	var m = new Transformation().Load(camera).Invert();
@@ -166,10 +160,8 @@ function Render() {
 	gl.LoadMatrix(new Transformation().Load(m).Product(body2));
 	gl.Cube();
 
-
-
-//	gl.LoadMatrix(new Transformation().Translation(joint.anchor[0], joint.anchor[1], joint.anchor[2]).InverseProduct(m));
-//	gl.Axis();
+	gl.LoadMatrix(new Transformation().Translation(joint.anchor[0], joint.anchor[1], joint.anchor[2]).InverseProduct(m));
+	gl.Axis();
 
 	gl.LoadMatrix(m);
 	gl.CallList(list1);
@@ -186,7 +178,13 @@ function Render() {
 //	Print( 'Rendering time: '+(IntervalNow()-t0)+'ms', '\n');
 	CollectGarbage();
 	gl.SwapBuffers();
-	world.Step(0.005,true);
+	
+	var tmp = IntervalNow();
+	var delta = tmp-time;
+	if ( delta > 100)
+		delta = 100;
+	time && world.Step(delta/1000,true);
+	time = tmp;
 }
 
 

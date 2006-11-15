@@ -71,7 +71,7 @@ DEFINE_FUNCTION( SetBoxTotal ) {
 }
 
 
-DEFINE_PROPERTY( massSetter ) {
+DEFINE_PROPERTY( valueSetter ) {
 
 	ode::dBodyID bodyID;
 	ode::dMass mass;
@@ -85,7 +85,7 @@ DEFINE_PROPERTY( massSetter ) {
 }
 
 
-DEFINE_PROPERTY( massGetter ) {
+DEFINE_PROPERTY( valueGetter ) {
 
 	ode::dBodyID bodyID;
 	ode::dMass mass;
@@ -130,7 +130,7 @@ BEGIN_FUNCTION_MAP
 END_MAP
 
 BEGIN_PROPERTY_MAP
-	READWRITE( mass )
+	READWRITE( value )
 	READWRITE( center )
 END_MAP
 

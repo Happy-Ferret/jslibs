@@ -7,7 +7,7 @@
 
 #define MAX_CONTACTS 100
 
-typedef struct ColideContextPrivate {
+struct ColideContextPrivate {
 	ode::dJointGroupID contactGroupId;
 	ode::dWorldID worldId;
 	int contactCount;
@@ -25,32 +25,28 @@ static void nearCallback (void *data, ode::dGeomID o1, ode::dGeomID o2) {
 	if (Body1 && Body2 && dAreConnected(Body1, Body2))
 		return;
 
-
 	int i,n;
 	ode::dContact contact[MAX_CONTACTS];
 	n = ode::dCollide(o1,o2,MAX_CONTACTS,&contact[0].geom,sizeof(ode::dContact));
 	ccp->contactCount = n;
-	if (n > 0) {
-		for (i=0; i<n; i++) {
+	for ( i=0; i<n; i++ ) {
 
+		contact[i].surface.mode = ode::dContactSlip1 | ode::dContactSlip2 | ode::dContactSoftERP | ode::dContactSoftCFM | ode::dContactApprox1;
+		contact[i].surface.mu = dInfinity;
+		contact[i].surface.slip1 = 0.1;
+		contact[i].surface.slip2 = 0.1;
+		contact[i].surface.soft_erp = 0.5;
+		contact[i].surface.soft_cfm = 0.3;
 /*
-			contact[i].surface.mode = ode::dContactSlip1 | ode::dContactSlip2 | ode::dContactSoftERP | ode::dContactSoftCFM | ode::dContactApprox1;
-			contact[i].surface.mu = dInfinity;
-			contact[i].surface.slip1 = 0.1;
-			contact[i].surface.slip2 = 0.1;
-			contact[i].surface.soft_erp = 0.5;
-			contact[i].surface.soft_cfm = 0.3;
-*/
-			contact[i].surface.mode = ode::dContactBounce;
-			contact[i].surface.mu = dInfinity;
-			contact[i].surface.bounce = 0.2;
-			contact[i].surface.bounce_vel = 0;
-//			contact[i].surface.slip1 = 0.1;
-//			contact[i].surface.slip2 = 0.1;
-				
-			ode::dJointID c = ode::dJointCreateContact(ccp->worldId,ccp->contactGroupId,&contact[i]);
-			ode::dJointAttach(c, dGeomGetBody(contact[i].geom.g1), dGeomGetBody(contact[i].geom.g2));
-		}
+		contact[i].surface.mode = ode::dContactBounce | ode::dContactSlip1 | ode::dContactSlip2;
+		contact[i].surface.mu = dInfinity;
+		contact[i].surface.bounce = 0.2;
+		contact[i].surface.bounce_vel = 0;
+		contact[i].surface.slip1 = 0.1;
+		contact[i].surface.slip2 = 0.1;
+*/				
+		ode::dJointID c = ode::dJointCreateContact(ccp->worldId,ccp->contactGroupId,&contact[i]);
+		ode::dJointAttach(c, dGeomGetBody(contact[i].geom.g1), dGeomGetBody(contact[i].geom.g2));
 	}
 }
 
@@ -205,7 +201,7 @@ DEFINE_PROPERTY( realGetter ) {
 }
 
 
-DEFINE_PROPERTY( body ) {
+DEFINE_PROPERTY( env ) {
 
 	if ( *vp == JSVAL_VOID ) { //  create it if it does not exist
 
@@ -225,7 +221,7 @@ END_MAP
 
 BEGIN_PROPERTY_MAP
 	READWRITE( gravity )
-	PROPERTY_READONLY_STORE( body )
+	PROPERTY_READONLY_STORE( env )
 	PROPERTY_TABLE( ERP, real )
 	PROPERTY_TABLE( CFM, real )
 	PROPERTY_TABLE( quickStepNumIterations, real )

@@ -253,6 +253,8 @@ DEFINE_FUNCTION( RotationZ ) {
 
 DEFINE_FUNCTION( LookAt ) {
 
+	REPORT_ERROR("LookAt is buggy !! dont' use it");
+
 	RT_ASSERT_ARGC(3); // x, y, z
 	Matrix44 *m = (Matrix44*)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(m);
