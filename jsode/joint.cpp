@@ -30,7 +30,7 @@ inline JSBool SetJoint( JSContext *cx, JSObject *obj, jsval *b1, jsval *b2 ) {
 	RT_ASSERT( jointID != NULL, RT_ERROR_NOT_INITIALIZED );
 
 	if ( *b1 == JSVAL_VOID || *b2 == JSVAL_VOID )
-		ode::dJointAttach(jointID, 0, 0); // detach it
+		ode::dJointAttach(jointID, 0, 0); // detach it. The only way to attach it to the world environment is to use World.env
 
 	ode::dBodyID bId1 = 0;
 	ode::dBodyID bId2 = 0;
