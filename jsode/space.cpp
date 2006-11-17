@@ -1,3 +1,10 @@
+/*
+
+check this:
+	void dSpaceSetCleanup (dSpaceID space, int mode);
+	int dSpaceGetCleanup (dSpaceID space);
+*/
+
 #include "stdafx.h"
 #include "space.h"
 

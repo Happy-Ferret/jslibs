@@ -219,6 +219,8 @@
 #define PROPERTY_READONLY_STORE( name ) { #name, 0, JSPROP_PERMANENT|JSPROP_READONLY, name, NULL },
 // Declares a read-only property
 #define READONLY(name) { #name, 0, JSPROP_PERMANENT|JSPROP_SHARED|JSPROP_READONLY, name, NULL },
+// Declares a write-only property
+#define WRITEONLY(name) { #name, 0, JSPROP_PERMANENT|JSPROP_SHARED, NULL, name },
 // Allows a full definition of a property
 #define PROPERTY(name,id,flags,getter,setter) { #name, id, flags, getter, setter },
 // Used to define multiple properties with only one pari of getter/setter functions ( an enum has to be defiend ... less than 256 items ! )
