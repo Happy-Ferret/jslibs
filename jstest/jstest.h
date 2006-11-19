@@ -1,1 +1,1 @@
-DECLARE_CLASS(Test)
+DECLARE_CLASS( Toto );
