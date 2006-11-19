@@ -5,21 +5,36 @@
 #define XP_WIN
 #include <jsapi.h>
 
-#include "hlpr.h"
+#include "../common/jsclass.h"
 #include "jstest.h"
 
 // =====================================================
 
 BEGIN_CLASS(Toto);
 
+	DEFINE_FUNCTION( Test ) {
 
-INIT
-HAS_PRIVATE
-HAS_RESERVED_SLOTS(2)
+		return JS_TRUE;
+	}
 
+	DEFINE_FUNCTION( Constructor ) {
+
+		return JS_TRUE;
+	}
+
+
+
+CONFIGURE_CLASS
+
+	HAS_PRIVATE
+	HAS_RESERVED_SLOTS(2)
+	HAS_CONSTRUCTOR
+
+	BEGIN_FUNCTION_SPEC
+		FUNCTION(Test)
+	END_FUNCTION_SPEC
 
 END_CLASS;
-
 
 
 // = JSCLASS_CONSTRUCT_PROTOTYPE;

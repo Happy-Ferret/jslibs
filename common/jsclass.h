@@ -13,6 +13,8 @@
 #define BEGIN_STATIC_FUNCTION_SPEC { JSFunctionSpec _tmp[] = {
 #define END_STATIC_FUNCTION_SPEC {0}}; _staticFunctionSpec = _tmp; }
 
+#define DEFINE_FUNCTION(name) static JSBool name##(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+
 #define FUNCTION(name) { #name, name },
 #define FUNCTION2(name,nativeName) { #name, nativeName },
 #define FUNCTION_ARGC(name,nargs) { #name, name, nargs },
@@ -23,15 +25,17 @@
 #define BEGIN_STATIC_PROPERTY_SPEC { JSPropertySpec _tmp[] = {
 #define END_STATIC_PROPERTY_SPEC {0}}; _staticPropertySpec = _tmp; }
 
+#define DEFINE_PROPERTY(name) static JSBool name##(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
+
 // _S sufix means 'store' ( no JSPROP_SHARED attribute used )
 #define PROPERTY(name)   { #name, 0, JSPROP_PERMANENT|JSPROP_SHARED, name##Getter, name##Setter },
-#define PROPERTY_S(name) { #name, 0, JSPROP_PERMANENT              , name##Getter, name##Setter },
+#define PROPERTY_STORE(name) { #name, 0, JSPROP_PERMANENT              , name##Getter, name##Setter },
 
 #define PROPERTY_READ(name)   { #name, 0, JSPROP_PERMANENT|JSPROP_READONLY|JSPROP_SHARED, name, NULL },
-#define PROPERTY_READ_S(name) { #name, 0, JSPROP_PERMANENT|JSPROP_READONLY              , name, NULL },
+#define PROPERTY_READ_STORE(name) { #name, 0, JSPROP_PERMANENT|JSPROP_READONLY              , name, NULL },
 
 #define PROPERTY_WRITE(name)   { #name, 0, JSPROP_PERMANENT|JSPROP_SHARED, NULL, name },
-#define PROPERTY_WRITE_S(name) { #name, 0, JSPROP_PERMANENT              , NULL, name },
+#define PROPERTY_WRITE_STORE(name) { #name, 0, JSPROP_PERMANENT              , NULL, name },
 
 #define PROPERTY_SWITCH(name, function) { #name, name, JSPROP_PERMANENT|JSPROP_SHARED, function##Getter, function##Setter },
 
@@ -45,10 +49,9 @@
 
 #define CONST_DOUBLE(name,value) { value, #name },
 
-
 #define DECLARE_CLASS( CLASSNAME ) \
 	extern JSBool (*InitializeClass##CLASSNAME)(JSContext *cx, JSObject *obj); \
-	
+
 #define INIT_CLASS( CLASSNAME ) \
 	InitializeClass##CLASSNAME(cx, obj); \
 
@@ -61,11 +64,9 @@
 	static JSBool _InitializeClass(JSContext *cx, JSObject *obj); \
 	extern JSBool (*InitializeClass##CLASSNAME)(JSContext *cx, JSObject *obj) = _InitializeClass; \
 
-
-#define INIT \
+#define CONFIGURE_CLASS \
 	static JSBool _InitializeClass(JSContext *cx, JSObject *obj) { \
-		{ JSClass _tmp = { _name, 0, JS_PropertyStub , JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_EnumerateStub, JS_ResolveStub , JS_ConvertStub, JS_FinalizeStub }; \
-		*_class = _tmp; }\
+		{ JSClass _tmp = { _name, 0, JS_PropertyStub , JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_EnumerateStub, JS_ResolveStub , JS_ConvertStub, JS_FinalizeStub }; *_class = _tmp; } \
 		JSNative _constructor = NULL; \
 		JSFunctionSpec *_functionSpec = NULL, *_staticFunctionSpec = NULL; \
 		JSPropertySpec *_propertySpec = NULL, *_staticPropertySpec = NULL; \
@@ -86,9 +87,4 @@
 #define HAS_FINALIZE _class->finalize = Finalize;
 #define PROTOTYPE( PROTO ) *_parentProto = (PROTO);
 #define CONSTRUCT_PROTO _class->flags |= JSCLASS_CONSTRUCT_PROTOTYPE;
-
-
-
-
-
 

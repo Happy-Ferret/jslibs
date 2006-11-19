@@ -9,7 +9,11 @@ a();
 var aa = new a();
 */
 
-var vector = V(1,2,3);
+
+var a = new Toto;
+
+a.Test();
+
 
 Print('Done.');
 

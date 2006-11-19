@@ -7,13 +7,13 @@
 #include "jsobj.h"
 #include "jsatom.h"
 
-#include "hlpr.h"
+#include "../common/jsclass.h"
 #include "jstest.h"
 
 extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
 
-	INIT_CLASS( Toto );
+	JSBool st = INIT_CLASS( Toto );
 	return JS_TRUE;
 }
 
