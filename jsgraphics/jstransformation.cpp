@@ -1,3 +1,8 @@
+/*
+	First Person Shooter tricks:
+		http://www.delphi3d.net/articles/printarticle.php?article=viewing.htm
+*/
+
 #include "stdafx.h"
 #include "jstransformation.h"
 
@@ -12,7 +17,7 @@ static int ReadMatrix(void *pv, float **m) { // Doc: __declspec(noinline) tells 
 	return true;
 }
 
-BEGIN_CLASS
+BEGIN_CLASS( Transformation )
 
 DEFINE_FINALIZE() {
 
@@ -25,7 +30,7 @@ DEFINE_FINALIZE() {
 }
 
 
-DEFINE_FUNCTION( ClassConstruct ) {
+DEFINE_CONSTRUCTOR() {
 
 	Matrix44 *m = Matrix44Alloc();
 	RT_ASSERT_ALLOC(m);
@@ -310,53 +315,32 @@ DEFINE_FUNCTION( InverseProduct ) {
 
 
 
-BEGIN_FUNCTION_MAP
-	FUNCTION( Dump )
-	FUNCTION( Clear )
-	FUNCTION( Load )
-	FUNCTION( LoadRotation )
-	FUNCTION( LoadTranslation )
-	FUNCTION( Product )
-	FUNCTION( InverseProduct )
-	FUNCTION( Invert )
-//	FUNCTION( Translate )
-	FUNCTION( Translation )
-	FUNCTION( ClearRotation )
-	FUNCTION( ClearTranslation )
-	FUNCTION( Rotate )
-	FUNCTION( RotationX )
-	FUNCTION( RotationY )
-	FUNCTION( RotationZ )
-	FUNCTION( Rotation )
-	FUNCTION( LookAt )
-END_MAP
+CONFIGURE_CLASS
 
-BEGIN_PROPERTY_MAP
-END_MAP
+	HAS_CONSTRUCTOR
+	HAS_FINALIZE
 
-NO_STATIC_FUNCTION_MAP
-//BEGIN_STATIC_FUNCTION_MAP
-//END_MAP
+	BEGIN_FUNCTION_SPEC
+		FUNCTION( Dump )
+		FUNCTION( Clear )
+		FUNCTION( Load )
+		FUNCTION( LoadRotation )
+		FUNCTION( LoadTranslation )
+		FUNCTION( Product )
+		FUNCTION( InverseProduct )
+		FUNCTION( Invert )
+	//	FUNCTION( Translate )
+		FUNCTION( Translation )
+		FUNCTION( ClearRotation )
+		FUNCTION( ClearTranslation )
+		FUNCTION( Rotate )
+		FUNCTION( RotationX )
+		FUNCTION( RotationY )
+		FUNCTION( RotationZ )
+		FUNCTION( Rotation )
+		FUNCTION( LookAt )
+	END_FUNCTION_SPEC
 
-NO_STATIC_PROPERTY_MAP
-//BEGIN_STATIC_PROPERTY_MAP
-//END_MAP
+	HAS_PRIVATE  // private: BodyID
 
-//NO_CLASS_CONSTRUCT
-NO_OBJECT_CONSTRUCT
-//NO_FINALIZE
-NO_CALL
-NO_PROTOTYPE
-NO_CONSTANT_MAP
-NO_INITCLASSAUX
-
-END_CLASS(Transformation, HAS_PRIVATE, NO_RESERVED_SLOT)
-
-
-/*
-
-	First Person Shooter tricks:
-		http://www.delphi3d.net/articles/printarticle.php?article=viewing.htm
-
-
-*/
+END_CLASS

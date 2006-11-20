@@ -11,7 +11,7 @@ typedef struct {
 	png_structp png;
 	png_infop info;
 	void *pv;
-	NativeInterfaceRead read;
+	NIResourceRead read;
 } PngDescriptor;
 
 
@@ -24,21 +24,22 @@ void _png_read( png_structp png_ptr, png_bytep data, png_size_t length ) {
 }
 
 
-BEGIN_CLASS
+BEGIN_CLASS( Png )
 
-	static void Finalize(JSContext *cx, JSObject *obj) {
 
-		PngDescriptor *desc = (PngDescriptor*)JS_GetPrivate(cx, obj);
-		if ( desc != NULL ) {
+DEFINE_FINALIZE() {
 
-			png_destroy_read_struct(&desc->png, &desc->info, NULL);
-			free(desc);
-		}
+	PngDescriptor *desc = (PngDescriptor*)JS_GetPrivate(cx, obj);
+	if ( desc != NULL ) {
+
+		png_destroy_read_struct(&desc->png, &desc->info, NULL);
+		free(desc);
 	}
+}
 
-DEFINE_FUNCTION( ClassConstruct ) {
+DEFINE_CONSTRUCTOR() {
 
-	RT_ASSERT_CONSTRUCTING(thisClass);
+	RT_ASSERT_CONSTRUCTING(_class);
 	RT_ASSERT_ARGC(1);
 
 	PngDescriptor *desc = (PngDescriptor*)malloc(sizeof(PngDescriptor));
@@ -50,7 +51,7 @@ DEFINE_FUNCTION( ClassConstruct ) {
 	desc->info = png_create_info_struct(desc->png);
 	RT_ASSERT( desc->info != NULL, "Unable to png_create_info_struct.");
 
-	GetNativeInterface(cx, JSVAL_TO_OBJECT(argv[0]), NI_READ_RESOURCE, (void**)&desc->read, (void**)&desc->pv);
+	GetNativeInterface(cx, JSVAL_TO_OBJECT(argv[0]), NI_READ_RESOURCE, (FunctionPointer*)&desc->read, &desc->pv);
 	RT_ASSERT( desc->read != NULL && desc->pv != NULL, "Unable to GetNativeResource." );
 
 	png_set_read_fn( desc->png, (voidp)desc, _png_read );
@@ -151,28 +152,19 @@ DEFINE_PROPERTY( channels ) {
 	return JS_TRUE;
 }
 
+CONFIGURE_CLASS
 
-	BEGIN_FUNCTION_MAP
+	BEGIN_FUNCTION_SPEC
 		FUNCTION(Load)
-	END_MAP
-	BEGIN_PROPERTY_MAP
-		READONLY(width)
-		READONLY(height)
-		READONLY(channels)
-	END_MAP
-	NO_STATIC_FUNCTION_MAP
-	//BEGIN_STATIC_FUNCTION_MAP
-	//END_MAP
-	NO_STATIC_PROPERTY_MAP
-	//BEGIN_STATIC_PROPERTY_MAP
-	//END_MAP
-//	NO_CLASS_CONSTRUCT
-	NO_OBJECT_CONSTRUCT
-//	NO_FINALIZE
-	NO_CALL
-	NO_PROTOTYPE
-	NO_CONSTANT_MAP
-	NO_INITCLASSAUX
+	END_FUNCTION_SPEC
 
-END_CLASS(Png, HAS_PRIVATE, NO_RESERVED_SLOT)
+	BEGIN_PROPERTY_SPEC
+		PROPERTY_READ(width)
+		PROPERTY_READ(height)
+		PROPERTY_READ(channels)
+	END_PROPERTY_SPEC
+	
+	HAS_PRIVATE
+
+END_CLASS
 

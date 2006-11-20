@@ -2,7 +2,8 @@
 #include "body.h"
 #include "mass.h"
 
-BEGIN_CLASS
+// [TBD] Mass object seems to be useless. Try to merge Body with Mass
+BEGIN_CLASS( Mass )
 
 JSBool GetBodyAndMass(JSContext *cx, JSObject *massObject, ode::dBodyID *pBodyID, ode::dMass *pMass) {
 
@@ -123,31 +124,19 @@ DEFINE_PROPERTY( centerGetter ) {
 }
 
 
-BEGIN_FUNCTION_MAP
-	FUNCTION( Translate )
-	FUNCTION( Adjust )
-	FUNCTION( SetBoxTotal )
-END_MAP
+CONFIGURE_CLASS
 
-BEGIN_PROPERTY_MAP
-	READWRITE( value )
-	READWRITE( center )
-END_MAP
+	BEGIN_FUNCTION_SPEC
+		FUNCTION( Translate )
+		FUNCTION( Adjust )
+		FUNCTION( SetBoxTotal )
+	END_FUNCTION_SPEC
 
+	BEGIN_PROPERTY_SPEC
+		PROPERTY( value )
+		PROPERTY( center )
+	END_PROPERTY_SPEC
 
-NO_STATIC_FUNCTION_MAP
-NO_STATIC_PROPERTY_MAP
+	HAS_RESERVED_SLOTS(1)
 
-NO_PROTOTYPE
-NO_CLASS_CONSTRUCT
-NO_OBJECT_CONSTRUCT
-NO_FINALIZE
-NO_CALL
-NO_CONSTANT_MAP
-NO_INITCLASSAUX
-
-END_CLASS( Mass, NO_PRIVATE, 1 ) // [TBD] Mass object seems to be useless. Try to merge Body with Mass
-
-/****************************************************************
-
-*/
+END_CLASS

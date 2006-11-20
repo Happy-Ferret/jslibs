@@ -1,3 +1,12 @@
+/*
+win32, System Error Codes
+	http://msdn.microsoft.com/library/default.asp?url=/library/en-us/debug/base/system_error_codes.asp
+
+http://bob.developpez.com/tutapiwin/index.php
+
+read this: http://egachine.berlios.de/embedding-sm-best-practice/embedding-sm-best-practice.html
+*/
+
 #include "stdafx.h"
 #include "jswindow.h"
 
@@ -17,7 +26,7 @@ typedef struct {
 //}
 
 
-BEGIN_CLASS
+BEGIN_CLASS( Window )
 
 //void Finalize(JSContext *cx, JSObject *obj) {
 //	JS_GetPrivate(cx, obj);
@@ -170,10 +179,9 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 	return DefWindowProc(hWnd, message, wParam, lParam); // We do not want to handle this message so pass back to Windows to handle it in a default way
 }
 
+DEFINE_CONSTRUCTOR() {
 
-static JSBool ClassConstruct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
-
-	RT_ASSERT( JS_GetClass(obj) == thisClass, RT_ERROR_INVALID_CLASS );
+	RT_ASSERT( JS_GetClass(obj) == _class, RT_ERROR_INVALID_CLASS );
 	HINSTANCE hInst = (HINSTANCE)GetModuleHandle(NULL);
 
 	// hCursor doc: To use a predefined cursors, the application must set the hInstance parameter to NULL and the lpCursorName parameter to one the cursor values.
@@ -509,54 +517,39 @@ DEFINE_PROPERTY( activeSetter ) {
 }
 
 
-///////////
+CONFIGURE_CLASS
 
-BEGIN_FUNCTION_MAP
-	FUNCTION(ProcessEvents)
-	FUNCTION(Exit)
-	FUNCTION(WaitForMessage)
-END_MAP
+	HAS_CONSTRUCTOR
 
-BEGIN_PROPERTY_MAP
-	PROPERTY_STORE(title)
-	PROPERTY_STORE(showFrame)
-	PROPERTY_STORE(captureMouse)
-	PROPERTY_STORE(clipCursor)
-	READWRITE(rect)
-	READWRITE(active)
-	READWRITE(cursorPosition)
-END_MAP
+	BEGIN_FUNCTION_SPEC
+		FUNCTION(ProcessEvents)
+		FUNCTION(Exit)
+		FUNCTION(WaitForMessage)
+	END_FUNCTION_SPEC
 
-//NO_STATIC_FUNCTION_MAP
-BEGIN_STATIC_FUNCTION_MAP
-	FUNCTION(Mode)
-END_MAP
+	BEGIN_PROPERTY_SPEC
+		PROPERTY_WRITE_STORE(title)
+		PROPERTY_WRITE_STORE(showFrame)
+		PROPERTY_WRITE_STORE(captureMouse)
+		PROPERTY_WRITE_STORE(clipCursor)
+		PROPERTY(rect)
+		PROPERTY(active)
+		PROPERTY(cursorPosition)
+	END_PROPERTY_SPEC
 
-//NO_STATIC_PROPERTY_MAP
-BEGIN_STATIC_PROPERTY_MAP
-	PROPERTY_STORE(showCursor)
-	READONLY(desktopRect)
-	READWRITE(cursorAbsolutePosition)
-	PROPERTY_STORE(absoluteClipCursor)
-END_MAP
+	BEGIN_STATIC_FUNCTION_SPEC
+		FUNCTION(Mode)
+	END_STATIC_FUNCTION_SPEC
 
-NO_OBJECT_CONSTRUCT
-//	NO_CLASS_CONSTRUCT
-NO_FINALIZE
-NO_CALL
-NO_PROTOTYPE
-NO_CONSTANT_MAP
-NO_INITCLASSAUX
+	BEGIN_STATIC_PROPERTY_SPEC
+		PROPERTY_WRITE_STORE(showCursor)
+		PROPERTY_READ(desktopRect)
+		PROPERTY(cursorAbsolutePosition)
+		PROPERTY_WRITE_STORE(absoluteClipCursor)
+	END_STATIC_PROPERTY_SPEC
 
-END_CLASS(Window, HAS_PRIVATE, NO_RESERVED_SLOT)
+	HAS_PRIVATE  // private: BodyID
+//	HAS_RESERVED_SLOTS(1)
 
-/*
-win32, System Error Codes
-	http://msdn.microsoft.com/library/default.asp?url=/library/en-us/debug/base/system_error_codes.asp
+END_CLASS
 
-
-http://bob.developpez.com/tutapiwin/index.php
-
-read this: http://egachine.berlios.de/embedding-sm-best-practice/embedding-sm-best-practice.html
-
-*/

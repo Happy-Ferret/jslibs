@@ -6,7 +6,7 @@
 #include <stdlib.h>
 
 
-BEGIN_CLASS
+BEGIN_CLASS( Image )
 
 DEFINE_FINALIZE() {
 
@@ -17,7 +17,7 @@ DEFINE_FINALIZE() {
 
 DEFINE_FUNCTION( Alloc ) {
 
-	RT_ASSERT_CLASS(obj, thisClass);
+	RT_ASSERT_CLASS(obj, _class);
 	RT_ASSERT_ARGC(1);
 
 	void *data = JS_GetPrivate(cx, obj);
@@ -32,9 +32,9 @@ DEFINE_FUNCTION( Alloc ) {
 }
 
 
-DEFINE_FUNCTION( ClassConstruct ) {
+DEFINE_CONSTRUCTOR() {
 
-	RT_ASSERT_CONSTRUCTING(thisClass);
+	RT_ASSERT_CONSTRUCTING(_class);
 	JSFunction *allocFunction = JS_NewFunction(cx, Alloc, 0, 0, NULL, "Alloc");
 	RT_ASSERT( allocFunction != NULL, "Unable to create allocation function." );
 	JSObject *functionObject = JS_GetFunctionObject(allocFunction);
@@ -138,31 +138,28 @@ DEFINE_FUNCTION( Gamma ) {
 //		return JS_TRUE;
 //	}
 
-	BEGIN_FUNCTION_MAP
+
+CONFIGURE_CLASS
+
+	HAS_CONSTRUCTOR
+	HAS_FINALIZE
+
+	BEGIN_FUNCTION_SPEC
 		FUNCTION(Trim)
 		FUNCTION(Gamma)
 //		FUNCTION(Alloc) // see SLOT_FUNCTION_ALLOC
 		FUNCTION(Free)
-	END_MAP
-	BEGIN_PROPERTY_MAP
-		CREATE(width)
-		CREATE(height)
-		CREATE(channels)
-//		CREATE(pixelSize)
-	END_MAP
-	NO_STATIC_FUNCTION_MAP
-	//BEGIN_STATIC_FUNCTION_MAP
-	//END_MAP
-	NO_STATIC_PROPERTY_MAP
-	//BEGIN_STATIC_PROPERTY_MAP
-	//END_MAP
-//	NO_CLASS_CONSTRUCT
-	NO_OBJECT_CONSTRUCT
-//	NO_FINALIZE
-	NO_CALL
-	NO_PROTOTYPE
-	NO_CONSTANT_MAP
-	NO_INITCLASSAUX
+	END_FUNCTION_SPEC
 
-END_CLASS(Image, HAS_PRIVATE, 1)
+	BEGIN_PROPERTY_SPEC
+		PROPERTY_DEFINE(width)
+		PROPERTY_DEFINE(height)
+		PROPERTY_DEFINE(channels)
+//		CREATE(pixelSize)
+	END_PROPERTY_SPEC
+
+	HAS_PRIVATE
+	HAS_RESERVED_SLOTS(1)
+
+END_CLASS
 

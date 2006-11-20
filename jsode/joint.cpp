@@ -3,7 +3,7 @@
 #include "body.h"
 #include "world.h"
 
-BEGIN_CLASS
+BEGIN_CLASS( Joint )
 
 	// Api: dBodyID dJointGetBody (dJointID, int index);
 	// Api: int dAreConnected (dBodyID b1, dBodyID b2);
@@ -70,7 +70,7 @@ DEFINE_PROPERTY( body2 ) {
 
 DEFINE_FUNCTION( Destroy ) {
 
-	RT_ASSERT( IsInstanceOf(cx, obj, thisClass), RT_ERROR_INVALID_CLASS );
+	RT_ASSERT( IsInstanceOf(cx, obj, _class), RT_ERROR_INVALID_CLASS );
 	ode::dJointID jointId = (ode::dJointID)JS_GetPrivate( cx, obj );
 	RT_ASSERT_RESOURCE( jointId );
 	// remove references to bodies
@@ -325,39 +325,26 @@ DEFINE_PROPERTY( maxForceGetter ) {
 	return JS_TRUE;
 }
 
+CONFIGURE_CLASS
 
+	BEGIN_FUNCTION_SPEC
+		FUNCTION( Destroy )
+	END_FUNCTION_SPEC
 
-BEGIN_FUNCTION_MAP
-//	FUNCTION( Attach )
-	FUNCTION( Destroy )
-END_MAP
+	BEGIN_PROPERTY_SPEC
+		PROPERTY_WRITE_STORE( body1 )
+		PROPERTY_WRITE_STORE( body2 )
 
-BEGIN_PROPERTY_MAP
-//	PROPERTY_READONLY_STORE( body1 )
-//	PROPERTY_READONLY_STORE( body2 )
-	PROPERTY_STORE( body1 )
-	PROPERTY_STORE( body2 )
+		PROPERTY( loStop )
+		PROPERTY( hiStop )
+		PROPERTY( bounce )
 
-	READWRITE( loStop )
-	READWRITE( hiStop )
-	READWRITE( bounce )
+		PROPERTY( CFM )
+		PROPERTY( stopERP )
+		PROPERTY( stopCFM )
 
-	READWRITE( CFM )
-	READWRITE( stopERP )
-	READWRITE( stopCFM )
+		PROPERTY( velocity )
+		PROPERTY( maxForce )
+	END_PROPERTY_SPEC
 
-	READWRITE( velocity )
-	READWRITE( maxForce )
-END_MAP
-
-NO_STATIC_FUNCTION_MAP
-NO_STATIC_PROPERTY_MAP
-NO_CLASS_CONSTRUCT
-NO_OBJECT_CONSTRUCT
-NO_FINALIZE
-NO_CALL
-NO_PROTOTYPE
-NO_CONSTANT_MAP
-NO_INITCLASSAUX
-
-END_CLASS( Joint, NO_PRIVATE, NO_RESERVED_SLOT );
+END_CLASS;

@@ -1,3 +1,24 @@
+/*
+API:
+	http://refspecs.freestandards.org/LSB_3.1.0/LSB-Desktop-generic/LSB-Desktop-generic/libjpegman.html
+
+example:
+	.\src\example.c
+
+steps:
+
+	Allocate and initialize a JPEG decompression object
+	Specify the source of the compressed data (eg, a file)
+	Call jpeg_read_header() to obtain image info
+	Set parameters for decompression
+	jpeg_start_decompress(...);
+	while (scan lines remain to be read)
+		jpeg_read_scanlines(...);
+	jpeg_finish_decompress(...);
+	Release the JPEG decompression object
+
+*/
+
 #include "stdafx.h"
 #include "../common/jsNativeInterface.h"
 
@@ -17,7 +38,7 @@ typedef struct {
   struct jpeg_source_mgr pub;	// public fields
   JOCTET * buffer;
   void *pv;
-  NativeInterfaceRead read;
+  NIResourceRead read;
 } SourceMgr;
 typedef SourceMgr *SourceMgrPtr;
 
@@ -93,7 +114,7 @@ void ReadUsingJsMethod( void *pv, unsigned char *data, unsigned int *length ) {
 }
 
 
-BEGIN_CLASS
+BEGIN_CLASS( Jpeg )
 
 DEFINE_FINALIZE() {
 
@@ -104,9 +125,9 @@ DEFINE_FINALIZE() {
 	}
 }
 
-DEFINE_FUNCTION( ClassConstruct ) {
+DEFINE_CONSTRUCTOR() {
 
-	RT_ASSERT_CONSTRUCTING(thisClass);
+	RT_ASSERT_CONSTRUCTING(_class);
 	RT_ASSERT_ARGC(1);
 
 	j_decompress_ptr cinfo = (j_decompress_ptr)malloc(sizeof(jpeg_decompress_struct)); // [TBD] free
@@ -135,7 +156,7 @@ DEFINE_FUNCTION( ClassConstruct ) {
 	src->pub.next_input_byte = NULL; // until buffer loaded
 
 // try to use a fast way to read the data
-	GetNativeInterface(cx, JSVAL_TO_OBJECT(argv[0]), NI_READ_RESOURCE, (void**)&src->read, (void**)&src->pv);
+	GetNativeInterface(cx, JSVAL_TO_OBJECT(argv[0]), NI_READ_RESOURCE, (FunctionPointer*)&src->read, &src->pv);
 	RT_ASSERT( src->read != NULL && src->pv != NULL, "Unable to GetNativeResource." );
 
 // else use a 'classic' method to read the data ( like var data = resourceObject.Read(amount); )
@@ -251,52 +272,21 @@ DEFINE_PROPERTY( channels ) {
 
 // output_gamma
 
+CONFIGURE_CLASS
 
+	HAS_CONSTRUCTOR
+	HAS_FINALIZE
 
-	BEGIN_FUNCTION_MAP
+	BEGIN_FUNCTION_SPEC
 		FUNCTION(Load)
-	END_MAP
-	BEGIN_PROPERTY_MAP
-		READONLY(width)
-		READONLY(height)
-		READONLY(channels)
-	END_MAP
-	NO_STATIC_FUNCTION_MAP
-	//BEGIN_STATIC_FUNCTION_MAP
-	//END_MAP
-	NO_STATIC_PROPERTY_MAP
-	//BEGIN_STATIC_PROPERTY_MAP
-	//END_MAP
-//	NO_CLASS_CONSTRUCT
-	NO_OBJECT_CONSTRUCT
-//	NO_FINALIZE
-	NO_CALL
-	NO_PROTOTYPE
-	NO_CONSTANT_MAP
-	NO_INITCLASSAUX
+	END_FUNCTION_SPEC
 
-END_CLASS(Jpeg, HAS_PRIVATE, NO_RESERVED_SLOT)
+	BEGIN_PROPERTY_SPEC
+		PROPERTY_READ(width)
+		PROPERTY_READ(height)
+		PROPERTY_READ(channels)
+	END_PROPERTY_SPEC
 
-/*
+	HAS_PRIVATE
 
-API:
-	http://refspecs.freestandards.org/LSB_3.1.0/LSB-Desktop-generic/LSB-Desktop-generic/libjpegman.html
-
-example:
-	.\src\example.c
-
-steps:
-
-	Allocate and initialize a JPEG decompression object
-	Specify the source of the compressed data (eg, a file)
-	Call jpeg_read_header() to obtain image info
-	Set parameters for decompression
-	jpeg_start_decompress(...);
-	while (scan lines remain to be read)
-		jpeg_read_scanlines(...);
-	jpeg_finish_decompress(...);
-	Release the JPEG decompression object
-
-*/
-
-
+END_CLASS

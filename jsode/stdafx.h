@@ -13,6 +13,7 @@
 #include <jsapi.h>
 #define JSHELPER_UNSAFE_DEFINED
 #include "../common/jshelper.h"
+#include "../common/jsclass.h"
 #include "../common/jsConversionHelper.h"
 #include <malloc.h>
 

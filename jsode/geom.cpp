@@ -44,7 +44,7 @@ static int ReadMatrix(void *pv, float **pm) { // Doc: __declspec(noinline) tells
 	SetNativeInterface(cx, obj, NI_READ_MATRIX44, (FunctionPointer)ReadMatrix, bodyID); // [TBD] check return status
 */
 
-BEGIN_CLASS
+BEGIN_CLASS( Geom )
 
 
 DEFINE_FUNCTION( Destroy ) {
@@ -79,6 +79,7 @@ DEFINE_PROPERTY( enableSetter ) {
 	return JS_TRUE;
 }
 
+
 DEFINE_PROPERTY( enableGetter ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JS_GetPrivate(cx, obj);
@@ -86,7 +87,6 @@ DEFINE_PROPERTY( enableGetter ) {
 	*vp = ode::dGeomIsEnabled(geom) == 1 ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;
 }
-
 
 
 DEFINE_PROPERTY( body ) {
@@ -106,7 +106,6 @@ DEFINE_PROPERTY( body ) {
 }
 
 
-
 DEFINE_PROPERTY( tansformation ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JS_GetPrivate(cx, obj);
@@ -122,7 +121,6 @@ DEFINE_PROPERTY( tansformation ) {
 }
 
 
-
 DEFINE_PROPERTY( positionGetter ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JS_GetPrivate(cx, obj);
@@ -131,6 +129,7 @@ DEFINE_PROPERTY( positionGetter ) {
 	FloatVectorToArray(cx, 3, vector, vp);
 	return JS_TRUE;
 }
+
 
 DEFINE_PROPERTY( positionSetter ) {
 
@@ -152,6 +151,7 @@ DEFINE_PROPERTY( offsetPositionGetter ) {
 	return JS_TRUE;
 }
 
+
 DEFINE_PROPERTY( offsetPositionSetter ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JS_GetPrivate(cx, obj);
@@ -163,32 +163,20 @@ DEFINE_PROPERTY( offsetPositionSetter ) {
 }
 
 
+CONFIGURE_CLASS
 
+	BEGIN_FUNCTION_SPEC
+		FUNCTION( Destroy )
+		FUNCTION( ClearOffset )
+	END_FUNCTION_SPEC
 
-BEGIN_FUNCTION_MAP
-	FUNCTION( Destroy )
-	FUNCTION( ClearOffset )
-END_MAP
+	BEGIN_PROPERTY_SPEC
+		PROPERTY_WRITE_STORE( body )
+		PROPERTY_WRITE( tansformation )
+		PROPERTY( enable )
+		PROPERTY( position )
+		PROPERTY( offsetPosition )
+	END_PROPERTY_SPEC
 
-BEGIN_PROPERTY_MAP
-	PROPERTY_STORE( body )
-	READWRITE( enable )
-	READWRITE( position )
-	READWRITE( offsetPosition )
-	WRITEONLY( tansformation )
-END_MAP
-
-
-NO_STATIC_FUNCTION_MAP
-NO_STATIC_PROPERTY_MAP
-
-NO_CLASS_CONSTRUCT // the aim of this class is not to be construct, it is to be a prototype class
-NO_OBJECT_CONSTRUCT
-NO_FINALIZE
-NO_CALL
-NO_PROTOTYPE
-NO_CONSTANT_MAP
-NO_INITCLASSAUX
-
-END_CLASS( Geom, NO_PRIVATE, NO_RESERVED_SLOT)
+END_CLASS
 

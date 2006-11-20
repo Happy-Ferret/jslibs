@@ -1,3 +1,9 @@
+/*
+Manage GL extensions:
+	http://www.libsdl.org/cgi/viewvc.cgi/trunk/SDL/src/video/win32/SDL_win32opengl.c?view=markup&sortby=date
+
+*/
+
 #include "stdafx.h"
 //#include "jsobj.h"
 
@@ -18,7 +24,7 @@
 
 #define SLOT_WINDOW_OBJECT 0
 
-BEGIN_CLASS
+BEGIN_CLASS( Gl )
 
 /*
 void SetupBitmapDC() {
@@ -51,9 +57,9 @@ DEFINE_FINALIZE() {
 
 }
 
-DEFINE_FUNCTION( ClassConstruct ) {
+DEFINE_CONSTRUCTOR() {
 
-	RT_ASSERT( JS_IsConstructing(cx) && JS_GetClass(obj) == thisClass, RT_ERROR_INVALID_CLASS );
+	RT_ASSERT( JS_IsConstructing(cx) && JS_GetClass(obj) == _class, RT_ERROR_INVALID_CLASS );
 	RT_ASSERT_ARGC(1);
 	RT_ASSERT_OBJECT(argv[0]);
 	RT_ASSERT_CLASS(JSVAL_TO_OBJECT(argv[0]), &classWindow);
@@ -121,7 +127,7 @@ static JSBool _SwapBuffers(JSContext *cx, JSObject *obj, uintN argc, jsval *argv
 	
 	glFlush();
 	glFinish();
-	RT_ASSERT( JS_GetClass(obj) == thisClass, RT_ERROR_INVALID_CLASS );
+	RT_ASSERT( JS_GetClass(obj) == _class, RT_ERROR_INVALID_CLASS );
 	HDC hDC = wglGetCurrentDC();
 	RT_ASSERT( hDC != NULL, "Could not get the Current Device Context." );
 	BOOL res = SwapBuffers(hDC); // Doc: With multithread applications, flush the drawing commands in any other threads drawing to the same window before calling SwapBuffers.
@@ -469,56 +475,36 @@ DEFINE_FUNCTION( Test ) {
 }
 
 
-BEGIN_FUNCTION_MAP
-	FUNCTION_ALIAS(SwapBuffers, _SwapBuffers)
-	FUNCTION(StartList)
-	FUNCTION(EndList)
-	FUNCTION(CallList)
-	FUNCTION(Viewport)
-	FUNCTION(Perspective)
-	FUNCTION(Clear)
-	FUNCTION(LoadIdentity)
-	FUNCTION(PushMatrix)
-	FUNCTION(PopMatrix)
-	FUNCTION(Color)
-	FUNCTION(Texture)
-	FUNCTION(Axis)
-	FUNCTION(Cube)
-	FUNCTION(Quad)
-	FUNCTION(Line)
-	FUNCTION(LoadMatrix)
-	FUNCTION(Rotate)
-	FUNCTION(Translate)
-	FUNCTION(Init)
-	FUNCTION(Test)
-END_MAP
+CONFIGURE_CLASS
 
-BEGIN_PROPERTY_MAP
-END_MAP
+	HAS_CONSTRUCTOR
+	HAS_FINALIZE
 
+	BEGIN_FUNCTION_SPEC
+		FUNCTION2(SwapBuffers, _SwapBuffers)
+		FUNCTION(StartList)
+		FUNCTION(EndList)
+		FUNCTION(CallList)
+		FUNCTION(Viewport)
+		FUNCTION(Perspective)
+		FUNCTION(Clear)
+		FUNCTION(LoadIdentity)
+		FUNCTION(PushMatrix)
+		FUNCTION(PopMatrix)
+		FUNCTION(Color)
+		FUNCTION(Texture)
+		FUNCTION(Axis)
+		FUNCTION(Cube)
+		FUNCTION(Quad)
+		FUNCTION(Line)
+		FUNCTION(LoadMatrix)
+		FUNCTION(Rotate)
+		FUNCTION(Translate)
+		FUNCTION(Init)
+		FUNCTION(Test)
+	END_FUNCTION_SPEC
 
-NO_STATIC_FUNCTION_MAP
-//	BEGIN_STATIC_FUNCTION_MAP
-//	END_MAP
+	HAS_PRIVATE  // private: BodyID
+	HAS_RESERVED_SLOTS(1)
 
-NO_STATIC_PROPERTY_MAP
-//	BEGIN_STATIC_PROPERTY_MAP
-//	END_MAP
-
-//	NO_CLASS_CONSTRUCT
-NO_OBJECT_CONSTRUCT
-//NO_FINALIZE
-NO_CALL
-NO_PROTOTYPE
-NO_CONSTANT_MAP
-NO_INITCLASSAUX
-
-END_CLASS(Gl, HAS_PRIVATE, 1/*NO_RESERVED_SLOT*/)
-
-/*
-
-
-Manage GL extensions:
-	http://www.libsdl.org/cgi/viewvc.cgi/trunk/SDL/src/video/win32/SDL_win32opengl.c?view=markup&sortby=date
-
-*/
+END_CLASS

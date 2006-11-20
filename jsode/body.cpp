@@ -31,7 +31,7 @@ static int ReadMatrix(void *pv, float **pm) { // Doc: __declspec(noinline) tells
 	return true;
 }
 
-BEGIN_CLASS
+BEGIN_CLASS( Body )
 
 
 DEFINE_FINALIZE() {
@@ -48,7 +48,7 @@ DEFINE_FINALIZE() {
 }
 
 
-DEFINE_FUNCTION( ClassConstruct ) {
+DEFINE_CONSTRUCTOR() {
 
 	RT_ASSERT_CONSTRUCTING(&classBody);
 	RT_ASSERT_ARGC(1);
@@ -197,33 +197,30 @@ DEFINE_PROPERTY( mass ) {
 //	return JS_TRUE;
 //}
 
-BEGIN_FUNCTION_MAP
-	FUNCTION( Destroy )
-	FUNCTION( IsConnectedTo )
-END_MAP
+CONFIGURE_CLASS
 
-BEGIN_PROPERTY_MAP
-	PROPERTY_TABLE( position  , vector )
-	PROPERTY_TABLE( quaternion, vector )
-	PROPERTY_TABLE( linearVel , vector )
-	PROPERTY_TABLE( angularVel, vector )
-	PROPERTY_TABLE( force     , vector )
-	PROPERTY_TABLE( torque    , vector )
-	PROPERTY_READONLY_STORE( mass ) // mass is only a wrapper to dBodyGetMass and dBodySetMass
-END_MAP
+	HAS_CONSTRUCTOR
+	HAS_FINALIZE
 
-NO_STATIC_FUNCTION_MAP
-NO_STATIC_PROPERTY_MAP
+	BEGIN_FUNCTION_SPEC
+		FUNCTION( Destroy )
+		FUNCTION( IsConnectedTo )
+	END_FUNCTION_SPEC
 
-//NO_CLASS_CONSTRUCT
-NO_OBJECT_CONSTRUCT
-//NO_FINALIZE
-NO_CALL
-NO_PROTOTYPE
-NO_CONSTANT_MAP
-NO_INITCLASSAUX
+	BEGIN_PROPERTY_SPEC
+		PROPERTY_SWITCH( position  , vector )
+		PROPERTY_SWITCH( quaternion, vector )
+		PROPERTY_SWITCH( linearVel , vector )
+		PROPERTY_SWITCH( angularVel, vector )
+		PROPERTY_SWITCH( force     , vector )
+		PROPERTY_SWITCH( torque    , vector )
+		PROPERTY_READ_STORE( mass ) // mass is only a wrapper to dBodyGetMass and dBodySetMass
+	END_PROPERTY_SPEC
 
-END_CLASS(Body, HAS_PRIVATE, 1) // private: BodyID
+	HAS_PRIVATE  // private: BodyID
+	HAS_RESERVED_SLOTS(1)
+
+END_CLASS
 
 
 /****************************************************************

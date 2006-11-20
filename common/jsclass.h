@@ -1,40 +1,35 @@
 
-// maps
-//#define END_MAP {0}};
-//#define BEGIN_FUNCTION_SPEC static JSFunctionSpec _functionSpec[] = { // *name, call, nargs, flags, extra
-//#define BEGIN_STATIC_FUNCTION_SPEC static JSFunctionSpec _functionStaticSpec[] = {
-//#define BEGIN_PROPERTY_SPEC static JSPropertySpec _propertySpec[] = { // *name, tinyid, flags, getter, setter
-//#define BEGIN_STATIC_PROPERTY_SPEC static JSPropertySpec _propertyStaticSpec[] = {
-//#define BEGIN_CONSTANT_SPEC JSConstDoubleSpec _constantSpec[] = { // dval; *name; flags; spare[3];
-
-
-#define BEGIN_FUNCTION_SPEC { JSFunctionSpec _tmp[] = {
-#define END_FUNCTION_SPEC {0}}; _functionSpec = _tmp; }
-#define BEGIN_STATIC_FUNCTION_SPEC { JSFunctionSpec _tmp[] = {
-#define END_STATIC_FUNCTION_SPEC {0}}; _staticFunctionSpec = _tmp; }
+#define BEGIN_FUNCTION_SPEC JSFunctionSpec _tmp_fs[] = { // *name, call, nargs, flags, extra
+#define END_FUNCTION_SPEC {0}}; _functionSpec = _tmp_fs;
+#define BEGIN_STATIC_FUNCTION_SPEC JSFunctionSpec _tmp_sfs[] = {
+#define END_STATIC_FUNCTION_SPEC {0}}; _staticFunctionSpec = _tmp_sfs;
 
 #define DEFINE_FUNCTION(name) static JSBool name##(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+#define DEFINE_CONSTRUCTOR() static JSBool Constructor(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+#define DEFINE_FINALIZE() static void Finalize(JSContext *cx, JSObject *obj)
+#define DEFINE_CONVERT() static JSBool Convert(JSContext *cx, JSObject *obj, JSType type, jsval *vp)
+
 
 #define FUNCTION(name) { #name, name },
 #define FUNCTION2(name,nativeName) { #name, nativeName },
 #define FUNCTION_ARGC(name,nargs) { #name, name, nargs },
 
 
-#define BEGIN_PROPERTY_SPEC { JSPropertySpec _tmp[] = {
-#define END_PROPERTY_SPEC {0}}; _propertySpec = _tmp; }
-#define BEGIN_STATIC_PROPERTY_SPEC { JSPropertySpec _tmp[] = {
-#define END_STATIC_PROPERTY_SPEC {0}}; _staticPropertySpec = _tmp; }
+#define BEGIN_PROPERTY_SPEC JSPropertySpec _tmp_ps[] = { // *name, tinyid, flags, getter, setter
+#define END_PROPERTY_SPEC {0}}; _propertySpec = _tmp_ps;
+#define BEGIN_STATIC_PROPERTY_SPEC JSPropertySpec _tmp_sps[] = {
+#define END_STATIC_PROPERTY_SPEC {0}}; _staticPropertySpec = _tmp_sps;
 
 #define DEFINE_PROPERTY(name) static JSBool name##(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
 
 // _S sufix means 'store' ( no JSPROP_SHARED attribute used )
-#define PROPERTY(name)   { #name, 0, JSPROP_PERMANENT|JSPROP_SHARED, name##Getter, name##Setter },
+#define PROPERTY(name)       { #name, 0, JSPROP_PERMANENT|JSPROP_SHARED, name##Getter, name##Setter },
 #define PROPERTY_STORE(name) { #name, 0, JSPROP_PERMANENT              , name##Getter, name##Setter },
 
-#define PROPERTY_READ(name)   { #name, 0, JSPROP_PERMANENT|JSPROP_READONLY|JSPROP_SHARED, name, NULL },
+#define PROPERTY_READ(name)       { #name, 0, JSPROP_PERMANENT|JSPROP_READONLY|JSPROP_SHARED, name, NULL },
 #define PROPERTY_READ_STORE(name) { #name, 0, JSPROP_PERMANENT|JSPROP_READONLY              , name, NULL },
 
-#define PROPERTY_WRITE(name)   { #name, 0, JSPROP_PERMANENT|JSPROP_SHARED, NULL, name },
+#define PROPERTY_WRITE(name)       { #name, 0, JSPROP_PERMANENT|JSPROP_SHARED, NULL, name },
 #define PROPERTY_WRITE_STORE(name) { #name, 0, JSPROP_PERMANENT              , NULL, name },
 
 #define PROPERTY_SWITCH(name, function) { #name, name, JSPROP_PERMANENT|JSPROP_SHARED, function##Getter, function##Setter },
@@ -44,13 +39,32 @@
 #define PROPERTY_DEFINE(name) { #name, 0, JSPROP_PERMANENT, NULL, NULL },
 
 
-#define BEGIN_CONST_DOUBLE_SPEC { JSConstDoubleSpec _tmp[] = {
-#define END_CONST_DOUBLE_SPEC {0}}; _constSpec = _tmp; }
+#define BEGIN_CONST_DOUBLE_SPEC JSConstDoubleSpec _tmp_cds[] = { // dval; *name; flags; spare[3];
+#define END_CONST_DOUBLE_SPEC {0}}; _constSpec = _tmp_cds;
 
 #define CONST_DOUBLE(name,value) { value, #name },
 
+#define BEGIN_STATIC
+
+#define CONFIGURE_STATIC \
+	static JSBool _InitializeStatic(JSContext *cx, JSObject *obj) { \
+	JSFunctionSpec *_staticFunctionSpec = NULL; \
+	JSPropertySpec *_staticPropertySpec = NULL; \
+
+#define END_STATIC \
+	JS_DefineFunctions(cx, obj, _staticFunctionSpec); \
+	JS_DefineProperties(cx, obj, _staticPropertySpec); \
+	return JS_TRUE; } \
+
+#define INIT_STATIC(cx, obj) \
+	_InitializeStatic(cx, obj); \
+
+
+
 #define DECLARE_CLASS( CLASSNAME ) \
 	extern JSBool (*InitializeClass##CLASSNAME)(JSContext *cx, JSObject *obj); \
+	extern JSClass class##CLASSNAME; \
+	extern JSObject *prototype##CLASSNAME; \
 
 #define INIT_CLASS( CLASSNAME ) \
 	InitializeClass##CLASSNAME(cx, obj); \
@@ -59,32 +73,54 @@
 	static const char *_name = #CLASSNAME; \
 	extern JSClass class##CLASSNAME = {0}; \
 	static JSClass *_class = &class##CLASSNAME; \
-	extern JSObject *proto##CLASSNAME = NULL; \
-	static JSObject **_proto = &proto##CLASSNAME; \
+	extern JSObject *prototype##CLASSNAME = NULL; \
+	static JSObject **_prototype = &prototype##CLASSNAME; \
 	static JSBool _InitializeClass(JSContext *cx, JSObject *obj); \
 	extern JSBool (*InitializeClass##CLASSNAME)(JSContext *cx, JSObject *obj) = _InitializeClass; \
 
 #define CONFIGURE_CLASS \
 	static JSBool _InitializeClass(JSContext *cx, JSObject *obj) { \
-		{ JSClass _tmp = { _name, 0, JS_PropertyStub , JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_EnumerateStub, JS_ResolveStub , JS_ConvertStub, JS_FinalizeStub }; *_class = _tmp; } \
+		JSClass _tmp_class = { _name, 0, JS_PropertyStub , JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_EnumerateStub, JS_ResolveStub , JS_ConvertStub, JS_FinalizeStub, JSCLASS_NO_OPTIONAL_MEMBERS }; \
+		*_class = _tmp_class; \
 		JSNative _constructor = NULL; \
 		JSFunctionSpec *_functionSpec = NULL, *_staticFunctionSpec = NULL; \
 		JSPropertySpec *_propertySpec = NULL, *_staticPropertySpec = NULL; \
 		JSConstDoubleSpec *_constSpec = NULL; \
-		JSObject *_protoTmp = NULL; \
-		JSObject **_parentProto = &_protoTmp; \
+		JSObject *_tmp_prototype = NULL; \
+		JSObject **_parentPrototype = &_tmp_prototype; \
 
 #define END_CLASS \
-		*_proto = JS_InitClass(cx, obj, *_parentProto, _class, _constructor, 0, _propertySpec, _functionSpec, _staticPropertySpec, _staticFunctionSpec); \
-		if ( _constSpec != NULL ) if ( JS_DefineConstDoubles( cx, *_proto, _constSpec ) == JS_FALSE ) return JS_FALSE; \
+		*_prototype = JS_InitClass(cx, obj, *_parentPrototype, _class, _constructor, 0, _propertySpec, _functionSpec, _staticPropertySpec, _staticFunctionSpec); \
+		if ( _constSpec != NULL ) if ( JS_DefineConstDoubles(cx, JS_GetConstructor(cx, *_prototype), _constSpec) == JS_FALSE ) return JS_FALSE; \
 		return JS_TRUE; } \
 
-#define HAS_PRIVATE _class->flags |= JSCLASS_HAS_PRIVATE;
-#define HAS_RESERVED_SLOTS( COUNT ) _class->flags |= JSCLASS_HAS_RESERVED_SLOTS(COUNT);
-#define HAS_CALL _class->call = Call;
-#define HAS_CONSTRUCTOR _constructor = Constructor;
-#define HAS_OBJECT_CONSTRUCT _class->construct = ObjectConstruct;
-#define HAS_FINALIZE _class->finalize = Finalize;
-#define PROTOTYPE( PROTO ) *_parentProto = (PROTO);
-#define CONSTRUCT_PROTO _class->flags |= JSCLASS_CONSTRUCT_PROTOTYPE;
+#define HAS_CONSTRUCTOR \
+	_constructor = Constructor;
+
+#define HAS_OBJECT_CONSTRUCT \
+	_class->construct = ObjectConstruct;
+
+#define CONSTRUCT_PROTOTYPE \
+	_class->flags |= JSCLASS_CONSTRUCT_PROTOTYPE;
+
+#define HAS_PRIVATE \
+	_class->flags |= JSCLASS_HAS_PRIVATE;
+
+#define SHARE_ALL_PROPERTIES \
+	_class->flags |= JSCLASS_SHARE_ALL_PROPERTIES;
+
+#define HAS_RESERVED_SLOTS( COUNT ) \
+	_class->flags |= JSCLASS_HAS_RESERVED_SLOTS(COUNT);
+
+#define HAS_CALL \
+	_class->call = Call;
+
+#define HAS_FINALIZE \
+	_class->finalize = Finalize;
+
+#define HAS_CONVERT \
+	_class->convert = Convert;
+
+#define HAS_PROTOTYPE(PROTOTYPE) \
+	*_parentPrototype = (PROTOTYPE);
 

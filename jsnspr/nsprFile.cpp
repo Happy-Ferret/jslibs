@@ -97,7 +97,7 @@ JSBool File_open(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *r
 		return ThrowNSPRError( cx, PR_GetError() );
 
 	JS_SetPrivate( cx, obj, fd );
-	SetNativeInterface(cx, obj, NI_READ_RESOURCE, (NativeInterfaceRead)NativeInterfaceReadFile, fd);
+	SetNativeInterface(cx, obj, NI_READ_RESOURCE, (FunctionPointer)NativeInterfaceReadFile, fd);
 	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 }

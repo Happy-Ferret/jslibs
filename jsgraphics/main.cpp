@@ -11,14 +11,13 @@ extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj)
 	jsval value;
 	if ( GetConfigurationValue(cx, "unsafeMode", &value) == JS_FALSE )
 		return JS_FALSE;
+
 	SET_UNSAFE_MODE( value != JSVAL_VOID && JSVAL_IS_BOOLEAN(value) && JSVAL_TO_BOOLEAN(value) == JS_TRUE );
 
-	if ( InitClassTransformation( cx, obj ) == JS_FALSE ) 
-		return JS_FALSE;
-	if ( InitClassWindow( cx, obj ) == JS_FALSE ) 
-		return JS_FALSE;
-	if ( InitClassGl( cx, obj ) == JS_FALSE ) 
-		return JS_FALSE;
+	INIT_CLASS( Transformation )
+	INIT_CLASS( Window )
+	INIT_CLASS( Gl )
+
 	return JS_TRUE;
 }
 

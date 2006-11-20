@@ -8,11 +8,15 @@
 
 #define JSHELPER_UNSAFE_DEFINED
 #include "../common/jshelper.h"
+#include "../common/jsclass.h"
 #include "../configuration/configuration.h"
 
 DEFINE_UNSAFE_MODE;
 
 extern JSFunction *stdoutFunction = NULL;
+
+
+BEGIN_STATIC
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 DEFINE_FUNCTION( Seal ) {
@@ -258,29 +262,30 @@ DEFINE_FUNCTION( Exec ) {
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-BEGIN_STATIC_FUNCTION_MAP
-	FUNCTION( Seal )
-	FUNCTION( Clear )
-	FUNCTION( HideProperties )
-	FUNCTION( Exec )
-	FUNCTION( Print )
-	FUNCTION( CollectGarbage )
-	FUNCTION( Warning )
-END_MAP
 
-BEGIN_STATIC_PROPERTY_MAP
-	READONLY( gcByte )
-END_MAP
+CONFIGURE_STATIC
 
+	BEGIN_STATIC_FUNCTION_SPEC
+		FUNCTION( Seal )
+		FUNCTION( Clear )
+		FUNCTION( HideProperties )
+		FUNCTION( Exec )
+		FUNCTION( Print )
+		FUNCTION( CollectGarbage )
+		FUNCTION( Warning )
+	END_STATIC_FUNCTION_SPEC
+
+	BEGIN_STATIC_PROPERTY_SPEC
+		PROPERTY_READ( gcByte )
+	END_STATIC_PROPERTY_SPEC
+
+END_STATIC
 
 
 
 extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
-	BIND_STATIC_FUNCTIONS( obj );
-	BIND_STATIC_PROPERTIES( obj );
-
-
+	INIT_STATIC(cx, obj);
 
 // read configuration
 

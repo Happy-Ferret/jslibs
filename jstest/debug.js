@@ -14,6 +14,7 @@ var a = new Toto;
 
 a.Test();
 
+Print( Toto.pi );
 
 Print('Done.');
 
