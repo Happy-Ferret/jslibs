@@ -10,9 +10,12 @@
 #include "../common/jsclass.h"
 #include "jstest.h"
 
+
 extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
 
+
+	JSFunctionSpec _tmp[] = {{0}};
 	JSBool st = INIT_CLASS( Toto );
 	return JS_TRUE;
 }
