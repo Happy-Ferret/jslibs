@@ -40,9 +40,6 @@ var body1 = new Body(world);
 var geom1 = new GeomBox( world.space )
 geom1.body = body1;
 
-var body2 = new Body(world);
-var geom2 = new GeomBox( world.space );
-geom2.body = body2;
 
 //body1.mass.SetBoxTotal(10,[1,1,100]);
 //body.mass.mass = 1;
@@ -53,11 +50,21 @@ geom2.body = body2;
 body1.position = [0,99,100]
 body1.mass.value = 1;
 var joint = new JointHinge(world);
+joint.useFeedback = true;
 joint.body1 = world.env;
 joint.body2 = body1;
 joint.anchor = [0,0,100]; 
 joint.axis = [1,0,0];
-body2.position = [0.5,0.5,0.5]
+
+var box = [];
+for (var y=0; y<10; y++) {
+	var b = new Body(world);
+	new GeomBox( world.space ).body = b;	
+	b.position = [0.5,0.5,0.5 + y]
+	box.push(b);	
+}
+
+
 
 new GeomPlane(world.space);
 
@@ -143,28 +150,45 @@ function Render() {
 	
 
 	gl.Clear( glc.COLOR_BUFFER_BIT | glc.DEPTH_BUFFER_BIT );
-/*
-	gl.LoadIdentity();
-	gl.Color( 1,1,1 );
-	for ( var x = -10; x<10; x++ )
-		for ( var y = -10; y<10; y++ )
-			gl.Quad(x,y,x+1,y+1);
-*/
-
 
 	var m = new Transformation().Load(camera).Invert();
 
 	gl.LoadMatrix(new Transformation().Load(m).Product(body1));
 	gl.Cube();
+	var f = joint.body1Force;
 
-	gl.LoadMatrix(new Transformation().Load(m).Product(body2));
-	gl.Cube();
+	gl.LoadMatrix(new Transformation().Load(body1).ClearRotation().InverseProduct(m) );
+	
+	gl.Color(1,1,1);
+	gl.Line3D( 0,0,0, f[0],f[1],f[2] );
+	
 
+	gl.Color(1,0,0);
+	gl.Line3D( 0,0,0, f[0],0,0 );
+	gl.Color(0,1,0);
+	gl.Line3D( 0,0,0, 0,f[1],0 );
+	gl.Color(0,0,1);
+	gl.Line3D( 0,0,0, 0,0,f[2] );
+
+
+	for each( var b in box ) {
+		gl.LoadMatrix(new Transformation().Load(m).Product(b) );
+		gl.Cube();
+	}
+	
 	gl.LoadMatrix(new Transformation().Translation(joint.anchor[0], joint.anchor[1], joint.anchor[2]).InverseProduct(m));
 	gl.Axis();
 
 	gl.LoadMatrix(m);
-	gl.CallList(list1);
+	gl.Color(0.5,0.5,0.5);
+	gl.Translate(0,0,0);
+	for ( var x = -100; x<100; x+=2 )
+		for ( var y = -100; y<100; y+=2 )
+			gl.Quad(x,y,x+1,y+1);
+
+
+//	gl.LoadMatrix(m);
+//	gl.CallList(list1);
 
 //	move += 0.1;
 //			tmp.Load(m);
@@ -173,10 +197,10 @@ function Render() {
 //	}
 
 
-	Sleep(1)
 //	var t0 = IntervalNow();
 //	Print( 'Rendering time: '+(IntervalNow()-t0)+'ms', '\n');
 	CollectGarbage();
+	Sleep(1);
 	gl.SwapBuffers();
 	
 	var tmp = IntervalNow();

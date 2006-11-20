@@ -8,9 +8,9 @@
 #include "../common/jsclass.h"
 #include "jstest.h"
 
-// =====================================================
 
-BEGIN_CLASS(Toto);
+
+BEGIN_CLASS(Toto)
 
 	DEFINE_FUNCTION( Test ) {
 
@@ -22,28 +22,33 @@ BEGIN_CLASS(Toto);
 		return JS_TRUE;
 	}
 
+	DEFINE_CONVERT() {
+
+		return JS_TRUE;
+	}
+
 CONFIGURE_CLASS
 
-	HAS_PRIVATE
-	HAS_RESERVED_SLOTS(2)
 	HAS_CONSTRUCTOR
+	HAS_CONVERT
 
 	BEGIN_FUNCTION_SPEC
 		FUNCTION(Test)
 	END_FUNCTION_SPEC
 
-BEGIN_CONST_DOUBLE_SPEC
-CONST_DOUBLE( pi, 1.14f)
-END_CONST_DOUBLE_SPEC
+	BEGIN_CONST_DOUBLE_SPEC
+		CONST_DOUBLE( pi, 1.14f )
+	END_CONST_DOUBLE_SPEC
+
+	HAS_PRIVATE
+	HAS_RESERVED_SLOTS(2)
 
 END_CLASS;
 
 
 // = JSCLASS_CONSTRUCT_PROTOTYPE;
 
-
 /*
-
 static JSBool _InitClass(JSContext *cx, JSObject *obj) {
 
 	// JSCLASS_CONSTRUCT_PROTOTYPE |
@@ -56,7 +61,5 @@ static JSBool _InitClass(JSContext *cx, JSObject *obj) {
 		if ( JS_DefineConstDoubles( cx, thisClassObject, _constantMap ) == JS_FALSE )
 			return JS_FALSE;
 	InitClassAux(cx, obj);
-
 }
-
 */

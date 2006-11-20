@@ -23,8 +23,7 @@ JSBool GetConfigurationObject(JSContext *cx, JSObject **configurationObject ) {
 			return JS_FALSE; // cannot be created
 	} else {
 
-		if ( JS_ValueToObject(cx, configurationValue, configurationObject) == JS_FALSE )
-			return JS_FALSE;
+		RT_ASSERT_RETURN( JS_ValueToObject(cx, configurationValue, configurationObject) )
 		// [TBD] check if it is the right object
 	}
 	return JS_TRUE;
@@ -62,12 +61,10 @@ jsval GetConfigurationValue( JSContext *cx, const char *name ) {
 JSBool GetConfigurationValue( JSContext *cx, const char *name, jsval *value ) {
 
 	JSObject *configurationObject;
-	if ( GetConfigurationObject(cx, &configurationObject) == JS_FALSE )
-		return JS_FALSE;
+	RT_ASSERT_RETURN( GetConfigurationObject(cx, &configurationObject) );
 	if (configurationObject == NULL)
 		return JS_FALSE;
-	if ( JS_GetProperty(cx, configurationObject, name, value) == JS_FALSE )
-		return JS_FALSE;
+	RT_ASSERT_RETURN( JS_GetProperty(cx, configurationObject, name, value) );
 	return JS_TRUE;
 }
 

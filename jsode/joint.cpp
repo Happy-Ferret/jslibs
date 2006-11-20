@@ -36,12 +36,10 @@ inline JSBool SetJoint( JSContext *cx, JSObject *obj, jsval *b1, jsval *b2 ) {
 	ode::dBodyID bId2 = 0;
 
 	if ( *b1 != JSVAL_VOID )
-		if ( ValToBodyID(cx, *b1, &bId1) == JS_FALSE )
-			return JS_FALSE;
+		RT_ASSERT_RETURN( ValToBodyID(cx, *b1, &bId1) )
 	
 	if ( *b2 != JSVAL_VOID )
-		if ( ValToBodyID(cx, *b2, &bId2) == JS_FALSE )
-			return JS_FALSE;
+		RT_ASSERT_RETURN( ValToBodyID(cx, *b2, &bId2) )
 
 	ode::dJointAttach(jointID, bId1, bId2);
 	return JS_TRUE;
@@ -52,8 +50,7 @@ DEFINE_PROPERTY( body1 ) {
 
 	jsval b2;
 	JS_GetProperty(cx, obj, "body2", &b2);
-	if ( SetJoint(cx, obj, vp, &b2) == JS_FALSE )
-		return JS_FALSE;
+	RT_ASSERT_RETURN( SetJoint(cx, obj, vp, &b2) )
 	return JS_TRUE;
 }
 
@@ -62,8 +59,7 @@ DEFINE_PROPERTY( body2 ) {
 
 	jsval b1;
 	JS_GetProperty(cx, obj, "body1", &b1);
-	if ( SetJoint(cx, obj, &b1, vp) == JS_FALSE )
-		return JS_FALSE;
+	RT_ASSERT_RETURN( SetJoint(cx, obj, &b1, vp) )
 	return JS_TRUE;
 }
 
@@ -73,6 +69,10 @@ DEFINE_FUNCTION( Destroy ) {
 	RT_ASSERT( IsInstanceOf(cx, obj, _class), RT_ERROR_INVALID_CLASS );
 	ode::dJointID jointId = (ode::dJointID)JS_GetPrivate( cx, obj );
 	RT_ASSERT_RESOURCE( jointId );
+
+	ode::dJointFeedback *currentFeedback = ode::dJointGetFeedback(jointId);
+	if ( currentFeedback != NULL )
+		free(currentFeedback);
 	// remove references to bodies
 	jsval val = JSVAL_VOID;
 	JS_SetProperty(cx, obj, "body1", &val); // [TBD] find why to not use JS_DeleteProperty
@@ -325,6 +325,81 @@ DEFINE_PROPERTY( maxForceGetter ) {
 	return JS_TRUE;
 }
 
+DEFINE_PROPERTY( useFeedback ) {
+
+	ode::dJointID jointId = (ode::dJointID)JS_GetPrivate( cx, obj );
+	RT_ASSERT_RESOURCE( jointId );
+
+	JSBool b;
+	JS_ValueToBoolean(cx, *vp, &b);
+
+	ode::dJointFeedback *currentFeedback = ode::dJointGetFeedback(jointId);
+
+	if ( currentFeedback == NULL && b == JS_TRUE ) {
+
+		ode::dJointFeedback *fb = (ode::dJointFeedback*)malloc(sizeof(ode::dJointFeedback));
+		RT_ASSERT_ALLOC(fb);
+		ode::dJointSetFeedback(jointId, fb);
+	} else if ( currentFeedback != NULL && b == JS_FALSE ) {
+
+		ode::dJointSetFeedback(jointId, NULL);
+		free(currentFeedback);
+	}
+
+	return JS_TRUE;
+}
+
+
+enum { body1Force, body1Torque, body2Force, body2Torque };
+
+DEFINE_PROPERTY( vectorSetter ) {
+
+	ode::dJointID jointId = (ode::dJointID)JS_GetPrivate( cx, obj );
+	RT_ASSERT_RESOURCE( jointId );
+	ode::dJointFeedback *feedback = ode::dJointGetFeedback(jointId);
+	RT_ASSERT( feedback != NULL, "Feedback is disabled." );
+	switch(JSVAL_TO_INT(id)) {
+		case body1Force:
+			FloatArrayToVector(cx, 3, vp, feedback->f1);
+			break;
+		case body1Torque:
+			FloatArrayToVector(cx, 3, vp, feedback->t1);
+			break;
+		case body2Force:
+			FloatArrayToVector(cx, 3, vp, feedback->f2);
+			break;
+		case body2Torque:
+			FloatArrayToVector(cx, 3, vp, feedback->t2);
+			break;
+	}
+	return JS_TRUE;
+}
+
+
+DEFINE_PROPERTY( vectorGetter ) {
+
+	ode::dJointID jointId = (ode::dJointID)JS_GetPrivate( cx, obj );
+	RT_ASSERT_RESOURCE( jointId );
+	ode::dJointFeedback *feedback = ode::dJointGetFeedback(jointId);
+	RT_ASSERT( feedback != NULL, "Feedback is disabled." );
+	switch(JSVAL_TO_INT(id)) {
+		case body1Force:
+			FloatVectorToArray(cx, 3, feedback->f1, vp);
+			break;
+		case body1Torque:
+			FloatVectorToArray(cx, 3, feedback->t1, vp);
+			break;
+		case body2Force:
+			FloatVectorToArray(cx, 3, feedback->f2, vp);
+			break;
+		case body2Torque:
+			FloatVectorToArray(cx, 3, feedback->t2, vp);
+			break;
+	}
+	return JS_TRUE;
+}
+
+
 CONFIGURE_CLASS
 
 	BEGIN_FUNCTION_SPEC
@@ -334,6 +409,13 @@ CONFIGURE_CLASS
 	BEGIN_PROPERTY_SPEC
 		PROPERTY_WRITE_STORE( body1 )
 		PROPERTY_WRITE_STORE( body2 )
+
+		PROPERTY_WRITE_STORE( useFeedback )
+
+		PROPERTY_SWITCH( body1Force, vector )
+		PROPERTY_SWITCH( body1Torque, vector )
+		PROPERTY_SWITCH( body2Force, vector )
+		PROPERTY_SWITCH( body2Torque, vector )
 
 		PROPERTY( loStop )
 		PROPERTY( hiStop )

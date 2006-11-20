@@ -52,6 +52,8 @@ joint.body2 = body2;
 joint.anchor = [10,0,0];
 joint.axis = [1,1,1];
 
+joint.useFeedback = true;
+
 body1.position = [0,0,0]
 new JointHinge(world)
 
@@ -65,9 +67,15 @@ new GeomPlane(world.space);
 
 for ( var i = 0; i<20; i++ ) {
 //	Print( 'Step:', i,  '\n' );
-	Print( ' Position:', body1.position , '\n' );
+
+
+//	Print( ' Position:', body1.position , '\n' );
+
 //	Print( ' Force:', body.force , '\n' );
 	world.Step(0.1,true);
+	
+	Print( ' ->', joint.body1Torque, '\n' );
+	
 }
 
 //Print( 'joint angle rate:'+joint.angleRate ,'\n');

@@ -39,6 +39,9 @@
 ////////////////
 // helper macros
 
+#define RT_ASSERT_RETURN( functionCall ) \
+	if ((functionCall) == JS_FALSE) { return JS_FALSE; }
+
 #define RT_SAFE(code) \
 	if (!_unsafeMode) {code;}
 

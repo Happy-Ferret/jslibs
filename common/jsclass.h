@@ -1,4 +1,5 @@
 
+// functions
 #define BEGIN_FUNCTION_SPEC JSFunctionSpec _tmp_fs[] = { // *name, call, nargs, flags, extra
 #define END_FUNCTION_SPEC {0}}; _functionSpec = _tmp_fs;
 #define BEGIN_STATIC_FUNCTION_SPEC JSFunctionSpec _tmp_sfs[] = {
@@ -9,12 +10,11 @@
 #define DEFINE_FINALIZE() static void Finalize(JSContext *cx, JSObject *obj)
 #define DEFINE_CONVERT() static JSBool Convert(JSContext *cx, JSObject *obj, JSType type, jsval *vp)
 
-
 #define FUNCTION(name) { #name, name },
 #define FUNCTION2(name,nativeName) { #name, nativeName },
 #define FUNCTION_ARGC(name,nargs) { #name, name, nargs },
 
-
+// properties
 #define BEGIN_PROPERTY_SPEC JSPropertySpec _tmp_ps[] = { // *name, tinyid, flags, getter, setter
 #define END_PROPERTY_SPEC {0}}; _propertySpec = _tmp_ps;
 #define BEGIN_STATIC_PROPERTY_SPEC JSPropertySpec _tmp_sps[] = {
@@ -22,28 +22,30 @@
 
 #define DEFINE_PROPERTY(name) static JSBool name##(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
 
-// _S sufix means 'store' ( no JSPROP_SHARED attribute used )
 #define PROPERTY(name)       { #name, 0, JSPROP_PERMANENT|JSPROP_SHARED, name##Getter, name##Setter },
 #define PROPERTY_STORE(name) { #name, 0, JSPROP_PERMANENT              , name##Getter, name##Setter },
-
 #define PROPERTY_READ(name)       { #name, 0, JSPROP_PERMANENT|JSPROP_READONLY|JSPROP_SHARED, name, NULL },
 #define PROPERTY_READ_STORE(name) { #name, 0, JSPROP_PERMANENT|JSPROP_READONLY              , name, NULL },
-
 #define PROPERTY_WRITE(name)       { #name, 0, JSPROP_PERMANENT|JSPROP_SHARED, NULL, name },
 #define PROPERTY_WRITE_STORE(name) { #name, 0, JSPROP_PERMANENT              , NULL, name },
+#define PROPERTY_SWITCH(name, function) { #name, name, JSPROP_PERMANENT|JSPROP_SHARED, function##Getter, function##Setter }, // Used to define multiple properties with only one pari of getter/setter functions ( an enum has to be defiend ... less than 256 items ! )
 
-#define PROPERTY_SWITCH(name, function) { #name, name, JSPROP_PERMANENT|JSPROP_SHARED, function##Getter, function##Setter },
-
-// Used to define multiple properties with only one pari of getter/setter functions ( an enum has to be defiend ... less than 256 items ! )
 #define PROPERTY_CREATE(name,id,flags,getter,setter) { #name, id, flags, getter, setter },
 #define PROPERTY_DEFINE(name) { #name, 0, JSPROP_PERMANENT, NULL, NULL },
 
+// add del get set
+#define DEFINE_ADD_PROPERTY static JSBool AddProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
+#define DEFINE_DEL_PROPERTY static JSBool DelProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
+#define DEFINE_GET_PROPERTY static JSBool GetProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
+#define DEFINE_SET_PROPERTY static JSBool SetProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
 
+// const double
 #define BEGIN_CONST_DOUBLE_SPEC JSConstDoubleSpec _tmp_cds[] = { // dval; *name; flags; spare[3];
 #define END_CONST_DOUBLE_SPEC {0}}; _constSpec = _tmp_cds;
 
 #define CONST_DOUBLE(name,value) { value, #name },
 
+// static definition
 #define BEGIN_STATIC
 
 #define CONFIGURE_STATIC \
@@ -59,8 +61,7 @@
 #define INIT_STATIC(cx, obj) \
 	_InitializeStatic(cx, obj); \
 
-
-
+// class definition
 #define DECLARE_CLASS( CLASSNAME ) \
 	extern JSBool (*InitializeClass##CLASSNAME)(JSContext *cx, JSObject *obj); \
 	extern JSClass class##CLASSNAME; \
@@ -92,35 +93,21 @@
 #define END_CLASS \
 		*_prototype = JS_InitClass(cx, obj, *_parentPrototype, _class, _constructor, 0, _propertySpec, _functionSpec, _staticPropertySpec, _staticFunctionSpec); \
 		if ( _constSpec != NULL ) if ( JS_DefineConstDoubles(cx, JS_GetConstructor(cx, *_prototype), _constSpec) == JS_FALSE ) return JS_FALSE; \
-		return JS_TRUE; } \
+		return JS_TRUE; \
+	} \
 
-#define HAS_CONSTRUCTOR \
-	_constructor = Constructor;
-
-#define HAS_OBJECT_CONSTRUCT \
-	_class->construct = ObjectConstruct;
-
-#define CONSTRUCT_PROTOTYPE \
-	_class->flags |= JSCLASS_CONSTRUCT_PROTOTYPE;
-
-#define HAS_PRIVATE \
-	_class->flags |= JSCLASS_HAS_PRIVATE;
-
-#define SHARE_ALL_PROPERTIES \
-	_class->flags |= JSCLASS_SHARE_ALL_PROPERTIES;
-
-#define HAS_RESERVED_SLOTS( COUNT ) \
-	_class->flags |= JSCLASS_HAS_RESERVED_SLOTS(COUNT);
-
-#define HAS_CALL \
-	_class->call = Call;
-
-#define HAS_FINALIZE \
-	_class->finalize = Finalize;
-
-#define HAS_CONVERT \
-	_class->convert = Convert;
-
-#define HAS_PROTOTYPE(PROTOTYPE) \
-	*_parentPrototype = (PROTOTYPE);
-
+// class configuration
+#define HAS_CONSTRUCTOR   _constructor = Constructor;
+#define HAS_OBJECT_CONSTRUCT   _class->construct = ObjectConstruct;
+#define CONSTRUCT_PROTOTYPE   _class->flags |= JSCLASS_CONSTRUCT_PROTOTYPE;
+#define HAS_PRIVATE   _class->flags |= JSCLASS_HAS_PRIVATE;
+#define SHARE_ALL_PROPERTIES   _class->flags |= JSCLASS_SHARE_ALL_PROPERTIES;
+#define HAS_RESERVED_SLOTS(COUNT)   _class->flags |= JSCLASS_HAS_RESERVED_SLOTS(COUNT);
+#define HAS_CALL   _class->call = Call;
+#define HAS_FINALIZE   _class->finalize = Finalize;
+#define HAS_CONVERT   _class->convert = Convert;
+#define HAS_PROTOTYPE(PROTOTYPE)   *_parentPrototype = (PROTOTYPE);
+#define HAS_ADD_PROPERTY   _class->addProperty = AddProperty;
+#define HAS_DEL_PROPERTY   _class->delProperty = DelProperty;
+#define HAS_GET_PROPERTY   _class->getProperty = GetProperty;
+#define HAS_SET_PROPERTY   _class->setProperty = SetProperty;

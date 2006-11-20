@@ -9,15 +9,11 @@ DEFINE_UNSAFE_MODE
 extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
 	jsval value;
-	if ( GetConfigurationValue(cx, "unsafeMode", &value) == JS_FALSE )
-		return JS_FALSE;
-
+	RT_ASSERT_RETURN( GetConfigurationValue(cx, "unsafeMode", &value) )
 	SET_UNSAFE_MODE( value != JSVAL_VOID && JSVAL_IS_BOOLEAN(value) && JSVAL_TO_BOOLEAN(value) == JS_TRUE );
-
 	INIT_CLASS( Transformation )
 	INIT_CLASS( Window )
 	INIT_CLASS( Gl )
-
 	return JS_TRUE;
 }
 

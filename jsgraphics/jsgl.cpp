@@ -116,7 +116,6 @@ DEFINE_CONSTRUCTOR() {
 
 //  wglMakeCurrent(NULL,NULL); // This step is not required, but it can help find errors, especially when you are using multiple rendering contexts.
 //  wglDeleteContext(hRC);
-
 	return JS_TRUE;
 }
 
@@ -131,7 +130,7 @@ static JSBool _SwapBuffers(JSContext *cx, JSObject *obj, uintN argc, jsval *argv
 	HDC hDC = wglGetCurrentDC();
 	RT_ASSERT( hDC != NULL, "Could not get the Current Device Context." );
 	BOOL res = SwapBuffers(hDC); // Doc: With multithread applications, flush the drawing commands in any other threads drawing to the same window before calling SwapBuffers.
-	RT_ASSERT_1( res, "Unable to SwapBuffers.(%x)", GetLastError());
+	RT_ASSERT_1( res, "Unable to SwapBuffers.(%x)", GetLastError() );
 	return JS_TRUE;
 }
 
@@ -152,7 +151,7 @@ DEFINE_FUNCTION( Init ) {
 	glShadeModel(GL_FLAT);
 
 	glEnable(GL_DEPTH_TEST);
-	glDepthFunc(GL_LEQUAL); // GL_LESS cause some z-conflict on far objects ! [TBD] understand why
+	glDepthFunc(GL_LESS); // GL_LEQUAL cause some z-conflict on far objects ! [TBD] understand why
 	glClearDepth(1.0f);
 //	glDepthRange( 0.01, 1000 );
 
@@ -160,9 +159,10 @@ DEFINE_FUNCTION( Init ) {
 	glCullFace(GL_BACK);
 	glFrontFace(GL_CCW);
 
+  glEnable(GL_LINE_SMOOTH);
+
 //	glEnable(GL_LIGHTING);
 //	glEnable(GL_LIGHT0);
-
 
 	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST); // Really Nice Perspective Calculations
 
@@ -202,9 +202,7 @@ DEFINE_FUNCTION( Clear ) {
 	RT_ASSERT_ARGC(1);
 	int32 bitfield;
 	JS_ValueToInt32(cx, argv[0], &bitfield);
-	
 	glClear(bitfield); // GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT
-
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 	return JS_TRUE;
@@ -296,6 +294,26 @@ DEFINE_FUNCTION( CallList ) {
 	glCallList(list);
 	return JS_TRUE;
 }
+
+
+DEFINE_FUNCTION( Line3D ) {
+
+	jsdouble x0,y0,z0, x1,y1,z1;
+	JS_ValueToNumber(cx, argv[0], &x0);
+	JS_ValueToNumber(cx, argv[1], &y0);
+	JS_ValueToNumber(cx, argv[2], &z0);
+
+	JS_ValueToNumber(cx, argv[3], &x1);
+	JS_ValueToNumber(cx, argv[4], &y1);
+	JS_ValueToNumber(cx, argv[5], &z1);
+
+	glBegin(GL_LINES);
+	glVertex3f(x0, y0, z0);
+	glVertex3f(x1, y1, z1);
+	glEnd();
+	return JS_TRUE;
+}
+
 
 
 DEFINE_FUNCTION( Axis ) {
@@ -497,6 +515,7 @@ CONFIGURE_CLASS
 		FUNCTION(Cube)
 		FUNCTION(Quad)
 		FUNCTION(Line)
+		FUNCTION(Line3D)
 		FUNCTION(LoadMatrix)
 		FUNCTION(Rotate)
 		FUNCTION(Translate)

@@ -163,6 +163,7 @@ DEFINE_PROPERTY( offsetPositionSetter ) {
 }
 
 
+
 CONFIGURE_CLASS
 
 	BEGIN_FUNCTION_SPEC

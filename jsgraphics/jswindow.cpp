@@ -181,8 +181,9 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 
 DEFINE_CONSTRUCTOR() {
 
-	RT_ASSERT( JS_GetClass(obj) == _class, RT_ERROR_INVALID_CLASS );
+	RT_ASSERT_CLASS( obj, _class );
 	HINSTANCE hInst = (HINSTANCE)GetModuleHandle(NULL);
+	RT_ASSERT( hInst != NULL, "Unable to GetModuleHandle." );
 
 	// hCursor doc: To use a predefined cursors, the application must set the hInstance parameter to NULL and the lpCursorName parameter to one the cursor values.
 	WNDCLASS wc = { CS_HREDRAW | CS_VREDRAW | CS_OWNDC, (WNDPROC)WndProc, 0, 0, hInst, LoadIcon((HINSTANCE)NULL, IDI_APPLICATION), LoadCursor((HINSTANCE) NULL, IDC_ARROW), NULL, NULL, WINDOW_CLASS_NAME };
@@ -193,7 +194,7 @@ DEFINE_CONSTRUCTOR() {
 //	AdjustWindowRectEx(&WindowRect, dwStyle, FALSE, dwExStyle);
 
 	HWND hWnd = CreateWindow( WINDOW_CLASS_NAME, NULL,    WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN | WS_CLIPSIBLINGS,
-		CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,    (HWND)NULL, (HMENU)NULL, hInst, (LPVOID)NULL);
+	                          CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,    (HWND)NULL, (HMENU)NULL, hInst, (LPVOID)NULL);
 	RT_ASSERT( hWnd != NULL, "Unable to CreateWindow." );
 	JS_SetPrivate(cx, obj, hWnd);
 	
@@ -277,7 +278,7 @@ static JSBool Exit(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval 
 }
 
 
-DEFINE_FUNCTION( WaitForMessage ){
+DEFINE_FUNCTION( WaitForMessage ) {
 
 	RT_ASSERT_ARGC(1);
 	int32 val;
@@ -520,6 +521,7 @@ DEFINE_PROPERTY( activeSetter ) {
 CONFIGURE_CLASS
 
 	HAS_CONSTRUCTOR
+//	HAS_FINALIZE
 
 	BEGIN_FUNCTION_SPEC
 		FUNCTION(ProcessEvents)
