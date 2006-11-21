@@ -60,7 +60,7 @@ var box = [];
 for (var y=0; y<10; y++) {
 	var b = new Body(world);
 	new GeomBox( world.space ).body = b;	
-	b.position = [0.5,0.5,0.5 + y]
+	b.position = [0.5,0.5,y*1.2]
 	box.push(b);	
 }
 
@@ -255,7 +255,7 @@ win.onsize = function( w, h ) {
 }
 
 var x=0, y=0; // offset
-var texture = new Jpeg(new File('R0010235.JPG').Open( File.RDONLY )).Load().Trim([0+x,0+y,256+x,256+y], true);
+//var texture = new Jpeg(new File('R0010235.JPG').Open( File.RDONLY )).Load().Trim([0+x,0+y,256+x,256+y], true);
 
 gl.Init();
 gl.Perspective( 60, 0.01, 10000 );

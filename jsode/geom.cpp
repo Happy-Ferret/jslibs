@@ -6,21 +6,21 @@ check:
 
 	dGeomGetCategoryBits (o1);
 	dGeomGetCollideBits (o1);
-
-
 */
+
 #include "stdafx.h"
 #include "body.h"
 #include "geom.h"
 #include "../common/jsNativeInterface.h"
 
-/*
 static int ReadMatrix(void *pv, float **pm) { // Doc: __declspec(noinline) tells the compiler to never inline a particular function.
 
-	ode::dBodyID id = (ode::dBodyID)pv;
-	const ode::dReal * m43 = dBodyGetRotation( id );
-	const ode::dReal * pos = dBodyGetPosition( id );
-// [TBD] center of mass ajustement ?
+	ode::dGeomID geomID = (ode::dGeomID)pv;
+
+	// read LOCAL position and rotation
+	const ode::dReal* pos = ode::dGeomGetPosition(geomID);
+	const ode::dReal* m43 = ode::dGeomGetRotation(geomID);
+
 	float *m = *pm;
 	m[0]  = m43[0];
 	m[1]  = m43[4];
@@ -34,17 +34,23 @@ static int ReadMatrix(void *pv, float **pm) { // Doc: __declspec(noinline) tells
 	m[9]  = m43[6];
 	m[10] = m43[10];
 	m[11] = 0;
-	m[12] = pos[0];// - comx;
-	m[13] = pos[1];// - comy;
-	m[14] = pos[2];// - comz;
+	m[12] = pos[0];
+	m[13] = pos[1];
+	m[14] = pos[2];
 	m[15] = 1;
 	return true;
 }
-... DEFINE_FUNCTION( ClassConstruct ) -- JSCLASS_CONSTRUCT_PROTOTYPE
-	SetNativeInterface(cx, obj, NI_READ_MATRIX44, (FunctionPointer)ReadMatrix, bodyID); // [TBD] check return status
-*/
 
 BEGIN_CLASS( Geom )
+
+
+DEFINE_CONSTRUCTOR() {
+
+	ode::dGeomID geomId = (ode::dGeomID)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE( geomId ); // if it fails, try to add the next line in each geom constructor
+	SetNativeInterface(cx, obj, NI_READ_MATRIX44, (FunctionPointer)ReadMatrix, geomId); // [TBD] check return status
+	return JS_TRUE;
+}
 
 
 DEFINE_FUNCTION( Destroy ) {
@@ -165,6 +171,8 @@ DEFINE_PROPERTY( offsetPositionSetter ) {
 
 
 CONFIGURE_CLASS
+
+	HAS_CONSTRUCTOR
 
 	BEGIN_FUNCTION_SPEC
 		FUNCTION( Destroy )

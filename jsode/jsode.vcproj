@@ -252,6 +252,10 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath=".\surfaceParameters.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\world.cpp"
 				>
 			</File>

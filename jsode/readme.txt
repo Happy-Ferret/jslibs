@@ -1,8 +1,9 @@
-Note from GeomBox Finalize:
+ps: Note from GeomBox Finalize:
 
-	 // [TBD] manage destruction dependency: geom - space, body - world, but how to ?
 
+	// [TBD] manage destruction dependency: geom - space, body - world, but how to ?
 	// read the next comment !!
+	
 //	ode::dGeomID GeomId = (ode::dGeomID)JS_GetPrivate(cx,obj);
 //	if ( GeomId != NULL )
 //		ode::dGeomDestroy(GeomId);

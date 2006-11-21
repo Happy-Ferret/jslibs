@@ -21,6 +21,7 @@
 #define END_STATIC_PROPERTY_SPEC {0}}; _staticPropertySpec = _tmp_sps;
 
 #define DEFINE_PROPERTY(name) static JSBool name##(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
+#define DEFINE_PROPERTY_NULL(name) static JSPropertyOp name = NULL;
 
 #define PROPERTY(name)       { #name, 0, JSPROP_PERMANENT|JSPROP_SHARED, name##Getter, name##Setter },
 #define PROPERTY_STORE(name) { #name, 0, JSPROP_PERMANENT              , name##Getter, name##Setter },
@@ -28,7 +29,8 @@
 #define PROPERTY_READ_STORE(name) { #name, 0, JSPROP_PERMANENT|JSPROP_READONLY              , name, NULL },
 #define PROPERTY_WRITE(name)       { #name, 0, JSPROP_PERMANENT|JSPROP_SHARED, NULL, name },
 #define PROPERTY_WRITE_STORE(name) { #name, 0, JSPROP_PERMANENT              , NULL, name },
-#define PROPERTY_SWITCH(name, function) { #name, name, JSPROP_PERMANENT|JSPROP_SHARED, function##Getter, function##Setter }, // Used to define multiple properties with only one pari of getter/setter functions ( an enum has to be defiend ... less than 256 items ! )
+#define PROPERTY_SWITCH(name, function)       { #name, name, JSPROP_PERMANENT|JSPROP_SHARED, function##Getter, function##Setter }, // Used to define multiple properties with only one pari of getter/setter functions ( an enum has to be defiend ... less than 256 items ! )
+#define PROPERTY_SWITCH_STORE(name, function) { #name, name, JSPROP_PERMANENT, function##Getter, function##Setter },
 
 #define PROPERTY_CREATE(name,id,flags,getter,setter) { #name, id, flags, getter, setter },
 #define PROPERTY_DEFINE(name) { #name, 0, JSPROP_PERMANENT, NULL, NULL },

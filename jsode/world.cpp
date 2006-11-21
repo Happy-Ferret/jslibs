@@ -2,12 +2,14 @@
 #include "world.h"
 #include "space.h"
 #include "body.h"
+#include "geom.h"
 
 #include "stdlib.h"
 
 #define MAX_CONTACTS 100
 
 struct ColideContextPrivate {
+	ode::dSurfaceParameters *defaultSurfaceParameters;
 	ode::dJointGroupID contactGroupId;
 	ode::dWorldID worldId;
 	int contactCount;
@@ -31,12 +33,19 @@ static void nearCallback (void *data, ode::dGeomID o1, ode::dGeomID o2) {
 	ccp->contactCount = n;
 	for ( i=0; i<n; i++ ) {
 
-		contact[i].surface.mode = ode::dContactSlip1 | ode::dContactSlip2 | ode::dContactSoftERP | ode::dContactSoftCFM | ode::dContactApprox1;
-		contact[i].surface.mu = dInfinity;
+		contact[i].surface = *ccp->defaultSurfaceParameters;
+
+/*
+
+		contact[i].surface.mode = ode::dContactBounce | ode::dContactSlip1 | ode::dContactSlip2 | ode::dContactSoftERP | ode::dContactSoftCFM;// | ode::dContactApprox1;
+		contact[i].surface.bounce = 0;
+		contact[i].surface.bounce_vel = 0;
+		contact[i].surface.mu = 0;
 		contact[i].surface.slip1 = 0.1;
 		contact[i].surface.slip2 = 0.1;
 		contact[i].surface.soft_erp = 0.5;
-		contact[i].surface.soft_cfm = 0.3;
+		contact[i].surface.soft_cfm = 0.0;
+*/
 /*
 		contact[i].surface.mode = ode::dContactBounce | ode::dContactSlip1 | ode::dContactSlip2;
 		contact[i].surface.mu = dInfinity;
@@ -66,7 +75,6 @@ DEFINE_FINALIZE() {
 	}
 }
 
-
 DEFINE_CONSTRUCTOR() {
 
 	RT_ASSERT_CONSTRUCTING(&classWorld);
@@ -78,10 +86,14 @@ DEFINE_CONSTRUCTOR() {
 
 	JSObject *spaceObject = JS_ConstructObject(cx, &classSpace, NULL, NULL); // no arguments = create a topmost space object
 	RT_ASSERT( spaceObject != NULL, "Unable to construct Space for the World." );
-	JS_DefineProperty(cx, obj, "space", OBJECT_TO_JSVAL(spaceObject), NULL, NULL, JSPROP_PERMANENT | JSPROP_READONLY);
+	JS_DefineProperty(cx, obj, WORLD_SPACE_PROPERTY_NAME, OBJECT_TO_JSVAL(spaceObject), NULL, NULL, JSPROP_PERMANENT | JSPROP_READONLY);
 
 //	JS_SetReservedSlot(cx, obj, WORLD_SLOT_SPACE, PRIVATE_TO_JSVAL(contactgroup));
-//	JS_DefineObject(cx, obj, "space", &classSpace, NULL, JSPROP_PERMANENT|JSPROP_READONLY );
+//	JS_DefineObject(cx, obj, WORLD_SPACE_PROPERTY_NAME, &classSpace, NULL, JSPROP_PERMANENT|JSPROP_READONLY );
+
+	JSObject *surfaceParameters = JS_ConstructObject(cx, &classSurfaceParameters, NULL, NULL);
+	JS_DefineProperty(cx, obj, DEFAULT_SURFACE_PARAMETERS_PROPERTY_NAME, OBJECT_TO_JSVAL(surfaceParameters), NULL, NULL, JSPROP_PERMANENT | JSPROP_READONLY );
+
 	return JS_TRUE;
 }
 
@@ -109,14 +121,21 @@ DEFINE_FUNCTION( Step ) {
 
 	ode::dSpaceID spaceId;
 	jsval val;
-	JS_GetProperty(cx, obj, "space", &val);
+	JS_GetProperty(cx, obj, WORLD_SPACE_PROPERTY_NAME, &val);
 	if ( ValToSpaceID(cx, val, &spaceId) == JS_FALSE )
 		return JS_FALSE;
 
 	JS_GetReservedSlot(cx, obj, WORLD_SLOT_CONTACTGROUP, &val);
 	ode::dJointGroupID contactgroup = (ode::dJointGroupID)JSVAL_TO_PRIVATE(val);
 
-	ColideContextPrivate ccp = { contactgroup, worldID, 0 };
+	jsval defaultSurfaceParametersObject;
+	JS_GetProperty(cx, obj, DEFAULT_SURFACE_PARAMETERS_PROPERTY_NAME, &defaultSurfaceParametersObject );
+	RT_ASSERT( defaultSurfaceParametersObject != JSVAL_VOID && JSVAL_IS_OBJECT(defaultSurfaceParametersObject), "Unable to read defaultSurfaceParameters." ); // [TBD] simplify RT_ASSERT
+	RT_ASSERT_CLASS( JSVAL_TO_OBJECT(defaultSurfaceParametersObject), &classSurfaceParameters ); // [TBD] simplify RT_ASSERT
+	ode::dSurfaceParameters *defaultSurfaceParameters = (ode::dSurfaceParameters*)JS_GetPrivate(cx, JSVAL_TO_OBJECT(defaultSurfaceParametersObject)); // beware: local variable !
+	RT_ASSERT_RESOURCE( defaultSurfaceParameters );
+
+	ColideContextPrivate ccp = { defaultSurfaceParameters, contactgroup, worldID, 0 };
 	ode::dSpaceCollide(spaceId, (void*)&ccp, &nearCallback);
 
 	if ( argc >= 2 && argv[1] == JSVAL_TRUE ) // quick ?
@@ -212,9 +231,6 @@ DEFINE_PROPERTY( env ) {
 	}
 	return JS_TRUE;
 }
-
-
-
 
 CONFIGURE_CLASS
 

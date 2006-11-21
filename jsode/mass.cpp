@@ -23,11 +23,9 @@ DEFINE_FUNCTION( Translate ) {
 	RT_ASSERT_ARGC(1);
 	ode::dBodyID bodyID;
 	ode::dMass mass;
-	if ( GetBodyAndMass(cx, obj, &bodyID, &mass) == JS_FALSE)
-		return JS_FALSE;
+	RT_ASSERT_RETURN( GetBodyAndMass(cx, obj, &bodyID, &mass) )
 	real translation[3];
-	if (FloatArrayToVector(cx, 3, &argv[0], translation) == JS_FALSE)
-		return JS_FALSE;
+	RT_ASSERT_RETURN(  FloatArrayToVector(cx, 3, &argv[0], translation) )
 	ode::dMassTranslate(&mass, translation[0], translation[1], translation[2]);
 	ode::dBodySetMass(bodyID, &mass);
 	return JS_TRUE;
@@ -39,11 +37,21 @@ DEFINE_FUNCTION( Adjust ) {
 	RT_ASSERT_ARGC(1);
 	ode::dBodyID bodyID;
 	ode::dMass mass;
-	if ( GetBodyAndMass(cx, obj, &bodyID, &mass) == JS_FALSE)
-		return JS_FALSE;
+	RT_ASSERT_RETURN( GetBodyAndMass(cx, obj, &bodyID, &mass) )
 	jsdouble newMass;
 	JS_ValueToNumber(cx, argv[0], &newMass);
 	ode::dMassAdjust(&mass, newMass);
+	ode::dBodySetMass(bodyID, &mass);
+	return JS_TRUE;
+}
+
+
+DEFINE_FUNCTION( SetZero ) {
+
+	ode::dBodyID bodyID;
+	ode::dMass mass;
+	RT_ASSERT_RETURN( GetBodyAndMass(cx, obj, &bodyID, &mass) );
+	ode::dMassSetZero(&mass);
 	ode::dBodySetMass(bodyID, &mass);
 	return JS_TRUE;
 }
@@ -55,15 +63,13 @@ DEFINE_FUNCTION( SetBoxTotal ) {
 // get mass object
 	ode::dBodyID bodyID;
 	ode::dMass mass;
-	if ( GetBodyAndMass(cx, obj, &bodyID, &mass) == JS_FALSE)
-		return JS_FALSE;
+	RT_ASSERT_RETURN( GetBodyAndMass(cx, obj, &bodyID, &mass) )
 // arg 0
 	jsdouble totalMass;
 	JS_ValueToNumber(cx, argv[0], &totalMass);
 // arg 1
 	real dimensions[3];
-	if (FloatArrayToVector(cx, 3, &argv[1], dimensions) == JS_FALSE)
-		return JS_FALSE;
+	RT_ASSERT_RETURN( FloatArrayToVector(cx, 3, &argv[1], dimensions) )
 // apply the formulae
 	ode::dMassSetBoxTotal(&mass, totalMass, dimensions[0], dimensions[0], dimensions[0]);
 // set mass object
@@ -76,8 +82,7 @@ DEFINE_PROPERTY( valueSetter ) {
 
 	ode::dBodyID bodyID;
 	ode::dMass mass;
-	if ( GetBodyAndMass(cx, obj, &bodyID, &mass) == JS_FALSE)
-		return JS_FALSE;
+	RT_ASSERT_RETURN( GetBodyAndMass(cx, obj, &bodyID, &mass) )
 	jsdouble massValue;
 	JS_ValueToNumber(cx, *vp, &massValue);
 	mass.mass = massValue;
@@ -90,8 +95,7 @@ DEFINE_PROPERTY( valueGetter ) {
 
 	ode::dBodyID bodyID;
 	ode::dMass mass;
-	if ( GetBodyAndMass(cx, obj, &bodyID, &mass) == JS_FALSE)
-		return JS_FALSE;
+	RT_ASSERT_RETURN( GetBodyAndMass(cx, obj, &bodyID, &mass) )
 	JS_NewDoubleValue(cx, mass.mass, vp);
 	return JS_TRUE;
 }
@@ -101,12 +105,10 @@ DEFINE_PROPERTY( centerSetter ) {
 
 	ode::dBodyID bodyID;
 	ode::dMass mass;
-	if ( GetBodyAndMass(cx, obj, &bodyID, &mass) == JS_FALSE)
-		return JS_FALSE;
+	RT_ASSERT_RETURN( GetBodyAndMass(cx, obj, &bodyID, &mass) )
 //	jsdouble massValue;
 //	jsdouble translation[3];
-	if (FloatArrayToVector(cx, 3, vp, mass.c) == JS_FALSE)
-		return JS_FALSE;
+	RT_ASSERT_RETURN( FloatArrayToVector(cx, 3, vp, mass.c) )
 	ode::dBodySetMass(bodyID, &mass);
 	return JS_TRUE;
 }
@@ -116,10 +118,8 @@ DEFINE_PROPERTY( centerGetter ) {
 
 	ode::dBodyID bodyID;
 	ode::dMass mass;
-	if ( GetBodyAndMass(cx, obj, &bodyID, &mass) == JS_FALSE)
-		return JS_FALSE;
-	if (FloatVectorToArray(cx, 3, mass.c, vp) == JS_FALSE)
-		return JS_FALSE;
+	RT_ASSERT_RETURN( GetBodyAndMass(cx, obj, &bodyID, &mass) )
+	RT_ASSERT_RETURN( FloatVectorToArray(cx, 3, mass.c, vp) )
 	return JS_TRUE;
 }
 

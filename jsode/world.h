@@ -1,5 +1,9 @@
 DECLARE_CLASS( World )
 
+#define DEFAULT_SURFACE_PARAMETERS_PROPERTY_NAME "defaultSurfaceParameters"
+#define WORLD_SPACE_PROPERTY_NAME "space"
+
+
 #define WORLD_SLOT_CONTACTGROUP 0
 #define WORLD_SLOT_SPACE 1
 
