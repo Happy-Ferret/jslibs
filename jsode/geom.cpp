@@ -46,6 +46,7 @@ BEGIN_CLASS( Geom )
 
 DEFINE_CONSTRUCTOR() {
 
+	ERROR(" MUST BE TESTED !");
 	ode::dGeomID geomId = (ode::dGeomID)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE( geomId ); // if it fails, try to add the next line in each geom constructor
 	SetNativeInterface(cx, obj, NI_READ_MATRIX44, (FunctionPointer)ReadMatrix, geomId); // [TBD] check return status
