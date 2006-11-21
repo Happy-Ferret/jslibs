@@ -34,26 +34,6 @@ static void nearCallback (void *data, ode::dGeomID o1, ode::dGeomID o2) {
 	for ( i=0; i<n; i++ ) {
 
 		contact[i].surface = *ccp->defaultSurfaceParameters;
-
-/*
-
-		contact[i].surface.mode = ode::dContactBounce | ode::dContactSlip1 | ode::dContactSlip2 | ode::dContactSoftERP | ode::dContactSoftCFM;// | ode::dContactApprox1;
-		contact[i].surface.bounce = 0;
-		contact[i].surface.bounce_vel = 0;
-		contact[i].surface.mu = 0;
-		contact[i].surface.slip1 = 0.1;
-		contact[i].surface.slip2 = 0.1;
-		contact[i].surface.soft_erp = 0.5;
-		contact[i].surface.soft_cfm = 0.0;
-*/
-/*
-		contact[i].surface.mode = ode::dContactBounce | ode::dContactSlip1 | ode::dContactSlip2;
-		contact[i].surface.mu = dInfinity;
-		contact[i].surface.bounce = 0.2;
-		contact[i].surface.bounce_vel = 0;
-		contact[i].surface.slip1 = 0.1;
-		contact[i].surface.slip2 = 0.1;
-*/				
 		ode::dJointID c = ode::dJointCreateContact(ccp->worldId,ccp->contactGroupId,&contact[i]);
 		ode::dJointAttach(c, dGeomGetBody(contact[i].geom.g1), dGeomGetBody(contact[i].geom.g2));
 	}
@@ -92,6 +72,7 @@ DEFINE_CONSTRUCTOR() {
 //	JS_DefineObject(cx, obj, WORLD_SPACE_PROPERTY_NAME, &classSpace, NULL, JSPROP_PERMANENT|JSPROP_READONLY );
 
 	JSObject *surfaceParameters = JS_ConstructObject(cx, &classSurfaceParameters, NULL, NULL);
+	RT_ASSERT( surfaceParameters != NULL, "Unable to construct classSurfaceParameters." );
 	JS_DefineProperty(cx, obj, DEFAULT_SURFACE_PARAMETERS_PROPERTY_NAME, OBJECT_TO_JSVAL(surfaceParameters), NULL, NULL, JSPROP_PERMANENT | JSPROP_READONLY );
 
 	return JS_TRUE;

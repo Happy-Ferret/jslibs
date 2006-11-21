@@ -48,6 +48,7 @@ extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj)
 	INIT_CLASS( GeomBox );
 	INIT_CLASS( GeomPlane );
 	INIT_CLASS( World );
+	INIT_CLASS( SurfaceParameters );
 
 //	JSObject *p = JS_GetPrototype(cx, classObjectJointHinge);
 //	JSObject *q = JS_GetPrototype(cx, p);

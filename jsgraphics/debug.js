@@ -5,69 +5,43 @@ LoadModule('jsode');
 LoadModule('jsgraphics');
 var glc = Exec('OpenGL.js');
 var vk = Exec('WindowsKeys.js');
-
 Exec('winTools.js');
 
-var image=0;
-
-/*
-var world = new World;
-//world.gravity = [0,0,-0.81];
-var body1 = new Body(world);
-var body2 = new Body(world);
-var joint = new JointHinge(world);
-joint.Attach(body1,body2);
-joint.anchor = [4,4,0];
-joint.axis = [0,0,1];
-//joint.loStop = 0;
-//joint.hiStop = -1;
-//joint.bounce = 0.5;
-//Print('bounce: '+ joint.bounce);
-body1.linearVel = [0,10,0];
-body2.linearVel = [0,-10,0];
-//body1.angularVel = [0,0,5];
-*/
-
 
 var world = new World;
-//world.quickStepNumIterations = 20;
-//world.Body = Body;
-//var b = new world.Body();
+//world.quickStepNumIterations = 20; // only need for quickstep
+world.defaultSurfaceParameters.mu = 5;
+world.defaultSurfaceParameters.softERP = 0.1;
 
 world.gravity = [0,0,-9.81];
+world.ERP = 1;
+//world.CFM = 0;
 
 var body1 = new Body(world);
 var geom1 = new GeomBox( world.space )
 geom1.body = body1;
+body1.position = [0,48,50]
+body1.mass.value = 10;
 
-
-//body1.mass.SetBoxTotal(10,[1,1,100]);
-//body.mass.mass = 1;
-//body.mass.Translate([2,1,0]);
-//body.mass.center = [2,0,0];
-//body.mass.Adjust(10);
-
-body1.position = [0,99,100]
-body1.mass.value = 1;
 var joint = new JointHinge(world);
-joint.useFeedback = true;
+joint.useFeedback = false;
 joint.body1 = world.env;
 joint.body2 = body1;
-joint.anchor = [0,0,100]; 
+joint.anchor = [0,0,50];
 joint.axis = [1,0,0];
+//joint.CFM = 0;
+
 
 var box = [];
 for (var y=0; y<10; y++) {
+
 	var b = new Body(world);
 	new GeomBox( world.space ).body = b;	
-	b.position = [0.5,0.5,y*1.2]
+	b.position = [0.5,0.5,y*1.1]
 	box.push(b);	
 }
 
-
-
 new GeomPlane(world.space);
-
 
 var win = new Window();
 win.title = "Test";
@@ -78,26 +52,27 @@ var h = 500;
 win.rect = [x,y,x+w,y+h];
 var gl = new Gl(win);
 
-	gl.LoadIdentity();
-	var list1 = gl.StartList();
-	var tmp = new Transformation();
-	for ( let x = -2000; x <= 2000; x += 100 )
-		for ( let y = -2000; y <= 2000; y += 100 ) {
-			
-			gl.PushMatrix();
-			gl.Translate(Math.random()*1000-500, Math.random()*1000-500, Math.random()*1000-500 );
-			gl.Cube();
-			gl.PopMatrix();
-		}
-	gl.EndList();
+gl.LoadIdentity();
+var list1 = gl.StartList();
+var tmp = new Transformation();
+for ( let x = -2000; x <= 2000; x += 100 )
+	for ( let y = -2000; y <= 2000; y += 100 ) {
+		
+		gl.PushMatrix();
+		gl.Translate(Math.random()*1000-500, Math.random()*1000-500, Math.random()*1000-500 );
+		gl.Cube();
+		gl.PopMatrix();
+	}
+gl.EndList();
 
 
 var mouse = new MouseMotion(win);
 var camera = new Transformation();
 camera.Product( new Transformation().Translation(-1,-1,10) );
 var cameraRotation = new Transformation();
-cameraRotation.Rotate( 90, 1,0,0);
+cameraRotation.Rotate( 90, 1,0,0 );
 //camera.LookAt(0,0,0);
+
 
 Transformation.prototype.toString = function() {
 	
@@ -140,36 +115,33 @@ mouse.delta = function( dx,dy,dw, b1,b2,b3 ) {
 }
 
 
-var time;
 
+
+var time;
 function Render() {
 
 	var cameraPosition = new Transformation();
-	cameraPosition.Translation( 0,0, -speed * run );
+	cameraPosition.Translation( 0, 0, -speed * run );
 	camera.Product(cameraPosition);
 	
-
 	gl.Clear( glc.COLOR_BUFFER_BIT | glc.DEPTH_BUFFER_BIT );
 
 	var m = new Transformation().Load(camera).Invert();
 
 	gl.LoadMatrix(new Transformation().Load(m).Product(body1));
 	gl.Cube();
+/*
 	var f = joint.body1Force;
-
 	gl.LoadMatrix(new Transformation().Load(body1).ClearRotation().InverseProduct(m) );
-	
 	gl.Color(1,1,1);
 	gl.Line3D( 0,0,0, f[0],f[1],f[2] );
-	
-
 	gl.Color(1,0,0);
 	gl.Line3D( 0,0,0, f[0],0,0 );
 	gl.Color(0,1,0);
 	gl.Line3D( 0,0,0, 0,f[1],0 );
 	gl.Color(0,0,1);
 	gl.Line3D( 0,0,0, 0,0,f[2] );
-
+*/
 
 	for each( var b in box ) {
 		gl.LoadMatrix(new Transformation().Load(m).Product(b) );
@@ -187,8 +159,8 @@ function Render() {
 			gl.Quad(x,y,x+1,y+1);
 
 
-//	gl.LoadMatrix(m);
-//	gl.CallList(list1);
+	gl.LoadMatrix(m);
+	gl.CallList(list1);
 
 //	move += 0.1;
 //			tmp.Load(m);
@@ -205,8 +177,8 @@ function Render() {
 	
 	var tmp = IntervalNow();
 	var delta = tmp-time;
-	if ( delta > 100)
-		delta = 100;
+	if ( delta > 50)
+		delta = 50;
 	time && world.Step(delta/1000,true);
 	time = tmp;
 }

@@ -110,6 +110,8 @@ DEFINE_FUNCTION( Attach ) {
 }
 */
 
+// http://opende.sourceforge.net/wiki/index.php/Manual_%28Joint_Types_and_Functions%29
+
 	//dJointTypeBall 	A ball-and-socket joint.
 	//dJointTypeHinge 	A hinge joint.
 	//dJointTypeSlider 	A slider joint.
@@ -161,170 +163,6 @@ ode::dReal JointGetParam( ode::dJointID jointId, int parameter ) {
 
 
 
-// http://opende.sourceforge.net/wiki/index.php/Manual_%28Joint_Types_and_Functions%29
-DEFINE_PROPERTY( loStopSetter ) {
-
-	ode::dJointID jointId = (ode::dJointID)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE(jointId);
-	jsdouble value;
-	if ( *vp == JSVAL_VOID )
-		value = -dInfinity;
-	else
-		JS_ValueToNumber(cx, *vp, &value);
-	JointSetParam(jointId, ode::dParamLoStop, value);
-	return JS_TRUE;
-}
-
-DEFINE_PROPERTY( loStopGetter ) {
-
-	ode::dJointID jointId = (ode::dJointID)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE(jointId);
-	JS_NewDoubleValue(cx, JointGetParam(jointId, ode::dParamLoStop), vp);
-	return JS_TRUE;
-}
-
-
-DEFINE_PROPERTY( hiStopSetter ) {
-
-	ode::dJointID jointId = (ode::dJointID)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE(jointId);
-	jsdouble value;
-	if ( *vp == JSVAL_VOID )
-		value = dInfinity;
-	else
-		JS_ValueToNumber(cx, *vp, &value);
-	JointSetParam(jointId, ode::dParamLoStop, value);
-	return JS_TRUE;
-}
-
-DEFINE_PROPERTY( hiStopGetter ) {
-
-	ode::dJointID jointId = (ode::dJointID)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE(jointId);
-	JS_NewDoubleValue(cx, JointGetParam(jointId, ode::dParamLoStop), vp);
-	return JS_TRUE;
-}
-
-
-DEFINE_PROPERTY( bounceSetter ) {
-
-	ode::dJointID jointId = (ode::dJointID)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE(jointId);
-	jsdouble value;
-	JS_ValueToNumber(cx, *vp, &value);
-	JointSetParam(jointId, ode::dParamBounce, value);
-	return JS_TRUE;
-}
-
-DEFINE_PROPERTY( bounceGetter ) {
-
-	ode::dJointID jointId = (ode::dJointID)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE(jointId);
-	JS_NewDoubleValue(cx, JointGetParam(jointId, ode::dParamBounce), vp);
-	return JS_TRUE;
-}
-
-
-DEFINE_PROPERTY( CFMSetter ) {
-
-	ode::dJointID jointId = (ode::dJointID)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE(jointId);
-	jsdouble value;
-	JS_ValueToNumber(cx, *vp, &value);
-	JointSetParam(jointId, ode::dParamCFM, value);
-	return JS_TRUE;
-}
-
-DEFINE_PROPERTY( CFMGetter ) {
-
-	ode::dJointID jointId = (ode::dJointID)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE(jointId);
-	JS_NewDoubleValue(cx, JointGetParam(jointId, ode::dParamCFM), vp);
-	return JS_TRUE;
-}
-
-
-
-DEFINE_PROPERTY( stopERPSetter ) {
-
-	ode::dJointID jointId = (ode::dJointID)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE(jointId);
-	jsdouble value;
-	JS_ValueToNumber(cx, *vp, &value);
-	JointSetParam(jointId, ode::dParamStopERP, value);
-	return JS_TRUE;
-}
-
-DEFINE_PROPERTY( stopERPGetter ) {
-
-	ode::dJointID jointId = (ode::dJointID)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE(jointId);
-	JS_NewDoubleValue(cx, JointGetParam(jointId, ode::dParamStopERP), vp);
-	return JS_TRUE;
-}
-
-
-
-DEFINE_PROPERTY( stopCFMSetter ) {
-
-	ode::dJointID jointId = (ode::dJointID)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE(jointId);
-	jsdouble value;
-	JS_ValueToNumber(cx, *vp, &value);
-	JointSetParam(jointId, ode::dParamStopCFM, value);
-	return JS_TRUE;
-}
-
-DEFINE_PROPERTY( stopCFMGetter ) {
-
-	ode::dJointID jointId = (ode::dJointID)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE(jointId);
-	JS_NewDoubleValue(cx, JointGetParam(jointId, ode::dParamStopCFM), vp);
-	return JS_TRUE;
-}
-
-//dParamSuspensionERP 	 Suspension error reduction parameter (ERP). Currently this is only implemented on the hinge-2 joint.
-//dParamSuspensionCFM 	Suspension constraint force mixing (CFM) value. Currently this is only implemented on the hinge-2 joint.
-
-
-
-DEFINE_PROPERTY( velocitySetter ) {
-
-	ode::dJointID jointId = (ode::dJointID)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE(jointId);
-	jsdouble value;
-	JS_ValueToNumber(cx, *vp, &value);
-	JointSetParam(jointId, ode::dParamVel, value);
-	return JS_TRUE;
-}
-
-DEFINE_PROPERTY( velocityGetter ) {
-
-	ode::dJointID jointId = (ode::dJointID)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE(jointId);
-	JS_NewDoubleValue(cx, JointGetParam(jointId, ode::dParamFMax), vp);
-	return JS_TRUE;
-}
-
-
-DEFINE_PROPERTY( maxForceSetter ) {
-
-	ode::dJointID jointId = (ode::dJointID)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE(jointId);
-	jsdouble value;
-	JS_ValueToNumber(cx, *vp, &value);
-	JointSetParam(jointId, ode::dParamVel, value);
-	return JS_TRUE;
-}
-
-DEFINE_PROPERTY( maxForceGetter ) {
-
-	ode::dJointID jointId = (ode::dJointID)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE(jointId);
-	JS_NewDoubleValue(cx, JointGetParam(jointId, ode::dParamFMax), vp);
-	return JS_TRUE;
-}
-
 DEFINE_PROPERTY( useFeedback ) {
 
 	ode::dJointID jointId = (ode::dJointID)JS_GetPrivate( cx, obj );
@@ -352,7 +190,7 @@ DEFINE_PROPERTY( useFeedback ) {
 
 enum { body1Force, body1Torque, body2Force, body2Torque };
 
-DEFINE_PROPERTY( vectorSetter ) {
+DEFINE_PROPERTY( feedbackVectorSetter ) {
 
 	ode::dJointID jointId = (ode::dJointID)JS_GetPrivate( cx, obj );
 	RT_ASSERT_RESOURCE( jointId );
@@ -376,7 +214,7 @@ DEFINE_PROPERTY( vectorSetter ) {
 }
 
 
-DEFINE_PROPERTY( vectorGetter ) {
+DEFINE_PROPERTY( feedbackVectorGetter ) {
 
 	ode::dJointID jointId = (ode::dJointID)JS_GetPrivate( cx, obj );
 	RT_ASSERT_RESOURCE( jointId );
@@ -400,6 +238,88 @@ DEFINE_PROPERTY( vectorGetter ) {
 }
 
 
+enum { loStop, hiStop, bounce, CFM, stopERP, stopCFM, velocity, maxForce };
+
+DEFINE_PROPERTY( jointParamSetter ) {
+
+	ode::dJointID jointId = (ode::dJointID)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE(jointId);
+	jsdouble value;
+	JS_ValueToNumber(cx, *vp, &value);
+	int parameter;
+	switch(JSVAL_TO_INT(id)) {
+		case loStop:
+			if ( *vp == JSVAL_VOID )
+				value = -dInfinity;
+			parameter = ode::dParamLoStop;
+			break;
+		case hiStop:
+			if ( *vp == JSVAL_VOID )
+				value = dInfinity;
+			parameter = ode::dParamHiStop;
+			break;
+		case bounce:
+			parameter = ode::dParamBounce;
+			break;
+		case CFM:
+			parameter = ode::dParamCFM;
+			break;
+		case stopERP:
+			parameter = ode::dParamStopERP;
+			break;
+		case stopCFM:
+			parameter = ode::dParamStopCFM;
+			break;
+		case velocity:
+			parameter = ode::dParamVel;
+			break;
+		case maxForce:
+			parameter = ode::dParamFMax;
+			break;
+	}
+	JointSetParam(jointId, parameter, value);
+	return JS_TRUE;
+}
+
+
+DEFINE_PROPERTY( jointParamGetter ) {
+
+	ode::dJointID jointId = (ode::dJointID)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE(jointId);
+	int parameter;
+	switch(JSVAL_TO_INT(id)) {
+		case loStop:
+			parameter = ode::dParamLoStop;
+			break;
+		case hiStop:
+			parameter = ode::dParamHiStop;
+			break;
+		case bounce:
+			parameter = ode::dParamBounce;
+			break;
+		case CFM:
+			parameter = ode::dParamCFM;
+			break;
+		case stopERP:
+			parameter = ode::dParamStopERP;
+			break;
+		case stopCFM:
+			parameter = ode::dParamStopCFM;
+			break;
+		case velocity:
+			parameter = ode::dParamVel;
+			break;
+		case maxForce:
+			parameter = ode::dParamFMax;
+			break;
+	}
+	JS_NewDoubleValue(cx, JointGetParam(jointId, parameter), vp);
+	return JS_TRUE;
+}
+
+
+
+
 CONFIGURE_CLASS
 
 	BEGIN_FUNCTION_SPEC
@@ -412,11 +332,21 @@ CONFIGURE_CLASS
 
 		PROPERTY_WRITE_STORE( useFeedback )
 
-		PROPERTY_SWITCH( body1Force, vector )
-		PROPERTY_SWITCH( body1Torque, vector )
-		PROPERTY_SWITCH( body2Force, vector )
-		PROPERTY_SWITCH( body2Torque, vector )
+		PROPERTY_SWITCH( body1Force, feedbackVector )
+		PROPERTY_SWITCH( body1Torque, feedbackVector )
+		PROPERTY_SWITCH( body2Force, feedbackVector )
+		PROPERTY_SWITCH( body2Torque, feedbackVector )
 
+		PROPERTY_SWITCH( loStop, jointParam )
+		PROPERTY_SWITCH( hiStop, jointParam )
+		PROPERTY_SWITCH( bounce, jointParam )
+		PROPERTY_SWITCH( CFM, jointParam )
+		PROPERTY_SWITCH( stopERP, jointParam )
+		PROPERTY_SWITCH( stopCFM, jointParam )
+		PROPERTY_SWITCH( velocity, jointParam )
+		PROPERTY_SWITCH( maxForce, jointParam )
+
+/*
 		PROPERTY( loStop )
 		PROPERTY( hiStop )
 		PROPERTY( bounce )
@@ -427,6 +357,7 @@ CONFIGURE_CLASS
 
 		PROPERTY( velocity )
 		PROPERTY( maxForce )
+*/
 	END_PROPERTY_SPEC
 
 END_CLASS;

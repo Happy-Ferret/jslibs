@@ -14,63 +14,71 @@ DEFINE_FINALIZE() {
 
 DEFINE_CONSTRUCTOR() {
 
+	static ode::dSurfaceParameters initSurfaceParameters = {0};
+
 	RT_ASSERT_CONSTRUCTING(_class);
 	ode::dSurfaceParameters *data = (ode::dSurfaceParameters*)malloc(sizeof(ode::dSurfaceParameters));
+	*data = initSurfaceParameters;
+	data->mu = dInfinity;
 	RT_ASSERT_ALLOC(data);
 	JS_SetPrivate(cx, obj, data);
 	return JS_TRUE;
 }
 
 
-enum { mu, mu2, bounce, bounceVel, softErp, softCfm, motion1, motion2, slip1, slip2 };
+enum { mu, mu2, bounce, bounceVel, softERP, softCFM, motion1, motion2, slip1, slip2 };
 
-DEFINE_PROPERTY_NULL( surfaceGetter );
+DEFINE_PROPERTY_NULL( surfaceGetter )
 DEFINE_PROPERTY( surfaceSetter ) {
 
-	ode::dJointID jointId = (ode::dJointID)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE(jointId); // [TBD] check if NULL is meaningful for joints !
+	ode::dSurfaceParameters *surface = (ode::dSurfaceParameters*)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE(surface); // [TBD] check if NULL is meaningful for joints !
+	
 	jsdouble dval;
-	JS_ValueToNumber(cx, *vp, &dval);
-	ode::dContact *contact = NULL;
+	if ( *vp == JSVAL_VOID )
+		dval = dInfinity;
+	else
+		JS_ValueToNumber(cx, *vp, &dval);
+
 	switch(JSVAL_TO_INT(id)) {
 		case mu:
-			contact->surface.mu = dval;
+			surface->mu = dval;
 			break;
 		case mu2:
-			contact->surface.mode |= ode::dContactMu2;
-			contact->surface.mu2 = dval;
+			surface->mode |= ode::dContactMu2;
+			surface->mu2 = dval;
 			break;
 		case bounce:
-			contact->surface.mode |= ode::dContactBounce;
-			contact->surface.bounce = dval;
+			surface->mode |= ode::dContactBounce;
+			surface->bounce = dval;
 			break;
 		case bounceVel:
-			contact->surface.mode |= ode::dContactBounce;
-			contact->surface.bounce_vel = dval;
+			surface->mode |= ode::dContactBounce;
+			surface->bounce_vel = dval;
 			break;
-		case softErp:
-			contact->surface.mode |= ode::dContactSoftERP;
-			contact->surface.soft_erp = dval;
+		case softERP:
+			surface->mode |= ode::dContactSoftERP;
+			surface->soft_erp = dval;
 			break;
-		case softCfm:
-			contact->surface.mode |= ode::dContactSoftCFM;
-			contact->surface.soft_cfm = dval;
+		case softCFM:
+			surface->mode |= ode::dContactSoftCFM;
+			surface->soft_cfm = dval;
 			break;
 		case motion1:
-			contact->surface.mode |= ode::dContactMotion1;
-			contact->surface.motion1 = dval;
+			surface->mode |= ode::dContactMotion1;
+			surface->motion1 = dval;
 			break;
 		case motion2:
-			contact->surface.mode |= ode::dContactMotion2;
-			contact->surface.motion2 = dval;
+			surface->mode |= ode::dContactMotion2;
+			surface->motion2 = dval;
 			break;
 		case slip1:
-			contact->surface.mode |= ode::dContactSlip1;
-			contact->surface.slip1 = dval;
+			surface->mode |= ode::dContactSlip1;
+			surface->slip1 = dval;
 			break;
 		case slip2:
-			contact->surface.mode |= ode::dContactSlip2;
-			contact->surface.slip2 = dval;
+			surface->mode |= ode::dContactSlip2;
+			surface->slip2 = dval;
 			break;
 	}  
 // Doc: http://opende.sourceforge.net/wiki/index.php/Manual_%28Joint_Types_and_Functions%29#Contact
@@ -95,8 +103,8 @@ CONFIGURE_CLASS
 		PROPERTY_SWITCH_STORE( mu2, surface )
 		PROPERTY_SWITCH_STORE( bounce, surface )
 		PROPERTY_SWITCH_STORE( bounceVel, surface )
-		PROPERTY_SWITCH_STORE( softErp, surface )
-		PROPERTY_SWITCH_STORE( softCfm, surface )
+		PROPERTY_SWITCH_STORE( softERP, surface )
+		PROPERTY_SWITCH_STORE( softCFM, surface )
 		PROPERTY_SWITCH_STORE( motion1, surface )
 		PROPERTY_SWITCH_STORE( motion2, surface )
 		PROPERTY_SWITCH_STORE( slip1, surface )

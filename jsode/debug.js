@@ -1,6 +1,7 @@
 LoadModule('jsstd');
 LoadModule('jsode');
 
+var g = new GeomBox();
 
 /*
 var world = new World;
