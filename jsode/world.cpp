@@ -12,7 +12,7 @@ struct ColideContextPrivate {
 	ode::dSurfaceParameters *defaultSurfaceParameters;
 	ode::dJointGroupID contactGroupId;
 	ode::dWorldID worldId;
-	int contactCount;
+//	int contactCount;
 };
 
 static void nearCallback (void *data, ode::dGeomID o1, ode::dGeomID o2) {
@@ -30,10 +30,22 @@ static void nearCallback (void *data, ode::dGeomID o1, ode::dGeomID o2) {
 	int i,n;
 	ode::dContact contact[MAX_CONTACTS];
 	n = ode::dCollide(o1,o2,MAX_CONTACTS,&contact[0].geom,sizeof(ode::dContact));
-	ccp->contactCount = n;
+//	ccp->contactCount = n;
 	for ( i=0; i<n; i++ ) {
 
 		contact[i].surface = *ccp->defaultSurfaceParameters;
+
+/* mixing :
+  dReal mu;		// min
+  dReal mu2;	// min
+  dReal bounce;	// average
+  dReal bounce_vel; // min
+  dReal soft_erp; // average
+  dReal soft_cfm; // average
+  dReal motion1,motion2;	// add
+  dReal slip1,slip2;	// ?
+*/
+
 		ode::dJointID c = ode::dJointCreateContact(ccp->worldId,ccp->contactGroupId,&contact[i]);
 		ode::dJointAttach(c, dGeomGetBody(contact[i].geom.g1), dGeomGetBody(contact[i].geom.g2));
 	}
@@ -47,9 +59,9 @@ DEFINE_FINALIZE() {
 	ode::dWorldID worldId = (ode::dWorldID)JS_GetPrivate( cx, obj );
 	if ( worldId != NULL ) {
 
-		jsval val;
-		JS_GetReservedSlot(cx, obj, WORLD_SLOT_CONTACTGROUP, &val);
-		ode::dJointGroupDestroy((ode::dJointGroupID)JSVAL_TO_PRIVATE(val));
+//		jsval val;
+//		JS_GetReservedSlot(cx, obj, WORLD_SLOT_CONTACTGROUP, &val);
+//		ode::dJointGroupDestroy((ode::dJointGroupID)JSVAL_TO_PRIVATE(val));
 		ode::dWorldDestroy(worldId); // [TBD] Destroy a world and everything in it.
 		JS_SetPrivate(cx,obj,NULL);
 	}
@@ -60,15 +72,15 @@ DEFINE_CONSTRUCTOR() {
 	RT_ASSERT_CONSTRUCTING(&classWorld);
 	ode::dWorldID worldId = ode::dWorldCreate();
 	JS_SetPrivate(cx, obj, worldId);
-	ode::dJointGroupID contactgroup = ode::dJointGroupCreate(0);
-	RT_ASSERT( contactgroup != NULL, "Unable to create contact group." );
-	JS_SetReservedSlot(cx, obj, WORLD_SLOT_CONTACTGROUP, PRIVATE_TO_JSVAL(contactgroup));
+	//ode::dJointGroupID contactgroup = ode::dJointGroupCreate(0);
+	//RT_ASSERT( contactgroup != NULL, "Unable to create contact group." );
+	//JS_SetReservedSlot(cx, obj, WORLD_SLOT_CONTACTGROUP, PRIVATE_TO_JSVAL(contactgroup));
 
 	JSObject *spaceObject = JS_ConstructObject(cx, &classSpace, NULL, NULL); // no arguments = create a topmost space object
 	RT_ASSERT( spaceObject != NULL, "Unable to construct Space for the World." );
 	JS_DefineProperty(cx, obj, WORLD_SPACE_PROPERTY_NAME, OBJECT_TO_JSVAL(spaceObject), NULL, NULL, JSPROP_PERMANENT | JSPROP_READONLY);
 
-//	JS_SetReservedSlot(cx, obj, WORLD_SLOT_SPACE, PRIVATE_TO_JSVAL(contactgroup));
+//	JS_SetReservedSlot(cx, obj, WORLD_SLOT_SPACE, PRIVATE_TO_JSVAL(spaceObject));
 //	JS_DefineObject(cx, obj, WORLD_SPACE_PROPERTY_NAME, &classSpace, NULL, JSPROP_PERMANENT|JSPROP_READONLY );
 
 	JSObject *surfaceParameters = JS_ConstructObject(cx, &classSurfaceParameters, NULL, NULL);
@@ -106,8 +118,9 @@ DEFINE_FUNCTION( Step ) {
 	if ( ValToSpaceID(cx, val, &spaceId) == JS_FALSE )
 		return JS_FALSE;
 
-	JS_GetReservedSlot(cx, obj, WORLD_SLOT_CONTACTGROUP, &val);
-	ode::dJointGroupID contactgroup = (ode::dJointGroupID)JSVAL_TO_PRIVATE(val);
+//	JS_GetReservedSlot(cx, obj, WORLD_SLOT_CONTACTGROUP, &val);
+//	ode::dJointGroupID contactgroup = (ode::dJointGroupID)JSVAL_TO_PRIVATE(val);
+	ode::dJointGroupID contactgroup = ode::dJointGroupCreate(0);
 
 	jsval defaultSurfaceParametersObject;
 	JS_GetProperty(cx, obj, DEFAULT_SURFACE_PARAMETERS_PROPERTY_NAME, &defaultSurfaceParametersObject );
@@ -116,7 +129,7 @@ DEFINE_FUNCTION( Step ) {
 	ode::dSurfaceParameters *defaultSurfaceParameters = (ode::dSurfaceParameters*)JS_GetPrivate(cx, JSVAL_TO_OBJECT(defaultSurfaceParametersObject)); // beware: local variable !
 	RT_ASSERT_RESOURCE( defaultSurfaceParameters );
 
-	ColideContextPrivate ccp = { defaultSurfaceParameters, contactgroup, worldID, 0 };
+	ColideContextPrivate ccp = { defaultSurfaceParameters, contactgroup, worldID };
 	ode::dSpaceCollide(spaceId, (void*)&ccp, &nearCallback);
 
 	if ( argc >= 2 && argv[1] == JSVAL_TRUE ) // quick ?
@@ -124,9 +137,7 @@ DEFINE_FUNCTION( Step ) {
 	else
 		ode::dWorldStep(worldID, value);
 
-	if ( ccp.contactCount > 0 ) // do not empty if not needed
-		ode::dJointGroupEmpty(contactgroup);
-
+	ode::dJointGroupDestroy(contactgroup); // dJointGroupEmpty calls dJointGroupEmpty
 	return JS_TRUE;
 }
 
@@ -232,6 +243,6 @@ CONFIGURE_CLASS
 		PROPERTY_SWITCH( contactSurfaceLayer, real )
 	END_PROPERTY_SPEC
 
-	HAS_PRIVATE
-	HAS_RESERVED_SLOTS(2)
+	HAS_PRIVATE // ode::dWorldID
+	HAS_RESERVED_SLOTS(2) // contactGroup, space
 END_CLASS

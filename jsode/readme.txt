@@ -37,6 +37,11 @@ Space(X) -- Geom(X)
 ==> Geom may be GC !
 
 
+SurfaceParameters(X) -- World(prop defaultSurfaceParameters)
+
+
+
+
 Everything that may be GC SHOULD not have a Finalize:
 - Body, Joint, Space, Geom
 But these functions should have a Destroy function

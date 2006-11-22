@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "space.h"
 #include "geom.h"
+#include "../common/jsNativeInterface.h"
 
 BEGIN_CLASS( GeomSphere )
 
@@ -13,6 +14,7 @@ DEFINE_CONSTRUCTOR() {
 			return JS_FALSE;
 	ode::dGeomID geomId = ode::dCreateSphere(space, 1); // default radius is 1
 	JS_SetPrivate(cx, obj, geomId);
+	SetupReadMatrix(cx,obj,geomId); // [TBD] check return status
 	return JS_TRUE;
 }
 
@@ -39,7 +41,6 @@ DEFINE_PROPERTY( radiusGetter ) {
 CONFIGURE_CLASS
 
 	HAS_PROTOTYPE( prototypeGeom )
-	CONSTRUCT_PROTOTYPE
 	HAS_CONSTRUCTOR
 
 	BEGIN_PROPERTY_SPEC

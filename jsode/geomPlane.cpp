@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "space.h"
 #include "geom.h"
+#include "../common/jsNativeInterface.h"
 
 BEGIN_CLASS( GeomPlane )
 
@@ -14,6 +15,7 @@ DEFINE_CONSTRUCTOR() {
 			return JS_FALSE;
 	ode::dGeomID geomId = ode::dCreatePlane(space, 0,0,1,0); // default lengths are 1
 	JS_SetPrivate(cx, obj, geomId);
+	SetupReadMatrix(cx,obj,geomId); // [TBD] check return status
 	return JS_TRUE;
 }
 
@@ -44,7 +46,6 @@ DEFINE_PROPERTY( lengthsGetter ) {
 CONFIGURE_CLASS
 
 	HAS_PROTOTYPE( prototypeGeom )
-	CONSTRUCT_PROTOTYPE
 	HAS_CONSTRUCTOR
 
 	HAS_PRIVATE

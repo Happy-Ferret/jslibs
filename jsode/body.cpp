@@ -62,8 +62,8 @@ DEFINE_CONSTRUCTOR() {
 	JS_SetPrivate(cx, obj, bodyID);
 	JS_SetReservedSlot(cx, obj, BODY_SLOT_WORLD, argv[0]);
 
-//	JS_AddRoot(cx, obj);
-//	ode::dBodySetData(bodyID, obj);
+//	JS_AddRoot(cx, obj); // Doc: The pointer or jsval whose address is passed as rp must live in storage that remains allocated until the balancing JS_RemoveRoot call is made.
+	ode::dBodySetData(bodyID, obj);
 
 //	ode::dBodySetData(bodyID,worldObject);
 	SetNativeInterface(cx, obj, NI_READ_MATRIX44, (FunctionPointer)ReadMatrix, bodyID); // [TBD] check return status

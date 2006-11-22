@@ -66,7 +66,7 @@ DEFINE_PROPERTY( body2 ) {
 
 DEFINE_FUNCTION( Destroy ) {
 
-	RT_ASSERT( IsInstanceOf(cx, obj, _class), RT_ERROR_INVALID_CLASS );
+	RT_ASSERT( InheritFrom(cx, obj, _class), RT_ERROR_INVALID_CLASS );
 	ode::dJointID jointId = (ode::dJointID)JS_GetPrivate( cx, obj );
 	RT_ASSERT_RESOURCE( jointId );
 

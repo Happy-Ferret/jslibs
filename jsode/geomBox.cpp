@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "space.h"
 #include "geom.h"
+#include "../common/jsNativeInterface.h"
 
 BEGIN_CLASS( GeomBox )
 
@@ -13,6 +14,7 @@ DEFINE_CONSTRUCTOR() {
 			return JS_FALSE;
 	ode::dGeomID geomId = ode::dCreateBox(space, 1,1,1); // default lengths are 1
 	JS_SetPrivate(cx, obj, geomId);
+	SetupReadMatrix(cx,obj,geomId); // [TBD] check return status
 	return JS_TRUE;
 }
 
@@ -39,8 +41,9 @@ DEFINE_PROPERTY( lengthsGetter ) {
 
 CONFIGURE_CLASS
 
-	HAS_PROTOTYPE( prototypeGeom )
 //	CONSTRUCT_PROTOTYPE
+
+	HAS_PROTOTYPE( prototypeGeom )
 	HAS_CONSTRUCTOR
 
 	BEGIN_PROPERTY_SPEC

@@ -13,7 +13,7 @@ check:
 #include "geom.h"
 #include "../common/jsNativeInterface.h"
 
-static int ReadMatrix(void *pv, float **pm) { // Doc: __declspec(noinline) tells the compiler to never inline a particular function.
+int ReadMatrix(void *pv, float **pm) { // Doc: __declspec(noinline) tells the compiler to never inline a particular function.
 
 	ode::dGeomID geomID = (ode::dGeomID)pv;
 
@@ -41,19 +41,13 @@ static int ReadMatrix(void *pv, float **pm) { // Doc: __declspec(noinline) tells
 	return true;
 }
 
-BEGIN_CLASS( Geom )
+JSBool SetupReadMatrix(JSContext *cx, JSObject *obj, ode::dGeomID geomId) {
 
-
-DEFINE_CONSTRUCTOR() {
-
-	REPORT_ERROR( "to be fixed !!" );
-
-	ode::dGeomID geomId = (ode::dGeomID)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE( geomId ); // if it fails, try to add the next line in each geom constructor
-	SetNativeInterface(cx, obj, NI_READ_MATRIX44, (FunctionPointer)ReadMatrix, geomId); // [TBD] check return status
-	return JS_TRUE;
+	return SetNativeInterface(cx, obj, NI_READ_MATRIX44, (FunctionPointer)ReadMatrix, geomId);
 }
 
+
+BEGIN_CLASS( Geom )
 
 DEFINE_FUNCTION( Destroy ) {
 
@@ -173,8 +167,6 @@ DEFINE_PROPERTY( offsetPositionSetter ) {
 
 
 CONFIGURE_CLASS
-
-	HAS_CONSTRUCTOR
 
 	BEGIN_FUNCTION_SPEC
 		FUNCTION( Destroy )

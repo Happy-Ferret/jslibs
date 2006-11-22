@@ -111,6 +111,9 @@
 	stringVariable = JS_GetStringBytes( JS_ValueToString(cx,jsvalString) ); \
 	RT_ASSERT( stringVariable != NULL, RT_ERROR_STRING_CONVERSION_FAILED );
 
+//inline const char *JsvalToString(cx, jsval) {
+//}
+
 #define RT_JSVAL_TO_STRING_AND_LENGTH( jsvalString, stringVariable, lengthVariable ) \
 	{ \
 		JSString *___jssTmp = JS_ValueToString(cx,jsvalString); \
@@ -131,6 +134,7 @@ inline double TimeNow() {
 	return 1000 * double(performanceCount.QuadPart) / double(frequency.QuadPart);
 #endif // WIN32
 }
+
 
 typedef void (*FunctionPointer)(void);
 
@@ -153,7 +157,7 @@ inline JSBool GetNativeInterface( JSContext *cx, JSObject *obj, const char *name
 
 ////
 
-inline bool IsInstanceOf( JSContext *cx, JSObject *obj, JSClass *clasp ) {
+inline bool InheritFrom( JSContext *cx, JSObject *obj, JSClass *clasp ) {
 
 	while( obj != NULL ) {
 
@@ -194,8 +198,6 @@ inline JSBool GetIntProperty( JSContext *cx, JSObject *obj, const char *property
 	*value = int32Value;
 	return JS_TRUE;
 }
-
-
 
 
 #endif // _JSHELPER_H_

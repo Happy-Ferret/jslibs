@@ -140,84 +140,86 @@ DEFINE_FUNCTION( Print ) {
 //	/be
 static JSScript* LoadScript(JSContext *cx, JSObject *obj, const char *fileName, bool useCompFile) {
 
-  char compiledFileName[MAX_PATH];
-  strcpy( compiledFileName, fileName );
-  strcat( compiledFileName, "xdr" );
+	char compiledFileName[MAX_PATH];
+	strcpy( compiledFileName, fileName );
+	strcat( compiledFileName, "xdr" );
 
-  struct _stat srcFileStat;
-  bool hasSrcFile = ( _stat( fileName, &srcFileStat ) != -1 ) ; // errno == ENOENT
+	struct _stat srcFileStat;
+	bool hasSrcFile = ( _stat( fileName, &srcFileStat ) != -1 ) ; // errno == ENOENT
 
-  struct _stat compFileStat;
-  bool hasCompFile = ( _stat( compiledFileName, &compFileStat ) != -1 );
+	struct _stat compFileStat;
+	bool hasCompFile = ( _stat( compiledFileName, &compFileStat ) != -1 );
 
-  bool compFileUpToDate = ( hasSrcFile && hasCompFile && (srcFileStat.st_mtime < compFileStat.st_mtime) ) || ( hasCompFile && !hasSrcFile );	// true if comp file is up to date or alone
+	bool compFileUpToDate = ( hasSrcFile && hasCompFile && (srcFileStat.st_mtime < compFileStat.st_mtime) ) || ( hasCompFile && !hasSrcFile );	// true if comp file is up to date or alone
 
-  if ( !hasSrcFile && !hasCompFile ) {
+	if ( !hasSrcFile && !hasCompFile ) {
 
-    JS_ReportError( cx, "Unable to load Script, file \"%s\" or \"%s\" not found.", fileName, compiledFileName );
-    return NULL;
-  }
+		JS_ReportError( cx, "Unable to load Script, file \"%s\" or \"%s\" not found.", fileName, compiledFileName );
+		return NULL;
+	}
 
-  JSScript *script;
+	JSScript *script;
 
-  if ( useCompFile && compFileUpToDate ) {
+	if ( useCompFile && compFileUpToDate ) {
 
-    FILE *file = fopen(compiledFileName, "rb"); // b for binary ( win32 )
-    if ( !file ) {
+		FILE *file = fopen(compiledFileName, "rb"); // b for binary ( win32 ) // [TBD] use open/close/read/... instead of fopen/fclose/fread/...
+		if ( !file ) {
 
-      JS_ReportError( cx, "Unable to open file \"%s\" for reading.", compiledFileName );
-      return NULL;
-    }
+			JS_ReportError( cx, "Unable to open file \"%s\" for reading.", compiledFileName );
+			return NULL;
+		}
 
-    int compFileSize = compFileStat.st_size;
-    void *data = JS_malloc( cx, compFileSize );
+		int compFileSize = compFileStat.st_size;
+		void *data = JS_malloc( cx, compFileSize );
 
-    size_t readCount = fread( data, 1, compFileSize, file ); // here we can use "Memory-Mapped I/O Functions" ( http://developer.mozilla.org/en/docs/NSPR_API_Reference:I/O_Functions#Memory-Mapped_I.2FO_Functions )
+		size_t readCount = fread( data, 1, compFileSize, file ); // here we can use "Memory-Mapped I/O Functions" ( http://developer.mozilla.org/en/docs/NSPR_API_Reference:I/O_Functions#Memory-Mapped_I.2FO_Functions )
 
 		if ( readCount != compFileSize ) {
-      JS_ReportError( cx, "Unable to read the file \"%s\" ", compiledFileName );
-      return NULL;
-    }
 
-    fclose( file );
+			JS_ReportError( cx, "Unable to read the file \"%s\" ", compiledFileName );
+			return NULL;
+		}
 
-    JSXDRState *xdr = JS_XDRNewMem(cx,JSXDR_DECODE);
+		fclose( file ); // [TBD] use open/close/read/... instead of fopen/fclose/fread/...
+
+		JSXDRState *xdr = JS_XDRNewMem(cx,JSXDR_DECODE);
 		if ( xdr == NULL )
 			return NULL;
 		JS_XDRMemSetData( xdr, data, compFileSize );
 		JSBool xdrSuccess = JS_XDRScript( xdr, &script );
 		if ( xdrSuccess != JS_TRUE )
 			return NULL;
-		// manage BIG_ENDIAN here ?
+		// [TBD] manage BIG_ENDIAN here ?
 		JS_XDRMemSetData(xdr, NULL, 0);
-    JS_XDRDestroy(xdr);
-    JS_free( cx, data );
-  } else {
+		JS_XDRDestroy(xdr);
+		JS_free( cx, data );
+	} else {
 
-    script = JS_CompileFile(cx, obj, fileName);
+		script = JS_CompileFile(cx, obj, fileName);
 
 		if ( useCompFile && script != NULL ) {
 
 			JSXDRState *xdr = JS_XDRNewMem(cx,JSXDR_ENCODE);
-	    if (!xdr)
+			if (!xdr)
 				return NULL;
 			JSBool xdrSuccess = JS_XDRScript( xdr, &script );
 			if ( xdrSuccess != JS_TRUE )
 				return NULL;
-			FILE *file  = fopen( compiledFileName, "wb" );
+			FILE *file  = fopen( compiledFileName, "wb" ); // [TBD] use open/close/read/... instead of fopen/fclose/fread/...
 			if ( file != NULL ) { // if the file cannot be write, this is not an error ( eg. read-only drive )
+
 				uint32 length;
 				void *buf = JS_XDRMemGetData( xdr, &length );
 				if ( buf == NULL )
 					return NULL;
 				// manage BIG_ENDIAN here ?
-				fwrite( buf, 1, length, file );
-				fclose(file);
+				fwrite( buf, 1, length, file ); // [TBD] use open/close/read/... instead of fopen/fclose/fread/...
+				fclose(file); // [TBD] use open/close/read/... instead of fopen/fclose/fread/...
 			}
 			JS_XDRDestroy( xdr );
 		}
 	}
-  return script;
+	return script;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

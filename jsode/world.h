@@ -4,7 +4,7 @@ DECLARE_CLASS( World )
 #define WORLD_SPACE_PROPERTY_NAME "space"
 
 
-#define WORLD_SLOT_CONTACTGROUP 0
+//#define WORLD_SLOT_CONTACTGROUP 0
 #define WORLD_SLOT_SPACE 1
 
 inline JSBool ValToWorldID( JSContext *cx, jsval val, ode::dWorldID *worldId ) {
