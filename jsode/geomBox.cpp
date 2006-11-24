@@ -22,7 +22,7 @@ DEFINE_PROPERTY( lengthsSetter ) {
 	
 	ode::dGeomID geom = (ode::dGeomID)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE( geom );
-	//RT_ASSERT_NUMBER( *vp );
+	RT_ASSERT_NUMBER( *vp );
 	ode::dVector3 vector;
 	FloatArrayToVector(cx, 3, vp, vector);
 	ode::dGeomBoxSetLengths(geom, vector[0], vector[1], vector[2]);

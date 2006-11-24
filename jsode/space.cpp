@@ -29,8 +29,8 @@ DEFINE_CONSTRUCTOR() {
 	if ( argc >= 1 )
 		if ( ValToSpaceID(cx, argv[0], &parentSpace) == JS_FALSE )
 			return JS_FALSE;
-	ode::dSpaceID spaceId = ode::dHashSpaceCreate(parentSpace);
-	JS_SetPrivate(cx, obj, spaceId); // dSimpleSpaceCreate
+	ode::dSpaceID spaceId = ode::dSimpleSpaceCreate(parentSpace);
+	JS_SetPrivate(cx, obj, spaceId); // dSimpleSpaceCreate / dHashSpaceCreate / dQuadTreeSpaceCreate
 	// ode::dHashSpaceSetLevels(spaceId, // [TBD] use this
 	return JS_TRUE;
 }

@@ -5,7 +5,7 @@ function main() {
 
 	var g = new GeomBox();
 
-	return;
+//	return;
 
 	/*
 	var world = new World;
@@ -56,6 +56,8 @@ function main() {
 	joint.body2 = body2;
 	joint.anchor = [10,0,0];
 	joint.axis = [1,1,1];
+	
+	joint.CFM = Infinity;
 
 	joint.useFeedback = true;
 

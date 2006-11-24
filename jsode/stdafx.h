@@ -22,3 +22,5 @@ namespace ode {
 }
 
 typedef ode::dReal real;
+
+#include "support.h"

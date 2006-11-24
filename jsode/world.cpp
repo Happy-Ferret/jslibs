@@ -118,16 +118,17 @@ DEFINE_FUNCTION( Step ) {
 	if ( ValToSpaceID(cx, val, &spaceId) == JS_FALSE )
 		return JS_FALSE;
 
-//	JS_GetReservedSlot(cx, obj, WORLD_SLOT_CONTACTGROUP, &val);
-//	ode::dJointGroupID contactgroup = (ode::dJointGroupID)JSVAL_TO_PRIVATE(val);
-	ode::dJointGroupID contactgroup = ode::dJointGroupCreate(0);
-
 	jsval defaultSurfaceParametersObject;
 	JS_GetProperty(cx, obj, DEFAULT_SURFACE_PARAMETERS_PROPERTY_NAME, &defaultSurfaceParametersObject );
 	RT_ASSERT( defaultSurfaceParametersObject != JSVAL_VOID && JSVAL_IS_OBJECT(defaultSurfaceParametersObject), "Unable to read defaultSurfaceParameters." ); // [TBD] simplify RT_ASSERT
 	RT_ASSERT_CLASS( JSVAL_TO_OBJECT(defaultSurfaceParametersObject), &classSurfaceParameters ); // [TBD] simplify RT_ASSERT
 	ode::dSurfaceParameters *defaultSurfaceParameters = (ode::dSurfaceParameters*)JS_GetPrivate(cx, JSVAL_TO_OBJECT(defaultSurfaceParametersObject)); // beware: local variable !
 	RT_ASSERT_RESOURCE( defaultSurfaceParameters );
+
+
+//	JS_GetReservedSlot(cx, obj, WORLD_SLOT_CONTACTGROUP, &val);
+//	ode::dJointGroupID contactgroup = (ode::dJointGroupID)JSVAL_TO_PRIVATE(val);
+	ode::dJointGroupID contactgroup = ode::dJointGroupCreate(0);
 
 	ColideContextPrivate ccp = { defaultSurfaceParameters, contactgroup, worldID };
 	ode::dSpaceCollide(spaceId, (void*)&ccp, &nearCallback);

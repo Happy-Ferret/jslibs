@@ -157,6 +157,18 @@ inline JSBool GetNativeInterface( JSContext *cx, JSObject *obj, const char *name
 
 ////
 
+ 
+inline bool IsPInfinity( JSContext *cx, jsval val ) {
+	
+	return JS_GetPositiveInfinityValue(cx) == val;
+}
+
+inline bool IsNInfinity( JSContext *cx, jsval val ) {
+	
+	return JS_GetNegativeInfinityValue(cx) == val;
+}
+
+
 inline bool InheritFrom( JSContext *cx, JSObject *obj, JSClass *clasp ) {
 
 	while( obj != NULL ) {

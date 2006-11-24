@@ -41,6 +41,7 @@ int ReadMatrix(void *pv, float **pm) { // Doc: __declspec(noinline) tells the co
 	return true;
 }
 
+
 JSBool SetupReadMatrix(JSContext *cx, JSObject *obj, ode::dGeomID geomId) {
 
 	return SetNativeInterface(cx, obj, NI_READ_MATRIX44, (FunctionPointer)ReadMatrix, geomId);

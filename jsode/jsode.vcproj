@@ -192,7 +192,15 @@
 				>
 			</File>
 			<File
+				RelativePath=".\geomCapsule.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\geomPlane.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\geomRay.cpp"
 				>
 			</File>
 			<File
@@ -287,6 +295,10 @@
 			</File>
 			<File
 				RelativePath=".\stdafx.h"
+				>
+			</File>
+			<File
+				RelativePath=".\support.h"
 				>
 			</File>
 			<File

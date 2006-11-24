@@ -47,6 +47,8 @@ extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj)
 	INIT_CLASS( GeomSphere );
 	INIT_CLASS( GeomBox );
 	INIT_CLASS( GeomPlane );
+	INIT_CLASS( GeomCapsule );
+	INIT_CLASS( GeomRay );
 	INIT_CLASS( World );
 	INIT_CLASS( SurfaceParameters );
 

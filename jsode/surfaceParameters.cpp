@@ -3,6 +3,7 @@
 
 BEGIN_CLASS( SurfaceParameters )
 
+
 DEFINE_FINALIZE() {
 	
 	ode::dSurfaceParameters *data = (ode::dSurfaceParameters*)JS_GetPrivate(cx, obj);
@@ -15,7 +16,6 @@ DEFINE_FINALIZE() {
 DEFINE_CONSTRUCTOR() {
 
 	static ode::dSurfaceParameters initSurfaceParameters = {0};
-
 	RT_ASSERT_CONSTRUCTING(_class);
 	ode::dSurfaceParameters *data = (ode::dSurfaceParameters*)malloc(sizeof(ode::dSurfaceParameters));
 	*data = initSurfaceParameters;
@@ -33,52 +33,47 @@ DEFINE_PROPERTY( surfaceSetter ) {
 
 	ode::dSurfaceParameters *surface = (ode::dSurfaceParameters*)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(surface); // [TBD] check if NULL is meaningful for joints !
-	
-	jsdouble dval;
-	if ( *vp == JSVAL_VOID )
-		dval = dInfinity;
-	else
-		JS_ValueToNumber(cx, *vp, &dval);
-
+	RT_ASSERT_NUMBER( *vp );
+	ode::dReal value = JSValToODEReal(cx, *vp);
 	switch(JSVAL_TO_INT(id)) {
 		case mu:
-			surface->mu = dval;
+			surface->mu = value;
 			break;
 		case mu2:
 			surface->mode |= ode::dContactMu2;
-			surface->mu2 = dval;
+			surface->mu2 = value;
 			break;
 		case bounce:
 			surface->mode |= ode::dContactBounce;
-			surface->bounce = dval;
+			surface->bounce = value;
 			break;
 		case bounceVel:
 			surface->mode |= ode::dContactBounce;
-			surface->bounce_vel = dval;
+			surface->bounce_vel = value;
 			break;
 		case softERP:
 			surface->mode |= ode::dContactSoftERP;
-			surface->soft_erp = dval;
+			surface->soft_erp = value;
 			break;
 		case softCFM:
 			surface->mode |= ode::dContactSoftCFM;
-			surface->soft_cfm = dval;
+			surface->soft_cfm = value;
 			break;
 		case motion1:
 			surface->mode |= ode::dContactMotion1;
-			surface->motion1 = dval;
+			surface->motion1 = value;
 			break;
 		case motion2:
 			surface->mode |= ode::dContactMotion2;
-			surface->motion2 = dval;
+			surface->motion2 = value;
 			break;
 		case slip1:
 			surface->mode |= ode::dContactSlip1;
-			surface->slip1 = dval;
+			surface->slip1 = value;
 			break;
 		case slip2:
 			surface->mode |= ode::dContactSlip2;
-			surface->slip2 = dval;
+			surface->slip2 = value;
 			break;
 	}  
 // Doc: http://opende.sourceforge.net/wiki/index.php/Manual_%28Joint_Types_and_Functions%29#Contact

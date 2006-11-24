@@ -3,6 +3,8 @@
 #include "body.h"
 #include "world.h"
 
+#include "math.h"
+
 BEGIN_CLASS( Joint )
 
 	// Api: dBodyID dJointGetBody (dJointID, int index);
@@ -244,18 +246,14 @@ DEFINE_PROPERTY( jointParamSetter ) {
 
 	ode::dJointID jointId = (ode::dJointID)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(jointId);
-	jsdouble value;
-	JS_ValueToNumber(cx, *vp, &value);
+	RT_ASSERT_NUMBER( *vp );
+	
 	int parameter;
 	switch(JSVAL_TO_INT(id)) {
 		case loStop:
-			if ( *vp == JSVAL_VOID )
-				value = -dInfinity;
 			parameter = ode::dParamLoStop;
 			break;
 		case hiStop:
-			if ( *vp == JSVAL_VOID )
-				value = dInfinity;
 			parameter = ode::dParamHiStop;
 			break;
 		case bounce:
@@ -277,7 +275,7 @@ DEFINE_PROPERTY( jointParamSetter ) {
 			parameter = ode::dParamFMax;
 			break;
 	}
-	JointSetParam(jointId, parameter, value);
+	JointSetParam(jointId, parameter, JSValToODEReal(cx, *vp));
 	return JS_TRUE;
 }
 
