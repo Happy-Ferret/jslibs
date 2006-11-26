@@ -11,8 +11,7 @@ DEFINE_CONSTRUCTOR() {
 	RT_ASSERT_CONSTRUCTING(&classGeomCapsule);
 	ode::dSpaceID space = 0;
 	if ( argc >= 1 ) // place it in a space ?
-		if ( ValToSpaceID(cx, argv[0], &space) == JS_FALSE )
-			return JS_FALSE;
+		RT_ASSERT_RETURN( ValToSpaceID(cx, argv[0], &space) )
 	ode::dGeomID geomId = ode::dCreateCapsule(space, 1, 1); // default radius and length are 1
 	JS_SetPrivate(cx, obj, geomId);
 	SetupReadMatrix(cx,obj,geomId); // [TBD] check return status

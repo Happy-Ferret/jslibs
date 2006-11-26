@@ -10,8 +10,7 @@ DEFINE_CONSTRUCTOR() {
 	RT_ASSERT_CONSTRUCTING(&classGeomRay);
 	ode::dSpaceID space = 0;
 	if ( argc >= 1 ) // place it in a space ?
-		if ( ValToSpaceID(cx, argv[0], &space) == JS_FALSE )
-			return JS_FALSE;
+		RT_ASSERT_RETURN( ValToSpaceID(cx, argv[0], &space) )
 	ode::dGeomID geomId = ode::dCreateRay(space, 1); // default ray length is 1
 	JS_SetPrivate(cx, obj, geomId);
 	SetupReadMatrix(cx,obj,geomId); // [TBD] check return status
@@ -38,7 +37,7 @@ DEFINE_PROPERTY( lengthGetter ) {
 }
 
 
-DEFINE_PROPERTY( positionSetter ) {
+DEFINE_PROPERTY( startSetter ) {
 	
 	ode::dGeomID geom = (ode::dGeomID)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE( geom );
@@ -49,7 +48,7 @@ DEFINE_PROPERTY( positionSetter ) {
 	return JS_TRUE;
 }
 
-DEFINE_PROPERTY( positionGetter ) {
+DEFINE_PROPERTY( startGetter ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE( geom );
@@ -91,7 +90,7 @@ CONFIGURE_CLASS
 
 	BEGIN_PROPERTY_SPEC
 		PROPERTY( length )
-		PROPERTY( position )
+		PROPERTY( start )
 		PROPERTY( direction )
 	END_PROPERTY_SPEC
 

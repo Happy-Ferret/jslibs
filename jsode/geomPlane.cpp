@@ -11,8 +11,7 @@ DEFINE_CONSTRUCTOR() {
 	RT_ASSERT_CONSTRUCTING(&classGeomPlane);
 	ode::dSpaceID space = 0;
 	if ( argc >= 1 ) // place it in a space ?
-		if ( ValToSpaceID(cx, argv[0], &space) == JS_FALSE )
-			return JS_FALSE;
+		RT_ASSERT_RETURN( ValToSpaceID(cx, argv[0], &space) )
 	ode::dGeomID geomId = ode::dCreatePlane(space, 0,0,1,0); // default lengths are 1
 	JS_SetPrivate(cx, obj, geomId);
 	SetupReadMatrix(cx,obj,geomId); // [TBD] check return status

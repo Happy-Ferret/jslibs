@@ -133,11 +133,16 @@ DEFINE_FUNCTION( Step ) {
 	ColideContextPrivate ccp = { defaultSurfaceParameters, contactgroup, worldID };
 	ode::dSpaceCollide(spaceId, (void*)&ccp, &nearCallback);
 
-	if ( argc >= 2 && argv[1] == JSVAL_TRUE ) // quick ?
-		ode::dWorldQuickStep(worldID, value);
-	else
-		ode::dWorldStep(worldID, value);
+	// [TBD] see dWorldSetQuickStepW and dWorldSetAutoEnableDepthSF1
 
+	if ( argc >= 2 ) {
+
+		RT_ASSERT_INT(argv[1]);
+		ode::dWorldSetQuickStepNumIterations(worldID, JSVAL_TO_INT(argv[1]));
+		ode::dWorldQuickStep(worldID, value);
+	} else {
+		ode::dWorldStep(worldID, value);
+	}
 	ode::dJointGroupDestroy(contactgroup); // dJointGroupEmpty calls dJointGroupEmpty
 	return JS_TRUE;
 }
@@ -163,7 +168,7 @@ DEFINE_PROPERTY( gravitySetter ) {
 }
 
 
-enum { ERP, CFM, quickStepNumIterations, contactSurfaceLayer };
+enum { ERP, CFM, /*quickStepNumIterations,*/ contactSurfaceLayer };
 
 DEFINE_PROPERTY( realSetter ) {
 
@@ -178,9 +183,9 @@ DEFINE_PROPERTY( realSetter ) {
 		case CFM:
 			ode::dWorldSetCFM(worldID, value);
 			break;
-		case quickStepNumIterations:
-			ode::dWorldSetQuickStepNumIterations(worldID, (int)value);
-			break;
+//		case quickStepNumIterations:
+//			ode::dWorldSetQuickStepNumIterations(worldID, (int)value);
+//			break;
 		case contactSurfaceLayer:
 			ode::dWorldSetContactSurfaceLayer(worldID, value);
 			break;
@@ -201,9 +206,9 @@ DEFINE_PROPERTY( realGetter ) {
 		case CFM:
 			value = ode::dWorldGetCFM(worldID);
 			break;
-		case quickStepNumIterations:
-			value = ode::dWorldGetQuickStepNumIterations(worldID);
-			break;
+//		case quickStepNumIterations:
+//			value = ode::dWorldGetQuickStepNumIterations(worldID);
+//			break;
 		case contactSurfaceLayer:
 			value = ode::dWorldGetContactSurfaceLayer(worldID);
 			break;
@@ -240,7 +245,7 @@ CONFIGURE_CLASS
 		PROPERTY_READ_STORE( env )
 		PROPERTY_SWITCH( ERP, real )
 		PROPERTY_SWITCH( CFM, real )
-		PROPERTY_SWITCH( quickStepNumIterations, real )
+//		PROPERTY_SWITCH( quickStepNumIterations, real )
 		PROPERTY_SWITCH( contactSurfaceLayer, real )
 	END_PROPERTY_SPEC
 

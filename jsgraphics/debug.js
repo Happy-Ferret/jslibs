@@ -9,7 +9,6 @@ Exec('winTools.js');
 
 
 var world = new World;
-//world.quickStepNumIterations = 20; // only need for quickstep
 world.defaultSurfaceParameters.mu = 5;
 world.defaultSurfaceParameters.softERP = 0.1;
 
@@ -33,11 +32,15 @@ joint.axis = [1,0,0];
 
 
 var box = [];
-for (var y=0; y<10; y++) {
+for (var y=0; y<100; y++) {
+var f = 4;
+var r = 5 - (y/40)
+var cy = Math.cos(y/f)*r
+var sy = Math.sin(y/f)*r
 
 	var b = new Body(world);
 	new GeomBox( world.space ).body = b;	
-	b.position = [0.5,0.5,y*1.1]
+	b.position = [cy,sy,y/10-1]
 	box.push(b);	
 }
 
@@ -179,7 +182,7 @@ function Render() {
 	var delta = tmp-time;
 	if ( delta > 50)
 		delta = 50;
-	time && world.Step(delta/1000,true);
+	time && world.Step(delta/1000,5);
 	time = tmp;
 }
 

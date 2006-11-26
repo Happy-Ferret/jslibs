@@ -60,15 +60,6 @@ DEFINE_FUNCTION( Destroy ) {
 }
 
 
-DEFINE_FUNCTION( ClearOffset ) {
-
-	ode::dGeomID geom = (ode::dGeomID)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE( geom );
-	ode::dGeomClearOffset(geom);
-	return JS_TRUE;
-}
-
-
 DEFINE_PROPERTY( enableSetter ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JS_GetPrivate(cx, obj);
@@ -109,6 +100,30 @@ DEFINE_PROPERTY( body ) {
 }
 
 
+// setting undefined means clear the offset
+DEFINE_PROPERTY( offset ) {
+
+	ode::dGeomID geom = (ode::dGeomID)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE(geom);
+	if ( *vp == JSVAL_VOID ) {
+		ode::dGeomClearOffset(geom);
+	} else {
+		float tmp[16], *m = tmp;
+		NIMatrix44Read ReadMatrix;
+		void *descriptor;
+		GetNativeInterface(cx, obj, NI_READ_MATRIX44, (FunctionPointer*)&ReadMatrix, &descriptor);
+		RT_ASSERT( ReadMatrix != NULL && descriptor != NULL, "Invalid matrix interface." );
+		ReadMatrix(descriptor, (float**)&m);
+		RT_ASSERT( *m != NULL, "Invalid matrix." );
+		ode::dMatrix3 m3 = { m[0], m[4], m[8], 0, m[1], m[5], m[9], 0, m[2], m[6], m[10], 0 }; // [TBD] check
+		ode::dGeomSetOffsetRotation(geom, m3);
+		ode::dGeomSetOffsetPosition(geom, m[3], m[7], m[11]);
+	}
+	return JS_TRUE;
+}
+
+
+
 DEFINE_PROPERTY( tansformation ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JS_GetPrivate(cx, obj);
@@ -119,6 +134,9 @@ DEFINE_PROPERTY( tansformation ) {
 	GetNativeInterface(cx, obj, NI_READ_MATRIX44, (FunctionPointer*)&ReadMatrix, &descriptor);
 	RT_ASSERT( ReadMatrix != NULL && descriptor != NULL, "Invalid matrix interface." );
 	ReadMatrix(descriptor, (float**)&m);
+	RT_ASSERT( *m != NULL, "Invalid matrix." );
+	ode::dMatrix3 m3 = { m[0], m[4], m[8], 0, m[1], m[5], m[9], 0, m[2], m[6], m[10], 0 }; // [TBD] check
+	ode::dGeomSetRotation(geom, m3);
 	ode::dGeomSetPosition(geom, m[3], m[7], m[11]);
 	return JS_TRUE;
 }
@@ -145,11 +163,21 @@ DEFINE_PROPERTY( positionSetter ) {
 }
 
 
+/*
+DEFINE_FUNCTION( ClearOffset ) {
+
+	ode::dGeomID geom = (ode::dGeomID)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE( geom );
+	ode::dGeomClearOffset(geom);
+	return JS_TRUE;
+}
+
+
 DEFINE_PROPERTY( offsetPositionGetter ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(geom);
-	const ode::dReal *vector = ode::dGeomGetOffsetPosition(geom);
+	const ode::dReal *vector = ode::dGeomGetOffsetPosition(geom); // [TBD] dGeomGetOffsetRotation 
 	FloatVectorToArray(cx, 3, vector, vp);
 	return JS_TRUE;
 }
@@ -161,25 +189,26 @@ DEFINE_PROPERTY( offsetPositionSetter ) {
 	RT_ASSERT_RESOURCE(geom);
 	ode::dVector3 vector;
 	FloatArrayToVector(cx, 3, vp, vector);
-	ode::dGeomSetOffsetPosition( geom, vector[0], vector[1], vector[2] );
+	ode::dGeomSetOffsetPosition( geom, vector[0], vector[1], vector[2] ); // [TBD] dGeomSetOffsetWorldRotation 
 	return JS_TRUE;
 }
-
+*/
 
 
 CONFIGURE_CLASS
 
 	BEGIN_FUNCTION_SPEC
 		FUNCTION( Destroy )
-		FUNCTION( ClearOffset )
+//		FUNCTION( ClearOffset )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
 		PROPERTY_WRITE_STORE( body )
 		PROPERTY_WRITE( tansformation )
+		PROPERTY_WRITE( offset )
 		PROPERTY( enable )
 		PROPERTY( position )
-		PROPERTY( offsetPosition )
+//		PROPERTY( offsetPosition )
 	END_PROPERTY_SPEC
 
 END_CLASS
