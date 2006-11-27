@@ -9,6 +9,7 @@
 #define MAX_CONTACTS 100
 
 struct ColideContextPrivate {
+	JSContext *cx;
 	ode::dSurfaceParameters *defaultSurfaceParameters;
 	ode::dJointGroupID contactGroupId;
 	ode::dWorldID worldId;
@@ -29,7 +30,7 @@ static void nearCallback (void *data, ode::dGeomID o1, ode::dGeomID o2) {
 
 	int i,n;
 	ode::dContact contact[MAX_CONTACTS];
-	n = ode::dCollide(o1,o2,MAX_CONTACTS,&contact[0].geom,sizeof(ode::dContact));
+	n = ode::dCollide(o1, o2, MAX_CONTACTS, &contact[0].geom, sizeof(ode::dContact));
 //	ccp->contactCount = n;
 	for ( i=0; i<n; i++ ) {
 
@@ -115,22 +116,22 @@ DEFINE_FUNCTION( Step ) {
 	ode::dSpaceID spaceId;
 	jsval val;
 	JS_GetProperty(cx, obj, WORLD_SPACE_PROPERTY_NAME, &val);
-	if ( ValToSpaceID(cx, val, &spaceId) == JS_FALSE )
-		return JS_FALSE;
+	RT_ASSERT_DEFINED( val );
+	RT_ASSERT_RETURN( ValToSpaceID(cx, val, &spaceId) );
 
 	jsval defaultSurfaceParametersObject;
-	JS_GetProperty(cx, obj, DEFAULT_SURFACE_PARAMETERS_PROPERTY_NAME, &defaultSurfaceParametersObject );
-	RT_ASSERT( defaultSurfaceParametersObject != JSVAL_VOID && JSVAL_IS_OBJECT(defaultSurfaceParametersObject), "Unable to read defaultSurfaceParameters." ); // [TBD] simplify RT_ASSERT
+	JS_GetProperty(cx, obj, DEFAULT_SURFACE_PARAMETERS_PROPERTY_NAME, &defaultSurfaceParametersObject);
+	RT_ASSERT_DEFINED( defaultSurfaceParametersObject );
+	RT_ASSERT_OBJECT( defaultSurfaceParametersObject );
 	RT_ASSERT_CLASS( JSVAL_TO_OBJECT(defaultSurfaceParametersObject), &classSurfaceParameters ); // [TBD] simplify RT_ASSERT
 	ode::dSurfaceParameters *defaultSurfaceParameters = (ode::dSurfaceParameters*)JS_GetPrivate(cx, JSVAL_TO_OBJECT(defaultSurfaceParametersObject)); // beware: local variable !
 	RT_ASSERT_RESOURCE( defaultSurfaceParameters );
-
 
 //	JS_GetReservedSlot(cx, obj, WORLD_SLOT_CONTACTGROUP, &val);
 //	ode::dJointGroupID contactgroup = (ode::dJointGroupID)JSVAL_TO_PRIVATE(val);
 	ode::dJointGroupID contactgroup = ode::dJointGroupCreate(0);
 
-	ColideContextPrivate ccp = { defaultSurfaceParameters, contactgroup, worldID };
+	ColideContextPrivate ccp = { cx, defaultSurfaceParameters, contactgroup, worldID };
 	ode::dSpaceCollide(spaceId, (void*)&ccp, &nearCallback);
 
 	// [TBD] see dWorldSetQuickStepW and dWorldSetAutoEnableDepthSF1
@@ -220,7 +221,7 @@ DEFINE_PROPERTY( realGetter ) {
 
 DEFINE_PROPERTY( env ) {
 
-	if ( *vp == JSVAL_VOID ) { //  create it if it does not exist
+	if ( *vp == JSVAL_VOID ) { //  create it if it does not exist and store it (cf. PROPERTY_READ_STORE) 
 
 		JSObject *staticBody = JS_NewObject(cx, &classBody, NULL, NULL);
 		RT_ASSERT_ALLOC(staticBody);

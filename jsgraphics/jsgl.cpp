@@ -458,6 +458,7 @@ DEFINE_FUNCTION( Line ) { // 2D
 }
 
 
+// [TBD] manage compression: http://www.opengl.org/registry/specs/ARB/texture_compression.txt
 DEFINE_FUNCTION( Texture ) {
 
 	RT_ASSERT_ARGC(1);

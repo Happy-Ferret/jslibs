@@ -69,6 +69,9 @@
 #define RT_ASSERT_TYPE(value,jsType) \
 	RT_ASSERT( JS_TypeOfValue(cx, (value)) == (jsType), RT_ERROR_UNEXPECTED_TYPE );
 
+#define RT_ASSERT_DEFINED(value) \
+	RT_ASSERT( value != JSVAL_VOID, "Value is undefined." );
+
 #define RT_ASSERT_OBJECT(value) \
 	RT_ASSERT( JSVAL_IS_OBJECT(value), RT_ERROR_UNEXPECTED_TYPE " Object expected." );
 
@@ -88,7 +91,7 @@
 	RT_ASSERT( JS_GetClass(jsObject) == (jsClass), RT_ERROR_INVALID_CLASS );
 
 #define RT_ASSERT_CLASS_NAME(jsObject, className) \
-	RT_ASSERT( strcmp(JS_GetClass(jsObject)->name, (className)) == 0,  RT_ERROR_INVALID_CLASS );
+	RT_ASSERT( strcmp(JS_GetClass(jsObject)->name, (className)) == 0,  RT_ERROR_INVALID_CLASS " Expecting " className "." );
 
 #define RT_ASSERT_ARGC(minCount) \
 	RT_ASSERT_1( argc >= (minCount), RT_ERROR_MISSING_N_ARGUMENT, (minCount)-argc );

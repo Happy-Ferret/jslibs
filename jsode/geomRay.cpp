@@ -14,8 +14,13 @@ DEFINE_CONSTRUCTOR() {
 	ode::dGeomID geomId = ode::dCreateRay(space, 1); // default ray length is 1
 	JS_SetPrivate(cx, obj, geomId);
 	SetupReadMatrix(cx,obj,geomId); // [TBD] check return status
+
+
+
+//	ode::dGeomSetData(geomId, obj); // [TBD] root obj !
 	return JS_TRUE;
 }
+
 
 DEFINE_PROPERTY( lengthSetter ) {
 	

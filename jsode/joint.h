@@ -4,7 +4,3 @@ DECLARE_CLASS( JointHinge );
 DECLARE_CLASS( JointSlider );
 DECLARE_CLASS( JointFixed );
 
-//#define JOINT_SLOT_FEEDBACK 0
-
-//#define JOINT_SLOT_BODY1 0
-//#define JOINT_SLOT_BODY2 1
