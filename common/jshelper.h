@@ -70,16 +70,16 @@
 	RT_ASSERT( JS_TypeOfValue(cx, (value)) == (jsType), RT_ERROR_UNEXPECTED_TYPE );
 
 #define RT_ASSERT_DEFINED(value) \
-	RT_ASSERT( value != JSVAL_VOID, "Value is undefined." );
+	RT_ASSERT( value != JSVAL_VOID, "Value is not defined." );
 
 #define RT_ASSERT_OBJECT(value) \
 	RT_ASSERT( JSVAL_IS_OBJECT(value), RT_ERROR_UNEXPECTED_TYPE " Object expected." );
 
 #define RT_ASSERT_INT(value) \
-	RT_ASSERT( JSVAL_IS_INT(value), RT_ERROR_UNEXPECTED_TYPE " integer expected." );
+	RT_ASSERT( JSVAL_IS_INT(value), RT_ERROR_UNEXPECTED_TYPE " Integer expected." );
 
 #define RT_ASSERT_NUMBER(value) \
-	RT_ASSERT( JSVAL_IS_NUMBER(value), RT_ERROR_UNEXPECTED_TYPE " number expected." );
+	RT_ASSERT( JSVAL_IS_NUMBER(value), RT_ERROR_UNEXPECTED_TYPE " Number expected." );
 
 #define RT_ASSERT_ALLOC(pointer) \
 	RT_ASSERT( (pointer) != NULL, RT_ERROR_OUT_OF_MEMORY );

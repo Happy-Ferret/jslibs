@@ -1,4 +1,3 @@
-
 inline ode::dReal JSValToODEReal( JSContext *cx, jsval val ) {
 
 	jsdouble value;

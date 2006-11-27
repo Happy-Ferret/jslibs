@@ -79,7 +79,7 @@ function main() {
 	//	Print( ' Position:', body1.position , '\n' );
 
 	//	Print( ' Force:', body.force , '\n' );
-		world.Step(0.1,true);
+		world.Step(0.1,20);
 		
 		Print( ' ->', joint.body1Torque, '\n' );
 		
