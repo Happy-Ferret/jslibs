@@ -50,6 +50,13 @@ JSBool SetupReadMatrix(JSContext *cx, JSObject *obj, ode::dGeomID geomId) {
 
 BEGIN_CLASS( Geom )
 
+DEFINE_FINALIZE() {
+
+	ode::dGeomID geomId = (ode::dGeomID)JS_GetPrivate(cx, obj);
+	if ( geomId != NULL )
+		ode::dGeomSetData(geomId, NULL);
+}
+
 DEFINE_FUNCTION( Destroy ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JS_GetPrivate(cx, obj);
@@ -197,6 +204,8 @@ DEFINE_PROPERTY( offsetPositionSetter ) {
 
 CONFIGURE_CLASS
 
+	HAS_FINALIZE
+	
 	BEGIN_FUNCTION_SPEC
 		FUNCTION( Destroy )
 //		FUNCTION( ClearOffset )
@@ -210,6 +219,8 @@ CONFIGURE_CLASS
 		PROPERTY( position )
 //		PROPERTY( offsetPosition )
 	END_PROPERTY_SPEC
+
+	HAS_PRIVATE // needed because Finalize use JS_GetPrivate
 
 END_CLASS
 

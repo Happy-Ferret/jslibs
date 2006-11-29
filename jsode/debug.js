@@ -37,7 +37,9 @@ function main() {
 	//world.gravity = [0,0,-9.81];
 
 	var body1 = new Body(world);
-	new GeomBox( world.space ).body = body1;
+	var g = new GeomBox( world.space );
+	g.body = body1;
+	g.impact = function(n, against, pos) { Print('hit'+n+'@['+pos+']\n') }
 
 
 	var body2 = new Body(world);
@@ -86,7 +88,8 @@ function main() {
 	}
 
 	//Print( 'joint angle rate:'+joint.angleRate ,'\n');
-
+	
+	delete g.impact;
 }
 
 main();

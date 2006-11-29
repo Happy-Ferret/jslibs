@@ -94,16 +94,16 @@ CONFIGURE_CLASS
 	HAS_FINALIZE
 
 	BEGIN_PROPERTY_SPEC
-		PROPERTY_SWITCH_STORE( mu, surface )
-		PROPERTY_SWITCH_STORE( mu2, surface )
-		PROPERTY_SWITCH_STORE( bounce, surface )
+		PROPERTY_SWITCH_STORE( mu       , surface )
+		PROPERTY_SWITCH_STORE( mu2      , surface )
+		PROPERTY_SWITCH_STORE( bounce   , surface )
 		PROPERTY_SWITCH_STORE( bounceVel, surface )
-		PROPERTY_SWITCH_STORE( softERP, surface )
-		PROPERTY_SWITCH_STORE( softCFM, surface )
-		PROPERTY_SWITCH_STORE( motion1, surface )
-		PROPERTY_SWITCH_STORE( motion2, surface )
-		PROPERTY_SWITCH_STORE( slip1, surface )
-		PROPERTY_SWITCH_STORE( slip2, surface )
+		PROPERTY_SWITCH_STORE( softERP  , surface )
+		PROPERTY_SWITCH_STORE( softCFM  , surface )
+		PROPERTY_SWITCH_STORE( motion1  , surface )
+		PROPERTY_SWITCH_STORE( motion2  , surface )
+		PROPERTY_SWITCH_STORE( slip1    , surface )
+		PROPERTY_SWITCH_STORE( slip2    , surface )
 	END_PROPERTY_SPEC
 
 	HAS_PRIVATE

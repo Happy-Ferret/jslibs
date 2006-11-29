@@ -6,7 +6,7 @@
 
 #include "stdlib.h"
 
-#define MAX_CONTACTS 100
+#define MAX_CONTACTS 50
 
 struct ColideContextPrivate {
 	JSContext *cx;
@@ -20,7 +20,7 @@ static void nearCallback (void *data, ode::dGeomID o1, ode::dGeomID o2) {
 
 	// Doc: http://opende.sourceforge.net/wiki/index.php/Manual_%28Joint_Types_and_Functions%29
 	ColideContextPrivate *ccp = (ColideContextPrivate*)data; // beware: *data is local to Step function
-
+	JSContext *cx = ccp->cx;
 	// ignore collisions between bodies that are connected by the same joint
 	ode::dBodyID Body1 = NULL, Body2 = NULL;
 	if (o1) Body1 = dGeomGetBody(o1);
@@ -28,27 +28,88 @@ static void nearCallback (void *data, ode::dGeomID o1, ode::dGeomID o2) {
 	if (Body1 && Body2 && dAreConnected(Body1, Body2))
 		return;
 
-	int i,n;
 	ode::dContact contact[MAX_CONTACTS];
-	n = ode::dCollide(o1, o2, MAX_CONTACTS, &contact[0].geom, sizeof(ode::dContact));
-//	ccp->contactCount = n;
-	for ( i=0; i<n; i++ ) {
+	int n = ode::dCollide(o1, o2, MAX_CONTACTS, &contact[0].geom, sizeof(ode::dContact)); // [TBD] or sizeof(ode::dContactGeom) ??? // It is an error for skip to be smaller than sizeof(dContactGeom).
 
-		contact[i].surface = *ccp->defaultSurfaceParameters;
+	if ( n > 0 ) {
 
-/* mixing :
-  dReal mu;		// min
-  dReal mu2;	// min
-  dReal bounce;	// average
-  dReal bounce_vel; // min
-  dReal soft_erp; // average
-  dReal soft_cfm; // average
-  dReal motion1,motion2;	// add
-  dReal slip1,slip2;	// ?
+		JSObject *obj1 = (JSObject*)ode::dGeomGetData(o1);
+		JSObject *obj2 = (JSObject*)ode::dGeomGetData(o2);
+
+		jsval rval, func1 = JSVAL_VOID, func2 = JSVAL_VOID;
+		
+		if ( obj1 != NULL ) { // assert that the javascript object (over the Geom) is not finalized
+
+			JS_GetProperty(cx, obj1, COLLIDE_FEEDBACK_FUNCTION_NAME, &func1);
+			RT_SAFE( if ( func1 != JSVAL_VOID && JS_TypeOfValue(cx, func1) != JSTYPE_FUNCTION ) { JS_ReportError(cx, RT_ERROR_UNEXPECTED_TYPE " Function expected."); return; } ) // we need a function, nothing else
+		}
+
+		if ( obj2 != NULL ) { // assert that the javascript object (over the Geom) is not finalized
+
+			JS_GetProperty(cx, obj2, COLLIDE_FEEDBACK_FUNCTION_NAME, &func2);
+			RT_SAFE( if ( func2 != JSVAL_VOID && JS_TypeOfValue(cx, func2) != JSTYPE_FUNCTION ) { JS_ReportError(cx, RT_ERROR_UNEXPECTED_TYPE " Function expected."); return; } ) // we need a function, nothing else
+		}
+
+		for ( int i=0; i<n; i++ ) {
+
+//			ode::dVector3 vel;
+			if ( func1 != JSVAL_VOID || func2 != JSVAL_VOID ) { // compute impact velocity only if needed
+/*
+
+				ode::dVector3 *pos = &contact[i].geom.pos;
+				ode::dVector3 vel2;
+				if ( Body1 != NULL ) {
+					
+					ode::dBodyGetPointVel( Body1, *pos[0], *pos[1], *pos[2], vel ); // dReal px, dReal py, dReal pz, dVector3 result
+				} else { // static thing
+
+					vel[0] = 0; vel[1] = 0; vel[2] = 0;
+				}
+
+				if ( Body2 != NULL ) {
+					
+					ode::dBodyGetPointVel( Body2, *pos[0], *pos[1], *pos[2], vel2 ); // dReal px, dReal py, dReal pz, dVector3 result
+				} else { // static thing
+					
+					vel2[0] = 0; vel2[1] = 0; vel2[2] = 0;
+				}
+
+				vel[0] += vel2[0];
+				vel[1] += vel2[1];
+				vel[2] += vel2[2];
 */
 
-		ode::dJointID c = ode::dJointCreateContact(ccp->worldId,ccp->contactGroupId,&contact[i]);
-		ode::dJointAttach(c, dGeomGetBody(contact[i].geom.g1), dGeomGetBody(contact[i].geom.g2));
+				jsval pos;
+				FloatVectorToArray(cx, 3, contact[i].geom.pos, &pos);
+
+				if ( func1 != JSVAL_VOID ) {
+
+					jsval rval, argv[] = { INT_TO_JSVAL(i), obj2 ? OBJECT_TO_JSVAL(obj2) : JSVAL_VOID, pos }; // INT_TO_JSVAL(vel[0]), INT_TO_JSVAL(vel[1]), INT_TO_JSVAL(vel[2])
+					JS_CallFunctionValue( cx, obj1, func1, sizeof(argv)/sizeof(*argv), argv, &rval); // JS_CallFunction() DO NOT WORK !!!
+				}
+
+				if ( func2 != JSVAL_VOID ) {
+
+					jsval rval, argv[] = { INT_TO_JSVAL(i), obj1 ? OBJECT_TO_JSVAL(obj1) : JSVAL_VOID, pos }; // INT_TO_JSVAL(vel[0]), INT_TO_JSVAL(vel[1]), INT_TO_JSVAL(vel[2])
+					JS_CallFunctionValue( cx, obj2, func2, sizeof(argv)/sizeof(*argv), argv, &rval); // JS_CallFunction() DO NOT WORK !!!
+				}
+			}
+
+			contact[i].surface = *ccp->defaultSurfaceParameters;
+
+			// mixing :
+			//dReal mu;		// min
+			//dReal mu2;	// min
+			//dReal bounce;	// average
+			//dReal bounce_vel; // min
+			//dReal soft_erp; // average
+			//dReal soft_cfm; // average
+			//dReal motion1,motion2;	// add
+			//dReal slip1,slip2;	// ?
+
+			ode::dJointID c = ode::dJointCreateContact(ccp->worldId,ccp->contactGroupId,&contact[i]);
+			ode::dJointAttach(c, dGeomGetBody(contact[i].geom.g1), dGeomGetBody(contact[i].geom.g2));
+		}
 	}
 }
 
@@ -145,6 +206,10 @@ DEFINE_FUNCTION( Step ) {
 		ode::dWorldStep(worldID, value);
 	}
 	ode::dJointGroupDestroy(contactgroup); // dJointGroupEmpty calls dJointGroupEmpty
+
+	if (JS_IsExceptionPending(cx)) // need JS_ErrorFromException(...) ??
+		return JS_FALSE;
+
 	return JS_TRUE;
 }
 

@@ -128,17 +128,16 @@ DEFINE_FUNCTION( Attach ) {
 void JointSetParam( ode::dJointID jointId, int parameter, ode::dReal value ) {
 
 	switch( ode::dJointGetType(jointId) ) {
-		case ode::dJointTypeBall:
-//			ode::dJointSetBallParam(jointId, parameter, value);
-			break;
 		case ode::dJointTypeHinge:
 			ode::dJointSetHingeParam(jointId, parameter, value);
 			break;
 		case ode::dJointTypeSlider:
 			ode::dJointSetSliderParam(jointId, parameter, value);
 			break;
-		case ode::dJointTypeFixed:
-//			ode::dJointSetFixedParam(jointId, parameter, value);
+		case ode::dJointTypePlane2D:
+			ode::dJointSetPlane2DXParam(jointId, parameter, value); // [TBD] split them
+			ode::dJointSetPlane2DYParam(jointId, parameter, value);
+			ode::dJointSetPlane2DAngleParam(jointId, parameter, value);
 			break;
 	}
 }
@@ -147,17 +146,11 @@ void JointSetParam( ode::dJointID jointId, int parameter, ode::dReal value ) {
 ode::dReal JointGetParam( ode::dJointID jointId, int parameter ) {
 
 	switch( ode::dJointGetType(jointId) ) {
-		case ode::dJointTypeBall:
-//			ode::dJointGetBallParam(jointId, parameter);
-			break;
 		case ode::dJointTypeHinge:
 			ode::dJointGetHingeParam(jointId, parameter);
 			break;
 		case ode::dJointTypeSlider:
 			ode::dJointGetSliderParam(jointId, parameter);
-			break;
-		case ode::dJointTypeFixed:
-//			ode::dJointGetFixedParam(jointId, parameter);
 			break;
 	}
 	return 0;
@@ -330,17 +323,17 @@ CONFIGURE_CLASS
 
 		PROPERTY_WRITE_STORE( useFeedback )
 
-		PROPERTY_SWITCH( body1Force, feedbackVector )
+		PROPERTY_SWITCH( body1Force , feedbackVector )
 		PROPERTY_SWITCH( body1Torque, feedbackVector )
-		PROPERTY_SWITCH( body2Force, feedbackVector )
+		PROPERTY_SWITCH( body2Force , feedbackVector )
 		PROPERTY_SWITCH( body2Torque, feedbackVector )
 
-		PROPERTY_SWITCH( loStop, jointParam )
-		PROPERTY_SWITCH( hiStop, jointParam )
-		PROPERTY_SWITCH( bounce, jointParam )
-		PROPERTY_SWITCH( CFM, jointParam )
-		PROPERTY_SWITCH( stopERP, jointParam )
-		PROPERTY_SWITCH( stopCFM, jointParam )
+		PROPERTY_SWITCH( loStop  , jointParam )
+		PROPERTY_SWITCH( hiStop  , jointParam )
+		PROPERTY_SWITCH( bounce  , jointParam )
+		PROPERTY_SWITCH( CFM     , jointParam )
+		PROPERTY_SWITCH( stopERP , jointParam )
+		PROPERTY_SWITCH( stopCFM , jointParam )
 		PROPERTY_SWITCH( velocity, jointParam )
 		PROPERTY_SWITCH( maxForce, jointParam )
 

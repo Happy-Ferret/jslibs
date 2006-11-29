@@ -14,6 +14,7 @@ DEFINE_CONSTRUCTOR() {
 	ode::dGeomID geomId = ode::dCreateSphere(space, 1); // default radius is 1
 	JS_SetPrivate(cx, obj, geomId);
 	SetupReadMatrix(cx,obj,geomId); // [TBD] check return status
+	ode::dGeomSetData(geomId, obj); // 'obj' do not need to be rooted because Goem's data is reset to NULL when 'obj' is finalized.
 	return JS_TRUE;
 }
 
