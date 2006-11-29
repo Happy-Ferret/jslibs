@@ -5,6 +5,12 @@
 
 BEGIN_CLASS( GeomPlane )
 
+DEFINE_FINALIZE() {
+
+	ode::dGeomID geomId = (ode::dGeomID)JS_GetPrivate(cx, obj);
+	if ( geomId != NULL )
+		ode::dGeomSetData(geomId, NULL);
+}
 
 DEFINE_CONSTRUCTOR() {
 
@@ -44,6 +50,8 @@ DEFINE_PROPERTY( lengthsGetter ) {
 
 
 CONFIGURE_CLASS
+
+	HAS_FINALIZE
 
 	HAS_PROTOTYPE( prototypeGeom )
 	HAS_CONSTRUCTOR

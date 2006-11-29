@@ -69,7 +69,7 @@ function main() {
 	body2.position = [0,0,5]
 	body2.linearVel = [0,0,-5];
 
-	new GeomPlane(world.space);
+	var floor = new GeomPlane(world.space);
 
 	//body.linearVel = [10,10,10];
 	//body.angularVel = [10,0,0];

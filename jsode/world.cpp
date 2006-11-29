@@ -4,6 +4,8 @@
 #include "body.h"
 #include "geom.h"
 
+#include "jsobj.h"
+
 #include "stdlib.h"
 
 #define MAX_CONTACTS 50
@@ -84,13 +86,13 @@ static void nearCallback (void *data, ode::dGeomID o1, ode::dGeomID o2) {
 
 				if ( func1 != JSVAL_VOID ) {
 
-					jsval rval, argv[] = { INT_TO_JSVAL(i), obj2 ? OBJECT_TO_JSVAL(obj2) : JSVAL_VOID, pos }; // INT_TO_JSVAL(vel[0]), INT_TO_JSVAL(vel[1]), INT_TO_JSVAL(vel[2])
+					jsval rval, argv[] = { INT_TO_JSVAL(i), OBJECT_TO_JSVAL(obj1), obj2 ? OBJECT_TO_JSVAL(obj2) : JSVAL_VOID, pos }; // INT_TO_JSVAL(vel[0]), INT_TO_JSVAL(vel[1]), INT_TO_JSVAL(vel[2])
 					JS_CallFunctionValue( cx, obj1, func1, sizeof(argv)/sizeof(*argv), argv, &rval); // JS_CallFunction() DO NOT WORK !!!
 				}
 
 				if ( func2 != JSVAL_VOID ) {
 
-					jsval rval, argv[] = { INT_TO_JSVAL(i), obj1 ? OBJECT_TO_JSVAL(obj1) : JSVAL_VOID, pos }; // INT_TO_JSVAL(vel[0]), INT_TO_JSVAL(vel[1]), INT_TO_JSVAL(vel[2])
+					jsval rval, argv[] = { INT_TO_JSVAL(i), OBJECT_TO_JSVAL(obj2), obj1 ? OBJECT_TO_JSVAL(obj1) : JSVAL_VOID, pos }; // INT_TO_JSVAL(vel[0]), INT_TO_JSVAL(vel[1]), INT_TO_JSVAL(vel[2])
 					JS_CallFunctionValue( cx, obj2, func2, sizeof(argv)/sizeof(*argv), argv, &rval); // JS_CallFunction() DO NOT WORK !!!
 				}
 			}

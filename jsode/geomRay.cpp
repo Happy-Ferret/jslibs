@@ -5,6 +5,13 @@
 
 BEGIN_CLASS( GeomRay )
 
+DEFINE_FINALIZE() {
+
+	ode::dGeomID geomId = (ode::dGeomID)JS_GetPrivate(cx, obj);
+	if ( geomId != NULL )
+		ode::dGeomSetData(geomId, NULL);
+}
+
 DEFINE_CONSTRUCTOR() {
 
 	RT_ASSERT_CONSTRUCTING(&classGeomRay);
@@ -85,6 +92,7 @@ DEFINE_PROPERTY( directionGetter ) {
 
 CONFIGURE_CLASS
 
+	HAS_FINALIZE
 //	CONSTRUCT_PROTOTYPE
 
 	HAS_PROTOTYPE( prototypeGeom )

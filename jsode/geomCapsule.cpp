@@ -5,6 +5,12 @@
 
 BEGIN_CLASS( GeomCapsule )
 
+DEFINE_FINALIZE() {
+
+	ode::dGeomID geomId = (ode::dGeomID)JS_GetPrivate(cx, obj);
+	if ( geomId != NULL )
+		ode::dGeomSetData(geomId, NULL);
+}
 
 DEFINE_CONSTRUCTOR() {
 
@@ -69,6 +75,8 @@ DEFINE_PROPERTY( lengthGetter ) {
 
 
 CONFIGURE_CLASS
+
+	HAS_FINALIZE
 
 	HAS_PROTOTYPE( prototypeGeom )
 	HAS_CONSTRUCTOR

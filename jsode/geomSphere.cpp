@@ -5,6 +5,14 @@
 
 BEGIN_CLASS( GeomSphere )
 
+
+DEFINE_FINALIZE() {
+
+	ode::dGeomID geomId = (ode::dGeomID)JS_GetPrivate(cx, obj);
+	if ( geomId != NULL )
+		ode::dGeomSetData(geomId, NULL);
+}
+
 DEFINE_CONSTRUCTOR() {
 
 	RT_ASSERT_CONSTRUCTING(&classGeomSphere);
@@ -39,6 +47,8 @@ DEFINE_PROPERTY( radiusGetter ) {
 
 
 CONFIGURE_CLASS
+
+	HAS_FINALIZE
 
 	HAS_PROTOTYPE( prototypeGeom )
 	HAS_CONSTRUCTOR
