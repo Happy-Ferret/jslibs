@@ -426,9 +426,17 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
   JS_ShutDown();
 
 // free used modules
-  for ( int i = 0; _moduleList[i]; ++i )
-    ::FreeLibrary(_moduleList[i]);
 
+	typedef void (*ModuleFreeFunction)(void);
+
+	for ( int i = sizeof(_moduleList) / sizeof(*_moduleList) - 1; i >= 0; --i ) // beware: 'i' must be signed
+		if ( _moduleList[i] != NULL ) {
+
+			ModuleFreeFunction moduleFree = (ModuleFreeFunction)::GetProcAddress( _moduleList[i], "ModuleFree" );
+			if ( moduleFree != NULL )
+				moduleFree();
+			::FreeLibrary(_moduleList[i]);
+		}
   return 0;
 }
 
