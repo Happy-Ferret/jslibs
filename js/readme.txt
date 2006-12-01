@@ -18,6 +18,13 @@ help:
 =====
 	http://developer.mozilla.org/en/docs/Introduction_to_the_JavaScript_shell
 	
+multithreaded version:
+======================
+  need to copy NSPR 4+ in:
+  ./dist/include/nspr
+  ./dist/lib
+
+
 misc:
 =====
 	jsxml.h & jsxml.c should be linked with spidermonkey
