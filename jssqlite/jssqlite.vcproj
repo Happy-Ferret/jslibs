@@ -177,15 +177,19 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath=".\jssqlite.cpp"
+				RelativePath=".\database.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\sqliteClass.cpp"
+				RelativePath=".\error.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\sqliteError.cpp"
+				RelativePath=".\main.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\result.cpp"
 				>
 			</File>
 			<File
@@ -215,11 +219,15 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath=".\sqliteClass.h"
+				RelativePath=".\database.h"
 				>
 			</File>
 			<File
-				RelativePath=".\sqliteError.h"
+				RelativePath=".\error.h"
+				>
+			</File>
+			<File
+				RelativePath=".\result.h"
 				>
 			</File>
 			<File
@@ -227,6 +235,10 @@
 				>
 			</File>
 		</Filter>
+		<File
+			RelativePath=".\debug.js"
+			>
+		</File>
 		<File
 			RelativePath=".\ReadMe.txt"
 			>
