@@ -54,7 +54,7 @@ DEFINE_FUNCTION( Destroy ) {
 
 	ode::dGeomID geomId = (ode::dGeomID)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE( geomId );
-	ode::dGeomSetData(geomId, NULL);
+	ode::dGeomSetData(geomId, NULL); // perhaps useless
 	ode::dGeomDestroy(geomId);
 	JS_SetPrivate(cx, obj, NULL);
 	return JS_TRUE;

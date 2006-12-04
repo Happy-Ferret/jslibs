@@ -58,7 +58,7 @@ extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj)
 	return JS_TRUE;
 }
 
-extern "C" __declspec(dllexport) JSBool ModuleFinalize(JSContext *cx, JSObject *obj) {
+extern "C" __declspec(dllexport) JSBool ModuleRelease(JSContext *cx, JSObject *obj) {
 
 	ode::dCloseODE();
 	return JS_TRUE;

@@ -137,7 +137,7 @@ void JointSetParam( ode::dJointID jointId, int parameter, ode::dReal value ) {
 		case ode::dJointTypePlane2D:
 			ode::dJointSetPlane2DXParam(jointId, parameter, value); // [TBD] split them
 			ode::dJointSetPlane2DYParam(jointId, parameter, value);
-			ode::dJointSetPlane2DAngleParam(jointId, parameter, value);
+//			ode::dJointSetPlane2DAngleParam(jointId, parameter, value);
 			break;
 	}
 }
