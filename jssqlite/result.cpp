@@ -2,6 +2,42 @@
 #include "error.h"
 #include "result.h"
 
+
+JSBool SqliteColumnToJsval( JSContext *cx, sqlite3_stmt *pStmt, int iCol, jsval *rval ) {
+
+	switch ( sqlite3_column_type( pStmt, iCol ) ) {
+		case SQLITE_INTEGER:
+			{
+				int i = sqlite3_column_int( pStmt, iCol );
+				if ( INT_FITS_IN_JSVAL(i) )
+					*rval = INT_TO_JSVAL( i );
+				else
+					RT_ASSERT_RETURN( JS_NewNumberValue( cx, i, rval ) );
+			}
+			break;
+		case SQLITE_FLOAT:
+			RT_ASSERT_RETURN( JS_NewNumberValue( cx, sqlite3_column_double( pStmt, iCol ), rval ) );
+			break;
+		case SQLITE_BLOB:
+			*rval = STRING_TO_JSVAL( JS_NewStringCopyN( cx,(const char *)sqlite3_column_blob( pStmt, iCol ), sqlite3_column_bytes( pStmt, iCol ) ) );
+			break;
+		case SQLITE_NULL:
+			*rval = JSVAL_NULL;
+			break;
+		case SQLITE_TEXT:
+			*rval = STRING_TO_JSVAL(JS_NewStringCopyZ(cx,(const char *)sqlite3_column_text( pStmt, iCol )));
+			break;
+		default:
+			REPORT_ERROR( "Unable to convert data.");
+	}
+	
+	return JS_TRUE;
+}
+
+
+
+
+
 BEGIN_CLASS( Result )
 
 DEFINE_FINALIZE() {
@@ -14,6 +50,7 @@ DEFINE_FINALIZE() {
 			// [TBD] do something ?
 		}
 		JS_SetPrivate( cx, obj, NULL );
+//		JS_SetReservedSlot(cx, obj, SLOT_RESULT_DATABASE, JSVAL_VOID); // beware: don't do JS_SetReservedSlot while GC !! 
 	}
 }
 
@@ -26,6 +63,7 @@ DEFINE_FUNCTION( Close ) {
 	if ( status != SQLITE_OK )
 		return SqliteThrowError( cx, sqlite3_errcode(sqlite3_db_handle(pStmt)), sqlite3_errmsg(sqlite3_db_handle(pStmt)) );
 	JS_SetPrivate( cx, obj, NULL );
+	JS_SetReservedSlot(cx, obj, SLOT_RESULT_DATABASE, JSVAL_VOID);
 	return JS_TRUE;
 }
 
@@ -49,38 +87,20 @@ DEFINE_FUNCTION( Step ) {
 			*rval = JSVAL_TRUE;
 			return JS_TRUE;
 	}
-	JS_ReportError( cx, "uncautch error (%d)", status );
+	JS_ReportError( cx, "uncatch error (%d)", status );
 	return JS_FALSE;
 }
 
 
 DEFINE_FUNCTION( Col ) {
 
+	RT_ASSERT_ARGC( 1 );
 	sqlite3_stmt *pStmt = (sqlite3_stmt *)JS_GetPrivate( cx, obj );
 	RT_ASSERT_RESOURCE( pStmt );
-	RT_ASSERT_ARGC( 1 );
 
 	int32 col;
 	JS_ValueToInt32( cx, argv[0], &col );
-
-	switch ( sqlite3_column_type( pStmt, col ) ) {
-		case SQLITE_INTEGER:
-			*rval = INT_TO_JSVAL( sqlite3_column_int( pStmt, col ) );
-			break;
-		case SQLITE_FLOAT:
-			JS_NewNumberValue( cx, sqlite3_column_double( pStmt, col ), rval );
-			break;
-		case SQLITE_BLOB:
-			*rval = STRING_TO_JSVAL( JS_NewStringCopyN( cx,(const char *)sqlite3_column_blob( pStmt, col ), sqlite3_column_bytes( pStmt, col ) ) );
-			break;
-		case SQLITE_NULL:
-			*rval = JSVAL_NULL;
-			break;
-		case SQLITE_TEXT:
-			// use default case ( string )
-		default: // by default, if type is unknown, use TEXT cast
-			*rval = STRING_TO_JSVAL(JS_NewStringCopyZ(cx,(const char *)sqlite3_column_text( pStmt, col )));
-	}
+	SqliteColumnToJsval( cx, pStmt, col, rval );
 	return JS_TRUE;
 }
 
@@ -90,8 +110,7 @@ DEFINE_FUNCTION( Row ) {
 	sqlite3_stmt *pStmt = (sqlite3_stmt *)JS_GetPrivate( cx, obj );
 	RT_ASSERT_RESOURCE( pStmt );
 
-	if ( Step( cx, obj, 0, NULL, rval ) == JS_FALSE ) // if something goes wrong in Result_step ( error report has already been set )
-		return JS_FALSE;
+	RT_ASSERT_RETURN( Step( cx, obj, 0, NULL, rval ) ); // if something goes wrong in Result_step ( error report has already been set )
 
 	if ( *rval == JSVAL_FALSE ) { // the statement has finished executing successfully
 
@@ -111,9 +130,8 @@ DEFINE_FUNCTION( Row ) {
 	jsval colJsValue, jsvCol;
 	for ( int col = 0; col < columnCount; ++col ) {
 		
-		jsvCol = INT_TO_JSVAL(col);
-		if ( Col( cx, obj, 1, &jsvCol, &colJsValue ) == JS_FALSE ) // if something goes wrong in Result_col ( error report has already been set )
-			return JS_FALSE;
+		RT_ASSERT_RETURN( SqliteColumnToJsval(cx, pStmt, INT_TO_JSVAL(col), &colJsValue ) ); // if something goes wrong in SqliteColumnToJsval, error report has already been set.
+
 		if ( namedRows )
 			JS_SetProperty( cx, row, sqlite3_column_name( pStmt, col ), &colJsValue );
 		else
@@ -154,7 +172,7 @@ DEFINE_PROPERTY( columnNames ) {
 	for ( int col = 0; col < columnCount; ++col ) {
 
 		colJsValue = STRING_TO_JSVAL(JS_NewStringCopyZ(cx,(const char *)sqlite3_column_name( pStmt, col ))); // sqlite3_column_name can be called BEFORE sqlite3_step
-		JS_DefineElement(cx, columnNames, col, colJsValue, NULL, NULL, JSPROP_ENUMERATE);
+		JS_DefineElement(cx, columnNames, col, colJsValue, NULL, NULL, JSPROP_ENUMERATE | JSPROP_PERMANENT);
 	}
 	return JS_TRUE;
 }

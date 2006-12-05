@@ -37,10 +37,10 @@ DEFINE_FUNCTION( Query ) {
 	
 	RT_ASSERT_ARGC( 1 );
 
-	char *sqlQuery = JS_GetStringBytes( JS_ValueToString( cx, argv[0] ) );
+	sqlite3 *db = (sqlite3*)JS_GetPrivate( cx, obj );
+	RT_ASSERT_RESOURCE( db );
 
-	sqlite3 *db = (sqlite3 *)JS_GetPrivate( cx, obj );
-	RT_ASSERT( db != NULL, "invalid database handler" );
+	char *sqlQuery = JS_GetStringBytes( JS_ValueToString( cx, argv[0] ) );
 
 	const char *szTail;
 	sqlite3_stmt *pStmt;
@@ -52,17 +52,58 @@ DEFINE_FUNCTION( Query ) {
 
 	RT_ASSERT_1( *szTail == '\0', "too many SQL statements (%s)", szTail ); // for the moment, do not support multiple statements
 
-	
 	if ( pStmt == NULL ) { // if there is an error, *ppStmt may be set to NULL. If the input text contained no SQL (if the input is and empty string or a comment) then *ppStmt is set to NULL.
 		// nothing to do here [TBD] why ?
 	}
 	
-	JSObject *object = JS_NewObject( cx, &classResult, NULL, obj ); // statement's parent is the database
-	JS_SetPrivate( cx, object, pStmt );
-	*rval = OBJECT_TO_JSVAL( object );
+	JSObject *dbStatement = JS_NewObject( cx, &classResult, NULL, NULL );
+	JS_SetPrivate( cx, dbStatement, pStmt );
+	JS_SetReservedSlot(cx, dbStatement, SLOT_RESULT_DATABASE, OBJECT_TO_JSVAL( obj )); // link to avoid GC [TBD] enhance
+	*rval = OBJECT_TO_JSVAL( dbStatement );
 
 	return JS_TRUE;
 }
+
+
+
+DEFINE_FUNCTION( Exec ) {
+
+	RT_ASSERT_ARGC( 1 );
+	sqlite3 *db = (sqlite3*)JS_GetPrivate( cx, obj );
+	RT_ASSERT_RESOURCE( db );
+
+	char *sqlQuery;
+	RT_JSVAL_TO_STRING( argv[0], sqlQuery );
+
+	const char *szTail;
+	sqlite3_stmt *pStmt;
+	int status;
+	status = sqlite3_prepare( db, sqlQuery, -1, &pStmt, &szTail ); // If the next argument, "nBytes", is less than zero, then zSql is read up to the first nul terminator. 
+	if ( status != SQLITE_OK )
+		return SqliteThrowError( cx, sqlite3_errcode(db), sqlite3_errmsg(db) );
+	RT_ASSERT_1( *szTail == '\0', "too many SQL statements (%s)", szTail ); // for the moment, do not support multiple statements
+	status = sqlite3_step( pStmt ); // The return value will be either SQLITE_BUSY, SQLITE_DONE, SQLITE_ROW, SQLITE_ERROR, or 	SQLITE_MISUSE.
+	switch (status) {
+		case SQLITE_ERROR:
+			return SqliteThrowError( cx, sqlite3_errcode(sqlite3_db_handle( pStmt )), sqlite3_errmsg(sqlite3_db_handle( pStmt )));
+		case SQLITE_MISUSE: // means that the this routine was called inappropriately. Perhaps it was called on a virtual machine that had already been finalized or on one that had previously returned SQLITE_ERROR or SQLITE_DONE. Or it could be the case that a database connection is being used by a different thread than the one it was created it.
+			REPORT_ERROR( "this routine was called inappropriately" );
+		case SQLITE_DONE: // means that the statement has finished executing successfully. sqlite3_step() should not be called again on this virtual machine without first calling sqlite3_reset() to reset the virtual machine back to its initial state.
+			//			REPORT_ERROR( "No result found." );
+			*rval = JSVAL_VOID;
+			break;
+		case SQLITE_ROW:
+			{
+			RT_ASSERT_RETURN( SqliteColumnToJsval(cx, pStmt, 0, rval) );
+			status = sqlite3_finalize( pStmt );
+			if ( status != SQLITE_OK )
+				return SqliteThrowError( cx, sqlite3_errcode(sqlite3_db_handle(pStmt)), sqlite3_errmsg(sqlite3_db_handle(pStmt)) );
+			}
+			break;
+	}
+	return JS_TRUE;
+}
+
 
 
 DEFINE_FUNCTION( Close ) {
@@ -113,6 +154,7 @@ CONFIGURE_CLASS
 	
 	BEGIN_FUNCTION_SPEC
 		FUNCTION( Query )
+		FUNCTION( Exec )
 		FUNCTION( Close )
 	END_FUNCTION_SPEC
 
