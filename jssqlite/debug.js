@@ -24,7 +24,7 @@ try {
 	Print('database version: ' + Database.version ,'\n' );
 	var db = new Database('test_database');
 	
-	Print( 'value = ' + db.Exec('PRAGMA user_version') ,'\n' );
+	Print( 'value = ' + db.Exec('Select undefined') ,'\n' );
 	
 //	Print('Pragma:'+ st.Row() ,'\n');
 //	st.Close();
