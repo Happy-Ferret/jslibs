@@ -26,12 +26,27 @@ DEFINE_FUNCTION( Expand ) {
 
 	RT_ASSERT_ARGC( 1 );
 
+	int totalLen = 0;
+
 	char *str;
-	RT_JSVAL_TO_STRING( argv[0], str );
+	int len;
+	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], str, len );
 
-//	JS_malloc
+	jsval val;
+	JS_GetProperty(cx, JS_GetParent(cx, obj), name, &val);
+	char *iStr;
+	int iLen;
+	RT_JSVAL_TO_STRING_AND_LENGTH( val, iStr, iLen );
+	totalLen += iLen;
 
 
+
+
+
+
+	void *stack;
+	StackPush( &stack, (void*)123 );
+	int v = (int)StackPop( &stack );
 
 	return JS_TRUE;
 }

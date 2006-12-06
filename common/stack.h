@@ -8,15 +8,16 @@ static void StackPush( void **stack, void *ptr ) {
   *stack = newItem; // store the new start of the list in *list
 }
 
+
 static void* StackPop( void **stack ) {
 
-  void **item, *ptr;
-  item = (void**)*stack;
+  void *ptr, **item = (void**)*stack;
   ptr = item[1];
   *stack = item[0];
   free( item );
   return ptr;
 }
+
 
 static void StackRemove( void **stack, void *ptr ) {
 
@@ -33,6 +34,7 @@ static void StackRemove( void **stack, void *ptr ) {
   }
 }
 
+
 static bool StackHas( void **stack, void *ptr ) {
 
   while ( *stack != NULL ) {
@@ -44,8 +46,11 @@ static bool StackHas( void **stack, void *ptr ) {
   return false;
 }
 
+
+/*
 static bool StackFree( void **stack, void *ptr ) {
 
 	while ( *stack )
       free( StackPop( ppList ) );
 }
+*/
