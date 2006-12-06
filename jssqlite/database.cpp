@@ -6,6 +6,7 @@
 
 BEGIN_CLASS( Database )
 
+
 DEFINE_CONSTRUCTOR() {
 
 	RT_ASSERT_CONSTRUCTING( _class );
@@ -16,9 +17,13 @@ DEFINE_CONSTRUCTOR() {
 	int status = sqlite3_open( fileName, &db );
 	if ( status != SQLITE_OK )
 		return SqliteThrowError( cx, sqlite3_errcode(db), sqlite3_errmsg(db) );
+
+//	sqlite3_extended_result_codes(db, true); // [TBD] symbol not found ??
+
 	JS_SetPrivate( cx, obj, db );
 	return JS_TRUE;
 }
+
 
 DEFINE_FINALIZE() {
 
@@ -82,6 +87,7 @@ DEFINE_FUNCTION( Exec ) {
 	if ( status != SQLITE_OK )
 		return SqliteThrowError( cx, sqlite3_errcode(db), sqlite3_errmsg(db) );
 	RT_ASSERT_1( *szTail == '\0', "too many SQL statements (%s)", szTail ); // for the moment, do not support multiple statements
+	SqliteSetupBindings(cx, pStmt, NULL, JS_GetParent(cx, obj) );
 	status = sqlite3_step( pStmt ); // The return value will be either SQLITE_BUSY, SQLITE_DONE, SQLITE_ROW, SQLITE_ERROR, or 	SQLITE_MISUSE.
 	switch (status) {
 		case SQLITE_ERROR:

@@ -36,10 +36,10 @@
 #define PROPERTY_DEFINE(name) { #name, 0, JSPROP_PERMANENT, NULL, NULL },
 
 // add del get set
-#define DEFINE_ADD_PROPERTY static JSBool AddProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
-#define DEFINE_DEL_PROPERTY static JSBool DelProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
-#define DEFINE_GET_PROPERTY static JSBool GetProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
-#define DEFINE_SET_PROPERTY static JSBool SetProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
+#define DEFINE_ADD_PROPERTY() static JSBool AddProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
+#define DEFINE_DEL_PROPERTY() static JSBool DelProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
+#define DEFINE_GET_PROPERTY() static JSBool GetProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
+#define DEFINE_SET_PROPERTY() static JSBool SetProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
 
 // const double
 #define BEGIN_CONST_DOUBLE_SPEC JSConstDoubleSpec _tmp_cds[] = { // dval; *name; flags; spare[3];

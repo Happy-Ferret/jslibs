@@ -11,12 +11,31 @@
 #include "../common/jsclass.h"
 #include "../configuration/configuration.h"
 
+#include "../common/stack.h"
+
+
 DEFINE_UNSAFE_MODE;
 
 extern JSFunction *stdoutFunction = NULL;
 
 
 BEGIN_STATIC
+
+
+DEFINE_FUNCTION( Expand ) {
+
+	RT_ASSERT_ARGC( 1 );
+
+	char *str;
+	RT_JSVAL_TO_STRING( argv[0], str );
+
+//	JS_malloc
+
+
+
+	return JS_TRUE;
+}
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 DEFINE_FUNCTION( Seal ) {
@@ -268,6 +287,7 @@ DEFINE_FUNCTION( Exec ) {
 CONFIGURE_STATIC
 
 	BEGIN_STATIC_FUNCTION_SPEC
+		FUNCTION( Expand )
 		FUNCTION( Seal )
 		FUNCTION( Clear )
 		FUNCTION( HideProperties )

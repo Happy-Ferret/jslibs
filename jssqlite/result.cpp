@@ -2,6 +2,81 @@
 #include "error.h"
 #include "result.h"
 
+#include "limits.h"
+
+// doc: The sqlite3_bind_*() routines must be called after sqlite3_prepare() or sqlite3_reset() and before sqlite3_step(). Bindings are not cleared by the sqlite3_reset() routine. Unbound parameters are interpreted as NULL.
+JSBool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *objAt, JSObject *objColon ) {
+
+	int count = sqlite3_bind_parameter_count(pStmt);
+	for ( int param = 1; param <= count; param++ ) {
+		
+		const char *name = sqlite3_bind_parameter_name( pStmt, param );
+		RT_ASSERT( name != NULL, "Binding is out of range." ); // [TBD] better error message
+		
+		JSObject *obj = NULL;
+
+		if ( objAt != NULL && name[0] == '@' )
+			obj = objAt;
+
+		if ( objColon != NULL && name[0] == ':' )
+			obj = objColon;
+
+		if ( obj == NULL )
+			continue;
+
+		jsval val;
+		JS_GetProperty(cx, obj, name+1, &val);
+
+		switch ( JS_TypeOfValue(cx, val) ) {
+			case JSTYPE_VOID:
+			case JSTYPE_NULL:
+				sqlite3_bind_null(pStmt, param);
+				break;
+			case JSTYPE_BOOLEAN:
+				sqlite3_bind_int(pStmt, param, JSVAL_TO_BOOLEAN(val) == JS_TRUE ? 1 : 0 );
+				break;
+			case JSTYPE_NUMBER:
+				if ( JSVAL_IS_INT(val) ) {
+
+					sqlite3_bind_int(pStmt, param, JSVAL_TO_INT(val));
+				} else {
+
+					jsdouble jd;
+					JS_ValueToNumber(cx, val, &jd);
+//					sqlite_int64 i64val = jd;
+//					if ( (double)i64val == jd )
+//						sqlite3_bind_int64( pStmt, param, i64val );
+//					else
+
+					int ival = jd;
+					if ( jd >= INT_MIN && jd <= INT_MAX && (double)ival == jd )
+						sqlite3_bind_int( pStmt, param, ival );
+					else
+						sqlite3_bind_double(pStmt, param, jd);
+				}
+				break;
+			case JSTYPE_OBJECT: // beware: no break; because we use the JSTYPE_STRING's case JS_ValueToString conversion
+			case JSTYPE_XML:
+			case JSTYPE_STRING: {
+				
+				JSString *jsstr = JS_ValueToString(cx, val);
+				int len = JS_GetStringLength(jsstr);
+				const char *str = JS_GetStringBytes(jsstr);
+				sqlite3_bind_text(pStmt, param, str, len, SQLITE_STATIC); // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT
+				// cf.  int sqlite3_bind_text16(sqlite3_stmt*, int, const void*, int n, void(*)(void*));
+				//      int sqlite3_bind_blob(sqlite3_stmt*, int, const void*, int n, void(*)(void*)); // [TBD] manage blobs, but beware: blob != text 
+				}
+				break;
+			case JSTYPE_FUNCTION:
+					// [TBD] call the function and pass its result to SQLite
+				break;
+			default:
+				REPORT_ERROR( "Invalid data type binding" ); // [TBD] better error message
+		}
+	}
+	return JS_TRUE;
+}
+
 
 JSBool SqliteColumnToJsval( JSContext *cx, sqlite3_stmt *pStmt, int iCol, jsval *rval ) {
 
@@ -73,6 +148,17 @@ DEFINE_FUNCTION( Step ) {
 	sqlite3_stmt *pStmt = (sqlite3_stmt *)JS_GetPrivate( cx, obj );
 	RT_ASSERT_RESOURCE( pStmt );
 
+	jsval bindingUpToDate;
+	JS_GetReservedSlot(cx, obj, SLOT_RESULT_BINDING_UP_TO_DATE, &bindingUpToDate);
+	if ( bindingUpToDate != JSVAL_TRUE ) {
+
+		JS_SetReservedSlot(cx, obj, SLOT_RESULT_BINDING_UP_TO_DATE, BOOLEAN_TO_JSVAL(JS_TRUE));
+		RT_ASSERT_RETURN( SqliteSetupBindings(cx, pStmt, obj, JS_GetParent(cx,obj)) ); // "@" use result object. ":" use scope object
+	}
+
+// doc: The sqlite3_bind_*() routines must be called after sqlite3_prepare() or sqlite3_reset() and before sqlite3_step(). Bindings are not cleared by the sqlite3_reset() routine. Unbound parameters are interpreted as NULL.
+
+
 	int status = sqlite3_step( pStmt ); // The return value will be either SQLITE_BUSY, SQLITE_DONE, SQLITE_ROW, SQLITE_ERROR, or SQLITE_MISUSE.
 	switch (status) {
 		case SQLITE_ERROR:
@@ -130,7 +216,7 @@ DEFINE_FUNCTION( Row ) {
 	jsval colJsValue, jsvCol;
 	for ( int col = 0; col < columnCount; ++col ) {
 		
-		RT_ASSERT_RETURN( SqliteColumnToJsval(cx, pStmt, INT_TO_JSVAL(col), &colJsValue ) ); // if something goes wrong in SqliteColumnToJsval, error report has already been set.
+		RT_ASSERT_RETURN( SqliteColumnToJsval(cx, pStmt, col, &colJsValue ) ); // if something goes wrong in SqliteColumnToJsval, error report has already been set.
 
 		if ( namedRows )
 			JS_SetProperty( cx, row, sqlite3_column_name( pStmt, col ), &colJsValue );
@@ -194,11 +280,27 @@ DEFINE_PROPERTY( columnIndexes ) {
   return JS_TRUE;
 }
 
+
+DEFINE_DEL_PROPERTY() {
+
+	JS_SetReservedSlot(cx, obj, SLOT_RESULT_BINDING_UP_TO_DATE, BOOLEAN_TO_JSVAL(JS_FALSE) ); // invalidate current bindings
+	return JS_TRUE;
+}
+
+DEFINE_SET_PROPERTY() {
+	
+	JS_SetReservedSlot(cx, obj, SLOT_RESULT_BINDING_UP_TO_DATE, BOOLEAN_TO_JSVAL(JS_FALSE) ); // invalidate current bindings
+	return JS_TRUE;
+}
+
 CONFIGURE_CLASS
 
 //	HAS_CONSTRUCTOR
 	HAS_FINALIZE
-	
+	HAS_SET_PROPERTY
+	HAS_DEL_PROPERTY
+
+
 	BEGIN_PROPERTY_SPEC
 		PROPERTY_READ( columnCount )
 		PROPERTY_READ( columnNames )
@@ -214,5 +316,6 @@ CONFIGURE_CLASS
 	END_FUNCTION_SPEC
 
 	HAS_PRIVATE
+	HAS_RESERVED_SLOTS(2)
 
 END_CLASS

@@ -44,7 +44,7 @@ static bool StackHas( void **stack, void *ptr ) {
   return false;
 }
 
-static bool StackHas( void **stack, void *ptr ) {
+static bool StackFree( void **stack, void *ptr ) {
 
 	while ( *stack )
       free( StackPop( ppList ) );
