@@ -325,6 +325,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	JSBool jsStatus;
 // global object
 	JSClass global_class = { "global", 0, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, JS_FinalizeStub };
+
 	globalObject = JS_NewObject(cx, &global_class, NULL, NULL);
 	RT_HOST_MAIN_ASSERT( globalObject != NULL, "unable to create the global object." );
 
@@ -372,7 +373,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	}
 
 // language options
-	JS_SetOptions(cx, JSOPTION_STRICT | JSOPTION_XML | JSOPTION_COMPILE_N_GO );
+	JS_SetOptions(cx, JSOPTION_VAROBJFIX | JSOPTION_STRICT | JSOPTION_XML | JSOPTION_COMPILE_N_GO );
   // JSOPTION_COMPILE_N_GO:
 	//  caller of JS_Compile*Script promises to execute compiled script once only; enables compile-time scope chain resolution of consts.
   // JSOPTION_DONT_REPORT_UNCAUGHT:

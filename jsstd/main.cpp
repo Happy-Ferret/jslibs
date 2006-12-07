@@ -26,28 +26,93 @@ DEFINE_FUNCTION( Expand ) {
 
 	RT_ASSERT_ARGC( 1 );
 
-	int totalLen = 0;
+	char *srcBegin;
+	int srcLen;
+	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], srcBegin, srcLen );
+	char *srcEnd = srcBegin + srcLen;
 
-	char *str;
-	int len;
-	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], str, len );
+	JSObject *table;
+	if ( argc >= 2 ) {
 
-	jsval val;
-	JS_GetProperty(cx, JS_GetParent(cx, obj), name, &val);
-	char *iStr;
-	int iLen;
-	RT_JSVAL_TO_STRING_AND_LENGTH( val, iStr, iLen );
-	totalLen += iLen;
+		RT_ASSERT_OBJECT( argv[1] );
+		table = JSVAL_TO_OBJECT( argv[1] );
+	} else {
 
+		table = obj;
+	}
 
+	typedef struct {
 
+		const char *data;
+		long int length;
+	} Chunk;
 
-
+	int totalLength = 0;
 
 	void *stack;
-	StackPush( &stack, (void*)123 );
-	int v = (int)StackPop( &stack );
+	StackInit( &stack );
+	Chunk *chunk;
+	char *tok;
+	jsval val;	
 
+	while (true) {
+
+		tok = strstr(srcBegin, "$(");
+
+		if ( tok == NULL ) {
+
+			chunk = (Chunk*)malloc(sizeof(Chunk));
+			chunk->data = srcBegin;
+			chunk->length = srcEnd - srcBegin;
+			totalLength += chunk->length;
+			StackPush( &stack, chunk );
+			break;
+		}
+
+		chunk = (Chunk*)malloc(sizeof(Chunk));
+		chunk->data = srcBegin;
+		chunk->length = tok - srcBegin;
+		totalLength += chunk->length;
+		StackPush( &stack, chunk );
+		
+		srcBegin = tok + 2;
+//		if ( srcBegin >= srcEnd )
+//			break;
+
+		tok = strstr(srcBegin, ")");
+
+		if ( tok == NULL )
+			break;
+		
+		char tmp = *tok;
+		*tok = 0;
+		JS_GetProperty(cx, table, srcBegin, &val);
+		*tok = tmp;
+
+		chunk = (Chunk*)malloc(sizeof(Chunk));
+		RT_JSVAL_TO_STRING_AND_LENGTH( val, chunk->data, chunk->length );
+		totalLength += chunk->length;
+		StackPush( &stack, chunk );
+		
+		srcBegin = tok + 1; // [TBD] check buffer overflow
+//		if ( srcBegin >= srcEnd )
+//			break;
+	}
+
+	StackReverse(&stack);
+
+	char *expandedString = (char*)JS_malloc(cx, totalLength);
+
+	char *tmp = expandedString;
+	while ( !StackIsEmpty(&stack) ) {
+
+		Chunk *chunk = (Chunk*)StackPop(&stack);
+		memcpy(tmp, chunk->data, chunk->length);
+		tmp += chunk->length;
+		free(chunk);
+	}
+
+	*rval = STRING_TO_JSVAL( JS_NewString(cx, expandedString, totalLength) );
 	return JS_TRUE;
 }
 
@@ -325,7 +390,6 @@ extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj)
 	INIT_STATIC(cx, obj);
 
 // read configuration
-
 	jsval stdoutFunctionValue;
 	JSBool jsStatus = GetConfigurationValue(cx, "stdout", &stdoutFunctionValue );
 	RT_ASSERT( jsStatus != JS_FALSE, "Unable to read stdout function from configuration object." );

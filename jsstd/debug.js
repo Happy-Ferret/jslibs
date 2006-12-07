@@ -10,7 +10,12 @@ text
 
 Print(t);
 
-var toto = 123;
-var titi = 'abc';
+function test() {
 
-Expand(':toto :titi');
+	var o = { title:'My HTML Page', titi:1234, Expand:Expand };
+	
+	
+	Print( o.Expand('<html><title>$(title)</title>\n' ) )
+}
+
+test();

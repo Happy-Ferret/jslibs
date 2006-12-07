@@ -1,6 +1,21 @@
-
 // very simple stack functions
-static void StackPush( void **stack, void *ptr ) {
+
+inline void StackInit( void **stack ) {
+	
+	*stack = NULL;
+}
+
+inline void* StackData( const void * const *stack ) {
+
+  return ((void**)*stack)[1];
+}
+
+inline void* StackPrev( const void * const *stack ) {
+
+  return ((void**)*stack)[0];
+}
+
+inline void StackPush( void **stack, void *ptr ) {
 
   void **newItem = (void**)malloc( sizeof( void* ) * 2 ); // create a new item for the list ( pointer, pointer )
   newItem[0] = *stack; // chain the list
@@ -9,48 +24,79 @@ static void StackPush( void **stack, void *ptr ) {
 }
 
 
-static void* StackPop( void **stack ) {
+inline void* StackPop( void **stack ) {
 
   void *ptr, **item = (void**)*stack;
-  ptr = item[1];
   *stack = item[0];
+  ptr = item[1];
   free( item );
   return ptr;
 }
 
+/*
+   NULL
+   ^
+  [0][1]
+  ^
+ [0][1]  
+ ^
+[0][1] <-- stack
 
-static void StackRemove( void **stack, void *ptr ) {
+*/
 
-  while ( *stack != NULL ) {
 
-    if ( (*(void***)stack)[1] == ptr ) {
+inline void StackReverse( void **stack ) { // [TBD] optimize
 
-      void* item = *stack;
-      *stack = **(void***)stack;
-      free( item );
-      return;
-    }
-    stack = (void**)*stack;
-  }
+	void *newStack;
+	StackInit(&newStack);
+	while ( *stack )
+		StackPush(&newStack, StackPop(stack));
+	*stack = newStack;
 }
 
 
-static bool StackHas( void **stack, void *ptr ) {
+inline void StackRemove( void **stack, void *data ) {
 
-  while ( *stack != NULL ) {
+	for ( ; *stack; stack = (void**)*stack )
+		if ( StackData(stack) == data ) {
+			
+			void *tmp = *stack;
+			*stack = StackPrev(stack);
+			free(tmp);
+			return;
+		}
+}
 
-    if ( (*(void***)stack)[1] == ptr )
-      return true;
-    stack = (void**)*stack;
-  }
+inline bool StackIsEmpty( void * const *stack ) {
+
+	return *stack == NULL;
+}
+
+inline bool StackLength( void * const *stack ) {
+
+	int length = 0;
+	for ( ; *stack; stack = (void**)*stack, length++ );
+	return length;
+}
+
+
+inline bool StackHas( void * const *stack, const void *data ) {
+
+	for ( ; *stack; stack = (void**)*stack )
+		if ( StackData(stack) == data )
+			return true;
   return false;
 }
 
 
-/*
-static bool StackFree( void **stack, void *ptr ) {
+inline bool StackFreeContent( void **stack ) {
 
 	while ( *stack )
-      free( StackPop( ppList ) );
+      free( StackPop( stack ) );
 }
-*/
+
+inline bool StackFree( void **stack ) {
+
+	while ( *stack )
+      StackPop( stack );
+}
