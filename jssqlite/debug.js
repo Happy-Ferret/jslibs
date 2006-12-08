@@ -18,6 +18,15 @@ function test(db) {
 		Print( 'row          :'+r.toSource() ,'\n' );
 }
 
+function testBinding() {
+
+	var toto = 1234;
+	var result1 = db.Query('SELECT :toto');
+	result1.toto = 'wert';
+	Print( 'using binding: '+result1.Row().toSource(), '\n' );
+	result1.Close();
+
+}
 
 try {
 
@@ -30,13 +39,10 @@ try {
 //	Print('Pragma:'+ st.Row() ,'\n');
 //	st.Close();
 
+
 	test(db);
+	testBinding(db)
 	
-	var toto = 1234;
-	var result1 = db.Query('SELECT :toto');
-	result1.toto = 'wert';
-	Print( 'using binding: '+result1.Row().toSource(), '\n' );
-	result1.Close();
 	
 	
 //	Print( 'first col only     :'+result.Col(0).toSource() ,'\n' );

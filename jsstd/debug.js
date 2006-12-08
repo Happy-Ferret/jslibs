@@ -12,10 +12,11 @@ Print(t);
 
 function test() {
 
-	var o = { title:'My HTML Page', titi:1234, Expand:Expand };
+	var o = { title:'My HTML Page', titi:1234, toString:function() { return Expand( this.text, this ) } };
+	o.text = '<html><title>$(title)</title>\n'
 	
 	
-	Print( o.Expand('<html><title>$(title)</title>\n' ) )
+	Print( o )
 }
 
 test();

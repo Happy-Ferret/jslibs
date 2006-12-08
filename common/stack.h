@@ -34,24 +34,30 @@ inline void* StackPop( void **stack ) {
 }
 
 /*
-   NULL
+     NULL
+     ^
+    [0][a]
+    ^
+   [0][b]
    ^
-  [0][1]
+  [0][c] ptr
   ^
- [0][1]  
+ [0][d]
  ^
-[0][1] <-- stack
+[0][e] stack
 
 */
 
+// C Operator Precedence and Associativity: http://www.difranco.net/cop2220/op-prec.htm
+inline void StackReverse( void **stack ) {
 
-inline void StackReverse( void **stack ) { // [TBD] optimize
+	for ( void *tmp, *ptr = *stack; *(void**)ptr != NULL; ) {
 
-	void *newStack;
-	StackInit(&newStack);
-	while ( *stack )
-		StackPush(&newStack, StackPop(stack));
-	*stack = newStack;
+		tmp = *stack;
+		*stack = *(void**)ptr;
+		*(void**)ptr = *(void**)*stack;
+		*(void**)*stack = tmp;
+	}
 }
 
 

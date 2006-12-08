@@ -113,6 +113,9 @@ DEFINE_FUNCTION( Expand ) {
 	}
 
 	*rval = STRING_TO_JSVAL( JS_NewString(cx, expandedString, totalLength) );
+
+
+	js_GetFrameCallObject
 	return JS_TRUE;
 }
 
@@ -140,6 +143,7 @@ DEFINE_FUNCTION( Seal ) {
 	return JS_SealObject(cx, target, deep);
 }
 
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 DEFINE_FUNCTION( Clear ) {
 
@@ -150,6 +154,7 @@ DEFINE_FUNCTION( Clear ) {
 	JS_ClearScope(cx, obj);
   return JS_TRUE;
 }
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 DEFINE_FUNCTION( HideProperties ) {
