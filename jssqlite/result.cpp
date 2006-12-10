@@ -56,8 +56,9 @@ JSBool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *objAt,
 				}
 				break;
 			case JSTYPE_OBJECT: // beware: no break; because we use the JSTYPE_STRING's case JS_ValueToString conversion
+
 			case JSTYPE_XML:
-			case JSTYPE_STRING: {
+			case JSTYPE_STRING: { // [TBD] manage blob type because result1.toto='12'+'\0'+'34'; do not work with string 
 				
 				JSString *jsstr = JS_ValueToString(cx, val);
 				int len = JS_GetStringLength(jsstr);
