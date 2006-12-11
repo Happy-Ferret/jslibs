@@ -82,6 +82,9 @@
 #define RT_ASSERT_NUMBER(value) \
 	RT_ASSERT( JSVAL_IS_NUMBER(value), RT_ERROR_UNEXPECTED_TYPE " Number expected." );
 
+#define RT_ASSERT_STRING(value) \
+	RT_ASSERT( JSVAL_IS_STRING(value), RT_ERROR_UNEXPECTED_TYPE " String expected." );
+
 #define RT_ASSERT_ALLOC(pointer) \
 	RT_ASSERT( (pointer) != NULL, RT_ERROR_OUT_OF_MEMORY );
 
@@ -213,6 +216,14 @@ inline JSBool GetIntProperty( JSContext *cx, JSObject *obj, const char *property
 	JS_ValueToInt32(cx, tmp, &int32Value);
 	*value = int32Value;
 	return JS_TRUE;
+}
+
+inline bool HasProperty( JSContext *cx, JSObject *obj, const char *propertyName ) {
+
+	uintN attr;
+	JSBool found;
+	JSBool status = JS_GetPropertyAttributes(cx, obj, propertyName, &attr, &found);
+	return ( status == JS_TRUE && found != JS_FALSE );
 }
 
 

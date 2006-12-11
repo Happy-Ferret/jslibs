@@ -9,6 +9,7 @@
 #define DEFINE_CONSTRUCTOR() static JSBool Constructor(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 #define DEFINE_FINALIZE() static void Finalize(JSContext *cx, JSObject *obj)
 #define DEFINE_CONVERT() static JSBool Convert(JSContext *cx, JSObject *obj, JSType type, jsval *vp)
+#define DEFINE_RESOLVE() static JSBool Resolve(JSContext *cx, JSObject *obj, jsval id, uintN flags, JSObject **objp)
 
 #define FUNCTION(name) { #name, name },
 #define FUNCTION2(name,nativeName) { #name, nativeName },
@@ -108,6 +109,7 @@
 #define HAS_CALL   _class->call = Call;
 #define HAS_FINALIZE   _class->finalize = Finalize;
 #define HAS_CONVERT   _class->convert = Convert;
+#define HAS_RESOLVE   _class->resolve = (JSResolveOp)Resolve;
 #define HAS_PROTOTYPE(PROTOTYPE)   *_parentPrototype = (PROTOTYPE);
 #define HAS_ADD_PROPERTY   _class->addProperty = AddProperty;
 #define HAS_DEL_PROPERTY   _class->delProperty = DelProperty;

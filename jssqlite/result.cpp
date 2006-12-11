@@ -1,8 +1,43 @@
 #include "stdafx.h"
+#include "blob.h"
 #include "error.h"
 #include "result.h"
 
-#include "limits.h"
+#include <limits.h>
+
+
+
+JSBool SqliteToJsval( JSContext *cx, sqlite3_value *value, jsval *rval ) {
+
+	int i;
+	switch( sqlite3_value_type(value) ) {
+		
+		case SQLITE_INTEGER:
+			i = sqlite3_value_int(value);
+			if ( INT_FITS_IN_JSVAL(i) )
+				*rval = INT_TO_JSVAL( i );
+			else
+				RT_ASSERT_RETURN( JS_NewNumberValue(cx, i, rval ) );
+			break;
+		case SQLITE_FLOAT:
+			RT_ASSERT_RETURN( JS_NewNumberValue( cx, sqlite3_value_double(value), rval ) );
+			break;
+		case SQLITE_BLOB:
+			*rval = STRING_TO_JSVAL( JS_NewStringCopyN( cx,(const char *)sqlite3_value_blob(value), sqlite3_value_bytes(value) ) );
+			break;
+		case SQLITE_NULL:
+			*rval = JSVAL_NULL;
+			break;
+		case SQLITE_TEXT:
+			*rval = STRING_TO_JSVAL(JS_NewStringCopyZ(cx,(const char *)sqlite3_value_text(value)));
+			break;
+		default:
+			REPORT_ERROR( "Unable to convert data.");
+	}
+	return JS_TRUE;
+}
+
+
 
 // doc: The sqlite3_bind_*() routines must be called after sqlite3_prepare() or sqlite3_reset() and before sqlite3_step(). Bindings are not cleared by the sqlite3_reset() routine. Unbound parameters are interpreted as NULL.
 JSBool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *objAt, JSObject *objColon ) {
@@ -26,6 +61,8 @@ JSBool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *objAt,
 
 		jsval val;
 		JS_GetProperty(cx, obj, name+1, &val);
+
+//		sqlite3_bind_value( pStmt, param, // [TBD] how to use this
 
 		switch ( JS_TypeOfValue(cx, val) ) {
 			case JSTYPE_VOID:
@@ -55,8 +92,21 @@ JSBool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *objAt,
 						sqlite3_bind_double(pStmt, param, jd);
 				}
 				break;
-			case JSTYPE_OBJECT: // beware: no break; because we use the JSTYPE_STRING's case JS_ValueToString conversion
-
+			case JSTYPE_OBJECT: {
+				
+				JSObject *objVal = JSVAL_TO_OBJECT(val);
+				if ( JS_GetClass(objVal) == &classBlob ) { // beware: with SQLite, blob != text 
+					
+					jsval blobVal;
+					JS_GetReservedSlot(cx, objVal, SLOT_BLOB_DATA, &blobVal);
+					JSString *jsstr = JS_ValueToString(cx, blobVal);
+					int len = JS_GetStringLength(jsstr);
+					const char *str = JS_GetStringBytes(jsstr);
+					sqlite3_bind_blob(pStmt, param, str, len, SQLITE_STATIC); // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT
+					break;
+				}
+				// beware: no break; because we use the JSTYPE_STRING's case JS_ValueToString conversion
+			}
 			case JSTYPE_XML:
 			case JSTYPE_STRING: { // [TBD] manage blob type because result1.toto='12'+'\0'+'34'; do not work with string 
 				
@@ -65,11 +115,10 @@ JSBool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *objAt,
 				const char *str = JS_GetStringBytes(jsstr);
 				sqlite3_bind_text(pStmt, param, str, len, SQLITE_STATIC); // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT
 				// cf.  int sqlite3_bind_text16(sqlite3_stmt*, int, const void*, int n, void(*)(void*));
-				//      int sqlite3_bind_blob(sqlite3_stmt*, int, const void*, int n, void(*)(void*)); // [TBD] manage blobs, but beware: blob != text 
 				}
 				break;
 			case JSTYPE_FUNCTION:
-					// [TBD] call the function and pass its result to SQLite
+					// [TBD] call the function and pass its result to SQLite ?
 				break;
 			default:
 				REPORT_ERROR( "Invalid data type binding" ); // [TBD] better error message
@@ -81,36 +130,9 @@ JSBool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *objAt,
 
 JSBool SqliteColumnToJsval( JSContext *cx, sqlite3_stmt *pStmt, int iCol, jsval *rval ) {
 
-	switch ( sqlite3_column_type( pStmt, iCol ) ) {
-		case SQLITE_INTEGER:
-			{
-				int i = sqlite3_column_int( pStmt, iCol );
-				if ( INT_FITS_IN_JSVAL(i) )
-					*rval = INT_TO_JSVAL( i );
-				else
-					RT_ASSERT_RETURN( JS_NewNumberValue( cx, i, rval ) );
-			}
-			break;
-		case SQLITE_FLOAT:
-			RT_ASSERT_RETURN( JS_NewNumberValue( cx, sqlite3_column_double( pStmt, iCol ), rval ) );
-			break;
-		case SQLITE_BLOB:
-			*rval = STRING_TO_JSVAL( JS_NewStringCopyN( cx,(const char *)sqlite3_column_blob( pStmt, iCol ), sqlite3_column_bytes( pStmt, iCol ) ) );
-			break;
-		case SQLITE_NULL:
-			*rval = JSVAL_NULL;
-			break;
-		case SQLITE_TEXT:
-			*rval = STRING_TO_JSVAL(JS_NewStringCopyZ(cx,(const char *)sqlite3_column_text( pStmt, iCol )));
-			break;
-		default:
-			REPORT_ERROR( "Unable to convert data.");
-	}
-	
+	RT_ASSERT_RETURN( SqliteToJsval(cx, sqlite3_column_value(pStmt, iCol), rval) );
 	return JS_TRUE;
 }
-
-
 
 
 

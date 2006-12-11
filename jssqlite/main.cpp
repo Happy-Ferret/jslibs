@@ -2,6 +2,7 @@
 
 #include "../configuration/Configuration.h"
 
+#include "blob.h"
 #include "error.h"
 #include "database.h"
 #include "result.h"
@@ -15,6 +16,7 @@ extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj)
 	if ( JSVAL_IS_BOOLEAN(unsafeModeValue) )
 		SET_UNSAFE_MODE( JSVAL_TO_BOOLEAN(unsafeModeValue) == JS_TRUE );
 
+	INIT_CLASS( Blob )
 	INIT_CLASS( SqliteError )
 	INIT_CLASS( Result )
 	INIT_CLASS( Database )

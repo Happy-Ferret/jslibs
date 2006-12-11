@@ -23,7 +23,10 @@ function testBinding() {
 
 	var toto = 1234;
 	var result1 = db.Query('SELECT @toto');
-	result1.toto = '12' + '\0' + '34';
+	// result1.toto = '12' + '\0' + '34';
+	result1.toto = Blob('12' + '\0' + '34');
+
+	
 	Print( 'using binding: '+result1.Row()[0].length, '\n' );
 	result1.Close();
 }
@@ -33,6 +36,11 @@ try {
 
 	Print('database version: ' + Database.version ,'\n' );
 	var db = new Database('test_database');
+	
+	db.testFun = function(arg1, arg2) { return arg1+arg2 }
+	Print( 'testFunc = ' + db.Exec('SELECT testFun(123,456)') ,'\n' );	
+	
+	
 
 //	var varTest = <toto><i>ti</i></toto>;
 //	Print( 'Exec test = ' + db.Exec('SELECT :varTest') ,'\n' );

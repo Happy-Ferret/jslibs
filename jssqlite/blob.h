@@ -1,0 +1,3 @@
+DECLARE_CLASS( Blob )
+
+#define SLOT_BLOB_DATA 0

@@ -1,8 +1,11 @@
 #include "stdafx.h"
+#include "blob.h"
 #include "error.h"
 #include "result.h"
 #include "database.h"
 
+#include <limits.h>
+#include <stdlib.h>
 
 BEGIN_CLASS( Database )
 
@@ -153,6 +156,127 @@ DEFINE_PROPERTY( version ) {
 }
 
 
+typedef struct SqliteFunctionCallUserData {
+
+	JSContext *cx;
+	JSObject *object;
+	JSFunction *function;
+};
+
+
+
+//JSBool JsvalToSqlite( JSContext *cx, sqlite3_value *value, jsval *rval ) {
+//
+//	return JS_TRUE;
+//}
+
+
+void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArgv ) {
+	
+	SqliteFunctionCallUserData *data = (SqliteFunctionCallUserData*)sqlite3_user_data(sCx);
+
+	JSContext *cx = data->cx;
+	JSFunction *fun = data->function;
+	JSObject *obj = data->object;
+
+	jsval argv[128];
+	jsval rval;
+
+	for ( int i = 0; i < sArgc; i++ ) {
+
+		JS_AddRoot(cx, &argv[i]);
+		if ( SqliteToJsval( cx, sArgv[i], &argv[i] ) == JS_FALSE )
+			JS_ReportError(cx, "Invalid type" ); // [TBD] enhance error report & remove roots on error
+	}
+	
+	if ( JS_CallFunction(cx, obj, fun, sArgc, argv, &rval) == JS_FALSE )
+		return; // [TBD] enhance error management
+
+	for ( int i = 0; i < sArgc; i++ )
+		JS_RemoveRoot(cx, &argv[i]);
+
+
+	switch ( JS_TypeOfValue(cx, rval) ) {
+		case JSTYPE_VOID:
+		case JSTYPE_NULL:
+			sqlite3_result_null(sCx);
+			break;
+		case JSTYPE_BOOLEAN:
+			sqlite3_result_int(sCx, JSVAL_TO_BOOLEAN(rval) == JS_TRUE ? 1 : 0 );
+			break;
+		case JSTYPE_NUMBER:
+			if ( JSVAL_IS_INT(rval) ) {
+
+				sqlite3_result_int(sCx, JSVAL_TO_INT(rval));
+			} else {
+
+				jsdouble jd;
+				JS_ValueToNumber(cx, rval, &jd);
+				int ival = jd;
+				if ( jd >= INT_MIN && jd <= INT_MAX && (double)ival == jd )
+					sqlite3_result_int(sCx, ival );
+				else
+					sqlite3_result_double(sCx, jd);
+			}
+			break;
+		case JSTYPE_OBJECT: {
+			
+			JSObject *objVal = JSVAL_TO_OBJECT(rval);
+			if ( JS_GetClass(objVal) == &classBlob ) { // beware: with SQLite, blob != text 
+				
+				jsval blobVal;
+				JS_GetReservedSlot(cx, objVal, SLOT_BLOB_DATA, &blobVal);
+				JSString *jsstr = JS_ValueToString(cx, blobVal);
+				int len = JS_GetStringLength(jsstr);
+				const char *str = JS_GetStringBytes(jsstr);
+				sqlite3_result_blob(sCx, str, len, SQLITE_STATIC); // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT
+				break;
+			}
+			// beware: no break; because we use the JSTYPE_STRING's case JS_ValueToString conversion
+		}
+		case JSTYPE_XML:
+		case JSTYPE_STRING: { // [TBD] manage blob type because result1.toto='12'+'\0'+'34'; do not work with string 
+			
+			JSString *jsstr = JS_ValueToString(cx, rval);
+			int len = JS_GetStringLength(jsstr);
+			const char *str = JS_GetStringBytes(jsstr);
+			sqlite3_result_text(sCx, str, len, SQLITE_STATIC); // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT // cf.  int sqlite3_bind_text16(sqlite3_stmt*, int, const void*, int n, void(*)(void*));
+			}
+			break;
+		case JSTYPE_FUNCTION:
+				// [TBD] call the function and pass its result to SQLite ?
+			break;
+		//default:
+			//sqlite3_result_error(sCx, "Invalid data type binding", 12 ); // [TBD] better error message
+	}
+}
+
+DEFINE_SET_PROPERTY() {
+//DEFINE_FUNCTION( AddFunction ) {
+	
+	if ( JSVAL_IS_OBJECT(*vp) && JS_ObjectIsFunction(cx, JSVAL_TO_OBJECT(*vp) ) ) {
+
+		char *fName;
+		RT_JSVAL_TO_STRING( id, fName );
+
+		JSFunction * fun = JS_ValueToFunction(cx, *vp);
+
+		sqlite3 *db = (sqlite3 *)JS_GetPrivate( cx, obj );
+		RT_ASSERT_RESOURCE( db );
+
+		SqliteFunctionCallUserData *data = (SqliteFunctionCallUserData*)malloc(sizeof(SqliteFunctionCallUserData));
+		// [TBD] store this allocated pointer in a stack to be freedlater
+		data->cx = cx;
+		data->object = obj;
+		data->function = fun;
+
+		int status = sqlite3_create_function(db, fName, -1, SQLITE_ANY /*SQLITE_UTF8*/, data, sqlite_function_call, NULL, NULL);
+		if ( status != SQLITE_OK )
+			return SqliteThrowError( cx, sqlite3_errcode(db), sqlite3_errmsg(db) );
+	}
+	return JS_TRUE;
+}
+
 CONFIGURE_CLASS
 
 	HAS_CONSTRUCTOR
@@ -162,6 +286,7 @@ CONFIGURE_CLASS
 		FUNCTION( Query )
 		FUNCTION( Exec )
 		FUNCTION( Close )
+//		FUNCTION( AddFunction )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
@@ -173,6 +298,8 @@ CONFIGURE_CLASS
 	BEGIN_STATIC_PROPERTY_SPEC
 		PROPERTY_READ( version )
 	END_STATIC_PROPERTY_SPEC
+
+	HAS_SET_PROPERTY;
 
 	HAS_PRIVATE
 

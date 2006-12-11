@@ -1,3 +1,4 @@
+#include <stdlib.h>
 // very simple stack functions
 
 inline void StackInit( void **stack ) {
