@@ -28,6 +28,8 @@ function testBinding() {
 
 	
 	Print( 'using binding: '+result1.Row()[0].length, '\n' );
+	
+	Print('changes :' + db.changes, '\n');
 	result1.Close();
 }
 
@@ -37,8 +39,10 @@ try {
 	Print('database version: ' + Database.version ,'\n' );
 	var db = new Database('test_database');
 	
-	db.testFun = function(arg1, arg2) { return arg1+arg2 }
-	Print( 'testFunc = ' + db.Exec('SELECT testFun(123,456)') ,'\n' );	
+	db.testFun = function() { return null }
+	db.jseval = function(s){ return eval(s) };
+	
+	Print( 'testFunc = ' + db.Exec('SELECT (null = 123), length(:toto), jseval("null") is null', {toto:Blob('qqwe\00\00fv1234'), aaa:null}) ,'\n' );	
 	
 	
 

@@ -63,10 +63,9 @@ JSBool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *objAt,
 		JS_GetProperty(cx, obj, name+1, &val);
 
 //		sqlite3_bind_value( pStmt, param, // [TBD] how to use this
-
-		switch ( JS_TypeOfValue(cx, val) ) {
+		switch ( JS_TypeOfValue(cx, val) ) { 
 			case JSTYPE_VOID:
-			case JSTYPE_NULL:
+			case JSTYPE_NULL: // http://www.sqlite.org/nulls.html
 				sqlite3_bind_null(pStmt, param);
 				break;
 			case JSTYPE_BOOLEAN:
@@ -80,48 +79,36 @@ JSBool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *objAt,
 
 					jsdouble jd;
 					JS_ValueToNumber(cx, val, &jd);
-//					sqlite_int64 i64val = jd;
-//					if ( (double)i64val == jd )
-//						sqlite3_bind_int64( pStmt, param, i64val );
-//					else
-
-					int ival = jd;
-					if ( jd >= INT_MIN && jd <= INT_MAX && (double)ival == jd )
-						sqlite3_bind_int( pStmt, param, ival );
+					if ( jd >= INT_MIN && jd <= INT_MAX && jd == (int)jd )
+						sqlite3_bind_int( pStmt, param, (int)jd );
 					else
 						sqlite3_bind_double(pStmt, param, jd);
 				}
 				break;
-			case JSTYPE_OBJECT: {
-				
-				JSObject *objVal = JSVAL_TO_OBJECT(val);
-				if ( JS_GetClass(objVal) == &classBlob ) { // beware: with SQLite, blob != text 
-					
-					jsval blobVal;
-					JS_GetReservedSlot(cx, objVal, SLOT_BLOB_DATA, &blobVal);
-					JSString *jsstr = JS_ValueToString(cx, blobVal);
-					int len = JS_GetStringLength(jsstr);
-					const char *str = JS_GetStringBytes(jsstr);
-					sqlite3_bind_blob(pStmt, param, str, len, SQLITE_STATIC); // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT
+			case JSTYPE_OBJECT: // beware: no break; because we use the JSTYPE_STRING's case JS_ValueToString conversion
+				if ( JSVAL_IS_NULL(val) ) {
+
+					sqlite3_bind_null(pStmt, param);
 					break;
 				}
-				// beware: no break; because we use the JSTYPE_STRING's case JS_ValueToString conversion
-			}
+				if ( JS_GetClass(JSVAL_TO_OBJECT(val)) == &classBlob ) { // beware: with SQLite, blob != text 
+					
+					jsval blobVal;
+					JS_GetReservedSlot(cx, JSVAL_TO_OBJECT(val), SLOT_BLOB_DATA, &blobVal);
+					JSString *jsstr = JS_ValueToString(cx, blobVal);
+					sqlite3_bind_blob(pStmt, param, JS_GetStringBytes(jsstr), JS_GetStringLength(jsstr), SQLITE_STATIC); // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT
+					break;
+				}
 			case JSTYPE_XML:
-			case JSTYPE_STRING: { // [TBD] manage blob type because result1.toto='12'+'\0'+'34'; do not work with string 
+			case JSTYPE_FUNCTION: // [TBD] call the function and pass its result to SQLite ?
+			case JSTYPE_STRING: {
 				
 				JSString *jsstr = JS_ValueToString(cx, val);
-				int len = JS_GetStringLength(jsstr);
-				const char *str = JS_GetStringBytes(jsstr);
-				sqlite3_bind_text(pStmt, param, str, len, SQLITE_STATIC); // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT
-				// cf.  int sqlite3_bind_text16(sqlite3_stmt*, int, const void*, int n, void(*)(void*));
+				sqlite3_bind_text(pStmt, param, JS_GetStringBytes(jsstr), JS_GetStringLength(jsstr), SQLITE_STATIC); // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT
 				}
 				break;
-			case JSTYPE_FUNCTION:
-					// [TBD] call the function and pass its result to SQLite ?
-				break;
 			default:
-				REPORT_ERROR( "Invalid data type binding" ); // [TBD] better error message
+				REPORT_ERROR("Unsupported data type"); // [TBD] better error message
 		}
 	}
 	return JS_TRUE;
@@ -147,7 +134,7 @@ DEFINE_FINALIZE() {
 		if ( status != SQLITE_OK ) {
 			// [TBD] do something ?
 		}
-		JS_SetPrivate( cx, obj, NULL );
+		JS_SetPrivate( cx, obj, NULL ); // [TBD] not needed
 //		JS_SetReservedSlot(cx, obj, SLOT_RESULT_DATABASE, JSVAL_VOID); // beware: don't do JS_SetReservedSlot while GC !! 
 	}
 }
@@ -159,7 +146,7 @@ DEFINE_FUNCTION( Close ) {
 	RT_ASSERT_RESOURCE( pStmt );
 	int status = sqlite3_finalize( pStmt );
 	if ( status != SQLITE_OK )
-		return SqliteThrowError( cx, sqlite3_errcode(sqlite3_db_handle(pStmt)), sqlite3_errmsg(sqlite3_db_handle(pStmt)) );
+		return SqliteThrowError( cx, status, sqlite3_errcode(sqlite3_db_handle(pStmt)), sqlite3_errmsg(sqlite3_db_handle(pStmt)) );
 	JS_SetPrivate( cx, obj, NULL );
 	JS_SetReservedSlot(cx, obj, SLOT_RESULT_DATABASE, JSVAL_VOID);
 	return JS_TRUE;
@@ -171,24 +158,22 @@ DEFINE_FUNCTION( Step ) {
 	sqlite3_stmt *pStmt = (sqlite3_stmt *)JS_GetPrivate( cx, obj );
 	RT_ASSERT_RESOURCE( pStmt );
 
+	// check if bindings are up to date
 	jsval bindingUpToDate;
 	JS_GetReservedSlot(cx, obj, SLOT_RESULT_BINDING_UP_TO_DATE, &bindingUpToDate);
 	if ( bindingUpToDate != JSVAL_TRUE ) {
 
 		JS_SetReservedSlot(cx, obj, SLOT_RESULT_BINDING_UP_TO_DATE, BOOLEAN_TO_JSVAL(JS_TRUE));
 		RT_ASSERT_RETURN( SqliteSetupBindings(cx, pStmt, obj, JS_GetParent(cx,obj)) ); // "@" use result object. ":" use scope object
+		// doc: The sqlite3_bind_*() routines must be called AFTER sqlite3_prepare() or sqlite3_reset() and BEFORE sqlite3_step(). Bindings are not cleared by the sqlite3_reset() routine. Unbound parameters are interpreted as NULL.
 	}
-
-// doc: The sqlite3_bind_*() routines must be called after sqlite3_prepare() or sqlite3_reset() and before sqlite3_step(). Bindings are not cleared by the sqlite3_reset() routine. Unbound parameters are interpreted as NULL.
-
 
 	int status = sqlite3_step( pStmt ); // The return value will be either SQLITE_BUSY, SQLITE_DONE, SQLITE_ROW, SQLITE_ERROR, or SQLITE_MISUSE.
 	switch (status) {
 		case SQLITE_ERROR:
-			return SqliteThrowError( cx, sqlite3_errcode(sqlite3_db_handle( pStmt )), sqlite3_errmsg(sqlite3_db_handle( pStmt )));
+			return SqliteThrowError( cx, status, sqlite3_errcode(sqlite3_db_handle( pStmt )), sqlite3_errmsg(sqlite3_db_handle( pStmt )));
 		case SQLITE_MISUSE: // means that the this routine was called inappropriately. Perhaps it was called on a virtual machine that had already been finalized or on one that had previously returned SQLITE_ERROR or SQLITE_DONE. Or it could be the case that a database connection is being used by a different thread than the one it was created it.
-			JS_ReportError( cx, "this routine was called inappropriately" );
-			return JS_FALSE;
+			REPORT_ERROR( "this routine was called inappropriately" );
 		case SQLITE_DONE: // means that the statement has finished executing successfully. sqlite3_step() should not be called again on this virtual machine without first calling sqlite3_reset() to reset the virtual machine back to its initial state.
 			*rval = JSVAL_FALSE;
 			return JS_TRUE;
@@ -196,8 +181,7 @@ DEFINE_FUNCTION( Step ) {
 			*rval = JSVAL_TRUE;
 			return JS_TRUE;
 	}
-	JS_ReportError( cx, "uncatch error (%d)", status );
-	return JS_FALSE;
+	REPORT_ERROR_1("uncatch error (%d)", status );
 }
 
 
@@ -256,7 +240,7 @@ DEFINE_FUNCTION( Reset ) {
 	RT_ASSERT_RESOURCE( pStmt );
 	int status = sqlite3_reset(pStmt);
 	if ( status != SQLITE_OK )
-		return SqliteThrowError( cx, sqlite3_errcode(sqlite3_db_handle(pStmt)), sqlite3_errmsg(sqlite3_db_handle(pStmt)) );
+		return SqliteThrowError( cx, status, sqlite3_errcode(sqlite3_db_handle(pStmt)), sqlite3_errmsg(sqlite3_db_handle(pStmt)) );
 	return JS_TRUE;
 }
 
@@ -322,7 +306,6 @@ CONFIGURE_CLASS
 	HAS_FINALIZE
 	HAS_SET_PROPERTY
 	HAS_DEL_PROPERTY
-
 
 	BEGIN_PROPERTY_SPEC
 		PROPERTY_READ( columnCount )

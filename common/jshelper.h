@@ -50,7 +50,10 @@
 	if (_unsafeMode) {code;}
 
 #define REPORT_ERROR(errorMessage) \
-	JS_ReportError( cx, (errorMessage) ); return JS_FALSE;
+	{ JS_ReportError( cx, (errorMessage) ); return JS_FALSE; }
+
+#define REPORT_ERROR_1(errorMessage, arg) \
+	{ JS_ReportError( cx, (errorMessage), arg ); return JS_FALSE; }
 
 /////////
 // assert
@@ -100,9 +103,10 @@
 #define RT_ASSERT_ARGC(minCount) \
 	RT_ASSERT_1( argc >= (minCount), RT_ERROR_MISSING_N_ARGUMENT, (minCount)-argc );
 
-#define RT_ASSERT_CONSTRUCTING(jsClass) \
-	RT_ASSERT( JS_IsConstructing(cx) == JS_TRUE, RT_ERROR_NEED_CONSTRUCTION ); \
-	RT_ASSERT_CLASS( obj, (jsClass) );
+#define RT_ASSERT_CONSTRUCTING(jsClass) { \
+		RT_ASSERT( JS_IsConstructing(cx) == JS_TRUE, RT_ERROR_NEED_CONSTRUCTION ); \
+		RT_ASSERT_CLASS( obj, (jsClass) ); \
+	}
 
 ////////////////////
 // conversion macros
@@ -114,15 +118,17 @@
 		RT_ASSERT( JS_ValueToInt32( cx, jsvalInt, &intVariable ) != JS_FALSE, RT_ERROR_INT_CONVERSION_FAILED ); \
 	}
 
-#define RT_JSVAL_TO_STRING( jsvalString, stringVariable ) \
-	stringVariable = JS_GetStringBytes( JS_ValueToString(cx,jsvalString) ); \
-	RT_ASSERT( stringVariable != NULL, RT_ERROR_STRING_CONVERSION_FAILED );
+#define RT_JSVAL_TO_STRING( jsvalString, stringVariable ) { \
+		JSString *___jssTmp = JS_ValueToString(cx,jsvalString); \
+		RT_ASSERT( ___jssTmp != NULL, RT_ERROR_STRING_CONVERSION_FAILED ); \
+		stringVariable = JS_GetStringBytes( ___jssTmp ); \
+		RT_ASSERT( stringVariable != NULL, RT_ERROR_STRING_CONVERSION_FAILED ); \
+	}
 
 //inline const char *JsvalToString(cx, jsval) {
 //}
 
-#define RT_JSVAL_TO_STRING_AND_LENGTH( jsvalString, stringVariable, lengthVariable ) \
-	{ \
+#define RT_JSVAL_TO_STRING_AND_LENGTH( jsvalString, stringVariable, lengthVariable ) { \
 		JSString *___jssTmp = JS_ValueToString(cx,jsvalString); \
 		RT_ASSERT( ___jssTmp != NULL, RT_ERROR_STRING_CONVERSION_FAILED ); \
 		stringVariable = JS_GetStringBytes( ___jssTmp ); \

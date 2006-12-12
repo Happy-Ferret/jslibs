@@ -35,15 +35,15 @@ CONFIGURE_CLASS
 END_CLASS
 
 
-JSBool SqliteThrowError( JSContext *cx, int errorCode, const char *errorMsg ) {
+JSBool SqliteThrowError( JSContext *cx, int status, int errorCode, const char *errorMsg ) {
 
 	RT_SAFE(	JS_ReportWarning( cx, "SqliteError exception" ) );
 	JSObject *error = JS_NewObject( cx, &classSqliteError, NULL, NULL ); // [TBD] understand why classSqliteError must have a constructor to be throwed in an exception
 	RT_ASSERT( error != NULL, "Unable to create SqliteError object." );
-	JS_SetReservedSlot( cx, error, 0, INT_TO_JSVAL(errorCode) );
-	JS_SetReservedSlot( cx, error, 1, STRING_TO_JSVAL(JS_NewStringCopyZ( cx, errorMsg )) );
+	JS_SetReservedSlot( cx, error, SLOT_SQLITE_ERROR_CODE, INT_TO_JSVAL(errorCode) );
+	JS_SetReservedSlot( cx, error, SLOT_SQLITE_ERROR_TEXT, STRING_TO_JSVAL(JS_NewStringCopyZ( cx, errorMsg )) );
 	JS_SetPendingException( cx, OBJECT_TO_JSVAL( error ) );
-  return JS_FALSE;
+	return JS_FALSE;
 }
 
 

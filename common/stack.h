@@ -79,7 +79,7 @@ inline bool StackIsEmpty( void * const *stack ) {
 	return *stack == NULL;
 }
 
-inline bool StackLength( void * const *stack ) {
+inline int StackLength( void * const *stack ) {
 
 	int length = 0;
 	for ( ; *stack; stack = (void**)*stack, length++ );
@@ -96,13 +96,13 @@ inline bool StackHas( void * const *stack, const void *data ) {
 }
 
 
-inline bool StackFreeContent( void **stack ) {
+inline void StackFreeContent( void **stack ) {
 
 	while ( *stack )
       free( StackPop( stack ) );
 }
 
-inline bool StackFree( void **stack ) {
+inline void StackFree( void **stack ) {
 
 	while ( *stack )
       StackPop( stack );
