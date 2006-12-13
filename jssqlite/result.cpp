@@ -2,6 +2,9 @@
 #include "blob.h"
 #include "error.h"
 #include "result.h"
+#include "database.h"
+
+#include "../common/stack.h"
 
 #include <limits.h>
 
@@ -121,6 +124,8 @@ JSBool SqliteColumnToJsval( JSContext *cx, sqlite3_stmt *pStmt, int iCol, jsval 
 	return JS_TRUE;
 }
 
+//DatabaseReleaseStatement( JSContext *cx, JSObject *result ) {
+
 
 
 BEGIN_CLASS( Result )
@@ -130,7 +135,14 @@ DEFINE_FINALIZE() {
 	sqlite3_stmt *pStmt = (sqlite3_stmt *)JS_GetPrivate( cx, obj );
 	if ( pStmt != NULL ) {
 
-		int status = sqlite3_finalize( pStmt );
+		//jsval db, s;
+		//JS_GetReservedSlot(cx, obj, SLOT_RESULT_DATABASE, &db);
+		//JS_GetReservedSlot(cx, JSVAL_TO_OBJECT(db), SLOT_SQLITE_DATABASE_STATEMENT_STACK, &s);
+		//void *stack = JSVAL_TO_PRIVATE(s);
+		//StackRemove( &stack, pStmt );
+		//JS_SetReservedSlot(cx, JSVAL_TO_OBJECT(db), SLOT_SQLITE_DATABASE_STATEMENT_STACK, PRIVATE_TO_JSVAL(stack));
+
+		int status = sqlite3_finalize( pStmt ); // sqlite3_interrupt
 		if ( status != SQLITE_OK ) {
 			// [TBD] do something ?
 		}
@@ -144,6 +156,14 @@ DEFINE_FUNCTION( Close ) {
 
 	sqlite3_stmt *pStmt = (sqlite3_stmt *)JS_GetPrivate( cx, obj );
 	RT_ASSERT_RESOURCE( pStmt );
+
+	//jsval db, s;
+	//JS_GetReservedSlot(cx, obj, SLOT_RESULT_DATABASE, &db);
+	//JS_GetReservedSlot(cx, JSVAL_TO_OBJECT(db), SLOT_SQLITE_DATABASE_STATEMENT_STACK, &s);
+	//void *stack = JSVAL_TO_PRIVATE(s);
+	//StackRemove( &stack, pStmt );
+	//JS_SetReservedSlot(cx, JSVAL_TO_OBJECT(db), SLOT_SQLITE_DATABASE_STATEMENT_STACK, PRIVATE_TO_JSVAL(stack));
+
 	int status = sqlite3_finalize( pStmt );
 	if ( status != SQLITE_OK )
 		return SqliteThrowError( cx, status, sqlite3_errcode(sqlite3_db_handle(pStmt)), sqlite3_errmsg(sqlite3_db_handle(pStmt)) );
@@ -287,6 +307,14 @@ DEFINE_PROPERTY( columnIndexes ) {
   return JS_TRUE;
 }
 
+DEFINE_PROPERTY( expired ) {
+
+	sqlite3_stmt *pStmt = (sqlite3_stmt *)JS_GetPrivate( cx, obj );
+	RT_ASSERT_RESOURCE( pStmt );
+	*vp = sqlite3_expired(pStmt) ? JSVAL_TRUE : JSVAL_FALSE;
+  return JS_TRUE;
+}
+
 
 DEFINE_DEL_PROPERTY() {
 
@@ -311,6 +339,7 @@ CONFIGURE_CLASS
 		PROPERTY_READ( columnCount )
 		PROPERTY_READ( columnNames )
 		PROPERTY_READ( columnIndexes )
+		PROPERTY_READ( expired )
 	END_PROPERTY_SPEC
 
 	BEGIN_FUNCTION_SPEC

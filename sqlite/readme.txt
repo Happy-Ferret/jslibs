@@ -1,6 +1,8 @@
-http://www.sqlite.org/download.html
-sqlite-source-3_3_7.zip
+Version: 3.3.8
 
+http://www.sqlite.org/download.html
+	Source Code
+		sqlite-source-3_3_8.zip
 
 .
 ..

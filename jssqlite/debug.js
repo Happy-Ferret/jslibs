@@ -29,7 +29,7 @@ function testBinding() {
 	
 	Print( 'using binding: '+result1.Row()[0].length, '\n' );
 	
-	Print('changes :' + db.changes, '\n');
+	Print('changes: ' + db.changes, '\n');
 	result1.Close();
 }
 
@@ -39,10 +39,10 @@ try {
 	Print('database version: ' + Database.version ,'\n' );
 	var db = new Database('test_database');
 	
-	db.testFun = function() { return null }
+	db.testFun = function(a) { return a*10 }
 	db.jseval = function(s){ return eval(s) };
 	
-	Print( 'testFunc = ' + db.Exec('SELECT (null = 123), length(:toto), jseval("null") is null', {toto:Blob('qqwe\00\00fv1234'), aaa:null}) ,'\n' );	
+	Print( 'testFunc = ' + db.Exec('SELECT testFun(123), length(:toto), jseval("null") is null', {toto:Blob('qqwe\00\00fv1234'), aaa:null}) ,'\n' );	
 	
 	
 
@@ -56,8 +56,8 @@ try {
 //	Print( 'first col only     :'+result.Col(0).toSource() ,'\n' );
 //	result.Close();
 
+//CollectGarbage();
 
-CollectGarbage();
 	db.Close();
 
 } catch ( ex if ex instanceof SqliteError ) { // if ex instanceof SqliteError 

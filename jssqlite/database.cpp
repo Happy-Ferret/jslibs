@@ -9,6 +9,9 @@
 #include <limits.h>
 #include <stdlib.h>
 
+// [TBD] add User-defined Collation Sequences ( http://www.sqlite.org/datatype3.html )
+
+
 BEGIN_CLASS( Database )
 
 
@@ -22,9 +25,10 @@ DEFINE_CONSTRUCTOR() {
 	int status = sqlite3_open( fileName, &db );
 	if ( status != SQLITE_OK )
 		return SqliteThrowError( cx, status, sqlite3_errcode(db), sqlite3_errmsg(db) );
+	sqlite3_extended_result_codes(db, true); // SQLite 3.3.8
 
-	//sqlite3_extended_result_codes(db, true); // [TBD] symbol not found ??
-
+	JS_SetReservedSlot(cx, obj, SLOT_SQLITE_DATABASE_FUNCTION_CALL_STACK, PRIVATE_TO_JSVAL(NULL));
+//	JS_SetReservedSlot(cx, obj, SLOT_SQLITE_DATABASE_STATEMENT_STACK, PRIVATE_TO_JSVAL(NULL));
 	JS_SetPrivate( cx, obj, db );
 	return JS_TRUE;
 }
@@ -32,16 +36,30 @@ DEFINE_CONSTRUCTOR() {
 
 DEFINE_FINALIZE() {
 
+	int status;
 	sqlite3 *db = (sqlite3 *)JS_GetPrivate( cx, obj );
 	if ( db != NULL ) {
 
-		// now free the data allocated for function context
+		void *stack;
 		jsval v;
+
+		//// finalize open database statements
+		//
+		//JS_GetReservedSlot(cx, obj, SLOT_SQLITE_DATABASE_STATEMENT_STACK, &v);
+		//stack = JSVAL_TO_PRIVATE(v);
+		//while ( !StackIsEnd(&stack) ) {
+		//	sqlite3_stmt *pStmt = (sqlite3_stmt*)StackPop(&stack);
+		//	status = sqlite3_clear_bindings( pStmt ); // [TBD] usefull ?
+		//	status = sqlite3_finalize( pStmt );
+		//}
+
+		// now free the data allocated for function context
 		JS_GetReservedSlot(cx, obj, SLOT_SQLITE_DATABASE_FUNCTION_CALL_STACK, &v);
-		void *stack = JSVAL_TO_PRIVATE(v);
+		stack = JSVAL_TO_PRIVATE(v);
 		StackFreeContent(&stack); // StackLength( &stack );
 
-		int status = sqlite3_close( db ); // All prepared statements must finalized before sqlite3_close() is called or else the close will fail with a return code of SQLITE_BUSY.
+		// close the database
+		status = sqlite3_close( db ); // All prepared statements must finalized before sqlite3_close() is called or else the close will fail with a return code of SQLITE_BUSY.
 		if ( status != SQLITE_OK )
 			JS_ReportError( cx, "unable to finalize the database (error:%d) ", status );
 		JS_SetPrivate( cx, obj, NULL );
@@ -50,19 +68,44 @@ DEFINE_FINALIZE() {
 
 
 DEFINE_FUNCTION( Close ) {
-	
+
+	int status;
 	sqlite3 *db = (sqlite3 *)JS_GetPrivate( cx, obj );
 	RT_ASSERT_RESOURCE( db );
 
-	// now free the data allocated for function context
-	jsval v;
-	JS_GetReservedSlot(cx, obj, SLOT_SQLITE_DATABASE_FUNCTION_CALL_STACK, &v);
-	void *stack = JSVAL_TO_PRIVATE(v);
-	StackFreeContent( &stack ); // StackLength( &stack );
+	sqlite3_interrupt(db);
 
-	int status = sqlite3_close( db ); // All prepared statements must finalized before sqlite3_close() is called or else the close will fail with a return code of SQLITE_BUSY.
+	//// now free the data allocated for function context
+	//void *stack;
+	//jsval v;
+	//JS_GetReservedSlot(cx, obj, SLOT_SQLITE_DATABASE_FUNCTION_CALL_STACK, &v);
+	//stack = JSVAL_TO_PRIVATE(v);
+	//StackFreeContent( &stack ); // StackLength( &stack );
+
+	//// finalize open database statements
+	//JS_GetReservedSlot(cx, obj, SLOT_SQLITE_DATABASE_STATEMENT_STACK, &v);
+	//stack = JSVAL_TO_PRIVATE(v);
+
+	//while ( !StackIsEnd(&stack) ) {
+
+	//	sqlite3_stmt *pStmt = (sqlite3_stmt*)StackPop(&stack);
+	//	RT_ASSERT_RESOURCE( pStmt );
+
+	//	status = sqlite3_clear_bindings( pStmt ); // [TBD] usefull ?
+	//	if ( status != SQLITE_OK )
+	//		return SqliteThrowError( cx, status, sqlite3_errcode(db), sqlite3_errmsg(db) ); // cannot be called in Finalize ( because string allocation )
+
+	//	status = sqlite3_finalize( pStmt );
+	//	if ( status != SQLITE_OK )
+	//		return SqliteThrowError( cx, status, sqlite3_errcode(db), sqlite3_errmsg(db) );
+	//}
+	//JS_SetReservedSlot(cx, obj, SLOT_SQLITE_DATABASE_STATEMENT_STACK, PRIVATE_TO_JSVAL(NULL));
+
+	// close the database
+	status = sqlite3_close( db ); // All prepared statements must finalized before sqlite3_close() is called or else the close will fail with a return code of SQLITE_BUSY.
 	if ( status != SQLITE_OK )
 		return SqliteThrowError( cx, status, sqlite3_errcode(db), sqlite3_errmsg(db) );
+	
 	JS_SetPrivate( cx, obj, NULL );
 	return JS_TRUE;
 }
@@ -81,7 +124,6 @@ DEFINE_FUNCTION( Query ) {
 	sqlite3_stmt *pStmt;
 
 	int status = sqlite3_prepare( db, sqlQuery, -1, &pStmt, &szTail ); // If the next argument, "nBytes", is less than zero, then zSql is read up to the first nul terminator. 
-
 	if ( status != SQLITE_OK )
 		return SqliteThrowError( cx, status, sqlite3_errcode(db), sqlite3_errmsg(db) );
 
@@ -90,7 +132,15 @@ DEFINE_FUNCTION( Query ) {
 	if ( pStmt == NULL ) { // if there is an error, *ppStmt may be set to NULL. If the input text contained no SQL (if the input is and empty string or a comment) then *ppStmt is set to NULL.
 		// nothing to do here [TBD] why ?
 	}
-	
+
+	//// remember the statement
+	//jsval v;
+	//JS_GetReservedSlot(cx, obj, SLOT_SQLITE_DATABASE_STATEMENT_STACK, &v);
+	//void *stack = JSVAL_TO_PRIVATE(v);
+	//StackPush( &stack, pStmt );
+	//JS_SetReservedSlot(cx, obj, SLOT_SQLITE_DATABASE_STATEMENT_STACK, PRIVATE_TO_JSVAL(stack));
+
+	// create the Result (statement) object
 	JSObject *dbStatement = JS_NewObject( cx, &classResult, NULL, NULL );
 	JS_SetPrivate( cx, dbStatement, pStmt );
 	JS_SetReservedSlot(cx, dbStatement, SLOT_RESULT_DATABASE, OBJECT_TO_JSVAL( obj )); // link to avoid GC [TBD] enhance
@@ -282,10 +332,9 @@ DEFINE_SET_PROPERTY() {
 		// remember the data allocation
 		jsval v;
 		JS_GetReservedSlot(cx, obj, SLOT_SQLITE_DATABASE_FUNCTION_CALL_STACK, &v);
-		void *stack = v == JSVAL_VOID ? NULL : JSVAL_TO_PRIVATE(v); // first time ?
+		void *stack = JSVAL_TO_PRIVATE(v);
 		StackPush( &stack, data );
-		v = PRIVATE_TO_JSVAL(stack);
-		JS_SetReservedSlot(cx, obj, SLOT_SQLITE_DATABASE_FUNCTION_CALL_STACK, v);
+		JS_SetReservedSlot(cx, obj, SLOT_SQLITE_DATABASE_FUNCTION_CALL_STACK, PRIVATE_TO_JSVAL(stack));
 
 		int status = sqlite3_create_function(db, fName, -1, SQLITE_ANY /*SQLITE_UTF8*/, data, sqlite_function_call, NULL, NULL);
 		if ( status != SQLITE_OK )
@@ -316,6 +365,6 @@ CONFIGURE_CLASS
 
 	HAS_SET_PROPERTY
 	HAS_PRIVATE
-	HAS_RESERVED_SLOTS(1)
+	HAS_RESERVED_SLOTS(2)
 
 END_CLASS

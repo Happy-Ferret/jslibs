@@ -416,6 +416,17 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
     JS_EndRequest(cx);
 #endif
 
+	typedef void (*ModuleReleaseFunction)(JSContext *cx);
+	for ( int i = sizeof(_moduleList) / sizeof(*_moduleList) - 1; i >= 0; --i ) // beware: 'i' must be signed // start from the end
+		if ( _moduleList[i] != NULL ) {
+
+			ModuleReleaseFunction moduleRelease = (ModuleReleaseFunction)::GetProcAddress( _moduleList[i], "ModuleRelease" );
+			if ( moduleRelease != NULL )
+				moduleRelease(cx);
+		}
+
+//	JS_GC(cx); // try to break linked objects [TBD] don't
+
 // cleanup
   // For each context you've created
   JS_DestroyContext(cx); // [TBD] is JS_DestroyContextNoGC faster ?
@@ -426,18 +437,18 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
   // And finally
   JS_ShutDown();
 
-// free used modules
-
+// Beware: because JS engine allocate memory from the DLL, all memory must be disallocated before releasing the DLL
+	// free used modules
 	typedef void (*ModuleFreeFunction)(void);
-
-	for ( int i = sizeof(_moduleList) / sizeof(*_moduleList) - 1; i >= 0; --i ) // beware: 'i' must be signed
+	for ( int i = sizeof(_moduleList) / sizeof(*_moduleList) - 1; i >= 0; --i ) // beware: 'i' must be signed // start from the end
 		if ( _moduleList[i] != NULL ) {
 
-			ModuleFreeFunction moduleFree = (ModuleFreeFunction)::GetProcAddress( _moduleList[i], "ModuleRelease" );
+			ModuleFreeFunction moduleFree = (ModuleFreeFunction)::GetProcAddress( _moduleList[i], "ModuleFree" );
 			if ( moduleFree != NULL )
 				moduleFree();
 			::FreeLibrary(_moduleList[i]);
 		}
+
   return 0;
 }
 

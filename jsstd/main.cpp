@@ -104,7 +104,7 @@ DEFINE_FUNCTION( Expand ) {
 	char *expandedString = (char*)JS_malloc(cx, totalLength);
 
 	char *tmp = expandedString;
-	while ( !StackIsEmpty(&stack) ) {
+	while ( !StackIsEnd(&stack) ) {
 
 		Chunk *chunk = (Chunk*)StackPop(&stack);
 		memcpy(tmp, chunk->data, chunk->length);
@@ -115,7 +115,7 @@ DEFINE_FUNCTION( Expand ) {
 	*rval = STRING_TO_JSVAL( JS_NewString(cx, expandedString, totalLength) );
 
 
-	js_GetFrameCallObject
+//	js_GetFrameCallObject
 	return JS_TRUE;
 }
 
