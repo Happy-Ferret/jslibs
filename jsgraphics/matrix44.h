@@ -91,7 +91,7 @@ inline void Matrix44Product( Matrix44 *m, const Matrix44 *mx ) { // m = m * mx
 	m->m4 = _mm_add_ps(_mm_add_ps(_mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(sm4, sm4, _MM_SHUFFLE(0,0,0,0)), mx1), _mm_mul_ps(_mm_shuffle_ps(sm4, sm4, _MM_SHUFFLE(1,1,1,1)), mx2)), _mm_mul_ps(_mm_shuffle_ps(sm4, sm4, _MM_SHUFFLE(2,2,2,2)), mx3)), _mm_mul_ps(_mm_shuffle_ps(sm4, sm4, _MM_SHUFFLE(3,3,3,3)), mx4));
 }
 
-// [TBD] optimize it, try to base it on Matrix44Multiply()
+// (TBD) optimize it, try to base it on Matrix44Multiply()
 inline void Matrix44InverseProduct( Matrix44 *m, const Matrix44 *mx ) { // m = mx * m
 
 	__m128 sm1 = m->m1;
@@ -241,7 +241,7 @@ inline void Matrix44SetRotation( Matrix44 *m, const Vector3 *axis, float radAngl
 
 /*
 	Vector3 v = *axis;
-	Vector3Normalize(&v); // [TBD] Opt: check if already normalized
+	Vector3Normalize(&v); // (TBD) Opt: check if already normalized
 	float sa = (float) sinf(radAngle);
 	float ca = (float) cosf(radAngle);
 //	Matrix44 rot;

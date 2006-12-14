@@ -94,7 +94,7 @@ DEFINE_FUNCTION( Expand ) {
 		totalLength += chunk->length;
 		StackPush( &stack, chunk );
 		
-		srcBegin = tok + 1; // [TBD] check buffer overflow
+		srcBegin = tok + 1; // (TBD) check buffer overflow
 //		if ( srcBegin >= srcEnd )
 //			break;
 	}
@@ -183,7 +183,8 @@ DEFINE_FUNCTION( HideProperties ) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // note:
-//  warning is reported on stderr ( jshost.exe test.js 2>NUL ) [TBD] update this note ?
+//  warning is reported on stderr ( jshost.exe test.js 2>NUL )
+// (TBD) update this note ?
 DEFINE_FUNCTION( Warning ) {
 
 	JSString *jssMesage = JS_ValueToString(cx, argv[0]);
@@ -266,7 +267,8 @@ static JSScript* LoadScript(JSContext *cx, JSObject *obj, const char *fileName, 
 
 	if ( useCompFile && compFileUpToDate ) {
 
-		FILE *file = fopen(compiledFileName, "rb"); // b for binary ( win32 ) // [TBD] use open/close/read/... instead of fopen/fclose/fread/...
+		FILE *file = fopen(compiledFileName, "rb"); // b for binary ( win32 ) 
+		// (TBD) use open/close/read/... instead of fopen/fclose/fread/...
 		if ( !file ) {
 
 			JS_ReportError( cx, "Unable to open file \"%s\" for reading.", compiledFileName );
@@ -284,7 +286,7 @@ static JSScript* LoadScript(JSContext *cx, JSObject *obj, const char *fileName, 
 			return NULL;
 		}
 
-		fclose( file ); // [TBD] use open/close/read/... instead of fopen/fclose/fread/...
+		fclose( file ); // (TBD) use open/close/read/... instead of fopen/fclose/fread/...
 
 		JSXDRState *xdr = JS_XDRNewMem(cx,JSXDR_DECODE);
 		if ( xdr == NULL )
@@ -293,7 +295,7 @@ static JSScript* LoadScript(JSContext *cx, JSObject *obj, const char *fileName, 
 		JSBool xdrSuccess = JS_XDRScript( xdr, &script );
 		if ( xdrSuccess != JS_TRUE )
 			return NULL;
-		// [TBD] manage BIG_ENDIAN here ?
+		// (TBD) manage BIG_ENDIAN here ?
 		JS_XDRMemSetData(xdr, NULL, 0);
 		JS_XDRDestroy(xdr);
 		JS_free( cx, data );
@@ -309,7 +311,7 @@ static JSScript* LoadScript(JSContext *cx, JSObject *obj, const char *fileName, 
 			JSBool xdrSuccess = JS_XDRScript( xdr, &script );
 			if ( xdrSuccess != JS_TRUE )
 				return NULL;
-			FILE *file  = fopen( compiledFileName, "wb" ); // [TBD] use open/close/read/... instead of fopen/fclose/fread/...
+			FILE *file  = fopen( compiledFileName, "wb" ); // (TBD) use open/close/read/... instead of fopen/fclose/fread/...
 			if ( file != NULL ) { // if the file cannot be write, this is not an error ( eg. read-only drive )
 
 				uint32 length;
@@ -317,8 +319,8 @@ static JSScript* LoadScript(JSContext *cx, JSObject *obj, const char *fileName, 
 				if ( buf == NULL )
 					return NULL;
 				// manage BIG_ENDIAN here ?
-				fwrite( buf, 1, length, file ); // [TBD] use open/close/read/... instead of fopen/fclose/fread/...
-				fclose(file); // [TBD] use open/close/read/... instead of fopen/fclose/fread/...
+				fwrite( buf, 1, length, file ); // (TBD) use open/close/read/... instead of fopen/fclose/fread/...
+				fclose(file); // (TBD) use open/close/read/... instead of fopen/fclose/fread/...
 			}
 			JS_XDRDestroy( xdr );
 		}

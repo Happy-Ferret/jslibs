@@ -10,7 +10,7 @@ static int ReadMatrix(void *pv, float **pm) { // Doc: __declspec(noinline) tells
 	ode::dBodyID id = (ode::dBodyID)pv;
 	const ode::dReal * m43 = dBodyGetRotation( id );
 	const ode::dReal * pos = dBodyGetPosition( id );
-// [TBD] center of mass ajustement ?
+// (TBD) need center of mass ajustement ?
 	float *m = *pm;
 	m[0]  = m43[0];
 	m[1]  = m43[4];
@@ -36,7 +36,7 @@ BEGIN_CLASS( Body )
 
 DEFINE_FINALIZE() {
 
-	// [TBD] manage Mass object (body.mass)
+// (TBD) manage Mass object (body.mass)
 /*
 	ode::dBodyID bodyId = (ode::dBodyID)JS_GetPrivate( cx, obj );
 //	JSObject *parent = JS_GetParent(cx,obj); // If the object does not have a parent, or the object finalize function is active, JS_GetParent returns NULL.
@@ -66,7 +66,7 @@ DEFINE_CONSTRUCTOR() {
 //	ode::dBodySetData(bodyID, obj);
 
 //	ode::dBodySetData(bodyID,worldObject);
-	SetNativeInterface(cx, obj, NI_READ_MATRIX44, (FunctionPointer)ReadMatrix, bodyID); // [TBD] check return status
+	SetNativeInterface(cx, obj, NI_READ_MATRIX44, (FunctionPointer)ReadMatrix, bodyID); // (TBD) check return status
 	return JS_TRUE;
 }
 
@@ -75,7 +75,7 @@ DEFINE_FUNCTION( Destroy ) {
 
 	RT_ASSERT_CLASS(obj, &classBody);
 	ode::dBodyID bodyId = (ode::dBodyID)JS_GetPrivate( cx, obj );
-	RT_ASSERT_RESOURCE( bodyId ); // [TBD] manage world-connected ( when bodyId == 0 )
+	RT_ASSERT_RESOURCE( bodyId ); // (TBD) manage world-connected ( when bodyId == 0 )
 	dBodyDestroy(bodyId);
 	JS_SetPrivate(cx, obj, NULL);
 	JS_SetReservedSlot(cx, obj, BODY_SLOT_WORLD, JSVAL_VOID);

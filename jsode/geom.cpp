@@ -86,7 +86,7 @@ DEFINE_PROPERTY( enableGetter ) {
 
 DEFINE_PROPERTY( body ) {
 
-	// [TBD] check if the obj's private data is the right body. else ERROR
+	// (TBD) check if the obj's private data is the right body. else ERROR
 	//ode::dGeomID geom = (ode::dGeomID)JS_GetPrivate(cx, obj);
 	//RT_ASSERT_RESOURCE( geom );
 	//ode::dBodyID bodyId = dGeomGetBody(geom);
@@ -116,7 +116,7 @@ DEFINE_PROPERTY( offset ) {
 		RT_ASSERT( ReadMatrix != NULL && descriptor != NULL, "Invalid matrix interface." );
 		ReadMatrix(descriptor, (float**)&m);
 		RT_ASSERT( *m != NULL, "Invalid matrix." );
-		ode::dMatrix3 m3 = { m[0], m[4], m[8], 0, m[1], m[5], m[9], 0, m[2], m[6], m[10], 0 }; // [TBD] check
+		ode::dMatrix3 m3 = { m[0], m[4], m[8], 0, m[1], m[5], m[9], 0, m[2], m[6], m[10], 0 }; // (TBD) check
 		ode::dGeomSetOffsetRotation(geom, m3);
 		ode::dGeomSetOffsetPosition(geom, m[3], m[7], m[11]);
 	}
@@ -136,7 +136,7 @@ DEFINE_PROPERTY( tansformation ) {
 	RT_ASSERT( ReadMatrix != NULL && descriptor != NULL, "Invalid matrix interface." );
 	ReadMatrix(descriptor, (float**)&m);
 	RT_ASSERT( *m != NULL, "Invalid matrix." );
-	ode::dMatrix3 m3 = { m[0], m[4], m[8], 0, m[1], m[5], m[9], 0, m[2], m[6], m[10], 0 }; // [TBD] check
+	ode::dMatrix3 m3 = { m[0], m[4], m[8], 0, m[1], m[5], m[9], 0, m[2], m[6], m[10], 0 }; // (TBD) check
 	ode::dGeomSetRotation(geom, m3);
 	ode::dGeomSetPosition(geom, m[3], m[7], m[11]);
 	return JS_TRUE;
@@ -178,7 +178,7 @@ DEFINE_PROPERTY( offsetPositionGetter ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(geom);
-	const ode::dReal *vector = ode::dGeomGetOffsetPosition(geom); // [TBD] dGeomGetOffsetRotation 
+	const ode::dReal *vector = ode::dGeomGetOffsetPosition(geom); // (TBD) dGeomGetOffsetRotation 
 	FloatVectorToArray(cx, 3, vector, vp);
 	return JS_TRUE;
 }
@@ -190,7 +190,7 @@ DEFINE_PROPERTY( offsetPositionSetter ) {
 	RT_ASSERT_RESOURCE(geom);
 	ode::dVector3 vector;
 	FloatArrayToVector(cx, 3, vp, vector);
-	ode::dGeomSetOffsetPosition( geom, vector[0], vector[1], vector[2] ); // [TBD] dGeomSetOffsetWorldRotation 
+	ode::dGeomSetOffsetPosition( geom, vector[0], vector[1], vector[2] ); // (TBD) dGeomSetOffsetWorldRotation 
 	return JS_TRUE;
 }
 */

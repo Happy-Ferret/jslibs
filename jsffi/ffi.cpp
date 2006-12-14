@@ -18,7 +18,7 @@
 // symbol _Py_FatalError referenced in function _ffi_prep_args
 extern "C" void Py_FatalError(char *msg) { 
 
-// [TBD] need to manage a pool of context ?
+// (TBD) need to manage a pool of context ?
 }
 
 

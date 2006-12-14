@@ -32,7 +32,7 @@ DEFINE_PROPERTY_NULL( surfaceGetter )
 DEFINE_PROPERTY( surfaceSetter ) {
 
 	ode::dSurfaceParameters *surface = (ode::dSurfaceParameters*)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE(surface); // [TBD] check if NULL is meaningful for joints !
+	RT_ASSERT_RESOURCE(surface); // (TBD) check if NULL is meaningful for joints !
 	RT_ASSERT_NUMBER( *vp );
 	ode::dReal value = JSValToODEReal(cx, *vp);
 	switch(JSVAL_TO_INT(id)) {
@@ -77,7 +77,7 @@ DEFINE_PROPERTY( surfaceSetter ) {
 			break;
 	}  
 // Doc: http://opende.sourceforge.net/wiki/index.php/Manual_%28Joint_Types_and_Functions%29#Contact
-// [TBD] manage this:
+// (TBD) manage this:
 // dContactFDir1 ?
 //	dContactApprox0	= 0x0000,
 //	dContactApprox1_1	= 0x1000,

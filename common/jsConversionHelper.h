@@ -34,7 +34,7 @@ inline JSBool IntVectorToArray( JSContext *cx, int count, const int *vector, jsv
 	jsval value;
 	for (jsint i=0; i<count; ++i) {
 
-		RT_SAFE( JS_NewNumberValue(cx, vector[i], &value) ); // [TBD] useful ??
+		RT_SAFE( JS_NewNumberValue(cx, vector[i], &value) ); // (TBD) useful ??
 		RT_UNSAFE( value = INT_TO_JSVAL(vector[i]) );
 		JS_SetElement(cx, jsArray, i, &value);
 	}

@@ -31,7 +31,8 @@ DEFINE_CONSTRUCTOR() {
 			return JS_FALSE;
 	ode::dSpaceID spaceId = ode::dSimpleSpaceCreate(parentSpace);
 	JS_SetPrivate(cx, obj, spaceId); // dSimpleSpaceCreate / dHashSpaceCreate / dQuadTreeSpaceCreate
-	// ode::dHashSpaceSetLevels(spaceId, // [TBD] use this
+	// ode::dHashSpaceSetLevels(spaceId, 
+	// (TBD) use this
 	return JS_TRUE;
 }
 

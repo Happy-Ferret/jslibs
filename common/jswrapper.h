@@ -153,7 +153,7 @@ protected:
 
 	static T_Class* Object(JSContext *cx, JSObject *obj) {
 		
-		if ( !JS_InstanceOf( cx, obj, &_jsClass, NULL) /*&& !HasPrototype(cx, obj) [TBD]*/ )
+		if ( !JS_InstanceOf( cx, obj, &_jsClass, NULL) // (TBD) ... && !HasPrototype(cx, obj) ...  )
       return NULL;
 
     return (T_Class *) JS_GetPrivate(cx, obj);
@@ -183,7 +183,7 @@ private:
 
   static void Destructor(JSContext *cx, JSObject *obj) {
 
-    // [TBD] check obj and JS_GetPrivate return
+    // (TBD) check obj and JS_GetPrivate return
     T_Class *o = (T_Class *) JS_GetPrivate(cx, obj);
 		if ( o != NULL )
 			delete o;

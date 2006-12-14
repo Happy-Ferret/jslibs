@@ -31,7 +31,7 @@ static void nearCallback (void *data, ode::dGeomID o1, ode::dGeomID o2) {
 		return;
 
 	ode::dContact contact[MAX_CONTACTS];
-	int n = ode::dCollide(o1, o2, MAX_CONTACTS, &contact[0].geom, sizeof(ode::dContact)); // [TBD] or sizeof(ode::dContactGeom) ??? // It is an error for skip to be smaller than sizeof(dContactGeom).
+	int n = ode::dCollide(o1, o2, MAX_CONTACTS, &contact[0].geom, sizeof(ode::dContact)); // (TBD) or sizeof(ode::dContactGeom) ??? // It is an error for skip to be smaller than sizeof(dContactGeom).
 
 	if ( n > 0 ) {
 
@@ -127,7 +127,7 @@ DEFINE_FINALIZE() {
 //		jsval val;
 //		JS_GetReservedSlot(cx, obj, WORLD_SLOT_CONTACTGROUP, &val);
 //		ode::dJointGroupDestroy((ode::dJointGroupID)JSVAL_TO_PRIVATE(val));
-		ode::dWorldDestroy(worldId); // [TBD] Destroy a world and everything in it.
+		ode::dWorldDestroy(worldId); // (TBD) Destroy a world and everything in it.
 		JS_SetPrivate(cx,obj,NULL);
 	}
 }
@@ -187,7 +187,7 @@ DEFINE_FUNCTION( Step ) {
 	JS_GetProperty(cx, obj, DEFAULT_SURFACE_PARAMETERS_PROPERTY_NAME, &defaultSurfaceParametersObject);
 	RT_ASSERT_DEFINED( defaultSurfaceParametersObject );
 	RT_ASSERT_OBJECT( defaultSurfaceParametersObject );
-	RT_ASSERT_CLASS( JSVAL_TO_OBJECT(defaultSurfaceParametersObject), &classSurfaceParameters ); // [TBD] simplify RT_ASSERT
+	RT_ASSERT_CLASS( JSVAL_TO_OBJECT(defaultSurfaceParametersObject), &classSurfaceParameters ); // (TBD) simplify RT_ASSERT
 	ode::dSurfaceParameters *defaultSurfaceParameters = (ode::dSurfaceParameters*)JS_GetPrivate(cx, JSVAL_TO_OBJECT(defaultSurfaceParametersObject)); // beware: local variable !
 	RT_ASSERT_RESOURCE( defaultSurfaceParameters );
 
@@ -198,7 +198,7 @@ DEFINE_FUNCTION( Step ) {
 	ColideContextPrivate ccp = { cx, defaultSurfaceParameters, contactgroup, worldID };
 	ode::dSpaceCollide(spaceId, (void*)&ccp, &nearCallback);
 
-	// [TBD] see dWorldSetQuickStepW and dWorldSetAutoEnableDepthSF1
+	// (TBD) see dWorldSetQuickStepW and dWorldSetAutoEnableDepthSF1
 
 	if ( argc >= 2 ) {
 

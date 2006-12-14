@@ -19,7 +19,7 @@ DEFINE_CONSTRUCTOR() {
 DEFINE_PROPERTY( anchorSetter ) {
 
 	ode::dJointID jointId = (ode::dJointID)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE(jointId); // [TBD] check if NULL is meaningful for joints !
+	RT_ASSERT_RESOURCE(jointId); // (TBD) check if NULL is meaningful for joints !
 	ode::dVector3 vector;
 	FloatArrayToVector(cx, 3, vp, vector);
 	ode::dJointSetHingeAnchor( jointId, vector[0], vector[1], vector[2] );
@@ -49,7 +49,7 @@ DEFINE_PROPERTY( anchor2 ) { // read only
 DEFINE_PROPERTY( axisSetter ) {
 
 	ode::dJointID jointId = (ode::dJointID)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE(jointId); // [TBD] check if NULL is meaningful for joints !
+	RT_ASSERT_RESOURCE(jointId); // (TBD) check if NULL is meaningful for joints !
 	ode::dVector3 vector;
 	FloatArrayToVector(cx, 3, vp, vector);
 	ode::dJointSetHingeAxis( jointId, vector[0], vector[1], vector[2] );

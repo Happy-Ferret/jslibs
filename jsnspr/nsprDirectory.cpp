@@ -69,7 +69,8 @@ JSBool Directory_open(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsv
 	PRDir *dd = PR_OpenDir( directoryName );
 
 	if ( dd == NULL )
-		return ThrowNSPRError( cx, PR_GetError() ); // ??? Doc do not say it is possible to read PR_GetError after an error on PR_OpenDir !!! [TBD] check
+		return ThrowNSPRError( cx, PR_GetError() ); // ??? Doc do not say it is possible to read PR_GetError after an error on PR_OpenDir !!!
+		// (TBD) check
 
 	JS_SetPrivate( cx, obj, dd );
 

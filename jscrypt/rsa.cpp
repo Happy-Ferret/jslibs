@@ -57,7 +57,7 @@ JSBool rsa_createKeys(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsv
 
 	int err;
 	if ((err=rsa_make_key( &prngPrivate->state, prngIndex, keySize/8, 65537, &rsaPrivate->key )) != CRYPT_OK)
-		return ThrowCryptError(cx, err); // [TBD] should free rsaPrivate or Finalize is called ?
+		return ThrowCryptError(cx, err); // (TBD) should free rsaPrivate or Finalize is called ?
 
 	return JS_TRUE;
 }
@@ -104,7 +104,7 @@ JSBool rsa_encryptKey(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsv
 
 	int err;
 	if ( (err=rsa_encrypt_key( (const unsigned char *)in, inLength, (unsigned char *)out, &outLength, NULL, 0, &prngPrivate->state, prngIndex, hashIndex, &privateData->key )) != CRYPT_OK )
-		return ThrowCryptError(cx, err); // [TBD] free rsaPrivate ?
+		return ThrowCryptError(cx, err); // (TBD) free rsaPrivate ?
 
 	JSString *jssOut = JS_NewString( cx, out, outLength );
 	RT_ASSERT( jssOut != NULL, "unable to create the string." );
@@ -153,7 +153,7 @@ JSBool rsa_decryptKey(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsv
 
 	int err;
 	if ( (err=rsa_decrypt_key( (const unsigned char *)in, inLength, (unsigned char *)out, &outLength, NULL, 0, hashIndex, &stat, &privateData->key )) != CRYPT_OK )
-		return ThrowCryptError(cx, err); // [TBD] free rsaPrivate ?
+		return ThrowCryptError(cx, err); // (TBD) free rsaPrivate ?
 
 	// RT_ASSERT( stat == 1, "invalid decryption" );
 	if ( stat != 1 ) {
@@ -192,7 +192,7 @@ JSBool rsa_setter_key(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 
 	int err;
 	if ( (err=rsa_import( (const unsigned char *)key, keyLength, &privateData->key )) != CRYPT_OK )
-		return ThrowCryptError(cx, err); // [TBD] free rsaPrivate ?
+		return ThrowCryptError(cx, err); // (TBD) free rsaPrivate ?
 
 	return JS_TRUE;
 }
@@ -214,7 +214,7 @@ JSBool rsa_getter_key(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 
 	int err;
 	if ( (err=rsa_export( (unsigned char *)key, &keyLength, type, &privateData->key )) != CRYPT_OK )
-		return ThrowCryptError(cx, err); // [TBD] free rsaPrivate ?
+		return ThrowCryptError(cx, err); // (TBD) free rsaPrivate ?
 
 	JSString *jssKey = JS_NewStringCopyN( cx, key, keyLength );
 	RT_ASSERT( jssKey != NULL, "unable to create the key string." );

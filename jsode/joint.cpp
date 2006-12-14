@@ -11,7 +11,7 @@ BEGIN_CLASS( Joint )
 	// Api: int dAreConnected (dBodyID b1, dBodyID b2);
 
 	
-	// [TBD] replace Attach with body1 and body2 setter
+	// (TBD) replace Attach with body1 and body2 setter
 
 /*
 DEFINE_PROPERTY( body1 ) {
@@ -77,7 +77,7 @@ DEFINE_FUNCTION( Destroy ) {
 		free(currentFeedback);
 	// remove references to bodies
 	jsval val = JSVAL_VOID;
-	JS_SetProperty(cx, obj, "body1", &val); // [TBD] find why to not use JS_DeleteProperty
+	JS_SetProperty(cx, obj, "body1", &val); // (TBD) find why to not use JS_DeleteProperty
 	JS_SetProperty(cx, obj, "body2", &val);
 	JS_SetPrivate(cx, obj, NULL); 
 	ode::dJointDestroy(jointId);
@@ -135,7 +135,7 @@ void JointSetParam( ode::dJointID jointId, int parameter, ode::dReal value ) {
 			ode::dJointSetSliderParam(jointId, parameter, value);
 			break;
 		case ode::dJointTypePlane2D:
-			ode::dJointSetPlane2DXParam(jointId, parameter, value); // [TBD] split them
+			ode::dJointSetPlane2DXParam(jointId, parameter, value); // (TBD) split them
 			ode::dJointSetPlane2DYParam(jointId, parameter, value);
 //			ode::dJointSetPlane2DAngleParam(jointId, parameter, value);
 			break;

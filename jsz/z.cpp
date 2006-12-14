@@ -34,7 +34,8 @@ void z_Finalize(JSContext *cx, JSObject *obj) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 JSBool z_call(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
-	JSObject *thisObj = JSVAL_TO_OBJECT(argv[-2]); // get 'this' object of the current object ... [TBD]: check JS_InstanceOf( cx, thisObj, &NativeProc, NULL )
+	JSObject *thisObj = JSVAL_TO_OBJECT(argv[-2]); // get 'this' object of the current object ... 
+	// (TBD) check JS_InstanceOf( cx, thisObj, &NativeProc, NULL )
 
 	z_streamp stream = (z_streamp)JS_GetPrivate( cx, thisObj );
 	if ( stream == NULL ) {
@@ -100,7 +101,7 @@ JSBool z_call(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval
 
 // assamble chunks
 	unsigned char *outputData = (unsigned char*)JS_malloc( cx, outputLength +1 ); // +1 for '\0' char
-	outputData[outputLength] = 0; // [TBD] understand WHY !? outputLength info is not enough ??
+	outputData[outputLength] = 0; // (TBD) understand WHY !? outputLength info is not enough ??
 	buffer.Read(outputData);
 	JSString *jssOutputData = JS_NewString( cx, (char*)outputData, outputLength );
 	if ( jssOutputData == NULL ) {

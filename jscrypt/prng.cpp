@@ -16,7 +16,8 @@ void prng_Finalize(JSContext *cx, JSObject *obj) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 JSBool prng_call(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
-	JSObject *thisObj = JSVAL_TO_OBJECT(argv[-2]); // get 'this' object of the current object ... [TBD]: check JS_InstanceOf( cx, thisObj, &NativeProc, NULL )
+	JSObject *thisObj = JSVAL_TO_OBJECT(argv[-2]); // get 'this' object of the current object ... 
+	// (TBD) check JS_InstanceOf( cx, thisObj, &NativeProc, NULL )
 
 	RT_ASSERT_ARGC( 1 );
 	RT_ASSERT_CLASS( thisObj, &prng_class );

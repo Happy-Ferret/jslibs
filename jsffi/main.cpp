@@ -11,7 +11,7 @@ extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj)
 
 extern "C" __declspec(dllexport) JSBool ModuleRelease(JSContext *cx, JSObject *obj) {
 
-	// [TBD] cleanup the global object
+	// (TBD) cleanup the global object
 	Release_JSNI(cx);
 	Destroy_JSNI();
 	return JS_TRUE;

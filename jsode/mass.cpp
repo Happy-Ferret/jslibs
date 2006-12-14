@@ -2,7 +2,7 @@
 #include "body.h"
 #include "mass.h"
 
-// [TBD] Mass object seems to be useless. Try to merge Body with Mass
+// (TBD) Mass object seems to be useless. Try to merge Body with Mass
 BEGIN_CLASS( Mass )
 
 JSBool GetBodyAndMass(JSContext *cx, JSObject *massObject, ode::dBodyID *pBodyID, ode::dMass *pMass) {

@@ -24,7 +24,7 @@ JSBool GetConfigurationObject(JSContext *cx, JSObject **configurationObject ) {
 	} else {
 
 		RT_ASSERT_RETURN( JS_ValueToObject(cx, configurationValue, configurationObject) )
-		// [TBD] check if it is the right object
+		// (TBD) check if it is the right object
 	}
 	return JS_TRUE;
 }

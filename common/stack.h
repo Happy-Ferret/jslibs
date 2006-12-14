@@ -40,6 +40,11 @@ inline void* StackData( const void * const * stack ) {
   return ((void**)*stack)[1];
 }
 
+inline void StackSetData( const void * const * stack, void *data ) {
+
+  ((void**)*stack)[1] = data;
+}
+
 
 inline void* StackPrev( const void * const * stack ) {
 
@@ -97,6 +102,15 @@ inline void* StackPop( void **stack ) {
   data = item[1];
   free( item );
   return data;
+}
+
+
+inline bool StackReplaceData( void * const *stack, const void *data, void *newData ) {
+
+	void *it;
+	if ( it = StackFind( stack, data ) )
+		StackSetData( stack, newData );
+	return it != NULL;
 }
 
 

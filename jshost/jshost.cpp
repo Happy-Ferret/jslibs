@@ -254,7 +254,7 @@ static JSBool stdoutFunction(JSContext *cx, JSObject *obj, uintN argc, jsval *ar
 	JSString *str;
 	str = JS_ValueToString(cx, argv[0]);
 	RT_ASSERT( str != NULL, "Unable to convert argument to string.");
-	argv[0] = STRING_TO_JSVAL(str); // [TBD] needed ?
+	argv[0] = STRING_TO_JSVAL(str); // (TBD) needed ?
 	consoleStdOut( JS_GetStringBytes(str), JS_GetStringLength(str) );
 	return JS_TRUE;
 }
@@ -276,7 +276,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 		switch ( argv[0][1] ) {
 			case 'w': // report warnings
 				argv++;
-				// [TBD] set into configuration
+				// (TBD) set into configuration
 				break;
 			case 'm': // maxbytes (GC)
 				argv++;
@@ -295,7 +295,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 			case 'u': // avoid any runtime checks
 				argv++;
 				unsafeMode = ( atoi( *argv ) != 0 );
-				// [TBD] set into configuration
+				// (TBD) set into configuration
 				break;
 	}
 
@@ -313,7 +313,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	RT_HOST_MAIN_ASSERT( cx != NULL, "unable to create the context." );
 
 	JS_SetVersion( cx, JSVERSION_1_7 );
-	//	[TBD] set into configuration file
+	// (TBD) set into configuration file
 
 // error management
 	JS_SetErrorReporter(cx, ErrorReporter);
@@ -405,7 +405,8 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	jsStatus = JS_ExecuteScript( cx, globalObject, script, &rval ); // MUST be executed only once ( JSOPTION_COMPILE_N_GO )
 	// if jsStatus != JS_TRUE, an error has been throw while the execution, so there is no need to throw another error
 
-//		printf( "Last executed line %s:%d", script->filename, JS_PCToLineNumber( cx, script, script->code ) ); // if it right ? [TBD] enhance this
+//		printf( "Last executed line %s:%d", script->filename, JS_PCToLineNumber( cx, script, script->code ) ); // if it right ?
+	// (TBD) enhance this
 
   JS_DestroyScript( cx, script );
 
@@ -425,11 +426,12 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 				moduleRelease(cx);
 		}
 
-//	JS_GC(cx); // try to break linked objects [TBD] don't
+//	JS_GC(cx); // try to break linked objects
+// (TBD) don't
 
 // cleanup
   // For each context you've created
-  JS_DestroyContext(cx); // [TBD] is JS_DestroyContextNoGC faster ?
+  JS_DestroyContext(cx); // (TBD) is JS_DestroyContextNoGC faster ?
 
   // For each runtime
   JS_DestroyRuntime(rt);

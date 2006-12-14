@@ -52,8 +52,8 @@ DEFINE_FINALIZE() {
 
 	JS_SetReservedSlot(cx, obj, SLOT_WINDOW_OBJECT, JSVAL_VOID);
 
-	// [TBD] ? wglDeleteContext 
-	// [TBD] ? ReleaseDC
+	// (TBD) ? wglDeleteContext 
+	// (TBD) ? ReleaseDC
 
 }
 
@@ -101,7 +101,7 @@ DEFINE_CONSTRUCTOR() {
 	// If you are using the Win32 interface (as opposed to GLUT), call DescribePixelFormat() and check the returned dwFlags bitfield. 
 	// If PFD_GENERIC_ACCELERATED is clear and PFD_GENERIC_FORMAT is set, then the pixel format is only supported by the generic implementation. 
 	// Hardware acceleration is not possible for this format. For hardware acceleration, you need to choose a different format.
-	DescribePixelFormat(hDC, pixelFormat, sizeof(PIXELFORMATDESCRIPTOR), &pfd); // [TBD] check return value for error
+	DescribePixelFormat(hDC, pixelFormat, sizeof(PIXELFORMATDESCRIPTOR), &pfd); // (TBD) check return value for error
 	bool hasNoAccel = (pfd.dwFlags & PFD_GENERIC_FORMAT) != 0 && (pfd.dwFlags & PFD_GENERIC_ACCELERATED) == 0;
 	RT_ASSERT( hasNoAccel == false, "Hardware acceleration is not possible for this format." );
 
@@ -151,7 +151,8 @@ DEFINE_FUNCTION( Init ) {
 	glShadeModel(GL_FLAT);
 
 	glEnable(GL_DEPTH_TEST);
-	glDepthFunc(GL_LESS); // GL_LEQUAL cause some z-conflict on far objects ! [TBD] understand why
+	glDepthFunc(GL_LESS); // GL_LEQUAL cause some z-conflict on far objects ! 
+	// (TBD) understand why
 	glClearDepth(1.0f);
 //	glDepthRange( 0.01, 1000 );
 
@@ -458,7 +459,7 @@ DEFINE_FUNCTION( Line ) { // 2D
 }
 
 
-// [TBD] manage compression: http://www.opengl.org/registry/specs/ARB/texture_compression.txt
+// (TBD) manage compression: http://www.opengl.org/registry/specs/ARB/texture_compression.txt
 DEFINE_FUNCTION( Texture ) {
 
 	RT_ASSERT_ARGC(1);
@@ -476,7 +477,7 @@ DEFINE_FUNCTION( Texture ) {
 	GetIntProperty(cx, image, "channels", &channels);
 
 	GLuint texture;
-	glGenTextures( 1, &texture ); // [TBD] free with glDeleteTextures
+	glGenTextures( 1, &texture ); // (TBD) free with glDeleteTextures
 	glBindTexture( GL_TEXTURE_2D, texture ); // Doc: glBindTexture is included in display lists.
    
 	glTexImage2D( GL_TEXTURE_2D, 0, 3, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data );

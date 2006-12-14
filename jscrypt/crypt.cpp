@@ -62,7 +62,7 @@ JSBool crypt_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, js
 		symmetric_CTR *psctr = (symmetric_CTR *)malloc( sizeof(symmetric_CTR) );
 		RT_ASSERT( psctr != NULL, RT_ERROR_OUT_OF_MEMORY );
 		if ((err = ctr_start( cipherIndex, (const unsigned char *)IV, (const unsigned char *)key, keyLength, 0, CTR_COUNTER_LITTLE_ENDIAN, psctr )) != CRYPT_OK)
-			return ThrowCryptError(cx, err); // [TBD] free privateData and psctr
+			return ThrowCryptError(cx, err); // (TBD) free privateData and psctr
 		privateData->symmetric_XXX = psctr;
 	} else if ( _stricmp( modeName, MODE_CFB ) == 0 ) {
 
@@ -70,7 +70,7 @@ JSBool crypt_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, js
 		symmetric_CFB *symmetric_XXX = (symmetric_CFB *)malloc( sizeof(symmetric_CFB) );
 		RT_ASSERT( symmetric_XXX != NULL, RT_ERROR_OUT_OF_MEMORY );
 		if ((err = cfb_start( cipherIndex, (const unsigned char *)IV, (const unsigned char *)key, keyLength, 0, symmetric_XXX )) != CRYPT_OK)
-			return ThrowCryptError(cx, err); // [TBD] free privateData and psctr
+			return ThrowCryptError(cx, err); // (TBD) free privateData and psctr
 		privateData->symmetric_XXX = symmetric_XXX;
 	} else
 		RT_ASSERT_1( false, "unsupported %s mode.", modeName );

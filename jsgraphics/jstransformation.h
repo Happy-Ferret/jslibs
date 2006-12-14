@@ -17,7 +17,7 @@ inline JSBool GetMatrixHelper( JSContext *cx, jsval val, Matrix44 **m ) {
 	if ( JS_GetClass(obj) == &classTransformation ) { // ok, we know this object and the content of its jsprivate
 
 		*m = (Matrix44*)JS_GetPrivate(cx, obj);
-		RT_ASSERT_RESOURCE(m); // [TBD] good place to throw an error ? ( shouldn't be the caller's job ? )
+		RT_ASSERT_RESOURCE(m); // (TBD) good place to throw an error ? ( shouldn't be the caller's job ? )
 	} else { // try to read the matrix using the NativeInterface system
 
 		NIMatrix44Read ReadMatrix;

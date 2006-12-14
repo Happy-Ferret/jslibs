@@ -39,7 +39,7 @@
 ////////////////
 // helper macros
 
-// [TBD] rename the following function
+// (TBD) rename the following function
 #define RT_ASSERT_RETURN( functionCall ) \
 	if ((functionCall) == JS_FALSE) { return JS_FALSE; }
 

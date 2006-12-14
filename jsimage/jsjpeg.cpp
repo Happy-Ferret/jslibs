@@ -51,7 +51,7 @@ METHODDEF(boolean) fill_input_buffer(j_decompress_ptr cinfo) {
 
 	unsigned int amount = INPUT_BUF_SIZE;
 	src->read(src->pv, src->buffer, &amount);
-	// [TBD] manage errors
+	// (TBD) manage errors
 
 	if ( amount == 0 ) {
 		WARNMS(cinfo, JWRN_JPEG_EOF);
@@ -73,7 +73,7 @@ METHODDEF(void) skip_input_data(j_decompress_ptr cinfo, long num_bytes) {
 		while (num_bytes > (long) src->pub.bytes_in_buffer) {
 
 			num_bytes -= (long) src->pub.bytes_in_buffer;
-			fill_input_buffer(cinfo); // [TBD] change this
+			fill_input_buffer(cinfo); // (TBD) change this
 		}
 		src->pub.next_input_byte += (size_t) num_bytes;
 		src->pub.bytes_in_buffer -= (size_t) num_bytes;
@@ -104,13 +104,14 @@ typedef struct {
 void ReadUsingJsMethod( void *pv, unsigned char *data, unsigned int *length ) {
 
 	jsval rval, len = INT_TO_JSVAL(*length);
-	JS_CallFunctionName(((CxObj*)pv)->cx, ((CxObj*)pv)->obj, "Read", 1, &len, &rval ); // [TBD] check if function exists
-	//if ( !JSVAL_IS_STRING(rval) ) [TBD] manage this error
+	JS_CallFunctionName(((CxObj*)pv)->cx, ((CxObj*)pv)->obj, "Read", 1, &len, &rval ); // (TBD) check if function exists
+	//if ( !JSVAL_IS_STRING(rval) )
+	// (TBD) manage this error
 	JSString *str = JSVAL_TO_STRING(rval);
 	*length = JS_GetStringLength(str);
 	char *stringData = JS_GetStringBytes(str);
-	// [TBD] check if not NULL
-	memcpy(data, stringData, *length); // [TBD] hard but try to avoid the useless copy of data
+	// (TBD) check if not NULL
+	memcpy(data, stringData, *length); // (TBD) hard but try to avoid the useless copy of data
 }
 
 
@@ -130,7 +131,7 @@ DEFINE_CONSTRUCTOR() {
 	RT_ASSERT_CONSTRUCTING(_class);
 	RT_ASSERT_ARGC(1);
 
-	j_decompress_ptr cinfo = (j_decompress_ptr)malloc(sizeof(jpeg_decompress_struct)); // [TBD] free
+	j_decompress_ptr cinfo = (j_decompress_ptr)malloc(sizeof(jpeg_decompress_struct)); // (TBD) free
 	RT_ASSERT_ALLOC(cinfo);
 
 // setup error structure
@@ -161,7 +162,7 @@ DEFINE_CONSTRUCTOR() {
 
 // else use a 'classic' method to read the data ( like var data = resourceObject.Read(amount); )
 	if ( src->read == NULL || src->pv == NULL ) {
-		RT_ASSERT( false, "[TBD]" );
+		RT_ASSERT( false, "TO BE DONE" ); // (TBD) read without NI_READ_RESOURCE
 //		CxObj
 //		src->pv = resourceObject;
 //		src->read = ReadUsingJsMethod;

@@ -363,7 +363,8 @@ JSBool File_getter_info( JSContext *cx, JSObject *obj, jsval id, jsval *vp ) {
 		status = PR_GetOpenFileInfo( fd, &fileInfo );
 
 	if ( status != PR_SUCCESS )
-		return ThrowNSPRError( cx, PR_GetError() ); // ??? Doc do not say it is possible to read PR_GetError after an error on PR_GetFileInfo !!! [TBD] check
+		return ThrowNSPRError( cx, PR_GetError() ); // ??? Doc do not say it is possible to read PR_GetError after an error on PR_GetFileInfo !!!
+		// (TBD) check
 
 	JSObject *fileTypeObj = JS_NewObject( cx, NULL, NULL, NULL );
 	*vp = OBJECT_TO_JSVAL( fileTypeObj );

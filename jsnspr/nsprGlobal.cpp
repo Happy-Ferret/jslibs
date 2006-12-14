@@ -52,7 +52,8 @@ JSBool g_poll(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval
 		JS_IdToValue( cx, idArray->vector[i], &propVal );
 		JS_GetElement(cx, JSVAL_TO_OBJECT(argv[0]), JSVAL_TO_INT(propVal), &propVal );
 		JSObject *o = JSVAL_TO_OBJECT( propVal ); //JS_ValueToObject
-		*rval = OBJECT_TO_JSVAL( o ); // protect from GC [TBD] is it useful ? I don't use JS_ValueToObject
+		*rval = OBJECT_TO_JSVAL( o ); // protect from GC
+		// (TBD) is it useful ? I don't use JS_ValueToObject
 
 		PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, o );
 
@@ -145,7 +146,8 @@ JSBool g_isReadable(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval
 	}
 
 	JSObject *o = JSVAL_TO_OBJECT( argv[0] ); //JS_ValueToObject
-	*rval = OBJECT_TO_JSVAL( o ); // protect from GC [TBD] is it useful ? I don't use JS_ValueToObject
+	*rval = OBJECT_TO_JSVAL( o ); // protect from GC
+	// (TBD) is it useful ? I don't use JS_ValueToObject
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, o );
 	PRPollDesc desc;
 	desc.fd = fd;
@@ -175,7 +177,8 @@ JSBool g_isWritable(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval
 	}
 
 	JSObject *o = JSVAL_TO_OBJECT( argv[0] ); //JS_ValueToObject
-	*rval = OBJECT_TO_JSVAL( o ); // protect from GC [TBD] is it useful ? I don't use JS_ValueToObject
+	*rval = OBJECT_TO_JSVAL( o ); // protect from GC
+	// (TBD) is it useful ? I don't use JS_ValueToObject
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, o );
 	PRPollDesc desc;
 	desc.fd = fd;
