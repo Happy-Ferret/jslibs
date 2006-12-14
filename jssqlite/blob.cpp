@@ -18,7 +18,7 @@ DEFINE_CONSTRUCTOR() {
 
 DEFINE_CONVERT() {
 
-	JS_GetReservedSlot(cx, obj, SLOT_BLOB_DATA, vp); // [TBD] why we cannot use this: if ( type == JSTYPE_STRING )
+	JS_GetReservedSlot(cx, obj, SLOT_BLOB_DATA, vp); // (TBD) why we cannot use this: if ( type == JSTYPE_STRING )
 	return JS_TRUE;
 }
 

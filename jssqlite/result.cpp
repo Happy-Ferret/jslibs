@@ -49,7 +49,7 @@ JSBool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *objAt,
 	for ( int param = 1; param <= count; param++ ) {
 		
 		const char *name = sqlite3_bind_parameter_name( pStmt, param );
-		RT_ASSERT( name != NULL, "Binding is out of range." ); // [TBD] better error message
+		RT_ASSERT( name != NULL, "Binding is out of range." ); // (TBD) better error message
 		
 		JSObject *obj = NULL;
 
@@ -65,7 +65,8 @@ JSBool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *objAt,
 		jsval val;
 		JS_GetProperty(cx, obj, name+1, &val);
 
-//		sqlite3_bind_value( pStmt, param, // [TBD] how to use this
+		// sqlite3_bind_value( pStmt, param, 
+		// (TBD) how to use this
 		switch ( JS_TypeOfValue(cx, val) ) { 
 			case JSTYPE_VOID:
 			case JSTYPE_NULL: // http://www.sqlite.org/nulls.html
@@ -103,7 +104,7 @@ JSBool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *objAt,
 					break;
 				}
 			case JSTYPE_XML:
-			case JSTYPE_FUNCTION: // [TBD] call the function and pass its result to SQLite ?
+			case JSTYPE_FUNCTION: // (TBD) call the function and pass its result to SQLite ?
 			case JSTYPE_STRING: {
 				
 				JSString *jsstr = JS_ValueToString(cx, val);
@@ -111,7 +112,7 @@ JSBool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *objAt,
 				}
 				break;
 			default:
-				REPORT_ERROR("Unsupported data type"); // [TBD] better error message
+				REPORT_ERROR("Unsupported data type"); // (TBD) better error message
 		}
 	}
 	return JS_TRUE;
@@ -124,9 +125,6 @@ JSBool SqliteColumnToJsval( JSContext *cx, sqlite3_stmt *pStmt, int iCol, jsval 
 	return JS_TRUE;
 }
 
-//DatabaseReleaseStatement( JSContext *cx, JSObject *result ) {
-
-
 
 BEGIN_CLASS( Result )
 
@@ -135,18 +133,20 @@ DEFINE_FINALIZE() {
 	sqlite3_stmt *pStmt = (sqlite3_stmt *)JS_GetPrivate( cx, obj );
 	if ( pStmt != NULL ) {
 
-		//jsval db, s;
-		//JS_GetReservedSlot(cx, obj, SLOT_RESULT_DATABASE, &db);
-		//JS_GetReservedSlot(cx, JSVAL_TO_OBJECT(db), SLOT_SQLITE_DATABASE_STATEMENT_STACK, &s);
-		//void *stack = JSVAL_TO_PRIVATE(s);
-		//StackRemove( &stack, pStmt );
-		//JS_SetReservedSlot(cx, JSVAL_TO_OBJECT(db), SLOT_SQLITE_DATABASE_STATEMENT_STACK, PRIVATE_TO_JSVAL(stack));
+#if 0 // issue when database object is finalized BEFORE its statements: getReservedSlot(DATABASE) will failed 
+		// (TBD) fix it
+		jsval v;
+		JS_GetReservedSlot(cx, obj, SLOT_RESULT_DATABASE, &v);
+		JS_GetReservedSlot(cx, JSVAL_TO_OBJECT(v), SLOT_SQLITE_DATABASE_STATEMENT_STACK, &v);
+		void *stack = JSVAL_TO_PRIVATE(v);
+		StackReplaceData( &stack, pStmt, NULL );
+#endif
 
 		int status = sqlite3_finalize( pStmt ); // sqlite3_interrupt
 		if ( status != SQLITE_OK ) {
-			// [TBD] do something ?
+			// (TBD) do something ?
 		}
-		JS_SetPrivate( cx, obj, NULL ); // [TBD] not needed
+		JS_SetPrivate( cx, obj, NULL ); // (TBD) not needed
 //		JS_SetReservedSlot(cx, obj, SLOT_RESULT_DATABASE, JSVAL_VOID); // beware: don't do JS_SetReservedSlot while GC !! 
 	}
 }
@@ -156,18 +156,19 @@ DEFINE_FUNCTION( Close ) {
 
 	sqlite3_stmt *pStmt = (sqlite3_stmt *)JS_GetPrivate( cx, obj );
 	RT_ASSERT_RESOURCE( pStmt );
+	JS_SetPrivate( cx, obj, NULL );
 
-	//jsval db, s;
-	//JS_GetReservedSlot(cx, obj, SLOT_RESULT_DATABASE, &db);
-	//JS_GetReservedSlot(cx, JSVAL_TO_OBJECT(db), SLOT_SQLITE_DATABASE_STATEMENT_STACK, &s);
-	//void *stack = JSVAL_TO_PRIVATE(s);
-	//StackRemove( &stack, pStmt );
-	//JS_SetReservedSlot(cx, JSVAL_TO_OBJECT(db), SLOT_SQLITE_DATABASE_STATEMENT_STACK, PRIVATE_TO_JSVAL(stack));
+#if 0
+	jsval v;
+	RT_ASSERT_RETURN( JS_GetReservedSlot(cx, obj, SLOT_RESULT_DATABASE, &v) );
+	RT_ASSERT_RETURN( JS_GetReservedSlot(cx, JSVAL_TO_OBJECT(v), SLOT_SQLITE_DATABASE_STATEMENT_STACK, &v) );
+	void *stack = JSVAL_TO_PRIVATE(v);
+	StackReplaceData( &stack, pStmt, NULL );
+#endif
 
 	int status = sqlite3_finalize( pStmt );
 	if ( status != SQLITE_OK )
 		return SqliteThrowError( cx, status, sqlite3_errcode(sqlite3_db_handle(pStmt)), sqlite3_errmsg(sqlite3_db_handle(pStmt)) );
-	JS_SetPrivate( cx, obj, NULL );
 	JS_SetReservedSlot(cx, obj, SLOT_RESULT_DATABASE, JSVAL_VOID);
 	return JS_TRUE;
 }

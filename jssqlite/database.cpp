@@ -9,7 +9,7 @@
 #include <limits.h>
 #include <stdlib.h>
 
-// [TBD] add User-defined Collation Sequences ( http://www.sqlite.org/datatype3.html )
+// (TBD) add User-defined Collation Sequences ( http://www.sqlite.org/datatype3.html )
 
 
 BEGIN_CLASS( Database )
@@ -28,7 +28,7 @@ DEFINE_CONSTRUCTOR() {
 	sqlite3_extended_result_codes(db, true); // SQLite 3.3.8
 
 	JS_SetReservedSlot(cx, obj, SLOT_SQLITE_DATABASE_FUNCTION_CALL_STACK, PRIVATE_TO_JSVAL(NULL));
-//	JS_SetReservedSlot(cx, obj, SLOT_SQLITE_DATABASE_STATEMENT_STACK, PRIVATE_TO_JSVAL(NULL));
+	JS_SetReservedSlot(cx, obj, SLOT_SQLITE_DATABASE_STATEMENT_STACK, PRIVATE_TO_JSVAL(NULL));
 	JS_SetPrivate( cx, obj, db );
 	return JS_TRUE;
 }
@@ -49,14 +49,30 @@ DEFINE_FINALIZE() {
 		//stack = JSVAL_TO_PRIVATE(v);
 		//while ( !StackIsEnd(&stack) ) {
 		//	sqlite3_stmt *pStmt = (sqlite3_stmt*)StackPop(&stack);
-		//	status = sqlite3_clear_bindings( pStmt ); // [TBD] usefull ?
+		//	status = sqlite3_clear_bindings( pStmt ); 
+		// (TBD) usefull ?
 		//	status = sqlite3_finalize( pStmt );
 		//}
 
-		// now free the data allocated for function context
+		// free the data allocated for function context
 		JS_GetReservedSlot(cx, obj, SLOT_SQLITE_DATABASE_FUNCTION_CALL_STACK, &v);
 		stack = JSVAL_TO_PRIVATE(v);
 		StackFreeContent(&stack); // StackLength( &stack );
+
+#if 0
+		// finalize open database statements
+		JS_GetReservedSlot(cx, obj, SLOT_SQLITE_DATABASE_STATEMENT_STACK, &v);
+		stack = JSVAL_TO_PRIVATE(v);
+		while ( !StackIsEnd(&stack) ) {
+
+			sqlite3_stmt *pStmt = (sqlite3_stmt*)StackPop(&stack);
+			if ( pStmt == NULL ) // already finalized ( see Result:Close and Result:Finalize )
+				continue;
+			status = sqlite3_finalize( pStmt );
+			if ( status != SQLITE_OK )
+				;
+		}
+#endif
 
 		// close the database
 		status = sqlite3_close( db ); // All prepared statements must finalized before sqlite3_close() is called or else the close will fail with a return code of SQLITE_BUSY.
@@ -69,44 +85,40 @@ DEFINE_FINALIZE() {
 
 DEFINE_FUNCTION( Close ) {
 
-	int status;
 	sqlite3 *db = (sqlite3 *)JS_GetPrivate( cx, obj );
 	RT_ASSERT_RESOURCE( db );
+	JS_SetPrivate( cx, obj, NULL );
 
+	int status;
 	sqlite3_interrupt(db);
 
-	//// now free the data allocated for function context
-	//void *stack;
-	//jsval v;
-	//JS_GetReservedSlot(cx, obj, SLOT_SQLITE_DATABASE_FUNCTION_CALL_STACK, &v);
-	//stack = JSVAL_TO_PRIVATE(v);
-	//StackFreeContent( &stack ); // StackLength( &stack );
+	// free the data allocated for function context
+	void *stack;
+	jsval v;
+	JS_GetReservedSlot(cx, obj, SLOT_SQLITE_DATABASE_FUNCTION_CALL_STACK, &v);
+	stack = JSVAL_TO_PRIVATE(v);
+	StackFreeContent( &stack ); 
 
-	//// finalize open database statements
-	//JS_GetReservedSlot(cx, obj, SLOT_SQLITE_DATABASE_STATEMENT_STACK, &v);
-	//stack = JSVAL_TO_PRIVATE(v);
+#if 0
+	// finalize open database statements
+	RT_ASSERT_RETURN( JS_GetReservedSlot(cx, obj, SLOT_SQLITE_DATABASE_STATEMENT_STACK, &v) );
+	stack = JSVAL_TO_PRIVATE(v);
+	while ( !StackIsEnd(&stack) ) {
 
-	//while ( !StackIsEnd(&stack) ) {
-
-	//	sqlite3_stmt *pStmt = (sqlite3_stmt*)StackPop(&stack);
-	//	RT_ASSERT_RESOURCE( pStmt );
-
-	//	status = sqlite3_clear_bindings( pStmt ); // [TBD] usefull ?
-	//	if ( status != SQLITE_OK )
-	//		return SqliteThrowError( cx, status, sqlite3_errcode(db), sqlite3_errmsg(db) ); // cannot be called in Finalize ( because string allocation )
-
-	//	status = sqlite3_finalize( pStmt );
-	//	if ( status != SQLITE_OK )
-	//		return SqliteThrowError( cx, status, sqlite3_errcode(db), sqlite3_errmsg(db) );
-	//}
-	//JS_SetReservedSlot(cx, obj, SLOT_SQLITE_DATABASE_STATEMENT_STACK, PRIVATE_TO_JSVAL(NULL));
+		sqlite3_stmt *pStmt = (sqlite3_stmt*)StackPop(&stack);
+		if ( pStmt == NULL ) // already finalized ( see Result:Close and Result:Finalize )
+			continue;
+		status = sqlite3_finalize( pStmt );
+		if ( status != SQLITE_OK )
+			return SqliteThrowError( cx, status, sqlite3_errcode(db), sqlite3_errmsg(db) );
+	}
+#endif
 
 	// close the database
 	status = sqlite3_close( db ); // All prepared statements must finalized before sqlite3_close() is called or else the close will fail with a return code of SQLITE_BUSY.
 	if ( status != SQLITE_OK )
 		return SqliteThrowError( cx, status, sqlite3_errcode(db), sqlite3_errmsg(db) );
 	
-	JS_SetPrivate( cx, obj, NULL );
 	return JS_TRUE;
 }
 
@@ -129,21 +141,23 @@ DEFINE_FUNCTION( Query ) {
 
 	RT_ASSERT_1( *szTail == '\0', "too many SQL statements (%s)", szTail ); // for the moment, do not support multiple statements
 
-	if ( pStmt == NULL ) { // if there is an error, *ppStmt may be set to NULL. If the input text contained no SQL (if the input is and empty string or a comment) then *ppStmt is set to NULL.
-		// nothing to do here [TBD] why ?
-	}
+	if ( pStmt == NULL ) // if there is an error, *ppStmt may be set to NULL. If the input text contained no SQL (if the input is and empty string or a comment) then *ppStmt is set to NULL.
+		REPORT_ERROR( "Invalid SQL string." );
 
-	//// remember the statement
-	//jsval v;
-	//JS_GetReservedSlot(cx, obj, SLOT_SQLITE_DATABASE_STATEMENT_STACK, &v);
-	//void *stack = JSVAL_TO_PRIVATE(v);
-	//StackPush( &stack, pStmt );
-	//JS_SetReservedSlot(cx, obj, SLOT_SQLITE_DATABASE_STATEMENT_STACK, PRIVATE_TO_JSVAL(stack));
+#if 0
+	// remember the statement for later finalization
+	jsval v;
+	JS_GetReservedSlot(cx, obj, SLOT_SQLITE_DATABASE_STATEMENT_STACK, &v);
+	void *stack = JSVAL_TO_PRIVATE(v);
+	StackPush( &stack, pStmt );
+	JS_SetReservedSlot(cx, obj, SLOT_SQLITE_DATABASE_STATEMENT_STACK, PRIVATE_TO_JSVAL(stack));
+#endif
 
 	// create the Result (statement) object
 	JSObject *dbStatement = JS_NewObject( cx, &classResult, NULL, NULL );
 	JS_SetPrivate( cx, dbStatement, pStmt );
-	JS_SetReservedSlot(cx, dbStatement, SLOT_RESULT_DATABASE, OBJECT_TO_JSVAL( obj )); // link to avoid GC [TBD] enhance
+	JS_SetReservedSlot(cx, dbStatement, SLOT_RESULT_DATABASE, OBJECT_TO_JSVAL( obj )); // link to avoid GC 
+	// (TBD) enhance
 	*rval = OBJECT_TO_JSVAL( dbStatement );
 
 	return JS_TRUE;
@@ -166,7 +180,8 @@ DEFINE_FUNCTION( Exec ) {
 	status = sqlite3_prepare( db, sqlQuery, -1, &pStmt, &szTail ); // If the next argument, "nBytes", is less than zero, then zSql is read up to the first nul terminator. 
 	if ( status != SQLITE_OK )
 		return SqliteThrowError( cx, status, sqlite3_errcode(db), sqlite3_errmsg(db) );
-	RT_ASSERT_1( *szTail == '\0', "too many SQL statements (%s)", szTail ); // for the moment, do not support multiple statements
+	RT_ASSERT_1( *szTail == '\0', "Too many SQL statements (%s).", szTail ); // for the moment, do not support multiple statements 
+	// (TBD) support multiple statements
 
 	if ( argc >= 2 && argv[1] != JSVAL_VOID && JSVAL_IS_OBJECT(argv[1]) )
 		SqliteSetupBindings(cx, pStmt, NULL, JSVAL_TO_OBJECT(argv[1]) ); // JS_GetParent(cx, obj)
@@ -175,7 +190,7 @@ DEFINE_FUNCTION( Exec ) {
 		case SQLITE_ERROR:
 			return SqliteThrowError( cx, status, sqlite3_errcode(sqlite3_db_handle( pStmt )), sqlite3_errmsg(sqlite3_db_handle( pStmt )));
 		case SQLITE_MISUSE: // means that the this routine was called inappropriately. Perhaps it was called on a virtual machine that had already been finalized or on one that had previously returned SQLITE_ERROR or SQLITE_DONE. Or it could be the case that a database connection is being used by a different thread than the one it was created it.
-			REPORT_ERROR( "this routine was called inappropriately" );
+			REPORT_ERROR( "This routine was called inappropriately." );
 		case SQLITE_DONE: // means that the statement has finished executing successfully. sqlite3_step() should not be called again on this virtual machine without first calling sqlite3_reset() to reset the virtual machine back to its initial state.
 			//			REPORT_ERROR( "No result found." );
 			*rval = JSVAL_VOID;
@@ -236,7 +251,7 @@ void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArg
 	SqliteFunctionCallUserData *data = (SqliteFunctionCallUserData*)sqlite3_user_data(sCx);
 
 	JSContext *iterp = NULL;
-	JSContext *cx = JS_ContextIterator(data->rt, &iterp); // [TBD] change this for multithread
+	JSContext *cx = JS_ContextIterator(data->rt, &iterp); // (TBD) change this for multithread
 	JSFunction *fun = data->function;
 	JSObject *obj = data->object;
 
@@ -249,18 +264,18 @@ void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArg
 		JS_AddRoot(cx, &argv[r]);
 		if ( SqliteToJsval( cx, sArgv[r], &argv[r] ) == JS_FALSE ) {
 
-			sqlite3_result_error(sCx, "Invalid type", -1 ); // [TBD] enhance error report & remove roots on error
+			sqlite3_result_error(sCx, "Invalid type", -1 ); // (TBD) enhance error report & remove roots on error
 			goto bad;
 		}
 	}
 	
 	if ( JS_CallFunction(cx, obj, fun, sArgc, argv, &rval) == JS_FALSE ) {
 
-		sqlite3_result_error(sCx, "Function call error", -1 ); // [TBD] better error message
+		sqlite3_result_error(sCx, "Function call error", -1 ); // (TBD) better error message
 		goto bad;
 	}
 
-	// [TBD] how to use sqlite3_result_value
+	// (TBD) how to use sqlite3_result_value
 	switch ( JS_TypeOfValue(cx, rval) ) {
 		case JSTYPE_VOID:
 		case JSTYPE_NULL:
@@ -298,14 +313,14 @@ void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArg
 				break;
 			}
 		case JSTYPE_XML:
-		case JSTYPE_FUNCTION: // [TBD] call the function and pass its result to SQLite ?
+		case JSTYPE_FUNCTION: // (TBD) call the function and pass its result to SQLite ?
 		case JSTYPE_STRING: {
 			JSString *jsstr = JS_ValueToString(cx, rval);
 			sqlite3_result_text(sCx, JS_GetStringBytes(jsstr), JS_GetStringLength(jsstr), SQLITE_STATIC); // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT // cf.  int sqlite3_bind_text16(sqlite3_stmt*, int, const void*, int n, void(*)(void*));
 			break;
 		}
 		default:
-			sqlite3_result_error(sCx, "Unsupported data type", -1 ); // [TBD] better error message
+			sqlite3_result_error(sCx, "Unsupported data type", -1 ); // (TBD) better error message
 	}
 
 bad:
@@ -324,7 +339,7 @@ DEFINE_SET_PROPERTY() {
 		char *fName;
 		RT_JSVAL_TO_STRING( id, fName );
 
-		SqliteFunctionCallUserData *data = (SqliteFunctionCallUserData*)malloc(sizeof(SqliteFunctionCallUserData)); // [TBD] store this allocated pointer in a stack to be freed later
+		SqliteFunctionCallUserData *data = (SqliteFunctionCallUserData*)malloc(sizeof(SqliteFunctionCallUserData)); // (TBD) store this allocated pointer in a stack to be freed later
 		data->rt = JS_GetRuntime(cx);
 		data->object = obj;
 		data->function = JS_ValueToFunction(cx, *vp);
