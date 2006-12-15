@@ -16,7 +16,7 @@ extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj)
 
 
 	JSFunctionSpec _tmp[] = {{0}};
-	JSBool st = INIT_CLASS( Toto );
+	JSBool st = INIT_CLASS( World );
 	return JS_TRUE;
 }
 

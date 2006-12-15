@@ -7,6 +7,7 @@
 
 #define DEFINE_FUNCTION(name) static JSBool name##(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 #define DEFINE_CONSTRUCTOR() static JSBool Constructor(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+#define DEFINE_OBJECT_CONSTRUCTOR() static JSBool ObjectConstructor(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 #define DEFINE_FINALIZE() static void Finalize(JSContext *cx, JSObject *obj)
 #define DEFINE_CONVERT() static JSBool Convert(JSContext *cx, JSObject *obj, JSType type, jsval *vp)
 #define DEFINE_RESOLVE() static JSBool Resolve(JSContext *cx, JSObject *obj, jsval id, uintN flags, JSObject **objp)
@@ -101,7 +102,7 @@
 
 // class configuration
 #define HAS_CONSTRUCTOR   _constructor = Constructor;
-#define HAS_OBJECT_CONSTRUCT   _class->construct = ObjectConstruct;
+#define HAS_OBJECT_CONSTRUCTOR   _class->construct = ObjectConstructor;
 #define CONSTRUCT_PROTOTYPE   _class->flags |= JSCLASS_CONSTRUCT_PROTOTYPE;
 #define HAS_PRIVATE   _class->flags |= JSCLASS_HAS_PRIVATE;
 #define SHARE_ALL_PROPERTIES   _class->flags |= JSCLASS_SHARE_ALL_PROPERTIES;

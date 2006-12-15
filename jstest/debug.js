@@ -10,11 +10,10 @@ var aa = new a();
 */
 
 
-var a = new Toto;
+var w = new World;
 
+var Body = new w.Body;
 
-
-Print( a );
 
 Print('Done.');
 

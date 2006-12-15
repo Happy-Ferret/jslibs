@@ -1,1 +1,1 @@
-DECLARE_CLASS( Toto );
+DECLARE_CLASS( World );
