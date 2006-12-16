@@ -59,7 +59,7 @@ DEFINE_FINALIZE() {
 		stack = JSVAL_TO_PRIVATE(v);
 		StackFreeContent(&stack); // StackLength( &stack );
 
-#if 0
+
 		// finalize open database statements
 		JS_GetReservedSlot(cx, obj, SLOT_SQLITE_DATABASE_STATEMENT_STACK, &v);
 		stack = JSVAL_TO_PRIVATE(v);
@@ -69,10 +69,10 @@ DEFINE_FINALIZE() {
 			if ( pStmt == NULL ) // already finalized ( see Result:Close and Result:Finalize )
 				continue;
 			status = sqlite3_finalize( pStmt );
-			if ( status != SQLITE_OK )
-				;
+			if ( status != SQLITE_OK ) {
+				// (TBD) report the error ?
+			}
 		}
-#endif
 
 		// close the database
 		status = sqlite3_close( db ); // All prepared statements must finalized before sqlite3_close() is called or else the close will fail with a return code of SQLITE_BUSY.
@@ -88,37 +88,30 @@ DEFINE_FUNCTION( Close ) {
 	sqlite3 *db = (sqlite3 *)JS_GetPrivate( cx, obj );
 	RT_ASSERT_RESOURCE( db );
 	JS_SetPrivate( cx, obj, NULL );
-
 	int status;
 	sqlite3_interrupt(db);
-
 	// free the data allocated for function context
 	void *stack;
 	jsval v;
 	JS_GetReservedSlot(cx, obj, SLOT_SQLITE_DATABASE_FUNCTION_CALL_STACK, &v);
 	stack = JSVAL_TO_PRIVATE(v);
 	StackFreeContent( &stack ); 
-
-#if 0
 	// finalize open database statements
 	RT_ASSERT_RETURN( JS_GetReservedSlot(cx, obj, SLOT_SQLITE_DATABASE_STATEMENT_STACK, &v) );
 	stack = JSVAL_TO_PRIVATE(v);
 	while ( !StackIsEnd(&stack) ) {
 
 		sqlite3_stmt *pStmt = (sqlite3_stmt*)StackPop(&stack);
-		if ( pStmt == NULL ) // already finalized ( see Result:Close and Result:Finalize )
+		if ( pStmt == NULL ) // already finalized ( see Result:Close )
 			continue;
 		status = sqlite3_finalize( pStmt );
 		if ( status != SQLITE_OK )
 			return SqliteThrowError( cx, status, sqlite3_errcode(db), sqlite3_errmsg(db) );
 	}
-#endif
-
 	// close the database
 	status = sqlite3_close( db ); // All prepared statements must finalized before sqlite3_close() is called or else the close will fail with a return code of SQLITE_BUSY.
 	if ( status != SQLITE_OK )
 		return SqliteThrowError( cx, status, sqlite3_errcode(db), sqlite3_errmsg(db) );
-	
 	return JS_TRUE;
 }
 
@@ -144,14 +137,12 @@ DEFINE_FUNCTION( Query ) {
 	if ( pStmt == NULL ) // if there is an error, *ppStmt may be set to NULL. If the input text contained no SQL (if the input is and empty string or a comment) then *ppStmt is set to NULL.
 		REPORT_ERROR( "Invalid SQL string." );
 
-#if 0
 	// remember the statement for later finalization
 	jsval v;
 	JS_GetReservedSlot(cx, obj, SLOT_SQLITE_DATABASE_STATEMENT_STACK, &v);
 	void *stack = JSVAL_TO_PRIVATE(v);
 	StackPush( &stack, pStmt );
 	JS_SetReservedSlot(cx, obj, SLOT_SQLITE_DATABASE_STATEMENT_STACK, PRIVATE_TO_JSVAL(stack));
-#endif
 
 	// create the Result (statement) object
 	JSObject *dbStatement = JS_NewObject( cx, &classResult, NULL, NULL );
@@ -159,6 +150,10 @@ DEFINE_FUNCTION( Query ) {
 	JS_SetReservedSlot(cx, dbStatement, SLOT_RESULT_DATABASE, OBJECT_TO_JSVAL( obj )); // link to avoid GC 
 	// (TBD) enhance
 	*rval = OBJECT_TO_JSVAL( dbStatement );
+
+	if ( argc >= 2 && argv[1] != JSVAL_VOID && JSVAL_IS_OBJECT(argv[1]) )
+		JS_SetReservedSlot(cx, dbStatement, SLOT_RESULT_QUERY_ARGUMENT_OBJECT, argv[1]);
+
 
 	return JS_TRUE;
 }
@@ -184,7 +179,7 @@ DEFINE_FUNCTION( Exec ) {
 	// (TBD) support multiple statements
 
 	if ( argc >= 2 && argv[1] != JSVAL_VOID && JSVAL_IS_OBJECT(argv[1]) )
-		SqliteSetupBindings(cx, pStmt, NULL, JSVAL_TO_OBJECT(argv[1]) ); // JS_GetParent(cx, obj)
+		SqliteSetupBindings(cx, pStmt, JSVAL_TO_OBJECT(argv[1]) , NULL ); // "@" : the the argument passed to Exec(), ":" nothing
 	status = sqlite3_step( pStmt ); // The return value will be either SQLITE_BUSY, SQLITE_DONE, SQLITE_ROW, SQLITE_ERROR, or 	SQLITE_MISUSE.
 	switch (status) {
 		case SQLITE_ERROR:

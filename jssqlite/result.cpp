@@ -130,22 +130,18 @@ BEGIN_CLASS( Result )
 
 DEFINE_FINALIZE() {
 
+// beware: we cannot finalize the result here because there is no way 
+//         to get a reference to the database object that hold the statements stack.
+//         When this function is call (by the GC), it is possible that the 
+//         database object (and its statement stack) has already be finalized !
+
 	sqlite3_stmt *pStmt = (sqlite3_stmt *)JS_GetPrivate( cx, obj );
 	if ( pStmt != NULL ) {
 
-#if 0 // issue when database object is finalized BEFORE its statements: getReservedSlot(DATABASE) will failed 
-		// (TBD) fix it
-		jsval v;
-		JS_GetReservedSlot(cx, obj, SLOT_RESULT_DATABASE, &v);
-		JS_GetReservedSlot(cx, JSVAL_TO_OBJECT(v), SLOT_SQLITE_DATABASE_STATEMENT_STACK, &v);
-		void *stack = JSVAL_TO_PRIVATE(v);
-		StackReplaceData( &stack, pStmt, NULL );
-#endif
-
-		int status = sqlite3_finalize( pStmt ); // sqlite3_interrupt
-		if ( status != SQLITE_OK ) {
-			// (TBD) do something ?
-		}
+		//int status = sqlite3_finalize( pStmt ); // sqlite3_interrupt
+		//if ( status != SQLITE_OK ) {
+		//	// (TBD) do something ?
+		//}
 		JS_SetPrivate( cx, obj, NULL ); // (TBD) not needed
 //		JS_SetReservedSlot(cx, obj, SLOT_RESULT_DATABASE, JSVAL_VOID); // beware: don't do JS_SetReservedSlot while GC !! 
 	}
@@ -158,13 +154,11 @@ DEFINE_FUNCTION( Close ) {
 	RT_ASSERT_RESOURCE( pStmt );
 	JS_SetPrivate( cx, obj, NULL );
 
-#if 0
 	jsval v;
 	RT_ASSERT_RETURN( JS_GetReservedSlot(cx, obj, SLOT_RESULT_DATABASE, &v) );
 	RT_ASSERT_RETURN( JS_GetReservedSlot(cx, JSVAL_TO_OBJECT(v), SLOT_SQLITE_DATABASE_STATEMENT_STACK, &v) );
 	void *stack = JSVAL_TO_PRIVATE(v);
 	StackReplaceData( &stack, pStmt, NULL );
-#endif
 
 	int status = sqlite3_finalize( pStmt );
 	if ( status != SQLITE_OK )
@@ -184,8 +178,14 @@ DEFINE_FUNCTION( Step ) {
 	JS_GetReservedSlot(cx, obj, SLOT_RESULT_BINDING_UP_TO_DATE, &bindingUpToDate);
 	if ( bindingUpToDate != JSVAL_TRUE ) {
 
+		jsval queryArgument;
+		JS_GetReservedSlot(cx, obj, SLOT_RESULT_QUERY_ARGUMENT_OBJECT, &queryArgument);
+		JSObject *argObj = NULL;
+		if ( queryArgument != JSVAL_VOID )
+			argObj = JSVAL_TO_OBJECT(queryArgument);
+
 		JS_SetReservedSlot(cx, obj, SLOT_RESULT_BINDING_UP_TO_DATE, BOOLEAN_TO_JSVAL(JS_TRUE));
-		RT_ASSERT_RETURN( SqliteSetupBindings(cx, pStmt, obj, JS_GetParent(cx,obj)) ); // "@" use result object. ":" use scope object
+		RT_ASSERT_RETURN( SqliteSetupBindings(cx, pStmt, argObj, obj ) ); // ":" use result object. "@" is the object passed to Query()
 		// doc: The sqlite3_bind_*() routines must be called AFTER sqlite3_prepare() or sqlite3_reset() and BEFORE sqlite3_step(). Bindings are not cleared by the sqlite3_reset() routine. Unbound parameters are interpreted as NULL.
 	}
 
@@ -352,6 +352,6 @@ CONFIGURE_CLASS
 	END_FUNCTION_SPEC
 
 	HAS_PRIVATE
-	HAS_RESERVED_SLOTS(2)
+	HAS_RESERVED_SLOTS(3)
 
 END_CLASS

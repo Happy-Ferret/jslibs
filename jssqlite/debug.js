@@ -21,12 +21,9 @@ function test(db) {
 
 function testBinding() {
 
-	var toto = 1234;
-	var result1 = db.Query('SELECT @toto');
-	// result1.toto = '12' + '\0' + '34';
+	var result1 = db.Query('SELECT :toto');
 	result1.toto = Blob('12' + '\0' + '34');
 
-	
 	Print( 'using binding: '+result1.Row()[0].length, '\n' );
 	
 	Print('changes: ' + db.changes, '\n');
@@ -47,7 +44,7 @@ try {
 	
 
 //	var varTest = <toto><i>ti</i></toto>;
-//	Print( 'Exec test = ' + db.Exec('SELECT :varTest') ,'\n' );
+	Print( 'Exec test = ' + db.Exec('SELECT @varTest', { varTest:123} ) ,'\n' );
 //	test(db);
 	testBinding(db)
 	
@@ -56,7 +53,7 @@ try {
 //	Print( 'first col only     :'+result.Col(0).toSource() ,'\n' );
 //	result.Close();
 
-//CollectGarbage();
+// CollectGarbage();
 
 	db.Close();
 
