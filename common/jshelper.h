@@ -168,6 +168,15 @@ inline JSBool GetNativeInterface( JSContext *cx, JSObject *obj, const char *name
 	return JS_TRUE;
 }
 
+
+inline JSBool RemoveNativeInterface( JSContext *cx, JSObject *obj, const char *name ) {
+
+	if ( JS_DeleteProperty(cx, obj, name) == JS_FALSE )
+		return JS_FALSE;
+	return JS_TRUE;
+}
+
+
 ////
 
  

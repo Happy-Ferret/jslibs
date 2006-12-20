@@ -195,7 +195,7 @@ static JSBool global_loadModule(JSContext *cx, JSObject *obj, uintN argc, jsval 
 	RT_ASSERT( i < 32, "unable to load more libraries" );
 	_moduleList[i] = module;
 	typedef JSBool (*ModuleInitFunction)(JSContext *, JSObject *);
-	ModuleInitFunction moduleInit = (ModuleInitFunction)::GetProcAddress( module, (argc>1) ? JS_GetStringBytes(JS_ValueToString(cx, argv[1])) : "ModuleInit" );
+	ModuleInitFunction moduleInit = (ModuleInitFunction)::GetProcAddress( module, "ModuleInit" ); // (argc>1) ? JS_GetStringBytes(JS_ValueToString(cx, argv[1])) : 
 	RT_ASSERT_1( moduleInit != NULL, "Module initialization function not found in %s.", libFileName );
 	*rval = moduleInit( cx, obj ) == JS_TRUE ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;

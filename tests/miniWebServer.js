@@ -2,6 +2,9 @@ LoadModule('jsstd');
 LoadModule('jsnspr');
 LoadModule('jsz');
 
+
+var configuration = { port:80, bind:'127.0.0.1' };
+
 // protocol constants
 const CR = '\r';
 const LF = '\n';
@@ -406,7 +409,8 @@ function Connection(s) {
 	ProcessHeaders();
 }
 
-
+Print( 'Try this URL: http://localhost:' + configuration.port + '/miniWebServer.html', '\n' );
+Print( 'Press ctrl-c to exit...', '\n' );
 
 try {
 
@@ -419,7 +423,7 @@ try {
 		list.push(clientSocket);
 	}
 
-	serverSocket.Listen( 80, undefined, 100 );
+	serverSocket.Listen( configuration.port, configuration.bind, 100 );
 	list.push(serverSocket);
 	for(;!endSignal;) {
 		Poll(list,timeout.Next() || 500);

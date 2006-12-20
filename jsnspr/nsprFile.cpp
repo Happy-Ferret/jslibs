@@ -111,13 +111,12 @@ JSBool File_close(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *
 		JS_ReportError( cx, "file is closed" );
 		return JS_FALSE;
 	}
-//	if ( fd != NULL ) {
-
-		PRStatus status = PR_Close( fd );
-		if ( status == PR_FAILURE )
-			return ThrowNSPRError( cx, PR_GetError() );
-		JS_SetPrivate( cx, obj, NULL );
-//	}
+		
+	RemoveNativeInterface(cx, obj, NI_READ_RESOURCE );
+	PRStatus status = PR_Close( fd );
+	if ( status == PR_FAILURE )
+		return ThrowNSPRError( cx, PR_GetError() );
+	JS_SetPrivate( cx, obj, NULL );
 	return JS_TRUE;
 }
 
