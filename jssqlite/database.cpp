@@ -1,3 +1,17 @@
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: GNU GPL 2.0
+ *
+ * The contents of this file are subject to the
+ * GNU General Public License Version 2.0; you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://www.gnu.org/licenses/gpl.html
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ * ***** END LICENSE BLOCK ***** */
+
 #include "stdafx.h"
 #include "blob.h"
 #include "error.h"
@@ -49,7 +63,7 @@ DEFINE_FINALIZE() {
 		//stack = JSVAL_TO_PRIVATE(v);
 		//while ( !StackIsEnd(&stack) ) {
 		//	sqlite3_stmt *pStmt = (sqlite3_stmt*)StackPop(&stack);
-		//	status = sqlite3_clear_bindings( pStmt ); 
+		//	status = sqlite3_clear_bindings( pStmt );
 		// (TBD) usefull ?
 		//	status = sqlite3_finalize( pStmt );
 		//}
@@ -95,7 +109,7 @@ DEFINE_FUNCTION( Close ) {
 	jsval v;
 	JS_GetReservedSlot(cx, obj, SLOT_SQLITE_DATABASE_FUNCTION_CALL_STACK, &v);
 	stack = JSVAL_TO_PRIVATE(v);
-	StackFreeContent( &stack ); 
+	StackFreeContent( &stack );
 	// finalize open database statements
 	RT_ASSERT_RETURN( JS_GetReservedSlot(cx, obj, SLOT_SQLITE_DATABASE_STATEMENT_STACK, &v) );
 	stack = JSVAL_TO_PRIVATE(v);
@@ -117,7 +131,7 @@ DEFINE_FUNCTION( Close ) {
 
 
 DEFINE_FUNCTION( Query ) {
-	
+
 	RT_ASSERT_ARGC( 1 );
 
 	sqlite3 *db = (sqlite3*)JS_GetPrivate( cx, obj );
@@ -128,7 +142,7 @@ DEFINE_FUNCTION( Query ) {
 	const char *szTail;
 	sqlite3_stmt *pStmt;
 
-	int status = sqlite3_prepare( db, sqlQuery, -1, &pStmt, &szTail ); // If the next argument, "nBytes", is less than zero, then zSql is read up to the first nul terminator. 
+	int status = sqlite3_prepare( db, sqlQuery, -1, &pStmt, &szTail ); // If the next argument, "nBytes", is less than zero, then zSql is read up to the first nul terminator.
 	if ( status != SQLITE_OK )
 		return SqliteThrowError( cx, status, sqlite3_errcode(db), sqlite3_errmsg(db) );
 
@@ -147,7 +161,7 @@ DEFINE_FUNCTION( Query ) {
 	// create the Result (statement) object
 	JSObject *dbStatement = JS_NewObject( cx, &classResult, NULL, NULL );
 	JS_SetPrivate( cx, dbStatement, pStmt );
-	JS_SetReservedSlot(cx, dbStatement, SLOT_RESULT_DATABASE, OBJECT_TO_JSVAL( obj )); // link to avoid GC 
+	JS_SetReservedSlot(cx, dbStatement, SLOT_RESULT_DATABASE, OBJECT_TO_JSVAL( obj )); // link to avoid GC
 	// (TBD) enhance
 	*rval = OBJECT_TO_JSVAL( dbStatement );
 
@@ -172,10 +186,10 @@ DEFINE_FUNCTION( Exec ) {
 	const char *szTail;
 	sqlite3_stmt *pStmt;
 	int status;
-	status = sqlite3_prepare( db, sqlQuery, -1, &pStmt, &szTail ); // If the next argument, "nBytes", is less than zero, then zSql is read up to the first nul terminator. 
+	status = sqlite3_prepare( db, sqlQuery, -1, &pStmt, &szTail ); // If the next argument, "nBytes", is less than zero, then zSql is read up to the first nul terminator.
 	if ( status != SQLITE_OK )
 		return SqliteThrowError( cx, status, sqlite3_errcode(db), sqlite3_errmsg(db) );
-	RT_ASSERT_1( *szTail == '\0', "Too many SQL statements (%s).", szTail ); // for the moment, do not support multiple statements 
+	RT_ASSERT_1( *szTail == '\0', "Too many SQL statements (%s).", szTail ); // for the moment, do not support multiple statements
 	// (TBD) support multiple statements
 
 	if ( argc >= 2 && argv[1] != JSVAL_VOID && JSVAL_IS_OBJECT(argv[1]) )
@@ -218,7 +232,7 @@ DEFINE_PROPERTY( changes ) {
 	sqlite3 *db = (sqlite3 *)JS_GetPrivate( cx, obj );
 	RT_ASSERT_RESOURCE( db );
 
-	// This function returns the number of database rows that were changed (or inserted or deleted) by the most recently completed INSERT, UPDATE, or DELETE statement. 
+	// This function returns the number of database rows that were changed (or inserted or deleted) by the most recently completed INSERT, UPDATE, or DELETE statement.
 	// Only changes that are directly specified by the INSERT, UPDATE, or DELETE statement are counted. Auxiliary changes caused by triggers are not counted. Use the sqlite3_total_changes() function to find the total number of changes including changes caused by triggers.
 	//JS_NewNumberValue( cx, sqlite3_changes(db), vp );
 	*vp = INT_TO_JSVAL( sqlite3_changes(db) );
@@ -242,7 +256,7 @@ typedef struct SqliteFunctionCallUserData {
 
 
 void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArgv ) {
-	
+
 	SqliteFunctionCallUserData *data = (SqliteFunctionCallUserData*)sqlite3_user_data(sCx);
 
 	JSContext *iterp = NULL;
@@ -263,7 +277,7 @@ void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArg
 			goto bad;
 		}
 	}
-	
+
 	if ( JS_CallFunction(cx, obj, fun, sArgc, argv, &rval) == JS_FALSE ) {
 
 		sqlite3_result_error(sCx, "Function call error", -1 ); // (TBD) better error message
@@ -299,8 +313,8 @@ void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArg
 				sqlite3_result_null(sCx);
 				break;
 			}
-			if ( JS_GetClass(JSVAL_TO_OBJECT(rval)) == &classBlob ) { // beware: with SQLite, blob != text 
-				
+			if ( JS_GetClass(JSVAL_TO_OBJECT(rval)) == &classBlob ) { // beware: with SQLite, blob != text
+
 				jsval blobVal;
 				JS_GetReservedSlot(cx, JSVAL_TO_OBJECT(rval), SLOT_BLOB_DATA, &blobVal);
 				JSString *jsstr = JS_ValueToString(cx, blobVal);
@@ -325,7 +339,7 @@ bad:
 
 
 DEFINE_SET_PROPERTY() {
-	
+
 	if ( JSVAL_IS_OBJECT(*vp) && *vp != JSVAL_NULL && JS_ObjectIsFunction(cx, JSVAL_TO_OBJECT(*vp) ) ) {
 
 		sqlite3 *db = (sqlite3 *)JS_GetPrivate( cx, obj );
@@ -357,7 +371,7 @@ CONFIGURE_CLASS
 
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE
-	
+
 	BEGIN_FUNCTION_SPEC
 		FUNCTION( Query )
 		FUNCTION( Exec )

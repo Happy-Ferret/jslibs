@@ -1,3 +1,17 @@
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: GNU GPL 2.0
+ *
+ * The contents of this file are subject to the
+ * GNU General Public License Version 2.0; you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://www.gnu.org/licenses/gpl.html
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ * ***** END LICENSE BLOCK ***** */
+
 /*
 Manage GL extensions:
 	http://www.libsdl.org/cgi/viewvc.cgi/trunk/SDL/src/video/win32/SDL_win32opengl.c?view=markup&sortby=date
@@ -36,10 +50,10 @@ void SetupBitmapDC() {
 	pfd.dwFlags = PFD_DRAW_TO_BITMAP | // replaces PFD_DRAW_TO_WINDOW
 					  PFD_SUPPORT_OPENGL |
 					  PFD_SUPPORT_GDI ;
-	pfd.iPixelType = PFD_TYPE_RGBA ; 
+	pfd.iPixelType = PFD_TYPE_RGBA ;
 	pfd.cColorBits = 8 ;
 	pfd.cDepthBits = 16 ;
-	pfd.iLayerType = PFD_MAIN_PLANE ; 
+	pfd.iLayerType = PFD_MAIN_PLANE ;
 
 
 // ChoosePixelFormat  : gives you the number of bits per pixel you asked for
@@ -52,7 +66,7 @@ DEFINE_FINALIZE() {
 
 	JS_SetReservedSlot(cx, obj, SLOT_WINDOW_OBJECT, JSVAL_VOID);
 
-	// (TBD) ? wglDeleteContext 
+	// (TBD) ? wglDeleteContext
 	// (TBD) ? ReleaseDC
 
 }
@@ -87,7 +101,7 @@ DEFINE_CONSTRUCTOR() {
 		0,                               // Shift Bit Ignored
 		0,                               // No Accumulation Buffer
 		0, 0, 0, 0,                      // Accumulation Bits Ignored
-		16,                              // 16Bit Z-Buffer (Depth Buffer)  
+		16,                              // 16Bit Z-Buffer (Depth Buffer)
 		0,                               // No Stencil Buffer
 		0,                               // No Auxiliary Buffer
 		PFD_MAIN_PLANE,                  // Main Drawing Layer
@@ -98,8 +112,8 @@ DEFINE_CONSTRUCTOR() {
 	int pixelFormat = ChoosePixelFormat(hDC, &pfd);
 	RT_ASSERT( pixelFormat != 0, "Could not Find A Suitable OpenGL PixelFormat." );
 
-	// If you are using the Win32 interface (as opposed to GLUT), call DescribePixelFormat() and check the returned dwFlags bitfield. 
-	// If PFD_GENERIC_ACCELERATED is clear and PFD_GENERIC_FORMAT is set, then the pixel format is only supported by the generic implementation. 
+	// If you are using the Win32 interface (as opposed to GLUT), call DescribePixelFormat() and check the returned dwFlags bitfield.
+	// If PFD_GENERIC_ACCELERATED is clear and PFD_GENERIC_FORMAT is set, then the pixel format is only supported by the generic implementation.
 	// Hardware acceleration is not possible for this format. For hardware acceleration, you need to choose a different format.
 	DescribePixelFormat(hDC, pixelFormat, sizeof(PIXELFORMATDESCRIPTOR), &pfd); // (TBD) check return value for error
 	bool hasNoAccel = (pfd.dwFlags & PFD_GENERIC_FORMAT) != 0 && (pfd.dwFlags & PFD_GENERIC_ACCELERATED) == 0;
@@ -123,7 +137,7 @@ DEFINE_CONSTRUCTOR() {
 // The Effects of Double Buffering on Animation Frame Rates
 //		http://www.futuretech.blinkenlights.nl/dbuffer.html
 static JSBool _SwapBuffers(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
-	
+
 	glFlush();
 	glFinish();
 	RT_ASSERT( JS_GetClass(obj) == _class, RT_ERROR_INVALID_CLASS );
@@ -151,7 +165,7 @@ DEFINE_FUNCTION( Init ) {
 	glShadeModel(GL_FLAT);
 
 	glEnable(GL_DEPTH_TEST);
-	glDepthFunc(GL_LESS); // GL_LEQUAL cause some z-conflict on far objects ! 
+	glDepthFunc(GL_LESS); // GL_LEQUAL cause some z-conflict on far objects !
 	// (TBD) understand why
 	glClearDepth(1.0f);
 //	glDepthRange( 0.01, 1000 );
@@ -169,7 +183,7 @@ DEFINE_FUNCTION( Init ) {
 
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 
-//    glBlendFunc(GL_SRC_ALPHA,GL_ONE); 
+//    glBlendFunc(GL_SRC_ALPHA,GL_ONE);
 	return JS_TRUE;
 }
 
@@ -239,7 +253,7 @@ DEFINE_FUNCTION( LoadMatrix ) {
 
 
 DEFINE_FUNCTION( Rotate ) {
-	
+
 	RT_ASSERT_ARGC(4);
 	jsdouble angle;
 	JS_ValueToNumber(cx, argv[0], &angle);
@@ -257,7 +271,7 @@ DEFINE_FUNCTION( Rotate ) {
 
 
 DEFINE_FUNCTION( Translate ) {
-	
+
 	RT_ASSERT_ARGC(3);
 //	float vec[3];
 //	FloatArrayToVector(cx, 3, &argv[0], vec);
@@ -345,13 +359,13 @@ DEFINE_FUNCTION( Quad ) {
 	JS_ValueToNumber(cx, argv[3], &y1);
 
 	glBegin(GL_QUADS);
-	glTexCoord2f( 0, 0 ); 
+	glTexCoord2f( 0, 0 );
 	glVertex2f( x0, y0 );
-	glTexCoord2f( 1, 0 ); 
+	glTexCoord2f( 1, 0 );
 	glVertex2f( x1, y0 );
-	glTexCoord2f( 1, 1 ); 
+	glTexCoord2f( 1, 1 );
 	glVertex2f( x1, y1 );
-	glTexCoord2f( 0, 1 ); 
+	glTexCoord2f( 0, 1 );
 	glVertex2f( x0, y1 );
 	glEnd();
 
@@ -427,7 +441,7 @@ DEFINE_FUNCTION( Cube ) {
 	glVertex3f(-0.5f,-0.5f,-0.5f);	// Top Left Of The Quad (Back)
 	glVertex3f(-0.5f, 0.5f,-0.5f);	// Bottom Left Of The Quad (Back)
 	glVertex3f( 0.5f, 0.5f,-0.5f);	// Bottom Right Of The Quad (Back)
-	glEnd();	
+	glEnd();
 	return JS_TRUE;
 }
 
@@ -470,7 +484,7 @@ DEFINE_FUNCTION( Texture ) {
 	RT_ASSERT_CLASS_NAME(image, "Image");
 	void *data = JS_GetPrivate(cx, image);
 	RT_ASSERT_RESOURCE(data);
-	
+
 	int width, height, channels;
 	GetIntProperty(cx, image, "width", &width);
 	GetIntProperty(cx, image, "height", &height);
@@ -479,7 +493,7 @@ DEFINE_FUNCTION( Texture ) {
 	GLuint texture;
 	glGenTextures( 1, &texture ); // (TBD) free with glDeleteTextures
 	glBindTexture( GL_TEXTURE_2D, texture ); // Doc: glBindTexture is included in display lists.
-   
+
 	glTexImage2D( GL_TEXTURE_2D, 0, 3, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data );
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -490,7 +504,7 @@ DEFINE_FUNCTION( Texture ) {
 
 
 DEFINE_FUNCTION( Test ) {
-	
+
 	return JS_TRUE;
 }
 

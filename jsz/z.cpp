@@ -1,3 +1,17 @@
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: GNU GPL 2.0
+ *
+ * The contents of this file are subject to the
+ * GNU General Public License Version 2.0; you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://www.gnu.org/licenses/gpl.html
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ * ***** END LICENSE BLOCK ***** */
+
 #include "stdafx.h"
 
 #define ASSERT(e)
@@ -34,7 +48,7 @@ void z_Finalize(JSContext *cx, JSObject *obj) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 JSBool z_call(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
-	JSObject *thisObj = JSVAL_TO_OBJECT(argv[-2]); // get 'this' object of the current object ... 
+	JSObject *thisObj = JSVAL_TO_OBJECT(argv[-2]); // get 'this' object of the current object ...
 	// (TBD) check JS_InstanceOf( cx, thisObj, &NativeProc, NULL )
 
 	z_streamp stream = (z_streamp)JS_GetPrivate( cx, thisObj );
@@ -70,7 +84,7 @@ JSBool z_call(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval
 	stream->next_in = (Bytef*)inputData;
 
 // force finish
-	JSBool forceFinish = JS_FALSE; 
+	JSBool forceFinish = JS_FALSE;
 	if ( argc >= 2 )
 		JS_ValueToBoolean( cx, argv[1], &forceFinish );
 
@@ -134,7 +148,7 @@ JSClass z_class = { "Z", JSCLASS_HAS_PRIVATE | JSCLASS_HAS_RESERVED_SLOTS(1), //
 JSBool z_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
 	if ( !JS_IsConstructing(cx) ) {
-		
+
 		JS_ReportError( cx, "construction is needed" );
 		return JS_FALSE;
 	}
@@ -297,7 +311,7 @@ About JS_NewString:
 	has a NUL included in its characters, at the end.  That crops printing
 	in the JS shell and any other 8-bit environment.
 
-	/be 
+	/be
 
 
 

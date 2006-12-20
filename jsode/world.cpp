@@ -1,3 +1,17 @@
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: GNU GPL 2.0
+ *
+ * The contents of this file are subject to the
+ * GNU General Public License Version 2.0; you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://www.gnu.org/licenses/gpl.html
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ * ***** END LICENSE BLOCK ***** */
+
 #include "stdafx.h"
 #include "world.h"
 #include "space.h"
@@ -39,7 +53,7 @@ static void nearCallback (void *data, ode::dGeomID o1, ode::dGeomID o2) {
 		JSObject *obj2 = (JSObject*)ode::dGeomGetData(o2);
 
 		jsval rval, func1 = JSVAL_VOID, func2 = JSVAL_VOID;
-		
+
 		if ( obj1 != NULL ) { // assert that the javascript object (over the Geom) is not finalized
 
 			JS_GetProperty(cx, obj1, COLLIDE_FEEDBACK_FUNCTION_NAME, &func1);
@@ -61,7 +75,7 @@ static void nearCallback (void *data, ode::dGeomID o1, ode::dGeomID o2) {
 				ode::dVector3 *pos = &contact[i].geom.pos;
 				ode::dVector3 vel2;
 				if ( Body1 != NULL ) {
-					
+
 					ode::dBodyGetPointVel( Body1, *pos[0], *pos[1], *pos[2], vel ); // dReal px, dReal py, dReal pz, dVector3 result
 				} else { // static thing
 
@@ -69,10 +83,10 @@ static void nearCallback (void *data, ode::dGeomID o1, ode::dGeomID o2) {
 				}
 
 				if ( Body2 != NULL ) {
-					
+
 					ode::dBodyGetPointVel( Body2, *pos[0], *pos[1], *pos[2], vel2 ); // dReal px, dReal py, dReal pz, dVector3 result
 				} else { // static thing
-					
+
 					vel2[0] = 0; vel2[1] = 0; vel2[2] = 0;
 				}
 
@@ -289,12 +303,12 @@ DEFINE_PROPERTY( realGetter ) {
 
 DEFINE_PROPERTY( env ) {
 
-	if ( *vp == JSVAL_VOID ) { //  create it if it does not exist and store it (cf. PROPERTY_READ_STORE) 
+	if ( *vp == JSVAL_VOID ) { //  create it if it does not exist and store it (cf. PROPERTY_READ_STORE)
 
 		JSObject *staticBody = JS_NewObject(cx, &classBody, NULL, NULL);
 		RT_ASSERT_ALLOC(staticBody);
 		JS_SetPrivate(cx, staticBody, (ode::dBodyID)0);
-		*vp = OBJECT_TO_JSVAL(staticBody);	
+		*vp = OBJECT_TO_JSVAL(staticBody);
 	}
 	return JS_TRUE;
 }
@@ -308,7 +322,7 @@ CONFIGURE_CLASS
 		FUNCTION( Step )
 		FUNCTION( Destroy )
 	END_FUNCTION_SPEC
-	
+
 	BEGIN_PROPERTY_SPEC
 		PROPERTY( gravity )
 		PROPERTY_READ_STORE( env )

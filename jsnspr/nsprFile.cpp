@@ -1,3 +1,17 @@
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: GNU GPL 2.0
+ *
+ * The contents of this file are subject to the
+ * GNU General Public License Version 2.0; you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://www.gnu.org/licenses/gpl.html
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ * ***** END LICENSE BLOCK ***** */
+
 #define XP_WIN
 #include <jsapi.h>
 #include <nspr.h>
@@ -90,8 +104,8 @@ JSBool File_open(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *r
 	flags = tmp;
 
 	PRFileDesc *fd;
-	
-	PRIntn mode = 0666;	
+
+	PRIntn mode = 0666;
 	fd = PR_Open( fileName, flags, mode ); // The mode parameter is currently applicable only on Unix platforms.
 	if ( fd == NULL )
 		return ThrowNSPRError( cx, PR_GetError() );
@@ -111,7 +125,7 @@ JSBool File_close(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *
 		JS_ReportError( cx, "file is closed" );
 		return JS_FALSE;
 	}
-		
+
 	RemoveNativeInterface(cx, obj, NI_READ_RESOURCE );
 	PRStatus status = PR_Close( fd );
 	if ( status == PR_FAILURE )
@@ -190,7 +204,7 @@ JSBool File_write(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *
 
 		int32 userLength;
 		JS_ValueToInt32( cx, argv[1], &userLength );
-		
+
 		if ( userLength <= length && userLength >= 0 ) // security
 			length = userLength;
 	}
@@ -370,7 +384,7 @@ JSBool File_getter_info( JSContext *cx, JSObject *obj, jsval id, jsval *vp ) {
 
 	jsval jsvalType = INT_TO_JSVAL((int)fileInfo.type);
 	JS_SetProperty( cx, fileTypeObj, "type", &jsvalType );
-	
+
 	jsval jsvalSize = INT_TO_JSVAL(fileInfo.size);
 	JS_SetProperty( cx, fileTypeObj, "size", &jsvalSize );
 
@@ -389,7 +403,7 @@ JSPropertySpec File_PropertySpec[] = { // *name, tinyid, flags, getter, setter
   { 0 }
 };
 
-    
+
 JSBool File_static_setConst( JSContext *cx, JSObject *obj, jsval id, jsval *vp ) {
 
 	int32 i;

@@ -1,3 +1,17 @@
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: GNU GPL 2.0
+ *
+ * The contents of this file are subject to the
+ * GNU General Public License Version 2.0; you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://www.gnu.org/licenses/gpl.html
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ * ***** END LICENSE BLOCK ***** */
+
 #define XP_WIN
 #include <jsapi.h>
 #include <nspr.h>
@@ -114,7 +128,7 @@ JSBool Directory_read(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsv
 
 	PRDirEntry *dirEntry = PR_ReadDir( dd, flags );
 	if ( dirEntry == NULL ) {
-	
+
 		PRErrorCode errorCode = PR_GetError();
 		if ( errorCode == PR_NO_MORE_FILES_ERROR ) {
 			*rval = JSVAL_VOID;
@@ -181,9 +195,9 @@ JSBool Directory_remove(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, j
 	PRIntn mode = 0666;
 	PRStatus status = PR_RmDir( directoryName ); // PR_RmDir removes the directory specified by the pathname name. The directory must be empty. If the directory is not empty, PR_RmDir fails and PR_GetError returns the error code PR_DIRECTORY_NOT_EMPTY_ERROR.
 	if ( status == PR_FAILURE ) {
-		
+
 		PRErrorCode errorCode = PR_GetError();
-		if ( errorCode == PR_DIRECTORY_NOT_EMPTY_ERROR ) 
+		if ( errorCode == PR_DIRECTORY_NOT_EMPTY_ERROR )
 			*rval = JSVAL_FALSE;
 		else
 			return ThrowNSPRError( cx, errorCode );
@@ -214,7 +228,7 @@ JSPropertySpec Directory_PropertySpec[] = { // *name, tinyid, flags, getter, set
   { 0 }
 };
 
-    
+
 JSBool Directory_static_setConst( JSContext *cx, JSObject *obj, jsval id, jsval *vp ) {
 
 	*vp = id;

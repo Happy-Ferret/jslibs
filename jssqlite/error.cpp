@@ -1,10 +1,24 @@
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: GNU GPL 2.0
+ *
+ * The contents of this file are subject to the
+ * GNU General Public License Version 2.0; you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://www.gnu.org/licenses/gpl.html
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ * ***** END LICENSE BLOCK ***** */
+
 #include "stdafx.h"
 #include "error.h"
 
 BEGIN_CLASS( SqliteError )
 
 DEFINE_CONSTRUCTOR() {
-	
+
 	REPORT_ERROR( "This object cannot be construct." );
 	return JS_TRUE;
 }
@@ -24,7 +38,7 @@ DEFINE_PROPERTY( text ) {
 CONFIGURE_CLASS
 
 	HAS_CONSTRUCTOR
-	
+
 	BEGIN_PROPERTY_SPEC
 		PROPERTY_READ( code )
 		PROPERTY_READ( text )
@@ -49,6 +63,6 @@ JSBool SqliteThrowError( JSContext *cx, int status, int errorCode, const char *e
 
 /*
 
-Sure, you can JS_GetProperty(cx, global, "Error", &v) to get the constructor, then JS_GetProperty(cx, JSVAL_TO_OBJECT(v), "prototype", &v), then JS_GET_CLASS(cx, JSVAL_TO_OBJECT(v)).  Error and type checking elided, as usual. 
+Sure, you can JS_GetProperty(cx, global, "Error", &v) to get the constructor, then JS_GetProperty(cx, JSVAL_TO_OBJECT(v), "prototype", &v), then JS_GET_CLASS(cx, JSVAL_TO_OBJECT(v)).  Error and type checking elided, as usual.
 
 */

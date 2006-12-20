@@ -1,3 +1,17 @@
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: GNU GPL 2.0
+ *
+ * The contents of this file are subject to the
+ * GNU General Public License Version 2.0; you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://www.gnu.org/licenses/gpl.html
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ * ***** END LICENSE BLOCK ***** */
+
 #include <stdlib.h>
 
 #define STATIC_BUFFER_LENGTH (16384 -1)
@@ -62,7 +76,7 @@ public:
 	}
 
 	size_t OptimalLength() {
-		
+
 		size_t length = _queue[_currentIndex].avail;
 
 		if ( length > 0 )
@@ -75,14 +89,14 @@ public:
 	}
 
 	size_t SmartLength() {
-		
+
 		size_t length;
 
 		if ( _useCount == 0 ) {
 
 			 length = sizeof _staticMem;
 		} else {
-	
+
 			float prevUsedRatio = (float)(_prevAvail - _queue[_currentIndex].avail) / (float)(_prevRequest +1);
 
 			if ( prevUsedRatio >= 1.f ) {
@@ -100,7 +114,7 @@ public:
 
 		_useCount++;
 		if ( _queue[_currentIndex].avail <= 0 ) { // if not enough space in the current ckunk
-			
+
 			_length += _queue[_currentIndex].data - _queue[_currentIndex].mem;
 
 			_currentIndex++;
@@ -109,7 +123,7 @@ public:
 				_queueLength *= 2;
 				_queue = (BufferChunk*)realloc( _queue, _queueLength * sizeof BufferChunk );
 			}
-			
+
 			if ( _hasStaticMem && length <= sizeof _staticMem ) {
 
 				_queue[_currentIndex].avail = sizeof _staticMem;
@@ -140,7 +154,7 @@ public:
 	void Read( unsigned char *data ) { // alloc is made by the caller
 
 		for ( int i=0; i<=_currentIndex; ++i ) {
-			
+
 			size_t length = _queue[i].data - _queue[i].mem;
 			memcpy( data, _queue[i].mem, length );
 			data += length;

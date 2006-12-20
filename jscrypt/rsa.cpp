@@ -1,3 +1,17 @@
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: GNU GPL 2.0
+ *
+ * The contents of this file are subject to the
+ * GNU General Public License Version 2.0; you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://www.gnu.org/licenses/gpl.html
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ * ***** END LICENSE BLOCK ***** */
+
 #include "stdafx.h"
 
 #include "rsa.h"
@@ -40,13 +54,13 @@ JSBool rsa_createKeys(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsv
 
 	RT_ASSERT_ARGC( 2 );
 	RT_ASSERT_CLASS( obj, &rsa_class );
-	
+
 	JSObject *objPrng JSVAL_TO_OBJECT(argv[0]);
 	RT_ASSERT_CLASS( objPrng, &prng_class );
 
 	PrngPrivate *prngPrivate = (PrngPrivate *)JS_GetPrivate( cx, objPrng );
 	RT_ASSERT( prngPrivate != NULL, "invalid prng." );
-	
+
 	int32 keySize;
 	RT_JSVAL_TO_INT32( argv[1], keySize );
 
@@ -296,7 +310,7 @@ To encrypt the plaintext value 123, we calculate
 
 To decrypt the ciphertext value 855, we calculate
 
-    decrypt(855) = 8552753 mod 3233 = 123 
+    decrypt(855) = 8552753 mod 3233 = 123
 
 
 */

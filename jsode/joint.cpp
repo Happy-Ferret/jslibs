@@ -1,3 +1,17 @@
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: GNU GPL 2.0
+ *
+ * The contents of this file are subject to the
+ * GNU General Public License Version 2.0; you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://www.gnu.org/licenses/gpl.html
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ * ***** END LICENSE BLOCK ***** */
+
 #include "stdafx.h"
 #include "joint.h"
 #include "body.h"
@@ -10,7 +24,7 @@ BEGIN_CLASS( Joint )
 	// Api: dBodyID dJointGetBody (dJointID, int index);
 	// Api: int dAreConnected (dBodyID b1, dBodyID b2);
 
-	
+
 	// (TBD) replace Attach with body1 and body2 setter
 
 /*
@@ -39,7 +53,7 @@ inline JSBool SetJoint( JSContext *cx, JSObject *obj, jsval *b1, jsval *b2 ) {
 
 	if ( *b1 != JSVAL_VOID )
 		RT_ASSERT_RETURN( ValToBodyID(cx, *b1, &bId1) )
-	
+
 	if ( *b2 != JSVAL_VOID )
 		RT_ASSERT_RETURN( ValToBodyID(cx, *b2, &bId2) )
 
@@ -79,7 +93,7 @@ DEFINE_FUNCTION( Destroy ) {
 	jsval val = JSVAL_VOID;
 	JS_SetProperty(cx, obj, "body1", &val); // (TBD) find why to not use JS_DeleteProperty
 	JS_SetProperty(cx, obj, "body2", &val);
-	JS_SetPrivate(cx, obj, NULL); 
+	JS_SetPrivate(cx, obj, NULL);
 	ode::dJointDestroy(jointId);
 	return JS_TRUE;
 }
@@ -240,7 +254,7 @@ DEFINE_PROPERTY( jointParamSetter ) {
 	ode::dJointID jointId = (ode::dJointID)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(jointId);
 	RT_ASSERT_NUMBER( *vp );
-	
+
 	int parameter;
 	switch(JSVAL_TO_INT(id)) {
 		case loStop:

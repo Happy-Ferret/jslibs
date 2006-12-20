@@ -1,3 +1,17 @@
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: GNU GPL 2.0
+ *
+ * The contents of this file are subject to the
+ * GNU General Public License Version 2.0; you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://www.gnu.org/licenses/gpl.html
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ * ***** END LICENSE BLOCK ***** */
+
 #include "stdafx.h"
 
 #include <sys/stat.h>
@@ -53,7 +67,7 @@ DEFINE_FUNCTION( Expand ) {
 	StackInit( &stack );
 	Chunk *chunk;
 	char *tok;
-	jsval val;	
+	jsval val;
 
 	while (true) {
 
@@ -74,7 +88,7 @@ DEFINE_FUNCTION( Expand ) {
 		chunk->length = tok - srcBegin;
 		totalLength += chunk->length;
 		StackPush( &stack, chunk );
-		
+
 		srcBegin = tok + 2;
 //		if ( srcBegin >= srcEnd )
 //			break;
@@ -83,7 +97,7 @@ DEFINE_FUNCTION( Expand ) {
 
 		if ( tok == NULL )
 			break;
-		
+
 		char tmp = *tok;
 		*tok = 0;
 		JS_GetProperty(cx, table, srcBegin, &val);
@@ -93,7 +107,7 @@ DEFINE_FUNCTION( Expand ) {
 		RT_JSVAL_TO_STRING_AND_LENGTH( val, chunk->data, chunk->length );
 		totalLength += chunk->length;
 		StackPush( &stack, chunk );
-		
+
 		srcBegin = tok + 1; // (TBD) check buffer overflow
 //		if ( srcBegin >= srcEnd )
 //			break;
@@ -197,7 +211,7 @@ DEFINE_FUNCTION( Warning ) {
 DEFINE_PROPERTY( gcByte ) {
 
     JSRuntime *rt = cx->runtime;
-	*vp = INT_TO_JSVAL(rt->gcBytes); 
+	*vp = INT_TO_JSVAL(rt->gcBytes);
 	return JS_TRUE;
 }
 
@@ -267,7 +281,7 @@ static JSScript* LoadScript(JSContext *cx, JSObject *obj, const char *fileName, 
 
 	if ( useCompFile && compFileUpToDate ) {
 
-		FILE *file = fopen(compiledFileName, "rb"); // b for binary ( win32 ) 
+		FILE *file = fopen(compiledFileName, "rb"); // b for binary ( win32 )
 		// (TBD) use open/close/read/... instead of fopen/fclose/fread/...
 		if ( !file ) {
 
@@ -403,7 +417,7 @@ extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj)
 
 	stdoutFunction = JS_ValueToFunction(cx, stdoutFunctionValue); // returns NULL if the function is not defined
 //	_unsafeMode = JSVAL_TO_BOOLEAN(GetConfigurationValue(cx, "unsafeMode")) == JS_TRUE;
-	
+
 	jsval unsafeModeValue;
 	jsStatus = GetConfigurationValue(cx, "unsafeMode", &unsafeModeValue);
 	RT_ASSERT( jsStatus != JS_FALSE, "Unable to read unsafeMode state from configuration object." );

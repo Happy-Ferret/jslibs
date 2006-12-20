@@ -1,3 +1,17 @@
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: GNU GPL 2.0
+ *
+ * The contents of this file are subject to the
+ * GNU General Public License Version 2.0; you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://www.gnu.org/licenses/gpl.html
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ * ***** END LICENSE BLOCK ***** */
+
 #include "stdafx.h"
 #include "blob.h"
 #include "error.h"
@@ -14,7 +28,7 @@ JSBool SqliteToJsval( JSContext *cx, sqlite3_value *value, jsval *rval ) {
 
 	int i;
 	switch( sqlite3_value_type(value) ) {
-		
+
 		case SQLITE_INTEGER:
 			i = sqlite3_value_int(value);
 			if ( INT_FITS_IN_JSVAL(i) )
@@ -47,10 +61,10 @@ JSBool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *objAt,
 
 	int count = sqlite3_bind_parameter_count(pStmt);
 	for ( int param = 1; param <= count; param++ ) {
-		
+
 		const char *name = sqlite3_bind_parameter_name( pStmt, param );
 		RT_ASSERT( name != NULL, "Binding is out of range." ); // (TBD) better error message
-		
+
 		JSObject *obj = NULL;
 
 		if ( objAt != NULL && name[0] == '@' )
@@ -65,9 +79,9 @@ JSBool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *objAt,
 		jsval val;
 		JS_GetProperty(cx, obj, name+1, &val);
 
-		// sqlite3_bind_value( pStmt, param, 
+		// sqlite3_bind_value( pStmt, param,
 		// (TBD) how to use this
-		switch ( JS_TypeOfValue(cx, val) ) { 
+		switch ( JS_TypeOfValue(cx, val) ) {
 			case JSTYPE_VOID:
 			case JSTYPE_NULL: // http://www.sqlite.org/nulls.html
 				sqlite3_bind_null(pStmt, param);
@@ -95,8 +109,8 @@ JSBool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *objAt,
 					sqlite3_bind_null(pStmt, param);
 					break;
 				}
-				if ( JS_GetClass(JSVAL_TO_OBJECT(val)) == &classBlob ) { // beware: with SQLite, blob != text 
-					
+				if ( JS_GetClass(JSVAL_TO_OBJECT(val)) == &classBlob ) { // beware: with SQLite, blob != text
+
 					jsval blobVal;
 					JS_GetReservedSlot(cx, JSVAL_TO_OBJECT(val), SLOT_BLOB_DATA, &blobVal);
 					JSString *jsstr = JS_ValueToString(cx, blobVal);
@@ -106,7 +120,7 @@ JSBool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *objAt,
 			case JSTYPE_XML:
 			case JSTYPE_FUNCTION: // (TBD) call the function and pass its result to SQLite ?
 			case JSTYPE_STRING: {
-				
+
 				JSString *jsstr = JS_ValueToString(cx, val);
 				sqlite3_bind_text(pStmt, param, JS_GetStringBytes(jsstr), JS_GetStringLength(jsstr), SQLITE_STATIC); // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT
 				}
@@ -130,9 +144,9 @@ BEGIN_CLASS( Result )
 
 DEFINE_FINALIZE() {
 
-// beware: we cannot finalize the result here because there is no way 
+// beware: we cannot finalize the result here because there is no way
 //         to get a reference to the database object that hold the statements stack.
-//         When this function is call (by the GC), it is possible that the 
+//         When this function is call (by the GC), it is possible that the
 //         database object (and its statement stack) has already be finalized !
 
 	sqlite3_stmt *pStmt = (sqlite3_stmt *)JS_GetPrivate( cx, obj );
@@ -143,7 +157,7 @@ DEFINE_FINALIZE() {
 		//	// (TBD) do something ?
 		//}
 		JS_SetPrivate( cx, obj, NULL ); // (TBD) not needed
-//		JS_SetReservedSlot(cx, obj, SLOT_RESULT_DATABASE, JSVAL_VOID); // beware: don't do JS_SetReservedSlot while GC !! 
+//		JS_SetReservedSlot(cx, obj, SLOT_RESULT_DATABASE, JSVAL_VOID); // beware: don't do JS_SetReservedSlot while GC !!
 	}
 }
 
@@ -238,12 +252,12 @@ DEFINE_FUNCTION( Row ) {
 		JS_ValueToBoolean( cx, argv[0], &namedRows );
 	JSObject *row = namedRows ? JS_NewObject(cx, NULL, NULL, NULL) : JS_NewArrayObject(cx, 0, NULL); // If length is 0, JS_NewArrayObject creates an array object of length 0 and ignores vector.
 	*rval = OBJECT_TO_JSVAL(row); // now, row is protectef fom GC ??
-	// If the previous call to sqlite3_step() returned SQLITE_DONE or an error code, 
+	// If the previous call to sqlite3_step() returned SQLITE_DONE or an error code,
 	// then sqlite3_data_count() will return 0 whereas sqlite3_column_count() will continue to return the number of columns in the result set.
 	int columnCount = sqlite3_data_count( pStmt ); // This routine returns 0 if pStmt is an SQL statement that does not return data (for example an UPDATE).
 	jsval colJsValue, jsvCol;
 	for ( int col = 0; col < columnCount; ++col ) {
-		
+
 		RT_ASSERT_RETURN( SqliteColumnToJsval(cx, pStmt, col, &colJsValue ) ); // if something goes wrong in SqliteColumnToJsval, error report has already been set.
 
 		if ( namedRows )
@@ -324,7 +338,7 @@ DEFINE_DEL_PROPERTY() {
 }
 
 DEFINE_SET_PROPERTY() {
-	
+
 	JS_SetReservedSlot(cx, obj, SLOT_RESULT_BINDING_UP_TO_DATE, BOOLEAN_TO_JSVAL(JS_FALSE) ); // invalidate current bindings
 	return JS_TRUE;
 }

@@ -1,3 +1,17 @@
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: GNU GPL 2.0
+ *
+ * The contents of this file are subject to the
+ * GNU General Public License Version 2.0; you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://www.gnu.org/licenses/gpl.html
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ * ***** END LICENSE BLOCK ***** */
+
 #define XP_WIN
 #include <jsapi.h>
 #include <nspr.h>
@@ -64,16 +78,16 @@ JSBool Socket_close(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval
 
 /*
 man page:
-	Sets or gets the SO_LINGER option. The argument is a linger structure. 
-	When enabled, a close(2) or shutdown(2) will not return until all queued messages for the socket have been successfully sent 
-	or the linger timeout has been reached. Otherwise, the call returns immediately and the closing is done in the background. 
+	Sets or gets the SO_LINGER option. The argument is a linger structure.
+	When enabled, a close(2) or shutdown(2) will not return until all queued messages for the socket have been successfully sent
+	or the linger timeout has been reached. Otherwise, the call returns immediately and the closing is done in the background.
 	When the socket is closed as part of exit(2), it always lingers in the background.
 
 MSDN: (http://windowssdk.msdn.microsoft.com/en-us/library/ms737582.aspx)
 	Enabling SO_LINGER with a nonzero time-out interval on a nonblocking socket is not recommended. In this case,
 	the call to closesocket will fail with an error of WSAEWOULDBLOCK if the close operation cannot be completed immediately.
 	If closesocket fails with WSAEWOULDBLOCK the socket handle is still valid, and a disconnect is not initiated.
-	The application must call closesocket again to close the socket. 
+	The application must call closesocket again to close the socket.
 
 Closing non-blocking network sockets
 	http://www.squid-cache.org/mail-archive/squid-dev/199805/0065.html
@@ -132,7 +146,7 @@ JSBool Socket_shutdown(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, js
 //   indication before the server side has called PR_Accept.
 //   Since your call sequence shows that the SERVER called Listen()
 //   and the SERVER socket was readable, the above is what happened.
-//    Wan-Teh 
+//    Wan-Teh
 JSBool Socket_listen(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
 	PRStatus status;
@@ -233,7 +247,7 @@ JSBool Socket_accept(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsva
 //
 //	Since the client side has no way of telling when the server has called
 //	accept() it can't wait for the server to do that before making the
-//	descriptor writeable. 
+//	descriptor writeable.
 JSBool Socket_connect(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
 	if ( argc < 2 ) {
@@ -320,16 +334,16 @@ JSBool Socket_send(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval 
 	//If there is some room in the socket send buffer, the return value will
 	//be the number of bytes that the kernel was able to copy into the buffer."
 	//
-	//page 398, UNIX Network Programming, Second Edition, W. Richard Stevens 
+	//page 398, UNIX Network Programming, Second Edition, W. Richard Stevens
 
 
 	// return value : A positive number indicates the number of bytes successfully sent. If the parameter fd is a blocking socket, this number must always equal amount.
 	// PR_Write(), PR_Send(), PR_Writev() in blocking mode block until the entire buffer is sent. In nonblocking mode, they cannot block, so they may return with just sending part of the buffer.
 
-	
+
 	//	printf( "%d<%d ?", byteSent, length ); // 		PR_WOULD_BLOCK_ERROR;
 	if ( result == -1 ) {
-		
+
 		PRErrorCode errorCode = PR_GetError();
 
 		if ( errorCode == PR_WOULD_BLOCK_ERROR ) {
@@ -562,7 +576,7 @@ JSBool Socket_getter_sockName( JSContext *cx, JSObject *obj, jsval id, jsval *vp
 
 ///////////////////////////////////////////////////////////////////////////////
 // http://developer.mozilla.org/en/docs/PR_GetConnectStatus
-// After PR_Connect on a nonblocking socket fails with PR_IN_PROGRESS_ERROR, 
+// After PR_Connect on a nonblocking socket fails with PR_IN_PROGRESS_ERROR,
 // you may wait for the connection to complete by calling PR_Poll on the socket with the in_flags PR_POLL_WRITE | PR_POLL_EXCEPT.
 // When PR_Poll returns, call PR_GetConnectStatus on the socket to determine whether the nonblocking connect has succeeded or failed.
 JSBool Socket_getter_connectContinue( JSContext *cx, JSObject *obj, jsval id, jsval *vp ) {
@@ -653,7 +667,7 @@ JSPropertySpec Socket_PropertySpec[] = { // *name, tinyid, flags, getter, setter
 	{ "keepAlive"     , PR_SockOpt_Keepalive     , JSPROP_SHARED | JSPROP_PERMANENT, Socket_getOption, Socket_setOption },
 	{ "recvBufferSize", PR_SockOpt_RecvBufferSize, JSPROP_SHARED | JSPROP_PERMANENT, Socket_getOption, Socket_setOption },
 	{ "sendBufferSize", PR_SockOpt_SendBufferSize, JSPROP_SHARED | JSPROP_PERMANENT, Socket_getOption, Socket_setOption },
-// properties	
+// properties
 	{ "peerName"         , 0, JSPROP_SHARED | JSPROP_PERMANENT|JSPROP_READONLY, Socket_getter_peerName         , NULL },
 	{ "sockName"         , 0, JSPROP_SHARED | JSPROP_PERMANENT|JSPROP_READONLY, Socket_getter_sockName         , NULL },
 	{ "connectContinue"  , 0, JSPROP_SHARED | JSPROP_PERMANENT|JSPROP_READONLY, Socket_getter_connectContinue  , NULL },

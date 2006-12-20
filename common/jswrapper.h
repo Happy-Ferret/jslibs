@@ -1,3 +1,17 @@
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: GNU GPL 2.0
+ *
+ * The contents of this file are subject to the
+ * GNU General Public License Version 2.0; you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://www.gnu.org/licenses/gpl.html
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ * ***** END LICENSE BLOCK ***** */
+
 #ifndef _JSWRAPPER_H
 #define _JSWRAPPER_H
 
@@ -43,12 +57,12 @@ public:
   }
 
   ToJsVal( JSContext *cx, const char *val ) {
-  
+
     _jsval = STRING_TO_JSVAL( JS_NewStringCopyZ( cx, val ) );
   }
 
   ToJsVal( JSContext *cx, const String &val ) {
-  
+
     _jsval = STRING_TO_JSVAL( JS_NewStringCopyN( cx, val.c_str(), val.size() ) );
   }
 
@@ -67,7 +81,7 @@ public:
   JsValTo( JSContext *cx, jsval val ) : _cx(cx), _jsval(val) { }
 
   operator bool() {
-    
+
     JSBool bp;
     JS_ValueToBoolean( _cx, _jsval, &bp );
     return bp == JS_TRUE;
@@ -152,7 +166,7 @@ protected:
   }
 
 	static T_Class* Object(JSContext *cx, JSObject *obj) {
-		
+
 		if ( !JS_InstanceOf( cx, obj, &_jsClass, NULL) // (TBD) ... && !HasPrototype(cx, obj) ...  )
       return NULL;
 
@@ -162,7 +176,7 @@ protected:
 
 // default implementation of construct
   static T_Class* Construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv) {
-		
+
 		return new T_Class();
 	}
 
@@ -217,8 +231,8 @@ JSClass JsClassWrapper<T_JsWrapper, T_Class>::_jsClass = {
 #define HAS_RETURN *rval = ToJsVal( cx,
 #define NO_RETURN (
 
-#define ARG(N) JsValTo( cx, argv[N] ) 
-#define NO_ARG 
+#define ARG(N) JsValTo( cx, argv[N] )
+#define NO_ARG
 #define ARG_1 ARG(0)
 #define ARG_2 ARG_1,ARG(1)
 #define ARG_3 ARG_2,ARG(2)

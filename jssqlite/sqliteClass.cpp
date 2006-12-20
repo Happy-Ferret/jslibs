@@ -1,3 +1,17 @@
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: GNU GPL 2.0
+ *
+ * The contents of this file are subject to the
+ * GNU General Public License Version 2.0; you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://www.gnu.org/licenses/gpl.html
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ * ***** END LICENSE BLOCK ***** */
+
 #include "stdafx.h"
 
 #define XP_WIN
@@ -13,7 +27,7 @@ bool _safeMode = true;
 extern JSClass Database_class;
 
 
-void Result_Finalize(JSContext *cx, JSObject *obj) { 
+void Result_Finalize(JSContext *cx, JSObject *obj) {
 
 	sqlite3_stmt *pStmt = (sqlite3_stmt *)JS_GetPrivate( cx, obj );
 	if ( pStmt != NULL ) {
@@ -26,9 +40,9 @@ void Result_Finalize(JSContext *cx, JSObject *obj) {
 }
 
 
-JSClass Result_class = { 
-  "Result", JSCLASS_HAS_PRIVATE, 
-  JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, 
+JSClass Result_class = {
+  "Result", JSCLASS_HAS_PRIVATE,
+  JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub,
   JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, Result_Finalize
 };
 
@@ -133,14 +147,14 @@ JSBool Result_row(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *
 
 	JSObject *row = namedRows ? JS_NewObject(cx, NULL, NULL, NULL) : JS_NewArrayObject(cx, 0, NULL); // If length is 0, JS_NewArrayObject creates an array object of length 0 and ignores vector.
 	*rval = OBJECT_TO_JSVAL(row); // now, row is protectef fom GC ??
-	
-	// If the previous call to sqlite3_step() returned SQLITE_DONE or an error code, 
+
+	// If the previous call to sqlite3_step() returned SQLITE_DONE or an error code,
 	// then sqlite3_data_count() will return 0 whereas sqlite3_column_count() will continue to return the number of columns in the result set.
 	int columnCount = sqlite3_data_count( pStmt ); // This routine returns 0 if pStmt is an SQL statement that does not return data (for example an UPDATE).
 
 	jsval colJsValue, jsvCol;
 	for ( int col = 0; col < columnCount; ++col ) {
-		
+
 		jsvCol = INT_TO_JSVAL(col);
 		if ( Result_col( cx, obj, 1, &jsvCol, &colJsValue ) == JS_FALSE ) // if something goes wrong in Result_col ( error report has already been set )
 			return JS_FALSE;
@@ -155,7 +169,7 @@ JSBool Result_row(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *
 
 
 JSBool Result_reset(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
-	
+
 	sqlite3_stmt *pStmt = (sqlite3_stmt *)JS_GetPrivate( cx, obj );
 	if ( pStmt == NULL ) {
 
@@ -271,7 +285,7 @@ JSPropertySpec Result_PropertySpec[] = { // *name, tinyid, flags, getter, setter
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void Database_Finalize(JSContext *cx, JSObject *obj) { 
+void Database_Finalize(JSContext *cx, JSObject *obj) {
 
 	sqlite3 *db = (sqlite3 *)JS_GetPrivate( cx, obj );
 	if ( db != NULL ) {
@@ -283,9 +297,9 @@ void Database_Finalize(JSContext *cx, JSObject *obj) {
 }
 
 
-JSClass Database_class = { 
-  "Database", JSCLASS_HAS_PRIVATE, 
-  JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, 
+JSClass Database_class = {
+  "Database", JSCLASS_HAS_PRIVATE,
+  JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub,
   JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, Database_Finalize
 };
 
@@ -303,7 +317,7 @@ JSBool Database_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv,
 		JS_ReportError( cx, "missing argument" );
 		return JS_FALSE;
 	}
-	
+
 	JSString *jssFileName = JS_ValueToString( cx, argv[0] );
 	char *fileName = JS_GetStringBytes(jssFileName);
 	if ( fileName == NULL ) {
@@ -343,7 +357,7 @@ JSBool Database_query(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsv
 	const char *szTail;
 	sqlite3_stmt *pStmt;
 
-	int status = sqlite3_prepare( db, sqlQuery, -1, &pStmt, &szTail ); // If the next argument, "nBytes", is less than zero, then zSql is read up to the first nul terminator. 
+	int status = sqlite3_prepare( db, sqlQuery, -1, &pStmt, &szTail ); // If the next argument, "nBytes", is less than zero, then zSql is read up to the first nul terminator.
 
 	if ( status != SQLITE_OK )
 		return SqliteThrowError( cx, sqlite3_errcode(db), sqlite3_errmsg(db) );
@@ -353,11 +367,11 @@ JSBool Database_query(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsv
 		JS_ReportError( cx, "too many SQL statements (%s)", szTail );
 		return JS_FALSE;
 	}
-	
+
 	if ( pStmt == NULL ) { // if there is an error, *ppStmt may be set to NULL. If the input text contained no SQL (if the input is and empty string or a comment) then *ppStmt is set to NULL.
 		// nothing to do here
 	}
-	
+
 	JSObject *object = JS_NewObject( cx, &Result_class, NULL, obj ); // statement's parent is the database
 	JS_SetPrivate( cx, object, pStmt );
 	*rval = OBJECT_TO_JSVAL( object );
@@ -378,7 +392,7 @@ JSBool Database_close(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsv
 	int status = sqlite3_close( db ); // All prepared statements must finalized before sqlite3_close() is called or else the close will fail with a return code of SQLITE_BUSY.
 	if ( status != SQLITE_OK )
 		return SqliteThrowError( cx, sqlite3_errcode(db), sqlite3_errmsg(db) );
-			
+
 	JS_SetPrivate( cx, obj, NULL );
 
 	return JS_TRUE;
@@ -415,7 +429,7 @@ JSBool Database_getter_changes(JSContext *cx, JSObject *obj, jsval id, jsval *vp
 		return JS_FALSE;
 	}
 
-	// This function returns the number of database rows that were changed (or inserted or deleted) by the most recently completed INSERT, UPDATE, or DELETE statement. 
+	// This function returns the number of database rows that were changed (or inserted or deleted) by the most recently completed INSERT, UPDATE, or DELETE statement.
 	// Only changes that are directly specified by the INSERT, UPDATE, or DELETE statement are counted. Auxiliary changes caused by triggers are not counted. Use the sqlite3_total_changes() function to find the total number of changes including changes caused by triggers.
 	//JS_NewNumberValue( cx, sqlite3_changes(db), vp );
 	*vp = INT_TO_JSVAL( sqlite3_changes(db) );
@@ -449,7 +463,7 @@ JSPropertySpec Database_static_PropertySpec[] = { // *name, tinyid, flags, gette
 
 
 JSObject *SqliteInitClass( JSContext *cx, JSObject *obj ) {
-	
+
 	JS_InitClass( cx, obj, NULL, &Result_class, Database_construct, 1, Result_PropertySpec, Result_FunctionSpec, NULL, NULL );
 
 	return JS_InitClass( cx, obj, NULL, &Database_class, Database_construct, 1, Database_PropertySpec, Database_FunctionSpec, Database_static_PropertySpec, NULL );
@@ -465,7 +479,7 @@ sqlite3_column_count
 	Return the number of columns in the result set returned by the prepared SQL statement. This routine returns 0 if pStmt is an SQL statement that does not return data (for example an UPDATE).
 sqlite3_data_count
 	Return the number of values in the current row of the result set.
-	After a call to sqlite3_step() that returns SQLITE_ROW, this routine will return the same value as the sqlite3_column_count() function. 
-	After sqlite3_step() has returned an SQLITE_DONE, SQLITE_BUSY or error code, or before sqlite3_step() has been called on a prepared SQL statement, this routine returns zero. 
+	After a call to sqlite3_step() that returns SQLITE_ROW, this routine will return the same value as the sqlite3_column_count() function.
+	After sqlite3_step() has returned an SQLITE_DONE, SQLITE_BUSY or error code, or before sqlite3_step() has been called on a prepared SQL statement, this routine returns zero.
 */
 

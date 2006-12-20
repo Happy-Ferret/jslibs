@@ -1,3 +1,17 @@
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: GNU GPL 2.0
+ *
+ * The contents of this file are subject to the
+ * GNU General Public License Version 2.0; you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://www.gnu.org/licenses/gpl.html
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ * ***** END LICENSE BLOCK ***** */
+
 /*
 win32, System Error Codes
 	http://msdn.microsoft.com/library/default.asp?url=/library/en-us/debug/base/system_error_codes.asp
@@ -16,7 +30,7 @@ typedef struct {
 	JSContext *cx;
 	JSObject *obj;
 } CxObj;
-	
+
 
 //HINSTANCE GetInst() {
 //
@@ -139,14 +153,14 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 			JS_GetProperty(cx, obj, "onmousedown", &functionVal);
 			if ( functionVal != JSVAL_VOID ) {
 
-				// xPos = GET_X_LPARAM(lParam); 
-				// yPos = GET_Y_LPARAM(lParam); 
+				// xPos = GET_X_LPARAM(lParam);
+				// yPos = GET_Y_LPARAM(lParam);
 
 				RT_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." );
-				jsval argv[] = { 
+				jsval argv[] = {
 					INT_TO_JSVAL( message==WM_LBUTTONDOWN ? 1 : message==WM_RBUTTONDOWN ? 2 : message==WM_MBUTTONDOWN ? 3 : 0 ), JSVAL_TRUE };
-//					BOOLEAN_TO_JSVAL(wParam & MK_LBUTTON), 
-//					BOOLEAN_TO_JSVAL(wParam & MK_RBUTTON), 
+//					BOOLEAN_TO_JSVAL(wParam & MK_LBUTTON),
+//					BOOLEAN_TO_JSVAL(wParam & MK_RBUTTON),
 //					BOOLEAN_TO_JSVAL(wParam & MK_MBUTTON) };
 				JS_CallFunctionValue(cx, obj, functionVal, sizeof(argv)/sizeof(*argv), argv, &rval);
 				return 0;
@@ -158,8 +172,8 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 			JS_GetProperty(cx, obj, "onmouseup", &functionVal);
 			if ( functionVal != JSVAL_VOID ) {
 
-				// xPos = GET_X_LPARAM(lParam); 
-				// yPos = GET_Y_LPARAM(lParam); 
+				// xPos = GET_X_LPARAM(lParam);
+				// yPos = GET_Y_LPARAM(lParam);
 
 				RT_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." );
 				jsval argv[] = { INT_TO_JSVAL( message==WM_LBUTTONUP ? 1 : message==WM_RBUTTONUP ? 2 : message==WM_MBUTTONUP ? 3 : 0 ), JSVAL_FALSE };
@@ -197,11 +211,11 @@ DEFINE_CONSTRUCTOR() {
 	                          CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,    (HWND)NULL, (HMENU)NULL, hInst, (LPVOID)NULL);
 	RT_ASSERT( hWnd != NULL, "Unable to CreateWindow." );
 	JS_SetPrivate(cx, obj, hWnd);
-	
+
 	CxObj *cxobj = (CxObj*)malloc(sizeof(CxObj));
 	cxobj->cx = cx;
 	cxobj->obj = obj;
-	
+
 	DWORD err;
 	RT_SAFE(SetLastError(0));
 	LONG prevWindowLong = SetWindowLong(hWnd, GWL_USERDATA, (LONG)cxobj );
@@ -236,7 +250,7 @@ DEFINE_FUNCTION( ProcessEvents ) {
 	do {
 
 		JS_GetProperty(cx, obj, "onidle", &functionVal);
-		
+
 		if ( functionVal != JSVAL_VOID ) {
 			RT_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." );
 			if ( JS_CallFunctionValue(cx, obj, functionVal, 0, NULL, rval) == JS_FALSE )
@@ -294,7 +308,7 @@ DEFINE_FUNCTION( Mode ) {
 
 	LONG status;
 	if ( argc > 0 ) {
-		
+
 		RT_ASSERT_ARGC(3);
 		int32 bits;
 		JSBool fullscreen;
@@ -303,7 +317,7 @@ DEFINE_FUNCTION( Mode ) {
 		IntArrayToVector(cx, 2, argv, size);
 		JS_ValueToInt32(cx, argv[1], &bits);
 		JS_ValueToBoolean(cx, argv[2], &fullscreen);
-		
+
 		DEVMODE dmScreenSettings;
 		memset(&dmScreenSettings, 0, sizeof(dmScreenSettings));
 		dmScreenSettings.dmSize = sizeof(dmScreenSettings);
@@ -465,8 +479,8 @@ DEFINE_PROPERTY( showFrame ) {
 		s |= WS_POPUP;
 	}
 	SetWindowLong(hWnd, GWL_STYLE, s);
-	// Certain window data is cached, so changes you make using SetWindowLong will not take effect until you call the SetWindowPos function. 
-	// Specifically, if you change any of the frame styles, you must call SetWindowPos with the SWP_FRAMECHANGED flag for the cache to be updated properly. 
+	// Certain window data is cached, so changes you make using SetWindowLong will not take effect until you call the SetWindowPos function.
+	// Specifically, if you change any of the frame styles, you must call SetWindowPos with the SWP_FRAMECHANGED flag for the cache to be updated properly.
 	SetWindowPos(hWnd, HWND_TOP, 0,0,0,0,  SWP_FRAMECHANGED | SWP_NOSIZE | SWP_NOMOVE | SWP_NOZORDER | SWP_NOOWNERZORDER); //HWND_TOPMOST
 	return JS_TRUE;
 }
@@ -489,7 +503,7 @@ DEFINE_PROPERTY( captureMouse ) {
 	JSBool capture;
 	JS_ValueToBoolean(cx, *vp, &capture);
 
-	// Only the foreground window can capture the mouse. 
+	// Only the foreground window can capture the mouse.
 	// When a background window attempts to do so, the window receives messages only for mouse events that occur when the cursor hot spot is within the visible portion of the window.
 	if ( capture )
 		SetCapture(hWnd);

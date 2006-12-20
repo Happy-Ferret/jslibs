@@ -1,3 +1,17 @@
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: GNU GPL 2.0
+ *
+ * The contents of this file are subject to the
+ * GNU General Public License Version 2.0; you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://www.gnu.org/licenses/gpl.html
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ * ***** END LICENSE BLOCK ***** */
+
 /*
 API:
 	http://refspecs.freestandards.org/LSB_3.1.0/LSB-Desktop-generic/LSB-Desktop-generic/libjpegman.html
@@ -173,13 +187,13 @@ DEFINE_CONSTRUCTOR() {
 
 // read image headers
 	jpeg_read_header(cinfo, TRUE); //we passed TRUE to reject a tables-only JPEG file as an error.
-	
+
 	// the default is to produce full color output from a color file.
 
 	jpeg_calc_output_dimensions(cinfo);
 
 	JS_SetPrivate(cx, obj, cinfo);
-	
+
 	return JS_TRUE;
 }
 
@@ -227,7 +241,7 @@ DEFINE_FUNCTION( Load ) {
 
 	// cinfo->rec_outbuf_height : recomanded scanline height ( 1, 2 or 4 )
 	while (cinfo->output_scanline < cinfo->output_height) {
-		
+
 		jpeg_read_scanlines(cinfo, &data, 1);
 		data += bytePerRow;
 	}

@@ -1,3 +1,17 @@
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: GNU GPL 2.0
+ *
+ * The contents of this file are subject to the
+ * GNU General Public License Version 2.0; you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://www.gnu.org/licenses/gpl.html
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ * ***** END LICENSE BLOCK ***** */
+
 #include "stdafx.h"
 #include "jsimage.h"
 #include "../common/jsNativeInterface.h"
@@ -16,7 +30,7 @@ typedef struct {
 
 
 void _png_read( png_structp png_ptr, png_bytep data, png_size_t length ) {
-	
+
 	PngDescriptor *desc = (PngDescriptor*)png_get_io_ptr(png_ptr);
 	desc->read(desc->pv, data, &length);
 //	if ( length == 0 )
@@ -100,7 +114,7 @@ DEFINE_FUNCTION( Load ) {
 	//JS_SetProperty(cx, image, "channels", &tmp );
 //	tmp = INT_TO_JSVAL(bytePerRow/width);
 //	JS_SetProperty(cx, image, "pixelSize", &tmp );
-	
+
 	png_bytep data = (png_bytep)malloc(height * bytePerRow);
 	RT_ASSERT_ALLOC(data);
 	JS_SetPrivate(cx, image, data);
@@ -163,7 +177,7 @@ CONFIGURE_CLASS
 		PROPERTY_READ(height)
 		PROPERTY_READ(channels)
 	END_PROPERTY_SPEC
-	
+
 	HAS_PRIVATE
 
 END_CLASS

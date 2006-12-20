@@ -1,3 +1,17 @@
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: GNU GPL 2.0
+ *
+ * The contents of this file are subject to the
+ * GNU General Public License Version 2.0; you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://www.gnu.org/licenses/gpl.html
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ * ***** END LICENSE BLOCK ***** */
+
 #pragma once
 /*
 source: http://nebuladevice.svn.sourceforge.net/viewvc/nebuladevice/trunk/nebula2/code/nebula2/inc/mathlib/_vector3_sse.h?view=markup
@@ -29,7 +43,7 @@ inline Vector3 *Vector3Alloc() {
 
 
 inline void Vector3Identity( Vector3 *v ) {
-	
+
 	v->m128 = _mm_set_ps(0.0f,0.0f,0.0f,0.0f);
 }
 
@@ -119,9 +133,9 @@ inline void Vector3Cross(Vector3 *v, const Vector3 *v0, const Vector3 *v1) { // 
 	__m128 b = _mm_shuffle_ps(v1->m128, v1->m128, _MM_SHUFFLE(W, Y, X, Z));
 	__m128 c = _mm_shuffle_ps(v0->m128, v0->m128, _MM_SHUFFLE(W, Y, X, Z));
 	__m128 d = _mm_shuffle_ps(v1->m128, v1->m128, _MM_SHUFFLE(W, X, Z, Y));
-	
+
 	__m128 e = _mm_mul_ps(a, b);
 	__m128 f = _mm_mul_ps(c, d);
-	
+
 	v->m128 = _mm_sub_ps(e, f);
 }

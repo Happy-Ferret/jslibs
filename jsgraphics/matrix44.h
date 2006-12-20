@@ -1,3 +1,17 @@
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: GNU GPL 2.0
+ *
+ * The contents of this file are subject to the
+ * GNU General Public License Version 2.0; you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://www.gnu.org/licenses/gpl.html
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ * ***** END LICENSE BLOCK ***** */
+
 #pragma once
 /*
 	source:
@@ -47,7 +61,7 @@ static float Matrix44IdentityValue[] = {
     1.0f, 0.0f, 0.0f, 0.0f,
     0.0f, 1.0f, 0.0f, 0.0f,
     0.0f, 0.0f, 1.0f, 0.0f,
-    0.0f, 0.0f, 0.0f, 1.0f 
+    0.0f, 0.0f, 0.0f, 1.0f
 };
 
 inline void Matrix44Free( Matrix44 *m ) {
@@ -57,8 +71,8 @@ inline void Matrix44Free( Matrix44 *m ) {
 
 inline Matrix44 *Matrix44Alloc() {
 
-	// Doc: For example, if you use malloc, the result depends on the operand size. If arg >= 8, 
-	//      alignment will be 8 byte aligned. If arg < 8, alignment will be the first power of 2 less than arg. 
+	// Doc: For example, if you use malloc, the result depends on the operand size. If arg >= 8,
+	//      alignment will be 8 byte aligned. If arg < 8, alignment will be the first power of 2 less than arg.
 	//      For example, if you use malloc(7), alignment is 4 bytes.
 	return (Matrix44*)_aligned_malloc(sizeof(Matrix44), __alignof(Matrix44));
 }
@@ -246,7 +260,7 @@ inline void Matrix44SetRotation( Matrix44 *m, const Vector3 *axis, float radAngl
 	float ca = (float) cosf(radAngle);
 //	Matrix44 rot;
 //	Matrix44Identity(&rot);
-//	rot.m1 = _mm_set1_ps( 
+//	rot.m1 = _mm_set1_ps(
 	m->m[0][0] = ca + (1.0f - ca) * v.x * v.x;
 	m->m[0][1] = (1.0f - ca) * v.x * v.y - sa * v.z;
 	m->m[0][2] = (1.0f - ca) * v.z * v.x + sa * v.y;
