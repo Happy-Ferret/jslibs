@@ -59,7 +59,7 @@ var sy = Math.sin(y/f)*r
 
 
 var floor = new GeomPlane(world.space);
-floor.impact = function(n,thisgeom,othergeom,pos) { n||Print('impact '+othergeom.body.linearVel+'\n') }
+//floor.impact = function(n,thisgeom,othergeom,pos) { n||Print('impact '+othergeom.body.linearVel+'\n') }
 
 var win = new Window();
 win.title = "Test";

@@ -160,7 +160,7 @@ JSBool g_isReadable(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval
 	}
 
 	JSObject *o = JSVAL_TO_OBJECT( argv[0] ); //JS_ValueToObject
-	*rval = OBJECT_TO_JSVAL( o ); // protect from GC
+	*rval = OBJECT_TO_JSVAL( o ); // (TBD) check if it is needed to protect from GC ?
 	// (TBD) is it useful ? I don't use JS_ValueToObject
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, o );
 	PRPollDesc desc;

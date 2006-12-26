@@ -21,6 +21,7 @@
 
 #include <string.h>
 
+
 void Socket_Finalize(JSContext *cx, JSObject *obj) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
