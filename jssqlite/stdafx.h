@@ -3,18 +3,38 @@
 // are changed infrequently
 //
 
-#pragma once
+// #pragma once
+
+#ifndef stdafx_h___
+#define stdafx_h___
+
+#ifdef _MSC_VER
+	#define DLLEXPORT __declspec(dllexport)
+	#define DLLLOCAL
+#else
+  #ifdef HAVE_GCCVISIBILITYPATCH
+    #define DLLEXPORT __attribute__ ((visibility("default")))
+    #define DLLLOCAL __attribute__ ((visibility("hidden")))
+  #else
+    #define DLLEXPORT
+    #define DLLLOCAL
+  #endif
+#endif
 
 
-#define WIN32_LEAN_AND_MEAN		// Exclude rarely-used stuff from Windows headers
+#ifdef _MSC_VER
+	#define WIN32_LEAN_AND_MEAN		// Exclude rarely-used stuff from Windows headers
+	#include <windows.h>
+	#define XP_WIN
+#else
+	#define XP_UNIX
+#endif
 
-// TODO: reference additional headers your program requires here
-#include <windows.h>
-
-#define XP_WIN
 #include <jsapi.h>
 
 #include "../common/jshelper.h"
 #include "../common/jsclass.h"
 
 #include <sqlite3.h>
+
+#endif // stdafx_h___
