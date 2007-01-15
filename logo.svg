@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://web.resource.org/cc/"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="744.09448819"
+   height="1052.3622047"
+   id="svg1882"
+   sodipodi:version="0.32"
+   inkscape:version="0.44.1"
+   sodipodi:docbase="C:\PERSO\projects"
+   sodipodi:docname="logo.svg">
+  <defs
+     id="defs1884">
+    <linearGradient
+       inkscape:collect="always"
+       id="linearGradient2804">
+      <stop
+         style="stop-color:white;stop-opacity:1"
+         offset="0"
+         id="stop2806" />
+      <stop
+         style="stop-color:#3f5957;stop-opacity:0"
+         offset="1"
+         id="stop2808" />
+    </linearGradient>
+    <linearGradient
+       inkscape:collect="always"
+       id="linearGradient2780">
+      <stop
+         style="stop-color:#042b7a;stop-opacity:1"
+         offset="0"
+         id="stop2782" />
+      <stop
+         style="stop-color:black;stop-opacity:0;"
+         offset="1"
+         id="stop2784" />
+    </linearGradient>
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient2780"
+       id="linearGradient2788"
+       x1="92.393021"
+       y1="143.35156"
+       x2="80.018646"
+       y2="139.05513"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="matrix(1.091093,0,0,1.091093,-22.18657,13.27946)" />
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient2804"
+       id="linearGradient2810"
+       x1="99.216637"
+       y1="170.36984"
+       x2="121.94907"
+       y2="146.12949"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="matrix(1.091093,0,0,1.091093,-22.18657,13.27946)" />
+  </defs>
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     gridtolerance="10000"
+     guidetolerance="10"
+     objecttolerance="10"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="3.959798"
+     inkscape:cx="123.48261"
+     inkscape:cy="878.0726"
+     inkscape:document-units="px"
+     inkscape:current-layer="layer1"
+     inkscape:window-width="853"
+     inkscape:window-height="573"
+     inkscape:window-x="462"
+     inkscape:window-y="446" />
+  <metadata
+     id="metadata1887">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <text
+       xml:space="preserve"
+       style="font-size:9.99999684;font-style:normal;font-weight:normal;fill:url(#linearGradient2788);fill-opacity:1;stroke:url(#linearGradient2810);stroke-width:1.09109259px;stroke-linecap:butt;stroke-linejoin:round;stroke-opacity:1;font-family:sans;font-stretch:normal;font-variant:normal;text-anchor:start;text-align:start;writing-mode:lr;line-height:125%"
+       x="77.570465"
+       y="182.63811"
+       id="text1890"
+       transform="scale(1.181291,0.846532)"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan1892"
+         x="77.570465"
+         y="182.63811"
+         style="fill:url(#linearGradient2788);fill-opacity:1;stroke:url(#linearGradient2810);stroke-width:1.09109259;stroke-linecap:butt;stroke-linejoin:round;stroke-opacity:1;font-family:sans;font-weight:normal;font-style:normal;font-stretch:normal;font-variant:normal;font-size:9.99999684;text-anchor:start;text-align:start;writing-mode:lr;line-height:125%">jslibs</tspan></text>
+  </g>
+</svg>
