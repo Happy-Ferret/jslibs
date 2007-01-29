@@ -143,23 +143,28 @@ JSBool File_read(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *r
 		return JS_FALSE;
 	}
 
-	PRInt32 available = PR_Available(fd); // For a normal file, these are the bytes beyond the current file pointer.
-	if ( available == -1 )
-		return ThrowNSPRError( cx, PR_GetError() );
 
 	PRInt32 amount;
-	if ( argc >= 1 ) {
+	if ( argc >= 1 && argv[0] != JSVAL_VOID ) {
 
 		int32 val;
 		JS_ValueToInt32( cx, argv[0], &val );
 		amount = val;
+
+/* PR_Available fails with PRSpecialFD
 		if ( amount > available )
 			amount = available;
-	} else // no amount specified : read the whole file
+*/
+	} else  { // no amount specified : read the whole file
+
+		PRInt32 available = PR_Available(fd); // For a normal file, these are the bytes beyond the current file pointer.
+		if ( available == -1 )
+			return ThrowNSPRError( cx, PR_GetError() );
 		amount = available;
+	}
 
 	char *buf = (char*)JS_malloc( cx, amount +1 );
-	buf[amount] = 0;
+	buf[amount] = 0; // (TBD) check if useful: PR_Read can read binary data !
 
 	PRInt32 res = PR_Read( fd, buf, amount );
 	if (res == -1) { // failure. The reason for the failure can be obtained by calling PR_GetError.
@@ -413,7 +418,33 @@ JSBool File_static_setConst( JSContext *cx, JSObject *obj, jsval id, jsval *vp )
 }
 
 
+JSBool File_static_standard( JSContext *cx, JSObject *obj, jsval id, jsval *vp ) {
+	
+	if ( *vp == JSVAL_VOID ) {
+
+		int32 i;
+		JS_ValueToInt32( cx, id, &i );
+
+		JSObject *obj = JS_NewObject(cx, &File_class, NULL, NULL );
+		*vp = OBJECT_TO_JSVAL( obj ); // GC protection ?
+
+		PRFileDesc *fd = PR_GetSpecialFD( (PRSpecialFD)i); // beware: cast !
+		if ( fd == NULL )
+			return ThrowNSPRError( cx, PR_GetError() );
+		JS_SetPrivate( cx, obj, fd );
+	}
+}
+
+
+
+
 JSPropertySpec File_static_PropertySpec[] = { // *name, tinyid, flags, getter, setter
+
+	{ "stdin"    , PR_StandardInput,  JSPROP_PERMANENT|JSPROP_READONLY, File_static_standard, NULL },
+	{ "stdout"   , PR_StandardOutput, JSPROP_PERMANENT|JSPROP_READONLY, File_static_standard, NULL },
+	{ "stderr"   , PR_StandardError,  JSPROP_PERMANENT|JSPROP_READONLY, File_static_standard, NULL },
+
+
 // PR_Open flags
 	{ "RDONLY"        ,PR_RDONLY      ,JSPROP_SHARED | JSPROP_PERMANENT|JSPROP_READONLY, File_static_setConst, NULL },
 	{ "WRONLY"			,PR_WRONLY      ,JSPROP_SHARED | JSPROP_PERMANENT|JSPROP_READONLY, File_static_setConst, NULL },
@@ -436,6 +467,8 @@ JSPropertySpec File_static_PropertySpec[] = { // *name, tinyid, flags, getter, s
 };
 
 JSObject *InitFileClass( JSContext *cx, JSObject *obj ) {
+
+	PR_STDIO_INIT()
 
 	JSObject *fileClass = JS_InitClass( cx, obj, NULL, &File_class, File_construct, 1, File_PropertySpec, File_FunctionSpec, File_static_PropertySpec, NULL );
 //	JS_DefineConstDoubles( cx, fileClass, &File_const);
