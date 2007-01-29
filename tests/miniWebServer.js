@@ -317,7 +317,7 @@ function Connection(s) {
 			} 
 			s.Send(_output.shift());
 		} else
-			delete(s.writable);
+			delete s.writable;
 	}
 	
 	function Output( dataInfo ) {

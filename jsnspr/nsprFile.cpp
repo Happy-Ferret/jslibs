@@ -173,6 +173,13 @@ JSBool File_read(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *r
 		return ThrowNSPRError( cx, PR_GetError() );
 	}
 
+	if ( res == 0 ) {
+
+		JS_free( cx, buf );
+		*rval = JS_GetEmptyStringValue(cx); // (TBD) check if it is realy faster.
+		return JS_TRUE;
+	}
+
 	JSString *str = JS_NewString( cx, (char*)buf, res );
 	if (str == NULL) {
 
@@ -265,12 +272,29 @@ JSBool File_seek(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *r
 }
 
 
+JSBool File_sync(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+
+	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
+	if ( fd == NULL ) {
+
+		JS_ReportError( cx, "file is closed" );
+		return JS_FALSE;
+	}
+
+	PRStatus status = PR_Sync(fd);
+	if ( status == PR_FAILURE )
+		return ThrowNSPRError( cx, PR_GetError() );
+
+	return JS_TRUE;
+}
+
 JSFunctionSpec File_FunctionSpec[] = { // { *name, call, nargs, flags, extra }
  { "Open"     , File_open   , 0, 0, 0 },
  { "Close"    , File_close  , 0, 0, 0 },
  { "Read"     , File_read   , 0, 0, 0 },
  { "Write"    , File_write  , 0, 0, 0 },
  { "Seek"     , File_seek   , 0, 0, 0 },
+ { "Sync"     , File_sync   , 0, 0, 0 },
  { 0 }
 };
 
