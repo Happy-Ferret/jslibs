@@ -222,13 +222,20 @@ bool gEndSignal = false;
 JSBool global_getter_endSignal(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 
 	*vp = BOOLEAN_TO_JSVAL( gEndSignal );
-  return JS_TRUE;
+	return JS_TRUE;
+}
+
+JSBool global_getter_global(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
+	
+	*vp = OBJECT_TO_JSVAL(JS_GetGlobalObject(cx));
+	return JS_TRUE;
 }
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////
 JSPropertySpec Global_PropertySpec[] = { // *name, tinyid, flags, getter, setter
 	{ "endSignal"    , 0    , JSPROP_SHARED | JSPROP_READONLY | JSPROP_PERMANENT, global_getter_endSignal, NULL },
+	{ "global"    , 0    , JSPROP_SHARED | JSPROP_READONLY | JSPROP_PERMANENT, global_getter_global, NULL },
 	{ 0 }
 };
 
