@@ -46,6 +46,7 @@
 #define PROPERTY_WRITE_STORE(name) { #name, 0, JSPROP_PERMANENT              , NULL, name },
 #define PROPERTY_SWITCH(name, function)       { #name, name, JSPROP_PERMANENT|JSPROP_SHARED, function##Getter, function##Setter }, // Used to define multiple properties with only one pari of getter/setter functions ( an enum has to be defiend ... less than 256 items ! )
 #define PROPERTY_SWITCH_STORE(name, function) { #name, name, JSPROP_PERMANENT, function##Getter, function##Setter },
+#define PROPERTY_SWITCH_READ_STORE(name, function) { #name, name, JSPROP_PERMANENT|JSPROP_READONLY, function##Getter, NULL },
 
 #define PROPERTY_CREATE(name,id,flags,getter,setter) { #name, id, flags, getter, setter },
 #define PROPERTY_DEFINE(name) { #name, 0, JSPROP_PERMANENT, NULL, NULL },
@@ -62,21 +63,28 @@
 
 #define CONST_DOUBLE(name,value) { value, #name },
 
+
+
 // static definition
 #define BEGIN_STATIC
 
 #define CONFIGURE_STATIC \
-	static JSBool _InitializeStatic(JSContext *cx, JSObject *obj) { \
+	JSBool InitializeStatic(JSContext *cx, JSObject *obj) { \
 	JSFunctionSpec *_staticFunctionSpec = NULL; \
 	JSPropertySpec *_staticPropertySpec = NULL; \
 
 #define END_STATIC \
-	JS_DefineFunctions(cx, obj, _staticFunctionSpec); \
-	JS_DefineProperties(cx, obj, _staticPropertySpec); \
+	if ( _staticFunctionSpec != NULL ) JS_DefineFunctions(cx, obj, _staticFunctionSpec); \
+	if ( _staticPropertySpec != NULL ) JS_DefineProperties(cx, obj, _staticPropertySpec); \
 	return JS_TRUE; } \
 
-#define INIT_STATIC(cx, obj) \
-	_InitializeStatic(cx, obj); \
+#define DECLARE_STATIC() \
+	JSBool InitializeStatic(JSContext *cx, JSObject *obj);
+
+#define INIT_STATIC() \
+	InitializeStatic(cx, obj); \
+
+
 
 // class definition
 #define DECLARE_CLASS( CLASSNAME ) \
