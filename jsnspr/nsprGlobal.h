@@ -12,5 +12,4 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-JSBool InitGlobal( JSContext *cx, JSObject *obj );
-
+DECLARE_STATIC()

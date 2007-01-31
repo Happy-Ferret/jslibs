@@ -12,50 +12,47 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-#define XP_WIN
-#include <jsapi.h>
-//#include <jsdbgapi.h>
-//#include <jscntxt.h>
-//#include <jsscript.h>
-
-#include <nspr.h>
+#include "stdafx.h"
 
 #include "nsprError.h"
 
-JSClass NSPRError_class = {
-  "NSPRError", JSCLASS_HAS_RESERVED_SLOTS(1),
-  JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub,
-  JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, JS_FinalizeStub
-};
 
+BEGIN_CLASS( NSPRError )
 
-JSBool NSPRError_getter_code(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
+DEFINE_CONSTRUCTOR() {
 
-	JS_GetReservedSlot( cx, obj, 0, vp );
-  return JS_TRUE;
+	REPORT_ERROR( "This object cannot be construct." ); // but constructor must be defined
+	return JS_TRUE;
 }
 
-JSBool NSPRError_getter_text(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
+DEFINE_PROPERTY( code ) {
 
-	JS_GetReservedSlot( cx, obj, 0, vp );
+	JS_GetReservedSlot( cx, obj, 0, vp );  // (TBD) use the obj.name proprety directly instead of slot 0 ?
+	return JS_TRUE;
+}
+
+DEFINE_PROPERTY( text ) {
+
+	JS_GetReservedSlot( cx, obj, 0, vp );  // (TBD) use the obj.name proprety directly instead of slot 0 ?
 	PRErrorCode errorCode = JSVAL_TO_INT(*vp);
 	JSString *str = JS_NewStringCopyZ( cx, PR_ErrorToString( errorCode, PR_LANGUAGE_EN ) );
 	*vp = STRING_TO_JSVAL( str );
-  return JS_TRUE;
-}
-
-
-JSPropertySpec NSPRError_PropertySpec[] = { // *name, tinyid, flags, getter, setter
-  { "code",  0, JSPROP_READONLY|JSPROP_PERMANENT, NSPRError_getter_code, NULL },
-  { "text",  0, JSPROP_READONLY|JSPROP_PERMANENT, NSPRError_getter_text, NULL },
-  { 0 }
-};
-
-
-JSBool NSPRError_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
-
 	return JS_TRUE;
 }
+
+CONFIGURE_CLASS
+
+	HAS_CONSTRUCTOR
+
+	BEGIN_PROPERTY_SPEC
+		PROPERTY_READ( code )
+		PROPERTY_READ( text )
+	END_PROPERTY_SPEC
+
+	HAS_RESERVED_SLOTS(1)
+
+END_CLASS
+
 
 
 JSBool ThrowNSPRError( JSContext *cx, PRErrorCode errorCode ) {
@@ -74,14 +71,8 @@ JSBool ThrowNSPRError( JSContext *cx, PRErrorCode errorCode ) {
 */
 
 	JS_ReportWarning( cx, "NSPRError exception" );
-
-	JSObject *error = JS_NewObject( cx, &NSPRError_class, NULL, NULL );
+	JSObject *error = JS_NewObject( cx, &classNSPRError, NULL, NULL );
 	JS_SetReservedSlot( cx, error, 0, INT_TO_JSVAL(errorCode) );
 	JS_SetPendingException( cx, OBJECT_TO_JSVAL( error ) );
-  return JS_FALSE;
-}
-
-JSObject *InitErrorClass( JSContext *cx, JSObject *obj ) {
-
-	return JS_InitClass( cx, obj, NULL, &NSPRError_class, NSPRError_construct, 0, NSPRError_PropertySpec, NULL, NULL, NULL );
+	return JS_FALSE;
 }

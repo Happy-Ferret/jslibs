@@ -12,4 +12,6 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-JSObject *InitFileClass( JSContext *cx, JSObject *obj );
+DECLARE_CLASS( File )
+
+#define SLOT_NSPR_FILE_NAME 0

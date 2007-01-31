@@ -12,6 +12,6 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-JSObject *InitErrorClass( JSContext *cx, JSObject *obj );
-JSBool ThrowNSPRError( JSContext *cx, PRErrorCode errorCode );
+DECLARE_CLASS( NSPRError )
 
+JSBool ThrowNSPRError( JSContext *cx, PRErrorCode errorCode );

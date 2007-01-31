@@ -12,14 +12,14 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-#define XP_WIN
-#include <jsapi.h>
-#include <nspr.h>
+#include "stdafx.h"
 
 #include "nsprError.h"
 #include "nsprSocket.h"
 
-JSBool g_poll(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+BEGIN_STATIC
+
+DEFINE_FUNCTION( Poll ) {
 
 	// NSPR Poll Method:
 	//   http://www.mozilla.org/projects/nspr/tech-notes/poll-method.html
@@ -150,8 +150,7 @@ failed: // goto is the cheaper solution
 	return JS_FALSE;
 }
 
-
-JSBool g_isReadable(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+DEFINE_FUNCTION( IsReadable ) {
 
 	if ( argc < 1 ) {
 
@@ -181,8 +180,7 @@ JSBool g_isReadable(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval
 	return JS_TRUE;
 }
 
-
-JSBool g_isWritable(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+DEFINE_FUNCTION( IsWritable ) {
 
 	if ( argc < 1 ) {
 
@@ -212,8 +210,7 @@ JSBool g_isWritable(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval
 	return JS_TRUE;
 }
 
-
-JSBool g_IntervalNow(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+DEFINE_FUNCTION( IntervalNow ) {
 
 	PRUint32 interval = PR_IntervalToMilliseconds( PR_IntervalNow() );
 	JS_NewNumberValue( cx, interval, rval );
@@ -221,7 +218,7 @@ JSBool g_IntervalNow(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsva
 }
 
 
-JSBool g_Sleep(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+DEFINE_FUNCTION( Sleep ) {
 
 	uint32 timeout;
 	JSBool res = JS_ValueToECMAUint32( cx, argv[0], &timeout );
@@ -230,17 +227,44 @@ JSBool g_Sleep(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rva
 }
 
 
-JSFunctionSpec Global_FunctionSpec[] = { // *name, call, nargs, flags, extra
- { "Poll"         , g_poll         , 0, 0, 0 },
- { "IsReadable"   , g_isReadable   , 0, 0, 0 },
- { "IsWritable"   , g_isWritable   , 0, 0, 0 },
- { "IntervalNow"  , g_IntervalNow  , 0, 0, 0 },
- { "Sleep"        , g_Sleep        , 0, 0, 0 },
- { 0 }
-};
+DEFINE_FUNCTION( GetEnv ) {
 
-
-JSBool InitGlobal( JSContext *cx, JSObject *obj ) {
-
-	return JS_DefineFunctions( cx, obj, Global_FunctionSpec );
+	RT_ASSERT_ARGC(1)
+	char *name;
+	RT_JSVAL_TO_STRING( argv[0], name );
+	char* value = PR_GetEnv(name); // If the environment variable is not defined, the function returns NULL.
+	if ( value != NULL ) {
+		JSString *jsstr = JS_NewStringCopyZ(cx,value);
+		RT_ASSERT_ALLOC( jsstr );
+		*rval = STRING_TO_JSVAL(jsstr);
+	}
+	return JS_TRUE;
 }
+
+DEFINE_FUNCTION( HostName ) {
+
+	char tmp[1024];
+	PRStatus status = PR_GetSystemInfo( PR_SI_HOSTNAME, tmp, sizeof(tmp) );
+	if ( status != PR_SUCCESS )
+		JS_ReportError( cx, "unable to GetSystemInfo" );
+	JSString *jsstr = JS_NewStringCopyZ(cx,tmp);
+	RT_ASSERT_ALLOC( jsstr );
+	*rval = STRING_TO_JSVAL(jsstr);
+	return JS_TRUE;
+}
+
+
+CONFIGURE_STATIC
+
+	BEGIN_STATIC_FUNCTION_SPEC
+		FUNCTION( Poll )
+		FUNCTION( IsReadable )
+		FUNCTION( IsWritable )
+		FUNCTION( IntervalNow )
+		FUNCTION( Sleep )
+		FUNCTION( GetEnv )
+		FUNCTION( HostName )
+	END_STATIC_FUNCTION_SPEC
+
+END_STATIC
+

@@ -12,14 +12,14 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-#define XP_WIN
-#include <jsapi.h>
-#include <nspr.h>
+#include "stdafx.h"
 
 #include "nsprError.h"
 #include "nsprDirectory.h"
 
-void Directory_Finalize(JSContext *cx, JSObject *obj) {
+BEGIN_CLASS( Directory )
+
+DEFINE_FINALIZE() {
 
 	PRDir *dd = (PRDir *)JS_GetPrivate( cx, obj );
 	if ( dd != NULL ) {
@@ -31,15 +31,7 @@ void Directory_Finalize(JSContext *cx, JSObject *obj) {
 	}
 }
 
-
-JSClass Directory_class = {
-	"Directory", JSCLASS_HAS_PRIVATE | JSCLASS_HAS_RESERVED_SLOTS(1),
-	JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub,
-	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, Directory_Finalize
-};
-
-
-JSBool Directory_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+DEFINE_CONSTRUCTOR() {
 
 	if ( !JS_IsConstructing(cx) ) {
 
@@ -58,7 +50,7 @@ JSBool Directory_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv
 }
 
 
-JSBool Directory_open(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+DEFINE_FUNCTION( Open ) {
 
 	jsval jsvalDirectoryName;
 	JS_GetReservedSlot( cx, obj, 0, &jsvalDirectoryName );
@@ -92,7 +84,7 @@ JSBool Directory_open(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsv
 }
 
 
-JSBool Directory_close(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+DEFINE_FUNCTION( Close ) {
 
 	PRDir *dd = (PRDir *)JS_GetPrivate( cx, obj );
 	if ( dd == NULL ) {
@@ -108,9 +100,7 @@ JSBool Directory_close(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, js
 }
 
 
-
-
-JSBool Directory_read(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+DEFINE_FUNCTION( Read ) {
 
 	PRDir *dd = (PRDir *)JS_GetPrivate( cx, obj );
 	if ( dd == NULL ) {
@@ -142,7 +132,7 @@ JSBool Directory_read(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsv
 }
 
 
-JSBool Directory_make(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+DEFINE_FUNCTION( Make ) {
 
 	jsval jsvalDirectoryName;
 	JS_GetReservedSlot( cx, obj, 0, &jsvalDirectoryName );
@@ -169,8 +159,7 @@ JSBool Directory_make(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsv
 	return JS_TRUE;
 }
 
-
-JSBool Directory_remove(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+DEFINE_FUNCTION( Remove ) {
 
 	jsval jsvalDirectoryName;
 	JS_GetReservedSlot( cx, obj, 0, &jsvalDirectoryName );
@@ -187,7 +176,6 @@ JSBool Directory_remove(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, j
 		JS_ReportError( cx, "unable to get the directory name" );
 		return JS_FALSE;
 	}
-
 
 	jsvalDirectoryName = STRING_TO_JSVAL( jsStringDirectoryName ); // protect form GC ??? ( is this ok, is this needed, ... ? )
 	char *directoryName = JS_GetStringBytes( jsStringDirectoryName );
@@ -206,50 +194,38 @@ JSBool Directory_remove(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, j
 }
 
 
-JSFunctionSpec Directory_FunctionSpec[] = { // { *name, call, nargs, flags, extra }
- { "Open"     , Directory_open   , 0, 0, 0 },
- { "Close"    , Directory_close  , 0, 0, 0 },
- { "Read"     , Directory_read   , 0, 0, 0 },
- { "Make"     , Directory_make   , 0, 0, 0 },
- { "Remove"   , Directory_remove , 0, 0, 0 },
- { 0 }
-};
+DEFINE_PROPERTY( name ) {
 
-
-JSBool Directory_getter_name( JSContext *cx, JSObject *obj, jsval id, jsval *vp ) {
-
-	JS_GetReservedSlot( cx, obj, 0, vp );
+	JS_GetReservedSlot( cx, obj, 0, vp ); // (TBD) use the obj.name proprety directly instead of slot 0
 	return JS_TRUE;
 }
 
+CONFIGURE_CLASS
 
-JSPropertySpec Directory_PropertySpec[] = { // *name, tinyid, flags, getter, setter
-	{ "name", 0, JSPROP_PERMANENT|JSPROP_READONLY, Directory_getter_name, NULL },
-  { 0 }
-};
+	HAS_CONSTRUCTOR
+	HAS_FINALIZE
 
+	BEGIN_FUNCTION_SPEC
+		FUNCTION( Open )
+		FUNCTION( Close )
+		FUNCTION( Read )
+		FUNCTION( Make )
+		FUNCTION( Remove )
+	END_FUNCTION_SPEC
 
-JSBool Directory_static_setConst( JSContext *cx, JSObject *obj, jsval id, jsval *vp ) {
+	BEGIN_PROPERTY_SPEC
+		PROPERTY_READ_STORE( name )
+	END_PROPERTY_SPEC
 
-	*vp = id;
-	return JS_TRUE;
-}
+	BEGIN_CONST_DOUBLE_SPEC
+		CONST_DOUBLE(SKIP_NONE   ,PR_SKIP_NONE )
+		CONST_DOUBLE(SKIP_DOT    ,PR_SKIP_DOT )
+		CONST_DOUBLE(SKIP_DOT_DOT,PR_SKIP_DOT_DOT )
+		CONST_DOUBLE(SKIP_BOTH   ,PR_SKIP_BOTH )
+		CONST_DOUBLE(SKIP_HIDDEN ,PR_APPEND )
+	END_CONST_DOUBLE_SPEC
 
+	HAS_PRIVATE
+	HAS_RESERVED_SLOTS(1)
 
-JSPropertySpec Directory_static_PropertySpec[] = { // *name, tinyid, flags, getter, setter
-// PR_ReadDir flags
-	{ "SKIP_NONE"     ,PR_SKIP_NONE     ,JSPROP_SHARED | JSPROP_PERMANENT | JSPROP_READONLY, Directory_static_setConst, NULL },
-	{ "SKIP_DOT"		,PR_SKIP_DOT      ,JSPROP_SHARED | JSPROP_PERMANENT | JSPROP_READONLY, Directory_static_setConst, NULL },
-	{ "SKIP_DOT_DOT"  ,PR_SKIP_DOT_DOT  ,JSPROP_SHARED | JSPROP_PERMANENT | JSPROP_READONLY, Directory_static_setConst, NULL },
-	{ "SKIP_BOTH"     ,PR_SKIP_BOTH     ,JSPROP_SHARED | JSPROP_PERMANENT | JSPROP_READONLY, Directory_static_setConst, NULL },
-	{ "SKIP_HIDDEN"   ,PR_APPEND        ,JSPROP_SHARED | JSPROP_PERMANENT | JSPROP_READONLY, Directory_static_setConst, NULL },
-//
-	{ 0 }
-};
-
-
-
-JSObject *InitDirectoryClass( JSContext *cx, JSObject *obj ) {
-
-	return JS_InitClass( cx, obj, NULL, &Directory_class, Directory_construct, 1, Directory_PropertySpec, Directory_FunctionSpec, Directory_static_PropertySpec, NULL );
-}
+END_CLASS

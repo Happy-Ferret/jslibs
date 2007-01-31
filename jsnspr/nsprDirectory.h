@@ -12,4 +12,5 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-JSObject *InitDirectoryClass( JSContext *cx, JSObject *obj );
+DECLARE_CLASS( Directory )
+

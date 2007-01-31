@@ -12,4 +12,4 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-JSObject *InitSocketClass( JSContext *cx, JSObject *obj );
+DECLARE_CLASS( Socket )

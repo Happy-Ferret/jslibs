@@ -12,9 +12,7 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-#define XP_WIN
-#include <jsapi.h>
-#include <nspr.h>
+#include "stdafx.h"
 
 #include "nsprError.h"
 #include "nsprFile.h"
@@ -23,27 +21,19 @@
 #include "../common/jsNativeInterface.h"
 
 
-void File_Finalize(JSContext *cx, JSObject *obj) {
+static bool NativeInterfaceReadFile( void *pv, unsigned char *buf, unsigned int *amount ) {
 
-	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
-	if ( fd != NULL ) {
-
-		PRStatus status = PR_Close( fd ); // what to do on error ??
-		if ( status == PR_FAILURE )
-			JS_ReportError( cx, "a file descriptor cannot be closed while Finalize" );
-		JS_SetPrivate( cx, obj, NULL );
-	}
+	PRInt32 status = PR_Read( (PRFileDesc *)pv, buf, *amount );
+	if ( status == -1 )
+		return false;
+	*amount = status;
+	return true;
 }
 
 
-JSClass File_class = {
-	"File", JSCLASS_HAS_PRIVATE | JSCLASS_HAS_RESERVED_SLOTS(1),
-	JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub,
-	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, File_Finalize
-};
+BEGIN_CLASS( File )
 
-
-JSBool File_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+DEFINE_CONSTRUCTOR() {
 
 	if ( !JS_IsConstructing(cx) ) {
 
@@ -57,22 +47,25 @@ JSBool File_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsv
 		return JS_FALSE;
 	}
 
-	JS_SetReservedSlot( cx, obj, 0, argv[0] );
+	JS_SetReservedSlot( cx, obj, SLOT_NSPR_FILE_NAME, argv[0] );
 	return JS_TRUE;
 }
 
 
-static bool NativeInterfaceReadFile( void *pv, unsigned char *buf, unsigned int *amount ) {
+DEFINE_FINALIZE() {
 
-	PRInt32 status = PR_Read( (PRFileDesc *)pv, buf, *amount );
-	if ( status == -1 )
-		return false;
-	*amount = status;
-	return true;
+	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
+	if ( fd != NULL ) {
+
+		PRStatus status = PR_Close( fd ); // what to do on error ??
+		if ( status == PR_FAILURE )
+			JS_ReportError( cx, "a file descriptor cannot be closed while Finalize" );
+		JS_SetPrivate( cx, obj, NULL );
+	}
 }
 
 
-JSBool File_open(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+DEFINE_FUNCTION( Open ) {
 
 	if ( argc < 1 ) {
 
@@ -82,7 +75,7 @@ JSBool File_open(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *r
 
 	jsval jsvalFileName;
 //	JS_GetProperty( cx, obj, "fileName", &jsvalFileName );
-	JS_GetReservedSlot( cx, obj, 0, &jsvalFileName );
+	JS_GetReservedSlot( cx, obj, SLOT_NSPR_FILE_NAME, &jsvalFileName );
 	if ( jsvalFileName == JSVAL_VOID ) {
 
 		JS_ReportError( cx, "unable to get the file name" );
@@ -117,7 +110,7 @@ JSBool File_open(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *r
 }
 
 
-JSBool File_close(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+DEFINE_FUNCTION( Close ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
 	if ( fd == NULL ) {
@@ -134,7 +127,7 @@ JSBool File_close(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *
 	return JS_TRUE;
 }
 
-JSBool File_read(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+DEFINE_FUNCTION( Read ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
 	if ( fd == NULL ) {
@@ -142,7 +135,6 @@ JSBool File_read(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *r
 		JS_ReportError( cx, "file is closed" );
 		return JS_FALSE;
 	}
-
 
 	PRInt32 amount;
 	if ( argc >= 1 && argv[0] != JSVAL_VOID ) {
@@ -191,8 +183,7 @@ JSBool File_read(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *r
 	return JS_TRUE;
 }
 
-
-JSBool File_write(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+DEFINE_FUNCTION( Write ) {
 
 	if ( argc < 1 ) {
 
@@ -236,8 +227,7 @@ JSBool File_write(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *
 	return JS_TRUE;
 }
 
-
-JSBool File_seek(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+DEFINE_FUNCTION( Seek ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
 	if ( fd == NULL ) {
@@ -271,8 +261,7 @@ JSBool File_seek(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *r
 	return JS_TRUE;
 }
 
-
-JSBool File_sync(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+DEFINE_FUNCTION( Sync ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
 	if ( fd == NULL ) {
@@ -288,18 +277,7 @@ JSBool File_sync(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *r
 	return JS_TRUE;
 }
 
-JSFunctionSpec File_FunctionSpec[] = { // { *name, call, nargs, flags, extra }
- { "Open"     , File_open   , 0, 0, 0 },
- { "Close"    , File_close  , 0, 0, 0 },
- { "Read"     , File_read   , 0, 0, 0 },
- { "Write"    , File_write  , 0, 0, 0 },
- { "Seek"     , File_seek   , 0, 0, 0 },
- { "Sync"     , File_sync   , 0, 0, 0 },
- { 0 }
-};
-
-
-JSBool File_getter_eof( JSContext *cx, JSObject *obj, jsval id, jsval *vp ) {
+DEFINE_PROPERTY( eof ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
 	if ( fd == NULL ) {
@@ -316,15 +294,13 @@ JSBool File_getter_eof( JSContext *cx, JSObject *obj, jsval id, jsval *vp ) {
 	return JS_TRUE;
 }
 
+DEFINE_PROPERTY( name ) {
 
-JSBool File_getter_name( JSContext *cx, JSObject *obj, jsval id, jsval *vp ) {
-
-	JS_GetReservedSlot( cx, obj, 0, vp );
+	JS_GetReservedSlot( cx, obj, SLOT_NSPR_FILE_NAME, vp );
 	return JS_TRUE;
 }
 
-
-JSBool File_getter_available( JSContext *cx, JSObject *obj, jsval id, jsval *vp ) {
+DEFINE_PROPERTY( available ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
 	if ( fd == NULL ) {
@@ -342,12 +318,11 @@ JSBool File_getter_available( JSContext *cx, JSObject *obj, jsval id, jsval *vp 
 	return JS_TRUE;
 }
 
-
-JSBool File_getter_exist( JSContext *cx, JSObject *obj, jsval id, jsval *vp ) {
+DEFINE_PROPERTY( exist ) {
 
 	jsval jsvalFileName;
 //	JS_GetProperty( cx, obj, "fileName", &jsvalFileName );
-	JS_GetReservedSlot( cx, obj, 0, &jsvalFileName );
+	JS_GetReservedSlot( cx, obj, SLOT_NSPR_FILE_NAME, &jsvalFileName );
 
 	if ( jsvalFileName == JSVAL_VOID ) {
 
@@ -372,12 +347,11 @@ JSBool File_getter_exist( JSContext *cx, JSObject *obj, jsval id, jsval *vp ) {
 }
 
 
-
-JSBool File_getter_info( JSContext *cx, JSObject *obj, jsval id, jsval *vp ) {
+DEFINE_PROPERTY( info ) {
 
 	jsval jsvalFileName;
 //	JS_GetProperty( cx, obj, "fileName", &jsvalFileName );
-	JS_GetReservedSlot( cx, obj, 0, &jsvalFileName );
+	JS_GetReservedSlot( cx, obj, SLOT_NSPR_FILE_NAME, &jsvalFileName );
 
 	if ( jsvalFileName == JSVAL_VOID ) {
 
@@ -423,33 +397,15 @@ JSBool File_getter_info( JSContext *cx, JSObject *obj, jsval id, jsval *vp ) {
 	return JS_TRUE;
 }
 
-JSPropertySpec File_PropertySpec[] = { // *name, tinyid, flags, getter, setter
-	{ "eof"       , 0, JSPROP_SHARED | JSPROP_PERMANENT|JSPROP_READONLY, File_getter_eof       , NULL },
-	{ "name"      , 0, JSPROP_SHARED | JSPROP_PERMANENT|JSPROP_READONLY, File_getter_name      , NULL },
-	{ "available" , 0, JSPROP_SHARED | JSPROP_PERMANENT|JSPROP_READONLY, File_getter_available , NULL },
-	{ "exist"     , 0, JSPROP_SHARED | JSPROP_PERMANENT|JSPROP_READONLY, File_getter_exist     , NULL },
-	{ "info"      , 0, JSPROP_SHARED | JSPROP_PERMANENT|JSPROP_READONLY, File_getter_info      , NULL },
-  { 0 }
-};
 
-
-JSBool File_static_setConst( JSContext *cx, JSObject *obj, jsval id, jsval *vp ) {
-
-	int32 i;
-	JS_ValueToInt32( cx, id, &i );
-	*vp = INT_TO_JSVAL(i);
-	return JS_TRUE;
-}
-
-
-JSBool File_static_standard( JSContext *cx, JSObject *obj, jsval id, jsval *vp ) {
+DEFINE_PROPERTY( standard ) {
 	
 	if ( *vp == JSVAL_VOID ) {
 
 		int32 i;
 		JS_ValueToInt32( cx, id, &i );
 
-		JSObject *obj = JS_NewObject(cx, &File_class, NULL, NULL );
+		JSObject *obj = JS_NewObject(cx, &classFile, NULL, NULL );
 		*vp = OBJECT_TO_JSVAL( obj ); // GC protection ?
 
 		PRFileDesc *fd = PR_GetSpecialFD( (PRSpecialFD)i); // beware: cast !
@@ -457,44 +413,59 @@ JSBool File_static_standard( JSContext *cx, JSObject *obj, jsval id, jsval *vp )
 			return ThrowNSPRError( cx, PR_GetError() );
 		JS_SetPrivate( cx, obj, fd );
 	}
+	return JS_TRUE;
 }
 
 
+CONFIGURE_CLASS
 
+	HAS_CONSTRUCTOR
+	HAS_FINALIZE
 
-JSPropertySpec File_static_PropertySpec[] = { // *name, tinyid, flags, getter, setter
+	BEGIN_FUNCTION_SPEC
+		FUNCTION( Open )
+		FUNCTION( Close )
+		FUNCTION( Read )
+		FUNCTION( Write )
+		FUNCTION( Seek )
+		FUNCTION( Sync )
+	END_FUNCTION_SPEC
 
-	{ "stdin"    , PR_StandardInput,  JSPROP_PERMANENT|JSPROP_READONLY, File_static_standard, NULL },
-	{ "stdout"   , PR_StandardOutput, JSPROP_PERMANENT|JSPROP_READONLY, File_static_standard, NULL },
-	{ "stderr"   , PR_StandardError,  JSPROP_PERMANENT|JSPROP_READONLY, File_static_standard, NULL },
+	BEGIN_PROPERTY_SPEC
+		PROPERTY_READ( eof )
+		PROPERTY_READ( name )
+		PROPERTY_READ( available )
+		PROPERTY_READ( exist )
+		PROPERTY_READ( info )
+	END_PROPERTY_SPEC
 
+	BEGIN_STATIC_PROPERTY_SPEC
+		PROPERTY_CREATE( stdin , PR_StandardInput,  JSPROP_PERMANENT|JSPROP_READONLY, standard, NULL ) // (TBD) change this
+		PROPERTY_CREATE( stdout, PR_StandardOutput, JSPROP_PERMANENT|JSPROP_READONLY, standard, NULL ) // (TBD) change this
+		PROPERTY_CREATE( stderr, PR_StandardError,  JSPROP_PERMANENT|JSPROP_READONLY, standard, NULL ) // (TBD) change this
+	END_STATIC_PROPERTY_SPEC
 
+	BEGIN_CONST_DOUBLE_SPEC
 // PR_Open flags
-	{ "RDONLY"        ,PR_RDONLY      ,JSPROP_SHARED | JSPROP_PERMANENT|JSPROP_READONLY, File_static_setConst, NULL },
-	{ "WRONLY"			,PR_WRONLY      ,JSPROP_SHARED | JSPROP_PERMANENT|JSPROP_READONLY, File_static_setConst, NULL },
-	{ "RDWR"				,PR_RDWR        ,JSPROP_SHARED | JSPROP_PERMANENT|JSPROP_READONLY, File_static_setConst, NULL },
-	{ "CREATE_FILE"	,PR_CREATE_FILE ,JSPROP_SHARED | JSPROP_PERMANENT|JSPROP_READONLY, File_static_setConst, NULL },
-	{ "APPEND"			,PR_APPEND      ,JSPROP_SHARED | JSPROP_PERMANENT|JSPROP_READONLY, File_static_setConst, NULL },
-	{ "TRUNCATE"		,PR_TRUNCATE    ,JSPROP_SHARED | JSPROP_PERMANENT|JSPROP_READONLY, File_static_setConst, NULL },
-	{ "SYNC"				,PR_SYNC        ,JSPROP_SHARED | JSPROP_PERMANENT|JSPROP_READONLY, File_static_setConst, NULL },
-	{ "EXCL"				,PR_EXCL        ,JSPROP_SHARED | JSPROP_PERMANENT|JSPROP_READONLY, File_static_setConst, NULL },
+		CONST_DOUBLE( RDONLY			,PR_RDONLY )
+		CONST_DOUBLE( WRONLY			,PR_WRONLY )
+		CONST_DOUBLE( RDWR			,PR_RDWR )
+		CONST_DOUBLE( CREATE_FILE	,PR_CREATE_FILE )
+		CONST_DOUBLE( APPEND			,PR_APPEND )
+		CONST_DOUBLE( TRUNCATE		,PR_TRUNCATE )
+		CONST_DOUBLE( SYNC			,PR_SYNC )
+		CONST_DOUBLE( EXCL			,PR_EXCL )
 // PRSeekWhence enum
-	{ "SEEK_SET"		,PR_SEEK_SET    ,JSPROP_SHARED | JSPROP_PERMANENT|JSPROP_READONLY, File_static_setConst, NULL },
-	{ "SEEK_CUR"		,PR_SEEK_CUR    ,JSPROP_SHARED | JSPROP_PERMANENT|JSPROP_READONLY, File_static_setConst, NULL },
-	{ "SEEK_END"		,PR_SEEK_END    ,JSPROP_SHARED | JSPROP_PERMANENT|JSPROP_READONLY, File_static_setConst, NULL },
+		CONST_DOUBLE( SEEK_SET			,PR_SEEK_SET )
+		CONST_DOUBLE( SEEK_CUR			,PR_SEEK_CUR )
+		CONST_DOUBLE( SEEK_END			,PR_SEEK_END )
 // PRFileType enum
-	{ "FILE_FILE"		 ,PR_FILE_FILE         ,JSPROP_SHARED | JSPROP_PERMANENT|JSPROP_READONLY, File_static_setConst, NULL },
-	{ "FILE_DIRECTORY" ,PR_FILE_DIRECTORY    ,JSPROP_SHARED | JSPROP_PERMANENT|JSPROP_READONLY, File_static_setConst, NULL },
-	{ "FILE_OTHER"		 ,PR_FILE_OTHER        ,JSPROP_SHARED | JSPROP_PERMANENT|JSPROP_READONLY, File_static_setConst, NULL },
-//
-	{ 0 }
-};
+		CONST_DOUBLE( FILE_FILE			,PR_FILE_FILE )
+		CONST_DOUBLE( FILE_DIRECTORY	,PR_FILE_DIRECTORY )
+		CONST_DOUBLE( FILE_OTHER		,PR_FILE_OTHER )
+	END_CONST_DOUBLE_SPEC
 
-JSObject *InitFileClass( JSContext *cx, JSObject *obj ) {
+	HAS_PRIVATE
+	HAS_RESERVED_SLOTS(1)
 
-	PR_STDIO_INIT()
-
-	JSObject *fileClass = JS_InitClass( cx, obj, NULL, &File_class, File_construct, 1, File_PropertySpec, File_FunctionSpec, File_static_PropertySpec, NULL );
-//	JS_DefineConstDoubles( cx, fileClass, &File_const);
-	return fileClass;
-}
+END_CLASS

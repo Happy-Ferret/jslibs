@@ -12,9 +12,7 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-#define XP_WIN
-#include <jsapi.h>
-#include <nspr.h>
+#include "stdafx.h"
 
 #include "nsprError.h"
 #include "nsprSocket.h"
@@ -22,7 +20,9 @@
 #include <string.h>
 
 
-void Socket_Finalize(JSContext *cx, JSObject *obj) {
+BEGIN_CLASS( Socket )
+
+DEFINE_FINALIZE() {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
 	if ( fd != NULL ) { // check if not already closed
@@ -34,15 +34,7 @@ void Socket_Finalize(JSContext *cx, JSObject *obj) {
 }
 
 
-JSClass Socket_class = {
-  "Socket", JSCLASS_HAS_PRIVATE,
-  JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub,
-  JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, Socket_Finalize
-};
-
-
-///////////////////////////////////////////////////////////////////////////////
-JSBool Socket_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+DEFINE_CONSTRUCTOR() {
 
 	if ( !JS_IsConstructing(cx) ) {
 
@@ -68,7 +60,7 @@ JSBool Socket_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, j
 //   http://windowssdk.msdn.microsoft.com/en-us/library/ms738547.aspx
 // PRLinger ... PR_Close
 //   http://developer.mozilla.org/en/docs/PRLinger
-JSBool Socket_close(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+DEFINE_FUNCTION( Close ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
 	if ( fd == NULL ) {
@@ -113,7 +105,7 @@ if (status != PR_SUCCESS) // need to check PR_WOULD_BLOCK_ERROR ???
 
 ///////////////////////////////////////////////////////////////////////////////
 // arg[0] =  false: SHUTDOWN_RCV | true: SHUTDOWN_SEND | else it will SHUTDOWN_BOTH
-JSBool Socket_shutdown(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+DEFINE_FUNCTION( Shutdown ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
 	if ( fd == NULL ) {
@@ -148,7 +140,7 @@ JSBool Socket_shutdown(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, js
 //   Since your call sequence shows that the SERVER called Listen()
 //   and the SERVER socket was readable, the above is what happened.
 //    Wan-Teh
-JSBool Socket_listen(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+DEFINE_FUNCTION( Listen ) {
 
 	PRStatus status;
 
@@ -214,7 +206,7 @@ JSBool Socket_listen(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsva
 
 
 ///////////////////////////////////////////////////////////////////////////////
-JSBool Socket_accept(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+DEFINE_FUNCTION( Accept ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
 	if ( fd == NULL ) {
@@ -228,7 +220,7 @@ JSBool Socket_accept(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsva
 	if ( newFd == NULL )
 		return ThrowNSPRError( cx, PR_GetError() );
 
-	JSObject *object = JS_NewObject( cx, &Socket_class, NULL, NULL );
+	JSObject *object = JS_NewObject( cx, &classSocket, NULL, NULL );
 	JS_SetPrivate( cx, object, newFd );
 	*rval = OBJECT_TO_JSVAL( object );
 	return JS_TRUE;
@@ -249,7 +241,7 @@ JSBool Socket_accept(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsva
 //	Since the client side has no way of telling when the server has called
 //	accept() it can't wait for the server to do that before making the
 //	descriptor writeable.
-JSBool Socket_connect(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+DEFINE_FUNCTION( Connect ) {
 
 	if ( argc < 2 ) {
 
@@ -303,7 +295,7 @@ JSBool Socket_connect(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsv
 
 
 ///////////////////////////////////////////////////////////////////////////////
-JSBool Socket_send(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+DEFINE_FUNCTION( Send ) {
 
 	if ( argc < 1 ) {
 
@@ -368,7 +360,7 @@ JSBool Socket_send(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval 
 
 ///////////////////////////////////////////////////////////////////////////////
 // possible optimization: loop on PR_Recv while res > 0
-JSBool Socket_recv(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+DEFINE_FUNCTION( Recv ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
 	if ( fd == NULL ) {
@@ -425,20 +417,8 @@ JSBool Socket_recv(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval 
 }
 
 
-JSFunctionSpec Socket_FunctionSpec[] = { // *name, call, nargs, flags, extra
- { "Listen"     , Socket_listen     , 0, 0, 0 },
- { "Accept"     , Socket_accept     , 0, 0, 0 },
- { "Connect"    , Socket_connect    , 0, 0, 0 },
- { "Shutdown"   , Socket_shutdown   , 0, 0, 0 },
- { "Close"      , Socket_close      , 0, 0, 0 },
- { "Send"       , Socket_send       , 0, 0, 0 },
- { "Recv"       , Socket_recv       , 0, 0, 0 },
- { 0 }
-};
-
-
 ///////////////////////////////////////////////////////////////////////////////
-JSBool Socket_setOption( JSContext *cx, JSObject *obj, jsval id, jsval *vp ) {
+DEFINE_PROPERTY( OptionSetter ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
 	if ( fd == NULL ) {
@@ -493,7 +473,7 @@ JSBool Socket_setOption( JSContext *cx, JSObject *obj, jsval id, jsval *vp ) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-JSBool Socket_getOption( JSContext *cx, JSObject *obj, jsval id, jsval *vp ) {
+DEFINE_PROPERTY( OptionGetter ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
 	if ( fd == NULL ) {
@@ -531,8 +511,7 @@ JSBool Socket_getOption( JSContext *cx, JSObject *obj, jsval id, jsval *vp ) {
 	return JS_TRUE;
 }
 
-///////////////////////////////////////////////////////////////////////////////
-JSBool Socket_getter_peerName( JSContext *cx, JSObject *obj, jsval id, jsval *vp ) {
+DEFINE_PROPERTY( peerName ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
 	if ( fd == NULL ) {
@@ -553,8 +532,7 @@ JSBool Socket_getter_peerName( JSContext *cx, JSObject *obj, jsval id, jsval *vp
 	return JS_TRUE;
 }
 
-///////////////////////////////////////////////////////////////////////////////
-JSBool Socket_getter_sockName( JSContext *cx, JSObject *obj, jsval id, jsval *vp ) {
+DEFINE_PROPERTY( sockName ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
 	if ( fd == NULL ) {
@@ -580,7 +558,7 @@ JSBool Socket_getter_sockName( JSContext *cx, JSObject *obj, jsval id, jsval *vp
 // After PR_Connect on a nonblocking socket fails with PR_IN_PROGRESS_ERROR,
 // you may wait for the connection to complete by calling PR_Poll on the socket with the in_flags PR_POLL_WRITE | PR_POLL_EXCEPT.
 // When PR_Poll returns, call PR_GetConnectStatus on the socket to determine whether the nonblocking connect has succeeded or failed.
-JSBool Socket_getter_connectContinue( JSContext *cx, JSObject *obj, jsval id, jsval *vp ) {
+DEFINE_PROPERTY( connectContinue ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
 	if ( fd == NULL ) {
@@ -615,8 +593,7 @@ JSBool Socket_getter_connectContinue( JSContext *cx, JSObject *obj, jsval id, js
 	return JS_TRUE;
 }
 
-///////////////////////////////////////////////////////////////////////////////
-JSBool Socket_getter_connectionClosed( JSContext *cx, JSObject *obj, jsval id, jsval *vp ) {
+DEFINE_PROPERTY( connectionClosed ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
 	if ( fd == NULL ) {
@@ -659,35 +636,46 @@ JSBool Socket_getter_connectionClosed( JSContext *cx, JSObject *obj, jsval id, j
 	return JS_TRUE;
 }
 
+enum { linger = PR_SockOpt_Linger, noDelay = PR_SockOpt_NoDelay, reuseAddr = PR_SockOpt_Reuseaddr, keepAlive = PR_SockOpt_Keepalive, recvBufferSize = PR_SockOpt_RecvBufferSize, sendBufferSize = PR_SockOpt_SendBufferSize };
 
-JSPropertySpec Socket_PropertySpec[] = { // *name, tinyid, flags, getter, setter
+
+CONFIGURE_CLASS
+
+	HAS_CONSTRUCTOR
+	HAS_FINALIZE
+
+	BEGIN_FUNCTION_SPEC
+		FUNCTION( Close )
+		FUNCTION( Shutdown )
+		FUNCTION( Listen )
+		FUNCTION( Accept )
+		FUNCTION( Connect )
+		FUNCTION( Send )
+		FUNCTION( Recv )
+	END_FUNCTION_SPEC
+
+	BEGIN_PROPERTY_SPEC
 // PR SocketOption
-	{ "linger"        , PR_SockOpt_Linger        , JSPROP_SHARED | JSPROP_PERMANENT, Socket_getOption, Socket_setOption },
-	{ "noDelay"       , PR_SockOpt_NoDelay       , JSPROP_SHARED | JSPROP_PERMANENT, Socket_getOption, Socket_setOption },
-	{ "reuseAddr"     , PR_SockOpt_Reuseaddr     , JSPROP_SHARED | JSPROP_PERMANENT, Socket_getOption, Socket_setOption },
-	{ "keepAlive"     , PR_SockOpt_Keepalive     , JSPROP_SHARED | JSPROP_PERMANENT, Socket_getOption, Socket_setOption },
-	{ "recvBufferSize", PR_SockOpt_RecvBufferSize, JSPROP_SHARED | JSPROP_PERMANENT, Socket_getOption, Socket_setOption },
-	{ "sendBufferSize", PR_SockOpt_SendBufferSize, JSPROP_SHARED | JSPROP_PERMANENT, Socket_getOption, Socket_setOption },
-// properties
-	{ "peerName"         , 0, JSPROP_SHARED | JSPROP_PERMANENT|JSPROP_READONLY, Socket_getter_peerName         , NULL },
-	{ "sockName"         , 0, JSPROP_SHARED | JSPROP_PERMANENT|JSPROP_READONLY, Socket_getter_sockName         , NULL },
-	{ "connectContinue"  , 0, JSPROP_SHARED | JSPROP_PERMANENT|JSPROP_READONLY, Socket_getter_connectContinue  , NULL },
-	{ "connectionClosed" , 0, JSPROP_SHARED | JSPROP_PERMANENT|JSPROP_READONLY, Socket_getter_connectionClosed , NULL },
-//
-  { 0 }
-};
+		PROPERTY_SWITCH( linger, Option )
+		PROPERTY_SWITCH( noDelay, Option )
+		PROPERTY_SWITCH( reuseAddr, Option )
+		PROPERTY_SWITCH( keepAlive, Option )
+		PROPERTY_SWITCH( recvBufferSize, Option )
+		PROPERTY_SWITCH( sendBufferSize, Option )
+		PROPERTY_READ( peerName )
+		PROPERTY_READ( sockName )
+		PROPERTY_READ( connectContinue )
+		PROPERTY_READ( connectionClosed )
+	END_PROPERTY_SPEC
 
+	HAS_PRIVATE
+//	HAS_RESERVED_SLOTS(2)
 
+END_CLASS
 
-JSObject *InitSocketClass( JSContext *cx, JSObject *obj ) {
-
-	return JS_InitClass( cx, obj, NULL, &Socket_class, Socket_construct, 1, Socket_PropertySpec, Socket_FunctionSpec, NULL, NULL );
-}
 
 
 /*
-
-
 
 winsock:
 	http://www.sockets.com/winsock.htm

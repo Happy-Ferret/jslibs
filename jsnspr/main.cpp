@@ -12,31 +12,35 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-#include <windows.h>
-
-#define XP_WIN
-#include <jsapi.h>
-#include <nspr.h>
+#include "stdafx.h"
 
 #include "nsprError.h"
 #include "nsprFile.h"
 #include "nsprDirectory.h"
 #include "nsprSocket.h"
+
 #include "nsprGlobal.h"
-
-
-//////////////////////////////////////////////////////////////////////////////////////////////////
-
 
 extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
-	InitFileClass(cx, obj);
-	InitDirectoryClass(cx, obj);
-	InitSocketClass(cx, obj);
-	InitErrorClass(cx, obj);
-	InitGlobal(cx, obj);
+	PR_STDIO_INIT()
 
-  return JS_TRUE;
+	INIT_CLASS( NSPRError );
+	INIT_CLASS( File );
+	INIT_CLASS( Directory );
+	INIT_CLASS( Socket );
+	INIT_STATIC();
+
+	return JS_TRUE;
+}
+
+extern "C" __declspec(dllexport) JSBool ModuleRelease(JSContext *cx, JSObject *obj) {
+
+	return JS_TRUE;
+}
+
+
+extern "C" __declspec(dllexport) void ModuleFree() {
 }
 
 
