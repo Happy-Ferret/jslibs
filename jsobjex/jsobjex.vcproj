@@ -222,6 +222,10 @@
 				>
 			</File>
 		</Filter>
+		<File
+			RelativePath=".\debug.js"
+			>
+		</File>
 	</Files>
 	<Globals>
 	</Globals>

@@ -2,7 +2,6 @@
 
 #define XP_WIN
 #include <jsapi.h>
-
 #include "objex.h"
 
 #define ADD_SLOT 0
@@ -11,63 +10,44 @@
 #define SET_SLOT 3
 #define AUX_SLOT 4
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void objex_Finalize(JSContext *cx, JSObject *obj) {
-}
+JSBool NotifyObject( int slotIndex, JSContext *cx, JSObject *obj, jsval id, jsval *vp ) {
 
-
-JSBool objex_addProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
-
-  jsval slot;
-  JS_GetReservedSlot( cx, obj, ADD_SLOT, &slot );
-	if ( JS_TypeOfValue( cx, slot ) != JSTYPE_FUNCTION )
+	if ( JSVAL_IS_VOID(*vp) && strcmp( JS_GetStringBytes(JS_ValueToString(cx,id)), "__iterator__" ) == 0 ) // we don't want to override the iterator
+		return JS_TRUE;
+	jsval slot;
+	JS_GetReservedSlot( cx, obj, slotIndex , &slot );
+	if ( JSVAL_IS_VOID(slot) )
 		return JS_TRUE;
 	jsval aux;
-  JS_GetReservedSlot( cx, obj, AUX_SLOT, &aux );
+	JS_GetReservedSlot( cx, obj, AUX_SLOT, &aux );
 	jsval args[] = { INT_TO_JSVAL(ADD_SLOT), OBJECT_TO_JSVAL(obj), id, *vp, aux };
 	return JS_CallFunctionValue( cx, obj, slot, sizeof(args)/sizeof(jsval), args, vp );
 }
 
+JSBool objex_addProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
+
+	return NotifyObject( ADD_SLOT, cx, obj, id, vp );
+}
+
 JSBool objex_delProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 
-  jsval slot;
-  JS_GetReservedSlot( cx, obj, DEL_SLOT, &slot );
-	if ( JS_TypeOfValue( cx, slot ) != JSTYPE_FUNCTION )
-		return JS_TRUE;
-	jsval aux;
-  JS_GetReservedSlot( cx, obj, AUX_SLOT, &aux );
-	jsval args[] = { INT_TO_JSVAL(DEL_SLOT), OBJECT_TO_JSVAL(obj), id, *vp, aux };
-	return JS_CallFunctionValue( cx, obj, slot, sizeof(args)/sizeof(jsval), args, vp );
+	return NotifyObject( DEL_SLOT, cx, obj, id, vp );
 }
 
 JSBool objex_getProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 
-  jsval slot;
-  JS_GetReservedSlot( cx, obj, GET_SLOT, &slot );
-	if ( JS_TypeOfValue( cx, slot ) != JSTYPE_FUNCTION )
-		return JS_TRUE;
-	jsval aux;
-  JS_GetReservedSlot( cx, obj, AUX_SLOT, &aux );
-	jsval args[] = { INT_TO_JSVAL(GET_SLOT), OBJECT_TO_JSVAL(obj), id, *vp, aux };
-	return JS_CallFunctionValue( cx, obj, slot, sizeof(args)/sizeof(jsval), args, vp );
+	return NotifyObject( GET_SLOT, cx, obj, id, vp );
 }
 
 JSBool objex_setProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 
-  jsval slot;
-  JS_GetReservedSlot( cx, obj, SET_SLOT, &slot );
-	if ( JS_TypeOfValue( cx, slot ) != JSTYPE_FUNCTION )
-		return JS_TRUE;
-	jsval aux;
-  JS_GetReservedSlot( cx, obj, AUX_SLOT, &aux );
-	jsval args[] = { INT_TO_JSVAL(SET_SLOT), OBJECT_TO_JSVAL(obj), id, *vp, aux };
-	return JS_CallFunctionValue( cx, obj, slot, sizeof(args)/sizeof(jsval), args, vp );
+	return NotifyObject( SET_SLOT, cx, obj, id, vp );
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 JSClass objex_class = { "objex", JSCLASS_HAS_RESERVED_SLOTS(5) /*| JSCLASS_NEW_RESOLVE | JSCLASS_SHARE_ALL_PROPERTIES */,
   objex_addProperty, objex_delProperty, objex_getProperty, objex_setProperty,
-  JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, objex_Finalize
+  JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, JS_FinalizeStub
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -79,8 +59,19 @@ JSBool objex_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, js
 		return JS_FALSE;
 	}
 
-	for ( int i=0; i<argc; i++)
+	for ( uintN i=0; i<argc && i<4; i++ ) {
+
+		if ( JS_TypeOfValue( cx, argv[i] ) != JSTYPE_FUNCTION && !JSVAL_IS_VOID(argv[i]) ) {
+
+			JS_ReportError( cx, "function expected" );
+			return JS_FALSE;
+		}
 		JS_SetReservedSlot( cx, obj, i, argv[i] );
+	}
+
+	if ( argc >= 5 ) // AUX object
+		JS_SetReservedSlot( cx, obj, AUX_SLOT, argv[4] );
+	
 	return JS_TRUE;
 }
 
@@ -93,18 +84,17 @@ JSBool objex_static_aux(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, j
 		return JS_FALSE;
 	}
 
-	JSObject *object;
-	JSBool status;
-	status = JS_ValueToObject( cx, argv[0], &object );
-	if ( status == JS_FALSE || object == NULL ) {
+	if ( !JSVAL_IS_OBJECT(argv[0]) || argv[0] == JSVAL_NULL ) {
 
-		JS_ReportError( cx, "not an object" );
+		JS_ReportError( cx, "object expected" );
 		return JS_FALSE;
 	}
+	
+	JSObject *object = JSVAL_TO_OBJECT(argv[0]);
 
 	if ( JS_GetClass(object) != &objex_class  ) {
 
-		JS_ReportError( cx, "not an %s object", objex_class.name );
+		JS_ReportError( cx, "%s object expected", objex_class.name );
 		return JS_FALSE;
 	}
 
