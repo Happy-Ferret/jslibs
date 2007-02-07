@@ -23,7 +23,7 @@
 #pragma warning(disable:4244 4305)  // for VC++, no precision loss complaints
 #endif
 
-#ifdef JSHELPER_UNSAFE_DEFINED
+#ifdef USE_UNSAFE_MODE
 	extern bool _unsafeMode;
 #else
 	static bool _unsafeMode = false; // by default, we are in SAFE mode
@@ -67,19 +67,24 @@
 	{ JS_ReportError( cx, (errorMessage) ); return JS_FALSE; }
 
 #define REPORT_ERROR_1(errorMessage, arg) \
-	{ JS_ReportError( cx, (errorMessage), arg ); return JS_FALSE; }
+	{ JS_ReportError( cx, (errorMessage), (arg) ); return JS_FALSE; }
+
+#define REPORT_ERROR_2(errorMessage, arg1, arg2) \
+	{ JS_ReportError( cx, (errorMessage), (arg1), (arg2) ); return JS_FALSE; }
+
 
 /////////
 // assert
 
-#define RT_ASSERT_2( condition, errorMessage, arg1, arg2 ) \
-	if ( !_unsafeMode && !(condition) ) { JS_ReportError( cx, (errorMessage), (arg1), (arg2) ); return JS_FALSE; }
+#define RT_ASSERT( condition, errorMessage ) \
+if ( !_unsafeMode && !(condition) ) { JS_ReportError( cx, (errorMessage) ); return JS_FALSE; }
 
 #define RT_ASSERT_1( condition, errorMessage, arg ) \
 	if ( !_unsafeMode && !(condition) ) { JS_ReportError( cx, (errorMessage), (arg) ); return JS_FALSE; }
 
-#define RT_ASSERT( condition, errorMessage ) \
-	if ( !_unsafeMode && !(condition) ) { JS_ReportError( cx, (errorMessage) ); return JS_FALSE; }
+#define RT_ASSERT_2( condition, errorMessage, arg1, arg2 ) \
+	if ( !_unsafeMode && !(condition) ) { JS_ReportError( cx, (errorMessage), (arg1), (arg2) ); return JS_FALSE; }
+
 
 //////////////////
 // advanced assert
@@ -139,9 +144,6 @@
 		RT_ASSERT( stringVariable != NULL, RT_ERROR_STRING_CONVERSION_FAILED ); \
 	}
 
-//inline const char *JsvalToString(cx, jsval) {
-//}
-
 #define RT_JSVAL_TO_STRING_AND_LENGTH( jsvalString, stringVariable, lengthVariable ) { \
 		JSString *___jssTmp = JS_ValueToString(cx,jsvalString); \
 		RT_ASSERT( ___jssTmp != NULL, RT_ERROR_STRING_CONVERSION_FAILED ); \
@@ -164,6 +166,7 @@ inline double TimeNow() {
 
 
 typedef void (*FunctionPointer)(void);
+
 
 inline JSBool SetNativeInterface( JSContext *cx, JSObject *obj, const char *name, FunctionPointer function, void *descriptor ) {
 
@@ -246,6 +249,7 @@ inline JSBool GetIntProperty( JSContext *cx, JSObject *obj, const char *property
 	*value = int32Value;
 	return JS_TRUE;
 }
+
 
 inline bool HasProperty( JSContext *cx, JSObject *obj, const char *propertyName ) {
 
