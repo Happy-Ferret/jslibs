@@ -14,16 +14,25 @@
 
 #include "stdafx.h"
 
+DEFINE_UNSAFE_MODE;
+
 #include "nsprError.h"
 #include "nsprFile.h"
 #include "nsprDirectory.h"
 #include "nsprSocket.h"
-
 #include "nsprGlobal.h"
+
+#include "../configuration/configuration.h"
 
 extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
-	PR_STDIO_INIT()
+	jsval unsafeModeValue;
+	JSBool jsStatus = GetConfigurationValue(cx, "unsafeMode", &unsafeModeValue);
+	RT_ASSERT( jsStatus != JS_FALSE, "Unable to read unsafeMode state from configuration object." );
+	if ( JSVAL_IS_BOOLEAN(unsafeModeValue) )
+		SET_UNSAFE_MODE( unsafeModeValue == JSVAL_TRUE );
+
+	PR_STDIO_INIT();
 
 	INIT_CLASS( NSPRError );
 	INIT_CLASS( File );
@@ -31,8 +40,12 @@ extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj)
 	INIT_CLASS( Socket );
 	INIT_STATIC();
 
+	// Doc: PR_Init is necessary only if a program has specific initialization-sequencing requirements.
+
 	return JS_TRUE;
 }
+
+/*
 
 extern "C" __declspec(dllexport) JSBool ModuleRelease(JSContext *cx, JSObject *obj) {
 
@@ -57,3 +70,4 @@ BOOL APIENTRY DllMain( HANDLE hModule, DWORD  ul_reason_for_call, LPVOID lpReser
   return TRUE;
 }
 
+*/

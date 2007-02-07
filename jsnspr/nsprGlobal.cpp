@@ -233,7 +233,8 @@ DEFINE_FUNCTION( GetEnv ) {
 	char *name;
 	RT_JSVAL_TO_STRING( argv[0], name );
 	char* value = PR_GetEnv(name); // If the environment variable is not defined, the function returns NULL.
-	if ( value != NULL ) {
+	if ( value != NULL ) { // this will cause an 'undefined' return value
+
 		JSString *jsstr = JS_NewStringCopyZ(cx,value);
 		RT_ASSERT_ALLOC( jsstr );
 		*rval = STRING_TO_JSVAL(jsstr);
@@ -253,6 +254,14 @@ DEFINE_FUNCTION( HostName ) {
 	return JS_TRUE;
 }
 
+DEFINE_FUNCTION( NSPRVersion ) {
+
+	JSString *jsstr = JS_NewStringCopyZ(cx,PR_VERSION);
+	RT_ASSERT_ALLOC( jsstr );
+	*rval = STRING_TO_JSVAL(jsstr);
+	return JS_TRUE;
+}
+
 
 CONFIGURE_STATIC
 
@@ -264,6 +273,7 @@ CONFIGURE_STATIC
 		FUNCTION( Sleep )
 		FUNCTION( GetEnv )
 		FUNCTION( HostName )
+		FUNCTION( NSPRVersion )
 	END_STATIC_FUNCTION_SPEC
 
 END_STATIC

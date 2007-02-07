@@ -18,6 +18,8 @@
 
 #include <jsapi.h>
 
+#define USE_UNSAFE_MODE
+
 #include "../common/jshelper.h"
 #include "../common/jsclass.h"
 
