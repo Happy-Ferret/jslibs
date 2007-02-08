@@ -20,3 +20,13 @@ function test() {
 }
 
 test();
+
+
+var obj = {};
+
+Exec( 'test.js' );
+
+
+Print( 'obj.a : ' + obj.a, '\n');
+Print( 'obj.b : ' + obj.b, '\n');
+Print( 'obj.c : ' + obj.c, '\n');

@@ -20,7 +20,7 @@
 
 #include "jscntxt.h"
 
-#define JSHELPER_UNSAFE_DEFINED
+#define USE_UNSAFE_MODE
 #include "../common/jshelper.h"
 #include "../common/jsclass.h"
 #include "../configuration/configuration.h"
@@ -346,40 +346,45 @@ static JSScript* LoadScript(JSContext *cx, JSObject *obj, const char *fileName, 
 // function copied from mozilla/js/src/js.c
 DEFINE_FUNCTION( Exec ) {
 
-//  uintN i;
-  JSString *str;
-  const char *filename;
-  JSScript *script;
-  JSBool ok;
-//  JSErrorReporter older;
-  uint32 oldopts;
+	//  uintN i;
+	JSString *str;
+	const char *filename;
+	JSScript *script;
+	JSBool ok;
+	//  JSErrorReporter older;
+	uint32 oldopts;
 
-  RT_ASSERT_ARGC(1);
+	RT_ASSERT_ARGC(1);
 	bool saveCompiledScripts = true; // default
-	if ( argc >= 2 && argv[1] != JSVAL_FALSE )
+	if ( argc >= 2 && argv[1] == JSVAL_FALSE )
 		saveCompiledScripts = false;
 
-  str = JS_ValueToString(cx, argv[0]);
-  RT_ASSERT( str != NULL, "unable to get the filename." );
-  argv[0] = STRING_TO_JSVAL(str);
-  filename = JS_GetStringBytes(str);
-  errno = 0;
-//        older = JS_SetErrorReporter(cx, LoadErrorReporter);
-  oldopts = JS_GetOptions(cx);
-  JS_SetOptions(cx, oldopts | JSOPTION_COMPILE_N_GO);
-  // script = JS_CompileFile(cx, obj, filename);
-  script = LoadScript( cx, obj, filename, saveCompiledScripts );
-  if (!script) {
-    ok = JS_FALSE;
-  } else {
-    ok = JS_ExecuteScript(cx, obj, script, rval); // rval = Pointer to the value from the last executed expression statement processed in the script.
-    JS_DestroyScript(cx, script);
-  }
-  JS_SetOptions(cx, oldopts);
-//        JS_SetErrorReporter(cx, older);
-  if (!ok)
+	str = JS_ValueToString(cx, argv[0]);
+	RT_ASSERT( str != NULL, "unable to get the filename." );
+	argv[0] = STRING_TO_JSVAL(str);
+	filename = JS_GetStringBytes(str);
+	errno = 0;
+	//        older = JS_SetErrorReporter(cx, LoadErrorReporter);
+	oldopts = JS_GetOptions(cx);
+	JS_SetOptions(cx, oldopts | JSOPTION_COMPILE_N_GO);
+	// script = JS_CompileFile(cx, obj, filename);
+	script = LoadScript( cx, obj, filename, saveCompiledScripts );
+	if (!script) {
+		ok = JS_FALSE;
+	} else {
+
+//		if ( argc >= 3 )
+//			obj = JSVAL_TO_OBJECT( argv[2] ); // try Exec.call( obj1, 'test.js' ); ...
+// see: http://groups.google.com/group/mozilla.dev.tech.js-engine/browse_thread/thread/97269b31d65d493d/be8a4f9c4e805bef		
+
+		ok = JS_ExecuteScript(cx, obj, script, rval); // Doc: On successful completion, rval is a pointer to a variable that holds the value from the last executed expression statement processed in the script.
+		JS_DestroyScript(cx, script);
+	}
+	JS_SetOptions(cx, oldopts);
+	//        JS_SetErrorReporter(cx, older);
+	if (!ok)
 		return JS_FALSE;
-  return JS_TRUE;
+	return JS_TRUE;
 }
 
 
