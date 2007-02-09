@@ -8,6 +8,9 @@ try {
 	f.Write('test');
 	f.Close();
 
+	f.name = 'toto.txt'
+	f.Delete();
+
 	File.stdout.Write('stdout test !\n');
 
 	Print( 'NSPR version = ' + NSPRVersion()  ,'\n' );

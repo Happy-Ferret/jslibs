@@ -65,7 +65,7 @@ DEFINE_FUNCTION( Open ) {
 		// (TBD) check
 
 	JS_SetPrivate( cx, obj, dd );
-
+	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 }
 

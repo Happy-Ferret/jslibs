@@ -33,25 +33,6 @@ static bool NativeInterfaceReadFile( void *pv, unsigned char *buf, unsigned int 
 
 BEGIN_CLASS( File )
 
-DEFINE_CONSTRUCTOR() {
-
-	if ( !JS_IsConstructing(cx) ) {
-
-		JS_ReportError( cx, "need to be construct" );
-		return JS_FALSE;
-	}
-
-	if ( argc < 1 ) {
-
-		JS_ReportError( cx, "missing argument" );
-		return JS_FALSE;
-	}
-
-	JS_SetReservedSlot( cx, obj, SLOT_NSPR_FILE_NAME, argv[0] );
-	return JS_TRUE;
-}
-
-
 DEFINE_FINALIZE() {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
@@ -64,45 +45,34 @@ DEFINE_FINALIZE() {
 	}
 }
 
+DEFINE_CONSTRUCTOR() {
+
+	RT_ASSERT_CONSTRUCTING( &classFile );
+	RT_ASSERT_ARGC(1);
+	JS_SetReservedSlot( cx, obj, SLOT_NSPR_FILE_NAME, argv[0] );
+	return JS_TRUE;
+}
 
 DEFINE_FUNCTION( Open ) {
 
-	if ( argc < 1 ) {
-
-		JS_ReportError( cx, "missing argument" );
-		return JS_FALSE;
-	}
+	RT_ASSERT_ARGC(1);
 
 	jsval jsvalFileName;
-//	JS_GetProperty( cx, obj, "fileName", &jsvalFileName );
 	JS_GetReservedSlot( cx, obj, SLOT_NSPR_FILE_NAME, &jsvalFileName );
-	if ( jsvalFileName == JSVAL_VOID ) {
-
-		JS_ReportError( cx, "unable to get the file name" );
-		return JS_FALSE;
-	}
-
-	JSString *jsStringFileName = JS_ValueToString( cx, jsvalFileName );
-	if ( jsStringFileName == NULL ) {
-
-		JS_ReportError( cx, "unable to get the file name" );
-		return JS_FALSE;
-	}
-	jsvalFileName = STRING_TO_JSVAL( jsStringFileName ); // protect form GC ??? ( is this ok, is this needed, ... ? )
-	char *fileName = JS_GetStringBytes( jsStringFileName );
+	RT_ASSERT_DEFINED( jsvalFileName );
+	char *fileName;
+	RT_JSVAL_TO_STRING(jsvalFileName, fileName);
 
 	PRIntn flags;
 	int32 tmp;
 	JS_ValueToInt32( cx, argv[0], &tmp );
 	flags = tmp;
 
-	PRFileDesc *fd;
-
 	PRIntn mode = 0666;
-	fd = PR_Open( fileName, flags, mode ); // The mode parameter is currently applicable only on Unix platforms.
+
+	PRFileDesc *fd = PR_Open( fileName, flags, mode ); // The mode parameter is currently applicable only on Unix platforms.
 	if ( fd == NULL )
 		return ThrowNSPRError( cx, PR_GetError() );
-
 	JS_SetPrivate( cx, obj, fd );
 	SetNativeInterface(cx, obj, NI_READ_RESOURCE, (FunctionPointer)NativeInterfaceReadFile, fd);
 	*rval = OBJECT_TO_JSVAL(obj);
@@ -113,11 +83,7 @@ DEFINE_FUNCTION( Open ) {
 DEFINE_FUNCTION( Close ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
-	if ( fd == NULL ) {
-
-		JS_ReportError( cx, "file is closed" );
-		return JS_FALSE;
-	}
+	RT_ASSERT( fd != NULL, "file is closed." );
 
 	RemoveNativeInterface(cx, obj, NI_READ_RESOURCE );
 	PRStatus status = PR_Close( fd );
@@ -130,11 +96,7 @@ DEFINE_FUNCTION( Close ) {
 DEFINE_FUNCTION( Read ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
-	if ( fd == NULL ) {
-
-		JS_ReportError( cx, "file is closed" );
-		return JS_FALSE;
-	}
+	RT_ASSERT( fd != NULL, "file is closed." );
 
 	PRInt32 amount;
 	if ( argc >= 1 && argv[0] != JSVAL_VOID ) {
@@ -173,11 +135,7 @@ DEFINE_FUNCTION( Read ) {
 	}
 
 	JSString *str = JS_NewString( cx, (char*)buf, res );
-	if (str == NULL) {
-
-		JS_ReportError( cx, "JS_NewString error" );
-		return JS_FALSE;
-	}
+	RT_ASSERT_ALLOC(str);
 
 	*rval = STRING_TO_JSVAL(str); // GC protection is ok with this ?
 	return JS_TRUE;
@@ -185,18 +143,10 @@ DEFINE_FUNCTION( Read ) {
 
 DEFINE_FUNCTION( Write ) {
 
-	if ( argc < 1 ) {
-
-		JS_ReportError( cx, "missing argument" );
-		return JS_FALSE;
-	}
+	RT_ASSERT_ARGC(1);
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
-	if ( fd == NULL ) {
-
-		JS_ReportError( cx, "file is closed" );
-		return JS_FALSE;
-	}
+	RT_ASSERT( fd != NULL, "file is closed." );
 
 	JSString *jsstr = JS_ValueToString( cx, argv[0] );
 	argv[0] = STRING_TO_JSVAL( jsstr ); // protect from GC
@@ -218,23 +168,15 @@ DEFINE_FUNCTION( Write ) {
 
 	if ( bytesSent == -1 )
 		return ThrowNSPRError( cx, PR_GetError() );
-
-	if ( bytesSent < length ) {
-
-		JS_ReportError( cx, "unable to send all datas" );
-		return JS_FALSE;
-	}
+	
+	RT_ASSERT( bytesSent = length, "unable to send all datas" );
 	return JS_TRUE;
 }
 
 DEFINE_FUNCTION( Seek ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
-	if ( fd == NULL ) {
-
-		JS_ReportError( cx, "file is closed" );
-		return JS_FALSE;
-	}
+	RT_ASSERT( fd != NULL, "file is closed." );
 
 	PRInt64 offset = 0; // default is arg is missing
 	if ( argc >= 1 ) {
@@ -264,11 +206,7 @@ DEFINE_FUNCTION( Seek ) {
 DEFINE_FUNCTION( Sync ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
-	if ( fd == NULL ) {
-
-		JS_ReportError( cx, "file is closed" );
-		return JS_FALSE;
-	}
+	RT_ASSERT( fd != NULL, "file is closed." ); // 	RT_ASSERT_RESOURCE(fd);
 
 	PRStatus status = PR_Sync(fd);
 	if ( status == PR_FAILURE )
@@ -277,37 +215,29 @@ DEFINE_FUNCTION( Sync ) {
 	return JS_TRUE;
 }
 
-DEFINE_PROPERTY( eof ) {
+
+DEFINE_FUNCTION( Delete ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
-	if ( fd == NULL ) {
-
-		JS_ReportError( cx, "file is closed" );
-		return JS_FALSE;
-	}
-
-	PRInt32 available = PR_Available( fd ); // For a normal file, these are the bytes beyond the current file pointer.
-	if ( available == -1 )
+	RT_ASSERT( fd == NULL, "Cannot delete an open file." );
+	jsval jsvalFileName;
+	JS_GetReservedSlot( cx, obj, SLOT_NSPR_FILE_NAME, &jsvalFileName );
+	RT_ASSERT_DEFINED( jsvalFileName );
+	char *fileName;
+	RT_JSVAL_TO_STRING(jsvalFileName, fileName);
+	
+	PRStatus status = PR_Delete(fileName);
+	if ( status != PR_SUCCESS )
 		return ThrowNSPRError( cx, PR_GetError() );
 
-	*vp = BOOLEAN_TO_JSVAL(available == 0);
 	return JS_TRUE;
 }
 
-DEFINE_PROPERTY( name ) {
-
-	JS_GetReservedSlot( cx, obj, SLOT_NSPR_FILE_NAME, vp );
-	return JS_TRUE;
-}
 
 DEFINE_PROPERTY( available ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
-	if ( fd == NULL ) {
-
-		JS_ReportError( cx, "file is closed" );
-		return JS_FALSE;
-	}
+	RT_ASSERT( fd != NULL, "file is closed." );
 
 	PRInt32 available = PR_Available( fd ); // For a normal file, these are the bytes beyond the current file pointer.
 	if ( available == -1 )
@@ -318,64 +248,79 @@ DEFINE_PROPERTY( available ) {
 	return JS_TRUE;
 }
 
+DEFINE_PROPERTY( eof ) {
+
+	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
+	RT_ASSERT( fd != NULL, "file is closed." );
+
+	PRInt32 available = PR_Available( fd ); // For a normal file, these are the bytes beyond the current file pointer.
+	if ( available == -1 )
+		return ThrowNSPRError( cx, PR_GetError() );
+
+	*vp = BOOLEAN_TO_JSVAL(available == 0);
+	return JS_TRUE;
+}
+
+DEFINE_PROPERTY( nameGetter ) {
+
+	JS_GetReservedSlot( cx, obj, SLOT_NSPR_FILE_NAME, vp );
+	return JS_TRUE;
+}
+
+
+DEFINE_PROPERTY( nameSetter ) {
+
+	RT_ASSERT_DEFINED( *vp );
+
+	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
+	RT_ASSERT( fd == NULL, "Cannot rename an open file.");
+	jsval jsvalFileName;
+	JS_GetReservedSlot( cx, obj, SLOT_NSPR_FILE_NAME, &jsvalFileName );
+	RT_ASSERT_DEFINED( jsvalFileName );
+
+	char *fromFileName, *toFileName;
+	RT_JSVAL_TO_STRING(jsvalFileName, fromFileName);
+	RT_JSVAL_TO_STRING(*vp, toFileName);
+
+	PRStatus status = PR_Rename(fromFileName, toFileName); // is status == PR_FILE_EXISTS_ERROR ...
+	if ( status != PR_SUCCESS )
+		return ThrowNSPRError( cx, PR_GetError() );
+
+	JS_SetReservedSlot( cx, obj, SLOT_NSPR_FILE_NAME, *vp );
+	return JS_TRUE;
+}
+
+
 DEFINE_PROPERTY( exist ) {
 
 	jsval jsvalFileName;
 //	JS_GetProperty( cx, obj, "fileName", &jsvalFileName );
 	JS_GetReservedSlot( cx, obj, SLOT_NSPR_FILE_NAME, &jsvalFileName );
-
-	if ( jsvalFileName == JSVAL_VOID ) {
-
-		JS_ReportError( cx, "unable to get the file name" );
-		return JS_FALSE;
-	}
-
-	JSString *jsStringFileName = JS_ValueToString( cx, jsvalFileName );
-	if ( jsStringFileName == NULL ) {
-
-		JS_ReportError( cx, "unable to get the file name" );
-		return JS_FALSE;
-	}
-	jsvalFileName = STRING_TO_JSVAL( jsStringFileName ); // protect form GC ??? ( is this ok, is this needed, ... ? )
-
-	char *fileName = JS_GetStringBytes( jsStringFileName );
-
+	RT_ASSERT_DEFINED( jsvalFileName );
+	char *fileName;
+	RT_JSVAL_TO_STRING(jsvalFileName, fileName);
 	PRStatus status = PR_Access( fileName, PR_ACCESS_EXISTS );
 	*vp = BOOLEAN_TO_JSVAL( status == PR_SUCCESS );
-
 	return JS_TRUE;
 }
 
 
 DEFINE_PROPERTY( info ) {
 
-	jsval jsvalFileName;
-//	JS_GetProperty( cx, obj, "fileName", &jsvalFileName );
-	JS_GetReservedSlot( cx, obj, SLOT_NSPR_FILE_NAME, &jsvalFileName );
-
-	if ( jsvalFileName == JSVAL_VOID ) {
-
-		JS_ReportError( cx, "unable to get the file name" );
-		return JS_FALSE;
-	}
-
-	JSString *jsStringFileName = JS_ValueToString( cx, jsvalFileName );
-	if ( jsStringFileName == NULL ) {
-
-		JS_ReportError( cx, "unable to get the file name" );
-		return JS_FALSE;
-	}
-	jsvalFileName = STRING_TO_JSVAL( jsStringFileName ); // protect form GC ??? ( is this ok, is this needed, ... ? )
-
-	char *fileName = JS_GetStringBytes( jsStringFileName );
-
 	PRFileInfo fileInfo;
 	PRStatus status;
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
-	if ( fd == NULL )
+	if ( fd == NULL ) {
+		
+		jsval jsvalFileName;
+		JS_GetReservedSlot( cx, obj, SLOT_NSPR_FILE_NAME, &jsvalFileName );
+		RT_ASSERT_DEFINED( jsvalFileName );
+		char *fileName;
+		RT_JSVAL_TO_STRING(jsvalFileName, fileName);
+		
 		status = PR_GetFileInfo( fileName, &fileInfo );
-	else
+	} else
 		status = PR_GetOpenFileInfo( fd, &fileInfo );
 
 	if ( status != PR_SUCCESS )
@@ -429,11 +374,12 @@ CONFIGURE_CLASS
 		FUNCTION( Write )
 		FUNCTION( Seek )
 		FUNCTION( Sync )
+		FUNCTION( Delete )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
+		PROPERTY( name )
 		PROPERTY_READ( eof )
-		PROPERTY_READ( name )
 		PROPERTY_READ( available )
 		PROPERTY_READ( exist )
 		PROPERTY_READ( info )
