@@ -2,7 +2,7 @@ LoadModule('jsstd');
 LoadModule('jsnspr');
 
 try {
-
+/*
 	var f = new File('test.txt');
 	f.Open( File.RDWR | File.CREATE_FILE  );
 	f.Write('test');
@@ -22,6 +22,35 @@ try {
 	
 	Print( 'has xxx directory: ' + new Directory('xxx').exist, '\n' );
 	Print( 'has .svn directory: ' + new Directory('.svn').exist, '\n' );
+*/
+
+
+var end = false;
+var soc = new Socket();
+soc.Connect( 'www.google.com', 80 );
+Print('Connecting...');
+
+soc.writable = function(s) {
+	
+	Print('accepted`\n');
+	delete soc.writable;
+	s.Send('GET / HTTP/1.0\r\n\r\n');
+}
+
+soc.readable = function(s) {
+
+	var data = s.Recv();
+	
+	if ( data.length == 0 ) {
+		end = true;
+		delete soc.readable;
+	} else
+		Print( data );
+}
+
+
+while(!endSignal && !end )
+	Poll([soc],1000);
 
 
 } catch ( ex if ex instanceof NSPRError ) {
