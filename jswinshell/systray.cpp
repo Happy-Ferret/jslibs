@@ -15,41 +15,62 @@
 #include "stdafx.h"
 #include "systray.h"
 
+#include <stdlib.h>
+
+
+/*
+static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
+
+	return DefWindowProc(hWnd, message, wParam, lParam); // We do not want to handle this message so pass back to Windows to handle it in a default way
+}
+*/
+
 BEGIN_CLASS( Systray )
 
 DEFINE_FINALIZE() {
+
+	NOTIFYICONDATA *nid = (NOTIFYICONDATA*)JS_GetPrivate(cx, obj);
+	if ( nid != NULL ) {
+
+		BOOL status = Shell_NotifyIcon(NIM_DELETE, nid);
+//		RT_ASSERT( status == TRUE, "Unable to setup systray icon." );
+
+	}
 }
 
 DEFINE_CONSTRUCTOR() {
 
 	RT_ASSERT_CONSTRUCTING(_class);
 
-	WNDCLASS wc = { CS_HREDRAW | CS_VREDRAW | CS_OWNDC, (WNDPROC)WndProc, 0, 0, hInst, LoadIcon((HINSTANCE)NULL, IDI_APPLICATION), LoadCursor((HINSTANCE) NULL, IDC_ARROW), NULL, NULL, WINDOW_CLASS_NAME };
+	HINSTANCE hInst = (HINSTANCE)GetModuleHandle(NULL);
+	RT_ASSERT( hInst != NULL, "Unable to GetModuleHandle." );
+	WNDCLASS wc = { 0, (WNDPROC)DefWindowProc, 0, 0, hInst, NULL, NULL, NULL, NULL, L"systray" };
 	ATOM rc = RegisterClass(&wc);
 	RT_ASSERT( rc != 0, "Unable to RegisterClass." );
+	HWND hWnd = CreateWindow( (LPCWSTR)rc, NULL, WS_POPUP, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, (HWND)NULL, (HMENU)NULL, hInst, (LPVOID)NULL );
+	RT_ASSERT( hWnd != NULL, "Unable to CreateWindow." );
+//	JS_SetPrivate(cx, obj, hWnd);
 
-	HWND hWnd = CreateWindow( WINDOW_CLASS_NAME, NULL,    WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN | WS_CLIPSIBLINGS,
-	                          CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,    (HWND)NULL, (HMENU)NULL, hInst, (LPVOID)NULL);
+	NOTIFYICONDATA *nid = (NOTIFYICONDATA*)malloc( sizeof(NOTIFYICONDATA) );
+	memset(nid, 0, sizeof(NOTIFYICONDATA));
+	nid->cbSize = sizeof(NOTIFYICONDATA);
+	nid->hWnd = hWnd;
+	nid->uID = (12) + 0; // doc: Values from 0 to 12 are reserved and should not be used.
+	nid->uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP;
+	nid->uCallbackMessage = (WM_USER) + 0; // doc: All Message Numbers below 0x0400 are RESERVED.
+	nid->hIcon = LoadIcon(NULL,MAKEINTRESOURCE(IDI_APPLICATION));
+	wcscpy( nid->szTip, L"text" );
 
+	BOOL status = Shell_NotifyIcon(NIM_ADD, nid);
+	RT_ASSERT( status == TRUE, "Unable to setup systray icon." );
 
+	JS_SetPrivate(cx, obj, (void*)nid);
 
-	NOTIFYICONDATA nid; // http://msdn.microsoft.com/library/default.asp?url=/library/en-us/shellcc/platform/shell/reference/structures/notifyicondata.asp
+//	Shell_NotifyIcon(NIM_MODIFY, &nid);
+//	Shell_NotifyIcon(NIM_DELETE, &nid);
 
-	memset(&nid, 0, sizeof(NOTIFYICONDATA));
-
-
-
-	nid.cbSize = sizeof(NOTIFYICONDATA);
-	nid.hWnd   = pParent->GetSafeHwnd()? pParent->GetSafeHwnd() : m_hWnd;
-	nid.uID    = uID;
-	nid.hIcon  = icon;
-	nid.uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP;
-	nid.uCallbackMessage = uCallbackMessage;
-	_tcscpy(nid.szTip, szToolTip);
-
-	Shell_NotifyIcon(NIM_ADD, &m_tnd)
-
-//    CWnd::CreateEx(0, AfxRegisterWndClass(0), _T(""), WS_POPUP, 0,0,10,10, NULL, 0);
+// http://msdn.microsoft.com/library/default.asp?url=/library/en-us/shellcc/platform/shell/reference/structures/notifyicondata.asp
+//	_tcscpy(nid.szTip, "tooltip");
 
 	return JS_TRUE;
 }
