@@ -118,6 +118,8 @@ DEFINE_FUNCTION( Read ) {
 	}
 
 	char *buf = (char*)JS_malloc( cx, amount +1 );
+	RT_ASSERT_ALLOC(buf);
+
 	buf[amount] = 0; // (TBD) check if useful: PR_Read can read binary data !
 
 	PRInt32 res = PR_Read( fd, buf, amount );
@@ -132,6 +134,17 @@ DEFINE_FUNCTION( Read ) {
 		JS_free( cx, buf );
 		*rval = JS_GetEmptyStringValue(cx); // (TBD) check if it is realy faster.
 		return JS_TRUE;
+	}
+
+	if ( argc >= 2 ) {
+
+		JSBool doRealloc;
+		JS_ValueToBoolean(cx, argv[1], &doRealloc );
+		if ( doRealloc == JS_TRUE ) {
+			
+			buf = (char*)JS_realloc(cx, buf, res); // realloc the string using its real size
+			RT_ASSERT_ALLOC(buf);
+		}
 	}
 
 	JSString *str = JS_NewString( cx, (char*)buf, res );

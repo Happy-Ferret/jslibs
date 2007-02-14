@@ -13,3 +13,4 @@
  * ***** END LICENSE BLOCK ***** */
 
 DECLARE_CLASS( Template )
+
