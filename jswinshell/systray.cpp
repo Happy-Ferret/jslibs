@@ -14,9 +14,261 @@
 
 #include "stdafx.h"
 #include "systray.h"
-
 #include <stdlib.h>
 
+
+typedef struct
+{
+    BYTE        bWidth;          // Width, in pixels, of the image
+    BYTE        bHeight;         // Height, in pixels, of the image
+    BYTE        bColorCount;     // Number of colors in image (0 if >=8bpp)
+    BYTE        bReserved;       // Reserved ( must be 0)
+    WORD        wPlanes;         // Color Planes
+    WORD        wBitCount;       // Bits per pixel
+    DWORD       dwBytesInRes;    // How many bytes in this resource?
+    DWORD       dwImageOffset;   // Where in the file is this image?
+} ICONDIRENTRY, *LPICONDIRENTRY;
+
+typedef struct
+{
+    DWORD	dwBytes;
+    DWORD	dwOffset;
+} RESOURCEPOSINFO, *LPRESOURCEPOSINFO;
+
+typedef struct
+{
+	UINT			Width, Height, Colors; // Width, Height and bpp
+	LPBYTE			lpBits;                // ptr to DIB bits
+	DWORD			dwNumBytes;            // how many bytes?
+	LPBITMAPINFO	lpbi;                  // ptr to header
+	LPBYTE			lpXOR;                 // ptr to XOR image bits
+	LPBYTE			lpAND;                 // ptr to AND image bits
+} ICONIMAGE, *LPICONIMAGE;
+
+typedef struct
+{
+    BOOL        bHasChanged;                     // Has image changed?
+    TCHAR       szOriginalICOFileName[MAX_PATH]; // Original name
+    TCHAR       szOriginalDLLFileName[MAX_PATH]; // Original name
+    UINT        nNumImages;                      // How many images?
+    ICONIMAGE   IconImages[1];                   // Image entries
+} ICONRESOURCE, *LPICONRESOURCE;
+
+#define WIDTHBYTES(bits)      ((((bits) + 31)>>5)<<2)
+
+DWORD BytesPerLine( LPBITMAPINFOHEADER lpBMIH )
+{
+    return WIDTHBYTES(lpBMIH->biWidth * lpBMIH->biPlanes * lpBMIH->biBitCount);
+}
+
+WORD DIBNumColors( LPSTR lpbi )
+{
+    WORD wBitCount;
+    DWORD dwClrUsed;
+
+    dwClrUsed = ((LPBITMAPINFOHEADER) lpbi)->biClrUsed;
+
+    if (dwClrUsed)
+        return (WORD) dwClrUsed;
+
+    wBitCount = ((LPBITMAPINFOHEADER) lpbi)->biBitCount;
+
+    switch (wBitCount)
+    {
+        case 1: return 2;
+        case 4: return 16;
+        case 8:	return 256;
+        default:return 0;
+    }
+    return 0;
+}
+
+WORD PaletteSize( LPSTR lpbi )
+{
+    return ( DIBNumColors( lpbi ) * sizeof( RGBQUAD ) );
+}
+
+LPSTR FindDIBBits( LPSTR lpbi )
+{
+   return ( lpbi + *(LPDWORD)lpbi + PaletteSize( lpbi ) );
+}
+
+
+BOOL AdjustIconImagePointers( LPICONIMAGE lpImage )
+{
+    // Sanity check
+    if( lpImage==NULL )
+        return FALSE;
+    // BITMAPINFO is at beginning of bits
+    lpImage->lpbi = (LPBITMAPINFO)lpImage->lpBits;
+    // Width - simple enough
+    lpImage->Width = lpImage->lpbi->bmiHeader.biWidth;
+    // Icons are stored in funky format where height is doubled - account for it
+    lpImage->Height = (lpImage->lpbi->bmiHeader.biHeight)/2;
+    // How many colors?
+    lpImage->Colors = lpImage->lpbi->bmiHeader.biPlanes * lpImage->lpbi->bmiHeader.biBitCount;
+    // XOR bits follow the header and color table
+    lpImage->lpXOR = (LPBYTE)FindDIBBits((LPSTR)(lpImage->lpbi));
+    // AND bits follow the XOR bits
+    lpImage->lpAND = lpImage->lpXOR + (lpImage->Height*BytesPerLine((LPBITMAPINFOHEADER)(lpImage->lpbi)));
+    return TRUE;
+}
+
+
+UINT ReadICOHeader( HANDLE hFile )
+{
+    WORD    Input;
+    DWORD	dwBytesRead;
+
+    // Read the 'reserved' WORD
+    if( ! ReadFile( hFile, &Input, sizeof( WORD ), &dwBytesRead, NULL ) )
+        return (UINT)-1;
+    // Did we get a WORD?
+    if( dwBytesRead != sizeof( WORD ) )
+        return (UINT)-1;
+    // Was it 'reserved' ?   (ie 0)
+    if( Input != 0 )
+        return (UINT)-1;
+    // Read the type WORD
+    if( ! ReadFile( hFile, &Input, sizeof( WORD ), &dwBytesRead, NULL ) )
+        return (UINT)-1;
+    // Did we get a WORD?
+    if( dwBytesRead != sizeof( WORD ) )
+        return (UINT)-1;
+    // Was it type 1?
+    if( Input != 1 )
+        return (UINT)-1;
+    // Get the count of images
+    if( ! ReadFile( hFile, &Input, sizeof( WORD ), &dwBytesRead, NULL ) )
+        return (UINT)-1;
+    // Did we get a WORD?
+    if( dwBytesRead != sizeof( WORD ) )
+        return (UINT)-1;
+    // Return the count
+    return Input;
+}
+
+LPICONRESOURCE ReadIconFromICOFile( LPCTSTR szFileName )
+{
+    LPICONRESOURCE    	lpIR = NULL, lpNew = NULL;
+    HANDLE            	hFile = NULL;
+    LPRESOURCEPOSINFO	lpRPI = NULL;
+    UINT                i;
+    DWORD            	dwBytesRead;
+    LPICONDIRENTRY    	lpIDE = NULL;
+
+
+    // Open the file
+    if( (hFile = CreateFile( szFileName, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL )) == INVALID_HANDLE_VALUE )
+    {
+        //MessageBox( hWndMain, "Error Opening File for Reading", szFileName, MB_OK );
+        return NULL;
+    }
+    // Allocate memory for the resource structure
+    if( (lpIR = (LPICONRESOURCE)malloc( sizeof(ICONRESOURCE) )) == NULL )
+    {
+        //MessageBox( hWndMain, "Error Allocating Memory", szFileName, MB_OK );
+        CloseHandle( hFile );
+        return NULL;
+    }
+    // Read in the header
+    if( (lpIR->nNumImages = ReadICOHeader( hFile )) == (UINT)-1 )
+    {
+        //MessageBox( hWndMain, "Error Reading File Header", szFileName, MB_OK );
+        CloseHandle( hFile );
+        free( lpIR );
+        return NULL;
+    }
+    // Adjust the size of the struct to account for the images
+    if( (lpNew = (LPICONRESOURCE)realloc( lpIR, sizeof(ICONRESOURCE) + ((lpIR->nNumImages-1) * sizeof(ICONIMAGE)) )) == NULL )
+    {
+        //MessageBox( hWndMain, "Error Allocating Memory", szFileName, MB_OK );
+        CloseHandle( hFile );
+        free( lpIR );
+        return NULL;
+    }
+    lpIR = lpNew;
+    // Store the original name
+    lstrcpy( lpIR->szOriginalICOFileName, szFileName );
+    lstrcpy( lpIR->szOriginalDLLFileName, L"" );
+    // Allocate enough memory for the icon directory entries
+    if( (lpIDE = (LPICONDIRENTRY)malloc( lpIR->nNumImages * sizeof( ICONDIRENTRY ) ) ) == NULL )
+    {
+        //MessageBox( hWndMain, "Error Allocating Memory", szFileName, MB_OK );
+        CloseHandle( hFile );
+        free( lpIR );
+        return NULL;
+    }
+    // Read in the icon directory entries
+    if( ! ReadFile( hFile, lpIDE, lpIR->nNumImages * sizeof( ICONDIRENTRY ), &dwBytesRead, NULL ) )
+    {
+        //MessageBox( hWndMain, "Error Reading File", szFileName, MB_OK );
+        CloseHandle( hFile );
+        free( lpIR );
+        return NULL;
+    }
+    if( dwBytesRead != lpIR->nNumImages * sizeof( ICONDIRENTRY ) )
+    {
+        //MessageBox( hWndMain, "Error Reading File", szFileName, MB_OK );
+        CloseHandle( hFile );
+        free( lpIR );
+        return NULL;
+    }
+    // Loop through and read in each image
+    for( i = 0; i < lpIR->nNumImages; i++ )
+    {
+        // Allocate memory for the resource
+        if( (lpIR->IconImages[i].lpBits = (LPBYTE)malloc(lpIDE[i].dwBytesInRes)) == NULL )
+        {
+            //MessageBox( hWndMain, "Error Allocating Memory", szFileName, MB_OK );
+            CloseHandle( hFile );
+            free( lpIR );
+            free( lpIDE );
+            return NULL;
+        }
+        lpIR->IconImages[i].dwNumBytes = lpIDE[i].dwBytesInRes;
+        // Seek to beginning of this image
+        if( SetFilePointer( hFile, lpIDE[i].dwImageOffset, NULL, FILE_BEGIN ) == 0xFFFFFFFF )
+        {
+            //MessageBox( hWndMain, "Error Seeking in File", szFileName, MB_OK );
+            CloseHandle( hFile );
+            free( lpIR );
+            free( lpIDE );
+            return NULL;
+        }
+        // Read it in
+        if( ! ReadFile( hFile, lpIR->IconImages[i].lpBits, lpIDE[i].dwBytesInRes, &dwBytesRead, NULL ) )
+        {
+            //MessageBox( hWndMain, "Error Reading File", szFileName, MB_OK );
+            CloseHandle( hFile );
+            free( lpIR );
+            free( lpIDE );
+            return NULL;
+        }
+        if( dwBytesRead != lpIDE[i].dwBytesInRes )
+        {
+            //MessageBox( hWndMain, "Error Reading File", szFileName, MB_OK );
+            CloseHandle( hFile );
+            free( lpIDE );
+            free( lpIR );
+            return NULL;
+        }
+        // Set the internal pointers appropriately
+        if( ! AdjustIconImagePointers( &(lpIR->IconImages[i]) ) )
+        {
+            //MessageBox( hWndMain, "Error Converting to Internal Format", szFileName, MB_OK );
+            CloseHandle( hFile );
+            free( lpIDE );
+            free( lpIR );
+            return NULL;
+        }
+    }
+    // Clean up	
+    free( lpIDE );
+    free( lpRPI );
+    CloseHandle( hFile );
+    return lpIR;
+}
 
 /*
 static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
@@ -60,6 +312,11 @@ DEFINE_CONSTRUCTOR() {
 	nid->uCallbackMessage = (WM_USER) + 0; // doc: All Message Numbers below 0x0400 are RESERVED.
 	nid->hIcon = LoadIcon(NULL,MAKEINTRESOURCE(IDI_APPLICATION));
 	wcscpy( nid->szTip, L"text" );
+
+//SHGetFileInfo
+
+//	ReadIconFromICOFile(
+//	LookUpIconIdFromDirectory;
 
 	BOOL status = Shell_NotifyIcon(NIM_ADD, nid);
 	RT_ASSERT( status == TRUE, "Unable to setup systray icon." );
@@ -110,6 +367,11 @@ END_CLASS
 
 
 http://msdn.microsoft.com/library/default.asp?url=/library/en-us/shellcc/platform/shell/reference/functions/shell_notifyicon.asp
+
+
+Icons in Win32:
+
+http://msdn2.microsoft.com/en-us/library/ms997538.aspx
 
 
 */
