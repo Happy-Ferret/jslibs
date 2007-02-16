@@ -16,7 +16,7 @@
 #include "systray.h"
 #include <stdlib.h>
 
-
+/*
 typedef struct
 {
     BYTE        bWidth;          // Width, in pixels, of the image
@@ -263,12 +263,14 @@ LPICONRESOURCE ReadIconFromICOFile( LPCTSTR szFileName )
             return NULL;
         }
     }
-    // Clean up	
+    // Clean up
     free( lpIDE );
     free( lpRPI );
     CloseHandle( hFile );
     return lpIR;
 }
+*/
+
 
 /*
 static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
@@ -308,7 +310,7 @@ DEFINE_CONSTRUCTOR() {
 	nid->cbSize = sizeof(NOTIFYICONDATA);
 	nid->hWnd = hWnd;
 	nid->uID = (12) + 0; // doc: Values from 0 to 12 are reserved and should not be used.
-	nid->uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP;
+	nid->uFlags = NIF_MESSAGE | NIF_TIP; // | NIF_ICON
 	nid->uCallbackMessage = (WM_USER) + 0; // doc: All Message Numbers below 0x0400 are RESERVED.
 	nid->hIcon = LoadIcon(NULL,MAKEINTRESOURCE(IDI_APPLICATION));
 	wcscpy( nid->szTip, L"text" );
@@ -332,6 +334,124 @@ DEFINE_CONSTRUCTOR() {
 	return JS_TRUE;
 }
 
+DEFINE_PROPERTY( icon ) {
+
+	JSObject *imgObj = JSVAL_TO_OBJECT(*vp);
+
+	RT_ASSERT_CLASS_NAME(imgObj, "Image");
+	HINSTANCE hInst = (HINSTANCE)GetModuleHandle(NULL);
+
+	jsval tmp;
+	JS_GetProperty(cx, imgObj, "width", &tmp);
+	RT_ASSERT(JSVAL_IS_INT(tmp), RT_ERROR_UNEXPECTED_TYPE);
+	int width = JSVAL_TO_INT(tmp);
+
+	JS_GetProperty(cx, imgObj, "height", &tmp);
+	RT_ASSERT(JSVAL_IS_INT(tmp), RT_ERROR_UNEXPECTED_TYPE);
+	int height = JSVAL_TO_INT(tmp);
+
+	JS_GetProperty(cx, imgObj, "channels", &tmp);
+	RT_ASSERT(JSVAL_IS_INT(tmp), RT_ERROR_UNEXPECTED_TYPE);
+	int channels = JSVAL_TO_INT(tmp);
+
+	char *imageData = (char*)JS_GetPrivate(cx, imgObj);
+
+	PNOTIFYICONDATA nid = (PNOTIFYICONDATA)JS_GetPrivate(cx, obj);
+	nid->uFlags |= NIF_ICON;
+
+//	void* mask = malloc( width * height * channels );
+//	RT_ASSERT( mask != NULL, "Unable to create the icon mask." );
+//	memset(mask, 127, width * height * channels );
+
+	// http://www.we11er.co.uk/
+	// To determine the width and height supported by the display driver, use the GetSystemMetrics function, specifying the SM_CXICON or SM_CYICON value.
+
+
+
+/*
+	char *bitmap = (char*)malloc( width * height * 4 );
+	RT_ASSERT( bitmap != NULL, "Unable to create the icon bitmap." );
+	for ( int i = 0; i < width * height; i++ ) {
+
+		//b, g, r, ?
+		bitmap[i*4 + 0] = imageData[i*3 + 2];
+		bitmap[i*4 + 1] = imageData[i*3 + 1];
+		bitmap[i*4 + 2] = imageData[i*3 + 0];
+		bitmap[i*4 + 3] = 0;
+	}
+	HICON icon = CreateIcon( hInst, width, height, 4, 8, (const BYTE *)NULL, (const BYTE *)bitmap );
+*/
+CreateIcon
+
+/*
+	BITMAP bm;
+	bm.bmType = 0; // This member must be zero.
+	bm.bmWidth = width;
+	bm.bmHeight = height;
+	bm.bmWidthBytes = width * channels;
+	bm.bmPlanes = channels;
+	bm.bmBitsPixel = 3*8; // 24
+	bm.bmBits = imageData;
+	CreateBitmapIndirect( &bm );
+*/
+
+	BITMAPV4HEADER bh;
+	bh.bV4Size = sizeof(BITMAPV4HEADER);
+	bh.bV4Width = width;
+	bh.bV4Height = height;
+	bh.bV4Planes = 1; // doc: This value must be set to 1.
+	bh.bV4BitCount = channels * 8;
+	bh.bV4V4Compression = BI_BITFIELDS; // BI_RGB; // An uncompressed format.
+	bh.bV4SizeImage = 0; // This may be set to zero for BI_RGB bitmaps.
+	bh.bV4XPelsPerMeter = 0;
+	bh.bV4YPelsPerMeter = 0;
+	bh.bV4ClrUsed = 0; // doc: If this value is zero, the bitmap uses the maximum number of colors corresponding to the value of the bV5BitCount member for the compression mode specified by bV5Compression.
+	bh.bV4ClrImportant = 0; // If this value is zero, all colors are required.
+	bh.bV4RedMask = 0xff000000;
+	bh.bV4GreenMask = 0x00ff0000;
+	bh.bV4BlueMask = 0x0000ff00;
+	bh.bV4AlphaMask = 0x000000ff;
+	bh.bV4CSType = LCS_WINDOWS_COLOR_SPACE;
+//	bh.bV5Endpoints = 0; // doc: This member is ignored unless the bV5CSType member specifies LCS_CALIBRATED_RGB.
+	bh.bV4GammaRed = 0;
+	bh.bV4GammaGreen = 0;
+	bh.bV4GammaBlue = 0;
+
+	HBITMAP bitmap = CreateDIBitmap( GetDC(NULL), (PBITMAPINFOHEADER)&bh, CBM_INIT, imageData, &bi, DIB_RGB_COLORS );
+
+/*
+	BITMAPINFO bi;
+	bi.bmiHeader.
+	HBITMAP bitmap = CreateCompatibleBitmap( GetDC(NULL), width, height ); // doc: When you no longer need the bitmap, call the DeleteObject function to delete it.
+	SetDIBits( GetDC(NULL), bitmap, 0, height, imageData, &bi, DIB_RGB_COLORS );
+*/
+
+
+	ICONINFO ii;
+	ii.fIcon = TRUE;
+	ii.xHotspot = 0;
+	ii.yHotspot = 0;
+	ii.hbmMask = NULL;
+	ii.hbmColor = bitmap;// HBITMAP
+	HICON icon = CreateIconIndirect( &ii );
+
+// Device-Independent Bitmaps
+//   http://msdn.microsoft.com/library/default.asp?url=/library/en-us/gdi/bitmaps_9c6r.asp
+
+//	CreateBitmap( width, height, channels, 8, (const BYTE *)imageData );
+
+
+//	free(mask);
+
+	RT_ASSERT( icon != NULL, "Unable to create the icon." );
+	nid->hIcon = icon;
+	BOOL status = Shell_NotifyIcon(NIM_MODIFY, nid);
+	RT_ASSERT( status == TRUE, "Unable to setup systray icon." );
+
+	//DestroyIcon // doc: Before closing, your application must use DestroyIcon to destroy any icon it created by using CreateIconIndirect. It is not necessary to destroy icons created by other functions.
+
+	return JS_TRUE;
+}
 
 CONFIGURE_CLASS
 
@@ -342,9 +462,7 @@ CONFIGURE_CLASS
 //	return JS_TRUE;
 //}
 
-//DEFINE_PROPERTY( prop ) {
-//	return JS_TRUE;
-//}
+
 
 //DEFINE_FUNCTION( Func ) {
 //	return JS_TRUE;
@@ -355,7 +473,7 @@ CONFIGURE_CLASS
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
-//		PROPERTY(prop)
+		PROPERTY_WRITE(icon) // (TBD) _STORE ? is needed to keep the reference to the image ( aboid GC ) ???
 	END_PROPERTY_SPEC
 
 	HAS_PRIVATE
