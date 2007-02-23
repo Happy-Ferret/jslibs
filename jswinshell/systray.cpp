@@ -16,268 +16,103 @@
 #include "systray.h"
 #include <stdlib.h>
 
-/*
-typedef struct
-{
-    BYTE        bWidth;          // Width, in pixels, of the image
-    BYTE        bHeight;         // Height, in pixels, of the image
-    BYTE        bColorCount;     // Number of colors in image (0 if >=8bpp)
-    BYTE        bReserved;       // Reserved ( must be 0)
-    WORD        wPlanes;         // Color Planes
-    WORD        wBitCount;       // Bits per pixel
-    DWORD       dwBytesInRes;    // How many bytes in this resource?
-    DWORD       dwImageOffset;   // Where in the file is this image?
-} ICONDIRENTRY, *LPICONDIRENTRY;
+#include <jsobj.h>
 
-typedef struct
-{
-    DWORD	dwBytes;
-    DWORD	dwOffset;
-} RESOURCEPOSINFO, *LPRESOURCEPOSINFO;
 
-typedef struct
-{
-	UINT			Width, Height, Colors; // Width, Height and bpp
-	LPBYTE			lpBits;                // ptr to DIB bits
-	DWORD			dwNumBytes;            // how many bytes?
-	LPBITMAPINFO	lpbi;                  // ptr to header
-	LPBYTE			lpXOR;                 // ptr to XOR image bits
-	LPBYTE			lpAND;                 // ptr to AND image bits
-} ICONIMAGE, *LPICONIMAGE;
+#define MIN(X,Y) ((X) < (Y) ? (X) : (Y))
+#define MAX(X,Y) ((X) > (Y) ? (X) : (Y))
 
-typedef struct
-{
-    BOOL        bHasChanged;                     // Has image changed?
-    TCHAR       szOriginalICOFileName[MAX_PATH]; // Original name
-    TCHAR       szOriginalDLLFileName[MAX_PATH]; // Original name
-    UINT        nNumImages;                      // How many images?
-    ICONIMAGE   IconImages[1];                   // Image entries
-} ICONRESOURCE, *LPICONRESOURCE;
+#define WINDOW_CLASS_NAME "systray"
+#define TRAY_ID 1
 
-#define WIDTHBYTES(bits)      ((((bits) + 31)>>5)<<2)
+#define MSG_TRAY_CALLBACK 1
+#define MSG_FORWARD 2
+#define MSG_POPUP_MENU 3
+#define MSG_QUIT 4
 
-DWORD BytesPerLine( LPBITMAPINFOHEADER lpBMIH )
-{
-    return WIDTHBYTES(lpBMIH->biWidth * lpBMIH->biPlanes * lpBMIH->biBitCount);
-}
 
-WORD DIBNumColors( LPSTR lpbi )
-{
-    WORD wBitCount;
-    DWORD dwClrUsed;
+void WinErrorText() {
 
-    dwClrUsed = ((LPBITMAPINFOHEADER) lpbi)->biClrUsed;
+  LPVOID lpMsgBuf;
+  DWORD result = ::FormatMessage(
+    FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS | 
+    FORMAT_MESSAGE_MAX_WIDTH_MASK,
+    NULL,
+	 GetLastError(),
+    MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), // Default language
+    (LPTSTR) &lpMsgBuf,
+    0,
+    NULL );
 
-    if (dwClrUsed)
-        return (WORD) dwClrUsed;
-
-    wBitCount = ((LPBITMAPINFOHEADER) lpbi)->biBitCount;
-
-    switch (wBitCount)
-    {
-        case 1: return 2;
-        case 4: return 16;
-        case 8:	return 256;
-        default:return 0;
-    }
-    return 0;
-}
-
-WORD PaletteSize( LPSTR lpbi )
-{
-    return ( DIBNumColors( lpbi ) * sizeof( RGBQUAD ) );
-}
-
-LPSTR FindDIBBits( LPSTR lpbi )
-{
-   return ( lpbi + *(LPDWORD)lpbi + PaletteSize( lpbi ) );
+  printf( "%s", lpMsgBuf );
+  LocalFree( lpMsgBuf ); // Free the buffer.
 }
 
 
-BOOL AdjustIconImagePointers( LPICONIMAGE lpImage )
-{
-    // Sanity check
-    if( lpImage==NULL )
-        return FALSE;
-    // BITMAPINFO is at beginning of bits
-    lpImage->lpbi = (LPBITMAPINFO)lpImage->lpBits;
-    // Width - simple enough
-    lpImage->Width = lpImage->lpbi->bmiHeader.biWidth;
-    // Icons are stored in funky format where height is doubled - account for it
-    lpImage->Height = (lpImage->lpbi->bmiHeader.biHeight)/2;
-    // How many colors?
-    lpImage->Colors = lpImage->lpbi->bmiHeader.biPlanes * lpImage->lpbi->bmiHeader.biBitCount;
-    // XOR bits follow the header and color table
-    lpImage->lpXOR = (LPBYTE)FindDIBBits((LPSTR)(lpImage->lpbi));
-    // AND bits follow the XOR bits
-    lpImage->lpAND = lpImage->lpXOR + (lpImage->Height*BytesPerLine((LPBITMAPINFOHEADER)(lpImage->lpbi)));
-    return TRUE;
-}
+struct ThreadPrivateData {
+
+	HWND hWnd;
+	HANDLE syncEvent;
+	DWORD parentThreadId;
+	ATOM registredWindowClass;
+	HINSTANCE hInstance;
+};
 
 
-UINT ReadICOHeader( HANDLE hFile )
-{
-    WORD    Input;
-    DWORD	dwBytesRead;
-
-    // Read the 'reserved' WORD
-    if( ! ReadFile( hFile, &Input, sizeof( WORD ), &dwBytesRead, NULL ) )
-        return (UINT)-1;
-    // Did we get a WORD?
-    if( dwBytesRead != sizeof( WORD ) )
-        return (UINT)-1;
-    // Was it 'reserved' ?   (ie 0)
-    if( Input != 0 )
-        return (UINT)-1;
-    // Read the type WORD
-    if( ! ReadFile( hFile, &Input, sizeof( WORD ), &dwBytesRead, NULL ) )
-        return (UINT)-1;
-    // Did we get a WORD?
-    if( dwBytesRead != sizeof( WORD ) )
-        return (UINT)-1;
-    // Was it type 1?
-    if( Input != 1 )
-        return (UINT)-1;
-    // Get the count of images
-    if( ! ReadFile( hFile, &Input, sizeof( WORD ), &dwBytesRead, NULL ) )
-        return (UINT)-1;
-    // Did we get a WORD?
-    if( dwBytesRead != sizeof( WORD ) )
-        return (UINT)-1;
-    // Return the count
-    return Input;
-}
-
-LPICONRESOURCE ReadIconFromICOFile( LPCTSTR szFileName )
-{
-    LPICONRESOURCE    	lpIR = NULL, lpNew = NULL;
-    HANDLE            	hFile = NULL;
-    LPRESOURCEPOSINFO	lpRPI = NULL;
-    UINT                i;
-    DWORD            	dwBytesRead;
-    LPICONDIRENTRY    	lpIDE = NULL;
-
-
-    // Open the file
-    if( (hFile = CreateFile( szFileName, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL )) == INVALID_HANDLE_VALUE )
-    {
-        //MessageBox( hWndMain, "Error Opening File for Reading", szFileName, MB_OK );
-        return NULL;
-    }
-    // Allocate memory for the resource structure
-    if( (lpIR = (LPICONRESOURCE)malloc( sizeof(ICONRESOURCE) )) == NULL )
-    {
-        //MessageBox( hWndMain, "Error Allocating Memory", szFileName, MB_OK );
-        CloseHandle( hFile );
-        return NULL;
-    }
-    // Read in the header
-    if( (lpIR->nNumImages = ReadICOHeader( hFile )) == (UINT)-1 )
-    {
-        //MessageBox( hWndMain, "Error Reading File Header", szFileName, MB_OK );
-        CloseHandle( hFile );
-        free( lpIR );
-        return NULL;
-    }
-    // Adjust the size of the struct to account for the images
-    if( (lpNew = (LPICONRESOURCE)realloc( lpIR, sizeof(ICONRESOURCE) + ((lpIR->nNumImages-1) * sizeof(ICONIMAGE)) )) == NULL )
-    {
-        //MessageBox( hWndMain, "Error Allocating Memory", szFileName, MB_OK );
-        CloseHandle( hFile );
-        free( lpIR );
-        return NULL;
-    }
-    lpIR = lpNew;
-    // Store the original name
-    lstrcpy( lpIR->szOriginalICOFileName, szFileName );
-    lstrcpy( lpIR->szOriginalDLLFileName, L"" );
-    // Allocate enough memory for the icon directory entries
-    if( (lpIDE = (LPICONDIRENTRY)malloc( lpIR->nNumImages * sizeof( ICONDIRENTRY ) ) ) == NULL )
-    {
-        //MessageBox( hWndMain, "Error Allocating Memory", szFileName, MB_OK );
-        CloseHandle( hFile );
-        free( lpIR );
-        return NULL;
-    }
-    // Read in the icon directory entries
-    if( ! ReadFile( hFile, lpIDE, lpIR->nNumImages * sizeof( ICONDIRENTRY ), &dwBytesRead, NULL ) )
-    {
-        //MessageBox( hWndMain, "Error Reading File", szFileName, MB_OK );
-        CloseHandle( hFile );
-        free( lpIR );
-        return NULL;
-    }
-    if( dwBytesRead != lpIR->nNumImages * sizeof( ICONDIRENTRY ) )
-    {
-        //MessageBox( hWndMain, "Error Reading File", szFileName, MB_OK );
-        CloseHandle( hFile );
-        free( lpIR );
-        return NULL;
-    }
-    // Loop through and read in each image
-    for( i = 0; i < lpIR->nNumImages; i++ )
-    {
-        // Allocate memory for the resource
-        if( (lpIR->IconImages[i].lpBits = (LPBYTE)malloc(lpIDE[i].dwBytesInRes)) == NULL )
-        {
-            //MessageBox( hWndMain, "Error Allocating Memory", szFileName, MB_OK );
-            CloseHandle( hFile );
-            free( lpIR );
-            free( lpIDE );
-            return NULL;
-        }
-        lpIR->IconImages[i].dwNumBytes = lpIDE[i].dwBytesInRes;
-        // Seek to beginning of this image
-        if( SetFilePointer( hFile, lpIDE[i].dwImageOffset, NULL, FILE_BEGIN ) == 0xFFFFFFFF )
-        {
-            //MessageBox( hWndMain, "Error Seeking in File", szFileName, MB_OK );
-            CloseHandle( hFile );
-            free( lpIR );
-            free( lpIDE );
-            return NULL;
-        }
-        // Read it in
-        if( ! ReadFile( hFile, lpIR->IconImages[i].lpBits, lpIDE[i].dwBytesInRes, &dwBytesRead, NULL ) )
-        {
-            //MessageBox( hWndMain, "Error Reading File", szFileName, MB_OK );
-            CloseHandle( hFile );
-            free( lpIR );
-            free( lpIDE );
-            return NULL;
-        }
-        if( dwBytesRead != lpIDE[i].dwBytesInRes )
-        {
-            //MessageBox( hWndMain, "Error Reading File", szFileName, MB_OK );
-            CloseHandle( hFile );
-            free( lpIDE );
-            free( lpIR );
-            return NULL;
-        }
-        // Set the internal pointers appropriately
-        if( ! AdjustIconImagePointers( &(lpIR->IconImages[i]) ) )
-        {
-            //MessageBox( hWndMain, "Error Converting to Internal Format", szFileName, MB_OK );
-            CloseHandle( hFile );
-            free( lpIDE );
-            free( lpIR );
-            return NULL;
-        }
-    }
-    // Clean up
-    free( lpIDE );
-    free( lpRPI );
-    CloseHandle( hFile );
-    return lpIR;
-}
-*/
-
-
-/*
 static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
-
+	
+	if ( message == WM_USER + MSG_TRAY_CALLBACK ) { //  && wParam == (12) + TRAY_ID 
+		
+		PostMessage(hWnd, WM_USER + MSG_FORWARD, wParam, lParam );
+		return 0;
+	}
 	return DefWindowProc(hWnd, message, wParam, lParam); // We do not want to handle this message so pass back to Windows to handle it in a default way
 }
-*/
+
+
+DWORD WINAPI WinThread( LPVOID lpParam ) {
+
+	ThreadPrivateData *tpd = (ThreadPrivateData*)lpParam;
+
+	HMENU hMenu = CreatePopupMenu();
+	HWND hWnd = CreateWindow( (LPSTR)tpd->registredWindowClass, NULL, WS_OVERLAPPED, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, (HWND)NULL, (HMENU)hMenu, tpd->hInstance, (LPVOID)NULL );
+	DWORD parentThreadId = tpd->parentThreadId;
+	tpd->hWnd = hWnd;
+	SetEvent(tpd->syncEvent); // beware: tpd is invalid after this line !!!!!!!!!
+
+	MSG msg;
+	while ( GetMessage( &msg, NULL, 0, 0 ) != 0 ) {
+
+		switch ( msg.message ) {
+			case WM_USER + MSG_QUIT:
+				PostQuitMessage(msg.wParam);
+				break;
+			case WM_USER + MSG_FORWARD:
+				PostThreadMessage( parentThreadId, msg.message, msg.wParam, msg.lParam );
+				break;
+			case WM_USER + MSG_POPUP_MENU:
+				{
+				POINT pos;
+				GetCursorPos(&pos);
+				TrackPopupMenu(hMenu, TPM_LEFTALIGN, pos.x, pos.y, 0, hWnd, NULL);
+//				PostMessage(hWnd, WM_NULL, 0, 0);
+				}
+				break;
+			case WM_COMMAND:
+				PostThreadMessage( parentThreadId, msg.message, msg.wParam, msg.lParam );
+				break;
+			default:
+				TranslateMessage(&msg);
+				DispatchMessage(&msg);
+		}
+	}
+
+	DestroyMenu(hMenu);
+	DestroyWindow(hWnd);
+	return 0;
+}
+
+
 
 BEGIN_CLASS( Systray )
 
@@ -286,11 +121,19 @@ DEFINE_FINALIZE() {
 	NOTIFYICONDATA *nid = (NOTIFYICONDATA*)JS_GetPrivate(cx, obj);
 	if ( nid != NULL ) {
 
-		BOOL status = Shell_NotifyIcon(NIM_DELETE, nid);
-//		RT_ASSERT( status == TRUE, "Unable to setup systray icon." );
+		//PostMessage( nid->hWnd, WM_USER + MSG_QUIT, 0/*exit value*/, 0 );
+		PostMessage( nid->hWnd, WM_USER + MSG_QUIT, 0/*quit*/, 0 );
 
+		//WaitForSingleObject( thread )
+		// (TBD) exit the message loop
+
+		if ( nid->hIcon != NULL )
+			DestroyIcon( nid->hIcon ); // doc: Before closing, your application must use DestroyIcon to destroy any icon it created by using CreateIconIndirect. It is not necessary to destroy icons created by other functions.
+
+		BOOL status = Shell_NotifyIcon(NIM_DELETE, nid); // (TBD) error check
 	}
 }
+
 
 DEFINE_CONSTRUCTOR() {
 
@@ -298,38 +141,120 @@ DEFINE_CONSTRUCTOR() {
 
 	HINSTANCE hInst = (HINSTANCE)GetModuleHandle(NULL);
 	RT_ASSERT( hInst != NULL, "Unable to GetModuleHandle." );
-	WNDCLASS wc = { 0, (WNDPROC)DefWindowProc, 0, 0, hInst, NULL, NULL, NULL, NULL, L"systray" };
+	WNDCLASS wc = { 0, (WNDPROC)WndProc, 0, 0, hInst, NULL, NULL, NULL, NULL, WINDOW_CLASS_NAME };
 	ATOM rc = RegisterClass(&wc);
 	RT_ASSERT( rc != 0, "Unable to RegisterClass." );
-	HWND hWnd = CreateWindow( (LPCWSTR)rc, NULL, WS_POPUP, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, (HWND)NULL, (HMENU)NULL, hInst, (LPVOID)NULL );
-	RT_ASSERT( hWnd != NULL, "Unable to CreateWindow." );
-//	JS_SetPrivate(cx, obj, hWnd);
 
+//    OSVERSIONINFO os = { sizeof(os) };
+//    GetVersionx(&os);
+//    isWin2K = ( VER_PLATFORM_WIN32_NT == os.dwPlatformId && os.dwMajorVersion >= 5 );
+
+	ThreadPrivateData tpd;
+	tpd.hWnd = NULL;
+	tpd.hInstance = hInst;
+	tpd.syncEvent = CreateEvent( NULL, FALSE, FALSE, NULL );
+	tpd.parentThreadId = GetCurrentThreadId();
+	tpd.registredWindowClass = rc;
+	
+	MSG msg;
+	PeekMessage(&msg, NULL, WM_USER, WM_USER, PM_NOREMOVE); // force the system to create the message queue.
+	DWORD dwThreadId;
+	HANDLE thread = CreateThread( NULL, 0, WinThread, &tpd, 0, &dwThreadId );
+	WaitForSingleObject( tpd.syncEvent, INFINITE );
+	
 	NOTIFYICONDATA *nid = (NOTIFYICONDATA*)malloc( sizeof(NOTIFYICONDATA) );
 	memset(nid, 0, sizeof(NOTIFYICONDATA));
 	nid->cbSize = sizeof(NOTIFYICONDATA);
-	nid->hWnd = hWnd;
-	nid->uID = (12) + 0; // doc: Values from 0 to 12 are reserved and should not be used.
-	nid->uFlags = NIF_MESSAGE | NIF_TIP; // | NIF_ICON
-	nid->uCallbackMessage = (WM_USER) + 0; // doc: All Message Numbers below 0x0400 are RESERVED.
-	nid->hIcon = LoadIcon(NULL,MAKEINTRESOURCE(IDI_APPLICATION));
-	wcscpy( nid->szTip, L"text" );
-
-//SHGetFileInfo
-
-//	ReadIconFromICOFile(
-//	LookUpIconIdFromDirectory;
+	nid->hWnd = tpd.hWnd;
+	nid->uID = (12) + TRAY_ID; // doc: Values from 0 to 12 are reserved and should not be used.
+	nid->uFlags = NIF_MESSAGE;
+	nid->uCallbackMessage = WM_USER + MSG_TRAY_CALLBACK; // doc: All Message Numbers below 0x0400 are RESERVED.
 
 	BOOL status = Shell_NotifyIcon(NIM_ADD, nid);
 	RT_ASSERT( status == TRUE, "Unable to setup systray icon." );
 
 	JS_SetPrivate(cx, obj, (void*)nid);
 
-//	Shell_NotifyIcon(NIM_MODIFY, &nid);
-//	Shell_NotifyIcon(NIM_DELETE, &nid);
-
 // http://msdn.microsoft.com/library/default.asp?url=/library/en-us/shellcc/platform/shell/reference/structures/notifyicondata.asp
 //	_tcscpy(nid.szTip, "tooltip");
+
+	return JS_TRUE;
+}
+
+DEFINE_FUNCTION( ProcessEvents ) {
+
+	NOTIFYICONDATA *nid = (NOTIFYICONDATA*)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE(nid);
+
+	MSG msg;
+	while ( PeekMessage( &msg, (HWND)-1, 0, 0, PM_REMOVE ) != 0 ) { // doc: If hWnd is -1, PeekMessage retrieves only messages on the current thread's message queue whose hwnd value is NULL
+
+		UINT message = msg.message;
+		LPARAM lParam = msg.lParam;
+		WPARAM wParam = msg.wParam;
+		
+		jsval functionVal, rval;
+
+		if ( message == WM_COMMAND ) {
+
+			JS_GetProperty(cx, obj, "oncommand", &functionVal);
+			if ( functionVal != JSVAL_VOID ) {
+
+				jsval key;
+				RT_ASSERT_RETURN( JS_IdToValue(cx, (jsid)wParam, &key) );
+				RT_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." );
+				jsval argv[] = { key };
+				JS_CallFunctionValue(cx, obj, functionVal, sizeof(argv)/sizeof(*argv), argv, &rval);
+			}
+			return JS_TRUE;
+		}
+
+		if ( message == WM_USER + MSG_FORWARD ) {
+
+			switch ( lParam ) {
+
+				case WM_MOUSEMOVE:
+					JS_GetProperty(cx, obj, "onmousemove", &functionVal);
+					if ( functionVal != JSVAL_VOID ) {
+
+						RT_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." );
+						//	POINT pt;
+						//	GetCursorPos( &pt );
+						//	ScreenToClient(hWnd, &pt);
+						JS_CallFunctionValue(cx, obj, functionVal, 0, NULL, &rval);
+					}
+					break;
+				case WM_LBUTTONDOWN:
+				case WM_MBUTTONDOWN:
+				case WM_RBUTTONDOWN:
+					JS_GetProperty(cx, obj, "onmousedown", &functionVal);
+					if ( functionVal != JSVAL_VOID ) {
+
+						RT_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." );
+						jsval argv[] = { 
+							INT_TO_JSVAL( lParam==WM_LBUTTONDOWN ? 1 : lParam==WM_RBUTTONDOWN ? 2 : lParam==WM_MBUTTONDOWN ? 3 : 0 ), 
+							JSVAL_TRUE 
+						};
+						JS_CallFunctionValue(cx, obj, functionVal, sizeof(argv)/sizeof(*argv), argv, &rval);
+					}
+					break;
+				case WM_LBUTTONUP:
+				case WM_MBUTTONUP:
+				case WM_RBUTTONUP:
+					JS_GetProperty(cx, obj, "onmouseup", &functionVal);
+					if ( functionVal != JSVAL_VOID ) {
+
+						RT_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." );
+						jsval argv[] = { 
+							INT_TO_JSVAL( lParam==WM_LBUTTONUP ? 1 : lParam==WM_RBUTTONUP ? 2 : lParam==WM_MBUTTONUP ? 3 : 0 ), 
+							JSVAL_FALSE 
+						};
+						JS_CallFunctionValue(cx, obj, functionVal, sizeof(argv)/sizeof(*argv), argv, &rval);
+					}
+					break;
+			}
+		}
+	}
 
 	return JS_TRUE;
 }
@@ -338,118 +263,138 @@ DEFINE_PROPERTY( icon ) {
 
 	JSObject *imgObj = JSVAL_TO_OBJECT(*vp);
 
-	RT_ASSERT_CLASS_NAME(imgObj, "Image");
+	RT_ASSERT_CLASS_NAME(imgObj, "Image"); // (TBD) need something better/safer ?
 	HINSTANCE hInst = (HINSTANCE)GetModuleHandle(NULL);
 
 	jsval tmp;
 	JS_GetProperty(cx, imgObj, "width", &tmp);
 	RT_ASSERT(JSVAL_IS_INT(tmp), RT_ERROR_UNEXPECTED_TYPE);
 	int width = JSVAL_TO_INT(tmp);
-
 	JS_GetProperty(cx, imgObj, "height", &tmp);
 	RT_ASSERT(JSVAL_IS_INT(tmp), RT_ERROR_UNEXPECTED_TYPE);
 	int height = JSVAL_TO_INT(tmp);
-
 	JS_GetProperty(cx, imgObj, "channels", &tmp);
 	RT_ASSERT(JSVAL_IS_INT(tmp), RT_ERROR_UNEXPECTED_TYPE);
 	int channels = JSVAL_TO_INT(tmp);
+	unsigned char *imageData = (unsigned char*)JS_GetPrivate(cx, imgObj);
 
-	char *imageData = (char*)JS_GetPrivate(cx, imgObj);
+	// http://groups.google.com/group/microsoft.public.win32.programmer.gdi/browse_frm/thread/adaf38d715cef81/3825af9edde28cdc?lnk=st&q=RGB+CreateIcon&rnum=9&hl=en#3825af9edde28cdc
+	HDC screenDC = GetDC(NULL); // doc: If this value is NULL, GetDC retrieves the DC for the entire screen.
+	HDC colorDC = CreateCompatibleDC(screenDC);
+	HDC maskDC = CreateCompatibleDC(screenDC);
+	HBITMAP colorBMP = CreateCompatibleBitmap(screenDC, width, height);
+	HBITMAP maskBMP = CreateCompatibleBitmap(screenDC, width, height);
+	HBITMAP oldColorBMP = (HBITMAP)SelectObject(colorDC, colorBMP);
+	HBITMAP oldMaskBMP = (HBITMAP)SelectObject(maskDC, maskBMP);
+
+	for ( int x = 0; x < width; x++ )
+		for ( int y = 0; y < width; y++ ) {
+
+			unsigned char *offset = imageData + channels*(x + y * width);
+			SetPixel(colorDC, x,y, RGB(offset[0],offset[1],offset[2]) );
+			if ( channels == 4 ) // image has alpha channel ?
+				SetPixel(maskDC, x,y, RGB( 255-offset[3], 255-offset[3], 255-offset[3] ) );
+			else
+				SetPixel(maskDC, x,y, RGB(0,0,0) );
+		}
+
+	SelectObject(colorDC, oldColorBMP); 
+	SelectObject(maskDC, oldMaskBMP);
+	DeleteDC(colorDC);
+	DeleteDC(maskDC);
+
+	ICONINFO ii = { TRUE, 0, 0, maskBMP, colorBMP };
+	HICON icon = CreateIconIndirect( &ii );
+	DeleteObject(colorBMP);
+	DeleteObject(maskBMP); 
+	RT_ASSERT( icon != NULL, "Unable to create the icon." );
 
 	PNOTIFYICONDATA nid = (PNOTIFYICONDATA)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE(nid);
 	nid->uFlags |= NIF_ICON;
-
-//	void* mask = malloc( width * height * channels );
-//	RT_ASSERT( mask != NULL, "Unable to create the icon mask." );
-//	memset(mask, 127, width * height * channels );
-
-	// http://www.we11er.co.uk/
-	// To determine the width and height supported by the display driver, use the GetSystemMetrics function, specifying the SM_CXICON or SM_CYICON value.
-
-
-
-/*
-	char *bitmap = (char*)malloc( width * height * 4 );
-	RT_ASSERT( bitmap != NULL, "Unable to create the icon bitmap." );
-	for ( int i = 0; i < width * height; i++ ) {
-
-		//b, g, r, ?
-		bitmap[i*4 + 0] = imageData[i*3 + 2];
-		bitmap[i*4 + 1] = imageData[i*3 + 1];
-		bitmap[i*4 + 2] = imageData[i*3 + 0];
-		bitmap[i*4 + 3] = 0;
-	}
-	HICON icon = CreateIcon( hInst, width, height, 4, 8, (const BYTE *)NULL, (const BYTE *)bitmap );
-*/
-CreateIcon
-
-/*
-	BITMAP bm;
-	bm.bmType = 0; // This member must be zero.
-	bm.bmWidth = width;
-	bm.bmHeight = height;
-	bm.bmWidthBytes = width * channels;
-	bm.bmPlanes = channels;
-	bm.bmBitsPixel = 3*8; // 24
-	bm.bmBits = imageData;
-	CreateBitmapIndirect( &bm );
-*/
-
-	BITMAPV4HEADER bh;
-	bh.bV4Size = sizeof(BITMAPV4HEADER);
-	bh.bV4Width = width;
-	bh.bV4Height = height;
-	bh.bV4Planes = 1; // doc: This value must be set to 1.
-	bh.bV4BitCount = channels * 8;
-	bh.bV4V4Compression = BI_BITFIELDS; // BI_RGB; // An uncompressed format.
-	bh.bV4SizeImage = 0; // This may be set to zero for BI_RGB bitmaps.
-	bh.bV4XPelsPerMeter = 0;
-	bh.bV4YPelsPerMeter = 0;
-	bh.bV4ClrUsed = 0; // doc: If this value is zero, the bitmap uses the maximum number of colors corresponding to the value of the bV5BitCount member for the compression mode specified by bV5Compression.
-	bh.bV4ClrImportant = 0; // If this value is zero, all colors are required.
-	bh.bV4RedMask = 0xff000000;
-	bh.bV4GreenMask = 0x00ff0000;
-	bh.bV4BlueMask = 0x0000ff00;
-	bh.bV4AlphaMask = 0x000000ff;
-	bh.bV4CSType = LCS_WINDOWS_COLOR_SPACE;
-//	bh.bV5Endpoints = 0; // doc: This member is ignored unless the bV5CSType member specifies LCS_CALIBRATED_RGB.
-	bh.bV4GammaRed = 0;
-	bh.bV4GammaGreen = 0;
-	bh.bV4GammaBlue = 0;
-
-	HBITMAP bitmap = CreateDIBitmap( GetDC(NULL), (PBITMAPINFOHEADER)&bh, CBM_INIT, imageData, &bi, DIB_RGB_COLORS );
-
-/*
-	BITMAPINFO bi;
-	bi.bmiHeader.
-	HBITMAP bitmap = CreateCompatibleBitmap( GetDC(NULL), width, height ); // doc: When you no longer need the bitmap, call the DeleteObject function to delete it.
-	SetDIBits( GetDC(NULL), bitmap, 0, height, imageData, &bi, DIB_RGB_COLORS );
-*/
-
-
-	ICONINFO ii;
-	ii.fIcon = TRUE;
-	ii.xHotspot = 0;
-	ii.yHotspot = 0;
-	ii.hbmMask = NULL;
-	ii.hbmColor = bitmap;// HBITMAP
-	HICON icon = CreateIconIndirect( &ii );
-
-// Device-Independent Bitmaps
-//   http://msdn.microsoft.com/library/default.asp?url=/library/en-us/gdi/bitmaps_9c6r.asp
-
-//	CreateBitmap( width, height, channels, 8, (const BYTE *)imageData );
-
-
-//	free(mask);
-
-	RT_ASSERT( icon != NULL, "Unable to create the icon." );
+	if ( nid->hIcon != NULL ) // free the previous icon
+		DestroyIcon( nid->hIcon );
 	nid->hIcon = icon;
 	BOOL status = Shell_NotifyIcon(NIM_MODIFY, nid);
 	RT_ASSERT( status == TRUE, "Unable to setup systray icon." );
+	return JS_TRUE;
+}
 
-	//DestroyIcon // doc: Before closing, your application must use DestroyIcon to destroy any icon it created by using CreateIconIndirect. It is not necessary to destroy icons created by other functions.
 
+DEFINE_PROPERTY( text ) {
+
+	PNOTIFYICONDATA nid = (PNOTIFYICONDATA)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE(nid);
+
+	char *tipText;
+	int tipLen;
+	RT_JSVAL_TO_STRING_AND_LENGTH( *vp, tipText, tipLen );
+	strncpy( nid->szTip, tipText, MIN(sizeof(nid->szTip)-1,tipLen) );
+	nid->uFlags |= NIF_TIP;
+	BOOL status = Shell_NotifyIcon(NIM_MODIFY, nid);
+	RT_ASSERT( status == TRUE, "Unable to setup systray icon." );
+	return JS_TRUE;
+}
+
+
+DEFINE_FUNCTION( PopupMenu ) {
+
+	PNOTIFYICONDATA nid = (PNOTIFYICONDATA)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE(nid);
+	HMENU hMenu = GetMenu(nid->hWnd);
+	RT_ASSERT_RESOURCE(hMenu);
+	while ( DeleteMenu(hMenu, 0, MF_BYPOSITION) != 0 ); // remove existing items
+	jsval menu;
+	JS_GetReservedSlot(cx, obj, SLOT_SYSTRAY_MENU, &menu);
+	JSObject *menuObj = JSVAL_TO_OBJECT(menu);
+	JSIdArray *list = JS_Enumerate(cx, menuObj);
+	for ( int i = 0; i < list->length; i++ ) {
+
+		jsval key, val;
+		OBJ_GET_PROPERTY(cx, menuObj, list->vector[i], &val);
+
+		LPCSTR newItem = NULL;
+		UINT uFlags = MF_STRING;
+
+		if ( JSVAL_IS_STRING(val) ) {
+
+			 newItem = JS_GetStringBytes(JS_ValueToString(cx,val));
+		} else
+
+		if ( JSVAL_IS_OBJECT(val) && !JSVAL_IS_NULL(val) ) {
+			
+			JSObject *itemObject = JSVAL_TO_OBJECT(val);
+			jsval tmp;
+			JS_GetProperty(cx, itemObject, "text", &tmp);
+			if ( tmp != JSVAL_VOID )
+				RT_JSVAL_TO_STRING( tmp, newItem );
+			JS_GetProperty(cx, itemObject, "checked", &tmp);
+			if ( tmp == JSVAL_TRUE || tmp == JSVAL_ONE ) // allows to write: s.menu[id].checked ^= 1; // toggle
+				uFlags |= MF_CHECKED;
+			JS_GetProperty(cx, itemObject, "grayed", &tmp);
+			if ( tmp == JSVAL_TRUE || tmp == JSVAL_ONE )
+				uFlags |= MF_GRAYED;
+			JS_GetProperty(cx, itemObject, "separator", &tmp);
+			if ( tmp == JSVAL_TRUE || tmp == JSVAL_ONE )
+				uFlags |= MF_SEPARATOR;
+		}
+		AppendMenu(hMenu, uFlags, list->vector[i], newItem);
+	}
+	JS_DestroyIdArray(cx, list);
+	PostMessage(nid->hWnd, WM_USER + MSG_POPUP_MENU, 0, 0);
+	return JS_TRUE;
+}
+
+
+DEFINE_PROPERTY( menuSetter ) {
+
+	JS_SetReservedSlot(cx, obj, SLOT_SYSTRAY_MENU, *vp);
+	return JS_TRUE;
+}
+
+DEFINE_PROPERTY( menuGetter ) {
+
+	JS_GetReservedSlot(cx, obj, SLOT_SYSTRAY_MENU, vp);
 	return JS_TRUE;
 }
 
@@ -458,38 +403,27 @@ CONFIGURE_CLASS
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE
 
-//DEFINE_FUNCTION( Call ) {
-//	return JS_TRUE;
-//}
-
-
-
-//DEFINE_FUNCTION( Func ) {
-//	return JS_TRUE;
-//}
-
 	BEGIN_FUNCTION_SPEC
-//		FUNCTION(Func)
+		FUNCTION(ProcessEvents)
+		FUNCTION(PopupMenu)
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
 		PROPERTY_WRITE(icon) // (TBD) _STORE ? is needed to keep the reference to the image ( aboid GC ) ???
+		PROPERTY_WRITE(text)
+		PROPERTY(menu)
 	END_PROPERTY_SPEC
 
 	HAS_PRIVATE
-//	HAS_RESERVED_SLOTS(1)
+	HAS_RESERVED_SLOTS(1)
 
 END_CLASS
 
+
 /*
-
-
 http://msdn.microsoft.com/library/default.asp?url=/library/en-us/shellcc/platform/shell/reference/functions/shell_notifyicon.asp
 
-
 Icons in Win32:
-
-http://msdn2.microsoft.com/en-us/library/ms997538.aspx
-
+	http://msdn2.microsoft.com/en-us/library/ms997538.aspx
 
 */
