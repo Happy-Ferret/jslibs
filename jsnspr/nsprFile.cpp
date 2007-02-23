@@ -23,7 +23,9 @@
 
 static bool NativeInterfaceReadFile( void *pv, unsigned char *buf, unsigned int *amount ) {
 
-	PRInt32 status = PR_Read( (PRFileDesc *)pv, buf, *amount );
+	PRInt32 tmp = *amount;
+	PRInt32 status = PR_Read( (PRFileDesc *)pv, buf, tmp );
+	*amount = tmp;
 	if ( status == -1 )
 		return false;
 	*amount = status;

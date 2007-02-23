@@ -19,6 +19,33 @@
 
 #include <string.h>
 
+#include "../common/jsNativeInterface.h"
+
+static bool NativeInterfaceReadFile( void *pv, unsigned char *buf, unsigned int *amount ) {
+
+	PRFileDesc *fd = (PRFileDesc *)pv;
+	PRInt32 status;
+	// because this socket class is non-blocking and NativeInterfaceReadFile cannot manage non-blocking socket, 
+	// we simulate blocking socket using poll() function. the maximum timeout is 10 seconds.
+	// (TBD) check again !
+	PRPollDesc desc;
+	desc.fd = fd;
+	desc.in_flags = PR_POLL_READ;
+	desc.out_flags = 0;
+	status = PR_Poll( &desc, 1, PR_MillisecondsToInterval(10000) ); // wait for data
+	if ( status == -1 )
+		return false;
+
+	PRInt32 tmp = *amount;
+	status = PR_Recv( fd, buf, tmp, 0, PR_INTERVAL_NO_WAIT );
+	*amount = tmp;
+	if ( status == -1 )
+		return false;
+	*amount = status;
+	return true;
+}
+
+
 
 BEGIN_CLASS( Socket )
 
@@ -69,6 +96,8 @@ DEFINE_FUNCTION( Close ) {
 		return JS_FALSE;
 	}
 
+	RemoveNativeInterface(cx, obj, NI_READ_RESOURCE );
+
 /*
 man page:
 	Sets or gets the SO_LINGER option. The argument is a linger structure.
@@ -100,6 +129,7 @@ if (status != PR_SUCCESS) // need to check PR_WOULD_BLOCK_ERROR ???
 	}
 	JS_SetPrivate( cx, obj, NULL );
 	JS_ClearScope( cx, obj ); // help to clear readable, writable, exception
+
 	return JS_TRUE;
 }
 
@@ -122,11 +152,13 @@ DEFINE_FUNCTION( Shutdown ) {
 		else if (argv[0] == JSVAL_TRUE )
 			how = PR_SHUTDOWN_SEND;
 
+	if ( how == PR_SHUTDOWN_BOTH || how == PR_SHUTDOWN_RCV )
+		RemoveNativeInterface(cx, obj, NI_READ_RESOURCE);
+
 	PRStatus status;
 	status = PR_Shutdown( fd, how ); // is this compatible with linger ??
 	if (status != PR_SUCCESS) // need to check PR_WOULD_BLOCK_ERROR ???
 		return ThrowNSPRError( cx, PR_GetError() );
-
 	return JS_TRUE;
 }
 
@@ -220,6 +252,8 @@ DEFINE_FUNCTION( Accept ) {
 	if ( newFd == NULL )
 		return ThrowNSPRError( cx, PR_GetError() );
 
+	SetNativeInterface(cx, obj, NI_READ_RESOURCE, (FunctionPointer)NativeInterfaceReadFile, newFd);
+
 	JSObject *object = JS_NewObject( cx, &classSocket, NULL, NULL );
 	JS_SetPrivate( cx, object, newFd );
 	*rval = OBJECT_TO_JSVAL( object );
@@ -288,6 +322,8 @@ DEFINE_FUNCTION( Connect ) {
 			return ThrowNSPRError( cx, errorCode );
 	}
 	// see 	PR_GetConnectStatus or PR_ConnectContinue INSTEAD ???
+
+	SetNativeInterface(cx, obj, NI_READ_RESOURCE, (FunctionPointer)NativeInterfaceReadFile, fd);
 
 	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
