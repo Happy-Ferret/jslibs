@@ -14,7 +14,6 @@
 
 HMODULE _moduleList[32] = {NULL}; // do not manage the module list dynamicaly, we allow a maximum of 32 modules
 
-
 static JSBool global_loadModule(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
 	RT_ASSERT_ARGC(1);
@@ -37,24 +36,13 @@ static JSBool global_loadModule(JSContext *cx, JSObject *obj, uintN argc, jsval 
 }
 
 
-JSBool global_getter_global(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
-	
-	*vp = OBJECT_TO_JSVAL(JS_GetGlobalObject(cx));
-	return JS_TRUE;
-}
-
-//////////////////////////////////////////////////////////////////////////////////////////////
-JSPropertySpec Global_PropertySpec[] = { // *name, tinyid, flags, getter, setter
-	{ "global"    , 0    , JSPROP_SHARED | JSPROP_READONLY | JSPROP_PERMANENT, global_getter_global, NULL },
-	{ 0 }
-};
-
 static JSBool stdoutFunction(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
 	JSString *str;
 	str = JS_ValueToString(cx, argv[0]);
 	RT_ASSERT( str != NULL, "Unable to convert argument to string.");
 	argv[0] = STRING_TO_JSVAL(str); // (TBD) needed ?
+	// (TBD) find somewhere to log data
 //	consoleStdOut( JS_GetStringBytes(str), JS_GetStringLength(str) );
 	return JS_TRUE;
 }
@@ -83,21 +71,21 @@ int WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int 
 	jsStatus = JS_InitStandardClasses(cx, globalObject);
 
 // global functions & properties
-	JS_DefineProperties( cx, globalObject, Global_PropertySpec );
-	JS_DefineFunction( cx, globalObject, "LoadModule", global_loadModule, 0, 0 );
+	JS_DefineProperty(cx, globalObject, "global", OBJECT_TO_JSVAL(JS_GetGlobalObject(cx)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
+	JS_DefineFunction(cx, globalObject, "LoadModule", global_loadModule, 0, 0);
 
 // Global configuration object
 	JSObject *configObject;
 	jsStatus = GetConfigurationObject(cx, &configObject);
 	jsval value = OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunction(cx, stdoutFunction, 1, 0, NULL, NULL))); // If you do not assign a name to the function, it is assigned the name "anonymous".
 	jsStatus = JS_SetProperty(cx, configObject, "stdout", &value);
-	value = JSVAL_TRUE;
+	value = JSVAL_TRUE; // enable unsafe mode
 	jsStatus = JS_SetProperty(cx, configObject, "unsafeMode", &value);
 
 // arguments
 	jsStatus = JS_DefineProperty(cx, globalObject, "arguments", STRING_TO_JSVAL(JS_NewStringCopyZ(cx, lpCmdLine)), NULL, NULL, 0);
 
-	JS_SetOptions(cx, JSOPTION_VAROBJFIX | JSOPTION_STRICT | JSOPTION_XML | JSOPTION_COMPILE_N_GO );
+	JS_SetOptions(cx, JSOPTION_VAROBJFIX | /*JSOPTION_STRICT |*/ JSOPTION_XML | JSOPTION_COMPILE_N_GO );
 
 	CHAR moduleFileName[MAX_PATH];
 	DWORD len = GetModuleFileName(hInstance, moduleFileName, sizeof(moduleFileName));
@@ -106,6 +94,7 @@ int WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int 
 	JSScript *script = JS_CompileFile( cx, globalObject, moduleFileName );
 	if ( script == NULL )
 		return -1; // script not found
+
 	jsval rval;
 	jsStatus = JS_ExecuteScript( cx, globalObject, script, &rval ); // MUST be executed only once ( JSOPTION_COMPILE_N_GO )
 	JS_DestroyScript( cx, script );
@@ -119,15 +108,11 @@ int WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int 
 				moduleRelease(cx);
 		}
 
-// cleanup
-  // For each context you've created
-  JS_DestroyContext(cx); // (TBD) is JS_DestroyContextNoGC faster ?
-  // For each runtime
+  JS_DestroyContext(cx);
   JS_DestroyRuntime(rt);
-  // And finally
   JS_ShutDown();
-// Beware: because JS engine allocate memory from the DLL, all memory must be disallocated before releasing the DLL
-	// free used modules
+
+  // Beware: because JS engine allocate memory from the DLL, all memory must be disallocated before releasing the DLL
 	typedef void (*ModuleFreeFunction)(void);
 	for ( int i = sizeof(_moduleList) / sizeof(*_moduleList) - 1; i >= 0; --i ) // beware: 'i' must be signed // start from the end
 		if ( _moduleList[i] != NULL ) {
