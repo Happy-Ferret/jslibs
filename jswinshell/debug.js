@@ -12,7 +12,7 @@ var exit = false;
   
 s.icon = new Png(new File('calendar.png').Open(File.RDONLY)).Load();
 s.text = "test";
-s.menu = { a:"123", 1:{text:"Start", checked:true}, 2:{text:"Stop"}, 3:{separator:true}, 4:"exit" }
+s.menu = { a:"123", g1:{ grayed:1, text:'menu' }, sep1:{separator:true}, state:{text:"Start", checked:true}, 2:{text:"Stop"}, 4:"exit" }
 
 s.onmouseup = function(button) { 
 	
@@ -23,7 +23,7 @@ s.onmouseup = function(button) {
 s.oncommand = function(id) {
 	
 	if ( id == 4 ) exit = true;
-	if ( id == 1 ) s.menu[id].checked ^= 1;
+	if ( id == 'state' ) s.menu[id].checked ^= 1;
 }
 
 while ( !endSignal && !exit ) {

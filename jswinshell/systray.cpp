@@ -58,7 +58,6 @@ struct ThreadPrivateData {
 	HINSTANCE hInstance;
 };
 
-
 static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 	
 	if ( message == WM_USER + MSG_TRAY_CALLBACK ) { //  && wParam == (12) + TRAY_ID 
@@ -91,11 +90,12 @@ DWORD WINAPI WinThread( LPVOID lpParam ) {
 				PostThreadMessage( parentThreadId, msg.message, msg.wParam, msg.lParam );
 				break;
 			case WM_USER + MSG_POPUP_MENU:
-				{
+				{	
 				POINT pos;
 				GetCursorPos(&pos);
-				TrackPopupMenu(hMenu, TPM_LEFTALIGN, pos.x, pos.y, 0, hWnd, NULL);
-//				PostMessage(hWnd, WM_NULL, 0, 0);
+				SetForegroundWindow(hWnd);
+				TrackPopupMenuEx(hMenu, GetSystemMetrics(SM_MENUDROPALIGNMENT) | TPM_LEFTBUTTON | TPM_RIGHTBUTTON, pos.x, pos.y, hWnd, NULL);
+				PostMessage(hWnd, WM_NULL, 0, 0);
 				}
 				break;
 			case WM_COMMAND:
@@ -113,7 +113,6 @@ DWORD WINAPI WinThread( LPVOID lpParam ) {
 }
 
 
-
 BEGIN_CLASS( Systray )
 
 DEFINE_FINALIZE() {
@@ -121,15 +120,13 @@ DEFINE_FINALIZE() {
 	NOTIFYICONDATA *nid = (NOTIFYICONDATA*)JS_GetPrivate(cx, obj);
 	if ( nid != NULL ) {
 
-		//PostMessage( nid->hWnd, WM_USER + MSG_QUIT, 0/*exit value*/, 0 );
 		PostMessage( nid->hWnd, WM_USER + MSG_QUIT, 0/*quit*/, 0 );
 
-		//WaitForSingleObject( thread )
+		//DWORD r = WaitForSingleObject( ???, INFINITE );
 		// (TBD) exit the message loop
 
 		if ( nid->hIcon != NULL )
 			DestroyIcon( nid->hIcon ); // doc: Before closing, your application must use DestroyIcon to destroy any icon it created by using CreateIconIndirect. It is not necessary to destroy icons created by other functions.
-
 		BOOL status = Shell_NotifyIcon(NIM_DELETE, nid); // (TBD) error check
 	}
 }
@@ -343,7 +340,11 @@ DEFINE_FUNCTION( PopupMenu ) {
 	RT_ASSERT_RESOURCE(nid);
 	HMENU hMenu = GetMenu(nid->hWnd);
 	RT_ASSERT_RESOURCE(hMenu);
+	//DestroyMenu(hMenu);
 	while ( DeleteMenu(hMenu, 0, MF_BYPOSITION) != 0 ); // remove existing items
+	//hMenu = CreatePopupMenu();
+	//SetMenu(nid->hWnd, hMenu);
+
 	jsval menu;
 	JS_GetReservedSlot(cx, obj, SLOT_SYSTRAY_MENU, &menu);
 	JSObject *menuObj = JSVAL_TO_OBJECT(menu);
