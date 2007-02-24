@@ -13,10 +13,12 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
+#include "icon.h"
 #include "systray.h"
 
 extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
+	INIT_CLASS( Icon );
 	INIT_CLASS( Systray );
 
 	return JS_TRUE;
