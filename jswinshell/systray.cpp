@@ -136,8 +136,8 @@ DEFINE_FINALIZE() {
 	if ( nid != NULL ) { // if not already closed
 
 		SendMessage( nid->hWnd, WM_CLOSE, 0, 0 ); // PostMessage
-		if ( nid->hIcon != NULL )
-			DestroyIcon( nid->hIcon ); // doc: Before closing, your application must use DestroyIcon to destroy any icon it created by using CreateIconIndirect. It is not necessary to destroy icons created by other functions.
+//		if ( nid->hIcon != NULL )
+//			DestroyIcon( nid->hIcon ); // doc: Before closing, your application must use DestroyIcon to destroy any icon it created by using CreateIconIndirect. It is not necessary to destroy icons created by other functions.
 		BOOL status = Shell_NotifyIcon(NIM_DELETE, nid); // (TBD) error check
 	}
 }
@@ -147,13 +147,12 @@ DEFINE_FUNCTION( Close ) {
 	NOTIFYICONDATA *nid = (NOTIFYICONDATA*)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(nid);
 	SendMessage( nid->hWnd, WM_CLOSE, 0, 0 );
-	if ( nid->hIcon != NULL )
-		DestroyIcon( nid->hIcon ); // doc: Before closing, your application must use DestroyIcon to destroy any icon it created by using CreateIconIndirect. It is not necessary to destroy icons created by other functions.
+//	if ( nid->hIcon != NULL )
+//		DestroyIcon( nid->hIcon ); // doc: Before closing, your application must use DestroyIcon to destroy any icon it created by using CreateIconIndirect. It is not necessary to destroy icons created by other functions.
 	BOOL status = Shell_NotifyIcon(NIM_DELETE, nid); // (TBD) error check
 	RT_ASSERT( status == TRUE, "Unable to delete notification icon.");
 	JS_SetPrivate(cx, obj, NULL);
 }
-
 
 
 DEFINE_FUNCTION( ProcessEvents ) {
@@ -235,8 +234,8 @@ DEFINE_FUNCTION( ProcessEvents ) {
 }
 
 
-DEFINE_PROPERTY( blink ) {
 /*
+DEFINE_PROPERTY( blink ) {
 	PNOTIFYICONDATA nid = (PNOTIFYICONDATA)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(nid);
 
@@ -246,13 +245,13 @@ DEFINE_PROPERTY( blink ) {
 	nid->uFlags |= NIF_TIP;
 	BOOL status = Shell_NotifyIcon(NIM_MODIFY, nid);
 	RT_ASSERT( status == TRUE, "Unable to setup systray icon." );
-*/
 	return JS_TRUE;
 }
+*/
 
 DEFINE_PROPERTY( icon ) {
 
-	HICON hIcon = NULL;
+	HICON hIcon;
 
 	if ( JSVAL_IS_OBJECT(*vp) && *vp != JSVAL_NULL ) {
 
@@ -262,17 +261,19 @@ DEFINE_PROPERTY( icon ) {
 		HICON *phIcon = (HICON*)JS_GetPrivate(cx, iconObj);
 		RT_ASSERT_RESOURCE( phIcon );
 		hIcon = *phIcon;
+	} else
+	if ( *vp == JSVAL_NULL || *vp == JSVAL_VOID ) {
+
+		hIcon = NULL;
+	} else {
+
+		REPORT_ERROR("Invalid icon.");
 	}
 
 	PNOTIFYICONDATA nid = (PNOTIFYICONDATA)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(nid);
-
-//	if ( nid->hIcon != NULL ) // free the previous icon
-//		DestroyIcon( nid->hIcon );
-
 	nid->hIcon = hIcon;
 	nid->uFlags |= NIF_ICON;
-
 	BOOL status = Shell_NotifyIcon(NIM_MODIFY, nid);
 	RT_ASSERT( status == TRUE, "Unable to setup systray icon." );
 	return JS_TRUE;
@@ -371,7 +372,7 @@ CONFIGURE_CLASS
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
-		PROPERTY_WRITE_STORE(icon) // (TBD) _STORE ? is needed to keep the reference to the image ( aboid GC ) ???
+		PROPERTY_WRITE_STORE(icon) // _STORE  is needed to keep the reference to the image ( aboid GC )
 		PROPERTY_WRITE(text)
 		PROPERTY(menu)
 //		PROPERTY(blink)
