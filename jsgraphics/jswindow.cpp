@@ -207,7 +207,7 @@ DEFINE_CONSTRUCTOR() {
 // http://nehe.gamedev.net/data/lessons/lesson.asp?lesson=01
 //	AdjustWindowRectEx(&WindowRect, dwStyle, FALSE, dwExStyle);
 
-	HWND hWnd = CreateWindow( WINDOW_CLASS_NAME, NULL,    WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN | WS_CLIPSIBLINGS,
+	HWND hWnd = CreateWindow( (LPSTR)rc, NULL,    WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN | WS_CLIPSIBLINGS,
 	                          CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,    (HWND)NULL, (HMENU)NULL, hInst, (LPVOID)NULL);
 	RT_ASSERT( hWnd != NULL, "Unable to CreateWindow." );
 	JS_SetPrivate(cx, obj, hWnd);
@@ -535,7 +535,7 @@ DEFINE_PROPERTY( activeSetter ) {
 CONFIGURE_CLASS
 
 	HAS_CONSTRUCTOR
-//	HAS_FINALIZE
+//	HAS_FINALIZE // (TBD) create it !
 
 	BEGIN_FUNCTION_SPEC
 		FUNCTION(ProcessEvents)

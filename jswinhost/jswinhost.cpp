@@ -38,18 +38,47 @@ static JSBool global_loadModule(JSContext *cx, JSObject *obj, uintN argc, jsval 
 	return JS_TRUE;
 }
 
+static JSBool noop(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+
+	return JS_TRUE;
+}
 
 int consoleStdOut( JSContext *cx, const char *data, int length ) {
 
-	return 0;
+	JSObject *obj;
+	RT_CHECK_CALL( GetConfigurationObject(cx, &obj) );
+	jsval functionVal;
+	JS_GetProperty(cx, obj, "stdout", &functionVal);
+	if ( functionVal != JSVAL_VOID ) {
+
+		RT_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." );
+		JSString *str = JS_NewStringCopyN(cx, data, length);
+		RT_ASSERT_ALLOC( str ); 
+		jsval rval, arg = STRING_TO_JSVAL(str);
+		RT_CHECK_CALL ( JS_CallFunctionValue(cx, obj, functionVal, 1, &arg, &rval) )
+	}
+	return length;
 }
 
 int consoleStdErr( JSContext *cx, const char *data, int length ) {
 
-	return 0;
+	JSObject *obj;
+	RT_CHECK_CALL( GetConfigurationObject(cx, &obj) );
+	jsval functionVal;
+	JS_GetProperty(cx, obj, "stderr", &functionVal);
+	if ( functionVal != JSVAL_VOID ) {
+
+		RT_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." );
+		JSString *str = JS_NewStringCopyN(cx, data, length);
+		RT_ASSERT_ALLOC( str ); 
+		jsval rval, arg = STRING_TO_JSVAL(str);
+		RT_CHECK_CALL( JS_CallFunctionValue(cx, obj, functionVal, 1, &arg, &rval) )
+	}
+	return length;
 }
 
 
+/*
 static JSBool stderrFunction(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
 	JSString *str;
@@ -69,7 +98,7 @@ static JSBool stdoutFunction(JSContext *cx, JSObject *obj, uintN argc, jsval *ar
 	consoleStdOut( cx, JS_GetStringBytes(str), JS_GetStringLength(str) );
 	return JS_TRUE;
 }
-
+*/
 
 bool reportWarnings = true;
 
@@ -186,8 +215,15 @@ int WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int 
 // Global configuration object
 	JSObject *configObject;
 	jsStatus = GetConfigurationObject(cx, &configObject);
-	jsval value = OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunction(cx, stdoutFunction, 1, 0, NULL, NULL))); // If you do not assign a name to the function, it is assigned the name "anonymous".
+
+	jsval value;
+	
+	value = OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunction(cx, noop, 1, 0, NULL, NULL))); // If you do not assign a name to the function, it is assigned the name "anonymous".
+	jsStatus = JS_SetProperty(cx, configObject, "stderr", &value);
+
+	value = OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunction(cx, noop, 1, 0, NULL, NULL))); // If you do not assign a name to the function, it is assigned the name "anonymous".
 	jsStatus = JS_SetProperty(cx, configObject, "stdout", &value);
+
 	value = JSVAL_TRUE; // enable unsafe mode
 	jsStatus = JS_SetProperty(cx, configObject, "unsafeMode", &value);
 
@@ -205,6 +241,8 @@ int WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int 
 
 	jsval rval;
 	jsStatus = JS_ExecuteScript( cx, globalObject, script, &rval ); // MUST be executed only once ( JSOPTION_COMPILE_N_GO )
+	if ( jsStatus == JS_FALSE )
+		return -2;
 	JS_DestroyScript( cx, script );
 
 	typedef void (*ModuleReleaseFunction)(JSContext *cx);

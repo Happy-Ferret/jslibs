@@ -208,7 +208,7 @@ DEFINE_FUNCTION( ProcessEvents ) {
 							INT_TO_JSVAL( lParam==WM_LBUTTONDOWN ? 1 : lParam==WM_RBUTTONDOWN ? 2 : lParam==WM_MBUTTONDOWN ? 3 : 0 ), 
 							JSVAL_TRUE 
 						};
-						if ( JS_CallFunctionValue(cx, obj, functionVal, 0, NULL, &rval) == JS_FALSE )
+						if ( JS_CallFunctionValue(cx, obj, functionVal, sizeof(argv)/sizeof(*argv), argv, &rval) == JS_FALSE )
 							return JS_FALSE;
 					}
 					break;
@@ -223,7 +223,7 @@ DEFINE_FUNCTION( ProcessEvents ) {
 							INT_TO_JSVAL( lParam==WM_LBUTTONUP ? 1 : lParam==WM_RBUTTONUP ? 2 : lParam==WM_MBUTTONUP ? 3 : 0 ), 
 							JSVAL_FALSE 
 						};
-						if ( JS_CallFunctionValue(cx, obj, functionVal, 0, NULL, &rval) == JS_FALSE )
+						if ( JS_CallFunctionValue(cx, obj, functionVal, sizeof(argv)/sizeof(*argv), argv, &rval) == JS_FALSE )
 							return JS_FALSE;
 					}
 					break;

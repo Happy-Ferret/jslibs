@@ -249,12 +249,12 @@ win.onsize = function( w, h ) {
 
 var x=0, y=0; // offset
 //var texture = new Jpeg(new File('R0010235.JPG').Open( File.RDONLY )).Load().Trim([0+x,0+y,256+x,256+y], true);
-var texture = new Png(new File('calendar2a.png').Open( File.RDONLY )).Load();//.Trim([0+x,0+y,256+x,256+y], true);
+//var texture = new Png(new File('calendar2a.png').Open( File.RDONLY )).Load();//.Trim([0+x,0+y,256+x,256+y], true);
 
 
 gl.Init();
 gl.Perspective( 60, 0.01, 10000 );
-gl.Texture( texture );
+//gl.Texture( texture );
 
 //Window.absoluteClipCursor = [100,100, 200, 200 ]
 win.ProcessEvents();

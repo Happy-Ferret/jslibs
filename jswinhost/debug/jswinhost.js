@@ -1,2 +1,6 @@
+LoadModule('jswinshell');
+var cons = new Console()
+configuration.stderr = configuration.stdout = cons.Write;
 LoadModule('jsstd');
-Exec('debug.js');
+Print('toto');
+MessageBox('end');
