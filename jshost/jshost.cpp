@@ -35,7 +35,7 @@
 
 // to be used in the main() function only
 #define RT_HOST_MAIN_ASSERT( condition, errorMessage ) \
-	if ( !(condition) ) { consoleStdErr( errorMessage, sizeof(errorMessage)-1 ); return -1; }
+	if ( !(condition) ) { consoleStdErr( cx, errorMessage, sizeof(errorMessage)-1 ); return -1; }
 
 //#include "../objectEx/objetEx.h"
 
@@ -44,12 +44,12 @@ HMODULE _moduleList[32] = {NULL}; // do not manage the module list dynamicaly, w
 
 JSBool unsafeMode = JS_FALSE;
 
-int consoleStdOut( const char *data, int length ) {
+int consoleStdOut( JSContext *cx, const char *data, int length ) {
 
 	return fwrite( data, 1, length, stdout );
 }
 
-int consoleStdErr( const char *data, int length ) {
+int consoleStdErr( JSContext *cx, const char *data, int length ) {
 
 	return fwrite( data, 1, length, stderr );
 }
@@ -83,7 +83,7 @@ static JSBool BranchCallback(JSContext *cx, JSScript *script)
 
 bool reportWarnings = true;
 
-// function copied from mozilla/js/src/js.c
+// function copied from ../js/src/js.c
 static void ErrorReporter(JSContext *cx, const char *message, JSErrorReport *report) {
 
     int i, j, k, n;
@@ -92,8 +92,8 @@ static void ErrorReporter(JSContext *cx, const char *message, JSErrorReport *rep
 
     if (!report) {
 
-		consoleStdOut( message, strlen(message) );
-		consoleStdOut( "\n", 1 );
+		consoleStdOut( cx, message, strlen(message) );
+		consoleStdOut( cx, "\n", 1 );
 		return;
     }
 
@@ -121,18 +121,18 @@ static void ErrorReporter(JSContext *cx, const char *message, JSErrorReport *rep
     while ((ctmp = strchr(message, '\n')) != 0) {
         ctmp++;
         if (prefix)
-            consoleStdErr( prefix, strlen(prefix) );
-        consoleStdErr(message, ctmp - message );
+            consoleStdErr( cx, prefix, strlen(prefix) );
+        consoleStdErr( cx, message, ctmp - message );
         message = ctmp;
     }
 
     /* If there were no filename or lineno, the prefix might be empty */
     if (prefix)
-	    consoleStdErr( prefix, strlen(prefix) );
-    consoleStdErr(message, strlen(message) );
+	    consoleStdErr( cx, prefix, strlen(prefix) );
+    consoleStdErr( cx, message, strlen(message) );
 
     if (!report->linebuf) {
-        consoleStdErr("\n", 1);
+        consoleStdErr(cx, "\n", 1);
         goto out;
     }
 
@@ -143,19 +143,19 @@ static void ErrorReporter(JSContext *cx, const char *message, JSErrorReport *rep
             report->linebuf,
             (n > 0 && report->linebuf[n-1] == '\n') ? "" : "\n",
             prefix);
-	 consoleStdErr( msg, strlen(msg) );
+	 consoleStdErr( cx, msg, strlen(msg) );
     n = PTRDIFF(report->tokenptr, report->linebuf, char);
     for (i = j = 0; i < n; i++) {
         if (report->linebuf[i] == '\t') {
             for (k = (j + 8) & ~7; j < k; j++) {
-                consoleStdErr(".", 1);
+                consoleStdErr( cx, ".", 1);
             }
             continue;
         }
-        consoleStdErr(".", 1);
+        consoleStdErr( cx, ".", 1);
         j++;
     }
-    consoleStdErr("^\n", 2);
+    consoleStdErr( cx, "^\n", 2);
  out:
 //    if (!JSREPORT_IS_WARNING(report->flags))
 //        gExitCode = EXITCODE_RUNTIME_ERROR;
@@ -225,17 +225,9 @@ JSBool global_getter_endSignal(JSContext *cx, JSObject *obj, jsval id, jsval *vp
 	return JS_TRUE;
 }
 
-JSBool global_getter_global(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
-	
-	*vp = OBJECT_TO_JSVAL(JS_GetGlobalObject(cx));
-	return JS_TRUE;
-}
-
-
 //////////////////////////////////////////////////////////////////////////////////////////////
 JSPropertySpec Global_PropertySpec[] = { // *name, tinyid, flags, getter, setter
 	{ "endSignal"    , 0    , JSPROP_SHARED | JSPROP_READONLY | JSPROP_PERMANENT, global_getter_endSignal, NULL },
-	{ "global"    , 0    , JSPROP_SHARED | JSPROP_READONLY | JSPROP_PERMANENT, global_getter_global, NULL },
 	{ 0 }
 };
 
@@ -256,13 +248,23 @@ BOOL Interrupt(DWORD CtrlType) {
 #endif // _CONSOLE
 
 
+static JSBool stderrFunction(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+
+	JSString *str;
+	str = JS_ValueToString(cx, argv[0]);
+	RT_ASSERT( str != NULL, "Unable to convert argument to string.");
+	argv[0] = STRING_TO_JSVAL(str); // (TBD) needed ?
+	consoleStdErr( cx, JS_GetStringBytes(str), JS_GetStringLength(str) );
+	return JS_TRUE;
+}
+
 static JSBool stdoutFunction(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
 	JSString *str;
 	str = JS_ValueToString(cx, argv[0]);
 	RT_ASSERT( str != NULL, "Unable to convert argument to string.");
 	argv[0] = STRING_TO_JSVAL(str); // (TBD) needed ?
-	consoleStdOut( JS_GetStringBytes(str), JS_GetStringLength(str) );
+	consoleStdOut( cx, JS_GetStringBytes(str), JS_GetStringLength(str) );
 	return JS_TRUE;
 }
 
@@ -341,6 +343,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	RT_HOST_MAIN_ASSERT( jsStatus == JS_TRUE, "unable to initialize standard classes." );
 
 // global functions & properties
+	JS_DefineProperty(cx, globalObject, "global", OBJECT_TO_JSVAL(JS_GetGlobalObject(cx)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
 	JS_DefineProperties( cx, globalObject, Global_PropertySpec );
 	JS_DefineFunction( cx, globalObject, "LoadModule", global_loadModule, 0, 0 );
 //	JS_DefineFunction( cx, globalObject, "test", global_test, 0, 0 );
@@ -351,9 +354,15 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	jsStatus = GetConfigurationObject(cx, &configObject);
 	RT_HOST_MAIN_ASSERT( jsStatus != JS_FALSE, "failed to get configuration object." );
 	RT_HOST_MAIN_ASSERT( configObject != NULL, "unable to create the configuration data." );
-	jsval value = OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunction(cx, stdoutFunction, 1, 0, NULL, NULL))); // If you do not assign a name to the function, it is assigned the name "anonymous".
+
+	jsval value = OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunction(cx, stderrFunction, 1, 0, NULL, NULL))); // If you do not assign a name to the function, it is assigned the name "anonymous".
+	jsStatus = JS_SetProperty(cx, configObject, "stderr", &value);
+	RT_HOST_MAIN_ASSERT( jsStatus != JS_FALSE, "Unable to set store stderr into configuration." );
+
+	value = OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunction(cx, stdoutFunction, 1, 0, NULL, NULL))); // If you do not assign a name to the function, it is assigned the name "anonymous".
 	jsStatus = JS_SetProperty(cx, configObject, "stdout", &value);
 	RT_HOST_MAIN_ASSERT( jsStatus != JS_FALSE, "Unable to set store stdout into configuration." );
+
 	value = BOOLEAN_TO_JSVAL(unsafeMode);
 	jsStatus = JS_SetProperty(cx, configObject, "unsafeMode", &value);
 	RT_HOST_MAIN_ASSERT( jsStatus != JS_FALSE, "Unable to set store unsafeMode into configuration." );
@@ -368,7 +377,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	JSObject *argsObj = JS_NewArrayObject(cx, 0, NULL);
 	RT_HOST_MAIN_ASSERT( argsObj != NULL, "unable to create argument array." );
 
-	jsStatus = JS_DefineProperty(cx, globalObject, "arguments", OBJECT_TO_JSVAL(argsObj), NULL, NULL, 0);
+	jsStatus = JS_DefineProperty(cx, globalObject, "arguments", OBJECT_TO_JSVAL(argsObj), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT);
 	RT_HOST_MAIN_ASSERT( jsStatus == JS_TRUE, "unable to store the argument array." );
 	int index = 0;
 	for ( ; *argv; argv++ ) {

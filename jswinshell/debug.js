@@ -3,6 +3,16 @@ LoadModule('jsnspr');
 LoadModule('jsimage');
 LoadModule('jswinshell');
 
+var clip = clipboard;
+if ( clip != null ) {
+	
+	clipboard = 'tata';
+	Print( clipboard );
+	clipboard = clip;
+}
+
+
+
 var s = new Systray();
 
 var exit = false;
@@ -11,7 +21,7 @@ var exit = false;
 //var image = new Png(new File('calendar.png').Open(File.RDONLY)).Load();
 //Print( image.width+'x'+image.height+'x'+image.channels, '\n' );
 
-var trayIcon = new Icon(new Png(new File('calendar.png').Open(File.RDONLY)).Load());
+var trayIcon = new Icon(new Png(new File('calendar_16x16x3.png').Open(File.RDONLY)).Load());
 s.icon = trayIcon;
 s.text = "test";
 s.menu = { ico:"icon", del:"del", g1:{ grayed:1, text:'menu' }, sep1:{separator:true}, state:{text:"Start", checked:true}, 2:{text:"Stop"}, 4:"exit" }
@@ -41,3 +51,4 @@ while ( !endSignal && !exit ) {
 
 //File.stdout.Write("press enter");
 //File.stdin.Read(1);
+

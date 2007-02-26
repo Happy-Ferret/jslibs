@@ -13,13 +13,29 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
+#include "global.h"
 #include "icon.h"
 #include "systray.h"
+#include "console.h"
+
+#include "../configuration/configuration.h"
+
+
+DEFINE_UNSAFE_MODE;
 
 extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
+	jsval unsafeModeValue;
+	JSBool jsStatus = GetConfigurationValue(cx, "unsafeMode", &unsafeModeValue);
+	RT_ASSERT( jsStatus != JS_FALSE, "Unable to read unsafeMode state from configuration object." );
+	if ( JSVAL_IS_BOOLEAN(unsafeModeValue) )
+		SET_UNSAFE_MODE( unsafeModeValue == JSVAL_TRUE );
+
+
+	INIT_STATIC();
 	INIT_CLASS( Icon );
 	INIT_CLASS( Systray );
+	INIT_CLASS( Console );
 
 	return JS_TRUE;
 }

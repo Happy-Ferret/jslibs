@@ -175,7 +175,7 @@ DEFINE_FUNCTION( ProcessEvents ) {
 			if ( functionVal != JSVAL_VOID ) {
 
 				jsval key;
-				RT_ASSERT_RETURN( JS_IdToValue(cx, (jsid)wParam, &key) );
+				RT_CHECK_CALL( JS_IdToValue(cx, (jsid)wParam, &key) );
 				RT_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." );
 				jsval argv[] = { key };
 				if ( JS_CallFunctionValue(cx, obj, functionVal, sizeof(argv)/sizeof(*argv), argv, &rval) == JS_FALSE )

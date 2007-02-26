@@ -53,8 +53,7 @@
 ////////////////
 // helper macros
 
-// (TBD) rename the following function
-#define RT_ASSERT_RETURN( functionCall ) \
+#define RT_CHECK_CALL( functionCall ) \
 	if ((functionCall) == JS_FALSE) { return JS_FALSE; }
 
 #define RT_SAFE(code) \
@@ -131,10 +130,10 @@ if ( !_unsafeMode && !(condition) ) { JS_ReportError( cx, (errorMessage) ); retu
 // conversion macros
 
 #define RT_JSVAL_TO_INT32( jsvalInt, intVariable ) \
-	if ( _unsafeMode ) { \
-		intVariable = JSVAL_TO_INT(jsvalInt); \
-	} else { \
-		RT_ASSERT( JS_ValueToInt32( cx, jsvalInt, &intVariable ) != JS_FALSE, RT_ERROR_INT_CONVERSION_FAILED ); \
+	{ \
+		int32 intVal; \
+		RT_ASSERT( JS_ValueToInt32( cx, jsvalInt, &intVal ) != JS_FALSE, RT_ERROR_INT_CONVERSION_FAILED ); \
+		intVariable = intVal; \
 	}
 
 #define RT_JSVAL_TO_STRING( jsvalString, stringVariable ) { \
