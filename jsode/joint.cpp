@@ -52,10 +52,10 @@ inline JSBool SetJoint( JSContext *cx, JSObject *obj, jsval *b1, jsval *b2 ) {
 	ode::dBodyID bId2 = 0;
 
 	if ( *b1 != JSVAL_VOID )
-		RT_ASSERT_RETURN( ValToBodyID(cx, *b1, &bId1) )
+		RT_CHECK_CALL( ValToBodyID(cx, *b1, &bId1) )
 
 	if ( *b2 != JSVAL_VOID )
-		RT_ASSERT_RETURN( ValToBodyID(cx, *b2, &bId2) )
+		RT_CHECK_CALL( ValToBodyID(cx, *b2, &bId2) )
 
 	ode::dJointAttach(jointID, bId1, bId2);
 	return JS_TRUE;
@@ -66,7 +66,7 @@ DEFINE_PROPERTY( body1 ) {
 
 	jsval b2;
 	JS_GetProperty(cx, obj, "body2", &b2);
-	RT_ASSERT_RETURN( SetJoint(cx, obj, vp, &b2) )
+	RT_CHECK_CALL( SetJoint(cx, obj, vp, &b2) )
 	return JS_TRUE;
 }
 
@@ -75,7 +75,7 @@ DEFINE_PROPERTY( body2 ) {
 
 	jsval b1;
 	JS_GetProperty(cx, obj, "body1", &b1);
-	RT_ASSERT_RETURN( SetJoint(cx, obj, &b1, vp) )
+	RT_CHECK_CALL( SetJoint(cx, obj, &b1, vp) )
 	return JS_TRUE;
 }
 

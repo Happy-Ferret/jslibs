@@ -195,7 +195,7 @@ DEFINE_FUNCTION( Step ) {
 	jsval val;
 	JS_GetProperty(cx, obj, WORLD_SPACE_PROPERTY_NAME, &val);
 	RT_ASSERT_DEFINED( val );
-	RT_ASSERT_RETURN( ValToSpaceID(cx, val, &spaceId) );
+	RT_CHECK_CALL( ValToSpaceID(cx, val, &spaceId) );
 
 	jsval defaultSurfaceParametersObject;
 	JS_GetProperty(cx, obj, DEFAULT_SURFACE_PARAMETERS_PROPERTY_NAME, &defaultSurfaceParametersObject);

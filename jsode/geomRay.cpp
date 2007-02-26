@@ -31,7 +31,7 @@ DEFINE_CONSTRUCTOR() {
 	RT_ASSERT_CONSTRUCTING(&classGeomRay);
 	ode::dSpaceID space = 0;
 	if ( argc >= 1 ) // place it in a space ?
-		RT_ASSERT_RETURN( ValToSpaceID(cx, argv[0], &space) )
+		RT_CHECK_CALL( ValToSpaceID(cx, argv[0], &space) )
 	ode::dGeomID geomId = ode::dCreateRay(space, 1); // default ray length is 1
 	JS_SetPrivate(cx, obj, geomId);
 	SetupReadMatrix(cx,obj,geomId); // (TBD) check return status
