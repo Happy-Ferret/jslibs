@@ -20,14 +20,17 @@
 
 #include "icon.h"
 
+#include <varargs.h>
+
+
 #define MIN(X,Y) ((X) < (Y) ? (X) : (Y))
 #define MAX(X,Y) ((X) > (Y) ? (X) : (Y))
 
 #define WINDOW_CLASS_NAME "systray"
-#define TRAY_ID 1
+#define TRAY_ID 1 // doc: Values from 0 to 12 are reserved and should not be used.
 
-#define MSG_TRAY_CALLBACK 1
-#define MSG_POPUP_MENU 2
+#define MSG_TRAY_CALLBACK (WM_USER + 1) // This message has two meanings: tray message + forward
+#define MSG_POPUP_MENU (WM_USER + 2)
 
 static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 
@@ -38,9 +41,21 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 		case WM_CLOSE:
 			DestroyWindow(hWnd);
 			return 0;
-		case WM_USER + MSG_TRAY_CALLBACK:
+		case MSG_TRAY_CALLBACK:
+		case WM_KEYDOWN:
+		case WM_KEYUP:
+		case WM_CHAR:
+		case WM_SETFOCUS:
+		case WM_KILLFOCUS:
 		case WM_COMMAND:
-			PostThreadMessage( GetWindowLong(hWnd, GWL_USERDATA), message, wParam, lParam );
+			{
+				MSG *msg = (MSG*)malloc(sizeof(MSG));
+				msg->hwnd = hWnd;
+				msg->message = message;
+				msg->wParam = wParam;
+				msg->lParam = lParam;
+				PostThreadMessage( GetWindowLong(hWnd, GWL_USERDATA), MSG_TRAY_CALLBACK, (WPARAM)msg, 0 );
+			}
 			return 0;
 	}
 	return DefWindowProc(hWnd, message, wParam, lParam); // We do not want to handle this message so pass back to Windows to handle it in a default way
@@ -50,7 +65,6 @@ struct ThreadPrivateData {
 
 	HWND hWnd;
 	HANDLE syncEvent;
-	ATOM registredWindowClass;
 };
 
 DWORD WINAPI WinThread( LPVOID lpParam ) {
@@ -58,13 +72,13 @@ DWORD WINAPI WinThread( LPVOID lpParam ) {
 	ThreadPrivateData *tpd = (ThreadPrivateData*)lpParam;
 	HINSTANCE hInst = (HINSTANCE)GetModuleHandle(NULL);
 	HMENU hMenu = CreatePopupMenu(); // doc: A menu that is assigned to a window is automatically destroyed when the application closes.
-	HWND hWnd = CreateWindow( (LPSTR)tpd->registredWindowClass, NULL, WS_OVERLAPPED, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, (HWND)NULL, (HMENU)hMenu, hInst, (LPVOID)NULL );
+	HWND hWnd = CreateWindow( (LPSTR)WINDOW_CLASS_NAME, NULL, WS_OVERLAPPED, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, (HWND)NULL, (HMENU)hMenu, hInst, (LPVOID)NULL );
 	tpd->hWnd = hWnd; // send back the hWnd value to the constructor
 	SetEvent(tpd->syncEvent); // beware: tpd is invalid after this line ( static data )
 	for ( MSG msg; GetMessage( &msg, NULL, 0, 0 ) != 0; ) {
 
 		switch ( msg.message ) {
-			case WM_USER + MSG_POPUP_MENU:
+			case MSG_POPUP_MENU:
 				{	
 				POINT pos;
 				GetCursorPos(&pos);
@@ -91,9 +105,10 @@ DEFINE_CONSTRUCTOR() {
 
 	HINSTANCE hInst = (HINSTANCE)GetModuleHandle(NULL);
 	RT_ASSERT( hInst != NULL, "Unable to GetModuleHandle." );
+
 	WNDCLASS wc = { 0, (WNDPROC)WndProc, 0, 0, hInst, NULL, NULL, NULL, NULL, WINDOW_CLASS_NAME };
 	ATOM rc = RegisterClass(&wc);
-	RT_ASSERT( rc != 0, "Unable to RegisterClass." );
+	RT_ASSERT( rc != 0 || GetLastError() == ERROR_CLASS_ALREADY_EXISTS, "Unable to RegisterClass." );
 
 //    OSVERSIONINFO os = { sizeof(os) };
 //    GetVersionx(&os);
@@ -102,7 +117,6 @@ DEFINE_CONSTRUCTOR() {
 	ThreadPrivateData tpd;
 	tpd.hWnd = NULL;
 	tpd.syncEvent = CreateEvent( NULL, FALSE, FALSE, NULL );
-	tpd.registredWindowClass = rc;
 	
 	MSG msg;
 	PeekMessage(&msg, NULL, WM_USER, WM_USER, PM_NOREMOVE); // force the system to create the message queue for the current thread
@@ -115,9 +129,9 @@ DEFINE_CONSTRUCTOR() {
 	memset(nid, 0, sizeof(NOTIFYICONDATA));
 	nid->cbSize = sizeof(NOTIFYICONDATA);
 	nid->hWnd = tpd.hWnd;
-	nid->uID = (12) + TRAY_ID; // doc: Values from 0 to 12 are reserved and should not be used.
+	nid->uID = TRAY_ID;
 	nid->uFlags = NIF_MESSAGE;
-	nid->uCallbackMessage = WM_USER + MSG_TRAY_CALLBACK; // doc: All Message Numbers below 0x0400 are RESERVED.
+	nid->uCallbackMessage = MSG_TRAY_CALLBACK; // doc: All Message Numbers below 0x0400 are RESERVED.
 
 	BOOL status = Shell_NotifyIcon(NIM_ADD, nid);
 	RT_ASSERT( status == TRUE, "Unable to setup systray icon." );
@@ -136,8 +150,6 @@ DEFINE_FINALIZE() {
 	if ( nid != NULL ) { // if not already closed
 
 		SendMessage( nid->hWnd, WM_CLOSE, 0, 0 ); // PostMessage
-//		if ( nid->hIcon != NULL )
-//			DestroyIcon( nid->hIcon ); // doc: Before closing, your application must use DestroyIcon to destroy any icon it created by using CreateIconIndirect. It is not necessary to destroy icons created by other functions.
 		BOOL status = Shell_NotifyIcon(NIM_DELETE, nid); // (TBD) error check
 	}
 }
@@ -147,8 +159,6 @@ DEFINE_FUNCTION( Close ) {
 	NOTIFYICONDATA *nid = (NOTIFYICONDATA*)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(nid);
 	SendMessage( nid->hWnd, WM_CLOSE, 0, 0 );
-//	if ( nid->hIcon != NULL )
-//		DestroyIcon( nid->hIcon ); // doc: Before closing, your application must use DestroyIcon to destroy any icon it created by using CreateIconIndirect. It is not necessary to destroy icons created by other functions.
 	BOOL status = Shell_NotifyIcon(NIM_DELETE, nid); // (TBD) error check
 	RT_ASSERT( status == TRUE, "Unable to delete notification icon.");
 	JS_SetPrivate(cx, obj, NULL);
@@ -157,141 +167,93 @@ DEFINE_FUNCTION( Close ) {
 
 DEFINE_FUNCTION( ProcessEvents ) {
 
-//	NOTIFYICONDATA *nid = (NOTIFYICONDATA*)JS_GetPrivate(cx, obj);
-//	RT_ASSERT_RESOURCE(nid);
+	NOTIFYICONDATA *nid = (NOTIFYICONDATA*)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE(nid);
 
 	MSG msg;
-	while ( PeekMessage( &msg, (HWND)-1, 0, 0, PM_REMOVE ) != 0 ) { // doc: If hWnd is -1, PeekMessage retrieves only messages on the current thread's message queue whose hwnd value is NULL
+	while ( PeekMessage( &msg, (HWND)-1, MSG_TRAY_CALLBACK, MSG_TRAY_CALLBACK, PM_REMOVE ) != 0 ) { // doc: If hWnd is -1, PeekMessage retrieves only messages on the current thread's message queue whose hwnd value is NULL
 
-		UINT message = msg.message;
-		LPARAM lParam = msg.lParam;
-		WPARAM wParam = msg.wParam;
-		
-		jsval functionVal, rval;
+		MSG *trayWndMsg = (MSG*)msg.wParam;
+		if ( trayWndMsg->hwnd != nid->hWnd ) {
 
-		if ( message == WM_COMMAND ) {
+			PostMessage( msg.hwnd, msg.message, msg.wParam, msg.lParam ); // this message is not for this tray icon
+		} else {
 
-			JS_GetProperty(cx, obj, "oncommand", &functionVal);
-			if ( functionVal != JSVAL_VOID ) {
+			UINT message = trayWndMsg->message;
+			LPARAM lParam = trayWndMsg->lParam;
+			WPARAM wParam = trayWndMsg->wParam;
+			free(trayWndMsg);
+			jsval functionVal, rval;
 
-				jsval key;
-				RT_CHECK_CALL( JS_IdToValue(cx, (jsid)wParam, &key) );
-				RT_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." );
-				jsval argv[] = { key };
-				if ( JS_CallFunctionValue(cx, obj, functionVal, sizeof(argv)/sizeof(*argv), argv, &rval) == JS_FALSE )
-					return JS_FALSE;
-			}
-			return JS_TRUE;
+			switch ( message ) {
+				case WM_SETFOCUS:
+					JS_GetProperty(cx, obj, "onfocus", &functionVal);
+					if ( functionVal != JSVAL_VOID )
+						RT_CHECK_CALL( CallFunction( cx, obj, functionVal, &rval, 1, JSVAL_TRUE ) );
+					break;
+				case WM_KILLFOCUS:
+					JS_GetProperty(cx, obj, "onblur", &functionVal);
+					if ( functionVal != JSVAL_VOID )
+						RT_CHECK_CALL( CallFunction( cx, obj, functionVal, &rval, 1, JSVAL_FALSE ) );
+					break;
+				case WM_CHAR:
+					JS_GetProperty(cx, obj, "onchar", &functionVal);
+					if ( functionVal != JSVAL_VOID ) {
+						
+						char c = wParam;
+						RT_CHECK_CALL( CallFunction( cx, obj, functionVal, &rval, 1, STRING_TO_JSVAL( JS_NewStringCopyN(cx, &c, 1) ) ) );
+					}
+					break;
+				case WM_COMMAND:
+					JS_GetProperty(cx, obj, "oncommand", &functionVal);
+					if ( functionVal != JSVAL_VOID ) {
+
+						jsval key;
+						RT_CHECK_CALL( JS_IdToValue(cx, (jsid)wParam, &key) );
+						RT_CHECK_CALL( CallFunction( cx, obj, functionVal, &rval, 1, key ) );
+					}
+					break;
+				case MSG_TRAY_CALLBACK:
+					switch ( lParam ) {
+						case WM_MOUSEMOVE:
+							JS_GetProperty(cx, obj, "onmousemove", &functionVal);
+							if ( functionVal != JSVAL_VOID )
+								RT_CHECK_CALL( CallFunction( cx, obj, functionVal, &rval, 0 ) );
+							break;
+						case WM_LBUTTONDOWN:
+						case WM_MBUTTONDOWN:
+						case WM_RBUTTONDOWN:
+							JS_GetProperty(cx, obj, "onmousedown", &functionVal);
+							if ( functionVal != JSVAL_VOID )
+								RT_CHECK_CALL( CallFunction( cx, obj, functionVal, &rval, 2, INT_TO_JSVAL( lParam==WM_LBUTTONDOWN ? 1 : lParam==WM_RBUTTONDOWN ? 2 : lParam==WM_MBUTTONDOWN ? 3 : 0 ), JSVAL_TRUE ) );
+							break;
+						case WM_LBUTTONUP:
+						case WM_MBUTTONUP:
+						case WM_RBUTTONUP:
+							JS_GetProperty(cx, obj, "onmouseup", &functionVal);
+							if ( functionVal != JSVAL_VOID )
+								RT_CHECK_CALL( CallFunction( cx, obj, functionVal, &rval, 2, INT_TO_JSVAL( lParam==WM_LBUTTONUP ? 1 : lParam==WM_RBUTTONUP ? 2 : lParam==WM_MBUTTONUP ? 3 : 0 ), JSVAL_FALSE ) );
+							break;
+						case WM_LBUTTONDBLCLK:
+						case WM_MBUTTONDBLCLK:
+						case WM_RBUTTONDBLCLK:
+							JS_GetProperty(cx, obj, "onmousedblclick", &functionVal);
+							if ( functionVal != JSVAL_VOID )
+								CallFunction( cx, obj, functionVal, &rval, 1, INT_TO_JSVAL( lParam==WM_LBUTTONDBLCLK ? 1 : lParam==WM_RBUTTONDBLCLK ? 2 : lParam==WM_MBUTTONDBLCLK ? 3 : 0 ) );
+							break;
+					} // switch lParam
+			} //  switch message
 		}
-
-		if ( message == WM_USER + MSG_TRAY_CALLBACK ) {
-
-			switch ( lParam ) {
-
-				case WM_MOUSEMOVE:
-					JS_GetProperty(cx, obj, "onmousemove", &functionVal);
-					if ( functionVal != JSVAL_VOID ) {
-
-						RT_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." );
-						if ( JS_CallFunctionValue(cx, obj, functionVal, 0, NULL, &rval) == JS_FALSE )
-							return JS_FALSE;
-					}
-					break;
-				case WM_LBUTTONDOWN:
-				case WM_MBUTTONDOWN:
-				case WM_RBUTTONDOWN:
-					JS_GetProperty(cx, obj, "onmousedown", &functionVal);
-					if ( functionVal != JSVAL_VOID ) {
-
-						RT_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." );
-						jsval argv[] = { 
-							INT_TO_JSVAL( lParam==WM_LBUTTONDOWN ? 1 : lParam==WM_RBUTTONDOWN ? 2 : lParam==WM_MBUTTONDOWN ? 3 : 0 ), 
-							JSVAL_TRUE 
-						};
-						if ( JS_CallFunctionValue(cx, obj, functionVal, sizeof(argv)/sizeof(*argv), argv, &rval) == JS_FALSE )
-							return JS_FALSE;
-					}
-					break;
-				case WM_LBUTTONUP:
-				case WM_MBUTTONUP:
-				case WM_RBUTTONUP:
-					JS_GetProperty(cx, obj, "onmouseup", &functionVal);
-					if ( functionVal != JSVAL_VOID ) {
-
-						RT_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." );
-						jsval argv[] = { 
-							INT_TO_JSVAL( lParam==WM_LBUTTONUP ? 1 : lParam==WM_RBUTTONUP ? 2 : lParam==WM_MBUTTONUP ? 3 : 0 ), 
-							JSVAL_FALSE 
-						};
-						if ( JS_CallFunctionValue(cx, obj, functionVal, sizeof(argv)/sizeof(*argv), argv, &rval) == JS_FALSE )
-							return JS_FALSE;
-					}
-					break;
-			}
-		}
-	}
+	} // while PeekMessage
 	return JS_TRUE;
 }
 
 
-/*
-DEFINE_PROPERTY( blink ) {
-	PNOTIFYICONDATA nid = (PNOTIFYICONDATA)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE(nid);
-
-
-	SetTimer
-
-	nid->uFlags |= NIF_TIP;
-	BOOL status = Shell_NotifyIcon(NIM_MODIFY, nid);
-	RT_ASSERT( status == TRUE, "Unable to setup systray icon." );
-	return JS_TRUE;
-}
-*/
-
-DEFINE_PROPERTY( icon ) {
-
-	HICON hIcon;
-
-	if ( JSVAL_IS_OBJECT(*vp) && *vp != JSVAL_NULL ) {
-
-		JSObject *iconObj = JSVAL_TO_OBJECT(*vp);
-		RT_ASSERT_CLASS( iconObj, &classIcon );
-
-		HICON *phIcon = (HICON*)JS_GetPrivate(cx, iconObj);
-		RT_ASSERT_RESOURCE( phIcon );
-		hIcon = *phIcon;
-	} else
-	if ( *vp == JSVAL_NULL || *vp == JSVAL_VOID ) {
-
-		hIcon = NULL;
-	} else {
-
-		REPORT_ERROR("Invalid icon.");
-	}
+DEFINE_FUNCTION( Focus ) {
 
 	PNOTIFYICONDATA nid = (PNOTIFYICONDATA)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(nid);
-	nid->hIcon = hIcon;
-	nid->uFlags |= NIF_ICON;
-	BOOL status = Shell_NotifyIcon(NIM_MODIFY, nid);
-	RT_ASSERT( status == TRUE, "Unable to setup systray icon." );
-	return JS_TRUE;
-}
-
-
-DEFINE_PROPERTY( text ) {
-
-	PNOTIFYICONDATA nid = (PNOTIFYICONDATA)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE(nid);
-
-	char *tipText;
-	int tipLen;
-	RT_JSVAL_TO_STRING_AND_LENGTH( *vp, tipText, tipLen );
-	strncpy( nid->szTip, tipText, MIN(sizeof(nid->szTip)-1,tipLen) );
-	nid->uFlags |= NIF_TIP;
-	BOOL status = Shell_NotifyIcon(NIM_MODIFY, nid);
-	RT_ASSERT( status == TRUE, "Unable to setup systray icon." );
+	SetForegroundWindow(nid->hWnd);
 	return JS_TRUE;
 }
 
@@ -343,10 +305,80 @@ DEFINE_FUNCTION( PopupMenu ) {
 		AppendMenu(hMenu, uFlags, list->vector[i], newItem);
 	}
 	JS_DestroyIdArray(cx, list);
-	PostMessage(nid->hWnd, WM_USER + MSG_POPUP_MENU, 0, 0);
+	PostMessage(nid->hWnd, MSG_POPUP_MENU, 0, 0);
 	return JS_TRUE;
 }
 
+
+/*
+DEFINE_PROPERTY( blink ) {
+	PNOTIFYICONDATA nid = (PNOTIFYICONDATA)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE(nid);
+
+
+	SetTimer
+
+	nid->uFlags |= NIF_TIP;
+	BOOL status = Shell_NotifyIcon(NIM_MODIFY, nid);
+	RT_ASSERT( status == TRUE, "Unable to setup systray icon." );
+	return JS_TRUE;
+}
+*/
+
+DEFINE_PROPERTY( icon ) {
+
+	HICON hIcon;
+
+	if ( JSVAL_IS_OBJECT(*vp) && *vp != JSVAL_NULL ) {
+
+		JSObject *iconObj = JSVAL_TO_OBJECT(*vp);
+		RT_ASSERT_CLASS( iconObj, &classIcon );
+
+		HICON *phIcon = (HICON*)JS_GetPrivate(cx, iconObj);
+		RT_ASSERT_RESOURCE( phIcon );
+		hIcon = *phIcon;
+	} else
+	if ( *vp == JSVAL_NULL || *vp == JSVAL_VOID ) {
+
+		hIcon = NULL;
+	} else {
+
+		REPORT_ERROR("Invalid icon.");
+	}
+
+	PNOTIFYICONDATA nid = (PNOTIFYICONDATA)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE(nid);
+	nid->hIcon = hIcon;
+	nid->uFlags |= NIF_ICON;
+	BOOL status = Shell_NotifyIcon(NIM_MODIFY, nid);
+	RT_ASSERT( status == TRUE, "Unable to setup systray icon." );
+	return JS_TRUE;
+}
+
+DEFINE_PROPERTY( visible ) {
+
+	JSBool state;
+	RT_CHECK_CALL( JS_ValueToBoolean(cx, *vp, &state ) );
+	PNOTIFYICONDATA nid = (PNOTIFYICONDATA)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE(nid);
+	BOOL status = Shell_NotifyIcon( state == JS_TRUE ? NIM_ADD : NIM_DELETE, nid);
+	RT_ASSERT( status == TRUE || GetLastError() == NO_ERROR, "Unable to setup systray icon." );
+	return JS_TRUE;
+}
+
+DEFINE_PROPERTY( text ) {
+
+	PNOTIFYICONDATA nid = (PNOTIFYICONDATA)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE(nid);
+	char *tipText;
+	int tipLen;
+	RT_JSVAL_TO_STRING_AND_LENGTH( *vp, tipText, tipLen );
+	strncpy( nid->szTip, tipText, MIN(sizeof(nid->szTip)-1,tipLen) );
+	nid->uFlags |= NIF_TIP;
+	BOOL status = Shell_NotifyIcon(NIM_MODIFY, nid);
+	RT_ASSERT( status == TRUE, "Unable to setup systray icon." );
+	return JS_TRUE;
+}
 
 DEFINE_PROPERTY( menuSetter ) {
 
@@ -369,12 +401,14 @@ CONFIGURE_CLASS
 		FUNCTION(Close)
 		FUNCTION(ProcessEvents)
 		FUNCTION(PopupMenu)
+		FUNCTION(Focus)
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
 		PROPERTY_WRITE_STORE(icon) // _STORE  is needed to keep the reference to the image ( aboid GC )
 		PROPERTY_WRITE(text)
 		PROPERTY(menu)
+		PROPERTY_WRITE(visible)
 //		PROPERTY(blink)
 	END_PROPERTY_SPEC
 

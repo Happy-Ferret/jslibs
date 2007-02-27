@@ -49,6 +49,7 @@
 #define RT_ERROR_INVALID_RESOURCE "the resource is invalid or not proprely initialized."
 #define RT_ERROR_CLASS_CREATION_FAILED "unable to create the class."
 #define RT_ERROR_UNEXPECTED_TYPE "unexpected data type."
+#define RT_ERROR_FUNCTION_EXPECTED "a function is expected."
 
 ////////////////
 // helper macros
@@ -105,6 +106,9 @@ if ( !_unsafeMode && !(condition) ) { JS_ReportError( cx, (errorMessage) ); retu
 
 #define RT_ASSERT_STRING(value) \
 	RT_ASSERT( JSVAL_IS_STRING(value), RT_ERROR_UNEXPECTED_TYPE " String expected." );
+
+#define RT_ASSERT_FUNCTION(value) \
+	RT_ASSERT( JS_TypeOfValue( cx, value ) == JSTYPE_FUNCTION, RT_ERROR_FUNCTION_EXPECTED );
 
 #define RT_ASSERT_ALLOC(pointer) \
 	RT_ASSERT( (pointer) != NULL, RT_ERROR_OUT_OF_MEMORY );
@@ -256,6 +260,20 @@ inline bool HasProperty( JSContext *cx, JSObject *obj, const char *propertyName 
 	JSBool found;
 	JSBool status = JS_GetPropertyAttributes(cx, obj, propertyName, &attr, &found);
 	return ( status == JS_TRUE && found != JS_FALSE );
+}
+
+
+
+inline JSBool CallFunction( JSContext *cx, JSObject *obj, jsval functionValue, jsval *rval, uintN argc, ... ) {
+	
+	va_list ap;
+	jsval argv[16]; // argc MUST be <= 16
+	va_start(ap, argc);
+	for ( uintN i = 0; i < argc; i++ )
+		argv[i] = va_arg(ap, jsval);
+	va_end(ap);
+	RT_ASSERT_FUNCTION( functionValue );
+	return JS_CallFunctionValue(cx, obj, functionValue, argc, argv, rval);
 }
 
 

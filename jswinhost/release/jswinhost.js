@@ -1,9 +1,8 @@
 LoadModule('jswinshell');
-configuration.stderr = configuration.stdout = new Console().Write;
+configuration.stdout = new Console().Write;
+configuration.stderr = MessageBox;
 LoadModule('jsstd');
 
-sdf();
 
 Print('toto');
-MessageBox('end');
 

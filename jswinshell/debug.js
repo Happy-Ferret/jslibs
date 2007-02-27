@@ -28,10 +28,18 @@ s.menu = { ico:"icon", del:"del", g1:{ grayed:1, text:'menu' }, sep1:{separator:
 
 s.onmousedown = function(button) { 
 	
-	s.PopupMenu();
+	if ( button == 1  )
+		s.Focus()
+	if ( button == 2 )
+		s.PopupMenu();
 }
 
-//s.onmousemove = function(x,y) { Print('x:'+x+' y:'+y+' \n') }
+s.onchar = function(c) { Print(c); }
+
+s.onmousemove = function(x,y) {  }
+s.onfocus = function(polarity) { s.icon = null }
+s.onblur = function() { s.icon = trayIcon }
+
 s.oncommand = function(id) {
 	
 	if ( id == 4 ) exit = true;
@@ -46,7 +54,8 @@ while ( !endSignal && !exit ) {
 	s.ProcessEvents();
 	Sleep(100);//Print('.');
 //	s.icon = blink ? trayIcon : null;
-//	blink = !blink;
+	blink = !blink;
+//	s.visible = blink;
 }
 
 //File.stdout.Write("press enter");

@@ -182,7 +182,6 @@ static void ErrorReporter(JSContext *cx, const char *message, JSErrorReport *rep
 }
 
 
-
 int WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow ) {
 
 	JSRuntime *rt;
@@ -207,6 +206,8 @@ int WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int 
 
 // Standard classes
 	jsStatus = JS_InitStandardClasses(cx, globalObject);
+	if ( jsStatus == JS_FALSE )
+		return -1;
 
 // global functions & properties
 	JS_DefineProperty(cx, globalObject, "global", OBJECT_TO_JSVAL(JS_GetGlobalObject(cx)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT);
@@ -215,20 +216,22 @@ int WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int 
 // Global configuration object
 	JSObject *configObject;
 	jsStatus = GetConfigurationObject(cx, &configObject);
+	if ( jsStatus == JS_FALSE )
+		return -1;
 
 	jsval value;
 	
 	value = OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunction(cx, noop, 1, 0, NULL, NULL))); // If you do not assign a name to the function, it is assigned the name "anonymous".
-	jsStatus = JS_SetProperty(cx, configObject, "stderr", &value);
+	JS_SetProperty(cx, configObject, "stderr", &value);
 
 	value = OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunction(cx, noop, 1, 0, NULL, NULL))); // If you do not assign a name to the function, it is assigned the name "anonymous".
-	jsStatus = JS_SetProperty(cx, configObject, "stdout", &value);
+	JS_SetProperty(cx, configObject, "stdout", &value);
 
 	value = JSVAL_TRUE; // enable unsafe mode
-	jsStatus = JS_SetProperty(cx, configObject, "unsafeMode", &value);
+	JS_SetProperty(cx, configObject, "unsafeMode", &value);
 
 // arguments
-	jsStatus = JS_DefineProperty(cx, globalObject, "argument", STRING_TO_JSVAL(JS_NewStringCopyZ(cx, lpCmdLine)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT);
+	JS_DefineProperty(cx, globalObject, "argument", STRING_TO_JSVAL(JS_NewStringCopyZ(cx, lpCmdLine)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT);
 	JS_SetOptions(cx, JSOPTION_VAROBJFIX | /*JSOPTION_STRICT |*/ JSOPTION_XML | JSOPTION_COMPILE_N_GO );
 
 	CHAR moduleFileName[MAX_PATH];
