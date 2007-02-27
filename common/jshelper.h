@@ -23,6 +23,8 @@
 #pragma warning(disable:4244 4305)  // for VC++, no precision loss complaints
 #endif
 
+#include <varargs.h>
+
 #ifdef USE_UNSAFE_MODE
 	extern bool _unsafeMode;
 #else
@@ -30,7 +32,6 @@
 #endif
 
 #define DEFINE_UNSAFE_MODE	extern bool _unsafeMode = false;
-
 #define SET_UNSAFE_MODE(polarity) _unsafeMode = (polarity);
 
 // RunTime helper macros
@@ -38,6 +39,7 @@
 
 ////////////////////////
 // common error messages
+
 #define RT_ERROR_NEED_CONSTRUCTION "construction is needed for this object."
 #define RT_ERROR_MISSING_ARGUMENT "this function require more arguments."
 #define RT_ERROR_MISSING_N_ARGUMENT "this function require %d more argument(s)."
@@ -50,6 +52,7 @@
 #define RT_ERROR_CLASS_CREATION_FAILED "unable to create the class."
 #define RT_ERROR_UNEXPECTED_TYPE "unexpected data type."
 #define RT_ERROR_FUNCTION_EXPECTED "a function is expected."
+
 
 ////////////////
 // helper macros
@@ -130,6 +133,7 @@ if ( !_unsafeMode && !(condition) ) { JS_ReportError( cx, (errorMessage) ); retu
 		RT_ASSERT_CLASS( obj, (jsClass) ); \
 	}
 
+
 ////////////////////
 // conversion macros
 
@@ -154,6 +158,7 @@ if ( !_unsafeMode && !(condition) ) { JS_ReportError( cx, (errorMessage) ); retu
 		RT_ASSERT( stringVariable != NULL, RT_ERROR_STRING_CONVERSION_FAILED ); \
 		lengthVariable = JS_GetStringLength( ___jssTmp ); \
 	}
+
 
 ///////////
 
@@ -210,7 +215,6 @@ inline bool IsNInfinity( JSContext *cx, jsval val ) {
 	return JS_GetNegativeInfinityValue(cx) == val;
 }
 
-
 inline bool InheritFrom( JSContext *cx, JSObject *obj, JSClass *clasp ) {
 
 	while( obj != NULL ) {
@@ -222,7 +226,6 @@ inline bool InheritFrom( JSContext *cx, JSObject *obj, JSClass *clasp ) {
 	return false;
 }
 
-
 inline JSBool GetNamedPrivate( JSContext *cx, JSObject *obj, const char *name, void **pv ) {
 
 	jsval tmp;
@@ -232,7 +235,6 @@ inline JSBool GetNamedPrivate( JSContext *cx, JSObject *obj, const char *name, v
 	return JS_TRUE;
 }
 
-
 inline JSBool SetNamedPrivate( JSContext *cx, JSObject *obj, const char *name, const void *pv ) {
 
 //	RT_SAFE(	if ( (int)pv % 2 ) return JS_FALSE; ); // check if *vp is 2-byte aligned
@@ -240,7 +242,6 @@ inline JSBool SetNamedPrivate( JSContext *cx, JSObject *obj, const char *name, c
 		return JS_FALSE;
 	return JS_TRUE;
 }
-
 
 inline JSBool GetIntProperty( JSContext *cx, JSObject *obj, const char *propertyName, int *value ) {
 
@@ -253,7 +254,6 @@ inline JSBool GetIntProperty( JSContext *cx, JSObject *obj, const char *property
 	return JS_TRUE;
 }
 
-
 inline bool HasProperty( JSContext *cx, JSObject *obj, const char *propertyName ) {
 
 	uintN attr;
@@ -262,12 +262,11 @@ inline bool HasProperty( JSContext *cx, JSObject *obj, const char *propertyName 
 	return ( status == JS_TRUE && found != JS_FALSE );
 }
 
-
-
 inline JSBool CallFunction( JSContext *cx, JSObject *obj, jsval functionValue, jsval *rval, uintN argc, ... ) {
 	
 	va_list ap;
 	jsval argv[16]; // argc MUST be <= 16
+	RT_ASSERT( argc <= sizeof(argv)/sizeof(jsval), "Too many arguments." );
 	va_start(ap, argc);
 	for ( uintN i = 0; i < argc; i++ )
 		argv[i] = va_arg(ap, jsval);
@@ -275,6 +274,5 @@ inline JSBool CallFunction( JSContext *cx, JSObject *obj, jsval functionValue, j
 	RT_ASSERT_FUNCTION( functionValue );
 	return JS_CallFunctionValue(cx, obj, functionValue, argc, argv, rval);
 }
-
 
 #endif // _JSHELPER_H_

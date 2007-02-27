@@ -20,9 +20,6 @@
 
 #include "icon.h"
 
-#include <varargs.h>
-
-
 #define MIN(X,Y) ((X) < (Y) ? (X) : (Y))
 #define MAX(X,Y) ((X) > (Y) ? (X) : (Y))
 
@@ -310,20 +307,22 @@ DEFINE_FUNCTION( PopupMenu ) {
 }
 
 
+DEFINE_FUNCTION( Flash ) {
 /*
-DEFINE_PROPERTY( blink ) {
 	PNOTIFYICONDATA nid = (PNOTIFYICONDATA)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(nid);
-
-
-	SetTimer
-
-	nid->uFlags |= NIF_TIP;
-	BOOL status = Shell_NotifyIcon(NIM_MODIFY, nid);
-	RT_ASSERT( status == TRUE, "Unable to setup systray icon." );
+	FLASHWINFO fwi = { sizeof(FLASHWINFO) };
+	fwi.hwnd = nid->hWnd;
+	fwi.dwFlags = FLASHW_TIMER;
+	fwi.uCount = 100;
+	fwi.dwTimeout = 100;
+	BOOL status = FlashWindowEx(&fwi);
+//	DWORD e = GetLastError();
+//	RT_ASSERT( status == TRUE, "Unable to flash systray icon." );
+*/
 	return JS_TRUE;
 }
-*/
+
 
 DEFINE_PROPERTY( icon ) {
 
@@ -333,12 +332,10 @@ DEFINE_PROPERTY( icon ) {
 
 		JSObject *iconObj = JSVAL_TO_OBJECT(*vp);
 		RT_ASSERT_CLASS( iconObj, &classIcon );
-
 		HICON *phIcon = (HICON*)JS_GetPrivate(cx, iconObj);
 		RT_ASSERT_RESOURCE( phIcon );
 		hIcon = *phIcon;
-	} else
-	if ( *vp == JSVAL_NULL || *vp == JSVAL_VOID ) {
+	} else if ( *vp == JSVAL_NULL || *vp == JSVAL_VOID ) {
 
 		hIcon = NULL;
 	} else {
@@ -366,7 +363,7 @@ DEFINE_PROPERTY( visible ) {
 	return JS_TRUE;
 }
 
-DEFINE_PROPERTY( text ) {
+DEFINE_PROPERTY( textSetter ) {
 
 	PNOTIFYICONDATA nid = (PNOTIFYICONDATA)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(nid);
@@ -377,6 +374,15 @@ DEFINE_PROPERTY( text ) {
 	nid->uFlags |= NIF_TIP;
 	BOOL status = Shell_NotifyIcon(NIM_MODIFY, nid);
 	RT_ASSERT( status == TRUE, "Unable to setup systray icon." );
+	return JS_TRUE;
+}
+
+DEFINE_PROPERTY( textGetter ) {
+
+	PNOTIFYICONDATA nid = (PNOTIFYICONDATA)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE(nid);
+	if ( nid->uFlags & NIF_TIP )
+		*vp = STRING_TO_JSVAL( JS_NewStringCopyZ(cx, nid->szTip) );
 	return JS_TRUE;
 }
 
@@ -402,14 +408,14 @@ CONFIGURE_CLASS
 		FUNCTION(ProcessEvents)
 		FUNCTION(PopupMenu)
 		FUNCTION(Focus)
+//		FUNCTION(Flash)
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
-		PROPERTY_WRITE_STORE(icon) // _STORE  is needed to keep the reference to the image ( aboid GC )
-		PROPERTY_WRITE(text)
 		PROPERTY(menu)
+		PROPERTY_WRITE_STORE(icon) // _STORE  is needed to keep the reference to the image ( aboid GC )
+		PROPERTY(text)
 		PROPERTY_WRITE(visible)
-//		PROPERTY(blink)
 	END_PROPERTY_SPEC
 
 	HAS_PRIVATE

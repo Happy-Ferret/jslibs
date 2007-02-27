@@ -31,7 +31,6 @@ extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj)
 	if ( JSVAL_IS_BOOLEAN(unsafeModeValue) )
 		SET_UNSAFE_MODE( unsafeModeValue == JSVAL_TRUE );
 
-
 	INIT_STATIC();
 	INIT_CLASS( Icon );
 	INIT_CLASS( Systray );
@@ -41,13 +40,10 @@ extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj)
 }
 
 extern "C" __declspec(dllexport) void ModuleRelease(JSContext *cx) {
-
 }
-
 
 extern "C" __declspec(dllexport) void ModuleFree() {
 }
-
 
 BOOL APIENTRY DllMain( HANDLE hModule, DWORD  ul_reason_for_call, LPVOID lpReserved ) {
 
