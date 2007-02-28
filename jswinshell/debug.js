@@ -3,23 +3,60 @@ LoadModule('jsnspr');
 LoadModule('jsimage');
 LoadModule('jswinshell');
 
+var exit = false, index = 0;
+var s = new Systray();
+s.icon = new Icon(0);
+s.menu = { add:'Add', exit:'Exit', s1:{ separator:true } };
+s.onmousedown = function(button) { 
+
+	if ( button == 2 )
+		s.PopupMenu();
+}
+
+s.oncommand = function(id) {
+
+	switch (id) {
+		case 'exit':
+			exit = true;
+			break;
+		case 'add':
+			var fileName = FileOpenDialog('executable files|*.exe;*.com;*.cmd;*.bat|all files|*.*');
+			var icon = ExtractIcon( fileName );
+			var text = fileName.substr( fileName.lastIndexOf('\\') + 1 );
+			s.menu[++index] = { icon:icon, text:text, _myFilename:fileName };
+			break;
+		default:
+			CreateProcess(s.menu[id]._myFilename);
+		}
+}
+
+while ( !exit ) {
+
+	s.ProcessEvents();
+	Sleep(100);
+}
+
+
+
+
+/*
 var clip = clipboard;
 if ( clip != null ) {
 	
 	clipboard = 'tata';
-	Print( clipboard );
+	Print( clipboard, '\n' );
 	clipboard = clip;
 }
 
 
-MessageBox(FileOpenDialog('','executable files|*.exe;*.com;*.cmd;*.bat|all files|*.*'));
 
+//Print( FileOpenDialog('executable files|*.exe;*.com;*.cmd;*.bat|all files|*.*'), '\n' );
+//Print( ExpandEnvironmentStrings('%SystemRoot%\\System32\\calc.exe'), '\n' );
 //CreateProcess('C:\\WINDOWS\\system32\\calc.exe');
 
 var s = new Systray();
 
 var exit = false;
-
 
 //var image = new Png(new File('calendar.png').Open(File.RDONLY)).Load();
 //Print( image.width+'x'+image.height+'x'+image.channels, '\n' );
@@ -27,8 +64,6 @@ var exit = false;
 var trayIcon = new Icon(new Png(new File('calendar_16x16x3.png').Open(File.RDONLY)).Load());
 var calcIcon = ExtractIcon( "C:\\WINDOWS\\system32\\calc.exe" );
 //var trayIcon = ExtractIcon( "C:\\Program Files\\Mozilla Firefox\\firefox.exe" );
-
-
 
 s.icon = trayIcon;
 s.text = "test";
@@ -45,8 +80,8 @@ s.onmousedown = function(button) {
 s.onchar = function(c) { Print(c); }
 
 s.onmousemove = function(x,y) {  }
-s.onfocus = function(polarity) { s.icon = null }
-s.onblur = function() { s.icon = trayIcon }
+//s.onfocus = function(polarity) { s.icon = null }
+//s.onblur = function() { s.icon = trayIcon }
 
 s.oncommand = function(id) {
 	
@@ -72,3 +107,4 @@ while ( !endSignal && !exit ) {
 //File.stdout.Write("press enter");
 //File.stdin.Read(1);
 
+*/

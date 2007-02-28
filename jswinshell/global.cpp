@@ -160,20 +160,10 @@ DEFINE_FUNCTION( FileOpenDialog ) {
 	char filter[255];
 
 	if ( argc >= 1 && argv[0] != JSVAL_VOID ) {
-
-		char *tmp;
-		RT_JSVAL_TO_STRING( argv[0], tmp );
-		strcpy( fileName, tmp );
-
-		ofn.lpstrFile = fileName;
-		ofn.nMaxFile = sizeof(fileName);
-	}
-
-	if ( argc >= 2 && argv[1] != JSVAL_VOID ) {
 		
 		char *str;
 		int len;
-		RT_JSVAL_TO_STRING_AND_LENGTH( argv[1], str, len );
+		RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], str, len );
 		strcpy( filter, str );
 		for ( char *tmp = filter; tmp = strchr( tmp, '|' ); tmp++ )
 			*tmp = '\0'; // doc: Pointer to a buffer containing pairs of null-terminated filter strings. 
@@ -181,19 +171,40 @@ DEFINE_FUNCTION( FileOpenDialog ) {
 		ofn.lpstrFilter = filter;
 	}
 
+	if ( argc >= 2 && argv[1] != JSVAL_VOID ) {
+
+		char *tmp;
+		RT_JSVAL_TO_STRING( argv[1], tmp );
+		strcpy( fileName, tmp );
+	} else {
+		*fileName = '\0';
+	}
+
+	ofn.lpstrFile = fileName;
+	ofn.nMaxFile = sizeof(fileName);
 	ofn.Flags = OFN_NOCHANGEDIR | OFN_LONGNAMES | OFN_HIDEREADONLY;
 	BOOL res = GetOpenFileName(&ofn); // doc: http://msdn.microsoft.com/library/default.asp?url=/library/en-us/winui/winui/windowsuserinterface/userinput/commondialogboxlibrary/commondialogboxreference/commondialogboxstructures/openfilename.asp
 	DWORD err = CommDlgExtendedError();
 
 	RT_ASSERT( res == TRUE || err == 0, "Unable to GetOpenFileName." );
 
-	if ( res == FALSE && err == 0 ) {
-	
+	if ( res == FALSE && err == 0 )
 		*rval = JSVAL_VOID;
-	} else {
-
+	else
 		*rval = STRING_TO_JSVAL( JS_NewStringCopyZ(cx, fileName) );
-	}
+	return JS_TRUE;
+}
+
+
+DEFINE_FUNCTION( _ExpandEnvironmentStrings ) {
+
+	RT_ASSERT_ARGC(1);
+	char *src;
+	RT_JSVAL_TO_STRING( argv[0], src );
+	TCHAR dst[MAX_PATH];
+	DWORD res = ExpandEnvironmentStrings( src, dst, sizeof(dst) );
+	RT_ASSERT( res != 0, "Unable to ExpandEnvironmentStrings." );
+	*rval = STRING_TO_JSVAL( JS_NewStringCopyN(cx, dst, res) );
 	return JS_TRUE;
 }
 
@@ -204,6 +215,7 @@ CONFIGURE_STATIC
 		FUNCTION2( MessageBox, _MessageBox )
 		FUNCTION2( CreateProcess, _CreateProcess )
 		FUNCTION2( ExtractIcon, _ExtractIcon )
+		FUNCTION2( ExpandEnvironmentStrings, _ExpandEnvironmentStrings )
 		FUNCTION( FileOpenDialog )
 	END_STATIC_FUNCTION_SPEC
 

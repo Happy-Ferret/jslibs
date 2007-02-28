@@ -103,11 +103,22 @@ DWORD WINAPI WinThread( LPVOID lpParam ) {
 		switch ( msg.message ) {
 			case MSG_POPUP_MENU:
 				{	
-				POINT pos;
-				GetCursorPos(&pos);
-				SetForegroundWindow(hWnd);
-				TrackPopupMenuEx(hMenu, GetSystemMetrics(SM_MENUDROPALIGNMENT) | TPM_LEFTBUTTON | TPM_RIGHTBUTTON, pos.x, pos.y, hWnd, NULL);
-				PostMessage(hWnd, WM_NULL, 0, 0);
+					POINT pos;
+					GetCursorPos(&pos);
+					SetForegroundWindow(hWnd);
+					TrackPopupMenuEx(hMenu, GetSystemMetrics(SM_MENUDROPALIGNMENT) | TPM_LEFTBUTTON | TPM_RIGHTBUTTON, pos.x, pos.y, hWnd, NULL);
+					PostMessage(hWnd, WM_NULL, 0, 0);
+					// free menu data and menu items
+					for ( int i = GetMenuItemCount(hMenu); i > 0; i-- ) {
+
+						MENUITEMINFO mii = { sizeof(MENUITEMINFO) };
+						mii.fType = MFT_RADIOCHECK; // doc: Displays selected menu items using a radio-button mark instead of a check mark if the hbmpChecked member is NULL.
+						mii.fMask = MIIM_CHECKMARKS; // doc: Retrieves or sets the hbmpChecked and hbmpUnchecked members.
+						BOOL st = GetMenuItemInfo(hMenu, 0, TRUE, &mii);
+						if ( mii.hbmpChecked != NULL )
+							DeleteObject(mii.hbmpChecked);
+						DeleteMenu(hMenu, 0, MF_BYPOSITION);
+					}
 				}
 				break;
 			default:
@@ -288,12 +299,12 @@ DEFINE_FUNCTION( PopupMenu ) {
 	HMENU hMenu = GetMenu(nid->hWnd);
 	RT_ASSERT_RESOURCE(hMenu);
 	//DestroyMenu(hMenu);
-	while ( DeleteMenu(hMenu, 0, MF_BYPOSITION) != 0 ); // remove existing items
 	//hMenu = CreatePopupMenu();
 	//SetMenu(nid->hWnd, hMenu);
 
 	jsval menu;
 	JS_GetReservedSlot(cx, obj, SLOT_SYSTRAY_MENU, &menu);
+	RT_ASSERT_DEFINED(menu);
 	JSObject *menuObj = JSVAL_TO_OBJECT(menu);
 	JSIdArray *list = JS_Enumerate(cx, menuObj);
 	for ( int i = 0; i < list->length; i++ ) {
@@ -308,7 +319,6 @@ DEFINE_FUNCTION( PopupMenu ) {
 
 			RT_JSVAL_TO_STRING( val, newItem );
 			AppendMenu(hMenu, uFlags, list->vector[i], newItem);
-
 		} else if ( JSVAL_IS_OBJECT(val) && !JSVAL_IS_NULL(val) ) {
 			
 			JSObject *itemObject = JSVAL_TO_OBJECT(val);
@@ -326,13 +336,9 @@ DEFINE_FUNCTION( PopupMenu ) {
 			if ( tmp == JSVAL_TRUE || tmp == JSVAL_ONE )
 				uFlags |= MF_SEPARATOR;
 
-				//uFlags |= MF_BITMAP;
-				//newItem = (LPCSTR)hBMP;
-
 			AppendMenu(hMenu, uFlags, list->vector[i], newItem);
-			
-			// the menu item bitmap can only be added AFTER the item has been created
-			JS_GetProperty(cx, itemObject, "icon", &tmp);
+
+			JS_GetProperty(cx, itemObject, "icon", &tmp); // the menu item bitmap can only be added AFTER the item has been created
 			if ( tmp != JSVAL_VOID ) {
 				
 				JSObject *iconObj = JSVAL_TO_OBJECT(tmp);
@@ -341,7 +347,7 @@ DEFINE_FUNCTION( PopupMenu ) {
 				RT_ASSERT_RESOURCE(phIcon);
 				HBITMAP hBMP = MenuItemBitmapFromIcon(*phIcon);
 				RT_ASSERT(hBMP != NULL, "Unable to create the menu item icon.");
-				BOOL res = SetMenuItemBitmaps(hMenu, i, MF_BYPOSITION, hBMP, hBMP );
+				BOOL res = SetMenuItemBitmaps(hMenu, i, MF_BYPOSITION, hBMP, hBMP ); // doc: When the menu is destroyed, these bitmaps are not destroyed; it is up to the application to destroy them.
 				RT_ASSERT( res != FALSE, "Unable to SetMenuItemBitmaps." );
 			}
 		}
