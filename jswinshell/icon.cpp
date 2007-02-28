@@ -90,6 +90,7 @@ DEFINE_CONSTRUCTOR() {
 		SelectObject(maskDC, oldMaskBMP);
 		DeleteDC(colorDC);
 		DeleteDC(maskDC);
+		ReleaseDC(NULL, screenDC);
 
 		ICONINFO ii = { TRUE, 0, 0, maskBMP, colorBMP };
 		hIcon = CreateIconIndirect( &ii );

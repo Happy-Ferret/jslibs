@@ -42,6 +42,7 @@
 
 #define RT_ERROR_NEED_CONSTRUCTION "construction is needed for this object."
 #define RT_ERROR_MISSING_ARGUMENT "this function require more arguments."
+#define RT_ERROR_TOO_MANY_ARGUMENTS "you provide too many argument to the function."
 #define RT_ERROR_MISSING_N_ARGUMENT "this function require %d more argument(s)."
 #define RT_ERROR_INVALID_CLASS "wrong object type."
 #define RT_ERROR_STRING_CONVERSION_FAILED "unable to convert this argument to string."
@@ -120,13 +121,16 @@ if ( !_unsafeMode && !(condition) ) { JS_ReportError( cx, (errorMessage) ); retu
 	RT_ASSERT( (resourcePointer) != NULL, RT_ERROR_INVALID_RESOURCE );
 
 #define RT_ASSERT_CLASS(jsObject, jsClass) \
-	RT_ASSERT( JS_GetClass(jsObject) == (jsClass), RT_ERROR_INVALID_CLASS );
+	RT_ASSERT( jsObject != NULL && JS_GetClass(jsObject) == (jsClass), RT_ERROR_INVALID_CLASS );
 
 #define RT_ASSERT_CLASS_NAME(jsObject, className) \
 	RT_ASSERT( strcmp(JS_GetClass(jsObject)->name, (className)) == 0,  RT_ERROR_INVALID_CLASS " Expecting " className "." );
 
 #define RT_ASSERT_ARGC(minCount) \
 	RT_ASSERT_1( argc >= (minCount), RT_ERROR_MISSING_N_ARGUMENT, (minCount)-argc );
+
+#define RT_ASSERT_ARGC_MAX(maxCount) \
+	RT_ASSERT( argc <= (maxCount), RT_ERROR_TOO_MANY_ARGUMENTS );
 
 #define RT_ASSERT_CONSTRUCTING(jsClass) { \
 		RT_ASSERT( JS_IsConstructing(cx) == JS_TRUE, RT_ERROR_NEED_CONSTRUCTION ); \

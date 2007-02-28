@@ -14,8 +14,40 @@
 
 #include "stdafx.h"
 
+#include "icon.h"
+#include <stdlib.h>
+
+#include <Commdlg.h>
+#include <shlobj.h>
 
 BEGIN_STATIC
+
+
+DEFINE_FUNCTION( _ExtractIcon ) {
+	
+	RT_ASSERT_ARGC(1);
+	char *fileName;
+	UINT iconIndex = 0;
+	RT_JSVAL_TO_STRING( argv[0], fileName );
+	if ( argc >= 2 )
+		RT_JSVAL_TO_INT32( argv[1], iconIndex );
+	HINSTANCE hInst = (HINSTANCE)GetModuleHandle(NULL);
+	RT_ASSERT( hInst != NULL, "Unable to GetModuleHandle." );
+	HICON hIcon = ExtractIcon( hInst, fileName, iconIndex ); // see SHGetFileInfo(
+	//DWORD err = GetLastError();
+	//RT_ASSERT( hIcon != NULL, "Unable to extract the icon." );
+
+	if ( hIcon != NULL ) {
+
+		JSObject *icon = JS_NewObject(cx, &classIcon, NULL, NULL);
+		HICON *phIcon = (HICON*)malloc(sizeof(HICON)); // this is needed because JS_SetPrivate stores ONLY alligned values
+		RT_ASSERT_ALLOC( phIcon );
+		*phIcon = hIcon;
+		JS_SetPrivate(cx, icon, phIcon);
+		*rval = OBJECT_TO_JSVAL(icon);
+	}
+	return JS_TRUE;
+}
 
 
 DEFINE_FUNCTION( _MessageBox ) {
@@ -35,6 +67,36 @@ DEFINE_FUNCTION( _MessageBox ) {
 
 	MessageBox(NULL, text, caption, type );
 
+	return JS_TRUE;
+}
+
+
+DEFINE_FUNCTION( _CreateProcess ) {
+
+	RT_ASSERT_ARGC(1);
+
+	char *applicationName, *commandLine = NULL, *environment = NULL, *currentDirectory = NULL;
+
+	RT_JSVAL_TO_STRING( argv[0], applicationName );
+
+	if ( argc >= 2 && argv[1] != JSVAL_VOID )
+		RT_JSVAL_TO_STRING( argv[1], commandLine );
+
+	if ( argc >= 3 && argv[2] != JSVAL_VOID  )
+		RT_JSVAL_TO_STRING( argv[2], environment );
+
+	if ( argc >= 4 && argv[3] != JSVAL_VOID  )
+		RT_JSVAL_TO_STRING( argv[3], currentDirectory );
+
+	STARTUPINFO si = { sizeof(STARTUPINFO) };
+	PROCESS_INFORMATION pi;
+
+	BOOL st = CreateProcess( applicationName, commandLine, NULL, NULL, FALSE, 0, environment, currentDirectory, &si, &pi ); // doc: http://msdn2.microsoft.com/en-us/library/ms682425.aspx
+	DWORD err = 0;
+	if ( st != TRUE )
+		err = GetLastError();
+	RT_ASSERT_1( st == TRUE || err == ERROR_FILE_NOT_FOUND, "Unable to create the process (%s)", applicationName );
+	*rval = st == TRUE || err == ERROR_FILE_NOT_FOUND ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;
 }
 
@@ -91,13 +153,58 @@ DEFINE_PROPERTY( clipboardSetter ) {
 }
 
 
+DEFINE_FUNCTION( FileOpenDialog ) {
 
+	OPENFILENAME ofn = { sizeof(OPENFILENAME) };
+	char fileName[MAX_PATH];
+	char filter[255];
+
+	if ( argc >= 1 && argv[0] != JSVAL_VOID ) {
+
+		char *tmp;
+		RT_JSVAL_TO_STRING( argv[0], tmp );
+		strcpy( fileName, tmp );
+
+		ofn.lpstrFile = fileName;
+		ofn.nMaxFile = sizeof(fileName);
+	}
+
+	if ( argc >= 2 && argv[1] != JSVAL_VOID ) {
+		
+		char *str;
+		int len;
+		RT_JSVAL_TO_STRING_AND_LENGTH( argv[1], str, len );
+		strcpy( filter, str );
+		for ( char *tmp = filter; tmp = strchr( tmp, '|' ); tmp++ )
+			*tmp = '\0'; // doc: Pointer to a buffer containing pairs of null-terminated filter strings. 
+		filter[len+1] = '\0'; // The last string in the buffer must be terminated by two NULL characters.
+		ofn.lpstrFilter = filter;
+	}
+
+	ofn.Flags = OFN_NOCHANGEDIR | OFN_LONGNAMES | OFN_HIDEREADONLY;
+	BOOL res = GetOpenFileName(&ofn); // doc: http://msdn.microsoft.com/library/default.asp?url=/library/en-us/winui/winui/windowsuserinterface/userinput/commondialogboxlibrary/commondialogboxreference/commondialogboxstructures/openfilename.asp
+	DWORD err = CommDlgExtendedError();
+
+	RT_ASSERT( res == TRUE || err == 0, "Unable to GetOpenFileName." );
+
+	if ( res == FALSE && err == 0 ) {
+	
+		*rval = JSVAL_VOID;
+	} else {
+
+		*rval = STRING_TO_JSVAL( JS_NewStringCopyZ(cx, fileName) );
+	}
+	return JS_TRUE;
+}
 
 
 CONFIGURE_STATIC
 
 	BEGIN_STATIC_FUNCTION_SPEC
 		FUNCTION2( MessageBox, _MessageBox )
+		FUNCTION2( CreateProcess, _CreateProcess )
+		FUNCTION2( ExtractIcon, _ExtractIcon )
+		FUNCTION( FileOpenDialog )
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC

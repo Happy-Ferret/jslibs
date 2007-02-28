@@ -29,6 +29,32 @@
 #define MSG_TRAY_CALLBACK (WM_USER + 1) // This message has two meanings: tray message + forward
 #define MSG_POPUP_MENU (WM_USER + 2)
 
+
+static HBITMAP MenuItemBitmapFromIcon(HICON hIcon) {
+
+	HDC aHDC = GetDC(NULL);
+	HDC aCHDC = CreateCompatibleDC(aHDC);
+	int cx = GetSystemMetrics(SM_CXMENUCHECK);
+	int cy = GetSystemMetrics(SM_CYMENUCHECK);
+	HBITMAP hBMP = CreateCompatibleBitmap(aHDC, cx, cy);
+	hBMP = (HBITMAP)SelectObject(aCHDC, hBMP);    
+	RECT rect;
+	SetRect(&rect, 0, 0, cx, cy); 
+	FillRect(aCHDC,&rect,(HBRUSH)GetSysColorBrush(COLOR_WINDOW)); // COLOR_MENU // doc: http://msdn2.microsoft.com/en-us/library/ms724371.aspx
+	if( DrawIconEx(aCHDC, 0, 0, hIcon, cx, cy, 0, NULL, DI_NORMAL ) == FALSE ) {
+
+		DeleteObject(hBMP);
+		hBMP = 0;
+	} else {
+
+		hBMP = (HBITMAP)SelectObject(aCHDC, hBMP);
+	}
+	DeleteDC(aCHDC);
+	ReleaseDC(NULL, aHDC);
+	return hBMP;
+}
+
+
 static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 
 	switch ( message ) {
@@ -281,8 +307,9 @@ DEFINE_FUNCTION( PopupMenu ) {
 		if ( JSVAL_IS_STRING(val) ) {
 
 			RT_JSVAL_TO_STRING( val, newItem );
-		} else
-		if ( JSVAL_IS_OBJECT(val) && !JSVAL_IS_NULL(val) ) {
+			AppendMenu(hMenu, uFlags, list->vector[i], newItem);
+
+		} else if ( JSVAL_IS_OBJECT(val) && !JSVAL_IS_NULL(val) ) {
 			
 			JSObject *itemObject = JSVAL_TO_OBJECT(val);
 			jsval tmp;
@@ -298,8 +325,26 @@ DEFINE_FUNCTION( PopupMenu ) {
 			JS_GetProperty(cx, itemObject, "separator", &tmp);
 			if ( tmp == JSVAL_TRUE || tmp == JSVAL_ONE )
 				uFlags |= MF_SEPARATOR;
+
+				//uFlags |= MF_BITMAP;
+				//newItem = (LPCSTR)hBMP;
+
+			AppendMenu(hMenu, uFlags, list->vector[i], newItem);
+			
+			// the menu item bitmap can only be added AFTER the item has been created
+			JS_GetProperty(cx, itemObject, "icon", &tmp);
+			if ( tmp != JSVAL_VOID ) {
+				
+				JSObject *iconObj = JSVAL_TO_OBJECT(tmp);
+				RT_ASSERT_CLASS( iconObj, &classIcon );
+				HICON *phIcon = (HICON*)JS_GetPrivate(cx, iconObj);
+				RT_ASSERT_RESOURCE(phIcon);
+				HBITMAP hBMP = MenuItemBitmapFromIcon(*phIcon);
+				RT_ASSERT(hBMP != NULL, "Unable to create the menu item icon.");
+				BOOL res = SetMenuItemBitmaps(hMenu, i, MF_BYPOSITION, hBMP, hBMP );
+				RT_ASSERT( res != FALSE, "Unable to SetMenuItemBitmaps." );
+			}
 		}
-		AppendMenu(hMenu, uFlags, list->vector[i], newItem);
 	}
 	JS_DestroyIdArray(cx, list);
 	PostMessage(nid->hWnd, MSG_POPUP_MENU, 0, 0);

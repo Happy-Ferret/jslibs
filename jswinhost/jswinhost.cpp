@@ -221,10 +221,10 @@ int WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int 
 
 	jsval value;
 	
-	value = OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunction(cx, noop, 1, 0, NULL, NULL))); // If you do not assign a name to the function, it is assigned the name "anonymous".
+	value = OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunction(cx, noop, 1, 0, NULL, NULL))); // doc: If you do not assign a name to the function, it is assigned the name "anonymous".
 	JS_SetProperty(cx, configObject, "stderr", &value);
 
-	value = OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunction(cx, noop, 1, 0, NULL, NULL))); // If you do not assign a name to the function, it is assigned the name "anonymous".
+	value = OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunction(cx, noop, 1, 0, NULL, NULL))); // doc: If you do not assign a name to the function, it is assigned the name "anonymous".
 	JS_SetProperty(cx, configObject, "stdout", &value);
 
 	value = JSVAL_TRUE; // enable unsafe mode
@@ -232,7 +232,12 @@ int WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int 
 
 // arguments
 	JS_DefineProperty(cx, globalObject, "argument", STRING_TO_JSVAL(JS_NewStringCopyZ(cx, lpCmdLine)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT);
-	JS_SetOptions(cx, JSOPTION_VAROBJFIX | /*JSOPTION_STRICT |*/ JSOPTION_XML | JSOPTION_COMPILE_N_GO );
+
+// options
+	uint32 options = JSOPTION_VAROBJFIX | JSOPTION_XML | JSOPTION_COMPILE_N_GO;
+	if ( /*!unsafeMode*/ false )
+		options |= JSOPTION_STRICT;
+	JS_SetOptions(cx, options );
 
 	CHAR moduleFileName[MAX_PATH];
 	DWORD len = GetModuleFileName(hInstance, moduleFileName, sizeof(moduleFileName));
@@ -243,13 +248,13 @@ int WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int 
 		return -1; // script not found
 
 	jsval rval;
-	jsStatus = JS_ExecuteScript( cx, globalObject, script, &rval ); // MUST be executed only once ( JSOPTION_COMPILE_N_GO )
+	jsStatus = JS_ExecuteScript( cx, globalObject, script, &rval ); // the script MUST be executed only once because JSOPTION_COMPILE_N_GO is set.
 	if ( jsStatus == JS_FALSE )
 		return -2;
 	JS_DestroyScript( cx, script );
 
 	typedef void (*ModuleReleaseFunction)(JSContext *cx);
-	for ( int i = sizeof(_moduleList) / sizeof(*_moduleList) - 1; i >= 0; --i ) // beware: 'i' must be signed // start from the end
+	for ( int i = sizeof(_moduleList) / sizeof(*_moduleList) - 1; i >= 0; --i ) // beware: 'i' must be signed because we start from the end
 		if ( _moduleList[i] != NULL ) {
 
 			ModuleReleaseFunction moduleRelease = (ModuleReleaseFunction)::GetProcAddress( _moduleList[i], "ModuleRelease" );
