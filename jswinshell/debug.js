@@ -62,10 +62,10 @@ TIMEOUT :32000
 
 var s = new Systray();
 s.icon = new Icon( 0 );
-s.menu = { add:'Add', exit:'Exit', s1:{ separator:true } };
+s.menu = { add:{ text:'Add', default:true}, exit:'Exit', s1:{ separator:true } };
 s.onmousedown = function( button ) { 
-
-	s.PopupMenu();
+	
+		s.PopupMenu();
 }
 
 s.oncommand = function( id, button ) {

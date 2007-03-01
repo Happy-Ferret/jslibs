@@ -363,6 +363,12 @@ DEFINE_FUNCTION( PopupMenu ) {
 
 			AppendMenu(hMenu, uFlags, list->vector[i], newItem);
 
+			JS_GetProperty(cx, itemObject, "default", &tmp);
+			if ( tmp == JSVAL_TRUE || tmp == JSVAL_ONE ) {
+
+				SetMenuDefaultItem(hMenu, i, TRUE);
+			}
+
 			JS_GetProperty(cx, itemObject, "icon", &tmp); // the menu item bitmap can only be added AFTER the item has been created
 			if ( tmp != JSVAL_VOID ) {
 				
@@ -382,28 +388,32 @@ DEFINE_FUNCTION( PopupMenu ) {
 	return JS_TRUE;
 }
 
-
-DEFINE_FUNCTION( Flash ) {
 /*
+DEFINE_FUNCTION( CallDefault ) {
+
 	PNOTIFYICONDATA nid = (PNOTIFYICONDATA)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(nid);
-	FLASHWINFO fwi = { sizeof(FLASHWINFO) };
-	fwi.hwnd = nid->hWnd;
-	fwi.dwFlags = FLASHW_TIMER;
-	fwi.uCount = 100;
-	fwi.dwTimeout = 100;
-	BOOL status = FlashWindowEx(&fwi);
-//	DWORD e = GetLastError();
-//	RT_ASSERT( status == TRUE, "Unable to flash systray icon." );
-*/
+	HMENU hMenu = GetMenu(nid->hWnd);
+	RT_ASSERT_RESOURCE(hMenu);
+!!! menu is empty !!!
+	jsid id = GetMenuDefaultItem( hMenu, FALSE, GMDI_USEDISABLED ); // http://msdn.microsoft.com/library/default.asp?url=/library/en-us/winui/winui/windowsuserinterface/resources/menus/menureference/menufunctions/getmenudefaultitem.asp
+	DWORD err = GetLastError();
+
+	jsval functionVal;
+	JS_GetProperty(cx, obj, "oncommand", &functionVal);
+	if ( functionVal != JSVAL_VOID ) {
+
+		jsval key;
+		RT_CHECK_CALL( JS_IdToValue(cx, id, &key) );
+		RT_CHECK_CALL( CallFunction( cx, obj, functionVal, rval, 1, key ) );
+	}
 	return JS_TRUE;
 }
-
+*/
 
 DEFINE_PROPERTY( icon ) {
 
 	HICON hIcon;
-
 	if ( JSVAL_IS_OBJECT(*vp) && *vp != JSVAL_NULL ) {
 
 		JSObject *iconObj = JSVAL_TO_OBJECT(*vp);
@@ -484,7 +494,7 @@ CONFIGURE_CLASS
 		FUNCTION(ProcessEvents)
 		FUNCTION(PopupMenu)
 		FUNCTION(Focus)
-//		FUNCTION(Flash)
+//		FUNCTION(CallDefault)
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
