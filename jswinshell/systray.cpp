@@ -54,6 +54,15 @@ static HBITMAP MenuItemBitmapFromIcon(HICON hIcon) {
 	return hBMP;
 }
 
+typedef struct MSGInfo {
+	HWND        hwnd;
+	UINT        message;
+	WPARAM      wParam;
+	LPARAM      lParam;
+	BOOL lButton, rButton, mButton;
+	BOOL shiftKey, controlKey, altKey;
+} MSGInfo;
+
 
 static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 
@@ -72,7 +81,16 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 		case WM_KILLFOCUS:
 		case WM_COMMAND:
 			{
-				MSG *msg = (MSG*)malloc(sizeof(MSG));
+				MSGInfo *msg = (MSGInfo*)malloc(sizeof(MSGInfo));
+				BOOL swapButtons = GetSystemMetrics(SM_SWAPBUTTON);
+				msg->lButton = GetAsyncKeyState(VK_LBUTTON)&0x8000 == 0x8000;
+				msg->rButton = GetAsyncKeyState(VK_RBUTTON)&0x8000 == 0x8000;
+				msg->mButton = GetAsyncKeyState(VK_MBUTTON)&0x8000 == 0x8000;
+			
+				msg->shiftKey = GetAsyncKeyState(VK_SHIFT)&0x8000 == 0x8000;
+				msg->controlKey = GetAsyncKeyState(VK_CONTROL)&0x8000 == 0x8000;
+				msg->altKey = GetAsyncKeyState(VK_MENU)&0x8000 == 0x8000;
+
 				msg->hwnd = hWnd;
 				msg->message = message;
 				msg->wParam = wParam;
@@ -204,10 +222,11 @@ DEFINE_FUNCTION( ProcessEvents ) {
 	NOTIFYICONDATA *nid = (NOTIFYICONDATA*)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(nid);
 
+	bool exitBool = false;
 	MSG msg;
 	while ( PeekMessage( &msg, (HWND)-1, MSG_TRAY_CALLBACK, MSG_TRAY_CALLBACK, PM_REMOVE ) != 0 ) { // doc: If hWnd is -1, PeekMessage retrieves only messages on the current thread's message queue whose hwnd value is NULL
 
-		MSG *trayWndMsg = (MSG*)msg.wParam;
+		MSGInfo *trayWndMsg = (MSGInfo*)msg.wParam;
 		if ( trayWndMsg->hwnd != nid->hWnd ) {
 
 			PostMessage( msg.hwnd, msg.message, msg.wParam, msg.lParam ); // this message is not for this tray icon
@@ -216,26 +235,27 @@ DEFINE_FUNCTION( ProcessEvents ) {
 			UINT message = trayWndMsg->message;
 			LPARAM lParam = trayWndMsg->lParam;
 			WPARAM wParam = trayWndMsg->wParam;
+			int mButton = trayWndMsg->lButton ? 1 : trayWndMsg->rButton ? 2 : 0;
 			free(trayWndMsg);
-			jsval functionVal, rval;
+			jsval functionVal;
 
 			switch ( message ) {
 				case WM_SETFOCUS:
 					JS_GetProperty(cx, obj, "onfocus", &functionVal);
 					if ( functionVal != JSVAL_VOID )
-						RT_CHECK_CALL( CallFunction( cx, obj, functionVal, &rval, 1, JSVAL_TRUE ) );
+						RT_CHECK_CALL( CallFunction( cx, obj, functionVal, rval, 1, JSVAL_TRUE ) );
 					break;
 				case WM_KILLFOCUS:
 					JS_GetProperty(cx, obj, "onblur", &functionVal);
 					if ( functionVal != JSVAL_VOID )
-						RT_CHECK_CALL( CallFunction( cx, obj, functionVal, &rval, 1, JSVAL_FALSE ) );
+						RT_CHECK_CALL( CallFunction( cx, obj, functionVal, rval, 1, JSVAL_FALSE ) );
 					break;
 				case WM_CHAR:
 					JS_GetProperty(cx, obj, "onchar", &functionVal);
 					if ( functionVal != JSVAL_VOID ) {
 						
 						char c = wParam;
-						RT_CHECK_CALL( CallFunction( cx, obj, functionVal, &rval, 1, STRING_TO_JSVAL( JS_NewStringCopyN(cx, &c, 1) ) ) );
+						RT_CHECK_CALL( CallFunction( cx, obj, functionVal, rval, 1, STRING_TO_JSVAL( JS_NewStringCopyN(cx, &c, 1) ) ) );
 					}
 					break;
 				case WM_COMMAND:
@@ -244,7 +264,7 @@ DEFINE_FUNCTION( ProcessEvents ) {
 
 						jsval key;
 						RT_CHECK_CALL( JS_IdToValue(cx, (jsid)wParam, &key) );
-						RT_CHECK_CALL( CallFunction( cx, obj, functionVal, &rval, 1, key ) );
+						RT_CHECK_CALL( CallFunction( cx, obj, functionVal, rval, 2, key, INT_TO_JSVAL( mButton ) ) );
 					}
 					break;
 				case MSG_TRAY_CALLBACK:
@@ -252,33 +272,38 @@ DEFINE_FUNCTION( ProcessEvents ) {
 						case WM_MOUSEMOVE:
 							JS_GetProperty(cx, obj, "onmousemove", &functionVal);
 							if ( functionVal != JSVAL_VOID )
-								RT_CHECK_CALL( CallFunction( cx, obj, functionVal, &rval, 0 ) );
+								RT_CHECK_CALL( CallFunction( cx, obj, functionVal, rval, 0 ) );
 							break;
 						case WM_LBUTTONDOWN:
 						case WM_MBUTTONDOWN:
 						case WM_RBUTTONDOWN:
 							JS_GetProperty(cx, obj, "onmousedown", &functionVal);
 							if ( functionVal != JSVAL_VOID )
-								RT_CHECK_CALL( CallFunction( cx, obj, functionVal, &rval, 2, INT_TO_JSVAL( lParam==WM_LBUTTONDOWN ? 1 : lParam==WM_RBUTTONDOWN ? 2 : lParam==WM_MBUTTONDOWN ? 3 : 0 ), JSVAL_TRUE ) );
+								RT_CHECK_CALL( CallFunction( cx, obj, functionVal, rval, 2, INT_TO_JSVAL( lParam==WM_LBUTTONDOWN ? 1 : lParam==WM_RBUTTONDOWN ? 2 : lParam==WM_MBUTTONDOWN ? 3 : 0 ), JSVAL_TRUE ) );
 							break;
 						case WM_LBUTTONUP:
 						case WM_MBUTTONUP:
 						case WM_RBUTTONUP:
 							JS_GetProperty(cx, obj, "onmouseup", &functionVal);
 							if ( functionVal != JSVAL_VOID )
-								RT_CHECK_CALL( CallFunction( cx, obj, functionVal, &rval, 2, INT_TO_JSVAL( lParam==WM_LBUTTONUP ? 1 : lParam==WM_RBUTTONUP ? 2 : lParam==WM_MBUTTONUP ? 3 : 0 ), JSVAL_FALSE ) );
+								RT_CHECK_CALL( CallFunction( cx, obj, functionVal, rval, 2, INT_TO_JSVAL( lParam==WM_LBUTTONUP ? 1 : lParam==WM_RBUTTONUP ? 2 : lParam==WM_MBUTTONUP ? 3 : 0 ), JSVAL_FALSE ) );
 							break;
 						case WM_LBUTTONDBLCLK:
 						case WM_MBUTTONDBLCLK:
 						case WM_RBUTTONDBLCLK:
 							JS_GetProperty(cx, obj, "onmousedblclick", &functionVal);
 							if ( functionVal != JSVAL_VOID )
-								CallFunction( cx, obj, functionVal, &rval, 1, INT_TO_JSVAL( lParam==WM_LBUTTONDBLCLK ? 1 : lParam==WM_RBUTTONDBLCLK ? 2 : lParam==WM_MBUTTONDBLCLK ? 3 : 0 ) );
+								CallFunction( cx, obj, functionVal, rval, 1, INT_TO_JSVAL( lParam==WM_LBUTTONDBLCLK ? 1 : lParam==WM_RBUTTONDBLCLK ? 2 : lParam==WM_MBUTTONDBLCLK ? 3 : 0 ) );
 							break;
 					} // switch lParam
 			} //  switch message
 		}
+		JSBool boolValue;
+		JS_ValueToBoolean(cx, *rval, &boolValue );
+		if ( boolValue == JS_TRUE )
+			exitBool = true;
 	} // while PeekMessage
+	*rval = exitBool ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;
 }
 

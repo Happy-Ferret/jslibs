@@ -11,7 +11,7 @@
 
 #include "jsprf.h"
 
-
+#include "../common/jsNames.h"
 #include "../common/jshelper.h"
 #include "../configuration/configuration.h"
 
@@ -32,7 +32,7 @@ static JSBool global_loadModule(JSContext *cx, JSObject *obj, uintN argc, jsval 
 	RT_ASSERT( i < sizeof(_moduleList)/sizeof(HMODULE), "unable to load more libraries" );
 	_moduleList[i] = module;
 	typedef JSBool (*ModuleInitFunction)(JSContext *, JSObject *);
-	ModuleInitFunction moduleInit = (ModuleInitFunction)::GetProcAddress( module, "ModuleInit" ); // (argc>1) ? JS_GetStringBytes(JS_ValueToString(cx, argv[1])) : 
+	ModuleInitFunction moduleInit = (ModuleInitFunction)::GetProcAddress( module, NAME_MODULE_INIT ); // (argc>1) ? JS_GetStringBytes(JS_ValueToString(cx, argv[1])) : 
 	RT_ASSERT_1( moduleInit != NULL, "Module initialization function not found in %s.", libFileName );
 	*rval = moduleInit( cx, obj ) == JS_TRUE ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;
@@ -51,7 +51,7 @@ int consoleStdOut( JSContext *cx, const char *data, int length ) {
 	JS_GetProperty(cx, obj, "stdout", &functionVal);
 	if ( functionVal != JSVAL_VOID ) {
 
-		RT_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." );
+		RT_ASSERT_FUNCTION( functionVal );
 		JSString *str = JS_NewStringCopyN(cx, data, length);
 		RT_ASSERT_ALLOC( str ); 
 		jsval rval, arg = STRING_TO_JSVAL(str);
@@ -68,7 +68,7 @@ int consoleStdErr( JSContext *cx, const char *data, int length ) {
 	JS_GetProperty(cx, obj, "stderr", &functionVal);
 	if ( functionVal != JSVAL_VOID ) {
 
-		RT_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." );
+		RT_ASSERT_FUNCTION( functionVal );
 		JSString *str = JS_NewStringCopyN(cx, data, length);
 		RT_ASSERT_ALLOC( str ); 
 		jsval rval, arg = STRING_TO_JSVAL(str);
@@ -182,7 +182,8 @@ static void ErrorReporter(JSContext *cx, const char *message, JSErrorReport *rep
 }
 
 
-int WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow ) {
+
+int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow ) {
 
 	JSRuntime *rt;
 	JSContext *cx;
@@ -201,7 +202,7 @@ int WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int 
 
 	JSBool jsStatus;
 // global object
-	JSClass global_class = { "global", 0, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, JS_FinalizeStub };
+	JSClass global_class = { NAME_GLOBAL_CLASS, 0, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, JS_FinalizeStub };
 	globalObject = JS_NewObject(cx, &global_class, NULL, NULL);
 
 // Standard classes
@@ -210,8 +211,8 @@ int WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int 
 		return -1;
 
 // global functions & properties
-	JS_DefineProperty(cx, globalObject, "global", OBJECT_TO_JSVAL(JS_GetGlobalObject(cx)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT);
-	JS_DefineFunction(cx, globalObject, "LoadModule", global_loadModule, 0, 0);
+	JS_DefineProperty(cx, globalObject, NAME_GLOBAL_GLOBAL_OBJECT, OBJECT_TO_JSVAL(JS_GetGlobalObject(cx)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT);
+	JS_DefineFunction(cx, globalObject, NAME_GLOBAL_FUNCTION_LOAD_MODULE, global_loadModule, 0, 0);
 
 // Global configuration object
 	JSObject *configObject;
@@ -222,16 +223,29 @@ int WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int 
 	jsval value;
 	
 	value = OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunction(cx, noop, 1, 0, NULL, NULL))); // doc: If you do not assign a name to the function, it is assigned the name "anonymous".
-	JS_SetProperty(cx, configObject, "stderr", &value);
+	JS_SetProperty(cx, configObject, NAME_CONFIGURATION_STDERR, &value);
 
 	value = OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunction(cx, noop, 1, 0, NULL, NULL))); // doc: If you do not assign a name to the function, it is assigned the name "anonymous".
-	JS_SetProperty(cx, configObject, "stdout", &value);
+	JS_SetProperty(cx, configObject, NAME_CONFIGURATION_STDOUT, &value);
 
 	value = JSVAL_TRUE; // enable unsafe mode
-	JS_SetProperty(cx, configObject, "unsafeMode", &value);
+	JS_SetProperty(cx, configObject, NAME_CONFIGURATION_UNSAFE_MODE, &value);
 
 // arguments
-	JS_DefineProperty(cx, globalObject, "argument", STRING_TO_JSVAL(JS_NewStringCopyZ(cx, lpCmdLine)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT);
+	JS_DefineProperty(cx, globalObject, NAME_GLOBAL_ARGUMENT, STRING_TO_JSVAL(JS_NewStringCopyZ(cx, lpCmdLine)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT);
+	
+	CHAR moduleFileName[MAX_PATH];
+	DWORD len = GetModuleFileName(hInstance, moduleFileName, sizeof(moduleFileName));
+	if ( len == 0 )
+		return -1;
+	char *name = strrchr( moduleFileName, '\\' );
+	if ( name == NULL )
+		return -1;
+	*name = '\0';
+	name++;
+	
+	JS_DefineProperty(cx, globalObject, NAME_GLOBAL_SCRIPT_HOST_NAME, STRING_TO_JSVAL(JS_NewStringCopyZ(cx, name)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT);
+	JS_DefineProperty(cx, globalObject, NAME_GLOBAL_SCRIPT_HOST_PATH, STRING_TO_JSVAL(JS_NewStringCopyZ(cx, moduleFileName)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT);
 
 // options
 	uint32 options = JSOPTION_VAROBJFIX | JSOPTION_XML | JSOPTION_COMPILE_N_GO;
@@ -239,11 +253,11 @@ int WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int 
 		options |= JSOPTION_STRICT;
 	JS_SetOptions(cx, options );
 
-	CHAR moduleFileName[MAX_PATH];
-	DWORD len = GetModuleFileName(hInstance, moduleFileName, sizeof(moduleFileName));
-	strcpy( moduleFileName + len - 3, "js" ); // construct the script name
+	CHAR scriptName[MAX_PATH];
+	DWORD scriptNameLen = GetModuleFileName(hInstance, scriptName, sizeof(scriptName));
+	strcpy( scriptName + scriptNameLen - 3, "js" ); // construct the script name
 
-	JSScript *script = JS_CompileFile( cx, globalObject, moduleFileName );
+	JSScript *script = JS_CompileFile( cx, globalObject, scriptName );
 	if ( script == NULL )
 		return -1; // script not found
 
@@ -257,7 +271,7 @@ int WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int 
 	for ( int i = sizeof(_moduleList) / sizeof(*_moduleList) - 1; i >= 0; --i ) // beware: 'i' must be signed because we start from the end
 		if ( _moduleList[i] != NULL ) {
 
-			ModuleReleaseFunction moduleRelease = (ModuleReleaseFunction)::GetProcAddress( _moduleList[i], "ModuleRelease" );
+			ModuleReleaseFunction moduleRelease = (ModuleReleaseFunction)::GetProcAddress( _moduleList[i], NAME_MODULE_RELEASE );
 			if ( moduleRelease != NULL )
 				moduleRelease(cx);
 		}
@@ -271,7 +285,7 @@ int WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int 
 	for ( int i = sizeof(_moduleList) / sizeof(*_moduleList) - 1; i >= 0; --i ) // beware: 'i' must be signed // start from the end
 		if ( _moduleList[i] != NULL ) {
 
-			ModuleFreeFunction moduleFree = (ModuleFreeFunction)::GetProcAddress( _moduleList[i], "ModuleFree" );
+			ModuleFreeFunction moduleFree = (ModuleFreeFunction)::GetProcAddress( _moduleList[i], NAME_MODULE_FREE );
 			if ( moduleFree != NULL )
 				moduleFree();
 			::FreeLibrary(_moduleList[i]);

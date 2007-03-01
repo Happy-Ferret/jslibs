@@ -58,15 +58,16 @@ DEFINE_FUNCTION( _MessageBox ) {
 	RT_JSVAL_TO_STRING( argv[0], text );
 
 	char *caption = NULL;
-	if ( argc >= 2 )
+	if ( argc >= 2 && argv[1] != JSVAL_VOID )
 		RT_JSVAL_TO_STRING( argv[1], caption );
 	
 	UINT type = 0;
 	if ( argc >= 3 )
 		RT_JSVAL_TO_INT32( argv[2], type );
 
-	MessageBox(NULL, text, caption, type );
-
+	int res = MessageBox(NULL, text, caption, type);
+	RT_ASSERT( res != 0, "MessageBox call Failed." );
+	*rval = INT_TO_JSVAL( res );
 	return JS_TRUE;
 }
 

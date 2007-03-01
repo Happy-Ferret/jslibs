@@ -30,6 +30,7 @@
 // #include <jscntxt.h>
 // #include <jsscript.h>
 
+#include "../common/jsNames.h"
 #include "../common/jshelper.h"
 #include "../configuration/configuration.h"
 
@@ -275,8 +276,6 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	JSContext *cx;
 	JSObject *globalObject;
 
-	char* scriptName;
-
 	unsigned long maxbytes = 32L * 1024L * 1024L;
 	unsigned long stackSize = 1L * 1024L * 1024L;
 
@@ -308,16 +307,8 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 				break;
 	}
 
-
-#ifdef _CONSOLE
-#ifdef WIN32
-	BOOL status = SetConsoleCtrlHandler((PHANDLER_ROUTINE)&Interrupt, true);
-	RT_HOST_MAIN_ASSERT( status == TRUE, "Unable to set console handler" );
-#endif // WIN32
-#endif // _CONSOLE
-
 	rt = JS_NewRuntime(maxbytes); // maxbytes specifies the number of allocated bytes after which garbage collection is run.
-	RT_HOST_MAIN_ASSERT( rt != NULL, "unable to create the runtime." );
+	RT_HOST_MAIN_ASSERT( rt != NULL, "unable to create the runtime." ); // (TBD) fix Warning: uninitialized local variable 'cx'
 	cx = JS_NewContext(rt, stackSize); // A context specifies a stack size for the script, the amount, in bytes, of private memory to allocate to the execution stack for the script.
 	RT_HOST_MAIN_ASSERT( cx != NULL, "unable to create the context." );
 
@@ -327,13 +318,20 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 // error management
 	JS_SetErrorReporter(cx, ErrorReporter);
 
+#ifdef _CONSOLE
+#ifdef WIN32
+	BOOL status = SetConsoleCtrlHandler((PHANDLER_ROUTINE)&Interrupt, true);
+	RT_HOST_MAIN_ASSERT( status == TRUE, "Unable to set console handler" );
+#endif // WIN32
+#endif // _CONSOLE
+
 #ifdef JS_THREADSAFE
     JS_BeginRequest(cx);
 #endif
 
 	JSBool jsStatus;
 // global object
-	JSClass global_class = { "global", 0, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, JS_FinalizeStub };
+	JSClass global_class = { NAME_GLOBAL_CLASS, 0, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, JS_FinalizeStub };
 
 	globalObject = JS_NewObject(cx, &global_class, NULL, NULL);
 	RT_HOST_MAIN_ASSERT( globalObject != NULL, "unable to create the global object." );
@@ -343,9 +341,9 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	RT_HOST_MAIN_ASSERT( jsStatus == JS_TRUE, "unable to initialize standard classes." );
 
 // global functions & properties
-	JS_DefineProperty(cx, globalObject, "global", OBJECT_TO_JSVAL(JS_GetGlobalObject(cx)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
+	JS_DefineProperty(cx, globalObject, NAME_GLOBAL_GLOBAL_OBJECT, OBJECT_TO_JSVAL(JS_GetGlobalObject(cx)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
 	JS_DefineProperties( cx, globalObject, Global_PropertySpec );
-	JS_DefineFunction( cx, globalObject, "LoadModule", global_loadModule, 0, 0 );
+	JS_DefineFunction( cx, globalObject, NAME_GLOBAL_FUNCTION_LOAD_MODULE, global_loadModule, 0, 0 );
 //	JS_DefineFunction( cx, globalObject, "test", global_test, 0, 0 );
 // JS_DefineFunction( cx, globalObject, "Module", _Module, 0, 0 );
 
@@ -356,37 +354,51 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	RT_HOST_MAIN_ASSERT( configObject != NULL, "unable to create the configuration data." );
 
 	jsval value = OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunction(cx, stderrFunction, 1, 0, NULL, NULL))); // If you do not assign a name to the function, it is assigned the name "anonymous".
-	jsStatus = JS_SetProperty(cx, configObject, "stderr", &value);
+	jsStatus = JS_SetProperty(cx, configObject, NAME_CONFIGURATION_STDERR, &value);
 	RT_HOST_MAIN_ASSERT( jsStatus != JS_FALSE, "Unable to set store stderr into configuration." );
 
 	value = OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunction(cx, stdoutFunction, 1, 0, NULL, NULL))); // If you do not assign a name to the function, it is assigned the name "anonymous".
-	jsStatus = JS_SetProperty(cx, configObject, "stdout", &value);
+	jsStatus = JS_SetProperty(cx, configObject, NAME_CONFIGURATION_STDOUT, &value);
 	RT_HOST_MAIN_ASSERT( jsStatus != JS_FALSE, "Unable to set store stdout into configuration." );
 
 	value = BOOLEAN_TO_JSVAL(unsafeMode);
-	jsStatus = JS_SetProperty(cx, configObject, "unsafeMode", &value);
+	jsStatus = JS_SetProperty(cx, configObject, NAME_CONFIGURATION_UNSAFE_MODE, &value);
 	RT_HOST_MAIN_ASSERT( jsStatus != JS_FALSE, "Unable to set store unsafeMode into configuration." );
 
 
 
 // script name
-  scriptName = *argv;
+  const char *scriptName = *argv;
   RT_HOST_MAIN_ASSERT( scriptName != NULL, "no script specified" );
 
 // arguments
 	JSObject *argsObj = JS_NewArrayObject(cx, 0, NULL);
 	RT_HOST_MAIN_ASSERT( argsObj != NULL, "unable to create argument array." );
 
-	jsStatus = JS_DefineProperty(cx, globalObject, "arguments", OBJECT_TO_JSVAL(argsObj), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT);
+	jsStatus = JS_DefineProperty(cx, globalObject, NAME_GLOBAL_ARGUMENTS, OBJECT_TO_JSVAL(argsObj), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT);
 	RT_HOST_MAIN_ASSERT( jsStatus == JS_TRUE, "unable to store the argument array." );
 	int index = 0;
-	for ( ; *argv; argv++ ) {
+	for ( char** argvit = argv; *argvit; argvit++ ) {
 
-		JSString *str = JS_NewStringCopyZ(cx, *argv);
+		JSString *str = JS_NewStringCopyZ(cx, *argvit);
 		RT_HOST_MAIN_ASSERT( str != NULL, "unable to store the argument." );
 		jsStatus = JS_DefineElement(cx, argsObj, index++, STRING_TO_JSVAL(str), NULL, NULL, JSPROP_ENUMERATE);
 		RT_HOST_MAIN_ASSERT( str != NULL, "unable to store the argument." );
 	}
+
+#ifdef WIN32
+// get hostpath and hostname
+	HINSTANCE hInstance = (HINSTANCE)GetModuleHandle(NULL);
+	CHAR moduleFileName[MAX_PATH];
+	DWORD len = GetModuleFileName(hInstance, moduleFileName, sizeof(moduleFileName));
+	RT_HOST_MAIN_ASSERT( len != 0, "unable to GetModuleFileName." );
+	char *name = strrchr( moduleFileName, '\\' );
+	RT_HOST_MAIN_ASSERT( name != NULL, "unable to get module FileName." );
+	*name = '\0';
+	name++;
+	JS_DefineProperty(cx, globalObject, NAME_GLOBAL_SCRIPT_HOST_PATH, STRING_TO_JSVAL(JS_NewStringCopyZ(cx, moduleFileName)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT);
+	JS_DefineProperty(cx, globalObject, NAME_GLOBAL_SCRIPT_HOST_NAME, STRING_TO_JSVAL(JS_NewStringCopyZ(cx, name)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT);
+#endif // WIN32
 
 // language options
 // options
