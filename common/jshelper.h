@@ -144,7 +144,8 @@ if ( !_unsafeMode && !(condition) ) { JS_ReportError( cx, (errorMessage) ); retu
 #define RT_JSVAL_TO_INT32( jsvalInt, intVariable ) \
 	{ \
 		int32 intVal; \
-		RT_ASSERT( JS_ValueToInt32( cx, jsvalInt, &intVal ) != JS_FALSE, RT_ERROR_INT_CONVERSION_FAILED ); \
+		JSBool st = JS_ValueToInt32( cx, jsvalInt, &intVal ); \
+		RT_ASSERT( st != JS_FALSE, RT_ERROR_INT_CONVERSION_FAILED ); \
 		intVariable = intVal; \
 	}
 
