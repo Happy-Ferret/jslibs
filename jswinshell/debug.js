@@ -68,6 +68,12 @@ s.onmousedown = function( button ) {
 		s.PopupMenu();
 }
 
+s.onmousemove = function( x,y ) {
+
+	var pos = s.Position();
+	Print( x-pos[0], ',', y-pos[1], '\n' );
+}
+
 s.oncommand = function( id, button ) {
 
 	switch ( id ) {
@@ -91,6 +97,11 @@ s.oncommand = function( id, button ) {
 }
 
 do { Sleep(100) } while ( !s.ProcessEvents() );
+
+
+
+
+
 
 
 

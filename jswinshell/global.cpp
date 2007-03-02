@@ -13,6 +13,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
+#include "error.h"
 
 #include "icon.h"
 #include <stdlib.h>
@@ -34,18 +35,14 @@ DEFINE_FUNCTION( _ExtractIcon ) {
 	HINSTANCE hInst = (HINSTANCE)GetModuleHandle(NULL);
 	RT_ASSERT( hInst != NULL, "Unable to GetModuleHandle." );
 	HICON hIcon = ExtractIcon( hInst, fileName, iconIndex ); // see SHGetFileInfo(
-	//DWORD err = GetLastError();
-	//RT_ASSERT( hIcon != NULL, "Unable to extract the icon." );
-
-	if ( hIcon != NULL ) {
-
-		JSObject *icon = JS_NewObject(cx, &classIcon, NULL, NULL);
-		HICON *phIcon = (HICON*)malloc(sizeof(HICON)); // this is needed because JS_SetPrivate stores ONLY alligned values
-		RT_ASSERT_ALLOC( phIcon );
-		*phIcon = hIcon;
-		JS_SetPrivate(cx, icon, phIcon);
-		*rval = OBJECT_TO_JSVAL(icon);
-	}
+	if ( hIcon == NULL )
+		return WinThrowError(cx, GetLastError());
+	JSObject *icon = JS_NewObject(cx, &classIcon, NULL, NULL);
+	HICON *phIcon = (HICON*)malloc(sizeof(HICON)); // this is needed because JS_SetPrivate stores ONLY alligned values
+	RT_ASSERT_ALLOC( phIcon );
+	*phIcon = hIcon;
+	JS_SetPrivate(cx, icon, phIcon);
+	*rval = OBJECT_TO_JSVAL(icon);
 	return JS_TRUE;
 }
 
@@ -91,13 +88,9 @@ DEFINE_FUNCTION( _CreateProcess ) {
 
 	STARTUPINFO si = { sizeof(STARTUPINFO) };
 	PROCESS_INFORMATION pi;
-
 	BOOL st = CreateProcess( applicationName, commandLine, NULL, NULL, FALSE, 0, environment, currentDirectory, &si, &pi ); // doc: http://msdn2.microsoft.com/en-us/library/ms682425.aspx
-	DWORD err = 0;
-	if ( st != TRUE )
-		err = GetLastError();
-	RT_ASSERT_1( st == TRUE || err == ERROR_FILE_NOT_FOUND, "Unable to create the process (%s)", applicationName );
-	*rval = st == TRUE || err == ERROR_FILE_NOT_FOUND ? JSVAL_TRUE : JSVAL_FALSE;
+	if ( st = FALSE )
+		return WinThrowError(cx, GetLastError());
 	return JS_TRUE;
 }
 

@@ -13,6 +13,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
+#include "error.h"
 #include "global.h"
 #include "icon.h"
 #include "systray.h"
@@ -31,6 +32,7 @@ extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj)
 	if ( JSVAL_IS_BOOLEAN(unsafeModeValue) )
 		SET_UNSAFE_MODE( unsafeModeValue == JSVAL_TRUE );
 
+	INIT_CLASS( WinError );
 	INIT_STATIC();
 	INIT_CLASS( Icon );
 	INIT_CLASS( Systray );

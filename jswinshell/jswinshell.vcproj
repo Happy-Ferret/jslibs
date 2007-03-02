@@ -186,6 +186,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\error.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\global.cpp"
 				>
 			</File>
@@ -229,6 +233,10 @@
 			>
 			<File
 				RelativePath=".\console.h"
+				>
+			</File>
+			<File
+				RelativePath=".\error.h"
 				>
 			</File>
 			<File

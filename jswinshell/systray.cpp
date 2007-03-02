@@ -13,12 +13,15 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
+#include "error.h"
 #include "systray.h"
 #include <stdlib.h>
 
 #include <jsobj.h>
 
 #include "icon.h"
+
+#include <commctrl.h>
 
 #define MIN(X,Y) ((X) < (Y) ? (X) : (Y))
 #define MAX(X,Y) ((X) > (Y) ? (X) : (Y))
@@ -28,6 +31,107 @@
 
 #define MSG_TRAY_CALLBACK (WM_USER + 1) // This message has two meanings: tray message + forward
 #define MSG_POPUP_MENU (WM_USER + 2)
+
+// source: http://www.codeproject.com/shell/ctrayiconposition.asp
+BOOL CALLBACK FindTrayWnd(HWND hwnd, LPARAM lParam) {    
+
+	TCHAR szClassName[256];
+	GetClassName(hwnd, szClassName, 255);
+	if (strcmp(szClassName, "TrayNotifyWnd") == 0) {
+
+		*(HWND*)lParam = hwnd;
+      return FALSE;    
+	}    
+	return TRUE;
+}
+
+// source: http://www.codeproject.com/shell/ctrayiconposition.asp
+BOOL CALLBACK FindToolBarInTrayWnd(HWND hwnd, LPARAM lParam) {    
+
+	TCHAR szClassName[256];
+	GetClassName(hwnd, szClassName, 255);    // Did we find the Main System Tray? If so, then get its size and quit
+	if (strcmp(szClassName, "ToolbarWindow32") == 0) {        
+
+		*(HWND*)lParam = hwnd;
+		return FALSE;
+	}    
+	return TRUE;
+}
+
+// source: http://www.codeproject.com/shell/ctrayiconposition.asp
+HWND GetTrayNotifyWnd() {
+
+	HWND hWndTrayNotifyWnd = NULL;
+	HWND hWndShellTrayWnd = FindWindow("Shell_TrayWnd", NULL);
+	if (hWndShellTrayWnd) {        
+
+		EnumChildWindows(hWndShellTrayWnd, FindTrayWnd, (LPARAM)&hWndTrayNotifyWnd);   
+		if (hWndTrayNotifyWnd && IsWindow(hWndTrayNotifyWnd)) {
+
+			HWND hWndToolBarWnd = NULL;
+			EnumChildWindows(hWndTrayNotifyWnd, FindToolBarInTrayWnd, (LPARAM)&hWndToolBarWnd);   
+			if(hWndToolBarWnd)
+				return hWndToolBarWnd;
+		}
+		return hWndTrayNotifyWnd;
+	}
+	return hWndShellTrayWnd;
+}
+
+// source: http://www.codeproject.com/shell/ctrayiconposition.asp
+BOOL FindOutPositionOfIconDirectly(const HWND a_hWndOwner, const int a_iButtonID, RECT *a_rcIcon) {
+
+	HWND hWndTray = GetTrayNotifyWnd();
+   if (hWndTray == NULL)
+		return FALSE;
+	DWORD dwTrayProcessID = -1;
+	GetWindowThreadProcessId(hWndTray, &dwTrayProcessID);
+	if(dwTrayProcessID <= 0)
+		return FALSE;
+	HANDLE hTrayProc = OpenProcess(PROCESS_ALL_ACCESS, 0, dwTrayProcessID);
+	if(hTrayProc == NULL)
+		return FALSE;
+ 	int iButtonsCount = SendMessage(hWndTray, TB_BUTTONCOUNT, 0, 0);
+	LPVOID lpData = VirtualAllocEx(hTrayProc, NULL, sizeof(TBBUTTON), MEM_COMMIT, PAGE_READWRITE);
+	if( lpData == NULL || iButtonsCount < 1 ) {
+
+		CloseHandle(hTrayProc);
+		return FALSE;
+	}
+	BOOL bIconFound = FALSE;
+	for(int iButton=0; iButton<iButtonsCount; iButton++) {
+
+		DWORD dwBytesRead = -1;
+		TBBUTTON buttonData;
+		SendMessage(hWndTray, TB_GETBUTTON, iButton, (LPARAM)lpData);
+		ReadProcessMemory(hTrayProc, lpData, &buttonData, sizeof(TBBUTTON), &dwBytesRead);
+		if(dwBytesRead < sizeof(TBBUTTON))
+			continue;
+		DWORD dwExtraData[2] = { 0,0 };
+		ReadProcessMemory(hTrayProc, (LPVOID)buttonData.dwData, dwExtraData, sizeof(dwExtraData), &dwBytesRead);
+		if(dwBytesRead < sizeof(dwExtraData))
+			continue;
+		HWND hWndOfIconOwner = (HWND) dwExtraData[0];
+		int  iIconId		 = (int)  dwExtraData[1];
+		if(hWndOfIconOwner != a_hWndOwner || iIconId != a_iButtonID)
+			continue;
+		if( buttonData.fsState & TBSTATE_HIDDEN )
+			break;
+		RECT rcPosition = {0,0};
+		SendMessage(hWndTray, TB_GETITEMRECT, iButton, (LPARAM)lpData);
+		ReadProcessMemory(hTrayProc, lpData, &rcPosition, sizeof(RECT), &dwBytesRead);
+		if(dwBytesRead < sizeof(RECT))
+			continue;
+		MapWindowPoints(hWndTray, NULL, (LPPOINT)&rcPosition, 2);
+		*a_rcIcon = rcPosition;
+		bIconFound = TRUE;
+		break;
+	}
+	VirtualFreeEx(hTrayProc, lpData, NULL, MEM_RELEASE);
+	CloseHandle(hTrayProc);
+	return bIconFound;
+}
+
 
 
 static HBITMAP MenuItemBitmapFromIcon(HICON hIcon) {
@@ -61,6 +165,7 @@ typedef struct MSGInfo {
 	LPARAM      lParam;
 	BOOL lButton, rButton, mButton;
 	BOOL shiftKey, controlKey, altKey;
+	int mouseX, mouseY;
 } MSGInfo;
 
 
@@ -90,6 +195,18 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 				msg->shiftKey = GetAsyncKeyState(VK_SHIFT)&0x8000 == 0x8000;
 				msg->controlKey = GetAsyncKeyState(VK_CONTROL)&0x8000 == 0x8000;
 				msg->altKey = GetAsyncKeyState(VK_MENU)&0x8000 == 0x8000;
+
+				if ( message == MSG_TRAY_CALLBACK ) {
+					
+					POINT pt;
+					GetCursorPos(&pt);
+					msg->mouseX = pt.x;
+					msg->mouseY = pt.y;
+				} else {
+					
+					msg->mouseX = -1;
+					msg->mouseY = -1;
+				}
 
 				msg->hwnd = hWnd;
 				msg->message = message;
@@ -236,6 +353,8 @@ DEFINE_FUNCTION( ProcessEvents ) {
 			LPARAM lParam = trayWndMsg->lParam;
 			WPARAM wParam = trayWndMsg->wParam;
 			int mButton = trayWndMsg->lButton ? 1 : trayWndMsg->rButton ? 2 : 0;
+			int mouseX = trayWndMsg->mouseX;
+			int mouseY = trayWndMsg->mouseY;
 			free(trayWndMsg);
 			jsval functionVal;
 
@@ -272,7 +391,7 @@ DEFINE_FUNCTION( ProcessEvents ) {
 						case WM_MOUSEMOVE:
 							JS_GetProperty(cx, obj, "onmousemove", &functionVal);
 							if ( functionVal != JSVAL_VOID )
-								RT_CHECK_CALL( CallFunction( cx, obj, functionVal, rval, 0 ) );
+								RT_CHECK_CALL( CallFunction( cx, obj, functionVal, rval, 2, INT_TO_JSVAL( mouseX ), INT_TO_JSVAL( mouseY ) ) );
 							break;
 						case WM_LBUTTONDOWN:
 						case WM_MBUTTONDOWN:
@@ -411,6 +530,55 @@ DEFINE_FUNCTION( CallDefault ) {
 }
 */
 
+DEFINE_FUNCTION( Position ) {
+
+	PNOTIFYICONDATA nid = (PNOTIFYICONDATA)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE(nid);
+	RECT r;
+	BOOL res = FindOutPositionOfIconDirectly( nid->hWnd, nid->uID, &r );
+	RT_ASSERT( res == TRUE, "Unable to FindOutPositionOfIconDirectly." );
+	jsval v[] = { INT_TO_JSVAL(r.left), INT_TO_JSVAL(r.top) };
+
+	JSObject *point;
+	if ( argc >= 1 && JSVAL_IS_OBJECT(argv[0]) && !JSVAL_IS_NULL(argv[0]) ) { // reuse
+		
+		JS_SetElement(cx, point, 0, &v[0]);
+		JS_SetElement(cx, point, 1, &v[1]);
+	} else {
+
+		point = JS_NewArrayObject(cx, 2, v);
+	}
+	*rval = OBJECT_TO_JSVAL(point);
+	return JS_TRUE;
+}
+
+
+DEFINE_FUNCTION( Rect ) {
+
+	HWND hWndTrayWnd = GetTrayNotifyWnd();
+	RT_ASSERT( hWndTrayWnd != NULL, "Unable to GetTrayNotifyWnd." );
+	RECT rect;
+	BOOL st = GetWindowRect(hWndTrayWnd, &rect);
+	RT_ASSERT( st == TRUE, "Unable to GetWindowRect." );
+	jsval v[] = { INT_TO_JSVAL(rect.left), INT_TO_JSVAL(rect.top), INT_TO_JSVAL(rect.right-rect.left), INT_TO_JSVAL(rect.bottom-rect.top) };
+
+	JSObject *point;
+	if ( argc >= 1 && JSVAL_IS_OBJECT(argv[0]) && !JSVAL_IS_NULL(argv[0]) ) { // reuse
+		
+		JS_SetElement(cx, point, 0, &v[0]);
+		JS_SetElement(cx, point, 1, &v[1]);
+		JS_SetElement(cx, point, 2, &v[2]);
+		JS_SetElement(cx, point, 3, &v[3]);
+	} else {
+
+		point = JS_NewArrayObject(cx, 4, v);
+	}
+	*rval = OBJECT_TO_JSVAL(point);
+	return JS_TRUE;
+}
+
+
+
 DEFINE_PROPERTY( icon ) {
 
 	HICON hIcon;
@@ -494,7 +662,7 @@ CONFIGURE_CLASS
 		FUNCTION(ProcessEvents)
 		FUNCTION(PopupMenu)
 		FUNCTION(Focus)
-//		FUNCTION(CallDefault)
+		FUNCTION(Position)
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
@@ -503,6 +671,11 @@ CONFIGURE_CLASS
 		PROPERTY(text)
 		PROPERTY_WRITE(visible)
 	END_PROPERTY_SPEC
+
+	BEGIN_STATIC_FUNCTION_SPEC
+		FUNCTION(Rect)
+	END_STATIC_FUNCTION_SPEC
+
 
 	HAS_PRIVATE
 	HAS_RESERVED_SLOTS(1)
