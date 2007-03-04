@@ -184,37 +184,36 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 		case WM_CHAR:
 		case WM_SETFOCUS:
 		case WM_KILLFOCUS:
-		case WM_COMMAND:
-			{
-				MSGInfo *msg = (MSGInfo*)malloc(sizeof(MSGInfo));
-				BOOL swapButtons = GetSystemMetrics(SM_SWAPBUTTON);
-				msg->lButton = GetAsyncKeyState(VK_LBUTTON)&0x8000 == 0x8000;
-				msg->rButton = GetAsyncKeyState(VK_RBUTTON)&0x8000 == 0x8000;
-				msg->mButton = GetAsyncKeyState(VK_MBUTTON)&0x8000 == 0x8000;
-			
-				msg->shiftKey = GetAsyncKeyState(VK_SHIFT)&0x8000 == 0x8000;
-				msg->controlKey = GetAsyncKeyState(VK_CONTROL)&0x8000 == 0x8000;
-				msg->altKey = GetAsyncKeyState(VK_MENU)&0x8000 == 0x8000;
+		case WM_COMMAND: {
+			MSGInfo *msg = (MSGInfo*)malloc(sizeof(MSGInfo));
+			BOOL swapButtons = GetSystemMetrics(SM_SWAPBUTTON);
+			msg->lButton = GetAsyncKeyState(VK_LBUTTON)&0x8000 == 0x8000;
+			msg->rButton = GetAsyncKeyState(VK_RBUTTON)&0x8000 == 0x8000;
+			msg->mButton = GetAsyncKeyState(VK_MBUTTON)&0x8000 == 0x8000;
+		
+			msg->shiftKey = GetAsyncKeyState(VK_SHIFT)&0x8000 == 0x8000;
+			msg->controlKey = GetAsyncKeyState(VK_CONTROL)&0x8000 == 0x8000;
+			msg->altKey = GetAsyncKeyState(VK_MENU)&0x8000 == 0x8000;
 
-				if ( message == MSG_TRAY_CALLBACK ) {
-					
-					POINT pt;
-					GetCursorPos(&pt);
-					msg->mouseX = pt.x;
-					msg->mouseY = pt.y;
-				} else {
-					
-					msg->mouseX = -1;
-					msg->mouseY = -1;
-				}
-
-				msg->hwnd = hWnd;
-				msg->message = message;
-				msg->wParam = wParam;
-				msg->lParam = lParam;
-				PostThreadMessage( GetWindowLong(hWnd, GWL_USERDATA), MSG_TRAY_CALLBACK, (WPARAM)msg, 0 );
+			if ( message == MSG_TRAY_CALLBACK ) {
+				
+				POINT pt;
+				GetCursorPos(&pt);
+				msg->mouseX = pt.x;
+				msg->mouseY = pt.y;
+			} else {
+				
+				msg->mouseX = -1;
+				msg->mouseY = -1;
 			}
+
+			msg->hwnd = hWnd;
+			msg->message = message;
+			msg->wParam = wParam;
+			msg->lParam = lParam;
+			PostThreadMessage( GetWindowLong(hWnd, GWL_USERDATA), MSG_TRAY_CALLBACK, (WPARAM)msg, 0 );
 			return 0;
+		}
 	}
 	return DefWindowProc(hWnd, message, wParam, lParam); // We do not want to handle this message so pass back to Windows to handle it in a default way
 }
@@ -236,26 +235,25 @@ DWORD WINAPI WinThread( LPVOID lpParam ) {
 	for ( MSG msg; GetMessage( &msg, NULL, 0, 0 ) != 0; ) {
 
 		switch ( msg.message ) {
-			case MSG_POPUP_MENU:
-				{	
-					POINT pos;
-					GetCursorPos(&pos);
-					SetForegroundWindow(hWnd);
-					TrackPopupMenuEx(hMenu, GetSystemMetrics(SM_MENUDROPALIGNMENT) | TPM_LEFTBUTTON | TPM_RIGHTBUTTON, pos.x, pos.y, hWnd, NULL);
-					PostMessage(hWnd, WM_NULL, 0, 0);
-					// free menu data and menu items
-					for ( int i = GetMenuItemCount(hMenu); i > 0; i-- ) {
+			case MSG_POPUP_MENU: {	
+				POINT pos;
+				GetCursorPos(&pos);
+				SetForegroundWindow(hWnd);
+				TrackPopupMenuEx(hMenu, GetSystemMetrics(SM_MENUDROPALIGNMENT) | TPM_LEFTBUTTON | TPM_RIGHTBUTTON, pos.x, pos.y, hWnd, NULL);
+				PostMessage(hWnd, WM_NULL, 0, 0);
+				// free menu data and menu items
+				for ( int i = GetMenuItemCount(hMenu); i > 0; i-- ) {
 
-						MENUITEMINFO mii = { sizeof(MENUITEMINFO) };
-						mii.fType = MFT_RADIOCHECK; // doc: Displays selected menu items using a radio-button mark instead of a check mark if the hbmpChecked member is NULL.
-						mii.fMask = MIIM_CHECKMARKS; // doc: Retrieves or sets the hbmpChecked and hbmpUnchecked members.
-						BOOL st = GetMenuItemInfo(hMenu, 0, TRUE, &mii);
-						if ( mii.hbmpChecked != NULL )
-							DeleteObject(mii.hbmpChecked);
-						DeleteMenu(hMenu, 0, MF_BYPOSITION);
-					}
+					MENUITEMINFO mii = { sizeof(MENUITEMINFO) };
+					mii.fType = MFT_RADIOCHECK; // doc: Displays selected menu items using a radio-button mark instead of a check mark if the hbmpChecked member is NULL.
+					mii.fMask = MIIM_CHECKMARKS; // doc: Retrieves or sets the hbmpChecked and hbmpUnchecked members.
+					BOOL st = GetMenuItemInfo(hMenu, 0, TRUE, &mii);
+					if ( mii.hbmpChecked != NULL )
+						DeleteObject(mii.hbmpChecked);
+					DeleteMenu(hMenu, 0, MF_BYPOSITION);
 				}
 				break;
+			}
 			default:
 				TranslateMessage(&msg);
 				DispatchMessage(&msg);
@@ -453,52 +451,92 @@ DEFINE_FUNCTION( PopupMenu ) {
 	JSIdArray *list = JS_Enumerate(cx, menuObj);
 	for ( int i = 0; i < list->length; i++ ) {
 
-		jsval val;
-		OBJ_GET_PROPERTY(cx, menuObj, list->vector[i], &val);
-
+		jsval item;
+		OBJ_GET_PROPERTY(cx, menuObj, list->vector[i], &item);
 		LPCSTR newItem = NULL;
 		UINT uFlags = MF_STRING;
 
-		if ( JSVAL_IS_STRING(val) ) {
+		if ( JSVAL_IS_STRING(item) ) {
 
-			RT_JSVAL_TO_STRING( val, newItem );
+			RT_JSVAL_TO_STRING( item, newItem );
 			AppendMenu(hMenu, uFlags, list->vector[i], newItem);
-		} else if ( JSVAL_IS_OBJECT(val) && !JSVAL_IS_NULL(val) ) {
+		} else if ( JSVAL_IS_OBJECT(item) && !JSVAL_IS_NULL(item) ) {
 			
-			JSObject *itemObject = JSVAL_TO_OBJECT(val);
-			jsval tmp;
-			JS_GetProperty(cx, itemObject, "text", &tmp);
-			if ( tmp != JSVAL_VOID )
-				RT_JSVAL_TO_STRING( tmp, newItem );
-			JS_GetProperty(cx, itemObject, "checked", &tmp);
-			if ( tmp == JSVAL_TRUE || tmp == JSVAL_ONE ) // allows to write: s.menu[id].checked ^= 1; // toggle
-				uFlags |= MF_CHECKED;
-			JS_GetProperty(cx, itemObject, "grayed", &tmp);
-			if ( tmp == JSVAL_TRUE || tmp == JSVAL_ONE )
-				uFlags |= MF_GRAYED;
-			JS_GetProperty(cx, itemObject, "separator", &tmp);
-			if ( tmp == JSVAL_TRUE || tmp == JSVAL_ONE )
+			JSObject *itemObject = JSVAL_TO_OBJECT(item);
+			jsval key, itemVal;
+
+			JS_GetProperty(cx, itemObject, "text", &itemVal);
+			if ( itemVal != JSVAL_VOID ) {
+				if ( JS_TypeOfValue(cx, itemVal) == JSTYPE_FUNCTION ) {
+
+					RT_CHECK_CALL( JS_IdToValue(cx, list->vector[i], &key) );
+					RT_CHECK_CALL( CallFunction(cx, obj, itemVal, &itemVal, 2, item, key) );
+				}
+				if ( itemVal != JSVAL_VOID ) {
+					RT_JSVAL_TO_STRING( itemVal, newItem )
+				}
+			}
+
+			JS_GetProperty(cx, itemObject, "checked", &itemVal);
+			if ( itemVal != JSVAL_VOID ) {
+				if ( JS_TypeOfValue(cx, itemVal) == JSTYPE_FUNCTION ) {
+
+					RT_CHECK_CALL( JS_IdToValue(cx, list->vector[i], &key) );
+					RT_CHECK_CALL( CallFunction(cx, obj, itemVal, &itemVal, 2, item, key) );
+				}
+				if ( itemVal != JSVAL_VOID ) {
+					JSBool boolVal;
+					RT_CHECK_CALL( JS_ValueToBoolean(cx, itemVal, &boolVal) );
+					if ( boolVal == JS_TRUE )
+						uFlags |= MF_CHECKED;
+				}
+			}
+
+			JS_GetProperty(cx, itemObject, "grayed", &itemVal);
+			if ( itemVal != JSVAL_VOID ) {
+				if ( JS_TypeOfValue(cx, itemVal) == JSTYPE_FUNCTION ) {
+
+					RT_CHECK_CALL( JS_IdToValue(cx, list->vector[i], &key) );
+					RT_CHECK_CALL( CallFunction(cx, obj, itemVal, &itemVal, 2, item, key) );
+				}
+
+				if ( itemVal != JSVAL_VOID ) {
+					JSBool boolVal;
+					RT_CHECK_CALL( JS_ValueToBoolean(cx, itemVal, &boolVal) );
+					if ( boolVal == JS_TRUE )
+						uFlags |= MF_GRAYED;
+				}
+			}
+
+			JS_GetProperty(cx, itemObject, "separator", &itemVal);
+			if ( itemVal == JSVAL_TRUE || itemVal == JSVAL_ONE )
 				uFlags |= MF_SEPARATOR;
 
 			AppendMenu(hMenu, uFlags, list->vector[i], newItem);
 
-			JS_GetProperty(cx, itemObject, "default", &tmp);
-			if ( tmp == JSVAL_TRUE || tmp == JSVAL_ONE ) {
+			JS_GetProperty(cx, itemObject, "default", &itemVal);
+			if ( itemVal == JSVAL_TRUE || itemVal == JSVAL_ONE ) {
 
 				SetMenuDefaultItem(hMenu, i, TRUE);
 			}
 
-			JS_GetProperty(cx, itemObject, "icon", &tmp); // the menu item bitmap can only be added AFTER the item has been created
-			if ( tmp != JSVAL_VOID ) {
-				
-				JSObject *iconObj = JSVAL_TO_OBJECT(tmp);
-				RT_ASSERT_CLASS( iconObj, &classIcon );
-				HICON *phIcon = (HICON*)JS_GetPrivate(cx, iconObj);
-				RT_ASSERT_RESOURCE(phIcon);
-				HBITMAP hBMP = MenuItemBitmapFromIcon(*phIcon);
-				RT_ASSERT(hBMP != NULL, "Unable to create the menu item icon.");
-				BOOL res = SetMenuItemBitmaps(hMenu, i, MF_BYPOSITION, hBMP, hBMP ); // doc: When the menu is destroyed, these bitmaps are not destroyed; it is up to the application to destroy them.
-				RT_ASSERT( res != FALSE, "Unable to SetMenuItemBitmaps." );
+			JS_GetProperty(cx, itemObject, "icon", &itemVal); // the menu item bitmap can only be added AFTER the item has been created
+			if ( itemVal != JSVAL_VOID ) {
+				if ( JS_TypeOfValue(cx, itemVal) == JSTYPE_FUNCTION ) {
+
+					RT_CHECK_CALL( JS_IdToValue(cx, list->vector[i], &key) );
+					RT_CHECK_CALL( CallFunction(cx, obj, itemVal, &itemVal, 2, item, key) );
+				}
+				if ( itemVal != JSVAL_VOID ) {
+					JSObject *iconObj = JSVAL_TO_OBJECT(itemVal);
+					RT_ASSERT_CLASS( iconObj, &classIcon );
+					HICON *phIcon = (HICON*)JS_GetPrivate(cx, iconObj);
+					RT_ASSERT_RESOURCE(phIcon);
+					HBITMAP hBMP = MenuItemBitmapFromIcon(*phIcon);
+					RT_ASSERT(hBMP != NULL, "Unable to create the menu item icon.");
+					BOOL res = SetMenuItemBitmaps(hMenu, i, MF_BYPOSITION, hBMP, hBMP ); // doc: When the menu is destroyed, these bitmaps are not destroyed; it is up to the application to destroy them.
+					RT_ASSERT( res != FALSE, "Unable to SetMenuItemBitmaps." );
+				}
 			}
 		}
 	}

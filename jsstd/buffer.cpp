@@ -17,8 +17,23 @@
 
 #include "../common/jsNativeInterface.h"
 
+#include <stdlib.h>
+
+typedef struct CxObj {
+	JSContext *cx;
+	JSObject *obj;
+} CxObj;
 
 static bool NativeInterfaceReadBuffer( void *pv, unsigned char *buf, unsigned int *amount ) {
+
+	CxObj *cxobj = (CxObj*)pv;
+	JSContext *cx = cxobj->cx;
+	JSObject *obj = cxobj->obj;
+
+//	JS_CallFunctionName(cx, obj, "un
+
+
+
 /*
 	PRInt32 tmp = *amount;
 	PRInt32 status = PR_Read( (PRFileDesc *)pv, buf, tmp );
@@ -28,7 +43,6 @@ static bool NativeInterfaceReadBuffer( void *pv, unsigned char *buf, unsigned in
 	*amount = status;
 */
 
-// 	SetNativeInterface(cx, obj, NI_READ_RESOURCE, (FunctionPointer)NativeInterfaceReadBuffer, fd);
 	return true;
 }
 
@@ -47,8 +61,41 @@ DEFINE_FINALIZE() {
 DEFINE_CONSTRUCTOR() {
 
 	RT_ASSERT_CONSTRUCTING( _class );
+
+	CxObj *cxobj = (CxObj*)malloc(sizeof(CxObj));
+	
+	// (TBD) change this:
+	cxobj->cx = cx; // beware: cx must exist during the life of this object !
+	cxobj->obj = obj;
+
+	SetNativeInterface(cx, obj, NI_READ_RESOURCE, (FunctionPointer)NativeInterfaceReadBuffer, cxobj);
+
+	JSObject *arrayObj = JS_NewArrayObject(cx, 0, NULL);
+	RT_ASSERT( arrayObj != NULL, "Unable to create internal buffer." );
+	JS_SetReservedSlot(cx, obj, SLOT_BUFFER_ARRAY, OBJECT_TO_JSVAL(arrayObj) );
 	return JS_TRUE;
 }
+
+
+DEFINE_FUNCTION( Write ) {
+
+	RT_ASSERT_ARGC(1);
+
+	char *data;
+	int length;
+	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], data, length );
+
+	int amount = length;
+	if ( argc >= 2 )
+		RT_JSVAL_TO_INT32( argv[1], amount );
+}
+
+
+DEFINE_FUNCTION( Read ) {
+
+}
+
+
 
 
 CONFIGURE_CLASS
@@ -77,6 +124,6 @@ CONFIGURE_CLASS
 	END_PROPERTY_SPEC
 
 	HAS_PRIVATE
-//	HAS_RESERVED_SLOTS(1)
+	HAS_RESERVED_SLOTS(1)
 
 END_CLASS

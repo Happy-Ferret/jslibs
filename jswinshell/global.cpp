@@ -189,7 +189,6 @@ DEFINE_FUNCTION( FileOpenDialog ) {
 	return JS_TRUE;
 }
 
-
 DEFINE_FUNCTION( _ExpandEnvironmentStrings ) {
 
 	RT_ASSERT_ARGC(1);
@@ -202,6 +201,36 @@ DEFINE_FUNCTION( _ExpandEnvironmentStrings ) {
 	return JS_TRUE;
 }
 
+DEFINE_FUNCTION( _Sleep ) {
+
+	RT_ASSERT_ARGC(1);
+	uint32 timeout;
+	RT_JSVAL_TO_INT32( argv[0], timeout );
+	Sleep(timeout);
+	return JS_TRUE;
+}
+
+DEFINE_FUNCTION( _MessageBeep ) {
+
+	UINT type = -1;
+	if ( argc >= 1 )
+		RT_JSVAL_TO_INT32( argv[0], type );
+	MessageBeep(type);
+	return JS_TRUE;
+}
+
+
+DEFINE_FUNCTION( _Beep ) {
+
+	RT_ASSERT_ARGC(2);
+	uint32 timeout;
+	DWORD freq, duration;
+	RT_JSVAL_TO_INT32( argv[0], freq );
+	RT_JSVAL_TO_INT32( argv[1], duration );
+	Beep(freq, duration);
+	return JS_TRUE;
+}
+
 
 CONFIGURE_STATIC
 
@@ -211,6 +240,9 @@ CONFIGURE_STATIC
 		FUNCTION2( ExtractIcon, _ExtractIcon )
 		FUNCTION2( ExpandEnvironmentStrings, _ExpandEnvironmentStrings )
 		FUNCTION( FileOpenDialog )
+		FUNCTION2( Sleep, _Sleep )
+		FUNCTION2( MessageBeep, _MessageBeep )
+		FUNCTION2( Beep, _Beep )
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC

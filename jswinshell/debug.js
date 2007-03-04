@@ -62,9 +62,10 @@ TIMEOUT :32000
 
 var s = new Systray();
 s.icon = new Icon( 0 );
-s.menu = { add:{ text:'Add', default:true}, exit:'Exit', s1:{ separator:true } };
+s.menu = { add:{ text:'Add', default:true}, exit:'Exit', s1:{ separator:true }, 'C:\\WINDOWS\\notepad.exe':'Notepad' };
 s.onmousedown = function( button ) { 
 	
+		MessageBeep();
 		s.PopupMenu();
 }
 
@@ -83,15 +84,21 @@ s.oncommand = function( id, button ) {
 			var fileName = FileOpenDialog( 'executable files|*.exe;*.com;*.cmd;*.bat|all files|*.*' );
 			if ( !fileName )
 				return;
-			var icon = ExtractIcon( fileName );
+			var icon = function(val,key) { 
+				try {
+					return ExtractIcon( key )
+				} catch (ex) {}; // do not worry about ExtractIcon failures
+			}
 			var text = fileName.substr( fileName.lastIndexOf( '\\' ) + 1 );
 			s.menu[fileName] = { icon:icon, text:text };
 			break;
 		default:
-			if ( button == 1 )
-				CreateProcess( id );
-			else
-				if ( MessageBox( 'Remove item: ' + id + '? ', 'Question', MB.YESNO) == ID.YES )
+			if ( button == 1 ) {
+				try {
+					CreateProcess( id );
+				} catch (ex) {}; // do not worry about CreateProcess failures
+			} else
+				if ( MessageBox( 'Remove item: ' + id + '? ', 'Question', 4) == 6 )
 					delete s.menu[id];
 		}
 }
@@ -133,7 +140,26 @@ var calcIcon = ExtractIcon( "C:\\WINDOWS\\system32\\calc.exe" );
 
 s.icon = trayIcon;
 s.text = "test";
-s.menu = { ico:"icon", del:"del", g1:{ grayed:1, text:'menu' }, sep1:{separator:true}, state:{text:"Start", checked:true}, 2:{text:"Stop", icon:calcIcon}, 4:"exit" }
+s.menu = { 
+	ico:"icon", 
+	del:"del", 
+	g1:{ 
+		grayed:1,
+		text:'menu'
+	}, 
+	sep1:{
+		separator:true
+	}, 
+	state:{
+		text:"Start", 
+		checked:true
+	}, 
+	2:{
+		text:"Stop", 
+		icon:calcIcon
+	}, 
+	4:"exit" 
+}
 
 s.onmousedown = function(button) { 
 	
