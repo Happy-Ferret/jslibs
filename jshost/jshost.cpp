@@ -373,7 +373,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 
 // arguments
 	JSObject *argsObj = JS_NewArrayObject(cx, 0, NULL);
-	RT_HOST_MAIN_ASSERT( argsObj != NULL, "unable to create argument array." );
+	RT_HOST_MAIN_ASSERT( argsObj != NULL, "unable to c reate argument array." );
 
 	jsStatus = JS_DefineProperty(cx, globalObject, NAME_GLOBAL_ARGUMENTS, OBJECT_TO_JSVAL(argsObj), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT);
 	RT_HOST_MAIN_ASSERT( jsStatus == JS_TRUE, "unable to store the argument array." );
@@ -383,7 +383,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 		JSString *str = JS_NewStringCopyZ(cx, *argvit);
 		RT_HOST_MAIN_ASSERT( str != NULL, "unable to store the argument." );
 		jsStatus = JS_DefineElement(cx, argsObj, index++, STRING_TO_JSVAL(str), NULL, NULL, JSPROP_ENUMERATE);
-		RT_HOST_MAIN_ASSERT( str != NULL, "unable to store the argument." );
+		RT_HOST_MAIN_ASSERT( jsStatus == JS_TRUE, "unable to define the argument." );
 	}
 
 #ifdef WIN32

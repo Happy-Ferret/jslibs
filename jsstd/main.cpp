@@ -41,7 +41,7 @@ extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj)
 	if ( unsafeModeValue != JSVAL_VOID && JSVAL_IS_BOOLEAN(unsafeModeValue) )
 		SET_UNSAFE_MODE( JSVAL_TO_BOOLEAN(unsafeModeValue) == JS_TRUE );
 
-	INIT_STATIC(cx, obj);
+	INIT_STATIC();
 	INIT_CLASS( Buffer );
 
 	return JS_TRUE;

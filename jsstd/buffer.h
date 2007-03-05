@@ -14,4 +14,4 @@
 
 DECLARE_CLASS( Buffer )
 
-#define SLOT_BUFFER_ARRAY 0
+#define SLOT_BUFFER_LENGTH 0
