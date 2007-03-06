@@ -32,7 +32,6 @@ extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj)
 	RT_ASSERT( jsStatus != JS_FALSE, "Unable to read stdout function from configuration object." );
 
 	stdoutFunction = JS_ValueToFunction(cx, stdoutFunctionValue); // returns NULL if the function is not defined
-//	_unsafeMode = JSVAL_TO_BOOLEAN(GetConfigurationValue(cx, "unsafeMode")) == JS_TRUE;
 
 	jsval unsafeModeValue;
 	jsStatus = GetConfigurationValue(cx, "unsafeMode", &unsafeModeValue);
@@ -43,7 +42,6 @@ extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj)
 
 	INIT_STATIC();
 	INIT_CLASS( Buffer );
-
 	return JS_TRUE;
 }
 

@@ -1,15 +1,17 @@
 LoadModule('jsstd');
 
-
+var toto = 'rrr';
 
 var buf = new Buffer();
-buf.onunderflow = function(buf) { Print( '{UNDERFLOW}' ); buf.Write('toto') }
+buf.onunderflow = function(buf) { Print( ' ? ' ); buf.Write(toto) }
 buf.Write('1234');
 buf.Write('5');
 buf.Write('');
 buf.Write('6789');
 
+Print( buf.Read(100) );
 
+/*
 Print( '['+buf.length +']');
 Print( buf.Read(3) );
 Print( '['+buf.length +']');
@@ -21,7 +23,7 @@ Print( buf.Read(1) );
 Print( '['+buf.length +']');
 Print( buf.Read(10) );
 Print( buf.Read(10) );
-
+*/
 
 
 /*

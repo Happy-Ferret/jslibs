@@ -225,10 +225,8 @@ DEFINE_FUNCTION( Print ) {
 
 	if ( stdoutFunction == NULL )
 		return JS_TRUE; // nowhere to write, but don't failed
-
 	for (uintN i = 0; i<argc; i++)
-		if (JS_CallFunction(cx, obj, stdoutFunction, 1, &argv[i], rval) == JS_FALSE)
-			return JS_FALSE;
+		RT_CHECK_CALL( JS_CallFunction(cx, obj, stdoutFunction, 1, &argv[i], rval) );
 	return JS_TRUE;
 }
 

@@ -131,9 +131,23 @@ DEFINE_FUNCTION( Read ) {
 	Queue *queue = (Queue*)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(queue);
 	jsval bufferLengthVal;
-	JS_GetReservedSlot(cx, obj, SLOT_BUFFER_LENGTH, &bufferLengthVal );
 
-	if ( bufferLengthVal == JSVAL_ZERO ) {
+	JS_GetReservedSlot(cx, obj, SLOT_BUFFER_LENGTH, &bufferLengthVal );
+	int bufferLength = JSVAL_TO_INT(bufferLengthVal);
+	size_t amount;
+
+	if ( argc == 0 )
+		amount = bufferLength; // read the whole buffer
+	else
+		RT_JSVAL_TO_INT32( argv[0], amount );
+
+	if ( amount <= 0 ) { // optimization
+		
+		*rval = JS_GetEmptyStringValue(cx);
+		return JS_TRUE;
+	}
+
+	if ( bufferLength < amount || bufferLength == 0 ) {
 
 		jsval fctVal;
 		JS_GetProperty(cx, obj, "onunderflow", &fctVal);
@@ -143,69 +157,44 @@ DEFINE_FUNCTION( Read ) {
 			jsval retVal;
 			RT_CHECK_CALL( CallFunction(cx, obj, fctVal, &retVal, 1, OBJECT_TO_JSVAL(obj)) );
 		}
-		JS_GetReservedSlot(cx, obj, SLOT_BUFFER_LENGTH, &bufferLengthVal );
+
+		JS_GetReservedSlot(cx, obj, SLOT_BUFFER_LENGTH, &bufferLengthVal ); // read it again because it may have changed
+		bufferLength = JSVAL_TO_INT(bufferLengthVal);
+
+		if ( amount > bufferLength )
+			amount = bufferLength; // we definitively cannot read the required amount of data, thaen adjust the amount of data we will read
 	}
+	// at this point, amound must contain the exact amount of data we will return
+	char *str = (char*)JS_malloc(cx, amount +1);
+	RT_ASSERT_ALLOC(str);
+	str[amount] = '\0';
+	char *ptr = str;
+	size_t remainToRead = amount;
 
-	int bufferLength = JSVAL_TO_INT(bufferLengthVal);
+	while ( remainToRead > 0 ) {
 
-	if ( argc == 0 ) {
+		JSString **pNewStr = (JSString**)QueueGetData(QueueBegin(queue)); // just get the data, do not shift the queue
+		char *chunk = JS_GetStringBytes(*pNewStr);
+		size_t chunkLen = JS_GetStringLength(*pNewStr);
 
-		char *str = (char*)JS_malloc(cx, bufferLength +1);
-		RT_ASSERT_ALLOC(str);
-		str[bufferLength] = '\0';
-		char *tmp = str;
+		if ( chunkLen <= remainToRead ) {
 
-		while ( !QueueIsEmpty(queue) ) {
-
-			JSString **pNewStr = (JSString**)QueueShift(queue);
+			memcpy(ptr, chunk, chunkLen);
+			ptr += chunkLen;
+			remainToRead -= chunkLen; // adjust remaining required data length
 			RT_CHECK_CALL( JS_RemoveRoot(cx, pNewStr) );
+			QueueShift(queue);
+		} else { // chunkLen > remain ( this is the last chunk we have to manage )
 
-			char *chunk = JS_GetStringBytes(*pNewStr);
-			size_t chunkLen = JS_GetStringLength(*pNewStr);
-			memcpy(tmp, chunk, chunkLen);
-			tmp += chunkLen;
+			memcpy(ptr, chunk, remainToRead);
+			*pNewStr = JS_NewStringCopyN(cx, chunk + remainToRead, chunkLen - remainToRead); // now, we have to store the unwanted data of this chunk. note that pNewStr is already rooted
+			RT_ASSERT_ALLOC( *pNewStr );
+			remainToRead = 0; // adjust remaining required data length
 		}
-
-		*rval = STRING_TO_JSVAL(JS_NewString(cx, str, bufferLength));
-		bufferLength = 0;
-	} else {
-
-		size_t amount;
-		RT_JSVAL_TO_INT32( argv[0], amount );
-		RT_ASSERT( amount > 0, "The amount of data to read must be >= 0." );
-		if ( amount > bufferLength ) // adjust the amount we will read
-			amount = bufferLength;
-		char *str = (char*)JS_malloc(cx, amount +1);
-		RT_ASSERT_ALLOC(str);
-		str[amount] = '\0';
-		char *ptr = str;
-		size_t remain = amount;
-
-		while ( remain > 0 ) {
-
-			JSString **pNewStr = (JSString**)QueueGetData(QueueBegin(queue)); // just get the data, do not shift the queue
-			char *chunk = JS_GetStringBytes(*pNewStr);
-			size_t chunkLen = JS_GetStringLength(*pNewStr);
-
-			if ( chunkLen <= remain ) {
-
-				memcpy(ptr, chunk, chunkLen);
-				ptr += chunkLen;
-				remain -= chunkLen; // adjust remaining required data length
-				RT_CHECK_CALL( JS_RemoveRoot(cx, pNewStr) );
-				QueueShift(queue);
-			} else { // chunkLen > remain ( this is the last chunk we have to manage )
-
-				memcpy(ptr, chunk, remain);
-				*pNewStr = JS_NewStringCopyN(cx, chunk + remain, chunkLen - remain); // now, we have to store the unwanted data of this chunk. note that pNewStr is already rooted
-				RT_ASSERT_ALLOC( *pNewStr );
-				remain = 0; // adjust remaining required data length
-			}
-		}
-
-		*rval = STRING_TO_JSVAL(JS_NewString(cx, str, amount));
-		bufferLength -= amount;
 	}
+
+	*rval = STRING_TO_JSVAL(JS_NewString(cx, str, amount));
+	bufferLength -= amount;
 
 	bufferLengthVal = INT_TO_JSVAL( bufferLength );
 	JS_SetReservedSlot(cx, obj, SLOT_BUFFER_LENGTH, bufferLengthVal );
@@ -242,7 +231,7 @@ CONFIGURE_CLASS
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
-	PROPERTY_READ(length)
+		PROPERTY_READ(length)
 	END_PROPERTY_SPEC
 
 	HAS_PRIVATE
