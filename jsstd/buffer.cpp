@@ -24,12 +24,12 @@
 typedef struct JsCntxt {
 	JSRuntime *rt;
 	JSObject *obj;
-} CxObj;
+} JsCntxt;
 
 
 static bool NativeInterfaceReadBuffer( void *pv, unsigned char *buf, unsigned int *amount ) {
 
-	JsCntxt *cntxt = (CxObj*)pv;
+	JsCntxt *cntxt = (JsCntxt*)pv;
 	JSContext *cx = NULL;
 	JS_ContextIterator(cntxt->rt, &cx); // (TBD) find a better way to get a suitable cx ( beware: cx & threads )
 	JSObject *obj = cntxt->obj;
@@ -127,7 +127,6 @@ DEFINE_CONSTRUCTOR() {
 	cntxt->rt = JS_GetRuntime(cx); // beware: cx must exist during the life of this object !
 	cntxt->obj = obj;
 	SetNativeInterface(cx, obj, NI_READ_RESOURCE, (FunctionPointer)NativeInterfaceReadBuffer, cntxt);
-
 	Queue *queue = QueueConstruct();
 	RT_ASSERT_ALLOC(queue);
 	JS_SetPrivate(cx, obj, queue);
@@ -141,7 +140,7 @@ DEFINE_FUNCTION( Write ) {
 	RT_ASSERT_ARGC(1);
 	RT_ASSERT_STRING(argv[0]);
 	Queue *queue = (Queue*)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE( queue );
+	RT_ASSERT_RESOURCE(queue);
 
 	JSString *str = JSVAL_TO_STRING(argv[0]);
 	size_t strLen = JS_GetStringLength(str);
@@ -184,7 +183,7 @@ DEFINE_FUNCTION( Unread ) {
 DEFINE_FUNCTION( Read ) { // Read( [amount | <undefined> ] )
 
 	Queue *queue = (Queue*)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE( queue );
+	RT_ASSERT_RESOURCE(queue);
 	size_t bufferLength;
 	RT_CHECK_CALL( BufferGetLength(cx, obj, &bufferLength) );
 	size_t amount;
@@ -222,7 +221,7 @@ DEFINE_FUNCTION( Read ) { // Read( [amount | <undefined> ] )
 		RT_CHECK_CALL( BufferRefillRequest(cx, obj, &bufferLength) );
 		if ( amount > bufferLength )
 			amount = bufferLength; // we definitively cannot read the required amount of data, then read the whole buffer.
-	}
+		}
 
 	// at this point, amound must contain the exact amount of data we will return
 	char *str = (char*)JS_malloc(cx, amount +1);
