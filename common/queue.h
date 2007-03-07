@@ -104,7 +104,6 @@ inline void QueueUnshift( Queue *queue, void *data ) {
 	}
 }
 
-
 inline void *QueueShift( Queue *queue ) {
 	
 	QueueCell *cell = queue->begin;

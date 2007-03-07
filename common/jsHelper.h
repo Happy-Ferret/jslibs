@@ -40,6 +40,15 @@
 ////////////////////////
 // common error messages
 
+#define STRINGIFY(x) #x
+#define TOSTRING(x) STRINGIFY(x)
+
+#ifdef _DEBUG
+	#define RT_CODE_LOCATION " (in " __FILE__ ":" TOSTRING(__LINE__) ")"
+#else // _DEBUG
+	#define RT_CODE_LOCATION ""
+#endif // _DEBUG
+
 #define RT_ERROR_NEED_CONSTRUCTION "construction is needed for this object."
 #define RT_ERROR_MISSING_ARGUMENT "this function require more arguments."
 #define RT_ERROR_TOO_MANY_ARGUMENTS "you provide too many argument to the function."
@@ -54,7 +63,6 @@
 #define RT_ERROR_UNEXPECTED_TYPE "unexpected data type."
 #define RT_ERROR_FUNCTION_EXPECTED "a function is expected."
 
-
 ////////////////
 // helper macros
 
@@ -68,26 +76,26 @@
 	if (_unsafeMode) {code;}
 
 #define REPORT_ERROR(errorMessage) \
-	{ JS_ReportError( cx, (errorMessage) ); return JS_FALSE; }
+	{ JS_ReportError( cx, (errorMessage RT_CODE_LOCATION) ); return JS_FALSE; }
 
 #define REPORT_ERROR_1(errorMessage, arg) \
-	{ JS_ReportError( cx, (errorMessage), (arg) ); return JS_FALSE; }
+	{ JS_ReportError( cx, (errorMessage RT_CODE_LOCATION), (arg) ); return JS_FALSE; }
 
 #define REPORT_ERROR_2(errorMessage, arg1, arg2) \
-	{ JS_ReportError( cx, (errorMessage), (arg1), (arg2) ); return JS_FALSE; }
+	{ JS_ReportError( cx, (errorMessage RT_CODE_LOCATION), (arg1), (arg2) ); return JS_FALSE; }
 
 
 /////////
 // assert
 
 #define RT_ASSERT( condition, errorMessage ) \
-if ( !_unsafeMode && !(condition) ) { JS_ReportError( cx, (errorMessage) ); return JS_FALSE; }
+	if ( !_unsafeMode && !(condition) ) { JS_ReportError( cx, (errorMessage RT_CODE_LOCATION) ); return JS_FALSE; }
 
 #define RT_ASSERT_1( condition, errorMessage, arg ) \
-	if ( !_unsafeMode && !(condition) ) { JS_ReportError( cx, (errorMessage), (arg) ); return JS_FALSE; }
+	if ( !_unsafeMode && !(condition) ) { JS_ReportError( cx, (errorMessage RT_CODE_LOCATION), (arg) ); return JS_FALSE; }
 
 #define RT_ASSERT_2( condition, errorMessage, arg1, arg2 ) \
-	if ( !_unsafeMode && !(condition) ) { JS_ReportError( cx, (errorMessage), (arg1), (arg2) ); return JS_FALSE; }
+	if ( !_unsafeMode && !(condition) ) { JS_ReportError( cx, (errorMessage RT_CODE_LOCATION), (arg1), (arg2) ); return JS_FALSE; }
 
 
 //////////////////
