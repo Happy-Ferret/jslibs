@@ -1,4 +1,22 @@
+
 LoadModule('jsstd');
+
+var obj = { a:1, b:2, c:3 }
+
+HideProperties( obj, 'b' );
+
+for ( var i in obj )
+	Print( i +':'+obj[i],'\n');
+	
+	
+
+
+
+var toto = [ 1,3,5 ];
+toto.i = 6;
+Clear(toto);
+Print( 'toto:'+toto.length, '\n' );
+
 
 var toto = 'rrr';
 
@@ -9,7 +27,27 @@ buf.Write('5');
 buf.Write('');
 buf.Write('6789');
 
+CollectGarbage();
+var s = buf.Read(5);
+s += 'X'
+CollectGarbage();
+buf.Unread(s);
+s += 'Y'
+CollectGarbage();
+
 Print( buf.Read(100) );
+
+buf.Write('1234');
+buf.Write('5');
+buf.Write('');
+buf.Write('6789');
+
+Print( buf.Read(undefined), '\n' );
+Print( buf.Read(undefined), '\n' );
+Print( buf.Read(undefined), '\n' );
+Print( buf.Read(undefined), '\n' );
+Print( buf.Read(undefined), '\n' );
+
 
 /*
 Print( '['+buf.length +']');

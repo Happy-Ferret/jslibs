@@ -20,12 +20,6 @@
 
 #include <jscntxt.h>
 
-/*
-typedef struct BufferChunk {
-	JSString *str;
-	int length;
-} BufferChunk;
-*/
 
 typedef struct JsCntxt {
 	JSRuntime *rt;
@@ -37,26 +31,73 @@ static bool NativeInterfaceReadBuffer( void *pv, unsigned char *buf, unsigned in
 
 	JsCntxt *cntxt = (CxObj*)pv;
 	JSContext *cx = NULL;
-	JS_ContextIterator(cntxt->rt, &cx);
+	JS_ContextIterator(cntxt->rt, &cx); // (TBD) find a better way to get a suitable cx ( beware: cx & threads )
 	JSObject *obj = cntxt->obj;
 	RT_SAFE( if ( obj == NULL || cx == NULL ) return false );
+
+	#ifdef JS_THREADSAFE
+	JS_BeginRequest( cx ); // http://developer.mozilla.org/en/docs/JS_BeginRequest
+	#endif
 
 	jsval rval, argv[] = { INT_TO_JSVAL(*amount) };
 	if ( JS_CallFunctionName(cx, obj, "Read", 1, argv, &rval) == JS_FALSE )
 		return false;
-
 	if ( !JSVAL_IS_STRING(rval) )
 		return false;
-
 	JSString *jsStr = JSVAL_TO_STRING(rval);
-
 	char * str = JS_GetStringBytes(jsStr);
 	size_t len = JS_GetStringLength(jsStr);
-
 	memcpy(buf, str, len);
 	*amount = len;
+
+	#ifdef JS_THREADSAFE
+		JS_EndRequest( cx );
+	#endif
+
 	return true;
 }
+
+
+
+inline JSBool BufferSetLength( JSContext *cx, JSObject *obj, size_t bufferLength ) {
+
+	RT_CHECK_CALL( JS_SetReservedSlot(cx, obj, SLOT_BUFFER_LENGTH, INT_TO_JSVAL( bufferLength )) );
+	return JS_TRUE;
+}
+
+inline JSBool BufferGetLength( JSContext *cx, JSObject *obj, size_t *bufferLength ) {
+
+	jsval bufferLengthVal;
+	RT_CHECK_CALL( JS_GetReservedSlot(cx, obj, SLOT_BUFFER_LENGTH, &bufferLengthVal) );
+	*bufferLength = JSVAL_TO_INT(bufferLengthVal);
+	return JS_TRUE;
+}
+
+inline JSBool BufferLengthAdd( JSContext *cx, JSObject *obj, size_t amount ) {
+	
+	size_t bufferLength;
+	RT_CHECK_CALL( BufferGetLength(cx, obj, &bufferLength) );
+	bufferLength += amount;
+	RT_CHECK_CALL( BufferSetLength(cx, obj, bufferLength) );
+	return JS_TRUE;
+}
+
+inline JSBool BufferRefillRequest( JSContext *cx, JSObject *obj, size_t *bufferLength  ) {
+
+	jsval fctVal;
+	JS_GetProperty(cx, obj, "onunderflow", &fctVal);
+	if ( fctVal != JSVAL_VOID ) {
+
+		RT_ASSERT_FUNCTION(fctVal);
+		jsval retVal;
+		RT_CHECK_CALL( CallFunction(cx, obj, fctVal, &retVal, 1, OBJECT_TO_JSVAL(obj)) );
+	}
+	BufferGetLength(cx, obj, bufferLength); // read it again because it may have changed
+	return JS_TRUE;
+}
+
+
+
 
 BEGIN_CLASS( Buffer )
 
@@ -76,23 +117,21 @@ DEFINE_FINALIZE() {
 	}
 }
 
+
 DEFINE_CONSTRUCTOR() {
 
 	RT_ASSERT_CONSTRUCTING( _class );
 
-
+	// prepare NativeInterface compatibility
 	JsCntxt *cntxt = (JsCntxt*)malloc(sizeof(JsCntxt));
-	
-	// (TBD) change this:
 	cntxt->rt = JS_GetRuntime(cx); // beware: cx must exist during the life of this object !
 	cntxt->obj = obj;
-
 	SetNativeInterface(cx, obj, NI_READ_RESOURCE, (FunctionPointer)NativeInterfaceReadBuffer, cntxt);
 
 	Queue *queue = QueueConstruct();
 	RT_ASSERT_ALLOC(queue);
 	JS_SetPrivate(cx, obj, queue);
-	JS_SetReservedSlot(cx, obj, SLOT_BUFFER_LENGTH, JSVAL_ZERO );
+	BufferSetLength(cx, obj, 0);
 	return JS_TRUE;
 }
 
@@ -102,43 +141,74 @@ DEFINE_FUNCTION( Write ) {
 	RT_ASSERT_ARGC(1);
 	RT_ASSERT_STRING(argv[0]);
 	Queue *queue = (Queue*)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE(queue);
+	RT_ASSERT_RESOURCE( queue );
 
 	JSString *str = JSVAL_TO_STRING(argv[0]);
+	size_t strLen = JS_GetStringLength(str);
+
 	size_t amount;
-	if ( argc >= 2 )
-		RT_JSVAL_TO_INT32( argv[1], amount )
-	else
-		amount = JS_GetStringLength(str);
+	if ( argc >= 2 ) {
+		RT_JSVAL_TO_INT32( argv[1], amount );
+		if ( amount > strLen )
+			amount = strLen;
+	} else
+		amount = strLen;
 
 	JSString **pNewStr = (JSString**)malloc(sizeof(JSString*));
 	*pNewStr = JS_NewDependentString(cx, str, 0, amount);
 	RT_ASSERT( pNewStr != NULL, "Unable to create a NewDependentString." );
 	RT_CHECK_CALL( JS_AddRoot(cx, pNewStr) );
 	QueuePush( queue, pNewStr );
-
-	jsval bufferLengthVal;
-	JS_GetReservedSlot(cx, obj, SLOT_BUFFER_LENGTH, &bufferLengthVal );
-	bufferLengthVal = INT_TO_JSVAL( JSVAL_TO_INT(bufferLengthVal) + amount );
-	JS_SetReservedSlot(cx, obj, SLOT_BUFFER_LENGTH, bufferLengthVal );
+	RT_CHECK_CALL( BufferLengthAdd(cx, obj, amount) );
 	return JS_TRUE;
 }
 
-//JSBool BufferRead( JSContext *cx, JSObject *obj, size_t amount, )
 
-DEFINE_FUNCTION( Read ) {
+DEFINE_FUNCTION( Unread ) {
+
+	RT_ASSERT_ARGC( 1 );
+	RT_ASSERT_ARGC_MAX( 1 ); // discourages one to use Unread like Write
+	RT_ASSERT_STRING( argv[0] );
+	Queue *queue = (Queue*)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE( queue );
+	JSString **pNewStr = (JSString**)malloc(sizeof(JSString*));
+	RT_ASSERT_ALLOC( pNewStr );
+	*pNewStr = JSVAL_TO_STRING(argv[0]); // no need to use JS_NewDependentString (see js_NewDependentString in jsstr.c)
+	RT_CHECK_CALL( JS_AddRoot(cx, pNewStr) );
+	QueueUnshift( queue, pNewStr );
+	RT_CHECK_CALL( BufferLengthAdd(cx, obj, JS_GetStringLength(*pNewStr)) );
+	return JS_TRUE;
+}
+
+
+DEFINE_FUNCTION( Read ) { // Read( [amount | <undefined> ] )
 
 	Queue *queue = (Queue*)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE(queue);
-	jsval bufferLengthVal;
-
-	JS_GetReservedSlot(cx, obj, SLOT_BUFFER_LENGTH, &bufferLengthVal );
-	int bufferLength = JSVAL_TO_INT(bufferLengthVal);
+	RT_ASSERT_RESOURCE( queue );
+	size_t bufferLength;
+	RT_CHECK_CALL( BufferGetLength(cx, obj, &bufferLength) );
 	size_t amount;
 
 	if ( argc == 0 )
 		amount = bufferLength; // read the whole buffer
-	else
+	else if ( argv[0] == JSVAL_VOID ) { // read the next chunk (read something as fast as possible)
+
+		if ( bufferLength == 0 ) {
+
+			RT_CHECK_CALL( BufferRefillRequest(cx, obj, &bufferLength) );
+			if ( bufferLength == 0 ) { // the data are definitively exhausted
+				
+				*rval = JS_GetEmptyStringValue(cx);
+				return JS_TRUE;
+			}
+		}
+		JSString **pNewStr = (JSString**)QueueShift(queue);
+		bufferLength -= JS_GetStringLength(*pNewStr);
+		RT_CHECK_CALL( BufferSetLength(cx, obj, bufferLength) ); // update buffer size
+		RT_CHECK_CALL( JS_RemoveRoot(cx, pNewStr) ); // removeRoot
+		*rval = STRING_TO_JSVAL(*pNewStr); // result (Rooted)
+		return JS_TRUE;
+	} else
 		RT_JSVAL_TO_INT32( argv[0], amount );
 
 	if ( amount <= 0 ) { // optimization
@@ -149,25 +219,15 @@ DEFINE_FUNCTION( Read ) {
 
 	if ( bufferLength < amount || bufferLength == 0 ) {
 
-		jsval fctVal;
-		JS_GetProperty(cx, obj, "onunderflow", &fctVal);
-		if ( fctVal != JSVAL_VOID ) {
-
-			RT_ASSERT_FUNCTION(fctVal);
-			jsval retVal;
-			RT_CHECK_CALL( CallFunction(cx, obj, fctVal, &retVal, 1, OBJECT_TO_JSVAL(obj)) );
-		}
-
-		JS_GetReservedSlot(cx, obj, SLOT_BUFFER_LENGTH, &bufferLengthVal ); // read it again because it may have changed
-		bufferLength = JSVAL_TO_INT(bufferLengthVal);
-
+		RT_CHECK_CALL( BufferRefillRequest(cx, obj, &bufferLength) );
 		if ( amount > bufferLength )
-			amount = bufferLength; // we definitively cannot read the required amount of data, thaen adjust the amount of data we will read
+			amount = bufferLength; // we definitively cannot read the required amount of data, then read the whole buffer.
 	}
+
 	// at this point, amound must contain the exact amount of data we will return
 	char *str = (char*)JS_malloc(cx, amount +1);
 	RT_ASSERT_ALLOC(str);
-	str[amount] = '\0';
+	str[amount] = '\0'; // (TBD) explain this
 	char *ptr = str;
 	size_t remainToRead = amount;
 
@@ -192,12 +252,9 @@ DEFINE_FUNCTION( Read ) {
 			remainToRead = 0; // adjust remaining required data length
 		}
 	}
-
 	*rval = STRING_TO_JSVAL(JS_NewString(cx, str, amount));
 	bufferLength -= amount;
-
-	bufferLengthVal = INT_TO_JSVAL( bufferLength );
-	JS_SetReservedSlot(cx, obj, SLOT_BUFFER_LENGTH, bufferLengthVal );
+	RT_CHECK_CALL( BufferSetLength(cx, obj, bufferLength) ); // update buffer size
 	return JS_TRUE;
 }
 
@@ -227,6 +284,7 @@ CONFIGURE_CLASS
 
 	BEGIN_FUNCTION_SPEC
 		FUNCTION(Write)
+		FUNCTION(Unread)
 		FUNCTION(Read)
 	END_FUNCTION_SPEC
 

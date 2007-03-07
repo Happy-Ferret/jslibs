@@ -127,23 +127,14 @@ DEFINE_FUNCTION( Expand ) {
 DEFINE_FUNCTION( Seal ) {
 
 	RT_ASSERT_ARGC(1);
-
-	JSObject *target;
-	JSBool deep = JS_FALSE;
-
-	JSBool err;
-	err = JS_ValueToObject( cx, argv[0], &target );
-	RT_ASSERT( err == JS_TRUE, "unable to seal this object." );
-
-	argv[0] = OBJECT_TO_JSVAL(target);
-
-	if ( argc >= 2 ) { // strange: js> seal(o) => deep == true : it's because nargs in JS_DefineFunction
-
-		err = JS_ValueToBoolean( cx, argv[1], &deep );
-		RT_ASSERT( err == JS_TRUE, "unable to convert arg2 to bool." );
-	}
-
-	return JS_SealObject(cx, target, deep);
+	JSBool deep;
+	RT_ASSERT_OBJECT(argv[0]);
+	//RT_CHECK_CALL( JS_ValueToObject(cx, argv[0], &obj) );
+	if ( argc >= 2 ) // strange: js> seal(o) => deep == true : it's because nargs in JS_DefineFunction
+		RT_CHECK_CALL( JS_ValueToBoolean( cx, argv[1], &deep ) )
+	else
+		deep = JS_FALSE;
+	return JS_SealObject(cx, JSVAL_TO_OBJECT(argv[0]), deep);
 }
 
 
@@ -151,10 +142,9 @@ DEFINE_FUNCTION( Seal ) {
 DEFINE_FUNCTION( Clear ) {
 
 	RT_ASSERT_ARGC(1);
-	JSBool err;
-	err = JS_ValueToObject(cx, argv[0], &obj);
-	RT_ASSERT( err == JS_TRUE, "unable to clear this object." );
-	JS_ClearScope(cx, obj);
+	//RT_CHECK_CALL( JS_ValueToObject(cx, argv[0], &obj) );
+	RT_ASSERT_OBJECT(argv[0]);
+	JS_ClearScope(cx, JSVAL_TO_OBJECT(argv[0]));
   return JS_TRUE;
 }
 
@@ -163,23 +153,22 @@ DEFINE_FUNCTION( Clear ) {
 DEFINE_FUNCTION( HideProperties ) {
 
 	RT_ASSERT_ARGC(2);
+
 	JSObject *object;
 	JSBool err;
-	err = JS_ValueToObject( cx, argv[0], &object );
-	RT_ASSERT( err == JS_TRUE, "unable to seal this object." );
-
+	RT_CHECK_CALL( JS_ValueToObject( cx, argv[0], &object ) );
 	const char *propertyName;
 	uintN attributes;
 	JSBool found;
 	for ( uintN i=1; i<argc; i++ ) {
 
 		propertyName = JS_GetStringBytes( JS_ValueToString( cx, argv[i] ) );
-		RT_ASSERT( propertyName != NULL, "invalid property." );
-		JS_GetPropertyAttributes( cx, object, propertyName, &attributes, &found );
+		RT_ASSERT_1( propertyName != NULL, "Invalid property name (%s).", propertyName );
+		RT_CHECK_CALL( JS_GetPropertyAttributes( cx, object, propertyName, &attributes, &found ) );
 		if ( found == JS_FALSE )
 			continue;
 		attributes &= ~JSPROP_ENUMERATE;
-		JS_SetPropertyAttributes( cx, object, propertyName, attributes, &found );
+		RT_CHECK_CALL( JS_SetPropertyAttributes( cx, object, propertyName, attributes, &found ) );
 	}
 	return JS_TRUE;
 }
@@ -206,18 +195,18 @@ DEFINE_PROPERTY( gcByte ) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 DEFINE_FUNCTION( CollectGarbage ) {
-/* needed ???
-  #ifdef JS_THREADSAFE
-	JS_BeginRequest( cx );
-  #endif
-*/
+
+	#ifdef JS_THREADSAFE
+	JS_BeginRequest( cx ); // http://developer.mozilla.org/en/docs/JS_BeginRequest
+	#endif
+
 	JS_GC( cx );
-/* needed ???
-  #ifdef JS_THREADSAFE
+
+	#ifdef JS_THREADSAFE
 	JS_EndRequest( cx );
-  #endif
-*/
-  return JS_TRUE;
+	#endif
+	
+	return JS_TRUE;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
