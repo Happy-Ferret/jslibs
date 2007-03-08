@@ -38,7 +38,7 @@ extern "C" DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	return JS_TRUE;
 }
 
-extern "C" DLLEXPORT void ModuleRelease(JSContext *cx) {
+extern "C" DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
 }
 
 extern "C" DLLEXPORT void ModuleFree() {

@@ -26,22 +26,14 @@
 #include "jsprf.h"
 #include "jsscript.h"
 
-// #include <jsdbgapi.h>
-// #include <jscntxt.h>
-// #include <jsscript.h>
-
 #include "../common/jsNames.h"
 #include "../common/jshelper.h"
 #include "../configuration/configuration.h"
+#include "../moduleManager/moduleManager.h"
 
 // to be used in the main() function only
 #define RT_HOST_MAIN_ASSERT( condition, errorMessage ) \
 	if ( !(condition) ) { consoleStdErr( cx, errorMessage, sizeof(errorMessage)-1 ); return -1; }
-
-//#include "../objectEx/objetEx.h"
-
-HMODULE _moduleList[32] = {NULL}; // do not manage the module list dynamicaly, we allow a maximum of 32 modules
-//JSBool _Module(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval);
 
 JSBool unsafeMode = JS_FALSE;
 
@@ -179,8 +171,6 @@ static void LoadErrorReporter(JSContext *cx, const char *message, JSErrorReport 
 }
 */
 
-
-
 static JSBool global_loadModule(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
 	RT_ASSERT_ARGC(1);
@@ -189,16 +179,28 @@ static JSBool global_loadModule(JSContext *cx, JSObject *obj, uintN argc, jsval 
 	char libFileName[MAX_PATH];
 	strcpy( libFileName, fileName );
 	strcat( libFileName, DLL_EXT );
-	HMODULE module = ::LoadLibrary(libFileName);
-	RT_ASSERT_2( module != NULL, "Unable to load the library %s (error:%d).", libFileName, GetLastError() );
-	int i;
-	for ( i = 0; _moduleList[i]; ++i ); // find a free module slot
-	RT_ASSERT( i < 32, "unable to load more libraries" );
-	_moduleList[i] = module;
-	typedef JSBool (*ModuleInitFunction)(JSContext *, JSObject *);
-	ModuleInitFunction moduleInit = (ModuleInitFunction)::GetProcAddress( module, "ModuleInit" ); // (argc>1) ? JS_GetStringBytes(JS_ValueToString(cx, argv[1])) : 
-	RT_ASSERT_1( moduleInit != NULL, "Module initialization function not found in %s.", libFileName );
-	*rval = moduleInit( cx, obj ) == JS_TRUE ? JSVAL_TRUE : JSVAL_FALSE;
+	ModuleId id = ModuleLoad(libFileName, cx, obj);
+	RT_ASSERT_2( id != 0, "Unable to load the module %s (error:%d).", libFileName, GetLastError() );
+	RT_CHECK_CALL( JS_NewNumberValue(cx, id, rval) );
+	return JS_TRUE;
+}
+
+
+static JSBool global_unloadModule(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+
+	RT_ASSERT_ARGC(1);
+	jsdouble dVal;
+	RT_CHECK_CALL( JS_ValueToNumber(cx, argv[0], &dVal) );
+	ModuleId id = dVal;
+	
+	if ( ModuleIsUnloadable(id) ) {
+
+		bool st = ModuleUnload(id, cx);
+		RT_ASSERT( st == true, "Unable to unload the module" );
+		*rval = JSVAL_TRUE;
+	} else {
+		*rval = JSVAL_FALSE;
+	}
 	return JS_TRUE;
 }
 
@@ -276,8 +278,8 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	JSContext *cx;
 	JSObject *globalObject;
 
-	unsigned long maxbytes = 32L * 1024L * 1024L;
-	unsigned long stackSize = 1L * 1024L * 1024L;
+	unsigned long maxbytes = 16L * 1024L * 1024L;
+	unsigned long stackSize = 8192; //1L * 1024L * 1024L; // http://groups.google.com/group/mozilla.dev.tech.js-engine/browse_thread/thread/be9f404b623acf39/9efdfca81be99ca3
 
 
 	for ( argv++; argv[0] && argv[0][0] == '-'; argv++ )
@@ -290,10 +292,12 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 				argv++;
 				maxbytes = atol( *argv );
 				break;
-			case 's': // stackSize
-				argv++;
-				stackSize = atol( *argv );
-				break;
+
+//			case 's': // stackSize
+//				argv++;
+//				stackSize = atol( *argv );
+//				break;
+
 /*
 			case 'c': // save compiled scripts
 				arg++;
@@ -344,6 +348,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	JS_DefineProperty(cx, globalObject, NAME_GLOBAL_GLOBAL_OBJECT, OBJECT_TO_JSVAL(JS_GetGlobalObject(cx)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
 	JS_DefineProperties( cx, globalObject, Global_PropertySpec );
 	JS_DefineFunction( cx, globalObject, NAME_GLOBAL_FUNCTION_LOAD_MODULE, global_loadModule, 0, 0 );
+	JS_DefineFunction( cx, globalObject, NAME_GLOBAL_FUNCTION_UNLOAD_MODULE, global_unloadModule, 0, 0 );
 //	JS_DefineFunction( cx, globalObject, "test", global_test, 0, 0 );
 // JS_DefineFunction( cx, globalObject, "Module", _Module, 0, 0 );
 
@@ -451,14 +456,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
     JS_EndRequest(cx);
 #endif
 
-	typedef void (*ModuleReleaseFunction)(JSContext *cx);
-	for ( int i = sizeof(_moduleList) / sizeof(*_moduleList) - 1; i >= 0; --i ) // beware: 'i' must be signed // start from the end
-		if ( _moduleList[i] != NULL ) {
-
-			ModuleReleaseFunction moduleRelease = (ModuleReleaseFunction)::GetProcAddress( _moduleList[i], "ModuleRelease" );
-			if ( moduleRelease != NULL )
-				moduleRelease(cx);
-		}
+	 ModuleReleaseAll(cx);
 
 //	JS_GC(cx); // try to break linked objects
 // (TBD) don't
@@ -475,16 +473,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 
 // Beware: because JS engine allocate memory from the DLL, all memory must be disallocated before releasing the DLL
 	// free used modules
-	typedef void (*ModuleFreeFunction)(void);
-	for ( int i = sizeof(_moduleList) / sizeof(*_moduleList) - 1; i >= 0; --i ) // beware: 'i' must be signed // start from the end
-		if ( _moduleList[i] != NULL ) {
-
-			ModuleFreeFunction moduleFree = (ModuleFreeFunction)::GetProcAddress( _moduleList[i], "ModuleFree" );
-			if ( moduleFree != NULL )
-				moduleFree();
-			::FreeLibrary(_moduleList[i]);
-		}
-
+  ModuleFreeAll();
   return 0;
 }
 

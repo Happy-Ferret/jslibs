@@ -14,8 +14,7 @@
 #include "../common/jsNames.h"
 #include "../common/jshelper.h"
 #include "../configuration/configuration.h"
-
-HMODULE _moduleList[32] = {NULL}; // do not manage the module list dynamicaly, we allow a maximum of 32 modules
+#include "../moduleManager/moduleManager.h"
 
 static JSBool global_loadModule(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
@@ -25,16 +24,20 @@ static JSBool global_loadModule(JSContext *cx, JSObject *obj, uintN argc, jsval 
 	char libFileName[MAX_PATH];
 	strcpy( libFileName, fileName );
 	strcat( libFileName, DLL_EXT );
-	HMODULE module = ::LoadLibrary(libFileName);
-	RT_ASSERT_2( module != NULL, "Unable to load the library %s (error:%d).", libFileName, GetLastError() );
-	int i;
-	for ( i = 0; _moduleList[i]; ++i ); // find a free module slot
-	RT_ASSERT( i < sizeof(_moduleList)/sizeof(HMODULE), "unable to load more libraries" );
-	_moduleList[i] = module;
-	typedef JSBool (*ModuleInitFunction)(JSContext *, JSObject *);
-	ModuleInitFunction moduleInit = (ModuleInitFunction)::GetProcAddress( module, NAME_MODULE_INIT ); // (argc>1) ? JS_GetStringBytes(JS_ValueToString(cx, argv[1])) : 
-	RT_ASSERT_1( moduleInit != NULL, "Module initialization function not found in %s.", libFileName );
-	*rval = moduleInit( cx, obj ) == JS_TRUE ? JSVAL_TRUE : JSVAL_FALSE;
+	ModuleId id = ModuleLoad(libFileName, cx, obj);
+	RT_ASSERT_2( id != 0, "Unable to load the module %s (error:%d).", libFileName, GetLastError() );
+	RT_CHECK_CALL( JS_NewNumberValue(cx, id, rval) );
+	return JS_TRUE;
+}
+
+static JSBool global_unloadModule(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+
+	RT_ASSERT_ARGC(1);
+	jsdouble dVal;
+	RT_CHECK_CALL( JS_ValueToNumber(cx, argv[0], &dVal) );
+	ModuleId id = dVal;
+	bool st = ModuleUnload(id, cx);
+	RT_ASSERT( st == true, "Unable to unload the module" );
 	return JS_TRUE;
 }
 
@@ -189,8 +192,8 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 	JSContext *cx;
 	JSObject *globalObject;
 
-	unsigned long maxbytes = 32L * 1024L * 1024L;
-	unsigned long stackSize = 1L * 1024L * 1024L;
+	unsigned long maxbytes = 16L * 1024L * 1024L;
+	unsigned long stackSize = 8192; //1L * 1024L * 1024L; // http://groups.google.com/group/mozilla.dev.tech.js-engine/browse_thread/thread/be9f404b623acf39/9efdfca81be99ca3
 
 	rt = JS_NewRuntime(maxbytes); // maxbytes specifies the number of allocated bytes after which garbage collection is run.
 	cx = JS_NewContext(rt, stackSize); // A context specifies a stack size for the script, the amount, in bytes, of private memory to allocate to the execution stack for the script.
@@ -213,6 +216,7 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 // global functions & properties
 	JS_DefineProperty(cx, globalObject, NAME_GLOBAL_GLOBAL_OBJECT, OBJECT_TO_JSVAL(JS_GetGlobalObject(cx)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT);
 	JS_DefineFunction(cx, globalObject, NAME_GLOBAL_FUNCTION_LOAD_MODULE, global_loadModule, 0, 0);
+	JS_DefineFunction(cx, globalObject, NAME_GLOBAL_FUNCTION_UNLOAD_MODULE, global_unloadModule, 0, 0);
 
 // Global configuration object
 	JSObject *configObject;
@@ -267,29 +271,14 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 		return -2;
 	JS_DestroyScript( cx, script );
 
-	typedef void (*ModuleReleaseFunction)(JSContext *cx);
-	for ( int i = sizeof(_moduleList) / sizeof(*_moduleList) - 1; i >= 0; --i ) // beware: 'i' must be signed because we start from the end
-		if ( _moduleList[i] != NULL ) {
-
-			ModuleReleaseFunction moduleRelease = (ModuleReleaseFunction)::GetProcAddress( _moduleList[i], NAME_MODULE_RELEASE );
-			if ( moduleRelease != NULL )
-				moduleRelease(cx);
-		}
+	ModuleReleaseAll(cx);
 
   JS_DestroyContext(cx);
   JS_DestroyRuntime(rt);
   JS_ShutDown();
 
   // Beware: because JS engine allocate memory from the DLL, all memory must be disallocated before releasing the DLL
-	typedef void (*ModuleFreeFunction)(void);
-	for ( int i = sizeof(_moduleList) / sizeof(*_moduleList) - 1; i >= 0; --i ) // beware: 'i' must be signed // start from the end
-		if ( _moduleList[i] != NULL ) {
-
-			ModuleFreeFunction moduleFree = (ModuleFreeFunction)::GetProcAddress( _moduleList[i], NAME_MODULE_FREE );
-			if ( moduleFree != NULL )
-				moduleFree();
-			::FreeLibrary(_moduleList[i]);
-		}
+  ModuleFreeAll();
 
   return 0;
 }

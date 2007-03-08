@@ -3,10 +3,13 @@ Microsoft Visual Studio Solution File, Format Version 9.00
 # Visual C++ Express 2005
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jswinhost", "jswinhost.vcproj", "{98728E89-FF4F-4A74-A508-07FBA279783B}"
 	ProjectSection(ProjectDependencies) = postProject
+		{724F3FF6-D460-4854-AF30-C63AE8516419} = {724F3FF6-D460-4854-AF30-C63AE8516419}
 		{35128DFB-6C49-4E4C-AC5E-9948F01282B3} = {35128DFB-6C49-4E4C-AC5E-9948F01282B3}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "configuration", "..\configuration\configuration.vcproj", "{35128DFB-6C49-4E4C-AC5E-9948F01282B3}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "moduleManager", "..\moduleManager\moduleManager.vcproj", "{724F3FF6-D460-4854-AF30-C63AE8516419}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -22,6 +25,10 @@ Global
 		{35128DFB-6C49-4E4C-AC5E-9948F01282B3}.Debug|Win32.Build.0 = Debug|Win32
 		{35128DFB-6C49-4E4C-AC5E-9948F01282B3}.Release|Win32.ActiveCfg = Release|Win32
 		{35128DFB-6C49-4E4C-AC5E-9948F01282B3}.Release|Win32.Build.0 = Release|Win32
+		{724F3FF6-D460-4854-AF30-C63AE8516419}.Debug|Win32.ActiveCfg = Debug|Win32
+		{724F3FF6-D460-4854-AF30-C63AE8516419}.Debug|Win32.Build.0 = Debug|Win32
+		{724F3FF6-D460-4854-AF30-C63AE8516419}.Release|Win32.ActiveCfg = Release|Win32
+		{724F3FF6-D460-4854-AF30-C63AE8516419}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -173,6 +173,16 @@ DEFINE_FUNCTION( HideProperties ) {
 	return JS_TRUE;
 }
 
+/*
+DEFINE_FUNCTION( test ) {
+
+// toto(123) = 'test' 
+	*rval
+	JS_SetCallReturnValue2(cx, 
+	return JS_TRUE;
+}
+*/
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // note:
 //  warning is reported on stderr ( jshost.exe test.js 2>NUL )

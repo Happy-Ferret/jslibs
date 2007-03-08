@@ -49,6 +49,12 @@ inline bool QueueIsEmpty( Queue *queue ) {
 	return queue->begin == NULL;
 }
 
+inline void QueueSetData( QueueCell *cell, void *data ) {
+	
+	cell->data = data;
+}
+
+
 inline void QueuePush( Queue *queue, void *data ) {
 	
 	QueueCell *cell = (QueueCell*)malloc(sizeof(QueueCell));
@@ -137,7 +143,40 @@ inline void *QueueGetData( QueueCell *cell ) {
 	return cell->data;
 }
 
-inline void QueueSetData( QueueCell *cell, void *data ) {
-	
-	cell->data = data;
+inline void *QueueRemoveCell( Queue *queue, QueueCell *cell ) {
+
+	if ( cell == queue->begin )
+		return QueueShift(queue);
+	if ( cell == queue->end )
+		return QueuePop(queue);
+	cell->prev->next = cell->next;
+	cell->next->prev = cell->prev;
+	void *data = cell->data;
+	free(cell);
+	return data;
+}
+
+inline void QueueInsertCell( Queue *queue, QueueCell *nextCell, void *data ) {
+
+	if ( nextCell == queue->begin )
+		return QueueUnshift(queue, data);
+	QueueCell *newCell = (QueueCell*)malloc(sizeof(QueueCell));
+	newCell->data = data;
+	newCell->next = nextCell;
+	newCell->prev = nextCell->prev;
+	nextCell->prev->next = newCell;
+	nextCell->prev = newCell;
+}
+
+
+inline void QueueInsertCellAfter( Queue *queue, QueueCell *prevCell, void *data ) {
+
+	if ( prevCell == queue->end )
+		return QueuePush(queue, data);
+	QueueCell *newCell = (QueueCell*)malloc(sizeof(QueueCell));
+	newCell->data = data;
+	newCell->prev = prevCell;
+	newCell->next = prevCell->next;
+	prevCell->next->prev = newCell;
+	prevCell->next = newCell;
 }

@@ -41,7 +41,7 @@ extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj)
 	return JS_TRUE;
 }
 
-extern "C" __declspec(dllexport) void ModuleRelease(JSContext *cx) {
+extern "C" __declspec(dllexport) JSBool ModuleRelease(JSContext *cx) {
 }
 
 extern "C" __declspec(dllexport) void ModuleFree() {
