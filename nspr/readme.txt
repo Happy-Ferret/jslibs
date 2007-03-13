@@ -15,3 +15,20 @@ misc:
 
 try last version:
 	ftp://ftp.mozilla.org/pub/mozilla.org/nspr/releases/
+
+
+<...>
+Hi,
+
+I added two wiki pages on developer.mozilla.org for NSPR build
+and test instructions:
+
+http://developer.mozilla.org/en/docs/NSPR_build_instructions
+
+http://developer.mozilla.org/en/docs/Running_NSPR_tests
+
+I welcome your review comments.
+
+Wan-Teh 
+
+<...>
