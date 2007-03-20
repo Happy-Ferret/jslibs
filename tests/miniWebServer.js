@@ -3,7 +3,7 @@ LoadModule('jsnspr');
 LoadModule('jsz');
 
 
-var configuration = { port:80, bind:'127.0.0.1' };
+var configuration = { port:8001, bind:'127.0.0.1' };
 
 // protocol constants
 const CR = '\r';

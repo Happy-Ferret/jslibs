@@ -173,6 +173,18 @@ DEFINE_FUNCTION( HideProperties ) {
 	return JS_TRUE;
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+DEFINE_FUNCTION( IdOf ) {
+
+	jsid id;
+	if ( JSVAL_IS_OBJECT(argv[0]) )
+		JS_GetObjectId(cx, JSVAL_TO_OBJECT(argv[0]), &id);
+	else
+		JS_ValueToId(cx, argv[0], &id);
+	JS_NewNumberValue(cx,(JSUword)id,rval); // src: ... JSDOUBLE_IS_INT(d, i) && INT_FITS_IN_JSVAL(i) ...
+	return JS_TRUE;
+}
+
 /*
 DEFINE_FUNCTION( test ) {
 
@@ -196,6 +208,7 @@ DEFINE_FUNCTION( Warning ) {
 }
 
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 DEFINE_PROPERTY( gcByte ) {
 
 	JSRuntime *rt = cx->runtime;
@@ -387,6 +400,7 @@ CONFIGURE_STATIC
 		FUNCTION( Print )
 		FUNCTION( CollectGarbage )
 		FUNCTION( Warning )
+		FUNCTION( IdOf )
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC

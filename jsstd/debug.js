@@ -1,5 +1,10 @@
-
 LoadModule('jsstd');
+
+Print( IdOf({}), '\n' );
+Print( IdOf({}), '\n' );
+
+	
+throw(0)
 
 var obj = { a:1, b:2, c:3 }
 
@@ -8,8 +13,6 @@ HideProperties( obj, 'b' );
 for ( var i in obj )
 	Print( i +':'+obj[i],'\n');
 	
-	
-
 
 
 var toto = [ 1,3,5 ];

@@ -29,7 +29,7 @@ var joint = new JointHinge(world);
 joint.useFeedback = false;
 joint.body1 = world.env;
 joint.body2 = body1;
-joint.anchor = [0,0,150];
+joint.anchor = [0,0,150]; // Vec(0,0,150)
 joint.axis = [1,0,0];
 //joint.CFM = 0;
 */
