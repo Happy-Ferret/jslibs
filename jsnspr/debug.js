@@ -2,6 +2,13 @@ LoadModule('jsstd');
 LoadModule('jsnspr');
 
 try {
+
+
+	new File('test.txt').content += new Date() + '\n';
+
+
+throw undefined;
+
 /*
 	var f = new File('test.txt');
 	f.Open( File.RDWR | File.CREATE_FILE  );
