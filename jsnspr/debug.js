@@ -4,7 +4,7 @@ LoadModule('jsnspr');
 try {
 
 
-	new File('test.txt').content += new Date() + '\n';
+	new File('test.txt').content = "test1";
 
 
 throw undefined;

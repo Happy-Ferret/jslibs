@@ -184,7 +184,7 @@ DEFINE_FUNCTION( Write ) {
 	if ( bytesSent == -1 )
 		return ThrowNSPRError( cx, PR_GetError() );
 	
-	RT_ASSERT( bytesSent = length, "unable to send all datas" );
+	RT_ASSERT( bytesSent == length, "unable to send all datas" );
 	return JS_TRUE;
 }
 
@@ -279,60 +279,48 @@ DEFINE_PROPERTY( eof ) {
 DEFINE_PROPERTY( contentGetter ) {
 
 	RT_ASSERT( (PRFileDesc *)JS_GetPrivate( cx, obj ) == NULL, "Cannot get content of an open file.");
-
 	jsval jsvalFileName;
 	JS_GetReservedSlot( cx, obj, SLOT_NSPR_FILE_NAME, &jsvalFileName );
 	RT_ASSERT_DEFINED( jsvalFileName );
 	char *fileName;
 	RT_JSVAL_TO_STRING(jsvalFileName, fileName);
-
-	PRFileDesc *fd = PR_Open( fileName, PR_RDONLY, 0 ); // The mode parameter is currently applicable only on Unix platforms.
-
+	PRFileDesc *fd = PR_OpenFile( fileName, PR_RDONLY, 0 ); // The mode parameter is currently applicable only on Unix platforms.
 	if ( fd == NULL ) {
 		
 		PRErrorCode err = PR_GetError();
 		if ( err == PR_FILE_NOT_FOUND_ERROR )
-			return JS_TRUE;
+			return JS_TRUE; // property will return  undefined
 		return ThrowNSPRError( cx, err );
 	}
-
 	PRInt32 available = PR_Available( fd ); // For a normal file, these are the bytes beyond the current file pointer.
 	if ( available == -1 )
 		return ThrowNSPRError( cx, PR_GetError() );
-
 	char *buf = (char*)JS_malloc( cx, available +1 );
 	RT_ASSERT_ALLOC(buf);
-
 	buf[available] = 0;
-
 	PRInt32 res = PR_Read( fd, buf, available );
-	if (res == -1) { // failure. The reason for the failure can be obtained by calling PR_GetError.
+	if ( res == -1 ) {
 
 		JS_free( cx, buf );
 		return ThrowNSPRError( cx, PR_GetError() );
 	}
-
 	PRStatus status = PR_Close( fd );
 	if ( status == PR_FAILURE )
 		return ThrowNSPRError( cx, PR_GetError() );
-
 	if ( res == 0 ) {
 
 		JS_free( cx, buf );
 		*vp = JS_GetEmptyStringValue(cx); // (TBD) check if it is realy faster.
 		return JS_TRUE;
 	}
-
 	if ( res < available ) { // should never occured
 
 		buf = (char*)JS_realloc(cx, buf, res); // realloc the string using its real size
 		RT_ASSERT_ALLOC(buf);
 	}
-
 	JSString *str = JS_NewString( cx, (char*)buf, res );
 	RT_ASSERT_ALLOC(str);
-
-	*vp = STRING_TO_JSVAL(str); // GC protection is ok with this ?
+	*vp = STRING_TO_JSVAL(str);
 	return JS_TRUE;
 }
 
@@ -341,35 +329,24 @@ DEFINE_PROPERTY( contentSetter ) {
 
 	RT_ASSERT_DEFINED( *vp );
 	RT_ASSERT( (PRFileDesc *)JS_GetPrivate( cx, obj ) == NULL, "Cannot set content of an open file.");
-
 	jsval jsvalFileName;
 	JS_GetReservedSlot( cx, obj, SLOT_NSPR_FILE_NAME, &jsvalFileName );
 	RT_ASSERT_DEFINED( jsvalFileName );
 	char *fileName;
 	RT_JSVAL_TO_STRING(jsvalFileName, fileName);
-
-	PRFileDesc *fd = PR_Open( fileName, PR_CREATE_FILE | PR_WRONLY, 0666 ); // The mode parameter is currently applicable only on Unix platforms.
+	PRFileDesc *fd = PR_OpenFile( fileName, PR_CREATE_FILE | PR_TRUNCATE | PR_WRONLY, 0666 ); // The mode parameter is currently applicable only on Unix platforms.
 	if ( fd == NULL )
 		return ThrowNSPRError( cx, PR_GetError() );
-
-	JSString *jsstr = JS_ValueToString( cx, *vp );
-	*vp = STRING_TO_JSVAL( jsstr ); // protect from GC. Needed ?
-
-	PRInt32 length = JS_GetStringLength( jsstr );
-	void *buf = JS_GetStringBytes( jsstr );
-
-	PRInt32 bytesSent = PR_Write( fd, buf, length );
-
+	void *buf;
+	PRInt32 len;
+	RT_JSVAL_TO_STRING_AND_LENGTH( *vp, buf, len );
+	PRInt32 bytesSent = PR_Write( fd, buf, len );
 	if ( bytesSent == -1 )
 		return ThrowNSPRError( cx, PR_GetError() );
-	
-	RT_ASSERT( bytesSent = length, "unable to set content" );
-	return JS_TRUE;
-
+	RT_ASSERT( bytesSent == len, "unable to set content" );
 	PRStatus status = PR_Close( fd );
 	if ( status == PR_FAILURE )
 		return ThrowNSPRError( cx, PR_GetError() );
-
 	return JS_TRUE;
 }
 
