@@ -327,13 +327,25 @@ DEFINE_PROPERTY( contentGetter ) {
 
 DEFINE_PROPERTY( contentSetter ) {
 
-	RT_ASSERT_DEFINED( *vp );
+//	RT_ASSERT_DEFINED( *vp );
 	RT_ASSERT( (PRFileDesc *)JS_GetPrivate( cx, obj ) == NULL, "Cannot set content of an open file.");
 	jsval jsvalFileName;
 	JS_GetReservedSlot( cx, obj, SLOT_NSPR_FILE_NAME, &jsvalFileName );
 	RT_ASSERT_DEFINED( jsvalFileName );
 	char *fileName;
 	RT_JSVAL_TO_STRING(jsvalFileName, fileName);
+	if ( *vp == JSVAL_VOID ) {
+
+		PRStatus status = PR_Delete( fileName );
+		if ( status != PR_SUCCESS ) {
+		
+			PRErrorCode err = PR_GetError();
+			if ( err == PR_FILE_NOT_FOUND_ERROR )
+				return JS_TRUE; // property will return  undefined
+			return ThrowNSPRError( cx, err );
+		}
+		return JS_TRUE;
+	}
 	PRFileDesc *fd = PR_OpenFile( fileName, PR_CREATE_FILE | PR_TRUNCATE | PR_WRONLY, 0666 ); // The mode parameter is currently applicable only on Unix platforms.
 	if ( fd == NULL )
 		return ThrowNSPRError( cx, PR_GetError() );
