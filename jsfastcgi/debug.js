@@ -1,9 +1,11 @@
 LoadModule('jsstd');
+LoadModule('jsnspr');
 LoadModule('jsfastcgi');
 
-var fcgidata = '...';
-
+var fcgidata = new File('test.txt').content;
 var record = ParseRecord(fcgidata);
+
+Print( record.contentLength, '\n' );
 
 for each ( var i in record.params )
 	Print( i, '\n' );
@@ -16,7 +18,7 @@ for each ( var i in record.params )
 
 LoadModule('jsnspr');
 
-var data = File.stdin.Read(10000);
+var data = File.stdin.Read(10000); // spec: ... FCGI_LISTENSOCK_FILENO equals STDIN_FILENO.
 var result;
 
 //var hex = [];

@@ -73,6 +73,7 @@ DEFINE_FUNCTION( ParseRecord ) {
 
 		case FCGI_PARAMS: { // 4
 
+			char buf[128];
 			JSObject *params = JS_DefineObject(cx, record, "params", NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT);
 			unsigned char *paramStart = data;
 			
@@ -95,14 +96,19 @@ DEFINE_FUNCTION( ParseRecord ) {
 					valueLength = ((data[0] & 0x7f) << 24) + (data[1] << 16) + (data[2] << 8) + data[3];
 					data += 4;
 				}
-				
-				char *name = (char*)JS_malloc(cx, nameLength +1);
+
+				char *name;
+				if ( nameLength <= sizeof(buf)-1 ) // optimization
+					name = buf;
+				else
+					name = (char*)JS_malloc(cx, nameLength +1);
 				name[nameLength] = '\0';
 				memcpy(name, data, nameLength);
 				data += nameLength;
 				JSString *value = JS_NewDependentString(cx, JS_ValueToString(cx, argv[0]), data-start, valueLength);
 				JS_DefineProperty(cx, params, name, STRING_TO_JSVAL( value ), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT | JSPROP_ENUMERATE);
-				JS_free(cx, name);
+				if ( nameLength > sizeof(buf)-1 )
+					JS_free(cx, name);
 				data += valueLength;
 			}
 			

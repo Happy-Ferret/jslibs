@@ -14,6 +14,12 @@
 
 #include "stdafx.h"
 #include "fastcgi.h"
+/*
+#include "../common/jsNativeInterface.h"
+GetNativeInterface(cx, JSVAL_TO_OBJECT(argv[0]), NI_READ_RESOURCE, (FunctionPointer*)&desc->read, &desc->pv);
+RT_ASSERT( desc->read != NULL && desc->pv != NULL, "Unable to GetNativeResource." );
+*/
+
 
 BEGIN_CLASS( FastCGI )
 
@@ -21,6 +27,7 @@ DEFINE_FINALIZE() {
 }
 
 DEFINE_CONSTRUCTOR() {
+
 
 	RT_ASSERT_CONSTRUCTING(_class);
 	return JS_TRUE;
