@@ -157,6 +157,15 @@
 		intVariable = intVal; \
 	}
 
+#define RT_JSVAL_TO_UINT32( jsvalUInt, uintVariable ) \
+	{ \
+	jsdouble tmp; \
+	JSBool st = JS_ValueToNumber(cx, jsvalUInt, &tmp ); \
+	RT_ASSERT( st != JS_FALSE, RT_ERROR_INT_CONVERSION_FAILED ); \
+	uintVariable = (unsigned long)tmp; \
+	RT_ASSERT( tmp == (double)((unsigned long)tmp), RT_ERROR_INT_CONVERSION_FAILED ); \
+	}
+
 #define RT_JSVAL_TO_STRING( jsvalString, stringVariable ) { \
 		JSString *___jssTmp = JS_ValueToString(cx,jsvalString); \
 		RT_ASSERT( ___jssTmp != NULL, RT_ERROR_STRING_CONVERSION_FAILED ); \

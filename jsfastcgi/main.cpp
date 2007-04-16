@@ -14,6 +14,7 @@
 
 #include "stdafx.h"
 #include "fastcgi.h"
+#include "fcgi.h"
 #include "global.h"
 
 extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj) {

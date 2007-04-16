@@ -2,13 +2,37 @@ LoadModule('jsstd');
 LoadModule('jsnspr');
 LoadModule('jsfastcgi');
 
-var fcgidata = new File('test.txt').content;
-var record = ParseRecord(fcgidata);
+var buffer = new Buffer();
+buffer.Write( new File('test.txt').content );
 
-Print( record.contentLength, '\n' );
 
-for each ( var i in record.params )
-	Print( i, '\n' );
+var stdinBuffer = new Buffer();
+
+for ( var i = 0; i < 4; i++ ) { 
+
+	var header = ParseHeader( buffer.Read(8) );
+	Print( 'type:',header.type, '\n' );
+	Print( 'id:',header.requestId, '\n' );
+	switch ( header.type ) {
+		case 1: // FCGI_BEGIN_REQUEST
+			ParseBeginRequest( buffer.Read(header.contentLength), header );
+			break;
+		case 2: // FCGI_ABORT_REQUEST
+			break;
+		case 4: // FCGI_PARAMS
+			header.param || (header.param={});
+			ParseParams( buffer.Read(header.contentLength), header.param );
+			break;
+		case 5: // FCGI_STDIN
+			stdinBuffer.Write( buffer.Read(header.contentLength) );
+			break;
+	}
+	Print( '[remain ' + buffer.length + ']', '\n' );
+}
+
+
+MakeStdoutHeader( id, length );
+
 
 
 // http://www.fastcgi.com/devkit/doc/fcgi-spec.html
