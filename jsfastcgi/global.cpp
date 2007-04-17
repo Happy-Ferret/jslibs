@@ -13,11 +13,13 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
+#include <jsobj.h>
 
 #include "global.h"
 
 #include "fastcgi.h"
 
+// http://www.fastcgi.com/devkit/doc/fcgi-spec.html
 
 BEGIN_STATIC
 
@@ -44,7 +46,7 @@ DEFINE_FUNCTION( ParseHeader ) {
 	return JS_TRUE;
 }
 
-DEFINE_FUNCTION( ParseBeginRequest ) {
+DEFINE_FUNCTION( ParseBeginRequestBody ) {
 
 	RT_ASSERT_ARGC( 1 );
 
@@ -91,7 +93,7 @@ DEFINE_FUNCTION( ParseEndRequest ) {
 }
 */
 
-DEFINE_FUNCTION( ParseParams ) {
+DEFINE_FUNCTION( ParsePairs ) {
 
 	RT_ASSERT_ARGC( 1 );
 
@@ -151,28 +153,27 @@ DEFINE_FUNCTION( ParseParams ) {
 //FCGI_GET_VALUES
 
 
-
-
-DEFINE_FUNCTION( MakeStdoutHeader ) {
+DEFINE_FUNCTION( MakeHeader ) { // type, requestId, contentLength
 	
-	RT_ASSERT_ARGC( 2 );
+	RT_ASSERT_ARGC( 3 );
 
 	FCGI_Header *record = (FCGI_Header*) JS_malloc(cx, sizeof(FCGI_Header));
 	RT_ASSERT_ALLOC( record );
 
 	record->version = 1;
-	record->type = FCGI_STDOUT;
 
 	RT_ASSERT_INT(argv[0]);
-	unsigned short requestId = JSVAL_TO_INT(argv[0]);
-
-	record->requestIdB0 = requestId & 0xFF;
-	record->requestIdB1 = requestId >> 8;
+	record->type = JSVAL_TO_INT(argv[0]);
 
 	RT_ASSERT_INT(argv[1]);
-	unsigned short contentLength = JSVAL_TO_INT(argv[1]);
+	unsigned short requestId = JSVAL_TO_INT(argv[1]);
+	record->requestIdB0 = requestId & 0xFF;
+	record->requestIdB1 = (requestId >> 8) & 0xFF;
+
+	RT_ASSERT_INT(argv[2]);
+	unsigned short contentLength = JSVAL_TO_INT(argv[2]);
 	record->contentLengthB0 = contentLength & 0xFF;
-	record->contentLengthB1 = contentLength >> 8;
+	record->contentLengthB1 = (contentLength >> 8) & 0xFF;
 
 	record->paddingLength = 0;
 	record->reserved = 0;
@@ -180,62 +181,109 @@ DEFINE_FUNCTION( MakeStdoutHeader ) {
 	JSString *jsstr = JS_NewString(cx, (char*)record, sizeof(FCGI_Header));
 	RT_ASSERT_ALLOC( jsstr );
 	*rval = STRING_TO_JSVAL(jsstr);
-
 	return JS_TRUE;
 }
 
 
-DEFINE_FUNCTION( MakeEndRequestHeader ) {
+DEFINE_FUNCTION( MakeEndRequestBody ) {
 
-	RT_ASSERT_ARGC( 3 );
+	RT_ASSERT_ARGC( 2 );
 
-	FCGI_EndRequestRecord *record = (FCGI_EndRequestRecord*) JS_malloc(cx, sizeof(FCGI_EndRequestRecord));
-	RT_ASSERT_ALLOC( record );
-
-	record->header.version = 1;
-	record->header.type = FCGI_END_REQUEST;
-
-	RT_ASSERT_INT(argv[0]);
-	unsigned short requestId = JSVAL_TO_INT(argv[0]);
-	record->header.requestIdB0 = requestId & 0xFF;
-	record->header.requestIdB1 = (requestId >> 8) & 0xFF;
-
-	unsigned short contentLength = sizeof(FCGI_EndRequestBody);
-	record->header.contentLengthB0 = contentLength & 0xFF;
-	record->header.contentLengthB1 = (contentLength >> 8) & 0xFF;
-
-	record->header.paddingLength = 0;
-	record->header.reserved = 0;
+	FCGI_EndRequestBody *body = (FCGI_EndRequestBody*) JS_malloc(cx, sizeof(FCGI_EndRequestBody));
+	RT_ASSERT_ALLOC( body );
 
 	unsigned long appStatus;
-	RT_JSVAL_TO_UINT32( argv[1], appStatus );
-	record->body.appStatusB0 = appStatus & 0xFF;
-	record->body.appStatusB1 = (appStatus >> 8) & 0xFF;
-	record->body.appStatusB2 = (appStatus >> 16) & 0xFF;
-	record->body.appStatusB3 = (appStatus >> 24) & 0xFF;
+	RT_JSVAL_TO_UINT32( argv[0], appStatus );
+	body->appStatusB0 = appStatus & 0xFF;
+	body->appStatusB1 = (appStatus >> 8) & 0xFF;
+	body->appStatusB2 = (appStatus >> 16) & 0xFF;
+	body->appStatusB3 = (appStatus >> 24) & 0xFF;
 
-	RT_ASSERT_NUMBER(argv[2]);
-	record->body.protocolStatus = JSVAL_TO_INT(argv[2]);
+	RT_ASSERT_NUMBER(argv[1]);
+	body->protocolStatus = JSVAL_TO_INT(argv[1]);
 
-	JSString *jsstr = JS_NewString(cx, (char*)record, sizeof(FCGI_EndRequestRecord));
+	JSString *jsstr = JS_NewString(cx, (char*)body, sizeof(FCGI_EndRequestRecord));
 	RT_ASSERT_ALLOC( jsstr );
 	*rval = STRING_TO_JSVAL(jsstr);
-
 	return JS_TRUE;
 }
 
+
+
+DEFINE_FUNCTION( MakePairs ) {
+
+	RT_ASSERT_ARGC( 1 );
+	RT_ASSERT_OBJECT( argv[0] );
+
+	int bufferPos = 0;
+	int bufferLength = 256;
+	unsigned char *buffer = (unsigned char *)JS_malloc(cx, bufferLength);
+
+	JSObject *pairs = JSVAL_TO_OBJECT( argv[0] );
+	JSIdArray *pairsArray = JS_Enumerate(cx, pairs);
+	for ( int i=0; i<pairsArray->length; i++ ) {
+		
+		jsval keyVal;
+		RT_CHECK_CALL( JS_IdToValue(cx, pairsArray->vector[i], &keyVal) );
+		char *key;
+		unsigned long keyLen;
+		RT_JSVAL_TO_STRING_AND_LENGTH( keyVal, key, keyLen );
+
+		jsval valueVal;
+		OBJ_GET_PROPERTY(cx, pairs, pairsArray->vector[i], &valueVal);
+		char *value;
+		unsigned long valueLen;
+		RT_JSVAL_TO_STRING_AND_LENGTH( valueVal, value, valueLen );
+
+		if ( bufferLength - bufferPos < keyLen + valueLen + 8 ) { // max
+			bufferLength += keyLen + valueLen + 8 + 256;
+			buffer = (unsigned char *)JS_realloc(cx, buffer, bufferLength);
+		}
+		
+		if ( keyLen > 127 ) {
+			
+			buffer[bufferPos++] = ( (keyLen >> 24) & 0xFF ) | 0x80;
+			buffer[bufferPos++] = (keyLen >> 16) & 0xFF;
+			buffer[bufferPos++] = (keyLen >>  8) & 0xFF;
+			buffer[bufferPos++] = keyLen & 0xFF;
+		} else
+			buffer[bufferPos++] = keyLen & 0x7F;
+
+		if ( valueLen > 127 ) {
+
+			buffer[bufferPos++] = ( (valueLen >> 24) & 0xFF ) | 0x80;
+			buffer[bufferPos++] = (valueLen >> 16) & 0xFF;
+			buffer[bufferPos++] = (valueLen >>  8) & 0xFF;
+			buffer[bufferPos++] = valueLen & 0xFF;
+		} else
+			buffer[bufferPos++] = valueLen & 0x7F;
+
+		if ( bufferLength - bufferPos < valueLen ) {
+			bufferLength += valueLen + 256;
+			buffer = (unsigned char *)JS_realloc(cx, buffer, bufferLength);
+		}
+
+		memcpy(buffer+bufferPos, key, keyLen);
+		bufferPos += keyLen;
+
+		memcpy(buffer+bufferPos, value, valueLen);
+		bufferPos += valueLen;
+	}
+	JS_DestroyIdArray(cx, pairsArray);
+	*rval = STRING_TO_JSVAL( JS_NewString(cx, (char*)buffer, bufferPos) );
+	return JS_TRUE;
+}
 
 
 CONFIGURE_STATIC
 
 	BEGIN_STATIC_FUNCTION_SPEC
-//		FUNCTION( ParseRecord )
 		FUNCTION( ParseHeader )
-		FUNCTION( ParseBeginRequest )
-//		FUNCTION( ParseEndRequest )
-		FUNCTION( ParseParams )
-		FUNCTION( MakeStdoutHeader )
-		FUNCTION( MakeEndRequestHeader )
+		FUNCTION( ParseBeginRequestBody )
+		FUNCTION( ParsePairs )
+		FUNCTION( MakeHeader )
+		FUNCTION( MakeEndRequestBody )
+		FUNCTION( MakePairs )
 	END_STATIC_FUNCTION_SPEC
 
 END_STATIC

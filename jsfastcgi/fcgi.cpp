@@ -21,6 +21,19 @@ RT_ASSERT( desc->read != NULL && desc->pv != NULL, "Unable to GetNativeResource.
 */
 
 
+JSObject *CreateObjectFromPairs( JSContext *cx ) {
+
+
+	return NULL;
+}
+
+/*
+typedef struct State {
+	int bufferLength
+
+} State;
+*/
+
 BEGIN_CLASS( FastCGI )
 
 DEFINE_FINALIZE() {
@@ -32,6 +45,18 @@ DEFINE_CONSTRUCTOR() {
 	RT_ASSERT_CONSTRUCTING(_class);
 	return JS_TRUE;
 }
+
+
+DEFINE_FUNCTION(Send) {
+	
+	RT_ASSERT_ARGC(1);
+	unsigned char *buffer = (unsigned char *)JS_GetPrivate(cx, obj);
+
+
+
+
+}
+
 
 
 CONFIGURE_CLASS

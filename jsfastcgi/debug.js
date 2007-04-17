@@ -2,28 +2,61 @@ LoadModule('jsstd');
 LoadModule('jsnspr');
 LoadModule('jsfastcgi');
 
+
+//var p = ParsePairs( MakePairs({aaa:123444, bbb:'test'}) ); // test
+//Print( p.bbb.length );
+//throw 0;
+
 var buffer = new Buffer();
 buffer.Write( new File('test.txt').content );
 
+var fcgi = { 
+	BEGIN_REQUEST     : 1,
+	ABORT_REQUEST     : 2,
+	END_REQUEST       : 3,
+	PARAMS            : 4,
+	STDIN             : 5,
+	STDOUT            : 6,
+	STDERR            : 7,
+	DATA              : 8,
+	GET_VALUES        : 9,
+	GET_VALUES_RESULT :10,
+	UNKNOWN_TYPE      :11
+};
+
+var role = {
+	RESPONDER       :1,
+	FCGI_AUTHORIZER :2,
+	FCGI_FILTER     :3
+};
+
+var protocolStatus = {
+	REQUEST_COMPLETE :0,
+	CANT_MPX_CONN    :1,
+	OVERLOADED       :2,
+	UNKNOWN_ROLE     :3
+};
 
 var stdinBuffer = new Buffer();
 
 for ( var i = 0; i < 4; i++ ) { 
 
-	var header = ParseHeader( buffer.Read(8) );
+	var header = ParseHeader( buffer.Read(8) ); // FCGI_HEADER_LEN
 	Print( 'type:',header.type, '\n' );
 	Print( 'id:',header.requestId, '\n' );
 	switch ( header.type ) {
-		case 1: // FCGI_BEGIN_REQUEST
-			ParseBeginRequest( buffer.Read(header.contentLength), header );
+		case fcgi.GET_VALUES:
 			break;
-		case 2: // FCGI_ABORT_REQUEST
+		case fcgi.BEGIN_REQUEST:
+			ParseBeginRequestBody( buffer.Read(header.contentLength), header );
 			break;
-		case 4: // FCGI_PARAMS
+		case fcgi.ABORT_REQUEST:
+			break;
+		case fcgi.PARAMS:
 			header.param || (header.param={});
-			ParseParams( buffer.Read(header.contentLength), header.param );
+			ParsePairs( buffer.Read(header.contentLength), header.param );
 			break;
-		case 5: // FCGI_STDIN
+		case fcgi.STDIN:
 			stdinBuffer.Write( buffer.Read(header.contentLength) );
 			break;
 	}
@@ -31,7 +64,8 @@ for ( var i = 0; i < 4; i++ ) {
 }
 
 
-MakeStdoutHeader( id, length );
+//MakeHeader( fcgi.STDOUT, id, length );
+
 
 
 
