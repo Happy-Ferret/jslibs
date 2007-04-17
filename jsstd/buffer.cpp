@@ -174,6 +174,7 @@ DEFINE_FUNCTION( Unread ) {
 	RT_CHECK_CALL( JS_AddRoot(cx, pNewStr) );
 	QueueUnshift( queue, pNewStr );
 	RT_CHECK_CALL( BufferLengthAdd(cx, obj, JS_GetStringLength(*pNewStr)) );
+	*rval = argv[0];
 	return JS_TRUE;
 }
 
