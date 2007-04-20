@@ -452,6 +452,27 @@ DEFINE_FUNCTION( Recv ) {
 	return JS_TRUE;
 }
 
+/*
+///////////////////////////////////////////////////////////////////////////////
+DEFINE_PROPERTY( _fdSetter ) {
+
+	RT_ASSERT_INT( *vp );
+	RT_CHECK_CALL( JS_SetPrivate( cx, obj, JSVAL_TO_INT(*vp) ) );
+	return JS_TRUE;
+}
+
+DEFINE_PROPERTY( _fdGetter ) {
+
+	int fd JS_GetPrivate(cx, obj);
+	RT_CHECK_CALL( JS_SetPrivate( cx, obj, JSVAL_TO_INT(*vp) ) );
+
+	RT_ASSERT_INT( *vp );
+	return JS_TRUE;
+}
+*/
+
+///////////////////////////////////////////////////////////////////////////////
+enum { linger = PR_SockOpt_Linger, noDelay = PR_SockOpt_NoDelay, reuseAddr = PR_SockOpt_Reuseaddr, keepAlive = PR_SockOpt_Keepalive, recvBufferSize = PR_SockOpt_RecvBufferSize, sendBufferSize = PR_SockOpt_SendBufferSize };
 
 ///////////////////////////////////////////////////////////////////////////////
 DEFINE_PROPERTY( OptionSetter ) {
@@ -672,8 +693,6 @@ DEFINE_PROPERTY( connectionClosed ) {
 	return JS_TRUE;
 }
 
-enum { linger = PR_SockOpt_Linger, noDelay = PR_SockOpt_NoDelay, reuseAddr = PR_SockOpt_Reuseaddr, keepAlive = PR_SockOpt_Keepalive, recvBufferSize = PR_SockOpt_RecvBufferSize, sendBufferSize = PR_SockOpt_SendBufferSize };
-
 
 CONFIGURE_CLASS
 
@@ -702,6 +721,7 @@ CONFIGURE_CLASS
 		PROPERTY_READ( sockName )
 		PROPERTY_READ( connectContinue )
 		PROPERTY_READ( connectionClosed )
+//		PROPERTY( _fd )
 	END_PROPERTY_SPEC
 
 	HAS_PRIVATE

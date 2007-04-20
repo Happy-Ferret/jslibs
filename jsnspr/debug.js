@@ -3,11 +3,15 @@ LoadModule('jsnspr');
 
 try {
 
+	Print( File.stdin.ReadAll().length );
+	
+throw 0;
 
 //	new File('test.txt').content = undefined;
 
+Socket.stdin.Accept();
 
-throw undefined;
+throw 0;
 
 /*
 	var f = new File('test.txt');

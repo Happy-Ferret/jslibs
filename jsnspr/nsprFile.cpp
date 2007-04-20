@@ -20,6 +20,8 @@
 #include "../common/jshelper.h"
 #include "../common/jsNativeInterface.h"
 
+#include "../common/queue.h"
+
 
 static bool NativeInterfaceReadFile( void *pv, unsigned char *buf, unsigned int *amount ) {
 
@@ -95,6 +97,60 @@ DEFINE_FUNCTION( Close ) {
 	return JS_TRUE;
 }
 
+
+DEFINE_FUNCTION( ReadAll ) {
+
+	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
+	RT_ASSERT( fd != NULL, "file is closed." );
+
+	int totalLength = 0;
+	int chunkListTotalLength = 32; // initial value, will evolve at runtime
+	int chunkListContentLength = 0;
+	char **chunkList = (char **)malloc(chunkListTotalLength * sizeof(char*));
+	int currrentReadLength = 1024;
+
+	PRInt32 res;
+	do {
+
+		if ( chunkListContentLength >= chunkListTotalLength ) {
+			
+			chunkListTotalLength *= 2;
+			chunkList = (char**)realloc(chunkList, chunkListTotalLength * sizeof(char*));
+		}
+		//	currrentReadLength = currrentReadLength < 16384 ? 2048 + 1024 * chunkListContentLength : 16384; // 2048, 3072, 4096, 5120, ..., 16384
+		char *chunk = (char *)malloc(sizeof(int) + currrentReadLength);  // chunk format: int + data ...
+		chunkList[chunkListContentLength++] = chunk;
+		res = PR_Read( fd, chunk + sizeof(int), currrentReadLength );
+		if (res == -1) { // failure. The reason for the failure can be obtained by calling PR_GetError.
+
+			while ( chunkListContentLength )
+				free(chunkList[--chunkListContentLength]);
+			free(chunkList);
+			return ThrowNSPRError( cx, PR_GetError() );
+		}
+		*(int*)chunk = res;
+		totalLength += res;
+	} while ( res == currrentReadLength );
+
+	char *jsData = (char*)JS_malloc(cx, totalLength +1);
+	jsData[totalLength] = '\0';
+	char *ptr = jsData + totalLength; // starts from the end
+	while ( chunkListContentLength ) {
+
+		char *chunk = chunkList[--chunkListContentLength];
+		int chunkLength = *(int*)chunk;
+		ptr -= chunkLength;
+		memcpy(ptr, chunk + sizeof(int), chunkLength);
+		free(chunk);
+	}
+	free(chunkList);
+	JSString *jsstr = JS_NewString(cx, jsData, totalLength);
+	RT_ASSERT_ALLOC(jsstr);
+	*rval = STRING_TO_JSVAL( jsstr );
+	return JS_TRUE;
+}
+
+
 DEFINE_FUNCTION( Read ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
@@ -102,15 +158,8 @@ DEFINE_FUNCTION( Read ) {
 
 	PRInt32 amount;
 	if ( argc >= 1 && argv[0] != JSVAL_VOID ) {
-
-		int32 val;
-		JS_ValueToInt32( cx, argv[0], &val );
-		amount = val;
-
-/* PR_Available fails with PRSpecialFD
-		if ( amount > available )
-			amount = available;
-*/
+		
+		RT_JSVAL_TO_INT32( argv[0], amount );
 	} else  { // no amount specified : read the whole file
 
 		PRInt32 available = PR_Available(fd); // For a normal file, these are the bytes beyond the current file pointer.
@@ -155,6 +204,7 @@ DEFINE_FUNCTION( Read ) {
 	*rval = STRING_TO_JSVAL(str); // GC protection is ok with this ?
 	return JS_TRUE;
 }
+
 
 DEFINE_FUNCTION( Write ) {
 
@@ -473,6 +523,7 @@ CONFIGURE_CLASS
 		FUNCTION( Open )
 		FUNCTION( Close )
 		FUNCTION( Read )
+		FUNCTION( ReadAll )
 		FUNCTION( Write )
 		FUNCTION( Seek )
 		FUNCTION( Sync )
