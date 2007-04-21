@@ -153,15 +153,34 @@ DEFINE_FUNCTION( Clear ) {
 DEFINE_FUNCTION( HideProperties ) {
 
 	RT_ASSERT_ARGC(2);
-
 	JSObject *object;
 	JSBool err;
 	RT_CHECK_CALL( JS_ValueToObject( cx, argv[0], &object ) );
 	const char *propertyName;
 	uintN attributes;
-	JSBool found;
 	for ( uintN i=1; i<argc; i++ ) {
 
+		jsid id;
+		uintN attrs;
+		JSObject *obj2;
+		JSProperty *prop;
+
+		RT_CHECK_CALL( JS_ValueToId(cx, argv[i], &id) );
+		RT_CHECK_CALL( OBJ_LOOKUP_PROPERTY(cx, object, id, &obj2, &prop) );
+		if (!prop || object != obj2) { // not found
+
+			if (prop)
+				OBJ_DROP_PROPERTY(cx, obj2, prop);
+			REPORT_ERROR( "Invalid property name." );
+		}
+		RT_CHECK_CALL( OBJ_GET_ATTRIBUTES(cx, object, id, prop, &attrs) );
+		attrs &= ~JSPROP_ENUMERATE;
+		RT_CHECK_CALL( OBJ_SET_ATTRIBUTES(cx, object, id, prop, &attrs) );
+		OBJ_DROP_PROPERTY(cx, object, prop);
+
+/*
+	JSBool found;
+		...
 		propertyName = JS_GetStringBytes( JS_ValueToString( cx, argv[i] ) );
 		RT_ASSERT_1( propertyName != NULL, "Invalid property name (%s).", propertyName );
 		RT_CHECK_CALL( JS_GetPropertyAttributes( cx, object, propertyName, &attributes, &found ) );
@@ -169,6 +188,7 @@ DEFINE_FUNCTION( HideProperties ) {
 			continue;
 		attributes &= ~JSPROP_ENUMERATE;
 		RT_CHECK_CALL( JS_SetPropertyAttributes( cx, object, propertyName, attributes, &found ) );
+*/
 	}
 	return JS_TRUE;
 }

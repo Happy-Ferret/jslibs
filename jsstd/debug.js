@@ -1,8 +1,21 @@
 LoadModule('jsstd');
 
-Print( IdOf({}), '\n' );
-Print( IdOf({}), '\n' );
+var obj = { aaa:123, bbb:'xxx' };
 
+for ( var p in obj )
+  Print( p + ' = ' + obj[p], '\n' );
+
+HideProperties( obj, 'aaa' );
+  Print( '...\n' );
+
+for ( var p in obj )
+  Print( p + ' = ' + obj[p], '\n' );
+
+
+throw(0)
+
+Print( IdOf({}), '\n' );
+Print( IdOf({}), '\n' );
 	
 throw(0)
 
