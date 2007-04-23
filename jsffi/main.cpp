@@ -12,8 +12,7 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-#include <windows.h>
-#include <jsapi.h>
+#include "stdafx.h"
 #include "ffi.h"
 
 
