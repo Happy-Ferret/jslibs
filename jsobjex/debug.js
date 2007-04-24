@@ -1,23 +1,12 @@
 LoadModule('jsstd');
 LoadModule('jsobjex');
 
-function newDataNode(parent) {
-
-	return new objex( undefined, undefined, get, undefined, { listenerList:[], parent:parent, data:undefined } );
+function addCallback( name, value ) {
+	
+  Print('adding ' + name + ' = ' + value, '\n');
 }
 
-function get( what, obj, id, val, aux ) {
+var obj = new ObjEx( addCallback, undefined, undefined, undefined, null );
 
-	return id in obj ? val : obj[id] = newDataNode(obj);
-}
-
-var d = newDataNode();
-objex.Aux(d.aaa.bbb).data = 5;
-
-for ( var [k,v] in d.aaa.bbb ) {
-	delData( v );
-}
-
-
-Print( objex.Aux(d.aaa.bbb).data, '\n' );
-Print( objex.Aux(d.aaa.bbbb).data, '\n' );
+obj.foo = 123;
+obj.foo = 456;

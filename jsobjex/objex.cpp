@@ -20,7 +20,7 @@ JSBool NotifyObject( int slotIndex, JSContext *cx, JSObject *obj, jsval id, jsva
 		return JS_TRUE;
 	jsval aux;
 	JS_GetReservedSlot( cx, obj, AUX_SLOT, &aux );
-	jsval args[] = { INT_TO_JSVAL(ADD_SLOT), OBJECT_TO_JSVAL(obj), id, *vp, aux };
+	jsval args[] = { id, *vp, aux, INT_TO_JSVAL(slotIndex) }; // ( propertyName, propertyValue, auxObject, callbackIndex )
 	return JS_CallFunctionValue( cx, obj, slot, sizeof(args)/sizeof(jsval), args, vp );
 }
 
@@ -63,7 +63,7 @@ JSBool objex_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, js
 
 		if ( JS_TypeOfValue( cx, argv[i] ) != JSTYPE_FUNCTION && !JSVAL_IS_VOID(argv[i]) ) {
 
-			JS_ReportError( cx, "function expected" );
+			JS_ReportError( cx, "function or undefined expected" );
 			return JS_FALSE;
 		}
 		JS_SetReservedSlot( cx, obj, i, argv[i] );
