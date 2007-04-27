@@ -1,5 +1,24 @@
 LoadModule('jsstd');
 
+function foo() {
+
+	var data = 55;
+
+	function bar() {
+
+		Print(data,'\n');
+	}
+	
+	var old = SetScope(bar,{data:7});
+	bar();
+	var old = SetScope(bar,old);
+	bar();
+}
+
+foo();
+
+throw 0;
+
 var obj = { aaa:123, bbb:'xxx' };
 
 for ( var p in obj )

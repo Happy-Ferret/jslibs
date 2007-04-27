@@ -142,10 +142,27 @@ DEFINE_FUNCTION( Seal ) {
 DEFINE_FUNCTION( Clear ) {
 
 	RT_ASSERT_ARGC(1);
-	//RT_CHECK_CALL( JS_ValueToObject(cx, argv[0], &obj) );
 	RT_ASSERT_OBJECT(argv[0]);
 	JS_ClearScope(cx, JSVAL_TO_OBJECT(argv[0]));
-  return JS_TRUE;
+	return JS_TRUE;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+DEFINE_FUNCTION( SetScope ) {
+
+	RT_ASSERT_ARGC(2);
+
+	JSObject *o;
+	JS_ValueToObject(cx, argv[0], &o);
+
+	JSObject *p;
+	JS_ValueToObject(cx, argv[1], &p);
+
+	*rval = OBJECT_TO_JSVAL(JS_GetParent(cx, o));
+
+	RT_CHECK_CALL( JS_SetParent(cx, o, p) );
+	
+	return JS_TRUE;
 }
 
 
@@ -408,6 +425,20 @@ DEFINE_FUNCTION( Exec ) {
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+DEFINE_FUNCTION( IsStatementValid ) {
+	
+	RT_ASSERT_ARGC( 1 );
+	char *buffer;
+	int length;
+	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], buffer, length );
+	*rval = JS_BufferIsCompilableUnit(cx, obj, buffer, length) == JS_TRUE ? JSVAL_TRUE : JSVAL_FALSE;
+	return JS_TRUE;
+}
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 CONFIGURE_STATIC
 
@@ -415,8 +446,10 @@ CONFIGURE_STATIC
 		FUNCTION( Expand )
 		FUNCTION( Seal )
 		FUNCTION( Clear )
+		FUNCTION( SetScope )
 		FUNCTION( HideProperties )
 		FUNCTION( Exec )
+		FUNCTION( IsStatementValid )
 		FUNCTION( Print )
 		FUNCTION( CollectGarbage )
 		FUNCTION( Warning )
