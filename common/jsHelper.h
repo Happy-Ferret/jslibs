@@ -75,6 +75,15 @@
 #define RT_UNSAFE(code) \
 	if (_unsafeMode) {code;}
 
+#define REPORT_WARNING(errorMessage) \
+	{ JS_ReportWarning( cx, (errorMessage RT_CODE_LOCATION) ); }
+
+#define REPORT_WARNING_1(errorMessage, arg) \
+	{ JS_ReportWarning( cx, (errorMessage RT_CODE_LOCATION), (arg) ); }
+
+#define REPORT_WARNING_2(errorMessage, arg1, arg2) \
+	{ JS_ReportWarning( cx, (errorMessage RT_CODE_LOCATION), (arg1), (arg2) ); }
+
 #define REPORT_ERROR(errorMessage) \
 	{ JS_ReportError( cx, (errorMessage RT_CODE_LOCATION) ); return JS_FALSE; }
 
