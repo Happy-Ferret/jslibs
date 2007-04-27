@@ -21,6 +21,8 @@
 
 #include "../common/jsNativeInterface.h"
 
+#include "nsprFile.h"
+
 static bool NativeInterfaceReadFile( void *pv, unsigned char *buf, unsigned int *amount ) {
 
 	PRFileDesc *fd = (PRFileDesc *)pv;
@@ -35,7 +37,6 @@ static bool NativeInterfaceReadFile( void *pv, unsigned char *buf, unsigned int 
 	status = PR_Poll( &desc, 1, PR_MillisecondsToInterval(10000) ); // wait for data
 	if ( status == -1 )
 		return false;
-
 	PRInt32 tmp = *amount;
 	status = PR_Recv( fd, buf, tmp, 0, PR_INTERVAL_NO_WAIT );
 	*amount = tmp;
@@ -45,39 +46,47 @@ static bool NativeInterfaceReadFile( void *pv, unsigned char *buf, unsigned int 
 	return true;
 }
 
-
-
 BEGIN_CLASS( Socket )
 
 DEFINE_FINALIZE() {
 
-	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
+	PRFileDesc *fd = (PRFileDesc*)JS_GetPrivate( cx, obj );
 	if ( fd != NULL ) { // check if not already closed
+
 		PRStatus status = PR_Close( fd ); // what to do on error ??
 		if ( status != PR_SUCCESS )
 			JS_ReportError( cx, "a socket descriptor cannot be closed while Finalize" );
+		JS_SetPrivate( cx, obj, NULL );
 	}
-	JS_SetPrivate( cx, obj, NULL );
 }
 
 
 DEFINE_CONSTRUCTOR() {
+	
+	RT_ASSERT_CONSTRUCTING( &classSocket );
 
-	if ( !JS_IsConstructing(cx) ) {
+	int descType = PR_DESC_SOCKET_TCP; // default
+	if ( argc >= 1 )
+		RT_JSVAL_TO_INT32( argv[0], descType );
 
-		JS_ReportError( cx, "need to be construct" );
-		return JS_FALSE;
+	PRFileDesc *fd;
+	switch ( descType ) {
+		case PR_DESC_SOCKET_TCP:
+			fd = PR_NewTCPSocket();
+			break;
+		case PR_DESC_SOCKET_UDP:
+			fd = PR_NewUDPSocket();
+			break;
+		default:
+			REPORT_ERROR( "Invalid socket type." );
 	}
-
-	PRFileDesc *fd = PR_NewTCPSocket(); // PR_NewTCPSocket();
 	if ( fd == NULL )
 		return ThrowNSPRError( cx, PR_GetError() );
-
 	PRSocketOptionData sod = { PR_SockOpt_Nonblocking, PR_TRUE };
-	PR_SetSocketOption(fd, &sod); // Make the socket nonblocking
-
+	PRStatus status = PR_SetSocketOption(fd, &sod); // Make the socket nonblocking
+	if ( status != PR_SUCCESS )
+		return ThrowNSPRError( cx, PR_GetError() );
 	JS_SetPrivate( cx, obj, fd );
-
 	return JS_TRUE;
 }
 
@@ -89,12 +98,8 @@ DEFINE_CONSTRUCTOR() {
 //   http://developer.mozilla.org/en/docs/PRLinger
 DEFINE_FUNCTION( Close ) {
 
-	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
-	if ( fd == NULL ) {
-
-		JS_ReportError( cx, "descriptor is NULL" );
-		return JS_FALSE;
-	}
+	PRFileDesc *fd = (PRFileDesc*)JS_GetPrivate( cx, obj );
+	RT_ASSERT_RESOURCE( fd );
 
 	RemoveNativeInterface(cx, obj, NI_READ_RESOURCE );
 
@@ -129,7 +134,6 @@ if (status != PR_SUCCESS) // need to check PR_WOULD_BLOCK_ERROR ???
 	}
 	JS_SetPrivate( cx, obj, NULL );
 	JS_ClearScope( cx, obj ); // help to clear readable, writable, exception
-
 	return JS_TRUE;
 }
 
@@ -137,27 +141,54 @@ if (status != PR_SUCCESS) // need to check PR_WOULD_BLOCK_ERROR ???
 // arg[0] =  false: SHUTDOWN_RCV | true: SHUTDOWN_SEND | else it will SHUTDOWN_BOTH
 DEFINE_FUNCTION( Shutdown ) {
 
-	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
-	if ( fd == NULL ) {
-
-		JS_ReportError( cx, "descriptor is NULL" );
-		return JS_FALSE;
-	}
-
+	PRFileDesc *fd = (PRFileDesc*)JS_GetPrivate( cx, obj );
+	RT_ASSERT_RESOURCE( fd );
 	PRShutdownHow how = PR_SHUTDOWN_BOTH; // default
-
 	if ( argc >= 1 )
 		if ( argv[0] == JSVAL_FALSE )
 			how = PR_SHUTDOWN_RCV;
 		else if (argv[0] == JSVAL_TRUE )
 			how = PR_SHUTDOWN_SEND;
-
 	if ( how == PR_SHUTDOWN_BOTH || how == PR_SHUTDOWN_RCV )
 		RemoveNativeInterface(cx, obj, NI_READ_RESOURCE);
-
 	PRStatus status;
 	status = PR_Shutdown( fd, how ); // is this compatible with linger ??
 	if (status != PR_SUCCESS) // need to check PR_WOULD_BLOCK_ERROR ???
+		return ThrowNSPRError( cx, PR_GetError() );
+	return JS_TRUE;
+}
+
+DEFINE_FUNCTION( Bind ) {
+
+	RT_ASSERT_ARGC( 1 ); // need port number (at least)
+	PRFileDesc *fd = (PRFileDesc*)JS_GetPrivate( cx, obj );
+	RT_ASSERT_RESOURCE( fd );
+	PRStatus status;
+	uint16 port;
+	RT_JSVAL_TO_INT32( argv[0], port );
+	PRNetAddr addr;
+	status = PR_InitializeNetAddr(PR_IpAddrAny, port, &addr); // Initializes or reinitializes a network address(
+	if ( status != PR_SUCCESS )
+		return ThrowNSPRError( cx, PR_GetError() );
+
+	if ( argc >= 2 ) { // if we have a second argument and this argument is not undefined
+		
+		char *hostName;
+		RT_JSVAL_TO_STRING( argv[1], hostName );
+
+//		if ( hostName[0] != '\0' ) { // else, by default: PR_IpAddrAny ( see PR_InitializeNetAddr )
+
+//	if ( strcmp( hostName, "localhost" ) == 0 )
+//			addr.inet.ip = PR_INADDR_LOOPBACK;
+
+		status = PR_StringToNetAddr( hostName, &addr ); // see PR_GetHostByName
+		if ( status != PR_SUCCESS )
+			return ThrowNSPRError( cx, PR_GetError() );
+//		}
+	} // else addr.inet.ip = PR_htonl(PR_INADDR_ANY)
+
+	status = PR_Bind(fd, &addr);
+	if ( status != PR_SUCCESS )
 		return ThrowNSPRError( cx, PR_GetError() );
 	return JS_TRUE;
 }
@@ -174,65 +205,15 @@ DEFINE_FUNCTION( Shutdown ) {
 //    Wan-Teh
 DEFINE_FUNCTION( Listen ) {
 
+	PRFileDesc *fd = (PRFileDesc*)JS_GetPrivate( cx, obj );
+	RT_ASSERT_RESOURCE( fd );
 	PRStatus status;
-
-	if ( argc < 1 ) { // need port number (at least)
-
-		JS_ReportError( cx, "missing argument" );
-		return JS_FALSE;
-	}
-
-	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
-	if ( fd == NULL ) {
-
-		JS_ReportError( cx, "descriptor is NULL" );
-		return JS_FALSE;
-	}
-
-	uint16 port;
-	JS_ValueToUint16( cx, argv[0], &port );
-
-	PRNetAddr addr;
-	status = PR_InitializeNetAddr(PR_IpAddrAny, port, &addr); // Initializes or reinitializes a network address
-	if ( status != PR_SUCCESS )
-		return ThrowNSPRError( cx, PR_GetError() );
-
-	if ( argc >= 2 && argv[1] != JSVAL_VOID ) { // if we have a second argument and this argument is not undefined
-
-		JSString *jsstr = JS_ValueToString( cx, argv[1] );
-		argv[1] = STRING_TO_JSVAL( jsstr );
-
-		char *hostName = JS_GetStringBytes( jsstr );
-
-//		if ( hostName[0] != '\0' ) { // else, by default: PR_IpAddrAny ( see PR_InitializeNetAddr )
-
-
-//	if ( strcmp( hostName, "localhost" ) == 0 )
-//			addr.inet.ip = PR_INADDR_LOOPBACK;
-
-		status = PR_StringToNetAddr( hostName, &addr ); // see PR_GetHostByName
-		if ( status != PR_SUCCESS )
-			return ThrowNSPRError( cx, PR_GetError() );
-//		}
-	} // else addr.inet.ip = PR_htonl(PR_INADDR_ANY)
-
-	status = PR_Bind(fd, &addr);
-	if ( status != PR_SUCCESS )
-		return ThrowNSPRError( cx, PR_GetError() );
-
-	PRIntn backlog = 1; // too low ??
-	if ( argc >= 3 ) {
-
-		int32 val;
-		JS_ValueToInt32( cx, argv[2], &val );
-		backlog = val;
-//		printf( "backlog=%d\n",backlog);
-	}
-
+	PRIntn backlog = 8; // too low ??
+	if ( argc >= 1 )
+		RT_JSVAL_TO_INT32( argv[0], backlog );
 	status = PR_Listen( fd, backlog );
 	if ( status != PR_SUCCESS )
 		return ThrowNSPRError( cx, PR_GetError() );
-
 	return JS_TRUE;
 }
 
@@ -240,20 +221,12 @@ DEFINE_FUNCTION( Listen ) {
 ///////////////////////////////////////////////////////////////////////////////
 DEFINE_FUNCTION( Accept ) {
 
-	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
-	if ( fd == NULL ) {
-
-		JS_ReportError( cx, "descriptor is NULL" );
-		return JS_FALSE;
-	}
-
+	PRFileDesc *fd = (PRFileDesc*)JS_GetPrivate( cx, obj );
+	RT_ASSERT_RESOURCE( fd );
 	PRFileDesc *newFd = PR_Accept( fd, NULL, PR_INTERVAL_NO_TIMEOUT ); // PR_INTERVAL_NO_WAIT ? ignored ?
-
 	if ( newFd == NULL )
 		return ThrowNSPRError( cx, PR_GetError() );
-
 	SetNativeInterface(cx, obj, NI_READ_RESOURCE, (FunctionPointer)NativeInterfaceReadFile, newFd);
-
 	JSObject *object = JS_NewObject( cx, &classSocket, NULL, NULL );
 	JS_SetPrivate( cx, object, newFd );
 	*rval = OBJECT_TO_JSVAL( object );
@@ -277,18 +250,9 @@ DEFINE_FUNCTION( Accept ) {
 //	descriptor writeable.
 DEFINE_FUNCTION( Connect ) {
 
-	if ( argc < 2 ) {
-
-		JS_ReportError( cx, "missing argument" );
-		return JS_FALSE;
-	}
-
-	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
-	if ( fd == NULL ) {
-
-		JS_ReportError( cx, "descriptor is NULL" );
-		return JS_FALSE;
-	}
+	RT_ASSERT_ARGC( 2 )
+	PRFileDesc *fd = (PRFileDesc*)JS_GetPrivate( cx, obj );
+	RT_ASSERT_RESOURCE( fd );
 
 	JSString *jsstr = JS_ValueToString( cx, argv[0] );
 	argv[0] = STRING_TO_JSVAL( jsstr );
@@ -333,18 +297,9 @@ DEFINE_FUNCTION( Connect ) {
 ///////////////////////////////////////////////////////////////////////////////
 DEFINE_FUNCTION( Send ) {
 
-	if ( argc < 1 ) {
-
-		JS_ReportError( cx, "missing argument" );
-		return JS_FALSE;
-	}
-
+	RT_ASSERT_ARGC( 1 )
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
-	if ( fd == NULL ) {
-
-		JS_ReportError( cx, "descriptor is NULL" );
-		return JS_FALSE;
-	}
+	RT_ASSERT_RESOURCE( fd );
 
 	JSString *jsstr = JS_ValueToString( cx, argv[0] );
 	argv[0] = STRING_TO_JSVAL( jsstr ); // protect from GC
@@ -393,17 +348,13 @@ DEFINE_FUNCTION( Send ) {
 	return JS_TRUE;
 }
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // possible optimization: loop on PR_Recv while res > 0
 DEFINE_FUNCTION( Recv ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
-	if ( fd == NULL ) {
+	RT_ASSERT_RESOURCE( fd );
 
-		JS_ReportError( cx, "descriptor is NULL" );
-		return JS_FALSE;
-	}
 
 	//If PR_Poll() reports that the socket is readable (i.e., PR_POLL_READ is set in out_flags),
 	//and PR_Available() returns 0, this means that the socket connection is closed.
@@ -442,31 +393,45 @@ DEFINE_FUNCTION( Recv ) {
 	}
 
 	JSString *str = JS_NewString( cx, (char*)buf, res );
-	if (str == NULL) {
-
-		JS_ReportError( cx, "JS_NewString error" );
-		return JS_FALSE;
-	}
-
+	RT_ASSERT_ALLOC( str );
 	*rval = STRING_TO_JSVAL(str);
 	return JS_TRUE;
 }
 
 /*
 ///////////////////////////////////////////////////////////////////////////////
-DEFINE_PROPERTY( _fdSetter ) {
+//
+DEFINE_FUNCTION( TransmitFile ) { // WORKS ONLY ON BLOCKING SOCKET !!!
 
-	RT_ASSERT_INT( *vp );
-	RT_CHECK_CALL( JS_SetPrivate( cx, obj, JSVAL_TO_INT(*vp) ) );
-	return JS_TRUE;
-}
+	RT_ASSERT_ARGC( 1 );
+	PRFileDesc *socketFd = (PRFileDesc *)JS_GetPrivate( cx, obj );
+	RT_ASSERT_RESOURCE( socketFd );
 
-DEFINE_PROPERTY( _fdGetter ) {
+	RT_ASSERT_OBJECT( argv[0] );
+	JSObject *fileObj = JSVAL_TO_OBJECT( argv[0] );
+	RT_ASSERT_CLASS( fileObj, &classFile );
+	PRFileDesc *fileFd = (PRFileDesc*)JS_GetPrivate( cx, fileObj );
+	RT_ASSERT_RESOURCE( fileFd );
 
-	int fd JS_GetPrivate(cx, obj);
-	RT_CHECK_CALL( JS_SetPrivate( cx, obj, JSVAL_TO_INT(*vp) ) );
+	PRTransmitFileFlags flag = PR_TRANSMITFILE_KEEP_OPEN;
+	if ( argc >= 2 ) {
 
-	RT_ASSERT_INT( *vp );
+		JSBool b;
+		RT_CHECK_CALL( JS_ValueToBoolean(cx, argv[1], &b) );
+		if ( b == JS_TRUE )
+			flag = PR_TRANSMITFILE_CLOSE_SOCKET;
+	}
+	char *headers = NULL;
+	int headerLength = 0;
+	if ( argc >= 3 )
+		RT_JSVAL_TO_STRING_AND_LENGTH( argv[2], headers, headerLength );
+//	PRInt32 bytes = PR_TransmitFile( socketFd, fileFd, headers, headerLength, flag, PR_INTERVAL_NO_WAIT ); // PR_MillisecondsToInterval(10000)
+
+	PRInt32 bytes = PR_TransmitFile( socketFd, fileFd, NULL, 0, PR_TRANSMITFILE_CLOSE_SOCKET, PR_INTERVAL_NO_TIMEOUT );
+	if ( bytes == -1 )
+		return ThrowNSPRError( cx, PR_GetError() );
+
+	*rval = INT_TO_JSVAL( bytes ); // (TBD) secure this
 	return JS_TRUE;
 }
 */
@@ -478,11 +443,8 @@ enum { linger = PR_SockOpt_Linger, noDelay = PR_SockOpt_NoDelay, reuseAddr = PR_
 DEFINE_PROPERTY( OptionSetter ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
-	if ( fd == NULL ) {
+	RT_ASSERT_RESOURCE( fd );
 
-		JS_ReportError( cx, "descriptor is NULL" );
-		return JS_FALSE;
-	}
 	PRSocketOptionData sod;
 	sod.option = (PRSockOption)JSVAL_TO_INT( id );
 
@@ -533,11 +495,8 @@ DEFINE_PROPERTY( OptionSetter ) {
 DEFINE_PROPERTY( OptionGetter ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
-	if ( fd == NULL ) {
+	RT_ASSERT_RESOURCE( fd );
 
-		JS_ReportError( cx, "descriptor is NULL" );
-		return JS_FALSE;
-	}
 	PRSocketOptionData sod;
 	sod.option = (PRSockOption)JSVAL_TO_INT( id );
 	if ( PR_GetSocketOption(fd, &sod) == PR_FAILURE )
@@ -571,11 +530,7 @@ DEFINE_PROPERTY( OptionGetter ) {
 DEFINE_PROPERTY( peerName ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
-	if ( fd == NULL ) {
-
-		JS_ReportError( cx, "descriptor is NULL" );
-		return JS_FALSE;
-	}
+	RT_ASSERT_RESOURCE( fd );
 
 	PRStatus status;
 	PRNetAddr peerAddr;
@@ -592,11 +547,7 @@ DEFINE_PROPERTY( peerName ) {
 DEFINE_PROPERTY( sockName ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
-	if ( fd == NULL ) {
-
-		JS_ReportError( cx, "descriptor is NULL" );
-		return JS_FALSE;
-	}
+	RT_ASSERT_RESOURCE( fd );
 
 	PRStatus status;
 	PRNetAddr peerAddr;
@@ -618,11 +569,7 @@ DEFINE_PROPERTY( sockName ) {
 DEFINE_PROPERTY( connectContinue ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
-	if ( fd == NULL ) {
-
-		JS_ReportError( cx, "descriptor is NULL" );
-		return JS_FALSE;
-	}
+	RT_ASSERT_RESOURCE( fd );
 
 	PRStatus status;
 	PRPollDesc desc = { fd, PR_POLL_WRITE | PR_POLL_EXCEPT, 0 };
@@ -653,11 +600,7 @@ DEFINE_PROPERTY( connectContinue ) {
 DEFINE_PROPERTY( connectionClosed ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
-	if ( fd == NULL ) {
-
-		JS_ReportError( cx, "descriptor is NULL" );
-		return JS_FALSE;
-	}
+	RT_ASSERT_RESOURCE( fd );
 
 	//If PR_Poll() reports that the socket is readable (i.e., PR_POLL_READ is set in out_flags),
 	//and PR_Available() returns 0, this means that the socket connection is closed.
@@ -693,7 +636,6 @@ DEFINE_PROPERTY( connectionClosed ) {
 	return JS_TRUE;
 }
 
-
 CONFIGURE_CLASS
 
 	HAS_CONSTRUCTOR
@@ -702,11 +644,13 @@ CONFIGURE_CLASS
 	BEGIN_FUNCTION_SPEC
 		FUNCTION( Close )
 		FUNCTION( Shutdown )
+		FUNCTION( Bind )
 		FUNCTION( Listen )
 		FUNCTION( Accept )
 		FUNCTION( Connect )
 		FUNCTION( Send )
 		FUNCTION( Recv )
+//		FUNCTION( TransmitFile )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
@@ -721,12 +665,14 @@ CONFIGURE_CLASS
 		PROPERTY_READ( sockName )
 		PROPERTY_READ( connectContinue )
 		PROPERTY_READ( connectionClosed )
-//		PROPERTY( _fd )
 	END_PROPERTY_SPEC
 
-	HAS_PRIVATE
-//	HAS_RESERVED_SLOTS(2)
+	BEGIN_CONST_DOUBLE_SPEC
+		CONST_DOUBLE(TCP, PR_DESC_SOCKET_TCP)
+		CONST_DOUBLE(UDP, PR_DESC_SOCKET_UDP)
+	END_CONST_DOUBLE_SPEC
 
+	HAS_PRIVATE
 END_CLASS
 
 
