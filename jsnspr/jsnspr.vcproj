@@ -193,6 +193,10 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath=".\nsprEvent.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\nsprFile.cpp"
 				>
 				<FileConfiguration
@@ -252,6 +256,10 @@
 			</File>
 			<File
 				RelativePath=".\nsprError.h"
+				>
+			</File>
+			<File
+				RelativePath=".\nsprEvent.h"
 				>
 			</File>
 			<File

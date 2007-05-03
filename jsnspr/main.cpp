@@ -20,6 +20,7 @@ DEFINE_UNSAFE_MODE;
 #include "nsprFile.h"
 #include "nsprDirectory.h"
 #include "nsprSocket.h"
+#include "nsprEvent.h"
 #include "nsprGlobal.h"
 
 #include "../configuration/configuration.h"
@@ -38,6 +39,7 @@ extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj)
 	INIT_CLASS( File );
 	INIT_CLASS( Directory );
 	INIT_CLASS( Socket );
+	INIT_CLASS( Event );
 	INIT_STATIC();
 
 	// Doc: PR_Init is necessary only if a program has specific initialization-sequencing requirements.

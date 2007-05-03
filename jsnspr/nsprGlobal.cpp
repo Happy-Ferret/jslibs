@@ -28,22 +28,13 @@ DEFINE_FUNCTION( Poll ) {
 
 	PRPollDesc pollDesc[1024];
 
-	if ( argc < 1 ) { // || argc-1 > sizeof(pollDesc) / sizeof(PRPollDesc) )
-
-		JS_ReportError( cx, "argument is missing" );
-		return JS_FALSE;
-	}
-
-	if ( JS_IsArrayObject( cx, JSVAL_TO_OBJECT(argv[0]) ) != JS_TRUE ) { // first argument is an array ?
-
-		JS_ReportError( cx, "Array object is required" );
-		return JS_FALSE;
-	}
+	RT_ASSERT_ARGC( 1 );
+	RT_ASSERT_ARRAY( argv[0] );
 
 	JSIdArray *idArray = JS_Enumerate( cx, JSVAL_TO_OBJECT(argv[0]) ); // make a kind of auto-ptr for this
 
 	if ( idArray->length > sizeof(pollDesc) / sizeof(PRPollDesc) ) {
-
+		
 		JS_ReportError( cx, "Too many descriptors in Poll" );
 		goto failed;
 	}
@@ -262,6 +253,24 @@ DEFINE_FUNCTION( NSPRVersion ) {
 	return JS_TRUE;
 }
 
+DEFINE_FUNCTION( GetRandomNoise ) {
+
+	RT_ASSERT_ARGC( 1 );
+	RT_ASSERT_INT( argv[0] );
+	PRSize rndSize = JSVAL_TO_INT( argv[0] );
+	void *buf = (void*)JS_malloc(cx, rndSize);
+	PRSize size = PR_GetRandomNoise(buf, rndSize);
+	if ( size <= 0 ) {
+		
+		JS_free(cx, buf);
+		REPORT_ERROR( "PR_GetRandomNoise is not implemented on this platform." );
+	}
+	JSString *jsstr = JS_NewString(cx, (char*)buf, size);
+	RT_ASSERT_ALLOC( jsstr );
+	*rval = STRING_TO_JSVAL(jsstr);
+	return JS_TRUE;
+}
+ 
 
 CONFIGURE_STATIC
 

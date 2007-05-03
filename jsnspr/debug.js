@@ -4,6 +4,19 @@ LoadModule('jsnspr');
 
 try {
 
+
+	var ev = new Event();
+	
+	var evlist = [ev];
+	
+	Print( Poll( evlist, 100 ) );
+	ev.Set();
+	Print( Poll( evlist, 100 ) );
+	
+
+
+throw 0;
+
 	var dlist = []; //descriptor list
 
 	var step = 0;
