@@ -1,5 +1,23 @@
 LoadModule('jsstd');
 
+
+var buf = new Buffer();
+buf.Write('1');
+buf.Write('2');
+buf.Write('3');
+buf.Write('4');
+
+buf.Clear();
+
+Print( buf.length, '\n' );
+
+buf.Write('4');
+buf.Write('45');
+
+Print( buf.length, '\n' );
+
+throw 0;
+
 function foo() {
 
 	var data = 55;
@@ -45,7 +63,6 @@ HideProperties( obj, 'b' );
 for ( var i in obj )
 	Print( i +':'+obj[i],'\n');
 	
-
 
 var toto = [ 1,3,5 ];
 toto.i = 6;

@@ -119,7 +119,6 @@ DEFINE_FINALIZE() {
 DEFINE_CONSTRUCTOR() {
 
 	RT_ASSERT_CONSTRUCTING( _class );
-
 	// prepare NativeInterface compatibility
 	JsCntxt *cntxt = (JsCntxt*)malloc(sizeof(JsCntxt));
 	cntxt->rt = JS_GetRuntime(cx); // beware: cx must exist during the life of this object !
@@ -132,6 +131,20 @@ DEFINE_CONSTRUCTOR() {
 	return JS_TRUE;
 }
 
+DEFINE_FUNCTION( Clear ) {
+
+	Queue *queue = (Queue*)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE(queue);
+
+	while ( !QueueIsEmpty(queue) ) {
+		
+		JSString **pNewStr = (JSString**)QueueShift(queue);
+		JS_RemoveRoot(cx, pNewStr);
+		free(pNewStr);
+	}
+	BufferSetLength(cx, obj, 0);
+	return JS_TRUE;
+}
 
 DEFINE_FUNCTION( Write ) {
 
@@ -270,6 +283,7 @@ CONFIGURE_CLASS
 	HAS_FINALIZE
 
 	BEGIN_FUNCTION_SPEC
+		FUNCTION(Clear)
 		FUNCTION(Write)
 		FUNCTION(Unread)
 		FUNCTION(Read)
