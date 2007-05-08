@@ -188,6 +188,24 @@ static void ErrorReporter(JSContext *cx, const char *message, JSErrorReport *rep
 
 int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow ) {
 
+	CHAR moduleFileName[MAX_PATH];
+	DWORD len = GetModuleFileName(hInstance, moduleFileName, sizeof(moduleFileName));
+	if ( len == 0 )
+		return -1;
+	char *name = strrchr( moduleFileName, '\\' );
+	if ( name == NULL )
+		return -1;
+	*name = '\0';
+	name++;
+	
+//If you need to detect whether another instance already exists, create a uniquely named mutex using the CreateMutex function. 
+//CreateMutex will succeed even if the mutex already exists, but the function will return ERROR_ALREADY_EXISTS. 
+//This indicates that another instance of your application exists, because it created the mutex first.
+	
+	SetLastError(0);
+	HANDLE instanceCheckMutex = CreateMutex( NULL, TRUE, name );
+	bool hasPrevInstance = GetLastError() == ERROR_ALREADY_EXISTS;
+
 	JSRuntime *rt;
 	JSContext *cx;
 	JSObject *globalObject;
@@ -237,19 +255,9 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 
 // arguments
 	JS_DefineProperty(cx, globalObject, NAME_GLOBAL_ARGUMENT, STRING_TO_JSVAL(JS_NewStringCopyZ(cx, lpCmdLine)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT);
-	
-	CHAR moduleFileName[MAX_PATH];
-	DWORD len = GetModuleFileName(hInstance, moduleFileName, sizeof(moduleFileName));
-	if ( len == 0 )
-		return -1;
-	char *name = strrchr( moduleFileName, '\\' );
-	if ( name == NULL )
-		return -1;
-	*name = '\0';
-	name++;
-	
 	JS_DefineProperty(cx, globalObject, NAME_GLOBAL_SCRIPT_HOST_NAME, STRING_TO_JSVAL(JS_NewStringCopyZ(cx, name)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT);
 	JS_DefineProperty(cx, globalObject, NAME_GLOBAL_SCRIPT_HOST_PATH, STRING_TO_JSVAL(JS_NewStringCopyZ(cx, moduleFileName)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT);
+	JS_DefineProperty(cx, globalObject, NAME_GLOBAL_FIRST_INSTANCE, BOOLEAN_TO_JSVAL(hasPrevInstance?JS_FALSE:JS_TRUE), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT);
 
 // options
 	uint32 options = JSOPTION_VAROBJFIX | JSOPTION_XML | JSOPTION_COMPILE_N_GO;
@@ -279,6 +287,9 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 
   // Beware: because JS engine allocate memory from the DLL, all memory must be disallocated before releasing the DLL
   ModuleFreeAll();
+
+  //ReleaseMutex
+  CloseHandle( instanceCheckMutex );
 
   return 0;
 }

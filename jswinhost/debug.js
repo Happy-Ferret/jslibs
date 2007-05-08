@@ -1,5 +1,5 @@
 LoadModule('jsshell');
-MessageBox('test');
+MessageBox(isfirstInstance);
 
 
 //var cons = new Console();

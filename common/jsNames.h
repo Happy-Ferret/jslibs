@@ -22,6 +22,7 @@
 #define NAME_GLOBAL_ARGUMENT "argument"
 #define NAME_GLOBAL_SCRIPT_HOST_PATH "scripthostpath"
 #define NAME_GLOBAL_SCRIPT_HOST_NAME "scripthostname"
+#define NAME_GLOBAL_FIRST_INSTANCE "isfirstinstance"
 #define NAME_GLOBAL_GLOBAL_OBJECT "global"
 
 #define NAME_GLOBAL_FUNCTION_LOAD_MODULE "LoadModule"
