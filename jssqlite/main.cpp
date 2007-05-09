@@ -38,22 +38,3 @@ extern "C" DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	return JS_TRUE;
 }
 
-extern "C" DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
-}
-
-extern "C" DLLEXPORT void ModuleFree() {
-}
-/*
-BOOL APIENTRY DllMain( HANDLE hModule, DWORD ul_reason_for_call, LPVOID lpReserved ) {
-
-  switch (ul_reason_for_call) {
-
-	  case DLL_PROCESS_ATTACH:
-	  case DLL_THREAD_ATTACH:
-	  case DLL_THREAD_DETACH:
-	  case DLL_PROCESS_DETACH:
-		  break;
-  }
-  return TRUE;
-}
-*/

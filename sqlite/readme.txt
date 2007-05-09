@@ -1,9 +1,9 @@
-current Version: 3.3.8
+current Version: 3.3.17
 
 http://www.sqlite.org/download.html
 	Source Code
-		sqlite-source-3_3_8.zip : for windows
-		sqlite-3.3.8.tar.gz : for linux
+		sqlite-source-3_3_17.zip : for windows
+		sqlite-3.3.17.tar.gz : for linux
 
 .
 ..

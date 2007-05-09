@@ -22,8 +22,10 @@ static JSBool global_loadModule(JSContext *cx, JSObject *obj, uintN argc, jsval 
 	char *fileName;
 	RT_JSVAL_TO_STRING( argv[0], fileName );
 	char libFileName[MAX_PATH];
-	strcpy( libFileName, fileName );
-	strcat( libFileName, DLL_EXT );
+	errno_t err = strcpy_s(libFileName, sizeof(libFileName), fileName);
+	RT_ASSERT( err == 0, "Buffer overflow." );
+	err = strcat_s(libFileName, sizeof(libFileName), DLL_EXT);
+	RT_ASSERT( err == 0, "Buffer overflow." );
 	ModuleId id = ModuleLoad(libFileName, cx, obj);
 	RT_ASSERT_2( id != 0, "Unable to load the module %s (error:%d).", libFileName, GetLastError() );
 	RT_CHECK_CALL( JS_NewNumberValue(cx, id, rval) );
@@ -188,24 +190,6 @@ static void ErrorReporter(JSContext *cx, const char *message, JSErrorReport *rep
 
 int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow ) {
 
-	CHAR moduleFileName[MAX_PATH];
-	DWORD len = GetModuleFileName(hInstance, moduleFileName, sizeof(moduleFileName));
-	if ( len == 0 )
-		return -1;
-	char *name = strrchr( moduleFileName, '\\' );
-	if ( name == NULL )
-		return -1;
-	*name = '\0';
-	name++;
-	
-//If you need to detect whether another instance already exists, create a uniquely named mutex using the CreateMutex function. 
-//CreateMutex will succeed even if the mutex already exists, but the function will return ERROR_ALREADY_EXISTS. 
-//This indicates that another instance of your application exists, because it created the mutex first.
-	
-	SetLastError(0);
-	HANDLE instanceCheckMutex = CreateMutex( NULL, TRUE, name );
-	bool hasPrevInstance = GetLastError() == ERROR_ALREADY_EXISTS;
-
 	JSRuntime *rt;
 	JSContext *cx;
 	JSObject *globalObject;
@@ -220,6 +204,37 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 	// (TBD) set into configuration file
 
 	JS_SetErrorReporter(cx, ErrorReporter);
+
+	errno_t err;
+
+	CHAR moduleFileName[MAX_PATH];
+	DWORD len = GetModuleFileName(hInstance, moduleFileName, sizeof(moduleFileName));
+	if ( len == 0 )
+		return -1;
+	char *name = strrchr( moduleFileName, '\\' );
+	if ( name == NULL )
+		return -1;
+	*name = '\0';
+	name++;
+
+	CHAR scriptName[MAX_PATH];
+	DWORD scriptNameLen = GetModuleFileName(hInstance, scriptName, sizeof(scriptName));
+	char *dotPos = strrchr(scriptName, '.');
+	if ( dotPos == NULL )
+		return -1;
+	*dotPos = '\0';
+	err = strcat_s( scriptName, sizeof(scriptName), ".js" );
+	RT_ASSERT( err == 0, "Buffer overflow." );
+
+	//If you need to detect whether another instance already exists, create a uniquely named mutex using the CreateMutex function. 
+	//CreateMutex will succeed even if the mutex already exists, but the function will return ERROR_ALREADY_EXISTS. 
+	//This indicates that another instance of your application exists, because it created the mutex first.
+	char mutexName[MAX_PATH] = "jswinhost_";
+	err = strcat_s(mutexName, sizeof(mutexName), name);
+	RT_ASSERT( err == 0, "Buffer overflow." );
+	SetLastError(0);
+	HANDLE instanceCheckMutex = CreateMutex( NULL, TRUE, mutexName );
+	bool hasPrevInstance = GetLastError() == ERROR_ALREADY_EXISTS;
 
 	JSBool jsStatus;
 // global object
@@ -264,10 +279,6 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 	if ( /*!unsafeMode*/ false )
 		options |= JSOPTION_STRICT;
 	JS_SetOptions(cx, options );
-
-	CHAR scriptName[MAX_PATH];
-	DWORD scriptNameLen = GetModuleFileName(hInstance, scriptName, sizeof(scriptName));
-	strcpy( scriptName + scriptNameLen - 3, "js" ); // construct the script name
 
 	JSScript *script = JS_CompileFile( cx, globalObject, scriptName );
 	if ( script == NULL )
