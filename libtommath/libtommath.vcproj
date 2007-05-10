@@ -43,7 +43,7 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake /f libtommath.mak libonly"
+				BuildCommandLine="nmake /f libtommath.mak build"
 				ReBuildCommandLine="nmake /f libtommath.mak rebuild"
 				CleanCommandLine="nmake /f libtommath.mak clean"
 				Output="$(ProjectDir)\tommath.lib"

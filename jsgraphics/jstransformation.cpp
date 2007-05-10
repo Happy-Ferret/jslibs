@@ -98,7 +98,7 @@ DEFINE_FUNCTION( Load ) {
 	Matrix44 *tm = (Matrix44*)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(tm);
 	Matrix44 *m = tm;
-	RT_ASSERT_RETURN( GetMatrixHelper(cx, argv[0], &m) ); // GetMatrixHelper will copy data into tmp OR replace tmp by its own float pointer
+	RT_CHECK_CALL( GetMatrixHelper(cx, argv[0], &m) ); // GetMatrixHelper will copy data into tmp OR replace tmp by its own float pointer
 	if ( m != tm ) // check if the pointer has been modified
 		memcpy(tm, m, sizeof(Matrix44)); // if it is, copy the data
 	*rval = OBJECT_TO_JSVAL(obj);
@@ -112,7 +112,7 @@ DEFINE_FUNCTION( LoadRotation ) {
 	Matrix44 *tm = (Matrix44*)JS_GetPrivate(cx, obj); // tm for thisMatrix
 	RT_ASSERT_RESOURCE(tm);
 	Matrix44 tmp, *m = &tmp;
-	RT_ASSERT_RETURN( GetMatrixHelper(cx, argv[0], &m) );
+	RT_CHECK_CALL( GetMatrixHelper(cx, argv[0], &m) );
 	tm->raw[0]  = m->raw[0] ; //L1
 	tm->raw[1]  = m->raw[1] ;
 	tm->raw[2]  = m->raw[2] ;
@@ -131,7 +131,7 @@ DEFINE_FUNCTION( LoadTranslation ) {
 	Matrix44 *tm = (Matrix44*)JS_GetPrivate(cx, obj); // tm for thisMatrix
 	RT_ASSERT_RESOURCE(tm);
 	Matrix44 tmp, *m = &tmp;
-	RT_ASSERT_RETURN( GetMatrixHelper(cx, argv[0], &m) );
+	RT_CHECK_CALL( GetMatrixHelper(cx, argv[0], &m) );
 	tm->raw[3]  = m->raw[3];
 	tm->raw[7]  = m->raw[7];
 	tm->raw[11] = m->raw[11];
@@ -301,7 +301,7 @@ DEFINE_FUNCTION( Product ) {
 	Matrix44 *tm = (Matrix44*)JS_GetPrivate(cx, obj); // tm for thisMatrix
 	RT_ASSERT_RESOURCE(tm);
 	Matrix44 tmp, *m = &tmp;
-	RT_ASSERT_RETURN( GetMatrixHelper(cx, argv[0], &m) );
+	RT_CHECK_CALL( GetMatrixHelper(cx, argv[0], &m) );
 	Matrix44Product(tm,m); // <- mult
 	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
@@ -314,7 +314,7 @@ DEFINE_FUNCTION( InverseProduct ) {
 	Matrix44 *tm = (Matrix44*)JS_GetPrivate(cx, obj); // tm for thisMatrix
 	RT_ASSERT_RESOURCE(tm);
 	Matrix44 tmp, *m = &tmp;
-	RT_ASSERT_RETURN( GetMatrixHelper(cx, argv[0], &m) )
+	RT_CHECK_CALL( GetMatrixHelper(cx, argv[0], &m) )
 	Matrix44InverseProduct(tm,m); // <- mult
 	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;

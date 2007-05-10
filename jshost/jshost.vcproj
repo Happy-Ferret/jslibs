@@ -146,7 +146,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="kernel32.lib ../js/src/WINNT5.1_OPT.OBJ/js32.lib $(NoInherit)"
+				AdditionalDependencies="kernel32.lib ../js/src/WINNT5.1_OPT.OBJ/js32.lib $(NOINHERIT)"
 				LinkIncremental="1"
 				GenerateManifest="false"
 				GenerateDebugInformation="true"

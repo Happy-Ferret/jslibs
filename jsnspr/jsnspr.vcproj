@@ -55,7 +55,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="../js/src/WINNT5.1_DBG.OBJ/js32.lib ../nspr/lib/libnspr4.lib"
+				AdditionalDependencies="../js/src/WINNT5.1_DBG.OBJ/js32.lib ../nspr/lib/libnspr4.lib $(NOINHERIT)"
 				GenerateDebugInformation="true"
 			/>
 			<Tool
@@ -120,7 +120,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="../js/src/WINNT5.1_OPT.OBJ/js32.lib ../nspr/lib/libnspr4.lib"
+				AdditionalDependencies="../js/src/WINNT5.1_OPT.OBJ/js32.lib ../nspr/lib/libnspr4.lib $(NOINHERIT)"
 			/>
 			<Tool
 				Name="VCALinkTool"

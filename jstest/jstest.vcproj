@@ -62,7 +62,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="..\js\src\WINNT5.1_DBG.OBJ\js32.lib"
+				AdditionalDependencies="..\js\src\WINNT5.1_DBG.OBJ\js32.lib $(NOINHERIT)"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				TargetMachine="1"
@@ -139,7 +139,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="..\js\src\WINNT5.1_OPT.OBJ\js32.lib"
+				AdditionalDependencies="..\js\src\WINNT5.1_OPT.OBJ\js32.lib $(NOINHERIT)"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				OptimizeReferences="2"

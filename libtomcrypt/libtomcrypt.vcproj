@@ -43,7 +43,7 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake /f libtomcrypt.mak libonly"
+				BuildCommandLine="nmake /f libtomcrypt.mak build"
 				ReBuildCommandLine="nmake /f libtomcrypt.mak rebuild"
 				CleanCommandLine="nmake /f libtomcrypt.mak clean"
 				Output="$(ProjectDir)\tomcrypt.lib"
