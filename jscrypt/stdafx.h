@@ -14,7 +14,7 @@
 #define XP_WIN
 #include <jsapi.h>
 
-#define JSHELPER_UNSAFE_DEFINED
+#define USE_UNSAFE_MODE
 #include "../common/jshelper.h"
 
 #include <tomcrypt.h>
