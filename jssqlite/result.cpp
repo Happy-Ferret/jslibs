@@ -34,10 +34,10 @@ JSBool SqliteToJsval( JSContext *cx, sqlite3_value *value, jsval *rval ) {
 			if ( INT_FITS_IN_JSVAL(i) )
 				*rval = INT_TO_JSVAL( i );
 			else
-				RT_ASSERT_RETURN( JS_NewNumberValue(cx, i, rval ) );
+				RT_CHECK_CALL( JS_NewNumberValue(cx, i, rval ) );
 			break;
 		case SQLITE_FLOAT:
-			RT_ASSERT_RETURN( JS_NewNumberValue( cx, sqlite3_value_double(value), rval ) );
+			RT_CHECK_CALL( JS_NewNumberValue( cx, sqlite3_value_double(value), rval ) );
 			break;
 		case SQLITE_BLOB:
 			*rval = STRING_TO_JSVAL( JS_NewStringCopyN( cx,(const char *)sqlite3_value_blob(value), sqlite3_value_bytes(value) ) );
@@ -135,7 +135,7 @@ JSBool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *objAt,
 
 JSBool SqliteColumnToJsval( JSContext *cx, sqlite3_stmt *pStmt, int iCol, jsval *rval ) {
 
-	RT_ASSERT_RETURN( SqliteToJsval(cx, sqlite3_column_value(pStmt, iCol), rval) );
+	RT_CHECK_CALL( SqliteToJsval(cx, sqlite3_column_value(pStmt, iCol), rval) );
 	return JS_TRUE;
 }
 
@@ -169,8 +169,8 @@ DEFINE_FUNCTION( Close ) {
 	JS_SetPrivate( cx, obj, NULL );
 
 	jsval v;
-	RT_ASSERT_RETURN( JS_GetReservedSlot(cx, obj, SLOT_RESULT_DATABASE, &v) );
-	RT_ASSERT_RETURN( JS_GetReservedSlot(cx, JSVAL_TO_OBJECT(v), SLOT_SQLITE_DATABASE_STATEMENT_STACK, &v) );
+	RT_CHECK_CALL( JS_GetReservedSlot(cx, obj, SLOT_RESULT_DATABASE, &v) );
+	RT_CHECK_CALL( JS_GetReservedSlot(cx, JSVAL_TO_OBJECT(v), SLOT_SQLITE_DATABASE_STATEMENT_STACK, &v) );
 	void *stack = JSVAL_TO_PRIVATE(v);
 	StackReplaceData( &stack, pStmt, NULL );
 
@@ -199,7 +199,7 @@ DEFINE_FUNCTION( Step ) {
 			argObj = JSVAL_TO_OBJECT(queryArgument);
 
 		JS_SetReservedSlot(cx, obj, SLOT_RESULT_BINDING_UP_TO_DATE, BOOLEAN_TO_JSVAL(JS_TRUE));
-		RT_ASSERT_RETURN( SqliteSetupBindings(cx, pStmt, argObj, obj ) ); // ":" use result object. "@" is the object passed to Query()
+		RT_CHECK_CALL( SqliteSetupBindings(cx, pStmt, argObj, obj ) ); // ":" use result object. "@" is the object passed to Query()
 		// doc: The sqlite3_bind_*() routines must be called AFTER sqlite3_prepare() or sqlite3_reset() and BEFORE sqlite3_step(). Bindings are not cleared by the sqlite3_reset() routine. Unbound parameters are interpreted as NULL.
 	}
 
@@ -238,7 +238,7 @@ DEFINE_FUNCTION( Row ) {
 	sqlite3_stmt *pStmt = (sqlite3_stmt *)JS_GetPrivate( cx, obj );
 	RT_ASSERT_RESOURCE( pStmt );
 
-	RT_ASSERT_RETURN( Step( cx, obj, 0, NULL, rval ) ); // if something goes wrong in Result_step ( error report has already been set )
+	RT_CHECK_CALL( Step( cx, obj, 0, NULL, rval ) ); // if something goes wrong in Result_step ( error report has already been set )
 
 	if ( *rval == JSVAL_FALSE ) { // the statement has finished executing successfully
 
@@ -258,7 +258,7 @@ DEFINE_FUNCTION( Row ) {
 	jsval colJsValue, jsvCol;
 	for ( int col = 0; col < columnCount; ++col ) {
 
-		RT_ASSERT_RETURN( SqliteColumnToJsval(cx, pStmt, col, &colJsValue ) ); // if something goes wrong in SqliteColumnToJsval, error report has already been set.
+		RT_CHECK_CALL( SqliteColumnToJsval(cx, pStmt, col, &colJsValue ) ); // if something goes wrong in SqliteColumnToJsval, error report has already been set.
 
 		if ( namedRows )
 			JS_SetProperty( cx, row, sqlite3_column_name( pStmt, col ), &colJsValue );

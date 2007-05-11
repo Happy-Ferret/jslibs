@@ -16,6 +16,7 @@
 
 #define USE_UNSAFE_MODE
 #include "../common/jshelper.h"
+#include "../common/jsConfiguration.h"
 
 #include <tomcrypt.h>
 #include "cryptError.h"

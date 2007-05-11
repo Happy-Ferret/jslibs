@@ -16,7 +16,7 @@
 #define USE_UNSAFE_MODE
 #include "../common/jshelper.h"
 #include "../common/jsclass.h"
-
+#include "../common/jsConfiguration.h"
 #include <windows.h>
 
 #include <shellapi.h>

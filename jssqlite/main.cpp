@@ -14,21 +14,16 @@
 
 #include "stdafx.h"
 
-#include "../configuration/Configuration.h"
-
 #include "blob.h"
 #include "error.h"
 #include "database.h"
 #include "result.h"
 
+DEFINE_UNSAFE_MODE
 
 extern "C" DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
-	jsval unsafeModeValue;
-	JSBool jsStatus = GetConfigurationValue(cx, "unsafeMode", &unsafeModeValue);
-	RT_ASSERT( jsStatus != JS_FALSE, "Unable to read unsafeMode state from configuration object." );
-	if ( JSVAL_IS_BOOLEAN(unsafeModeValue) )
-		SET_UNSAFE_MODE( JSVAL_TO_BOOLEAN(unsafeModeValue) == JS_TRUE );
+	SET_UNSAFE_MODE( GetConfigurationValue(cx, "unsafeMode" ) == JSVAL_TRUE );
 
 	INIT_CLASS( Blob )
 	INIT_CLASS( SqliteError )

@@ -14,9 +14,6 @@
 
 #include "stdafx.h"
 
-#include "../configuration/configuration.h"
-
-
 #include "static.h"
 #include "buffer.h"
 
@@ -27,18 +24,11 @@ extern JSFunction *stdoutFunction = NULL;
 extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
 // read configuration
-	jsval stdoutFunctionValue;
-	JSBool jsStatus = GetConfigurationValue(cx, "stdout", &stdoutFunctionValue );
-	RT_ASSERT( jsStatus != JS_FALSE, "Unable to read stdout function from configuration object." );
-
+	jsval stdoutFunctionValue = GetConfigurationValue(cx, "stdout");
+	RT_ASSERT( stdoutFunctionValue != JSVAL_VOID, "Unable to read stdout function from configuration object." );
 	stdoutFunction = JS_ValueToFunction(cx, stdoutFunctionValue); // returns NULL if the function is not defined
 
-	jsval unsafeModeValue;
-	jsStatus = GetConfigurationValue(cx, "unsafeMode", &unsafeModeValue);
-	RT_ASSERT( jsStatus != JS_FALSE, "Unable to read unsafeMode state from configuration object." );
-
-	if ( unsafeModeValue != JSVAL_VOID && JSVAL_IS_BOOLEAN(unsafeModeValue) )
-		SET_UNSAFE_MODE( JSVAL_TO_BOOLEAN(unsafeModeValue) == JS_TRUE );
+	SET_UNSAFE_MODE( GetConfigurationValue(cx, "unsafeMode" ) == JSVAL_TRUE );
 
 	INIT_STATIC();
 	INIT_CLASS( Buffer );

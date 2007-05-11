@@ -3,7 +3,6 @@
 #define JSHELPER_UNSAFE_DEFINED
 #include "../common/jshelper.h"
 #include "../common/jsclass.h"
-#include "../configuration/configuration.h"
 
 #define MAX_WXJS_MODULES 32
 #define WXJS_INIT_PROC_NAME "wxJS_Init"

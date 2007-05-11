@@ -15,6 +15,8 @@
 #include "../common/jshelper.h"
 #include "../common/jsclass.h"
 #include "../common/jsConversionHelper.h"
+#include "../common/jsConfiguration.h"
+
 #include <malloc.h>
 
 namespace ode {

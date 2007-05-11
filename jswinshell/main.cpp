@@ -19,18 +19,11 @@
 #include "systray.h"
 #include "console.h"
 
-#include "../configuration/configuration.h"
-
-
 DEFINE_UNSAFE_MODE;
 
 extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
-	jsval unsafeModeValue;
-	JSBool jsStatus = GetConfigurationValue(cx, "unsafeMode", &unsafeModeValue);
-	RT_ASSERT( jsStatus != JS_FALSE, "Unable to read unsafeMode state from configuration object." );
-	if ( JSVAL_IS_BOOLEAN(unsafeModeValue) )
-		SET_UNSAFE_MODE( unsafeModeValue == JSVAL_TRUE );
+	SET_UNSAFE_MODE( GetConfigurationValue(cx, "unsafeMode" ) == JSVAL_TRUE );
 
 	INIT_CLASS( WinError );
 	INIT_STATIC();

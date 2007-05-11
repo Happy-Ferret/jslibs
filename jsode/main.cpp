@@ -21,10 +21,7 @@
 
 #include "geom.h"
 
-#include "../configuration/configuration.h"
-
 DEFINE_UNSAFE_MODE;
-
 
 // the following avoid ODE to be linked with User32.lib ( MessageBox* symbol is used in ../ode/src/ode/src/error.cpp )
 int WINAPI MessageBoxA(__in_opt HWND hWnd, __in_opt LPCSTR lpText, __in_opt LPCSTR lpCaption, __in UINT uType) {
@@ -43,11 +40,7 @@ extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj)
 	ode::dSetDebugHandler(messageHandler);
 	ode::dSetMessageHandler(messageHandler);
 
-	jsval unsafeModeValue;
-	JSBool jsStatus = GetConfigurationValue(cx, "unsafeMode", &unsafeModeValue);
-	RT_ASSERT( jsStatus != JS_FALSE, "Unable to read unsafeMode state from configuration object." );
-	if ( unsafeModeValue != JSVAL_VOID && JSVAL_IS_BOOLEAN(unsafeModeValue) )
-		SET_UNSAFE_MODE( JSVAL_TO_BOOLEAN(unsafeModeValue) == JS_TRUE );
+	SET_UNSAFE_MODE( GetConfigurationValue(cx, "unsafeMode" ) == JSVAL_TRUE );
 
 	INIT_CLASS( Space );
 	INIT_CLASS( Joint );

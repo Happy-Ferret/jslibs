@@ -16,15 +16,13 @@
 #include "jswindow.h"
 #include "jsgl.h"
 #include "jstransformation.h"
-#include "../configuration/configuration.h"
 
 DEFINE_UNSAFE_MODE
 
 extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
-	jsval value;
-	RT_CHECK_CALL( GetConfigurationValue(cx, "unsafeMode", &value) )
-	SET_UNSAFE_MODE( value != JSVAL_VOID && JSVAL_IS_BOOLEAN(value) && JSVAL_TO_BOOLEAN(value) == JS_TRUE );
+	SET_UNSAFE_MODE( GetConfigurationValue(cx, "unsafeMode" ) == JSVAL_TRUE );
+
 	INIT_CLASS( Transformation )
 	INIT_CLASS( Window )
 	INIT_CLASS( Gl )

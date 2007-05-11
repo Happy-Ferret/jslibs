@@ -7,7 +7,6 @@
 
 #include "../common/jsclass.h"
 #include "../common/jshelper.h"
-#include "../common/jsconfiguration.h"
 #include "jstest.h"
 
 

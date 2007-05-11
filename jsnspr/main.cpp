@@ -14,8 +14,6 @@
 
 #include "stdafx.h"
 
-DEFINE_UNSAFE_MODE;
-
 #include "nsprError.h"
 #include "nsprFile.h"
 #include "nsprDirectory.h"
@@ -23,15 +21,11 @@ DEFINE_UNSAFE_MODE;
 #include "nsprEvent.h"
 #include "nsprGlobal.h"
 
-#include "../configuration/configuration.h"
+DEFINE_UNSAFE_MODE;
 
 extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
-	jsval unsafeModeValue;
-	JSBool jsStatus = GetConfigurationValue(cx, "unsafeMode", &unsafeModeValue);
-	RT_ASSERT( jsStatus != JS_FALSE, "Unable to read unsafeMode state from configuration object." );
-	if ( JSVAL_IS_BOOLEAN(unsafeModeValue) )
-		SET_UNSAFE_MODE( unsafeModeValue == JSVAL_TRUE );
+	SET_UNSAFE_MODE( GetConfigurationValue(cx, "unsafeMode" ) == JSVAL_TRUE );
 
 	PR_STDIO_INIT();
 

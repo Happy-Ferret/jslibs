@@ -2,11 +2,6 @@
 Microsoft Visual Studio Solution File, Format Version 9.00
 # Visual C++ Express 2005
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jsnspr", "jsnspr.vcproj", "{462C2A9C-115B-49B6-BCA9-7ABC10243476}"
-	ProjectSection(ProjectDependencies) = postProject
-		{35128DFB-6C49-4E4C-AC5E-9948F01282B3} = {35128DFB-6C49-4E4C-AC5E-9948F01282B3}
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "configuration", "..\configuration\configuration.vcproj", "{35128DFB-6C49-4E4C-AC5E-9948F01282B3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -18,10 +13,6 @@ Global
 		{462C2A9C-115B-49B6-BCA9-7ABC10243476}.Debug|Win32.Build.0 = Debug|Win32
 		{462C2A9C-115B-49B6-BCA9-7ABC10243476}.Release|Win32.ActiveCfg = Release|Win32
 		{462C2A9C-115B-49B6-BCA9-7ABC10243476}.Release|Win32.Build.0 = Release|Win32
-		{35128DFB-6C49-4E4C-AC5E-9948F01282B3}.Debug|Win32.ActiveCfg = Debug|Win32
-		{35128DFB-6C49-4E4C-AC5E-9948F01282B3}.Debug|Win32.Build.0 = Debug|Win32
-		{35128DFB-6C49-4E4C-AC5E-9948F01282B3}.Release|Win32.ActiveCfg = Release|Win32
-		{35128DFB-6C49-4E4C-AC5E-9948F01282B3}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

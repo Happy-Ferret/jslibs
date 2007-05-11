@@ -17,7 +17,7 @@
 #include "stdafx.h"
 #include "template.h"
 
-DEFINE_UNSAFE_MODE;
+DEFINE_UNSAFE_MODE
 
 extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 

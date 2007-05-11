@@ -28,7 +28,7 @@
 
 #include "../common/jsNames.h"
 #include "../common/jshelper.h"
-#include "../configuration/configuration.h"
+#include "../common/jsConfiguration.h"
 #include "../moduleManager/moduleManager.h"
 
 // to be used in the main() function only

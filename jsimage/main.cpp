@@ -17,8 +17,11 @@
 #include "jspng.h"
 #include "jsjpeg.h"
 
+DEFINE_UNSAFE_MODE
 
 extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj) {
+
+	SET_UNSAFE_MODE( GetConfigurationValue(cx, "unsafeMode" ) == JSVAL_TRUE );
 
 	INIT_CLASS( Image );
 	INIT_CLASS( Png );

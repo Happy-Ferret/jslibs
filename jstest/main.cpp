@@ -8,16 +8,14 @@
 #include "jsatom.h"
 
 #include "../common/jsclass.h"
+#include "../common/jsconfiguration.h"
 
 #define USE_UNSAFE_MODE
 
 #include "../common/jshelper.h"
 #include "jstest.h"
 
-#include "../configuration/configuration.h"
-
 DEFINE_UNSAFE_MODE;
-
 
 extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	

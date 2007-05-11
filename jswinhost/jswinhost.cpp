@@ -13,8 +13,8 @@
 
 #include "../common/jsNames.h"
 #include "../common/jshelper.h"
-#include "../configuration/configuration.h"
 #include "../moduleManager/moduleManager.h"
+#include "../common/jsConfiguration.h"
 
 static JSBool global_loadModule(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
@@ -50,8 +50,8 @@ static JSBool noop(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval 
 
 int consoleStdOut( JSContext *cx, const char *data, int length ) {
 
-	JSObject *obj;
-	RT_CHECK_CALL( GetConfigurationObject(cx, &obj) );
+	JSObject *obj = GetConfigurationObject(cx);
+	RT_ASSERT( obj != NULL, "Unable to get GetConfigurationObject" );
 	jsval functionVal;
 	JS_GetProperty(cx, obj, "stdout", &functionVal);
 	if ( functionVal != JSVAL_VOID ) {
@@ -67,8 +67,8 @@ int consoleStdOut( JSContext *cx, const char *data, int length ) {
 
 int consoleStdErr( JSContext *cx, const char *data, int length ) {
 
-	JSObject *obj;
-	RT_CHECK_CALL( GetConfigurationObject(cx, &obj) );
+	JSObject *obj = GetConfigurationObject(cx);
+	RT_ASSERT( obj != NULL, "Unable to get GetConfigurationObject" );
 	jsval functionVal;
 	JS_GetProperty(cx, obj, "stderr", &functionVal);
 	if ( functionVal != JSVAL_VOID ) {
@@ -252,9 +252,8 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 	JS_DefineFunction(cx, globalObject, NAME_GLOBAL_FUNCTION_UNLOAD_MODULE, global_unloadModule, 0, 0);
 
 // Global configuration object
-	JSObject *configObject;
-	jsStatus = GetConfigurationObject(cx, &configObject);
-	if ( jsStatus == JS_FALSE )
+	JSObject *configObject = GetConfigurationObject(cx);
+	if ( configObject != NULL )
 		return -1;
 
 	jsval value;

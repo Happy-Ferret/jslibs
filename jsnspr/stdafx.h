@@ -22,6 +22,7 @@
 
 #include "../common/jshelper.h"
 #include "../common/jsclass.h"
+#include "../common/jsConfiguration.h"
 
 #include <nspr.h>
 

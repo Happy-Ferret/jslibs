@@ -111,7 +111,7 @@ DEFINE_FUNCTION( Close ) {
 	stack = JSVAL_TO_PRIVATE(v);
 	StackFreeContent( &stack );
 	// finalize open database statements
-	RT_ASSERT_RETURN( JS_GetReservedSlot(cx, obj, SLOT_SQLITE_DATABASE_STATEMENT_STACK, &v) );
+	RT_CHECK_CALL( JS_GetReservedSlot(cx, obj, SLOT_SQLITE_DATABASE_STATEMENT_STACK, &v) );
 	stack = JSVAL_TO_PRIVATE(v);
 	while ( !StackIsEnd(&stack) ) {
 
@@ -206,7 +206,7 @@ DEFINE_FUNCTION( Exec ) {
 			break;
 		case SQLITE_ROW:
 			{
-			RT_ASSERT_RETURN( SqliteColumnToJsval(cx, pStmt, 0, rval) );
+			RT_CHECK_CALL( SqliteColumnToJsval(cx, pStmt, 0, rval) );
 			status = sqlite3_finalize( pStmt );
 			if ( status != SQLITE_OK )
 				return SqliteThrowError( cx, status, sqlite3_errcode(sqlite3_db_handle(pStmt)), sqlite3_errmsg(sqlite3_db_handle(pStmt)) );
