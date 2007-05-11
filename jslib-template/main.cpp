@@ -12,6 +12,8 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
+//$Id$
+
 #include "stdafx.h"
 #include "template.h"
 
