@@ -6,6 +6,8 @@
 #include <jsapi.h>
 
 #include "../common/jsclass.h"
+#include "../common/jshelper.h"
+#include "../common/jsconfiguration.h"
 #include "jstest.h"
 
 
@@ -14,6 +16,7 @@ BEGIN_CLASS(World)
 
 	DEFINE_FUNCTION( Test ) {
 
+		*rval = _unsafeMode ? JSVAL_TRUE : JSVAL_FALSE;
 		return JS_TRUE;
 	}
 

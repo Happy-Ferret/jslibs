@@ -21,26 +21,26 @@
 //};
 
 // returns JS_FALSE on fatal errors only
-JSBool GetConfigurationObject(JSContext *cx, JSObject **configurationObject ) {
+JSObject *GetConfigurationObject(JSContext *cx) {
 
 	JSObject *globalObject = JS_GetGlobalObject(cx);
+	JSObject *configurationObject;
 	if ( globalObject == NULL )
-		return JS_FALSE;
-
+		return NULL;
 	jsval configurationValue;
 	JS_GetProperty(cx, globalObject, CONFIGURATION_OBJECT_NAME, &configurationValue);
-
 	if ( configurationValue == JSVAL_VOID ) { // if configuration object do not exist, we build one
 
-		*configurationObject = JS_DefineObject(cx, globalObject, CONFIGURATION_OBJECT_NAME, NULL, NULL, 0 );
-		if ( *configurationObject == NULL ) // Doc: If the property already exists, or cannot be created, JS_DefineObject returns NULL.
-			return JS_FALSE; // cannot be created
+		configurationObject = JS_DefineObject(cx, globalObject, CONFIGURATION_OBJECT_NAME, NULL, NULL, 0 );
+		if ( configurationObject == NULL ) // Doc: If the property already exists, or cannot be created, JS_DefineObject returns NULL.
+			return NULL; // cannot be created
 	} else {
 
-		RT_CHECK_CALL( JS_ValueToObject(cx, configurationValue, configurationObject) )
-		// (TBD) check if it is the right object
+		if ( !JSVAL_IS_OBJECT(configurationValue) )
+			return NULL;
+		configurationObject = JSVAL_TO_OBJECT( configurationValue );
 	}
-	return JS_TRUE;
+	return configurationObject;
 }
 
 /*
@@ -71,7 +71,21 @@ jsval GetConfigurationValue( JSContext *cx, const char *name ) {
 */
 
 
-// returns JS_FALSE on fatal errors only
+// returns JSVAL_VOID on errors
+jsval GetConfigurationValue( JSContext *cx, const char *name ) {
+
+	JSObject *configurationObject;
+	jsval value;
+	configurationObject = GetConfigurationObject(cx);
+	if (configurationObject == NULL)
+		return JSVAL_VOID;
+	if ( JS_GetProperty(cx, configurationObject, name, &value) != JS_TRUE )
+		return JSVAL_VOID;
+	return value;
+}
+
+
+/*
 JSBool GetConfigurationValue( JSContext *cx, const char *name, jsval *value ) {
 
 	JSObject *configurationObject;
@@ -81,6 +95,8 @@ JSBool GetConfigurationValue( JSContext *cx, const char *name, jsval *value ) {
 	RT_CHECK_CALL( JS_GetProperty(cx, configurationObject, name, value) )
 	return JS_TRUE;
 }
+*/
+
 
 
 /*

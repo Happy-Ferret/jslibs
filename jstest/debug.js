@@ -1,6 +1,11 @@
 LoadModule('jsstd');
 LoadModule('jstest');
 
+var w = new World();
+Print( w.Test() );
+
+throw 0;
+
 /*
 var a = new Test();
 a.Func();

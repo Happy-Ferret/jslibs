@@ -8,12 +8,20 @@
 #include "jsatom.h"
 
 #include "../common/jsclass.h"
+
+#define USE_UNSAFE_MODE
+
+#include "../common/jshelper.h"
 #include "jstest.h"
+
+#include "../configuration/configuration.h"
+
+DEFINE_UNSAFE_MODE;
 
 
 extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj) {
-
-
+	
+	SET_UNSAFE_MODE( GetConfigurationValue(cx, "unsafeMode" ) == JSVAL_TRUE );
 
 	JSFunctionSpec _tmp[] = {{0}};
 	JSBool st = INIT_CLASS( World );

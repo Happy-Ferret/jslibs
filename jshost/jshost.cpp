@@ -353,10 +353,8 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 // JS_DefineFunction( cx, globalObject, "Module", _Module, 0, 0 );
 
 // Global configuration object
-	JSObject *configObject;
-	jsStatus = GetConfigurationObject(cx, &configObject);
-	RT_HOST_MAIN_ASSERT( jsStatus != JS_FALSE, "failed to get configuration object." );
-	RT_HOST_MAIN_ASSERT( configObject != NULL, "unable to create the configuration data." );
+	JSObject *configObject = GetConfigurationObject(cx);
+	RT_HOST_MAIN_ASSERT( configObject != NULL, "failed to get/create configuration object." );
 
 	jsval value = OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunction(cx, stderrFunction, 1, 0, NULL, NULL))); // If you do not assign a name to the function, it is assigned the name "anonymous".
 	jsStatus = JS_SetProperty(cx, configObject, NAME_CONFIGURATION_STDERR, &value);

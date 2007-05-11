@@ -21,8 +21,8 @@
 
 extern JSClass configuration_class;
 
-JSBool GetConfigurationObject(JSContext *cx, JSObject **configurationObject );
-JSBool GetConfigurationValue( JSContext *cx, const char *name, jsval *value );
+JSObject *GetConfigurationObject(JSContext *cx);
+jsval GetConfigurationValue( JSContext *cx, const char *name );
 
 
 /*
