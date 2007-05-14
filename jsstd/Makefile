@@ -1,12 +1,13 @@
 LIBNAME = jsstd
 OBJS    = $(patsubst %.cpp,%.o,$(wildcard *.cpp))
 CFLAGS  = -g -Wall
- 
+LIBS    =
+
 .cpp.o:
-	gcc -I../js/src -I../js/src/Linux_All_DBG.OBJ -fPIC $(CFLAGS) -c -o $*.o $<
+	gcc -I../js/src -I../js/src/Linux_All_DBG.OBJ -fpic $(CFLAGS) -c -o $*.o $<
 
 $(LIBNAME).so: $(OBJS)
-	gcc -g -shared $(OBJS) -lc -Wl,-soname,$(LIBNAME).so -o $(LIBNAME).so
+	gcc -g -shared $(OBJS) -lc ../js/src/Linux_All_DBG.OBJ/libjs.so $(LIBS) -Wl,-soname,$(LIBNAME).so -o $(LIBNAME).so
 
 all: $(LIBNAME).so
  

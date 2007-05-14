@@ -1,15 +1,15 @@
-OBJS      = blob.o database.o error.o result.o main.o
-LIBNAME   = jssqlite
-CFLAGS    = -Wall
+LIBNAME = jssqlite
+OBJS    = $(patsubst %.cpp,%.o,$(wildcard *.cpp))
+CFLAGS  = -g -Wall
+LIBS    =  -L../sqlite/libs -lsqlite
  
+.cpp.o:
+	gcc -I../js/src -I../js/src/Linux_All_DBG.OBJ -fpic $(CFLAGS) -c -o $*.o $<
+
+$(LIBNAME).so: $(OBJS)
+	gcc -g -shared $(OBJS) -lc $(LIBS) -Wl,-soname,$(LIBNAME).so -o $(LIBNAME).so
+
 all: $(LIBNAME).so
  
-$(LIBNAME).so: $(OBJS)
-	gcc -shared $(CFLAGS) $(OBJS) -lc -Wl,-soname,$(LIBNAME).so -o $(LIBNAME).so
-
-.cpp.o:
-        gcc -fPIC -DPIC $(CFLAGS) -c -o $*.o $<
- 
 clean:
-        rm -f *.o *.a *.so
-
+	rm -f *.o *.a *.so

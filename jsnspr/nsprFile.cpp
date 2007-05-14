@@ -71,9 +71,7 @@ DEFINE_FUNCTION( Open ) {
 	int32 tmp;
 	JS_ValueToInt32( cx, argv[0], &tmp );
 	flags = tmp;
-
-	PRIntn mode = 0666;
-
+	PRIntn mode = PR_IRWXU; // read, write, execute/search by owner
 	PRFileDesc *fd = PR_Open( fileName, flags, mode ); // The mode parameter is currently applicable only on Unix platforms.
 	if ( fd == NULL )
 		return ThrowNSPRError( cx, PR_GetError() );

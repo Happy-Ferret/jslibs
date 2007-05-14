@@ -23,7 +23,7 @@
 #pragma warning(disable:4244 4305)  // for VC++, no precision loss complaints
 #endif
 
-#include <varargs.h>
+#include <stdarg.h>
 
 #ifdef USE_UNSAFE_MODE
 	extern bool _unsafeMode;
