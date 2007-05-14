@@ -15,8 +15,6 @@
 #include "stdafx.h"
 #include "moduleManager.h"
 
-#include "../common/queue.h"
-
 HMODULE _moduleList[32] = {NULL}; // do not manage the module list dynamicaly, we allow a maximum of 32 modules
 
 ModuleId ModuleLoad( const char *fileName, JSContext *cx, JSObject *obj ) {

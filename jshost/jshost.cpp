@@ -14,15 +14,18 @@
 
 #include "stdafx.h"
 
-#ifdef WIN32
- #define DLL_EXT ".dll"
-#else
- #define DLL_EXT ".so"
-#endif
+#include "../common/platform.h"
 
-#include "jsstddef.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <string.h>
+#include <time.h>
+#include <errno.h>
 
 #include <jsapi.h>
+#include "jsstddef.h"
 #include "jsprf.h"
 #include "jsscript.h"
 

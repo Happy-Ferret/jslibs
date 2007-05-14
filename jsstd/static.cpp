@@ -13,13 +13,16 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
+
 #include "static.h"
 
-#include <sys/stat.h>
 #include "jsxdrapi.h"
 #include "jscntxt.h"
 
-#include "../common/stack.h"
+
+#ifdef XP_UNIX
+	#define MAX_PATH PATH_MAX
+#endif
 
 extern JSFunction *stdoutFunction;
 
@@ -161,7 +164,7 @@ DEFINE_FUNCTION( SetScope ) {
 	*rval = OBJECT_TO_JSVAL(JS_GetParent(cx, o));
 
 	RT_CHECK_CALL( JS_SetParent(cx, o, p) );
-	
+
 	return JS_TRUE;
 }
 
@@ -171,10 +174,9 @@ DEFINE_FUNCTION( HideProperties ) {
 
 	RT_ASSERT_ARGC(2);
 	JSObject *object;
-	JSBool err;
 	RT_CHECK_CALL( JS_ValueToObject( cx, argv[0], &object ) );
-	const char *propertyName;
-	uintN attributes;
+//	const char *propertyName;
+//	uintN attributes;
 	for ( uintN i=1; i<argc; i++ ) {
 
 		jsid id;
@@ -225,9 +227,9 @@ DEFINE_FUNCTION( IdOf ) {
 /*
 DEFINE_FUNCTION( test ) {
 
-// toto(123) = 'test' 
+// toto(123) = 'test'
 	*rval
-	JS_SetCallReturnValue2(cx, 
+	JS_SetCallReturnValue2(cx,
 	return JS_TRUE;
 }
 */
@@ -265,7 +267,7 @@ DEFINE_FUNCTION( CollectGarbage ) {
 	#ifdef JS_THREADSAFE
 	JS_EndRequest( cx );
 	#endif
-	
+
 	return JS_TRUE;
 }
 
@@ -299,11 +301,11 @@ static JSScript* LoadScript(JSContext *cx, JSObject *obj, const char *fileName, 
 	strcpy( compiledFileName, fileName );
 	strcat( compiledFileName, "xdr" );
 
-	struct _stat srcFileStat;
-	bool hasSrcFile = ( _stat( fileName, &srcFileStat ) != -1 ) ; // errno == ENOENT
+	struct stat srcFileStat;
+	bool hasSrcFile = ( stat( fileName, &srcFileStat ) != -1 ) ; // errno == ENOENT
 
-	struct _stat compFileStat;
-	bool hasCompFile = ( _stat( compiledFileName, &compFileStat ) != -1 );
+	struct stat compFileStat;
+	bool hasCompFile = ( stat( compiledFileName, &compFileStat ) != -1 );
 
 	bool compFileUpToDate = ( hasSrcFile && hasCompFile && (srcFileStat.st_mtime < compFileStat.st_mtime) ) || ( hasCompFile && !hasSrcFile );	// true if comp file is up to date or alone
 
@@ -325,7 +327,7 @@ static JSScript* LoadScript(JSContext *cx, JSObject *obj, const char *fileName, 
 			return NULL;
 		}
 
-		int compFileSize = compFileStat.st_size;
+		size_t compFileSize = compFileStat.st_size;
 		void *data = JS_malloc( cx, compFileSize );
 
 		size_t readCount = fread( data, 1, compFileSize, file ); // here we can use "Memory-Mapped I/O Functions" ( http://developer.mozilla.org/en/docs/NSPR_API_Reference:I/O_Functions#Memory-Mapped_I.2FO_Functions )
@@ -411,7 +413,7 @@ DEFINE_FUNCTION( Exec ) {
 
 //		if ( argc >= 3 )
 //			obj = JSVAL_TO_OBJECT( argv[2] ); // try Exec.call( obj1, 'test.js' ); ...
-// see: http://groups.google.com/group/mozilla.dev.tech.js-engine/browse_thread/thread/97269b31d65d493d/be8a4f9c4e805bef		
+// see: http://groups.google.com/group/mozilla.dev.tech.js-engine/browse_thread/thread/97269b31d65d493d/be8a4f9c4e805bef
 
 		ok = JS_ExecuteScript(cx, obj, script, rval); // Doc: On successful completion, rval is a pointer to a variable that holds the value from the last executed expression statement processed in the script.
 		JS_DestroyScript(cx, script);
@@ -427,7 +429,7 @@ DEFINE_FUNCTION( Exec ) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 DEFINE_FUNCTION( IsStatementValid ) {
-	
+
 	RT_ASSERT_ARGC( 1 );
 	char *buffer;
 	int length;

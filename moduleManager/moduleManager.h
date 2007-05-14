@@ -12,23 +12,15 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-#ifdef WIN32
-	#define DLL_EXT ".dll"
-#else
-	#define DLL_EXT ".so"
-#endif
-
-#include "../common/jsNames.h"
-
 typedef unsigned int ModuleId;
 
 typedef JSBool (*ModuleInitFunction)(JSContext *, JSObject *);
 typedef JSBool (*ModuleReleaseFunction)(JSContext *cx);
 typedef void (*ModuleFreeFunction)(void);
 
-extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj);
-extern "C" __declspec(dllexport) JSBool ModuleRelease(JSContext *cx);
-extern "C" __declspec(dllexport) void ModuleFree();
+extern "C" DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj);
+extern "C" DLLEXPORT JSBool ModuleRelease(JSContext *cx);
+extern "C" DLLEXPORT void ModuleFree();
 
 ModuleId ModuleLoad( const char *fileName, JSContext *cx, JSObject *obj );
 bool ModuleIsUnloadable( ModuleId id );

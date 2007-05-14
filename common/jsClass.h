@@ -18,7 +18,7 @@
 #define BEGIN_STATIC_FUNCTION_SPEC JSFunctionSpec _tmp_sfs[] = {
 #define END_STATIC_FUNCTION_SPEC {0}}; _staticFunctionSpec = _tmp_sfs;
 
-#define DEFINE_FUNCTION(name) static JSBool name##(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+#define DEFINE_FUNCTION(name) static JSBool name(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 #define DEFINE_CONSTRUCTOR() static JSBool Constructor(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 #define DEFINE_OBJECT_CONSTRUCTOR() static JSBool ObjectConstructor(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 #define DEFINE_FINALIZE() static void Finalize(JSContext *cx, JSObject *obj)
@@ -35,7 +35,7 @@
 #define BEGIN_STATIC_PROPERTY_SPEC JSPropertySpec _tmp_sps[] = {
 #define END_STATIC_PROPERTY_SPEC {0}}; _staticPropertySpec = _tmp_sps;
 
-#define DEFINE_PROPERTY(name) static JSBool name##(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
+#define DEFINE_PROPERTY(name) static JSBool name(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
 #define DEFINE_PROPERTY_NULL(name) static JSPropertyOp name = NULL;
 
 #define PROPERTY(name)       { #name, 0, JSPROP_PERMANENT|JSPROP_SHARED, name##Getter, name##Setter },

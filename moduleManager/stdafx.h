@@ -5,12 +5,12 @@
 
 #pragma once
 
-#define WIN32_LEAN_AND_MEAN		// Exclude rarely-used stuff from Windows headers
+#include "../common/platform.h"
 
-// TODO: reference additional headers your program requires here
+#define WIN32_LEAN_AND_MEAN		// Exclude rarely-used stuff from Windows headers
 #include <windows.h>
-#define XP_WIN
+
 #include <jsapi.h>
 #include "../common/jshelper.h"
-
-
+#include "../common/queue.h"
+#include "../common/jsNames.h"
