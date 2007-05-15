@@ -7,10 +7,17 @@
 
 #include "../common/platform.h"
 
-#define WIN32_LEAN_AND_MEAN		// Exclude rarely-used stuff from Windows headers
-#include <windows.h>
+#ifdef XP_WIN
+	#define WIN32_LEAN_AND_MEAN		// Exclude rarely-used stuff from Windows headers
+	#include <windows.h>
+#endif
+
+
+#ifdef XP_UNIX
+	#include <dlfcn.h>
+#endif
 
 #include <jsapi.h>
-#include "../common/jshelper.h"
-#include "../common/queue.h"
+#include "../common/jsHelper.h"
 #include "../common/jsNames.h"
+#include "../common/queue.h"

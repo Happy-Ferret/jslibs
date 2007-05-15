@@ -23,6 +23,7 @@
 #include <string.h>
 #include <time.h>
 #include <errno.h>
+#include <limits.h>
 
 #include <jsapi.h>
 #include "jsstddef.h"
@@ -30,9 +31,14 @@
 #include "jsscript.h"
 
 #include "../common/jsNames.h"
-#include "../common/jshelper.h"
+#include "../common/jsHelper.h"
 #include "../common/jsConfiguration.h"
 #include "../moduleManager/moduleManager.h"
+
+#ifdef XP_UNIX
+	#define MAX_PATH PATH_MAX
+#endif
+
 
 // to be used in the main() function only
 #define RT_HOST_MAIN_ASSERT( condition, errorMessage ) \
@@ -85,6 +91,7 @@ static void ErrorReporter(JSContext *cx, const char *message, JSErrorReport *rep
     int i, j, k, n;
     char *prefix, *tmp;
     const char *ctmp;
+	char *msg;
 
     if (!report) {
 
@@ -134,7 +141,7 @@ static void ErrorReporter(JSContext *cx, const char *message, JSErrorReport *rep
 
     /* report->linebuf usually ends with a newline. */
     n = strlen(report->linebuf);
-    char *msg = JS_smprintf(":\n%s%s%s%s",
+    msg = JS_smprintf(":\n%s%s%s%s",
             prefix,
             report->linebuf,
             (n > 0 && report->linebuf[n-1] == '\n') ? "" : "\n",
@@ -183,7 +190,8 @@ static JSBool global_loadModule(JSContext *cx, JSObject *obj, uintN argc, jsval 
 	strcpy( libFileName, fileName );
 	strcat( libFileName, DLL_EXT );
 	ModuleId id = ModuleLoad(libFileName, cx, obj);
-	RT_ASSERT_2( id != 0, "Unable to load the module %s (error:%d).", libFileName, GetLastError() );
+//	RT_ASSERT_2( id != 0, "Unable to load the module %s (error:%d).", libFileName, GetLastError() ); // (TBD) rewrite this for Linux
+	RT_ASSERT_1( id != 0, "Unable to load the module %s (error:%d).", libFileName );
 	RT_CHECK_CALL( JS_NewNumberValue(cx, id, rval) );
 	return JS_TRUE;
 }
@@ -194,8 +202,8 @@ static JSBool global_unloadModule(JSContext *cx, JSObject *obj, uintN argc, jsva
 	RT_ASSERT_ARGC(1);
 	jsdouble dVal;
 	RT_CHECK_CALL( JS_ValueToNumber(cx, argv[0], &dVal) );
-	ModuleId id = dVal;
-	
+	ModuleId id = (ModuleId)dVal;
+
 	if ( ModuleIsUnloadable(id) ) {
 
 		bool st = ModuleUnload(id, cx);

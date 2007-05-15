@@ -14,14 +14,56 @@
 
 #include "stdafx.h"
 #include "moduleManager.h"
+//#include "../common/platform.h"
 
-HMODULE _moduleList[32] = {NULL}; // do not manage the module list dynamicaly, we allow a maximum of 32 modules
+#ifdef XP_UNIX
+	typedef void *LibraryHandler;
+
+	LibraryHandler DynamicLibraryOpen( const char *filename ) {
+
+		return dlopen( filename, RTLD_NOW );
+	}
+
+	bool DynamicLibraryClose( LibraryHandler lh ) {
+
+		return dlclose( lh ) == 0;
+	}
+
+	void *DynamicLibrarySymbol( LibraryHandler lh, const char *filename ) {
+
+		return dlsym( lh, filename );
+	}
+#endif
+
+#ifdef XP_WIN
+	typedef HMODULE LibraryHandler;
+	LibraryHandler DynamicLibraryOpen( const char *filename ) {
+
+		return LoadLibrary( filename );
+	}
+
+	bool DynamicLibraryClose( LibraryHandler lh ) {
+
+		return FreeLibrary( lh ) == TRUE;
+	}
+
+	void *DynamicLibrarySymbol( LibraryHandler lh, const char *filename ) {
+
+		return GetProcAddress( lh, filename );
+	}
+#endif
+
+
+
+
+LibraryHandler _moduleList[32] = {NULL}; // do not manage the module list dynamicaly, we allow a maximum of 32 modules
 
 ModuleId ModuleLoad( const char *fileName, JSContext *cx, JSObject *obj ) {
 
 	if ( fileName == NULL || *fileName == '\0' )
 		return 0;
-	HMODULE module = ::LoadLibrary(fileName);
+
+	LibraryHandler module = DynamicLibraryOpen(fileName);
 	if ( module == NULL )
 		return 0;
 	int i;
@@ -29,18 +71,18 @@ ModuleId ModuleLoad( const char *fileName, JSContext *cx, JSObject *obj ) {
 	for ( i = 0; _moduleList[i] != NULL && i < MaxModuleSlot; ++i ); // find a free module slot
 	if ( i == MaxModuleSlot )
 		return 0;
-	ModuleInitFunction moduleInit = (ModuleInitFunction)::GetProcAddress( module, NAME_MODULE_INIT );
+	ModuleInitFunction moduleInit = (ModuleInitFunction)DynamicLibrarySymbol( module, NAME_MODULE_INIT );
 	if ( moduleInit == NULL ) {
 
-		::FreeLibrary(module);
+		DynamicLibraryClose(module);
 		return 0;
 	}
 
 	_moduleList[i] = module;
 
 	if ( moduleInit(cx, obj) == JS_FALSE ) {
-		
-		::FreeLibrary(module);
+
+		DynamicLibraryClose(module);
 		_moduleList[i] = NULL;
 		return 0;
 	}
@@ -49,10 +91,10 @@ ModuleId ModuleLoad( const char *fileName, JSContext *cx, JSObject *obj ) {
 
 bool ModuleIsUnloadable( ModuleId id ) {
 
-	HMODULE module = (HMODULE)id;
+	LibraryHandler module = (LibraryHandler)id;
 	if ( module == NULL )
 		return false;
-	ModuleReleaseFunction moduleRelease = (ModuleReleaseFunction)::GetProcAddress( module, NAME_MODULE_RELEASE );
+	ModuleReleaseFunction moduleRelease = (ModuleReleaseFunction)DynamicLibrarySymbol( module, NAME_MODULE_RELEASE );
 	if ( moduleRelease == NULL )
 		return false;
 	return true;
@@ -74,7 +116,7 @@ bool ModuleUnload( ModuleId id, JSContext *cx ) {
 
 	for ( int i = sizeof(_moduleList) / sizeof(*_moduleList) - 1; i >= 0; --i ) // beware: 'i' must be signed // start from the end
 		if ( _moduleList[i] == module ) {
-			
+
 			_moduleList[i] = NULL;
 
 			typedef JSBool (*ModuleReleaseFunction)(JSContext *cx);
@@ -100,7 +142,7 @@ void ModuleReleaseAll( JSContext *cx ) {
 	for ( int i = sizeof(_moduleList) / sizeof(*_moduleList) - 1; i >= 0; --i ) // beware: 'i' must be signed // start from the end
 		if ( _moduleList[i] != NULL ) {
 
-			ModuleReleaseFunction moduleRelease = (ModuleReleaseFunction)::GetProcAddress( _moduleList[i], NAME_MODULE_RELEASE );
+			ModuleReleaseFunction moduleRelease = (ModuleReleaseFunction)DynamicLibrarySymbol( _moduleList[i], NAME_MODULE_RELEASE );
 			if ( moduleRelease != NULL )
 				moduleRelease(cx);
 		}
@@ -111,9 +153,18 @@ void ModuleFreeAll() {
 	for ( int i = sizeof(_moduleList) / sizeof(*_moduleList) - 1; i >= 0; --i ) // beware: 'i' must be signed // start from the end
 		if ( _moduleList[i] != NULL ) {
 
-			ModuleFreeFunction moduleFree = (ModuleFreeFunction)::GetProcAddress( _moduleList[i], NAME_MODULE_FREE );
+			ModuleFreeFunction moduleFree = (ModuleFreeFunction)DynamicLibrarySymbol( _moduleList[i], NAME_MODULE_FREE );
 			if ( moduleFree != NULL )
 				moduleFree();
-			::FreeLibrary(_moduleList[i]);
+			DynamicLibraryClose(_moduleList[i]);
 		}
 }
+
+
+/*
+
+Program Library HOWTO
+	http://www.faqs.org/docs/Linux-HOWTO/Program-Library-HOWTO.html
+
+
+*/

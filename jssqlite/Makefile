@@ -4,10 +4,10 @@ CFLAGS  = -g -Wall
 LIBS    =  -L../sqlite/libs -lsqlite
  
 .cpp.o:
-	gcc -I../js/src -I../js/src/Linux_All_DBG.OBJ -fpic $(CFLAGS) -c -o $*.o $<
+	g++ -I../js/src -I../js/src/Linux_All_DBG.OBJ -fpic $(CFLAGS) -c -o $*.o $<
 
 $(LIBNAME).so: $(OBJS)
-	gcc -g -shared $(OBJS) -lc $(LIBS) -Wl,-soname,$(LIBNAME).so -o $(LIBNAME).so
+	g++ -shared $(OBJS) -Wl,-soname,$(LIBNAME).so -o $(LIBNAME).so -lc $(LIBS)
 
 all: $(LIBNAME).so
  
