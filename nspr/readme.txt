@@ -17,6 +17,10 @@ try last version:
 	ftp://ftp.mozilla.org/pub/mozilla.org/nspr/releases/
 
 
+Linux compilation:
+	./configure --disable-debug --enable-strip --enable-nspr-threads --enable-optimize=-O3
+	make
+
 <...>
 Hi,
 

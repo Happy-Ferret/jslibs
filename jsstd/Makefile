@@ -1,5 +1,7 @@
 LIBNAME = jsstd
 OBJS    = $(patsubst %.cpp,%.o,$(wildcard *.cpp))
-LIBS    =
+INCLUDES   =
+STATICLIBS =
+SHAREDLIBS =
 
 include ../common/rules.mk

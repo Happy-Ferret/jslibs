@@ -20,17 +20,17 @@
 	typedef void *LibraryHandler;
 
 	LibraryHandler DynamicLibraryOpen( const char *filename ) {
-
+		dlerror();
 		return dlopen( filename, RTLD_NOW );
 	}
 
 	bool DynamicLibraryClose( LibraryHandler lh ) {
-
+		dlerror();
 		return dlclose( lh ) == 0;
 	}
 
 	void *DynamicLibrarySymbol( LibraryHandler lh, const char *filename ) {
-
+		dlerror();
 		return dlsym( lh, filename );
 	}
 #endif
@@ -51,6 +51,7 @@
 
 		return GetProcAddress( lh, filename );
 	}
+
 #endif
 
 

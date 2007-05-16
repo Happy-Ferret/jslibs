@@ -24,6 +24,7 @@
 #include <time.h>
 #include <errno.h>
 #include <limits.h>
+//	#include <dlfcn.h>
 
 #include <jsapi.h>
 #include "jsstddef.h"
@@ -181,6 +182,7 @@ static void LoadErrorReporter(JSContext *cx, const char *message, JSErrorReport 
 }
 */
 
+
 static JSBool global_loadModule(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
 	RT_ASSERT_ARGC(1);
@@ -191,8 +193,9 @@ static JSBool global_loadModule(JSContext *cx, JSObject *obj, uintN argc, jsval 
 	strcat( libFileName, DLL_EXT );
 	ModuleId id = ModuleLoad(libFileName, cx, obj);
 //	RT_ASSERT_2( id != 0, "Unable to load the module %s (error:%d).", libFileName, GetLastError() ); // (TBD) rewrite this for Linux
-	RT_ASSERT_1( id != 0, "Unable to load the module %s (error:%d).", libFileName );
-	RT_CHECK_CALL( JS_NewNumberValue(cx, id, rval) );
+//	RT_ASSERT_2( id != 0, "Unable to load the module %s (error:%s).", libFileName, dlerror() );
+	RT_ASSERT_1( id != 0, "Unable to load the module \"%s\".", libFileName );
+//	RT_CHECK_CALL( JS_NewNumberValue(cx, id, rval) );
 	return JS_TRUE;
 }
 

@@ -14,10 +14,12 @@
 
 #include "stdafx.h"
 
+#include <string.h>
+
+
 #include "nsprError.h"
 #include "nsprFile.h"
 
-#include "../common/jshelper.h"
 #include "../common/jsNativeInterface.h"
 
 #include "../common/queue.h"
@@ -71,7 +73,7 @@ DEFINE_FUNCTION( Open ) {
 	int32 tmp;
 	JS_ValueToInt32( cx, argv[0], &tmp );
 	flags = tmp;
-	PRIntn mode = PR_IRWXU; // read, write, execute/search by owner
+	PRIntn mode = PR_IRUSR + PR_IWUSR; // read write permission, owner
 	PRFileDesc *fd = PR_Open( fileName, flags, mode ); // The mode parameter is currently applicable only on Unix platforms.
 	if ( fd == NULL )
 		return ThrowNSPRError( cx, PR_GetError() );
@@ -111,7 +113,7 @@ DEFINE_FUNCTION( ReadAll ) {
 	do {
 
 		if ( chunkListContentLength >= chunkListTotalLength ) {
-			
+
 			chunkListTotalLength *= 2;
 			chunkList = (char**)realloc(chunkList, chunkListTotalLength * sizeof(char*));
 		}
@@ -156,7 +158,7 @@ DEFINE_FUNCTION( Read ) {
 
 	PRInt32 amount;
 	if ( argc >= 1 && argv[0] != JSVAL_VOID ) {
-		
+
 		RT_JSVAL_TO_INT32( argv[0], amount );
 	} else  { // no amount specified : read the whole file
 
@@ -190,7 +192,7 @@ DEFINE_FUNCTION( Read ) {
 		JSBool doRealloc;
 		JS_ValueToBoolean(cx, argv[1], &doRealloc );
 		if ( doRealloc == JS_TRUE ) {
-			
+
 			buf = (char*)JS_realloc(cx, buf, res); // realloc the string using its real size
 			RT_ASSERT_ALLOC(buf);
 		}
@@ -231,7 +233,7 @@ DEFINE_FUNCTION( Write ) {
 
 	if ( bytesSent == -1 )
 		return ThrowNSPRError( cx, PR_GetError() );
-	
+
 	RT_ASSERT( bytesSent == length, "unable to send all datas" );
 	return JS_TRUE;
 }
@@ -288,7 +290,7 @@ DEFINE_FUNCTION( Delete ) {
 	RT_ASSERT_DEFINED( jsvalFileName );
 	char *fileName;
 	RT_JSVAL_TO_STRING(jsvalFileName, fileName);
-	
+
 	PRStatus status = PR_Delete(fileName);
 	if ( status != PR_SUCCESS )
 		return ThrowNSPRError( cx, PR_GetError() );
@@ -334,7 +336,7 @@ DEFINE_PROPERTY( contentGetter ) {
 	RT_JSVAL_TO_STRING(jsvalFileName, fileName);
 	PRFileDesc *fd = PR_OpenFile( fileName, PR_RDONLY, 0 ); // The mode parameter is currently applicable only on Unix platforms.
 	if ( fd == NULL ) {
-		
+
 		PRErrorCode err = PR_GetError();
 		if ( err == PR_FILE_NOT_FOUND_ERROR )
 			return JS_TRUE; // property will return  undefined
@@ -386,7 +388,7 @@ DEFINE_PROPERTY( contentSetter ) {
 
 		PRStatus status = PR_Delete( fileName );
 		if ( status != PR_SUCCESS ) {
-		
+
 			PRErrorCode err = PR_GetError();
 			if ( err == PR_FILE_NOT_FOUND_ERROR )
 				return JS_TRUE; // property will return  undefined
@@ -394,7 +396,7 @@ DEFINE_PROPERTY( contentSetter ) {
 		}
 		return JS_TRUE;
 	}
-	PRFileDesc *fd = PR_OpenFile( fileName, PR_CREATE_FILE | PR_TRUNCATE | PR_WRONLY, 0666 ); // The mode parameter is currently applicable only on Unix platforms.
+	PRFileDesc *fd = PR_OpenFile( fileName, PR_CREATE_FILE | PR_TRUNCATE | PR_WRONLY, PR_IRUSR + PR_IWUSR ); // The mode parameter is currently applicable only on Unix platforms.
 	if ( fd == NULL )
 		return ThrowNSPRError( cx, PR_GetError() );
 	void *buf;
@@ -462,13 +464,13 @@ DEFINE_PROPERTY( info ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
 	if ( fd == NULL ) {
-		
+
 		jsval jsvalFileName;
 		JS_GetReservedSlot( cx, obj, SLOT_NSPR_FILE_NAME, &jsvalFileName );
 		RT_ASSERT_DEFINED( jsvalFileName );
 		char *fileName;
 		RT_JSVAL_TO_STRING(jsvalFileName, fileName);
-		
+
 		status = PR_GetFileInfo( fileName, &fileInfo );
 	} else
 		status = PR_GetOpenFileInfo( fd, &fileInfo );
@@ -494,7 +496,7 @@ DEFINE_PROPERTY( info ) {
 
 
 DEFINE_PROPERTY( standard ) {
-	
+
 	if ( *vp == JSVAL_VOID ) {
 
 		int32 i;

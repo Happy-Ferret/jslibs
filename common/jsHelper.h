@@ -204,6 +204,7 @@ inline double TimeNow() {
 	QueryPerformanceCounter(&performanceCount);
 	return 1000 * double(performanceCount.QuadPart) / double(frequency.QuadPart);
 #endif // WIN32
+	return 0;
 }
 
 
@@ -297,7 +298,7 @@ inline bool HasProperty( JSContext *cx, JSObject *obj, const char *propertyName 
 }
 
 inline JSBool CallFunction( JSContext *cx, JSObject *obj, jsval functionValue, jsval *rval, uintN argc, ... ) {
-	
+
 	va_list ap;
 	jsval argv[16]; // argc MUST be <= 16
 	RT_ASSERT( argc <= sizeof(argv)/sizeof(jsval), "Too many arguments." );

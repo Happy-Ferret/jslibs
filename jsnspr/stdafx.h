@@ -8,20 +8,13 @@
 #ifndef stdafx_h___
 #define stdafx_h___
 
-#ifdef _MSC_VER
-	#define WIN32_LEAN_AND_MEAN		// Exclude rarely-used stuff from Windows headers
-	#include <windows.h>
-	#define XP_WIN
-#else
-	#define XP_UNIX
-#endif
+#include "../common/platform.h"
 
 #include <jsapi.h>
 
 #define USE_UNSAFE_MODE
-
-#include "../common/jshelper.h"
-#include "../common/jsclass.h"
+#include "../common/jsHelper.h"
+#include "../common/jsClass.h"
 #include "../common/jsConfiguration.h"
 
 #include <nspr.h>

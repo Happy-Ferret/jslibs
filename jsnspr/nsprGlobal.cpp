@@ -21,6 +21,9 @@ BEGIN_STATIC
 
 DEFINE_FUNCTION( Poll ) {
 
+	uintN objCount;
+	PRInt32 result;
+
 	// NSPR Poll Method:
 	//   http://www.mozilla.org/projects/nspr/tech-notes/poll-method.html
 
@@ -34,7 +37,7 @@ DEFINE_FUNCTION( Poll ) {
 	JSIdArray *idArray = JS_Enumerate( cx, JSVAL_TO_OBJECT(argv[0]) ); // make a kind of auto-ptr for this
 
 	if ( idArray->length > sizeof(pollDesc) / sizeof(PRPollDesc) ) {
-		
+
 		JS_ReportError( cx, "Too many descriptors in Poll" );
 		goto failed;
 	}
@@ -50,7 +53,8 @@ DEFINE_FUNCTION( Poll ) {
 		pr_timeout = PR_INTERVAL_NO_TIMEOUT;
 	}
 
-	uintN i, objCount = idArray->length;
+	uintN i;
+	objCount = idArray->length;
 	for ( i = 0; i < objCount; i++ ) {
 
 		jsval propVal;
@@ -88,7 +92,7 @@ DEFINE_FUNCTION( Poll ) {
 			pollDesc[i].in_flags |= PR_POLL_EXCEPT;
 	}
 
-	PRInt32 result = PR_Poll( pollDesc, objCount, pr_timeout );
+	result = PR_Poll( pollDesc, objCount, pr_timeout );
 
 	if ( result == -1 ) {  // failed. see PR_GetError()
 
@@ -261,7 +265,7 @@ DEFINE_FUNCTION( GetRandomNoise ) {
 	void *buf = (void*)JS_malloc(cx, rndSize);
 	PRSize size = PR_GetRandomNoise(buf, rndSize);
 	if ( size <= 0 ) {
-		
+
 		JS_free(cx, buf);
 		REPORT_ERROR( "PR_GetRandomNoise is not implemented on this platform." );
 	}
@@ -270,7 +274,7 @@ DEFINE_FUNCTION( GetRandomNoise ) {
 	*rval = STRING_TO_JSVAL(jsstr);
 	return JS_TRUE;
 }
- 
+
 
 CONFIGURE_STATIC
 
