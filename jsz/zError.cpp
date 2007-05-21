@@ -14,8 +14,6 @@
 
 #include "stdafx.h"
 
-#define XP_WIN
-#include <jsapi.h>
 //#include <jsdbgapi.h>
 //#include <jscntxt.h>
 //#include <jsscript.h>

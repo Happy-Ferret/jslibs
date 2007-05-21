@@ -5,9 +5,13 @@
 
 #pragma once
 
+#include "../common/platform.h"
 
-#define WIN32_LEAN_AND_MEAN		// Exclude rarely-used stuff from Windows headers
+#include <jsapi.h>
 
-// TODO: reference additional headers your program requires here
-#include <windows.h>
+#define USE_UNSAFE_MODE
+#include "../common/jsHelper.h"
+#include "../common/jsClass.h"
+#include "../common/jsConfiguration.h"
 
+#include <string.h>

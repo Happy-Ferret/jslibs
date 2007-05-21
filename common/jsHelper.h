@@ -31,7 +31,7 @@
 	static bool _unsafeMode = false; // by default, we are in SAFE mode
 #endif
 
-#define DEFINE_UNSAFE_MODE	extern bool _unsafeMode = false;
+#define DEFINE_UNSAFE_MODE	bool _unsafeMode = false;
 #define SET_UNSAFE_MODE(polarity) _unsafeMode = (polarity);
 
 // RunTime helper macros

@@ -32,4 +32,3 @@ extern "C" DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
 	return JS_TRUE;
 }
-

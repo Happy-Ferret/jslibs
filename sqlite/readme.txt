@@ -18,6 +18,6 @@ readme.txt
 
 Linux compilation:
 
-	./configure --disable-tcl --disable-dynamic --disable-shared --enable-static
+	./configure --enable-releasemode --disable-readline --disable-tcl --disable-dynamic --disable-shared --enable-static
 	make clean all
-	ls .libs/libsqlite.a
+	ls ./.libs/libsqlite.a

@@ -14,12 +14,7 @@
 
 #include "stdafx.h"
 
-#define ASSERT(e)
-
-#define XP_WIN
-#include <jsapi.h>
 #include <zlib.h>
-#include <stdlib.h>
 
 #include "zError.h"
 #include "z.h"
@@ -90,7 +85,7 @@ JSBool z_call(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval
 
 	int flushType = inputLength == 0 || forceFinish == JS_TRUE ? Z_FINISH : Z_SYNC_FLUSH;
 
-	Buffer buffer( method == DEFLATE ? 12 + 1.001f * stream->avail_in : 1.5f * stream->avail_in ); // if DEFLATE, dest. buffer must be at least 0.1% larger than sourceLen plus 12 bytes
+	Buffer buffer( method == DEFLATE ? (size_t)(12 + 1.001f * stream->avail_in) : (size_t)(1.5f * stream->avail_in) ); // if DEFLATE, dest. buffer must be at least 0.1% larger than sourceLen plus 12 bytes
 
 // deflate / inflate loop
 	size_t outputLength;
@@ -159,7 +154,7 @@ JSBool z_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval 
 		return JS_FALSE;
 	}
 
-	z_streamp stream = (z_streamp)malloc( sizeof z_stream );
+	z_streamp stream = (z_streamp)malloc( sizeof(z_stream) );
 	stream->zalloc = Z_NULL;
 	stream->zfree = Z_NULL;
 	stream->opaque = (voidpf) false; // use this private member to store the "stream_end" status (eof)
@@ -267,7 +262,7 @@ JSPropertySpec z_PropertySpec[] = { // *name, tinyid, flags, getter, setter
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 JSBool z_static_getter_idealInputLength(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 
-	JS_NewNumberValue( cx, Buffer.staticBufferLength, vp );
+	JS_NewNumberValue( cx, Buffer::staticBufferLength, vp );
 	return JS_TRUE;
 }
 

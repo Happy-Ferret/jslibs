@@ -13,6 +13,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include <stdlib.h>
+#include <string.h>
 
 #define STATIC_BUFFER_LENGTH (16384 -1)
 #define INITIAL_QUEUE_LENGTH 8
@@ -62,7 +63,7 @@ public:
 		_hasStaticMem = true;
 
 		_queueLength = INITIAL_QUEUE_LENGTH;
-		_queue = (BufferChunk*)malloc( _queueLength * sizeof BufferChunk );
+		_queue = (BufferChunk*)malloc( _queueLength * sizeof(BufferChunk) );
 		_currentIndex = 0;
 
 		_queue[0].mem = NULL;
@@ -83,7 +84,7 @@ public:
 			return length;
 
 		if ( _hasStaticMem )
-			return sizeof _staticMem;
+			return sizeof(_staticMem);
 
 		return _defaultLength;
 	}
@@ -94,15 +95,15 @@ public:
 
 		if ( _useCount == 0 ) {
 
-			 length = sizeof _staticMem;
+			 length = sizeof(_staticMem);
 		} else {
 
 			float prevUsedRatio = (float)(_prevAvail - _queue[_currentIndex].avail) / (float)(_prevRequest +1);
 
 			if ( prevUsedRatio >= 1.f ) {
-				length = (float)_prevRequest * 1.5f;
+				length = (size_t)((float)_prevRequest * 1.5f);
 			} else if ( prevUsedRatio < 0.5f ) {
-				length = 1+ (float)_prevRequest / 1.5f;
+				length = (size_t)(1+ (float)_prevRequest / 1.5f);
 			} else {
 				length = _prevRequest;
 			}
@@ -121,12 +122,12 @@ public:
 			if ( _currentIndex >= _queueLength ) {
 
 				_queueLength *= 2;
-				_queue = (BufferChunk*)realloc( _queue, _queueLength * sizeof BufferChunk );
+				_queue = (BufferChunk*)realloc( _queue, _queueLength * sizeof(BufferChunk) );
 			}
 
-			if ( _hasStaticMem && length <= sizeof _staticMem ) {
+			if ( _hasStaticMem && length <= sizeof(_staticMem) ) {
 
-				_queue[_currentIndex].avail = sizeof _staticMem;
+				_queue[_currentIndex].avail = sizeof(_staticMem);
 				_queue[_currentIndex].mem = _queue[_currentIndex].data = _staticMem;
 				_hasStaticMem = false; // it is no more available
 			} else {

@@ -1,7 +1,5 @@
 #include "stdafx.h"
 
-#define XP_WIN
-#include <jsapi.h>
 #include "objex.h"
 
 #define ADD_SLOT 0
@@ -71,7 +69,7 @@ JSBool objex_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, js
 
 	if ( argc >= 5 ) // AUX object
 		JS_SetReservedSlot( cx, obj, AUX_SLOT, argv[4] );
-	
+
 	return JS_TRUE;
 }
 
@@ -79,7 +77,7 @@ JSBool objex_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, js
 JSBool objex_static_aux(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
 	if ( argc < 1 ) {
-		
+
 		JS_ReportError( cx, "missing argument" );
 		return JS_FALSE;
 	}
@@ -89,7 +87,7 @@ JSBool objex_static_aux(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, j
 		JS_ReportError( cx, "object expected" );
 		return JS_FALSE;
 	}
-	
+
 	JSObject *object = JSVAL_TO_OBJECT(argv[0]);
 
 	if ( JS_GetClass(object) != &objex_class  ) {
@@ -126,7 +124,7 @@ http://groups.google.fr/group/netscape.public.mozilla.jseng/browse_frm/thread/ac
 	changes from and to your std::map.  You can set the JSClass.flags bit
 	JSCLASS_SHARE_ALL_PROPERTIES to avoid any parallel map being managed by
 	SpiderMonkey.  Then for each get or set, the appropriate JSClass hook
-	will be called and you can fetch or store using your map. 
+	will be called and you can fetch or store using your map.
 	/be
 
 

@@ -36,7 +36,7 @@ DEFINE_FUNCTION( Poll ) {
 
 	JSIdArray *idArray = JS_Enumerate( cx, JSVAL_TO_OBJECT(argv[0]) ); // make a kind of auto-ptr for this
 
-	if ( idArray->length > sizeof(pollDesc) / sizeof(PRPollDesc) ) {
+	if ( idArray->length > (signed)(sizeof(pollDesc) / sizeof(PRPollDesc)) ) {
 
 		JS_ReportError( cx, "Too many descriptors in Poll" );
 		goto failed;
@@ -216,7 +216,7 @@ DEFINE_FUNCTION( IntervalNow ) {
 DEFINE_FUNCTION( Sleep ) {
 
 	uint32 timeout;
-	JSBool res = JS_ValueToECMAUint32( cx, argv[0], &timeout );
+	RT_CHECK_CALL( JS_ValueToECMAUint32( cx, argv[0], &timeout ) );
 	PR_Sleep( PR_MillisecondsToInterval(timeout) );
 	return JS_TRUE;
 }
@@ -286,6 +286,7 @@ CONFIGURE_STATIC
 		FUNCTION( Sleep )
 		FUNCTION( GetEnv )
 		FUNCTION( HostName )
+		FUNCTION( GetRandomNoise )
 		FUNCTION( NSPRVersion )
 	END_STATIC_FUNCTION_SPEC
 

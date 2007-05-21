@@ -248,7 +248,7 @@ DEFINE_FUNCTION( Seek ) {
 
 		jsdouble doubleOffset;
 		JS_ValueToNumber( cx, argv[0], &doubleOffset );
-		offset = doubleOffset;
+		offset = (PRInt64)doubleOffset;
 	}
 
 	PRSeekWhence whence = PR_SEEK_CUR; // default is arg is missing
@@ -488,8 +488,11 @@ DEFINE_PROPERTY( info ) {
 	jsval jsvalSize = INT_TO_JSVAL(fileInfo.size);
 	JS_SetProperty( cx, fileTypeObj, "size", &jsvalSize );
 
-	PRTime creationTime = fileInfo.creationTime;
-	PRTime modifyTime = fileInfo.modifyTime;
+	jsval jsvalCreationTime = INT_TO_JSVAL(fileInfo.creationTime);
+	JS_SetProperty( cx, fileTypeObj, "creationTime", &jsvalCreationTime );
+
+	jsval jsvalModifyTime = INT_TO_JSVAL(fileInfo.modifyTime);
+	JS_SetProperty( cx, fileTypeObj, "modifyTime", &jsvalModifyTime );
 
 	return JS_TRUE;
 }

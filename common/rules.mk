@@ -1,7 +1,7 @@
 #ifeq ($(BUILD),opt)
-CFLAGS = $(CFLAGS) -O3 -s -funroll-loops
+CFLAGS = -O3 -s -funroll-loops
 #else
-CFLAGS = $(CFLAGS) -g3
+CFLAGS = -g3
 #endif
 
 .cpp.o:

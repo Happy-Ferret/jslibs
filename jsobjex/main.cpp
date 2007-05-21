@@ -1,17 +1,14 @@
 #include "stdafx.h"
 
-#define XP_WIN
-#include <jsapi.h>
-
 #include "objex.h"
 
-extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj) {
+extern "C" DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
 	objexInitClass( cx, obj );
 	return JS_TRUE;
 }
 
-
+/*
 BOOL APIENTRY DllMain( HANDLE hModule, DWORD  ul_reason_for_call, LPVOID lpReserved ) {
 
   switch (ul_reason_for_call) {
@@ -24,4 +21,4 @@ BOOL APIENTRY DllMain( HANDLE hModule, DWORD  ul_reason_for_call, LPVOID lpReser
   }
   return TRUE;
 }
-
+*/

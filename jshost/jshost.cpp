@@ -24,6 +24,7 @@
 #include <time.h>
 #include <errno.h>
 #include <limits.h>
+#include <signal.h>
 //	#include <dlfcn.h>
 
 #include <jsapi.h>
@@ -195,7 +196,8 @@ static JSBool global_loadModule(JSContext *cx, JSObject *obj, uintN argc, jsval 
 //	RT_ASSERT_2( id != 0, "Unable to load the module %s (error:%d).", libFileName, GetLastError() ); // (TBD) rewrite this for Linux
 //	RT_ASSERT_2( id != 0, "Unable to load the module %s (error:%s).", libFileName, dlerror() );
 	RT_ASSERT_1( id != 0, "Unable to load the module \"%s\".", libFileName );
-//	RT_CHECK_CALL( JS_NewNumberValue(cx, id, rval) );
+//	RT_CHECK_CALL( JS_NewNumberValue(cx, id, rval) ); // (TBD) really needed ?
+
 	return JS_TRUE;
 }
 
@@ -250,9 +252,7 @@ JSPropertySpec Global_PropertySpec[] = { // *name, tinyid, flags, getter, setter
 
 //////////////////////////////////////////////////////////////////////////////////////////////
 
-#ifdef _CONSOLE
-#ifdef WIN32
-
+#ifdef XP_WIN
 BOOL Interrupt(DWORD CtrlType) {
 
 	if (CtrlType == CTRL_LOGOFF_EVENT || CtrlType == CTRL_SHUTDOWN_EVENT)
@@ -260,9 +260,12 @@ BOOL Interrupt(DWORD CtrlType) {
 	gEndSignal = true;
   return TRUE;
 }
+#else
+void Interrupt(int CtrlType) {
 
-#endif // WIN32
-#endif // _CONSOLE
+	gEndSignal = true;
+}
+#endif // XP_WIN
 
 
 static JSBool stderrFunction(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
@@ -294,7 +297,6 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 
 	unsigned long maxbytes = 16L * 1024L * 1024L;
 	unsigned long stackSize = 8192; //1L * 1024L * 1024L; // http://groups.google.com/group/mozilla.dev.tech.js-engine/browse_thread/thread/be9f404b623acf39/9efdfca81be99ca3
-
 
 	for ( argv++; argv[0] && argv[0][0] == '-'; argv++ )
 		switch ( argv[0][1] ) {
@@ -336,12 +338,15 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 // error management
 	JS_SetErrorReporter(cx, ErrorReporter);
 
-#ifdef _CONSOLE
-#ifdef WIN32
+
+#ifdef XP_WIN
 	BOOL status = SetConsoleCtrlHandler((PHANDLER_ROUTINE)&Interrupt, true);
 	RT_HOST_MAIN_ASSERT( status == TRUE, "Unable to set console handler" );
-#endif // WIN32
-#endif // _CONSOLE
+#else
+	signal(SIGINT,Interrupt);
+	signal(SIGTERM,Interrupt);
+#endif // XP_WIN
+
 
 #ifdef JS_THREADSAFE
     JS_BeginRequest(cx);
@@ -382,8 +387,6 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	jsStatus = JS_SetProperty(cx, configObject, NAME_CONFIGURATION_UNSAFE_MODE, &value);
 	RT_HOST_MAIN_ASSERT( jsStatus != JS_FALSE, "Unable to set store unsafeMode into configuration." );
 
-
-
 // script name
   const char *scriptName = *argv;
   RT_HOST_MAIN_ASSERT( scriptName != NULL, "no script specified" );
@@ -403,19 +406,24 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 		RT_HOST_MAIN_ASSERT( jsStatus == JS_TRUE, "unable to define the argument." );
 	}
 
-#ifdef WIN32
+
+#ifdef XP_WIN
+	CHAR moduleFileName[MAX_PATH];
 // get hostpath and hostname
 	HINSTANCE hInstance = (HINSTANCE)GetModuleHandle(NULL);
-	CHAR moduleFileName[MAX_PATH];
 	DWORD len = GetModuleFileName(hInstance, moduleFileName, sizeof(moduleFileName));
 	RT_HOST_MAIN_ASSERT( len != 0, "unable to GetModuleFileName." );
-	char *name = strrchr( moduleFileName, '\\' );
+#else // XP_WIN
+	char *moduleFileName = argv[-1];
+	RT_HOST_MAIN_ASSERT( moduleFileName != NULL, "unable to GetModuleFileName." );
+#endif // XP_WIN
+
+	char *name = strrchr( moduleFileName, PATH_SEPARATOR );
 	RT_HOST_MAIN_ASSERT( name != NULL, "unable to get module FileName." );
 	*name = '\0';
 	name++;
 	JS_DefineProperty(cx, globalObject, NAME_GLOBAL_SCRIPT_HOST_PATH, STRING_TO_JSVAL(JS_NewStringCopyZ(cx, moduleFileName)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT);
 	JS_DefineProperty(cx, globalObject, NAME_GLOBAL_SCRIPT_HOST_NAME, STRING_TO_JSVAL(JS_NewStringCopyZ(cx, name)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT);
-#endif // WIN32
 
 // language options
 // options

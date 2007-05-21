@@ -97,12 +97,12 @@
 
 #define BEGIN_CLASS(CLASSNAME) \
 	static const char *_name = #CLASSNAME; \
-	extern JSClass class##CLASSNAME = {0}; \
+	JSClass class##CLASSNAME = {0}; \
 	static JSClass *_class = &class##CLASSNAME; \
-	extern JSObject *prototype##CLASSNAME = NULL; \
+	JSObject *prototype##CLASSNAME = NULL; \
 	static JSObject **_prototype = &prototype##CLASSNAME; \
 	static JSBool _InitializeClass(JSContext *cx, JSObject *obj); \
-	extern JSBool (*InitializeClass##CLASSNAME)(JSContext *cx, JSObject *obj) = _InitializeClass; \
+	JSBool (*InitializeClass##CLASSNAME)(JSContext *cx, JSObject *obj) = _InitializeClass; \
 
 #define CONFIGURE_CLASS \
 	static JSBool _InitializeClass(JSContext *cx, JSObject *obj) { \

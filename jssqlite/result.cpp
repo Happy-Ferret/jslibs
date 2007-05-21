@@ -255,7 +255,7 @@ DEFINE_FUNCTION( Row ) {
 	// If the previous call to sqlite3_step() returned SQLITE_DONE or an error code,
 	// then sqlite3_data_count() will return 0 whereas sqlite3_column_count() will continue to return the number of columns in the result set.
 	int columnCount = sqlite3_data_count( pStmt ); // This routine returns 0 if pStmt is an SQL statement that does not return data (for example an UPDATE).
-	jsval colJsValue, jsvCol;
+	jsval colJsValue;
 	for ( int col = 0; col < columnCount; ++col ) {
 
 		RT_CHECK_CALL( SqliteColumnToJsval(cx, pStmt, col, &colJsValue ) ); // if something goes wrong in SqliteColumnToJsval, error report has already been set.

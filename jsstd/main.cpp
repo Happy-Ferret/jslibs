@@ -19,7 +19,8 @@
 
 DEFINE_UNSAFE_MODE;
 
-extern JSFunction *stdoutFunction = NULL;
+extern JSFunction *stdoutFunction;
+JSFunction *stdoutFunction = NULL;
 
 extern "C" DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
