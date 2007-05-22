@@ -1,22 +1,43 @@
-#ifeq ($(BUILD),opt)
-CFLAGS = -O3 -s -funroll-loops
+CC= g++
+AR= ar
+RM= rm
+LD= ld
+
+SMINCLUDE= -I../js/src/Linux_All_OPT.OBJ -I../js/src
+SMLIB= -Wl,-Bdynamic -L../js/src/Linux_All_OPT.OBJ -ljs
+
+#ifeq ($(BUILD),dbg)
+	CFLAGS= -Wall -g3
 #else
-CFLAGS = -g3
+	CFLAGS= -Wall -O3 -s -funroll-loops
 #endif
 
+OBJ= $(SRC:.cpp=.o)
+
 .cpp.o:
-	g++ -Wall -c -fpic $(CFLAGS) -I../js/src -I../js/src/Linux_All_DBG.OBJ $(INCLUDES) -o $*.o $<
+	$(CC) -c $(CFLAGS) $(SMINCLUDE) $(INCLUDES) -o $*.o $<
+	# -fpic needed ???
 
-$(LIBNAME).so: $(OBJS)
-	g++ -Wall -shared $(OBJS) -Wl,-soname,$(LIBNAME).so -o $(LIBNAME).so -shared-libgcc -Wl,-Bstatic $(STATICLIBS) -Wl,-Bdynamic -L../js/src/Linux_All_DBG.OBJ -ljs $(SHAREDLIBS)
+%.a: $(OBJ)
+	$(AR) rcs $@ $^
 
-all: $(LIBNAME).so
+%.so: $(OBJ)
+	$(CC) $(CFLAGS) -o $@ -shared -Wl,-soname,$@ $^ -shared-libgcc -Wl,-Bstatic $(STATICLIBS) -Wl,-Bdynamic $(SHAREDLIBS) $(SMLIB)
+
+%.bin: $(OBJ)
+	$(CC) $(CFLAGS) -o $(basename $@) $^ -shared-libgcc -Wl,-Bstatic $(STATICLIBS) -Wl,-Bdynamic $(SHAREDLIBS) $(SMLIB)
+
+all: $(TARGET)
 
 clean:
-	rm -f *.o *.a *.so
+	$(RM) -f *.o $(TARGET) $(basename $(TARGET))
 
-# 
 
+
+
+#
+# make manual: http://www.gnu.org/software/make/manual/make.html#Automatic-Variables
+#
 # http://tldp.org/HOWTO/Program-Library-HOWTO/shared-libraries.html
 # debugging information: -g
 # generate warnings -Wall
@@ -42,3 +63,4 @@ clean:
 # If you install libstdc++.so.6 in a non-standard location, you need to tell the dynamic linker where to find it.  This can be done by setting
 # the environment variable LD_LIBRARY_PATH to the directory where libstdc++.so.6 can be found.  Or by using -Wl,-rpath,DIR when you
 # link.  Or, on a GNU/Linux system, by adding the directory to /etc/ld.so.conf and friends and running ldconfig.
+

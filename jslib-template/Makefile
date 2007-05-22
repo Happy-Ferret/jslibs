@@ -1,5 +1,5 @@
-LIBNAME = jstemplate
-OBJS    = $(patsubst %.cpp,%.o,$(wildcard *.cpp))
+TARGET     = jstemplate.so
+SRC        = $(wildcard *.cpp)
 INCLUDES   =
 STATICLIBS =
 SHAREDLIBS =

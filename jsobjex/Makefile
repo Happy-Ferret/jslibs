@@ -1,5 +1,5 @@
-LIBNAME = jsobjex
-OBJS    = $(patsubst %.cpp,%.o,$(wildcard *.cpp))
+TARGET     = jsobjex.so
+SRC        = $(wildcard *.cpp)
 INCLUDES   =
 STATICLIBS =
 SHAREDLIBS =

@@ -1,7 +1,7 @@
-LIBNAME = jsstd
-OBJS    = $(patsubst %.cpp,%.o,$(wildcard *.cpp))
+TARGET     = jsstd.so
+SRC        = $(wildcard *.cpp)
 INCLUDES   =
-STATICLIBS =
+STATICLIBS =../moduleManager/moduleManager.a
 SHAREDLIBS =
 
 include ../common/rules.mk
