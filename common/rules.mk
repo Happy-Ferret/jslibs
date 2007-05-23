@@ -1,40 +1,46 @@
-CC= g++
-AR= ar
-RM= rm
-LD= ld
+CC := g++
+AR := ar
+RM := rm
+LD := ld
 
 SMINCLUDE= -I../js/src/Linux_All_OPT.OBJ -I../js/src
 SMLIB= -Wl,-Bdynamic -L../js/src/Linux_All_OPT.OBJ -ljs
 
 #ifeq ($(BUILD),dbg)
-	CFLAGS= -Wall -g3
+	CFLAGS += -Wall -g3
 #else
-	CFLAGS= -Wall -O3 -s -funroll-loops
+	CFLAGS += -Wall -O3 -s -funroll-loops
 #endif
 
-OBJ= $(SRC:.cpp=.o)
+#if ($(findstring '.so',$(TARGET)))
+	CFLAGS += -fpic
+#endif
 
 .cpp.o:
-	$(CC) -c $(CFLAGS) $(SMINCLUDE) $(INCLUDES) -o $*.o $<
-	# -fpic needed ???
+	$(CC) -c $(CFLAGS) $(SMINCLUDE) $(INCLUDES) -o $@ $<
 
-%.a: $(OBJ)
+%.a: $(SRC:.cpp=.o)
 	$(AR) rcs $@ $^
 
-%.so: $(OBJ)
-	$(CC) $(CFLAGS) -o $@ -shared -Wl,-soname,$@ $^ -shared-libgcc -Wl,-Bstatic $(STATICLIBS) -Wl,-Bdynamic $(SHAREDLIBS) $(SMLIB)
+%.so: $(SRC:.cpp=.o)
+	$(CC) $(CFLAGS) -o $@ -shared -Wl,-soname,$@ $? -Wl,-Bstatic $(STATICLIBS) -Wl,-Bdynamic $(SHAREDLIBS) $(SMLIB)
 
-%.bin: $(OBJ)
-	$(CC) $(CFLAGS) -o $(basename $@) $^ -shared-libgcc -Wl,-Bstatic $(STATICLIBS) -Wl,-Bdynamic $(SHAREDLIBS) $(SMLIB)
+%: $(SRC:.cpp=.o)
+	$(CC) $(CFLAGS) -o $(basename $@) $^ -Wl,-Bstatic $(STATICLIBS) -Wl,-Bdynamic $(SHAREDLIBS) $(SMLIB)
+
+.PHONY: clean all
 
 all: $(TARGET)
 
 clean:
-	$(RM) -f *.o $(TARGET) $(basename $(TARGET))
+	$(RM) -f *.o $(TARGET)
+
+#.PRECIOUS: %.o
 
 
 
-
+# Linking libstdc++ statically
+# 	http://www.trilithium.com/johan/2005/06/static-libstdc/
 #
 # make manual: http://www.gnu.org/software/make/manual/make.html#Automatic-Variables
 #
@@ -63,4 +69,3 @@ clean:
 # If you install libstdc++.so.6 in a non-standard location, you need to tell the dynamic linker where to find it.  This can be done by setting
 # the environment variable LD_LIBRARY_PATH to the directory where libstdc++.so.6 can be found.  Or by using -Wl,-rpath,DIR when you
 # link.  Or, on a GNU/Linux system, by adding the directory to /etc/ld.so.conf and friends and running ldconfig.
-

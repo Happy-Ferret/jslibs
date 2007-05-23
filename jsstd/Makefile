@@ -1,7 +1,7 @@
 TARGET     = jsstd.so
 SRC        = $(wildcard *.cpp)
 INCLUDES   =
-STATICLIBS =../moduleManager/moduleManager.a
+STATICLIBS =
 SHAREDLIBS =
 
 include ../common/rules.mk

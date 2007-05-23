@@ -4,7 +4,7 @@ download:
 directory structure
 	.
 	..
-	include
+	include/nspr
 	lib
 	readme.txt
 
