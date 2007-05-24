@@ -1,7 +1,7 @@
-TARGET=jshost.bin
+TARGET=jshost
 SRC=$(wildcard *.cpp)
 INCLUDES=
-STATICLIBS=../moduleManager/moduleManager.a
-SHAREDLIBS= -ldl
+STATICLIBS=../moduleManager/moduleManager.a -lm
+SHAREDLIBS=-ldl
 
 include ../common/rules.mk

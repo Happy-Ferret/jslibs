@@ -23,6 +23,7 @@
 #pragma warning(disable:4244 4305)  // for VC++, no precision loss complaints
 #endif
 
+//#include <stdbool.h>
 #include <stdarg.h>
 
 #ifdef USE_UNSAFE_MODE
@@ -161,16 +162,14 @@
 ////////////////////
 // conversion macros
 
-#define RT_JSVAL_TO_INT32( jsvalInt, intVariable ) \
-	{ \
-		int32 intVal; \
-		JSBool st = JS_ValueToInt32( cx, jsvalInt, &intVal ); \
-		RT_ASSERT( st != JS_FALSE, RT_ERROR_INT_CONVERSION_FAILED ); \
-		intVariable = intVal; \
-	}
+#define RT_JSVAL_TO_INT32( jsvalInt, intVariable ) { \
+	int32 intVal; \
+	JSBool st = JS_ValueToInt32( cx, jsvalInt, &intVal ); \
+	RT_ASSERT( st != JS_FALSE, RT_ERROR_INT_CONVERSION_FAILED ); \
+	intVariable = intVal; \
+}
 
-#define RT_JSVAL_TO_UINT32( jsvalUInt, uintVariable ) \
-	{ \
+#define RT_JSVAL_TO_UINT32( jsvalUInt, uintVariable ) { \
 	jsdouble tmp; \
 	JSBool st = JS_ValueToNumber(cx, jsvalUInt, &tmp ); \
 	RT_ASSERT( st != JS_FALSE, RT_ERROR_INT_CONVERSION_FAILED ); \
@@ -179,19 +178,19 @@
 	}
 
 #define RT_JSVAL_TO_STRING( jsvalString, stringVariable ) { \
-		JSString *___jssTmp = JS_ValueToString(cx,jsvalString); \
-		RT_ASSERT( ___jssTmp != NULL, RT_ERROR_STRING_CONVERSION_FAILED ); \
-		stringVariable = JS_GetStringBytes( ___jssTmp ); \
-		RT_ASSERT( stringVariable != NULL, RT_ERROR_STRING_CONVERSION_FAILED ); \
-	}
+	JSString *___jssTmp = JS_ValueToString(cx,jsvalString); \
+	RT_ASSERT( ___jssTmp != NULL, RT_ERROR_STRING_CONVERSION_FAILED ); \
+	stringVariable = JS_GetStringBytes( ___jssTmp ); \
+	RT_ASSERT( stringVariable != NULL, RT_ERROR_STRING_CONVERSION_FAILED ); \
+}
 
 #define RT_JSVAL_TO_STRING_AND_LENGTH( jsvalString, stringVariable, lengthVariable ) { \
-		JSString *___jssTmp = JS_ValueToString(cx,jsvalString); \
-		RT_ASSERT( ___jssTmp != NULL, RT_ERROR_STRING_CONVERSION_FAILED ); \
-		stringVariable = JS_GetStringBytes( ___jssTmp ); \
-		RT_ASSERT( stringVariable != NULL, RT_ERROR_STRING_CONVERSION_FAILED ); \
-		lengthVariable = JS_GetStringLength( ___jssTmp ); \
-	}
+	JSString *___jssTmp = JS_ValueToString(cx,jsvalString); \
+	RT_ASSERT( ___jssTmp != NULL, RT_ERROR_STRING_CONVERSION_FAILED ); \
+	stringVariable = JS_GetStringBytes( ___jssTmp ); \
+	RT_ASSERT( stringVariable != NULL, RT_ERROR_STRING_CONVERSION_FAILED ); \
+	lengthVariable = JS_GetStringLength( ___jssTmp ); \
+}
 
 
 ///////////
@@ -204,7 +203,7 @@ inline double TimeNow() {
 	QueryPerformanceCounter(&performanceCount);
 	return 1000 * double(performanceCount.QuadPart) / double(frequency.QuadPart);
 #endif // WIN32
-	return 0;
+	return 0; // (TBD) impl.
 }
 
 

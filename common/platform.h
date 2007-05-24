@@ -20,3 +20,23 @@
 		#define DLLLOCAL
 	#endif
 #endif
+
+
+/*
+Inline Functions In C
+	http://www.greenend.org.uk/rjk/2003/03/inline.html
+*/
+
+/*
+#ifndef BOOL
+	#define BOOL int
+#endif
+
+#ifndef TRUE
+	#define TRUE (1)
+#endif
+
+#ifndef FALSE
+	#define FALSE (0)
+#endif
+*/

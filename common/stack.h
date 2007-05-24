@@ -81,14 +81,14 @@ inline bool StackIsEnd( const void * const * stack ) {
 inline int StackLength( const void * const * stack ) {
 
 	register int length;
-	for ( length = 0; *stack; stack = (void**)*stack, length++ );
+	for ( length = 0; *stack; stack = (const void * const *)*stack, length++ );
 	return length;
 }
 
 
 inline void* StackFind( void * const * stack, const void *data ) {
 
-	register void *it;
+	void *it;
 	for ( it = *stack; it && StackData(&it) != data; StackGoPrev(&it) );
 	return it;
 }
@@ -122,7 +122,7 @@ inline void* StackPop( void **stack ) {
 inline bool StackReplaceData( void * const *stack, const void *data, void *newData ) {
 
 	void *it;
-	if ( it = StackFind( stack, data ) )
+	if ( (it = StackFind( stack, data )) )
 		StackSetData( stack, newData );
 	return it != NULL;
 }
@@ -130,7 +130,7 @@ inline bool StackReplaceData( void * const *stack, const void *data, void *newDa
 
 inline bool StackIterate( void * const * stack, void **iterator ) { // usage: for ( void *it = NULL; StackIterate( &stack, &it ); ) // alternate method: for ( void *it = stack; !StackIsEnd(&it); it = StackPrev(&it) )
 
-	return *iterator = *iterator == NULL ? *stack : StackPrev(iterator);
+	return (*iterator = *iterator == NULL ? *stack : StackPrev(iterator));
 }
 
 

@@ -19,6 +19,11 @@
 #include "jsxdrapi.h"
 #include "jscntxt.h"
 
+#include <limits.h>
+
+#ifndef PATH_MAX
+	#define PATH_MAX FILENAME_MAX
+#endif
 
 #ifdef XP_UNIX
 	#define MAX_PATH PATH_MAX
@@ -133,10 +138,13 @@ DEFINE_FUNCTION( Seal ) {
 	JSBool deep;
 	RT_ASSERT_OBJECT(argv[0]);
 	//RT_CHECK_CALL( JS_ValueToObject(cx, argv[0], &obj) );
-	if ( argc >= 2 ) // strange: js> seal(o) => deep == true : it's because nargs in JS_DefineFunction
+	if ( argc >= 2 ) { // strange: js> seal(o) => deep == true : it's because nargs in JS_DefineFunction
+
 		RT_CHECK_CALL( JS_ValueToBoolean( cx, argv[1], &deep ) )
-	else
+	} else {
+
 		deep = JS_FALSE;
+	}
 	return JS_SealObject(cx, JSVAL_TO_OBJECT(argv[0]), deep);
 }
 
@@ -438,6 +446,12 @@ DEFINE_FUNCTION( IsStatementValid ) {
 	return JS_TRUE;
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+DEFINE_FUNCTION( Halt ) {
+
+	return JS_FALSE;
+}
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -456,6 +470,7 @@ CONFIGURE_STATIC
 		FUNCTION( CollectGarbage )
 		FUNCTION( Warning )
 		FUNCTION( IdOf )
+		FUNCTION( Halt )
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC

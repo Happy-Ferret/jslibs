@@ -1,46 +1,57 @@
-CC := g++
+CC := gcc
 AR := ar
 RM := rm
 LD := ld
 
-SMINCLUDE= -I../js/src/Linux_All_OPT.OBJ -I../js/src
-SMLIB= -Wl,-Bdynamic -L../js/src/Linux_All_OPT.OBJ -ljs
+SMINC = -I../js/src/Linux_All_OPT.OBJ -I../js/src
+SMLIB = -Wl,-Bdynamic -L../js/src/Linux_All_OPT.OBJ -ljs
 
-#ifeq ($(BUILD),dbg)
+ifeq ($(BUILD),dbg)
 	CFLAGS += -Wall -g3
-#else
+else
 	CFLAGS += -Wall -O3 -s -funroll-loops
-#endif
+endif
 
-#if ($(findstring '.so',$(TARGET)))
+ifneq (,$(findstring .so,$(TARGET)))
 	CFLAGS += -fpic
-#endif
+endif
 
-.cpp.o:
-	$(CC) -c $(CFLAGS) $(SMINCLUDE) $(INCLUDES) -o $@ $<
+CFLAGS += -fno-exceptions -fno-rtti -felide-constructors
+
+%.o: %.cpp
+	$(CC) -c $(CFLAGS) -I../js/src/Linux_All_OPT.OBJ -I../js/src $(INCLUDES) -o $@ $<
 
 %.a: $(SRC:.cpp=.o)
 	$(AR) rcs $@ $^
 
 %.so: $(SRC:.cpp=.o)
-	$(CC) $(CFLAGS) -o $@ -shared -Wl,-soname,$@ $? -Wl,-Bstatic $(STATICLIBS) -Wl,-Bdynamic $(SHAREDLIBS) $(SMLIB)
+	$(CC) $(CFLAGS) -o $@ -shared -Wl,-soname,$@ $? -static-libgcc -Wl,-Bstatic $(STATICLIBS) -Wl,-Bdynamic $(SHAREDLIBS) $(SMLIB)
 
 %: $(SRC:.cpp=.o)
-	$(CC) $(CFLAGS) -o $(basename $@) $^ -Wl,-Bstatic $(STATICLIBS) -Wl,-Bdynamic $(SHAREDLIBS) $(SMLIB)
+	$(CC) $(CFLAGS) -o $@ $^ -static-libgcc -Wl,-Bstatic $(STATICLIBS) -Wl,-Bdynamic $(SHAREDLIBS) $(SMLIB)
 
 .PHONY: clean all
+
 
 all: $(TARGET)
 
 clean:
-	$(RM) -f *.o $(TARGET)
+	$(RM) -f *.o
+	
+# $(TARGET)
 
 #.PRECIOUS: %.o
 
 
+# If I decide to use C instead of C++:
+#  -std=c99
+
+# -lstdc++
+
 
 # Linking libstdc++ statically
 # 	http://www.trilithium.com/johan/2005/06/static-libstdc/
+#  tip: use gcc instead of g++
 #
 # make manual: http://www.gnu.org/software/make/manual/make.html#Automatic-Variables
 #

@@ -14,9 +14,8 @@
 
 #include <stdlib.h>
 
-
 typedef struct QueueCell {
-	QueueCell *prev, *next;
+	struct QueueCell *prev, *next;
 	void *data;
 } QueueCell;
 
@@ -36,7 +35,7 @@ inline void QueueDestruct( Queue *queue ) {
 
 	QueueCell *it = queue->begin;
 	while ( it != NULL ) {
-		
+
 		QueueCell *next = it->next;
 		free(it);
 		it = next;
@@ -45,28 +44,28 @@ inline void QueueDestruct( Queue *queue ) {
 }
 
 inline bool QueueIsEmpty( Queue *queue ) {
-	
+
 	return queue->begin == NULL;
 }
 
 inline void QueueSetData( QueueCell *cell, void *data ) {
-	
+
 	cell->data = data;
 }
 
 
 inline void QueuePush( Queue *queue, void *data ) {
-	
+
 	QueueCell *cell = (QueueCell*)malloc(sizeof(QueueCell));
 	cell->data = data;
 	if ( QueueIsEmpty(queue) ) {
-		
+
 		cell->prev = NULL;
 		cell->next = NULL;
 		queue->begin = cell;
 		queue->end = cell;
 	} else {
-		
+
 		cell->prev = queue->end;
 		cell->next = NULL;
 		queue->end->next = cell;
@@ -75,7 +74,7 @@ inline void QueuePush( Queue *queue, void *data ) {
 }
 
 inline void *QueuePop( Queue *queue ) {
-	
+
 	QueueCell *cell = queue->end;
 	if ( queue->begin == queue->end ) { // do we have only one cell ?
 
@@ -96,13 +95,13 @@ inline void QueueUnshift( Queue *queue, void *data ) {
 	QueueCell *cell = (QueueCell*)malloc(sizeof(QueueCell));
 	cell->data = data;
 	if ( QueueIsEmpty(queue) ) {
-		
+
 		cell->prev = NULL;
 		cell->next = NULL;
 		queue->begin = cell;
 		queue->end = cell;
 	} else {
-		
+
 		cell->next = queue->begin;
 		cell->prev = NULL;
 		queue->begin->prev = cell;
@@ -111,7 +110,7 @@ inline void QueueUnshift( Queue *queue, void *data ) {
 }
 
 inline void *QueueShift( Queue *queue ) {
-	
+
 	QueueCell *cell = queue->begin;
 	if ( queue->begin == queue->end ) { // do we have only one cell ?
 
@@ -139,7 +138,7 @@ inline QueueCell *QueueEnd( Queue *queue ) {
 }
 
 inline void *QueueGetData( QueueCell *cell ) {
-	
+
 	return cell->data;
 }
 
