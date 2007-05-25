@@ -22,28 +22,27 @@ CFLAGS += -fno-exceptions -fno-rtti -felide-constructors
 	$(CC) -c $(CFLAGS) -I../js/src/Linux_All_OPT.OBJ -I../js/src $(INCLUDES) -o $@ $<
 
 %.a: $(SRC:.cpp=.o)
-	$(AR) rcs $@ $^
+	$(AR) rcs /tmp/$(notdir $@) $^
+	mv /tmp/$(notdir $@) $@ #needed to support cofs (fc. coLinux: cofs rename() bug )
 
 %.so: $(SRC:.cpp=.o)
 	$(CC) $(CFLAGS) -o $@ -shared -Wl,-soname,$@ $? -static-libgcc -Wl,-Bstatic $(STATICLIBS) -Wl,-Bdynamic $(SHAREDLIBS) $(SMLIB)
 
-%: $(SRC:.cpp=.o)
+%.bin: $(SRC:.cpp=.o)
 	$(CC) $(CFLAGS) -o $@ $^ -static-libgcc -Wl,-Bstatic $(STATICLIBS) -Wl,-Bdynamic $(SHAREDLIBS) $(SMLIB)
+	mv $@ $(basename $@)
 
-.PHONY: clean all
-
+.PHONY: all clean
 
 all: $(TARGET)
 
 clean:
-	$(RM) -f *.o
-	
-# $(TARGET)
+	$(RM) -f *.o $(TARGET) $(basename $(TARGET))
 
 #.PRECIOUS: %.o
 
 
-# If I decide to use C instead of C++:
+# If I decide to use C instead of C++ ( but no static functions support ):
 #  -std=c99
 
 # -lstdc++

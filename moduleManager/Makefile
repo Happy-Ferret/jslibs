@@ -1,4 +1,4 @@
-TARGET=moduleManager.a
+TARGET=libmoduleManager.a
 SRC=$(wildcard *.cpp)
 INCLUDES=
 STATICLIBS=

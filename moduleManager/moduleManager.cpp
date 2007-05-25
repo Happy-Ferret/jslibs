@@ -57,7 +57,7 @@
 
 
 
-LibraryHandler _moduleList[32] = {NULL}; // do not manage the module list dynamicaly, we allow a maximum of 32 modules
+static LibraryHandler _moduleList[32] = {NULL}; // do not manage the module list dynamicaly, we allow a maximum of 32 modules
 
 ModuleId ModuleLoad( const char *fileName, JSContext *cx, JSObject *obj ) {
 
