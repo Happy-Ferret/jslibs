@@ -30,11 +30,17 @@ function testBinding() {
 	result1.Close();
 }
 
-
 try {
 
 	Print('database version: ' + Database.version ,'\n' );
+
 	var db = new Database('test_database');
+
+	Print( 'xxxxxxxxxxxx = ' + db.Query('SELECT ?+?+?', {0:2,1:2,2:2,3:2,length:3}).Row() ,'\n' );
+
+
+
+
 	
 	db.testFun = function(a) { return a*10 }
 	db.jseval = function(s){ return eval(s) };

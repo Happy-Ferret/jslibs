@@ -58,26 +58,35 @@ JSBool SqliteToJsval( JSContext *cx, sqlite3_value *value, jsval *rval ) {
 
 // doc: The sqlite3_bind_*() routines must be called after sqlite3_prepare() or sqlite3_reset() and before sqlite3_step(). Bindings are not cleared by the sqlite3_reset() routine. Unbound parameters are interpreted as NULL.
 JSBool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *objAt, JSObject *objColon ) {
-
+	
 	int count = sqlite3_bind_parameter_count(pStmt);
 	for ( int param = 1; param <= count; param++ ) {
 
 		const char *name = sqlite3_bind_parameter_name( pStmt, param );
-		RT_ASSERT( name != NULL, "Binding is out of range." ); // (TBD) better error message
+		// doc: Parameters of the form "?" have no name. ... If the value n is out of range or if the n-th parameter is nameless, then NULL is returned.
 
-		JSObject *obj = NULL;
-
-		if ( objAt != NULL && name[0] == '@' )
-			obj = objAt;
-
-		if ( objColon != NULL && name[0] == ':' )
-			obj = objColon;
-
-		if ( obj == NULL )
-			continue;
+//		RT_ASSERT( name != NULL, "Binding is out of range." ); // (TBD) better error message
 
 		jsval val;
-		JS_GetProperty(cx, obj, name+1, &val);
+		
+		if ( name != NULL ) {
+
+			JSObject *obj = NULL;
+
+			if ( objAt != NULL && name[0] == '@' )
+				obj = objAt;
+
+			if ( objColon != NULL && name[0] == ':' )
+				obj = objColon;
+
+			if ( obj == NULL )
+				continue;
+
+			JS_GetProperty(cx, obj, name+1, &val);
+		} else { // ? is used in the SQL statement, then use objAt as an array and param as index
+
+			JS_GetElement(cx, objAt, param-1, &val); // works with {0:2,1:2,2:2,length:3} and [2,2,2]
+		}
 
 		// sqlite3_bind_value( pStmt, param,
 		// (TBD) how to use this

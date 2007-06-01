@@ -137,15 +137,14 @@ DEFINE_FUNCTION( Query ) {
 	sqlite3 *db = (sqlite3*)JS_GetPrivate( cx, obj );
 	RT_ASSERT_RESOURCE( db );
 
-	char *sqlQuery = JS_GetStringBytes( JS_ValueToString( cx, argv[0] ) );
+	char *sqlQuery;
+	RT_JSVAL_TO_STRING( argv[0], sqlQuery );
 
 	const char *szTail;
 	sqlite3_stmt *pStmt;
-
 	int status = sqlite3_prepare( db, sqlQuery, -1, &pStmt, &szTail ); // If the next argument, "nBytes", is less than zero, then zSql is read up to the first nul terminator.
 	if ( status != SQLITE_OK )
 		return SqliteThrowError( cx, status, sqlite3_errcode(db), sqlite3_errmsg(db) );
-
 	RT_ASSERT_1( *szTail == '\0', "too many SQL statements (%s)", szTail ); // for the moment, do not support multiple statements
 
 	if ( pStmt == NULL ) // if there is an error, *ppStmt may be set to NULL. If the input text contained no SQL (if the input is and empty string or a comment) then *ppStmt is set to NULL.
@@ -193,7 +192,7 @@ DEFINE_FUNCTION( Exec ) {
 	// (TBD) support multiple statements
 
 	if ( argc >= 2 && argv[1] != JSVAL_VOID && JSVAL_IS_OBJECT(argv[1]) )
-		SqliteSetupBindings(cx, pStmt, JSVAL_TO_OBJECT(argv[1]) , NULL ); // "@" : the the argument passed to Exec(), ":" nothing
+		RT_CHECK_CALL( SqliteSetupBindings(cx, pStmt, JSVAL_TO_OBJECT(argv[1]) , NULL ) ); // "@" : the the argument passed to Exec(), ":" nothing
 	status = sqlite3_step( pStmt ); // The return value will be either SQLITE_BUSY, SQLITE_DONE, SQLITE_ROW, SQLITE_ERROR, or 	SQLITE_MISUSE.
 	switch (status) {
 		case SQLITE_ERROR:
