@@ -14,6 +14,10 @@
 
 DECLARE_CLASS( Texture )
 
+#define PMIN -1
+#define PMAX 1
+#define PMID 0
+
 typedef struct {
 
 	float r;

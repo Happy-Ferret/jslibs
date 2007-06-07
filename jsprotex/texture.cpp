@@ -58,10 +58,10 @@ DEFINE_FUNCTION( Flat ) {
 	RT_ASSERT_RESOURCE(tex);
 
 	float r,g,b,a;
-	RT_JSVAL_TO_FLOAT( argv[0], r );
-	RT_JSVAL_TO_FLOAT( argv[1], g );
-	RT_JSVAL_TO_FLOAT( argv[2], b );
-	RT_JSVAL_TO_FLOAT( argv[3], a );
+	RT_JSVAL_TO_REAL( argv[0], r );
+	RT_JSVAL_TO_REAL( argv[1], g );
+	RT_JSVAL_TO_REAL( argv[2], b );
+	RT_JSVAL_TO_REAL( argv[3], a );
 
 	size_t size = tex->width * tex->height;
 	for ( size_t i = 0; i < size; i++ ) {
@@ -94,17 +94,10 @@ DEFINE_FUNCTION( Rect ) {
 	RT_ASSERT( x0 >= 0 && x0 < x1 && x1 < width  &&  y0 >= 0 && y0 < y1 && y1 < height, "Invalid size" );
 
 	float r,g,b,a;
-	if ( !JSVAL_IS_VOID( argv[0] )
-		RT_JSVAL_TO_FLOAT( argv[0], r );
-
-	if ( !JSVAL_IS_VOID( argv[1] )
-		RT_JSVAL_TO_FLOAT( argv[1], g );
-	
-	if ( !JSVAL_IS_VOID( argv[2] )
-		RT_JSVAL_TO_FLOAT( argv[2], b );
-	
-	if ( !JSVAL_IS_VOID( argv[3] )
-		RT_JSVAL_TO_FLOAT( argv[3], a );
+	RT_JSVAL_TO_REAL( argv[0], r );
+	RT_JSVAL_TO_REAL( argv[1], g );
+	RT_JSVAL_TO_REAL( argv[2], b );
+	RT_JSVAL_TO_REAL( argv[3], a );
 
 	for ( size_t x = x0; x < x1; x++ )
 		for ( size_t y = y0; y < y1; y++ ) {
@@ -126,6 +119,7 @@ float IntegerNoise (int n) {
 }
 
 double CoherentNoise (double x) {
+
   int intX = (int)(floor (x));
   double n0 = IntegerNoise (intX);
   double n1 = IntegerNoise (intX + 1);
@@ -139,19 +133,138 @@ DEFINE_FUNCTION( Noise ) {
 	
 	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(tex);
-
-	int seed = JsvalToInt(cx, argv[1], 0);
+	
+	int seed;
+	RT_JSVAL_TO_INT32( argv[0], seed );
 
 	size_t size = tex->width * tex->height;
 
 	for ( size_t i = 0; i < size; i++ ) {
 
 		float noiseValue = IntegerNoise(seed * size + i); // no common noize chunk between two different seed
-		
 		tex->buffer[i].r = noiseValue;
 		tex->buffer[i].g = noiseValue;
 		tex->buffer[i].b = noiseValue;
 	}
+	return JS_TRUE;
+}
+
+DEFINE_FUNCTION( Pixels ) {
+
+	RT_ASSERT_ARGC( 2 );
+
+	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE(tex);
+
+	int seed, count;
+	RT_JSVAL_TO_UINT32( argv[0], count );
+	RT_JSVAL_TO_INT32( argv[1], seed );
+
+	size_t size = tex->width * tex->height;
+
+	for ( size_t i = 0; i < count; i++ ) {
+
+		size_t pos = ( 1 + 0.5f * IntegerNoise(seed * count + i) ) * size;
+
+		tex->buffer[pos].r = PMAX;
+		tex->buffer[pos].g = PMAX;
+		tex->buffer[pos].b = PMAX;
+	}
+	return JS_TRUE;
+}
+
+DEFINE_FUNCTION( Convolution ) {
+
+	return JS_TRUE;
+}
+
+DEFINE_FUNCTION( Cells ) { // source: FxGen
+
+	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE(tex);
+
+
+	ubyte byRegularity;
+	ubyte byDensity;
+	uword wSeed;
+	RGBA col;
+
+	byDensity = byDensity>1?byDensity:1;
+
+	size_t width = tex->width;
+	size_t height = tex->height;
+	Pixel* pPxDst = tex->buffer;
+
+	//Init
+	const float regularity = byRegularity / 255.0f;
+	vec3 *cellPoints = (vec3*)NMemAlloc(sizeof(vec3)*byDensity*byDensity);	//###TOFIX### JN: MemAlloc
+
+	//Render
+	for (udword y=0; y<byDensity; ++y)
+	{
+		for (udword x=0; x<byDensity; ++x)
+		{
+			float rand1 = (float)myRandom() / 65536.0f;
+			float rand2 = (float)myRandom() / 65536.0f;
+			cellPoints[x+y*byDensity].x = (x+0.5f+(rand1-0.5f)*(1-regularity))/byDensity;
+			cellPoints[x+y*byDensity].y = (y+0.5f+(rand2-0.5f)*(1-regularity))/byDensity;
+			cellPoints[x+y*byDensity].z = 0;
+		}
+	}
+
+	//Temporary buffeur to Texture
+	for (udword y=0; y<h; y++)
+	{
+		for (udword x=0; x<w; x++)
+		{
+      vec3 pixelPos;
+      pixelPos.x = x/(float)w,
+      pixelPos.y = y/(float)h;
+      pixelPos.z = 0;
+
+      float minDist = 10;
+      float nextMinDist = minDist;
+      int xo = x*byDensity/w;
+      int yo = y*byDensity/h;
+      for (sdword v=-1; v<2; ++v)
+      {
+        int vo = ((yo+byDensity+v)%byDensity)*byDensity;
+        for (sdword u=-1; u<2; ++u)
+        {
+          vec3 cellPos = cellPoints[((xo+byDensity+u)%byDensity) + vo];
+          if (u==-1 && x*byDensity<w) cellPos.x-=1;
+          if (v==-1 && y*byDensity<h) cellPos.y-=1;
+          if (u==1 && x*byDensity>=w*(byDensity-1)) cellPos.x+=1;
+          if (v==1 && y*byDensity>=h*(byDensity-1)) cellPos.y+=1;
+          vec3 tmp;
+          float dist = sub(tmp, pixelPos, cellPos).norm ();
+          if (dist<minDist) 
+          {
+            nextMinDist = minDist;
+            minDist = dist;
+          } else if (dist<nextMinDist)
+          {
+            nextMinDist = dist;
+          }
+        }
+      }
+
+      minDist = (nextMinDist-minDist)*byDensity;
+      if (minDist<0) minDist = 0;
+      if (minDist>1) minDist = 1;
+
+			pPxDst->r = (ubyte)(minDist*col.r);
+			pPxDst->g = (ubyte)(minDist*col.g);
+			pPxDst->b = (ubyte)(minDist*col.b);
+			pPxDst->a = 255;
+
+			pPxDst++;
+		}
+	}
+
+	NMemFree(cellPoints);
+
+
 	return JS_TRUE;
 }
 
@@ -178,6 +291,7 @@ CONFIGURE_CLASS
 		FUNCTION_ARGC( Flat, 4 )
 		FUNCTION_ARGC( Rect, 8 )
 		FUNCTION_ARGC( Noise, 1 )
+		FUNCTION_ARGC( Pixels, 2 )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
