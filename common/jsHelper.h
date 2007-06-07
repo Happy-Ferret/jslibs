@@ -162,11 +162,11 @@
 ////////////////////
 // conversion macros
 
-#define RT_JSVAL_TO_FLOAT( jsval, floatVariable ) { \
+#define RT_JSVAL_TO_REAL( jsval, floatVariable ) { \
 	jsdouble d; \
 	JSBool st = JS_ValueToNumber( cx, jsval, &d ); \
 	RT_ASSERT( st != JS_FALSE, RT_ERROR_INT_CONVERSION_FAILED ); \
-	floatVariable = (float)d; \
+	floatVariable = d; \
 }
 
 #define RT_JSVAL_TO_INT32( jsvalInt, intVariable ) { \
