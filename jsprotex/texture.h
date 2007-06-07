@@ -14,21 +14,21 @@
 
 DECLARE_CLASS( Texture )
 
-typedef struct Pixel {
+typedef struct {
 
 	float r;
 	float g;
 	float b;
 	float a;
-};
+} Pixel;
 
-typedef struct Texture {
+typedef struct {
 	
 	unsigned int width;
 	unsigned int height;
 	Pixel *buffer;
 	Pixel *backBuffer;
-};
+} Texture;
 
 static void TextureSwitchBuffers( Texture *tex ) {
 	
