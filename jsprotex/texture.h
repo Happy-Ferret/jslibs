@@ -14,9 +14,12 @@
 
 DECLARE_CLASS( Texture )
 
-#define PMIN -1
-#define PMAX 1
-#define PMID 0
+#define MINMAX(val, min, max) ((val) > (max) ? (max) : (val) < (min) ? (min) : (val) )
+
+#define PMIN (0.f)
+#define PMID (0.5f)
+#define PMAX (1.f)
+#define PTYPE float
 
 typedef struct {
 
@@ -28,10 +31,11 @@ typedef struct {
 
 typedef struct {
 	
-	unsigned int width;
-	unsigned int height;
-	Pixel *buffer;
-	Pixel *backBuffer;
+	size_t width;
+	size_t height;
+	unsigned char channels;
+	float *buffer;
+	float *backBuffer;
 } Texture;
 
 static void TextureSwitchBuffers( Texture *tex ) {
