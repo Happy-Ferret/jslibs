@@ -28,6 +28,8 @@ Manage GL extensions:
 #include "jstransformation.h"
 #include "../jsimage/jsimage.h"
 
+#include "../jsprotex/texture.h"
+
 #define _USE_MATH_DEFINES
 #include "math.h"
 
@@ -210,6 +212,22 @@ DEFINE_FUNCTION( Perspective ) {
 	return JS_TRUE;
 }
 
+DEFINE_FUNCTION( Ortho ) {
+
+	RT_ASSERT_ARGC(4);
+	jsdouble left, right, bottom, top;
+	JS_ValueToNumber(cx, argv[0], &left);
+	JS_ValueToNumber(cx, argv[1], &right);
+	JS_ValueToNumber(cx, argv[2], &bottom);
+	JS_ValueToNumber(cx, argv[3], &top);
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+//	GLint viewport[4];
+//	glGetIntegerv( GL_VIEWPORT, viewport );
+//	gluOrtho2D(left, right, bottom, top);
+	glOrtho(left, right, bottom, top, -1, 1);
+	return JS_TRUE;
+}
 
 DEFINE_FUNCTION( Clear ) {
 
@@ -474,7 +492,7 @@ DEFINE_FUNCTION( Line ) { // 2D
 
 
 // (TBD) manage compression: http://www.opengl.org/registry/specs/ARB/texture_compression.txt
-DEFINE_FUNCTION( Texture ) {
+DEFINE_FUNCTION( LoadImage ) {
 
 	RT_ASSERT_ARGC(1);
 
@@ -502,6 +520,24 @@ DEFINE_FUNCTION( Texture ) {
 	return JS_TRUE;
 }
 
+DEFINE_FUNCTION( LoadTexture ) {
+
+	RT_ASSERT_ARGC(1);
+	RT_ASSERT_CLASS_NAME( JSVAL_TO_OBJECT(argv[0]), "Texture" );
+	Texture *tex = (Texture *)JS_GetPrivate(cx, JSVAL_TO_OBJECT(argv[0]));
+	RT_ASSERT_RESOURCE(tex);
+
+	GLuint texture;
+	glGenTextures( 1, &texture ); // (TBD) free with glDeleteTextures
+	glBindTexture( GL_TEXTURE_2D, texture ); // Doc: glBindTexture is included in display lists.
+
+	glTexImage2D( GL_TEXTURE_2D, 0, 3, tex->width, tex->height, 0, GL_RGBA, GL_FLOAT, tex->buffer );
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	*rval = JSVAL_TO_INT(texture);
+	return JS_TRUE;
+}
 
 DEFINE_FUNCTION( Test ) {
 
@@ -521,12 +557,14 @@ CONFIGURE_CLASS
 		FUNCTION(CallList)
 		FUNCTION(Viewport)
 		FUNCTION(Perspective)
+		FUNCTION(Ortho)
 		FUNCTION(Clear)
 		FUNCTION(LoadIdentity)
 		FUNCTION(PushMatrix)
 		FUNCTION(PopMatrix)
 		FUNCTION(Color)
-		FUNCTION(Texture)
+		FUNCTION(LoadImage)
+		FUNCTION(LoadTexture)
 		FUNCTION(Axis)
 		FUNCTION(Cube)
 		FUNCTION(Quad)

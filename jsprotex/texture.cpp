@@ -44,25 +44,23 @@ DEFINE_CONSTRUCTOR() {
 		memcpy( tex->buffer, srcTex->buffer, size * sizeof(PTYPE) );
 		tex->width = srcTex->width;
 		tex->height = srcTex->height;
-		tex->channels = srcTex->channels;
+		JS_SetPrivate(cx, obj, tex);
 	} else {
 
-		RT_ASSERT_ARGC( 3 );
+		RT_ASSERT_ARGC( 2 );
 
-		size_t width, height, channels;
+		size_t width, height;
 		RT_JSVAL_TO_UINT32( argv[0], width );
 		RT_JSVAL_TO_UINT32( argv[1], height );
-		RT_JSVAL_TO_UINT32( argv[2], channels );
-
-		RT_ASSSERT( channels == 1 || channels == 4, "Invalid channels count." );
 
 		size_t size = width * height;
-		tex->buffer = (float*)malloc( size * channels * sizeof(float) ); // (TBD) try with js_malloc
+		tex->buffer = (Pixel*)malloc( size * sizeof(Pixel) ); // (TBD) try with js_malloc
 		RT_ASSERT_ALLOC( tex->buffer );
 
 		tex->width = width;
 		tex->height = height;
-		tex->channels = channels;
+
+		JS_SetPrivate(cx, obj, tex);
 	}
 
 	return JS_TRUE;
@@ -75,36 +73,21 @@ DEFINE_FUNCTION( Flat ) {
 	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(tex);
 	
-	if ( tex->channels == 1 ) {
-	
-		RT_ASSERT_ARGC( 1 );
+	RT_ASSERT_ARGC( 4 );
 
-		float l;
-		RT_JSVAL_TO_REAL( argv[0], l );
-		size_t size = tex->width * tex->height;
+	float r,g,b,a;
+	RT_JSVAL_TO_REAL( argv[0], r );
+	RT_JSVAL_TO_REAL( argv[1], g );
+	RT_JSVAL_TO_REAL( argv[2], b );
+	RT_JSVAL_TO_REAL( argv[3], a );
 
-		for ( size_t i = 0; i < size; i++ )
-			tex->buffer[i] = l;
-	}
+	size_t size = tex->width * tex->height;
+	for ( size_t i = 0; i < size; i++ ) {
 
-	if ( tex->channels == 4 ) {
-
-		RT_ASSERT_ARGC( 4 );
-
-		float r,g,b,a;
-		RT_JSVAL_TO_REAL( argv[0], r );
-		RT_JSVAL_TO_REAL( argv[1], g );
-		RT_JSVAL_TO_REAL( argv[2], b );
-		RT_JSVAL_TO_REAL( argv[3], a );
-
-		size_t size = tex->width * tex->height;
-		for ( size_t i = 0; i < size; i++ ) {
-
-			tex->buffer[i*4 + 0] = r;
-			tex->buffer[i*4 + 1] = g;
-			tex->buffer[i*4 + 2] = b;
-			tex->buffer[i*4 + 3] = a;
-		}
+		tex->buffer[i].r = r;
+		tex->buffer[i].g = g;
+		tex->buffer[i].b = b;
+		tex->buffer[i].a = a;
 	}
 
 	return JS_TRUE;
@@ -145,7 +128,7 @@ DEFINE_FUNCTION( Rect ) {
 	return JS_TRUE;
 }
 
-int IntNoise(int n) {
+int IntNoise(int n) { // 0 -> 2147483648
 
   n = (n >> 13) ^ n;
   return (n * (n * n * 60493 + 19990303) + 1376312589) & 0x7fffffff;
@@ -153,7 +136,7 @@ int IntNoise(int n) {
 
 float RealNoise(int n) { // return: 0 <= val <= 1
 	
-	return ((float)IntNoise(n) / 4294967296.f);
+	return ((float)IntNoise(n) / 2147483648.f); // 4294967296.f
 }
 
 /*
@@ -169,7 +152,9 @@ double CoherentNoise (double x) {
 */
 
 DEFINE_FUNCTION( Noise ) {
-	
+
+	RT_ASSERT_ARGC( 1 );
+
 	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(tex);
 	
@@ -202,10 +187,22 @@ DEFINE_FUNCTION( Pixels ) {
 
 	size_t size = tex->width * tex->height;
 
+/* orig:
+
+	udword dwCount = 2<<(byCount>>4);
+	RGBA* pPxDst = pDst->GetPixels();
+	while (--dwCount)
+	{
+		udword x=myRandom() % w;
+		udword y=myRandom() % h;
+		pPxDst[x + y*w] = col;
+	}
+*/
+
 	for ( size_t i = 0; i < count; i++ ) {
 
 //		size_t pos = ( 1 + 0.5f * IntegerNoise(seed * count + i) ) * size;
-		size_t pos = IntNoise(seed * count + i) % size;
+		size_t pos = IntNoise(seed * count + i) % size; // (TBD) render more random
 
 		tex->buffer[pos].r = PMAX;
 		tex->buffer[pos].g = PMAX;
@@ -314,9 +311,9 @@ DEFINE_FUNCTION( Cells ) { // source: FxGen
 	
 	int seed, density;
 	float regularity;
-	RT_JSVAL_TO_INT32( argv[0], seed );
-	RT_JSVAL_TO_INT32( argv[1], density );
-	RT_JSVAL_TO_REAL( argv[2], regularity );
+	RT_JSVAL_TO_INT32( argv[0], density );
+	RT_JSVAL_TO_REAL( argv[1], regularity );
+	RT_JSVAL_TO_INT32( argv[2], seed );
 
 	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(tex);
@@ -330,10 +327,11 @@ DEFINE_FUNCTION( Cells ) { // source: FxGen
 
 	Pixel* pPxDst = tex->buffer;
 
-	Point *cellPoints = (Point*)malloc(sizeof(Point)*density*density);
+	size_t count = density * density;
+
+	Point *cellPoints = (Point*)malloc(sizeof(Point)*count);
 
 	//Render
-	size_t count = density * density;
 	for ( size_t i = 0; i < count; i++ ) {
 	
 		float rand1 = RealNoise(seed+i);
@@ -341,45 +339,45 @@ DEFINE_FUNCTION( Cells ) { // source: FxGen
 		size_t x = i%density;
 		size_t y = i/density;
 
-		cellPoints[i].x = (x+0.5f+(rand1-0.5f)*(1-regularity))/density;
-		cellPoints[i].y = (y+0.5f+(rand2-0.5f)*(1-regularity))/density;
+		cellPoints[i].x = (x+0.5f+(rand1-0.5f)*(1.f-regularity))/density;
+		cellPoints[i].y = (y+0.5f+(rand2-0.5f)*(1.f-regularity))/density;
 	}
 
 	for (size_t y=0; y<height; y++) {
 		for (size_t x=0; x<width; x++) {
 
 			Point pixelPos;
-			pixelPos.x = x/(float)width,
-			pixelPos.y = y/(float)height;
+			pixelPos.x = (float)x/(float)width,
+			pixelPos.y = (float)y/(float)height;
 
-			float minDist = 10;
+			float minDist = 10.f;
 			float nextMinDist = minDist;
 			int xo = x*density/width;
 			int yo = y*density/height;
-			for ( size_t v=-1; v<2; ++v ) {
+			for ( int v=-1; v<2; ++v ) {
 				
 				int vo = ((yo+density+v)%density)*density;
-				for (size_t u=-1; u<2; ++u) {
+				for ( int u=-1; u<2; ++u ) {
 
 					Point cellPos = cellPoints[((xo+density+u)%density) + vo];
-					if (u==-1 && x*density < width)
+					if (u == -1 && x*density < width)
 						cellPos.x -= 1;
-					if (v==-1 && y*density < height)
+					if (v == -1 && y*density < height)
 						cellPos.y -= 1;
-					if (u==1 && x*density >= width*(density-1))
+					if (u == 1 && x*density >= width*(density-1))
 						cellPos.x += 1;
-					if (v==1 && y*density >= height*(density-1))
+					if (v == 1 && y*density >= height*(density-1))
 						cellPos.y += 1;
 					
 					float tx = pixelPos.x - cellPos.x;
 					float ty = pixelPos.y - cellPos.y;
 					float dist = sqrtf( tx*tx + ty*ty );
-						
+					
 					if (dist < minDist) {
 
 						nextMinDist = minDist;
 						minDist = dist;
-					} else if (dist<nextMinDist) {
+					} else if (dist < nextMinDist) {
 						
 						nextMinDist = dist;
 					}
@@ -387,9 +385,7 @@ DEFINE_FUNCTION( Cells ) { // source: FxGen
 			}
 
 			minDist = (nextMinDist-minDist)*density;
-			if (minDist<0) minDist = 0;
-			if (minDist>1) minDist = 1;
-
+			minDist = MINMAX( minDist, 0, 1 );
 			pPxDst->r = minDist;
 			pPxDst->g = minDist;
 			pPxDst->b = minDist;

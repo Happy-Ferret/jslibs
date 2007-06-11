@@ -33,9 +33,8 @@ typedef struct {
 	
 	size_t width;
 	size_t height;
-	unsigned char channels;
-	float *buffer;
-	float *backBuffer;
+	Pixel *buffer;
+	Pixel *backBuffer;
 } Texture;
 
 static void TextureSwitchBuffers( Texture *tex ) {
