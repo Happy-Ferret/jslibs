@@ -18,6 +18,11 @@
 #include <stdlib.h>
 #include "texture.h"
 
+extern "C" void init_genrand(unsigned long s);
+extern "C" unsigned long genrand_int32(void);
+extern "C" double genrand_real1(void);
+
+
 BEGIN_CLASS( Texture )
 
 DEFINE_FINALIZE() {
@@ -68,31 +73,6 @@ DEFINE_CONSTRUCTOR() {
 
 BEGIN_STATIC
 
-DEFINE_FUNCTION( Flat ) {
-
-	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE(tex);
-	
-	RT_ASSERT_ARGC( 4 );
-
-	float r,g,b,a;
-	RT_JSVAL_TO_REAL( argv[0], r );
-	RT_JSVAL_TO_REAL( argv[1], g );
-	RT_JSVAL_TO_REAL( argv[2], b );
-	RT_JSVAL_TO_REAL( argv[3], a );
-
-	size_t size = tex->width * tex->height;
-	for ( size_t i = 0; i < size; i++ ) {
-
-		tex->buffer[i].r = r;
-		tex->buffer[i].g = g;
-		tex->buffer[i].b = b;
-		tex->buffer[i].a = a;
-	}
-
-	return JS_TRUE;
-}
-
 
 DEFINE_FUNCTION( Rect ) {
 	
@@ -128,18 +108,47 @@ DEFINE_FUNCTION( Rect ) {
 	return JS_TRUE;
 }
 
-int IntNoise(int n) { // 0 -> 2147483648
+/* old rand & noise function
+inline long sqrt(long i) {
 
-  n = (n >> 13) ^ n;
-  return (n * (n * n * 60493 + 19990303) + 1376312589) & 0x7fffffff;
+	long r,rnew=1,rold=r;
+	do {
+		rold=r;
+		r=rnew;
+		rnew = (r+(i/r));
+		rnew >>= 1;
+	} while(rold != rnew);
+	return rnew;
 }
 
-float RealNoise(int n) { // return: 0 <= val <= 1
+inline int isprime(long i) {
 	
-	return ((float)IntNoise(n) / 2147483648.f); // 4294967296.f
+	long si,j;
+	si = sqrt(i);
+	for (j=2; (j<=si); j++)
+		if (i%j == 0)
+			return 0;
+	return 1;
 }
 
-/*
+
+unsigned long int IntNoise(unsigned long int a) { // 0 -> 1376312589
+	
+//	return ( (a * 19990303) % 1376312589 ) ^ ( (a * 60493) % 349997189 );
+//	return ( (a * 349997189) % 1376312589 );
+//	return (65539*a)%2147483648;
+
+	return 1664525 * a + 1013904223;
+}
+
+float RealNoise(unsigned long int n) { // return: 0 <= val <= 1
+
+	n = (n << 13) ^ n;
+	n = (n * (n * n * 60493 + 19990303) + 1376312589);
+	return (float)n / 4294967296.f;
+}
+
+
 double CoherentNoise (double x) {
 
   int intX = (int)(floor (x));
@@ -151,24 +160,33 @@ double CoherentNoise (double x) {
 }
 */
 
-DEFINE_FUNCTION( Noise ) {
+DEFINE_FUNCTION( Noise ) { // coloredNoise, seed
 
 	RT_ASSERT_ARGC( 1 );
-
 	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(tex);
-	
+	bool color;
+	RT_JSVAL_TO_BOOL( argv[0], color );
 	int seed;
-	RT_JSVAL_TO_INT32( argv[0], seed );
-
+	RT_JSVAL_TO_INT32( argv[1], seed );
+	init_genrand(seed);
 	size_t size = tex->width * tex->height;
-
 	for ( size_t i = 0; i < size; i++ ) {
+		
+		float r,g,b;
+		r = genrand_real1(); // no common noize chunk between two different seed
+		if ( color ) {
 
-		float noiseValue = RealNoise(seed * size + i); // no common noize chunk between two different seed
-		tex->buffer[i].r = noiseValue;
-		tex->buffer[i].g = noiseValue;
-		tex->buffer[i].b = noiseValue;
+			g = genrand_real1();
+			b = genrand_real1();
+		} else {
+
+			g = r;
+			b = r;
+		}
+		tex->buffer[i].r = r;
+		tex->buffer[i].g = g;
+		tex->buffer[i].b = b;
 	}
 	return JS_TRUE;
 }
@@ -185,25 +203,17 @@ DEFINE_FUNCTION( Pixels ) {
 	RT_JSVAL_TO_UINT32( argv[0], count );
 	RT_JSVAL_TO_INT32( argv[1], seed );
 
-	size_t size = tex->width * tex->height;
+	size_t width = tex->width;
+	size_t height = tex->height;
+	size_t size = width * height;
 
-/* orig:
+	init_genrand(seed);
 
-	udword dwCount = 2<<(byCount>>4);
-	RGBA* pPxDst = pDst->GetPixels();
-	while (--dwCount)
-	{
-		udword x=myRandom() % w;
-		udword y=myRandom() % h;
-		pPxDst[x + y*w] = col;
-	}
-*/
-
+	size_t rand = seed * 2 + 1;
 	for ( size_t i = 0; i < count; i++ ) {
-
-//		size_t pos = ( 1 + 0.5f * IntegerNoise(seed * count + i) ) * size;
-		size_t pos = IntNoise(seed * count + i) % size; // (TBD) render more random
-
+		
+		rand = genrand_int32();
+		size_t pos = rand % size;
 		tex->buffer[pos].r = PMAX;
 		tex->buffer[pos].g = PMAX;
 		tex->buffer[pos].b = PMAX;
@@ -273,7 +283,7 @@ DEFINE_FUNCTION( Normalize ) {
 	return JS_TRUE;
 }
 
-DEFINE_FUNCTION( Clamp ) { // min, max, keep clamped color
+DEFINE_FUNCTION( Clamp ) { // min, max, keepClampedColor
 
 	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(tex);
@@ -281,19 +291,148 @@ DEFINE_FUNCTION( Clamp ) { // min, max, keep clamped color
 	RT_ASSERT_ARGC( 3 );
 
 	float min, max;
+	bool keep;
 	RT_JSVAL_TO_REAL( argv[0], min );
 	RT_JSVAL_TO_REAL( argv[1], max );
+	RT_JSVAL_TO_BOOL( argv[2], keep );
+
+	size_t size = tex->width * tex->height;
+	size_t i;
+	if ( keep )
+		for ( i = 0; i < size; i++ ) {
+
+			tex->buffer[i].r = MINMAX( tex->buffer[i].r, min, max );
+			tex->buffer[i].g = MINMAX( tex->buffer[i].g, min, max );
+			tex->buffer[i].b = MINMAX( tex->buffer[i].b, min, max );
+//			tex->buffer[i].a = MINMAX( tex->buffer[i].r, min, max );
+		}
+	else
+		for ( i = 0; i < size; i++ ) {
+
+		}
+
 	
+	return JS_TRUE;
+}
 
+DEFINE_FUNCTION( PasteAt ) {
+	return JS_TRUE;
+}
 
+DEFINE_FUNCTION( Polarize ) {
+	return JS_TRUE;
+}
 
+DEFINE_FUNCTION( UnPolarize ) {
+	return JS_TRUE;
+}
+
+DEFINE_FUNCTION( Lerp ) {
+	return JS_TRUE;
+}
+
+DEFINE_FUNCTION( Invert ) {
+	return JS_TRUE;
+}
+
+DEFINE_FUNCTION( Reverse ) {
+	return JS_TRUE;
+}
+
+DEFINE_FUNCTION( Resample ) {
 	return JS_TRUE;
 }
 
 
 
-DEFINE_FUNCTION( Lerp ) {
+DEFINE_FUNCTION( SetValue ) {
+
+	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE(tex);
+	
+	RT_ASSERT_ARGC( 4 );
+
+	float r,g,b,a;
+	RT_JSVAL_TO_REAL( argv[0], r );
+	RT_JSVAL_TO_REAL( argv[1], g );
+	RT_JSVAL_TO_REAL( argv[2], b );
+	RT_JSVAL_TO_REAL( argv[3], a );
+
+	size_t size = tex->width * tex->height;
+	for ( size_t i = 0; i < size; i++ ) {
+
+		tex->buffer[i].r = r;
+		tex->buffer[i].g = g;
+		tex->buffer[i].b = b;
+		tex->buffer[i].a = a;
+	}
+	return JS_TRUE;
 }
+
+
+DEFINE_FUNCTION( AddValue ) {
+
+	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE(tex);
+	RT_ASSERT_ARGC( 4 );
+	float r,g,b,a;
+	RT_JSVAL_TO_REAL( argv[0], r );
+	RT_JSVAL_TO_REAL( argv[1], g );
+	RT_JSVAL_TO_REAL( argv[2], b );
+	RT_JSVAL_TO_REAL( argv[3], a );
+	size_t size = tex->width * tex->height;
+	for ( size_t i = 0; i < size; i++ ) {
+
+		tex->buffer[i].r += r;
+		tex->buffer[i].g += g;
+		tex->buffer[i].b += b;
+		tex->buffer[i].a += a;
+	}
+	return JS_TRUE;
+}
+
+
+DEFINE_FUNCTION( MultValue ) {
+
+	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE(tex);
+	RT_ASSERT_ARGC( 4 );
+	float r,g,b,a;
+	RT_JSVAL_TO_REAL( argv[0], r );
+	RT_JSVAL_TO_REAL( argv[1], g );
+	RT_JSVAL_TO_REAL( argv[2], b );
+	RT_JSVAL_TO_REAL( argv[3], a );
+	size_t size = tex->width * tex->height;
+	for ( size_t i = 0; i < size; i++ ) {
+
+		tex->buffer[i].r *= r;
+		tex->buffer[i].g *= g;
+		tex->buffer[i].b *= b;
+		tex->buffer[i].a *= a;
+	}
+	return JS_TRUE;
+}
+
+
+DEFINE_FUNCTION( AddTexture ) {
+
+	RT_ASSERT_ARGC( 1 );
+	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE(tex);
+	JSObject *tex1Obj = JSVAL_TO_OBJECT(argv[1]);
+	RT_ASSERT_CLASS( tex1Obj, _class );
+	Texture *tex1 = (Texture*)JS_GetPrivate(cx, JSVAL_TO_OBJECT(argv[1]));
+	RT_ASSERT_RESOURCE(tex1);
+
+	if ( tex->width != tex1->width || tex->height != tex1->height )
+		REPORT_ERROR("Images must have the same size.");
+
+	size_t size = tex->width * tex->height;
+	for ( size_t i = 0; i < size; i++ )
+		tex->buffer[i] += tex1->buffer[i];
+	return JS_TRUE;
+}
+
 
 
 DEFINE_FUNCTION( Convolution ) {
@@ -331,11 +470,12 @@ DEFINE_FUNCTION( Cells ) { // source: FxGen
 
 	Point *cellPoints = (Point*)malloc(sizeof(Point)*count);
 
+	init_genrand(seed);
 	//Render
 	for ( size_t i = 0; i < count; i++ ) {
 	
-		float rand1 = RealNoise(seed+i);
-		float rand2 = RealNoise(seed+size+i);
+		float rand1 = genrand_real1();
+		float rand2 = genrand_real1();
 		size_t x = i%density;
 		size_t y = i/density;
 
@@ -422,7 +562,7 @@ CONFIGURE_CLASS
 	BEGIN_FUNCTION_SPEC
 		FUNCTION_ARGC( Flat, 4 )
 		FUNCTION_ARGC( Rect, 8 )
-		FUNCTION_ARGC( Noise, 1 )
+		FUNCTION_ARGC( Noise, 2 )
 		FUNCTION_ARGC( Pixels, 2 )
 		FUNCTION_ARGC( Cells, 3 )
 	END_FUNCTION_SPEC
@@ -435,3 +575,22 @@ CONFIGURE_CLASS
 //	HAS_RESERVED_SLOTS(1)
 
 END_CLASS
+
+/*
+
+TextureMathematique:
+	http://raphaello.univ-fcomte.fr/Ig/Textures/ExemplesGLUt/TextureMathematique.htm
+
+Mersenne Twister Random Number Generator
+	http://www-personal.engin.umich.edu/~wagnerr/MersenneTwister.h
+
+Mersenne Twist Pseudorandom Number Generator Package
+	http://www.cs.hmc.edu/~geoff/mtwist.html#downloading
+
+SFMT (sse2) version of Mersenne Twist Pseudorandom Number Generator
+	http://www.math.sci.hiroshima-u.ac.jp/~m-mat/MT/SFMT/index.html
+
+ISAAC: a fast cryptographic random number generator
+	http://www.burtleburtle.net/bob/rand/isaacafa.html
+	periodicity: 2^40
+*/

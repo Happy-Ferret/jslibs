@@ -41,14 +41,14 @@ gl.Ortho(-1, 1, -1, 1);
 var texture = new Texture(256,256);
 
 texture.Flat(0,0,0,1);
-//texture.Noise(1234);
-texture.Pixels(10000,1234);
+texture.Noise(false,1234);
+//texture.Pixels(10000,1234);
 //texture.Cells(16,0,1);
 
 
 gl.Color(1,1,1);
 gl.LoadTexture( texture );
 
-win.rect = [1000,1000,1200,1200]
+win.rect = [1700,1000,1900,1200]
 win.ProcessEvents();
 

@@ -142,7 +142,7 @@
 	RT_ASSERT( (resourcePointer) != NULL, RT_ERROR_INVALID_RESOURCE );
 
 #define RT_ASSERT_CLASS(jsObject, jsClass) \
-	RT_ASSERT( jsObject != NULL && JS_GetClass(jsObject) == (jsClass), RT_ERROR_INVALID_CLASS );
+	RT_ASSERT( (jsObject) != NULL && JS_GetClass(jsObject) == (jsClass), RT_ERROR_INVALID_CLASS );
 
 #define RT_ASSERT_CLASS_NAME(jsObject, className) \
 	RT_ASSERT( strcmp(JS_GetClass(jsObject)->name, (className)) == 0,  RT_ERROR_INVALID_CLASS " Expecting " className "." );
@@ -161,6 +161,13 @@
 
 ////////////////////
 // conversion macros
+
+#define RT_JSVAL_TO_BOOL( jsval, boolVariable ) { \
+	JSBool b; \
+	JSBool st = JS_ValueToBoolean( cx, jsval, &b ); \
+	RT_ASSERT( st != JS_FALSE, RT_ERROR_INT_CONVERSION_FAILED ); \
+	boolVariable = (b == JS_TRUE); \
+}
 
 #define RT_JSVAL_TO_REAL( jsval, floatVariable ) { \
 	jsdouble d; \
