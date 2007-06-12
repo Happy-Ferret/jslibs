@@ -12,13 +12,20 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
+#include <limits.h>
+#include <float.h>
+
 DECLARE_CLASS( Texture )
 
 #define MINMAX(val, min, max) ((val) > (max) ? (max) : (val) < (min) ? (min) : (val) )
 
+#define PMAXLIMIT FLT_MAX
+#define PMINLIMIT FLT_MIN
 #define PMIN (0.f)
-#define PMID (0.5f)
 #define PMAX (1.f)
+
+#define PMID (MIN+((PMAX-PMIN)/2))
+
 #define PTYPE float
 
 typedef struct {

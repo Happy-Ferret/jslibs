@@ -38,17 +38,21 @@ gl.Init();
 gl.Ortho(-1, 1, -1, 1);
 
 
-var texture = new Texture(256,256);
+var texture = new Texture(512,512);
 
-texture.Flat(0,0,0,1);
-texture.Noise(false,1234);
+//texture.SetValue(0,0,0,1);
+//texture.Noise(false,1234);
 //texture.Pixels(10000,1234);
-//texture.Cells(16,0,1);
-
+texture.Cells(8,0,1);
+//texture.MultValue(3,2,2,1);
+texture.Clamp(0.5, 1, false);
+texture.Normalize();
+//texture.Aliasing(10);
 
 gl.Color(1,1,1);
 gl.LoadTexture( texture );
 
-win.rect = [1700,1000,1900,1200]
+//win.rect = [1700,1000,1900,1200]
+win.rect = [500,500,700,700];
 win.ProcessEvents();
 

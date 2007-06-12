@@ -22,7 +22,6 @@ extern "C" void init_genrand(unsigned long s);
 extern "C" unsigned long genrand_int32(void);
 extern "C" double genrand_real1(void);
 
-
 BEGIN_CLASS( Texture )
 
 DEFINE_FINALIZE() {
@@ -225,22 +224,18 @@ DEFINE_FUNCTION( Pixels ) {
 DEFINE_FUNCTION( Aliasing ) {
 
 	RT_ASSERT_ARGC( 1 );
-
 	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(tex);
-
 	float count;
 	RT_JSVAL_TO_UINT32( argv[0], count );
-
 	size_t size = tex->width * tex->height;
 	for ( size_t i = 0; i < size; i++ ) {
 		
-		tex->buffer[i].r = count * floor( tex->buffer[i].r / count );
-		tex->buffer[i].g = count * floor( tex->buffer[i].g / count );
-		tex->buffer[i].b = count * floor( tex->buffer[i].b / count );
-		tex->buffer[i].a = count * floor( tex->buffer[i].a / count );
+		tex->buffer[i].r = floor( count * tex->buffer[i].r ) / count;
+		tex->buffer[i].g = floor( count * tex->buffer[i].g ) / count;
+		tex->buffer[i].b = floor( count * tex->buffer[i].b ) / count;
+//		tex->buffer[i].a = floor( count * tex->buffer[i].a ) / count;
 	}
-
 	return JS_TRUE;
 }
 
@@ -249,8 +244,8 @@ DEFINE_FUNCTION( Normalize ) {
 	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(tex);
 
-	float min = 1.f;
-	float max = 0.f;
+	float min = PMAXLIMIT;
+	float max = PMINLIMIT;
 
 	size_t size = tex->width * tex->height;
 	size_t i;
@@ -264,22 +259,20 @@ DEFINE_FUNCTION( Normalize ) {
 			max = tex->buffer[i].b;
 
 		if ( tex->buffer[i].r < min )
-			max = tex->buffer[i].r;
+			min = tex->buffer[i].r;
 		if ( tex->buffer[i].g < min )
-			max = tex->buffer[i].g;
+			min = tex->buffer[i].g;
 		if ( tex->buffer[i].b < min )
-			max = tex->buffer[i].b;
+			min = tex->buffer[i].b;
 	}
 
 	float ratio = 1 / ( max - min );
-
 	for ( i = 0; i < size; i++ ) {
 
 		tex->buffer[i].r = ( tex->buffer[i].r - min ) * ratio;
-		tex->buffer[i].r = ( tex->buffer[i].g - min ) * ratio;
-		tex->buffer[i].r = ( tex->buffer[i].b - min ) * ratio;
+		tex->buffer[i].g = ( tex->buffer[i].g - min ) * ratio;
+		tex->buffer[i].b = ( tex->buffer[i].b - min ) * ratio;
 	}
-
 	return JS_TRUE;
 }
 
@@ -298,20 +291,56 @@ DEFINE_FUNCTION( Clamp ) { // min, max, keepClampedColor
 
 	size_t size = tex->width * tex->height;
 	size_t i;
+
+		for ( i = 0; i < size; i++ ) {
+			
+			float localmax = max;
+			if ( tex->buffer[i].r > localmax ) localmax = tex->buffer[i].r;
+			if ( tex->buffer[i].g > localmax ) localmax = tex->buffer[i].g;
+			if ( tex->buffer[i].b > localmax ) localmax = tex->buffer[i].b;
+			if ( localmax > max ) {
+
+				float ratio = max / localmax;
+				tex->buffer[i].r *= ratio;
+				tex->buffer[i].g *= ratio;
+				tex->buffer[i].b *= ratio;
+			}
+
+			float localmin = min;
+			if ( tex->buffer[i].r < localmin ) localmin = tex->buffer[i].r;
+			if ( tex->buffer[i].g < localmin ) localmin = tex->buffer[i].g;
+			if ( tex->buffer[i].b < localmin ) localmin = tex->buffer[i].b;
+			if ( localmin < min ) {
+
+				float ratio = min / localmin;
+				tex->buffer[i].r *= ratio;
+				tex->buffer[i].g *= ratio;
+				tex->buffer[i].b *= ratio;
+			}
+		}
+
+
+/*
 	if ( keep )
 		for ( i = 0; i < size; i++ ) {
 
 			tex->buffer[i].r = MINMAX( tex->buffer[i].r, min, max );
 			tex->buffer[i].g = MINMAX( tex->buffer[i].g, min, max );
 			tex->buffer[i].b = MINMAX( tex->buffer[i].b, min, max );
-//			tex->buffer[i].a = MINMAX( tex->buffer[i].r, min, max );
 		}
 	else
 		for ( i = 0; i < size; i++ ) {
+			
+			if ( tex->buffer[i].r > max ) tex->buffer[i].r = PMAX;
+			if ( tex->buffer[i].r < min ) tex->buffer[i].r = PMIN;
 
+			if ( tex->buffer[i].g > max ) tex->buffer[i].g = PMAX;
+			if ( tex->buffer[i].g < min ) tex->buffer[i].g = PMIN;
+
+			if ( tex->buffer[i].b > max ) tex->buffer[i].b = PMAX;
+			if ( tex->buffer[i].b < min ) tex->buffer[i].b = PMIN;
 		}
-
-	
+*/
 	return JS_TRUE;
 }
 
@@ -428,17 +457,21 @@ DEFINE_FUNCTION( AddTexture ) {
 		REPORT_ERROR("Images must have the same size.");
 
 	size_t size = tex->width * tex->height;
-	for ( size_t i = 0; i < size; i++ )
-		tex->buffer[i] += tex1->buffer[i];
+	for ( size_t i = 0; i < size; i++ ) {
+		tex->buffer[i].r += tex1->buffer[i].r;
+		tex->buffer[i].g += tex1->buffer[i].g;
+		tex->buffer[i].b += tex1->buffer[i].b;
+//		tex->buffer[i].a += tex1->buffer[i].a;
+	}
 	return JS_TRUE;
 }
-
 
 
 DEFINE_FUNCTION( Convolution ) {
 
 	return JS_TRUE;
 }
+
 
 DEFINE_FUNCTION( Cells ) { // source: FxGen
 
@@ -560,11 +593,15 @@ CONFIGURE_CLASS
 //}
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION_ARGC( Flat, 4 )
+		FUNCTION_ARGC( SetValue, 4 )
+		FUNCTION_ARGC( MultValue, 4 )
 		FUNCTION_ARGC( Rect, 8 )
 		FUNCTION_ARGC( Noise, 2 )
 		FUNCTION_ARGC( Pixels, 2 )
 		FUNCTION_ARGC( Cells, 3 )
+		FUNCTION_ARGC( Clamp, 3 )
+		FUNCTION_ARGC( Normalize, 0 )
+		FUNCTION_ARGC( Aliasing, 0 )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
