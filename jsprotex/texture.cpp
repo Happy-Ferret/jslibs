@@ -19,23 +19,54 @@
 #include "texture.h"
 
 extern "C" void init_genrand(unsigned long s);
+extern "C" long genrand_int31(void);
 extern "C" unsigned long genrand_int32(void);
 extern "C" double genrand_real1(void);
+
+
+
+unsigned long int NoiseInt(unsigned long int n) {
+	
+	n = (n << 13) ^ n;
+	return (n * (n * n * 60493 + 19990303) + 1376312589);
+}
+
+float NoiseReal(unsigned long int n) { // return: 0 <= val <= 1
+
+	return (float)NoiseInt(n) / 4294967296.f;
+}
+
+
+
+void TextureSwapBuffers( Texture *tex ) {
+
+	Pixel *tmp = tex->buffer;
+	tex->buffer = tex->backBuffer;
+	tex->backBuffer = tmp;
+}
 
 BEGIN_CLASS( Texture )
 
 DEFINE_FINALIZE() {
+	
+	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
+	if ( tex != NULL ) {
+		
+		if ( tex->backBuffer != NULL )
+			free(tex->backBuffer);
+		if ( tex->buffer != NULL )
+			free(tex->buffer);
+		free(tex);
+		JS_SetPrivate(cx, obj, NULL);
+	}
 }
 
 DEFINE_CONSTRUCTOR() {
 
 	RT_ASSERT_CONSTRUCTING(_class);
 	RT_ASSERT_ARGC( 1 );
-
 	Texture *tex = (Texture *)malloc(sizeof(Texture));
-
 	tex->backBuffer = NULL;
-
 	if ( JSVAL_IS_OBJECT(argv[0]) && JS_GET_CLASS(cx, JSVAL_TO_OBJECT(argv[0])) == _class ) { // copy constructor
 
 		Texture *srcTex = (Texture *)JS_GetPrivate(cx, JSVAL_TO_OBJECT(argv[0]));
@@ -91,10 +122,10 @@ DEFINE_FUNCTION( Rect ) {
 	RT_ASSERT( x0 >= 0 && x0 < x1 && x1 < width  &&  y0 >= 0 && y0 < y1 && y1 < height, "Invalid size" );
 
 	float r,g,b,a;
-	RT_JSVAL_TO_REAL( argv[0], r );
-	RT_JSVAL_TO_REAL( argv[1], g );
-	RT_JSVAL_TO_REAL( argv[2], b );
-	RT_JSVAL_TO_REAL( argv[3], a );
+	RT_JSVAL_TO_REAL( argv[4], r );
+	RT_JSVAL_TO_REAL( argv[5], g );
+	RT_JSVAL_TO_REAL( argv[6], b );
+	RT_JSVAL_TO_REAL( argv[7], a );
 
 	for ( size_t x = x0; x < x1; x++ )
 		for ( size_t y = y0; y < y1; y++ ) {
@@ -131,22 +162,6 @@ inline int isprime(long i) {
 }
 
 
-unsigned long int IntNoise(unsigned long int a) { // 0 -> 1376312589
-	
-//	return ( (a * 19990303) % 1376312589 ) ^ ( (a * 60493) % 349997189 );
-//	return ( (a * 349997189) % 1376312589 );
-//	return (65539*a)%2147483648;
-
-	return 1664525 * a + 1013904223;
-}
-
-float RealNoise(unsigned long int n) { // return: 0 <= val <= 1
-
-	n = (n << 13) ^ n;
-	n = (n * (n * n * 60493 + 19990303) + 1376312589);
-	return (float)n / 4294967296.f;
-}
-
 
 double CoherentNoise (double x) {
 
@@ -159,7 +174,7 @@ double CoherentNoise (double x) {
 }
 */
 
-DEFINE_FUNCTION( Noise ) { // coloredNoise, seed
+DEFINE_FUNCTION( SetNoise ) { // coloredNoise, seed
 
 	RT_ASSERT_ARGC( 1 );
 	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
@@ -289,36 +304,34 @@ DEFINE_FUNCTION( Clamp ) { // min, max, keepClampedColor
 	RT_JSVAL_TO_REAL( argv[1], max );
 	RT_JSVAL_TO_BOOL( argv[2], keep );
 
-	size_t size = tex->width * tex->height;
-	size_t i;
+	float local;
+	size_t i, size = tex->width * tex->height;
+	for ( i = 0; i < size; i++ ) {
+		
+		local = max;
+		if ( tex->buffer[i].r > local ) local = tex->buffer[i].r;
+		if ( tex->buffer[i].g > local ) local = tex->buffer[i].g;
+		if ( tex->buffer[i].b > local ) local = tex->buffer[i].b;
+		if ( local > max ) {
 
-		for ( i = 0; i < size; i++ ) {
-			
-			float localmax = max;
-			if ( tex->buffer[i].r > localmax ) localmax = tex->buffer[i].r;
-			if ( tex->buffer[i].g > localmax ) localmax = tex->buffer[i].g;
-			if ( tex->buffer[i].b > localmax ) localmax = tex->buffer[i].b;
-			if ( localmax > max ) {
-
-				float ratio = max / localmax;
-				tex->buffer[i].r *= ratio;
-				tex->buffer[i].g *= ratio;
-				tex->buffer[i].b *= ratio;
-			}
-
-			float localmin = min;
-			if ( tex->buffer[i].r < localmin ) localmin = tex->buffer[i].r;
-			if ( tex->buffer[i].g < localmin ) localmin = tex->buffer[i].g;
-			if ( tex->buffer[i].b < localmin ) localmin = tex->buffer[i].b;
-			if ( localmin < min ) {
-
-				float ratio = min / localmin;
-				tex->buffer[i].r *= ratio;
-				tex->buffer[i].g *= ratio;
-				tex->buffer[i].b *= ratio;
-			}
+			float ratio = max / local;
+			tex->buffer[i].r *= ratio;
+			tex->buffer[i].g *= ratio;
+			tex->buffer[i].b *= ratio;
 		}
 
+		local = min;
+		if ( tex->buffer[i].r < local ) local = tex->buffer[i].r;
+		if ( tex->buffer[i].g < local ) local = tex->buffer[i].g;
+		if ( tex->buffer[i].b < local ) local = tex->buffer[i].b;
+		if ( local < min ) {
+
+			float ratio = min / local;
+			tex->buffer[i].r *= ratio;
+			tex->buffer[i].g *= ratio;
+			tex->buffer[i].b *= ratio;
+		}
+	}
 
 /*
 	if ( keep )
@@ -344,9 +357,232 @@ DEFINE_FUNCTION( Clamp ) { // min, max, keepClampedColor
 	return JS_TRUE;
 }
 
-DEFINE_FUNCTION( PasteAt ) {
+DEFINE_FUNCTION( PasteAt ) { // (Texture)texture, (int)x, (int)y, (bool)wrap
+
+	RT_ASSERT_ARGC( 4 );
+
+	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE(tex);
+	
+	int px, py;
+	bool wrap;
+
+	JSObject *tex1Obj = JSVAL_TO_OBJECT(argv[0]);
+	RT_ASSERT_CLASS( tex1Obj, _class );
+	Texture *tex1 = (Texture *)JS_GetPrivate(cx, tex1Obj);
+	RT_ASSERT_RESOURCE(tex1);
+	RT_JSVAL_TO_INT32( argv[1], px );
+	RT_JSVAL_TO_INT32( argv[2], py );
+	RT_JSVAL_TO_BOOL( argv[3], wrap );
+
+	size_t texWidth = tex->width;
+	size_t texHeight = tex->height;
+
+	size_t tex1Width = tex1->width;
+	size_t tex1Height = tex1->height;
+
+	int x, y;
+	size_t ptex, ptex1;
+	if ( wrap ) {
+		for ( y = 0; y < tex1Height; y++ )
+			for ( x = 0; x < tex1Width; x++ ) {
+				
+				ptex = ((py+y)%texHeight) * texWidth + ((px+x)%texWidth);
+				ptex1 = y * tex1Width + x;
+				tex->buffer[ptex].r = tex1->buffer[ptex1].r;
+				tex->buffer[ptex].g = tex1->buffer[ptex1].g;
+				tex->buffer[ptex].b = tex1->buffer[ptex1].b;
+				tex->buffer[ptex].a = tex1->buffer[ptex1].a;
+			}
+	} else {
+		// other method: calc. the two rect intersection and use this to draw the safe tex1
+		for ( y = 0; y < tex1Height; y++ )
+			for ( x = 0; x < tex1Width; x++ )
+				if ( (px+x) >= 0 && (px+x) < texWidth && (py+y) >= 0 && (py+y) < texHeight ) {
+
+					ptex = (py+y) * texWidth + (px+x);
+					ptex1 = y * tex1Width + x;
+					tex->buffer[ptex].r = tex1->buffer[ptex1].r;
+					tex->buffer[ptex].g = tex1->buffer[ptex1].g;
+					tex->buffer[ptex].b = tex1->buffer[ptex1].b;
+					tex->buffer[ptex].a = tex1->buffer[ptex1].a;
+				}
+	}
 	return JS_TRUE;
 }
+
+DEFINE_FUNCTION( Shift ) {
+	// (TBD) I think it is possible to do the Shift operation without using a second buffer. 
+
+	RT_ASSERT_ARGC( 2 );
+
+	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE(tex);
+
+	int px, py;
+	RT_JSVAL_TO_INT32( argv[0], px );
+	RT_JSVAL_TO_INT32( argv[1], py );
+
+	size_t texWidth = tex->width;
+	size_t texHeight = tex->height;
+
+	if ( tex->backBuffer == NULL )
+		tex->backBuffer = (Pixel*)malloc( tex->width * tex->height * sizeof(Pixel) );
+	
+	size_t ptex, ptex1;
+	int x,y;
+	for ( y = 0; y < texHeight; y++ )
+		for ( x = 0; x < texWidth; x++ ) {
+			
+			ptex = ((py+y)%texHeight) * texWidth + ((px+x)%texWidth);
+			ptex1 = y * texWidth + x;
+
+			tex->backBuffer[ptex].r = tex->buffer[ptex1].r;
+			tex->backBuffer[ptex].g = tex->buffer[ptex1].g;
+			tex->backBuffer[ptex].b = tex->buffer[ptex1].b;
+			tex->backBuffer[ptex].a = tex->buffer[ptex1].a;
+		}
+	TextureSwapBuffers(tex);
+	return JS_TRUE;
+}
+
+
+DEFINE_FUNCTION( Mix ) { // or lerp (Linear interpolation)
+
+	RT_ASSERT_ARGC( 2 );
+
+	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE(tex);
+
+	JSObject *tex1Obj = JSVAL_TO_OBJECT(argv[0]);
+	RT_ASSERT_CLASS( tex1Obj, _class );
+	Texture *tex1 = (Texture *)JS_GetPrivate(cx, tex1Obj);
+	RT_ASSERT_RESOURCE(tex1);
+
+	JSObject *tex2Obj = JSVAL_TO_OBJECT(argv[1]);
+	RT_ASSERT_CLASS( tex2Obj, _class );
+	Texture *tex2 = (Texture *)JS_GetPrivate(cx, tex2Obj);
+	RT_ASSERT_RESOURCE(tex2);
+
+	size_t i, size = tex->width * tex->height;
+	for ( i = 0; i < size; i++ ) {
+
+		float blend;
+		blend = tex->buffer[i].r;
+		tex->buffer[i].r = ( tex1->buffer[i].r * (PMAX-blend) + tex2->buffer[i].r * blend ) / PMAX;
+		blend = tex->buffer[i].g;
+		tex->buffer[i].g = ( tex1->buffer[i].g * (PMAX-blend) + tex2->buffer[i].g * blend ) / PMAX;
+		blend = tex->buffer[i].b;
+		tex->buffer[i].r = ( tex1->buffer[i].b * (PMAX-blend) + tex2->buffer[i].b * blend ) / PMAX;
+	}
+	return JS_TRUE;
+}
+
+
+DEFINE_FUNCTION( Invert ) { // black -> white / white -> black
+
+	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE(tex);
+	size_t i, size = tex->width * tex->height;
+	for ( i = 0; i < size; i++ ) {
+		
+		tex->buffer[i].r = PMID - (tex->buffer[i].r - PMID);
+		tex->buffer[i].g = PMID - (tex->buffer[i].g - PMID);
+		tex->buffer[i].b = PMID - (tex->buffer[i].b - PMID);
+		tex->buffer[i].a = PMID - (tex->buffer[i].a - PMID);
+	}
+	return JS_TRUE;
+}
+
+
+DEFINE_FUNCTION( Absolute ) { // 
+
+	RT_ASSERT_ARGC( 1 );
+
+	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE(tex);
+
+	float zero;
+	RT_JSVAL_TO_REAL(argv[0], zero);
+
+	size_t i, size = tex->width * tex->height;
+	for ( i = 0; i < size; i++ ) {
+		
+		tex->buffer[i].r = abs(tex->buffer[i].r - zero) + zero;
+		tex->buffer[i].g = abs(tex->buffer[i].g - zero) + zero;
+		tex->buffer[i].b = abs(tex->buffer[i].b - zero) + zero;
+		tex->buffer[i].a = abs(tex->buffer[i].a - zero) + zero;
+	}
+	return JS_TRUE;
+}
+
+DEFINE_FUNCTION( Desaturate ) {
+
+	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE(tex);
+	float average;
+	size_t i, size = tex->width * tex->height;
+	for ( i = 0; i < size; i++ ) {
+		
+		average = ( tex->buffer[i].r + tex->buffer[i].g + tex->buffer[i].b ) / 3.f;
+		tex->buffer[i].r = average;
+		tex->buffer[i].g = average;
+		tex->buffer[i].b = average;
+	}
+	return JS_TRUE;
+}
+
+
+/*
+
+float TextureFx::InterpolateLinear( float nx, float ny ) { // 0..1
+
+	float fx = (_width -1) * nx;
+	float fy = (_height-1) * ny;
+
+	size_t x = fx;
+	size_t y = fy;
+	size_t x1 = (x+1)<_width  ? x+1 : x;
+	size_t y1 = (y+1)<_height ? y+1 : y;
+
+	float dx = fx - x;
+	float dy = fy - y;
+
+	float e = Data( x, y  ) * (1 - dx) + Data( x1, y  ) * dx;
+	float f = Data( x, y1 ) * (1 - dx) + Data( x1, y1 ) * dx;
+	return e * (1 - dy) + f * dy;
+}
+
+
+DEFINE_FUNCTION( Resample ) {
+
+	RT_ASSERT_ARGC( 2 );
+
+	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE(tex);
+
+	int sx, sy;
+	RT_JSVAL_TO_INT32( argv[0], sx );
+	RT_JSVAL_TO_INT32( argv[1], sy );
+
+	size_t texWidth = tex->width;
+	size_t texHeight = tex->height;
+
+//	if ( tex->backBuffer == NULL )
+//		tex->backBuffer = (Pixel*)malloc( tex->width * tex->height * sizeof(Pixel) );
+	
+	size_t ptex, ptex1;
+	int x,y;
+	for ( y = 0; y < sy; y++ )
+		for ( x = 0; x < sx; x++ )
+			tex->buffer[ x + y * sx ] = InterpolateLinear( x / (float)sx, y / (float)sy );
+
+	return JS_TRUE;
+}
+
+*/
+
+
 
 DEFINE_FUNCTION( Polarize ) {
 	return JS_TRUE;
@@ -355,23 +591,6 @@ DEFINE_FUNCTION( Polarize ) {
 DEFINE_FUNCTION( UnPolarize ) {
 	return JS_TRUE;
 }
-
-DEFINE_FUNCTION( Lerp ) {
-	return JS_TRUE;
-}
-
-DEFINE_FUNCTION( Invert ) {
-	return JS_TRUE;
-}
-
-DEFINE_FUNCTION( Reverse ) {
-	return JS_TRUE;
-}
-
-DEFINE_FUNCTION( Resample ) {
-	return JS_TRUE;
-}
-
 
 
 DEFINE_FUNCTION( SetValue ) {
@@ -504,7 +723,8 @@ DEFINE_FUNCTION( Cells ) { // source: FxGen
 	Point *cellPoints = (Point*)malloc(sizeof(Point)*count);
 
 	init_genrand(seed);
-	//Render
+
+
 	for ( size_t i = 0; i < count; i++ ) {
 	
 		float rand1 = genrand_real1();
@@ -573,7 +793,49 @@ DEFINE_FUNCTION( Cells ) { // source: FxGen
 	return JS_TRUE;
 }
 
+DEFINE_PROPERTY( width ) {
 
+	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE(tex);
+	jsdouble d = tex->width;
+	RT_CHECK_CALL( JS_NewNumberValue(cx, d, vp) );
+	return JS_TRUE;
+}
+
+DEFINE_PROPERTY( height ) {
+
+	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE(tex);
+	jsdouble d = tex->height;
+	RT_CHECK_CALL( JS_NewNumberValue(cx, d, vp) );
+	return JS_TRUE;
+}
+
+DEFINE_FUNCTION( RandSeed ) {
+
+	RT_ASSERT_ARGC(1);
+	unsigned long seed;
+	RT_JSVAL_TO_UINT32(argv[0], seed);
+	init_genrand(seed);
+	return JS_TRUE;
+}
+
+DEFINE_FUNCTION( Rand ) {
+
+	jsdouble d = genrand_int32();
+	RT_CHECK_CALL( JS_NewNumberValue(cx, d, rval) );
+	return JS_TRUE;
+}
+
+DEFINE_FUNCTION( Noise ) {
+
+	RT_ASSERT_ARGC(1);
+	unsigned long seed;
+	RT_JSVAL_TO_UINT32(argv[0], seed);
+	jsdouble d = NoiseInt(seed);
+	RT_CHECK_CALL( JS_NewNumberValue(cx, d, rval) );
+	return JS_TRUE;
+}
 
 CONFIGURE_CLASS
 
@@ -584,9 +846,6 @@ CONFIGURE_CLASS
 //	return JS_TRUE;
 //}
 
-//DEFINE_PROPERTY( prop ) {
-//	return JS_TRUE;
-//}
 
 //DEFINE_FUNCTION( Func ) {
 //	return JS_TRUE;
@@ -594,19 +853,32 @@ CONFIGURE_CLASS
 
 	BEGIN_FUNCTION_SPEC
 		FUNCTION_ARGC( SetValue, 4 )
+		FUNCTION_ARGC( SetNoise, 2 )
 		FUNCTION_ARGC( MultValue, 4 )
 		FUNCTION_ARGC( Rect, 8 )
-		FUNCTION_ARGC( Noise, 2 )
+		FUNCTION_ARGC( PasteAt, 4 )
+		FUNCTION_ARGC( Shift, 2 )
 		FUNCTION_ARGC( Pixels, 2 )
 		FUNCTION_ARGC( Cells, 3 )
 		FUNCTION_ARGC( Clamp, 3 )
+		FUNCTION_ARGC( Mix, 2 )
 		FUNCTION_ARGC( Normalize, 0 )
+		FUNCTION_ARGC( Invert, 0 )
+		FUNCTION_ARGC( Absolute, 0 )
 		FUNCTION_ARGC( Aliasing, 0 )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
-//		PROPERTY(prop)
+		PROPERTY_READ(width)
+		PROPERTY_READ(height)
 	END_PROPERTY_SPEC
+
+	BEGIN_STATIC_FUNCTION_SPEC
+		FUNCTION_ARGC( RandSeed, 1 )
+		FUNCTION_ARGC( Rand, 0 )
+		FUNCTION_ARGC( Noise, 1 )
+	END_STATIC_FUNCTION_SPEC
+
 
 	HAS_PRIVATE
 //	HAS_RESERVED_SLOTS(1)
@@ -630,4 +902,10 @@ SFMT (sse2) version of Mersenne Twist Pseudorandom Number Generator
 ISAAC: a fast cryptographic random number generator
 	http://www.burtleburtle.net/bob/rand/isaacafa.html
 	periodicity: 2^40
+
+RGB to HSV color space conversion
+	http://en.literateprograms.org/RGB_to_HSV_color_space_conversion_(C)#chunk%20def:compute%20hue
+
+	http://en.wikipedia.org/wiki/Hue#Computing_hue_from_RGB
+	
 */

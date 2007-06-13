@@ -24,7 +24,7 @@ DECLARE_CLASS( Texture )
 #define PMIN (0.f)
 #define PMAX (1.f)
 
-#define PMID (MIN+((PMAX-PMIN)/2))
+#define PMID (PMIN+((PMAX-PMIN)/2))
 
 #define PTYPE float
 

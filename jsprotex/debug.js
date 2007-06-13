@@ -21,7 +21,7 @@ win.onidle = function() {
 
 win.onkeydown = function( key, l ) {
 	
-	if ( ket == vk.ESC )
+	if ( key == vk.ESC )
 		win.Exit();
 }
 
@@ -39,15 +39,23 @@ gl.Ortho(-1, 1, -1, 1);
 
 
 var texture = new Texture(512,512);
+texture.Rect(0,0,100,100,1,0,0,1);
+texture.Shift(-50,-10);
 
 //texture.SetValue(0,0,0,1);
 //texture.Noise(false,1234);
 //texture.Pixels(10000,1234);
-texture.Cells(8,0,1);
+//texture.Cells(8,0,1);
+
+//var texture2 = new Texture(256,256);
+//texture2.SetValue(1,0,0,1);
+//texture.PasteAt( texture2, 300, 300, true );
+
 //texture.MultValue(3,2,2,1);
-texture.Clamp(0.5, 1, false);
-texture.Normalize();
+//texture.Clamp(0.5, 1, false);
+//texture.Normalize();
 //texture.Aliasing(10);
+//texture.Invert();
 
 gl.Color(1,1,1);
 gl.LoadTexture( texture );
