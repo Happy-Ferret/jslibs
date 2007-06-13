@@ -135,6 +135,8 @@ DEFINE_FUNCTION( Rect ) {
 			tex->buffer[x + width * y].b = b;
 			tex->buffer[x + width * y].a = a;
 		}
+
+	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 }
 
@@ -176,7 +178,7 @@ double CoherentNoise (double x) {
 
 DEFINE_FUNCTION( SetNoise ) { // coloredNoise, seed
 
-	RT_ASSERT_ARGC( 1 );
+	RT_ASSERT_ARGC( 2 );
 	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(tex);
 	bool color;
@@ -202,6 +204,8 @@ DEFINE_FUNCTION( SetNoise ) { // coloredNoise, seed
 		tex->buffer[i].g = g;
 		tex->buffer[i].b = b;
 	}
+
+	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 }
 
@@ -232,6 +236,8 @@ DEFINE_FUNCTION( Pixels ) {
 		tex->buffer[pos].g = PMAX;
 		tex->buffer[pos].b = PMAX;
 	}
+
+	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 }
 
@@ -251,8 +257,11 @@ DEFINE_FUNCTION( Aliasing ) {
 		tex->buffer[i].b = floor( count * tex->buffer[i].b ) / count;
 //		tex->buffer[i].a = floor( count * tex->buffer[i].a ) / count;
 	}
+
+	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 }
+
 
 DEFINE_FUNCTION( Normalize ) {
 
@@ -288,6 +297,8 @@ DEFINE_FUNCTION( Normalize ) {
 		tex->buffer[i].g = ( tex->buffer[i].g - min ) * ratio;
 		tex->buffer[i].b = ( tex->buffer[i].b - min ) * ratio;
 	}
+
+	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 }
 
@@ -354,6 +365,8 @@ DEFINE_FUNCTION( Clamp ) { // min, max, keepClampedColor
 			if ( tex->buffer[i].b < min ) tex->buffer[i].b = PMIN;
 		}
 */
+
+	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 }
 
@@ -408,6 +421,8 @@ DEFINE_FUNCTION( PasteAt ) { // (Texture)texture, (int)x, (int)y, (bool)wrap
 					tex->buffer[ptex].a = tex1->buffer[ptex1].a;
 				}
 	}
+
+	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 }
 
@@ -443,6 +458,8 @@ DEFINE_FUNCTION( Shift ) {
 			tex->backBuffer[ptex].a = tex->buffer[ptex1].a;
 		}
 	TextureSwapBuffers(tex);
+
+	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 }
 
@@ -475,6 +492,8 @@ DEFINE_FUNCTION( Mix ) { // or lerp (Linear interpolation)
 		blend = tex->buffer[i].b;
 		tex->buffer[i].r = ( tex1->buffer[i].b * (PMAX-blend) + tex2->buffer[i].b * blend ) / PMAX;
 	}
+
+	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 }
 
@@ -491,6 +510,8 @@ DEFINE_FUNCTION( Invert ) { // black -> white / white -> black
 		tex->buffer[i].b = PMID - (tex->buffer[i].b - PMID);
 		tex->buffer[i].a = PMID - (tex->buffer[i].a - PMID);
 	}
+
+	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 }
 
@@ -513,8 +534,37 @@ DEFINE_FUNCTION( Absolute ) { //
 		tex->buffer[i].b = abs(tex->buffer[i].b - zero) + zero;
 		tex->buffer[i].a = abs(tex->buffer[i].a - zero) + zero;
 	}
+
+	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 }
+
+DEFINE_FUNCTION( Wrap ) { // 
+
+	RT_ASSERT_ARGC( 1 );
+
+	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE(tex);
+
+	float wrap, div;
+	RT_JSVAL_TO_REAL(argv[0], wrap);
+
+	size_t i, size = tex->width * tex->height;
+	for ( i = 0; i < size; i++ ) {
+		
+		div = tex->buffer[i].r / wrap;
+		tex->buffer[i].r = div - floor( div );
+		div = tex->buffer[i].g / wrap;
+		tex->buffer[i].g = div - floor( div );
+		div = tex->buffer[i].b / wrap;
+		tex->buffer[i].b = div - floor( div );
+	}
+
+	*rval = OBJECT_TO_JSVAL(obj);
+	return JS_TRUE;
+}
+
+
 
 DEFINE_FUNCTION( Desaturate ) {
 
@@ -529,6 +579,8 @@ DEFINE_FUNCTION( Desaturate ) {
 		tex->buffer[i].g = average;
 		tex->buffer[i].b = average;
 	}
+
+	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 }
 
@@ -585,13 +637,70 @@ DEFINE_FUNCTION( Resample ) {
 
 
 DEFINE_FUNCTION( Polarize ) {
+
+	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 }
 
 DEFINE_FUNCTION( UnPolarize ) {
+
+	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 }
 
+DEFINE_FUNCTION( Displace ) {
+
+	RT_ASSERT_ARGC( 2 );
+
+	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE(tex);
+	
+	JSObject *tex1Obj = JSVAL_TO_OBJECT(argv[0]);
+	RT_ASSERT_CLASS( tex1Obj, _class );
+	Texture *tex1 = (Texture *)JS_GetPrivate(cx, tex1Obj);
+	RT_ASSERT_RESOURCE(tex1);
+
+	float factor;
+	RT_JSVAL_TO_INT32( argv[1], factor );
+
+	size_t width = tex->width;
+	size_t height = tex->height;
+
+	RT_ASSERT( width == tex1->width && height == tex1->height, "Textures must have the same size." );
+
+	if ( tex->backBuffer == NULL )
+		tex->backBuffer = (Pixel*)malloc( tex->width * tex->height * sizeof(Pixel) );
+
+	int x, y;
+	float ox, oy, oz, norm;
+	size_t pos, pos1;
+	for ( y = 0; y < height; y++ )
+		for ( x = 0; x < width; x++ ) {
+
+			pos = x + y * width;
+			ox = PNORM(tex1->buffer[pos].r) - PMID;
+			oy = PNORM(tex1->buffer[pos].g) - PMID;
+			oz = PNORM(tex1->buffer[pos].b) - PMID;
+
+			norm = sqrtf(ox*ox+oy*oy+oz*oz);
+			if ( norm != 0 ) {
+				ox /= norm;
+				oy /= norm;
+				oz /= norm;
+			}
+
+			pos1 = (long(x+ox*factor)%width) + (long(y+oy*factor)%height) * width;
+
+			tex->backBuffer[pos].r = tex->buffer[pos1].r;
+			tex->backBuffer[pos].g = tex->buffer[pos1].g;
+			tex->backBuffer[pos].b = tex->buffer[pos1].b;
+			tex->backBuffer[pos].a = tex->buffer[pos1].a;
+		}
+	TextureSwapBuffers(tex);
+	
+	*rval = OBJECT_TO_JSVAL(obj);
+	return JS_TRUE;
+}
 
 DEFINE_FUNCTION( SetValue ) {
 
@@ -614,6 +723,8 @@ DEFINE_FUNCTION( SetValue ) {
 		tex->buffer[i].b = b;
 		tex->buffer[i].a = a;
 	}
+
+	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 }
 
@@ -636,6 +747,8 @@ DEFINE_FUNCTION( AddValue ) {
 		tex->buffer[i].b += b;
 		tex->buffer[i].a += a;
 	}
+
+	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 }
 
@@ -658,6 +771,8 @@ DEFINE_FUNCTION( MultValue ) {
 		tex->buffer[i].b *= b;
 		tex->buffer[i].a *= a;
 	}
+
+	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 }
 
@@ -682,12 +797,15 @@ DEFINE_FUNCTION( AddTexture ) {
 		tex->buffer[i].b += tex1->buffer[i].b;
 //		tex->buffer[i].a += tex1->buffer[i].a;
 	}
+
+	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 }
 
 
 DEFINE_FUNCTION( Convolution ) {
 
+	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 }
 
@@ -790,6 +908,7 @@ DEFINE_FUNCTION( Cells ) { // source: FxGen
 
 	free(cellPoints);
 
+	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 }
 
@@ -861,10 +980,12 @@ CONFIGURE_CLASS
 		FUNCTION_ARGC( Pixels, 2 )
 		FUNCTION_ARGC( Cells, 3 )
 		FUNCTION_ARGC( Clamp, 3 )
+		FUNCTION_ARGC( Displace, 2 )
 		FUNCTION_ARGC( Mix, 2 )
 		FUNCTION_ARGC( Normalize, 0 )
 		FUNCTION_ARGC( Invert, 0 )
-		FUNCTION_ARGC( Absolute, 0 )
+		FUNCTION_ARGC( Absolute, 1 )
+		FUNCTION_ARGC( Wrap, 1 )
 		FUNCTION_ARGC( Aliasing, 0 )
 	END_FUNCTION_SPEC
 

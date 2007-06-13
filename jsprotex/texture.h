@@ -26,6 +26,9 @@ DECLARE_CLASS( Texture )
 
 #define PMID (PMIN+((PMAX-PMIN)/2))
 
+// normalize the pixel value to range 0..1
+#define PNORM(p) (((p)-PMIN) / (PMAX-PMIN))
+
 #define PTYPE float
 
 typedef struct {
