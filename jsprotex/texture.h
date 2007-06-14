@@ -47,7 +47,7 @@ typedef struct {
 	Pixel *backBuffer;
 } Texture;
 
-static void TextureSwitchBuffers( Texture *tex ) {
+inline void TextureSwapBuffers( Texture *tex ) {
 	
 	Pixel *tmp = tex->buffer;
 	tex->buffer = tex->backBuffer;

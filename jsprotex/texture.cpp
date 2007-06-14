@@ -39,14 +39,6 @@ float NoiseReal(unsigned long int n) { // return: 0 <= val <= 1
 }
 
 
-
-void TextureSwapBuffers( Texture *tex ) {
-
-	Pixel *tmp = tex->buffer;
-	tex->buffer = tex->backBuffer;
-	tex->backBuffer = tmp;
-}
-
 BEGIN_CLASS( Texture )
 
 DEFINE_FINALIZE() {
@@ -560,6 +552,57 @@ DEFINE_FUNCTION( UnPolarize ) {
 	return JS_TRUE;
 }
 
+DEFINE_FUNCTION( Trim ) {
+
+	RT_ASSERT_ARGC( 4 );
+	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE(tex);
+
+	int x0, y0, x1, y1;
+	RT_JSVAL_TO_INT32( argv[0], x0 );
+	RT_JSVAL_TO_INT32( argv[1], y0 );
+	RT_JSVAL_TO_INT32( argv[2], x1 );
+	RT_JSVAL_TO_INT32( argv[3], y1 );
+
+	size_t width = tex->width;
+	size_t height = tex->height;
+
+
+--> alloc new buffer / texture
+
+	int x, y;
+
+	for ( y = y0; y < y1; y++ )
+		for ( x = x0; x < x1; x++ )
+
+
+
+}
+
+DEFINE_FUNCTION( Flip ) {
+
+	RT_ASSERT_ARGC( 2 );
+
+	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE(tex);
+
+	bool flipX, flipY;
+	RT_JSVAL_TO_BOOL( argv[0], flipX );
+	RT_JSVAL_TO_BOOL( argv[1], flipY );
+
+	if ( tex->backBuffer == NULL )
+		tex->backBuffer = (Pixel*)malloc( tex->width * tex->height * sizeof(Pixel) );
+
+	size_t width = tex->width;
+	size_t height = tex->height;
+
+	int x, y;
+	for ( y = 0; y < height; y++ )
+		for ( x = 0; x < width; x++ )
+			tex->backBuffer[ x + y * width ] = tex->buffer[ (flipX?width-x:x) + (flipY?height-y:y) * width ];
+	TextureSwapBuffers(tex);
+	return JS_TRUE;
+}
 
 
 DEFINE_FUNCTION( PasteAt ) { // (Texture)texture, (int)x, (int)y, (bool)wrap
@@ -608,10 +651,13 @@ DEFINE_FUNCTION( PasteAt ) { // (Texture)texture, (int)x, (int)y, (bool)wrap
 				case borderClamp:
 					if ( tx >= 0 && tx < texWidth && ty >= 0 && ty < texHeight ) {
 
-					ptex = tx + ty * texWidth;
-					ptex1 = y * tex1Width + x;
-					tex->buffer[ptex] = tex1->buffer[ptex1];
+						ptex = tx + ty * texWidth;
+						ptex1 = y * tex1Width + x;
+						tex->buffer[ptex] = tex1->buffer[ptex1];
+					}
+					break;
 				}
+			}
 	}
 
 	*rval = OBJECT_TO_JSVAL(obj);
@@ -1041,7 +1087,9 @@ CONFIGURE_CLASS
 		FUNCTION_ARGC( SetNoise, 2 )
 		FUNCTION_ARGC( MultValue, 4 )
 		FUNCTION_ARGC( Rect, 8 )
+		FUNCTION_ARGC( Trim, 4 )
 		FUNCTION_ARGC( PasteAt, 4 )
+		FUNCTION_ARGC( Flip, 2 )
 		FUNCTION_ARGC( Shift, 2 )
 		FUNCTION_ARGC( Pixels, 2 )
 		FUNCTION_ARGC( Cells, 3 )
