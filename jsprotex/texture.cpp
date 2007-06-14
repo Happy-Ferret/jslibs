@@ -24,9 +24,11 @@ extern "C" unsigned long genrand_int32(void);
 extern "C" double genrand_real1(void);
 
 
+enum BorderMode { borderClamp, borderWrap, borderMirror };
+
 
 unsigned long int NoiseInt(unsigned long int n) {
-	
+
 	n = (n << 13) ^ n;
 	return (n * (n * n * 60493 + 19990303) + 1376312589);
 }
@@ -48,10 +50,10 @@ void TextureSwapBuffers( Texture *tex ) {
 BEGIN_CLASS( Texture )
 
 DEFINE_FINALIZE() {
-	
+
 	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
 	if ( tex != NULL ) {
-		
+
 		if ( tex->backBuffer != NULL )
 			free(tex->backBuffer);
 		if ( tex->buffer != NULL )
@@ -105,7 +107,7 @@ BEGIN_STATIC
 
 
 DEFINE_FUNCTION( Rect ) {
-	
+
 	RT_ASSERT_ARGC( 4 );
 	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(tex);
@@ -129,7 +131,7 @@ DEFINE_FUNCTION( Rect ) {
 
 	for ( size_t x = x0; x < x1; x++ )
 		for ( size_t y = y0; y < y1; y++ ) {
-			
+
 			tex->buffer[x + width * y].r = r;
 			tex->buffer[x + width * y].g = g;
 			tex->buffer[x + width * y].b = b;
@@ -154,7 +156,7 @@ inline long sqrt(long i) {
 }
 
 inline int isprime(long i) {
-	
+
 	long si,j;
 	si = sqrt(i);
 	for (j=2; (j<=si); j++)
@@ -188,7 +190,7 @@ DEFINE_FUNCTION( SetNoise ) { // coloredNoise, seed
 	init_genrand(seed);
 	size_t size = tex->width * tex->height;
 	for ( size_t i = 0; i < size; i++ ) {
-		
+
 		float r,g,b;
 		r = genrand_real1(); // no common noize chunk between two different seed
 		if ( color ) {
@@ -229,7 +231,7 @@ DEFINE_FUNCTION( Pixels ) {
 
 	size_t rand = seed * 2 + 1;
 	for ( size_t i = 0; i < count; i++ ) {
-		
+
 		rand = genrand_int32();
 		size_t pos = rand % size;
 		tex->buffer[pos].r = PMAX;
@@ -251,7 +253,7 @@ DEFINE_FUNCTION( Aliasing ) {
 	RT_JSVAL_TO_UINT32( argv[0], count );
 	size_t size = tex->width * tex->height;
 	for ( size_t i = 0; i < size; i++ ) {
-		
+
 		tex->buffer[i].r = floor( count * tex->buffer[i].r ) / count;
 		tex->buffer[i].g = floor( count * tex->buffer[i].g ) / count;
 		tex->buffer[i].b = floor( count * tex->buffer[i].b ) / count;
@@ -274,7 +276,7 @@ DEFINE_FUNCTION( Normalize ) {
 	size_t size = tex->width * tex->height;
 	size_t i;
 	for ( i = 0; i < size; i++ ) {
-		
+
 		if ( tex->buffer[i].r > max )
 			max = tex->buffer[i].r;
 		if ( tex->buffer[i].g > max )
@@ -306,7 +308,7 @@ DEFINE_FUNCTION( Clamp ) { // min, max, keepClampedColor
 
 	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(tex);
-	
+
 	RT_ASSERT_ARGC( 3 );
 
 	float min, max;
@@ -318,7 +320,7 @@ DEFINE_FUNCTION( Clamp ) { // min, max, keepClampedColor
 	float local;
 	size_t i, size = tex->width * tex->height;
 	for ( i = 0; i < size; i++ ) {
-		
+
 		local = max;
 		if ( tex->buffer[i].r > local ) local = tex->buffer[i].r;
 		if ( tex->buffer[i].g > local ) local = tex->buffer[i].g;
@@ -354,7 +356,7 @@ DEFINE_FUNCTION( Clamp ) { // min, max, keepClampedColor
 		}
 	else
 		for ( i = 0; i < size; i++ ) {
-			
+
 			if ( tex->buffer[i].r > max ) tex->buffer[i].r = PMAX;
 			if ( tex->buffer[i].r < min ) tex->buffer[i].r = PMIN;
 
@@ -370,98 +372,6 @@ DEFINE_FUNCTION( Clamp ) { // min, max, keepClampedColor
 	return JS_TRUE;
 }
 
-DEFINE_FUNCTION( PasteAt ) { // (Texture)texture, (int)x, (int)y, (bool)wrap
-
-	RT_ASSERT_ARGC( 4 );
-
-	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE(tex);
-	
-	int px, py;
-	bool wrap;
-
-	JSObject *tex1Obj = JSVAL_TO_OBJECT(argv[0]);
-	RT_ASSERT_CLASS( tex1Obj, _class );
-	Texture *tex1 = (Texture *)JS_GetPrivate(cx, tex1Obj);
-	RT_ASSERT_RESOURCE(tex1);
-	RT_JSVAL_TO_INT32( argv[1], px );
-	RT_JSVAL_TO_INT32( argv[2], py );
-	RT_JSVAL_TO_BOOL( argv[3], wrap );
-
-	size_t texWidth = tex->width;
-	size_t texHeight = tex->height;
-
-	size_t tex1Width = tex1->width;
-	size_t tex1Height = tex1->height;
-
-	int x, y;
-	size_t ptex, ptex1;
-	if ( wrap ) {
-		for ( y = 0; y < tex1Height; y++ )
-			for ( x = 0; x < tex1Width; x++ ) {
-				
-				ptex = ((py+y)%texHeight) * texWidth + ((px+x)%texWidth);
-				ptex1 = y * tex1Width + x;
-				tex->buffer[ptex].r = tex1->buffer[ptex1].r;
-				tex->buffer[ptex].g = tex1->buffer[ptex1].g;
-				tex->buffer[ptex].b = tex1->buffer[ptex1].b;
-				tex->buffer[ptex].a = tex1->buffer[ptex1].a;
-			}
-	} else {
-		// other method: calc. the two rect intersection and use this to draw the safe tex1
-		for ( y = 0; y < tex1Height; y++ )
-			for ( x = 0; x < tex1Width; x++ )
-				if ( (px+x) >= 0 && (px+x) < texWidth && (py+y) >= 0 && (py+y) < texHeight ) {
-
-					ptex = (py+y) * texWidth + (px+x);
-					ptex1 = y * tex1Width + x;
-					tex->buffer[ptex].r = tex1->buffer[ptex1].r;
-					tex->buffer[ptex].g = tex1->buffer[ptex1].g;
-					tex->buffer[ptex].b = tex1->buffer[ptex1].b;
-					tex->buffer[ptex].a = tex1->buffer[ptex1].a;
-				}
-	}
-
-	*rval = OBJECT_TO_JSVAL(obj);
-	return JS_TRUE;
-}
-
-DEFINE_FUNCTION( Shift ) {
-	// (TBD) I think it is possible to do the Shift operation without using a second buffer. 
-
-	RT_ASSERT_ARGC( 2 );
-
-	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE(tex);
-
-	int px, py;
-	RT_JSVAL_TO_INT32( argv[0], px );
-	RT_JSVAL_TO_INT32( argv[1], py );
-
-	size_t texWidth = tex->width;
-	size_t texHeight = tex->height;
-
-	if ( tex->backBuffer == NULL )
-		tex->backBuffer = (Pixel*)malloc( tex->width * tex->height * sizeof(Pixel) );
-	
-	size_t ptex, ptex1;
-	int x,y;
-	for ( y = 0; y < texHeight; y++ )
-		for ( x = 0; x < texWidth; x++ ) {
-			
-			ptex = ((py+y)%texHeight) * texWidth + ((px+x)%texWidth);
-			ptex1 = y * texWidth + x;
-
-			tex->backBuffer[ptex].r = tex->buffer[ptex1].r;
-			tex->backBuffer[ptex].g = tex->buffer[ptex1].g;
-			tex->backBuffer[ptex].b = tex->buffer[ptex1].b;
-			tex->backBuffer[ptex].a = tex->buffer[ptex1].a;
-		}
-	TextureSwapBuffers(tex);
-
-	*rval = OBJECT_TO_JSVAL(obj);
-	return JS_TRUE;
-}
 
 
 DEFINE_FUNCTION( Mix ) { // or lerp (Linear interpolation)
@@ -471,11 +381,13 @@ DEFINE_FUNCTION( Mix ) { // or lerp (Linear interpolation)
 	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(tex);
 
+	RT_ASSERT_OBJECT(argv[0]);
 	JSObject *tex1Obj = JSVAL_TO_OBJECT(argv[0]);
 	RT_ASSERT_CLASS( tex1Obj, _class );
 	Texture *tex1 = (Texture *)JS_GetPrivate(cx, tex1Obj);
 	RT_ASSERT_RESOURCE(tex1);
 
+	RT_ASSERT_OBJECT(argv[1]);
 	JSObject *tex2Obj = JSVAL_TO_OBJECT(argv[1]);
 	RT_ASSERT_CLASS( tex2Obj, _class );
 	Texture *tex2 = (Texture *)JS_GetPrivate(cx, tex2Obj);
@@ -504,7 +416,7 @@ DEFINE_FUNCTION( Invert ) { // black -> white / white -> black
 	RT_ASSERT_RESOURCE(tex);
 	size_t i, size = tex->width * tex->height;
 	for ( i = 0; i < size; i++ ) {
-		
+
 		tex->buffer[i].r = PMID - (tex->buffer[i].r - PMID);
 		tex->buffer[i].g = PMID - (tex->buffer[i].g - PMID);
 		tex->buffer[i].b = PMID - (tex->buffer[i].b - PMID);
@@ -516,7 +428,7 @@ DEFINE_FUNCTION( Invert ) { // black -> white / white -> black
 }
 
 
-DEFINE_FUNCTION( Absolute ) { // 
+DEFINE_FUNCTION( Absolute ) { //
 
 	RT_ASSERT_ARGC( 1 );
 
@@ -528,7 +440,7 @@ DEFINE_FUNCTION( Absolute ) { //
 
 	size_t i, size = tex->width * tex->height;
 	for ( i = 0; i < size; i++ ) {
-		
+
 		tex->buffer[i].r = abs(tex->buffer[i].r - zero) + zero;
 		tex->buffer[i].g = abs(tex->buffer[i].g - zero) + zero;
 		tex->buffer[i].b = abs(tex->buffer[i].b - zero) + zero;
@@ -539,7 +451,7 @@ DEFINE_FUNCTION( Absolute ) { //
 	return JS_TRUE;
 }
 
-DEFINE_FUNCTION( Wrap ) { // 
+DEFINE_FUNCTION( Wrap ) { //
 
 	RT_ASSERT_ARGC( 1 );
 
@@ -551,7 +463,7 @@ DEFINE_FUNCTION( Wrap ) { //
 
 	size_t i, size = tex->width * tex->height;
 	for ( i = 0; i < size; i++ ) {
-		
+
 		div = tex->buffer[i].r / wrap;
 		tex->buffer[i].r = div - floor( div );
 		div = tex->buffer[i].g / wrap;
@@ -573,7 +485,7 @@ DEFINE_FUNCTION( Desaturate ) {
 	float average;
 	size_t i, size = tex->width * tex->height;
 	for ( i = 0; i < size; i++ ) {
-		
+
 		average = ( tex->buffer[i].r + tex->buffer[i].g + tex->buffer[i].b ) / 3.f;
 		tex->buffer[i].r = average;
 		tex->buffer[i].g = average;
@@ -622,7 +534,7 @@ DEFINE_FUNCTION( Resample ) {
 
 //	if ( tex->backBuffer == NULL )
 //		tex->backBuffer = (Pixel*)malloc( tex->width * tex->height * sizeof(Pixel) );
-	
+
 	size_t ptex, ptex1;
 	int x,y;
 	for ( y = 0; y < sy; y++ )
@@ -648,13 +560,136 @@ DEFINE_FUNCTION( UnPolarize ) {
 	return JS_TRUE;
 }
 
+
+
+DEFINE_FUNCTION( PasteAt ) { // (Texture)texture, (int)x, (int)y, (bool)wrap
+
+	RT_ASSERT_ARGC( 4 );
+
+	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE(tex);
+
+	int px, py;
+	bool wrap;
+
+	RT_ASSERT_OBJECT(argv[0]);
+	JSObject *tex1Obj = JSVAL_TO_OBJECT(argv[0]);
+	RT_ASSERT_CLASS( tex1Obj, _class );
+	Texture *tex1 = (Texture *)JS_GetPrivate(cx, tex1Obj);
+	RT_ASSERT_RESOURCE(tex1);
+	RT_JSVAL_TO_INT32( argv[1], px );
+	RT_JSVAL_TO_INT32( argv[2], py );
+	RT_JSVAL_TO_BOOL( argv[3], wrap );
+
+	BorderMode mode = borderClamp;
+
+	size_t texWidth = tex->width;
+	size_t texHeight = tex->height;
+
+	size_t tex1Width = tex1->width;
+	size_t tex1Height = tex1->height;
+
+	int x, y, tx, ty;
+	size_t ptex, ptex1;
+	if ( wrap ) {
+		for ( y = 0; y < tex1Height; y++ )
+			for ( x = 0; x < tex1Width; x++ ) {
+
+				tx = px + x;
+				ty = py + y;
+
+				switch (mode) {
+					case borderWrap:				
+
+						ptex = (tx % texWidth) + (ty % texHeight) * texWidth;
+						ptex1 = y * tex1Width + x;
+						tex->buffer[ptex] = tex1->buffer[ptex1];
+						break;
+				case borderClamp:
+					if ( tx >= 0 && tx < texWidth && ty >= 0 && ty < texHeight ) {
+
+					ptex = tx + ty * texWidth;
+					ptex1 = y * tex1Width + x;
+					tex->buffer[ptex] = tex1->buffer[ptex1];
+				}
+	}
+
+	*rval = OBJECT_TO_JSVAL(obj);
+	return JS_TRUE;
+}
+
+DEFINE_FUNCTION( Shift ) {
+	// (TBD) I think it is possible to do the Shift operation without using a second buffer.
+
+	RT_ASSERT_ARGC( 2 );
+
+	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE(tex);
+
+	int ox, oy;
+	RT_JSVAL_TO_INT32( argv[0], ox );
+	RT_JSVAL_TO_INT32( argv[1], oy );
+
+	BorderMode mode = borderClamp;
+
+	size_t texWidth = tex->width;
+	size_t texHeight = tex->height;
+
+	if ( tex->backBuffer == NULL )
+		tex->backBuffer = (Pixel*)malloc( tex->width * tex->height * sizeof(Pixel) );
+
+	size_t ptex, ptex1;
+	int x, y, tx, ty;
+	for ( y = 0; y < texHeight; y++ )
+		for ( x = 0; x < texWidth; x++ ) {
+
+			tx = ox+x;
+			ty = oy+y;
+
+			switch (mode) {
+				case borderWrap:
+					ptex =  (ox % texWidth) + (oy % texHeight) * texWidth;
+					ptex1 = x + y * texWidth;
+					tex->backBuffer[ptex] = tex->buffer[ptex1];
+					break;
+
+				case borderClamp:
+					if ( tx >= 0 && tx < texWidth && ty >= 0 && ty < texHeight ) {
+
+						ptex = ox + oy * texWidth;
+						ptex1 = y * texWidth + x;
+						tex->backBuffer[ptex] = tex->buffer[ptex1];
+					}
+					break;
+				case borderMirror:
+
+					if ( tx < 0 )  tx = 0 - tx;
+					if ( ty < 0 )  tx = 0 - ty;
+					if ( tx >= texWidth )  tx = texWidth - tx;
+					if ( ty >= texHeight )  ty = texWidth - ty;
+					if ( tx >= 0 && tx < texWidth && ty >= 0 && ty < texHeight ) { // do not manage infinite mirror
+
+						ptex = ox + oy * texWidth;
+						ptex1 = y * texWidth + x;
+						tex->backBuffer[ptex] = tex->buffer[ptex1];
+					}
+					break;
+			}
+		}
+	TextureSwapBuffers(tex);
+	*rval = OBJECT_TO_JSVAL(obj);
+	return JS_TRUE;
+}
+
+
 DEFINE_FUNCTION( Displace ) {
 
 	RT_ASSERT_ARGC( 2 );
 
 	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(tex);
-	
+
+	RT_ASSERT_OBJECT(argv[0]);
 	JSObject *tex1Obj = JSVAL_TO_OBJECT(argv[0]);
 	RT_ASSERT_CLASS( tex1Obj, _class );
 	Texture *tex1 = (Texture *)JS_GetPrivate(cx, tex1Obj);
@@ -671,33 +706,56 @@ DEFINE_FUNCTION( Displace ) {
 	if ( tex->backBuffer == NULL )
 		tex->backBuffer = (Pixel*)malloc( tex->width * tex->height * sizeof(Pixel) );
 
-	int x, y;
+	BorderMode mode = borderClamp;
+
+	int x, y, tx, ty;
 	float ox, oy, oz, norm;
 	size_t pos, pos1;
 	for ( y = 0; y < height; y++ )
 		for ( x = 0; x < width; x++ ) {
 
 			pos = x + y * width;
-			ox = PNORM(tex1->buffer[pos].r) - PMID;
-			oy = PNORM(tex1->buffer[pos].g) - PMID;
-			oz = PNORM(tex1->buffer[pos].b) - PMID;
+			// normalize to (-1,+1)
+			ox = PNORM(tex1->buffer[pos].r - PMID);
+			oy = PNORM(tex1->buffer[pos].g - PMID);
+			oz = PNORM(tex1->buffer[pos].b - PMID);
 
 			norm = sqrtf(ox*ox+oy*oy+oz*oz);
 			if ( norm != 0 ) {
 				ox /= norm;
 				oy /= norm;
-				oz /= norm;
+//				oz /= norm; // not used
 			}
+			
+			tx = long(x+ox*factor);
+			ty = long(y+oy*factor);
+			switch (mode) {
+				case borderWrap:
+					pos1 = tx % width + (ty % height) * width;
+					tex->backBuffer[pos] = tex->buffer[pos1];
+					break;
+				case borderClamp:
+					if ( tx >= 0 && tx < width && ty >= 0 && ty < height ) {
 
-			pos1 = (long(x+ox*factor)%width) + (long(y+oy*factor)%height) * width;
+						pos1 = tx + ty * width;
+						tex->backBuffer[pos] = tex->buffer[pos1];
+					}
+					break;
+				case borderMirror:
 
-			tex->backBuffer[pos].r = tex->buffer[pos1].r;
-			tex->backBuffer[pos].g = tex->buffer[pos1].g;
-			tex->backBuffer[pos].b = tex->buffer[pos1].b;
-			tex->backBuffer[pos].a = tex->buffer[pos1].a;
+					if ( tx < 0 )  tx = 0 - tx;
+					if ( ty < 0 )  tx = 0 - ty;
+					if ( tx >= width )  tx = width - tx;
+					if ( ty >= height )  ty = width - ty;
+					if ( tx >= 0 && tx < width && ty >= 0 && ty < height ) { // do not manage infinite mirror
+
+						pos1 = tx + ty * width;
+						tex->backBuffer[pos] = tex->buffer[pos1];
+					}
+					break;
+			}
 		}
 	TextureSwapBuffers(tex);
-	
 	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 }
@@ -706,7 +764,7 @@ DEFINE_FUNCTION( SetValue ) {
 
 	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(tex);
-	
+
 	RT_ASSERT_ARGC( 4 );
 
 	float r,g,b,a;
@@ -782,6 +840,8 @@ DEFINE_FUNCTION( AddTexture ) {
 	RT_ASSERT_ARGC( 1 );
 	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(tex);
+
+	RT_ASSERT_OBJECT(argv[1]);
 	JSObject *tex1Obj = JSVAL_TO_OBJECT(argv[1]);
 	RT_ASSERT_CLASS( tex1Obj, _class );
 	Texture *tex1 = (Texture*)JS_GetPrivate(cx, JSVAL_TO_OBJECT(argv[1]));
@@ -817,7 +877,7 @@ DEFINE_FUNCTION( Cells ) { // source: FxGen
 	} Point;
 
 	RT_ASSERT_ARGC( 3 );
-	
+
 	int seed, density;
 	float regularity;
 	RT_JSVAL_TO_INT32( argv[0], density );
@@ -844,7 +904,7 @@ DEFINE_FUNCTION( Cells ) { // source: FxGen
 
 
 	for ( size_t i = 0; i < count; i++ ) {
-	
+
 		float rand1 = genrand_real1();
 		float rand2 = genrand_real1();
 		size_t x = i%density;
@@ -866,7 +926,7 @@ DEFINE_FUNCTION( Cells ) { // source: FxGen
 			int xo = x*density/width;
 			int yo = y*density/height;
 			for ( int v=-1; v<2; ++v ) {
-				
+
 				int vo = ((yo+density+v)%density)*density;
 				for ( int u=-1; u<2; ++u ) {
 
@@ -879,17 +939,17 @@ DEFINE_FUNCTION( Cells ) { // source: FxGen
 						cellPos.x += 1;
 					if (v == 1 && y*density >= height*(density-1))
 						cellPos.y += 1;
-					
+
 					float tx = pixelPos.x - cellPos.x;
 					float ty = pixelPos.y - cellPos.y;
 					float dist = sqrtf( tx*tx + ty*ty );
-					
+
 					if (dist < minDist) {
 
 						nextMinDist = minDist;
 						minDist = dist;
 					} else if (dist < nextMinDist) {
-						
+
 						nextMinDist = dist;
 					}
 				}
@@ -960,7 +1020,13 @@ CONFIGURE_CLASS
 
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE
-
+/*
+	BEGIN_CONST_DOUBLE_SPEC
+		CONST_DOUBLE( borderClamp, borderClamp );
+		CONST_DOUBLE( borderWrap, borderWrap );
+		CONST_DOUBLE( borderMirror, borderMirror );
+	END_CONST_DOUBLE_SPEC
+*/
 //DEFINE_FUNCTION( Call ) {
 //	return JS_TRUE;
 //}
@@ -1028,5 +1094,5 @@ RGB to HSV color space conversion
 	http://en.literateprograms.org/RGB_to_HSV_color_space_conversion_(C)#chunk%20def:compute%20hue
 
 	http://en.wikipedia.org/wiki/Hue#Computing_hue_from_RGB
-	
+
 */

@@ -47,7 +47,8 @@ var texture = new Texture(512,512);
 //texture.Pixels(10000,1234);
 texture.Cells(2,1,1);
 
-texture.Displace(new Texture(512,512).SetNoise(true, 1), 32);
+//texture.Displace(new Texture(512,512).SetNoise(true, 1), 32);
+texture.Displace(undefined, 32);
 
 
 
