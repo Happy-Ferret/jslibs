@@ -38,7 +38,7 @@ gl.Init();
 gl.Ortho(-1, 1, -1, 1);
 
 
-var texture = new Texture(512,512);
+var texture = new Texture(128,128);
 //texture.Rect(0,0,100,100,1,0,0,1);
 //texture.Shift(-50,-10);
 
@@ -47,9 +47,10 @@ var texture = new Texture(512,512);
 //texture.Pixels(10000,1234);
 texture.Cells(2,1,1);
 
-//texture.Displace(new Texture(512,512).SetNoise(true, 1), 32);
-texture.Displace(undefined, 32);
 
+texture.Resize(4,4,false);
+
+//texture.Displace(new Texture(512,512).SetNoise(true, 1), 32);
 
 
 //var texture2 = new Texture(256,256);

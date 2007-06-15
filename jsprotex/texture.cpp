@@ -23,9 +23,7 @@ extern "C" long genrand_int31(void);
 extern "C" unsigned long genrand_int32(void);
 extern "C" double genrand_real1(void);
 
-
 enum BorderMode { borderClamp, borderWrap, borderMirror };
-
 
 unsigned long int NoiseInt(unsigned long int n) {
 
@@ -82,8 +80,7 @@ DEFINE_CONSTRUCTOR() {
 		RT_JSVAL_TO_UINT32( argv[0], width );
 		RT_JSVAL_TO_UINT32( argv[1], height );
 
-		size_t size = width * height;
-		tex->buffer = (Pixel*)malloc( size * sizeof(Pixel) ); // (TBD) try with js_malloc
+		tex->buffer = (Pixel*)malloc( width * height * sizeof(Pixel) ); // (TBD) try with js_malloc
 		RT_ASSERT_ALLOC( tex->buffer );
 
 		tex->width = width;
@@ -91,14 +88,11 @@ DEFINE_CONSTRUCTOR() {
 
 		JS_SetPrivate(cx, obj, tex);
 	}
-
 	return JS_TRUE;
 }
 
-BEGIN_STATIC
-
-
-DEFINE_FUNCTION( Rect ) {
+/*
+DEFINE_FUNCTION( Rect ) { // use Paste instead
 
 	RT_ASSERT_ARGC( 4 );
 	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
@@ -133,6 +127,8 @@ DEFINE_FUNCTION( Rect ) {
 	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 }
+*/
+
 
 /* old rand & noise function
 inline long sqrt(long i) {
@@ -491,23 +487,6 @@ DEFINE_FUNCTION( Desaturate ) {
 
 /*
 
-float TextureFx::InterpolateLinear( float nx, float ny ) { // 0..1
-
-	float fx = (_width -1) * nx;
-	float fy = (_height-1) * ny;
-
-	size_t x = fx;
-	size_t y = fy;
-	size_t x1 = (x+1)<_width  ? x+1 : x;
-	size_t y1 = (y+1)<_height ? y+1 : y;
-
-	float dx = fx - x;
-	float dy = fy - y;
-
-	float e = Data( x, y  ) * (1 - dx) + Data( x1, y  ) * dx;
-	float f = Data( x, y1 ) * (1 - dx) + Data( x1, y1 ) * dx;
-	return e * (1 - dy) + f * dy;
-}
 
 
 DEFINE_FUNCTION( Resample ) {
@@ -538,6 +517,91 @@ DEFINE_FUNCTION( Resample ) {
 
 */
 
+/*
+inline float InterpolateLinear( Texture *tex, float nx, float ny ) { // 0..1
+
+	float fx = (_width -1) * nx;
+	float fy = (_height-1) * ny;
+
+	size_t x = fx;
+	size_t y = fy;
+	size_t x1 = (x+1)<_width  ? x+1 : x;
+	size_t y1 = (y+1)<_height ? y+1 : y;
+
+	float dx = fx - x;
+	float dy = fy - y;
+
+	float e = Data( x, y  ) * (1 - dx) + Data( x1, y  ) * dx;
+	float f = Data( x, y1 ) * (1 - dx) + Data( x1, y1 ) * dx;
+	return e * (1 - dy) + f * dy;
+}
+*/
+
+DEFINE_FUNCTION( Resize ) {
+
+	RT_ASSERT_ARGC( 2 );
+	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE(tex);
+
+	size_t newWidth, newHeight;
+	bool interpolate;
+	RT_JSVAL_TO_REAL( argv[0], newWidth );
+	RT_JSVAL_TO_REAL( argv[1], newHeight );
+	RT_JSVAL_TO_REAL( argv[2], interpolate );
+
+	size_t width = tex->width;
+	size_t height = tex->height;
+
+	Pixel *newBuffer = (Pixel*)malloc( newWidth * newHeight * sizeof(Pixel) );
+
+	int nx, ny;
+	size_t pos;
+	int x, y;
+	for ( y = 0; y < newHeight; y++ )
+		for ( x = 0; x < newWidth; x++ ) {	
+
+			if ( interpolate ) {
+
+				float rx = (float)width / (float)newWidth);
+				float ry = (float)height / (float)newHeight);
+
+
+				Pixel *p1 = tex->buffer[ 
+				
+	
+
+			
+			} else {
+			
+				nx = (int)((float)x * (float)width / (float)newWidth);
+				ny = (int)((float)y * (float)height / (float)newHeight);
+				newBuffer[ x + y * newWidth ] = tex->buffer[ nx + ny * width ];
+			}
+		}
+
+	free( tex->buffer );
+	if ( tex->backBuffer != NULL ) {
+
+		free( tex->backBuffer );
+		tex->backBuffer = NULL;
+	}
+	
+	tex->buffer = newBuffer;
+	tex->width = newWidth;
+	tex->height = newHeight;
+
+	*rval = OBJECT_TO_JSVAL(obj);
+	return JS_TRUE;
+}
+
+
+
+DEFINE_FUNCTION( Gradiant ) {
+
+	*rval = OBJECT_TO_JSVAL(obj);
+	return JS_TRUE;
+}
+
 
 
 DEFINE_FUNCTION( Polarize ) {
@@ -567,17 +631,30 @@ DEFINE_FUNCTION( Trim ) {
 	size_t width = tex->width;
 	size_t height = tex->height;
 
+	size_t newWidth = x1-x0;
+	size_t newHeight = y1-y0;
 
---> alloc new buffer / texture
+	Pixel *newBuffer = (Pixel*)malloc( newWidth * newHeight * sizeof(Pixel) );
 
 	int x, y;
+	for ( y = 0; y < newHeight; y++ )
+		for ( x = 0; x < newWidth; x++ )
+			newBuffer[ x + y * newWidth ] = tex->buffer[ (x0+x) + (y0+y) * width ];
 
-	for ( y = y0; y < y1; y++ )
-		for ( x = x0; x < x1; x++ )
+	free( tex->buffer );
+	if ( tex->backBuffer != NULL ) {
 
-
-
+		free( tex->backBuffer );
+		tex->backBuffer = NULL;
+	}
+	
+	tex->buffer = newBuffer;
+	tex->width = newWidth;
+	tex->height = newHeight;
+	*rval = OBJECT_TO_JSVAL(obj);
+	return JS_TRUE;
 }
+
 
 DEFINE_FUNCTION( Flip ) {
 
@@ -601,11 +678,12 @@ DEFINE_FUNCTION( Flip ) {
 		for ( x = 0; x < width; x++ )
 			tex->backBuffer[ x + y * width ] = tex->buffer[ (flipX?width-x:x) + (flipY?height-y:y) * width ];
 	TextureSwapBuffers(tex);
+	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 }
 
 
-DEFINE_FUNCTION( PasteAt ) { // (Texture)texture, (int)x, (int)y, (bool)wrap
+DEFINE_FUNCTION( Paste ) { // (Texture)texture, (int)x, (int)y, (bool)wrap
 
 	RT_ASSERT_ARGC( 4 );
 
@@ -640,10 +718,8 @@ DEFINE_FUNCTION( PasteAt ) { // (Texture)texture, (int)x, (int)y, (bool)wrap
 
 				tx = px + x;
 				ty = py + y;
-
 				switch (mode) {
 					case borderWrap:				
-
 						ptex = (tx % texWidth) + (ty % texHeight) * texWidth;
 						ptex1 = y * tex1Width + x;
 						tex->buffer[ptex] = tex1->buffer[ptex1];
@@ -806,6 +882,8 @@ DEFINE_FUNCTION( Displace ) {
 	return JS_TRUE;
 }
 
+
+
 DEFINE_FUNCTION( SetValue ) {
 
 	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
@@ -939,15 +1017,10 @@ DEFINE_FUNCTION( Cells ) { // source: FxGen
 	size_t width = tex->width;
 	size_t height = tex->height;
 	size_t size = width * height;
-
 	Pixel* pPxDst = tex->buffer;
-
 	size_t count = density * density;
-
 	Point *cellPoints = (Point*)malloc(sizeof(Point)*count);
-
 	init_genrand(seed);
-
 
 	for ( size_t i = 0; i < count; i++ ) {
 
@@ -1086,9 +1159,10 @@ CONFIGURE_CLASS
 		FUNCTION_ARGC( SetValue, 4 )
 		FUNCTION_ARGC( SetNoise, 2 )
 		FUNCTION_ARGC( MultValue, 4 )
-		FUNCTION_ARGC( Rect, 8 )
+//		FUNCTION_ARGC( Rect, 8 )
+		FUNCTION_ARGC( Resize, 3 )
 		FUNCTION_ARGC( Trim, 4 )
-		FUNCTION_ARGC( PasteAt, 4 )
+		FUNCTION_ARGC( Paste, 4 )
 		FUNCTION_ARGC( Flip, 2 )
 		FUNCTION_ARGC( Shift, 2 )
 		FUNCTION_ARGC( Pixels, 2 )

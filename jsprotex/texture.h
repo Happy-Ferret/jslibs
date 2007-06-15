@@ -31,21 +31,19 @@ DECLARE_CLASS( Texture )
 
 #define PTYPE float
 
-typedef struct {
+struct Pixel {
+	union {
+		struct { float r, g, b, a; };
+		float composant[4];
+	};
+};
 
-	float r;
-	float g;
-	float b;
-	float a;
-} Pixel;
-
-typedef struct {
-	
+struct Texture {
 	size_t width;
 	size_t height;
 	Pixel *buffer;
 	Pixel *backBuffer;
-} Texture;
+};
 
 inline void TextureSwapBuffers( Texture *tex ) {
 	
