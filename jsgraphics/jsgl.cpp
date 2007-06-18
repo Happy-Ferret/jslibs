@@ -532,8 +532,8 @@ DEFINE_FUNCTION( LoadTexture ) {
 	glBindTexture( GL_TEXTURE_2D, texture ); // Doc: glBindTexture is included in display lists.
 
 	glTexImage2D( GL_TEXTURE_2D, 0, 3, tex->width, tex->height, 0, GL_RGBA, GL_FLOAT, tex->buffer );
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST); // GL_LINEAR
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST); // GL_LINEAR
 
 	*rval = JSVAL_TO_INT(texture);
 	return JS_TRUE;

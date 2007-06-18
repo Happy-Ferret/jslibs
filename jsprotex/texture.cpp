@@ -18,6 +18,9 @@
 #include <stdlib.h>
 #include "texture.h"
 
+#include "../common/jsConversionHelper.h"
+
+
 extern "C" void init_genrand(unsigned long s);
 extern "C" long genrand_int31(void);
 extern "C" unsigned long genrand_int32(void);
@@ -554,28 +557,64 @@ DEFINE_FUNCTION( Resize ) {
 
 	Pixel *newBuffer = (Pixel*)malloc( newWidth * newHeight * sizeof(Pixel) );
 
-	int nx, ny;
-	size_t pos;
+	float r, g, b, a;
+	int spx, spy; // position in the source
+	size_t pos; // offset in the buffer
+	float ratio; // pixel value ratio
+	float prx, pry; // pixel ratio
+	float rx = (float)width / (float)newWidth; // texture ratio x
+	float ry = (float)height / (float)newHeight; // texture ratio y
+	float tmp;
 	int x, y;
 	for ( y = 0; y < newHeight; y++ )
 		for ( x = 0; x < newWidth; x++ ) {	
 
 			if ( interpolate ) {
 
-				float rx = (float)width / (float)newWidth);
-				float ry = (float)height / (float)newHeight);
+				prx = modf( (float)x*rx, &tmp );
+				spx = (int)tmp;
+				pry = modf( (float)y*ry, &tmp );
+				spy = (int)tmp;
 
+				pos = ((spx + 0) % width) + ((spy + 0) % height) * width;
+				ratio = (1.f - prx) * (1.f - pry); // (TBD) try to use the distance
+//				ratio = (1.f - prx) * (1.f - pry); xxx
+				r = tex->buffer[pos].r * ratio;
+				g = tex->buffer[pos].g * ratio;
+				b = tex->buffer[pos].b * ratio;
+				a = tex->buffer[pos].a * ratio;
 
-				Pixel *p1 = tex->buffer[ 
+				pos = ((spx + 1) % width) + ((spy + 0) % height) * width;
+				ratio = (prx) * (1.f - pry);
+				r += tex->buffer[pos].r * ratio;
+				g += tex->buffer[pos].g * ratio;
+				b += tex->buffer[pos].b * ratio;
+				a += tex->buffer[pos].a * ratio;
 				
-	
+				pos = ((spx + 0) % width) + ((spy + 1) % height) * width;
+				ratio = (1.f - prx) * (pry);
+				r += tex->buffer[pos].r * ratio;
+				g += tex->buffer[pos].g * ratio;
+				b += tex->buffer[pos].b * ratio;
+				a += tex->buffer[pos].a * ratio;
 
-			
+				pos = ((spx + 1) % width) + ((spy + 1) % height) * width;
+				ratio = (prx) * (pry);
+				r += tex->buffer[pos].r * ratio;
+				g += tex->buffer[pos].g * ratio;
+				b += tex->buffer[pos].b * ratio;
+				a += tex->buffer[pos].a * ratio;
+
+				pos = x + y * newWidth;
+				newBuffer[pos].r = r;
+				newBuffer[pos].g = g;
+				newBuffer[pos].b = b;
+				newBuffer[pos].a = a;
 			} else {
 			
-				nx = (int)((float)x * (float)width / (float)newWidth);
-				ny = (int)((float)y * (float)height / (float)newHeight);
-				newBuffer[ x + y * newWidth ] = tex->buffer[ nx + ny * width ];
+				spx = (int)((float)x*rx);
+				spy = (int)((float)y*ry);
+				newBuffer[ x + y * newWidth ] = tex->buffer[ spx + spy * width ];
 			}
 		}
 
@@ -590,6 +629,79 @@ DEFINE_FUNCTION( Resize ) {
 	tex->width = newWidth;
 	tex->height = newHeight;
 
+	*rval = OBJECT_TO_JSVAL(obj);
+	return JS_TRUE;
+}
+
+
+DEFINE_FUNCTION( Convolution ) {
+
+	RT_ASSERT_ARGC( 1 );
+
+	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE(tex);
+	size_t width = tex->width;
+	size_t height = tex->height;
+
+	RT_ASSERT_ARRAY( argv[0] );
+	JSObject *jsArray;
+	JS_ValueToObject(cx, argv[0], &jsArray);
+
+	jsuint count;
+	RT_CHECK_CALL( JS_GetArrayLength(cx, jsArray, &count) );
+
+	float *vector = (float*)malloc(sizeof(float) * count);
+	RT_ASSERT_ALLOC( vector );
+
+	jsval value;
+	jsdouble d;
+	JSBool status;
+	for (int i=0; i<count; ++i) {
+
+		status = JS_GetElement(cx, jsArray, i, &value );
+		RT_ASSERT( status && value != JSVAL_VOID, "Invalid array value." );
+		JS_ValueToNumber(cx, value, &d);
+		vector[i] = d;
+	}
+
+	RT_ASSERT( sqrtf(count) == (int)sqrtf(count) && sqrtf(count)/2.f == (int)sqrtf(count)/2, "Invalid array size." );
+
+	if ( tex->backBuffer == NULL )
+		tex->backBuffer = (Pixel*)malloc( tex->width * tex->height * sizeof(Pixel) );
+
+	int size = (int)sqrtf(count);
+	int offset = size / 2;
+
+	float ratio, divide;
+	float r, g, b, a;
+	size_t pos;
+	int x, y, vx, vy;
+	for ( y = 0; y < height; y++ )
+		for ( x = 0; x < width; x++ ) {
+			
+			r = b = b = a = 0;
+//
+			for ( vy = 0; vy < size; vy++ )
+				for ( vx = 0; vx < size; vx++ ) {
+				
+					pos = (x + vx-offset)%width + (y + vy-offset)%height * width;
+					ratio =  vector[vx + vy*size];
+					r += tex->buffer[pos].r * ratio;
+					g += tex->buffer[pos].g * ratio;
+					b += tex->buffer[pos].b * ratio;
+					a += tex->buffer[pos].a * ratio;
+				}
+			divide = size;
+//
+
+			pos = x + y*width;
+			tex->backBuffer[pos].r = r / divide;
+			tex->backBuffer[pos].g = g / divide;
+			tex->backBuffer[pos].b = b / divide;
+			tex->backBuffer[pos].a = a / divide;
+		}
+
+	free(vector);
 	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 }
@@ -986,12 +1098,6 @@ DEFINE_FUNCTION( AddTexture ) {
 	return JS_TRUE;
 }
 
-
-DEFINE_FUNCTION( Convolution ) {
-
-	*rval = OBJECT_TO_JSVAL(obj);
-	return JS_TRUE;
-}
 
 
 DEFINE_FUNCTION( Cells ) { // source: FxGen

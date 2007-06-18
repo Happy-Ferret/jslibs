@@ -178,6 +178,14 @@ DEFINE_FUNCTION( SetScope ) {
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+DEFINE_FUNCTION( IsConstructing ) {
+	
+	*rval = JS_IsConstructing(cx) == JS_TRUE ? JSVAL_TRUE : JSVAL_FALSE;
+	return JS_TRUE;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 DEFINE_FUNCTION( HideProperties ) {
 
 	RT_ASSERT_ARGC(2);
@@ -463,6 +471,7 @@ CONFIGURE_STATIC
 		FUNCTION( Seal )
 		FUNCTION( Clear )
 		FUNCTION( SetScope )
+		FUNCTION( IsConstructing )
 		FUNCTION( HideProperties )
 		FUNCTION( Exec )
 		FUNCTION( IsStatementValid )
