@@ -664,7 +664,7 @@ DEFINE_FUNCTION( Convolution ) {
 		vector[i] = d;
 	}
 
-	RT_ASSERT( sqrtf(count) == (int)sqrtf(count) && sqrtf(count)/2.f == (int)sqrtf(count)/2, "Invalid array size." );
+//	RT_ASSERT( sqrtf(count) == (int)sqrtf(count) && sqrtf(count)/2.f == (int)sqrtf(count)/2, "Invalid array size." );
 
 	if ( tex->backBuffer == NULL )
 		tex->backBuffer = (Pixel*)malloc( tex->width * tex->height * sizeof(Pixel) );
@@ -679,7 +679,7 @@ DEFINE_FUNCTION( Convolution ) {
 	for ( y = 0; y < height; y++ )
 		for ( x = 0; x < width; x++ ) {
 			
-			r = b = b = a = 0;
+			r = g = b = a = 0;
 //
 			for ( vy = 0; vy < size; vy++ )
 				for ( vx = 0; vx < size; vx++ ) {
@@ -702,6 +702,7 @@ DEFINE_FUNCTION( Convolution ) {
 		}
 
 	free(vector);
+	TextureSwapBuffers(tex);
 	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 }
@@ -1272,6 +1273,7 @@ CONFIGURE_CLASS
 		FUNCTION_ARGC( Flip, 2 )
 		FUNCTION_ARGC( Shift, 2 )
 		FUNCTION_ARGC( Pixels, 2 )
+		FUNCTION_ARGC( Convolution, 1 )
 		FUNCTION_ARGC( Cells, 3 )
 		FUNCTION_ARGC( Clamp, 3 )
 		FUNCTION_ARGC( Displace, 2 )
