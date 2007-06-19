@@ -26,7 +26,30 @@ extern "C" long genrand_int31(void);
 extern "C" unsigned long genrand_int32(void);
 extern "C" double genrand_real1(void);
 
-enum BorderMode { borderClamp, borderWrap, borderMirror };
+enum BorderMode { borderClamp, borderWrap, borderMirror, borderValue };
+
+/*
+inline Point PixelByBorderMode( Point *out, const Point in, const Point rect, BorderMode borderMode ) {
+	
+	int sx, sy;
+	switch ( borderMode ) { // Note: it is faster to do the switch outside the inner loop
+
+		case borderClamp:
+			break;
+		case borderWrap:
+			out->x = in.x % rect.x;
+			out->y = in.y % rect.y;
+			break;
+		case borderMirror:
+			if ( in.x < 0 ) in.x = -in.x;
+			if ( in.x >= rect.x ) in.x = rect.x-in.x;
+			if ( in.y < 0 ) in.y = -in.y;
+			if ( in.y >= rect.y ) in.y = rect.y-in.y;
+
+			break;
+	}
+}
+*/
 
 unsigned long int NoiseInt(unsigned long int n) {
 
@@ -442,6 +465,8 @@ DEFINE_FUNCTION( Absolute ) { //
 	return JS_TRUE;
 }
 
+
+
 DEFINE_FUNCTION( Wrap ) { //
 
 	RT_ASSERT_ARGC( 1 );
@@ -488,57 +513,49 @@ DEFINE_FUNCTION( Desaturate ) {
 }
 
 
-/*
-
-
-
-DEFINE_FUNCTION( Resample ) {
-
-	RT_ASSERT_ARGC( 2 );
+DEFINE_FUNCTION( Pow ) {
 
 	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(tex);
+	
+	float pow;
+	RT_JSVAL_TO_REAL( argv[0], pow );
+	
+	size_t i, size = tex->width * tex->height;
+	for ( i = 0; i < size; i++ ) {
+		
+		tex->buffer[i].r = powf( tex->buffer[i].r - PMID, pow ) + PMID;
+		tex->buffer[i].g = powf( tex->buffer[i].g - PMID, pow ) + PMID;
+		tex->buffer[i].b = powf( tex->buffer[i].b - PMID, pow ) + PMID;
+	}
 
-	int sx, sy;
-	RT_JSVAL_TO_INT32( argv[0], sx );
-	RT_JSVAL_TO_INT32( argv[1], sy );
-
-	size_t texWidth = tex->width;
-	size_t texHeight = tex->height;
-
-//	if ( tex->backBuffer == NULL )
-//		tex->backBuffer = (Pixel*)malloc( tex->width * tex->height * sizeof(Pixel) );
-
-	size_t ptex, ptex1;
-	int x,y;
-	for ( y = 0; y < sy; y++ )
-		for ( x = 0; x < sx; x++ )
-			tex->buffer[ x + y * sx ] = InterpolateLinear( x / (float)sx, y / (float)sy );
-
+	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 }
 
-*/
 
-/*
-inline float InterpolateLinear( Texture *tex, float nx, float ny ) { // 0..1
 
-	float fx = (_width -1) * nx;
-	float fy = (_height-1) * ny;
+DEFINE_FUNCTION( Contrast ) {
 
-	size_t x = fx;
-	size_t y = fy;
-	size_t x1 = (x+1)<_width  ? x+1 : x;
-	size_t y1 = (y+1)<_height ? y+1 : y;
+	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE(tex);
+	
+	float contrast;
+	RT_JSVAL_TO_REAL( argv[0], contrast );
+	
+	size_t i, size = tex->width * tex->height;
+	for ( i = 0; i < size; i++ ) {
 
-	float dx = fx - x;
-	float dy = fy - y;
+		tex->buffer[i].r = PZNORM(tex->buffer[i].r) * contrast + PMID;
+		tex->buffer[i].g = PZNORM(tex->buffer[i].g) * contrast + PMID;
+		tex->buffer[i].b = PZNORM(tex->buffer[i].b) * contrast + PMID;
+		// (TBD) manage alpha ???
+	}
 
-	float e = Data( x, y  ) * (1 - dx) + Data( x1, y  ) * dx;
-	float f = Data( x, y1 ) * (1 - dx) + Data( x1, y1 ) * dx;
-	return e * (1 - dy) + f * dy;
+	*rval = OBJECT_TO_JSVAL(obj);
+	return JS_TRUE;
 }
-*/
+
 
 DEFINE_FUNCTION( Resize ) {
 
@@ -643,62 +660,103 @@ DEFINE_FUNCTION( Convolution ) {
 	size_t width = tex->width;
 	size_t height = tex->height;
 
-	RT_ASSERT_ARRAY( argv[0] );
-	JSObject *jsArray;
-	JS_ValueToObject(cx, argv[0], &jsArray);
-
-	jsuint count;
-	RT_CHECK_CALL( JS_GetArrayLength(cx, jsArray, &count) );
-
+	size_t count;
+	RT_CHECK_CALL( ArrayLength(cx, &count, argv[0]) );
 	float *vector = (float*)malloc(sizeof(float) * count);
 	RT_ASSERT_ALLOC( vector );
-
-	jsval value;
-	jsdouble d;
-	JSBool status;
-	for (int i=0; i<count; ++i) {
-
-		status = JS_GetElement(cx, jsArray, i, &value );
-		RT_ASSERT( status && value != JSVAL_VOID, "Invalid array value." );
-		JS_ValueToNumber(cx, value, &d);
-		vector[i] = d;
-	}
-
-//	RT_ASSERT( sqrtf(count) == (int)sqrtf(count) && sqrtf(count)/2.f == (int)sqrtf(count)/2, "Invalid array size." );
-
-	if ( tex->backBuffer == NULL )
-		tex->backBuffer = (Pixel*)malloc( tex->width * tex->height * sizeof(Pixel) );
+	RT_CHECK_CALL( FloatArrayToVector(cx, count, &argv[0], vector) );
 
 	int size = (int)sqrtf(count);
-	int offset = size / 2;
 
-	float ratio, divide;
+	RT_ASSERT( size * size == count, "Invalid convolution kernel size.");
+
+	BorderMode borderMode = borderClamp; // (TBD) from function arg
+
+	TextureSetupBackBuffer(tex);
+
+	int offset = size / 2;
+	float sizeWeight = count;
+	float ratio;
 	float r, g, b, a;
 	size_t pos;
-	int x, y, vx, vy;
+	int x, y, vx, vy, sx, sy;
 	for ( y = 0; y < height; y++ )
 		for ( x = 0; x < width; x++ ) {
 			
 			r = g = b = a = 0;
-//
-			for ( vy = 0; vy < size; vy++ )
-				for ( vx = 0; vx < size; vx++ ) {
-				
-					pos = (x + vx-offset)%width + (y + vy-offset)%height * width;
-					ratio =  vector[vx + vy*size];
-					r += tex->buffer[pos].r * ratio;
-					g += tex->buffer[pos].g * ratio;
-					b += tex->buffer[pos].b * ratio;
-					a += tex->buffer[pos].a * ratio;
-				}
-			divide = size;
-//
+
+			switch ( borderMode ) { // Note: it is faster to do the switch outside the inner loop
+
+				case borderWrap:
+					for ( vy = 0; vy < size; vy++ )
+						for ( vx = 0; vx < size; vx++ ) {
+								
+							sx = (x + vx-offset)%width;
+							sy = (y + vy-offset)%height;
+						
+							pos = sx + sy * width;
+							ratio =  vector[vx + vy * size];
+							r += tex->buffer[pos].r * ratio;
+							g += tex->buffer[pos].g * ratio;
+							b += tex->buffer[pos].b * ratio;
+							a += tex->buffer[pos].a * ratio;
+						}
+					break;
+
+				case borderMirror:
+					for ( vy = 0; vy < size; vy++ )
+						for ( vx = 0; vx < size; vx++ ) {
+
+							sx = (x + vx-offset);
+							sy = (y + vy-offset);
+
+							if ( sx < 0 )
+								sx = -sx % width;
+							else if ( sx >= width )
+								sx = (width-sx) % width;
+
+							if ( sy < 0 )
+								sy = -sy % height;
+							else if ( sy >= height )
+								sy = (height-sy) % height;
+
+							pos = sx + sy * width;
+							ratio =  vector[vx + vy * size];
+							r += tex->buffer[pos].r * ratio;
+							g += tex->buffer[pos].g * ratio;
+							b += tex->buffer[pos].b * ratio;
+							a += tex->buffer[pos].a * ratio;
+						}
+					break;
+
+				case borderClamp:
+				case borderValue:
+					for ( vy = 0; vy < size; vy++ )
+						for ( vx = 0; vx < size; vx++ ) {
+
+							sx = (x + vx-offset);
+							sy = (y + vy-offset);
+
+							if ( sx < 0 )  sx = 0;
+							if ( sx >= width )  sx = width-1;
+							if ( sy < 0 )  sy = 0;
+							if ( sy >= height )  sy = height-1;
+							
+							pos = sx + sy * width;
+							ratio =  vector[vx + vy * size];
+							r += tex->buffer[pos].r * ratio;
+							g += tex->buffer[pos].g * ratio;
+							b += tex->buffer[pos].b * ratio;
+							a += tex->buffer[pos].a * ratio;
+						}
+					break;
+			}
 
 			pos = x + y*width;
-			tex->backBuffer[pos].r = r / divide;
-			tex->backBuffer[pos].g = g / divide;
-			tex->backBuffer[pos].b = b / divide;
-			tex->backBuffer[pos].a = a / divide;
+			tex->backBuffer[pos].r = r / sizeWeight;
+			tex->backBuffer[pos].g = g / sizeWeight;
+			tex->backBuffer[pos].b = b / sizeWeight;
+			tex->backBuffer[pos].a = a / sizeWeight;
 		}
 
 	free(vector);
@@ -780,8 +838,7 @@ DEFINE_FUNCTION( Flip ) {
 	RT_JSVAL_TO_BOOL( argv[0], flipX );
 	RT_JSVAL_TO_BOOL( argv[1], flipY );
 
-	if ( tex->backBuffer == NULL )
-		tex->backBuffer = (Pixel*)malloc( tex->width * tex->height * sizeof(Pixel) );
+	TextureSetupBackBuffer(tex);
 
 	size_t width = tex->width;
 	size_t height = tex->height;
@@ -861,53 +918,54 @@ DEFINE_FUNCTION( Shift ) {
 	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(tex);
 
-	int ox, oy;
-	RT_JSVAL_TO_INT32( argv[0], ox );
-	RT_JSVAL_TO_INT32( argv[1], oy );
+	int offsetX, offsetY;
+	RT_JSVAL_TO_INT32( argv[0], offsetX );
+	RT_JSVAL_TO_INT32( argv[1], offsetY );
 
 	BorderMode mode = borderClamp;
 
-	size_t texWidth = tex->width;
-	size_t texHeight = tex->height;
+	size_t width = tex->width;
+	size_t height = tex->height;
 
-	if ( tex->backBuffer == NULL )
-		tex->backBuffer = (Pixel*)malloc( tex->width * tex->height * sizeof(Pixel) );
+	TextureSetupBackBuffer(tex);
+
 
 	size_t ptex, ptex1;
-	int x, y, tx, ty;
-	for ( y = 0; y < texHeight; y++ )
-		for ( x = 0; x < texWidth; x++ ) {
+	int x, y; // destination image x, y
+	int sx, sy; // source image x, y
+	for ( y = 0; y < height; y++ )
+		for ( x = 0; x < width; x++ ) {
 
-			tx = ox+x;
-			ty = oy+y;
+			sx = x + offsetX;
+			sy = y + offsetY;
 
 			switch (mode) {
 				case borderWrap:
-					ptex =  (ox % texWidth) + (oy % texHeight) * texWidth;
-					ptex1 = x + y * texWidth;
-					tex->backBuffer[ptex] = tex->buffer[ptex1];
+					sx %= width;
+					sy %= height;
+					tex->backBuffer[x + y * width] = tex->buffer[sx + sy * width];
 					break;
 
 				case borderClamp:
-					if ( tx >= 0 && tx < texWidth && ty >= 0 && ty < texHeight ) {
-
-						ptex = ox + oy * texWidth;
-						ptex1 = y * texWidth + x;
-						tex->backBuffer[ptex] = tex->buffer[ptex1];
-					}
+					if ( sx >= 0 && sx < width && sy >= 0 && sy < height )
+						tex->backBuffer[x + y * width] = tex->buffer[sx + sy * width];
 					break;
+
 				case borderMirror:
 
-					if ( tx < 0 )  tx = 0 - tx;
-					if ( ty < 0 )  tx = 0 - ty;
-					if ( tx >= texWidth )  tx = texWidth - tx;
-					if ( ty >= texHeight )  ty = texWidth - ty;
-					if ( tx >= 0 && tx < texWidth && ty >= 0 && ty < texHeight ) { // do not manage infinite mirror
+					if ( sx < 0 )  sx = 0 - sx;
+					if ( sx >= width )  sx = width - sx;
+					if ( sy < 0 )  sy = 0 - sy;
+					if ( sy >= height )  sy = height - sy;
+					tex->backBuffer[x + y * width] = tex->buffer[sx + sy * width];
+					break;
+				case borderValue:
 
-						ptex = ox + oy * texWidth;
-						ptex1 = y * texWidth + x;
-						tex->backBuffer[ptex] = tex->buffer[ptex1];
-					}
+					if ( sx < 0 )  sx = 0;
+					if ( sx >= width )  sx = width - 1;
+					if ( sy < 0 )  sy = 0;
+					if ( sy >= height )  sy = height - 1;
+					tex->backBuffer[x + y * width] = tex->buffer[sx + sy * width];
 					break;
 			}
 		}
@@ -938,8 +996,7 @@ DEFINE_FUNCTION( Displace ) {
 
 	RT_ASSERT( width == tex1->width && height == tex1->height, "Textures must have the same size." );
 
-	if ( tex->backBuffer == NULL )
-		tex->backBuffer = (Pixel*)malloc( tex->width * tex->height * sizeof(Pixel) );
+	TextureSetupBackBuffer(tex);
 
 	BorderMode mode = borderClamp;
 
@@ -976,17 +1033,25 @@ DEFINE_FUNCTION( Displace ) {
 						tex->backBuffer[pos] = tex->buffer[pos1];
 					}
 					break;
-				case borderMirror:
+				case borderValue:
+					if ( tx < 0 ) tx = 0;
+					if ( tx >= width ) tx = width - 1;
+					if ( ty < 0 ) ty = 0;
+					if ( ty >= height ) ty = height - 1;
 
+					pos1 = tx + ty * width;
+					tex->backBuffer[pos] = tex->buffer[pos1];
+					break;
+				case borderMirror:
 					if ( tx < 0 )  tx = 0 - tx;
 					if ( ty < 0 )  tx = 0 - ty;
 					if ( tx >= width )  tx = width - tx;
 					if ( ty >= height )  ty = width - ty;
-					if ( tx >= 0 && tx < width && ty >= 0 && ty < height ) { // do not manage infinite mirror
+//					if ( tx >= 0 && tx < width && ty >= 0 && ty < height ) { // (TBD) do not manage infinite mirror ?
 
 						pos1 = tx + ty * width;
 						tex->backBuffer[pos] = tex->buffer[pos1];
-					}
+//					}
 					break;
 			}
 		}
@@ -1102,10 +1167,6 @@ DEFINE_FUNCTION( AddTexture ) {
 
 
 DEFINE_FUNCTION( Cells ) { // source: FxGen
-
-	typedef struct {
-		float x,y;
-	} Point;
 
 	RT_ASSERT_ARGC( 3 );
 
@@ -1266,6 +1327,8 @@ CONFIGURE_CLASS
 		FUNCTION_ARGC( SetValue, 4 )
 		FUNCTION_ARGC( SetNoise, 2 )
 		FUNCTION_ARGC( MultValue, 4 )
+		FUNCTION_ARGC( Pow, 1 )
+		FUNCTION_ARGC( Contrast, 1 )
 //		FUNCTION_ARGC( Rect, 8 )
 		FUNCTION_ARGC( Resize, 3 )
 		FUNCTION_ARGC( Trim, 4 )
@@ -1324,5 +1387,13 @@ RGB to HSV color space conversion
 	http://en.literateprograms.org/RGB_to_HSV_color_space_conversion_(C)#chunk%20def:compute%20hue
 
 	http://en.wikipedia.org/wiki/Hue#Computing_hue_from_RGB
+
+Convolution & gaussian blur
+	http://www.gamedev.net/reference/programming/features/imageproc/page2.asp
+
+
+Image Processing Algorithms
+	http://www.efg2.com/Lab/Library/ImageProcessing/Algorithms.htm
+
 
 */

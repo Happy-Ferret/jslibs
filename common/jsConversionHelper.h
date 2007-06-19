@@ -23,6 +23,17 @@ inline JSBool IntArgvToVector( JSContext *cx, int count, const jsval *argv, int 
 	return JS_TRUE;
 }
 
+inline JSBool ArrayLength( JSContext *cx, size_t *count, const jsval jsvalArray ) {
+
+	JSObject *jsArray;
+	RT_CHECK_CALL( JS_ValueToObject(cx, jsvalArray, &jsArray) );
+	RT_ASSERT( jsArray != NULL && JS_IsArrayObject(cx,jsArray), "value must be an array." );
+	jsuint arraySize;
+	RT_CHECK_CALL( JS_GetArrayLength(cx, jsArray, &arraySize) );
+	*count = arraySize;
+	return JS_TRUE;
+}
+
 inline JSBool IntArrayToVector( JSContext *cx, int count, const jsval *vp, int *vector ) {
 
 	JSObject *jsArray;

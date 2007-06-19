@@ -12,6 +12,8 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
+#include <stdlib.h>
+
 #include <limits.h>
 #include <float.h>
 
@@ -19,22 +21,40 @@ DECLARE_CLASS( Texture )
 
 #define MINMAX(val, min, max) ((val) > (max) ? (max) : (val) < (min) ? (min) : (val) )
 
-#define PMAXLIMIT FLT_MAX
+// min 'invisible' value
 #define PMINLIMIT FLT_MIN
+
+// max 'invisible' value
+#define PMAXLIMIT FLT_MAX
+
+// min 'visible' value
 #define PMIN (0.f)
+
+// max 'visible' value
 #define PMAX (1.f)
 
+// full amplitude
+#define PAMP (PMAX-PMIN)
+
+// middle pixel value (gray)
 #define PMID (PMIN+((PMAX-PMIN)/2))
 
 // normalize the pixel value to range 0..1
 #define PNORM(p) (((p)-PMIN) / (PMAX-PMIN))
 
+// normalize the pixel value to range -1..1
+#define PZNORM(p) (  (((p)-PMIN) / (PMAX-PMIN)) * 2 - 1  )
+
 #define PTYPE float
+
+struct Point {
+	float x, y;
+};
 
 struct Pixel {
 	union {
-		struct { float r, g, b, a; };
-		float composant[4];
+		struct { PTYPE r, g, b, a; };
+		PTYPE composant[4];
 	};
 };
 
@@ -44,6 +64,13 @@ struct Texture {
 	Pixel *buffer;
 	Pixel *backBuffer;
 };
+
+inline void TextureSetupBackBuffer( Texture *tex ) {
+
+	if ( tex->backBuffer == NULL )
+		tex->backBuffer = (Pixel*)malloc( tex->width * tex->height * sizeof(Pixel) );
+}
+
 
 inline void TextureSwapBuffers( Texture *tex ) {
 	

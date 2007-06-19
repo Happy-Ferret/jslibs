@@ -47,11 +47,20 @@ var texture = new Texture(256,256);
 //texture.Pixels(10000,1234);
 texture.Cells(10,0,1);
 
+texture.Contrast(2.5);
+
 //texture.Resize(256,256,true);
-//texture.Convolution([0,0,0, -1,1,-2 ,0,0,0]);
-//texture.Convolution([0,-1,0, -1,-5,-1, 0,-1,0]);
-texture.Convolution([1,1,1, -2,-2,-2, 1,1,1]);
-texture.Normalize();
+
+//texture.Convolution([0,-1,0, -1,4,-1 ,0,-1,0]); // laplacian 4
+
+//texture.Convolution([0,0,0, 0,0,0 ,0,0,1]); // shift
+
+//texture.Convolution([-1,0,0, 0,0,0 ,0,0,1]); // emboss
+//texture.Convolution([0,-1,0, -1,5,-1, 0,-1,0]); // crystals
+//texture.Convolution([1,1,1, -2,-2,-2, 1,1,1]);
+//texture.Convolution([1,1,1, 1,1,1, 1,1,1]);
+//texture.Normalize();
+//texture.MultValue(20,20,20,20);
 
 //texture.Displace(new Texture(512,512).SetNoise(true, 1), 32);
 
@@ -69,7 +78,7 @@ texture.Normalize();
 gl.Color(1,1,1);
 gl.LoadTexture( texture );
 
-//win.rect = [1700,1000,1900,1200]
-win.rect = [500,500,700,700];
+win.rect = [1700,1000,1900,1200]
+//win.rect = [500,500,700,700];
 win.ProcessEvents();
 
