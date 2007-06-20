@@ -43,9 +43,17 @@ DECLARE_CLASS( Texture )
 #define PNORM(p) (((p)-PMIN) / (PMAX-PMIN))
 
 // normalize the pixel value to range -1..1
-#define PZNORM(p) (  (((p)-PMIN) / (PMAX-PMIN)) * 2 - 1  )
+#define PZNORM(p) (PNORM(p) * 2 - 1)
 
 #define PTYPE float
+
+#define PMAXCHANNELS 4
+
+// channels :
+// 1 : L
+// 2 : LA
+// 3 : RGB
+// 4 : RGBA
 
 struct Point {
 	float x, y;
@@ -61,8 +69,15 @@ struct Pixel {
 struct Texture {
 	size_t width;
 	size_t height;
-	Pixel *buffer;
-	Pixel *backBuffer;
+	size_t channels;
+	union {
+		Pixel *buffer;
+		PTYPE *cbuffer;
+	};
+	union {
+		Pixel *backBuffer;
+		PTYPE *cbackBuffer;
+	};
 };
 
 inline void TextureSetupBackBuffer( Texture *tex ) {
@@ -70,7 +85,6 @@ inline void TextureSetupBackBuffer( Texture *tex ) {
 	if ( tex->backBuffer == NULL )
 		tex->backBuffer = (Pixel*)malloc( tex->width * tex->height * sizeof(Pixel) );
 }
-
 
 inline void TextureSwapBuffers( Texture *tex ) {
 	
