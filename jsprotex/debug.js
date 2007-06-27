@@ -53,8 +53,11 @@ texture.SetChannel(0, noise, 0).SetChannel(1, noise, 0).SetChannel(2, noise, 0);
 var texture = new Texture(2,2,4);
 texture.SetValue([0,0,0,1]);
 texture.SetPixel(0,0,[1,0,0,1]);
-texture.SetPixel(1,1,[0,1,0,1]);
+texture.SetPixel(1,0,[1,0,0,1]);
+texture.SetPixel(0,1,[0,0,1,1]);
+texture.SetPixel(1,1,[1,1,1,1]);
 texture.Resize(64,64,true);
+texture.Shift(10,0);
 
 
 
@@ -98,7 +101,7 @@ texture.Resize(64,64,true);
 gl.Color(1,1,1);
 gl.LoadTexture( texture );
 
-win.rect = [1700,1000,1900,1200]
-//win.rect = [500,500,700,700];
+//win.rect = [1700,1000,1900,1200]
+win.rect = [500,500,700,700];
 win.ProcessEvents();
 

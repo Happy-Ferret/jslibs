@@ -1102,7 +1102,7 @@ DEFINE_FUNCTION( Shift ) {
 	RT_JSVAL_TO_INT32( argv[0], offsetX );
 	RT_JSVAL_TO_INT32( argv[1], offsetY );
 
-	BorderMode mode = borderClamp;
+	BorderMode mode = borderMirror;
 
 	size_t width = tex->width;
 	size_t height = tex->height;
@@ -1133,12 +1133,13 @@ DEFINE_FUNCTION( Shift ) {
 
 				case borderMirror:
 
-					if ( sx < 0 )  sx = 0 - sx;
+					if ( sx < 0 )  sx =  -sx;
 					if ( sx >= width )  sx = width - sx;
-					if ( sy < 0 )  sy = 0 - sy;
+					if ( sy < 0 )  sy =  -sy;
 					if ( sy >= height )  sy = height - sy;
 					tex->backBuffer[x + y * width] = tex->buffer[sx + sy * width];
 					break;
+
 				case borderValue:
 
 					if ( sx < 0 )  sx = 0;
