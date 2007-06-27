@@ -38,16 +38,36 @@ gl.Init();
 gl.Ortho(-1, 1, -1, 1);
 
 
-var texture = new Texture(256,256);
+/*
+var sx = 16; 
+var sy = 16; 
+
+
+var noise = new Texture(sx,sy,1).SetNoise();
+noise.Resize( 64, 64, true );
+
+var texture = new Texture(noise.width,noise.height,4);
+texture.SetChannel(0, noise, 0).SetChannel(1, noise, 0).SetChannel(2, noise, 0);
+*/
+
+var texture = new Texture(2,2,4);
+texture.SetValue([0,0,0,1]);
+texture.SetPixel(0,0,[1,0,0,1]);
+texture.SetPixel(1,1,[0,1,0,1]);
+texture.Resize(64,64,true);
+
+
+
+
 //texture.Rect(0,0,100,100,1,0,0,1);
 //texture.Shift(-50,-10);
 
 //texture.SetValue(0,0,0,1);
-//texture.Noise(false,1234);
+//texture.SetNoise(1234);
 //texture.Pixels(10000,1234);
-texture.Cells(10,0,1);
+//texture.Cells(10,0,1);
 
-texture.Contrast(2.5);
+//texture.Contrast(2.5);
 
 //texture.Resize(256,256,true);
 

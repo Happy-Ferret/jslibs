@@ -40,7 +40,10 @@ DECLARE_CLASS( Texture )
 #define PMID (PMIN+((PMAX-PMIN)/2))
 
 // normalize the pixel value to range 0..1
-#define PNORM(p) (((p)-PMIN) / (PMAX-PMIN))
+#define PNORM(p) (( (p) -PMIN) / (PMAX-PMIN))
+
+// un-normalize the pixel value from range 0..1
+#define PUNNORM(p) ((p) * (PMAX-PMIN) + PMIN)
 
 // normalize the pixel value to range -1..1
 #define PZNORM(p) (PNORM(p) * 2 - 1)

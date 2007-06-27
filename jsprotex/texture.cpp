@@ -72,10 +72,10 @@ DEFINE_FINALIZE() {
 	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
 	if ( tex != NULL ) {
 
-		if ( tex->backBuffer != NULL )
-			free(tex->backBuffer);
-		if ( tex->buffer != NULL )
-			free(tex->buffer);
+		if ( tex->cbackBuffer != NULL )
+			free(tex->cbackBuffer);
+		if ( tex->cbuffer != NULL )
+			free(tex->cbuffer);
 		free(tex);
 		JS_SetPrivate(cx, obj, NULL);
 	}
@@ -92,11 +92,11 @@ DEFINE_CONSTRUCTOR() {
 		Texture *srcTex = (Texture *)JS_GetPrivate(cx, JSVAL_TO_OBJECT(argv[0]));
 		RT_ASSERT_RESOURCE(srcTex);
 
-		size_t size = srcTex->width * srcTex->height;
-		tex->buffer = (Pixel*)malloc( size * sizeof(Pixel) ); // (TBD) try with js_malloc
+		size_t tsize = srcTex->width * srcTex->height * srcTex->channels;
+		tex->cbuffer = (PTYPE*)malloc( tsize * sizeof(PTYPE) ); // (TBD) try with js_malloc
 		RT_ASSERT_ALLOC( tex->buffer );
 
-		memcpy( tex->buffer, srcTex->buffer, size * sizeof(Pixel) );
+		memcpy( tex->cbuffer, srcTex->cbuffer, tsize * sizeof(PTYPE) );
 		tex->width = srcTex->width;
 		tex->height = srcTex->height;
 		tex->channels = srcTex->channels;
@@ -109,8 +109,8 @@ DEFINE_CONSTRUCTOR() {
 		RT_JSVAL_TO_UINT32( argv[1], height );
 		RT_JSVAL_TO_UINT32( argv[2], channels );
 
-		tex->buffer = (Pixel*)malloc( width * height * sizeof(Pixel) ); // (TBD) try with js_malloc
-		RT_ASSERT_ALLOC( tex->buffer );
+		tex->cbuffer = (PTYPE*)malloc( width * height * channels * sizeof(PTYPE) ); // (TBD) try with js_malloc
+		RT_ASSERT_ALLOC( tex->cbuffer );
 
 		tex->width = width;
 		tex->height = height;
@@ -119,6 +119,52 @@ DEFINE_CONSTRUCTOR() {
 	JS_SetPrivate(cx, obj, tex);
 	return JS_TRUE;
 }
+
+
+DEFINE_FUNCTION( Decompose ) {
+	return JS_TRUE;
+}
+
+DEFINE_FUNCTION( Compose ) {
+	return JS_TRUE;
+}
+
+DEFINE_FUNCTION( SetChannel ) { // src texture, src channel, dest channel
+
+	RT_ASSERT_ARGC( 3 );
+	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE(tex);
+
+	RT_ASSERT_OBJECT(argv[1]);
+	JSObject *tex1Obj = JSVAL_TO_OBJECT(argv[1]);
+	RT_ASSERT_CLASS( tex1Obj, _class );
+	Texture *tex1 = (Texture *)JS_GetPrivate(cx, tex1Obj);
+	RT_ASSERT_RESOURCE(tex1);
+
+	int srcChannel, dstChannel;
+	RT_JSVAL_TO_INT32( argv[0], dstChannel );
+	RT_JSVAL_TO_INT32( argv[2], srcChannel );
+
+	int texChannel = tex->channels;
+	int tex1Channel = tex1->channels;
+
+	if ( tex->width != tex1->width || tex->height != tex1->height )
+		REPORT_ERROR("Images must have the same size.");
+
+	if ( srcChannel >= tex1Channel )
+		REPORT_ERROR("Invalid source channel.");
+
+	if ( dstChannel >= texChannel )
+		REPORT_ERROR("Invalid destination channel.");
+
+	size_t size = tex->width * tex->height;
+	for ( size_t i = 0; i < size; i++ )
+		tex->cbuffer[texChannel * i + dstChannel] = tex1->cbuffer[tex1Channel * i + srcChannel];
+
+	*rval = OBJECT_TO_JSVAL(obj);
+	return JS_TRUE;
+}
+
 
 /*
 DEFINE_FUNCTION( Rect ) { // use Paste instead
@@ -197,12 +243,14 @@ double CoherentNoise (double x) {
 
 DEFINE_FUNCTION( SetNoise ) { // seed
 
-	RT_ASSERT_ARGC( 1 );
 	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(tex);
 
 	int seed;
-	RT_JSVAL_TO_INT32( argv[0], seed );
+	if ( argc >= 1 )
+		RT_JSVAL_TO_INT32( argv[0], seed )
+	else 
+		seed = 0;
 
 	init_genrand(seed);
 	size_t tsize = tex->width * tex->height * tex->channels;
@@ -377,6 +425,31 @@ DEFINE_FUNCTION( Mix ) { // or lerp (Linear interpolation)
 }
 
 
+
+DEFINE_FUNCTION( AddTexture ) {
+
+	RT_ASSERT_ARGC( 1 );
+	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE(tex);
+
+	RT_ASSERT_OBJECT(argv[0]);
+	JSObject *tex1Obj = JSVAL_TO_OBJECT(argv[0]);
+	RT_ASSERT_CLASS( tex1Obj, _class );
+	Texture *tex1 = (Texture *)JS_GetPrivate(cx, tex1Obj);
+	RT_ASSERT_RESOURCE(tex1);
+
+	if ( tex->width != tex1->width || tex->height != tex1->height )
+		REPORT_ERROR("Images must have the same size.");
+
+	size_t tsize = tex->width * tex->height * tex->channels;
+	for ( size_t i = 0; i < tsize; i++ )
+		tex->cbuffer[i] = (tex->cbuffer[i]-PMIN) + (tex1->cbuffer[i]-PMIN) + PMIN;
+
+	*rval = OBJECT_TO_JSVAL(obj);
+	return JS_TRUE;
+}
+
+
 DEFINE_FUNCTION( Invert ) { // black -> white / white -> black
 
 	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
@@ -454,6 +527,37 @@ DEFINE_FUNCTION( Desaturate ) {
 	return JS_TRUE;
 }
 
+DEFINE_FUNCTION( SetPixel ) {
+
+	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE(tex);
+
+	RT_ASSERT_ARGC( 3 );
+
+	int x, y;
+	RT_JSVAL_TO_INT32( argv[0], x );
+	RT_JSVAL_TO_INT32( argv[1], y );
+
+	size_t count;
+	ArrayLength(cx, &count, argv[2]);
+
+	RT_ASSERT( count == tex->channels, "Invalid number of channels." );
+	RT_ASSERT( x >= 0 && x < tex->width, "Invalid x position." );
+	RT_ASSERT( y >= 0 && y < tex->height, "Invalid y position." );
+
+	PTYPE pixel[PMAXCHANNELS];
+	FloatArrayToVector(cx, count, &argv[2], (float*)&pixel);
+
+	size_t channels = tex->channels;
+	size_t pos = (x + y * tex->width) * channels;
+	for ( int c = 0; c < channels; c++ )
+		tex->cbuffer[pos+c] = pixel[c];
+
+	*rval = OBJECT_TO_JSVAL(obj);
+	return JS_TRUE;
+}
+
+
 
 DEFINE_FUNCTION( SetValue ) {
 
@@ -462,7 +566,7 @@ DEFINE_FUNCTION( SetValue ) {
 
 	RT_ASSERT_ARGC( 1 );
 
-	float pixel[PMAXCHANNELS];
+	PTYPE pixel[PMAXCHANNELS];
 
 	size_t count;
 	ArrayLength(cx, &count, argv[0]);
@@ -486,87 +590,68 @@ DEFINE_FUNCTION( SetValue ) {
 }
 
 
-
-/// <<<<< WORGING ON USING cbuffer instead of buffer  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-
 DEFINE_FUNCTION( AddValue ) {
-
+	
 	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(tex);
-	RT_ASSERT_ARGC( 4 );
-	float r,g,b,a;
-	RT_JSVAL_TO_REAL( argv[0], r );
-	RT_JSVAL_TO_REAL( argv[1], g );
-	RT_JSVAL_TO_REAL( argv[2], b );
-	RT_JSVAL_TO_REAL( argv[3], a );
+
+	RT_ASSERT_ARGC( 1 );
+
+	PTYPE pixel[PMAXCHANNELS];
+
+	size_t count;
+	ArrayLength(cx, &count, argv[0]);
+
+	RT_ASSERT( count == tex->channels, "Invalid number of channels." );
+
+	FloatArrayToVector(cx, count, &argv[0], (float*)&pixel);
+
+	size_t channels = tex->channels;
 	size_t size = tex->width * tex->height;
-	for ( size_t i = 0; i < size; i++ ) {
+	int i, c;
+	size_t pos;
+	for ( i = 0; i < size; i++ ) {
 
-		tex->buffer[i].r += r;
-		tex->buffer[i].g += g;
-		tex->buffer[i].b += b;
-		tex->buffer[i].a += a;
+		pos = i * channels;
+		for ( c = 0; c < channels; c++ )
+			tex->cbuffer[pos+c] += pixel[c];
 	}
-
 	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 }
 
 
 DEFINE_FUNCTION( MultValue ) {
-
+	
 	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(tex);
-	RT_ASSERT_ARGC( 4 );
-	float r,g,b,a;
-	RT_JSVAL_TO_REAL( argv[0], r );
-	RT_JSVAL_TO_REAL( argv[1], g );
-	RT_JSVAL_TO_REAL( argv[2], b );
-	RT_JSVAL_TO_REAL( argv[3], a );
-	size_t size = tex->width * tex->height;
-	for ( size_t i = 0; i < size; i++ ) {
-
-		tex->buffer[i].r *= r;
-		tex->buffer[i].g *= g;
-		tex->buffer[i].b *= b;
-		tex->buffer[i].a *= a;
-	}
-
-	*rval = OBJECT_TO_JSVAL(obj);
-	return JS_TRUE;
-}
-
-
-DEFINE_FUNCTION( AddTexture ) {
 
 	RT_ASSERT_ARGC( 1 );
-	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE(tex);
 
-	RT_ASSERT_OBJECT(argv[1]);
-	JSObject *tex1Obj = JSVAL_TO_OBJECT(argv[1]);
-	RT_ASSERT_CLASS( tex1Obj, _class );
-	Texture *tex1 = (Texture*)JS_GetPrivate(cx, JSVAL_TO_OBJECT(argv[1]));
-	RT_ASSERT_RESOURCE(tex1);
+	float pixel[PMAXCHANNELS];
 
-	if ( tex->width != tex1->width || tex->height != tex1->height )
-		REPORT_ERROR("Images must have the same size.");
+	size_t count;
+	ArrayLength(cx, &count, argv[0]);
 
+	RT_ASSERT( count == tex->channels, "Invalid number of channels." );
+
+	FloatArrayToVector(cx, count, &argv[0], (float*)&pixel);
+
+	size_t channels = tex->channels;
 	size_t size = tex->width * tex->height;
-	for ( size_t i = 0; i < size; i++ ) {
-		tex->buffer[i].r += tex1->buffer[i].r;
-		tex->buffer[i].g += tex1->buffer[i].g;
-		tex->buffer[i].b += tex1->buffer[i].b;
-//		tex->buffer[i].a += tex1->buffer[i].a;
-	}
+	int i, c;
+	size_t pos;
+	for ( i = 0; i < size; i++ ) {
 
+		pos = i * channels;
+		for ( c = 0; c < channels; c++ )
+			tex->cbuffer[pos+c] = (tex->cbuffer[pos+c] - PMIN) * pixel[c] + PMIN;
+	}
 	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 }
 
-
-
+/* 
 
 DEFINE_FUNCTION( Contrast ) {
 
@@ -575,19 +660,76 @@ DEFINE_FUNCTION( Contrast ) {
 	
 	float contrast;
 	RT_JSVAL_TO_REAL( argv[0], contrast );
-	
-	size_t i, size = tex->width * tex->height;
-	for ( i = 0; i < size; i++ ) {
 
-		tex->buffer[i].r = PZNORM(tex->buffer[i].r) * contrast + PMID;
-		tex->buffer[i].g = PZNORM(tex->buffer[i].g) * contrast + PMID;
-		tex->buffer[i].b = PZNORM(tex->buffer[i].b) * contrast + PMID;
-		// (TBD) manage alpha ???
-	}
+	size_t tsize = tex->width * tex->height * tex->channels;
+	for ( size_t i = 0; i < tsize; i++ )
+		tex->cbuffer[i] = PZNORM(tex->cbuffer[i]) * contrast + PMID;
 
 	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 }
+
+*/
+
+
+DEFINE_FUNCTION( Rotate90 ) { // (TBD) test it
+
+	RT_ASSERT_ARGC( 1 );
+	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE(tex);
+
+	int turn;
+	RT_JSVAL_TO_INT32(argv[0], turn);
+	turn = abs( turn % (360/90) );
+	size_t channels = tex->channels;
+	size_t width = tex->width;
+	size_t height = tex->height;
+
+	int x, y;
+
+	TextureSetupBackBuffer(tex);
+
+	size_t i, pos, pos1;
+	int c;
+
+	for ( y = 0; y < height; y++ )
+		for ( x = 0; x < width; x++ ) {
+
+			pos = (x + y * width) * channels;
+			switch ( turn ) {
+				case 0:
+					pos1 = pos;
+					break;
+				case 1:
+					pos1 = ((width-1-y) + (x) * width) * channels;
+					break;
+				case 2:
+					pos1 = ((width-1-x) + (height-1-y) * width) * channels;
+					break;
+				case 3:
+					pos1 = ((y) + (height-1-x) * width) * channels;
+					break;
+			}
+			for ( c = 0; c < channels; c++ )
+				tex->cbackBuffer[pos+c] = tex->cbuffer[pos1+c];
+		}
+
+	switch ( turn ) {
+		case 1:
+		case 3:
+			tex->height = width;
+			tex->width = height;
+		case 0:
+		case 2:
+			break;
+	}
+
+	TextureSwapBuffers(tex);
+
+	*rval = OBJECT_TO_JSVAL(obj);
+	return JS_TRUE;
+}
+
 
 
 DEFINE_FUNCTION( Resize ) {
@@ -602,20 +744,26 @@ DEFINE_FUNCTION( Resize ) {
 	RT_JSVAL_TO_REAL( argv[1], newHeight );
 	RT_JSVAL_TO_REAL( argv[2], interpolate );
 
+	BorderMode borderMode = borderWrap; // (TBD) from function arg
+
 	size_t width = tex->width;
 	size_t height = tex->height;
+	size_t channels = tex->channels;
 
-	Pixel *newBuffer = (Pixel*)malloc( newWidth * newHeight * sizeof(Pixel) );
+	PTYPE *newBuffer = (PTYPE*)malloc( newWidth * newHeight * channels * sizeof(PTYPE) );
+	RT_ASSERT_ALLOC( newBuffer );
 
-	float r, g, b, a;
+	PTYPE pixel[PMAXCHANNELS];
 	int spx, spy; // position in the source
-	size_t pos; // offset in the buffer
-	float ratio; // pixel value ratio
 	float prx, pry; // pixel ratio
 	float rx = (float)width / (float)newWidth; // texture ratio x
 	float ry = (float)height / (float)newHeight; // texture ratio y
 	float tmp;
-	int x, y;
+	int x, y, c;
+
+	size_t pos, pos1, pos2, pos3, pos4; // offset in the buffer
+	float ratio1, ratio2, ratio3, ratio4; // pixel value ratio
+
 	for ( y = 0; y < newHeight; y++ )
 		for ( x = 0; x < newWidth; x++ ) {	
 
@@ -626,62 +774,57 @@ DEFINE_FUNCTION( Resize ) {
 				pry = modf( (float)y*ry, &tmp );
 				spy = (int)tmp;
 
-				pos = ((spx + 0) % width) + ((spy + 0) % height) * width;
-				ratio = (1.f - prx) * (1.f - pry); // (TBD) try to use the distance
-//				ratio = (1.f - prx) * (1.f - pry); xxx
-				r = tex->buffer[pos].r * ratio;
-				g = tex->buffer[pos].g * ratio;
-				b = tex->buffer[pos].b * ratio;
-				a = tex->buffer[pos].a * ratio;
+				// (TBD) for radio1,..4, try to use the distance ?
+				switch ( borderMode ) { // Note: it is faster to do the switch outside the inner loop
 
-				pos = ((spx + 1) % width) + ((spy + 0) % height) * width;
-				ratio = (prx) * (1.f - pry);
-				r += tex->buffer[pos].r * ratio;
-				g += tex->buffer[pos].g * ratio;
-				b += tex->buffer[pos].b * ratio;
-				a += tex->buffer[pos].a * ratio;
-				
-				pos = ((spx + 0) % width) + ((spy + 1) % height) * width;
-				ratio = (1.f - prx) * (pry);
-				r += tex->buffer[pos].r * ratio;
-				g += tex->buffer[pos].g * ratio;
-				b += tex->buffer[pos].b * ratio;
-				a += tex->buffer[pos].a * ratio;
+					case borderClamp:
+						break;
+					case borderWrap:
+						pos1 = (  ((spx + 0)        ) + ((spy + 0)         ) * width  ) * channels;
+						pos2 = (  ((spx + 1) % width) + ((spy + 0)         ) * width  ) * channels;
+						pos3 = (  ((spx + 0)        ) + ((spy + 1) % height) * width  ) * channels;
+						pos4 = (  ((spx + 1) % width) + ((spy + 1) % height) * width  ) * channels;
+						break;
+					case borderMirror:
+						break;
+					case borderValue:
+						break;
+				}
 
-				pos = ((spx + 1) % width) + ((spy + 1) % height) * width;
-				ratio = (prx) * (pry);
-				r += tex->buffer[pos].r * ratio;
-				g += tex->buffer[pos].g * ratio;
-				b += tex->buffer[pos].b * ratio;
-				a += tex->buffer[pos].a * ratio;
+				ratio1 = (1.f - prx) * (1.f - pry);
+				ratio2 = (prx) * (1.f - pry);
+				ratio3 = (1.f - prx) * (pry);
+				ratio4 = (prx) * (pry);
 
-				pos = x + y * newWidth;
-				newBuffer[pos].r = r;
-				newBuffer[pos].g = g;
-				newBuffer[pos].b = b;
-				newBuffer[pos].a = a;
+				pos = (x + y * newWidth) * channels;
+				for ( c = 0; c < channels; c++ )
+					newBuffer[pos+c] = tex->cbuffer[pos1+c] * ratio1 + tex->cbuffer[pos2+c] * ratio2 + tex->cbuffer[pos3+c] * ratio3 + tex->cbuffer[pos4+c] * ratio4;
 			} else {
-			
+
 				spx = (int)((float)x*rx);
 				spy = (int)((float)y*ry);
-				newBuffer[ x + y * newWidth ] = tex->buffer[ spx + spy * width ];
+				for ( c = 0; c < channels; c++ )
+					newBuffer[ (x + y * newWidth) * channels + c ] = tex->cbuffer[ (spx + spy * width) * channels + c ];
 			}
 		}
 
-	free( tex->buffer );
+	free( tex->cbuffer );
 	if ( tex->backBuffer != NULL ) {
 
 		free( tex->backBuffer );
 		tex->backBuffer = NULL;
 	}
 	
-	tex->buffer = newBuffer;
+	tex->cbuffer = newBuffer;
 	tex->width = newWidth;
 	tex->height = newHeight;
+	// channels don't change
 
 	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 }
+
+
 
 
 DEFINE_FUNCTION( Convolution ) {
@@ -710,13 +853,20 @@ DEFINE_FUNCTION( Convolution ) {
 	int offset = size / 2;
 	float sizeWeight = count;
 	float ratio;
-	float r, g, b, a;
+
+//	float r, g, b, a;
+	PTYPE pixel[PMAXCHANNELS];
+	size_t channels = tex->channels;
+	int c;
+
 	size_t pos;
 	int x, y, vx, vy, sx, sy;
 	for ( y = 0; y < height; y++ )
 		for ( x = 0; x < width; x++ ) {
-			
-			r = g = b = a = 0;
+
+//			r = g = b = a = 0;
+			for ( c = 0; c < channels; c++ )
+				pixel[c] = 0;
 
 			switch ( borderMode ) { // Note: it is faster to do the switch outside the inner loop
 
@@ -727,12 +877,10 @@ DEFINE_FUNCTION( Convolution ) {
 							sx = (x + vx-offset)%width;
 							sy = (y + vy-offset)%height;
 						
-							pos = sx + sy * width;
+							pos = (sx + sy * width)*channels;
 							ratio =  vector[vx + vy * size];
-							r += tex->buffer[pos].r * ratio;
-							g += tex->buffer[pos].g * ratio;
-							b += tex->buffer[pos].b * ratio;
-							a += tex->buffer[pos].a * ratio;
+							for ( c = 0; c < channels; c++ )
+								pixel[c] += tex->cbuffer[pos+c] * ratio;
 						}
 					break;
 
@@ -753,12 +901,10 @@ DEFINE_FUNCTION( Convolution ) {
 							else if ( sy >= height )
 								sy = (height-sy) % height;
 
-							pos = sx + sy * width;
+							pos = (sx + sy * width)*channels;
 							ratio =  vector[vx + vy * size];
-							r += tex->buffer[pos].r * ratio;
-							g += tex->buffer[pos].g * ratio;
-							b += tex->buffer[pos].b * ratio;
-							a += tex->buffer[pos].a * ratio;
+							for ( c = 0; c < channels; c++ )
+								pixel[c] += tex->cbuffer[pos+c] * ratio;
 						}
 					break;
 
@@ -775,21 +921,17 @@ DEFINE_FUNCTION( Convolution ) {
 							if ( sy < 0 )  sy = 0;
 							if ( sy >= height )  sy = height-1;
 							
-							pos = sx + sy * width;
+							pos = (sx + sy * width)*channels;
 							ratio =  vector[vx + vy * size];
-							r += tex->buffer[pos].r * ratio;
-							g += tex->buffer[pos].g * ratio;
-							b += tex->buffer[pos].b * ratio;
-							a += tex->buffer[pos].a * ratio;
+							for ( c = 0; c < channels; c++ )
+								pixel[c] += tex->cbuffer[pos+c] * ratio;
 						}
 					break;
 			}
 
-			pos = x + y*width;
-			tex->backBuffer[pos].r = r / sizeWeight;
-			tex->backBuffer[pos].g = g / sizeWeight;
-			tex->backBuffer[pos].b = b / sizeWeight;
-			tex->backBuffer[pos].a = a / sizeWeight;
+			pos = (x + y * width) * channels;
+			for ( c = 0; c < channels; c++ )
+				tex->cbackBuffer[pos+c] = pixel[c] / sizeWeight;
 		}
 
 	free(vector);
@@ -800,13 +942,16 @@ DEFINE_FUNCTION( Convolution ) {
 
 
 
+/// <<<<< WORGING ON USING cbuffer instead of buffer  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
 DEFINE_FUNCTION( Gradiant ) {
 
 	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 }
-
-
 
 DEFINE_FUNCTION( Polarize ) {
 
@@ -819,6 +964,8 @@ DEFINE_FUNCTION( UnPolarize ) {
 	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 }
+
+
 
 DEFINE_FUNCTION( Trim ) {
 
@@ -1206,6 +1353,16 @@ DEFINE_PROPERTY( height ) {
 	return JS_TRUE;
 }
 
+DEFINE_PROPERTY( channels ) {
+
+	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE(tex);
+	jsdouble d = tex->channels;
+	RT_CHECK_CALL( JS_NewNumberValue(cx, d, vp) );
+	return JS_TRUE;
+}
+
+
 DEFINE_FUNCTION( RandSeed ) {
 
 	RT_ASSERT_ARGC(1);
@@ -1253,10 +1410,12 @@ CONFIGURE_CLASS
 //}
 
 	BEGIN_FUNCTION_SPEC
+		FUNCTION_ARGC( SetChannel, 3 )
+		FUNCTION_ARGC( SetPixel, 3 )
 		FUNCTION_ARGC( SetValue, 4 )
 		FUNCTION_ARGC( SetNoise, 1 )
 		FUNCTION_ARGC( MultValue, 4 )
-		FUNCTION_ARGC( Contrast, 1 )
+//		FUNCTION_ARGC( Contrast, 1 )
 //		FUNCTION_ARGC( Rect, 8 )
 		FUNCTION_ARGC( Resize, 3 )
 		FUNCTION_ARGC( Trim, 4 )
@@ -1279,6 +1438,7 @@ CONFIGURE_CLASS
 	BEGIN_PROPERTY_SPEC
 		PROPERTY_READ(width)
 		PROPERTY_READ(height)
+		PROPERTY_READ(channels)
 	END_PROPERTY_SPEC
 
 	BEGIN_STATIC_FUNCTION_SPEC
