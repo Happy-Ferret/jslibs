@@ -19,6 +19,12 @@
 
 DECLARE_CLASS( Texture )
 
+#define ABS(val) ( (val) < 0 ? -(val) : (val) )
+
+#define MIN(val1, val2) ( (val1) < (val2) ? (val1) : (val2) )
+
+#define MAX(val1, val2) ( (val1) > (val2) ? (val1) : (val2) )
+
 #define MINMAX(val, min, max) ((val) > (max) ? (max) : (val) < (min) ? (min) : (val) )
 
 // min 'invisible' value
