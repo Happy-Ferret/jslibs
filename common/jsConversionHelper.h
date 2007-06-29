@@ -23,7 +23,7 @@ inline JSBool IntArgvToVector( JSContext *cx, int count, const jsval *argv, int 
 	return JS_TRUE;
 }
 
-inline JSBool ArrayLength( JSContext *cx, size_t *count, const jsval jsvalArray ) {
+inline JSBool ArrayLength( JSContext *cx, int *count, const jsval jsvalArray ) {
 
 	JSObject *jsArray;
 	RT_CHECK_CALL( JS_ValueToObject(cx, jsvalArray, &jsArray) );
@@ -74,7 +74,7 @@ inline JSBool FloatArrayToVector( JSContext *cx, int count, const jsval *vp, flo
 	jsval value;
 	jsdouble d;
 	JSBool status;
-	for (int i=0; i<count; ++i) {
+	for (jsint i=0; i<count; ++i) {
 
 		status = JS_GetElement(cx, jsArray, i, &value );
 		RT_ASSERT( status && value != JSVAL_VOID, "Invalid array value." );

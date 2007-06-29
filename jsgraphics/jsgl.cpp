@@ -531,7 +531,24 @@ DEFINE_FUNCTION( LoadTexture ) {
 	glGenTextures( 1, &texture ); // (TBD) free with glDeleteTextures
 	glBindTexture( GL_TEXTURE_2D, texture ); // Doc: glBindTexture is included in display lists.
 
-	glTexImage2D( GL_TEXTURE_2D, 0, 3, tex->width, tex->height, 0, GL_RGBA, GL_FLOAT, tex->buffer );
+
+	GLenum format;
+	switch ( tex->channels ) {
+		case 1:
+			format = GL_LUMINANCE;
+			break;
+		case 2:
+			format = GL_LUMINANCE_ALPHA;
+			break;
+		case 3:
+			format = GL_RGB;
+			break;
+		case 4:
+			format = GL_RGBA;
+			break;
+	}
+
+	glTexImage2D( GL_TEXTURE_2D, 0, 3, tex->width, tex->height, 0, format, GL_FLOAT, tex->buffer );
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST); // GL_LINEAR
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST); // GL_LINEAR
 

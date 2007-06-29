@@ -37,6 +37,12 @@ gl.Init();
 //gl.Perspective( 60, 0.01, 10000 );
 gl.Ortho(-1, 1, -1, 1);
 
+const RED = [1,0,0];
+const GREEN = [0,1,0];
+const BLUE = [0,0,1];
+const GRAY = [.5,.5,.5];
+const BLACK = [0,0,0];
+const WHITE = [1,1,1];
 
 /*
 var sx = 16; 
@@ -50,6 +56,7 @@ var texture = new Texture(noise.width,noise.height,4);
 texture.SetChannel(0, noise, 0).SetChannel(1, noise, 0).SetChannel(2, noise, 0);
 */
 
+/*
 var texture = new Texture(2,2,4);
 texture.SetValue([0,0,0,1]);
 texture.SetPixel(0,0,[1,0,0,1]);
@@ -58,8 +65,31 @@ texture.SetPixel(0,1,[0,0,1,1]);
 texture.SetPixel(1,1,[1,1,1,1]);
 texture.Resize(64,64,true);
 texture.Shift(10,0);
+*/
 
 
+/* test normals
+var texture = new Texture(128,128,1);
+texture.SetNoise();
+texture.SetRectangle( 0, 0, 10, 10, [1]);
+texture.Normals(1);
+*/
+
+/* spaceship hud
+*/
+var texture = new Texture(256,256,1);
+texture.SetValue([0]);
+texture.Pixels(100);
+texture.BoxBlur(32,64);
+texture.Convolution([0,0,-1.5, 0,1,0 ,0,0,1]);
+//texture.Convolution([0,0,0, 0,1,0 ,0,0,0]);
+texture.MultLevels([200]);
+//texture.NormalizeLevels();
+
+
+//texture.Convolution([-1,0,1, 0,1,0 ,-1,0,1]);
+//texture.NormalizeLevels();
+//texture.NormalizeVectors();
 
 
 //texture.Rect(0,0,100,100,1,0,0,1);
@@ -101,7 +131,7 @@ texture.Shift(10,0);
 gl.Color(1,1,1);
 gl.LoadTexture( texture );
 
-//win.rect = [1700,1000,1900,1200]
-win.rect = [500,500,700,700];
+win.rect = [1700,1000,1900,1200]
+//win.rect = [500,500,700,700];
 win.ProcessEvents();
 

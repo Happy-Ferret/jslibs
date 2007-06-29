@@ -54,6 +54,10 @@ DECLARE_CLASS( Texture )
 // normalize the pixel value to range -1..1
 #define PZNORM(p) (PNORM(p) * 2 - 1)
 
+// un-normalize the pixel value from range -1..1
+#define PUNZNORM(p) ( (PUNNORM(p) + 1 ) / 2)
+
+
 #define PTYPE float
 
 #define PMAXCHANNELS 4
@@ -76,9 +80,6 @@ struct Pixel {
 };
 
 struct Texture {
-	size_t width;
-	size_t height;
-	size_t channels;
 	union {
 		Pixel *buffer;
 		PTYPE *cbuffer;
@@ -87,17 +88,20 @@ struct Texture {
 		Pixel *backBuffer;
 		PTYPE *cbackBuffer;
 	};
+	int width;
+	int height;
+	char channels;
 };
 
 inline void TextureSetupBackBuffer( Texture *tex ) {
 
-	if ( tex->backBuffer == NULL )
-		tex->backBuffer = (Pixel*)malloc( tex->width * tex->height * sizeof(Pixel) );
+	if ( tex->cbackBuffer == NULL )
+		tex->cbackBuffer = (PTYPE*)malloc( tex->width * tex->height * tex->channels * sizeof(PTYPE) );
 }
 
 inline void TextureSwapBuffers( Texture *tex ) {
 	
-	Pixel *tmp = tex->buffer;
-	tex->buffer = tex->backBuffer;
-	tex->backBuffer = tmp;
+	PTYPE *tmp = tex->cbuffer;
+	tex->cbuffer = tex->cbackBuffer;
+	tex->cbackBuffer = tmp;
 }
