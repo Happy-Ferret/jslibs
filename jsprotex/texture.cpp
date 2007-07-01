@@ -1076,7 +1076,7 @@ DEFINE_FUNCTION( Convolution ) {
 	RT_ASSERT_ALLOC( kernel );
 	RT_CHECK_CALL( FloatArrayToVector(cx, count, &argv[0], kernel) );
 
-	int size = (int)sqrtf(count);
+	int size = (int)sqrtf(count); // (TBD) allow not-squared kernels like [ [1,2,3], [4,5,6] ]
 
 	RT_ASSERT( size * size == count, "Invalid convolution kernel size.");
 

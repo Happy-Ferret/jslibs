@@ -78,8 +78,8 @@ texture.Normals(1);
 /* spaceship hud
 */
 var texture = new Texture(256,256,1);
-texture.SetValue([0]);
-texture.Pixels(100);
+texture.SetLevels([0]);
+texture.SetPixels(100);
 texture.BoxBlur(32,64);
 texture.Convolution([0,0,-1.5, 0,1,0 ,0,0,1]);
 //texture.Convolution([0,0,0, 0,1,0 ,0,0,0]);
@@ -131,7 +131,7 @@ texture.MultLevels([200]);
 gl.Color(1,1,1);
 gl.LoadTexture( texture );
 
-win.rect = [1700,1000,1900,1200]
-//win.rect = [500,500,700,700];
+//win.rect = [1700,1000,1900,1200]
+win.rect = [500,500,700,700];
 win.ProcessEvents();
 
