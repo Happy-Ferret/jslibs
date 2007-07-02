@@ -34,16 +34,33 @@ inline JSBool ArrayLength( JSContext *cx, int *count, const jsval jsvalArray ) {
 	return JS_TRUE;
 }
 
+inline JSBool ArrayArrayToVector( JSContext *cx, int count, const jsval *vp, jsval *vector ) {
+
+	JSObject *jsArray;
+	RT_CHECK_CALL( JS_ValueToObject(cx, *vp, &jsArray) )
+	RT_ASSERT( jsArray != NULL && JS_IsArrayObject(cx,jsArray), "value must be an array." );
+	jsval value; // sub-array
+	JSBool status;
+	for (int i=0; i<count; ++i) {
+
+		status = JS_GetElement(cx, jsArray, i, &value);
+		RT_ASSERT( status && value != JSVAL_VOID, "Invalid array value." );
+		vector[i] = value;
+	}
+	return JS_TRUE;
+}
+
 inline JSBool IntArrayToVector( JSContext *cx, int count, const jsval *vp, int *vector ) {
 
 	JSObject *jsArray;
-	if ( JS_ValueToObject(cx, *vp, &jsArray) == JS_FALSE )
-		return JS_FALSE;
+	RT_CHECK_CALL( JS_ValueToObject(cx, *vp, &jsArray) )
 	RT_ASSERT( jsArray != NULL && JS_IsArrayObject(cx,jsArray), "value must be an array." );
 	jsval value;
+	JSBool status;
 	for (int i=0; i<count; ++i) {
 
-		JS_GetElement(cx, jsArray, i, &value );
+		status = JS_GetElement(cx, jsArray, i, &value);
+		RT_ASSERT( status && value != JSVAL_VOID, "Invalid array value." );
 		RT_SAFE( jsdouble d; JS_ValueToNumber(cx, value, &d); vector[i] = d; );
 		RT_UNSAFE( vector[i] = JSVAL_TO_INT(value) );
 	}

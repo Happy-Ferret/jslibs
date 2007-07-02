@@ -34,22 +34,22 @@ DECLARE_CLASS( Texture )
 #define PMAXLIMIT FLT_MAX
 
 // min 'visible' value
-#define PMIN (0.f)
+// #define PMIN (0.f) // IMPORTANT: the lowest visible value is always 0, then this macro is no more used
 
 // max 'visible' value
 #define PMAX (1.f)
 
 // full amplitude
-#define PAMP (PMAX-PMIN)
+//#define PAMP (PMAX-PMIN)
 
 // middle pixel value (gray)
-#define PMID (PMIN+((PMAX-PMIN)/2))
+#define PMID ( PMAX / 2 )
 
 // normalize the pixel value to range 0..1
-#define PNORM(p) (( (p) -PMIN) / (PMAX-PMIN))
+#define PNORM(p) ((p) / PMAX)
 
 // un-normalize the pixel value from range 0..1
-#define PUNNORM(p) ((p) * (PMAX-PMIN) + PMIN)
+#define PUNNORM(p) ((p) * PMAX)
 
 // normalize the pixel value to range -1..1
 #define PZNORM(p) (PNORM(p) * 2 - 1)
@@ -72,20 +72,12 @@ struct Point {
 	float x, y;
 };
 
-struct Pixel {
-	union {
-		struct { PTYPE r, g, b, a; };
-		PTYPE composant[4];
-	};
-};
 
 struct Texture {
 	union {
-		Pixel *buffer;
 		PTYPE *cbuffer;
 	};
 	union {
-		Pixel *backBuffer;
 		PTYPE *cbackBuffer;
 	};
 	int width;

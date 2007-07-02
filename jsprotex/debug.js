@@ -76,7 +76,6 @@ texture.Normals(1);
 */
 
 /* spaceship hud
-*/
 var texture = new Texture(256,256,1);
 texture.SetLevels([0]);
 texture.SetPixels(100);
@@ -85,6 +84,37 @@ texture.Convolution([0,0,-1.5, 0,1,0 ,0,0,1]);
 //texture.Convolution([0,0,0, 0,1,0 ,0,0,0]);
 texture.MultLevels([200]);
 //texture.NormalizeLevels();
+*/
+
+
+function Cloud( size, amp ) {
+
+	var octaves = Math.log(size) / Math.log(2);
+	var s = 1;
+	var cloud = new Texture(s, s, 1);
+	cloud.SetLevels([0]);
+	var a = 1;
+	while ( --octaves >= 0 ) {
+		
+		var tmp = new Texture(s, s, 1).SetNoise(a);
+		cloud.AddTexture(tmp);
+		tmp.Free();
+		a *= amp;
+		s *= 2;
+		cloud.Resize(s, s, false);
+		cloud.BoxBlur(3, 3);
+	}
+	cloud.NormalizeLevels();
+	return cloud;
+}
+
+var t0 = IntervalNow();
+
+var t = Cloud(256, 0.5);
+
+Print( 'time: '+ (IntervalNow() - t0) + ' ms\n' );
+
+
 
 
 //texture.Convolution([-1,0,1, 0,1,0 ,-1,0,1]);
@@ -129,9 +159,9 @@ texture.MultLevels([200]);
 //texture.Invert();
 
 gl.Color(1,1,1);
-gl.LoadTexture( texture );
+gl.LoadTexture( t );
 
-//win.rect = [1700,1000,1900,1200]
-win.rect = [500,500,700,700];
+win.rect = [1700,1000,1900,1200]
+//win.rect = [500,500,700,700];
 win.ProcessEvents();
 

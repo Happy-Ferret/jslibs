@@ -28,6 +28,7 @@ static const int W = 3;
 typedef __declspec(align(4)) union {
     __m128 m128;
     struct { float x, y, z, pad; };
+    float raw[4];
 } Vector3;
 
 
