@@ -12,7 +12,7 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-#include "vector3.h"
+#include "../common/vector3.h"
 #include "matrix44.h"
 #include "../common/jsNativeInterface.h"
 

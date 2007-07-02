@@ -1420,8 +1420,6 @@ DEFINE_FUNCTION( NormalizeVectors ) {
 
 DEFINE_FUNCTION( Normals ) {
 
-	RT_ASSERT_ARGC( 1 );
-
 	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(tex);
 
@@ -1431,13 +1429,17 @@ DEFINE_FUNCTION( Normals ) {
 		tex->cbackBuffer = NULL;
 	}
 
+
 	if ( tex->cbackBuffer == NULL )
 		tex->cbackBuffer = (PTYPE*)malloc( tex->width * tex->height * 3 * sizeof(PTYPE) );
 
 	// from here, tex->cbackBuffer is a 3 channels buffer
 
 	float amp;
-	RT_JSVAL_TO_REAL( argv[0], amp );
+	if ( argc >= 1 )
+		RT_JSVAL_TO_REAL( argv[0], amp )
+	else
+		amp = 1;
 
 	int width = tex->width;
 	int height = tex->height;
@@ -1488,7 +1490,7 @@ DEFINE_FUNCTION( Normals ) {
 			fPix = (float)tex->cbuffer[(  (x+1) % width + (((y+1) % height)*width)  ) * channels];
 			dX+= PNORM(fPix) * 1.0f;
 			
-			Vector3Set(&normal, dX, dY, 1.f);
+			Vector3Set(&normal, dX*amp, dY*amp, 1.f);
 			Vector3Normalize(&normal);
 
 			pos = (x + y * width) * 3; // 3 is the number of channels
@@ -2019,7 +2021,7 @@ DEFINE_FUNCTION( Cells ) { // source: FxGen
 	return JS_TRUE;
 }
 
-DEFINE_FUNCTION( Cells ) { // source: FxGen
+DEFINE_FUNCTION( Glow ) { // source: FxGen
 
 	RT_ASSERT_ARGC( 3 );
 

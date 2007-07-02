@@ -38,7 +38,7 @@
 //
 #include <fvec.h>
 
-#include "vector3.h"
+#include "../common/vector3.h"
 
 typedef __declspec(align(16)) union {
     struct {
