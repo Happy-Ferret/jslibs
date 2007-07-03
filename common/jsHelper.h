@@ -323,4 +323,5 @@ inline JSBool CallFunction( JSContext *cx, JSObject *obj, jsval functionValue, j
 	return JS_CallFunctionValue(cx, obj, functionValue, argc, argv, rval);
 }
 
+
 #endif // _JSHELPER_H_

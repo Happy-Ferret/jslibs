@@ -114,3 +114,45 @@ inline JSBool FloatVectorToArray( JSContext *cx, int count, const float *vector,
 	}
 	return JS_TRUE;
 }
+
+
+
+
+inline int GetInt( JSContext *cx, jsval objVal, const char *propertyName, int defaultValue ) {
+
+	int32 value;
+	jsval tmp;
+	if ( !JSVAL_IS_OBJECT(objVal) || JSVAL_IS_NULL(objVal) )
+		return defaultValue;
+	if ( JS_GetProperty(cx, JSVAL_TO_OBJECT(objVal), propertyName, &tmp) == JS_FALSE )
+		return defaultValue;
+	if ( JS_ValueToInt32(cx, tmp, &value) == JS_FALSE )
+		return defaultValue;
+	return value;
+}
+
+inline float GetFloat( JSContext *cx, jsval objVal, const char *propertyName, float defaultValue ) {
+
+	jsdouble value;
+	jsval tmp;
+	if ( !JSVAL_IS_OBJECT(objVal) || JSVAL_IS_NULL(objVal) )
+		return defaultValue;
+	if ( JS_GetProperty(cx, JSVAL_TO_OBJECT(objVal), propertyName, &tmp) == JS_FALSE )
+		return defaultValue;
+	if ( JS_ValueToNumber(cx, tmp, &value) == JS_FALSE )
+		return defaultValue;
+	return value;
+}
+
+inline float GetBool( JSContext *cx, jsval objVal, const char *propertyName, bool defaultValue ) {
+
+	JSBool value;
+	jsval tmp;
+	if ( !JSVAL_IS_OBJECT(objVal) || JSVAL_IS_NULL(objVal) )
+		return defaultValue;
+	if ( JS_GetProperty(cx, JSVAL_TO_OBJECT(objVal), propertyName, &tmp) == JS_FALSE )
+		return defaultValue;
+	if ( JS_ValueToBoolean(cx, tmp, &value) == JS_FALSE )
+		return defaultValue;
+	return value == JS_TRUE;
+}

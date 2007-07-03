@@ -21,7 +21,7 @@ win.onidle = function() {
 
 win.onkeydown = function( key, l ) {
 	
-	if ( key == vk.ESC )
+//	if ( key == vk.ESC )
 		win.Exit();
 }
 
@@ -43,6 +43,11 @@ const BLUE = [0,0,1];
 const GRAY = [.5,.5,.5];
 const BLACK = [0,0,0];
 const WHITE = [1,1,1];
+
+var curveLinear = [];
+for ( var i = 0; i < 1024; i++ )
+	curveLinear[i] = (1024-i)/1024;
+
 
 /*
 var sx = 16; 
@@ -86,19 +91,32 @@ texture.MultLevels([200]);
 //texture.NormalizeLevels();
 */
 
+function AddChannel(t) {
+	
+	var tmp = new Texture(t.width, t.height, t.channels+1);
+	for ( var i = 0; i < t.channels; i++ )
+		tmp.SetChannel(i, t, i);
+	t.Free();
+	return tmp;
+}
+
+function AddPixels(t, count) {
+	
+	var color = [1,1,1];	
+	while ( count-- > 0 )
+		t.SetPixel(Texture.RandInt(), Texture.RandInt(), color);
+}
 
 function Cloud( size, amp ) {
 
 	var octaves = Math.log(size) / Math.log(2);
+	var a = 1;
 	var s = 1;
 	var cloud = new Texture(s, s, 1);
-	cloud.SetLevels([0]);
-	var a = 1;
-	while ( --octaves >= 0 ) {
+	cloud.ClearChannel();
+	while ( octaves-- > 0 ) {
 		
-		var tmp = new Texture(s, s, 1).SetNoise(a);
-		cloud.AddTexture(tmp);
-		tmp.Free();
+		cloud.AddNoise(a);
 		a *= amp;
 		s *= 2;
 		cloud.Resize(s, s, false);
@@ -108,15 +126,47 @@ function Cloud( size, amp ) {
 	return cloud;
 }
 
+
+var t = Cloud(256, 0.3);
+t.Aliasing(5)
+t.AddGradiantRadial(100, 100, 50, curveLinear);
+//t.Normals();
+t.ClearChannel();
+t.AddGradiantQuad( [0], [0], [1], [1] );
+
+var t = new Texture(128, 128, 3);
+t.ClearChannel();
+t.AddNoise();
+t.RGBToHLS();
+//t.MultLevels([1,1,0.1]);
+//t.BoxBlur(2,2);
+t.HLSToRGB();
+
+t.ClearChannel();
+
+
+for ( var i = 0; i< 10; i++ ) {
+	AddPixels(t, 64);
+	t.BoxBlur(2,2);
+}
+t.BoxBlur(2,2);
+t.NormalizeLevels();
+
 var t0 = IntervalNow();
 
-var t = Cloud(128, 0.5);
+var red = new Texture(128,128,3);
+red.SetLevels([1,0,0]);
+var blue = new Texture(128,128,3);
+blue.SetLevels([0,0,1]);
 
-t.Normals();
+t.Mix(red,blue);
+
+t.ClearChannel(2);
+
+t.AddCracks( 100, 100, 1 );
+
 
 Print( 'time: '+ (IntervalNow() - t0) + ' ms\n' );
-
-
 
 
 //texture.Convolution([-1,0,1, 0,1,0 ,-1,0,1]);
@@ -163,7 +213,7 @@ Print( 'time: '+ (IntervalNow() - t0) + ' ms\n' );
 gl.Color(1,1,1);
 gl.LoadTexture( t );
 
-//win.rect = [1700,1000,1900,1200]
-win.rect = [500,500,700,700];
+win.rect = [1700,1000,1900,1200]
+//win.rect = [500,500,700,700];
 win.ProcessEvents();
 
