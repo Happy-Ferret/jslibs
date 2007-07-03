@@ -37,17 +37,16 @@ gl.Init();
 //gl.Perspective( 60, 0.01, 10000 );
 gl.Ortho(-1, 1, -1, 1);
 
-const RED = [1,0,0];
-const GREEN = [0,1,0];
-const BLUE = [0,0,1];
-const GRAY = [.5,.5,.5];
-const BLACK = [0,0,0];
-const WHITE = [1,1,1];
+const RED = [1,0,0,1];
+const GREEN = [0,1,0,1];
+const BLUE = [0,0,1,1];
+const GRAY = [.5,.5,.5,1];
+const BLACK = [0,0,0,1];
+const WHITE = [1,1,1,1];
 
-var curveLinear = [];
-for ( var i = 0; i < 1024; i++ )
-	curveLinear[i] = (1024-i)/1024;
-
+var curveLinear = function(v) { return 1-v }
+var curveSin = function(v) { return Math.cos(v*Math.PI/2) }
+var curveDot = function(v,i) { return (i/5)%2 }
 
 /*
 var sx = 16; 
@@ -126,10 +125,14 @@ function Cloud( size, amp ) {
 	return cloud;
 }
 
+draw:{
 
 var t = Cloud(256, 0.3);
 t.Aliasing(5)
-t.AddGradiantRadial(100, 100, 50, curveLinear);
+t.AddGradiantRadial(100, 100, 50, curveDot );
+
+break draw;
+
 //t.Normals();
 t.ClearChannel();
 t.AddGradiantQuad( [0], [0], [1], [1] );
@@ -143,7 +146,6 @@ t.RGBToHLS();
 t.HLSToRGB();
 
 t.ClearChannel();
-
 
 for ( var i = 0; i< 10; i++ ) {
 	AddPixels(t, 64);
@@ -163,8 +165,10 @@ t.Mix(red,blue);
 
 t.ClearChannel(2);
 
-t.AddCracks( 100, 100, 1 );
+t.ClearChannel();
+t.AddCracks( 100, 100, 0, WHITE, [.1,.2,.3,.5,.6,.7,.8,.9,1] );
 
+//t.Convolution( [ 0,0.5,0, 0.5,1,0.5, 0,0.5,0 ] );
 
 Print( 'time: '+ (IntervalNow() - t0) + ' ms\n' );
 
@@ -210,10 +214,12 @@ Print( 'time: '+ (IntervalNow() - t0) + ' ms\n' );
 //texture.Aliasing(10);
 //texture.Invert();
 
+}
+
 gl.Color(1,1,1);
 gl.LoadTexture( t );
 
-win.rect = [1700,1000,1900,1200]
-//win.rect = [500,500,700,700];
+//win.rect = [1700,1000,1900,1200]
+win.rect = [500,500,700,700];
 win.ProcessEvents();
 

@@ -1854,11 +1854,27 @@ DEFINE_FUNCTION( AddGradiantRadial ) {
 	RT_JSVAL_TO_INT32( argv[2], radius );
 
 	BorderMode borderMode = borderWrap;
-
+/*
 	int curveLength;
 	RT_CHECK_CALL( ArrayLength(cx, &curveLength, argv[3]) );
 	float *curve = (float*)malloc( curveLength * sizeof(float) );
 	RT_CHECK_CALL( FloatArrayToVector(cx, curveLength, &argv[3], curve) );
+*/
+	float *curve = (float*)malloc( radius * sizeof(float) );
+
+	// get curve data
+	RT_ASSERT_FUNCTION( argv[3] );
+	jsval val[2], resultValue;
+	jsdouble fval;
+	for ( int i = 0; i < radius; i++ ) {
+		
+		fval = (float)i / radius;
+		RT_CHECK_CALL( JS_NewDoubleValue(cx, fval, val) );
+		val[1] = INT_TO_JSVAL(i);
+		RT_CHECK_CALL( JS_CallFunctionValue(cx, obj, argv[3], 2, val, &resultValue) );
+		RT_CHECK_CALL( JS_ValueToNumber(cx, resultValue, &fval) );
+		curve[i] = fval;
+	}
 
 	Vector3 p;
 	int dist;
@@ -1885,7 +1901,8 @@ DEFINE_FUNCTION( AddGradiantRadial ) {
 				if ( dist < radius ) {
 
 					pos = (x + y * width) * channels;
-					curveValue = curve[dist * curveLength / radius];
+//					curveValue = curve[dist * curveLength / radius];
+					curveValue = curve[dist];
 					for ( c = 0; c < channels; c++ )
 						tex->cbuffer[pos+c] += curveValue;
 				}
@@ -1917,26 +1934,37 @@ DEFINE_FUNCTION( AddCracks ) { // source: FxGen
 	float variation;
 	RT_JSVAL_TO_REAL( argv[2], variation );
 
+	PTYPE pixel[PMAXCHANNELS];
+	FloatArrayToVector(cx, tex->channels, &argv[3], (float*)&pixel);
+
+	int curveLength;
+	RT_CHECK_CALL( ArrayLength(cx, &curveLength, argv[4]) );
+	float *curve = (float*)malloc( curveLength * sizeof(float) );
+	RT_CHECK_CALL( FloatArrayToVector(cx, curveLength, &argv[4], curve) );
+
 	int c;
 	int pos;
 
+	float curveValue;
 	//Process operator
 	int n = 0;
-	while( n++ < count )
-	{
+	while( n++ < count ) {
 		float x = genrand_real1() * width;
 		float y = genrand_real1() * height;
 		float a = 2.0f * M_PI * genrand_real1();
 		int crackLength = (int)(genrand_real1() * length);
 
-		while( --crackLength >= 0 )
-		{
+		while( --crackLength >= 0 ) {
+
 			int ix = int(x)%width;
 			int iy = int(y)%height;
 			
-			pos = (ix + iy * width)*channels;
+			pos = (ix + iy * width) * channels;
 			for ( c = 0; c < channels; c++ )
-				tex->cbuffer[pos+c] = 1;
+
+			curveValue = curve[crackLength * curveLength / length];
+			for ( c = 0; c < channels; c++ )
+				tex->cbuffer[pos+c] += curveValue;
 
 			x = x + cos(a);
 			y = y + sin(a);
