@@ -37,6 +37,8 @@ DECLARE_CLASS( Texture )
 // #define PMIN (0.f) // IMPORTANT: the lowest visible value is always 0, then this macro is no more used
 
 // max 'visible' value
+// with bytes, the range should be [0,255]
+// BUT with real, the range should be [0,1] or [0,1) ( use 1.f - FLT_EPSILON )
 #define PMAX (1.f)
 
 // full amplitude
@@ -83,6 +85,10 @@ struct Texture {
 	int width;
 	int height;
 	char channels;
+};
+
+struct RGB {
+	PTYPE r,g,b;
 };
 
 inline void TextureSetupBackBuffer( Texture *tex ) {

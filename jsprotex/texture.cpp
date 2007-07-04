@@ -20,7 +20,6 @@
 #include <stdlib.h>
 #include "texture.h"
 
-
 #include "../common/vector3.h"
 #include "../common/jsConversionHelper.h"
 
@@ -30,6 +29,24 @@ extern "C" unsigned long genrand_int32(void);
 extern "C" double genrand_real1(void);
 
 enum BorderMode { borderClamp, borderWrap, borderMirror, borderValue };
+
+unsigned long int NoiseInt(unsigned long int n) {
+
+	n = (n << 13) ^ n;
+	return (n * (n * n * 60493 + 19990303) + 1376312589);
+}
+
+float NoiseReal(unsigned long int n) { // return: 0 <= val <= 1
+
+	return (float)NoiseInt(n) / 4294967296.f;
+}
+
+RGB HueToRGB( float hue ) {
+	
+	RGB rgb;
+	// ...
+	return rgb;
+}
 
 
 inline PTYPE* PosByMode( const Texture *tex, int x, int y, BorderMode mode ) {
@@ -60,30 +77,76 @@ inline PTYPE* PosByMode( const Texture *tex, int x, int y, BorderMode mode ) {
 }
 
 
-unsigned long int NoiseInt(unsigned long int n) {
-
-	n = (n << 13) ^ n;
-	return (n * (n * n * 60493 + 19990303) + 1376312589);
-}
-
-float NoiseReal(unsigned long int n) { // return: 0 <= val <= 1
-
-	return (float)NoiseInt(n) / 4294967296.f;
-}
-
-
-BEGIN_CLASS( Texture )
-
-
 JSBool ValueToTexture( JSContext* cx, jsval value, Texture **tex ) {
 	
 	RT_ASSERT_OBJECT( value );
 	JSObject *texObj = JSVAL_TO_OBJECT( value );
-	RT_ASSERT_CLASS( texObj, _class );
+	RT_ASSERT_CLASS( texObj, &classTexture );
 	*tex = (Texture *)JS_GetPrivate(cx, texObj);
 	RT_ASSERT_RESOURCE(tex);
 	return JS_TRUE;
 }
+
+// curve: number | array
+inline JSBool InitLevelData( JSContext* cx, jsval value, int count, PTYPE *level ) {
+
+	if ( JSVAL_IS_OBJECT(value) && JS_IsArrayObject(cx, JSVAL_TO_OBJECT(value)) ) {
+
+		FloatArrayToVector(cx, count, &value, level);
+	} else if ( JSVAL_IS_NUMBER(value) ) {
+		
+		jsdouble dval;
+		RT_CHECK_CALL( JS_ValueToNumber(cx, value, &dval) );
+		PTYPE val = (PTYPE)dval;
+		for ( int i = 0; i < count; i++ )
+			level[i] = val;
+	}
+	return JS_TRUE;
+}
+
+// curve: number | function | array
+inline JSBool InitCurveData( JSContext* cx, jsval value, int length, float *curve ) {
+ 
+	if ( JSVAL_IS_NUMBER(value) ) {
+		
+		jsdouble dval;
+		RT_CHECK_CALL( JS_ValueToNumber(cx, value, &dval) );
+		PTYPE val = (PTYPE)dval;
+		for ( int i = 0; i < length; i++ )
+			curve[i] = val;
+	} else if ( JS_TypeOfValue( cx, value ) == JSTYPE_FUNCTION ) {
+
+		jsval val[2], resultValue;
+		jsdouble fval;
+		for ( int i = 0; i < length; i++ ) {
+			
+			fval = i / (float)length;
+			RT_CHECK_CALL( JS_NewDoubleValue(cx, fval, val) );
+			val[1] = INT_TO_JSVAL(i);
+			RT_CHECK_CALL( JS_CallFunctionValue(cx, JS_GetGlobalObject(cx), value, 2, val, &resultValue) );
+			RT_CHECK_CALL( JS_ValueToNumber(cx, resultValue, &fval) );
+			curve[i] = fval;
+		}
+	} else if ( JSVAL_IS_OBJECT(value) && JS_IsArrayObject( cx, JSVAL_TO_OBJECT(value) ) ) {
+
+		int curveArrayLength;
+		RT_CHECK_CALL( ArrayLength(cx, &curveArrayLength, value) );
+		float *curveArray = (float*)malloc( curveArrayLength * sizeof(float) );
+		RT_CHECK_CALL( FloatArrayToVector(cx, curveArrayLength, &value, curveArray) );
+
+		for ( int i = 0; i < length; i++ )
+			curve[i] = curveArray[ i * curveArrayLength / length ];
+	} else {
+
+		for ( int i = 0; i < length; i++ )
+			curve[i] = PMAX;
+	}
+	return JS_TRUE;
+}
+
+
+
+BEGIN_CLASS( Texture )
 
 DEFINE_FINALIZE() {
 
@@ -98,6 +161,7 @@ DEFINE_FINALIZE() {
 		JS_SetPrivate(cx, obj, NULL);
 	}
 }
+
 
 DEFINE_CONSTRUCTOR() {
 
@@ -141,6 +205,7 @@ DEFINE_CONSTRUCTOR() {
 	return JS_TRUE;
 }
 
+
 DEFINE_FUNCTION( Free ) {
 
 	RT_ASSERT_CLASS(obj, _class);
@@ -180,7 +245,7 @@ DEFINE_FUNCTION( ClearChannel ) {
 }
 
 
-DEFINE_FUNCTION( SetChannel ) {
+DEFINE_FUNCTION( SetChannel ) { // dstChannel,   tex1, srcChannel
 
 	RT_ASSERT_ARGC( 3 );
 	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
@@ -210,12 +275,13 @@ DEFINE_FUNCTION( SetChannel ) {
 	return JS_TRUE;
 }
 
+
 DEFINE_FUNCTION( Aliasing ) {
 
 	RT_ASSERT_ARGC( 1 );
 	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(tex);
-	float count;
+	PTYPE count;
 	RT_JSVAL_TO_UINT32( argv[0], count );
 
 	int tsize = tex->width * tex->height * tex->channels;
@@ -232,19 +298,21 @@ DEFINE_FUNCTION( NormalizeLevels ) {
 	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(tex);
 
-	float min = PMAXLIMIT;
-	float max = PMINLIMIT;
+	PTYPE min = PMAXLIMIT;
+	PTYPE max = PMINLIMIT;
+	PTYPE level;
 
 	int tsize = tex->width * tex->height * tex->channels;
 	for ( int i = 0; i < tsize; i++ ) {
 
-		if ( tex->cbuffer[i] > max )
-			max = tex->cbuffer[i];
-		if ( tex->cbuffer[i] < min )
-			min = tex->cbuffer[i];
+		level = tex->cbuffer[i]; 
+		if ( level > max )
+			max = level;
+		else if ( level < min )
+			min = level;
 	}
 
-	float amp = max - min;
+	PTYPE amp = max - min;
 	for ( int i = 0; i < tsize; i++ )
 		tex->cbuffer[i] = PMAX * ( tex->cbuffer[i] - min ) / amp; // value is normalized to 0...PMAX
 
@@ -253,12 +321,90 @@ DEFINE_FUNCTION( NormalizeLevels ) {
 }
 
 
-DEFINE_FUNCTION( Clamp ) { // min, max, keepClampedColor
+DEFINE_FUNCTION( ClampLevels ) { // (TBD) chack if this algo is right
+
+	RT_ASSERT_ARGC( 2 );
 
 	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(tex);
 
+	PTYPE min, max;
+	RT_JSVAL_TO_REAL( argv[0], min );
+	RT_JSVAL_TO_REAL( argv[1], max );
+
+	PTYPE level;
+	int tsize = tex->width * tex->height * tex->channels;
+	for ( int i = 0; i < tsize; i++ ) {
+		
+		level = tex->cbuffer[i];
+		if ( level > max )
+			tex->cbuffer[i] = max;
+		else if ( level < min )
+			tex->cbuffer[i] = min;
+	}
+
+	*rval = OBJECT_TO_JSVAL(obj);
+	return JS_TRUE;
+}
+
+
+DEFINE_FUNCTION( CutLevels ) {
+
+	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE(tex);
+
+	PTYPE min, max;
+	if ( argc >= 2 ) {
+
+		RT_JSVAL_TO_REAL( argv[0], min );
+		RT_JSVAL_TO_REAL( argv[1], max );
+	} else {
+		min = 0;
+		max = PMAX;
+	}
+
+	PTYPE lmin, lmax; // local min & max
+	PTYPE level;
+	int channels = tex->channels;
+	int size = tex->width * tex->height;
+	int i, c, pos;
+	for ( i = 0; i < size; i++ ) {
+
+		lmax = max;
+		lmin = min;
+
+		pos = i * channels;
+		for ( c = 0; c < channels; c++ ) {
+			
+			level = tex->cbuffer[pos+c];
+			if ( level > lmax )
+				lmax = level;
+			else if ( level < lmin )
+				lmin = level;
+		}
+
+		level = ( lmin + lmax ) / 2.f;
+
+		if ( level > max )
+			for ( c = 0; c < channels; c++ )
+				tex->cbuffer[pos+c] = PMAX;
+		else if ( level < min )
+			for ( c = 0; c < channels; c++ )
+				tex->cbuffer[pos+c] = 0;
+	}
+
+	*rval = OBJECT_TO_JSVAL(obj);
+	return JS_TRUE;
+}
+
+
+/*
+DEFINE_FUNCTION( ClampLevelsxxx ) { // min, max, keepClampedColor
+
 	RT_ASSERT_ARGC( 3 );
+	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE(tex);
+
 
 	float min, max;
 	bool keep;
@@ -281,27 +427,43 @@ DEFINE_FUNCTION( Clamp ) { // min, max, keepClampedColor
 			tmp = tex->cbuffer[pos+c];
 			if ( tmp > lmax )
 				lmax = tmp;
-			if ( tmp < lmin )
+			else if ( tmp < lmin )
 				lmin = tmp;
 		}
 		
+
+
 		if ( lmax > max ) {
+			
+			if ( keep ) {
 
-			ratio = max / lmax;
-			for ( c = 0; c < channels; c++ ) {
+				ratio = max / lmax;
+				for ( c = 0; c < channels; c++ ) {
 
-				tmp = tex->cbuffer[pos+c];
-				tex->cbuffer[pos+c] = tmp / ratio;
+					tmp = tex->cbuffer[pos+c];
+					tex->cbuffer[pos+c] = tmp * ratio;
+				}
+			} else {
+
+				for ( c = 0; c < channels; c++ )
+					tex->cbuffer[pos+c] = lmax;
 			}
 		}
 
 		if ( lmin < min ) {
 
-			ratio = min / lmin;
-			for ( c = 0; c < channels; c++ ) {
+			if ( keep ) {
 
-				tmp = tex->cbuffer[pos+c];
-				tex->cbuffer[pos+c] = tmp / ratio;
+				ratio = min / lmin;
+				for ( c = 0; c < channels; c++ ) {
+
+					tmp = tex->cbuffer[pos+c];
+					tex->cbuffer[pos+c] = tmp * ratio;
+				}
+			} else {
+
+				for ( c = 0; c < channels; c++ )
+					tex->cbuffer[pos+c] = lmin;
 			}
 		}
 	}
@@ -309,8 +471,10 @@ DEFINE_FUNCTION( Clamp ) { // min, max, keepClampedColor
 	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 }
+*/
 
 
+// PTYPE suppoprt
 DEFINE_FUNCTION( Mix ) { // or lerp (Linear interpolation)
 
 	RT_ASSERT_ARGC( 2 );
@@ -326,11 +490,8 @@ DEFINE_FUNCTION( Mix ) { // or lerp (Linear interpolation)
 
 	float blend;
 	int tsize = tex->width * tex->height * tex->channels;
-	for ( int i = 0; i < tsize; i++ ) {
-
-		blend = PNORM(tex->cbuffer[i]); // 0..1
-		tex->cbuffer[i] = tex1->cbuffer[i] * blend + tex2->cbuffer[i] * (1-blend);
-	}
+	for ( int i = 0; i < tsize; i++ )
+		tex->cbuffer[i] = (tex1->cbuffer[i] * blend + tex2->cbuffer[i] * (PMAX-blend)) / PMAX;
 
 	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
@@ -361,26 +522,49 @@ DEFINE_FUNCTION( MultTexture ) {
 	RT_ASSERT_RESOURCE(tex);
 	RT_CHECK_CALL( ValueToTexture(cx, argv[0], &tex1) );
 	RT_ASSERT( tex->width == tex1->width && tex->height == tex1->height && tex->channels == tex1->channels, "Images must have the same size." );
-
 	int tsize = tex->width * tex->height * tex->channels;
 	for ( int i = 0; i < tsize; i++ )
 		tex->cbuffer[i] = tex->cbuffer[i] * tex1->cbuffer[i];
+	*rval = OBJECT_TO_JSVAL(obj);
+	return JS_TRUE;
+}
 
+DEFINE_FUNCTION( BlendTexture ) { // (TBD) test
+	// http://nehe.gamedev.net/data/lessons/lesson.asp?lesson=08
+
+	RT_ASSERT_ARGC( 1 );
+	Texture *tex1, *tex = (Texture *)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE(tex);
+
+	RT_CHECK_CALL( ValueToTexture(cx, argv[0], &tex1) );
+	RT_ASSERT( tex->width == tex1->width && tex->height == tex1->height && tex->channels == tex1->channels, "Images must have the same size." );
+
+	PTYPE factors[PMAXCHANNELS];
+	RT_CHECK_CALL( InitLevelData(cx, argv[1], tex->channels, factors) );
+
+	int channels = tex->channels;
+	int tsize = tex->width * tex->height * channels;
+	
+	PTYPE factor;
+	for ( int i = 0; i < tsize; i++ ) {
+		
+		factor = factors[i%channels];
+		tex->cbuffer[i] = factor * tex->cbuffer[i] + (PMAX - factor) * tex1->cbuffer[i];
+	}
 	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 }
 
 
-
 DEFINE_FUNCTION( SetLevels ) {
+
+	RT_ASSERT_ARGC( 1 );
 
 	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(tex);
 
-	RT_ASSERT_ARGC( 1 );
-
 	PTYPE pixel[PMAXCHANNELS];
-	FloatArrayToVector(cx, tex->channels, &argv[0], (float*)&pixel);
+	RT_CHECK_CALL( InitLevelData(cx, argv[0], tex->channels, pixel) );
 
 	int channels = tex->channels;
 	int tsize = tex->width * tex->height * channels;
@@ -394,29 +578,18 @@ DEFINE_FUNCTION( SetLevels ) {
 
 DEFINE_FUNCTION( AddLevels ) { // (TBD) test it
 	
+	RT_ASSERT_ARGC( 1 );
+
 	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(tex);
 
-	RT_ASSERT_ARGC( 1 );
-
 	PTYPE pixel[PMAXCHANNELS];
-	FloatArrayToVector(cx, tex->channels, &argv[0], (float*)&pixel);
+	RT_CHECK_CALL( InitLevelData(cx, argv[0], tex->channels, pixel) );
 
 	int channels = tex->channels;
 	int tsize = tex->width * tex->height * channels;
 	for ( int i = 0; i < tsize; i++ )
 		tex->cbuffer[i] += pixel[i % channels];
-
-//	int size = tex->width * tex->height;
-//	int i, c;
-//	int pos;
-//	for ( i = 0; i < size; i++ ) {
-//
-//		pos = i * channels;
-//		for ( c = 0; c < channels; c++ )
-//			tex->cbuffer[pos+c] += pixel[c];
-//	}
-
 	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 }
@@ -424,12 +597,13 @@ DEFINE_FUNCTION( AddLevels ) { // (TBD) test it
 
 DEFINE_FUNCTION( MultLevels ) {
 	
+	RT_ASSERT_ARGC( 1 );
+
 	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(tex);
 
-	RT_ASSERT_ARGC( 1 );
 	PTYPE pixel[PMAXCHANNELS];
-	FloatArrayToVector(cx, tex->channels, &argv[0], (float*)&pixel);
+	RT_CHECK_CALL( InitLevelData(cx, argv[0], tex->channels, pixel) );
 
 	int channels = tex->channels;
 	int tsize = tex->width * tex->height * channels;
@@ -472,12 +646,12 @@ DEFINE_FUNCTION( MirrorLevels ) {
 	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(tex);
 
-	float boundary;
-	RT_JSVAL_TO_REAL(argv[0], boundary);
+	PTYPE boundary;
+	RT_JSVAL_TO_REAL( argv[0], boundary );
 	
 	bool mirrorFromBottom;
 	if ( argc >= 2 && !JSVAL_IS_VOID(argv[1]) )
-		RT_JSVAL_TO_BOOL(argv[1], mirrorFromBottom)
+		RT_JSVAL_TO_BOOL( argv[1], mirrorFromBottom )
 	else
 		mirrorFromBottom = true;
 
@@ -502,15 +676,15 @@ DEFINE_FUNCTION( WrapLevels ) { //
 	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(tex);
 
-	float wrap;
+	PTYPE wrap;
 	RT_JSVAL_TO_REAL(argv[0], wrap);
 
-	float div;
+	PTYPE div;
 	int tsize = tex->width * tex->height * tex->channels;
 	for ( int i = 0; i < tsize; i++ ) {
 
 		div = tex->cbuffer[i] / wrap;
-		tex->cbuffer[i] = div - floor( div );
+		tex->cbuffer[i] = div - floor(div);
 	}
 
 	*rval = OBJECT_TO_JSVAL(obj);
@@ -523,11 +697,8 @@ DEFINE_FUNCTION( AddNoise ) {
 	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(tex);
 
-	float amp;
-	if ( argc >= 1 )
-		RT_JSVAL_TO_REAL( argv[0], amp )
-	else 
-		amp = 1;
+	PTYPE pixel[PMAXCHANNELS];
+	RT_CHECK_CALL( InitLevelData(cx, argv[0], tex->channels, pixel) );
 
 	if ( argc >= 2 ) {
 
@@ -536,15 +707,17 @@ DEFINE_FUNCTION( AddNoise ) {
 		init_genrand(seed);
 	}
 
-	int tsize = tex->width * tex->height * tex->channels;
+	int channels = tex->channels;
+	int tsize = tex->width * tex->height * channels;
 	for ( int i = 0; i < tsize; i++ )
-		tex->cbuffer[i] += genrand_real1() * amp;
+		tex->cbuffer[i] += genrand_real1() * pixel[i%channels];
 	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 }
 
 
-DEFINE_FUNCTION( RGBToHLS ) { // (TBD) test it
+// (TBD) PTYPE
+DEFINE_FUNCTION( ToHLS ) { // (TBD) test it
 
 	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(tex);
@@ -600,7 +773,7 @@ DEFINE_FUNCTION( RGBToHLS ) { // (TBD) test it
 	return JS_TRUE;
 }
 
-
+// (TBD) PTYPE
 inline float HLSToRGB_hue( float n1, float n2, float hue) { // helper function for the HLS->RGB conversion
 
 	if (hue > 1) hue -= 1;
@@ -611,7 +784,8 @@ inline float HLSToRGB_hue( float n1, float n2, float hue) { // helper function f
 	return( n1 );
 }
 
-DEFINE_FUNCTION( HLSToRGB ) { // (TBD) test it
+// (TBD) PTYPE
+DEFINE_FUNCTION( ToRGB ) { // (TBD) test it
 
 	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(tex);
@@ -661,7 +835,7 @@ DEFINE_FUNCTION( Desaturate ) {
 	
 	RT_ASSERT( tex->channels >= 3, "Texture must be RGB or RGBA." );
 
-	float average;
+	PTYPE average;
 	int pos, i;
 	int channels = tex->channels;
 	int size = tex->width * tex->height;
@@ -685,9 +859,10 @@ DEFINE_FUNCTION( Desaturate ) {
 
 DEFINE_FUNCTION( SetPixel ) { // x, y, levels
 
+	RT_ASSERT_ARGC( 3 );
+
 	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(tex);
-	RT_ASSERT_ARGC( 3 );
 
 	int x, y;
 	RT_JSVAL_TO_INT32( argv[0], x );
@@ -697,7 +872,7 @@ DEFINE_FUNCTION( SetPixel ) { // x, y, levels
 	y = ABS( y % tex->height );
 
 	PTYPE pixel[PMAXCHANNELS];
-	FloatArrayToVector(cx, tex->channels, &argv[2], (float*)&pixel);
+	RT_CHECK_CALL( InitLevelData(cx, argv[2], tex->channels, pixel) );
 
 	int c, channels = tex->channels;
 	int pos = (x + y * tex->width) * channels;
@@ -712,10 +887,11 @@ DEFINE_FUNCTION( SetPixel ) { // x, y, levels
 
 DEFINE_FUNCTION( SetRectangle ) {
 
+	RT_ASSERT_ARGC( 3 );
+
 	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(tex);
 
-	RT_ASSERT_ARGC( 3 );
 
 	int x0, y0, x1, y1;
 	RT_JSVAL_TO_INT32( argv[0], x0 );
@@ -724,7 +900,7 @@ DEFINE_FUNCTION( SetRectangle ) {
 	RT_JSVAL_TO_INT32( argv[3], y1 );
 
 	PTYPE pixel[PMAXCHANNELS];
-	FloatArrayToVector(cx, tex->channels, &argv[4], (float*)&pixel);
+	RT_CHECK_CALL( InitLevelData(cx, argv[4], tex->channels, pixel) );
 
 	int channels = tex->channels;
 	int width = tex->width;
@@ -748,6 +924,7 @@ DEFINE_FUNCTION( SetRectangle ) {
 DEFINE_FUNCTION( Rotate90 ) { // (TBD) test it
 
 	RT_ASSERT_ARGC( 1 );
+
 	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(tex);
 
@@ -839,6 +1016,7 @@ DEFINE_FUNCTION( Flip ) {
 }
 
 
+// (TBD) PTYPE
 DEFINE_FUNCTION( Resize ) {
 
 	RT_ASSERT_ARGC( 2 );
@@ -858,7 +1036,6 @@ DEFINE_FUNCTION( Resize ) {
 		RT_JSVAL_TO_BOOL( argv[2], interpolate );
 
 		BorderMode borderMode = borderWrap; // (TBD) from function arg
-
 
 		PTYPE *newBuffer = (PTYPE*)malloc( newWidth * newHeight * channels * sizeof(PTYPE) );
 		RT_ASSERT_ALLOC( newBuffer );
@@ -934,12 +1111,11 @@ DEFINE_FUNCTION( Resize ) {
 		tex->height = newHeight;
 		// channels don't change
 	}
-
 	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 }
 
-
+// (TBD) PTYPE
 DEFINE_FUNCTION( Convolution ) {
 
 	// (TBD) accumulate precalculated pixels ? ( like BoxBlur )
@@ -1155,7 +1331,8 @@ DEFINE_FUNCTION( NormalizeVectors ) {
 	int c;
 
 	int size = tex->width * tex->height;
-	float val, sum, ratio;
+	PTYPE val, sum;
+	float ratio;
 	int pos;
 	for ( int i = 0; i < size; i++ ) {
 		
@@ -1167,7 +1344,7 @@ DEFINE_FUNCTION( NormalizeVectors ) {
 			sum += val*val;
 		}
 
-		ratio = sum == 0.f ? 0.f : (1.f / sqrt(sum));
+		ratio = sum == 0 ? 0 : (1.f / sqrt(sum));
 
 		for ( c = 0; c < channels; c++ ) {
 
@@ -1181,7 +1358,7 @@ DEFINE_FUNCTION( NormalizeVectors ) {
 	return JS_TRUE;
 }
 
-
+// (TBD) PTYPE
 DEFINE_FUNCTION( Normals ) {
 
 	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
@@ -1217,41 +1394,41 @@ DEFINE_FUNCTION( Normals ) {
 
 			//Y Sobel filter
 			fPix = tex->cbuffer[(  (x-1 + width) % width + (((y+1) % height)*width)  ) * channels];
-			dY  = PNORM(fPix) * -1.0f;
+			dY  = PNORM(fPix) * -1.f;
 
 			fPix = (float)tex->cbuffer[(  x % width + (((y+1) % height)*width)  ) * channels];
-			dY+= PNORM(fPix) * -2.0f;
+			dY+= PNORM(fPix) * -2.f;
 
 			fPix = (float)tex->cbuffer[(  (x+1) % width + (((y+1) % height)*width)  ) * channels];
-			dY+= PNORM(fPix) * -1.0f;
+			dY+= PNORM(fPix) * -1.f;
 
 			fPix = (float)tex->cbuffer[(  (x-1+width) % width + (((y-1+height) % height)*width)  ) * channels];
-			dY+= PNORM(fPix) * 1.0f;
+			dY+= PNORM(fPix) * 1.f;
 
 			fPix = (float)tex->cbuffer[(  x % width + (((y-1+height) % height)*width)  ) * channels];
-			dY+= PNORM(fPix) * 2.0f;
+			dY+= PNORM(fPix) * 2.f;
 
 			fPix = (float)tex->cbuffer[(  (x+1) % width + (((y-1+height) % height)*width)  ) * channels];
-			dY+= PNORM(fPix) * 1.0f;
+			dY+= PNORM(fPix) * 1.f;
 
 			//X Sobel filter
 			fPix = (float)tex->cbuffer[(  (x-1+width) % width + (((y-1+height) % height)*width)  ) * channels];
-			dX  = PNORM(fPix) * -1.0f;
+			dX  = PNORM(fPix) * -1.f;
 
 			fPix = (float)tex->cbuffer[(  (x-1+width) % width + ((y % height)*width)  ) * channels];
-			dX+= PNORM(fPix) * -2.0f;
+			dX+= PNORM(fPix) * -2.f;
 
 			fPix = (float)tex->cbuffer[(  (x-1+width) % width + (((y+1) % height)*width)  ) * channels];
-			dX+= PNORM(fPix) * -1.0f;
+			dX+= PNORM(fPix) * -1.f;
 
 			fPix = (float)tex->cbuffer[(  (x+1) % width + (((y-1+height) % height)*width)  ) * channels];
-			dX+= PNORM(fPix) * 1.0f;
+			dX+= PNORM(fPix) * 1.f;
 
 			fPix = (float)tex->cbuffer[(  (x+1) % width + ((y % height)*width)  ) * channels];
-			dX+= PNORM(fPix) * 2.0f;
+			dX+= PNORM(fPix) * 2.f;
 
 			fPix = (float)tex->cbuffer[(  (x+1) % width + (((y+1) % height)*width)  ) * channels];
-			dX+= PNORM(fPix) * 1.0f;
+			dX+= PNORM(fPix) * 1.f;
 			
 			Vector3Set(&normal, dX*amp, dY*amp, 1.f);
 			Vector3Normalize(&normal);
@@ -1277,7 +1454,7 @@ DEFINE_FUNCTION( Normals ) {
 }
 
 
-
+// (TBD) PTYPE
 DEFINE_FUNCTION( Light ) {
 
 //	RT_ASSERT_ARGC( 4 );
@@ -1292,13 +1469,13 @@ DEFINE_FUNCTION( Light ) {
 	RT_ASSERT( normals->width == tex->width && normals->height == tex->height, "Invalid normals texture size." );
 
 	PTYPE ambient[3];
-	FloatArrayToVector(cx, 3, &argv[1], (float*)&ambient);
+	RT_CHECK_CALL( InitLevelData(cx, argv[1], 3, ambient) );
 
 	PTYPE diffuse[3];
-	FloatArrayToVector(cx, 3, &argv[2], (float*)&diffuse);
+	RT_CHECK_CALL( InitLevelData(cx, argv[2], 3, diffuse) );
 
 	PTYPE specular[3];
-	FloatArrayToVector(cx, 3, &argv[3], (float*)&specular);
+	RT_CHECK_CALL( InitLevelData(cx, argv[3], 3, specular) );
 	
 	Vector3 lightPos;
 	FloatArrayToVector(cx, 3, &argv[4], lightPos.raw );
@@ -1619,7 +1796,7 @@ DEFINE_FUNCTION( Shift ) {
 	return JS_TRUE;
 }
 
-
+// (TBD) PTYPE
 DEFINE_FUNCTION( Displace ) {
 
 	RT_ASSERT_ARGC( 2 );
@@ -1734,12 +1911,12 @@ DEFINE_FUNCTION( Cells ) { // source: FxGen
 		cellPoints[i].y = (y+0.5f+(rand2-0.5f)*(1.f-regularity))/density;
 	}
 
-	for (int y=0; y<height; y++) {
-		for (int x=0; x<width; x++) {
+	for (int y = 0; y < height; y++) {
+		for (int x = 0; x < width; x++) {
 
 			Point pixelPos;
-			pixelPos.x = (float)x/(float)width,
-			pixelPos.y = (float)y/(float)height;
+			pixelPos.x = (float)x / (float)width,
+			pixelPos.y = (float)y / (float)height;
 
 			float minDist = 10.f;
 			float nextMinDist = minDist;
@@ -1795,24 +1972,24 @@ DEFINE_FUNCTION( AddGradiantQuad ) {
 	
 	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(tex);
-
-	PTYPE pixel1[PMAXCHANNELS];
-	FloatArrayToVector(cx, tex->channels, &argv[0], (float*)&pixel1);
-
-	PTYPE pixel2[PMAXCHANNELS];
-	FloatArrayToVector(cx, tex->channels, &argv[1], (float*)&pixel2);
-
-	PTYPE pixel3[PMAXCHANNELS];
-	FloatArrayToVector(cx, tex->channels, &argv[2], (float*)&pixel3);
-
-	PTYPE pixel4[PMAXCHANNELS];
-	FloatArrayToVector(cx, tex->channels, &argv[3], (float*)&pixel4);
-
 	int width = tex->width;
 	int height = tex->height;
 	int channels = tex->channels;
 
-	float aspectRatio = 1.f / (float)(width * height);
+
+	PTYPE pixel1[PMAXCHANNELS];
+	RT_CHECK_CALL( InitLevelData(cx, argv[0], channels, pixel1) );
+
+	PTYPE pixel2[PMAXCHANNELS];
+	RT_CHECK_CALL( InitLevelData(cx, argv[1], channels, pixel2) );
+
+	PTYPE pixel3[PMAXCHANNELS];
+	RT_CHECK_CALL( InitLevelData(cx, argv[2], channels, pixel3) );
+
+	PTYPE pixel4[PMAXCHANNELS];
+	RT_CHECK_CALL( InitLevelData(cx, argv[3], channels, pixel4) );
+
+	float aspectRatio = width * height;
 
 	float r1, r2, r3, r4;
 	int x, y, c;
@@ -1820,14 +1997,45 @@ DEFINE_FUNCTION( AddGradiantQuad ) {
 	for ( y = 0; y < height; y++ )
 		for ( x = 0; x < width; x++ ) {
 
-			r1 = (float)((width-x) * (height-y)) * aspectRatio;
-			r2 = (float)((x)       * (height-y)) * aspectRatio;
-			r3 = (float)((width-x) * (y))        * aspectRatio;
-			r4 = (float)((x)       * (y))        * aspectRatio;
+			r1 = (float)((width-x) * (height-y)) / aspectRatio;
+			r2 = (float)((x)       * (height-y)) / aspectRatio;
+			r3 = (float)((width-x) * (y))        / aspectRatio;
+			r4 = (float)((x)       * (y))        / aspectRatio;
 			
 			pos = ( x + y * width ) * channels;
 			for ( c = 0; c < channels; c++ )
 				tex->cbuffer[pos+c] += pixel1[c]*r1 + pixel2[c]*r2 + pixel3[c]*r3 + pixel4[c]*r4;
+		}
+	*rval = OBJECT_TO_JSVAL(obj);
+	return JS_TRUE;
+}
+
+
+DEFINE_FUNCTION( AddGradiantLinear ) {
+
+	RT_ASSERT_ARGC( 2 );
+	
+	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE(tex);
+
+	int width = tex->width;
+	int height = tex->height;
+	int channels = tex->channels;
+
+	float *curvex = (float*)malloc( width * sizeof(float) );
+	InitCurveData( cx, argv[0], width, curvex );
+
+	float *curvey = (float*)malloc( height * sizeof(float) );
+	InitCurveData( cx, argv[1], height, curvey );
+
+	int x, y, c;
+	int pos;
+	for ( y = 0; y < height; y++ )
+		for ( x = 0; x < width; x++ ) {
+	
+			pos = ( x + y * width ) * channels;
+			for ( c = 0; c < channels; c++ )
+				tex->cbuffer[pos+c] += curvex[x] * curvey[y];
 		}
 
 	*rval = OBJECT_TO_JSVAL(obj);
@@ -1854,28 +2062,11 @@ DEFINE_FUNCTION( AddGradiantRadial ) {
 	RT_JSVAL_TO_INT32( argv[2], radius );
 
 	BorderMode borderMode = borderWrap;
-/*
-	int curveLength;
-	RT_CHECK_CALL( ArrayLength(cx, &curveLength, argv[3]) );
-	float *curve = (float*)malloc( curveLength * sizeof(float) );
-	RT_CHECK_CALL( FloatArrayToVector(cx, curveLength, &argv[3], curve) );
-*/
+
 	float *curve = (float*)malloc( radius * sizeof(float) );
+	InitCurveData( cx, argv[3], radius, curve );
 
-	// get curve data
-	RT_ASSERT_FUNCTION( argv[3] );
-	jsval val[2], resultValue;
-	jsdouble fval;
-	for ( int i = 0; i < radius; i++ ) {
-		
-		fval = (float)i / radius;
-		RT_CHECK_CALL( JS_NewDoubleValue(cx, fval, val) );
-		val[1] = INT_TO_JSVAL(i);
-		RT_CHECK_CALL( JS_CallFunctionValue(cx, obj, argv[3], 2, val, &resultValue) );
-		RT_CHECK_CALL( JS_ValueToNumber(cx, resultValue, &fval) );
-		curve[i] = fval;
-	}
-
+	// draw
 	Vector3 p;
 	int dist;
 	int x, y, c;
@@ -1900,7 +2091,8 @@ DEFINE_FUNCTION( AddGradiantRadial ) {
 				dist = (int)Vector3Len(&p);
 				if ( dist < radius ) {
 
-					pos = (x + y * width) * channels;
+					pos = ((x%width) + (y%height) * width) * channels; // (TBD) use borderMode
+
 //					curveValue = curve[dist * curveLength / radius];
 					curveValue = curve[dist];
 					for ( c = 0; c < channels; c++ )
@@ -1928,20 +2120,20 @@ DEFINE_FUNCTION( AddCracks ) { // source: FxGen
 	int count;
 	RT_JSVAL_TO_INT32( argv[0], count );
 
-	int length;
-	RT_JSVAL_TO_INT32( argv[1], length );
+	int crackMaxLength;
+	RT_JSVAL_TO_INT32( argv[1], crackMaxLength );
 	
 	float variation;
 	RT_JSVAL_TO_REAL( argv[2], variation );
 
 	PTYPE pixel[PMAXCHANNELS];
-	FloatArrayToVector(cx, tex->channels, &argv[3], (float*)&pixel);
+	RT_CHECK_CALL( InitLevelData(cx, argv[3], channels, pixel) );
 
-	int curveLength;
-	RT_CHECK_CALL( ArrayLength(cx, &curveLength, argv[4]) );
-	float *curve = (float*)malloc( curveLength * sizeof(float) );
-	RT_CHECK_CALL( FloatArrayToVector(cx, curveLength, &argv[4], curve) );
 
+	float *curve = (float*)malloc( crackMaxLength * sizeof(float) );
+	InitCurveData( cx, argv[4], crackMaxLength, curve );
+
+	// draw
 	int c;
 	int pos;
 
@@ -1951,8 +2143,9 @@ DEFINE_FUNCTION( AddCracks ) { // source: FxGen
 	while( n++ < count ) {
 		float x = genrand_real1() * width;
 		float y = genrand_real1() * height;
-		float a = 2.0f * M_PI * genrand_real1();
-		int crackLength = (int)(genrand_real1() * length);
+		float a = 2.f * M_PI * genrand_real1();
+//		int crackLength = (int)(genrand_real1() * crackMaxLength);
+		int crackLength = crackMaxLength;
 
 		while( --crackLength >= 0 ) {
 
@@ -1962,16 +2155,17 @@ DEFINE_FUNCTION( AddCracks ) { // source: FxGen
 			pos = (ix + iy * width) * channels;
 			for ( c = 0; c < channels; c++ )
 
-			curveValue = curve[crackLength * curveLength / length];
+//			curveValue = curve[crackLength * curveLength / length];
+			curveValue = curve[crackLength];
 			for ( c = 0; c < channels; c++ )
-				tex->cbuffer[pos+c] += curveValue;
+				tex->cbuffer[pos+c] += curveValue * pixel[c];
 
 			x = x + cos(a);
 			y = y + sin(a);
 			if( x < 0.0 ) x = x + float(width);
 			if( y < 0.0 ) y = y + float(height);
 
-			a = a + variation*(2.0f * genrand_real1() - 1.0f);
+			a = a + variation*(2.f * genrand_real1() - 1.f);
 		}
 	}
 	*rval = OBJECT_TO_JSVAL(obj);
@@ -2021,7 +2215,6 @@ DEFINE_FUNCTION( RandSeed ) {
 DEFINE_FUNCTION( RandInt ) {
 
 	int i = genrand_int31();
-//	RT_CHECK_CALL( JS_NewNumberValue(cx, d, rval) );
 	*rval = INT_TO_JSVAL(i);
 	return JS_TRUE;
 }
@@ -2042,6 +2235,13 @@ DEFINE_FUNCTION( Noise ) {
 	RT_CHECK_CALL( JS_NewNumberValue(cx, d, rval) );
 	return JS_TRUE;
 }
+
+#ifdef _DEBUG
+DEFINE_FUNCTION( Test ) {
+
+	return JS_FALSE;
+}
+#endif // _DEBUG
 
 
 CONFIGURE_CLASS
@@ -2067,8 +2267,8 @@ CONFIGURE_CLASS
 	BEGIN_FUNCTION_SPEC
 		FUNCTION( Free )
 		FUNCTION( ClearChannel )
-		FUNCTION_ARGC( RGBToHLS, 0 )
-		FUNCTION_ARGC( HLSToRGB, 0 )
+		FUNCTION_ARGC( ToHLS, 0 )
+		FUNCTION_ARGC( ToRGB, 0 )
 		FUNCTION_ARGC( SetChannel, 3 )
 		FUNCTION_ARGC( SetPixel, 3 )
 //		FUNCTION_ARGC( AddPixels, 2 )
@@ -2092,7 +2292,8 @@ CONFIGURE_CLASS
 		FUNCTION_ARGC( NormalizeVectors, 0 )
 		FUNCTION( Light )
 		FUNCTION_ARGC( BoxBlur, 2 )
-		FUNCTION_ARGC( Clamp, 3 )
+		FUNCTION_ARGC( ClampLevels, 2 )
+		FUNCTION_ARGC( CutLevels, 2 )
 		FUNCTION_ARGC( Displace, 2 )
 		FUNCTION_ARGC( Mix, 2 )
 		FUNCTION_ARGC( NormalizeLevels, 0 )
@@ -2104,7 +2305,12 @@ CONFIGURE_CLASS
 		FUNCTION_ARGC( Cells, 3 )
 		FUNCTION_ARGC( AddCracks, 2 )
 		FUNCTION_ARGC( AddGradiantQuad, 4 )
+		FUNCTION_ARGC( AddGradiantLinear, 2 )
 		FUNCTION_ARGC( AddGradiantRadial, 3 )
+#ifdef _DEBUG
+		FUNCTION( Test )
+#endif // _DEBUG
+
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
@@ -2163,4 +2369,28 @@ Image Processing Algorithms
 	http://www.efg2.com/Lab/Library/ImageProcessing/Algorithms.htm
 
 
+
+float a = 0;
+int b = 2;
+int c = 3;
+
+a = b / c; // 0
+a = (float)b / c; // 0.66666669
+a = b / (float)c; // 0.66666669
+a = (float)b / (float)c; // 0.66666669
+
+a = 2 / 3; // 0
+a = 2.f / 3; // 0.66666669
+a = 2 / 3.f; // 0.66666669
+a = 2.f / 3.f; // 0.66666669
+
+
+2 / 3
+0
+
+2 / 3.0
+0.66666666666666663
+
+2.0 / 3
+0.66666666666666663
 */
