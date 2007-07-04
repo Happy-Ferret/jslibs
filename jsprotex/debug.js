@@ -89,6 +89,19 @@ function Cloud( size, amp ) {
 	return cloud;
 }
 
+function GrayToRGB( tex ) {
+
+	if ( tex.channels == 1 ) {
+	
+		var tmp = new Texture(tex.width, tex.height, 3);
+		tmp.SetChannel(0, tex, 0);
+		tmp.SetChannel(1, tex, 0);
+		tmp.SetChannel(2, tex, 0);
+		tex.Swap(tmp);
+	}
+
+}
+
 var t0 = IntervalNow();
 
 draw:{
@@ -96,19 +109,18 @@ draw:{
 	
 	var size = 128;
 	
-	var t = new Texture(size, size, 3);
+	var t = new Texture(size, size, 1);
 	t.ClearChannel();
 
-	t.AddNoise();
-	t.CutLevels( 0.45, 0.55 );
+	t.AddNoise(1);
+	GrayToRGB(t);
+	t.CutLevels( 0.5, 0.5 );
+	t.MultLevels([0.5,1,1]);
 	
-	var t = Cloud(size, 1);
-	t.CutLevels( 0.8, 1 );
 	t.BoxBlur(2,2);
 	
 
 break draw; // -----------------------------------------
-
 
 //	t.Aliasing(5)
 //	t.AddGradiantRadial(100, 100, 50, curveDot );
@@ -257,7 +269,7 @@ Print( 'time: '+ (IntervalNow() - t0) + ' ms\n' );
 gl.Color(1,1,1);
 gl.LoadTexture( t );
 
-win.rect = [1700,1000,1900,1200]
-//win.rect = [500,500,700,700];
+//win.rect = [1700,1000,1900,1200]
+win.rect = [500,500,700,700];
 win.ProcessEvents();
 

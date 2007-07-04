@@ -210,6 +210,21 @@ DEFINE_FUNCTION( Free ) {
 
 	RT_ASSERT_CLASS(obj, _class);
 	Finalize(cx, obj);
+	return JS_TRUE;
+}
+
+
+DEFINE_FUNCTION( Swap ) {
+
+	RT_ASSERT_ARGC( 1 );
+	RT_ASSERT_CLASS( obj, _class );
+	RT_ASSERT_OBJECT( argv[0] );
+	JSObject *texObj = JSVAL_TO_OBJECT( argv[0] );
+	RT_ASSERT_CLASS( texObj, _class );
+	void *tmp = JS_GetPrivate(cx, obj);
+	JS_SetPrivate(cx, obj, JS_GetPrivate(cx, texObj));
+	RT_CHECK_CALL( JS_SetPrivate(cx, texObj, tmp) );
+	return JS_TRUE;
 }
 
 
@@ -490,10 +505,13 @@ DEFINE_FUNCTION( Mix ) { // or lerp (Linear interpolation)
 
 	float blend;
 	int tsize = tex->width * tex->height * tex->channels;
-	for ( int i = 0; i < tsize; i++ )
+	for ( int i = 0; i < tsize; i++ ) {
+		
+		blend = tex->cbuffer[i];
 		tex->cbuffer[i] = (tex1->cbuffer[i] * blend + tex2->cbuffer[i] * (PMAX-blend)) / PMAX;
+	}
 
-	*rval = OBJECT_TO_JSVAL(obj);
+	*rval = OBJECT_TO_JSVAL(obj); 
 	return JS_TRUE;
 }
 
@@ -727,7 +745,6 @@ DEFINE_FUNCTION( ToHLS ) { // (TBD) test it
 	int channels = tex->channels;
 
 	int size = tex->width * tex->height;
-	char c;
 	int pos;
 	float R, G, B, H, L, S, min, max;
 
@@ -792,7 +809,6 @@ DEFINE_FUNCTION( ToRGB ) { // (TBD) test it
 	RT_ASSERT( tex->channels == 3, "Invalid pixel format (need HLS).");
 
 	int size = tex->width * tex->height;
-	char c;
 	int pos;
 	float R, G, B, H, L, S;
 	float m1, m2;
@@ -1499,7 +1515,6 @@ DEFINE_FUNCTION( Light ) {
 	int channels = tex->channels;
 
 	int x, y, c;
-	float nx, ny, nz; // normal vector for each point
 	int pos;
 
 	Vector3 n;
@@ -1822,8 +1837,6 @@ DEFINE_FUNCTION( Displace ) {
 
 	int x, y;
 	int sx, sy; // source position
-	float ox, oy, oz; // offset
-	float norm;
 	int pos, pos1;
 	int c;
 	Vector3 o;
@@ -2266,10 +2279,12 @@ CONFIGURE_CLASS
 
 	BEGIN_FUNCTION_SPEC
 		FUNCTION( Free )
+		FUNCTION( Swap )
 		FUNCTION( ClearChannel )
 		FUNCTION_ARGC( ToHLS, 0 )
 		FUNCTION_ARGC( ToRGB, 0 )
 		FUNCTION_ARGC( SetChannel, 3 )
+		FUNCTION_ARGC( Desaturate, 0 )
 		FUNCTION_ARGC( SetPixel, 3 )
 //		FUNCTION_ARGC( AddPixels, 2 )
 		FUNCTION_ARGC( SetLevels, 4 )

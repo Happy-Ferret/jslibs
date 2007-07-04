@@ -14,7 +14,7 @@
 
 //$Id: main.cpp 856 2007-05-11 17:58:04Z soubok $
 
-#include "stdafx.h"
+#include "stdafx.h" 
 #include "texture.h"
 #include "static.h"
 
