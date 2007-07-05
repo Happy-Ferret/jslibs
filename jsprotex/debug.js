@@ -49,26 +49,20 @@ const WHITE = [1,1,1,1];
 const curveLinear = function(v) { return 1-v }
 const curveHalfSine = function(v) { return Math.cos(v*Math.PI/2) }
 const curveSine = function(v) { return Math.sin(v*Math.PI) }
+const curveInverse = function(v) { return 1/v }
+const curveSquare = function(v) { return v*v }
 const curveDot = function(v,i) { return i%2 }
 const curveZero = function(v,i) { return 0 }
 const curveOne = function(v,i) { return 1 }
 
+const kernelGaussian = [0,3,10,3,0, 3,16,26,16,3, 10,26,26,26,10, 3,16,26,16,3, 0,3,10,3,0 ];
+const kernelGaussian2 = [2,4,5,4,2, 4,9,12,9,4, 5,12,15,12,5, 4,9,12,9,4, 2,4,5,4,2]; // G(r) = pow(E,-r*r/(2*o*o))/sqrt(2*PI*o);
 
-
-function AddChannel(t) {
-	
-	var tmp = new Texture(t.width, t.height, t.channels+1);
-	for ( var i = 0; i < t.channels; i++ )
-		tmp.SetChannel(i, t, i);
-	t.Free();
-	return tmp;
-}
 
 function AddPixels(t, count) {
 	
-	var color = [1,1,1];	
 	while ( count-- > 0 )
-		t.SetPixel(Texture.RandInt(), Texture.RandInt(), color);
+		t.SetPixel(Texture.RandInt(), Texture.RandInt(), 1);
 }
 
 function Cloud( size, amp ) {
@@ -91,29 +85,69 @@ function Cloud( size, amp ) {
 
 function GrayToRGB( tex ) {
 
-	if ( tex.channels == 1 ) {
-	
-		var tmp = new Texture(tex.width, tex.height, 3);
-		tmp.SetChannel(0, tex, 0);
-		tmp.SetChannel(1, tex, 0);
-		tmp.SetChannel(2, tex, 0);
-		tex.Swap(tmp);
-	}
-
+	if ( tex.channels == 1 )
+		new Texture(tex.width, tex.height, 3).SetChannel(0, tex, 0).SetChannel(1, tex, 0).SetChannel(2, tex, 0).Swap(tex);
+	else if ( tex.channels == 2 )
+		new Texture(tex.width, tex.height, 4).SetChannel(0, tex, 0).SetChannel(1, tex, 0).SetChannel(2, tex, 0).Swap(tex);
 }
+
+function AddAlpha( tex ) {
+
+	if ( tex.channels == 1 )
+		new Texture(tex.width, tex.height, 2).SetChannel(0, tex, 0).Swap(tex);
+	else if ( tex.channels == 3 )
+		new Texture(tex.width, tex.height, 4).SetChannel(0, tex, 0).SetChannel(1, tex, 1).SetChannel(2, tex, 2).Swap(tex);
+}
+
 
 var t0 = IntervalNow();
 
 draw:{
 
+	var size = 256;
+//	var t = new Texture(size, size, 3);
+
+	var t = Cloud(size, 0.5);
+	t.Aliasing(256,curveSquare);
 	
-	var size = 128;
 	
+
+
+
+break draw; // -----------------------------------------		
+	var bump = new Texture(size, size, 3).Cells(8, 0).Add( new Texture(size, size, 3).Cells(8, 1).OppositeLevels() ); // broken floor
+	bump.Normals();
+
+	var t = new Texture(size, size, 3);
+	t.Set(1);
+	t.Light( bump, 0, 1, 1, [1,1,1], 0.5, 1 );
+
+	
+/*	
+	t.Normals();
+	var t1 = new Texture(size, size, 3);
+	t1.SetLevels(0.5);
+	t1.Light( t, 0, 0.5, '#ff0000', [1,1,3], 1, 1 );
+	
+	t.Swap(t1);
+*/
+
+break draw; // -----------------------------------------	
+
+	t.SetLevels('#FFDDEE');
+	
+	var t1 = new Texture(t);
+	t1.AddLevels(-0.5);
+	t1.MultLevels(0.5);
+	
+	t.Paste( t1, size/2, 0, -1 );
+	
+break draw; // -----------------------------------------	
 	var t = new Texture(size, size, 1);
 	t.ClearChannel();
-
 	t.AddNoise(1);
 	GrayToRGB(t);
+
 	t.CutLevels( 0.5, 0.5 );
 	t.MultLevels([0.5,1,1]);
 	
