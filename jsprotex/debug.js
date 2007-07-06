@@ -46,7 +46,7 @@ const GRAY = [.5,.5,.5,1];
 const BLACK = [0,0,0,1];
 const WHITE = [1,1,1,1];
 
-const curveLinear = function(v) { return 1-v }
+const curveLinear = function(v) { return v }
 const curveHalfSine = function(v) { return Math.cos(v*Math.PI/2) }
 const curveSine = function(v) { return Math.sin(v*Math.PI) }
 const curveInverse = function(v) { return 1/v }
@@ -58,10 +58,10 @@ const curveOne = function(v,i) { return 1 }
 const kernelGaussian = [0,3,10,3,0, 3,16,26,16,3, 10,26,26,26,10, 3,16,26,16,3, 0,3,10,3,0 ];
 const kernelGaussian2 = [2,4,5,4,2, 4,9,12,9,4, 5,12,15,12,5, 4,9,12,9,4, 2,4,5,4,2]; // G(r) = pow(E,-r*r/(2*o*o))/sqrt(2*PI*o);
 const kernelEmboss = [-1,0,0, 0,0,0 ,0,0,1];
+const kernelLaplacian = [-1,-1,-1, -1,8,-1, -1,-1,-1];
 
-	//texture.Convolution([0,-1,0, -1,4,-1 ,0,-1,0]); // laplacian 4
-
-	//texture.Convolution([0,-1,0, -1,5,-1, 0,-1,0]); // crystals
+//texture.Convolution([0,-1,0, -1,4,-1 ,0,-1,0]); // laplacian 4
+//texture.Convolution([0,-1,0, -1,5,-1, 0,-1,0]); // crystals
 
 
 function AddPixels(t, count) {
@@ -88,6 +88,14 @@ function Cloud( size, amp ) {
 	return cloud;
 }
 
+function DesaturateLuminosity( tex ) { // see http://svn.gnome.org/viewcvs/gimp/trunk/libgimpcolor/gimprgb.h?revision=19720&view=markup
+	
+	tex.Mult([0.2126, 0.7152, 0.0722]);
+	var tmp = new Texture(tex.width, tex.height, 1).Desaturate(tex, Texture.desaturateSum);
+	tex.Swap(tmp);
+	tmp.Free();
+}
+
 function GrayToRGB( tex ) {
 
 	if ( tex.channels == 1 )
@@ -110,17 +118,27 @@ var t0 = IntervalNow();
 draw:{
 
 	var size = 256;
-//	var t = new Texture(size, size, 3);
-
-	var t = Cloud(size, 0.3);
-	t.Aliasing(20,curveDot);
-//	t.Convolution( kernelGaussian2 );
-	t.BoxBlur(2,2)
-	t.NormalizeLevels();
+	var t = new Texture(size, size, 3);
 	
 	
+break draw; // -----------------------------------------		
+	
+	
+	t.ClearChannel();
+//	t.AddNoise(1);
+	t.AddGradiantQuad(RED, GREEN, BLUE, BLACK);
+	t.Colorize(RED, BLUE);
+	
+//	DesaturateLuminosity(t);
 
 
+
+
+break draw; // -----------------------------------------		
+
+	var t = Cloud(size, 0.5);
+	t.Aliasing(8,curveLinear);
+	t.BoxBlur(3,3)
 
 break draw; // -----------------------------------------		
 	var bump = new Texture(size, size, 3).Cells(8, 0).Add( new Texture(size, size, 3).Cells(8, 1).OppositeLevels() ); // broken floor
@@ -311,7 +329,7 @@ Print( 'time: '+ (IntervalNow() - t0) + ' ms\n' );
 gl.Color(1,1,1);
 gl.LoadTexture( t );
 
-//win.rect = [1700,1000,1900,1200]
-win.rect = [500,500,700,700];
+win.rect = [1700,1000,1900,1200]
+//win.rect = [500,500,700,700];
 win.ProcessEvents();
 

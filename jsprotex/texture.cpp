@@ -29,6 +29,7 @@ extern "C" unsigned long genrand_int32(void);
 extern "C" double genrand_real1(void);
 
 enum BorderMode { borderClamp, borderWrap, borderMirror, borderValue };
+enum DesaturateMode { desaturateLightness, desaturateSum, desaturateAverage };
 
 unsigned long int NoiseInt(unsigned long int n) {
 
@@ -44,7 +45,7 @@ float NoiseReal(unsigned long int n) { // return: 0 <= val <= 1
 
 inline bool IsTexture( jsval value ) {
 	
-	return JSVAL_IS_OBJECT( value ) && JS_GetClass(JSVAL_TO_OBJECT( value ));
+	return ( JSVAL_IS_OBJECT( value ) && JS_GetClass(JSVAL_TO_OBJECT( value )) == &classTexture );
 }
 
 
@@ -52,8 +53,10 @@ inline PTYPE* PosByMode( const Texture *tex, int x, int y, BorderMode mode ) {
 
 	switch ( mode ) {
 		case borderWrap:
-			x = ABS( x % tex->width );
-			y = ABS( y % tex->height );
+			if ( x < 0 || x >= tex->width )
+				x = ABS( x % tex->width );
+			if ( y < 0 || y >= tex->height )
+				y = ABS( y % tex->height );
 			break;
 		case borderMirror:
 			if ( x < 0 ) x = - x;
@@ -317,6 +320,8 @@ DEFINE_FUNCTION( SetChannel ) { // dstChannel,   tex1, srcChannel
 // (TBD) PTYPE
 DEFINE_FUNCTION( ToHLS ) { // (TBD) test it
 
+	// see http://svn.gnome.org/viewcvs/gimp/trunk/libgimpcolor/gimpcolorspace.c?view=markup
+
 	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(tex);
 
@@ -383,6 +388,7 @@ inline float HLSToRGB_hue( float n1, float n2, float hue) { // helper function f
 
 // (TBD) PTYPE
 DEFINE_FUNCTION( ToRGB ) { // (TBD) test it
+	// see http://svn.gnome.org/viewcvs/gimp/trunk/libgimpcolor/gimpcolorspace.c?view=markup
 
 	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(tex);
@@ -449,32 +455,31 @@ DEFINE_FUNCTION( Aliasing ) {
 
 
 DEFINE_FUNCTION( Colorize ) {
+	// GIMP color to alpha: http://www.google.com/codesearch?hl=en&q=+gimp+%22color+to+alpha%22
 
 	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(tex);
 
 	int channels = tex->channels;
 
-	PTYPE min;
-	RT_JSVAL_TO_REAL( argv[0], min );
+	PTYPE colorSrc[PMAXCHANNELS];
+	RT_CHECK_CALL( InitLevelData(cx, argv[0], channels, colorSrc) );
 
-	PTYPE colorMin[PMAXCHANNELS];
-	RT_CHECK_CALL( InitLevelData(cx, argv[1], channels, colorMin) );
+	PTYPE colorDst[PMAXCHANNELS];
+	RT_CHECK_CALL( InitLevelData(cx, argv[1], channels, colorDst) );
 
-	PTYPE max;
-	RT_JSVAL_TO_REAL( argv[2], max );
-	
-	PTYPE colorMax[PMAXCHANNELS];
-	RT_CHECK_CALL( InitLevelData(cx, argv[1], channels, colorMax) );
+	float ratio;
+	int pos, size = tex->width * tex->height;
+	int c;
+	for ( int i = 0; i < size; i++ ) {
 
-
-
-//	int tsize = tex->width * tex->height * channels;
-//		for ( int i = 0; i < tsize; i++ )
-//			tex->cbuffer[i] = pixel[i % channels];
-
-
-
+		pos = i * channels;
+		ratio = 1;
+		for ( c = 0; c < channels; c++ )
+			ratio *= PMAX - ABS(tex->cbuffer[pos+c] - colorSrc[c]);
+		for ( c = 0; c < channels; c++ )
+			tex->cbuffer[pos+c] = (tex->cbuffer[pos+c] * (PMAX-ratio) + colorDst[c] * ratio) / PMAX;
+	}
 	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 }
@@ -683,27 +688,56 @@ DEFINE_FUNCTION( AddNoise ) {
 
 DEFINE_FUNCTION( Desaturate ) {
 
+	RT_ASSERT_ARGC(2)
+
 	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(tex);
+	RT_ASSERT( tex->channels == 1, "Destination texture must have only one channel.")
+
+	Texture *texSrc;
+	RT_CHECK_CALL( ValueToTexture(cx, argv[0], &texSrc) );
+	RT_ASSERT( tex->width == texSrc->width && tex->height == texSrc->height, "Images must have the same width and height." );
+
+	int modeVal;
+	RT_JSVAL_TO_INT32( argv[1], modeVal );
+	DesaturateMode mode = (DesaturateMode)modeVal;
 	
 	PTYPE average;
 	int pos, i, c;
-	int channels = tex->channels;
+	int srcChannels = tex->channels;
 	int size = tex->width * tex->height;
-	PTYPE sum;
+	PTYPE val, min, max, tmp;
 	for ( i = 0; i < size; i++ ) {
 
-		pos = i * channels;
-		for ( c = 0; c < channels; c++ )
-			sum += tex->cbuffer[pos+c];
-		average = sum / channels;
-		for ( c = 0; c < channels; c++ )
-			tex->cbuffer[pos+c] = average;
-
-// (TBD) try this instead
-//		min = MIN( R, MIN( G, B ) );
-//		max = MAX( R, MAX( G, B ) );
-//		L = (max + min) / 2.f;
+		pos = i * srcChannels;
+		switch( mode ) {
+			case desaturateLightness:
+				min = max = texSrc->cbuffer[pos+0];
+				for ( c = 1; c < srcChannels; c++ ) {
+					
+					tmp = texSrc->cbuffer[pos+c];
+					if ( tmp > max )
+						max = tmp;
+					else if ( tmp < min )
+						min = tmp;
+				}
+				val = ( min + max ) / 2;
+				break;
+			case desaturateSum:
+				val = 0;
+				for ( c = 0; c < srcChannels; c++ )
+					val += texSrc->cbuffer[pos+c];
+				break;
+			case desaturateAverage:
+				val = 0;
+				for ( c = 0; c < srcChannels; c++ )
+					val += texSrc->cbuffer[pos+c];
+				val /= srcChannels;
+				break;
+//			case desaturateLuminosity: // see http://svn.gnome.org/viewcvs/gimp/trunk/libgimpcolor/gimprgb.h?revision=19720&view=markup
+//				break;
+		}
+		tex->cbuffer[pos] = val;
 	}
 	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
@@ -842,8 +876,10 @@ DEFINE_FUNCTION( SetPixel ) { // x, y, levels
 	RT_JSVAL_TO_INT32( argv[0], x );
 	RT_JSVAL_TO_INT32( argv[1], y );
 
-	x = ABS( x % tex->width );
-	y = ABS( y % tex->height );
+	if ( x < 0 || x >= tex->width )
+		x = ABS( x % tex->width );
+	if ( y < 0 || y >= tex->height )
+		y = ABS( y % tex->height );
 
 	PTYPE pixel[PMAXCHANNELS];
 	RT_CHECK_CALL( InitLevelData(cx, argv[2], tex->channels, pixel) );
@@ -878,12 +914,18 @@ DEFINE_FUNCTION( SetRectangle ) {
 	int width = tex->width;
 	int height = tex->height;
 
-	int x, y;
+	int x, y, px, py;
 	int c, pos;
 	for ( y = y0; y < y1; y++ )
 		for ( x = x0; x < x1; x++ ) {
-
-			pos = ( ABS(x % width) + ABS(y % height) * width ) * channels;
+			
+			px = x;
+			py = y;
+			if ( px < 0 || px >= width )
+				px = ABS(px%width);
+			if ( py < 0 || py >= height )
+				py = ABS(py%height);
+			pos = ( px + py * width ) * channels;
 			for ( c = 0; c < channels; c++ )
 				tex->cbuffer[pos+c] = pixel[c];
 		}
@@ -1144,9 +1186,14 @@ DEFINE_FUNCTION( Convolution ) {
 				case borderWrap:
 					for ( vy = 0; vy < size; vy++ )
 						for ( vx = 0; vx < size; vx++ ) {
-								
-							sx = ABS((x + vx-offset) % width);
-							sy = ABS((y + vy-offset) % height);
+					
+							sx = x + vx-offset;
+							if ( sx < 0 || sx >= width )
+								sx = ABS(sx%width);
+
+							sy = y + vy-offset;
+							if ( sy < 0 || sy >= height )
+								sy = ABS(sy%height);
 						
 							pos = (sx + sy * width) * channels;
 							ratio =  kernel[vx + vy * size];
@@ -1189,10 +1236,14 @@ DEFINE_FUNCTION( Convolution ) {
 							sx = (x + vx-offset);
 							sy = (y + vy-offset);
 
-							if ( sx < 0 )  sx = 0;
-							if ( sx >= width )  sx = width-1;
-							if ( sy < 0 )  sy = 0;
-							if ( sy >= height )  sy = height-1;
+							if ( sx < 0 )
+								sx = 0;
+							if ( sx >= width )
+								sx = width-1;
+							if ( sy < 0 )
+								sy = 0;
+							if ( sy >= height )
+								sy = height-1;
 							
 							pos = (sx + sy * width)*channels;
 							ratio =  kernel[vx + vy * size];
@@ -1203,11 +1254,14 @@ DEFINE_FUNCTION( Convolution ) {
 					break;
 			}
 
+//			if ( gain == 0 )
+//				gain = 1;
+
 			pos = (x + y * width) * channels;
 			for ( c = 0; c < channels; c++ ) {
 
 				// (TBD) manage gain
-				tex->cbackBuffer[pos+c] = pixel[c];
+				tex->cbackBuffer[pos+c] = pixel[c];// / gain;
 			}
 		}
 
@@ -1273,7 +1327,7 @@ DEFINE_FUNCTION( BoxBlur ) {
 
 			for ( y = 0; y < height; y++ ) {
 	
-				tex->cbuffer[ ( x + ((y+bh/2) % height) * width ) * channels + c ] = sum[c] / bh;
+				tex->cbuffer[ ( x + ((y + bh/2) % height) * width ) * channels + c ] = sum[c] / bh;
 				sum[c] = sum[c] - line[y * channels + c] + line[( (y + bh) % height ) * channels + c];
 			}
 		}
@@ -1609,8 +1663,10 @@ DEFINE_FUNCTION( Copy ) { // (Texture)source, (int)x, (int)y
 			sy = y + py;
 			switch (borderMode) {
 				case borderWrap:
-					sx = ABS(sx % texWidth);
-					sy = ABS(sy % texHeight);
+					if ( sx < 0 || sx >= texWidth )
+						sx = ABS( sx % texWidth );
+					if ( sy < 0 || sy >= texHeight )
+						sy = ABS( sy % texHeight );
 					break;
 			case borderClamp:
 				if ( !(sx >= 0 && sx < srcTexWidth && sy >= 0 && sy < srcTexHeight) )
@@ -1668,8 +1724,10 @@ DEFINE_FUNCTION( Paste ) { // (Texture)texture, (int)x, (int)y, (bool)borderMode
 			dy = y + py;
 			switch (borderMode) {
 				case borderWrap:
-					dx = ABS(dx % texWidth);
-					dy = ABS(dy % texHeight);
+					if ( dx < 0 || dx >= texWidth )
+						dx = ABS(dx % texWidth);
+					if ( dy < 0 || dy >= texHeight )
+						dy = ABS(dy % texHeight);
 					break;
 			case borderClamp:
 				if ( !(dx >= 0 && dx < texWidth && dy >= 0 && dy < texHeight) ) {
@@ -1720,8 +1778,10 @@ DEFINE_FUNCTION( Shift ) {
 
 			switch (mode) {
 				case borderWrap:
-					sx = ABS( sx % width);
-					sy = ABS( sy % height);
+					if ( sx < 0 || sx >= width )
+						sx = ABS(sx % width);
+					if ( sy < 0 || sy >= height )
+						sy = ABS(sy % height);
 					break;
 
 				case borderClamp:
@@ -1790,8 +1850,10 @@ DEFINE_FUNCTION( Displace ) {
 			sy = (int)( y + o.y * factor );
 			switch (mode) {
 				case borderWrap:
-					sx = ABS(sx % width);
-					sy = ABS(sy % height);
+					if ( sx < 0 || sx >= width )
+						sx = ABS(sx % width);
+					if ( sy < 0 || sy >= height )
+						sy = ABS(sy % height);
 					break;
 				case borderClamp:
 					if ( !(sx >= 0 && sx < width && sy >= 0 && sy < height) )
@@ -2193,11 +2255,14 @@ DEFINE_FUNCTION( Noise ) {
 	return JS_TRUE;
 }
 
+
 #ifdef _DEBUG
-DEFINE_FUNCTION( Test ) {
+
+static JSBool Test(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
 	return JS_FALSE;
 }
+
 #endif // _DEBUG
 
 
@@ -2214,6 +2279,7 @@ CONFIGURE_CLASS
 		FUNCTION( ToRGB )
 		FUNCTION( SetChannel )
 		FUNCTION( Desaturate )
+		FUNCTION( Colorize )
 		FUNCTION( SetPixel )
 		FUNCTION( SetRectangle )
 		FUNCTION( AddNoise )
@@ -2271,6 +2337,11 @@ CONFIGURE_CLASS
 		CONST_DOUBLE( borderWrap, borderWrap )
 		CONST_DOUBLE( borderMirror, borderMirror )
 		CONST_DOUBLE( borderValue, borderValue )
+
+		CONST_DOUBLE( desaturateLightness, desaturateLightness )
+		CONST_DOUBLE( desaturateSum, desaturateSum )
+		CONST_DOUBLE( desaturateAverage, desaturateAverage )
+		
 	END_CONST_DOUBLE_SPEC
 
 	HAS_PRIVATE
