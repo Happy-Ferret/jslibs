@@ -7,10 +7,10 @@
 
 #include "../common/jsclass.h"
 #include "../common/jshelper.h"
-#include "jstest.h"
+#include "jstest1.h"
 
 
-BEGIN_CLASS(World)
+BEGIN_CLASS(Body)
 
 DEFINE_CONSTRUCTOR() {
 

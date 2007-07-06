@@ -14,6 +14,7 @@
 
 #include "../common/jshelper.h"
 #include "jstest.h"
+#include "jstest1.h"
 
 DEFINE_UNSAFE_MODE;
 
@@ -22,7 +23,13 @@ extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj)
 	SET_UNSAFE_MODE( GetConfigurationValue(cx, "unsafeMode" ) == JSVAL_TRUE );
 
 	JSFunctionSpec _tmp[] = {{0}};
-	JSBool st = INIT_CLASS( World );
+	JSBool st;
+
+	st = INIT_CLASS( Body );
+	st = INIT_CLASS( World );
+
+
+
 	return JS_TRUE;
 }
 

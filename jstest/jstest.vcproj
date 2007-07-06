@@ -193,6 +193,10 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath=".\jstest1.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\main.cpp"
 				>
 				<FileConfiguration
@@ -224,6 +228,10 @@
 			>
 			<File
 				RelativePath=".\jstest.h"
+				>
+			</File>
+			<File
+				RelativePath=".\jstest1.h"
 				>
 			</File>
 			<File
