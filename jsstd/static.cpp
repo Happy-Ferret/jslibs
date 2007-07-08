@@ -33,6 +33,15 @@ extern JSFunction *stdoutFunction;
 
 BEGIN_STATIC
 
+DEFINE_FUNCTION( ASSERT ) {
+
+	JSBool assert;
+	RT_JSVAL_TO_BOOL( argv[0], assert );
+	RT_ASSERT( assert, "Assertion failed." );
+	return JS_TRUE;
+}
+
+
 DEFINE_FUNCTION( Expand ) {
 
 	RT_ASSERT_ARGC( 1 );
@@ -467,6 +476,7 @@ DEFINE_FUNCTION( Halt ) {
 CONFIGURE_STATIC
 
 	BEGIN_STATIC_FUNCTION_SPEC
+		FUNCTION( ASSERT )
 		FUNCTION( Expand )
 		FUNCTION( Seal )
 		FUNCTION( Clear )

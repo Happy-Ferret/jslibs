@@ -42,6 +42,9 @@ gl.Ortho(-1, 1, -1, 1);
 const RED = [1,0,0,1];
 const GREEN = [0,1,0,1];
 const BLUE = [0,0,1,1];
+const MAGENTA = [1,0,1,1];
+const CYAN = [0,1,1,1];
+const YELLOW = [1,1,0,1];
 const GRAY = [.5,.5,.5,1];
 const BLACK = [0,0,0,1];
 const WHITE = [1,1,1,1];
@@ -112,27 +115,55 @@ function AddAlpha( tex ) {
 		new Texture(tex.width, tex.height, 4).SetChannel(0, tex, 0).SetChannel(1, tex, 1).SetChannel(2, tex, 2).Swap(tex);
 }
 
+function ColorToAlpha( tex, color ) {
+
+	ASSERT( tex.channels == 2 || tex.channels == 4 );
+	
+	var alpha = new Texture(tex.width, tex.height, 1);
+	alpha.ExtractColor(tex, color);
+	tex.SetChannel(tex.channels, alpha, 0);
+}
+
 
 var t0 = IntervalNow();
 
 draw:{
 
 	var size = 256;
-	var t = new Texture(size, size, 3);
+	var t = new Texture(256, 256, 3);
+	t.ClearChannel();
+	t.AddGradiantRadial( [0, 1] );
+//	t.Resize(256,256);
+//	t.AddNoise(0.5);
+
+	
+	
+//	t.AddGradiantQuad(BLUE, GREEN, RED, YELLOW);
+
+//	t.Colorize(RED, WHITE);
+	
+//	t.NormalizeVectors();
+//	t.NormalizeLevels();
+
+break draw; // -----------------------------------------		
+	
+	var t1 = new Texture(size, size, 1);
+	
+	t1.ExtractColor(t,BLACK, 1);
+	t1.CutLevels(0.5);
+	
+	t = t1;
 	
 	
 break draw; // -----------------------------------------		
+
+	t.Colorize(RED, BLACK);
+	t.Colorize(GREEN, BLACK);
+	t.Colorize(BLUE, BLACK);
+	t.NormalizeLevels();
 	
-	
-	t.ClearChannel();
-//	t.AddNoise(1);
-	t.AddGradiantQuad(RED, GREEN, BLUE, BLACK);
-	t.Colorize(RED, BLUE);
 	
 //	DesaturateLuminosity(t);
-
-
-
 
 break draw; // -----------------------------------------		
 
@@ -329,7 +360,7 @@ Print( 'time: '+ (IntervalNow() - t0) + ' ms\n' );
 gl.Color(1,1,1);
 gl.LoadTexture( t );
 
-win.rect = [1700,1000,1900,1200]
-//win.rect = [500,500,700,700];
+//win.rect = [1700,1000,1900,1200]
+win.rect = [500,500,700,700];
 win.ProcessEvents();
 

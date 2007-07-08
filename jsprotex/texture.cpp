@@ -468,6 +468,12 @@ DEFINE_FUNCTION( Colorize ) {
 	PTYPE colorDst[PMAXCHANNELS];
 	RT_CHECK_CALL( InitLevelData(cx, argv[1], channels, colorDst) );
 
+	float power;
+	if ( argc >= 3 )
+		RT_JSVAL_TO_REAL(argv[2], power)
+	else
+		power = 1;
+
 	float ratio;
 	int pos, size = tex->width * tex->height;
 	int c;
@@ -477,6 +483,17 @@ DEFINE_FUNCTION( Colorize ) {
 		ratio = 1;
 		for ( c = 0; c < channels; c++ )
 			ratio *= PMAX - ABS(tex->cbuffer[pos+c] - colorSrc[c]);
+		
+		if ( power == 0 && ratio == 1 ) {
+
+			for ( c = 0; c < channels; c++ )
+				tex->cbuffer[pos+c] = colorDst[c];
+			continue;
+		}
+
+		if ( power != 1 )
+			ratio = powf(ratio, 1.0 / power);
+
 		for ( c = 0; c < channels; c++ )
 			tex->cbuffer[pos+c] = (tex->cbuffer[pos+c] * (PMAX-ratio) + colorDst[c] * ratio) / PMAX;
 	}
@@ -484,6 +501,46 @@ DEFINE_FUNCTION( Colorize ) {
 	return JS_TRUE;
 }
 
+
+DEFINE_FUNCTION( ExtractColor ) {
+
+	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE(tex);
+
+	RT_ASSERT( tex->channels == 1, "Destination texture must have only 1 channel.");
+
+	Texture *texSrc;
+	RT_CHECK_CALL( ValueToTexture(cx, argv[0], &texSrc) );
+	RT_ASSERT( tex->width == texSrc->width && tex->height == texSrc->height, "Images must have the same width and height." );
+
+	int srcChannels = texSrc->channels;
+
+	PTYPE color[PMAXCHANNELS];
+	RT_CHECK_CALL( InitLevelData(cx, argv[1], srcChannels, color) );
+
+
+	float power;
+	if ( argc >= 3 )
+		RT_JSVAL_TO_REAL(argv[2], power)
+	else
+		power = 1;
+
+	float ratio;
+	int pos, size = tex->width * tex->height;
+	int c;
+	for ( int i = 0; i < size; i++ ) {
+
+		pos = i * srcChannels;
+		ratio = 1;
+		for ( c = 0; c < srcChannels; c++ )
+			ratio *= PMAX - ABS(texSrc->cbuffer[pos+c] - color[c]);
+		if ( power != 1 )
+			ratio = powf(ratio,1/power);
+		tex->cbuffer[i] = ratio;
+	}
+	*rval = OBJECT_TO_JSVAL(obj);
+	return JS_TRUE;
+}
 
 
 DEFINE_FUNCTION( NormalizeLevels ) {
@@ -545,13 +602,21 @@ DEFINE_FUNCTION( CutLevels ) {
 	RT_ASSERT_RESOURCE(tex);
 
 	PTYPE min, max;
-	if ( argc >= 2 ) {
 
-		RT_JSVAL_TO_REAL( argv[0], min );
-		RT_JSVAL_TO_REAL( argv[1], max );
-	} else {
+	if ( argc == 0 ) {
+
 		min = 0;
 		max = PMAX;
+	} else
+	if ( argc >= 1 ) {
+
+		RT_JSVAL_TO_REAL( argv[0], min );
+		max = min;
+	} else
+
+	if ( argc >= 2 ) {
+
+		RT_JSVAL_TO_REAL( argv[1], max );
 	}
 
 	PTYPE lmin, lmax; // local min & max
@@ -665,9 +730,19 @@ DEFINE_FUNCTION( AddNoise ) {
 
 	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(tex);
+	int channels = tex->channels;
+
+	bool fullLevel;
 
 	PTYPE pixel[PMAXCHANNELS];
-	RT_CHECK_CALL( InitLevelData(cx, argv[0], tex->channels, pixel) );
+	if ( argc >= 1 ) {
+
+		RT_CHECK_CALL( InitLevelData(cx, argv[0], tex->channels, pixel) )
+		fullLevel = false;
+	} else {
+
+		fullLevel = true;
+	}
 
 	if ( argc >= 2 ) {
 
@@ -676,10 +751,9 @@ DEFINE_FUNCTION( AddNoise ) {
 		init_genrand(seed);
 	}
 
-	int channels = tex->channels;
 	int tsize = tex->width * tex->height * channels;
 	for ( int i = 0; i < tsize; i++ )
-		tex->cbuffer[i] += genrand_real1() * pixel[i%channels];
+		tex->cbuffer[i] += genrand_real1() * ( fullLevel ? 1 : pixel[i%channels] );
 	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 }
@@ -702,7 +776,6 @@ DEFINE_FUNCTION( Desaturate ) {
 	RT_JSVAL_TO_INT32( argv[1], modeVal );
 	DesaturateMode mode = (DesaturateMode)modeVal;
 	
-	PTYPE average;
 	int pos, i, c;
 	int srcChannels = tex->channels;
 	int size = tex->width * tex->height;
@@ -1359,12 +1432,11 @@ DEFINE_FUNCTION( NormalizeVectors ) {
 		for ( c = 0; c < channels; c++ ) {
 			
 			val = PZNORM( tex->cbuffer[pos+c] );
-			sum += val*val;
+			sum += val * val;
 		}
 		length = sqrt(sum);
-		if ( length != 0 )
-			for ( c = 0; c < channels; c++ )
-				tex->cbuffer[pos+c] /= length;
+		for ( c = 0; c < channels; c++ )
+			tex->cbuffer[pos+c] *= length;
 	}
 	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
@@ -2060,6 +2132,56 @@ DEFINE_FUNCTION( AddGradiantLinear ) {
 
 DEFINE_FUNCTION( AddGradiantRadial ) {
 
+	RT_ASSERT_ARGC( 1 );
+
+	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE(tex);
+
+	int width = tex->width;
+	int height = tex->height;
+	int channels = tex->channels;
+
+	int radius = MAX( width, height ) / 2;
+
+	float *curve = (float*)malloc( radius * sizeof(float) );
+	InitCurveData(cx, argv[0], radius, curve);
+
+	float aspectRatio = (float)width / (float)height;
+
+	// draw
+	Vector3 p;
+	float dist;
+	int x, y, c;
+	int pos;
+	float curveValue;
+	for ( y = 0; y < height; y++ )
+		for ( x = 0; x < width; x++ ) {
+		
+//			if ( aspectRatio >= 1 )
+//				Vector3Set(&p, x - width / 2 , (y - height / 2) * aspectRatio, 0);
+//			else
+//				Vector3Set(&p, (x - width / 2) / aspectRatio , y - height / 2, 0);
+
+//			Vector3Set(&p, (x - width / 2) / width, (y - height / 2) / height, 0);
+			Vector3Set(&p, (float)x / width - 0.5, (float)y / height - 0.5, 0);
+			dist = Vector3Len(&p);
+			if ( dist < 0.5 ) { // if dist == 0.5, (int)(dist*radius*2) is out of the curve data
+
+				pos = (x + y * width) * channels; // (TBD) use borderMode
+				curveValue = curve[(int)(dist*radius*2)];
+				for ( c = 0; c < channels; c++ )
+					tex->cbuffer[pos+c] += curveValue;
+			}
+		}
+	*rval = OBJECT_TO_JSVAL(obj);
+	return JS_TRUE;
+}
+
+
+
+/*
+DEFINE_FUNCTION( AddGradiantRadial ) {
+
 	RT_ASSERT_ARGC( 3 );
 
 	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
@@ -2090,7 +2212,6 @@ DEFINE_FUNCTION( AddGradiantRadial ) {
 	for ( y = 0; y < height; y++ )
 		for ( x = 0; x < width; x++ ) {
 
-
 			switch (borderMode) {
 				case borderWrap:
 					break;
@@ -2118,6 +2239,8 @@ DEFINE_FUNCTION( AddGradiantRadial ) {
 	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 }
+*/
+
 
 
 DEFINE_FUNCTION( AddCracks ) { // source: FxGen
@@ -2280,6 +2403,7 @@ CONFIGURE_CLASS
 		FUNCTION( SetChannel )
 		FUNCTION( Desaturate )
 		FUNCTION( Colorize )
+		FUNCTION( ExtractColor )
 		FUNCTION( SetPixel )
 		FUNCTION( SetRectangle )
 		FUNCTION( AddNoise )
@@ -2326,10 +2450,10 @@ CONFIGURE_CLASS
 	END_PROPERTY_SPEC
 
 	BEGIN_STATIC_FUNCTION_SPEC
-		FUNCTION( RandSeed, 1 )
+		FUNCTION( RandSeed )
 		FUNCTION( RandInt )
 		FUNCTION( RandReal )
-		FUNCTION( Noise, 1 )
+		FUNCTION( Noise )
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_CONST_DOUBLE_SPEC
