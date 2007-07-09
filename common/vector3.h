@@ -72,9 +72,9 @@ static __forceinline __m128 rsqrt_nr(const __m128& x) {
 	return _mm_mul_ps(_mm_mul_ps(v0pt5, t), _mm_sub_ps(v3pt0, _mm_mul_ps(_mm_mul_ps(x, t), t)));
 }
 
+
 inline void Vector3Normalize( Vector3 *v ) {
 
-/*
 	__m128 m128 = v->m128;
     __m128 a = _mm_mul_ps(m128, m128);
 
@@ -83,10 +83,11 @@ inline void Vector3Normalize( Vector3 *v ) {
 
     // get reciprocal of square root of squared length
     __m128 f = _mm_rsqrt_ss(b);
-    __m128 oneDivLen = _mm_shuffle_ps(f, f, _MM_SHUFFLE(X,X,X,X));
 
+	 __m128 oneDivLen = _mm_shuffle_ps(f, f, _MM_SHUFFLE(X,X,X,X));
     v->m128 = _mm_mul_ps(m128, oneDivLen);
-*/
+
+/*
 	__m128 vec = v->m128;
 
 	__m128 r = _mm_mul_ps(vec,vec);
@@ -98,6 +99,7 @@ inline void Vector3Normalize( Vector3 *v ) {
 		t = rsqrt_nr(t);
 	#endif
 	v->m128 = _mm_mul_ps(vec, _mm_shuffle_ps(t,t,0x00));
+*/
 }
 
 
@@ -140,3 +142,12 @@ inline void Vector3Cross(Vector3 *v, const Vector3 *v0, const Vector3 *v1) { // 
 
 	v->m128 = _mm_sub_ps(e, f);
 }
+/*
+
+SSE/SSE2 Toolbox SSE/SSE2 Toolbox Solutions for Solutions for Real Real-Life SIMD Life SIMD Problems Problems :
+	http://www.gamasutra.com/features/gdcarchive/2001E/Alex_Klimovitski3.pdf
+
+vector3 SSE
+	http://www.google.com/codesearch?hl=en&q=show:lATM9JcpEDw:VAe0nw1kH7g:FsV6pRjFWes&sa=N&ct=rd&cs_p=http://davehillier.googlecode.com/svn&cs_f=trunk/src/maths/_vector3_sse.h&start=1
+
+*/

@@ -263,8 +263,7 @@ DEFINE_FUNCTION( ClearChannel ) {
 
 		memset(tex->cbuffer, 0, tex->width * tex->height * tex->channels * sizeof(PTYPE));
 		*rval = OBJECT_TO_JSVAL(obj);
-	}
-	
+	} else
 	if ( argc >= 1 ) {
 
 		int channel;
@@ -448,7 +447,6 @@ DEFINE_FUNCTION( Aliasing ) {
 //		tex->cbuffer[i] = (int)( count * tex->cbuffer[i] ) / count;
 		tex->cbuffer[i] = curve[ (int)((count-1) * tex->cbuffer[i] / PMAX) ];
 	}
-
 	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 }
@@ -456,6 +454,7 @@ DEFINE_FUNCTION( Aliasing ) {
 
 DEFINE_FUNCTION( Colorize ) {
 	// GIMP color to alpha: http://www.google.com/codesearch?hl=en&q=+gimp+%22color+to+alpha%22
+	// color exchange algo. : http://www.koders.com/c/fidB39DAC5A8DB8B6073D78FB23363C5E0541208B02.aspx
 
 	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(tex);
@@ -474,15 +473,25 @@ DEFINE_FUNCTION( Colorize ) {
 	else
 		power = 1;
 
-	float ratio;
+	float ratio, dist;
 	int pos, size = tex->width * tex->height;
 	int c;
 	for ( int i = 0; i < size; i++ ) {
 
 		pos = i * channels;
+
 		ratio = 1;
-		for ( c = 0; c < channels; c++ )
-			ratio *= PMAX - ABS(tex->cbuffer[pos+c] - colorSrc[c]);
+		for ( c = 0; c  < channels; c++ ) {
+			
+//			dist = tex->cbuffer[pos+c] / colorSrc[c];
+//			if ( dist > 1 )
+//				dist = 1.0 /dist;
+
+//			ratio += dist;
+
+			dist = PMAX - ABS( tex->cbuffer[pos+c] - colorSrc[c] );
+			ratio *= dist;
+		}
 		
 		if ( power == 0 && ratio == 1 ) {
 
@@ -517,7 +526,6 @@ DEFINE_FUNCTION( ExtractColor ) {
 
 	PTYPE color[PMAXCHANNELS];
 	RT_CHECK_CALL( InitLevelData(cx, argv[1], srcChannels, color) );
-
 
 	float power;
 	if ( argc >= 3 )
@@ -569,7 +577,7 @@ DEFINE_FUNCTION( NormalizeLevels ) {
 }
 
 
-DEFINE_FUNCTION( ClampLevels ) { // (TBD) chack if this algo is right
+DEFINE_FUNCTION( ClampLevels ) { // (TBD) check if this algo is right
 
 	RT_ASSERT_ARGC( 2 );
 
@@ -590,7 +598,6 @@ DEFINE_FUNCTION( ClampLevels ) { // (TBD) chack if this algo is right
 		else if ( level < min )
 			tex->cbuffer[i] = min;
 	}
-
 	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 }
@@ -751,9 +758,13 @@ DEFINE_FUNCTION( AddNoise ) {
 		init_genrand(seed);
 	}
 
-	int tsize = tex->width * tex->height * channels;
-	for ( int i = 0; i < tsize; i++ )
-		tex->cbuffer[i] += genrand_real1() * ( fullLevel ? 1 : pixel[i%channels] );
+	int i, tsize = tex->width * tex->height * channels;
+	if ( fullLevel )
+		for ( i = 0; i < tsize; i++ )
+			tex->cbuffer[i] += genrand_real1();
+	else
+		for ( i = 0; i < tsize; i++ )
+			tex->cbuffer[i] += genrand_real1() * pixel[i%channels];
 	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 }
@@ -1541,11 +1552,18 @@ DEFINE_FUNCTION( Normals ) {
 
 // (TBD) PTYPE
 DEFINE_FUNCTION( Light ) {
+	// Simple Lighting: http://www.gamasutra.com/features/19990416/intel_simd_04.htm
 
-//	RT_ASSERT_ARGC( 4 );
+
+	RT_ASSERT_ARGC( 5 );
 
 	Texture *normals, *tex = (Texture *)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(tex);
+
+	int width = tex->width;
+	int height = tex->height;
+	int channels = tex->channels;
+
 	RT_CHECK_CALL( ValueToTexture(cx, argv[0], &normals) );
 	RT_ASSERT( normals->channels == 3, "Invalid normals texture channel count." );
 
@@ -1553,41 +1571,40 @@ DEFINE_FUNCTION( Light ) {
 	
 	RT_ASSERT( normals->width == tex->width && normals->height == tex->height, "Invalid normals texture size." );
 
+	Vector3 lightPos;
+	FloatArrayToVector(cx, 3, &argv[1], lightPos.raw );
+
 	PTYPE ambient[3];
-	RT_CHECK_CALL( InitLevelData(cx, argv[1], 3, ambient) );
+	RT_CHECK_CALL( InitLevelData(cx, argv[2], 3, ambient) );
+	bool ambiantTexture = false;
 
 	PTYPE diffuse[3];
-	RT_CHECK_CALL( InitLevelData(cx, argv[2], 3, diffuse) );
+	RT_CHECK_CALL( InitLevelData(cx, argv[3], 3, diffuse) );
 
 	PTYPE specular[3];
-	RT_CHECK_CALL( InitLevelData(cx, argv[3], 3, specular) );
-	
-	Vector3 lightPos;
-	FloatArrayToVector(cx, 3, &argv[4], lightPos.raw );
-
-	Vector3 halfV = lightPos;
-	halfV.z += 1.f;
-	Vector3Normalize(&halfV);
-
-
-	float bumpPower; // (TBD) default value
-	RT_JSVAL_TO_INT32( argv[5], bumpPower );
-
-	float specularPower; // (TBD) default value
-	RT_JSVAL_TO_INT32( argv[6], specularPower );
-
-	bool ambiantTexture = false;
+	RT_CHECK_CALL( InitLevelData(cx, argv[4], 3, specular) );
 	bool specularTexture = false;
 	
-	int width = tex->width;
-	int height = tex->height;
-	int channels = tex->channels;
+	float bumpPower; // (TBD) default value
+	if ( argc >= 6 )
+		RT_JSVAL_TO_REAL( argv[5], bumpPower )
+	else
+		bumpPower = 1;
+
+	float specularPower; // (TBD) default value
+	if ( argc >= 7 )
+		RT_JSVAL_TO_REAL( argv[6], specularPower )
+	else
+		specularPower = 1;
+
+	Vector3Normalize(&lightPos);
+	Vector3 halfV = lightPos;
+	halfV.z += 1;
+	Vector3Normalize(&halfV);
+	Vector3 n;
 
 	int x, y, c;
 	int pos;
-
-	Vector3 n;
-
 	for ( y = 0; y < height; y++ )
 		for ( x = 0; x < width; x++ ) {
 			
@@ -1596,13 +1613,13 @@ DEFINE_FUNCTION( Light ) {
 			Vector3Normalize(&n);
 
 			float fDiffDot = Vector3Dot(&n, &lightPos);
-			if ( fDiffDot < 0.f )
-				fDiffDot = 0.f;
+			if ( fDiffDot < 0 )
+				fDiffDot = 0;
 			
 			float fSpecDot = Vector3Dot(&n, &halfV);
-			if ( fSpecDot < 0.f )
-				fSpecDot = 0.f;
-			fSpecDot = powf(fSpecDot, 1.f / specularPower);
+			if ( fSpecDot < 0 )
+				fSpecDot = 0;
+			fSpecDot = powf(fSpecDot, 1 / specularPower);
 
 			PTYPE localAmbient[3];
 			if ( ambiantTexture ) { // (TBD) manage ambiant texture
@@ -1620,12 +1637,10 @@ DEFINE_FUNCTION( Light ) {
 				localSpecular[2] = specular[2];
 			}
 
-			// Color = ambient + dif*dot + dot^2 * spec
 			pos = (x + y * width) * channels;
 			for ( c = 0; c < 3; c++ )
 				tex->cbuffer[pos+c] = tex->cbuffer[pos+c] * ( localAmbient[c] + fDiffDot * diffuse[c] ) / PMAX + fSpecDot * localSpecular[c];  // sdword r	= (sdword) ((sdword(pPxSrc->r*(localAmbient.r + fDiffDot*Diffuse.r)) >> 8) + (fSpecDot*localSpecular.r));
 		}
-
 	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 }

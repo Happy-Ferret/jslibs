@@ -205,6 +205,7 @@ DEFINE_FUNCTION( IsWritable ) {
 	return JS_TRUE;
 }
 
+
 DEFINE_FUNCTION( IntervalNow ) {
 
 	PRUint32 interval = PR_IntervalToMilliseconds( PR_IntervalNow() );

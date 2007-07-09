@@ -130,17 +130,36 @@ var t0 = IntervalNow();
 draw:{
 
 	var size = 256;
-	var t = new Texture(256, 256, 3);
+	var t = new Texture(size, size, 3);
 	t.ClearChannel();
-	t.AddGradiantRadial( [0, 1] );
+	t.Set('#1144FF');
+	
+
+	var bump = new Texture(size, size, 3);
+	bump.ClearChannel();
+	for ( var i = 0; i < 10; i++ ) {
+
+		var x = Texture.RandReal() * bump.width;
+		var y = Texture.RandReal() * bump.height;
+		var s = Texture.RandReal() * 50 + 10;
+		bump.SetRectangle(x, y, x+s, y+s, 1 );
+	}
+	bump.Normals();
+	
+	t.Light( bump, [1, 1, 1], 0, 0.5, 1, 2 );
+	
+
+	
+break draw; // -----------------------------------------		
+	
+//	t.AddGradiantRadial( [0, 1] );
 //	t.Resize(256,256);
 //	t.AddNoise(0.5);
-
 	
-	
-//	t.AddGradiantQuad(BLUE, GREEN, RED, YELLOW);
+	t.AddGradiantQuad(BLUE, GREEN, RED, YELLOW);
+//	t.Set( YELLOW )
 
-//	t.Colorize(RED, WHITE);
+	t.Colorize(BLUE, WHITE);
 	
 //	t.NormalizeVectors();
 //	t.NormalizeLevels();
@@ -360,7 +379,7 @@ Print( 'time: '+ (IntervalNow() - t0) + ' ms\n' );
 gl.Color(1,1,1);
 gl.LoadTexture( t );
 
-//win.rect = [1700,1000,1900,1200]
-win.rect = [500,500,700,700];
+win.rect = [1700,1000,1900,1200]
+//win.rect = [500,500,700,700];
 win.ProcessEvents();
 
