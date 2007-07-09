@@ -483,12 +483,6 @@ DEFINE_FUNCTION( Colorize ) {
 		ratio = 1;
 		for ( c = 0; c  < channels; c++ ) {
 			
-//			dist = tex->cbuffer[pos+c] / colorSrc[c];
-//			if ( dist > 1 )
-//				dist = 1.0 /dist;
-
-//			ratio += dist;
-
 			dist = PMAX - ABS( tex->cbuffer[pos+c] - colorSrc[c] );
 			ratio *= dist;
 		}
