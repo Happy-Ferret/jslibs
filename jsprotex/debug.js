@@ -6,7 +6,8 @@ LoadModule('jsprotex');
 var glc = Exec('OpenGL.js'); // OpenGL constants
 
 var win = new Window();
-var gl = new Gl(win);
+win.CreateOpenGLContext();
+var gl = new Gl();
 
 win.onidle = function() {
 
@@ -16,7 +17,7 @@ win.onidle = function() {
 	gl.Quad(-1,-1,1,1);
 	
 	Sleep(1);
-	gl.SwapBuffers();
+	win.SwapBuffers();
 }
 
 win.onkeydown = function( key, l ) {
@@ -52,6 +53,7 @@ const WHITE = [1,1,1,1];
 const curveLinear = function(v) { return v }
 const curveHalfSine = function(v) { return Math.cos(v*Math.PI/2) }
 const curveSine = function(v) { return Math.sin(v*Math.PI) }
+const curveGaussian = function(c) { return function(x) { return Math.exp( -(x*x)/(2*c*c) ) } }
 const curveInverse = function(v) { return 1/v }
 const curveSquare = function(v) { return v*v }
 const curveDot = function(v,i) { return i%2 }
@@ -129,16 +131,52 @@ var t0 = IntervalNow();
 
 draw:{
 
-	var size = 128;
-	var t = new Texture(size, size, 3);
+	var size = 512;
+	var t = new Texture(size, size, 1);
 	t.ClearChannel();
 
-//	t.AddGradiantRadial( [0, 1] );
-//	t.Resize(256,256);
-//	t.AddNoise(0.5);
-
-	t.Set('#1144FF');
+	t.AddGradiantRadial(curveGaussian( 0.4 ));
 	
+
+//	t.AddGradiantRadial(curveHalfSine);
+
+//	t.AddGradiantRadial(curveSine);
+//	t.OppositeLevels();
+//	t.Add(1);
+	
+	var c = Cloud(size, 0.5)
+	t.Mult( c );
+	t.Add(-0.05);
+	t.Mult(3)
+	
+
+	var tmp = new Texture(size, size, 1);
+	tmp.ClearChannel();
+	tmp.SetRectangle(10,10,size-10,size-10,1);
+	t.Blend(tmp,0.7);
+
+	
+break draw; // -----------------------------------------		
+	
+	
+//	t.Set(GRAY);
+	t.AddGradiantLinear(curveHalfSine, curveOne);
+	
+	var bump = new Texture(size, size, 1);
+	bump.ClearChannel();
+	bump.AddGradiantRadial( curveHalfSine );
+	bump.Normals();
+//	t.Light( bump, [1, 1, 0.01], 0, [1,0,0], 1, 1, 1 );
+//t.Displace( bump, 1 );
+	
+//	t.Resize(256,256);
+//	t.AddNoise(0.1);
+
+//	t.Set(BLUE);
+	
+//	t.Blend(t,RED);
+	
+break draw; // -----------------------------------------		
 
 	var bump = new Texture(size, size, 3);
 	bump.ClearChannel();
@@ -385,7 +423,7 @@ Print( 'time: '+ (IntervalNow() - t0) + ' ms\n' );
 gl.Color(1,1,1);
 gl.LoadTexture( t );
 
-//win.rect = [1700,1000,1900,1200]
-win.rect = [500,500,700,700];
+win.rect = [1700,1000,1900,1200]
+//win.rect = [500,500,700,700];
 win.ProcessEvents();
 

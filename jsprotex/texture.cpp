@@ -758,7 +758,7 @@ DEFINE_FUNCTION( AddNoise ) {
 			tex->cbuffer[i] += genrand_real1();
 	else
 		for ( i = 0; i < tsize; i++ )
-			tex->cbuffer[i] += genrand_real1() * pixel[i%channels];
+			tex->cbuffer[i] += genrand_real1() * pixel[i%channels]; //(TBD) test i%channels
 	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 }
@@ -840,9 +840,16 @@ DEFINE_FUNCTION( Set ) {
 
 		PTYPE pixel[PMAXCHANNELS];
 		RT_CHECK_CALL( InitLevelData(cx, argv[0], channels, pixel) );
+/* slower
 		int tsize = tex->width * tex->height * channels;
 		for ( int i = 0; i < tsize; i++ )
 			tex->cbuffer[i] = pixel[i % channels];
+*/
+		int i, c, size = tex->width * tex->height;
+		for ( i = 0; i < size; i++ )
+			for ( c = 0; c < channels; c++ )
+				tex->cbuffer[i*channels+c] = pixel[c];
+
 	}
 	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
@@ -867,9 +874,10 @@ DEFINE_FUNCTION( Add ) {
 
 		PTYPE pixel[PMAXCHANNELS];
 		RT_CHECK_CALL( InitLevelData(cx, argv[0], channels, pixel) );
-		int tsize = tex->width * tex->height * channels;
-		for ( int i = 0; i < tsize; i++ )
-			tex->cbuffer[i] += pixel[i % channels];
+		int i, c, size = tex->width * tex->height;
+		for ( i = 0; i < size; i++ )
+			for ( c = 0; c < channels; c++ )
+				tex->cbuffer[i*channels+c] += pixel[c];
 	}
 	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
@@ -894,9 +902,10 @@ DEFINE_FUNCTION( Mult ) {
 
 		PTYPE pixel[PMAXCHANNELS];
 		RT_CHECK_CALL( InitLevelData(cx, argv[0], channels, pixel) );
-		int tsize = tex->width * tex->height * channels;
-		for ( int i = 0; i < tsize; i++ )
-			tex->cbuffer[i] *= pixel[i % channels];
+		int i, c, size = tex->width * tex->height;
+		for ( i = 0; i < size; i++ )
+			for ( c = 0; c < channels; c++ )
+				tex->cbuffer[i*channels+c] *= pixel[c];
 	}
 	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
@@ -931,12 +940,26 @@ DEFINE_FUNCTION( Blend ) { // texture1, blenderTexture|blenderColor
 
 		PTYPE pixel[PMAXCHANNELS];
 		RT_CHECK_CALL( InitLevelData(cx, argv[1], channels, pixel) );
+
+		int pos, c, size = tex->width * tex->height;
+		for ( int i = 0; i < size; i++ ) {
+
+			pos = i * channels;
+			for ( c = 0; c < channels; c++ ) {
+
+				blend = pixel[c];
+				tex->cbuffer[i] = blend * tex->cbuffer[pos+c] + (PMAX - blend) * tex1->cbuffer[pos+c];
+			}
+		}
+/* following is slower
 		int tsize = tex->width * tex->height * channels;
 		for ( int i = 0; i < tsize; i++ ) {
 
-			blend = pixel[i&channels];
+			blend = pixel[i%channels];
 			tex->cbuffer[i] = blend * tex->cbuffer[i] + (PMAX - blend) * tex1->cbuffer[i];
 		}
+*/		
+		
 	}
 	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
@@ -987,6 +1010,12 @@ DEFINE_FUNCTION( SetRectangle ) {
 
 	PTYPE pixel[PMAXCHANNELS];
 	RT_CHECK_CALL( InitLevelData(cx, argv[4], tex->channels, pixel) );
+	
+//	PTYPE alpha;
+//	if ( argc >= 6 )
+//		RT_JSVAL_TO_REAL( argv[5], alpha )
+//	else
+//		alpha = 1;
 
 	int channels = tex->channels;
 	int width = tex->width;
@@ -1004,8 +1033,13 @@ DEFINE_FUNCTION( SetRectangle ) {
 			if ( py < 0 || py >= height )
 				py = ABS(py%height);
 			pos = ( px + py * width ) * channels;
-			for ( c = 0; c < channels; c++ )
-				tex->cbuffer[pos+c] = pixel[c];
+
+//			if ( alpha == 1 )
+				for ( c = 0; c < channels; c++ )
+					tex->cbuffer[pos+c] = pixel[c];
+//			else
+//				for ( c = 0; c < channels; c++ )
+//					tex->cbuffer[pos+c] = tex->cbuffer[pos+c] * (PMAX-alpha) + pixel[c] * alpha;
 		}
 
 	*rval = OBJECT_TO_JSVAL(obj);
