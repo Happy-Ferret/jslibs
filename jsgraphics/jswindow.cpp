@@ -304,6 +304,85 @@ DEFINE_FUNCTION( WaitForMessage ) {
 }
 
 
+DEFINE_FUNCTION( CreateOpenGLContext ) {
+
+//	RT_ASSERT( JS_IsConstructing(cx) && JS_GetClass(obj) == _class, RT_ERROR_INVALID_CLASS );
+//	RT_ASSERT_ARGC(1);
+//	RT_ASSERT_OBJECT(argv[0]);
+//	RT_ASSERT_CLASS(JSVAL_TO_OBJECT(argv[0]), &classWindow);
+
+	HWND hWnd = (HWND)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE( hWnd );
+
+//	JS_SetReservedSlot(cx, obj, SLOT_WINDOW_OBJECT, argv[0]); // avoid being GC while Gl is in use
+
+	BOOL res;
+	HDC hDC = GetDC(hWnd);
+	RT_ASSERT( hDC != NULL, "Could not get window Device Context." );
+
+	// PFD_DRAW_TO_BITMAP : http://msdn.microsoft.com/library/default.asp?url=/library/en-us/dnopen/html/msdn_gl6.asp
+
+	PIXELFORMATDESCRIPTOR pfd = {     // pfd Tells Windows How We Want Things To Be
+		sizeof(PIXELFORMATDESCRIPTOR),   // Size Of This Pixel Format Descriptor
+		1,                               // Version Number
+		PFD_DRAW_TO_WINDOW |             // Format Must Support Window
+		PFD_SUPPORT_OPENGL |             // Format Must Support OpenGL
+		PFD_DOUBLEBUFFER,                // Must Support Double Buffering
+		PFD_TYPE_RGBA,                   // Request An RGBA Format
+		32,                              // Select Our Color Depth
+		0, 0, 0, 0, 0, 0,                // Color Bits Ignored
+		0,                               // No Alpha Buffer
+		0,                               // Shift Bit Ignored
+		0,                               // No Accumulation Buffer
+		0, 0, 0, 0,                      // Accumulation Bits Ignored
+		16,                              // 16Bit Z-Buffer (Depth Buffer)
+		0,                               // No Stencil Buffer
+		0,                               // No Auxiliary Buffer
+		PFD_MAIN_PLANE,                  // Main Drawing Layer
+		0,                               // Reserved
+		0, 0, 0                          // Layer Masks Ignored
+	};
+
+	int pixelFormat = ChoosePixelFormat(hDC, &pfd);
+	RT_ASSERT( pixelFormat != 0, "Could not Find A Suitable OpenGL PixelFormat." );
+
+	// If you are using the Win32 interface (as opposed to GLUT), call DescribePixelFormat() and check the returned dwFlags bitfield.
+	// If PFD_GENERIC_ACCELERATED is clear and PFD_GENERIC_FORMAT is set, then the pixel format is only supported by the generic implementation.
+	// Hardware acceleration is not possible for this format. For hardware acceleration, you need to choose a different format.
+	DescribePixelFormat(hDC, pixelFormat, sizeof(PIXELFORMATDESCRIPTOR), &pfd); // (TBD) check return value for error
+	bool hasNoAccel = (pfd.dwFlags & PFD_GENERIC_FORMAT) != 0 && (pfd.dwFlags & PFD_GENERIC_ACCELERATED) == 0;
+	RT_ASSERT( hasNoAccel == false, "Hardware acceleration is not possible for this format." );
+
+	res = SetPixelFormat(hDC,pixelFormat,&pfd);
+	RT_ASSERT( res, "Could not Set The PixelFormat." );
+
+	HGLRC hRC = wglCreateContext(hDC);
+	RT_ASSERT_1( hRC != NULL , "Cannot Create A GL Rendering Context. (%x)", GetLastError() );
+
+	res = wglMakeCurrent(hDC,hRC);
+	RT_ASSERT_1( res, "Cannot Activate The GL Rendering Context. (%x)", GetLastError());
+
+//  wglMakeCurrent(NULL,NULL); // This step is not required, but it can help find errors, especially when you are using multiple rendering contexts.
+//  wglDeleteContext(hRC);
+	return JS_TRUE;
+}
+
+
+// The Effects of Double Buffering on Animation Frame Rates
+//		http://www.futuretech.blinkenlights.nl/dbuffer.html
+static JSBool _SwapBuffers(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+
+//	glFlush();
+//	glFinish();
+//	RT_ASSERT( JS_GetClass(obj) == _class, RT_ERROR_INVALID_CLASS );
+	HDC hDC = wglGetCurrentDC(); // (TBD) un-specialize from OpenGL
+	RT_ASSERT( hDC != NULL, "Could not get the Current Device Context." );
+	BOOL res = SwapBuffers(hDC); // Doc: With multithread applications, flush the drawing commands in any other threads drawing to the same window before calling SwapBuffers.
+	RT_ASSERT_1( res, "Unable to SwapBuffers.(%x)", GetLastError() );
+	return JS_TRUE;
+}
+
+
 DEFINE_FUNCTION( Mode ) {
 
 	LONG status;
@@ -541,6 +620,8 @@ CONFIGURE_CLASS
 		FUNCTION(ProcessEvents)
 		FUNCTION(Exit)
 		FUNCTION(WaitForMessage)
+		FUNCTION(CreateOpenGLContext)
+		FUNCTION2(SwapBuffers, _SwapBuffers)
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC

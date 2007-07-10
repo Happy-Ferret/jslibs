@@ -68,7 +68,10 @@ var y = 300;
 var w = 500;
 var h = 500;
 win.rect = [x,y,x+w,y+h];
-var gl = new Gl(win);
+
+win.CreateOpenGLContext();
+
+var gl = new Gl();
 
 gl.LoadIdentity();
 var list1 = gl.StartList();

@@ -66,7 +66,7 @@ void SetupBitmapDC() {
 
 DEFINE_FINALIZE() {
 
-	JS_SetReservedSlot(cx, obj, SLOT_WINDOW_OBJECT, JSVAL_VOID);
+//	JS_SetReservedSlot(cx, obj, SLOT_WINDOW_OBJECT, JSVAL_VOID);
 
 	// (TBD) ? wglDeleteContext
 	// (TBD) ? ReleaseDC
@@ -74,7 +74,7 @@ DEFINE_FINALIZE() {
 }
 
 DEFINE_CONSTRUCTOR() {
-
+/*
 	RT_ASSERT( JS_IsConstructing(cx) && JS_GetClass(obj) == _class, RT_ERROR_INVALID_CLASS );
 	RT_ASSERT_ARGC(1);
 	RT_ASSERT_OBJECT(argv[0]);
@@ -132,10 +132,11 @@ DEFINE_CONSTRUCTOR() {
 
 //  wglMakeCurrent(NULL,NULL); // This step is not required, but it can help find errors, especially when you are using multiple rendering contexts.
 //  wglDeleteContext(hRC);
+*/
 	return JS_TRUE;
 }
 
-
+/*
 // The Effects of Double Buffering on Animation Frame Rates
 //		http://www.futuretech.blinkenlights.nl/dbuffer.html
 static JSBool _SwapBuffers(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
@@ -149,7 +150,7 @@ static JSBool _SwapBuffers(JSContext *cx, JSObject *obj, uintN argc, jsval *argv
 	RT_ASSERT_1( res, "Unable to SwapBuffers.(%x)", GetLastError() );
 	return JS_TRUE;
 }
-
+*/
 
 DEFINE_FUNCTION( Viewport ) {
 
@@ -556,6 +557,7 @@ DEFINE_FUNCTION( LoadTexture ) {
 	return JS_TRUE;
 }
 
+
 DEFINE_FUNCTION( Test ) {
 
 	return JS_TRUE;
@@ -568,7 +570,7 @@ CONFIGURE_CLASS
 	HAS_FINALIZE
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION2(SwapBuffers, _SwapBuffers)
+//		FUNCTION2(SwapBuffers, _SwapBuffers)
 		FUNCTION(StartList)
 		FUNCTION(EndList)
 		FUNCTION(CallList)
