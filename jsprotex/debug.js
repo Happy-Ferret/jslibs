@@ -136,8 +136,10 @@ draw:{
 	t.ClearChannel();
 
 	t.AddGradiantRadial(curveGaussian( 0.4 ));
+	t.RotoZoom( 0.5,0.5, 1,0.1, 30 );
 	
-
+	
+break draw; // -----------------------------------------		
 //	t.AddGradiantRadial(curveHalfSine);
 
 //	t.AddGradiantRadial(curveSine);

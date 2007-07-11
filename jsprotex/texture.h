@@ -27,6 +27,8 @@ DECLARE_CLASS( Texture )
 
 #define MINMAX(val, min, max) ((val) > (max) ? (max) : (val) < (min) ? (min) : (val) )
 
+#define PTYPE float
+
 // min 'invisible' value
 #define PMINLIMIT FLT_MIN
 
@@ -59,8 +61,10 @@ DECLARE_CLASS( Texture )
 // un-normalize the pixel value from range -1..1
 #define PUNZNORM(p) ( (PUNNORM(p) + 1 ) / 2)
 
+#define PRAND (genrand_real1())
 
-#define PTYPE float
+
+
 
 #define PMAXCHANNELS 4
 

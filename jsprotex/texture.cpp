@@ -238,7 +238,7 @@ DEFINE_FUNCTION( Free ) {
 	return JS_TRUE;
 }
 
-
+// PTYPE ok
 DEFINE_FUNCTION( Swap ) {
 
 	RT_ASSERT_ARGC( 1 );
@@ -253,7 +253,7 @@ DEFINE_FUNCTION( Swap ) {
 	return JS_TRUE;
 }
 
-
+// PTYPE ok
 DEFINE_FUNCTION( ClearChannel ) {
 
 	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
@@ -284,7 +284,7 @@ DEFINE_FUNCTION( ClearChannel ) {
 	return JS_TRUE;
 }
 
-
+// PTYPE ok
 DEFINE_FUNCTION( SetChannel ) { // dstChannel,   tex1, srcChannel
 
 	RT_ASSERT_ARGC( 3 );
@@ -428,7 +428,7 @@ DEFINE_FUNCTION( ToRGB ) { // (TBD) test it
 	return JS_TRUE;
 }
 
-
+// PTYPE ok
 DEFINE_FUNCTION( Aliasing ) {
 
 	RT_ASSERT_ARGC( 2 );
@@ -442,16 +442,13 @@ DEFINE_FUNCTION( Aliasing ) {
 	RT_CHECK_CALL( InitCurveData( cx, argv[1], count, curve ) );
 
 	int tsize = tex->width * tex->height * tex->channels;
-	for ( int i = 0; i < tsize; i++ ) {
-
-//		tex->cbuffer[i] = (int)( count * tex->cbuffer[i] ) / count;
-		tex->cbuffer[i] = curve[ (int)((count-1) * tex->cbuffer[i] / PMAX) ];
-	}
+	for ( int i = 0; i < tsize; i++ )
+		tex->cbuffer[i] = curve[ (long)((count-1) * tex->cbuffer[i] / PMAX) ];
 	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 }
 
-
+// PTYPE ok
 DEFINE_FUNCTION( Colorize ) {
 	// GIMP color to alpha: http://www.google.com/codesearch?hl=en&q=+gimp+%22color+to+alpha%22
 	// color exchange algo. : http://www.koders.com/c/fidB39DAC5A8DB8B6073D78FB23363C5E0541208B02.aspx
@@ -473,7 +470,7 @@ DEFINE_FUNCTION( Colorize ) {
 	else
 		power = 1;
 
-	float ratio, dist;
+	float ratio;
 	int pos, size = tex->width * tex->height;
 	int c;
 	for ( int i = 0; i < size; i++ ) {
@@ -481,12 +478,9 @@ DEFINE_FUNCTION( Colorize ) {
 		pos = i * channels;
 
 		ratio = 1;
-		for ( c = 0; c  < channels; c++ ) {
-			
-			dist = PMAX - ABS( tex->cbuffer[pos+c] - colorSrc[c] );
-			ratio *= dist;
-		}
-		
+		for ( c = 0; c  < channels; c++ )
+			ratio *= (PMAX - ABS( tex->cbuffer[pos+c] - colorSrc[c] )) / PMAX;
+
 		if ( power == 0 && ratio == 1 ) {
 
 			for ( c = 0; c < channels; c++ )
@@ -495,16 +489,17 @@ DEFINE_FUNCTION( Colorize ) {
 		}
 
 		if ( power != 1 )
-			ratio = powf(ratio, 1.0 / power);
+			ratio = powf(ratio, 1 / power);
 
 		for ( c = 0; c < channels; c++ )
-			tex->cbuffer[pos+c] = (tex->cbuffer[pos+c] * (PMAX-ratio) + colorDst[c] * ratio) / PMAX;
+			tex->cbuffer[pos+c] = (tex->cbuffer[pos+c] * (1-ratio) + colorDst[c] * ratio);
 	}
 	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 }
 
 
+// PTYPE ok
 DEFINE_FUNCTION( ExtractColor ) {
 
 	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
@@ -535,16 +530,16 @@ DEFINE_FUNCTION( ExtractColor ) {
 		pos = i * srcChannels;
 		ratio = 1;
 		for ( c = 0; c < srcChannels; c++ )
-			ratio *= PMAX - ABS(texSrc->cbuffer[pos+c] - color[c]);
+			ratio *= ( PMAX - ABS(texSrc->cbuffer[pos+c] - color[c]) ) / PMAX;
 		if ( power != 1 )
-			ratio = powf(ratio,1/power);
+			ratio = powf(ratio, 1 / power);
 		tex->cbuffer[i] = ratio;
 	}
 	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 }
 
-
+// PTYPE ok
 DEFINE_FUNCTION( NormalizeLevels ) {
 
 	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
@@ -552,16 +547,16 @@ DEFINE_FUNCTION( NormalizeLevels ) {
 
 	PTYPE min = PMAXLIMIT;
 	PTYPE max = PMINLIMIT;
-	PTYPE level;
+	PTYPE tmp;
 
 	int tsize = tex->width * tex->height * tex->channels;
 	for ( int i = 0; i < tsize; i++ ) {
 
-		level = tex->cbuffer[i]; 
-		if ( level > max )
-			max = level;
-		else if ( level < min )
-			min = level;
+		tmp = tex->cbuffer[i]; 
+		if ( tmp > max )
+			max = tmp;
+		else if ( tmp < min )
+			min = tmp;
 	}
 	PTYPE amp = max - min;
 	for ( int i = 0; i < tsize; i++ )
@@ -570,7 +565,7 @@ DEFINE_FUNCTION( NormalizeLevels ) {
 	return JS_TRUE;
 }
 
-
+// PTYPE ok
 DEFINE_FUNCTION( ClampLevels ) { // (TBD) check if this algo is right
 
 	RT_ASSERT_ARGC( 2 );
@@ -582,21 +577,21 @@ DEFINE_FUNCTION( ClampLevels ) { // (TBD) check if this algo is right
 	RT_JSVAL_TO_REAL( argv[0], min );
 	RT_JSVAL_TO_REAL( argv[1], max );
 
-	PTYPE level;
+	PTYPE tmp;
 	int tsize = tex->width * tex->height * tex->channels;
 	for ( int i = 0; i < tsize; i++ ) {
 		
-		level = tex->cbuffer[i];
-		if ( level > max )
+		tmp = tex->cbuffer[i];
+		if ( tmp > max )
 			tex->cbuffer[i] = max;
-		else if ( level < min )
+		else if ( tmp < min )
 			tex->cbuffer[i] = min;
 	}
 	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 }
 
-
+// PTYPE ok
 DEFINE_FUNCTION( CutLevels ) {
 
 	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
@@ -638,7 +633,7 @@ DEFINE_FUNCTION( CutLevels ) {
 			else if ( level < lmin )
 				lmin = level;
 		}
-		level = ( lmin + lmax ) / 2.f;
+		level = ( lmin + lmax ) / 2;
 		if ( level > max )
 			for ( c = 0; c < channels; c++ )
 				tex->cbuffer[pos+c] = PMAX;
@@ -650,31 +645,31 @@ DEFINE_FUNCTION( CutLevels ) {
 	return JS_TRUE;
 }
 
-
+// PTYPE ok
 DEFINE_FUNCTION( InvertLevels ) { // level = 1 / level
 
 	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(tex);
 	int tsize = tex->width * tex->height * tex->channels;
 	for ( int i = 0; i < tsize; i++ )
-		tex->cbuffer[i] = 1.f / tex->cbuffer[i];
+		tex->cbuffer[i] = 1 / tex->cbuffer[i];
 	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 }
 
-
+// PTYPE ok
 DEFINE_FUNCTION( OppositeLevels ) { // level = -level
 
 	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(tex);
 	int tsize = tex->width * tex->height * tex->channels;
 	for ( int i = 0; i < tsize; i++ )
-		tex->cbuffer[i] =  -tex->cbuffer[i];
+		tex->cbuffer[i] =  - tex->cbuffer[i];
 	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 }
 
-
+// PTYPE ok
 DEFINE_FUNCTION( MirrorLevels ) {
 
 	RT_ASSERT_ARGC( 1 );
@@ -691,19 +686,17 @@ DEFINE_FUNCTION( MirrorLevels ) {
 		mirrorFromBottom = true;
 
 	int tsize = tex->width * tex->height * tex->channels;
-	
 	if ( mirrorFromBottom )
 		for ( int i = 0; i < tsize; i++ )
 			tex->cbuffer[i] = ABS(tex->cbuffer[i] - threshold) + threshold;
 	else
 		for ( int i = 0; i < tsize; i++ )
 			tex->cbuffer[i] = -( ABS(-tex->cbuffer[i] + threshold) - threshold);
-
 	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 }
 
-
+// PTYPE ok
 DEFINE_FUNCTION( WrapLevels ) { // real modulo
 
 	RT_ASSERT_ARGC( 1 );
@@ -719,14 +712,14 @@ DEFINE_FUNCTION( WrapLevels ) { // real modulo
 	for ( int i = 0; i < tsize; i++ ) {
 
 		div = tex->cbuffer[i] / wrap;
-		tex->cbuffer[i] = div - floor(div);
+		tex->cbuffer[i] = div - (long)div;
 	}
 
 	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 }
 
-
+// PTYPE ok
 DEFINE_FUNCTION( AddNoise ) {
 
 	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
@@ -755,16 +748,16 @@ DEFINE_FUNCTION( AddNoise ) {
 	int i, tsize = tex->width * tex->height * channels;
 	if ( fullLevel )
 		for ( i = 0; i < tsize; i++ )
-			tex->cbuffer[i] += genrand_real1();
+			tex->cbuffer[i] += PRAND;
 	else
 		for ( i = 0; i < tsize; i++ )
-			tex->cbuffer[i] += genrand_real1() * pixel[i%channels]; //(TBD) test i%channels
+			tex->cbuffer[i] += PRAND * pixel[i % channels] / PMAX; //(TBD) test if i%channels works fine, else use double for loop
 	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 }
 
 
-
+// PTYPE ok
 DEFINE_FUNCTION( Desaturate ) {
 
 	RT_ASSERT_ARGC(2)
@@ -821,7 +814,7 @@ DEFINE_FUNCTION( Desaturate ) {
 	return JS_TRUE;
 }
 
-
+// PTYPE ok
 DEFINE_FUNCTION( Set ) {
 
 	RT_ASSERT_ARGC( 1 );
@@ -855,7 +848,7 @@ DEFINE_FUNCTION( Set ) {
 	return JS_TRUE;
 }
 
-
+// PTYPE ok
 DEFINE_FUNCTION( Add ) {
 
 	RT_ASSERT_ARGC( 1 );
@@ -883,7 +876,7 @@ DEFINE_FUNCTION( Add ) {
 	return JS_TRUE;
 }
 
-
+// PTYPE ok
 DEFINE_FUNCTION( Mult ) {
 
 	RT_ASSERT_ARGC( 1 );
@@ -911,7 +904,7 @@ DEFINE_FUNCTION( Mult ) {
 	return JS_TRUE;
 }
 
-
+// PTYPE ok
 DEFINE_FUNCTION( Blend ) { // texture1, blenderTexture|blenderColor
 
 	RT_ASSERT_ARGC( 2 );
@@ -934,7 +927,7 @@ DEFINE_FUNCTION( Blend ) { // texture1, blenderTexture|blenderColor
 		for ( int i = 0; i < tsize; i++ ) {
 			
 			blend = blenderTex->cbuffer[i];
-			tex->cbuffer[i] = blend * tex->cbuffer[i] + (PMAX - blend) * tex1->cbuffer[i];
+			tex->cbuffer[i] = (blend * tex->cbuffer[i] + (PMAX - blend) * tex1->cbuffer[i] ) / PMAX;
 		}
 	} else {
 
@@ -948,7 +941,7 @@ DEFINE_FUNCTION( Blend ) { // texture1, blenderTexture|blenderColor
 			for ( c = 0; c < channels; c++ ) {
 
 				blend = pixel[c];
-				tex->cbuffer[i] = blend * tex->cbuffer[pos+c] + (PMAX - blend) * tex1->cbuffer[pos+c];
+				tex->cbuffer[i] = ( blend * tex->cbuffer[pos+c] + (PMAX - blend) * tex1->cbuffer[pos+c] ) / PMAX;
 			}
 		}
 /* following is slower
@@ -959,13 +952,12 @@ DEFINE_FUNCTION( Blend ) { // texture1, blenderTexture|blenderColor
 			tex->cbuffer[i] = blend * tex->cbuffer[i] + (PMAX - blend) * tex1->cbuffer[i];
 		}
 */		
-		
 	}
 	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 }
 
-
+// PTYPE ok
 DEFINE_FUNCTION( SetPixel ) { // x, y, levels
 
 	RT_ASSERT_ARGC( 3 );
@@ -994,7 +986,7 @@ DEFINE_FUNCTION( SetPixel ) { // x, y, levels
 	return JS_TRUE;
 }
 
-
+// PTYPE ok
 DEFINE_FUNCTION( SetRectangle ) {
 
 	RT_ASSERT_ARGC( 3 );
@@ -1140,7 +1132,121 @@ DEFINE_FUNCTION( Flip ) {
 }
 
 
-// (TBD) PTYPE
+DEFINE_FUNCTION( RotoZoom ) { // source: FxGen
+
+	RT_ASSERT_ARGC( 2 );
+
+	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE(tex);
+	int width = tex->width;
+	int height = tex->height;
+	int channels = tex->channels;
+
+	int newWidth = width;
+	int newHeight = height;
+
+	float centerX, centerY;
+	RT_JSVAL_TO_REAL( argv[0], centerX );
+	RT_JSVAL_TO_REAL( argv[1], centerY );
+
+	float zoomX, zoomY;
+	RT_JSVAL_TO_REAL( argv[2], zoomX );
+	RT_JSVAL_TO_REAL( argv[3], zoomY );
+
+	zoomX = 0.5 - ( zoomX / 2 );
+	zoomX = exp( zoomX * 6 );
+
+	zoomY = 0.5 - ( zoomY / 2 );
+	zoomY = exp( zoomY * 6 );
+
+	float rotate;
+	RT_JSVAL_TO_REAL( argv[4], rotate ); // 0..360
+
+	rotate = M_PI * rotate / 180;
+
+	float coefX = zoomX * (float)width / (float)newWidth;
+	float coefY = zoomY * (float)height / (float)newHeight;
+
+	float	cosVal = cosf(rotate);
+	float	sinVal = sinf(rotate);
+
+	float tw2 = newWidth / 2.0f;
+	float th2 = newHeight / 2.0f;
+
+	float	ys = sinVal * -th2;
+	float	yc = cosVal * -th2;
+
+		unsigned int spx, spy; // position in the source
+		float prx, pry; // pixel ratio
+		float rx = (float)width / (float)newWidth; // texture ratio x
+		float ry = (float)height / (float)newHeight; // texture ratio y
+		float tmp;
+		int x, y, c;
+
+		int pos, pos1, pos2, pos3, pos4; // offset in the buffer
+		float ratio1, ratio2, ratio3, ratio4; // pixel value ratio
+
+	TextureSetupBackBuffer(tex);
+
+	for ( y = 0; y < newHeight; y++ ) {
+
+		float	u = (((cosVal * -tw2) - ys) * coefX) + (centerX * (float)width);		// x' = cos(x)-sin(y) + Center X;
+		float	v = (((sinVal * -tw2) + yc) * coefY) + (centerY * (float)height);		// y' = sin(x)+cos(y) + Center Y;
+
+		for ( x = 0; x < newWidth; x++ ) {
+/*		
+					prx = modf( u, &tmp );
+					spx = (int)tmp;
+					pry = modf( v, &tmp );
+					spy = (int)tmp;
+*/
+			prx = fabs(u - (int)u);	//Fraction
+			pry = fabs(v - (int)v);	//Fraction
+
+//			spx = (unsigned int)u;
+//			spy = (unsigned int)v;
+			
+			spx = u < 0 ? ABS( (int)u % width ) : u;
+			spy = v < 0 ? ABS( (int)v % height ) : v;
+
+
+
+					ratio1 = (1.f - prx) * (1.f - pry);
+					ratio2 = (prx) * (1.f - pry);
+					ratio3 = (1.f - prx) * (pry);
+					ratio4 = (prx) * (pry);
+
+					pos1 = (  ((spx + 0) % width) + ((spy + 0) % height) * width  ) * channels;
+					pos2 = (  ((spx + 1) % width) + ((spy + 0) % height) * width  ) * channels;
+					pos3 = (  ((spx + 0) % width) + ((spy + 1) % height) * width  ) * channels;
+					pos4 = (  ((spx + 1) % width) + ((spy + 1) % height) * width  ) * channels;
+
+
+					pos = (x + y * newWidth) * channels;
+					for ( c = 0; c < channels; c++ )
+						tex->cbackBuffer[pos+c] = tex->cbuffer[pos1+c] * ratio1 + tex->cbuffer[pos2+c] * ratio2 + tex->cbuffer[pos3+c] * ratio3 + tex->cbuffer[pos4+c] * ratio4;
+
+
+
+			//Vectors
+			u += cosVal * coefX;
+			v += sinVal * coefY;
+		}
+
+		//Vectors
+		ys += sinVal;
+		yc += cosVal;
+	}
+
+
+	TextureSwapBuffers(tex);
+
+	*rval = OBJECT_TO_JSVAL(obj);
+	return JS_TRUE;
+}
+
+
+// PTYPE ok
 DEFINE_FUNCTION( Resize ) {
 
 	RT_ASSERT_ARGC( 2 );
@@ -1458,13 +1564,12 @@ DEFINE_FUNCTION( NormalizeVectors ) {
 	int width = tex->width;
 	int height = tex->height;
 	int channels = tex->channels;
-	int c;
 
 	int size = tex->width * tex->height;
 	PTYPE val, sum;
 	float length;
-	int pos;
-	for ( int i = 0; i < size; i++ ) {
+	int i, pos, c;
+	for ( i = 0; i < size; i++ ) {
 		
 		pos = i * channels;
 		sum = 0;
@@ -1582,7 +1687,6 @@ DEFINE_FUNCTION( Normals ) {
 DEFINE_FUNCTION( Light ) {
 	// Simple Lighting: http://www.gamasutra.com/features/19990416/intel_simd_04.htm
 
-
 	RT_ASSERT_ARGC( 5 );
 
 	Texture *normals, *tex = (Texture *)JS_GetPrivate(cx, obj);
@@ -1692,8 +1796,8 @@ DEFINE_FUNCTION( Trim ) { // (TBD) test this new version that use memcpy
 
 	int channels = tex->channels;
 
-	int newWidth = x1-x0;
-	int newHeight = y1-y0;
+	int newWidth = x1 - x0;
+	int newHeight = y1 - y0;
 
 	if ( tex->cbackBuffer != NULL ) {
 
@@ -2032,8 +2136,8 @@ DEFINE_FUNCTION( Cells ) { // source: FxGen
 
 	for ( int i = 0; i < count; i++ ) {
 
-		float rand1 = genrand_real1();
-		float rand2 = genrand_real1();
+		float rand1 = genrand_real1(); // [0,1]-real-interval
+		float rand2 = genrand_real1(); // [0,1]-real-interval
 		int x = i % density;
 		int y = i / density;
 
@@ -2095,6 +2199,7 @@ DEFINE_FUNCTION( Cells ) { // source: FxGen
 	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 }
+
 
 DEFINE_FUNCTION( AddGradiantQuad ) {
 
@@ -2314,9 +2419,7 @@ DEFINE_FUNCTION( AddCracks ) { // source: FxGen
 	InitCurveData( cx, argv[4], crackMaxLength, curve );
 
 	// draw
-	int c;
-	int pos;
-
+	int pos, c;
 	float curveValue;
 	//Process operator
 	int n = 0;
@@ -2342,10 +2445,10 @@ DEFINE_FUNCTION( AddCracks ) { // source: FxGen
 
 			x = x + cos(a);
 			y = y + sin(a);
-			if( x < 0.0 ) x = x + float(width);
-			if( y < 0.0 ) y = y + float(height);
+			if( x < 0.0 ) x = x + width;
+			if( y < 0.0 ) y = y + height;
 
-			a = a + variation*(2.f * genrand_real1() - 1.f);
+			a = a + variation*(2 * genrand_real1() - 1);
 		}
 	}
 	*rval = OBJECT_TO_JSVAL(obj);
@@ -2454,6 +2557,7 @@ CONFIGURE_CLASS
 		FUNCTION( Add )
 		FUNCTION( Mult )
 		FUNCTION( Blend )
+		FUNCTION( RotoZoom )
 		FUNCTION( Resize )
 		FUNCTION( Trim )
 		FUNCTION( Copy )
