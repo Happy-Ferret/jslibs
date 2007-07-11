@@ -131,14 +131,26 @@ var t0 = IntervalNow();
 
 draw:{
 
+	Texture.RandSeed(0);
 	var size = 512;
-	var t = new Texture(size, size, 1);
-	t.ClearChannel();
+//	var t = new Texture(size, size, 3);
+//	t.ClearChannel();
 
-	t.AddGradiantRadial(curveGaussian( 0.4 ));
-	t.RotoZoom( 0.5,0.5, 1,0.1, 30 );
+//	t.AddGradiantRadial( curveGaussian( 0.4 ) );
+	var t = Cloud(size, 0.2);
+	GrayToRGB( t );
+	
+//	t.AddGradiantQuad(BLUE, GREEN, RED, YELLOW);
+	t.MirrorLevels( 0.5 );
+	t.Mult(2);
+	t.CutLevels(0.6, 0.8);
+	t.Colorize( BLACK, RED, 0 );
+	t.Colorize( WHITE, BLUE, 0 );
+
 	
 	
+//	t.RotoZoom( 0.5,0.5, 1,1, 0 );
+		
 break draw; // -----------------------------------------		
 //	t.AddGradiantRadial(curveHalfSine);
 
@@ -425,7 +437,7 @@ Print( 'time: '+ (IntervalNow() - t0) + ' ms\n' );
 gl.Color(1,1,1);
 gl.LoadTexture( t );
 
-win.rect = [1700,1000,1900,1200]
-//win.rect = [500,500,700,700];
+//win.rect = [1700,1000,1900,1200]
+win.rect = [500,500,700,700];
 win.ProcessEvents();
 

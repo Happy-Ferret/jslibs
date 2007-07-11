@@ -48,15 +48,22 @@ inline bool IsTexture( jsval value ) {
 	return ( JSVAL_IS_OBJECT( value ) && JS_GetClass(JSVAL_TO_OBJECT( value )) == &classTexture );
 }
 
+inline unsigned int Wrap( int value, unsigned int limit ) {
+
+	if ( value >= limit )
+		return value % limit;
+	else if ( value < 0 )
+		return limit - (-value) % limit;
+	else
+		return value;
+}
 
 inline PTYPE* PosByMode( const Texture *tex, int x, int y, BorderMode mode ) {
 
 	switch ( mode ) {
 		case borderWrap:
-			if ( x < 0 || x >= tex->width )
-				x = ABS( x % tex->width );
-			if ( y < 0 || y >= tex->height )
-				y = ABS( y % tex->height );
+			x = Wrap(x, tex->width);
+			y = Wrap(y, tex->height);
 			break;
 		case borderMirror:
 			if ( x < 0 ) x = - x;
@@ -469,7 +476,7 @@ DEFINE_FUNCTION( Colorize ) {
 		RT_JSVAL_TO_REAL(argv[2], power)
 	else
 		power = 1;
-
+	
 	float ratio;
 	int pos, size = tex->width * tex->height;
 	int c;
@@ -479,12 +486,12 @@ DEFINE_FUNCTION( Colorize ) {
 
 		ratio = 1;
 		for ( c = 0; c  < channels; c++ )
-			ratio *= (PMAX - ABS( tex->cbuffer[pos+c] - colorSrc[c] )) / PMAX;
+			ratio *= (PMAX - abs(tex->cbuffer[pos+c] - colorSrc[c])) / PMAX;
 
-		if ( power == 0 && ratio == 1 ) {
-
-			for ( c = 0; c < channels; c++ )
-				tex->cbuffer[pos+c] = colorDst[c];
+		if ( power == 0 ) {
+			if ( ratio == 1 )
+				for ( c = 0; c < channels; c++ )
+					tex->cbuffer[pos+c] = colorDst[c];
 			continue;
 		}
 
@@ -530,7 +537,7 @@ DEFINE_FUNCTION( ExtractColor ) {
 		pos = i * srcChannels;
 		ratio = 1;
 		for ( c = 0; c < srcChannels; c++ )
-			ratio *= ( PMAX - ABS(texSrc->cbuffer[pos+c] - color[c]) ) / PMAX;
+			ratio *= ( PMAX - abs(texSrc->cbuffer[pos+c] - color[c]) ) / PMAX;
 		if ( power != 1 )
 			ratio = powf(ratio, 1 / power);
 		tex->cbuffer[i] = ratio;
@@ -591,6 +598,34 @@ DEFINE_FUNCTION( ClampLevels ) { // (TBD) check if this algo is right
 	return JS_TRUE;
 }
 
+
+// PTYPE ok
+DEFINE_FUNCTION( CutLevels ) { // (TBD) check if this algo is right
+
+	RT_ASSERT_ARGC( 2 );
+
+	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE(tex);
+
+	PTYPE min, max;
+	RT_JSVAL_TO_REAL( argv[0], min );
+	RT_JSVAL_TO_REAL( argv[1], max );
+
+	PTYPE tmp;
+	int tsize = tex->width * tex->height * tex->channels;
+	for ( int i = 0; i < tsize; i++ ) {
+		
+		tmp = tex->cbuffer[i];
+		if ( tmp > max )
+			tex->cbuffer[i] = PMAX;
+		else if ( tmp < min )
+			tex->cbuffer[i] = 0;
+	}
+	*rval = OBJECT_TO_JSVAL(obj);
+	return JS_TRUE;
+}
+
+/*
 // PTYPE ok
 DEFINE_FUNCTION( CutLevels ) {
 
@@ -603,20 +638,20 @@ DEFINE_FUNCTION( CutLevels ) {
 
 		min = 0;
 		max = PMAX;
-	} else
+	} 
+	
 	if ( argc >= 1 ) {
 
 		RT_JSVAL_TO_REAL( argv[0], min );
 		max = min;
-	} else
-
+	}
+	
 	if ( argc >= 2 ) {
 
 		RT_JSVAL_TO_REAL( argv[1], max );
 	}
 
-	PTYPE lmin, lmax; // local min & max
-	PTYPE level;
+	PTYPE level, lmin, lmax; // local min & max
 	int channels = tex->channels;
 	int size = tex->width * tex->height;
 	int i, c, pos;
@@ -644,6 +679,7 @@ DEFINE_FUNCTION( CutLevels ) {
 	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 }
+*/
 
 // PTYPE ok
 DEFINE_FUNCTION( InvertLevels ) { // level = 1 / level
@@ -679,19 +715,29 @@ DEFINE_FUNCTION( MirrorLevels ) {
 	PTYPE threshold;
 	RT_JSVAL_TO_REAL( argv[0], threshold );
 	
-	bool mirrorFromBottom;
+	bool mirrorTop;
 	if ( argc >= 2 && !JSVAL_IS_VOID(argv[1]) )
-		RT_JSVAL_TO_BOOL( argv[1], mirrorFromBottom )
+		RT_JSVAL_TO_BOOL( argv[1], mirrorTop )
 	else
-		mirrorFromBottom = true;
+		mirrorTop = true;
 
-	int tsize = tex->width * tex->height * tex->channels;
-	if ( mirrorFromBottom )
-		for ( int i = 0; i < tsize; i++ )
-			tex->cbuffer[i] = ABS(tex->cbuffer[i] - threshold) + threshold;
+	PTYPE value;
+	int i, tsize = tex->width * tex->height * tex->channels;
+
+	if ( mirrorTop )
+		for ( i = 0; i < tsize; i++ ) {
+			
+			value = tex->cbuffer[i];
+			if ( value > threshold )
+				tex->cbuffer[i] = 2 * threshold - value;
+		}
 	else
-		for ( int i = 0; i < tsize; i++ )
-			tex->cbuffer[i] = -( ABS(-tex->cbuffer[i] + threshold) - threshold);
+		for ( i = 0; i < tsize; i++ ) {
+			
+			value = tex->cbuffer[i];
+			if ( value < threshold )
+				tex->cbuffer[i] = 2 * threshold - value;
+		}
 	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 }
@@ -736,13 +782,6 @@ DEFINE_FUNCTION( AddNoise ) {
 	} else {
 
 		fullLevel = true;
-	}
-
-	if ( argc >= 2 ) {
-
-		int seed;
-		RT_JSVAL_TO_INT32( argv[1], seed )
-		init_genrand(seed);
 	}
 
 	int i, tsize = tex->width * tex->height * channels;
@@ -968,11 +1007,9 @@ DEFINE_FUNCTION( SetPixel ) { // x, y, levels
 	int x, y;
 	RT_JSVAL_TO_INT32( argv[0], x );
 	RT_JSVAL_TO_INT32( argv[1], y );
-
-	if ( x < 0 || x >= tex->width )
-		x = ABS( x % tex->width );
-	if ( y < 0 || y >= tex->height )
-		y = ABS( y % tex->height );
+	
+	x = Wrap(x, tex->width);
+	y = Wrap(y, tex->height);
 
 	PTYPE pixel[PMAXCHANNELS];
 	RT_CHECK_CALL( InitLevelData(cx, argv[2], tex->channels, pixel) );
@@ -1017,21 +1054,10 @@ DEFINE_FUNCTION( SetRectangle ) {
 	int c, pos;
 	for ( y = y0; y < y1; y++ )
 		for ( x = x0; x < x1; x++ ) {
-			
-			px = x;
-			py = y;
-			if ( px < 0 || px >= width )
-				px = ABS(px%width);
-			if ( py < 0 || py >= height )
-				py = ABS(py%height);
-			pos = ( px + py * width ) * channels;
 
-//			if ( alpha == 1 )
-				for ( c = 0; c < channels; c++ )
-					tex->cbuffer[pos+c] = pixel[c];
-//			else
-//				for ( c = 0; c < channels; c++ )
-//					tex->cbuffer[pos+c] = tex->cbuffer[pos+c] * (PMAX-alpha) + pixel[c] * alpha;
+			pos = ( Wrap(x, width) + Wrap(y, height) * width ) * channels;
+			for ( c = 0; c < channels; c++ )
+				tex->cbuffer[pos+c] = pixel[c];
 		}
 
 	*rval = OBJECT_TO_JSVAL(obj);
@@ -1048,7 +1074,9 @@ DEFINE_FUNCTION( Rotate90 ) { // (TBD) test it
 
 	int turn;
 	RT_JSVAL_TO_INT32(argv[0], turn);
-	turn = abs( turn % (360/90) );
+
+	turn = Wrap(turn, turn);
+
 	int channels = tex->channels;
 	int width = tex->width;
 	int height = tex->height;
@@ -1134,7 +1162,7 @@ DEFINE_FUNCTION( Flip ) {
 
 DEFINE_FUNCTION( RotoZoom ) { // source: FxGen
 
-	RT_ASSERT_ARGC( 2 );
+	RT_ASSERT_ARGC( 5 );
 
 	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(tex);
@@ -1153,22 +1181,22 @@ DEFINE_FUNCTION( RotoZoom ) { // source: FxGen
 	RT_JSVAL_TO_REAL( argv[2], zoomX );
 	RT_JSVAL_TO_REAL( argv[3], zoomY );
 
-	zoomX = 0.5 - ( zoomX / 2 );
-	zoomX = exp( zoomX * 6 );
+//	zoomX = 0.5 - ( zoomX / 2 );
+//	zoomX = exp( zoomX * 6 );
 
-	zoomY = 0.5 - ( zoomY / 2 );
-	zoomY = exp( zoomY * 6 );
+//	zoomY = 0.5 - ( zoomY / 2 );
+//	zoomY = exp( zoomY * 6 );
 
 	float rotate;
 	RT_JSVAL_TO_REAL( argv[4], rotate ); // 0..360
 
 	rotate = M_PI * rotate / 180;
 
-	float coefX = zoomX * (float)width / (float)newWidth;
-	float coefY = zoomY * (float)height / (float)newHeight;
+	float coefX = zoomX * width / newWidth;
+	float coefY = zoomY * height / newHeight;
 
-	float	cosVal = cosf(rotate);
-	float	sinVal = sinf(rotate);
+	float	cosVal = cos(rotate);
+	float	sinVal = sin(rotate);
 
 	float tw2 = newWidth / 2.0f;
 	float th2 = newHeight / 2.0f;
@@ -1176,57 +1204,40 @@ DEFINE_FUNCTION( RotoZoom ) { // source: FxGen
 	float	ys = sinVal * -th2;
 	float	yc = cosVal * -th2;
 
-		unsigned int spx, spy; // position in the source
-		float prx, pry; // pixel ratio
-		float rx = (float)width / (float)newWidth; // texture ratio x
-		float ry = (float)height / (float)newHeight; // texture ratio y
-		float tmp;
-		int x, y, c;
-
-		int pos, pos1, pos2, pos3, pos4; // offset in the buffer
-		float ratio1, ratio2, ratio3, ratio4; // pixel value ratio
-
 	TextureSetupBackBuffer(tex);
 
+	unsigned int spx, spy; // position in the source
+	float prx, pry; // pixel ratio
+	int x, y, c;
+	int pos, pos1, pos2, pos3, pos4; // offset in the buffer
+	float ratio1, ratio2, ratio3, ratio4; // pixel value ratio
+	float u, v;
 	for ( y = 0; y < newHeight; y++ ) {
 
-		float	u = (((cosVal * -tw2) - ys) * coefX) + (centerX * (float)width);		// x' = cos(x)-sin(y) + Center X;
-		float	v = (((sinVal * -tw2) + yc) * coefY) + (centerY * (float)height);		// y' = sin(x)+cos(y) + Center Y;
+		u = (cosVal * -tw2 - ys) * coefX + centerX * width;		// x' = cos(x)-sin(y) + Center X;
+		v = (sinVal * -tw2 + yc) * coefY + centerY * height;		// y' = sin(x)+cos(y) + Center Y;
 
 		for ( x = 0; x < newWidth; x++ ) {
-/*		
-					prx = modf( u, &tmp );
-					spx = (int)tmp;
-					pry = modf( v, &tmp );
-					spy = (int)tmp;
-*/
-			prx = fabs(u - (int)u);	//Fraction
-			pry = fabs(v - (int)v);	//Fraction
+		
+			prx = abs(u - (long)u);	//Fraction
+			pry = abs(v - (long)v);	//Fraction
+			spx = Wrap(u, width);
+			spy = Wrap(v, height);
 
-//			spx = (unsigned int)u;
-//			spy = (unsigned int)v;
-			
-			spx = u < 0 ? ABS( (int)u % width ) : u;
-			spy = v < 0 ? ABS( (int)v % height ) : v;
+			ratio1 = (1.f - prx) * (1.f - pry);
+			ratio2 = (prx) * (1.f - pry);
+			ratio3 = (1.f - prx) * (pry);
+			ratio4 = (prx) * (pry);
 
-
-
-					ratio1 = (1.f - prx) * (1.f - pry);
-					ratio2 = (prx) * (1.f - pry);
-					ratio3 = (1.f - prx) * (pry);
-					ratio4 = (prx) * (pry);
-
-					pos1 = (  ((spx + 0) % width) + ((spy + 0) % height) * width  ) * channels;
-					pos2 = (  ((spx + 1) % width) + ((spy + 0) % height) * width  ) * channels;
-					pos3 = (  ((spx + 0) % width) + ((spy + 1) % height) * width  ) * channels;
-					pos4 = (  ((spx + 1) % width) + ((spy + 1) % height) * width  ) * channels;
+			pos1 = (  ((spx + 0) % width) + ((spy + 0) % height) * width  ) * channels;
+			pos2 = (  ((spx + 1) % width) + ((spy + 0) % height) * width  ) * channels;
+			pos3 = (  ((spx + 0) % width) + ((spy + 1) % height) * width  ) * channels;
+			pos4 = (  ((spx + 1) % width) + ((spy + 1) % height) * width  ) * channels;
 
 
-					pos = (x + y * newWidth) * channels;
-					for ( c = 0; c < channels; c++ )
-						tex->cbackBuffer[pos+c] = tex->cbuffer[pos1+c] * ratio1 + tex->cbuffer[pos2+c] * ratio2 + tex->cbuffer[pos3+c] * ratio3 + tex->cbuffer[pos4+c] * ratio4;
-
-
+			pos = (x + y * newWidth) * channels;
+			for ( c = 0; c < channels; c++ )
+				tex->cbackBuffer[pos+c] = tex->cbuffer[pos1+c] * ratio1 + tex->cbuffer[pos2+c] * ratio2 + tex->cbuffer[pos3+c] * ratio3 + tex->cbuffer[pos4+c] * ratio4;
 
 			//Vectors
 			u += cosVal * coefX;
@@ -1237,7 +1248,6 @@ DEFINE_FUNCTION( RotoZoom ) { // source: FxGen
 		ys += sinVal;
 		yc += cosVal;
 	}
-
 
 	TextureSwapBuffers(tex);
 
@@ -1284,11 +1294,21 @@ DEFINE_FUNCTION( Resize ) {
 			for ( x = 0; x < newWidth; x++ ) {	
 
 				if ( interpolate ) {
-
+/* slower
 					prx = modf( (float)x*rx, &tmp );
 					spx = (int)tmp;
 					pry = modf( (float)y*ry, &tmp );
 					spy = (int)tmp;
+*/
+			float u = x*rx;
+			float v = y*ry;
+
+			prx = abs(u - (long)u);	//Fraction
+			pry = abs(v - (long)v);	//Fraction
+			spx = Wrap(u, width);
+			spy = Wrap(v, height);
+
+
 
 					// (TBD) for radio1,..4, try to use the distance ?
 					switch ( borderMode ) { // Note: it is faster to do the switch outside the inner loop
@@ -1404,16 +1424,8 @@ DEFINE_FUNCTION( Convolution ) {
 				case borderWrap:
 					for ( vy = 0; vy < size; vy++ )
 						for ( vx = 0; vx < size; vx++ ) {
-					
-							sx = x + vx-offset;
-							if ( sx < 0 || sx >= width )
-								sx = ABS(sx%width);
-
-							sy = y + vy-offset;
-							if ( sy < 0 || sy >= height )
-								sy = ABS(sy%height);
-						
-							pos = (sx + sy * width) * channels;
+				
+							pos = (Wrap(x + vx-offset, width) + Wrap(y + vy-offset, height) * width) * channels;
 							ratio =  kernel[vx + vy * size];
 							gain += ratio;
 							for ( c = 0; c < channels; c++ )
@@ -1429,14 +1441,14 @@ DEFINE_FUNCTION( Convolution ) {
 							sy = (y + vy-offset);
 
 							if ( sx < 0 )
-								sx = ABS(-sx % width);
+								sx = abs(-sx % width);
 							else if ( sx >= width )
-								sx = ABS((width-sx) % width);
+								sx = abs((width-sx) % width);
 
 							if ( sy < 0 )
-								sy = ABS(-sy % height);
+								sy = abs(-sy % height);
 							else if ( sy >= height )
-								sy = ABS((height-sy) % height);
+								sy = abs((height-sy) % height);
 
 							pos = (sx + sy * width)*channels;
 							ratio =  kernel[vx + vy * size];
@@ -1882,10 +1894,8 @@ DEFINE_FUNCTION( Copy ) { // (Texture)source, (int)x, (int)y
 			sy = y + py;
 			switch (borderMode) {
 				case borderWrap:
-					if ( sx < 0 || sx >= texWidth )
-						sx = ABS( sx % texWidth );
-					if ( sy < 0 || sy >= texHeight )
-						sy = ABS( sy % texHeight );
+					sx = Wrap(sx, texWidth);
+					sy = Wrap(sy, texHeight);
 					break;
 			case borderClamp:
 				if ( !(sx >= 0 && sx < srcTexWidth && sy >= 0 && sy < srcTexHeight) )
@@ -1943,10 +1953,8 @@ DEFINE_FUNCTION( Paste ) { // (Texture)texture, (int)x, (int)y, (bool)borderMode
 			dy = y + py;
 			switch (borderMode) {
 				case borderWrap:
-					if ( dx < 0 || dx >= texWidth )
-						dx = ABS(dx % texWidth);
-					if ( dy < 0 || dy >= texHeight )
-						dy = ABS(dy % texHeight);
+					dx = Wrap(dx, texWidth);
+					dy = Wrap(dy, texHeight);
 					break;
 			case borderClamp:
 				if ( !(dx >= 0 && dx < texWidth && dy >= 0 && dy < texHeight) ) {
@@ -1997,10 +2005,8 @@ DEFINE_FUNCTION( Shift ) {
 
 			switch (mode) {
 				case borderWrap:
-					if ( sx < 0 || sx >= width )
-						sx = ABS(sx % width);
-					if ( sy < 0 || sy >= height )
-						sy = ABS(sy % height);
+					sx = Wrap(sx, width);
+					sy = Wrap(sy, height);
 					break;
 
 				case borderClamp:
@@ -2069,10 +2075,8 @@ DEFINE_FUNCTION( Displace ) {
 			sy = (int)( y + o.y * factor );
 			switch (mode) {
 				case borderWrap:
-					if ( sx < 0 || sx >= width )
-						sx = ABS(sx % width);
-					if ( sy < 0 || sy >= height )
-						sy = ABS(sy % height);
+					sx = Wrap(sx, width);
+					sy = Wrap(sy, height);
 					break;
 				case borderClamp:
 					if ( !(sx >= 0 && sx < width && sy >= 0 && sy < height) )
@@ -2112,13 +2116,6 @@ DEFINE_FUNCTION( Cells ) { // source: FxGen
 	RT_JSVAL_TO_INT32( argv[0], density );
 	RT_JSVAL_TO_REAL( argv[1], regularity );
 
-	if ( argc >= 3 ) {
-
-		int seed;
-		RT_JSVAL_TO_INT32( argv[2], seed );
-		init_genrand(seed);
-	}
-
 	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(tex);
 
@@ -2141,8 +2138,8 @@ DEFINE_FUNCTION( Cells ) { // source: FxGen
 		int x = i % density;
 		int y = i / density;
 
-		cellPoints[i].x = (x+0.5f+(rand1-0.5f)*(1.f-regularity))/density;
-		cellPoints[i].y = (y+0.5f+(rand2-0.5f)*(1.f-regularity))/density;
+		cellPoints[i].x = ( x + 0.5 + (rand1-0.5f) * (1.0f-regularity) ) / density;
+		cellPoints[i].y = ( y + 0.5 + (rand2-0.5f) * (1.0f-regularity) ) / density;
 	}
 
 	for (int y = 0; y < height; y++) {
@@ -2413,7 +2410,6 @@ DEFINE_FUNCTION( AddCracks ) { // source: FxGen
 
 	PTYPE pixel[PMAXCHANNELS];
 	RT_CHECK_CALL( InitLevelData(cx, argv[3], channels, pixel) );
-
 
 	float *curve = (float*)malloc( crackMaxLength * sizeof(float) );
 	InitCurveData( cx, argv[4], crackMaxLength, curve );
