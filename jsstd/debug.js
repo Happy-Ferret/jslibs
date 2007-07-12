@@ -16,7 +16,9 @@ buf.Write('45');
 
 Print( buf.length, '\n' );
 
-throw 0;
+ASSERT( 0 )
+
+throw 0; // -------------------------------------------------
 
 function foo() {
 
@@ -35,7 +37,8 @@ function foo() {
 
 foo();
 
-throw 0;
+throw 0; // -------------------------------------------------
+
 
 var obj = { aaa:123, bbb:'xxx' };
 
@@ -49,12 +52,14 @@ for ( var p in obj )
   Print( p + ' = ' + obj[p], '\n' );
 
 
-throw(0)
+throw 0; // -------------------------------------------------
+
 
 Print( IdOf({}), '\n' );
 Print( IdOf({}), '\n' );
 	
-throw(0)
+throw 0; // -------------------------------------------------
+
 
 var obj = { a:1, b:2, c:3 }
 

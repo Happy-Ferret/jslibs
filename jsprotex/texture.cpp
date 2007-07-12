@@ -31,16 +31,16 @@ extern "C" double genrand_real1(void);
 enum BorderMode { borderClamp, borderWrap, borderMirror, borderValue };
 enum DesaturateMode { desaturateLightness, desaturateSum, desaturateAverage };
 
-unsigned long int NoiseInt(unsigned long int n) {
-
-	n = (n << 13) ^ n;
-	return (n * (n * n * 60493 + 19990303) + 1376312589);
-}
-
-float NoiseReal(unsigned long int n) { // return: 0 <= val <= 1
-
-	return (float)NoiseInt(n) / 4294967296.f;
-}
+//unsigned long int NoiseInt(unsigned long int n) {
+//
+//	n = (n << 13) ^ n;
+//	return (n * (n * n * 60493 + 19990303) + 1376312589);
+//}
+//
+//float NoiseReal(unsigned long int n) { // return: 0 <= val <= 1
+//
+//	return (float)NoiseInt(n) / 4294967296.f;
+//}
 
 
 inline bool IsTexture( jsval value ) {
@@ -56,6 +56,12 @@ inline unsigned int Wrap( int value, unsigned int limit ) {
 		return limit - (-value) % limit;
 	else
 		return value;
+}
+
+inline unsigned int Mirror( int value, unsigned int limit ) {
+
+	// (TBD)
+	return value;
 }
 
 inline PTYPE* PosByMode( const Texture *tex, int x, int y, BorderMode mode ) {
@@ -96,15 +102,15 @@ JSBool ValueToTexture( JSContext* cx, jsval value, Texture **tex ) {
 	return JS_TRUE;
 }
 
+
 // levels: number | array | string ('#8800AAFF')
 inline JSBool InitLevelData( JSContext* cx, jsval value, int count, PTYPE *level ) {
 
 	if ( JSVAL_IS_NUMBER(value) ) {
 		
 		jsdouble dval;
-		PTYPE val;
 		RT_CHECK_CALL( JS_ValueToNumber(cx, value, &dval) );
-		val = (PTYPE)dval;
+		PTYPE val = (PTYPE)dval;
 		for ( int i = 0; i < count; i++ )
 			level[i] = val;
 	} else if ( JSVAL_IS_OBJECT(value) && JS_IsArrayObject(cx, JSVAL_TO_OBJECT(value)) ) {
@@ -135,6 +141,7 @@ inline JSBool InitLevelData( JSContext* cx, jsval value, int count, PTYPE *level
 	}
 	return JS_TRUE;
 }
+
 
 // curve: number | function | array
 inline JSBool InitCurveData( JSContext* cx, jsval value, int length, float *curve ) {
@@ -201,7 +208,27 @@ DEFINE_CONSTRUCTOR() {
 	RT_ASSERT_ARGC( 1 );
 	Texture *tex = (Texture *)malloc(sizeof(Texture));
 	tex->cbackBuffer = NULL;
-	if ( IsTexture(argv[0]) ) { // copy constructor
+
+	if ( !IsTexture(argv[0]) ) {
+
+		RT_ASSERT_ARGC( 3 );
+
+		int width, height, channels;
+		RT_JSVAL_TO_INT32( argv[0], width );
+		RT_JSVAL_TO_INT32( argv[1], height );
+		RT_JSVAL_TO_INT32( argv[2], channels );
+
+		RT_ASSERT( width > 0, "Invalid width." );
+		RT_ASSERT( height > 0, "Invalid height." );
+		RT_ASSERT( channels <= PMAXCHANNELS, "Too many channels." );
+
+		tex->cbuffer = (PTYPE*)malloc( width * height * channels * sizeof(PTYPE) ); // (TBD) try with js_malloc
+		RT_ASSERT_ALLOC( tex->cbuffer );
+
+		tex->width = width;
+		tex->height = height;
+		tex->channels = channels;
+	} else { // copy constructor
 
 		Texture *srcTex = (Texture *)JS_GetPrivate(cx, JSVAL_TO_OBJECT(argv[0]));
 		RT_ASSERT_RESOURCE(srcTex);
@@ -214,25 +241,7 @@ DEFINE_CONSTRUCTOR() {
 		tex->width = srcTex->width;
 		tex->height = srcTex->height;
 		tex->channels = srcTex->channels;
-	} else {
-
-		RT_ASSERT_ARGC( 3 );
-
-		int width, height, channels;
-		RT_JSVAL_TO_UINT32( argv[0], width );
-		RT_JSVAL_TO_UINT32( argv[1], height );
-		RT_JSVAL_TO_UINT32( argv[2], channels );
-
-		RT_ASSERT( channels <= PMAXCHANNELS, "Too many channels." );
-
-		tex->cbuffer = (PTYPE*)malloc( width * height * channels * sizeof(PTYPE) ); // (TBD) try with js_malloc
-		RT_ASSERT_ALLOC( tex->cbuffer );
-
-		tex->width = width;
-		tex->height = height;
-		tex->channels = channels;
 	}
-
 	JS_SetPrivate(cx, obj, tex);
 	return JS_TRUE;
 }
@@ -330,10 +339,8 @@ DEFINE_FUNCTION( ToHLS ) { // (TBD) test it
 
 	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(tex);
-
-	RT_ASSERT( tex->channels == 3, "Invalid pixel format (need RGB).");
-
 	int channels = tex->channels;
+	RT_ASSERT( channels >= 3, "Invalid pixel format (need RGB).");
 
 	int size = tex->width * tex->height;
 	int pos;
@@ -341,7 +348,7 @@ DEFINE_FUNCTION( ToHLS ) { // (TBD) test it
 
 	for ( int i = 0; i < size; i++ ) {
 		
-		pos = i * 3;
+		pos = i * channels;
 		R = tex->cbuffer[pos+0];
 		G = tex->cbuffer[pos+1];
 		B = tex->cbuffer[pos+2];
@@ -398,7 +405,9 @@ DEFINE_FUNCTION( ToRGB ) { // (TBD) test it
 
 	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(tex);
-	RT_ASSERT( tex->channels == 3, "Invalid pixel format (need HLS).");
+	int channels = tex->channels;
+	
+	RT_ASSERT( channels >= 3, "Invalid pixel format (need HLS).");
 
 	int size = tex->width * tex->height;
 	int pos;
@@ -406,24 +415,24 @@ DEFINE_FUNCTION( ToRGB ) { // (TBD) test it
 	float m1, m2;
 	for ( int i = 0; i < size; i++ ) {
 		
-		pos = i * 3;
+		pos = i * channels;
 		H = tex->cbuffer[pos+0];
 		L = tex->cbuffer[pos+1];
 		S = tex->cbuffer[pos+2];
 
 		if (L <= 0.5)
-				m2 = L*(1.0+S);
+				m2 = L * ( 1.0 + S );
 		else 
-				m2 = L + S - L*S;
-		m1 = 2.0*L - m2;
+				m2 = L + S - L * S;
+		m1 = 2.0 * L - m2;
 		if (S == 0.0) { // achromatic cast
 
 			R = G = B = 1;
 		} else { // chromatic case
 
-			R = HLSToRGB_hue(m1, m2, H+(1.f/3.f));
+			R = HLSToRGB_hue(m1, m2, H + (1.f / 3.f));
 			G = HLSToRGB_hue(m1, m2, H);
-			B = HLSToRGB_hue(m1, m2, H-(1.f/3.f));
+			B = HLSToRGB_hue(m1, m2, H - (1.f / 3.f));
 		}
 
 		tex->cbuffer[pos+0] = R;
@@ -787,7 +796,7 @@ DEFINE_FUNCTION( AddNoise ) {
 	int i, tsize = tex->width * tex->height * channels;
 	if ( fullLevel )
 		for ( i = 0; i < tsize; i++ )
-			tex->cbuffer[i] += PRAND;
+			tex->cbuffer[i] = PRAND;
 	else
 		for ( i = 0; i < tsize; i++ )
 			tex->cbuffer[i] += PRAND * pixel[i % channels] / PMAX; //(TBD) test if i%channels works fine, else use double for loop
@@ -1188,9 +1197,9 @@ DEFINE_FUNCTION( RotoZoom ) { // source: FxGen
 //	zoomY = exp( zoomY * 6 );
 
 	float rotate;
-	RT_JSVAL_TO_REAL( argv[4], rotate ); // 0..360
+	RT_JSVAL_TO_REAL( argv[4], rotate ); // 1 for 1 turn
 
-	rotate = M_PI * rotate / 180;
+	rotate = M_PI * 2 * rotate;
 
 	float coefX = zoomX * width / newWidth;
 	float coefY = zoomY * height / newHeight;
@@ -1218,7 +1227,7 @@ DEFINE_FUNCTION( RotoZoom ) { // source: FxGen
 		v = (sinVal * -tw2 + yc) * coefY + centerY * height;		// y' = sin(x)+cos(y) + Center Y;
 
 		for ( x = 0; x < newWidth; x++ ) {
-		
+
 			prx = abs(u - (long)u);	//Fraction
 			pry = abs(v - (long)v);	//Fraction
 			spx = Wrap(u, width);
@@ -1229,11 +1238,26 @@ DEFINE_FUNCTION( RotoZoom ) { // source: FxGen
 			ratio3 = (1.f - prx) * (pry);
 			ratio4 = (prx) * (pry);
 
-			pos1 = (  ((spx + 0) % width) + ((spy + 0) % height) * width  ) * channels;
-			pos2 = (  ((spx + 1) % width) + ((spy + 0) % height) * width  ) * channels;
-			pos3 = (  ((spx + 0) % width) + ((spy + 1) % height) * width  ) * channels;
+			pos1 = (  ((spx + 0)        ) + ((spy + 0)         ) * width  ) * channels;
+			pos2 = (  ((spx + 1) % width) + ((spy + 0)         ) * width  ) * channels;
+			pos3 = (  ((spx + 0)        ) + ((spy + 1) % height) * width  ) * channels;
 			pos4 = (  ((spx + 1) % width) + ((spy + 1) % height) * width  ) * channels;
 
+
+/*
+			prx = abs(u - (long)u);	//Fraction
+			pry = abs(v - (long)v);	//Fraction
+
+			ratio1 = (1.f - prx) * (1.f - pry);
+			ratio2 = (prx) * (1.f - pry);
+			ratio3 = (1.f - prx) * (pry);
+			ratio4 = (prx) * (pry);
+
+			pos1 = (  Wrap(u  , width) + Wrap(v  , height) * width  ) * channels;
+			pos2 = (  Wrap(u+1, width) + Wrap(v  , height) * width  ) * channels;
+			pos3 = (  Wrap(u  , width) + Wrap(v+1, height) * width  ) * channels;
+			pos4 = (  Wrap(u+1, width) + Wrap(v+1, height) * width  ) * channels;
+*/
 
 			pos = (x + y * newWidth) * channels;
 			for ( c = 0; c < channels; c++ )
@@ -1282,8 +1306,8 @@ DEFINE_FUNCTION( Resize ) {
 
 		int spx, spy; // position in the source
 		float prx, pry; // pixel ratio
-		float rx = (float)width / (float)newWidth; // texture ratio x
-		float ry = (float)height / (float)newHeight; // texture ratio y
+		float rx = (float)width / newWidth; // texture ratio x
+		float ry = (float)height / newHeight; // texture ratio y
 		float tmp;
 		int x, y, c;
 
@@ -1300,13 +1324,13 @@ DEFINE_FUNCTION( Resize ) {
 					pry = modf( (float)y*ry, &tmp );
 					spy = (int)tmp;
 */
-			float u = x*rx;
-			float v = y*ry;
+					float u = x*rx;
+					float v = y*ry;
 
-			prx = abs(u - (long)u);	//Fraction
-			pry = abs(v - (long)v);	//Fraction
-			spx = Wrap(u, width);
-			spy = Wrap(v, height);
+					prx = abs(u - (long)u);	//Fraction
+					pry = abs(v - (long)v);	//Fraction
+					spx = Wrap(u, width);
+					spy = Wrap(v, height);
 
 
 
@@ -1340,8 +1364,8 @@ DEFINE_FUNCTION( Resize ) {
 						newBuffer[pos+c] = tex->cbuffer[pos1+c] * ratio1 + tex->cbuffer[pos2+c] * ratio2 + tex->cbuffer[pos3+c] * ratio3 + tex->cbuffer[pos4+c] * ratio4;
 				} else {
 
-					spx = (int)((float)x*rx);
-					spy = (int)((float)y*ry);
+					spx = (int)(rx * x);
+					spy = (int)(ry * y);
 					pos = (x + y * newWidth) * channels;
 					pos1 = (spx + spy * width) * channels;
 					for ( c = 0; c < channels; c++ )
@@ -1752,7 +1776,7 @@ DEFINE_FUNCTION( Light ) {
 	for ( y = 0; y < height; y++ )
 		for ( x = 0; x < width; x++ ) {
 			
-			pos = (x + y * width) * 3;
+			pos = (x + y * width) * 3; // normal texture is only 3 channels
 			Vector3Set(&n, PZNORM(normals->cbuffer[pos+0]), PZNORM(normals->cbuffer[pos+1]), PZNORM(normals->cbuffer[pos+2]) / bumpPower );
 			Vector3Normalize(&n);
 
@@ -2039,26 +2063,29 @@ DEFINE_FUNCTION( Shift ) {
 // (TBD) PTYPE
 DEFINE_FUNCTION( Displace ) {
 
-	RT_ASSERT_ARGC( 2 );
+	RT_ASSERT_ARGC( 1 );
 
 	Texture *tex1, *tex = (Texture *)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(tex);
-
-	RT_CHECK_CALL( ValueToTexture(cx, argv[0], &tex1) );
-
-	float factor;
-	RT_JSVAL_TO_INT32( argv[1], factor );
-
 	int width = tex->width;
 	int height = tex->height;
 	int channels = tex->channels;
 
+	RT_CHECK_CALL( ValueToTexture(cx, argv[0], &tex1) );
+
 	RT_ASSERT( width == tex1->width && height == tex1->height, "Textures must have the same size." );
-	RT_ASSERT( tex1->channels == 3, "Displacement texture must have 3 channels." );
+	RT_ASSERT( tex1->channels >= 3, "Displacement texture must have 3 or more channels." );
+
+
+	float factor;
+	if ( argc >= 2 )
+		RT_JSVAL_TO_REAL( argv[1], factor )
+	else
+		factor = 1;
 
 	TextureSetupBackBuffer(tex);
 
-	BorderMode mode = borderClamp;
+	BorderMode mode = borderWrap;
 
 	int x, y;
 	int sx, sy; // source position
@@ -2068,11 +2095,18 @@ DEFINE_FUNCTION( Displace ) {
 	for ( y = 0; y < height; y++ )
 		for ( x = 0; x < width; x++ ) {
 
-			pos = (x + y * width) * 3;
-			Vector3Set(&o, PZNORM( tex1->cbuffer[pos+0] ), PZNORM( tex1->cbuffer[pos+1] ), PZNORM( tex1->cbuffer[pos+2] ) );
-			Vector3Normalize(&o);
-			sx = (int)( x + o.x * factor );
-			sy = (int)( y + o.y * factor );
+			pos = (x + y * width) * channels;
+
+//			Vector3Set(&o, PZNORM( tex1->cbuffer[pos+0] ), PZNORM( tex1->cbuffer[pos+1] ), PZNORM( tex1->cbuffer[pos+2] ) );
+//			Vector3Normalize(&o);
+//			sx = (int)( x + o.x * factor );
+//			sy = (int)( y + o.y * factor );
+
+			// (TBD) test !
+			
+			sx = x + PZNORM( tex1->cbuffer[pos+0] ) * factor;
+			sy = y + PZNORM( tex1->cbuffer[pos+1] ) * factor;
+
 			switch (mode) {
 				case borderWrap:
 					sx = Wrap(sx, width);
@@ -2451,11 +2485,13 @@ DEFINE_FUNCTION( AddCracks ) { // source: FxGen
 	return JS_TRUE;
 }
 
+
 DEFINE_PROPERTY( vmax ) {
 
 	RT_CHECK_CALL( JS_NewNumberValue(cx, PMAX, vp) );
 	return JS_TRUE;
 }
+
 
 DEFINE_PROPERTY( width ) {
 
@@ -2496,12 +2532,14 @@ DEFINE_FUNCTION( RandSeed ) {
 	return JS_TRUE;
 }
 
+
 DEFINE_FUNCTION( RandInt ) {
 
 	int i = genrand_int31();
 	*rval = INT_TO_JSVAL(i);
 	return JS_TRUE;
 }
+
 
 DEFINE_FUNCTION( RandReal ) {
 
@@ -2510,15 +2548,16 @@ DEFINE_FUNCTION( RandReal ) {
 	return JS_TRUE;
 }
 
-DEFINE_FUNCTION( Noise ) {
 
-	RT_ASSERT_ARGC(1);
-	unsigned long seed;
-	RT_JSVAL_TO_UINT32(argv[0], seed);
-	jsdouble d = NoiseInt(seed);
-	RT_CHECK_CALL( JS_NewNumberValue(cx, d, rval) );
-	return JS_TRUE;
-}
+//DEFINE_FUNCTION( Noise ) {
+//
+//	RT_ASSERT_ARGC(1);
+//	unsigned long seed;
+//	RT_JSVAL_TO_UINT32(argv[0], seed);
+//	jsdouble d = NoiseInt(seed);
+//	RT_CHECK_CALL( JS_NewNumberValue(cx, d, rval) );
+//	return JS_TRUE;
+//}
 
 
 #ifdef _DEBUG
@@ -2596,7 +2635,7 @@ CONFIGURE_CLASS
 		FUNCTION( RandSeed )
 		FUNCTION( RandInt )
 		FUNCTION( RandReal )
-		FUNCTION( Noise )
+//		FUNCTION( Noise )
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_CONST_DOUBLE_SPEC

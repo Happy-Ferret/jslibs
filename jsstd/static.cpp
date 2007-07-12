@@ -35,9 +35,21 @@ BEGIN_STATIC
 
 DEFINE_FUNCTION( ASSERT ) {
 
-	JSBool assert;
+	RT_ASSERT_ARGC( 1 );
+
+	bool assert;
 	RT_JSVAL_TO_BOOL( argv[0], assert );
-	RT_ASSERT( assert, "Assertion failed." );
+
+	if ( !assert ) {
+
+		char *message;
+		if ( argc >= 2 )
+			RT_JSVAL_TO_STRING( argv[1], message )
+		else
+			message = "Assertion failed.";
+		JS_ReportError( cx, message );
+		return JS_FALSE;
+	}
 	return JS_TRUE;
 }
 

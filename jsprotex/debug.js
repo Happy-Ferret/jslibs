@@ -120,10 +120,18 @@ function AddAlpha( tex ) {
 function ColorToAlpha( tex, color ) {
 
 	ASSERT( tex.channels == 2 || tex.channels == 4 );
-	
 	var alpha = new Texture(tex.width, tex.height, 1);
 	alpha.ExtractColor(tex, color);
 	tex.SetChannel(tex.channels, alpha, 0);
+}
+
+
+function NoiseChannel( tex, channel ) {
+	
+	var tmp = new Texture(tex.width, tex.height, 1);
+	tmp.AddNoise();
+	tex.SetChannel(channel, tmp, 0);
+	tmp.Free();
 }
 
 
@@ -133,10 +141,36 @@ draw:{
 
 	Texture.RandSeed(0);
 	var size = 512;
-//	var t = new Texture(size, size, 3);
-//	t.ClearChannel();
+	var t = new Texture(size, size, 3);
+	t.ClearChannel();
+	t.AddGradiantRadial( curveGaussian( 0.4 ) );
+	t.RotoZoom( 0.5,0.5, 5,5, 0 );
+	
+	var displace = new Texture(size, size, 3);
+	NoiseChannel( displace, 0 );
+	NoiseChannel( displace, 1 );
+//	displace.ClearChannel(2);
+	displace.Mult([4,0.1,1]);
+	
+	t.Displace(displace, 64);
 
-//	t.AddGradiantRadial( curveGaussian( 0.4 ) );
+
+//	var tex = t;
+//	var channel = 1;
+//	Print( tex.width );
+//	var tmp = new Texture(tex.width, tex.height, 1);
+//	tmp.AddNoise();
+//	tex.SetChannel(channel, tmp, 0);
+//	tex.Free();
+
+
+//	NoiseChannel( displace, 0 );
+//	NoiseChannel( displace, 1 );
+//	displace.ClearChannel(2);
+	
+	
+
+break draw; // -----------------------------------------
 	var t = Cloud(size, 0.2);
 	GrayToRGB( t );
 	
@@ -149,7 +183,7 @@ draw:{
 
 	
 	
-//	t.RotoZoom( 0.5,0.5, 1,1, 0 );
+//	
 		
 break draw; // -----------------------------------------		
 //	t.AddGradiantRadial(curveHalfSine);
@@ -437,7 +471,7 @@ Print( 'time: '+ (IntervalNow() - t0) + ' ms\n' );
 gl.Color(1,1,1);
 gl.LoadTexture( t );
 
-//win.rect = [1700,1000,1900,1200]
-win.rect = [500,500,700,700];
+win.rect = [1700,1000,1900,1200]
+//win.rect = [500,500,700,700];
 win.ProcessEvents();
 
