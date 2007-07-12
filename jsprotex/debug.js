@@ -143,16 +143,22 @@ draw:{
 	var size = 512;
 	var t = new Texture(size, size, 3);
 	t.ClearChannel();
-	t.AddGradiantRadial( curveGaussian( 0.4 ) );
+	t.AddGradiantRadial( curveGaussian( 0.6 ) );
+//	t.AddGradiantRadial( [1,0], 1 );
 	t.RotoZoom( 0.5,0.5, 5,5, 0 );
+	t.OppositeLevels();
+	t.Add(1);
+//	t.PowLevels( 0.1 );
+
 	
-	var displace = new Texture(size, size, 3);
-	NoiseChannel( displace, 0 );
-	NoiseChannel( displace, 1 );
-//	displace.ClearChannel(2);
-	displace.Mult([4,0.1,1]);
+//	var displace = new Texture(size, size, 2);
+//	NoiseChannel( displace, 0 );
+//	NoiseChannel( displace, 1 );
+//	displace.NormalizeVectors();
 	
-	t.Displace(displace, 64);
+//	t.Displace(displace, 20);
+//	t.RotoZoom( 0.5,0.5, 5,5, 0 );
+//	t.BoxBlur(3,3);
 
 
 //	var tex = t;
@@ -471,7 +477,7 @@ Print( 'time: '+ (IntervalNow() - t0) + ' ms\n' );
 gl.Color(1,1,1);
 gl.LoadTexture( t );
 
-win.rect = [1700,1000,1900,1200]
-//win.rect = [500,500,700,700];
+//win.rect = [1700,1000,1900,1200]
+win.rect = [500,500,700,700];
 win.ProcessEvents();
 

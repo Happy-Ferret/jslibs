@@ -64,6 +64,12 @@ inline unsigned int Mirror( int value, unsigned int limit ) {
 	return value;
 }
 
+inline float Length2D( float a, float b ) {
+
+	return sqrtf(a*a + b*b);
+}
+
+
 inline PTYPE* PosByMode( const Texture *tex, int x, int y, BorderMode mode ) {
 
 	switch ( mode ) {
@@ -713,6 +719,25 @@ DEFINE_FUNCTION( OppositeLevels ) { // level = -level
 	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 }
+
+// PTYPE ok
+DEFINE_FUNCTION( PowLevels ) { // 
+
+	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE(tex);
+
+	RT_ASSERT_ARGC( 1 );
+
+	float power;
+	RT_JSVAL_TO_REAL( argv[0], power );
+
+	int tsize = tex->width * tex->height * tex->channels;
+	for ( int i = 0; i < tsize; i++ )
+		tex->cbuffer[i] =  powf(tex->cbuffer[i], power);
+	*rval = OBJECT_TO_JSVAL(obj);
+	return JS_TRUE;
+}
+
 
 // PTYPE ok
 DEFINE_FUNCTION( MirrorLevels ) {
@@ -2073,9 +2098,10 @@ DEFINE_FUNCTION( Displace ) {
 
 	RT_CHECK_CALL( ValueToTexture(cx, argv[0], &tex1) );
 
-	RT_ASSERT( width == tex1->width && height == tex1->height, "Textures must have the same size." );
-	RT_ASSERT( tex1->channels >= 3, "Displacement texture must have 3 or more channels." );
+	int displaceChannels = tex1->channels;
 
+	RT_ASSERT( width == tex1->width && height == tex1->height, "Textures must have the same size." );
+	RT_ASSERT( tex1->channels >= 2, "Displacement texture must have 2 or more channels." );
 
 	float factor;
 	if ( argc >= 2 )
@@ -2091,11 +2117,11 @@ DEFINE_FUNCTION( Displace ) {
 	int sx, sy; // source position
 	int pos, pos1;
 	int c;
-	Vector3 o;
+//	Vector3 o;
 	for ( y = 0; y < height; y++ )
 		for ( x = 0; x < width; x++ ) {
 
-			pos = (x + y * width) * channels;
+			pos = (x + y * width) * displaceChannels;
 
 //			Vector3Set(&o, PZNORM( tex1->cbuffer[pos+0] ), PZNORM( tex1->cbuffer[pos+1] ), PZNORM( tex1->cbuffer[pos+2] ) );
 //			Vector3Normalize(&o);
@@ -2315,12 +2341,21 @@ DEFINE_FUNCTION( AddGradiantRadial ) {
 
 	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(tex);
-
 	int width = tex->width;
 	int height = tex->height;
 	int channels = tex->channels;
 
-	int radius = MAX( width, height ) / 2;
+	bool drawToCorner;
+	if ( argc >= 2 )
+		RT_JSVAL_TO_BOOL( argv[1], drawToCorner )
+	else
+		drawToCorner = true;
+
+	float radius;
+	if ( drawToCorner )
+		radius = Length2D( width, height ) / 2.0;
+	else
+		radius = MAX( width, height ) / 2.0;
 
 	float *curve = (float*)malloc( radius * sizeof(float) );
 	InitCurveData(cx, argv[0], radius, curve);
@@ -2336,18 +2371,19 @@ DEFINE_FUNCTION( AddGradiantRadial ) {
 	for ( y = 0; y < height; y++ )
 		for ( x = 0; x < width; x++ ) {
 		
-//			if ( aspectRatio >= 1 )
-//				Vector3Set(&p, x - width / 2 , (y - height / 2) * aspectRatio, 0);
-//			else
-//				Vector3Set(&p, (x - width / 2) / aspectRatio , y - height / 2, 0);
+			dist = Length2D( (float)x / width - 0.5, (float)y / height - 0.5 ); // distance to the center ( 0..M_SQRT1_2 )
 
-//			Vector3Set(&p, (x - width / 2) / width, (y - height / 2) / height, 0);
-			Vector3Set(&p, (float)x / width - 0.5, (float)y / height - 0.5, 0);
-			dist = Vector3Len(&p);
+			if ( drawToCorner ) {
+
+				pos = (x + y * width) * channels; // (TBD) use borderMode
+				curveValue = curve[(int)(dist*radius/M_SQRT1_2)];
+				for ( c = 0; c < channels; c++ )
+					tex->cbuffer[pos+c] += curveValue;
+			} else
 			if ( dist < 0.5 ) { // if dist == 0.5, (int)(dist*radius*2) is out of the curve data
 
 				pos = (x + y * width) * channels; // (TBD) use borderMode
-				curveValue = curve[(int)(dist*radius*2)];
+				curveValue = curve[(int)(dist*radius)];
 				for ( c = 0; c < channels; c++ )
 					tex->cbuffer[pos+c] += curveValue;
 			}
@@ -2610,6 +2646,7 @@ CONFIGURE_CLASS
 		FUNCTION( NormalizeLevels )
 		FUNCTION( InvertLevels )
 		FUNCTION( OppositeLevels )
+		FUNCTION( PowLevels )
 		FUNCTION( MirrorLevels )
 		FUNCTION( WrapLevels )
 		FUNCTION( Aliasing )
