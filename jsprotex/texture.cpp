@@ -2357,8 +2357,8 @@ DEFINE_FUNCTION( AddGradiantRadial ) {
 	else
 		radius = MAX( width, height ) / 2.0;
 
-	float *curve = (float*)malloc( radius * sizeof(float) );
-	InitCurveData(cx, argv[0], radius, curve);
+	float *curve = (float*)malloc( (int)radius * sizeof(float) );
+	InitCurveData(cx, argv[0], (int)radius, curve);
 
 	float aspectRatio = (float)width / (float)height;
 
@@ -2366,7 +2366,7 @@ DEFINE_FUNCTION( AddGradiantRadial ) {
 	Vector3 p;
 	float dist;
 	int x, y, c;
-	int pos;
+	int pos, curvePos;
 	float curveValue;
 	for ( y = 0; y < height; y++ )
 		for ( x = 0; x < width; x++ ) {
@@ -2376,14 +2376,16 @@ DEFINE_FUNCTION( AddGradiantRadial ) {
 			if ( drawToCorner ) {
 
 				pos = (x + y * width) * channels; // (TBD) use borderMode
-				curveValue = curve[(int)(dist*radius/M_SQRT1_2)];
+				curvePos = dist * (radius-1) / M_SQRT1_2;
+				curveValue = curve[curvePos];
 				for ( c = 0; c < channels; c++ )
 					tex->cbuffer[pos+c] += curveValue;
 			} else
-			if ( dist < 0.5 ) { // if dist == 0.5, (int)(dist*radius*2) is out of the curve data
+			if ( dist <= 0.5 ) { // if dist == 0.5, (int)(dist*radius) is out of the curve data
 
 				pos = (x + y * width) * channels; // (TBD) use borderMode
-				curveValue = curve[(int)(dist*radius)];
+				curvePos = dist * (radius-1) * 2;
+				curveValue = curve[curvePos];
 				for ( c = 0; c < channels; c++ )
 					tex->cbuffer[pos+c] += curveValue;
 			}

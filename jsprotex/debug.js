@@ -141,13 +141,13 @@ draw:{
 
 	Texture.RandSeed(0);
 	var size = 512;
-	var t = new Texture(size, size, 3);
+	var t = new Texture(512, 512, 3);
 	t.ClearChannel();
-	t.AddGradiantRadial( curveGaussian( 0.6 ) );
+	t.AddGradiantRadial( curveGaussian( 0.5 ) );
 //	t.AddGradiantRadial( [1,0], 1 );
-	t.RotoZoom( 0.5,0.5, 5,5, 0 );
-	t.OppositeLevels();
-	t.Add(1);
+	t.RotoZoom( 0.5,0.5, 10,1, 0 );
+//	t.OppositeLevels();
+//	t.Add(1);
 //	t.PowLevels( 0.1 );
 
 	
@@ -477,7 +477,7 @@ Print( 'time: '+ (IntervalNow() - t0) + ' ms\n' );
 gl.Color(1,1,1);
 gl.LoadTexture( t );
 
-//win.rect = [1700,1000,1900,1200]
-win.rect = [500,500,700,700];
+win.rect = [1700,1000,1900,1200]
+//win.rect = [500,500,700,700];
 win.ProcessEvents();
 
