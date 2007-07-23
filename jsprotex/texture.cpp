@@ -453,19 +453,33 @@ DEFINE_FUNCTION( ToRGB ) { // (TBD) test it
 // PTYPE ok
 DEFINE_FUNCTION( Aliasing ) {
 
-	RT_ASSERT_ARGC( 2 );
+	RT_ASSERT_ARGC( 1 );
 	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(tex);
 
 	PTYPE count;
 	RT_JSVAL_TO_UINT32( argv[0], count );
 
-	float *curve = (float*)malloc( count * sizeof(float) );
-	RT_CHECK_CALL( InitCurveData( cx, argv[1], count, curve ) );
+	bool useCurve;
+
+	float *curve;
+	if ( argc >= 2 ) {
+
+		useCurve = true;
+		curve = (float*)malloc( count * sizeof(float) );
+		RT_CHECK_CALL( InitCurveData( cx, argv[1], count, curve ) );
+	} else
+		useCurve = false;
 
 	int tsize = tex->width * tex->height * tex->channels;
-	for ( int i = 0; i < tsize; i++ )
-		tex->cbuffer[i] = curve[ (long)((count-1) * tex->cbuffer[i] / PMAX) ];
+	
+	if ( useCurve )
+		for ( int i = 0; i < tsize; i++ )
+			tex->cbuffer[i] = curve[ (long)((count-1) * tex->cbuffer[i] / PMAX) ];
+	else
+		for ( int i = 0; i < tsize; i++ )
+			tex->cbuffer[i] = floor( count * tex->cbuffer[i] ) / count;
+
 	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 }

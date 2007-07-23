@@ -14,7 +14,6 @@
 
 #include "stdafx.h"
 #include "moduleManager.h"
-//#include "../common/platform.h"
 
 #ifdef XP_UNIX
 	typedef void *LibraryHandler;

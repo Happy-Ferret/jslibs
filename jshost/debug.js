@@ -1,5 +1,8 @@
-var hModule = LoadModule('jsstd');
 
+
+var hModule = LoadModule('jsstd');
+Print( 'hModule: '+hModule, '\n' );
+var hModule = LoadModule('jsstd');
 Print( 'hModule: '+hModule, '\n' );
 
 //Print( 'Unsafe mode: '+Configuration.unsafeMode, '\n' );

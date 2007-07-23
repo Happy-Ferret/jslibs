@@ -1,13 +1,34 @@
 
+#ifdef __cplusplus
+	#define EXTERN_C extern "C"
+#else
+	#define EXTERN_C
+#endif
 
-#if defined(_WINDOWS) || defined(WIN32)
+#if defined(_WINDOWS) || defined(WIN32) // Windows platform
 	#define XP_WIN
 	#define DLL_EXT ".dll"
 	#define PATH_SEPARATOR '\\'
 
 	#define DLLEXPORT __declspec(dllexport)
 	#define DLLLOCAL
-#else
+
+
+#elif defined(_MACOSX) // MacosX platform
+	#define XP_UNIX
+	#define DLL_EXT ".dylib"
+	#define PATH_SEPARATOR '/'
+
+	#ifdef HAVE_GCCVISIBILITYPATCH
+		#define DLLEXPORT __attribute__ ((visibility("default")))
+		#define DLLLOCAL __attribute__ ((visibility("hidden")))
+	#else
+		#define DLLEXPORT
+		#define DLLLOCAL
+	#endif
+
+
+#else // Linux platform
 	#define XP_UNIX
 	#define DLL_EXT ".so"
 	#define PATH_SEPARATOR '/'
@@ -19,6 +40,9 @@
 		#define DLLEXPORT
 		#define DLLLOCAL
 	#endif
+
+
+
 #endif
 
 

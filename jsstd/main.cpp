@@ -22,7 +22,7 @@ DEFINE_UNSAFE_MODE;
 extern JSFunction *stdoutFunction;
 JSFunction *stdoutFunction = NULL;
 
-extern "C" DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
+EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
 // read configuration
 	jsval stdoutFunctionValue = GetConfigurationValue(cx, "stdout");
@@ -36,12 +36,12 @@ extern "C" DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	return JS_TRUE;
 }
 
-extern "C" DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
+EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
 
 	return JS_FALSE;
 }
 
-extern "C" DLLEXPORT void ModuleFree() {
+EXTERN_C DLLEXPORT void ModuleFree() {
 }
 
 

@@ -131,4 +131,3 @@ LoadModule('jsffi');
 	}
 
 	Print( 'runing tests...' + (tests() || 'nothing') + ' failed.' , '\n');
-
