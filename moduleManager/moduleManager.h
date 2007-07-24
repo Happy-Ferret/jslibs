@@ -18,13 +18,14 @@ typedef JSBool (*ModuleInitFunction)(JSContext *, JSObject *);
 typedef JSBool (*ModuleReleaseFunction)(JSContext *cx);
 typedef void (*ModuleFreeFunction)(void);
 
-extern "C" DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj);
-extern "C" DLLEXPORT JSBool ModuleRelease(JSContext *cx);
-extern "C" DLLEXPORT void ModuleFree();
+EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj);
+EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx);
+EXTERN_C DLLEXPORT void ModuleFree();
 
 ModuleId ModuleLoad( const char *fileName, JSContext *cx, JSObject *obj );
 bool ModuleIsUnloadable( ModuleId id );
 bool ModuleUnload( ModuleId id, JSContext *cx );
+bool ModuleIsLoaded( const char *fileName );
 
 
 void ModuleReleaseAll( JSContext *cx );

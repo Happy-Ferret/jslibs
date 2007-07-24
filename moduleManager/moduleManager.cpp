@@ -54,9 +54,27 @@
 #endif
 
 
-
-
 static LibraryHandler _moduleList[32] = {NULL}; // do not manage the module list dynamicaly, we allow a maximum of 32 modules
+
+bool ModuleIsLoaded( const char *fileName ) {
+
+	if ( fileName == NULL || *fileName == '\0' )
+		return false;
+
+	LibraryHandler module = DynamicLibraryOpen(fileName);
+	if ( module == NULL )
+		return false;
+
+	int MaxModuleSlot = sizeof(_moduleList)/sizeof(*_moduleList);
+	int i;
+	for ( i = 0; i < MaxModuleSlot; ++i )
+		if ( _moduleList[i] == module )
+			return true; // already loaded
+
+	DynamicLibraryClose(module);
+	return false;
+}
+
 
 ModuleId ModuleLoad( const char *fileName, JSContext *cx, JSObject *obj ) {
 
@@ -67,6 +85,7 @@ ModuleId ModuleLoad( const char *fileName, JSContext *cx, JSObject *obj ) {
 	if ( module == NULL )
 		return 0;
 	int i;
+
 	int MaxModuleSlot = sizeof(_moduleList)/sizeof(*_moduleList);
 	for ( i = 0; _moduleList[i] != NULL && i < MaxModuleSlot; ++i ); // find a free module slot
 	if ( i == MaxModuleSlot )

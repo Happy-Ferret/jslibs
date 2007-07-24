@@ -197,13 +197,16 @@ static JSBool global_loadModule(JSContext *cx, JSObject *obj, uintN argc, jsval 
 
 // MAC OSX: 	'@executable_path' ??
 
+	if ( !ModuleIsLoaded( libFileName ) ) {
 
-	ModuleId id = ModuleLoad(libFileName, cx, obj);
-//	RT_ASSERT_2( id != 0, "Unable to load the module %s (error:%d).", libFileName, GetLastError() ); // (TBD) rewrite this for Linux
-//	RT_ASSERT_2( id != 0, "Unable to load the module %s (error:%s).", libFileName, dlerror() );
-	RT_ASSERT_1( id != 0, "Unable to load the module \"%s\".", libFileName );
-	RT_CHECK_CALL( JS_NewNumberValue(cx, id, rval) ); // (TBD) really needed ?
-
+		ModuleId id = ModuleLoad(libFileName, cx, obj);
+	//	RT_ASSERT_2( id != 0, "Unable to load the module %s (error:%d).", libFileName, GetLastError() ); // (TBD) rewrite this for Linux
+	//	RT_ASSERT_2( id != 0, "Unable to load the module %s (error:%s).", libFileName, dlerror() );
+		RT_ASSERT_1( id != 0, "Unable to load the module \"%s\".", libFileName );
+//		RT_CHECK_CALL( JS_NewNumberValue(cx, id, rval) ); // (TBD) really needed ?
+	} else { // module already loaded
+	}
+	*rval = JSVAL_TRUE;
 	return JS_TRUE;
 }
 

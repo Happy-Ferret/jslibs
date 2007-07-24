@@ -1,10 +1,6 @@
 #include "stdafx.h"
 
-#ifdef WIN32
- #define DLL_EXT ".dll"
-#else
- #define DLL_EXT ".so"
-#endif
+#include "../common/platform.h"
 
 #include "jsstddef.h"
 #include <jsapi.h>
@@ -26,9 +22,16 @@ static JSBool global_loadModule(JSContext *cx, JSObject *obj, uintN argc, jsval 
 	RT_ASSERT( err == 0, "Buffer overflow." );
 	err = strcat_s(libFileName, sizeof(libFileName), DLL_EXT);
 	RT_ASSERT( err == 0, "Buffer overflow." );
-	ModuleId id = ModuleLoad(libFileName, cx, obj);
-	RT_ASSERT_2( id != 0, "Unable to load the module %s (error:%d).", libFileName, GetLastError() );
-	RT_CHECK_CALL( JS_NewNumberValue(cx, id, rval) );
+
+	if ( !ModuleIsLoaded( libFileName ) ) {
+
+		ModuleId id = ModuleLoad(libFileName, cx, obj);
+		RT_ASSERT_2( id != 0, "Unable to load the module %s (error:%d).", libFileName, GetLastError() );
+//		RT_CHECK_CALL( JS_NewNumberValue(cx, id, rval) );
+	} else {
+	}
+
+	*rval = JSVAL_TRUE;
 	return JS_TRUE;
 }
 

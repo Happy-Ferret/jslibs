@@ -16,8 +16,13 @@
 /*
 source: http://nebuladevice.svn.sourceforge.net/viewvc/nebuladevice/trunk/nebula2/code/nebula2/inc/mathlib/_vector3_sse.h?view=markup
 */
-#include <xmmintrin.h>
 
+#include <stdlib.h>
+
+
+#ifdef SSE
+
+#include <xmmintrin.h>
 #include <ivec.h>
 
 static const int X = 0;
@@ -102,7 +107,6 @@ inline void Vector3Normalize( Vector3 *v ) {
 */
 }
 
-
 inline void Vector3Add( Vector3 *v, Vector3 *v1 ) {
 
 	v->m128 = _mm_add_ps(v->m128, v1->m128);
@@ -142,6 +146,91 @@ inline void Vector3Cross(Vector3 *v, const Vector3 *v0, const Vector3 *v1) { // 
 
 	v->m128 = _mm_sub_ps(e, f);
 }
+
+#else // SSE
+
+#include <math.h>
+
+
+typedef union {
+    struct { float x, y, z; };
+    float raw[3];
+} Vector3;
+
+
+inline void Vector3Free( Vector3 *m ) {
+
+	return free(m);
+}
+
+inline Vector3 *Vector3Alloc() {
+
+	return (Vector3*)malloc(sizeof(Vector3));
+}
+
+inline void Vector3Identity( Vector3 *v ) {
+
+	v->x = 0;
+	v->y = 0;
+	v->z = 0;
+}
+
+inline void Vector3Set( Vector3 *v, const float _x, const float _y, const float _z ) {
+
+	v->x = _x;
+	v->y = _y;
+	v->z = _z;
+}
+
+inline float Vector3Len( Vector3 *v ) {
+	
+	return sqrt( v->x * v->x + v->y * v->y + v->z * v->z );
+}
+
+inline void Vector3Normalize( Vector3 *v ) {
+
+	float len = Vector3Len(v);
+	v->x /= len;
+	v->y /= len;
+	v->z /= len;
+}
+
+inline void Vector3Add( Vector3 *v, Vector3 *v1 ) {
+
+	v->x += v1->x;
+	v->y += v1->y;
+	v->z += v1->z;
+}
+
+inline void Vector3Sub( Vector3 *v, const Vector3 *v1 ) {
+
+	v->x -= v1->x;
+	v->y -= v1->y;
+	v->z -= v1->z;
+}
+
+inline void Vector3Mult( Vector3 *v, float s ) {
+
+	v->x *= s;
+	v->y *= s;
+	v->z *= s;
+}
+
+inline float Vector3Dot(const Vector3 *v0, const Vector3 *v1) { // Dot Product
+
+	return v0->x * v1->x + v0->y * v1->y + v0->z * v1->z;
+}
+
+inline void Vector3Cross(Vector3 *v, const Vector3 *v0, const Vector3 *v1) { // Cross Product
+
+	v->x = v0->y * v1->z - v0->z * v1->y;
+	v->y = v0->z * v1->x - v0->x * v1->z;
+	v->z = v0->x * v1->y - v0->y * v1->x;
+}
+
+#endif // SSE
+
+
 /*
 
 SSE/SSE2 Toolbox SSE/SSE2 Toolbox Solutions for Solutions for Real Real-Life SIMD Life SIMD Problems Problems :

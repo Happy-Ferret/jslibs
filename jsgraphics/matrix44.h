@@ -30,12 +30,12 @@
 		http://glide64.emuxhaven.net/files/Glide64_WonderPlus_src.zip/
 */
 
-#include <xmmintrin.h>
-
 #include <stdlib.h>
 #include <math.h>
 
-//
+#ifdef SSE
+
+#include <xmmintrin.h>
 #include <fvec.h>
 
 #include "../common/vector3.h"
@@ -574,3 +574,6 @@ inline void Matrix44Invert( Matrix44 *m ) {
     _mm_storeh_pi((__m64*)(src+14), minor3);
 }
 
+#else // SSE
+
+#endif // SSE
