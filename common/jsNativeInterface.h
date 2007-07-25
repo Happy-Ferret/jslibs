@@ -12,6 +12,9 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
+#ifndef _JSNATIVEINTERFACE_H_
+#define _JSNATIVEINTERFACE_H_
+
 #define NI_READ_RESOURCE "_NI_READ_RESOURCE"
 typedef bool (*NIResourceRead)( void *pv, unsigned char *buf, unsigned int *amount );
 
@@ -21,3 +24,4 @@ typedef bool (*NIResourceRead)( void *pv, unsigned char *buf, unsigned int *amou
 //  out: pointer provided as input OR another pointer to float
 typedef int (*NIMatrix44Read)(void *pv, float **pm); // **pm allows NIMatrix44Read to return its own data pointer ( should be const )
 
+#endif // _JSNATIVEINTERFACE_H_

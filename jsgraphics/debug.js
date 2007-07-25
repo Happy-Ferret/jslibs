@@ -197,7 +197,7 @@ function Render() {
 //	Print( 'Rendering time: '+(IntervalNow()-t0)+'ms', '\n');
 	CollectGarbage();
 	Sleep(1);
-	gl.SwapBuffers();
+	win.SwapBuffers();
 	
 	var tmp = IntervalNow();
 	var delta = tmp-time;

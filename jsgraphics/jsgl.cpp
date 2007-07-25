@@ -33,7 +33,7 @@ Manage GL extensions:
 #define _USE_MATH_DEFINES
 #include "math.h"
 
-#include "matrix44.h"
+#include "../common/matrix44.h"
 
 #include "gl/gl.h"
 #include "gl/glu.h"

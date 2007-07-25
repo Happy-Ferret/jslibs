@@ -33,27 +33,6 @@ extern JSFunction *stdoutFunction;
 
 BEGIN_STATIC
 
-DEFINE_FUNCTION( ASSERT ) {
-
-	RT_ASSERT_ARGC( 1 );
-
-	bool assert;
-	RT_JSVAL_TO_BOOL( argv[0], assert );
-
-	if ( !assert ) {
-
-		char *message;
-		if ( argc >= 2 )
-			RT_JSVAL_TO_STRING( argv[1], message )
-		else
-			message = "Assertion failed.";
-		JS_ReportError( cx, message );
-		return JS_FALSE;
-	}
-	return JS_TRUE;
-}
-
-
 DEFINE_FUNCTION( Expand ) {
 
 	RT_ASSERT_ARGC( 1 );
@@ -285,6 +264,28 @@ DEFINE_FUNCTION( Warning ) {
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+DEFINE_FUNCTION( ASSERT ) {
+
+	RT_ASSERT_ARGC( 1 );
+
+	bool assert;
+	RT_JSVAL_TO_BOOL( argv[0], assert );
+
+	if ( !assert ) {
+
+		char *message;
+		if ( argc >= 2 )
+			RT_JSVAL_TO_STRING( argv[1], message )
+		else
+			message = "Assertion failed.";
+		JS_ReportError( cx, message );
+		return JS_FALSE;
+	}
+	return JS_TRUE;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 DEFINE_PROPERTY( gcByte ) {
 
 	JSRuntime *rt = cx->runtime;
@@ -333,6 +334,8 @@ DEFINE_FUNCTION( Print ) {
 //
 //	/be
 static JSScript* LoadScript(JSContext *cx, JSObject *obj, const char *fileName, bool useCompFile) {
+
+#ifdef JS_HAS_XDR
 
 	char compiledFileName[MAX_PATH];
 	strcpy( compiledFileName, fileName );
@@ -414,7 +417,14 @@ static JSScript* LoadScript(JSContext *cx, JSObject *obj, const char *fileName, 
 			JS_XDRDestroy( xdr );
 		}
 	}
+
 	return script;
+
+#else // JS_HAS_XDR
+
+	return JS_CompileFile(cx, obj, fileName);
+
+#endif // JS_HAS_XDR
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

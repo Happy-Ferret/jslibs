@@ -245,10 +245,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\matrix44.h"
-				>
-			</File>
-			<File
 				RelativePath=".\stdafx.h"
 				>
 			</File>

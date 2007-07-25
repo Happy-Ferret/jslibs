@@ -12,6 +12,9 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
+#ifndef _JSCLASS_H_
+#define _JSCLASS_H_
+
 // functions
 #define BEGIN_FUNCTION_SPEC JSFunctionSpec _tmp_fs[] = { // *name, call, nargs, flags, extra
 #define END_FUNCTION_SPEC {0}}; _functionSpec = _tmp_fs;
@@ -137,3 +140,5 @@
 #define HAS_DEL_PROPERTY   _class->delProperty = DelProperty;
 #define HAS_GET_PROPERTY   _class->getProperty = GetProperty;
 #define HAS_SET_PROPERTY   _class->setProperty = SetProperty;
+
+#endif _JSCLASS_H_

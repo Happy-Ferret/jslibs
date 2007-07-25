@@ -12,6 +12,9 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
+#ifndef _JSCONVERSIONHELPER_H_
+#define _JSCONVERSIONHELPER_H_
+
 inline JSBool IntArgvToVector( JSContext *cx, int count, const jsval *argv, int *vector ) {
 
 	for (int i=0; i<count; ++i) {
@@ -156,3 +159,5 @@ inline float GetBool( JSContext *cx, jsval objVal, const char *propertyName, boo
 		return defaultValue;
 	return value == JS_TRUE;
 }
+
+#endif // _JSCONVERSIONHELPER_H_

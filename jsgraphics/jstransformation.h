@@ -13,7 +13,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "../common/vector3.h"
-#include "matrix44.h"
+#include "../common/matrix44.h"
 #include "../common/jsNativeInterface.h"
 
 DECLARE_CLASS(Transformation)

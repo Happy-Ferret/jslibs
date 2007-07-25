@@ -12,6 +12,9 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
+#ifndef _STACK_H_
+#define _STACK_H_
+
 #include <stdlib.h>
 // very simple stack functions
 
@@ -172,3 +175,5 @@ inline void StackFree( void **stack ) {
 	while ( *stack )
       StackPop( stack );
 }
+
+#endif // _STACK_H_

@@ -12,6 +12,9 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
+#ifndef _QUEUE_H_
+#define _QUEUE_H_
+
 #include <stdlib.h>
 
 typedef struct QueueCell {
@@ -179,3 +182,6 @@ inline void QueueInsertCellAfter( Queue *queue, QueueCell *prevCell, void *data 
 	prevCell->next->prev = newCell;
 	prevCell->next = newCell;
 }
+
+
+#endif // _QUEUE_H_
