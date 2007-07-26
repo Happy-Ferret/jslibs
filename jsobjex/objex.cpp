@@ -90,7 +90,7 @@ JSBool objex_static_aux(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, j
 
 	JSObject *object = JSVAL_TO_OBJECT(argv[0]);
 
-	if ( JS_GetClass(object) != &objex_class  ) {
+	if ( JS_GET_CLASS(cx,object) != &objex_class  ) {
 
 		JS_ReportError( cx, "%s object expected", objex_class.name );
 		return JS_FALSE;

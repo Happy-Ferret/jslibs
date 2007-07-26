@@ -142,10 +142,10 @@
 	RT_ASSERT( (resourcePointer) != NULL, RT_ERROR_INVALID_RESOURCE );
 
 #define RT_ASSERT_CLASS(jsObject, jsClass) \
-	RT_ASSERT( (jsObject) != NULL && JS_GetClass(jsObject) == (jsClass), RT_ERROR_INVALID_CLASS );
+	RT_ASSERT( (jsObject) != NULL && JS_GET_CLASS(cx, jsObject) == (jsClass), RT_ERROR_INVALID_CLASS );
 
 #define RT_ASSERT_CLASS_NAME(jsObject, className) \
-	RT_ASSERT( strcmp(JS_GetClass(jsObject)->name, (className)) == 0,  RT_ERROR_INVALID_CLASS " Expecting " className "." );
+	RT_ASSERT( strcmp(JS_GET_CLASS(cx, jsObject)->name, (className)) == 0,  RT_ERROR_INVALID_CLASS " Expecting " className "." );
 
 #define RT_ASSERT_ARGC(minCount) \
 	RT_ASSERT_1( argc >= (minCount), RT_ERROR_MISSING_N_ARGUMENT, (minCount)-argc );
@@ -268,7 +268,7 @@ inline bool InheritFrom( JSContext *cx, JSObject *obj, JSClass *clasp ) {
 	while( obj != NULL ) {
 
 		obj = JS_GetPrototype(cx, obj);
-		if ( JS_GetClass(obj) == clasp )
+		if ( JS_GET_CLASS(cx, obj) == clasp )
 			return true;
 	}
 	return false;

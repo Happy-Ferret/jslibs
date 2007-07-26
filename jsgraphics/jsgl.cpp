@@ -75,7 +75,7 @@ DEFINE_FINALIZE() {
 
 DEFINE_CONSTRUCTOR() {
 /*
-	RT_ASSERT( JS_IsConstructing(cx) && JS_GetClass(obj) == _class, RT_ERROR_INVALID_CLASS );
+	RT_ASSERT( JS_IsConstructing(cx) && JS_GET_CLASS(cx,obj) == _class, RT_ERROR_INVALID_CLASS );
 	RT_ASSERT_ARGC(1);
 	RT_ASSERT_OBJECT(argv[0]);
 	RT_ASSERT_CLASS(JSVAL_TO_OBJECT(argv[0]), &classWindow);
@@ -143,7 +143,7 @@ static JSBool _SwapBuffers(JSContext *cx, JSObject *obj, uintN argc, jsval *argv
 
 	glFlush();
 	glFinish();
-	RT_ASSERT( JS_GetClass(obj) == _class, RT_ERROR_INVALID_CLASS );
+	RT_ASSERT( JS_GET_CLASS(cx,obj) == _class, RT_ERROR_INVALID_CLASS );
 	HDC hDC = wglGetCurrentDC();
 	RT_ASSERT( hDC != NULL, "Could not get the Current Device Context." );
 	BOOL res = SwapBuffers(hDC); // Doc: With multithread applications, flush the drawing commands in any other threads drawing to the same window before calling SwapBuffers.
@@ -232,7 +232,7 @@ DEFINE_FUNCTION( Ortho ) {
 
 DEFINE_FUNCTION( Clear ) {
 
-//	RT_ASSERT( JS_GetClass(obj) == thisClass, RT_ERROR_INVALID_CLASS );
+//	RT_ASSERT( JS_GET_CLASS(cx,obj) == thisClass, RT_ERROR_INVALID_CLASS );
 	RT_ASSERT_ARGC(1);
 	int32 bitfield;
 	JS_ValueToInt32(cx, argv[0], &bitfield);

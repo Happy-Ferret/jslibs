@@ -118,7 +118,7 @@ JSBool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *objAt,
 					sqlite3_bind_null(pStmt, param);
 					break;
 				}
-				if ( JS_GetClass(JSVAL_TO_OBJECT(val)) == &classBlob ) { // beware: with SQLite, blob != text
+				if ( JS_GET_CLASS(cx,JSVAL_TO_OBJECT(val)) == &classBlob ) { // beware: with SQLite, blob != text
 
 					jsval blobVal;
 					JS_GetReservedSlot(cx, JSVAL_TO_OBJECT(val), SLOT_BLOB_DATA, &blobVal);

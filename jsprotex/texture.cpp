@@ -45,7 +45,7 @@ enum DesaturateMode { desaturateLightness, desaturateSum, desaturateAverage };
 
 inline bool IsTexture( jsval value ) {
 	
-	return ( JSVAL_IS_OBJECT( value ) && JS_GetClass(JSVAL_TO_OBJECT( value )) == &classTexture );
+	return ( JSVAL_IS_OBJECT( value ) && JS_GET_CLASS(cx,JSVAL_TO_OBJECT( value )) == &classTexture );
 }
 
 inline unsigned int Wrap( int value, unsigned int limit ) {

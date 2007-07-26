@@ -34,7 +34,7 @@ extern "C" __declspec(dllexport) JSBool ModuleRelease(JSContext *cx) {
 extern "C" __declspec(dllexport) void ModuleFree() {
 }
 
-
+/* windows only
 BOOL APIENTRY DllMain( HANDLE hModule, DWORD  ul_reason_for_call, LPVOID lpReserved ) {
 
   switch (ul_reason_for_call) {
@@ -47,6 +47,7 @@ BOOL APIENTRY DllMain( HANDLE hModule, DWORD  ul_reason_for_call, LPVOID lpReser
   }
   return TRUE;
 }
+*/
 
 /* MS doc:
 

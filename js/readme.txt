@@ -67,13 +67,20 @@ tools: ( GNU utilities for Win32: http://unxutils.sourceforge.net/ )
 compilation with gmake under cygwin ( Makefile.ref )
 ----------------------------------------------------
 
-"c:\Program Files\Microsoft Visual Studio\VC98\Bin\VCVARS32.BAT"
-  or
-"c:\Program Files\Microsoft Visual Studio 8\VC\vcvarsall.bat"
+set path=C:\tools\cygwin\bin
 
-cigwin.bat
-cd /cygdrive/p/dev/spidermonkey/mozilla/js/src
-make -f Makefile.ref
+call "C:\Program Files\Microsoft Platform SDK\SetEnv.Cmd" /XP32 /DEBUG
+call "C:\Program Files\Microsoft Visual Studio 8\VC\vcvarsall.bat" x86
+
+cd .\src
+
+rem BUILD_OPT=1 produce a Release version, and ommiting this will produce a Debug version
+rem XCFLAGS=/MT allows to produce a .exe with staticaly linked msvcrt ( then msvcr80.dll is not needed )
+rem set USE_MSVC=1
+
+rem /MT
+set XCFLAGS=/D_CRT_SECURE_NO_DEPRECATE=1
+make -f Makefile.ref clean all JS_THREADSAFE=1 JS_DIST=../../nspr
 
 
 compilation with gmake under windows ( Makefile.ref )

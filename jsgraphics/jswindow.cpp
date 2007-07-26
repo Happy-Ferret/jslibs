@@ -46,7 +46,7 @@ BEGIN_CLASS( Window )
 //	JS_GetPrivate(cx, obj);
 //}
 //static JSBool ClassConstruct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
-//	RT_ASSERT( JS_IsConstructing(cx) && JS_GetClass(obj) == thisClass, RT_ERROR_INVALID_CLASS );
+//	RT_ASSERT( JS_IsConstructing(cx) && JS_GET_CLASS(cx,obj) == thisClass, RT_ERROR_INVALID_CLASS );
 //	return JS_TRUE;
 //}
 //	JSBool Call(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
@@ -306,7 +306,7 @@ DEFINE_FUNCTION( WaitForMessage ) {
 
 DEFINE_FUNCTION( CreateOpenGLContext ) {
 
-//	RT_ASSERT( JS_IsConstructing(cx) && JS_GetClass(obj) == _class, RT_ERROR_INVALID_CLASS );
+//	RT_ASSERT( JS_IsConstructing(cx) && JS_GET_CLASS(cx,obj) == _class, RT_ERROR_INVALID_CLASS );
 //	RT_ASSERT_ARGC(1);
 //	RT_ASSERT_OBJECT(argv[0]);
 //	RT_ASSERT_CLASS(JSVAL_TO_OBJECT(argv[0]), &classWindow);
@@ -374,7 +374,7 @@ static JSBool _SwapBuffers(JSContext *cx, JSObject *obj, uintN argc, jsval *argv
 
 //	glFlush();
 //	glFinish();
-//	RT_ASSERT( JS_GetClass(obj) == _class, RT_ERROR_INVALID_CLASS );
+//	RT_ASSERT( JS_GET_CLASS(cx,obj) == _class, RT_ERROR_INVALID_CLASS );
 	HDC hDC = wglGetCurrentDC(); // (TBD) un-specialize from OpenGL
 	RT_ASSERT( hDC != NULL, "Could not get the Current Device Context." );
 	BOOL res = SwapBuffers(hDC); // Doc: With multithread applications, flush the drawing commands in any other threads drawing to the same window before calling SwapBuffers.

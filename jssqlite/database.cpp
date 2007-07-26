@@ -312,7 +312,7 @@ void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArg
 				sqlite3_result_null(sCx);
 				break;
 			}
-			if ( JS_GetClass(JSVAL_TO_OBJECT(rval)) == &classBlob ) { // beware: with SQLite, blob != text
+			if ( JS_GET_CLASS(cx,JSVAL_TO_OBJECT(rval)) == &classBlob ) { // beware: with SQLite, blob != text
 
 				jsval blobVal;
 				JS_GetReservedSlot(cx, JSVAL_TO_OBJECT(rval), SLOT_BLOB_DATA, &blobVal);

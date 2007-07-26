@@ -40,7 +40,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\js\src"
+				AdditionalIncludeDirectories="..\js\src;../nspr/include/nspr"
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -118,7 +118,7 @@
 				Name="VCCLCompilerTool"
 				InlineFunctionExpansion="2"
 				FavorSizeOrSpeed="1"
-				AdditionalIncludeDirectories="..\js\src"
+				AdditionalIncludeDirectories="..\js\src;../nspr/include/nspr"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB"
 				BasicRuntimeChecks="0"
 				RuntimeLibrary="2"

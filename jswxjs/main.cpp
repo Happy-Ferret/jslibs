@@ -1,18 +1,23 @@
 #include "stdafx.h"
 
-#define JSHELPER_UNSAFE_DEFINED
-#include "../common/jshelper.h"
-#include "../common/jsclass.h"
-
 #define MAX_WXJS_MODULES 32
-#define WXJS_INIT_PROC_NAME "wxJS_Init"
-#define WXJS_DESTROY_PROC_NAME "wxJS_Destroy"
 
-#ifdef WIN32
-	#define DLL_EXT ".dll"
-#else
-	#define DLL_EXT ".so"
-#endif
+#define wxString char*
+#define wxT(S) (S)
+
+// from [wxjs]/wxjs/src/engine/module.cpp:
+
+static wxString WXJS_INIT_CLASS = wxT("wxJS_InitClass");
+static wxString WXJS_INIT_OBJECT = wxT("wxJS_InitObject");
+static wxString WXJS_DESTROY = wxT("wxJS_Destroy");
+
+typedef bool (*WXJS_INIT_PROC)(JSContext *cx, JSObject *obj);
+typedef void (*WXJS_DESTROY_PROC)();
+typedef void (*WXJS_ERROR_PROC)(JSErrorReporter er);
+
+
+
+DEFINE_UNSAFE_MODE
 
 static HMODULE _moduleList[MAX_WXJS_MODULES] = { NULL };
 
@@ -30,8 +35,9 @@ DEFINE_FUNCTION( LoadWXJSModule ) {
 	for ( i = 0; _moduleList[i] != NULL; ++i ); // find a free module slot
 	RT_ASSERT( i < 32, "unable to load more libraries" );
 	_moduleList[i] = module;
-	typedef bool (*ModuleInitFunction)(JSContext *, JSObject *);
-	ModuleInitFunction moduleInit = (ModuleInitFunction)::GetProcAddress( module, WXJS_INIT_PROC_NAME );
+
+	WXJS_INIT_PROC moduleInit = (WXJS_INIT_PROC)::GetProcAddress( module, WXJS_INIT_CLASS );
+
 	RT_ASSERT_1( moduleInit != NULL, "Module initialization function not found in %s.", libFileName );
 	*rval = moduleInit( cx, obj ) ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;
@@ -58,27 +64,27 @@ END_STATIC
 
 
 
-extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj) {
+EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
-	INIT_STATIC(cx, obj);
-/*
-	jsval unsafeModeValue;
-	JSBool jsStatus = GetConfigurationValue(cx, "unsafeMode", &unsafeModeValue);
-	RT_ASSERT( jsStatus != JS_FALSE, "Unable to read unsafeMode state from configuration object." );
-	if ( unsafeModeValue != JSVAL_VOID && JSVAL_IS_BOOLEAN(unsafeModeValue) )
-		SET_UNSAFE_MODE( JSVAL_TO_BOOLEAN(unsafeModeValue) == JS_TRUE );
-*/
+// read configuration
+//	jsval stdoutFunctionValue = GetConfigurationValue(cx, "stdout");
+//	RT_ASSERT( stdoutFunctionValue != JSVAL_VOID, "Unable to read stdout function from configuration object." );
+//	stdoutFunction = JS_ValueToFunction(cx, stdoutFunctionValue); // returns NULL if the function is not defined
+
+	SET_UNSAFE_MODE( GetConfigurationValue(cx, "unsafeMode" ) == JSVAL_TRUE );
+
+	INIT_STATIC();
 	return JS_TRUE;
 }
 
-extern "C" __declspec(dllexport) JSBool ModuleRelease(JSContext *cx, JSObject *obj) {
+EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
 
 // free used modules
 	typedef void (*ModuleFreeFunction)(void);
 	for ( int i = sizeof(_moduleList) / sizeof(*_moduleList) - 1; i >= 0; --i ) // beware: 'i' must be signed
 		if ( _moduleList[i] != NULL ) {
 
-			ModuleFreeFunction moduleFree = (ModuleFreeFunction)::GetProcAddress( _moduleList[i], WXJS_DESTROY_PROC_NAME );
+			WXJS_DESTROY_PROC moduleFree = (WXJS_DESTROY_PROC)::GetProcAddress( _moduleList[i], WXJS_DESTROY );
 			if ( moduleFree != NULL )
 				moduleFree();
 			::FreeLibrary(_moduleList[i]);
@@ -88,6 +94,7 @@ extern "C" __declspec(dllexport) JSBool ModuleRelease(JSContext *cx, JSObject *o
 	return JS_TRUE;
 }
 
+/*
 
 BOOL APIENTRY DllMain( HANDLE hModule, DWORD  ul_reason_for_call, LPVOID lpReserved ) {
 
@@ -102,3 +109,4 @@ BOOL APIENTRY DllMain( HANDLE hModule, DWORD  ul_reason_for_call, LPVOID lpReser
   return TRUE;
 }
 
+*/

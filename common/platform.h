@@ -59,6 +59,8 @@
 
 #endif // platform
 
+#define JS_THREADSAFE
+
 #endif // _PLATFORM_H_
 
 

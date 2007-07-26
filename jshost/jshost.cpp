@@ -49,12 +49,12 @@
 
 JSBool unsafeMode = JS_FALSE;
 
-int consoleStdOut( JSContext *cx, const char *data, int length ) {
+int consoleStdOut( JSContext *, const char *data, int length ) {
 
 	return fwrite( data, 1, length, stdout );
 }
 
-int consoleStdErr( JSContext *cx, const char *data, int length ) {
+int consoleStdErr( JSContext *, const char *data, int length ) {
 
 	return fwrite( data, 1, length, stderr );
 }
@@ -301,7 +301,7 @@ static JSBool stdoutFunction(JSContext *cx, JSObject *obj, uintN argc, jsval *ar
 int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[]) for UNICODE
 
 	JSRuntime *rt;
-	JSContext *cx;
+	JSContext *cx = NULL;
 	JSObject *globalObject;
 
 	unsigned long maxbytes = 16L * 1024L * 1024L;

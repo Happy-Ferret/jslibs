@@ -6,12 +6,21 @@
 #pragma once
 
 #define WIN32_LEAN_AND_MEAN		// Exclude rarely-used stuff from Windows headers
-// TODO: reference additional headers your program requires here
-
 #include <windows.h>
 
-#define XP_WIN
+#include "../common/platform.h"
+
 #include <jsapi.h>
-#include "../common/jshelper.h"
-#include "../common/jsclass.h"
+
+#define USE_UNSAFE_MODE
+#include "../common/jsHelper.h"
+#include "../common/jsClass.h"
+#include "../common/jsConfiguration.h"
+#include "../common/stack.h"
+
+#include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <errno.h>
+#include <limits.h>
 
