@@ -10,7 +10,7 @@
 	<Tool
 		Name="VCCLCompilerTool"
 		AdditionalIncludeDirectories="..\js\src;..\nspr\include\nspr"
-		PreprocessorDefinitions=""
+		PreprocessorDefinitions="JS_THREADSAFE"
 		ExceptionHandling="0"
 		RuntimeLibrary="2"
 	/>
