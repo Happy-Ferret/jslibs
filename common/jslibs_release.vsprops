@@ -4,14 +4,24 @@
 	Version="8.00"
 	Name="jslibs common properties"
 	>
+	<!-- tmp VCCLCompilerTool
+	
+	-->
 	<Tool
 		Name="VCCLCompilerTool"
 		AdditionalIncludeDirectories="..\js\src;..\nspr\include\nspr"
 		PreprocessorDefinitions=""
+		ExceptionHandling="0"
 		RuntimeLibrary="2"
 	/>
+
+	<!-- tmp VCLinkerTool
+	
+		IgnoreDefaultLibraryNames="LIBCMT"
+	-->
 	<Tool
 		Name="VCLinkerTool"
+		GenerateDebugInformation="true"
 		AdditionalDependencies="..\js\src\WINNT5.1_OPT.OBJ\js32.lib $(NOINHERIT)"
 	/>
 </VisualStudioPropertySheet>

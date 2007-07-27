@@ -16,9 +16,8 @@ buf.Write('45');
 
 Print( buf.length, '\n' );
 
-ASSERT( 0 )
-
-throw 0; // -------------------------------------------------
+//Halt();
+Print( '\n * testingSetScope ...\n' );
 
 function foo() {
 
@@ -37,8 +36,7 @@ function foo() {
 
 foo();
 
-throw 0; // -------------------------------------------------
-
+Print( '\n * testingHideProperties ...\n' );
 
 var obj = { aaa:123, bbb:'xxx' };
 
@@ -52,14 +50,12 @@ for ( var p in obj )
   Print( p + ' = ' + obj[p], '\n' );
 
 
-throw 0; // -------------------------------------------------
-
+Print( '\n * testingIdOf ...\n' );
 
 Print( IdOf({}), '\n' );
 Print( IdOf({}), '\n' );
 	
-throw 0; // -------------------------------------------------
-
+Print( '\n * testingHideProperties ...\n' );
 
 var obj = { a:1, b:2, c:3 }
 
@@ -67,12 +63,14 @@ HideProperties( obj, 'b' );
 
 for ( var i in obj )
 	Print( i +':'+obj[i],'\n');
-	
 
 var toto = [ 1,3,5 ];
 toto.i = 6;
 Clear(toto);
 Print( 'toto:'+toto.length, '\n' );
+
+
+Print( '\n * testingBuffer ...\n' );
 
 
 var toto = 'rrr';

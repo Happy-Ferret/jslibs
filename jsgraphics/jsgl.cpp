@@ -36,7 +36,7 @@ Manage GL extensions:
 #include "../common/matrix44.h"
 
 #include "gl/gl.h"
-#include "gl/glu.h"
+//#include "gl/glu.h"
 
 #define SLOT_WINDOW_OBJECT 0
 
@@ -203,13 +203,16 @@ DEFINE_FUNCTION( Perspective ) {
 	GLint viewport[4];
 	glGetIntegerv( GL_VIEWPORT, viewport );
 
-	//float xmin, xmax, ymin, ymax;
-	//ymax = zNear * tan(fovy * M_PI / 360.0f);
-	//ymin = -ymax;
-	//xmin = ymin * aspect;
-	//xmax = ymax * aspect;
-	//glFrustum(xmin, xmax, ymin, ymax, zNear, zFar);
-	gluPerspective(fovy, float(viewport[2]) / float(viewport[3]), zNear, zFar);
+	float aspect = float(viewport[2]) / float(viewport[3]);
+
+	float xmin, xmax, ymin, ymax;
+	ymax = zNear * tan(fovy * M_PI / 360.0f);
+	ymin = -ymax;
+	xmin = ymin * aspect;
+	xmax = ymax * aspect;
+	glFrustum(xmin, xmax, ymin, ymax, zNear, zFar);
+
+//	gluPerspective(fovy, float(viewport[2]) / float(viewport[3]), zNear, zFar);
 	return JS_TRUE;
 }
 
@@ -469,10 +472,9 @@ DEFINE_FUNCTION( Line ) { // 2D
 	jsdouble x0,y0, x1,y1;
 	JS_ValueToNumber(cx, argv[0], &x0);
 	JS_ValueToNumber(cx, argv[1], &y0);
-//	JS_ValueToNumber(cx, argv[2], &z0);
-	JS_ValueToNumber(cx, argv[3], &x1);
-	JS_ValueToNumber(cx, argv[4], &y1);
-//	JS_ValueToNumber(cx, argv[5], &z1);
+
+	JS_ValueToNumber(cx, argv[2], &x1);
+	JS_ValueToNumber(cx, argv[3], &y1);
 
 	glBegin(GL_LINES);
 	glVertex2f( x0,y0 );

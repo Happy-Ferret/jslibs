@@ -19,19 +19,19 @@
 
 DEFINE_UNSAFE_MODE
 
-extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj) {
+EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
 	SET_UNSAFE_MODE( GetConfigurationValue(cx, "unsafeMode" ) == JSVAL_TRUE );
 	INIT_CLASS( Template );
 	return JS_TRUE;
 }
 
-extern "C" __declspec(dllexport) JSBool ModuleRelease(JSContext *cx) {
+EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
 
 	return JS_FALSE;
 }
 
-extern "C" __declspec(dllexport) void ModuleFree() {
+EXTERN_C DLLEXPORT void ModuleFree() {
 }
 
 /* windows only

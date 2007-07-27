@@ -256,7 +256,7 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 
 // Global configuration object
 	JSObject *configObject = GetConfigurationObject(cx);
-	if ( configObject != NULL )
+	if ( configObject == NULL )
 		return -1;
 
 	jsval value;

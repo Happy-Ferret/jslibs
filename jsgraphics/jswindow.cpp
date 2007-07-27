@@ -195,6 +195,7 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 
 DEFINE_CONSTRUCTOR() {
 
+//	JSClass *test = JS_GetClass(obj);
 	RT_ASSERT_CLASS( obj, _class );
 	HINSTANCE hInst = (HINSTANCE)GetModuleHandle(NULL);
 	RT_ASSERT( hInst != NULL, "Unable to GetModuleHandle." );

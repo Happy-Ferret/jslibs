@@ -186,14 +186,15 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 		case WM_KILLFOCUS:
 		case WM_COMMAND: {
 			MSGInfo *msg = (MSGInfo*)malloc(sizeof(MSGInfo));
-			BOOL swapButtons = GetSystemMetrics(SM_SWAPBUTTON);
-			msg->lButton = GetAsyncKeyState(VK_LBUTTON)&0x8000 == 0x8000;
-			msg->rButton = GetAsyncKeyState(VK_RBUTTON)&0x8000 == 0x8000;
-			msg->mButton = GetAsyncKeyState(VK_MBUTTON)&0x8000 == 0x8000;
+			// BOOL swapButtons = GetSystemMetrics(SM_SWAPBUTTON); // (TBD) use it
+
+			msg->lButton = GetAsyncKeyState(VK_LBUTTON) > 0; // (TBD) check !!
+			msg->rButton = GetAsyncKeyState(VK_RBUTTON) > 0; // (TBD) check !!
+			msg->mButton = GetAsyncKeyState(VK_MBUTTON) > 0; // (TBD) check !!
 		
-			msg->shiftKey = GetAsyncKeyState(VK_SHIFT)&0x8000 == 0x8000;
-			msg->controlKey = GetAsyncKeyState(VK_CONTROL)&0x8000 == 0x8000;
-			msg->altKey = GetAsyncKeyState(VK_MENU)&0x8000 == 0x8000;
+			msg->shiftKey   = GetAsyncKeyState(VK_SHIFT)   > 0; // (TBD) check !!
+			msg->controlKey = GetAsyncKeyState(VK_CONTROL) > 0; // (TBD) check !!
+			msg->altKey     = GetAsyncKeyState(VK_MENU)    > 0; // (TBD) check !!
 
 			if ( message == MSG_TRAY_CALLBACK ) {
 				
@@ -329,6 +330,7 @@ DEFINE_FUNCTION( Close ) {
 	BOOL status = Shell_NotifyIcon(NIM_DELETE, nid); // (TBD) error check
 	RT_ASSERT( status == TRUE, "Unable to delete notification icon.");
 	JS_SetPrivate(cx, obj, NULL);
+	return JS_TRUE;
 }
 
 
@@ -579,6 +581,8 @@ DEFINE_FUNCTION( Position ) {
 
 	JSObject *point;
 	if ( argc >= 1 && JSVAL_IS_OBJECT(argv[0]) && !JSVAL_IS_NULL(argv[0]) ) { // reuse
+
+		point = JSVAL_TO_OBJECT(argv[0]); // (TBD) check this
 		
 		JS_SetElement(cx, point, 0, &v[0]);
 		JS_SetElement(cx, point, 1, &v[1]);
@@ -602,6 +606,8 @@ DEFINE_FUNCTION( Rect ) {
 
 	JSObject *point;
 	if ( argc >= 1 && JSVAL_IS_OBJECT(argv[0]) && !JSVAL_IS_NULL(argv[0]) ) { // reuse
+
+		point = JSVAL_TO_OBJECT(argv[0]); // (TBD) check this
 		
 		JS_SetElement(cx, point, 0, &v[0]);
 		JS_SetElement(cx, point, 1, &v[1]);

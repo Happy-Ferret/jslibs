@@ -43,9 +43,9 @@ enum DesaturateMode { desaturateLightness, desaturateSum, desaturateAverage };
 //}
 
 
-inline bool IsTexture( jsval value ) {
+inline bool IsTexture( JSContext *cx, jsval value ) {
 	
-	return ( JSVAL_IS_OBJECT( value ) && JS_GET_CLASS(cx,JSVAL_TO_OBJECT( value )) == &classTexture );
+	return ( JSVAL_IS_OBJECT( value ) && JS_GET_CLASS(cx, JSVAL_TO_OBJECT( value )) == &classTexture );
 }
 
 inline unsigned int Wrap( int value, unsigned int limit ) {
@@ -215,7 +215,7 @@ DEFINE_CONSTRUCTOR() {
 	Texture *tex = (Texture *)malloc(sizeof(Texture));
 	tex->cbackBuffer = NULL;
 
-	if ( !IsTexture(argv[0]) ) {
+	if ( !IsTexture(cx, argv[0]) ) {
 
 		RT_ASSERT_ARGC( 3 );
 
@@ -909,7 +909,7 @@ DEFINE_FUNCTION( Set ) {
 	RT_ASSERT_RESOURCE(tex);
 	int channels = tex->channels;
 	int tsize = tex->width * tex->height * channels;
-	if ( IsTexture(argv[0]) ) {
+	if ( IsTexture(cx, argv[0]) ) {
 		
 		Texture *tex1;
 		RT_CHECK_CALL( ValueToTexture(cx, argv[0], &tex1) );
@@ -943,7 +943,7 @@ DEFINE_FUNCTION( Add ) {
 	RT_ASSERT_RESOURCE(tex);
 	int channels = tex->channels;
 	int tsize = tex->width * tex->height * channels;
-	if ( IsTexture(argv[0]) ) {
+	if ( IsTexture(cx, argv[0]) ) {
 		
 		Texture *tex1;
 		RT_CHECK_CALL( ValueToTexture(cx, argv[0], &tex1) );
@@ -971,7 +971,7 @@ DEFINE_FUNCTION( Mult ) {
 	RT_ASSERT_RESOURCE(tex);
 	int channels = tex->channels;
 	int tsize = tex->width * tex->height * channels;
-	if ( IsTexture(argv[0]) ) {
+	if ( IsTexture(cx, argv[0]) ) {
 		
 		Texture *tex1;
 		RT_CHECK_CALL( ValueToTexture(cx, argv[0], &tex1) );
@@ -1006,7 +1006,7 @@ DEFINE_FUNCTION( Blend ) { // texture1, blenderTexture|blenderColor
 
 	float blend;
 
-	if ( IsTexture(argv[1]) ) {
+	if ( IsTexture(cx, argv[1]) ) {
 		
 		Texture *blenderTex;
 		RT_CHECK_CALL( ValueToTexture(cx, argv[0], &blenderTex) );

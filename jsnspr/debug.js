@@ -4,6 +4,7 @@ LoadModule('jsnspr');
 
 try {
 
+Print('\n * testing Event \n');
 
 	var ev = new Event();
 	
@@ -14,8 +15,7 @@ try {
 	Print( Poll( evlist, 100 ) );
 	
 
-
-throw 0;
+Print('\n * testing TCP socket \n');
 
 	var dlist = []; //descriptor list
 
@@ -42,8 +42,9 @@ throw 0;
 	
 	dlist.push(client);
 	dlist.push(server);
-
-	while(!endSignal) {
+	
+	var i = 0;
+	while(++i < 15) {
 		
 		Print('.\n');
 		Poll(dlist,100);
@@ -55,10 +56,7 @@ throw 0;
 	}
 	
 
-throw 0;
-
-
-
+Print('\n * testing UDP socket \n');
 
 
 // UDP test
@@ -73,7 +71,9 @@ throw 0;
 		Print( s.Recv() );
 	}
 	var dlist = [s1,s2]; //descriptor list
-	while(!endSignal) {
+
+	var i = 0;
+	while(++i < 15) {
 		
 		Print('.\n');
 		Poll(dlist,100);
@@ -84,17 +84,20 @@ throw 0;
 		}
 	}
 
-throw 0;
+Print('\n * testing stdin.ReadAll (please type something) \n');
 
 	Print( File.stdin.ReadAll().length );
 	
-throw 0;
+Print('\n * testing File .content method \n');
 
-//	new File('test.txt').content = undefined;
+	new File('test.txt').content = 'hello world';
+	
+	Print( new File('test.txt').content );
 
-Socket.stdin.Accept();
+	new File('test.txt').content = undefined;
 
-throw 0;
+
+Halt();
 
 /*
 	var f = new File('test.txt');

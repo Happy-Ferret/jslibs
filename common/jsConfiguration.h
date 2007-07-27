@@ -25,7 +25,10 @@ inline JSObject *GetConfigurationObject(JSContext *cx) {
 	if ( globalObject == NULL )
 		return NULL;
 	jsval configurationValue;
-	JS_GetProperty(cx, globalObject, NAME_CONFIGURATION_OBJECT, &configurationValue);
+	JSBool status;
+	status = JS_GetProperty(cx, globalObject, NAME_CONFIGURATION_OBJECT, &configurationValue);
+	if ( status != JS_TRUE )
+		return NULL;
 	if ( configurationValue == JSVAL_VOID ) { // if configuration object do not exist, we build one
 
 		configurationObject = JS_DefineObject(cx, globalObject, NAME_CONFIGURATION_OBJECT, NULL, NULL, 0 );

@@ -15,7 +15,6 @@
 #include "stdafx.h"
 #include "jsimage.h"
 
-#include "../smtools/smtools.h"
 
 #include <stdlib.h>
 

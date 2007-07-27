@@ -6,8 +6,8 @@ set platformSDKPath=C:\Program Files\Microsoft Platform SDK
 
 rem --------------------------------------------------------------------------
 
-call "%platformSDKPath%\SetEnv.Cmd"
-call "%visualStudioPath%\VC\vcvarsall.bat"
+call "%platformSDKPath%\SetEnv.Cmd" /XP32 /RETAIL
+call "%visualStudioPath%\VC\vcvarsall.bat" x86
 
 del build.log
 
