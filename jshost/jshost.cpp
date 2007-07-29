@@ -423,7 +423,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	DWORD len = GetModuleFileName(hInstance, moduleFileName, sizeof(moduleFileName));
 	RT_HOST_MAIN_ASSERT( len != 0, "unable to GetModuleFileName." );
 #else // XP_WIN
-	char *moduleFileName = argv[-1];
+	char *moduleFileName = argv[-1]; // beware argv has already moved !
 	RT_HOST_MAIN_ASSERT( moduleFileName != NULL, "unable to GetModuleFileName." );
 #endif // XP_WIN
 
