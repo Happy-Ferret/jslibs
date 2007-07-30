@@ -489,6 +489,9 @@ DEFINE_FUNCTION( IsStatementValid ) {
 //
 DEFINE_FUNCTION( Halt ) {
 
+//	if ( argc >= 1 )
+//		*rval = argv[0];
+
 	return JS_FALSE;
 }
 

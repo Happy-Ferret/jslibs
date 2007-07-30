@@ -22,6 +22,8 @@
 	<Tool
 		Name="VCLinkerTool"
 		GenerateDebugInformation="true"
-		AdditionalDependencies="..\js\src\WINNT5.1_OPT.OBJ\js32.lib $(NOINHERIT)"
+		IgnoreAllDefaultLibraries="false"
+		IgnoreDefaultLibraryNames=""
+		AdditionalDependencies="..\js\src\WINNT5.1_OPT.OBJ\js32.lib kernel32.lib $(NoInherit) $(StopEvaluating)"
 	/>
 </VisualStudioPropertySheet>

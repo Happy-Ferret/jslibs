@@ -471,6 +471,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	// You need to protect a JSScript (via a rooted script object) if and only if a garbage collection can occur between compilation and the start of execution.
 	jsval rval;
 	jsStatus = JS_ExecuteScript( cx, globalObject, script, &rval ); // MUST be executed only once ( JSOPTION_COMPILE_N_GO )
+	// doc: If a script executes successfully, JS_ExecuteScript returns JS_TRUE. Otherwise it returns JS_FALSE. On failure, your application should assume that rval is undefined.
 	// if jsStatus != JS_TRUE, an error has been throw while the execution, so there is no need to throw another error
 
 //		printf( "Last executed line %s:%d", script->filename, JS_PCToLineNumber( cx, script, script->code ) ); // if it right ?
@@ -479,7 +480,15 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
   JS_DestroyScript( cx, script );
 
 //  printf("script result: %s\n", JS_GetStringBytes(JS_ValueToString(cx, rval)));
-
+	
+  int exitValue;
+  if ( jsStatus == JS_TRUE )
+	  if ( JSVAL_IS_INT(rval) && JSVAL_TO_INT(rval) >= 0 )
+		  exitValue = JSVAL_TO_INT(rval);
+	  else
+		  exitValue = 0;
+  else
+	  exitValue = -1;
 
 #ifdef JS_THREADSAFE
     JS_EndRequest(cx);
@@ -503,7 +512,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 // Beware: because JS engine allocate memory from the DLL, all memory must be disallocated before releasing the DLL
 	// free used modules
   ModuleFreeAll();
-  return 0;
+  return exitValue;
 }
 
 

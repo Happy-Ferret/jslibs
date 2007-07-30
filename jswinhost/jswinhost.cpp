@@ -220,8 +220,14 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 	*name = '\0';
 	name++;
 
+
+	CHAR moduleName[MAX_PATH];
+	DWORD moduleNameLen = GetModuleFileName(hInstance, moduleName, sizeof(moduleName));
+
 	CHAR scriptName[MAX_PATH];
-	DWORD scriptNameLen = GetModuleFileName(hInstance, scriptName, sizeof(scriptName));
+	err = strncpy_s(scriptName, sizeof(scriptName), moduleName, moduleNameLen );
+	RT_ASSERT( err == 0, "Buffer overflow." );
+//	DWORD scriptNameLen = GetModuleFileName(hInstance, scriptName, sizeof(scriptName));
 	char *dotPos = strrchr(scriptName, '.');
 	if ( dotPos == NULL )
 		return -1;
@@ -232,7 +238,12 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 	//If you need to detect whether another instance already exists, create a uniquely named mutex using the CreateMutex function. 
 	//CreateMutex will succeed even if the mutex already exists, but the function will return ERROR_ALREADY_EXISTS. 
 	//This indicates that another instance of your application exists, because it created the mutex first.
-	char mutexName[MAX_PATH] = "jswinhost_";
+
+
+	// (TBD) use file index as mutexName. note: If the file is on an NTFS volume, you can get a unique 64 bit identifier for it with GetFileInformationByHandle.  The 64 bit identifier is the "file index". 
+	char mutexName[MAX_PATH];// = "jswinhost_";
+	err = strncpy_s(mutexName, sizeof(mutexName), moduleName, moduleNameLen );
+	RT_ASSERT( err == 0, "Buffer overflow." );
 	err = strcat_s(mutexName, sizeof(mutexName), name);
 	RT_ASSERT( err == 0, "Buffer overflow." );
 	SetLastError(0);
