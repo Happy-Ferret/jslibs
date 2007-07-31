@@ -1,5 +1,15 @@
 LoadModule('jsstd');
 
+Print( '\n * testing IdOf ...\n' );
+
+var obj1 = {};
+var obj2 = {};
+
+Print( IdOf(obj1.constructor), '\n' );
+Print( IdOf(obj1.constructor), '\n' );
+
+
+Print( '\n * testing Buffer ...\n' );
 
 var buf = new Buffer();
 buf.Write('1');
@@ -17,7 +27,7 @@ buf.Write('45');
 Print( buf.length, '\n' );
 
 //Halt();
-Print( '\n * testingSetScope ...\n' );
+Print( '\n * testing SetScope ...\n' );
 
 function foo() {
 
@@ -36,7 +46,7 @@ function foo() {
 
 foo();
 
-Print( '\n * testingHideProperties ...\n' );
+Print( '\n * testing HideProperties ...\n' );
 
 var obj = { aaa:123, bbb:'xxx' };
 
@@ -55,7 +65,7 @@ Print( '\n * testingIdOf ...\n' );
 Print( IdOf({}), '\n' );
 Print( IdOf({}), '\n' );
 	
-Print( '\n * testingHideProperties ...\n' );
+Print( '\n * testing HideProperties ...\n' );
 
 var obj = { a:1, b:2, c:3 }
 
@@ -64,13 +74,17 @@ HideProperties( obj, 'b' );
 for ( var i in obj )
 	Print( i +':'+obj[i],'\n');
 
+
+
+Print( '\n * testing Clear ...\n' );
+
 var toto = [ 1,3,5 ];
 toto.i = 6;
 Clear(toto);
 Print( 'toto:'+toto.length, '\n' );
 
 
-Print( '\n * testingBuffer ...\n' );
+Print( '\n * testing Buffer ...\n' );
 
 
 var toto = 'rrr';

@@ -56,6 +56,13 @@
 
 static LibraryHandler _moduleList[32] = {NULL}; // do not manage the module list dynamicaly, we allow a maximum of 32 modules
 
+/* Note:
+	Current the only way I found to detect if a module is already loaded is to load it and to compare its handler to already-opened modules.
+	other solutions:
+	- use the full motule path as unique Id
+	- on linux, use the INode / on windows, use file index from GetFileInformationByHandle function / on macosx ???
+*/
+/*
 bool ModuleIsLoaded( const char *fileName ) {
 
 	if ( fileName == NULL || *fileName == '\0' )
@@ -74,8 +81,15 @@ bool ModuleIsLoaded( const char *fileName ) {
 	DynamicLibraryClose(module);
 	return false;
 }
+*/
 
 
+/* Note:
+	ModuleLoad should return three values: 
+	- ModuleId
+	- (bool) module is already loaded
+	- (bool) failure status
+*/
 ModuleId ModuleLoad( const char *fileName, JSContext *cx, JSObject *obj ) {
 
 	if ( fileName == NULL || *fileName == '\0' )
@@ -84,12 +98,22 @@ ModuleId ModuleLoad( const char *fileName, JSContext *cx, JSObject *obj ) {
 	LibraryHandler module = DynamicLibraryOpen(fileName);
 	if ( module == NULL )
 		return 0;
-	int i;
+// ASSERT( sizeof(LibraryHandler) <= sizeof(ModuleId) ) // (TBD)
 
+	int i;
 	int MaxModuleSlot = sizeof(_moduleList)/sizeof(*_moduleList);
+
+	for ( i = 0; i < MaxModuleSlot; ++i )
+		if ( _moduleList[i] == module ) {
+			
+			DynamicLibraryClose(module); // as it is aleready open, we can close this one (because reference counter?)
+			return (ModuleId)module; // already loaded
+		}
+	
 	for ( i = 0; _moduleList[i] != NULL && i < MaxModuleSlot; ++i ); // find a free module slot
 	if ( i == MaxModuleSlot )
 		return 0;
+
 	ModuleInitFunction moduleInit = (ModuleInitFunction)DynamicLibrarySymbol( module, NAME_MODULE_INIT );
 	if ( moduleInit == NULL ) {
 
@@ -118,6 +142,7 @@ bool ModuleIsUnloadable( ModuleId id ) {
 		return false;
 	return true;
 }
+
 
 bool ModuleUnload( ModuleId id, JSContext *cx ) {
 

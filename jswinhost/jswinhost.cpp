@@ -12,7 +12,7 @@
 #include "../moduleManager/moduleManager.h"
 #include "../common/jsConfiguration.h"
 
-static JSBool global_loadModule(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+static JSBool LoadModule(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
 	RT_ASSERT_ARGC(1);
 	char *fileName;
@@ -23,19 +23,14 @@ static JSBool global_loadModule(JSContext *cx, JSObject *obj, uintN argc, jsval 
 	err = strcat_s(libFileName, sizeof(libFileName), DLL_EXT);
 	RT_ASSERT( err == 0, "Buffer overflow." );
 
-	if ( !ModuleIsLoaded( libFileName ) ) {
+	ModuleId id = ModuleLoad(libFileName, cx, obj);
+	RT_ASSERT_2( id != 0, "Unable to load the module %s (error:%d).", libFileName, GetLastError() );
+	RT_CHECK_CALL( JS_NewNumberValue(cx, id, rval) );
 
-		ModuleId id = ModuleLoad(libFileName, cx, obj);
-		RT_ASSERT_2( id != 0, "Unable to load the module %s (error:%d).", libFileName, GetLastError() );
-//		RT_CHECK_CALL( JS_NewNumberValue(cx, id, rval) );
-	} else {
-	}
-
-	*rval = JSVAL_TRUE;
 	return JS_TRUE;
 }
 
-static JSBool global_unloadModule(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+static JSBool UnloadModule(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
 	RT_ASSERT_ARGC(1);
 	jsdouble dVal;
@@ -262,8 +257,8 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 
 // global functions & properties
 	JS_DefineProperty(cx, globalObject, NAME_GLOBAL_GLOBAL_OBJECT, OBJECT_TO_JSVAL(JS_GetGlobalObject(cx)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT);
-	JS_DefineFunction(cx, globalObject, NAME_GLOBAL_FUNCTION_LOAD_MODULE, global_loadModule, 0, 0);
-	JS_DefineFunction(cx, globalObject, NAME_GLOBAL_FUNCTION_UNLOAD_MODULE, global_unloadModule, 0, 0);
+	JS_DefineFunction(cx, globalObject, NAME_GLOBAL_FUNCTION_LOAD_MODULE, LoadModule, 0, 0);
+	JS_DefineFunction(cx, globalObject, NAME_GLOBAL_FUNCTION_UNLOAD_MODULE, UnloadModule, 0, 0);
 
 // Global configuration object
 	JSObject *configObject = GetConfigurationObject(cx);
@@ -278,7 +273,7 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 	value = OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunction(cx, noop, 1, 0, NULL, NULL))); // doc: If you do not assign a name to the function, it is assigned the name "anonymous".
 	JS_SetProperty(cx, configObject, NAME_CONFIGURATION_STDOUT, &value);
 
-	value = JSVAL_TRUE; // enable unsafe mode
+	value = JSVAL_TRUE; // enable unsafe mode by default
 	JS_SetProperty(cx, configObject, NAME_CONFIGURATION_UNSAFE_MODE, &value);
 
 // arguments

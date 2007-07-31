@@ -185,7 +185,7 @@ static void LoadErrorReporter(JSContext *cx, const char *message, JSErrorReport 
 */
 
 
-static JSBool global_loadModule(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+static JSBool LoadModule(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
 	RT_ASSERT_ARGC(1);
 
@@ -197,21 +197,22 @@ static JSBool global_loadModule(JSContext *cx, JSObject *obj, uintN argc, jsval 
 
 // MAC OSX: 	'@executable_path' ??
 
-	if ( !ModuleIsLoaded( libFileName ) ) {
+//	if ( !ModuleIsLoaded( libFileName ) ) {
 
 		ModuleId id = ModuleLoad(libFileName, cx, obj);
 	//	RT_ASSERT_2( id != 0, "Unable to load the module %s (error:%d).", libFileName, GetLastError() ); // (TBD) rewrite this for Linux
 	//	RT_ASSERT_2( id != 0, "Unable to load the module %s (error:%s).", libFileName, dlerror() );
 		RT_ASSERT_1( id != 0, "Unable to load the module \"%s\".", libFileName );
-//		RT_CHECK_CALL( JS_NewNumberValue(cx, id, rval) ); // (TBD) really needed ?
-	} else { // module already loaded
-	}
-	*rval = JSVAL_TRUE;
+		RT_CHECK_CALL( JS_NewNumberValue(cx, id, rval) ); // (TBD) really needed ? yes, UnloadModule need this ID
+//	} else { // module already loaded
+//	}
+//	*rval = JSVAL_TRUE;
+
 	return JS_TRUE;
 }
 
 
-static JSBool global_unloadModule(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+static JSBool UnloadModule(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
 	RT_ASSERT_ARGC(1);
 	jsdouble dVal;
@@ -247,7 +248,7 @@ static JSBool global_unloadModule(JSContext *cx, JSObject *obj, uintN argc, jsva
 
 bool gEndSignal = false;
 
-JSBool global_getter_endSignal(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
+JSBool EndSignalGetter(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 
 	*vp = BOOLEAN_TO_JSVAL( gEndSignal );
 	return JS_TRUE;
@@ -255,7 +256,7 @@ JSBool global_getter_endSignal(JSContext *cx, JSObject *obj, jsval id, jsval *vp
 
 //////////////////////////////////////////////////////////////////////////////////////////////
 JSPropertySpec Global_PropertySpec[] = { // *name, tinyid, flags, getter, setter
-	{ "endSignal"    , 0    , JSPROP_SHARED | JSPROP_READONLY | JSPROP_PERMANENT, global_getter_endSignal, NULL },
+	{ "endSignal"    , 0    , JSPROP_SHARED | JSPROP_READONLY | JSPROP_PERMANENT, EndSignalGetter, NULL },
 	{ 0 }
 };
 
@@ -375,8 +376,8 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 // global functions & properties
 	JS_DefineProperty(cx, globalObject, NAME_GLOBAL_GLOBAL_OBJECT, OBJECT_TO_JSVAL(JS_GetGlobalObject(cx)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
 	JS_DefineProperties( cx, globalObject, Global_PropertySpec );
-	JS_DefineFunction( cx, globalObject, NAME_GLOBAL_FUNCTION_LOAD_MODULE, global_loadModule, 0, 0 );
-	JS_DefineFunction( cx, globalObject, NAME_GLOBAL_FUNCTION_UNLOAD_MODULE, global_unloadModule, 0, 0 );
+	JS_DefineFunction( cx, globalObject, NAME_GLOBAL_FUNCTION_LOAD_MODULE, LoadModule, 0, 0 );
+	JS_DefineFunction( cx, globalObject, NAME_GLOBAL_FUNCTION_UNLOAD_MODULE, UnloadModule, 0, 0 );
 //	JS_DefineFunction( cx, globalObject, "test", global_test, 0, 0 );
 // JS_DefineFunction( cx, globalObject, "Module", _Module, 0, 0 );
 

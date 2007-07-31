@@ -16,9 +16,12 @@
 #include "../common/jsConfiguration.h"
 #include "../common/stack.h"
 
+#include <errno.h>
+#include <fcntl.h>
+#include <io.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
-#include <errno.h>
 #include <limits.h>
+
 

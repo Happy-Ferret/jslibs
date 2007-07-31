@@ -25,7 +25,7 @@ EXTERN_C DLLEXPORT void ModuleFree();
 ModuleId ModuleLoad( const char *fileName, JSContext *cx, JSObject *obj );
 bool ModuleIsUnloadable( ModuleId id );
 bool ModuleUnload( ModuleId id, JSContext *cx );
-bool ModuleIsLoaded( const char *fileName );
+//bool ModuleIsLoaded( const char *fileName );
 
 
 void ModuleReleaseAll( JSContext *cx );

@@ -19,8 +19,6 @@
 #include "jsxdrapi.h"
 #include "jscntxt.h"
 
-#include <limits.h>
-
 #ifndef PATH_MAX
 	#define PATH_MAX FILENAME_MAX
 #endif
@@ -125,7 +123,6 @@ DEFINE_FUNCTION( Expand ) {
 
 	*rval = STRING_TO_JSVAL( JS_NewString(cx, expandedString, totalLength) );
 
-
 //	js_GetFrameCallObject
 	return JS_TRUE;
 }
@@ -138,13 +135,10 @@ DEFINE_FUNCTION( Seal ) {
 	JSBool deep;
 	RT_ASSERT_OBJECT(argv[0]);
 	//RT_CHECK_CALL( JS_ValueToObject(cx, argv[0], &obj) );
-	if ( argc >= 2 ) { // strange: js> seal(o) => deep == true : it's because nargs in JS_DefineFunction
-
+	if ( argc >= 2 )
 		RT_CHECK_CALL( JS_ValueToBoolean( cx, argv[1], &deep ) )
-	} else {
-
+	else
 		deep = JS_FALSE;
-	}
 	return JS_SealObject(cx, JSVAL_TO_OBJECT(argv[0]), deep);
 }
 
@@ -158,21 +152,17 @@ DEFINE_FUNCTION( Clear ) {
 	return JS_TRUE;
 }
 
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 DEFINE_FUNCTION( SetScope ) {
 
 	RT_ASSERT_ARGC(2);
-
 	JSObject *o;
 	JS_ValueToObject(cx, argv[0], &o);
-
 	JSObject *p;
 	JS_ValueToObject(cx, argv[1], &p);
-
 	*rval = OBJECT_TO_JSVAL(JS_GetParent(cx, o));
-
 	RT_CHECK_CALL( JS_SetParent(cx, o, p) );
-
 	return JS_TRUE;
 }
 
@@ -228,27 +218,23 @@ DEFINE_FUNCTION( HideProperties ) {
 	return JS_TRUE;
 }
 
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 DEFINE_FUNCTION( IdOf ) {
 
 	jsid id;
 	if ( JSVAL_IS_OBJECT(argv[0]) )
-		JS_GetObjectId(cx, JSVAL_TO_OBJECT(argv[0]), &id);
+		RT_CHECK_CALL( JS_GetObjectId(cx, JSVAL_TO_OBJECT(argv[0]), &id) )
 	else
-		JS_ValueToId(cx, argv[0], &id);
-	JS_NewNumberValue(cx,(JSUword)id,rval); // src: ... JSDOUBLE_IS_INT(d, i) && INT_FITS_IN_JSVAL(i) ...
+		RT_CHECK_CALL( JS_ValueToId(cx, argv[0], &id) )
+
+	if ( INT_FITS_IN_JSVAL(id) )
+		*rval = INT_TO_JSVAL(id);
+	else
+		JS_NewNumberValue(cx,(JSUword)id,rval); // src: ... JSDOUBLE_IS_INT(d, i) && INT_FITS_IN_JSVAL(i) ...
 	return JS_TRUE;
 }
 
-/*
-DEFINE_FUNCTION( test ) {
-
-// toto(123) = 'test'
-	*rval
-	JS_SetCallReturnValue2(cx,
-	return JS_TRUE;
-}
-*/
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // note:
@@ -293,6 +279,7 @@ DEFINE_PROPERTY( gcByte ) {
 	return JS_TRUE;
 }
 
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 DEFINE_FUNCTION( CollectGarbage ) {
 
@@ -308,6 +295,7 @@ DEFINE_FUNCTION( CollectGarbage ) {
 
 	return JS_TRUE;
 }
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 DEFINE_FUNCTION( Print ) {
@@ -335,6 +323,8 @@ DEFINE_FUNCTION( Print ) {
 //	/be
 static JSScript* LoadScript(JSContext *cx, JSObject *obj, const char *fileName, bool useCompFile) {
 
+	
+
 #ifdef JS_HAS_XDR
 
 	char compiledFileName[MAX_PATH];
@@ -358,27 +348,29 @@ static JSScript* LoadScript(JSContext *cx, JSObject *obj, const char *fileName, 
 	JSScript *script;
 
 	if ( useCompFile && compFileUpToDate ) {
-
-		FILE *file = fopen(compiledFileName, "rb"); // b for binary ( win32 )
+		
+		int file = open(compiledFileName, O_RDONLY | O_BINARY, 0);
+//		FILE *file = fopen(compiledFileName, "rb"); // b for binary ( win32 )
 		// (TBD) use open/close/read/... instead of fopen/fclose/fread/...
-		if ( !file ) {
+		if ( file == -1 ) {
 
 			JS_ReportError( cx, "Unable to open file \"%s\" for reading.", compiledFileName );
 			return NULL;
 		}
 
-		size_t compFileSize = compFileStat.st_size;
+//		size_t compFileSize = compFileStat.st_size;
+		size_t compFileSize = filelength(file);
 		void *data = JS_malloc( cx, compFileSize );
 
-		size_t readCount = fread( data, 1, compFileSize, file ); // here we can use "Memory-Mapped I/O Functions" ( http://developer.mozilla.org/en/docs/NSPR_API_Reference:I/O_Functions#Memory-Mapped_I.2FO_Functions )
+		size_t readCount = read( file, data, compFileSize ); // here we can use "Memory-Mapped I/O Functions" ( http://developer.mozilla.org/en/docs/NSPR_API_Reference:I/O_Functions#Memory-Mapped_I.2FO_Functions )
 
-		if ( readCount != compFileSize ) {
+		if ( readCount == -1 || readCount != compFileSize ) {
 
 			JS_ReportError( cx, "Unable to read the file \"%s\" ", compiledFileName );
 			return NULL;
 		}
 
-		fclose( file ); // (TBD) use open/close/read/... instead of fopen/fclose/fread/...
+		close( file ); // (TBD) use open/close/read/... instead of fopen/fclose/fread/...
 
 		JSXDRState *xdr = JS_XDRNewMem(cx,JSXDR_DECODE);
 		if ( xdr == NULL )
@@ -403,16 +395,16 @@ static JSScript* LoadScript(JSContext *cx, JSObject *obj, const char *fileName, 
 			JSBool xdrSuccess = JS_XDRScript( xdr, &script );
 			if ( xdrSuccess != JS_TRUE )
 				return NULL;
-			FILE *file  = fopen( compiledFileName, "wb" ); // (TBD) use open/close/read/... instead of fopen/fclose/fread/...
-			if ( file != NULL ) { // if the file cannot be write, this is not an error ( eg. read-only drive )
+			int file = open( compiledFileName, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY ); // (TBD) use open/close/read/... instead of fopen/fclose/fread/...
+			if ( file != -1 ) { // if the file cannot be write, this is not an error ( eg. read-only drive )
 
 				uint32 length;
 				void *buf = JS_XDRMemGetData( xdr, &length );
 				if ( buf == NULL )
 					return NULL;
 				// manage BIG_ENDIAN here ?
-				fwrite( buf, 1, length, file ); // (TBD) use open/close/read/... instead of fopen/fclose/fread/...
-				fclose(file); // (TBD) use open/close/read/... instead of fopen/fclose/fread/...
+				write( file, buf, length ); // (TBD) use open/close/read/... instead of fopen/fclose/fread/...
+				close(file); // (TBD) use open/close/read/... instead of fopen/fclose/fread/...
 			}
 			JS_XDRDestroy( xdr );
 		}
@@ -427,6 +419,7 @@ static JSScript* LoadScript(JSContext *cx, JSObject *obj, const char *fileName, 
 #endif // JS_HAS_XDR
 }
 
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // function copied from mozilla/js/src/js.c
 DEFINE_FUNCTION( Exec ) {
@@ -440,9 +433,11 @@ DEFINE_FUNCTION( Exec ) {
 	uint32 oldopts;
 
 	RT_ASSERT_ARGC(1);
-	bool saveCompiledScripts = true; // default
+	bool saveCompiledScripts;
 	if ( argc >= 2 && argv[1] == JSVAL_FALSE )
 		saveCompiledScripts = false;
+	else
+		saveCompiledScripts = true; // default
 
 	str = JS_ValueToString(cx, argv[0]);
 	RT_ASSERT( str != NULL, "unable to get the filename." );
@@ -485,6 +480,7 @@ DEFINE_FUNCTION( IsStatementValid ) {
 	return JS_TRUE;
 }
 
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 DEFINE_FUNCTION( Halt ) {
@@ -496,12 +492,12 @@ DEFINE_FUNCTION( Halt ) {
 }
 
 
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 CONFIGURE_STATIC
 
 	BEGIN_STATIC_FUNCTION_SPEC
-		FUNCTION( ASSERT )
 		FUNCTION( Expand )
 		FUNCTION( Seal )
 		FUNCTION( Clear )
@@ -512,8 +508,9 @@ CONFIGURE_STATIC
 		FUNCTION( IsStatementValid )
 		FUNCTION( Print )
 		FUNCTION( CollectGarbage )
-		FUNCTION( Warning )
 		FUNCTION( IdOf )
+		FUNCTION( Warning )
+		FUNCTION( ASSERT )
 		FUNCTION( Halt )
 	END_STATIC_FUNCTION_SPEC
 

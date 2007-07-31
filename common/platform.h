@@ -21,6 +21,14 @@
 	#define EXTERN_C
 #endif
 
+#ifdef _MSC_VER
+#pragma warning(disable : 4311)
+#pragma warning(disable : 4312)
+#pragma warning(disable : 4267)
+#pragma warning(disable : 4996)
+#endif // #ifdef WIN32
+
+
 #if defined(_WINDOWS) || defined(WIN32) // Windows platform
 	#define XP_WIN
 	#define DLL_EXT ".dll"
@@ -57,7 +65,13 @@
 		#define DLLLOCAL
 	#endif
 
-#endif // platform
+#endif // Windows/MacosX/Linux platform
+
+// MS specific ?
+//#ifndef O_BINARY
+//	#define O_BINARY 0
+//#endif
+
 
 #endif // _PLATFORM_H_
 
