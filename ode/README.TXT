@@ -1,4 +1,4 @@
-ode is svn:externals from https://svn.sourceforge.net/svnroot/opende/trunk
+ode is svn:externals from https://opende.svn.sourceforge.net/svnroot/opende/trunk/
 
 TODO:
 	copy
