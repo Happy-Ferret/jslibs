@@ -198,7 +198,7 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 	rt = JS_NewRuntime(maxbytes); // maxbytes specifies the number of allocated bytes after which garbage collection is run.
 	cx = JS_NewContext(rt, stackSize); // A context specifies a stack size for the script, the amount, in bytes, of private memory to allocate to the execution stack for the script.
 
-	JS_SetVersion( cx, JSVERSION_1_7 );
+	JS_SetVersion( cx, (JSVersion)JS_VERSION );
 	// (TBD) set into configuration file
 
 	JS_SetErrorReporter(cx, ErrorReporter);

@@ -7,6 +7,7 @@ modify:
 =======
 	./src/jsconfig.h:
 	  disable JS_HAS_STR_HTML_HELPERS
+	  enable JS_HAS_XDR
 	  enable JS_HAS_XDR_FREEZE_THAW
 	  enable JS_HAS_SCRIPT_OBJECT
 	in the last JS_VERSION

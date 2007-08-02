@@ -2,6 +2,9 @@
 Microsoft Visual Studio Solution File, Format Version 9.00
 # Visual C++ Express 2005
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jsode", "jsode.vcproj", "{F96A90A1-2DFB-4C89-BFEF-9B703D2A78EE}"
+	ProjectSection(ProjectDependencies) = postProject
+		{2A8430BA-889E-EE4A-B1E3-A3231F6816EE} = {2A8430BA-889E-EE4A-B1E3-A3231F6816EE}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ode", "..\ode\src\build\vs2005\ode.vcproj", "{2A8430BA-889E-EE4A-B1E3-A3231F6816EE}"
 EndProject

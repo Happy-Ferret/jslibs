@@ -54,7 +54,7 @@ JSBool z_call(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval
 	}
 
 // manage this call if eof is already reach : return an empty string
-	if ( (bool)stream->opaque == true ) {
+	if ( stream->opaque != 0 ) { // ( (bool)stream->opaque == true )
 
 		*rval = JS_GetEmptyStringValue(cx);
 		return JS_TRUE;
@@ -209,7 +209,7 @@ JSBool z_getter_eof(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 		return JS_FALSE;
 	}
 
-	*vp = BOOLEAN_TO_JSVAL( (bool)stream->opaque );
+	*vp = BOOLEAN_TO_JSVAL( stream->opaque != 0 ); // (bool)stream->opaque
 
 //	JS_GetReservedSlot( cx, obj, SLOT_EOF, vp ); // eof
 

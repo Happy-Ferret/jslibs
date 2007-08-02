@@ -342,7 +342,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	cx = JS_NewContext(rt, stackSize); // A context specifies a stack size for the script, the amount, in bytes, of private memory to allocate to the execution stack for the script.
 	RT_HOST_MAIN_ASSERT( cx != NULL, "unable to create the context." );
 
-	JS_SetVersion( cx, JSVERSION_1_7 );
+	JS_SetVersion( cx, (JSVersion)JS_VERSION );
 	// (TBD) set into configuration file
 
 // error management
