@@ -1,3 +1,5 @@
+static const char *_revision = "$Rev:$";
+
 #include "stdafx.h"
 
 #define XP_WIN
@@ -19,7 +21,7 @@
 DEFINE_UNSAFE_MODE;
 
 extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj) {
-	
+
 	SET_UNSAFE_MODE( GetConfigurationValue(cx, "unsafeMode" ) == JSVAL_TRUE );
 
 	JSFunctionSpec _tmp[] = {{0}};

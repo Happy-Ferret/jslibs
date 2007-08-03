@@ -12,9 +12,10 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
+static const char *_revision = "$Rev:$";
+
 #include "stdafx.h"
 #include "ffi.h"
-
 
 extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 

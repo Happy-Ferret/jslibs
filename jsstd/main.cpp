@@ -12,12 +12,13 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
+static const char *_revision = "$Rev:$";
+
 #include "stdafx.h"
 
 #include "static.h"
 #include "buffer.h"
 
-static const char *_revision = "$Rev:$";
 
 DEFINE_UNSAFE_MODE;
 

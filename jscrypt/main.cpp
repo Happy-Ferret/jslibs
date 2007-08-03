@@ -12,6 +12,8 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
+static const char *_revision = "$Rev:$";
+
 #include "stdafx.h"
 
 #include "misc.h"

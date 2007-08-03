@@ -12,7 +12,7 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-//$Id$
+static const char *_revision = "$Rev:$";
 
 #include "stdafx.h"
 #include "template.h"
