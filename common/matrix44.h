@@ -226,6 +226,7 @@ inline void Matrix44SetXRotation( Matrix44 *m, float radAngle ) {
 		fstp	float ptr [eax+0x3C]	// set element _44
 	}
 #else // SSE
+	// (TBD)
 #endif // SSE
 }
 
@@ -251,6 +252,7 @@ inline void Matrix44SetYRotation( Matrix44 *m, float radAngle ) {
 		fstp	float ptr [eax+0x3C]	// set element _44
 	}
 #else // SSE
+	// (TBD)
 #endif // SSE
 }
 
@@ -277,6 +279,7 @@ inline void Matrix44SetZRotation( Matrix44 *m, float radAngle ) {
 		fstp	float ptr [eax+0x3C]	// set element _44
 	}
 #else // SSE
+	// (TBD)
 #endif // SSE
 }
 
@@ -287,6 +290,7 @@ inline FORCEINLINE float Sin(float angle) {
 	__asm fld	angle
 	__asm fsin
 #else // SSE
+	// (TBD)
 #endif // SSE
 }
 
@@ -296,6 +300,7 @@ inline FORCEINLINE float Cos(float angle)	{
 	__asm fld	angle
 	__asm fcos
 #else // SSE
+	// (TBD)
 #endif // SSE
 }
 
@@ -309,6 +314,7 @@ inline FORCEINLINE void SinCos(float angle, float *sinVal, float *cosVal) {
 	__asm mov		eax,sinVal
 	__asm fstp		dword ptr [eax]
 #else // SSE
+	// (TBD)
 #endif // SSE
 }
 
@@ -318,6 +324,7 @@ inline FORCEINLINE float Sqrt(float val) {
 	__asm fld		val
 	__asm fsqrt
 #else // SSE
+	// (TBD)
 #endif // SSE
 }
 
@@ -392,6 +399,7 @@ inline void Matrix44SetRotation( Matrix44 *m, const Vector3 *axis, float radAngl
 	m->raw[9]  =     2 * ( yz + xw );
 	m->raw[10] = 1 - 2 * ( xx + yy );
 #else // SSE
+	// (TBD)
 #endif // SSE
 }
 
@@ -410,6 +418,7 @@ inline void Matrix44ClearRotation( Matrix44 *m ) {
 	m->raw[9]  = 0;
 	m->raw[10] = 1;
 #else // SSE
+	// (TBD)
 #endif // SSE
 }
 
@@ -512,6 +521,7 @@ inline void Matrix44LookAt( Matrix44 *m, const Vector3 *to, const Vector3 *up ) 
 	m->m2 = y.m128;
 	m->m3 = z.m128;
 #else // SSE
+	// (TBD)
 #endif // SSE
 }
 
@@ -536,6 +546,7 @@ inline void Matrix44Billboard( Matrix44 *m, const Vector3 *to, const Vector3 *up
 	m->m2 = y.m128;
 	m->m3 = z.m128;
 #else // SSE
+	// (TBD)
 #endif // SSE
 }
 
@@ -656,6 +667,7 @@ inline void Matrix44Invert( Matrix44 *m ) {
     _mm_storel_pi((__m64*)(src+12), minor3);
     _mm_storeh_pi((__m64*)(src+14), minor3);
 #else // SSE
+	// (TBD)
 #endif // SSE
 }
 

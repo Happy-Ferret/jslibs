@@ -304,6 +304,31 @@ DEFINE_FUNCTION( WaitForMessage ) {
 	return JS_TRUE;
 }
 
+/*
+DEFINE_FUNCTION( CreateOpenGLBitmap ) {
+
+
+	PIXELFORMATDESCRIPTOR pfd ;
+	memset(&pfd,0,sizeof(PIXELFORMATDESCRIPTOR)) ;
+	pfd.nSize = sizeof(PIXELFORMATDESCRIPTOR) ;
+	pfd.nVersion = 1 ;
+	pfd.dwFlags = PFD_DRAW_TO_BITMAP | PFD_SUPPORT_OPENGL | PFD_SUPPORT_GDI;
+	pfd.iPixelType = PFD_TYPE_RGBA ; 
+	pfd.cColorBits = 8 ;
+	pfd.cDepthBits = 16 ;
+	pfd.iLayerType = PFD_MAIN_PLANE ; 
+
+//	char *mem = (char*)malloc( 100 * 100 * 3 * 3 );
+//	HBITMAP bitmap = CreateBitmap(100, 100, 3, 32, mem );
+
+	CreateDC( NULL, NULL, NULL, NULL );
+
+
+
+	return JS_TRUE;
+}
+*/
+
 
 DEFINE_FUNCTION( CreateOpenGLContext ) {
 

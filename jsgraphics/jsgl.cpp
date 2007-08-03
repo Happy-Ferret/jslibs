@@ -35,7 +35,7 @@ Manage GL extensions:
 
 #include "../common/matrix44.h"
 
-#ifdef(_MACOSX) // MacosX platform specific
+#ifdef _MACOSX // MacosX platform specific
 	#include <AGL/agl.h>
 	#include <OpenGL/gl.h>
 #endif

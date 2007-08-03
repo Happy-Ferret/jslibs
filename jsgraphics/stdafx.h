@@ -5,11 +5,6 @@
 
 #pragma once
 
-
-#define WIN32_LEAN_AND_MEAN		// Exclude rarely-used stuff from Windows headers
-
-// TODO: reference additional headers your program requires here
-
 #ifndef WINVER                // Allow use of features specific to Windows 95 and Windows NT 4 or later.
 #define WINVER 0x0501        // Change this to the appropriate value to target Windows 98 and Windows 2000 or later.
 #endif
@@ -22,11 +17,13 @@
 #define _WIN32_WINDOWS 0x0501 // Change this to the appropriate value to target Windows Me or later.
 #endif
 
+#define WIN32_LEAN_AND_MEAN		// Exclude rarely-used stuff from Windows headers
 #include <windows.h>
 
 #include "stdlib.h"
 
-#define XP_WIN
+#include "../common/platform.h"
+
 #include <jsapi.h>
 
 #define USE_UNSAFE_MODE

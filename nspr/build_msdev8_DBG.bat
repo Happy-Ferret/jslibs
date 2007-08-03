@@ -1,7 +1,9 @@
 set prevDir=%CD%
 set prevPath=%PATH%
 
-set path=C:\tools\cygwin\bin
+set path=C:\tools\cygwin\bin;%CD%
+
+	rem extract nsinstall.exe in the /nspr directory
 
 call "C:\Program Files\Microsoft Platform SDK\SetEnv.Cmd" /XP32 /DEBUG
 call "C:\Program Files\Microsoft Visual Studio 8\VC\vcvarsall.bat" x86
@@ -11,15 +13,17 @@ call "C:\Program Files\Microsoft Visual Studio 8\VC\vcvarsall.bat" x86
 
 md win32
 cd win32
-sh ../nsprpub/configure --enable-debug-rtl --with-dist-prefix=.
+	
+	rem make distclean
+	rem --enable-win32-target=WIN95 --enable-debug-rtl  --with-dist-prefix=..
+	
+sh ../nsprpub/configure
 
-cd pr/src
+make clean all
 
-make all
 
-cd ../../..
+cd ..
 
 set PATH=%prevPath%
 cd /D %prevDir%
 
-pause
