@@ -17,6 +17,8 @@
 #include "static.h"
 #include "buffer.h"
 
+static const char *_revision = "$Rev:$";
+
 DEFINE_UNSAFE_MODE;
 
 extern JSFunction *stdoutFunction;
