@@ -12,9 +12,10 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-static const char *_revision = "$Rev:$";
-
 #include "stdafx.h"
+
+#define MODULE_NAME "jstemplate"
+static const char *_revision = "$Rev$";
 
 #include "blob.h"
 #include "error.h"
@@ -24,6 +25,8 @@ static const char *_revision = "$Rev:$";
 DEFINE_UNSAFE_MODE
 
 extern "C" DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
+
+	JS_DefineProperty(cx, obj, MODULE_NAME "_build", INT_TO_JSVAL(atoi(_revision+6)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ); // 6 is the size of "$Rev: "
 
 	SET_UNSAFE_MODE( GetConfigurationValue(cx, "unsafeMode" ) == JSVAL_TRUE );
 

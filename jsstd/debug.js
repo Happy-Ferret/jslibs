@@ -1,4 +1,5 @@
 LoadModule('jsstd');
+Print('Version :'+jsstd_revision);
 
 Print( '\n * testing IdOf ...\n' );
 

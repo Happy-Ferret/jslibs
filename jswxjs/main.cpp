@@ -12,9 +12,10 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-static const char *_revision = "$Rev:$";
-
 #include "stdafx.h"
+
+#define MODULE_NAME "jstemplate"
+static const char *_revision = "$Rev$";
 
 #define MAX_WXJS_MODULES 32
 
@@ -81,6 +82,8 @@ END_STATIC
 
 
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
+
+	JS_DefineProperty(cx, obj, MODULE_NAME "_build", INT_TO_JSVAL(atoi(_revision+6)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ); // 6 is the size of "$Rev: "
 
 // read configuration
 //	jsval stdoutFunctionValue = GetConfigurationValue(cx, "stdout");

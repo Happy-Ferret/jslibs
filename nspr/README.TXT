@@ -5,7 +5,7 @@ Download:
 
 CVS:
 	cvs -d :pserver:anonymous@cvs-mirror.mozilla.org:/cvsroot login
-	cvs -d :pserver:anonymous@cvs-mirror.mozilla.org:/cvsroot co -d src mozilla/nsprpub
+	cvs -d :pserver:anonymous@cvs-mirror.mozilla.org:/cvsroot co -d nsprpub mozilla/nsprpub
 
 NSPR Release Notes:
 	http://www.mozilla.org/projects/nspr/release-notes/
@@ -25,7 +25,7 @@ Build procedure:
 	http://developer.mozilla.org/en/docs/NSPR_build_instructions
 
 	need nsinstall ( http://www.mozilla.org/build/win32-nmake.html#ss2.1 )
-	nsinstall.exe from cvs: :pserver:anonymous@cvs-mirror.mozilla.org:/cvsroot/buildtools/windows/bin/x86/nsinstall.exe
+
 
 Windows compilation (debug version):
 	set path=C:\tools\cygwin\bin

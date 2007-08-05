@@ -14,10 +14,11 @@ call "C:\Program Files\Microsoft Visual Studio 8\VC\vcvarsall.bat" x86
 md win32
 cd win32
 	
-	rem make distclean
+make distclean
+
 	rem --enable-win32-target=WIN95 --enable-debug-rtl  --with-dist-prefix=..
 	
-sh ../nsprpub/configure
+sh ../nsprpub/configure --enable-win32-target=WIN95 --enable-debug-rtl
 
 make clean all
 
@@ -26,4 +27,3 @@ cd ..
 
 set PATH=%prevPath%
 cd /D %prevDir%
-

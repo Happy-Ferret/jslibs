@@ -12,14 +12,19 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-static const char *_revision = "$Rev:$";
 
 #include "stdafx.h"
+
+#define MODULE_NAME "jsfastcgi"
+static const char *_revision = "$Rev$";
+
 #include "fastcgi.h"
 #include "fcgi.h"
 #include "global.h"
 
 extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj) {
+
+	JS_DefineProperty(cx, obj, MODULE_NAME "_build", INT_TO_JSVAL(atoi(_revision+6)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ); // 6 is the size of "$Rev: "
 
 	INIT_CLASS( FastCGI );
 	INIT_STATIC();

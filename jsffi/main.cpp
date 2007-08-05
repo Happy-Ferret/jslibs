@@ -12,13 +12,17 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-static const char *_revision = "$Rev:$";
-
 #include "stdafx.h"
+
+#define MODULE_NAME "jsffi"
+static const char *_revision = "$Rev$";
+
 #include "ffi.h"
 
 extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
+	JS_DefineProperty(cx, obj, MODULE_NAME "_build", INT_TO_JSVAL(atoi(_revision+6)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ); // 6 is the size of "$Rev: "
+	
 	Init_JSNI(cx, obj);
 	return JS_TRUE;
 }
