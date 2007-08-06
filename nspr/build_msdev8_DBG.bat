@@ -27,3 +27,5 @@ cd ..
 
 set PATH=%prevPath%
 cd /D %prevDir%
+
+pause

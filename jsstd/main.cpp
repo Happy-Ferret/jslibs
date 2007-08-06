@@ -19,6 +19,7 @@ static const char *_revision = "$Rev$";
 
 #include "static.h"
 #include "buffer.h"
+#include "pack.h"
 
 
 DEFINE_UNSAFE_MODE;
@@ -39,6 +40,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
 	INIT_STATIC();
 	INIT_CLASS( Buffer );
+	INIT_CLASS( Pack );
 	return JS_TRUE;
 }
 

@@ -13,16 +13,49 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-#include "template.h"
+#include "pack.h"
 
-BEGIN_CLASS( Template )
+#include "../common/jsNativeInterface.h"
+#include "../common/queue.h"
+
+BEGIN_CLASS( Pack )
 
 DEFINE_FINALIZE() {
 }
 
 DEFINE_CONSTRUCTOR() {
 
-	RT_ASSERT_CONSTRUCTING(_class);
+	return JS_TRUE;
+}
+
+DEFINE_FUNCTION( ReadInt ) {
+
+	int size = argc >= 1 ? JSVAL_TO_INT(argv[0]) : sizeof(int);
+
+	return JS_TRUE;
+}
+
+DEFINE_FUNCTION( ReadUInt ) {
+
+	int size = argc >= 1 ? JSVAL_TO_INT(argv[0]) : sizeof(unsigned int);
+	return JS_TRUE;
+}
+
+DEFINE_FUNCTION( ReadReal ) {
+
+	int size = argc >= 1 ? JSVAL_TO_INT(argv[0]) : 0;
+	return JS_TRUE;
+}
+
+DEFINE_FUNCTION( ReadString ) {
+
+	int size = argc >= 1 ? JSVAL_TO_INT(argv[0]) : -1;
+	return JS_TRUE;
+}
+
+
+DEFINE_PROPERTY( length ) {
+
 	return JS_TRUE;
 }
 
@@ -32,27 +65,15 @@ CONFIGURE_CLASS
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE
 
-//DEFINE_FUNCTION( Call ) {
-//	return JS_TRUE;
-//}
-
-//DEFINE_PROPERTY( prop ) {
-//	return JS_TRUE;
-//}
-
-//DEFINE_FUNCTION( Func ) {
-//	return JS_TRUE;
-//}
-
 	BEGIN_FUNCTION_SPEC
-//		FUNCTION(Func)
+		FUNCTION(ReadInt)
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
-//		PROPERTY(prop)
+		PROPERTY_READ(length)
 	END_PROPERTY_SPEC
 
 	HAS_PRIVATE
-//	HAS_RESERVED_SLOTS(1)
+	HAS_RESERVED_SLOTS(0)
 
 END_CLASS

@@ -173,75 +173,61 @@ DEFINE_FUNCTION( Write ) {
 	return JS_TRUE;
 }
 
+inline JSBool ReadOneChunk( JSContext *cx, JSObject *obj, jsval *rval ) {
 
-DEFINE_FUNCTION( Unread ) {
+  	size_t bufferLength;
+	RT_CHECK_CALL( BufferGetLength(cx, obj, &bufferLength) );
 
-	RT_ASSERT_ARGC( 1 );
-	RT_ASSERT_ARGC_MAX( 1 ); // discourages one to use Unread like Write
-	RT_ASSERT_STRING( argv[0] );
+	if ( bufferLength == 0 ) { // if buffer is empty, try to refill it.
+
+		RT_CHECK_CALL( BufferRefillRequest(cx, obj, &bufferLength) );
+		if ( bufferLength == 0 ) { // the data are definitively exhausted
+			
+			*rval = JS_GetEmptyStringValue(cx);
+			return JS_TRUE;
+		}
+	}
 	Queue *queue = (Queue*)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE( queue );
-	JSString **pNewStr = (JSString**)malloc(sizeof(JSString*));
-	RT_ASSERT_ALLOC( pNewStr );
-	*pNewStr = JSVAL_TO_STRING(argv[0]); // no need to use JS_NewDependentString (see js_NewDependentString in jsstr.c)
-	RT_CHECK_CALL( JS_AddRoot(cx, pNewStr) );
-	QueueUnshift( queue, pNewStr );
-	RT_CHECK_CALL( BufferLengthAdd(cx, obj, JS_GetStringLength(*pNewStr)) );
-	*rval = argv[0];
+	JSString **pNewStr = (JSString**)QueueShift(queue);
+	bufferLength -= JS_GetStringLength(*pNewStr);
+	RT_CHECK_CALL( BufferSetLength(cx, obj, bufferLength) ); // update buffer size
+	RT_CHECK_CALL( JS_RemoveRoot(cx, pNewStr) ); // removeRoot
+	*rval = STRING_TO_JSVAL(*pNewStr); // result (Rooted)
 	return JS_TRUE;
 }
 
 
-DEFINE_FUNCTION( Read ) { // Read( [amount | <undefined> ] )
+inline JSBool ReadAmount( JSContext *cx, JSObject *obj, size_t amount, jsval *rval ) {
+	
+	if ( amount == 0 ) { // optimization
 
-	Queue *queue = (Queue*)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE(queue);
-	size_t bufferLength;
-	RT_CHECK_CALL( BufferGetLength(cx, obj, &bufferLength) );
-	size_t amount;
-
-	if ( argc == 0 )
-		amount = bufferLength; // read the whole buffer
-	else if ( argv[0] == JSVAL_VOID ) { // read the next chunk (read something as fast as possible)
-
-		if ( bufferLength == 0 ) {
-
-			RT_CHECK_CALL( BufferRefillRequest(cx, obj, &bufferLength) );
-			if ( bufferLength == 0 ) { // the data are definitively exhausted
-				
-				*rval = JS_GetEmptyStringValue(cx);
-				return JS_TRUE;
-			}
-		}
-		JSString **pNewStr = (JSString**)QueueShift(queue);
-		bufferLength -= JS_GetStringLength(*pNewStr);
-		RT_CHECK_CALL( BufferSetLength(cx, obj, bufferLength) ); // update buffer size
-		RT_CHECK_CALL( JS_RemoveRoot(cx, pNewStr) ); // removeRoot
-		*rval = STRING_TO_JSVAL(*pNewStr); // result (Rooted)
-		return JS_TRUE;
-	} else
-		RT_JSVAL_TO_INT32( argv[0], amount );
-
-	if ( amount <= 0 ) { // optimization
-		
 		*rval = JS_GetEmptyStringValue(cx);
 		return JS_TRUE;
 	}
+
+	size_t bufferLength;
+	RT_CHECK_CALL( BufferGetLength(cx, obj, &bufferLength) );
 
 	if ( bufferLength < amount || bufferLength == 0 ) {
 
 		RT_CHECK_CALL( BufferRefillRequest(cx, obj, &bufferLength) );
 		if ( amount > bufferLength )
 			amount = bufferLength; // we definitively cannot read the required amount of data, then read the whole buffer.
-		}
+	}
 
-	// at this point, amound must contain the exact amount of data we will return
-	char *str = (char*)JS_malloc(cx, amount +1);
+	// (TBD) here: if amount < size_of_the_first_chunk, use  JS_NewDependentString  for the returning chunk and for the remaining chunk, then return
+	/*
+		if ( amount < JS_GetStringLength( *((JSString**)QueueGetData(QueueBegin(queue) );
+	*/
+
+
+	char *str = (char*)JS_malloc(cx, amount + 1);
 	RT_ASSERT_ALLOC(str);
 	str[amount] = '\0'; // (TBD) explain this
 	char *ptr = str;
 	size_t remainToRead = amount;
 
+	Queue *queue = (Queue*)JS_GetPrivate(cx, obj);
 	while ( remainToRead > 0 ) {
 
 		JSString **pNewStr = (JSString**)QueueGetData(QueueBegin(queue)); // just get the data, do not shift the queue
@@ -255,17 +241,68 @@ DEFINE_FUNCTION( Read ) { // Read( [amount | <undefined> ] )
 			remainToRead -= chunkLen; // adjust remaining required data length
 			RT_CHECK_CALL( JS_RemoveRoot(cx, pNewStr) );
 			QueueShift(queue);
-		} else { // chunkLen > remain ( this is the last chunk we have to manage )
-
+		} else { // chunkLen > remain: this is the last chunk we have to manage, get only a part of this chunk, then 'unread' it.
+			
 			memcpy(ptr, chunk, remainToRead);
-			*pNewStr = JS_NewStringCopyN(cx, chunk + remainToRead, chunkLen - remainToRead); // now, we have to store the unwanted data of this chunk. note that pNewStr is already rooted
-			RT_ASSERT_ALLOC( *pNewStr );
+			if ( false ) { // (TBD) compute the condition to make 'conservative chunk'
+
+				*pNewStr = JS_NewDependentString(cx, *pNewStr, remainToRead, chunkLen - remainToRead);
+			} else {
+				*pNewStr = JS_NewStringCopyN(cx, chunk + remainToRead, chunkLen - remainToRead); // now, we have to store the unwanted data of this chunk. note that pNewStr is already rooted
+				RT_ASSERT_ALLOC( *pNewStr );
+			}
+
 			remainToRead = 0; // adjust remaining required data length
 		}
 	}
 	*rval = STRING_TO_JSVAL(JS_NewString(cx, str, amount));
 	bufferLength -= amount;
 	RT_CHECK_CALL( BufferSetLength(cx, obj, bufferLength) ); // update buffer size
+	return JS_TRUE;
+}
+
+
+
+inline JSBool UnReadChunk( JSContext *cx, JSObject *obj, JSString *chunk ) {
+
+	Queue *queue = (Queue*)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE( queue );
+	JSString **pNewStr = (JSString**)malloc(sizeof(JSString*));
+	RT_ASSERT_ALLOC( pNewStr );
+	*pNewStr = chunk; // no need to use JS_NewDependentString (see js_NewDependentString in jsstr.c)
+	RT_CHECK_CALL( JS_AddRoot(cx, pNewStr) );
+	QueueUnshift( queue, pNewStr );
+	RT_CHECK_CALL( BufferLengthAdd(cx, obj, JS_GetStringLength(*pNewStr)) );
+	return JS_TRUE;
+}
+
+
+DEFINE_FUNCTION( Read ) { // Read( [amount | <undefined> ] )
+
+	RT_ASSERT_RESOURCE( JS_GetPrivate(cx, obj) ); // first, ensure that the object is valid
+	if ( argc >= 1 && argv[0] == JSVAL_VOID ) { // read the next chunk (of an unknown length) (read something as fast as possible)
+		
+		RT_CHECK_CALL( ReadOneChunk(cx, obj, rval) );
+		return JS_TRUE;
+	}
+	size_t amount;
+	if ( argc == 0 )
+		RT_CHECK_CALL( BufferGetLength(cx, obj, &amount) ) // no arguments then read the whole buffer
+	else
+		RT_JSVAL_TO_INT32( argv[0], amount );
+	RT_ASSERT( amount >= 0, "Invalid amount" );
+	RT_CHECK_CALL( ReadAmount(cx, obj, amount, rval) );
+	return JS_TRUE;
+}
+
+
+DEFINE_FUNCTION( Unread ) {
+
+	RT_ASSERT_ARGC( 1 );
+	RT_ASSERT_ARGC_MAX( 1 ); // discourages one to use Unread like Write
+	RT_ASSERT_STRING( argv[0] );
+	RT_CHECK_CALL( UnReadChunk(cx, obj, JSVAL_TO_STRING(argv[0])) ); // no need to use JS_NewDependentString (see js_NewDependentString in jsstr.c)
+	*rval = argv[0];
 	return JS_TRUE;
 }
 

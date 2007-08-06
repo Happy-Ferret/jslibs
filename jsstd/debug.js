@@ -1,5 +1,5 @@
 LoadModule('jsstd');
-Print('Version :'+jsstd_revision);
+//Print('Version :'+jsstd_revision);
 
 Print( '\n * testing IdOf ...\n' );
 
@@ -13,19 +13,22 @@ Print( IdOf(obj1.constructor), '\n' );
 Print( '\n * testing Buffer ...\n' );
 
 var buf = new Buffer();
-buf.Write('1');
-buf.Write('2');
-buf.Write('3');
-buf.Write('4');
+buf.Write('12345');
+buf.Write('6');
+buf.Write('');
+buf.Write('789');
+
+Print( '['+buf.Read(2)+']\n' );
+
 
 buf.Clear();
 
-Print( buf.length, '\n' );
+Print( 'len = ' + buf.length, '\n' );
 
 buf.Write('4');
 buf.Write('45');
 
-Print( buf.length, '\n' );
+Print( 'len = ' + buf.length, '\n' );
 
 //Halt();
 Print( '\n * testing SetScope ...\n' );

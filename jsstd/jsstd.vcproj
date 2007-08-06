@@ -189,6 +189,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\pack.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\static.cpp"
 				>
 			</File>
@@ -220,6 +224,10 @@
 			>
 			<File
 				RelativePath=".\buffer.h"
+				>
+			</File>
+			<File
+				RelativePath=".\pack.h"
 				>
 			</File>
 			<File

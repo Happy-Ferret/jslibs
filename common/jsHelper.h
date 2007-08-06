@@ -68,13 +68,13 @@
 // helper macros
 
 #define RT_CHECK_CALL( functionCall ) \
-	if ((functionCall) == JS_FALSE) { return JS_FALSE; }
+	{ if ((functionCall) == JS_FALSE) { return JS_FALSE; } }
 
 #define RT_SAFE(code) \
-	if (!_unsafeMode) {code;}
+	{ if (!_unsafeMode) {code;} }
 
 #define RT_UNSAFE(code) \
-	if (_unsafeMode) {code;}
+	{ if (_unsafeMode) {code;} }
 
 #define REPORT_WARNING(errorMessage) \
 	{ JS_ReportWarning( cx, (errorMessage RT_CODE_LOCATION) ); }
@@ -99,13 +99,13 @@
 // assert
 
 #define RT_ASSERT( condition, errorMessage ) \
-	if ( !_unsafeMode && !(condition) ) { JS_ReportError( cx, (errorMessage RT_CODE_LOCATION) ); return JS_FALSE; }
+	{ if ( !_unsafeMode && !(condition) ) { JS_ReportError( cx, (errorMessage RT_CODE_LOCATION) ); return JS_FALSE; } }
 
 #define RT_ASSERT_1( condition, errorMessage, arg ) \
-	if ( !_unsafeMode && !(condition) ) { JS_ReportError( cx, (errorMessage RT_CODE_LOCATION), (arg) ); return JS_FALSE; }
+	{ if ( !_unsafeMode && !(condition) ) { JS_ReportError( cx, (errorMessage RT_CODE_LOCATION), (arg) ); return JS_FALSE; } }
 
 #define RT_ASSERT_2( condition, errorMessage, arg1, arg2 ) \
-	if ( !_unsafeMode && !(condition) ) { JS_ReportError( cx, (errorMessage RT_CODE_LOCATION), (arg1), (arg2) ); return JS_FALSE; }
+	{ if ( !_unsafeMode && !(condition) ) { JS_ReportError( cx, (errorMessage RT_CODE_LOCATION), (arg1), (arg2) ); return JS_FALSE; } }
 
 
 //////////////////
