@@ -26,6 +26,17 @@ Build procedure:
 
 	need nsinstall ( http://www.mozilla.org/build/win32-nmake.html#ss2.1 )
 
+Important compilation note:
+
+	"The WIN95 target is better maintained.  For lack of time, some of the
+	new features in the past four or five years were only added to the WIN95
+	target.
+
+	It is unfortunate that NSPR has two implementations on Windows
+	and the obvious, better-sounding name (WINNT) is used for the
+	non-default target.  This has caused a lot of confusions."
+	Wan-Teh
+
 
 Windows compilation (debug version):
 	set path=C:\tools\cygwin\bin
