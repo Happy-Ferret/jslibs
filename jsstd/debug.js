@@ -1,6 +1,18 @@
 LoadModule('jsstd');
 //Print('Version :'+jsstd_revision);
 
+var buf = new Buffer();
+buf.Write('\x00\x02\x00');
+
+Print( buf.ReadUInt(4), '\n' );
+Print( buf.ReadUInt(2), '\n' );
+Print( buf.ReadUInt(2), '\n' );
+Print( buf.length, '\n' );
+
+
+
+Halt();
+
 Print( '\n * testing IdOf ...\n' );
 
 var obj1 = {};

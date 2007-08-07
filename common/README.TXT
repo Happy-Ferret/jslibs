@@ -12,3 +12,4 @@ which libraries should be ignored depending on which run-time library you want t
 
 cf.  jslibs_debug.vsprops, jslibs_release.vsprops
 
+eg. /NODEFAULTLIB:libc.lib, libcmt.lib, msvcrt.lib, libcd.lib, libcmtd.lib

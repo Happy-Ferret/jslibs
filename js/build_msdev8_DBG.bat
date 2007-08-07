@@ -12,16 +12,16 @@ cd .\src
 	rem /MTd : Multithreaded static debug
 	rem /MD  : Multithreaded DLL
 	rem /MDd : Multithreaded DLL debug
-set XCFLAGS=/D_CRT_SECURE_NO_DEPRECATE=1 /MDd
-
-	rem set OTHER_LIBS=../../nspr/win32/dist/lib/nspr4.lib /NODEFAULTLIB:libnspr4.lib
-
-	rem Linker Options: http://msdn2.microsoft.com/en-us/library/y0zzbyt4(VS.80).aspx
-	rem TEMPORARY ( may crash with Date object ) :
-	rem set OTHER_LIBS=/FORCE:UNRESOLVED
+set XCFLAGS=/DWINVER=0x500 /D_WIN32_WINNT=0x500 /D_CRT_SECURE_NO_DEPRECATE=1 /MD
+	rem /MDd
+	rem /D_NSPR_BUILD_
+	rem set OTHER_LIBS=wsock32.lib ../../nspr/lib/libnspr4_s.lib /NODEFAULTLIB:libnspr4
+	
+	rem set OTHER_LIBS=/NODEFAULTLIB:../../nspr/win32/dist/lib/libnspr4.lib
 
 make -f Makefile.ref clean all   JS_THREADSAFE=1 JS_DIST=../../nspr
-	rem JS_DIST=../../nspr/win32/dist
 
 set PATH=%prevPath%
 cd /D %prevDir%
+
+pause

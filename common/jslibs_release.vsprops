@@ -18,6 +18,7 @@
 	<!-- tmp VCLinkerTool
 	
 		IgnoreDefaultLibraryNames="LIBCMT"
+		
 	-->
 	<Tool
 		Name="VCLinkerTool"

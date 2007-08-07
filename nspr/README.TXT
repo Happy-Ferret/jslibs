@@ -1,14 +1,17 @@
 Download:
 	ftp://ftp.mozilla.org/pub/mozilla.org/nspr/releases/
 	ftp://ftp.mozilla.org/pub/mozilla.org/nspr/releases/v4.6.1/WINNT5.0_OPT.OBJ
-	( do not extract the source with winzip, use instead: tar xfz ... )
+	( do NOT extract the source with winzip, but use: tar xfz nspr-X.Y.Z.tar.gz )
+
 
 CVS:
 	cvs -d :pserver:anonymous@cvs-mirror.mozilla.org:/cvsroot login
 	cvs -d :pserver:anonymous@cvs-mirror.mozilla.org:/cvsroot co -d nsprpub mozilla/nsprpub
 
+
 NSPR Release Notes:
 	http://www.mozilla.org/projects/nspr/release-notes/
+
 
 Directory structure:
 	.
@@ -17,8 +20,10 @@ Directory structure:
 	lib
 	README.TXT
 
+
 API reference:
 	http://developer.mozilla.org/en/docs/NSPR_API_Reference
+
 
 Build procedure:
 	http://www.mozilla.org/projects/nspr/eng-process/build.html
@@ -26,16 +31,67 @@ Build procedure:
 
 	need nsinstall ( http://www.mozilla.org/build/win32-nmake.html#ss2.1 )
 
-Important compilation note:
+
+Important note about win32-target:
+
+	"By the way, NSPR has two implementations for Windows.  For
+	historical reasons, the default one (called "WINNT") is not appropriate
+	for general use.  I suggest that you pass --enable-win32-target=WIN95
+	to 'configure'.  Don't be turned off by the name "WIN95".  It is a historical
+	name.  It really means generic WIN32."
+	Wan-Teh
 
 	"The WIN95 target is better maintained.  For lack of time, some of the
 	new features in the past four or five years were only added to the WIN95
 	target.
-
 	It is unfortunate that NSPR has two implementations on Windows
 	and the obvious, better-sounding name (WINNT) is used for the
 	non-default target.  This has caused a lot of confusions."
 	Wan-Teh
+	(source: mozilla.dev.tech.nspr@news.mozilla.org )
+
+
+Important note about static link:
+
+	"We don't support linking with NSPR's static libraries.
+	Our binary distributions only contain DLLs.
+
+	The reason we still generate the static libraries when
+	we build NSPR from source code is that one of the NSS
+	crypto libraries (nssckbi.dll) uses the NSPR static
+	libraries.  That bug will be fixed in the upcoming
+	NSS 3.11 release.
+
+	If you really need to use NSPR static libraries, you
+	can eliminate the unresolved externals you reported
+	by compiling all of your files with the -D_NSPR_BUILD_
+	compiler flag.  Again, you should only do this if you
+	must use NSPR static libraries.  Please note the following
+	two problems:
+	1. Threads created outside NSPR can call NSPR functions
+	with no problem, but their PRThread structures will be
+	leaked when they terminate, because we free their
+	PRThread structures in the DllMain function of
+	libnspr4.dll/nspr4.dll.  This is not an issue if all
+	the threads that call NSPR functions are created by
+	NSPR (PR_CreateThread).
+	2. All the NSPR public functions will be exported from
+	your executable or DLL because they are defined with the
+	__declspec(dllexport) keyword (the value of the PR_IMPLEMENT
+	macro)."
+---- >8 ----
+	"After I wrote my last reply, I thought of another problem:
+	multiple copies of NSPR in a process.
+
+	Your .so/.dll will contain a copy of NSPR if you link with
+	NSPR static libraries.
+
+	If the executable program or some other .so/.dll also uses
+	NSPR (the .so/.dll), the process will end up with two copies
+	of NSPR.  In the past, this caused problems on at least Windows
+	and AIX."	
+	Wan-Teh
+	(source: http://www.nabble.com/Static-linking-causing-unresolved-externals-t629691.html)
 
 
 Windows compilation (debug version):
@@ -52,19 +108,14 @@ Linux compilation:
 	./configure --disable-debug --enable-strip --enable-nspr-threads --enable-optimize=-O3
 	make
 
+
 NSPR static library (libnspr4_s.lib):
 	It is not recomended to use it ( cf. http://www.nabble.com/Static-linking-causing-unresolved-externals-t629691.html )
 	use -D_NSPR_BUILD_
 
+
 Misc:
 	tests: http://developer.mozilla.org/en/docs/Running_NSPR_tests
-
-	Wan-Teh:
-		By the way, NSPR has two implementations for Windows.  For
-		historical reasons, the default one (called "WINNT") is not appropriate
-		for general use.  I suggest that you pass --enable-win32-target=WIN95
-		to 'configure'.  Don't be turned off by the name "WIN95".  It is a historical
-		name.  It really means generic WIN32.
 
 
 Configure options:

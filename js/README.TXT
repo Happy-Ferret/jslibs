@@ -22,6 +22,8 @@ directory structure:
 help:
 =====
 	http://developer.mozilla.org/en/docs/Introduction_to_the_JavaScript_shell
+
+	Visual C++ Linker Options: http://msdn.microsoft.com/library/default.asp?url=/library/en-us/vccore/html/_core_linker_reference.asp
 	
 multithreaded version:
 ======================
