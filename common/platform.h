@@ -31,8 +31,10 @@
 
 #if defined(_WINDOWS) || defined(WIN32) // Windows platform
 	#define XP_WIN
+
 	#define DLL_EXT ".dll"
 	#define PATH_SEPARATOR '\\'
+	#define LLONG __int64
 
 	#define DLLEXPORT __declspec(dllexport)
 	#define DLLLOCAL
@@ -40,8 +42,10 @@
 
 #elif defined(_MACOSX) // MacosX platform
 	#define XP_UNIX
+
 	#define DLL_EXT ".dylib"
 	#define PATH_SEPARATOR '/'
+	#define LLONG long long
 
 	#ifdef HAVE_GCCVISIBILITYPATCH
 		#define DLLEXPORT __attribute__ ((visibility("default")))
@@ -54,8 +58,10 @@
 
 #else // Linux platform
 	#define XP_UNIX
+
 	#define DLL_EXT ".so"
 	#define PATH_SEPARATOR '/'
+	#define LLONG long long
 
 	#ifdef HAVE_GCCVISIBILITYPATCH
 		#define DLLEXPORT __attribute__ ((visibility("default")))

@@ -63,6 +63,7 @@
 #define RT_ERROR_CLASS_CREATION_FAILED "unable to create the class."
 #define RT_ERROR_UNEXPECTED_TYPE "unexpected data type."
 #define RT_ERROR_FUNCTION_EXPECTED "a function is expected."
+#define RT_ERROR_INVALID_RANGE "value is out of range."
 
 ////////////////
 // helper macros
@@ -142,7 +143,7 @@
 	RT_ASSERT( (resourcePointer) != NULL, RT_ERROR_INVALID_RESOURCE );
 
 #define RT_ASSERT_CLASS(jsObject, jsClass) \
-	RT_ASSERT( (jsObject) != NULL && JS_GET_CLASS(cx, jsObject) == (jsClass), RT_ERROR_INVALID_CLASS );
+	RT_ASSERT( ((jsObject) != NULL) && (JS_GET_CLASS(cx, jsObject) == (jsClass)), RT_ERROR_INVALID_CLASS );
 
 #define RT_ASSERT_CLASS_NAME(jsObject, className) \
 	RT_ASSERT( strcmp(JS_GET_CLASS(cx, jsObject)->name, (className)) == 0,  RT_ERROR_INVALID_CLASS " Expecting " className "." );

@@ -2,13 +2,14 @@ LoadModule('jsstd');
 //Print('Version :'+jsstd_revision);
 
 var buf = new Buffer();
-buf.Write('\x00\x02\x00');
+buf.Write('\xff\xff\xff\xffabcd');
 
-Print( buf.ReadUInt(4), '\n' );
-Print( buf.ReadUInt(2), '\n' );
-Print( buf.ReadUInt(2), '\n' );
-Print( buf.length, '\n' );
+var pack = new Pack(buf);
 
+pack.Test(0xffffffff);
+
+Print( pack.ReadInt(8), '\n' );
+//Print( pack.ReadString(4), '\n' );
 
 
 Halt();

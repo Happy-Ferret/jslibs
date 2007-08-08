@@ -136,6 +136,7 @@ DEFINE_CONSTRUCTOR() {
 	return JS_TRUE;
 }
 
+
 DEFINE_FUNCTION( Clear ) {
 
 	Queue *queue = (Queue*)JS_GetPrivate(cx, obj);
@@ -149,6 +150,23 @@ DEFINE_FUNCTION( Clear ) {
 	}
 	BufferSetLength(cx, obj, 0);
 	return JS_TRUE;
+}
+
+
+JSBool WriteRawData( JSContext *cx, JSObject *obj, size_t amount, char *str ) {
+
+	Queue *queue = (Queue*)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE(queue);
+
+	JSString **pNewStr = (JSString**)malloc(sizeof(JSString*));
+	
+	*pNewStr = JS_NewStringCopyN(cx, str, amount);
+
+	RT_ASSERT( pNewStr != NULL, "Unable to create a NewDependentString." );
+	RT_CHECK_CALL( JS_AddRoot(cx, pNewStr) );
+	QueuePush( queue, pNewStr );
+	RT_CHECK_CALL( BufferLengthAdd(cx, obj, amount) );
+
 }
 
 
@@ -205,7 +223,7 @@ inline JSBool ReadOneChunk( JSContext *cx, JSObject *obj, jsval *rval ) {
 }
 
 
-inline JSBool ReadRawAmount( JSContext *cx, JSObject *obj, size_t *amount, char *str ) { // this form allows one to read into a static buffer
+JSBool ReadRawAmount( JSContext *cx, JSObject *obj, size_t *amount, char *str ) { // this form allows one to read into a static buffer
 	
 	if ( amount == 0 ) // optimization
 		return JS_TRUE;
@@ -259,7 +277,7 @@ inline JSBool ReadRawAmount( JSContext *cx, JSObject *obj, size_t *amount, char 
 }
 
 
-inline JSBool ReadAmount( JSContext *cx, JSObject *obj, size_t amount, jsval *rval ) {
+JSBool ReadAmount( JSContext *cx, JSObject *obj, size_t amount, jsval *rval ) {
 	
 	if ( amount == 0 ) { // optimization
 
@@ -276,7 +294,7 @@ inline JSBool ReadAmount( JSContext *cx, JSObject *obj, size_t amount, jsval *rv
 }
 
 
-inline JSBool UnReadRawChunk( JSContext *cx, JSObject *obj, char *data, size_t length ) {
+JSBool UnReadRawChunk( JSContext *cx, JSObject *obj, char *data, size_t length ) {
 
 	Queue *queue = (Queue*)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE( queue );
@@ -301,138 +319,6 @@ inline JSBool UnReadChunk( JSContext *cx, JSObject *obj, JSString *chunk ) {
 	RT_CHECK_CALL( JS_AddRoot(cx, pNewStr) );
 	QueueUnshift( queue, pNewStr );
 	RT_CHECK_CALL( BufferLengthAdd(cx, obj, JS_GetStringLength(*pNewStr)) );
-	return JS_TRUE;
-}
-
-
-DEFINE_FUNCTION( ReadReal ) {
-
-	RT_ASSERT_ARGC(1);
-	unsigned char data[16];
-	size_t size = JSVAL_TO_INT( argv[0] );
-	size_t amount = size;
-	RT_CHECK_CALL( ReadRawAmount(cx, obj, &amount, (char*)data) );
-	if ( amount < size ) { // not enough data to complete the requested operation, then unread the few data we read
-
-		RT_CHECK_CALL( UnReadRawChunk(cx, obj, (char*)data, amount) );
-		*rval = JSVAL_VOID;
-		return JS_TRUE;
-	}
-
-	switch (size) {
-		case sizeof(float):
-			RT_CHECK_CALL( JS_NewNumberValue(cx, *((float*)data), rval) );
-			break;
-		case sizeof(double):
-			RT_CHECK_CALL( JS_NewNumberValue(cx, *((double*)data), rval) );
-			break;
-		default:
-			*rval = JSVAL_VOID;
-	}
-	return JS_TRUE;
-
-}
-
-
-DEFINE_FUNCTION( ReadInt ) {
-		
-	unsigned char data[8]; // int 64
-	
-	size_t size = argc >= 1 ? JSVAL_TO_INT(argv[0]) : sizeof(int);
-	size_t amount = size;
-	RT_CHECK_CALL( ReadRawAmount(cx, obj, &amount, (char*)data) );
-
-	if ( amount < size ) { // not enough data to complete the requested operation, then unread the few data we read
-
-		RT_CHECK_CALL( UnReadRawChunk(cx, obj, (char*)data, amount) );
-		*rval = JSVAL_VOID;
-		return JS_TRUE;
-	}
-
-	switch (size) {
-		case sizeof(signed char):
-			*rval = INT_TO_JSVAL( *(signed char*)data );
-			break;
-		case sizeof(signed short):
-			*rval = INT_TO_JSVAL( *(signed short*)data );
-			break;
-		case sizeof(signed long): {
-			unsigned long val = *(signed long*)data;
-			if ( INT_FITS_IN_JSVAL( val ) )
-				*rval = INT_TO_JSVAL( val );
-			else
-				RT_CHECK_CALL( JS_NewNumberValue(cx, val, rval) );
-			break;
-		}
-		case sizeof(signed __int64): {
-			unsigned long val = *(signed __int64*)data;
-			if ( INT_FITS_IN_JSVAL( val ) )
-				*rval = INT_TO_JSVAL( val );
-			else
-				RT_CHECK_CALL( JS_NewNumberValue(cx, val, rval) );
-			break;
-		}
-		default:
-			*rval = JSVAL_VOID;
-	}
-	return JS_TRUE;
-}
-
-
-DEFINE_FUNCTION( ReadStringZ ) {
-	
-	// get a chunk
-	// check if it contains '\0'
-	// else store it and get a new chunk...
-	// if it contains '\0',
-	// create a buffer of the right size,
-	// strcat all stored chunks, and unread the remainder if any
-	// else if no '\0' and the buffer is empty, unread all stored chunks
-
-	return JS_TRUE;
-}
-
-DEFINE_FUNCTION( ReadUInt ) {
-		
-	unsigned char data[8]; // int 64
-	
-	size_t size = argc >= 1 ? JSVAL_TO_INT(argv[0]) : sizeof(unsigned int);
-	size_t amount = size;
-	RT_CHECK_CALL( ReadRawAmount(cx, obj, &amount, (char*)data) );
-
-	if ( amount < size ) { // not enough data to complete the requested operation, then unread the few data we read
-
-		RT_CHECK_CALL( UnReadRawChunk(cx, obj, (char*)data, amount) );
-		*rval = JSVAL_VOID;
-		return JS_TRUE;
-	}
-
-	switch (size) {
-		case sizeof(unsigned char):
-			*rval = INT_TO_JSVAL( *(unsigned char*)data );
-			break;
-		case sizeof(unsigned short):
-			*rval = INT_TO_JSVAL( *(unsigned short*)data );
-			break;
-		case sizeof(unsigned long): {
-			unsigned long val = *(unsigned long*)data;
-			if ( INT_FITS_IN_JSVAL( val ) )
-				*rval = INT_TO_JSVAL( val );
-			else
-				RT_CHECK_CALL( JS_NewNumberValue(cx, val, rval) );
-			break;
-		}
-		case sizeof(unsigned __int64): {
-			unsigned long val = *((unsigned __int64*)data);
-			if ( INT_FITS_IN_JSVAL( val ) )
-				*rval = INT_TO_JSVAL( val );
-			else
-				RT_CHECK_CALL( JS_NewNumberValue(cx, val, rval) );
-			break;
-		}
-		default:
-			*rval = JSVAL_VOID;
-	}
 	return JS_TRUE;
 }
 
@@ -469,7 +355,7 @@ DEFINE_FUNCTION( Unread ) {
 
 DEFINE_PROPERTY( length ) {
 
-	JS_GetReservedSlot(cx, obj, SLOT_BUFFER_LENGTH, vp );
+	RT_CHECK_CALL( JS_GetReservedSlot(cx, obj, SLOT_BUFFER_LENGTH, vp ) );
 	return JS_TRUE;
 }
 
@@ -484,8 +370,6 @@ CONFIGURE_CLASS
 		FUNCTION(Write)
 		FUNCTION(Unread)
 		FUNCTION(Read)
-		FUNCTION(ReadInt)
-		FUNCTION(ReadUInt)
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
