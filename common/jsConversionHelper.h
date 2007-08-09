@@ -29,7 +29,7 @@ inline JSBool JsvalToSInt8( JSContext *cx, jsval val, char *result, bool *outOfR
 		double d = *JSVAL_TO_DOUBLE(val);
 		*outOfRange = d < CHAR_MIN || d > CHAR_MAX;
 		*result = (signed char)(unsigned char)d;
-	} else if ( JSVAL_IS_STRING( val ) ) {
+	} else if ( JSVAL_IS_STRING( val ) ) { // using system byte order
 		
 		if ( JS_GetStringLength(JSVAL_TO_STRING( val )) < sizeof(char) )
 			return JS_FALSE;
@@ -52,7 +52,7 @@ inline JSBool JsvalToUInt8( JSContext *cx, jsval val, unsigned char *result, boo
 		double d = *JSVAL_TO_DOUBLE(val);
 		*outOfRange = d < 0 || d > UCHAR_MAX;
 		*result = (unsigned char)d;
-	} else if ( JSVAL_IS_STRING( val ) ) {
+	} else if ( JSVAL_IS_STRING( val ) ) { // using system byte order
 		
 		if ( JS_GetStringLength(JSVAL_TO_STRING( val )) < sizeof(unsigned char) )
 			return JS_FALSE;
@@ -78,7 +78,7 @@ inline JSBool JsvalToSInt16( JSContext *cx, jsval val, short *result, bool *outO
 		double d = *JSVAL_TO_DOUBLE(val);
 		*outOfRange = d < SHRT_MIN || d > SHRT_MAX;
 		*result = (signed short)(unsigned short)d;
-	} else if ( JSVAL_IS_STRING( val ) ) {
+	} else if ( JSVAL_IS_STRING( val ) ) { // using system byte order
 		
 		if ( JS_GetStringLength(JSVAL_TO_STRING( val )) < sizeof(short) )
 			return JS_FALSE;
@@ -101,7 +101,7 @@ inline JSBool JsvalToUInt16( JSContext *cx, jsval val, unsigned short *result, b
 		double d = *JSVAL_TO_DOUBLE(val);
 		*outOfRange = d < 0 || d > USHRT_MAX;
 		*result = (unsigned short)d;
-	} else if ( JSVAL_IS_STRING( val ) ) {
+	} else if ( JSVAL_IS_STRING( val ) ) { // using system byte order
 		
 		if ( JS_GetStringLength(JSVAL_TO_STRING( val )) < sizeof(unsigned short) )
 			return JS_FALSE;
@@ -126,7 +126,7 @@ inline JSBool JsvalToSInt32( JSContext *cx, jsval val, long *result, bool *outOf
 		double d = *JSVAL_TO_DOUBLE(val);
 		*outOfRange = d < SHRT_MIN || d > SHRT_MAX;
 		*result = (signed long)(unsigned long)d;
-	} else if ( JSVAL_IS_STRING( val ) ) {
+	} else if ( JSVAL_IS_STRING( val ) ) { // using system byte order
 		
 		if ( JS_GetStringLength(JSVAL_TO_STRING( val )) < sizeof(long) )
 			return JS_FALSE;
@@ -136,7 +136,6 @@ inline JSBool JsvalToSInt32( JSContext *cx, jsval val, long *result, bool *outOf
 		return JS_FALSE;
 	return JS_TRUE;
 }
-
 
 inline JSBool JsvalToUInt32( JSContext *cx, jsval val, unsigned long *result, bool *outOfRange ) {
 	
@@ -150,7 +149,7 @@ inline JSBool JsvalToUInt32( JSContext *cx, jsval val, unsigned long *result, bo
 		double d = *JSVAL_TO_DOUBLE(val);
 		*outOfRange = d < 0 || d > ULONG_MAX;
 		*result = (unsigned long)d;
-	} else if ( JSVAL_IS_STRING( val ) ) {
+	} else if ( JSVAL_IS_STRING( val ) ) { // using system byte order
 		
 		if ( JS_GetStringLength(JSVAL_TO_STRING( val )) < sizeof(unsigned long) )
 			return JS_FALSE;
@@ -161,6 +160,8 @@ inline JSBool JsvalToUInt32( JSContext *cx, jsval val, unsigned long *result, bo
 		return JS_FALSE;
 	return JS_TRUE;
 }
+
+
 
 
 inline JSBool IntArgvToVector( JSContext *cx, int count, const jsval *argv, int *vector ) {

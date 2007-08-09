@@ -138,67 +138,36 @@ DEFINE_FUNCTION( WriteInt ) {
 	else
 		isSigned = false;
 
-/* (TBD)
-	JSVAL_IS_INT( argv[0] )
-
-		JSVAL_IS_DOUBLE(
-	
+	jsval jsvalue = argv[0];
 	unsigned char data[8] = { 0 };
 
-
-
+	bool outOfRange = false;
 
 	switch (size) {
 		case sizeof(char):
-			if ( isSigned ) {
-
-				RT_ASSERT( val >= CHAR_MIN && val <= CHAR_MAX, RT_ERROR_INVALID_RANGE );
-				*(signed char*)data = (signed char)val;
-			} else {
-
-				RT_ASSERT( val >= 0 && val <= UCHAR_MAX, RT_ERROR_INVALID_RANGE );
-				*(unsigned char*)data = (unsigned char)val;
-			}
+			if ( isSigned )
+				RT_CHECK_CALL( JsvalToSInt8(cx, jsvalue, (char*)data, &outOfRange) )
+			else
+				RT_CHECK_CALL( JsvalToUInt8(cx, jsvalue, (unsigned char*)data, &outOfRange) )
 			break;
 		case sizeof(short):
-			if ( isSigned ) {
-
-				RT_ASSERT( val >= SHRT_MIN && val <= SHRT_MAX, RT_ERROR_INVALID_RANGE );
-				*(signed short*)data = (signed short)val;
-			} else {
-				
-				RT_ASSERT( val >= 0 && val <= USHRT_MAX, RT_ERROR_INVALID_RANGE );
-				*(unsigned short*)data = (unsigned short)val;
-			}
+			if ( isSigned )
+				RT_CHECK_CALL( JsvalToSInt16(cx, jsvalue, (short*)data, &outOfRange) )
+			else
+				RT_CHECK_CALL( JsvalToUInt16(cx, jsvalue, (unsigned short*)data, &outOfRange) )
 			break;
 		case sizeof(long):
-			if ( isSigned ) {
-
-				RT_ASSERT( val >= LONG_MIN && val <= LONG_MAX, RT_ERROR_INVALID_RANGE );
-				*(signed long*)data = (signed long)val;
-			} else {
-				
-				RT_ASSERT( val >= 0 && val <= ULONG_MAX, RT_ERROR_INVALID_RANGE );
-				*(unsigned long*)data = (unsigned long)val;
-			}
+			if ( isSigned )
+				RT_CHECK_CALL( JsvalToSInt32(cx, jsvalue, (long*)data, &outOfRange) )
+			else
+				RT_CHECK_CALL( JsvalToUInt32(cx, jsvalue, (unsigned long*)data, &outOfRange) )
 			break;
 		case sizeof(LLONG):
-			if ( isSigned ) {
-
-				RT_ASSERT( val >= LLONG_MIN && val <= LLONG_MAX, RT_ERROR_INVALID_RANGE );
-				*(signed LLONG*)data = (signed LLONG)val;
-			} else {
-				
-				RT_ASSERT( val >= 0 && val <= ULLONG_MAX, RT_ERROR_INVALID_RANGE );
-				*(unsigned LLONG*)data = (unsigned LLONG)val;
-			}
+			// (TBD)
 			break;
 		default:
 			*rval = JSVAL_VOID;
 	}
-
-
-*/
 
 
 	return JS_TRUE;

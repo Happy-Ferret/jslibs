@@ -12,7 +12,7 @@ Print( pack.ReadInt(8), '\n' );
 //Print( pack.ReadString(4), '\n' );
 
 
-Halt();
+//Halt();
 
 Print( '\n * testing IdOf ...\n' );
 

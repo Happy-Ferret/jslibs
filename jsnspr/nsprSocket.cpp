@@ -14,6 +14,8 @@
 
 #include "stdafx.h"
 
+#include <pprio.h> // nspr/include/nspr/private
+
 #include "nsprError.h"
 #include "nsprSocket.h"
 
@@ -61,6 +63,14 @@ DEFINE_FINALIZE() {
 }
 
 
+// FastCGI need descriptor 0: PRInt32 osfd = fd->secret->md.osfd;
+//	  PRFileDesc *fd = PR_AllocFileDesc(0, PR_GetTCPMethods());
+//   ...
+//   PR_FreeFileDesc(PRFileDesc *fd);
+//   -- OR --
+// PR_ImportTCPSocket(0)
+
+
 DEFINE_CONSTRUCTOR() {
 	
 	RT_ASSERT_CONSTRUCTING( &classSocket );
@@ -69,13 +79,24 @@ DEFINE_CONSTRUCTOR() {
 	if ( argc >= 1 )
 		RT_JSVAL_TO_INT32( argv[0], descType );
 
+	bool useOSFD = ( argc >= 2 );
+	PRInt32 osfd;
+	if ( useOSFD )
+		RT_JSVAL_TO_INT32( argv[1], osfd );
+
 	PRFileDesc *fd;
 	switch ( descType ) {
 		case PR_DESC_SOCKET_TCP:
-			fd = PR_NewTCPSocket();
+			if ( useOSFD )
+				fd = PR_ImportTCPSocket(osfd);
+			else
+				fd = PR_NewTCPSocket();
 			break;
 		case PR_DESC_SOCKET_UDP:
-			fd = PR_NewUDPSocket();
+			if ( useOSFD )
+				fd = PR_ImportUDPSocket(osfd);
+			else
+				fd = PR_NewUDPSocket();
 			break;
 		default:
 			REPORT_ERROR( "Invalid socket type." );
@@ -216,7 +237,6 @@ DEFINE_FUNCTION( Listen ) {
 		return ThrowNSPRError( cx, PR_GetError() );
 	return JS_TRUE;
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////
 DEFINE_FUNCTION( Accept ) {

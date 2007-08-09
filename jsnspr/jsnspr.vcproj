@@ -40,7 +40,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				InlineFunctionExpansion="0"
-				AdditionalIncludeDirectories="../nspr/include/nspr"
+				AdditionalIncludeDirectories="../nspr/include/nspr;../nspr/include/nspr/private"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL"
 				DebugInformationFormat="3"
 			/>
@@ -107,7 +107,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="../nspr/include/nspr"
+				AdditionalIncludeDirectories="../nspr/include/nspr;../nspr/include/nspr/private"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL"
 			/>
 			<Tool
