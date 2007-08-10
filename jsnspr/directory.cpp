@@ -15,7 +15,7 @@
 #include "stdafx.h"
 
 #include "nsprError.h"
-#include "nsprDirectory.h"
+#include "directory.h"
 
 BEGIN_CLASS( Directory )
 

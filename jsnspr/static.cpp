@@ -14,8 +14,10 @@
 
 #include "stdafx.h"
 
+#include "static.h"
+
 #include "nsprError.h"
-#include "nsprSocket.h"
+#include "socket.h"
 
 BEGIN_STATIC
 

@@ -17,13 +17,13 @@
 #include <pprio.h> // nspr/include/nspr/private
 
 #include "nsprError.h"
-#include "nsprSocket.h"
+#include "socket.h"
 
 #include <string.h>
 
 #include "../common/jsNativeInterface.h"
 
-#include "nsprFile.h"
+#include "file.h"
 
 static bool NativeInterfaceReadFile( void *pv, unsigned char *buf, unsigned int *amount ) {
 

@@ -13,7 +13,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-#include "nsprEvent.h"
+#include "event.h"
 #include "nsprError.h"
 
 BEGIN_CLASS( Event )

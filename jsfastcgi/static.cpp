@@ -13,6 +13,88 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
+
+#define DLLAPI
+#include "fcgiapp.h"
+
+
+static FCGX_Stream *in, *out, *err;
+static FCGX_ParamArray envp;
+
+BEGIN_STATIC
+
+
+DEFINE_FUNCTION( Accept ) {
+
+	*rval = INT_TO_JSVAL( FCGX_Accept(&in, &out, &err, &envp) );
+	return JS_TRUE;
+}
+
+
+DEFINE_FUNCTION( GetParam ) {
+
+	char *paramName;
+	RT_JSVAL_TO_STRING( argv[0], paramName );
+	char *paramValue = FCGX_GetParam(paramName, envp);
+	if ( paramValue == NULL )
+		*rval = JSVAL_VOID;
+	else
+		*rval = STRING_TO_JSVAL( JS_NewStringCopyZ(cx, paramValue) );
+	return JS_TRUE;
+}
+
+
+DEFINE_FUNCTION( Read ) {
+
+	RT_ASSERT_ARGC( 1 );
+	int len;
+	RT_JSVAL_TO_UINT32( argv[0], len );
+	char* str = (char*)JS_malloc(cx, len + 1);
+	int result = FCGX_GetStr( str, len, in );
+	if ( result = 0 ) {
+		
+		JS_free(cx, str);
+		*rval = STRING_TO_JSVAL( JS_GetEmptyStringValue(cx) );
+		return JS_TRUE;
+	}
+	str[result] = '\0';
+	*rval = STRING_TO_JSVAL( JS_NewString(cx, str, result) );
+	return JS_TRUE;
+}
+
+
+DEFINE_FUNCTION( Write ) {
+
+	char *str;
+	int len;
+	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], str, len );
+	int result = FCGX_PutStr( str, len, out );
+	if ( result >= 0 && result < len ) // returns unwritten data
+		*rval = STRING_TO_JSVAL( JS_NewDependentString(cx, JSVAL_TO_STRING(argv[0]), result, len - result) );
+	else
+		*rval = STRING_TO_JSVAL( JS_GetEmptyStringValue(cx) );
+	return JS_TRUE;
+}
+
+
+CONFIGURE_STATIC
+
+	BEGIN_STATIC_FUNCTION_SPEC
+		FUNCTION( Accept )
+		FUNCTION( GetParam )
+		FUNCTION( Read )
+		FUNCTION( Write )
+	END_STATIC_FUNCTION_SPEC
+
+	BEGIN_STATIC_PROPERTY_SPEC
+	END_STATIC_PROPERTY_SPEC
+
+END_STATIC
+
+
+
+/*
+
 #include <jsobj.h>
 
 #include "global.h"
@@ -67,31 +149,31 @@ DEFINE_FUNCTION( ParseBeginRequestBody ) {
 	return JS_TRUE;
 }
 
-/*
-DEFINE_FUNCTION( ParseEndRequest ) {
 
-	RT_ASSERT_ARGC( 1 );
+//DEFINE_FUNCTION( ParseEndRequest ) {
+//
+//	RT_ASSERT_ARGC( 1 );
+//
+//	JSObject *record;
+//	if ( argc >= 2 ) {
+//		RT_ASSERT_OBJECT(argv[1]);
+//		record = JSVAL_TO_OBJECT(argv[1]);
+//	} else
+//		record = JS_NewObject(cx, NULL, NULL, NULL);
+//	*rval = OBJECT_TO_JSVAL( record );
+//
+//	char *data;
+//	RT_JSVAL_TO_STRING( argv[0], data );
+//
+//	FCGI_EndRequestBody *endRequestBody = (FCGI_EndRequestBody *)data;
+//	unsigned long appStatus = ((endRequestBody->appStatusB3 & 0x7f) << 24) + (endRequestBody->appStatusB2 << 16) + (endRequestBody->appStatusB1 << 8) + endRequestBody->appStatusB0;
+//	jsval appStatusVal;
+//	JS_NewNumberValue(cx, appStatus, &appStatusVal);
+//	JS_DefineProperty(cx, record, "appStatus", appStatusVal, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT);
+//	JS_DefineProperty(cx, record, "protocolStatus", INT_TO_JSVAL( endRequestBody->protocolStatus ), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT);
+//	return JS_TRUE;
+//}
 
-	JSObject *record;
-	if ( argc >= 2 ) {
-		RT_ASSERT_OBJECT(argv[1]);
-		record = JSVAL_TO_OBJECT(argv[1]);
-	} else
-		record = JS_NewObject(cx, NULL, NULL, NULL);
-	*rval = OBJECT_TO_JSVAL( record );
-
-	char *data;
-	RT_JSVAL_TO_STRING( argv[0], data );
-
-	FCGI_EndRequestBody *endRequestBody = (FCGI_EndRequestBody *)data;
-	unsigned long appStatus = ((endRequestBody->appStatusB3 & 0x7f) << 24) + (endRequestBody->appStatusB2 << 16) + (endRequestBody->appStatusB1 << 8) + endRequestBody->appStatusB0;
-	jsval appStatusVal;
-	JS_NewNumberValue(cx, appStatus, &appStatusVal);
-	JS_DefineProperty(cx, record, "appStatus", appStatusVal, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT);
-	JS_DefineProperty(cx, record, "protocolStatus", INT_TO_JSVAL( endRequestBody->protocolStatus ), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT);
-	return JS_TRUE;
-}
-*/
 
 DEFINE_FUNCTION( ParsePairs ) {
 
@@ -391,4 +473,6 @@ DEFINE_FUNCTION( ParseRecord ) {
 
 	return JS_TRUE;
 }
+
+
 */

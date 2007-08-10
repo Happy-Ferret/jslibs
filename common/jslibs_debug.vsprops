@@ -5,27 +5,30 @@
 	Name="jslibs common properties"
 	>
 	<!-- tmp VCCLCompilerTool
-		debug version: RuntimeLibrary="3"
 	
+		Debug Single-threaded (libcd.lib)           | N/A
+		Debug Multithreaded (libcmtd.lib)           | RuntimeLibrary="1"
+		Debug Multithreaded using DLL (msvcrtd.lib) | RuntimeLibrary="3"
 	-->
 	<Tool
 		Name="VCCLCompilerTool"
 		AdditionalIncludeDirectories="..\js\src;..\nspr\include\nspr"
 		PreprocessorDefinitions="JS_THREADSAFE"
 		ExceptionHandling="0"
-		RuntimeLibrary="2"
+		RuntimeLibrary="1"
 	/>
 	
 	<!-- tmp VCLinkerTool
 	
-		IgnoreDefaultLibraryNames="LIBCMT"
-		debug version: IgnoreDefaultLibraryNames="libc.lib, libcmt.lib, msvcrt.lib, libcd.lib, libcmtd.lib"
+		Debug Single-threaded (libcd.lib)           | IgnoreDefaultLibraryNames="libc.lib, libcmt.lib, msvcrt.lib, libcmtd.lib, msvcrtd.lib"
+		Debug Multithreaded (libcmtd.lib)           | IgnoreDefaultLibraryNames="libc.lib, libcmt.lib, msvcrt.lib, libcd.lib, msvcrtd.lib"
+		Debug Multithreaded using DLL (msvcrtd.lib) | IgnoreDefaultLibraryNames="libc.lib, libcmt.lib, msvcrt.lib, libcd.lib, libcmtd.lib"
 	-->
 	<Tool
 		Name="VCLinkerTool"
 		GenerateDebugInformation="true"
 		IgnoreAllDefaultLibraries="false"
-		IgnoreDefaultLibraryNames="libc.lib, libcmt.lib, libcd.lib, libcmtd.lib, msvcrtd.lib"
+		IgnoreDefaultLibraryNames="libc.lib, libcmt.lib, msvcrt.lib, libcd.lib, msvcrtd.lib"
 		AdditionalDependencies="..\js\src\WINNT5.1_DBG.OBJ\js32.lib kernel32.lib $(NoInherit) $(StopEvaluating)"
 	/>
 </VisualStudioPropertySheet>

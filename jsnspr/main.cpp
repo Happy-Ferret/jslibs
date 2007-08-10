@@ -18,11 +18,11 @@
 static const char *_revision = "$Rev$";
 
 #include "nsprError.h"
-#include "nsprFile.h"
-#include "nsprDirectory.h"
-#include "nsprSocket.h"
-#include "nsprEvent.h"
-#include "nsprGlobal.h"
+#include "file.h"
+#include "directory.h"
+#include "socket.h"
+#include "event.h"
+#include "static.h"
 
 DEFINE_UNSAFE_MODE;
 

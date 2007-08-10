@@ -13,26 +13,13 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
+
+
+/*
 #include "fastcgi.h"
-/*
-#include "../common/jsNativeInterface.h"
-GetNativeInterface(cx, JSVAL_TO_OBJECT(argv[0]), NI_READ_RESOURCE, (FunctionPointer*)&desc->read, &desc->pv);
-RT_ASSERT( desc->read != NULL && desc->pv != NULL, "Unable to GetNativeResource." );
-*/
 
+#include "fcgiapp.h"
 
-JSObject *CreateObjectFromPairs( JSContext *cx ) {
-
-
-	return NULL;
-}
-
-/*
-typedef struct State {
-	int bufferLength
-
-} State;
-*/
 
 BEGIN_CLASS( FastCGI )
 
@@ -41,22 +28,26 @@ DEFINE_FINALIZE() {
 
 DEFINE_CONSTRUCTOR() {
 
-
 	RT_ASSERT_CONSTRUCTING(_class);
 	return JS_TRUE;
 }
 
-
-DEFINE_FUNCTION(Send) {
+DEFINE_FUNCTION(Accept) {
 	
-	RT_ASSERT_ARGC(1);
-	unsigned char *buffer = (unsigned char *)JS_GetPrivate(cx, obj);
-
-
-
-
+	
+	return JS_TRUE;
 }
 
+DEFINE_FUNCTION(Finish) {
+	
+	FCGX_Finish();
+	return JS_TRUE;
+}
+
+DEFINE_FUNCTION(Puts) {
+	
+	return JS_TRUE;
+}
 
 
 CONFIGURE_CLASS
@@ -88,3 +79,5 @@ CONFIGURE_CLASS
 //	HAS_RESERVED_SLOTS(1)
 
 END_CLASS
+
+*/

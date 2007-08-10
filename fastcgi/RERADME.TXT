@@ -1,0 +1,21 @@
+FastCGI Specification:
+  http://www.fastcgi.com/devkit/doc/fcgi-spec.html
+
+Download:
+  http://www.fastcgi.com/dist/
+
+in files:
+  src\include\fcgi_stdio.h(28)
+  src\include\fcgiapp.h(27)
+  src\include\fcgio.h(39)
+  src\include\fcgios.h(54)
+  src\libfcgi\fcgi_stdio.c(30)
+  src\libfcgi\fcgiapp.c(47)
+  src\libfcgi\fcgio.cpp(22)
+  src\libfcgi\os_win32.c(32)
+
+replace the string:
+__declspec(dllimport)
+
+with:
+//__declspec(dllimport)

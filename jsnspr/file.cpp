@@ -18,7 +18,7 @@
 
 
 #include "nsprError.h"
-#include "nsprFile.h"
+#include "file.h"
 
 #include "../common/jsNativeInterface.h"
 
