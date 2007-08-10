@@ -4,21 +4,23 @@ FastCGI Specification:
 Download:
   http://www.fastcgi.com/dist/
 
-latest sources:
+Directory structure:
+./src/include
+./src/libfcgi
+...
+
+Latest sources:
   http://fastcgi.com/cvs/
 
-in files:
-  src\include\fcgi_stdio.h(28)
-  src\include\fcgiapp.h(27)
-  src\include\fcgio.h(39)
-  src\include\fcgios.h(54)
-  src\libfcgi\fcgi_stdio.c(30)
-  src\libfcgi\fcgiapp.c(47)
-  src\libfcgi\fcgio.cpp(22)
-  src\libfcgi\os_win32.c(32)
 
-replace the string:
-__declspec(dllimport)
+Todo before compile on windows:
 
-with:
-//__declspec(dllimport)
+1/
+  copy ./src/include/fcgi_config_x86.h ./src/include/fcgi_config.h
+
+2/
+  REPLACE __declspec(dllimport) WITH //__declspec(dllimport) IN FILES:
+    src\libfcgi\fcgiapp.c(47)
+    src\libfcgi\os_win32.c(32)
+
+
