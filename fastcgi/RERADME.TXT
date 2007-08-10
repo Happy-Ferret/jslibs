@@ -4,6 +4,9 @@ FastCGI Specification:
 Download:
   http://www.fastcgi.com/dist/
 
+latest sources:
+  http://fastcgi.com/cvs/
+
 in files:
   src\include\fcgi_stdio.h(28)
   src\include\fcgiapp.h(27)
