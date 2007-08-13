@@ -403,7 +403,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 
 // arguments
 	JSObject *argsObj = JS_NewArrayObject(cx, 0, NULL);
-	RT_HOST_MAIN_ASSERT( argsObj != NULL, "unable to c reate argument array." );
+	RT_HOST_MAIN_ASSERT( argsObj != NULL, "unable to create argument array." );
 
 	jsStatus = JS_DefineProperty(cx, globalObject, NAME_GLOBAL_ARGUMENTS, OBJECT_TO_JSVAL(argsObj), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT);
 	RT_HOST_MAIN_ASSERT( jsStatus == JS_TRUE, "unable to store the argument array." );

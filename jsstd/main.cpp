@@ -14,8 +14,8 @@
 
 #include "stdafx.h"
 
-#define MODULE_NAME "jsstd"
-static const char *_revision = "$Rev$";
+//#define MODULE_NAME "jsstd"
+//static const char *_revision = "$Rev$";
 
 #include "static.h"
 #include "buffer.h"
@@ -24,16 +24,18 @@ static const char *_revision = "$Rev$";
 
 DEFINE_UNSAFE_MODE;
 
+
 extern JSFunction *stdoutFunction;
 JSFunction *stdoutFunction = NULL;
 
+
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
-	JS_DefineProperty(cx, obj, MODULE_NAME "_build", INT_TO_JSVAL(atoi(_revision+6)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ); // 6 is the size of "$Rev: "
+//	JS_DefineProperty(cx, obj, MODULE_NAME "_build", INT_TO_JSVAL(atoi(_revision+6)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ); // 6 is the size of "$Rev: "
 
 // read configuration
 	jsval stdoutFunctionValue = GetConfigurationValue(cx, NAME_CONFIGURATION_STDOUT);
-	RT_ASSERT( stdoutFunctionValue != JSVAL_VOID, "Unable to read stdout function from configuration object." );
+//	RT_ASSERT( stdoutFunctionValue != JSVAL_VOID, "Unable to read stdout function from configuration object." );
 	stdoutFunction = JS_ValueToFunction(cx, stdoutFunctionValue); // returns NULL if the function is not defined
 
 	SET_UNSAFE_MODE( GetConfigurationValue(cx, NAME_CONFIGURATION_UNSAFE_MODE ) == JSVAL_TRUE );

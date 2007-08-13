@@ -25,24 +25,39 @@ BEGIN_STATIC
 
 
 DEFINE_FUNCTION( Accept ) {
-
-	*rval = INT_TO_JSVAL( FCGX_Accept(&in, &out, &err, &envp) );
+	
+	int result = FCGX_Accept(&in, &out, &err, &envp);
+	*rval = INT_TO_JSVAL( result );
 	return JS_TRUE;
 }
 
 
 DEFINE_FUNCTION( GetParam ) {
 
-	char *paramName;
-	RT_JSVAL_TO_STRING( argv[0], paramName );
-	char *paramValue = FCGX_GetParam(paramName, envp);
-	if ( paramValue == NULL )
-		*rval = JSVAL_VOID;
-	else
-		*rval = STRING_TO_JSVAL( JS_NewStringCopyZ(cx, paramValue) );
+	if ( argc >= 1 ) {
+
+		char *paramName;
+		RT_JSVAL_TO_STRING( argv[0], paramName );
+		char *paramValue = FCGX_GetParam(paramName, envp);
+		*rval = paramValue == NULL ? JSVAL_VOID : STRING_TO_JSVAL( JS_NewStringCopyZ(cx, paramValue) );
+	} else {
+
+		JSObject *argsObj = JS_NewObject(cx, NULL, NULL, NULL);
+		RT_ASSERT_ALLOC(argsObj);
+		int index = 0;
+		for ( char** ptr = envp; *ptr; ptr++ ) {
+
+			char *separator = strchr( *ptr, '=' );
+			RT_ASSERT( separator != NULL, "Unable to find the value." );
+			*separator = '\0';
+			JSString *value = JS_NewStringCopyZ(cx, separator + 1);
+			JSBool jsStatus = JS_DefineProperty(cx, argsObj, *ptr, STRING_TO_JSVAL(value), NULL, NULL, JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT);
+			*separator = '=';
+		}
+		*rval = OBJECT_TO_JSVAL(argsObj);
+	}
 	return JS_TRUE;
 }
-
 
 DEFINE_FUNCTION( Read ) {
 
@@ -68,11 +83,35 @@ DEFINE_FUNCTION( Write ) {
 	char *str;
 	int len;
 	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], str, len );
-	int result = FCGX_PutStr( str, len, out );
+	int result = FCGX_PutStr(str, len, out);
 	if ( result >= 0 && result < len ) // returns unwritten data
 		*rval = STRING_TO_JSVAL( JS_NewDependentString(cx, JSVAL_TO_STRING(argv[0]), result, len - result) );
 	else
 		*rval = STRING_TO_JSVAL( JS_GetEmptyStringValue(cx) );
+	return JS_TRUE;
+}
+
+DEFINE_FUNCTION( Flush ) {
+
+	int result = FCGX_FFlush(out);
+	RT_ASSERT( result != -1, "Unable to flush the output stream." );
+	return JS_TRUE;
+}
+
+DEFINE_FUNCTION( Log ) {
+
+	char *str;
+	int len;
+	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], str, len );
+	int result = FCGX_PutStr(str, len, err);
+	RT_ASSERT( result != -1, "Unable to write to the log." );
+	FCGX_FFlush(err);
+	return JS_TRUE;
+}
+
+DEFINE_FUNCTION( ShutdownPending ) {
+
+	FCGX_ShutdownPending();
 	return JS_TRUE;
 }
 
@@ -84,9 +123,13 @@ CONFIGURE_STATIC
 		FUNCTION( GetParam )
 		FUNCTION( Read )
 		FUNCTION( Write )
+		FUNCTION( Flush )
+		FUNCTION( ShutdownPending )
+		FUNCTION( Log )
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC
+//		PROPERTY_READ( params )
 	END_STATIC_PROPERTY_SPEC
 
 END_STATIC

@@ -1,4 +1,7 @@
-#define JS_VERSION 170
+#define JS_HAS_RESERVED_JAVA_KEYWORDS   1
+#define JS_HAS_RESERVED_ECMA_KEYWORDS   1
+
+#define JS_VERSION 180
 
 #define JS_HAS_STR_HTML_HELPERS 0       /* has str.anchor, str.bold, etc. */
 #define JS_HAS_PERL_SUBSTR      1       /* has str.substr */
@@ -7,9 +10,9 @@
 #define JS_HAS_EXPORT_IMPORT    1       /* has export fun; import obj.fun */
 #define JS_HAS_EVAL_THIS_SCOPE  1       /* Math.eval is same as with (Math) */
 #define JS_HAS_SHARP_VARS       1       /* has #n=, #n# for object literals */
-#define JS_HAS_SCRIPT_OBJECT    0       /* has (new Script("x++")).exec() */
+#define JS_HAS_SCRIPT_OBJECT    1       /* has (new Script("x++")).exec() */
 #define JS_HAS_XDR              1       /* has XDR API and internal support */
-#define JS_HAS_XDR_FREEZE_THAW  1      /* has XDR freeze/thaw script methods */
+#define JS_HAS_XDR_FREEZE_THAW  1       /* has XDR freeze/thaw script methods */
 #define JS_HAS_TOSOURCE         1       /* has Object/Array toSource method */
 #define JS_HAS_DEBUGGER_KEYWORD 1       /* has hook for debugger keyword */
 #define JS_HAS_CATCH_GUARD      1       /* has exception handling catch guard */
@@ -25,6 +28,6 @@
 #define JS_HAS_GENERATORS       1       /* has yield in generator function */
 #define JS_HAS_BLOCK_SCOPE      1       /* has block scope via let/arraycomp */
 #define JS_HAS_DESTRUCTURING    1       /* has [a,b] = ... or {p:a,q:b} = ... */
+#define JS_HAS_GENERATOR_EXPRS  1       /* has (expr for (lhs in iterable)) */
+#define JS_HAS_EXPR_CLOSURES    1       /* has function (formals) listexpr */
 
-#define JS_HAS_RESERVED_JAVA_KEYWORDS   1
-#define JS_HAS_RESERVED_ECMA_KEYWORDS   1
