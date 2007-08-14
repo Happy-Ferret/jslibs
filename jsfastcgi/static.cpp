@@ -39,7 +39,13 @@ DEFINE_FUNCTION( GetParam ) {
 		char *paramName;
 		RT_JSVAL_TO_STRING( argv[0], paramName );
 		char *paramValue = FCGX_GetParam(paramName, envp);
-		*rval = paramValue == NULL ? JSVAL_VOID : STRING_TO_JSVAL( JS_NewStringCopyZ(cx, paramValue) );
+		if ( paramValue != NULL ) {
+
+			JSString *jsstr = JS_NewStringCopyZ(cx, paramValue);
+			RT_ASSERT_ALLOC( jsstr );
+			*rval = STRING_TO_JSVAL( jsstr );
+		} else
+			*rval = JSVAL_VOID;
 	} else {
 
 		JSObject *argsObj = JS_NewObject(cx, NULL, NULL, NULL);
@@ -69,11 +75,13 @@ DEFINE_FUNCTION( Read ) {
 	if ( result = 0 ) {
 		
 		JS_free(cx, str);
-		*rval = STRING_TO_JSVAL( JS_GetEmptyStringValue(cx) );
+		*rval = JS_GetEmptyStringValue(cx);
 		return JS_TRUE;
 	}
 	str[result] = '\0';
-	*rval = STRING_TO_JSVAL( JS_NewString(cx, str, result) );
+	JSString *jsstr = JS_NewString(cx, str, result);
+	RT_ASSERT_ALLOC( jsstr );
+	*rval = STRING_TO_JSVAL( jsstr );
 	return JS_TRUE;
 }
 
@@ -84,10 +92,13 @@ DEFINE_FUNCTION( Write ) {
 	int len;
 	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], str, len );
 	int result = FCGX_PutStr(str, len, out);
-	if ( result >= 0 && result < len ) // returns unwritten data
-		*rval = STRING_TO_JSVAL( JS_NewDependentString(cx, JSVAL_TO_STRING(argv[0]), result, len - result) );
-	else
-		*rval = STRING_TO_JSVAL( JS_GetEmptyStringValue(cx) );
+	if ( result >= 0 && result < len ) { // returns unwritten data
+
+		JSString *jsstr = JS_NewDependentString(cx, JSVAL_TO_STRING(argv[0]), result, len - result);
+		RT_ASSERT( jsstr != NULL, "Unable to create the NewDependentString." );
+		*rval = STRING_TO_JSVAL( jsstr );
+	} else
+		*rval = JS_GetEmptyStringValue(cx);
 	return JS_TRUE;
 }
 
@@ -116,6 +127,96 @@ DEFINE_FUNCTION( ShutdownPending ) {
 }
 
 
+DEFINE_FUNCTION( URLEncode ) {
+
+	RT_ASSERT_ARGC( 1 );
+	static unsigned char hex[] = "0123456789ABCDEF";
+	char *src;
+	int srcLen;
+	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], src, srcLen );
+	char *dest = (char *)JS_malloc(cx, 3 * srcLen + 1);
+	RT_ASSERT_ALLOC( dest );
+
+	char *it, *it1;
+	for ( it = src, it1 = dest; it < src + srcLen; it++ )
+		if ( *it == ' ' )
+			*(it1++) = '+';
+		else
+			if ( (*it < '0' && *it != '-' && *it != '.') || (*it < 'A' && *it > '9') || (*it > 'Z' && *it < 'a' && *it != '_') || (*it > 'z') ) {
+
+				*(it1++) = '%';
+				*(it1++) = hex[ *it >> 4 ];
+				*(it1++) = hex[ *it & 0x0F ];
+			} else
+				*(it1++) = *it;
+
+	*it1 = '\0';
+	*rval = STRING_TO_JSVAL( JS_NewString(cx, dest, it1-dest ) ); // do not include the '\0' in the string length
+	return JS_TRUE;
+}
+
+
+
+DEFINE_FUNCTION( URLDecode ) {
+
+	RT_ASSERT_ARGC( 1 );
+	char *src;
+	int srcLen;
+	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], src, srcLen );
+	char *dest = (char *)JS_malloc(cx, srcLen + 1);
+	RT_ASSERT_ALLOC( dest );
+
+	char *it, *it1;
+	for ( it = src, it1 = dest; it < src + srcLen; it++ )
+
+		if ( *it == '+' )
+			*(it1++) = ' ';
+		else
+			if ( *it == '%' ) {
+				
+				if ( it + 3 > src + srcLen ) // %XX is 3 chars length
+					goto decoding_error;
+
+				it++;
+				char c;
+				if ( *it >= '0' && *it <= '9' )
+					c = (*it - '0') << 4;
+				else
+					if ( *it >= 'A' && *it <= 'F' )
+						c = (*it - ('A'-10)) << 4;
+					else
+						if ( *it >= 'a' && *it <= 'f' )
+							c = (*it - ('a'-10)) << 4;
+						else
+							goto decoding_error;
+
+				it++;
+				if ( *it >= '0' && *it <= '9' )
+					c |= *it - '0';
+				else
+					if ( *it >= 'A' && *it <= 'F' )
+						c |= *it - ('A'-10);
+					else
+						if ( *it >= 'a' && *it <= 'f' )
+							c |= *it - ('a'-10);
+						else
+							goto decoding_error;
+
+				*(it1++) = c;
+			} else
+				*(it1++) = *it;
+
+	*it1 = '\0';
+	*rval = STRING_TO_JSVAL( JS_NewString(cx, dest, it1-dest ) ); // do not include the '\0' in the string length
+	return JS_TRUE;
+
+decoding_error:
+	JS_free(cx, dest);
+	*rval = JSVAL_VOID;
+	return JS_TRUE;
+}
+
+
 CONFIGURE_STATIC
 
 	BEGIN_STATIC_FUNCTION_SPEC
@@ -126,6 +227,10 @@ CONFIGURE_STATIC
 		FUNCTION( Flush )
 		FUNCTION( ShutdownPending )
 		FUNCTION( Log )
+
+		FUNCTION( URLEncode )
+		FUNCTION( URLDecode )
+
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC

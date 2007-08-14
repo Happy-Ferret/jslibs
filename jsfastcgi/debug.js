@@ -1,42 +1,8 @@
+LoadModule('jsstd');
 LoadModule('jsfastcgi');
 
-var cgiVariables = [
-"SERVER_SOFTWARE",
-"SERVER_NAME",
-"GATEWAY_INTERFACE",
-"SERVER_PROTOCOL",
-"SERVER_PORT",
-"REQUEST_METHOD",
-"PATH_INFO",
-"PATH_TRANSLATED",
-"SCRIPT_NAME",
-"QUERY_STRING",
-"REMOTE_HOST",
-"REMOTE_ADDR",
-"AUTH_TYPE",
-"REMOTE_USER",
-"REMOTE_IDENT",
-"CONTENT_TYPE",
-"CONTENT_LENGTH" ];
+Print( URLDecode( 'a+a+a+a' ), '\n' );
 
-
-while (Accept() >= 0) {
-
-	Write( "Content-type: text/plain\r\n\r\n" ); // cgi response: http://www.ietf.org/rfc/rfc3875
-
-	Write('CGI/1.1 variables:\n');
-	for ( var i in cgiVariables )
-		Write( '    ' + cgiVariables[i] + ' = ' + GetParam(cgiVariables[i]) + '\n' );
-	Write('HTTP_* variables:\n');
-	Write( '    ' + 'HTTP_USER_AGENT = ' + GetParam('HTTP_USER_AGENT') + '\n' );
-
-	Write('Data:\n');
-	var str;
-	Write('[');
-	while ( str = Read(1024) )
-		Write( str );
-	Write(']');
-}
 
 
 /*

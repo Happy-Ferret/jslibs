@@ -2,11 +2,15 @@ LoadModule('jsnspr');
 LoadModule('jsstd');
 LoadModule('jsfastcgi');
 
-while (Accept() >= 0) {
-
+while ( Accept() >= 0 ) {
+	
 	try {
-		var res = Exec( GetParam('SCRIPT_FILENAME') );
+	
+		Exec(GetParam('SCRIPT_FILENAME'));
 	} catch(ex) {
-		Log( ex.line );
+	
+		var errorMessage = ex.name + ': ' + ex.message + ' (' + ex.fileName + ':' + ex.lineNumber + ')';
+		Log( errorMessage );
+		Write( 'Status: 500\r\n\r\n' + errorMessage );
 	}
 }
