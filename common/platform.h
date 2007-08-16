@@ -61,6 +61,7 @@
 
 	#define DLL_EXT ".so"
 	#define PATH_SEPARATOR '/'
+	#define MAX_PATH PATH_MAX
 	#define LLONG long long
 
 	#ifdef HAVE_GCCVISIBILITYPATCH

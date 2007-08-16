@@ -166,7 +166,7 @@ JSBool WriteRawData( JSContext *cx, JSObject *obj, size_t amount, char *str ) {
 	RT_CHECK_CALL( JS_AddRoot(cx, pNewStr) );
 	QueuePush( queue, pNewStr );
 	RT_CHECK_CALL( BufferLengthAdd(cx, obj, amount) );
-
+	return JS_TRUE;
 }
 
 

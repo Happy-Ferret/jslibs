@@ -15,7 +15,8 @@ cd .\src
 set XCFLAGS=/DWINVER=0x500 /D_WIN32_WINNT=0x500 /O2 /Ox /Oi /Ot /Oy /GL /GS- /arch:SSE /D_CRT_SECURE_NO_DEPRECATE=1 /MT
 	rem /D_NSPR_BUILD_
 	rem set OTHER_LIBS=wsock32.lib ../../nspr/lib/libnspr4_s.lib
-make -f Makefile.ref clean all BUILD_OPT=1   JS_THREADSAFE=1 JS_DIST=../../nspr 
+make -f Makefile.ref clean all BUILD_OPT=1
+rem  JS_THREADSAFE=1 JS_DIST=../../nspr 
 
 set PATH=%prevPath%
 cd /D %prevDir%

@@ -9,11 +9,12 @@
 		Single-threaded (libc.lib)                  | N/A
 		Multithreaded (libcmt.lib)                  | RuntimeLibrary="0"
 		Multithreaded using DLL (msvcrt.lib)        | RuntimeLibrary="2"
+
+		PreprocessorDefinitions="JS_THREADSAFE"
 	-->
 	<Tool
 		Name="VCCLCompilerTool"
 		AdditionalIncludeDirectories="..\js\src;..\nspr\include\nspr"
-		PreprocessorDefinitions="JS_THREADSAFE"
 		ExceptionHandling="0"
 		RuntimeLibrary="0"
 	/>

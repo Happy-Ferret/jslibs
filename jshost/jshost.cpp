@@ -16,7 +16,9 @@
 
 #include "../common/platform.h"
 
-#include <stdio.h>
+#include <fcntl.h>
+#include <io.h>
+//#include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -38,10 +40,6 @@
 #include "../common/jsConfiguration.h"
 #include "../moduleManager/moduleManager.h"
 
-#ifdef XP_UNIX
-	#define MAX_PATH PATH_MAX
-#endif
-
 
 // to be used in the main() function only
 #define RT_HOST_MAIN_ASSERT( condition, errorMessage ) \
@@ -51,12 +49,12 @@ JSBool unsafeMode = JS_FALSE;
 
 int consoleStdOut( JSContext *, const char *data, int length ) {
 
-	return fwrite( data, 1, length, stdout );
+	return write( 1, data, length );
 }
 
 int consoleStdErr( JSContext *, const char *data, int length ) {
 
-	return fwrite( data, 1, length, stderr );
+	return write( 2, data, length );
 }
 
 // function copied from mozilla/js/src/js.c
@@ -299,10 +297,14 @@ static JSBool stdoutFunction(JSContext *cx, JSObject *obj, uintN argc, jsval *ar
 }
 
 
+JSScript *script = NULL;
+JSRuntime *rt = NULL;
+JSContext *cx = NULL;
+
+void Finalize(void);
+
 int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[]) for UNICODE
 
-	JSRuntime *rt;
-	JSContext *cx = NULL;
 	JSObject *globalObject;
 
 	unsigned long maxbytes = 16L * 1024L * 1024L;
@@ -465,9 +467,12 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	*/
 
 // compile & executes the script
-	JSScript *script = JS_CompileFile( cx, globalObject, scriptName );
+	script = JS_CompileFile( cx, globalObject, scriptName );
 //  JSScript *script = LoadScript( cx, globalObject, scriptName, saveCompiledScripts );
 	RT_HOST_MAIN_ASSERT( script != NULL, "unable to compile the script." );
+
+	int atexitStatus = atexit(Finalize); // returns the value 0 if successful; otherwise the value -1 is returned and the global variable errno is set to indicate the error.
+	RT_HOST_MAIN_ASSERT( atexitStatus == 0, "unable to setup exit." );
 
 	// You need to protect a JSScript (via a rooted script object) if and only if a garbage collection can occur between compilation and the start of execution.
 	jsval rval;
@@ -476,12 +481,8 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	// if jsStatus != JS_TRUE, an error has been throw while the execution, so there is no need to throw another error
 
 //		printf( "Last executed line %s:%d", script->filename, JS_PCToLineNumber( cx, script, script->code ) ); // if it right ?
-	// (TBD) enhance this
+// (TBD) enhance this
 
-  JS_DestroyScript( cx, script );
-
-//  printf("script result: %s\n", JS_GetStringBytes(JS_ValueToString(cx, rval)));
-	
   int exitValue;
   if ( jsStatus == JS_TRUE )
 	  if ( JSVAL_IS_INT(rval) && JSVAL_TO_INT(rval) >= 0 )
@@ -491,11 +492,23 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
   else
 	  exitValue = -1;
 
+	exit(exitValue);
+}
+
+
+void Finalize() { // called by the system on exit(), or at the end of the main.
+
+// because atexit(Terminate); is  set just before the JS_ExecuteScript, rt, cx, script ARE defined. 
+
 #ifdef JS_THREADSAFE
     JS_EndRequest(cx);
 #endif
 
-	 ModuleReleaseAll(cx);
+	JS_DestroyScript(cx, script);
+
+//  printf("script result: %s\n", JS_GetStringBytes(JS_ValueToString(cx, rval)));
+	
+	ModuleReleaseAll(cx);
 
 //	JS_GC(cx); // try to break linked objects
 // (TBD) don't
@@ -513,8 +526,11 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 // Beware: because JS engine allocate memory from the DLL, all memory must be disallocated before releasing the DLL
 	// free used modules
   ModuleFreeAll();
-  return exitValue;
+	// (TBD) make rt, cx, script, ... global and finish them 
+
 }
+
+
 
 
 /*

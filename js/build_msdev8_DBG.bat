@@ -19,7 +19,8 @@ set XCFLAGS=/DWINVER=0x500 /D_WIN32_WINNT=0x500 /D_CRT_SECURE_NO_DEPRECATE=1 /MT
 	
 	rem set OTHER_LIBS=/NODEFAULTLIB:../../nspr/win32/dist/lib/libnspr4.lib
 
-make -f Makefile.ref clean all   JS_THREADSAFE=1 JS_DIST=../../nspr
+make -f Makefile.ref clean all
+rem  JS_THREADSAFE=1 JS_DIST=../../nspr
 
 set PATH=%prevPath%
 cd /D %prevDir%

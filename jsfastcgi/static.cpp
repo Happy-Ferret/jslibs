@@ -14,23 +14,52 @@
 
 #include "stdafx.h"
 
+#include <stdlib.h>
+#include <setjmp.h>
+
 #define DLLAPI
-#include "fcgiapp.h"
+#include <fcgiapp.h>
 
 
-static FCGX_Stream *in, *out, *err;
-static FCGX_ParamArray envp;
+//static FCGX_Stream *_in, *_out, *_err;
+//static FCGX_ParamArray _request.envp;
+static FCGX_Request _request;
+
+//static jmp_buf env;
+
+static bool _initDone = false;
+
+void onExit() {
+	
+	FCGX_ShutdownPending();
+	FCGX_Free(&_request, 1);
+
+//	longjmp(env,0); // if the value argument of longjmp is 0, setjmp returns 1.
+}
+
 
 BEGIN_STATIC
 
 
 DEFINE_FUNCTION( Accept ) {
+
+	if (!_initDone) {
 	
-	int result = FCGX_Accept(&in, &out, &err, &envp);
-	*rval = INT_TO_JSVAL( result );
+		int status = FCGX_Init(); // (TBD) do it only once
+		RT_ASSERT( status == 0, "Unable to initialize FCGX." );
+		FCGX_InitRequest(&_request, 0, FCGI_FAIL_ACCEPT_ON_INTR); // doc: fail_on_intr is ignored in the Win lib.
+		status = atexit(&onExit);
+		RT_ASSERT( status == 0, "Unable to setup fcgi exit.");
+		_initDone = true;
+	}
+
+//	if ( setjmp(env) == 0 ) {
+//	}
+
+	int rc = FCGX_Accept_r(&_request);
+	*rval = INT_TO_JSVAL( rc );
 	return JS_TRUE;
 }
-
 
 DEFINE_FUNCTION( GetParam ) {
 
@@ -38,7 +67,7 @@ DEFINE_FUNCTION( GetParam ) {
 
 		char *paramName;
 		RT_JSVAL_TO_STRING( argv[0], paramName );
-		char *paramValue = FCGX_GetParam(paramName, envp);
+		char *paramValue = FCGX_GetParam(paramName, _request.envp);
 		if ( paramValue != NULL ) {
 
 			JSString *jsstr = JS_NewStringCopyZ(cx, paramValue);
@@ -47,11 +76,12 @@ DEFINE_FUNCTION( GetParam ) {
 		} else
 			*rval = JSVAL_VOID;
 	} else {
-
+		
+		// (TDB) use FCGX_ParamArray instead ?
 		JSObject *argsObj = JS_NewObject(cx, NULL, NULL, NULL);
 		RT_ASSERT_ALLOC(argsObj);
 		int index = 0;
-		for ( char** ptr = envp; *ptr; ptr++ ) {
+		for ( char** ptr = _request.envp; *ptr; ptr++ ) {
 
 			char *separator = strchr( *ptr, '=' );
 			RT_ASSERT( separator != NULL, "Unable to find the value." );
@@ -71,7 +101,7 @@ DEFINE_FUNCTION( Read ) {
 	int len;
 	RT_JSVAL_TO_UINT32( argv[0], len );
 	char* str = (char*)JS_malloc(cx, len + 1);
-	int result = FCGX_GetStr( str, len, in );
+	int result = FCGX_GetStr( str, len, _request.in );
 	if ( result = 0 ) {
 		
 		JS_free(cx, str);
@@ -85,13 +115,12 @@ DEFINE_FUNCTION( Read ) {
 	return JS_TRUE;
 }
 
-
 DEFINE_FUNCTION( Write ) {
 
 	char *str;
 	int len;
 	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], str, len );
-	int result = FCGX_PutStr(str, len, out);
+	int result = FCGX_PutStr(str, len, _request.out);
 	if ( result >= 0 && result < len ) { // returns unwritten data
 
 		JSString *jsstr = JS_NewDependentString(cx, JSVAL_TO_STRING(argv[0]), result, len - result);
@@ -104,7 +133,7 @@ DEFINE_FUNCTION( Write ) {
 
 DEFINE_FUNCTION( Flush ) {
 
-	int result = FCGX_FFlush(out);
+	int result = FCGX_FFlush(_request.out);
 	RT_ASSERT( result != -1, "Unable to flush the output stream." );
 	return JS_TRUE;
 }
@@ -114,9 +143,9 @@ DEFINE_FUNCTION( Log ) {
 	char *str;
 	int len;
 	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], str, len );
-	int result = FCGX_PutStr(str, len, err);
+	int result = FCGX_PutStr(str, len, _request.err);
 	RT_ASSERT( result != -1, "Unable to write to the log." );
-	FCGX_FFlush(err);
+	FCGX_FFlush(_request.err);
 	return JS_TRUE;
 }
 
@@ -125,7 +154,6 @@ DEFINE_FUNCTION( ShutdownPending ) {
 	FCGX_ShutdownPending();
 	return JS_TRUE;
 }
-
 
 DEFINE_FUNCTION( URLEncode ) {
 
