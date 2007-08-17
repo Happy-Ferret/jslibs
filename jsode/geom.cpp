@@ -226,6 +226,7 @@ CONFIGURE_CLASS
 //		PROPERTY( offsetPosition )
 	END_PROPERTY_SPEC
 
+	// (TBD) explain why HAS_PRIVATE is needed in Geom
 	HAS_PRIVATE // needed because Finalize use JS_GetPrivate
 
 END_CLASS
