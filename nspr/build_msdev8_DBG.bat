@@ -18,7 +18,8 @@ make distclean
 
 	rem --enable-win32-target=WIN95 --enable-debug-rtl  --with-dist-prefix=..
 	
-sh ../nsprpub/configure --enable-win32-target=WIN95 --enable-debug-rtl
+sh ../nsprpub/configure --enable-win32-target=WIN95
+	rem --enable-debug-rtl
 
 make clean all
 
