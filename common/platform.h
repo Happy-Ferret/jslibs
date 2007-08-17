@@ -30,6 +30,9 @@
 
 
 #if defined(_WINDOWS) || defined(WIN32) // Windows platform
+
+// (TBD) #include <windows.h> here ?
+
 	#define XP_WIN
 
 	#define DLL_EXT ".dll"
