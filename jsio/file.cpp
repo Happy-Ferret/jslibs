@@ -23,8 +23,11 @@ DEFINE_FINALIZE() {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
 	if ( fd != NULL ) {
-
-		PR_Close( fd );
+		
+		jsval imported;
+		JS_GetReservedSlot(cx, obj, SLOT_JSIO_DESCRIPTOR_IMPORTED, &imported);
+		if ( imported != JSVAL_TRUE ) // Descriptor was inported, then do not close it
+			PR_Close( fd );
 		JS_SetPrivate( cx, obj, NULL );
 	}
 }
@@ -33,7 +36,7 @@ DEFINE_FINALIZE() {
 DEFINE_CONSTRUCTOR() {
 
 	RT_ASSERT_CONSTRUCTING(_class);
-	RT_ASSERT_ARGC(1);
+	RT_ASSERT_ARGC(2);
 
 	char *fileName;
 	RT_JSVAL_TO_STRING( argv[0], fileName );
@@ -59,6 +62,7 @@ CONFIGURE_CLASS
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE
 	HAS_PROTOTYPE( prototypeDescriptor )
+	HAS_RESERVED_SLOTS( 1 )
 	HAS_PRIVATE
 
 	BEGIN_CONST_DOUBLE_SPEC

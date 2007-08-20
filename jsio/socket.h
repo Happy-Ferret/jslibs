@@ -12,6 +12,5 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-DECLARE_CLASS( Descriptor )
+DECLARE_CLASS( Socket )
 
-#define SLOT_JSIO_DESCRIPTOR_IMPORTED 0

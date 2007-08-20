@@ -12,6 +12,39 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-DECLARE_CLASS( Descriptor )
+#include "stdafx.h"
 
-#define SLOT_JSIO_DESCRIPTOR_IMPORTED 0
+#include <pprio.h> // nspr/include/nspr/private
+
+#include "error.h"
+#include "descriptor.h"
+#include "file.h"
+
+BEGIN_CLASS( Socket )
+
+
+DEFINE_FINALIZE() {
+}
+
+DEFINE_CONSTRUCTOR() {
+
+	return JS_TRUE;
+}
+
+
+CONFIGURE_CLASS
+	
+	HAS_CONSTRUCTOR
+	HAS_PROTOTYPE( prototypeDescriptor )
+	HAS_PRIVATE
+	HAS_RESERVED_SLOTS( 1 )
+
+	BEGIN_FUNCTION_SPEC
+//		FUNCTION( Accept )
+	END_FUNCTION_SPEC
+
+	BEGIN_PROPERTY_SPEC
+//		PROPERTY_READ( xxx )
+	END_PROPERTY_SPEC
+
+END_CLASS
