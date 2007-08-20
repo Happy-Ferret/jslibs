@@ -301,6 +301,7 @@ JSScript *script = NULL;
 JSRuntime *rt = NULL;
 JSContext *cx = NULL;
 
+//bool _finalized = false;
 void Finalize(void);
 
 int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[]) for UNICODE
@@ -493,12 +494,19 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	  exitValue = -1;
 
 	exit(exitValue);
+
+
+//  Finalize();
+//  return exitValue;
 }
 
 
 void Finalize() { // called by the system on exit(), or at the end of the main.
 
-// because atexit(Terminate); is  set just before the JS_ExecuteScript, rt, cx, script ARE defined. 
+//	if ( _finalized )
+//		return;
+
+	// because atexit(Terminate); is  set just before the JS_ExecuteScript, rt, cx, script ARE defined. 
 
 #ifdef JS_THREADSAFE
     JS_EndRequest(cx);
@@ -514,20 +522,21 @@ void Finalize() { // called by the system on exit(), or at the end of the main.
 // (TBD) don't
 
 // cleanup
-  // For each context you've created
-  JS_DestroyContext(cx); // (TBD) is JS_DestroyContextNoGC faster ?
+	// For each context you've created
+	JS_DestroyContext(cx); // (TBD) is JS_DestroyContextNoGC faster ?
+	
+	// For each runtime
+	JS_DestroyRuntime(rt);
 
-  // For each runtime
-  JS_DestroyRuntime(rt);
-
-  // And finally
-  JS_ShutDown();
+	// And finally
+	JS_ShutDown();
 
 // Beware: because JS engine allocate memory from the DLL, all memory must be disallocated before releasing the DLL
 	// free used modules
-  ModuleFreeAll();
+	ModuleFreeAll();
 	// (TBD) make rt, cx, script, ... global and finish them 
 
+//	_finalized = true;
 }
 
 

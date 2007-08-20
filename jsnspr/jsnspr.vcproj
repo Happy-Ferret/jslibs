@@ -40,7 +40,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				InlineFunctionExpansion="0"
-				AdditionalIncludeDirectories="../nspr/include/nspr;../nspr/include/nspr/private"
+				AdditionalIncludeDirectories="../nspr/win32/dist/include/nspr;../nspr/win32/dist/include/nspr/private"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL"
 				DebugInformationFormat="3"
 			/>
@@ -55,7 +55,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="../nspr/lib/libnspr4.lib"
+				AdditionalDependencies="../nspr/win32/dist/lib/nspr4.lib"
 				GenerateDebugInformation="true"
 			/>
 			<Tool
@@ -107,7 +107,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="../nspr/include/nspr;../nspr/include/nspr/private"
+				AdditionalIncludeDirectories="../nspr/win32/dist/include/nspr;../nspr/win32/dist/include/nspr/private"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL"
 			/>
 			<Tool
@@ -121,7 +121,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="../nspr/lib/libnspr4.lib"
+				AdditionalDependencies="../nspr/win32/dist/lib/nspr4.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"

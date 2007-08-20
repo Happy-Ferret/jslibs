@@ -21,6 +21,8 @@ make distclean
 sh ../nsprpub/configure --enable-win32-target=WIN95
 	rem --enable-debug-rtl
 
+set XCFLAGS=/MT
+
 make clean all
 
 
