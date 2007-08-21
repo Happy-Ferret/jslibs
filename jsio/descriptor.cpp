@@ -247,64 +247,36 @@ DEFINE_PROPERTY( type ) {
 }
 
 
-DEFINE_FUNCTION( ImportFile ) {
+DEFINE_FUNCTION( Import ) {
 
-	RT_ASSERT_ARGC(1);
+	RT_ASSERT_ARGC(2);
 	PRInt32 osfd;
 	RT_JSVAL_TO_INT32( argv[0], osfd );
-	JSObject *descriptorObject = JS_NewObject(cx, &classFile, NULL, NULL); // (TBD) chack if proto is needed !
-	RT_ASSERT_ALLOC( descriptorObject ); 
-	PRFileDesc *fd = PR_ImportFile(osfd);
+	int tmp;
+	RT_JSVAL_TO_INT32( argv[1], tmp );
+	PRDescType type = (PRDescType)tmp;
+	PRFileDesc *fd;
+	switch (type) {
+		case PR_DESC_FILE:
+			fd = PR_ImportFile(osfd);
+			break;
+		case PR_DESC_SOCKET_TCP:
+			fd = PR_ImportTCPSocket(osfd);
+			break;
+		case PR_DESC_SOCKET_UDP:
+			fd = PR_ImportUDPSocket(osfd);
+			break;
+		case PR_DESC_PIPE:
+			fd = PR_ImportPipe(osfd);
+			break;
+		default:
+			REPORT_ERROR("Invalid descriptor type.");
+	}
 	if ( fd == NULL )
 		return ThrowIoError( cx, PR_GetError() );
-	RT_CHECK_CALL( JS_SetPrivate(cx, descriptorObject, (void*)fd) );
-	RT_CHECK_CALL( JS_SetReservedSlot(cx, descriptorObject, SLOT_JSIO_DESCRIPTOR_IMPORTED, JSVAL_TRUE) );
-	return JS_TRUE;
-}
 
-
-DEFINE_FUNCTION( ImportPipe ) {
-
-	RT_ASSERT_ARGC(1);
-	PRInt32 osfd;
-	RT_JSVAL_TO_INT32( argv[0], osfd );
 	JSObject *descriptorObject = JS_NewObject(cx, &classFile, NULL, NULL); // (TBD) chack if proto is needed !
 	RT_ASSERT_ALLOC( descriptorObject ); 
-	PRFileDesc *fd = PR_ImportPipe(osfd);
-	if ( fd == NULL )
-		return ThrowIoError( cx, PR_GetError() );
-	RT_CHECK_CALL( JS_SetPrivate(cx, descriptorObject, (void*)fd) );
-	RT_CHECK_CALL( JS_SetReservedSlot(cx, descriptorObject, SLOT_JSIO_DESCRIPTOR_IMPORTED, JSVAL_TRUE) );
-	return JS_TRUE;
-}
-
-
-DEFINE_FUNCTION( ImportTCPSocket ) {
-
-	RT_ASSERT_ARGC(1);
-	PRInt32 osfd;
-	RT_JSVAL_TO_INT32( argv[0], osfd );
-	JSObject *descriptorObject = JS_NewObject(cx, &classFile, NULL, NULL); // (TBD) chack if proto is needed !
-	RT_ASSERT_ALLOC( descriptorObject ); 
-	PRFileDesc *fd = PR_ImportTCPSocket(osfd);
-	if ( fd == NULL )
-		return ThrowIoError( cx, PR_GetError() );
-	RT_CHECK_CALL( JS_SetPrivate(cx, descriptorObject, (void*)fd) );
-	RT_CHECK_CALL( JS_SetReservedSlot(cx, descriptorObject, SLOT_JSIO_DESCRIPTOR_IMPORTED, JSVAL_TRUE) );
-	return JS_TRUE;
-}
-
-
-DEFINE_FUNCTION( ImportUDPSocket ) {
-
-	RT_ASSERT_ARGC(1);
-	PRInt32 osfd;
-	RT_JSVAL_TO_INT32( argv[0], osfd );
-	JSObject *descriptorObject = JS_NewObject(cx, &classFile, NULL, NULL); // (TBD) chack if proto is needed !
-	RT_ASSERT_ALLOC( descriptorObject ); 
-	PRFileDesc *fd = PR_ImportUDPSocket(osfd);
-	if ( fd == NULL )
-		return ThrowIoError( cx, PR_GetError() );
 	RT_CHECK_CALL( JS_SetPrivate(cx, descriptorObject, (void*)fd) );
 	RT_CHECK_CALL( JS_SetReservedSlot(cx, descriptorObject, SLOT_JSIO_DESCRIPTOR_IMPORTED, JSVAL_TRUE) );
 	return JS_TRUE;
@@ -325,12 +297,7 @@ CONFIGURE_CLASS
 	END_PROPERTY_SPEC
 
 	BEGIN_STATIC_FUNCTION_SPEC
-		FUNCTION( ImportFile )
-		FUNCTION( ImportPipe )
-		FUNCTION( ImportTCPSocket )
-		FUNCTION( ImportUDPSocket )
-		FUNCTION( Read )
-		FUNCTION( Write )
+		FUNCTION( Import )
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_CONST_DOUBLE_SPEC
@@ -338,6 +305,7 @@ CONFIGURE_CLASS
 		CONST_DOUBLE( DESC_SOCKET_TCP	,PR_DESC_SOCKET_TCP )
 		CONST_DOUBLE( DESC_SOCKET_UDP ,PR_DESC_SOCKET_UDP )
 		CONST_DOUBLE( DESC_LAYERED	   ,PR_DESC_LAYERED )
+		CONST_DOUBLE( DESC_PIPE       ,PR_DESC_PIPE )
 	END_CONST_DOUBLE_SPEC
 
 END_CLASS
