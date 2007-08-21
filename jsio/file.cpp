@@ -86,7 +86,7 @@ DEFINE_FUNCTION( Seek ) {
 		whence = PR_SEEK_CUR; // default is arg is missing
 
 	PRInt64 ret = PR_Seek64( fd, offset, whence );
-	if ( ret == PR_FAILURE )
+	if ( ret == -1 )
 		return ThrowIoError( cx, PR_GetError() );
 
 	jsdouble newLocation = ret;
@@ -305,7 +305,7 @@ DEFINE_PROPERTY( standard ) {
 		int32 i;
 		JS_ValueToInt32( cx, id, &i );
 
-		JSObject *obj = JS_NewObject(cx, &classFile, NULL, NULL ); // (TBD) should use classDescriptor as proto ???
+		JSObject *obj = JS_NewObject(cx, &classFile, NULL, NULL ); // no need to use classDescriptor as proto.
 		*vp = OBJECT_TO_JSVAL( obj ); // GC protection ?
 
 		PRFileDesc *fd = PR_GetSpecialFD( (PRSpecialFD)i); // beware: cast !

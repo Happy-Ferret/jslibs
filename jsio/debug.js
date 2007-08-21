@@ -3,10 +3,18 @@ LoadModule('jsio');
 
 try {
 
-var f = new File('test.txt');
-f.Open( File.RDWR | File.CREATE_FILE );
-f.Write(new Date());
-f.Close();
+
+Print('\n * testing stdout \n');
+
+	var f = File.stdout;
+	f.Write(new Date());
+
+Print('\n * testing simple file write \n');
+
+	var f = new File('test.txt');
+	f.Open( File.RDWR | File.CREATE_FILE );
+	f.Write(new Date());
+	f.Close();
 
 Print('\n * testing TCP socket \n');
 

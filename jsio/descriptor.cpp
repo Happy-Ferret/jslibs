@@ -225,6 +225,7 @@ DEFINE_FUNCTION( Write ) {
 	return JS_TRUE;
 }
 
+
 DEFINE_PROPERTY( available ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
