@@ -12,8 +12,4 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-DECLARE_CLASS( File )
-
-
-#define SLOT_JSIO_FILE_NAME 0
-
+DECLARE_STATIC()

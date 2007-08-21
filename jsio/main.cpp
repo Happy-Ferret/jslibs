@@ -20,6 +20,8 @@ static const char *_revision = "$Rev: 974 $";
 #include "error.h"
 #include "descriptor.h"
 #include "file.h"
+#include "socket.h"
+#include "static.h"
 
 DEFINE_UNSAFE_MODE
 
@@ -31,6 +33,8 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	INIT_CLASS( IoError );
 	INIT_CLASS( Descriptor );
 	INIT_CLASS( File );
+	INIT_CLASS( Socket );
+	INIT_STATIC();
 	return JS_TRUE;
 }
 

@@ -15,3 +15,7 @@
 DECLARE_CLASS( Descriptor )
 
 #define SLOT_JSIO_DESCRIPTOR_IMPORTED 0
+
+void FinalizeDescriptor(JSContext *cx, JSObject *obj);
+
+bool NativeInterfaceReadDescriptor( void *pv, unsigned char *buf, unsigned int *amount );
