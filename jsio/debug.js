@@ -3,6 +3,14 @@ LoadModule('jsio');
 
 try {
 
+var f = File.stdin;
+
+
+	var f = Descriptor.Import(0, Descriptor.DESC_PIPE);
+	Print(f.Read(10));
+
+Halt();	
+	
 
 Print('\n * testing stdout \n');
 

@@ -120,7 +120,9 @@
 
 #define END_CLASS \
 		*_prototype = JS_InitClass(cx, obj, *_parentPrototype, _class, _constructor, 0, _propertySpec, _functionSpec, _staticPropertySpec, _staticFunctionSpec); \
-		if ( _constSpec != NULL ) if ( JS_DefineConstDoubles(cx, JS_GetConstructor(cx, *_prototype), _constSpec) == JS_FALSE ) return JS_FALSE; \
+		if ( _constSpec != NULL ) \
+			if ( JS_DefineConstDoubles(cx, JS_GetConstructor(cx, *_prototype), _constSpec) == JS_FALSE ) \
+				return JS_FALSE; \
 		return JS_TRUE; \
 	} \
 

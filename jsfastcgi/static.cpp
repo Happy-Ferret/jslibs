@@ -14,6 +14,8 @@
 
 #include "stdafx.h"
 
+/*
+
 #include <stdlib.h>
 #include <setjmp.h>
 
@@ -267,13 +269,11 @@ CONFIGURE_STATIC
 
 END_STATIC
 
-
-
-/*
+*/
 
 #include <jsobj.h>
 
-#include "global.h"
+#include "static.h"
 
 #include "fastcgi.h"
 
@@ -351,7 +351,7 @@ DEFINE_FUNCTION( ParseBeginRequestBody ) {
 //}
 
 
-DEFINE_FUNCTION( ParsePairs ) {
+DEFINE_FUNCTION( ParsePairs ) { // arguments: data [, paramObject ]
 
 	RT_ASSERT_ARGC( 1 );
 
@@ -649,6 +649,5 @@ DEFINE_FUNCTION( ParseRecord ) {
 
 	return JS_TRUE;
 }
-
 
 */

@@ -20,10 +20,16 @@
 #include "error.h"
 #include "descriptor.h"
 #include "file.h"
+#include "socket.h"
 
 // open: 	SetNativeInterface(cx, obj, NI_READ_RESOURCE, (FunctionPointer)NativeInterfaceReadFile, fd);
 // close: 	RemoveNativeInterface(cx, obj, NI_READ_RESOURCE );
 
+DEFINE_CONSTRUCTOR() {
+
+	REPORT_ERROR( "This object cannot be construct." ); // but constructor must be defined
+	return JS_TRUE;
+}
 
 bool NativeInterfaceReadDescriptor( void *pv, unsigned char *buf, unsigned int *amount ) {
 
@@ -103,7 +109,6 @@ DEFINE_FUNCTION( Close ) {
 	JS_SetPrivate( cx, obj, NULL );
 	JS_ClearScope( cx, obj ); // help to clear readable, writable, exception
 	RemoveNativeInterface(cx, obj, NI_READ_RESOURCE );
-
 	return JS_TRUE;
 }
 
@@ -141,7 +146,7 @@ JSBool ReadAllToJsval(JSContext *cx, PRFileDesc *fd, jsval *rval ) {
 	int chunkListTotalLength = 32; // initial value (chunks), will evolve at runtime
 	int chunkListContentLength = 0;
 	char **chunkList = (char **)malloc(chunkListTotalLength * sizeof(char*));
-	int currrentReadLength = 1024;
+	int currentReadLength = 1024;
 
 	PRInt32 res;
 	do {
@@ -150,10 +155,10 @@ JSBool ReadAllToJsval(JSContext *cx, PRFileDesc *fd, jsval *rval ) {
 			chunkListTotalLength *= 2;
 			chunkList = (char**)realloc(chunkList, chunkListTotalLength * sizeof(char*));
 		}
-		//	currrentReadLength = currrentReadLength < 16384 ? 2048 + 1024 * chunkListContentLength : 16384; // 2048, 3072, 4096, 5120, ..., 16384
-		char *chunk = (char *)malloc(sizeof(int) + currrentReadLength);  // chunk format: int + data ...
+		//	currentReadLength = currentReadLength < 16384 ? 2048 + 1024 * chunkListContentLength : 16384; // 2048, 3072, 4096, 5120, ..., 16384
+		char *chunk = (char *)malloc(sizeof(int) + currentReadLength);  // chunk format: int + data ...
 		chunkList[chunkListContentLength++] = chunk;
-		res = PR_Read( fd, chunk + sizeof(int), currrentReadLength ); // chunk + sizeof(int) gives the position where the data can be written. Size to read is currrentReadLength
+		res = PR_Read( fd, chunk + sizeof(int), currentReadLength ); // chunk + sizeof(int) gives the position where the data can be written. Size to read is currentReadLength
 		if (res == -1) { // failure. The reason for the failure can be obtained by calling PR_GetError.
 
 			while ( chunkListContentLength )
@@ -164,7 +169,16 @@ JSBool ReadAllToJsval(JSContext *cx, PRFileDesc *fd, jsval *rval ) {
 		*(int*)chunk = res;
 		totalLength += res;
 
-	} while ( res == currrentReadLength );
+	} while ( res == currentReadLength );
+	
+	if ( totalLength == 0 ) {
+
+		while ( chunkListContentLength )
+			free(chunkList[--chunkListContentLength]);
+		free(chunkList);
+		*rval = JS_GetEmptyStringValue(cx); // (TBD) check if it is realy faster.
+		return JS_TRUE;
+	}
 
 	char *jsData = (char*)JS_malloc(cx, totalLength +1);
 	jsData[totalLength] = '\0';
@@ -194,13 +208,19 @@ DEFINE_FUNCTION( Read ) {
 		
 		PRInt32 amount;
 		RT_JSVAL_TO_INT32( argv[0], amount );
-		RT_CHECK_CALL( ReadToJsval(cx, fd, amount, rval) );
+
+//		if ( amount == 0 ) // (TBD) check if it is good to use this
+//			*rval = JS_GetEmptyStringValue(cx);
+//		else
+			
+		RT_CHECK_CALL( ReadToJsval(cx, fd, amount, rval) )
+
 	} else { // amount value is NOT provided, then try to read all
 
 		PRInt32 available = PR_Available( fd );
 		if ( available != -1 ) // we can use the 'available' information
 			RT_CHECK_CALL( ReadToJsval(cx, fd, available, rval) )
-		else
+		else // available is not usable with this fd, then we used a buffered read
 			RT_CHECK_CALL( ReadAllToJsval(cx, fd, rval) )
 	}
 	return JS_TRUE;
@@ -215,13 +235,29 @@ DEFINE_FUNCTION( Write ) {
 	char *str;
 	int len;
 	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], str, len );
-	PRInt32 res = PR_Write( fd, str, len );
+
+	PRInt32 res = PR_Write( fd, str, len ); // (TBD) if len==0, do write ? 
+	
 	if ( res == -1 )
 		return ThrowIoError( cx, PR_GetError() );
+
 	if ( res < len )
-		*rval = STRING_TO_JSVAL( JS_NewDependentString(cx, JSVAL_TO_STRING( argv[0] ), res, len - res) );
+		*rval = STRING_TO_JSVAL( JS_NewDependentString(cx, JSVAL_TO_STRING( argv[0] ), res, len - res) ); // return unsent data
 	else
-		*rval = JS_GetEmptyStringValue(cx);
+		*rval = JS_GetEmptyStringValue(cx); // nothing remains
+	return JS_TRUE;
+}
+
+
+DEFINE_FUNCTION( Sync ) {
+
+	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
+	RT_ASSERT_RESOURCE( fd );
+
+	PRStatus status = PR_Sync(fd);
+	if ( status == PR_FAILURE )
+		return ThrowIoError( cx, PR_GetError() );
+
 	return JS_TRUE;
 }
 
@@ -230,10 +266,17 @@ DEFINE_PROPERTY( available ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
 	RT_ASSERT_RESOURCE( fd );
-	PRInt32 available = PR_Available( fd ); // For a normal file, these are the bytes beyond the current file pointer.
+
+	PRInt64 available = PR_Available64( fd ); // For a normal file, these are the bytes beyond the current file pointer.
+
 	if ( available == -1 )
 		return ThrowIoError( cx, PR_GetError() );
-	*vp = INT_TO_JSVAL(available);
+
+	if ( available <= JSVAL_INT_MAX )
+		*vp = INT_TO_JSVAL(available);
+	else
+		JS_NewNumberValue(cx, (jsdouble)available, vp);
+
 	return JS_TRUE;
 }
 
@@ -250,24 +293,46 @@ DEFINE_PROPERTY( type ) {
 DEFINE_FUNCTION( Import ) {
 
 	RT_ASSERT_ARGC(2);
+	int stdfd;
+	RT_JSVAL_TO_INT32( argv[0], stdfd );
 	PRInt32 osfd;
-	RT_JSVAL_TO_INT32( argv[0], osfd );
+	switch (stdfd) {
+		case 0:
+			osfd = (PRInt32)GetStdHandle(STD_INPUT_HANDLE);
+			break;
+		case 1:
+			osfd = (PRInt32)GetStdHandle(STD_OUTPUT_HANDLE);
+			break;
+		case 2:
+			osfd = (PRInt32)GetStdHandle(STD_ERROR_HANDLE);
+			break;
+		default:
+			REPORT_ERROR("Unsupported standard handle.");
+	}
+
 	int tmp;
 	RT_JSVAL_TO_INT32( argv[1], tmp );
 	PRDescType type = (PRDescType)tmp;
+
 	PRFileDesc *fd;
+	JSObject *descriptorObject;
+
 	switch (type) {
 		case PR_DESC_FILE:
 			fd = PR_ImportFile(osfd);
+			descriptorObject = JS_NewObject(cx, &classFile, NULL, NULL); // (TBD) chack if proto is needed !
 			break;
 		case PR_DESC_SOCKET_TCP:
 			fd = PR_ImportTCPSocket(osfd);
+			descriptorObject = JS_NewObject(cx, &classSocket, NULL, NULL); // (TBD) chack if proto is needed !
 			break;
 		case PR_DESC_SOCKET_UDP:
 			fd = PR_ImportUDPSocket(osfd);
+			descriptorObject = JS_NewObject(cx, &classSocket, NULL, NULL); // (TBD) chack if proto is needed !
 			break;
 		case PR_DESC_PIPE:
 			fd = PR_ImportPipe(osfd);
+			descriptorObject = JS_NewObject(cx, &classFile, NULL, NULL); // (TBD) chack if proto is needed !
 			break;
 		default:
 			REPORT_ERROR("Invalid descriptor type.");
@@ -275,20 +340,24 @@ DEFINE_FUNCTION( Import ) {
 	if ( fd == NULL )
 		return ThrowIoError( cx, PR_GetError() );
 
-	JSObject *descriptorObject = JS_NewObject(cx, &classFile, NULL, NULL); // (TBD) chack if proto is needed !
 	RT_ASSERT_ALLOC( descriptorObject ); 
 	RT_CHECK_CALL( JS_SetPrivate(cx, descriptorObject, (void*)fd) );
 	RT_CHECK_CALL( JS_SetReservedSlot(cx, descriptorObject, SLOT_JSIO_DESCRIPTOR_IMPORTED, JSVAL_TRUE) );
+
+	*rval = OBJECT_TO_JSVAL(descriptorObject);
 	return JS_TRUE;
 }
 
 
 CONFIGURE_CLASS
 
+	HAS_CONSTRUCTOR
+
 	BEGIN_FUNCTION_SPEC
 		FUNCTION( Close )
 		FUNCTION( Read )
 		FUNCTION( Write )
+		FUNCTION( Sync )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC

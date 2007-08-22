@@ -151,7 +151,18 @@ DEFINE_FUNCTION( IsReadable ) {
 
 	RT_ASSERT_ARGC( 1 );
 	JSObject *o = JSVAL_TO_OBJECT( argv[0] ); //JS_ValueToObject
-	*rval = OBJECT_TO_JSVAL( o ); // (TBD) check if it is needed to protect from GC ?
+
+	PRIntervalTime prTimeout;
+	if ( argc >= 2 && argv[1] != JSVAL_VOID ) {
+
+		uint32 timeout;
+		JS_ValueToECMAUint32( cx, argv[1], &timeout );
+		prTimeout = PR_MillisecondsToInterval(timeout);
+	} else {
+
+		prTimeout = PR_INTERVAL_NO_TIMEOUT;
+	}
+
 	// (TBD) is it useful ? I don't use JS_ValueToObject
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, o );
 	PRPollDesc desc;
@@ -159,7 +170,7 @@ DEFINE_FUNCTION( IsReadable ) {
 	desc.in_flags = PR_POLL_READ;
 	desc.out_flags = 0;
 
-	PRInt32 result = PR_Poll( &desc, 1, PR_INTERVAL_NO_WAIT );
+	PRInt32 result = PR_Poll( &desc, 1, prTimeout );
 	if ( result == -1 ) // error
 		return ThrowIoError( cx, PR_GetError() );
 
@@ -176,7 +187,18 @@ DEFINE_FUNCTION( IsWritable ) {
 
 	RT_ASSERT_ARGC( 1 );
 	JSObject *o = JSVAL_TO_OBJECT( argv[0] ); //JS_ValueToObject
-	*rval = OBJECT_TO_JSVAL( o ); // protect from GC
+
+	PRIntervalTime prTimeout;
+	if ( argc >= 2 && argv[1] != JSVAL_VOID ) {
+
+		uint32 timeout;
+		JS_ValueToECMAUint32( cx, argv[1], &timeout );
+		prTimeout = PR_MillisecondsToInterval(timeout);
+	} else {
+
+		prTimeout = PR_INTERVAL_NO_TIMEOUT;
+	}
+
 	// (TBD) is it useful ? I don't use JS_ValueToObject
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, o );
 	PRPollDesc desc;
@@ -184,7 +206,7 @@ DEFINE_FUNCTION( IsWritable ) {
 	desc.in_flags = PR_POLL_WRITE;
 	desc.out_flags = 0;
 
-	PRInt32 result = PR_Poll( &desc, 1, PR_INTERVAL_NO_WAIT );
+	PRInt32 result = PR_Poll( &desc, 1, prTimeout );
 	if ( result == -1 ) // error
 		return ThrowIoError( cx, PR_GetError() );
 

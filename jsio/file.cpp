@@ -32,6 +32,7 @@ DEFINE_CONSTRUCTOR() {
 	RT_ASSERT_CONSTRUCTING( _class );
 	RT_ASSERT_ARGC(1);
 	JS_SetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, argv[0] );
+	JS_SetPrivate(cx, obj, NULL); // (TBD) optional ?
 	return JS_TRUE;
 }
 
@@ -39,6 +40,7 @@ DEFINE_CONSTRUCTOR() {
 DEFINE_FUNCTION( Open ) {
 
 	RT_ASSERT_ARGC(1);
+	RT_ASSERT( JS_GetPrivate( cx, obj ) == NULL, "File is already open." );
 
 	jsval jsvalFileName;
 	JS_GetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName );
@@ -56,7 +58,7 @@ DEFINE_FUNCTION( Open ) {
 		return ThrowIoError( cx, PR_GetError() );
 	JS_SetPrivate( cx, obj, fd );
 	SetNativeInterface(cx, obj, NI_READ_RESOURCE, (FunctionPointer)NativeInterfaceReadDescriptor, fd);
-	*rval = OBJECT_TO_JSVAL(obj);
+	*rval = OBJECT_TO_JSVAL(obj); // allows to write f.Open(...).Read()
 	return JS_TRUE;
 }
 
@@ -91,19 +93,6 @@ DEFINE_FUNCTION( Seek ) {
 
 	jsdouble newLocation = ret;
 	JS_NewDoubleValue( cx, newLocation, rval );
-	return JS_TRUE;
-}
-
-
-DEFINE_FUNCTION( Sync ) {
-
-	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
-	RT_ASSERT( fd != NULL, "file is closed." ); // 	RT_ASSERT_RESOURCE(fd);
-
-	PRStatus status = PR_Sync(fd);
-	if ( status == PR_FAILURE )
-		return ThrowIoError( cx, PR_GetError() );
-
 	return JS_TRUE;
 }
 
@@ -330,7 +319,6 @@ CONFIGURE_CLASS
 	BEGIN_FUNCTION_SPEC
 		FUNCTION( Open )
 		FUNCTION( Seek )
-		FUNCTION( Sync )
 		FUNCTION( Delete )
 	END_FUNCTION_SPEC
 

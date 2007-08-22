@@ -252,7 +252,7 @@ enum {
 	keepAlive = PR_SockOpt_Keepalive, 
 	recvBufferSize = PR_SockOpt_RecvBufferSize, 
 	sendBufferSize = PR_SockOpt_SendBufferSize,
-   nonblocking = PR_SockOpt_Nonblocking,
+   nonblocking = PR_SockOpt_Nonblocking
 };
 
 ///////////////////////////////////////////////////////////////////////////////
