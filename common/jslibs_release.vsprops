@@ -11,10 +11,11 @@
 		Multithreaded using DLL (msvcrt.lib)        | RuntimeLibrary="2"
 
 		PreprocessorDefinitions="JS_THREADSAFE"
+		AdditionalIncludeDirectories="..\js\src;..\nspr\include\nspr"
 	-->
 	<Tool
 		Name="VCCLCompilerTool"
-		AdditionalIncludeDirectories="..\js\src;..\nspr\include\nspr"
+		AdditionalIncludeDirectories="..\js\src"
 		ExceptionHandling="0"
 		RuntimeLibrary="0"
 	/>

@@ -468,7 +468,39 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	*/
 
 // compile & executes the script
+
+
 	script = JS_CompileFile( cx, globalObject, scriptName );
+
+	// shebang support
+
+/*
+	FILE *f = fopen(scriptName, "r");
+
+//	if (!file) {
+//
+//		JS_ReportErrorNumber(cx, my_GetErrorMessage, NULL, JSSMSG_CANT_OPEN, filename, strerror(errno));
+//		exit();
+//	}
+
+
+	char s, b;
+	s = fgetc(f);
+	b = fgetc(f);
+	if ( s == '#' && b == '!' ) {
+
+		ungetc( '/', f );
+		ungetc( '/', f );
+	} else {
+		ungetc( b, f );
+		ungetc( s, f );
+	}
+
+	script = JS_CompileFileHandle(cx, globalObject, scriptName, f);
+*/
+	
+//	JS_AddRoot(cx, &script);
+
 //  JSScript *script = LoadScript( cx, globalObject, scriptName, saveCompiledScripts );
 	RT_HOST_MAIN_ASSERT( script != NULL, "unable to compile the script." );
 
@@ -478,6 +510,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	// You need to protect a JSScript (via a rooted script object) if and only if a garbage collection can occur between compilation and the start of execution.
 	jsval rval;
 	jsStatus = JS_ExecuteScript( cx, globalObject, script, &rval ); // MUST be executed only once ( JSOPTION_COMPILE_N_GO )
+
 	// doc: If a script executes successfully, JS_ExecuteScript returns JS_TRUE. Otherwise it returns JS_FALSE. On failure, your application should assume that rval is undefined.
 	// if jsStatus != JS_TRUE, an error has been throw while the execution, so there is no need to throw another error
 
@@ -511,6 +544,8 @@ void Finalize() { // called by the system on exit(), or at the end of the main.
 #ifdef JS_THREADSAFE
     JS_EndRequest(cx);
 #endif
+
+//	JS_RemoveRoot(cx, &script);
 
 	JS_DestroyScript(cx, script);
 

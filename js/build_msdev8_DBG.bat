@@ -12,7 +12,7 @@ cd .\src
 	rem /MTd : Multithreaded static debug
 	rem /MD  : Multithreaded DLL
 	rem /MDd : Multithreaded DLL debug
-set XCFLAGS=/DWINVER=0x500 /D_WIN32_WINNT=0x500 /D_CRT_SECURE_NO_DEPRECATE=1 /MT
+set XCFLAGS=/DWINVER=0x500 /D_WIN32_WINNT=0x500 /D_CRT_SECURE_NO_DEPRECATE=1 /MTd
 	rem /MDd
 	rem /D_NSPR_BUILD_
 	rem set OTHER_LIBS=wsock32.lib ../../nspr/lib/libnspr4_s.lib /NODEFAULTLIB:libnspr4
