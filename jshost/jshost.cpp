@@ -57,32 +57,6 @@ int consoleStdErr( JSContext *, const char *data, int length ) {
 	return write( 2, data, length );
 }
 
-// function copied from mozilla/js/src/js.c
-/*
-static uint32 gBranchCount;
-static uint32 gBranchLimit;
-
-static JSBool BranchCallback(JSContext *cx, JSScript *script)
-{
-    if (++gBranchCount == gBranchLimit) {
-        if (script) {
-            if (script->filename)
-                fprintf(gErrFile, "%s:", script->filename);
-            fprintf(gErrFile, "%u: script branch callback (%u callbacks)\n",
-                    script->lineno, gBranchLimit);
-        } else {
-            fprintf(gErrFile, "native branch callback (%u callbacks)\n",
-                    gBranchLimit);
-        }
-        gBranchCount = 0;
-        return JS_FALSE;
-    }
-    if ((gBranchCount & 0x3fff) == 1)
-        JS_MaybeGC(cx);
-    return JS_TRUE;
-}
-*/
-
 
 bool reportWarnings = true;
 
@@ -182,6 +156,40 @@ static void LoadErrorReporter(JSContext *cx, const char *message, JSErrorReport 
 }
 */
 
+
+// function copied from mozilla/js/src/js.c
+
+static uint32 gBranchLimit = 998;
+
+static uint32 gBranchCount;
+
+static JSBool BranchCallback(JSContext *cx, JSScript *script) {
+
+	if (++gBranchCount == gBranchLimit) {
+
+		char *msg;
+		if (script) {
+
+			if (script->filename) {
+				
+				msg = JS_smprintf("%s:", script->filename);
+				consoleStdErr(cx, msg, strlen(msg));
+			}
+			msg = JS_smprintf("%u: script branch callback (%u callbacks)\n", script->lineno, gBranchLimit);
+			consoleStdErr(cx, msg, strlen(msg));
+		} else {
+			
+			msg = JS_smprintf("native branch callback (%u callbacks)\n", gBranchLimit);
+			consoleStdErr(cx, msg, strlen(msg));
+		}
+		gBranchCount = 0;
+		return JS_FALSE;
+	}
+
+	if ((gBranchCount & 0x3fff) == 1)
+		JS_MaybeGC(cx);
+	return JS_TRUE;
+}
 
 static JSBool LoadModule(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
@@ -419,7 +427,6 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 		RT_HOST_MAIN_ASSERT( jsStatus == JS_TRUE, "unable to define the argument." );
 	}
 
-
 #ifdef XP_WIN
 	CHAR moduleFileName[MAX_PATH];
 // get hostpath and hostname
@@ -461,43 +468,35 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	//  JS_SetParent(cx, libobj, NULL) and JS_SetParent(cx, libobj, global)
 	//  around all JS_Evaluate*Script* and JS_Compile* API calls.)
 
-	/*
-	gBranchLimit =
-	JS_SetBranchCallback(cx, BranchCallback);
-	JS_ToggleOptions(cx, JSOPTION_NATIVE_BRANCH_CALLBACK);
-	*/
+
+//	gBranchLimit =
+	if ( !unsafeMode ) {
+			
+		JSBranchCallback branchCallback = JS_SetBranchCallback(cx, BranchCallback);
+		JS_ToggleOptions(cx, JSOPTION_NATIVE_BRANCH_CALLBACK);
+	}
 
 // compile & executes the script
 
 
-	script = JS_CompileFile( cx, globalObject, scriptName );
+//	script = JS_CompileFile( cx, globalObject, scriptName );
 
-	// shebang support
+// shebang support
+	FILE *file = fopen(scriptName, "r");
+	RT_HOST_MAIN_ASSERT( file != NULL, "Script file cannot be opened." );
 
-/*
-	FILE *f = fopen(scriptName, "r");
-
-//	if (!file) {
-//
-//		JS_ReportErrorNumber(cx, my_GetErrorMessage, NULL, JSSMSG_CANT_OPEN, filename, strerror(errno));
-//		exit();
-//	}
-
-
-	char s, b;
-	s = fgetc(f);
-	b = fgetc(f);
+	char s = getc(file);
+	char b = getc(file);
 	if ( s == '#' && b == '!' ) {
 
-		ungetc( '/', f );
-		ungetc( '/', f );
+		ungetc('/', file);
+		ungetc('/', file);
 	} else {
-		ungetc( b, f );
-		ungetc( s, f );
-	}
 
-	script = JS_CompileFileHandle(cx, globalObject, scriptName, f);
-*/
+		ungetc(b, file);
+		ungetc(s, file);
+	}
+	script = JS_CompileFileHandle(cx, globalObject, scriptName, file);
 	
 //	JS_AddRoot(cx, &script);
 
@@ -547,7 +546,8 @@ void Finalize() { // called by the system on exit(), or at the end of the main.
 
 //	JS_RemoveRoot(cx, &script);
 
-	JS_DestroyScript(cx, script);
+	if ( script != NULL )
+		JS_DestroyScript(cx, script);
 
 //  printf("script result: %s\n", JS_GetStringBytes(JS_ValueToString(cx, rval)));
 	
@@ -618,30 +618,6 @@ Directories structure:
 	mozilla
 		js
 			src
-
-
-TODO list: ( - todo, v- done, x- forget, > comment )
----------
-  v- rename global.Load into global.exec
-  x- add an global.options() function to configure language options
-  - add a global.Version() function
-	x- add an argument 'once' to .exec : exec('jsni.js', true )
-	  > can be done in javascript
-	x- add an argument 'save comiled version' to .exec
-	v- add an argument 'save comiled version' to command line
-	- manage gBranchLimit ( property of global objet ? )
-	x- manage exit()
-	  > not needed
-	- manage object environment ( see mozilla/js/src/js.c )
-	- rewrite Load&XDR in javascript ?
-	x- support \\ and / path separator
-	  > "/" is natively suported by XP
-	v- configurable warning report
-	  > command-line switch
-	- execOnce hash table should be based on the full path name
-	- port to linux
-	- use a dyn. list for _LoadModule
-	- trap Ctrl+C signal
 
 
 jhost documentation:

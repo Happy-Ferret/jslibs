@@ -15,9 +15,36 @@
 #include "stdafx.h"
 #include "../common/jsNativeInterface.h"
 
+#include <pprio.h> // nspr/include/nspr/private
+
 #include "error.h"
 #include "descriptor.h"
 #include "file.h"
+
+
+PRIntn FileOpenFlagsFromString( const char *strFlags, int length ) {
+	
+	if ( length == 0 || length > 2 )
+		return 0;
+	if ( length == 2 && strFlags[1] != '+' )
+		return 0;
+
+	char c = strFlags[0];
+	bool plus = length == 2 && strFlags[1] == '+';
+
+	PRIntn flags;
+	if ( c == 'r' )
+		flags = plus ? PR_RDWR : PR_RDONLY;
+	else 
+		if ( c == 'w' )
+			flags = plus ? PR_CREATE_FILE | PR_TRUNCATE | PR_RDWR : PR_CREATE_FILE | PR_TRUNCATE | PR_WRONLY;
+		else 
+			if ( c == 'a' )
+				flags = plus ? PR_CREATE_FILE | PR_APPEND | PR_RDWR : PR_CREATE_FILE | PR_APPEND | PR_WRONLY;
+			else
+				flags = 0;
+	return flags;
+}
 
 BEGIN_CLASS( File )
 
@@ -49,10 +76,26 @@ DEFINE_FUNCTION( Open ) {
 	RT_JSVAL_TO_STRING(jsvalFileName, fileName);
 
 	PRIntn flags;
-	int32 tmp;
-	JS_ValueToInt32( cx, argv[0], &tmp );
-	flags = tmp;
-	PRIntn mode = PR_IRUSR + PR_IWUSR; // read write permission, owner
+	if ( JSVAL_IS_INT( argv[0] ) ) {
+	
+		flags = JSVAL_TO_INT( argv[0] );
+	} else {
+
+		char *strFlags;
+		int len;
+		RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], strFlags, len );
+		flags = FileOpenFlagsFromString(strFlags, len);
+	}
+
+	PRIntn mode;
+	if ( argc >= 2 ) {
+		
+		RT_JSVAL_TO_INT32( argv[1], mode );
+	} else {
+
+		mode = PR_IRUSR + PR_IWUSR; // read write permission, owner
+	}
+
 	PRFileDesc *fd = PR_Open( fileName, flags, mode ); // The mode parameter is currently applicable only on Unix platforms.
 	if ( fd == NULL )
 		return ThrowIoError( cx, PR_GetError() );
@@ -113,6 +156,24 @@ DEFINE_FUNCTION( Delete ) {
 
 	return JS_TRUE;
 }
+
+
+DEFINE_FUNCTION( Lock ) {
+
+	RT_ASSERT_ARGC( 1 );
+	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
+	RT_ASSERT_RESOURCE( fd );
+	bool doLock;
+	RT_JSVAL_TO_BOOL( argv[0], doLock );
+	PRStatus st = doLock ? PR_LockFile(fd) : PR_UnlockFile(fd);
+	if ( st != PR_SUCCESS )
+		return ThrowIoError( cx, PR_GetError() );
+	return JS_TRUE;
+}
+
+
+
+
 
 
 DEFINE_PROPERTY( contentGetter ) {
@@ -297,7 +358,7 @@ DEFINE_PROPERTY( standard ) {
 		JSObject *obj = JS_NewObject(cx, &classFile, NULL, NULL ); // no need to use classDescriptor as proto.
 		*vp = OBJECT_TO_JSVAL( obj ); // GC protection ?
 
-		PRFileDesc *fd = PR_GetSpecialFD( (PRSpecialFD)i); // beware: cast !
+		PRFileDesc *fd = PR_GetSpecialFD((PRSpecialFD)i); // beware: cast !
 		if ( fd == NULL )
 			return ThrowIoError( cx, PR_GetError() );
 		JS_SetPrivate( cx, obj, fd );
@@ -320,6 +381,7 @@ CONFIGURE_CLASS
 		FUNCTION( Open )
 		FUNCTION( Seek )
 		FUNCTION( Delete )
+		FUNCTION( Lock )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC

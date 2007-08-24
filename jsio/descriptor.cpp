@@ -298,13 +298,13 @@ DEFINE_FUNCTION( Import ) {
 	PRInt32 osfd;
 	switch (stdfd) {
 		case 0:
-			osfd = (PRInt32)GetStdHandle(STD_INPUT_HANDLE);
+			osfd = PR_FileDesc2NativeHandle(PR_STDIN);
 			break;
 		case 1:
-			osfd = (PRInt32)GetStdHandle(STD_OUTPUT_HANDLE);
+			osfd = PR_FileDesc2NativeHandle(PR_STDOUT);
 			break;
 		case 2:
-			osfd = (PRInt32)GetStdHandle(STD_ERROR_HANDLE);
+			osfd = PR_FileDesc2NativeHandle(PR_STDERR);
 			break;
 		default:
 			REPORT_ERROR("Unsupported standard handle.");

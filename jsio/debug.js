@@ -3,11 +3,16 @@ LoadModule('jsio');
 
 try {
 
-var f = File.stdin;
+
+var f = new File('toto.txt');
+f.Open( "w+" );
+f.lock = true;
+
+File.stdin.Read();
+
+f.Close();
 
 
-	var f = Descriptor.Import(0, Descriptor.DESC_PIPE);
-	Print(f.Read(10));
 
 Halt();	
 	

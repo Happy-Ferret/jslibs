@@ -17,7 +17,7 @@
 		Name="VCCLCompilerTool"
 		AdditionalIncludeDirectories="..\js\src"
 		ExceptionHandling="0"
-		RuntimeLibrary="1"
+		RuntimeLibrary="3"
 	/>
 	
 	<!-- tmp VCLinkerTool
@@ -30,7 +30,7 @@
 		Name="VCLinkerTool"
 		GenerateDebugInformation="true"
 		IgnoreAllDefaultLibraries="false"
-		IgnoreDefaultLibraryNames="libc.lib, libcmt.lib, msvcrt.lib, libcd.lib, msvcrtd.lib"
+		IgnoreDefaultLibraryNames="libc.lib, libcmt.lib, msvcrt.lib, libcd.lib, libcmtd.lib"
 		AdditionalDependencies="..\js\src\WINNT5.1_DBG.OBJ\js32.lib kernel32.lib $(NoInherit) $(StopEvaluating)"
 	/>
 </VisualStudioPropertySheet>
