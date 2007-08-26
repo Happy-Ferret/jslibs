@@ -170,13 +170,11 @@ DEFINE_FUNCTION( Connect ) {
 	PRFileDesc *fd = (PRFileDesc*)JS_GetPrivate( cx, obj );
 	RT_ASSERT_RESOURCE( fd );
 
-	JSString *jsstr = JS_ValueToString( cx, argv[0] );
-	argv[0] = STRING_TO_JSVAL( jsstr );
-	char *hostName = JS_GetStringBytes( jsstr );
+	char *hostName;
+	RT_JSVAL_TO_STRING( argv[0], hostName );
 
-	uint16 intval;
-	JS_ValueToUint16( cx, argv[1], &intval );
-	PRUint16 port = intval;
+	PRUint16 port;
+	RT_JSVAL_TO_INT32( argv[1], port );
 
 	PRStatus status;
 

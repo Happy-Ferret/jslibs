@@ -1,4 +1,4 @@
-#!test
+#!shebang test
 
 var hModule = LoadModule('jsstd');
 Print( 'hModule: '+hModule, '\n' );

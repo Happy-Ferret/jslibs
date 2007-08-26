@@ -34,18 +34,15 @@
 #include "jsprf.h"
 #include "jsscript.h"
 
-
 #include "../common/jsNames.h"
 #include "../common/jsHelper.h"
 #include "../common/jsConfiguration.h"
 #include "../moduleManager/moduleManager.h"
 
-
 // to be used in the main() function only
 #define RT_HOST_MAIN_ASSERT( condition, errorMessage ) \
 	if ( !(condition) ) { consoleStdErr( cx, errorMessage, sizeof(errorMessage)-1 ); return -1; }
 
-JSBool unsafeMode = JS_FALSE;
 
 int consoleStdOut( JSContext *, const char *data, int length ) {
 
@@ -202,7 +199,6 @@ static JSBool LoadModule(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, 
 	strcat( libFileName, DLL_EXT );
 
 // MAC OSX: 	'@executable_path' ??
-
 //	if ( !ModuleIsLoaded( libFileName ) ) {
 
 		ModuleId id = ModuleLoad(libFileName, cx, obj);
@@ -213,7 +209,6 @@ static JSBool LoadModule(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, 
 //	} else { // module already loaded
 //	}
 //	*rval = JSVAL_TRUE;
-
 	return JS_TRUE;
 }
 
@@ -314,6 +309,7 @@ void Finalize(void);
 
 int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[]) for UNICODE
 
+	JSBool unsafeMode = JS_FALSE;
 	JSObject *globalObject;
 
 	unsigned long maxbytes = 16L * 1024L * 1024L;

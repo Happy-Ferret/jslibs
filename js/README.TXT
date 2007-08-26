@@ -93,3 +93,6 @@ compilation with gmake under windows ( Makefile.ref )
  set path=%path%;C:\cygwin\bin
  make -f Makefile.ref clean all BUILD_OPT=1 
 
+
+Compile SpiderMonkey with MINGW:
+  http://groups.google.com/group/netscape.public.mozilla.jseng/browse_frm/thread/f32dabd45aa075e0/d06225aa155b7642

@@ -6,8 +6,6 @@ try {
 
 var f = new File('toto.txt');
 f.Open( "w+" );
-f.lock = true;
-
 File.stdin.Read();
 
 f.Close();
