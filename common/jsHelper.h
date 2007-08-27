@@ -198,7 +198,7 @@ inline bool MaybeRealloc( int requested, int received ) {
 	jsdouble tmp; \
 	if ( JSVAL_IS_INT(jsvalUInt) && JSVAL_TO_INT(jsvalUInt) >= 0 ) { \
 		uintVariable = JSVAL_TO_INT(jsvalUInt); \
-	else { \
+	} else { \
 		JSBool st = JS_ValueToNumber(cx, jsvalUInt, &tmp ); \
 		RT_ASSERT( st != JS_FALSE, RT_ERROR_INT_CONVERSION_FAILED ); \
 		uintVariable = (unsigned long)tmp; \

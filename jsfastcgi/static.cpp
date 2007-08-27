@@ -14,7 +14,6 @@
 
 #include "stdafx.h"
 
-/*
 
 #include <stdlib.h>
 #include <setjmp.h>
@@ -269,7 +268,9 @@ CONFIGURE_STATIC
 
 END_STATIC
 
-*/
+
+
+/*
 
 #include <jsobj.h>
 
