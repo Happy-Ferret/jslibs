@@ -4,13 +4,12 @@ LoadModule('jsio');
 try {
 
 
+/*
 var f = new File('toto.txt');
 f.Open( "w+" );
 File.stdin.Read();
 
 f.Close();
-
-
 
 Halt();	
 	
@@ -26,49 +25,41 @@ Print('\n * testing simple file write \n');
 	f.Open( File.RDWR | File.CREATE_FILE );
 	f.Write(new Date());
 	f.Close();
+*/
 
-Print('\n * testing TCP socket \n');
+Print('\n * testing UDP socket \n');
 
-	var dlist = []; //descriptor list
+
+	var data = '';
+	for ( var i = 0; i < 8193; i++, data += 'x' );
 
 	var step = 0;
 
-	var server = new Socket( Socket.TCP );
-	server.nonblocking = true;
-	server.Bind(80, '127.0.0.1');
-	server.Listen();
-	server.readable = function(s) {
-		
-		var soc = s.Accept();
-		dlist.push(soc);
-		soc.readable = function(s) {
-
-			var data = s.Read();
-			Print(data);
-			if ( !data.length )
-				delete s.readable;
-		}
+	var s1 = new Socket( Socket.UDP );
+	s1.Connect('127.0.0.1', 1);
+	
+	var s2 = new Socket( Socket.UDP );
+//	s2.nonblocking = true;
+	s2.Bind(1);
+	s2.readable = function(s) {
+	
+		Print( s.Read().length );
 	}
-	
-	var client = new Socket( Socket.TCP );
-	
-	client.Connect('127.0.0.1', 80);
-	
-	dlist.push(client);
-	dlist.push(server);
-	
+	var dlist = [s1,s2]; //descriptor list
+
 	var i = 0;
 	while(++i < 15) {
 		
 		Print('.\n');
 		Poll(dlist,100);
 		step++;
-		if ( !(step%5) ) {
+		if ( !(step % 5) ) {
 		
-			client.Write('test');
+			s1.Write(data);
 		}
 	}
-	
+
+
 
 } catch ( ex if ex instanceof IoError ) {
 	Print( 'IoError: ' + ex.text, '\n' );

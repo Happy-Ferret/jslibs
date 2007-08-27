@@ -197,7 +197,7 @@ DEFINE_PROPERTY( contentGetter ) {
 		return ThrowIoError( cx, PR_GetError() );
 	char *buf = (char*)JS_malloc( cx, available +1 );
 	RT_ASSERT_ALLOC(buf);
-	buf[available] = 0;
+	buf[available] = '\0';
 	PRInt32 res = PR_Read( fd, buf, available );
 	if ( res == -1 ) {
 
@@ -213,9 +213,9 @@ DEFINE_PROPERTY( contentGetter ) {
 		*vp = JS_GetEmptyStringValue(cx); // (TBD) check if it is realy faster.
 		return JS_TRUE;
 	}
-	if ( res < available ) { // should never occured
+	if ( MaybeRealloc( available, res ) ) { // should never occured
 
-		buf = (char*)JS_realloc(cx, buf, res); // realloc the string using its real size
+		buf = (char*)JS_realloc(cx, buf, res + 1); // realloc the string using its real size
 		RT_ASSERT_ALLOC(buf);
 	}
 	JSString *str = JS_NewString( cx, (char*)buf, res );

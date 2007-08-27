@@ -25,6 +25,7 @@
 // open: 	SetNativeInterface(cx, obj, NI_READ_RESOURCE, (FunctionPointer)NativeInterfaceReadFile, fd);
 // close: 	RemoveNativeInterface(cx, obj, NI_READ_RESOURCE );
 
+
 DEFINE_CONSTRUCTOR() {
 
 	REPORT_ERROR( "This object cannot be construct." ); // but constructor must be defined
@@ -133,6 +134,12 @@ JSBool ReadToJsval(JSContext *cx, PRFileDesc *fd, int amount, jsval *rval ) {
 		return JS_TRUE;
 	}
 
+	if ( MaybeRealloc(amount, res) ) {
+
+		buf = (char*)JS_realloc(cx, buf, res + 1); // realloc the string using its real size
+		RT_ASSERT_ALLOC(buf);
+	}
+
 	JSString *str = JS_NewString( cx, (char*)buf, res );
 	RT_ASSERT_ALLOC(str);
 	*rval = STRING_TO_JSVAL(str); // GC protection is ok with this ?
@@ -180,7 +187,7 @@ JSBool ReadAllToJsval(JSContext *cx, PRFileDesc *fd, jsval *rval ) {
 		return JS_TRUE;
 	}
 
-	char *jsData = (char*)JS_malloc(cx, totalLength +1);
+	char *jsData = (char*)JS_malloc(cx, totalLength + 1);
 	jsData[totalLength] = '\0';
 	char *ptr = jsData + totalLength; // starts from the end
 	while ( chunkListContentLength ) {
@@ -204,12 +211,12 @@ DEFINE_FUNCTION( Read ) {
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
 	RT_ASSERT_RESOURCE( fd );
 
-	if ( argc >= 1 ) { // amount value is provided
+	if ( argc >= 1 ) { // amount value is provided // && argv[0] != JSVAL_VOID 
 		
 		PRInt32 amount;
 		RT_JSVAL_TO_INT32( argv[0], amount );
 
-//		if ( amount == 0 ) // (TBD) check if it is good to use this
+//		if ( amount == 0 ) // (TBD) check if it is good to use this ( even if amount is 0, we must call Read
 //			*rval = JS_GetEmptyStringValue(cx);
 //		else
 			

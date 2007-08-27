@@ -24,6 +24,43 @@
 #include "limits.h"
 
 
+#define ROL16(x,b) (((x) << (b)) | ((x) >> (16 - (b))))
+
+static Endian systemEndian;
+
+void DetectEndian() {
+
+	systemEndian = DetectSystemEndianType();
+}
+
+
+void ShortToNetworkShort( unsigned short *val ) {
+	
+	if ( systemEndian == BigEndian )
+		*val = ROL16( *val, 8 );
+}
+
+void LongToNetworkLong( unsigned long *val ) {
+
+}
+
+void ULongToNetworkULong( unsigned long *val ) {
+}
+
+
+void NetworkShortToShort( unsigned short *val ) {
+
+	if ( systemEndian == BigEndian )
+		*val = ROL16( *val, 8 );
+}
+
+void NetworkLongToLong( unsigned long *val ) {
+}
+
+void NetworkLLongToLLong( unsigned LLONG *val ) {
+}
+
+
 BEGIN_CLASS( Pack )
 
 DEFINE_FINALIZE() {
@@ -78,12 +115,21 @@ DEFINE_FUNCTION( ReadInt ) {
 			*rval = INT_TO_JSVAL( isSigned ? *(signed char*)data : *(unsigned char*)data );
 			break;
 		case sizeof(short):
-			*rval = INT_TO_JSVAL( isSigned ? *(signed short*)data : *(unsigned short*)data );
+			if ( isSigned ) {
+				signed short val = *(signed short*)data;
+				NetworkShortToShort((unsigned short*)&val);
+				*rval = INT_TO_JSVAL( val );
+			} else {
+				unsigned short val = *(unsigned short*)data;
+				NetworkShortToShort((unsigned short*)&val);
+				*rval = INT_TO_JSVAL( val );
+			}
 			break;
 		case sizeof(long):
 			if ( isSigned ) {
 
 				signed long val = *(signed long*)data;
+				NetworkLongToLong( (unsigned long*)&val);
 				if ( INT_FITS_IN_JSVAL( val ) )
 					*rval = INT_TO_JSVAL( val );
 				else
@@ -91,6 +137,7 @@ DEFINE_FUNCTION( ReadInt ) {
 			} else {
 
 				unsigned long val = *(unsigned long*)data;
+				NetworkLongToLong( (unsigned long*)&val);
 				if ( INT_FITS_IN_JSVAL( val ) )
 					*rval = INT_TO_JSVAL( val );
 				else
@@ -98,7 +145,17 @@ DEFINE_FUNCTION( ReadInt ) {
 			}
 			break;
 		case sizeof(LLONG):
-			RT_CHECK_CALL( JS_NewNumberValue(cx, isSigned ?  *(signed LLONG*)data : *(unsigned LLONG*)data, rval) );
+			if ( isSigned ) {
+				
+				signed LLONG val = *(signed LLONG*)data;
+				NetworkLLongToLLong( (unsigned LLONG*)&val);
+				RT_CHECK_CALL( JS_NewNumberValue(cx, val, rval) );
+			} else {
+
+				unsigned LLONG val = *(unsigned LLONG*)data;
+				NetworkLLongToLLong( (unsigned LLONG*)&val);
+				RT_CHECK_CALL( JS_NewNumberValue(cx, val, rval) );
+			}
 			break;
 		default:
 			*rval = JSVAL_VOID;
@@ -113,8 +170,6 @@ DEFINE_FUNCTION( Test ) {
 	long c;
 	bool isOutOfRange;
 	JsvalToSInt32(cx, argv[0], &c, &isOutOfRange);
-
-
 
 	return JS_TRUE;
 }
@@ -138,6 +193,14 @@ DEFINE_FUNCTION( WriteInt ) {
 	else
 		isSigned = false;
 
+	bool htonConversion;
+	if ( argc >= 3 )
+		RT_JSVAL_TO_BOOL( argv[2], htonConversion )
+	else
+		htonConversion = false;
+
+
+
 	jsval jsvalue = argv[0];
 	unsigned char data[8] = { 0 };
 
@@ -155,12 +218,16 @@ DEFINE_FUNCTION( WriteInt ) {
 				RT_CHECK_CALL( JsvalToSInt16(cx, jsvalue, (short*)data, &outOfRange) )
 			else
 				RT_CHECK_CALL( JsvalToUInt16(cx, jsvalue, (unsigned short*)data, &outOfRange) )
+			if ( htonConversion )
+				ShortToNetworkShort( (unsigned short*)data );
 			break;
 		case sizeof(long):
 			if ( isSigned )
 				RT_CHECK_CALL( JsvalToSInt32(cx, jsvalue, (long*)data, &outOfRange) )
 			else
 				RT_CHECK_CALL( JsvalToUInt32(cx, jsvalue, (unsigned long*)data, &outOfRange) )
+			if ( htonConversion )
+				LongToNetworkLong( (unsigned long*)data );
 			break;
 		case sizeof(LLONG):
 			// (TBD)
@@ -249,15 +316,21 @@ DEFINE_PROPERTY( systemIntSize ) {
 	return JS_TRUE;
 }
 
+DEFINE_PROPERTY( systemBigEndian ) {
+
+	*vp = BOOLEAN_TO_JSVAL( systemEndian == BigEndian );
+	return JS_TRUE;
+}
 
 CONFIGURE_CLASS
+
+	CALL_ON_INIT( DetectEndian )
 
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE
 
 	BEGIN_FUNCTION_SPEC
 		FUNCTION(ReadInt)
-//		FUNCTION(ReadUInt)
 		FUNCTION(ReadReal)
 		FUNCTION(ReadString)
 
@@ -267,8 +340,12 @@ CONFIGURE_CLASS
 
 	BEGIN_PROPERTY_SPEC
 		PROPERTY_READ(buffer)
-		PROPERTY_READ(systemIntSize)
 	END_PROPERTY_SPEC
+
+	BEGIN_STATIC_PROPERTY_SPEC
+		PROPERTY_READ(systemIntSize)
+		PROPERTY_READ(systemBigEndian)
+	END_STATIC_PROPERTY_SPEC
 
 //	HAS_PRIVATE
 	HAS_RESERVED_SLOTS(1)

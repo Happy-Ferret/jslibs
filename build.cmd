@@ -23,10 +23,10 @@ for /D %%f in (js*) do (
 			echo ... failed.
 rem		if ERRORLEVEL 1 goto error
 		) ELSE (
-		
+
 			pushd %%~dg%%~pgrelease
-			copy *.dll ..\..
-			copy *.exe ..\..
+			copy %%f.dll ..\..
+			copy %%f.exe ..\..
 			popd
 		)
 	)

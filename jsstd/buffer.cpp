@@ -287,8 +287,16 @@ JSBool ReadAmount( JSContext *cx, JSObject *obj, size_t amount, jsval *rval ) {
 	char *str = (char*)JS_malloc(cx, amount + 1);
 	RT_ASSERT_ALLOC(str);
 	str[amount] = '\0'; // (TBD) explain this
+
+	int requestedAmount = amount;
 	RT_CHECK_CALL( ReadRawAmount(cx, obj, &amount, str) );
 	// (TBD) if amount after calling ReadRawAmount is smaller than before, realloc the buffer 
+
+	if ( MaybeRealloc( requestedAmount, amount ) ) {
+
+		str = (char*)JS_realloc(cx, str, amount + 1);
+		RT_ASSERT_ALLOC(str);
+	}
 	*rval = STRING_TO_JSVAL(JS_NewString(cx, str, amount));
 	return JS_TRUE;
 }

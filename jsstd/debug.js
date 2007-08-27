@@ -1,6 +1,9 @@
 LoadModule('jsstd');
 //Print('Version :'+jsstd_revision);
 
+
+Print( 'systemBigEndian '+Pack.systemBigEndian + '\n' );
+
 var buf = new Buffer();
 buf.Write('\xff\xff\xff\xffabcd');
 

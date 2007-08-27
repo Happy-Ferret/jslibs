@@ -156,7 +156,7 @@ static void LoadErrorReporter(JSContext *cx, const char *message, JSErrorReport 
 
 // function copied from mozilla/js/src/js.c
 
-static uint32 gBranchLimit = 998;
+static uint32 gBranchLimit = 1000000;
 
 static uint32 gBranchCount;
 

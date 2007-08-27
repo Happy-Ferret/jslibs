@@ -143,4 +143,6 @@
 #define HAS_GET_PROPERTY   _class->getProperty = GetProperty;
 #define HAS_SET_PROPERTY   _class->setProperty = SetProperty;
 
+#define CALL_ON_INIT(fctName) (fctName)();
+
 #endif _JSCLASS_H_

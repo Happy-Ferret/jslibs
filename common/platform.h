@@ -83,6 +83,24 @@
 //#endif
 
 
+
+
+enum Endian {
+	BigEndian,
+	LittleEndian,
+	MiddleEndian
+};
+
+inline Endian DetectSystemEndianType() {
+
+	switch ( *(unsigned long*)"\3\2\1" ) {
+		case 0x03020100: return BigEndian;
+		case 0x00010203: return LittleEndian;
+		case 0x02030001: return MiddleEndian;
+	}
+}
+
+
 #endif // _PLATFORM_H_
 
 

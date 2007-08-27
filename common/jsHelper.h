@@ -26,6 +26,16 @@
 //#include <stdbool.h>
 #include <stdarg.h>
 
+
+// buffer realloc policy:
+
+inline bool MaybeRealloc( int requested, int received ) {
+
+	return (100 * received / requested < 90) && (requested - received > 256);
+}
+
+// unsafe mode management
+
 #ifdef USE_UNSAFE_MODE
 	extern bool _unsafeMode;
 #else
@@ -186,10 +196,14 @@
 
 #define RT_JSVAL_TO_UINT32( jsvalUInt, uintVariable ) { \
 	jsdouble tmp; \
-	JSBool st = JS_ValueToNumber(cx, jsvalUInt, &tmp ); \
-	RT_ASSERT( st != JS_FALSE, RT_ERROR_INT_CONVERSION_FAILED ); \
-	uintVariable = (unsigned long)tmp; \
-	RT_ASSERT( tmp == (double)((unsigned long)tmp), RT_ERROR_INT_CONVERSION_FAILED ); \
+	if ( JSVAL_IS_INT(jsvalUInt) && JSVAL_TO_INT(jsvalUInt) >= 0 ) { \
+		uintVariable = JSVAL_TO_INT(jsvalUInt); \
+	else { \
+		JSBool st = JS_ValueToNumber(cx, jsvalUInt, &tmp ); \
+		RT_ASSERT( st != JS_FALSE, RT_ERROR_INT_CONVERSION_FAILED ); \
+		uintVariable = (unsigned long)tmp; \
+		RT_ASSERT( tmp == (double)((unsigned long)tmp), RT_ERROR_INT_CONVERSION_FAILED ); \
+	} \
 }
 
 #define RT_JSVAL_TO_STRING( jsvalString, stringVariable ) { \

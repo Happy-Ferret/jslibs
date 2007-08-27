@@ -284,6 +284,31 @@ DEFINE_FUNCTION( GetRandomNoise ) {
 	return JS_TRUE;
 }
 
+/*
+**      PR_ntohs        16 bit conversion from network to host
+**      PR_ntohl        32 bit conversion from network to host
+**      PR_ntohll       64 bit conversion from network to host
+**      PR_htons        16 bit conversion from host to network
+**      PR_htonl        32 bit conversion from host to network
+**      PR_ntonll       64 bit conversion from host to network
+
+
+DEFINE_FUNCTION( hton ) {
+	
+	RT_ASSERT_ARGC( 1 );	
+
+	PRUint32 val;
+	RT_JSVAL_TO_UINT32( argv[0], val );
+
+	val = PR_ntohl(val);
+
+	if ( 
+
+	PR_htonll
+	return JS_TRUE;
+}
+
+*/
 
 CONFIGURE_STATIC
 
