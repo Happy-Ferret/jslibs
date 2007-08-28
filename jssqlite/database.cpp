@@ -246,12 +246,12 @@ DEFINE_PROPERTY( version ) {
 }
 
 
-typedef struct SqliteFunctionCallUserData {
+typedef struct {
 
 	JSRuntime *rt;
 	JSObject *object;
 	JSFunction *function;
-};
+} SqliteFunctionCallUserData;
 
 
 void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArgv ) {

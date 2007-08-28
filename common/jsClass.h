@@ -69,6 +69,12 @@
 
 
 // static definition
+#define DECLARE_STATIC() \
+	JSBool InitializeStatic(JSContext *cx, JSObject *obj);
+
+#define INIT_STATIC() \
+	InitializeStatic(cx, obj); \
+
 #define BEGIN_STATIC
 
 #define CONFIGURE_STATIC \
@@ -81,11 +87,6 @@
 	if ( _staticPropertySpec != NULL ) JS_DefineProperties(cx, obj, _staticPropertySpec); \
 	return JS_TRUE; } \
 
-#define DECLARE_STATIC() \
-	JSBool InitializeStatic(JSContext *cx, JSObject *obj);
-
-#define INIT_STATIC() \
-	InitializeStatic(cx, obj); \
 
 
 
@@ -143,6 +144,6 @@
 #define HAS_GET_PROPERTY   _class->getProperty = GetProperty;
 #define HAS_SET_PROPERTY   _class->setProperty = SetProperty;
 
-#define CALL_ON_INIT(fctName) (fctName)();
+#define CALL_ON_INIT(function) if ( (function)(cx, obj) != JS_TRUE ) return JS_FALSE;
 
 #endif _JSCLASS_H_

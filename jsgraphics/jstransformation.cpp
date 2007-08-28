@@ -314,7 +314,7 @@ DEFINE_FUNCTION( InverseProduct ) {
 	Matrix44 *tm = (Matrix44*)JS_GetPrivate(cx, obj); // tm for thisMatrix
 	RT_ASSERT_RESOURCE(tm);
 	Matrix44 tmp, *m = &tmp;
-	RT_CHECK_CALL( GetMatrixHelper(cx, argv[0], &m) )
+	RT_CHECK_CALL( GetMatrixHelper(cx, argv[0], &m) );
 	Matrix44InverseProduct(tm,m); // <- mult
 	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;

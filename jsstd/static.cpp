@@ -136,7 +136,7 @@ DEFINE_FUNCTION( Seal ) {
 	RT_ASSERT_OBJECT(argv[0]);
 	//RT_CHECK_CALL( JS_ValueToObject(cx, argv[0], &obj) );
 	if ( argc >= 2 )
-		RT_CHECK_CALL( JS_ValueToBoolean( cx, argv[1], &deep ) )
+		RT_CHECK_CALL( JS_ValueToBoolean( cx, argv[1], &deep ) );
 	else
 		deep = JS_FALSE;
 	return JS_SealObject(cx, JSVAL_TO_OBJECT(argv[0]), deep);
@@ -224,9 +224,9 @@ DEFINE_FUNCTION( IdOf ) {
 
 	jsid id;
 	if ( JSVAL_IS_OBJECT(argv[0]) )
-		RT_CHECK_CALL( JS_GetObjectId(cx, JSVAL_TO_OBJECT(argv[0]), &id) )
+		RT_CHECK_CALL( JS_GetObjectId(cx, JSVAL_TO_OBJECT(argv[0]), &id) );
 	else
-		RT_CHECK_CALL( JS_ValueToId(cx, argv[0], &id) )
+		RT_CHECK_CALL( JS_ValueToId(cx, argv[0], &id) );
 
 	if ( INT_FITS_IN_JSVAL(id) )
 		*rval = INT_TO_JSVAL(id);
@@ -261,7 +261,7 @@ DEFINE_FUNCTION( ASSERT ) {
 
 		char *message;
 		if ( argc >= 2 )
-			RT_JSVAL_TO_STRING( argv[1], message )
+			RT_JSVAL_TO_STRING( argv[1], message );
 		else
 			message = "Assertion failed.";
 		JS_ReportError( cx, message );

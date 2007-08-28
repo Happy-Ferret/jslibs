@@ -341,7 +341,7 @@ DEFINE_FUNCTION( Read ) { // Read( [amount | <undefined> ] )
 	}
 	size_t amount;
 	if ( argc == 0 )
-		RT_CHECK_CALL( BufferGetLength(cx, obj, &amount) ) // no arguments then read the whole buffer
+		RT_CHECK_CALL( BufferGetLength(cx, obj, &amount) ); // no arguments then read the whole buffer
 	else
 		RT_JSVAL_TO_INT32( argv[0], amount );
 	RT_ASSERT( amount >= 0, "Invalid amount" );

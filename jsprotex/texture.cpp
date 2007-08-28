@@ -502,7 +502,7 @@ DEFINE_FUNCTION( Colorize ) {
 
 	float power;
 	if ( argc >= 3 )
-		RT_JSVAL_TO_REAL(argv[2], power)
+		RT_JSVAL_TO_REAL(argv[2], power);
 	else
 		power = 1;
 	
@@ -554,7 +554,7 @@ DEFINE_FUNCTION( ExtractColor ) {
 
 	float power;
 	if ( argc >= 3 )
-		RT_JSVAL_TO_REAL(argv[2], power)
+		RT_JSVAL_TO_REAL(argv[2], power);
 	else
 		power = 1;
 
@@ -765,7 +765,7 @@ DEFINE_FUNCTION( MirrorLevels ) {
 	
 	bool mirrorTop;
 	if ( argc >= 2 && !JSVAL_IS_VOID(argv[1]) )
-		RT_JSVAL_TO_BOOL( argv[1], mirrorTop )
+		RT_JSVAL_TO_BOOL( argv[1], mirrorTop );
 	else
 		mirrorTop = true;
 
@@ -825,7 +825,7 @@ DEFINE_FUNCTION( AddNoise ) {
 	PTYPE pixel[PMAXCHANNELS];
 	if ( argc >= 1 ) {
 
-		RT_CHECK_CALL( InitLevelData(cx, argv[0], tex->channels, pixel) )
+		RT_CHECK_CALL( InitLevelData(cx, argv[0], tex->channels, pixel) );
 		fullLevel = false;
 	} else {
 
@@ -1681,7 +1681,7 @@ DEFINE_FUNCTION( Normals ) {
 
 	float amp;
 	if ( argc >= 1 )
-		RT_JSVAL_TO_REAL( argv[0], amp )
+		RT_JSVAL_TO_REAL( argv[0], amp );
 	else
 		amp = 1;
 
@@ -1794,13 +1794,13 @@ DEFINE_FUNCTION( Light ) {
 	
 	float bumpPower; // (TBD) default value
 	if ( argc >= 6 )
-		RT_JSVAL_TO_REAL( argv[5], bumpPower )
+		RT_JSVAL_TO_REAL( argv[5], bumpPower );
 	else
 		bumpPower = 1;
 
 	float specularPower; // (TBD) default value
 	if ( argc >= 7 )
-		RT_JSVAL_TO_REAL( argv[6], specularPower )
+		RT_JSVAL_TO_REAL( argv[6], specularPower );
 	else
 		specularPower = 1;
 
@@ -2119,7 +2119,7 @@ DEFINE_FUNCTION( Displace ) {
 
 	float factor;
 	if ( argc >= 2 )
-		RT_JSVAL_TO_REAL( argv[1], factor )
+		RT_JSVAL_TO_REAL( argv[1], factor );
 	else
 		factor = 1;
 
@@ -2361,7 +2361,7 @@ DEFINE_FUNCTION( AddGradiantRadial ) {
 
 	bool drawToCorner;
 	if ( argc >= 2 )
-		RT_JSVAL_TO_BOOL( argv[1], drawToCorner )
+		RT_JSVAL_TO_BOOL( argv[1], drawToCorner );
 	else
 		drawToCorner = true;
 

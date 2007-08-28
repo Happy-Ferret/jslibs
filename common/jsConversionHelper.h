@@ -119,12 +119,12 @@ inline JSBool JsvalToSInt32( JSContext *cx, jsval val, long *result, bool *outOf
 	if ( JSVAL_IS_INT( val ) ) {
 		
 		int v = JSVAL_TO_INT( val );
-		*outOfRange = v < SHRT_MIN || v > SHRT_MAX;
+		*outOfRange = v < LONG_MIN || v > LONG_MAX;
 		*result = (long)v;
 	} else if ( JSVAL_IS_DOUBLE( val ) ) {
 
 		double d = *JSVAL_TO_DOUBLE(val);
-		*outOfRange = d < SHRT_MIN || d > SHRT_MAX;
+		*outOfRange = d < LONG_MIN || d > LONG_MAX;
 		*result = (signed long)(unsigned long)d;
 	} else if ( JSVAL_IS_STRING( val ) ) { // using system byte order
 		
@@ -189,7 +189,7 @@ inline JSBool ArrayLength( JSContext *cx, int *count, const jsval jsvalArray ) {
 inline JSBool ArrayArrayToVector( JSContext *cx, int count, const jsval *vp, jsval *vector ) {
 
 	JSObject *jsArray;
-	RT_CHECK_CALL( JS_ValueToObject(cx, *vp, &jsArray) )
+	RT_CHECK_CALL( JS_ValueToObject(cx, *vp, &jsArray) );
 	RT_ASSERT( jsArray != NULL && JS_IsArrayObject(cx,jsArray), "value must be an array." );
 	jsval value; // sub-array
 	JSBool status;
@@ -205,7 +205,7 @@ inline JSBool ArrayArrayToVector( JSContext *cx, int count, const jsval *vp, jsv
 inline JSBool IntArrayToVector( JSContext *cx, int count, const jsval *vp, int *vector ) {
 
 	JSObject *jsArray;
-	RT_CHECK_CALL( JS_ValueToObject(cx, *vp, &jsArray) )
+	RT_CHECK_CALL( JS_ValueToObject(cx, *vp, &jsArray) );
 	RT_ASSERT( jsArray != NULL && JS_IsArrayObject(cx,jsArray), "value must be an array." );
 	jsval value;
 	JSBool status;
@@ -268,8 +268,6 @@ inline JSBool FloatVectorToArray( JSContext *cx, int count, const float *vector,
 }
 
 
-
-
 inline int GetInt( JSContext *cx, jsval objVal, const char *propertyName, int defaultValue ) {
 
 	int32 value;
@@ -283,6 +281,7 @@ inline int GetInt( JSContext *cx, jsval objVal, const char *propertyName, int de
 	return value;
 }
 
+
 inline float GetFloat( JSContext *cx, jsval objVal, const char *propertyName, float defaultValue ) {
 
 	jsdouble value;
@@ -295,6 +294,7 @@ inline float GetFloat( JSContext *cx, jsval objVal, const char *propertyName, fl
 		return defaultValue;
 	return value;
 }
+
 
 inline float GetBool( JSContext *cx, jsval objVal, const char *propertyName, bool defaultValue ) {
 

@@ -475,7 +475,7 @@ DEFINE_FUNCTION( PopupMenu ) {
 					RT_CHECK_CALL( CallFunction(cx, obj, itemVal, &itemVal, 2, item, key) );
 				}
 				if ( itemVal != JSVAL_VOID ) {
-					RT_JSVAL_TO_STRING( itemVal, newItem )
+					RT_JSVAL_TO_STRING( itemVal, newItem );
 				}
 			}
 

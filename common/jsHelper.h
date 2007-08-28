@@ -79,31 +79,31 @@ inline bool MaybeRealloc( int requested, int received ) {
 // helper macros
 
 #define RT_CHECK_CALL( functionCall ) \
-	{ if ((functionCall) == JS_FALSE) { return JS_FALSE; } }
+	do { if ((functionCall) == JS_FALSE) { return JS_FALSE; } }  while(0)
 
 #define RT_SAFE(code) \
-	{ if (!_unsafeMode) {code;} }
+	do { if (!_unsafeMode) {code;} } while(0)
 
 #define RT_UNSAFE(code) \
-	{ if (_unsafeMode) {code;} }
+	do { if (_unsafeMode) {code;} } while(0)
 
 #define REPORT_WARNING(errorMessage) \
-	{ JS_ReportWarning( cx, (errorMessage RT_CODE_LOCATION) ); }
+	do { JS_ReportWarning( cx, (errorMessage RT_CODE_LOCATION) ); } while(0)
 
 #define REPORT_WARNING_1(errorMessage, arg) \
-	{ JS_ReportWarning( cx, (errorMessage RT_CODE_LOCATION), (arg) ); }
+	do { JS_ReportWarning( cx, (errorMessage RT_CODE_LOCATION), (arg) ); } while(0)
 
 #define REPORT_WARNING_2(errorMessage, arg1, arg2) \
-	{ JS_ReportWarning( cx, (errorMessage RT_CODE_LOCATION), (arg1), (arg2) ); }
+	do { JS_ReportWarning( cx, (errorMessage RT_CODE_LOCATION), (arg1), (arg2) ); } while(0)
 
 #define REPORT_ERROR(errorMessage) \
-	{ JS_ReportError( cx, (errorMessage RT_CODE_LOCATION) ); return JS_FALSE; }
+	do { JS_ReportError( cx, (errorMessage RT_CODE_LOCATION) ); return JS_FALSE; } while(0)
 
 #define REPORT_ERROR_1(errorMessage, arg) \
-	{ JS_ReportError( cx, (errorMessage RT_CODE_LOCATION), (arg) ); return JS_FALSE; }
+	do { JS_ReportError( cx, (errorMessage RT_CODE_LOCATION), (arg) ); return JS_FALSE; } while(0)
 
 #define REPORT_ERROR_2(errorMessage, arg1, arg2) \
-	{ JS_ReportError( cx, (errorMessage RT_CODE_LOCATION), (arg1), (arg2) ); return JS_FALSE; }
+	do { JS_ReportError( cx, (errorMessage RT_CODE_LOCATION), (arg1), (arg2) ); return JS_FALSE; } while(0)
 
 
 /////////
@@ -165,36 +165,36 @@ inline bool MaybeRealloc( int requested, int received ) {
 	RT_ASSERT( argc <= (maxCount), RT_ERROR_TOO_MANY_ARGUMENTS );
 
 #define RT_ASSERT_CONSTRUCTING(jsClass) { \
-		RT_ASSERT( JS_IsConstructing(cx) == JS_TRUE, RT_ERROR_NEED_CONSTRUCTION ); \
-		RT_ASSERT_CLASS( obj, (jsClass) ); \
-	}
+	RT_ASSERT( JS_IsConstructing(cx) == JS_TRUE, RT_ERROR_NEED_CONSTRUCTION ); \
+	RT_ASSERT_CLASS( obj, (jsClass) ); \
+}
 
 
 ////////////////////
 // conversion macros
 
-#define RT_JSVAL_TO_BOOL( jsval, boolVariable ) { \
+#define RT_JSVAL_TO_BOOL( jsval, boolVariable ) do { \
 	JSBool b; \
 	JSBool st = JS_ValueToBoolean( cx, jsval, &b ); \
 	RT_ASSERT( st != JS_FALSE, RT_ERROR_INT_CONVERSION_FAILED ); \
 	boolVariable = (b == JS_TRUE); \
-}
+} while(0)
 
-#define RT_JSVAL_TO_REAL( jsval, floatVariable ) { \
+#define RT_JSVAL_TO_REAL( jsval, floatVariable ) do { \
 	jsdouble d; \
 	JSBool st = JS_ValueToNumber( cx, jsval, &d ); \
 	RT_ASSERT( st != JS_FALSE, RT_ERROR_INT_CONVERSION_FAILED ); \
 	floatVariable = d; \
-}
+} while(0)
 
-#define RT_JSVAL_TO_INT32( jsvalInt, intVariable ) { \
+#define RT_JSVAL_TO_INT32( jsvalInt, intVariable ) do { \
 	int32 intVal; \
 	JSBool st = JS_ValueToInt32( cx, jsvalInt, &intVal ); \
 	RT_ASSERT( st != JS_FALSE, RT_ERROR_INT_CONVERSION_FAILED ); \
 	intVariable = intVal; \
-}
+} while(0)
 
-#define RT_JSVAL_TO_UINT32( jsvalUInt, uintVariable ) { \
+#define RT_JSVAL_TO_UINT32( jsvalUInt, uintVariable ) do { \
 	jsdouble tmp; \
 	if ( JSVAL_IS_INT(jsvalUInt) && JSVAL_TO_INT(jsvalUInt) >= 0 ) { \
 		uintVariable = JSVAL_TO_INT(jsvalUInt); \
@@ -204,25 +204,26 @@ inline bool MaybeRealloc( int requested, int received ) {
 		uintVariable = (unsigned long)tmp; \
 		RT_ASSERT( tmp == (double)((unsigned long)tmp), RT_ERROR_INT_CONVERSION_FAILED ); \
 	} \
-}
+} while(0)
 
-#define RT_JSVAL_TO_STRING( jsvalString, stringVariable ) { \
+#define RT_JSVAL_TO_STRING( jsvalString, stringVariable ) do { \
 	JSString *___jssTmp = JS_ValueToString(cx,jsvalString); \
 	RT_ASSERT( ___jssTmp != NULL, RT_ERROR_STRING_CONVERSION_FAILED ); \
 	stringVariable = JS_GetStringBytes( ___jssTmp ); \
 	RT_ASSERT( stringVariable != NULL, RT_ERROR_STRING_CONVERSION_FAILED ); \
-}
+} while(0)
 
-#define RT_JSVAL_TO_STRING_AND_LENGTH( jsvalString, stringVariable, lengthVariable ) { \
+#define RT_JSVAL_TO_STRING_AND_LENGTH( jsvalString, stringVariable, lengthVariable ) do { \
 	JSString *___jssTmp = JS_ValueToString(cx,jsvalString); \
 	RT_ASSERT( ___jssTmp != NULL, RT_ERROR_STRING_CONVERSION_FAILED ); \
 	stringVariable = JS_GetStringBytes( ___jssTmp ); \
 	RT_ASSERT( stringVariable != NULL, RT_ERROR_STRING_CONVERSION_FAILED ); \
 	lengthVariable = JS_GetStringLength( ___jssTmp ); \
-}
+} while(0)
 
 
 ///////////
+
 
 inline double TimeNow() {
 

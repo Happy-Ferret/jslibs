@@ -220,15 +220,15 @@ DEFINE_FUNCTION( Read ) {
 //			*rval = JS_GetEmptyStringValue(cx);
 //		else
 			
-		RT_CHECK_CALL( ReadToJsval(cx, fd, amount, rval) )
+		RT_CHECK_CALL( ReadToJsval(cx, fd, amount, rval) );
 
 	} else { // amount value is NOT provided, then try to read all
 
 		PRInt32 available = PR_Available( fd );
 		if ( available != -1 ) // we can use the 'available' information
-			RT_CHECK_CALL( ReadToJsval(cx, fd, available, rval) )
+			RT_CHECK_CALL( ReadToJsval(cx, fd, available, rval) );
 		else // available is not usable with this fd, then we used a buffered read
-			RT_CHECK_CALL( ReadAllToJsval(cx, fd, rval) )
+			RT_CHECK_CALL( ReadAllToJsval(cx, fd, rval) );
 	}
 	return JS_TRUE;
 }

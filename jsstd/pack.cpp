@@ -23,41 +23,75 @@
 
 #include "limits.h"
 
-
-#define ROL16(x,b) (((x) << (b)) | ((x) >> (16 - (b))))
-
 static Endian systemEndian;
 
-void DetectEndian() {
+JSBool DetectSystemEndian(JSContext *cx, JSObject *obj) {
 
 	systemEndian = DetectSystemEndianType();
+	return JS_TRUE;
 }
 
+JSBool CheckSystemTypesSize(JSContext *cx, JSObject *obj) {
 
-void ShortToNetworkShort( unsigned short *val ) {
-	
-	if ( systemEndian == BigEndian )
-		*val = ROL16( *val, 8 );
+	RT_ASSERT( sizeof(char) == 1 && sizeof(short) == 2 && sizeof(long) == 4, "The system has no suitable type for using Pack class." );
+	return JS_TRUE;
 }
 
-void LongToNetworkLong( unsigned long *val ) {
+// cf. _swab()
+// 16 bits: #define SWAP_BYTES(X)           ((X & 0xff) << 8) | (X >> 8)
+// 32 bits swap: #define SWAP_BYTE(x) ((x<<24) | (x>>24) | ((x&0xFF00)<<8) | ((x&0xFF0000)>>8))
+#define BYTE_SWAP(ptr,a,b) { register char tmp = ((char*)ptr)[a]; ((char*)ptr)[a] = ((char*)ptr)[b]; ((char*)ptr)[b] = tmp; }
 
+void ShortToNetworkShort( void *pval ) {
+
+	if ( systemEndian == LittleEndian )
+		BYTE_SWAP( pval, 0, 1 )
 }
 
-void ULongToNetworkULong( unsigned long *val ) {
+void LongToNetworkLong( void *pval ) {
+
+	if ( systemEndian == LittleEndian ) {
+
+		BYTE_SWAP( pval, 0, 3 )
+		BYTE_SWAP( pval, 1, 2 )
+	}
 }
 
+void LLongToNetworkLLong( void *pval ) {
 
-void NetworkShortToShort( unsigned short *val ) {
+	if ( systemEndian == LittleEndian ) {
 
-	if ( systemEndian == BigEndian )
-		*val = ROL16( *val, 8 );
+		BYTE_SWAP( pval, 0, 7 )
+		BYTE_SWAP( pval, 1, 6 )
+		BYTE_SWAP( pval, 2, 5 )
+		BYTE_SWAP( pval, 3, 4 )
+	}
 }
 
-void NetworkLongToLong( unsigned long *val ) {
+void NetworkShortToShort( void *pval ) {
+
+	if ( systemEndian == LittleEndian )
+		BYTE_SWAP( pval, 0, 1 )
 }
 
-void NetworkLLongToLLong( unsigned LLONG *val ) {
+void NetworkLongToLong( void *pval ) {
+
+	if ( systemEndian == LittleEndian ) {
+
+		BYTE_SWAP( pval, 0, 3 )
+		BYTE_SWAP( pval, 1, 2 )
+	}
+}
+
+void NetworkLLongToLLong( void *pval ) {
+
+	if ( systemEndian == LittleEndian ) {
+
+		BYTE_SWAP( pval, 0, 7 )
+		BYTE_SWAP( pval, 1, 6 )
+		BYTE_SWAP( pval, 2, 5 )
+		BYTE_SWAP( pval, 3, 4 )
+	}
 }
 
 
@@ -89,16 +123,21 @@ DEFINE_FUNCTION( ReadInt ) {
 	RT_ASSERT_DEFINED( bufferVal );
 	JSObject *bufferObject = JSVAL_TO_OBJECT( bufferVal );
 
-
 	size_t size;
 	RT_JSVAL_TO_INT32( argv[0], size );
 	
 	bool isSigned;
 	if ( argc >= 2 )
-		RT_JSVAL_TO_BOOL( argv[1], isSigned )
+		RT_JSVAL_TO_BOOL( argv[1], isSigned );
 	else
 		isSigned = false;
 	
+	bool netConv;
+	if ( argc >= 3 )
+		RT_JSVAL_TO_BOOL( argv[2], netConv );
+	else
+		netConv = false;
+
 	unsigned char data[8] = { 0 };
 
 	size_t amount = size;
@@ -115,50 +154,50 @@ DEFINE_FUNCTION( ReadInt ) {
 			*rval = INT_TO_JSVAL( isSigned ? *(signed char*)data : *(unsigned char*)data );
 			break;
 		case sizeof(short):
+			if (netConv)
+				NetworkShortToShort(data);
 			if ( isSigned ) {
 				signed short val = *(signed short*)data;
-				NetworkShortToShort((unsigned short*)&val);
 				*rval = INT_TO_JSVAL( val );
 			} else {
 				unsigned short val = *(unsigned short*)data;
-				NetworkShortToShort((unsigned short*)&val);
 				*rval = INT_TO_JSVAL( val );
 			}
 			break;
 		case sizeof(long):
+			if (netConv)
+				NetworkLongToLong(data);
 			if ( isSigned ) {
 
 				signed long val = *(signed long*)data;
-				NetworkLongToLong( (unsigned long*)&val);
-				if ( INT_FITS_IN_JSVAL( val ) )
+				if ( val >> JSVAL_INT_BITS == 0 ) // check if we can store the value in a simple JSVAL_INT
 					*rval = INT_TO_JSVAL( val );
-				else
+				else // if not, we have to create a new number
 					RT_CHECK_CALL( JS_NewNumberValue(cx, val, rval) );
 			} else {
 
 				unsigned long val = *(unsigned long*)data;
-				NetworkLongToLong( (unsigned long*)&val);
-				if ( INT_FITS_IN_JSVAL( val ) )
+				if ( val >> (JSVAL_INT_BITS-1) == 0 ) // check if we can store the value in a simple JSVAL_INT ( -1 because the sign )
 					*rval = INT_TO_JSVAL( val );
-				else
+				else // if not, we have to create a new number
 					RT_CHECK_CALL( JS_NewNumberValue(cx, val, rval) );
 			}
 			break;
 		case sizeof(LLONG):
+			if (netConv)
+				NetworkLLongToLLong(data);
 			if ( isSigned ) {
 				
 				signed LLONG val = *(signed LLONG*)data;
-				NetworkLLongToLLong( (unsigned LLONG*)&val);
 				RT_CHECK_CALL( JS_NewNumberValue(cx, val, rval) );
 			} else {
 
 				unsigned LLONG val = *(unsigned LLONG*)data;
-				NetworkLLongToLLong( (unsigned LLONG*)&val);
 				RT_CHECK_CALL( JS_NewNumberValue(cx, val, rval) );
 			}
 			break;
 		default:
-			*rval = JSVAL_VOID;
+			REPORT_ERROR("Unable to manage this size.");
 	}
 	return JS_TRUE;
 }
@@ -184,24 +223,23 @@ DEFINE_FUNCTION( WriteInt ) {
 	RT_ASSERT_DEFINED( bufferVal );
 	JSObject *bufferObject = JSVAL_TO_OBJECT( bufferVal );
 
+	jsval jsvalue = argv[0];
+
 	size_t size;
 	RT_JSVAL_TO_INT32( argv[1], size );
 	
 	bool isSigned;
-	if ( argc >= 2 )
-		RT_JSVAL_TO_BOOL( argv[2], isSigned )
+	if ( argc >= 3 )
+		RT_JSVAL_TO_BOOL( argv[2], isSigned );
 	else
 		isSigned = false;
 
-	bool htonConversion;
-	if ( argc >= 3 )
-		RT_JSVAL_TO_BOOL( argv[2], htonConversion )
+	bool netConv;
+	if ( argc >= 4 )
+		RT_JSVAL_TO_BOOL( argv[3], netConv );
 	else
-		htonConversion = false;
+		netConv = false;
 
-
-
-	jsval jsvalue = argv[0];
 	unsigned char data[8] = { 0 };
 
 	bool outOfRange = false;
@@ -209,33 +247,36 @@ DEFINE_FUNCTION( WriteInt ) {
 	switch (size) {
 		case sizeof(char):
 			if ( isSigned )
-				RT_CHECK_CALL( JsvalToSInt8(cx, jsvalue, (char*)data, &outOfRange) )
+				RT_CHECK_CALL( JsvalToSInt8(cx, jsvalue, (char*)data, &outOfRange) );
 			else
-				RT_CHECK_CALL( JsvalToUInt8(cx, jsvalue, (unsigned char*)data, &outOfRange) )
+				RT_CHECK_CALL( JsvalToUInt8(cx, jsvalue, (unsigned char*)data, &outOfRange) );
 			break;
 		case sizeof(short):
 			if ( isSigned )
-				RT_CHECK_CALL( JsvalToSInt16(cx, jsvalue, (short*)data, &outOfRange) )
+				RT_CHECK_CALL( JsvalToSInt16(cx, jsvalue, (short*)data, &outOfRange) );
 			else
-				RT_CHECK_CALL( JsvalToUInt16(cx, jsvalue, (unsigned short*)data, &outOfRange) )
-			if ( htonConversion )
-				ShortToNetworkShort( (unsigned short*)data );
+				RT_CHECK_CALL( JsvalToUInt16(cx, jsvalue, (unsigned short*)data, &outOfRange) );
+			if ( netConv )
+				ShortToNetworkShort(data);
 			break;
 		case sizeof(long):
 			if ( isSigned )
-				RT_CHECK_CALL( JsvalToSInt32(cx, jsvalue, (long*)data, &outOfRange) )
+				RT_CHECK_CALL( JsvalToSInt32(cx, jsvalue, (long*)data, &outOfRange) );
 			else
-				RT_CHECK_CALL( JsvalToUInt32(cx, jsvalue, (unsigned long*)data, &outOfRange) )
-			if ( htonConversion )
-				LongToNetworkLong( (unsigned long*)data );
+				RT_CHECK_CALL( JsvalToUInt32(cx, jsvalue, (unsigned long*)data, &outOfRange) );
+			if ( netConv )
+				LongToNetworkLong(data);
 			break;
 		case sizeof(LLONG):
-			// (TBD)
-			break;
+			// (TBD) implement it
+			// break;
 		default:
-			*rval = JSVAL_VOID;
+			REPORT_ERROR("Unable to manage this size.");
 	}
 
+	RT_ASSERT( !outOfRange, "Value size too big to be stored." );
+
+	RT_CHECK_CALL( WriteRawData(cx, bufferObject, size, (char*)data) );
 
 	return JS_TRUE;
 }
@@ -324,7 +365,8 @@ DEFINE_PROPERTY( systemBigEndian ) {
 
 CONFIGURE_CLASS
 
-	CALL_ON_INIT( DetectEndian )
+	CALL_ON_INIT( DetectSystemEndian )
+	CALL_ON_INIT( CheckSystemTypesSize )
 
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE
@@ -333,6 +375,8 @@ CONFIGURE_CLASS
 		FUNCTION(ReadInt)
 		FUNCTION(ReadReal)
 		FUNCTION(ReadString)
+
+		FUNCTION(WriteInt)
 
 		FUNCTION(Test)
 

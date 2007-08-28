@@ -52,18 +52,18 @@ static void nearCallback (void *data, ode::dGeomID o1, ode::dGeomID o2) {
 		JSObject *obj1 = (JSObject*)ode::dGeomGetData(o1);
 		JSObject *obj2 = (JSObject*)ode::dGeomGetData(o2);
 
-		jsval rval, func1 = JSVAL_VOID, func2 = JSVAL_VOID;
+		jsval func1 = JSVAL_VOID, func2 = JSVAL_VOID;
 
 		if ( obj1 != NULL ) { // assert that the javascript object (over the Geom) is not finalized
 
 			JS_GetProperty(cx, obj1, COLLIDE_FEEDBACK_FUNCTION_NAME, &func1);
-			RT_SAFE( if ( func1 != JSVAL_VOID && JS_TypeOfValue(cx, func1) != JSTYPE_FUNCTION ) { JS_ReportError(cx, RT_ERROR_UNEXPECTED_TYPE " Function expected."); return; } ) // we need a function, nothing else
+			RT_SAFE( if ( func1 != JSVAL_VOID && JS_TypeOfValue(cx, func1) != JSTYPE_FUNCTION ) { JS_ReportError(cx, RT_ERROR_UNEXPECTED_TYPE " Function expected."); return; } ); // we need a function, nothing else
 		}
 
 		if ( obj2 != NULL ) { // assert that the javascript object (over the Geom) is not finalized
 
 			JS_GetProperty(cx, obj2, COLLIDE_FEEDBACK_FUNCTION_NAME, &func2);
-			RT_SAFE( if ( func2 != JSVAL_VOID && JS_TypeOfValue(cx, func2) != JSTYPE_FUNCTION ) { JS_ReportError(cx, RT_ERROR_UNEXPECTED_TYPE " Function expected."); return; } ) // we need a function, nothing else
+			RT_SAFE( if ( func2 != JSVAL_VOID && JS_TypeOfValue(cx, func2) != JSTYPE_FUNCTION ) { JS_ReportError(cx, RT_ERROR_UNEXPECTED_TYPE " Function expected."); return; } ); // we need a function, nothing else
 		}
 
 		for ( int i=0; i<n; i++ ) {

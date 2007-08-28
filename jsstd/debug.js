@@ -2,20 +2,30 @@ LoadModule('jsstd');
 //Print('Version :'+jsstd_revision);
 
 
-Print( 'systemBigEndian '+Pack.systemBigEndian + '\n' );
+Print( 'systemBigEndian='+Pack.systemBigEndian + '\n' );
 
 var buf = new Buffer();
-buf.Write('\xff\xff\xff\xffabcd');
+var pack = new Pack(buf);
+
+var v = 12345678;
+
+pack.WriteInt(v, 4, true);
+Print( 'pack test:', v == pack.ReadInt(4, true), '\n' );
+
+Halt();
+
+//buf.Write('\xff\xff\xff\xffabcd');
+buf.Write('\xAA\xBB\xCC\xDD');
 
 var pack = new Pack(buf);
 
-pack.Test(0xffffffff);
+Print( pack.ReadInt(4, false, true).toString(16), '\n' );
 
-Print( pack.ReadInt(8), '\n' );
+
 //Print( pack.ReadString(4), '\n' );
 
 
-//Halt();
+Halt();
 
 Print( '\n * testing IdOf ...\n' );
 

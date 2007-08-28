@@ -34,7 +34,7 @@ DEFINE_CONSTRUCTOR() {
 
 	int descType;
 	if ( argc >= 1 )
-		RT_JSVAL_TO_INT32( argv[0], descType )
+		RT_JSVAL_TO_INT32( argv[0], descType );
 	else
 		descType = PR_DESC_SOCKET_TCP; // default
 
@@ -123,7 +123,7 @@ DEFINE_FUNCTION( Listen ) {
 	PRStatus status;
 	PRIntn backlog;
 	if ( argc >= 1 )
-		RT_JSVAL_TO_INT32( argv[0], backlog )
+		RT_JSVAL_TO_INT32( argv[0], backlog );
 	else
 		backlog = 8; // too low ??
 	status = PR_Listen(fd, backlog);
