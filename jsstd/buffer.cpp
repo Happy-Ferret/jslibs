@@ -214,6 +214,7 @@ inline JSBool ReadOneChunk( JSContext *cx, JSObject *obj, jsval *rval ) {
 		}
 	}
 	Queue *queue = (Queue*)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE( queue );
 	JSString **pNewStr = (JSString**)QueueShift(queue);
 	bufferLength -= JS_GetStringLength(*pNewStr);
 	RT_CHECK_CALL( BufferSetLength(cx, obj, bufferLength) ); // update buffer size
@@ -243,6 +244,7 @@ JSBool ReadRawAmount( JSContext *cx, JSObject *obj, size_t *amount, char *str ) 
 	size_t remainToRead = *amount;
 
 	Queue *queue = (Queue*)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE( queue );
 
 	while ( remainToRead > 0 ) { // while there is something to read,
 
@@ -349,6 +351,37 @@ DEFINE_FUNCTION( Read ) { // Read( [amount | <undefined> ] )
 	return JS_TRUE;
 }
 
+/*
+DEFINE_FUNCTION( ReadUntil ) {
+
+
+10 - get a chunk
+20 - find the boundary string
+40 - if not found, concat. the chunk and goto 10
+50 - unread everything after the boundary string
+60 - Done.
+
+
+	RT_ASSERT_ARGC( 1 );
+
+	Queue *queue = (Queue*)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE( queue );
+	JSString **pNewStr = (JSString**)QueueShift(queue);
+
+	int boundary;
+	char *boundaryLength;
+	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], boundary, boundaryLength );
+
+
+	bufferLength -= JS_GetStringLength(*pNewStr);
+	RT_CHECK_CALL( BufferSetLength(cx, obj, bufferLength) ); // update buffer size
+	RT_CHECK_CALL( JS_RemoveRoot(cx, pNewStr) ); // removeRoot
+	*rval = STRING_TO_JSVAL(*pNewStr); // result (Rooted)
+	return JS_TRUE;
+
+	return JS_TRUE;
+}
+*/
 
 DEFINE_FUNCTION( Unread ) {
 
@@ -378,6 +411,7 @@ CONFIGURE_CLASS
 		FUNCTION(Write)
 		FUNCTION(Unread)
 		FUNCTION(Read)
+		FUNCTION(ReadUntil)
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
