@@ -26,5 +26,3 @@ rem  JS_THREADSAFE=1 JS_DIST=../../nspr
 
 set PATH=%prevPath%
 cd /D %prevDir%
-
-pause

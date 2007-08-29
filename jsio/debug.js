@@ -30,12 +30,13 @@ Print('\n * testing simple file write \n');
 Print('\n * testing UDP socket \n');
 
 
-	var data = '';
-	for ( var i = 0; i < 8193; i++, data += 'x' );
+	var data = '1234';
+//	for ( var i = 0; i < 8192; i++, data += 'x' );
 
 	var step = 0;
 
 	var s1 = new Socket( Socket.UDP );
+	s1.reuseAddr = true;
 	s1.Connect('127.0.0.1', 1);
 	
 	var s2 = new Socket( Socket.UDP );

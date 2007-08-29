@@ -20,6 +20,7 @@
 #include "descriptor.h"
 #include "file.h"
 
+
 BEGIN_CLASS( Socket )
 
 
@@ -39,7 +40,7 @@ DEFINE_CONSTRUCTOR() {
 		descType = PR_DESC_SOCKET_TCP; // default
 
 	PRFileDesc *fd;
-
+	
 	if ( descType == PR_DESC_SOCKET_TCP )
 		fd = PR_NewTCPSocket();
 	else if ( descType == PR_DESC_SOCKET_UDP )
@@ -77,7 +78,6 @@ DEFINE_FUNCTION( Shutdown ) {
 		return ThrowIoError( cx, PR_GetError(), PR_GetOSError() );
 	return JS_TRUE;
 }
-
 
 
 DEFINE_FUNCTION( Bind ) {
@@ -170,39 +170,62 @@ DEFINE_FUNCTION( Connect ) {
 	PRFileDesc *fd = (PRFileDesc*)JS_GetPrivate( cx, obj );
 	RT_ASSERT_RESOURCE( fd );
 
-	char *hostName;
-	RT_JSVAL_TO_STRING( argv[0], hostName );
+	char *host;
+	RT_JSVAL_TO_STRING( argv[0], host );
 
 	PRUint16 port;
 	RT_JSVAL_TO_INT32( argv[1], port );
 
+	PRIntervalTime connectTimeout;
+	if ( argc >= 3 ) {
+
+		PRUint32 timeoutInMilliseconds;
+		RT_JSVAL_TO_INT32( argv[2], timeoutInMilliseconds );
+		connectTimeout = PR_MillisecondsToInterval(timeoutInMilliseconds);
+	} else
+		connectTimeout = PR_INTERVAL_NO_TIMEOUT;
+
 	PRStatus status;
-
-	char netdb_buf[PR_NETDB_BUF_SIZE];
-	PRHostEnt he;
-	status = PR_GetHostByName( hostName, netdb_buf, sizeof(netdb_buf), &he );
-
-	if ( status != PR_SUCCESS )
-		return ThrowIoError( cx, PR_GetError(), PR_GetOSError() );
-
 	PRNetAddr addr;
-	PRIntn next_index = 0;
 
-	next_index = PR_EnumerateHostEnt(next_index, &he, port, &addr); // data is valid until return is -1
-	if ( next_index == -1 )
-		return ThrowIoError( cx, PR_GetError(), PR_GetOSError() );
+	if ( PR_StringToNetAddr(host, &addr) == PR_SUCCESS ) {
 
-	status = PR_Connect( fd, &addr , /*PRIntervalTime*/ PR_INTERVAL_NO_TIMEOUT ); // timeout is ignored in nonblocking mode ( cf. PR_INTERVAL_NO_WAIT )
-	if ( status != PR_SUCCESS ) {
+		status = PR_InitializeNetAddr(PR_IpAddrNull, port, &addr);
+		if ( status != PR_SUCCESS )
+			return ThrowIoError( cx, PR_GetError(), PR_GetOSError() );
+	} else {
 
-		PRErrorCode errorCode = PR_GetError();
-		if ( errorCode != PR_IN_PROGRESS_ERROR ) // not nonblocking-error
-			return ThrowIoError( cx, errorCode, PR_GetOSError() );
+		char netdb_buf[PR_NETDB_BUF_SIZE];
+		PRHostEnt hostEntry;
+		PRIntn hostIndex;
+
+		status = PR_GetHostByName( host, netdb_buf, sizeof(netdb_buf), &hostEntry );
+		if ( status != PR_SUCCESS )
+			return ThrowIoError( cx, PR_GetError(), PR_GetOSError() );
+
+		hostIndex = 0;
+		hostIndex = PR_EnumerateHostEnt(hostIndex, &hostEntry, port, &addr); // data is valid until return is -1
+		if ( hostIndex == -1 )
+			return ThrowIoError( cx, PR_GetError(), PR_GetOSError() );
 	}
+
+		status = PR_Connect( fd, &addr, connectTimeout ); // timeout is ignored in nonblocking mode ( cf. PR_INTERVAL_NO_WAIT )
+		if ( status != PR_SUCCESS ) {
+
+			PRErrorCode errorCode = PR_GetError();
+			switch (errorCode) {
+				case PR_CONNECT_TIMEOUT_ERROR:
+					*rval = JSVAL_FALSE;
+					return JS_TRUE;
+				case PR_IN_PROGRESS_ERROR: // not nonblocking-error
+					break;
+				default:
+					return ThrowIoError( cx, errorCode, PR_GetOSError() );
+			}
+		}
 	// see 	PR_GetConnectStatus or PR_ConnectContinue INSTEAD ???
 
 	SetNativeInterface(cx, obj, NI_READ_RESOURCE, (FunctionPointer)NativeInterfaceReadDescriptor, fd);
-
 	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 }
