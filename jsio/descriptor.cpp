@@ -124,7 +124,7 @@ JSBool ReadToJsval(JSContext *cx, PRFileDesc *fd, int amount, jsval *rval ) {
 	if (res == -1) { // failure. The reason for the failure can be obtained by calling PR_GetError.
 
 		JS_free( cx, buf );
-		return ThrowIoError( cx, PR_GetError() );
+		return ThrowIoError( cx, PR_GetError(), PR_GetOSError() );
 	}
 
 	if (res == 0) {
@@ -171,7 +171,7 @@ JSBool ReadAllToJsval(JSContext *cx, PRFileDesc *fd, jsval *rval ) {
 			while ( chunkListContentLength )
 				free(chunkList[--chunkListContentLength]);
 			free(chunkList);
-			return ThrowIoError( cx, PR_GetError() );
+			return ThrowIoError( cx, PR_GetError(), PR_GetOSError() );
 		}
 		*(int*)chunk = res;
 		totalLength += res;
@@ -246,7 +246,7 @@ DEFINE_FUNCTION( Write ) {
 	PRInt32 res = PR_Write( fd, str, len ); // (TBD) if len==0, do write ? 
 	
 	if ( res == -1 )
-		return ThrowIoError( cx, PR_GetError() );
+		return ThrowIoError( cx, PR_GetError(), PR_GetOSError() );
 
 	if ( res < len )
 		*rval = STRING_TO_JSVAL( JS_NewDependentString(cx, JSVAL_TO_STRING( argv[0] ), res, len - res) ); // return unsent data
@@ -263,7 +263,7 @@ DEFINE_FUNCTION( Sync ) {
 
 	PRStatus status = PR_Sync(fd);
 	if ( status == PR_FAILURE )
-		return ThrowIoError( cx, PR_GetError() );
+		return ThrowIoError( cx, PR_GetError(), PR_GetOSError() );
 
 	return JS_TRUE;
 }
@@ -277,7 +277,7 @@ DEFINE_PROPERTY( available ) {
 	PRInt64 available = PR_Available64( fd ); // For a normal file, these are the bytes beyond the current file pointer.
 
 	if ( available == -1 )
-		return ThrowIoError( cx, PR_GetError() );
+		return ThrowIoError( cx, PR_GetError(), PR_GetOSError() );
 
 	if ( available <= JSVAL_INT_MAX )
 		*vp = INT_TO_JSVAL(available);
@@ -345,7 +345,7 @@ DEFINE_FUNCTION( Import ) {
 			REPORT_ERROR("Invalid descriptor type.");
 	}
 	if ( fd == NULL )
-		return ThrowIoError( cx, PR_GetError() );
+		return ThrowIoError( cx, PR_GetError(), PR_GetOSError() );
 
 	RT_ASSERT_ALLOC( descriptorObject ); 
 	RT_CHECK_CALL( JS_SetPrivate(cx, descriptorObject, (void*)fd) );

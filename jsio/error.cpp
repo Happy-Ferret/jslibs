@@ -31,6 +31,12 @@ DEFINE_PROPERTY( code ) {
 	return JS_TRUE;
 }
 
+DEFINE_PROPERTY( os ) {
+
+	JS_GetReservedSlot( cx, obj, 1, vp );  // (TBD) use the obj.name proprety directly instead of slot 1 ?
+	return JS_TRUE;
+}
+
 DEFINE_PROPERTY( text ) {
 
 	JS_GetReservedSlot( cx, obj, 0, vp );  // (TBD) use the obj.name proprety directly instead of slot 0 ?
@@ -46,16 +52,17 @@ CONFIGURE_CLASS
 
 	BEGIN_PROPERTY_SPEC
 		PROPERTY_READ( code )
+		PROPERTY_READ( os )
 		PROPERTY_READ( text )
 	END_PROPERTY_SPEC
 
-	HAS_RESERVED_SLOTS(1)
+	HAS_RESERVED_SLOTS(2)
 
 END_CLASS
 
 
 
-JSBool ThrowIoError( JSContext *cx, PRErrorCode errorCode ) {
+JSBool ThrowIoError( JSContext *cx, PRErrorCode errorCode, PRInt32 osError ) {
 
 /*
 	const char * filename = NULL;
@@ -73,6 +80,7 @@ JSBool ThrowIoError( JSContext *cx, PRErrorCode errorCode ) {
 	JS_ReportWarning( cx, "IoError exception" );
 	JSObject *error = JS_NewObject( cx, &classIoError, NULL, NULL );
 	JS_SetReservedSlot( cx, error, 0, INT_TO_JSVAL(errorCode) );
+	JS_SetReservedSlot( cx, error, 1, INT_TO_JSVAL(osError) );
 	JS_SetPendingException( cx, OBJECT_TO_JSVAL( error ) );
 	return JS_FALSE;
 }

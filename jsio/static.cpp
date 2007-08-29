@@ -98,7 +98,7 @@ DEFINE_FUNCTION( Poll ) {
 
 	if ( result == -1 ) {  // failed. see PR_GetError()
 
-		ThrowIoError( cx, PR_GetError() );
+		ThrowIoError( cx, PR_GetError(), PR_GetOSError() );
 		goto failed;
 	}
 
@@ -172,7 +172,7 @@ DEFINE_FUNCTION( IsReadable ) {
 
 	PRInt32 result = PR_Poll( &desc, 1, prTimeout );
 	if ( result == -1 ) // error
-		return ThrowIoError( cx, PR_GetError() );
+		return ThrowIoError( cx, PR_GetError(), PR_GetOSError() );
 
 	if ( result == 1 && (desc.out_flags & PR_POLL_READ) != 0 ) {
 
@@ -208,7 +208,7 @@ DEFINE_FUNCTION( IsWritable ) {
 
 	PRInt32 result = PR_Poll( &desc, 1, prTimeout );
 	if ( result == -1 ) // error
-		return ThrowIoError( cx, PR_GetError() );
+		return ThrowIoError( cx, PR_GetError(), PR_GetOSError() );
 
 	if ( result == 1 && (desc.out_flags & PR_POLL_WRITE) != 0 ) {
 

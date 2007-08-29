@@ -14,4 +14,4 @@
 
 DECLARE_CLASS( IoError )
 
-JSBool ThrowIoError( JSContext *cx, PRErrorCode errorCode );
+JSBool ThrowIoError( JSContext *cx, PRErrorCode errorCode, PRInt32 osError );
