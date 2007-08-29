@@ -109,7 +109,7 @@ JSBool FindInBuffer( JSContext *cx, JSObject *obj, char *needle, int needleLengt
 	RT_ASSERT_RESOURCE( queue );
 	
 	int pos = 0;
-	char *buf = (char*)malloc(needleLength);
+	char *buf = (char*)malloc(needleLength); // the ring buffer
 
 	int chunkLength;
 	char *chunk;
@@ -126,7 +126,7 @@ JSBool FindInBuffer( JSContext *cx, JSObject *obj, char *needle, int needleLengt
 			buf[pos++ % needleLength] = chunk[i]; // store one more char of the chunk in the ring buffer
 			if ( pos >= needleLength ) { // if we have enough data in the ring buffer to start the search
 				 
-				for ( j = 0; j < needleLength && needle[j] == buf[(pos+j) % needleLength]; j++ ); // search the 'needle' in starting at the right place in the 'buf'
+				for ( j = 0; j < needleLength && needle[j] == buf[(pos+j) % needleLength]; j++ ); // search the 'needle' starting at the right position in the ring buffer.
 				if( j == needleLength ) { // if all chars of the 'needle' are found
 
 					*foundAt = pos-needleLength;
@@ -275,9 +275,10 @@ JSBool ReadRawAmount( JSContext *cx, JSObject *obj, size_t *amount, char *str ) 
 
 	if ( bufferLength < *amount || bufferLength == 0 ) { // more that the available data is required, then try to refill the buffer
 
+		size_t bufferLengthBeforeRefillRequest;
 		do {
 
-			size_t bufferLengthBeforeRefillRequest = bufferLength;
+			bufferLengthBeforeRefillRequest = bufferLength;
 			RT_CHECK_CALL( BufferRefillRequest(cx, obj, *amount - bufferLength) );
 			RT_CHECK_CALL( BufferGetLength(cx, obj, &bufferLength) ); // read it again because it may have changed
 		} while( *amount > bufferLength && bufferLength != bufferLengthBeforeRefillRequest ); // if bufferLength == bufferLengthBeforeRefillRequest nothing has been added in the buffer
@@ -397,6 +398,18 @@ DEFINE_FUNCTION( Read ) { // Read( [amount | <undefined> ] )
 	return JS_TRUE;
 }
 
+/*
+DEFINE_FUNCTION( Skip ) { // Skip( amount )
+
+	RT_ASSERT_ARGC( 1 );
+	RT_ASSERT_RESOURCE( JS_GetPrivate(cx, obj) ); // first, ensure that the object is valid
+	size_t amount;
+	RT_JSVAL_TO_INT32( argv[0], amount );
+	RT_ASSERT( amount >= 0, "Invalid amount" );
+	RT_CHECK_CALL( ReadAmount(cx, obj, amount, rval) ); // (TBD) optimization: skip without reading the data.
+	return JS_TRUE;
+}
+*/
 
 DEFINE_FUNCTION( ReadUntil ) {
 
@@ -406,8 +419,12 @@ DEFINE_FUNCTION( ReadUntil ) {
 	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], boundary, boundaryLength );
 	int found;
 	RT_CHECK_CALL( FindInBuffer(cx, obj, boundary, boundaryLength, &found) );
-	if ( found != -1 )
+	if ( found != -1 ) {
+
 		ReadAmount(cx, obj, found, rval);
+		jsval tmp;
+		RT_CHECK_CALL( ReadAmount(cx, obj, boundaryLength, &tmp) ); // (TBD) optimization: skip without reading the data.
+	}
 	return JS_TRUE;
 }
 
@@ -441,6 +458,7 @@ CONFIGURE_CLASS
 		FUNCTION(Unread)
 		FUNCTION(Read)
 		FUNCTION(ReadUntil)
+//		FUNCTION(Skip)
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
