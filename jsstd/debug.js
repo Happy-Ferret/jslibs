@@ -1,6 +1,13 @@
 LoadModule('jsstd');
 //Print('Version :'+jsstd_revision);
 
+var buf = new Buffer();
+buf.Write('xxx1');
+buf.Write('12');
+
+Print( buf.ReadUntil('112') );
+
+Halt();
 
 Print( 'systemBigEndian='+Pack.systemBigEndian + '\n' );
 

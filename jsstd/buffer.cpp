@@ -97,7 +97,48 @@ inline JSBool BufferRefillRequest( JSContext *cx, JSObject *obj, size_t missing 
 		jsval retVal;
 		RT_CHECK_CALL( CallFunction(cx, obj, fctVal, &retVal, 2, OBJECT_TO_JSVAL(obj), INT_TO_JSVAL(missing) ) );
 	}
+	return JS_TRUE;
+}
 
+
+JSBool FindInBuffer( JSContext *cx, JSObject *obj, char *needle, int needleLength, int *foundAt ) {
+
+	// (TBD) optimise this function for needleLength == 1 (eg. '\0' in a string)
+
+	Queue *queue = (Queue*)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE( queue );
+	
+	int pos = 0;
+	char *buf = (char*)malloc(needleLength);
+
+	int chunkLength;
+	char *chunk;
+	int i, j;
+
+	for ( QueueCell *it = queue->begin; it; it = it->next ) {
+
+		JSString **pNewStr = (JSString**)QueueGetData(it);
+		chunkLength = JS_GetStringLength(*pNewStr);
+		chunk = JS_GetStringBytes(*pNewStr);
+
+		for ( i = 0; i < chunkLength; i++ ) {
+			
+			buf[pos++ % needleLength] = chunk[i]; // store one more char of the chunk in the ring buffer
+			if ( pos >= needleLength ) { // if we have enough data in the ring buffer to start the search
+				 
+				for ( j = 0; j < needleLength && needle[j] == buf[(pos+j) % needleLength]; j++ ); // search the 'needle' in starting at the right place in the 'buf'
+				if( j == needleLength ) { // if all chars of the 'needle' are found
+
+					*foundAt = pos-needleLength;
+					goto end; // this is a cheap way to break all these nested loops
+				}
+			}
+		}
+	}
+
+	*foundAt = -1;
+end:
+	free(buf);
 	return JS_TRUE;
 }
 
@@ -234,8 +275,13 @@ JSBool ReadRawAmount( JSContext *cx, JSObject *obj, size_t *amount, char *str ) 
 
 	if ( bufferLength < *amount || bufferLength == 0 ) { // more that the available data is required, then try to refill the buffer
 
-		RT_CHECK_CALL( BufferRefillRequest(cx, obj, *amount - bufferLength) );
-		RT_CHECK_CALL( BufferGetLength(cx, obj, &bufferLength) ); // read it again because it may have changed
+		do {
+
+			size_t bufferLengthBeforeRefillRequest = bufferLength;
+			RT_CHECK_CALL( BufferRefillRequest(cx, obj, *amount - bufferLength) );
+			RT_CHECK_CALL( BufferGetLength(cx, obj, &bufferLength) ); // read it again because it may have changed
+		} while( *amount > bufferLength && bufferLength != bufferLengthBeforeRefillRequest ); // if bufferLength == bufferLengthBeforeRefillRequest nothing has been added in the buffer
+
 		if ( *amount > bufferLength ) // we definitively cannot read the required amount of data, then read the whole buffer.
 			*amount = bufferLength;
 	}
@@ -351,37 +397,20 @@ DEFINE_FUNCTION( Read ) { // Read( [amount | <undefined> ] )
 	return JS_TRUE;
 }
 
-/*
+
 DEFINE_FUNCTION( ReadUntil ) {
 
-
-10 - get a chunk
-20 - find the boundary string
-40 - if not found, concat. the chunk and goto 10
-50 - unread everything after the boundary string
-60 - Done.
-
-
 	RT_ASSERT_ARGC( 1 );
-
-	Queue *queue = (Queue*)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE( queue );
-	JSString **pNewStr = (JSString**)QueueShift(queue);
-
-	int boundary;
-	char *boundaryLength;
+	char *boundary;
+	int boundaryLength;
 	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], boundary, boundaryLength );
-
-
-	bufferLength -= JS_GetStringLength(*pNewStr);
-	RT_CHECK_CALL( BufferSetLength(cx, obj, bufferLength) ); // update buffer size
-	RT_CHECK_CALL( JS_RemoveRoot(cx, pNewStr) ); // removeRoot
-	*rval = STRING_TO_JSVAL(*pNewStr); // result (Rooted)
-	return JS_TRUE;
-
+	int found;
+	RT_CHECK_CALL( FindInBuffer(cx, obj, boundary, boundaryLength, &found) );
+	if ( found != -1 )
+		ReadAmount(cx, obj, found, rval);
 	return JS_TRUE;
 }
-*/
+
 
 DEFINE_FUNCTION( Unread ) {
 
