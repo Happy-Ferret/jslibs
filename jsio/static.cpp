@@ -134,7 +134,21 @@ DEFINE_FUNCTION( Poll ) {
 				if ( JS_CallFunctionValue( cx, o, prop, 1, rval, &ret ) == JS_FALSE ) // JS_CallFunction() DO NOT WORK !!!
 					goto failed;
 
-			// need PR_POLL_NVAL and PR_POLL_HUP ??
+			JS_GetProperty( cx, o, "error", &prop );
+			if ( pollDesc[i].out_flags & PR_POLL_ERR && JS_TypeOfValue( cx, prop ) == JSTYPE_FUNCTION )
+				if ( JS_CallFunctionValue( cx, o, prop, 1, rval, &ret ) == JS_FALSE ) // JS_CallFunction() DO NOT WORK !!!
+					goto failed;
+/*
+			JS_GetProperty( cx, o, "nval", &prop );
+			if ( pollDesc[i].out_flags & PR_POLL_NVAL && JS_TypeOfValue( cx, prop ) == JSTYPE_FUNCTION )
+				if ( JS_CallFunctionValue( cx, o, prop, 1, rval, &ret ) == JS_FALSE ) // JS_CallFunction() DO NOT WORK !!!
+					goto failed;
+
+			JS_GetProperty( cx, o, "hup", &prop );
+			if ( pollDesc[i].out_flags & PR_POLL_HUP && JS_TypeOfValue( cx, prop ) == JSTYPE_FUNCTION )
+				if ( JS_CallFunctionValue( cx, o, prop, 1, rval, &ret ) == JS_FALSE ) // JS_CallFunction() DO NOT WORK !!!
+					goto failed;
+*/
 		}
 	}
 

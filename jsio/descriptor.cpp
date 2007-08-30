@@ -124,7 +124,12 @@ JSBool ReadToJsval(JSContext *cx, PRFileDesc *fd, int amount, jsval *rval ) {
 	if (res == -1) { // failure. The reason for the failure can be obtained by calling PR_GetError.
 
 		JS_free( cx, buf );
-		return ThrowIoError( cx, PR_GetError(), PR_GetOSError() );
+
+		PRErrorCode errCode = PR_GetError();
+		if ( errCode != PR_WOULD_BLOCK_ERROR )
+			return ThrowIoError( cx, errCode, PR_GetOSError() );
+		*rval = JS_GetEmptyStringValue(cx); // (TBD) check if it is realy faster.
+		return JS_TRUE;
 	}
 
 	if (res == 0) {
@@ -155,7 +160,7 @@ JSBool ReadAllToJsval(JSContext *cx, PRFileDesc *fd, jsval *rval ) {
 	char **chunkList = (char **)malloc(chunkListTotalLength * sizeof(char*));
 	int currentReadLength = 1024;
 
-	PRInt32 res;
+	PRInt32 receivedAmount;
 	do {
 		if ( chunkListContentLength >= chunkListTotalLength ) {
 
@@ -165,18 +170,28 @@ JSBool ReadAllToJsval(JSContext *cx, PRFileDesc *fd, jsval *rval ) {
 		//	currentReadLength = currentReadLength < 16384 ? 2048 + 1024 * chunkListContentLength : 16384; // 2048, 3072, 4096, 5120, ..., 16384
 		char *chunk = (char *)malloc(sizeof(int) + currentReadLength);  // chunk format: int + data ...
 		chunkList[chunkListContentLength++] = chunk;
-		res = PR_Read( fd, chunk + sizeof(int), currentReadLength ); // chunk + sizeof(int) gives the position where the data can be written. Size to read is currentReadLength
+
+		PRInt32 res = PR_Read( fd, chunk + sizeof(int), currentReadLength ); // chunk + sizeof(int) gives the position where the data can be written. Size to read is currentReadLength
 		if (res == -1) { // failure. The reason for the failure can be obtained by calling PR_GetError.
 
-			while ( chunkListContentLength )
-				free(chunkList[--chunkListContentLength]);
-			free(chunkList);
-			return ThrowIoError( cx, PR_GetError(), PR_GetOSError() );
-		}
-		*(int*)chunk = res;
-		totalLength += res;
+			PRErrorCode errCode = PR_GetError();
+			if ( errCode != PR_WOULD_BLOCK_ERROR ) {
 
-	} while ( res == currentReadLength );
+				while ( chunkListContentLength )
+					free(chunkList[--chunkListContentLength]);
+				free(chunkList);
+				return ThrowIoError( cx, errCode, PR_GetOSError() );
+			}
+			free(chunkList[--chunkListContentLength]); // cancel the last chunk
+			receivedAmount == 0;
+			break; // no error, no data received, we cannot reach currentReadLength
+		} else
+			receivedAmount = res;
+
+		*(int*)chunk = receivedAmount;
+		totalLength += receivedAmount;
+
+	} while ( receivedAmount == currentReadLength );
 	
 	if ( totalLength == 0 ) {
 
@@ -243,13 +258,22 @@ DEFINE_FUNCTION( Write ) {
 	int len;
 	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], str, len );
 
-	PRInt32 res = PR_Write( fd, str, len ); // (TBD) if len==0, do write ? 
-	
-	if ( res == -1 )
-		return ThrowIoError( cx, PR_GetError(), PR_GetOSError() );
+	PRInt32 sentAmount;
 
-	if ( res < len )
-		*rval = STRING_TO_JSVAL( JS_NewDependentString(cx, JSVAL_TO_STRING( argv[0] ), res, len - res) ); // return unsent data
+	PRInt32 res = PR_Write( fd, str, len ); // (TBD) if len==0, do write ? 
+	if ( res == -1 ) {
+
+		PRErrorCode errCode = PR_GetError();
+		if ( errCode != PR_WOULD_BLOCK_ERROR )
+			return ThrowIoError( cx, errCode, PR_GetOSError() );
+		sentAmount = 0;
+	} else
+		sentAmount = res;
+
+	if ( sentAmount < len )
+		*rval = STRING_TO_JSVAL( JS_NewDependentString(cx, JSVAL_TO_STRING( argv[0] ), sentAmount, len - sentAmount) ); // return unsent data
+	else if ( sentAmount == 0 )
+		*rval = argv[0]; // nothing has been sent
 	else
 		*rval = JS_GetEmptyStringValue(cx); // nothing remains
 	return JS_TRUE;

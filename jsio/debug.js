@@ -3,6 +3,8 @@ LoadModule('jsio');
 
 try {
 
+Print( Socket.GetHostsByName('www.google.com') );
+Halt();
 
 /*
 var f = new File('toto.txt');

@@ -15,11 +15,11 @@
 #include "stdafx.h"
 #include "../common/jsNativeInterface.h"
 
-
 #include "error.h"
 #include "descriptor.h"
 #include "file.h"
 
+#define MAX_IP_STRING 39 // IPv4 & IPv6
 
 BEGIN_CLASS( Socket )
 
@@ -115,7 +115,16 @@ DEFINE_FUNCTION( Bind ) {
 	return JS_TRUE;
 }
 
-
+///////////////////////////////////////////////////////////////////////////////
+//Q. PR_ConnectContinue() returns PR_SUCCESS whereas the server socket didn't PR_Accept() the connection.
+//A. This behavior is reasonable if you have called PR_Listen on the
+//   server socket.  After PR_Listen socket is called, the OS will
+//   accept the connection for you as long as the listen queue is
+//   not full.  This is why the client side gets a connection success
+//   indication before the server side has called PR_Accept.
+//   Since your call sequence shows that the SERVER called Listen()
+//   and the SERVER socket was readable, the above is what happened.
+//    Wan-Teh
 DEFINE_FUNCTION( Listen ) {
 
 	PRFileDesc *fd = (PRFileDesc*)JS_GetPrivate( cx, obj );
@@ -195,16 +204,16 @@ DEFINE_FUNCTION( Connect ) {
 			return ThrowIoError( cx, PR_GetError(), PR_GetOSError() );
 	} else {
 
-		char netdb_buf[PR_NETDB_BUF_SIZE];
+		char netdbBuf[PR_NETDB_BUF_SIZE];
 		PRHostEnt hostEntry;
 		PRIntn hostIndex;
 
-		status = PR_GetHostByName( host, netdb_buf, sizeof(netdb_buf), &hostEntry );
+		status = PR_GetHostByName( host, netdbBuf, sizeof(netdbBuf), &hostEntry );
 		if ( status != PR_SUCCESS )
 			return ThrowIoError( cx, PR_GetError(), PR_GetOSError() );
 
 		hostIndex = 0;
-		hostIndex = PR_EnumerateHostEnt(hostIndex, &hostEntry, port, &addr); // data is valid until return is -1
+		hostIndex = PR_EnumerateHostEnt(hostIndex, &hostEntry, port, &addr); // data is valid until return is 0 or -1
 		if ( hostIndex == -1 )
 			return ThrowIoError( cx, PR_GetError(), PR_GetOSError() );
 	}
@@ -265,6 +274,80 @@ DEFINE_FUNCTION( TransmitFile ) { // WORKS ONLY ON BLOCKING SOCKET !!!
 }
 
 
+
+///////////////////////////////////////////////////////////////////////////////
+// http://developer.mozilla.org/en/docs/PR_GetConnectStatus
+// After PR_Connect on a nonblocking socket fails with PR_IN_PROGRESS_ERROR,
+// you may wait for the connection to complete by calling PR_Poll on the socket with the in_flags PR_POLL_WRITE | PR_POLL_EXCEPT.
+// When PR_Poll returns, call PR_GetConnectStatus on the socket to determine whether the nonblocking connect has succeeded or failed.
+DEFINE_PROPERTY( connectContinue ) {
+
+	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
+	RT_ASSERT_RESOURCE( fd );
+
+	PRStatus status;
+	PRPollDesc desc = { fd, PR_POLL_WRITE | PR_POLL_EXCEPT, 0 };
+
+	PRInt32 result = PR_Poll( &desc, 1, PR_INTERVAL_NO_WAIT ); // this avoid to store out_flags from the previous poll
+	if ( result == -1 )
+		return ThrowIoError( cx, PR_GetError(), PR_GetOSError() );
+
+	if ( result == 0 ) {
+
+		JS_ReportError( cx, "no connection are pending" );
+		return JS_FALSE;
+	}
+
+	// this can help ? : http://lxr.mozilla.org/seamonkey/search?string=PR_ConnectContinue
+	// source: http://lxr.mozilla.org/seamonkey/source/nsprpub/pr/src/io/prsocket.c#287
+	status = PR_ConnectContinue( fd, desc.out_flags ); // If the nonblocking connect has successfully completed, PR_ConnectContinue returns PR_SUCCESS
+//	printf( "status: %d\n", status );
+
+	if ( status != PR_SUCCESS )
+		*vp = PR_GetError() == PR_IN_PROGRESS_ERROR ? JSVAL_VOID : JSVAL_FALSE;
+	else
+		*vp = JSVAL_TRUE;
+
+	return JS_TRUE;
+}
+
+
+DEFINE_PROPERTY( connectionClosed ) {
+
+	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
+	RT_ASSERT_RESOURCE( fd );
+
+	//If PR_Poll() reports that the socket is readable (i.e., PR_POLL_READ is set in out_flags),
+	//and PR_Available() returns 0, this means that the socket connection is closed.
+	//see http://www.mozilla.org/projects/nspr/tech-notes/nonblockingio.html
+
+	PRInt32 available = PR_Available( fd );
+	if ( available == -1 )
+		return ThrowIoError( cx, PR_GetError(), PR_GetOSError() );
+
+	if ( available == 0 ) {
+
+		// socket is readable ?
+		PRPollDesc desc = { fd, PR_POLL_READ, 0 };
+		PRInt32 result = PR_Poll( &desc, 1, PR_INTERVAL_NO_WAIT );
+		if ( result == -1 ) // error
+			return ThrowIoError( cx, PR_GetError(), PR_GetOSError() );
+
+//		printf("out_flags: %x\n", desc.out_flags );
+//		printf("result: %x\n", result );
+
+		if ( result == 1 && (desc.out_flags & PR_POLL_READ) != 0 ) {
+
+			*vp = JSVAL_TRUE; // socket is closed
+			return JS_TRUE;
+		}
+	}
+
+	*vp = JSVAL_FALSE;
+	return JS_TRUE;
+}
+
+
 ///////////////////////////////////////////////////////////////////////////////
 enum { 
 	linger = PR_SockOpt_Linger, 
@@ -273,7 +356,9 @@ enum {
 	keepAlive = PR_SockOpt_Keepalive, 
 	recvBufferSize = PR_SockOpt_RecvBufferSize, 
 	sendBufferSize = PR_SockOpt_SendBufferSize,
-   nonblocking = PR_SockOpt_Nonblocking
+   nonblocking = PR_SockOpt_Nonblocking,
+	broadcast = PR_SockOpt_Broadcast,
+	multicastLoopback = PR_SockOpt_McastLoopback
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -326,6 +411,16 @@ DEFINE_PROPERTY( OptionSetter ) {
 			JS_ValueToBoolean( cx, *vp, &boolValue );
 			sod.value.non_blocking = ( boolValue == JS_TRUE );
 		} break;
+		case PR_SockOpt_Broadcast: {
+			JSBool boolValue;
+			JS_ValueToBoolean( cx, *vp, &boolValue );
+			sod.value.broadcast = ( boolValue == JS_TRUE );
+		} break;
+		case PR_SockOpt_McastLoopback: {
+			JSBool boolValue;
+			JS_ValueToBoolean( cx, *vp, &boolValue );
+			sod.value.mcast_loopback = ( boolValue == JS_TRUE );
+		} break;
 
 	}
 	if ( PR_SetSocketOption(fd, &sod) == PR_FAILURE )
@@ -368,6 +463,12 @@ DEFINE_PROPERTY( OptionGetter ) {
 		case PR_SockOpt_Nonblocking:
 			*vp = sod.value.non_blocking == PR_TRUE ? JSVAL_TRUE : JSVAL_FALSE;
 			break;
+		case PR_SockOpt_Broadcast:
+			*vp = sod.value.broadcast == PR_TRUE ? JSVAL_TRUE : JSVAL_FALSE;
+			break;
+		case PR_SockOpt_McastLoopback:
+			*vp = sod.value.mcast_loopback == PR_TRUE ? JSVAL_TRUE : JSVAL_FALSE;
+			break;
 	}
 	return JS_TRUE;
 }
@@ -408,6 +509,49 @@ DEFINE_PROPERTY( sockName ) {
 }
 
 
+DEFINE_FUNCTION( GetHostsByName ) {
+
+	RT_ASSERT_ARGC( 1 )
+
+	char *host;
+	RT_JSVAL_TO_STRING( argv[0], host );
+
+//	PRUint16 port;
+//	RT_JSVAL_TO_INT32( argv[1], port );
+
+	char netdbBuf[PR_NETDB_BUF_SIZE];
+	PRHostEnt hostEntry;
+	PRNetAddr addr;
+	
+	PRStatus status;
+
+	status = PR_GetHostByName( host, netdbBuf, sizeof(netdbBuf), &hostEntry );
+	if ( status != PR_SUCCESS )
+		return ThrowIoError( cx, PR_GetError(), PR_GetOSError() );
+
+	JSObject *addrJsObj = JS_NewArrayObject(cx, 0, NULL);
+	RT_ASSERT_ALLOC( addrJsObj );
+
+	int index = 0;
+	PRIntn hostIndex = 0;
+	char addrStr[MAX_IP_STRING + 1];
+
+	for (;;) {
+
+		hostIndex = PR_EnumerateHostEnt(hostIndex, &hostEntry, 0, &addr);
+		if ( hostIndex == -1 )
+			return ThrowIoError( cx, PR_GetError(), PR_GetOSError() );
+		if ( hostIndex == 0 )
+			break;
+		status = PR_NetAddrToString(&addr, addrStr, sizeof(addrStr));
+		JSString *str = JS_NewStringCopyZ(cx, addrStr);
+		RT_ASSERT_ALLOC( str );
+		JS_DefineElement(cx, addrJsObj, index++, STRING_TO_JSVAL(str), NULL, NULL, JSPROP_ENUMERATE);
+	}
+
+	*rval = OBJECT_TO_JSVAL(addrJsObj);
+	return JS_TRUE;
+}
 
 
 CONFIGURE_CLASS
@@ -438,11 +582,17 @@ CONFIGURE_CLASS
 		PROPERTY_SWITCH( recvBufferSize, Option )
 		PROPERTY_SWITCH( sendBufferSize, Option )
 		PROPERTY_SWITCH( nonblocking, Option )
+		PROPERTY_SWITCH( broadcast, Option )
+		PROPERTY_SWITCH( multicastLoopback, Option )
 		PROPERTY_READ( peerName )
 		PROPERTY_READ( sockName )
-//		PROPERTY_READ( connectContinue )
-//		PROPERTY_READ( connectionClosed )
+		PROPERTY_READ( connectContinue )
+		PROPERTY_READ( connectionClosed )
 	END_PROPERTY_SPEC
+
+	BEGIN_STATIC_FUNCTION_SPEC
+		FUNCTION( GetHostsByName )
+	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_CONST_DOUBLE_SPEC
 		CONST_DOUBLE(TCP, PR_DESC_SOCKET_TCP)
@@ -450,3 +600,99 @@ CONFIGURE_CLASS
 	END_CONST_DOUBLE_SPEC
 
 END_CLASS
+
+/*
+
+About closing socket:
+
+		Graceful Shutdown, Linger Options, and Socket Closure
+		  http://windowssdk.msdn.microsoft.com/en-us/library/ms738547.aspx
+		PRLinger ... PR_Close
+		  http://developer.mozilla.org/en/docs/PRLinger
+
+		man page:
+			Sets or gets the SO_LINGER option. The argument is a linger structure.
+			When enabled, a close(2) or shutdown(2) will not return until all queued messages for the socket have been successfully sent
+			or the linger timeout has been reached. Otherwise, the call returns immediately and the closing is done in the background.
+			When the socket is closed as part of exit(2), it always lingers in the background.
+
+		MSDN: (http://windowssdk.msdn.microsoft.com/en-us/library/ms737582.aspx)
+			Enabling SO_LINGER with a nonzero time-out interval on a nonblocking socket is not recommended. In this case,
+			the call to closesocket will fail with an error of WSAEWOULDBLOCK if the close operation cannot be completed immediately.
+			If closesocket fails with WSAEWOULDBLOCK the socket handle is still valid, and a disconnect is not initiated.
+			The application must call closesocket again to close the socket.
+
+		Closing non-blocking network sockets
+			http://www.squid-cache.org/mail-archive/squid-dev/199805/0065.html
+
+
+		status = PR_Shutdown( fd, PR_SHUTDOWN_BOTH ); // is this compatible with linger ??
+		if (status != PR_SUCCESS) // need to check PR_WOULD_BLOCK_ERROR ???
+			return ThrowNSPRError( cx, PR_GetError() );
+
+About sending data:
+
+		If a partial write occurred, send() returns the number of bytes that were
+		written.  If it returns -1 with errno == EWOULDBLOCK, *no* bytes were
+		written.
+
+		"With a nonblocking TCP socket, if there is no room at all in the socket
+		send buffer, return is made immediately with an error of EWOULDBLOCK.
+		If there is some room in the socket send buffer, the return value will
+		be the number of bytes that the kernel was able to copy into the buffer."
+
+		page 398, UNIX Network Programming, Second Edition, W. Richard Stevens
+
+		return value : A positive number indicates the number of bytes successfully sent. If the parameter fd is a blocking socket, this number must always equal amount.
+		PR_Write(), PR_Send(), PR_Writev() in blocking mode block until the entire buffer is sent. In nonblocking mode, they cannot block, so they may return with just sending part of the buffer.
+
+
+About receiving data:
+
+		If PR_Poll() reports that the socket is readable (i.e., PR_POLL_READ is set in out_flags),
+		and PR_Available() returns 0, this means that the socket connection is closed.
+		see http://www.mozilla.org/projects/nspr/tech-notes/nonblockingio.html
+
+		the following code is needed when IE is connected then closed. does not happens with Moz.
+		else PR_Recv will return with -1 and error -5962 ( PR_BUFFER_OVERFLOW_ERROR (WSAEMSGSIZE for win32) )
+
+
+Miscellaneous:
+
+
+		winsock: http://www.sockets.com/winsock.htm
+
+		post to mozilla.dev.tech.nspr
+
+			Issue with NON-BLOCKING sockets
+
+			Hi,
+			My issue is that :
+			PR_ConnectContinue() returns PR_SUCCESS whereas the server socket didn't PR_Accept() the connection.
+
+			[poll]
+			SERVER - Listen()
+			CLIENT - Connect()
+			[poll]
+			SERVER - readable ( but PR_Accept() is not called )
+			CLIENT - writable
+			CLIENT - PR_ConnectContinue() == PR_SUCCESS   <-------------- I should get PR_FAILURE & PR_GetError() == PR_IN_PROGRESS_ERROR  no ???
+			SERVER - readable
+			SERVER - readable
+			SERVER - readable
+			SERVER - readable
+			SERVER - readable
+			SERVER - readable
+			...
+
+			Do you have any explication ??
+
+			Thanks
+
+
+		Ps:
+		  source code: http://jslibs.googlecode.com/svn/trunk/jsnspr/nsprSocket.cpp
+		  test case: http://jslibs.googlecode.com/svn/trunk/tests/cs.js
+
+
+*/
