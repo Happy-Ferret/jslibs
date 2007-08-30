@@ -4,7 +4,7 @@ LoadModule('jsio');
 try {
 
 Print( Socket.GetHostsByName('www.google.com') );
-Halt();
+
 
 /*
 var f = new File('toto.txt');
@@ -41,17 +41,19 @@ Print('\n * testing UDP socket \n');
 	s1.reuseAddr = true;
 	s1.Connect('127.0.0.1', 1);
 	
+	
 	var s2 = new Socket( Socket.UDP );
 //	s2.nonblocking = true;
 	s2.Bind(1);
 	s2.readable = function(s) {
 	
+	Print( 'port:'+s1.sockPort+'\n' );
 		Print( s.Read().length );
 	}
 	var dlist = [s1,s2]; //descriptor list
 
 	var i = 0;
-	while(++i < 15) {
+	while(++i < 50) {
 		
 		Print('.\n');
 		Poll(dlist,100);

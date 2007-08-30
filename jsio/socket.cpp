@@ -490,6 +490,19 @@ DEFINE_PROPERTY( peerName ) {
 	return JS_TRUE;
 }
 
+DEFINE_PROPERTY( peerPort ) {
+
+	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
+	RT_ASSERT_RESOURCE( fd );
+
+	PRStatus status;
+	PRNetAddr peerAddr;
+	status = PR_GetPeerName( fd, &peerAddr );
+	if ( status == PR_FAILURE )
+		return ThrowIoError( cx, PR_GetError(), PR_GetOSError() );
+	*vp = INT_TO_JSVAL( PR_NetAddrInetPort(&peerAddr) );
+	return JS_TRUE;
+}
 
 DEFINE_PROPERTY( sockName ) {
 
@@ -497,14 +510,28 @@ DEFINE_PROPERTY( sockName ) {
 	RT_ASSERT_RESOURCE( fd );
 
 	PRStatus status;
-	PRNetAddr peerAddr;
-	status = PR_GetSockName( fd, &peerAddr );
+	PRNetAddr sockAddr;
+	status = PR_GetSockName( fd, &sockAddr );
 	if ( status == PR_FAILURE )
 		return ThrowIoError( cx, PR_GetError(), PR_GetOSError() );
 
 	char buf[16]; // If addr is an IPv4 address, size needs to be at least 16. If addr is an IPv6 address, size needs to be at least 46.
-	PR_NetAddrToString( &peerAddr, buf, sizeof(buf) );
+	PR_NetAddrToString( &sockAddr, buf, sizeof(buf) );
 	*vp = STRING_TO_JSVAL( JS_NewStringCopyZ( cx, buf ) );
+	return JS_TRUE;
+}
+
+DEFINE_PROPERTY( sockPort ) {
+
+	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
+	RT_ASSERT_RESOURCE( fd );
+
+	PRStatus status;
+	PRNetAddr sockAddr;
+	status = PR_GetSockName( fd, &sockAddr );
+	if ( status == PR_FAILURE )
+		return ThrowIoError( cx, PR_GetError(), PR_GetOSError() );
+	*vp = INT_TO_JSVAL( PR_NetAddrInetPort(&sockAddr) );
 	return JS_TRUE;
 }
 
@@ -585,7 +612,9 @@ CONFIGURE_CLASS
 		PROPERTY_SWITCH( broadcast, Option )
 		PROPERTY_SWITCH( multicastLoopback, Option )
 		PROPERTY_READ( peerName )
+		PROPERTY_READ( peerPort )
 		PROPERTY_READ( sockName )
+		PROPERTY_READ( sockPort )
 		PROPERTY_READ( connectContinue )
 		PROPERTY_READ( connectionClosed )
 	END_PROPERTY_SPEC
