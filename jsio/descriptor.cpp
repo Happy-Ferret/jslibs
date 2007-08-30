@@ -183,7 +183,7 @@ JSBool ReadAllToJsval(JSContext *cx, PRFileDesc *fd, jsval *rval ) {
 				return ThrowIoError( cx, errCode, PR_GetOSError() );
 			}
 			free(chunkList[--chunkListContentLength]); // cancel the last chunk
-			receivedAmount == 0;
+			receivedAmount = 0;
 			break; // no error, no data received, we cannot reach currentReadLength
 		} else
 			receivedAmount = res;
