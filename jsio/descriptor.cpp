@@ -26,48 +26,24 @@
 // close: 	RemoveNativeInterface(cx, obj, NI_READ_RESOURCE );
 
 
-DEFINE_CONSTRUCTOR() {
-
-	REPORT_ERROR( "This object cannot be construct." ); // but constructor must be defined
-	return JS_TRUE;
-}
-
 bool NativeInterfaceReadDescriptor( void *pv, unsigned char *buf, unsigned int *amount ) {
 
 	PRFileDesc *fd = (PRFileDesc *)pv;
-	PRInt32 status;
-	// because this socket class is non-blocking and NativeInterfaceReadFile cannot manage non-blocking socket, 
-	// we simulate blocking socket using poll() function. the maximum timeout is 10 seconds.
-	// (TBD) check again !
-	PRPollDesc desc;
-	desc.fd = fd;
-	desc.in_flags = PR_POLL_READ;
-	desc.out_flags = 0;
-	status = PR_Poll( &desc, 1, PR_MillisecondsToInterval(10000) ); // wait for data
-	if ( status == -1 ) // if PR_Poll is not compatible with the file descriptor, just ignore the error ?
+	PRInt32 ret;
+	PRPollDesc desc = { fd, PR_POLL_READ, 0 };
+	ret = PR_Poll( &desc, 1, PR_SecondsToInterval(10) ); // wait 10 seconds for data
+	if ( ret == -1 ) // if PR_Poll is not compatible with the file descriptor, just ignore the error ?
 		return false;
-
-	if ( status == 0 ) { // The value 0 indicates the function timed out.
+	if ( ret == 0 ) { // timeout
 
 		*amount = 0;
 		return true; // no error, but no data
 	}
-	PRInt32 tmp = *amount;
-	status = PR_Recv( fd, buf, tmp, 0, PR_INTERVAL_NO_WAIT );
-	*amount = tmp;
-	if ( status == -1 )
+	ret = PR_Read(fd, buf, *amount);
+	if ( ret == -1 )
 		return false;
-	*amount = status;
+	*amount = ret;
 	return true;
-
-
-/*
-	PRInt32 status = PR_Read( (PRFileDesc *)pv, buf, *amount );
-	if ( status == -1 )
-		return false;
-	*amount = status;
-	return true;
-*/
 }
 
 
@@ -96,6 +72,12 @@ void FinalizeDescriptor(JSContext *cx, JSObject *obj) {
 BEGIN_CLASS( Descriptor )
 
 
+DEFINE_CONSTRUCTOR() {
+
+	REPORT_ERROR( RT_ERROR_NO_CONSTRUCT ); // BUT constructor must be defined
+}
+
+
 DEFINE_FUNCTION( Close ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
@@ -108,16 +90,17 @@ DEFINE_FUNCTION( Close ) {
 			JS_ReportError( cx, "A descriptor cannot be closed." );
 	}
 	JS_SetPrivate( cx, obj, NULL );
-	JS_ClearScope( cx, obj ); // help to clear readable, writable, exception
+//	JS_ClearScope( cx, obj ); // help to clear readable, writable, exception
 	RemoveNativeInterface(cx, obj, NI_READ_RESOURCE );
 	return JS_TRUE;
 }
+
 
 JSBool ReadToJsval(JSContext *cx, PRFileDesc *fd, int amount, jsval *rval ) {
 
 	char *buf = (char*)JS_malloc( cx, amount + 1 );
 	RT_ASSERT_ALLOC(buf);
-	buf[amount] = 0; // (TBD) check if useful: PR_Read can read binary data !
+	buf[amount] = '\0';
 
 	PRInt32 res = PR_Read( fd, buf, amount );
 
@@ -127,15 +110,15 @@ JSBool ReadToJsval(JSContext *cx, PRFileDesc *fd, int amount, jsval *rval ) {
 
 		PRErrorCode errCode = PR_GetError();
 		if ( errCode != PR_WOULD_BLOCK_ERROR )
-			return ThrowIoError( cx, errCode, PR_GetOSError() );
-		*rval = JS_GetEmptyStringValue(cx); // (TBD) check if it is realy faster.
+			return ThrowIoError(cx);
+		*rval = JS_GetEmptyStringValue(cx);
 		return JS_TRUE;
 	}
 
 	if (res == 0) {
 
 		JS_free( cx, buf );
-		*rval = JS_GetEmptyStringValue(cx); // (TBD) check if it is realy faster.
+		*rval = JS_GetEmptyStringValue(cx);
 		return JS_TRUE;
 	}
 
@@ -180,7 +163,7 @@ JSBool ReadAllToJsval(JSContext *cx, PRFileDesc *fd, jsval *rval ) {
 				while ( chunkListContentLength )
 					free(chunkList[--chunkListContentLength]);
 				free(chunkList);
-				return ThrowIoError( cx, errCode, PR_GetOSError() );
+				return ThrowIoError(cx);
 			}
 			free(chunkList[--chunkListContentLength]); // cancel the last chunk
 			receivedAmount = 0;
@@ -198,7 +181,7 @@ JSBool ReadAllToJsval(JSContext *cx, PRFileDesc *fd, jsval *rval ) {
 		while ( chunkListContentLength )
 			free(chunkList[--chunkListContentLength]);
 		free(chunkList);
-		*rval = JS_GetEmptyStringValue(cx); // (TBD) check if it is realy faster.
+		*rval = JS_GetEmptyStringValue(cx);
 		return JS_TRUE;
 	}
 
@@ -260,12 +243,12 @@ DEFINE_FUNCTION( Write ) {
 
 	PRInt32 sentAmount;
 
-	PRInt32 res = PR_Write( fd, str, len ); // (TBD) if len==0, do write ? 
+	PRInt32 res = PR_Write( fd, str, len );
 	if ( res == -1 ) {
 
 		PRErrorCode errCode = PR_GetError();
 		if ( errCode != PR_WOULD_BLOCK_ERROR )
-			return ThrowIoError( cx, errCode, PR_GetOSError() );
+			return ThrowIoError(cx);
 		sentAmount = 0;
 	} else
 		sentAmount = res;
@@ -287,7 +270,7 @@ DEFINE_FUNCTION( Sync ) {
 
 	PRStatus status = PR_Sync(fd);
 	if ( status == PR_FAILURE )
-		return ThrowIoError( cx, PR_GetError(), PR_GetOSError() );
+		return ThrowIoError(cx);
 
 	return JS_TRUE;
 }
@@ -299,9 +282,8 @@ DEFINE_PROPERTY( available ) {
 	RT_ASSERT_RESOURCE( fd );
 
 	PRInt64 available = PR_Available64( fd ); // For a normal file, these are the bytes beyond the current file pointer.
-
 	if ( available == -1 )
-		return ThrowIoError( cx, PR_GetError(), PR_GetOSError() );
+		return ThrowIoError(cx);
 
 	if ( available <= JSVAL_INT_MAX )
 		*vp = INT_TO_JSVAL(available);
@@ -351,25 +333,25 @@ DEFINE_FUNCTION( Import ) {
 	switch (type) {
 		case PR_DESC_FILE:
 			fd = PR_ImportFile(osfd);
-			descriptorObject = JS_NewObject(cx, &classFile, NULL, NULL); // (TBD) chack if proto is needed !
+			descriptorObject = JS_NewObject(cx, &classFile, NULL, NULL); // (TBD) check if proto is needed !
 			break;
 		case PR_DESC_SOCKET_TCP:
 			fd = PR_ImportTCPSocket(osfd);
-			descriptorObject = JS_NewObject(cx, &classSocket, NULL, NULL); // (TBD) chack if proto is needed !
+			descriptorObject = JS_NewObject(cx, &classSocket, NULL, NULL); // (TBD) check if proto is needed !
 			break;
 		case PR_DESC_SOCKET_UDP:
 			fd = PR_ImportUDPSocket(osfd);
-			descriptorObject = JS_NewObject(cx, &classSocket, NULL, NULL); // (TBD) chack if proto is needed !
+			descriptorObject = JS_NewObject(cx, &classSocket, NULL, NULL); // (TBD) check if proto is needed !
 			break;
 		case PR_DESC_PIPE:
 			fd = PR_ImportPipe(osfd);
-			descriptorObject = JS_NewObject(cx, &classFile, NULL, NULL); // (TBD) chack if proto is needed !
+			descriptorObject = JS_NewObject(cx, &classFile, NULL, NULL); // (TBD) check if proto is needed !
 			break;
 		default:
 			REPORT_ERROR("Invalid descriptor type.");
 	}
 	if ( fd == NULL )
-		return ThrowIoError( cx, PR_GetError(), PR_GetOSError() );
+		return ThrowIoError(cx);
 
 	RT_ASSERT_ALLOC( descriptorObject ); 
 	RT_CHECK_CALL( JS_SetPrivate(cx, descriptorObject, (void*)fd) );

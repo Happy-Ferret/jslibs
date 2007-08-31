@@ -98,7 +98,7 @@ DEFINE_FUNCTION( Open ) {
 
 	PRFileDesc *fd = PR_Open( fileName, flags, mode ); // The mode parameter is currently applicable only on Unix platforms.
 	if ( fd == NULL )
-		return ThrowIoError( cx, PR_GetError(), PR_GetOSError() );
+		return ThrowIoError(cx);
 	JS_SetPrivate( cx, obj, fd );
 	SetNativeInterface(cx, obj, NI_READ_RESOURCE, (FunctionPointer)NativeInterfaceReadDescriptor, fd);
 	*rval = OBJECT_TO_JSVAL(obj); // allows to write f.Open(...).Read()
@@ -132,7 +132,7 @@ DEFINE_FUNCTION( Seek ) {
 
 	PRInt64 ret = PR_Seek64( fd, offset, whence );
 	if ( ret == -1 )
-		return ThrowIoError( cx, PR_GetError(), PR_GetOSError() );
+		return ThrowIoError(cx);
 
 	jsdouble newLocation = ret;
 	JS_NewDoubleValue( cx, newLocation, rval );
@@ -149,11 +149,8 @@ DEFINE_FUNCTION( Delete ) {
 	RT_ASSERT_DEFINED( jsvalFileName );
 	char *fileName;
 	RT_JSVAL_TO_STRING(jsvalFileName, fileName);
-
-	PRStatus status = PR_Delete(fileName);
-	if ( status != PR_SUCCESS )
-		return ThrowIoError( cx, PR_GetError(), PR_GetOSError() );
-
+	if ( PR_Delete(fileName) != PR_SUCCESS )
+		return ThrowIoError(cx);
 	return JS_TRUE;
 }
 
@@ -167,13 +164,9 @@ DEFINE_FUNCTION( Lock ) {
 	RT_JSVAL_TO_BOOL( argv[0], doLock );
 	PRStatus st = doLock ? PR_LockFile(fd) : PR_UnlockFile(fd);
 	if ( st != PR_SUCCESS )
-		return ThrowIoError( cx, PR_GetError(), PR_GetOSError() );
+		return ThrowIoError(cx);
 	return JS_TRUE;
 }
-
-
-
-
 
 
 DEFINE_PROPERTY( contentGetter ) {
@@ -190,11 +183,11 @@ DEFINE_PROPERTY( contentGetter ) {
 		PRErrorCode err = PR_GetError();
 		if ( err == PR_FILE_NOT_FOUND_ERROR )
 			return JS_TRUE; // property will return  undefined
-		return ThrowIoError( cx, err, PR_GetOSError() );
+		return ThrowIoErrorArg( cx, err, PR_GetOSError() );
 	}
 	PRInt32 available = PR_Available( fd ); // For a normal file, these are the bytes beyond the current file pointer.
 	if ( available == -1 )
-		return ThrowIoError( cx, PR_GetError(), PR_GetOSError() );
+		return ThrowIoError(cx);
 	char *buf = (char*)JS_malloc( cx, available +1 );
 	RT_ASSERT_ALLOC(buf);
 	buf[available] = '\0';
@@ -202,15 +195,14 @@ DEFINE_PROPERTY( contentGetter ) {
 	if ( res == -1 ) {
 
 		JS_free( cx, buf );
-		return ThrowIoError( cx, PR_GetError(), PR_GetOSError() );
+		return ThrowIoError(cx);
 	}
-	PRStatus status = PR_Close( fd );
-	if ( status == PR_FAILURE )
-		return ThrowIoError( cx, PR_GetError(), PR_GetOSError() );
+	if ( PR_Close( fd ) == PR_FAILURE )
+		return ThrowIoError(cx);
 	if ( res == 0 ) {
 
 		JS_free( cx, buf );
-		*vp = JS_GetEmptyStringValue(cx); // (TBD) check if it is realy faster.
+		*vp = JS_GetEmptyStringValue(cx);
 		return JS_TRUE;
 	}
 	if ( MaybeRealloc( available, res ) ) { // should never occured
@@ -236,29 +228,27 @@ DEFINE_PROPERTY( contentSetter ) {
 	RT_JSVAL_TO_STRING(jsvalFileName, fileName);
 	if ( *vp == JSVAL_VOID ) {
 
-		PRStatus status = PR_Delete( fileName );
-		if ( status != PR_SUCCESS ) {
+		if ( PR_Delete(fileName) != PR_SUCCESS ) {
 
 			PRErrorCode err = PR_GetError();
 			if ( err == PR_FILE_NOT_FOUND_ERROR )
 				return JS_TRUE; // property will return  undefined
-			return ThrowIoError( cx, err, PR_GetOSError() );
+			return ThrowIoErrorArg( cx, err, PR_GetOSError() );
 		}
 		return JS_TRUE;
 	}
 	PRFileDesc *fd = PR_OpenFile( fileName, PR_CREATE_FILE | PR_TRUNCATE | PR_WRONLY, PR_IRUSR + PR_IWUSR ); // The mode parameter is currently applicable only on Unix platforms.
 	if ( fd == NULL )
-		return ThrowIoError( cx, PR_GetError(), PR_GetOSError() );
+		return ThrowIoError(cx);
 	void *buf;
 	PRInt32 len;
 	RT_JSVAL_TO_STRING_AND_LENGTH( *vp, buf, len );
 	PRInt32 bytesSent = PR_Write( fd, buf, len );
 	if ( bytesSent == -1 )
-		return ThrowIoError( cx, PR_GetError(), PR_GetOSError() );
+		return ThrowIoError(cx);
 	RT_ASSERT( bytesSent == len, "unable to set content" );
-	PRStatus status = PR_Close( fd );
-	if ( status == PR_FAILURE )
-		return ThrowIoError( cx, PR_GetError(), PR_GetOSError() );
+	if ( PR_Close(fd) != PR_SUCCESS )
+		return ThrowIoError(cx);
 	return JS_TRUE;
 }
 
@@ -279,15 +269,11 @@ DEFINE_PROPERTY( nameSetter ) {
 	jsval jsvalFileName;
 	JS_GetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName );
 	RT_ASSERT_DEFINED( jsvalFileName );
-
 	char *fromFileName, *toFileName;
 	RT_JSVAL_TO_STRING(jsvalFileName, fromFileName);
 	RT_JSVAL_TO_STRING(*vp, toFileName);
-
-	PRStatus status = PR_Rename(fromFileName, toFileName); // is status == PR_FILE_EXISTS_ERROR ...
-	if ( status != PR_SUCCESS )
-		return ThrowIoError( cx, PR_GetError(), PR_GetOSError() );
-
+	if ( PR_Rename(fromFileName, toFileName) != PR_SUCCESS ) // if status == PR_FILE_EXISTS_ERROR ...
+		return ThrowIoError(cx);
 	JS_SetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, *vp );
 	return JS_TRUE;
 }
@@ -326,8 +312,7 @@ DEFINE_PROPERTY( info ) {
 		status = PR_GetOpenFileInfo( fd, &fileInfo );
 
 	if ( status != PR_SUCCESS )
-		return ThrowIoError( cx, PR_GetError(), PR_GetOSError() ); // ??? Doc do not say it is possible to read PR_GetError after an error on PR_GetFileInfo !!!
-		// (TBD) check
+		return ThrowIoError(cx);
 
 	JSObject *fileTypeObj = JS_NewObject( cx, NULL, NULL, NULL );
 	*vp = OBJECT_TO_JSVAL( fileTypeObj );
@@ -360,7 +345,7 @@ DEFINE_PROPERTY( standard ) {
 
 		PRFileDesc *fd = PR_GetSpecialFD((PRSpecialFD)i); // beware: cast !
 		if ( fd == NULL )
-			return ThrowIoError( cx, PR_GetError(), PR_GetOSError() );
+			return ThrowIoError(cx);
 		JS_SetPrivate( cx, obj, fd );
 	}
 	return JS_TRUE;

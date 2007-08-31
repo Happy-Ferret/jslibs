@@ -190,6 +190,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\directory.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\error.cpp"
 				>
 			</File>
@@ -237,6 +241,10 @@
 			>
 			<File
 				RelativePath=".\descriptor.h"
+				>
+			</File>
+			<File
+				RelativePath=".\directory.h"
 				>
 			</File>
 			<File

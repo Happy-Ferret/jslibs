@@ -12,7 +12,6 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-DECLARE_CLASS( IoError )
+DECLARE_CLASS( Directory )
 
-JSBool ThrowIoErrorArg( JSContext *cx, PRErrorCode errorCode, PRInt32 osError );
-JSBool ThrowIoError( JSContext *cx );
+#define SLOT_JSIO_DIR_NAME 0

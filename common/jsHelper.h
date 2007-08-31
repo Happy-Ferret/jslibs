@@ -60,6 +60,7 @@ inline bool MaybeRealloc( int requested, int received ) {
 	#define RT_CODE_LOCATION ""
 #endif // _DEBUG
 
+#define RT_ERROR_NO_CONSTRUCT "this object cannot be construct."
 #define RT_ERROR_NEED_CONSTRUCTION "construction is needed for this object."
 #define RT_ERROR_MISSING_ARGUMENT "this function require more arguments."
 #define RT_ERROR_TOO_MANY_ARGUMENTS "you provide too many argument to the function."

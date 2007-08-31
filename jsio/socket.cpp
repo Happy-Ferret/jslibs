@@ -49,7 +49,7 @@ DEFINE_CONSTRUCTOR() {
 		REPORT_ERROR( "Invalid socket type." );
 
 	if ( fd == NULL )
-		return ThrowIoError( cx, PR_GetError(), PR_GetOSError() );
+		return ThrowIoError(cx);
 
 	RT_CHECK_CALL( JS_SetPrivate( cx, obj, fd ) );
 	return JS_TRUE;
@@ -72,10 +72,8 @@ DEFINE_FUNCTION( Shutdown ) {
 		how = PR_SHUTDOWN_BOTH; // default
 	if ( how == PR_SHUTDOWN_BOTH || how == PR_SHUTDOWN_RCV )
 		RemoveNativeInterface(cx, obj, NI_READ_RESOURCE);
-	PRStatus status;
-	status = PR_Shutdown( fd, how ); // is this compatible with linger ??
-	if (status != PR_SUCCESS) // need to check PR_WOULD_BLOCK_ERROR ???
-		return ThrowIoError( cx, PR_GetError(), PR_GetOSError() );
+	if (PR_Shutdown( fd, how ) != PR_SUCCESS) // is this compatible with linger ?? need to check PR_WOULD_BLOCK_ERROR ???
+		return ThrowIoError(cx);
 	return JS_TRUE;
 }
 
@@ -85,35 +83,32 @@ DEFINE_FUNCTION( Bind ) {
 	RT_ASSERT_ARGC( 1 ); // need port number (at least)
 	PRFileDesc *fd = (PRFileDesc*)JS_GetPrivate( cx, obj );
 	RT_ASSERT_RESOURCE( fd );
-	PRStatus status;
-	uint16 port;
-	RT_JSVAL_TO_INT32( argv[0], port );
+
 	PRNetAddr addr;
-	status = PR_InitializeNetAddr(PR_IpAddrAny, port, &addr); // Initializes or reinitializes a network address(
-	if ( status != PR_SUCCESS )
-		return ThrowIoError( cx, PR_GetError(), PR_GetOSError() );
+	PRUint16 port;
+	RT_JSVAL_TO_INT32( argv[0], port );
 
 	if ( argc >= 2 ) { // if we have a second argument and this argument is not undefined
+
+		char *host;
+		RT_JSVAL_TO_STRING( argv[1], host );
+
+		if ( PR_StringToNetAddr(host, &addr) != PR_SUCCESS )
+			return ThrowIoError(cx);
+
+		if ( PR_InitializeNetAddr(PR_IpAddrNull, port, &addr) != PR_SUCCESS )
+			return ThrowIoError(cx);
+	} else {
 		
-		char *hostName;
-		RT_JSVAL_TO_STRING( argv[1], hostName );
+		if ( PR_InitializeNetAddr(PR_IpAddrAny, port, &addr) != PR_SUCCESS )
+			return ThrowIoError(cx);
+	}
 
-//		if ( hostName[0] != '\0' ) { // else, by default: PR_IpAddrAny ( see PR_InitializeNetAddr )
-
-//	if ( strcmp( hostName, "localhost" ) == 0 )
-//			addr.inet.ip = PR_INADDR_LOOPBACK;
-
-		status = PR_StringToNetAddr( hostName, &addr ); // see PR_GetHostByName
-		if ( status != PR_SUCCESS )
-			return ThrowIoError( cx, PR_GetError(), PR_GetOSError() );
-//		}
-	} // else addr.inet.ip = PR_htonl(PR_INADDR_ANY)
-
-	status = PR_Bind(fd, &addr);
-	if ( status != PR_SUCCESS )
-		return ThrowIoError( cx, PR_GetError(), PR_GetOSError() );
+	if ( PR_Bind(fd, &addr) != PR_SUCCESS )
+		return ThrowIoError(cx);
 	return JS_TRUE;
 }
+
 
 ///////////////////////////////////////////////////////////////////////////////
 //Q. PR_ConnectContinue() returns PR_SUCCESS whereas the server socket didn't PR_Accept() the connection.
@@ -129,15 +124,13 @@ DEFINE_FUNCTION( Listen ) {
 
 	PRFileDesc *fd = (PRFileDesc*)JS_GetPrivate( cx, obj );
 	RT_ASSERT_RESOURCE( fd );
-	PRStatus status;
 	PRIntn backlog;
 	if ( argc >= 1 )
 		RT_JSVAL_TO_INT32( argv[0], backlog );
 	else
 		backlog = 8; // too low ??
-	status = PR_Listen(fd, backlog);
-	if ( status != PR_SUCCESS )
-		return ThrowIoError( cx, PR_GetError(), PR_GetOSError() );
+	if ( PR_Listen(fd, backlog) != PR_SUCCESS )
+		return ThrowIoError(cx);
 	return JS_TRUE;
 }
 
@@ -147,9 +140,19 @@ DEFINE_FUNCTION( Accept ) {
 
 	PRFileDesc *fd = (PRFileDesc*)JS_GetPrivate( cx, obj );
 	RT_ASSERT_RESOURCE( fd );
-	PRFileDesc *newFd = PR_Accept( fd, NULL, PR_INTERVAL_NO_TIMEOUT ); // cf. PR_INTERVAL_NO_WAIT and nonblocking socket
+
+	PRIntervalTime connectTimeout;
+	if ( argc >= 1 ) {
+
+		PRUint32 timeoutInMilliseconds;
+		RT_JSVAL_TO_INT32( argv[0], timeoutInMilliseconds );
+		connectTimeout = PR_MillisecondsToInterval(timeoutInMilliseconds);
+	} else
+		connectTimeout = PR_INTERVAL_NO_TIMEOUT;
+
+	PRFileDesc *newFd = PR_Accept( fd, NULL, connectTimeout );
 	if ( newFd == NULL )
-		return ThrowIoError( cx, PR_GetError(), PR_GetOSError() );
+		return ThrowIoError(cx);
 	SetNativeInterface(cx, obj, NI_READ_RESOURCE, (FunctionPointer)NativeInterfaceReadDescriptor, newFd);
 	JSObject *object = JS_NewObject( cx, &classSocket, NULL, NULL );
 	JS_SetPrivate( cx, object, newFd );
@@ -194,44 +197,40 @@ DEFINE_FUNCTION( Connect ) {
 	} else
 		connectTimeout = PR_INTERVAL_NO_TIMEOUT;
 
-	PRStatus status;
 	PRNetAddr addr;
 
 	if ( PR_StringToNetAddr(host, &addr) == PR_SUCCESS ) {
 
-		status = PR_InitializeNetAddr(PR_IpAddrNull, port, &addr);
-		if ( status != PR_SUCCESS )
-			return ThrowIoError( cx, PR_GetError(), PR_GetOSError() );
+		if ( PR_InitializeNetAddr(PR_IpAddrNull, port, &addr) != PR_SUCCESS )
+			return ThrowIoError(cx);
 	} else {
 
 		char netdbBuf[PR_NETDB_BUF_SIZE];
 		PRHostEnt hostEntry;
 		PRIntn hostIndex;
 
-		status = PR_GetHostByName( host, netdbBuf, sizeof(netdbBuf), &hostEntry );
-		if ( status != PR_SUCCESS )
-			return ThrowIoError( cx, PR_GetError(), PR_GetOSError() );
+		if ( PR_GetHostByName( host, netdbBuf, sizeof(netdbBuf), &hostEntry ) != PR_SUCCESS )
+			return ThrowIoError(cx);
 
 		hostIndex = 0;
 		hostIndex = PR_EnumerateHostEnt(hostIndex, &hostEntry, port, &addr); // data is valid until return is 0 or -1
 		if ( hostIndex == -1 )
-			return ThrowIoError( cx, PR_GetError(), PR_GetOSError() );
+			return ThrowIoError(cx);
 	}
 
-		status = PR_Connect( fd, &addr, connectTimeout ); // timeout is ignored in nonblocking mode ( cf. PR_INTERVAL_NO_WAIT )
-		if ( status != PR_SUCCESS ) {
+	if ( PR_Connect( fd, &addr, connectTimeout ) != PR_SUCCESS ) { // Doc: timeout is ignored in nonblocking mode ( cf. PR_INTERVAL_NO_WAIT )
 
-			PRErrorCode errorCode = PR_GetError();
-			switch (errorCode) {
-				case PR_CONNECT_TIMEOUT_ERROR:
-					*rval = JSVAL_FALSE;
-					return JS_TRUE;
-				case PR_IN_PROGRESS_ERROR: // not nonblocking-error
-					break;
-				default:
-					return ThrowIoError( cx, errorCode, PR_GetOSError() );
-			}
+		PRErrorCode errorCode = PR_GetError();
+		switch (errorCode) {
+			case PR_CONNECT_TIMEOUT_ERROR:
+				*rval = JSVAL_FALSE;
+				return JS_TRUE;
+			case PR_IN_PROGRESS_ERROR: // not nonblocking-error
+				break;
+			default:
+				return ThrowIoError(cx);
 		}
+	}
 	// see 	PR_GetConnectStatus or PR_ConnectContinue INSTEAD ???
 
 	SetNativeInterface(cx, obj, NI_READ_RESOURCE, (FunctionPointer)NativeInterfaceReadDescriptor, fd);
@@ -260,16 +259,26 @@ DEFINE_FUNCTION( TransmitFile ) { // WORKS ONLY ON BLOCKING SOCKET !!!
 		if ( closeAfterTransmit )
 			flag = PR_TRANSMITFILE_CLOSE_SOCKET;
 	}
+
 	char *headers = NULL;
 	int headerLength = 0;
 	if ( argc >= 3 )
 		RT_JSVAL_TO_STRING_AND_LENGTH( argv[2], headers, headerLength );
 
-	PRInt32 bytes = PR_TransmitFile( socketFd, fileFd, NULL, 0, flag, PR_INTERVAL_NO_TIMEOUT );
-	if ( bytes == -1 )
-		return ThrowIoError( cx, PR_GetError(), PR_GetOSError() );
+	PRIntervalTime connectTimeout;
+	if ( argc >= 4 ) {
 
-	*rval = INT_TO_JSVAL( bytes ); // (TBD) secure this
+		PRUint32 timeoutInMilliseconds;
+		RT_JSVAL_TO_INT32( argv[3], timeoutInMilliseconds );
+		connectTimeout = PR_MillisecondsToInterval(timeoutInMilliseconds);
+	} else
+		connectTimeout = PR_INTERVAL_NO_TIMEOUT;
+
+	PRInt32 bytes = PR_TransmitFile( socketFd, fileFd, NULL, 0, flag, connectTimeout );
+	if ( bytes == -1 )
+		return ThrowIoError(cx);
+
+	RT_CHECK_CALL( JS_NewNumberValue(cx, bytes, rval) );
 	return JS_TRUE;
 }
 
@@ -285,12 +294,12 @@ DEFINE_PROPERTY( connectContinue ) {
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
 	RT_ASSERT_RESOURCE( fd );
 
-	PRStatus status;
+
 	PRPollDesc desc = { fd, PR_POLL_WRITE | PR_POLL_EXCEPT, 0 };
 
 	PRInt32 result = PR_Poll( &desc, 1, PR_INTERVAL_NO_WAIT ); // this avoid to store out_flags from the previous poll
 	if ( result == -1 )
-		return ThrowIoError( cx, PR_GetError(), PR_GetOSError() );
+		return ThrowIoError(cx);
 
 	if ( result == 0 ) {
 
@@ -300,10 +309,8 @@ DEFINE_PROPERTY( connectContinue ) {
 
 	// this can help ? : http://lxr.mozilla.org/seamonkey/search?string=PR_ConnectContinue
 	// source: http://lxr.mozilla.org/seamonkey/source/nsprpub/pr/src/io/prsocket.c#287
-	status = PR_ConnectContinue( fd, desc.out_flags ); // If the nonblocking connect has successfully completed, PR_ConnectContinue returns PR_SUCCESS
-//	printf( "status: %d\n", status );
 
-	if ( status != PR_SUCCESS )
+	if ( PR_ConnectContinue( fd, desc.out_flags ) != PR_SUCCESS ) // If the nonblocking connect has successfully completed, PR_ConnectContinue returns PR_SUCCESS
 		*vp = PR_GetError() == PR_IN_PROGRESS_ERROR ? JSVAL_VOID : JSVAL_FALSE;
 	else
 		*vp = JSVAL_TRUE;
@@ -323,7 +330,7 @@ DEFINE_PROPERTY( connectionClosed ) {
 
 	PRInt32 available = PR_Available( fd );
 	if ( available == -1 )
-		return ThrowIoError( cx, PR_GetError(), PR_GetOSError() );
+		return ThrowIoError(cx);
 
 	if ( available == 0 ) {
 
@@ -331,7 +338,7 @@ DEFINE_PROPERTY( connectionClosed ) {
 		PRPollDesc desc = { fd, PR_POLL_READ, 0 };
 		PRInt32 result = PR_Poll( &desc, 1, PR_INTERVAL_NO_WAIT );
 		if ( result == -1 ) // error
-			return ThrowIoError( cx, PR_GetError(), PR_GetOSError() );
+			return ThrowIoError(cx);
 
 //		printf("out_flags: %x\n", desc.out_flags );
 //		printf("result: %x\n", result );
@@ -423,8 +430,8 @@ DEFINE_PROPERTY( OptionSetter ) {
 		} break;
 
 	}
-	if ( PR_SetSocketOption(fd, &sod) == PR_FAILURE )
-		return ThrowIoError( cx, PR_GetError(), PR_GetOSError() );
+	if ( PR_SetSocketOption(fd, &sod) != PR_SUCCESS )
+		return ThrowIoError(cx);
 	return JS_TRUE;
 }
 
@@ -436,8 +443,8 @@ DEFINE_PROPERTY( OptionGetter ) {
 
 	PRSocketOptionData sod;
 	sod.option = (PRSockOption)JSVAL_TO_INT( id );
-	if ( PR_GetSocketOption(fd, &sod) == PR_FAILURE )
-		return ThrowIoError( cx, PR_GetError(), PR_GetOSError() );
+	if ( PR_GetSocketOption(fd, &sod) != PR_SUCCESS )
+		return ThrowIoError(cx);
 	switch ( sod.option ) {
 		case PR_SockOpt_Linger:
 			if ( sod.value.linger.polarity == PR_TRUE )
@@ -477,15 +484,12 @@ DEFINE_PROPERTY( peerName ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
 	RT_ASSERT_RESOURCE( fd );
-
-	PRStatus status;
 	PRNetAddr peerAddr;
-	status = PR_GetPeerName( fd, &peerAddr );
-	if ( status == PR_FAILURE )
-		return ThrowIoError( cx, PR_GetError(), PR_GetOSError() );
-
-	char buf[16]; // If addr is an IPv4 address, size needs to be at least 16. If addr is an IPv6 address, size needs to be at least 46.
-	PR_NetAddrToString( &peerAddr, buf, sizeof(buf) );
+	if ( PR_GetPeerName(fd, &peerAddr) != PR_SUCCESS )
+		return ThrowIoError(cx);
+	char buf[MAX_IP_STRING + 1];
+	if ( PR_NetAddrToString(&peerAddr, buf, sizeof(buf)) != PR_SUCCESS )
+		return ThrowIoError(cx);
 	*vp = STRING_TO_JSVAL( JS_NewStringCopyZ( cx, buf ) );
 	return JS_TRUE;
 }
@@ -494,13 +498,10 @@ DEFINE_PROPERTY( peerPort ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
 	RT_ASSERT_RESOURCE( fd );
-
-	PRStatus status;
 	PRNetAddr peerAddr;
-	status = PR_GetPeerName( fd, &peerAddr );
-	if ( status == PR_FAILURE )
-		return ThrowIoError( cx, PR_GetError(), PR_GetOSError() );
-	*vp = INT_TO_JSVAL( PR_NetAddrInetPort(&peerAddr) );
+	if ( PR_GetPeerName(fd, &peerAddr) != PR_SUCCESS )
+		return ThrowIoError(cx);
+	*vp = INT_TO_JSVAL( PR_ntohs(PR_NetAddrInetPort(&peerAddr)) );
 	return JS_TRUE;
 }
 
@@ -508,15 +509,12 @@ DEFINE_PROPERTY( sockName ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
 	RT_ASSERT_RESOURCE( fd );
-
-	PRStatus status;
 	PRNetAddr sockAddr;
-	status = PR_GetSockName( fd, &sockAddr );
-	if ( status == PR_FAILURE )
-		return ThrowIoError( cx, PR_GetError(), PR_GetOSError() );
-
-	char buf[16]; // If addr is an IPv4 address, size needs to be at least 16. If addr is an IPv6 address, size needs to be at least 46.
-	PR_NetAddrToString( &sockAddr, buf, sizeof(buf) );
+	if ( PR_GetSockName( fd, &sockAddr ) != PR_SUCCESS )
+		return ThrowIoError(cx);
+	char buf[MAX_IP_STRING + 1];
+	if ( PR_NetAddrToString( &sockAddr, buf, sizeof(buf) ) != PR_SUCCESS )
+		return ThrowIoError(cx);
 	*vp = STRING_TO_JSVAL( JS_NewStringCopyZ( cx, buf ) );
 	return JS_TRUE;
 }
@@ -525,13 +523,10 @@ DEFINE_PROPERTY( sockPort ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
 	RT_ASSERT_RESOURCE( fd );
-
-	PRStatus status;
 	PRNetAddr sockAddr;
-	status = PR_GetSockName( fd, &sockAddr );
-	if ( status == PR_FAILURE )
-		return ThrowIoError( cx, PR_GetError(), PR_GetOSError() );
-	*vp = INT_TO_JSVAL( PR_NetAddrInetPort(&sockAddr) );
+	if ( PR_GetSockName( fd, &sockAddr ) != PR_SUCCESS )
+		return ThrowIoError(cx);
+	*vp = INT_TO_JSVAL( PR_ntohs(PR_NetAddrInetPort(&sockAddr)) );
 	return JS_TRUE;
 }
 
@@ -550,11 +545,8 @@ DEFINE_FUNCTION( GetHostsByName ) {
 	PRHostEnt hostEntry;
 	PRNetAddr addr;
 	
-	PRStatus status;
-
-	status = PR_GetHostByName( host, netdbBuf, sizeof(netdbBuf), &hostEntry );
-	if ( status != PR_SUCCESS )
-		return ThrowIoError( cx, PR_GetError(), PR_GetOSError() );
+	if ( PR_GetHostByName( host, netdbBuf, sizeof(netdbBuf), &hostEntry ) != PR_SUCCESS )
+		return ThrowIoError(cx);
 
 	JSObject *addrJsObj = JS_NewArrayObject(cx, 0, NULL);
 	RT_ASSERT_ALLOC( addrJsObj );
@@ -567,15 +559,15 @@ DEFINE_FUNCTION( GetHostsByName ) {
 
 		hostIndex = PR_EnumerateHostEnt(hostIndex, &hostEntry, 0, &addr);
 		if ( hostIndex == -1 )
-			return ThrowIoError( cx, PR_GetError(), PR_GetOSError() );
+			return ThrowIoError(cx);
 		if ( hostIndex == 0 )
 			break;
-		status = PR_NetAddrToString(&addr, addrStr, sizeof(addrStr));
+		if ( PR_NetAddrToString(&addr, addrStr, sizeof(addrStr)) != PR_SUCCESS )
+			return ThrowIoError(cx);
 		JSString *str = JS_NewStringCopyZ(cx, addrStr);
 		RT_ASSERT_ALLOC( str );
 		JS_DefineElement(cx, addrJsObj, index++, STRING_TO_JSVAL(str), NULL, NULL, JSPROP_ENUMERATE);
 	}
-
 	*rval = OBJECT_TO_JSVAL(addrJsObj);
 	return JS_TRUE;
 }

@@ -62,10 +62,8 @@ DEFINE_FUNCTION( Poll ) {
 		jsval propVal;
 		JS_IdToValue( cx, idArray->vector[i], &propVal );
 		JS_GetElement(cx, JSVAL_TO_OBJECT(argv[0]), JSVAL_TO_INT(propVal), &propVal );
-		JSObject *o = JSVAL_TO_OBJECT( propVal ); //JS_ValueToObject
-		*rval = OBJECT_TO_JSVAL( o ); // protect from GC
-		// (TBD) is it useful ? I don't use JS_ValueToObject
-
+		JSObject *o = JSVAL_TO_OBJECT( propVal );
+		// RT_ASSERT_CLASS( o, 
 		PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, o );
 
 		// not needed, see below
@@ -98,7 +96,7 @@ DEFINE_FUNCTION( Poll ) {
 
 	if ( result == -1 ) {  // failed. see PR_GetError()
 
-		ThrowIoError( cx, PR_GetError(), PR_GetOSError() );
+		ThrowIoError(cx);
 		goto failed;
 	}
 
@@ -164,8 +162,6 @@ failed: // goto is the cheaper solution
 DEFINE_FUNCTION( IsReadable ) {
 
 	RT_ASSERT_ARGC( 1 );
-	JSObject *o = JSVAL_TO_OBJECT( argv[0] ); //JS_ValueToObject
-
 	PRIntervalTime prTimeout;
 	if ( argc >= 2 && argv[1] != JSVAL_VOID ) {
 
@@ -177,16 +173,12 @@ DEFINE_FUNCTION( IsReadable ) {
 		prTimeout = PR_INTERVAL_NO_TIMEOUT;
 	}
 
-	// (TBD) is it useful ? I don't use JS_ValueToObject
+	JSObject *o = JSVAL_TO_OBJECT( argv[0] );
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, o );
-	PRPollDesc desc;
-	desc.fd = fd;
-	desc.in_flags = PR_POLL_READ;
-	desc.out_flags = 0;
-
+	PRPollDesc desc = { fd, PR_POLL_READ, 0 };
 	PRInt32 result = PR_Poll( &desc, 1, prTimeout );
 	if ( result == -1 ) // error
-		return ThrowIoError( cx, PR_GetError(), PR_GetOSError() );
+		return ThrowIoError(cx);
 
 	if ( result == 1 && (desc.out_flags & PR_POLL_READ) != 0 ) {
 
@@ -197,10 +189,10 @@ DEFINE_FUNCTION( IsReadable ) {
 	return JS_TRUE;
 }
 
+
 DEFINE_FUNCTION( IsWritable ) {
 
 	RT_ASSERT_ARGC( 1 );
-	JSObject *o = JSVAL_TO_OBJECT( argv[0] ); //JS_ValueToObject
 
 	PRIntervalTime prTimeout;
 	if ( argc >= 2 && argv[1] != JSVAL_VOID ) {
@@ -213,16 +205,12 @@ DEFINE_FUNCTION( IsWritable ) {
 		prTimeout = PR_INTERVAL_NO_TIMEOUT;
 	}
 
-	// (TBD) is it useful ? I don't use JS_ValueToObject
+	JSObject *o = JSVAL_TO_OBJECT( argv[0] );
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, o );
-	PRPollDesc desc;
-	desc.fd = fd;
-	desc.in_flags = PR_POLL_WRITE;
-	desc.out_flags = 0;
-
+	PRPollDesc desc = { fd, PR_POLL_WRITE, 0 };
 	PRInt32 result = PR_Poll( &desc, 1, prTimeout );
 	if ( result == -1 ) // error
-		return ThrowIoError( cx, PR_GetError(), PR_GetOSError() );
+		return ThrowIoError(cx);
 
 	if ( result == 1 && (desc.out_flags & PR_POLL_WRITE) != 0 ) {
 

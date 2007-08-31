@@ -62,7 +62,7 @@ END_CLASS
 
 
 
-JSBool ThrowIoError( JSContext *cx, PRErrorCode errorCode, PRInt32 osError ) {
+JSBool ThrowIoErrorArg( JSContext *cx, PRErrorCode errorCode, PRInt32 osError ) {
 
 /*
 	const char * filename = NULL;
@@ -83,4 +83,10 @@ JSBool ThrowIoError( JSContext *cx, PRErrorCode errorCode, PRInt32 osError ) {
 	JS_SetReservedSlot( cx, error, 1, INT_TO_JSVAL(osError) );
 	JS_SetPendingException( cx, OBJECT_TO_JSVAL( error ) );
 	return JS_FALSE;
+}
+
+
+JSBool ThrowIoError( JSContext *cx ) {
+
+	return ThrowIoErrorArg(cx, PR_GetError(), PR_GetOSError());
 }
