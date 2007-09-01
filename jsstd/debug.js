@@ -1,7 +1,7 @@
 LoadModule('jsstd');
 //Print('Version :'+jsstd_revision);
 
-var buf = new Buffer();
+var buf = new Buffer('xxx');
 buf.Write('aaaaabbbbbccccc114ddddd');
 
 

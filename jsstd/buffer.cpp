@@ -174,6 +174,17 @@ DEFINE_CONSTRUCTOR() {
 	RT_ASSERT_ALLOC(queue);
 	JS_SetPrivate(cx, obj, queue);
 	BufferSetLength(cx, obj, 0);
+
+	if ( argc >= 1 ) {
+
+		RT_ASSERT_STRING( argv[0] );
+		JSString **pNewStr = (JSString**)malloc(sizeof(JSString*));
+		*pNewStr = JSVAL_TO_STRING( argv[0] );
+		RT_CHECK_CALL( JS_AddRoot(cx, pNewStr) );
+		QueuePush( queue, pNewStr );
+		RT_CHECK_CALL( BufferLengthAdd(cx, obj, JS_GetStringLength(*pNewStr)) );
+	}
+
 	return JS_TRUE;
 }
 
@@ -380,7 +391,34 @@ inline JSBool UnReadChunk( JSContext *cx, JSObject *obj, JSString *chunk ) {
 }
 
 
-DEFINE_FUNCTION( Read ) { // Read( [amount | <undefined> ] )
+DEFINE_FUNCTION( Match ) {
+	
+	RT_ASSERT_ARGC( 1 );
+	RT_ASSERT_RESOURCE( JS_GetPrivate(cx, obj) ); // first, ensure that the object is valid
+	RT_ASSERT_STRING( argv[0] );
+		
+	char *str;
+	int len;
+	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], str, len );
+
+	char *src = (char *)malloc(len);
+	size_t amount = len;
+	JSBool st = ReadRawAmount(cx, obj, &amount, src);
+	if ( st != JS_TRUE )
+		goto err;
+
+	if ( amount != len )
+		*rval = JSVAL_FALSE;
+	else
+		*rval = strncmp( str, src, len ) == 0 ? JSVAL_TRUE : JSVAL_FALSE;
+
+err:
+	free(src);
+	return JS_TRUE;
+}
+
+
+DEFINE_FUNCTION( Read ) { // Read( [ amount | <undefined> ] )
 
 	RT_ASSERT_RESOURCE( JS_GetPrivate(cx, obj) ); // first, ensure that the object is valid
 	if ( argc >= 1 && argv[0] == JSVAL_VOID ) { // read the next chunk (of an unknown length) (read something as fast as possible)
@@ -398,7 +436,7 @@ DEFINE_FUNCTION( Read ) { // Read( [amount | <undefined> ] )
 	return JS_TRUE;
 }
 
-/*
+
 DEFINE_FUNCTION( Skip ) { // Skip( amount )
 
 	RT_ASSERT_ARGC( 1 );
@@ -407,9 +445,10 @@ DEFINE_FUNCTION( Skip ) { // Skip( amount )
 	RT_JSVAL_TO_INT32( argv[0], amount );
 	RT_ASSERT( amount >= 0, "Invalid amount" );
 	RT_CHECK_CALL( ReadAmount(cx, obj, amount, rval) ); // (TBD) optimization: skip without reading the data.
+	*rval = JSVAL_VOID;
 	return JS_TRUE;
 }
-*/
+
 
 DEFINE_FUNCTION( ReadUntil ) {
 
@@ -458,7 +497,8 @@ CONFIGURE_CLASS
 		FUNCTION(Unread)
 		FUNCTION(Read)
 		FUNCTION(ReadUntil)
-//		FUNCTION(Skip)
+		FUNCTION(Match)
+		FUNCTION(Skip)
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
