@@ -60,40 +60,37 @@ DEFINE_FUNCTION( Poll ) {
 	for ( i = 0; i < objCount; i++ ) {
 
 		jsval propVal;
-		JS_IdToValue( cx, idArray->vector[i], &propVal );
-		JS_GetElement(cx, JSVAL_TO_OBJECT(argv[0]), JSVAL_TO_INT(propVal), &propVal );
-		JSObject *o = JSVAL_TO_OBJECT( propVal );
-		// RT_ASSERT_CLASS( o, 
-		PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, o );
-
-		// not needed, see below
-//   if ( fd == NULL ) {
-//
-//			JS_ReportError( cx, "descriptor is NULL" );
-//			goto failed;
-//		}
+		RT_CHECK_CALL( JS_IdToValue( cx, idArray->vector[i], &propVal ) );
+		RT_CHECK_CALL( JS_GetElement(cx, JSVAL_TO_OBJECT(argv[0]), JSVAL_TO_INT(propVal), &propVal ) );
+		RT_ASSERT_OBJECT( propVal );
+		JSObject *fdObj = JSVAL_TO_OBJECT( propVal );
+		RT_ASSERT( InheritFrom(cx, fdObj, &classDescriptor), RT_ERROR_INVALID_CLASS );
+		PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, fdObj );
+//		RT_ASSERT_RESOURCE( fd ); // fd == NULL is supported !
 
 		pollDesc[i].fd = fd; // fd is A pointer to a PRFileDesc object representing a socket or a pollable event.  This field can be set to NULL to indicate to PR_Poll that this PRFileDesc object should be ignored.
 		pollDesc[i].in_flags = 0;
 		pollDesc[i].out_flags = 0;
-
+	
 		jsval prop;
-
-		JS_GetProperty( cx, o, "readable", &prop );
+		JS_GetProperty( cx, fdObj, "readable", &prop );
 		if ( prop != JSVAL_VOID )
 			pollDesc[i].in_flags |= PR_POLL_READ;
 
-		JS_GetProperty( cx, o, "writable", &prop );
+		JS_GetProperty( cx, fdObj, "writable", &prop );
 		if ( prop != JSVAL_VOID )
 			pollDesc[i].in_flags |= PR_POLL_WRITE;
 
-		JS_GetProperty( cx, o, "exception", &prop );
+		JS_GetProperty( cx, fdObj, "exception", &prop );
 		if ( prop != JSVAL_VOID )
 			pollDesc[i].in_flags |= PR_POLL_EXCEPT;
+
+		JS_GetProperty( cx, fdObj, "error", &prop );
+		if ( prop != JSVAL_VOID )
+			pollDesc[i].in_flags |= PR_POLL_ERR;
 	}
 
 	result = PR_Poll( pollDesc, objCount, pr_timeout );
-
 	if ( result == -1 ) {  // failed. see PR_GetError()
 
 		ThrowIoError(cx);
@@ -103,55 +100,51 @@ DEFINE_FUNCTION( Poll ) {
 	for ( i = 0; i < objCount; i++ ) {
 
 		jsval arrayItem;
-		JS_IdToValue( cx, idArray->vector[i], &arrayItem );
-		JS_GetElement(cx, JSVAL_TO_OBJECT(argv[0]), JSVAL_TO_INT(arrayItem), &arrayItem );
+		RT_CHECK_CALL( JS_IdToValue(cx, idArray->vector[i], &arrayItem) );
+		RT_CHECK_CALL( JS_GetElement(cx, JSVAL_TO_OBJECT(argv[0]), JSVAL_TO_INT(arrayItem), &arrayItem) );
 		if ( arrayItem == JSVAL_VOID ) // socket has been removed from the list while js func "poll()" is runing
 			continue;
-		JSObject *o = JSVAL_TO_OBJECT( arrayItem ); //JS_ValueToObject
-		*rval = OBJECT_TO_JSVAL( o ); // protect from GC
-
-//		printf( "is protected?%d ", JSVAL_IS_GCTHING( *rval ) ); // returns 1
-//		*rval = propVal;
+		JSObject *fdObj = JSVAL_TO_OBJECT( arrayItem ); //JS_ValueToObject
+		*rval = OBJECT_TO_JSVAL( fdObj ); // protect from GC
 
 		jsval prop, ret;
-
 		if ( result > 0 ) { // no timeout
 
-			JS_GetProperty( cx, o, "readable", &prop );
+			JS_GetProperty( cx, fdObj, "readable", &prop );
 			if ( pollDesc[i].out_flags & PR_POLL_READ && JS_TypeOfValue( cx, prop ) == JSTYPE_FUNCTION )
-				if ( JS_CallFunctionValue( cx, o, prop, 1, rval, &ret ) == JS_FALSE ) // JS_CallFunction() DO NOT WORK !!!
+				if ( JS_CallFunctionValue( cx, fdObj, prop, 1, rval, &ret ) == JS_FALSE ) // JS_CallFunction() DO NOT WORK !!!
 					goto failed;
 
-			JS_GetProperty( cx, o, "writable", &prop );
+			JS_GetProperty( cx, fdObj, "writable", &prop );
 			if ( pollDesc[i].out_flags & PR_POLL_WRITE && JS_TypeOfValue( cx, prop ) == JSTYPE_FUNCTION )
-				if ( JS_CallFunctionValue( cx, o, prop, 1, rval, &ret ) == JS_FALSE ) // JS_CallFunction() DO NOT WORK !!!
+				if ( JS_CallFunctionValue( cx, fdObj, prop, 1, rval, &ret ) == JS_FALSE ) // JS_CallFunction() DO NOT WORK !!!
 					goto failed;
 
-			JS_GetProperty( cx, o, "exception", &prop );
+			JS_GetProperty( cx, fdObj, "exception", &prop );
 			if ( pollDesc[i].out_flags & PR_POLL_EXCEPT && JS_TypeOfValue( cx, prop ) == JSTYPE_FUNCTION )
-				if ( JS_CallFunctionValue( cx, o, prop, 1, rval, &ret ) == JS_FALSE ) // JS_CallFunction() DO NOT WORK !!!
+				if ( JS_CallFunctionValue( cx, fdObj, prop, 1, rval, &ret ) == JS_FALSE ) // JS_CallFunction() DO NOT WORK !!!
 					goto failed;
 
-			JS_GetProperty( cx, o, "error", &prop );
+			JS_GetProperty( cx, fdObj, "error", &prop );
 			if ( pollDesc[i].out_flags & PR_POLL_ERR && JS_TypeOfValue( cx, prop ) == JSTYPE_FUNCTION )
-				if ( JS_CallFunctionValue( cx, o, prop, 1, rval, &ret ) == JS_FALSE ) // JS_CallFunction() DO NOT WORK !!!
+				if ( JS_CallFunctionValue( cx, fdObj, prop, 1, rval, &ret ) == JS_FALSE ) // JS_CallFunction() DO NOT WORK !!!
 					goto failed;
 /*
-			JS_GetProperty( cx, o, "nval", &prop );
+			JS_GetProperty( cx, fdObj, "nval", &prop );
 			if ( pollDesc[i].out_flags & PR_POLL_NVAL && JS_TypeOfValue( cx, prop ) == JSTYPE_FUNCTION )
-				if ( JS_CallFunctionValue( cx, o, prop, 1, rval, &ret ) == JS_FALSE ) // JS_CallFunction() DO NOT WORK !!!
+				if ( JS_CallFunctionValue( cx, fdObj, prop, 1, rval, &ret ) == JS_FALSE ) // JS_CallFunction() DO NOT WORK !!!
 					goto failed;
 
-			JS_GetProperty( cx, o, "hup", &prop );
+			JS_GetProperty( cx, fdObj, "hup", &prop );
 			if ( pollDesc[i].out_flags & PR_POLL_HUP && JS_TypeOfValue( cx, prop ) == JSTYPE_FUNCTION )
-				if ( JS_CallFunctionValue( cx, o, prop, 1, rval, &ret ) == JS_FALSE ) // JS_CallFunction() DO NOT WORK !!!
+				if ( JS_CallFunctionValue( cx, fdObj, prop, 1, rval, &ret ) == JS_FALSE ) // JS_CallFunction() DO NOT WORK !!!
 					goto failed;
 */
 		}
 	}
 
-	JS_DestroyIdArray( cx, idArray );
 	*rval = INT_TO_JSVAL( result );
+	JS_DestroyIdArray(cx, idArray);
 	return JS_TRUE;
 
 failed: // goto is the cheaper solution
@@ -162,30 +155,26 @@ failed: // goto is the cheaper solution
 DEFINE_FUNCTION( IsReadable ) {
 
 	RT_ASSERT_ARGC( 1 );
+
+	JSObject *descriptorObj = JSVAL_TO_OBJECT( argv[0] );
+	RT_ASSERT( InheritFrom(cx, descriptorObj, &classDescriptor), RT_ERROR_INVALID_CLASS );
+	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, descriptorObj );
+//	RT_ASSERT_RESOURCE( fd ); // fd == NULL is supported !
+
 	PRIntervalTime prTimeout;
-	if ( argc >= 2 && argv[1] != JSVAL_VOID ) {
+	if ( argc >= 2 ) {
 
 		uint32 timeout;
-		JS_ValueToECMAUint32( cx, argv[1], &timeout );
+		RT_JSVAL_TO_UINT32( argv[1], timeout );
 		prTimeout = PR_MillisecondsToInterval(timeout);
-	} else {
-
+	} else
 		prTimeout = PR_INTERVAL_NO_TIMEOUT;
-	}
 
-	JSObject *o = JSVAL_TO_OBJECT( argv[0] );
-	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, o );
 	PRPollDesc desc = { fd, PR_POLL_READ, 0 };
 	PRInt32 result = PR_Poll( &desc, 1, prTimeout );
 	if ( result == -1 ) // error
 		return ThrowIoError(cx);
-
-	if ( result == 1 && (desc.out_flags & PR_POLL_READ) != 0 ) {
-
-		*rval = JSVAL_TRUE;
-		return JS_TRUE;
-	}
-	*rval = JSVAL_FALSE;
+	*rval = ( result == 1 && (desc.out_flags & PR_POLL_READ) != 0 ) ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;
 }
 
@@ -194,30 +183,25 @@ DEFINE_FUNCTION( IsWritable ) {
 
 	RT_ASSERT_ARGC( 1 );
 
+	JSObject *descriptorObj = JSVAL_TO_OBJECT( argv[0] );
+	RT_ASSERT( InheritFrom(cx, descriptorObj, &classDescriptor), RT_ERROR_INVALID_CLASS );
+	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, descriptorObj );
+//	RT_ASSERT_RESOURCE( fd ); // fd == NULL is supported !
+
 	PRIntervalTime prTimeout;
-	if ( argc >= 2 && argv[1] != JSVAL_VOID ) {
+	if ( argc >= 2 ) {
 
 		uint32 timeout;
-		JS_ValueToECMAUint32( cx, argv[1], &timeout );
+		RT_JSVAL_TO_UINT32( argv[1], timeout );
 		prTimeout = PR_MillisecondsToInterval(timeout);
-	} else {
-
+	} else
 		prTimeout = PR_INTERVAL_NO_TIMEOUT;
-	}
 
-	JSObject *o = JSVAL_TO_OBJECT( argv[0] );
-	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, o );
 	PRPollDesc desc = { fd, PR_POLL_WRITE, 0 };
 	PRInt32 result = PR_Poll( &desc, 1, prTimeout );
 	if ( result == -1 ) // error
 		return ThrowIoError(cx);
-
-	if ( result == 1 && (desc.out_flags & PR_POLL_WRITE) != 0 ) {
-
-		*rval = JSVAL_TRUE;
-		return JS_TRUE;
-	}
-	*rval = JSVAL_FALSE;
+	*rval = ( result == 1 && (desc.out_flags & PR_POLL_WRITE) != 0 ) ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;
 }
 
@@ -274,6 +258,7 @@ DEFINE_FUNCTION( GetRandomNoise ) {
 	RT_ASSERT_INT( argv[0] );
 	PRSize rndSize = JSVAL_TO_INT( argv[0] );
 	void *buf = (void*)JS_malloc(cx, rndSize);
+	RT_ASSERT_ALLOC( buf );
 	PRSize size = PR_GetRandomNoise(buf, rndSize);
 	if ( size <= 0 ) {
 

@@ -39,6 +39,7 @@ Print('\n * testing TCP socket \n');
 	var server = new Socket( Socket.TCP );
 	server.Bind(80, '127.0.0.1');
 	server.Listen();
+	
 	server.readable = function(s) {
 		
 		var soc = s.Accept();
