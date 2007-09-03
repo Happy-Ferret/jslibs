@@ -176,13 +176,35 @@ DEFINE_CONSTRUCTOR() {
 	BufferSetLength(cx, obj, 0);
 
 	if ( argc >= 1 ) {
+		
+		if ( JSVAL_IS_STRING( argv[0] ) ) {
 
-		RT_ASSERT_STRING( argv[0] );
-		JSString **pNewStr = (JSString**)malloc(sizeof(JSString*));
-		*pNewStr = JSVAL_TO_STRING( argv[0] );
-		RT_CHECK_CALL( JS_AddRoot(cx, pNewStr) );
-		QueuePush( queue, pNewStr );
-		RT_CHECK_CALL( BufferLengthAdd(cx, obj, JS_GetStringLength(*pNewStr)) );
+			JSString **pNewStr = (JSString**)malloc(sizeof(JSString*));
+			*pNewStr = JSVAL_TO_STRING( argv[0] );
+			RT_CHECK_CALL( JS_AddRoot(cx, pNewStr) );
+			QueuePush( queue, pNewStr );
+			RT_CHECK_CALL( BufferLengthAdd(cx, obj, JS_GetStringLength(*pNewStr)) );
+		} else
+		if ( JSVAL_IS_OBJECT( argv[0] ) && JS_GetClass(JSVAL_TO_OBJECT( argv[0] ))==_class ) { // (TBD) test the following code !
+
+			JSObject *bufObj = JSVAL_TO_OBJECT( argv[0] );
+			Queue *bufQueue = (Queue*)JS_GetPrivate(cx, bufObj);
+			RT_ASSERT_RESOURCE( bufQueue );
+
+			for ( QueueCell *it = bufQueue->begin; it; it = it->next ) {
+				
+				JSString **pNewStr = (JSString**)malloc(sizeof(JSString*));
+				*pNewStr = *(JSString **)QueueGetData(it);
+				RT_CHECK_CALL( JS_AddRoot(cx, pNewStr) );
+				QueuePush( queue, pNewStr );
+				
+				size_t bufLength;
+				RT_CHECK_CALL( BufferGetLength(cx, bufObj, &bufLength) );
+				RT_CHECK_CALL( BufferSetLength(cx, bufObj, bufLength) );
+			}
+
+		} else
+			REPORT_ERROR( RT_ERROR_INVALID_ARGUMENT );
 	}
 
 	return JS_TRUE;

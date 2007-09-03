@@ -2,7 +2,9 @@ LoadModule('jsstd');
 //Print('Version :'+jsstd_revision);
 
 var buf = new Buffer('xxx');
-buf.Write('aaaaabbbbbccccc114ddddd');
+buf.Write('aaa');
+buf.Write('bb1');
+buf.Write('14ccc');
 
 
 Print( 'token :'+ buf.ReadUntil('114') ,'\n' );

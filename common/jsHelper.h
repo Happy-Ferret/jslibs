@@ -65,6 +65,7 @@ inline bool MaybeRealloc( int requested, int received ) {
 #define RT_ERROR_MISSING_ARGUMENT "this function require more arguments."
 #define RT_ERROR_TOO_MANY_ARGUMENTS "you provide too many argument to the function."
 #define RT_ERROR_MISSING_N_ARGUMENT "this function require %d more argument(s)."
+#define RT_ERROR_INVALID_ARGUMENT "invalid argument."
 #define RT_ERROR_INVALID_CLASS "wrong object type."
 #define RT_ERROR_STRING_CONVERSION_FAILED "unable to convert this argument to string."
 #define RT_ERROR_INT_CONVERSION_FAILED "unable to convert this argument to integer."
