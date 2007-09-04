@@ -140,6 +140,11 @@ inline QueueCell *QueueEnd( Queue *queue ) {
 	return queue->end;
 }
 
+inline QueueCell *QueueNext( QueueCell *cell ) {
+
+	return cell->next;
+}
+
 inline void *QueueGetData( QueueCell *cell ) {
 
 	return cell->data;

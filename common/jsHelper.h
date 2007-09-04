@@ -243,27 +243,27 @@ typedef void (*FunctionPointer)(void);
 
 
 inline JSBool SetNativeInterface( JSContext *cx, JSObject *obj, const char *name, FunctionPointer function, void *descriptor ) {
-
+	
+	// Cannot be alled while Finalize
 	// the following must work because spidermonkey will never call the getter or setter if it is not explicitly required by the script
-	if ( JS_DefineProperty(cx, obj, name, JSVAL_VOID, (JSPropertyOp)function, (JSPropertyOp)descriptor, JSPROP_READONLY | JSPROP_PERMANENT) == JS_FALSE )
-		return JS_FALSE;
+	RT_CHECK_CALL( JS_DefineProperty(cx, obj, name, JSVAL_VOID, (JSPropertyOp)function, (JSPropertyOp)descriptor, JSPROP_READONLY | JSPROP_PERMANENT) );
 	return JS_TRUE;
 }
 
 inline JSBool GetNativeInterface( JSContext *cx, JSObject *obj, const char *name, FunctionPointer *function, void **descriptor ) {
 
+	// Cannot be alled while Finalize
 	uintN attrs;
 	JSBool found;
-	if ( JS_GetPropertyAttrsGetterAndSetter(cx, obj, name, &attrs, &found, (JSPropertyOp*)function, (JSPropertyOp*)descriptor) == JS_FALSE )
-		return JS_FALSE;
+	RT_CHECK_CALL( JS_GetPropertyAttrsGetterAndSetter(cx, obj, name, &attrs, &found, (JSPropertyOp*)function, (JSPropertyOp*)descriptor) ); // NULL is supported for function and descriptor
 	return JS_TRUE;
 }
 
 
 inline JSBool RemoveNativeInterface( JSContext *cx, JSObject *obj, const char *name ) {
-
-	if ( JS_DeleteProperty(cx, obj, name) == JS_FALSE )
-		return JS_FALSE;
+	
+	// Cannot be alled while Finalize
+	RT_CHECK_CALL( JS_DeleteProperty(cx, obj, name) );
 	return JS_TRUE;
 }
 
@@ -332,13 +332,17 @@ inline JSBool CallFunction( JSContext *cx, JSObject *obj, jsval functionValue, j
 
 	va_list ap;
 	jsval argv[16]; // argc MUST be <= 16
+	jsval rvalTmp;
 	RT_ASSERT( argc <= sizeof(argv)/sizeof(jsval), "Too many arguments." );
 	va_start(ap, argc);
 	for ( uintN i = 0; i < argc; i++ )
 		argv[i] = va_arg(ap, jsval);
 	va_end(ap);
 	RT_ASSERT_FUNCTION( functionValue );
-	return JS_CallFunctionValue(cx, obj, functionValue, argc, argv, rval);
+	RT_CHECK_CALL( JS_CallFunctionValue(cx, obj, functionValue, argc, argv, &rvalTmp) ); // NULL is NOT supported for &rvalTmp ( last arg of JS_CallFunctionValue )
+	if ( rval != NULL )
+		*rval = rvalTmp;
+	return JS_TRUE;
 }
 
 

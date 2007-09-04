@@ -88,7 +88,8 @@
 enum Endian {
 	BigEndian,
 	LittleEndian,
-	MiddleEndian
+	MiddleEndian,
+	UnknownEndian
 };
 
 inline Endian DetectSystemEndianType() {
@@ -98,6 +99,7 @@ inline Endian DetectSystemEndianType() {
 		case 0x00010203: return LittleEndian;
 		case 0x02030001: return MiddleEndian;
 	}
+	return UnknownEndian;
 }
 
 

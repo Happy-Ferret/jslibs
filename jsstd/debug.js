@@ -6,9 +6,10 @@ buf.Write('aaa');
 buf.Write('bb1');
 buf.Write('14ccc');
 
-
-Print( 'token :'+ buf.ReadUntil('114') ,'\n' );
-Print( 'rest :'+ buf.Read() ,'\n' );
+var buf2 = new Buffer(buf);
+buf2.Write('buffer2');
+Print( 'token :'+ buf2.ReadUntil('114') ,'\n' );
+Print( 'rest :'+ buf2.Read() ,'\n' );
 
 Halt();
 

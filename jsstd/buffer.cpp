@@ -18,9 +18,6 @@
 #include "../common/jsNativeInterface.h"
 #include "../common/queue.h"
 
-#include <jscntxt.h>
-
-inline JSBool ReadRawAmount( JSContext *cx, JSObject *obj, size_t *amount, char *str );
 
 typedef struct JsCntxt {
 	JSRuntime *rt;
@@ -30,6 +27,7 @@ typedef struct JsCntxt {
 
 static bool NativeInterfaceReadBuffer( void *pv, unsigned char *buf, unsigned int *amount ) {
 
+	RT_SAFE( if ( pv == NULL ) return false );
 	JsCntxt *cntxt = (JsCntxt*)pv;
 	JSContext *cx = NULL;
 	JS_ContextIterator(cntxt->rt, &cx); // (TBD) find a better way to get a suitable cx ( beware: cx & threads )
@@ -43,34 +41,21 @@ static bool NativeInterfaceReadBuffer( void *pv, unsigned char *buf, unsigned in
 	JSBool status = ReadRawAmount(cx, obj, amount, (char*)buf);
 	if ( status != JS_TRUE )
 		return false;
-/*
-	jsval rval, argv[] = { INT_TO_JSVAL(*amount) };
-	if ( JS_CallFunctionName(cx, obj, "Read", 1, argv, &rval) == JS_FALSE ) // (TBD) use a lower level function like ReadRawAmount
-		return false;
-	if ( !JSVAL_IS_STRING(rval) )
-		return false;
-	JSString *jsStr = JSVAL_TO_STRING(rval);
-	char * str = JS_GetStringBytes(jsStr);
-	size_t len = JS_GetStringLength(jsStr);
-	memcpy(buf, str, len);
-	*amount = len;
-*/
+
 	#ifdef JS_THREADSAFE
 		JS_EndRequest( cx );
 	#endif
-
 	return true;
 }
 
 
-
-inline JSBool BufferSetLength( JSContext *cx, JSObject *obj, size_t bufferLength ) {
+inline JSBool BufferLengthSet( JSContext *cx, JSObject *obj, size_t bufferLength ) {
 
 	RT_CHECK_CALL( JS_SetReservedSlot(cx, obj, SLOT_BUFFER_LENGTH, INT_TO_JSVAL( bufferLength )) );
 	return JS_TRUE;
 }
 
-inline JSBool BufferGetLength( JSContext *cx, JSObject *obj, size_t *bufferLength ) {
+inline JSBool BufferLengthGet( JSContext *cx, JSObject *obj, size_t *bufferLength ) {
 
 	jsval bufferLengthVal;
 	RT_CHECK_CALL( JS_GetReservedSlot(cx, obj, SLOT_BUFFER_LENGTH, &bufferLengthVal) );
@@ -81,30 +66,24 @@ inline JSBool BufferGetLength( JSContext *cx, JSObject *obj, size_t *bufferLengt
 inline JSBool BufferLengthAdd( JSContext *cx, JSObject *obj, size_t amount ) {
 	
 	size_t bufferLength;
-	RT_CHECK_CALL( BufferGetLength(cx, obj, &bufferLength) );
+	RT_CHECK_CALL( BufferLengthGet(cx, obj, &bufferLength) );
 	bufferLength += amount;
-	RT_CHECK_CALL( BufferSetLength(cx, obj, bufferLength) );
+	RT_CHECK_CALL( BufferLengthSet(cx, obj, bufferLength) );
 	return JS_TRUE;
 }
 
 inline JSBool BufferRefillRequest( JSContext *cx, JSObject *obj, size_t missing ) { // missing = missing amount of data to complete the request
 
 	jsval fctVal;
-	JS_GetProperty(cx, obj, "onunderflow", &fctVal);
-	if ( fctVal != JSVAL_VOID ) {
-
-		RT_ASSERT_FUNCTION(fctVal);
-		jsval retVal;
-		RT_CHECK_CALL( CallFunction(cx, obj, fctVal, &retVal, 2, OBJECT_TO_JSVAL(obj), INT_TO_JSVAL(missing) ) );
-	}
+	RT_CHECK_CALL( JS_GetProperty(cx, obj, "onunderflow", &fctVal) );
+	if ( fctVal != JSVAL_VOID )
+		RT_CHECK_CALL( CallFunction(cx, obj, fctVal, NULL, 2, OBJECT_TO_JSVAL(obj), INT_TO_JSVAL(missing) ) );
 	return JS_TRUE;
 }
-
 
 JSBool FindInBuffer( JSContext *cx, JSObject *obj, char *needle, int needleLength, int *foundAt ) {
 
 	// (TBD) optimise this function for needleLength == 1 (eg. '\0' in a string)
-
 	Queue *queue = (Queue*)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE( queue );
 	
@@ -143,86 +122,26 @@ end:
 }
 
 
-BEGIN_CLASS( Buffer )
+JSBool AddBuffer( JSContext *cx, JSObject *destBuffer, JSObject *srcBuffer ) {
 
-DEFINE_FINALIZE() {
+	RT_ASSERT_CLASS( destBuffer, &classBuffer );
+	Queue *destQueue = (Queue*)JS_GetPrivate(cx, destBuffer);
+	RT_ASSERT_RESOURCE( destQueue );
 
-	Queue *queue = (Queue*)JS_GetPrivate(cx, obj);
-	if ( queue != NULL ) {
+	RT_ASSERT_CLASS( srcBuffer, &classBuffer );
+	Queue *srcQueue = (Queue*)JS_GetPrivate(cx, srcBuffer);
+	RT_ASSERT_RESOURCE( srcQueue );
+
+	for ( QueueCell *it = QueueBegin(srcQueue); it; it = QueueNext(it) ) {
 		
-		while ( !QueueIsEmpty(queue) ) {
-			
-			JSString **pNewStr = (JSString**)QueueShift(queue);
-			JS_RemoveRoot(cx, pNewStr);
-			free(pNewStr);
-		}
-		QueueDestruct(queue);
-		JS_SetPrivate(cx, obj, NULL);
+		JSString **pNewStr = (JSString**)malloc(sizeof(JSString*));
+		*pNewStr = *(JSString **)QueueGetData(it);
+		RT_CHECK_CALL( JS_AddRoot(cx, pNewStr) );
+		QueuePush( destQueue, pNewStr );
 	}
-}
-
-
-DEFINE_CONSTRUCTOR() {
-
-	RT_ASSERT_CONSTRUCTING( _class );
-	// prepare NativeInterface compatibility
-	JsCntxt *cntxt = (JsCntxt*)malloc(sizeof(JsCntxt));
-	cntxt->rt = JS_GetRuntime(cx); // beware: cx must exist during the life of this object !
-	cntxt->obj = obj;
-	SetNativeInterface(cx, obj, NI_READ_RESOURCE, (FunctionPointer)NativeInterfaceReadBuffer, cntxt);
-	Queue *queue = QueueConstruct();
-	RT_ASSERT_ALLOC(queue);
-	JS_SetPrivate(cx, obj, queue);
-	BufferSetLength(cx, obj, 0);
-
-	if ( argc >= 1 ) {
-		
-		if ( JSVAL_IS_STRING( argv[0] ) ) {
-
-			JSString **pNewStr = (JSString**)malloc(sizeof(JSString*));
-			*pNewStr = JSVAL_TO_STRING( argv[0] );
-			RT_CHECK_CALL( JS_AddRoot(cx, pNewStr) );
-			QueuePush( queue, pNewStr );
-			RT_CHECK_CALL( BufferLengthAdd(cx, obj, JS_GetStringLength(*pNewStr)) );
-		} else
-		if ( JSVAL_IS_OBJECT( argv[0] ) && JS_GetClass(JSVAL_TO_OBJECT( argv[0] ))==_class ) { // (TBD) test the following code !
-
-			JSObject *bufObj = JSVAL_TO_OBJECT( argv[0] );
-			Queue *bufQueue = (Queue*)JS_GetPrivate(cx, bufObj);
-			RT_ASSERT_RESOURCE( bufQueue );
-
-			for ( QueueCell *it = bufQueue->begin; it; it = it->next ) {
-				
-				JSString **pNewStr = (JSString**)malloc(sizeof(JSString*));
-				*pNewStr = *(JSString **)QueueGetData(it);
-				RT_CHECK_CALL( JS_AddRoot(cx, pNewStr) );
-				QueuePush( queue, pNewStr );
-				
-				size_t bufLength;
-				RT_CHECK_CALL( BufferGetLength(cx, bufObj, &bufLength) );
-				RT_CHECK_CALL( BufferSetLength(cx, bufObj, bufLength) );
-			}
-
-		} else
-			REPORT_ERROR( RT_ERROR_INVALID_ARGUMENT );
-	}
-
-	return JS_TRUE;
-}
-
-
-DEFINE_FUNCTION( Clear ) {
-
-	Queue *queue = (Queue*)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE(queue);
-
-	while ( !QueueIsEmpty(queue) ) {
-		
-		JSString **pNewStr = (JSString**)QueueShift(queue);
-		JS_RemoveRoot(cx, pNewStr);
-		free(pNewStr);
-	}
-	BufferSetLength(cx, obj, 0);
+	size_t bufLength;
+	RT_CHECK_CALL( BufferLengthGet(cx, srcBuffer, &bufLength) );
+	RT_CHECK_CALL( BufferLengthAdd(cx, destBuffer, bufLength) );
 	return JS_TRUE;
 }
 
@@ -231,11 +150,8 @@ JSBool WriteRawData( JSContext *cx, JSObject *obj, size_t amount, char *str ) {
 
 	Queue *queue = (Queue*)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(queue);
-
 	JSString **pNewStr = (JSString**)malloc(sizeof(JSString*));
-	
 	*pNewStr = JS_NewStringCopyN(cx, str, amount);
-
 	RT_ASSERT( pNewStr != NULL, "Unable to create a NewDependentString." );
 	RT_CHECK_CALL( JS_AddRoot(cx, pNewStr) );
 	QueuePush( queue, pNewStr );
@@ -244,43 +160,15 @@ JSBool WriteRawData( JSContext *cx, JSObject *obj, size_t amount, char *str ) {
 }
 
 
-DEFINE_FUNCTION( Write ) {
-
-	RT_ASSERT_ARGC(1);
-	RT_ASSERT_STRING(argv[0]);
-	Queue *queue = (Queue*)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE(queue);
-
-	JSString *str = JSVAL_TO_STRING(argv[0]);
-	size_t strLen = JS_GetStringLength(str);
-
-	size_t amount;
-	if ( argc >= 2 ) {
-		RT_JSVAL_TO_INT32( argv[1], amount );
-		if ( amount > strLen )
-			amount = strLen;
-	} else
-		amount = strLen;
-
-	JSString **pNewStr = (JSString**)malloc(sizeof(JSString*));
-	*pNewStr = JS_NewDependentString(cx, str, 0, amount);
-	RT_ASSERT( pNewStr != NULL, "Unable to create a NewDependentString." );
-	RT_CHECK_CALL( JS_AddRoot(cx, pNewStr) );
-	QueuePush( queue, pNewStr );
-	RT_CHECK_CALL( BufferLengthAdd(cx, obj, amount) );
-	return JS_TRUE;
-}
-
-
-inline JSBool ReadOneChunk( JSContext *cx, JSObject *obj, jsval *rval ) {
+JSBool ReadOneChunk( JSContext *cx, JSObject *obj, jsval *rval ) {
 
   	size_t bufferLength;
-	RT_CHECK_CALL( BufferGetLength(cx, obj, &bufferLength) );
+	RT_CHECK_CALL( BufferLengthGet(cx, obj, &bufferLength) );
 
 	if ( bufferLength == 0 ) { // if buffer is empty, try to refill it.
 
 		RT_CHECK_CALL( BufferRefillRequest(cx, obj, 0) );
-		RT_CHECK_CALL( BufferGetLength(cx, obj, &bufferLength) ); // read it again because it may have changed
+		RT_CHECK_CALL( BufferLengthGet(cx, obj, &bufferLength) ); // read it again because it may have changed
 		if ( bufferLength == 0 ) { // the data are definitively exhausted
 			
 			*rval = JS_GetEmptyStringValue(cx);
@@ -291,7 +179,7 @@ inline JSBool ReadOneChunk( JSContext *cx, JSObject *obj, jsval *rval ) {
 	RT_ASSERT_RESOURCE( queue );
 	JSString **pNewStr = (JSString**)QueueShift(queue);
 	bufferLength -= JS_GetStringLength(*pNewStr);
-	RT_CHECK_CALL( BufferSetLength(cx, obj, bufferLength) ); // update buffer size
+	RT_CHECK_CALL( BufferLengthSet(cx, obj, bufferLength) ); // update buffer size
 	RT_CHECK_CALL( JS_RemoveRoot(cx, pNewStr) ); // removeRoot
 	*rval = STRING_TO_JSVAL(*pNewStr); // result (Rooted)
 	return JS_TRUE;
@@ -304,7 +192,7 @@ JSBool ReadRawAmount( JSContext *cx, JSObject *obj, size_t *amount, char *str ) 
 		return JS_TRUE;
 
 	size_t bufferLength;
-	RT_CHECK_CALL( BufferGetLength(cx, obj, &bufferLength) );
+	RT_CHECK_CALL( BufferLengthGet(cx, obj, &bufferLength) );
 
 	if ( bufferLength < *amount || bufferLength == 0 ) { // more that the available data is required, then try to refill the buffer
 
@@ -313,7 +201,7 @@ JSBool ReadRawAmount( JSContext *cx, JSObject *obj, size_t *amount, char *str ) 
 
 			bufferLengthBeforeRefillRequest = bufferLength;
 			RT_CHECK_CALL( BufferRefillRequest(cx, obj, *amount - bufferLength) );
-			RT_CHECK_CALL( BufferGetLength(cx, obj, &bufferLength) ); // read it again because it may have changed
+			RT_CHECK_CALL( BufferLengthGet(cx, obj, &bufferLength) ); // read it again because it may have changed
 		} while( *amount > bufferLength && bufferLength != bufferLengthBeforeRefillRequest ); // if bufferLength == bufferLengthBeforeRefillRequest nothing has been added in the buffer
 
 		if ( *amount > bufferLength ) // we definitively cannot read the required amount of data, then read the whole buffer.
@@ -354,7 +242,7 @@ JSBool ReadRawAmount( JSContext *cx, JSObject *obj, size_t *amount, char *str ) 
 		}
 	}
 	bufferLength -= *amount;
-	RT_CHECK_CALL( BufferSetLength(cx, obj, bufferLength) ); // update buffer size
+	RT_CHECK_CALL( BufferLengthSet(cx, obj, bufferLength) ); // update buffer size
 	return JS_TRUE;
 }
 
@@ -399,7 +287,7 @@ JSBool UnReadRawChunk( JSContext *cx, JSObject *obj, char *data, size_t length )
 }
 
 
-inline JSBool UnReadChunk( JSContext *cx, JSObject *obj, JSString *chunk ) {
+JSBool UnReadChunk( JSContext *cx, JSObject *obj, JSString *chunk ) {
 
 	Queue *queue = (Queue*)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE( queue );
@@ -409,6 +297,110 @@ inline JSBool UnReadChunk( JSContext *cx, JSObject *obj, JSString *chunk ) {
 	RT_CHECK_CALL( JS_AddRoot(cx, pNewStr) );
 	QueueUnshift( queue, pNewStr );
 	RT_CHECK_CALL( BufferLengthAdd(cx, obj, JS_GetStringLength(*pNewStr)) );
+	return JS_TRUE;
+}
+
+
+
+BEGIN_CLASS( Buffer )
+
+DEFINE_FINALIZE() {
+
+	Queue *queue = (Queue*)JS_GetPrivate(cx, obj);
+	if ( queue != NULL ) {
+
+
+// unable to call GetNativeInterface in Finalize !!!
+//		JsCntxt *cntxt;
+//		FunctionPointer fp;
+//		GetNativeInterface(cx, obj, NI_READ_RESOURCE, &fp, (void**)&cntxt);
+//		free(cntxt);
+		RemoveNativeInterface(cx, obj, NI_READ_RESOURCE);
+		
+		while ( !QueueIsEmpty(queue) ) {
+			
+			JSString **pNewStr = (JSString**)QueueShift(queue);
+			JS_RemoveRoot(cx, pNewStr);
+			free(pNewStr);
+		}
+		QueueDestruct(queue);
+		JS_SetPrivate(cx, obj, NULL);
+	}
+}
+
+
+DEFINE_CONSTRUCTOR() {
+
+	RT_ASSERT_CONSTRUCTING( _class );
+	JsCntxt *cntxt = (JsCntxt*)malloc(sizeof(JsCntxt)); // prepare NativeInterface compatibility
+	cntxt->rt = JS_GetRuntime(cx); // beware: cx must exist during the life of this object !
+	cntxt->obj = obj;
+	SetNativeInterface(cx, obj, NI_READ_RESOURCE, (FunctionPointer)NativeInterfaceReadBuffer, cntxt);
+	Queue *queue = QueueConstruct();
+	RT_ASSERT_ALLOC(queue);
+	JS_SetPrivate(cx, obj, queue);
+	BufferLengthSet(cx, obj, 0);
+
+	if ( argc >= 1 ) {
+		
+		if ( JSVAL_IS_STRING( argv[0] ) ) {
+
+			JSString **pNewStr = (JSString**)malloc(sizeof(JSString*));
+			*pNewStr = JSVAL_TO_STRING( argv[0] );
+			RT_CHECK_CALL( JS_AddRoot(cx, pNewStr) );
+			QueuePush( queue, pNewStr );
+			RT_CHECK_CALL( BufferLengthAdd(cx, obj, JS_GetStringLength(*pNewStr)) );
+		} else if ( JSVAL_IS_OBJECT( argv[0] ) ) {
+
+			RT_CHECK_CALL( AddBuffer(cx, obj, JSVAL_TO_OBJECT( argv[0] )) );
+		} else
+			REPORT_ERROR( RT_ERROR_INVALID_ARGUMENT );
+	}
+
+	return JS_TRUE;
+}
+
+
+DEFINE_FUNCTION( Clear ) {
+
+	Queue *queue = (Queue*)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE(queue);
+
+	while ( !QueueIsEmpty(queue) ) {
+		
+		JSString **pNewStr = (JSString**)QueueShift(queue);
+		JS_RemoveRoot(cx, pNewStr);
+		free(pNewStr);
+	}
+	BufferLengthSet(cx, obj, 0);
+	return JS_TRUE;
+}
+
+
+DEFINE_FUNCTION( Write ) {
+
+	RT_ASSERT_ARGC(1);
+	RT_ASSERT_STRING(argv[0]);
+	Queue *queue = (Queue*)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE(queue);
+
+	JSString *str = JSVAL_TO_STRING(argv[0]);
+	size_t strLen = JS_GetStringLength(str);
+
+	size_t amount;
+	if ( argc >= 2 ) {
+		RT_JSVAL_TO_INT32( argv[1], amount );
+		if ( amount > strLen )
+			amount = strLen;
+	} else
+		amount = strLen;
+
+	JSString **pNewStr = (JSString**)malloc(sizeof(JSString*));
+	*pNewStr = JS_NewDependentString(cx, str, 0, amount);
+	RT_ASSERT( pNewStr != NULL, "Unable to create a NewDependentString." );
+	RT_CHECK_CALL( JS_AddRoot(cx, pNewStr) );
+	QueuePush( queue, pNewStr );
+	RT_CHECK_CALL( BufferLengthAdd(cx, obj, amount) );
 	return JS_TRUE;
 }
 
@@ -450,7 +442,7 @@ DEFINE_FUNCTION( Read ) { // Read( [ amount | <undefined> ] )
 	}
 	size_t amount;
 	if ( argc == 0 )
-		RT_CHECK_CALL( BufferGetLength(cx, obj, &amount) ); // no arguments then read the whole buffer
+		RT_CHECK_CALL( BufferLengthGet(cx, obj, &amount) ); // no arguments then read the whole buffer
 	else
 		RT_JSVAL_TO_INT32( argv[0], amount );
 	RT_ASSERT( amount >= 0, "Invalid amount" );
