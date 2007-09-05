@@ -123,6 +123,7 @@ JSBool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *objAt,
 					jsval blobVal;
 					JS_GetReservedSlot(cx, JSVAL_TO_OBJECT(val), SLOT_BLOB_DATA, &blobVal);
 					JSString *jsstr = JS_ValueToString(cx, blobVal);
+					// (TBD) GC protect (root) jsstr
 					sqlite3_bind_blob(pStmt, param, JS_GetStringBytes(jsstr), JS_GetStringLength(jsstr), SQLITE_STATIC); // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT
 					break;
 				}
@@ -131,6 +132,7 @@ JSBool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *objAt,
 			case JSTYPE_STRING: {
 
 				JSString *jsstr = JS_ValueToString(cx, val);
+				// (TBD) GC protect (root) jsstr
 				sqlite3_bind_text(pStmt, param, JS_GetStringBytes(jsstr), JS_GetStringLength(jsstr), SQLITE_STATIC); // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT
 				}
 				break;

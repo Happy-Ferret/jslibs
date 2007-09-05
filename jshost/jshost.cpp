@@ -284,7 +284,7 @@ static JSBool stderrFunction(JSContext *cx, JSObject *obj, uintN argc, jsval *ar
 	JSString *str;
 	str = JS_ValueToString(cx, argv[0]);
 	RT_ASSERT( str != NULL, "Unable to convert argument to string.");
-	argv[0] = STRING_TO_JSVAL(str); // (TBD) needed ?
+	argv[0] = STRING_TO_JSVAL(str); // (TBD) needed ? YES
 	consoleStdErr( cx, JS_GetStringBytes(str), JS_GetStringLength(str) );
 	return JS_TRUE;
 }
@@ -294,7 +294,7 @@ static JSBool stdoutFunction(JSContext *cx, JSObject *obj, uintN argc, jsval *ar
 	JSString *str;
 	str = JS_ValueToString(cx, argv[0]);
 	RT_ASSERT( str != NULL, "Unable to convert argument to string.");
-	argv[0] = STRING_TO_JSVAL(str); // (TBD) needed ?
+	argv[0] = STRING_TO_JSVAL(str); // (TBD) needed ? YES
 	consoleStdOut( cx, JS_GetStringBytes(str), JS_GetStringLength(str) );
 	return JS_TRUE;
 }

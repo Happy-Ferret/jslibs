@@ -317,6 +317,7 @@ void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArg
 				jsval blobVal;
 				JS_GetReservedSlot(cx, JSVAL_TO_OBJECT(rval), SLOT_BLOB_DATA, &blobVal);
 				JSString *jsstr = JS_ValueToString(cx, blobVal);
+				// (TBD) GC protect (root) jsstr !!!
 				sqlite3_result_blob(sCx, JS_GetStringBytes(jsstr), JS_GetStringLength(jsstr), SQLITE_STATIC); // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT
 				break;
 			}
@@ -324,6 +325,7 @@ void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArg
 		case JSTYPE_FUNCTION: // (TBD) call the function and pass its result to SQLite ?
 		case JSTYPE_STRING: {
 			JSString *jsstr = JS_ValueToString(cx, rval);
+			// (TBD) GC protect (root) jsstr
 			sqlite3_result_text(sCx, JS_GetStringBytes(jsstr), JS_GetStringLength(jsstr), SQLITE_STATIC); // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT // cf.  int sqlite3_bind_text16(sqlite3_stmt*, int, const void*, int n, void(*)(void*));
 			break;
 		}

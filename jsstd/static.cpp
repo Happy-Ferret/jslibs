@@ -243,6 +243,7 @@ DEFINE_FUNCTION( IdOf ) {
 DEFINE_FUNCTION( Warning ) {
 
 	JSString *jssMesage = JS_ValueToString(cx, argv[0]);
+	RT_ASSERT_ALLOC( jssMesage );
 	argv[0] = STRING_TO_JSVAL(jssMesage);
 	JS_ReportWarning( cx, "%s", JS_GetStringBytes(jssMesage) );
 	return JS_TRUE;

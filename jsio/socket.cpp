@@ -363,6 +363,7 @@ enum {
 	keepAlive = PR_SockOpt_Keepalive, 
 	recvBufferSize = PR_SockOpt_RecvBufferSize, 
 	sendBufferSize = PR_SockOpt_SendBufferSize,
+	maxSegment = PR_SockOpt_MaxSegment,
    nonblocking = PR_SockOpt_Nonblocking,
 	broadcast = PR_SockOpt_Broadcast,
 	multicastLoopback = PR_SockOpt_McastLoopback
@@ -412,6 +413,11 @@ DEFINE_PROPERTY( OptionSetter ) {
 			uint32 size;
 			JS_ValueToECMAUint32( cx, *vp, &size );
 			sod.value.send_buffer_size = size;
+		} break;
+		case PR_SockOpt_MaxSegment: {
+			uint32 size;
+			JS_ValueToECMAUint32( cx, *vp, &size );
+			sod.value.max_segment = size;
 		} break;
 		case PR_SockOpt_Nonblocking: {
 			JSBool boolValue;
@@ -466,6 +472,9 @@ DEFINE_PROPERTY( OptionGetter ) {
 			break;
 		case PR_SockOpt_SendBufferSize:
 			*vp = INT_TO_JSVAL(sod.value.send_buffer_size);
+			break;
+		case PR_SockOpt_MaxSegment:
+			*vp = INT_TO_JSVAL(sod.value.max_segment);
 			break;
 		case PR_SockOpt_Nonblocking:
 			*vp = sod.value.non_blocking == PR_TRUE ? JSVAL_TRUE : JSVAL_FALSE;
@@ -600,6 +609,7 @@ CONFIGURE_CLASS
 		PROPERTY_SWITCH( keepAlive, Option )
 		PROPERTY_SWITCH( recvBufferSize, Option )
 		PROPERTY_SWITCH( sendBufferSize, Option )
+		PROPERTY_SWITCH( maxSegment, Option )
 		PROPERTY_SWITCH( nonblocking, Option )
 		PROPERTY_SWITCH( broadcast, Option )
 		PROPERTY_SWITCH( multicastLoopback, Option )

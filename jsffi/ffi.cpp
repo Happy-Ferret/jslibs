@@ -1036,7 +1036,10 @@ JSBool NativeModule_Construct(JSContext *cx, JSObject *obj, uintN argc, jsval *a
 
 //    char* str = JS_GetStringBytes( JS_ValueToString ( cx, OBJECT_TO_JSVAL(obj) ) );
 
-  char *libName = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
+	if ( !JSVAL_IS_STRING(argv[0]) )
+		argv[0] = STRING_TO_JSVAL( JS_ValueToString(cx, argv[0]) );
+
+  char *libName = JS_GetStringBytes( JSVAL_TO_STRING(argv[0]) );
   if ( libName == NULL || *libName == 0 )
     return JS_FALSE;
 

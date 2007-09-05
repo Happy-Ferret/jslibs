@@ -72,6 +72,8 @@ JSBool z_call(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval
 	if ( argc >= 1 ) {
 
 		JSString *jssData = JS_ValueToString( cx, argv[0] );
+		RT_ASSERT_ALLOC( jssData );
+		argv[0] = STRING_TO_JSVAL( jssData );
 		inputLength = JS_GetStringLength( jssData );
 		inputData = JS_GetStringBytes( jssData ); // no copy is done, we read directly in the string hold by SM
 	}

@@ -1,6 +1,8 @@
 LoadModule('jsstd');
 LoadModule('jsio');
 
+
+
 try {
 
 Print( Socket.GetHostsByName('www.google.com') );
@@ -56,6 +58,8 @@ Print('\n * testing TCP socket \n');
 	
 	var client = new Socket( Socket.TCP );
 	client.Connect('127.0.0.1', 80);
+	
+	Print('seg: '+client.maxSegment);
 	
 	dlist.push(client);
 	dlist.push(server);
