@@ -362,6 +362,14 @@ DEFINE_FUNCTION( Import ) {
 }
 
 
+DEFINE_PROPERTY( closed ) {
+
+	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
+	*vp = BOOLEAN_TO_JSVAL( fd != NULL );
+	return JS_TRUE;
+}
+
+
 CONFIGURE_CLASS
 
 	HAS_CONSTRUCTOR
@@ -376,6 +384,7 @@ CONFIGURE_CLASS
 	BEGIN_PROPERTY_SPEC
 		PROPERTY_READ( available )
 		PROPERTY_READ( type )
+		PROPERTY_READ( closed )
 	END_PROPERTY_SPEC
 
 	BEGIN_STATIC_FUNCTION_SPEC
