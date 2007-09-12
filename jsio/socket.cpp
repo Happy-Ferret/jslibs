@@ -62,18 +62,23 @@ DEFINE_FUNCTION( Shutdown ) {
 
 	PRFileDesc *fd = (PRFileDesc*)JS_GetPrivate( cx, obj );
 	RT_ASSERT_RESOURCE( fd );
+
 	PRShutdownHow how;
 	if ( argc >= 1 )
 		if ( argv[0] == JSVAL_FALSE )
 			how = PR_SHUTDOWN_RCV;
 		else if (argv[0] == JSVAL_TRUE )
 			how = PR_SHUTDOWN_SEND;
+		else
+			REPORT_ERROR("Invalid Shutdown case.");
 	else
 		how = PR_SHUTDOWN_BOTH; // default
+
 	if ( how == PR_SHUTDOWN_BOTH || how == PR_SHUTDOWN_RCV )
 		RemoveNativeInterface(cx, obj, NI_READ_RESOURCE);
 	if (PR_Shutdown( fd, how ) != PR_SUCCESS) // is this compatible with linger ?? need to check PR_WOULD_BLOCK_ERROR ???
 		return ThrowIoError(cx);
+
 	return JS_TRUE;
 }
 
@@ -88,7 +93,7 @@ DEFINE_FUNCTION( Bind ) {
 	PRUint16 port;
 	RT_JSVAL_TO_INT32( argv[0], port );
 
-	if ( argc >= 2 ) { // if we have a second argument and this argument is not undefined
+	if ( argc >= 2 && argv[1] != JSVAL_VOID ) { // if we have a second argument and this argument is not undefined
 
 		char *host;
 		RT_JSVAL_TO_STRING( argv[1], host );

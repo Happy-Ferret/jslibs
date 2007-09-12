@@ -31,6 +31,7 @@
 #define FUNCTION(name) { #name, name },
 #define FUNCTION2(name,nativeName) { #name, nativeName },
 #define FUNCTION_ARGC(name,nargs) { #name, name, nargs },
+#define FUNCTION_ALIAS(alias, name) { #alias, name },
 
 // properties
 #define BEGIN_PROPERTY_SPEC JSPropertySpec _tmp_ps[] = { // *name, tinyid, flags, getter, setter

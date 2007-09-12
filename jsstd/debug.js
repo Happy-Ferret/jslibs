@@ -1,4 +1,10 @@
 LoadModule('jsstd');
+
+Exec('jsircbot.js');
+
+/*
+
+LoadModule('jsstd');
 //Print('Version :'+jsstd_revision);
 
 var buf = new Buffer('xxx');
@@ -9,7 +15,7 @@ buf.Write('14ccc');
 var buf2 = new Buffer(buf);
 buf2.Write('buffer2');
 Print( 'token :'+ buf2.ReadUntil('114') ,'\n' );
-Print( 'rest :'+ buf2.Read() ,'\n' );
+Print( 'rest :'+ buf2 ,'\n' );
 
 Halt();
 

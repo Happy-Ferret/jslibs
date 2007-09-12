@@ -315,7 +315,7 @@ DEFINE_FINALIZE() {
 //		FunctionPointer fp;
 //		GetNativeInterface(cx, obj, NI_READ_RESOURCE, &fp, (void**)&cntxt);
 //		free(cntxt);
-		RemoveNativeInterface(cx, obj, NI_READ_RESOURCE);
+//		RemoveNativeInterface(cx, obj, NI_READ_RESOURCE);
 		
 		while ( !QueueIsEmpty(queue) ) {
 			
@@ -513,6 +513,7 @@ CONFIGURE_CLASS
 		FUNCTION(ReadUntil)
 		FUNCTION(Match)
 		FUNCTION(Skip)
+		FUNCTION_ALIAS(toString, Read) // ised when the buffer has to be transformed into a string
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
