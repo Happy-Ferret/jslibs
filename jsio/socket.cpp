@@ -109,8 +109,20 @@ DEFINE_FUNCTION( Bind ) {
 			return ThrowIoError(cx);
 	}
 
-	if ( PR_Bind(fd, &addr) != PR_SUCCESS )
-		return ThrowIoError(cx);
+	if ( PR_Bind(fd, &addr) != PR_SUCCESS ) {
+		
+		PRErrorCode errorCode = PR_GetError();
+		switch (errorCode) {
+			case PR_ADDRESS_IN_USE_ERROR: // do not failed but return false
+				*rval = JSVAL_FALSE;
+				break;
+			default:
+				return ThrowIoErrorArg(cx, errorCode, PR_GetOSError());
+		}
+	} else {
+		
+		*rval = JSVAL_TRUE;
+	}
 	return JS_TRUE;
 }
 

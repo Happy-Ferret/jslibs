@@ -5,7 +5,24 @@ LoadModule('jsio');
 
 try {
 
-Print( Socket.GetHostsByName('www.google.com') );
+
+	var server = new Socket( Socket.TCP );
+	server.Bind( 80, '127.0.0.1');
+	server.Listen();
+	
+	Sleep(100);
+
+	var server1 = new Socket( Socket.TCP );
+
+	for ( var port = 80; !server1.Bind( port, '127.0.0.1' ) && port <= 82; port++ );
+	
+	Print('port '+port);
+
+	server1.Listen();
+
+Halt();
+
+//Print( Socket.GetHostsByName('www.google.com') );
 
 
 /*
@@ -115,7 +132,7 @@ Print('\n * testing UDP socket \n');
 
 
 } catch ( ex if ex instanceof IoError ) {
-	Print( 'IoError: ' + ex.text, '\n' );
+	Print( 'IoError: ' + ex.text + ' ('+ex.code+')', '\n' );
 } catch( ex ) {
 	throw ex;
 }
