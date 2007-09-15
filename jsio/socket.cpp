@@ -651,6 +651,10 @@ END_CLASS
 
 /*
 
+Five pitfalls of Linux sockets programming:
+	http://www.ibm.com/developerworks/linux/library/l-sockpit/index.html
+
+
 About closing socket:
 
 		Graceful Shutdown, Linger Options, and Socket Closure
