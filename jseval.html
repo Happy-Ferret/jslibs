@@ -7,28 +7,27 @@ function getInnerText(o) {
     var txt = '';
     for (var i=0; i<o.childNodes.length; i++) {
         switch(o.childNodes[i].nodeType) {
-			case 1:
+			case 1: // element
 				txt += arguments.callee(o.childNodes[i]);
 				if ( o.childNodes[i].nodeName == 'BR' )
 					txt += '\n';
 				break;
-			case 3:
+			case 3: // text
 				txt += o.childNodes[i].nodeValue;
-				break;
-			case 8:
-				txt += '\n';
 				break;
         }
     }
     return txt;
 }
 
+
 function setCookie(c_name,value,expiredays) {
 
 	var exdate = new Date();
 	exdate.setDate( exdate.getDate() + expiredays );
-	document.cookie = c_name + '=' + escape(value) + ( expiredays == null ? '' : ';expires='+exdate.toGMTString() );
+	document.cookie = c_name + '=' + encodeURIComponent(value) + ( expiredays == null ? '' : ';expires='+exdate.toGMTString() );
 }
+
 
 function getCookie(c_name) {
 
@@ -41,7 +40,7 @@ function getCookie(c_name) {
 			c_end = document.cookie.indexOf( ';', c_start )
 			if (c_end == -1)
 				c_end = document.cookie.length;
-			return unescape(document.cookie.substring( c_start, c_end ));
+			return decodeURIComponent(document.cookie.substring( c_start, c_end ));
 		}
 	}
 	return '';
@@ -52,27 +51,12 @@ function load() {
 
 	var doc = document.getElementById('editor').contentDocument;
 	var output = document.getElementById('output');
-	doc.designMode = "On";
-	doc.execCommand('useCSS', false, true);
-	doc.body.spellcheck = false;
-	doc.body.style.whiteSpace = 'pre';
-	doc.body.style.fontFamily = 'monospace';
-	doc.body.style.padding = '0px';
-	doc.body.style.margin = '0px';
-//	doc.body.style.marginLeft = '20px';
 
 	doc.body.innerHTML = getCookie('code');
-/*
-	var div = doc.createElement('DIV');
-	div.innerHTML = '1<br>2<br>3';
-	div.style.position = 'absolute';
-	div.style.top = '0px';
-	div.style.left = '0px';
-	div.style.zIndex = '1';
-	div.style.color = 'white';
-	div.designMode = 'Off';
-	doc.body.appendChild(div);
-*/
+	doc.designMode = "On";
+	doc.execCommand('useCSS', false, false);
+	doc.body.spellcheck = false;
+	doc.body.setAttribute('style', 'padding: 0px; margin: 0px; white-space: pre; font-family: monospace');
 
 	var previousScriptCode;
 	doc.addEventListener( 'keyup', function(event) {
@@ -81,8 +65,7 @@ function load() {
 		if ( scriptCode == previousScriptCode )
 			return;
 		previousScriptCode = scriptCode;
-
-		setCookie('code', scriptCode, 1000);
+		setCookie('code', doc.body.innerHTML, 1000);
 
 		var outText = '';
 		var error = '';
@@ -98,7 +81,6 @@ function load() {
 
 			try { throw new Error() } catch(ex) { lineNumber = ex.lineNumber }
 			evalResult = eval(scriptCode);
-
 		} catch(ex) {
 
  			error = ex.message + ' (line ' + (ex.lineNumber-lineNumber) + ')';
@@ -108,21 +90,6 @@ function load() {
 		document.getElementById('error').innerHTML = error;
 		document.getElementById('eval').innerHTML = evalResult;
 	}, false );
-
-	doc.addEventListener( 'keydown', function(event) {
-/*
-		if ( event.keyCode == 9 )  {
-
-			var doc = document.getElementById('editor').contentDocument;
-
-			alert( doc.getSelection() );
-//			doc.execCommand('indent', false, null);
-			event.preventDefault();
-			event.stopPropagation();
-		}
-*/
-	}, false );
-
 }
 </script>
 <style>
@@ -163,6 +130,7 @@ BODY {
 }
 
 #eval {
+	white-space:pre;
 	border-top: 1px solid #EEE;
 	margin-top: 10px;
 	color: yellow;
