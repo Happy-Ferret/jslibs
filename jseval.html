@@ -135,19 +135,20 @@ window.addEventListener( 'load', function() {
 
 		WriteHtmlTo('text', '\
 <b>Help:<\/b><br>\
-  Ctrl-h    : Display this help<br>\
-  Ctrl-t    : toggle auto-eval ('+(autoEval ? 'ON':'OFF')+')<br>\
-  Ctrl-e    : Eval code<br>\
-  Ctrl-p    : Profile code ('+(profilePeriod)+'ms)<br>\
-  Ctrl-s    : Save code<br>\
-  Ctrl-l    : Load code<br>\
-  Ctrl-i    : Auto-indent code<br>\
-  Ctrl-g    : Generates code<br>\
-  Ctrl-1..9 : Change current window ('+(currentWin)+')<br>\
+ Ctrl-h   : Display this help<br>\
+ Ctrl-t   : Toggle auto-eval ('+(autoEval?'ON':'OFF')+')<br>\
+ Ctrl-e   : Eval code<br>\
+ Ctrl-p   : Profile code ('+(profilePeriod)+'ms)<br>\
+ Ctrl-s   : Save code<br>\
+ Ctrl-l   : Load code<br>\
+ Ctrl-i   : Auto-indent code<br>\
+ Ctrl-g   : Generates code<br>\
+ Ctrl-1..9: Select window ('+(currentWin)+')<br>\
+ F11      : Toggle fullscreen<br>\
 <br>\
 <b>Functions:<\/b><br>\
-  Print(text) : write text here<br>\
-<br>');
+ Print(text): write text here<br>\
+<br>'	);
 	}
 
 	var win = document.getElementById('editor').contentWindow;
