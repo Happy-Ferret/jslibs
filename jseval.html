@@ -1,23 +1,39 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html>
 <head>
 <script type="application/javascript;version=1.7">
 
-function getInnerText(o) {
+
+function getInnerText(o) { // out: text
 
     var txt = '';
     for (var i=0; i<o.childNodes.length; i++) {
-        switch(o.childNodes[i].nodeType) {
+    	var node = o.childNodes[i];
+        switch(node.nodeType) {
 			case 1: // element
-				txt += arguments.callee(o.childNodes[i]);
-				if ( o.childNodes[i].nodeName == 'BR' )
+				if ( node.nodeName == 'BR' )
 					txt += '\n';
+				else
+					txt += arguments.callee(node);
 				break;
 			case 3: // text
-				txt += o.childNodes[i].nodeValue;
+			case 4: // CDATA
+
+				var data = node.nodeValue;
+				data = data.replace(/\xA0/mg, ' '); // produce true spaces
+				txt += data;
 				break;
         }
     }
     return txt;
+}
+
+
+function Htmlize(text) { // in: text, out:HTML
+
+	text = text.replace(/\n/gm, '<br>');
+	text = text.replace(/ /gm, '&nbsp;');
+	return text;
 }
 
 
@@ -47,98 +63,266 @@ function getCookie(c_name) {
 }
 
 
-function load() {
+function Indent(code) { // in: text, out: text
 
-	var doc = document.getElementById('editor').contentDocument;
-	var output = document.getElementById('output');
+	try {
+		code = Function(code).toSource(0);
+		var codeLines = code.split('\n')
+		codeLines.shift();
+		codeLines[0] == '' && codeLines.shift();
+		codeLines.pop();
+		for ( var l in codeLines )
+			codeLines[l] = codeLines[l].replace(/^    /, '')
+		codeLines.push('\n\n');
+		code = codeLines.join('\n');
+	} catch(ex) {}
+	return code;
+}
 
-	doc.body.innerHTML = getCookie('code');
+
+function WriteHtmlTo(eltId, html) { // in: html
+
+	document.getElementById(eltId).innerHTML = html;
+}
+
+
+function EvalCode(code) { // in: text, out: text
+
+	var outText = '', error = '', evalResult = '';
+	function Print(text) {
+
+		outText += text+'\n';
+	}
+	var relativeLineNumber;
+	try {
+
+		try { throw new Error() } catch(ex) { relativeLineNumber = ex.lineNumber }
+		evalResult = eval(code);
+	} catch(ex) {
+
+		error = ex.message+' (line '+(ex.lineNumber - relativeLineNumber)+')';
+	}
+	return [outText, evalResult, error];
+}
+
+
+function Profile(code, testPeriod) { // in: text
+
+	try {
+		function Time() { return (new Date).getTime() }
+		function Noop(){};
+		var codeFunction = new Function('Print', code);
+		var dummyFunction = new Function('Print','0;');
+		dummyFunction(Noop);
+		for ( var loop = 0, t0 = Time(); Time() - t0 < 100; loop++ )
+			dummyFunction(Noop);
+		var errorPerLoop = (Time() - t0) / loop;
+		codeFunction(Noop);
+		for ( var loop = 0, t0 = Time(); Time() - t0 < testPeriod; loop++ )
+			dummyFunction(Noop);
+		var time = (Time() - t0) - (errorPerLoop * loop);
+		WriteHtmlTo('text', 'Profile:<br>  rate  : '+(loop/(time/1000)).toFixed(0)+' times/s' + '<br>  speed : '+(time/loop).toFixed(5)+' ms/eval' );
+	} catch(ex) {
+
+		WriteHtmlTo('error', ex.message+' (line '+(ex.lineNumber - relativeLineNumber)+')');
+	}
+}
+
+
+window.addEventListener( 'load', function() {
+
+	function DisplayHelp() {
+
+		WriteHtmlTo('text', '\
+<b>Help:<\/b><br>\
+  Ctrl-h    : Display this help<br>\
+  Ctrl-t    : toggle auto-eval ('+(autoEval ? 'ON':'OFF')+')<br>\
+  Ctrl-e    : Eval code<br>\
+  Ctrl-p    : Profile code ('+(profilePeriod)+'ms)<br>\
+  Ctrl-s    : Save code<br>\
+  Ctrl-l    : Load code<br>\
+  Ctrl-i    : Auto-indent code<br>\
+  Ctrl-g    : Generates code<br>\
+  Ctrl-1..9 : Change current window ('+(currentWin)+')<br>\
+<br>\
+<b>Functions:<\/b><br>\
+  Print(text) : write text here<br>\
+<br>');
+	}
+
+	var win = document.getElementById('editor').contentWindow;
+	var doc = win.document;
+	doc.body.innerHTML = '<br>';
 	doc.designMode = "On";
-	doc.execCommand('useCSS', false, false);
+	doc.execCommand('styleWithCSS', false, false);
 	doc.body.spellcheck = false;
-	doc.body.setAttribute('style', 'padding: 0px; margin: 0px; white-space: pre; font-family: monospace');
+	doc.body.setAttribute('style', 'padding: 0px; margin: 0px; font-family: monospace; white-space: nowrap');
 
+	var autoEval = true;
+	var profilePeriod = 5000;
+	var currentWin = 1;
 	var previousScriptCode;
+
+	DisplayHelp();
+
+	doc.body.innerHTML = getCookie('code'+currentWin);
+
+	window.addEventListener( 'unload', function() {
+
+		setCookie('code'+currentWin, doc.body.innerHTML, 365);
+	}, false );
+
 	doc.addEventListener( 'keyup', function(event) {
 
 		var scriptCode = getInnerText(doc.body);
 		if ( scriptCode == previousScriptCode )
 			return;
+
+		if ( !previousScriptCode ) {
+			previousScriptCode = scriptCode;
+			return;
+		}
+
 		previousScriptCode = scriptCode;
-		setCookie('code', doc.body.innerHTML, 1000);
 
-		var outText = '';
-		var error = '';
-		var evalResult = '';
+		if ( autoEval ) {
 
-		function Print(text) {
-
-			outText += text + '<br>';
+			var [output, evalResult, error] = EvalCode(scriptCode);
+			WriteHtmlTo('text', output);
+			WriteHtmlTo('error', error);
+			WriteHtmlTo('eval', evalResult);
 		}
-
-		var lineNumber;
-		try {
-
-			try { throw new Error() } catch(ex) { lineNumber = ex.lineNumber }
-			evalResult = eval(scriptCode);
-		} catch(ex) {
-
- 			error = ex.message + ' (line ' + (ex.lineNumber-lineNumber) + ')';
-		}
-
-		document.getElementById('text').innerHTML = outText;
-		document.getElementById('error').innerHTML = error;
-		document.getElementById('eval').innerHTML = evalResult;
 	}, false );
-}
+
+	doc.addEventListener( 'keydown', function(event) {
+
+		switch (event.keyCode) {
+			case 9:
+//				var range = win.getSelection().getRangeAt(0);
+//				range.setStartBefore(range.startContainer);
+//				range.setEndAfter(range.endContainer);
+//				doc.execCommand('insertHTML', false, range.toString());
+
+				if ( event.shiftKey )
+					break;
+				if ( win.getSelection().toString().indexOf('\n') != -1 )
+					break;
+				doc.execCommand('insertHTML', false, Htmlize('    '));
+				break;
+			default:
+				return;
+		}
+		event.preventDefault();
+		event.stopPropagation();
+	}, false );
+
+	doc.addEventListener( 'keypress', function(event) {
+
+		if ( !event.ctrlKey )
+			return;
+		switch (String.fromCharCode(event.charCode)) {
+		case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':
+			setCookie('code'+currentWin, doc.body.innerHTML, 365);
+			currentWin = parseInt(String.fromCharCode(event.charCode));
+			doc.body.innerHTML = getCookie('code'+currentWin);
+			WriteHtmlTo('text', 'Active window: '+currentWin);
+			break;
+		case 'h':
+			DisplayHelp();
+			break;
+		case 's':
+			setCookie('code', doc.body.innerHTML, 365);
+			WriteHtmlTo('text', 'saved.');
+			break;
+		case 'l':
+			doc.body.innerHTML = getCookie('code');
+			WriteHtmlTo('text', 'loaded.');
+			break;
+		case 'p':
+			var code = getInnerText(doc.body);
+			WriteHtmlTo('text', 'Profiling...');
+			window.setTimeout( function() { Profile(code, profilePeriod) }, 100 );
+			break;
+		case 'e':
+			var [output, evalResult, error] = EvalCode(getInnerText(doc.body));
+			WriteHtmlTo('text', output);
+			WriteHtmlTo('error', error);
+			WriteHtmlTo('eval', evalResult);
+			break;
+		case 't':
+			autoEval = !autoEval;
+			WriteHtmlTo('text', 'Auto-eval: '+(autoEval ? 'ON':'OFF'));
+			break;
+		case 'i':
+			doc.body.innerHTML = Htmlize(Indent(getInnerText(doc.body)));
+			break;
+		case 'g':
+			var code = 'function HelloWorld(){Print("Hello World!");return true}for(var i=0;i<5;i++)HelloWorld()';
+			doc.body.innerHTML = Htmlize(Indent(code));
+			break;
+		default:
+			return;
+		}
+		event.preventDefault();
+		event.stopPropagation();
+	}, false );
+}, false );
+
 </script>
-<style>
-BODY {
+<style type="text/css">
+HTML, BODY {
 	padding: 0px;
 	margin: 0px;
+	height: 100%;
 }
 
 #editor,
 #output {
+	height: 100%;
 	float: left;
 	padding: 0px;
 	margin: 0px;
-	height: 100%;
 	border-style: none;
 }
 
 #editor {
+	width: 75%;
 	background-color: #EEE;
-	width: 74%;
+	color: #000;
 }
 
 #output {
-	font-family: monospace;
 	width: 25%;
-	background-color: black;
-	color: white;
+	font-family: monospace;
+	background-color: #000;
+	color: #EEE;
 }
 
 #text {
-	white-space:pre;
+	white-space: pre;
+	overflow: auto;
+	border-bottom: 1px solid #EEE;
 }
 
 #error {
-	background-color: red;
 	font-weight: bold;
 	white-space: -moz-pre-wrap;
+	overflow: auto;
+	background-color: red;
+	color: white;
 }
 
 #eval {
-	white-space:pre;
-	border-top: 1px solid #EEE;
 	margin-top: 10px;
-	color: yellow;
+	white-space: pre;
+	overflow: auto;
+	background-color: #008;
 }
 
 </style>
+<title>JavaScript eval</title>
 </head>
-<body onload="load()">
+<body>
 <iframe id="editor"></iframe>
 <div id="output">
 	<div id="text"></div>
