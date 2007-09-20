@@ -54,6 +54,11 @@ function LoadData(name) {
     return "";
 }
 
+function MakeString(chr, count) {
+
+    for (var i = 0, str = ''; i < count; i++, str += chr);
+    return str;
+}
 
 function Indent(code) {
     try {
@@ -64,7 +69,7 @@ function Indent(code) {
         codeLines.pop();
         for (var l in codeLines) {
             codeLines[l] = codeLines[l].replace(/^ {4}/, "");
-//            codeLines[l] = codeLines[l].replace(/ {4}(?= *[^ ])/g,'  ');
+			codeLines[l] = codeLines[l].replace(/^( {4})+/, function (a) {return MakeString("  ", a.length / 4);});
         }
         codeLines.push("\n\n");
         code = codeLines.join("\n");
@@ -221,13 +226,15 @@ window.addEventListener( 'load', function() {
 				var range = _win.getSelection().getRangeAt(0);
 				var body = range.startContainer.ownerDocument.body;
 
+
+
 				if ( range.collapsed || ( range.startContainer == range.endContainer && range.startContainer.nodeType == 3 ) ) {
 
 					if ( !event.shiftKey )
 						_win.document.execCommand('insertHTML', false, '\xA0\xA0\xA0\xA0');
 				} else {
 
-					for (var it = range.startContainer == body ? range.startContainer.firstChild : range.startContainer; it && it != range.endContainer; it = it.nextSibling)
+					for (var it = range.endContainer == body ? range.startContainer.firstChild : range.startContainer; it && it != range.endContainer; it = it.nextSibling)
 						if ( (!it.previousSibling || it.previousSibling.nodeName == 'BR') && it.nodeType == 3 )
 							DoIndent(it);
 
