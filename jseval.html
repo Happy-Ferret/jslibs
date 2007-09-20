@@ -3,8 +3,13 @@
 <head>
 <script type="application/javascript;version=1.7">
 
+function CreateTranslator(translationTable) { return function (s) {return s.replace(new RegExp([k for (k in translationTable)].join("|"), "g"), function (str) {return translationTable[str];});}; }
 
-function getInnerText(o) { // out: text
+var Htmlize = CreateTranslator({'&':'&amp;', '<':'&lt;', '>':'&gt;', '\n':'<br>', ' ':'&nbsp;' }); // '\t':'&#09;',
+
+var Textize = CreateTranslator({'\xA0':' '}); // produce true spaces
+
+function getInnerText(o) {
 
     var txt = '';
     for (var i=0; i<o.childNodes.length; i++) {
@@ -18,10 +23,7 @@ function getInnerText(o) { // out: text
 				break;
 			case 3: // text
 			case 4: // CDATA
-
-				var data = node.nodeValue;
-				data = data.replace(/\xA0/mg, ' '); // produce true spaces
-				txt += data;
+				txt += Textize(node.nodeValue);
 				break;
         }
     }
@@ -29,71 +31,62 @@ function getInnerText(o) { // out: text
 }
 
 
-function Htmlize(text) { // in: text, out:HTML
+function SaveData(name, data) {
 
-	text = text.replace(/\n/gm, '<br>');
-	text = text.replace(/ /gm, '&nbsp;');
-	return text;
+	var expires = new Date;
+	expires.setDate(expires.getDate() + 365); // espires in 1 year
+	document.cookie = name + "=" + encodeURIComponent(data) + ";expires=" + expires.toGMTString();
 }
 
 
-function setCookie(c_name,value,expiredays) {
+function LoadData(name) {
 
-	var exdate = new Date();
-	exdate.setDate( exdate.getDate() + expiredays );
-	document.cookie = c_name + '=' + encodeURIComponent(value) + ( expiredays == null ? '' : ';expires='+exdate.toGMTString() );
+    if (document.cookie.length) {
+        var start = document.cookie.indexOf(name + "=");
+        if (start != -1) {
+            start = start + name.length + 1;
+            var end = document.cookie.indexOf(";", start);
+            if (end == -1)
+                end = document.cookie.length;
+            return decodeURIComponent(document.cookie.substring(start, end));
+        }
+    }
+    return "";
 }
 
 
-function getCookie(c_name) {
-
-	if (document.cookie.length ) {
-
-		c_start = document.cookie.indexOf(c_name + '=');
-		if (c_start != -1) {
-
-			c_start = c_start + c_name.length + 1
-			c_end = document.cookie.indexOf( ';', c_start )
-			if (c_end == -1)
-				c_end = document.cookie.length;
-			return decodeURIComponent(document.cookie.substring( c_start, c_end ));
-		}
-	}
-	return '';
+function Indent(code) {
+    try {
+        code = Function(code).toSource(0);
+        var codeLines = code.split("\n");
+        codeLines.shift();
+        codeLines[0] == "" && codeLines.shift();
+        codeLines.pop();
+        for (var l in codeLines) {
+            codeLines[l] = codeLines[l].replace(/^ {4}/, "");
+//            codeLines[l] = codeLines[l].replace(/ {4}(?= *[^ ])/g,'  ');
+        }
+        codeLines.push("\n\n");
+        code = codeLines.join("\n");
+    } catch (ex) {
+    }
+    return code;
 }
 
 
-function Indent(code) { // in: text, out: text
-
-	try {
-		code = Function(code).toSource(0);
-		var codeLines = code.split('\n')
-		codeLines.shift();
-		codeLines[0] == '' && codeLines.shift();
-		codeLines.pop();
-		for ( var l in codeLines )
-			codeLines[l] = codeLines[l].replace(/^    /, '')
-		codeLines.push('\n\n');
-		code = codeLines.join('\n');
-	} catch(ex) {}
-	return code;
-}
-
-
-function WriteHtmlTo(eltId, html) { // in: html
+function WriteHtmlTo(eltId, html) {
 
 	document.getElementById(eltId).innerHTML = html;
 }
 
 
-function EvalCode(code) { // in: text, out: text
+function EvalCode(code) {
 
-	var outText = '', error = '', evalResult = '';
+	var relativeLineNumber, outText = '', error = '', evalResult = '';
 	function Print(text) {
 
 		outText += text+'\n';
 	}
-	var relativeLineNumber;
 	try {
 
 		try { throw new Error() } catch(ex) { relativeLineNumber = ex.lineNumber }
@@ -102,30 +95,47 @@ function EvalCode(code) { // in: text, out: text
 
 		error = ex.message+' (line '+(ex.lineNumber - relativeLineNumber)+')';
 	}
-	return [outText, evalResult, error];
+	return [outText, ''+evalResult, error];
 }
 
 
-function Profile(code, testPeriod) { // in: text
+function Profile(code, testPeriod) {
+
+	function Time() { return (new Date).getTime() }
+	var dummyFunction = new Function('Print', 'init', ' ');
+	var codeFunction = new Function('Print', 'init', code);
+	function Noop(){};
+
+	function ErrorPerLoop(period) {
+
+		dummyFunction(Noop, true);
+		for ( var loops = 0, t0 = Time(); Time() - t0 < period; loops++ )
+			dummyFunction(Noop);
+		return (Time() - t0) / loops;
+	}
+
+	function ProfileCode(period) {
+
+		codeFunction(Noop, true);
+		for ( var loops = 0, t0 = Time(); Time() - t0 < period; loops++ )
+			codeFunction(Noop);
+		return [Time() - t0, loops];
+	}
 
 	try {
-		function Time() { return (new Date).getTime() }
-		function Noop(){};
-		var codeFunction = new Function('Print', code);
-		var dummyFunction = new Function('Print','0;');
-		dummyFunction(Noop);
-		for ( var loop = 0, t0 = Time(); Time() - t0 < 100; loop++ )
-			dummyFunction(Noop);
-		var errorPerLoop = (Time() - t0) / loop;
-		codeFunction(Noop);
-		for ( var loop = 0, t0 = Time(); Time() - t0 < testPeriod; loop++ )
-			dummyFunction(Noop);
-		var time = (Time() - t0) - (errorPerLoop * loop);
-		WriteHtmlTo('text', 'Profile:<br>  rate  : '+(loop/(time/1000)).toFixed(0)+' times/s' + '<br>  speed : '+(time/loop).toFixed(5)+' ms/eval' );
-	} catch(ex) {
 
-		WriteHtmlTo('error', ex.message+' (line '+(ex.lineNumber - relativeLineNumber)+')');
-	}
+		ProfileCode(100);
+		ErrorPerLoop(100);
+		testPeriod /= 10;
+		var totalTime = 0, totalLoops = 0;
+		for ( var i = 0; i < 10; i++ ) {
+
+			var [time, loops] = ProfileCode(testPeriod);
+			totalTime += time - ErrorPerLoop(100) * loops;
+			totalLoops += loops;
+		}
+		return totalTime / totalLoops;
+	} catch(ex) {}
 }
 
 
@@ -136,14 +146,14 @@ window.addEventListener( 'load', function() {
 		WriteHtmlTo('text', '\
 <b>Help:<\/b><br>\
  Ctrl-h   : Display this help<br>\
- Ctrl-t   : Toggle auto-eval ('+(autoEval?'ON':'OFF')+')<br>\
+ Ctrl-t   : Toggle auto-eval ('+(_autoEval?'ON':'OFF')+')<br>\
  Ctrl-e   : Eval code<br>\
- Ctrl-p   : Profile code ('+(profilePeriod)+'ms)<br>\
+ Ctrl-p   : Profile code ('+(_profilePeriod)+'ms)<br>\
  Ctrl-s   : Save code<br>\
  Ctrl-l   : Load code<br>\
  Ctrl-i   : Auto-indent code<br>\
  Ctrl-g   : Generates code<br>\
- Ctrl-1..9: Select window ('+(currentWin)+')<br>\
+ Ctrl-1..9: Select window ('+(_currentWin)+')<br>\
  F11      : Toggle fullscreen<br>\
 <br>\
 <b>Functions:<\/b><br>\
@@ -151,42 +161,45 @@ window.addEventListener( 'load', function() {
 <br>'	);
 	}
 
-	var win = document.getElementById('editor').contentWindow;
-	var doc = win.document;
-	doc.body.innerHTML = '<br>';
-	doc.designMode = "On";
-	doc.execCommand('styleWithCSS', false, false);
-	doc.body.spellcheck = false;
-	doc.body.setAttribute('style', 'padding: 0px; margin: 0px; font-family: monospace; white-space: nowrap');
+	var _win = document.getElementById('editor').contentWindow;
+	_win.document.body.innerHTML = '<br>';
+	_win.document.designMode = "On";
+	_win.document.execCommand('styleWithCSS', false, false);
+	_win.document.body.spellcheck = false;
+	_win.document.body.setAttribute('style', 'padding: 0px; margin: 0px; font-family: monospace; white-space: nowrap');
 
-	var autoEval = true;
-	var profilePeriod = 5000;
-	var currentWin = 1;
-	var previousScriptCode;
+	var _autoEval = true;
+	var _profilePeriod = 2000;
+	var _currentWin = 1;
+	var _previousScriptCode;
+	var _previousProfile;
+
+	function GetCode() { return getInnerText(_win.document.body) }
+	function SetCode(code) { _win.document.body.innerHTML = Htmlize(code) }
 
 	DisplayHelp();
 
-	doc.body.innerHTML = getCookie('code'+currentWin);
+	SetCode(LoadData('code'+_currentWin));
 
 	window.addEventListener( 'unload', function() {
 
-		setCookie('code'+currentWin, doc.body.innerHTML, 365);
+		SaveData('code'+_currentWin, GetCode());
 	}, false );
 
-	doc.addEventListener( 'keyup', function(event) {
+	_win.document.addEventListener( 'keyup', function(event) {
 
-		var scriptCode = getInnerText(doc.body);
-		if ( scriptCode == previousScriptCode )
+		var scriptCode = GetCode();
+		if ( scriptCode == _previousScriptCode )
 			return;
 
-		if ( !previousScriptCode ) {
-			previousScriptCode = scriptCode;
+		if ( !_previousScriptCode ) {
+			_previousScriptCode = scriptCode;
 			return;
 		}
 
-		previousScriptCode = scriptCode;
+		_previousScriptCode = scriptCode;
 
-		if ( autoEval ) {
+		if ( _autoEval ) {
 
 			var [output, evalResult, error] = EvalCode(scriptCode);
 			WriteHtmlTo('text', output);
@@ -195,74 +208,94 @@ window.addEventListener( 'load', function() {
 		}
 	}, false );
 
-	doc.addEventListener( 'keydown', function(event) {
+	_win.document.addEventListener( 'keydown', function(event) {
 
 		switch (event.keyCode) {
 			case 9:
-//				var range = win.getSelection().getRangeAt(0);
-//				range.setStartBefore(range.startContainer);
-//				range.setEndAfter(range.endContainer);
-//				doc.execCommand('insertHTML', false, range.toString());
 
-				if ( event.shiftKey )
-					break;
-				if ( win.getSelection().toString().indexOf('\n') != -1 )
-					break;
-				doc.execCommand('insertHTML', false, Htmlize('    '));
+				function DoIndent(textElement) {
+
+					textElement.data = event.shiftKey ? textElement.data.replace(/^\s{4}/,'') : '\xA0\xA0\xA0\xA0' + textElement.data;
+				}
+
+				var range = _win.getSelection().getRangeAt(0);
+				var body = range.startContainer.ownerDocument.body;
+
+				if ( range.collapsed || ( range.startContainer == range.endContainer && range.startContainer.nodeType == 3 ) ) {
+
+					if ( !event.shiftKey )
+						_win.document.execCommand('insertHTML', false, '\xA0\xA0\xA0\xA0');
+				} else {
+
+					for (var it = range.startContainer == body ? range.startContainer.firstChild : range.startContainer; it && it != range.endContainer; it = it.nextSibling)
+						if ( (!it.previousSibling || it.previousSibling.nodeName == 'BR') && it.nodeType == 3 )
+							DoIndent(it);
+
+					if ( it == range.endContainer && range.endOffset != 0 ) {
+
+						DoIndent(it);
+						range.setEnd( it, it.data.length );
+					}
+				}
 				break;
-			default:
-				return;
+			default: return;
 		}
 		event.preventDefault();
 		event.stopPropagation();
 	}, false );
 
-	doc.addEventListener( 'keypress', function(event) {
+	_win.document.addEventListener( 'keypress', function(event) {
 
 		if ( !event.ctrlKey )
 			return;
 		switch (String.fromCharCode(event.charCode)) {
 		case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':
-			setCookie('code'+currentWin, doc.body.innerHTML, 365);
-			currentWin = parseInt(String.fromCharCode(event.charCode));
-			doc.body.innerHTML = getCookie('code'+currentWin);
-			WriteHtmlTo('text', 'Active window: '+currentWin);
+			SaveData('code'+_currentWin, GetCode());
+			_currentWin = parseInt(String.fromCharCode(event.charCode));
+			SetCode(LoadData('code'+_currentWin));
+			WriteHtmlTo('text', 'Active window: '+_currentWin);
 			break;
 		case 'h':
 			DisplayHelp();
 			break;
 		case 's':
-			setCookie('code', doc.body.innerHTML, 365);
+			SaveData('code', GetCode());
 			WriteHtmlTo('text', 'saved.');
 			break;
 		case 'l':
-			doc.body.innerHTML = getCookie('code');
+			SetCode(LoadData('code'));
 			WriteHtmlTo('text', 'loaded.');
 			break;
 		case 'p':
-			var code = getInnerText(doc.body);
 			WriteHtmlTo('text', 'Profiling...');
-			window.setTimeout( function() { Profile(code, profilePeriod) }, 100 );
+			window.setTimeout( function() {
+
+				var result = Profile(GetCode(), _profilePeriod);
+				if (result) {
+
+					WriteHtmlTo('text', 'Profile:<br>  rate  : '+(1000/result).toFixed(0)+'x/s' + '<br>  speed : '+result.toFixed(5)+' ms/eval<br>  ' + ( _previousProfile ? (100*_previousProfile/result).toFixed(0) + '%' : '' )  );
+				} else
+					WriteHtmlTo('error', 'Error');
+				_previousProfile = result;
+			}, 0 );
 			break;
 		case 'e':
-			var [output, evalResult, error] = EvalCode(getInnerText(doc.body));
+			var [output, evalResult, error] = EvalCode(GetCode());
 			WriteHtmlTo('text', output);
 			WriteHtmlTo('error', error);
 			WriteHtmlTo('eval', evalResult);
 			break;
 		case 't':
-			autoEval = !autoEval;
-			WriteHtmlTo('text', 'Auto-eval: '+(autoEval ? 'ON':'OFF'));
+			_autoEval = !_autoEval;
+			WriteHtmlTo('text', 'Auto-eval: '+(_autoEval ? 'ON':'OFF'));
 			break;
 		case 'i':
-			doc.body.innerHTML = Htmlize(Indent(getInnerText(doc.body)));
+			SetCode(Indent(GetCode()));
 			break;
 		case 'g':
-			var code = 'function HelloWorld(){Print("Hello World!");return true}for(var i=0;i<5;i++)HelloWorld()';
-			doc.body.innerHTML = Htmlize(Indent(code));
+			SetCode(Indent('function HelloWorld(){Print("Hello World!");return true}for(var i=0;i<5;i++)HelloWorld()'));
 			break;
-		default:
-			return;
+		default: return;
 		}
 		event.preventDefault();
 		event.stopPropagation();
@@ -271,6 +304,7 @@ window.addEventListener( 'load', function() {
 
 </script>
 <style type="text/css">
+
 HTML, BODY {
 	padding: 0px;
 	margin: 0px;
