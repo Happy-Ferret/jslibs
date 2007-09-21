@@ -54,27 +54,29 @@ function LoadData(name) {
     return "";
 }
 
+
 function MakeString(chr, count) {
 
     for (var i = 0, str = ''; i < count; i++, str += chr);
     return str;
 }
 
+
 function Indent(code) {
+
     try {
+
         code = Function(code).toSource(0);
-        var codeLines = code.split("\n");
-        codeLines.shift();
-        codeLines[0] == "" && codeLines.shift();
-        codeLines.pop();
-        for (var l in codeLines) {
-            codeLines[l] = codeLines[l].replace(/^ {4}/, "");
-			codeLines[l] = codeLines[l].replace(/^( {4})+/, function (a) {return MakeString("  ", a.length / 4);});
-        }
-        codeLines.push("\n\n");
-        code = codeLines.join("\n");
-    } catch (ex) {
-    }
+        var codeLines = code.split('\n').slice(1,-1);
+        codeLines[0] == '' && codeLines.shift();
+        code = codeLines.join('\n');
+        code = code.replace(/\{$/gm, '{\n');
+        code = code.replace(/^ {4}/gm, '');
+        code = code.replace(/^( {4})+/gm, function (a) {return MakeString('    ', a.length / 4);});
+        code = code.replace(/{\s*}/gm, '{}');
+//		code = code.replace(/(["'])((?:\\?.)*?)\1/g,'*$2*'); // convert quotes '" into *
+        code += '\n\n';
+	} catch (ex) {}
     return code;
 }
 
@@ -148,21 +150,22 @@ window.addEventListener( 'load', function() {
 
 	function DisplayHelp() {
 
-		WriteHtmlTo('text', '\
+		WriteHtmlTo('text', '<br>\
 <b>Help:<\/b><br>\
- Ctrl-h   : Display this help<br>\
- Ctrl-t   : Toggle auto-eval ('+(_autoEval?'ON':'OFF')+')<br>\
- Ctrl-e   : Eval code<br>\
- Ctrl-p   : Profile code ('+(_profilePeriod)+'ms)<br>\
- Ctrl-s   : Save code<br>\
- Ctrl-l   : Load code<br>\
- Ctrl-i   : Auto-indent code<br>\
- Ctrl-g   : Generates code<br>\
- Ctrl-1..9: Select window ('+(_currentWin)+')<br>\
- F11      : Toggle fullscreen<br>\
+ Ctrl-h    : Display this help<br>\
+ Ctrl-t    : Toggle auto-eval ('+(_autoEval?'ON':'OFF')+')<br>\
+ Ctrl-e    : Eval code<br>\
+ Ctrl-p    : Profile code ('+(_profilePeriod)+'ms)<br>\
+ Ctrl-s    : Save code<br>\
+ Ctrl-l    : Load code<br>\
+ Ctrl-i    : Auto-indent code<br>\
+ Ctrl-g    : Generates code<br>\
+ Ctrl-space: Auto-complete<br>\
+ Ctrl-1..9 : Select window ('+(_currentWin)+')<br>\
+ F11       : Toggle fullscreen<br>\
 <br>\
 <b>Functions:<\/b><br>\
- Print(text): write text here<br>\
+ Print(text): Write text here<br>\
 <br>'	);
 	}
 
@@ -172,6 +175,8 @@ window.addEventListener( 'load', function() {
 	_win.document.execCommand('styleWithCSS', false, false);
 	_win.document.body.spellcheck = false;
 	_win.document.body.setAttribute('style', 'padding: 0px; margin: 0px; font-family: monospace; white-space: nowrap');
+	document.getElementById('editor').focus();
+	_win.focus();
 
 	var _autoEval = true;
 	var _profilePeriod = 2000;
@@ -179,12 +184,32 @@ window.addEventListener( 'load', function() {
 	var _previousScriptCode;
 	var _previousProfile;
 
+	var _autocompleteKeywords = [
+		[Htmlize('//hello world:\n\nfunction HelloWorld() {\n  Print("Hello World!");\n  return true;\n}\nfor (var i=0; i<5; i++)\n  HelloWorld();\n\n')],
+		['function foo() {', -7,3],
+		['var a = 0;', -6,5],
+		['Print(\'\');',-4,2],
+		['return ;', -1],
+		['switch () {',-3],
+		['case :',-1],
+		['for (var i=0; i<10; i++) {', -17,14],
+		['while () {',-3],
+		['do {'],
+		['if () {',-3],
+		['()', -1],
+		['[1, 2, 3]',-8,7],
+		['{ a:1, b:2 }',-10,8],
+		['\'abc\'', -4,3],
+		['"abc"', -4,3]
+	];
+
 	function GetCode() { return getInnerText(_win.document.body) }
 	function SetCode(code) { _win.document.body.innerHTML = Htmlize(code) }
-
 	DisplayHelp();
 
 	SetCode(LoadData('code'+_currentWin));
+	_win.document.execCommand('selectall', false, null);
+	_win.getSelection().collapseToEnd();
 
 	window.addEventListener( 'unload', function() {
 
@@ -223,25 +248,22 @@ window.addEventListener( 'load', function() {
 					textElement.data = event.shiftKey ? textElement.data.replace(/^\s{4}/,'') : '\xA0\xA0\xA0\xA0' + textElement.data;
 				}
 
-				var range = _win.getSelection().getRangeAt(0);
-				var body = range.startContainer.ownerDocument.body;
-
-
-
-				if ( range.collapsed || ( range.startContainer == range.endContainer && range.startContainer.nodeType == 3 ) ) {
+				var sel = _win.getSelection();
+				var body = sel.anchorNode.ownerDocument.body;
+				if ( sel.isCollapsed || ( sel.anchorNode == sel.focusNode && sel.anchorNode.nodeType == 3 ) ) {
 
 					if ( !event.shiftKey )
 						_win.document.execCommand('insertHTML', false, '\xA0\xA0\xA0\xA0');
 				} else {
 
-					for (var it = range.endContainer == body ? range.startContainer.firstChild : range.startContainer; it && it != range.endContainer; it = it.nextSibling)
+					for ( var it = sel.focusNode == body ? sel.anchorNode.firstChild : sel.anchorNode; it && it != sel.focusNode; it = it.nextSibling)
 						if ( (!it.previousSibling || it.previousSibling.nodeName == 'BR') && it.nodeType == 3 )
 							DoIndent(it);
 
-					if ( it == range.endContainer && range.endOffset != 0 ) {
+					if ( it == sel.focusNode && sel.focusOffset != 0 ) {
 
 						DoIndent(it);
-						range.setEnd( it, it.data.length );
+						sel.extend( it, it.data.length );
 					}
 				}
 				break;
@@ -301,6 +323,29 @@ window.addEventListener( 'load', function() {
 			break;
 		case 'g':
 			SetCode(Indent('function HelloWorld(){Print("Hello World!");return true}for(var i=0;i<5;i++)HelloWorld()'));
+			break;
+		case ' ':
+			var sel = _win.getSelection();
+			if ( !sel.isCollapsed || sel.anchorNode.nodeType != 3 )
+				break;
+			var match = /((\/\/\w*)|(\w+)|(\W))$/( sel.anchorNode.data.substr( 0, sel.anchorOffset ) );
+			if ( !match )
+				break;
+			var [,word] = match;
+			sel.extend( sel.anchorNode, sel.anchorOffset - word.length );
+			for each ( [instr,offset,len] in _autocompleteKeywords )
+
+				if ( word.toLowerCase() == instr.substr(0, word.length).toLowerCase() ) {
+
+					_win.document.execCommand('insertHTML', false, instr);
+					if ( offset ) {
+
+						var sel = _win.getSelection();
+						sel.collapse( sel.anchorNode, sel.anchorOffset + offset );
+						len && sel.extend( sel.anchorNode, sel.anchorOffset + len );
+					}
+					break;
+				}
 			break;
 		default: return;
 		}
