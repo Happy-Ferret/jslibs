@@ -1,6 +1,6 @@
 TARGET     = jsnspr.so
 SRC        = $(wildcard *.cpp)
-INCLUDES   = -I../nspr/nsprpub/dist/include/nspr
+INCLUDES   = -I../nspr/nsprpub/dist/include/nspr -I../nspr/nsprpub/dist/include/nspr/private
 STATICLIBS = -L../nspr/nsprpub/dist/lib -lnspr4
 SHAREDLIBS =
 
