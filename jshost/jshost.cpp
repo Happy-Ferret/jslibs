@@ -17,7 +17,9 @@
 #include "../common/platform.h"
 
 #include <fcntl.h>
-#include <io.h>
+#ifdef XP_WIN
+	#include <io.h>
+#endif
 //#include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
