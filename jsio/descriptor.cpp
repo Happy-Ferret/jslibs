@@ -16,6 +16,7 @@
 #include "../common/jsNativeInterface.h"
 
 #include <pprio.h> // nspr/include/nspr/private
+#include <string.h>
 
 #include "error.h"
 #include "descriptor.h"
