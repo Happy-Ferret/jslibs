@@ -17,7 +17,7 @@ directory structure:
 	.
 	..
 	src
-	readme.txt
+	README.TXT
 
 help:
 =====
