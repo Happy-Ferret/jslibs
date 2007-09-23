@@ -20,6 +20,11 @@
 #ifdef XP_WIN
 	#include <io.h>
 #endif
+
+#ifdef XP_UNIX
+	#include <unistd.h>
+#endif
+
 //#include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
