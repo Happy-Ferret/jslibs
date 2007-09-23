@@ -351,7 +351,7 @@ static JSScript* LoadScript(JSContext *cx, JSObject *obj, const char *fileName, 
 
 	if ( useCompFile && compFileUpToDate ) {
 		
-		int file = open(compiledFileName, O_RDONLY | O_BINARY, 0);
+		int file = open(compiledFileName, O_RDONLY | O_BINARY);
 //		FILE *file = fopen(compiledFileName, "rb"); // b for binary ( win32 )
 		// (TBD) use open/close/read/... instead of fopen/fclose/fread/...
 		if ( file == -1 ) {
@@ -397,7 +397,7 @@ static JSScript* LoadScript(JSContext *cx, JSObject *obj, const char *fileName, 
 			JSBool xdrSuccess = JS_XDRScript( xdr, &script );
 			if ( xdrSuccess != JS_TRUE )
 				return NULL;
-			int file = open( compiledFileName, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY ); // (TBD) use open/close/read/... instead of fopen/fclose/fread/...
+			int file = open( compiledFileName, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, 0700 ); // (TBD) use open/close/read/... instead of fopen/fclose/fread/...
 			if ( file != -1 ) { // if the file cannot be write, this is not an error ( eg. read-only drive )
 
 				uint32 length;
