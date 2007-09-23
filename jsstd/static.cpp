@@ -360,8 +360,8 @@ static JSScript* LoadScript(JSContext *cx, JSObject *obj, const char *fileName, 
 			return NULL;
 		}
 
-//		size_t compFileSize = compFileStat.st_size;
-		size_t compFileSize = filelength(file);
+		size_t compFileSize = compFileStat.st_size;
+//		size_t compFileSize = filelength(file);
 		void *data = JS_malloc( cx, compFileSize );
 
 		size_t readCount = read( file, data, compFileSize ); // here we can use "Memory-Mapped I/O Functions" ( http://developer.mozilla.org/en/docs/NSPR_API_Reference:I/O_Functions#Memory-Mapped_I.2FO_Functions )

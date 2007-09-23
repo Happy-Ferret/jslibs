@@ -18,8 +18,12 @@
 
 #include <errno.h>
 #include <fcntl.h>
-#include <io.h>
-#include <stdlib.h>
+
+#ifdef XP_UNIX
+	#include <unistd.h>
+#else
+	#include <io.h>
+#endif
 #include <string.h>
 #include <sys/stat.h>
 #include <limits.h>
