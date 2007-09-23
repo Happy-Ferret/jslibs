@@ -147,4 +147,4 @@
 
 #define CALL_ON_INIT(function) if ( (function)(cx, obj) != JS_TRUE ) return JS_FALSE;
 
-#endif _JSCLASS_H_
+#endif // _JSCLASS_H_
