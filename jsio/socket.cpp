@@ -121,7 +121,7 @@ DEFINE_FUNCTION( Bind ) {
 		}
 	} else {
 		
-		*rval = JSVAL_TRUE;
+		*rval = JSVAL_TRUE; // no error, return true
 	}
 	return JS_TRUE;
 }
@@ -310,7 +310,6 @@ DEFINE_PROPERTY( connectContinue ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
 	RT_ASSERT_RESOURCE( fd );
-
 
 	PRPollDesc desc = { fd, PR_POLL_WRITE | PR_POLL_EXCEPT, 0 };
 
