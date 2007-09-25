@@ -306,7 +306,7 @@ window.addEventListener( 'load', function() {
 				var result = Profile(GetCode(), _profilePeriod);
 				if (result) {
 
-					WriteHtmlTo('text', 'Profile:<br>  rate  : '+(1000/result).toFixed(0)+'x/s' + '<br>  speed : '+result.toFixed(5)+' ms/eval<br>  ' + ( _previousProfile ? (100*_previousProfile/result).toFixed(0) + '%' : '' )  );
+					WriteHtmlTo('text', 'Profile:<br>  rate  : '+(1000/result).toFixed(0)+'x/s' + '<br>  speed : '+result.toFixed(5)+' ms/eval<br>  ' + ( _previousProfile ? (100*_previousProfile/result).toFixed(0) + '% of the previous result' : '' )  );
 				} else
 					WriteHtmlTo('error', 'Error');
 				_previousProfile = result;
