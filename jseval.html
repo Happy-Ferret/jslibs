@@ -328,7 +328,7 @@ window.addEventListener( 'load', function() {
 		case 'g':
 			SetCode(Indent('function HelloWorld(){Print("Hello World!");return true}for(var i=0;i<5;i++)HelloWorld()'));
 			break;
-		case ' ':
+		case ' ': //'
 			var sel = _win.getSelection();
 			if ( !sel.isCollapsed || sel.anchorNode.nodeType != 3 )
 				break;
@@ -361,10 +361,12 @@ window.addEventListener( 'load', function() {
 </script>
 <style type="text/css">
 
-HTML, BODY {
+HTML,
+BODY {
 	padding: 0px;
 	margin: 0px;
 	height: 100%;
+	background-color: #000;
 }
 
 #editor,
@@ -385,7 +387,6 @@ HTML, BODY {
 #output {
 	width: 25%;
 	font-family: monospace;
-	background-color: #000;
 	color: #EEE;
 }
 
