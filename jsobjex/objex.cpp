@@ -70,6 +70,7 @@ JSBool objex_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, js
 	if ( argc >= 5 ) // AUX object
 		JS_SetReservedSlot( cx, obj, AUX_SLOT, argv[4] );
 
+	JS_SetPrototype(cx, obj, NULL); // this creates an empty object ( without __proto__, __parent__, toString, ... )
 	return JS_TRUE;
 }
 

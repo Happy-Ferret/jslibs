@@ -185,6 +185,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\data.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\main.cpp"
 				>
 			</File>
@@ -224,6 +228,10 @@
 			>
 			<File
 				RelativePath=".\buffer.h"
+				>
+			</File>
+			<File
+				RelativePath=".\data.h"
 				>
 			</File>
 			<File
