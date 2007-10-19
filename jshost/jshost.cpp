@@ -322,20 +322,22 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	unsigned long maxbytes = 16L * 1024L * 1024L;
 	unsigned long stackSize = 8192; //1L * 1024L * 1024L; // http://groups.google.com/group/mozilla.dev.tech.js-engine/browse_thread/thread/be9f404b623acf39/9efdfca81be99ca3
 
-	for ( argv++; argv[0] && argv[0][0] == '-'; argv++ )
-		switch ( argv[0][1] ) {
+	char** argumentVector = argv;
+
+	for ( argumentVector++; argumentVector[0] && argumentVector[0][0] == '-'; argumentVector++ )
+		switch ( argumentVector[0][1] ) {
 			case 'w': // report warnings
-				argv++;
+				argumentVector++;
 				// (TBD) set into configuration
 				break;
 			case 'm': // maxbytes (GC)
-				argv++;
-				maxbytes = atol( *argv );
+				argumentVector++;
+				maxbytes = atol( *argumentVector );
 				break;
 
 //			case 's': // stackSize
-//				argv++;
-//				stackSize = atol( *argv );
+//				argumentVector++;
+//				stackSize = atol( *argumentVector );
 //				break;
 
 /*
@@ -345,8 +347,8 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 				break;
 */
 			case 'u': // avoid any runtime checks
-				argv++;
-				unsafeMode = ( atoi( *argv ) != 0 );
+				argumentVector++;
+				unsafeMode = ( atoi( *argumentVector ) != 0 );
 				// (TBD) set into configuration
 				break;
 	}
@@ -412,7 +414,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	RT_HOST_MAIN_ASSERT( jsStatus != JS_FALSE, "Unable to set store unsafeMode into configuration." );
 
 // script name
-  const char *scriptName = *argv;
+  const char *scriptName = *argumentVector;
   RT_HOST_MAIN_ASSERT( scriptName != NULL, "no script specified" );
 
 // arguments
@@ -422,9 +424,9 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	jsStatus = JS_DefineProperty(cx, globalObject, NAME_GLOBAL_ARGUMENTS, OBJECT_TO_JSVAL(argsObj), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT);
 	RT_HOST_MAIN_ASSERT( jsStatus == JS_TRUE, "unable to store the argument array." );
 	int index = 0;
-	for ( char** argvit = argv; *argvit; argvit++ ) {
+	for ( char** argumentVectorit = argumentVector; *argumentVectorit; argumentVectorit++ ) {
 
-		JSString *str = JS_NewStringCopyZ(cx, *argvit);
+		JSString *str = JS_NewStringCopyZ(cx, *argumentVectorit);
 		RT_HOST_MAIN_ASSERT( str != NULL, "unable to store the argument." );
 		jsStatus = JS_DefineElement(cx, argsObj, index++, STRING_TO_JSVAL(str), NULL, NULL, JSPROP_ENUMERATE);
 		RT_HOST_MAIN_ASSERT( jsStatus == JS_TRUE, "unable to define the argument." );
@@ -437,7 +439,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	DWORD len = GetModuleFileName(hInstance, moduleFileName, sizeof(moduleFileName));
 	RT_HOST_MAIN_ASSERT( len != 0, "unable to GetModuleFileName." );
 #else // XP_WIN
-	char *moduleFileName = argv[-1]; // beware argv has already moved !
+	char *moduleFileName = argv[0]; // beware do not use argumentVector, it already moved !
 	RT_HOST_MAIN_ASSERT( moduleFileName != NULL, "unable to GetModuleFileName." );
 #endif // XP_WIN
 
@@ -653,14 +655,14 @@ Spidermonkey API DOC reminder:
 FAQ
 ---
 What's the nargs member of JSFunctionSpec actually used for?
-	It's not minimum requirement in the	report-an-error/throw-an-exception-if-fewer-actuals sense.  It's the minimum the callee can count on dereferencing with non-negative indexes via argv.
+	It's not minimum requirement in the	report-an-error/throw-an-exception-if-fewer-actuals sense.  It's the minimum the callee can count on dereferencing with non-negative indexes via argumentVector.
 	If fewer actuals are passed, the engine will push undefined until nargs arguments are available.
 	...
-	Just because argc reflects the actual parameter count does not mean that you cannot dereference argv[argc] or argv[argc+1] safely -- you can, all the way up to argv[NARGS-1],
+	Just because argc reflects the actual parameter count does not mean that you cannot dereference argumentVector[argc] or argumentVector[argc+1] safely -- you can, all the way up to argumentVector[NARGS-1],
 	for the value of NARGS you stored in the JSFunctionSpec.nargs initializer, or passed to JS_DefineFunction.
   ...
-	Ah, I think I understand now. I can specify 0 for nargs for *all* functions just as long as I check argc's value before dereferencing argv[] elements.
-	But if I want guarantee that argv[0], as an example, can be dereferenced (regardless of the number of arguments actually passed), then I need to specify an nargs value of 1 (or higher). Right?
+	Ah, I think I understand now. I can specify 0 for nargs for *all* functions just as long as I check argc's value before dereferencing argumentVector[] elements.
+	But if I want guarantee that argumentVector[0], as an example, can be dereferenced (regardless of the number of arguments actually passed), then I need to specify an nargs value of 1 (or higher). Right?
 
 
 Useful Links:
