@@ -1,6 +1,14 @@
 LoadModule('jsstd');
 
-Exec('jsircbot.js');
+var a = 'toto';
+var x = '12343rv3rv';
+var b = 'toto';
+
+Print(IdOf(a).toString(36), '\n');
+Print(IdOf(b), '\n');
+
+
+//Exec('jsircbot.js');
 
 /*
 
