@@ -326,27 +326,12 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 
 	for ( argumentVector++; argumentVector[0] && argumentVector[0][0] == '-'; argumentVector++ )
 		switch ( argumentVector[0][1] ) {
-			case 'w': // report warnings
-				argumentVector++;
-				// (TBD) set into configuration
-				break;
 			case 'm': // maxbytes (GC)
 				argumentVector++;
 				maxbytes = atol( *argumentVector );
 				break;
-
-//			case 's': // stackSize
-//				argumentVector++;
-//				stackSize = atol( *argumentVector );
-//				break;
-
-/*
-			case 'c': // save compiled scripts
-				arg++;
-				saveCompiledScripts = ( atoi( *arg ) != 0 );
-				break;
-*/
 			case 'u': // avoid any runtime checks
+				reportWarnings = false;
 				argumentVector++;
 				unsafeMode = ( atoi( *argumentVector ) != 0 );
 				// (TBD) set into configuration
