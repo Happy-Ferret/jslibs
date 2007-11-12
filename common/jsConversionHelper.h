@@ -169,7 +169,7 @@ inline JSBool IntArgvToVector( JSContext *cx, int count, const jsval *argv, int 
 	for (int i=0; i<count; ++i) {
 
 		RT_ASSERT( JSVAL_IS_INT(argv[i]), "Must be an integer." );
-		RT_SAFE( jsdouble d; JS_ValueToNumber(cx, argv[i], &d); vector[i] = d; );
+		RT_SAFE( jsdouble d; JS_ValueToNumber(cx, argv[i], &d); vector[i] = (int)d; );
 		RT_UNSAFE( vector[i] = JSVAL_TO_INT(argv[i]) );
 	}
 	return JS_TRUE;
@@ -213,7 +213,7 @@ inline JSBool IntArrayToVector( JSContext *cx, int count, const jsval *vp, int *
 
 		status = JS_GetElement(cx, jsArray, i, &value);
 		RT_ASSERT( status && value != JSVAL_VOID, "Invalid array value." );
-		RT_SAFE( jsdouble d; JS_ValueToNumber(cx, value, &d); vector[i] = d; );
+		RT_SAFE( jsdouble d; JS_ValueToNumber(cx, value, &d); vector[i] = (int)d; );
 		RT_UNSAFE( vector[i] = JSVAL_TO_INT(value) );
 	}
 	return JS_TRUE;
