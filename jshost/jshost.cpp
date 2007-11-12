@@ -462,7 +462,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 //	gBranchLimit =
 	if ( !unsafeMode ) {
 			
-		JSBranchCallback branchCallback = JS_SetBranchCallback(cx, BranchCallback);
+		JSBranchCallback oldBranchCallback = JS_SetBranchCallback(cx, BranchCallback);
 		JS_ToggleOptions(cx, JSOPTION_NATIVE_BRANCH_CALLBACK);
 	}
 
@@ -487,6 +487,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 		ungetc(s, file);
 	}
 	script = JS_CompileFileHandle(cx, globalObject, scriptName, file);
+	// (TBD) fclose(file); ??
 	
 //	JS_AddRoot(cx, &script);
 
