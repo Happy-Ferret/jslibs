@@ -1,5 +1,11 @@
 LoadModule('jsstd');
 
+
+var buf = new Buffer('abcde');
+buf.Read(6);
+
+Halt();
+
 var a = {};
 Print( gcByte, '\n' );
 var b = {};

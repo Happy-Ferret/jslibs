@@ -374,7 +374,9 @@ static JSScript* LoadScript(JSContext *cx, JSObject *obj, const char *fileName, 
 
 		size_t readCount = read( file, data, compFileSize ); // here we can use "Memory-Mapped I/O Functions" ( http://developer.mozilla.org/en/docs/NSPR_API_Reference:I/O_Functions#Memory-Mapped_I.2FO_Functions )
 
-		if ( readCount == -1 || readCount != compFileSize ) {
+		// (TBD) if ( readCount == -1 && errno == EBADF ) ...
+
+		if ( readCount == (size_t)(-1) || readCount != compFileSize ) {
 
 			JS_ReportError( cx, "Unable to read the file \"%s\" ", compiledFileName );
 			return NULL;

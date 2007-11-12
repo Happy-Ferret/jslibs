@@ -255,7 +255,7 @@ JSBool ReadAmount( JSContext *cx, JSObject *obj, size_t amount, jsval *rval ) {
 		*rval = JS_GetEmptyStringValue(cx);
 		return JS_TRUE;
 	}
-	char *str = (char*)JS_malloc(cx, amount + 1);
+	char *str = (char*)JS_malloc(cx, amount + 1); // (TBD) memory leak if ReadRawAmount failed
 	RT_ASSERT_ALLOC(str);
 	str[amount] = '\0'; // (TBD) explain this
 
@@ -421,7 +421,7 @@ DEFINE_FUNCTION( Match ) {
 	RT_ASSERT_STRING( argv[0] );
 		
 	char *str;
-	int len;
+	size_t len;
 	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], str, len );
 
 	char *src = (char *)malloc(len);
