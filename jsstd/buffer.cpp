@@ -19,11 +19,12 @@
 #include "../common/queue.h"
 
 
-typedef struct JsCntxt {
+/*
+// used by NativeInterface 
+typedef struct {
 	JSRuntime *rt;
 	JSObject *obj;
 } JsCntxt;
-
 
 static bool NativeInterfaceReadBuffer( void *pv, unsigned char *buf, unsigned int *amount ) {
 
@@ -47,7 +48,7 @@ static bool NativeInterfaceReadBuffer( void *pv, unsigned char *buf, unsigned in
 	#endif
 	return true;
 }
-
+*/
 
 inline JSBool BufferLengthSet( JSContext *cx, JSObject *obj, size_t bufferLength ) {
 
@@ -309,14 +310,19 @@ DEFINE_FINALIZE() {
 	Queue *queue = (Queue*)JS_GetPrivate(cx, obj);
 	if ( queue != NULL ) {
 
-
+/*
+// remove NativeInterface 
 // unable to call GetNativeInterface in Finalize !!!
 //		JsCntxt *cntxt;
 //		FunctionPointer fp;
 //		GetNativeInterface(cx, obj, NI_READ_RESOURCE, &fp, (void**)&cntxt);
 //		free(cntxt);
 //		RemoveNativeInterface(cx, obj, NI_READ_RESOURCE);
-		
+*/
+
+//		jsval tmp;
+//		JS_GetReservedSlot(cx, obj, 0, &tmp );
+
 		while ( !QueueIsEmpty(queue) ) {
 			
 			JSString **pNewStr = (JSString**)QueueShift(queue);
@@ -324,7 +330,7 @@ DEFINE_FINALIZE() {
 			free(pNewStr);
 		}
 		QueueDestruct(queue);
-		JS_SetPrivate(cx, obj, NULL);
+		JS_SetPrivate(cx, obj, NULL); // optional ?
 	}
 }
 
@@ -332,10 +338,13 @@ DEFINE_FINALIZE() {
 DEFINE_CONSTRUCTOR() {
 
 	RT_ASSERT_CONSTRUCTING( _class );
-	JsCntxt *cntxt = (JsCntxt*)malloc(sizeof(JsCntxt)); // prepare NativeInterface compatibility
+/*
+	// prepare NativeInterface compatibility
+	JsCntxt *cntxt = (JsCntxt*)malloc(sizeof(JsCntxt)); // (TBD) fix this memory leak
 	cntxt->rt = JS_GetRuntime(cx); // beware: cx must exist during the life of this object !
 	cntxt->obj = obj;
 	SetNativeInterface(cx, obj, NI_READ_RESOURCE, (FunctionPointer)NativeInterfaceReadBuffer, cntxt);
+*/
 	Queue *queue = QueueConstruct();
 	RT_ASSERT_ALLOC(queue);
 	JS_SetPrivate(cx, obj, queue);

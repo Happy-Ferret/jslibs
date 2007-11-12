@@ -1,19 +1,11 @@
 LoadModule('jsstd');
 
-var a = 'toto';
-var x = '12343rv3rv';
-var b = 'toto';
+var a = {};
+Print( gcByte, '\n' );
+var b = {};
+Print( gcByte, '\n' );
 
-Print(IdOf(a).toString(36), '\n');
-Print(IdOf(b), '\n');
-
-
-//Exec('jsircbot.js');
-
-/*
-
-LoadModule('jsstd');
-//Print('Version :'+jsstd_revision);
+Halt();
 
 var buf = new Buffer('xxx');
 buf.Write('aaa');

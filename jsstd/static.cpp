@@ -276,8 +276,16 @@ DEFINE_FUNCTION( ASSERT ) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 DEFINE_PROPERTY( gcByte ) {
 
-	JSRuntime *rt = cx->runtime;
-	*vp = INT_TO_JSVAL(rt->gcBytes);
+    uint32 *pbytes, bytes;
+
+#ifdef JS_THREADSAFE
+    pbytes = &cx->thread->gcMallocBytes;
+#else
+    pbytes = &cx->runtime->gcMallocBytes;
+#endif
+    bytes = *pbytes;
+
+	 RT_CHECK_CALL( JS_NewNumberValue(cx, bytes, vp) );
 	return JS_TRUE;
 }
 
