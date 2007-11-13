@@ -141,8 +141,8 @@ inline JSBool JsvalToUInt32( JSContext *cx, jsval val, unsigned long *result, bo
 	
 	if ( JSVAL_IS_INT( val ) ) {
 		
-		long v = JSVAL_TO_INT( val );
-		*outOfRange = v < 0 || v > ULONG_MAX;
+		long v = JSVAL_TO_INT( val ); // beware: int31 ! not int32
+		*outOfRange = v < 0;// || v > ULONG_MAX; <- this case is impossible
 		*result = (unsigned long)v;
 	} else if ( JSVAL_IS_DOUBLE( val ) ) {
 		

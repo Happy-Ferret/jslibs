@@ -462,8 +462,8 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 //	gBranchLimit =
 	if ( !unsafeMode ) {
 			
-		JSBranchCallback oldBranchCallback = JS_SetBranchCallback(cx, BranchCallback);
-		oldBranchCallback;
+		//JSBranchCallback oldBranchCallback = JS_SetBranchCallback(cx, BranchCallback);
+		JS_SetBranchCallback(cx, BranchCallback);
 		JS_ToggleOptions(cx, JSOPTION_NATIVE_BRANCH_CALLBACK);
 	}
 
