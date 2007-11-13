@@ -21,6 +21,7 @@
 
 #ifdef _MSC_VER
 #pragma warning(disable:4244 4305)  // for VC++, no precision loss complaints
+#pragma warning(disable:4127)  // no "conditional expression is constant" complaints
 #endif
 
 //#include <stdbool.h>
@@ -98,6 +99,7 @@ inline bool MaybeRealloc( int requested, int received ) {
 #define REPORT_WARNING_2(errorMessage, arg1, arg2) \
 	do { JS_ReportWarning( cx, (errorMessage RT_CODE_LOCATION), (arg1), (arg2) ); } while(0)
 
+// fatal errors: script must stop as soon as possible
 #define REPORT_ERROR(errorMessage) \
 	do { JS_ReportError( cx, (errorMessage RT_CODE_LOCATION) ); return JS_FALSE; } while(0)
 
@@ -244,7 +246,7 @@ typedef void (*FunctionPointer)(void);
 
 inline JSBool SetNativeInterface( JSContext *cx, JSObject *obj, const char *name, FunctionPointer function, void *descriptor ) {
 	
-	// Cannot be alled while Finalize
+	// Cannot be called while Finalize
 	// the following must work because spidermonkey will never call the getter or setter if it is not explicitly required by the script
 	RT_CHECK_CALL( JS_DefineProperty(cx, obj, name, JSVAL_VOID, (JSPropertyOp)function, (JSPropertyOp)descriptor, JSPROP_READONLY | JSPROP_PERMANENT) );
 	return JS_TRUE;
@@ -252,7 +254,7 @@ inline JSBool SetNativeInterface( JSContext *cx, JSObject *obj, const char *name
 
 inline JSBool GetNativeInterface( JSContext *cx, JSObject *obj, const char *name, FunctionPointer *function, void **descriptor ) {
 
-	// Cannot be alled while Finalize
+	// Cannot be called while Finalize
 	uintN attrs;
 	JSBool found;
 	RT_CHECK_CALL( JS_GetPropertyAttrsGetterAndSetter(cx, obj, name, &attrs, &found, (JSPropertyOp*)function, (JSPropertyOp*)descriptor) ); // NULL is supported for function and descriptor
@@ -262,7 +264,7 @@ inline JSBool GetNativeInterface( JSContext *cx, JSObject *obj, const char *name
 
 inline JSBool RemoveNativeInterface( JSContext *cx, JSObject *obj, const char *name ) {
 	
-	// Cannot be alled while Finalize
+	// Cannot be called while Finalize
 	RT_CHECK_CALL( JS_DeleteProperty(cx, obj, name) );
 	return JS_TRUE;
 }
@@ -344,6 +346,5 @@ inline JSBool CallFunction( JSContext *cx, JSObject *obj, jsval functionValue, j
 		*rval = rvalTmp;
 	return JS_TRUE;
 }
-
 
 #endif // _JSHELPER_H_

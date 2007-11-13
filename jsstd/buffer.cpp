@@ -89,7 +89,7 @@ JSBool FindInBuffer( JSContext *cx, JSObject *obj, char *needle, int needleLengt
 	RT_ASSERT_RESOURCE( queue );
 	
 	int pos = 0;
-	char *buf = (char*)malloc(needleLength); // the ring buffer
+	char *buf = (char*)malloc(needleLength); // the "ring buffer"
 
 	int chunkLength;
 	char *chunk;
@@ -118,7 +118,7 @@ JSBool FindInBuffer( JSContext *cx, JSObject *obj, char *needle, int needleLengt
 
 	*foundAt = -1;
 end:
-	free(buf);
+	free(buf); // free the "ring buffer"
 	return JS_TRUE;
 }
 
@@ -181,8 +181,9 @@ JSBool ReadOneChunk( JSContext *cx, JSObject *obj, jsval *rval ) {
 	JSString **pNewStr = (JSString**)QueueShift(queue);
 	bufferLength -= JS_GetStringLength(*pNewStr);
 	RT_CHECK_CALL( BufferLengthSet(cx, obj, bufferLength) ); // update buffer size
-	RT_CHECK_CALL( JS_RemoveRoot(cx, pNewStr) ); // removeRoot
 	*rval = STRING_TO_JSVAL(*pNewStr); // result (Rooted)
+	RT_CHECK_CALL( JS_RemoveRoot(cx, pNewStr) ); // removeRoot
+	free(pNewStr); // (TBD) check it
 	return JS_TRUE;
 }
 
@@ -227,6 +228,7 @@ JSBool ReadRawAmount( JSContext *cx, JSObject *obj, size_t *amount, char *str ) 
 			ptr += chunkLen;
 			remainToRead -= chunkLen; // adjust remaining required data length
 			RT_CHECK_CALL( JS_RemoveRoot(cx, pNewStr) );
+			free(pNewStr); // (TBD) check it
 			QueueShift(queue);
 		} else { // chunkLen > remain: this is the last chunk we have to manage. we only get a part of it chunk and we 'unread' the remaining.
 			

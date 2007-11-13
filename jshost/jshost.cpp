@@ -80,7 +80,7 @@ static void ErrorReporter(JSContext *cx, const char *message, JSErrorReport *rep
     }
 
     /* Conditionally ignore reported warnings. */
-    if (JSREPORT_IS_WARNING(report->flags) && !reportWarnings)
+    if ((JSREPORT_IS_WARNING(report->flags) || JSREPORT_IS_EXCEPTION(report->flags)) && !reportWarnings)
         return;
 
     prefix = NULL;
@@ -319,8 +319,8 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	JSBool unsafeMode = JS_FALSE;
 	JSObject *globalObject;
 
-	unsigned long maxbytes = 16L * 1024L * 1024L;
-	unsigned long stackSize = 8192; //1L * 1024L * 1024L; // http://groups.google.com/group/mozilla.dev.tech.js-engine/browse_thread/thread/be9f404b623acf39/9efdfca81be99ca3
+	unsigned long maxbytes = 64L * 1024L * 1024L;
+	unsigned long stackSize = 8192L; //1L * 1024L * 1024L; // http://groups.google.com/group/mozilla.dev.tech.js-engine/browse_thread/thread/be9f404b623acf39/9efdfca81be99ca3
 
 	char** argumentVector = argv;
 
@@ -463,6 +463,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	if ( !unsafeMode ) {
 			
 		JSBranchCallback oldBranchCallback = JS_SetBranchCallback(cx, BranchCallback);
+		oldBranchCallback;
 		JS_ToggleOptions(cx, JSOPTION_NATIVE_BRANCH_CALLBACK);
 	}
 
@@ -486,6 +487,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 		ungetc(b, file);
 		ungetc(s, file);
 	}
+	JS_GC(cx); // ...and also just before doing anything that requires compilation (since compilation disables GC until complete).
 	script = JS_CompileFileHandle(cx, globalObject, scriptName, file);
 	// (TBD) fclose(file); ??
 	

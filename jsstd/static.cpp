@@ -333,8 +333,6 @@ DEFINE_FUNCTION( Print ) {
 //	/be
 static JSScript* LoadScript(JSContext *cx, JSObject *obj, const char *fileName, bool useCompFile) {
 
-	
-
 #ifdef JS_HAS_XDR
 
 	char compiledFileName[MAX_PATH];
@@ -396,7 +394,8 @@ static JSScript* LoadScript(JSContext *cx, JSObject *obj, const char *fileName, 
 		JS_XDRDestroy(xdr);
 		JS_free( cx, data );
 	} else {
-
+		
+		JS_GC(cx); // ...and also just before doing anything that requires compilation (since compilation disables GC until complete). 
 		script = JS_CompileFile(cx, obj, fileName);
 
 		if ( useCompFile && script != NULL ) {
@@ -421,11 +420,11 @@ static JSScript* LoadScript(JSContext *cx, JSObject *obj, const char *fileName, 
 			JS_XDRDestroy( xdr );
 		}
 	}
-
 	return script;
 
 #else // JS_HAS_XDR
 
+	JS_GC(cx);  // ...and also just before doing anything that requires compilation (since compilation disables GC until complete). 
 	return JS_CompileFile(cx, obj, fileName);
 
 #endif // JS_HAS_XDR
