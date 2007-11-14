@@ -23,7 +23,6 @@ BEGIN_STATIC
 
 DEFINE_FUNCTION( Poll ) {
 
-	uintN objCount;
 	PRInt32 result;
 
 	// NSPR Poll Method:
@@ -31,18 +30,11 @@ DEFINE_FUNCTION( Poll ) {
 
 	// http://developer.mozilla.org/en/docs/PR_Poll
 
-	PRPollDesc pollDesc[1024];
 
 	RT_ASSERT_ARGC( 1 );
 	RT_ASSERT_ARRAY( argv[0] );
 
 	JSIdArray *idArray = JS_Enumerate( cx, JSVAL_TO_OBJECT(argv[0]) ); // make a kind of auto-ptr for this
-
-	if ( idArray->length > (signed)(sizeof(pollDesc) / sizeof(PRPollDesc)) ) {
-
-		JS_ReportError( cx, "Too many descriptors in Poll" );
-		goto failed;
-	}
 
 	PRIntervalTime pr_timeout;
 	if ( argc >= 2 && argv[1] != JSVAL_VOID ) {
@@ -55,9 +47,29 @@ DEFINE_FUNCTION( Poll ) {
 		pr_timeout = PR_INTERVAL_NO_TIMEOUT;
 	}
 
-	uintN i;
-	objCount = idArray->length;
-	for ( i = 0; i < objCount; i++ ) {
+	if ( idArray->length == 0 ) { // optimization
+
+		JS_DestroyIdArray(cx, idArray);
+		result = PR_Poll( NULL, 0, pr_timeout ); // we can replace this by a delay, but the function is Pool, not Sleep
+		if ( result == -1 ) {  // failed. see PR_GetError()
+
+			return ThrowIoError(cx);
+		}
+		*rval = JSVAL_ZERO;
+		return JS_TRUE;
+	}
+
+	PRPollDesc pollDesc[1024];
+
+	if ( idArray->length > (signed)(sizeof(pollDesc) / sizeof(PRPollDesc)) ) {
+
+		JS_ReportError( cx, "Too many descriptors in Poll" );
+		goto failed;
+	}
+
+
+	jsint i;
+	for ( i = 0; i < idArray->length; i++ ) {
 
 		jsval propVal;
 		RT_CHECK_CALL( JS_IdToValue( cx, idArray->vector[i], &propVal ) );
@@ -90,14 +102,14 @@ DEFINE_FUNCTION( Poll ) {
 			pollDesc[i].in_flags |= PR_POLL_ERR;
 	}
 
-	result = PR_Poll( pollDesc, objCount, pr_timeout );
+	result = PR_Poll( pollDesc, idArray->length, pr_timeout );
 	if ( result == -1 ) {  // failed. see PR_GetError()
 
 		ThrowIoError(cx);
 		goto failed;
 	}
 
-	for ( i = 0; i < objCount; i++ ) {
+	for ( i = 0; i < idArray->length; i++ ) {
 
 		jsval arrayItem;
 		RT_CHECK_CALL( JS_IdToValue(cx, idArray->vector[i], &arrayItem) );

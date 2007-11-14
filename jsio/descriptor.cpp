@@ -129,7 +129,7 @@ JSBool ReadToJsval(JSContext *cx, PRFileDesc *fd, int amount, jsval *rval ) {
 		RT_ASSERT_ALLOC(buf);
 	}
 
-	JSString *str = JS_NewString( cx, (char*)buf, res );
+	JSString *str = JS_NewString(cx, buf, res);
 	RT_ASSERT_ALLOC(str);
 	*rval = STRING_TO_JSVAL(str); // GC protection is ok with this ?
 	return JS_TRUE;
@@ -226,7 +226,7 @@ DEFINE_FUNCTION( Read ) {
 		PRInt32 available = PR_Available( fd );
 		if ( available != -1 ) // we can use the 'available' information
 			RT_CHECK_CALL( ReadToJsval(cx, fd, available, rval) );
-		else // available is not usable with this fd, then we used a buffered read
+		else // 'available' is not usable with this fd type, then we used a buffered read ( aka read while there is someting to read )
 			RT_CHECK_CALL( ReadAllToJsval(cx, fd, rval) );
 	}
 	return JS_TRUE;
