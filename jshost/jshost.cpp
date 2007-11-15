@@ -331,9 +331,9 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 				maxbytes = atol( *argumentVector );
 				break;
 			case 'u': // avoid any runtime checks
-				reportWarnings = false;
 				argumentVector++;
 				unsafeMode = ( atoi( *argumentVector ) != 0 );
+				reportWarnings = !unsafeMode;
 				// (TBD) set into configuration
 				break;
 	}

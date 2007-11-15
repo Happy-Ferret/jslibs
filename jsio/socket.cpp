@@ -325,11 +325,21 @@ DEFINE_PROPERTY( connectContinue ) {
 
 	// this can help ? : http://lxr.mozilla.org/seamonkey/search?string=PR_ConnectContinue
 	// source: http://lxr.mozilla.org/seamonkey/source/nsprpub/pr/src/io/prsocket.c#287
+	// example: http://www.google.com/codesearch?hl=en&q=+PR_ConnectContinue+show:Su0oyYj9cVc:HRv_2Hg8Bm0:u0BRTcINCf8&sa=N&cd=5&ct=rc&cs_p=http://archive.mozilla.org/pub/mozilla.org/mozilla/releases/mozilla1.1a/src/mozilla-source-1.1a.tar.bz2&cs_f=mozilla/netwerk/base/src/nsSocketTransport.cpp#l926
 
-	if ( PR_ConnectContinue( fd, desc.out_flags ) != PR_SUCCESS ) // If the nonblocking connect has successfully completed, PR_ConnectContinue returns PR_SUCCESS
-		*vp = PR_GetError() == PR_IN_PROGRESS_ERROR ? JSVAL_VOID : JSVAL_FALSE;
-	else
-		*vp = JSVAL_TRUE;
+	if ( PR_ConnectContinue( fd, desc.out_flags ) != PR_SUCCESS ) { // If the nonblocking connect has successfully completed, PR_ConnectContinue returns PR_SUCCESS
+
+		if ( PR_GetError() == PR_IN_PROGRESS_ERROR ) {
+
+			*vp = JSVAL_VOID; // Operation is still in progress
+		} else {
+
+			*vp = JSVAL_FALSE; // Connection refused, ...
+		}
+	} else {
+
+		*vp = JSVAL_TRUE; // We are connected.
+	}
 
 	return JS_TRUE;
 }
