@@ -328,7 +328,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 		switch ( argumentVector[0][1] ) {
 			case 'm': // maxbytes (GC)
 				argumentVector++;
-				maxbytes = atol( *argumentVector );
+				maxbytes = atol( *argumentVector ) * 1024L * 1024L;
 				break;
 			case 'u': // avoid any runtime checks
 				argumentVector++;
