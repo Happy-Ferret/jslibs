@@ -353,7 +353,7 @@ JSBool UnReadRawChunk( JSContext *cx, JSObject *obj, char *data, size_t length )
 */
 
 	JSString *jsstr = JS_NewStringCopyN(cx, data, length);
-	RT_ASSERT_ALLOC( *pNewStr );
+	RT_ASSERT_ALLOC( jsstr );
 	return UnReadChunk(cx, obj, jsstr );
 }
 
