@@ -50,11 +50,13 @@ static bool NativeInterfaceReadBuffer( void *pv, unsigned char *buf, unsigned in
 }
 */
 
+
 inline JSBool BufferLengthSet( JSContext *cx, JSObject *obj, size_t bufferLength ) {
 
 	RT_CHECK_CALL( JS_SetReservedSlot(cx, obj, SLOT_BUFFER_LENGTH, INT_TO_JSVAL( bufferLength )) );
 	return JS_TRUE;
 }
+
 
 inline JSBool BufferLengthGet( JSContext *cx, JSObject *obj, size_t *bufferLength ) {
 
@@ -63,6 +65,7 @@ inline JSBool BufferLengthGet( JSContext *cx, JSObject *obj, size_t *bufferLengt
 	*bufferLength = JSVAL_TO_INT(bufferLengthVal);
 	return JS_TRUE;
 }
+
 
 inline JSBool BufferLengthAdd( JSContext *cx, JSObject *obj, size_t amount ) {
 	
@@ -73,6 +76,7 @@ inline JSBool BufferLengthAdd( JSContext *cx, JSObject *obj, size_t amount ) {
 	return JS_TRUE;
 }
 
+
 inline JSBool BufferRefillRequest( JSContext *cx, JSObject *obj, size_t missing ) { // missing = missing amount of data to complete the request
 
 	jsval fctVal;
@@ -81,6 +85,28 @@ inline JSBool BufferRefillRequest( JSContext *cx, JSObject *obj, size_t missing 
 		RT_CHECK_CALL( CallFunction(cx, obj, fctVal, NULL, 2, OBJECT_TO_JSVAL(obj), INT_TO_JSVAL(missing) ) );
 	return JS_TRUE;
 }
+
+
+/*
+JSBool RefillBuffer( JSContext *cx, JSObject *obj, size_t neededAmount ) {
+
+	size_t bufferLength;
+	RT_CHECK_CALL( BufferLengthGet(cx, obj, &bufferLength) );
+
+	if ( bufferLength < neededAmount ) {
+
+		size_t bufferLengthBeforeRefillRequest;
+		do {
+
+			bufferLengthBeforeRefillRequest = bufferLength;
+			RT_CHECK_CALL( BufferRefillRequest(cx, obj, neededAmount - bufferLength) );
+			RT_CHECK_CALL( BufferLengthGet(cx, obj, &bufferLength) ); // read it again because it may have changed
+		} while( neededAmount > bufferLength && bufferLength != bufferLengthBeforeRefillRequest ); // if bufferLength == bufferLengthBeforeRefillRequest nothing has been added in the buffer
+
+	}
+}
+*/
+
 
 JSBool FindInBuffer( JSContext *cx, JSObject *obj, char *needle, int needleLength, int *foundAt ) {
 
@@ -190,8 +216,10 @@ JSBool ReadOneChunk( JSContext *cx, JSObject *obj, jsval *rval ) {
 
 JSBool ReadRawAmount( JSContext *cx, JSObject *obj, size_t *amount, char *str ) { // this form allows one to read into a static buffer
 	
-	if ( amount == 0 ) // optimization
+	if ( *amount == 0 ) { // optimization
+
 		return JS_TRUE;
+	}
 
 	size_t bufferLength;
 	RT_CHECK_CALL( BufferLengthGet(cx, obj, &bufferLength) );
@@ -209,6 +237,13 @@ JSBool ReadRawAmount( JSContext *cx, JSObject *obj, size_t *amount, char *str ) 
 		if ( *amount > bufferLength ) // we definitively cannot read the required amount of data, then read the whole buffer.
 			*amount = bufferLength;
 	}
+
+	if ( *amount == 0 ) { // another optimization
+
+		return JS_TRUE;
+	}
+
+
 
 	char *ptr = str;
 	size_t remainToRead = *amount;
@@ -257,14 +292,24 @@ JSBool ReadAmount( JSContext *cx, JSObject *obj, size_t amount, jsval *rval ) {
 		*rval = JS_GetEmptyStringValue(cx);
 		return JS_TRUE;
 	}
+
 	char *str = (char*)JS_malloc(cx, amount + 1); // (TBD) memory leak if ReadRawAmount failed
 	RT_ASSERT_ALLOC(str);
-	str[amount] = '\0'; // (TBD) explain this
-
+	
+	// (TBD) IMPORTANT: here, amount should be MIN( amount, buffer_size ). This can avoid an useless memory allocation.
 	int requestedAmount = amount;
 	RT_CHECK_CALL( ReadRawAmount(cx, obj, &amount, str) );
-	// (TBD) if amount after calling ReadRawAmount is smaller than before, realloc the buffer 
 
+	if ( amount == 0 ) { // optimization
+		
+		JS_free(cx, str);
+		*rval = JS_GetEmptyStringValue(cx);
+		return JS_TRUE;
+	}
+
+	str[amount] = '\0'; // (TBD) explain this
+
+	// (TBD) if amount after calling ReadRawAmount is smaller than before, realloc the buffer 
 	if ( MaybeRealloc( requestedAmount, amount ) ) {
 
 		str = (char*)JS_realloc(cx, str, amount + 1);
@@ -275,14 +320,15 @@ JSBool ReadAmount( JSContext *cx, JSObject *obj, size_t amount, jsval *rval ) {
 }
 
 
-JSBool UnReadRawChunk( JSContext *cx, JSObject *obj, char *data, size_t length ) {
+JSBool UnReadChunk( JSContext *cx, JSObject *obj, JSString *chunk ) {
 
 	Queue *queue = (Queue*)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE( queue );
 	JSString **pNewStr = (JSString**)malloc(sizeof(JSString*));
 	RT_ASSERT_ALLOC( pNewStr );
-	*pNewStr = JS_NewStringCopyN(cx, data, length);
-	RT_ASSERT_ALLOC( *pNewStr );
+
+	*pNewStr = chunk; // no need to use JS_NewDependentString (see js_NewDependentString in jsstr.c)
+
 	RT_CHECK_CALL( JS_AddRoot(cx, pNewStr) );
 	QueueUnshift( queue, pNewStr );
 	RT_CHECK_CALL( BufferLengthAdd(cx, obj, JS_GetStringLength(*pNewStr)) );
@@ -290,17 +336,25 @@ JSBool UnReadRawChunk( JSContext *cx, JSObject *obj, char *data, size_t length )
 }
 
 
-JSBool UnReadChunk( JSContext *cx, JSObject *obj, JSString *chunk ) {
-
+JSBool UnReadRawChunk( JSContext *cx, JSObject *obj, char *data, size_t length ) {
+/*
 	Queue *queue = (Queue*)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE( queue );
 	JSString **pNewStr = (JSString**)malloc(sizeof(JSString*));
 	RT_ASSERT_ALLOC( pNewStr );
-	*pNewStr = chunk; // no need to use JS_NewDependentString (see js_NewDependentString in jsstr.c)
+
+	*pNewStr = JS_NewStringCopyN(cx, data, length);
+	RT_ASSERT_ALLOC( *pNewStr );
+
 	RT_CHECK_CALL( JS_AddRoot(cx, pNewStr) );
 	QueueUnshift( queue, pNewStr );
 	RT_CHECK_CALL( BufferLengthAdd(cx, obj, JS_GetStringLength(*pNewStr)) );
 	return JS_TRUE;
+*/
+
+	JSString *jsstr = JS_NewStringCopyN(cx, data, length);
+	RT_ASSERT_ALLOC( *pNewStr );
+	return UnReadChunk(cx, obj, jsstr );
 }
 
 

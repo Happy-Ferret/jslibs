@@ -1,8 +1,11 @@
 LoadModule('jsstd');
 
 
-var buf = new Buffer('abcde');
-buf.Read(6);
+var b = new Buffer();
+var s = b.Read(1);
+Print( s, '\n' )
+
+
 
 Halt();
 
