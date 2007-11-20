@@ -8,5 +8,6 @@
 #include "../common/platform.h"
 
 #include <jsapi.h>
-
 #include <stdlib.h>
+
+#include "../common/jshelper.h"
