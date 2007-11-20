@@ -107,7 +107,6 @@ JSBool RefillBuffer( JSContext *cx, JSObject *obj, size_t neededAmount ) {
 }
 */
 
-
 JSBool FindInBuffer( JSContext *cx, JSObject *obj, char *needle, int needleLength, int *foundAt ) {
 
 	// (TBD) optimise this function for needleLength == 1 (eg. '\0' in a string)

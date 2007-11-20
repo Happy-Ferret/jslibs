@@ -346,6 +346,10 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	JS_SetVersion( cx, (JSVersion)JS_VERSION );
 	// (TBD) set into configuration file
 
+	// good place to manage stack limit ( that is 32MB by default ):
+	//JS_SetScriptStackQuota( cx, JS_DEFAULT_SCRIPT_STACK_QUOTA );
+	//	btw, JS_SetScriptStackQuota ( see also JS_SetThreadStackLimit )
+
 // error management
 	JS_SetErrorReporter(cx, ErrorReporter);
 
