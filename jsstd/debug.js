@@ -1,10 +1,36 @@
 LoadModule('jsstd');
 
 
-var b = new Buffer();
-var s = b.Read(1);
-Print( s, '\n' )
 
+var i;
+var b = new Buffer();
+
+for (;!endSignal;) {
+	
+	for ( i = 0; i < 100; i++ ) {
+		
+		b.Write('aaa');
+		b.Write('');
+		b.Write('bbXb');
+		b.Write('');
+		b.Write('ccc');
+		b.Read(2);
+		b.ReadUntil('X');
+		b.Skip(2);
+		b.Match('cc');
+		b.Unread('ddd');
+		b.Match('ddd');
+		b.Match('ZZZ');
+		b.ReadUntil('ZZZ');
+		b.Read(1000);
+		b.Write('eeee');
+		b.Write('ffff');
+		b.Write('gggg');
+		var t = b.Read();
+		b.Write(b);
+	}
+	CollectGarbage();
+}
 
 
 Halt();

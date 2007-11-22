@@ -12,6 +12,15 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
+//
+// RULES:
+// - the buffer MUST NOT contains an empty chunk ( else memory leak during bugger life time )
+// - reading a greater amount that the buffer length make 'onunderflow' property to be called until the size of the buffer do not grows any more.
+// - reading only one chunk of data ( with .Read(undefined); ) on an empty buffer just make one call to 'onunderflow' property.
+// - buffer length is stored in SLOT_BUFFER_LENGTH, and MUST always be up to date.
+// - each buffer chunk is a JSString** that is rooted before being stored in the chunk queue.
+//
+
 #include "stdafx.h"
 #include "buffer.h"
 
@@ -231,7 +240,7 @@ JSBool ReadRawAmount( JSContext *cx, JSObject *obj, size_t *amount, char *str ) 
 			bufferLengthBeforeRefillRequest = bufferLength;
 			RT_CHECK_CALL( BufferRefillRequest(cx, obj, *amount - bufferLength) );
 			RT_CHECK_CALL( BufferLengthGet(cx, obj, &bufferLength) ); // read it again because it may have changed
-		} while( *amount > bufferLength && bufferLength != bufferLengthBeforeRefillRequest ); // if bufferLength == bufferLengthBeforeRefillRequest nothing has been added in the buffer
+		} while( *amount > bufferLength && bufferLength > bufferLengthBeforeRefillRequest ); // see RULES ( at the top of this file )
 
 		if ( *amount > bufferLength ) // we definitively cannot read the required amount of data, then read the whole buffer.
 			*amount = bufferLength;
@@ -241,7 +250,6 @@ JSBool ReadRawAmount( JSContext *cx, JSObject *obj, size_t *amount, char *str ) 
 
 		return JS_TRUE;
 	}
-
 
 
 	char *ptr = str;
@@ -323,14 +331,16 @@ JSBool UnReadChunk( JSContext *cx, JSObject *obj, JSString *chunk ) {
 
 	Queue *queue = (Queue*)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE( queue );
+
+	size_t length = JS_GetStringLength(chunk);
+	if ( length == 0 ) // optimization & RULES
+		return JS_TRUE;
 	JSString **pNewStr = (JSString**)malloc(sizeof(JSString*));
 	RT_ASSERT_ALLOC( pNewStr );
-
 	*pNewStr = chunk; // no need to use JS_NewDependentString (see js_NewDependentString in jsstr.c)
-
 	RT_CHECK_CALL( JS_AddRoot(cx, pNewStr) );
 	QueueUnshift( queue, pNewStr );
-	RT_CHECK_CALL( BufferLengthAdd(cx, obj, JS_GetStringLength(*pNewStr)) );
+	RT_CHECK_CALL( BufferLengthAdd(cx, obj, length) );
 	return JS_TRUE;
 }
 
@@ -351,11 +361,16 @@ JSBool UnReadRawChunk( JSContext *cx, JSObject *obj, char *data, size_t length )
 	return JS_TRUE;
 */
 
+	if ( length == 0 ) // optimization & RULES
+		return JS_TRUE;
+
 	JSString *jsstr = JS_NewStringCopyN(cx, data, length);
 	RT_ASSERT_ALLOC( jsstr );
-	return UnReadChunk(cx, obj, jsstr );
-}
 
+	RT_CHECK_CALL( UnReadChunk(cx, obj, jsstr) );
+
+	return JS_TRUE;
+}
 
 
 BEGIN_CLASS( Buffer )
@@ -451,8 +466,12 @@ DEFINE_FUNCTION( Write ) {
 	JSString *str = JSVAL_TO_STRING(argv[0]);
 	size_t strLen = JS_GetStringLength(str);
 
+	if ( strLen == 0 )
+		return JS_TRUE;
+
 	size_t amount;
 	if ( argc >= 2 ) {
+
 		RT_JSVAL_TO_INT32( argv[1], amount );
 		if ( amount > strLen )
 			amount = strLen;
