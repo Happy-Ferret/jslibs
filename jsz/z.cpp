@@ -106,7 +106,7 @@ JSBool z_call(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval
 		if ( xflateStatus < 0 )
 			return ThrowZError( cx, xflateStatus, stream->msg );
 	} while ( ( flushType != Z_FINISH && stream->avail_in > 0 ) || // the input data is not exhausted
-	          ( flushType == Z_FINISH && xflateStatus != Z_STREAM_END ) || // the last datas are not read
+	          ( flushType == Z_FINISH && xflateStatus != Z_STREAM_END ) || // the last data are not read
 	          ( xflateStatus == Z_OK && outputLength == 0 ) // we need to output something
 	        );
 
