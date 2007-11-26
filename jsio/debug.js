@@ -5,10 +5,43 @@ LoadModule('jsio');
 
 try {
 
-var soc = new Socket( Socket.UDP );
 
-Socket.SendTo('127.0.0.1', 6789, 'abcd');
-Print( Socket.RecvFrom('127.0.0.1', 6789, 4) );
+Print('\n * testing UDP socket \n');
+
+	var data = '1234';
+//	for ( var i = 0; i < 8192; i++, data += 'x' );
+
+	var step = 0;
+
+	var s1 = new Socket( Socket.UDP );
+	s1.reuseAddr = true;
+	s1.Connect('127.0.0.1', 9999);
+	
+	
+	var s2 = new Socket( Socket.UDP );
+//	s2.nonblocking = true;
+	s2.Bind(9999);
+	s2.readable = function(s) {
+	
+		Print( 'port:'+s.sockPort+'\n' );
+		var [data, info] = s.RecvFrom();
+		Print( 'receiving from '+info+'  : '+ data.length );
+
+	}
+	var dlist = [s1,s2]; //descriptor list
+
+	var i = 0;
+	while(++i < 20) {
+		
+		Print('.\n');
+		Poll(dlist,100);
+		step++;
+		if ( !(step % 5) ) {
+		
+			s1.Write(data);
+		}
+	}
+
 
 
 Halt();
@@ -101,41 +134,6 @@ Print('\n * testing TCP socket \n');
 		}
 	}
 	
-
-
-Print('\n * testing UDP socket \n');
-
-	var data = '1234';
-//	for ( var i = 0; i < 8192; i++, data += 'x' );
-
-	var step = 0;
-
-	var s1 = new Socket( Socket.UDP );
-	s1.reuseAddr = true;
-	s1.Connect('127.0.0.1', 9999);
-	
-	
-	var s2 = new Socket( Socket.UDP );
-//	s2.nonblocking = true;
-	s2.Bind(9999);
-	s2.readable = function(s) {
-	
-		Print( 'port:'+s.sockPort+'\n' );
-		Print( s.Read().length );
-	}
-	var dlist = [s1,s2]; //descriptor list
-
-	var i = 0;
-	while(++i < 10) {
-		
-		Print('.\n');
-		Poll(dlist,100);
-		step++;
-		if ( !(step % 5) ) {
-		
-			s1.Write(data);
-		}
-	}
 
 
 

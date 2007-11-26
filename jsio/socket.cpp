@@ -262,26 +262,17 @@ DEFINE_FUNCTION( SendTo ) {
 	RT_ASSERT_ARGC( 2 )
 	
 	PRFileDesc *fd;
-
-	if ( JS_GET_CLASS(cx, obj) == _class ) {
-		
+	if ( JS_GET_CLASS(cx, obj) == _class )
 		fd = (PRFileDesc*)JS_GetPrivate( cx, obj );
-	} else {
-		
-		fd = PR_NewUDPSocket();
-	}
-
+	else
+		fd = PR_NewUDPSocket(); // allow to use SendTo as static function
 	RT_ASSERT_RESOURCE( fd );
-
-
-
 
 	char *host;
 	RT_JSVAL_TO_STRING( argv[0], host );
 
 	PRUint16 port;
 	RT_JSVAL_TO_INT32( argv[1], port );
-
 
 	PRNetAddr addr;
 
@@ -308,7 +299,7 @@ DEFINE_FUNCTION( SendTo ) {
 	int len;
 	RT_JSVAL_TO_STRING_AND_LENGTH( argv[2], str, len );
 
-
+/*
 	PRIntervalTime pr_timeout;
 	if ( argc >= 2 && argv[1] != JSVAL_VOID ) {
 
@@ -319,8 +310,8 @@ DEFINE_FUNCTION( SendTo ) {
 
 		pr_timeout = PR_INTERVAL_NO_TIMEOUT;
 	}
-
-	PRInt32 res = PR_SendTo(fd, str, len, 0, &addr, pr_timeout );
+*/
+	PRInt32 res = PR_SendTo(fd, str, len, 0, &addr, PR_INTERVAL_NO_TIMEOUT );
 
 	PRInt32 sentAmount;
 	if ( res == -1 ) {
@@ -346,73 +337,56 @@ DEFINE_FUNCTION( SendTo ) {
 }
 
 
-/*
+
 DEFINE_FUNCTION( RecvFrom ) {
 		
-	RT_ASSERT_ARGC( 2 )
-
-	PRFileDesc *fd;
-
-	if ( JS_GET_CLASS(cx, obj) == _class ) {
-		
-		fd = (PRFileDesc*)JS_GetPrivate( cx, obj );
-	} else {
-		
-		fd = PR_NewUDPSocket();
-	}
-
+	PRFileDesc *fd = (PRFileDesc*)JS_GetPrivate( cx, obj );
 	RT_ASSERT_RESOURCE( fd );
-		
-
-	char *host;
-	RT_JSVAL_TO_STRING( argv[0], host );
-
-	PRUint16 port;
-	RT_JSVAL_TO_INT32( argv[1], port );
-
-
-	PRNetAddr addr;
-
-	if ( PR_StringToNetAddr(host, &addr) == PR_SUCCESS ) {
-
-		if ( PR_InitializeNetAddr(PR_IpAddrNull, port, &addr) != PR_SUCCESS )
-			return ThrowIoError(cx);
-	} else {
-
-		char netdbBuf[PR_NETDB_BUF_SIZE];
-		PRHostEnt hostEntry;
-		PRIntn hostIndex;
-
-		if ( PR_GetHostByName( host, netdbBuf, sizeof(netdbBuf), &hostEntry ) != PR_SUCCESS )
-			return ThrowIoError(cx);
-
-		hostIndex = 0;
-		hostIndex = PR_EnumerateHostEnt(hostIndex, &hostEntry, port, &addr); // data is valid until return is 0 or -1
-		if ( hostIndex == -1 )
-			return ThrowIoError(cx);
-	}
-	
-
-
-	char buffer[4096];
-	PRInt32 length;
-
-	length = sizeof(buffer);
 	
 	PRInt64 available = PR_Available64( fd );
-
-	PRInt32 res = PR_RecvFrom(fd, buffer, length, 0, &addr, pr_timeout );
-	if ( res == -1 )
+	if ( available == -1 )
 		return ThrowIoError(cx);
 
+	if ( available == 0 ) {
+
+		*rval = JS_GetEmptyStringValue(cx);
+		return JS_TRUE;
+	}
+
+	char *buffer = (char *)JS_malloc(cx, available+1);
+	RT_ASSERT_ALLOC( buffer );
+	buffer[available] = '\0';
+
+	PRNetAddr addr;
+	PRInt32 res = PR_RecvFrom(fd, buffer, available, 0, &addr, PR_INTERVAL_NO_TIMEOUT );
+
+	if ( res == -1 ) {
+		
+		JS_free(cx, buffer);
+		return ThrowIoError(cx);
+	}
+
+	JSString *strBuffer = JS_NewString(cx, buffer, res);
+	RT_ASSERT_ALLOC( strBuffer );
+
+	char peerName[1024];
+	PRStatus status = PR_NetAddrToString(&addr, peerName, sizeof(peerName));
+	if ( status != PR_SUCCESS )
+		JS_ReportError( cx, "unable to PR_NetAddrToString" );
+	JSString *strPeerName = JS_NewStringCopyZ(cx, peerName);
+	RT_ASSERT_ALLOC(strPeerName);
+
+	jsval arrayItems[] = { STRING_TO_JSVAL(strBuffer), STRING_TO_JSVAL(strPeerName) };
+	JSObject *arrayObject = JS_NewArrayObject(cx, sizeof(arrayItems), arrayItems );
+	RT_ASSERT_ALLOC( arrayObject );
+	*rval = OBJECT_TO_JSVAL( arrayObject );
 
 	if ( JS_GET_CLASS(cx, obj) != _class )
 		PR_Close(fd);
 
-
 	return JS_TRUE;
 }
-*/
+
 
 
 DEFINE_FUNCTION( TransmitFile ) { // WORKS ONLY ON BLOCKING SOCKET !!!
@@ -784,7 +758,7 @@ CONFIGURE_CLASS
 		FUNCTION( Accept )
 		FUNCTION( Connect )
 		FUNCTION( SendTo )
-//		FUNCTION( RecvFrom )
+		FUNCTION( RecvFrom )
 		FUNCTION( TransmitFile )
 	END_FUNCTION_SPEC
 
@@ -810,8 +784,6 @@ CONFIGURE_CLASS
 
 	BEGIN_STATIC_FUNCTION_SPEC
 		FUNCTION( GetHostsByName )
-		FUNCTION( SendTo )
-//		FUNCTION( RecvFrom )
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_CONST_DOUBLE_SPEC
