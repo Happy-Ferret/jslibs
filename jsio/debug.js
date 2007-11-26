@@ -5,6 +5,14 @@ LoadModule('jsio');
 
 try {
 
+var soc = new Socket( Socket.UDP );
+
+Socket.SendTo('127.0.0.1', 6789, 'abcd');
+Print( Socket.RecvFrom('127.0.0.1', 6789, 4) );
+
+
+Halt();
+
 
 	var server = new Socket( Socket.TCP );
 	server.Bind( 80, '127.0.0.1');
