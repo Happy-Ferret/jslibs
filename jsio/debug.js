@@ -8,37 +8,45 @@ try {
 
 Print('\n * testing UDP socket \n');
 
-	var data = '1234';
-//	for ( var i = 0; i < 8192; i++, data += 'x' );
-
 	var step = 0;
-
-	var s1 = new Socket( Socket.UDP );
-	s1.reuseAddr = true;
-	s1.Connect('127.0.0.1', 9999);
-	
 	
 	var s2 = new Socket( Socket.UDP );
-//	s2.nonblocking = true;
+	s2.nonblocking = true;
 	s2.Bind(9999);
 	s2.readable = function(s) {
 	
-		Print( 'port:'+s.sockPort+'\n' );
-		var [data, info] = s.RecvFrom();
-		Print( 'receiving from '+info+'  : '+ data.length );
-
+//		Print( 'port:'+s.sockPort+'\n' );
+		var [data, ip, port] = s.RecvFrom();
+		
+		s.SendTo(ip, port, '5554');
+		
+		
+//		new Socket( Socket.UDP ).SendTo( ip, port, 'receiving from '+ip+':'+port+'   '+ data.length );
 	}
+	
+	var s1 = new Socket( Socket.UDP );
+	s1.reuseAddr = true;
+	s1.nonblocking = true;
+	s1.Connect('127.0.0.1', 9999);
+	
+	s1.readable = function(s) { Print( 'readable', '\n' ); }
+//	s1.writable = function(s) { Print( 'writable', '\n' ); }
+	s1.exception = function(s) { Print( 'exception', '\n' ); }
+	s1.error = function(s) { Print( 'error', '\n' ); }
+	
 	var dlist = [s1,s2]; //descriptor list
 
+
 	var i = 0;
-	while(++i < 20) {
+	while(++i < 20 && !endSignal) {
 		
 		Print('.\n');
 		Poll(dlist,100);
 		step++;
-		if ( !(step % 5) ) {
+		if ( !(step % 4) ) {
 		
-			s1.Write(data);
+			s1.Write('1234');
+
 		}
 	}
 
@@ -138,7 +146,7 @@ Print('\n * testing TCP socket \n');
 
 
 } catch ( ex if ex instanceof IoError ) {
-	Print( 'IoError: ' + ex.text + ' ('+ex.code+')', '\n' );
+	Print( 'IoError: ' + ex.text + ' ('+ex.os+')', '\n' );
 } catch( ex ) {
 	throw ex;
 }

@@ -259,8 +259,8 @@ DEFINE_FUNCTION( Connect ) {
 
 DEFINE_FUNCTION( SendTo ) {
 		
-	RT_ASSERT_ARGC( 2 )
-	
+	RT_ASSERT_ARGC( 3 );
+
 	PRFileDesc *fd;
 	if ( JS_GET_CLASS(cx, obj) == _class )
 		fd = (PRFileDesc*)JS_GetPrivate( cx, obj );
@@ -299,25 +299,13 @@ DEFINE_FUNCTION( SendTo ) {
 	int len;
 	RT_JSVAL_TO_STRING_AND_LENGTH( argv[2], str, len );
 
-/*
-	PRIntervalTime pr_timeout;
-	if ( argc >= 2 && argv[1] != JSVAL_VOID ) {
-
-		uint32 timeout;
-		JS_ValueToECMAUint32( cx, argv[3], &timeout );
-		pr_timeout = PR_MillisecondsToInterval(timeout);
-	} else {
-
-		pr_timeout = PR_INTERVAL_NO_TIMEOUT;
-	}
-*/
 	PRInt32 res = PR_SendTo(fd, str, len, 0, &addr, PR_INTERVAL_NO_TIMEOUT );
 
 	PRInt32 sentAmount;
 	if ( res == -1 ) {
 
-//		PRErrorCode errCode = PR_GetError();
-//		if ( errCode != PR_WOULD_BLOCK_ERROR )
+		PRErrorCode errCode = PR_GetError();
+		if ( errCode != PR_WOULD_BLOCK_ERROR )
 			return ThrowIoError(cx);
 		sentAmount = 0;
 	} else
@@ -340,9 +328,17 @@ DEFINE_FUNCTION( SendTo ) {
 
 DEFINE_FUNCTION( RecvFrom ) {
 		
-	PRFileDesc *fd = (PRFileDesc*)JS_GetPrivate( cx, obj );
+//	PRFileDesc *fd = (PRFileDesc*)JS_GetPrivate( cx, obj );
+//	RT_ASSERT_RESOURCE( fd );
+	PRFileDesc *fd;
+	if ( JS_GET_CLASS(cx, obj) == _class )
+		fd = (PRFileDesc*)JS_GetPrivate( cx, obj );
+	else
+		fd = PR_NewUDPSocket(); // allow to use SendTo as static function
 	RT_ASSERT_RESOURCE( fd );
-	
+
+
+
 	PRInt64 available = PR_Available64( fd );
 	if ( available == -1 )
 		return ThrowIoError(cx);
@@ -361,28 +357,41 @@ DEFINE_FUNCTION( RecvFrom ) {
 	PRInt32 res = PR_RecvFrom(fd, buffer, available, 0, &addr, PR_INTERVAL_NO_TIMEOUT );
 
 	if ( res == -1 ) {
-		
+
+		PRErrorCode errCode = PR_GetError();
+		if ( errCode != PR_WOULD_BLOCK_ERROR ) {
+
+			JS_free(cx, buffer);
+			return ThrowIoError(cx);
+		}
+	}
+	
+//	RT_ASSERT( res == available, "Invalid size" );
+
+	JSString *strBuffer = JS_NewString(cx, buffer, res);
+	RT_ASSERT_ALLOC( strBuffer ); // (TBD) else free buffer
+
+	char peerName[46]; // If addr is an IPv4 address, size needs to be at least 16. If addr is an IPv6 address, size needs to be at least 46.
+	PRStatus status = PR_NetAddrToString(&addr, peerName, sizeof(peerName)); // Converts a character string to a network address.
+	if ( status != PR_SUCCESS ) {
+
 		JS_free(cx, buffer);
 		return ThrowIoError(cx);
 	}
 
-	JSString *strBuffer = JS_NewString(cx, buffer, res);
-	RT_ASSERT_ALLOC( strBuffer );
-
-	char peerName[1024];
-	PRStatus status = PR_NetAddrToString(&addr, peerName, sizeof(peerName));
-	if ( status != PR_SUCCESS )
-		JS_ReportError( cx, "unable to PR_NetAddrToString" );
 	JSString *strPeerName = JS_NewStringCopyZ(cx, peerName);
-	RT_ASSERT_ALLOC(strPeerName);
+	RT_ASSERT_ALLOC(strPeerName); // (TBD) else free buffer ? ( or, this is a fatal error, program should stop )
 
-	jsval arrayItems[] = { STRING_TO_JSVAL(strBuffer), STRING_TO_JSVAL(strPeerName) };
+	int port = PR_NetAddrInetPort(&addr);
+
+	jsval arrayItems[] = { STRING_TO_JSVAL(strBuffer), STRING_TO_JSVAL(strPeerName), INT_TO_JSVAL(port) };
 	JSObject *arrayObject = JS_NewArrayObject(cx, sizeof(arrayItems), arrayItems );
-	RT_ASSERT_ALLOC( arrayObject );
+	RT_ASSERT_ALLOC( arrayObject ); // (TBD) else free buffer
 	*rval = OBJECT_TO_JSVAL( arrayObject );
 
 	if ( JS_GET_CLASS(cx, obj) != _class )
 		PR_Close(fd);
+
 
 	return JS_TRUE;
 }
@@ -783,6 +792,8 @@ CONFIGURE_CLASS
 	END_PROPERTY_SPEC
 
 	BEGIN_STATIC_FUNCTION_SPEC
+		FUNCTION( SendTo )
+		FUNCTION( RecvFrom )
 		FUNCTION( GetHostsByName )
 	END_STATIC_FUNCTION_SPEC
 
