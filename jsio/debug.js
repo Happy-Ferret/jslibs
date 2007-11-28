@@ -5,6 +5,21 @@ LoadModule('jsio');
 
 try {
 
+    Poll(desc,1);
+    
+    
+
+} catch ( ex if ex instanceof IoError ) { 
+	Print( ex.text + ' ('+ex.code+')', '\n' );
+} catch (ex) {
+	throw(ex);
+}
+
+var desc;
+
+
+try {
+
 
 Print('\n * testing UDP socket \n');
 

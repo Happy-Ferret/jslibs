@@ -79,9 +79,12 @@ static void ErrorReporter(JSContext *cx, const char *message, JSErrorReport *rep
 		return;
     }
 
-    /* Conditionally ignore reported warnings. */
-    if ((JSREPORT_IS_WARNING(report->flags) || JSREPORT_IS_EXCEPTION(report->flags)) && !reportWarnings)
-        return;
+	// Conditionally ignore reported warnings.
+	if (JSREPORT_IS_WARNING(report->flags) && !reportWarnings)
+		return;
+
+//	if (JSREPORT_IS_EXCEPTION(report->flags) && !reportWarnings)
+//		return;
 
     prefix = NULL;
     if (report->filename)
@@ -161,12 +164,11 @@ static void LoadErrorReporter(JSContext *cx, const char *message, JSErrorReport 
 */
 
 
+
+/*
 // function copied from mozilla/js/src/js.c
-
 static uint32 gBranchLimit = 1000000;
-
 static uint32 gBranchCount;
-
 static JSBool BranchCallback(JSContext *cx, JSScript *script) {
 
 	if (++gBranchCount == gBranchLimit) {
@@ -194,6 +196,9 @@ static JSBool BranchCallback(JSContext *cx, JSScript *script) {
 		JS_MaybeGC(cx);
 	return JS_TRUE;
 }
+*/
+
+
 
 static JSBool LoadModule(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
@@ -463,6 +468,8 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	//  around all JS_Evaluate*Script* and JS_Compile* API calls.)
 
 
+/*
+
 //	gBranchLimit =
 	if ( !unsafeMode ) {
 			
@@ -470,6 +477,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 		JS_SetBranchCallback(cx, BranchCallback);
 		JS_ToggleOptions(cx, JSOPTION_NATIVE_BRANCH_CALLBACK);
 	}
+*/
 
 // compile & executes the script
 
