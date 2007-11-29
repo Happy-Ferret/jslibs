@@ -17,6 +17,7 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
+var global = {};
 
 function CreateTranslator(translationTable) { return function (s) {return s.replace(new RegExp([k for (k in translationTable)].join("|"), "g"), function (str) {return translationTable[str];});}; }
 
@@ -57,8 +58,10 @@ function SaveData(name, data) {
 function LoadData(name) {
 
     if (document.cookie.length) {
+
         var start = document.cookie.indexOf(name + "=");
         if (start != -1) {
+
             start = start + name.length + 1;
             var end = document.cookie.indexOf(";", start);
             if (end == -1)
@@ -105,10 +108,14 @@ function WriteHtmlTo(eltId, html) {
 function EvalCode(code) {
 
 	var relativeLineNumber, outText = '', error = '', evalResult = '';
+
 	function Print(text) {
 
-		outText += text+'\n';
+		outText += text + '\n';
 	}
+
+	var loop = 0;
+
 	try {
 
 		try { throw new Error() } catch(ex) { relativeLineNumber = ex.lineNumber }
@@ -124,23 +131,23 @@ function EvalCode(code) {
 function Profile(code, testPeriod) {
 
 	function Time() { return (new Date).getTime() }
-	var dummyFunction = new Function('Print', 'init', ' ');
-	var codeFunction = new Function('Print', 'init', code);
+	var dummyFunction = new Function('Print', 'loop','global', ' ');
+	var codeFunction = new Function('Print', 'loop','global', code);
 	function Noop(){};
 
 	function ErrorPerLoop(period) {
 
-		dummyFunction(Noop, true);
+		dummyFunction(Noop, 0, global);
 		for ( var loops = 0, t0 = Time(); Time() - t0 < period; loops++ )
-			dummyFunction(Noop);
+			dummyFunction(Noop, loops, global);
 		return (Time() - t0) / loops;
 	}
 
 	function ProfileCode(period) {
 
-		codeFunction(Noop, true);
+		codeFunction(Noop, 0, global);
 		for ( var loops = 0, t0 = Time(); Time() - t0 < period; loops++ )
-			codeFunction(Noop);
+			codeFunction(Noop, loops, global);
 		return [Time() - t0, loops];
 	}
 
@@ -181,6 +188,10 @@ window.addEventListener( 'load', function() {
 <br>\
 <b>Functions:<\/b><br>\
  Print(text): Write text here<br>\
+<br>\
+<b>Variables:<\/b><br>\
+ global: A multi-purpose global object<br>\
+ loop  : Loop index when profiling<br>\
 <br>'	);
 	}
 
@@ -226,6 +237,26 @@ window.addEventListener( 'load', function() {
 	_win.document.execCommand('selectall', false, null);
 	_win.getSelection().collapseToEnd();
 
+	function UpdateLineNumbers() {
+
+		var lines = document.getElementById('lines');
+		lines.innerHTML = '0';
+		var lineHeight = lines.offsetHeight;
+		var scroll = _win.pageYOffset;
+		var linesOffset = Math.floor(scroll/lineHeight);
+		var lineCount = Math.floor(window.innerHeight/lineHeight);
+		lines.style.top = (-scroll+linesOffset*lineHeight)+'px';
+		var text = '';
+		for ( var i = 0; i < lineCount; i++ )
+			text += (linesOffset+i+1)+'\n';
+		lines.innerHTML = text;
+		_win.document.body.style.marginLeft = lines.offsetWidth+1+'px';
+	}
+
+	_win.addEventListener( 'scroll', UpdateLineNumbers, false);
+	window.addEventListener( 'resize', UpdateLineNumbers, false);
+	UpdateLineNumbers();
+
 	window.addEventListener( 'unload', function() {
 
 		SaveData('code'+_currentWin, GetCode());
@@ -238,6 +269,7 @@ window.addEventListener( 'load', function() {
 			return;
 
 		if ( !_previousScriptCode ) {
+
 			_previousScriptCode = scriptCode;
 			return;
 		}
@@ -341,9 +373,9 @@ window.addEventListener( 'load', function() {
 			SetCode(Indent(GetCode()));
 			break;
 		case 'g':
-			SetCode(Indent('function HelloWorld(){Print("Hello World!");return true}for(var i=0;i<5;i++)HelloWorld()'));
+			SetCode(Indent('function HelloWorld(){Print("Hello World!");return true}for(var i=0;i<5;i++)HelloWorld()')); //'
 			break;
-		case ' ': //'
+		case ' ':
 			var sel = _win.getSelection();
 			if ( !sel.isCollapsed || sel.anchorNode.nodeType != 3 )
 				break;
@@ -405,6 +437,16 @@ BODY {
 	color: #EEE;
 }
 
+#lines {
+	white-space: pre;
+	background-color: #BBB;
+	color: #EEE;
+	font-family: monospace;
+	position: absolute;
+	top: 0px;
+	left: 0px;
+}
+
 #error {
 	font-weight: bold;
 	white-space: -moz-pre-wrap;
@@ -431,6 +473,7 @@ BODY {
 <title>JavaScript eval</title>
 </head>
 <body>
+<div id="lines"></div>
 <iframe id="editor"></iframe>
 <div id="output">
 	<div id="text"></div>
