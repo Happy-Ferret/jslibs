@@ -1,5 +1,7 @@
 cd ..
-set PATH=%PATH%;%CD%\js\src\WINNT5.1_OPT.OBJ;%CD%\jshost\debug;%CD%\jswinhost\debug;%CD%\jsstd\debug;%CD%\jsio\debug;%CD%\nspr\win32\dist\lib;%CD%\jssqlite\debug;%CD%\jsobjex\debug;%CD%\jsz\debug;%CD%\jscrypt\debug;%CD%\jswinshell\debug;%CD%\jstest\debug
+
+set BLD=release
+set PATH=%CD%\js\src\WINNT5.1_OPT.OBJ;%CD%\jshost\%BLD%;%CD%\jswinhost\%BLD%;%CD%\jsstd\%BLD%;%CD%\jsio\%BLD%;%CD%\nspr\win32\dist\lib;%CD%\jssqlite\%BLD%;%CD%\jsobjex\%BLD%;%CD%\jsz\%BLD%;%CD%\jscrypt\%BLD%;%CD%\jswinshell\%BLD%;%CD%\jstest\%BLD%;%PATH%
 
 cd tests
 cmd /k 
