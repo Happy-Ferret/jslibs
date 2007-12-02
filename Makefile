@@ -10,6 +10,7 @@ else
         BUILD_DIR = opt
 endif
 
+FILES = js/src/$(LIBJS_DIR)/libjs.so moduleManager/libmoduleManager.a jshost/jshost jsstd/jsstd.so jsio/jsio.so jsobjex/jsobjex.so
 
 js/src/$(LIBJS_DIR)/libjs.so:
         cd js/src && $(MAKE) -f Makefile.ref $(LIBJS_MAKE_OPTIONS)/
@@ -18,4 +19,11 @@ js/src/$(LIBJS_DIR)/libjs.so:
         cd $(dir $@) && $(MAKE) $(JSLIB_MAKE_OPTIONS)
 
 .PHONY: all
-all: js/src/$(LIBJS_DIR)/libjs.so moduleManager/moduleManager.a jshost/jshost jsstd/jsstd.so jsio/jsio.so jsobjex/jsobjex.so
+all: $(FILES)
+
+clean:
+        rm $(FILES)
+
+install: all
+        mkdir ./$(BUILD_DIR)
+        cp $(FILES) ./$(BUILD_DIR)
