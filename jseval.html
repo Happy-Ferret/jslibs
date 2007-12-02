@@ -247,7 +247,7 @@ window.addEventListener( 'load', function() {
 		var lineCount = Math.floor(window.innerHeight/lineHeight);
 		lines.style.top = (-scroll+linesOffset*lineHeight)+'px';
 		var text = '';
-		for ( var i = 0; i < lineCount; i++ )
+		for ( var i = 0; i < lineCount+2; i++ )
 			text += (linesOffset+i+1)+'\n';
 		lines.innerHTML = text;
 		_win.document.body.style.marginLeft = lines.offsetWidth+1+'px';
@@ -414,6 +414,7 @@ BODY {
 	margin: 0px;
 	height: 100%;
 	background-color: #000;
+	overflow: hidden; /* see line numbers */
 }
 
 #editor,
@@ -423,6 +424,7 @@ BODY {
 	padding: 0px;
 	margin: 0px;
 	border-style: none;
+	overflow: auto;
 }
 
 #editor {
