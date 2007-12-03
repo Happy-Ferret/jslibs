@@ -172,7 +172,7 @@ window.addEventListener( 'load', function() {
 
 	function DisplayHelp() {
 
-		WriteHtmlTo('text', '<br>\
+		WriteHtmlTo('text', '\
 <b>Help:<\/b><br>\
  Ctrl-h    : Display this help<br>\
  Ctrl-t    : Toggle auto-eval ('+(_autoEval?'ON':'OFF')+')<br>\
@@ -192,7 +192,8 @@ window.addEventListener( 'load', function() {
 <b>Variables:<\/b><br>\
  global: A multi-purpose global object<br>\
  loop  : Loop index when profiling<br>\
-<br>'	);
+<br>'
+);
 	}
 
 	var _win = document.getElementById('editor').contentWindow;
@@ -351,10 +352,9 @@ window.addEventListener( 'load', function() {
 			window.setTimeout( function() {
 
 				var result = Profile(GetCode(), _profilePeriod);
-				if (result) {
-
+				if (result)
 					WriteHtmlTo('text', 'Profile:<br>  rate  : '+(1000/result).toFixed(0)+'x/s' + '<br>  speed : '+result.toFixed(5)+' ms/eval<br>  ' + ( _previousProfile ? (100*_previousProfile/result).toFixed(0) + '% of the previous result' : '' )  );
-				} else
+				else
 					WriteHtmlTo('error', 'Error');
 				_previousProfile = result;
 			}, 0 );
@@ -440,6 +440,7 @@ BODY {
 }
 
 #lines {
+	-moz-user-select: none;
 	white-space: pre;
 	background-color: #BBB;
 	color: #EEE;
