@@ -14,6 +14,8 @@
 
 #include "stdafx.h"
 
+#define NOATEXIT
+
 #include "../common/platform.h"
 
 #include <fcntl.h>
@@ -177,14 +179,14 @@ static JSBool BranchCallback(JSContext *cx, JSScript *script) {
 		if (script) {
 
 			if (script->filename) {
-				
+
 				msg = JS_smprintf("%s:", script->filename);
 				consoleStdErr(cx, msg, strlen(msg));
 			}
 			msg = JS_smprintf("%u: script branch callback (%u callbacks)\n", script->lineno, gBranchLimit);
 			consoleStdErr(cx, msg, strlen(msg));
 		} else {
-			
+
 			msg = JS_smprintf("native branch callback (%u callbacks)\n", gBranchLimit);
 			consoleStdErr(cx, msg, strlen(msg));
 		}
@@ -360,7 +362,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 
 
 #ifdef XP_WIN
-	BOOL status = SetConsoleCtrlHandler((PHANDLER_ROUTINE)&Interrupt, true);
+	BOOL status = SetConsoleCtrlHandler((PHANDLER_ROUTINE)&Interrupt, TRUE);
 	RT_HOST_MAIN_ASSERT( status == TRUE, "Unable to set console handler" );
 #else
 	signal(SIGINT,Interrupt);
@@ -380,7 +382,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	RT_HOST_MAIN_ASSERT( globalObject != NULL, "unable to create the global object." );
 
 // Standard classes
-	jsStatus = JS_InitStandardClasses(cx, globalObject);
+	jsStatus = JS_InitStandardClasses(cx, globalObject); // use NULL instead of globalObject ?
 	RT_HOST_MAIN_ASSERT( jsStatus == JS_TRUE, "unable to initialize standard classes." );
 
 // global functions & properties
@@ -472,7 +474,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 
 //	gBranchLimit =
 	if ( !unsafeMode ) {
-			
+
 		//JSBranchCallback oldBranchCallback = JS_SetBranchCallback(cx, BranchCallback);
 		JS_SetBranchCallback(cx, BranchCallback);
 		JS_ToggleOptions(cx, JSOPTION_NATIVE_BRANCH_CALLBACK);
@@ -502,14 +504,16 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	JS_GC(cx); // ...and also just before doing anything that requires compilation (since compilation disables GC until complete).
 	script = JS_CompileFileHandle(cx, globalObject, scriptName, file);
 	// (TBD) fclose(file); ??
-	
+
 //	JS_AddRoot(cx, &script);
 
 //  JSScript *script = LoadScript( cx, globalObject, scriptName, saveCompiledScripts );
 	RT_HOST_MAIN_ASSERT( script != NULL, "unable to compile the script." );
 
+#ifndef NOATEXIT
 	int atexitStatus = atexit(Finalize); // returns the value 0 if successful; otherwise the value -1 is returned and the global variable errno is set to indicate the error.
 	RT_HOST_MAIN_ASSERT( atexitStatus == 0, "unable to setup exit." );
+#endif // NOATEXIT
 
 	// You need to protect a JSScript (via a rooted script object) if and only if a garbage collection can occur between compilation and the start of execution.
 	jsval rval;
@@ -526,15 +530,17 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	  if ( JSVAL_IS_INT(rval) && JSVAL_TO_INT(rval) >= 0 )
 		  exitValue = JSVAL_TO_INT(rval);
 	  else
-		  exitValue = 0;
+		  exitValue = EXIT_SUCCESS;
   else
-	  exitValue = -1;
+	  exitValue = EXIT_FAILURE;
 
+//#ifndef NOATEXIT
+//	Finalize();
+//	return exitValue;
+//#else
 	exit(exitValue);
+//#endif // NOATEXIT
 
-
-//  Finalize();
-//  return exitValue;
 }
 
 
@@ -543,7 +549,7 @@ void Finalize() { // called by the system on exit(), or at the end of the main.
 //	if ( _finalized )
 //		return;
 
-	// because atexit(Terminate); is  set just before the JS_ExecuteScript, rt, cx, script ARE defined. 
+	// because atexit(Terminate); is  set just before the JS_ExecuteScript, rt, cx, script ARE defined.
 
 #ifdef JS_THREADSAFE
     JS_EndRequest(cx);
@@ -555,7 +561,7 @@ void Finalize() { // called by the system on exit(), or at the end of the main.
 		JS_DestroyScript(cx, script);
 
 //  printf("script result: %s\n", JS_GetStringBytes(JS_ValueToString(cx, rval)));
-	
+
 	ModuleReleaseAll(cx);
 
 //	JS_GC(cx); // try to break linked objects
@@ -564,7 +570,7 @@ void Finalize() { // called by the system on exit(), or at the end of the main.
 // cleanup
 	// For each context you've created
 	JS_DestroyContext(cx); // (TBD) is JS_DestroyContextNoGC faster ?
-	
+
 	// For each runtime
 	JS_DestroyRuntime(rt);
 
@@ -574,7 +580,16 @@ void Finalize() { // called by the system on exit(), or at the end of the main.
 // Beware: because JS engine allocate memory from the DLL, all memory must be disallocated before releasing the DLL
 	// free used modules
 	ModuleFreeAll();
-	// (TBD) make rt, cx, script, ... global and finish them 
+	// (TBD) make rt, cx, script, ... global and finish them
+
+
+#ifdef XP_WIN
+	BOOL status = SetConsoleCtrlHandler((PHANDLER_ROUTINE)&Interrupt, FALSE);
+//	RT_HOST_MAIN_ASSERT( status == TRUE, "Unable to remove console handler" );
+#else
+	signal(SIGINT, SIG_DFL);
+	signal(SIGTERM, SIG_DFL);
+#endif // XP_WIN
 
 //	_finalized = true;
 }
