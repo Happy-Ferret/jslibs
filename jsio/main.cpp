@@ -46,4 +46,7 @@ EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
 }
 
 EXTERN_C DLLEXPORT void ModuleFree() {
+
+	if ( PR_Initialized() == PR_TRUE )
+		PR_Cleanup();
 }

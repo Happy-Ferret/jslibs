@@ -311,6 +311,14 @@ DEFINE_FUNCTION( hton ) {
 
 */
 
+DEFINE_PROPERTY( physicalMemorySize ) {
+	
+	PRUint64 mem = PR_GetPhysicalMemorySize();
+	RT_CHECK_CALL( JS_NewNumberValue(cx, (jsdouble)mem, vp) );
+	return JS_TRUE;
+}
+
+
 CONFIGURE_STATIC
 
 	BEGIN_STATIC_FUNCTION_SPEC
@@ -323,6 +331,10 @@ CONFIGURE_STATIC
 		FUNCTION( HostName )
 		FUNCTION( GetRandomNoise )
 	END_STATIC_FUNCTION_SPEC
+	
+	BEGIN_STATIC_PROPERTY_SPEC
+		PROPERTY_READ( physicalMemorySize )
+	END_STATIC_PROPERTY_SPEC
 
 END_STATIC
 
