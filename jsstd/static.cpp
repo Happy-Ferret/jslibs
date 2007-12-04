@@ -14,6 +14,12 @@
 
 #include "stdafx.h"
 
+#ifdef XP_WIN
+#define _WIN32_WINNT 0x0501
+#pragma comment(lib,"Psapi.lib")
+#include <Psapi.h>
+#endif // XP_WIN
+
 #include "static.h"
 
 #include "jsxdrapi.h"
@@ -503,6 +509,61 @@ DEFINE_FUNCTION( Halt ) {
 }
 
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+DEFINE_PROPERTY( currentMemoryUsage ) {
+
+	uint32 bytes;
+
+#ifdef XP_WIN
+	// SIZE_T is compatible with uint32
+	HANDLE hProcess = GetCurrentProcess(); // doc: (HANDLE)-1, that is interpreted as the current process handle
+	PROCESS_MEMORY_COUNTERS_EX pmc;
+	GetProcessMemoryInfo( hProcess, (PPROCESS_MEMORY_COUNTERS)&pmc, sizeof(pmc) ); // MEM_PRIVATE
+	bytes = pmc.PrivateUsage; // doc: The current amount of memory that cannot be shared with other processes, in bytes. Private bytes include memory that is committed and marked MEM_PRIVATE, data that is not mapped, and executable pages that have been written to.
+//	bytes = pmc.WorkingSetSize; // same value as "windows task manager" "mem usage"
+#else
+
+	REPORT_ERROR("Not implemented yet.");
+
+#endif // XP_WIN
+
+	RT_CHECK_CALL( JS_NewNumberValue(cx, bytes, vp) );
+	return JS_TRUE;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+DEFINE_PROPERTY( peakMemoryUsage ) {
+
+	uint32 bytes;
+
+#ifdef XP_WIN
+
+/*
+	DWORD  dwMin, dwMax;
+	HANDLE hProcess;
+	hProcess = GetCurrentProcess();
+	if (!GetProcessWorkingSetSize(hProcess, &dwMin, &dwMax))
+		REPORT_ERROR_1("GetProcessWorkingSetSize failed (%d)\n", GetLastError());
+//	printf("Minimum working set: %lu Kbytes\n", dwMin/1024);
+//	printf("Maximum working set: %lu Kbytes\n", dwMax/1024);
+	bytes = dwMax;
+	//cf. GetProcessWorkingSetSizeEx
+*/
+	HANDLE hProcess = GetCurrentProcess(); // doc: (HANDLE)-1, that is interpreted as the current process handle
+	PROCESS_MEMORY_COUNTERS_EX pmc;
+	GetProcessMemoryInfo( hProcess, (PPROCESS_MEMORY_COUNTERS)&pmc, sizeof(pmc) ); // MEM_PRIVATE
+	bytes = pmc.PeakWorkingSetSize; // same value as "windows task manager" "peak mem usage"
+#else
+
+	REPORT_ERROR("Not implemented yet.");
+
+#endif // XP_WIN
+
+	RT_CHECK_CALL( JS_NewNumberValue(cx, bytes, vp) );
+	return JS_TRUE;
+}
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -527,6 +588,8 @@ CONFIGURE_STATIC
 
 	BEGIN_STATIC_PROPERTY_SPEC
 		PROPERTY_READ( gcByte )
+		PROPERTY_READ( currentMemoryUsage )
+		PROPERTY_READ( peakMemoryUsage )
 	END_STATIC_PROPERTY_SPEC
 
 END_STATIC

@@ -1,6 +1,6 @@
 LoadModule('jsstd');
 
-
+	Print(currentMemoryUsage);
 
 var i;
 var b = new Buffer();
@@ -30,6 +30,7 @@ for (;!endSignal;) {
 		b.Write(b);
 	}
 	CollectGarbage();
+
 }
 
 
