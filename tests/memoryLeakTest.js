@@ -25,23 +25,24 @@ log.AddFilter( MakeLogFile(function() thisSession, false), LOG_ALL );
 //log.AddFilter( MakeLogScreen(), LOG_FAILURE | LOG_ERROR | LOG_WARNING );
 
 
+	var n = 0;
 
 
-	var b = new Buffer();
-
-
-	
 	StartAsyncProc( new function() {
 		
-		var n = 0;
 		
 		for (;;) {
 			
-			++n%1000 || Print( n, '\n' );
+			var [status, statusCode, reasonPhrase, headers, response] = yield function(cb) HttpRequest( 'http://localhost:8080/', undefined, 1, cb );
 
-			var [status, statusCode, reasonPhrase, headers, response] = yield function(cb) HttpRequest( 'http://localhost:8080/', undefined, 10, cb );
-//			Print( status );
+//			yield function(cb) TCPGet( 'localhost', 8080, 'abcd', 1, cb );
+//			yield function(cb) UDPGet( 'localhost', 6789, 'abcd', 1, cb );
 			
+
+
+
+//			Print( status );
+/*			
 			if ( status == OK ) {
 
 				b.Write(response);
@@ -50,6 +51,7 @@ log.AddFilter( MakeLogFile(function() thisSession, false), LOG_ALL );
 				b.Read( RandomRange(0, b.length) );
 				b.Unread(tmp);
 			}
+*/
 		}
 	});
 
@@ -61,31 +63,29 @@ log.AddFilter( MakeLogFile(function() thisSession, false), LOG_ALL );
 	s1.readable = function(s) {
 		
 		var [data, ip, port] = s.RecvFrom();
-		b.Write(data);
+//		var b = new Buffer();
+//		b.Write(data);
 	};
 
-
+	var dataToSend = RandomString(8192);
 	!function() {
 	
-		Socket.SendTo('127.0.0.1', 6789, 'abc');
-
-		var tmp = b.Read( RandomRange(0, b.length/2) );
-		b.Read( RandomRange(0, b.length) );
-		b.Unread(tmp);
-		
+		Socket.SendTo('localhost', 6789, dataToSend);
 		io.AddTimeout(1, arguments.callee );
 	}();
-	
-	
+
+/*
+	//UDPGet
+
 	var s2 = new Socket( Socket.UDP );
 	s2.nonblocking = true;
 	io.AddDescriptor(s2);
-	s2.Connect( '127.0.0.1', 6789 );
-	s2.writable = function(s) s.Write( RandomString(8192) );
+	s2.Connect( 'localhost', 6789 );
+	s2.writable = function(s) s.Write( dataToSend );
+*/
 
 
-
-
+/*
 
 var proc1 = new AsyncProcHelper( function() {
 
@@ -111,10 +111,12 @@ var proc2 = new AsyncProcHelper( function() {
 	}
 } );
 
-
 var obj = {};
 
 proc2.Start();
+
+*/
+
 
 //UDPServer(6789, function(data) 'echo:'+data);
 //UDPGet( '127.0.0.1' , 6789, 'abc', 100, function(state, data) { Print(data) } );
@@ -123,7 +125,15 @@ proc2.Start();
 
 try {
 
-	io.Process( function() { CollectGarbage(); return endSignal } );
+	io.Process( function() { 
+		
+		if ( ++n%1000 == 0 ) {
+			
+			CollectGarbage();
+			Print((currentMemoryUsage/1024).toFixed()+'  '+(peakMemoryUsage/1024).toFixed(), '\n');
+		}
+		return endSignal;
+	} );
 } catch(ex if ex instanceof IoError) {
 
 	Print( ex.text );
