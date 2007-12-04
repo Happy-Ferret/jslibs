@@ -519,8 +519,8 @@ DEFINE_PROPERTY( currentMemoryUsage ) {
 	HANDLE hProcess = GetCurrentProcess(); // doc: (HANDLE)-1, that is interpreted as the current process handle
 	PROCESS_MEMORY_COUNTERS_EX pmc;
 	GetProcessMemoryInfo( hProcess, (PPROCESS_MEMORY_COUNTERS)&pmc, sizeof(pmc) ); // MEM_PRIVATE
-	bytes = pmc.PrivateUsage; // doc: The current amount of memory that cannot be shared with other processes, in bytes. Private bytes include memory that is committed and marked MEM_PRIVATE, data that is not mapped, and executable pages that have been written to.
-//	bytes = pmc.WorkingSetSize; // same value as "windows task manager" "mem usage"
+//	bytes = pmc.PrivateUsage; // doc: The current amount of memory that cannot be shared with other processes, in bytes. Private bytes include memory that is committed and marked MEM_PRIVATE, data that is not mapped, and executable pages that have been written to.
+	bytes = pmc.WorkingSetSize; // same value as "windows task manager" "mem usage"
 #else
 
 	REPORT_ERROR("Not implemented yet.");
