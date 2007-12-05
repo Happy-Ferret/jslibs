@@ -176,7 +176,7 @@ DEFINE_FUNCTION( SetScope ) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 DEFINE_FUNCTION( IsConstructing ) {
-	
+
 	*rval = JS_IsConstructing(cx) == JS_TRUE ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;
 }
@@ -362,7 +362,7 @@ static JSScript* LoadScript(JSContext *cx, JSObject *obj, const char *fileName, 
 	JSScript *script;
 
 	if ( useCompFile && compFileUpToDate ) {
-		
+
 		int file = open(compiledFileName, O_RDONLY | O_BINARY);
 //		FILE *file = fopen(compiledFileName, "rb"); // b for binary ( win32 )
 		// (TBD) use open/close/read/... instead of fopen/fclose/fread/...
@@ -400,8 +400,8 @@ static JSScript* LoadScript(JSContext *cx, JSObject *obj, const char *fileName, 
 		JS_XDRDestroy(xdr);
 		JS_free( cx, data );
 	} else {
-		
-		JS_GC(cx); // ...and also just before doing anything that requires compilation (since compilation disables GC until complete). 
+
+		JS_GC(cx); // ...and also just before doing anything that requires compilation (since compilation disables GC until complete).
 		script = JS_CompileFile(cx, obj, fileName);
 
 		if ( useCompFile && script != NULL ) {
@@ -430,7 +430,7 @@ static JSScript* LoadScript(JSContext *cx, JSObject *obj, const char *fileName, 
 
 #else // JS_HAS_XDR
 
-	JS_GC(cx);  // ...and also just before doing anything that requires compilation (since compilation disables GC until complete). 
+	JS_GC(cx);  // ...and also just before doing anything that requires compilation (since compilation disables GC until complete).
 	return JS_CompileFile(cx, obj, fileName);
 
 #endif // JS_HAS_XDR
@@ -555,7 +555,7 @@ struct LinuxProcInfo {
 	unsigned int wchan; // %u
 };
 
-int GetProcInfo( pid_t pid, LinuxProcInfo *pinfo ) {
+bool GetProcInfo( pid_t pid, LinuxProcInfo *pinfo ) {
 
 	char path[128];
 	char data[512];
@@ -567,42 +567,43 @@ int GetProcInfo( pid_t pid, LinuxProcInfo *pinfo ) {
 	data[rd] = '\0';
 
 	sscanf(data, "%d %s %c %d %d %d %d %d %u %u %u %u %u %d %d %d %d %d %d %u %u %d %u %u %u %u %u %u %u %u %d %d %d %d %u",
-		&pinfo.pid, // %d
-		pinfo.comm, // %s
-		&pinfo.state, // %c
-		&pinfo.ppid, // %d
-		&pinfo.pgrp, // %d
-		&pinfo.session, // %d
-		&pinfo.tty, // %d
-		&pinfo.tpgid, // %d
-		&pinfo.flags, // %u
-		&pinfo.minflt, // %u
-		&pinfo.cminflt, // %u
-		&pinfo.majflt, // %u
-		&pinfo.cmajflt, // %u
-		&pinfo.utime, // %d
-		&pinfo.stime, // %d
-		&pinfo.cutime, // %d
-		&pinfo.cstime, // %d
-		&pinfo.counter, // %d
-		&pinfo.priority, // %d
-		&pinfo.timeout, // %u
-		&pinfo.itrealvalue, // %u
-		&pinfo.starttime, // %d
-		&pinfo.vsize, // %u
-		&pinfo.rss, // %u
-		&pinfo.rlim, // %u
-		&pinfo.startcode, // %u
-		&pinfo.endcode, // %u
-		&pinfo.startstack, // %u
-		&pinfo.kstkesp, // %u
-		&pinfo.kstkeip, // %u
-		&pinfo.signal, // %d
-		&pinfo.blocked, // %d
-		&pinfo.sigignore, // %d
-		&pinfo.sigcatch, // %d
-		&pinfo.wchan // %u
+		&pinfo->pid, // %d
+		&pinfo->comm, // %s
+		&pinfo->state, // %c
+		&pinfo->ppid, // %d
+		&pinfo->pgrp, // %d
+		&pinfo->session, // %d
+		&pinfo->tty, // %d
+		&pinfo->tpgid, // %d
+		&pinfo->flags, // %u
+		&pinfo->minflt, // %u
+		&pinfo->cminflt, // %u
+		&pinfo->majflt, // %u
+		&pinfo->cmajflt, // %u
+		&pinfo->utime, // %d
+		&pinfo->stime, // %d
+		&pinfo->cutime, // %d
+		&pinfo->cstime, // %d
+		&pinfo->counter, // %d
+		&pinfo->priority, // %d
+		&pinfo->timeout, // %u
+		&pinfo->itrealvalue, // %u
+		&pinfo->starttime, // %d
+		&pinfo->vsize, // %u
+		&pinfo->rss, // %u
+		&pinfo->rlim, // %u
+		&pinfo->startcode, // %u
+		&pinfo->endcode, // %u
+		&pinfo->startstack, // %u
+		&pinfo->kstkesp, // %u
+		&pinfo->kstkeip, // %u
+		&pinfo->signal, // %d
+		&pinfo->blocked, // %d
+		&pinfo->sigignore, // %d
+		&pinfo->sigcatch, // %d
+		&pinfo->wchan // %u
 	);
+	return true;
 }
 
 #endif // XP_UNIX
@@ -624,7 +625,7 @@ DEFINE_PROPERTY( currentMemoryUsage ) {
 #else
 
 	LinuxProcInfo pinfo;
-	GetProcInfo(getpid(), &pinfo); 
+	GetProcInfo(getpid(), &pinfo);
 	bytes = pinfo.vsize;
 
 #endif // XP_WIN
@@ -656,7 +657,7 @@ DEFINE_PROPERTY( peakMemoryUsage ) {
 	GetProcessMemoryInfo( hProcess, (PPROCESS_MEMORY_COUNTERS)&pmc, sizeof(pmc) ); // MEM_PRIVATE
 	bytes = pmc.PeakWorkingSetSize; // same value as "windows task manager" "peak mem usage"
 #else
-	
+
 	REPORT_ERROR("Not implemented yet.");
 
 #endif // XP_WIN
