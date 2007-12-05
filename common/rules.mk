@@ -2,13 +2,18 @@ CC := gcc
 AR := ar
 RM := rm
 LD := ld
+CP := cp
+MV := mv
+CD := cd
 
 SMINC = -I../js/src/Linux_All_OPT.OBJ -I../js/src
 SMLIB = -Wl,-Bdynamic -L../js/src/Linux_All_OPT.OBJ -ljs
 
 ifeq ($(BUILD),dbg)
+	BUILD = dbg
 	CFLAGS += -Wall -g3
 else
+	BUILD = opt
 	CFLAGS += -Wall -O3 -s -funroll-loops
 endif
 
@@ -23,21 +28,37 @@ CFLAGS += -fno-exceptions -fno-rtti -felide-constructors
 
 %.a: $(SRC:.cpp=.o)
 	$(AR) rcs /tmp/$(notdir $@) $^
-	mv /tmp/$(notdir $@) $@ #needed to support cofs (fc. coLinux: cofs rename() bug )
+	$(MV) /tmp/$(notdir $@) $@     #needed to support cofs (fc. coLinux: cofs rename() bug )
 
 %.so: $(SRC:.cpp=.o)
 	$(CC) $(CFLAGS) -o $@ -shared -Wl,-soname,$@ $? -static-libgcc -Wl,-Bstatic $(STATICLIBS) -Wl,-Bdynamic $(SHAREDLIBS) $(SMLIB)
 
 %.bin: $(SRC:.cpp=.o)
 	$(CC) $(CFLAGS) -o $@ $^ -static-libgcc -Wl,-Bstatic $(STATICLIBS) -Wl,-Bdynamic $(SHAREDLIBS) $(SMLIB)
-	mv $@ $(basename $@)
+	$(MV) $@ $(basename $@)
 
-.PHONY: all clean
+.PHONY: clean all install dependenses
 
-all: $(TARGET)
+#dependenses:
+#	for d in $(DEPENDS); do $(MAKE) -C $$d $(MAKECMDGOALS); done
 
-clean:
+$(DEPENDS):
+	$(MAKE) -C $(dir $@) $(MAKECMDGOALS)
+
+clean: $(DEPENDS)
 	$(RM) -f *.o $(TARGET) $(basename $(TARGET))
+
+all: $(DEPENDS) $(TARGET)
+
+install:
+	-mkdir ../$(BUILD)
+	$(cp) BUILD ../$(BUILD)
+
+.DEFAULT_GOAL: all
+
+
+
+################################# END
 
 #.PRECIOUS: %.o
 
