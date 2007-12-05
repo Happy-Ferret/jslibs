@@ -10,4 +10,4 @@
 #include <jsapi.h>
 #include <stdlib.h>
 
-#include "../common/jshelper.h"
+#include "../common/jsHelper.h"

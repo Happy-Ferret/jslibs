@@ -75,6 +75,8 @@ JSBool ZError_getter_const(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 		case -6:
 			errStr = "Z_VERSION_ERROR";
 			break;
+		default:
+			errStr = "UNKNOWN_ERROR";
 	}
 
 	JSString *str = JS_NewStringCopyZ( cx, errStr );

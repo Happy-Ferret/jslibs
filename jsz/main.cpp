@@ -14,9 +14,6 @@
 
 #include "stdafx.h"
 
-#define MODULE_NAME "jstemplate"
-static const char *_revision = "$Rev$";
-
 #include "zError.h"
 #include "z.h"
 
