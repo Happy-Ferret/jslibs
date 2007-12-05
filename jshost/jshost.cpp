@@ -53,6 +53,77 @@
 	if ( !(condition) ) { consoleStdErr( cx, errorMessage, sizeof(errorMessage)-1 ); return -1; }
 
 
+
+// source: ftp://ftp.fvwm.org/pub/fvwm/version-2/fvwm-2.4.20.tar.bz2 fvwm-2.4.20/libs/System.c
+ 
+/****************************************************************************
+ *
+ * Find the specified file somewhere along the given path.
+ *
+ * There is a possible race condition here:  We check the file and later
+ * do something with it.  By then, the file might not be accessible.
+ * Oh well.
+ *
+ ****************************************************************************/
+char* searchPath( const char* pathlist, const char* filename,
+		  const char* suffix, int type )
+{
+    char *path;
+    int l;
+
+    if ( filename == NULL || *filename == 0 )
+	return NULL;
+
+    l = (pathlist) ? strlen(pathlist) : 0;
+    l += (suffix) ? strlen(suffix) : 0;
+
+    /* +1 for extra / and +1 for null termination */
+    path = (char*)malloc( strlen(filename) + l + 2 );
+    *path = '\0';
+
+    if (*filename == '/' || pathlist == NULL || *pathlist == '\0')
+    {
+	/* No search if filename begins with a slash */
+	/* No search if pathlist is empty */
+	strcpy( path, filename );
+	return path;
+    }
+
+    /* Search each element of the pathlist for the file */
+    while ((pathlist)&&(*pathlist))
+    {
+	const char* dir_end = strchr(pathlist, ':');
+	if (dir_end != NULL)
+	{
+	    strncpy(path, pathlist, dir_end - pathlist);
+	    path[dir_end - pathlist] = 0;
+	}
+	else
+	    strcpy(path, pathlist);
+
+	strcat(path, "/");
+	strcat(path, filename);
+	if (access(path, type) == 0)
+	    return path;
+
+	if ( suffix && *suffix != 0 ) {
+	    strcat( path, suffix );
+	    if (access(path, type) == 0)
+		return path;
+	}
+
+	/* Point to next element of the path */
+	if(dir_end == NULL)
+	    break;
+	else
+	    pathlist = dir_end + 1;
+    }
+    /* Hmm, couldn't find the file.  Return NULL */
+    free(path);
+    return NULL;
+}
+
+
 int consoleStdOut( JSContext *, const char *data, int length ) {
 
 	return write( 1, data, length );
@@ -428,15 +499,30 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 		RT_HOST_MAIN_ASSERT( jsStatus == JS_TRUE, "unable to define the argument." );
 	}
 
+	char moduleFileName[MAX_PATH +1];
+
 #ifdef XP_WIN
-	CHAR moduleFileName[MAX_PATH];
 // get hostpath and hostname
 	HINSTANCE hInstance = (HINSTANCE)GetModuleHandle(NULL);
 	DWORD len = GetModuleFileName(hInstance, moduleFileName, sizeof(moduleFileName));
 	RT_HOST_MAIN_ASSERT( len != 0, "unable to GetModuleFileName." );
 #else // XP_WIN
-	char *moduleFileName = argv[0]; // beware do not use argumentVector, it already moved !
+
+/*
+	char *tmp = searchPath( getenv('PATH', argv[0], NULL, X_OK );
+	RT_HOST_MAIN_ASSERT( tmp != NULL, "unable to get module FileName." );
+	strcpy( moduleFileName, tmp );
+	free(tmp);
+//	char *moduleFileName = argv[0]; // beware do not use argumentVector, it already moved !
 	RT_HOST_MAIN_ASSERT( moduleFileName != NULL, "unable to GetModuleFileName." );
+*/
+
+/*
+	int len = readlink("/proc/self/exe", moduleFileName, sizeof(moduleFileName)); // doc: readlink does not append a NUL character to buf.
+	moduleFileName[len] = '\0';
+*/
+
+	strcpy(moduleFileName, argv[0]);
 #endif // XP_WIN
 
 	char *name = strrchr( moduleFileName, PATH_SEPARATOR );
