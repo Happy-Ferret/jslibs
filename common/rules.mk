@@ -11,7 +11,7 @@ SMLIB = -Wl,-Bdynamic -L../js/src/Linux_All_OPT.OBJ -ljs
 
 ifeq ($(BUILD),dbg)
 	BUILD = dbg
-	CFLAGS += -Wall -g3
+	CFLAGS += -Wall -g3 -O0
 else
 	BUILD = opt
 	CFLAGS += -Wall -O3 -s -funroll-loops

@@ -27,7 +27,7 @@ js/src/$(LIBJS_DIR)/libjs.so:
 all: $(FILES)
 
 .PHONY: clean
-clean:
+clean: $(FILES)
 	rm $(FILES)
 
 .PHONY: install
