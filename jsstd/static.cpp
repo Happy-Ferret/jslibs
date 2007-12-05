@@ -568,7 +568,7 @@ bool GetProcInfo( pid_t pid, LinuxProcInfo *pinfo ) {
 
 	sscanf(data, "%d %s %c %d %d %d %d %d %u %u %u %u %u %d %d %d %d %d %d %u %u %d %u %u %u %u %u %u %u %u %d %d %d %d %u",
 		&pinfo->pid, // %d
-		&pinfo->comm, // %s
+		pinfo->comm, // %s
 		&pinfo->state, // %c
 		&pinfo->ppid, // %d
 		&pinfo->pgrp, // %d
