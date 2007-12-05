@@ -13,4 +13,3 @@
  * ***** END LICENSE BLOCK ***** */
 
 DECLARE_CLASS( Socket )
-

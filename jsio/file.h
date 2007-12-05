@@ -16,4 +16,3 @@ DECLARE_CLASS( File )
 
 
 #define SLOT_JSIO_FILE_NAME 0
-

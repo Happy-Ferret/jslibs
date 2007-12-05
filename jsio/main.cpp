@@ -14,9 +14,6 @@
 
 #include "stdafx.h"
 
-#define MODULE_NAME "jstemplate"
-static const char *_revision = "$Rev: 974 $";
-
 #include "error.h"
 #include "descriptor.h"
 #include "file.h"

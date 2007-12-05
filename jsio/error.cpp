@@ -47,7 +47,7 @@ DEFINE_PROPERTY( text ) {
 }
 
 DEFINE_FUNCTION( toString ) {
-	
+
 	RT_CHECK_CALL( text(cx, obj, 0, rval) );
 	return JS_TRUE;
 }

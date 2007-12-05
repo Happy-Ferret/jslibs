@@ -30,7 +30,7 @@ DEFINE_FINALIZE() {
 }
 
 DEFINE_CONSTRUCTOR() {
-	
+
 	RT_ASSERT_CONSTRUCTING( _class );
 
 	int descType;
@@ -40,7 +40,7 @@ DEFINE_CONSTRUCTOR() {
 		descType = PR_DESC_SOCKET_TCP; // default
 
 	PRFileDesc *fd;
-	
+
 	if ( descType == PR_DESC_SOCKET_TCP )
 		fd = PR_NewTCPSocket();
 	else if ( descType == PR_DESC_SOCKET_UDP )
@@ -104,13 +104,13 @@ DEFINE_FUNCTION( Bind ) {
 		if ( PR_InitializeNetAddr(PR_IpAddrNull, port, &addr) != PR_SUCCESS )
 			return ThrowIoError(cx);
 	} else {
-		
+
 		if ( PR_InitializeNetAddr(PR_IpAddrAny, port, &addr) != PR_SUCCESS )
 			return ThrowIoError(cx);
 	}
 
 	if ( PR_Bind(fd, &addr) != PR_SUCCESS ) {
-		
+
 		PRErrorCode errorCode = PR_GetError();
 		switch (errorCode) {
 			case PR_ADDRESS_IN_USE_ERROR: // do not failed but return false
@@ -120,7 +120,7 @@ DEFINE_FUNCTION( Bind ) {
 				return ThrowIoErrorArg(cx, errorCode, PR_GetOSError());
 		}
 	} else {
-		
+
 		*rval = JSVAL_TRUE; // no error, return true
 	}
 	return JS_TRUE;
@@ -258,7 +258,7 @@ DEFINE_FUNCTION( Connect ) {
 
 
 DEFINE_FUNCTION( SendTo ) {
-		
+
 	RT_ASSERT_ARGC( 3 );
 
 	PRFileDesc *fd;
@@ -327,7 +327,7 @@ DEFINE_FUNCTION( SendTo ) {
 
 
 DEFINE_FUNCTION( RecvFrom ) {
-		
+
 //	PRFileDesc *fd = (PRFileDesc*)JS_GetPrivate( cx, obj );
 //	RT_ASSERT_RESOURCE( fd );
 	PRFileDesc *fd;
@@ -365,7 +365,7 @@ DEFINE_FUNCTION( RecvFrom ) {
 			return ThrowIoError(cx);
 		}
 	}
-	
+
 //	RT_ASSERT( res == available, "Invalid size" );
 
 	JSString *strBuffer = JS_NewString(cx, buffer, res);
@@ -524,12 +524,12 @@ DEFINE_PROPERTY( connectionClosed ) {
 
 
 ///////////////////////////////////////////////////////////////////////////////
-enum { 
-	linger = PR_SockOpt_Linger, 
-	noDelay = PR_SockOpt_NoDelay, 
-	reuseAddr = PR_SockOpt_Reuseaddr, 
-	keepAlive = PR_SockOpt_Keepalive, 
-	recvBufferSize = PR_SockOpt_RecvBufferSize, 
+enum {
+	linger = PR_SockOpt_Linger,
+	noDelay = PR_SockOpt_NoDelay,
+	reuseAddr = PR_SockOpt_Reuseaddr,
+	keepAlive = PR_SockOpt_Keepalive,
+	recvBufferSize = PR_SockOpt_RecvBufferSize,
 	sendBufferSize = PR_SockOpt_SendBufferSize,
 	maxSegment = PR_SockOpt_MaxSegment,
    nonblocking = PR_SockOpt_Nonblocking,
@@ -602,7 +602,7 @@ DEFINE_PROPERTY( OptionSetter ) {
 			JS_ValueToBoolean( cx, *vp, &boolValue );
 			sod.value.mcast_loopback = ( boolValue == JS_TRUE );
 		} break;
-
+		default:;
 	}
 	if ( PR_SetSocketOption(fd, &sod) != PR_SUCCESS )
 		return ThrowIoError(cx);
@@ -653,6 +653,7 @@ DEFINE_PROPERTY( OptionGetter ) {
 		case PR_SockOpt_McastLoopback:
 			*vp = sod.value.mcast_loopback == PR_TRUE ? JSVAL_TRUE : JSVAL_FALSE;
 			break;
+		default:;
 	}
 	return JS_TRUE;
 }
@@ -721,7 +722,7 @@ DEFINE_FUNCTION( GetHostsByName ) {
 	char netdbBuf[PR_NETDB_BUF_SIZE];
 	PRHostEnt hostEntry;
 	PRNetAddr addr;
-	
+
 	if ( PR_GetHostByName( host, netdbBuf, sizeof(netdbBuf), &hostEntry ) != PR_SUCCESS )
 		return ThrowIoError(cx);
 
