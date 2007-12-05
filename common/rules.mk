@@ -43,6 +43,9 @@ clean: $(DEPENDS)
 .PHONY: all
 all: $(DEPENDS) $(TARGET)
 
+.PHONY: install
+install: ;
+
 
 .DEFAULT_GOAL := all
 
