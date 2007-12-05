@@ -25,71 +25,70 @@ log.AddFilter( MakeLogFile(function() thisSession, false), LOG_ALL );
 //log.AddFilter( MakeLogScreen(), LOG_FAILURE | LOG_ERROR | LOG_WARNING );
 
 
-	var n = 0;
+var dataToSend = RandomString(8192);
 
-	StartAsyncProc( new function() {
-		
-		
-		for (;;) {
-			
-			var [status, statusCode, reasonPhrase, headers, response] = yield function(cb) HttpRequest( 'http://localhost:8080/', undefined, 1, cb );
+var n = 0;
 
-//			yield function(cb) TCPGet( 'localhost', 8080, 'abcd', 1, cb );
-//			yield function(cb) UDPGet( 'localhost', 6789, 'abcd', 1, cb );
+var buf = new Buffer();
+
+StartAsyncProc( new function() {
+
+	for (;;) {
+
+		var [status, statusCode, reasonPhrase, headers, response] = yield function(cb) HttpRequest( 'http://localhost:8080/', undefined, 1, cb );
+		if ( status == OK ) {
+
+			buf.Write(response);
+
+			var tmp = buf.Read( RandomRange(0, buf.length/2) );
+			buf.Read( RandomRange(0, buf.length) );
+			buf.Unread(tmp);
+		}
+
+			yield function(cb) TCPGet( 'localhost', 8080, 'abcd', 1, cb );
+			yield function(cb) UDPGet( 'localhost', 6789, 'abcd', 1, cb );
 //			yield AsyncSleep(1);
-			
-
 
 
 //			Print( status );
 /*			
-			if ( status == OK ) {
-
-				b.Write(response);
-
-				var tmp = b.Read( RandomRange(0, b.length/2) );
-				b.Read( RandomRange(0, b.length) );
-				b.Unread(tmp);
-			}
 */
-		}
-	});
+	}
+});
 
-	var buf = new Buffer();
 
-	var s1 = new Socket( Socket.UDP );
-	s1.nonblocking = true;
-	io.AddDescriptor(s1);
-	s1.Bind( 6789, '127.0.0.1' );
-	s1.readable = function(s) {
-		
-		var [data, ip, port] = s.RecvFrom();
-		buf.Write(data);
-		buf.Clear();
-	};
 
-	var dataToSend = RandomString(8192);
 
-	!function() {
+var s1 = new Socket( Socket.UDP );
+s1.nonblocking = true;
+io.AddDescriptor(s1);
+s1.Bind( 6789, '127.0.0.1' );
+s1.readable = function(s) {
+
+	var [data, ip, port] = s.RecvFrom();
+	buf.Write(data);
+	buf.Clear();
+};
+
+
+
+!function() {
 	
-		Socket.SendTo('localhost', 6789, dataToSend);
-		io.AddTimeout(1, arguments.callee );
-	}();
+	Socket.SendTo('localhost', 6789, dataToSend);
+	io.AddTimeout(1, arguments.callee );
+}();
 
 
 
 
-	//UDPGet
+//UDPGet
 
-	var s2 = new Socket( Socket.UDP );
-	s2.nonblocking = true;
-	io.AddDescriptor(s2);
-	s2.Connect( 'localhost', 6789 );
-	s2.writable = function(s) s.Write( dataToSend );
+var s2 = new Socket( Socket.UDP );
+s2.nonblocking = true;
+io.AddDescriptor(s2);
+s2.Connect( 'localhost', 6789 );
+s2.writable = function(s) s.Write( dataToSend );
 
-
-
-/*
 
 var proc1 = new AsyncProcHelper( function() {
 
@@ -102,6 +101,7 @@ var proc1 = new AsyncProcHelper( function() {
 
 	}
 } );
+
 
 
 var proc2 = new AsyncProcHelper( function() {
@@ -119,27 +119,36 @@ var obj = {};
 
 proc2.Start();
 
-*/
 
 
 //UDPServer(6789, function(data) 'echo:'+data);
 //UDPGet( '127.0.0.1' , 6789, 'abc', 100, function(state, data) { Print(data) } );
 
-
+var prev = {};
 var prevCurrentMemoryUsage = 0;
 var prevPeakMemoryUsage = 0;
+
+var maxMemAfterGc = 0;
 
 try {
 
 	io.Process( function() { 
 		
 		if ( ++n%1000 == 0 ) {
+
+			var diff = (peakMemoryUsage-prevPeakMemoryUsage)/4096;
+		
+			CollectGarbage();
+			if ( currentMemoryUsage > maxMemAfterGc )
+				maxMemAfterGc = privateMemoryUsage;
+
 			
-			CollectGarbage();
-			CollectGarbage();
-			Print(((peakMemoryUsage-prevPeakMemoryUsage)/4096)||'.', '\n');
 //			Print(((currentMemoryUsage-prevCurrentMemoryUsage)/4096)||'.', '\n');
+
+//			var diff = maxMemAfterGc - prev.maxMemAfterGc;
+			Print(diff ? diff+'\n' : '.');
 			
+			prev.maxMemAfterGc = maxMemAfterGc;
 			
 			prevCurrentMemoryUsage = currentMemoryUsage;
 			prevPeakMemoryUsage = peakMemoryUsage;
