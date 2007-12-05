@@ -37,6 +37,7 @@ CFLAGS += -fno-exceptions -fno-rtti -felide-constructors
 	$(CC) $(CFLAGS) -o $@ $^ -static-libgcc -Wl,-Bstatic $(STATICLIBS) -Wl,-Bdynamic $(SHAREDLIBS) $(SMLIB)
 	$(MV) $@ $(basename $@)
 
+.PHONY: $(DEPENDS)
 $(DEPENDS):
 	$(MAKE) -C $(dir $@) -f $(notdir $@) $(MAKECMDGOALS)
 
