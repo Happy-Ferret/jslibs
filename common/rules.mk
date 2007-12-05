@@ -1,10 +1,5 @@
-CC := gcc
-AR := ar
-RM := rm
-LD := ld
-CP := cp
-MV := mv
-CD := cd
+CC:=gcc
+AR:=ar
 
 SMINC = -I../js/src/Linux_All_OPT.OBJ -I../js/src
 SMLIB = -Wl,-Bdynamic -L../js/src/Linux_All_OPT.OBJ -ljs
@@ -28,14 +23,14 @@ CFLAGS += -fno-exceptions -fno-rtti -felide-constructors
 
 %.a: $(SRC:.cpp=.o)
 	$(AR) rcs /tmp/$(notdir $@) $^
-	$(MV) /tmp/$(notdir $@) $@     #needed to support cofs (fc. coLinux: cofs rename() bug )
+	mv /tmp/$(notdir $@) $@     #needed to support cofs (fc. coLinux: cofs rename() bug )
 
 %.so: $(SRC:.cpp=.o)
 	$(CC) $(CFLAGS) -o $@ -shared -Wl,-soname,$@ $? -static-libgcc -Wl,-Bstatic $(STATICLIBS) -Wl,-Bdynamic $(SHAREDLIBS) $(SMLIB)
 
 %.bin: $(SRC:.cpp=.o)
 	$(CC) $(CFLAGS) -o $@ $^ -static-libgcc -Wl,-Bstatic $(STATICLIBS) -Wl,-Bdynamic $(SHAREDLIBS) $(SMLIB)
-	$(MV) $@ $(basename $@)
+	mv $@ $(basename $@)
 
 .PHONY: $(DEPENDS)
 $(DEPENDS):
@@ -43,17 +38,14 @@ $(DEPENDS):
 
 .PHONY: clean
 clean: $(DEPENDS)
-	$(RM) -f *.o $(TARGET) $(basename $(TARGET))
+	-rm -f *.o $(TARGET) $(basename $(TARGET))
 
 .PHONY: all
 all: $(DEPENDS) $(TARGET)
 
-.PHONY: install
-install:
-	-mkdir ../$(BUILD)
-	$(cp) BUILD ../$(BUILD)
 
 .DEFAULT_GOAL := all
+
 
 
 ################################# END

@@ -13,7 +13,8 @@ FILES = \
 	jshost/jshost\
 	jsstd/jsstd.so\
 	jsio/jsio.so\
-	jsobjex/jsobjex.so
+	jsobjex/jsobjex.so\
+	jsz/jsz.so\
 
 
 $(FILES):
@@ -22,13 +23,12 @@ $(FILES):
 js/src/$(LIBJS_DIR)/libjs.so:
 	cd js/src && $(MAKE) -f Makefile.ref $(LIBJS_MAKE_OPTIONS)
 
-
 .PHONY: all
 all: $(FILES)
 
 .PHONY: clean
 clean: $(FILES)
-	rm $(FILES)
+	-rm $(FILES)
 
 .PHONY: install
 install: all
