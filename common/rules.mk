@@ -37,28 +37,30 @@ CFLAGS += -fno-exceptions -fno-rtti -felide-constructors
 	$(CC) $(CFLAGS) -o $@ $^ -static-libgcc -Wl,-Bstatic $(STATICLIBS) -Wl,-Bdynamic $(SHAREDLIBS) $(SMLIB)
 	$(MV) $@ $(basename $@)
 
-.PHONY: clean all install dependenses
-
-#dependenses:
-#	for d in $(DEPENDS); do $(MAKE) -C $$d $(MAKECMDGOALS); done
-
 $(DEPENDS):
-	$(MAKE) -C $(dir $@) $(MAKECMDGOALS)
+	$(MAKE) -C $(dir $@) -f $(notdir $@) $(MAKECMDGOALS)
 
+.PHONY: clean
 clean: $(DEPENDS)
 	$(RM) -f *.o $(TARGET) $(basename $(TARGET))
 
+.PHONY: all
 all: $(DEPENDS) $(TARGET)
 
+.PHONY: install
 install:
 	-mkdir ../$(BUILD)
 	$(cp) BUILD ../$(BUILD)
 
-.DEFAULT_GOAL: all
-
+.DEFAULT_GOAL := all
 
 
 ################################# END
+
+
+#dependenses:
+#	for d in $(DEPENDS); do $(MAKE) -C $$d $(MAKECMDGOALS); done
+
 
 #.PRECIOUS: %.o
 

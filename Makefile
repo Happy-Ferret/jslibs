@@ -15,24 +15,29 @@ FILES = \
 	jsio/jsio.so\
 	jsobjex/jsobjex.so
 
-js/src/$(LIBJS_DIR)/libjs.so:
-	cd js/src && $(MAKE) -f Makefile.ref $(LIBJS_MAKE_OPTIONS)
 
 $(FILES):
 	$(MAKE) -C $(dir $@) $(MAKECMDGOALS)
 
-.PHONY: all clean install
+js/src/$(LIBJS_DIR)/libjs.so:
+	cd js/src && $(MAKE) -f Makefile.ref $(LIBJS_MAKE_OPTIONS)
 
+
+.PHONY: all
 all: $(FILES)
 
+.PHONY: clean
 clean:
 	rm $(FILES)
 
+.PHONY: install
 install: all
 	-mkdir ./$(BUILD)
 	cp $(FILES) ./$(BUILD)
 	cp ./nspr/nsprpub/dist/lib/libnspr4.so ./$(BUILD)
 
+
+.DEFAULT_GOAL := all
 
 
 ######################### END
