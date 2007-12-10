@@ -23,9 +23,9 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake /f libtommath.mak build"
-				ReBuildCommandLine="nmake /f libtommath.mak rebuild"
-				CleanCommandLine="nmake /f libtommath.mak clean"
+				BuildCommandLine="cd src &amp;&amp; nmake /f ../libtommath.mak build dest=../$(IntDir)/$(TargetFileName)"
+				ReBuildCommandLine="cd src &amp;&amp; nmake /f ../libtommath.mak rebuild dest=../$(IntDir)/$(TargetFileName)"
+				CleanCommandLine="cd src &amp;&amp; nmake /f ../libtommath.mak clean dest=../$(IntDir)/$(TargetFileName)"
 				Output="$(ProjectDir)\tommath.lib"
 				PreprocessorDefinitions="WIN32;_DEBUG"
 				IncludeSearchPath=""
@@ -43,9 +43,9 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake /f libtommath.mak build"
-				ReBuildCommandLine="nmake /f libtommath.mak rebuild"
-				CleanCommandLine="nmake /f libtommath.mak clean"
+				BuildCommandLine="cd src &amp;&amp; nmake /f ../libtommath.mak build dest=../$(IntDir)/$(TargetFileName)"
+				ReBuildCommandLine="cd src &amp;&amp; nmake /f ../libtommath.mak rebuild dest=../$(IntDir)/$(TargetFileName)"
+				CleanCommandLine="cd src &amp;&amp; nmake /f ../libtommath.mak clean dest=../$(IntDir)/$(TargetFileName)"
 				Output="$(ProjectDir)\tommath.lib"
 				PreprocessorDefinitions="WIN32;NDEBUG"
 				IncludeSearchPath=""

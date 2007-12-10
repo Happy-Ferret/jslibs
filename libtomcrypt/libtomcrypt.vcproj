@@ -23,9 +23,9 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake /f libtomcrypt.mak build"
-				ReBuildCommandLine="nmake /f libtomcrypt.mak rebuild"
-				CleanCommandLine="nmake /f libtomcrypt.mak clean"
+				BuildCommandLine="cd src &amp;&amp; nmake /f ../libtomcrypt.mak build dest=../$(IntDir)/$(TargetFileName)"
+				ReBuildCommandLine="cd src &amp;&amp; nmake /f ../libtomcrypt.mak rebuild dest=../$(IntDir)/$(TargetFileName)"
+				CleanCommandLine="cd src &amp;&amp; nmake /f ../libtomcrypt.mak clean dest=../$(IntDir)/$(TargetFileName)"
 				Output="$(ProjectDir)\tomcrypt.lib"
 				PreprocessorDefinitions="WIN32;_DEBUG"
 				IncludeSearchPath=""
@@ -43,9 +43,9 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake /f libtomcrypt.mak build"
-				ReBuildCommandLine="nmake /f libtomcrypt.mak rebuild"
-				CleanCommandLine="nmake /f libtomcrypt.mak clean"
+				BuildCommandLine="cd src &amp;&amp; nmake /f ../libtomcrypt.mak build dest=../$(IntDir)/$(TargetFileName)"
+				ReBuildCommandLine="cd src &amp;&amp; nmake /f ../libtomcrypt.mak rebuild dest=../$(IntDir)/$(TargetFileName)"
+				CleanCommandLine="cd src &amp;&amp; nmake /f ../libtomcrypt.mak clean dest=../$(IntDir)/$(TargetFileName)"
 				Output="$(ProjectDir)\tomcrypt.lib"
 				PreprocessorDefinitions="WIN32;NDEBUG"
 				IncludeSearchPath=""

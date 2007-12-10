@@ -3,18 +3,19 @@
 include makefile.msvc
 
 CFLAGS = /I. /Ox /DWIN32 /DLTM_DESC /W3
-LIBNAME = tommath.lib
+LIBNAME = $(dest)
 
 .c.obj:
     cl /nologo $(CFLAGS) /Fo$@ /c $<
 
 $(LIBNAME): $(OBJECTS)
 	lib /nologo /out:$(LIBNAME) $(OBJECTS)
+	del /s *.obj
 
 build: $(LIBNAME)
 
 clean:
-	del $(LIBNAME)
+	del "$(LIBNAME)"
 	del /s *.obj
 
 rebuild: clean build
