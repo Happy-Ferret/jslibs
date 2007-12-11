@@ -21,3 +21,9 @@ Linux compilation:
 	./configure --enable-releasemode --disable-readline --disable-tcl --disable-dynamic --disable-shared --enable-static
 	make clean all
 	ls ./.libs/libsqlite.a
+
+Building sqlite-amalgamation-x.x.x for Linux:
+	gcc -c sqlite3.c
+	ld xxx -lpthread -ldl
+	
+	
