@@ -18,7 +18,7 @@ endif
 
 CFLAGS += -fno-exceptions -fno-rtti -felide-constructors
 
-%.o: %.cpp
+%.o: %.cpp %.c
 	$(CC) -c $(CFLAGS) -I../js/src/Linux_All_OPT.OBJ -I../js/src $(INCLUDES) -o $@ $<
 
 %.a: $(SRC:.cpp=.o)
