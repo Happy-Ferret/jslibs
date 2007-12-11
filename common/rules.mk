@@ -1,37 +1,39 @@
 CC:=gcc
 AR:=ar
 
-SMINC = -I../js/src/Linux_All_OPT.OBJ -I../js/src
-SMLIB = -Wl,-Bdynamic -L../js/src/Linux_All_OPT.OBJ -ljs
-
 ifeq ($(BUILD),dbg)
 	BUILD = dbg
 	CFLAGS += -Wall -g3 -O0
+	SMINC = -I../js/src/Linux_All_DBG.OBJ -I../js/src
+	SMLIB = -Wl,-Bdynamic -L../js/src/Linux_All_DBG.OBJ -ljs
 else
 	BUILD = opt
 	CFLAGS += -Wall -O3 -s -funroll-loops
+	SMINC = -I../js/src/Linux_All_OPT.OBJ -I../js/src
+	SMLIB = -Wl,-Bdynamic -L../js/src/Linux_All_OPT.OBJ -ljs
 endif
+
 
 ifneq (,$(findstring .so,$(TARGET)))
 	CFLAGS += -fpic
 endif
 
-CFLAGS += -fno-exceptions -fno-rtti -felide-constructors
+CFLAGS += -fno-exceptions -fno-rtti -felide-constructors # -static-libgcc 
+
+OBJECTS = $(patsubst %.cpp,%.o,$(filter %.cpp, $(SRC))) $(patsubst %.c,%.o,$(filter %.c, $(SRC)))
+
 
 %.o: %.cpp %.c
-	$(CC) -c $(CFLAGS) -I../js/src/Linux_All_OPT.OBJ -I../js/src $(INCLUDES) -o $@ $<
+	$(CC) -c $(CFLAGS) $(SMINC) $(INCLUDES) -o $@ $<
 
-%.a: $(SRC:.cpp=.o) $(SRC:.c=.o)
-	$(AR) rcs /tmp/$(notdir $@) $^
-	# Running ar s on an archive is equivalent to running ranlib on it.
-	mv /tmp/$(notdir $@) $@     #needed to support cofs (fc. coLinux: cofs rename() bug )
+%.a: $(OBJECTS)
+	$(AR) rcs $@ $^
 
-%.so: $(SRC:.cpp=.o) $(SRC:.c=.o)
-	$(CC) $(CFLAGS) -o $@ -shared -Wl,-soname,$@ $? -static-libgcc -Wl,-Bstatic $(STATICLIBS) -Wl,-Bdynamic $(SHAREDLIBS) $(SMLIB)
+%.so: $(OBJECTS)
+	$(CC) $(CFLAGS) $(SMINC) $(INCLUDES) -o $@ -shared -Wl,-soname,$@ $? -Wl,-Bstatic $(STATICLIBS) -Wl,-Bdynamic $(SHAREDLIBS) $(SMLIB)
 
-%.bin: $(SRC:.cpp=.o) $(SRC:.c=.o)
-	$(CC) $(CFLAGS) -o $@ $^ -static-libgcc -Wl,-Bstatic $(STATICLIBS) -Wl,-Bdynamic $(SHAREDLIBS) $(SMLIB)
-	mv $@ $(basename $@)
+%: $(OBJECTS)
+	$(CC) $(CFLAGS) $(SMINC) $(INCLUDES) -o $@ $^ -static-libgcc -Wl,-Bstatic $(STATICLIBS) -Wl,-Bdynamic $(SHAREDLIBS) $(SMLIB)
 
 .PHONY: $(DEPENDS)
 $(DEPENDS):
@@ -46,7 +48,6 @@ all: $(DEPENDS) $(TARGET)
 
 .PHONY: install
 install: ;
-
 
 .DEFAULT_GOAL := all
 
