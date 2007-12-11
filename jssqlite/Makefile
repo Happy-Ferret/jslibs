@@ -1,7 +1,7 @@
 TARGET     = jssqlite.so
 SRC        = $(wildcard *.cpp)
-INCLUDES   = -I../sqlite/sqlite-3.3.17
-STATICLIBS = -L../sqlite/sqlite-3.3.17/.libs -lsqlite3
+INCLUDES   = -I../sqlite/src
+STATICLIBS = -L../sqlite -lsqlite3 -ldl -lpthread
 SHAREDLIBS =
 
 include ../common/rules.mk
