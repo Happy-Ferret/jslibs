@@ -21,15 +21,15 @@ CFLAGS += -fno-exceptions -fno-rtti -felide-constructors
 %.o: %.cpp %.c
 	$(CC) -c $(CFLAGS) -I../js/src/Linux_All_OPT.OBJ -I../js/src $(INCLUDES) -o $@ $<
 
-%.a: $(SRC:.cpp=.o)
+%.a: $(SRC:.cpp=.o) $(SRC:.c=.o)
 	$(AR) rcs /tmp/$(notdir $@) $^
 	# Running ar s on an archive is equivalent to running ranlib on it.
 	mv /tmp/$(notdir $@) $@     #needed to support cofs (fc. coLinux: cofs rename() bug )
 
-%.so: $(SRC:.cpp=.o)
+%.so: $(SRC:.cpp=.o) $(SRC:.c=.o)
 	$(CC) $(CFLAGS) -o $@ -shared -Wl,-soname,$@ $? -static-libgcc -Wl,-Bstatic $(STATICLIBS) -Wl,-Bdynamic $(SHAREDLIBS) $(SMLIB)
 
-%.bin: $(SRC:.cpp=.o)
+%.bin: $(SRC:.cpp=.o) $(SRC:.c=.o)
 	$(CC) $(CFLAGS) -o $@ $^ -static-libgcc -Wl,-Bstatic $(STATICLIBS) -Wl,-Bdynamic $(SHAREDLIBS) $(SMLIB)
 	mv $@ $(basename $@)
 
