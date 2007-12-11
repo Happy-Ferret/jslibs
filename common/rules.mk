@@ -23,6 +23,7 @@ CFLAGS += -fno-exceptions -fno-rtti -felide-constructors
 
 %.a: $(SRC:.cpp=.o)
 	$(AR) rcs /tmp/$(notdir $@) $^
+	# Running ar s on an archive is equivalent to running ranlib on it.
 	mv /tmp/$(notdir $@) $@     #needed to support cofs (fc. coLinux: cofs rename() bug )
 
 %.so: $(SRC:.cpp=.o)
