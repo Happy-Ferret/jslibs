@@ -3,6 +3,7 @@ SRC        = $(wildcard *.cpp)
 INCLUDES   = -I../libtommath/src -I../libtomcrypt/src/src/headers
 STATICLIBS =  -L../libtommath/src -ltommath -L../libtomcrypt/src -ltomcrypt
 SHAREDLIBS =
+DEFINES    = -DLTM_DESC
 DEPENDS    = ../libtommath/Makefile ../libtomcrypt/Makefile
 
 include ../common/rules.mk
