@@ -23,17 +23,21 @@ CFLAGS += -fno-exceptions -fno-rtti -felide-constructors # -static-libgcc
 OBJECTS = $(patsubst %.cpp,%.o,$(filter %.cpp, $(SRC))) $(patsubst %.c,%.o,$(filter %.c, $(SRC)))
 
 
-%.o: %.cpp %.c
-	$(CC) -c $(CFLAGS) $(SMINC) $(INCLUDES) -o $@ $<
+%.o: %.cpp
+	$(CC) -c $(CFLAGS) $(DEFINES) $(SMINC) $(INCLUDES) -o $@ $<
+
+%.o: %.c
+	$(CC) -c $(CFLAGS) $(DEFINES) $(SMINC) $(INCLUDES) -o $@ $<
+
 
 %.a: $(OBJECTS)
 	$(AR) rcs $@ $^
 
 %.so: $(OBJECTS)
-	$(CC) $(CFLAGS) $(SMINC) $(INCLUDES) -o $@ -shared -Wl,-soname,$@ $? -Wl,-Bstatic $(STATICLIBS) -Wl,-Bdynamic $(SHAREDLIBS) $(SMLIB)
+	$(CC) $(CFLAGS) $(DEFINES) $(SMINC) $(INCLUDES) -o $@ -shared -Wl,-soname,$@ $? -Wl,-Bstatic $(STATICLIBS) -Wl,-Bdynamic $(SHAREDLIBS) $(SMLIB)
 
 %: $(OBJECTS)
-	$(CC) $(CFLAGS) $(SMINC) $(INCLUDES) -o $@ $^ -static-libgcc -Wl,-Bstatic $(STATICLIBS) -Wl,-Bdynamic $(SHAREDLIBS) $(SMLIB)
+	$(CC) $(CFLAGS) $(DEFINES) $(SMINC) $(INCLUDES) -o $@ $^ -static-libgcc -Wl,-Bstatic $(STATICLIBS) -Wl,-Bdynamic $(SHAREDLIBS) $(SMLIB)
 
 .PHONY: $(DEPENDS)
 $(DEPENDS):
