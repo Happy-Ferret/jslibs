@@ -1,7 +1,3 @@
-.PHONY: all clean
-all clean:
+.PHONY: all clean install
+all clean install:
 	cd src && CFLAGS="-DLTM_DESC -I../../libtommath/src" $(MAKE) $(MAKECMDGOALS)
-
-.PHONY: install
-install: ;
-
