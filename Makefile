@@ -15,6 +15,7 @@ FILES = \
 	jsio/jsio.so\
 	jsobjex/jsobjex.so\
 	jsz/jsz.so\
+	jscrypt/jscrypt.so
 
 
 $(FILES):
@@ -34,7 +35,8 @@ clean: $(FILES)
 install: all
 	-mkdir ./$(BUILD)
 	cp $(FILES) ./$(BUILD)
-	cp ./nspr/nsprpub/dist/lib/libnspr4.so ./$(BUILD)
+	cp ./nspr/src/dist/lib/libnspr4.so ./$(BUILD)
+	cp ./js/src/$(LIBJS_DIR)/libjs.so ./$(BUILD)
 
 
 .DEFAULT_GOAL := all
