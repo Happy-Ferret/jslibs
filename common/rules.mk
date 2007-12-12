@@ -36,10 +36,10 @@ OBJECTS = $(patsubst %.cpp,%.o,$(filter %.cpp, $(SRC))) $(patsubst %.c,%.o,$(fil
 %.so: $(OBJECTS)
 	$(CC) $(CFLAGS) $(DEFINES) $(SMINC) $(INCLUDES) -o $@ -shared -Wl,-soname,$@ $? -Wl,-Bstatic $(STATICLIBS) -Wl,-Bdynamic $(SHAREDLIBS) $(SMLIB)
 
-%: $(OBJECTS)
+%.bin: $(OBJECTS)
 	$(CC) $(CFLAGS) $(DEFINES) $(SMINC) $(INCLUDES) -o $@ $^ -static-libgcc -Wl,-Bstatic $(STATICLIBS) -Wl,-Bdynamic $(SHAREDLIBS) $(SMLIB)
+	mv $@ $(basename $@)
 
-.SECONDARY: $(DEPENDS)
 .PHONY: $(DEPENDS)
 $(DEPENDS):
 	$(MAKE) -C $(dir $@) -f $(notdir $@) $(MAKECMDGOALS)
