@@ -9,3 +9,6 @@ all:
 clean:
 	-rm sqlite3.o libsqlite3.a
 
+.PHONY: install
+install: ;
+
