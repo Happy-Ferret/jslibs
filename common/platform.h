@@ -42,6 +42,8 @@
 	#define DLLEXPORT __declspec(dllexport)
 	#define DLLLOCAL
 
+	#define strcasecmp stricmp
+
 
 #elif defined(_MACOSX) // MacosX platform
 	#define XP_UNIX
