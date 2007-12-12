@@ -1,8 +1,11 @@
-TARGET=libsqlite3.a
-SRC=src/sqlite3.c
-INCLUDES=src
-STATICLIBS=
-SHAREDLIBS=
+CC=gcc
 
-include ../common/rules.mk
+.PHONY: all
+all:
+	$(CC) -c $(CFLAGS) -o sqlite3.o src/sqlite3.c
+	$(AR) rcs libsqlite3.a sqlite3.o
+
+.PHONY: clean
+clean:
+	-rm sqlite3.o libsqlite3.a
 
