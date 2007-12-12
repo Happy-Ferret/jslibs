@@ -70,7 +70,7 @@ JSBool crypt_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, js
 //	RT_ASSERT_1( IVLength == cipher.block_length, "IV must have the same size as cipher block length (%d bytes)", cipher.block_length );
 
 	int err;
-	if ( _stricmp( modeName, MODE_CTR ) == 0 ) {
+	if ( strcasecmp( modeName, MODE_CTR ) == 0 ) {
 
 		privateData->mode = mode_ctr;
 		symmetric_CTR *psctr = (symmetric_CTR *)malloc( sizeof(symmetric_CTR) );
@@ -78,7 +78,7 @@ JSBool crypt_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, js
 		if ((err = ctr_start( cipherIndex, (const unsigned char *)IV, (const unsigned char *)key, keyLength, 0, CTR_COUNTER_LITTLE_ENDIAN, psctr )) != CRYPT_OK)
 			return ThrowCryptError(cx, err); // (TBD) free privateData and psctr
 		privateData->symmetric_XXX = psctr;
-	} else if ( _stricmp( modeName, MODE_CFB ) == 0 ) {
+	} else if ( strcasecmp( modeName, MODE_CFB ) == 0 ) {
 
 		privateData->mode = mode_cfb;
 		symmetric_CFB *symmetric_XXX = (symmetric_CFB *)malloc( sizeof(symmetric_CFB) );
@@ -211,7 +211,7 @@ JSBool crypt_getter_IV(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 	CryptPrivate *privateData = (CryptPrivate *)JS_GetPrivate( cx, obj );
 	RT_ASSERT( privateData != NULL, RT_ERROR_NOT_INITIALIZED );
 
-	char *IV;
+	char *IV = NULL;
 	unsigned long IVLength;
 
 	int err;

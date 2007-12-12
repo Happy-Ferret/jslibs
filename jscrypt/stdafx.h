@@ -3,20 +3,20 @@
 // are changed infrequently
 //
 
-#pragma once
+#ifndef stdafx_h___
+#define stdafx_h___
 
+#include "../common/platform.h"
 
-#define WIN32_LEAN_AND_MEAN		// Exclude rarely-used stuff from Windows headers
-
-// TODO: reference additional headers your program requires here
-#include <windows.h>
-
-#define XP_WIN
 #include <jsapi.h>
 
 #define USE_UNSAFE_MODE
-#include "../common/jshelper.h"
+#include "../common/jsHelper.h"
+#include "../common/jsClass.h"
 #include "../common/jsConfiguration.h"
 
 #include <tomcrypt.h>
 #include "cryptError.h"
+
+#endif // stdafx_h___
+

@@ -196,3 +196,4 @@ JSObject *hashInitClass( JSContext *cx, JSObject *obj ) {
 /****************************************************************
 
 */
+

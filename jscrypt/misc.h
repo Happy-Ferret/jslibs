@@ -13,3 +13,4 @@
  * ***** END LICENSE BLOCK ***** */
 
 JSObject *miscInitClass( JSContext *cx, JSObject *obj );
+

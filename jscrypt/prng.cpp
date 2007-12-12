@@ -38,7 +38,7 @@ JSBool prng_call(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *r
 	PrngPrivate *privateData = (PrngPrivate *)JS_GetPrivate( cx, thisObj );
 	RT_ASSERT( privateData, RT_ERROR_NOT_INITIALIZED );
 
-	int32 readCount;
+	unsigned long readCount;
 	RT_JSVAL_TO_INT32( argv[0], readCount );
 
 	char *pr = (char*)JS_malloc( cx, readCount );

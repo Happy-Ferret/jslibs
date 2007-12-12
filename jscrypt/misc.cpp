@@ -116,8 +116,8 @@ static JSBool misc_hex64Decode(JSContext *cx, JSObject *obj, uintN argc, jsval *
 	char *out = (char *)JS_malloc( cx, outLength );
 	RT_ASSERT( out != NULL, RT_ERROR_OUT_OF_MEMORY );
 
-	for ( int i=0; i<outLength; ++i )
-		out[i] = unhex[ in[i*2] ] << 4 | unhex[ in[i*2+1] ];
+	for ( unsigned long i=0; i<outLength; ++i )
+		out[i] = unhex[ (unsigned char)in[i*2] ] << 4 | unhex[ (unsigned char)in[i*2+1] ];
 
 	JSString *jssOutData = JS_NewString( cx, out, outLength );
 	RT_ASSERT( jssOutData != NULL, "unable to create the plaintext string." );

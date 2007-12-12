@@ -14,8 +14,6 @@
 
 #include "stdafx.h"
 
-#define MODULE_NAME "jstemplate"
-static const char *_revision = "$Rev$";
 
 #include "misc.h"
 
@@ -26,12 +24,11 @@ static const char *_revision = "$Rev$";
 
 DEFINE_UNSAFE_MODE;
 
-extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj) {
-
-	JS_DefineProperty(cx, obj, MODULE_NAME "_build", INT_TO_JSVAL(atoi(_revision+6)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ); // 6 is the size of "$Rev: "
+extern "C" DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
 	SET_UNSAFE_MODE( GetConfigurationValue(cx, "unsafeMode" ) == JSVAL_TRUE );
 
+	// register math
 	ltc_mp = ltm_desc;
 
 	InitErrorClass( cx, obj );
@@ -42,19 +39,5 @@ extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj)
 //	cipherInitClass( cx, obj );
 	cryptInitClass( cx, obj );
 	return JS_TRUE;
-}
-
-
-BOOL APIENTRY DllMain( HANDLE hModule, DWORD  ul_reason_for_call, LPVOID lpReserved ) {
-
-  switch (ul_reason_for_call) {
-
-	  case DLL_PROCESS_ATTACH:
-	  case DLL_THREAD_ATTACH:
-	  case DLL_THREAD_DETACH:
-	  case DLL_PROCESS_DETACH:
-		  break;
-  }
-  return TRUE;
 }
 

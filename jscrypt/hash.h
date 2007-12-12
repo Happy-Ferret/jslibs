@@ -27,3 +27,4 @@ struct HashPrivate {
 extern JSClass hash_class;
 
 #endif // HASH_H_
+

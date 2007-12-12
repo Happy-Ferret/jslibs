@@ -27,3 +27,4 @@ struct PrngPrivate {
 extern JSClass prng_class;
 
 #endif // PRNG_H_
+
