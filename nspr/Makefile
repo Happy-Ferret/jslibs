@@ -1,9 +1,9 @@
-.PHONY: all clean install
+.PHONY: all clean distclean install
 
 all: ./src/Makefile
 	cd src && make $(MAKECMDGOALS)
 
-clean install:
+clean distclean install:
 	cd src && $(MAKE) $(MAKECMDGOALS)
 
 ./src/Makefile:
