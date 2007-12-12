@@ -39,6 +39,7 @@ OBJECTS = $(patsubst %.cpp,%.o,$(filter %.cpp, $(SRC))) $(patsubst %.c,%.o,$(fil
 %: $(OBJECTS)
 	$(CC) $(CFLAGS) $(DEFINES) $(SMINC) $(INCLUDES) -o $@ $^ -static-libgcc -Wl,-Bstatic $(STATICLIBS) -Wl,-Bdynamic $(SHAREDLIBS) $(SMLIB)
 
+.SECONDARY: $(DEPENDS)
 .PHONY: $(DEPENDS)
 $(DEPENDS):
 	$(MAKE) -C $(dir $@) -f $(notdir $@) $(MAKECMDGOALS)
