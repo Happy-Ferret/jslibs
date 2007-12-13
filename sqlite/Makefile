@@ -1,5 +1,6 @@
 CC=gcc
 
+# $(MAKECMDGOALS)
 .PHONY: all
 all:
 	$(CC) -c $(CFLAGS) -o sqlite3.o src/sqlite3.c

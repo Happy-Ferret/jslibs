@@ -1,3 +1,6 @@
-.PHONY: all clean install
-all clean install:
-	cd src && $(MAKE) $(MAKECMDGOALS)
+.DEFUALT: ;
+
+.PHONY: $(MAKECMDGOALS)
+$(MAKECMDGOALS):
+	$(MAKE) -C src $@
+
