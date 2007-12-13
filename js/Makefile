@@ -2,13 +2,17 @@ ifeq ($(BUILD),dbg)
 	BUILD = dbg
 	LIBJS_DIR = Linux_All_DBG.OBJ
 	LIBJS_MAKE_OPTIONS =
+	CFLAGS =
 else
 	BUILD = opt
 	LIBJS_DIR = Linux_All_OPT.OBJ
 	LIBJS_MAKE_OPTIONS = BUILD_OPT=1
+	CFLAGS = -O3
 endif
 
+.PHONY: $(MAKECMDGOALS)
+$(MAKECMDGOALS):
+	$(MAKE) -C src -f Makefile.ref $@ $(LIBJS_MAKE_OPTIONS)
 
-.PHONY: all clean install
-all clean install:
-	cd src && $(MAKE) -f Makefile.ref $(MAKECMDGOALS) $(LIBJS_MAKE_OPTIONS)
+.DEFUALT: ;
+
