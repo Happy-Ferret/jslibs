@@ -2,5 +2,5 @@
 
 .PHONY: $(MAKECMDGOALS)
 $(MAKECMDGOALS):
-	$(MAKE) -C src $(subst all,default,$@)
+	$(MAKE) -C src $(@:all=default)
 
