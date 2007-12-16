@@ -22,25 +22,48 @@ CFLAGS += -fno-exceptions -fno-rtti -felide-constructors # -static-libgcc
 
 OBJECTS = $(patsubst %.cpp,%.o,$(filter %.cpp, $(SRC))) $(patsubst %.c,%.o,$(filter %.c, $(SRC)))
 
-%.o: %.cpp
-	$(CC) -c $(CFLAGS) $(DEFINES) $(SMINC) $(INCLUDES) -o $@ $<
 
-%.o: %.c
-	$(CC) -c $(CFLAGS) $(DEFINES) $(SMINC) $(INCLUDES) -o $@ $<
 
-%.a: $(OBJECTS)
-	$(AR) rcs $@ $^
+.PHONY: $(TARGET)
 
-%.so: $(OBJECTS)
+ifneq ($(findstring .so,$(TARGET)),)
+$(TARGET): $(OBJECTS)
 	$(CC) $(CFLAGS) $(DEFINES) $(SMINC) $(INCLUDES) -o $@ -shared -Wl,-soname,$@ $? -Wl,-Bstatic $(STATICLIBS) -Wl,-Bdynamic $(SHAREDLIBS) $(SMLIB)
+endif
 
-%.bin: $(OBJECTS)
+ifneq ($(findstring .a,$(TARGET)),)
+$(TARGET): $(OBJECTS)
+	$(AR) rcs $@ $^
+endif
+
+ifeq ($(findstring .,$(TARGET)),)
+$(TARGET): $(OBJECTS)
 	$(CC) $(CFLAGS) $(DEFINES) $(SMINC) $(INCLUDES) -o $@ $^ -static-libgcc -Wl,-Bstatic $(STATICLIBS) -Wl,-Bdynamic $(SHAREDLIBS) $(SMLIB)
-	mv $@ $(basename $@)
+	 mv $@ $(basename $@)
+endif
+
+
+#%.o: %.cpp
+#	$(CC) -c $(CFLAGS) $(DEFINES) $(SMINC) $(INCLUDES) -o $@ $<
+#
+#%.o: %.c
+#	$(CC) -c $(CFLAGS) $(DEFINES) $(SMINC) $(INCLUDES) -o $@ $<
+#
+#%.a: $(OBJECTS)
+#	$(AR) rcs $@ $^
+#
+#%.so: $(OBJECTS)
+#	$(CC) $(CFLAGS) $(DEFINES) $(SMINC) $(INCLUDES) -o $@ -shared -Wl,-soname,$@ $? -Wl,-Bstatic $(STATICLIBS) -Wl,-Bdynamic $(SHAREDLIBS) $(SMLIB)
+#
+#%.bin: $(OBJECTS)
+#	$(CC) $(CFLAGS) $(DEFINES) $(SMINC) $(INCLUDES) -o $@ $^ -static-libgcc -Wl,-Bstatic $(STATICLIBS) -Wl,-Bdynamic $(SHAREDLIBS) $(SMLIB)
+#	mv $@ $(basename $@)
+#
+#
 
 .PHONY: $(DEPENDS)
 $(DEPENDS):
-	$(MAKE) -C $(dir $@) -f $(notdir $@) $(MAKECMDGOALS)
+	$(MAKE) $(MFLAGS) -C $(dir $@) -f $(notdir $@) $(MAKECMDGOALS)
 
 .PHONY: clean
 clean: $(DEPENDS)
