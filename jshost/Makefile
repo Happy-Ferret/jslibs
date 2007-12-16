@@ -1,4 +1,4 @@
-TARGET=jshost.bin
+TARGET=jshost
 SRC=$(wildcard *.cpp)
 INCLUDES=
 STATICLIBS=../moduleManager/libmoduleManager.a -lm

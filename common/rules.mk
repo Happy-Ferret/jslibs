@@ -1,5 +1,6 @@
-CC := gcc
-AR := ar
+ifeq ($(MAKECMDGOALS),)
+$(error NO GOAL SPECIFIED)
+endif
 
 BUILD ?= opt
 
@@ -22,7 +23,14 @@ CFLAGS += -fno-exceptions -fno-rtti -felide-constructors # -static-libgcc
 
 OBJECTS = $(patsubst %.cpp,%.o,$(filter %.cpp, $(SRC))) $(patsubst %.c,%.o,$(filter %.c, $(SRC)))
 
+CC := gcc
+AR := ar
 
+%.o: %.cpp
+	$(CC) -c $(CFLAGS) $(DEFINES) $(SMINC) $(INCLUDES) -o $@ $<
+
+%.o: %.c
+	$(CC) -c $(CFLAGS) $(DEFINES) $(SMINC) $(INCLUDES) -o $@ $<
 
 .PHONY: $(TARGET)
 
@@ -39,15 +47,10 @@ endif
 ifeq ($(findstring .,$(TARGET)),)
 $(TARGET): $(OBJECTS)
 	$(CC) $(CFLAGS) $(DEFINES) $(SMINC) $(INCLUDES) -o $@ $^ -static-libgcc -Wl,-Bstatic $(STATICLIBS) -Wl,-Bdynamic $(SHAREDLIBS) $(SMLIB)
-	 mv $@ $(basename $@)
+	#mv $@ $(basename $@)
 endif
 
 
-#%.o: %.cpp
-#	$(CC) -c $(CFLAGS) $(DEFINES) $(SMINC) $(INCLUDES) -o $@ $<
-#
-#%.o: %.c
-#	$(CC) -c $(CFLAGS) $(DEFINES) $(SMINC) $(INCLUDES) -o $@ $<
 #
 #%.a: $(OBJECTS)
 #	$(AR) rcs $@ $^
@@ -72,13 +75,10 @@ clean: $(DEPENDS)
 .PHONY: all
 all: $(DEPENDS) $(TARGET)
 
-.PHONY: install
-install: ;
-
 .PHONY: copy
-copy: ;
-
-.DEFAULT_GOAL := all
+copy:
+	-mkdir ./$(BUILD)/
+	cp $(TARGET) ./$(BUILD)/
 
 
 
