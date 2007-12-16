@@ -1,6 +1,7 @@
-.DEFUALT: ;
+include ../common/subdirs.mk
 
-.PHONY: $(MAKECMDGOALS)
-$(MAKECMDGOALS):
+TARGET_FILES = ./src/libtommath.a
+
+all clean:
 	$(MAKE) -C src $(@:all=default)
 

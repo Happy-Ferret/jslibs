@@ -1,48 +1,13 @@
-ifeq ($(BUILD),dbg)
-	BUILD = dbg
-	LIBJS_DIR = Linux_All_DBG.OBJ
-	LIBJS_MAKE_OPTIONS =
-else
-	BUILD = opt
-	LIBJS_DIR = Linux_All_OPT.OBJ
-	LIBJS_MAKE_OPTIONS = BUILD_OPT=1
-endif
+BUILD ?= opt
 
-FILES = \
-	js/src/$(LIBJS_DIR)/libjs.so\
-	jshost/jshost\
-	jsstd/jsstd.so\
-	jsio/jsio.so\
-	jsobjex/jsobjex.so\
-	jsz/jsz.so\
-	jscrypt/jscrypt.so
+SUBDIRS = js jshost jsstd nspr jsio jsobjex zlib jsz libtomcrypt jscrypt
+
+all clean distclean copy:
+	for d in $(SUBDIRS); do $(MAKE) -C $$d $@ BUILD=$(BUILD); done
+
+install: copy
+	-mkdir ./$(BUILD)/
+	for d in $(SUBDIRS); do cp $$d/$(BUILD)/* ./$(BUILD)/; done
 
 
-$(FILES):
-	$(MAKE) -C $(dir $@) $(MAKECMDGOALS)
-
-js/src/$(LIBJS_DIR)/libjs.so:
-	cd js/src && $(MAKE) -f Makefile.ref $(LIBJS_MAKE_OPTIONS)
-
-.PHONY: all
-all: $(FILES)
-
-.PHONY: clean
-clean: $(FILES)
-	-rm $(FILES)
-
-.PHONY: install
-install: all
-	-mkdir ./$(BUILD)
-	cp $(FILES) ./$(BUILD)
-	cp ./nspr/src/dist/lib/libnspr4.so ./$(BUILD)
-	cp ./js/src/$(LIBJS_DIR)/libjs.so ./$(BUILD)
-
-
-.DEFAULT_GOAL := all
-
-
-######################### END
-
-#  for d in $(DEPENDS); do $(MAKE) -C $$d $(MAKECMDGOALS); done
-
+################################ END

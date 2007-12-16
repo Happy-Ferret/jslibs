@@ -1,15 +1,21 @@
+include ../common/subdirs.mk
+
+TARGET_FILES = ./src/libsqlite3.a
+
 CC=gcc
+ifeq ($(BUILD),opt)
+CFLAGS += -O3
+else
+CFLAGS += -O0 -g
+endif
 
-# $(MAKECMDGOALS)
-.PHONY: all
-all:
-	$(CC) -c $(CFLAGS) -o sqlite3.o src/sqlite3.c
-	$(AR) rcs libsqlite3.a sqlite3.o
+./src/libsqlite3.a:
+	cd src && $(CC) -c -o sqlite3.o $(CFLAGS) sqlite3.c
+	cd src && $(AR) rcs libsqlite3.a sqlite3.o
 
-.PHONY: clean
+all: ./src/libsqlite3.a
+
 clean:
-	-rm sqlite3.o libsqlite3.a
+	-cd src && rm sqlite3.o libsqlite3.a
 
-.PHONY: install
-install: ;
 

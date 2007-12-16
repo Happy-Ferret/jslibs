@@ -1,20 +1,20 @@
-CC:=gcc
-AR:=ar
+CC := gcc
+AR := ar
+
+BUILD ?= opt
 
 ifeq ($(BUILD),dbg)
-	BUILD = dbg
 	CFLAGS += -Wall -g3 -O0
 	SMINC = -I../js/src/Linux_All_DBG.OBJ -I../js/src
 	SMLIB = -Wl,-Bdynamic -L../js/src/Linux_All_DBG.OBJ -ljs
 else
-	BUILD = opt
 	CFLAGS += -Wall -O3 -s -funroll-loops
 	SMINC = -I../js/src/Linux_All_OPT.OBJ -I../js/src
 	SMLIB = -Wl,-Bdynamic -L../js/src/Linux_All_OPT.OBJ -ljs
 endif
 
 
-ifneq (,$(findstring .so,$(TARGET)))
+ifneq ($(findstring .so,$(TARGET)),)
 	CFLAGS += -fpic
 endif
 
@@ -22,13 +22,11 @@ CFLAGS += -fno-exceptions -fno-rtti -felide-constructors # -static-libgcc
 
 OBJECTS = $(patsubst %.cpp,%.o,$(filter %.cpp, $(SRC))) $(patsubst %.c,%.o,$(filter %.c, $(SRC)))
 
-
 %.o: %.cpp
 	$(CC) -c $(CFLAGS) $(DEFINES) $(SMINC) $(INCLUDES) -o $@ $<
 
 %.o: %.c
 	$(CC) -c $(CFLAGS) $(DEFINES) $(SMINC) $(INCLUDES) -o $@ $<
-
 
 %.a: $(OBJECTS)
 	$(AR) rcs $@ $^
@@ -53,6 +51,9 @@ all: $(DEPENDS) $(TARGET)
 
 .PHONY: install
 install: ;
+
+.PHONY: copy
+copy: ;
 
 .DEFAULT_GOAL := all
 
