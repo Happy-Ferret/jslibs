@@ -1,6 +1,6 @@
 BUILD ?= opt
 
-SUBDIRS = js jshost jsstd nspr jsio jsobjex jsz jscrypt
+SUBDIRS = js jshost jsstd nspr jsio jsobjex jssqlite jsz jscrypt
 
 all clean distclean copy:
 	for d in $(SUBDIRS); do $(MAKE) -C $$d $@ BUILD=$(BUILD); done
