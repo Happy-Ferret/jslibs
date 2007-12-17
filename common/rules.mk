@@ -47,22 +47,7 @@ endif
 ifeq ($(findstring .,$(TARGET)),)
 $(TARGET): $(OBJECTS)
 	$(CC) $(CFLAGS) $(DEFINES) $(SMINC) $(INCLUDES) -o $@ $^ -static-libgcc -Wl,-Bstatic $(STATICLIBS) -Wl,-Bdynamic $(SHAREDLIBS) $(SMLIB)
-	#mv $@ $(basename $@)
 endif
-
-
-#
-#%.a: $(OBJECTS)
-#	$(AR) rcs $@ $^
-#
-#%.so: $(OBJECTS)
-#	$(CC) $(CFLAGS) $(DEFINES) $(SMINC) $(INCLUDES) -o $@ -shared -Wl,-soname,$@ $? -Wl,-Bstatic $(STATICLIBS) -Wl,-Bdynamic $(SHAREDLIBS) $(SMLIB)
-#
-#%.bin: $(OBJECTS)
-#	$(CC) $(CFLAGS) $(DEFINES) $(SMINC) $(INCLUDES) -o $@ $^ -static-libgcc -Wl,-Bstatic $(STATICLIBS) -Wl,-Bdynamic $(SHAREDLIBS) $(SMLIB)
-#	mv $@ $(basename $@)
-#
-#
 
 .PHONY: $(DEPENDS)
 $(DEPENDS):
@@ -70,7 +55,7 @@ $(DEPENDS):
 
 .PHONY: clean
 clean: $(DEPENDS)
-	-rm -f *.o $(TARGET) $(basename $(TARGET))
+	-rm *.o $(TARGET)
 
 .PHONY: all
 all: $(DEPENDS) $(TARGET)
@@ -80,29 +65,18 @@ copy:
 	-mkdir ./$(BUILD)/
 	cp $(TARGET) ./$(BUILD)/
 
-
+install: ;
 
 ################################# END
-
-
-#dependenses:
-#	for d in $(DEPENDS); do $(MAKE) -C $$d $(MAKECMDGOALS); done
-
-
-#.PRECIOUS: %.o
-
 
 # If I decide to use C instead of C++ ( but no static functions support ):
 #  -std=c99
 
 # -lstdc++
 
-
 # Linking libstdc++ statically
 # 	http://www.trilithium.com/johan/2005/06/static-libstdc/
 #  tip: use gcc instead of g++
-#
-# make manual: http://www.gnu.org/software/make/manual/make.html#Automatic-Variables
 #
 # http://tldp.org/HOWTO/Program-Library-HOWTO/shared-libraries.html
 # debugging information: -g

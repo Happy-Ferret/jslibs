@@ -3,6 +3,6 @@ SRC        = $(wildcard *.cpp)
 INCLUDES   = -I../zlib/src
 STATICLIBS = -L../zlib/src -lz
 SHAREDLIBS =
-DEPENDS    = ../zlib/src/Makefile
+DEPENDS    = ../zlib/Makefile
 
 include ../common/rules.mk
