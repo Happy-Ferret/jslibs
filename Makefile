@@ -6,9 +6,11 @@ SUBDIRS = js jshost jsstd nspr jsio jsobjex jssqlite jsz jscrypt
 $(SUBDIRS):
 	$(MAKE) -C $@ BUILD=$(BUILD) $(MAKECMDGOALS)
 
-$(MAKECMDGOALS) copy: $(SUBDIRS) ;
+$(MAKECMDGOALS): $(SUBDIRS) ;
 
-install: copy
+install:
 	-mkdir ./$(BUILD)/
-	for d in $(SUBDIRS); do cp $$d/$(BUILD)/* ./$(BUILD)/; done
+	for d in $(SUBDIRS); do \
+		$(MAKE) -C $$d BUILD=$(BUILD) copy && cp $$d/$(BUILD)/* ./$(BUILD)/ ;\
+	done
 
