@@ -6,6 +6,7 @@ SUBDIRS = js jshost jsstd nspr jsio jsobjex jssqlite jsz jscrypt
 $(SUBDIRS):
 	$(MAKE) -C $@ BUILD=$(BUILD) $(MAKECMDGOALS)
 
+.PHONY: $(MAKECMDGOALS)
 $(MAKECMDGOALS): $(SUBDIRS) ;
 
 install:
