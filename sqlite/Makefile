@@ -13,9 +13,9 @@ endif
 	cd src && $(CC) -c -o sqlite3.o $(CFLAGS) sqlite3.c
 	cd src && $(AR) rcs libsqlite3.a sqlite3.o
 
-all: ./src/libsqlite3.a
+all:: ./src/libsqlite3.a
 
-clean:
+clean::
 	-cd src && rm sqlite3.o libsqlite3.a
 
 

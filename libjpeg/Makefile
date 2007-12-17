@@ -1,9 +1,9 @@
-.DEFUALT: ;
+include ../common/subdirs.mk
 
-.PHONY: $(MAKECMDGOALS)
-$(MAKECMDGOALS): ./src/Makefile
-	$(MAKE) -C src $@
-	
+TARGET_FILES = ./src/.libs/libjpeg.a
+
 ./src/Makefile:
 	cd src && ./configure --enable-static --disable-shared
 
+all clean distclean:: ./src/Makefile
+	$(MAKE) -C src $@

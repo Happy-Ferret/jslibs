@@ -15,3 +15,7 @@ DEST_DIR = ./$(BUILD)/
 copy:
 	-mkdir $(DEST_DIR)
 	cp $(TARGET_FILES) $(DEST_DIR)
+
+clean::
+	-rm $(DEST_DIR)*
+	-rmdir $(DEST_DIR)

@@ -12,5 +12,5 @@ endif
 
 TARGET_FILES = ./src/$(LIBJS_DIR)/libjs.so
 
-all clean:
+all clean::
 	$(MAKE) -C src -f Makefile.ref $@ $(LIBJS_MAKE_OPTIONS)

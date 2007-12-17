@@ -24,10 +24,10 @@ CFLAGS += -fno-exceptions -fno-rtti -felide-constructors # -static-libgcc
 OBJECTS = $(patsubst %.cpp,%.o,$(filter %.cpp, $(SRC))) $(patsubst %.c,%.o,$(filter %.c, $(SRC)))
 
 CC := gcc
-AR := ar
+CCX := gcc
 
 %.o: %.cpp
-	$(CC) -c $(CFLAGS) $(DEFINES) $(SMINC) $(INCLUDES) -o $@ $<
+	$(CCX) -c $(CFLAGS) $(DEFINES) $(SMINC) $(INCLUDES) -o $@ $<
 
 %.o: %.c
 	$(CC) -c $(CFLAGS) $(DEFINES) $(SMINC) $(INCLUDES) -o $@ $<
@@ -53,19 +53,19 @@ endif
 $(DEPENDS):
 	$(MAKE) $(MFLAGS) -C $(dir $@) -f $(notdir $@) $(MAKECMDGOALS)
 
-.PHONY: clean
-clean: $(DEPENDS)
+.PHONY: clean distclean
+clean distclean: $(DEPENDS)
 	-rm *.o $(TARGET)
+	-rm ./$(BUILD)/*
+	-rmdir ./$(BUILD)/
 
 .PHONY: all
 all: $(DEPENDS) $(TARGET)
 
-.PHONY: copy
+.PHONY: copy 
 copy:
 	-mkdir ./$(BUILD)/
 	cp $(TARGET) ./$(BUILD)/
-
-install: ;
 
 ################################# END
 

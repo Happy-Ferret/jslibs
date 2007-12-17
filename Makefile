@@ -1,17 +1,20 @@
 BUILD ?= opt
 
-SUBDIRS = js jshost jsstd nspr jsio jsobjex jssqlite jsz jscrypt
+SUBDIRS := js jshost jsstd nspr jsio jsobjex jssqlite jsz jscrypt
 
 .PHONY: $(SUBDIRS)
 $(SUBDIRS):
-	$(MAKE) -C $@ BUILD=$(BUILD) $(MAKECMDGOALS)
+	$(MAKE) -C $@ $(MAKECMDGOALS) BUILD=$(BUILD)
 
 .PHONY: $(MAKECMDGOALS)
-$(MAKECMDGOALS): $(SUBDIRS) ;
+$(MAKECMDGOALS):: $(SUBDIRS) ;
 
-install:
+copy::
 	-mkdir ./$(BUILD)/
 	for d in $(SUBDIRS); do \
-		$(MAKE) -C $$d BUILD=$(BUILD) copy && cp $$d/$(BUILD)/* ./$(BUILD)/ ;\
+		cp ./$$d/$(BUILD)/* ./$(BUILD)/ ;\
 	done
 
+clean::
+	-rm ./$(BUILD)/*
+	-rmdir ./$(BUILD)/
