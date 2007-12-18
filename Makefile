@@ -11,7 +11,7 @@ $(MAKECMDGOALS):: $(SUBDIRS) ;
 
 copy::
 	-mkdir ./$(BUILD)/
-	for d in $(SUBDIRS); do \
+	for d in $(SUBDIRS) ; do \
 		cp ./$$d/$(BUILD)/* ./$(BUILD)/ ;\
 	done
 
