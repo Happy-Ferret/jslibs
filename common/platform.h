@@ -36,6 +36,7 @@
 	#define XP_WIN
 
 	#define DLL_EXT ".dll"
+	#define PATH_SEPARATOR_STRING "\\"
 	#define PATH_SEPARATOR '\\'
 	#define LLONG __int64
 
@@ -49,6 +50,7 @@
 	#define XP_UNIX
 
 	#define DLL_EXT ".dylib"
+	#define PATH_SEPARATOR_STRING "/"
 	#define PATH_SEPARATOR '/'
 	#define LLONG long long
 
@@ -65,6 +67,7 @@
 	#define XP_UNIX
 
 	#define DLL_EXT ".so"
+	#define PATH_SEPARATOR_STRING "/"
 	#define PATH_SEPARATOR '/'
 	#define MAX_PATH PATH_MAX
 	#define LLONG long long
