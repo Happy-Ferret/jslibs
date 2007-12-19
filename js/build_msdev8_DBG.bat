@@ -6,6 +6,8 @@ set path=C:\tools\cygwin\bin
 call "C:\Program Files\Microsoft Platform SDK\SetEnv.Cmd" /XP32 /DEBUG
 call "C:\Program Files\Microsoft Visual Studio 8\VC\vcvarsall.bat" x86
 
+copy jsconfig.h src
+
 cd .\src
 
 	rem /MT  : Multithreaded static
