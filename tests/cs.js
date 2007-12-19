@@ -1,5 +1,5 @@
 LoadModule('jsstd');
-LoadModule('jsnspr');
+LoadModule('jsio');
 
 var dlist = []; //descriptor list
 

@@ -25,6 +25,7 @@
 
 #ifdef XP_UNIX
 	#include <unistd.h>
+	#include <dlfcn.h>
 #endif //XP_UNIX
 
 //#include <stdio.h>
@@ -58,13 +59,13 @@
 void GetAbsoluteModulePath( char* moduleFileName, size_t size, char *modulePath ) {
 
 	if ( modulePath[0] == PATH_SEPARATOR ) { //  /jshost
-		
+
 		strcpy(moduleFileName, modulePath);
 		return;
 	}
 
 	if ( modulePath[0] == '.' && modulePath[1] == PATH_SEPARATOR ) { //  ./jshost
-	
+
 		getcwd(moduleFileName, size);
 		strcat(moduleFileName, modulePath + 1 );
 		return;
@@ -86,7 +87,7 @@ void GetAbsoluteModulePath( char* moduleFileName, size_t size, char *modulePath 
 		return;
 	}
 
-	char *envPath = getenv('PATH');
+	char *envPath = getenv("PATH");
 	char *pos;
 
 	do {
@@ -117,6 +118,7 @@ void GetAbsoluteModulePath( char* moduleFileName, size_t size, char *modulePath 
 
 	moduleFileName[0] = '\0';
 	return;
+
 }
 
 #endif //XP_UNIX
@@ -514,8 +516,8 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	RT_HOST_MAIN_ASSERT( len != 0, "unable to GetModuleFileName." );
 #else // XP_WIN
 
-	GetAbsoluteModulePath(moduleFileName, sizeof(hostFullPath), argv[0]);
-	RT_HOST_MAIN_ASSERT( moduleFileName[0] != '\0', "unable to get module FileName." );
+	GetAbsoluteModulePath(hostFullPath, sizeof(hostFullPath), argv[0]);
+	RT_HOST_MAIN_ASSERT( hostFullPath[0] != '\0', "unable to get module FileName." );
 
 //	int len = readlink("/proc/self/exe", moduleFileName, sizeof(moduleFileName)); // doc: readlink does not append a NUL character to buf.
 //	moduleFileName[len] = '\0';
