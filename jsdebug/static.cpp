@@ -13,20 +13,18 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-
 #include "jsstddef.h"
-
 #include "static.h"
 
+#include "jsdbgapi.h"
 #include "jsatom.h"
 #include "jscntxt.h"
-
-#include "jsdbgapi.h"
-
 #include "jsscope.h"
 #include "jsstr.h"
 #include "jsscript.h"
 #include "jsfun.h"
+
+#include "string.h"
 
 
 extern JSFunction *stdoutFunction;
