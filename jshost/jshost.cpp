@@ -426,6 +426,14 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 
 	rt = JS_NewRuntime(maxbytes); // maxbytes specifies the number of allocated bytes after which garbage collection is run.
 	RT_HOST_MAIN_ASSERT( rt != NULL, "unable to create the runtime." ); // (TBD) fix Warning: uninitialized local variable 'cx'
+
+	//enum { MEM_LIMIT = 64*1024*1024 };
+	//enum { GC_INTERVAL = 2*1024*1024 };
+	//JS_SetGCParameter(rt, JSGC_MAX_BYTES, 0xffffffff); /* maximum nominal heap before last ditch GC */
+	//JS_SetGCParameter(rt, JSGC_MAX_MALLOC_BYTES, GC_INTERVAL); /* # of JS_malloc bytes before last ditch GC */
+	JS_SetGCParameter(rt, JSGC_MAX_MALLOC_BYTES, maxbytes / 2); /* # of JS_malloc bytes before last ditch GC */
+
+
 	cx = JS_NewContext(rt, stackSize); // A context specifies a stack size for the script, the amount, in bytes, of private memory to allocate to the execution stack for the script.
 	RT_HOST_MAIN_ASSERT( cx != NULL, "unable to create the context." );
 
