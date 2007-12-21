@@ -83,7 +83,6 @@ BEGIN_STATIC
 static void
 DumpScope(JSContext *cx, JSObject *obj)
 {
-	char buffer[65535];
     uintN i;
     JSScope *scope;
     JSScopeProperty *sprop;
@@ -111,15 +110,25 @@ DumpScope(JSContext *cx, JSObject *obj)
             if (!str)
                 _puts(cx, "<error>");
 				else {
+#ifndef DEBUG
+
+//	JS_ReportError( cx, ("Available in DEBUG mode only." RT_CODE_LOCATION) );
+	_puts(cx, "Available in DEBUG mode only.");
+
+#else //DEBUG
+					char buffer[65535];
 					size_t count = js_PutEscapedStringImpl(buffer, sizeof(buffer), NULL, str, '"'); // js_FileEscapedString(fp, str, '"');
 					buffer[count] = '\0';
-                _puts(cx, buffer);
+					_puts(cx, buffer);
+#endif //DEBUG
+
 				}
         }
         _printf(cx, " slot %lu flags %x shortid %d\n",
                 (unsigned long)sprop->slot, sprop->flags, sprop->shortid);
     }
 }
+
 
 static JSBool
 DumpStats(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
