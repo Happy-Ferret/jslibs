@@ -21,6 +21,10 @@
 	#define EXTERN_C
 #endif
 
+#ifdef _DEBUG
+	#define DEBUG
+#endif
+
 #ifdef _MSC_VER
 #pragma warning(disable : 4311)
 #pragma warning(disable : 4312)
