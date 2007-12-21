@@ -5,7 +5,7 @@ endif
 BUILD ?= opt
 
 ifeq ($(BUILD),dbg)
-	CFLAGS += -Wall -g3 -O0
+	CFLAGS += -Wall -g3 -O0 -DDEBUG
 	SMINC = -I../js/src/Linux_All_DBG.OBJ -I../js/src
 	SMLIB = -Wl,-Bdynamic -L../js/src/Linux_All_DBG.OBJ -ljs
 else
