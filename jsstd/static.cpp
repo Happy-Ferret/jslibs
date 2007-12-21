@@ -134,6 +134,23 @@ DEFINE_FUNCTION( Expand ) {
 	return JS_TRUE;
 }
 
+/*
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// source: http://mxr.mozilla.org/mozilla/source/js/src/js.c
+static JSBool Intern(JSContext *cx, uintN argc, jsval *vp) {
+
+	JSString *str;
+	str = JS_ValueToString(cx, vp[2]);
+	if (!str)
+		return JS_FALSE;
+	if (!JS_InternUCStringN(cx, JS_GetStringChars(str), JS_GetStringLength(str))) {
+
+		return JS_FALSE;
+	}
+	*vp = JSVAL_VOID;
+	return JS_TRUE;
+}
+*/
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 DEFINE_FUNCTION( Seal ) {
@@ -695,6 +712,7 @@ CONFIGURE_STATIC
 
 	BEGIN_STATIC_FUNCTION_SPEC
 		FUNCTION( Expand )
+//		FUNCTION( Intern )
 		FUNCTION( Seal )
 		FUNCTION( Clear )
 		FUNCTION( SetScope )
