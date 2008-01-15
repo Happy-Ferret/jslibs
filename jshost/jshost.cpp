@@ -430,10 +430,14 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 				break;
 	}
 
-	rt = JS_NewRuntime(maxMem); // maxbytes specifies the number of allocated bytes after which garbage collection is run.
+	rt = JS_NewRuntime(0); // maxMem specifies the number of allocated bytes after which garbage collection is run.
 	RT_HOST_MAIN_ASSERT( rt != NULL, "unable to create the runtime." ); // (TBD) fix Warning: uninitialized local variable 'cx'
 
-	//JS_SetGCParameter(rt, JSGC_MAX_BYTES, maxbytes); /* maximum nominal heap before last ditch GC */
+//call of  'js_malloc'  acts on  'runtime->gcMallocBytes'
+//do gc IF rt->gcMallocBytes >= rt->gcMaxMallocBytes
+
+
+	JS_SetGCParameter(rt, JSGC_MAX_BYTES, maxMem); /* maximum nominal heap before last ditch GC */
 	JS_SetGCParameter(rt, JSGC_MAX_MALLOC_BYTES, maxAlloc); /* # of JS_malloc bytes before last ditch GC */
 
 	cx = JS_NewContext(rt, 8192L); // http://groups.google.com/group/mozilla.dev.tech.js-engine/browse_thread/thread/be9f404b623acf39/9efdfca81be99ca3
