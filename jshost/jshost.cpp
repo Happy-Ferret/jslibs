@@ -408,7 +408,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 //	unsigned long maxbytes = 64L * 1024L * 1024L;
 	
 	uint32 maxMem = (uint32)-1; // by default, there are no limit
-	uint32 maxAlloc = 2 * 1024L * 1024L;
+	uint32 maxAlloc = (uint32)-1; // by default, there are no limit
 
 	char** argumentVector = argv;
 
@@ -435,7 +435,6 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 
 //call of  'js_malloc'  acts on  'runtime->gcMallocBytes'
 //do gc IF rt->gcMallocBytes >= rt->gcMaxMallocBytes
-
 
 	JS_SetGCParameter(rt, JSGC_MAX_BYTES, maxMem); /* maximum nominal heap before last ditch GC */
 	JS_SetGCParameter(rt, JSGC_MAX_MALLOC_BYTES, maxAlloc); /* # of JS_malloc bytes before last ditch GC */
