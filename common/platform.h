@@ -48,8 +48,6 @@
 	#define DLLLOCAL
 
 	#define strcasecmp stricmp
-	#define getsystime _getsystime
-
 
 #elif defined(_MACOSX) // MacosX platform
 	#define XP_UNIX

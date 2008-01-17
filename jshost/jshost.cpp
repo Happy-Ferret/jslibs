@@ -402,11 +402,13 @@ JSBool GCCallTrace(JSContext *cx, JSGCStatus status) {
 	char *statusStr[4] = { "JSGC_BEGIN", "JSGC_END", "JSGC_MARK_END", "JSGC_FINALIZE_END" };
 	if ( status == JSGC_BEGIN || status == JSGC_END ) {
 
-		tm time;
-		getsystime(&time);
+		time_t t;
+		struct tm *tim;
+		t = time(NULL);
+		tim = localtime(&t);
 
 		char timeTmp[256];
-		strftime( timeTmp, sizeof(timeTmp), "%m.%d %H:%M:%S", &time);
+		strftime( timeTmp, sizeof(timeTmp), "%m.%d %H:%M:%S", tim);
 		
 		char tmp[256];
 		int len = sprintf(tmp, "## %s %s gcByte:%u\n", timeTmp, statusStr[status], cx->runtime->gcBytes );
