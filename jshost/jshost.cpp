@@ -18,6 +18,8 @@
 
 #include "../common/platform.h"
 
+#include <time.h>
+
 #include <fcntl.h>
 #ifdef XP_WIN
 	#include <io.h>
@@ -396,11 +398,18 @@ static JSBool stdoutFunction(JSContext *cx, JSObject *obj, uintN argc, jsval *ar
 }
 
 JSBool GCCallTrace(JSContext *cx, JSGCStatus status) {
-	
-	if ( status == JSGC_BEGIN ) {
-	
-		char tmp[1024];
-		int len = sprintf(tmp, "GC JSGC_BEGIN. gcByte:%u gcMaxBytes:%u gcMaxMallocBytes:%u \n", cx->runtime->gcBytes, cx->runtime->gcMaxBytes, cx->runtime->gcMaxMallocBytes );
+
+	char *statusStr[4] = { "JSGC_BEGIN", "JSGC_END", "JSGC_MARK_END", "JSGC_FINALIZE_END" };
+	if ( status == JSGC_BEGIN || status == JSGC_END ) {
+
+		tm time;
+		getsystime(&time);
+
+		char timeTmp[256];
+		strftime( timeTmp, sizeof(timeTmp), "%m.%d %H:%M:%S", &time);
+		
+		char tmp[256];
+		int len = sprintf(tmp, "## %s %s gcByte:%u\n", timeTmp, statusStr[status], cx->runtime->gcBytes );
 		consoleStdErr( cx, tmp, len );
 	}
 	return JS_TRUE;
