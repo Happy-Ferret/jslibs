@@ -43,6 +43,7 @@
 #include "jsstddef.h"
 #include "jsprf.h"
 #include "jsscript.h"
+#include "jscntxt.h"
 
 #include "../common/jsNames.h"
 #include "../common/jsHelper.h"
@@ -136,6 +137,8 @@ int consoleStdErr( JSContext *, const char *data, int length ) {
 
 
 bool reportWarnings = true;
+bool debugTraces = false;
+
 
 // function copied from ../js/src/js.c
 static void ErrorReporter(JSContext *cx, const char *message, JSErrorReport *report) {
@@ -392,6 +395,17 @@ static JSBool stdoutFunction(JSContext *cx, JSObject *obj, uintN argc, jsval *ar
 	return JS_TRUE;
 }
 
+JSBool GCCallTrace(JSContext *cx, JSGCStatus status) {
+	
+	if ( status == JSGC_BEGIN ) {
+	
+		char tmp[1024];
+		int len = sprintf(tmp, "GC JSGC_BEGIN. gcByte:%u gcMaxBytes:%u gcMaxMallocBytes:%u \n", cx->runtime->gcBytes, cx->runtime->gcMaxBytes, cx->runtime->gcMaxMallocBytes );
+		consoleStdErr( cx, tmp, len );
+	}
+	return JS_TRUE;
+}
+
 
 JSScript *script = NULL;
 JSRuntime *rt = NULL;
@@ -428,10 +442,14 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 				reportWarnings = !unsafeMode;
 				// (TBD) set into configuration
 				break;
+			case 'd': // debugTraces
+				debugTraces = true;
+				break;
 	}
 
 	rt = JS_NewRuntime(0); // maxMem specifies the number of allocated bytes after which garbage collection is run.
 	RT_HOST_MAIN_ASSERT( rt != NULL, "unable to create the runtime." ); // (TBD) fix Warning: uninitialized local variable 'cx'
+
 
 //call of  'js_malloc'  acts on  'runtime->gcMallocBytes'
 //do gc IF rt->gcMallocBytes >= rt->gcMaxMallocBytes
@@ -451,6 +469,11 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 
 // error management
 	JS_SetErrorReporter(cx, ErrorReporter);
+
+	if ( debugTraces ) {
+		
+		JS_SetGCCallbackRT(rt, GCCallTrace);
+	}
 
 
 #ifdef XP_WIN
