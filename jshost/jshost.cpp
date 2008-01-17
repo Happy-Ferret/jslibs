@@ -483,7 +483,8 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 
 	if ( debugTraces ) {
 		
-		JS_SetGCCallbackRT(rt, GCCallTrace);
+//		JS_SetGCCallbackRT(rt, GCCallTrace);
+		JS_SetGCCallback(cx, GCCallTrace);
 	}
 
 
