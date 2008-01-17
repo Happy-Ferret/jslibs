@@ -179,7 +179,7 @@ DumpStats(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-/*
+
 static JSBool
 DumpHeap(JSContext *cx, uintN argc, jsval *vp)
 {
@@ -276,7 +276,7 @@ DumpHeap(JSContext *cx, uintN argc, jsval *vp)
                    badTraceArg);
     return JS_FALSE;
 }
-*/
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -425,6 +425,7 @@ CONFIGURE_STATIC
 
 	BEGIN_STATIC_FUNCTION_SPEC
 
+		FUNCTION_FAST( DumpHeap )
 		FUNCTION( DumpStats )
 		FUNCTION( Trap )
 		FUNCTION( Untrap )
