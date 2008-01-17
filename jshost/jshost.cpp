@@ -249,7 +249,8 @@ static uint32 gBranchLimit = 1000000;
 static uint32 gBranchCount;
 static JSBool BranchCallback(JSContext *cx, JSScript *script) {
 
-	if (++gBranchCount == gBranchLimit) {
+	if (++g
+	Count == gBranchLimit) {
 
 		char *msg;
 		if (script) {
@@ -276,6 +277,13 @@ static JSBool BranchCallback(JSContext *cx, JSScript *script) {
 }
 */
 
+static uint32 gBranchCount = 1;
+static JSBool BranchCallback(JSContext *cx, JSScript *script) {
+
+	if ((++gBranchCount & (0x1000-1)) == 1) // true every 4096
+		JS_MaybeGC(cx);
+	return JS_TRUE;
+}
 
 
 static JSBool LoadModule(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
@@ -411,7 +419,7 @@ JSBool GCCallTrace(JSContext *cx, JSGCStatus status) {
 		strftime( timeTmp, sizeof(timeTmp), "%m.%d %H:%M:%S", tim);
 		
 		char tmp[256];
-		int len = sprintf(tmp, "## %s %s gcByte:%u\n", timeTmp, statusStr[status], cx->runtime->gcBytes );
+		int len = sprintf(tmp, "## %s %s gcByte:%u gcMallocBytes:%u\n", timeTmp, statusStr[status], cx->runtime->gcBytes, cx->runtime->gcMallocBytes );
 		consoleStdErr( cx, tmp, len );
 	}
 	return JS_TRUE;
@@ -468,24 +476,21 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	JS_SetGCParameter(rt, JSGC_MAX_BYTES, maxMem); /* maximum nominal heap before last ditch GC */
 	JS_SetGCParameter(rt, JSGC_MAX_MALLOC_BYTES, maxAlloc); /* # of JS_malloc bytes before last ditch GC */
 
-	cx = JS_NewContext(rt, 8192L); // http://groups.google.com/group/mozilla.dev.tech.js-engine/browse_thread/thread/be9f404b623acf39/9efdfca81be99ca3
+	cx = JS_NewContext(rt, 8192L); // set the chunk size of the stack pool to 8192. see http://groups.google.com/group/mozilla.dev.tech.js-engine/browse_thread/thread/be9f404b623acf39/9efdfca81be99ca3
 	RT_HOST_MAIN_ASSERT( cx != NULL, "unable to create the context." );
+
+	JS_SetScriptStackQuota( cx, JS_DEFAULT_SCRIPT_STACK_QUOTA ); // good place to manage stack limit ( that is 32MB by default )
+	//	btw, JS_SetScriptStackQuota ( see also JS_SetThreadStackLimit )
 
 	JS_SetVersion( cx, (JSVersion)JS_VERSION );
 	// (TBD) set into configuration file
 
-	// good place to manage stack limit ( that is 32MB by default ):
-	//JS_SetScriptStackQuota( cx, JS_DEFAULT_SCRIPT_STACK_QUOTA );
-	//	btw, JS_SetScriptStackQuota ( see also JS_SetThreadStackLimit )
+// hooks and callbacks
+	if ( debugTraces )
+		JS_SetGCCallback(cx, GCCallTrace);  // JS_SetGCCallbackRT(rt, GCCallTrace); ???
 
 // error management
 	JS_SetErrorReporter(cx, ErrorReporter);
-
-	if ( debugTraces ) {
-		
-//		JS_SetGCCallbackRT(rt, GCCallTrace);
-		JS_SetGCCallback(cx, GCCallTrace);
-	}
 
 
 #ifdef XP_WIN
@@ -593,10 +598,10 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 
 // language options
 // options
-	uint32 options = JSOPTION_VAROBJFIX | JSOPTION_XML | JSOPTION_COMPILE_N_GO;
-	if ( !unsafeMode )
-		options |= JSOPTION_STRICT;
-	JS_SetOptions(cx, options );
+//	uint32 options = JSOPTION_VAROBJFIX | JSOPTION_XML | JSOPTION_COMPILE_N_GO;
+//	if ( !unsafeMode )
+//		options |= JSOPTION_STRICT;
+//	JS_SetOptions(cx, options );
 
 	JS_SetOptions(cx, JSOPTION_VAROBJFIX | JSOPTION_STRICT | JSOPTION_XML | JSOPTION_COMPILE_N_GO );
   // JSOPTION_COMPILE_N_GO:
@@ -626,8 +631,10 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	}
 */
 
-// compile & executes the script
+	JS_SetBranchCallback(cx, BranchCallback);
+	JS_ToggleOptions(cx, JSOPTION_NATIVE_BRANCH_CALLBACK);
 
+// compile & executes the script
 
 //	script = JS_CompileFile( cx, globalObject, scriptName );
 
