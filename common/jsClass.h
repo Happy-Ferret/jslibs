@@ -21,6 +21,7 @@
 #define BEGIN_STATIC_FUNCTION_SPEC JSFunctionSpec _tmp_sfs[] = {
 #define END_STATIC_FUNCTION_SPEC {0}}; _staticFunctionSpec = _tmp_sfs;
 
+#define DEFINE_FUNCTION_FAST(name) static JSBool name(JSContext *cx, uintN argc, jsval *vp)
 #define DEFINE_FUNCTION(name) static JSBool name(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 #define DEFINE_CONSTRUCTOR() static JSBool Constructor(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 #define DEFINE_OBJECT_CONSTRUCTOR() static JSBool ObjectConstructor(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
@@ -28,6 +29,8 @@
 #define DEFINE_CONVERT() static JSBool Convert(JSContext *cx, JSObject *obj, JSType type, jsval *vp)
 #define DEFINE_RESOLVE() static JSBool Resolve(JSContext *cx, JSObject *obj, jsval id, uintN flags, JSObject **objp)
 
+
+#define FUNCTION_FAST(name) {#name, (JSNative)(name), 0, JSFUN_FAST_NATIVE, 0 },
 #define FUNCTION(name) { #name, name },
 #define FUNCTION2(name,nativeName) { #name, nativeName },
 #define FUNCTION_ARGC(name,nargs) { #name, name, nargs },
