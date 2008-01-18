@@ -297,6 +297,7 @@ DEFINE_FUNCTION( ASSERT ) {
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/*
 DEFINE_PROPERTY( gcByte ) {
 
     uint32 *pbytes, bytes;
@@ -311,10 +312,10 @@ DEFINE_PROPERTY( gcByte ) {
 	 RT_CHECK_CALL( JS_NewNumberValue(cx, bytes, vp) );
 	return JS_TRUE;
 }
-
+*/
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-DEFINE_FUNCTION( CollectGarbage ) {
+DEFINE_FUNCTION_FAST( CollectGarbage ) {
 
 	#ifdef JS_THREADSAFE
 	JS_BeginRequest( cx ); // http://developer.mozilla.org/en/docs/JS_BeginRequest
@@ -329,14 +330,29 @@ DEFINE_FUNCTION( CollectGarbage ) {
 	return JS_TRUE;
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+DEFINE_FUNCTION_FAST( MaybeCollectGarbage ) {
+
+	#ifdef JS_THREADSAFE
+	JS_BeginRequest( cx ); // http://developer.mozilla.org/en/docs/JS_BeginRequest
+	#endif
+
+	JS_MaybeGC( cx );
+
+	#ifdef JS_THREADSAFE
+	JS_EndRequest( cx );
+	#endif
+
+	return JS_TRUE;
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-DEFINE_FUNCTION( Print ) {
+DEFINE_FUNCTION_FAST( Print ) {
 
 	if ( stdoutFunction == NULL )
 		return JS_TRUE; // nowhere to write, but don't failed
 	for (uintN i = 0; i<argc; i++)
-		RT_CHECK_CALL( JS_CallFunction(cx, obj, stdoutFunction, 1, &argv[i], rval) );
+		RT_CHECK_CALL( JS_CallFunction(cx, JS_THIS_OBJECT(cx, vp), stdoutFunction, 1, &JS_ARGV(cx,vp)[i], &JS_RVAL(cx,vp)) );
 	return JS_TRUE;
 }
 
@@ -720,16 +736,17 @@ CONFIGURE_STATIC
 		FUNCTION( HideProperties )
 		FUNCTION( Exec )
 		FUNCTION( IsStatementValid )
-		FUNCTION( Print )
-		FUNCTION( CollectGarbage )
+		FUNCTION_FAST( Print )
+		FUNCTION_FAST( CollectGarbage )
+		FUNCTION_FAST( MaybeCollectGarbage )
 		FUNCTION( IdOf )
 		FUNCTION( Warning )
 		FUNCTION( ASSERT )
-		FUNCTION( Halt )
+		FUNCTION_FAST( Halt )
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC
-		PROPERTY_READ( gcByte )
+//		PROPERTY_READ( gcByte )
 		PROPERTY_READ( currentMemoryUsage )
 		PROPERTY_READ( peakMemoryUsage )
 		PROPERTY_READ( privateMemoryUsage )

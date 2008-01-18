@@ -13,6 +13,9 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
+
+#include <time.h>
+
 #include "jsstddef.h"
 #include "static.h"
 
@@ -78,6 +81,7 @@ DEFINE_FUNCTION( Print ) {
 BEGIN_STATIC
 
 
+/*
 static void
 DumpScope(JSContext *cx, JSObject *obj)
 {
@@ -126,8 +130,57 @@ DumpScope(JSContext *cx, JSObject *obj)
                 (unsigned long)sprop->slot, sprop->flags, sprop->shortid);
     }
 }
+*/
 
+static void
+DumpScope(JSContext *cx, JSObject *obj, FILE *fp)
+{
+    uintN i;
+    JSScope *scope;
+    JSScopeProperty *sprop;
+    jsval v;
+    JSString *str;
 
+    i = 0;
+    scope = OBJ_SCOPE(obj);
+    for (sprop = SCOPE_LAST_PROP(scope); sprop; sprop = sprop->parent) {
+        if (SCOPE_HAD_MIDDLE_DELETE(scope) && !SCOPE_HAS_PROPERTY(scope, sprop))
+            continue;
+        fprintf(fp, "%3u %p ", i, (void *)sprop);
+
+        v = ID_TO_VALUE(sprop->id);
+        if (JSID_IS_INT(sprop->id)) {
+            fprintf(fp, "[%ld]", (long)JSVAL_TO_INT(v));
+        } else {
+            if (JSID_IS_ATOM(sprop->id)) {
+                str = JSVAL_TO_STRING(v);
+            } else {
+                JS_ASSERT(JSID_IS_OBJECT(sprop->id));
+                str = js_ValueToString(cx, v);
+                fputs("object ", fp);
+            }
+            if (!str)
+                fputs("<error>", fp);
+				else {
+#ifdef DEBUG
+                js_FileEscapedString(fp, str, '"');
+#endif // DEBUG
+				}
+        }
+#define DUMP_ATTR(name) if (sprop->attrs & JSPROP_##name) fputs(" " #name, fp)
+        DUMP_ATTR(ENUMERATE);
+        DUMP_ATTR(READONLY);
+        DUMP_ATTR(PERMANENT);
+        DUMP_ATTR(EXPORTED);
+        DUMP_ATTR(GETTER);
+        DUMP_ATTR(SETTER);
+#undef  DUMP_ATTR
+
+        fprintf(fp, " slot %lu flags %x shortid %d\n",
+                (unsigned long)sprop->slot, sprop->flags, sprop->shortid);
+    }
+}
+/*
 static JSBool
 DumpStats(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
@@ -174,15 +227,102 @@ DumpStats(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
     }
     return JS_TRUE;
 }
+*/
+
+static JSBool
+DumpStats(JSContext *cx, uintN argc, jsval *vp) // JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+{
+
+	jsval *argv = JS_ARGV(cx, vp);
+	JSObject *obj = JS_THIS_OBJECT(cx, vp);
+
+    char *fileName;
+    jsval v;
+    FILE *dumpFile;
+
+    uintN i;
+    JSString *str;
+    const char *bytes;
+    JSAtom *atom;
+    JSObject *obj2;
+    JSProperty *prop;
+    jsval value;
+
+	 fileName = NULL;
+    if (argc > 0) {
+        v = JS_ARGV(cx, vp)[0];
+        if (v != JSVAL_NULL) {
+            JSString *str;
+
+            str = JS_ValueToString(cx, v);
+            if (!str)
+                return JS_FALSE;
+            JS_ARGV(cx, vp)[0] = STRING_TO_JSVAL(str);
+            fileName = JS_GetStringBytes(str);
+        }
+    }
+
+    if (!fileName) {
+        dumpFile = stdout;
+    } else {
+        dumpFile = fopen(fileName, "w");
+        if (!dumpFile) {
+            JS_ReportError(cx, "can't open %s: %s", fileName, strerror(errno));
+            return JS_FALSE;
+        }
+    }
+
+
+    for (i = 1; i < argc; i++) { // argv[0] is the filename
+        str = JS_ValueToString(cx, argv[i]);
+        if (!str)
+            return JS_FALSE;
+        bytes = JS_GetStringBytes(str);
+        if (strcmp(bytes, "arena") == 0) {
+#ifdef JS_ARENAMETER
+            JS_DumpArenaStats(dumpFile);
+#endif
+        } else if (strcmp(bytes, "atom") == 0) {
+#ifdef DEBUG
+            js_DumpAtoms(cx, dumpFile);
+#endif // DEBUG
+        } else if (strcmp(bytes, "global") == 0) {
+            DumpScope(cx, cx->globalObject, dumpFile);
+        } else {
+            atom = js_Atomize(cx, bytes, JS_GetStringLength(str), 0);
+            if (!atom)
+                return JS_FALSE;
+            if (!js_FindProperty(cx, ATOM_TO_JSID(atom), &obj, &obj2, &prop))
+                return JS_FALSE;
+            if (prop) {
+                OBJ_DROP_PROPERTY(cx, obj2, prop);
+                if (!OBJ_GET_PROPERTY(cx, obj, ATOM_TO_JSID(atom), &value))
+                    return JS_FALSE;
+            }
+            if (!prop || !JSVAL_IS_OBJECT(value)) {
+                fprintf(dumpFile, "js: invalid stats argument %s\n",
+                        bytes);
+                continue;
+            }
+            obj = JSVAL_TO_OBJECT(value);
+            if (obj)
+                DumpScope(cx, obj, dumpFile);
+        }
+    }
+    return JS_TRUE;
+}
 
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
+#ifdef DEBUG
+
 static JSBool
 DumpHeap(JSContext *cx, uintN argc, jsval *vp)
 {
+
     char *fileName;
     jsval v;
     void* startThing;
@@ -274,8 +414,11 @@ DumpHeap(JSContext *cx, uintN argc, jsval *vp)
   not_traceable_arg:
     JS_ReportError(cx, "argument '%s' is not null or a heap-allocated thing",
                    badTraceArg);
-    return JS_FALSE;
+	 return JS_FALSE;
 }
+#endif // DEBUG
+
+
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -418,6 +561,98 @@ PCToLine(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
     return JS_TRUE;
 }
 
+
+
+static bool hasGCTrace = false;
+static JSGCCallback prevGCCallback = NULL;
+static char GCTraceFileName[MAX_PATH];
+
+JSBool GCCallTrace(JSContext *cx, JSGCStatus status) {
+
+	char *statusStr[4] = { "JSGC_BEGIN", "JSGC_END", "JSGC_MARK_END", "JSGC_FINALIZE_END" };
+	if ( status == JSGC_MARK_END || status == JSGC_FINALIZE_END )
+		return JS_TRUE;
+
+	time_t t;
+	struct tm *tim;
+	t = time(NULL); // for milliseconds, cf. ftime() or clock()
+	tim = localtime(&t);
+
+	char timeTmp[256];
+	strftime( timeTmp, sizeof(timeTmp), "%m/%d %H:%M:%S", tim);
+
+	FILE *dumpFile;
+
+	if ( GCTraceFileName && GCTraceFileName[0] ) {
+
+		dumpFile = fopen(GCTraceFileName, "a");
+		if (!dumpFile) {
+			JS_ReportError(cx, "can't open %s: %s", GCTraceFileName, strerror(errno));
+			return JS_FALSE;
+		}
+	} else {
+		dumpFile = stdout;
+	}
+	
+	if ( status == JSGC_BEGIN )
+		fprintf( dumpFile, "%s - gcByte:%u gcMallocBytes:%u ... ", timeTmp, cx->runtime->gcBytes, cx->runtime->gcMallocBytes );
+
+	if ( status == JSGC_END )
+		fprintf( dumpFile, "gcByte:%u gcMallocBytes:%u  \n", cx->runtime->gcBytes, cx->runtime->gcMallocBytes );
+
+	if ( dumpFile != stdout )
+		fclose(dumpFile);
+
+	return JS_TRUE;
+}
+
+
+static JSBool
+DumpGC(JSContext *cx, uintN argc, jsval *vp)
+{
+
+	if ( argc > 0 ) { // start GC dump
+
+		jsval *argv = JS_ARGV(cx, vp);
+		JSObject *obj = JS_THIS_OBJECT(cx, vp);
+
+		char *fileName = NULL;
+
+		if (argv[0] != JSVAL_NULL) {
+
+			JSString *str;
+			str = JS_ValueToString(cx, argv[0]);
+			if (!str)
+				 return JS_FALSE;
+			argv[0] = STRING_TO_JSVAL(str);
+			fileName = JS_GetStringBytes(str);
+		}
+
+		if (!fileName)
+			GCTraceFileName[0] = '\0';
+		else
+			strcpy( GCTraceFileName, fileName );
+
+		if (!hasGCTrace) {
+
+			prevGCCallback = JS_SetGCCallback(cx, GCCallTrace);  // JS_SetGCCallbackRT(rt, GCCallTrace); ???
+			hasGCTrace = true;
+		}
+
+	} else { // stop GC dump
+
+		if ( hasGCTrace ) {
+
+			JS_SetGCCallback(cx, prevGCCallback); // (TBD) check this !
+			hasGCTrace = false;
+		}
+	}
+
+	return JS_TRUE;
+}
+
+
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -425,8 +660,12 @@ CONFIGURE_STATIC
 
 	BEGIN_STATIC_FUNCTION_SPEC
 
+#ifdef DEBUG
 		FUNCTION_FAST( DumpHeap )
-		FUNCTION( DumpStats )
+#endif // DEBUG
+
+		FUNCTION_FAST( DumpStats )
+		FUNCTION_FAST( DumpGC )
 		FUNCTION( Trap )
 		FUNCTION( Untrap )
 		FUNCTION( LineToPC )

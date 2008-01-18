@@ -18,8 +18,6 @@
 
 #include "../common/platform.h"
 
-#include <time.h>
-
 #include <fcntl.h>
 #ifdef XP_WIN
 	#include <io.h>
@@ -139,7 +137,6 @@ int consoleStdErr( JSContext *, const char *data, int length ) {
 
 
 bool reportWarnings = true;
-bool debugTraces = false;
 
 
 // function copied from ../js/src/js.c
@@ -372,10 +369,11 @@ JSPropertySpec Global_PropertySpec[] = { // *name, tinyid, flags, getter, setter
 #ifdef XP_WIN
 BOOL Interrupt(DWORD CtrlType) {
 
-	if (CtrlType == CTRL_LOGOFF_EVENT || CtrlType == CTRL_SHUTDOWN_EVENT)
-		return FALSE;
+// see. http://msdn2.microsoft.com/en-us/library/ms683242.aspx
+//	if (CtrlType == CTRL_LOGOFF_EVENT || CtrlType == CTRL_SHUTDOWN_EVENT) // CTRL_C_EVENT, CTRL_BREAK_EVENT, CTRL_CLOSE_EVENT, CTRL_LOGOFF_EVENT, CTRL_SHUTDOWN_EVENT
+//		return FALSE;
 	gEndSignal = true;
-  return TRUE;
+	return TRUE;
 }
 #else
 void Interrupt(int CtrlType) {
@@ -405,26 +403,6 @@ static JSBool stdoutFunction(JSContext *cx, JSObject *obj, uintN argc, jsval *ar
 	return JS_TRUE;
 }
 
-JSBool GCCallTrace(JSContext *cx, JSGCStatus status) {
-
-	char *statusStr[4] = { "JSGC_BEGIN", "JSGC_END", "JSGC_MARK_END", "JSGC_FINALIZE_END" };
-	if ( status == JSGC_BEGIN || status == JSGC_END ) {
-
-		time_t t;
-		struct tm *tim;
-		t = time(NULL);
-		tim = localtime(&t);
-
-		char timeTmp[256];
-		strftime( timeTmp, sizeof(timeTmp), "%m.%d %H:%M:%S", tim);
-		
-		char tmp[256];
-		int len = sprintf(tmp, "## %s %s gcByte:%u gcMallocBytes:%u\n", timeTmp, statusStr[status], cx->runtime->gcBytes, cx->runtime->gcMallocBytes );
-		consoleStdErr( cx, tmp, len );
-	}
-	return JS_TRUE;
-}
-
 
 JSScript *script = NULL;
 JSRuntime *rt = NULL;
@@ -442,6 +420,8 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	
 	uint32 maxMem = (uint32)-1; // by default, there are no limit
 	uint32 maxAlloc = (uint32)-1; // by default, there are no limit
+
+	bool compileOnly = false;
 
 	char** argumentVector = argv;
 
@@ -461,8 +441,8 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 				reportWarnings = !unsafeMode;
 				// (TBD) set into configuration
 				break;
-			case 'd': // debugTraces
-				debugTraces = true;
+			case 'c':
+				compileOnly = true;
 				break;
 	}
 
@@ -484,10 +464,6 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 
 	JS_SetVersion( cx, (JSVersion)JS_VERSION );
 	// (TBD) set into configuration file
-
-// hooks and callbacks
-	if ( debugTraces )
-		JS_SetGCCallback(cx, GCCallTrace);  // JS_SetGCCallbackRT(rt, GCCallTrace); ???
 
 // error management
 	JS_SetErrorReporter(cx, ErrorReporter);
@@ -669,7 +645,11 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 
 	// You need to protect a JSScript (via a rooted script object) if and only if a garbage collection can occur between compilation and the start of execution.
 	jsval rval;
-	jsStatus = JS_ExecuteScript( cx, globalObject, script, &rval ); // MUST be executed only once ( JSOPTION_COMPILE_N_GO )
+
+	if ( !compileOnly )
+		jsStatus = JS_ExecuteScript( cx, globalObject, script, &rval ); // MUST be executed only once ( JSOPTION_COMPILE_N_GO )
+	else
+		jsStatus = JS_TRUE;
 
 	// doc: If a script executes successfully, JS_ExecuteScript returns JS_TRUE. Otherwise it returns JS_FALSE. On failure, your application should assume that rval is undefined.
 	// if jsStatus != JS_TRUE, an error has been throw while the execution, so there is no need to throw another error
