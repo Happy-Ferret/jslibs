@@ -1,6 +1,6 @@
 BUILD ?= opt
 
-SUBDIRS := js jshost jsstd nspr jsio jsobjex jssqlite jsz jscrypt
+SUBDIRS := js jshost jsstd nspr jsio jsobjex jssqlite jsz jscrypt jsdebug
 
 .PHONY: $(SUBDIRS)
 $(SUBDIRS):
