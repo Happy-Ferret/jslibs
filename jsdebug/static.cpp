@@ -14,6 +14,8 @@
 
 #include "stdafx.h"
 
+#include <errno.h>
+
 #include <time.h>
 
 #include "jsstddef.h"
@@ -533,7 +535,7 @@ LineToPC(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
     jsbytecode *pc;
 
 	 RT_ASSERT_ARGC( 1 );
-	 
+
 	 script = cx->fp->down->script;
     if (!GetTrapArgs(cx, argc, argv, &script, &i))
         return JS_FALSE;
@@ -593,7 +595,7 @@ JSBool GCCallTrace(JSContext *cx, JSGCStatus status) {
 	} else {
 		dumpFile = stdout;
 	}
-	
+
 	if ( status == JSGC_BEGIN )
 		fprintf( dumpFile, "%s - gcByte:%u gcMallocBytes:%u ... ", timeTmp, cx->runtime->gcBytes, cx->runtime->gcMallocBytes );
 
