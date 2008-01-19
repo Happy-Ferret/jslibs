@@ -8,10 +8,12 @@ ifeq ($(BUILD),dbg)
 	CFLAGS += -Wall -g3 -O0 -DDEBUG
 	SMINC = -I../js/src/Linux_All_DBG.OBJ -I../js/src
 	SMLIB = -Wl,-Bdynamic -L../js/src/Linux_All_DBG.OBJ -ljs
+	SMDEF = -DJS_GCMETER -DJS_ARENAMETER -DJS_HASHMETER
 else
 	CFLAGS += -Wall -O3 -s -funroll-loops
 	SMINC = -I../js/src/Linux_All_OPT.OBJ -I../js/src
 	SMLIB = -Wl,-Bdynamic -L../js/src/Linux_All_OPT.OBJ -ljs
+	SMDEF =
 endif
 
 
@@ -27,16 +29,16 @@ CC := gcc
 CCX := gcc
 
 %.o: %.cpp
-	$(CCX) -c $(CFLAGS) $(DEFINES) $(SMINC) $(INCLUDES) -o $@ $<
+	$(CCX) -c $(CFLAGS) $(DEFINES) $(SMDEF) $(SMINC) $(INCLUDES) -o $@ $<
 
 %.o: %.c
-	$(CC) -c $(CFLAGS) $(DEFINES) $(SMINC) $(INCLUDES) -o $@ $<
+	$(CC) -c $(CFLAGS) $(DEFINES) $(SMDEF) $(SMINC) $(INCLUDES) -o $@ $<
 
 .PHONY: $(TARGET)
 
 ifneq ($(findstring .so,$(TARGET)),)
 $(TARGET): $(OBJECTS)
-	$(CC) $(CFLAGS) $(DEFINES) $(SMINC) $(INCLUDES) -o $@ -shared -Wl,-soname,$@ $? -Wl,-Bstatic $(STATICLIBS) -Wl,-Bdynamic $(SHAREDLIBS) $(SMLIB)
+	$(CC) $(CFLAGS) $(DEFINES) $(SMDEF) $(SMINC) $(INCLUDES) -o $@ -shared -Wl,-soname,$@ $? -Wl,-Bstatic $(STATICLIBS) -Wl,-Bdynamic $(SHAREDLIBS) $(SMLIB)
 endif
 
 ifneq ($(findstring .a,$(TARGET)),)
@@ -46,7 +48,7 @@ endif
 
 ifeq ($(findstring .,$(TARGET)),)
 $(TARGET): $(OBJECTS)
-	$(CC) $(CFLAGS) $(DEFINES) $(SMINC) $(INCLUDES) -o $@ $^ -static-libgcc -Wl,-Bstatic $(STATICLIBS) -Wl,-Bdynamic $(SHAREDLIBS) $(SMLIB)
+	$(CC) $(CFLAGS) $(DEFINES) $(SMDEF) $(SMINC) $(INCLUDES) -o $@ $^ -static-libgcc -Wl,-Bstatic $(STATICLIBS) -Wl,-Bdynamic $(SHAREDLIBS) $(SMLIB)
 endif
 
 .PHONY: $(DEPENDS)
