@@ -10,11 +10,12 @@
 		Debug Multithreaded (libcmtd.lib)           | RuntimeLibrary="1"
 		Debug Multithreaded using DLL (msvcrtd.lib) | RuntimeLibrary="3"
 
-		PreprocessorDefinitions="JS_THREADSAFE"
+		PreprocessorDefinitions="JS_THREADSAFE JS_GCMETER"
 		AdditionalIncludeDirectories="..\js\src;..\nspr\include\nspr"
 	-->
 	<Tool
 		Name="VCCLCompilerTool"
+		PreprocessorDefinitions="JS_GCMETER;JS_HASHMETER"
 		AdditionalIncludeDirectories="..\js\src"
 		ExceptionHandling="0"
 		RuntimeLibrary="3"
