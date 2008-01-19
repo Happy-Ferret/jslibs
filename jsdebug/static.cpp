@@ -28,6 +28,7 @@
 #include "jsstr.h"
 #include "jsscript.h"
 #include "jsfun.h"
+#include "jsgc.h"
 
 #include "string.h"
 
@@ -274,12 +275,18 @@ DumpStats(JSContext *cx, uintN argc, jsval *vp) // JSContext *cx, JSObject *obj,
         }
     }
 
-
-    for (i = 1; i < argc; i++) { // argv[0] is the filename
+	 for (i = 1; i < argc; i++) { // argv[0] is the filename
         str = JS_ValueToString(cx, argv[i]);
         if (!str)
             return JS_FALSE;
         bytes = JS_GetStringBytes(str);
+
+        if (strcmp(bytes, "gc") == 0) {
+
+#ifdef JS_GCMETER //  defined(DEBUG) && defined(JS_GCMETER) 
+				js_DumpGCStats(cx->runtime, dumpFile);
+#endif
+        } else
         if (strcmp(bytes, "arena") == 0) {
 #ifdef JS_ARENAMETER
             JS_DumpArenaStats(dumpFile);
@@ -313,7 +320,6 @@ DumpStats(JSContext *cx, uintN argc, jsval *vp) // JSContext *cx, JSObject *obj,
     }
     return JS_TRUE;
 }
-
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -610,7 +616,7 @@ JSBool GCCallTrace(JSContext *cx, JSGCStatus status) {
 
 
 static JSBool
-DumpGC(JSContext *cx, uintN argc, jsval *vp)
+TraceGC(JSContext *cx, uintN argc, jsval *vp)
 {
 
 	if ( argc > 0 ) { // start GC dump
@@ -654,7 +660,6 @@ DumpGC(JSContext *cx, uintN argc, jsval *vp)
 }
 
 
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -667,7 +672,7 @@ CONFIGURE_STATIC
 #endif // DEBUG
 
 		FUNCTION_FAST( DumpStats )
-		FUNCTION_FAST( DumpGC )
+		FUNCTION_FAST( TraceGC )
 		FUNCTION( Trap )
 		FUNCTION( Untrap )
 		FUNCTION( LineToPC )
