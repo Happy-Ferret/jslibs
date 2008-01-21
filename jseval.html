@@ -282,7 +282,7 @@ window.addEventListener( 'load', function() {
 			var t0 = new Date().getTime();
 			var [output, evalResult, error] = EvalCode(scriptCode);
 			var evalTime = new Date().getTime() - t0
-			if ( evalTime > 500 )
+			if ( evalTime > 1000 )
 				_autoEval = !confirm( 'Script execution too long, disable auto-eval ?' );
 			WriteHtmlTo('text', output);
 			WriteHtmlTo('error', error);
