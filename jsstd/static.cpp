@@ -295,25 +295,6 @@ DEFINE_FUNCTION( ASSERT ) {
 	return JS_TRUE;
 }
 
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/*
-DEFINE_PROPERTY( gcByte ) {
-
-    uint32 *pbytes, bytes;
-
-#ifdef JS_THREADSAFE
-    pbytes = &cx->thread->gcMallocBytes;
-#else
-    pbytes = &cx->runtime->gcMallocBytes;
-#endif
-    bytes = *pbytes;
-
-	 RT_CHECK_CALL( JS_NewNumberValue(cx, bytes, vp) );
-	return JS_TRUE;
-}
-*/
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 DEFINE_FUNCTION_FAST( CollectGarbage ) {
 
@@ -746,7 +727,6 @@ CONFIGURE_STATIC
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC
-//		PROPERTY_READ( gcByte )
 		PROPERTY_READ( currentMemoryUsage )
 		PROPERTY_READ( peakMemoryUsage )
 		PROPERTY_READ( privateMemoryUsage )

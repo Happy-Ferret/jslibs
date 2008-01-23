@@ -142,7 +142,7 @@ DEFINE_FUNCTION( Listen ) {
 	PRFileDesc *fd = (PRFileDesc*)JS_GetPrivate( cx, obj );
 	RT_ASSERT_RESOURCE( fd );
 	PRIntn backlog;
-	if ( argc >= 1 )
+	if ( argc >= 1 && argv[0] != JSVAL_VOID )
 		RT_JSVAL_TO_INT32( argv[0], backlog );
 	else
 		backlog = 8; // too low ??

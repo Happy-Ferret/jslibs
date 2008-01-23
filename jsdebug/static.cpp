@@ -662,15 +662,39 @@ TraceGC(JSContext *cx, uintN argc, jsval *vp)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+DEFINE_PROPERTY( gcMallocBytes ) {
+
+    uint32 *pbytes, bytes;
+#ifdef JS_THREADSAFE
+    pbytes = &cx->thread->gcMallocBytes;
+#else
+    pbytes = &cx->runtime->gcMallocBytes;
+#endif
+    bytes = *pbytes;
+	 RT_CHECK_CALL( JS_NewNumberValue(cx, bytes, vp) );
+	return JS_TRUE;
+}
+
+DEFINE_PROPERTY( gcBytes ) {
+
+    uint32 *pbytes, bytes;
+#ifdef JS_THREADSAFE
+    pbytes = &cx->thread->gcBytes;
+#else
+	 pbytes = &cx->runtime->gcBytes;
+#endif
+    bytes = *pbytes;
+	 RT_CHECK_CALL( JS_NewNumberValue(cx, bytes, vp) );
+	return JS_TRUE;
+}
+
 
 CONFIGURE_STATIC
 
 	BEGIN_STATIC_FUNCTION_SPEC
-
 #ifdef DEBUG
 		FUNCTION_FAST( DumpHeap )
 #endif // DEBUG
-
 		FUNCTION_FAST( DumpStats )
 		FUNCTION_FAST( TraceGC )
 		FUNCTION( Trap )
@@ -680,7 +704,8 @@ CONFIGURE_STATIC
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC
-//		PROPERTY_READ( gcByte )
+		PROPERTY_READ( gcMallocBytes )
+		PROPERTY_READ( gcBytes )
 	END_STATIC_PROPERTY_SPEC
 
 END_STATIC
