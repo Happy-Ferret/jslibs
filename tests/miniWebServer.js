@@ -1,5 +1,5 @@
 LoadModule('jsstd');
-LoadModule('jsnspr');
+LoadModule('jsio');
 LoadModule('jsz');
 
 
@@ -14,13 +14,9 @@ const DOT = '.';
 const SLASH = '/';
 
 // mini tools
-Trim.regexp=/^ *(.*?) *$/;
-function Trim(string) {
-	return Trim.regexp(string)[1];
-}
+function Trim(string) /^ *(.*?) *$/(string)[1];
 
-
-function Identity(arg) { return arg }
+function Identity(arg) arg;
 function Noop() {}
 
 //
@@ -109,7 +105,7 @@ var timeout = new function() {
 		var now = IntervalNow();
 		if ( _min > now )
 			return;
-		for ( var [w,f] in _tlist )
+		for ( var [w,f] in Iterator(_tlist) )
 			if ( w <= now ) {
 				f();
 				delete _tlist[w];
@@ -123,7 +119,7 @@ var list = [];
 function CreateHttpHeaders( status, headers ) {
 
 	var buf = 'HTTP/1.1' + SP + status + SP + statusText[status] + CRLF;
-	for ( var [h,v] in headers )
+	for ( var [h,v] in Iterator(headers) )
 		buf += h + ': ' + v + CRLF;
 	return buf + CRLF;
 }
@@ -266,11 +262,12 @@ function ProcessRequest( status, headers, output, close ) {
 			}
 
 			file.Open( File.RDONLY );
-
+			
 			output( CreateHttpHeaders( 200, respondeHeaders ) );
 			output( function(chunks) {
 
 				var data = file.Read(Z.idealInputLength);
+				
 				data = ContentEncoding(data);
 
 				if ( data.length ) {
@@ -279,7 +276,7 @@ function ProcessRequest( status, headers, output, close ) {
 						chunks.push( data.length.toString(16) + CRLF, data, CRLF );
 					else
 						chunks.push( data );
-						
+
 					return true; // continue
 				}
 				file.Close();
@@ -314,8 +311,8 @@ function Connection(s) {
 				if ( chunks.length == 0 )
 					return; // cannot shift here because the next item may be a Function
 				_output = chunks.concat(_output);
-			} 
-			s.Send(_output.shift());
+			}
+			s.Write( _output.shift() );
 		} else
 			delete s.writable;
 	}
@@ -336,7 +333,7 @@ function Connection(s) {
 		_input && Next('');
 		s.readable = function() { 
 			
-			var data = s.Recv();
+			var data = s.Read();
 			Next( data );
 			data.length || CloseConnection(s);
 		}
@@ -423,15 +420,16 @@ try {
 		list.push(clientSocket);
 	}
 
-	serverSocket.Listen( configuration.port, configuration.bind, 100 );
+	serverSocket.Bind( configuration.port, configuration.bind );
+	serverSocket.Listen();
 	list.push(serverSocket);
-	for(;!endSignal;) {
+	while (!endSignal) {
 		Poll(list,timeout.Next() || 500);
 		timeout.Process();
 	}
 	Print('end.');
 
-} catch ( ex if ex instanceof NSPRError ) {
+} catch ( ex if ex instanceof IoError ) {
 	Print( ex.text + ' ('+ex.code+')', '\n' );
 } catch( ex if ex instanceof Halt ) {
 	Print( 'Halt: '+ex.message,'\n' );
