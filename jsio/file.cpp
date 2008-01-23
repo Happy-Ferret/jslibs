@@ -177,6 +177,14 @@ DEFINE_PROPERTY( contentGetter ) {
 	RT_ASSERT_DEFINED( jsvalFileName );
 	char *fileName;
 	RT_JSVAL_TO_STRING(jsvalFileName, fileName);
+
+	PRStatus status = PR_Access( fileName, PR_ACCESS_READ_OK ); // We want to read the whole file, then first check if the file is readable
+	if ( status != PR_SUCCESS ) {
+
+		*vp = JSVAL_VOID;
+		return JS_TRUE;
+	}
+
 	PRFileDesc *fd = PR_OpenFile( fileName, PR_RDONLY, 0 ); // The mode parameter is currently applicable only on Unix platforms.
 	if ( fd == NULL ) {
 
@@ -185,12 +193,14 @@ DEFINE_PROPERTY( contentGetter ) {
 			return JS_TRUE; // property will return  undefined
 		return ThrowIoErrorArg( cx, err, PR_GetOSError() );
 	}
+
 	PRInt32 available = PR_Available( fd ); // For a normal file, these are the bytes beyond the current file pointer.
 	if ( available == -1 )
 		return ThrowIoError(cx);
 	char *buf = (char*)JS_malloc( cx, available +1 );
 	RT_ASSERT_ALLOC(buf);
 	buf[available] = '\0';
+
 	PRInt32 res = PR_Read( fd, buf, available );
 	if ( res == -1 ) {
 
