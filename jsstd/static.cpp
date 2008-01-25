@@ -14,12 +14,6 @@
 
 #include "stdafx.h"
 
-#ifdef XP_WIN
-#define _WIN32_WINNT 0x0501
-#pragma comment(lib,"Psapi.lib")
-#include <Psapi.h>
-#endif // XP_WIN
-
 #include "static.h"
 
 #include "jsxdrapi.h"
@@ -523,186 +517,6 @@ DEFINE_FUNCTION( Halt ) {
 }
 
 
-
-#ifdef XP_UNIX
-#include <stdio.h>
-#include <stdlib.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <stdlib.h>
-
-struct LinuxProcInfo {
-	int pid; // %d
-	char comm[400]; // %s
-	char state; // %c
-	int ppid; // %d
-	int pgrp; // %d
-	int session; // %d
-	int tty; // %d
-	int tpgid; // %d
-	unsigned int flags; // %u
-	unsigned int minflt; // %u
-	unsigned int cminflt; // %u
-	unsigned int majflt; // %u
-	unsigned int cmajflt; // %u
-	int utime; // %d
-	int stime; // %d
-	int cutime; // %d
-	int cstime; // %d
-	int counter; // %d
-	int priority; // %d
-	unsigned int timeout; // %u
-	unsigned int itrealvalue; // %u
-	int starttime; // %d
-	unsigned int vsize; // %u
-	unsigned int rss; // %u
-	unsigned int rlim; // %u
-	unsigned int startcode; // %u
-	unsigned int endcode; // %u
-	unsigned int startstack; // %u
-	unsigned int kstkesp; // %u
-	unsigned int kstkeip; // %u
-	int signal; // %d
-	int blocked; // %d
-	int sigignore; // %d
-	int sigcatch; // %d
-	unsigned int wchan; // %u
-};
-
-bool GetProcInfo( pid_t pid, LinuxProcInfo *pinfo ) {
-
-	char path[128];
-	char data[512];
-	snprintf(path, sizeof(path), "/proc/%d/stat", pid);
-	int fd = open(path, O_RDONLY);
-	//lseek(fd,0,SEEK_SET);
-	int rd = read(fd, data, sizeof(data));
-	close(fd);
-	data[rd] = '\0';
-
-	sscanf(data, "%d %s %c %d %d %d %d %d %u %u %u %u %u %d %d %d %d %d %d %u %u %d %u %u %u %u %u %u %u %u %d %d %d %d %u",
-		&pinfo->pid, // %d
-		pinfo->comm, // %s
-		&pinfo->state, // %c
-		&pinfo->ppid, // %d
-		&pinfo->pgrp, // %d
-		&pinfo->session, // %d
-		&pinfo->tty, // %d
-		&pinfo->tpgid, // %d
-		&pinfo->flags, // %u
-		&pinfo->minflt, // %u
-		&pinfo->cminflt, // %u
-		&pinfo->majflt, // %u
-		&pinfo->cmajflt, // %u
-		&pinfo->utime, // %d
-		&pinfo->stime, // %d
-		&pinfo->cutime, // %d
-		&pinfo->cstime, // %d
-		&pinfo->counter, // %d
-		&pinfo->priority, // %d
-		&pinfo->timeout, // %u
-		&pinfo->itrealvalue, // %u
-		&pinfo->starttime, // %d
-		&pinfo->vsize, // %u
-		&pinfo->rss, // %u
-		&pinfo->rlim, // %u
-		&pinfo->startcode, // %u
-		&pinfo->endcode, // %u
-		&pinfo->startstack, // %u
-		&pinfo->kstkesp, // %u
-		&pinfo->kstkeip, // %u
-		&pinfo->signal, // %d
-		&pinfo->blocked, // %d
-		&pinfo->sigignore, // %d
-		&pinfo->sigcatch, // %d
-		&pinfo->wchan // %u
-	);
-	return true;
-}
-
-#endif // XP_UNIX
-
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-DEFINE_PROPERTY( currentMemoryUsage ) {
-
-	uint32 bytes;
-
-#ifdef XP_WIN
-	// SIZE_T is compatible with uint32
-	HANDLE hProcess = GetCurrentProcess(); // doc: (HANDLE)-1, that is interpreted as the current process handle
-	PROCESS_MEMORY_COUNTERS_EX pmc;
-	GetProcessMemoryInfo( hProcess, (PPROCESS_MEMORY_COUNTERS)&pmc, sizeof(pmc) ); // MEM_PRIVATE
-//	bytes = pmc.PrivateUsage; // doc: The current amount of memory that cannot be shared with other processes, in bytes. Private bytes include memory that is committed and marked MEM_PRIVATE, data that is not mapped, and executable pages that have been written to.
-	bytes = pmc.WorkingSetSize; // same value as "windows task manager" "mem usage"
-#else
-
-	LinuxProcInfo pinfo;
-	GetProcInfo(getpid(), &pinfo);
-	bytes = pinfo.vsize;
-
-#endif // XP_WIN
-
-	RT_CHECK_CALL( JS_NewNumberValue(cx, bytes, vp) );
-	return JS_TRUE;
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-DEFINE_PROPERTY( peakMemoryUsage ) {
-
-	uint32 bytes;
-
-#ifdef XP_WIN
-
-/*
-	DWORD  dwMin, dwMax;
-	HANDLE hProcess;
-	hProcess = GetCurrentProcess();
-	if (!GetProcessWorkingSetSize(hProcess, &dwMin, &dwMax))
-		REPORT_ERROR_1("GetProcessWorkingSetSize failed (%d)\n", GetLastError());
-//	printf("Minimum working set: %lu Kbytes\n", dwMin/1024);
-//	printf("Maximum working set: %lu Kbytes\n", dwMax/1024);
-	bytes = dwMax;
-	//cf. GetProcessWorkingSetSizeEx
-*/
-	HANDLE hProcess = GetCurrentProcess(); // doc: (HANDLE)-1, that is interpreted as the current process handle
-	PROCESS_MEMORY_COUNTERS_EX pmc;
-	GetProcessMemoryInfo( hProcess, (PPROCESS_MEMORY_COUNTERS)&pmc, sizeof(pmc) ); // MEM_PRIVATE
-	bytes = pmc.PeakWorkingSetSize; // same value as "windows task manager" "peak mem usage"
-#else
-
-	REPORT_ERROR("Not implemented yet.");
-
-#endif // XP_WIN
-
-	RT_CHECK_CALL( JS_NewNumberValue(cx, bytes, vp) );
-	return JS_TRUE;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-DEFINE_PROPERTY( privateMemoryUsage ) {
-
-	uint32 bytes;
-
-#ifdef XP_WIN
-	// SIZE_T is compatible with uint32
-	HANDLE hProcess = GetCurrentProcess(); // doc: (HANDLE)-1, that is interpreted as the current process handle
-	PROCESS_MEMORY_COUNTERS_EX pmc;
-	GetProcessMemoryInfo( hProcess, (PPROCESS_MEMORY_COUNTERS)&pmc, sizeof(pmc) ); // MEM_PRIVATE
-//	bytes = pmc.PrivateUsage; // doc: The current amount of memory that cannot be shared with other processes, in bytes. Private bytes include memory that is committed and marked MEM_PRIVATE, data that is not mapped, and executable pages that have been written to.
-	bytes = pmc.WorkingSetSize; // same value as "windows task manager" "mem usage"
-#else
-
-	REPORT_ERROR("Not implemented yet.");
-
-#endif // XP_WIN
-
-	RT_CHECK_CALL( JS_NewNumberValue(cx, bytes, vp) );
-	return JS_TRUE;
-}
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 CONFIGURE_STATIC
@@ -727,9 +541,6 @@ CONFIGURE_STATIC
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC
-		PROPERTY_READ( currentMemoryUsage )
-		PROPERTY_READ( peakMemoryUsage )
-		PROPERTY_READ( privateMemoryUsage )
 	END_STATIC_PROPERTY_SPEC
 
 END_STATIC

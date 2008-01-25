@@ -1,9 +1,18 @@
 LoadModule('jsstd');
 
-	Print(currentMemoryUsage);
 
 var i;
 var b = new Buffer();
+
+
+b.Write('abcd');
+b.Write('e');
+b.Write('');
+b.Write('');
+b.Write('fghij');
+
+Print( b.IndexOf('def') );
+Halt();
 
 for (;!endSignal;) {
 	
@@ -27,7 +36,7 @@ for (;!endSignal;) {
 		b.Write('ffff');
 		b.Write('gggg');
 		var t = b.Read();
-		b.Write(b);
+//		b.Write(b);
 	}
 	CollectGarbage();
 

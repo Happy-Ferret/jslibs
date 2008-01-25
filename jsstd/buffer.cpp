@@ -565,6 +565,19 @@ DEFINE_FUNCTION( ReadUntil ) {
 }
 
 
+DEFINE_FUNCTION( IndexOf ) {
+
+	RT_ASSERT_ARGC( 1 );
+	char *boundary;
+	int boundaryLength;
+	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], boundary, boundaryLength );
+	int found;
+	RT_CHECK_CALL( FindInBuffer(cx, obj, boundary, boundaryLength, &found) );
+	*rval = INT_TO_JSVAL(found);
+	return JS_TRUE;
+}
+
+
 DEFINE_FUNCTION( Unread ) {
 
 	RT_ASSERT_ARGC( 1 );
@@ -594,6 +607,7 @@ CONFIGURE_CLASS
 		FUNCTION(Unread)
 		FUNCTION(Read)
 		FUNCTION(ReadUntil)
+		FUNCTION(IndexOf)
 		FUNCTION(Match)
 		FUNCTION(Skip)
 		FUNCTION_ALIAS(toString, Read) // ised when the buffer has to be transformed into a string
