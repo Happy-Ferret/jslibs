@@ -576,6 +576,27 @@ PCToLine(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 }
 
 
+DEFINE_FUNCTION(Locate) {
+
+	RT_ASSERT_ARGC( 1 );
+	int32 frame;
+	RT_JSVAL_TO_INT32( argv[0], frame );
+	RT_ASSERT(frame <= 0, "Frame number must be <= 0")
+
+	for ( JSStackFrame *fp = cx->fp; fp; fp = fp->down )
+		if ( fp->script && fp->pc && !frame++ ) {
+
+			char tmp[512];
+			strcpy(tmp, fp->script->filename);
+			strcat(tmp,":");
+			ltoa(JS_PCToLineNumber(cx, fp->script, fp->pc), tmp + strlen(tmp), 10);
+			*rval = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, tmp));
+			break;
+		}
+	return JS_TRUE;
+}
+
+
 
 static bool hasGCTrace = false;
 static JSGCCallback prevGCCallback = NULL;
@@ -889,6 +910,7 @@ CONFIGURE_STATIC
 		FUNCTION( Untrap )
 		FUNCTION( LineToPC )
 		FUNCTION( PCToLine )
+		FUNCTION( Locate )
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC
