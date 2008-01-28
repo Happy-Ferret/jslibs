@@ -304,12 +304,22 @@ DumpStats(JSContext *cx, uintN argc, jsval *vp) // JSContext *cx, JSObject *obj,
         } else if (strcmp(bytes, "global") == 0) {
             DumpScope(cx, cx->globalObject, dumpFile);
         } else {
-            atom = js_Atomize(cx, bytes, JS_GetStringLength(str), 0);
-            if (!atom)
+
+// see. https://bugzilla.mozilla.org/show_bug.cgi?id=413104#c2 ("I removed FRIEND declarations from atomized functions as they are not used outside the SpiderMonkey.")
+//          atom = js_Atomize(cx, bytes, JS_GetStringLength(str), 0); 
+//          if (!atom)
+//                return JS_FALSE;
+//				if (!js_FindProperty(cx, ATOM_TO_JSID(atom), &obj, &obj2, &prop))
+//                return JS_FALSE;
+				
+				jsid id;
+				if (!JS_ValueToId(cx, argv[i], &id))
+					return JS_FALSE;
+				if (!js_FindProperty(cx, id, &obj, &obj2, &prop))
                 return JS_FALSE;
-            if (!js_FindProperty(cx, ATOM_TO_JSID(atom), &obj, &obj2, &prop))
-                return JS_FALSE;
-            if (prop) {
+
+
+				if (prop) {
                 OBJ_DROP_PROPERTY(cx, obj2, prop);
                 if (!OBJ_GET_PROPERTY(cx, obj, ATOM_TO_JSID(atom), &value))
                     return JS_FALSE;
