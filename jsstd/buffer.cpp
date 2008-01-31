@@ -550,6 +550,11 @@ DEFINE_FUNCTION( Skip ) { // Skip( amount )
 DEFINE_FUNCTION( ReadUntil ) {
 
 	RT_ASSERT_ARGC( 1 );
+	bool skip;
+	if ( argc >= 2 )
+		RT_JSVAL_TO_BOOL(argv[1], skip);
+	else
+		skip = false;
 	char *boundary;
 	int boundaryLength;
 	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], boundary, boundaryLength );
@@ -558,8 +563,10 @@ DEFINE_FUNCTION( ReadUntil ) {
 	if ( found != -1 ) {
 
 		ReadAmount(cx, obj, found, rval);
-		jsval tmp;
-		RT_CHECK_CALL( ReadAmount(cx, obj, boundaryLength, &tmp) ); // (TBD) optimization: skip without reading the data.
+		if ( skip ) {
+			jsval tmp;
+			RT_CHECK_CALL( ReadAmount(cx, obj, boundaryLength, &tmp) ); // (TBD) optimization: skip without reading the data.
+		}
 	}
 	return JS_TRUE;
 }
