@@ -29,7 +29,7 @@
 
 
 /*
-// used by NativeInterface 
+// used by NativeInterface
 typedef struct {
 	JSRuntime *rt;
 	JSObject *obj;
@@ -77,7 +77,7 @@ inline JSBool BufferLengthGet( JSContext *cx, JSObject *obj, size_t *bufferLengt
 
 
 inline JSBool BufferLengthAdd( JSContext *cx, JSObject *obj, size_t amount ) {
-	
+
 	size_t bufferLength;
 	RT_CHECK_CALL( BufferLengthGet(cx, obj, &bufferLength) );
 	bufferLength += amount;
@@ -121,7 +121,7 @@ JSBool FindInBuffer( JSContext *cx, JSObject *obj, char *needle, int needleLengt
 	// (TBD) optimise this function for needleLength == 1 (eg. '\0' in a string)
 	Queue *queue = (Queue*)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE( queue );
-	
+
 	int pos = 0;
 	char *buf = (char*)malloc(needleLength); // the "ring buffer"
 
@@ -136,10 +136,10 @@ JSBool FindInBuffer( JSContext *cx, JSObject *obj, char *needle, int needleLengt
 		chunk = JS_GetStringBytes(*pNewStr);
 
 		for ( i = 0; i < chunkLength; i++ ) {
-			
+
 			buf[pos++ % needleLength] = chunk[i]; // store one more char of the chunk in the ring buffer
 			if ( pos >= needleLength ) { // if we have enough data in the ring buffer to start the search
-				 
+
 				for ( j = 0; j < needleLength && needle[j] == buf[(pos+j) % needleLength]; j++ ); // search the 'needle' starting at the right position in the ring buffer.
 				if( j == needleLength ) { // if all chars of the 'needle' are found
 
@@ -168,7 +168,7 @@ JSBool AddBuffer( JSContext *cx, JSObject *destBuffer, JSObject *srcBuffer ) {
 	RT_ASSERT_RESOURCE( srcQueue );
 
 	for ( QueueCell *it = QueueBegin(srcQueue); it; it = QueueNext(it) ) {
-		
+
 		JSString **pNewStr = (JSString**)malloc(sizeof(JSString*));
 		*pNewStr = *(JSString **)QueueGetData(it);
 		RT_CHECK_CALL( JS_AddRoot(cx, pNewStr) );
@@ -205,7 +205,7 @@ JSBool ReadOneChunk( JSContext *cx, JSObject *obj, jsval *rval ) {
 		RT_CHECK_CALL( BufferRefillRequest(cx, obj, 0) );
 		RT_CHECK_CALL( BufferLengthGet(cx, obj, &bufferLength) ); // read it again because it may have changed
 		if ( bufferLength == 0 ) { // the data are definitively exhausted
-			
+
 			*rval = JS_GetEmptyStringValue(cx);
 			return JS_TRUE;
 		}
@@ -223,7 +223,7 @@ JSBool ReadOneChunk( JSContext *cx, JSObject *obj, jsval *rval ) {
 
 
 JSBool ReadRawAmount( JSContext *cx, JSObject *obj, size_t *amount, char *str ) { // this form allows one to read into a static buffer
-	
+
 	if ( *amount == 0 ) { // optimization
 
 		return JS_TRUE;
@@ -273,7 +273,7 @@ JSBool ReadRawAmount( JSContext *cx, JSObject *obj, size_t *amount, char *str ) 
 			free(pNewStr); // (TBD) check it
 			QueueShift(queue);
 		} else { // chunkLen > remain: this is the last chunk we have to manage. we only get a part of it chunk and we 'unread' the remaining.
-			
+
 			memcpy(ptr, chunk, remainToRead);
 			if ( true ) { // (TBD) compute the condition to make 'conservative chunk'
 
@@ -293,7 +293,7 @@ JSBool ReadRawAmount( JSContext *cx, JSObject *obj, size_t *amount, char *str ) 
 
 
 JSBool ReadAmount( JSContext *cx, JSObject *obj, size_t amount, jsval *rval ) {
-	
+
 	if ( amount == 0 ) { // optimization
 
 		*rval = JS_GetEmptyStringValue(cx);
@@ -302,13 +302,13 @@ JSBool ReadAmount( JSContext *cx, JSObject *obj, size_t amount, jsval *rval ) {
 
 	char *str = (char*)JS_malloc(cx, amount + 1); // (TBD) memory leak if ReadRawAmount failed
 	RT_ASSERT_ALLOC(str);
-	
+
 	// (TBD) IMPORTANT: here, amount should be MIN( amount, buffer_size ). This can avoid an useless memory allocation.
 	int requestedAmount = amount;
 	RT_CHECK_CALL( ReadRawAmount(cx, obj, &amount, str) );
 
 	if ( amount == 0 ) { // optimization
-		
+
 		JS_free(cx, str);
 		*rval = JS_GetEmptyStringValue(cx);
 		return JS_TRUE;
@@ -316,7 +316,7 @@ JSBool ReadAmount( JSContext *cx, JSObject *obj, size_t amount, jsval *rval ) {
 
 	str[amount] = '\0'; // (TBD) explain this
 
-	// (TBD) if amount after calling ReadRawAmount is smaller than before, realloc the buffer 
+	// (TBD) if amount after calling ReadRawAmount is smaller than before, realloc the buffer
 	if ( MaybeRealloc( requestedAmount, amount ) ) {
 
 		str = (char*)JS_realloc(cx, str, amount + 1);
@@ -381,7 +381,7 @@ DEFINE_FINALIZE() {
 	if ( queue != NULL ) {
 
 /*
-// remove NativeInterface 
+// remove NativeInterface
 // unable to call GetNativeInterface in Finalize !!!
 //		JsCntxt *cntxt;
 //		FunctionPointer fp;
@@ -394,7 +394,7 @@ DEFINE_FINALIZE() {
 //		JS_GetReservedSlot(cx, obj, 0, &tmp );
 
 		while ( !QueueIsEmpty(queue) ) {
-			
+
 			JSString **pNewStr = (JSString**)QueueShift(queue);
 			JS_RemoveRoot(cx, pNewStr);
 			free(pNewStr);
@@ -421,7 +421,7 @@ DEFINE_CONSTRUCTOR() {
 	BufferLengthSet(cx, obj, 0);
 
 	if ( argc >= 1 ) {
-		
+
 		if ( JSVAL_IS_STRING( argv[0] ) ) {
 
 			JSString **pNewStr = (JSString**)malloc(sizeof(JSString*));
@@ -446,7 +446,7 @@ DEFINE_FUNCTION( Clear ) {
 	RT_ASSERT_RESOURCE(queue);
 
 	while ( !QueueIsEmpty(queue) ) {
-		
+
 		JSString **pNewStr = (JSString**)QueueShift(queue);
 		JS_RemoveRoot(cx, pNewStr);
 		free(pNewStr);
@@ -489,11 +489,11 @@ DEFINE_FUNCTION( Write ) {
 
 
 DEFINE_FUNCTION( Match ) {
-	
+
 	RT_ASSERT_ARGC( 1 );
 	RT_ASSERT_RESOURCE( JS_GetPrivate(cx, obj) ); // first, ensure that the object is valid
 	RT_ASSERT_STRING( argv[0] );
-		
+
 	char *str;
 	size_t len;
 	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], str, len );
@@ -519,7 +519,7 @@ DEFINE_FUNCTION( Read ) { // Read( [ amount | <undefined> ] )
 
 	RT_ASSERT_RESOURCE( JS_GetPrivate(cx, obj) ); // first, ensure that the object is valid
 	if ( argc >= 1 && argv[0] == JSVAL_VOID ) { // read the next chunk (of an unknown length) (read something as fast as possible)
-		
+
 		RT_CHECK_CALL( ReadOneChunk(cx, obj, rval) );
 		return JS_TRUE;
 	}
@@ -550,20 +550,21 @@ DEFINE_FUNCTION( Skip ) { // Skip( amount )
 DEFINE_FUNCTION( ReadUntil ) {
 
 	RT_ASSERT_ARGC( 1 );
+	char *boundary;
+	int boundaryLength;
+	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], boundary, boundaryLength );
 	bool skip;
 	if ( argc >= 2 )
 		RT_JSVAL_TO_BOOL(argv[1], skip);
 	else
-		skip = false;
-	char *boundary;
-	int boundaryLength;
-	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], boundary, boundaryLength );
+		skip = true;
 	int found;
 	RT_CHECK_CALL( FindInBuffer(cx, obj, boundary, boundaryLength, &found) );
 	if ( found != -1 ) {
 
 		ReadAmount(cx, obj, found, rval);
 		if ( skip ) {
+
 			jsval tmp;
 			RT_CHECK_CALL( ReadAmount(cx, obj, boundaryLength, &tmp) ); // (TBD) optimization: skip without reading the data.
 		}
