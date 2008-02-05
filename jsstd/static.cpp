@@ -165,8 +165,13 @@ DEFINE_FUNCTION( Seal ) {
 DEFINE_FUNCTION( Clear ) {
 
 	RT_ASSERT_ARGC(1);
-	RT_ASSERT_OBJECT(argv[0]);
-	JS_ClearScope(cx, JSVAL_TO_OBJECT(argv[0]));
+//	RT_ASSERT_OBJECT(argv[0]);
+	if ( JSVAL_IS_OBJECT(argv[0]) ) {
+
+		JS_ClearScope(cx, JSVAL_TO_OBJECT(argv[0]));
+		*rval = JSVAL_TRUE;
+	} else
+		*rval = JSVAL_FALSE;
 	return JS_TRUE;
 }
 
