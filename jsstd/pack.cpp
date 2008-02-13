@@ -21,7 +21,7 @@
 
 #include "buffer.h"
 
-#include "limits.h"
+// #include <limits.h> // included by ../common/platform.h
 
 static Endian systemEndian;
 

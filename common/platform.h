@@ -32,6 +32,7 @@
 #pragma warning(disable : 4996)
 #endif // #ifdef WIN32
 
+#include <limits.h>
 
 #if defined(_WINDOWS) || defined(WIN32) // Windows platform
 
@@ -108,6 +109,16 @@ inline Endian DetectSystemEndianType() {
 		case 0x02030001: return MiddleEndian;
 	}
 	return UnknownEndian;
+}
+
+
+inline char* IntegerToString(int val, int base) {
+	
+	static char buf[32] = {0};
+	int i = 30;
+	for(; val && i ; --i, val /= base)
+		buf[i] = "0123456789abcdef"[val % base];
+	return &buf[i+1];
 }
 
 

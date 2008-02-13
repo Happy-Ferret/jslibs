@@ -20,7 +20,7 @@
 
 #include "../common/stack.h"
 
-#include <limits.h>
+// #include <limits.h> // included by ../common/platform.h
 
 
 

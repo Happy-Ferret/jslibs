@@ -599,7 +599,7 @@ DEFINE_FUNCTION(Locate) {
 			char tmp[512];
 			strcpy(tmp, fp->script->filename);
 			strcat(tmp,":");
-			ltoa(JS_PCToLineNumber(cx, fp->script, fp->pc), tmp + strlen(tmp), 10);
+			strcat(tmp, IntegerToString(JS_PCToLineNumber(cx, fp->script, fp->pc), 10));
 			*rval = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, tmp));
 			break;
 		}

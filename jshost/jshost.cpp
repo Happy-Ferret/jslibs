@@ -35,7 +35,7 @@
 #include <string.h>
 #include <time.h>
 #include <errno.h>
-#include <limits.h>
+// #include <limits.h> // included by ../common/platform.h
 #include <signal.h>
 //	#include <dlfcn.h>
 

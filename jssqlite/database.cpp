@@ -20,7 +20,7 @@
 
 #include "../common/stack.h"
 
-#include <limits.h>
+// #include <limits.h> // included by ../common/platform.h
 #include <stdlib.h>
 
 // (TBD) add User-defined Collation Sequences ( http://www.sqlite.org/datatype3.html )
