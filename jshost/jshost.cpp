@@ -358,9 +358,15 @@ JSBool EndSignalGetter(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 	return JS_TRUE;
 }
 
+JSBool EndSignalSetter(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
+
+	RT_JSVAL_TO_BOOL(*vp, gEndSignal);
+	return JS_TRUE;
+}
+
 //////////////////////////////////////////////////////////////////////////////////////////////
 JSPropertySpec Global_PropertySpec[] = { // *name, tinyid, flags, getter, setter
-	{ "endSignal"    , 0    , JSPROP_SHARED | JSPROP_READONLY | JSPROP_PERMANENT, EndSignalGetter, NULL },
+	{ "endSignal"    , 0    , JSPROP_SHARED | JSPROP_PERMANENT, EndSignalGetter, EndSignalSetter },
 	{ 0 }
 };
 
@@ -648,8 +654,10 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 
 	if ( !compileOnly )
 		jsStatus = JS_ExecuteScript( cx, globalObject, script, &rval ); // MUST be executed only once ( JSOPTION_COMPILE_N_GO )
-	else
+	else {
+		rval = JSVAL_VOID;
 		jsStatus = JS_TRUE;
+	}
 
 	// doc: If a script executes successfully, JS_ExecuteScript returns JS_TRUE. Otherwise it returns JS_FALSE. On failure, your application should assume that rval is undefined.
 	// if jsStatus != JS_TRUE, an error has been throw while the execution, so there is no need to throw another error
