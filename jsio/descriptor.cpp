@@ -248,6 +248,29 @@ DEFINE_FUNCTION( Write ) {
 	if ( res == -1 ) {
 
 		PRErrorCode errCode = PR_GetError();
+/*
+		if ( errCode == PR_CONNECT_RESET_ERROR ) { // 10054
+			
+			// WSAECONNRESET (error 10054)
+			// Connection reset by peer. An existing connection
+			// was forcibly closed by the remote host. This
+			// normally results if the peer application on the
+			// remote host is suddenly stopped, the host is
+			// rebooted, or the remote host uses a hard close
+			// (see setsockopt for more information on the
+			// SO_LINGER option on the remote socket.) This
+			// error may also result if a connection was broken
+			// due to keep-alive activity detecting a failure
+			// while one or more operations are in progress.
+			// Operations that were in progress fail with
+			// WSAENETRESET. Subsequent operations fail with
+			// WSAECONNRESET.
+
+			*rval = JSVAL_VOID; // TCP connection reset by peer
+			return JS_TRUE;
+		}
+*/ // find a better solution !
+
 		if ( errCode != PR_WOULD_BLOCK_ERROR )
 			return ThrowIoError(cx);
 		sentAmount = 0;

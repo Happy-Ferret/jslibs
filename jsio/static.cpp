@@ -144,16 +144,15 @@ DEFINE_FUNCTION( Poll ) {
 					goto failed;
 */
 
-			JS_GetProperty( cx, fdObj, "writable", &prop );
-			if ( pollDesc[i].out_flags & PR_POLL_WRITE && JS_TypeOfValue( cx, prop ) == JSTYPE_FUNCTION )
-				if ( JS_CallFunctionValue( cx, fdObj, prop, 1, rval, &ret ) == JS_FALSE ) // JS_CallFunction() DO NOT WORK !!!
-					goto failed;
-
 			JS_GetProperty( cx, fdObj, "readable", &prop );
 			if ( pollDesc[i].out_flags & PR_POLL_READ && JS_TypeOfValue( cx, prop ) == JSTYPE_FUNCTION )
 				if ( JS_CallFunctionValue( cx, fdObj, prop, 1, rval, &ret ) == JS_FALSE ) // JS_CallFunction() DO NOT WORK !!!
 					goto failed;
 
+			JS_GetProperty( cx, fdObj, "writable", &prop );
+			if ( pollDesc[i].out_flags & PR_POLL_WRITE && JS_TypeOfValue( cx, prop ) == JSTYPE_FUNCTION )
+				if ( JS_CallFunctionValue( cx, fdObj, prop, 1, rval, &ret ) == JS_FALSE ) // JS_CallFunction() DO NOT WORK !!!
+					goto failed;
 		}
 	}
 
