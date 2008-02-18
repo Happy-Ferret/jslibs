@@ -33,10 +33,21 @@
 #endif // #ifdef WIN32
 
 #include <limits.h>
+#include <sys/types.h>
 
 #if defined(_WINDOWS) || defined(WIN32) // Windows platform
+	
+	#define int8_t   INT8
+	#define int16_t  INT16
+	#define int32_t  INT32
+	#define int64_t  INT64
 
-// (TBD) #include <windows.h> here ?
+	#define uint8_t  UINT8
+	#define uint16_t UINT16
+	#define uint32_t UINT32
+	#define uint64_t UINT64
+
+// (TBD) #iUINT64nclude <windows.h> here ?
 
 	#define XP_WIN
 
@@ -103,7 +114,7 @@ enum Endian {
 
 inline Endian DetectSystemEndianType() {
 
-	switch ( *(unsigned long*)"\3\2\1" ) {
+	switch ( *(unsigned long*)"\3\2\1" ) { // 03020100
 		case 0x03020100: return BigEndian;
 		case 0x00010203: return LittleEndian;
 		case 0x02030001: return MiddleEndian;

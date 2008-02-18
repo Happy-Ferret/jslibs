@@ -33,22 +33,22 @@ JSBool DetectSystemEndian(JSContext *cx, JSObject *obj) {
 
 JSBool CheckSystemTypesSize(JSContext *cx, JSObject *obj) {
 
-	RT_ASSERT( sizeof(char) == 1 && sizeof(short) == 2 && sizeof(long) == 4, "The system has no suitable type for using Pack class." );
+	RT_ASSERT( sizeof(int8_t) == 1 && sizeof(int16_t) == 2 && sizeof(int32_t) == 4, "The system has no suitable type for using Pack class." );
 	return JS_TRUE;
 }
 
 // cf. _swab()
 // 16 bits: #define SWAP_BYTES(X)           ((X & 0xff) << 8) | (X >> 8)
 // 32 bits swap: #define SWAP_BYTE(x) ((x<<24) | (x>>24) | ((x&0xFF00)<<8) | ((x&0xFF0000)>>8))
-#define BYTE_SWAP(ptr,a,b) { register char tmp = ((char*)ptr)[a]; ((char*)ptr)[a] = ((char*)ptr)[b]; ((char*)ptr)[b] = tmp; }
+#define BYTE_SWAP(ptr,a,b) { register char tmp = ((int8_t*)ptr)[a]; ((int8_t*)ptr)[a] = ((int8_t*)ptr)[b]; ((int8_t*)ptr)[b] = tmp; }
 
-void ShortToNetworkShort( void *pval ) {
+void Host16ToNetwork16( void *pval ) {
 
 	if ( systemEndian == LittleEndian )
 		BYTE_SWAP( pval, 0, 1 )
 }
 
-void LongToNetworkLong( void *pval ) {
+void Host32ToNetwork32( void *pval ) {
 
 	if ( systemEndian == LittleEndian ) {
 
@@ -57,7 +57,7 @@ void LongToNetworkLong( void *pval ) {
 	}
 }
 
-void LLongToNetworkLLong( void *pval ) {
+void Host64ToNetwork64( void *pval ) {
 
 	if ( systemEndian == LittleEndian ) {
 
@@ -68,13 +68,14 @@ void LLongToNetworkLLong( void *pval ) {
 	}
 }
 
-void NetworkShortToShort( void *pval ) {
+
+void Network16ToHost16( void *pval ) {
 
 	if ( systemEndian == LittleEndian )
 		BYTE_SWAP( pval, 0, 1 )
 }
 
-void NetworkLongToLong( void *pval ) {
+void Network32ToHost32( void *pval ) {
 
 	if ( systemEndian == LittleEndian ) {
 
@@ -83,7 +84,7 @@ void NetworkLongToLong( void *pval ) {
 	}
 }
 
-void NetworkLLongToLLong( void *pval ) {
+void Network64ToHost64( void *pval ) {
 
 	if ( systemEndian == LittleEndian ) {
 
@@ -93,6 +94,8 @@ void NetworkLLongToLLong( void *pval ) {
 		BYTE_SWAP( pval, 3, 4 )
 	}
 }
+
+
 
 
 BEGIN_CLASS( Pack )
@@ -138,7 +141,7 @@ DEFINE_FUNCTION( ReadInt ) {
 	else
 		netConv = false;
 
-	unsigned char data[8] = { 0 };
+	uint8_t data[8] = { 0 };
 
 	size_t amount = size;
 	RT_CHECK_CALL( ReadRawAmount(cx, bufferObject, &amount, (char*)data) );
@@ -150,49 +153,49 @@ DEFINE_FUNCTION( ReadInt ) {
 	}
 
 	switch (size) {
-		case sizeof(char):
-			*rval = INT_TO_JSVAL( isSigned ? *(signed char*)data : *(unsigned char*)data );
+		case sizeof(int8_t):
+			*rval = INT_TO_JSVAL( isSigned ? *(int8_t*)data : *(uint8_t*)data );
 			break;
-		case sizeof(short):
+		case sizeof(int16_t):
 			if (netConv)
-				NetworkShortToShort(data);
+				Network16ToHost16(data);
 			if ( isSigned ) {
-				signed short val = *(signed short*)data;
+				int16_t val = *(int16_t*)data;
 				*rval = INT_TO_JSVAL( val );
 			} else {
-				unsigned short val = *(unsigned short*)data;
+				uint16_t val = *(uint16_t*)data;
 				*rval = INT_TO_JSVAL( val );
 			}
 			break;
-		case sizeof(long):
+		case sizeof(int32_t):
 			if (netConv)
-				NetworkLongToLong(data);
+				Network32ToHost32(data);
 			if ( isSigned ) {
 
-				signed long val = *(signed long*)data;
+				int32_t val = *(int32_t*)data;
 				if ( val >> JSVAL_INT_BITS == 0 ) // check if we can store the value in a simple JSVAL_INT
 					*rval = INT_TO_JSVAL( val );
 				else // if not, we have to create a new number
 					RT_CHECK_CALL( JS_NewNumberValue(cx, val, rval) );
 			} else {
 
-				unsigned long val = *(unsigned long*)data;
+				uint32_t val = *(uint32_t*)data;
 				if ( val >> (JSVAL_INT_BITS-1) == 0 ) // check if we can store the value in a simple JSVAL_INT ( -1 because the sign )
 					*rval = INT_TO_JSVAL( val );
 				else // if not, we have to create a new number
 					RT_CHECK_CALL( JS_NewNumberValue(cx, val, rval) );
 			}
 			break;
-		case sizeof(LLONG):
+		case sizeof(int64_t):
 			if (netConv)
-				NetworkLLongToLLong(data);
+				Network64ToHost64(data);
 			if ( isSigned ) {
 				
-				signed LLONG val = *(signed LLONG*)data;
+				int64_t val = *(int64_t*)data;
 				RT_CHECK_CALL( JS_NewNumberValue(cx, val, rval) );
 			} else {
 
-				unsigned LLONG val = *(unsigned LLONG*)data;
+				uint64_t val = *(uint64_t*)data;
 				RT_CHECK_CALL( JS_NewNumberValue(cx, val, rval) );
 			}
 			break;
@@ -206,7 +209,7 @@ DEFINE_FUNCTION( ReadInt ) {
 
 DEFINE_FUNCTION( Test ) {
 
-	long c;
+	int32_t c;
 	bool isOutOfRange;
 	JsvalToSInt32(cx, argv[0], &c, &isOutOfRange);
 
@@ -240,34 +243,34 @@ DEFINE_FUNCTION( WriteInt ) {
 	else
 		netConv = false;
 
-	unsigned char data[8] = { 0 };
+	uint8_t data[8] = { 0 };
 
 	bool outOfRange = false;
 
 	switch (size) {
-		case sizeof(char):
+		case sizeof(int8_t):
 			if ( isSigned )
-				RT_CHECK_CALL( JsvalToSInt8(cx, jsvalue, (char*)data, &outOfRange) );
+				RT_CHECK_CALL( JsvalToSInt8(cx, jsvalue, (int8_t*)data, &outOfRange) );
 			else
-				RT_CHECK_CALL( JsvalToUInt8(cx, jsvalue, (unsigned char*)data, &outOfRange) );
+				RT_CHECK_CALL( JsvalToUInt8(cx, jsvalue, (uint8_t*)data, &outOfRange) );
 			break;
-		case sizeof(short):
+		case sizeof(int16_t):
 			if ( isSigned )
-				RT_CHECK_CALL( JsvalToSInt16(cx, jsvalue, (short*)data, &outOfRange) );
+				RT_CHECK_CALL( JsvalToSInt16(cx, jsvalue, (int16_t*)data, &outOfRange) );
 			else
-				RT_CHECK_CALL( JsvalToUInt16(cx, jsvalue, (unsigned short*)data, &outOfRange) );
+				RT_CHECK_CALL( JsvalToUInt16(cx, jsvalue, (uint16_t*)data, &outOfRange) );
 			if ( netConv )
-				ShortToNetworkShort(data);
+				Host16ToNetwork16(data);
 			break;
-		case sizeof(long):
+		case sizeof(int32_t):
 			if ( isSigned )
-				RT_CHECK_CALL( JsvalToSInt32(cx, jsvalue, (long*)data, &outOfRange) );
+				RT_CHECK_CALL( JsvalToSInt32(cx, jsvalue, (int32_t*)data, &outOfRange) );
 			else
-				RT_CHECK_CALL( JsvalToUInt32(cx, jsvalue, (unsigned long*)data, &outOfRange) );
+				RT_CHECK_CALL( JsvalToUInt32(cx, jsvalue, (uint32_t*)data, &outOfRange) );
 			if ( netConv )
-				LongToNetworkLong(data);
+				Host32ToNetwork32(data);
 			break;
-		case sizeof(LLONG):
+		case sizeof(int64_t):
 			// (TBD) implement it
 			// break;
 		default:
@@ -293,7 +296,7 @@ DEFINE_FUNCTION( ReadReal ) {
 
 	size_t size = JSVAL_TO_INT( argv[0] );
 
-	unsigned char data[16];
+	uint8_t data[16];
 	size_t amount = size;
 	RT_CHECK_CALL( ReadRawAmount(cx, bufferObject, &amount, (char*)data) );
 	if ( amount < size ) { // not enough data to complete the requested operation, then unread the few data we read

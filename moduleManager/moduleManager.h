@@ -12,7 +12,7 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-typedef unsigned int ModuleId;
+typedef unsigned long int ModuleId;
 
 typedef JSBool (*ModuleInitFunction)(JSContext *, JSObject *);
 typedef JSBool (*ModuleReleaseFunction)(JSContext *cx);
