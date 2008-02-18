@@ -42,10 +42,10 @@
 	#define int32_t  INT32
 	#define int64_t  INT64
 
-	#define uint8_t  UINT8
-	#define uint16_t UINT16
-	#define uint32_t UINT32
-	#define uint64_t UINT64
+	#define u_int8_t  UINT8
+	#define u_int16_t UINT16
+	#define u_int32_t UINT32
+	#define u_int64_t UINT64
 
 // (TBD) #iUINT64nclude <windows.h> here ?
 

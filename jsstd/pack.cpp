@@ -141,7 +141,7 @@ DEFINE_FUNCTION( ReadInt ) {
 	else
 		netConv = false;
 
-	uint8_t data[8] = { 0 };
+	u_int8_t data[8] = { 0 };
 
 	size_t amount = size;
 	RT_CHECK_CALL( ReadRawAmount(cx, bufferObject, &amount, (char*)data) );
@@ -154,7 +154,7 @@ DEFINE_FUNCTION( ReadInt ) {
 
 	switch (size) {
 		case sizeof(int8_t):
-			*rval = INT_TO_JSVAL( isSigned ? *(int8_t*)data : *(uint8_t*)data );
+			*rval = INT_TO_JSVAL( isSigned ? *(int8_t*)data : *(u_int8_t*)data );
 			break;
 		case sizeof(int16_t):
 			if (netConv)
@@ -163,7 +163,7 @@ DEFINE_FUNCTION( ReadInt ) {
 				int16_t val = *(int16_t*)data;
 				*rval = INT_TO_JSVAL( val );
 			} else {
-				uint16_t val = *(uint16_t*)data;
+				u_int16_t val = *(u_int16_t*)data;
 				*rval = INT_TO_JSVAL( val );
 			}
 			break;
@@ -179,7 +179,7 @@ DEFINE_FUNCTION( ReadInt ) {
 					RT_CHECK_CALL( JS_NewNumberValue(cx, val, rval) );
 			} else {
 
-				uint32_t val = *(uint32_t*)data;
+				u_int32_t val = *(u_int32_t*)data;
 				if ( val >> (JSVAL_INT_BITS-1) == 0 ) // check if we can store the value in a simple JSVAL_INT ( -1 because the sign )
 					*rval = INT_TO_JSVAL( val );
 				else // if not, we have to create a new number
@@ -195,7 +195,7 @@ DEFINE_FUNCTION( ReadInt ) {
 				RT_CHECK_CALL( JS_NewNumberValue(cx, val, rval) );
 			} else {
 
-				uint64_t val = *(uint64_t*)data;
+				u_int64_t val = *(u_int64_t*)data;
 				RT_CHECK_CALL( JS_NewNumberValue(cx, val, rval) );
 			}
 			break;
@@ -243,7 +243,7 @@ DEFINE_FUNCTION( WriteInt ) {
 	else
 		netConv = false;
 
-	uint8_t data[8] = { 0 };
+	u_int8_t data[8] = { 0 };
 
 	bool outOfRange = false;
 
@@ -252,13 +252,13 @@ DEFINE_FUNCTION( WriteInt ) {
 			if ( isSigned )
 				RT_CHECK_CALL( JsvalToSInt8(cx, jsvalue, (int8_t*)data, &outOfRange) );
 			else
-				RT_CHECK_CALL( JsvalToUInt8(cx, jsvalue, (uint8_t*)data, &outOfRange) );
+				RT_CHECK_CALL( JsvalToUInt8(cx, jsvalue, (u_int8_t*)data, &outOfRange) );
 			break;
 		case sizeof(int16_t):
 			if ( isSigned )
 				RT_CHECK_CALL( JsvalToSInt16(cx, jsvalue, (int16_t*)data, &outOfRange) );
 			else
-				RT_CHECK_CALL( JsvalToUInt16(cx, jsvalue, (uint16_t*)data, &outOfRange) );
+				RT_CHECK_CALL( JsvalToUInt16(cx, jsvalue, (u_int16_t*)data, &outOfRange) );
 			if ( netConv )
 				Host16ToNetwork16(data);
 			break;
@@ -266,7 +266,7 @@ DEFINE_FUNCTION( WriteInt ) {
 			if ( isSigned )
 				RT_CHECK_CALL( JsvalToSInt32(cx, jsvalue, (int32_t*)data, &outOfRange) );
 			else
-				RT_CHECK_CALL( JsvalToUInt32(cx, jsvalue, (uint32_t*)data, &outOfRange) );
+				RT_CHECK_CALL( JsvalToUInt32(cx, jsvalue, (u_int32_t*)data, &outOfRange) );
 			if ( netConv )
 				Host32ToNetwork32(data);
 			break;
@@ -296,7 +296,7 @@ DEFINE_FUNCTION( ReadReal ) {
 
 	size_t size = JSVAL_TO_INT( argv[0] );
 
-	uint8_t data[16];
+	u_int8_t data[16];
 	size_t amount = size;
 	RT_CHECK_CALL( ReadRawAmount(cx, bufferObject, &amount, (char*)data) );
 	if ( amount < size ) { // not enough data to complete the requested operation, then unread the few data we read
