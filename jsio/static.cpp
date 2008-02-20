@@ -227,6 +227,14 @@ DEFINE_FUNCTION( IntervalNow ) {
 }
 
 
+DEFINE_FUNCTION_FAST( UIntervalNow ) {
+
+	PRUint32 interval = PR_IntervalToMicroseconds( PR_IntervalNow() );
+	JS_NewNumberValue( cx, interval, &JS_RVAL(cx, vp) );
+	return JS_TRUE;
+}
+
+
 DEFINE_FUNCTION( Sleep ) {
 
 	uint32 timeout;
@@ -325,6 +333,7 @@ CONFIGURE_STATIC
 		FUNCTION( IsReadable )
 		FUNCTION( IsWritable )
 		FUNCTION( IntervalNow )
+		FUNCTION_FAST( UIntervalNow )
 		FUNCTION( Sleep )
 		FUNCTION( GetEnv )
 		FUNCTION( HostName )

@@ -36,6 +36,8 @@
 #include <sys/types.h>
 
 #if defined(_WINDOWS) || defined(WIN32) // Windows platform
+
+	#include <windows.h>
 	
 	#define int8_t   INT8
 	#define int16_t  INT16
@@ -130,6 +132,18 @@ inline char* IntegerToString(int val, int base) {
 	for(; val && i ; --i, val /= base)
 		buf[i] = "0123456789abcdef"[val % base];
 	return &buf[i+1];
+}
+
+inline double TimeCouner() {
+
+#ifdef XP_WIN
+	LARGE_INTEGER frequency, performanceCount;
+	BOOL result = ::QueryPerformanceFrequency(&frequency);
+	result = ::QueryPerformanceCounter(&performanceCount);
+	return 1000 * performanceCount.QuadPart / (double)frequency.QuadPart; 
+#endif // XP_WIN
+
+	return -1; // (TBD)
 }
 
 
