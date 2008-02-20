@@ -40,9 +40,22 @@ bool NativeInterfaceReadDescriptor( void *pv, unsigned char *buf, unsigned int *
 		*amount = 0;
 		return true; // no error, but no data
 	}
+
 	ret = PR_Read(fd, buf, *amount);
-	if ( ret == -1 )
-		return false;
+	if ( ret == -1 ) {
+
+		PRErrorCode errorCode = PR_GetError();
+		if ( errorCode != PR_WOULD_BLOCK_ERROR )// if non-blocking descriptor, this is a non-fatal error
+			return false; // real error			
+		*amount = 0;
+		return true; // no error, but no data
+	}
+	
+	if ( ret == 0 ) { // end of file / socket
+		
+		// (TBD)
+	}
+
 	*amount = ret;
 	return true;
 }
@@ -119,7 +132,7 @@ JSBool ReadToJsval(JSContext *cx, PRFileDesc *fd, int amount, jsval *rval ) {
 	if (res == 0) {
 
 		JS_free( cx, buf );
-		*rval = JS_GetEmptyStringValue(cx);
+		*rval = JSVAL_VOID; // end of file/socket
 		return JS_TRUE;
 	}
 
@@ -156,7 +169,11 @@ JSBool ReadAllToJsval(JSContext *cx, PRFileDesc *fd, jsval *rval ) {
 		chunkList[chunkListContentLength++] = chunk;
 
 		PRInt32 res = PR_Read( fd, chunk + sizeof(int), currentReadLength ); // chunk + sizeof(int) gives the position where the data can be written. Size to read is currentReadLength
-		if (res == -1) { // failure. The reason for the failure can be obtained by calling PR_GetError.
+		
+		if ( res > 0 ) {
+
+			receivedAmount = res;
+		} else if ( res == -1 ) { // failure. The reason for the failure can be obtained by calling PR_GetError.
 
 			PRErrorCode errCode = PR_GetError();
 			if ( errCode != PR_WOULD_BLOCK_ERROR ) {
@@ -169,15 +186,27 @@ JSBool ReadAllToJsval(JSContext *cx, PRFileDesc *fd, jsval *rval ) {
 			free(chunkList[--chunkListContentLength]); // cancel the last chunk
 			receivedAmount = 0;
 			break; // no error, no data received, we cannot reach currentReadLength
-		} else
-			receivedAmount = res;
+		} else if ( res == 0 ) { // end of file/socket
+			
+			if ( totalLength > 0 ) { // we reach eof BUT we have read some data.
 
+				free(chunkList[--chunkListContentLength]); // cancel the last chunk
+				receivedAmount = 0;
+				break; // no error, no data received, we cannot reach currentReadLength
+			} else {
+
+				free(chunkList[--chunkListContentLength]); // cancel the last chunk
+				free(chunkList);
+				*rval = JSVAL_VOID;
+				return JS_TRUE;
+			}
+		}
 		*(int*)chunk = receivedAmount;
 		totalLength += receivedAmount;
-
 	} while ( receivedAmount == currentReadLength );
-	
-	if ( totalLength == 0 ) {
+
+
+	if ( totalLength == 0 ) { // PR_WOULD_BLOCK_ERROR and NOT end of file/socket
 
 		while ( chunkListContentLength )
 			free(chunkList[--chunkListContentLength]);

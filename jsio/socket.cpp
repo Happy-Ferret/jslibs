@@ -328,8 +328,8 @@ DEFINE_FUNCTION( SendTo ) {
 
 DEFINE_FUNCTION( RecvFrom ) {
 
-//	PRFileDesc *fd = (PRFileDesc*)JS_GetPrivate( cx, obj );
-//	RT_ASSERT_RESOURCE( fd );
+	RT_ASSERT_CLASS( obj, _class );
+
 	PRFileDesc *fd;
 	if ( JS_GET_CLASS(cx, obj) == _class )
 		fd = (PRFileDesc*)JS_GetPrivate( cx, obj );
@@ -337,39 +337,16 @@ DEFINE_FUNCTION( RecvFrom ) {
 		fd = PR_NewUDPSocket(); // allow to use SendTo as static function
 	RT_ASSERT_RESOURCE( fd );
 
-
-
 	PRInt64 available = PR_Available64( fd );
 	if ( available == -1 )
 		return ThrowIoError(cx);
 
-	if ( available == 0 ) {
-
-		*rval = JS_GetEmptyStringValue(cx);
-		return JS_TRUE;
-	}
-
-	char *buffer = (char *)JS_malloc(cx, available+1);
+	char *buffer = (char *)JS_malloc(cx, available+1); // (TBD) optimize this if  available == 0 !!
 	RT_ASSERT_ALLOC( buffer );
 	buffer[available] = '\0';
 
 	PRNetAddr addr;
 	PRInt32 res = PR_RecvFrom(fd, buffer, available, 0, &addr, PR_INTERVAL_NO_TIMEOUT );
-
-	if ( res == -1 ) {
-
-		PRErrorCode errCode = PR_GetError();
-		if ( errCode != PR_WOULD_BLOCK_ERROR ) {
-
-			JS_free(cx, buffer);
-			return ThrowIoError(cx);
-		}
-	}
-
-//	RT_ASSERT( res == available, "Invalid size" );
-
-	JSString *strBuffer = JS_NewString(cx, buffer, res);
-	RT_ASSERT_ALLOC( strBuffer ); // (TBD) else free buffer
 
 	char peerName[46]; // If addr is an IPv4 address, size needs to be at least 16. If addr is an IPv6 address, size needs to be at least 46.
 	PRStatus status = PR_NetAddrToString(&addr, peerName, sizeof(peerName)); // Converts a character string to a network address.
@@ -378,20 +355,35 @@ DEFINE_FUNCTION( RecvFrom ) {
 		JS_free(cx, buffer);
 		return ThrowIoError(cx);
 	}
-
 	JSString *strPeerName = JS_NewStringCopyZ(cx, peerName);
 	RT_ASSERT_ALLOC(strPeerName); // (TBD) else free buffer ? ( or, this is a fatal error, program should stop )
 
 	int port = PR_NetAddrInetPort(&addr);
 
-	jsval arrayItems[] = { STRING_TO_JSVAL(strBuffer), STRING_TO_JSVAL(strPeerName), INT_TO_JSVAL(port) };
+	jsval data;
+	if (res > 0) {
+
+		JSString *strBuffer = JS_NewString(cx, buffer, res);
+		RT_ASSERT_ALLOC( strBuffer ); // (TBD) else free buffer
+		data = STRING_TO_JSVAL(strBuffer);
+		*rval = data; // protect from GC
+	} else if (res == 0) {
+		
+		JS_free(cx, buffer);
+		data = JSVAL_VOID;
+	} else if (res == -1) {
+
+		JS_free(cx, buffer);
+		PRErrorCode errCode = PR_GetError();
+		if ( errCode != PR_WOULD_BLOCK_ERROR )
+			return ThrowIoError(cx);
+		data = JS_GetEmptyStringValue(cx);
+	}
+
+	jsval arrayItems[] = { data, STRING_TO_JSVAL(strPeerName), INT_TO_JSVAL(port) };
 	JSObject *arrayObject = JS_NewArrayObject(cx, sizeof(arrayItems), arrayItems );
 	RT_ASSERT_ALLOC( arrayObject ); // (TBD) else free buffer
 	*rval = OBJECT_TO_JSVAL( arrayObject );
-
-	if ( JS_GET_CLASS(cx, obj) != _class )
-		PR_Close(fd);
-
 
 	return JS_TRUE;
 }
