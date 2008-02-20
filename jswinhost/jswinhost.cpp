@@ -58,7 +58,7 @@ int consoleStdOut( JSContext *cx, const char *data, int length ) {
 		JSString *str = JS_NewStringCopyN(cx, data, length);
 		RT_ASSERT_ALLOC( str ); 
 		jsval rval, arg = STRING_TO_JSVAL(str);
-		RT_CHECK_CALL ( JS_CallFunctionValue(cx, obj, functionVal, 1, &arg, &rval) )
+		RT_CHECK_CALL ( JS_CallFunctionValue(cx, obj, functionVal, 1, &arg, &rval) );
 	}
 	return length;
 }
@@ -75,7 +75,7 @@ int consoleStdErr( JSContext *cx, const char *data, int length ) {
 		JSString *str = JS_NewStringCopyN(cx, data, length);
 		RT_ASSERT_ALLOC( str ); 
 		jsval rval, arg = STRING_TO_JSVAL(str);
-		RT_CHECK_CALL( JS_CallFunctionValue(cx, obj, functionVal, 1, &arg, &rval) )
+		RT_CHECK_CALL( JS_CallFunctionValue(cx, obj, functionVal, 1, &arg, &rval) );
 	}
 	return length;
 }

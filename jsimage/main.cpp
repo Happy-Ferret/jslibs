@@ -14,8 +14,8 @@
 
 #include "stdafx.h"
 
-#define MODULE_NAME "jsimage"
-static const char *_revision = "$Rev$";
+//#define MODULE_NAME "jsimage"
+//static const char *_revision = "$Rev$";
 
 #include "jsimage.h"
 #include "jspng.h"
@@ -25,7 +25,7 @@ DEFINE_UNSAFE_MODE
 
 extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
-	JS_DefineProperty(cx, obj, MODULE_NAME "_build", INT_TO_JSVAL(atoi(_revision+6)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ); // 6 is the size of "$Rev: "
+//	JS_DefineProperty(cx, obj, MODULE_NAME "_build", INT_TO_JSVAL(atoi(_revision+6)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ); // 6 is the size of "$Rev: "
 
 	SET_UNSAFE_MODE( GetConfigurationValue(cx, "unsafeMode" ) == JSVAL_TRUE );
 
