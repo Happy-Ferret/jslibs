@@ -9,6 +9,7 @@ else
 	LIBJS_DIR = Linux_All_OPT.OBJ
 	LIBJS_MAKE_OPTIONS = BUILD_OPT=1
 	CFLAGS = -O3
+	POSBUILD = strip $(TARGET_FILES)
 endif
 
 TARGET_FILES = ./src/$(LIBJS_DIR)/libjs.so
@@ -18,3 +19,5 @@ all::
 
 all clean::
 	$(MAKE) -C src -f Makefile.ref $@ $(LIBJS_MAKE_OPTIONS) XCFLAGS="$(CFLAGS)"
+	$(POSBUILD)
+

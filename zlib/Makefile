@@ -1,6 +1,7 @@
 include ../common/subdirs.mk
 
 TARGET_FILES = ./src/libz.a
+CFLAGS += -fPIC
 
 ./src/Makefile:
 	cd src && ./configure

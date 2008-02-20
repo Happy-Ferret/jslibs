@@ -8,6 +8,7 @@ endif
 	echo IGNORE $@
 
 BUILD ?= opt
+BITS ?= 32
 
 DEST_DIR = ./$(BUILD)/
 

@@ -3,6 +3,8 @@ include ../common/subdirs.mk
 TARGET_FILES = ./src/libsqlite3.a
 
 CC=gcc
+CFLAGS += -fPIC
+
 ifeq ($(BUILD),opt)
 CFLAGS += -O3
 else
@@ -17,5 +19,3 @@ all:: ./src/libsqlite3.a
 
 clean::
 	-cd src && rm sqlite3.o libsqlite3.a
-
-
