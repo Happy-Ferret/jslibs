@@ -38,7 +38,7 @@
 #if defined(_WINDOWS) || defined(WIN32) // Windows platform
 
 	#include <windows.h>
-	
+
 	#define int8_t   INT8
 	#define int16_t  INT16
 	#define int32_t  INT32
@@ -126,7 +126,7 @@ inline Endian DetectSystemEndianType() {
 
 
 inline char* IntegerToString(int val, int base) {
-	
+
 	static char buf[32] = {0};
 	int i = 30;
 	for(; val && i ; --i, val /= base)
@@ -134,13 +134,13 @@ inline char* IntegerToString(int val, int base) {
 	return &buf[i+1];
 }
 
-inline double TimeCouner() {
+inline double TimeCounter() {
 
 #ifdef XP_WIN
 	LARGE_INTEGER frequency, performanceCount;
 	BOOL result = ::QueryPerformanceFrequency(&frequency);
 	result = ::QueryPerformanceCounter(&performanceCount);
-	return 1000 * performanceCount.QuadPart / (double)frequency.QuadPart; 
+	return 1000 * performanceCount.QuadPart / (double)frequency.QuadPart;
 #endif // XP_WIN
 
 	return -1; // (TBD)
