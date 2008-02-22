@@ -83,15 +83,19 @@ DEFINE_FUNCTION( Poll ) {
 		pollDesc[i].fd = fd; // fd is A pointer to a PRFileDesc object representing a socket or a pollable event.  This field can be set to NULL to indicate to PR_Poll that this PRFileDesc object should be ignored.
 		pollDesc[i].in_flags = 0;
 		pollDesc[i].out_flags = 0;
-	
 		jsval prop;
-		JS_GetProperty( cx, fdObj, "readable", &prop );
-		if ( prop != JSVAL_VOID )
-			pollDesc[i].in_flags |= PR_POLL_READ;
 
 		JS_GetProperty( cx, fdObj, "writable", &prop );
 		if ( prop != JSVAL_VOID )
 			pollDesc[i].in_flags |= PR_POLL_WRITE;
+
+		JS_GetProperty( cx, fdObj, "readable", &prop );
+		if ( prop != JSVAL_VOID )
+			pollDesc[i].in_flags |= PR_POLL_READ;
+
+		JS_GetProperty( cx, fdObj, "hangup", &prop );
+		if ( prop != JSVAL_VOID )
+			pollDesc[i].in_flags |= PR_POLL_HUP;
 
 		JS_GetProperty( cx, fdObj, "exception", &prop );
 		if ( prop != JSVAL_VOID )
@@ -109,50 +113,59 @@ DEFINE_FUNCTION( Poll ) {
 		goto failed;
 	}
 
-	for ( i = 0; i < idArray->length; i++ ) {
+	if ( result > 0 ) { // has event(s)
 
-		jsval arrayItem;
-		RT_CHECK_CALL( JS_IdToValue(cx, idArray->vector[i], &arrayItem) );
-		RT_CHECK_CALL( JS_GetElement(cx, JSVAL_TO_OBJECT(argv[0]), JSVAL_TO_INT(arrayItem), &arrayItem) );
-		if ( arrayItem == JSVAL_VOID ) // socket has been removed from the list while js func "poll()" is runing
-			continue;
-		JSObject *fdObj = JSVAL_TO_OBJECT( arrayItem ); //JS_ValueToObject
-		*rval = OBJECT_TO_JSVAL( fdObj ); // protect from GC
+		for ( i = 0; i < idArray->length; i++ ) {
 
-		jsval prop, ret;
-		if ( result > 0 ) { // no timeout
+			jsval arrayItem;
+			RT_CHECK_CALL( JS_IdToValue(cx, idArray->vector[i], &arrayItem) );
+			RT_CHECK_CALL( JS_GetElement(cx, JSVAL_TO_OBJECT(argv[0]), JSVAL_TO_INT(arrayItem), &arrayItem) );
+			if ( arrayItem == JSVAL_VOID ) // socket has been removed from the list while js func "poll()" is runing
+				continue;
+			JSObject *fdObj = JSVAL_TO_OBJECT( arrayItem ); //JS_ValueToObject
+			jsval prop, ret;
+			PRInt16 outFlag = pollDesc[i].out_flags;
+			jsval cbArgv[2] = { *rval, (outFlag & PR_POLL_HUP) ? JSVAL_TRUE : JSVAL_FALSE }; // fd, hup_flag
 
-			JS_GetProperty( cx, fdObj, "error", &prop );
-			if ( pollDesc[i].out_flags & PR_POLL_ERR && JS_TypeOfValue( cx, prop ) == JSTYPE_FUNCTION )
-				if ( JS_CallFunctionValue( cx, fdObj, prop, 1, rval, &ret ) == JS_FALSE ) // JS_CallFunction() DO NOT WORK !!!
-					goto failed;
+			if ( outFlag & PR_POLL_ERR ) {
+				
+				JS_GetProperty( cx, fdObj, "error", &prop );
+				if ( JS_TypeOfValue( cx, prop ) == JSTYPE_FUNCTION )
+					if ( JS_CallFunctionValue( cx, fdObj, prop, sizeof(cbArgv)/sizeof(jsval), cbArgv, &ret ) == JS_FALSE ) // JS_CallFunction() DO NOT WORK !!!
+						goto failed;
+			}
 
-			JS_GetProperty( cx, fdObj, "exception", &prop );
-			if ( pollDesc[i].out_flags & PR_POLL_EXCEPT && JS_TypeOfValue( cx, prop ) == JSTYPE_FUNCTION )
-				if ( JS_CallFunctionValue( cx, fdObj, prop, 1, rval, &ret ) == JS_FALSE ) // JS_CallFunction() DO NOT WORK !!!
-					goto failed;
+			if ( outFlag & PR_POLL_EXCEPT ) {
 
-/*
-			JS_GetProperty( cx, fdObj, "nval", &prop );
-			if ( pollDesc[i].out_flags & PR_POLL_NVAL && JS_TypeOfValue( cx, prop ) == JSTYPE_FUNCTION )
-				if ( JS_CallFunctionValue( cx, fdObj, prop, 1, rval, &ret ) == JS_FALSE ) // JS_CallFunction() DO NOT WORK !!!
-					goto failed;
+				JS_GetProperty( cx, fdObj, "exception", &prop );
+				if (JS_TypeOfValue( cx, prop ) == JSTYPE_FUNCTION )
+					if ( JS_CallFunctionValue( cx, fdObj, prop, sizeof(cbArgv)/sizeof(jsval), cbArgv, &ret ) == JS_FALSE ) // JS_CallFunction() DO NOT WORK !!!
+						goto failed;
+			}
 
-			JS_GetProperty( cx, fdObj, "hup", &prop );
-			if ( pollDesc[i].out_flags & PR_POLL_HUP && JS_TypeOfValue( cx, prop ) == JSTYPE_FUNCTION )
-				if ( JS_CallFunctionValue( cx, fdObj, prop, 1, rval, &ret ) == JS_FALSE ) // JS_CallFunction() DO NOT WORK !!!
-					goto failed;
-*/
+			if ( outFlag & PR_POLL_HUP ) {
+				
+				JS_GetProperty( cx, fdObj, "hangup", &prop );
+				if ( JS_TypeOfValue( cx, prop ) == JSTYPE_FUNCTION )
+					if ( JS_CallFunctionValue( cx, fdObj, prop, sizeof(cbArgv)/sizeof(jsval), cbArgv, &ret ) == JS_FALSE ) // JS_CallFunction() DO NOT WORK !!!
+						goto failed;
+			}
 
-			JS_GetProperty( cx, fdObj, "readable", &prop );
-			if ( pollDesc[i].out_flags & PR_POLL_READ && JS_TypeOfValue( cx, prop ) == JSTYPE_FUNCTION )
-				if ( JS_CallFunctionValue( cx, fdObj, prop, 1, rval, &ret ) == JS_FALSE ) // JS_CallFunction() DO NOT WORK !!!
-					goto failed;
+			if ( outFlag & PR_POLL_READ ) {
+				
+				JS_GetProperty( cx, fdObj, "readable", &prop );
+				if ( JS_TypeOfValue( cx, prop ) == JSTYPE_FUNCTION )
+					if ( JS_CallFunctionValue( cx, fdObj, prop, sizeof(cbArgv)/sizeof(jsval), cbArgv, &ret ) == JS_FALSE ) // JS_CallFunction() DO NOT WORK !!!
+						goto failed;
+			}
 
-			JS_GetProperty( cx, fdObj, "writable", &prop );
-			if ( pollDesc[i].out_flags & PR_POLL_WRITE && JS_TypeOfValue( cx, prop ) == JSTYPE_FUNCTION )
-				if ( JS_CallFunctionValue( cx, fdObj, prop, 1, rval, &ret ) == JS_FALSE ) // JS_CallFunction() DO NOT WORK !!!
-					goto failed;
+			if ( outFlag & PR_POLL_WRITE ) {
+			
+				JS_GetProperty( cx, fdObj, "writable", &prop );
+				if ( JS_TypeOfValue( cx, prop ) == JSTYPE_FUNCTION )
+					if ( JS_CallFunctionValue( cx, fdObj, prop, sizeof(cbArgv)/sizeof(jsval), cbArgv, &ret ) == JS_FALSE ) // JS_CallFunction() DO NOT WORK !!!
+						goto failed;
+			}
 		}
 	}
 
