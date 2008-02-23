@@ -337,7 +337,7 @@ DEFINE_FUNCTION_FAST( MaybeCollectGarbage ) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 DEFINE_FUNCTION_FAST( TimeCounter ) {
 
-	JS_NewNumberValue(cx, TimeCounter(), &JS_RVAL(cx,vp));
+	JS_NewNumberValue(cx, AccurateTimeCounter(), &JS_RVAL(cx,vp));
 	return JS_TRUE;
 }
 

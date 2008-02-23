@@ -134,7 +134,7 @@ inline char* IntegerToString(int val, int base) {
 	return &buf[i+1];
 }
 
-inline double TimeCounter() {
+inline double AccurateTimeCounter() {
 
 #ifdef XP_WIN
 	LARGE_INTEGER frequency, performanceCount;
