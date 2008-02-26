@@ -41,7 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../nspr/win32/dist/include/nspr;../nspr/include/nspr/private"
+				AdditionalIncludeDirectories="../nspr/win32/dist/include/nspr;../nspr/win32/dist/include/nspr/private"
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB"
 				MinimalRebuild="true"
 				ExceptionHandling="0"
@@ -122,7 +122,7 @@
 				InlineFunctionExpansion="2"
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
-				AdditionalIncludeDirectories="../nspr/win32/dist/include/nspr;../nspr/include/nspr/private"
+				AdditionalIncludeDirectories="../nspr/win32/dist/include/nspr;../nspr/win32/dist/include/nspr/private"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB"
 				ExceptionHandling="0"
 				BasicRuntimeChecks="0"

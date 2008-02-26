@@ -11,6 +11,8 @@ call "%visualStudioPath%\VC\vcvarsall.bat" x86
 
 del build.log
 
+md .\opt
+
 for /D %%f in (js*) do (
 
 	for %%g in (%%f\*.sln) do (
@@ -25,8 +27,8 @@ rem		if ERRORLEVEL 1 goto error
 		) ELSE (
 
 			pushd %%~dg%%~pgrelease
-			copy %%f.dll ..\..
-			copy %%f.exe ..\..
+			copy %%f.dll ..\..\opt
+			copy %%f.exe ..\..\opt
 			popd
 		)
 	)
@@ -40,4 +42,3 @@ echo Build failed!
 
 :end
 pause
-
