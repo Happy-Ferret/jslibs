@@ -188,12 +188,6 @@ JSClass prng_class = { "Prng", JSCLASS_HAS_PRIVATE,
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 JSObject *prngInitClass( JSContext *cx, JSObject *obj ) {
 
-	register_prng(&yarrow_desc);
-	register_prng(&fortuna_desc);
-	register_prng(&rc4_desc);
-	register_prng(&sprng_desc);
-	register_prng(&sober128_desc);
-
 	return JS_InitClass( cx, obj, NULL, &prng_class, prng_construct, 0, prng_PropertySpec, prng_FunctionSpec, prng_static_PropertySpec, prng_static_FunctionSpec );
 }
 

@@ -2,20 +2,22 @@
 
 include makefile.msvc
 
-CFLAGS = /Isrc/headers/ /I../../libtommath/src/ /Ox /DWIN32 /DLTC_SOURCE /DLTM_DESC /DNO_FILE /W3
+CFLAGS = /Isrc/headers/ /I../../libtommath/src/ /DWIN32 /DLTC_SOURCE /DLTM_DESC /DNO_FILE /W3 /Ox
+### DEBUG VERSION: /Od /Yd /Zi /ZI
+### DEFAULT FLAGS: /Isrc/headers/ /Itestprof/ /Ox /DWIN32 /DLTC_SOURCE /W3 /Fo$@ $(CF)
+
 LIBNAME = $(dest)
 
 .c.obj:
-    cl /nologo $(CFLAGS) /Fo$@ /c $<
+	cl /nologo $(CFLAGS) /Fo$@ /c $<
 
 $(LIBNAME): $(OBJECTS)
 	lib /nologo /out:$(LIBNAME) $(OBJECTS)
-	del /s *.obj
 
 build: $(LIBNAME)
 
 clean:
-	del "$(LIBNAME)"
-	del /s *.obj
+	-del "$(LIBNAME)"
+	-del /s *.obj
 
 rebuild: clean build

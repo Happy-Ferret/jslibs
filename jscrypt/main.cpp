@@ -28,16 +28,69 @@ extern "C" DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
 	SET_UNSAFE_MODE( GetConfigurationValue(cx, "unsafeMode" ) == JSVAL_TRUE );
 
-	// register math
-	ltc_mp = ltm_desc;
+	ltc_mp = ltm_desc; // register math
+
+	const struct ltc_cipher_descriptor * cipherList[] = {
+		&blowfish_desc, 
+		&rc5_desc, 
+		&rc6_desc, 
+		&rc2_desc, 
+		&saferp_desc,
+		&safer_k64_desc, &safer_k128_desc, &safer_sk64_desc, &safer_sk128_desc,
+		&rijndael_desc, &aes_desc,
+		&rijndael_enc_desc, &aes_enc_desc,
+		&xtea_desc,
+		&twofish_desc,
+		&des_desc, &des3_desc,
+		&cast5_desc,
+		&noekeon_desc,
+		&skipjack_desc,
+		&khazad_desc,
+		&anubis_desc,
+		&kseed_desc,
+		&kasumi_desc,
+//		&multi2_desc,
+	};
+	for ( int i=0; i<sizeof(cipherList)/sizeof(ltc_cipher_descriptor*); i++ )
+		RT_ASSERT_1( register_cipher(cipherList[i]) != -1, "Unable to load cipher %s", cipherList[i]->name );
+
+	const struct ltc_hash_descriptor * hashList[] = {
+		&chc_desc,
+		&whirlpool_desc,
+		&sha512_desc,
+		&sha384_desc,
+		&sha256_desc,
+		&sha224_desc,
+		&sha1_desc,
+		&md5_desc,
+		&md4_desc,
+		&md2_desc,
+		&tiger_desc,
+		&rmd128_desc,
+		&rmd160_desc,
+		&rmd256_desc,
+		&rmd320_desc,
+	};
+	for ( int i=0; i<sizeof(hashList)/sizeof(ltc_hash_descriptor*); i++ )
+		RT_ASSERT_1( register_hash(hashList[i]) != -1, "Unable to load hash %s", hashList[i]->name );
+
+	const struct ltc_prng_descriptor * prngList[] = {
+		&yarrow_desc,
+		&fortuna_desc,
+		&rc4_desc,
+		&sprng_desc,
+		&sober128_desc,
+	};
+	for ( int i=0; i<sizeof(prngList)/sizeof(ltc_prng_descriptor*); i++ )
+		RT_ASSERT_1( register_prng(prngList[i]) != -1, "Unable to load prng %s", prngList[i]->name );
+
 
 	InitErrorClass( cx, obj );
 	miscInitClass( cx, obj );
 	rsaInitClass( cx, obj );
+	cryptInitClass( cx, obj );
 	prngInitClass( cx, obj );
 	hashInitClass( cx, obj );
-//	cipherInitClass( cx, obj );
-	cryptInitClass( cx, obj );
 	return JS_TRUE;
 }
 

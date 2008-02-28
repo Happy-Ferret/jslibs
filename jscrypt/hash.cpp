@@ -174,21 +174,6 @@ JSClass hash_class = { "Hash", JSCLASS_HAS_PRIVATE,
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 JSObject *hashInitClass( JSContext *cx, JSObject *obj ) {
 
-	register_hash(&whirlpool_desc);
-	register_hash(&sha512_desc);
-	register_hash(&sha384_desc);
-	register_hash(&sha256_desc);
-	register_hash(&sha224_desc);
-	register_hash(&sha1_desc);
-	register_hash(&md5_desc);
-	register_hash(&md4_desc);
-	register_hash(&md2_desc);
-	register_hash(&tiger_desc);
-	register_hash(&rmd128_desc);
-	register_hash(&rmd160_desc);
-
-	register_hash(&chc_desc); // allow to use chc_register for a 'Cipher Hash Construction'
-
 	return JS_InitClass( cx, obj, NULL, &hash_class, hash_construct, 0, hash_PropertySpec, hash_FunctionSpec, hash_static_PropertySpec, hash_static_FunctionSpec );
 }
 

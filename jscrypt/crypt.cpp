@@ -314,68 +314,6 @@ JSClass crypt_class = { "Crypt", JSCLASS_HAS_PRIVATE,
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 JSObject *cryptInitClass( JSContext *cx, JSObject *obj ) {
 
-#ifdef RIJNDAEL
-  register_cipher (&aes_desc);
-#endif
-#ifdef BLOWFISH
-  register_cipher (&blowfish_desc);
-#endif
-#ifdef XTEA
-  register_cipher (&xtea_desc);
-#endif
-#ifdef RC5
-  register_cipher (&rc5_desc);
-#endif
-#ifdef RC6
-  register_cipher (&rc6_desc);
-#endif
-#ifdef SAFERP
-  register_cipher (&saferp_desc);
-#endif
-#ifdef TWOFISH
-  register_cipher (&twofish_desc);
-#endif
-#ifdef SAFER
-  register_cipher (&safer_k64_desc);
-  register_cipher (&safer_sk64_desc);
-  register_cipher (&safer_k128_desc);
-  register_cipher (&safer_sk128_desc);
-#endif
-#ifdef RC2
-  register_cipher (&rc2_desc);
-#endif
-#ifdef DES
-  register_cipher (&des_desc);
-  register_cipher (&des3_desc);
-#endif
-#ifdef CAST5
-  register_cipher (&cast5_desc);
-#endif
-#ifdef NOEKEON
-  register_cipher (&noekeon_desc);
-#endif
-#ifdef SKIPJACK
-  register_cipher (&skipjack_desc);
-#endif
-#ifdef KHAZAD
-  register_cipher (&khazad_desc);
-#endif
-#ifdef ANUBIS
-  register_cipher (&anubis_desc);
-#endif
-
-// if register_cipher failed but the cipher will not be used, it is acceptable because further check is done on find_cipher call
-
-
-/*
-	// you must register a cipher before you use it
-	if ( register_cipher(&blowfish_desc) == -1 ) {
-
-		JS_ReportError( cx, "Unable to register Blowfish cipher." );
-		return JS_FALSE;
-	}
-*/
-
 	return JS_InitClass( cx, obj, NULL, &crypt_class, crypt_construct, 0, crypt_PropertySpec, crypt_FunctionSpec, crypt_static_PropertySpec, crypt_static_FunctionSpec );
 }
 
