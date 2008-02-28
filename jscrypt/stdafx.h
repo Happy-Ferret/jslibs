@@ -16,7 +16,7 @@
 #include "../common/jsConfiguration.h"
 
 #include <tomcrypt.h>
-#include "cryptError.h"
+#include "error.h"
 
 #endif // stdafx_h___
 

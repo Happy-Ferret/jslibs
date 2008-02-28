@@ -13,12 +13,12 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-#include "crypt.h"
+#include "cypher.h"
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void crypt_Finalize(JSContext *cx, JSObject *obj) {
+void cypher_Finalize(JSContext *cx, JSObject *obj) {
 
-	CryptPrivate *privateData = (CryptPrivate *)JS_GetPrivate( cx, obj );
+	CypherPrivate *privateData = (CypherPrivate *)JS_GetPrivate( cx, obj );
 	if ( privateData == NULL )
 		return;
 
@@ -37,11 +37,11 @@ void crypt_Finalize(JSContext *cx, JSObject *obj) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // mode, cipher, key, IV
-JSBool crypt_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+JSBool cypher_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
 	RT_ASSERT( JS_IsConstructing(cx), RT_ERROR_NEED_CONSTRUCTION );
 	RT_ASSERT_ARGC( 4 );
-	RT_ASSERT_CLASS( obj, &crypt_class );
+	RT_ASSERT_CLASS( obj, &cypher_class );
 
 	char *modeName;
 	RT_JSVAL_TO_STRING( argv[0], modeName );
@@ -57,7 +57,7 @@ JSBool crypt_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, js
 	int IVLength;
 	RT_JSVAL_TO_STRING_AND_LENGTH( argv[3], IV, IVLength );
 
-	CryptPrivate *privateData = (CryptPrivate*)malloc( sizeof(CryptPrivate) );
+	CypherPrivate *privateData = (CypherPrivate*)malloc( sizeof(CypherPrivate) );
 	RT_ASSERT( privateData != NULL, RT_ERROR_OUT_OF_MEMORY );
 
 	int cipherIndex = find_cipher(cipherName);
@@ -95,11 +95,11 @@ JSBool crypt_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, js
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSBool crypt_encrypt(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+JSBool cypher_encrypt(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
 	RT_ASSERT_ARGC( 1 );
-	RT_ASSERT_CLASS( obj, &crypt_class );
-	CryptPrivate *privateData = (CryptPrivate *)JS_GetPrivate( cx, obj );
+	RT_ASSERT_CLASS( obj, &cypher_class );
+	CypherPrivate *privateData = (CypherPrivate *)JS_GetPrivate( cx, obj );
 	RT_ASSERT( privateData != NULL, RT_ERROR_NOT_INITIALIZED );
 
 	char *pt;
@@ -132,11 +132,11 @@ JSBool crypt_encrypt(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsva
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSBool crypt_decrypt(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+JSBool cypher_decrypt(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
 	RT_ASSERT_ARGC( 1 );
-	RT_ASSERT_CLASS( obj, &crypt_class );
-	CryptPrivate *privateData = (CryptPrivate *)JS_GetPrivate( cx, obj );
+	RT_ASSERT_CLASS( obj, &cypher_class );
+	CypherPrivate *privateData = (CypherPrivate *)JS_GetPrivate( cx, obj );
 	RT_ASSERT( privateData != NULL, RT_ERROR_NOT_INITIALIZED );
 
 	char *ct;
@@ -170,17 +170,17 @@ JSBool crypt_decrypt(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsva
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSFunctionSpec crypt_FunctionSpec[] = { // *name, call, nargs, flags, extra
- { "Encrypt"        , crypt_encrypt     , 0, 0, 0 },
- { "Decrypt"        , crypt_decrypt     , 0, 0, 0 },
+JSFunctionSpec cypher_FunctionSpec[] = { // *name, call, nargs, flags, extra
+ { "Encrypt"        , cypher_encrypt     , 0, 0, 0 },
+ { "Decrypt"        , cypher_decrypt     , 0, 0, 0 },
  { 0 }
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSBool crypt_setter_IV(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
+JSBool cypher_setter_IV(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 
-	RT_ASSERT_CLASS( obj, &crypt_class );
-	CryptPrivate *privateData = (CryptPrivate *)JS_GetPrivate( cx, obj );
+	RT_ASSERT_CLASS( obj, &cypher_class );
+	CypherPrivate *privateData = (CypherPrivate *)JS_GetPrivate( cx, obj );
 	RT_ASSERT( privateData != NULL, RT_ERROR_NOT_INITIALIZED );
 
 	char *IV;
@@ -205,10 +205,10 @@ JSBool crypt_setter_IV(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSBool crypt_getter_IV(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
+JSBool cypher_getter_IV(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 
-	RT_ASSERT_CLASS( obj, &crypt_class );
-	CryptPrivate *privateData = (CryptPrivate *)JS_GetPrivate( cx, obj );
+	RT_ASSERT_CLASS( obj, &cypher_class );
+	CypherPrivate *privateData = (CypherPrivate *)JS_GetPrivate( cx, obj );
 	RT_ASSERT( privateData != NULL, RT_ERROR_NOT_INITIALIZED );
 
 	char *IV = NULL;
@@ -247,14 +247,14 @@ JSBool crypt_getter_IV(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSPropertySpec crypt_PropertySpec[] = { // *name, tinyid, flags, getter, setter
-	{ "IV"            , 0, JSPROP_PERMANENT, crypt_getter_IV, crypt_setter_IV },
+JSPropertySpec cypher_PropertySpec[] = { // *name, tinyid, flags, getter, setter
+	{ "IV"            , 0, JSPROP_PERMANENT, cypher_getter_IV, cypher_setter_IV },
   { 0 }
 };
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSBool crypt_static_blockLength(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+JSBool cypher_static_blockLength(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
 	RT_ASSERT_ARGC( 1 );
 	char *cipherName;
@@ -269,14 +269,14 @@ JSBool crypt_static_blockLength(JSContext *cx, JSObject *obj, uintN argc, jsval 
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSFunctionSpec crypt_static_FunctionSpec[] = { // *name, call, nargs, flags, extra
-	{ "BlockLength"        , crypt_static_blockLength  , 0, 0, 0 },
+JSFunctionSpec cypher_static_FunctionSpec[] = { // *name, call, nargs, flags, extra
+	{ "BlockLength"        , cypher_static_blockLength  , 0, 0, 0 },
 	{ 0 }
 };
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSBool crypt_static_getter_cipherList(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
+JSBool cypher_static_getter_cipherList(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 
 	JSObject *list = JS_NewObject( cx, NULL, NULL, NULL );
 	RT_ASSERT( list != NULL, "unable to create cipher list." );
@@ -300,21 +300,21 @@ JSBool crypt_static_getter_cipherList(JSContext *cx, JSObject *obj, jsval id, js
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSPropertySpec crypt_static_PropertySpec[] = { // *name, tinyid, flags, getter, setter
-	{ "cipherList"   , 0, JSPROP_PERMANENT|JSPROP_READONLY, crypt_static_getter_cipherList , NULL },
+JSPropertySpec cypher_static_PropertySpec[] = { // *name, tinyid, flags, getter, setter
+	{ "cipherList"   , 0, JSPROP_PERMANENT|JSPROP_READONLY, cypher_static_getter_cipherList , NULL },
 	{ 0 }
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSClass crypt_class = { "Crypt", JSCLASS_HAS_PRIVATE,
+JSClass cypher_class = { "Crypt", JSCLASS_HAS_PRIVATE,
 	JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub,
-	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, crypt_Finalize
+	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, cypher_Finalize
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSObject *cryptInitClass( JSContext *cx, JSObject *obj ) {
+JSObject *cypherInitClass( JSContext *cx, JSObject *obj ) {
 
-	return JS_InitClass( cx, obj, NULL, &crypt_class, crypt_construct, 0, crypt_PropertySpec, crypt_FunctionSpec, crypt_static_PropertySpec, crypt_static_FunctionSpec );
+	return JS_InitClass( cx, obj, NULL, &cypher_class, cypher_construct, 0, cypher_PropertySpec, cypher_FunctionSpec, cypher_static_PropertySpec, cypher_static_FunctionSpec );
 }
 
 

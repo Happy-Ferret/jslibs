@@ -20,7 +20,7 @@
 #include "rsa.h"
 #include "prng.h"
 #include "hash.h"
-#include "crypt.h"
+#include "cypher.h"
 
 DEFINE_UNSAFE_MODE;
 
@@ -88,7 +88,7 @@ extern "C" DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	InitErrorClass( cx, obj );
 	miscInitClass( cx, obj );
 	rsaInitClass( cx, obj );
-	cryptInitClass( cx, obj );
+	cypherInitClass( cx, obj );
 	prngInitClass( cx, obj );
 	hashInitClass( cx, obj );
 	return JS_TRUE;

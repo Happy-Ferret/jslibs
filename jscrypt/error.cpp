@@ -13,7 +13,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-#include "cryptError.h"
+#include "error.h"
 
 JSClass CryptError_class = {
   "CryptError", JSCLASS_HAS_RESERVED_SLOTS(1),
