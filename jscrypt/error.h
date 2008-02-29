@@ -12,6 +12,7 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-JSObject *InitErrorClass( JSContext *cx, JSObject *obj );
+DECLARE_CLASS( CryptError );
+
 JSBool ThrowCryptError( JSContext *cx, int errorCode );
 

@@ -15,58 +15,61 @@
 #include "stdafx.h"
 #include "error.h"
 
-JSClass CryptError_class = {
-  "CryptError", JSCLASS_HAS_RESERVED_SLOTS(1),
-  JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub,
-  JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, JS_FinalizeStub
-};
 
+BEGIN_CLASS( CryptError )
 
-JSBool CryptError_getter_code(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
+DEFINE_CONSTRUCTOR() {
 
-	JS_GetReservedSlot( cx, obj, 0, vp );
-
+	REPORT_ERROR( "This object cannot be construct." ); // but constructor must be defined
 	return JS_TRUE;
 }
 
-JSBool CryptError_getter_text(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
+DEFINE_PROPERTY( code ) {
+
+	JS_GetReservedSlot( cx, obj, 0, vp );
+	return JS_TRUE;
+}
+
+DEFINE_PROPERTY( text ) {
 
 	JS_GetReservedSlot( cx, obj, 0, vp );
 	int errorCode = JSVAL_TO_INT(*vp);
-
 	JSString *str = JS_NewStringCopyZ( cx, error_to_string(errorCode) );
 	*vp = STRING_TO_JSVAL( str );
-
 	return JS_TRUE;
 }
 
-JSPropertySpec CryptError_PropertySpec[] = { // *name, tinyid, flags, getter, setter
-  { "code",  0, JSPROP_READONLY|JSPROP_PERMANENT, CryptError_getter_code, NULL },
-  { "text",  0, JSPROP_READONLY|JSPROP_PERMANENT, CryptError_getter_text, NULL },
-  { 0 }
-};
+DEFINE_FUNCTION( toString ) {
 
-
-JSBool CryptError_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
-
+	RT_CHECK_CALL( text(cx, obj, 0, rval) );
 	return JS_TRUE;
 }
+
+CONFIGURE_CLASS
+
+	HAS_CONSTRUCTOR
+
+	BEGIN_PROPERTY_SPEC
+		PROPERTY_READ( code )
+		PROPERTY_READ( text )
+	END_PROPERTY_SPEC
+
+	BEGIN_FUNCTION_SPEC
+		FUNCTION(toString)
+	END_FUNCTION_SPEC
+
+	HAS_RESERVED_SLOTS(1)
+
+END_CLASS
+
 
 
 JSBool ThrowCryptError( JSContext *cx, int errorCode ) {
 
 	JS_ReportWarning( cx, "CryptError exception" );
-
-	JSObject *error = JS_NewObject( cx, &CryptError_class, NULL, NULL );
-
+	JSObject *error = JS_NewObject( cx, _class, NULL, NULL );
 	JS_SetReservedSlot( cx, error, 0, INT_TO_JSVAL(errorCode) );
 //	JS_SetReservedSlot( cx, error, 1, errorMessage != NULL ? STRING_TO_JSVAL(JS_NewStringCopyZ( cx, errorMessage )) : JSVAL_VOID );
-
 	JS_SetPendingException( cx, OBJECT_TO_JSVAL( error ) );
   return JS_FALSE;
-}
-
-JSObject *InitErrorClass( JSContext *cx, JSObject *obj ) {
-
-	return JS_InitClass( cx, obj, NULL, &CryptError_class, CryptError_construct, 0, CryptError_PropertySpec, NULL, NULL, NULL );
 }
