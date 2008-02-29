@@ -724,8 +724,8 @@ void Finalize() { // called by the system on exit(), or at the end of the main.
 
 
 #ifdef XP_WIN
-	BOOL status = SetConsoleCtrlHandler((PHANDLER_ROUTINE)&Interrupt, FALSE);
-//	RT_HOST_MAIN_ASSERT( status == TRUE, "Unable to remove console handler" );
+	SetConsoleCtrlHandler((PHANDLER_ROUTINE)&Interrupt, FALSE);
+//	RT_HOST_MAIN_ASSERT( status == TRUE, "Unable to remove console crtl handler" );
 #else
 	signal(SIGINT, SIG_DFL);
 	signal(SIGTERM, SIG_DFL);
