@@ -84,10 +84,14 @@ extern "C" DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	for ( int i=0; i<sizeof(prngList)/sizeof(ltc_prng_descriptor*); i++ )
 		RT_ASSERT_1( register_prng(prngList[i]) != -1, "Unable to load prng %s", prngList[i]->name );
 
+	SET_UNSAFE_MODE( GetConfigurationValue(cx, NAME_CONFIGURATION_UNSAFE_MODE ) == JSVAL_TRUE );
+
+	INIT_STATIC();
+
 
 	InitErrorClass( cx, obj );
-	miscInitClass( cx, obj );
 	rsaInitClass( cx, obj );
+
 	INIT_CLASS( Cypher );
 	INIT_CLASS( Prng );
 	INIT_CLASS( Hash );

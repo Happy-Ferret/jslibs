@@ -15,8 +15,11 @@
 #include "stdafx.h"
 #include "misc.h"
 
+
+BEGIN_STATIC
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-static JSBool misc_base64Encode(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+DEFINE_FUNCTION( Base64Encode ) {
 
 	RT_ASSERT_ARGC( 1 );
 	RT_ASSERT_STRING(argv[0]);
@@ -40,7 +43,7 @@ static JSBool misc_base64Encode(JSContext *cx, JSObject *obj, uintN argc, jsval 
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-static JSBool misc_base64Decode(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+DEFINE_FUNCTION( Base64Decode ) {
 
 	RT_ASSERT_ARGC( 1 );
 	RT_ASSERT_STRING(argv[0]);
@@ -65,7 +68,7 @@ static JSBool misc_base64Decode(JSContext *cx, JSObject *obj, uintN argc, jsval 
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-static JSBool misc_hex64Encode(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+DEFINE_FUNCTION( HexEncode ) {
 
 	static const char hex[] = "0123456789ABCDEF";
 
@@ -98,7 +101,7 @@ static JSBool misc_hex64Encode(JSContext *cx, JSObject *obj, uintN argc, jsval *
 #define XX 0
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-static JSBool misc_hex64Decode(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+DEFINE_FUNCTION( HexDecode ) {
 
 	static const unsigned char unhex[] = {
 
@@ -132,28 +135,16 @@ static JSBool misc_hex64Decode(JSContext *cx, JSObject *obj, uintN argc, jsval *
 }
 
 
+CONFIGURE_STATIC
 
-JSFunctionSpec Misc_FunctionSpec[] = { // *name, call, nargs, flags, extra
-	{ "Base64Encode"    , misc_base64Encode    , 0, 0, 0 },
-	{ "Base64Decode"    , misc_base64Decode    , 0, 0, 0 },
-	{ "HexEncode"       , misc_hex64Encode     , 0, 0, 0 },
-	{ "HexDecode"       , misc_hex64Decode     , 0, 0, 0 },
-//
-	{ 0 }
-};
+	BEGIN_STATIC_FUNCTION_SPEC
+		FUNCTION( Base64Encode )
+		FUNCTION( Base64Decode )
+		FUNCTION( HexEncode )
+		FUNCTION( HexDecode )
+	END_STATIC_FUNCTION_SPEC
 
+	BEGIN_STATIC_PROPERTY_SPEC
+	END_STATIC_PROPERTY_SPEC
 
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSObject *miscInitClass( JSContext *cx, JSObject *obj ) {
-
-	JS_DefineFunctions( cx, obj, Misc_FunctionSpec );
-//	JS_DefineProperties( cx, globalObject, Global_PropertySpec );
-	return NULL;
-}
-
-
-/****************************************************************
-
-*/
+END_STATIC
