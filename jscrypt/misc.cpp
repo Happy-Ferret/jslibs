@@ -19,6 +19,7 @@
 static JSBool misc_base64Encode(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
 	RT_ASSERT_ARGC( 1 );
+	RT_ASSERT_STRING(argv[0]);
 	char *in;
 	int inLength;
 	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], in, inLength );
@@ -42,6 +43,7 @@ static JSBool misc_base64Encode(JSContext *cx, JSObject *obj, uintN argc, jsval 
 static JSBool misc_base64Decode(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
 	RT_ASSERT_ARGC( 1 );
+	RT_ASSERT_STRING(argv[0]);
 	char *in;
 	int inLength;
 	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], in, inLength );
@@ -68,6 +70,8 @@ static JSBool misc_hex64Encode(JSContext *cx, JSObject *obj, uintN argc, jsval *
 	static const char hex[] = "0123456789ABCDEF";
 
 	RT_ASSERT_ARGC( 1 );
+	RT_ASSERT_STRING(argv[0]);
+
 	char *in;
 	int inLength;
 	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], in, inLength );
@@ -108,6 +112,7 @@ static JSBool misc_hex64Decode(JSContext *cx, JSObject *obj, uintN argc, jsval *
 	};
 
 	RT_ASSERT_ARGC( 1 );
+	RT_ASSERT_STRING(argv[0]);
 	char *in;
 	int inLength;
 	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], in, inLength );

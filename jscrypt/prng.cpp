@@ -16,8 +16,12 @@
 #include "prng.h"
 
 
+
+BEGIN_CLASS( Prng )
+
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void prng_Finalize(JSContext *cx, JSObject *obj) {
+DEFINE_FINALIZE() {
 
 	PrngPrivate *privateData = (PrngPrivate *)JS_GetPrivate( cx, obj );
 	if ( privateData != NULL ) {
@@ -28,13 +32,13 @@ void prng_Finalize(JSContext *cx, JSObject *obj) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSBool prng_call(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+DEFINE_FUNCTION( Call ) {
 
 	JSObject *thisObj = JSVAL_TO_OBJECT(argv[-2]); // get 'this' object of the current object ...
 	// (TBD) check JS_InstanceOf( cx, thisObj, &NativeProc, NULL )
 
 	RT_ASSERT_ARGC( 1 );
-	RT_ASSERT_CLASS( thisObj, &prng_class );
+	RT_ASSERT_CLASS( thisObj, _class );
 	PrngPrivate *privateData = (PrngPrivate *)JS_GetPrivate( cx, thisObj );
 	RT_ASSERT( privateData, RT_ERROR_NOT_INITIALIZED );
 
@@ -54,11 +58,11 @@ JSBool prng_call(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *r
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSBool prng_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+DEFINE_CONSTRUCTOR() {
 
 	RT_ASSERT( JS_IsConstructing(cx), RT_ERROR_NEED_CONSTRUCTION );
 	RT_ASSERT_ARGC( 1 );
-	RT_ASSERT_CLASS( obj, &prng_class );
+	RT_ASSERT_CLASS( obj, _class );
 
 	char *prngName;
 	RT_JSVAL_TO_STRING( argv[0], prngName );
@@ -85,10 +89,10 @@ JSBool prng_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsv
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSBool prng_addEntropy(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+DEFINE_FUNCTION( AddEntropy ) {
 
 	RT_ASSERT_ARGC( 1 );
-	RT_ASSERT_CLASS( obj, &prng_class );
+	RT_ASSERT_CLASS( obj, _class );
 	PrngPrivate *privateData = (PrngPrivate *)JS_GetPrivate( cx, obj );
 	RT_ASSERT( privateData != NULL, RT_ERROR_NOT_INITIALIZED );
 
@@ -107,10 +111,10 @@ JSBool prng_addEntropy(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, js
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSBool prng_autoEntropy(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+DEFINE_FUNCTION( AutoEntropy ) {
 
 	RT_ASSERT_ARGC( 1 );
-	RT_ASSERT_CLASS( obj, &prng_class );
+	RT_ASSERT_CLASS( obj, _class );
 	PrngPrivate *privateData = (PrngPrivate *)JS_GetPrivate( cx, obj );
 	RT_ASSERT( privateData != NULL, RT_ERROR_NOT_INITIALIZED );
 
@@ -121,24 +125,11 @@ JSBool prng_autoEntropy(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, j
 	return JS_TRUE;
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//JSBool prng_export(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
-//
-//	return JS_TRUE;
-//}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSFunctionSpec prng_FunctionSpec[] = { // *name, call, nargs, flags, extra
- { "AddEntropy"      , prng_addEntropy      , 0, 0, 0 },
- { "AutoEntropy"     , prng_autoEntropy     , 0, 0, 0 },
-// { "Export"          , prng_export          , 0, 0, 0 },
- { 0 }
-};
+DEFINE_PROPERTY( name ) {
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSBool prng_getter_name(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
-
-	RT_ASSERT_CLASS( obj, &prng_class );
+	RT_ASSERT_CLASS( obj, _class );
 	PrngPrivate *privateData = (PrngPrivate *)JS_GetPrivate( cx, obj );
 	RT_ASSERT( privateData != NULL, RT_ERROR_NOT_INITIALIZED );
 
@@ -146,52 +137,31 @@ JSBool prng_getter_name(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 	return JS_TRUE;
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSPropertySpec prng_PropertySpec[] = { // *name, tinyid, flags, getter, setter
-//	{ "name"  , 0, JSPROP_PERMANENT|JSPROP_READONLY, prng_getter_name       , NULL },
-	{ 0 }
-};
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//JSBool prng_nameByLength(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
-//
-//	return JS_TRUE;
-//}
+CONFIGURE_CLASS
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSFunctionSpec prng_static_FunctionSpec[] = { // *name, call, nargs, flags, extra
-// { "NameByLength"     , prng_nameByLength     , 0, 0, 0 },
- { 0 }
-};
+	HAS_CONSTRUCTOR
+	HAS_FINALIZE
+	HAS_CALL
 
+	BEGIN_FUNCTION_SPEC
+		FUNCTION( AddEntropy )
+		FUNCTION( AutoEntropy )
+	END_FUNCTION_SPEC
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//JSBool prng_static_getter_myStatic(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
-//
-//  return JS_TRUE;
-//}
+	BEGIN_PROPERTY_SPEC
+		PROPERTY_READ( name )
+//		PROPERTY_READ( blockSize )
+//		PROPERTY_READ( length )
+	END_PROPERTY_SPEC
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSPropertySpec prng_static_PropertySpec[] = { // *name, tinyid, flags, getter, setter
-//	{ "myStatic"                , 0, JSPROP_PERMANENT|JSPROP_READONLY, prng_static_getter_myStatic         , NULL },
-	{ 0 }
-};
+	BEGIN_STATIC_FUNCTION_SPEC
+	END_STATIC_FUNCTION_SPEC
 
+	BEGIN_STATIC_PROPERTY_SPEC
+//		PROPERTY_READ( list )
+	END_STATIC_PROPERTY_SPEC
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSClass prng_class = { "Prng", JSCLASS_HAS_PRIVATE,
-	JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub,
-	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, prng_Finalize,
-	0,0, prng_call
-};
+	HAS_PRIVATE
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSObject *prngInitClass( JSContext *cx, JSObject *obj ) {
-
-	return JS_InitClass( cx, obj, NULL, &prng_class, prng_construct, 0, prng_PropertySpec, prng_FunctionSpec, prng_static_PropertySpec, prng_static_FunctionSpec );
-}
-
-
-/****************************************************************
-
-*/
+END_CLASS

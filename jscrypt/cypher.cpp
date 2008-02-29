@@ -15,11 +15,30 @@
 #include "stdafx.h"
 #include "cypher.h"
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void cypher_Finalize(JSContext *cx, JSObject *obj) {
+#define MODE_CTR "CTR"
+#define MODE_CFB "CFB"
+
+enum CryptMode {
+	mode_ctr,
+	mode_cfb
+};
+
+struct CypherPrivate {
+
+	ltc_cipher_descriptor *descriptor;
+	CryptMode mode;
+	void *symmetric_XXX;
+};
+
+
+
+BEGIN_CLASS( Cypher )
+
+
+DEFINE_FINALIZE() {
 
 	CypherPrivate *privateData = (CypherPrivate *)JS_GetPrivate( cx, obj );
-	if ( privateData == NULL )
+	if ( privateData == NULL ) // is already finished ?
 		return;
 
 	switch ( privateData->mode ) {
@@ -35,13 +54,14 @@ void cypher_Finalize(JSContext *cx, JSObject *obj) {
 	free(privateData);
 }
 
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // mode, cipher, key, IV
-JSBool cypher_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+DEFINE_CONSTRUCTOR() {
 
-	RT_ASSERT( JS_IsConstructing(cx), RT_ERROR_NEED_CONSTRUCTION );
+//	RT_ASSERT_THIS_CLASS(); <- done in RT_ASSERT_CONSTRUCTING
+	RT_ASSERT_CONSTRUCTING(_class)
 	RT_ASSERT_ARGC( 4 );
-	RT_ASSERT_CLASS( obj, &cypher_class );
 
 	char *modeName;
 	RT_JSVAL_TO_STRING( argv[0], modeName );
@@ -58,14 +78,14 @@ JSBool cypher_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, j
 	RT_JSVAL_TO_STRING_AND_LENGTH( argv[3], IV, IVLength );
 
 	CypherPrivate *privateData = (CypherPrivate*)malloc( sizeof(CypherPrivate) );
-	RT_ASSERT( privateData != NULL, RT_ERROR_OUT_OF_MEMORY );
+	RT_ASSERT_ALLOC( privateData );
 
 	int cipherIndex = find_cipher(cipherName);
 	RT_ASSERT_1( cipherIndex != -1, "cipher %s is not registred", cipherName );
 
-	ltc_cipher_descriptor cipher = cipher_descriptor[cipherIndex];
-
-	RT_ASSERT_1( cipher.test() == CRYPT_OK, "%s cipher test failed.", cipherName );
+	ltc_cipher_descriptor *cipher = &cipher_descriptor[cipherIndex];
+	privateData->descriptor = cipher;
+	RT_ASSERT_1( cipher->test() == CRYPT_OK, "%s cipher test failed.", cipherName );
 
 //	RT_ASSERT_1( IVLength == cipher.block_length, "IV must have the same size as cipher block length (%d bytes)", cipher.block_length );
 
@@ -74,7 +94,7 @@ JSBool cypher_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, j
 
 		privateData->mode = mode_ctr;
 		symmetric_CTR *psctr = (symmetric_CTR *)malloc( sizeof(symmetric_CTR) );
-		RT_ASSERT( psctr != NULL, RT_ERROR_OUT_OF_MEMORY );
+		RT_ASSERT_ALLOC( psctr );
 		if ((err = ctr_start( cipherIndex, (const unsigned char *)IV, (const unsigned char *)key, keyLength, 0, CTR_COUNTER_LITTLE_ENDIAN, psctr )) != CRYPT_OK)
 			return ThrowCryptError(cx, err); // (TBD) free privateData and psctr
 		privateData->symmetric_XXX = psctr;
@@ -82,7 +102,7 @@ JSBool cypher_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, j
 
 		privateData->mode = mode_cfb;
 		symmetric_CFB *symmetric_XXX = (symmetric_CFB *)malloc( sizeof(symmetric_CFB) );
-		RT_ASSERT( symmetric_XXX != NULL, RT_ERROR_OUT_OF_MEMORY );
+		RT_ASSERT_ALLOC( symmetric_XXX );
 		if ((err = cfb_start( cipherIndex, (const unsigned char *)IV, (const unsigned char *)key, keyLength, 0, symmetric_XXX )) != CRYPT_OK)
 			return ThrowCryptError(cx, err); // (TBD) free privateData and psctr
 		privateData->symmetric_XXX = symmetric_XXX;
@@ -95,19 +115,19 @@ JSBool cypher_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, j
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSBool cypher_encrypt(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+DEFINE_FUNCTION( Encrypt ) {
 
+	RT_ASSERT_THIS_CLASS();
 	RT_ASSERT_ARGC( 1 );
-	RT_ASSERT_CLASS( obj, &cypher_class );
 	CypherPrivate *privateData = (CypherPrivate *)JS_GetPrivate( cx, obj );
-	RT_ASSERT( privateData != NULL, RT_ERROR_NOT_INITIALIZED );
+	RT_ASSERT_RESOURCE( privateData );
 
 	char *pt;
 	int ptLength;
 	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], pt, ptLength );
 
 	char *ct = (char *)JS_malloc( cx, ptLength );
-	RT_ASSERT( ct != NULL, RT_ERROR_OUT_OF_MEMORY );
+	RT_ASSERT_ALLOC( ct );
 
 	int err;
 	switch ( privateData->mode ) {
@@ -132,19 +152,19 @@ JSBool cypher_encrypt(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsv
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSBool cypher_decrypt(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+DEFINE_FUNCTION( Decrypt ) {
 
 	RT_ASSERT_ARGC( 1 );
-	RT_ASSERT_CLASS( obj, &cypher_class );
+	RT_ASSERT_CLASS( obj, _class );
 	CypherPrivate *privateData = (CypherPrivate *)JS_GetPrivate( cx, obj );
-	RT_ASSERT( privateData != NULL, RT_ERROR_NOT_INITIALIZED );
+	RT_ASSERT_RESOURCE( privateData );
 
 	char *ct;
 	int ctLength;
 	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], ct, ctLength );
 
 	char *pt = (char *)JS_malloc( cx, ctLength );
-	RT_ASSERT( pt != NULL, RT_ERROR_OUT_OF_MEMORY );
+	RT_ASSERT_ALLOC( pt );
 
 	int err;
 	switch ( privateData->mode ) {
@@ -169,19 +189,43 @@ JSBool cypher_decrypt(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsv
 }
 
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSFunctionSpec cypher_FunctionSpec[] = { // *name, call, nargs, flags, extra
- { "Encrypt"        , cypher_encrypt     , 0, 0, 0 },
- { "Decrypt"        , cypher_decrypt     , 0, 0, 0 },
- { 0 }
-};
+DEFINE_PROPERTY( blockLength ) {
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSBool cypher_setter_IV(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
-
-	RT_ASSERT_CLASS( obj, &cypher_class );
+	RT_ASSERT_CLASS( obj, _class );
 	CypherPrivate *privateData = (CypherPrivate *)JS_GetPrivate( cx, obj );
-	RT_ASSERT( privateData != NULL, RT_ERROR_NOT_INITIALIZED );
+	RT_ASSERT_RESOURCE( privateData );
+	*vp = INT_TO_JSVAL( privateData->descriptor->block_length );
+	return JS_TRUE;
+}
+
+
+DEFINE_PROPERTY( keySize ) {
+
+	RT_ASSERT_CLASS( obj, _class );
+	CypherPrivate *privateData = (CypherPrivate *)JS_GetPrivate( cx, obj );
+	RT_ASSERT_RESOURCE( privateData );
+	*vp = INT_TO_JSVAL( privateData->descriptor->keysize );
+	return JS_TRUE;
+}
+
+
+DEFINE_PROPERTY( name ) {
+
+	RT_ASSERT_CLASS( obj, _class );
+	CypherPrivate *privateData = (CypherPrivate *)JS_GetPrivate( cx, obj );
+	RT_ASSERT_RESOURCE( privateData );
+	JSString *jsstr = JS_NewStringCopyZ(cx, privateData->descriptor->name);
+	RT_ASSERT_ALLOC( jsstr );
+	*vp = STRING_TO_JSVAL( jsstr );
+	return JS_TRUE;
+}
+
+
+DEFINE_PROPERTY( IVSetter ) {
+
+	RT_ASSERT_CLASS( obj, _class );
+	CypherPrivate *privateData = (CypherPrivate *)JS_GetPrivate( cx, obj );
+	RT_ASSERT_RESOURCE( privateData );
 
 	char *IV;
 	int IVLength;
@@ -205,11 +249,11 @@ JSBool cypher_setter_IV(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSBool cypher_getter_IV(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
+DEFINE_PROPERTY( IVGetter ) {
 
-	RT_ASSERT_CLASS( obj, &cypher_class );
+	RT_ASSERT_CLASS( obj, _class );
 	CypherPrivate *privateData = (CypherPrivate *)JS_GetPrivate( cx, obj );
-	RT_ASSERT( privateData != NULL, RT_ERROR_NOT_INITIALIZED );
+	RT_ASSERT_RESOURCE( privateData );
 
 	char *IV = NULL;
 	unsigned long IVLength;
@@ -220,7 +264,7 @@ JSBool cypher_getter_IV(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 			symmetric_CTR *psctr = (symmetric_CTR *)privateData->symmetric_XXX;
 			IVLength = psctr->blocklen;
 			IV = (char*)JS_malloc( cx, IVLength );
-			RT_ASSERT( IV != NULL, RT_ERROR_OUT_OF_MEMORY );
+			RT_ASSERT_ALLOC( IV );
 			if ( (err=ctr_getiv( (unsigned char *)IV, &IVLength, psctr )) != CRYPT_OK )
 				return ThrowCryptError(cx, err);
 			break;
@@ -229,7 +273,7 @@ JSBool cypher_getter_IV(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 			symmetric_CFB *psctr = (symmetric_CFB *)privateData->symmetric_XXX;
 			IVLength = psctr->blocklen;
 			IV = (char*)JS_malloc( cx, IVLength );
-			RT_ASSERT( IV != NULL, RT_ERROR_OUT_OF_MEMORY );
+			RT_ASSERT_ALLOC( IV );
 			if ( (err=cfb_getiv( (unsigned char *)IV, &IVLength, psctr )) != CRYPT_OK )
 				return ThrowCryptError(cx, err);
 			break;
@@ -247,36 +291,7 @@ JSBool cypher_getter_IV(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSPropertySpec cypher_PropertySpec[] = { // *name, tinyid, flags, getter, setter
-	{ "IV"            , 0, JSPROP_PERMANENT, cypher_getter_IV, cypher_setter_IV },
-  { 0 }
-};
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSBool cypher_static_blockLength(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
-
-	RT_ASSERT_ARGC( 1 );
-	char *cipherName;
-	RT_JSVAL_TO_STRING( argv[0], cipherName );
-
-	int cipherIndex = find_cipher(cipherName);
-	RT_ASSERT_1( cipherIndex != -1, "cipher %s is not registred", cipherName );
-
-	*rval = INT_TO_JSVAL(cipher_descriptor[cipherIndex].block_length);
-
-	return JS_TRUE;
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSFunctionSpec cypher_static_FunctionSpec[] = { // *name, call, nargs, flags, extra
-	{ "BlockLength"        , cypher_static_blockLength  , 0, 0, 0 },
-	{ 0 }
-};
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSBool cypher_static_getter_cipherList(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
+DEFINE_PROPERTY( list ) {
 
 	JSObject *list = JS_NewObject( cx, NULL, NULL, NULL );
 	RT_ASSERT( list != NULL, "unable to create cipher list." );
@@ -299,23 +314,34 @@ JSBool cypher_static_getter_cipherList(JSContext *cx, JSObject *obj, jsval id, j
 	return JS_TRUE;
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSPropertySpec cypher_static_PropertySpec[] = { // *name, tinyid, flags, getter, setter
-	{ "cipherList"   , 0, JSPROP_PERMANENT|JSPROP_READONLY, cypher_static_getter_cipherList , NULL },
-	{ 0 }
-};
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSClass cypher_class = { "Crypt", JSCLASS_HAS_PRIVATE,
-	JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub,
-	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, cypher_Finalize
-};
+CONFIGURE_CLASS
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSObject *cypherInitClass( JSContext *cx, JSObject *obj ) {
+	HAS_CONSTRUCTOR
+	HAS_FINALIZE
 
-	return JS_InitClass( cx, obj, NULL, &cypher_class, cypher_construct, 0, cypher_PropertySpec, cypher_FunctionSpec, cypher_static_PropertySpec, cypher_static_FunctionSpec );
-}
+	BEGIN_FUNCTION_SPEC
+		FUNCTION( Encrypt )
+		FUNCTION( Decrypt )
+	END_FUNCTION_SPEC
+
+	BEGIN_PROPERTY_SPEC
+		PROPERTY( IV )
+		PROPERTY_READ( blockLength )
+		PROPERTY_READ( keySize )
+		PROPERTY_READ( name )
+	END_PROPERTY_SPEC
+
+	BEGIN_STATIC_FUNCTION_SPEC
+	END_STATIC_FUNCTION_SPEC
+
+	BEGIN_STATIC_PROPERTY_SPEC
+		PROPERTY_READ( list )
+	END_STATIC_PROPERTY_SPEC
+
+	HAS_PRIVATE
+
+END_CLASS
 
 
 /****************************************************************

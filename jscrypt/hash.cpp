@@ -15,8 +15,17 @@
 #include "stdafx.h"
 #include "hash.h"
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void hash_Finalize(JSContext *cx, JSObject *obj) {
+struct HashPrivate {
+
+	ltc_hash_descriptor *descriptor;
+	hash_state state;
+	int inputLength;
+};
+
+
+BEGIN_CLASS( Hash )
+
+DEFINE_FINALIZE() {
 
 	HashPrivate *privateData = (HashPrivate *)JS_GetPrivate( cx, obj );
 	if ( privateData != NULL ) {
@@ -25,47 +34,10 @@ void hash_Finalize(JSContext *cx, JSObject *obj) {
 	}
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSBool hash_call(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+DEFINE_CONSTRUCTOR() {
 
-	JSObject *thisObj = JSVAL_TO_OBJECT(argv[-2]); // get 'this' object of the current object ...
-	// (TBD) check JS_InstanceOf( cx, thisObj, &NativeProc, NULL )
-	RT_ASSERT_CLASS( thisObj, &hash_class );
+	RT_ASSERT_CONSTRUCTING( _class );
 	RT_ASSERT_ARGC( 1 );
-	HashPrivate *privateData = (HashPrivate *)JS_GetPrivate( cx, thisObj );
-	RT_ASSERT( privateData != NULL, RT_ERROR_NOT_INITIALIZED );
-
-	char *in;
-	int inLength;
-	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], in, inLength );
-
-	int err;
-	if ((err=privateData->hash.process(&privateData->state, (const unsigned char *)in, inLength)) != CRYPT_OK )
-		return ThrowCryptError(cx, err);
-
-	if ( argc == 1 ) { // do not continue
-
-		unsigned long outLength = privateData->hash.hashsize;
-		char *out = (char *)JS_malloc( cx, outLength );
-		RT_ASSERT( out != NULL, RT_ERROR_OUT_OF_MEMORY );
-
-		if ((err=privateData->hash.done(&privateData->state, (unsigned char*)out)) != CRYPT_OK )
-			return ThrowCryptError(cx, err);
-
-		JSString *jssHashData = JS_NewString( cx, out, outLength );
-		RT_ASSERT( jssHashData != NULL, "unable to create the hash string." );
-		*rval = STRING_TO_JSVAL(jssHashData);
-	}
-
-	return JS_TRUE;
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSBool hash_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
-
-	RT_ASSERT( JS_IsConstructing(cx), RT_ERROR_NEED_CONSTRUCTION );
-	RT_ASSERT_ARGC( 1 );
-	RT_ASSERT_CLASS( obj, &hash_class );
 
 	char *hashName;
 	RT_JSVAL_TO_STRING( argv[0], hashName );
@@ -74,71 +46,183 @@ JSBool hash_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsv
 	RT_ASSERT_1( hashIndex != -1, "hash %s is not registred", hashName );
 
 	HashPrivate *privateData = (HashPrivate*)malloc( sizeof(HashPrivate) );
-	RT_ASSERT( privateData != NULL, RT_ERROR_OUT_OF_MEMORY );
+	RT_ASSERT_ALLOC( privateData );
 
-	privateData->hash = hash_descriptor[hashIndex];
+	privateData->descriptor = &hash_descriptor[hashIndex];
 
-	RT_ASSERT_1( privateData->hash.test() == CRYPT_OK, "%s hash test failed.", hashName );
+	RT_ASSERT_1( privateData->descriptor->test() == CRYPT_OK, "%s hash test failed.", hashName );
 
 	int err;
-	if ( (err = privateData->hash.init(&privateData->state)) != CRYPT_OK )
+	if ( (err = privateData->descriptor->init(&privateData->state)) != CRYPT_OK )
 		return ThrowCryptError(cx, err);
+	privateData->inputLength = 0;
 
 	JS_SetPrivate( cx, obj, privateData );
 
 	return JS_TRUE;
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//JSBool hash_hash(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
-//
-//	return JS_TRUE;
-//}
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSFunctionSpec hash_FunctionSpec[] = { // *name, call, nargs, flags, extra
-// { "hash"          , hash_hash          , 0, 0, 0 },
- { 0 }
-};
+DEFINE_FUNCTION( Init ) {
 
+	RT_ASSERT_THIS_CLASS();
+	RT_ASSERT_ARGC_MAX( 0 );
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//JSBool hash_getter_myProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
-//
-//  return JS_TRUE;
-//}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSPropertySpec hash_PropertySpec[] = { // *name, tinyid, flags, getter, setter
-//	{ "myProperty"            , 0, JSPROP_PERMANENT|JSPROP_READONLY, hash_getter_myProperty       , NULL },
-  { 0 }
-};
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSBool hash_static_cipherHash(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
-
-	RT_ASSERT_ARGC(1);
-
-	char *cipher;
-	RT_JSVAL_TO_STRING( argv[0], cipher );
+	HashPrivate *privateData = (HashPrivate *)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE( privateData );
 
 	int err;
-	if ((err = chc_register(find_cipher(cipher))) != CRYPT_OK)
+	err = privateData->descriptor->init(&privateData->state); // Initialize the hash state
+	if ( err != CRYPT_OK )
 		return ThrowCryptError(cx, err);
+	privateData->inputLength = 0;
 
 	return JS_TRUE;
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSFunctionSpec hash_static_FunctionSpec[] = { // *name, call, nargs, flags, extra
- { "CipherHash"          , hash_static_cipherHash          , 0, 0, 0 },
- { 0 }
-};
+
+DEFINE_FUNCTION( Process ) {
+
+	RT_ASSERT_THIS_CLASS();
+	RT_ASSERT_ARGC( 1 );
+	RT_ASSERT_STRING( argv[0] );
+
+	HashPrivate *privateData = (HashPrivate *)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE( privateData );
+
+	int err;
+	char *in;
+	int inLength;
+	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], in, inLength );
+
+	err = privateData->descriptor->process(&privateData->state, (const unsigned char *)in, inLength); // Process a block of memory though the hash
+	if ( err != CRYPT_OK )
+		return ThrowCryptError(cx, err);
+
+	privateData->inputLength += inLength;
+
+	return JS_TRUE;
+}
+
+
+DEFINE_FUNCTION( Done ) {
+
+	HashPrivate *privateData = (HashPrivate *)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE( privateData );
+
+	unsigned long outLength = privateData->descriptor->hashsize;
+	char *out = (char *)JS_malloc( cx, outLength );
+	RT_ASSERT_ALLOC( out );
+	int err;
+	err = privateData->descriptor->done(&privateData->state, (unsigned char*)out); // Terminate the hash to get the digest
+	if ( err != CRYPT_OK )
+		return ThrowCryptError(cx, err);
+	JSString *jssHashData = JS_NewString( cx, out, outLength );
+	RT_ASSERT( jssHashData != NULL, "unable to create the hash string." );
+	*rval = STRING_TO_JSVAL(jssHashData);
+	return JS_TRUE;
+}
+
+
+DEFINE_FUNCTION( Call ) {
+
+	JSObject *thisObj = JSVAL_TO_OBJECT(argv[-2]); // get 'this' object of the current object ...
+	// (TBD) check JS_InstanceOf( cx, thisObj, &NativeProc, NULL )
+	RT_ASSERT_CLASS( thisObj, _class );
+	
+	RT_ASSERT_ARGC( 1 );
+	RT_ASSERT_STRING( argv[0] );
+
+	HashPrivate *privateData = (HashPrivate *)JS_GetPrivate( cx, thisObj );
+	RT_ASSERT( privateData != NULL, RT_ERROR_NOT_INITIALIZED );
+
+	int err;
+	
+	char *in;
+	int inLength;
+	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], in, inLength );
+	unsigned long outLength = privateData->descriptor->hashsize;
+	char *out = (char *)JS_malloc( cx, outLength );
+	RT_ASSERT_ALLOC( out );
+
+	err = privateData->descriptor->init(&privateData->state);
+	if (err != CRYPT_OK)
+		return ThrowCryptError(cx, err);
+
+	err = privateData->descriptor->process(&privateData->state, (const unsigned char *)in, inLength);
+	if (err != CRYPT_OK)
+		return ThrowCryptError(cx, err);
+
+	err = privateData->descriptor->done(&privateData->state, (unsigned char*)out);
+	if (err != CRYPT_OK)
+		return ThrowCryptError(cx, err);
+
+	err = privateData->descriptor->init(&privateData->state);
+	if (err != CRYPT_OK)
+		return ThrowCryptError(cx, err);
+	privateData->inputLength = 0;
+
+	JSString *jssHashData = JS_NewString( cx, out, outLength );
+	RT_ASSERT_ALLOC( jssHashData );
+	*rval = STRING_TO_JSVAL(jssHashData);
+	return JS_TRUE;
+}
+
+DEFINE_PROPERTY( name ) {
+
+	RT_ASSERT_CLASS( obj, _class );
+	HashPrivate *privateData = (HashPrivate *)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE( privateData );
+	JSString *jsstr = JS_NewStringCopyZ(cx, privateData->descriptor->name );
+	RT_ASSERT_ALLOC( jsstr );
+	*vp = STRING_TO_JSVAL( jsstr );
+	return JS_TRUE;
+}
+
+DEFINE_PROPERTY( blockSize ) {
+
+	RT_ASSERT_CLASS( obj, _class );
+	HashPrivate *privateData = (HashPrivate *)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE( privateData );
+	*vp = INT_TO_JSVAL( privateData->descriptor->blocksize );
+	return JS_TRUE;
+}	
+
+DEFINE_PROPERTY( length ) {
+
+	RT_ASSERT_CLASS( obj, _class );
+	HashPrivate *privateData = (HashPrivate *)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE( privateData );
+	*vp = INT_TO_JSVAL( privateData->descriptor->hashsize );
+	return JS_TRUE;
+}	
+
+DEFINE_PROPERTY( inputLength ) {
+
+	RT_ASSERT_CLASS( obj, _class );
+	HashPrivate *privateData = (HashPrivate *)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE( privateData );
+	*vp = INT_TO_JSVAL( 	privateData->inputLength );
+	return JS_TRUE;
+}	
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSBool hash_static_getter_list(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
+DEFINE_FUNCTION( CypherHash ) {
+
+	RT_ASSERT_ARGC(1);
+	char *cipherName;
+	RT_JSVAL_TO_STRING( argv[0], cipherName );
+	int cypherIndex = find_cipher(cipherName);
+	RT_ASSERT_1( cypherIndex >= 0, "Cypher not found: %s", cipherName );
+	int err;
+	if ((err = chc_register(cypherIndex)) != CRYPT_OK)
+		return ThrowCryptError(cx, err);
+	return JS_TRUE;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+DEFINE_PROPERTY( list ) {
 
 	JSObject *list = JS_NewObject( cx, NULL, NULL, NULL );
 	RT_ASSERT( list != NULL, "unable to create hash list." );
@@ -148,6 +232,7 @@ JSBool hash_static_getter_list(JSContext *cx, JSObject *obj, jsval id, jsval *vp
 	LTC_MUTEX_LOCK(&ltc_hash_mutex);
 	for (x = 0; x < TAB_SIZE; x++)
 		if ( (hashName = hash_descriptor[x].name) != NULL) {
+
 		  //JS_DefineProperty(cx, list, hashName, JSVAL_TRUE, NULL, NULL, 0);
 			jsval value = INT_TO_JSVAL( hash_descriptor[x].hashsize );
 			JS_SetProperty( cx, list, hashName, &value );
@@ -158,27 +243,34 @@ JSBool hash_static_getter_list(JSContext *cx, JSObject *obj, jsval id, jsval *vp
 	return JS_TRUE;
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSPropertySpec hash_static_PropertySpec[] = { // *name, tinyid, flags, getter, setter
-	{ "list"                , 0, JSPROP_PERMANENT|JSPROP_READONLY, hash_static_getter_list         , NULL },
-	{ 0 }
-};
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSClass hash_class = { "Hash", JSCLASS_HAS_PRIVATE,
-	JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub,
-	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, hash_Finalize,
-	0,0, hash_call
-};
+CONFIGURE_CLASS
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSObject *hashInitClass( JSContext *cx, JSObject *obj ) {
+	HAS_CONSTRUCTOR
+	HAS_FINALIZE
+	HAS_CALL
 
-	return JS_InitClass( cx, obj, NULL, &hash_class, hash_construct, 0, hash_PropertySpec, hash_FunctionSpec, hash_static_PropertySpec, hash_static_FunctionSpec );
-}
+	BEGIN_FUNCTION_SPEC
+		FUNCTION( Init )
+		FUNCTION( Process )
+		FUNCTION( Done )
+	END_FUNCTION_SPEC
 
+	BEGIN_PROPERTY_SPEC
+		PROPERTY_READ( name )
+		PROPERTY_READ( blockSize )
+		PROPERTY_READ( length )
+		PROPERTY_READ( inputLength )
+	END_PROPERTY_SPEC
 
-/****************************************************************
+	BEGIN_STATIC_FUNCTION_SPEC
+		FUNCTION( CypherHash )
+	END_STATIC_FUNCTION_SPEC
 
-*/
+	BEGIN_STATIC_PROPERTY_SPEC
+		PROPERTY_READ( list )
+	END_STATIC_PROPERTY_SPEC
 
+	HAS_PRIVATE
+
+END_CLASS

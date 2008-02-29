@@ -88,9 +88,8 @@ extern "C" DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	InitErrorClass( cx, obj );
 	miscInitClass( cx, obj );
 	rsaInitClass( cx, obj );
-	cypherInitClass( cx, obj );
-	prngInitClass( cx, obj );
-	hashInitClass( cx, obj );
+	INIT_CLASS( Cypher );
+	INIT_CLASS( Prng );
+	INIT_CLASS( Hash );
 	return JS_TRUE;
 }
-

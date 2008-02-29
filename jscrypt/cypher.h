@@ -15,23 +15,11 @@
 #ifndef CRYPT_H_
 #define CRYPT_H_
 
+DECLARE_CLASS( Cypher )
+
+/*
 JSObject *cypherInitClass( JSContext *cx, JSObject *obj );
-
-#define MODE_CTR "CTR"
-#define MODE_CFB "CFB"
-
-enum CryptMode {
-	mode_ctr,
-	mode_cfb
-};
-
-struct CypherPrivate {
-
-	CryptMode mode;
-	void *symmetric_XXX;
-};
-
-
 extern JSClass cypher_class;
+*/
 
 #endif // CRYPT_H_

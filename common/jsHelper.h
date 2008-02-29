@@ -159,6 +159,9 @@ inline bool MaybeRealloc( int requested, int received ) {
 #define RT_ASSERT_CLASS(jsObject, jsClass) \
 	RT_ASSERT( ((jsObject) != NULL) && (JS_GET_CLASS(cx, jsObject) == (jsClass)), RT_ERROR_INVALID_CLASS );
 
+#define RT_ASSERT_THIS_CLASS() \
+	RT_ASSERT( ((obj) != NULL) && (JS_GET_CLASS(cx, obj) == (_class)), RT_ERROR_INVALID_CLASS );
+
 #define RT_ASSERT_CLASS_NAME(jsObject, className) \
 	RT_ASSERT( strcmp(JS_GET_CLASS(cx, jsObject)->name, (className)) == 0,  RT_ERROR_INVALID_CLASS " Expecting " className "." );
 

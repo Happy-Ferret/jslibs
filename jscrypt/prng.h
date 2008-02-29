@@ -17,14 +17,15 @@
 
 #include <tomcrypt.h>
 
-JSObject *prngInitClass( JSContext *cx, JSObject *obj );
 
 struct PrngPrivate {
+
 	ltc_prng_descriptor prng;
 	prng_state state;
 };
 
-extern JSClass prng_class;
+
+DECLARE_CLASS( Prng )
 
 #endif // PRNG_H_
 

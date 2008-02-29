@@ -1,10 +1,19 @@
 LoadModule('jsstd');
 LoadModule('jscrypt');
+var md5 = new Hash('md5');
+md5.Process('foobarxxx');
+
+Print(HexEncode(md5.Done(), '\n'));
+
+
+
+
+Halt();
 
 try {
 
 
-	var r = new Prng('yarrow');
+	var r = new Prng('fortuna');
 	r.AutoEntropy(128); // give more entropy
 
 	

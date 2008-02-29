@@ -52,7 +52,7 @@ JSBool rsa_createKeys(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsv
 	RT_ASSERT_CLASS( obj, &rsa_class );
 
 	JSObject *objPrng JSVAL_TO_OBJECT(argv[0]);
-	RT_ASSERT_CLASS( objPrng, &prng_class );
+	RT_ASSERT_CLASS( objPrng, &classPrng );
 
 	PrngPrivate *prngPrivate = (PrngPrivate *)JS_GetPrivate( cx, objPrng );
 	RT_ASSERT( prngPrivate != NULL, "invalid prng." );
@@ -83,7 +83,7 @@ JSBool rsa_encryptKey(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsv
 	RsaPrivate *privateData = (RsaPrivate *)JS_GetPrivate( cx, obj );
 
 	JSObject *objPrng = JSVAL_TO_OBJECT(argv[0]);
-	RT_ASSERT_CLASS( objPrng, &prng_class );
+	RT_ASSERT_CLASS( objPrng, &classPrng );
 	PrngPrivate *prngPrivate = (PrngPrivate *)JS_GetPrivate( cx, objPrng );
 	RT_ASSERT( prngPrivate != NULL, "prng is not initialized." );
 	int prngIndex = find_prng(prngPrivate->prng.name);

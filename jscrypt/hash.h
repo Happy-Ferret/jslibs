@@ -17,14 +17,7 @@
 
 #include <tomcrypt.h>
 
-JSObject *hashInitClass( JSContext *cx, JSObject *obj );
-
-struct HashPrivate {
-	ltc_hash_descriptor hash;
-	hash_state state;
-};
-
-extern JSClass hash_class;
+DECLARE_CLASS( Hash )
 
 #endif // HASH_H_
 
