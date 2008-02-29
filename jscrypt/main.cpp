@@ -87,11 +87,8 @@ extern "C" DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	SET_UNSAFE_MODE( GetConfigurationValue(cx, NAME_CONFIGURATION_UNSAFE_MODE ) == JSVAL_TRUE );
 
 	INIT_STATIC();
-
-
 	INIT_CLASS( CryptError );
-	rsaInitClass( cx, obj );
-
+	INIT_CLASS( Rsa );
 	INIT_CLASS( Cypher );
 	INIT_CLASS( Prng );
 	INIT_CLASS( Hash );

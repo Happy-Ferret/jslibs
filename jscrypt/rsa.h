@@ -17,13 +17,7 @@
 
 #include <tomcrypt.h>
 
-JSObject *rsaInitClass( JSContext *cx, JSObject *obj );
-
-struct RsaPrivate {
-	rsa_key key;
-};
-
-extern JSClass rsa_class;
+DECLARE_CLASS( Rsa );
 
 #endif // RSA_H_
 

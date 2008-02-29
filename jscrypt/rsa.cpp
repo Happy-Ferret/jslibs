@@ -20,36 +20,37 @@
 
 #include <tommath.h>
 
+struct RsaPrivate {
+	rsa_key key;
+};
+
+BEGIN_CLASS( Rsa )
 
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void rsa_Finalize(JSContext *cx, JSObject *obj) {
+DEFINE_FINALIZE() {
 
 	RsaPrivate *rsaPrivate = (RsaPrivate *)JS_GetPrivate( cx, obj );
 	if ( rsaPrivate == NULL )
 		return;
-
 	rsa_free(&rsaPrivate->key);
 	free(rsaPrivate);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // prng, keysize
-JSBool rsa_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+DEFINE_CONSTRUCTOR() {
 
 	RT_ASSERT( JS_IsConstructing(cx), RT_ERROR_NEED_CONSTRUCTION );
 	RsaPrivate *rsaPrivate = (RsaPrivate *)malloc( sizeof(RsaPrivate) );
 	RT_ASSERT( rsaPrivate != NULL, RT_ERROR_OUT_OF_MEMORY );
 	JS_SetPrivate( cx, obj, rsaPrivate );
-
 	return JS_TRUE;
 }
 
-
-JSBool rsa_createKeys(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+DEFINE_FUNCTION( CreateKeys ) {
 
 	RT_ASSERT_ARGC( 2 );
-	RT_ASSERT_CLASS( obj, &rsa_class );
+	RT_ASSERT_CLASS( obj, _class );
 
 	JSObject *objPrng JSVAL_TO_OBJECT(argv[0]);
 	RT_ASSERT_CLASS( objPrng, &classPrng );
@@ -73,13 +74,12 @@ JSBool rsa_createKeys(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsv
 }
 
 
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSBool rsa_encryptKey(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+DEFINE_FUNCTION( EncryptKey ) {
 
 	RT_ASSERT_ARGC( 3 );
 
-	RT_ASSERT_CLASS( obj, &rsa_class );
+	RT_ASSERT_CLASS( obj, _class );
 	RsaPrivate *privateData = (RsaPrivate *)JS_GetPrivate( cx, obj );
 
 	JSObject *objPrng = JSVAL_TO_OBJECT(argv[0]);
@@ -123,12 +123,13 @@ JSBool rsa_encryptKey(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsv
 	return JS_TRUE;
 }
 
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSBool rsa_decryptKey(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+DEFINE_FUNCTION( DecryptKey ) {
 
 	RT_ASSERT_ARGC( 2 );
 
-	RT_ASSERT_CLASS( obj, &rsa_class );
+	RT_ASSERT_CLASS( obj, _class );
 	RsaPrivate *privateData = (RsaPrivate *)JS_GetPrivate( cx, obj );
 
 	char *hashName;
@@ -181,18 +182,9 @@ JSBool rsa_decryptKey(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsv
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSFunctionSpec rsa_FunctionSpec[] = { // *name, call, nargs, flags, extra
- { "CreateKeys"        , rsa_createKeys },
- { "EncryptKey"        , rsa_encryptKey },
- { "DecryptKey"        , rsa_decryptKey },
- { 0 }
-};
+DEFINE_PROPERTY( keySetter ) {
 
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSBool rsa_setter_key(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
-
-	RT_ASSERT_CLASS( obj, &rsa_class );
+	RT_ASSERT_CLASS( obj, _class );
 	RsaPrivate *privateData = (RsaPrivate *)JS_GetPrivate( cx, obj );
 	RT_ASSERT( privateData != NULL, RT_ERROR_NOT_INITIALIZED );
 
@@ -208,9 +200,9 @@ JSBool rsa_setter_key(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSBool rsa_getter_key(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
+DEFINE_PROPERTY( keyGetter ) {
 
-	RT_ASSERT_CLASS( obj, &rsa_class );
+	RT_ASSERT_CLASS( obj, _class );
 	RsaPrivate *privateData = (RsaPrivate *)JS_GetPrivate( cx, obj );
 	RT_ASSERT( privateData != NULL, RT_ERROR_NOT_INITIALIZED );
 
@@ -233,52 +225,36 @@ JSBool rsa_getter_key(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 	return JS_TRUE;
 }
 
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSPropertySpec rsa_PropertySpec[] = { // *name, tinyid, flags, getter, setter
-	{ "privateKey"     , PK_PRIVATE, JSPROP_PERMANENT, rsa_getter_key , rsa_setter_key },
-	{ "publicKey"      , PK_PUBLIC , JSPROP_PERMANENT, rsa_getter_key , rsa_setter_key  },
-	{ 0 }
+enum {
+	privateKey = PK_PRIVATE,
+	publicKey = PK_PUBLIC
 };
 
+CONFIGURE_CLASS
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSBool rsa_static_blockLength(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+	HAS_CONSTRUCTOR
+	HAS_FINALIZE
 
-	return JS_TRUE;
-}
+	BEGIN_FUNCTION_SPEC
+		FUNCTION( CreateKeys )
+		FUNCTION( EncryptKey )
+		FUNCTION( DecryptKey )
+	END_FUNCTION_SPEC
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSFunctionSpec rsa_static_FunctionSpec[] = { // *name, call, nargs, flags, extra
-//	{ "BlockLength"        , rsa_static_blockLength  , 0, 0, 0 },
-	{ 0 }
-};
+	BEGIN_PROPERTY_SPEC
+		PROPERTY_SWITCH( privateKey, key )
+		PROPERTY_SWITCH( publicKey, key )
+	END_PROPERTY_SPEC
 
+	BEGIN_STATIC_FUNCTION_SPEC
+	END_STATIC_FUNCTION_SPEC
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSBool rsa_static_getter_cipherList(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
+	BEGIN_STATIC_PROPERTY_SPEC
+	END_STATIC_PROPERTY_SPEC
 
-	return JS_TRUE;
-}
+	HAS_PRIVATE
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSPropertySpec rsa_static_PropertySpec[] = { // *name, tinyid, flags, getter, setter
-//	{ "cipherList"   , 0, JSPROP_PERMANENT|JSPROP_READONLY, rsa_static_getter_cipherList , NULL },
-	{ 0 }
-};
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSClass rsa_class = { "Rsa", JSCLASS_HAS_PRIVATE,
-	JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub,
-	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, rsa_Finalize
-};
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSObject *rsaInitClass( JSContext *cx, JSObject *obj ) {
-
-	return JS_InitClass( cx, obj, NULL, &rsa_class, rsa_construct, 0, rsa_PropertySpec, rsa_FunctionSpec, rsa_static_PropertySpec, rsa_static_FunctionSpec );
-}
+END_CLASS
 
 
 /****************************************************************
