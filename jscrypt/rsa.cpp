@@ -62,12 +62,13 @@ DEFINE_FUNCTION( CreateKeys ) {
 	RT_JSVAL_TO_INT32( argv[1], keySize );
 
 	int prngIndex = find_prng(prngPrivate->prng.name);
-	RT_ASSERT_1( prngIndex != -1, "prng %s is not registred", prngPrivate->prng.name );
+	RT_ASSERT_1( prngIndex != -1, "prng %s is not available", prngPrivate->prng.name );
 
-	RsaPrivate *rsaPrivate = (RsaPrivate *)JS_GetPrivate( cx, obj );
+	RsaPrivate *rsaPrivate = (RsaPrivate *)JS_GetPrivate(cx, obj);
 
-	int err;
-	if ((err=rsa_make_key( &prngPrivate->state, prngIndex, keySize/8, 65537, &rsaPrivate->key )) != CRYPT_OK)
+	int e = 65537; // typical values are 3, 17, 257 and 65537
+	int err = rsa_make_key( &prngPrivate->state, prngIndex, keySize/8, e, &rsaPrivate->key );
+	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err); // (TBD) should free rsaPrivate or Finalize is called ?
 
 	return JS_TRUE;
@@ -75,33 +76,37 @@ DEFINE_FUNCTION( CreateKeys ) {
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-DEFINE_FUNCTION( EncryptKey ) {
+DEFINE_FUNCTION( Encrypt ) {
 
 	RT_ASSERT_ARGC( 3 );
 
 	RT_ASSERT_CLASS( obj, _class );
 	RsaPrivate *privateData = (RsaPrivate *)JS_GetPrivate( cx, obj );
 
-	JSObject *objPrng = JSVAL_TO_OBJECT(argv[0]);
-	RT_ASSERT_CLASS( objPrng, &classPrng );
-	PrngPrivate *prngPrivate = (PrngPrivate *)JS_GetPrivate( cx, objPrng );
-	RT_ASSERT( prngPrivate != NULL, "prng is not initialized." );
-	int prngIndex = find_prng(prngPrivate->prng.name);
-	RT_ASSERT_1( prngIndex != -1, "prng %s is not registred", prngPrivate->prng.name );
+	prng_state *prngState;
+	int prngIndex;
+
+	if ( JSVAL_IS_OBJECT(argv[0]) && JS_GET_CLASS(cx, JSVAL_TO_OBJECT(argv[0])) == &classPrng ) {
+
+		JSObject *objPrng = JSVAL_TO_OBJECT(argv[0]);
+		PrngPrivate *prngPrivate = (PrngPrivate *)JS_GetPrivate(cx, objPrng);
+		RT_ASSERT_RESOURCE( prngPrivate );
+		prngIndex = find_prng(prngPrivate->prng.name); // needed !
+		prngState = &prngPrivate->state;
+	} else {
+
+		char *prngName;
+		RT_JSVAL_TO_STRING( argv[0], prngName );
+		prngIndex = find_prng(prngName);
+		RT_ASSERT_1( prngIndex != -1, "prng %s is not available", prngName );
+		prngState = NULL;
+	}
 
 	char *hashName;
 	RT_JSVAL_TO_STRING( argv[1], hashName );
 	int hashIndex = find_hash(hashName);
-	RT_ASSERT_1( hashIndex != -1, "hash %s is not registred", hashName );
+	RT_ASSERT_1( hashIndex != -1, "hash %s is not available", hashName );
 
-/*
-	JSObject *objHash = JSVAL_TO_OBJECT(argv[1]);
-	RT_ASSERT_CLASS( objHash, &hash_class );
-	HashPrivate *hashPrivate = (HashPrivate *)JS_GetPrivate( cx, objHash );
-	RT_ASSERT( hashPrivate != NULL, "hash is not initialized." );
-	int hashIndex = find_hash(hashPrivate->hash.name);
-	RT_ASSERT_1( hashIndex != -1, "hash %s is not registred", hashPrivate->hash.name );
-*/
 
 	char *in;
 	int inLength;
@@ -110,22 +115,28 @@ DEFINE_FUNCTION( EncryptKey ) {
 	unsigned long outLength = inLength + mp_unsigned_bin_size((mp_int*)privateData->key.N) - hash_descriptor[hashIndex].hashsize - 2; // length = message + (modulus length - 2 * hash size - 2)
 
 	char *out = (char *)JS_malloc( cx, outLength );
-	RT_ASSERT( out != NULL, RT_ERROR_OUT_OF_MEMORY );
+	RT_ASSERT_ALLOC( out );
+
+	// lparam doc: The lparam variable is an additional system specific tag that can be applied to the encoding.
+	// This is useful to identify which system encoded the message. If no variance is desired then lparam can be set to NULL.
+	unsigned char *lparam = NULL; 
+	unsigned long lparamlen = 0;
 
 	int err;
-	if ( (err=rsa_encrypt_key( (const unsigned char *)in, inLength, (unsigned char *)out, &outLength, NULL, 0, &prngPrivate->state, prngIndex, hashIndex, &privateData->key )) != CRYPT_OK )
+	err = rsa_encrypt_key( (const unsigned char *)in, inLength, (unsigned char *)out, &outLength, lparam, lparamlen, prngState, prngIndex, hashIndex, &privateData->key );
+	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err); // (TBD) free rsaPrivate ?
 
 	JSString *jssOut = JS_NewString( cx, out, outLength );
-	RT_ASSERT( jssOut != NULL, "unable to create the string." );
-	*rval = STRING_TO_JSVAL(jssOut);
+	RT_ASSERT_ALLOC( jssOut );
+	*rval = STRING_TO_JSVAL( jssOut );
 
 	return JS_TRUE;
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-DEFINE_FUNCTION( DecryptKey ) {
+DEFINE_FUNCTION( Decrypt ) {
 
 	RT_ASSERT_ARGC( 2 );
 
@@ -135,16 +146,7 @@ DEFINE_FUNCTION( DecryptKey ) {
 	char *hashName;
 	RT_JSVAL_TO_STRING( argv[0], hashName );
 	int hashIndex = find_hash(hashName);
-	RT_ASSERT_1( hashIndex != -1, "hash %s is not registred", hashName );
-
-/*
-	JSObject *objHash = JSVAL_TO_OBJECT(argv[0]);
-	RT_ASSERT_CLASS( objHash, &hash_class );
-	HashPrivate *hashPrivate = (HashPrivate *)JS_GetPrivate( cx, objHash );
-	RT_ASSERT( hashPrivate != NULL, "hash is not initialized." );
-	int hashIndex = find_hash(hashPrivate->hash.name);
-	RT_ASSERT_1( hashIndex != -1, "hash %s is not registred", hashPrivate->hash.name );
-*/
+	RT_ASSERT_1( hashIndex != -1, "hash %s is not available", hashName );
 
 	char *in;
 	int inLength;
@@ -157,18 +159,24 @@ DEFINE_FUNCTION( DecryptKey ) {
 
 	unsigned long outLength = inLength;
 
-	char *out = (char *)JS_malloc( cx, outLength );
-	RT_ASSERT( out != NULL, RT_ERROR_OUT_OF_MEMORY );
+	char *out = (char *)JS_malloc( cx, outLength +1 );
+	out[outLength] = '\0';
+	RT_ASSERT_ALLOC( out );
 
-	int stat;
+	unsigned char *lparam = NULL;
+	unsigned long lparamlen = 0;
+
+	int res; // validity of data
 
 	int err;
-	if ( (err=rsa_decrypt_key( (const unsigned char *)in, inLength, (unsigned char *)out, &outLength, NULL, 0, hashIndex, &stat, &privateData->key )) != CRYPT_OK )
+	err = rsa_decrypt_key( (const unsigned char *)in, inLength, (unsigned char *)out, &outLength, lparam, lparamlen, hashIndex, &res, &privateData->key );
+	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err); // (TBD) free rsaPrivate ?
 
-	// RT_ASSERT( stat == 1, "invalid decryption" );
-	if ( stat != 1 ) {
-
+	// doc: if all went well pt == pt2, l2 == 16, res == 1
+	if ( res != 1 ) {
+		
+		JS_free(cx, out);
 		*rval = JSVAL_VOID;
 		return JS_TRUE;
 	}
@@ -237,8 +245,8 @@ CONFIGURE_CLASS
 
 	BEGIN_FUNCTION_SPEC
 		FUNCTION( CreateKeys )
-		FUNCTION( EncryptKey )
-		FUNCTION( DecryptKey )
+		FUNCTION( Encrypt )
+		FUNCTION( Decrypt )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC

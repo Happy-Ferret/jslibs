@@ -28,7 +28,8 @@ DEFINE_FUNCTION( Base64Encode ) {
 	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], in, inLength );
 
 	unsigned long outLength = 4 * ((inLength + 2) / 3) +1;
-	char *out = (char *)JS_malloc( cx, outLength );
+	char *out = (char *)JS_malloc( cx, outLength +1 );
+	out[outLength] = '\0';
 	RT_ASSERT( out != NULL, RT_ERROR_OUT_OF_MEMORY );
 
 	int err;
@@ -80,7 +81,8 @@ DEFINE_FUNCTION( HexEncode ) {
 	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], in, inLength );
 
 	unsigned long outLength = inLength * 2;
-	char *out = (char *)JS_malloc( cx, outLength );
+	char *out = (char *)JS_malloc( cx, outLength +1 );
+	out[outLength] = '\0';
 	RT_ASSERT( out != NULL, RT_ERROR_OUT_OF_MEMORY );
 
 	unsigned char c;
@@ -143,8 +145,5 @@ CONFIGURE_STATIC
 		FUNCTION( HexEncode )
 		FUNCTION( HexDecode )
 	END_STATIC_FUNCTION_SPEC
-
-	BEGIN_STATIC_PROPERTY_SPEC
-	END_STATIC_PROPERTY_SPEC
 
 END_STATIC

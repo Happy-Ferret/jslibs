@@ -43,7 +43,7 @@ DEFINE_CONSTRUCTOR() {
 	RT_JSVAL_TO_STRING( argv[0], hashName );
 
 	int hashIndex = find_hash(hashName);
-	RT_ASSERT_1( hashIndex != -1, "hash %s is not registred", hashName );
+	RT_ASSERT_1( hashIndex != -1, "hash %s is not available", hashName );
 
 	HashPrivate *privateData = (HashPrivate*)malloc( sizeof(HashPrivate) );
 	RT_ASSERT_ALLOC( privateData );
@@ -206,8 +206,6 @@ DEFINE_PROPERTY( inputLength ) {
 	return JS_TRUE;
 }	
 
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 DEFINE_FUNCTION( CipherHash ) {
 
 	RT_ASSERT_ARGC(1);
@@ -221,25 +219,30 @@ DEFINE_FUNCTION( CipherHash ) {
 	return JS_TRUE;
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 DEFINE_PROPERTY( list ) {
 
-	JSObject *list = JS_NewObject( cx, NULL, NULL, NULL );
-	RT_ASSERT( list != NULL, "unable to create hash list." );
+	if ( *vp == JSVAL_VOID ) {
 
-	const char *hashName;
-	int i;
-	LTC_MUTEX_LOCK(&ltc_hash_mutex);
-	for (i=0; i<TAB_SIZE; i++)
-		if ( hash_is_valid(i) ) {
+		JSObject *list = JS_NewObject( cx, NULL, NULL, NULL );
+		RT_ASSERT_ALLOC( list );
+		*vp = OBJECT_TO_JSVAL(list);
+		jsval value;
+		int i;
+		LTC_MUTEX_LOCK(&ltc_hash_mutex);
+		for (i=0; i<TAB_SIZE; i++)
+			if ( hash_is_valid(i) == CRYPT_OK ) {
 
-		  //JS_DefineProperty(cx, list, hashName, JSVAL_TRUE, NULL, NULL, 0);
-			jsval value = INT_TO_JSVAL( hash_descriptor[i].hashsize );
-			JS_SetProperty( cx, list, hashName, &value );
-		}
-	LTC_MUTEX_UNLOCK(&ltc_hash_mutex);
+				JSObject *desc = JS_NewObject( cx, NULL, NULL, NULL );
+				value = OBJECT_TO_JSVAL(desc);
+				JS_SetProperty( cx, list, cipher_descriptor[i].name, &value );
 
-	*vp = OBJECT_TO_JSVAL(list);
+				value = INT_TO_JSVAL( hash_descriptor[i].hashsize );
+				JS_SetProperty( cx, desc, "hashSize", &value );
+				value = INT_TO_JSVAL( hash_descriptor[i].blocksize );
+				JS_SetProperty( cx, desc, "blockSize", &value );
+			}
+		LTC_MUTEX_UNLOCK(&ltc_hash_mutex);
+	}
 	return JS_TRUE;
 }
 
@@ -268,7 +271,7 @@ CONFIGURE_CLASS
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC
-		PROPERTY_READ( list )
+		PROPERTY_READ_STORE( list )
 	END_STATIC_PROPERTY_SPEC
 
 	HAS_PRIVATE

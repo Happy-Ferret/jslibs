@@ -67,7 +67,7 @@ DEFINE_CONSTRUCTOR() {
 	RT_JSVAL_TO_STRING( argv[0], prngName );
 
 	int prngIndex = find_prng(prngName);
-	RT_ASSERT_1( prngIndex != -1, "prng %s is not registred", prngName );
+	RT_ASSERT_1( prngIndex != -1, "prng %s is not available", prngName );
 
 	PrngPrivate *privateData = (PrngPrivate*)malloc( sizeof(PrngPrivate) );
 	RT_ASSERT( privateData != NULL, RT_ERROR_OUT_OF_MEMORY );
@@ -170,24 +170,24 @@ DEFINE_PROPERTY( name ) {
 
 DEFINE_PROPERTY( list ) {
 
-	JSObject *list = JS_NewObject( cx, NULL, NULL, NULL );
-	RT_ASSERT_ALLOC( list );
+	if ( *vp == JSVAL_VOID ) {
 
-	const char *name;
-	int i;
-	LTC_MUTEX_LOCK(&ltc_prng_mutex);
-	for (i=0; i<TAB_SIZE; i++)
-		if ( prng_is_valid(i) ) {
+		JSObject *list = JS_NewObject( cx, NULL, NULL, NULL );
+		RT_ASSERT_ALLOC( list );
+		*vp = OBJECT_TO_JSVAL(list);
+		jsval value;
+		int i;
+		LTC_MUTEX_LOCK(&ltc_prng_mutex);
+		for (i=0; i<TAB_SIZE; i++)
+			if ( prng_is_valid(i) == CRYPT_OK ) {
 
-			jsval value = JSVAL_ONE;
-			JS_SetProperty( cx, list, name, &value );
-		}
-	LTC_MUTEX_UNLOCK(&ltc_prng_mutex);
-
-	*vp = OBJECT_TO_JSVAL(list);
+				value = JSVAL_ONE;
+				JS_SetProperty( cx, list, prng_descriptor[i].name, &value );
+			}
+		LTC_MUTEX_UNLOCK(&ltc_prng_mutex);
+	}
 	return JS_TRUE;
 }
-
 
 
 CONFIGURE_CLASS
@@ -210,7 +210,7 @@ CONFIGURE_CLASS
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC
-		PROPERTY_READ( list )
+		PROPERTY_READ_STORE( list )
 	END_STATIC_PROPERTY_SPEC
 
 	HAS_PRIVATE

@@ -1,17 +1,34 @@
 LoadModule('jsstd');
 LoadModule('jscrypt');
+
+
 var md5 = new Hash('md5');
 md5.Process('foobarxxx');
-
 Print(HexEncode(md5.Done(), '\n'));
+Print( '\n' );
 
 
+Print( Cipher.list.toSource() );
+Print( '\n' );
+Print( Hash.list.toSource() );
+Print( '\n' );
+Print( Prng.list.toSource() );
+Print( '\n' );
+
+
+var IV = "123";
+var cr = new Cipher('CFB', "cast5", "my  key of  16B ", IV );
+var encryptedText = cr.Encrypt('my  dataof  16B ');
+var cr = new Cipher('CFB', "cast5", "my  key of  16B ", IV );
+Print( cr.Decrypt(encryptedText) );
+Print( '\n' );
 
 
 Halt();
 
-try {
 
+
+try {
 
 	var r = new Prng('fortuna');
 	r.AutoEntropy(128); // give more entropy
