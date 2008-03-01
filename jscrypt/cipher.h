@@ -15,11 +15,6 @@
 #ifndef CRYPT_H_
 #define CRYPT_H_
 
-DECLARE_CLASS( Cypher )
-
-/*
-JSObject *cypherInitClass( JSContext *cx, JSObject *obj );
-extern JSClass cypher_class;
-*/
+DECLARE_CLASS( Cipher )
 
 #endif // CRYPT_H_

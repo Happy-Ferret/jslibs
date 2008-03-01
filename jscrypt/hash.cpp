@@ -208,15 +208,15 @@ DEFINE_PROPERTY( inputLength ) {
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-DEFINE_FUNCTION( CypherHash ) {
+DEFINE_FUNCTION( CipherHash ) {
 
 	RT_ASSERT_ARGC(1);
 	char *cipherName;
 	RT_JSVAL_TO_STRING( argv[0], cipherName );
-	int cypherIndex = find_cipher(cipherName);
-	RT_ASSERT_1( cypherIndex >= 0, "Cypher not found: %s", cipherName );
+	int cipherIndex = find_cipher(cipherName);
+	RT_ASSERT_1( cipherIndex >= 0, "Cipher not found: %s", cipherName );
 	int err;
-	if ((err = chc_register(cypherIndex)) != CRYPT_OK)
+	if ((err = chc_register(cipherIndex)) != CRYPT_OK)
 		return ThrowCryptError(cx, err);
 	return JS_TRUE;
 }
@@ -264,7 +264,7 @@ CONFIGURE_CLASS
 	END_PROPERTY_SPEC
 
 	BEGIN_STATIC_FUNCTION_SPEC
-		FUNCTION( CypherHash )
+		FUNCTION( CipherHash )
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC

@@ -13,7 +13,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-#include "cypher.h"
+#include "cipher.h"
 
 #define MODE_CTR "CTR"
 #define MODE_CFB "CFB"
@@ -23,7 +23,7 @@ enum CryptMode {
 	mode_cfb
 };
 
-struct CypherPrivate {
+struct CipherPrivate {
 
 	ltc_cipher_descriptor *descriptor;
 	CryptMode mode;
@@ -31,11 +31,11 @@ struct CypherPrivate {
 };
 
 
-BEGIN_CLASS( Cypher )
+BEGIN_CLASS( Cipher )
 
 DEFINE_FINALIZE() {
 
-	CypherPrivate *privateData = (CypherPrivate *)JS_GetPrivate( cx, obj );
+	CipherPrivate *privateData = (CipherPrivate *)JS_GetPrivate( cx, obj );
 	if ( privateData == NULL ) // is already finished ?
 		return;
 
@@ -75,16 +75,13 @@ DEFINE_CONSTRUCTOR() {
 	int IVLength;
 	RT_JSVAL_TO_STRING_AND_LENGTH( argv[3], IV, IVLength );
 
-   int numRounds;
+   int numRounds = 0;
 	if ( argc >= 5 ) {
 
 		RT_JSVAL_TO_INT32( numRounds, argv[4] );
-	} else {
-		
-		numRounds = 0;
 	}
 
-	CypherPrivate *privateData = (CypherPrivate*)malloc( sizeof(CypherPrivate) );
+	CipherPrivate *privateData = (CipherPrivate*)malloc( sizeof(CipherPrivate) );
 	RT_ASSERT_ALLOC( privateData );
 
 	int cipherIndex = find_cipher(cipherName);
@@ -126,7 +123,7 @@ DEFINE_FUNCTION( Encrypt ) {
 
 	RT_ASSERT_THIS_CLASS();
 	RT_ASSERT_ARGC( 1 );
-	CypherPrivate *privateData = (CypherPrivate *)JS_GetPrivate( cx, obj );
+	CipherPrivate *privateData = (CipherPrivate *)JS_GetPrivate( cx, obj );
 	RT_ASSERT_RESOURCE( privateData );
 
 	char *pt;
@@ -163,7 +160,7 @@ DEFINE_FUNCTION( Decrypt ) {
 
 	RT_ASSERT_ARGC( 1 );
 	RT_ASSERT_CLASS( obj, _class );
-	CypherPrivate *privateData = (CypherPrivate *)JS_GetPrivate( cx, obj );
+	CipherPrivate *privateData = (CipherPrivate *)JS_GetPrivate( cx, obj );
 	RT_ASSERT_RESOURCE( privateData );
 
 	char *ct;
@@ -199,7 +196,7 @@ DEFINE_FUNCTION( Decrypt ) {
 DEFINE_PROPERTY( blockLength ) {
 
 	RT_ASSERT_CLASS( obj, _class );
-	CypherPrivate *privateData = (CypherPrivate *)JS_GetPrivate( cx, obj );
+	CipherPrivate *privateData = (CipherPrivate *)JS_GetPrivate( cx, obj );
 	RT_ASSERT_RESOURCE( privateData );
 	*vp = INT_TO_JSVAL( privateData->descriptor->block_length );
 	return JS_TRUE;
@@ -209,7 +206,7 @@ DEFINE_PROPERTY( blockLength ) {
 DEFINE_PROPERTY( keySize ) {
 
 	RT_ASSERT_CLASS( obj, _class );
-	CypherPrivate *privateData = (CypherPrivate *)JS_GetPrivate( cx, obj );
+	CipherPrivate *privateData = (CipherPrivate *)JS_GetPrivate( cx, obj );
 	RT_ASSERT_RESOURCE( privateData );
 	*vp = INT_TO_JSVAL( privateData->descriptor->keysize );
 	return JS_TRUE;
@@ -219,7 +216,7 @@ DEFINE_PROPERTY( keySize ) {
 DEFINE_PROPERTY( name ) {
 
 	RT_ASSERT_CLASS( obj, _class );
-	CypherPrivate *privateData = (CypherPrivate *)JS_GetPrivate( cx, obj );
+	CipherPrivate *privateData = (CipherPrivate *)JS_GetPrivate( cx, obj );
 	RT_ASSERT_RESOURCE( privateData );
 	JSString *jsstr = JS_NewStringCopyZ(cx, privateData->descriptor->name);
 	RT_ASSERT_ALLOC( jsstr );
@@ -231,7 +228,7 @@ DEFINE_PROPERTY( name ) {
 DEFINE_PROPERTY( IVSetter ) {
 
 	RT_ASSERT_CLASS( obj, _class );
-	CypherPrivate *privateData = (CypherPrivate *)JS_GetPrivate( cx, obj );
+	CipherPrivate *privateData = (CipherPrivate *)JS_GetPrivate( cx, obj );
 	RT_ASSERT_RESOURCE( privateData );
 
 	char *IV;
@@ -259,7 +256,7 @@ DEFINE_PROPERTY( IVSetter ) {
 DEFINE_PROPERTY( IVGetter ) {
 
 	RT_ASSERT_CLASS( obj, _class );
-	CypherPrivate *privateData = (CypherPrivate *)JS_GetPrivate( cx, obj );
+	CipherPrivate *privateData = (CipherPrivate *)JS_GetPrivate( cx, obj );
 	RT_ASSERT_RESOURCE( privateData );
 
 	char *IV = NULL;
@@ -303,7 +300,7 @@ DEFINE_PROPERTY( list ) {
 	JSObject *list = JS_NewObject( cx, NULL, NULL, NULL );
 	RT_ASSERT( list != NULL, "unable to create cipher list." );
 
-	const char *cipherName;
+	const char *name;
 	int keySize;
 	int i;
 	LTC_MUTEX_LOCK(&ltc_cipher_mutex);
@@ -311,9 +308,10 @@ DEFINE_PROPERTY( list ) {
 		if ( cipher_is_valid(i) ) {
 		  //JS_DefineProperty(cx, list, cipherName, JSVAL_TRUE, NULL, NULL, 0);
 			keySize = INT_MAX;
+			name = cipher_descriptor[i].name;
 			cipher_descriptor[i].keysize(&keySize);
 			jsval value = INT_TO_JSVAL( keySize );
-			JS_SetProperty( cx, list, cipherName, &value );
+			JS_SetProperty( cx, list, name, &value );
 		}
 	LTC_MUTEX_UNLOCK(&ltc_cipher_mutex);
 
