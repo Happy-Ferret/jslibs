@@ -214,18 +214,18 @@ inline bool MaybeRealloc( int requested, int received ) {
 } while(0)
 
 #define RT_JSVAL_TO_STRING( jsvalString, stringVariable ) do { \
-	JSString *___jssTmp = JS_ValueToString(cx, jsvalString); \
+	JSString *___jssTmp = JS_ValueToString(cx, (jsvalString)); \
 	RT_ASSERT( ___jssTmp != NULL, RT_ERROR_STRING_CONVERSION_FAILED ); \
-	stringVariable = JS_GetStringBytes( ___jssTmp ); \
-	RT_ASSERT( stringVariable != NULL, RT_ERROR_STRING_CONVERSION_FAILED ); \
+	(stringVariable) = JS_GetStringBytes( ___jssTmp ); \
+	RT_ASSERT( (stringVariable) != NULL, RT_ERROR_STRING_CONVERSION_FAILED ); \
 } while(0)
 
 #define RT_JSVAL_TO_STRING_AND_LENGTH( jsvalString, stringVariable, lengthVariable ) do { \
-	JSString *___jssTmp = JS_ValueToString(cx,jsvalString); \
+	JSString *___jssTmp = JS_ValueToString(cx,(jsvalString)); \
 	RT_ASSERT( ___jssTmp != NULL, RT_ERROR_STRING_CONVERSION_FAILED ); \
-	stringVariable = JS_GetStringBytes( ___jssTmp ); \
-	RT_ASSERT( stringVariable != NULL, RT_ERROR_STRING_CONVERSION_FAILED ); \
-	lengthVariable = JS_GetStringLength( ___jssTmp ); \
+	(stringVariable) = JS_GetStringBytes( ___jssTmp ); \
+	RT_ASSERT( (stringVariable) != NULL, RT_ERROR_STRING_CONVERSION_FAILED ); \
+	(lengthVariable) = JS_GetStringLength( ___jssTmp ); \
 } while(0)
 
 

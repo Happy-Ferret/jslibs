@@ -30,6 +30,7 @@
 #pragma warning(disable : 4312)
 #pragma warning(disable : 4267)
 #pragma warning(disable : 4996)
+#pragma warning(disable : 4100) // warning C4100: 'xxx' : unreferenced formal parameter
 #endif // #ifdef WIN32
 
 #include <limits.h>
