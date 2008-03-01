@@ -131,14 +131,10 @@ DEFINE_CONSTRUCTOR() {
 
 	int cipherIndex = find_cipher(cipherName);
 	RT_ASSERT_1( cipherIndex != -1, "cipher %s is not registred", cipherName );
-
 	ltc_cipher_descriptor *cipher = &cipher_descriptor[cipherIndex];
+
 	privateData->descriptor = cipher;
 	RT_ASSERT_1( cipher->test() == CRYPT_OK, "%s cipher test failed.", cipherName );
-
-//	RT_ASSERT_1( IVLength == cipher.block_length, "IV must have the same size as cipher block length (%d bytes)", cipher.block_length );
-
-	privateData->mode = mode;
 
 	int err;
 	switch ( mode ) {
@@ -151,35 +147,35 @@ DEFINE_CONSTRUCTOR() {
 		case mode_cfb: {
 			privateData->symmetric_XXX = malloc( sizeof(symmetric_CFB) );
 			RT_ASSERT_ALLOC( privateData->symmetric_XXX );
-			RT_ASSERT( IV != NULL, "This mode need the initialization vector (IV)" );
+			RT_ASSERT_1( IVLength == cipher->block_length, "This cipher require a IV length of %d", cipher->block_length );
 			cfb_start( cipherIndex, (unsigned char *)IV, (unsigned char *)key, keyLength, numRounds, (symmetric_CFB *)privateData->symmetric_XXX );
 			break;
 		}
 		case mode_ofb: {
 			privateData->symmetric_XXX = malloc( sizeof(symmetric_OFB) );
 			RT_ASSERT_ALLOC( privateData->symmetric_XXX );
-			RT_ASSERT( IV != NULL, "This mode need the initialization vector (IV)" );
+			RT_ASSERT_1( IVLength == cipher->block_length, "This cipher require a IV length of %d", cipher->block_length );
 			ofb_start( cipherIndex, (unsigned char *)IV, (unsigned char *)key, keyLength, numRounds, (symmetric_OFB *)privateData->symmetric_XXX );
 			break;
 		}
 		case mode_cbc: {
 			privateData->symmetric_XXX = malloc( sizeof(symmetric_CBC) );
 			RT_ASSERT_ALLOC( privateData->symmetric_XXX );
-			RT_ASSERT( IV != NULL, "This mode need the initialization vector (IV)" );
+			RT_ASSERT_1( IVLength == cipher->block_length, "This cipher require a IV length of %d", cipher->block_length );
 			cbc_start( cipherIndex, (unsigned char *)IV, (unsigned char *)key, keyLength, numRounds, (symmetric_CBC *)privateData->symmetric_XXX );
 			break;
 		}
 		case mode_ctr: {
 			privateData->symmetric_XXX = malloc( sizeof(symmetric_CTR) );
 			RT_ASSERT_ALLOC( privateData->symmetric_XXX );
-			RT_ASSERT( IV != NULL, "This mode need the initialization vector (IV)" );
+			RT_ASSERT_1( IVLength == cipher->block_length, "This cipher require a IV length of %d", cipher->block_length );
 			err = ctr_start( cipherIndex, (unsigned char *)IV, (unsigned char *)key, keyLength, numRounds, CTR_COUNTER_LITTLE_ENDIAN, (symmetric_CTR *)privateData->symmetric_XXX );
 			break;
 		}
 		case mode_lrw: {
 			privateData->symmetric_XXX = malloc( sizeof(symmetric_LRW) );
 			RT_ASSERT_ALLOC( privateData->symmetric_XXX );
-			RT_ASSERT( IVLength > 0, "This mode need the initialization vector (IV)" );
+			RT_ASSERT_1( IVLength == cipher->block_length, "This cipher require a IV length of %d", cipher->block_length );
 			RT_ASSERT_1( optargLength == keyLength, "The tweak length must be %d bytes length", keyLength );
 			err = lrw_start( cipherIndex, (unsigned char *)IV, (unsigned char *)key, keyLength, (unsigned char *)optarg, numRounds, (symmetric_LRW *)privateData->symmetric_XXX );
 			break;
@@ -187,7 +183,7 @@ DEFINE_CONSTRUCTOR() {
 		case mode_f8: {
 			privateData->symmetric_XXX = malloc( sizeof(symmetric_F8) );
 			RT_ASSERT_ALLOC( privateData->symmetric_XXX );
-			RT_ASSERT( IVLength > 0, "This mode need the initialization vector (IV)" );
+			RT_ASSERT_1( IVLength == cipher->block_length, "This cipher require a IV length of %d", cipher->block_length );
 			RT_ASSERT( optargLength > 0, "This mode need the salt argument" );
 			err = f8_start( cipherIndex, (unsigned char *)IV, (unsigned char *)key, keyLength, (unsigned char *)optarg, optargLength, numRounds, (symmetric_F8 *)privateData->symmetric_XXX );
 			break;
@@ -211,8 +207,9 @@ DEFINE_FUNCTION( Encrypt ) {
 	int ptLength;
 	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], pt, ptLength );
 
-	char *ct = (char *)JS_malloc( cx, ptLength );
+	char *ct = (char *)JS_malloc( cx, ptLength +1 );
 	RT_ASSERT_ALLOC( ct );
+	ct[ctLength] = '\0';
 
 	int err;
 	switch ( privateData->mode ) {
@@ -259,8 +256,9 @@ DEFINE_FUNCTION( Decrypt ) {
 	int ctLength;
 	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], ct, ctLength );
 
-	char *pt = (char *)JS_malloc( cx, ctLength );
+	char *pt = (char *)JS_malloc( cx, ctLength +1 );
 	RT_ASSERT_ALLOC( pt );
+	pt[ctLength] = '\0';
 
 	int err;
 	switch ( privateData->mode ) {
