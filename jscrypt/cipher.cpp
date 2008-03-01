@@ -19,8 +19,13 @@
 #define MODE_CFB "CFB"
 
 enum CryptMode {
+	mode_ecb,
+	mode_cfb,
+	mode_ofb,
+	mode_cbc,
 	mode_ctr,
-	mode_cfb
+	mode_lrw,
+	mode_f8,
 };
 
 struct CipherPrivate {
@@ -38,16 +43,33 @@ DEFINE_FINALIZE() {
 	CipherPrivate *privateData = (CipherPrivate *)JS_GetPrivate( cx, obj );
 	if ( privateData == NULL ) // is already finished ?
 		return;
-
+	
+	int err;
 	switch ( privateData->mode ) {
-		case mode_ctr:
-			ctr_done((symmetric_CTR *)privateData->symmetric_XXX);
+		case mode_ecb:
+			err = ecb_done( (symmetric_ECB *)privateData->symmetric_XXX );
 			break;
 		case mode_cfb:
-			cfb_done((symmetric_CFB *)privateData->symmetric_XXX);
+			err = cfb_done( (symmetric_CFB *)privateData->symmetric_XXX );
+			break;
+		case mode_ofb:
+			err = ofb_done( (symmetric_OFB *)privateData->symmetric_XXX );
+			break;
+		case mode_cbc:
+			err = cbc_done( (symmetric_CBC *)privateData->symmetric_XXX );
+			break;
+		case mode_ctr:
+			err = ctr_done( (symmetric_CTR *)privateData->symmetric_XXX );
+			break;
+		case mode_lrw:
+			err = lrw_done( (symmetric_LRW *)privateData->symmetric_XXX );
+			break;
+		case mode_f8:
+			err = f8_done( (symmetric_F8 *)privateData->symmetric_XXX );
 			break;
 	}
-
+//	if (err != CRYPT_OK)
+//		return ThrowCryptError(cx, err);
 	free(privateData->symmetric_XXX);
 	free(privateData);
 }
@@ -59,10 +81,28 @@ DEFINE_CONSTRUCTOR() {
 
 //	RT_ASSERT_THIS_CLASS(); <- done in RT_ASSERT_CONSTRUCTING
 	RT_ASSERT_CONSTRUCTING(_class)
-	RT_ASSERT_ARGC( 4 );
+	RT_ASSERT_ARGC( 3 );
 
 	char *modeName;
 	RT_JSVAL_TO_STRING( argv[0], modeName );
+
+	CryptMode mode;
+	if ( strcasecmp( modeName, "ECB" ) == 0 )
+		mode = mode_ecb;
+	else if ( strcasecmp( modeName, "CFB" ) == 0 )
+		mode = mode_cfb;
+	else if ( strcasecmp( modeName, "OFB" ) == 0 )
+		mode = mode_ofb;
+	else if ( strcasecmp( modeName, "CBC" ) == 0 )
+		mode = mode_cbc;
+	else if ( strcasecmp( modeName, "CTR" ) == 0 )
+		mode = mode_ctr;
+	else if ( strcasecmp( modeName, "LRW" ) == 0 )
+		mode = mode_lrw;
+	else if ( strcasecmp( modeName, "F8" ) == 0 )
+		mode = mode_f8;
+	else
+		REPORT_ERROR_1("Invalid mode %s", modeName);
 
 	char *cipherName;
 	RT_JSVAL_TO_STRING( argv[1], cipherName );
@@ -72,14 +112,19 @@ DEFINE_CONSTRUCTOR() {
 	RT_JSVAL_TO_STRING_AND_LENGTH( argv[2], key, keyLength );
 
 	char *IV;
-	int IVLength;
-	RT_JSVAL_TO_STRING_AND_LENGTH( argv[3], IV, IVLength );
+	int IVLength = 0;
+	if ( argc >= 4 && argv[3] != JSVAL_VOID )
+		RT_JSVAL_TO_STRING_AND_LENGTH( argv[3], IV, IVLength );
 
-   int numRounds = 0;
-	if ( argc >= 5 ) {
+	char *optarg;
+	int optargLength = 0;
+	if ( argc >= 5 && argv[4] != JSVAL_VOID )
+		RT_JSVAL_TO_STRING_AND_LENGTH( argv[4], optarg, optargLength );
 
-		RT_JSVAL_TO_INT32( numRounds, argv[4] );
-	}
+   int numRounds = 0; // default value, us a default number of rounds.
+	if ( argc >= 6 && argv[5] != JSVAL_VOID )
+		RT_JSVAL_TO_INT32( numRounds, argv[5] );
+
 
 	CipherPrivate *privateData = (CipherPrivate*)malloc( sizeof(CipherPrivate) );
 	RT_ASSERT_ALLOC( privateData );
@@ -93,28 +138,64 @@ DEFINE_CONSTRUCTOR() {
 
 //	RT_ASSERT_1( IVLength == cipher.block_length, "IV must have the same size as cipher block length (%d bytes)", cipher.block_length );
 
+	privateData->mode = mode;
+
 	int err;
-	if ( strcasecmp( modeName, MODE_CTR ) == 0 ) {
-
-		privateData->mode = mode_ctr;
-		symmetric_CTR *psctr = (symmetric_CTR *)malloc( sizeof(symmetric_CTR) );
-		RT_ASSERT_ALLOC( psctr );
-		if ((err = ctr_start( cipherIndex, (const unsigned char *)IV, (const unsigned char *)key, keyLength, numRounds, CTR_COUNTER_LITTLE_ENDIAN, psctr )) != CRYPT_OK)
-			return ThrowCryptError(cx, err); // (TBD) free privateData and psctr
-		privateData->symmetric_XXX = psctr;
-	} else if ( strcasecmp( modeName, MODE_CFB ) == 0 ) {
-
-		privateData->mode = mode_cfb;
-		symmetric_CFB *symmetric_XXX = (symmetric_CFB *)malloc( sizeof(symmetric_CFB) );
-		RT_ASSERT_ALLOC( symmetric_XXX );
-		if ((err = cfb_start( cipherIndex, (const unsigned char *)IV, (const unsigned char *)key, keyLength, numRounds, symmetric_XXX )) != CRYPT_OK)
-			return ThrowCryptError(cx, err); // (TBD) free privateData and psctr
-		privateData->symmetric_XXX = symmetric_XXX;
-	} else
-		RT_ASSERT_1( false, "unsupported %s mode.", modeName );
-
+	switch ( mode ) {
+		case mode_ecb: {
+			privateData->symmetric_XXX = malloc( sizeof(symmetric_ECB) );
+			RT_ASSERT_ALLOC( privateData->symmetric_XXX );
+			ecb_start( cipherIndex, (unsigned char *)key, keyLength, numRounds, (symmetric_ECB *)privateData->symmetric_XXX );
+			break;
+		}
+		case mode_cfb: {
+			privateData->symmetric_XXX = malloc( sizeof(symmetric_CFB) );
+			RT_ASSERT_ALLOC( privateData->symmetric_XXX );
+			RT_ASSERT( IV != NULL, "This mode need the initialization vector (IV)" );
+			cfb_start( cipherIndex, (unsigned char *)IV, (unsigned char *)key, keyLength, numRounds, (symmetric_CFB *)privateData->symmetric_XXX );
+			break;
+		}
+		case mode_ofb: {
+			privateData->symmetric_XXX = malloc( sizeof(symmetric_OFB) );
+			RT_ASSERT_ALLOC( privateData->symmetric_XXX );
+			RT_ASSERT( IV != NULL, "This mode need the initialization vector (IV)" );
+			ofb_start( cipherIndex, (unsigned char *)IV, (unsigned char *)key, keyLength, numRounds, (symmetric_OFB *)privateData->symmetric_XXX );
+			break;
+		}
+		case mode_cbc: {
+			privateData->symmetric_XXX = malloc( sizeof(symmetric_CBC) );
+			RT_ASSERT_ALLOC( privateData->symmetric_XXX );
+			RT_ASSERT( IV != NULL, "This mode need the initialization vector (IV)" );
+			cbc_start( cipherIndex, (unsigned char *)IV, (unsigned char *)key, keyLength, numRounds, (symmetric_CBC *)privateData->symmetric_XXX );
+			break;
+		}
+		case mode_ctr: {
+			privateData->symmetric_XXX = malloc( sizeof(symmetric_CTR) );
+			RT_ASSERT_ALLOC( privateData->symmetric_XXX );
+			RT_ASSERT( IV != NULL, "This mode need the initialization vector (IV)" );
+			err = ctr_start( cipherIndex, (unsigned char *)IV, (unsigned char *)key, keyLength, numRounds, CTR_COUNTER_LITTLE_ENDIAN, (symmetric_CTR *)privateData->symmetric_XXX );
+			break;
+		}
+		case mode_lrw: {
+			privateData->symmetric_XXX = malloc( sizeof(symmetric_LRW) );
+			RT_ASSERT_ALLOC( privateData->symmetric_XXX );
+			RT_ASSERT( IVLength > 0, "This mode need the initialization vector (IV)" );
+			RT_ASSERT_1( optargLength == keyLength, "The tweak length must be %d bytes length", keyLength );
+			err = lrw_start( cipherIndex, (unsigned char *)IV, (unsigned char *)key, keyLength, (unsigned char *)optarg, numRounds, (symmetric_LRW *)privateData->symmetric_XXX );
+			break;
+		}
+		case mode_f8: {
+			privateData->symmetric_XXX = malloc( sizeof(symmetric_F8) );
+			RT_ASSERT_ALLOC( privateData->symmetric_XXX );
+			RT_ASSERT( IVLength > 0, "This mode need the initialization vector (IV)" );
+			RT_ASSERT( optargLength > 0, "This mode need the salt argument" );
+			err = f8_start( cipherIndex, (unsigned char *)IV, (unsigned char *)key, keyLength, (unsigned char *)optarg, optargLength, numRounds, (symmetric_F8 *)privateData->symmetric_XXX );
+			break;
+		}
+	}
+	if (err != CRYPT_OK)
+		return ThrowCryptError(cx, err); // (TBD) free privateData and psctr
 	JS_SetPrivate( cx, obj, privateData );
-
 	return JS_TRUE;
 }
 
@@ -135,23 +216,34 @@ DEFINE_FUNCTION( Encrypt ) {
 
 	int err;
 	switch ( privateData->mode ) {
-
-		case mode_ctr:
-			if ( (err = ctr_encrypt( (const unsigned char *)pt, (unsigned char *)ct, ptLength, (symmetric_CTR *)privateData->symmetric_XXX )) != CRYPT_OK )
-				return ThrowCryptError(cx, err);
+		case mode_ecb:
+			err = ecb_encrypt( (const unsigned char *)pt, (unsigned char *)ct, ptLength, (symmetric_ECB *)privateData->symmetric_XXX );
 			break;
 		case mode_cfb:
-			if ( (err = cfb_encrypt( (const unsigned char *)pt, (unsigned char *)ct, ptLength, (symmetric_CFB *)privateData->symmetric_XXX )) != CRYPT_OK )
-				return ThrowCryptError(cx, err);
+			err = cfb_encrypt( (const unsigned char *)pt, (unsigned char *)ct, ptLength, (symmetric_CFB *)privateData->symmetric_XXX );
 			break;
-		default:
-			RT_ASSERT( false, "unsupported mode." );
+		case mode_ofb:
+			err = ofb_encrypt( (const unsigned char *)pt, (unsigned char *)ct, ptLength, (symmetric_OFB *)privateData->symmetric_XXX );
+			break;
+		case mode_cbc:
+			err = cbc_encrypt( (const unsigned char *)pt, (unsigned char *)ct, ptLength, (symmetric_CBC *)privateData->symmetric_XXX );
+			break;
+		case mode_ctr:
+			err = ctr_encrypt( (const unsigned char *)pt, (unsigned char *)ct, ptLength, (symmetric_CTR *)privateData->symmetric_XXX );
+			break;
+		case mode_lrw:
+			err = lrw_encrypt( (const unsigned char *)pt, (unsigned char *)ct, ptLength, (symmetric_LRW *)privateData->symmetric_XXX );
+			break;
+		case mode_f8:
+			err = f8_encrypt( (const unsigned char *)pt, (unsigned char *)ct, ptLength, (symmetric_F8 *)privateData->symmetric_XXX );
+			break;
 	}
+	if (err != CRYPT_OK)
+		return ThrowCryptError(cx, err);
 
 	JSString *jssCt = JS_NewString( cx, ct, ptLength );
-	RT_ASSERT( jssCt != NULL, "unable to create the cipher string." );
+	RT_ASSERT_ALLOC( jssCt );
 	*rval = STRING_TO_JSVAL(jssCt);
-
 	return JS_TRUE;
 }
 
@@ -172,23 +264,33 @@ DEFINE_FUNCTION( Decrypt ) {
 
 	int err;
 	switch ( privateData->mode ) {
-
-		case mode_ctr:
-			if ( (err = ctr_decrypt( (const unsigned char *)ct, (unsigned char *)pt, ctLength, (symmetric_CTR *)privateData->symmetric_XXX )) != CRYPT_OK )
-				return ThrowCryptError(cx, err);
+		case mode_ecb:
+			err = ecb_decrypt( (const unsigned char *)ct, (unsigned char *)pt, ctLength, (symmetric_ECB *)privateData->symmetric_XXX );
 			break;
 		case mode_cfb:
-			if ( (err = cfb_decrypt( (const unsigned char *)ct, (unsigned char *)pt, ctLength, (symmetric_CFB *)privateData->symmetric_XXX )) != CRYPT_OK )
-				return ThrowCryptError(cx, err);
+			err = cfb_decrypt( (const unsigned char *)ct, (unsigned char *)pt, ctLength, (symmetric_CFB *)privateData->symmetric_XXX );
 			break;
-		default:
-			RT_ASSERT( false, "unsupported mode." );
+		case mode_ofb:
+			err = ofb_decrypt( (const unsigned char *)ct, (unsigned char *)pt, ctLength, (symmetric_OFB *)privateData->symmetric_XXX );
+			break;
+		case mode_cbc:
+			err = cbc_decrypt( (const unsigned char *)ct, (unsigned char *)pt, ctLength, (symmetric_CBC *)privateData->symmetric_XXX );
+			break;
+		case mode_ctr:
+			err = ctr_decrypt( (const unsigned char *)ct, (unsigned char *)pt, ctLength, (symmetric_CTR *)privateData->symmetric_XXX );
+			break;
+		case mode_lrw:
+			err = lrw_decrypt( (const unsigned char *)ct, (unsigned char *)pt, ctLength, (symmetric_LRW *)privateData->symmetric_XXX );
+			break;
+		case mode_f8:
+			err = f8_decrypt( (const unsigned char *)ct, (unsigned char *)pt, ctLength, (symmetric_F8 *)privateData->symmetric_XXX );
+			break;
 	}
-
+	if (err != CRYPT_OK)
+		return ThrowCryptError(cx, err);
 	JSString *jssCt = JS_NewString( cx, pt, ctLength );
-	RT_ASSERT( jssCt != NULL, "unable to create the cipher string." );
+	RT_ASSERT_ALLOC( jssCt );
 	*rval = STRING_TO_JSVAL(jssCt);
-
 	return JS_TRUE;
 }
 
@@ -237,16 +339,56 @@ DEFINE_PROPERTY( IVSetter ) {
 
 	int err;
 	switch ( privateData->mode ) {
-		case mode_ctr:
-			if ( (err=ctr_setiv( (const unsigned char *)IV, IVLength, (symmetric_CTR *)privateData->symmetric_XXX )) != CRYPT_OK )
+		case mode_ecb:
+			REPORT_ERROR("No IV in ECB mode");
+		case mode_cfb: {
+			symmetric_CFB *tmp = (symmetric_CFB *)privateData->symmetric_XXX;
+			RT_ASSERT_1( IVLength == tmp->blocklen, "This cipher require a IV length of %d", tmp->blocklen );
+			err = cfb_setiv( (const unsigned char *)IV, IVLength, tmp );
+			if (err != CRYPT_OK)
 				return ThrowCryptError(cx, err);
 			break;
-		case mode_cfb:
-			if ( (err=cfb_setiv( (const unsigned char *)IV, IVLength, (symmetric_CFB *)privateData->symmetric_XXX )) != CRYPT_OK )
+		}
+		case mode_ofb: {
+			symmetric_OFB *tmp = (symmetric_OFB *)privateData->symmetric_XXX;
+			RT_ASSERT_1( IVLength == tmp->blocklen, "This cipher require a IV length of %d", tmp->blocklen );
+			err = ofb_setiv( (const unsigned char *)IV, IVLength, tmp );
+			if (err != CRYPT_OK)
 				return ThrowCryptError(cx, err);
 			break;
-		default:
-			RT_ASSERT( false, "unsupported mode." );
+		}
+		case mode_cbc: {
+			symmetric_CBC *tmp = (symmetric_CBC *)privateData->symmetric_XXX;
+			RT_ASSERT_1( IVLength == tmp->blocklen, "This cipher require a IV length of %d", tmp->blocklen );
+			err = cbc_setiv( (const unsigned char *)IV, IVLength, tmp );
+			if (err != CRYPT_OK)
+				return ThrowCryptError(cx, err);
+			break;
+		}
+		case mode_ctr: {
+			symmetric_CTR *tmp = (symmetric_CTR *)privateData->symmetric_XXX;
+			RT_ASSERT_1( IVLength == tmp->blocklen, "This cipher require a IV length of %d", tmp->blocklen );
+			err = ctr_setiv( (const unsigned char *)IV, IVLength, tmp );
+			if (err != CRYPT_OK)
+				return ThrowCryptError(cx, err);
+			break;
+		}
+		case mode_lrw: {
+			symmetric_LRW *tmp = (symmetric_LRW *)privateData->symmetric_XXX;
+			RT_ASSERT_1( IVLength == 16, "This cipher require a IV length of %d", 16 );
+			err = lrw_setiv( (const unsigned char *)IV, IVLength, tmp );
+			if (err != CRYPT_OK)
+				return ThrowCryptError(cx, err);
+			break;
+		}
+		case mode_f8: {
+			symmetric_F8 *tmp = (symmetric_F8 *)privateData->symmetric_XXX;
+			RT_ASSERT_1( IVLength == tmp->blocklen, "This cipher require a IV length of %d", tmp->blocklen );
+			err = f8_setiv( (const unsigned char *)IV, IVLength, tmp );
+			if (err != CRYPT_OK)
+				return ThrowCryptError(cx, err);
+			break;
+		}
 	}
 
 	return JS_TRUE;
@@ -264,32 +406,63 @@ DEFINE_PROPERTY( IVGetter ) {
 
 	int err;
 	switch ( privateData->mode ) {
-		case mode_ctr: {
-			symmetric_CTR *psctr = (symmetric_CTR *)privateData->symmetric_XXX;
-			IVLength = psctr->blocklen;
-			IV = (char*)JS_malloc( cx, IVLength );
-			RT_ASSERT_ALLOC( IV );
-			if ( (err=ctr_getiv( (unsigned char *)IV, &IVLength, psctr )) != CRYPT_OK )
-				return ThrowCryptError(cx, err);
-			break;
-		}
-		case mode_cfb: {
-			symmetric_CFB *psctr = (symmetric_CFB *)privateData->symmetric_XXX;
-			IVLength = psctr->blocklen;
-			IV = (char*)JS_malloc( cx, IVLength );
-			RT_ASSERT_ALLOC( IV );
-			if ( (err=cfb_getiv( (unsigned char *)IV, &IVLength, psctr )) != CRYPT_OK )
-				return ThrowCryptError(cx, err);
-			break;
-		}
-		default:
-			RT_ASSERT( false, "unsupported mode." );
-	}
 
-	JSString *jssIV = JS_NewString( cx, IV, IVLength );
+		case mode_ecb:
+			REPORT_ERROR("No IV in ECB mode");
+		case mode_cfb: {
+			symmetric_CFB *tmp = (symmetric_CFB *)privateData->symmetric_XXX;
+			IVLength = tmp->blocklen;
+			IV = (char*)JS_malloc( cx, IVLength );
+			RT_ASSERT_ALLOC( IV );
+			err = cfb_getiv( (unsigned char *)IV, &IVLength, tmp );
+			break;
+		}
+		case mode_ofb: {
+			symmetric_OFB *tmp = (symmetric_OFB *)privateData->symmetric_XXX;
+			IVLength = tmp->blocklen;
+			IV = (char*)JS_malloc( cx, IVLength );
+			RT_ASSERT_ALLOC( IV );
+			err = ofb_getiv( (unsigned char *)IV, &IVLength, tmp );
+			break;
+		}
+		case mode_cbc: {
+			symmetric_CBC *tmp = (symmetric_CBC *)privateData->symmetric_XXX;
+			IVLength = tmp->blocklen;
+			IV = (char*)JS_malloc( cx, IVLength );
+			RT_ASSERT_ALLOC( IV );
+			err = cbc_getiv( (unsigned char *)IV, &IVLength, tmp );
+			break;
+		}
+		case mode_ctr: {
+			symmetric_CTR *tmp = (symmetric_CTR *)privateData->symmetric_XXX;
+			IVLength = tmp->blocklen;
+			IV = (char*)JS_malloc( cx, IVLength );
+			RT_ASSERT_ALLOC( IV );
+			err = ctr_getiv( (unsigned char *)IV, &IVLength, tmp );
+			break;
+		}
+		case mode_lrw: {
+			symmetric_LRW *tmp = (symmetric_LRW *)privateData->symmetric_XXX;
+			IVLength = 16;
+			IV = (char*)JS_malloc( cx, IVLength );
+			RT_ASSERT_ALLOC( IV );
+			err = lrw_getiv( (unsigned char *)IV, &IVLength, tmp );
+			break;
+		}
+		case mode_f8: {
+			symmetric_F8 *tmp = (symmetric_F8 *)privateData->symmetric_XXX;
+			IVLength = tmp->blocklen;
+			IV = (char*)JS_malloc( cx, IVLength );
+			RT_ASSERT_ALLOC( IV );
+			err = f8_getiv( (unsigned char *)IV, &IVLength, tmp );
+			break;
+		}
+	}
+	if (err != CRYPT_OK)
+		return ThrowCryptError(cx, err);
+	JSString *jssIV = JS_NewString(cx, IV, IVLength);
 	RT_ASSERT( jssIV != NULL, "unable to create the IV string." );
 	*vp = STRING_TO_JSVAL(jssIV);
-
 	return JS_TRUE;
 }
 
