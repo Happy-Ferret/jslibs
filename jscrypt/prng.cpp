@@ -53,7 +53,6 @@ DEFINE_FUNCTION( Call ) {
 	JSString *randomString = JS_NewString( cx, pr, hasRead );
 	RT_ASSERT( randomString != NULL, "unable to create the random string." );
 	*rval = STRING_TO_JSVAL(randomString);
-
 	return JS_TRUE;
 }
 
@@ -78,12 +77,12 @@ DEFINE_CONSTRUCTOR() {
 	RT_ASSERT_1( privateData->prng.test() == CRYPT_OK, "%s prng test failed.", prngName );
 
 	int err;
-	if ( (err = privateData->prng.start( &privateData->state )) != CRYPT_OK )
+	err = privateData->prng.start( &privateData->state );
+	if (err != CRYPT_OK)
 		return ThrowCryptError(cx,err);
-
-	if ((err = privateData->prng.ready( &privateData->state )) != CRYPT_OK )
+	err = privateData->prng.ready( &privateData->state );
+	if (err != CRYPT_OK)
 		return ThrowCryptError(cx,err);
-
 	JS_SetPrivate( cx, obj, privateData );
 	return JS_TRUE;
 }
@@ -100,13 +99,13 @@ DEFINE_FUNCTION( AddEntropy ) {
 	int entropyLength;
 	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], entropy, entropyLength );
 
-	int prngError;
-	if ( (prngError = privateData->prng.add_entropy( (const unsigned char *)entropy, entropyLength, &privateData->state )) != CRYPT_OK )
-		return ThrowCryptError(cx, prngError);
-
-	if ((prngError = privateData->prng.ready( &privateData->state )) != CRYPT_OK )
-		return ThrowCryptError(cx, prngError);
-
+	int err;
+	err = privateData->prng.add_entropy( (const unsigned char *)entropy, entropyLength, &privateData->state );
+	if ( err != CRYPT_OK )
+		return ThrowCryptError(cx, err);
+	err = privateData->prng.ready(&privateData->state);
+	if (err != CRYPT_OK)
+		return ThrowCryptError(cx, err);
 	return JS_TRUE;
 }
 
@@ -117,25 +116,78 @@ DEFINE_FUNCTION( AutoEntropy ) {
 	RT_ASSERT_CLASS( obj, _class );
 	PrngPrivate *privateData = (PrngPrivate *)JS_GetPrivate( cx, obj );
 	RT_ASSERT( privateData != NULL, RT_ERROR_NOT_INITIALIZED );
-
 	int32 bits;
 	RT_JSVAL_TO_INT32( argv[0], bits );
-	rng_make_prng( bits, find_prng(privateData->prng.name), &privateData->state, NULL );
-
+	int err = rng_make_prng( bits, find_prng(privateData->prng.name), &privateData->state, NULL );
+	if ( err != CRYPT_OK )
+		return ThrowCryptError(cx, err);
 	return JS_TRUE;
 }
 
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+DEFINE_PROPERTY( stateGetter ) {
+
+	RT_ASSERT_CLASS( obj, _class );
+	PrngPrivate *privateData = (PrngPrivate *)JS_GetPrivate( cx, obj );
+	RT_ASSERT( privateData != NULL, RT_ERROR_NOT_INITIALIZED );
+	unsigned long size = privateData->prng.export_size;
+	char *stateData = (char*)JS_malloc(cx, size);
+	unsigned long stateLength = size;
+	int err = privateData->prng.pexport((unsigned char *)stateData, &stateLength, &privateData->state);
+	if ( err != CRYPT_OK )
+		return ThrowCryptError(cx, err);
+	RT_ASSERT( stateLength == size, "Invalid export size." );
+	*vp = STRING_TO_JSVAL( JS_NewString(cx, stateData, size) );
+	return JS_TRUE;
+}
+
+
+DEFINE_PROPERTY( stateSetter ) {
+
+	RT_ASSERT_CLASS( obj, _class );
+	PrngPrivate *privateData = (PrngPrivate *)JS_GetPrivate( cx, obj );
+	RT_ASSERT( privateData != NULL, RT_ERROR_NOT_INITIALIZED );
+	char *stateData;
+	int stateLength;
+	RT_JSVAL_TO_STRING_AND_LENGTH( *vp, stateData, stateLength );
+	RT_ASSERT( stateLength == privateData->prng.export_size, "Invalid import size." );
+	int err = privateData->prng.pimport((unsigned char *)stateData, stateLength, &privateData->state);
+	if ( err != CRYPT_OK )
+		return ThrowCryptError(cx, err);
+	return JS_TRUE;
+}
+
+
+
 DEFINE_PROPERTY( name ) {
 
 	RT_ASSERT_CLASS( obj, _class );
 	PrngPrivate *privateData = (PrngPrivate *)JS_GetPrivate( cx, obj );
 	RT_ASSERT( privateData != NULL, RT_ERROR_NOT_INITIALIZED );
-
 	*vp = STRING_TO_JSVAL( JS_NewStringCopyZ(cx,privateData->prng.name) );
 	return JS_TRUE;
 }
+
+DEFINE_PROPERTY( list ) {
+
+	JSObject *list = JS_NewObject( cx, NULL, NULL, NULL );
+	RT_ASSERT_ALLOC( list );
+
+	const char *name;
+	int i;
+	LTC_MUTEX_LOCK(&ltc_prng_mutex);
+	for (i=0; i<TAB_SIZE; i++)
+		if ( prng_is_valid(i) ) {
+
+			jsval value = JSVAL_ONE;
+			JS_SetProperty( cx, list, name, &value );
+		}
+	LTC_MUTEX_UNLOCK(&ltc_prng_mutex);
+
+	*vp = OBJECT_TO_JSVAL(list);
+	return JS_TRUE;
+}
+
 
 
 CONFIGURE_CLASS
@@ -151,15 +203,14 @@ CONFIGURE_CLASS
 
 	BEGIN_PROPERTY_SPEC
 		PROPERTY_READ( name )
-//		PROPERTY_READ( blockSize )
-//		PROPERTY_READ( length )
+		PROPERTY( state )
 	END_PROPERTY_SPEC
 
 	BEGIN_STATIC_FUNCTION_SPEC
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC
-//		PROPERTY_READ( list )
+		PROPERTY_READ( list )
 	END_STATIC_PROPERTY_SPEC
 
 	HAS_PRIVATE

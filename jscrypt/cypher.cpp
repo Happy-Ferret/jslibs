@@ -31,9 +31,7 @@ struct CypherPrivate {
 };
 
 
-
 BEGIN_CLASS( Cypher )
-
 
 DEFINE_FINALIZE() {
 
@@ -77,6 +75,15 @@ DEFINE_CONSTRUCTOR() {
 	int IVLength;
 	RT_JSVAL_TO_STRING_AND_LENGTH( argv[3], IV, IVLength );
 
+   int numRounds;
+	if ( argc >= 5 ) {
+
+		RT_JSVAL_TO_INT32( numRounds, argv[4] );
+	} else {
+		
+		numRounds = 0;
+	}
+
 	CypherPrivate *privateData = (CypherPrivate*)malloc( sizeof(CypherPrivate) );
 	RT_ASSERT_ALLOC( privateData );
 
@@ -95,7 +102,7 @@ DEFINE_CONSTRUCTOR() {
 		privateData->mode = mode_ctr;
 		symmetric_CTR *psctr = (symmetric_CTR *)malloc( sizeof(symmetric_CTR) );
 		RT_ASSERT_ALLOC( psctr );
-		if ((err = ctr_start( cipherIndex, (const unsigned char *)IV, (const unsigned char *)key, keyLength, 0, CTR_COUNTER_LITTLE_ENDIAN, psctr )) != CRYPT_OK)
+		if ((err = ctr_start( cipherIndex, (const unsigned char *)IV, (const unsigned char *)key, keyLength, numRounds, CTR_COUNTER_LITTLE_ENDIAN, psctr )) != CRYPT_OK)
 			return ThrowCryptError(cx, err); // (TBD) free privateData and psctr
 		privateData->symmetric_XXX = psctr;
 	} else if ( strcasecmp( modeName, MODE_CFB ) == 0 ) {
@@ -103,7 +110,7 @@ DEFINE_CONSTRUCTOR() {
 		privateData->mode = mode_cfb;
 		symmetric_CFB *symmetric_XXX = (symmetric_CFB *)malloc( sizeof(symmetric_CFB) );
 		RT_ASSERT_ALLOC( symmetric_XXX );
-		if ((err = cfb_start( cipherIndex, (const unsigned char *)IV, (const unsigned char *)key, keyLength, 0, symmetric_XXX )) != CRYPT_OK)
+		if ((err = cfb_start( cipherIndex, (const unsigned char *)IV, (const unsigned char *)key, keyLength, numRounds, symmetric_XXX )) != CRYPT_OK)
 			return ThrowCryptError(cx, err); // (TBD) free privateData and psctr
 		privateData->symmetric_XXX = symmetric_XXX;
 	} else
@@ -298,13 +305,13 @@ DEFINE_PROPERTY( list ) {
 
 	const char *cipherName;
 	int keySize;
-	int x;
+	int i;
 	LTC_MUTEX_LOCK(&ltc_cipher_mutex);
-	for (x = 0; x < TAB_SIZE; x++)
-		if ( (cipherName = cipher_descriptor[x].name) != NULL) {
+	for (i=0; i<TAB_SIZE; i++)
+		if ( cipher_is_valid(i) ) {
 		  //JS_DefineProperty(cx, list, cipherName, JSVAL_TRUE, NULL, NULL, 0);
 			keySize = INT_MAX;
-			cipher_descriptor[x].keysize(&keySize);
+			cipher_descriptor[i].keysize(&keySize);
 			jsval value = INT_TO_JSVAL( keySize );
 			JS_SetProperty( cx, list, cipherName, &value );
 		}

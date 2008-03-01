@@ -228,13 +228,13 @@ DEFINE_PROPERTY( list ) {
 	RT_ASSERT( list != NULL, "unable to create hash list." );
 
 	const char *hashName;
-	int x;
+	int i;
 	LTC_MUTEX_LOCK(&ltc_hash_mutex);
-	for (x = 0; x < TAB_SIZE; x++)
-		if ( (hashName = hash_descriptor[x].name) != NULL) {
+	for (i=0; i<TAB_SIZE; i++)
+		if ( hash_is_valid(i) ) {
 
 		  //JS_DefineProperty(cx, list, hashName, JSVAL_TRUE, NULL, NULL, 0);
-			jsval value = INT_TO_JSVAL( hash_descriptor[x].hashsize );
+			jsval value = INT_TO_JSVAL( hash_descriptor[i].hashsize );
 			JS_SetProperty( cx, list, hashName, &value );
 		}
 	LTC_MUTEX_UNLOCK(&ltc_hash_mutex);
