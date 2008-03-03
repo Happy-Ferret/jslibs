@@ -234,7 +234,7 @@ DEFINE_PROPERTY( list ) {
 
 				JSObject *desc = JS_NewObject( cx, NULL, NULL, NULL );
 				value = OBJECT_TO_JSVAL(desc);
-				JS_SetProperty( cx, list, cipher_descriptor[i].name, &value );
+				JS_SetProperty( cx, list, hash_descriptor[i].name, &value );
 
 				value = INT_TO_JSVAL( hash_descriptor[i].hashsize );
 				JS_SetProperty( cx, desc, "hashSize", &value );

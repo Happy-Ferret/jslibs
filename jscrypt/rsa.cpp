@@ -52,22 +52,27 @@ DEFINE_FUNCTION( CreateKeys ) {
 	RT_ASSERT_ARGC( 2 );
 	RT_ASSERT_CLASS( obj, _class );
 
-	JSObject *objPrng JSVAL_TO_OBJECT(argv[0]);
-	RT_ASSERT_CLASS( objPrng, &classPrng );
+	prng_state *prngState;
+	int prngIndex;
 
-	PrngPrivate *prngPrivate = (PrngPrivate *)JS_GetPrivate( cx, objPrng );
-	RT_ASSERT( prngPrivate != NULL, "invalid prng." );
+	RT_ASSERT( JSVAL_IS_OBJECT(argv[0]) && JS_GET_CLASS(cx, JSVAL_TO_OBJECT(argv[0])) == &classPrng, "First argument must ba an initialized prng." );
+
+	JSObject *objPrng = JSVAL_TO_OBJECT(argv[0]);
+	PrngPrivate *prngPrivate = (PrngPrivate *)JS_GetPrivate(cx, objPrng);
+	RT_ASSERT_RESOURCE( prngPrivate );
+	prngIndex = find_prng(prngPrivate->prng.name); // needed !
+	prngState = &prngPrivate->state;
 
 	int32 keySize;
 	RT_JSVAL_TO_INT32( argv[1], keySize );
 
-	int prngIndex = find_prng(prngPrivate->prng.name);
-	RT_ASSERT_1( prngIndex != -1, "prng %s is not available", prngPrivate->prng.name );
-
 	RsaPrivate *rsaPrivate = (RsaPrivate *)JS_GetPrivate(cx, obj);
 
 	int e = 65537; // typical values are 3, 17, 257 and 65537
-	int err = rsa_make_key( &prngPrivate->state, prngIndex, keySize/8, e, &rsaPrivate->key );
+	int err = rsa_make_key( prngState, prngIndex, keySize/8, e, &rsaPrivate->key );
+
+//	int err = ecc_make_key( prngState, prngIndex, keySize/8, e, &rsaPrivate->key );
+
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err); // (TBD) should free rsaPrivate or Finalize is called ?
 
@@ -85,7 +90,6 @@ DEFINE_FUNCTION( Encrypt ) {
 
 	prng_state *prngState;
 	int prngIndex;
-
 	if ( JSVAL_IS_OBJECT(argv[0]) && JS_GET_CLASS(cx, JSVAL_TO_OBJECT(argv[0])) == &classPrng ) {
 
 		JSObject *objPrng = JSVAL_TO_OBJECT(argv[0]);
@@ -107,12 +111,12 @@ DEFINE_FUNCTION( Encrypt ) {
 	int hashIndex = find_hash(hashName);
 	RT_ASSERT_1( hashIndex != -1, "hash %s is not available", hashName );
 
-
 	char *in;
 	int inLength;
 	RT_JSVAL_TO_STRING_AND_LENGTH( argv[2], in, inLength );
 
-	unsigned long outLength = inLength + mp_unsigned_bin_size((mp_int*)privateData->key.N) - hash_descriptor[hashIndex].hashsize - 2; // length = message + (modulus length - 2 * hash size - 2)
+	// length = message + (modulus length - 2 * hash size - 2)
+	unsigned long outLength = inLength + (mp_unsigned_bin_size((mp_int*)privateData->key.N) - 2 * hash_descriptor[hashIndex].hashsize - 2);
 
 	char *out = (char *)JS_malloc( cx, outLength );
 	RT_ASSERT_ALLOC( out );
@@ -123,7 +127,7 @@ DEFINE_FUNCTION( Encrypt ) {
 	unsigned long lparamlen = 0;
 
 	int err;
-	err = rsa_encrypt_key( (const unsigned char *)in, inLength, (unsigned char *)out, &outLength, lparam, lparamlen, prngState, prngIndex, hashIndex, &privateData->key );
+	err = rsa_encrypt_key( (const unsigned char *)in, inLength, (unsigned char *)out, &outLength, lparam, lparamlen, prngState, prngIndex, hashIndex, &privateData->key ); //	ltc_mp.rsa_me()
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err); // (TBD) free rsaPrivate ?
 
@@ -201,7 +205,8 @@ DEFINE_PROPERTY( keySetter ) {
 	RT_JSVAL_TO_STRING_AND_LENGTH( *vp, key, keyLength );
 
 	int err;
-	if ( (err=rsa_import( (const unsigned char *)key, keyLength, &privateData->key )) != CRYPT_OK )
+	err = rsa_import( (const unsigned char *)key, keyLength, &privateData->key );
+	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err); // (TBD) free rsaPrivate ?
 
 	return JS_TRUE;
@@ -217,13 +222,14 @@ DEFINE_PROPERTY( keyGetter ) {
 	JSBool jsErr;
 	int32 type;
 	jsErr = JS_ValueToInt32( cx, id, &type );
-	RT_ASSERT( jsErr == JS_TRUE, "unable to get what to do." );
+	RT_ASSERT( jsErr == JS_TRUE, "Invalid operation." );
 
 	char key[4096];
 	unsigned long keyLength = sizeof(key);
 
 	int err;
-	if ( (err=rsa_export( (unsigned char *)key, &keyLength, type, &privateData->key )) != CRYPT_OK )
+	err = rsa_export( (unsigned char *)key, &keyLength, type, &privateData->key );
+	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err); // (TBD) free rsaPrivate ?
 
 	JSString *jssKey = JS_NewStringCopyN( cx, key, keyLength );
@@ -232,6 +238,19 @@ DEFINE_PROPERTY( keyGetter ) {
 
 	return JS_TRUE;
 }
+
+
+/*
+DEFINE_PROPERTY( blockLength ) {
+
+	RT_ASSERT_CLASS( obj, _class );
+	RsaPrivate *privateData = (RsaPrivate *)JS_GetPrivate( cx, obj );
+	RT_ASSERT( privateData != NULL, RT_ERROR_NOT_INITIALIZED );
+
+//	*vp = INT_TO_JSVAL( privateData->key.type );
+	return JS_TRUE;
+}
+*/
 
 enum {
 	privateKey = PK_PRIVATE,
@@ -247,11 +266,14 @@ CONFIGURE_CLASS
 		FUNCTION( CreateKeys )
 		FUNCTION( Encrypt )
 		FUNCTION( Decrypt )
+//		FUNCTION( CreateSignature )
+//		FUNCTION( VerifySignature )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
 		PROPERTY_SWITCH( privateKey, key )
 		PROPERTY_SWITCH( publicKey, key )
+//		PROPERTY_READ( blockLength )
 	END_PROPERTY_SPEC
 
 	BEGIN_STATIC_FUNCTION_SPEC
