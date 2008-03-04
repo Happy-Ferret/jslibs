@@ -180,6 +180,10 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
+				RelativePath=".\asymmetricCipher.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\cipher.cpp"
 				>
 			</File>
@@ -201,10 +205,6 @@
 			</File>
 			<File
 				RelativePath=".\prng.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\rsa.cpp"
 				>
 			</File>
 			<File
@@ -234,6 +234,10 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
+				RelativePath=".\asymmetricCipher.h"
+				>
+			</File>
+			<File
 				RelativePath=".\cipher.h"
 				>
 			</File>
@@ -251,10 +255,6 @@
 			</File>
 			<File
 				RelativePath=".\prng.h"
-				>
-			</File>
-			<File
-				RelativePath=".\rsa.h"
 				>
 			</File>
 			<File

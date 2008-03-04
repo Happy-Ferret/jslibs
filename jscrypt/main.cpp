@@ -17,7 +17,9 @@
 
 #include "misc.h"
 
-#include "rsa.h"
+//#include "rsa.h"
+#include "asymmetricCipher.h"
+
 #include "prng.h"
 #include "hash.h"
 #include "cipher.h"
@@ -88,7 +90,7 @@ extern "C" DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
 	INIT_STATIC();
 	INIT_CLASS( CryptError );
-	INIT_CLASS( Rsa );
+	INIT_CLASS( AsymmetricCipher );
 	INIT_CLASS( Cipher );
 	INIT_CLASS( Prng );
 	INIT_CLASS( Hash );

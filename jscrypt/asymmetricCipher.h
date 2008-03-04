@@ -12,12 +12,14 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-#ifndef RSA_H_
-#define RSA_H_
+#ifndef ASYMMETRIC_CIPHER_H_
+#define ASYMMETRIC_CIPHER_H_
 
-#include <tomcrypt.h>
+#define RSA_SIGN_DEFAULT_SALT_LENGTH 16
 
-DECLARE_CLASS( Rsa );
 
-#endif // RSA_H_
+#define ASYMMETRIC_CIPHER_PRNG_SLOT 0
 
+DECLARE_CLASS( AsymmetricCipher )
+
+#endif // ASYMMETRIC_CIPHER_H_
