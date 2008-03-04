@@ -23,6 +23,40 @@ var cr = new Cipher('CFB', "cast5", "my  key of  16B ", IV );
 Print( cr.Decrypt(encryptedText) );
 Print( '\n' );
 
+function createString(count) {
+
+	var s = '';
+	while (s.length < count)
+		s += 'x';
+	return s;
+}
+
+
+var fortuna = new Prng('fortuna');
+fortuna.AutoEntropy(123); // give more entropy
+
+//Alice
+var alice = new AsymmetricCipher('dsa', 'sha1', fortuna);
+alice.CreateKeys(128);
+
+var publicKey = alice.publicKey;
+
+//Bob
+var bob = new AsymmetricCipher('dsa', 'sha1', fortuna);
+bob.publicKey = publicKey;
+Print('blockLength = '+bob.blockLength, '\n' );
+Print('keySize = '+bob.keySize, '\n' );
+
+
+var encryptedData = bob.Encrypt(createString(bob.blockLength));
+Print('OK!\n');
+var encryptedData = bob.Encrypt(createString(bob.blockLength)+'z');
+
+
+//Alice
+Print( alice.Decrypt(encryptedData), '\n' );
+
+
 
 Halt();
 

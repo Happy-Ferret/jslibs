@@ -30,10 +30,11 @@ DEFINE_FUNCTION( Base64Encode ) {
 	unsigned long outLength = 4 * ((inLength + 2) / 3) +1;
 	char *out = (char *)JS_malloc( cx, outLength +1 );
 	out[outLength] = '\0';
-	RT_ASSERT( out != NULL, RT_ERROR_OUT_OF_MEMORY );
+	RT_ASSERT_ALLOC( out );
 
 	int err;
-	if ( (err=base64_encode( (const unsigned char *)in, inLength, (unsigned char *)out, &outLength )) != CRYPT_OK )
+	err = base64_encode( (const unsigned char *)in, inLength, (unsigned char *)out, &outLength );
+	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err);
 
 	JSString *jssOutData = JS_NewString( cx, out, outLength );
@@ -53,11 +54,13 @@ DEFINE_FUNCTION( Base64Decode ) {
 	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], in, inLength );
 
 	unsigned long outLength = 3 * (inLength-2) / 4 +1;
-	char *out = (char *)JS_malloc( cx, outLength );
-	RT_ASSERT( out != NULL, RT_ERROR_OUT_OF_MEMORY );
+	char *out = (char *)JS_malloc(cx, outLength +1);
+	RT_ASSERT_ALLOC( out );
+	out[outLength] = '\0';
 
 	int err;
-	if ( (err=base64_decode( (const unsigned char *)in, inLength, (unsigned char *)out, &outLength )) != CRYPT_OK )
+	err = base64_decode( (const unsigned char *)in, inLength, (unsigned char *)out, &outLength );
+	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err);
 
 	JSString *jssOutData = JS_NewString( cx, out, outLength );
@@ -81,9 +84,9 @@ DEFINE_FUNCTION( HexEncode ) {
 	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], in, inLength );
 
 	unsigned long outLength = inLength * 2;
-	char *out = (char *)JS_malloc( cx, outLength +1 );
+	char *out = (char *)JS_malloc(cx, outLength +1);
+	RT_ASSERT_ALLOC( out );
 	out[outLength] = '\0';
-	RT_ASSERT( out != NULL, RT_ERROR_OUT_OF_MEMORY );
 
 	unsigned char c;
 	for ( int i=0; i<inLength; ++i ) {
@@ -123,8 +126,9 @@ DEFINE_FUNCTION( HexDecode ) {
 	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], in, inLength );
 
 	unsigned long outLength = inLength / 2;
-	char *out = (char *)JS_malloc( cx, outLength );
-	RT_ASSERT( out != NULL, RT_ERROR_OUT_OF_MEMORY );
+	char *out = (char *)JS_malloc(cx, outLength +1);
+	RT_ASSERT_ALLOC( out );
+	out[outLength] = '\0';
 
 	for ( unsigned long i=0; i<outLength; ++i )
 		out[i] = unhex[ (unsigned char)in[i*2] ] << 4 | unhex[ (unsigned char)in[i*2+1] ];

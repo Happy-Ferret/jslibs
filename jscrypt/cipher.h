@@ -12,9 +12,9 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-#ifndef CRYPT_H_
-#define CRYPT_H_
+#ifndef CIPHER_H_
+#define CIPHER_H_
 
 DECLARE_CLASS( Cipher )
 
-#endif // CRYPT_H_
+#endif // CIPHER_H_
