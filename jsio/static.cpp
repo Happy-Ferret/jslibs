@@ -134,6 +134,8 @@ DEFINE_FUNCTION( Poll ) {
 					if ( JS_CallFunctionValue( cx, fdObj, prop, sizeof(cbArgv)/sizeof(jsval), cbArgv, &ret ) == JS_FALSE ) // JS_CallFunction() DO NOT WORK !!!
 						goto failed;
 			}
+			if (JS_IsExceptionPending(cx))
+				goto failed;
 
 			if ( outFlag & PR_POLL_EXCEPT ) {
 
@@ -142,6 +144,8 @@ DEFINE_FUNCTION( Poll ) {
 					if ( JS_CallFunctionValue( cx, fdObj, prop, sizeof(cbArgv)/sizeof(jsval), cbArgv, &ret ) == JS_FALSE ) // JS_CallFunction() DO NOT WORK !!!
 						goto failed;
 			}
+			if (JS_IsExceptionPending(cx))
+				goto failed;
 
 			if ( outFlag & PR_POLL_HUP ) {
 				
@@ -150,6 +154,8 @@ DEFINE_FUNCTION( Poll ) {
 					if ( JS_CallFunctionValue( cx, fdObj, prop, sizeof(cbArgv)/sizeof(jsval), cbArgv, &ret ) == JS_FALSE ) // JS_CallFunction() DO NOT WORK !!!
 						goto failed;
 			}
+			if (JS_IsExceptionPending(cx))
+				goto failed;
 
 			if ( outFlag & PR_POLL_READ ) {
 				
@@ -158,6 +164,8 @@ DEFINE_FUNCTION( Poll ) {
 					if ( JS_CallFunctionValue( cx, fdObj, prop, sizeof(cbArgv)/sizeof(jsval), cbArgv, &ret ) == JS_FALSE ) // JS_CallFunction() DO NOT WORK !!!
 						goto failed;
 			}
+			if (JS_IsExceptionPending(cx))
+				goto failed;
 
 			if ( outFlag & PR_POLL_WRITE ) {
 			
@@ -166,6 +174,9 @@ DEFINE_FUNCTION( Poll ) {
 					if ( JS_CallFunctionValue( cx, fdObj, prop, sizeof(cbArgv)/sizeof(jsval), cbArgv, &ret ) == JS_FALSE ) // JS_CallFunction() DO NOT WORK !!!
 						goto failed;
 			}
+			if (JS_IsExceptionPending(cx))
+				goto failed;
+
 		}
 	}
 
