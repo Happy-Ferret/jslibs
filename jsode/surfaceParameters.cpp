@@ -39,55 +39,79 @@ DEFINE_CONSTRUCTOR() {
 	return JS_TRUE;
 }
 
+#define SETBIT(value, mask, polarity) ((value) = (polarity) ? (value) | (mask) : (value) & ~(mask) )
 
 enum { mu, mu2, bounce, bounceVel, softERP, softCFM, motion1, motion2, slip1, slip2 };
 
 DEFINE_PROPERTY_NULL( surfaceGetter )
+
 DEFINE_PROPERTY( surfaceSetter ) {
 
 	ode::dSurfaceParameters *surface = (ode::dSurfaceParameters*)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(surface); // (TBD) check if NULL is meaningful for joints !
 	RT_ASSERT_NUMBER( *vp );
-	ode::dReal value = JSValToODEReal(cx, *vp);
+	
+	ode::dReal value;
+	bool set;
+	if ( *vp == JSVAL_VOID ) {
+
+		set = true;
+	} else {
+
+		set = false;
+		value = JSValToODEReal(cx, *vp);
+	}
+	
 	switch(JSVAL_TO_INT(id)) {
 		case mu:
-			surface->mu = value;
+			if ( set )
+				surface->mu = value;
+			else
+				surface->mu = dInfinity;
 			break;
 		case mu2:
-			surface->mode |= ode::dContactMu2;
-			surface->mu2 = value;
+			SETBIT( surface->mode, ode::dContactMu2, set );
+			if ( set )
+				surface->mu2 = value;
 			break;
 		case bounce:
-			surface->mode |= ode::dContactBounce;
-			surface->bounce = value;
+			SETBIT( surface->mode, ode::dContactBounce, set );
+			if ( set )
+				surface->bounce = value;
 			break;
 		case bounceVel:
-			surface->mode |= ode::dContactBounce;
-			surface->bounce_vel = value;
+			SETBIT( surface->mode, ode::dContactBounce, set );
+			if ( set )
+				surface->bounce_vel = value;
 			break;
 		case softERP:
-			surface->mode |= ode::dContactSoftERP;
-			surface->soft_erp = value;
+			SETBIT( surface->mode, ode::dContactSoftERP, set );
+			if ( set )
+				surface->soft_erp = value;
 			break;
 		case softCFM:
-			surface->mode |= ode::dContactSoftCFM;
-			surface->soft_cfm = value;
+			SETBIT( surface->mode, ode::dContactSoftCFM, set );
+			if ( set )
+				surface->soft_cfm = value;
 			break;
 		case motion1:
-			surface->mode |= ode::dContactMotion1;
-			surface->motion1 = value;
+			SETBIT( surface->mode, ode::dContactMotion1, set );
+			if ( set )
+				surface->motion1 = value;
 			break;
 		case motion2:
-			surface->mode |= ode::dContactMotion2;
-			surface->motion2 = value;
-			break;
+			SETBIT( surface->mode, ode::dContactMotion2, set );
+			if ( set )
+				surface->motion2 = value;
 		case slip1:
-			surface->mode |= ode::dContactSlip1;
-			surface->slip1 = value;
+			SETBIT( surface->mode, ode::dContactSlip1, set );
+			if ( set )
+				surface->slip1 = value;
 			break;
 		case slip2:
-			surface->mode |= ode::dContactSlip2;
-			surface->slip2 = value;
+			SETBIT( surface->mode, ode::dContactSlip2, set );
+			if ( set )
+				surface->slip2 = value;
 			break;
 	}
 // Doc: http://opende.sourceforge.net/wiki/index.php/Manual_%28Joint_Types_and_Functions%29#Contact

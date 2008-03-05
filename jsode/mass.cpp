@@ -39,7 +39,7 @@ DEFINE_FUNCTION( Translate ) {
 	ode::dMass mass;
 	RT_CHECK_CALL( GetBodyAndMass(cx, obj, &bodyID, &mass) );
 	real translation[3];
-	RT_CHECK_CALL(  FloatArrayToVector(cx, 3, &argv[0], translation) );
+	RT_CHECK_CALL( FloatArrayToVector(cx, 3, &argv[0], translation) );
 	ode::dMassTranslate(&mass, translation[0], translation[1], translation[2]);
 	ode::dBodySetMass(bodyID, &mass);
 	return JS_TRUE;
@@ -144,6 +144,7 @@ CONFIGURE_CLASS
 		FUNCTION( Translate )
 		FUNCTION( Adjust )
 		FUNCTION( SetBoxTotal )
+		FUNCTION( SetZero )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC

@@ -30,10 +30,32 @@ DEFINE_CONSTRUCTOR() {
 	return JS_TRUE;
 }
 
+// dJointSetPlane2DXParam
+// dJointSetPlane2DYParam
+// dJointSetPlane2DAngleParam
+
+//dParamFMax
+/*
+DEFINE_PROPERTY( x ) {
+
+	ode::dJointID jointId = (ode::dJointID)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE(jointId);
+
+	ode::dJointSetPlane2DXParam( jointId, 
+
+	return JS_TRUE;
+}
+*/
 
 CONFIGURE_CLASS
 
 	HAS_CONSTRUCTOR
+
+	BEGIN_PROPERTY_SPEC
+//		PROPERTY_WRITE_STORE( x )
+//		PROPERTY_WRITE_STORE( y )
+//		PROPERTY_WRITE_STORE( angle )
+	END_PROPERTY_SPEC
 
 	HAS_PROTOTYPE( prototypeJoint )
 	HAS_PRIVATE
