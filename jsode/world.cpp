@@ -104,7 +104,6 @@ static void nearCallback(void *data, ode::dGeomID o1, ode::dGeomID o2) {
 					JS_CallFunctionValue( cx, obj1, func1, sizeof(argv)/sizeof(*argv), argv, &rval); // JS_CallFunction() DO NOT WORK !!!
 				}
 
-
 				if ( func2 != JSVAL_VOID ) {
 
 					jsval rval, argv[] = { INT_TO_JSVAL(i), OBJECT_TO_JSVAL(obj2), obj1 ? OBJECT_TO_JSVAL(obj1) : JSVAL_VOID, pos }; // INT_TO_JSVAL(vel[0]), INT_TO_JSVAL(vel[1]), INT_TO_JSVAL(vel[2])
@@ -209,7 +208,7 @@ DEFINE_FUNCTION( Step ) {
 //	ode::dJointGroupID contactgroup = (ode::dJointGroupID)JSVAL_TO_PRIVATE(val);
 	ode::dJointGroupID contactgroup = ode::dJointGroupCreate(0);
 
-	ColideContextPrivate ccp = { cx, defaultSurfaceParameters, contactgroup, worldID };
+	ColideContextPrivate ccp = { cx, defaultSurfaceParameters, contactgroup, worldID };  // the context will only be used while the worls step.
 	ode::dSpaceCollide(spaceId, (void*)&ccp, &nearCallback);
 
 	// (TBD) see dWorldSetQuickStepW and dWorldSetAutoEnableDepthSF1
