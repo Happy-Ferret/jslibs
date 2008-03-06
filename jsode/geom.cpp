@@ -179,14 +179,6 @@ DEFINE_PROPERTY( positionSetter ) {
 
 
 /*
-DEFINE_FUNCTION( ClearOffset ) {
-
-	ode::dGeomID geom = (ode::dGeomID)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE( geom );
-	ode::dGeomClearOffset(geom);
-	return JS_TRUE;
-}
-
 
 DEFINE_PROPERTY( offsetPositionGetter ) {
 
@@ -214,7 +206,6 @@ CONFIGURE_CLASS
 
 	BEGIN_FUNCTION_SPEC
 		FUNCTION( Destroy )
-//		FUNCTION( ClearOffset )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC

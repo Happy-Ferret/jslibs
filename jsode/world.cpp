@@ -32,7 +32,7 @@ struct ColideContextPrivate {
 //	int contactCount;
 };
 
-static void nearCallback (void *data, ode::dGeomID o1, ode::dGeomID o2) {
+static void nearCallback(void *data, ode::dGeomID o1, ode::dGeomID o2) {
 
 	// Doc: http://opende.sourceforge.net/wiki/index.php/Manual_%28Joint_Types_and_Functions%29
 	ColideContextPrivate *ccp = (ColideContextPrivate*)data; // beware: *data is local to Step function
@@ -124,7 +124,7 @@ static void nearCallback (void *data, ode::dGeomID o1, ode::dGeomID o2) {
 			//dReal motion1,motion2;	// add
 			//dReal slip1,slip2;	// ?
 
-			ode::dJointID c = ode::dJointCreateContact(ccp->worldId,ccp->contactGroupId,&contact[i]);
+			ode::dJointID c = ode::dJointCreateContact(ccp->worldId, ccp->contactGroupId, &contact[i]);
 			ode::dJointAttach(c, dGeomGetBody(contact[i].geom.g1), dGeomGetBody(contact[i].geom.g2));
 		}
 	}
@@ -224,7 +224,7 @@ DEFINE_FUNCTION( Step ) {
 	}
 	ode::dJointGroupDestroy(contactgroup); // dJointGroupEmpty calls dJointGroupEmpty
 
-	if (JS_IsExceptionPending(cx)) // need JS_ErrorFromException(...) ??
+	if (JS_IsExceptionPending(cx)) // an exception may be throw in geom.impact
 		return JS_FALSE;
 
 	return JS_TRUE;
