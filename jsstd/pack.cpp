@@ -110,9 +110,9 @@ DEFINE_CONSTRUCTOR() {
 
 	RT_ASSERT_CONSTRUCTING( _class );
 	RT_ASSERT_ARGC( 1 );
-	RT_ASSERT_OBJECT( argv[0] );
-	RT_ASSERT_CLASS( JSVAL_TO_OBJECT( argv[0] ), &classBuffer );
-	RT_CHECK_CALL( JS_SetReservedSlot(cx, obj, SLOT_PACK_BUFFEROBJECT, argv[0]) );
+	RT_ASSERT_OBJECT( J_ARG(1) );
+	RT_ASSERT_CLASS( JSVAL_TO_OBJECT( J_ARG(1) ), &classBuffer );
+	RT_CHECK_CALL( JS_SetReservedSlot(cx, obj, SLOT_PACK_BUFFEROBJECT, J_ARG(1)) );
 	return JS_TRUE;
 }
 
@@ -127,17 +127,17 @@ DEFINE_FUNCTION( ReadInt ) {
 	JSObject *bufferObject = JSVAL_TO_OBJECT( bufferVal );
 
 	size_t size;
-	RT_JSVAL_TO_INT32( argv[0], size );
+	RT_JSVAL_TO_INT32( J_ARG(1), size );
 	
 	bool isSigned;
-	if ( argc >= 2 )
-		RT_JSVAL_TO_BOOL( argv[1], isSigned );
+	if ( J_ARG_ISDEF(2) )
+		RT_JSVAL_TO_BOOL( J_ARG(2), isSigned );
 	else
 		isSigned = false;
 	
 	bool netConv;
-	if ( argc >= 3 )
-		RT_JSVAL_TO_BOOL( argv[2], netConv );
+	if ( J_ARG_ISDEF(3) )
+		RT_JSVAL_TO_BOOL( J_ARG(3), netConv );
 	else
 		netConv = false;
 
@@ -211,7 +211,7 @@ DEFINE_FUNCTION( Test ) {
 
 	int32_t c;
 	bool isOutOfRange;
-	JsvalToSInt32(cx, argv[0], &c, &isOutOfRange);
+	JsvalToSInt32(cx, J_ARG(1), &c, &isOutOfRange);
 
 	return JS_TRUE;
 }
@@ -226,20 +226,20 @@ DEFINE_FUNCTION( WriteInt ) {
 	RT_ASSERT_DEFINED( bufferVal );
 	JSObject *bufferObject = JSVAL_TO_OBJECT( bufferVal );
 
-	jsval jsvalue = argv[0];
+	jsval jsvalue = J_ARG(1);
 
 	size_t size;
-	RT_JSVAL_TO_INT32( argv[1], size );
+	RT_JSVAL_TO_INT32( J_ARG(2), size );
 	
 	bool isSigned;
-	if ( argc >= 3 )
-		RT_JSVAL_TO_BOOL( argv[2], isSigned );
+	if ( J_ARG_ISDEF(3) )
+		RT_JSVAL_TO_BOOL( J_ARG(3), isSigned );
 	else
 		isSigned = false;
 
 	bool netConv;
-	if ( argc >= 4 )
-		RT_JSVAL_TO_BOOL( argv[3], netConv );
+	if ( J_ARG_ISDEF(4) )
+		RT_JSVAL_TO_BOOL( J_ARG(4), netConv );
 	else
 		netConv = false;
 
@@ -294,7 +294,7 @@ DEFINE_FUNCTION( ReadReal ) {
 	RT_ASSERT_DEFINED( bufferVal );
 	JSObject *bufferObject = JSVAL_TO_OBJECT( bufferVal );
 
-	size_t size = JSVAL_TO_INT( argv[0] );
+	size_t size = JSVAL_TO_INT( J_ARG(1) );
 
 	u_int8_t data[16];
 	size_t amount = size;
@@ -327,10 +327,10 @@ DEFINE_FUNCTION( ReadString ) {
 	RT_ASSERT_DEFINED( bufferVal );
 	JSObject *bufferObject = JSVAL_TO_OBJECT( bufferVal );
 
-	if ( argc >= 1 ) {
+	if ( J_ARG_ISDEF(1) ) {
 		
 		size_t amount;
-		RT_JSVAL_TO_INT32( argv[0], amount );
+		RT_JSVAL_TO_INT32( J_ARG(1), amount );
 		RT_ASSERT( amount >= 0, "Invalid amount" );
 		RT_CHECK_CALL( ReadAmount(cx, bufferObject, amount, rval) );
 	} else {

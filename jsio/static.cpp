@@ -30,17 +30,16 @@ DEFINE_FUNCTION( Poll ) {
 
 	// http://developer.mozilla.org/en/docs/PR_Poll
 
-
 	RT_ASSERT_ARGC( 1 );
-	RT_ASSERT_ARRAY( argv[0] );
+	RT_ASSERT_ARRAY( J_ARG(1) );
 
-	JSIdArray *idArray = JS_Enumerate( cx, JSVAL_TO_OBJECT(argv[0]) ); // make a kind of auto-ptr for this
+	JSIdArray *idArray = JS_Enumerate( cx, JSVAL_TO_OBJECT(J_ARG(1)) ); // make a kind of auto-ptr for this
 
 	PRIntervalTime pr_timeout;
-	if ( argc >= 2 && argv[1] != JSVAL_VOID ) {
+	if ( J_ARG_ISDEF(2) ) {
 
 		uint32 timeout;
-		JS_ValueToECMAUint32( cx, argv[1], &timeout );
+		JS_ValueToECMAUint32( cx, J_ARG(2), &timeout );
 		pr_timeout = PR_MillisecondsToInterval(timeout);
 	} else {
 
@@ -73,7 +72,7 @@ DEFINE_FUNCTION( Poll ) {
 
 		jsval propVal;
 		RT_CHECK_CALL( JS_IdToValue( cx, idArray->vector[i], &propVal ) );
-		RT_CHECK_CALL( JS_GetElement(cx, JSVAL_TO_OBJECT(argv[0]), JSVAL_TO_INT(propVal), &propVal ) );
+		RT_CHECK_CALL( JS_GetElement(cx, JSVAL_TO_OBJECT(J_ARG(1)), JSVAL_TO_INT(propVal), &propVal ) );
 		RT_ASSERT_OBJECT( propVal );
 		JSObject *fdObj = JSVAL_TO_OBJECT( propVal );
 		RT_ASSERT( InheritFrom(cx, fdObj, &classDescriptor), RT_ERROR_INVALID_CLASS );
@@ -119,13 +118,13 @@ DEFINE_FUNCTION( Poll ) {
 
 			jsval arrayItem;
 			RT_CHECK_CALL( JS_IdToValue(cx, idArray->vector[i], &arrayItem) );
-			RT_CHECK_CALL( JS_GetElement(cx, JSVAL_TO_OBJECT(argv[0]), JSVAL_TO_INT(arrayItem), &arrayItem) );
+			RT_CHECK_CALL( JS_GetElement(cx, JSVAL_TO_OBJECT(J_ARG(1)), JSVAL_TO_INT(arrayItem), &arrayItem) );
 			if ( arrayItem == JSVAL_VOID ) // socket has been removed from the list while js func "poll()" is runing
 				continue;
 			JSObject *fdObj = JSVAL_TO_OBJECT( arrayItem ); //JS_ValueToObject
 			jsval prop, ret;
 			PRInt16 outFlag = pollDesc[i].out_flags;
-			jsval cbArgv[2] = { *rval, (outFlag & PR_POLL_HUP) ? JSVAL_TRUE : JSVAL_FALSE }; // fd, hup_flag
+			jsval cbArgv[2] = { arrayItem, (outFlag & PR_POLL_HUP) ? JSVAL_TRUE : JSVAL_FALSE }; // fd, hup_flag
 
 			if ( outFlag & PR_POLL_ERR ) {
 				
@@ -193,16 +192,16 @@ DEFINE_FUNCTION( IsReadable ) {
 
 	RT_ASSERT_ARGC( 1 );
 
-	JSObject *descriptorObj = JSVAL_TO_OBJECT( argv[0] );
+	JSObject *descriptorObj = JSVAL_TO_OBJECT( J_ARG(1) );
 	RT_ASSERT( InheritFrom(cx, descriptorObj, &classDescriptor), RT_ERROR_INVALID_CLASS );
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, descriptorObj );
 //	RT_ASSERT_RESOURCE( fd ); // fd == NULL is supported !
 
 	PRIntervalTime prTimeout;
-	if ( argc >= 2 ) {
+	if ( J_ARG_ISDEF(2) ) {
 
 		uint32 timeout;
-		RT_JSVAL_TO_UINT32( argv[1], timeout );
+		RT_JSVAL_TO_UINT32( J_ARG(2), timeout );
 		prTimeout = PR_MillisecondsToInterval(timeout);
 	} else
 		prTimeout = PR_INTERVAL_NO_TIMEOUT;
@@ -220,16 +219,16 @@ DEFINE_FUNCTION( IsWritable ) {
 
 	RT_ASSERT_ARGC( 1 );
 
-	JSObject *descriptorObj = JSVAL_TO_OBJECT( argv[0] );
+	JSObject *descriptorObj = JSVAL_TO_OBJECT( J_ARG(1) );
 	RT_ASSERT( InheritFrom(cx, descriptorObj, &classDescriptor), RT_ERROR_INVALID_CLASS );
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, descriptorObj );
 //	RT_ASSERT_RESOURCE( fd ); // fd == NULL is supported !
 
 	PRIntervalTime prTimeout;
-	if ( argc >= 2 ) {
+	if ( J_ARG_ISDEF(2) ) {
 
 		uint32 timeout;
-		RT_JSVAL_TO_UINT32( argv[1], timeout );
+		RT_JSVAL_TO_UINT32( J_ARG(2), timeout );
 		prTimeout = PR_MillisecondsToInterval(timeout);
 	} else
 		prTimeout = PR_INTERVAL_NO_TIMEOUT;
@@ -262,7 +261,7 @@ DEFINE_FUNCTION_FAST( UIntervalNow ) {
 DEFINE_FUNCTION( Sleep ) {
 
 	uint32 timeout;
-	RT_CHECK_CALL( JS_ValueToECMAUint32( cx, argv[0], &timeout ) );
+	RT_CHECK_CALL( JS_ValueToECMAUint32( cx, J_ARG(1), &timeout ) );
 	PR_Sleep( PR_MillisecondsToInterval(timeout) );
 	return JS_TRUE;
 }
@@ -272,7 +271,7 @@ DEFINE_FUNCTION( GetEnv ) {
 
 	RT_ASSERT_ARGC(1)
 	char *name;
-	RT_JSVAL_TO_STRING( argv[0], name );
+	RT_JSVAL_TO_STRING( J_ARG(1), name );
 	char* value = PR_GetEnv(name); // If the environment variable is not defined, the function returns NULL.
 	if ( value != NULL ) { // this will cause an 'undefined' return value
 
@@ -287,8 +286,8 @@ DEFINE_FUNCTION( GetEnv ) {
 DEFINE_FUNCTION( GetRandomNoise ) {
 
 	RT_ASSERT_ARGC( 1 );
-	RT_ASSERT_INT( argv[0] );
-	PRSize rndSize = JSVAL_TO_INT( argv[0] );
+	RT_ASSERT_INT( J_ARG(1) );
+	PRSize rndSize = JSVAL_TO_INT( J_ARG(1) );
 	void *buf = (void*)JS_malloc(cx, rndSize);
 	RT_ASSERT_ALLOC( buf );
 	PRSize size = PR_GetRandomNoise(buf, rndSize);
@@ -317,7 +316,7 @@ DEFINE_FUNCTION( hton ) {
 	RT_ASSERT_ARGC( 1 );	
 
 	PRUint32 val;
-	RT_JSVAL_TO_UINT32( argv[0], val );
+	RT_JSVAL_TO_UINT32( J_ARG(1), val );
 
 	val = PR_ntohl(val);
 

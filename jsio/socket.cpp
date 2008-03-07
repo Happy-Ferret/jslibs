@@ -64,10 +64,10 @@ DEFINE_FUNCTION( Shutdown ) {
 	RT_ASSERT_RESOURCE( fd );
 
 	PRShutdownHow how;
-	if ( argc >= 1 && argv[0] != JSVAL_VOID )
-		if ( argv[0] == JSVAL_FALSE )
+	if ( J_ARG_ISDEF(1) )
+		if ( J_ARG(1) == JSVAL_FALSE )
 			how = PR_SHUTDOWN_RCV;
-		else if (argv[0] == JSVAL_TRUE )
+		else if (J_ARG(1) == JSVAL_TRUE )
 			how = PR_SHUTDOWN_SEND;
 		else
 			REPORT_ERROR("Invalid Shutdown case.");
@@ -91,12 +91,12 @@ DEFINE_FUNCTION( Bind ) {
 
 	PRNetAddr addr;
 	PRUint16 port;
-	RT_JSVAL_TO_INT32( argv[0], port );
+	RT_JSVAL_TO_INT32( J_ARG(1), port );
 
-	if ( argc >= 2 && argv[1] != JSVAL_VOID ) { // if we have a second argument and this argument is not undefined
+	if ( J_ARG_ISDEF(2) ) { // if we have a second argument and this argument is not undefined
 
 		char *host;
-		RT_JSVAL_TO_STRING( argv[1], host );
+		RT_JSVAL_TO_STRING( J_ARG(2), host );
 
 		if ( PR_StringToNetAddr(host, &addr) != PR_SUCCESS )
 			return ThrowIoError(cx);
@@ -142,8 +142,8 @@ DEFINE_FUNCTION( Listen ) {
 	PRFileDesc *fd = (PRFileDesc*)JS_GetPrivate( cx, obj );
 	RT_ASSERT_RESOURCE( fd );
 	PRIntn backlog;
-	if ( argc >= 1 && argv[0] != JSVAL_VOID )
-		RT_JSVAL_TO_INT32( argv[0], backlog );
+	if ( J_ARG_ISDEF(1) )
+		RT_JSVAL_TO_INT32( J_ARG(1), backlog );
 	else
 		backlog = 8; // too low ??
 	if ( PR_Listen(fd, backlog) != PR_SUCCESS )
@@ -159,10 +159,10 @@ DEFINE_FUNCTION( Accept ) {
 	RT_ASSERT_RESOURCE( fd );
 
 	PRIntervalTime connectTimeout;
-	if ( argc >= 1 ) {
+	if ( J_ARG_ISDEF(1) ) {
 
 		PRUint32 timeoutInMilliseconds;
-		RT_JSVAL_TO_INT32( argv[0], timeoutInMilliseconds );
+		RT_JSVAL_TO_INT32( J_ARG(1), timeoutInMilliseconds );
 		connectTimeout = PR_MillisecondsToInterval(timeoutInMilliseconds);
 	} else
 		connectTimeout = PR_INTERVAL_NO_TIMEOUT;
@@ -200,16 +200,16 @@ DEFINE_FUNCTION( Connect ) {
 	RT_ASSERT_RESOURCE( fd );
 
 	char *host;
-	RT_JSVAL_TO_STRING( argv[0], host );
+	RT_JSVAL_TO_STRING( J_ARG(1), host );
 
 	PRUint16 port;
-	RT_JSVAL_TO_INT32( argv[1], port );
+	RT_JSVAL_TO_INT32( J_ARG(2), port );
 
 	PRIntervalTime connectTimeout;
-	if ( argc >= 3 && argv[2] != JSVAL_VOID ) {
+	if ( J_ARG_ISDEF(3) ) {
 
 		PRUint32 timeoutInMilliseconds;
-		RT_JSVAL_TO_INT32( argv[2], timeoutInMilliseconds );
+		RT_JSVAL_TO_INT32( J_ARG(3), timeoutInMilliseconds );
 		connectTimeout = PR_MillisecondsToInterval(timeoutInMilliseconds);
 	} else
 		connectTimeout = PR_INTERVAL_NO_TIMEOUT;
@@ -269,10 +269,10 @@ DEFINE_FUNCTION( SendTo ) {
 	RT_ASSERT_RESOURCE( fd );
 
 	char *host;
-	RT_JSVAL_TO_STRING( argv[0], host );
+	RT_JSVAL_TO_STRING( J_ARG(1), host );
 
 	PRUint16 port;
-	RT_JSVAL_TO_INT32( argv[1], port );
+	RT_JSVAL_TO_INT32( J_ARG(2), port );
 
 	PRNetAddr addr;
 
@@ -297,7 +297,7 @@ DEFINE_FUNCTION( SendTo ) {
 
 	char *str;
 	int len;
-	RT_JSVAL_TO_STRING_AND_LENGTH( argv[2], str, len );
+	RT_JSVAL_TO_STRING_AND_LENGTH( J_ARG(3), str, len );
 
 	PRInt32 res = PR_SendTo(fd, str, len, 0, &addr, PR_INTERVAL_NO_TIMEOUT );
 
@@ -312,9 +312,9 @@ DEFINE_FUNCTION( SendTo ) {
 		sentAmount = res;
 
 	if ( sentAmount < len )
-		*rval = STRING_TO_JSVAL( JS_NewDependentString(cx, JSVAL_TO_STRING( argv[2] ), sentAmount, len - sentAmount) ); // return unsent data
+		*rval = STRING_TO_JSVAL( JS_NewDependentString(cx, JSVAL_TO_STRING( J_ARG(3) ), sentAmount, len - sentAmount) ); // return unsent data
 	else if ( sentAmount == 0 )
-		*rval = argv[2]; // nothing has been sent
+		*rval = J_ARG(3); // nothing has been sent
 	else
 		*rval = JS_GetEmptyStringValue(cx); // nothing remains
 
@@ -396,31 +396,31 @@ DEFINE_FUNCTION( TransmitFile ) { // WORKS ONLY ON BLOCKING SOCKET !!!
 	PRFileDesc *socketFd = (PRFileDesc *)JS_GetPrivate( cx, obj );
 	RT_ASSERT_RESOURCE( socketFd );
 
-	RT_ASSERT_OBJECT( argv[0] );
-	JSObject *fileObj = JSVAL_TO_OBJECT( argv[0] );
+	RT_ASSERT_OBJECT( J_ARG(1) );
+	JSObject *fileObj = JSVAL_TO_OBJECT( J_ARG(1) );
 	RT_ASSERT_CLASS( fileObj, &classFile );
 	PRFileDesc *fileFd = (PRFileDesc*)JS_GetPrivate( cx, fileObj );
 	RT_ASSERT_RESOURCE( fileFd );
 
 	PRTransmitFileFlags flag = PR_TRANSMITFILE_KEEP_OPEN;
-	if ( argc >= 2 ) {
+	if ( J_ARG_ISDEF(2) ) {
 
 		bool closeAfterTransmit;
-		RT_JSVAL_TO_BOOL( argv[1], closeAfterTransmit );
+		RT_JSVAL_TO_BOOL( J_ARG(2), closeAfterTransmit );
 		if ( closeAfterTransmit )
 			flag = PR_TRANSMITFILE_CLOSE_SOCKET;
 	}
 
 	char *headers = NULL;
 	int headerLength = 0;
-	if ( argc >= 3 )
-		RT_JSVAL_TO_STRING_AND_LENGTH( argv[2], headers, headerLength );
+	if ( J_ARG_ISDEF(3) )
+		RT_JSVAL_TO_STRING_AND_LENGTH( J_ARG(3), headers, headerLength );
 
 	PRIntervalTime connectTimeout;
-	if ( argc >= 4 ) {
+	if ( J_ARG_ISDEF(4) ) {
 
 		PRUint32 timeoutInMilliseconds;
-		RT_JSVAL_TO_INT32( argv[3], timeoutInMilliseconds );
+		RT_JSVAL_TO_INT32( J_ARG(4), timeoutInMilliseconds );
 		connectTimeout = PR_MillisecondsToInterval(timeoutInMilliseconds);
 	} else
 		connectTimeout = PR_INTERVAL_NO_TIMEOUT;
@@ -706,10 +706,10 @@ DEFINE_FUNCTION( GetHostsByName ) {
 	RT_ASSERT_ARGC( 1 )
 
 	char *host;
-	RT_JSVAL_TO_STRING( argv[0], host );
+	RT_JSVAL_TO_STRING( J_ARG(1), host );
 
 //	PRUint16 port;
-//	RT_JSVAL_TO_INT32( argv[1], port );
+//	RT_JSVAL_TO_INT32( J_ARG(1), port );
 
 	char netdbBuf[PR_NETDB_BUF_SIZE];
 	PRHostEnt hostEntry;

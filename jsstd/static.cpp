@@ -38,14 +38,14 @@ DEFINE_FUNCTION( Expand ) {
 
 	char *srcBegin;
 	int srcLen;
-	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], srcBegin, srcLen );
+	RT_JSVAL_TO_STRING_AND_LENGTH( J_ARG(1), srcBegin, srcLen );
 	char *srcEnd = srcBegin + srcLen;
 
 	JSObject *table;
-	if ( argc >= 2 ) {
+	if ( J_ARG_ISDEF(2) ) {
 
-		RT_ASSERT_OBJECT( argv[1] );
-		table = JSVAL_TO_OBJECT( argv[1] );
+		RT_ASSERT_OBJECT( J_ARG(2) );
+		table = JSVAL_TO_OBJECT( J_ARG(2) );
 	} else {
 
 		table = obj;
@@ -151,24 +151,24 @@ DEFINE_FUNCTION( Seal ) {
 
 	RT_ASSERT_ARGC(1);
 	JSBool deep;
-	RT_ASSERT_OBJECT(argv[0]);
-	//RT_CHECK_CALL( JS_ValueToObject(cx, argv[0], &obj) );
-	if ( argc >= 2 )
-		RT_CHECK_CALL( JS_ValueToBoolean( cx, argv[1], &deep ) );
+	RT_ASSERT_OBJECT( J_ARG(1) );
+	//RT_CHECK_CALL( JS_ValueToObject(cx, J_ARG(1), &obj) );
+	if ( J_ARG_ISDEF(2) )
+		RT_CHECK_CALL( JS_ValueToBoolean( cx, J_ARG(2), &deep ) );
 	else
 		deep = JS_FALSE;
-	return JS_SealObject(cx, JSVAL_TO_OBJECT(argv[0]), deep);
+	return JS_SealObject(cx, JSVAL_TO_OBJECT(J_ARG(1)), deep);
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 DEFINE_FUNCTION( Clear ) {
 
-	RT_ASSERT_ARGC(1);
-//	RT_ASSERT_OBJECT(argv[0]);
-	if ( JSVAL_IS_OBJECT(argv[0]) ) {
+	RT_ASSERT_ARGC( 1 );
+//	RT_ASSERT_OBJECT(J_ARG(1));
+	if ( JSVAL_IS_OBJECT( J_ARG(1) ) ) {
 
-		JS_ClearScope(cx, JSVAL_TO_OBJECT(argv[0]));
+		JS_ClearScope(cx, JSVAL_TO_OBJECT( J_ARG(1) ));
 		*rval = JSVAL_TRUE;
 	} else
 		*rval = JSVAL_FALSE;
@@ -179,11 +179,11 @@ DEFINE_FUNCTION( Clear ) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 DEFINE_FUNCTION( SetScope ) {
 
-	RT_ASSERT_ARGC(2);
+	RT_ASSERT_ARGC( 2 );
 	JSObject *o;
-	JS_ValueToObject(cx, argv[0], &o);
+	JS_ValueToObject(cx, J_ARG(1), &o);
 	JSObject *p;
-	JS_ValueToObject(cx, argv[1], &p);
+	JS_ValueToObject(cx, J_ARG(2), &p);
 	*rval = OBJECT_TO_JSVAL(JS_GetParent(cx, o));
 	RT_CHECK_CALL( JS_SetParent(cx, o, p) );
 	return JS_TRUE;
@@ -201,19 +201,19 @@ DEFINE_FUNCTION( IsConstructing ) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 DEFINE_FUNCTION( HideProperties ) {
 
-	RT_ASSERT_ARGC(2);
+	RT_ASSERT_ARGC( 2 );
 	JSObject *object;
-	RT_CHECK_CALL( JS_ValueToObject( cx, argv[0], &object ) );
+	RT_CHECK_CALL( JS_ValueToObject( cx, J_ARG(1), &object ) );
 //	const char *propertyName;
 //	uintN attributes;
-	for ( uintN i=1; i<argc; i++ ) {
+	for ( uintN i = 1; i < J_ARGC; i++ ) {
 
 		jsid id;
 		uintN attrs;
 		JSObject *obj2;
 		JSProperty *prop;
 
-		RT_CHECK_CALL( JS_ValueToId(cx, argv[i], &id) );
+		RT_CHECK_CALL( JS_ValueToId(cx, J_ARG(1+i), &id) );
 		RT_CHECK_CALL( OBJ_LOOKUP_PROPERTY(cx, object, id, &obj2, &prop) );
 		if (!prop || object != obj2) { // not found
 
@@ -229,7 +229,7 @@ DEFINE_FUNCTION( HideProperties ) {
 /*
 	JSBool found;
 		...
-		propertyName = JS_GetStringBytes( JS_ValueToString( cx, argv[i] ) );
+		propertyName = JS_GetStringBytes( JS_ValueToString( cx, J_ARG(i+1) ) );
 		RT_ASSERT_1( propertyName != NULL, "Invalid property name (%s).", propertyName );
 		RT_CHECK_CALL( JS_GetPropertyAttributes( cx, object, propertyName, &attributes, &found ) );
 		if ( found == JS_FALSE )
@@ -246,10 +246,10 @@ DEFINE_FUNCTION( HideProperties ) {
 DEFINE_FUNCTION( IdOf ) {
 
 	jsid id;
-	if ( JSVAL_IS_OBJECT(argv[0]) )
-		RT_CHECK_CALL( JS_GetObjectId(cx, JSVAL_TO_OBJECT(argv[0]), &id) );
+	if ( JSVAL_IS_OBJECT( J_ARG(1) ) )
+		RT_CHECK_CALL( JS_GetObjectId(cx, JSVAL_TO_OBJECT( J_ARG(1) ), &id) );
 	else
-		RT_CHECK_CALL( JS_ValueToId(cx, argv[0], &id) );
+		RT_CHECK_CALL( JS_ValueToId(cx, J_ARG(1), &id) );
 
 	if ( INT_FITS_IN_JSVAL(id) )
 		*rval = INT_TO_JSVAL(id);
@@ -265,9 +265,9 @@ DEFINE_FUNCTION( IdOf ) {
 // (TBD) update this note ?
 DEFINE_FUNCTION( Warning ) {
 
-	JSString *jssMesage = JS_ValueToString(cx, argv[0]);
+	JSString *jssMesage = JS_ValueToString(cx, J_ARG(1));
 	RT_ASSERT_ALLOC( jssMesage );
-	argv[0] = STRING_TO_JSVAL(jssMesage);
+//	J_ARG(1) = STRING_TO_JSVAL(jssMesage);
 	JS_ReportWarning( cx, "%s", JS_GetStringBytes(jssMesage) );
 	return JS_TRUE;
 }
@@ -279,13 +279,13 @@ DEFINE_FUNCTION( ASSERT ) {
 	RT_ASSERT_ARGC( 1 );
 
 	bool assert;
-	RT_JSVAL_TO_BOOL( argv[0], assert );
+	RT_JSVAL_TO_BOOL( J_ARG(1), assert );
 
 	if ( !assert ) {
 
 		char *message;
-		if ( argc >= 2 )
-			RT_JSVAL_TO_STRING( argv[1], message );
+		if ( J_ARG_ISDEF(2) )
+			RT_JSVAL_TO_STRING( J_ARG(2), message );
 		else
 			message = "Assertion failed.";
 		JS_ReportError( cx, message );
@@ -339,7 +339,7 @@ DEFINE_FUNCTION_FAST( MaybeCollectGarbage ) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 DEFINE_FUNCTION_FAST( TimeCounter ) {
 
-	JS_NewNumberValue(cx, AccurateTimeCounter(), &JS_RVAL(cx,vp));
+	JS_NewNumberValue(cx, AccurateTimeCounter(), &J_RVAL);
 	return JS_TRUE;
 }
 
@@ -349,9 +349,11 @@ DEFINE_FUNCTION_FAST( Print ) {
 
 	if ( stdoutFunction == NULL )
 		return JS_TRUE; // nowhere to write, but don't failed
-	JS_SET_RVAL(cx, JSVAL_VOID)
-	for (uintN i = 0; i<argc; i++)
-		RT_CHECK_CALL( JS_CallFunction(cx, JS_THIS_OBJECT(cx, vp), stdoutFunction, 1, &JS_ARGV(cx,vp)[i], &JS_RVAL(cx,vp)) );
+	
+	JS_SET_RVAL(cx, vp, JSVAL_VOID);
+
+	for (uintN i = 0; i < J_ARGC; i++)
+		RT_CHECK_CALL( JS_CallFunction(cx, JS_THIS_OBJECT(cx, vp), stdoutFunction, 1, &J_FARG(1+1), &J_RVAL) );
 	return JS_TRUE;
 }
 
@@ -481,16 +483,16 @@ DEFINE_FUNCTION( Exec ) {
 	//  JSErrorReporter older;
 	uint32 oldopts;
 
-	RT_ASSERT_ARGC(1);
+	RT_ASSERT_ARGC( 1 );
 	bool saveCompiledScripts;
-	if ( argc >= 2 && argv[1] == JSVAL_FALSE )
+	if ( J_ARG_ISDEF(2) && J_ARG(2) == JSVAL_FALSE )
 		saveCompiledScripts = false;
 	else
 		saveCompiledScripts = true; // default
 
-	str = JS_ValueToString(cx, argv[0]);
+	str = JS_ValueToString(cx, J_ARG(1));
 	RT_ASSERT( str != NULL, "unable to get the filename." );
-	argv[0] = STRING_TO_JSVAL(str);
+	J_ARG(1) = STRING_TO_JSVAL(str);
 	filename = JS_GetStringBytes(str);
 	errno = 0;
 	//        older = JS_SetErrorReporter(cx, LoadErrorReporter);
@@ -503,7 +505,7 @@ DEFINE_FUNCTION( Exec ) {
 	} else {
 
 //		if ( argc >= 3 )
-//			obj = JSVAL_TO_OBJECT( argv[2] ); // try Exec.call( obj1, 'test.js' ); ...
+//			obj = JSVAL_TO_OBJECT( J_ARG(3) ); // try Exec.call( obj1, 'test.js' ); ...
 // see: http://groups.google.com/group/mozilla.dev.tech.js-engine/browse_thread/thread/97269b31d65d493d/be8a4f9c4e805bef
 
 		ok = JS_ExecuteScript(cx, obj, script, rval); // Doc: On successful completion, rval is a pointer to a variable that holds the value from the last executed expression statement processed in the script.
@@ -524,7 +526,7 @@ DEFINE_FUNCTION( IsStatementValid ) {
 	RT_ASSERT_ARGC( 1 );
 	char *buffer;
 	int length;
-	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], buffer, length );
+	RT_JSVAL_TO_STRING_AND_LENGTH( J_ARG(1), buffer, length );
 	*rval = JS_BufferIsCompilableUnit(cx, obj, buffer, length) == JS_TRUE ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;
 }
@@ -533,9 +535,6 @@ DEFINE_FUNCTION( IsStatementValid ) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 DEFINE_FUNCTION( Halt ) {
-
-//	if ( argc >= 1 )
-//		*rval = argv[0];
 
 	return JS_FALSE;
 }

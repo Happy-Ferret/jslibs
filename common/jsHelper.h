@@ -178,10 +178,18 @@ inline bool MaybeRealloc( int requested, int received ) {
 
 // new namespace for jslibs: J_
 
+#define J_ARGC (argc)
+
 // returns the ARGument n or undefined if it does not exist
-#define J_ARG( n ) ( argc >= (n) ? argv[(n)-1] : JSVAL_VOID )
+#define J_ARG( n ) (argv[(n)-1])
 // same for fast native (cf. http://developer.mozilla.org/en/docs/JS_ARGV)
-#define J_FARG( n ) ( argc >= (n) ? JS_ARGV(cx,vp)[(n)-1] : JSVAL_VOID )
+#define J_FARG( n ) (JS_ARGV(cx,vp)[(n)-1])
+
+
+// returns the ARGument n or undefined if it does not exist
+#define J_SARG( n ) ( argc >= (n) ? argv[(n)-1] : JSVAL_VOID )
+// same for fast native (cf. http://developer.mozilla.org/en/docs/JS_ARGV)
+#define J_FSARG( n ) ( argc >= (n) ? JS_ARGV(cx,vp)[(n)-1] : JSVAL_VOID )
 
 
 // returns true if the ARGument n is DEFined

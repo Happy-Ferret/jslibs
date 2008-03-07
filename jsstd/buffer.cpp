@@ -420,18 +420,18 @@ DEFINE_CONSTRUCTOR() {
 	JS_SetPrivate(cx, obj, queue);
 	BufferLengthSet(cx, obj, 0);
 
-	if ( argc >= 1 ) {
+	if ( J_ARG_ISDEF(1) ) {
 
-		if ( JSVAL_IS_STRING( argv[0] ) ) {
+		if ( JSVAL_IS_STRING( J_ARG(1) ) ) {
 
 			JSString **pNewStr = (JSString**)malloc(sizeof(JSString*));
-			*pNewStr = JSVAL_TO_STRING( argv[0] );
+			*pNewStr = JSVAL_TO_STRING( J_ARG(1) );
 			RT_CHECK_CALL( JS_AddRoot(cx, pNewStr) );
 			QueuePush( queue, pNewStr );
 			RT_CHECK_CALL( BufferLengthAdd(cx, obj, JS_GetStringLength(*pNewStr)) );
-		} else if ( JSVAL_IS_OBJECT( argv[0] ) ) {
+		} else if ( JSVAL_IS_OBJECT( J_ARG(1) ) ) {
 
-			RT_CHECK_CALL( AddBuffer(cx, obj, JSVAL_TO_OBJECT( argv[0] )) );
+			RT_CHECK_CALL( AddBuffer(cx, obj, JSVAL_TO_OBJECT( J_ARG(1) )) );
 		} else
 			REPORT_ERROR( RT_ERROR_INVALID_ARGUMENT );
 	}
@@ -458,21 +458,21 @@ DEFINE_FUNCTION( Clear ) {
 
 DEFINE_FUNCTION( Write ) {
 
-	RT_ASSERT_ARGC(1);
-	RT_ASSERT_STRING(argv[0]);
+	RT_ASSERT_ARGC( 1 );
+	RT_ASSERT_STRING( J_ARG(1) );
 	Queue *queue = (Queue*)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(queue);
 
-	JSString *str = JSVAL_TO_STRING(argv[0]);
+	JSString *str = JSVAL_TO_STRING( J_ARG(1) );
 	size_t strLen = JS_GetStringLength(str);
 
 	if ( strLen == 0 )
 		return JS_TRUE;
 
 	size_t amount;
-	if ( argc >= 2 ) {
+	if ( J_ARG_ISDEF(2) ) {
 
-		RT_JSVAL_TO_INT32( argv[1], amount );
+		RT_JSVAL_TO_INT32( J_ARG(2), amount );
 		if ( amount > strLen )
 			amount = strLen;
 	} else
@@ -492,11 +492,11 @@ DEFINE_FUNCTION( Match ) {
 
 	RT_ASSERT_ARGC( 1 );
 	RT_ASSERT_RESOURCE( JS_GetPrivate(cx, obj) ); // first, ensure that the object is valid
-	RT_ASSERT_STRING( argv[0] );
+	RT_ASSERT_STRING( J_ARG(1) );
 
 	char *str;
 	size_t len;
-	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], str, len );
+	RT_JSVAL_TO_STRING_AND_LENGTH( J_ARG(1), str, len );
 
 	char *src = (char *)malloc(len);
 	size_t amount = len;
@@ -518,16 +518,18 @@ err:
 DEFINE_FUNCTION( Read ) { // Read( [ amount | <undefined> ] )
 
 	RT_ASSERT_RESOURCE( JS_GetPrivate(cx, obj) ); // first, ensure that the object is valid
-	if ( argc >= 1 && argv[0] == JSVAL_VOID ) { // read the next chunk (of an unknown length) (read something as fast as possible)
+	if ( J_ARG_ISDEF(1) ) { // read the next chunk (of an unknown length) (read something as fast as possible)
 
 		RT_CHECK_CALL( ReadOneChunk(cx, obj, rval) );
 		return JS_TRUE;
 	}
+
 	size_t amount;
-	if ( argc == 0 )
-		RT_CHECK_CALL( BufferLengthGet(cx, obj, &amount) ); // no arguments then read the whole buffer
+	if ( J_ARG_ISDEF(1) )
+		RT_JSVAL_TO_INT32( J_ARG(1), amount );
 	else
-		RT_JSVAL_TO_INT32( argv[0], amount );
+		RT_CHECK_CALL( BufferLengthGet(cx, obj, &amount) ); // no arguments then read the whole buffer
+
 	RT_ASSERT( amount >= 0, "Invalid amount" );
 	RT_CHECK_CALL( ReadAmount(cx, obj, amount, rval) );
 	return JS_TRUE;
@@ -539,7 +541,7 @@ DEFINE_FUNCTION( Skip ) { // Skip( amount )
 	RT_ASSERT_ARGC( 1 );
 	RT_ASSERT_RESOURCE( JS_GetPrivate(cx, obj) ); // first, ensure that the object is valid
 	size_t amount;
-	RT_JSVAL_TO_INT32( argv[0], amount );
+	RT_JSVAL_TO_INT32( J_ARG(1), amount );
 	RT_ASSERT( amount >= 0, "Invalid amount" );
 	RT_CHECK_CALL( ReadAmount(cx, obj, amount, rval) ); // (TBD) optimization: skip without reading the data.
 	*rval = JSVAL_VOID;
@@ -552,10 +554,10 @@ DEFINE_FUNCTION( ReadUntil ) {
 	RT_ASSERT_ARGC( 1 );
 	char *boundary;
 	int boundaryLength;
-	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], boundary, boundaryLength );
+	RT_JSVAL_TO_STRING_AND_LENGTH( J_ARG(1), boundary, boundaryLength );
 	bool skip;
-	if ( argc >= 2 )
-		RT_JSVAL_TO_BOOL(argv[1], skip);
+	if ( J_ARG_ISDEF(2) )
+		RT_JSVAL_TO_BOOL(J_ARG(2), skip);
 	else
 		skip = true;
 	int found;
@@ -578,7 +580,7 @@ DEFINE_FUNCTION( IndexOf ) {
 	RT_ASSERT_ARGC( 1 );
 	char *boundary;
 	int boundaryLength;
-	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], boundary, boundaryLength );
+	RT_JSVAL_TO_STRING_AND_LENGTH( J_ARG(1), boundary, boundaryLength );
 	int found;
 	RT_CHECK_CALL( FindInBuffer(cx, obj, boundary, boundaryLength, &found) );
 	*rval = INT_TO_JSVAL(found);
@@ -590,9 +592,9 @@ DEFINE_FUNCTION( Unread ) {
 
 	RT_ASSERT_ARGC( 1 );
 	RT_ASSERT_ARGC_MAX( 1 ); // discourages one to use Unread like Write
-	RT_ASSERT_STRING( argv[0] );
-	RT_CHECK_CALL( UnReadChunk(cx, obj, JSVAL_TO_STRING(argv[0])) ); // no need to use JS_NewDependentString (see js_NewDependentString in jsstr.c)
-	*rval = argv[0];
+	RT_ASSERT_STRING( J_ARG(1) );
+	RT_CHECK_CALL( UnReadChunk(cx, obj, JSVAL_TO_STRING( J_ARG(1) )) ); // no need to use JS_NewDependentString (see js_NewDependentString in jsstr.c)
+	*rval = J_ARG(1);
 	return JS_TRUE;
 }
 

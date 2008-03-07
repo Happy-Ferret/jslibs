@@ -58,7 +58,7 @@ DEFINE_CONSTRUCTOR() {
 
 	RT_ASSERT_CONSTRUCTING( _class );
 	RT_ASSERT_ARGC(1);
-	JS_SetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, argv[0] );
+	JS_SetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, J_ARG(1) );
 	JS_SetPrivate(cx, obj, NULL); // (TBD) optional ?
 	return JS_TRUE;
 }
@@ -76,21 +76,21 @@ DEFINE_FUNCTION( Open ) {
 	RT_JSVAL_TO_STRING(jsvalFileName, fileName);
 
 	PRIntn flags;
-	if ( JSVAL_IS_INT( argv[0] ) ) {
+	if ( JSVAL_IS_INT( J_ARG(1) ) ) {
 	
-		flags = JSVAL_TO_INT( argv[0] );
+		flags = JSVAL_TO_INT( J_ARG(1) );
 	} else {
 
 		char *strFlags;
 		int len;
-		RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], strFlags, len );
+		RT_JSVAL_TO_STRING_AND_LENGTH( J_ARG(1), strFlags, len );
 		flags = FileOpenFlagsFromString(strFlags, len);
 	}
 
 	PRIntn mode;
-	if ( argc >= 2 ) {
+	if ( J_ARG_ISDEF(2) ) {
 		
-		RT_JSVAL_TO_INT32( argv[1], mode );
+		RT_JSVAL_TO_INT32( J_ARG(2), mode );
 	} else {
 
 		mode = PR_IRUSR + PR_IWUSR; // read write permission, owner
@@ -113,19 +113,19 @@ DEFINE_FUNCTION( Seek ) {
 	RT_ASSERT( fd != NULL, "File is closed." );
 
 	PRInt64 offset;
-	if ( argc >= 1 ) {
+	if ( J_ARG_ISDEF(1) ) {
 
 		jsdouble doubleOffset;
-		JS_ValueToNumber( cx, argv[0], &doubleOffset );
+		JS_ValueToNumber( cx, J_ARG(1), &doubleOffset );
 		offset = (PRInt64)doubleOffset;
 	} else
 		offset = 0; // default is arg is missing
 
 	PRSeekWhence whence;
-	if ( argc >= 2 ) {
+	if ( J_ARG_ISDEF(2) ) {
 
 		int32 tmp;
-		JS_ValueToInt32( cx, argv[1], &tmp );
+		JS_ValueToInt32( cx, J_ARG(2), &tmp );
 		whence = (PRSeekWhence)tmp;
 	} else
 		whence = PR_SEEK_CUR; // default is arg is missing
@@ -161,7 +161,7 @@ DEFINE_FUNCTION( Lock ) {
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
 	RT_ASSERT_RESOURCE( fd );
 	bool doLock;
-	RT_JSVAL_TO_BOOL( argv[0], doLock );
+	RT_JSVAL_TO_BOOL( J_ARG(1), doLock );
 	PRStatus st = doLock ? PR_LockFile(fd) : PR_UnlockFile(fd);
 	if ( st != PR_SUCCESS )
 		return ThrowIoError(cx);

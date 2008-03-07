@@ -236,13 +236,13 @@ JSBool ReadAllToJsval(JSContext *cx, PRFileDesc *fd, jsval *rval ) {
 
 DEFINE_FUNCTION( Read ) {
 
-	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
+	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE( fd );
 
-	if ( argc >= 1 ) { // amount value is provided // && argv[0] != JSVAL_VOID 
+	if ( J_ARG_ISDEF(1) ) {
 		
 		PRInt32 amount;
-		RT_JSVAL_TO_INT32( argv[0], amount );
+		RT_JSVAL_TO_INT32( J_ARG(1), amount );
 
 //		if ( amount == 0 ) // (TBD) check if it is good to use this ( even if amount is 0, we must call Read
 //			*rval = JS_GetEmptyStringValue(cx);
@@ -264,12 +264,12 @@ DEFINE_FUNCTION( Read ) {
 
 DEFINE_FUNCTION( Write ) {
 
-	RT_ASSERT_ARGC(1);
+	RT_ASSERT_ARGC( 1 );
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
 	RT_ASSERT_RESOURCE( fd );
 	char *str;
 	int len;
-	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], str, len );
+	RT_JSVAL_TO_STRING_AND_LENGTH( J_ARG(1), str, len );
 
 	PRInt32 sentAmount;
 
@@ -307,9 +307,9 @@ DEFINE_FUNCTION( Write ) {
 		sentAmount = res;
 
 	if ( sentAmount < len )
-		*rval = STRING_TO_JSVAL( JS_NewDependentString(cx, JSVAL_TO_STRING( argv[0] ), sentAmount, len - sentAmount) ); // return unsent data
+		*rval = STRING_TO_JSVAL( JS_NewDependentString(cx, JSVAL_TO_STRING( J_ARG(1) ), sentAmount, len - sentAmount) ); // return unsent data
 	else if ( sentAmount == 0 )
-		*rval = argv[0]; // nothing has been sent
+		*rval = J_ARG(1); // nothing has been sent
 	else
 		*rval = JS_GetEmptyStringValue(cx); // nothing remains
 	return JS_TRUE;
@@ -360,7 +360,7 @@ DEFINE_FUNCTION( Import ) {
 
 	RT_ASSERT_ARGC(2);
 	int stdfd;
-	RT_JSVAL_TO_INT32( argv[0], stdfd );
+	RT_JSVAL_TO_INT32( J_ARG(1), stdfd );
 	PRInt32 osfd;
 	switch (stdfd) {
 		case 0:
@@ -377,7 +377,7 @@ DEFINE_FUNCTION( Import ) {
 	}
 
 	int tmp;
-	RT_JSVAL_TO_INT32( argv[1], tmp );
+	RT_JSVAL_TO_INT32( J_ARG(2), tmp );
 	PRDescType type = (PRDescType)tmp;
 
 	PRFileDesc *fd;
