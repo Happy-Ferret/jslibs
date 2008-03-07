@@ -101,7 +101,7 @@ DEFINE_FUNCTION( Close ) {
 
 		PRErrorCode errorCode = PR_GetError();
 		if ( errorCode != PR_WOULD_BLOCK_ERROR ) // if non-blocking descriptor, this is a non-fatal error
-			JS_ReportError( cx, "A descriptor cannot be closed." );
+			return ThrowIoError(cx);
 	}
 	JS_SetPrivate( cx, obj, NULL );
 //	JS_ClearScope( cx, obj ); // help to clear readable, writable, exception

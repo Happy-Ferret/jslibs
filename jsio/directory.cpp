@@ -35,7 +35,7 @@ DEFINE_CONSTRUCTOR() {
 	
 	RT_ASSERT_CONSTRUCTING( _class );
 	RT_ASSERT_ARGC( 1 );
-	JS_SetReservedSlot( cx, obj, SLOT_JSIO_DIR_NAME, argv[0] );
+	JS_SetReservedSlot( cx, obj, SLOT_JSIO_DIR_NAME, J_ARG(1) );
 	return JS_TRUE;
 }
 
@@ -50,7 +50,7 @@ DEFINE_FUNCTION( Open ) {
 
 	PRDir *dd = PR_OpenDir( directoryName );
 	if ( dd == NULL )
-		ThrowIoError(cx);
+		return ThrowIoError(cx);
 
 	JS_SetPrivate( cx, obj, dd );
 	*rval = OBJECT_TO_JSVAL(obj);
@@ -75,9 +75,10 @@ DEFINE_FUNCTION( Read ) {
 	RT_ASSERT( dd != NULL, "directory is closed" );
 
 	PRDirFlags flags = PR_SKIP_NONE;
-	if ( argc >= 1 ) {
+	if ( J_ARG_ISDEF(1) ) {
+
 		int32 tmp;
-		JS_ValueToInt32( cx, argv[0], &tmp );
+		JS_ValueToInt32( cx, J_ARG(1), &tmp );
 		flags = (PRDirFlags)tmp;
 	}
 
@@ -86,15 +87,17 @@ DEFINE_FUNCTION( Read ) {
 
 		PRErrorCode errorCode = PR_GetError();
 		if ( errorCode == PR_NO_MORE_FILES_ERROR ) {
+
 			*rval = JSVAL_VOID;
 			return JS_TRUE;
 		} else
-			ThrowIoError(cx);
+			return ThrowIoError(cx);
 	}
 
 	*rval = STRING_TO_JSVAL(JS_NewStringCopyZ( cx, dirEntry->name ));
 	return JS_TRUE;
 }
+
 
 DEFINE_FUNCTION( Make ) {
 
@@ -105,7 +108,7 @@ DEFINE_FUNCTION( Make ) {
 	RT_JSVAL_TO_STRING(jsvalDirectoryName, directoryName);
 	PRIntn mode = 0666;
 	if ( PR_MkDir(directoryName, mode) != PR_SUCCESS )
-		ThrowIoError(cx);
+		return ThrowIoError(cx);
 	return JS_TRUE;
 }
 
@@ -123,7 +126,7 @@ DEFINE_FUNCTION( Remove ) {
 		if ( errorCode == PR_DIRECTORY_NOT_EMPTY_ERROR )
 			*rval = JSVAL_FALSE;
 		else
-			ThrowIoError(cx);
+			return ThrowIoError(cx);
 	} else {
 			*rval = JSVAL_TRUE;
 	}
@@ -147,15 +150,60 @@ DEFINE_PROPERTY( exist ) {
 	} else {
 
 		if ( PR_CloseDir(dd) != PR_SUCCESS )
-			ThrowIoError(cx); // ??? Doc do not say it is possible to read PR_GetError after an error on PR_OpenDir !!!
+			return ThrowIoError(cx); // ??? Doc do not say it is possible to read PR_GetError after an error on PR_OpenDir !!!
 		*vp = JSVAL_TRUE;
 	}
 	return JS_TRUE;
 }
 
+
 DEFINE_PROPERTY( name ) {
 
 	JS_GetReservedSlot( cx, obj, SLOT_JSIO_DIR_NAME, vp );
+	return JS_TRUE;
+}
+
+
+DEFINE_FUNCTION( List ) {
+
+	RT_ASSERT_ARGC( 1 );
+	char *directoryName;
+	RT_JSVAL_TO_STRING( J_ARG(1), directoryName );
+	PRDir *dd = PR_OpenDir( directoryName );
+	if ( dd == NULL )
+		return ThrowIoError(cx);
+
+	PRDirFlags flags = PR_SKIP_DOT;
+
+	if ( J_ARG_ISDEF( 2 ) ) {
+
+		int32 tmp;
+		RT_CHECK_CALL( JS_ValueToInt32( cx, J_ARG(1), &tmp ) );
+		flags = (PRDirFlags)tmp;
+	}
+
+	JSObject *addrJsObj = JS_NewArrayObject(cx, 0, NULL);
+	RT_ASSERT_ALLOC( addrJsObj );
+	*rval = OBJECT_TO_JSVAL( addrJsObj );
+
+	int index = 0;
+	for (;;) {
+
+		PRDirEntry *dirEntry = PR_ReadDir( dd, flags );
+		if ( dirEntry == NULL ) {
+
+			PRErrorCode errorCode = PR_GetError();
+			if ( errorCode == PR_NO_MORE_FILES_ERROR )
+				break;
+			else
+				return ThrowIoError(cx);
+		}
+
+		JSString *jsStr = JS_NewStringCopyZ( cx, dirEntry->name );
+		RT_ASSERT_ALLOC( jsStr );
+		RT_CHECK_CALL(	JS_DefineElement(cx, addrJsObj, index++, STRING_TO_JSVAL(jsStr), NULL, NULL, JSPROP_ENUMERATE) );
+	}
+
 	return JS_TRUE;
 }
 
@@ -177,6 +225,10 @@ CONFIGURE_CLASS
 		PROPERTY_READ( exist )
 		PROPERTY_READ_STORE( name )
 	END_PROPERTY_SPEC
+
+	BEGIN_STATIC_FUNCTION_SPEC
+		FUNCTION( List )
+	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_CONST_DOUBLE_SPEC
 		CONST_DOUBLE(SKIP_NONE   ,PR_SKIP_NONE )

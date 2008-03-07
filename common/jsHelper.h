@@ -176,6 +176,25 @@ inline bool MaybeRealloc( int requested, int received ) {
 	RT_ASSERT_CLASS( obj, (jsClass) ); \
 }
 
+// new namespace for jslibs: J_
+
+// returns the ARGument n or undefined if it does not exist
+#define J_ARG( n ) ( argc >= (n) ? argv[(n)-1] : JSVAL_VOID )
+// same for fast native (cf. http://developer.mozilla.org/en/docs/JS_ARGV)
+#define J_FARG( n ) ( argc >= (n) ? JS_ARGV(cx,vp)[(n)-1] : JSVAL_VOID )
+
+
+// returns true if the ARGument n is DEFined
+#define J_ARG_ISDEF( n ) ( argc >= (n) && argv[(n)-1] != JSVAL_VOID )
+// same for fast native
+#define J_FARG_ISDEF( n ) ( argc >= (n) && JS_ARGV(cx,vp)[(n)-1] != JSVAL_VOID )
+
+// is the current obj (this)
+#define J_OBJ JS_THIS_OBJECT(cx, vp)
+
+// the return value
+#define J_RVAL JS_RVAL(cx, vp)
+
 
 ////////////////////
 // conversion macros

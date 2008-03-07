@@ -34,8 +34,8 @@ DEFINE_CONSTRUCTOR() {
 	RT_ASSERT_CONSTRUCTING( _class );
 
 	int descType;
-	if ( argc >= 1 )
-		RT_JSVAL_TO_INT32( argv[0], descType );
+	if ( J_ARG_ISDEF(1) )
+		RT_JSVAL_TO_INT32( J_ARG(1), descType );
 	else
 		descType = PR_DESC_SOCKET_TCP; // default
 
@@ -64,7 +64,7 @@ DEFINE_FUNCTION( Shutdown ) {
 	RT_ASSERT_RESOURCE( fd );
 
 	PRShutdownHow how;
-	if ( argc >= 1 )
+	if ( argc >= 1 && argv[0] != JSVAL_VOID )
 		if ( argv[0] == JSVAL_FALSE )
 			how = PR_SHUTDOWN_RCV;
 		else if (argv[0] == JSVAL_TRUE )
@@ -206,7 +206,7 @@ DEFINE_FUNCTION( Connect ) {
 	RT_JSVAL_TO_INT32( argv[1], port );
 
 	PRIntervalTime connectTimeout;
-	if ( argc >= 3 ) {
+	if ( argc >= 3 && argv[2] != JSVAL_VOID ) {
 
 		PRUint32 timeoutInMilliseconds;
 		RT_JSVAL_TO_INT32( argv[2], timeoutInMilliseconds );

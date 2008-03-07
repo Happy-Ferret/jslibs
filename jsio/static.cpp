@@ -109,7 +109,7 @@ DEFINE_FUNCTION( Poll ) {
 	result = PR_Poll( pollDesc, idArray->length, pr_timeout );
 	if ( result == -1 ) {  // failed. see PR_GetError()
 
-		ThrowIoError(cx);
+		ThrowIoError(cx); // returns later
 		goto failed;
 	}
 
@@ -284,19 +284,6 @@ DEFINE_FUNCTION( GetEnv ) {
 }
 
 
-DEFINE_FUNCTION( HostName ) {
-
-	char tmp[1024];
-	PRStatus status = PR_GetSystemInfo( PR_SI_HOSTNAME, tmp, sizeof(tmp) );
-	if ( status != PR_SUCCESS )
-		JS_ReportError( cx, "unable to GetSystemInfo" );
-	JSString *jsstr = JS_NewStringCopyZ(cx,tmp);
-	RT_ASSERT_ALLOC( jsstr );
-	*rval = STRING_TO_JSVAL(jsstr);
-	return JS_TRUE;
-}
-
-
 DEFINE_FUNCTION( GetRandomNoise ) {
 
 	RT_ASSERT_ARGC( 1 );
@@ -342,10 +329,68 @@ DEFINE_FUNCTION( hton ) {
 
 */
 
+DEFINE_PROPERTY( hostName ) {
+
+	char tmp[SYS_INFO_BUFFER_LENGTH];
+	PRStatus status = PR_GetSystemInfo( PR_SI_HOSTNAME, tmp, sizeof(tmp) );
+	if ( status != PR_SUCCESS )
+		return ThrowIoError(cx);
+	JSString *jsstr = JS_NewStringCopyZ(cx,tmp);
+	RT_ASSERT_ALLOC( jsstr );
+	*vp = STRING_TO_JSVAL(jsstr);
+	return JS_TRUE;
+}
+
+
 DEFINE_PROPERTY( physicalMemorySize ) {
 	
 	PRUint64 mem = PR_GetPhysicalMemorySize();
 	RT_CHECK_CALL( JS_NewNumberValue(cx, (jsdouble)mem, vp) );
+	return JS_TRUE;
+}
+
+
+DEFINE_PROPERTY( systemInfo ) {
+
+	if ( *vp == JSVAL_VOID ) {
+
+		char tmp[SYS_INFO_BUFFER_LENGTH];
+		
+		JSObject *info = JS_NewObject(cx, NULL, NULL, NULL);
+		RT_ASSERT_ALLOC( info );
+		*vp = OBJECT_TO_JSVAL( info );
+
+		PRStatus status;
+		jsval tmpVal;
+		JSString *jsstr;
+
+		// (TBD) these properties must be read-only !!
+
+		status = PR_GetSystemInfo( PR_SI_ARCHITECTURE, tmp, sizeof(tmp) );
+		if ( status != PR_SUCCESS )
+			return ThrowIoError(cx);
+		jsstr = JS_NewStringCopyZ(cx,tmp);
+		RT_ASSERT_ALLOC( jsstr );
+		tmpVal = STRING_TO_JSVAL(jsstr); 
+		JS_SetProperty(cx, info, "architecture", &tmpVal);
+
+		status = PR_GetSystemInfo( PR_SI_SYSNAME, tmp, sizeof(tmp) );
+		if ( status != PR_SUCCESS )
+			return ThrowIoError(cx);
+		jsstr = JS_NewStringCopyZ(cx,tmp);
+		RT_ASSERT_ALLOC( jsstr );
+		tmpVal = STRING_TO_JSVAL(jsstr); 
+		JS_SetProperty(cx, info, "name", &tmpVal);
+
+		status = PR_GetSystemInfo( PR_SI_RELEASE, tmp, sizeof(tmp) );
+		if ( status != PR_SUCCESS )
+			return ThrowIoError(cx);
+		jsstr = JS_NewStringCopyZ(cx,tmp);
+		RT_ASSERT_ALLOC( jsstr );
+		tmpVal = STRING_TO_JSVAL(jsstr); 
+		JS_SetProperty(cx, info, "release", &tmpVal);
+	}
+
 	return JS_TRUE;
 }
 
@@ -360,12 +405,13 @@ CONFIGURE_STATIC
 		FUNCTION_FAST( UIntervalNow )
 		FUNCTION( Sleep )
 		FUNCTION( GetEnv )
-		FUNCTION( HostName )
 		FUNCTION( GetRandomNoise )
 	END_STATIC_FUNCTION_SPEC
 	
 	BEGIN_STATIC_PROPERTY_SPEC
+		PROPERTY_READ( hostName )
 		PROPERTY_READ( physicalMemorySize )
+		PROPERTY_READ_STORE( systemInfo )
 	END_STATIC_PROPERTY_SPEC
 
 END_STATIC

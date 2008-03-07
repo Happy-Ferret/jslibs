@@ -327,6 +327,7 @@ DEFINE_PROPERTY( info ) {
 	JSObject *fileTypeObj = JS_NewObject( cx, NULL, NULL, NULL );
 	*vp = OBJECT_TO_JSVAL( fileTypeObj );
 
+	// (TBD) these properties must be read-only !!
 	jsval jsvalType = INT_TO_JSVAL((int)fileInfo.type);
 	JS_SetProperty( cx, fileTypeObj, "type", &jsvalType );
 

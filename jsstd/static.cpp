@@ -307,6 +307,7 @@ DEFINE_FUNCTION_FAST( CollectGarbage ) {
 	JS_EndRequest( cx );
 	#endif
 
+	JS_SET_RVAL(cx,vp,JSVAL_VOID);
 	return JS_TRUE;
 }
 
@@ -323,6 +324,7 @@ DEFINE_FUNCTION_FAST( MaybeCollectGarbage ) {
 	JS_EndRequest( cx );
 	#endif
 
+	JS_SET_RVAL(cx,vp,JSVAL_VOID);
 	return JS_TRUE;
 }
 
@@ -347,6 +349,7 @@ DEFINE_FUNCTION_FAST( Print ) {
 
 	if ( stdoutFunction == NULL )
 		return JS_TRUE; // nowhere to write, but don't failed
+	JS_SET_RVAL(cx, JSVAL_VOID)
 	for (uintN i = 0; i<argc; i++)
 		RT_CHECK_CALL( JS_CallFunction(cx, JS_THIS_OBJECT(cx, vp), stdoutFunction, 1, &JS_ARGV(cx,vp)[i], &JS_RVAL(cx,vp)) );
 	return JS_TRUE;
