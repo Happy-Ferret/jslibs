@@ -198,10 +198,14 @@ inline bool MaybeRealloc( int requested, int received ) {
 #define J_FARG_ISDEF( n ) ( argc >= (n) && JS_ARGV(cx,vp)[(n)-1] != JSVAL_VOID )
 
 // is the current obj (this)
-#define J_OBJ JS_THIS_OBJECT(cx, vp)
+#define J_OBJ (obj)
+// same for fast native
+#define J_FOBJ JS_THIS_OBJECT(cx, vp)
 
 // the return value
-#define J_RVAL JS_RVAL(cx, vp)
+#define J_RVAL (rval)
+// same for fast native
+#define J_FRVAL (&JS_RVAL(cx, vp))
 
 
 ////////////////////
