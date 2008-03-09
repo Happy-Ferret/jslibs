@@ -242,18 +242,18 @@ DEFINE_FUNCTION( HideProperties ) {
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-DEFINE_FUNCTION( IdOf ) {
+DEFINE_FUNCTION_FAST( IdOf ) {
 
 	jsid id;
-	if ( JSVAL_IS_OBJECT( J_ARG(1) ) )
-		RT_CHECK_CALL( JS_GetObjectId(cx, JSVAL_TO_OBJECT( J_ARG(1) ), &id) );
+	if ( JSVAL_IS_OBJECT( J_FARG(1) ) )
+		RT_CHECK_CALL( JS_GetObjectId(cx, JSVAL_TO_OBJECT( J_FARG(1) ), &id) );
 	else
-		RT_CHECK_CALL( JS_ValueToId(cx, J_ARG(1), &id) );
+		RT_CHECK_CALL( JS_ValueToId(cx, J_FARG(1), &id) );
 
 	if ( INT_FITS_IN_JSVAL(id) )
-		*rval = INT_TO_JSVAL(id);
+		*J_FRVAL = INT_TO_JSVAL(id);
 	else
-		JS_NewNumberValue(cx,(JSUword)id,rval); // src: ... JSDOUBLE_IS_INT(d, i) && INT_FITS_IN_JSVAL(i) ...
+		JS_NewNumberValue(cx, (JSUword)id, J_FRVAL); // src: ... JSDOUBLE_IS_INT(d, i) && INT_FITS_IN_JSVAL(i) ...
 	return JS_TRUE;
 }
 
@@ -338,7 +338,7 @@ DEFINE_FUNCTION_FAST( MaybeCollectGarbage ) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 DEFINE_FUNCTION_FAST( TimeCounter ) {
 
-	JS_NewNumberValue(cx, AccurateTimeCounter(), &J_RVAL);
+	JS_NewNumberValue(cx, AccurateTimeCounter(), J_FRVAL);
 	return JS_TRUE;
 }
 
@@ -352,7 +352,7 @@ DEFINE_FUNCTION_FAST( Print ) {
 	JS_SET_RVAL(cx, vp, JSVAL_VOID);
 
 	for (uintN i = 1; i <= J_ARGC; i++)
-		RT_CHECK_CALL( JS_CallFunction(cx, JS_THIS_OBJECT(cx, vp), stdoutFunction, 1, &J_FARG(i), &J_RVAL) );
+		RT_CHECK_CALL( JS_CallFunction(cx, J_FOBJ, stdoutFunction, 1, &J_FARG(i), J_FRVAL) );
 	return JS_TRUE;
 }
 
@@ -472,7 +472,7 @@ static JSScript* LoadScript(JSContext *cx, JSObject *obj, const char *fileName, 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // function copied from mozilla/js/src/js.c
-DEFINE_FUNCTION( Exec ) {
+DEFINE_FUNCTION_FAST( Exec ) {
 
 	//  uintN i;
 	JSString *str;
@@ -484,21 +484,21 @@ DEFINE_FUNCTION( Exec ) {
 
 	RT_ASSERT_ARGC( 1 );
 	bool saveCompiledScripts;
-	if ( J_ARG_ISDEF(2) && J_ARG(2) == JSVAL_FALSE )
+	if ( J_FARG_ISDEF(2) && J_FARG(2) == JSVAL_FALSE )
 		saveCompiledScripts = false;
 	else
 		saveCompiledScripts = true; // default
 
-	str = JS_ValueToString(cx, J_ARG(1));
+	str = JS_ValueToString(cx, J_FARG(1));
 	RT_ASSERT( str != NULL, "unable to get the filename." );
-	J_ARG(1) = STRING_TO_JSVAL(str);
+	J_FARG(1) = STRING_TO_JSVAL(str);
 	filename = JS_GetStringBytes(str);
 	errno = 0;
 	//        older = JS_SetErrorReporter(cx, LoadErrorReporter);
 	oldopts = JS_GetOptions(cx);
 	JS_SetOptions(cx, oldopts | JSOPTION_COMPILE_N_GO);
 	// script = JS_CompileFile(cx, obj, filename);
-	script = LoadScript( cx, obj, filename, saveCompiledScripts );
+	script = LoadScript( cx, J_FOBJ, filename, saveCompiledScripts );
 	if (!script) {
 		ok = JS_FALSE;
 	} else {
@@ -507,7 +507,7 @@ DEFINE_FUNCTION( Exec ) {
 //			obj = JSVAL_TO_OBJECT( J_ARG(3) ); // try Exec.call( obj1, 'test.js' ); ...
 // see: http://groups.google.com/group/mozilla.dev.tech.js-engine/browse_thread/thread/97269b31d65d493d/be8a4f9c4e805bef
 
-		ok = JS_ExecuteScript(cx, obj, script, rval); // Doc: On successful completion, rval is a pointer to a variable that holds the value from the last executed expression statement processed in the script.
+		ok = JS_ExecuteScript(cx, J_FOBJ, script, J_FRVAL); // Doc: On successful completion, rval is a pointer to a variable that holds the value from the last executed expression statement processed in the script.
 		JS_DestroyScript(cx, script);
 	}
 	JS_SetOptions(cx, oldopts);
@@ -551,16 +551,19 @@ CONFIGURE_STATIC
 		FUNCTION( SetScope )
 		FUNCTION( IsConstructing )
 		FUNCTION( HideProperties )
-		FUNCTION( Exec )
+		FUNCTION_FAST( Exec )
 		FUNCTION( IsStatementValid )
 		FUNCTION_FAST( Print )
 		FUNCTION_FAST( TimeCounter )
 		FUNCTION_FAST( CollectGarbage )
 		FUNCTION_FAST( MaybeCollectGarbage )
-		FUNCTION( IdOf )
+		FUNCTION_FAST( IdOf )
 		FUNCTION( Warning )
 		FUNCTION( ASSERT )
 		FUNCTION_FAST( Halt )
 	END_STATIC_FUNCTION_SPEC
+
+//	BEGIN_STATIC_PROPERTY_SPEC
+//	END_STATIC_PROPERTY_SPEC
 
 END_STATIC
