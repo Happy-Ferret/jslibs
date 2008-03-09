@@ -50,22 +50,17 @@ DEFINE_FUNCTION( Poll ) {
 
 		JS_DestroyIdArray(cx, idArray);
 		result = PR_Poll( NULL, 0, pr_timeout ); // we can replace this by a delay, but the function is Pool, not Sleep
-		if ( result == -1 ) {  // failed. see PR_GetError()
-
+		if ( result == -1 )
 			return ThrowIoError(cx);
-		}
 		*rval = JSVAL_ZERO;
 		return JS_TRUE;
 	}
 
-	PRPollDesc pollDesc[1024];
-
-	if ( idArray->length > (signed)(sizeof(pollDesc) / sizeof(PRPollDesc)) ) {
-
-		JS_ReportError( cx, "Too many descriptors in Poll" );
-		goto failed;
-	}
-
+	PRPollDesc staticPollDesc[32];
+	PRPollDesc *pollDesc = staticPollDesc; // Optimization to avoid dynamic allocation when it is possible
+	
+	if ( idArray->length > (signed)(sizeof(staticPollDesc) / sizeof(staticPollDesc[0])) )
+		pollDesc = (PRPollDesc*) malloc(idArray->length * sizeof(PRPollDesc));
 
 	jsint i;
 	for ( i = 0; i < idArray->length; i++ ) {
@@ -84,23 +79,28 @@ DEFINE_FUNCTION( Poll ) {
 		pollDesc[i].out_flags = 0;
 		jsval prop;
 
-		JS_GetProperty( cx, fdObj, "writable", &prop );
+		if ( JS_GetProperty( cx, fdObj, "writable", &prop ) == JS_FALSE )
+			goto failed;
 		if ( prop != JSVAL_VOID )
 			pollDesc[i].in_flags |= PR_POLL_WRITE;
 
-		JS_GetProperty( cx, fdObj, "readable", &prop );
+		if ( JS_GetProperty( cx, fdObj, "readable", &prop ) == JS_FALSE )
+			goto failed;
 		if ( prop != JSVAL_VOID )
 			pollDesc[i].in_flags |= PR_POLL_READ;
 
-		JS_GetProperty( cx, fdObj, "hangup", &prop );
+		if ( JS_GetProperty( cx, fdObj, "hangup", &prop ) == JS_FALSE )
+			goto failed;
 		if ( prop != JSVAL_VOID )
 			pollDesc[i].in_flags |= PR_POLL_HUP;
 
-		JS_GetProperty( cx, fdObj, "exception", &prop );
+		if ( JS_GetProperty( cx, fdObj, "exception", &prop ) == JS_FALSE )
+			goto failed;
 		if ( prop != JSVAL_VOID )
 			pollDesc[i].in_flags |= PR_POLL_EXCEPT;
 
-		JS_GetProperty( cx, fdObj, "error", &prop );
+		if ( JS_GetProperty( cx, fdObj, "error", &prop ) == JS_FALSE )
+			goto failed;
 		if ( prop != JSVAL_VOID )
 			pollDesc[i].in_flags |= PR_POLL_ERR;
 	}
@@ -130,7 +130,7 @@ DEFINE_FUNCTION( Poll ) {
 				
 				JS_GetProperty( cx, fdObj, "error", &prop );
 				if ( JS_TypeOfValue( cx, prop ) == JSTYPE_FUNCTION )
-					if ( JS_CallFunctionValue( cx, fdObj, prop, sizeof(cbArgv)/sizeof(jsval), cbArgv, &ret ) == JS_FALSE ) // JS_CallFunction() DO NOT WORK !!!
+					if ( JS_CallFunctionValue( cx, fdObj, prop, sizeof(cbArgv)/sizeof(*cbArgv), cbArgv, &ret ) == JS_FALSE ) // JS_CallFunction() DO NOT WORK !!!
 						goto failed;
 			}
 			if (JS_IsExceptionPending(cx))
@@ -140,7 +140,7 @@ DEFINE_FUNCTION( Poll ) {
 
 				JS_GetProperty( cx, fdObj, "exception", &prop );
 				if (JS_TypeOfValue( cx, prop ) == JSTYPE_FUNCTION )
-					if ( JS_CallFunctionValue( cx, fdObj, prop, sizeof(cbArgv)/sizeof(jsval), cbArgv, &ret ) == JS_FALSE ) // JS_CallFunction() DO NOT WORK !!!
+					if ( JS_CallFunctionValue( cx, fdObj, prop, sizeof(cbArgv)/sizeof(*cbArgv), cbArgv, &ret ) == JS_FALSE ) // JS_CallFunction() DO NOT WORK !!!
 						goto failed;
 			}
 			if (JS_IsExceptionPending(cx))
@@ -150,7 +150,7 @@ DEFINE_FUNCTION( Poll ) {
 				
 				JS_GetProperty( cx, fdObj, "hangup", &prop );
 				if ( JS_TypeOfValue( cx, prop ) == JSTYPE_FUNCTION )
-					if ( JS_CallFunctionValue( cx, fdObj, prop, sizeof(cbArgv)/sizeof(jsval), cbArgv, &ret ) == JS_FALSE ) // JS_CallFunction() DO NOT WORK !!!
+					if ( JS_CallFunctionValue( cx, fdObj, prop, sizeof(cbArgv)/sizeof(*cbArgv), cbArgv, &ret ) == JS_FALSE ) // JS_CallFunction() DO NOT WORK !!!
 						goto failed;
 			}
 			if (JS_IsExceptionPending(cx))
@@ -160,7 +160,7 @@ DEFINE_FUNCTION( Poll ) {
 				
 				JS_GetProperty( cx, fdObj, "readable", &prop );
 				if ( JS_TypeOfValue( cx, prop ) == JSTYPE_FUNCTION )
-					if ( JS_CallFunctionValue( cx, fdObj, prop, sizeof(cbArgv)/sizeof(jsval), cbArgv, &ret ) == JS_FALSE ) // JS_CallFunction() DO NOT WORK !!!
+					if ( JS_CallFunctionValue( cx, fdObj, prop, sizeof(cbArgv)/sizeof(*cbArgv), cbArgv, &ret ) == JS_FALSE ) // JS_CallFunction() DO NOT WORK !!!
 						goto failed;
 			}
 			if (JS_IsExceptionPending(cx))
@@ -170,20 +170,23 @@ DEFINE_FUNCTION( Poll ) {
 			
 				JS_GetProperty( cx, fdObj, "writable", &prop );
 				if ( JS_TypeOfValue( cx, prop ) == JSTYPE_FUNCTION )
-					if ( JS_CallFunctionValue( cx, fdObj, prop, sizeof(cbArgv)/sizeof(jsval), cbArgv, &ret ) == JS_FALSE ) // JS_CallFunction() DO NOT WORK !!!
+					if ( JS_CallFunctionValue( cx, fdObj, prop, sizeof(cbArgv)/sizeof(*cbArgv), cbArgv, &ret ) == JS_FALSE ) // JS_CallFunction() DO NOT WORK !!!
 						goto failed;
 			}
 			if (JS_IsExceptionPending(cx))
 				goto failed;
-
 		}
 	}
 
 	*rval = INT_TO_JSVAL( result );
+	if ( pollDesc != staticPollDesc )
+		free(pollDesc);
 	JS_DestroyIdArray(cx, idArray);
 	return JS_TRUE;
 
 failed: // goto is the cheaper solution
+	if ( pollDesc != staticPollDesc )
+		free(pollDesc);
 	JS_DestroyIdArray( cx, idArray );
 	return JS_FALSE;
 }
@@ -275,6 +278,7 @@ DEFINE_FUNCTION( GetEnv ) {
 	char* value = PR_GetEnv(name); // If the environment variable is not defined, the function returns NULL.
 	if ( value != NULL ) { // this will cause an 'undefined' return value
 
+//		JSString *jsstr = JS_NewExternalString(cx, (jschar*)value, strlen(value), JS_AddExternalStringFinalizer(NULL)); only works with unicode strings
 		JSString *jsstr = JS_NewStringCopyZ(cx,value);
 		RT_ASSERT_ALLOC( jsstr );
 		*rval = STRING_TO_JSVAL(jsstr);
@@ -397,7 +401,7 @@ DEFINE_PROPERTY( systemInfo ) {
 CONFIGURE_STATIC
 
 	BEGIN_STATIC_FUNCTION_SPEC
-		FUNCTION( Poll )
+		FUNCTION( Poll ) // Do not turn it in FAST NATIVE because we need a stack frame for debuging
 		FUNCTION( IsReadable )
 		FUNCTION( IsWritable )
 		FUNCTION( IntervalNow )
