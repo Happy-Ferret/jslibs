@@ -53,7 +53,7 @@ extern "C" DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 		&kasumi_desc,
 //		&multi2_desc,
 	};
-	for ( int i=0; i<sizeof(cipherList)/sizeof(ltc_cipher_descriptor*); i++ )
+	for ( int i=0; i<sizeof(cipherList)/sizeof(*cipherList); i++ )
 		RT_ASSERT_1( register_cipher(cipherList[i]) != -1, "Unable to load cipher %s", cipherList[i]->name );
 
 	const struct ltc_hash_descriptor * hashList[] = {
@@ -73,7 +73,7 @@ extern "C" DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 		&rmd256_desc,
 		&rmd320_desc,
 	};
-	for ( int i=0; i<sizeof(hashList)/sizeof(ltc_hash_descriptor*); i++ )
+	for ( int i=0; i<sizeof(hashList)/sizeof(*hashList); i++ )
 		RT_ASSERT_1( register_hash(hashList[i]) != -1, "Unable to load hash %s", hashList[i]->name );
 
 	const struct ltc_prng_descriptor * prngList[] = {
@@ -83,7 +83,7 @@ extern "C" DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 		&sprng_desc,
 		&sober128_desc,
 	};
-	for ( int i=0; i<sizeof(prngList)/sizeof(ltc_prng_descriptor*); i++ )
+	for ( int i=0; i<sizeof(prngList)/sizeof(*prngList); i++ )
 		RT_ASSERT_1( register_prng(prngList[i]) != -1, "Unable to load prng %s", prngList[i]->name );
 
 	SET_UNSAFE_MODE( GetConfigurationValue(cx, NAME_CONFIGURATION_UNSAFE_MODE ) == JSVAL_TRUE );

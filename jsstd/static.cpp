@@ -262,12 +262,13 @@ DEFINE_FUNCTION_FAST( IdOf ) {
 // note:
 //  warning is reported on stderr ( jshost.exe test.js 2>NUL )
 // (TBD) update this note ?
-DEFINE_FUNCTION( Warning ) {
+DEFINE_FUNCTION_FAST( Warning ) {
 
-	JSString *jssMesage = JS_ValueToString(cx, J_ARG(1));
+	JSString *jssMesage = JS_ValueToString(cx, J_FARG(1));
 	RT_ASSERT_ALLOC( jssMesage );
 //	J_ARG(1) = STRING_TO_JSVAL(jssMesage);
 	JS_ReportWarning( cx, "%s", JS_GetStringBytes(jssMesage) );
+	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
 
@@ -306,7 +307,7 @@ DEFINE_FUNCTION_FAST( CollectGarbage ) {
 	JS_EndRequest( cx );
 	#endif
 
-	JS_SET_RVAL(cx,vp,JSVAL_VOID);
+	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
 
@@ -323,7 +324,7 @@ DEFINE_FUNCTION_FAST( MaybeCollectGarbage ) {
 	JS_EndRequest( cx );
 	#endif
 
-	JS_SET_RVAL(cx,vp,JSVAL_VOID);
+	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
 
@@ -351,8 +352,8 @@ DEFINE_FUNCTION_FAST( Print ) {
 	
 	JS_SET_RVAL(cx, vp, JSVAL_VOID);
 
-	for (uintN i = 1; i <= J_ARGC; i++)
-		RT_CHECK_CALL( JS_CallFunction(cx, J_FOBJ, stdoutFunction, 1, &J_FARG(i), J_FRVAL) );
+	for (uintN i = 0; i < J_ARGC; i++)
+		RT_CHECK_CALL( JS_CallFunction(cx, J_FOBJ, stdoutFunction, 1, &J_FARG(1+i), J_FRVAL) );
 	return JS_TRUE;
 }
 
@@ -558,7 +559,7 @@ CONFIGURE_STATIC
 		FUNCTION_FAST( CollectGarbage )
 		FUNCTION_FAST( MaybeCollectGarbage )
 		FUNCTION_FAST( IdOf )
-		FUNCTION( Warning )
+		FUNCTION_FAST( Warning )
 		FUNCTION( ASSERT )
 		FUNCTION_FAST( Halt )
 	END_STATIC_FUNCTION_SPEC
