@@ -128,10 +128,10 @@ DEFINE_FUNCTION( Expand ) {
 	return JS_TRUE;
 }
 
-/*
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // source: http://mxr.mozilla.org/mozilla/source/js/src/js.c
-static JSBool Intern(JSContext *cx, uintN argc, jsval *vp) {
+static JSBool InternString(JSContext *cx, uintN argc, jsval *vp) {
 
 	JSString *str;
 	str = JS_ValueToString(cx, vp[2]);
@@ -144,7 +144,6 @@ static JSBool Intern(JSContext *cx, uintN argc, jsval *vp) {
 	*vp = JSVAL_VOID;
 	return JS_TRUE;
 }
-*/
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 DEFINE_FUNCTION( Seal ) {
@@ -352,8 +351,8 @@ DEFINE_FUNCTION_FAST( Print ) {
 	
 	JS_SET_RVAL(cx, vp, JSVAL_VOID);
 
-	for (uintN i = 0; i < J_ARGC; i++)
-		RT_CHECK_CALL( JS_CallFunction(cx, JS_THIS_OBJECT(cx, vp), stdoutFunction, 1, &J_FARG(1+1), &J_RVAL) );
+	for (uintN i = 1; i <= J_ARGC; i++)
+		RT_CHECK_CALL( JS_CallFunction(cx, JS_THIS_OBJECT(cx, vp), stdoutFunction, 1, &J_FARG(i), &J_RVAL) );
 	return JS_TRUE;
 }
 
@@ -546,7 +545,7 @@ CONFIGURE_STATIC
 
 	BEGIN_STATIC_FUNCTION_SPEC
 		FUNCTION( Expand )
-//		FUNCTION( Intern )
+		FUNCTION_FAST( InternString )
 		FUNCTION( Seal )
 		FUNCTION( Clear )
 		FUNCTION( SetScope )
@@ -555,7 +554,6 @@ CONFIGURE_STATIC
 		FUNCTION( Exec )
 		FUNCTION( IsStatementValid )
 		FUNCTION_FAST( Print )
-//		FUNCTION_FAST( Now )
 		FUNCTION_FAST( TimeCounter )
 		FUNCTION_FAST( CollectGarbage )
 		FUNCTION_FAST( MaybeCollectGarbage )
@@ -564,8 +562,5 @@ CONFIGURE_STATIC
 		FUNCTION( ASSERT )
 		FUNCTION_FAST( Halt )
 	END_STATIC_FUNCTION_SPEC
-
-	BEGIN_STATIC_PROPERTY_SPEC
-	END_STATIC_PROPERTY_SPEC
 
 END_STATIC
