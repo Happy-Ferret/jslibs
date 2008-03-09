@@ -518,7 +518,7 @@ err:
 DEFINE_FUNCTION( Read ) { // Read( [ amount | <undefined> ] )
 
 	RT_ASSERT_RESOURCE( JS_GetPrivate(cx, obj) ); // first, ensure that the object is valid
-	if ( J_ARG_ISDEF(1) ) { // read the next chunk (of an unknown length) (read something as fast as possible)
+	if ( J_ARGC == 1 && J_ARG(1) == JSVAL_VOID ) { // read the next chunk (of an unknown length) (read something as fast as possible)
 
 		RT_CHECK_CALL( ReadOneChunk(cx, obj, rval) );
 		return JS_TRUE;
