@@ -11,8 +11,10 @@
 JSBool NotifyObject( int slotIndex, JSContext *cx, JSObject *obj, jsval id, jsval *vp ) {
 
 	// (TBD) because in constructor we do JS_SetPrototype(cx, obj, NULL) to create a 'true' empty object, is the next line useful ?
+
 	if ( JSVAL_IS_VOID(*vp) && strcmp( JS_GetStringBytes(JS_ValueToString(cx,id)), "__iterator__" ) == 0 ) // we don't want to override the iterator
 		return JS_TRUE;
+
 	jsval slot;
 	JS_GetReservedSlot( cx, obj, slotIndex , &slot );
 	if ( JSVAL_IS_VOID(slot) )
@@ -50,7 +52,7 @@ JSClass objex_class = { "ObjEx", JSCLASS_HAS_RESERVED_SLOTS(5) /*| JSCLASS_NEW_R
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSBool objex_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+DEFINE_CONSTRUCTOR() {
 
 	if ( !JS_IsConstructing(cx) ) {
 
@@ -76,21 +78,21 @@ JSBool objex_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, js
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSBool objex_static_aux(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+DEFINE_FUNCTION_FAST( Aux ) {
 
-	if ( argc < 1 ) {
+	if ( J_ARGC < 1 ) {
 
 		JS_ReportError( cx, "missing argument" );
 		return JS_FALSE;
 	}
 
-	if ( !JSVAL_IS_OBJECT(argv[0]) || argv[0] == JSVAL_NULL ) {
+	if ( !JSVAL_IS_OBJECT(J_FARG(1)) || J_FARG(1) == JSVAL_NULL ) {
 
 		JS_ReportError( cx, "object expected" );
 		return JS_FALSE;
 	}
 
-	JSObject *object = JSVAL_TO_OBJECT(argv[0]);
+	JSObject *object = JSVAL_TO_OBJECT(J_FARG(1));
 
 	if ( JS_GET_CLASS(cx,object) != &objex_class  ) {
 
@@ -98,24 +100,24 @@ JSBool objex_static_aux(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, j
 		return JS_FALSE;
 	}
 
-  JS_GetReservedSlot( cx, object, AUX_SLOT, rval );
+  JS_GetReservedSlot( cx, object, AUX_SLOT, J_FRVAL );
 
-	if ( argc >= 2 )
-	  JS_SetReservedSlot( cx, object, AUX_SLOT, argv[1] );
+	if ( J_ARGC >= 2 )
+	  JS_SetReservedSlot( cx, object, AUX_SLOT, J_FARG(2) );
 
 	return JS_TRUE;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSFunctionSpec objex_static_FunctionSpec[] = { // *name, call, nargs, flags, extra
- { "Aux"          , objex_static_aux       , 0, 0, 0 },
- { 0 }
+JSFunctionSpec objex_static_FunctionSpec[] = {
+	FUNCTION_FAST( Aux )
+	JS_FS_END
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 JSObject *objexInitClass( JSContext *cx, JSObject *obj ) {
 
-	return JS_InitClass( cx, obj, NULL, &objex_class, objex_construct, 0, NULL, NULL, NULL, objex_static_FunctionSpec );
+	return JS_InitClass( cx, obj, NULL, &objex_class, Constructor, 0, NULL, NULL, NULL, objex_static_FunctionSpec );
 }
 
 
