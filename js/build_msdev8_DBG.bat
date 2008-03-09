@@ -14,7 +14,7 @@ cd .\src
 	rem /MTd : Multithreaded static debug
 	rem /MD  : Multithreaded DLL
 	rem /MDd : Multithreaded DLL debug
-set XCFLAGS=/DWINVER=0x500 /D_WIN32_WINNT=0x500 /D_CRT_SECURE_NO_DEPRECATE=1 /MDd /DJS_HASHMETER /DJS_GCMETER
+set XCFLAGS=/DWINVER=0x500 /D_WIN32_WINNT=0x500 /D_CRT_SECURE_NO_DEPRECATE=1 /MDd /DJS_HASHMETER
 	rem /MDd
 	rem /D_NSPR_BUILD_
 	rem set OTHER_LIBS=wsock32.lib ../../nspr/lib/libnspr4_s.lib /NODEFAULTLIB:libnspr4
@@ -28,3 +28,4 @@ rem  JS_THREADSAFE=1 JS_DIST=../../nspr
 
 set PATH=%prevPath%
 cd /D %prevDir%
+
