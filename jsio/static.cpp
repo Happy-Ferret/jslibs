@@ -38,9 +38,9 @@ DEFINE_FUNCTION( Poll ) {
 	PRIntervalTime pr_timeout;
 	if ( J_ARG_ISDEF(2) ) {
 
-		uint32 timeout;
-		JS_ValueToECMAUint32( cx, J_ARG(2), &timeout );
-		pr_timeout = PR_MillisecondsToInterval(timeout);
+		uint32 tmp;
+		RT_JSVAL_TO_UINT32( J_ARG(2), tmp );
+		pr_timeout = PR_MillisecondsToInterval(tmp);
 	} else {
 
 		pr_timeout = PR_INTERVAL_NO_TIMEOUT;
@@ -66,8 +66,8 @@ DEFINE_FUNCTION( Poll ) {
 	for ( i = 0; i < idArray->length; i++ ) {
 
 		jsval propVal;
-		RT_CHECK_CALL( JS_IdToValue( cx, idArray->vector[i], &propVal ) );
-		RT_CHECK_CALL( JS_GetElement(cx, JSVAL_TO_OBJECT(J_ARG(1)), JSVAL_TO_INT(propVal), &propVal ) );
+		RT_CHECK_CALL( JS_IdToValue(cx, idArray->vector[i], &propVal ));
+		RT_CHECK_CALL( JS_GetElement(cx, JSVAL_TO_OBJECT(J_ARG(1)), JSVAL_TO_INT(propVal), &propVal ));
 		RT_ASSERT_OBJECT( propVal );
 		JSObject *fdObj = JSVAL_TO_OBJECT( propVal );
 		RT_ASSERT( InheritFrom(cx, fdObj, &classDescriptor), RT_ERROR_INVALID_CLASS );

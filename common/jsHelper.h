@@ -233,14 +233,14 @@ inline bool MaybeRealloc( int requested, int received ) {
 } while(0)
 
 #define RT_JSVAL_TO_UINT32( jsvalUInt, uintVariable ) do { \
-	jsdouble tmp; \
+	jsdouble __tmp; \
 	if ( JSVAL_IS_INT(jsvalUInt) && JSVAL_TO_INT(jsvalUInt) >= 0 ) { \
 		uintVariable = JSVAL_TO_INT(jsvalUInt); \
 	} else { \
-		JSBool st = JS_ValueToNumber(cx, jsvalUInt, &tmp ); \
+		JSBool st = JS_ValueToNumber(cx, jsvalUInt, &__tmp ); \
 		RT_ASSERT( st != JS_FALSE, RT_ERROR_INT_CONVERSION_FAILED ); \
-		uintVariable = (unsigned long)tmp; \
-		RT_ASSERT( tmp == (double)((unsigned long)tmp), RT_ERROR_INT_CONVERSION_FAILED ); \
+		uintVariable = (unsigned long)__tmp; \
+		RT_ASSERT( __tmp == (double)((unsigned long)__tmp), RT_ERROR_INT_CONVERSION_FAILED ); \
 	} \
 } while(0)
 
