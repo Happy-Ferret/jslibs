@@ -352,12 +352,14 @@ DEFINE_PROPERTY( standard ) {
 		JS_ValueToInt32( cx, id, &i );
 
 		JSObject *obj = JS_NewObject(cx, &classFile, NULL, NULL ); // no need to use classDescriptor as proto.
-		*vp = OBJECT_TO_JSVAL( obj ); // GC protection ?
+		*vp = OBJECT_TO_JSVAL( obj );
 
 		PRFileDesc *fd = PR_GetSpecialFD((PRSpecialFD)i); // beware: cast !
 		if ( fd == NULL )
 			return ThrowIoError(cx);
 		JS_SetPrivate( cx, obj, fd );
+
+		JS_SetReservedSlot(cx, obj, SLOT_JSIO_DESCRIPTOR_IMPORTED, JSVAL_TRUE); // avoid PR_Close
 	}
 	return JS_TRUE;
 }
@@ -371,7 +373,7 @@ CONFIGURE_CLASS
 	HAS_FINALIZE
 
 	HAS_PRIVATE
-	HAS_RESERVED_SLOTS( 1 )
+	HAS_RESERVED_SLOTS( 2 ) // SLOT_JSIO_DESCRIPTOR_IMPORTED, SLOT_JSIO_FILE_NAME
 
 	BEGIN_FUNCTION_SPEC
 		FUNCTION( Open )
