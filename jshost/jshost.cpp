@@ -674,12 +674,12 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
   else
 	  exitValue = EXIT_FAILURE;
 
-//#ifndef NOATEXIT
-//	Finalize();
-//	return exitValue;
-//#else
+#ifndef NOATEXIT
 	exit(exitValue);
-//#endif // NOATEXIT
+#else
+	Finalize();
+	return exitValue;
+#endif // NOATEXIT
 
 }
 
