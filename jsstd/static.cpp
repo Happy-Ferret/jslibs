@@ -190,9 +190,9 @@ DEFINE_FUNCTION( SetScope ) {
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-DEFINE_FUNCTION( IsConstructing ) {
+DEFINE_PROPERTY( isConstructing ) {
 
-	*rval = JS_IsConstructing(cx) == JS_TRUE ? JSVAL_TRUE : JSVAL_FALSE;
+	*vp = BOOLEAN_TO_JSVAL( JS_IsConstructing(cx) );
 	return JS_TRUE;
 }
 
@@ -550,7 +550,6 @@ CONFIGURE_STATIC
 		FUNCTION( Seal )
 		FUNCTION( Clear )
 		FUNCTION( SetScope )
-		FUNCTION( IsConstructing )
 		FUNCTION( HideProperties )
 		FUNCTION_FAST( Exec )
 		FUNCTION( IsStatementValid )
@@ -564,7 +563,8 @@ CONFIGURE_STATIC
 		FUNCTION_FAST( Halt )
 	END_STATIC_FUNCTION_SPEC
 
-//	BEGIN_STATIC_PROPERTY_SPEC
-//	END_STATIC_PROPERTY_SPEC
+	BEGIN_STATIC_PROPERTY_SPEC
+		PROPERTY_READ( isConstructing )
+	END_STATIC_PROPERTY_SPEC
 
 END_STATIC
