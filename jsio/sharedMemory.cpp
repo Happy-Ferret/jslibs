@@ -43,22 +43,20 @@ DEFINE_FINALIZE() {
 		PRStatus status;
 		status = PR_WaitSemaphore( pv->accessSem );
 
-		(*(int*)pv->mem)--;
-		bool isLast = (*(int*)pv->mem == 0); // true if we are the last user of the shared memory
+		int count = *(int*)pv->mem;
+		count--;
+		*(int*)pv->mem = count;
+
 		status = PR_DetachSharedMemory(pv->shm, pv->mem);
-
-
 		status = PR_PostSemaphore(pv->accessSem);
 		status = PR_CloseSemaphore(pv->accessSem);
 
-		if ( isLast ) {
+		if ( count == 0 ) {
 		
 			status = PR_DeleteSharedMemory(pv->name);
-
 			char semName[MAX_PATH];
 			strcpy(semName, pv->name);
 			strcat(semName, "_jsiosem");
-
 			status = PR_DeleteSemaphore(semName);
 		}
 
@@ -81,21 +79,29 @@ DEFINE_CONSTRUCTOR() {
 	PRSize size;
 	RT_JSVAL_TO_INT32( J_ARG(2), size );
 
-	PRUintn mode = PR_IRUSR|PR_IWUSR | PR_IRWXG|PR_IRGRP; // read write permission for owner and group
+	PRUintn mode = PR_IRUSR | PR_IWUSR  |  PR_IRWXG | PR_IRGRP; // read write permission for owner and group
+
+	if ( J_ARG_ISDEF(3) )
+		RT_JSVAL_TO_INT32( J_ARG(3), mode );
 
 	char semName[MAX_PATH];
 	strcpy(semName, name);
-	strcat(semName, "_jsiosem");
+	strcat(semName, "_sem");
 
-	PRSem *isCreation = PR_OpenSemaphore(semName, PR_SEM_EXCL, 0, 0); // fail if already exists
-	PRSem *accessSem = PR_OpenSemaphore(semName, PR_SEM_CREATE, mode, 1); // If PR_SEM_CREATE is not specified, the third and fourth arguments are ignored.
-	if ( accessSem == NULL )
-		return ThrowIoError(cx);
+	bool isCreation = true;
+	PRSem *accessSem = PR_OpenSemaphore(semName, PR_SEM_EXCL | PR_SEM_CREATE, mode, 1); // fail if already exists
+
+	if ( accessSem == NULL ) {
+
+		accessSem = PR_OpenSemaphore(semName, 0, 0, 0); // If PR_SEM_CREATE is not specified, the third and fourth arguments are ignored.
+		if ( accessSem == NULL )
+			return ThrowIoError(cx);
+		isCreation = false;
+	}
 
 	status = PR_WaitSemaphore( accessSem );
 	if ( status != PR_SUCCESS )
 		return ThrowIoError(cx);
-
 
 	PRSharedMemory *shm = PR_OpenSharedMemory( name, size + RESERVED_LENGTH, PR_SHM_CREATE, mode );
 	if ( shm == NULL )
@@ -116,8 +122,8 @@ DEFINE_CONSTRUCTOR() {
 
 	if ( isCreation )
 		(*(int*)pv->mem) = 0;
-
-	(*(int*)pv->mem)++;
+	else
+		(*(int*)pv->mem)++;
 
 	status = PR_PostSemaphore( accessSem );
 	if ( status != PR_SUCCESS )
@@ -133,6 +139,9 @@ DEFINE_FUNCTION( Write ) {
 
 	RT_ASSERT_ARGC( 1 );
 
+	ClassPrivate *pv = (ClassPrivate*)JS_GetPrivate(cx, J_OBJ);
+	RT_ASSERT_RESOURCE( pv );
+
 	char *data;
 	int dataLength;
 	RT_JSVAL_TO_STRING_AND_LENGTH( J_ARG(1), data, dataLength );
@@ -141,8 +150,7 @@ DEFINE_FUNCTION( Write ) {
 	if ( J_ARG_ISDEF(2) )
 		RT_JSVAL_TO_INT32( J_ARG(2), offset );
 
-	ClassPrivate *pv = (ClassPrivate*)JS_GetPrivate(cx, J_OBJ);
-	RT_ASSERT_RESOURCE( pv );
+//	RT_ASSERT( RESERVED_LENGTH + offset + dataLength <= pv->size, "SharedMemory too small to hold the given data." );
 
 	PRStatus status;
 	status = PR_WaitSemaphore( pv->accessSem );
@@ -186,7 +194,6 @@ DEFINE_FUNCTION( Read ) {
 	if ( status != PR_SUCCESS )
 		return ThrowIoError(cx);
 
-	
 	JSString *jss = JS_NewString(cx, data, dataLength);
 	RT_ASSERT_ALLOC( jss );
 
