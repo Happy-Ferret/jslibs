@@ -21,7 +21,8 @@
 
 #include "sharedMemory.h"
 
-#define RESERVED_LENGTH 4
+#define SEMAPHORE_EXTENSION "_sem"
+
 
 struct ClassPrivate {
 
@@ -33,6 +34,29 @@ struct ClassPrivate {
 };
 
 
+struct MemHeader {
+	unsigned int currentDataLength;
+	unsigned int accessCount;
+};
+
+
+JSBool Lock( JSContext *cx, ClassPrivate *pv ) {
+
+	PRStatus status = PR_WaitSemaphore( pv->accessSem );
+	if ( status != PR_SUCCESS )
+		return ThrowIoError(cx);
+	return JS_TRUE;
+}
+
+JSBool Unlock( JSContext *cx, ClassPrivate *pv ) {
+
+	PRStatus status = PR_PostSemaphore( pv->accessSem );
+	if ( status != PR_SUCCESS )
+		return ThrowIoError(cx);
+	return JS_TRUE;
+}
+
+
 BEGIN_CLASS( SharedMemory )
 
 DEFINE_FINALIZE() {
@@ -42,21 +66,22 @@ DEFINE_FINALIZE() {
 
 		PRStatus status;
 		status = PR_WaitSemaphore( pv->accessSem );
+		
+		MemHeader *mh = (MemHeader*)pv->mem;
 
-		int count = *(int*)pv->mem;
-		count--;
-		*(int*)pv->mem = count;
+		mh->accessCount--;
+		bool isLast = (mh->accessCount == 0);
 
 		status = PR_DetachSharedMemory(pv->shm, pv->mem);
 		status = PR_PostSemaphore(pv->accessSem);
 		status = PR_CloseSemaphore(pv->accessSem);
 
-		if ( count == 0 ) {
+		if ( isLast ) {
 		
 			status = PR_DeleteSharedMemory(pv->name);
 			char semName[MAX_PATH];
 			strcpy(semName, pv->name);
-			strcat(semName, "_jsiosem");
+			strcat(semName, SEMAPHORE_EXTENSION);
 			status = PR_DeleteSemaphore(semName);
 		}
 
@@ -65,13 +90,17 @@ DEFINE_FINALIZE() {
 	}
 }
 
+/* doc.
+The unix implementation may use SysV IPC shared memory, Posix
+shared memory, or memory mapped files; the filename may used to
+define the namespace. On Windows, the name is significant, but
+there is no file associated with name.
+*/
 
 DEFINE_CONSTRUCTOR() {
 
 	RT_ASSERT_CONSTRUCTING( _class );
 	RT_ASSERT_ARGC( 2 );
-
-	PRStatus status;
 
 	char *name;
 	RT_JSVAL_TO_STRING( J_ARG(1), name );
@@ -79,14 +108,13 @@ DEFINE_CONSTRUCTOR() {
 	PRSize size;
 	RT_JSVAL_TO_INT32( J_ARG(2), size );
 
-	PRUintn mode = PR_IRUSR | PR_IWUSR  |  PR_IRWXG | PR_IRGRP; // read write permission for owner and group
-
+	PRUintn mode = PR_IRUSR | PR_IWUSR; // read write permission for owner.
 	if ( J_ARG_ISDEF(3) )
 		RT_JSVAL_TO_INT32( J_ARG(3), mode );
 
 	char semName[MAX_PATH];
 	strcpy(semName, name);
-	strcat(semName, "_sem");
+	strcat(semName, SEMAPHORE_EXTENSION);
 
 	bool isCreation = true;
 	PRSem *accessSem = PR_OpenSemaphore(semName, PR_SEM_EXCL | PR_SEM_CREATE, mode, 1); // fail if already exists
@@ -99,11 +127,12 @@ DEFINE_CONSTRUCTOR() {
 		isCreation = false;
 	}
 
+	PRStatus status;
 	status = PR_WaitSemaphore( accessSem );
 	if ( status != PR_SUCCESS )
 		return ThrowIoError(cx);
 
-	PRSharedMemory *shm = PR_OpenSharedMemory( name, size + RESERVED_LENGTH, PR_SHM_CREATE, mode );
+	PRSharedMemory *shm = PR_OpenSharedMemory( name, size + sizeof(MemHeader), PR_SHM_CREATE, mode );
 	if ( shm == NULL )
 		return ThrowIoError(cx);
 
@@ -117,13 +146,16 @@ DEFINE_CONSTRUCTOR() {
 	strcpy(pv->name, name);
 	pv->shm = shm;
 	pv->mem = mem;
-	pv->size = size + RESERVED_LENGTH;
+	pv->size = size + sizeof(MemHeader);
 	pv->accessSem = accessSem;
 
-	if ( isCreation )
-		(*(int*)pv->mem) = 0;
-	else
-		(*(int*)pv->mem)++;
+	MemHeader *mh = (MemHeader*)pv->mem;
+
+	if ( isCreation ) {
+		mh->accessCount = 0;
+		mh->currentDataLength = 0;
+	} else
+		mh->accessCount++;
 
 	status = PR_PostSemaphore( accessSem );
 	if ( status != PR_SUCCESS )
@@ -135,69 +167,137 @@ DEFINE_CONSTRUCTOR() {
 }
 
 
-DEFINE_FUNCTION( Write ) {
+DEFINE_FUNCTION_FAST( Write ) {
 
 	RT_ASSERT_ARGC( 1 );
-
-	ClassPrivate *pv = (ClassPrivate*)JS_GetPrivate(cx, J_OBJ);
+	ClassPrivate *pv = (ClassPrivate*)JS_GetPrivate(cx, J_FOBJ);
 	RT_ASSERT_RESOURCE( pv );
 
 	char *data;
-	int dataLength;
-	RT_JSVAL_TO_STRING_AND_LENGTH( J_ARG(1), data, dataLength );
+	unsigned int dataLength;
+	RT_JSVAL_TO_STRING_AND_LENGTH( J_FARG(1), data, dataLength );
 
 	PRSize offset = 0;
-	if ( J_ARG_ISDEF(2) )
-		RT_JSVAL_TO_INT32( J_ARG(2), offset );
+	if ( J_FARG_ISDEF(2) )
+		RT_JSVAL_TO_INT32( J_FARG(2), offset );
 
-//	RT_ASSERT( RESERVED_LENGTH + offset + dataLength <= pv->size, "SharedMemory too small to hold the given data." );
+	RT_ASSERT( sizeof(MemHeader) + offset + dataLength <= pv->size, "SharedMemory too small to hold the given data." );
 
-	PRStatus status;
-	status = PR_WaitSemaphore( pv->accessSem );
-	if ( status != PR_SUCCESS )
-		return ThrowIoError(cx);
 
-	memmove(	(char *)pv->mem + RESERVED_LENGTH + offset, data, dataLength );
+	RT_CHECK_CALL( Lock(cx, pv) );
 
-	status = PR_PostSemaphore( pv->accessSem );
-	if ( status != PR_SUCCESS )
-		return ThrowIoError(cx);
+	MemHeader *mh = (MemHeader*)pv->mem;
+	if ( offset + dataLength > mh->currentDataLength )
+		mh->currentDataLength = offset + dataLength;
+	memmove(	(char *)pv->mem + sizeof(MemHeader) + offset, data, dataLength );
+
+	RT_CHECK_CALL( Unlock(cx, pv) );
 
 	return JS_TRUE;
 }
 
 
-DEFINE_FUNCTION( Read ) {
+DEFINE_FUNCTION_FAST( Read ) {
 
-	RT_ASSERT_ARGC( 1 );
-
-	int dataLength;
-	RT_JSVAL_TO_INT32( J_ARG(1), dataLength );
-
-	PRSize offset = 0;
-	if ( J_ARG_ISDEF(2) )
-		RT_JSVAL_TO_INT32( J_ARG(2), offset );
-
-	ClassPrivate *pv = (ClassPrivate*)JS_GetPrivate(cx, J_OBJ);
+	ClassPrivate *pv = (ClassPrivate*)JS_GetPrivate(cx, J_FOBJ);
 	RT_ASSERT_RESOURCE( pv );
 
+	unsigned int offset = 0;
+	if ( J_FARG_ISDEF(2) )
+		RT_JSVAL_TO_INT32( J_FARG(2), offset );
+
+	RT_CHECK_CALL( Lock(cx, pv) );
+	MemHeader *mh = (MemHeader*)pv->mem;
+	
+	unsigned int dataLength;
+	if ( J_FARG_ISDEF(1) )
+		RT_JSVAL_TO_INT32( J_FARG(1), dataLength );
+	else
+		dataLength = mh->currentDataLength;
+
 	char *data = (char*)JS_malloc(cx, dataLength +1);
+	data[dataLength] = '\0';
 
-	PRStatus status;
-	status = PR_WaitSemaphore( pv->accessSem );
-	if ( status != PR_SUCCESS )
-		return ThrowIoError(cx);
+	memmove(	data, (char *)pv->mem + sizeof(MemHeader) + offset, dataLength );
 
-	memmove(	data, (char *)pv->mem + RESERVED_LENGTH + offset, dataLength );
+	RT_CHECK_CALL( Unlock(cx, pv) );
+	
+	JSString *jss = JS_NewString(cx, data, dataLength);
+	RT_ASSERT_ALLOC( jss );
+	*J_FRVAL = STRING_TO_JSVAL( jss );
+	
+	return JS_TRUE;
+}
 
-	status = PR_PostSemaphore( pv->accessSem );
-	if ( status != PR_SUCCESS )
-		return ThrowIoError(cx);
+
+DEFINE_FUNCTION_FAST( Clear ) {
+
+	RT_ASSERT_ARGC( 1 );
+	ClassPrivate *pv = (ClassPrivate*)JS_GetPrivate(cx, J_FOBJ);
+	RT_ASSERT_RESOURCE( pv );
+
+	RT_CHECK_CALL( Lock(cx, pv) );
+	MemHeader *mh = (MemHeader*)pv->mem;
+	mh->currentDataLength = 0;
+	memset( (char *)pv->mem + sizeof(MemHeader), 0, pv->size - sizeof(MemHeader) );
+	RT_CHECK_CALL( Unlock(cx, pv) );
+
+	return JS_TRUE;
+}
+
+
+DEFINE_PROPERTY( contentSetter ) {
+
+	ClassPrivate *pv = (ClassPrivate*)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE( pv );
+
+	if ( *vp == JSVAL_VOID ) {
+
+		RT_CHECK_CALL( Lock(cx, pv) );
+		MemHeader *mh = (MemHeader*)pv->mem;
+		mh->currentDataLength = 0;
+		memset( (char *)pv->mem + sizeof(MemHeader), 0, pv->size - sizeof(MemHeader) );
+		RT_CHECK_CALL( Unlock(cx, pv) );
+	} else {
+
+		char *data;
+		unsigned int dataLength;
+		RT_JSVAL_TO_STRING_AND_LENGTH( *vp, data, dataLength );
+
+		RT_CHECK_CALL( Lock(cx, pv) );
+
+		MemHeader *mh = (MemHeader*)pv->mem;
+		if ( dataLength > mh->currentDataLength )
+			mh->currentDataLength = dataLength;
+		memmove(	(char *)pv->mem + sizeof(MemHeader), data, dataLength );
+
+		RT_CHECK_CALL( Unlock(cx, pv) );
+	}
+	return JS_TRUE;
+}
+
+
+DEFINE_PROPERTY( contentGetter ) {
+
+	ClassPrivate *pv = (ClassPrivate*)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE( pv );
+
+	RT_CHECK_CALL( Lock(cx, pv) );
+
+	MemHeader *mh = (MemHeader*)pv->mem;
+
+	unsigned int dataLength = mh->currentDataLength;
+
+	char *data = (char*)JS_malloc(cx, dataLength +1);
+	data[pv->size - sizeof(MemHeader)] = '\0';
+
+	memmove(	data, (char *)pv->mem + sizeof(MemHeader), dataLength );
+
+	RT_CHECK_CALL( Unlock(cx, pv) );
 
 	JSString *jss = JS_NewString(cx, data, dataLength);
 	RT_ASSERT_ALLOC( jss );
-
-	*J_RVAL = STRING_TO_JSVAL( jss );
+	*vp = STRING_TO_JSVAL( jss );
 
 	return JS_TRUE;
 }
@@ -209,9 +309,14 @@ CONFIGURE_CLASS
 	HAS_FINALIZE
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION( Read )
-		FUNCTION( Write )
+		FUNCTION_FAST( Read )
+		FUNCTION_FAST( Write )
+		FUNCTION_FAST( Clear )
 	END_FUNCTION_SPEC
+
+	BEGIN_PROPERTY_SPEC
+		PROPERTY( content )
+	END_PROPERTY_SPEC
 
 	HAS_PRIVATE
 
