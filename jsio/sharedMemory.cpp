@@ -15,9 +15,7 @@
 #include "stdafx.h"
 #include "../common/jsNativeInterface.h"
 
-#include <pprio.h> // nspr/include/nspr/private
-
-#include "error.h"
+//#include <jsxdrapi.h>
 
 #include "sharedMemory.h"
 
@@ -25,7 +23,6 @@
 
 
 struct ClassPrivate {
-
 	char name[MAX_PATH];
 	PRSharedMemory *shm;
 	void *mem;
@@ -183,7 +180,6 @@ DEFINE_FUNCTION_FAST( Write ) {
 
 	RT_ASSERT( sizeof(MemHeader) + offset + dataLength <= pv->size, "SharedMemory too small to hold the given data." );
 
-
 	RT_CHECK_CALL( Lock(cx, pv) );
 
 	MemHeader *mh = (MemHeader*)pv->mem;
@@ -264,6 +260,8 @@ DEFINE_PROPERTY( contentSetter ) {
 		unsigned int dataLength;
 		RT_JSVAL_TO_STRING_AND_LENGTH( *vp, data, dataLength );
 
+		RT_ASSERT( sizeof(MemHeader) + dataLength <= pv->size, "SharedMemory too small to hold the given data." );
+
 		RT_CHECK_CALL( Lock(cx, pv) );
 
 		MemHeader *mh = (MemHeader*)pv->mem;
@@ -302,6 +300,66 @@ DEFINE_PROPERTY( contentGetter ) {
 	return JS_TRUE;
 }
 
+/*
+TypeError: can't XDR class Array
+...
+<soubok>	why Object class do not have XDR support ?
+<shaver>	because serializing object state is a very complex problem
+<shaver>	and not necessary for serialization of script
+<soubok>	ok thanks, I didn't know XDR was only for scripts
+<shaver>	that was why it was implemented
+
+DEFINE_PROPERTY( xdrSetter ) {
+
+	ClassPrivate *pv = (ClassPrivate*)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE( pv );
+
+	RT_CHECK_CALL( Lock(cx, pv) );
+	MemHeader *mh = (MemHeader*)pv->mem;
+
+	JSXDRState *xdr = JS_XDRNewMem(cx, JSXDR_ENCODE);
+	RT_ASSERT( xdr, "Unable to create XDR encoder." );
+
+	RT_CHECK_CALL( JS_XDRValue( xdr, vp ) );
+
+	uint32 length;
+	void *buffer = JS_XDRMemGetData( xdr, &length );
+	RT_ASSERT( buffer, "Unable to create XDR data." );
+
+	memmove( (char*)pv->mem + sizeof(MemHeader), buffer, length );
+
+	mh->currentDataLength = length;
+
+	JS_XDRDestroy( xdr );
+
+	RT_CHECK_CALL( Unlock(cx, pv) );
+
+	return JS_TRUE;
+}
+
+
+DEFINE_PROPERTY( xdrGetter ) {
+
+	ClassPrivate *pv = (ClassPrivate*)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE( pv );
+
+	RT_CHECK_CALL( Lock(cx, pv) );
+	MemHeader *mh = (MemHeader*)pv->mem;
+	
+	JSXDRState *xdr = JS_XDRNewMem(cx, JSXDR_DECODE);
+	RT_ASSERT( xdr, "Unable to create XDR decoder." );
+
+	JS_XDRMemSetData( xdr, (char*)pv->mem + sizeof(MemHeader), mh->currentDataLength );
+
+	RT_CHECK_CALL( JS_XDRValue(xdr, vp) );
+
+	JS_XDRMemSetData(xdr, NULL, 0);
+	JS_XDRDestroy(xdr);
+
+	RT_CHECK_CALL( Unlock(cx, pv) );
+	return JS_TRUE;
+}
+*/
 
 CONFIGURE_CLASS
 
@@ -316,6 +374,7 @@ CONFIGURE_CLASS
 
 	BEGIN_PROPERTY_SPEC
 		PROPERTY( content )
+//		PROPERTY( xdr )
 	END_PROPERTY_SPEC
 
 	HAS_PRIVATE
