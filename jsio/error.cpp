@@ -14,8 +14,6 @@
 
 #include "stdafx.h"
 
-#include "error.h"
-
 
 BEGIN_CLASS( IoError )
 

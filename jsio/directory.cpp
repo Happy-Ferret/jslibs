@@ -14,7 +14,6 @@
 
 #include "stdafx.h"
 
-#include "error.h"
 #include "directory.h"
 
 BEGIN_CLASS( Directory )

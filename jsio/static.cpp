@@ -16,7 +16,6 @@
 
 #include "static.h"
 
-#include "error.h"
 #include "descriptor.h"
 
 BEGIN_STATIC

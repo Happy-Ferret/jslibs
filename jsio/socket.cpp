@@ -15,7 +15,6 @@
 #include "stdafx.h"
 #include "../common/jsNativeInterface.h"
 
-#include "error.h"
 #include "descriptor.h"
 #include "file.h"
 

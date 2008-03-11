@@ -17,7 +17,6 @@
 
 #include <pprio.h> // nspr/include/nspr/private
 
-#include "error.h"
 #include "descriptor.h"
 #include "file.h"
 

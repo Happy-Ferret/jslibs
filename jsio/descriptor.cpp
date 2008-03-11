@@ -18,7 +18,6 @@
 #include <pprio.h> // nspr/include/nspr/private
 #include <string.h>
 
-#include "error.h"
 #include "descriptor.h"
 #include "file.h"
 #include "socket.h"

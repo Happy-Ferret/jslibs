@@ -21,3 +21,5 @@
 #include "../common/jsConfiguration.h"
 
 #include <nspr.h>
+
+#include "error.h"

@@ -14,7 +14,6 @@
 
 #include "stdafx.h"
 
-#include "error.h"
 #include "descriptor.h"
 #include "file.h"
 #include "socket.h"
