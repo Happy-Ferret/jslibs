@@ -1,3 +1,5 @@
+Latest svn:externals src http://libset.googlecode.com/svn/trunk/libtomcrypt/
+
 libtomcrypt source files:
 	http://libtomcrypt.com/download.html
 

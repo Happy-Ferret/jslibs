@@ -1,4 +1,4 @@
-
+svn:externals src http://libset.googlecode.com/svn/trunk/jpeg/
 
 download:
   freshmeat: http://freshmeat.net/projects/libjpeg/

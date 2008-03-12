@@ -1,23 +1,21 @@
-current Version: 3.3.17
-
-http://www.sqlite.org/download.html
-	Source Code
-		sqlite-source-3_3_17.zip : for windows
-		sqlite-3.3.17.tar.gz : for linux
-
-.
-..
-src
-readme.txt
+svn:externals src http://libset.googlecode.com/svn/trunk/sqlite-amalgamation/
 
 
-[TBD] try to import from: 
+Source:
+	http://www.sqlite.org/download.html
+		Source Code
+			sqlite-source-3_3_17.zip : for windows
+			sqlite-3.3.17.tar.gz : for linux
+	.
+	..
+	src
+	readme.txt
+
+Other SVN sources:
   http://svn.python.org/projects/external/sqlite-source-3.3.4/
   (http://websvn.kde.org/branches/stable/extragear/graphics/digikam/sqlite/)
 
-
 Linux compilation:
-
 	./configure --enable-releasemode --disable-readline --disable-tcl --disable-dynamic --disable-shared --enable-static
 	make clean all
 	ls ./.libs/libsqlite.a

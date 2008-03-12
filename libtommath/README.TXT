@@ -1,3 +1,5 @@
+Latest svn:externals src http://libset.googlecode.com/svn/trunk/libtommath/
+
 libtomcrypt source files:
 	http://math.libtomcrypt.com/
 

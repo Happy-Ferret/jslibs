@@ -1,8 +1,9 @@
+svn:externals src http://libset.googlecode.com/svn/trunk/nspr/mozilla/nsprpub
+
 Download:
 	ftp://ftp.mozilla.org/pub/mozilla.org/nspr/releases/
 	ftp://ftp.mozilla.org/pub/mozilla.org/nspr/releases/v4.6.1/WINNT5.0_OPT.OBJ
 	( do NOT extract the source with winzip, but use: tar xfz nspr-X.Y.Z.tar.gz )
-
 
 CVS:
 	cvs -d :pserver:anonymous@cvs-mirror.mozilla.org:/cvsroot login
