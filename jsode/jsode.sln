@@ -3,10 +3,10 @@ Microsoft Visual Studio Solution File, Format Version 9.00
 # Visual C++ Express 2005
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jsode", "jsode.vcproj", "{F96A90A1-2DFB-4C89-BFEF-9B703D2A78EE}"
 	ProjectSection(ProjectDependencies) = postProject
-		{20177D0B-6F8D-0743-A716-6AAC8343161D} = {20177D0B-6F8D-0743-A716-6AAC8343161D}
+		{2A8430BA-889E-EE4A-B1E3-A3231F6816EE} = {2A8430BA-889E-EE4A-B1E3-A3231F6816EE}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ode", "..\ode\src\build\vs2005\ode.vcproj", "{20177D0B-6F8D-0743-A716-6AAC8343161D}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ode", "..\ode\src\build\vs2005\ode.vcproj", "{2A8430BA-889E-EE4A-B1E3-A3231F6816EE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -30,18 +30,18 @@ Global
 		{F96A90A1-2DFB-4C89-BFEF-9B703D2A78EE}.ReleaseDLL|Win32.Build.0 = Release|Win32
 		{F96A90A1-2DFB-4C89-BFEF-9B703D2A78EE}.ReleaseLib|Win32.ActiveCfg = Release|Win32
 		{F96A90A1-2DFB-4C89-BFEF-9B703D2A78EE}.ReleaseLib|Win32.Build.0 = Release|Win32
-		{20177D0B-6F8D-0743-A716-6AAC8343161D}.Debug|Win32.ActiveCfg = DebugLib|Win32
-		{20177D0B-6F8D-0743-A716-6AAC8343161D}.Debug|Win32.Build.0 = DebugLib|Win32
-		{20177D0B-6F8D-0743-A716-6AAC8343161D}.DebugDLL|Win32.ActiveCfg = DebugDLL|Win32
-		{20177D0B-6F8D-0743-A716-6AAC8343161D}.DebugDLL|Win32.Build.0 = DebugDLL|Win32
-		{20177D0B-6F8D-0743-A716-6AAC8343161D}.DebugLib|Win32.ActiveCfg = DebugLib|Win32
-		{20177D0B-6F8D-0743-A716-6AAC8343161D}.DebugLib|Win32.Build.0 = DebugLib|Win32
-		{20177D0B-6F8D-0743-A716-6AAC8343161D}.Release|Win32.ActiveCfg = ReleaseLib|Win32
-		{20177D0B-6F8D-0743-A716-6AAC8343161D}.Release|Win32.Build.0 = ReleaseLib|Win32
-		{20177D0B-6F8D-0743-A716-6AAC8343161D}.ReleaseDLL|Win32.ActiveCfg = ReleaseDLL|Win32
-		{20177D0B-6F8D-0743-A716-6AAC8343161D}.ReleaseDLL|Win32.Build.0 = ReleaseDLL|Win32
-		{20177D0B-6F8D-0743-A716-6AAC8343161D}.ReleaseLib|Win32.ActiveCfg = ReleaseLib|Win32
-		{20177D0B-6F8D-0743-A716-6AAC8343161D}.ReleaseLib|Win32.Build.0 = ReleaseLib|Win32
+		{2A8430BA-889E-EE4A-B1E3-A3231F6816EE}.Debug|Win32.ActiveCfg = DebugLib|Win32
+		{2A8430BA-889E-EE4A-B1E3-A3231F6816EE}.Debug|Win32.Build.0 = DebugLib|Win32
+		{2A8430BA-889E-EE4A-B1E3-A3231F6816EE}.DebugDLL|Win32.ActiveCfg = DebugDLL|Win32
+		{2A8430BA-889E-EE4A-B1E3-A3231F6816EE}.DebugDLL|Win32.Build.0 = DebugDLL|Win32
+		{2A8430BA-889E-EE4A-B1E3-A3231F6816EE}.DebugLib|Win32.ActiveCfg = DebugLib|Win32
+		{2A8430BA-889E-EE4A-B1E3-A3231F6816EE}.DebugLib|Win32.Build.0 = DebugLib|Win32
+		{2A8430BA-889E-EE4A-B1E3-A3231F6816EE}.Release|Win32.ActiveCfg = ReleaseLib|Win32
+		{2A8430BA-889E-EE4A-B1E3-A3231F6816EE}.Release|Win32.Build.0 = ReleaseLib|Win32
+		{2A8430BA-889E-EE4A-B1E3-A3231F6816EE}.ReleaseDLL|Win32.ActiveCfg = ReleaseDLL|Win32
+		{2A8430BA-889E-EE4A-B1E3-A3231F6816EE}.ReleaseDLL|Win32.Build.0 = ReleaseDLL|Win32
+		{2A8430BA-889E-EE4A-B1E3-A3231F6816EE}.ReleaseLib|Win32.ActiveCfg = ReleaseLib|Win32
+		{2A8430BA-889E-EE4A-B1E3-A3231F6816EE}.ReleaseLib|Win32.Build.0 = ReleaseLib|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

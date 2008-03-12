@@ -10,7 +10,8 @@
 
 #include <windows.h>
 
-#define XP_WIN
+#include "../common/platform.h"
+
 #include <jsapi.h>
 
 #define USE_UNSAFE_MODE

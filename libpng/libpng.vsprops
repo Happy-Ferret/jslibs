@@ -6,6 +6,7 @@
 	>
 	<Tool
 		Name="VCCLCompilerTool"
+		PreprocessorDefinitions="XMD_H"
 		AdditionalIncludeDirectories="..\..\..\..\zlib\src"
 	/>
 </VisualStudioPropertySheet>
