@@ -2,6 +2,7 @@ set visualStudioPath=C:\Program Files\Microsoft Visual Studio 8
 set platformSDKPath=C:\Program Files\Microsoft Platform SDK
 
 rem --------------------------------------------------------------------------
+@echo off
 
 set prevDir=%CD%
 set prevPath=%PATH%
@@ -11,7 +12,10 @@ call "%visualStudioPath%\VC\vcvarsall.bat" x86
 
 del build.log
 
-md .\opt
+md .\release
+
+copy .\js\src\WINNT5.1_OPT.OBJ\*.dll .\release
+copy .\jslibs\nspr\win32\dist\lib\nspr4.dll .\release
 
 for /D %%f in (js*) do (
 
@@ -27,8 +31,8 @@ rem		if ERRORLEVEL 1 goto error
 		) ELSE (
 
 			pushd %%~dg%%~pgrelease
-			copy %%f.dll ..\..\opt
-			copy %%f.exe ..\..\opt
+			copy %%f.dll ..\..\release
+			copy %%f.exe ..\..\release
 			popd
 		)
 	)

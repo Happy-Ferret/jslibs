@@ -30,6 +30,7 @@
 #define DEFINE_RESOLVE() static JSBool Resolve(JSContext *cx, JSObject *obj, jsval id, uintN flags, JSObject **objp)
 
 #define FUNCTION_FAST(name) JS_FN( #name, name, 0, 0, 0 ),
+#define FUNCTION2_FAST(name,nativeName) JS_FN( #name, nativeName, 0, 0, 0 ),
 #define FUNCTION(name) JS_FS( #name, name, 0, 0, 0 ),
 #define FUNCTION2(name,nativeName) JS_FS( #name, nativeName, 0, 0, 0 ),
 #define FUNCTION_ARGC(name,nargs) JS_FS( #name, name, nargs, 0, 0 ),
