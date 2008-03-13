@@ -1,7 +1,29 @@
 LoadModule('jsstd');
 LoadModule('jsio');
 
+CreateProcess('C:\\WINDOWS\\system32\\notepad.exe', ['aaa']);
 
+Halt();
+
+var mem = new SharedMemory( 'test.txt', 4 );
+
+var i = 0;
+while (!endSignal) {
+
+	mem.content = i++;
+	Sleep(1000);
+}
+Halt();
+
+
+
+var mem = new SharedMemory( 'test.txt', 100 );
+mem.Write('test', 10);
+//mem.content = "toto";
+//Print( Directory.List('.').join('\n'), '\n' );
+var mem2 = new SharedMemory( 'test.txt', 4 );
+Print( mem2.content.length, '\n' );
+Halt();
 
 try {
 

@@ -30,8 +30,8 @@ DEFINE_FUNCTION( Poll ) {
 	// http://developer.mozilla.org/en/docs/PR_Poll
 
 	RT_ASSERT_ARGC( 1 );
-	RT_ASSERT_ARRAY( J_ARG(1) );
 
+	RT_ASSERT_ARRAY( J_ARG(1) );
 	JSIdArray *idArray = JS_Enumerate( cx, JSVAL_TO_OBJECT(J_ARG(1)) ); // make a kind of auto-ptr for this
 
 	PRIntervalTime pr_timeout;
@@ -397,6 +397,148 @@ DEFINE_PROPERTY( systemInfo ) {
 }
 
 
+DEFINE_FUNCTION_FAST( WaitSemaphore ) {
+
+	RT_ASSERT_ARGC( 1 );
+
+	char *name;
+	int nameLength;
+	RT_JSVAL_TO_STRING_AND_LENGTH( J_FARG(1), name, nameLength );
+
+	PRUintn mode = PR_IRUSR | PR_IWUSR; // read write permission for owner.
+	if ( J_FARG_ISDEF(2) )
+		RT_JSVAL_TO_INT32( J_FARG(2), mode );
+
+	bool isCreation = true;
+	PRSem *semaphore = PR_OpenSemaphore(name, PR_SEM_EXCL | PR_SEM_CREATE, mode, 1); // fail if already exists
+
+	if ( semaphore == NULL ) {
+
+		semaphore = PR_OpenSemaphore(name, 0, 0, 0); // If PR_SEM_CREATE is not specified, the third and fourth arguments are ignored.
+		if ( semaphore == NULL )
+			return ThrowIoError(cx);
+		isCreation = false;
+	}
+
+	PRStatus status;
+	status = PR_WaitSemaphore( semaphore );
+	if ( status != PR_SUCCESS )
+		return ThrowIoError(cx);
+
+	status = PR_CloseSemaphore(semaphore);
+	if ( status != PR_SUCCESS )
+		return ThrowIoError(cx);
+
+	if ( isCreation ) {
+
+		status = PR_DeleteSemaphore(name);
+		if ( status != PR_SUCCESS )
+			return ThrowIoError(cx);
+	}
+
+	return JS_TRUE;
+}
+
+
+
+DEFINE_FUNCTION_FAST( PostSemaphore ) {
+
+	RT_ASSERT_ARGC( 1 );
+
+	char *name;
+	int nameLength;
+	RT_JSVAL_TO_STRING_AND_LENGTH( J_FARG(1), name, nameLength );
+
+	PRSem *semaphore = PR_OpenSemaphore(name, 0, 0, 0);
+
+	if ( semaphore != NULL ) {
+
+		PRStatus status;
+		status = PR_PostSemaphore( semaphore );
+		if ( status != PR_SUCCESS )
+			return ThrowIoError(cx);
+
+		status = PR_CloseSemaphore(semaphore);
+		if ( status != PR_SUCCESS )
+			return ThrowIoError(cx);
+	}
+
+	return JS_TRUE;
+}
+
+
+
+DEFINE_FUNCTION_FAST( CreateProcess_ ) {
+
+	RT_ASSERT_ARGC( 1 );
+
+	char *path;
+	RT_JSVAL_TO_STRING( J_FARG(1), path );
+
+	char **processArgv;
+	int processArgc;
+	if ( J_FARG_ISDEF(2) && JSVAL_IS_OBJECT(J_FARG(2)) && JS_IsArrayObject( cx, JSVAL_TO_OBJECT(J_FARG(2)) ) == JS_TRUE ) {
+
+		JSIdArray *idArray = JS_Enumerate( cx, JSVAL_TO_OBJECT(J_FARG(2)) ); // make a kind of auto-ptr for this
+		processArgc = idArray->length +1; // +1 is argv[0]
+
+		processArgv = (char**)malloc(sizeof(char**) * (processArgc +1)); // +1 is NULL
+		RT_ASSERT_ALLOC( processArgv );
+
+		for ( int i = 0; i<processArgc -1; i++ ) { // -1 because argv[0]
+
+			jsval propVal;
+			RT_CHECK_CALL( JS_IdToValue(cx, idArray->vector[i], &propVal ));
+			RT_CHECK_CALL( JS_GetElement(cx, JSVAL_TO_OBJECT(J_FARG(2)), JSVAL_TO_INT(propVal), &propVal )); // (TBD) optimize
+
+			char *tmp;
+			RT_JSVAL_TO_STRING( propVal, tmp );
+			processArgv[i+1] = tmp;
+		}
+		JS_DestroyIdArray( cx, idArray );	
+	} else {
+
+		processArgc = 0 +1; // +1 is argv[0]
+		processArgv = (char**)malloc(sizeof(char**) * (processArgc +1)); // +1 is NULL
+	}
+
+	processArgv[0] = path;
+	processArgv[processArgc] = NULL;
+
+	bool waitEnd = false;
+	if ( J_FARG_ISDEF(3) )
+		RT_JSVAL_TO_BOOL( J_FARG(3), waitEnd );
+
+/*
+   PRFileDesc* stdout_child;
+	PRFileDesc* stdout_parent;
+	
+	PRStatus status;
+	status = PR_CreatePipe(&stdout_parent, &stdout_child);
+	if ( status != PR_SUCCESS )
+		return ThrowIoError(cx);
+*/
+
+	PRProcess *process;
+	process = PR_CreateProcess(path, processArgv, NULL, NULL); // PR_WaitProcess ...
+
+	PRInt32 exitValue;
+	if ( waitEnd ) {
+		
+		PR_WaitProcess( process, &exitValue );
+		*J_FRVAL = INT_TO_JSVAL( exitValue );
+	}
+
+	free(processArgv);
+//	PR_DestroyProcessAttr(pattr);
+
+//	RT_CHECK_CALL( JS_NewNumberValue(cx, id, J_FRVAL) );
+
+
+	return JS_TRUE;
+}
+
+
 CONFIGURE_STATIC
 
 	BEGIN_STATIC_FUNCTION_SPEC
@@ -408,6 +550,9 @@ CONFIGURE_STATIC
 		FUNCTION( Sleep )
 		FUNCTION( GetEnv )
 		FUNCTION( GetRandomNoise )
+		FUNCTION_FAST( WaitSemaphore )
+		FUNCTION_FAST( PostSemaphore )
+		FUNCTION2_FAST( CreateProcess, CreateProcess_ )
 	END_STATIC_FUNCTION_SPEC
 	
 	BEGIN_STATIC_PROPERTY_SPEC

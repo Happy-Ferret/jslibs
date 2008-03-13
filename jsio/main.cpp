@@ -19,6 +19,7 @@
 #include "socket.h"
 #include "directory.h"
 #include "sharedMemory.h"
+#include "semaphore.h"
 #include "static.h"
 
 DEFINE_UNSAFE_MODE
@@ -34,6 +35,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	INIT_CLASS( Socket );
 	INIT_CLASS( Directory );
 	INIT_CLASS( SharedMemory );
+	INIT_CLASS( Semaphore );
 	INIT_STATIC();
 	return JS_TRUE;
 }

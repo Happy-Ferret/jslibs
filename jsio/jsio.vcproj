@@ -206,6 +206,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\semaphore.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\sharedMemory.cpp"
 				>
 			</File>
@@ -257,6 +261,10 @@
 			</File>
 			<File
 				RelativePath=".\file.h"
+				>
+			</File>
+			<File
+				RelativePath=".\semaphore.h"
 				>
 			</File>
 			<File

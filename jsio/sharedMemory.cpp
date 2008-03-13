@@ -23,7 +23,7 @@
 
 
 struct ClassPrivate {
-	char name[MAX_PATH];
+	char name[MAX_PATH +1];
 	PRSharedMemory *shm;
 	void *mem;
 	unsigned int size;
