@@ -527,6 +527,10 @@ DEFINE_FUNCTION_FAST( CreateProcess_ ) {
 		
 		PR_WaitProcess( process, &exitValue );
 		*J_FRVAL = INT_TO_JSVAL( exitValue );
+	} else {
+
+		PR_DetachProcess(process);
+		*J_FRVAL = JSVAL_VOID;
 	}
 
 	free(processArgv);
