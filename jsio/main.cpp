@@ -15,6 +15,7 @@
 #include "stdafx.h"
 
 #include "descriptor.h"
+#include "pipe.h"
 #include "file.h"
 #include "socket.h"
 #include "directory.h"
@@ -31,6 +32,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	SET_UNSAFE_MODE( GetConfigurationValue(cx, "unsafeMode" ) == JSVAL_TRUE );
 	INIT_CLASS( IoError );
 	INIT_CLASS( Descriptor );
+	INIT_CLASS( Pipe );
 	INIT_CLASS( File );
 	INIT_CLASS( Socket );
 	INIT_CLASS( Directory );

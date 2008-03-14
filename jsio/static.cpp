@@ -17,6 +17,7 @@
 #include "static.h"
 
 #include "descriptor.h"
+#include "pipe.h"
 
 BEGIN_STATIC
 
@@ -485,7 +486,7 @@ DEFINE_FUNCTION_FAST( CreateProcess_ ) {
 		processArgv = (char**)malloc(sizeof(char**) * (processArgc +1)); // +1 is NULL
 		RT_ASSERT_ALLOC( processArgv );
 
-		for ( int i = 0; i<processArgc -1; i++ ) { // -1 because argv[0]
+		for ( int i=0; i<processArgc -1; i++ ) { // -1 because argv[0]
 
 			jsval propVal;
 			RT_CHECK_CALL( JS_IdToValue(cx, idArray->vector[i], &propVal ));
@@ -509,35 +510,59 @@ DEFINE_FUNCTION_FAST( CreateProcess_ ) {
 	if ( J_FARG_ISDEF(3) )
 		RT_JSVAL_TO_BOOL( J_FARG(3), waitEnd );
 
-/*
-   PRFileDesc* stdout_child;
+	PRFileDesc* stdout_child;
 	PRFileDesc* stdout_parent;
-	
 	PRStatus status;
 	status = PR_CreatePipe(&stdout_parent, &stdout_child);
 	if ( status != PR_SUCCESS )
 		return ThrowIoError(cx);
-*/
+
+   PRFileDesc* stdin_child;
+	PRFileDesc* stdin_parent;
+	status = PR_CreatePipe(&stdin_parent, &stdin_child);
+	if ( status != PR_SUCCESS )
+		return ThrowIoError(cx);
+
+	PRProcessAttr *psattr = PR_NewProcessAttr();
+
+	PR_ProcessAttrSetStdioRedirect(psattr, PR_StandardInput, stdin_child);
+	PR_ProcessAttrSetStdioRedirect(psattr, PR_StandardOutput, stdout_child);
 
 	PRProcess *process;
-	process = PR_CreateProcess(path, processArgv, NULL, NULL); // PR_WaitProcess ...
+	process = PR_CreateProcess(path, processArgv, NULL, psattr);
 
-	PRInt32 exitValue;
+	PR_DestroyProcessAttr(psattr);
+	free(processArgv);
+
+	if ( process = NULL )
+		return ThrowIoError(cx);
+
+	PR_Close(stdin_child);
+	PR_Close(stdout_child);
+
 	if ( waitEnd ) {
 		
-		PR_WaitProcess( process, &exitValue );
+		PRInt32 exitValue;
+		status = PR_WaitProcess( process, &exitValue );
+		if ( status != PR_SUCCESS )
+			return ThrowIoError(cx);
 		*J_FRVAL = INT_TO_JSVAL( exitValue );
 	} else {
 
-		PR_DetachProcess(process);
-		*J_FRVAL = JSVAL_VOID;
+//		status = PR_DetachProcess(process);
+//		if ( status != PR_SUCCESS )
+//			return ThrowIoError(cx);
+
+		JSObject *fdin = JS_NewObject( cx, &classPipe, NULL, NULL );
+		RT_CHECK_CALL( JS_SetPrivate( cx, fdin, stdin_parent ) );
+
+		JSObject *fdout = JS_NewObject( cx, &classPipe, NULL, NULL );
+		RT_CHECK_CALL( JS_SetPrivate( cx, fdout, stdout_parent ) );
+
+		jsval vector[] = { OBJECT_TO_JSVAL( fdin ), OBJECT_TO_JSVAL( fdout ) };
+		JSObject *arrObj = JS_NewArrayObject(cx, 2, vector);
+		*J_FRVAL = OBJECT_TO_JSVAL( arrObj );
 	}
-
-	free(processArgv);
-//	PR_DestroyProcessAttr(pattr);
-
-//	RT_CHECK_CALL( JS_NewNumberValue(cx, id, J_FRVAL) );
-
 
 	return JS_TRUE;
 }
