@@ -15,7 +15,7 @@ del build.log
 md .\release
 
 copy .\js\src\WINNT5.1_OPT.OBJ\*.dll .\release
-copy .\jslibs\nspr\win32\dist\lib\nspr4.dll .\release
+copy .\nspr\win32\dist\lib\nspr4.dll .\release
 
 for /D %%f in (js*) do (
 
