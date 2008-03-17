@@ -25,7 +25,7 @@
 
 
 struct ClassPrivate {
-	char name[MAX_PATH +1];
+	char name[PATH_MAX +1];
 	PRSharedMemory *shm;
 	void *mem;
 	unsigned int size;
@@ -78,7 +78,7 @@ DEFINE_FINALIZE() {
 		if ( isLast ) {
 		
 			status = PR_DeleteSharedMemory(pv->name);
-			char semName[MAX_PATH];
+			char semName[PATH_MAX];
 			strcpy(semName, pv->name);
 			strcat(semName, SEMAPHORE_EXTENSION);
 			status = PR_DeleteSemaphore(semName);
@@ -111,7 +111,7 @@ DEFINE_CONSTRUCTOR() {
 	if ( J_ARG_ISDEF(3) )
 		RT_JSVAL_TO_INT32( J_ARG(3), mode );
 
-	char semName[MAX_PATH];
+	char semName[PATH_MAX];
 	strcpy(semName, name);
 	strcat(semName, SEMAPHORE_EXTENSION);
 

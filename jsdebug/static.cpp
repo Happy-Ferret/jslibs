@@ -610,7 +610,7 @@ DEFINE_FUNCTION(Locate) {
 
 static bool hasGCTrace = false;
 static JSGCCallback prevGCCallback = NULL;
-static char GCTraceFileName[MAX_PATH];
+static char GCTraceFileName[PATH_MAX];
 
 JSBool GCCallTrace(JSContext *cx, JSGCStatus status) {
 

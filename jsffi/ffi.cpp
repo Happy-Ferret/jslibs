@@ -1043,7 +1043,7 @@ JSBool NativeModule_Construct(JSContext *cx, JSObject *obj, uintN argc, jsval *a
   if ( libName == NULL || *libName == 0 )
     return JS_FALSE;
 
-  char libFileName[MAX_PATH];
+  char libFileName[PATH_MAX];
   strcpy( libFileName, libName );
   strcat( libFileName, DLL_EXT );
 

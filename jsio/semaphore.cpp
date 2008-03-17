@@ -24,7 +24,7 @@ BEGIN_CLASS( Semaphore )
 
 
 struct ClassPrivate {
-	char name[MAX_PATH +1];
+	char name[PATH_MAX +1];
 	PRSem *semaphore;
 	bool owner;
 };
@@ -57,7 +57,7 @@ DEFINE_CONSTRUCTOR() {
 	int nameLength;
 	RT_JSVAL_TO_STRING_AND_LENGTH( J_ARG(1), name, nameLength );
 
-	RT_ASSERT( nameLength < MAX_PATH, "Semaphoer name too long." );
+	RT_ASSERT( nameLength < PATH_MAX, "Semaphoer name too long." );
 
 	PRUintn count = 0;
 	if ( J_ARG_ISDEF(2) )

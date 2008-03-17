@@ -19,14 +19,14 @@
 #include "jsxdrapi.h"
 #include "jscntxt.h"
 
-#ifndef PATH_MAX
-	#define PATH_MAX FILENAME_MAX
-#endif
-
-#ifdef XP_UNIX
-	#define MAX_PATH PATH_MAX
-	#define O_BINARY 0
-#endif
+//#ifndef PATH_MAX
+//	#define PATH_MAX FILENAME_MAX
+//#endif
+//
+//#ifdef XP_UNIX
+//	#define MAX_PATH PATH_MAX
+//	#define O_BINARY 0
+//#endif
 
 extern JSFunction *stdoutFunction;
 
@@ -375,7 +375,7 @@ static JSScript* LoadScript(JSContext *cx, JSObject *obj, const char *fileName, 
 
 #ifdef JS_HAS_XDR
 
-	char compiledFileName[MAX_PATH];
+	char compiledFileName[PATH_MAX];
 	strcpy( compiledFileName, fileName );
 	strcat( compiledFileName, "xdr" );
 

@@ -150,7 +150,7 @@ DEFINE_PROPERTY( clipboardSetter ) {
 DEFINE_FUNCTION( FileOpenDialog ) {
 
 	OPENFILENAME ofn = { sizeof(OPENFILENAME) };
-	char fileName[MAX_PATH];
+	char fileName[PATH_MAX];
 	char filter[255];
 
 	if ( argc >= 1 && argv[0] != JSVAL_VOID ) {
@@ -194,7 +194,7 @@ DEFINE_FUNCTION( _ExpandEnvironmentStrings ) {
 	RT_ASSERT_ARGC(1);
 	char *src;
 	RT_JSVAL_TO_STRING( argv[0], src );
-	TCHAR dst[MAX_PATH];
+	TCHAR dst[PATH_MAX];
 	DWORD res = ExpandEnvironmentStrings( src, dst, sizeof(dst) );
 	RT_ASSERT( res != 0, "Unable to ExpandEnvironmentStrings." );
 	*rval = STRING_TO_JSVAL( JS_NewStringCopyN(cx, dst, res) );

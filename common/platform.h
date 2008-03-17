@@ -54,6 +54,7 @@
 
 	#define XP_WIN
 
+	#define PATH_MAX MAX_PATH
 	#define DLL_EXT ".dll"
 	#define PATH_SEPARATOR_STRING "\\"
 	#define PATH_SEPARATOR '\\'
@@ -87,7 +88,6 @@
 	#define DLL_EXT ".so"
 	#define PATH_SEPARATOR_STRING "/"
 	#define PATH_SEPARATOR '/'
-	#define MAX_PATH PATH_MAX
 	#define LLONG long long
 
 	#ifdef HAVE_GCCVISIBILITYPATCH

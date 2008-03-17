@@ -43,7 +43,7 @@ DEFINE_FUNCTION( LoadWXJSModule ) {
 	RT_ASSERT_ARGC(1);
 	char *fileName;
 	RT_JSVAL_TO_STRING( argv[0], fileName );
-	char libFileName[MAX_PATH];
+	char libFileName[PATH_MAX];
 	strcpy( libFileName, fileName );
 	strcat( libFileName, DLL_EXT );
 	HMODULE module = ::LoadLibrary(libFileName);

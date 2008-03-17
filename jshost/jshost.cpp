@@ -289,7 +289,7 @@ static JSBool LoadModule(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, 
 
 	char *fileName;
 	RT_JSVAL_TO_STRING( argv[0], fileName );
-	char libFileName[MAX_PATH];
+	char libFileName[PATH_MAX];
 	strcpy( libFileName, fileName );
 	strcat( libFileName, DLL_EXT );
 
@@ -542,7 +542,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 		RT_HOST_MAIN_ASSERT( jsStatus == JS_TRUE, "unable to define the argument." );
 	}
 
-	char hostFullPath[MAX_PATH +1];
+	char hostFullPath[PATH_MAX +1];
 
 #ifdef XP_WIN
 // get hostpath and hostname

@@ -17,7 +17,7 @@ static JSBool LoadModule(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, 
 	RT_ASSERT_ARGC(1);
 	char *fileName;
 	RT_JSVAL_TO_STRING( argv[0], fileName );
-	char libFileName[MAX_PATH];
+	char libFileName[PATH_MAX];
 	errno_t err = strcpy_s(libFileName, sizeof(libFileName), fileName);
 	RT_ASSERT( err == 0, "Buffer overflow." );
 	err = strcat_s(libFileName, sizeof(libFileName), DLL_EXT);
@@ -205,7 +205,7 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 
 	errno_t err;
 
-	CHAR moduleFileName[MAX_PATH];
+	CHAR moduleFileName[PATH_MAX];
 	DWORD len = GetModuleFileName(hInstance, moduleFileName, sizeof(moduleFileName));
 	if ( len == 0 )
 		return -1;
@@ -216,10 +216,10 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 	name++;
 
 
-	CHAR moduleName[MAX_PATH];
+	CHAR moduleName[PATH_MAX];
 	DWORD moduleNameLen = GetModuleFileName(hInstance, moduleName, sizeof(moduleName));
 
-	CHAR scriptName[MAX_PATH];
+	CHAR scriptName[PATH_MAX];
 	err = strncpy_s(scriptName, sizeof(scriptName), moduleName, moduleNameLen );
 	RT_ASSERT( err == 0, "Buffer overflow." );
 //	DWORD scriptNameLen = GetModuleFileName(hInstance, scriptName, sizeof(scriptName));
@@ -236,7 +236,7 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 
 
 	// (TBD) use file index as mutexName. note: If the file is on an NTFS volume, you can get a unique 64 bit identifier for it with GetFileInformationByHandle.  The 64 bit identifier is the "file index". 
-	char mutexName[MAX_PATH];// = "jswinhost_";
+	char mutexName[PATH_MAX];// = "jswinhost_";
 	err = strncpy_s(mutexName, sizeof(mutexName), moduleName, moduleNameLen );
 	RT_ASSERT( err == 0, "Buffer overflow." );
 	err = strcat_s(mutexName, sizeof(mutexName), name);
