@@ -14,6 +14,8 @@
 
 #include "stdafx.h"
 
+#include <string.h>
+
 #include "directory.h"
 
 
@@ -36,7 +38,7 @@ DEFINE_FINALIZE() {
 
 
 DEFINE_CONSTRUCTOR() {
-	
+
 	RT_ASSERT_CONSTRUCTING( _class );
 	RT_ASSERT_ARGC( 1 );
 	JS_SetReservedSlot( cx, obj, SLOT_JSIO_DIR_NAME, J_ARG(1) );
@@ -194,7 +196,7 @@ DEFINE_FUNCTION( List ) {
 	int index = 0;
 	for (;;) {
 
-		PRDirEntry *dirEntry = PR_ReadDir( dd, flags ); // & 0x0F 
+		PRDirEntry *dirEntry = PR_ReadDir( dd, flags ); // & 0x0F
 		if ( dirEntry == NULL ) {
 
 			PRErrorCode errorCode = PR_GetError();
