@@ -22,11 +22,11 @@
 //#ifndef PATH_MAX
 //	#define PATH_MAX FILENAME_MAX
 //#endif
-//
-//#ifdef XP_UNIX
-//	#define MAX_PATH PATH_MAX
-//	#define O_BINARY 0
-//#endif
+
+#ifdef XP_UNIX
+	#define MAX_PATH PATH_MAX
+	#define O_BINARY 0
+#endif
 
 extern JSFunction *stdoutFunction;
 
