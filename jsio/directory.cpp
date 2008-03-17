@@ -16,6 +16,11 @@
 
 #include "directory.h"
 
+
+#define _SKIP_FILE 32
+#define _SKIP_DIRECTORY 64
+#define _SKIP_OTHER 128
+
 BEGIN_CLASS( Directory )
 
 DEFINE_FINALIZE() {
@@ -167,17 +172,18 @@ DEFINE_FUNCTION( List ) {
 
 	RT_ASSERT_ARGC( 1 );
 	char *directoryName;
-	RT_JSVAL_TO_STRING( J_ARG(1), directoryName );
+	int directoryNameLength;
+	RT_JSVAL_TO_STRING_AND_LENGTH( J_ARG(1), directoryName, directoryNameLength );
+	RT_ASSERT( directoryNameLength < PATH_MAX, "Path too long" );
 	PRDir *dd = PR_OpenDir( directoryName );
 	if ( dd == NULL )
 		return ThrowIoError(cx);
 
 	PRDirFlags flags = PR_SKIP_DOT;
-
 	if ( J_ARG_ISDEF( 2 ) ) {
 
 		int32 tmp;
-		RT_CHECK_CALL( JS_ValueToInt32( cx, J_ARG(1), &tmp ) );
+		RT_CHECK_CALL( JS_ValueToInt32( cx, J_ARG(2), &tmp ) );
 		flags = (PRDirFlags)tmp;
 	}
 
@@ -188,7 +194,7 @@ DEFINE_FUNCTION( List ) {
 	int index = 0;
 	for (;;) {
 
-		PRDirEntry *dirEntry = PR_ReadDir( dd, flags );
+		PRDirEntry *dirEntry = PR_ReadDir( dd, flags ); // & 0x0F 
 		if ( dirEntry == NULL ) {
 
 			PRErrorCode errorCode = PR_GetError();
@@ -196,6 +202,27 @@ DEFINE_FUNCTION( List ) {
 				break;
 			else
 				return ThrowIoError(cx);
+		}
+
+		if ( flags & (_SKIP_FILE | _SKIP_DIRECTORY | _SKIP_OTHER) ) {
+
+			PRFileInfo fileInfo;
+			PRStatus status;
+
+			char fileName[PATH_MAX];
+			strcpy( fileName, directoryName );
+			if ( directoryName[directoryNameLength-1] != '/' && directoryName[directoryNameLength-1] != '\\' )
+				strcat( fileName, "/" );
+			strcat( fileName, dirEntry->name );
+
+			status = PR_GetFileInfo( fileName, &fileInfo );
+			if ( status != PR_SUCCESS )
+				return ThrowIoError(cx);
+
+			if ( flags & _SKIP_FILE && fileInfo.type == PR_FILE_FILE ||
+				  flags & _SKIP_DIRECTORY && fileInfo.type == PR_FILE_DIRECTORY ||
+				  flags & _SKIP_OTHER && fileInfo.type == PR_FILE_OTHER )
+				continue;
 		}
 
 		JSString *jsStr = JS_NewStringCopyZ( cx, dirEntry->name );
@@ -235,6 +262,10 @@ CONFIGURE_CLASS
 		CONST_DOUBLE(SKIP_DOT_DOT,PR_SKIP_DOT_DOT )
 		CONST_DOUBLE(SKIP_BOTH   ,PR_SKIP_BOTH )
 		CONST_DOUBLE(SKIP_HIDDEN ,PR_SKIP_HIDDEN )
+
+		CONST_DOUBLE(SKIP_FILE, _SKIP_FILE )
+		CONST_DOUBLE(SKIP_DIRECTORY, _SKIP_DIRECTORY )
+		CONST_DOUBLE(SKIP_OTHER, _SKIP_OTHER )
 	END_CONST_DOUBLE_SPEC
 
 	HAS_PRIVATE
