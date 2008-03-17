@@ -13,6 +13,8 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
+#include <string.h>
+
 #include "../common/jsNativeInterface.h"
 
 //#include <jsxdrapi.h>
