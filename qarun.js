@@ -8,30 +8,32 @@ function QAASSERT( cond, message ) {
 	if ( !cond ) {
 
 		issues++;
-		Print( '    - ' + message + '\n' );
+		Print( '    - ' + message, '\n' );
 	}
 }
 
 var dirList = Directory.List('.', Directory.SKIP_BOTH | Directory.SKIP_FILE | Directory.SKIP_OTHER );
+dirList.sort();
+
 for each ( var dirName in dirList ) {
 	
-	var f = new File(dirName+'/qa.js');
+	var f = new File(dirName + '/qa.js');
 	if ( f.exist ) {
 		
 		var qatests = Exec(f.name, false)(QAASSERT);
 
-		Print(f.name+'\n');
+		Print( f.name, '\n' );
 		for ( var testName in qatests ) {
 			
-			Print('  '+testName+'\n');
+			Print( '  ' + testName, '\n' );
 
 			if ( arguments[1] && arguments[1] != testName ) {
-				Print('    X Skiped.\n');			
+				Print( '    X Skiped.', '\n' );
 				continue;
 			}
 			
 			if ( testName[0] == '_' ) {
-				Print('    X Disabled.\n');
+				Print( '    X Disabled', '\n' );
 				continue;
 			}
 			
@@ -42,7 +44,7 @@ for each ( var dirName in dirList ) {
 
 			} catch ( ex ) {
 
-				Print( '    ! ' + ex.constructor.name +': '+ ex.text + ' ('+ex.code+') "'+(ex.message||'???')+'"\n' );
+				Print( '    ! ' + ex.constructor.name +': '+ ex.text + ' ('+ex.code+') "'+(ex.stack||'???')+'"', '\n' );
 			}
 			
 			CollectGarbage();
