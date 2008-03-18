@@ -141,6 +141,7 @@ DumpScope(JSContext *cx, JSObject *obj)
 }
 */
 
+
 static void
 DumpScope(JSContext *cx, JSObject *obj, FILE *fp)
 {
@@ -168,12 +169,16 @@ DumpScope(JSContext *cx, JSObject *obj, FILE *fp)
                 str = js_ValueToString(cx, v);
                 fputs("object ", fp);
             }
-            if (!str)
+				if (!str) {
                 fputs("<error>", fp);
-				else {
-#ifdef DEBUG
-                js_FileEscapedString(fp, str, '"');
-#endif // DEBUG
+				} else {
+
+#if defined DEBUG || defined JS_DUMP_PROPTREE_STATS
+					char buffer[65535];
+					size_t count = js_PutEscapedStringImpl(buffer, sizeof(buffer), NULL, str, '"'); // js_FileEscapedString(fp, str, '"');
+					buffer[count] = '\0';
+					_puts(cx, buffer);
+#endif
 				}
         }
 #define DUMP_ATTR(name) if (sprop->attrs & JSPROP_##name) fputs(" " #name, fp)
@@ -189,154 +194,86 @@ DumpScope(JSContext *cx, JSObject *obj, FILE *fp)
                 (unsigned long)sprop->slot, sprop->flags, sprop->shortid);
     }
 }
-/*
+
+
+
+
 static JSBool
 DumpStats(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
     uintN i;
     JSString *str;
     const char *bytes;
-    JSAtom *atom;
+    jsid id;
     JSObject *obj2;
     JSProperty *prop;
     jsval value;
 
-    for (i = 0; i < argc; i++) {
+
+	FILE *gOutFile = stdout;
+	if ( J_ARG_ISDEF( 1 ) ) {
+
+		char *fileName;
+		RT_JSVAL_TO_STRING( J_ARG( 1 ), fileName );
+		if ( fileName[0] != '\0' ) {
+		
+			gOutFile = fopen(fileName, "w");
+			RT_ASSERT_2( gOutFile, "can't open %s: %s", fileName, strerror(errno));
+		}
+	}
+	FILE *gErrFile = gOutFile;
+
+
+    for (i = 0 +1; i < argc; i++) {
         str = JS_ValueToString(cx, argv[i]);
         if (!str)
             return JS_FALSE;
+        argv[i] = STRING_TO_JSVAL(str);
         bytes = JS_GetStringBytes(str);
-        if (strcmp(bytes, "arena") == 0) {
-#ifdef JS_ARENAMETER
-            JS_DumpArenaStats(stdout);
+
+#ifdef JS_GCMETER
+        if (strcmp(bytes, "gc") == 0) {
+				js_DumpGCStats(cx->runtime, gOutFile);
+        } else
 #endif
-//        } else if (strcmp(bytes, "atom") == 0) {
-//            js_DumpAtoms(cx, gOutFile);
-        } else if (strcmp(bytes, "global") == 0) {
-            DumpScope(cx, cx->globalObject);
+
+#ifdef JS_ARENAMETER
+        if (strcmp(bytes, "arena") == 0) {
+            JS_DumpArenaStats(gOutFile);
+		  } else
+#endif
+
+#ifdef DEBUG
+		  if (strcmp(bytes, "atom") == 0) {
+            js_DumpAtoms(cx, gOutFile);
+		  } else
+#endif
+
+		  if (strcmp(bytes, "global") == 0) {
+            DumpScope(cx, cx->globalObject, gOutFile);
         } else {
-            atom = js_Atomize(cx, bytes, JS_GetStringLength(str), 0);
-            if (!atom)
+
+            if (!JS_ValueToId(cx, STRING_TO_JSVAL(str), &id))
                 return JS_FALSE;
-            if (!js_FindProperty(cx, ATOM_TO_JSID(atom), &obj, &obj2, &prop))
+            if (!js_FindProperty(cx, id, &obj, &obj2, &prop))
                 return JS_FALSE;
             if (prop) {
                 OBJ_DROP_PROPERTY(cx, obj2, prop);
-                if (!OBJ_GET_PROPERTY(cx, obj, ATOM_TO_JSID(atom), &value))
-                    return JS_FALSE;
-            }
-
-
-				RT_ASSERT_1( prop && JSVAL_IS_OBJECT(value), "invalid stats argument %s\n", bytes );
-
-				obj = JSVAL_TO_OBJECT(value);
-            if (obj)
-                DumpScope(cx, obj);
-        }
-    }
-    return JS_TRUE;
-}
-*/
-
-static JSBool
-DumpStats(JSContext *cx, uintN argc, jsval *vp) // JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
-{
-
-	jsval *argv = JS_ARGV(cx, vp);
-	JSObject *obj = JS_THIS_OBJECT(cx, vp);
-
-    char *fileName;
-    jsval v;
-    FILE *dumpFile;
-
-    uintN i;
-    JSString *str;
-    const char *bytes;
-    JSAtom *atom;
-    JSObject *obj2;
-    JSProperty *prop;
-    jsval value;
-
-	 fileName = NULL;
-    if (argc > 0) {
-        v = JS_ARGV(cx, vp)[0];
-        if (v != JSVAL_NULL) {
-            JSString *str;
-
-            str = JS_ValueToString(cx, v);
-            if (!str)
-                return JS_FALSE;
-            JS_ARGV(cx, vp)[0] = STRING_TO_JSVAL(str);
-            fileName = JS_GetStringBytes(str);
-        }
-    }
-
-    if (!fileName) {
-        dumpFile = stdout;
-    } else {
-        dumpFile = fopen(fileName, "w");
-        if (!dumpFile) {
-            JS_ReportError(cx, "can't open %s: %s", fileName, strerror(errno));
-            return JS_FALSE;
-        }
-    }
-
-	 for (i = 1; i < argc; i++) { // argv[0] is the filename
-        str = JS_ValueToString(cx, argv[i]);
-        if (!str)
-            return JS_FALSE;
-        bytes = JS_GetStringBytes(str);
-
-        if (strcmp(bytes, "gc") == 0) {
-
-#ifdef JS_GCMETER //  defined(DEBUG) && defined(JS_GCMETER) 
-				js_DumpGCStats(cx->runtime, dumpFile);
-#endif
-        } else
-        if (strcmp(bytes, "arena") == 0) {
-#ifdef JS_ARENAMETER
-            JS_DumpArenaStats(dumpFile);
-#endif
-        } else if (strcmp(bytes, "atom") == 0) {
-#ifdef DEBUG
-            js_DumpAtoms(cx, dumpFile);
-#endif // DEBUG
-        } else if (strcmp(bytes, "global") == 0) {
-            DumpScope(cx, cx->globalObject, dumpFile);
-        } else {
-
-// see. https://bugzilla.mozilla.org/show_bug.cgi?id=413104#c2 ("I removed FRIEND declarations from atomized functions as they are not used outside the SpiderMonkey.")
-//          atom = js_Atomize(cx, bytes, JS_GetStringLength(str), 0); 
-//          if (!atom)
-//                return JS_FALSE;
-//				if (!js_FindProperty(cx, ATOM_TO_JSID(atom), &obj, &obj2, &prop))
-//                return JS_FALSE;
-				
-				jsid id;
-				if (!JS_ValueToId(cx, argv[i], &id))
-					return JS_FALSE;
-				if (!js_FindProperty(cx, id, &obj, &obj2, &prop))
-                return JS_FALSE;
-
-
-				if (prop) {
-                OBJ_DROP_PROPERTY(cx, obj2, prop);
-                if (!OBJ_GET_PROPERTY(cx, obj, ATOM_TO_JSID(atom), &value))
+                if (!OBJ_GET_PROPERTY(cx, obj, id, &value))
                     return JS_FALSE;
             }
             if (!prop || !JSVAL_IS_OBJECT(value)) {
-                fprintf(dumpFile, "js: invalid stats argument %s\n",
+                fprintf(gErrFile, "js: invalid stats argument %s\n",
                         bytes);
                 continue;
             }
             obj = JSVAL_TO_OBJECT(value);
             if (obj)
-                DumpScope(cx, obj, dumpFile);
+                DumpScope(cx, obj, gOutFile);
         }
     }
     return JS_TRUE;
 }
-
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -598,7 +535,7 @@ DEFINE_FUNCTION(Locate) {
 
 			char tmp[512];
 			strcpy(tmp, fp->script->filename);
-			strcat(tmp,":");
+			strcat(tmp, ":");
 			strcat(tmp, IntegerToString(JS_PCToLineNumber(cx, fp->script, fp->pc), 10));
 			*rval = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, tmp));
 			break;
@@ -907,6 +844,34 @@ DEFINE_PROPERTY( gcBytes ) {
 	return JS_TRUE;
 }
 
+/*
+makes the garbage collector extremely aggressive, which will
+help you find any GC hazards much more quickly. This is the same as
+-DWAY_TOO_MUCH_GC and friends, except that it can be manipulated at runtime
+(gdb: set rt->gcZeal = 2). 
+...
+in about:config javascript.options.gczeal = 2 (or 1, or 0, to disable). 
+*/
+DEFINE_PROPERTY( gcZeal ) {
+
+#ifdef JS_GC_ZEAL
+	int zeal;
+	RT_JSVAL_TO_INT32( *vp, zeal );
+	JS_SetGCZeal(cx, zeal);
+	return JS_TRUE;
+#else
+	REPORT_ERROR("Available in Debug mode only.");
+#endif // JS_GC_ZEAL
+}
+
+DEFINE_FUNCTION( DumpObjectPrivate ) {
+
+	RT_ASSERT_ARGC( 1 );
+	RT_ASSERT_OBJECT( J_ARG( 1 ) );
+	unsigned int n = (unsigned int)JS_GetPrivate(cx, JSVAL_TO_OBJECT( J_ARG( 1 ) ));
+	RT_CHECK_CALL( JS_NewNumberValue(cx, (double)n, J_RVAL) );
+}
+
 
 CONFIGURE_STATIC
 
@@ -914,16 +879,20 @@ CONFIGURE_STATIC
 #ifdef DEBUG
 		FUNCTION_FAST( DumpHeap )
 #endif // DEBUG
-		FUNCTION_FAST( DumpStats )
+		FUNCTION( DumpStats )
 		FUNCTION_FAST( TraceGC )
 		FUNCTION( Trap )
 		FUNCTION( Untrap )
 		FUNCTION( LineToPC )
 		FUNCTION( PCToLine )
 		FUNCTION( Locate )
+
+		FUNCTION( DumpObjectPrivate )
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC
+
+		PROPERTY_WRITE( gcZeal )
 		PROPERTY_READ( gcMallocBytes )
 		PROPERTY_READ( gcBytes )
 		PROPERTY_READ( currentMemoryUsage )

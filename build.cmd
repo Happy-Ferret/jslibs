@@ -4,6 +4,8 @@ set platformSDKPath=C:\Program Files\Microsoft Platform SDK
 rem --------------------------------------------------------------------------
 @echo off
 
+set BUILD=release
+
 set prevDir=%CD%
 set prevPath=%PATH%
 
@@ -12,10 +14,11 @@ call "%visualStudioPath%\VC\vcvarsall.bat" x86
 
 del build.log
 
-md .\release
+md .\%BUILD%
 
-copy .\js\src\WINNT5.1_OPT.OBJ\*.dll .\release
-copy .\nspr\win32\dist\lib\nspr4.dll .\release
+
+copy .\js\src\WINNT5.1_OPT.OBJ\*.dll .\%BUILD%
+copy .\nspr\win32\dist\lib\nspr4.dll .\%BUILD%
 
 for /D %%f in (js*) do (
 
@@ -23,16 +26,16 @@ for /D %%f in (js*) do (
 		
 		echo building %%g ...
 		rem VCBUILD Options: http://msdn2.microsoft.com/en-us/library/cz553aa1(VS.80).aspx
-		"%visualStudioPath%\VC\vcpackages\vcbuild" /useenv /rebuild %%g "RELEASE|WIN32" >> build.log
+		"%visualStudioPath%\VC\vcpackages\vcbuild" /useenv /rebuild %%g "%BUILD%|WIN32" >> build.log
 		if ERRORLEVEL 1 (
 		
 			echo ... failed.
 rem		if ERRORLEVEL 1 goto error
 		) ELSE (
 
-			pushd %%~dg%%~pgrelease
-			copy %%f.dll ..\..\release
-			copy %%f.exe ..\..\release
+			pushd %%~dg%%~pg%BUILD%
+			copy %%f.dll ..\..\%BUILD%
+			copy %%f.exe ..\..\%BUILD%
 			popd
 		)
 	)

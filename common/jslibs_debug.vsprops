@@ -14,7 +14,7 @@
 	-->
 	<Tool
 		Name="VCCLCompilerTool"
-		PreprocessorDefinitions="JS_HASHMETER JS_GC_ZEAL"
+		PreprocessorDefinitions="JS_HASHMETER JS_GC_ZEAL JS_DUMP_PROPTREE_STATS"
 		AdditionalIncludeDirectories="..\js\src"
 		ExceptionHandling="0"
 		RuntimeLibrary="3"

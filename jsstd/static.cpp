@@ -476,7 +476,6 @@ static JSScript* LoadScript(JSContext *cx, JSObject *obj, const char *fileName, 
 DEFINE_FUNCTION_FAST( Exec ) {
 
 	//  uintN i;
-	JSString *str;
 	const char *filename;
 	JSScript *script;
 	JSBool ok;
@@ -484,16 +483,9 @@ DEFINE_FUNCTION_FAST( Exec ) {
 	uint32 oldopts;
 
 	RT_ASSERT_ARGC( 1 );
-	bool saveCompiledScripts;
-	if ( J_FARG_ISDEF(2) && J_FARG(2) == JSVAL_FALSE )
-		saveCompiledScripts = false;
-	else
-		saveCompiledScripts = true; // default
+	bool saveCompiledScripts = !( J_FARG_ISDEF(2) && J_FARG(2) == JSVAL_FALSE );
 
-	str = JS_ValueToString(cx, J_FARG(1));
-	RT_ASSERT( str != NULL, "unable to get the filename." );
-	J_FARG(1) = STRING_TO_JSVAL(str);
-	filename = JS_GetStringBytes(str);
+	RT_JSVAL_TO_STRING( J_FARG(1), filename );
 	errno = 0;
 	//        older = JS_SetErrorReporter(cx, LoadErrorReporter);
 	oldopts = JS_GetOptions(cx);
