@@ -8,7 +8,7 @@ ifeq ($(BUILD),dbg)
 	CFLAGS += -Wall -g3 -O0 -DDEBUG
 	SMINC = -I../js/src/Linux_All_DBG.OBJ -I../js/src
 	SMLIB = -Wl,-Bdynamic -L../js/src/Linux_All_DBG.OBJ -ljs
-	SMDEF = -DJS_GCMETER -DJS_HASHMETER
+	SMDEF = -DJS_GCMETER -DJS_HASHMETER -DJS_GC_ZEAL
 #  -DJS_ARENAMETER
 else
 	CFLAGS += -Wall -O3 -s -funroll-loops

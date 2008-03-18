@@ -5,7 +5,6 @@
 	Name="jslibs common properties"
 	>
 	<!-- tmp VCCLCompilerTool
-	
 		Debug Single-threaded (libcd.lib)           | N/A
 		Debug Multithreaded (libcmtd.lib)           | RuntimeLibrary="1"
 		Debug Multithreaded using DLL (msvcrtd.lib) | RuntimeLibrary="3"
@@ -15,7 +14,7 @@
 	-->
 	<Tool
 		Name="VCCLCompilerTool"
-		PreprocessorDefinitions="JS_HASHMETER"
+		PreprocessorDefinitions="JS_HASHMETER JS_GC_ZEAL"
 		AdditionalIncludeDirectories="..\js\src"
 		ExceptionHandling="0"
 		RuntimeLibrary="3"
