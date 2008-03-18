@@ -1,4 +1,4 @@
-function( QAASSERT ) ({
+function( QA ) ({
 
 	BufferAccess: function() {
 
@@ -22,10 +22,32 @@ function( QAASSERT ) ({
 		b.Write('gggg');
 		var t = b.Read();
 
-		QAASSERT( t == 'eeeeffffgggg', 'Invalid Buffer result: '+t );	
+		QA.ASSERT( t, 'eeeeffffgggg', 'buffer match' );	
 	
+	},
+	
+	Pack: function() {
+
+		var buf = new Buffer();
+		var pack = new Pack(buf);
+
+		var v = 12345678;
+
+		pack.WriteInt(v, 4, true);
+		QA.ASSERT( pack.buffer.length, 4, 'buffer length' );
+		QA.ASSERT( v, pack.ReadInt(4, true), 'data validity' );
+
+		pack.WriteInt(v, 4);
+		QA.ASSERT( v, pack.ReadInt(4, false), 'data validity' );
+
+		pack.WriteInt(v, 4, false);
+		QA.ASSERT( v, pack.ReadInt(4), 'data validity' );
+
+		v = 65432;
+		pack.WriteInt(v, 2);
+		QA.ASSERT( v, pack.ReadInt(2), 'data validity' );
+
+
 	}
-
-
 
 })
