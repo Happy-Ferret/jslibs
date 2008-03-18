@@ -160,7 +160,7 @@ DEFINE_CONSTRUCTOR() {
 	if ( status != PR_SUCCESS )
 		return ThrowIoError(cx);
 
-	RT_CHECK_CALL( JS_SetPrivate(cx, J_OBJ, pv) );
+	RT_CHECK_CALL( JS_SetPrivate(cx, obj, pv) );
 
 	return JS_TRUE;
 }
@@ -279,6 +279,8 @@ DEFINE_PROPERTY( contentSetter ) {
 
 DEFINE_PROPERTY( contentGetter ) {
 
+//	*vp = STRING_TO_JSVAL( JS_NewStringCopyZ(cx, "123456789ABC") );
+//	return JS_TRUE;
 	ClassPrivate *pv = (ClassPrivate*)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE( pv );
 
@@ -287,9 +289,8 @@ DEFINE_PROPERTY( contentGetter ) {
 	MemHeader *mh = (MemHeader*)pv->mem;
 
 	unsigned int dataLength = mh->currentDataLength;
-
 	char *data = (char*)JS_malloc(cx, dataLength +1);
-	data[pv->size - sizeof(MemHeader)] = '\0';
+	data[dataLength] = '\0';
 
 	memmove(	data, (char *)pv->mem + sizeof(MemHeader), dataLength );
 
