@@ -156,18 +156,22 @@
 			soc.Connect( host, 80 );
 			soc.writable = function(s) {
 
+				QA.ASSERT( s instanceof Socket, true,  'object is a Socket' );
+				QA.ASSERT( s.closed , false,  'Socket descriptor is closed' );
+
 				delete soc.writable;
-				s.Send('GET\r\n');
+				QA.ASSERT_HAS_PROPERTIES( s, 'Write' );
+				s.Write('GET\r\n');
 			}
 
 			soc.readable = function(s) {
 				
-				response += s.Recv();
+				response += s.Read();
 			}
 
 			var i = 0;
 			while( ++i < 10 )
-				Poll([soc],50);
+				Poll([soc], 20);
 				
 		} catch( ex if ex instanceof IoError ) {
 			
