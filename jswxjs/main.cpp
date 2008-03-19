@@ -14,9 +14,6 @@
 
 #include "stdafx.h"
 
-#define MODULE_NAME "jstemplate"
-static const char *_revision = "$Rev$";
-
 #define MAX_WXJS_MODULES 32
 
 #define wxString char*
@@ -25,13 +22,11 @@ static const char *_revision = "$Rev$";
 // from [wxjs]/wxjs/src/engine/module.cpp:
 
 static wxString WXJS_INIT_CLASS = wxT("wxJS_InitClass");
-static wxString WXJS_INIT_OBJECT = wxT("wxJS_InitObject");
 static wxString WXJS_DESTROY = wxT("wxJS_Destroy");
 
 typedef bool (*WXJS_INIT_PROC)(JSContext *cx, JSObject *obj);
 typedef void (*WXJS_DESTROY_PROC)();
 typedef void (*WXJS_ERROR_PROC)(JSErrorReporter er);
-
 
 
 DEFINE_UNSAFE_MODE
@@ -66,24 +61,16 @@ DEFINE_FUNCTION( UnloadWXJSModule ) {
 	return JS_TRUE;
 }
 
-
 CONFIGURE_STATIC
-
 	BEGIN_STATIC_FUNCTION_SPEC
 		FUNCTION( LoadWXJSModule )
 		FUNCTION( UnloadWXJSModule )
 	END_STATIC_FUNCTION_SPEC
-
-	BEGIN_STATIC_PROPERTY_SPEC
-	END_STATIC_PROPERTY_SPEC
-
 END_STATIC
 
 
 
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
-
-	JS_DefineProperty(cx, obj, MODULE_NAME "_build", INT_TO_JSVAL(atoi(_revision+6)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ); // 6 is the size of "$Rev: "
 
 // read configuration
 //	jsval stdoutFunctionValue = GetConfigurationValue(cx, "stdout");
@@ -112,20 +99,3 @@ EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
 
 	return JS_TRUE;
 }
-
-/*
-
-BOOL APIENTRY DllMain( HANDLE hModule, DWORD  ul_reason_for_call, LPVOID lpReserved ) {
-
-  switch (ul_reason_for_call) {
-
-	  case DLL_PROCESS_ATTACH:
-	  case DLL_THREAD_ATTACH:
-	  case DLL_THREAD_DETACH:
-	  case DLL_PROCESS_DETACH:
-		  break;
-  }
-  return TRUE;
-}
-
-*/
