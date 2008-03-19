@@ -417,7 +417,7 @@ DEFINE_FUNCTION( Import ) {
 DEFINE_PROPERTY( closed ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
-	*vp = BOOLEAN_TO_JSVAL( fd != NULL );
+	*vp = BOOLEAN_TO_JSVAL( fd == NULL );
 	return JS_TRUE;
 }
 

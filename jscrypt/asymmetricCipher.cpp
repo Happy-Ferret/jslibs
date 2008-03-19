@@ -66,16 +66,19 @@ DEFINE_FINALIZE() {
 	AsymmetricCipherPrivate *pv = (AsymmetricCipherPrivate *)JS_GetPrivate(cx, obj);
 	if ( pv == NULL )
 		return;
-	switch ( pv->cipher ) {
-		case rsa:
-			rsa_free( &pv->key.rsaKey );
-			break;
-		case ecc:
-			ecc_free( &pv->key.eccKey );
-			break;	 
-		case dsa:
-			dsa_free( &pv->key.dsaKey );
-			break;
+	if ( pv->hasKey ) {
+
+		switch ( pv->cipher ) {
+			case rsa:
+				rsa_free( &pv->key.rsaKey );
+				break;
+			case ecc:
+				ecc_free( &pv->key.eccKey );
+				break;	 
+			case dsa:
+				dsa_free( &pv->key.dsaKey );
+				break;
+		}
 	}
 	zeromem(pv, sizeof(AsymmetricCipherPrivate)); // safe clean
 	free(pv);
@@ -306,7 +309,7 @@ DEFINE_FUNCTION( Decrypt ) { // ( encryptedData [, lparam] )
 		return ThrowCryptError(cx, err); // (TBD) free something ?
 
 	out[outLength] = '\0';
-	JSString *jssOut = JS_NewStringCopyN( cx, out, outLength +1 );
+	JSString *jssOut = JS_NewStringCopyN( cx, out, outLength );
 	zeromem(out, sizeof(out));
 	RT_ASSERT_ALLOC( jssOut );
 	*rval = STRING_TO_JSVAL(jssOut);

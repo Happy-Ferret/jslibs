@@ -207,7 +207,7 @@ DEFINE_FUNCTION( IsReadable ) {
 		RT_JSVAL_TO_UINT32( J_ARG(2), timeout );
 		prTimeout = PR_MillisecondsToInterval(timeout);
 	} else
-		prTimeout = PR_INTERVAL_NO_TIMEOUT;
+		prTimeout = PR_INTERVAL_NO_WAIT; //PR_INTERVAL_NO_TIMEOUT;
 
 	PRPollDesc desc = { fd, PR_POLL_READ, 0 };
 	PRInt32 result = PR_Poll( &desc, 1, prTimeout );
@@ -234,7 +234,7 @@ DEFINE_FUNCTION( IsWritable ) {
 		RT_JSVAL_TO_UINT32( J_ARG(2), timeout );
 		prTimeout = PR_MillisecondsToInterval(timeout);
 	} else
-		prTimeout = PR_INTERVAL_NO_TIMEOUT;
+		prTimeout = PR_INTERVAL_NO_WAIT; //PR_INTERVAL_NO_TIMEOUT;
 
 	PRPollDesc desc = { fd, PR_POLL_WRITE, 0 };
 	PRInt32 result = PR_Poll( &desc, 1, prTimeout );
@@ -374,24 +374,27 @@ DEFINE_PROPERTY( systemInfo ) {
 			return ThrowIoError(cx);
 		jsstr = JS_NewStringCopyZ(cx,tmp);
 		RT_ASSERT_ALLOC( jsstr );
-		tmpVal = STRING_TO_JSVAL(jsstr); 
-		JS_SetProperty(cx, info, "architecture", &tmpVal);
+//		tmpVal = STRING_TO_JSVAL(jsstr); 
+//		JS_SetProperty(cx, info, "architecture", &tmpVal);
+		RT_CHECK_CALL( JS_DefineProperty(cx, info, "architecture", STRING_TO_JSVAL(jsstr), NULL, NULL, JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT) );
 
 		status = PR_GetSystemInfo( PR_SI_SYSNAME, tmp, sizeof(tmp) );
 		if ( status != PR_SUCCESS )
 			return ThrowIoError(cx);
 		jsstr = JS_NewStringCopyZ(cx,tmp);
 		RT_ASSERT_ALLOC( jsstr );
-		tmpVal = STRING_TO_JSVAL(jsstr); 
-		JS_SetProperty(cx, info, "name", &tmpVal);
+//		tmpVal = STRING_TO_JSVAL(jsstr); 
+//		JS_SetProperty(cx, info, "name", &tmpVal);
+		RT_CHECK_CALL( JS_DefineProperty(cx, info, "name", STRING_TO_JSVAL(jsstr), NULL, NULL, JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT) );
 
 		status = PR_GetSystemInfo( PR_SI_RELEASE, tmp, sizeof(tmp) );
 		if ( status != PR_SUCCESS )
 			return ThrowIoError(cx);
 		jsstr = JS_NewStringCopyZ(cx,tmp);
 		RT_ASSERT_ALLOC( jsstr );
-		tmpVal = STRING_TO_JSVAL(jsstr); 
-		JS_SetProperty(cx, info, "release", &tmpVal);
+//		tmpVal = STRING_TO_JSVAL(jsstr); 
+//		JS_SetProperty(cx, info, "release", &tmpVal);
+		RT_CHECK_CALL( JS_DefineProperty(cx, info, "release", STRING_TO_JSVAL(jsstr), NULL, NULL, JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT) );
 	}
 
 	return JS_TRUE;
@@ -568,6 +571,57 @@ DEFINE_FUNCTION_FAST( CreateProcess_ ) {
 }
 
 
+
+DEFINE_PROPERTY( processPriorityGetter ) {
+
+	PRThreadPriority priority = PR_GetThreadPriority(PR_GetCurrentThread());
+	int priorityValue;
+	switch (priority) {
+		case PR_PRIORITY_LOW:
+			priorityValue = -1;
+			break;
+		case PR_PRIORITY_NORMAL:
+			priorityValue = 0;
+			break;
+		case PR_PRIORITY_HIGH:
+			priorityValue = 1;
+			break;
+		case PR_PRIORITY_URGENT:
+			priorityValue = 2;
+			break;
+		default:
+			REPORT_ERROR( "Invalid thread priority." );
+	}
+	*vp = INT_TO_JSVAL( priorityValue );
+	return JS_TRUE;
+}
+
+
+DEFINE_PROPERTY( processPrioritySetter ) {
+
+	int priorityValue;
+	RT_JSVAL_TO_INT32( *vp, priorityValue );
+	PRThreadPriority priority;
+	switch (priorityValue) {
+		case -1:
+			priority = PR_PRIORITY_LOW;
+			break;
+		case 0:
+			priority = PR_PRIORITY_NORMAL;
+			break;
+		case 1:
+			priority = PR_PRIORITY_HIGH;
+			break;
+		case 2:
+			priority = PR_PRIORITY_URGENT;
+			break;
+		default:
+			REPORT_ERROR( "Invalid thread priority." );
+	}
+	PR_SetThreadPriority(PR_GetCurrentThread(), priority);
+	return JS_TRUE;
+}
+
 CONFIGURE_STATIC
 
 	BEGIN_STATIC_FUNCTION_SPEC
@@ -588,6 +642,7 @@ CONFIGURE_STATIC
 		PROPERTY_READ( hostName )
 		PROPERTY_READ( physicalMemorySize )
 		PROPERTY_READ_STORE( systemInfo )
+		PROPERTY( processPriority )
 	END_STATIC_PROPERTY_SPEC
 
 END_STATIC
