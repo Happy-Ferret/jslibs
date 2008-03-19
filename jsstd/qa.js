@@ -1,6 +1,8 @@
-function( QA ) ({
+({
 
-	BufferAccess: function() {
+	BufferAccess: function(QA) {
+		
+		LoadModule('jsstd');
 
 		var b = new Buffer();
 		b.Write('aaa');
@@ -26,7 +28,9 @@ function( QA ) ({
 	
 	},
 	
-	Pack: function() {
+	Pack: function(QA) {
+
+		LoadModule('jsstd');
 
 		var buf = new Buffer();
 		var pack = new Pack(buf);

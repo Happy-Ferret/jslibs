@@ -1,74 +1,91 @@
 LoadModule('jsstd');
 LoadModule('jsio');
-
 LoadModule('jsdebug');
 
-////////////////////////
+function MakeTestList(directory) {
 
-var testIterate = 3;
+	var dirList = Directory.List(directory, Directory.SKIP_BOTH | Directory.SKIP_FILE | Directory.SKIP_OTHER );
+	dirList.sort();
+
+	var testList = {};
+	for each ( var dirName in dirList ) {
+
+		var f = new File(dirName + '/qa.js');
+		if ( f.exist ) {
+
+			var qatests = Exec(f.name, false);
+			for ( var testName in qatests )
+				testList[ dirName + ':' + testName ] = qatests[testName];
+		}
+	}
+	
+	return testList;
+}
 
 
-/////////////////////////
+function MakeTests( testList, filter, QAAPI, iterate ) {
 
-var issues = 0;
+	var savePrio = processPriority;
+	processPriority = 2;
 
-var _QA = new function() {
+	var t0 = TimeCounter();
+	for ( var testName in testList ) {
+
+		if ( !filter(testName) )
+			continue;
+
+		if ( testName[0] == '_' )
+			continue;
+
+		Print( testName, '\n' );
+		for ( var i = 0; i<iterate; i++ ) {
+
+			testList[testName](QAAPI);
+			CollectGarbage();
+			if ( endSignal )
+				return;
+		}
+	}
+
+	var t = TimeCounter() - t0;
+	Print( QAAPI.issues + ' issues found in '+ t.toFixed(2) + 'ms.' );
+	processPriority = savePrio;
+}
+
+
+var QAAPI = new function() {
+	
+	this.issues = 0;
+
+	this.REPORT = function( message ) {
+
+		this.issues++;
+		Print( ' - ' + message, '\n' );
+	}
+
 	this.ASSERT = function( value, expect, testName ) {
 
 		if ( value !== expect ) {
-
-			issues++;
-			Print( '    - ' + testName + ' ('+value+' != '+expect+')', '\n' );
-		}
-	}
-}
-
-
-var dirList = Directory.List('.', Directory.SKIP_BOTH | Directory.SKIP_FILE | Directory.SKIP_OTHER );
-dirList.sort();
-
-for each ( var dirName in dirList ) {
-	
-	var f = new File(dirName + '/qa.js');
-	if ( f.exist ) {
 		
-		var qatests = Exec(f.name, false)(_QA);
-
-		Print( f.name, '\n' );
-		for ( var testName in qatests ) {
-			
-			Print( '  ' + testName, '\n' );
-
-			if ( arguments[1] && arguments[1] != testName ) {
-			
-				Print( '    X Skiped.', '\n' );
-				continue;
-			}
-			
-			if ( testName[0] == '_' ) {
-			
-				Print( '    X Disabled', '\n' );
-				continue;
-			}
-
-			try {
-				
-				for ( var i = 0; i<testIterate; i++ ) {
-				
-					qatests[testName]();
-					CollectGarbage();
-				}
-
-			} catch ( ex ) {
-
-				Print( '    ! ' + ex.constructor.name +': '+ ex.text + ' ('+ex.code+') '+(ex.stack||'<no stack>'), '\n' );
-			}
-			
+			value = '('+typeof(value)+') '+ String(value).substr(0,50).quote()+'...';
+			expect = '('+typeof(expect)+') '+ String(expect).substr(0,50).quote()+'...';
+			this.REPORT( testName + '. '+value+' != '+expect );
 		}
 	}
+
+   this.ASSERT_HAS_PROPERTIES = function( obj, names ) {
+   	
+   	for each ( var p in names.split(/\s*,\s*/) )
+   		if ( !(p in obj) )
+	  			this.REPORT( 'property '+p+' not found' );
+   }
+
+   this.RandomString = function(length) { // [0-9A-Za-z]
+
+		 var str = '';
+		 for ( ; str.length < length; str += Math.random().toString(36).substr(2) );
+		 return str.substr(0, length);
+   }
 }
 
-Print( issues + ' issues found' );
-
-
-
+MakeTests(MakeTestList('.'), new RegExp(arguments[1]||'.*', 'i'), QAAPI, 5);

@@ -1,6 +1,6 @@
-function( QA ) ({
+({
 
-	GlobalVariables: function() {
+	GlobalVariables: function(QA) {
 		
 		QA.ASSERT( scripthostpath != '', true, 'script host path' );
 		QA.ASSERT( scripthostname.substr(0, 6), 'jshost', 'script host name' );
@@ -10,9 +10,10 @@ function( QA ) ({
 		var mod1 = LoadModule('jsstd');
 		QA.ASSERT( mod, mod1, 'LoadModule' );
 		QA.ASSERT( _configuration.unsafeMode, false, 'unsafe mode' );
+		QA.ASSERT( global.arguments[0], 'qarun.js', 'javascript program name' );
 	},
 
-	E4X: function() {
+	E4X: function(QA) {
 
 		var sales = <sales vendor="John">
 			 <item type="peas" price="4" quantity="6"/>

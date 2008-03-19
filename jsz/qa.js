@@ -1,6 +1,6 @@
-function( QA) ({
+({
 
-	DeflateRatio1: function() {
+	DeflateRatio1: function(QA) {
 
 		LoadModule('jsz');
 		var uncompressezText = 'jjjjjjjjjjjssssssssssssssssssslllllliiiiiiiibbsssssssssssssss';
@@ -10,7 +10,7 @@ function( QA) ({
 		QA.ASSERT( ratio, '37.70%', 'Bad compression ratio' );
 	},
 	
-	DeflateRatio2: function() {
+	DeflateRatio2: function(QA) {
 
 		LoadModule('jsz');
 		var uncompressezText = 'zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz';
@@ -28,48 +28,34 @@ function( QA) ({
 	},
 
 
-	InflateDeflate1: function() {
+	InflateDeflate1: function(QA) {
 	
 		var deflate = new Z(Z.DEFLATE);
 		var inflate = new Z(Z.INFLATE);
 		var source = 'x';
 		var str = deflate(source, true);	
-		QA.ASSERT( str.quote(), "x\x9C\xAB\0\0\0y\0y".quote(), 'deflate result' );
+		QA.ASSERT( str, "x\x9C\xAB\0\0\0y\0y", 'deflate result' );
 		var result = inflate(str, true);
-		QA.ASSERT( result.quote(), source.quote(), 'inflate result' );
+		QA.ASSERT( result, source, 'inflate result' );
 	},
 
-	InflateDeflate2: function() {
+	InflateDeflate2: function(QA) {
 
-		function RandomString(length) { // [0-9A-Za-z]
-
-			 var str = '';
-			 for ( ; str.length < length; str += Math.random().toString(36).substr(2) );
-			 return str.substr(0, length);
-		}
-	
 		var deflate = new Z(Z.DEFLATE);
 		var inflate = new Z(Z.INFLATE);
-		var source = RandomString(10000);
+		var source = QA.RandomString(10000);
 		var str = deflate(source, true);	
 		var result = inflate(str, true);
-		QA.ASSERT( result.quote(), source.quote(), 'inflate result' );
+		QA.ASSERT( result, source, 'inflate result' );
 	},
 
-	InflateDeflateHuge: function() {
+	InflateDeflateHuge: function(QA) {
 
-		function RandomString(length) { // [0-9A-Za-z]
-
-			 var str = '';
-			 for ( ; str.length < length; str += Math.random().toString(36).substr(2) );
-			 return str.substr(0, length);
-		}
-	
 		var deflate = new Z(Z.DEFLATE);
 		var inflate = new Z(Z.INFLATE);
 
 		for ( var i = 0; i < 200; i++ )
-			inflate(deflate(RandomString(10000)));
+			inflate(deflate(QA.RandomString(10000)));
 		inflate(deflate());
 		
 		QA.ASSERT( deflate.lengthIn, 2000000 , 'input length' );
@@ -77,16 +63,9 @@ function( QA) ({
 		QA.ASSERT( deflate.adler32, inflate.adler32, 'adler32 match' );
 	},
 	
-	EofMethods: function() {
+	EofMethods: function(QA) {
 
-		function RandomString(length) { // [0-9A-Za-z]
-
-			 var str = '';
-			 for ( ; str.length < length; str += Math.random().toString(36).substr(2) );
-			 return str.substr(0, length);
-		}
-
-		var source = RandomString(10000);
+		var source = QA.RandomString(10000);
 
 		var deflate1 = new Z(Z.DEFLATE);
 		deflate1(source, true);
