@@ -1,3 +1,5 @@
+_configuration.unsafeMode = true;
+
 LoadModule('jsstd');
 LoadModule('jsio');
 LoadModule('jsdebug');
@@ -63,13 +65,21 @@ var QAAPI = new function() {
 		Print( ' - ' + message, '\n' );
 	}
 
+	this.ASSERT_TYPE = function( value, type, testName ) {
+		
+		if ( typeof(value) != type && !(value instanceof type) ) {
+			
+			this.REPORT( (testName||'') + ' (@'+Locate(-1)+'), Invalid type, '+(type.name)+' is expected' );
+		}
+	}
+
 	this.ASSERT = function( value, expect, testName ) {
 
 		if ( value !== expect ) {
 		
-			value = '('+typeof(value)+') '+ String(value).substr(0,50).quote()+'...';
-			expect = '('+typeof(expect)+') '+ String(expect).substr(0,50).quote()+'...';
-			this.REPORT( testName + '. '+value+' != '+expect );
+			value = '('+typeof(value)+')'+ String(value).substr(0,50).quote()+'...';
+			expect = '('+typeof(expect)+')'+ String(expect).substr(0,50).quote()+'...';
+			this.REPORT( (testName||'') + ', (@'+Locate(-1)+'), '+value+' != '+expect );
 		}
 	}
 
@@ -89,3 +99,4 @@ var QAAPI = new function() {
 }
 
 MakeTests(MakeTestList('.'), new RegExp(arguments[1]||'.*', 'i'), QAAPI, 5);
+

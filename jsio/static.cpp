@@ -364,7 +364,7 @@ DEFINE_PROPERTY( systemInfo ) {
 		*vp = OBJECT_TO_JSVAL( info );
 
 		PRStatus status;
-		jsval tmpVal;
+//		jsval tmpVal;
 		JSString *jsstr;
 
 		// (TBD) these properties must be read-only !!
@@ -537,7 +537,7 @@ DEFINE_FUNCTION_FAST( CreateProcess_ ) {
 	PR_DestroyProcessAttr(psattr);
 	free(processArgv);
 
-	if ( process = NULL )
+	if ( process == NULL )
 		return ThrowIoError(cx);
 
 	PR_Close(stdin_child);

@@ -136,9 +136,6 @@ int consoleStdErr( JSContext *, const char *data, int length ) {
 }
 
 
-bool reportWarnings = true;
-
-
 // function copied from ../js/src/js.c
 static void ErrorReporter(JSContext *cx, const char *message, JSErrorReport *report) {
 
@@ -154,11 +151,11 @@ static void ErrorReporter(JSContext *cx, const char *message, JSErrorReport *rep
 		return;
     }
 
-	// Conditionally ignore reported warnings.
-	if (JSREPORT_IS_WARNING(report->flags) && !reportWarnings)
+	// check if we should report warnings
+	if ( JSREPORT_IS_WARNING(report->flags) && GetConfigurationValue(cx, NAME_CONFIGURATION_UNSAFE_MODE ) == JSVAL_TRUE )
 		return;
 
-//	if (JSREPORT_IS_EXCEPTION(report->flags) && !reportWarnings)
+//	if (JSREPORT_IS_EXCEPTION(report->flags))
 //		return;
 
     prefix = NULL;
@@ -444,8 +441,6 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 			case 'u': // avoid any runtime checks
 				argumentVector++;
 				unsafeMode = ( atoi( *argumentVector ) != 0 );
-				reportWarnings = !unsafeMode;
-				// (TBD) set into configuration
 				break;
 			case 'c':
 				compileOnly = true;

@@ -328,6 +328,27 @@ DEFINE_FUNCTION_FAST( MaybeCollectGarbage ) {
 	return JS_TRUE;
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+DEFINE_PROPERTY( disableGarbageCollection ) {
+// <shaver>	you could install a vetoing callback!
+// <crowder>	oh, true	
+
+//	JS_SetGCCallback(cx, ..
+
+	bool disableGC;
+	RT_JSVAL_TO_BOOL( *vp, disableGC );
+
+
+	if ( disableGC ) {
+
+		JS_LOCK_GC(JS_GetRuntime(cx));
+	} else {
+		
+		JS_UNLOCK_GC(JS_GetRuntime(cx));
+	}
+
+	return JS_TRUE;
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //DEFINE_FUNCTION_FAST( Now ) {
@@ -557,6 +578,7 @@ CONFIGURE_STATIC
 
 	BEGIN_STATIC_PROPERTY_SPEC
 		PROPERTY_READ( isConstructing )
+		PROPERTY_WRITE( disableGarbageCollection )
 	END_STATIC_PROPERTY_SPEC
 
 END_STATIC

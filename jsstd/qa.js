@@ -50,8 +50,25 @@
 		v = 65432;
 		pack.WriteInt(v, 2);
 		QA.ASSERT( v, pack.ReadInt(2), 'data validity' );
-
-
+	},
+	
+	GarbageCollector: function(QA) {
+		
+		LoadModule('jsdebug');
+		LoadModule('jsstd');
+		
+		var str = QA.RandomString(1024*1024);
+		
+		disableGarbageCollection = true;
+		CollectGarbage();
+	
+		for ( var i = 0; i < 7; i++ )
+			str += str;
+			
+		QA.ASSERT( gcBytes, str.length, 'lot of allocated memory' );
+		
+		CollectGarbage();
+	
 	}
 
 })

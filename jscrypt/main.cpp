@@ -32,6 +32,8 @@ extern "C" DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
 	ltc_mp = ltm_desc; // register math
 
+	int regStatus;
+
 	const struct ltc_cipher_descriptor * cipherList[] = {
 		&blowfish_desc, 
 		&rc5_desc, 
@@ -53,8 +55,11 @@ extern "C" DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 		&kasumi_desc,
 //		&multi2_desc,
 	};
-	for ( int i=0; i<sizeof(cipherList)/sizeof(*cipherList); i++ )
-		RT_ASSERT_1( register_cipher(cipherList[i]) != -1, "Unable to load cipher %s", cipherList[i]->name );
+	for ( int i=0; i<sizeof(cipherList)/sizeof(*cipherList); i++ ) {
+		
+		regStatus = register_cipher(cipherList[i]);
+		RT_ASSERT_1( regStatus != -1, "Unable to load cipher %s", cipherList[i]->name );
+	}
 
 	const struct ltc_hash_descriptor * hashList[] = {
 		&chc_desc,
@@ -73,8 +78,11 @@ extern "C" DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 		&rmd256_desc,
 		&rmd320_desc,
 	};
-	for ( int i=0; i<sizeof(hashList)/sizeof(*hashList); i++ )
-		RT_ASSERT_1( register_hash(hashList[i]) != -1, "Unable to load hash %s", hashList[i]->name );
+	for ( int i=0; i<sizeof(hashList)/sizeof(*hashList); i++ ) {
+		
+		regStatus = register_hash(hashList[i]);
+		RT_ASSERT_1( regStatus != -1, "Unable to load hash %s", hashList[i]->name );
+	}
 
 	const struct ltc_prng_descriptor * prngList[] = {
 		&yarrow_desc,
@@ -83,8 +91,11 @@ extern "C" DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 		&sprng_desc,
 		&sober128_desc,
 	};
-	for ( int i=0; i<sizeof(prngList)/sizeof(*prngList); i++ )
-		RT_ASSERT_1( register_prng(prngList[i]) != -1, "Unable to load prng %s", prngList[i]->name );
+	for ( int i=0; i<sizeof(prngList)/sizeof(*prngList); i++ ) {
+		
+		regStatus = register_prng(prngList[i]);
+		RT_ASSERT_1( regStatus != -1, "Unable to load prng %s", prngList[i]->name );
+	}
 
 	SET_UNSAFE_MODE( GetConfigurationValue(cx, NAME_CONFIGURATION_UNSAFE_MODE ) == JSVAL_TRUE );
 

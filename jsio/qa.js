@@ -28,7 +28,7 @@
 	Environment: function(QA) {
 		
 		QA.ASSERT( GetEnv('PATH').length > 1, true, 'get an environment' );
-		QA.ASSERT( GetEnv('qwuyoruiqwye'), undefined, 'undefined environment variable' );
+		QA.ASSERT( GetEnv('sdfrwetwergfqwuyoruiqwye'), undefined, 'undefined environment variable' );
 	},
 
 
@@ -46,6 +46,16 @@
 		QA.ASSERT( processPriority, 2, 'is thread priority 2' );
 		
 		processPriority = save;
+	},
+
+
+	GetHostByName: function(QA) {
+
+		var res = Socket.GetHostsByName('localhost');
+		QA.ASSERT( res.indexOf('127.0.0.1') != -1, true, 'localhost is 127.0.0.1' );
+
+		var res = Socket.GetHostsByName(hostName);
+		QA.ASSERT( res.length >= 1, true, 'find hostName' );
 	},
 
 
@@ -113,7 +123,6 @@
 		}
 	},
 
-
 	NonBlockingUDPSocket: function(QA) {
 	
 		var s2 = new Socket( Socket.UDP );
@@ -146,7 +155,7 @@
 
 	TCPGet: function(QA) {
 
-		var host = 'www.google.com';
+		var host = 'proxy';
 		try {
 			
 			var response;
@@ -156,7 +165,7 @@
 			soc.Connect( host, 80 );
 			soc.writable = function(s) {
 
-				QA.ASSERT( s instanceof Socket, true,  'object is a Socket' );
+				QA.ASSERT_TYPE( s, Socket,  'object is a Socket' );
 				QA.ASSERT( s.closed , false,  'Socket descriptor is closed' );
 
 				delete soc.writable;
@@ -308,7 +317,55 @@
 		QA.ASSERT( d1.exist, false, 'directory exist' );
 		delete d1.name;
 		QA.ASSERT( d1.name, 'qa_directory_do_not_exist', 'directory name' );
-	}
+	},
 
+
+	CreateProcessReadPipe: function(QA) {
+		
+		switch (systemInfo.name) {
+			case 'Windows_NT':
+				
+				var res = CreateProcess('C:\\WINDOWS\\system32\\cmd.exe', ['/c', 'dir']);
+				QA.ASSERT_TYPE( res, Array, 'CreateProcess returns an array' );
+				QA.ASSERT( res.length, 2, 'CreateProcess array length' );
+				QA.ASSERT_TYPE( res[0], Descriptor, 'process stdin type' );
+				QA.ASSERT_TYPE( res[1], Descriptor, 'process stdout type' );
+				QA.ASSERT( res[1].Read(10).length, 10, 'reading Process stdout' );
+				break;
+			default:
+				QA.REPORT('(TBD) no test available for this system.');
+		}
+	},
+	
+	CreateProcessWaitExit: function(QA) {
+		
+		switch (systemInfo.name) {
+			case 'Windows_NT':
+				
+				var res = CreateProcess('cmd.exe', ['/c', 'dir'], true);
+				QA.ASSERT_TYPE( res, 'number', 'CreateProcess returns an array' );
+				break;
+			default:
+				QA.REPORT('(TBD) no test available for this system.');
+		}
+	},
+	
+	CreateProcessErrorDetection: function(QA) {
+		
+		switch (systemInfo.name) {
+			case 'Windows_NT':
+				
+				try {
+				
+					var res = CreateProcess('uryqoiwueyrqoweu', [], true);
+				} catch( ex if ex instanceof IoError ) {
+				
+					QA.ASSERT( ex.code, -5994, 'CreateProcess error detection' );
+				}
+				break;
+			default:
+				QA.REPORT('(TBD) no test available for this system.');
+		}
+	}
 
 })
