@@ -32,13 +32,21 @@ BEGIN_CLASS( Database )
 DEFINE_CONSTRUCTOR() {
 
 	RT_ASSERT_CONSTRUCTING( _class );
-	RT_ASSERT_ARGC( 1 );
+
 	char *fileName;
-	RT_JSVAL_TO_STRING( argv[0], fileName );
+	if ( J_ARG_ISDEF(1) ) {
+
+		RT_JSVAL_TO_STRING( argv[0], fileName );
+	} else {
+
+		fileName = ":memory:";
+	}
+
 	sqlite3 *db;
 	int status = sqlite3_open( fileName, &db );
 	if ( status != SQLITE_OK )
 		return SqliteThrowError( cx, status, sqlite3_errcode(db), sqlite3_errmsg(db) );
+
 	sqlite3_extended_result_codes(db, true); // SQLite 3.3.8
 
 	JS_SetReservedSlot(cx, obj, SLOT_SQLITE_DATABASE_FUNCTION_CALL_STACK, PRIVATE_TO_JSVAL(NULL));

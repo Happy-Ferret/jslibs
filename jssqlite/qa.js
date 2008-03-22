@@ -82,7 +82,7 @@
 	
 		LoadModule('jssqlite');
 	
-		var db = new Database('test_sqlite_database');
+		var db = new Database('');
 	
 		db.testFun = function(a) { return a*10 }
 		db.jseval = function(s){ return eval(s) };
@@ -91,11 +91,40 @@
 
 		QA.ASSERT( res, 1230, 'row result' );
 
-	
 		db.Close();
-		new File('test_sqlite_database').Delete();
 	},
 
+	InMemoryDatabaseCreateTable: function(QA) {
+	
+		LoadModule('jssqlite');
+		try {
+
+			var db = new Database();
+
+			var res = db.Exec('create table a (id integer primary key, x varchar)');
+//			res.Close();
+
+			
+			db.Exec('insert into a values (NULL, "aaa")');
+			db.Close();
+
+		} catch ( ex if ex instanceof SqliteError ) { // if ex instanceof SqliteError 
+			
+			Print( 'SqliteError: ' + ex.text + '('+ex.code+')', '\n' );
+		}
+	
+	},
+
+
+	InMemoryDatabase: function(QA) {
+
+		LoadModule('jssqlite');
+		var db = new Database();
+		var res = db.Exec('SELECT 1');
+		QA.ASSERT( res, 1, 'select 1' );
+		db.Close();
+	},
+	
 
 	Exceptions: function(QA) {
 	
