@@ -82,7 +82,7 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 				RT_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." ); // (TBD) return value of assert is not compatible with this function (WndProc)
 				char c = wParam;
 				jsval argv[] = { STRING_TO_JSVAL(JS_NewStringCopyN(cx, &c, 1)), INT_TO_JSVAL(lParam) };
-				JS_CallFunctionValue(cx, obj, functionVal, sizeof(argv)/sizeof(*argv), argv, &rval);
+				RT_CHECK_CALL( JS_CallFunctionValue(cx, obj, functionVal, sizeof(argv)/sizeof(*argv), argv, &rval) );
 				return 0;
 			}
 			break;
@@ -92,7 +92,7 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 
 				RT_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." );
 				jsval argv[] = { INT_TO_JSVAL(wParam), INT_TO_JSVAL(lParam) };
-				JS_CallFunctionValue(cx, obj, functionVal, sizeof(argv)/sizeof(*argv), argv, &rval);
+				RT_CHECK_CALL( JS_CallFunctionValue(cx, obj, functionVal, sizeof(argv)/sizeof(*argv), argv, &rval) );
 				return 0;
 			}
 			break;
@@ -102,7 +102,7 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 
 				RT_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." );
 				jsval argv[] = { INT_TO_JSVAL(wParam), INT_TO_JSVAL(lParam) };
-				JS_CallFunctionValue(cx, obj, functionVal, sizeof(argv)/sizeof(*argv), argv, &rval);
+				RT_CHECK_CALL( JS_CallFunctionValue(cx, obj, functionVal, sizeof(argv)/sizeof(*argv), argv, &rval) );
 				return 0;
 			}
 			break;
@@ -112,7 +112,7 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 
 				RT_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." );
 				jsval argv[] = { BOOLEAN_TO_JSVAL(wParam != WA_INACTIVE) };
-				JS_CallFunctionValue(cx, obj, functionVal, sizeof(argv)/sizeof(*argv), argv, &rval);
+				RT_CHECK_CALL( JS_CallFunctionValue(cx, obj, functionVal, sizeof(argv)/sizeof(*argv), argv, &rval) );
 				return 0;
 			}
 			break;
@@ -123,7 +123,7 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 
 				RT_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." );
 				jsval argv[] = { INT_TO_JSVAL((short)LOWORD(lParam)), INT_TO_JSVAL((short)HIWORD(lParam)) };
-				JS_CallFunctionValue(cx, obj, functionVal, sizeof(argv)/sizeof(*argv), argv, &rval);
+				RT_CHECK_CALL( JS_CallFunctionValue(cx, obj, functionVal, sizeof(argv)/sizeof(*argv), argv, &rval) );
 				return 0;
 			}
 			break;
@@ -133,7 +133,7 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 
 				RT_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." );
 				jsval argv[] = { INT_TO_JSVAL(MAKEPOINTS(lParam).x), INT_TO_JSVAL(MAKEPOINTS(lParam).y), BOOLEAN_TO_JSVAL(wParam & MK_LBUTTON), BOOLEAN_TO_JSVAL(wParam & MK_RBUTTON), BOOLEAN_TO_JSVAL(wParam & MK_MBUTTON) };
-				JS_CallFunctionValue(cx, obj, functionVal, sizeof(argv)/sizeof(*argv), argv, &rval);
+				RT_CHECK_CALL( JS_CallFunctionValue(cx, obj, functionVal, sizeof(argv)/sizeof(*argv), argv, &rval) );
 				return 0;
 			}
 			break;
@@ -143,7 +143,7 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 
 				RT_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." );
 				jsval argv[] = { INT_TO_JSVAL( GET_WHEEL_DELTA_WPARAM(wParam)/WHEEL_DELTA ), BOOLEAN_TO_JSVAL(wParam & MK_LBUTTON), BOOLEAN_TO_JSVAL(wParam & MK_RBUTTON), BOOLEAN_TO_JSVAL(wParam & MK_MBUTTON) };
-				JS_CallFunctionValue(cx, obj, functionVal, sizeof(argv)/sizeof(*argv), argv, &rval);
+				RT_CHECK_CALL( JS_CallFunctionValue(cx, obj, functionVal, sizeof(argv)/sizeof(*argv), argv, &rval) );
 				return 0;
 			}
 			break;
@@ -162,7 +162,7 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 //					BOOLEAN_TO_JSVAL(wParam & MK_LBUTTON),
 //					BOOLEAN_TO_JSVAL(wParam & MK_RBUTTON),
 //					BOOLEAN_TO_JSVAL(wParam & MK_MBUTTON) };
-				JS_CallFunctionValue(cx, obj, functionVal, sizeof(argv)/sizeof(*argv), argv, &rval);
+				RT_CHECK_CALL( JS_CallFunctionValue(cx, obj, functionVal, sizeof(argv)/sizeof(*argv), argv, &rval) );
 				return 0;
 			}
 			break;
@@ -177,7 +177,7 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 
 				RT_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." );
 				jsval argv[] = { INT_TO_JSVAL( message==WM_LBUTTONUP ? 1 : message==WM_RBUTTONUP ? 2 : message==WM_MBUTTONUP ? 3 : 0 ), JSVAL_FALSE };
-					JS_CallFunctionValue(cx, obj, functionVal, sizeof(argv)/sizeof(*argv), argv, &rval);
+				RT_CHECK_CALL( JS_CallFunctionValue(cx, obj, functionVal, sizeof(argv)/sizeof(*argv), argv, &rval) );
 				return 0;
 			}
 			break;
@@ -234,29 +234,36 @@ bool TrackMouseLeave( HWND hWnd ) {
 //	RT_ASSERT_1( status != 0, "Unable to TrackMouseEvent.(%d)", GetLastError() );
 }
 
-DEFINE_FUNCTION( ProcessEvents ) {
+DEFINE_FUNCTION( Open ) {
 
 	HWND hWnd = (HWND)JS_GetPrivate(cx, obj);
-	RT_ASSERT( hWnd != NULL, RT_ERROR_NOT_INITIALIZED );
+	RT_ASSERT_RESOURCE( hWnd );
 
 	ShowWindow(hWnd, SW_SHOWNORMAL);
 	SetForegroundWindow(hWnd);
 	UpdateWindow(hWnd);
 	SetFocus(hWnd);
+}
+
+
+DEFINE_FUNCTION( ProcessEvents ) {
+
+	HWND hWnd = (HWND)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE( hWnd );
 
 	jsval functionVal;
 	int msgCount;
 	MSG msg;
-	bool quit = false;
-	do {
+//	bool quit = false;
+//	do {
 
+/*
 		JS_GetProperty(cx, obj, "onidle", &functionVal);
-
 		if ( functionVal != JSVAL_VOID ) {
 			RT_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." );
-			if ( JS_CallFunctionValue(cx, obj, functionVal, 0, NULL, rval) == JS_FALSE )
-				return JS_FALSE;
+			RT_CHECK_CALL( JS_CallFunctionValue(cx, obj, functionVal, 0, NULL, rval) );
 		}
+*/
 
 		RT_SAFE( msgCount = 0 );
 		while(PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) { //GetInputState() // determines whether there are mouse-button or keyboard messages in the calling thread's message queue.
@@ -269,21 +276,34 @@ DEFINE_FUNCTION( ProcessEvents ) {
 			if (msg.message == WM_QUIT) {
 
 				*rval = INT_TO_JSVAL((int)msg.wParam);
-				quit = true;
+//				quit = true;
 			}
 			RT_ASSERT( ++msgCount < 100, "Message loop deadlock detected." );
 		}
-	} while(!quit);
 
-	// some events can occur after this point, then we NUST keep cxobj as long as possible
+//	} while(!quit);
+
+	return JS_TRUE;
+}
+
+
+DEFINE_FUNCTION( Close ) {
+
+// some events can occur after this point, then we NUST keep cxobj as long as possible
+
+	HWND hWnd = (HWND)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE( hWnd );
 
 	CxObj *cxobj = (CxObj*)GetWindowLong(hWnd, GWL_USERDATA);
 	DestroyWindow(hWnd);
 //	LONG status = SetWindowLong(hWnd, GWL_USERDATA, (LONG)NULL );  // If the function fails, the return value is zero.
 	free(cxobj);
 	UnregisterClass(WINDOW_CLASS_NAME, GetModuleHandle(NULL));
+
+
 	return JS_TRUE;
 }
+
 
 
 static JSBool Exit(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
@@ -643,6 +663,8 @@ CONFIGURE_CLASS
 //	HAS_FINALIZE // (TBD) create it !
 
 	BEGIN_FUNCTION_SPEC
+		FUNCTION(Open)
+		FUNCTION(Close)
 		FUNCTION(ProcessEvents)
 		FUNCTION(Exit)
 		FUNCTION(WaitForMessage)

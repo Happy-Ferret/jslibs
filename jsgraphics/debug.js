@@ -162,7 +162,7 @@ function Render() {
 
 //	var t0 = IntervalNow();
 //	Print( 'Rendering time: '+(IntervalNow()-t0)+'ms', '\n');
-	CollectGarbage();
+//	CollectGarbage();
 	Sleep(1);
 	win.SwapBuffers();
 	
@@ -170,7 +170,7 @@ function Render() {
 	var delta = tmp-time;
 	if ( delta > 50)
 		delta = 50;
-	time && world.Step(delta/1000,5);
+	time && world.Step(delta/1000, 10);
 	time = tmp;
 }
 
@@ -178,16 +178,18 @@ function Render() {
 
 
 
-win.onidle = Render;
+//win.onidle = Render;
 
 var _fullscreenState = false;
 var _savedWindowSize;
+var _quit = false;
 
 win.onkeydown = function( key, l ) {
 
 	switch (key) {
 		case vk.ESC:
-			win.Exit();
+			//win.Exit();
+			_quit = true;
 			break;
 		case vk.ENTER:
 			// toggle fullscreen
@@ -227,8 +229,15 @@ gl.Perspective( 60, 0.01, 10000 );
 //gl.Texture( texture );
 
 //Window.absoluteClipCursor = [100,100, 200, 200 ]
-win.ProcessEvents();
+
+win.Open();
+
+while (!_quit) {
+	
+	win.ProcessEvents();
+	Render();
+}
+
+win.Close();
 //Window.absoluteClipCursor = undefined;
 Print('Done.', '\n');
-
-
