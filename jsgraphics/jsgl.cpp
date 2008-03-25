@@ -163,6 +163,7 @@ DEFINE_FUNCTION_FAST( Viewport ) {
 	int view[4];
 	IntArrayToVector(cx, 4, J_FARGV, view);
 	glViewport(view[0], view[1], view[2], view[3]);
+	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
 
@@ -192,6 +193,7 @@ DEFINE_FUNCTION_FAST( Init ) {
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 
 //    glBlendFunc(GL_SRC_ALPHA,GL_ONE);
+	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
 
@@ -218,8 +220,10 @@ DEFINE_FUNCTION_FAST( Perspective ) {
 	glFrustum(xmin, xmax, ymin, ymax, zNear, zFar);
 
 //	gluPerspective(fovy, float(viewport[2]) / float(viewport[3]), zNear, zFar);
+	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
+
 
 DEFINE_FUNCTION_FAST( Ortho ) {
 
@@ -235,6 +239,7 @@ DEFINE_FUNCTION_FAST( Ortho ) {
 //	glGetIntegerv( GL_VIEWPORT, viewport );
 //	gluOrtho2D(left, right, bottom, top);
 	glOrtho(left, right, bottom, top, -1, 1);
+	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
 
@@ -247,24 +252,28 @@ DEFINE_FUNCTION_FAST( Clear ) {
 	glClear(bitfield); // GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
+	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
 
 DEFINE_FUNCTION_FAST( LoadIdentity ) {
 
 	glLoadIdentity();
+	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
 
 DEFINE_FUNCTION_FAST( PushMatrix ) {
 
 	glPushMatrix();
+	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
 
 DEFINE_FUNCTION_FAST( PopMatrix ) {
 
 	glPopMatrix();
+	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
 
@@ -275,6 +284,7 @@ DEFINE_FUNCTION_FAST( LoadMatrix ) {
 	if (GetMatrixHelper(cx, J_FARG(1), &m) == JS_FALSE)
 		return JS_FALSE;
 	glLoadMatrixf(m->raw);
+	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
 
@@ -293,6 +303,7 @@ DEFINE_FUNCTION_FAST( Rotate ) {
 //	FloatArrayToVector(cx, 3, &argv[1], vec);
 //	glRotatef(angle, vec[0], vec[1], vec[2]);
 	glRotatef(angle, x, y, z);
+	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
 
@@ -308,6 +319,7 @@ DEFINE_FUNCTION_FAST( Translate ) {
 	JS_ValueToNumber(cx, J_FARG(2), &y);
 	JS_ValueToNumber(cx, J_FARG(3), &z);
 	glTranslatef(x,y,z);
+	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
 
@@ -324,6 +336,7 @@ DEFINE_FUNCTION_FAST( StartList ) {
 DEFINE_FUNCTION_FAST( EndList ) {
 
 	glEndList();
+	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
 
@@ -334,6 +347,7 @@ DEFINE_FUNCTION_FAST( CallList ) {
 	RT_ASSERT_INT(J_FARG(1));
 	GLuint list = JSVAL_TO_INT(J_FARG(1));
 	glCallList(list);
+	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
 
@@ -353,6 +367,7 @@ DEFINE_FUNCTION_FAST( Line3D ) {
 	glVertex3f(x0, y0, z0);
 	glVertex3f(x1, y1, z1);
 	glEnd();
+	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
 
@@ -371,6 +386,7 @@ DEFINE_FUNCTION_FAST( Axis ) {
 	glVertex3i( 0,0,0 );
 	glVertex3i( 0,0,1 );
 	glEnd();
+	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
 
@@ -396,6 +412,7 @@ DEFINE_FUNCTION_FAST( Quad ) {
 	glVertex2f( x0, y1 );
 	glEnd();
 
+	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
 
@@ -422,6 +439,7 @@ DEFINE_FUNCTION_FAST( Color ) {
 	JS_ValueToNumber(cx, J_FARG(2), &g);
 	JS_ValueToNumber(cx, J_FARG(3), &b);
 	glColor3f(r,g,b);
+	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
 
@@ -469,6 +487,7 @@ DEFINE_FUNCTION_FAST( Cube ) {
 	glVertex3f(-0.5f, 0.5f,-0.5f);	// Bottom Left Of The Quad (Back)
 	glVertex3f( 0.5f, 0.5f,-0.5f);	// Bottom Right Of The Quad (Back)
 	glEnd();
+	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
 
@@ -495,6 +514,7 @@ DEFINE_FUNCTION_FAST( Line ) { // 2D
 	//glVertex3i( point0[0], point0[1], point0[2] );
 	//glVertex3i( point1[0], point1[1], point1[2] );
 	//glEnd();
+	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
 
@@ -539,7 +559,6 @@ DEFINE_FUNCTION_FAST( LoadTexture ) {
 	glGenTextures( 1, &texture ); // (TBD) free with glDeleteTextures
 	glBindTexture( GL_TEXTURE_2D, texture ); // Doc: glBindTexture is included in display lists.
 
-
 	GLenum format;
 	switch ( tex->channels ) {
 		case 1:
@@ -567,6 +586,7 @@ DEFINE_FUNCTION_FAST( LoadTexture ) {
 
 DEFINE_FUNCTION_FAST( Test ) {
 
+	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
 
