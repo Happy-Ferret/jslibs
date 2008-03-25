@@ -27,18 +27,10 @@ function MakeTestList(directory) {
 
 function MakeTests( testList, filter, QAAPI, iterate ) {
 
-	var savePrio = processPriority;
-	processPriority = 2;
-
-	var t0 = TimeCounter();
 	for ( var testName in testList ) {
 
-		if ( !filter(testName) )
+		if ( !filter(testName) || testName[0] == '_' )
 			continue;
-
-		if ( testName[0] == '_' )
-			continue;
-
 		Print( testName, '\n' );
 		for ( var i = 0; i<iterate; i++ ) {
 
@@ -49,9 +41,6 @@ function MakeTests( testList, filter, QAAPI, iterate ) {
 		}
 	}
 
-	var t = TimeCounter() - t0;
-	Print( QAAPI.issues + ' issues found in '+ t.toFixed(2) + 'ms.' );
-	processPriority = savePrio;
 }
 
 
@@ -98,5 +87,27 @@ var QAAPI = new function() {
    }
 }
 
-MakeTests(MakeTestList('.'), new RegExp(arguments[1]||'.*', 'i'), QAAPI, 5);
+var perfTest = false;
 
+if ( perfTest ) {
+
+	var t0 = TimeCounter();
+	var savePrio = processPriority;
+	processPriority = 2;
+} else {
+
+	processPriority = -1;
+}
+
+MakeTests(MakeTestList('.'), new RegExp(arguments[1]||'.*', 'i'), QAAPI, 3);
+
+if ( perfTest ) {
+
+	var t = TimeCounter() - t0;
+	
+	Print( 'Time: '+t.toFixed(2) + 'ms.' );
+	
+}
+processPriority = savePrio;
+
+Print( QAAPI.issues + ' issues found' );
