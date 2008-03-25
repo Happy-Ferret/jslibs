@@ -157,17 +157,17 @@ static JSBool _SwapBuffers(JSContext *cx, JSObject *obj, uintN argc, jsval *argv
 }
 */
 
-DEFINE_FUNCTION( Viewport ) {
+DEFINE_FUNCTION_FAST( Viewport ) {
 
 	RT_ASSERT_ARGC(1);
 	int view[4];
-	IntArrayToVector(cx, 4, argv, view);
+	IntArrayToVector(cx, 4, J_FARGV, view);
 	glViewport(view[0], view[1], view[2], view[3]);
 	return JS_TRUE;
 }
 
 
-DEFINE_FUNCTION( Init ) {
+DEFINE_FUNCTION_FAST( Init ) {
 
 	glEnable(GL_TEXTURE_2D);
 	glShadeModel(GL_FLAT);
@@ -196,13 +196,13 @@ DEFINE_FUNCTION( Init ) {
 }
 
 
-DEFINE_FUNCTION( Perspective ) {
+DEFINE_FUNCTION_FAST( Perspective ) {
 
 	RT_ASSERT_ARGC(3);
 	jsdouble fovy, zNear, zFar;
-	JS_ValueToNumber(cx, argv[0], &fovy);
-	JS_ValueToNumber(cx, argv[1], &zNear);
-	JS_ValueToNumber(cx, argv[2], &zFar);
+	JS_ValueToNumber(cx, J_FARG(1), &fovy);
+	JS_ValueToNumber(cx, J_FARG(2), &zNear);
+	JS_ValueToNumber(cx, J_FARG(3), &zFar);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	GLint viewport[4];
@@ -221,14 +221,14 @@ DEFINE_FUNCTION( Perspective ) {
 	return JS_TRUE;
 }
 
-DEFINE_FUNCTION( Ortho ) {
+DEFINE_FUNCTION_FAST( Ortho ) {
 
 	RT_ASSERT_ARGC(4);
 	jsdouble left, right, bottom, top;
-	JS_ValueToNumber(cx, argv[0], &left);
-	JS_ValueToNumber(cx, argv[1], &right);
-	JS_ValueToNumber(cx, argv[2], &bottom);
-	JS_ValueToNumber(cx, argv[3], &top);
+	JS_ValueToNumber(cx, J_FARG(1), &left);
+	JS_ValueToNumber(cx, J_FARG(2), &right);
+	JS_ValueToNumber(cx, J_FARG(3), &bottom);
+	JS_ValueToNumber(cx, J_FARG(4), &top);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 //	GLint viewport[4];
@@ -238,56 +238,56 @@ DEFINE_FUNCTION( Ortho ) {
 	return JS_TRUE;
 }
 
-DEFINE_FUNCTION( Clear ) {
+DEFINE_FUNCTION_FAST( Clear ) {
 
 //	RT_ASSERT( JS_GET_CLASS(cx,obj) == thisClass, RT_ERROR_INVALID_CLASS );
 	RT_ASSERT_ARGC(1);
 	int32 bitfield;
-	JS_ValueToInt32(cx, argv[0], &bitfield);
+	JS_ValueToInt32(cx, J_FARG(1), &bitfield);
 	glClear(bitfield); // GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 	return JS_TRUE;
 }
 
-DEFINE_FUNCTION( LoadIdentity ) {
+DEFINE_FUNCTION_FAST( LoadIdentity ) {
 
 	glLoadIdentity();
 	return JS_TRUE;
 }
 
-DEFINE_FUNCTION( PushMatrix ) {
+DEFINE_FUNCTION_FAST( PushMatrix ) {
 
 	glPushMatrix();
 	return JS_TRUE;
 }
 
-DEFINE_FUNCTION( PopMatrix ) {
+DEFINE_FUNCTION_FAST( PopMatrix ) {
 
 	glPopMatrix();
 	return JS_TRUE;
 }
 
-DEFINE_FUNCTION( LoadMatrix ) {
+DEFINE_FUNCTION_FAST( LoadMatrix ) {
 
 	RT_ASSERT_ARGC(1);
 	Matrix44 tmp, *m = &tmp;
-	if (GetMatrixHelper(cx, argv[0], &m) == JS_FALSE)
+	if (GetMatrixHelper(cx, J_FARG(1), &m) == JS_FALSE)
 		return JS_FALSE;
 	glLoadMatrixf(m->raw);
 	return JS_TRUE;
 }
 
 
-DEFINE_FUNCTION( Rotate ) {
+DEFINE_FUNCTION_FAST( Rotate ) {
 
 	RT_ASSERT_ARGC(4);
 	jsdouble angle;
-	JS_ValueToNumber(cx, argv[0], &angle);
+	JS_ValueToNumber(cx, J_FARG(1), &angle);
 	jsdouble x, y, z;
-	JS_ValueToNumber(cx, argv[1], &x);
-	JS_ValueToNumber(cx, argv[2], &y);
-	JS_ValueToNumber(cx, argv[3], &z);
+	JS_ValueToNumber(cx, J_FARG(2), &x);
+	JS_ValueToNumber(cx, J_FARG(3), &y);
+	JS_ValueToNumber(cx, J_FARG(4), &z);
 
 //	float vec[3];
 //	FloatArrayToVector(cx, 3, &argv[1], vec);
@@ -297,57 +297,57 @@ DEFINE_FUNCTION( Rotate ) {
 }
 
 
-DEFINE_FUNCTION( Translate ) {
+DEFINE_FUNCTION_FAST( Translate ) {
 
 	RT_ASSERT_ARGC(3);
 //	float vec[3];
 //	FloatArrayToVector(cx, 3, &argv[0], vec);
 //	glTranslatef(vec[0], vec[1], vec[2]);
 	jsdouble x, y, z;
-	JS_ValueToNumber(cx, argv[0], &x);
-	JS_ValueToNumber(cx, argv[1], &y);
-	JS_ValueToNumber(cx, argv[2], &z);
+	JS_ValueToNumber(cx, J_FARG(1), &x);
+	JS_ValueToNumber(cx, J_FARG(2), &y);
+	JS_ValueToNumber(cx, J_FARG(3), &z);
 	glTranslatef(x,y,z);
 	return JS_TRUE;
 }
 
 
-DEFINE_FUNCTION( StartList ) {
+DEFINE_FUNCTION_FAST( StartList ) {
 
 	GLuint list = glGenLists(1);
 	glNewList(list,GL_COMPILE);
-	*rval = INT_TO_JSVAL(list);
+	*J_FRVAL = INT_TO_JSVAL(list);
 	return JS_TRUE;
 }
 
 
-DEFINE_FUNCTION( EndList ) {
+DEFINE_FUNCTION_FAST( EndList ) {
 
 	glEndList();
 	return JS_TRUE;
 }
 
 
-DEFINE_FUNCTION( CallList ) {
+DEFINE_FUNCTION_FAST( CallList ) {
 
 	RT_ASSERT_ARGC(1);
-	RT_ASSERT_INT(argv[0]);
-	GLuint list = JSVAL_TO_INT(argv[0]);
+	RT_ASSERT_INT(J_FARG(1));
+	GLuint list = JSVAL_TO_INT(J_FARG(1));
 	glCallList(list);
 	return JS_TRUE;
 }
 
 
-DEFINE_FUNCTION( Line3D ) {
+DEFINE_FUNCTION_FAST( Line3D ) {
 
 	jsdouble x0,y0,z0, x1,y1,z1;
-	JS_ValueToNumber(cx, argv[0], &x0);
-	JS_ValueToNumber(cx, argv[1], &y0);
-	JS_ValueToNumber(cx, argv[2], &z0);
+	JS_ValueToNumber(cx, J_FARG(1), &x0);
+	JS_ValueToNumber(cx, J_FARG(2), &y0);
+	JS_ValueToNumber(cx, J_FARG(3), &z0);
 
-	JS_ValueToNumber(cx, argv[3], &x1);
-	JS_ValueToNumber(cx, argv[4], &y1);
-	JS_ValueToNumber(cx, argv[5], &z1);
+	JS_ValueToNumber(cx, J_FARG(4), &x1);
+	JS_ValueToNumber(cx, J_FARG(5), &y1);
+	JS_ValueToNumber(cx, J_FARG(6), &z1);
 
 	glBegin(GL_LINES);
 	glVertex3f(x0, y0, z0);
@@ -358,7 +358,7 @@ DEFINE_FUNCTION( Line3D ) {
 
 
 
-DEFINE_FUNCTION( Axis ) {
+DEFINE_FUNCTION_FAST( Axis ) {
 
 	glBegin(GL_LINES);
 	glColor3f( 1,0,0 );
@@ -375,15 +375,15 @@ DEFINE_FUNCTION( Axis ) {
 }
 
 
-DEFINE_FUNCTION( Quad ) {
+DEFINE_FUNCTION_FAST( Quad ) {
 
 	RT_ASSERT_ARGC(4);
 
 	jsdouble x0,y0, x1,y1;
-	JS_ValueToNumber(cx, argv[0], &x0);
-	JS_ValueToNumber(cx, argv[1], &y0);
-	JS_ValueToNumber(cx, argv[2], &x1);
-	JS_ValueToNumber(cx, argv[3], &y1);
+	JS_ValueToNumber(cx, J_FARG(1), &x0);
+	JS_ValueToNumber(cx, J_FARG(2), &y0);
+	JS_ValueToNumber(cx, J_FARG(3), &x1);
+	JS_ValueToNumber(cx, J_FARG(4), &y1);
 
 	glBegin(GL_QUADS);
 	glTexCoord2f( 0, 0 );
@@ -400,7 +400,7 @@ DEFINE_FUNCTION( Quad ) {
 }
 
 /*
-DEFINE_FUNCTION( Color ) {
+DEFINE_FUNCTION_FAST( Color ) {
 
 	GLfloat color[3];
 	FloatArrayToVector(cx, 3, argv, color);
@@ -413,19 +413,19 @@ DEFINE_FUNCTION( Color ) {
 }
 */
 
-DEFINE_FUNCTION( Color ) {
+DEFINE_FUNCTION_FAST( Color ) {
 
 	RT_ASSERT_ARGC(3);
 
 	jsdouble r, g, b;
-	JS_ValueToNumber(cx, argv[0], &r);
-	JS_ValueToNumber(cx, argv[1], &g);
-	JS_ValueToNumber(cx, argv[2], &b);
+	JS_ValueToNumber(cx, J_FARG(1), &r);
+	JS_ValueToNumber(cx, J_FARG(2), &g);
+	JS_ValueToNumber(cx, J_FARG(3), &b);
 	glColor3f(r,g,b);
 	return JS_TRUE;
 }
 
-DEFINE_FUNCTION( Cube ) {
+DEFINE_FUNCTION_FAST( Cube ) {
 
 //	RT_ASSERT_ARGC(1);
 //	jsdouble len;
@@ -472,14 +472,14 @@ DEFINE_FUNCTION( Cube ) {
 	return JS_TRUE;
 }
 
-DEFINE_FUNCTION( Line ) { // 2D
+DEFINE_FUNCTION_FAST( Line ) { // 2D
 
 	jsdouble x0,y0, x1,y1;
-	JS_ValueToNumber(cx, argv[0], &x0);
-	JS_ValueToNumber(cx, argv[1], &y0);
+	JS_ValueToNumber(cx, J_FARG(1), &x0);
+	JS_ValueToNumber(cx, J_FARG(2), &y0);
 
-	JS_ValueToNumber(cx, argv[2], &x1);
-	JS_ValueToNumber(cx, argv[3], &y1);
+	JS_ValueToNumber(cx, J_FARG(3), &x1);
+	JS_ValueToNumber(cx, J_FARG(4), &y1);
 
 	glBegin(GL_LINES);
 	glVertex2f( x0,y0 );
@@ -500,13 +500,13 @@ DEFINE_FUNCTION( Line ) { // 2D
 
 
 // (TBD) manage compression: http://www.opengl.org/registry/specs/ARB/texture_compression.txt
-DEFINE_FUNCTION( LoadImage ) {
+DEFINE_FUNCTION_FAST( LoadImage_ ) {
 
 	RT_ASSERT_ARGC(1);
 
 	// get Image object
 	JSObject *image;
-	JSBool status = JS_ValueToObject(cx, argv[0], &image);
+	JSBool status = JS_ValueToObject(cx, J_FARG(1), &image);
 	RT_ASSERT_CLASS_NAME(image, "Image");
 	void *data = JS_GetPrivate(cx, image);
 	RT_ASSERT_RESOURCE(data);
@@ -524,15 +524,15 @@ DEFINE_FUNCTION( LoadImage ) {
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-	*rval = JSVAL_TO_INT(texture);
+	*J_FRVAL = JSVAL_TO_INT(texture);
 	return JS_TRUE;
 }
 
-DEFINE_FUNCTION( LoadTexture ) {
+DEFINE_FUNCTION_FAST( LoadTexture ) {
 
 	RT_ASSERT_ARGC(1);
-	RT_ASSERT_CLASS_NAME( JSVAL_TO_OBJECT(argv[0]), "Texture" );
-	Texture *tex = (Texture *)JS_GetPrivate(cx, JSVAL_TO_OBJECT(argv[0]));
+	RT_ASSERT_CLASS_NAME( JSVAL_TO_OBJECT(J_FARG(1)), "Texture" );
+	Texture *tex = (Texture *)JS_GetPrivate(cx, JSVAL_TO_OBJECT(J_FARG(1)));
 	RT_ASSERT_RESOURCE(tex);
 
 	GLuint texture;
@@ -560,12 +560,12 @@ DEFINE_FUNCTION( LoadTexture ) {
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST); // GL_LINEAR
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST); // GL_LINEAR
 
-	*rval = JSVAL_TO_INT(texture);
+	*J_FRVAL = JSVAL_TO_INT(texture);
 	return JS_TRUE;
 }
 
 
-DEFINE_FUNCTION( Test ) {
+DEFINE_FUNCTION_FAST( Test ) {
 
 	return JS_TRUE;
 }
@@ -578,29 +578,29 @@ CONFIGURE_CLASS
 
 	BEGIN_FUNCTION_SPEC
 //		FUNCTION2(SwapBuffers, _SwapBuffers)
-		FUNCTION(StartList)
-		FUNCTION(EndList)
-		FUNCTION(CallList)
-		FUNCTION(Viewport)
-		FUNCTION(Perspective)
-		FUNCTION(Ortho)
-		FUNCTION(Clear)
-		FUNCTION(LoadIdentity)
-		FUNCTION(PushMatrix)
-		FUNCTION(PopMatrix)
-		FUNCTION(Color)
-		FUNCTION(LoadImage)
-		FUNCTION(LoadTexture)
-		FUNCTION(Axis)
-		FUNCTION(Cube)
-		FUNCTION(Quad)
-		FUNCTION(Line)
-		FUNCTION(Line3D)
-		FUNCTION(LoadMatrix)
-		FUNCTION(Rotate)
-		FUNCTION(Translate)
-		FUNCTION(Init)
-		FUNCTION(Test)
+		FUNCTION_FAST(StartList)
+		FUNCTION_FAST(EndList)
+		FUNCTION_FAST(CallList)
+		FUNCTION_FAST(Viewport)
+		FUNCTION_FAST(Perspective)
+		FUNCTION_FAST(Ortho)
+		FUNCTION_FAST(Clear)
+		FUNCTION_FAST(LoadIdentity)
+		FUNCTION_FAST(PushMatrix)
+		FUNCTION_FAST(PopMatrix)
+		FUNCTION_FAST(Color)
+		FUNCTION2_FAST(LoadImage, LoadImage)
+		FUNCTION_FAST(LoadTexture)
+		FUNCTION_FAST(Axis)
+		FUNCTION_FAST(Cube)
+		FUNCTION_FAST(Quad)
+		FUNCTION_FAST(Line)
+		FUNCTION_FAST(Line3D)
+		FUNCTION_FAST(LoadMatrix)
+		FUNCTION_FAST(Rotate)
+		FUNCTION_FAST(Translate)
+		FUNCTION_FAST(Init)
+		FUNCTION_FAST(Test)
 	END_FUNCTION_SPEC
 
 	HAS_PRIVATE  // private: BodyID
