@@ -1,11 +1,11 @@
-//LoadModule('jsstd');
+LoadModule('jsstd');
 LoadModule('jsio');
 
 
 
 try {
 
-    Poll(desc,1);
+    Poll([],1);
     
     
 

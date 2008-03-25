@@ -36,4 +36,4 @@ for ( var k in data ) {
   Print( k, '\n' )
 }
 
-Print( data.constructor );
+//Print( data.constructor );

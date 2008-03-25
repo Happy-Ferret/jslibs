@@ -1,5 +1,5 @@
 LoadModule('jsstd');
-LoadModule('jsnspr');
+LoadModule('jsio');
 LoadModule('jsimage');
 LoadModule('jsode');
 LoadModule('jsgraphics');
@@ -14,52 +14,18 @@ world.defaultSurfaceParameters.softERP = 0.1;
 
 world.gravity = [0,0,-9.81];
 world.ERP = 1;
-//world.CFM = 0;
-
-/*
-var body1 = new Body(world);
-var geom1 = new GeomBox( world.space )
-geom1.body = body1;
-geom1.impact = function(n,geom,pos) { Print('impact '+pos+'\n') }
-
-body1.position = [0,48,50]
-body1.mass.value = 10;
-
-var joint = new JointHinge(world);
-joint.useFeedback = false;
-joint.body1 = world.env;
-joint.body2 = body1;
-joint.anchor = [0,0,150]; // Vec(0,0,150)
-joint.axis = [1,0,0];
-//joint.CFM = 0;
-*/
 
 var box = [];
-/*
 
-for (var y=0; y<10; y++) {
-var f = 4;
-var r = 5 - (y/40)
-var cy = Math.cos(y/f)*r
-var sy = Math.sin(y/f)*r
-
-	var b = new Body(world);
-	new GeomBox( world.space ).body = b;	
-	b.position = [cy,sy,y/10-1]
-	box.push(b);	
-}
-*/
-
-
-	var b = new Body(world);
-	var g = new GeomBox( world.space );
-	g.body = b;	
-	b.position = [0,0,10]
-	box.push(b);
+var b = new Body(world);
+var g = new GeomBox( world.space );
+g.body = b;	
+b.position = [0,0,10]
+box.push(b);
 
 
 var floor = new GeomPlane(world.space);
-//floor.impact = function(n,thisgeom,othergeom,pos) { n||Print('impact '+othergeom.body.linearVel+'\n') }
+floor.impact = function(n,thisgeom,othergeom,pos) { n||Print('impact '+othergeom.body.linearVel+'\n') }
 
 var win = new Window();
 win.title = "Test";
@@ -140,6 +106,7 @@ mouse.delta = function( dx,dy,dw, b1,b2,b3 ) {
 
 var time;
 function Render() {
+	
 
 	var cameraPosition = new Transformation();
 	cameraPosition.Translation( 0, 0, -speed * run );
