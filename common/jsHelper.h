@@ -181,6 +181,11 @@ inline bool MaybeRealloc( int requested, int received ) {
 
 #define J_ARGC (argc)
 
+// returns the ARGument Vector
+#define J_ARGV (argv)
+// same for fast native (cf. http://developer.mozilla.org/en/docs/JS_ARGV)
+#define J_FARGV (JS_ARGV(cx,vp))
+
 // returns the ARGument n
 #define J_ARG( n ) (argv[(n)-1])
 // same for fast native (cf. http://developer.mozilla.org/en/docs/JS_ARGV)
