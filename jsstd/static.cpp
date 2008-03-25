@@ -552,7 +552,26 @@ DEFINE_FUNCTION( Halt ) {
 	return JS_FALSE;
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+/*
+DEFINE_PROPERTY( processPriorityGetter ) {
 
+	return JS_TRUE;
+}
+
+
+DEFINE_PROPERTY( processPrioritySetter ) {
+
+	HANDLE hProcess = OpenProcess(PROCESS_DUP_HANDLE, TRUE, GetCurrentProcessId());
+	SetPriorityClass(hProcess, BELOW_NORMAL_PRIORITY_CLASS);
+
+	DWORD dwError = GetLastError();
+   CloseHandle(hProcess);
+
+	return JS_TRUE;
+}
+*/
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 CONFIGURE_STATIC
@@ -579,6 +598,7 @@ CONFIGURE_STATIC
 	BEGIN_STATIC_PROPERTY_SPEC
 		PROPERTY_READ( isConstructing )
 		PROPERTY_WRITE( disableGarbageCollection )
+//		PROPERTY( processPriority )
 	END_STATIC_PROPERTY_SPEC
 
 END_STATIC

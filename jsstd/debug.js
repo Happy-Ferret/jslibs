@@ -1,4 +1,19 @@
 LoadModule('jsstd');
+LoadModule('jsio');
+
+processPriority = 12;
+
+while (!endSignal )
+	Sleep(100);
+
+Halt();
+
+
+var b = new Buffer();
+b.Write('123');
+Print( b.Read(1) );
+
+Halt();
 
 
 var i;

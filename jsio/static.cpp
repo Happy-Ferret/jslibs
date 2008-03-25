@@ -571,7 +571,6 @@ DEFINE_FUNCTION_FAST( CreateProcess_ ) {
 }
 
 
-
 DEFINE_PROPERTY( processPriorityGetter ) {
 
 	PRThreadPriority priority = PR_GetThreadPriority(PR_GetCurrentThread());
@@ -618,7 +617,12 @@ DEFINE_PROPERTY( processPrioritySetter ) {
 		default:
 			REPORT_ERROR( "Invalid thread priority." );
 	}
-	PR_SetThreadPriority(PR_GetCurrentThread(), priority);
+
+	PRThread *thread = PR_GetCurrentThread();
+	PR_SetThreadPriority( thread, priority );
+
+	PRThreadState s = PR_GetThreadState(thread);
+
 	return JS_TRUE;
 }
 

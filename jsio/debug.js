@@ -1,8 +1,17 @@
 LoadModule('jsstd');
 LoadModule('jsio');
 
-CreateProcess('C:\\WINDOWS\\system32\\notepad.exe', ['aaa']);
+processPriority = 2;
+while (!endSignal) {
 
+	Sleep(100);
+}
+
+Print( processPriority );
+
+Sleep(500);
+		
+		
 Halt();
 
 var mem = new SharedMemory( 'test.txt', 4 );
