@@ -1,5 +1,5 @@
 LoadModule('jsstd');
-LoadModule('jsnspr');
+LoadModule('jsio');
 LoadModule('jsgraphics');
 LoadModule('jsprotex');
 
@@ -9,7 +9,7 @@ var win = new Window();
 win.CreateOpenGLContext();
 var gl = new Gl();
 
-win.onidle = function() {
+function Render() {
 
 	gl.Clear( glc.COLOR_BUFFER_BIT | glc.DEPTH_BUFFER_BIT );
 
@@ -31,7 +31,7 @@ win.onsize = function( w, h ) {
 	gl.Viewport([0,0,w,h]);
 //	gl.Perspective( 60, 0.01, 10000 );	
 	gl.Ortho(0,0,10,10);
-	win.onidle();
+	Render();
 }
 
 gl.Init();
@@ -77,7 +77,7 @@ function AddPixels(t, count) {
 
 function Cloud( size, amp ) {
 
-	var octaves = Math.log(size) / Math.log(2);
+	var octaves = Math.log(size) / Math.LN2;
 	var a = 1, s = 1;
 	var cloud = new Texture(s, s, 1);
 	cloud.ClearChannel();
@@ -144,6 +144,10 @@ draw:{
 	var t = new Texture(size, size, 3);
 	t.ClearChannel();
 	
+	
+	t = Cloud( 512, 0.5 );
+
+/*	
 	t.SetRectangle( 1*size/4, 1*size/4, 3*size/4, 3*size/4, WHITE );
 	t.RotoZoom( 0.5,0.5, 8,8, 0 );
 
@@ -151,12 +155,11 @@ draw:{
 	var d = Cloud( size, 0.5 );
 //	NoiseChannel( displace, 0 );
 //	NoiseChannel( displace, 1 );
-//	displace.NormalizeVectors();
+//	d.NormalizeVectors();
 	d.Aliasing(5);
 	d.Normals();
-	
 	t.Displace(d, 10);
-
+*/
 	
 //	t.AddGradiantRadial( curveGaussian( 0.5 ) );
 //	t.AddGradiantRadial( [1,0], 1 );
@@ -492,7 +495,20 @@ Print( 'time: '+ (IntervalNow() - t0) + ' ms\n' );
 gl.Color(1,1,1);
 gl.LoadTexture( t );
 
-win.rect = [1700,1000,1900,1200]
-//win.rect = [500,500,700,700];
-win.ProcessEvents();
+//win.rect = [1700,1000,1900,1200]
+win.rect = [500,500,700,700];
+
+win.Open();
+
+while (!endSignal) {
+
+	win.ProcessEvents();
+	Render();
+}
+
+
+win.Close();
+
+
+
 
