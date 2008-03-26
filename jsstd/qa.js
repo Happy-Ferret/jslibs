@@ -68,7 +68,109 @@
 //		QA.ASSERT( gcBytes, str.length, 'lot of allocated memory' );
 		
 		CollectGarbage();
+	},
 	
-	}
+	IdOf: function(QA) {
+		
+		var t1 = IdOf('uroiquwyeroquiwyeroquwyeroquwyeroquwreyouqwhelqwfvqlwefvlqwhjvlqwefjvlqw12412h5oiu2f34hovcu312gofuiv3124gfovi23gfvo23y4gfov234yugfvo23ufgvwperiughweoigh23oi7o2h3vg7o2374o23g74hgo32i74gho23i7ghov237ihg');
+		var xx = '23y2378vg239784gf293v87gfv293874gfv932847gfv';
+		var t2 = IdOf('uroiquwyeroquiwyeroquwyeroquwyeroquwreyouqwhelqwfvqlwefvlqwhjvlqwefjvlqw12412h5oiu2f34hovcu312gofuiv3124gfovi23gfvo23y4gfov234yugfvo23ufgvwperiughweoigh23oi7o2h3vg7o2374o23g74hgo32i74gho23i7ghov237ihg');
+		QA.ASSERT( t1, t2, 'IdOf on string' );
+		QA.ASSERT( IdOf(32), 65, 'IdOf on integer' );
+		
+		var o = {};
+		var p = {};
+		
+		QA.ASSERT( IdOf(o.constructor), IdOf(o.constructor), 'object constructor index' );
+	},
+	
+	
+	HideProperties: function(QA) {
+	
+		var o = { a:1, b:2, c:3, d:4 };
+		HideProperties(o, 'b', 'c');
+		QA.ASSERT( o.b, 2, 'do not delete' );
+		QA.ASSERT( [p for each (p in o)].join(','), '1,4', 'visible properties' );
+	},
+	
+	SetScope: function(QA) {
 
+		var data = 55;
+		function bar() { QA.ASSERT( data, 7, 'modified scope' ); }
+		var old = SetScope( bar, {data:7, QA:QA} );
+		bar();
+	},
+	
+	Expand: function(QA) {
+	
+		QA.ASSERT( Expand(' $(h) $(w)', { h:'Hello', w:'World' }), ' Hello World', 'expanding a string' );
+	},
+
+	ExecXDR: function(QA) {
+		
+		LoadModule('jsio');
+	
+		var f = new File('qa_exec_test.js');
+		f.content = '(1234)';
+		
+		var res = Exec(f.name, true);
+		QA.ASSERT( res, 1234, 'Exec return value' );
+
+		var fxdr = new File('qa_exec_test.jsxdr');
+		QA.ASSERT( fxdr.exist, true, 'XDR file exist' );
+		
+		f.Delete();
+
+		QA.ASSERT( f.exist, false, 'do not have source file' );
+
+		var res = Exec(f.name, true);
+		QA.ASSERT( res, 1234, 'Exec using XDR file' );
+
+		fxdr.Delete();
+		QA.ASSERT( fxdr.exist, false, 'XDR file is deleted' );
+		
+		try {
+			
+			var res = Exec(f.name, false);
+			QA.REPORT('Exec do not detect missing file');
+			
+		} catch(ex) {
+			
+			QA.ASSERT( ex.constructor, Error, 'Exec exception' );
+			QA.ASSERT( ex.message.substr(0,21), 'Unable to load Script', 'error message' );
+		}
+	},
+	
+	Clear: function(QA) {
+	
+		var o = { x:5, y:6, z:7 };
+		QA.ASSERT( 'z' in o, true, 'has z property' );
+		Clear(o);
+		QA.ASSERT( 'z' in o, false, 'property z is cleared' );
+	},
+
+	Seal: function(QA) {
+		
+		var o = { a:1 };
+		Seal(o);
+		
+		try {
+			
+			o.a = 123;
+			QA.REPORT('seal do not work');
+			
+		} catch(ex) {
+			
+			QA.ASSERT( ex.constructor, Error, 'object access exception' );
+			QA.ASSERT( ex.message, 'o.a is read-only', 'error message' );
+		}
+	},
+	
+	IsStatementValid: function(QA) {
+		
+		QA.ASSERT( IsStatementValid( 'for ( var i; i<10; i++ )' ), false, 'invalid statement' );
+		QA.ASSERT( IsStatementValid( 'for ( var i; i<10; i++ );' ), true, 'valid statement' );
+		QA.ASSERT( IsStatementValid( '{a,b,c} = { a:1, b:2, c:3 }' ), true, 'valid statement' );
+	}
+	
 })
