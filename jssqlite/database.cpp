@@ -43,7 +43,7 @@ DEFINE_CONSTRUCTOR() {
 	}
 
 	sqlite3 *db;
-	int status = sqlite3_open( fileName, &db );
+	int status = sqlite3_open( fileName, &db ); // see. sqlite3_open_v2()
 	if ( status != SQLITE_OK )
 		return SqliteThrowError( cx, status, sqlite3_errcode(db), sqlite3_errmsg(db) );
 
@@ -212,14 +212,14 @@ DEFINE_FUNCTION( Exec ) {
 			*rval = JSVAL_VOID;
 			break;
 		case SQLITE_ROW:
-			{
 			RT_CHECK_CALL( SqliteColumnToJsval(cx, pStmt, 0, rval) );
-			status = sqlite3_finalize( pStmt );
-			if ( status != SQLITE_OK )
-				return SqliteThrowError( cx, status, sqlite3_errcode(sqlite3_db_handle(pStmt)), sqlite3_errmsg(sqlite3_db_handle(pStmt)) );
-			}
 			break;
 	}
+
+	status = sqlite3_finalize( pStmt );
+	if ( status != SQLITE_OK )
+		return SqliteThrowError( cx, status, sqlite3_errcode(sqlite3_db_handle(pStmt)), sqlite3_errmsg(sqlite3_db_handle(pStmt)) );
+
 	return JS_TRUE;
 }
 
