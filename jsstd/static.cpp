@@ -14,6 +14,8 @@
 
 #include "stdafx.h"
 
+#include <string.h>
+
 #include "static.h"
 
 #include "jsxdrapi.h"
@@ -552,6 +554,35 @@ DEFINE_FUNCTION( Halt ) {
 	return JS_FALSE;
 }
 
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+DEFINE_FUNCTION( StrSet ) {
+
+	RT_ASSERT_ARGC( 2 );
+
+	char *chr;
+	int charLen;
+	RT_JSVAL_TO_STRING_AND_LENGTH( J_ARG(1), chr, charLen );
+	
+	unsigned int count;
+	RT_JSVAL_TO_UINT32( J_ARG(2), count );
+
+	char *buf = (char*)JS_malloc(cx, count +1);
+	RT_ASSERT_ALLOC( buf );
+	buf[count] = '\0';
+
+	memset(buf, chr[0], count); 
+
+	JSString *jsstr = JS_NewString(cx, buf, count);
+
+	RT_ASSERT_ALLOC( jsstr );
+	*J_RVAL = STRING_TO_JSVAL( jsstr );
+
+	return JS_TRUE;
+}
+
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 /*
@@ -593,6 +624,7 @@ CONFIGURE_STATIC
 		FUNCTION_FAST( Warning )
 		FUNCTION( ASSERT )
 		FUNCTION_FAST( Halt )
+		FUNCTION( StrSet )
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC

@@ -622,6 +622,25 @@ DEFINE_PROPERTY( processPrioritySetter ) {
 	return JS_TRUE;
 }
 
+
+
+DEFINE_PROPERTY( currentWorkingDirectory ) {
+	
+	char buf[PATH_MAX];
+
+#ifdef XP_WIN
+	_getcwd(buf, sizeof(buf));
+#else // XP_WIN
+	getcwd(buf, sizeof(buf));
+#endif // XP_WIN
+
+	JSString *str = JS_NewStringCopyZ(cx, buf);
+	RT_ASSERT_ALLOC( str );
+	*vp = STRING_TO_JSVAL( str );
+	return JS_TRUE;
+}
+
+
 CONFIGURE_STATIC
 
 	BEGIN_STATIC_FUNCTION_SPEC
@@ -643,6 +662,7 @@ CONFIGURE_STATIC
 		PROPERTY_READ( physicalMemorySize )
 		PROPERTY_READ_STORE( systemInfo )
 		PROPERTY( processPriority )
+		PROPERTY_READ( currentWorkingDirectory )
 	END_STATIC_PROPERTY_SPEC
 
 END_STATIC
