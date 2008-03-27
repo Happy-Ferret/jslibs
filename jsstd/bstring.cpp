@@ -35,13 +35,38 @@ DEFINE_CONSTRUCTOR() {
 }
 
 
+DEFINE_FUNCTION_FAST( Add ) {
+	
+	RT_ASSERT_ARGC( 1 );
+	char *pv = (char*)JS_GetPrivate(cx, J_FOBJ);
+	RT_ASSERT_RESOURCE( pv );
+
+	jsval val;
+	RT_CHECK_CALL( JS_GetReservedSlot(cx, J_FOBJ, BSTRING_SLOT_LENGTH, &val) );
+
+//	int length;
+
+
+
+//	pv = realloc( pv, 
+
+	return JS_TRUE;
+}
+
+
+DEFINE_RESOLVE() {
+	
+	return JS_TRUE;
+}
+
 CONFIGURE_CLASS
 
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE
+	HAS_RESOLVE
 
 	BEGIN_FUNCTION_SPEC
-//		FUNCTION(Skip)
+		FUNCTION_FAST( Add )
 //		FUNCTION_ALIAS(toString, Read) // ised when the buffer has to be transformed into a string
 //		FUNCTION_ALIAS(valueOf, Read) // ised when the buffer has to be transformed into a string
 	END_FUNCTION_SPEC

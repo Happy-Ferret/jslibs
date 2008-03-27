@@ -13,3 +13,5 @@
  * ***** END LICENSE BLOCK ***** */
 
 DECLARE_CLASS( BString )
+
+#define BSTRING_SLOT_LENGTH 0
