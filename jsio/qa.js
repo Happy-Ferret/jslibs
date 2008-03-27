@@ -186,7 +186,7 @@
 			
 			if (ex.code == -5981) {
 				
-				QA.REPORT( 'unable to connect to '+host );
+				QA.FAILED( 'unable to connect to '+host );
 				return;
 			}
 		}
@@ -333,7 +333,7 @@
 				QA.ASSERT( res[1].Read(10).length, 10, 'reading Process stdout' );
 				break;
 			default:
-				QA.REPORT('(TBD) no test available for this system.');
+				QA.FAILED('(TBD) no test available for this system.');
 		}
 	},
 	
@@ -346,7 +346,7 @@
 				QA.ASSERT_TYPE( res, 'number', 'CreateProcess returns an array' );
 				break;
 			default:
-				QA.REPORT('(TBD) no test available for this system.');
+				QA.FAILED('(TBD) no test available for this system.');
 		}
 	},
 	
@@ -364,8 +364,16 @@
 				}
 				break;
 			default:
-				QA.REPORT('(TBD) no test available for this system.');
+				QA.FAILED('(TBD) no test available for this system.');
 		}
+	},
+
+
+	CWD: function(QA) {
+	
+		QA.ASSERT( 'currentWorkingDirectory' in global, true, 'has currentWorkingDirectory' );
+		QA.ASSERT( typeof currentWorkingDirectory, 'string', 'current working directory' );
+		QA.ASSERT( currentWorkingDirectory.length >= 1, true, 'cwd length' );
 	}
 
 })

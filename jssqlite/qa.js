@@ -25,7 +25,7 @@
 
 		} catch ( ex if ex instanceof SqliteError ) { // if ex instanceof SqliteError 
 			
-			QA.REPORT( 'SqliteError: ' + ex.text + '('+ex.code+')' );
+			QA.FAILED( 'SqliteError: ' + ex.text + '('+ex.code+')' );
 		}
 	},
 
@@ -81,7 +81,7 @@
 		try {
 
 			var res = db.Query('select * from a');
-			QA.REPORT( 'Failed to throw exception' );
+			QA.FAILED( 'Failed to throw exception' );
 
 		} catch ( ex if ex instanceof SqliteError ) { // if ex instanceof SqliteError 
 			

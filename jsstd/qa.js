@@ -132,7 +132,7 @@
 		try {
 			
 			var res = Exec(f.name, false);
-			QA.REPORT('Exec do not detect missing file');
+			QA.FAILED('Exec do not detect missing file');
 			
 		} catch(ex) {
 			
@@ -157,7 +157,7 @@
 		try {
 			
 			o.a = 123;
-			QA.REPORT('seal do not work');
+			QA.FAILED('seal do not work');
 			
 		} catch(ex) {
 			
@@ -171,6 +171,16 @@
 		QA.ASSERT( IsStatementValid( 'for ( var i; i<10; i++ )' ), false, 'invalid statement' );
 		QA.ASSERT( IsStatementValid( 'for ( var i; i<10; i++ );' ), true, 'valid statement' );
 		QA.ASSERT( IsStatementValid( '{a,b,c} = { a:1, b:2, c:3 }' ), true, 'valid statement' );
-	}
+	},
 	
+	StrChr: function(QA) {
+
+		var str1 = StrSet('y', 100);
+		QA.ASSERT( [ c for each ( c in str1 ) if (c == 'y') ].length, 100, 'all chars are good' );
+		
+		var str = StrSet('x', 10000);
+		QA.ASSERT( str.length, 10000, 'string length' );
+		QA.ASSERT( str[0], 'x', 'first char' );
+		QA.ASSERT( str[9999], 'x', 'last char' );
+	}
 })

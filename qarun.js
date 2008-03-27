@@ -4,6 +4,7 @@ LoadModule('jsstd');
 LoadModule('jsio');
 LoadModule('jsdebug');
 
+
 function MakeTestList(directory) {
 
 	var dirList = Directory.List(directory, Directory.SKIP_BOTH | Directory.SKIP_FILE | Directory.SKIP_OTHER );
@@ -20,9 +21,36 @@ function MakeTestList(directory) {
 				testList[ dirName + ':' + testName ] = qatests[testName];
 		}
 	}
+	return testList;
+}
+
+
+
+function RecursiveDir(path) {
+	
+	var testList = [];
+	(function(path) {
+
+		var dir = new Directory(path);
+		dir.Open();
+		for ( var entry; ( entry = dir.Read(Directory.SKIP_BOTH) ); ) {
+
+			var file = new File(dir.name+'/'+entry);
+			switch ( file.info.type ) {
+				case File.FILE_DIRECTORY:
+					arguments.callee(file.name);
+					break;
+				case File.FILE_FILE:
+					testList.push(file.name);
+					break;
+			}
+		}
+		dir.Close();
+	})(path);
 	
 	return testList;
 }
+
 
 
 function MakeTests( testList, filter, QAAPI, iterate ) {
@@ -40,7 +68,6 @@ function MakeTests( testList, filter, QAAPI, iterate ) {
 				return;
 		}
 	}
-
 }
 
 
@@ -60,6 +87,11 @@ var QAAPI = new function() {
 			
 			this.REPORT( (testName||'') + ' (@'+Locate(-1)+'), Invalid type, '+(type.name)+' is expected' );
 		}
+	}
+
+	this.FAILED = function( message ) {
+
+		this.REPORT( message );
 	}
 
 	this.ASSERT = function( value, expect, testName ) {
