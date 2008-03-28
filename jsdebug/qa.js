@@ -2,14 +2,14 @@
 
 	StringMemUsage: function(QA) {
 		
-		CollectGarbage();
+		QA.GC();
 		var mem0 = privateMemoryUsage;
 
 		var str1 = StrSet('x', 1000000);
-		var str2 = StrSet('x', 1000000);
 		StrSet('x', 1000000);
-		CollectGarbage();
+		QA.GC();
 		
-		Print( privateMemoryUsage - mem0, '\n\n' );
+		var diff = privateMemoryUsage - mem0;
+		QA.ASSERT( diff > 3 * 1000000 && diff < 3.1 * 1000000, true, 'check privateMemoryUsage value' );
 	}
 })
