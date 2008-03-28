@@ -1,5 +1,7 @@
 #include "stdafx.h"
 
+#include <jscntxt.h>
+
 #include "objex.h"
 
 #define ADD_SLOT 0
@@ -12,7 +14,13 @@ JSBool NotifyObject( int slotIndex, JSContext *cx, JSObject *obj, jsval id, jsva
 
 	// (TBD) because in constructor we do JS_SetPrototype(cx, obj, NULL) to create a 'true' empty object, is the next line useful ?
 
-	if ( JSVAL_IS_VOID(*vp) && strcmp( JS_GetStringBytes(JS_ValueToString(cx,id)), "__iterator__" ) == 0 ) // we don't want to override the iterator
+	jsid idid;
+	JS_ValueToId(cx, id, &idid);
+	
+//	if ( JSVAL_IS_VOID(*vp) && strcmp( JS_GetStringBytes(JS_ValueToString(cx,id)), "__iterator__" ) == 0 ) // we don't want to override the iterator
+//		return JS_TRUE;
+
+	if ( idid == ATOM_TO_JSID(cx->runtime->atomState.iteratorAtom) ) // (TBD) check if it is faster
 		return JS_TRUE;
 
 	jsval slot;
