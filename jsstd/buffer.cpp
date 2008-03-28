@@ -132,8 +132,8 @@ JSBool FindInBuffer( JSContext *cx, JSObject *obj, char *needle, int needleLengt
 	for ( QueueCell *it = queue->begin; it; it = it->next ) {
 
 		JSString **pNewStr = (JSString**)QueueGetData(it);
-		char *chunk = JS_GetStringBytes(*pNewStr);
-		size_t chunkLen = JS_GetStringLength(*pNewStr);
+		chunk = JS_GetStringBytes(*pNewStr);
+		chunkLength = JS_GetStringLength(*pNewStr);
 //		RT_JSVAL_TO_STRING_AND_LENGTH( *pNewStr, chunk, chunkLength );
 
 		for ( i = 0; i < chunkLength; i++ ) {
