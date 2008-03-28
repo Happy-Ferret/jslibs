@@ -27,7 +27,9 @@
 #define DEFINE_OBJECT_CONSTRUCTOR() static JSBool ObjectConstructor(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 #define DEFINE_FINALIZE() static void Finalize(JSContext *cx, JSObject *obj)
 #define DEFINE_CONVERT() static JSBool Convert(JSContext *cx, JSObject *obj, JSType type, jsval *vp)
-#define DEFINE_RESOLVE() static JSBool Resolve(JSContext *cx, JSObject *obj, jsval id, uintN flags, JSObject **objp)
+#define DEFINE_RESOLVE() static JSBool Resolve(JSContext *cx, JSObject *obj, jsval id)
+#define DEFINE_NEW_RESOLVE() static JSBool NewResolve(JSContext *cx, JSObject *obj, jsval id, uintN flags, JSObject **objp)
+#define DEFINE_ENUMERATE() static JSBool Enumerate(JSContext *cx, JSObject *obj)
 
 #define FUNCTION_FAST(name) JS_FN( #name, name, 0, 0, 0 ),
 #define FUNCTION2_FAST(name,nativeName) JS_FN( #name, nativeName, 0, 0, 0 ),
@@ -143,7 +145,10 @@
 #define HAS_CALL   _class->call = Call;
 #define HAS_FINALIZE   _class->finalize = Finalize;
 #define HAS_CONVERT   _class->convert = Convert;
-#define HAS_RESOLVE   _class->resolve = (JSResolveOp)Resolve;
+#define HAS_RESOLVE   _class->resolve = Resolve;
+#define HAS_NEW_RESOLVE   _class->resolve = (JSResolveOp)NewResolve; _class->flags |= JSCLASS_NEW_RESOLVE;
+#define HAS_ENUMERATE  _class->enumerate = Enumerate;
+
 #define HAS_PROTOTYPE(PROTOTYPE)   *_parentPrototype = (PROTOTYPE);
 #define HAS_ADD_PROPERTY   _class->addProperty = AddProperty;
 #define HAS_DEL_PROPERTY   _class->delProperty = DelProperty;
