@@ -191,10 +191,6 @@
 		QA.ASSERT( res, 1230, 'row result' );
 
 		db.Close();
-	},
-
-
-	
-	
+	}
 
 })

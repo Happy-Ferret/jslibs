@@ -111,6 +111,12 @@ var QAAPI = new function() {
 	  			this.REPORT( 'property '+p+' not found' );
    }
 
+	 this.GC = function() {
+
+	 	 CollectGarbage();
+	   CollectGarbage();
+	 }
+	
    this.RandomString = function(length) { // [0-9A-Za-z]
 
 		 var str = '';
