@@ -122,20 +122,25 @@ typedef struct {
 	JSObject *obj;
 } CxObj;
 
-
+/*
 void ReadUsingJsMethod( void *pv, unsigned char *data, unsigned int *length ) {
 
 	jsval rval, len = INT_TO_JSVAL(*length);
 	JS_CallFunctionName(((CxObj*)pv)->cx, ((CxObj*)pv)->obj, "Read", 1, &len, &rval ); // (TBD) check if function exists
 	//if ( !JSVAL_IS_STRING(rval) )
 	// (TBD) manage this error
-	JSString *str = JSVAL_TO_STRING(rval);
-	*length = JS_GetStringLength(str);
-	char *stringData = JS_GetStringBytes(str);
+
+//	JSString *str = JSVAL_TO_STRING(rval);
+//	*length = JS_GetStringLength(str);
+//	char *stringData = JS_GetStringBytes(str);
+
+	char *stringData;
+	RT_JSVAL_TO_STRING_AND_LENGTH( rval, stringData, *length );
+
 	// (TBD) check if not NULL
 	memcpy(data, stringData, *length); // (TBD) hard but try to avoid the useless copy of data
 }
-
+*/
 
 BEGIN_CLASS( Jpeg )
 

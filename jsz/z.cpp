@@ -71,11 +71,13 @@ JSBool z_call(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval
 	size_t inputLength = 0;
 	if ( argc >= 1 ) {
 
-		JSString *jssData = JS_ValueToString( cx, argv[0] );
-		RT_ASSERT_ALLOC( jssData );
-		argv[0] = STRING_TO_JSVAL( jssData );
-		inputLength = JS_GetStringLength( jssData );
-		inputData = JS_GetStringBytes( jssData ); // no copy is done, we read directly in the string hold by SM
+		RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], inputData, inputLength );
+
+//		JSString *jssData = JS_ValueToString( cx, argv[0] );
+//		RT_ASSERT_ALLOC( jssData );
+//		argv[0] = STRING_TO_JSVAL( jssData );
+//		inputLength = JS_GetStringLength( jssData );
+//		inputData = JS_GetStringBytes( jssData ); // no copy is done, we read directly in the string hold by SM
 	}
 	stream->avail_in = inputLength;
 	stream->next_in = (Bytef*)inputData;

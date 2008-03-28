@@ -122,18 +122,25 @@ JSBool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *objAt,
 
 					jsval blobVal;
 					JS_GetReservedSlot(cx, JSVAL_TO_OBJECT(val), SLOT_BLOB_DATA, &blobVal);
-					JSString *jsstr = JS_ValueToString(cx, blobVal);
+					//JSString *jsstr = JS_ValueToString(cx, blobVal);
 					// (TBD) GC protect (root) jsstr
-					sqlite3_bind_blob(pStmt, param, JS_GetStringBytes(jsstr), JS_GetStringLength(jsstr), SQLITE_STATIC); // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT
+
+					char *str;
+					int strLen;
+					RT_JSVAL_TO_STRING_AND_LENGTH( blobVal, str, strLen );
+					sqlite3_bind_blob(pStmt, param, str, strLen, SQLITE_STATIC); // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT
 					break;
 				}
 			case JSTYPE_XML:
 			case JSTYPE_FUNCTION: // (TBD) call the function and pass its result to SQLite ?
 			case JSTYPE_STRING: {
 
-				JSString *jsstr = JS_ValueToString(cx, val);
+				//JSString *jsstr = JS_ValueToString(cx, val);
 				// (TBD) GC protect (root) jsstr
-				sqlite3_bind_text(pStmt, param, JS_GetStringBytes(jsstr), JS_GetStringLength(jsstr), SQLITE_STATIC); // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT
+				char *str;
+				int strLen;
+				RT_JSVAL_TO_STRING_AND_LENGTH( val, str, strLen );
+				sqlite3_bind_text(pStmt, param, str, strLen, SQLITE_STATIC); // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT
 				}
 				break;
 			default:

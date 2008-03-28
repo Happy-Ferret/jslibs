@@ -132,8 +132,9 @@ JSBool FindInBuffer( JSContext *cx, JSObject *obj, char *needle, int needleLengt
 	for ( QueueCell *it = queue->begin; it; it = it->next ) {
 
 		JSString **pNewStr = (JSString**)QueueGetData(it);
-		chunkLength = JS_GetStringLength(*pNewStr);
-		chunk = JS_GetStringBytes(*pNewStr);
+		char *chunk = JS_GetStringBytes(*pNewStr);
+		size_t chunkLen = JS_GetStringLength(*pNewStr);
+//		RT_JSVAL_TO_STRING_AND_LENGTH( *pNewStr, chunk, chunkLength );
 
 		for ( i = 0; i < chunkLength; i++ ) {
 
@@ -261,8 +262,10 @@ JSBool ReadRawAmount( JSContext *cx, JSObject *obj, size_t *amount, char *str ) 
 	while ( remainToRead > 0 ) { // while there is something to read,
 
 		JSString **pNewStr = (JSString**)QueueGetData(QueueBegin(queue)); // just get the data, do not shift the queue
+
 		char *chunk = JS_GetStringBytes(*pNewStr);
 		size_t chunkLen = JS_GetStringLength(*pNewStr);
+//		RT_JSVAL_TO_STRING_AND_LENGTH( *pNewStr, chunk, chunkLength );
 
 		if ( chunkLen <= remainToRead ) {
 
@@ -620,7 +623,7 @@ CONFIGURE_CLASS
 		FUNCTION(IndexOf)
 		FUNCTION(Match)
 		FUNCTION(Skip)
-		FUNCTION_ALIAS(toString, Read) // ised when the buffer has to be transformed into a string
+		FUNCTION_ALIAS(toString, Read) // used when the buffer has to be transformed into a string
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
