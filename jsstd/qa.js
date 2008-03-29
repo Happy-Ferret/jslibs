@@ -26,17 +26,17 @@
 	
 		var b = new BString();
 		b.Add( 'ABCDEF' );
-		QA.ASSERT( b.substr(0), 'ABCDEF', 'substr' );
-		QA.ASSERT( b.substr(1), 'BCDEF', 'substr' );
-		QA.ASSERT( b.substr(2,3), 'CDE', 'substr' );
-		QA.ASSERT( b.substr(-2,2), 'EF', 'substr' );
-		QA.ASSERT( b.substr(-2,3), 'EF', 'substr' );
-		QA.ASSERT( b.substr(0,6), 'ABCDEF', 'substr' );
-		QA.ASSERT( b.substr(0,7), 'ABCDEF', 'substr' );
-		QA.ASSERT( b.substr(0,-2), '', 'substr' );
-		QA.ASSERT( b.substr(6), '', 'substr' );
-		QA.ASSERT( b.substr(-6), 'ABCDEF', 'substr' );
-		QA.ASSERT( b.substr(-7,2), '', 'substr' );
+		QA.ASSERT( b.Substr(0), 'ABCDEF', 'substr' );
+		QA.ASSERT( b.Substr(1), 'BCDEF', 'substr' );
+		QA.ASSERT( b.Substr(2,3), 'CDE', 'substr' );
+		QA.ASSERT( b.Substr(-2,2), 'EF', 'substr' );
+		QA.ASSERT( b.Substr(-2,3), 'EF', 'substr' );
+		QA.ASSERT( b.Substr(0,6), 'ABCDEF', 'substr' );
+		QA.ASSERT( b.Substr(0,7), 'ABCDEF', 'substr' );
+		QA.ASSERT( b.Substr(0,-2), '', 'substr' );
+		QA.ASSERT( b.Substr(6), '', 'substr' );
+		QA.ASSERT( b.Substr(-6), 'ABCDEF', 'substr' );
+		QA.ASSERT( b.Substr(-7,2), '', 'substr' );
 	},
 
 	BStringSetter: function(QA) {
@@ -44,7 +44,7 @@
 		var b = new BString();
 		b.Add( 'ABCDEF' );
 		b[0] = 'X';
-		QA.ASSERT( b.substr(0,1), 'X', 'setter' );
+		QA.ASSERT( b.Substr(0,1), 'X', 'setter' );
 		b[5] = 'W';
 		QA.ASSERT( String(b), 'XBCDEW', 'setter' );
 		
