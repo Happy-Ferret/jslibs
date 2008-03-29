@@ -1,5 +1,65 @@
 ({
 
+	BString: function(QA) {
+		
+		LoadModule('jsstd');
+	
+		var b = new BString();
+		b.Add( 'ABCD' );
+		QA.ASSERT( String(b), 'ABCD', 'content' );
+		QA.ASSERT( b.length, 4, 'length' );
+		QA.ASSERT( b[0], 'A', 'first item' );
+		QA.ASSERT( b[3], 'D', 'last item' );
+		QA.ASSERT( 2 in b, true, 'in operator' );
+		QA.ASSERT( 4 in b, false, 'in operator' );
+		QA.ASSERT( b[4], undefined, 'after last item' );
+		b.Add('XYZ');
+		QA.ASSERT( b.length, 7, 'length' );
+		QA.ASSERT( b[6], 'Z', 'last item' );
+		QA.ASSERT( b.toString(), 'ABCDXYZ', 'toString' );
+		QA.ASSERT( String(b.valueOf()), 'ABCDXYZ', 'valueof' );
+		b.Clear();
+		QA.ASSERT( b.length, 0, 'length' );
+	},
+	
+	BStringSubstr: function(QA) {
+	
+		var b = new BString();
+		b.Add( 'ABCDEF' );
+		QA.ASSERT( b.substr(0), 'ABCDEF', 'substr' );
+		QA.ASSERT( b.substr(1), 'BCDEF', 'substr' );
+		QA.ASSERT( b.substr(2,3), 'CDE', 'substr' );
+		QA.ASSERT( b.substr(-2,2), 'EF', 'substr' );
+		QA.ASSERT( b.substr(-2,3), 'EF', 'substr' );
+		QA.ASSERT( b.substr(0,6), 'ABCDEF', 'substr' );
+		QA.ASSERT( b.substr(0,7), 'ABCDEF', 'substr' );
+		QA.ASSERT( b.substr(0,-2), '', 'substr' );
+		QA.ASSERT( b.substr(6), '', 'substr' );
+		QA.ASSERT( b.substr(-6), 'ABCDEF', 'substr' );
+		QA.ASSERT( b.substr(-7,2), '', 'substr' );
+	},
+
+	BStringSetter: function(QA) {
+	
+		var b = new BString();
+		b.Add( 'ABCDEF' );
+		b[0] = 'X';
+		QA.ASSERT( b.substr(0,1), 'X', 'setter' );
+		b[5] = 'W';
+		QA.ASSERT( String(b), 'XBCDEW', 'setter' );
+		
+		try {
+			b[-1] = 'Y';
+			QA.FAILED( 'Out of range not detected' );
+		} catch(ex) {}
+
+		try {
+			b[6] = 'Z';
+			QA.FAILED( 'Out of range not detected' );
+		} catch(ex) {}
+
+	},
+	
 	BufferTest1: function(QA) {
 		
 		LoadModule('jsstd');
@@ -24,7 +84,7 @@
 		b.Write('gggg');
 		var t = b.Read();
 
-		QA.ASSERT( t, 'eeeeffffgggg', 'buffer match' );	
+		QA.ASSERT( t, 'eeeeffffgggg', 'buffer match' );
 	},
 
 

@@ -15,3 +15,41 @@
 DECLARE_CLASS( BString )
 
 #define SLOT_BSTRING_LENGTH 0
+
+inline JSBool NewBString( JSContext *cx, char *jsMallocatedBuffer, size_t bufferLength ) {
+
+	JSObject *obj = JS_NewObject(cx, &classBString, NULL, NULL);
+	RT_ASSERT_ALLOC( obj );
+	RT_CHECK_CALL( JS_SetReservedSlot(cx, obj, SLOT_BSTRING_LENGTH, INT_TO_JSVAL( bufferLength )) );
+	RT_CHECK_CALL( JS_SetPrivate(cx, obj, jsMallocatedBuffer) );
+	return JS_TRUE;
+}
+
+inline size_t BStringLength( JSContext *cx, JSObject *bStringObject ) {
+
+	RT_ASSERT_CLASS_NAME( bStringObject, "BString" );
+	jsval lengthVal;
+	RT_CHECK_CALL( JS_GetReservedSlot(cx, bStringObject, SLOT_BSTRING_LENGTH, &lengthVal) );
+	return JSVAL_IS_INT(lengthVal) ? JSVAL_TO_INT( lengthVal ) : 0;
+}
+
+inline char* BStringData( JSContext *cx, JSObject *bStringObject ) {
+
+	RT_ASSERT_CLASS_NAME( bStringObject, "BString" );
+	return (char*)JS_GetPrivate(cx, bStringObject);
+}
+
+/*
+inline JSBool BStringGetDataAndLength( JSContext *cx, JSObject *bStringObject, char **data, size_t *dataLength ) {
+
+	RT_ASSERT_CLASS_NAME( bStringObject, "BString" );
+	jsval lengthVal;
+	RT_CHECK_CALL( JS_GetReservedSlot(cx, bStringObject, SLOT_BSTRING_LENGTH, &lengthVal) );
+	if ( JSVAL_IS_INT(lengthVal) )
+		*dataLength = JSVAL_TO_INT( lengthVal );
+	else
+		*dataLength = 0;
+	*data = (char*)JS_GetPrivate(cx, bStringObject);
+	return JS_TRUE;
+}
+*/
