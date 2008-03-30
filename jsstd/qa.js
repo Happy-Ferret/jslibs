@@ -18,7 +18,7 @@
 		QA.ASSERT( b[6], 'Z', 'last item' );
 		QA.ASSERT( b.toString(), 'ABCDXYZ', 'toString' );
 		QA.ASSERT( String(b.valueOf()), 'ABCDXYZ', 'valueof' );
-		b.Clear();
+		b.Set();
 		QA.ASSERT( b.length, 0, 'length' );
 	},
 	
@@ -26,17 +26,17 @@
 	
 		var b = new BString();
 		b.Add( 'ABCDEF' );
-		QA.ASSERT( b.Substr(0), 'ABCDEF', 'substr' );
-		QA.ASSERT( b.Substr(1), 'BCDEF', 'substr' );
-		QA.ASSERT( b.Substr(2,3), 'CDE', 'substr' );
-		QA.ASSERT( b.Substr(-2,2), 'EF', 'substr' );
-		QA.ASSERT( b.Substr(-2,3), 'EF', 'substr' );
-		QA.ASSERT( b.Substr(0,6), 'ABCDEF', 'substr' );
-		QA.ASSERT( b.Substr(0,7), 'ABCDEF', 'substr' );
-		QA.ASSERT( b.Substr(0,-2), '', 'substr' );
-		QA.ASSERT( b.Substr(6), '', 'substr' );
-		QA.ASSERT( b.Substr(-6), 'ABCDEF', 'substr' );
-		QA.ASSERT( b.Substr(-7,2), '', 'substr' );
+		QA.ASSERT( ''+b.Substr(0), 'ABCDEF', 'substr' );
+		QA.ASSERT( ''+b.Substr(1), 'BCDEF', 'substr' );
+		QA.ASSERT( ''+b.Substr(2,3), 'CDE', 'substr' );
+		QA.ASSERT( ''+b.Substr(-2,2), 'EF', 'substr' );
+		QA.ASSERT( ''+b.Substr(-2,3), 'EF', 'substr' );
+		QA.ASSERT( ''+b.Substr(0,6), 'ABCDEF', 'substr' );
+		QA.ASSERT( ''+b.Substr(0,7), 'ABCDEF', 'substr' );
+		QA.ASSERT( ''+b.Substr(0,-2), '', 'substr' );
+		QA.ASSERT( ''+b.Substr(6), '', 'substr' );
+		QA.ASSERT( ''+b.Substr(-6), 'ABCDEF', 'substr' );
+		QA.ASSERT( ''+b.Substr(-7,2), '', 'substr' );
 	},
 
 	BStringSetter: function(QA) {
@@ -44,7 +44,9 @@
 		var b = new BString();
 		b.Add( 'ABCDEF' );
 		b[0] = 'X';
-		QA.ASSERT( b.Substr(0,1), 'X', 'setter' );
+		QA.ASSERT( ''+b.Substr(0,1), 'X', 'setter' );
+		b[5] = 'W';
+		QA.ASSERT( ''+b[5], 'W', 'setted value' );
 		b[5] = 'W';
 		QA.ASSERT( String(b), 'XBCDEW', 'setter' );
 		
@@ -57,9 +59,43 @@
 			b[6] = 'Z';
 			QA.FAILED( 'Out of range not detected' );
 		} catch(ex) {}
-
 	},
+
 	
+	
+	BStringEquality: function(QA) {
+		
+		var b = new BString();
+		b.Add( 'ABCDEF' );
+
+		QA.ASSERT( b == 'ABCDEF', true, 'string and BString equality' )
+		QA.ASSERT( 'ABCDEF' == b, true, 'string and BString equality' )
+
+		QA.ASSERT( b === 'ABCDEF', false, 'string and BString equality and same type' )
+	},
+
+
+	BStringSelfReference: function(QA) {
+
+		var a = new BString();
+		a.Set();
+		a.Set( 'ABCDEF' );
+		a.Add(a);
+		QA.ASSERT( ''+a, 'ABCDEFABCDEF', 'self add' )
+	
+		var b = new BString();
+		b.Set( 'ABCDEF' );
+		b.Add( '12345' );
+		b.Set(b);
+		QA.ASSERT( ''+b, 'ABCDEF12345', 'self set' )
+
+		var a = new BString();
+		a.Set('');
+		a.Add(a);
+		QA.ASSERT( ''+a, '', 'self add empty' )
+	},
+
+		
 	BufferTest1: function(QA) {
 		
 		LoadModule('jsstd');
@@ -165,7 +201,7 @@
 		buf.Write('');
 		buf.Write('789');
 		QA.ASSERT( buf.Read(2), '12', 'Read(int)' );
-		buf.Clear();
+		buf.Set();
 		QA.ASSERT( buf.length, 0, 'empty length' );
 		QA.ASSERT( buf.Read(), '', 'empty content' );
 		buf.Write('4');
@@ -399,5 +435,7 @@
 		QA.ASSERT( typeof t, 'xml', 'text type' );
 		QA.ASSERT( String(t), "\n\t\tthis is\n\t\ta multiline\n\n\t\ttext\n\t\t", 'text' );
 	}
+	
+	
 	
 })
