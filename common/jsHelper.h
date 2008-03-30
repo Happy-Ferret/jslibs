@@ -133,7 +133,7 @@ inline bool MaybeRealloc( int requested, int received ) {
 	RT_ASSERT( value != JSVAL_VOID, "Value is not defined." );
 
 #define RT_ASSERT_OBJECT(value) \
-	RT_ASSERT( value != JSVAL_NULL && JSVAL_IS_OBJECT(value), RT_ERROR_UNEXPECTED_TYPE " Object expected." );
+	RT_ASSERT( JSVAL_IS_OBJECT(value) && !JSVAL_IS_NULL(value), RT_ERROR_UNEXPECTED_TYPE " Object expected." );
 
 #define RT_ASSERT_ARRAY(value) \
 	RT_ASSERT( JSVAL_IS_OBJECT(value) && JS_IsArrayObject( cx, JSVAL_TO_OBJECT(value) ) == JS_TRUE, RT_ERROR_UNEXPECTED_TYPE " Array expected." );
