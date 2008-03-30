@@ -16,6 +16,8 @@
 #include "stdafx.h"
 #include "bstring.h"
 
+#include "jslangapi.h"
+
 #include "../common/jsNativeInterface.h"
 
 inline bool JsvalIsBString( JSContext *cx, jsval val ) {

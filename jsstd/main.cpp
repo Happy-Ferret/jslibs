@@ -21,7 +21,6 @@
 #include "data.h"
 #include "buffer.h"
 #include "pack.h"
-#include "bstring.h"
 
 
 DEFINE_UNSAFE_MODE;
@@ -46,7 +45,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	INIT_CLASS( Data );
 	INIT_CLASS( Buffer );
 	INIT_CLASS( Pack );
-	INIT_CLASS( BString );
+
 	return JS_TRUE;
 }
 

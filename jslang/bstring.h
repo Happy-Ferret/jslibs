@@ -12,19 +12,6 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-#include "stdafx.h"
+DECLARE_CLASS( BString )
 
-#include "bstring.h"
-
-DEFINE_UNSAFE_MODE
-
-EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
-
-	obj = JS_GetGlobalObject(cx); // avoid LoadModule.call( foo, 'jslang' );
-
-	SET_UNSAFE_MODE( GetConfigurationValue(cx, "unsafeMode" ) == JSVAL_TRUE );
-
-	INIT_CLASS( BString );
-
-	return JS_TRUE;
-}
+#define SLOT_BSTRING_LENGTH 0

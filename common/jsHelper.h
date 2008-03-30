@@ -28,6 +28,10 @@
 #include <stdarg.h>
 
 
+#include <jsarena.h>
+#include <jsfun.h>
+
+
 // buffer realloc policy:
 
 inline bool MaybeRealloc( int requested, int received ) {
@@ -270,6 +274,23 @@ inline bool MaybeRealloc( int requested, int received ) {
 
 ///////////
 
+inline JSClass *GetClassByName(JSContext *cx, char *className) {
+
+	JSObject *globalObj = JS_GetGlobalObject(cx);
+	if ( globalObj == NULL )
+		return NULL;
+	jsval bstringConstructor;
+	if ( JS_LookupProperty(cx, globalObj, className, &bstringConstructor) != JS_TRUE )
+		return NULL;
+	if ( bstringConstructor == JSVAL_VOID )
+		return NULL;
+	JSFunction *fun = JS_ValueToFunction(cx, bstringConstructor);
+	if ( fun == NULL )
+		return NULL;
+	return fun->u.n.clasp; // (TBD) replace this by a jsapi.h call and remove dependency to jsarena.h and jsfun.h
+}
+
+///////////
 
 inline double TimeNow() {
 
