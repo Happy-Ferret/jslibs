@@ -14,8 +14,6 @@
 
 
 #include "stdafx.h"
-#include <jsobj.h>
-
 #include "bstring.h"
 
 #include "../common/jsNativeInterface.h"
