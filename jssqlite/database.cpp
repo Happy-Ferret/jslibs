@@ -321,7 +321,7 @@ void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArg
 				break;
 			}
 			if ( JS_GET_CLASS(cx,JSVAL_TO_OBJECT(rval)) == &classBlob ) { // beware: with SQLite, blob != text
-
+// (TBD) use BString
 				jsval blobVal;
 				JS_GetReservedSlot(cx, JSVAL_TO_OBJECT(rval), SLOT_BLOB_DATA, &blobVal);
 				JSString *jsstr = JS_ValueToString(cx, blobVal);

@@ -20,7 +20,9 @@ DEFINE_UNSAFE_MODE
 
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
-	obj = JS_GetGlobalObject(cx); // avoid LoadModule.call( foo, 'jslang' );
+	JSObject *globalObject = JS_GetGlobalObject(cx);
+	RT_ASSERT( obj == globalObject, "This module must be load into the global namespace" );
+//	obj = JS_GetGlobalObject(cx); // avoid LoadModule.call( foo, 'jslang' );
 
 	SET_UNSAFE_MODE( GetConfigurationValue(cx, "unsafeMode" ) == JSVAL_TRUE );
 

@@ -20,6 +20,9 @@
 
 #include "../common/jsNativeInterface.h"
 
+
+
+
 inline bool JsvalIsBString( JSContext *cx, jsval val ) {
 
 	return JSVAL_IS_OBJECT(val) && !JSVAL_IS_NULL(val) && JS_GET_CLASS(cx, JSVAL_TO_OBJECT(val)) == &classBString;
@@ -55,7 +58,6 @@ DEFINE_FINALIZE() {
 
 DEFINE_CONSTRUCTOR() {
 
-//	J_ASSERT_ARGC_RANGE(0,0);
 	RT_ASSERT_CONSTRUCTING( _class );
 	return JS_TRUE;
 }
@@ -191,8 +193,10 @@ DEFINE_FUNCTION_FAST( Substr ) { // http://developer.mozilla.org/en/docs/Core_Ja
 		*J_FRVAL = OBJECT_TO_JSVAL( EmptyBString(cx) );
 		return JS_TRUE;
 	}
+
 	if ( start < 0 ) 
 		start = dataLength + start;
+
 	if ( start < 0 || start >= dataLength )
 		start = 0;
 
@@ -214,16 +218,27 @@ DEFINE_FUNCTION_FAST( Substr ) { // http://developer.mozilla.org/en/docs/Core_Ja
 	} else
 		length = dataLength - start;
 
-//	JSString *jsstr = JS_NewStringCopyN(cx, pv + start, length);
-//	*J_FRVAL = STRING_TO_JSVAL( jsstr );
+	// now 0 <= length < dataLength - start
 
 	char *buffer = (char*)JS_malloc(cx, length);
 	RT_ASSERT_ALLOC( buffer );
 	memcpy(buffer, pv + start, length);
-	*J_FRVAL = OBJECT_TO_JSVAL( NewBString(cx, buffer, length) );
 
+	*J_FRVAL = OBJECT_TO_JSVAL( NewBString(cx, buffer, length) );
 	return JS_TRUE;
 }
+
+
+/*
+DEFINE_FUNCTION_FAST( IndexOf ) {
+
+	RT_ASSERT_ARGC(1);
+
+	int start = 0;
+	if ( J_FARG_ISDEF(2) )
+		RT_JSVAL_TO_INT32( J_FARG(2), start );
+}
+*/
 
 
 DEFINE_FUNCTION_FAST( toString ) {
@@ -238,7 +253,7 @@ DEFINE_FUNCTION_FAST( toString ) {
 
 		jschar *ucStr = (jschar*)JS_malloc(cx, length * sizeof(jschar));
 		for ( int i = 0; i < length; i++ )
-			ucStr[i] = (uint8) pv[i];
+			ucStr[i] = pv[i];
 		JSString *jsstr = JS_NewUCString(cx, ucStr, length);
 		*J_FRVAL = STRING_TO_JSVAL( jsstr );
 	}
@@ -285,16 +300,15 @@ DEFINE_NEW_RESOLVE() { // support of data[n]
 
 DEFINE_SET_PROPERTY() {
 		
-	RT_ASSERT_STRING(*vp);
-
-	jsint slot = JSVAL_TO_INT( id );
-
 	char *pv = (char*)JS_GetPrivate(cx, obj);
 	if ( pv == NULL )
-		return JS_TRUE;
+		REPORT_ERROR("Out of range.");
 
 	int length;
 	RT_CHECK_CALL( LengthGet(cx, obj, &length) );
+
+	RT_ASSERT_INT(id);
+	jsint slot = JSVAL_TO_INT( id );
 
 	if ( slot < 0 || slot >= length )
 		REPORT_ERROR("Out of range.");
@@ -303,7 +317,8 @@ DEFINE_SET_PROPERTY() {
 	JSString *str1 = JS_NewUCStringCopyN(cx, &chr, 1);
 	RT_ASSERT_ALLOC( str1 );
 
-	if ( !JSVAL_IS_STRING(*vp) || JS_GetStringLength( JSVAL_TO_STRING(*vp) ) != 1 )
+	RT_ASSERT_STRING(*vp);
+	if ( JS_GetStringLength( JSVAL_TO_STRING(*vp) ) != 1 )
 		REPORT_ERROR("Invalid char.");
 
 	pv[slot] = *JS_GetStringBytes( JSVAL_TO_STRING(*vp) );
@@ -334,4 +349,3 @@ CONFIGURE_CLASS
 	HAS_RESERVED_SLOTS(1)
 
 END_CLASS
-

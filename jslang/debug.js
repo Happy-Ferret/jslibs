@@ -1,2 +1,11 @@
+LoadModule('jslang');
 LoadModule('jsstd');
-LoadModule('jstemplate');
+
+Print( BString );
+
+var b = new BString();
+
+b.Add('abc');
+b.Add(b);
+
+Print(b);

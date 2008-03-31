@@ -274,24 +274,6 @@ inline bool MaybeRealloc( int requested, int received ) {
 
 ///////////
 
-inline JSClass *GetClassByName(JSContext *cx, char *className) {
-
-	JSObject *globalObj = JS_GetGlobalObject(cx);
-	if ( globalObj == NULL )
-		return NULL;
-	jsval bstringConstructor;
-	if ( JS_LookupProperty(cx, globalObj, className, &bstringConstructor) != JS_TRUE )
-		return NULL;
-	if ( bstringConstructor == JSVAL_VOID )
-		return NULL;
-	JSFunction *fun = JS_ValueToFunction(cx, bstringConstructor);
-	if ( fun == NULL )
-		return NULL;
-	return fun->u.n.clasp; // (TBD) replace this by a jsapi.h call and remove dependency to jsarena.h and jsfun.h
-}
-
-///////////
-
 inline double TimeNow() {
 
 #ifdef WIN32
@@ -303,14 +285,14 @@ inline double TimeNow() {
 	return 0; // (TBD) impl.
 }
 
+// Native Interface mechanism
 
 typedef void (*FunctionPointer)(void);
-
 
 inline JSBool SetNativeInterface( JSContext *cx, JSObject *obj, const char *name, FunctionPointer function, void *descriptor ) {
 	
 	// Cannot be called while Finalize
-	// the following must work because spidermonkey will never call the getter or setter if it is not explicitly required by the script
+	// the following must works because spidermonkey will never call the getter or setter if it is not explicitly required by the script
 	RT_CHECK_CALL( JS_DefineProperty(cx, obj, name, JSVAL_VOID, (JSPropertyOp)function, (JSPropertyOp)descriptor, JSPROP_READONLY | JSPROP_PERMANENT) );
 	return JS_TRUE;
 }
@@ -333,7 +315,7 @@ inline JSBool RemoveNativeInterface( JSContext *cx, JSObject *obj, const char *n
 }
 
 
-////
+////////
 
 
 inline bool IsPInfinity( JSContext *cx, jsval val ) {
@@ -409,5 +391,22 @@ inline JSBool CallFunction( JSContext *cx, JSObject *obj, jsval functionValue, j
 		*rval = rvalTmp;
 	return JS_TRUE;
 }
+
+inline JSClass *GetClassByName(JSContext *cx, const char *className) {
+
+	JSObject *globalObj = JS_GetGlobalObject(cx);
+	if ( globalObj == NULL )
+		return NULL;
+	jsval bstringConstructor;
+	if ( JS_LookupProperty(cx, globalObj, className, &bstringConstructor) != JS_TRUE )
+		return NULL;
+	if ( bstringConstructor == JSVAL_VOID )
+		return NULL;
+	JSFunction *fun = JS_ValueToFunction(cx, bstringConstructor);
+	if ( fun == NULL )
+		return NULL;
+	return fun->u.n.clasp; // (TBD) replace this by a jsapi.h call and remove dependency to jsarena.h and jsfun.h
+}
+
 
 #endif // _JSHELPER_H_
