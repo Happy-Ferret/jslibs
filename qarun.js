@@ -93,6 +93,22 @@ var QAAPI = new function() {
 
 		this.REPORT( message );
 	}
+	
+	this.ASSERT_EXCEPTION = function( fct, exType, message ) {
+		
+		try {
+		
+			fct();
+			this.REPORT( 'Failure not detected: '+message );
+		} catch(ex if ex instanceof exType) {
+
+			// good
+		} catch(ex) {
+			
+			this.REPORT( 'Invalid exception ('+ex.constructor.name+') for: '+message );
+		}
+	} 
+
 
 	this.ASSERT = function( value, expect, testName ) {
 
