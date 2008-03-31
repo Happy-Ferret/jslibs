@@ -155,7 +155,14 @@
 
 	TCPGet: function(QA) {
 
-		var host = 'proxy';
+		var hostList = ['www.google.com', 'proxy', 'localhost']; // try to find a web server on port 80
+		var host;
+		do {
+
+			host = hostList.shift();
+			var res = Socket.GetHostsByName(host);
+		} while ( !res || res.length == 0 );
+		
 		try {
 			
 			var response;
