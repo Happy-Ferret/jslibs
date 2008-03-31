@@ -106,7 +106,7 @@
 		buf.Write('');
 		buf.Write('789');
 		QA.ASSERT( buf.Read(2), '12', 'Read(int)' );
-		buf.Set();
+		buf.Clear();
 		QA.ASSERT( buf.length, 0, 'empty length' );
 		QA.ASSERT( buf.Read(), '', 'empty content' );
 		buf.Write('4');
