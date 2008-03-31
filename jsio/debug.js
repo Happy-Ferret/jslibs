@@ -1,6 +1,11 @@
 LoadModule('jsstd');
 LoadModule('jsio');
 
+
+Socket.GetHostsByName('fqsdvfqsdfv');
+
+Halt();
+
 processPriority = 2;
 while (!endSignal) {
 

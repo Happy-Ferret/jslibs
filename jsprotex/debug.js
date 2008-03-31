@@ -8,6 +8,7 @@ var glc = Exec('OpenGL.js'); // OpenGL constants
 var win = new Window();
 win.CreateOpenGLContext();
 var gl = new Gl();
+var end = false;
 
 function Render() {
 
@@ -22,8 +23,8 @@ function Render() {
 
 win.onkeydown = function( key, l ) {
 	
-//	if ( key == vk.ESC )
-		win.Exit();
+	if ( key == 0x1B )
+		end = true;
 }
 
 win.onsize = function( w, h ) {
@@ -87,7 +88,7 @@ function Cloud( size, amp ) {
 		a *= amp;
 		s *= 2;
 		cloud.Resize(s, s, false);
-		cloud.BoxBlur(3, 3);
+		cloud.BoxBlur(5, 5);
 	}
 	cloud.NormalizeLevels();
 	return cloud;
@@ -134,7 +135,6 @@ function NoiseChannel( tex, channel ) {
 	tmp.Free();
 }
 
-
 var t0 = IntervalNow();
 
 draw:{
@@ -143,23 +143,23 @@ draw:{
 	var size = 256;
 	var t = new Texture(size, size, 3);
 	t.ClearChannel();
-	
-	
-	t = Cloud( 512, 0.5 );
+	t = Cloud( size, 0.5 );
 
-/*	
-	t.SetRectangle( 1*size/4, 1*size/4, 3*size/4, 3*size/4, WHITE );
-	t.RotoZoom( 0.5,0.5, 8,8, 0 );
+//	t.SetRectangle( 1*size/4, 1*size/4, 3*size/4, 3*size/4, WHITE );
+//	t.RotoZoom( 0.5,0.5, 8,8, 0 );
 
-//	var displace = new Texture(size, size, 2);
+	var displace = new Texture(size, size, 2);
 	var d = Cloud( size, 0.5 );
 //	NoiseChannel( displace, 0 );
 //	NoiseChannel( displace, 1 );
 //	d.NormalizeVectors();
-	d.Aliasing(5);
+	d.Aliasing(20);
 	d.Normals();
-	t.Displace(d, 10);
-*/
+
+	d.BoxBlur(3,3);
+	
+	t.Displace(d, 50);
+
 	
 //	t.AddGradiantRadial( curveGaussian( 0.5 ) );
 //	t.AddGradiantRadial( [1,0], 1 );
@@ -500,15 +500,11 @@ win.rect = [500,500,700,700];
 
 win.Open();
 
-while (!endSignal) {
+while (!end) {
 
 	win.ProcessEvents();
 	Render();
 }
 
-
 win.Close();
-
-
-
 
