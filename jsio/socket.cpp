@@ -714,11 +714,23 @@ DEFINE_FUNCTION( GetHostsByName ) {
 	PRHostEnt hostEntry;
 	PRNetAddr addr;
 
-	if ( PR_GetHostByName( host, netdbBuf, sizeof(netdbBuf), &hostEntry ) != PR_SUCCESS )
-		return ThrowIoError(cx);
+//	if ( PR_GetHostByName( host, netdbBuf, sizeof(netdbBuf), &hostEntry ) != PR_SUCCESS )
+//		return ThrowIoError(cx);
 
 	JSObject *addrJsObj = JS_NewArrayObject(cx, 0, NULL);
 	RT_ASSERT_ALLOC( addrJsObj );
+
+	if ( PR_GetHostByName( host, netdbBuf, sizeof(netdbBuf), &hostEntry ) != PR_SUCCESS ) {
+
+		PRErrorCode error = PR_GetError();
+		switch (error) {
+			case PR_DIRECTORY_LOOKUP_ERROR:
+				*rval = OBJECT_TO_JSVAL(addrJsObj); // returns an empty array
+				return JS_TRUE;
+			default:
+				return ThrowIoError(cx);
+		}
+	}
 
 	int index = 0;
 	PRIntn hostIndex = 0;
