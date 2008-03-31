@@ -305,13 +305,13 @@ DEFINE_FUNCTION( Close ) {
 }
 
 
-
+/*
 static JSBool Exit(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
 	PostQuitMessage(0);
 	return JS_TRUE;
 }
-
+*/
 
 DEFINE_FUNCTION( WaitForMessage ) {
 
@@ -666,7 +666,7 @@ CONFIGURE_CLASS
 		FUNCTION(Open)
 		FUNCTION(Close)
 		FUNCTION(ProcessEvents)
-		FUNCTION(Exit)
+//		FUNCTION(Exit)
 		FUNCTION(WaitForMessage)
 		FUNCTION(CreateOpenGLContext)
 		FUNCTION2(SwapBuffers, _SwapBuffers)
