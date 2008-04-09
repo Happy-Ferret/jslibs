@@ -216,7 +216,9 @@ inline bool MaybeRealloc( int requested, int received ) {
 #define J_FRVAL (&JS_RVAL(cx, vp))
 
 
-// #define J_VALUE_IS_ARRAY(value) (JSVAL_IS_OBJECT(value) && JS_IsArrayObject( cx, JSVAL_TO_OBJECT(value) ) == JS_TRUE)
+#define J_VALUE_IS_ARRAY(value) (JSVAL_IS_OBJECT(value) && JS_IsArrayObject( cx, JSVAL_TO_OBJECT(value) ) == JS_TRUE)
+
+
 
 
 
