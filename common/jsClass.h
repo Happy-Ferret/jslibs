@@ -68,10 +68,21 @@
 #define DEFINE_GET_PROPERTY() static JSBool GetProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
 #define DEFINE_SET_PROPERTY() static JSBool SetProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
 
+
+struct JSLIBS_ConstIntegerSpec {
+	JSInt32         ival;
+	const char      *name;
+};
+
+// const integer
+#define BEGIN_CONST_INTEGER_SPEC JSLIBS_ConstIntegerSpec _tmp_cis[] = {
+#define END_CONST_INTEGER_SPEC {0}}; _constIntegerSpec = _tmp_cis;
+#define CONST_INTEGER(name,value) { value, #name },
+
+
 // const double
 #define BEGIN_CONST_DOUBLE_SPEC JSConstDoubleSpec _tmp_cds[] = { // dval; *name; flags; spare[3];
-#define END_CONST_DOUBLE_SPEC {0}}; _constSpec = _tmp_cds;
-
+#define END_CONST_DOUBLE_SPEC {0}}; _constDoubleSpec = _tmp_cds;
 #define CONST_DOUBLE(name,value) { value, #name },
 
 
@@ -123,14 +134,21 @@
 		JSNative _constructor = NULL; \
 		JSFunctionSpec *_functionSpec = NULL, *_staticFunctionSpec = NULL; \
 		JSPropertySpec *_propertySpec = NULL, *_staticPropertySpec = NULL; \
-		JSConstDoubleSpec *_constSpec = NULL; \
+		JSConstDoubleSpec *_constDoubleSpec = NULL; \
+		JSLIBS_ConstIntegerSpec *_constIntegerSpec = NULL; \
 		JSObject *_tmp_prototype = NULL; \
 		JSObject **_parentPrototype = &_tmp_prototype; \
 
 #define END_CLASS \
 		*_prototype = JS_InitClass(cx, obj, *_parentPrototype, _class, _constructor, 0, _propertySpec, _functionSpec, _staticPropertySpec, _staticFunctionSpec); \
-		if ( _constSpec != NULL ) \
-			if ( JS_DefineConstDoubles(cx, JS_GetConstructor(cx, *_prototype), _constSpec) == JS_FALSE ) \
+		if ( _constIntegerSpec != NULL ) { \
+		  JSObject *dstObj = _constructor ? JS_GetConstructor(cx, *_prototype) : *_prototype; \
+			for (; _constIntegerSpec->name; _constIntegerSpec++) \
+			if ( JS_DefineProperty(cx, dstObj, _constIntegerSpec->name, INT_TO_JSVAL(_constIntegerSpec->ival), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) != JS_TRUE ) \
+				return JS_FALSE; \
+		} \
+		if ( _constDoubleSpec != NULL ) \
+			if ( JS_DefineConstDoubles(cx, _constructor ? JS_GetConstructor(cx, *_prototype) : *_prototype, _constDoubleSpec) != JS_TRUE ) \
 				return JS_FALSE; \
 		return JS_TRUE; \
 	} \
