@@ -3,9 +3,102 @@ LoadModule('jsio');
 LoadModule('jsimage');
 LoadModule('jsode');
 LoadModule('jsgraphics');
-var glc = Exec('OpenGL.js');
 var vk = Exec('WindowsKeys.js');
 Exec('winTools.js');
+
+
+function Axis() {
+
+	with (Ogl) {
+
+		Begin(LINES);
+		Color( 1,0,0 );
+		Vertex( 0,0,0 );
+		Vertex( 1,0,0 );
+		Color( 0,1,0 );
+		Vertex( 0,0,0 );
+		Vertex( 0,1,0 );
+		Color( 0,0,1 );
+		Vertex( 0,0,0 );
+		Vertex( 0,0,1 );
+		End();
+	}
+}
+
+function Quad(x0, y0, x1, y1) {
+
+	with (Ogl) {
+
+		Begin(QUADS);
+		TexCoord( 0, 0 );
+		Vertex( x0, y0 );
+		TexCoord( 1, 0 );
+		Vertex( x1, y0 );
+		TexCoord( 1, 1 );
+		Vertex( x1, y1 );
+		TexCoord( 0, 1 );
+		Vertex( x0, y1 );
+		End();
+	}
+}
+
+function Line(x0, y0, z0, x1, y1, z1) {
+
+	with (Ogl) {
+	
+		Begin(LINES);
+		Vertex(x0, y0, z0);
+		Vertex(x1, y1, z1);
+		End();
+	}
+}
+
+
+function Cube() {
+
+	with (Ogl) {
+		Begin(QUADS);		// Draw The Cube Using quads
+
+		Color(1,0,0);
+		Vertex( 0.5, 0.5,-0.5);	// Top Right Of The Quad (Right)
+		Vertex( 0.5, 0.5, 0.5);	// Top Left Of The Quad (Right)
+		Vertex( 0.5,-0.5, 0.5);	// Bottom Left Of The Quad (Right)
+		Vertex( 0.5,-0.5,-0.5);	// Bottom Right Of The Quad (Right)
+
+		Color(0.5,0,0);
+		Vertex(-0.5, 0.5, 0.5);	// Top Right Of The Quad (Left)
+		Vertex(-0.5, 0.5,-0.5);	// Top Left Of The Quad (Left)
+		Vertex(-0.5,-0.5,-0.5);	// Bottom Left Of The Quad (Left)
+		Vertex(-0.5,-0.5, 0.5);	// Bottom Right Of The Quad (Left)
+
+		Color(0,1,0);
+		Vertex( 0.5, 0.5,-0.5);	// Top Right Of The Quad (Top)
+		Vertex(-0.5, 0.5,-0.5);	// Top Left Of The Quad (Top)
+		Vertex(-0.5, 0.5, 0.5);	// Bottom Left Of The Quad (Top)
+		Vertex( 0.5, 0.5, 0.5);	// Bottom Right Of The Quad (Top)
+
+		Color(0,0.5,0);
+		Vertex( 0.5,-0.5, 0.5);	// Top Right Of The Quad (Bottom)
+		Vertex(-0.5,-0.5, 0.5);	// Top Left Of The Quad (Bottom)
+		Vertex(-0.5,-0.5,-0.5);	// Bottom Left Of The Quad (Bottom)
+		Vertex( 0.5,-0.5,-0.5);	// Bottom Right Of The Quad (Bottom)
+
+		Color(0,0,1);
+		Vertex( 0.5, 0.5, 0.5);	// Top Right Of The Quad (Front)
+		Vertex(-0.5, 0.5, 0.5);	// Top Left Of The Quad (Front)
+		Vertex(-0.5,-0.5, 0.5);	// Bottom Left Of The Quad (Front)
+		Vertex( 0.5,-0.5, 0.5);	// Bottom Right Of The Quad (Front)
+
+		Color(0,0,0.5);
+		Vertex( 0.5,-0.5,-0.5);	// Top Right Of The Quad (Back)
+		Vertex(-0.5,-0.5,-0.5);	// Top Left Of The Quad (Back)
+		Vertex(-0.5, 0.5,-0.5);	// Bottom Left Of The Quad (Back)
+		Vertex( 0.5, 0.5,-0.5);	// Bottom Right Of The Quad (Back)
+		End();
+	}
+}
+
+
 
 
 var world = new World;
@@ -37,20 +130,18 @@ win.rect = [x,y,x+w,y+h];
 
 win.CreateOpenGLContext();
 
-var gl = new Gl();
-
-gl.LoadIdentity();
-var list1 = gl.StartList();
+Ogl.LoadIdentity();
+var list1 = Ogl.NewList();
 var tmp = new Transformation();
 for ( let x = -2000; x <= 2000; x += 100 )
 	for ( let y = -2000; y <= 2000; y += 100 ) {
 		
-		gl.PushMatrix();
-		gl.Translate(Math.random()*1000-500, Math.random()*1000-500, Math.random()*1000-500 );
-		gl.Cube();
-		gl.PopMatrix();
+		Ogl.PushMatrix();
+		Ogl.Translate(Math.random()*1000-500, Math.random()*1000-500, Math.random()*1000-500 );
+		Cube();
+		Ogl.PopMatrix();
 	}
-gl.EndList();
+Ogl.EndList();
 
 
 var mouse = new MouseMotion(win);
@@ -112,46 +203,46 @@ function Render() {
 	cameraPosition.Translation( 0, 0, -speed * run );
 	camera.Product(cameraPosition);
 	
-	gl.Clear( glc.COLOR_BUFFER_BIT | glc.DEPTH_BUFFER_BIT );
+	Ogl.Clear( Ogl.COLOR_BUFFER_BIT | Ogl.DEPTH_BUFFER_BIT );
 
 	var m = new Transformation().Load(camera).Invert();
 
-//	gl.LoadMatrix(new Transformation().Load(m).Product(body1));
-//	gl.Cube();
+//	Ogl.LoadMatrix(new Transformation().Load(m).Product(body1));
+//	Cube();
 
 
 
 /*
 	var f = joint.body1Force;
-	gl.LoadMatrix(new Transformation().Load(body1).ClearRotation().InverseProduct(m) );
-	gl.Color(1,1,1);
-	gl.Line3D( 0,0,0, f[0],f[1],f[2] );
-	gl.Color(1,0,0);
-	gl.Line3D( 0,0,0, f[0],0,0 );
-	gl.Color(0,1,0);
-	gl.Line3D( 0,0,0, 0,f[1],0 );
-	gl.Color(0,0,1);
-	gl.Line3D( 0,0,0, 0,0,f[2] );
+	Ogl.LoadMatrix(new Transformation().Load(body1).ClearRotation().InverseProduct(m) );
+	Ogl.Color(1,1,1);
+	Ogl.Line3D( 0,0,0, f[0],f[1],f[2] );
+	Ogl.Color(1,0,0);
+	Ogl.Line3D( 0,0,0, f[0],0,0 );
+	Ogl.Color(0,1,0);
+	Ogl.Line3D( 0,0,0, 0,f[1],0 );
+	Ogl.Color(0,0,1);
+	Ogl.Line3D( 0,0,0, 0,0,f[2] );
 */
 
 	for each( var b in box ) {
-		gl.LoadMatrix(new Transformation().Load(m).Product(b) );
-		gl.Cube();
+		Ogl.LoadMatrix(new Transformation().Load(m).Product(b) );
+		Cube();
 	}
 	
-//	gl.LoadMatrix(new Transformation().Translation(joint.anchor[0], joint.anchor[1], joint.anchor[2]).InverseProduct(m));
-//	gl.Axis();
+//	Ogl.LoadMatrix(new Transformation().Translation(joint.anchor[0], joint.anchor[1], joint.anchor[2]).InverseProduct(m));
+//	Ogl.Axis();
 
-	gl.LoadMatrix(m);
-	gl.Color(0.5,0.5,0.5);
-	gl.Translate(0,0,0);
+	Ogl.LoadMatrix(m);
+	Ogl.Color(0.5,0.5,0.5);
+	Ogl.Translate(0,0,0);
 	for ( var x = -100; x<100; x+=2 )
 		for ( var y = -100; y<100; y+=2 )
-			gl.Quad(x,y,x+1,y+1);
+			Quad(x,y,x+1,y+1);
 
 
-	gl.LoadMatrix(m);
-	gl.CallList(list1);
+	Ogl.LoadMatrix(m);
+	Ogl.CallList(list1);
 
 //	move += 0.1;
 //			tmp.Load(m);
@@ -214,8 +305,8 @@ win.onkeydown = function( key, l ) {
 
 win.onsize = function( w, h ) {
 
-	gl.Viewport([0,0,w,h]);
-	gl.Perspective( 60, 0.01, 10000 );	
+	Ogl.Viewport(0,0,w,h);
+	Ogl.Perspective( 60, 0.01, 10000 );	
 	Render();
 }
 
@@ -224,9 +315,32 @@ var x=0, y=0; // offset
 //var texture = new Png(new File('calendar2a.png').Open( File.RDONLY )).Load();//.Trim([0+x,0+y,256+x,256+y], true);
 
 
-gl.Init();
-gl.Perspective( 60, 0.01, 10000 );
-//gl.Texture( texture );
+// init
+with (Ogl) {
+
+	Enable(TEXTURE_2D);
+	ShadeModel(FLAT);
+	Enable(DEPTH_TEST);
+	DepthFunc(LESS); // LEQUAL cause some z-conflict on far objects !
+	// (TBD) understand why
+	ClearDepth(1);
+//	DepthRange( 0.01, 1000 );
+	Enable(CULL_FACE);
+	CullFace(BACK);
+	FrontFace(CCW);
+	Enable(LINE_SMOOTH);
+//	Enable(LIGHTING);
+//	Enable(LIGHT0);
+//	Hint(PERSPECTIVE_CORRECTION_HINT, NICEST); // Really Nice Perspective Calculations
+	ClearColor(0, 0, 0, 0);
+//    Ogl.BlendFunc(SRC_ALPHA, ONE);
+/// init
+}
+
+
+
+Ogl.Perspective( 60, 0.01, 10000 );
+//Ogl.Texture( texture );
 
 //Window.absoluteClipCursor = [100,100, 200, 200 ]
 

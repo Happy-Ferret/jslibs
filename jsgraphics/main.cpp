@@ -34,6 +34,6 @@ extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj)
 #endif
 
 	INIT_CLASS( Transformation )
-	INIT_CLASS( Gl )
+	INIT_CLASS( Ogl )
 	return JS_TRUE;
 }

@@ -12,5 +12,5 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-DECLARE_CLASS(Gl)
+DECLARE_CLASS(Ogl)
 

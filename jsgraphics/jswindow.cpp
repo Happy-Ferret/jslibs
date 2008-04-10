@@ -243,6 +243,7 @@ DEFINE_FUNCTION( Open ) {
 	SetForegroundWindow(hWnd);
 	UpdateWindow(hWnd);
 	SetFocus(hWnd);
+	return JS_TRUE;
 }
 
 
@@ -251,7 +252,7 @@ DEFINE_FUNCTION( ProcessEvents ) {
 	HWND hWnd = (HWND)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE( hWnd );
 
-	jsval functionVal;
+//	jsval functionVal;
 	int msgCount;
 	MSG msg;
 //	bool quit = false;
@@ -349,6 +350,22 @@ DEFINE_FUNCTION( CreateOpenGLBitmap ) {
 }
 */
 
+
+/*
+// The Effects of Double Buffering on Animation Frame Rates
+//		http://www.futuretech.blinkenlights.nl/dbuffer.html
+static JSBool _SwapBuffers(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+
+	glFlush();
+	glFinish();
+	RT_ASSERT( JS_GET_CLASS(cx,obj) == _class, RT_ERROR_INVALID_CLASS );
+	HDC hDC = wglGetCurrentDC();
+	RT_ASSERT( hDC != NULL, "Could not get the Current Device Context." );
+	BOOL res = SwapBuffers(hDC); // Doc: With multithread applications, flush the drawing commands in any other threads drawing to the same window before calling SwapBuffers.
+	RT_ASSERT_1( res, "Unable to SwapBuffers.(%x)", GetLastError() );
+	return JS_TRUE;
+}
+*/
 
 DEFINE_FUNCTION( CreateOpenGLContext ) {
 
