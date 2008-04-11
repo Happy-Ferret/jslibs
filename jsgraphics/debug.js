@@ -100,6 +100,76 @@ function Cube() {
 
 
 
+	var win = new Window();
+	win.title = "Test";
+	var x = 600;
+	var y = 300;
+	var w = 100;
+	var h = 100;
+	win.rect = [x,y,x+w,y+h];
+
+	var _quit = false;
+
+	win.onkeydown = function( key, l ) {
+
+		switch (key) {
+			case vk.ESC:
+				_quit = true;
+				break;
+		}
+	}
+	
+	win.Open();
+	win.CreateOpenGLContext();
+
+	with (Ogl) {
+	
+		
+
+		ShadeModel(SMOOTH);
+		ClearColor(0.0, 0.0, 0.0, 0.5);	
+		ClearDepth(1.0);
+//		Enable(DEPTH_TEST);
+//		DepthFunc(LEQUAL);
+//		Hint(PERSPECTIVE_CORRECTION_HINT, NICEST);
+
+		for (var i=0; !_quit; i++) {
+		
+			Viewport(0,0,1024,1024);
+			
+			Clear(COLOR_BUFFER_BIT | DEPTH_BUFFER_BIT);
+			LoadIdentity();
+			
+			Scale(0.25,0.25,0.25);
+			
+			Translate(-1.5,0.0,0);
+			
+			Begin(TRIANGLES);
+			Vertex( 0.0, 1.0, 0.0);
+			Vertex(-1.0,-1.0, 0.0);
+			Vertex( 1.0,-1.0, 0.0);
+			End();
+			
+			Translate(3.0,0.0,0.0);
+			
+			Begin(QUADS);
+			Vertex(-1.0, 1.0, 0.0);
+			Vertex( 1.0, 1.0, 0.0);
+			Vertex( 1.0,-1.0, 0.0);
+			Vertex(-1.0,-1.0, 0.0);
+			End();
+
+			RenderToImage();
+			
+			win.SwapBuffers();
+			
+			Sleep(10);
+			win.ProcessEvents();
+		}
+	}
+
+Halt(); /////////////////////////////////////////
+
 
 var world = new World;
 world.defaultSurfaceParameters.mu = 5;
@@ -197,7 +267,7 @@ mouse.delta = function( dx,dy,dw, b1,b2,b3 ) {
 
 var time;
 function Render() {
-	
+
 
 	var cameraPosition = new Transformation();
 	cameraPosition.Translation( 0, 0, -speed * run );
@@ -254,7 +324,7 @@ function Render() {
 //	var t0 = IntervalNow();
 //	Print( 'Rendering time: '+(IntervalNow()-t0)+'ms', '\n');
 //	CollectGarbage();
-	Sleep(1);
+//	Sleep(1);
 	win.SwapBuffers();
 	
 	var tmp = IntervalNow();

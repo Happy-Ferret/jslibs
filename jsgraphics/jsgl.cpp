@@ -26,9 +26,12 @@ Manage GL extensions:
 #include "../common/jsNativeInterface.h"
 
 #include "jstransformation.h"
-#include "../jsimage/jsimage.h"
 
+#include "../jsimage/image.h"
+#include "../jslang/bstring.h"
 #include "../jsprotex/texture.h"
+//TextureJSClass
+
 
 #define _USE_MATH_DEFINES
 #include "math.h"
@@ -43,8 +46,27 @@ Manage GL extensions:
 #include "gl/gl.h"
 
 
-
 BEGIN_CLASS( Ogl )
+
+
+DEFINE_FUNCTION_FAST( Flush ) {
+
+	glFlush();
+	*J_FRVAL = JSVAL_VOID;
+	return JS_TRUE;
+}
+
+
+DEFINE_FUNCTION_FAST( Hint ) {
+
+	RT_ASSERT_ARGC(2);
+	RT_ASSERT_INT(J_FARG(1));
+	RT_ASSERT_INT(J_FARG(2));
+	glHint( JSVAL_TO_INT(J_FARG(1)), JSVAL_TO_INT(J_FARG(2)) );
+	*J_FRVAL = JSVAL_VOID;
+	return JS_TRUE;
+}
+
 
 DEFINE_FUNCTION_FAST( Vertex ) {
 
@@ -88,17 +110,6 @@ DEFINE_FUNCTION_FAST( Color ) {
 
 		glColor3d(r, g, b);
 	}
-	*J_FRVAL = JSVAL_VOID;
-	return JS_TRUE;
-}
-
-
-DEFINE_FUNCTION_FAST( BlendFunc ) {
-
-	RT_ASSERT_ARGC(2);
-	RT_ASSERT_INT(J_FARG(1));
-	RT_ASSERT_INT(J_FARG(2));
-	glBlendFunc( JSVAL_TO_INT( J_FARG(1) ), JSVAL_TO_INT( J_FARG(2) ) );
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
@@ -265,6 +276,17 @@ DEFINE_FUNCTION_FAST( ShadeModel ) {
 }
 
 
+DEFINE_FUNCTION_FAST( BlendFunc ) {
+
+	RT_ASSERT_ARGC(2);
+	RT_ASSERT_INT(J_FARG(1));
+	RT_ASSERT_INT(J_FARG(2));
+	glBlendFunc( JSVAL_TO_INT( J_FARG(1) ), JSVAL_TO_INT( J_FARG(2) ) );
+	*J_FRVAL = JSVAL_VOID;
+	return JS_TRUE;
+}
+
+
 DEFINE_FUNCTION_FAST( DepthFunc ) {
 
 	RT_ASSERT_ARGC(1);
@@ -274,6 +296,16 @@ DEFINE_FUNCTION_FAST( DepthFunc ) {
 	return JS_TRUE;
 }
 
+
+DEFINE_FUNCTION_FAST( DepthRange ) {
+
+	RT_ASSERT_ARGC(2);
+	jsdouble zNear, zFar;
+	JS_ValueToNumber(cx, J_FARG(1), &zNear);
+	JS_ValueToNumber(cx, J_FARG(2), &zFar);
+	glDepthRange(zNear, zFar);
+	return JS_TRUE;
+}
 
 
 DEFINE_FUNCTION_FAST( CullFace ) {
@@ -295,6 +327,7 @@ DEFINE_FUNCTION_FAST( FrontFace ) {
 	return JS_TRUE;
 }
 
+
 DEFINE_FUNCTION_FAST( ClearStencil ) {
 
 	RT_ASSERT_ARGC(1);
@@ -303,6 +336,7 @@ DEFINE_FUNCTION_FAST( ClearStencil ) {
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
+
 
 DEFINE_FUNCTION_FAST( ClearDepth ) {
 
@@ -332,9 +366,8 @@ DEFINE_FUNCTION_FAST( ClearColor ) {
 DEFINE_FUNCTION_FAST( Clear ) {
 
 	RT_ASSERT_ARGC(1);
-	int32 bitfield;
-	JS_ValueToInt32(cx, J_FARG(1), &bitfield);
-	glClear(bitfield);
+	RT_ASSERT_INT(J_FARG(1));
+	glClear(JSVAL_TO_INT(J_FARG(1)));
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
@@ -343,12 +376,11 @@ DEFINE_FUNCTION_FAST( Clear ) {
 DEFINE_FUNCTION_FAST( Viewport ) {
 
 	RT_ASSERT_ARGC(4);
-	int32 x, y, w, h;
-	JS_ValueToInt32(cx, J_FARG(1), &x);
-	JS_ValueToInt32(cx, J_FARG(2), &y);
-	JS_ValueToInt32(cx, J_FARG(3), &w);
-	JS_ValueToInt32(cx, J_FARG(4), &h);
-	glViewport(x, y, w, h);
+	RT_ASSERT_INT(J_FARG(1));
+	RT_ASSERT_INT(J_FARG(2));
+	RT_ASSERT_INT(J_FARG(3));
+	RT_ASSERT_INT(J_FARG(4));
+	glViewport(JSVAL_TO_INT(J_FARG(1)), JSVAL_TO_INT(J_FARG(2)), JSVAL_TO_INT(J_FARG(3)), JSVAL_TO_INT(J_FARG(4)));
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
@@ -380,6 +412,9 @@ DEFINE_FUNCTION_FAST( Ortho ) {
 	JS_ValueToNumber(cx, J_FARG(4), &top);
 	JS_ValueToNumber(cx, J_FARG(5), &zNear);
 	JS_ValueToNumber(cx, J_FARG(6), &zFar);
+
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
 	glOrtho(left, right, bottom, top, zNear, zFar);
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
@@ -387,6 +422,8 @@ DEFINE_FUNCTION_FAST( Ortho ) {
 
 
 DEFINE_FUNCTION_FAST( Perspective ) {
+
+	//cf. gluPerspective(fovy, float(viewport[2]) / float(viewport[3]), zNear, zFar);
 
 	RT_ASSERT_ARGC(3);
 	jsdouble fovy, zNear, zFar;
@@ -407,12 +444,8 @@ DEFINE_FUNCTION_FAST( Perspective ) {
 	xmin = ymin * aspect;
 	xmax = ymax * aspect;
 
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
 	glFrustum(xmin, xmax, ymin, ymax, zNear, zFar);
-//	glMatrixMode(prevMatrixMode);
 
-//	gluPerspective(fovy, float(viewport[2]) / float(viewport[3]), zNear, zFar);
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
@@ -648,7 +681,8 @@ DEFINE_FUNCTION_FAST( DefineTextureImage ) {
 	GLvoid *data;
 	int channels;
 
-	if ( strcmp(className, "Texture" ) == 0 ) {
+//	if ( strcmp(className, "Texture" ) == 0 ) {
+	if ( TextureJSClass(cx) == JS_GET_CLASS(cx, tObj) ) {
 
 		Texture *tex = (Texture *)JS_GetPrivate(cx, tObj);
 		RT_ASSERT_RESOURCE(tex);
@@ -694,53 +728,45 @@ DEFINE_FUNCTION_FAST( DefineTextureImage ) {
 }
 
 
+DEFINE_FUNCTION_FAST( RenderToImage ) {
+
+	GLuint texture;
+	glGenTextures(1, &texture);
+	glBindTexture(GL_TEXTURE_2D, texture);
+
+	GLint viewport[4];
+	glGetIntegerv( GL_VIEWPORT, viewport );
+	int width = viewport[2];
+	int height = viewport[3];
+
+	glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 0, 0, width, height, 0);
+
+	GLint tWidth, tHeight, tComponents;
+	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &tWidth);
+	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &tHeight);
+//	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_COMPONENTS, &tComponents);
+	//  glGet	with arguments GL_PACK_ALIGNMENT and others
+
+	int size = tWidth * tHeight * 4; // RGBA
+	void *pixels = malloc(size);
+	glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+
+	JSObject *bstr = NewImage(cx, tWidth, tHeight, 4, pixels);
+	RT_ASSERT_ALLOC(bstr);
+	*J_FRVAL = OBJECT_TO_JSVAL(bstr);
+
+	glDeleteTextures(1, &texture);
+	return JS_TRUE;
+}
+
+
+DEFINE_PROPERTY(error) {
+
+	*vp = INT_TO_JSVAL(glGetError());
+	return JS_TRUE;
+}
 
 CONFIGURE_CLASS
-
-	BEGIN_STATIC_FUNCTION_SPEC
-		FUNCTION_FAST(Vertex)
-		FUNCTION_FAST(Color)
-		FUNCTION_FAST(Normal)
-		FUNCTION_FAST(TexCoord)
-		FUNCTION_FAST(TexParameter)
-		FUNCTION_FAST(LightModel)
-		FUNCTION_FAST(Light)
-		FUNCTION_FAST(Material)
-		FUNCTION_FAST(Enable)
-		FUNCTION_FAST(ShadeModel)
-		FUNCTION_FAST(DepthFunc)
-		FUNCTION_FAST(CullFace)
-		FUNCTION_FAST(FrontFace)
-		FUNCTION_FAST(ClearStencil)
-		FUNCTION_FAST(ClearDepth)
-		FUNCTION_FAST(ClearColor)
-		FUNCTION_FAST(Clear)
-		FUNCTION_FAST(Viewport)
-		FUNCTION_FAST(Frustum)
-		FUNCTION_FAST(Perspective)
-		FUNCTION_FAST(Ortho)
-		FUNCTION_FAST(LoadIdentity)
-		FUNCTION_FAST(PushMatrix)
-		FUNCTION_FAST(PopMatrix)
-		FUNCTION_FAST(LoadMatrix)
-		FUNCTION_FAST(Rotate)
-		FUNCTION_FAST(Translate)
-		FUNCTION_FAST(Scale)
-		FUNCTION_FAST(NewList)
-		FUNCTION_FAST(DeleteList)
-		FUNCTION_FAST(EndList)
-		FUNCTION_FAST(CallList)
-		FUNCTION_FAST(CallLists)
-		FUNCTION_FAST(Begin)
-		FUNCTION_FAST(End)
-		FUNCTION_FAST(PushAttrib)
-		FUNCTION_FAST(PopAttrib)
-		FUNCTION_FAST(GenTexture)
-		FUNCTION_FAST(BindTexture)
-		FUNCTION_FAST(DeleteTexture)
-		FUNCTION_FAST(DefineTextureImage)
-	END_STATIC_FUNCTION_SPEC
-
 
 	BEGIN_CONST_INTEGER_SPEC
 
@@ -1387,8 +1413,62 @@ CONFIGURE_CLASS
 
 		CONST_INTEGER( LOGIC_OP , GL_LOGIC_OP )
 		CONST_INTEGER( TEXTURE_COMPONENTS , GL_TEXTURE_COMPONENTS )
-
 	END_CONST_INTEGER_SPEC
+
+
+	BEGIN_STATIC_FUNCTION_SPEC
+		FUNCTION_FAST(Flush)
+		FUNCTION_FAST(Hint)
+		FUNCTION_FAST(Vertex)
+		FUNCTION_FAST(Color)
+		FUNCTION_FAST(Normal)
+		FUNCTION_FAST(TexCoord)
+		FUNCTION_FAST(TexParameter)
+		FUNCTION_FAST(LightModel)
+		FUNCTION_FAST(Light)
+		FUNCTION_FAST(Material)
+		FUNCTION_FAST(Enable)
+		FUNCTION_FAST(ShadeModel)
+		FUNCTION_FAST(BlendFunc)
+		FUNCTION_FAST(DepthFunc)
+		FUNCTION_FAST(DepthRange)
+		FUNCTION_FAST(CullFace)
+		FUNCTION_FAST(FrontFace)
+		FUNCTION_FAST(ClearStencil)
+		FUNCTION_FAST(ClearDepth)
+		FUNCTION_FAST(ClearColor)
+		FUNCTION_FAST(Clear)
+		FUNCTION_FAST(Viewport)
+		FUNCTION_FAST(Frustum)
+		FUNCTION_FAST(Perspective)
+		FUNCTION_FAST(Ortho)
+		FUNCTION_FAST(MatrixMode)
+		FUNCTION_FAST(LoadIdentity)
+		FUNCTION_FAST(PushMatrix)
+		FUNCTION_FAST(PopMatrix)
+		FUNCTION_FAST(LoadMatrix)
+		FUNCTION_FAST(Rotate)
+		FUNCTION_FAST(Translate)
+		FUNCTION_FAST(Scale)
+		FUNCTION_FAST(NewList)
+		FUNCTION_FAST(DeleteList)
+		FUNCTION_FAST(EndList)
+		FUNCTION_FAST(CallList)
+		FUNCTION_FAST(CallLists)
+		FUNCTION_FAST(Begin)
+		FUNCTION_FAST(End)
+		FUNCTION_FAST(PushAttrib)
+		FUNCTION_FAST(PopAttrib)
+		FUNCTION_FAST(GenTexture)
+		FUNCTION_FAST(BindTexture)
+		FUNCTION_FAST(DeleteTexture)
+		FUNCTION_FAST(DefineTextureImage)
+		FUNCTION_FAST(RenderToImage)
+	END_STATIC_FUNCTION_SPEC
+
+	BEGIN_STATIC_PROPERTY_SPEC
+		PROPERTY_READ(error)
+	END_STATIC_PROPERTY_SPEC
 
 
 END_CLASS
