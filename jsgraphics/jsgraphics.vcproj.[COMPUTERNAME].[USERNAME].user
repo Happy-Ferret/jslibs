@@ -19,7 +19,7 @@
 				HttpUrl=""
 				PDBPath=""
 				SQLDebugging=""
-				Environment="PATH=%PATH%;..\js\src\WINNT5.1_OPT.OBJ;..\nspr\win32\dist\lib;.\debug;..\jsstd\debug;..\jsio\debug;..\jsimage\debug;..\nspr\lib;..\jsode\debug"
+				Environment="PATH=%PATH%;..\js\src\WINNT5.1_DBG.OBJ;..\nspr\win32\dist\lib;.\debug;..\jsstd\debug;..\jsio\debug;..\jsimage\debug;..\nspr\lib;..\jsode\debug"
 				EnvironmentMerge="true"
 				DebuggerFlavor="0"
 				MPIRunCommand=""

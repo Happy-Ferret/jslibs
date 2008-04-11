@@ -34,4 +34,10 @@
 		IgnoreDefaultLibraryNames="libc.lib, libcmt.lib, libcd.lib, libcmtd.lib, msvcrtd.lib"
 		AdditionalDependencies="..\js\src\WINNT5.1_OPT.OBJ\js32.lib kernel32.lib $(NoInherit) $(StopEvaluating)"
 	/>
+	
+	<Tool
+		Name="VCManifestTool"
+		UseFAT32Workaround="true"
+	/>
+	
 </VisualStudioPropertySheet>
