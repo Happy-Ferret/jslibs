@@ -12,4 +12,3 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-DECLARE_CLASS(Png)

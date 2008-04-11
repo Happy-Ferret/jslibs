@@ -12,21 +12,10 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-
 #include "stdafx.h"
 #include "bstring.h"
 
-#include "jslangapi.h"
-
-#include "../common/jsNativeInterface.h"
-
-
-
-
-inline bool JsvalIsBString( JSContext *cx, jsval val ) {
-
-	return JSVAL_IS_OBJECT(val) && !JSVAL_IS_NULL(val) && JS_GET_CLASS(cx, JSVAL_TO_OBJECT(val)) == &classBString;
-}
+//#include "../common/jsNativeInterface.h"
 
 
 inline JSBool LengthSet( JSContext *cx, JSObject *obj, int bufferLength ) {
@@ -46,6 +35,11 @@ inline JSBool LengthGet( JSContext *cx, JSObject *obj, int *bufferLength ) {
 
 
 BEGIN_CLASS( BString )
+
+inline bool JsvalIsBString( JSContext *cx, jsval val ) {
+
+	return JSVAL_IS_OBJECT(val) && !JSVAL_IS_NULL(val) && JS_GET_CLASS(cx, JSVAL_TO_OBJECT(val)) == &classBString; // == BStringJSClass(cx);
+}
 
 
 DEFINE_FINALIZE() {
@@ -173,6 +167,7 @@ DEFINE_FUNCTION_FAST( Add ) {
 	RT_CHECK_CALL( LengthSet(cx, J_FOBJ, srcLen + length) );
 	RT_CHECK_CALL( JS_SetPrivate(cx, J_FOBJ, dst) );
 
+	*J_FRVAL = OBJECT_TO_JSVAL( J_FOBJ );
 	return JS_TRUE;
 }
 

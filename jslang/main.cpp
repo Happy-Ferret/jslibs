@@ -14,7 +14,7 @@
 
 #include "stdafx.h"
 
-#include "bstring.h"
+DECLARE_CLASS( BString )
 
 DEFINE_UNSAFE_MODE
 

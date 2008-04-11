@@ -36,7 +36,7 @@ steps:
 #include "stdafx.h"
 #include "../common/jsNativeInterface.h"
 
-#include "jsimage.h"
+#include "image.h"
 
 #ifndef INT32
 	#define XMD_H // avoid: jslibs\libjpeg\src\jmorecfg.h(161) : error C2371: 'INT32' : redefinition; different basic types /n Microsoft Platform SDK\Include\basetsd.h(62) : see declaration of 'INT32'
@@ -225,32 +225,11 @@ DEFINE_FUNCTION( Load ) {
 	int size = height * bytePerRow;
 	int channels = cinfo->output_components;
 
-	JSObject *image = JS_NewObject(cx, &classImage, NULL, NULL);
-//	JSObject *image = JS_ConstructObject(cx, &classImage, NULL, NULL);
-	RT_ASSERT( image != NULL, "Unable to create the resulting image." );
-
-
-	*rval = OBJECT_TO_JSVAL(image); // GC protection is ok with this ?
-	JS_DefineProperty(cx, image, "width", INT_TO_JSVAL(width), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
-	JS_DefineProperty(cx, image, "height", INT_TO_JSVAL(height), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
-	JS_DefineProperty(cx, image, "channels", INT_TO_JSVAL(channels), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ); // R G B
-	//JS_DefineProperty(cx, image, "pixelSize", INT_TO_JSVAL(channels), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ); // R*8bits G*8bits B*8bits = channels byte
-
-
-	//jsval tmp;
-	//tmp = INT_TO_JSVAL(width);
-	//JS_SetProperty(cx, image, "width", &tmp );
-	//tmp = INT_TO_JSVAL(height);
-	//JS_SetProperty(cx, image, "height", &tmp );
-	//tmp = INT_TO_JSVAL(channels);
-	//JS_SetProperty(cx, image, "channels", &tmp );
-//	tmp = INT_TO_JSVAL(channels);
-//	JS_SetProperty(cx, image, "pixelSize", &tmp );
-
-
-	JOCTET *data = (JOCTET *)malloc(size);
+	JOCTET * data = (JOCTET *)malloc(height * bytePerRow);
 	RT_ASSERT_ALLOC(data);
-	JS_SetPrivate(cx, image, data);
+	JSObject *image = NewImage(cx, INT_TO_JSVAL(width), INT_TO_JSVAL(height), INT_TO_JSVAL(channels), data);
+	*rval = OBJECT_TO_JSVAL(image);
+
 
 	// cinfo->rec_outbuf_height : recomanded scanline height ( 1, 2 or 4 )
 	while (cinfo->output_scanline < cinfo->output_height) {

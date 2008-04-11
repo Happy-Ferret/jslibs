@@ -13,8 +13,10 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-#include "jsimage.h"
 
+//DECLARE_CLASS(Image)
+
+#include "image.h"
 
 #include <stdlib.h>
 

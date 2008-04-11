@@ -13,7 +13,9 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-#include "jsimage.h"
+
+#include "image.h"
+
 #include "../common/jsNativeInterface.h"
 
 #include "png.h"
@@ -95,29 +97,10 @@ DEFINE_FUNCTION( Load ) {
 
 // read & store
 
-	JSObject *image = JS_NewObject(cx, &classImage, NULL, NULL);
-//	JSObject *image = JS_ConstructObjectWithArguments(cx, &classImage, NULL, NULL, 0, NULL);
-	RT_ASSERT( image != NULL, "Unable to create the resulting image." );
-	*rval = OBJECT_TO_JSVAL(image); // GC protection is ok with this ?
-
-	JS_DefineProperty(cx, image, "width", INT_TO_JSVAL(width), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
-	JS_DefineProperty(cx, image, "height", INT_TO_JSVAL(height), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
-	JS_DefineProperty(cx, image, "channels", INT_TO_JSVAL(channels), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
-	//JS_DefineProperty(cx, image, "pixelSize", INT_TO_JSVAL(bytePerRow/width), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
-
-	//jsval tmp;
-	//tmp = INT_TO_JSVAL(width);
-	//JS_SetProperty(cx, image, "width", &tmp );
-	//tmp = INT_TO_JSVAL(height);
-	//JS_SetProperty(cx, image, "height", &tmp );
-	//tmp = INT_TO_JSVAL(channels);
-	//JS_SetProperty(cx, image, "channels", &tmp );
-//	tmp = INT_TO_JSVAL(bytePerRow/width);
-//	JS_SetProperty(cx, image, "pixelSize", &tmp );
-
 	png_bytep data = (png_bytep)malloc(height * bytePerRow);
 	RT_ASSERT_ALLOC(data);
-	JS_SetPrivate(cx, image, data);
+	JSObject *image = NewImage(cx, INT_TO_JSVAL(width), INT_TO_JSVAL(height), INT_TO_JSVAL(channels), data);
+	*rval = OBJECT_TO_JSVAL(image);
 
 // int number_of_passes = png_set_interlace_handling(desc->png);
 // for ( int p = 0; p < number_of_passes; p++ )

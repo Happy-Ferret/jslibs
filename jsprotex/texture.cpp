@@ -12,13 +12,20 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
+
 #include "stdafx.h"
+
+//DECLARE_CLASS( Texture )
+
+#include "texture.h"
+
 #define _USE_MATH_DEFINES
 #include <math.h>
 #include <string.h>
 
+
 #include <stdlib.h>
-#include "texture.h"
+#include <limits.h>
 
 #include "../common/vector3.h"
 #include "../common/jsConversionHelper.h"
@@ -28,8 +35,73 @@ extern "C" long genrand_int31(void);
 extern "C" unsigned long genrand_int32(void);
 extern "C" double genrand_real1(void);
 
+#define ABS(val) ( (val) < 0 ? -(val) : (val) )
+
+#define MIN(val1, val2) ( (val1) < (val2) ? (val1) : (val2) )
+
+#define MAX(val1, val2) ( (val1) > (val2) ? (val1) : (val2) )
+
+#define MINMAX(val, min, max) ((val) > (max) ? (max) : (val) < (min) ? (min) : (val) )
+
+#include <float.h>
+
+// min 'invisible' value
+#define PMINLIMIT FLT_MIN
+
+// max 'invisible' value
+#define PMAXLIMIT FLT_MAX
+
+// min 'visible' value
+// #define PMIN (0.f) // IMPORTANT: the lowest visible value is always 0, then this macro is no more used
+
+// max 'visible' value
+// with bytes, the range should be [0,255]
+// BUT with real, the range should be [0,1] or [0,1) ( use 1.f - FLT_EPSILON )
+#define PMAX (1.f)
+
+// full amplitude
+//#define PAMP (PMAX-PMIN)
+
+// middle pixel value (gray)
+#define PMID ( PMAX / 2 )
+
+// normalize the pixel value to range 0..1
+#define PNORM(p) ((p) / PMAX)
+
+// un-normalize the pixel value from range 0..1
+#define PUNNORM(p) ((p) * PMAX)
+
+// normalize the pixel value to range -1..1
+#define PZNORM(p) (PNORM(p) * 2 - 1)
+
+// un-normalize the pixel value from range -1..1
+#define PUNZNORM(p) ( (PUNNORM(p) + 1 ) / 2)
+
+#define PRAND (genrand_real1())
+
+
+
+
+
+inline void TextureSetupBackBuffer( Texture *tex ) {
+
+	if ( tex->cbackBuffer == NULL )
+		tex->cbackBuffer = (PTYPE*)malloc( tex->width * tex->height * tex->channels * sizeof(PTYPE) );
+}
+
+inline void TextureSwapBuffers( Texture *tex ) {
+
+	PTYPE *tmp = tex->cbuffer;
+	tex->cbuffer = tex->cbackBuffer;
+	tex->cbackBuffer = tmp;
+}
+
+
 enum BorderMode { borderClamp, borderWrap, borderMirror, borderValue };
+
 enum DesaturateMode { desaturateLightness, desaturateSum, desaturateAverage };
+
+
 
 //unsigned long int NoiseInt(unsigned long int n) {
 //
@@ -43,12 +115,7 @@ enum DesaturateMode { desaturateLightness, desaturateSum, desaturateAverage };
 //}
 
 
-inline bool IsTexture( JSContext *cx, jsval value ) {
-	
-	return ( JSVAL_IS_OBJECT( value ) && JS_GET_CLASS(cx, JSVAL_TO_OBJECT( value )) == &classTexture );
-}
-
-inline unsigned int Wrap( int value, unsigned int limit ) {
+inline unsigned int Wrap( int value, int limit ) {
 
 	if ( value >= limit )
 		return value % limit;
@@ -97,16 +164,6 @@ inline PTYPE* PosByMode( const Texture *tex, int x, int y, BorderMode mode ) {
 	return &tex->cbuffer[ ( x + y * tex->width ) * tex->channels ];
 }
 
-
-JSBool ValueToTexture( JSContext* cx, jsval value, Texture **tex ) {
-	
-	RT_ASSERT_OBJECT( value );
-	JSObject *texObj = JSVAL_TO_OBJECT( value );
-	RT_ASSERT_CLASS( texObj, &classTexture );
-	*tex = (Texture *)JS_GetPrivate(cx, texObj);
-	RT_ASSERT_RESOURCE(tex);
-	return JS_TRUE;
-}
 
 
 // levels: number | array | string ('#8800AAFF')
@@ -192,6 +249,24 @@ inline JSBool InitCurveData( JSContext* cx, jsval value, int length, float *curv
 
 
 BEGIN_CLASS( Texture )
+
+
+inline bool IsTexture( JSContext *cx, jsval value ) {
+	
+	return ( JSVAL_IS_OBJECT( value ) && JS_GET_CLASS(cx, JSVAL_TO_OBJECT( value )) == &classTexture );
+}
+
+
+JSBool ValueToTexture( JSContext* cx, jsval value, Texture **tex ) {
+	
+	RT_ASSERT_OBJECT( value );
+	JSObject *texObj = JSVAL_TO_OBJECT( value );
+	RT_ASSERT_CLASS( texObj, &classTexture );
+	*tex = (Texture *)JS_GetPrivate(cx, texObj);
+	RT_ASSERT_RESOURCE(tex);
+	return JS_TRUE;
+}
+
 
 DEFINE_FINALIZE() {
 
@@ -1098,7 +1173,7 @@ DEFINE_FUNCTION( SetRectangle ) {
 	int width = tex->width;
 	int height = tex->height;
 
-	int x, y, px, py;
+	int x, y;
 	int c, pos;
 	for ( y = y0; y < y1; y++ )
 		for ( x = x0; x < x1; x++ ) {
@@ -1347,7 +1422,6 @@ DEFINE_FUNCTION( Resize ) {
 		float prx, pry; // pixel ratio
 		float rx = (float)width / newWidth; // texture ratio x
 		float ry = (float)height / newHeight; // texture ratio y
-		float tmp;
 		int x, y, c;
 
 		int pos, pos1, pos2, pos3, pos4; // offset in the buffer
@@ -2377,7 +2451,6 @@ DEFINE_FUNCTION( AddGradiantRadial ) {
 	float aspectRatio = (float)width / (float)height;
 
 	// draw
-	Vector3 p;
 	float dist;
 	int x, y, c;
 	int pos, curvePos;

@@ -17,7 +17,10 @@
 //#define MODULE_NAME "jsimage"
 //static const char *_revision = "$Rev$";
 
-#include "jsimage.h"
+DECLARE_CLASS(Jpeg)
+DECLARE_CLASS(Png)
+DECLARE_CLASS(Image)
+
 #include "jspng.h"
 #include "jsjpeg.h"
 
