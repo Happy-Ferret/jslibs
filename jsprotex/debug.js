@@ -3,43 +3,6 @@ LoadModule('jsio');
 LoadModule('jsgraphics');
 LoadModule('jsprotex');
 
-var glc = Exec('OpenGL.js'); // OpenGL constants
-
-var win = new Window();
-win.CreateOpenGLContext();
-var gl = new Gl();
-var end = false;
-
-function Render() {
-
-	gl.Clear( glc.COLOR_BUFFER_BIT | glc.DEPTH_BUFFER_BIT );
-
-	gl.Translate(0,0,-1);
-	gl.Quad(-1,-1,1,1);
-	
-	Sleep(1);
-	win.SwapBuffers();
-}
-
-win.onkeydown = function( key, l ) {
-	
-	if ( key == 0x1B )
-		end = true;
-}
-
-win.onsize = function( w, h ) {
-
-	gl.Viewport([0,0,w,h]);
-//	gl.Perspective( 60, 0.01, 10000 );	
-	gl.Ortho(0,0,10,10);
-	Render();
-}
-
-gl.Init();
-//gl.Perspective( 60, 0.01, 10000 );
-gl.Ortho(-1, 1, -1, 1);
-
-
 
 const RED = [1,0,0,1];
 const GREEN = [0,1,0,1];
@@ -135,30 +98,57 @@ function NoiseChannel( tex, channel ) {
 	tmp.Free();
 }
 
+
+
 var t0 = IntervalNow();
 
-draw:{
+function time() IntervalNow() - t0;
+
+var size = 256;
+var texture = new Texture(size, size, 3);
+
+function UpdateTexture(imageIndex) {
+
+//texture.SetRectangle(0,0,1,1, [1,0,0]);	
 
 	Texture.RandSeed(0);
-	var size = 256;
-	var t = new Texture(size, size, 3);
-	t.ClearChannel();
-	t = Cloud( size, 0.5 );
+	texture.ClearChannel();
+	
+	texture.AddGradiantRadial( [1], 0 );
+	
+	return;
+	
+	texture = Cloud( size, 0.5 * Math.sin(time()/1000) );
+	
 
-//	t.SetRectangle( 1*size/4, 1*size/4, 3*size/4, 3*size/4, WHITE );
-//	t.RotoZoom( 0.5,0.5, 8,8, 0 );
+	
+	texture.CutLevels(0.49,0.51);
+	texture.BoxBlur(4,4);
+	
+	
+	texture.MirrorLevels(0.5);
+	texture.PowLevels(0.5)
+	
+//texture.AddGradiantQuad(BLUE, GREEN, RED, YELLOW);
 
-	var displace = new Texture(size, size, 2);
-	var d = Cloud( size, 0.5 );
+
+//	texture.SetRectangle( 1*size/4, 1*size/4, 3*size/4, 3*size/4, WHITE );
+//	texture.RotoZoom( 0, 0, 1, 1, time()/10000 );
+	//texture.RotoZoom( 0, 0, 1, 0.5, 0 );
+
+
+
+//texture.Shift(time()/10,0);
+
+//	var displace = new Texture(size, size, 2);
+//	var d = Cloud( size, Math.random()/100 );
 //	NoiseChannel( displace, 0 );
 //	NoiseChannel( displace, 1 );
 //	d.NormalizeVectors();
-	d.Aliasing(20);
-	d.Normals();
-
-	d.BoxBlur(3,3);
-	
-	t.Displace(d, 50);
+	//d.Aliasing(2);
+//	d.Normals();
+//	d.BoxBlur(3,3);
+//	texture.Displace(d, 50);
 
 	
 //	t.AddGradiantRadial( curveGaussian( 0.5 ) );
@@ -194,7 +184,7 @@ draw:{
 	
 	
 
-break draw; // -----------------------------------------
+return;
 	var t = Cloud(size, 0.2);
 	GrayToRGB( t );
 	
@@ -209,7 +199,7 @@ break draw; // -----------------------------------------
 	
 //	
 		
-break draw; // -----------------------------------------		
+return;
 //	t.AddGradiantRadial(curveHalfSine);
 
 //	t.AddGradiantRadial(curveSine);
@@ -228,7 +218,7 @@ break draw; // -----------------------------------------
 	t.Blend(tmp,0.7);
 
 	
-break draw; // -----------------------------------------		
+return;
 	
 	
 //	t.Set(GRAY);
@@ -248,7 +238,7 @@ break draw; // -----------------------------------------
 	
 //	t.Blend(t,RED);
 	
-break draw; // -----------------------------------------		
+return;
 
 	var bump = new Texture(size, size, 3);
 	bump.ClearChannel();
@@ -266,7 +256,7 @@ break draw; // -----------------------------------------
 //	t.Light( bump, [1, 1, 0.01], RED, BLUE, 1, 0.25, 0 );
 
 
-break draw; // -----------------------------------------		
+return;
 	
 //	t.AddGradiantRadial( [0, 1] );
 //	t.Resize(256,256);
@@ -280,7 +270,7 @@ break draw; // -----------------------------------------
 //	t.NormalizeVectors();
 //	t.NormalizeLevels();
 
-break draw; // -----------------------------------------		
+return;
 	
 	var t1 = new Texture(size, size, 1);
 	
@@ -290,7 +280,7 @@ break draw; // -----------------------------------------
 	t = t1;
 	
 	
-break draw; // -----------------------------------------		
+return;
 
 	t.Colorize(RED, BLACK);
 	t.Colorize(GREEN, BLACK);
@@ -300,13 +290,13 @@ break draw; // -----------------------------------------
 	
 //	DesaturateLuminosity(t);
 
-break draw; // -----------------------------------------		
+return;
 
 	var t = Cloud(size, 0.5);
 	t.Aliasing(8,curveLinear);
 	t.BoxBlur(3,3)
 
-break draw; // -----------------------------------------		
+return;
 	var bump = new Texture(size, size, 3).Cells(8, 0).Add( new Texture(size, size, 3).Cells(8, 1).OppositeLevels() ); // broken floor
 	bump.Normals();
 
@@ -324,7 +314,7 @@ break draw; // -----------------------------------------
 	t.Swap(t1);
 */
 
-break draw; // -----------------------------------------	
+return;
 
 	t.SetLevels('#FFDDEE');
 	
@@ -334,7 +324,7 @@ break draw; // -----------------------------------------
 	
 	t.Paste( t1, size/2, 0, -1 );
 	
-break draw; // -----------------------------------------	
+return;
 	var t = new Texture(size, size, 1);
 	t.ClearChannel();
 	t.AddNoise(1);
@@ -346,7 +336,7 @@ break draw; // -----------------------------------------
 	t.BoxBlur(2,2);
 	
 
-break draw; // -----------------------------------------
+return;
 
 //	t.Aliasing(5)
 //	t.AddGradiantRadial(100, 100, 50, curveDot );
@@ -487,18 +477,79 @@ break draw; // -----------------------------------------
 	//texture.Normalize();
 	//texture.Aliasing(10);
 	//texture.Invert();
+}
+
+
+
+var end = false;
+
+var win = new Window();
+win.Open();
+win.CreateOpenGLContext();
+
+function ResizeWindow(w, h) {
+
+	with (Ogl) {
+		Viewport(0,0,w,h);
+		MatrixMode(PROJECTION);
+		LoadIdentity();
+		Ortho(0,0,10,10, -1, 1);
+	}
+	Render();
+}
+
+with (Ogl) {
+
+	ShadeModel(FLAT);
+	FrontFace(CCW);
+	ClearColor(0, 0, 0, 0);
+	Enable(TEXTURE_2D);
+	var tid = GenTexture();
+	BindTexture(TEXTURE_2D, tid);
+	TexParameter(TEXTURE_2D, TEXTURE_MIN_FILTER, NEAREST); // GL_LINEAR
+	TexParameter(TEXTURE_2D, TEXTURE_MAG_FILTER, NEAREST);
+	Clear( COLOR_BUFFER_BIT | DEPTH_BUFFER_BIT );
+}
+
+function Render(imageIndex) {
+
+	with (Ogl) {
+	
+		MatrixMode(MODELVIEW);
+
+		UpdateTexture();
+		DefineTextureImage(TEXTURE_2D, texture);
+		
+		LoadIdentity();
+		Translate(0,0,0);
+		Color(1,1,1);
+		Begin(QUADS);
+		TexCoord( 0, 0 );
+		Vertex( -1, -1, 0 );
+		TexCoord( 1, 0, 0 );
+		Vertex( 1, -1 );
+		TexCoord( 1, 1 );
+		Vertex( 1, 1 );
+		TexCoord( 0, 1 );
+		Vertex( -1, 1 );
+		End();
+	}
+	win.SwapBuffers();
+	
+	MaybeCollectGarbage();
 
 }
 
-Print( 'time: '+ (IntervalNow() - t0) + ' ms\n' );
+win.onkeydown = function( key, l ) {
 
-gl.Color(1,1,1);
-gl.LoadTexture( t );
+		end = ( key == 0x1B );
+}
+
+win.onsize = ResizeWindow;
+
 
 //win.rect = [1700,1000,1900,1200]
-win.rect = [500,500,700,700];
-
-win.Open();
+win.rect = [200,200,800,800];
 
 while (!end) {
 
@@ -507,4 +558,3 @@ while (!end) {
 }
 
 win.Close();
-
