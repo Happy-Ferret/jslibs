@@ -43,10 +43,64 @@ Manage GL extensions:
 	#include <OpenGL/gl.h>
 #endif
 
-#include "gl/gl.h"
+#include <gl/gl.h>
+#include "glext.h"
+
+// http://www.opengl.org/registry/api/glext.h
+
+#ifdef XP_WIN
+#define GL_GET_PROC_ADDRESS wglGetProcAddress
+#endif // XP_WIN
 
 
 BEGIN_CLASS( Ogl )
+
+
+DEFINE_FUNCTION_FAST( GetBoolean ) {
+
+	RT_ASSERT_ARGC(1);
+	RT_ASSERT_INT(J_FARG(1));
+	GLboolean params;
+	glGetBooleanv(JSVAL_TO_INT(J_FARG(1)), &params);
+	*J_FRVAL = BOOLEAN_TO_JSVAL(params);
+	return JS_TRUE;
+}
+
+
+DEFINE_FUNCTION_FAST( GetInteger ) {
+
+	RT_ASSERT_ARGC(1);
+	RT_ASSERT_INT(J_FARG(1));
+	GLint params;
+	glGetIntegerv(JSVAL_TO_INT(J_FARG(1)), &params);
+	*J_FRVAL = INT_TO_JSVAL(params);
+	return JS_TRUE;
+}
+
+
+DEFINE_FUNCTION_FAST( GetDouble ) {
+
+	RT_ASSERT_ARGC(1);
+	RT_ASSERT_INT(J_FARG(1));
+	GLdouble params;
+	glGetDoublev(JSVAL_TO_INT(J_FARG(1)), &params);
+	RT_CHECK_CALL( JS_NewDoubleValue(cx, params, J_FRVAL) );
+	return JS_TRUE;
+}
+
+
+
+DEFINE_FUNCTION_FAST( Accum ) {
+
+	RT_ASSERT_ARGC(2);
+	RT_ASSERT_INT(J_FARG(1));
+	GLenum op = JSVAL_TO_INT(J_FARG(1));
+	jsdouble value;
+	JS_ValueToNumber(cx, J_FARG(2), &value);
+	glAccum(op, value);
+	*J_FRVAL = JSVAL_VOID;
+	return JS_TRUE;
+}
 
 
 DEFINE_FUNCTION_FAST( Flush ) {
@@ -82,7 +136,7 @@ DEFINE_FUNCTION_FAST( Vertex ) {
 	JS_ValueToNumber(cx, J_FARG(2), &y);
 	if ( J_ARGC >= 3 ) {
 
-		JS_ValueToNumber(cx, J_FARG(2), &z);
+		JS_ValueToNumber(cx, J_FARG(3), &z);
 		glVertex3d(x, y, z);
 	} else {
 
@@ -175,6 +229,33 @@ DEFINE_FUNCTION_FAST( TexParameter ) {
 }
 
 
+DEFINE_FUNCTION_FAST( TexEnv ) {
+
+	RT_ASSERT_ARGC(3);
+	RT_ASSERT_INT(J_FARG(1));
+	RT_ASSERT_INT(J_FARG(2));
+	RT_ASSERT_NUMBER(J_FARG(3));
+
+	*J_FRVAL = JSVAL_VOID;
+	if ( JSVAL_IS_INT(J_FARG(3)) ) {
+
+		glTexEnvi( JSVAL_TO_INT( J_FARG(1) ), JSVAL_TO_INT( J_FARG(2) ), JSVAL_TO_INT( J_FARG(3) ) );
+		return JS_TRUE;
+	}
+	if ( JSVAL_IS_NUMBER(J_FARG(3)) ) {
+	
+		jsdouble param;
+		RT_CHECK_CALL( JS_ValueToNumber(cx, J_FARG(3), &param) );
+		glTexEnvf( JSVAL_TO_INT( J_FARG(1) ), JSVAL_TO_INT( J_FARG(2) ), param );
+		return JS_TRUE;
+	}
+
+	REPORT_ERROR("Invalid argument.");
+	return JS_TRUE;
+}
+
+
+
 
 DEFINE_FUNCTION_FAST( LightModel ) {
 
@@ -256,15 +337,34 @@ DEFINE_FUNCTION_FAST( Enable ) {
 	return JS_TRUE;
 }
 
-
 DEFINE_FUNCTION_FAST( Disable ) {
 	
 	RT_ASSERT_ARGC(1);
 	RT_ASSERT_INT(J_FARG(1));
-	glDisable( JSVAL_TO_INT( J_FARG(1) ) );
+	glDisable( JSVAL_TO_INT(J_FARG(1)) );
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
+
+DEFINE_FUNCTION_FAST( PointSize ) {
+
+	RT_ASSERT_ARGC(1);
+	jsdouble size;
+	JS_ValueToNumber(cx, J_FARG(1), &size);
+	glPointSize(size);
+	return JS_TRUE;
+}
+
+
+DEFINE_FUNCTION_FAST( LineWidth ) {
+
+	RT_ASSERT_ARGC(1);
+	jsdouble width;
+	JS_ValueToNumber(cx, J_FARG(1), &width);
+	glLineWidth(width);
+	return JS_TRUE;
+}
+
 
 
 DEFINE_FUNCTION_FAST( ShadeModel ) {
@@ -413,8 +513,8 @@ DEFINE_FUNCTION_FAST( Ortho ) {
 	JS_ValueToNumber(cx, J_FARG(5), &zNear);
 	JS_ValueToNumber(cx, J_FARG(6), &zFar);
 
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
+//	glMatrixMode(GL_PROJECTION);
+//	glLoadIdentity();
 	glOrtho(left, right, bottom, top, zNear, zFar);
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
@@ -436,9 +536,9 @@ DEFINE_FUNCTION_FAST( Perspective ) {
 	
 	GLint viewport[4];
 	glGetIntegerv( GL_VIEWPORT, viewport );
-	float aspect = float(viewport[2]) / float(viewport[3]);
+	double aspect = double(viewport[2]) / double(viewport[3]);
 
-	float xmin, xmax, ymin, ymax;
+	double xmin, xmax, ymin, ymax;
 	ymax = zNear * tan(fovy * M_PI / 360.0f);
 	ymin = -ymax;
 	xmin = ymin * aspect;
@@ -666,6 +766,174 @@ DEFINE_FUNCTION_FAST( DeleteTexture ) {
 }
 
 
+DEFINE_FUNCTION_FAST( CopyTexImage2D ) {
+
+	RT_ASSERT_ARGC(7);
+	RT_ASSERT_INT(J_FARG(1));
+	RT_ASSERT_INT(J_FARG(2));
+	RT_ASSERT_INT(J_FARG(3));
+	RT_ASSERT_INT(J_FARG(4));
+	RT_ASSERT_INT(J_FARG(5));
+	RT_ASSERT_INT(J_FARG(6));
+
+	GLint level = JSVAL_TO_INT(J_FARG(1));
+	GLenum internalFormat = JSVAL_TO_INT(J_FARG(2));
+
+	GLint x = JSVAL_TO_INT(J_FARG(3));
+	GLint y = JSVAL_TO_INT(J_FARG(4));
+	GLint width = JSVAL_TO_INT(J_FARG(5));
+	GLint height = JSVAL_TO_INT(J_FARG(6));
+
+	GLint border;
+	if ( J_FARG_ISDEF(7) )
+		border = JSVAL_TO_INT(J_FARG(7));
+	else
+		border = 0;
+
+	glCopyTexImage2D( GL_TEXTURE_2D, level, internalFormat, x, y, width, height, border );
+
+	*J_FRVAL = JSVAL_VOID;
+	return JS_TRUE;
+}
+
+
+/*
+DEFINE_FUNCTION_FAST( TexSubImage2D ) {
+
+	RT_ASSERT_ARGC(7);
+	RT_ASSERT_INT(J_FARG(1));
+	RT_ASSERT_INT(J_FARG(2));
+	RT_ASSERT_INT(J_FARG(3));
+	RT_ASSERT_INT(J_FARG(4));
+	RT_ASSERT_INT(J_FARG(5));
+	RT_ASSERT_INT(J_FARG(6));
+
+	GLint level = JSVAL_TO_INT(J_FARG(1));
+	GLenum internalFormat = JSVAL_TO_INT(J_FARG(2));
+
+	GLint xoffset = JSVAL_TO_INT(J_FARG(3));
+	GLint yoffset = JSVAL_TO_INT(J_FARG(4));
+	GLint x = JSVAL_TO_INT(J_FARG(5));
+	GLint y = JSVAL_TO_INT(J_FARG(6));
+	GLint width = JSVAL_TO_INT(J_FARG(7));
+	GLint height = JSVAL_TO_INT(J_FARG(8));
+
+	GLint border;
+	if ( J_FARG_ISDEF(7) )
+		border = JSVAL_TO_INT(J_FARG(7));
+	else
+		border = 0;
+
+	glTexSubImage2D( GL_TEXTURE_2D, level, xoffset, yoffset, width, height, format,  border );
+
+	*J_FRVAL = JSVAL_VOID;
+	return JS_TRUE;
+}
+*/
+
+
+
+// OpenGL extensions
+
+DEFINE_FUNCTION_FAST( GenBuffer ) {
+	
+	static PFNGLGENBUFFERSARBPROC glGenBuffersARB = NULL;
+	if ( !glGenBuffersARB ) {
+
+		glGenBuffersARB = (PFNGLGENBUFFERSARBPROC) GL_GET_PROC_ADDRESS("glGenBufferARB");
+		RT_ASSERT( glGenBuffersARB != NULL, "OpenGL extension unavailable.");
+	}
+
+	GLuint buffer;
+	glGenBuffersARB(1, &buffer);
+	*J_FRVAL = INT_TO_JSVAL(buffer);
+	return JS_TRUE;
+}
+
+
+DEFINE_FUNCTION_FAST( BindBuffer ) {
+	
+	static PFNGLBINDBUFFERARBPROC glBindBufferARB = NULL;
+	if ( !glBindBufferARB ) {
+
+		glBindBufferARB = (PFNGLBINDBUFFERARBPROC) GL_GET_PROC_ADDRESS("glBindBufferARB");
+		RT_ASSERT( glBindBufferARB != NULL, "OpenGL extension unavailable.");
+	}
+
+	RT_ASSERT_ARGC(2);
+	RT_ASSERT_INT(J_FARG(1));
+	RT_ASSERT_INT(J_FARG(2));
+	GLenum target = JSVAL_TO_INT(J_FARG(1));
+	GLenum buffer = JSVAL_TO_INT(J_FARG(2));
+	glBindBufferARB(target, buffer);
+	*J_FRVAL = JSVAL_VOID;
+	return JS_TRUE;
+}
+
+
+
+DEFINE_FUNCTION_FAST( PointParameter ) {
+
+	static bool initDone = false;
+	static PFNGLPOINTPARAMETERIPROC glPointParameteri = NULL;
+	static PFNGLPOINTPARAMETERIVPROC glPointParameteriv = NULL;
+	static PFNGLPOINTPARAMETERFPROC glPointParameterf = NULL;
+	static PFNGLPOINTPARAMETERFVPROC glPointParameterfv = NULL;
+
+	if ( !initDone ) {
+
+		glPointParameteri = (PFNGLPOINTPARAMETERIPROC) GL_GET_PROC_ADDRESS("glPointParameteri");
+		glPointParameteriv = (PFNGLPOINTPARAMETERIVPROC) GL_GET_PROC_ADDRESS("glPointParameteriv");
+		glPointParameterf = (PFNGLPOINTPARAMETERFPROC) GL_GET_PROC_ADDRESS("glPointParameterf");
+		glPointParameterfv = (PFNGLPOINTPARAMETERFVPROC) GL_GET_PROC_ADDRESS("glPointParameterfv");
+		RT_ASSERT( glPointParameteri != NULL && glPointParameteriv != NULL && glPointParameterf != NULL && glPointParameterfv != NULL, "OpenGL extension unavailable.");
+		initDone = true;
+	}
+
+	RT_ASSERT_ARGC(2);
+	RT_ASSERT_INT(J_FARG(1));
+
+	*J_FRVAL = JSVAL_VOID;
+	if ( JSVAL_IS_INT(J_FARG(2)) ) {
+
+		glPointParameteri(JSVAL_TO_INT(J_FARG(1)), JSVAL_TO_INT(J_FARG(2)));
+		return JS_TRUE;
+	}
+	if ( JSVAL_IS_NUMBER(J_FARG(2)) ) {
+
+		jsdouble param;
+		JS_ValueToNumber(cx, J_FARG(2), &param);
+		glPointParameterf( JSVAL_TO_INT(J_FARG(1)), param );
+		return JS_TRUE;
+	}
+	if ( J_VALUE_IS_ARRAY(J_FARG(2)) ) {
+
+		JSObject *arrayObj = JSVAL_TO_OBJECT(J_FARG(2));
+		jsuint length;
+		RT_CHECK_CALL( JS_GetArrayLength(cx, arrayObj, &length) );
+
+		GLfloat params[16];
+		RT_ASSERT( length <= sizeof(params), "Too many elements." );
+		jsval tmp;
+		jsdouble tmp2;
+		for ( jsuint i=0; i<length; i++ ) {
+			
+			JS_GetElement(cx, arrayObj, i, &tmp);
+			JS_ValueToNumber(cx, tmp, &tmp2);
+			params[i] = tmp2;
+		}
+		glPointParameterfv( JSVAL_TO_INT(J_FARG(1)), params );
+		return JS_TRUE;
+	}
+
+
+	REPORT_ERROR("Invalid argument.");
+	return JS_TRUE;
+}
+
+
+// non-OpenGL API
+
 // (TBD) manage compression: http://www.opengl.org/registry/specs/ARB/texture_compression.txt
 DEFINE_FUNCTION_FAST( DefineTextureImage ) {
 
@@ -766,10 +1034,13 @@ DEFINE_PROPERTY(error) {
 	return JS_TRUE;
 }
 
+
+
 CONFIGURE_CLASS
 
 	BEGIN_CONST_INTEGER_SPEC
 
+// OpenGL constants
 		CONST_INTEGER( ACCUM  , GL_ACCUM  )
 		CONST_INTEGER( LOAD   , GL_LOAD   )
 		CONST_INTEGER( RETURN , GL_RETURN )
@@ -1413,10 +1684,25 @@ CONFIGURE_CLASS
 
 		CONST_INTEGER( LOGIC_OP , GL_LOGIC_OP )
 		CONST_INTEGER( TEXTURE_COMPONENTS , GL_TEXTURE_COMPONENTS )
+
+//OpenGL extensions
+		CONST_INTEGER( POINT_SIZE_MIN             , GL_POINT_SIZE_MIN             )
+		CONST_INTEGER( POINT_SIZE_MAX             , GL_POINT_SIZE_MAX             )
+		CONST_INTEGER( POINT_FADE_THRESHOLD_SIZE  , GL_POINT_FADE_THRESHOLD_SIZE  )
+		CONST_INTEGER( POINT_DISTANCE_ATTENUATION , GL_POINT_DISTANCE_ATTENUATION )
+
+		CONST_INTEGER( POINT_SPRITE, GL_POINT_SPRITE )
+		CONST_INTEGER( COORD_REPLACE, GL_COORD_REPLACE )
+
 	END_CONST_INTEGER_SPEC
 
 
 	BEGIN_STATIC_FUNCTION_SPEC
+		
+		FUNCTION_FAST(GetBoolean)
+		FUNCTION_FAST(GetInteger)
+		FUNCTION_FAST(GetDouble)
+		FUNCTION_FAST(Accum)
 		FUNCTION_FAST(Flush)
 		FUNCTION_FAST(Hint)
 		FUNCTION_FAST(Vertex)
@@ -1424,10 +1710,14 @@ CONFIGURE_CLASS
 		FUNCTION_FAST(Normal)
 		FUNCTION_FAST(TexCoord)
 		FUNCTION_FAST(TexParameter)
+		FUNCTION_FAST(TexEnv)
 		FUNCTION_FAST(LightModel)
 		FUNCTION_FAST(Light)
 		FUNCTION_FAST(Material)
 		FUNCTION_FAST(Enable)
+		FUNCTION_FAST(Disable)
+		FUNCTION_FAST(PointSize)
+		FUNCTION_FAST(LineWidth)
 		FUNCTION_FAST(ShadeModel)
 		FUNCTION_FAST(BlendFunc)
 		FUNCTION_FAST(DepthFunc)
@@ -1462,8 +1752,15 @@ CONFIGURE_CLASS
 		FUNCTION_FAST(GenTexture)
 		FUNCTION_FAST(BindTexture)
 		FUNCTION_FAST(DeleteTexture)
+		FUNCTION_FAST(CopyTexImage2D)
 		FUNCTION_FAST(DefineTextureImage)
 		FUNCTION_FAST(RenderToImage)
+
+		// OpenGL extensions
+		FUNCTION_FAST(GenBuffer)
+		FUNCTION_FAST(BindBuffer)
+		FUNCTION_FAST(PointParameter)
+
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC

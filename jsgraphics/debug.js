@@ -3,6 +3,8 @@ LoadModule('jsio');
 LoadModule('jsimage');
 LoadModule('jsode');
 LoadModule('jsgraphics');
+LoadModule('jsprotex');
+
 var vk = Exec('WindowsKeys.js');
 Exec('winTools.js');
 
@@ -102,10 +104,10 @@ function Cube() {
 
 	var win = new Window();
 	win.title = "Test";
-	var x = 600;
-	var y = 300;
-	var w = 100;
-	var h = 100;
+	var x = 200;
+	var y = 200;
+	var w = 500;
+	var h = 500;
 	win.rect = [x,y,x+w,y+h];
 
 	var _quit = false;
@@ -119,54 +121,146 @@ function Cube() {
 		}
 	}
 	
-	win.Open();
-	win.CreateOpenGLContext();
+/*
+function ResizeWindow(w, h) {
 
 	with (Ogl) {
-	
-		
-
-		ShadeModel(SMOOTH);
-		ClearColor(0.0, 0.0, 0.0, 0.5);	
-		ClearDepth(1.0);
-//		Enable(DEPTH_TEST);
-//		DepthFunc(LEQUAL);
-//		Hint(PERSPECTIVE_CORRECTION_HINT, NICEST);
-
-		for (var i=0; !_quit; i++) {
-		
-			Viewport(0,0,1024,1024);
-			
-			Clear(COLOR_BUFFER_BIT | DEPTH_BUFFER_BIT);
-			LoadIdentity();
-			
-			Scale(0.25,0.25,0.25);
-			
-			Translate(-1.5,0.0,0);
-			
-			Begin(TRIANGLES);
-			Vertex( 0.0, 1.0, 0.0);
-			Vertex(-1.0,-1.0, 0.0);
-			Vertex( 1.0,-1.0, 0.0);
-			End();
-			
-			Translate(3.0,0.0,0.0);
-			
-			Begin(QUADS);
-			Vertex(-1.0, 1.0, 0.0);
-			Vertex( 1.0, 1.0, 0.0);
-			Vertex( 1.0,-1.0, 0.0);
-			Vertex(-1.0,-1.0, 0.0);
-			End();
-
-			RenderToImage();
-			
-			win.SwapBuffers();
-			
-			Sleep(10);
-			win.ProcessEvents();
-		}
+		Viewport(0,0,w,h);
+		MatrixMode(PROJECTION);
+		LoadIdentity();
+//		Ortho(0,0,10,10, -10, 10);
+		Perspective( 90, -1000, 1000 );
+		Print(123)
 	}
+	Render();
+}
+
+win.onsize = ResizeWindow;		
+*/
+
+win.Open();
+win.CreateOpenGLContext();
+
+
+with (Ogl) {
+
+//	ShadeModel(SMOOTH);
+	ShadeModel(FLAT);
+	FrontFace(CCW);
+
+	ClearColor(0,0,0,1);	
+
+	ClearDepth(1);
+	Enable(DEPTH_TEST);
+	DepthFunc(LEQUAL);
+
+//	DepthRange(1000, -1000);
+	
+	Hint(PERSPECTIVE_CORRECTION_HINT, NICEST);
+	Hint(LINE_SMOOTH_HINT, DONT_CARE);		
+
+	Enable( TEXTURE_2D );
+	BindTexture( TEXTURE_2D, GenTexture() );
+	TexParameter(TEXTURE_2D, TEXTURE_MIN_FILTER, NEAREST); // GL_LINEAR
+	TexParameter(TEXTURE_2D, TEXTURE_MAG_FILTER, NEAREST);
+	//		var texture = new Jpeg(new File('R0010235.JPG').Open( File.RDONLY )).Load();
+	var texture = new Texture(128, 128, 4);
+	texture.Set([0,0,0,0]);
+	const curveGaussian = function(c) { return function(x) { return Math.exp( -(x*x)/(2*c*c) ) } }
+	texture.AddGradiantRadial( curveGaussian( 0.5 ), 0 );
+
+//	BlendFunc(ONE, ONE);
+	BlendFunc(SRC_ALPHA, ONE_MINUS_SRC_ALPHA);
+	
+	Enable(BLEND);
+
+	DefineTextureImage( TEXTURE_2D, texture );
+
+//		PointParameter( POINT_SIZE_MIN, 0 );
+//		PointParameter( POINT_SIZE_MAX, 1 );
+		PointParameter( POINT_DISTANCE_ATTENUATION, [0.1, 0, 0] ); // 1/(a + b*d + c *d^2)
+
+	Enable(POINT_SPRITE); // http://www.informit.com/articles/article.aspx?p=770639&seqNum=7
+	TexEnv(POINT_SPRITE, COORD_REPLACE, TRUE);
+
+	MatrixMode(PROJECTION);
+	Perspective( 60, 0.0001, 1000 );
+}
+
+
+with (Ogl) {
+
+	var list = NewList();
+
+		LineWidth(1);
+		Begin(LINES);
+		Vertex( 0, 1, 0 );
+		Vertex( 0,-1, 0 );
+		End();
+
+		Color(1,1,1);
+		Enable( TEXTURE_2D );
+//		Enable( POINT_SMOOTH );
+		PointSize(40);
+		Begin(POINTS);
+		Vertex( 0, 1, 0);
+		Vertex( 0,-1, 0);
+		End();
+
+		Color(0.5,0.5,1);
+		Disable( TEXTURE_2D );
+		Enable(LINE_SMOOTH);
+		
+	EndList();
+}
+
+const degToRad = 360/Math.PI;
+
+function Render(i) {
+	with (Ogl) {
+
+		Clear(COLOR_BUFFER_BIT | DEPTH_BUFFER_BIT);
+	
+		MatrixMode(MODELVIEW);
+		LoadIdentity();
+
+		Translate(0, 0, -3);
+		Rotate(i,1,1,1);
+
+//		Translate(0, 0, -100);
+		
+		for (var n=0; n<100; n++) {
+
+				Translate(0, 0, -0.1);
+				Rotate(10, 0,0,1);
+				CallList(list);
+		}
+
+	}
+}
+
+
+for (var i=0; !_quit; i++) {
+
+	MaybeCollectGarbage();
+	Ogl.Viewport(0,0,w,h);
+	Render(i);
+	win.SwapBuffers();
+	win.ProcessEvents();
+	Sleep(10);
+}
+
+
+
+
+
+
+
+
+
+
+
+/*
 
 Halt(); /////////////////////////////////////////
 
@@ -282,18 +376,18 @@ function Render() {
 
 
 
-/*
-	var f = joint.body1Force;
-	Ogl.LoadMatrix(new Transformation().Load(body1).ClearRotation().InverseProduct(m) );
-	Ogl.Color(1,1,1);
-	Ogl.Line3D( 0,0,0, f[0],f[1],f[2] );
-	Ogl.Color(1,0,0);
-	Ogl.Line3D( 0,0,0, f[0],0,0 );
-	Ogl.Color(0,1,0);
-	Ogl.Line3D( 0,0,0, 0,f[1],0 );
-	Ogl.Color(0,0,1);
-	Ogl.Line3D( 0,0,0, 0,0,f[2] );
-*/
+
+//	var f = joint.body1Force;
+//	Ogl.LoadMatrix(new Transformation().Load(body1).ClearRotation().InverseProduct(m) );
+//	Ogl.Color(1,1,1);
+//	Ogl.Line3D( 0,0,0, f[0],f[1],f[2] );
+//	Ogl.Color(1,0,0);
+//	Ogl.Line3D( 0,0,0, f[0],0,0 );
+//	Ogl.Color(0,1,0);
+//	Ogl.Line3D( 0,0,0, 0,f[1],0 );
+//	Ogl.Color(0,0,1);
+//	Ogl.Line3D( 0,0,0, 0,0,f[2] );
+
 
 	for each( var b in box ) {
 		Ogl.LoadMatrix(new Transformation().Load(m).Product(b) );
@@ -425,3 +519,5 @@ while (!_quit) {
 win.Close();
 //Window.absoluteClipCursor = undefined;
 Print('Done.', '\n');
+
+*/
