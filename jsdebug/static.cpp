@@ -528,18 +528,25 @@ DEFINE_FUNCTION(Locate) {
 	RT_ASSERT_ARGC( 1 );
 	int32 frame;
 	RT_JSVAL_TO_INT32( argv[0], frame );
-	RT_ASSERT(frame <= 0, "Frame number must be <= 0")
+	RT_ASSERT(frame <= 0, "Frame number must be <= 0");
 
-	for ( JSStackFrame *fp = cx->fp; fp; fp = fp->down )
-		if ( fp->script && fp->pc && !frame++ ) {
+// (TBD) use JS_FrameIterator instead
+//		JSStackFrame *fp = NULL;
+//		JS_FrameIterator(cx, &fp);
+
+	for ( JSStackFrame *fp = cx->fp; fp; fp = fp->down ) {
+		
+		jsbytecode *pc = JS_GetFramePC(cx,fp);
+		if ( fp->script && pc && !frame++ ) {
 
 			char tmp[512];
 			strcpy(tmp, fp->script->filename);
 			strcat(tmp, ":");
-			strcat(tmp, IntegerToString(JS_PCToLineNumber(cx, fp->script, fp->pc), 10));
+			strcat(tmp, IntegerToString(JS_PCToLineNumber(cx, fp->script, pc), 10));
 			*rval = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, tmp));
 			break;
 		}
+	}
 	return JS_TRUE;
 }
 
@@ -870,6 +877,7 @@ DEFINE_FUNCTION( DumpObjectPrivate ) {
 	RT_ASSERT_OBJECT( J_ARG( 1 ) );
 	unsigned int n = (unsigned int)JS_GetPrivate(cx, JSVAL_TO_OBJECT( J_ARG( 1 ) ));
 	RT_CHECK_CALL( JS_NewNumberValue(cx, (double)n, J_RVAL) );
+	return JS_TRUE;
 }
 
 
