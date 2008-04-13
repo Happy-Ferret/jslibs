@@ -1149,7 +1149,7 @@ DEFINE_FUNCTION( SetPixel ) { // x, y, levels
 // PTYPE ok
 DEFINE_FUNCTION( SetRectangle ) {
 
-	RT_ASSERT_ARGC( 3 );
+	RT_ASSERT_ARGC( 5 );
 
 	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(tex);
@@ -2123,7 +2123,7 @@ DEFINE_FUNCTION( Shift ) {
 	RT_JSVAL_TO_INT32( argv[0], offsetX );
 	RT_JSVAL_TO_INT32( argv[1], offsetY );
 
-	BorderMode mode = borderMirror;
+	BorderMode mode = borderWrap;
 
 	int width = tex->width;
 	int height = tex->height;
