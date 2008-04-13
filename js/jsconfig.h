@@ -32,3 +32,15 @@
 #define JS_HAS_EXPR_CLOSURES    1       /* has function (formals) listexpr */
 
 #define JS_HAS_DESTRUCTURING_SHORTHAND 1
+
+/*
+jsscript.c
+jsscript.c(897) : error C2198: 'js_NewObject' : too few arguments for call
+make[1]: *** [WINNT5.1_OPT.OBJ/jsscript.obj] Error 2
+make[1]: Leaving directory `/cygdrive/d/Franck/Mes documents/DEV/my_projects/jslibs/js/src'
+make: *** [all] Error 2
+
+workaround:
+*/
+#undef JS_HAS_SCRIPT_OBJECT
+
