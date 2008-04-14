@@ -2685,6 +2685,32 @@ DEFINE_FUNCTION( RandReal ) {
 //}
 
 
+DEFINE_FUNCTION_FAST( PixelAt ) {
+
+	RT_ASSERT_ARGC(2);
+	RT_ASSERT_INT(J_FARG(1));
+	RT_ASSERT_INT(J_FARG(2));
+
+	int x = JSVAL_TO_INT(J_FARG(1));
+	int y = JSVAL_TO_INT(J_FARG(2));
+
+	Texture *tex = (Texture *)JS_GetPrivate(cx, J_FOBJ);
+	RT_ASSERT_RESOURCE(tex);
+
+	PTYPE *ptr = tex->cbuffer + tex->channels * ( x + tex->width * y );
+
+	JSObject *jsArray = JS_NewArrayObject(cx, 0, NULL);
+	*J_FRVAL = OBJECT_TO_JSVAL(jsArray);
+	jsval value;
+	for (int i=0; i<tex->channels; ++i) {
+
+		JS_NewNumberValue(cx, *(ptr + i), &value); // JS_NewDoubleValue(cx, vector[i], &value);
+		JS_SetElement(cx, jsArray, i, &value);
+	}
+	return JS_TRUE;
+}
+
+
 #ifdef _DEBUG
 
 static JSBool Test(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
@@ -2744,6 +2770,9 @@ CONFIGURE_CLASS
 		FUNCTION( AddGradiantQuad )
 		FUNCTION( AddGradiantLinear )
 		FUNCTION( AddGradiantRadial )
+
+		FUNCTION_FAST( PixelAt )
+
 #ifdef _DEBUG
 		FUNCTION( Test )
 #endif // _DEBUG
