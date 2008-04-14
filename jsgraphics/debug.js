@@ -130,7 +130,6 @@ function ResizeWindow(w, h) {
 		LoadIdentity();
 //		Ortho(0,0,10,10, -10, 10);
 		Perspective( 90, -1000, 1000 );
-		Print(123)
 	}
 	Render();
 }
@@ -148,16 +147,18 @@ with (Ogl) {
 	ShadeModel(FLAT);
 	FrontFace(CCW);
 
-	ClearColor(0,0,0,1);	
+	ClearColor(0.1,0.2,0.3,1);	
 
 	ClearDepth(1);
 	Enable(DEPTH_TEST);
-	DepthFunc(LEQUAL);
+	DepthFunc(LESS);
 
 //	DepthRange(1000, -1000);
 	
 	Hint(PERSPECTIVE_CORRECTION_HINT, NICEST);
 	Hint(LINE_SMOOTH_HINT, DONT_CARE);		
+	Enable(LINE_SMOOTH);
+	LineWidth(1);
 
 	Enable( TEXTURE_2D );
 	BindTexture( TEXTURE_2D, GenTexture() );
@@ -168,17 +169,20 @@ with (Ogl) {
 	texture.Set([0,0,0,0]);
 	const curveGaussian = function(c) { return function(x) { return Math.exp( -(x*x)/(2*c*c) ) } }
 	texture.AddGradiantRadial( curveGaussian( 0.5 ), 0 );
+	
+	Print( texture.PixelAt(64,64) );
+
+	Enable(BLEND);
 
 //	BlendFunc(ONE, ONE);
 	BlendFunc(SRC_ALPHA, ONE_MINUS_SRC_ALPHA);
 	
-	Enable(BLEND);
 
 	DefineTextureImage( TEXTURE_2D, texture );
 
 //		PointParameter( POINT_SIZE_MIN, 0 );
 //		PointParameter( POINT_SIZE_MAX, 1 );
-		PointParameter( POINT_DISTANCE_ATTENUATION, [0.1, 0, 0] ); // 1/(a + b*d + c *d^2)
+		PointParameter( POINT_DISTANCE_ATTENUATION, [0, 0, 0.01] ); // 1/(a + b*d + c *d^2)
 
 	Enable(POINT_SPRITE); // http://www.informit.com/articles/article.aspx?p=770639&seqNum=7
 	TexEnv(POINT_SPRITE, COORD_REPLACE, TRUE);
@@ -192,31 +196,27 @@ with (Ogl) {
 
 	var list = NewList();
 
-		LineWidth(1);
+		Color(0.5,0.5,1);
 		Begin(LINES);
 		Vertex( 0, 1, 0 );
 		Vertex( 0,-1, 0 );
 		End();
 
-		Color(1,1,1);
 		Enable( TEXTURE_2D );
-//		Enable( POINT_SMOOTH );
 		PointSize(40);
+		Color(1,1,1);
 		Begin(POINTS);
 		Vertex( 0, 1, 0);
 		Vertex( 0,-1, 0);
 		End();
-
-		Color(0.5,0.5,1);
 		Disable( TEXTURE_2D );
-		Enable(LINE_SMOOTH);
 		
 	EndList();
 }
 
 const degToRad = 360/Math.PI;
 
-function Render(i) {
+function Render(imgIndex) {
 	with (Ogl) {
 
 		Clear(COLOR_BUFFER_BIT | DEPTH_BUFFER_BIT);
@@ -224,17 +224,27 @@ function Render(i) {
 		MatrixMode(MODELVIEW);
 		LoadIdentity();
 
-		Translate(0, 0, -3);
-		Rotate(i,1,1,1);
+		Translate(0, 0, -10);
+//		Rotate(i,1,1,1);
 
-//		Translate(0, 0, -100);
+
+		Color(1,1,1,1);
+		for (var i=0; i<10; i++) {
 		
-		for (var n=0; n<100; n++) {
+			Enable( TEXTURE_2D );
 
-				Translate(0, 0, -0.1);
-				Rotate(10, 0,0,1);
-				CallList(list);
+//Quad(0,0,1,1)
+			
+			PointSize(80);
+			Begin(POINTS);
+
+			Vertex(i, 0, -i*2);
+			End();
+
+//			Translate(1,0,-2);
 		}
+
+
 
 	}
 }

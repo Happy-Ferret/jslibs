@@ -110,6 +110,57 @@ DEFINE_FUNCTION_FAST( Flush ) {
 	return JS_TRUE;
 }
 
+DEFINE_FUNCTION_FAST( Finish ) {
+
+	glFinish();
+	*J_FRVAL = JSVAL_VOID;
+	return JS_TRUE;
+}
+
+
+
+DEFINE_FUNCTION_FAST( Fog ) {
+
+	RT_ASSERT_ARGC(2);
+	RT_ASSERT_INT(J_FARG(1));
+
+	*J_FRVAL = JSVAL_VOID;
+	if ( JSVAL_IS_INT(J_FARG(2)) ) {
+
+		glFogi(JSVAL_TO_INT(J_FARG(1)), JSVAL_TO_INT(J_FARG(2)));
+		return JS_TRUE;
+	}
+	if ( JSVAL_IS_NUMBER(J_FARG(2)) ) {
+
+		jsdouble param;
+		JS_ValueToNumber(cx, J_FARG(2), &param);
+		glFogf( JSVAL_TO_INT(J_FARG(1)), param );
+		return JS_TRUE;
+	}
+	if ( J_VALUE_IS_ARRAY(J_FARG(2)) ) {
+
+		JSObject *arrayObj = JSVAL_TO_OBJECT(J_FARG(2));
+		jsuint length;
+		RT_CHECK_CALL( JS_GetArrayLength(cx, arrayObj, &length) );
+
+		GLfloat params[16];
+		RT_ASSERT( length <= sizeof(params), "Too many elements." );
+		jsval tmp;
+		jsdouble tmp2;
+		for ( jsuint i=0; i<length; i++ ) {
+			
+			RT_CHECK_CALL( JS_GetElement(cx, arrayObj, i, &tmp) );
+			RT_CHECK_CALL( JS_ValueToNumber(cx, tmp, &tmp2) );
+			params[i] = tmp2;
+		}
+		glFogfv( JSVAL_TO_INT(J_FARG(1)), params );
+		return JS_TRUE;
+	}
+
+	REPORT_ERROR("Invalid argument.");
+	return JS_TRUE;
+}
+
 
 DEFINE_FUNCTION_FAST( Hint ) {
 
@@ -332,7 +383,7 @@ DEFINE_FUNCTION_FAST( Enable ) {
 	
 	RT_ASSERT_ARGC(1);
 	RT_ASSERT_INT(J_FARG(1));
-	glEnable( JSVAL_TO_INT( J_FARG(1) ) );
+	glEnable( JSVAL_TO_INT(J_FARG(1)) );
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
@@ -875,18 +926,18 @@ DEFINE_FUNCTION_FAST( BindBuffer ) {
 DEFINE_FUNCTION_FAST( PointParameter ) {
 
 	static bool initDone = false;
-	static PFNGLPOINTPARAMETERIPROC glPointParameteri = NULL;
-	static PFNGLPOINTPARAMETERIVPROC glPointParameteriv = NULL;
+//	static PFNGLPOINTPARAMETERIPROC glPointParameteri = NULL;
+//	static PFNGLPOINTPARAMETERIVPROC glPointParameteriv = NULL;
 	static PFNGLPOINTPARAMETERFPROC glPointParameterf = NULL;
 	static PFNGLPOINTPARAMETERFVPROC glPointParameterfv = NULL;
 
 	if ( !initDone ) {
 
-		glPointParameteri = (PFNGLPOINTPARAMETERIPROC) GL_GET_PROC_ADDRESS("glPointParameteri");
-		glPointParameteriv = (PFNGLPOINTPARAMETERIVPROC) GL_GET_PROC_ADDRESS("glPointParameteriv");
+//		glPointParameteri = (PFNGLPOINTPARAMETERIPROC) GL_GET_PROC_ADDRESS("glPointParameteri");
+//		glPointParameteriv = (PFNGLPOINTPARAMETERIVPROC) GL_GET_PROC_ADDRESS("glPointParameteriv");
 		glPointParameterf = (PFNGLPOINTPARAMETERFPROC) GL_GET_PROC_ADDRESS("glPointParameterf");
 		glPointParameterfv = (PFNGLPOINTPARAMETERFVPROC) GL_GET_PROC_ADDRESS("glPointParameterfv");
-		RT_ASSERT( glPointParameteri != NULL && glPointParameteriv != NULL && glPointParameterf != NULL && glPointParameterfv != NULL, "OpenGL extension unavailable.");
+//		RT_ASSERT( glPointParameteri != NULL && glPointParameteriv != NULL && glPointParameterf != NULL && glPointParameterfv != NULL, "OpenGL extension unavailable.");
 		initDone = true;
 	}
 
@@ -894,11 +945,11 @@ DEFINE_FUNCTION_FAST( PointParameter ) {
 	RT_ASSERT_INT(J_FARG(1));
 
 	*J_FRVAL = JSVAL_VOID;
-	if ( JSVAL_IS_INT(J_FARG(2)) ) {
-
-		glPointParameteri(JSVAL_TO_INT(J_FARG(1)), JSVAL_TO_INT(J_FARG(2)));
-		return JS_TRUE;
-	}
+//	if ( JSVAL_IS_INT(J_FARG(2)) ) {
+//
+//		glPointParameteri(JSVAL_TO_INT(J_FARG(1)), JSVAL_TO_INT(J_FARG(2)));
+//		return JS_TRUE;
+//	}
 	if ( JSVAL_IS_NUMBER(J_FARG(2)) ) {
 
 		jsdouble param;
@@ -918,15 +969,13 @@ DEFINE_FUNCTION_FAST( PointParameter ) {
 		jsdouble tmp2;
 		for ( jsuint i=0; i<length; i++ ) {
 			
-			JS_GetElement(cx, arrayObj, i, &tmp);
-			JS_ValueToNumber(cx, tmp, &tmp2);
+			RT_CHECK_CALL( JS_GetElement(cx, arrayObj, i, &tmp) );
+			RT_CHECK_CALL( JS_ValueToNumber(cx, tmp, &tmp2) );
 			params[i] = tmp2;
 		}
 		glPointParameterfv( JSVAL_TO_INT(J_FARG(1)), params );
 		return JS_TRUE;
 	}
-
-
 	REPORT_ERROR("Invalid argument.");
 	return JS_TRUE;
 }
@@ -961,7 +1010,7 @@ DEFINE_FUNCTION_FAST( DefineTextureImage ) {
 		channels = tex->channels;
 		type = GL_FLOAT;
 	} else
-	if ( strcmp(className, "Image" ) == 0 ) {
+	if ( ImageJSClass(cx) == JS_GET_CLASS(cx, tObj) ) {
 
 		data = JS_GetPrivate(cx, tObj);
 		RT_ASSERT_RESOURCE(data);
@@ -1704,6 +1753,8 @@ CONFIGURE_CLASS
 		FUNCTION_FAST(GetDouble)
 		FUNCTION_FAST(Accum)
 		FUNCTION_FAST(Flush)
+		FUNCTION_FAST(Finish)
+		FUNCTION_FAST(Fog)
 		FUNCTION_FAST(Hint)
 		FUNCTION_FAST(Vertex)
 		FUNCTION_FAST(Color)
