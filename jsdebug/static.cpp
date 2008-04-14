@@ -530,19 +530,17 @@ DEFINE_FUNCTION(Locate) {
 	RT_JSVAL_TO_INT32( argv[0], frame );
 	RT_ASSERT(frame <= 0, "Frame number must be <= 0");
 
-// (TBD) use JS_FrameIterator instead
-//		JSStackFrame *fp = NULL;
-//		JS_FrameIterator(cx, &fp);
-
-	for ( JSStackFrame *fp = cx->fp; fp; fp = fp->down ) {
+	JSStackFrame *fp = NULL;
+	for ( JS_FrameIterator(cx, &fp); fp; JS_FrameIterator(cx, &fp) ) {
 		
 		jsbytecode *pc = JS_GetFramePC(cx,fp);
 		if ( fp->script && pc && !frame++ ) {
 
 			char tmp[512];
-			strcpy(tmp, fp->script->filename);
+			JSScript *script = JS_GetFrameScript(cx, fp);
+			strcpy(tmp, JS_GetScriptFilename(cx, script));
 			strcat(tmp, ":");
-			strcat(tmp, IntegerToString(JS_PCToLineNumber(cx, fp->script, pc), 10));
+			strcat(tmp, IntegerToString(JS_PCToLineNumber(cx, script, pc), 10));
 			*rval = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, tmp));
 			break;
 		}
