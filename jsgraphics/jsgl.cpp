@@ -43,6 +43,8 @@ Manage GL extensions:
 	#include <OpenGL/gl.h>
 #endif
 
+//#define GL_GLEXT_PROTOTYPES
+
 #include <gl/gl.h>
 #include "glext.h"
 
@@ -51,6 +53,13 @@ Manage GL extensions:
 #ifdef XP_WIN
 #define GL_GET_PROC_ADDRESS wglGetProcAddress
 #endif // XP_WIN
+
+#define LOAD_OPENGL_EXTENSION( name, proto ) \
+	static proto name = NULL; \
+	if ( name == NULL ) { \
+		name = (proto) GL_GET_PROC_ADDRESS( #name ); \
+		RT_ASSERT_1( name != NULL, "OpenGL extension %s unavailable.", #name ); \
+	}
 
 
 BEGIN_CLASS( Ogl )
@@ -237,21 +246,30 @@ DEFINE_FUNCTION_FAST( Normal ) {
 
 DEFINE_FUNCTION_FAST( TexCoord ) {
 
-	RT_ASSERT_ARGC(2);
-//	float vec[3];
-//	FloatArrayToVector(cx, 3, &argv[0], vec);
-	jsdouble s, t, r;
+	RT_ASSERT_ARGC(1);
+	*J_FRVAL = JSVAL_VOID;
+	jsdouble s;
 	JS_ValueToNumber(cx, J_FARG(1), &s);
+	if ( J_ARGC == 1 ) {
+	
+		glTexCoord1d(s);
+		return JS_TRUE;	
+	}
+	jsdouble t;
 	JS_ValueToNumber(cx, J_FARG(2), &t);
-	if ( J_ARGC >= 3 ) {
-
-		JS_ValueToNumber(cx, J_FARG(2), &r);
-		glTexCoord3d(s, t, r);
-	} else {
+	if ( J_ARGC == 2 ) {
 
 		glTexCoord2d(s, t);
+		return JS_TRUE;	
 	}
-	*J_FRVAL = JSVAL_VOID;
+	jsdouble r;
+	JS_ValueToNumber(cx, J_FARG(3), &r);
+	if ( J_ARGC == 3 ) {
+
+		glTexCoord3d(s, t, r);
+		return JS_TRUE;	
+	}
+	REPORT_ERROR("Invalid argument.");
 	return JS_TRUE;
 }
 
@@ -979,6 +997,71 @@ DEFINE_FUNCTION_FAST( PointParameter ) {
 	REPORT_ERROR("Invalid argument.");
 	return JS_TRUE;
 }
+
+
+DEFINE_FUNCTION_FAST( ActiveTexture ) {
+
+	LOAD_OPENGL_EXTENSION( glActiveTextureARB, PFNGLACTIVETEXTUREARBPROC );
+
+	RT_ASSERT_ARGC(1);
+	RT_ASSERT_INT(J_FARG(1));
+	GLenum texture = JSVAL_TO_INT(J_FARG(1));
+	glActiveTextureARB(texture);
+	*J_FRVAL = JSVAL_VOID;
+	return JS_TRUE;
+}
+
+
+DEFINE_FUNCTION_FAST( ClientActiveTexture ) {
+
+	LOAD_OPENGL_EXTENSION( glClientActiveTextureARB, PFNGLCLIENTACTIVETEXTUREARBPROC );
+
+	RT_ASSERT_ARGC(1);
+	RT_ASSERT_INT(J_FARG(1));
+	GLenum texture = JSVAL_TO_INT(J_FARG(1));
+	glClientActiveTextureARB(texture);
+	*J_FRVAL = JSVAL_VOID;
+	return JS_TRUE;
+}
+
+
+DEFINE_FUNCTION_FAST( MultiTexCoord ) {
+
+	LOAD_OPENGL_EXTENSION( glMultiTexCoord1d, PFNGLMULTITEXCOORD1DARBPROC );
+	LOAD_OPENGL_EXTENSION( glMultiTexCoord2d, PFNGLMULTITEXCOORD2DARBPROC );
+	LOAD_OPENGL_EXTENSION( glMultiTexCoord3d, PFNGLMULTITEXCOORD3DARBPROC );
+
+	RT_ASSERT_ARGC(2);
+
+	RT_ASSERT_INT(J_FARG(1));
+	GLenum target = JSVAL_TO_INT(J_FARG(1));
+	
+	*J_FRVAL = JSVAL_VOID;
+	jsdouble s;
+	JS_ValueToNumber(cx, J_FARG(1), &s);
+	if ( J_ARGC == 1 ) {
+	
+		glMultiTexCoord1d(target, s);
+		return JS_TRUE;	
+	}
+	jsdouble t;
+	JS_ValueToNumber(cx, J_FARG(2), &t);
+	if ( J_ARGC == 2 ) {
+
+		glMultiTexCoord2d(target, s, t);
+		return JS_TRUE;	
+	}
+	jsdouble r;
+	JS_ValueToNumber(cx, J_FARG(3), &r);
+	if ( J_ARGC == 3 ) {
+
+		glMultiTexCoord3d(target, s, t, r);
+		return JS_TRUE;	
+	}
+	REPORT_ERROR("Invalid argument.");
+	return JS_TRUE;
+}
+
 
 
 // non-OpenGL API
@@ -1743,6 +1826,45 @@ CONFIGURE_CLASS
 		CONST_INTEGER( POINT_SPRITE, GL_POINT_SPRITE )
 		CONST_INTEGER( COORD_REPLACE, GL_COORD_REPLACE )
 
+		#ifndef GL_ARB_multitexture
+		CONST_INTEGER( TEXTURE0_ARB             ,GL_TEXTURE0_ARB               )
+		CONST_INTEGER( TEXTURE1_ARB             ,GL_TEXTURE1_ARB               )
+		CONST_INTEGER( TEXTURE2_ARB             ,GL_TEXTURE2_ARB               )
+		CONST_INTEGER( TEXTURE3_ARB             ,GL_TEXTURE3_ARB               )
+		CONST_INTEGER( TEXTURE4_ARB             ,GL_TEXTURE4_ARB               )
+		CONST_INTEGER( TEXTURE5_ARB             ,GL_TEXTURE5_ARB               )
+		CONST_INTEGER( TEXTURE6_ARB             ,GL_TEXTURE6_ARB               )
+		CONST_INTEGER( TEXTURE7_ARB             ,GL_TEXTURE7_ARB               )
+		CONST_INTEGER( TEXTURE8_ARB             ,GL_TEXTURE8_ARB               )
+		CONST_INTEGER( TEXTURE9_ARB             ,GL_TEXTURE9_ARB               )
+		CONST_INTEGER( TEXTURE10_ARB            ,GL_TEXTURE10_ARB              )
+		CONST_INTEGER( TEXTURE11_ARB            ,GL_TEXTURE11_ARB              )
+		CONST_INTEGER( TEXTURE12_ARB            ,GL_TEXTURE12_ARB              )
+		CONST_INTEGER( TEXTURE13_ARB            ,GL_TEXTURE13_ARB              )
+		CONST_INTEGER( TEXTURE14_ARB            ,GL_TEXTURE14_ARB              )
+		CONST_INTEGER( TEXTURE15_ARB            ,GL_TEXTURE15_ARB              )
+		CONST_INTEGER( TEXTURE16_ARB            ,GL_TEXTURE16_ARB              )
+		CONST_INTEGER( TEXTURE17_ARB            ,GL_TEXTURE17_ARB              )
+		CONST_INTEGER( TEXTURE18_ARB            ,GL_TEXTURE18_ARB              )
+		CONST_INTEGER( TEXTURE19_ARB            ,GL_TEXTURE19_ARB              )
+		CONST_INTEGER( TEXTURE20_ARB            ,GL_TEXTURE20_ARB              )
+		CONST_INTEGER( TEXTURE21_ARB            ,GL_TEXTURE21_ARB              )
+		CONST_INTEGER( TEXTURE22_ARB            ,GL_TEXTURE22_ARB              )
+		CONST_INTEGER( TEXTURE23_ARB            ,GL_TEXTURE23_ARB              )
+		CONST_INTEGER( TEXTURE24_ARB            ,GL_TEXTURE24_ARB              )
+		CONST_INTEGER( TEXTURE25_ARB            ,GL_TEXTURE25_ARB              )
+		CONST_INTEGER( TEXTURE26_ARB            ,GL_TEXTURE26_ARB              )
+		CONST_INTEGER( TEXTURE27_ARB            ,GL_TEXTURE27_ARB              )
+		CONST_INTEGER( TEXTURE28_ARB            ,GL_TEXTURE28_ARB              )
+		CONST_INTEGER( TEXTURE29_ARB            ,GL_TEXTURE29_ARB              )
+		CONST_INTEGER( TEXTURE30_ARB            ,GL_TEXTURE30_ARB              )
+		CONST_INTEGER( TEXTURE31_ARB            ,GL_TEXTURE31_ARB              )
+		CONST_INTEGER( ACTIVE_TEXTURE_ARB       ,GL_ACTIVE_TEXTURE_ARB         )
+		CONST_INTEGER( CLIENT_ACTIVE_TEXTURE_ARB,GL_CLIENT_ACTIVE_TEXTURE_ARB  )
+		CONST_INTEGER( MAX_TEXTURE_UNITS_ARB    ,GL_MAX_TEXTURE_UNITS_ARB      )
+		#endif
+
+
 	END_CONST_INTEGER_SPEC
 
 
@@ -1811,6 +1933,11 @@ CONFIGURE_CLASS
 		FUNCTION_FAST(GenBuffer)
 		FUNCTION_FAST(BindBuffer)
 		FUNCTION_FAST(PointParameter)
+
+		FUNCTION_FAST(ActiveTexture)		
+		FUNCTION_FAST(ClientActiveTexture)
+
+		FUNCTION_FAST(MultiTexCoord)
 
 	END_STATIC_FUNCTION_SPEC
 
