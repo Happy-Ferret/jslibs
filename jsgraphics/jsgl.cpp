@@ -112,12 +112,26 @@ DEFINE_FUNCTION_FAST( Accum ) {
 }
 
 
+DEFINE_FUNCTION_FAST( AlphaFunc ) {
+
+	RT_ASSERT_ARGC(2);
+	RT_ASSERT_INT(J_FARG(1));
+	RT_ASSERT_NUMBER(J_FARG(2));
+	jsdouble ref;
+	JS_ValueToNumber(cx, J_FARG(2), &ref);
+	glAlphaFunc( JSVAL_TO_INT(J_FARG(1)), ref );
+	*J_FRVAL = JSVAL_VOID;
+	return JS_TRUE;
+}
+
+
 DEFINE_FUNCTION_FAST( Flush ) {
 
 	glFlush();
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
+
 
 DEFINE_FUNCTION_FAST( Finish ) {
 
@@ -303,7 +317,6 @@ DEFINE_FUNCTION_FAST( TexEnv ) {
 	RT_ASSERT_ARGC(3);
 	RT_ASSERT_INT(J_FARG(1));
 	RT_ASSERT_INT(J_FARG(2));
-	RT_ASSERT_NUMBER(J_FARG(3));
 
 	*J_FRVAL = JSVAL_VOID;
 	if ( JSVAL_IS_INT(J_FARG(3)) ) {
@@ -312,13 +325,31 @@ DEFINE_FUNCTION_FAST( TexEnv ) {
 		return JS_TRUE;
 	}
 	if ( JSVAL_IS_NUMBER(J_FARG(3)) ) {
-	
+
 		jsdouble param;
-		RT_CHECK_CALL( JS_ValueToNumber(cx, J_FARG(3), &param) );
-		glTexEnvf( JSVAL_TO_INT( J_FARG(1) ), JSVAL_TO_INT( J_FARG(2) ), param );
+		JS_ValueToNumber(cx, J_FARG(3), &param);
+		glTexEnvf( JSVAL_TO_INT(J_FARG(1)), JSVAL_TO_INT(J_FARG(2)), param );
 		return JS_TRUE;
 	}
+	if ( J_VALUE_IS_ARRAY(J_FARG(3)) ) {
 
+		JSObject *arrayObj = JSVAL_TO_OBJECT(J_FARG(3));
+		jsuint length;
+		RT_CHECK_CALL( JS_GetArrayLength(cx, arrayObj, &length) );
+
+		GLfloat params[16];
+		RT_ASSERT( length <= sizeof(params), "Too many elements." );
+		jsval tmp;
+		jsdouble tmp2;
+		for ( jsuint i=0; i<length; i++ ) {
+			
+			RT_CHECK_CALL( JS_GetElement(cx, arrayObj, i, &tmp) );
+			RT_CHECK_CALL( JS_ValueToNumber(cx, tmp, &tmp2) );
+			params[i] = tmp2;
+		}
+		glTexEnvfv( JSVAL_TO_INT(J_FARG(1)), JSVAL_TO_INT(J_FARG(2)), params );
+		return JS_TRUE;
+	}
 	REPORT_ERROR("Invalid argument.");
 	return JS_TRUE;
 }
@@ -1069,17 +1100,18 @@ DEFINE_FUNCTION_FAST( MultiTexCoord ) {
 // (TBD) manage compression: http://www.opengl.org/registry/specs/ARB/texture_compression.txt
 DEFINE_FUNCTION_FAST( DefineTextureImage ) {
 
-	RT_ASSERT_ARGC(2);
+	RT_ASSERT_ARGC(3);
 	RT_ASSERT_INT(J_FARG(1));
-	RT_ASSERT_OBJECT(J_FARG(2));
+	RT_ASSERT_INT(J_FARG(2));
+	RT_ASSERT_OBJECT(J_FARG(3));
 
-	JSObject *tObj = JSVAL_TO_OBJECT(J_FARG(2));
+	JSObject *tObj = JSVAL_TO_OBJECT(J_FARG(3));
 	const char * className = JS_GET_CLASS(cx, tObj)->name;
 
 	GLsizei width, height;
 	GLenum format, type;
-	GLvoid *data;
 	int channels;
+	GLvoid *data;
 
 //	if ( strcmp(className, "Texture" ) == 0 ) {
 	if ( TextureJSClass(cx) == JS_GET_CLASS(cx, tObj) ) {
@@ -1102,27 +1134,33 @@ DEFINE_FUNCTION_FAST( DefineTextureImage ) {
 		GetIntProperty(cx, tObj, "height", &height);
 		GetIntProperty(cx, tObj, "channels", &channels);
 		type = GL_UNSIGNED_BYTE;
-	} else {
-		
+	} else
 		REPORT_ERROR("Invalid texture type.");
-	}
 
-	switch ( channels ) {
-		case 1:
-			format = GL_LUMINANCE;
-			break;
-		case 2:
-			format = GL_LUMINANCE_ALPHA;
-			break;
-		case 3:
-			format = GL_RGB;
-			break;
-		case 4:
-			format = GL_RGBA;
-			break;
-	}
+	if ( J_FARG_ISDEF(2) ) {
+		
+		RT_ASSERT_INT(J_FARG(2));
+		format = JSVAL_TO_INT(J_FARG(2));
+	} else {
 
-	glTexImage2D( JSVAL_TO_INT(J_FARG(1)), 0, 3, width, height, 0, format, type, data );
+		switch ( channels ) {
+			case 1:
+				format = GL_LUMINANCE;
+				break;
+			case 2:
+				format = GL_LUMINANCE_ALPHA;
+				break;
+			case 3:
+				format = GL_RGB;
+				break;
+			case 4:
+				format = GL_RGBA;
+				break;
+		}
+	}	
+
+	glPixelStorei( GL_UNPACK_ALIGNMENT, 1 );
+	glTexImage2D( JSVAL_TO_INT(J_FARG(1)), 0, format, width, height, 0, format, type, data );
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
@@ -1874,6 +1912,7 @@ CONFIGURE_CLASS
 		FUNCTION_FAST(GetInteger)
 		FUNCTION_FAST(GetDouble)
 		FUNCTION_FAST(Accum)
+		FUNCTION_FAST(AlphaFunc)
 		FUNCTION_FAST(Flush)
 		FUNCTION_FAST(Finish)
 		FUNCTION_FAST(Fog)

@@ -150,7 +150,7 @@ with (Ogl) {
 	ClearColor(0.1,0.2,0.3,1);	
 
 	ClearDepth(1);
-	Enable(DEPTH_TEST);
+//	Enable(DEPTH_TEST); // !!!!
 	DepthFunc(LESS);
 
 //	DepthRange(1000, -1000);
@@ -164,21 +164,26 @@ with (Ogl) {
 	BindTexture( TEXTURE_2D, GenTexture() );
 	TexParameter(TEXTURE_2D, TEXTURE_MIN_FILTER, NEAREST); // GL_LINEAR
 	TexParameter(TEXTURE_2D, TEXTURE_MAG_FILTER, NEAREST);
-	//		var texture = new Jpeg(new File('R0010235.JPG').Open( File.RDONLY )).Load();
-	var texture = new Texture(128, 128, 4);
-	texture.Set([0,0,0,0]);
-	const curveGaussian = function(c) { return function(x) { return Math.exp( -(x*x)/(2*c*c) ) } }
-	texture.AddGradiantRadial( curveGaussian( 0.5 ), 0 );
+	TexEnv(TEXTURE_ENV, TEXTURE_ENV_MODE, MODULATE);
+	TexEnv(TEXTURE_ENV, TEXTURE_ENV_COLOR, [0,0,0,0]);
 	
-	Print( texture.PixelAt(64,64) );
+
+	//		var texture = new Jpeg(new File('R0010235.JPG').Open( File.RDONLY )).Load();
+	var texture = new Texture(128, 128, 1);
+	texture.Set([0]);
+	const curveGaussian = function(c) { return function(x) { return Math.exp( -(x*x)/(2*c*c) ) } }
+	texture.AddGradiantRadial( curveGaussian( 0.3 ), false );
+	Print( texture.PixelAt(32,64) );
+
+
+//	Enable(ALPHA_TEST);
+//	AlphaFunc( GREATER, 0.5 );
 
 	Enable(BLEND);
-
 //	BlendFunc(ONE, ONE);
 	BlendFunc(SRC_ALPHA, ONE_MINUS_SRC_ALPHA);
 	
-
-	DefineTextureImage( TEXTURE_2D, texture );
+	DefineTextureImage( TEXTURE_2D, ALPHA, texture );
 
 //		PointParameter( POINT_SIZE_MIN, 0 );
 //		PointParameter( POINT_SIZE_MAX, 1 );
@@ -186,6 +191,7 @@ with (Ogl) {
 
 	Enable(POINT_SPRITE); // http://www.informit.com/articles/article.aspx?p=770639&seqNum=7
 	TexEnv(POINT_SPRITE, COORD_REPLACE, TRUE);
+	
 
 	MatrixMode(PROJECTION);
 	Perspective( 60, 0.0001, 1000 );
@@ -224,27 +230,20 @@ function Render(imgIndex) {
 		MatrixMode(MODELVIEW);
 		LoadIdentity();
 
-		Translate(0, 0, -10);
+		Translate(0, 0, -30);
 //		Rotate(i,1,1,1);
 
-
-		Color(1,1,1,1);
-		for (var i=0; i<10; i++) {
+		Enable( TEXTURE_2D );
+		for (var i=0; i<100; i++) {
 		
-			Enable( TEXTURE_2D );
 
-//Quad(0,0,1,1)
+			//	Quad(0,0,1,1)
 			
-			PointSize(80);
+			PointSize(100);
 			Begin(POINTS);
-
-			Vertex(i, 0, -i*2);
+			Vertex(i/10, 0, i*2);
 			End();
-
-//			Translate(1,0,-2);
 		}
-
-
 
 	}
 }
@@ -254,7 +253,10 @@ for (var i=0; !_quit; i++) {
 
 	MaybeCollectGarbage();
 	Ogl.Viewport(0,0,w,h);
+	
+	var t0 = TimeCounter();
 	Render(i);
+	Print( (1000/(TimeCounter() - t0)).toFixed(), ' fps\n' )
 	win.SwapBuffers();
 	win.ProcessEvents();
 	Sleep(10);
