@@ -54,12 +54,19 @@ Manage GL extensions:
 #define GL_GET_PROC_ADDRESS wglGetProcAddress
 #endif // XP_WIN
 
+/*
 #define LOAD_OPENGL_EXTENSION( name, proto ) \
 	static proto name = NULL; \
 	if ( name == NULL ) { \
 		name = (proto) GL_GET_PROC_ADDRESS( #name ); \
 		RT_ASSERT_1( name != NULL, "OpenGL extension %s unavailable.", #name ); \
 	}
+*/
+
+#define LOAD_OPENGL_EXTENSION( name, proto ) \
+	static proto name = (proto) GL_GET_PROC_ADDRESS( #name ); \
+	RT_ASSERT_1( name != NULL, "OpenGL extension %s unavailable.", #name );
+
 
 
 BEGIN_CLASS( Ogl )
@@ -141,7 +148,6 @@ DEFINE_FUNCTION_FAST( Finish ) {
 }
 
 
-
 DEFINE_FUNCTION_FAST( Fog ) {
 
 	RT_ASSERT_ARGC(2);
@@ -162,24 +168,22 @@ DEFINE_FUNCTION_FAST( Fog ) {
 	}
 	if ( J_VALUE_IS_ARRAY(J_FARG(2)) ) {
 
+		GLfloat params[16];
 		JSObject *arrayObj = JSVAL_TO_OBJECT(J_FARG(2));
 		jsuint length;
 		RT_CHECK_CALL( JS_GetArrayLength(cx, arrayObj, &length) );
-
-		GLfloat params[16];
 		RT_ASSERT( length <= sizeof(params), "Too many elements." );
-		jsval tmp;
-		jsdouble tmp2;
+		jsval eltVal;
+		jsdouble dbl;
 		for ( jsuint i=0; i<length; i++ ) {
 			
-			RT_CHECK_CALL( JS_GetElement(cx, arrayObj, i, &tmp) );
-			RT_CHECK_CALL( JS_ValueToNumber(cx, tmp, &tmp2) );
-			params[i] = tmp2;
+			RT_CHECK_CALL( JS_GetElement(cx, arrayObj, i, &eltVal) );
+			RT_CHECK_CALL( JS_ValueToNumber(cx, eltVal, &dbl) );
+			params[i] = dbl;
 		}
 		glFogfv( JSVAL_TO_INT(J_FARG(1)), params );
 		return JS_TRUE;
 	}
-
 	REPORT_ERROR("Invalid argument.");
 	return JS_TRUE;
 }
@@ -932,17 +936,13 @@ DEFINE_FUNCTION_FAST( TexSubImage2D ) {
 */
 
 
-
+///////////////////////////////////////////////////////////////////////////////
 // OpenGL extensions
 
-DEFINE_FUNCTION_FAST( GenBuffer ) {
-	
-	static PFNGLGENBUFFERSARBPROC glGenBuffersARB = NULL;
-	if ( !glGenBuffersARB ) {
 
-		glGenBuffersARB = (PFNGLGENBUFFERSARBPROC) GL_GET_PROC_ADDRESS("glGenBufferARB");
-		RT_ASSERT( glGenBuffersARB != NULL, "OpenGL extension unavailable.");
-	}
+DEFINE_FUNCTION_FAST( GenBuffer ) {
+
+	LOAD_OPENGL_EXTENSION( glGenBuffersARB, PFNGLGENBUFFERSARBPROC );
 
 	GLuint buffer;
 	glGenBuffersARB(1, &buffer);
@@ -953,12 +953,7 @@ DEFINE_FUNCTION_FAST( GenBuffer ) {
 
 DEFINE_FUNCTION_FAST( BindBuffer ) {
 	
-	static PFNGLBINDBUFFERARBPROC glBindBufferARB = NULL;
-	if ( !glBindBufferARB ) {
-
-		glBindBufferARB = (PFNGLBINDBUFFERARBPROC) GL_GET_PROC_ADDRESS("glBindBufferARB");
-		RT_ASSERT( glBindBufferARB != NULL, "OpenGL extension unavailable.");
-	}
+	LOAD_OPENGL_EXTENSION( glBindBufferARB, PFNGLBINDBUFFERARBPROC );
 
 	RT_ASSERT_ARGC(2);
 	RT_ASSERT_INT(J_FARG(1));
@@ -974,21 +969,8 @@ DEFINE_FUNCTION_FAST( BindBuffer ) {
 
 DEFINE_FUNCTION_FAST( PointParameter ) {
 
-	static bool initDone = false;
-//	static PFNGLPOINTPARAMETERIPROC glPointParameteri = NULL;
-//	static PFNGLPOINTPARAMETERIVPROC glPointParameteriv = NULL;
-	static PFNGLPOINTPARAMETERFPROC glPointParameterf = NULL;
-	static PFNGLPOINTPARAMETERFVPROC glPointParameterfv = NULL;
-
-	if ( !initDone ) {
-
-//		glPointParameteri = (PFNGLPOINTPARAMETERIPROC) GL_GET_PROC_ADDRESS("glPointParameteri");
-//		glPointParameteriv = (PFNGLPOINTPARAMETERIVPROC) GL_GET_PROC_ADDRESS("glPointParameteriv");
-		glPointParameterf = (PFNGLPOINTPARAMETERFPROC) GL_GET_PROC_ADDRESS("glPointParameterf");
-		glPointParameterfv = (PFNGLPOINTPARAMETERFVPROC) GL_GET_PROC_ADDRESS("glPointParameterfv");
-//		RT_ASSERT( glPointParameteri != NULL && glPointParameteriv != NULL && glPointParameterf != NULL && glPointParameterfv != NULL, "OpenGL extension unavailable.");
-		initDone = true;
-	}
+	LOAD_OPENGL_EXTENSION( glPointParameterf, PFNGLPOINTPARAMETERFPROC );
+	LOAD_OPENGL_EXTENSION( glPointParameterfv, PFNGLPOINTPARAMETERFVPROC );
 
 	RT_ASSERT_ARGC(2);
 	RT_ASSERT_INT(J_FARG(1));
@@ -1179,7 +1161,7 @@ DEFINE_FUNCTION_FAST( RenderToImage ) {
 
 	glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 0, 0, width, height, 0);
 
-	GLint tWidth, tHeight, tComponents;
+	GLint tWidth, tHeight;
 	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &tWidth);
 	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &tHeight);
 //	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_COMPONENTS, &tComponents);
