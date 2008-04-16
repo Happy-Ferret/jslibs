@@ -86,13 +86,13 @@ inline bool MaybeRealloc( int requested, int received ) {
 // helper macros
 
 #define RT_CHECK_CALL( functionCall ) \
-	do { if ((functionCall) == JS_FALSE) { return JS_FALSE; } }  while(0)
+	do { if (unlikely( (functionCall) == JS_FALSE )) { return JS_FALSE; } }  while(0)
 
 #define RT_SAFE(code) \
-	do { if (!_unsafeMode) {code;} } while(0)
+	do { if (unlikely( !_unsafeMode )) {code;} } while(0)
 
 #define RT_UNSAFE(code) \
-	do { if (_unsafeMode) {code;} } while(0)
+	do { if (likely( _unsafeMode )) {code;} } while(0)
 
 #define REPORT_WARNING(errorMessage) \
 	do { JS_ReportWarning( cx, (errorMessage RT_CODE_LOCATION) ); } while(0)
@@ -118,13 +118,13 @@ inline bool MaybeRealloc( int requested, int received ) {
 // assert
 
 #define RT_ASSERT( condition, errorMessage ) \
-	{ if ( !_unsafeMode && !(condition) ) { JS_ReportError( cx, (errorMessage RT_CODE_LOCATION) ); return JS_FALSE; } }
+	{ if (unlikely( !_unsafeMode && !(condition) )) { JS_ReportError( cx, (errorMessage RT_CODE_LOCATION) ); return JS_FALSE; } }
 
 #define RT_ASSERT_1( condition, errorMessage, arg ) \
-	{ if ( !_unsafeMode && !(condition) ) { JS_ReportError( cx, (errorMessage RT_CODE_LOCATION), (arg) ); return JS_FALSE; } }
+	{ if (unlikely( !_unsafeMode && !(condition) )) { JS_ReportError( cx, (errorMessage RT_CODE_LOCATION), (arg) ); return JS_FALSE; } }
 
 #define RT_ASSERT_2( condition, errorMessage, arg1, arg2 ) \
-	{ if ( !_unsafeMode && !(condition) ) { JS_ReportError( cx, (errorMessage RT_CODE_LOCATION), (arg1), (arg2) ); return JS_FALSE; } }
+	{ if (unlikely( !_unsafeMode && !(condition) )) { JS_ReportError( cx, (errorMessage RT_CODE_LOCATION), (arg1), (arg2) ); return JS_FALSE; } }
 
 
 //////////////////
@@ -180,8 +180,9 @@ inline bool MaybeRealloc( int requested, int received ) {
 	RT_ASSERT_CLASS( obj, (jsClass) ); \
 }
 
-// new namespace for jslibs: J_
 
+
+// new namespace for jslibs: J_
 
 #define J_ARGC (argc)
 
