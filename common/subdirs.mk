@@ -2,13 +2,13 @@ ifeq ($(MAKECMDGOALS),)
 $(error NO GOAL SPECIFIED)
 endif
 
+BUILD ?= opt
+BITS ?= 32
+
 .PHONY: $(MAKECMDGOALS)
 
 .DEFAULT:
 	echo IGNORE $@
-
-BUILD ?= opt
-BITS ?= 32
 
 DEST_DIR = ./$(BUILD)/
 

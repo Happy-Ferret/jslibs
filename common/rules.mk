@@ -3,6 +3,7 @@ $(error NO GOAL SPECIFIED)
 endif
 
 BUILD ?= opt
+BITS ?= 32
 
 ifeq ($(BUILD),dbg)
 	CFLAGS += -Wall -g3 -O0 -DDEBUG
@@ -20,6 +21,14 @@ endif
 
 ifneq ($(findstring .so,$(TARGET)),)
 	CFLAGS += -fpic
+endif
+
+ifeq ($(BITS),32)
+	CFLAGS += -m32
+endif
+
+ifeq ($(BITS),64)
+	CFLAGS += -m64
 endif
 
 CFLAGS += -fno-exceptions -fno-rtti -felide-constructors # -static-libgcc 
