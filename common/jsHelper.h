@@ -15,18 +15,9 @@
 #ifndef _JSHELPER_H_
 #define _JSHELPER_H_
 
-#ifdef WIN32
-#include <windows.h>
-#endif // WIN32
-
-#ifdef _MSC_VER
-#pragma warning(disable:4244 4305)  // for VC++, no precision loss complaints
-#pragma warning(disable:4127)  // no "conditional expression is constant" complaints
-#endif
 
 //#include <stdbool.h>
 #include <stdarg.h>
-
 
 #include <jsarena.h>
 #include <jsfun.h>
@@ -53,17 +44,17 @@ inline bool MaybeRealloc( int requested, int received ) {
 // RunTime helper macros
 //   A set of very simple macro to help embeded spidermonkey do be more simple to read.
 
-////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 // common error messages
 
-#define STRINGIFY(x) #x
-#define TOSTRING(x) STRINGIFY(x)
+#define J__STRINGIFY(x) #x
+#define J__TOSTRING(x) J__STRINGIFY(x)
 
-#ifdef _DEBUG
-	#define RT_CODE_LOCATION " (in " __FILE__ ":" TOSTRING(__LINE__) ")"
-#else // _DEBUG
-	#define RT_CODE_LOCATION ""
-#endif // _DEBUG
+#ifdef DEBUG
+	#define J__CODE_LOCATION " (in " __FILE__ ":" J__TOSTRING(__LINE__) ")"
+#else
+	#define J__CODE_LOCATION ""
+#endif // DEBUG
 
 #define RT_ERROR_NO_CONSTRUCT "this object cannot be construct."
 #define RT_ERROR_NEED_CONSTRUCTION "construction is needed for this object."
@@ -82,7 +73,7 @@ inline bool MaybeRealloc( int requested, int received ) {
 #define RT_ERROR_FUNCTION_EXPECTED "a function is expected."
 #define RT_ERROR_INVALID_RANGE "value is out of range."
 
-////////////////
+///////////////////////////////////////////////////////////////////////////////
 // helper macros
 
 #define RT_CHECK_CALL( functionCall ) \
@@ -95,39 +86,39 @@ inline bool MaybeRealloc( int requested, int received ) {
 	do { if (likely( _unsafeMode )) {code;} } while(0)
 
 #define REPORT_WARNING(errorMessage) \
-	do { JS_ReportWarning( cx, (errorMessage RT_CODE_LOCATION) ); } while(0)
+	do { JS_ReportWarning( cx, (errorMessage J__CODE_LOCATION) ); } while(0)
 
 #define REPORT_WARNING_1(errorMessage, arg) \
-	do { JS_ReportWarning( cx, (errorMessage RT_CODE_LOCATION), (arg) ); } while(0)
+	do { JS_ReportWarning( cx, (errorMessage J__CODE_LOCATION), (arg) ); } while(0)
 
 #define REPORT_WARNING_2(errorMessage, arg1, arg2) \
-	do { JS_ReportWarning( cx, (errorMessage RT_CODE_LOCATION), (arg1), (arg2) ); } while(0)
+	do { JS_ReportWarning( cx, (errorMessage J__CODE_LOCATION), (arg1), (arg2) ); } while(0)
 
 // fatal errors: script must stop as soon as possible
 #define REPORT_ERROR(errorMessage) \
-	do { JS_ReportError( cx, (errorMessage RT_CODE_LOCATION) ); return JS_FALSE; } while(0)
+	do { JS_ReportError( cx, (errorMessage J__CODE_LOCATION) ); return JS_FALSE; } while(0)
 
 #define REPORT_ERROR_1(errorMessage, arg) \
-	do { JS_ReportError( cx, (errorMessage RT_CODE_LOCATION), (arg) ); return JS_FALSE; } while(0)
+	do { JS_ReportError( cx, (errorMessage J__CODE_LOCATION), (arg) ); return JS_FALSE; } while(0)
 
 #define REPORT_ERROR_2(errorMessage, arg1, arg2) \
-	do { JS_ReportError( cx, (errorMessage RT_CODE_LOCATION), (arg1), (arg2) ); return JS_FALSE; } while(0)
+	do { JS_ReportError( cx, (errorMessage J__CODE_LOCATION), (arg1), (arg2) ); return JS_FALSE; } while(0)
 
 
-/////////
+///////////////////////////////////////////////////////////////////////////////
 // assert
 
 #define RT_ASSERT( condition, errorMessage ) \
-	{ if (unlikely( !_unsafeMode && !(condition) )) { JS_ReportError( cx, (errorMessage RT_CODE_LOCATION) ); return JS_FALSE; } }
+	{ if (unlikely( !_unsafeMode && !(condition) )) { JS_ReportError( cx, (errorMessage J__CODE_LOCATION) ); return JS_FALSE; } }
 
 #define RT_ASSERT_1( condition, errorMessage, arg ) \
-	{ if (unlikely( !_unsafeMode && !(condition) )) { JS_ReportError( cx, (errorMessage RT_CODE_LOCATION), (arg) ); return JS_FALSE; } }
+	{ if (unlikely( !_unsafeMode && !(condition) )) { JS_ReportError( cx, (errorMessage J__CODE_LOCATION), (arg) ); return JS_FALSE; } }
 
 #define RT_ASSERT_2( condition, errorMessage, arg1, arg2 ) \
-	{ if (unlikely( !_unsafeMode && !(condition) )) { JS_ReportError( cx, (errorMessage RT_CODE_LOCATION), (arg1), (arg2) ); return JS_FALSE; } }
+	{ if (unlikely( !_unsafeMode && !(condition) )) { JS_ReportError( cx, (errorMessage J__CODE_LOCATION), (arg1), (arg2) ); return JS_FALSE; } }
 
 
-//////////////////
+///////////////////////////////////////////////////////////////////////////////
 // advanced assert
 
 #define RT_ASSERT_TYPE(value,jsType) \
@@ -181,8 +172,15 @@ inline bool MaybeRealloc( int requested, int received ) {
 }
 
 
-
 // new namespace for jslibs: J_
+
+
+// J_S_ stands for (J)slibs _ (S)afemode _ and mean that these macros will only be meaningful when unsafemode is false (see jslibs unsafemode)
+#define J_S_ASSERT_INT(value) \
+	RT_ASSERT( JSVAL_IS_INT(value), RT_ERROR_UNEXPECTED_TYPE " Integer expected." );
+
+
+// BEWARE: the following helper macros are only valid inside a JS Native function definition !
 
 #define J_ARGC (argc)
 
@@ -216,14 +214,15 @@ inline bool MaybeRealloc( int requested, int received ) {
 // same for fast native
 #define J_FRVAL (&JS_RVAL(cx, vp))
 
+#define J_VALUE_IS_ARRAY(value) \
+	( JSVAL_IS_OBJECT(value) && JS_IsArrayObject( cx, JSVAL_TO_OBJECT(value) ) == JS_TRUE)
 
-#define J_VALUE_IS_ARRAY(value) (JSVAL_IS_OBJECT(value) && JS_IsArrayObject( cx, JSVAL_TO_OBJECT(value) ) == JS_TRUE)
+#define J_S_ASSERT( condition, errorMessage ) \
+	do { if (unlikely( !_unsafeMode && !(condition) )) { JS_ReportError( cx, (errorMessage J__CODE_LOCATION) ); return JS_FALSE; } } while(0)
 
 
 
-
-
-////////////////////
+///////////////////////////////////////////////////////////////////////////////
 // conversion macros
 
 #define RT_JSVAL_TO_BOOL( jsval, boolVariable ) do { \
@@ -275,19 +274,8 @@ inline bool MaybeRealloc( int requested, int received ) {
 } while(0)
 
 
-///////////
 
-inline double TimeNow() {
-
-#ifdef WIN32
-	LARGE_INTEGER frequency, performanceCount;
-	QueryPerformanceFrequency(&frequency);
-	QueryPerformanceCounter(&performanceCount);
-	return 1000 * double(performanceCount.QuadPart) / double(frequency.QuadPart);
-#endif // WIN32
-	return 0; // (TBD) impl.
-}
-
+///////////////////////////////////////////////////////////////////////////////
 // Native Interface mechanism
 
 typedef void (*FunctionPointer)(void);
@@ -318,8 +306,8 @@ inline JSBool RemoveNativeInterface( JSContext *cx, JSObject *obj, const char *n
 }
 
 
-////////
-
+///////////////////////////////////////////////////////////////////////////////
+// Helper functions
 
 inline bool IsPInfinity( JSContext *cx, jsval val ) {
 

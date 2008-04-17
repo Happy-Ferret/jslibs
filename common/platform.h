@@ -19,22 +19,41 @@
 	#define EXTERN_C extern "C"
 #else
 	#define EXTERN_C
-#endif
+#endif // __cplusplus
 
 #ifdef _DEBUG
 	#define DEBUG
+#endif // _DEBUG
+
+
+///////////////////////////////////////////////////////////////////////////////
+// Compiler specific configuration
+
+#if __GNUC__ && __GNUC__ >= 3
+#define likely(expr)	__builtin_expect((expr), !0)
+#define unlikely(expr)	__builtin_expect((expr), 0)
+#else
+#define likely(expr)	(expr)
+#define unlikely(expr)	(expr)
 #endif
 
+
 #ifdef _MSC_VER
-#pragma warning(disable : 4311)
-#pragma warning(disable : 4312)
-#pragma warning(disable : 4267)
-#pragma warning(disable : 4996)
+#pragma warning(disable : 4244 4305)  // for VC++, no precision loss complaints
+#pragma warning(disable : 4127)  // no "conditional expression is constant" complaints
+#pragma warning(disable : 4311) // warning C4311: 'variable' : pointer truncation from 'type' to 'type'
+#pragma warning(disable : 4312) // warning C4312: 'operation' : conversion from 'type1' to 'type2' of greater size
+#pragma warning(disable : 4267) // warning C4267: 'var' : conversion from 'size_t' to 'type', possible loss of data
+#pragma warning(disable : 4996) // warning C4996: 'function': was declared deprecated
 #pragma warning(disable : 4100) // warning C4100: 'xxx' : unreferenced formal parameter
 #endif // #ifdef WIN32
 
 #include <limits.h>
 #include <sys/types.h>
+
+
+///////////////////////////////////////////////////////////////////////////////
+// Platform specific configuration
 
 #if defined(_WINDOWS) || defined(WIN32) // Windows platform
 
@@ -51,8 +70,7 @@
 	#endif
 
 	#include <windows.h>
-
-	#include <direct.h>
+	#include <direct.h> // function declarations for directory handling/creation
 
 	#define int8_t   INT8
 	#define int16_t  INT16
@@ -100,6 +118,7 @@
 #else // Linux platform
 	
 	#include <unistd.h>
+	#include <sys/time.h>
 
 	#define XP_UNIX
 
@@ -124,18 +143,8 @@
 //#endif
 
 
-
-#if __GNUC__ && __GNUC__ >= 3
-#define likely(expr)	__builtin_expect((expr), !0)
-#define unlikely(expr)	__builtin_expect((expr), 0)
-#else
-#define likely(expr)	(expr)
-#define unlikely(expr)	(expr)
-#endif
-
-
-
-
+///////////////////////////////////////////////////////////////////////////////
+// Platform tools
 
 enum Endian {
 	BigEndian,
@@ -153,7 +162,6 @@ inline Endian DetectSystemEndianType() {
 	}
 	return UnknownEndian;
 }
-
 
 inline char* IntegerToString(int val, int base) {
 
@@ -173,11 +181,20 @@ inline double AccurateTimeCounter() {
 	return 1000 * performanceCount.QuadPart / (double)frequency.QuadPart;
 #endif // XP_WIN
 
+#ifdef XP_UNIX
+
+	struct timeval time;
+	struct timezone tz;
+	gettimeofday(&time, &tz);
+	return (doubol)time.tv_sec / 1000*1000;
+#endif // XP_UNIX
+
 	return -1; // (TBD)
 }
 
 
 #endif // _PLATFORM_H_
+
 
 
 /*
