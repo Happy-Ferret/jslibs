@@ -567,11 +567,52 @@ DEFINE_FUNCTION_FAST( ClearColor ) {
 }
 
 
+DEFINE_FUNCTION_FAST( ClearAccum ) {
+
+	RT_ASSERT_ARGC(4);
+	jsdouble r, g, b, a;
+	JS_ValueToNumber(cx, J_FARG(1), &r);
+	JS_ValueToNumber(cx, J_FARG(2), &g);
+	JS_ValueToNumber(cx, J_FARG(3), &b);
+	JS_ValueToNumber(cx, J_FARG(4), &a);
+	glClearAccum(r, g, b, a);
+	*J_FRVAL = JSVAL_VOID;
+	return JS_TRUE;
+}
+
+
 DEFINE_FUNCTION_FAST( Clear ) {
 
 	RT_ASSERT_ARGC(1);
 	RT_ASSERT_INT(J_FARG(1));
 	glClear(JSVAL_TO_INT(J_FARG(1)));
+	*J_FRVAL = JSVAL_VOID;
+	return JS_TRUE;
+}
+
+
+DEFINE_FUNCTION_FAST( ClipPlane ) {
+
+	RT_ASSERT_ARGC(2);
+	RT_ASSERT_INT(J_FARG(1));
+	RT_ASSERT_ARRAY(J_FARG(2));
+
+	JSObject *arrayObj = JSVAL_TO_OBJECT(J_FARG(2));
+	jsuint length;
+	RT_CHECK_CALL( JS_GetArrayLength(cx, arrayObj, &length) );
+
+	GLdouble equation[16];
+	RT_ASSERT( length <= sizeof(equation), "Too many elements." );
+	jsval tmp;
+	jsdouble tmp2;
+	for ( jsuint i=0; i<length; i++ ) {
+		
+		RT_CHECK_CALL( JS_GetElement(cx, arrayObj, i, &tmp) );
+		RT_CHECK_CALL( JS_ValueToNumber(cx, tmp, &tmp2) );
+		equation[i] = tmp2;
+	}
+
+	glClipPlane(JSVAL_TO_INT(J_FARG(1)), equation);
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
@@ -1921,7 +1962,9 @@ CONFIGURE_CLASS
 		FUNCTION_FAST(ClearStencil)
 		FUNCTION_FAST(ClearDepth)
 		FUNCTION_FAST(ClearColor)
+		FUNCTION_FAST(ClearAccum)
 		FUNCTION_FAST(Clear)
+		FUNCTION_FAST(ClipPlane)
 		FUNCTION_FAST(Viewport)
 		FUNCTION_FAST(Frustum)
 		FUNCTION_FAST(Perspective)
