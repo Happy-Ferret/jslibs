@@ -31,7 +31,8 @@ BEGIN_CLASS( Database )
 
 DEFINE_CONSTRUCTOR() {
 
-	RT_ASSERT_CONSTRUCTING( _class );
+	RT_ASSERT_CONSTRUCTING();
+	RT_ASSERT_THIS_CLASS();
 
 	char *fileName;
 	if ( J_ARG_ISDEF(1) ) {

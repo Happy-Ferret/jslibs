@@ -36,7 +36,8 @@ DEFINE_FINALIZE() {
 
 DEFINE_CONSTRUCTOR() {
 
-	RT_ASSERT_CONSTRUCTING( _class );
+	RT_ASSERT_CONSTRUCTING();
+	J_S_ASSERT_THIS_CLASS();
 	RT_ASSERT_ARGC( 1 );
 
 	char *hashName;
@@ -134,7 +135,7 @@ DEFINE_FUNCTION( Call ) {
 	RT_ASSERT_STRING( argv[0] );
 
 	HashPrivate *privateData = (HashPrivate *)JS_GetPrivate( cx, thisObj );
-	RT_ASSERT( privateData != NULL, RT_ERROR_NOT_INITIALIZED );
+	J_S_ASSERT_RESOURCE( privateData );
 
 	int err;
 	

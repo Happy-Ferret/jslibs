@@ -55,7 +55,8 @@ DEFINE_FINALIZE() {
 
 DEFINE_CONSTRUCTOR() {
 
-	RT_ASSERT_CONSTRUCTING(_class);
+	RT_ASSERT_CONSTRUCTING();
+	J_S_ASSERT_THIS_CLASS();
 	RT_ASSERT_ARGC(1);
 
 	PngDescriptor *desc = (PngDescriptor*)malloc(sizeof(PngDescriptor));
@@ -82,7 +83,7 @@ DEFINE_CONSTRUCTOR() {
 DEFINE_FUNCTION( Load ) {
 
 	PngDescriptor *desc = (PngDescriptor*)JS_GetPrivate(cx, obj);
-	RT_ASSERT( desc != NULL, RT_ERROR_NOT_INITIALIZED );
+	J_S_ASSERT_RESOURCE( desc );
 
 	png_set_strip_16(desc->png);
 	png_set_packing(desc->png);
@@ -122,9 +123,9 @@ DEFINE_FUNCTION( Load ) {
 DEFINE_PROPERTY( width ) {
 
 	PngDescriptor *desc = (PngDescriptor*) JS_GetPrivate(cx, obj);
-	RT_ASSERT( desc != NULL, RT_ERROR_NOT_INITIALIZED );
+	J_S_ASSERT_RESOURCE( desc );
 	png_uint_32 width = png_get_image_width(desc->png, desc->info);
-	RT_ASSERT( width != 0, RT_ERROR_NOT_INITIALIZED );
+	J_S_ASSERT( width != 0, "Invalid width." );
 	*vp = INT_TO_JSVAL(width);
 	return JS_TRUE;
 }
@@ -132,9 +133,9 @@ DEFINE_PROPERTY( width ) {
 DEFINE_PROPERTY( height ) {
 
 	PngDescriptor *desc = (PngDescriptor*) JS_GetPrivate(cx, obj);
-	RT_ASSERT( desc != NULL, RT_ERROR_NOT_INITIALIZED );
+	J_S_ASSERT_RESOURCE( desc );
 	png_uint_32 height = png_get_image_height(desc->png, desc->info);
-	RT_ASSERT( height != 0, RT_ERROR_NOT_INITIALIZED );
+	J_S_ASSERT( width != 0, "Invalid height." );
 	*vp = INT_TO_JSVAL(height);
 	return JS_TRUE;
 }
@@ -142,9 +143,9 @@ DEFINE_PROPERTY( height ) {
 DEFINE_PROPERTY( channels ) {
 
 	PngDescriptor *desc = (PngDescriptor*) JS_GetPrivate(cx, obj);
-	RT_ASSERT( desc != NULL, RT_ERROR_NOT_INITIALIZED );
+	J_S_ASSERT_RESOURCE( desc );
 	png_uint_32 value = png_get_channels(desc->png, desc->info);
-	RT_ASSERT( value != 0, RT_ERROR_NOT_INITIALIZED );
+	J_S_ASSERT( value != 0, "Invalid channel count." );
 	*vp = INT_TO_JSVAL(value);
 	return JS_TRUE;
 }

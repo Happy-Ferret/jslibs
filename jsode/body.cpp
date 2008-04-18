@@ -64,7 +64,10 @@ DEFINE_FINALIZE() {
 
 DEFINE_CONSTRUCTOR() {
 
-	RT_ASSERT_CONSTRUCTING(&classBody);
+	RT_ASSERT_CONSTRUCTING();
+//	RT_ASSERT_CLASS(&classBody);
+	RT_ASSERT_THIS_CLASS();
+
 	RT_ASSERT_ARGC(1);
 
 	ode::dWorldID worldId;
@@ -102,7 +105,7 @@ DEFINE_FUNCTION( IsConnectedTo ) {
 	RT_ASSERT_ARGC(1);
 	RT_ASSERT_CLASS(obj, &classBody);
 	ode::dBodyID thisBodyID = (ode::dBodyID)JS_GetPrivate( cx, obj );
-	RT_ASSERT( thisBodyID != NULL, RT_ERROR_NOT_INITIALIZED );
+	RT_ASSERT_RESOURCE( thisBodyID );
 	ode::dBodyID bodyId;
 	ValToBodyID(cx, argv[0], &bodyId);
 	ode::dAreConnected(thisBodyID, bodyId);
@@ -115,7 +118,7 @@ enum { position, quaternion, linearVel, angularVel, force, torque };
 DEFINE_PROPERTY( vectorGetter ) {
 
 	ode::dBodyID bodyID = (ode::dBodyID)JS_GetPrivate(cx, obj);
-	RT_ASSERT(bodyID != NULL, RT_ERROR_NOT_INITIALIZED);
+	RT_ASSERT_RESOURCE( bodyID );
 	const ode::dReal *vector;
 	int dim;
 	switch(JSVAL_TO_INT(id)) {
@@ -152,7 +155,7 @@ DEFINE_PROPERTY( vectorGetter ) {
 DEFINE_PROPERTY( vectorSetter ) {
 
 	ode::dBodyID bodyID = (ode::dBodyID)JS_GetPrivate( cx, obj );
-	RT_ASSERT( bodyID != NULL, RT_ERROR_NOT_INITIALIZED );
+	RT_ASSERT_RESOURCE( bodyID );
 	ode::dVector3 vector;
 	switch(JSVAL_TO_INT(id)) {
 		case position:

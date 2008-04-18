@@ -15,20 +15,10 @@
 #ifndef _JSHELPER_H_
 #define _JSHELPER_H_
 
-
-//#include <stdbool.h>
 #include <stdarg.h>
 
 #include <jsarena.h>
 #include <jsfun.h>
-
-
-// buffer realloc policy:
-
-inline bool MaybeRealloc( int requested, int received ) {
-
-	return (100 * received / requested < 90) && (requested - received > 256);
-}
 
 // unsafe mode management
 
@@ -36,13 +26,12 @@ inline bool MaybeRealloc( int requested, int received ) {
 	extern bool _unsafeMode;
 #else
 	static bool _unsafeMode = false; // by default, we are in SAFE mode
-#endif
+#endif // USE_UNSAFE_MODE
 
 #define DEFINE_UNSAFE_MODE	bool _unsafeMode = false;
+
 #define SET_UNSAFE_MODE(polarity) _unsafeMode = (polarity);
 
-// RunTime helper macros
-//   A set of very simple macro to help embeded spidermonkey do be more simple to read.
 
 ///////////////////////////////////////////////////////////////////////////////
 // common error messages
@@ -56,129 +45,28 @@ inline bool MaybeRealloc( int requested, int received ) {
 	#define J__CODE_LOCATION ""
 #endif // DEBUG
 
-#define RT_ERROR_NO_CONSTRUCT "this object cannot be construct."
-#define RT_ERROR_NEED_CONSTRUCTION "construction is needed for this object."
-#define RT_ERROR_MISSING_ARGUMENT "this function require more arguments."
-#define RT_ERROR_TOO_MANY_ARGUMENTS "you provide too many argument to the function."
-#define RT_ERROR_MISSING_N_ARGUMENT "this function require %d more argument(s)."
-#define RT_ERROR_INVALID_ARGUMENT "invalid argument."
-#define RT_ERROR_INVALID_CLASS "wrong object type."
-#define RT_ERROR_STRING_CONVERSION_FAILED "unable to convert this argument to string."
-#define RT_ERROR_INT_CONVERSION_FAILED "unable to convert this argument to integer."
-#define RT_ERROR_OUT_OF_MEMORY "not enough memory to complete the allocation."
-#define RT_ERROR_NOT_INITIALIZED "the object or resource is not proprely initialized."
-#define RT_ERROR_INVALID_RESOURCE "the resource is invalid or not proprely initialized."
-#define RT_ERROR_CLASS_CREATION_FAILED "unable to create the class."
-#define RT_ERROR_UNEXPECTED_TYPE "unexpected data type."
-#define RT_ERROR_FUNCTION_EXPECTED "a function is expected."
-#define RT_ERROR_INVALID_RANGE "value is out of range."
+#define J__ERRMSG_NO_CONSTRUCT "This object cannot be construct."
+#define J__ERRMSG_NEED_CONSTRUCTION "Construction is needed for this object."
+#define J__ERRMSG_MISSING_ARGUMENT "This function require more arguments."
+#define J__ERRMSG_TOO_MANY_ARGUMENTS "You provide too many argument to the function."
+#define J__ERRMSG_MISSING_N_ARGUMENT "This function require %d more argument(s)."
+#define J__ERRMSG_INVALID_ARGUMENT "Invalid argument."
+#define J__ERRMSG_INVALID_CLASS "Wrong object type."
+#define J__ERRMSG_STRING_CONVERSION_FAILED "Unable to convert to string."
+#define J__ERRMSG_INT_CONVERSION_FAILED "Unable to convert to integer."
+#define J__ERRMSG_OUT_OF_MEMORY "Not enough memory to complete the allocation."
+#define J__ERRMSG_NOT_INITIALIZED "The object or resource is not proprely initialized."
+#define J__ERRMSG_INVALID_RESOURCE "The resource is invalid or not proprely initialized."
+#define J__ERRMSG_CLASS_CREATION_FAILED "Unable to create the class."
+#define J__ERRMSG_UNEXPECTED_TYPE "Unexpected data type."
+#define J__ERRMSG_INVALID_RANGE "Value is out of range."
+#define J__ERRMSG_UNINITIALIZED "Initialization failed."
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // helper macros
 
-#define RT_CHECK_CALL( functionCall ) \
-	do { if (unlikely( (functionCall) == JS_FALSE )) { return JS_FALSE; } }  while(0)
-
-#define RT_SAFE(code) \
-	do { if (unlikely( !_unsafeMode )) {code;} } while(0)
-
-#define RT_UNSAFE(code) \
-	do { if (likely( _unsafeMode )) {code;} } while(0)
-
-#define REPORT_WARNING(errorMessage) \
-	do { JS_ReportWarning( cx, (errorMessage J__CODE_LOCATION) ); } while(0)
-
-#define REPORT_WARNING_1(errorMessage, arg) \
-	do { JS_ReportWarning( cx, (errorMessage J__CODE_LOCATION), (arg) ); } while(0)
-
-#define REPORT_WARNING_2(errorMessage, arg1, arg2) \
-	do { JS_ReportWarning( cx, (errorMessage J__CODE_LOCATION), (arg1), (arg2) ); } while(0)
-
-// fatal errors: script must stop as soon as possible
-#define REPORT_ERROR(errorMessage) \
-	do { JS_ReportError( cx, (errorMessage J__CODE_LOCATION) ); return JS_FALSE; } while(0)
-
-#define REPORT_ERROR_1(errorMessage, arg) \
-	do { JS_ReportError( cx, (errorMessage J__CODE_LOCATION), (arg) ); return JS_FALSE; } while(0)
-
-#define REPORT_ERROR_2(errorMessage, arg1, arg2) \
-	do { JS_ReportError( cx, (errorMessage J__CODE_LOCATION), (arg1), (arg2) ); return JS_FALSE; } while(0)
-
-
-///////////////////////////////////////////////////////////////////////////////
-// assert
-
-#define RT_ASSERT( condition, errorMessage ) \
-	{ if (unlikely( !_unsafeMode && !(condition) )) { JS_ReportError( cx, (errorMessage J__CODE_LOCATION) ); return JS_FALSE; } }
-
-#define RT_ASSERT_1( condition, errorMessage, arg ) \
-	{ if (unlikely( !_unsafeMode && !(condition) )) { JS_ReportError( cx, (errorMessage J__CODE_LOCATION), (arg) ); return JS_FALSE; } }
-
-#define RT_ASSERT_2( condition, errorMessage, arg1, arg2 ) \
-	{ if (unlikely( !_unsafeMode && !(condition) )) { JS_ReportError( cx, (errorMessage J__CODE_LOCATION), (arg1), (arg2) ); return JS_FALSE; } }
-
-
-///////////////////////////////////////////////////////////////////////////////
-// advanced assert
-
-#define RT_ASSERT_TYPE(value,jsType) \
-	RT_ASSERT( JS_TypeOfValue(cx, (value)) == (jsType), RT_ERROR_UNEXPECTED_TYPE );
-
-#define RT_ASSERT_DEFINED(value) \
-	RT_ASSERT( value != JSVAL_VOID, "Value is not defined." );
-
-#define RT_ASSERT_OBJECT(value) \
-	RT_ASSERT( JSVAL_IS_OBJECT(value) && !JSVAL_IS_NULL(value), RT_ERROR_UNEXPECTED_TYPE " Object expected." );
-
-#define RT_ASSERT_ARRAY(value) \
-	RT_ASSERT( JSVAL_IS_OBJECT(value) && JS_IsArrayObject( cx, JSVAL_TO_OBJECT(value) ) == JS_TRUE, RT_ERROR_UNEXPECTED_TYPE " Array expected." );
-
-#define RT_ASSERT_INT(value) \
-	RT_ASSERT( JSVAL_IS_INT(value), RT_ERROR_UNEXPECTED_TYPE " Integer expected." );
-
-#define RT_ASSERT_NUMBER(value) \
-	RT_ASSERT( JSVAL_IS_NUMBER(value), RT_ERROR_UNEXPECTED_TYPE " Number expected." );
-
-#define RT_ASSERT_STRING(value) \
-	RT_ASSERT( JSVAL_IS_STRING(value), RT_ERROR_UNEXPECTED_TYPE " String expected." );
-
-#define RT_ASSERT_FUNCTION(value) \
-	RT_ASSERT( JS_TypeOfValue( cx, value ) == JSTYPE_FUNCTION, RT_ERROR_FUNCTION_EXPECTED );
-
-#define RT_ASSERT_ALLOC(pointer) \
-	RT_ASSERT( (pointer) != NULL, RT_ERROR_OUT_OF_MEMORY );
-
-#define RT_ASSERT_RESOURCE(resourcePointer) \
-	RT_ASSERT( (resourcePointer) != NULL, RT_ERROR_INVALID_RESOURCE );
-
-#define RT_ASSERT_CLASS(jsObject, jsClass) \
-	RT_ASSERT( ((jsObject) != NULL) && (JS_GET_CLASS(cx, jsObject) == (jsClass)), RT_ERROR_INVALID_CLASS );
-
-#define RT_ASSERT_THIS_CLASS() \
-	RT_ASSERT( ((obj) != NULL) && (JS_GET_CLASS(cx, obj) == (_class)), RT_ERROR_INVALID_CLASS );
-
-#define RT_ASSERT_CLASS_NAME(jsObject, className) \
-	RT_ASSERT( strcmp(JS_GET_CLASS(cx, jsObject)->name, (className)) == 0,  RT_ERROR_INVALID_CLASS " Expecting " className "." );
-
-#define RT_ASSERT_ARGC(minCount) \
-	RT_ASSERT_1( argc >= (minCount), RT_ERROR_MISSING_N_ARGUMENT, (minCount)-argc );
-
-#define RT_ASSERT_ARGC_MAX(maxCount) \
-	RT_ASSERT( argc <= (maxCount), RT_ERROR_TOO_MANY_ARGUMENTS );
-
-#define RT_ASSERT_CONSTRUCTING(jsClass) { \
-	RT_ASSERT( JS_IsConstructing(cx) == JS_TRUE, RT_ERROR_NEED_CONSTRUCTION ); \
-	RT_ASSERT_CLASS( obj, (jsClass) ); \
-}
-
-
 // new namespace for jslibs: J_
-
-
-// J_S_ stands for (J)slibs _ (S)afemode _ and mean that these macros will only be meaningful when unsafemode is false (see jslibs unsafemode)
-#define J_S_ASSERT_INT(value) \
-	RT_ASSERT( JSVAL_IS_INT(value), RT_ERROR_UNEXPECTED_TYPE " Integer expected." );
-
 
 // BEWARE: the following helper macros are only valid inside a JS Native function definition !
 
@@ -214,65 +102,254 @@ inline bool MaybeRealloc( int requested, int received ) {
 // same for fast native
 #define J_FRVAL (&JS_RVAL(cx, vp))
 
+
 #define J_VALUE_IS_ARRAY(value) \
 	( JSVAL_IS_OBJECT(value) && JS_IsArrayObject( cx, JSVAL_TO_OBJECT(value) ) == JS_TRUE)
 
+
+#define J_CHECK_CALL( functionCall ) \
+	do { if (unlikely( (functionCall) == JS_FALSE )) { return JS_FALSE; } } while(0)
+
+
+#define J_SAFE(code) \
+	do { if (unlikely( !_unsafeMode )) {code;} } while(0)
+
+#define J_UNSAFE(code) \
+	do { if (likely( _unsafeMode )) {code;} } while(0)
+
+
+// Reports warnings. May be disabled in unsafemode
+#define J_REPORT_WARNING(errorMessage) \
+	do { JS_ReportWarning( cx, (errorMessage J__CODE_LOCATION) ); } while(0)
+
+#define J_REPORT_WARNING_1(errorMessage, arg) \
+	do { JS_ReportWarning( cx, (errorMessage J__CODE_LOCATION), (arg) ); } while(0)
+
+#define J_REPORT_WARNING_2(errorMessage, arg1, arg2) \
+	do { JS_ReportWarning( cx, (errorMessage J__CODE_LOCATION), (arg1), (arg2) ); } while(0)
+
+
+// Reports a fatal errors, script must stop as soon as possible.
+#define J_REPORT_ERROR(errorMessage) \
+	do { JS_ReportError( cx, (errorMessage J__CODE_LOCATION) ); return JS_FALSE; } while(0)
+
+#define J_REPORT_ERROR_1(errorMessage, arg) \
+	do { JS_ReportError( cx, (errorMessage J__CODE_LOCATION), (arg) ); return JS_FALSE; } while(0)
+
+#define J_REPORT_ERROR_2(errorMessage, arg1, arg2) \
+	do { JS_ReportError( cx, (errorMessage J__CODE_LOCATION), (arg1), (arg2) ); return JS_FALSE; } while(0)
+
+
+// J_S_ stands for (J)slibs _ (S)afemode _ and mean that these macros will only be meaningful when unsafemode is false (see jslibs unsafemode).
+
 #define J_S_ASSERT( condition, errorMessage ) \
 	do { if (unlikely( !_unsafeMode && !(condition) )) { JS_ReportError( cx, (errorMessage J__CODE_LOCATION) ); return JS_FALSE; } } while(0)
+
+#define J_S_ASSERT_1( condition, errorMessage, arg ) \
+	do { if (unlikely( !_unsafeMode && !(condition) )) { JS_ReportError( cx, (errorMessage J__CODE_LOCATION), (arg) ); return JS_FALSE; } } while(0)
+
+#define J_S_ASSERT_2( condition, errorMessage, arg1, arg2 ) \
+	do { if (unlikely( !_unsafeMode && !(condition) )) { JS_ReportError( cx, (errorMessage J__CODE_LOCATION), (arg1), (arg2) ); return JS_FALSE; } } while(0)
+
+
+#define J_S_ASSERT_ARG_MIN(minCount) \
+	J_S_ASSERT_1( argc >= (minCount), J__ERRMSG_MISSING_N_ARGUMENT, (minCount)-argc )
+
+#define J_S_ASSERT_ARG_MAX(maxCount) \
+	J_S_ASSERT( argc <= (maxCount), J__ERRMSG_TOO_MANY_ARGUMENTS )
+
+#define J_S_ASSERT_ARG_RANGE(minCount, maxCount) \
+	J_S_ASSERT( argc >= (minCount) && argc <= (maxCount), "Invalid argument count." )
+
+
+#define J_S_ASSERT_DEFINED(value) \
+	J_S_ASSERT( !JSVAL_IS_VOID(value), "Value must be defined." )
+
+#define J_S_ASSERT_TYPE(value, jsType) \
+	J_S_ASSERT( JS_TypeOfValue(cx, (value)) == (jsType), J__ERRMSG_UNEXPECTED_TYPE )
+
+#define J_S_ASSERT_BOOLEAN(value) \
+	J_S_ASSERT( JSVAL_IS_BOOLEAN(value), J__ERRMSG_UNEXPECTED_TYPE " Boolean expected." )
+
+#define J_S_ASSERT_INT(value) \
+	J_S_ASSERT( JSVAL_IS_INT(value), J__ERRMSG_UNEXPECTED_TYPE " Integer expected." )
+
+#define J_S_ASSERT_NUMBER(value) \
+	J_S_ASSERT( JSVAL_IS_NUMBER(value), J__ERRMSG_UNEXPECTED_TYPE " Number expected." )
+
+#define J_S_ASSERT_STRING(value) \
+	J_S_ASSERT( JSVAL_IS_STRING(value), J__ERRMSG_UNEXPECTED_TYPE " String expected." )
+
+#define J_S_ASSERT_OBJECT(value) \
+	J_S_ASSERT( JSVAL_IS_OBJECT(value) && !JSVAL_IS_NULL(value), J__ERRMSG_UNEXPECTED_TYPE " Object expected." )
+
+#define J_S_ASSERT_ARRAY(value) \
+	J_S_ASSERT( J_VALUE_IS_ARRAY(value), J__ERRMSG_UNEXPECTED_TYPE " Array expected." )
+
+#define J_S_ASSERT_FUNCTION(value) \
+	J_S_ASSERT( JS_TypeOfValue(cx, (value)) == JSTYPE_FUNCTION, " Function is expected." )
+
+#define J_S_ASSERT_CLASS(jsObject, jsClass) \
+	J_S_ASSERT_1( (jsObject) != NULL && JS_GET_CLASS(cx, jsObject) == (jsClass), J__ERRMSG_INVALID_CLASS "%s expected.", (jsClass)->name )
+
+#define J_S_ASSERT_CLASS_NAME(jsObject, className) \
+	J_S_ASSERT( strcmp(JS_GET_CLASS(cx, (jsObject))->name, (className)) == 0, J__ERRMSG_INVALID_CLASS (className)" expected." )
+
+#define J_S_ASSERT_THIS_CLASS() \
+	J_S_ASSERT_CLASS(obj, _class)
+
+#define J_S_ASSERT_CONSTRUCTING() \
+	J_S_ASSERT( JS_IsConstructing(cx) == JS_TRUE, J__ERRMSG_NEED_CONSTRUCTION )
+
+#define J_S_ASSERT_INITIALIZED(pointer) \
+	J_S_ASSERT( (pointer) != NULL, J__ERRMSG_UNINITIALIZED )
+
+#define J_S_ASSERT_RESOURCE(resourcePointer) \
+	J_S_ASSERT( (resourcePointer) != NULL, J__ERRMSG_INVALID_RESOURCE )
+
+#define J_S_ASSERT_ALLOC(pointer) \
+	if (unlikely( (pointer) == NULL )) { J_REPORT_WARNING( J__ERRMSG_OUT_OF_MEMORY ); JS_ReportOutOfMemory(cx); return JS_FALSE; }
 
 
 
 ///////////////////////////////////////////////////////////////////////////////
 // conversion macros
 
-#define RT_JSVAL_TO_BOOL( jsval, boolVariable ) do { \
-	JSBool b; \
-	JSBool st = JS_ValueToBoolean( cx, jsval, &b ); \
-	RT_ASSERT( st != JS_FALSE, RT_ERROR_INT_CONVERSION_FAILED ); \
-	boolVariable = (b == JS_TRUE); \
-} while(0)
+// (TBD) try to use real functions with __forceinline
 
-#define RT_JSVAL_TO_REAL( jsval, floatVariable ) do { \
-	jsdouble d; \
-	JSBool st = JS_ValueToNumber( cx, jsval, &d ); \
-	RT_ASSERT( st != JS_FALSE, RT_ERROR_INT_CONVERSION_FAILED ); \
-	floatVariable = d; \
-} while(0)
-
-#define RT_JSVAL_TO_INT32( jsvalInt, intVariable ) do { \
-	int32 intVal; \
-	JSBool st = JS_ValueToInt32( cx, jsvalInt, &intVal ); \
-	RT_ASSERT( st != JS_FALSE, RT_ERROR_INT_CONVERSION_FAILED ); \
-	intVariable = intVal; \
-} while(0)
-
-#define RT_JSVAL_TO_UINT32( jsvalUInt, uintVariable ) do { \
-	jsdouble __tmp; \
-	if ( JSVAL_IS_INT(jsvalUInt) && JSVAL_TO_INT(jsvalUInt) >= 0 ) { \
-		uintVariable = JSVAL_TO_INT(jsvalUInt); \
+#define J_JSVAL_TO_BOOL( jsval, boolVariable ) do { \
+	if ( JSVAL_IS_BOOLEAN(jsval) ) { \
+		boolVariable = (JSVAL_TO_BOOLEAN(jsval) == JS_TRUE); \
 	} else { \
-		JSBool st = JS_ValueToNumber(cx, jsvalUInt, &__tmp ); \
-		RT_ASSERT( st != JS_FALSE, RT_ERROR_INT_CONVERSION_FAILED ); \
-		uintVariable = (unsigned long)__tmp; \
-		RT_ASSERT( __tmp == (double)((unsigned long)__tmp), RT_ERROR_INT_CONVERSION_FAILED ); \
+		JSBool __b; \
+		if (unlikely( JS_ValueToBoolean( cx, jsval, &__b ) != JS_TRUE )) \
+			J_REPORT_ERROR( "Unable to convert to integer." ); \
+		boolVariable = (__b == JS_TRUE); \
 	} \
 } while(0)
 
-#define RT_JSVAL_TO_STRING( jsvalString, stringVariable ) do { \
-	JSString *___jssTmp = JS_ValueToString(cx, (jsvalString)); \
-	RT_ASSERT( ___jssTmp != NULL, RT_ERROR_STRING_CONVERSION_FAILED ); \
-	(stringVariable) = JS_GetStringBytes( ___jssTmp ); \
-	RT_ASSERT( (stringVariable) != NULL, RT_ERROR_STRING_CONVERSION_FAILED ); \
+
+#define J_JSVAL_TO_REAL( jsval, floatVariable ) do { \
+	if ( JSVAL_IS_DOUBLE(jsval) ) { \
+		floatVariable = *JSVAL_TO_DOUBLE(jsval); \
+	} else { \
+		jsdouble __d; \
+		if (unlikely( JS_ValueToNumber( cx, jsval, &__d ) != JS_TRUE )) \
+			J_REPORT_ERROR( "Unable to convert to real." ); \
+		floatVariable = __d; \
+	} \
 } while(0)
 
-#define RT_JSVAL_TO_STRING_AND_LENGTH( jsvalString, stringVariable, lengthVariable ) do { \
-	JSString *___jssTmp = JS_ValueToString(cx,(jsvalString)); \
-	RT_ASSERT( ___jssTmp != NULL, RT_ERROR_STRING_CONVERSION_FAILED ); \
-	(stringVariable) = JS_GetStringBytes( ___jssTmp ); \
-	RT_ASSERT( (stringVariable) != NULL, RT_ERROR_STRING_CONVERSION_FAILED ); \
-	(lengthVariable) = JS_GetStringLength( ___jssTmp ); \
+
+#define J_JSVAL_TO_INT32( jsvalInt, intVariable ) do { \
+	int32 __intVal; \
+	if (unlikely( JS_ValueToInt32( cx, jsvalInt, &__intVal ) != JS_TRUE )) \
+		J_REPORT_ERROR( "Unable to convert to a 32bit integer." ); \
+	intVariable = __intVal; \
 } while(0)
 
+
+#define J_JSVAL_TO_UINT32( jsvalUInt, uintVariable ) do { \
+	if ( JSVAL_IS_INT(jsvalUInt) && JSVAL_TO_INT(jsvalUInt) >= 0 ) { \
+		uintVariable = JSVAL_TO_INT(jsvalUInt); \
+	} else { \
+		jsdouble __doubleValue; \
+		if (unlikely( JS_ValueToNumber(cx, jsvalUInt, &__doubleValue ) != JS_TRUE )) \
+			J_REPORT_ERROR( "Unable to convert to a 32bit unsigned integer." ); \
+		uintVariable = (unsigned long)__doubleValue; \
+		J_S_ASSERT( __doubleValue == (double)((unsigned long)__doubleValue), J__ERRMSG_INT_CONVERSION_FAILED ); \
+	} \
+} while(0)
+
+
+#define J_JSVAL_TO_STRING( jsvalString, stringVariable ) do { \
+	JSString *__jsString = JS_ValueToString(cx, (jsvalString)); \
+	J_S_ASSERT( __jsString != NULL, J__ERRMSG_STRING_CONVERSION_FAILED ); \
+	(stringVariable) = JS_GetStringBytes(__jsString); \
+	J_S_ASSERT( (stringVariable) != NULL, J__ERRMSG_STRING_CONVERSION_FAILED ); \
+} while(0)
+
+
+#define J_JSVAL_TO_STRING_AND_LENGTH( jsvalString, stringVariable, lengthVariable ) do { \
+	JSString *__jsString = JS_ValueToString(cx,(jsvalString)); \
+	J_S_ASSERT( __jsString != NULL, J__ERRMSG_STRING_CONVERSION_FAILED ); \
+	(stringVariable) = JS_GetStringBytes(__jsString); \
+	J_S_ASSERT( (stringVariable) != NULL, J__ERRMSG_STRING_CONVERSION_FAILED ); \
+	(lengthVariable) = JS_GetStringLength(__jsString); \
+} while(0)
+
+
+#define J_JSVAL_TO_INT_VECTOR( jsvalArray, vectorVariable, lengthVariable ) do { \
+	J_S_ASSERT_ARRAY(jsvalArray); \
+	JSObject *__arrayObj = JSVAL_TO_OBJECT(jsvalArray); \
+	jsuint __length; \
+	J_CHECK_CALL( JS_GetArrayLength(cx, __arrayObj, &__length) ); \
+	(lengthVariable) = __length; \
+	J_S_ASSERT( __length <= sizeof(vectorVariable), "Too many elements in the array." ); \
+	jsval __arrayElt; \
+	int __eltValue; \
+	for ( jsuint __i=0; __i<__length; __i++ ) { \
+		J_CHECK_CALL( JS_GetElement(cx, __arrayObj, __i, &__arrayElt) ); \
+		J_S_ASSERT_INT(__arrayElt); \
+		(vectorVariable)[__i] = JSVAL_TO_INT(__arrayElt); \
+	} \
+} while(0)
+
+
+#define J_JSVAL_TO_REAL_VECTOR( jsvalArray, vectorVariable, lengthVariable ) do { \
+	J_S_ASSERT_ARRAY(jsvalArray); \
+	JSObject *__arrayObj = JSVAL_TO_OBJECT(jsvalArray); \
+	jsuint __length; \
+	J_CHECK_CALL( JS_GetArrayLength(cx, __arrayObj, &__length) ); \
+	lengthVariable = __length; \
+	J_S_ASSERT( __length <= sizeof(vectorVariable), "Too many elements in the array." ); \
+	jsval __arrayElt; \
+	double __eltValue; \
+	for ( jsuint __i=0; __i<__length; __i++ ) { \
+		J_CHECK_CALL( JS_GetElement(cx, __arrayObj, __i, &__arrayElt) ); \
+		J_CHECK_CALL( JS_ValueToNumber(cx, __arrayElt, &__eltValue) ); \
+		(vectorVariable)[__i] = __eltValue; \
+	} \
+} while(0)
+
+
+// DEPRECATED macro
+#define RT_CHECK_CALL J_CHECK_CALL
+#define RT_SAFE J_SAFE
+#define RT_UNSAFE J_UNSAFE
+#define REPORT_WARNING J_REPORT_WARNING
+#define REPORT_WARNING_1 J_REPORT_WARNING_1
+#define REPORT_WARNING_2 J_REPORT_WARNING_2
+#define REPORT_ERROR J_REPORT_ERROR
+#define REPORT_ERROR_1 J_REPORT_ERROR_1
+#define REPORT_ERROR_2 J_REPORT_ERROR_2
+#define RT_ASSERT J_S_ASSERT
+#define RT_ASSERT_1 J_S_ASSERT_1
+#define RT_ASSERT_2 J_S_ASSERT_2
+#define RT_ASSERT_TYPE J_S_ASSERT_TYPE
+#define RT_ASSERT_DEFINED J_S_ASSERT_DEFINED
+#define RT_ASSERT_OBJECT J_S_ASSERT_OBJECT
+#define RT_ASSERT_ARRAY J_S_ASSERT_ARRAY
+
+#define RT_ASSERT_INT J_S_ASSERT_INT
+#define RT_ASSERT_NUMBER J_S_ASSERT_NUMBER
+#define RT_ASSERT_STRING J_S_ASSERT_STRING
+#define RT_ASSERT_FUNCTION J_S_ASSERT_FUNCTION
+#define RT_ASSERT_ALLOC J_S_ASSERT_ALLOC
+#define RT_ASSERT_RESOURCE J_S_ASSERT_RESOURCE
+#define RT_ASSERT_CLASS J_S_ASSERT_CLASS
+#define RT_ASSERT_THIS_CLASS J_S_ASSERT_THIS_CLASS
+#define RT_ASSERT_CLASS_NAME J_S_ASSERT_CLASS_NAME
+#define RT_ASSERT_ARGC J_S_ASSERT_ARG_MIN
+#define RT_ASSERT_ARGC_MAX J_S_ASSERT_ARG_MAX
+#define RT_ASSERT_CONSTRUCTING J_S_ASSERT_CONSTRUCTING
+
+#define RT_JSVAL_TO_BOOL J_JSVAL_TO_BOOL
+#define RT_JSVAL_TO_REAL J_JSVAL_TO_REAL
+#define RT_JSVAL_TO_INT32 J_JSVAL_TO_INT32
+#define RT_JSVAL_TO_UINT32 J_JSVAL_TO_UINT32
+#define RT_JSVAL_TO_STRING J_JSVAL_TO_STRING
+#define RT_JSVAL_TO_STRING_AND_LENGTH J_JSVAL_TO_STRING_AND_LENGTH
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -284,7 +361,7 @@ inline JSBool SetNativeInterface( JSContext *cx, JSObject *obj, const char *name
 	
 	// Cannot be called while Finalize
 	// the following must works because spidermonkey will never call the getter or setter if it is not explicitly required by the script
-	RT_CHECK_CALL( JS_DefineProperty(cx, obj, name, JSVAL_VOID, (JSPropertyOp)function, (JSPropertyOp)descriptor, JSPROP_READONLY | JSPROP_PERMANENT) );
+	J_CHECK_CALL( JS_DefineProperty(cx, obj, name, JSVAL_VOID, (JSPropertyOp)function, (JSPropertyOp)descriptor, JSPROP_READONLY | JSPROP_PERMANENT) );
 	return JS_TRUE;
 }
 
@@ -293,15 +370,14 @@ inline JSBool GetNativeInterface( JSContext *cx, JSObject *obj, const char *name
 	// Cannot be called while Finalize
 	uintN attrs;
 	JSBool found;
-	RT_CHECK_CALL( JS_GetPropertyAttrsGetterAndSetter(cx, obj, name, &attrs, &found, (JSPropertyOp*)function, (JSPropertyOp*)descriptor) ); // NULL is supported for function and descriptor
+	J_CHECK_CALL( JS_GetPropertyAttrsGetterAndSetter(cx, obj, name, &attrs, &found, (JSPropertyOp*)function, (JSPropertyOp*)descriptor) ); // NULL is supported for function and descriptor
 	return JS_TRUE;
 }
-
 
 inline JSBool RemoveNativeInterface( JSContext *cx, JSObject *obj, const char *name ) {
 	
 	// Cannot be called while Finalize
-	RT_CHECK_CALL( JS_DeleteProperty(cx, obj, name) );
+	J_CHECK_CALL( JS_DeleteProperty(cx, obj, name) );
 	return JS_TRUE;
 }
 
@@ -341,7 +417,7 @@ inline JSBool GetNamedPrivate( JSContext *cx, JSObject *obj, const char *name, v
 
 inline JSBool SetNamedPrivate( JSContext *cx, JSObject *obj, const char *name, const void *pv ) {
 
-//	RT_SAFE(	if ( (int)pv % 2 ) return JS_FALSE; ); // check if *vp is 2-byte aligned
+//	J_SAFE(	if ( (int)pv % 2 ) return JS_FALSE; ); // check if *vp is 2-byte aligned
 	if ( JS_DefineProperty(cx, obj, name, PRIVATE_TO_JSVAL(pv), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ) == JS_FALSE )
 		return JS_FALSE;
 	return JS_TRUE;
@@ -371,13 +447,13 @@ inline JSBool CallFunction( JSContext *cx, JSObject *obj, jsval functionValue, j
 	va_list ap;
 	jsval argv[16]; // argc MUST be <= 16
 	jsval rvalTmp;
-	RT_ASSERT( argc <= sizeof(argv)/sizeof(jsval), "Too many arguments." );
+	J_S_ASSERT( argc <= sizeof(argv)/sizeof(jsval), "Too many arguments." );
 	va_start(ap, argc);
 	for ( uintN i = 0; i < argc; i++ )
 		argv[i] = va_arg(ap, jsval);
 	va_end(ap);
-	RT_ASSERT_FUNCTION( functionValue );
-	RT_CHECK_CALL( JS_CallFunctionValue(cx, obj, functionValue, argc, argv, &rvalTmp) ); // NULL is NOT supported for &rvalTmp ( last arg of JS_CallFunctionValue )
+	J_S_ASSERT_FUNCTION( functionValue );
+	J_CHECK_CALL( JS_CallFunctionValue(cx, obj, functionValue, argc, argv, &rvalTmp) ); // NULL is NOT supported for &rvalTmp ( last arg of JS_CallFunctionValue )
 	if ( rval != NULL )
 		*rval = rvalTmp;
 	return JS_TRUE;
@@ -398,6 +474,12 @@ inline JSClass *GetClassByName(JSContext *cx, const char *className) {
 		return NULL;
 	return fun->u.n.clasp; // (TBD) replace this by a jsapi.h call and remove dependency to jsarena.h and jsfun.h
 }
+
+inline bool MaybeRealloc( int requested, int received ) {
+
+	return (100 * received / requested < 90) && (requested - received > 256);
+}
+
 
 
 #endif // _JSHELPER_H_

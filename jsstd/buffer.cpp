@@ -410,7 +410,8 @@ DEFINE_FINALIZE() {
 
 DEFINE_CONSTRUCTOR() {
 
-	RT_ASSERT_CONSTRUCTING( _class );
+	J_S_ASSERT_CONSTRUCTING();
+	J_S_ASSERT_THIS_CLASS();
 /*
 	// prepare NativeInterface compatibility
 	JsCntxt *cntxt = (JsCntxt*)malloc(sizeof(JsCntxt)); // (TBD) fix this memory leak
@@ -436,7 +437,7 @@ DEFINE_CONSTRUCTOR() {
 
 			RT_CHECK_CALL( AddBuffer(cx, obj, JSVAL_TO_OBJECT( J_ARG(1) )) );
 		} else
-			REPORT_ERROR( RT_ERROR_INVALID_ARGUMENT );
+			REPORT_ERROR( J__ERRMSG_INVALID_ARGUMENT );
 	}
 
 	return JS_TRUE;

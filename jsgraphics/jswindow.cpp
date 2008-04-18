@@ -482,7 +482,7 @@ DEFINE_FUNCTION( Mode ) {
 DEFINE_PROPERTY( clipCursor ) {
 
 	HWND hWnd = (HWND)JS_GetPrivate(cx, obj);
-	RT_ASSERT( hWnd != NULL, RT_ERROR_NOT_INITIALIZED );
+	J_S_ASSERT_INITIALIZED(hWnd);
 	JSBool clip;
 	JS_ValueToBoolean(cx, *vp, &clip);
 	RECT r;
@@ -526,7 +526,7 @@ DEFINE_PROPERTY( showCursor ) {
 DEFINE_PROPERTY( rectGetter ) {
 
 	HWND hWnd = (HWND)JS_GetPrivate(cx, obj);
-	RT_ASSERT( hWnd != NULL, RT_ERROR_NOT_INITIALIZED );
+	J_S_ASSERT_RESOURCE(hWnd);
 	RECT r;
 	GetWindowRect(hWnd, &r);
 	int vector[] = { r.left, r.top, r.right, r.bottom };
@@ -538,7 +538,7 @@ DEFINE_PROPERTY( rectGetter ) {
 DEFINE_PROPERTY( rectSetter ) {
 
 	HWND hWnd = (HWND)JS_GetPrivate(cx, obj);
-	RT_ASSERT( hWnd != NULL, RT_ERROR_NOT_INITIALIZED );
+	J_S_ASSERT_RESOURCE(hWnd);
 	int v[4];
 	IntArrayToVector(cx, 4, vp, v);
 	SetWindowPos(hWnd, 0, v[0], v[1], v[2] - v[0], v[3] - v[1], SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_NOACTIVATE);
@@ -549,7 +549,7 @@ DEFINE_PROPERTY( rectSetter ) {
 DEFINE_PROPERTY( cursorAbsolutePositionSetter ) {
 
 	HWND hWnd = (HWND)JS_GetPrivate(cx, obj);
-	RT_ASSERT( hWnd != NULL, RT_ERROR_NOT_INITIALIZED );
+	J_S_ASSERT_RESOURCE(hWnd);
 	int vec[2];
 	IntArrayToVector(cx, 2, vp, vec);
 	BOOL sysStatus = SetCursorPos(vec[0], vec[1]); // http://windowssdk.msdn.microsoft.com/en-us/library/ms648394.aspx
@@ -560,7 +560,7 @@ DEFINE_PROPERTY( cursorAbsolutePositionSetter ) {
 DEFINE_PROPERTY( cursorAbsolutePositionGetter ) {
 
 	HWND hWnd = (HWND)JS_GetPrivate(cx, obj);
-	RT_ASSERT( hWnd != NULL, RT_ERROR_NOT_INITIALIZED );
+	J_S_ASSERT_RESOURCE(hWnd);
 	POINT pt;
 	GetCursorPos( &pt );
 	int vector[] = { pt.x, pt.y };
@@ -571,7 +571,7 @@ DEFINE_PROPERTY( cursorAbsolutePositionGetter ) {
 DEFINE_PROPERTY( cursorPositionSetter ) {
 
 	HWND hWnd = (HWND)JS_GetPrivate(cx, obj);
-	RT_ASSERT( hWnd != NULL, RT_ERROR_NOT_INITIALIZED );
+	J_S_ASSERT_RESOURCE(hWnd);
 	int vec[2];
 	IntArrayToVector(cx, 2, vp, vec);
 	POINT pt = { vec[0], vec[1] };
@@ -584,7 +584,7 @@ DEFINE_PROPERTY( cursorPositionSetter ) {
 DEFINE_PROPERTY( cursorPositionGetter ) {
 
 	HWND hWnd = (HWND)JS_GetPrivate(cx, obj);
-	RT_ASSERT( hWnd != NULL, RT_ERROR_NOT_INITIALIZED );
+	J_S_ASSERT_RESOURCE(hWnd);
 	POINT pt;
 	GetCursorPos( &pt );
 	ScreenToClient(hWnd, &pt);
@@ -596,7 +596,7 @@ DEFINE_PROPERTY( cursorPositionGetter ) {
 DEFINE_PROPERTY( title ) {
 
 	HWND hWnd = (HWND)JS_GetPrivate(cx, obj);
-	RT_ASSERT( hWnd != NULL, RT_ERROR_NOT_INITIALIZED );
+	J_S_ASSERT_RESOURCE(hWnd);
 	char *title;
 	RT_JSVAL_TO_STRING( *vp, title );
 	SetWindowText(hWnd, title);
@@ -607,7 +607,7 @@ DEFINE_PROPERTY( title ) {
 DEFINE_PROPERTY( showFrame ) {
 
 	HWND hWnd = (HWND)JS_GetPrivate(cx, obj);
-	RT_ASSERT( hWnd != NULL, RT_ERROR_NOT_INITIALIZED );
+	J_S_ASSERT_RESOURCE(hWnd);
 
 	JSBool show;
 	JS_ValueToBoolean(cx, *vp, &show);
@@ -641,7 +641,7 @@ DEFINE_PROPERTY( desktopRect ) {
 DEFINE_PROPERTY( captureMouse ) {
 
 	HWND hWnd = (HWND)JS_GetPrivate(cx, obj);
-	RT_ASSERT( hWnd != NULL, RT_ERROR_NOT_INITIALIZED );
+	J_S_ASSERT_RESOURCE(hWnd);
 	JSBool capture;
 	JS_ValueToBoolean(cx, *vp, &capture);
 
@@ -657,7 +657,7 @@ DEFINE_PROPERTY( captureMouse ) {
 DEFINE_PROPERTY( activeGetter ) {
 
 	HWND hWnd = (HWND)JS_GetPrivate(cx, obj);
-	RT_ASSERT( hWnd != NULL, RT_ERROR_NOT_INITIALIZED );
+	J_S_ASSERT_RESOURCE(hWnd);
 	*vp = BOOLEAN_TO_JSVAL( GetActiveWindow() == hWnd );
 	return JS_TRUE;
 }
@@ -665,7 +665,7 @@ DEFINE_PROPERTY( activeGetter ) {
 DEFINE_PROPERTY( activeSetter ) {
 
 	HWND hWnd = (HWND)JS_GetPrivate(cx, obj);
-	RT_ASSERT( hWnd != NULL, RT_ERROR_NOT_INITIALIZED );
+	J_S_ASSERT_RESOURCE(hWnd);
 	JSBool active;
 	JS_ValueToBoolean(cx, *vp, &active);
 	if ( active )

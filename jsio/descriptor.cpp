@@ -87,7 +87,7 @@ BEGIN_CLASS( Descriptor )
 
 DEFINE_CONSTRUCTOR() {
 
-	REPORT_ERROR( RT_ERROR_NO_CONSTRUCT ); // BUT constructor must be defined
+	J_REPORT_ERROR( J__ERRMSG_NO_CONSTRUCT ); // BUT constructor must be defined
 }
 
 

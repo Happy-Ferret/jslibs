@@ -57,13 +57,13 @@ static void nearCallback(void *data, ode::dGeomID o1, ode::dGeomID o2) {
 		if ( obj1 != NULL ) { // assert that the javascript object (over the Geom) is not finalized
 
 			JS_GetProperty(cx, obj1, COLLIDE_FEEDBACK_FUNCTION_NAME, &func1);
-			RT_SAFE( if ( func1 != JSVAL_VOID && JS_TypeOfValue(cx, func1) != JSTYPE_FUNCTION ) { JS_ReportError(cx, RT_ERROR_UNEXPECTED_TYPE " Function expected."); return; } ); // we need a function, nothing else
+			RT_SAFE( if ( func1 != JSVAL_VOID && JS_TypeOfValue(cx, func1) != JSTYPE_FUNCTION ) { JS_ReportError(cx, J__ERRMSG_UNEXPECTED_TYPE " Function expected."); return; } ); // we need a function, nothing else
 		}
 
 		if ( obj2 != NULL ) { // assert that the javascript object (over the Geom) is not finalized
 
 			JS_GetProperty(cx, obj2, COLLIDE_FEEDBACK_FUNCTION_NAME, &func2);
-			RT_SAFE( if ( func2 != JSVAL_VOID && JS_TypeOfValue(cx, func2) != JSTYPE_FUNCTION ) { JS_ReportError(cx, RT_ERROR_UNEXPECTED_TYPE " Function expected."); return; } ); // we need a function, nothing else
+			RT_SAFE( if ( func2 != JSVAL_VOID && JS_TypeOfValue(cx, func2) != JSTYPE_FUNCTION ) { JS_ReportError(cx, J__ERRMSG_UNEXPECTED_TYPE " Function expected."); return; } ); // we need a function, nothing else
 		}
 
 		for ( int i=0; i<n; i++ ) {
@@ -147,7 +147,9 @@ DEFINE_FINALIZE() {
 
 DEFINE_CONSTRUCTOR() {
 
-	RT_ASSERT_CONSTRUCTING(&classWorld);
+	RT_ASSERT_CONSTRUCTING();
+	RT_ASSERT_THIS_CLASS();
+
 	ode::dWorldID worldId = ode::dWorldCreate();
 	JS_SetPrivate(cx, obj, worldId);
 	//ode::dJointGroupID contactgroup = ode::dJointGroupCreate(0);
@@ -232,7 +234,7 @@ DEFINE_FUNCTION( Step ) {
 DEFINE_PROPERTY( gravityGetter ) {
 
 	ode::dWorldID worldID = (ode::dWorldID)JS_GetPrivate( cx, obj );
-	RT_ASSERT( worldID != NULL, RT_ERROR_NOT_INITIALIZED );
+	RT_ASSERT_RESOURCE( worldID );
 	ode::dVector3 gravity;
 	ode::dWorldGetGravity(worldID, gravity);
 	FloatVectorToArray(cx, 3, gravity, vp);
@@ -242,7 +244,7 @@ DEFINE_PROPERTY( gravityGetter ) {
 DEFINE_PROPERTY( gravitySetter ) {
 
 	ode::dWorldID worldID = (ode::dWorldID)JS_GetPrivate( cx, obj );
-	RT_ASSERT( worldID != NULL, RT_ERROR_NOT_INITIALIZED );
+	RT_ASSERT_RESOURCE( worldID );
 	ode::dVector3 gravity;
 	FloatArrayToVector(cx, 3, vp, gravity);
 	ode::dWorldSetGravity( worldID, gravity[0], gravity[1], gravity[2] );
@@ -255,7 +257,7 @@ enum { ERP, CFM, /*quickStepNumIterations,*/ contactSurfaceLayer };
 DEFINE_PROPERTY( realSetter ) {
 
 	ode::dWorldID worldID = (ode::dWorldID)JS_GetPrivate( cx, obj );
-	RT_ASSERT( worldID != NULL, RT_ERROR_NOT_INITIALIZED );
+	RT_ASSERT_RESOURCE( worldID );
 	jsdouble value;
 	JS_ValueToNumber(cx, *vp, &value);
 	switch(JSVAL_TO_INT(id)) {
@@ -279,7 +281,7 @@ DEFINE_PROPERTY( realSetter ) {
 DEFINE_PROPERTY( realGetter ) {
 
 	ode::dWorldID worldID = (ode::dWorldID)JS_GetPrivate( cx, obj );
-	RT_ASSERT( worldID != NULL, RT_ERROR_NOT_INITIALIZED );
+	RT_ASSERT_RESOURCE( worldID );
 	jsdouble value;
 	switch(JSVAL_TO_INT(id)) {
 		case ERP:

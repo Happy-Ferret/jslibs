@@ -20,7 +20,8 @@ BEGIN_CLASS( JointHinge )
 
 DEFINE_CONSTRUCTOR() {
 
-	RT_ASSERT_CONSTRUCTING(_class);
+	RT_ASSERT_CONSTRUCTING();
+	RT_ASSERT_THIS_CLASS();
 	RT_ASSERT_ARGC(1);
 	ode::dWorldID worldId;
 	if ( ValToWorldID( cx, argv[0], &worldId) == JS_FALSE )
@@ -98,7 +99,7 @@ DEFINE_PROPERTY( angleRate ) {
 
 DEFINE_FUNCTION( AddTorque ) {
 
-	RT_ASSERT_ARGC(1)
+	RT_ASSERT_ARGC(1);
 	ode::dJointID jointId = (ode::dJointID)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(jointId);
 	jsdouble torque;

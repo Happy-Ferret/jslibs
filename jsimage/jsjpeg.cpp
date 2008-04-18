@@ -155,7 +155,8 @@ DEFINE_FINALIZE() {
 
 DEFINE_CONSTRUCTOR() {
 
-	RT_ASSERT_CONSTRUCTING(_class);
+	RT_ASSERT_CONSTRUCTING();
+	J_S_ASSERT_THIS_CLASS();
 	RT_ASSERT_ARGC(1);
 
 	j_decompress_ptr cinfo = (j_decompress_ptr)malloc(sizeof(jpeg_decompress_struct)); // (TBD) free
@@ -214,7 +215,7 @@ DEFINE_CONSTRUCTOR() {
 DEFINE_FUNCTION( Load ) {
 
 	j_decompress_ptr cinfo = (j_decompress_ptr)JS_GetPrivate(cx, obj);
-	RT_ASSERT( cinfo != NULL, RT_ERROR_NOT_INITIALIZED );
+	J_S_ASSERT_RESOURCE( cinfo );
 
 // read the image
 	jpeg_start_decompress(cinfo);
@@ -250,9 +251,10 @@ DEFINE_FUNCTION( Load ) {
 DEFINE_PROPERTY( width ) {
 
 	j_decompress_ptr cinfo = (j_decompress_ptr)JS_GetPrivate(cx, obj);
-	RT_ASSERT( cinfo != NULL, RT_ERROR_NOT_INITIALIZED );
+	J_S_ASSERT_RESOURCE( cinfo );
+
 	int value = cinfo->output_width;
-	RT_ASSERT( value != 0, RT_ERROR_NOT_INITIALIZED );
+	J_S_ASSERT( value != 0, "Invalid width." );
 	*vp = INT_TO_JSVAL(value);
 	return JS_TRUE;
 }
@@ -260,9 +262,10 @@ DEFINE_PROPERTY( width ) {
 DEFINE_PROPERTY( height ) {
 
 	j_decompress_ptr cinfo = (j_decompress_ptr)JS_GetPrivate(cx, obj);
-	RT_ASSERT( cinfo != NULL, RT_ERROR_NOT_INITIALIZED );
+	J_S_ASSERT_RESOURCE( cinfo );
+
 	int value = cinfo->output_height;
-	RT_ASSERT( value != 0, RT_ERROR_NOT_INITIALIZED );
+	J_S_ASSERT( value != 0, "Invalid height." );
 	*vp = INT_TO_JSVAL(value);
 	return JS_TRUE;
 }
@@ -270,9 +273,10 @@ DEFINE_PROPERTY( height ) {
 DEFINE_PROPERTY( channels ) {
 
 	j_decompress_ptr cinfo = (j_decompress_ptr)JS_GetPrivate(cx, obj);
-	RT_ASSERT( cinfo != NULL, RT_ERROR_NOT_INITIALIZED );
+	J_S_ASSERT_RESOURCE( cinfo );
+
 	int value = cinfo->output_components;
-	RT_ASSERT( value != 0, RT_ERROR_NOT_INITIALIZED );
+	J_S_ASSERT( value != 0, "Invalid component count." );
 	*vp = INT_TO_JSVAL(value);
 	return JS_TRUE;
 }

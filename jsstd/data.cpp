@@ -22,7 +22,9 @@ BEGIN_CLASS( Data )
 
 DEFINE_CONSTRUCTOR() {
 		
-	RT_ASSERT_CONSTRUCTING( _class );
+	RT_ASSERT_CONSTRUCTING();
+	J_S_ASSERT_THIS_CLASS();
+
 	RT_CHECK_CALL( JS_SetPrototype(cx, obj, NULL) ); // this creates an empty object ( without __proto__, __parent__, toString, ... )
 	return JS_TRUE;
 }

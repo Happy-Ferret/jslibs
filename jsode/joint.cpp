@@ -43,7 +43,7 @@ DEFINE_PROPERTY( body2 ) {
 inline JSBool SetJoint( JSContext *cx, JSObject *obj, jsval *b1, jsval *b2 ) {
 
 	ode::dJointID jointID = (ode::dJointID)JS_GetPrivate( cx, obj );
-	RT_ASSERT( jointID != NULL, RT_ERROR_NOT_INITIALIZED );
+	RT_ASSERT_RESOURCE( jointID );
 
 	if ( *b1 == JSVAL_VOID || *b2 == JSVAL_VOID )
 		ode::dJointAttach(jointID, 0, 0); // detach it. The only way to attach it to the world environment is to use World.env
@@ -82,7 +82,7 @@ DEFINE_PROPERTY( body2 ) {
 
 DEFINE_FUNCTION( Destroy ) {
 
-	RT_ASSERT( InheritFrom(cx, obj, _class), RT_ERROR_INVALID_CLASS );
+	RT_ASSERT( InheritFrom(cx, obj, _class), J__ERRMSG_INVALID_CLASS );
 	ode::dJointID jointId = (ode::dJointID)JS_GetPrivate( cx, obj );
 	RT_ASSERT_RESOURCE( jointId );
 

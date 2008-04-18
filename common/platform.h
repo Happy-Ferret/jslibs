@@ -29,7 +29,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // Compiler specific configuration
 
-#if __GNUC__ && __GNUC__ >= 3
+#if defined(__GNUC__) && (__GNUC__ > 2)
 #define likely(expr)	__builtin_expect((expr), !0)
 #define unlikely(expr)	__builtin_expect((expr), 0)
 #else

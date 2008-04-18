@@ -49,7 +49,8 @@ DEFINE_FUNCTION( Alloc ) {
 
 DEFINE_CONSTRUCTOR() {
 
-	RT_ASSERT_CONSTRUCTING(_class);
+	RT_ASSERT_CONSTRUCTING();
+	J_S_ASSERT_THIS_CLASS();
 	JSFunction *allocFunction = JS_NewFunction(cx, Alloc, 0, 0, NULL, "Alloc");
 	RT_ASSERT( allocFunction != NULL, "Unable to create allocation function." );
 	JSObject *functionObject = JS_GetFunctionObject(allocFunction);
@@ -81,15 +82,15 @@ DEFINE_FUNCTION( Trim ) {
 
 	jsval tmp;
 	JS_GetProperty(cx, obj, "width", &tmp);
-	RT_ASSERT(JSVAL_IS_INT(tmp), RT_ERROR_UNEXPECTED_TYPE);
+	J_S_ASSERT_INT( tmp );
 	int width = JSVAL_TO_INT(tmp);
 
 	JS_GetProperty(cx, obj, "height", &tmp);
-	RT_ASSERT(JSVAL_IS_INT(tmp), RT_ERROR_UNEXPECTED_TYPE);
+	J_S_ASSERT_INT( tmp );
 	int height = JSVAL_TO_INT(tmp);
 
 	JS_GetProperty(cx, obj, "channels", &tmp);
-	RT_ASSERT(JSVAL_IS_INT(tmp), RT_ERROR_UNEXPECTED_TYPE);
+	J_S_ASSERT_INT( tmp );
 	int channels = JSVAL_TO_INT(tmp);
 	// assume that we have 1 Byte/channel
 
@@ -100,7 +101,8 @@ DEFINE_FUNCTION( Trim ) {
 		JS_ValueToBoolean(cx, argv[1], &reuseBuffer);
 
 	char *data = (char*)JS_GetPrivate(cx, obj);
-	RT_ASSERT(data!=NULL, RT_ERROR_NOT_INITIALIZED);
+	J_S_ASSERT_RESOURCE( data );
+
 	char *tmpDataPtr = data;
 
 	char *newData;

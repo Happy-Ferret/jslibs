@@ -285,7 +285,8 @@ DEFINE_FINALIZE() {
 
 DEFINE_CONSTRUCTOR() {
 
-	RT_ASSERT_CONSTRUCTING(_class);
+	RT_ASSERT_CONSTRUCTING();
+	J_S_ASSERT_THIS_CLASS();
 	RT_ASSERT_ARGC( 1 );
 	Texture *tex = (Texture *)malloc(sizeof(Texture));
 	tex->cbackBuffer = NULL;
@@ -922,11 +923,11 @@ DEFINE_FUNCTION( AddNoise ) {
 // PTYPE ok
 DEFINE_FUNCTION( Desaturate ) {
 
-	RT_ASSERT_ARGC(2)
+	RT_ASSERT_ARGC(2);
 
 	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(tex);
-	RT_ASSERT( tex->channels == 1, "Destination texture must have only one channel.")
+	RT_ASSERT( tex->channels == 1, "Destination texture must have only one channel.");
 
 	Texture *texSrc;
 	RT_CHECK_CALL( ValueToTexture(cx, argv[0], &texSrc) );

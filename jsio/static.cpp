@@ -70,7 +70,7 @@ DEFINE_FUNCTION( Poll ) {
 		RT_CHECK_CALL( JS_GetElement(cx, JSVAL_TO_OBJECT(J_ARG(1)), JSVAL_TO_INT(propVal), &propVal ));
 		RT_ASSERT_OBJECT( propVal );
 		JSObject *fdObj = JSVAL_TO_OBJECT( propVal );
-		RT_ASSERT( InheritFrom(cx, fdObj, &classDescriptor), RT_ERROR_INVALID_CLASS );
+		RT_ASSERT( InheritFrom(cx, fdObj, &classDescriptor), J__ERRMSG_INVALID_CLASS );
 		PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, fdObj );
 //		RT_ASSERT_RESOURCE( fd ); // fd == NULL is supported !
 
@@ -196,7 +196,7 @@ DEFINE_FUNCTION( IsReadable ) {
 	RT_ASSERT_ARGC( 1 );
 
 	JSObject *descriptorObj = JSVAL_TO_OBJECT( J_ARG(1) );
-	RT_ASSERT( InheritFrom(cx, descriptorObj, &classDescriptor), RT_ERROR_INVALID_CLASS );
+	RT_ASSERT( InheritFrom(cx, descriptorObj, &classDescriptor), J__ERRMSG_INVALID_CLASS );
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, descriptorObj );
 //	RT_ASSERT_RESOURCE( fd ); // fd == NULL is supported !
 
@@ -223,7 +223,7 @@ DEFINE_FUNCTION( IsWritable ) {
 	RT_ASSERT_ARGC( 1 );
 
 	JSObject *descriptorObj = JSVAL_TO_OBJECT( J_ARG(1) );
-	RT_ASSERT( InheritFrom(cx, descriptorObj, &classDescriptor), RT_ERROR_INVALID_CLASS );
+	RT_ASSERT( InheritFrom(cx, descriptorObj, &classDescriptor), J__ERRMSG_INVALID_CLASS );
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, descriptorObj );
 //	RT_ASSERT_RESOURCE( fd ); // fd == NULL is supported !
 
@@ -272,7 +272,7 @@ DEFINE_FUNCTION( Sleep ) {
 
 DEFINE_FUNCTION( GetEnv ) {
 
-	RT_ASSERT_ARGC(1)
+	RT_ASSERT_ARGC(1);
 	char *name;
 	RT_JSVAL_TO_STRING( J_ARG(1), name );
 	char* value = PR_GetEnv(name); // If the environment variable is not defined, the function returns NULL.

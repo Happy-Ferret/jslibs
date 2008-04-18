@@ -30,7 +30,8 @@ DEFINE_FINALIZE() {
 
 DEFINE_CONSTRUCTOR() {
 
-	RT_ASSERT_CONSTRUCTING( _class );
+	RT_ASSERT_CONSTRUCTING();
+	J_S_ASSERT_THIS_CLASS();
 
 	int descType;
 	if ( J_ARG_ISDEF(1) )
@@ -194,7 +195,7 @@ DEFINE_FUNCTION( Accept ) {
 //	descriptor writeable.
 DEFINE_FUNCTION( Connect ) {
 
-	RT_ASSERT_ARGC( 2 )
+	RT_ASSERT_ARGC( 2 );
 	PRFileDesc *fd = (PRFileDesc*)JS_GetPrivate( cx, obj );
 	RT_ASSERT_RESOURCE( fd );
 
@@ -702,7 +703,7 @@ DEFINE_PROPERTY( sockPort ) {
 
 DEFINE_FUNCTION( GetHostsByName ) {
 
-	RT_ASSERT_ARGC( 1 )
+	RT_ASSERT_ARGC( 1 );
 
 	char *host;
 	RT_JSVAL_TO_STRING( J_ARG(1), host );

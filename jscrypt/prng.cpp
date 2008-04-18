@@ -40,13 +40,13 @@ DEFINE_FUNCTION( Call ) {
 	RT_ASSERT_ARGC( 1 );
 	RT_ASSERT_CLASS( thisObj, _class );
 	PrngPrivate *privateData = (PrngPrivate *)JS_GetPrivate( cx, thisObj );
-	RT_ASSERT( privateData, RT_ERROR_NOT_INITIALIZED );
+	J_S_ASSERT_RESOURCE( privateData );
 
 	unsigned long readCount;
 	RT_JSVAL_TO_INT32( argv[0], readCount );
 
 	char *pr = (char*)JS_malloc( cx, readCount );
-	RT_ASSERT( pr != NULL, RT_ERROR_OUT_OF_MEMORY );
+	J_S_ASSERT_ALLOC( pr );
 	unsigned long hasRead = privateData->prng.read( (unsigned char*)pr, readCount, &privateData->state );
 	RT_ASSERT( hasRead == readCount, "unable to read prng." );
 
@@ -59,9 +59,10 @@ DEFINE_FUNCTION( Call ) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 DEFINE_CONSTRUCTOR() {
 
-	RT_ASSERT( JS_IsConstructing(cx), RT_ERROR_NEED_CONSTRUCTION );
+	RT_ASSERT_CONSTRUCTING();
+	J_S_ASSERT_THIS_CLASS();
+
 	RT_ASSERT_ARGC( 1 );
-	RT_ASSERT_CLASS( obj, _class );
 
 	char *prngName;
 	RT_JSVAL_TO_STRING( argv[0], prngName );
@@ -70,7 +71,7 @@ DEFINE_CONSTRUCTOR() {
 	RT_ASSERT_1( prngIndex != -1, "prng %s is not available", prngName );
 
 	PrngPrivate *privateData = (PrngPrivate*)malloc( sizeof(PrngPrivate) );
-	RT_ASSERT( privateData != NULL, RT_ERROR_OUT_OF_MEMORY );
+	J_S_ASSERT_ALLOC( privateData );
 
 	privateData->prng = prng_descriptor[prngIndex];
 
@@ -91,9 +92,9 @@ DEFINE_CONSTRUCTOR() {
 DEFINE_FUNCTION( AddEntropy ) {
 
 	RT_ASSERT_ARGC( 1 );
-	RT_ASSERT_CLASS( obj, _class );
+	J_S_ASSERT_THIS_CLASS();
 	PrngPrivate *privateData = (PrngPrivate *)JS_GetPrivate( cx, obj );
-	RT_ASSERT( privateData != NULL, RT_ERROR_NOT_INITIALIZED );
+	J_S_ASSERT_RESOURCE( privateData );
 
 	char *entropy;
 	int entropyLength;
@@ -115,7 +116,7 @@ DEFINE_FUNCTION( AutoEntropy ) {
 	RT_ASSERT_ARGC( 1 );
 	RT_ASSERT_CLASS( obj, _class );
 	PrngPrivate *privateData = (PrngPrivate *)JS_GetPrivate( cx, obj );
-	RT_ASSERT( privateData != NULL, RT_ERROR_NOT_INITIALIZED );
+	J_S_ASSERT_RESOURCE( privateData );
 	int32 bits;
 	RT_JSVAL_TO_INT32( argv[0], bits );
 	int err = rng_make_prng( bits, find_prng(privateData->prng.name), &privateData->state, NULL );
@@ -129,7 +130,8 @@ DEFINE_PROPERTY( stateGetter ) {
 
 	RT_ASSERT_CLASS( obj, _class );
 	PrngPrivate *privateData = (PrngPrivate *)JS_GetPrivate( cx, obj );
-	RT_ASSERT( privateData != NULL, RT_ERROR_NOT_INITIALIZED );
+	J_S_ASSERT_RESOURCE( privateData );
+
 	unsigned long size = privateData->prng.export_size;
 	char *stateData = (char*)JS_malloc(cx, size);
 	unsigned long stateLength = size;
@@ -146,7 +148,8 @@ DEFINE_PROPERTY( stateSetter ) {
 
 	RT_ASSERT_CLASS( obj, _class );
 	PrngPrivate *privateData = (PrngPrivate *)JS_GetPrivate( cx, obj );
-	RT_ASSERT( privateData != NULL, RT_ERROR_NOT_INITIALIZED );
+	J_S_ASSERT_RESOURCE( privateData );
+
 	char *stateData;
 	int stateLength;
 	RT_JSVAL_TO_STRING_AND_LENGTH( *vp, stateData, stateLength );
@@ -163,7 +166,8 @@ DEFINE_PROPERTY( name ) {
 
 	RT_ASSERT_CLASS( obj, _class );
 	PrngPrivate *privateData = (PrngPrivate *)JS_GetPrivate( cx, obj );
-	RT_ASSERT( privateData != NULL, RT_ERROR_NOT_INITIALIZED );
+	J_S_ASSERT_RESOURCE( privateData );
+
 	*vp = STRING_TO_JSVAL( JS_NewStringCopyZ(cx,privateData->prng.name) );
 	return JS_TRUE;
 }

@@ -169,18 +169,8 @@ DEFINE_FUNCTION_FAST( Fog ) {
 	if ( J_VALUE_IS_ARRAY(J_FARG(2)) ) {
 
 		GLfloat params[16];
-		JSObject *arrayObj = JSVAL_TO_OBJECT(J_FARG(2));
 		jsuint length;
-		RT_CHECK_CALL( JS_GetArrayLength(cx, arrayObj, &length) );
-		RT_ASSERT( length <= sizeof(params), "Too many elements." );
-		jsval eltVal;
-		jsdouble dbl;
-		for ( jsuint i=0; i<length; i++ ) {
-			
-			RT_CHECK_CALL( JS_GetElement(cx, arrayObj, i, &eltVal) );
-			RT_CHECK_CALL( JS_ValueToNumber(cx, eltVal, &dbl) );
-			params[i] = dbl;
-		}
+		J_JSVAL_TO_REAL_VECTOR( J_FARG(2), params, length );
 		glFogfv( JSVAL_TO_INT(J_FARG(1)), params );
 		return JS_TRUE;
 	}
@@ -337,20 +327,9 @@ DEFINE_FUNCTION_FAST( TexEnv ) {
 	}
 	if ( J_VALUE_IS_ARRAY(J_FARG(3)) ) {
 
-		JSObject *arrayObj = JSVAL_TO_OBJECT(J_FARG(3));
-		jsuint length;
-		RT_CHECK_CALL( JS_GetArrayLength(cx, arrayObj, &length) );
-
 		GLfloat params[16];
-		RT_ASSERT( length <= sizeof(params), "Too many elements." );
-		jsval tmp;
-		jsdouble tmp2;
-		for ( jsuint i=0; i<length; i++ ) {
-			
-			RT_CHECK_CALL( JS_GetElement(cx, arrayObj, i, &tmp) );
-			RT_CHECK_CALL( JS_ValueToNumber(cx, tmp, &tmp2) );
-			params[i] = tmp2;
-		}
+		int length;
+		J_JSVAL_TO_REAL_VECTOR( J_FARG(3), params, length );
 		glTexEnvfv( JSVAL_TO_INT(J_FARG(1)), JSVAL_TO_INT(J_FARG(2)), params );
 		return JS_TRUE;
 	}
@@ -596,22 +575,9 @@ DEFINE_FUNCTION_FAST( ClipPlane ) {
 	RT_ASSERT_ARGC(2);
 	RT_ASSERT_INT(J_FARG(1));
 	RT_ASSERT_ARRAY(J_FARG(2));
-
-	JSObject *arrayObj = JSVAL_TO_OBJECT(J_FARG(2));
-	jsuint length;
-	RT_CHECK_CALL( JS_GetArrayLength(cx, arrayObj, &length) );
-
 	GLdouble equation[16];
-	RT_ASSERT( length <= sizeof(equation), "Too many elements." );
-	jsval tmp;
-	jsdouble tmp2;
-	for ( jsuint i=0; i<length; i++ ) {
-		
-		RT_CHECK_CALL( JS_GetElement(cx, arrayObj, i, &tmp) );
-		RT_CHECK_CALL( JS_ValueToNumber(cx, tmp, &tmp2) );
-		equation[i] = tmp2;
-	}
-
+	jsuint length;
+	J_JSVAL_TO_REAL_VECTOR( J_FARG(2), equation, length );
 	glClipPlane(JSVAL_TO_INT(J_FARG(1)), equation);
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
@@ -1031,20 +997,9 @@ DEFINE_FUNCTION_FAST( PointParameter ) {
 	}
 	if ( J_VALUE_IS_ARRAY(J_FARG(2)) ) {
 
-		JSObject *arrayObj = JSVAL_TO_OBJECT(J_FARG(2));
-		jsuint length;
-		RT_CHECK_CALL( JS_GetArrayLength(cx, arrayObj, &length) );
-
 		GLfloat params[16];
-		RT_ASSERT( length <= sizeof(params), "Too many elements." );
-		jsval tmp;
-		jsdouble tmp2;
-		for ( jsuint i=0; i<length; i++ ) {
-			
-			RT_CHECK_CALL( JS_GetElement(cx, arrayObj, i, &tmp) );
-			RT_CHECK_CALL( JS_ValueToNumber(cx, tmp, &tmp2) );
-			params[i] = tmp2;
-		}
+		jsuint length;
+		J_JSVAL_TO_REAL_VECTOR( J_FARG(2), params, length );
 		glPointParameterfv( JSVAL_TO_INT(J_FARG(1)), params );
 		return JS_TRUE;
 	}

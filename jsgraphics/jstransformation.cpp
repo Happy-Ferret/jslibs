@@ -96,7 +96,7 @@ DEFINE_FUNCTION_FAST( ClearTranslation ) {
 
 DEFINE_FUNCTION_FAST( Load ) {
 
-	RT_ASSERT_ARGC(1)
+	RT_ASSERT_ARGC(1);
 	Matrix44 *tm = (Matrix44*)JS_GetPrivate(cx, J_FOBJ);
 	RT_ASSERT_RESOURCE(tm);
 	Matrix44 *m = tm;
@@ -304,7 +304,7 @@ DEFINE_FUNCTION_FAST( Invert ) {
 
 DEFINE_FUNCTION_FAST( Product ) {
 
-	RT_ASSERT_ARGC(1)
+	RT_ASSERT_ARGC(1);
 	Matrix44 *tm = (Matrix44*)JS_GetPrivate(cx, J_FOBJ); // tm for thisMatrix
 	RT_ASSERT_RESOURCE(tm);
 	Matrix44 tmp, *m = &tmp;
@@ -317,7 +317,7 @@ DEFINE_FUNCTION_FAST( Product ) {
 
 DEFINE_FUNCTION_FAST( InverseProduct ) {
 
-	RT_ASSERT_ARGC(1)
+	RT_ASSERT_ARGC(1);
 	Matrix44 *tm = (Matrix44*)JS_GetPrivate(cx, J_FOBJ); // tm for thisMatrix
 	RT_ASSERT_RESOURCE(tm);
 	Matrix44 tmp, *m = &tmp;
