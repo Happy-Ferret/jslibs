@@ -21,7 +21,8 @@ BEGIN_CLASS( Icon )
 
 DEFINE_CONSTRUCTOR() {
 
-	RT_ASSERT_CONSTRUCTING(_class);
+	RT_ASSERT_CONSTRUCTING();
+	RT_ASSERT_THIS_CLASS();
 	RT_ASSERT_ARGC(1);
 
 	jsval iconVal = argv[0];
@@ -56,13 +57,13 @@ DEFINE_CONSTRUCTOR() {
 		RT_ASSERT_CLASS_NAME(imgObj, "Image"); // (TBD) need something better/safer ?
 		jsval tmp;
 		JS_GetProperty(cx, imgObj, "width", &tmp);
-		RT_ASSERT(JSVAL_IS_INT(tmp), RT_ERROR_UNEXPECTED_TYPE);
+		RT_ASSERT_INT(tmp);
 		int width = JSVAL_TO_INT(tmp);
 		JS_GetProperty(cx, imgObj, "height", &tmp);
-		RT_ASSERT(JSVAL_IS_INT(tmp), RT_ERROR_UNEXPECTED_TYPE);
+		RT_ASSERT_INT(tmp);
 		int height = JSVAL_TO_INT(tmp);
 		JS_GetProperty(cx, imgObj, "channels", &tmp);
-		RT_ASSERT(JSVAL_IS_INT(tmp), RT_ERROR_UNEXPECTED_TYPE);
+		RT_ASSERT_INT(tmp);
 		int channels = JSVAL_TO_INT(tmp);
 		unsigned char *imageData = (unsigned char*)JS_GetPrivate(cx, imgObj);
 

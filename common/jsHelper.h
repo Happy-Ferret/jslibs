@@ -15,6 +15,8 @@
 #ifndef _JSHELPER_H_
 #define _JSHELPER_H_
 
+#include "platform.h"
+
 #include <stdarg.h>
 
 #include <jsarena.h>
@@ -193,7 +195,7 @@
 	J_S_ASSERT_1( (jsObject) != NULL && JS_GET_CLASS(cx, jsObject) == (jsClass), J__ERRMSG_INVALID_CLASS "%s expected.", (jsClass)->name )
 
 #define J_S_ASSERT_CLASS_NAME(jsObject, className) \
-	J_S_ASSERT( strcmp(JS_GET_CLASS(cx, (jsObject))->name, (className)) == 0, J__ERRMSG_INVALID_CLASS (className)" expected." )
+	J_S_ASSERT_1( strcmp(JS_GET_CLASS(cx, (jsObject))->name, (className)) == 0, J__ERRMSG_INVALID_CLASS "%s expected.", className )
 
 #define J_S_ASSERT_THIS_CLASS() \
 	J_S_ASSERT_CLASS(obj, _class)

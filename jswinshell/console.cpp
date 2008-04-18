@@ -22,7 +22,9 @@ BEGIN_CLASS( Console )
 
 DEFINE_CONSTRUCTOR() {
 
-	RT_ASSERT_CONSTRUCTING(_class);
+	RT_ASSERT_CONSTRUCTING();
+	RT_ASSERT_THIS_CLASS();
+
 	BOOL res = AllocConsole();
 	SetConsoleTitle("");
 	RT_ASSERT( res != 0, "Unable to create the console." );
@@ -44,7 +46,7 @@ DEFINE_FUNCTION( Close ) {
 
 DEFINE_FUNCTION( Write ) {
 	
-	RT_ASSERT_ARGC( 1 )
+	RT_ASSERT_ARGC( 1 );
 	HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
 	RT_ASSERT( hStdout != NULL, "Unable to create the stdout." );
 	char *str;
@@ -59,7 +61,7 @@ DEFINE_FUNCTION( Write ) {
 
 DEFINE_FUNCTION( Read ) {
 	
-	RT_ASSERT_ARGC( 1 )
+	RT_ASSERT_ARGC( 1 );
 	HANDLE hStdin = GetStdHandle(STD_INPUT_HANDLE);
 	RT_ASSERT( hStdin != NULL, "Unable to create the stdin." );
 	char buffer[8192];
