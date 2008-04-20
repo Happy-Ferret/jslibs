@@ -223,7 +223,6 @@ DEFINE_FUNCTION( _MessageBeep ) {
 DEFINE_FUNCTION( _Beep ) {
 
 	RT_ASSERT_ARGC(2);
-	uint32 timeout;
 	DWORD freq, duration;
 	RT_JSVAL_TO_INT32( argv[0], freq );
 	RT_JSVAL_TO_INT32( argv[1], duration );
