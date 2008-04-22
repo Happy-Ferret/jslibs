@@ -82,7 +82,7 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 				RT_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." ); // (TBD) return value of assert is not compatible with this function (WndProc)
 				char c = wParam;
 				jsval argv[] = { STRING_TO_JSVAL(JS_NewStringCopyN(cx, &c, 1)), INT_TO_JSVAL(lParam) };
-				RT_CHECK_CALL( JS_CallFunctionValue(cx, obj, functionVal, sizeof(argv)/sizeof(*argv), argv, &rval) );
+				RT_CHECK_CALL( JS_CallFunctionValue(cx, obj, functionVal, COUNTOF(argv), argv, &rval) );
 				return 0;
 			}
 			break;
@@ -92,7 +92,7 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 
 				RT_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." );
 				jsval argv[] = { INT_TO_JSVAL(wParam), INT_TO_JSVAL(lParam) };
-				RT_CHECK_CALL( JS_CallFunctionValue(cx, obj, functionVal, sizeof(argv)/sizeof(*argv), argv, &rval) );
+				RT_CHECK_CALL( JS_CallFunctionValue(cx, obj, functionVal, COUNTOF(argv), argv, &rval) );
 				return 0;
 			}
 			break;
@@ -102,7 +102,7 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 
 				RT_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." );
 				jsval argv[] = { INT_TO_JSVAL(wParam), INT_TO_JSVAL(lParam) };
-				RT_CHECK_CALL( JS_CallFunctionValue(cx, obj, functionVal, sizeof(argv)/sizeof(*argv), argv, &rval) );
+				RT_CHECK_CALL( JS_CallFunctionValue(cx, obj, functionVal, COUNTOF(argv), argv, &rval) );
 				return 0;
 			}
 			break;
@@ -112,7 +112,7 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 
 				RT_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." );
 				jsval argv[] = { BOOLEAN_TO_JSVAL(wParam != WA_INACTIVE) };
-				RT_CHECK_CALL( JS_CallFunctionValue(cx, obj, functionVal, sizeof(argv)/sizeof(*argv), argv, &rval) );
+				RT_CHECK_CALL( JS_CallFunctionValue(cx, obj, functionVal, COUNTOF(argv), argv, &rval) );
 				return 0;
 			}
 			break;
@@ -123,7 +123,7 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 
 				RT_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." );
 				jsval argv[] = { INT_TO_JSVAL((short)LOWORD(lParam)), INT_TO_JSVAL((short)HIWORD(lParam)) };
-				RT_CHECK_CALL( JS_CallFunctionValue(cx, obj, functionVal, sizeof(argv)/sizeof(*argv), argv, &rval) );
+				RT_CHECK_CALL( JS_CallFunctionValue(cx, obj, functionVal, COUNTOF(argv), argv, &rval) );
 				return 0;
 			}
 			break;
@@ -133,7 +133,7 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 
 				RT_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." );
 				jsval argv[] = { INT_TO_JSVAL(MAKEPOINTS(lParam).x), INT_TO_JSVAL(MAKEPOINTS(lParam).y), BOOLEAN_TO_JSVAL(wParam & MK_LBUTTON), BOOLEAN_TO_JSVAL(wParam & MK_RBUTTON), BOOLEAN_TO_JSVAL(wParam & MK_MBUTTON) };
-				RT_CHECK_CALL( JS_CallFunctionValue(cx, obj, functionVal, sizeof(argv)/sizeof(*argv), argv, &rval) );
+				RT_CHECK_CALL( JS_CallFunctionValue(cx, obj, functionVal, COUNTOF(argv), argv, &rval) );
 				return 0;
 			}
 			break;
@@ -143,7 +143,7 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 
 				RT_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." );
 				jsval argv[] = { INT_TO_JSVAL( GET_WHEEL_DELTA_WPARAM(wParam)/WHEEL_DELTA ), BOOLEAN_TO_JSVAL(wParam & MK_LBUTTON), BOOLEAN_TO_JSVAL(wParam & MK_RBUTTON), BOOLEAN_TO_JSVAL(wParam & MK_MBUTTON) };
-				RT_CHECK_CALL( JS_CallFunctionValue(cx, obj, functionVal, sizeof(argv)/sizeof(*argv), argv, &rval) );
+				RT_CHECK_CALL( JS_CallFunctionValue(cx, obj, functionVal, COUNTOF(argv), argv, &rval) );
 				return 0;
 			}
 			break;
@@ -162,7 +162,7 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 //					BOOLEAN_TO_JSVAL(wParam & MK_LBUTTON),
 //					BOOLEAN_TO_JSVAL(wParam & MK_RBUTTON),
 //					BOOLEAN_TO_JSVAL(wParam & MK_MBUTTON) };
-				RT_CHECK_CALL( JS_CallFunctionValue(cx, obj, functionVal, sizeof(argv)/sizeof(*argv), argv, &rval) );
+				RT_CHECK_CALL( JS_CallFunctionValue(cx, obj, functionVal, COUNTOF(argv), argv, &rval) );
 				return 0;
 			}
 			break;
@@ -177,7 +177,7 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 
 				RT_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." );
 				jsval argv[] = { INT_TO_JSVAL( message==WM_LBUTTONUP ? 1 : message==WM_RBUTTONUP ? 2 : message==WM_MBUTTONUP ? 3 : 0 ), JSVAL_FALSE };
-				RT_CHECK_CALL( JS_CallFunctionValue(cx, obj, functionVal, sizeof(argv)/sizeof(*argv), argv, &rval) );
+				RT_CHECK_CALL( JS_CallFunctionValue(cx, obj, functionVal, COUNTOF(argv), argv, &rval) );
 				return 0;
 			}
 			break;
@@ -523,14 +523,64 @@ DEFINE_PROPERTY( showCursor ) {
 }
 
 
+
+
+DEFINE_PROPERTY( clientRect ) {
+
+	HWND hWnd = (HWND)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE(hWnd);
+	RECT r;
+	GetClientRect(hWnd, &r);
+
+	JSObject *arrayObj;
+	if ( !J_VALUE_IS_ARRAY(*vp) ) {
+
+		arrayObj = JS_NewArrayObject(cx, 0, NULL);
+		RT_ASSERT_ALLOC(arrayObj);
+		*vp = OBJECT_TO_JSVAL(arrayObj);
+	} else { // reusing the stored array is a good idea.
+
+		arrayObj = JSVAL_TO_OBJECT(*vp);
+	}
+
+	jsval value;
+	value = INT_TO_JSVAL(r.left);
+	J_CHECK_CALL( JS_SetElement(cx, arrayObj, 0, &value) );
+	value = INT_TO_JSVAL(r.top);
+	J_CHECK_CALL( JS_SetElement(cx, arrayObj, 1, &value) );
+	value = INT_TO_JSVAL(r.right);
+	J_CHECK_CALL( JS_SetElement(cx, arrayObj, 2, &value) );
+	value = INT_TO_JSVAL(r.bottom);
+	J_CHECK_CALL( JS_SetElement(cx, arrayObj, 3, &value) );
+	return JS_TRUE;
+}
+
+
 DEFINE_PROPERTY( rectGetter ) {
 
 	HWND hWnd = (HWND)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE(hWnd);
 	RECT r;
 	GetWindowRect(hWnd, &r);
+	//	IntVectorToArray(cx, COUNTOF(vector), vector, vp);
+/*
+	if ( J_VALUE_IS_ARRAY(*vp) ) { // reusing the stored array is NOT a good idea, because its reference may have been used elsewere
+
+		JSObject *arrayObj = JSVAL_TO_OBJECT(*vp);
+		jsval value;
+		value = INT_TO_JSVAL(r.left);
+		J_CHECK_CALL( JS_SetElement(cx, arrayObj, 0, &value) );
+		value = INT_TO_JSVAL(r.top);
+		J_CHECK_CALL( JS_SetElement(cx, arrayObj, 1, &value) );
+		value = INT_TO_JSVAL(r.right);
+		J_CHECK_CALL( JS_SetElement(cx, arrayObj, 2, &value) );
+		value = INT_TO_JSVAL(r.bottom);
+		J_CHECK_CALL( JS_SetElement(cx, arrayObj, 3, &value) );
+	} else {
+*/
 	int vector[] = { r.left, r.top, r.right, r.bottom };
-	IntVectorToArray(cx, 4, vector, vp);
+	J_INT_VECTOR_TO_JSVAL( vector, COUNTOF(vector), *vp );
+//	}
 	return JS_TRUE;
 }
 
@@ -540,7 +590,12 @@ DEFINE_PROPERTY( rectSetter ) {
 	HWND hWnd = (HWND)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE(hWnd);
 	int v[4];
-	IntArrayToVector(cx, 4, vp, v);
+
+//	IntArrayToVector(cx, 4, vp, v);
+	jsuint length;
+	J_JSVAL_TO_INT_VECTOR(*vp, v, length);
+	RT_ASSERT( length == 4, "Invalid element count." );
+
 	SetWindowPos(hWnd, 0, v[0], v[1], v[2] - v[0], v[3] - v[1], SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_NOACTIVATE);
 	return JS_TRUE;
 }
@@ -557,6 +612,7 @@ DEFINE_PROPERTY( cursorAbsolutePositionSetter ) {
 	return JS_TRUE;
 }
 
+
 DEFINE_PROPERTY( cursorAbsolutePositionGetter ) {
 
 	HWND hWnd = (HWND)JS_GetPrivate(cx, obj);
@@ -564,7 +620,7 @@ DEFINE_PROPERTY( cursorAbsolutePositionGetter ) {
 	POINT pt;
 	GetCursorPos( &pt );
 	int vector[] = { pt.x, pt.y };
-	IntVectorToArray(cx, 4, vector, vp);
+	IntVectorToArray(cx, COUNTOF(vector), vector, vp);
 	return JS_TRUE;
 }
 
@@ -589,7 +645,7 @@ DEFINE_PROPERTY( cursorPositionGetter ) {
 	GetCursorPos( &pt );
 	ScreenToClient(hWnd, &pt);
 	int vector[] = { pt.x, pt.y };
-	IntVectorToArray(cx, 4, vector, vp);
+	IntVectorToArray(cx, COUNTOF(vector), vector, vp);
 	return JS_TRUE;
 }
 
@@ -633,7 +689,7 @@ DEFINE_PROPERTY( desktopRect ) {
 	RECT r;
 	GetWindowRect(GetDesktopWindow(), &r);
 	int vector[] = { r.left, r.top, r.right, r.bottom };
-	IntVectorToArray(cx, 4, vector, vp);
+	IntVectorToArray(cx, COUNTOF(vector), vector, vp);
 	return JS_TRUE;
 }
 
@@ -694,6 +750,7 @@ CONFIGURE_CLASS
 		PROPERTY_WRITE_STORE(showFrame)
 		PROPERTY_WRITE_STORE(captureMouse)
 		PROPERTY_WRITE_STORE(clipCursor)
+		PROPERTY_READ_STORE(clientRect)
 		PROPERTY(rect)
 		PROPERTY(active)
 		PROPERTY(cursorPosition)

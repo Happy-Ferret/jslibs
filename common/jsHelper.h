@@ -113,6 +113,8 @@
 	do { if (unlikely( (functionCall) == JS_FALSE )) { return JS_FALSE; } } while(0)
 
 
+#define J_IS_SAFE_MODE(code) \
+
 #define J_SAFE(code) \
 	do { if (unlikely( !_unsafeMode )) {code;} } while(0)
 
@@ -281,6 +283,22 @@
 } while(0)
 
 
+#define J_FILL_JSVAL_ARRAY( vector, length, jsvalVariable ) do { \
+} while(0)
+
+
+#define J_INT_VECTOR_TO_JSVAL( vector, length, jsvalVariable ) do { \
+	JSObject *__arrayObj = JS_NewArrayObject(cx, 0, NULL); \
+	RT_ASSERT_ALLOC(__arrayObj); \
+	(jsvalVariable) = OBJECT_TO_JSVAL(__arrayObj); \
+	jsval __tmpValue; \
+	for ( jsint __i=0; __i<(length); ++__i ) { \
+		__tmpValue = INT_TO_JSVAL((vector)[__i]); \
+		J_CHECK_CALL( JS_SetElement(cx, __arrayObj, __i, &__tmpValue) ); \
+	} \
+} while(0)
+
+
 #define J_JSVAL_TO_INT_VECTOR( jsvalArray, vectorVariable, lengthVariable ) do { \
 	J_S_ASSERT_ARRAY(jsvalArray); \
 	JSObject *__arrayObj = JSVAL_TO_OBJECT(jsvalArray); \
@@ -289,12 +307,15 @@
 	(lengthVariable) = __length; \
 	J_S_ASSERT( __length <= sizeof(vectorVariable), "Too many elements in the array." ); \
 	jsval __arrayElt; \
-	int __eltValue; \
 	for ( jsuint __i=0; __i<__length; __i++ ) { \
 		J_CHECK_CALL( JS_GetElement(cx, __arrayObj, __i, &__arrayElt) ); \
 		J_S_ASSERT_INT(__arrayElt); \
 		(vectorVariable)[__i] = JSVAL_TO_INT(__arrayElt); \
 	} \
+} while(0)
+
+// (TBD)
+#define J_REAL_VECTOR_TO_JSVAL( vector, length, jsvalVariable ) do { \
 } while(0)
 
 
@@ -461,6 +482,7 @@ inline JSBool CallFunction( JSContext *cx, JSObject *obj, jsval functionValue, j
 	return JS_TRUE;
 }
 
+// The following function wil only works if the class is defined in the global namespace.
 inline JSClass *GetClassByName(JSContext *cx, const char *className) {
 
 	JSObject *globalObj = JS_GetGlobalObject(cx);

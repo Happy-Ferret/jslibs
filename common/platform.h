@@ -37,6 +37,7 @@
 #define unlikely(expr)	(expr)
 #endif
 
+#define COUNTOF(vector) (sizeof(vector)/sizeof(*vector))
 
 #ifdef _MSC_VER
 #pragma warning(disable : 4244 4305)  // for VC++, no precision loss complaints

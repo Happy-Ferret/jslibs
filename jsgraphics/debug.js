@@ -101,6 +101,7 @@ function Cube() {
 }
 
 
+var objects = [];
 
 	var win = new Window();
 	win.title = "Test";
@@ -121,6 +122,24 @@ function Cube() {
 		}
 	}
 	
+	win.onmousedown = function(button) {
+		
+		var clientRect = win.clientRect;
+		var cursorPosition = win.cursorPosition;
+		
+		var obj = {};
+		obj.createTime = TimeCounter();
+		obj.x = (cursorPosition[0] / (clientRect[2]-clientRect[0])) * 10;
+		obj.y = -(cursorPosition[1] / (clientRect[3]-clientRect[1])) * 10;
+
+
+
+		objects.push(obj);
+//		Print(win.cursorPosition, ' / ', clientRect[2]-clientRect[0], ',', clientRect[3]-clientRect[1], '\n');
+
+	}
+
+
 /*
 function ResizeWindow(w, h) {
 
@@ -128,8 +147,8 @@ function ResizeWindow(w, h) {
 		Viewport(0,0,w,h);
 		MatrixMode(PROJECTION);
 		LoadIdentity();
-//		Ortho(0,0,10,10, -10, 10);
-		Perspective( 90, -1000, 1000 );
+		Ortho(0,0,10,10, -10, 10);
+//		Perspective( 90, -1000, 1000 );
 	}
 	Render();
 }
@@ -147,7 +166,7 @@ with (Ogl) {
 	ShadeModel(FLAT);
 	FrontFace(CCW);
 
-	ClearColor(0.1,0.2,0.3,1);	
+	ClearColor(0.1,0.15,0.2,1);	
 
 	ClearDepth(1);
 //	Enable(DEPTH_TEST); // !!!!
@@ -194,7 +213,11 @@ with (Ogl) {
 	
 
 	MatrixMode(PROJECTION);
-	Perspective( 60, 0.0001, 1000 );
+//	Perspective( 60, 0.0001, 1000 );
+	Ortho(0,0,10,10, -10, 10);
+	
+//	Ortho( -110,-100, 100, 100, 0, 100 );
+	
 }
 
 
@@ -234,16 +257,26 @@ function Render(imgIndex) {
 //		Rotate(i,1,1,1);
 
 		Enable( TEXTURE_2D );
+		for each ( var obj in objects ) {
+			
+			var t = TimeCounter() - obj.createTime;
+			PointSize((-Math.cos(t/1000)+1)*100);
+			Begin(POINTS);
+			Vertex(obj.x, obj.y, 0);
+			End();			
+		}
+
+/*
+		Enable( TEXTURE_2D );
 		for (var i=0; i<100; i++) {
 		
-
 			//	Quad(0,0,1,1)
-			
 			PointSize(100);
 			Begin(POINTS);
 			Vertex(i/10, 0, i*2);
 			End();
 		}
+*/
 
 	}
 }
@@ -256,11 +289,21 @@ for (var i=0; !_quit; i++) {
 	
 	var t0 = TimeCounter();
 	Render(i);
-	Print( (1000/(TimeCounter() - t0)).toFixed(), ' fps\n' )
+//	Print( (1000/(TimeCounter() - t0)).toFixed(), ' fps\n' );
 	win.SwapBuffers();
 	win.ProcessEvents();
 	Sleep(10);
 }
+
+
+
+
+
+
+
+
+
+
 
 
 
