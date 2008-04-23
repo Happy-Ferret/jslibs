@@ -22,7 +22,7 @@ DECLARE_CLASS(Transformation)
 
 /* This function tries to read a matrix44 from a Transformation object OR a NI_READ_MATRIX44 interface
  * *m MUST be a valid matrix pointer BUT m MAY be modified and replaced by a private matrix pointer ( in this case, you MUST copy the data )
- * see Load por an example
+ * see Load for an example
  */
 inline JSBool GetMatrixHelper( JSContext *cx, jsval val, Matrix44 **m ) {
 
@@ -37,7 +37,7 @@ inline JSBool GetMatrixHelper( JSContext *cx, jsval val, Matrix44 **m ) {
 		NIMatrix44Read ReadMatrix;
 		void *descriptor;
 		GetNativeInterface(cx, obj, NI_READ_MATRIX44, (FunctionPointer*)&ReadMatrix, &descriptor);
-		RT_ASSERT( ReadMatrix != NULL && descriptor != NULL, "Invalid matrix interface." );
+		RT_ASSERT( ReadMatrix != NULL, "Invalid matrix interface." ); // && descriptor != NULL // the descriptor is not always required
 		ReadMatrix(descriptor, (float**)m);
 	}
 	return JS_TRUE;

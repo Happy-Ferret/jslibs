@@ -105,7 +105,7 @@
 #define J_FRVAL (&JS_RVAL(cx, vp))
 
 
-#define J_VALUE_IS_ARRAY(value) \
+#define J_JSVAL_IS_ARRAY(value) \
 	( JSVAL_IS_OBJECT(value) && JS_IsArrayObject( cx, JSVAL_TO_OBJECT(value) ) == JS_TRUE)
 
 
@@ -188,7 +188,7 @@
 	J_S_ASSERT( JSVAL_IS_OBJECT(value) && !JSVAL_IS_NULL(value), J__ERRMSG_UNEXPECTED_TYPE " Object expected." )
 
 #define J_S_ASSERT_ARRAY(value) \
-	J_S_ASSERT( J_VALUE_IS_ARRAY(value), J__ERRMSG_UNEXPECTED_TYPE " Array expected." )
+	J_S_ASSERT( J_JSVAL_IS_ARRAY(value), J__ERRMSG_UNEXPECTED_TYPE " Array expected." )
 
 #define J_S_ASSERT_FUNCTION(value) \
 	J_S_ASSERT( JS_TypeOfValue(cx, (value)) == JSTYPE_FUNCTION, " Function is expected." )
@@ -325,7 +325,7 @@
 	jsuint __length; \
 	J_CHECK_CALL( JS_GetArrayLength(cx, __arrayObj, &__length) ); \
 	lengthVariable = __length; \
-	J_S_ASSERT( __length <= sizeof(vectorVariable), "Too many elements in the array." ); \
+	J_S_ASSERT( __length <= (lengthVariable), "Too many elements in the array." ); \
 	jsval __arrayElt; \
 	double __eltValue; \
 	for ( jsuint __i=0; __i<__length; __i++ ) { \

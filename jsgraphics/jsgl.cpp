@@ -98,12 +98,29 @@ DEFINE_FUNCTION_FAST( GetDouble ) {
 
 	RT_ASSERT_ARGC(1);
 	RT_ASSERT_INT(J_FARG(1));
-	GLdouble params;
-	glGetDoublev(JSVAL_TO_INT(J_FARG(1)), &params);
-	RT_CHECK_CALL( JS_NewDoubleValue(cx, params, J_FRVAL) );
+
+	GLdouble params[16]; // (TBD) check if it is the max amount of data that glGetDoublev may returns.
+	glGetDoublev(JSVAL_TO_INT(J_FARG(1)), params);
+
+	if ( J_FARG_ISDEF(2) ) {
+
+		J_S_ASSERT_INT( J_FARG(2) );
+		int count = JSVAL_TO_INT( J_FARG(2) );
+		JSObject *arrayObj = JS_NewArrayObject(cx, 0, NULL);
+		RT_ASSERT_ALLOC(arrayObj);
+		*J_FRVAL = OBJECT_TO_JSVAL(arrayObj);
+		jsval tmpValue;
+		while (count--) {
+
+			J_CHECK_CALL( JS_NewDoubleValue(cx, params[count], &tmpValue) );
+			J_CHECK_CALL( JS_SetElement(cx, arrayObj, count, &tmpValue) );
+		}
+	} else {
+
+		RT_CHECK_CALL( JS_NewDoubleValue(cx, params[0], J_FRVAL) );
+	}	
 	return JS_TRUE;
 }
-
 
 
 DEFINE_FUNCTION_FAST( Accum ) {
@@ -166,7 +183,7 @@ DEFINE_FUNCTION_FAST( Fog ) {
 		glFogf( JSVAL_TO_INT(J_FARG(1)), param );
 		return JS_TRUE;
 	}
-	if ( J_VALUE_IS_ARRAY(J_FARG(2)) ) {
+	if ( J_JSVAL_IS_ARRAY(J_FARG(2)) ) {
 
 		GLfloat params[16];
 		jsuint length;
@@ -194,7 +211,7 @@ DEFINE_FUNCTION_FAST( Vertex ) {
 
 	RT_ASSERT_ARGC(2);
 
-//	if ( J_VALUE_IS_ARRAY(J_FARG(1)) ) {
+//	if ( J_JSVAL_IS_ARRAY(J_FARG(1)) ) {
 //	}
 
 //	float vec[3];
@@ -325,10 +342,10 @@ DEFINE_FUNCTION_FAST( TexEnv ) {
 		glTexEnvf( JSVAL_TO_INT(J_FARG(1)), JSVAL_TO_INT(J_FARG(2)), param );
 		return JS_TRUE;
 	}
-	if ( J_VALUE_IS_ARRAY(J_FARG(3)) ) {
+	if ( J_JSVAL_IS_ARRAY(J_FARG(3)) ) {
 
 		GLfloat params[16];
-		int length;
+		jsuint length;
 		J_JSVAL_TO_REAL_VECTOR( J_FARG(3), params, length );
 		glTexEnvfv( JSVAL_TO_INT(J_FARG(1)), JSVAL_TO_INT(J_FARG(2)), params );
 		return JS_TRUE;
@@ -995,7 +1012,7 @@ DEFINE_FUNCTION_FAST( PointParameter ) {
 		glPointParameterf( JSVAL_TO_INT(J_FARG(1)), param );
 		return JS_TRUE;
 	}
-	if ( J_VALUE_IS_ARRAY(J_FARG(2)) ) {
+	if ( J_JSVAL_IS_ARRAY(J_FARG(2)) ) {
 
 		GLfloat params[16];
 		jsuint length;
@@ -1182,6 +1199,32 @@ DEFINE_PROPERTY(error) {
 	return JS_TRUE;
 }
 
+
+static int ReadMatrix(void *pv, float **m) {
+
+	GLint matrixMode;
+	glGetIntegerv(GL_MATRIX_MODE, &matrixMode);
+	switch (matrixMode) {
+		case GL_MODELVIEW:
+			glGetFloatv(GL_MODELVIEW_MATRIX, *m);
+			return true;
+		case GL_PROJECTION:
+			glGetFloatv(GL_PROJECTION_MATRIX, *m);
+			return true;
+		case GL_TEXTURE:
+			glGetFloatv(GL_TEXTURE_MATRIX, *m);
+			return true;
+	}
+	return false;
+}
+
+
+JSBool Init( JSContext *cx, JSObject *obj ) {
+
+	JSBool status = SetNativeInterface(cx, obj, NI_READ_MATRIX44, (FunctionPointer)ReadMatrix, NULL);
+	RT_ASSERT( status == JS_TRUE, "Unable SetNativeInterface." );
+	return JS_TRUE;
+}
 
 
 CONFIGURE_CLASS
@@ -1964,5 +2007,6 @@ CONFIGURE_CLASS
 		PROPERTY_READ(error)
 	END_STATIC_PROPERTY_SPEC
 
+	HAS_INIT
 
 END_CLASS

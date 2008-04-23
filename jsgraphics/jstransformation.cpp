@@ -48,20 +48,10 @@ DEFINE_CONSTRUCTOR() {
 
 	Matrix44 *m = Matrix44Alloc();
 	RT_ASSERT_ALLOC(m);
-	Matrix44Identity(m);
+//	Matrix44Identity(m);
 	JS_SetPrivate(cx, obj, m);
 	JSBool status = SetNativeInterface(cx, obj, NI_READ_MATRIX44, (FunctionPointer)ReadMatrix, m);
 	RT_ASSERT( status == JS_TRUE, "Unable SetNativeInterface." );
-	return JS_TRUE;
-}
-
-
-DEFINE_FUNCTION_FAST( Dump ) {
-
-	Matrix44 *tm = (Matrix44*)JS_GetPrivate(cx, J_FOBJ);
-	RT_ASSERT_RESOURCE(tm);
-	FloatVectorToArray(cx, 16, tm->raw, J_FRVAL);
-	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
 
@@ -96,14 +86,24 @@ DEFINE_FUNCTION_FAST( ClearTranslation ) {
 
 DEFINE_FUNCTION_FAST( Load ) {
 
-	RT_ASSERT_ARGC(1);
+	J_S_ASSERT_ARG_MIN(1);
 	Matrix44 *tm = (Matrix44*)JS_GetPrivate(cx, J_FOBJ);
 	RT_ASSERT_RESOURCE(tm);
-	Matrix44 *m = tm;
-	RT_CHECK_CALL( GetMatrixHelper(cx, J_FARG(1), &m) ); // GetMatrixHelper will copy data into tmp OR replace tmp by its own float pointer
-	if ( m != tm ) // check if the pointer has been modified
-		memcpy(tm, m, sizeof(Matrix44)); // if it is, copy the data
-	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
+
+	if ( J_JSVAL_IS_ARRAY( J_FARG(1) ) ) {
+
+		jsuint length = 16;
+		J_JSVAL_TO_REAL_VECTOR( J_FARG(1), &(*tm->raw), length );
+		J_S_ASSERT( length == 16, "Too few elements in the array." );
+	} else {
+
+		Matrix44 *m = tm;
+		RT_CHECK_CALL( GetMatrixHelper(cx, J_FARG(1), &m) ); // GetMatrixHelper will copy data into tmp OR replace tmp by its own float pointer
+		if ( m != tm ) // check if the pointer has been modified
+			memcpy(tm, m, sizeof(Matrix44)); // if it is, copy the data
+		*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
+	}
+
 	return JS_TRUE;
 }
 
@@ -328,14 +328,53 @@ DEFINE_FUNCTION_FAST( InverseProduct ) {
 }
 
 
+DEFINE_NEW_RESOLVE() {
+
+	if (!JSVAL_IS_INT(id) || (flags & JSRESOLVE_ASSIGNING))
+		return JS_TRUE;
+	jsint slot = JSVAL_TO_INT( id );
+	J_S_ASSERT( slot >= 0 && slot <= 15, "Out of range." );
+	JS_DefineProperty(cx, obj, (char*)slot, JSVAL_VOID, NULL, NULL, JSPROP_INDEX | JSPROP_SHARED );
+	*objp = obj;
+	return JS_TRUE;
+}
+
+
+DEFINE_GET_PROPERTY() {
+
+	Matrix44 *tm = (Matrix44*)JS_GetPrivate(cx, obj); // tm for thisMatrix
+	J_S_ASSERT_RESOURCE(tm);
+	J_S_ASSERT_INT(id);
+	jsint slot = JSVAL_TO_INT( id );
+	J_S_ASSERT( slot >= 0 && slot <= 15, "Out of range." );
+	J_CHECK_CALL( JS_NewNumberValue(cx, tm->raw[slot], vp) );
+	return JS_TRUE;
+}
+
+
+DEFINE_SET_PROPERTY() {
+
+	Matrix44 *tm = (Matrix44*)JS_GetPrivate(cx, obj); // tm for thisMatrix
+	J_S_ASSERT_RESOURCE(tm);
+	J_S_ASSERT_NUMBER(*vp);
+	J_S_ASSERT_INT(id);
+	jsint slot = JSVAL_TO_INT( id );
+	J_S_ASSERT( slot >= 0 && slot <= 15, "Out of range." );
+	tm->raw[slot] = JSVAL_IS_DOUBLE(*vp) ? *JSVAL_TO_DOUBLE(*vp) : JSVAL_TO_INT(*vp);
+	return JS_TRUE;
+}
+
 
 CONFIGURE_CLASS
 
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE
 
+	HAS_NEW_RESOLVE
+	HAS_GET_PROPERTY
+	HAS_SET_PROPERTY
+
 	BEGIN_FUNCTION_SPEC
-		FUNCTION_FAST( Dump )
 		FUNCTION_FAST( Clear )
 		FUNCTION_FAST( Load )
 		FUNCTION_FAST( LoadRotation )

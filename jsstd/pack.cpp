@@ -25,13 +25,13 @@
 
 static Endian systemEndian;
 
-JSBool DetectSystemEndian(JSContext *cx, JSObject *obj) {
+JSBool DetectSystemEndian(JSContext *cx) {
 
 	systemEndian = DetectSystemEndianType();
 	return JS_TRUE;
 }
 
-JSBool CheckSystemTypesSize(JSContext *cx, JSObject *obj) {
+JSBool CheckSystemTypesSize(JSContext *cx) {
 
 	RT_ASSERT( sizeof(int8_t) == 1 && sizeof(int16_t) == 2 && sizeof(int32_t) == 4, "The system has no suitable type for using Pack class." );
 	return JS_TRUE;
@@ -367,23 +367,25 @@ DEFINE_PROPERTY( systemBigEndian ) {
 	return JS_TRUE;
 }
 
-CONFIGURE_CLASS
+JSBool Init(JSContext *cx, JSObject *obj) {
 
-	CALL_ON_INIT( DetectSystemEndian )
-	CALL_ON_INIT( CheckSystemTypesSize )
+	J_CHECK_CALL( DetectSystemEndian(cx) );
+	J_CHECK_CALL( CheckSystemTypesSize(cx) );
+	return JS_TRUE;
+}
+
+CONFIGURE_CLASS
 
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE
+	HAS_INIT
 
 	BEGIN_FUNCTION_SPEC
 		FUNCTION(ReadInt)
 		FUNCTION(ReadReal)
 		FUNCTION(ReadString)
-
 		FUNCTION(WriteInt)
-
 		FUNCTION(Test)
-
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC

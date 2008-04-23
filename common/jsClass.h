@@ -106,9 +106,6 @@ struct JSLIBS_ConstIntegerSpec {
 	if ( _staticPropertySpec != NULL ) JS_DefineProperties(cx, obj, _staticPropertySpec); \
 	return JS_TRUE; } \
 
-
-
-
 // class definition
 #define DECLARE_CLASS( CLASSNAME ) \
 	extern JSBool (*InitializeClass##CLASSNAME)(JSContext *cx, JSObject *obj); \
@@ -138,6 +135,7 @@ struct JSLIBS_ConstIntegerSpec {
 		JSLIBS_ConstIntegerSpec *_constIntegerSpec = NULL; \
 		JSObject *_tmp_prototype = NULL; \
 		JSObject **_parentPrototype = &_tmp_prototype; \
+		JSBool (* _init)(JSContext *cx, JSObject *obj) = NULL; \
 
 #define END_CLASS \
 		*_prototype = JS_InitClass(cx, obj, *_parentPrototype, _class, _constructor, 0, _propertySpec, _functionSpec, _staticPropertySpec, _staticFunctionSpec); \
@@ -149,6 +147,9 @@ struct JSLIBS_ConstIntegerSpec {
 		} \
 		if ( _constDoubleSpec != NULL ) \
 			if ( JS_DefineConstDoubles(cx, _constructor ? JS_GetConstructor(cx, *_prototype) : *_prototype, _constDoubleSpec) != JS_TRUE ) \
+				return JS_FALSE; \
+		if ( _init ) \
+			if ( _init(cx, _constructor ? JS_GetConstructor(cx, *_prototype) : *_prototype) != JS_TRUE ) \
 				return JS_FALSE; \
 		return JS_TRUE; \
 	} \
@@ -166,13 +167,12 @@ struct JSLIBS_ConstIntegerSpec {
 #define HAS_RESOLVE   _class->resolve = Resolve;
 #define HAS_NEW_RESOLVE   _class->resolve = (JSResolveOp)NewResolve; _class->flags |= JSCLASS_NEW_RESOLVE;
 #define HAS_ENUMERATE  _class->enumerate = Enumerate;
+#define HAS_INIT  _init = Init;
 
 #define HAS_PROTOTYPE(PROTOTYPE)   *_parentPrototype = (PROTOTYPE);
 #define HAS_ADD_PROPERTY   _class->addProperty = AddProperty;
 #define HAS_DEL_PROPERTY   _class->delProperty = DelProperty;
 #define HAS_GET_PROPERTY   _class->getProperty = GetProperty;
 #define HAS_SET_PROPERTY   _class->setProperty = SetProperty;
-
-#define CALL_ON_INIT(function) if ( (function)(cx, obj) != JS_TRUE ) return JS_FALSE;
 
 #endif // _JSCLASS_H_

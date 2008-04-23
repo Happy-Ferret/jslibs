@@ -533,7 +533,7 @@ DEFINE_PROPERTY( clientRect ) {
 	GetClientRect(hWnd, &r);
 
 	JSObject *arrayObj;
-	if ( !J_VALUE_IS_ARRAY(*vp) ) {
+	if ( !J_JSVAL_IS_ARRAY(*vp) ) {
 
 		arrayObj = JS_NewArrayObject(cx, 0, NULL);
 		RT_ASSERT_ALLOC(arrayObj);

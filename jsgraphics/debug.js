@@ -9,20 +9,20 @@ var vk = Exec('WindowsKeys.js');
 Exec('winTools.js');
 
 
-function Axis() {
+function Axis(size) {
 
 	with (Ogl) {
 
 		Begin(LINES);
-		Color( 1,0,0 );
+		Color( size,0,0 );
 		Vertex( 0,0,0 );
-		Vertex( 1,0,0 );
-		Color( 0,1,0 );
+		Vertex( size,0,0 );
+		Color( 0,size,0 );
 		Vertex( 0,0,0 );
-		Vertex( 0,1,0 );
-		Color( 0,0,1 );
+		Vertex( 0,size,0 );
+		Color( 0,0,size );
 		Vertex( 0,0,0 );
-		Vertex( 0,0,1 );
+		Vertex( 0,0,size );
 		End();
 	}
 }
@@ -127,17 +127,93 @@ var objects = [];
 		var clientRect = win.clientRect;
 		var cursorPosition = win.cursorPosition;
 		
+		var width = clientRect[2] - clientRect[0];
+		var height = clientRect[3] - clientRect[1];
+		
+		var projection = new Transformation();
+		Ogl.MatrixMode(Ogl.PROJECTION);
+		projection.Load(Ogl);
+//		projection.Invert();
+
+		var modelview = new Transformation();
+		Ogl.MatrixMode(Ogl.MODELVIEW);
+		modelview.Load(Ogl);
+		
+		projection.Product( modelview );
+		projection.Invert();
+		
+		Print( projection.Dump() );
+
+		
+		var x = -1 + 2 * ( cursorPosition[0] / width );
+		var y = -1 + 2 * ( height - cursorPosition[1] ) / height;
+		var z = 0;
+		var w = 1;
+
+		var x1 = projection[0]*x + projection[4]*y + projection[8]*z  + projection[12]*w;
+		var y1 = projection[1]*x + projection[5]*y + projection[9]*z  + projection[13]*w;
+		var z1 = projection[2]*x + projection[6]*y + projection[10]*z + projection[14]*w;
+		var w1 = projection[3]*x + projection[7]*y + projection[11]*z + projection[15]*w;
+
+		Print( 'x: '+x1, '\n' );
+		Print( 'y: '+y1, '\n' );
+		Print( 'z: '+z1, '\n' );
+		Print( 'w: '+w1, '\n' );
+
+
+/*
+		var t = new Transformation();
+		t.Clear();
+		t[12] = -1 + 2 * ( cursorPosition[0] / width );
+		t[13] = -1 + 2 * ( height - cursorPosition[1] ) / height;
+		t[14] = -1;
+		
+		//t.InverseProduct(projection);
+*/		
+		
+
 		var obj = {};
 		obj.createTime = TimeCounter();
-		obj.x = (cursorPosition[0] / (clientRect[2]-clientRect[0])) * 10;
-		obj.y = -(cursorPosition[1] / (clientRect[3]-clientRect[1])) * 10;
-
-
-
+		obj.x = x1;
+		obj.y = y1;
 		objects.push(obj);
 //		Print(win.cursorPosition, ' / ', clientRect[2]-clientRect[0], ',', clientRect[3]-clientRect[1], '\n');
 
+
 	}
+
+/*
+Line3 Viewport::Ray( int winx, int winy ) {
+
+  Vector4 in( -1 + 2 * ( (float)winx / (float)( _width - _offsetWidth ) ), -1 + 2 * (float)( _height - winy - _offsetHeight ) / (float)(_height - _offsetHeight ), -1, 1 );
+
+  in.x /= ProjectionMatrix()[0];
+  in.y /= ProjectionMatrix()[5];
+
+  Matrix44 invView = Camera().Transformation();
+  invView.Invert();
+
+  Vector4 out = invView( in ); ...
+
+												  Vector4 operator()( const Vector4 &vector ) const {
+												    
+													 return Vector4( _m[0]*vector.x + _m[4]*vector.y + _m[8]*vector.z  + _m[12]*vector.w,
+																		  _m[1]*vector.x + _m[5]*vector.y + _m[9]*vector.z  + _m[13]*vector.w,
+																		  _m[2]*vector.x + _m[6]*vector.y + _m[10]*vector.z + _m[14]*vector.w,
+																		  _m[3]*vector.x + _m[7]*vector.y + _m[11]*vector.z + _m[15]*vector.w );
+												  }
+  
+
+//  out.Rescale(); // should be done if needed
+
+  Point3 position( invView.Translation() );
+  Vector3 direction( out.x, out.y, out.z );
+  direction -= position;
+	return Line3( position, direction );
+}
+*/
+
+
 
 
 /*
@@ -187,13 +263,12 @@ with (Ogl) {
 	TexEnv(TEXTURE_ENV, TEXTURE_ENV_COLOR, [0,0,0,0]);
 	
 
-	//		var texture = new Jpeg(new File('R0010235.JPG').Open( File.RDONLY )).Load();
+//	var texture = new Jpeg(new File('R0010235.JPG').Open( File.RDONLY )).Load();
 	var texture = new Texture(128, 128, 1);
 	texture.Set([0]);
 	const curveGaussian = function(c) { return function(x) { return Math.exp( -(x*x)/(2*c*c) ) } }
 	texture.AddGradiantRadial( curveGaussian( 0.3 ), false );
-	Print( texture.PixelAt(32,64) );
-
+	texture.AddNoise(0.1,0,0,0);
 
 //	Enable(ALPHA_TEST);
 //	AlphaFunc( GREATER, 0.5 );
@@ -210,14 +285,12 @@ with (Ogl) {
 
 	Enable(POINT_SPRITE); // http://www.informit.com/articles/article.aspx?p=770639&seqNum=7
 	TexEnv(POINT_SPRITE, COORD_REPLACE, TRUE);
-	
 
 	MatrixMode(PROJECTION);
-//	Perspective( 60, 0.0001, 1000 );
-	Ortho(0,0,10,10, -10, 10);
-	
+	LoadIdentity();
+	Perspective( 60, 0.01, 1000 );
+//	Ortho(0,0,10,10, -10, 10);
 //	Ortho( -110,-100, 100, 100, 0, 100 );
-	
 }
 
 
@@ -252,15 +325,21 @@ function Render(imgIndex) {
 	
 		MatrixMode(MODELVIEW);
 		LoadIdentity();
+		Translate(0, 0, -10);
+//		Rotate(i,0,0,1);
+		Disable( TEXTURE_2D );
 
-		Translate(0, 0, -30);
-//		Rotate(i,1,1,1);
+//		Rotate(30,1,1,1);
+		Cube();
+		
 
 		Enable( TEXTURE_2D );
+
+		Color(1,1,1,1);
 		for each ( var obj in objects ) {
 			
 			var t = TimeCounter() - obj.createTime;
-			PointSize((-Math.cos(t/1000)+1)*100);
+			PointSize((-Math.cos(t/1000)+1)*10);
 			Begin(POINTS);
 			Vertex(obj.x, obj.y, 0);
 			End();			
@@ -296,283 +375,3 @@ for (var i=0; !_quit; i++) {
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*
-
-Halt(); /////////////////////////////////////////
-
-
-var world = new World;
-world.defaultSurfaceParameters.mu = 5;
-world.defaultSurfaceParameters.softERP = 0.1;
-
-world.gravity = [0,0,-9.81];
-world.ERP = 1;
-
-var box = [];
-
-var b = new Body(world);
-var g = new GeomBox( world.space );
-g.body = b;	
-b.position = [0,0,10]
-box.push(b);
-
-
-var floor = new GeomPlane(world.space);
-floor.impact = function(n,thisgeom,othergeom,pos) { n||Print('impact '+othergeom.body.linearVel+'\n') }
-
-var win = new Window();
-win.title = "Test";
-var x = 600;
-var y = 300;
-var w = 500;
-var h = 500;
-win.rect = [x,y,x+w,y+h];
-
-win.CreateOpenGLContext();
-
-Ogl.LoadIdentity();
-var list1 = Ogl.NewList();
-var tmp = new Transformation();
-for ( let x = -2000; x <= 2000; x += 100 )
-	for ( let y = -2000; y <= 2000; y += 100 ) {
-		
-		Ogl.PushMatrix();
-		Ogl.Translate(Math.random()*1000-500, Math.random()*1000-500, Math.random()*1000-500 );
-		Cube();
-		Ogl.PopMatrix();
-	}
-Ogl.EndList();
-
-
-var mouse = new MouseMotion(win);
-var camera = new Transformation();
-camera.Product( new Transformation().Translation(-1,-1,10) );
-var cameraRotation = new Transformation();
-cameraRotation.Rotate( 90, 1,0,0 );
-//camera.LookAt(0,0,0);
-
-
-Transformation.prototype.toString = function() {
-	
-	var mat = camera.Dump();
-	var str = '';
-	for ( var i = 0; i<4; i++) {
-		for ( var j = 0; j<4; j++)
-			str += (String(mat[4*j+i]).substr(0,5)) + '  ';
-		str += '\n';
-	}
-	return str;
-}
-
-var tw=0, tx=0, ty=0, tz=0;
-var speed = 1, run = 0;
-
-mouse.button = function( b, polarity, b1, b2, b3 ) {
-
-	mouse.infiniteMode = b1 || b2 || b3;
-	if ( b == 2 )
-	  run = polarity ? 1 : 0;
-	if ( b == 3 )
-		speed = 1;
-}
-
-mouse.delta = function( dx,dy,dw, b1,b2,b3 ) {
-
-	if (dw != 0) {
-	
-		camera.Product(new Transformation().Translation( 0,0, -dw*10 ));
-	}
-	
-	if ( b1 || b2 ) {
-
-		tx += dx;
-		ty += dy;
-		
-		camera.LoadRotation(new Transformation().RotationZ(tx/2).Product( new Transformation().RotationX(-ty/2) ));
-	}
-}
-
-
-
-
-var time;
-function Render() {
-
-
-	var cameraPosition = new Transformation();
-	cameraPosition.Translation( 0, 0, -speed * run );
-	camera.Product(cameraPosition);
-	
-	Ogl.Clear( Ogl.COLOR_BUFFER_BIT | Ogl.DEPTH_BUFFER_BIT );
-
-	var m = new Transformation().Load(camera).Invert();
-
-//	Ogl.LoadMatrix(new Transformation().Load(m).Product(body1));
-//	Cube();
-
-
-
-
-//	var f = joint.body1Force;
-//	Ogl.LoadMatrix(new Transformation().Load(body1).ClearRotation().InverseProduct(m) );
-//	Ogl.Color(1,1,1);
-//	Ogl.Line3D( 0,0,0, f[0],f[1],f[2] );
-//	Ogl.Color(1,0,0);
-//	Ogl.Line3D( 0,0,0, f[0],0,0 );
-//	Ogl.Color(0,1,0);
-//	Ogl.Line3D( 0,0,0, 0,f[1],0 );
-//	Ogl.Color(0,0,1);
-//	Ogl.Line3D( 0,0,0, 0,0,f[2] );
-
-
-	for each( var b in box ) {
-		Ogl.LoadMatrix(new Transformation().Load(m).Product(b) );
-		Cube();
-	}
-	
-//	Ogl.LoadMatrix(new Transformation().Translation(joint.anchor[0], joint.anchor[1], joint.anchor[2]).InverseProduct(m));
-//	Ogl.Axis();
-
-	Ogl.LoadMatrix(m);
-	Ogl.Color(0.5,0.5,0.5);
-	Ogl.Translate(0,0,0);
-	for ( var x = -100; x<100; x+=2 )
-		for ( var y = -100; y<100; y+=2 )
-			Quad(x,y,x+1,y+1);
-
-
-	Ogl.LoadMatrix(m);
-	Ogl.CallList(list1);
-
-//	move += 0.1;
-//			tmp.Load(m);
-//			tmp.Translate( x, y, -50 );
-//			tmp.Translate( x, y, Math.cos(move+(x*x+y*y)/5000)-10 );
-//	}
-
-
-//	var t0 = IntervalNow();
-//	Print( 'Rendering time: '+(IntervalNow()-t0)+'ms', '\n');
-//	CollectGarbage();
-//	Sleep(1);
-	win.SwapBuffers();
-	
-	var tmp = IntervalNow();
-	var delta = tmp-time;
-	if ( delta > 50)
-		delta = 50;
-	time && world.Step(delta/1000, 10);
-	time = tmp;
-}
-
-
-
-
-
-//win.onidle = Render;
-
-var _fullscreenState = false;
-var _savedWindowSize;
-var _quit = false;
-
-win.onkeydown = function( key, l ) {
-
-	switch (key) {
-		case vk.ESC:
-			//win.Exit();
-			_quit = true;
-			break;
-		case vk.ENTER:
-			// toggle fullscreen
-			_fullscreenState = !_fullscreenState;
-			if ( _fullscreenState ) {
-			
-				_savedWindowSize = win.rect;           // save current window rectangle
-				//Window.Mode( [640, 480], 32, true ); // change mode 640x480, 32bits, temporarily fullscreen
-				win.showFrame = false;                 // hide window frame ( remove all borders )
-				win.rect = Window.desktopRect;         // extends the window to the screen size
-				win.showCursor = false;                // hide the cursor
-			} else {
-			
-				win.rect = _savedWindowSize;
-				win.showCursor = true;
-				win.showFrame = true;
-				//Window.Mode();              // revert to default
-			}
-			break;
-		}
-}
-
-win.onsize = function( w, h ) {
-
-	Ogl.Viewport(0,0,w,h);
-	Ogl.Perspective( 60, 0.01, 10000 );	
-	Render();
-}
-
-var x=0, y=0; // offset
-//var texture = new Jpeg(new File('R0010235.JPG').Open( File.RDONLY )).Load().Trim([0+x,0+y,256+x,256+y], true);
-//var texture = new Png(new File('calendar2a.png').Open( File.RDONLY )).Load();//.Trim([0+x,0+y,256+x,256+y], true);
-
-
-// init
-with (Ogl) {
-
-	Enable(TEXTURE_2D);
-	ShadeModel(FLAT);
-	Enable(DEPTH_TEST);
-	DepthFunc(LESS); // LEQUAL cause some z-conflict on far objects !
-	// (TBD) understand why
-	ClearDepth(1);
-//	DepthRange( 0.01, 1000 );
-	Enable(CULL_FACE);
-	CullFace(BACK);
-	FrontFace(CCW);
-	Enable(LINE_SMOOTH);
-//	Enable(LIGHTING);
-//	Enable(LIGHT0);
-//	Hint(PERSPECTIVE_CORRECTION_HINT, NICEST); // Really Nice Perspective Calculations
-	ClearColor(0, 0, 0, 0);
-//    Ogl.BlendFunc(SRC_ALPHA, ONE);
-/// init
-}
-
-
-
-Ogl.Perspective( 60, 0.01, 10000 );
-//Ogl.Texture( texture );
-
-//Window.absoluteClipCursor = [100,100, 200, 200 ]
-
-win.Open();
-
-while (!_quit) {
-	
-	win.ProcessEvents();
-	Render();
-}
-
-win.Close();
-//Window.absoluteClipCursor = undefined;
-Print('Done.', '\n');
-
-*/
