@@ -21,6 +21,7 @@
 #define BEGIN_STATIC_FUNCTION_SPEC JSFunctionSpec _tmp_sfs[] = {
 #define END_STATIC_FUNCTION_SPEC {0}}; _staticFunctionSpec = _tmp_sfs;
 
+// function definition
 #define DEFINE_FUNCTION_FAST(name) static JSBool name(JSContext *cx, uintN argc, jsval *vp)
 #define DEFINE_FUNCTION(name) static JSBool name(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 #define DEFINE_CONSTRUCTOR() static JSBool Constructor(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
@@ -31,11 +32,15 @@
 #define DEFINE_NEW_RESOLVE() static JSBool NewResolve(JSContext *cx, JSObject *obj, jsval id, uintN flags, JSObject **objp)
 #define DEFINE_ENUMERATE() static JSBool Enumerate(JSContext *cx, JSObject *obj)
 
+// function declaration
 #define FUNCTION_FAST(name) JS_FN( #name, name, 0, 0, 0 ),
+#define FUNCTION_FAST_ARGC(name,nargs) JS_FN( #name, name, 0, nargs, 0 ),
 #define FUNCTION2_FAST(name,nativeName) JS_FN( #name, nativeName, 0, 0, 0 ),
+
 #define FUNCTION(name) JS_FS( #name, name, 0, 0, 0 ),
-#define FUNCTION2(name,nativeName) JS_FS( #name, nativeName, 0, 0, 0 ),
 #define FUNCTION_ARGC(name,nargs) JS_FS( #name, name, nargs, 0, 0 ),
+#define FUNCTION2(name,nativeName) JS_FS( #name, nativeName, 0, 0, 0 ),
+
 #define FUNCTION_ALIAS(alias, name) JS_FS( #alias, name, 0, 0, 0 ),
 
 // properties
@@ -44,11 +49,13 @@
 #define BEGIN_STATIC_PROPERTY_SPEC JSPropertySpec _tmp_sps[] = {
 #define END_STATIC_PROPERTY_SPEC {0}}; _staticPropertySpec = _tmp_sps;
 
+// property declaration
 #define DEFINE_PROPERTY(name) static JSBool name(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
 #define DEFINE_PROPERTY_GETTER(name) static JSBool name##Getter(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
 #define DEFINE_PROPERTY_SETTER(name) static JSBool name##Setter(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
 #define DEFINE_PROPERTY_NULL(name) static JSPropertyOp name = NULL;
 
+// property definition
 #define PROPERTY(name)       { #name, 0, JSPROP_PERMANENT|JSPROP_SHARED, name##Getter, name##Setter },
 #define PROPERTY_STORE(name) { #name, 0, JSPROP_PERMANENT              , name##Getter, name##Setter },
 #define PROPERTY_READ(name)       { #name, 0, JSPROP_PERMANENT|JSPROP_READONLY|JSPROP_SHARED, name, NULL }, // (TBD) rename into PROPERTY_GETTER

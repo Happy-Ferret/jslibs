@@ -108,6 +108,8 @@
 #define J_JSVAL_IS_ARRAY(value) \
 	( JSVAL_IS_OBJECT(value) && JS_IsArrayObject( cx, JSVAL_TO_OBJECT(value) ) == JS_TRUE)
 
+#define J_JSVAL_IS_CLASS(value, jsClass) \
+	( JSVAL_IS_OBJECT(value) && !JSVAL_IS_NULL(value) && JS_GET_CLASS(cx, JSVAL_TO_OBJECT(value)) == (jsClass) )
 
 #define J_CHECK_CALL( functionCall ) \
 	do { if (unlikely( (functionCall) == JS_FALSE )) { return JS_FALSE; } } while(0)
