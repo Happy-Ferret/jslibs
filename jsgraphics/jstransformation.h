@@ -27,18 +27,27 @@ DECLARE_CLASS(Transformation)
 inline JSBool GetMatrixHelper( JSContext *cx, jsval val, Matrix44 **m ) {
 
 	RT_ASSERT( JSVAL_IS_OBJECT(val), "Object expected." );
-	JSObject *obj = JSVAL_TO_OBJECT(val);
-	if ( JS_GET_CLASS(cx,obj) == &classTransformation ) { // ok, we know this object and the content of its jsprivate
 
-		*m = (Matrix44*)JS_GetPrivate(cx, obj);
+	if ( J_JSVAL_IS_CLASS( val, &classTransformation ) ) { // ok, we know this object and the content of its jsprivate
+
+		*m = (Matrix44*)JS_GetPrivate(cx, JSVAL_TO_OBJECT(val));
 		RT_ASSERT_RESOURCE(m); // (TBD) good place to throw an error ? ( shouldn't be the caller's job ? )
-	} else { // try to read the matrix using the NativeInterface system
+		return JS_TRUE;
+	}
+	else if ( J_JSVAL_IS_ARRAY( val ) ) {
+
+		jsuint length = 16;
+		J_JSVAL_TO_REAL_VECTOR( val, (*m)->raw, length );
+		J_S_ASSERT( length == 16, "Too few elements in the array." );
+		return JS_TRUE;
+	}	
+	else { // try to read the matrix using the NativeInterface system
 
 		NIMatrix44Read ReadMatrix;
 		void *descriptor;
-		GetNativeInterface(cx, obj, NI_READ_MATRIX44, (FunctionPointer*)&ReadMatrix, &descriptor);
+		GetNativeInterface(cx, JSVAL_TO_OBJECT(val), NI_READ_MATRIX44, (FunctionPointer*)&ReadMatrix, &descriptor);
 		RT_ASSERT( ReadMatrix != NULL, "Invalid matrix interface." ); // && descriptor != NULL // the descriptor is not always required
 		ReadMatrix(descriptor, (float**)m);
+		return JS_TRUE;
 	}
-	return JS_TRUE;
 }

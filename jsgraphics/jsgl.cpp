@@ -318,6 +318,15 @@ DEFINE_FUNCTION_FAST( TexParameter ) {
 		glTexParameterf( JSVAL_TO_INT( J_FARG(1) ), JSVAL_TO_INT( J_FARG(2) ), param );
 		return JS_TRUE;
 	}
+	if ( J_JSVAL_IS_ARRAY(J_FARG(3)) ) {
+
+		GLfloat params[16];
+		jsuint length;
+		J_JSVAL_TO_REAL_VECTOR( J_FARG(3), params, length );
+		glTexParameterfv( JSVAL_TO_INT(J_FARG(1)), JSVAL_TO_INT(J_FARG(2)), params );
+		return JS_TRUE;
+	}
+
 	REPORT_ERROR("Invalid argument.");
 	return JS_TRUE;
 }
@@ -355,20 +364,18 @@ DEFINE_FUNCTION_FAST( TexEnv ) {
 }
 
 
-
-
 DEFINE_FUNCTION_FAST( LightModel ) {
 
 	RT_ASSERT_ARGC(2);
 	RT_ASSERT_INT(J_FARG(1));
 
 	*J_FRVAL = JSVAL_VOID;
-	if ( JSVAL_IS_INT(J_FARG(3)) ) {
+	if ( JSVAL_IS_INT(J_FARG(2)) ) {
 
 		glLightModeli( JSVAL_TO_INT( J_FARG(1) ), JSVAL_TO_INT( J_FARG(2) ) );
 		return JS_TRUE;
 	}
-	if ( JSVAL_IS_DOUBLE(J_FARG(3)) ) {
+	if ( JSVAL_IS_DOUBLE(J_FARG(2)) ) {
 	
 		jsdouble param;
 		RT_CHECK_CALL( JS_ValueToNumber(cx, J_FARG(2), &param) );
@@ -795,35 +802,34 @@ DEFINE_FUNCTION_FAST( EndList ) {
 DEFINE_FUNCTION_FAST( CallList ) {
 
 	RT_ASSERT_ARGC(1);
-	RT_ASSERT_INT(J_FARG(1));
-	GLuint list = JSVAL_TO_INT(J_FARG(1));
-	glCallList(list);
 	*J_FRVAL = JSVAL_VOID;
-	return JS_TRUE;
-}
 
-
-DEFINE_FUNCTION_FAST( CallLists ) {
-
-	RT_ASSERT_ARGC(1);
-	RT_ASSERT_ARRAY( J_FARG(1) );
-
-	JSObject *jsArray = JSVAL_TO_OBJECT(J_FARG(1));
-	jsuint length;
-	RT_CHECK_CALL( JS_GetArrayLength(cx, jsArray, &length) );
-
-	GLuint *lists = (GLuint*)malloc(length * sizeof(GLuint));
-	jsval value;
-	for (jsuint i=0; i<length; ++i) {
-
-		RT_CHECK_CALL( JS_GetElement(cx, jsArray, i, &value) );
-		lists[i] = JSVAL_TO_INT(value);
+	if (JSVAL_IS_INT( J_FARG(1) )) {
+	
+		GLuint list = JSVAL_TO_INT(J_FARG(1));
+		glCallList(list);
+		return JS_TRUE;
 	}
-	glCallLists(length, GL_UNSIGNED_INT, lists); // http://www.opengl.org/documentation/specs/man_pages/hardcopy/GL/html/gl/calllists.html
-	free(lists);
+	else if (J_JSVAL_IS_ARRAY( J_FARG(1) )) {
 
-	*J_FRVAL = JSVAL_VOID;
-	return JS_TRUE;
+		JSObject *jsArray = JSVAL_TO_OBJECT(J_FARG(1));
+		jsuint length;
+		RT_CHECK_CALL( JS_GetArrayLength(cx, jsArray, &length) );
+
+		GLuint *lists = (GLuint*)malloc(length * sizeof(GLuint));
+		jsval value;
+		for (jsuint i=0; i<length; ++i) {
+
+			RT_CHECK_CALL( JS_GetElement(cx, jsArray, i, &value) );
+			lists[i] = JSVAL_TO_INT(value);
+		}
+		glCallLists(length, GL_UNSIGNED_INT, lists); // http://www.opengl.org/documentation/specs/man_pages/hardcopy/GL/html/gl/calllists.html
+		free(lists);
+		return JS_TRUE;
+	}
+
+	J_REPORT_ERROR("Invalid argument");
+	return JS_FALSE;
 }
 
 
@@ -1064,21 +1070,21 @@ DEFINE_FUNCTION_FAST( MultiTexCoord ) {
 	
 	*J_FRVAL = JSVAL_VOID;
 	jsdouble s;
-	JS_ValueToNumber(cx, J_FARG(1), &s);
+	JS_ValueToNumber(cx, J_FARG(2), &s);
 	if ( J_ARGC == 1 ) {
 	
 		glMultiTexCoord1d(target, s);
 		return JS_TRUE;	
 	}
 	jsdouble t;
-	JS_ValueToNumber(cx, J_FARG(2), &t);
+	JS_ValueToNumber(cx, J_FARG(3), &t);
 	if ( J_ARGC == 2 ) {
 
 		glMultiTexCoord2d(target, s, t);
 		return JS_TRUE;	
 	}
 	jsdouble r;
-	JS_ValueToNumber(cx, J_FARG(3), &r);
+	JS_ValueToNumber(cx, J_FARG(4), &r);
 	if ( J_ARGC == 3 ) {
 
 		glMultiTexCoord3d(target, s, t, r);
@@ -1929,77 +1935,76 @@ CONFIGURE_CLASS
 
 	BEGIN_STATIC_FUNCTION_SPEC
 		
-		FUNCTION_FAST(GetBoolean)
-		FUNCTION_FAST(GetInteger)
-		FUNCTION_FAST(GetDouble)
-		FUNCTION_FAST(Accum)
-		FUNCTION_FAST(AlphaFunc)
-		FUNCTION_FAST(Flush)
-		FUNCTION_FAST(Finish)
-		FUNCTION_FAST(Fog)
-		FUNCTION_FAST(Hint)
-		FUNCTION_FAST(Vertex)
-		FUNCTION_FAST(Color)
-		FUNCTION_FAST(Normal)
-		FUNCTION_FAST(TexCoord)
-		FUNCTION_FAST(TexParameter)
-		FUNCTION_FAST(TexEnv)
-		FUNCTION_FAST(LightModel)
-		FUNCTION_FAST(Light)
-		FUNCTION_FAST(Material)
-		FUNCTION_FAST(Enable)
-		FUNCTION_FAST(Disable)
-		FUNCTION_FAST(PointSize)
-		FUNCTION_FAST(LineWidth)
-		FUNCTION_FAST(ShadeModel)
-		FUNCTION_FAST(BlendFunc)
-		FUNCTION_FAST(DepthFunc)
-		FUNCTION_FAST(DepthRange)
-		FUNCTION_FAST(CullFace)
-		FUNCTION_FAST(FrontFace)
-		FUNCTION_FAST(ClearStencil)
-		FUNCTION_FAST(ClearDepth)
-		FUNCTION_FAST(ClearColor)
-		FUNCTION_FAST(ClearAccum)
-		FUNCTION_FAST(Clear)
-		FUNCTION_FAST(ClipPlane)
-		FUNCTION_FAST(Viewport)
-		FUNCTION_FAST(Frustum)
-		FUNCTION_FAST(Perspective)
-		FUNCTION_FAST(Ortho)
-		FUNCTION_FAST(MatrixMode)
-		FUNCTION_FAST(LoadIdentity)
-		FUNCTION_FAST(PushMatrix)
-		FUNCTION_FAST(PopMatrix)
-		FUNCTION_FAST(LoadMatrix)
-		FUNCTION_FAST(Rotate)
-		FUNCTION_FAST(Translate)
-		FUNCTION_FAST(Scale)
-		FUNCTION_FAST(NewList)
-		FUNCTION_FAST(DeleteList)
-		FUNCTION_FAST(EndList)
-		FUNCTION_FAST(CallList)
-		FUNCTION_FAST(CallLists)
-		FUNCTION_FAST(Begin)
-		FUNCTION_FAST(End)
-		FUNCTION_FAST(PushAttrib)
-		FUNCTION_FAST(PopAttrib)
-		FUNCTION_FAST(GenTexture)
-		FUNCTION_FAST(BindTexture)
-		FUNCTION_FAST(DeleteTexture)
-		FUNCTION_FAST(CopyTexImage2D)
-		FUNCTION_FAST(DefineTextureImage)
-		FUNCTION_FAST(RenderToImage)
+		FUNCTION_FAST_ARGC(GetBoolean, 1) // pname
+		FUNCTION_FAST_ARGC(GetInteger, 1) // pname
+		FUNCTION_FAST_ARGC(GetDouble, 1) // pname
+		FUNCTION_FAST_ARGC(Accum, 2) // op, value
+		FUNCTION_FAST_ARGC(AlphaFunc, 2) // func, ref
+		FUNCTION_FAST_ARGC(Flush, 0)
+		FUNCTION_FAST_ARGC(Finish, 0)
+		FUNCTION_FAST_ARGC(Fog, 2) // pname, param | array of params
+		FUNCTION_FAST_ARGC(Hint, 2) // target, mode
+		FUNCTION_FAST_ARGC(Vertex, 3) // x, y [, z]
+		FUNCTION_FAST_ARGC(Color, 4) // r, g, b [, a]
+		FUNCTION_FAST_ARGC(Normal, 3) // nx, ny, nz
+		FUNCTION_FAST_ARGC(TexCoord, 3) // s [, t [,r ]]
+		FUNCTION_FAST_ARGC(TexParameter, 3) // target, pname, param | array of params
+		FUNCTION_FAST_ARGC(TexEnv, 3) // target, pname, param | array of params
+		FUNCTION_FAST_ARGC(LightModel, 2) // pname, param
+		FUNCTION_FAST_ARGC(Light, 3) // light, pname, param
+		FUNCTION_FAST_ARGC(Material, 3) // face, pname, param
+		FUNCTION_FAST_ARGC(Enable, 1) // cap
+		FUNCTION_FAST_ARGC(Disable ,1) // cap
+		FUNCTION_FAST_ARGC(PointSize, 1) // size
+		FUNCTION_FAST_ARGC(LineWidth, 1) // width
+		FUNCTION_FAST_ARGC(ShadeModel, 1) // mode
+		FUNCTION_FAST_ARGC(BlendFunc, 2) // sfactor, dfactor
+		FUNCTION_FAST_ARGC(DepthFunc, 1) // func
+		FUNCTION_FAST_ARGC(DepthRange, 2) // zNear, zFar
+		FUNCTION_FAST_ARGC(CullFace, 1) // mode
+		FUNCTION_FAST_ARGC(FrontFace, 1) // mode
+		FUNCTION_FAST_ARGC(ClearStencil, 1) // s
+		FUNCTION_FAST_ARGC(ClearDepth, 1) // depth
+		FUNCTION_FAST_ARGC(ClearColor, 4) // r, g, b, alpha
+		FUNCTION_FAST_ARGC(ClearAccum, 4) // r, g, b, alpha
+		FUNCTION_FAST_ARGC(Clear, 1) // mask
+		FUNCTION_FAST_ARGC(ClipPlane, 2) // plane, equation
+		FUNCTION_FAST_ARGC(Viewport, 4) // x, y, width, height
+		FUNCTION_FAST_ARGC(Frustum, 6) // left, right, bottom, top, zNear, zFar
+		FUNCTION_FAST_ARGC(Perspective, 3) // fovY, zNear, zFar (non-OpenGL API)
+		FUNCTION_FAST_ARGC(Ortho, 6) // left, right, bottom, top, zNear, zFar
+		FUNCTION_FAST_ARGC(MatrixMode, 1) // mode
+		FUNCTION_FAST_ARGC(LoadIdentity, 0)
+		FUNCTION_FAST_ARGC(PushMatrix, 0)
+		FUNCTION_FAST_ARGC(PopMatrix, 0)
+		FUNCTION_FAST_ARGC(LoadMatrix, 1) // matrix
+		FUNCTION_FAST_ARGC(Rotate, 4) // angle, x, y, z
+		FUNCTION_FAST_ARGC(Translate, 3) // x, y, z
+		FUNCTION_FAST_ARGC(Scale, 3) // x, y, z
+		FUNCTION_FAST_ARGC(NewList, 0)
+		FUNCTION_FAST_ARGC(DeleteList, 1) // listId
+		FUNCTION_FAST_ARGC(EndList, 0)
+		FUNCTION_FAST_ARGC(CallList, 1) // listId | array of listId
+		FUNCTION_FAST_ARGC(Begin, 1) // mode
+		FUNCTION_FAST_ARGC(End, 0)
+		FUNCTION_FAST_ARGC(PushAttrib, 1) // mask
+		FUNCTION_FAST_ARGC(PopAttrib, 0)
+		FUNCTION_FAST_ARGC(GenTexture, 0)
+		FUNCTION_FAST_ARGC(BindTexture, 2) // target, texture
+		FUNCTION_FAST_ARGC(DeleteTexture, 1) // textureId
+		FUNCTION_FAST_ARGC(CopyTexImage2D, 7) // level, internalFormat, x, y, width, height, border
+		FUNCTION_FAST_ARGC(DefineTextureImage, 3) // target, format, image (non-OpenGL API)
+		FUNCTION_FAST_ARGC(RenderToImage, 0) // (non-OpenGL API)
 
 		// OpenGL extensions
-		FUNCTION_FAST(GenBuffer)
-		FUNCTION_FAST(BindBuffer)
-		FUNCTION_FAST(PointParameter)
+		FUNCTION_FAST_ARGC(GenBuffer, 0)
+		FUNCTION_FAST_ARGC(BindBuffer, 2) // target, buffer
+		FUNCTION_FAST_ARGC(PointParameter, 2) // pname, param | Array of param
 
-		FUNCTION_FAST(ActiveTexture)		
-		FUNCTION_FAST(ClientActiveTexture)
+		FUNCTION_FAST_ARGC(ActiveTexture, 1) // texture
+		FUNCTION_FAST_ARGC(ClientActiveTexture, 1) // texture
 
-		FUNCTION_FAST(MultiTexCoord)
+		FUNCTION_FAST_ARGC(MultiTexCoord, 4) // target, s, t, r
 
 	END_STATIC_FUNCTION_SPEC
 

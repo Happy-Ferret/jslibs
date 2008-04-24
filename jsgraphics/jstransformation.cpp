@@ -90,21 +90,38 @@ DEFINE_FUNCTION_FAST( Load ) {
 	Matrix44 *tm = (Matrix44*)JS_GetPrivate(cx, J_FOBJ);
 	RT_ASSERT_RESOURCE(tm);
 
+	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
+
+	/* GetMatrixHelper already to the following
 	if ( J_JSVAL_IS_ARRAY( J_FARG(1) ) ) {
 
 		jsuint length = 16;
 		J_JSVAL_TO_REAL_VECTOR( J_FARG(1), &(*tm->raw), length );
 		J_S_ASSERT( length == 16, "Too few elements in the array." );
-	} else {
+
+		return JS_TRUE;
+	}
+	*/
+	/* GetMatrixHelper already to the following
+	else if (J_JSVAL_IS_CLASS( J_FARG(1), &classTransformation )) {
+
+		Matrix44 *m = (Matrix44*)JS_GetPrivate(cx, JSVAL_TO_OBJECT(J_FARG(1)));
+		RT_ASSERT_RESOURCE(m);
+		memcpy(tm, m, sizeof(Matrix44));
+		return JS_TRUE;
+	}
+	*/
+//	else {
 
 		Matrix44 *m = tm;
 		RT_CHECK_CALL( GetMatrixHelper(cx, J_FARG(1), &m) ); // GetMatrixHelper will copy data into tmp OR replace tmp by its own float pointer
 		if ( m != tm ) // check if the pointer has been modified
 			memcpy(tm, m, sizeof(Matrix44)); // if it is, copy the data
-		*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
-	}
+		return JS_TRUE;
+//	}
 
-	return JS_TRUE;
+	J_REPORT_ERROR("Invalid matrix.");
+	return JS_FALSE;
 }
 
 
@@ -157,33 +174,29 @@ DEFINE_FUNCTION_FAST( Translation ) {
 	JS_ValueToNumber(cx, J_FARG(1), &x);
 	JS_ValueToNumber(cx, J_FARG(2), &y);
 	JS_ValueToNumber(cx, J_FARG(3), &z);
-//	Vector3 vector;
-//	Vector3Set(&vector, x,y,z);
 	Matrix44SetTranslation(m, x,y,z);
 	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 	return JS_TRUE;
 }
 
-/*
+
 DEFINE_FUNCTION_FAST( Translate ) {
 
 	RT_ASSERT_ARGC(3); // x, y, z
 	Matrix44 *m = (Matrix44*)JS_GetPrivate(cx, J_FOBJ);
 	RT_ASSERT_RESOURCE(m);
 	jsdouble x, y, z;
-	JS_ValueToNumber(cx, argv[0], &x);
-	JS_ValueToNumber(cx, argv[1], &y);
-	JS_ValueToNumber(cx, argv[2], &z);
-//	Vector3 vector;
-//	Vector3Set(&vector, x,y,z);
+	JS_ValueToNumber(cx, J_FARG(1), &x);
+	JS_ValueToNumber(cx, J_FARG(2), &y);
+	JS_ValueToNumber(cx, J_FARG(3), &z);
 	Matrix44 t;
 	Matrix44Identity(&t);
 	Matrix44SetTranslation(&t, x, y, z);
 	Matrix44Product(m, &t);
-	*rval = OBJECT_TO_JSVAL(obj);
+	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 	return JS_TRUE;
 }
-*/
+
 
 DEFINE_FUNCTION_FAST( Rotation ) {
 
@@ -315,7 +328,7 @@ DEFINE_FUNCTION_FAST( Product ) {
 }
 
 
-DEFINE_FUNCTION_FAST( InverseProduct ) {
+DEFINE_FUNCTION_FAST( RevertProduct ) {
 
 	RT_ASSERT_ARGC(1);
 	Matrix44 *tm = (Matrix44*)JS_GetPrivate(cx, J_FOBJ); // tm for thisMatrix
@@ -342,25 +355,29 @@ DEFINE_NEW_RESOLVE() {
 
 DEFINE_GET_PROPERTY() {
 
-	Matrix44 *tm = (Matrix44*)JS_GetPrivate(cx, obj); // tm for thisMatrix
-	J_S_ASSERT_RESOURCE(tm);
-	J_S_ASSERT_INT(id);
-	jsint slot = JSVAL_TO_INT( id );
-	J_S_ASSERT( slot >= 0 && slot <= 15, "Out of range." );
-	J_CHECK_CALL( JS_NewNumberValue(cx, tm->raw[slot], vp) );
+	if ( JSVAL_IS_INT(id) ) {
+
+		Matrix44 *tm = (Matrix44*)JS_GetPrivate(cx, obj); // tm for thisMatrix
+		J_S_ASSERT_RESOURCE(tm);
+		jsint slot = JSVAL_TO_INT( id );
+		J_S_ASSERT( slot >= 0 && slot <= 15, "Out of range." );
+		J_CHECK_CALL( JS_NewNumberValue(cx, tm->raw[slot], vp) );
+	}
 	return JS_TRUE;
 }
 
 
 DEFINE_SET_PROPERTY() {
 
-	Matrix44 *tm = (Matrix44*)JS_GetPrivate(cx, obj); // tm for thisMatrix
-	J_S_ASSERT_RESOURCE(tm);
-	J_S_ASSERT_NUMBER(*vp);
-	J_S_ASSERT_INT(id);
-	jsint slot = JSVAL_TO_INT( id );
-	J_S_ASSERT( slot >= 0 && slot <= 15, "Out of range." );
-	tm->raw[slot] = JSVAL_IS_DOUBLE(*vp) ? *JSVAL_TO_DOUBLE(*vp) : JSVAL_TO_INT(*vp);
+	if ( JSVAL_IS_INT(id) ) {
+
+		Matrix44 *tm = (Matrix44*)JS_GetPrivate(cx, obj); // tm for thisMatrix
+		J_S_ASSERT_RESOURCE(tm);
+		J_S_ASSERT_NUMBER(*vp);
+		jsint slot = JSVAL_TO_INT( id );
+		J_S_ASSERT( slot >= 0 && slot <= 15, "Out of range." );
+		tm->raw[slot] = JSVAL_IS_DOUBLE(*vp) ? *JSVAL_TO_DOUBLE(*vp) : JSVAL_TO_INT(*vp);
+	}
 	return JS_TRUE;
 }
 
@@ -375,23 +392,23 @@ CONFIGURE_CLASS
 	HAS_SET_PROPERTY
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION_FAST( Clear )
-		FUNCTION_FAST( Load )
-		FUNCTION_FAST( LoadRotation )
-		FUNCTION_FAST( LoadTranslation )
-		FUNCTION_FAST( Product )
-		FUNCTION_FAST( InverseProduct )
-		FUNCTION_FAST( Invert )
-	//	FUNCTION_FAST( Translate )
-		FUNCTION_FAST( Translation )
-		FUNCTION_FAST( ClearRotation )
-		FUNCTION_FAST( ClearTranslation )
-		FUNCTION_FAST( Rotate )
-		FUNCTION_FAST( RotationX )
-		FUNCTION_FAST( RotationY )
-		FUNCTION_FAST( RotationZ )
-		FUNCTION_FAST( Rotation )
-		FUNCTION_FAST( LookAt )
+		FUNCTION_FAST_ARGC( Clear, 0 )
+		FUNCTION_FAST_ARGC( Load, 1 )
+		FUNCTION_FAST_ARGC( LoadRotation, 1 )
+		FUNCTION_FAST_ARGC( LoadTranslation, 1 )
+		FUNCTION_FAST_ARGC( Product, 1 )
+		FUNCTION_FAST_ARGC( RevertProduct, 1 )
+		FUNCTION_FAST_ARGC( Invert, 0 )
+		FUNCTION_FAST_ARGC( Translate, 3 ) // x, y, z
+		FUNCTION_FAST_ARGC( Translation, 3 ) // x, y, z
+		FUNCTION_FAST_ARGC( ClearRotation, 0 )
+		FUNCTION_FAST_ARGC( ClearTranslation, 0 )
+		FUNCTION_FAST_ARGC( Rotate, 4 ) // angle, x, y, z
+		FUNCTION_FAST_ARGC( RotationX, 1 ) // angle
+		FUNCTION_FAST_ARGC( RotationY, 1 ) // angle
+		FUNCTION_FAST_ARGC( RotationZ, 1 ) // angle
+		FUNCTION_FAST_ARGC( Rotation, 4 ) // angle, x, y, z
+		FUNCTION_FAST_ARGC( LookAt, 3 ) // x, y, z
 	END_FUNCTION_SPEC
 
 	HAS_PRIVATE  // private: BodyID

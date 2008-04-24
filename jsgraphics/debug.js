@@ -27,10 +27,27 @@ function Axis(size) {
 	}
 }
 
+function Quad() {
+
+	with (Ogl) {
+		Disable( TEXTURE_2D );
+		Begin(LINE_LOOP);
+		Color(1,0.5,0.5);
+		Vertex( -0.5, -0.5 );
+		Color(0.5,1,0.5);
+		Vertex( 0.5, -0.5 );
+		Color(1,0.5,0.5);
+		Vertex( 0.5, 0.5 );
+		Color(0.5,1,0.5);
+		Vertex( -0.5, 0.5 );
+		End();
+	}
+}
+
+/*
 function Quad(x0, y0, x1, y1) {
 
 	with (Ogl) {
-
 		Begin(QUADS);
 		TexCoord( 0, 0 );
 		Vertex( x0, y0 );
@@ -43,6 +60,7 @@ function Quad(x0, y0, x1, y1) {
 		End();
 	}
 }
+*/
 
 function Line(x0, y0, z0, x1, y1, z1) {
 
@@ -100,6 +118,8 @@ function Cube() {
 	}
 }
 
+var camera = new Transformation;
+camera.Clear();
 
 var objects = [];
 
@@ -124,41 +144,37 @@ var objects = [];
 	
 	win.onmousedown = function(button) {
 		
-		var clientRect = win.clientRect;
-		var cursorPosition = win.cursorPosition;
+		var m = new Transformation();
+		Ogl.MatrixMode(Ogl.PROJECTION);
+
+		m.Load(camera);
+		m.Invert();
+//		m.RevertProduct(Ogl);
+
+//		
 		
+		//Print( projection.Dump() );
+
+		var clientRect = win.clientRect;
 		var width = clientRect[2] - clientRect[0];
 		var height = clientRect[3] - clientRect[1];
 		
-		var projection = new Transformation();
-		Ogl.MatrixMode(Ogl.PROJECTION);
-		projection.Load(Ogl);
-//		projection.Invert();
-
-		var modelview = new Transformation();
-		Ogl.MatrixMode(Ogl.MODELVIEW);
-		modelview.Load(Ogl);
-		
-		projection.Product( modelview );
-		projection.Invert();
-		
-		Print( projection.Dump() );
-
-		
+		var cursorPosition = win.cursorPosition;
 		var x = -1 + 2 * ( cursorPosition[0] / width );
 		var y = -1 + 2 * ( height - cursorPosition[1] ) / height;
 		var z = 0;
 		var w = 1;
 
-		var x1 = projection[0]*x + projection[4]*y + projection[8]*z  + projection[12]*w;
-		var y1 = projection[1]*x + projection[5]*y + projection[9]*z  + projection[13]*w;
-		var z1 = projection[2]*x + projection[6]*y + projection[10]*z + projection[14]*w;
-		var w1 = projection[3]*x + projection[7]*y + projection[11]*z + projection[15]*w;
+		var x1 = m[0]*x + m[4]*y + m[8]*z  + m[12]*w;
+		var y1 = m[1]*x + m[5]*y + m[9]*z  + m[13]*w;
+		var z1 = m[2]*x + m[6]*y + m[10]*z + m[14]*w;
+		var w1 = m[3]*x + m[7]*y + m[11]*z + m[15]*w;
 
 		Print( 'x: '+x1, '\n' );
 		Print( 'y: '+y1, '\n' );
 		Print( 'z: '+z1, '\n' );
 		Print( 'w: '+w1, '\n' );
+		Print( '\n' );
 
 
 /*
@@ -318,45 +334,29 @@ with (Ogl) {
 
 const degToRad = 360/Math.PI;
 
+
+camera.Translate(0, 0, -10);
+
+
 function Render(imgIndex) {
 	with (Ogl) {
 
 		Clear(COLOR_BUFFER_BIT | DEPTH_BUFFER_BIT);
 	
 		MatrixMode(MODELVIEW);
-		LoadIdentity();
-		Translate(0, 0, -10);
-//		Rotate(i,0,0,1);
-		Disable( TEXTURE_2D );
-
-//		Rotate(30,1,1,1);
-		Cube();
-		
-
+		LoadMatrix(camera);
+		Quad();
+	
 		Enable( TEXTURE_2D );
-
 		Color(1,1,1,1);
 		for each ( var obj in objects ) {
 			
 			var t = TimeCounter() - obj.createTime;
 			PointSize((-Math.cos(t/1000)+1)*10);
 			Begin(POINTS);
-			Vertex(obj.x, obj.y, 0);
+			Vertex(obj.x, obj.y);
 			End();			
 		}
-
-/*
-		Enable( TEXTURE_2D );
-		for (var i=0; i<100; i++) {
-		
-			//	Quad(0,0,1,1)
-			PointSize(100);
-			Begin(POINTS);
-			Vertex(i/10, 0, i*2);
-			End();
-		}
-*/
-
 	}
 }
 
