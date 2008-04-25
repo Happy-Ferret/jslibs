@@ -328,19 +328,48 @@ DEFINE_FUNCTION_FAST( Product ) {
 }
 
 
-DEFINE_FUNCTION_FAST( RevertProduct ) {
+DEFINE_FUNCTION_FAST( ReverseProduct ) {
 
 	RT_ASSERT_ARGC(1);
 	Matrix44 *tm = (Matrix44*)JS_GetPrivate(cx, J_FOBJ); // tm for thisMatrix
 	RT_ASSERT_RESOURCE(tm);
 	Matrix44 tmp, *m = &tmp;
 	RT_CHECK_CALL( GetMatrixHelper(cx, J_FARG(1), &m) );
-	Matrix44InverseProduct(tm,m); // <- mult
+	Matrix44ReverseProduct(tm,m); // <- mult
 	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 	return JS_TRUE;
 }
 
 
+DEFINE_FUNCTION_FAST( TransformVector ) {
+
+	J_S_ASSERT_ARG_MIN(1);
+	J_S_ASSERT_ARRAY( J_FARG(1) );
+
+	Matrix44 *tm = (Matrix44*)JS_GetPrivate(cx, J_FOBJ); // tm for thisMatrix
+	RT_ASSERT_RESOURCE(tm);
+
+	Vector3 src, dst;
+	jsuint length = 3;
+	J_JSVAL_TO_REAL_VECTOR( J_FARG(1), src.raw, length );
+
+	Matrix44MultVector3( tm, &src, &dst );
+
+	jsval tmpValue;
+	J_CHECK_CALL( JS_NewNumberValue(cx, dst.x, &tmpValue) );
+	J_CHECK_CALL( JS_SetElement(cx, JSVAL_TO_OBJECT( J_FARG(1) ), 0, &tmpValue) );
+
+	J_CHECK_CALL( JS_NewNumberValue(cx, dst.y, &tmpValue) );
+	J_CHECK_CALL( JS_SetElement(cx, JSVAL_TO_OBJECT( J_FARG(1) ), 1, &tmpValue) );
+
+	J_CHECK_CALL( JS_NewNumberValue(cx, dst.z, &tmpValue) );
+	J_CHECK_CALL( JS_SetElement(cx, JSVAL_TO_OBJECT( J_FARG(1) ), 2, &tmpValue) );
+
+	*J_FRVAL = JSVAL_VOID;
+	return JS_TRUE;
+}
+
+/*
 DEFINE_NEW_RESOLVE() {
 
 	if (!JSVAL_IS_INT(id) || (flags & JSRESOLVE_ASSIGNING))
@@ -351,7 +380,7 @@ DEFINE_NEW_RESOLVE() {
 	*objp = obj;
 	return JS_TRUE;
 }
-
+*/
 
 DEFINE_GET_PROPERTY() {
 
@@ -387,7 +416,7 @@ CONFIGURE_CLASS
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE
 
-	HAS_NEW_RESOLVE
+//	HAS_NEW_RESOLVE
 	HAS_GET_PROPERTY
 	HAS_SET_PROPERTY
 
@@ -397,7 +426,7 @@ CONFIGURE_CLASS
 		FUNCTION_FAST_ARGC( LoadRotation, 1 )
 		FUNCTION_FAST_ARGC( LoadTranslation, 1 )
 		FUNCTION_FAST_ARGC( Product, 1 )
-		FUNCTION_FAST_ARGC( RevertProduct, 1 )
+		FUNCTION_FAST_ARGC( ReverseProduct, 1 )
 		FUNCTION_FAST_ARGC( Invert, 0 )
 		FUNCTION_FAST_ARGC( Translate, 3 ) // x, y, z
 		FUNCTION_FAST_ARGC( Translation, 3 ) // x, y, z
@@ -409,6 +438,8 @@ CONFIGURE_CLASS
 		FUNCTION_FAST_ARGC( RotationZ, 1 ) // angle
 		FUNCTION_FAST_ARGC( Rotation, 4 ) // angle, x, y, z
 		FUNCTION_FAST_ARGC( LookAt, 3 ) // x, y, z
+		FUNCTION_FAST_ARGC( TransformVector, 1 )
+
 	END_FUNCTION_SPEC
 
 	HAS_PRIVATE  // private: BodyID
