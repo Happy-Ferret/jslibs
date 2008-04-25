@@ -9,6 +9,17 @@ var vk = Exec('WindowsKeys.js');
 Exec('winTools.js');
 
 
+function DumpMatrix(m) {
+    
+    for (var x = 0; x < 4; x++) {
+        Print('[  ' );
+        for (var y = 0; y < 4; y++)
+            Print( m[x+y*4].toFixed(1) + '  ' );
+        Print(']\n' );
+    }
+}
+
+
 function Axis(size) {
 
 	with (Ogl) {
@@ -147,55 +158,37 @@ var objects = [];
 		var m = new Transformation();
 		Ogl.MatrixMode(Ogl.PROJECTION);
 
+		var p = new Transformation();
+		p.Load(Ogl);
+		
 		m.Load(camera);
 		m.Invert();
-//		m.RevertProduct(Ogl);
-
-//		
 		
-		//Print( projection.Dump() );
-
 		var clientRect = win.clientRect;
 		var width = clientRect[2] - clientRect[0];
 		var height = clientRect[3] - clientRect[1];
 		
 		var cursorPosition = win.cursorPosition;
-		var x = -1 + 2 * ( cursorPosition[0] / width );
-		var y = -1 + 2 * ( height - cursorPosition[1] ) / height;
-		var z = 0;
-		var w = 1;
-
-		var x1 = m[0]*x + m[4]*y + m[8]*z  + m[12]*w;
-		var y1 = m[1]*x + m[5]*y + m[9]*z  + m[13]*w;
-		var z1 = m[2]*x + m[6]*y + m[10]*z + m[14]*w;
-		var w1 = m[3]*x + m[7]*y + m[11]*z + m[15]*w;
-
-		Print( 'x: '+x1, '\n' );
-		Print( 'y: '+y1, '\n' );
-		Print( 'z: '+z1, '\n' );
-		Print( 'w: '+w1, '\n' );
-		Print( '\n' );
-
-
-/*
-		var t = new Transformation();
-		t.Clear();
-		t[12] = -1 + 2 * ( cursorPosition[0] / width );
-		t[13] = -1 + 2 * ( height - cursorPosition[1] ) / height;
-		t[14] = -1;
+		var vect = [(-1 + 2 * ( cursorPosition[0] / width )) / p[0], (-1 + 2 * ( height - cursorPosition[1] ) / height) / p[5], -1];
 		
-		//t.InverseProduct(projection);
-*/		
+		m.TransformVector(vect);
+	
+	
+//		DumpMatrix(m);
 		
+//		Print( 'x: '+m[3], '\n' );
+//		Print( 'y: '+m[7], '\n' );
+		Print( 'z: '+m[11], '\n' );
 
+		Print( 'transformed vector: \n'+vect.join('\n'), '\n' );
+		
 		var obj = {};
 		obj.createTime = TimeCounter();
-		obj.x = x1;
-		obj.y = y1;
+		obj.x = vect[0];
+		obj.y = vect[1];
+		obj.z = vect[2];
 		objects.push(obj);
 //		Print(win.cursorPosition, ' / ', clientRect[2]-clientRect[0], ',', clientRect[3]-clientRect[1], '\n');
-
-
 	}
 
 /*
