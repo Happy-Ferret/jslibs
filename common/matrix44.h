@@ -159,7 +159,7 @@ inline void Matrix44Product( Matrix44 *m, const Matrix44 *mx ) { // m = m * mx
 }
 
 // (TBD) optimize it, try to base it on Matrix44Multiply()
-inline void Matrix44InverseProduct( Matrix44 *m, const Matrix44 *mx ) { // m = mx * m
+inline void Matrix44ReverseProduct( Matrix44 *m, const Matrix44 *mx ) { // m = mx * m
 
 #ifdef SSE
 	__m128 sm1 = m->m1;
@@ -554,6 +554,7 @@ inline void Matrix44Billboard( Matrix44 *m, const Vector3 *to, const Vector3 *up
 inline void Matrix44Invert( Matrix44 *m ) {
 
 #ifdef SSE
+
 	static __m128 undef = {0,0,0,0};
 	register float* src = m->raw;
 
@@ -666,9 +667,34 @@ inline void Matrix44Invert( Matrix44 *m ) {
     minor3 = _mm_mul_ps(det, minor3);
     _mm_storel_pi((__m64*)(src+12), minor3);
     _mm_storeh_pi((__m64*)(src+14), minor3);
+
 #else // SSE
 	// (TBD)
 #endif // SSE
+
 }
+
+
+
+inline void Matrix44MultVector3( Matrix44 *m, Vector3 *srcVector, Vector3 *dstVector ) { // dstVector = srcVector . m
+
+#ifdef SSE
+
+	__m128 src = srcVector->m128;
+	dstVector->m128 =
+		_mm_add_ps(
+		_mm_add_ps(
+		_mm_add_ps(
+			_mm_mul_ps(m->m1, _mm_shuffle_ps(src, src, _MM_SHUFFLE(0,0,0,0))),
+			_mm_mul_ps(m->m2, _mm_shuffle_ps(src, src, _MM_SHUFFLE(1,1,1,1)))),
+			_mm_mul_ps(m->m3, _mm_shuffle_ps(src, src, _MM_SHUFFLE(2,2,2,2)))),
+			_mm_mul_ps(m->m4, _mm_set_ps(0.0f, 1.0f, 1.0f, 1.0f)));
+
+#else // SSE
+	// (TBD)
+#endif // SSE
+
+}
+
 
 #endif // _MATRIX44_H_
