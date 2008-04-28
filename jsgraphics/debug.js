@@ -156,13 +156,29 @@ var objects = [];
 	win.onmousedown = function(button) {
 		
 		var m = new Transformation();
-		Ogl.MatrixMode(Ogl.PROJECTION);
 
 		var p = new Transformation();
+		Ogl.MatrixMode(Ogl.PROJECTION);
 		p.Load(Ogl);
 		
-		m.Load(camera);
-		m.Invert();
+		m.Load(p);
+//		m.Product(camera);
+
+//		m.Invert();
+
+		m.Clear();
+		
+		var tmp = new Transformation();
+		tmp.Clear();
+		tmp.Translation(1,1,1);
+		
+//		m.Product(tmp);
+		vect = [1,1,1];
+		m.TransformVector(vect);
+		Print( 'transformed vector: \n'+vect.join('\n'), '\n' );
+		
+		
+		
 		
 		var clientRect = win.clientRect;
 		var width = clientRect[2] - clientRect[0];
@@ -178,9 +194,8 @@ var objects = [];
 		
 //		Print( 'x: '+m[3], '\n' );
 //		Print( 'y: '+m[7], '\n' );
-		Print( 'z: '+m[11], '\n' );
-
-		Print( 'transformed vector: \n'+vect.join('\n'), '\n' );
+//		Print( 'z: '+m[11], '\n' );
+//		Print( 'transformed vector: \n'+vect.join('\n'), '\n' );
 		
 		var obj = {};
 		obj.createTime = TimeCounter();
