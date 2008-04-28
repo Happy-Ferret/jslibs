@@ -87,9 +87,27 @@ DEFINE_FUNCTION_FAST( GetInteger ) {
 
 	RT_ASSERT_ARGC(1);
 	RT_ASSERT_INT(J_FARG(1));
-	GLint params;
-	glGetIntegerv(JSVAL_TO_INT(J_FARG(1)), &params);
-	*J_FRVAL = INT_TO_JSVAL(params);
+
+	GLint params[16]; // (TBD) check if it is the max amount of data that glGetIntegerv may returns.
+	glGetIntegerv(JSVAL_TO_INT( J_FARG(1) ), params);
+
+	if ( J_FARG_ISDEF(2) ) {
+
+		J_S_ASSERT_INT( J_FARG(2) );
+		int count = JSVAL_TO_INT( J_FARG(2) );
+		JSObject *arrayObj = JS_NewArrayObject(cx, 0, NULL);
+		RT_ASSERT_ALLOC(arrayObj);
+		*J_FRVAL = OBJECT_TO_JSVAL(arrayObj);
+		jsval tmpValue;
+		while (count--) {
+
+			tmpValue = INT_TO_JSVAL( params[count] );
+			J_CHECK_CALL( JS_SetElement(cx, arrayObj, count, &tmpValue) );
+		}
+	} else {
+
+		*J_FRVAL = INT_TO_JSVAL( params[0] );
+	}	
 	return JS_TRUE;
 }
 

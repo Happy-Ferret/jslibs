@@ -338,6 +338,15 @@
 } while(0)
 
 
+#define J_JSVAL_TO_ARRAY_LENGTH( jsvalArray, lengthVariable ) do { \
+	J_S_ASSERT_ARRAY(jsvalArray); \
+	JSObject *__arrayObj = JSVAL_TO_OBJECT(jsvalArray); \
+	jsuint __length; \
+	J_CHECK_CALL( JS_GetArrayLength(cx, __arrayObj, &__length) ); \
+	lengthVariable = __length; \
+} while(0)
+
+
 // DEPRECATED macro
 #define RT_CHECK_CALL J_CHECK_CALL
 #define RT_SAFE J_SAFE

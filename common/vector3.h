@@ -28,10 +28,18 @@ source: http://nebuladevice.svn.sourceforge.net/viewvc/nebuladevice/trunk/nebula
 #include <xmmintrin.h>
 #include <ivec.h>
 
+
 static const int X = 0;
 static const int Y = 1;
 static const int Z = 2;
 static const int W = 3;
+
+/*
+#define X 0
+#define Y 1
+#define Z 2
+#define W 3
+*/
 
 typedef __declspec(align(4)) union {
     __m128 m128;

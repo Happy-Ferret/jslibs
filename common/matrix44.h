@@ -38,6 +38,7 @@
 #include <math.h>
 
 #include "../common/vector3.h"
+#include "../common/vector4.h"
 
 static float Matrix44IdentityValue[] = {
 
@@ -689,6 +690,28 @@ inline void Matrix44MultVector3( Matrix44 *m, Vector3 *srcVector, Vector3 *dstVe
 			_mm_mul_ps(m->m2, _mm_shuffle_ps(src, src, _MM_SHUFFLE(1,1,1,1)))),
 			_mm_mul_ps(m->m3, _mm_shuffle_ps(src, src, _MM_SHUFFLE(2,2,2,2)))),
 			_mm_mul_ps(m->m4, _mm_set_ps(0.0f, 1.0f, 1.0f, 1.0f)));
+
+#else // SSE
+	// (TBD)
+#endif // SSE
+
+}
+
+
+
+inline void Matrix44MultVector4( Matrix44 *m, Vector4 *srcVector, Vector4 *dstVector ) { // dstVector = srcVector . m
+
+#ifdef SSE
+
+	__m128 src = srcVector->m128;
+	dstVector->m128 =
+		_mm_add_ps(
+		_mm_add_ps(
+		_mm_add_ps(
+			_mm_mul_ps(m->m1, _mm_shuffle_ps(src, src, _MM_SHUFFLE(0,0,0,0))),
+			_mm_mul_ps(m->m2, _mm_shuffle_ps(src, src, _MM_SHUFFLE(1,1,1,1)))),
+			_mm_mul_ps(m->m3, _mm_shuffle_ps(src, src, _MM_SHUFFLE(2,2,2,2)))),
+			_mm_mul_ps(m->m4, _mm_shuffle_ps(src, src, _MM_SHUFFLE(3,3,3,3))));
 
 #else // SSE
 	// (TBD)

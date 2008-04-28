@@ -351,25 +351,54 @@ DEFINE_FUNCTION_FAST( TransformVector ) {
 	Matrix44 *tm = (Matrix44*)JS_GetPrivate(cx, J_FOBJ); // tm for thisMatrix
 	RT_ASSERT_RESOURCE(tm);
 
-	Vector3 src, dst;
-	jsuint length = 3;
-	J_JSVAL_TO_REAL_VECTOR( J_FARG(1), src.raw, length );
+	jsuint length;
+	J_JSVAL_TO_ARRAY_LENGTH( J_FARG(1), length );
 
-	Matrix44MultVector3( tm, &src, &dst );
+	if ( length == 3 ) {
 
-	jsval tmpValue;
-	J_CHECK_CALL( JS_NewNumberValue(cx, dst.x, &tmpValue) );
-	J_CHECK_CALL( JS_SetElement(cx, JSVAL_TO_OBJECT( J_FARG(1) ), 0, &tmpValue) );
+		Vector3 src, dst;
+		jsuint length = 3;
+		J_JSVAL_TO_REAL_VECTOR( J_FARG(1), src.raw, length );
 
-	J_CHECK_CALL( JS_NewNumberValue(cx, dst.y, &tmpValue) );
-	J_CHECK_CALL( JS_SetElement(cx, JSVAL_TO_OBJECT( J_FARG(1) ), 1, &tmpValue) );
+		Matrix44MultVector3( tm, &src, &dst );
 
-	J_CHECK_CALL( JS_NewNumberValue(cx, dst.z, &tmpValue) );
-	J_CHECK_CALL( JS_SetElement(cx, JSVAL_TO_OBJECT( J_FARG(1) ), 2, &tmpValue) );
+		jsval tmpValue;
+		J_CHECK_CALL( JS_NewNumberValue(cx, dst.x, &tmpValue) );
+		J_CHECK_CALL( JS_SetElement(cx, JSVAL_TO_OBJECT( J_FARG(1) ), 0, &tmpValue) );
+
+		J_CHECK_CALL( JS_NewNumberValue(cx, dst.y, &tmpValue) );
+		J_CHECK_CALL( JS_SetElement(cx, JSVAL_TO_OBJECT( J_FARG(1) ), 1, &tmpValue) );
+
+		J_CHECK_CALL( JS_NewNumberValue(cx, dst.z, &tmpValue) );
+		J_CHECK_CALL( JS_SetElement(cx, JSVAL_TO_OBJECT( J_FARG(1) ), 2, &tmpValue) );
+	} else
+	if ( length == 4 ) {
+
+		Vector4 src, dst;
+		jsuint length = 4;
+		J_JSVAL_TO_REAL_VECTOR( J_FARG(1), src.raw, length );
+
+		Matrix44MultVector4( tm, &src, &dst );
+
+		jsval tmpValue;
+		J_CHECK_CALL( JS_NewNumberValue(cx, dst.x, &tmpValue) );
+		J_CHECK_CALL( JS_SetElement(cx, JSVAL_TO_OBJECT( J_FARG(1) ), 0, &tmpValue) );
+
+		J_CHECK_CALL( JS_NewNumberValue(cx, dst.y, &tmpValue) );
+		J_CHECK_CALL( JS_SetElement(cx, JSVAL_TO_OBJECT( J_FARG(1) ), 1, &tmpValue) );
+
+		J_CHECK_CALL( JS_NewNumberValue(cx, dst.z, &tmpValue) );
+		J_CHECK_CALL( JS_SetElement(cx, JSVAL_TO_OBJECT( J_FARG(1) ), 2, &tmpValue) );
+
+		J_CHECK_CALL( JS_NewNumberValue(cx, dst.w, &tmpValue) );
+		J_CHECK_CALL( JS_SetElement(cx, JSVAL_TO_OBJECT( J_FARG(1) ), 3, &tmpValue) );
+	}
 
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
+
+
 
 /*
 DEFINE_NEW_RESOLVE() {
