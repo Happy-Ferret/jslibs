@@ -271,11 +271,12 @@ static JSBool BranchCallback(JSContext *cx, JSScript *script) {
 }
 */
 
-static uint32 gBranchCount = 1;
+static u_int32_t gBranchCount = 1;
 static JSBool BranchCallback(JSContext *cx, JSScript *script) {
 
-	if ((++gBranchCount & (0x1000-1)) == 1) // true every 4096
-		JS_MaybeGC(cx);
+	if ((++gBranchCount & (0x1000-1)) != 1) // every 4096
+		return JS_TRUE;
+	JS_MaybeGC(cx);
 	return JS_TRUE;
 }
 
@@ -580,7 +581,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 //		options |= JSOPTION_STRICT;
 //	JS_SetOptions(cx, options );
 
-	JS_SetOptions(cx, JSOPTION_VAROBJFIX | JSOPTION_STRICT | JSOPTION_XML | JSOPTION_COMPILE_N_GO );
+	JS_SetOptions(cx, JSOPTION_VAROBJFIX | JSOPTION_STRICT | JSOPTION_XML | JSOPTION_COMPILE_N_GO | JSOPTION_RELIMIT );
   // JSOPTION_COMPILE_N_GO:
 	//  caller of JS_Compile*Script promises to execute compiled script once only; enables compile-time scope chain resolution of consts.
   // JSOPTION_DONT_REPORT_UNCAUGHT:
