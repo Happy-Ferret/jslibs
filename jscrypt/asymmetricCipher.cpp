@@ -87,7 +87,7 @@ DEFINE_FINALIZE() {
 
 DEFINE_CONSTRUCTOR() { // ( cipherName, hashName [, prngObject] [, PKCSVersion] )
 
-	RT_ASSERT_CONSTRUCTING();
+	J_S_ASSERT_CONSTRUCTING();
 	J_S_ASSERT_THIS_CLASS();
 	RT_ASSERT_ARGC( 3 );
 
