@@ -187,7 +187,7 @@ inline double AccurateTimeCounter() {
 	struct timeval time;
 	struct timezone tz;
 	gettimeofday(&time, &tz);
-	return (doubol)time.tv_sec / 1000*1000;
+	return (double)time.tv_sec / 1000*1000;
 #endif // XP_UNIX
 
 	return -1; // (TBD)
