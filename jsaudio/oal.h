@@ -12,16 +12,4 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-#include "stdafx.h"
-
-#include "oal.h"
-
-DEFINE_UNSAFE_MODE
-
-extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj) {
-
-	SET_UNSAFE_MODE( GetConfigurationValue(cx, "unsafeMode" ) == JSVAL_TRUE );
-
-	INIT_CLASS( Oal )
-	return JS_TRUE;
-}
+DECLARE_CLASS(Oal)
