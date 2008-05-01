@@ -21,3 +21,21 @@ OpenAL Installer for Windows:
 OpenAL 1.1 SDK for Windows
 	http://www.openal.org/downloads.html
 	contain OpenAL32.lib, al.h
+
+Windows compilation issues:
+
+requirement:
+	Microsoft DirectX 9+
+	Microsoft Platform SDK
+
+	In Tools > Options > Projects and Solutions > VC++ Directories > Include files, add the following directories if they are missing:
+		$(ProgramFiles)\Microsoft Platform SDK\include
+		$(ProgramFiles)\Microsoft Platform SDK\include\atl
+		$(ProgramFiles)\Microsoft Platform SDK\include\mfc
+
+
+	Remove any reference to odbc libraries from link
+
+	add user32.lib and ole32.lib
+
+
