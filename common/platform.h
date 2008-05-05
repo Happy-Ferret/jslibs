@@ -30,23 +30,23 @@
 // Compiler specific configuration
 
 #if defined(__GNUC__) && (__GNUC__ > 2)
-#define likely(expr)	__builtin_expect((expr), !0)
-#define unlikely(expr)	__builtin_expect((expr), 0)
+	#define likely(expr)	__builtin_expect((expr), !0)
+	#define unlikely(expr)	__builtin_expect((expr), 0)
 #else
-#define likely(expr)	(expr)
-#define unlikely(expr)	(expr)
+	#define likely(expr)	(expr)
+	#define unlikely(expr)	(expr)
 #endif
 
 #define COUNTOF(vector) (sizeof(vector)/sizeof(*vector))
 
 #ifdef _MSC_VER
-#pragma warning(disable : 4244 4305)  // for VC++, no precision loss complaints
-#pragma warning(disable : 4127)  // no "conditional expression is constant" complaints
-#pragma warning(disable : 4311) // warning C4311: 'variable' : pointer truncation from 'type' to 'type'
-#pragma warning(disable : 4312) // warning C4312: 'operation' : conversion from 'type1' to 'type2' of greater size
-#pragma warning(disable : 4267) // warning C4267: 'var' : conversion from 'size_t' to 'type', possible loss of data
-#pragma warning(disable : 4996) // warning C4996: 'function': was declared deprecated
-#pragma warning(disable : 4100) // warning C4100: 'xxx' : unreferenced formal parameter
+	#pragma warning(disable : 4244 4305)  // for VC++, no precision loss complaints
+	#pragma warning(disable : 4127)  // no "conditional expression is constant" complaints
+	#pragma warning(disable : 4311) // warning C4311: 'variable' : pointer truncation from 'type' to 'type'
+	#pragma warning(disable : 4312) // warning C4312: 'operation' : conversion from 'type1' to 'type2' of greater size
+	#pragma warning(disable : 4267) // warning C4267: 'var' : conversion from 'size_t' to 'type', possible loss of data
+	#pragma warning(disable : 4996) // warning C4996: 'function': was declared deprecated
+	#pragma warning(disable : 4100) // warning C4100: 'xxx' : unreferenced formal parameter
 #endif // #ifdef WIN32
 
 #include <limits.h>
@@ -190,6 +190,7 @@ inline double AccurateTimeCounter() {
 	return (double)time.tv_sec / 1000*1000;
 #endif // XP_UNIX
 
+	// see. JS_Now()
 	return -1; // (TBD)
 }
 
