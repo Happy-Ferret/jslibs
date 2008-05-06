@@ -114,6 +114,9 @@ JSBool ReadToJsval(JSContext *cx, PRFileDesc *fd, int amount, jsval *rval ) {
 	char *buf = (char*)JS_malloc( cx, amount + 1 );
 	RT_ASSERT_ALLOC(buf);
 	buf[amount] = '\0';
+// (TBD) use BString
+//	JSObject bstringObj = NewBString(cx, buf, amount);
+//	*rval = OBJECT_TO_JSVAL(bstringObj);
 
 	PRInt32 res = PR_Read( fd, buf, amount );
 
@@ -214,6 +217,7 @@ JSBool ReadAllToJsval(JSContext *cx, PRFileDesc *fd, jsval *rval ) {
 		return JS_TRUE;
 	}
 
+// (TBD) use BString
 	char *jsData = (char*)JS_malloc(cx, totalLength + 1);
 	jsData[totalLength] = '\0';
 	char *ptr = jsData + totalLength; // starts from the end

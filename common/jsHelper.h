@@ -22,6 +22,9 @@
 #include <jsarena.h>
 #include <jsfun.h>
 
+//#include "../jslang/bstringapi.h"
+
+
 // unsafe mode management
 
 #ifdef USE_UNSAFE_MODE
@@ -216,7 +219,23 @@
 #define J_S_ASSERT_ALLOC(pointer) \
 	if (unlikely( (pointer) == NULL )) { J_REPORT_WARNING( J__ERRMSG_OUT_OF_MEMORY ); JS_ReportOutOfMemory(cx); return JS_FALSE; }
 
+///////////////////////////////////////////////////////////////////////////////
+// conversion functions
 
+/* (TBD)
+char *JsvalToString( JSContext *cx, jsval val ) {
+
+
+//	if ( JSVAL_IS_STRING(val) ) {
+//		JSVAL_TO_STRING(val)
+
+
+	JSObject *obj = JSVAL_TO_OBJECT(val);
+	if ( JS_GET_CLASS(cx, obj) == BStringJSClass(cx) )
+		return BStringData(cx, obj);
+
+}
+*/
 
 ///////////////////////////////////////////////////////////////////////////////
 // conversion macros
@@ -506,7 +525,9 @@ inline JSClass *GetClassByName(JSContext *cx, const char *className) {
 	jsval bstringConstructor;
 	if ( JS_LookupProperty(cx, globalObj, className, &bstringConstructor) != JS_TRUE )
 		return NULL;
-	if ( bstringConstructor == JSVAL_VOID )
+//	if ( bstringConstructor == JSVAL_VOID )
+//		return NULL;
+	if ( JS_TypeOfValue(cx, bstringConstructor) != JSTYPE_FUNCTION )
 		return NULL;
 	JSFunction *fun = JS_ValueToFunction(cx, bstringConstructor);
 	if ( fun == NULL )

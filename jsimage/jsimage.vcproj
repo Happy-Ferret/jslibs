@@ -228,6 +228,26 @@
 				>
 			</File>
 			<File
+				RelativePath=".\static.cpp"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="..\libjpeg\src;..\libpng\src;..\zlib\src"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="..\libjpeg\src;..\libpng\src;..\zlib\src"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
 				RelativePath=".\stdafx.cpp"
 				>
 				<FileConfiguration
@@ -263,6 +283,10 @@
 			</File>
 			<File
 				RelativePath=".\jspng.h"
+				>
+			</File>
+			<File
+				RelativePath=".\static.h"
 				>
 			</File>
 			<File

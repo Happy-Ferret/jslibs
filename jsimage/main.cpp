@@ -17,6 +17,7 @@
 //#define MODULE_NAME "jsimage"
 //static const char *_revision = "$Rev$";
 
+DECLARE_STATIC()
 DECLARE_CLASS(Jpeg)
 DECLARE_CLASS(Png)
 DECLARE_CLASS(Image)

@@ -14,7 +14,6 @@
 
 #include "stdafx.h"
 
-#include "blob.h"
 #include "error.h"
 #include "database.h"
 #include "result.h"
@@ -25,7 +24,6 @@ extern "C" DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
 	SET_UNSAFE_MODE( GetConfigurationValue(cx, "unsafeMode" ) == JSVAL_TRUE );
 
-	INIT_CLASS( Blob )
 	INIT_CLASS( SqliteError )
 	INIT_CLASS( Result )
 	INIT_CLASS( Database )

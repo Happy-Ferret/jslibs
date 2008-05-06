@@ -13,7 +13,9 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-#include "blob.h"
+
+#include "../jslang/bstringapi.h"
+
 #include "error.h"
 #include "result.h"
 #include "database.h"
@@ -31,8 +33,8 @@ BEGIN_CLASS( Database )
 
 DEFINE_CONSTRUCTOR() {
 
-	RT_ASSERT_CONSTRUCTING();
-	RT_ASSERT_THIS_CLASS();
+	J_S_ASSERT_CONSTRUCTING();
+	J_S_ASSERT_THIS_CLASS();
 
 	char *fileName;
 	if ( J_ARG_ISDEF(1) ) {
@@ -321,13 +323,13 @@ void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArg
 				sqlite3_result_null(sCx);
 				break;
 			}
-			if ( JS_GET_CLASS(cx,JSVAL_TO_OBJECT(rval)) == &classBlob ) { // beware: with SQLite, blob != text
-// (TBD) use BString
-				jsval blobVal;
-				JS_GetReservedSlot(cx, JSVAL_TO_OBJECT(rval), SLOT_BLOB_DATA, &blobVal);
-				JSString *jsstr = JS_ValueToString(cx, blobVal);
-				// (TBD) GC protect (root) jsstr !!!
-				sqlite3_result_blob(sCx, JS_GetStringBytes(jsstr), JS_GetStringLength(jsstr), SQLITE_STATIC); // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT
+			if ( JS_GET_CLASS(cx, JSVAL_TO_OBJECT(rval)) == BStringJSClass(cx) ) { // beware: with SQLite, blob != text
+
+				JSObject *bstringObject = JSVAL_TO_OBJECT(rval);
+				char *data = BStringData(cx, bstringObject);
+				//J_S_ASSERT( data != NULL, "Invalid BString object.")
+				int length = BStringLength(cx, bstringObject);
+				sqlite3_result_blob(sCx, data, length, SQLITE_STATIC); // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT
 				break;
 			}
 		case JSTYPE_XML:

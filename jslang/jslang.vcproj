@@ -222,6 +222,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\bstringapi.h"
+				>
+			</File>
+			<File
 				RelativePath=".\stdafx.h"
 				>
 			</File>

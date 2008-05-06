@@ -13,7 +13,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-#include "bstring.h"
+#include "bstringapi.h"
 
 //#include "../common/jsNativeInterface.h"
 
@@ -237,6 +237,27 @@ DEFINE_FUNCTION_FAST( IndexOf ) {
 */
 
 
+DEFINE_FUNCTION_FAST( valueOf ) {
+
+	char *pv = (char*)JS_GetPrivate(cx, J_FOBJ);
+	int length;
+	RT_CHECK_CALL( LengthGet(cx, J_FOBJ, &length) );
+	if ( pv == NULL || length == 0 ) {
+
+		*J_FRVAL = JS_GetEmptyStringValue(cx);
+	} else {
+
+		jschar *ucStr = (jschar*)JS_malloc(cx, (length + 1) * sizeof(jschar));
+		ucStr[length] = 0;
+		for ( int i = 0; i < length; i++ )
+			ucStr[i] = pv[i];
+		JSString *jsstr = JS_NewUCString(cx, ucStr, length);
+		*J_FRVAL = STRING_TO_JSVAL( jsstr );
+	}
+	return JS_TRUE;
+}
+
+
 DEFINE_FUNCTION_FAST( toString ) {
 
 	char *pv = (char*)JS_GetPrivate(cx, J_FOBJ);
@@ -247,7 +268,8 @@ DEFINE_FUNCTION_FAST( toString ) {
 		*J_FRVAL = JS_GetEmptyStringValue(cx);
 	} else {
 
-		jschar *ucStr = (jschar*)JS_malloc(cx, length * sizeof(jschar));
+		jschar *ucStr = (jschar*)JS_malloc(cx, (length + 1) * sizeof(jschar));
+		ucStr[length] = 0;
 		for ( int i = 0; i < length; i++ )
 			ucStr[i] = pv[i];
 		JSString *jsstr = JS_NewUCString(cx, ucStr, length);
@@ -334,6 +356,7 @@ CONFIGURE_CLASS
 		FUNCTION_FAST(Add)
 		FUNCTION_FAST(Set)
 		FUNCTION_FAST(Substr)
+		FUNCTION_FAST(valueOf)
 		FUNCTION_FAST(toString)
 	END_FUNCTION_SPEC
 
