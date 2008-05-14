@@ -326,7 +326,7 @@ void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArg
 			if ( JS_GET_CLASS(cx, JSVAL_TO_OBJECT(rval)) == BStringJSClass(cx) ) { // beware: with SQLite, blob != text
 
 				JSObject *bstringObject = JSVAL_TO_OBJECT(rval);
-				char *data = BStringData(cx, bstringObject);
+				void *data = BStringData(cx, bstringObject);
 				//J_S_ASSERT( data != NULL, "Invalid BString object.")
 				int length = BStringLength(cx, bstringObject);
 				sqlite3_result_blob(sCx, data, length, SQLITE_STATIC); // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT

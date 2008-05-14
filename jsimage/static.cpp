@@ -156,7 +156,14 @@ DEFINE_FUNCTION( DecodeJpegImage ) {
 
 	int length = height * bytePerRow;
 	JOCTET * data = (JOCTET *)JS_malloc(cx, length);
-	RT_ASSERT_ALLOC(data);
+	J_S_ASSERT_ALLOC(data);
+	JSObject *bstringObj = NewBString(cx, (char*)data, length);
+	J_S_ASSERT( bstringObj, "Unable to create BString object." );
+	*rval = OBJECT_TO_JSVAL(bstringObj);
+	
+	JS_DefineProperty(cx, bstringObj, "channels", INT_TO_JSVAL(channels), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
+	JS_DefineProperty(cx, bstringObj, "width", INT_TO_JSVAL(width), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
+	JS_DefineProperty(cx, bstringObj, "height", INT_TO_JSVAL(height), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
 
 	// cinfo->rec_outbuf_height : recomanded scanline height ( 1, 2 or 4 )
 	while (cinfo.output_scanline < cinfo.output_height) {
@@ -168,14 +175,6 @@ DEFINE_FUNCTION( DecodeJpegImage ) {
 	jpeg_finish_decompress(&cinfo);
 	jpeg_destroy_decompress(&cinfo);
 	// jpeg_destroy(); ??
-
-	JSObject *bstringObj = NewBString(cx, (char*)data, length);
-	J_S_ASSERT( bstringObj, "Unable to create BString object." );
-	*rval = OBJECT_TO_JSVAL(bstringObj);
-	
-	JS_DefineProperty(cx, bstringObj, "channels", INT_TO_JSVAL(channels), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
-	JS_DefineProperty(cx, bstringObj, "width", INT_TO_JSVAL(width), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
-	JS_DefineProperty(cx, bstringObj, "height", INT_TO_JSVAL(height), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
 
 	return JS_TRUE;
 }
@@ -238,7 +237,14 @@ DEFINE_FUNCTION( DecodePngImage ) {
 
 	int length = height * bytePerRow;
 	png_bytep data = (png_bytep)JS_malloc(cx, length);
-	RT_ASSERT_ALLOC(data);
+	J_S_ASSERT_ALLOC(data);
+	JSObject *bstringObj = NewBString(cx, (char*)data, length);
+	J_S_ASSERT( bstringObj, "Unable to create BString object." );
+	*rval = OBJECT_TO_JSVAL(bstringObj);
+
+	JS_DefineProperty(cx, bstringObj, "channels", INT_TO_JSVAL(channels), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
+	JS_DefineProperty(cx, bstringObj, "width", INT_TO_JSVAL(width), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
+	JS_DefineProperty(cx, bstringObj, "height", INT_TO_JSVAL(height), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
 
 
 	// int number_of_passes = png_set_interlace_handling(desc.png);
@@ -250,15 +256,6 @@ DEFINE_FUNCTION( DecodePngImage ) {
 	}
    png_read_end(desc.png, desc.info); // read rest of file, and get additional chunks in desc.info - REQUIRED
 	png_destroy_read_struct(&desc.png, &desc.info, NULL);
-
-
-	JSObject *bstringObj = NewBString(cx, (char*)data, length);
-	J_S_ASSERT( bstringObj, "Unable to create BString object." );
-	*rval = OBJECT_TO_JSVAL(bstringObj);
-
-	JS_DefineProperty(cx, bstringObj, "channels", INT_TO_JSVAL(channels), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
-	JS_DefineProperty(cx, bstringObj, "width", INT_TO_JSVAL(width), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
-	JS_DefineProperty(cx, bstringObj, "height", INT_TO_JSVAL(height), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
 
 	return JS_TRUE;
 }

@@ -34,8 +34,7 @@ rem		if ERRORLEVEL 1 goto error
 		) ELSE (
 
 			pushd %%~dg%%~pg%BUILD%
-			copy %%f.dll ..\..\%BUILD%
-			copy %%f.exe ..\..\%BUILD%
+			copy %%f.dll %%f.exe ..\..\%BUILD% 1>nul
 			popd
 		)
 	)

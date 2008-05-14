@@ -14,9 +14,6 @@
 
 #include "stdafx.h"
 
-//#define MODULE_NAME "jsimage"
-//static const char *_revision = "$Rev$";
-
 DECLARE_STATIC()
 DECLARE_CLASS(Jpeg)
 DECLARE_CLASS(Png)
@@ -33,6 +30,7 @@ extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj)
 
 	SET_UNSAFE_MODE( GetConfigurationValue(cx, "unsafeMode" ) == JSVAL_TRUE );
 
+	INIT_STATIC();
 	INIT_CLASS( Image );
 	INIT_CLASS( Png );
 	INIT_CLASS( Jpeg );

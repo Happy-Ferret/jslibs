@@ -49,7 +49,7 @@ DEFINE_FUNCTION( Alloc ) {
 
 DEFINE_CONSTRUCTOR() {
 
-	RT_ASSERT_CONSTRUCTING();
+	J_S_ASSERT_CONSTRUCTING();
 	J_S_ASSERT_THIS_CLASS();
 	JSFunction *allocFunction = JS_NewFunction(cx, Alloc, 0, 0, NULL, "Alloc");
 	RT_ASSERT( allocFunction != NULL, "Unable to create allocation function." );

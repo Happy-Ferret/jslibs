@@ -131,11 +131,13 @@
 
 	Binding: function(QA) {
 	
+		LoadModule('jslang');
 		LoadModule('jssqlite');
 		var db = new Database();
 
 		var result1 = db.Query('SELECT :toto');
-		result1.toto = Blob('12' + '\0' + '34');
+		
+		result1.toto = new BString().Set('12' + '\0' + '34');
 
 		QA.ASSERT( result1.Row()[0].length, 5, 'using binding' );
 		QA.ASSERT( db.changes, 0, 'changes' );
@@ -177,8 +179,9 @@
 	},
 	
 	
-	FunctionBinding: function(QA) {
+	_FunctionBinding: function(QA) {
 	
+		LoadModule('jslang');
 		LoadModule('jssqlite');
 	
 		var db = new Database('');
@@ -186,7 +189,9 @@
 		db.testFun = function(a) { return a*10 }
 		db.jseval = function(s){ return eval(s) };
 		
-		var res = db.Exec('SELECT testFun(123), length(:toto), jseval("null") is null', {toto:Blob('qqwe\00\00fv1234'), aaa:null});
+		var blob = new BString();
+		blob.Set('qqwe\00\00fv1234');
+		var res = db.Exec('SELECT testFun(123), length(:toto), jseval("null") is null', {toto:blob, aaa:null});
 
 		QA.ASSERT( res, 1230, 'row result' );
 

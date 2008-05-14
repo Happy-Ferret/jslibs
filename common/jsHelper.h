@@ -266,12 +266,25 @@ char *JsvalToString( JSContext *cx, jsval val ) {
 } while(0)
 
 
+
 #define J_JSVAL_TO_INT32( jsvalInt, intVariable ) do { \
-	int32 __intVal; \
-	if (unlikely( JS_ValueToInt32( cx, jsvalInt, &__intVal ) != JS_TRUE )) \
-		J_REPORT_ERROR( "Unable to convert to a 32bit integer." ); \
-	intVariable = __intVal; \
+	if ( JSVAL_IS_INT(jsvalInt) ) { \
+		intVariable = JSVAL_TO_INT(jsvalInt); \
+	} else { \
+		int32 __intVal; \
+		if (unlikely( JS_ValueToInt32( cx, jsvalInt, &__intVal ) != JS_TRUE )) \
+			J_REPORT_ERROR( "Unable to convert to a 32bit integer." ); \
+		intVariable = __intVal; \
+	} \
 } while(0)
+
+
+#define J_PROPERTY_TO_INT32( jsobject, propertyName, intVariable ) do { \
+	jsval __tmpVal; \
+	J_CHECK_CALL( JS_GetProperty(cx, jsobject, propertyName, &__tmpVal) ); \
+	J_JSVAL_TO_INT32( __tmpVal, intVariable ); \
+} while(0)
+
 
 
 #define J_JSVAL_TO_UINT32( jsvalUInt, uintVariable ) do { \
@@ -463,6 +476,7 @@ inline bool InheritFrom( JSContext *cx, JSObject *obj, JSClass *clasp ) {
 	return false;
 }
 
+/*
 inline JSBool GetNamedPrivate( JSContext *cx, JSObject *obj, const char *name, void **pv ) {
 
 	jsval tmp;
@@ -471,7 +485,9 @@ inline JSBool GetNamedPrivate( JSContext *cx, JSObject *obj, const char *name, v
 	*pv = tmp == JSVAL_VOID ? NULL : JSVAL_TO_PRIVATE(tmp);
 	return JS_TRUE;
 }
+*/
 
+/*
 inline JSBool SetNamedPrivate( JSContext *cx, JSObject *obj, const char *name, const void *pv ) {
 
 //	J_SAFE(	if ( (int)pv % 2 ) return JS_FALSE; ); // check if *vp is 2-byte aligned
@@ -479,7 +495,9 @@ inline JSBool SetNamedPrivate( JSContext *cx, JSObject *obj, const char *name, c
 		return JS_FALSE;
 	return JS_TRUE;
 }
+*/
 
+/*
 inline JSBool GetIntProperty( JSContext *cx, JSObject *obj, const char *propertyName, int *value ) {
 
 	jsval tmp;
@@ -490,6 +508,7 @@ inline JSBool GetIntProperty( JSContext *cx, JSObject *obj, const char *property
 	*value = int32Value;
 	return JS_TRUE;
 }
+*/
 
 inline bool HasProperty( JSContext *cx, JSObject *obj, const char *propertyName ) {
 

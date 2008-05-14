@@ -41,14 +41,13 @@ JSBool SqliteToJsval( JSContext *cx, sqlite3_value *value, jsval *rval ) {
 			RT_CHECK_CALL( JS_NewNumberValue( cx, sqlite3_value_double(value), rval ) );
 			break;
 		case SQLITE_BLOB: {
-
 				int length = sqlite3_value_bytes(value);
-				char *data = (char*)JS_malloc(cx, length);
+				void *data = JS_malloc(cx, length);
 				J_S_ASSERT_ALLOC(data);
 				memcpy(data, sqlite3_value_blob(value), length);
 				JSObject *bstringObj = NewBString(cx, data, length);
 				J_S_ASSERT( bstringObj != NULL, "Unable to create BString." );
-				*rval = STRING_TO_JSVAL( bstringObj );
+				*rval = OBJECT_TO_JSVAL( bstringObj );
 			}
 			break;
 		case SQLITE_NULL:
@@ -131,7 +130,7 @@ JSBool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *objAt,
 				if ( JS_GET_CLASS(cx, JSVAL_TO_OBJECT(val)) == BStringJSClass(cx) ) { // beware: with SQLite, blob != text
 
 					JSObject *bstringObject = JSVAL_TO_OBJECT(val);
-					char *data = BStringData(cx, bstringObject);
+					void *data = BStringData(cx, bstringObject);
 					//J_S_ASSERT( data != NULL, "Invalid BString object.")
 					int length = BStringLength(cx, bstringObject);
 					sqlite3_bind_blob(pStmt, param, data, length, SQLITE_STATIC); // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT

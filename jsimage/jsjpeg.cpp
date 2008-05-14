@@ -228,7 +228,7 @@ DEFINE_FUNCTION( Load ) {
 
 	JOCTET * data = (JOCTET *)malloc(height * bytePerRow);
 	RT_ASSERT_ALLOC(data);
-	JSObject *image = NewImage(cx, INT_TO_JSVAL(width), INT_TO_JSVAL(height), INT_TO_JSVAL(channels), data);
+	JSObject *image = NewImage(cx, width, height, channels, data);
 	*rval = OBJECT_TO_JSVAL(image);
 
 

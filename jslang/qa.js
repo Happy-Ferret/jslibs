@@ -3,6 +3,7 @@
 	BString: function(QA) {
 		
 		LoadModule('jsstd');
+		LoadModule('jslang');
 	
 		var b = new BString();
 		b.Add( 'ABCD' );
@@ -25,6 +26,9 @@
 
 	BStringSubstr: function(QA) {
 	
+		LoadModule('jsstd');
+		LoadModule('jslang');
+
 		var b = new BString();
 		b.Add( 'ABCDEF' );
 		QA.ASSERT( ''+b.Substr(0), 'ABCDEF', 'substr' );
@@ -43,6 +47,9 @@
 
 	BStringSetter: function(QA) {
 	
+		LoadModule('jsstd');
+		LoadModule('jslang');
+
 		var b = new BString();
 		b.Add( 'ABCDEF' );
 		b[0] = 'X';
@@ -58,6 +65,9 @@
 	
 	BStringEquality: function(QA) {
 		
+		LoadModule('jsstd');
+		LoadModule('jslang');
+
 		var b = new BString();
 		b.Add( 'ABCDEF' );
 
@@ -69,6 +79,9 @@
 
 
 	BStringSelfReference: function(QA) {
+
+		LoadModule('jsstd');
+		LoadModule('jslang');
 
 		var a = new BString();
 		a.Set();

@@ -57,7 +57,7 @@ function MakeTests( testList, filter, QAAPI, iterate ) {
 
 	for ( var testName in testList ) {
 
-		if ( !filter(testName) || testName[0] == '_' )
+		if ( !filter(testName) || testName[testName.indexOf(':')+1] == '_' )
 			continue;
 		Print( testName, '\n' );
 		for ( var i = 0; i<iterate; i++ ) {
@@ -162,6 +162,7 @@ if ( perfTest ) {
 	Print( 'Time: '+t.toFixed(2) + 'ms.' );
 	
 }
-processPriority = savePrio;
+
+processPriority = savePrio || 0; // savePrio may be undefined
 
 Print( QAAPI.issues + ' issues found' );

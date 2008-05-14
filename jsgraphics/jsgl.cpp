@@ -1121,7 +1121,7 @@ DEFINE_FUNCTION_FAST( DefineTextureImage ) {
 
 	RT_ASSERT_ARGC(3);
 	RT_ASSERT_INT(J_FARG(1));
-	RT_ASSERT_INT(J_FARG(2));
+//	RT_ASSERT_INT(J_FARG(2)); // may be undefined
 	RT_ASSERT_OBJECT(J_FARG(3));
 
 	JSObject *tObj = JSVAL_TO_OBJECT(J_FARG(3));
@@ -1148,10 +1148,15 @@ DEFINE_FUNCTION_FAST( DefineTextureImage ) {
 
 		data = JS_GetPrivate(cx, tObj);
 		RT_ASSERT_RESOURCE(data);
+		
+//		GetIntProperty(cx, tObj, "width", &width);
+//		GetIntProperty(cx, tObj, "height", &height);
+//		GetIntProperty(cx, tObj, "channels", &channels);
 
-		GetIntProperty(cx, tObj, "width", &width);
-		GetIntProperty(cx, tObj, "height", &height);
-		GetIntProperty(cx, tObj, "channels", &channels);
+		J_PROPERTY_TO_INT32(tObj, "width", width);
+		J_PROPERTY_TO_INT32(tObj, "height", height);
+		J_PROPERTY_TO_INT32(tObj, "channels", channels);
+
 		type = GL_UNSIGNED_BYTE;
 	} else
 		REPORT_ERROR("Invalid texture type.");

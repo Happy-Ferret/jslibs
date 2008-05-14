@@ -30,12 +30,12 @@ inline JSClass* BStringJSClass( JSContext *cx ) {
 
 
 // NewBString takes ownership of jsMallocatedBuffer on success. Allocation must be done with JS_malloc
-inline JSObject* NewBString( JSContext *cx, char *jsMallocatedBuffer, size_t bufferLength ) {
+inline JSObject* NewBString( JSContext *cx, void *jsMallocatedBuffer, size_t bufferLength ) {
 		
 	JSClass *bstringClass = BStringJSClass(cx);
 	if ( bstringClass == NULL )
 		return NULL;
-	JSObject *obj = JS_NewObject(cx, BStringJSClass(cx), NULL, NULL);
+	JSObject *obj = JS_NewObject(cx, bstringClass, NULL, NULL);
 	if ( obj == NULL )
 		return NULL;
 	JS_SetReservedSlot(cx, obj, SLOT_BSTRING_LENGTH, INT_TO_JSVAL( bufferLength ));
@@ -68,7 +68,7 @@ inline size_t BStringLength( JSContext *cx, JSObject *bStringObject ) {
 }
 
 
-inline char* BStringData( JSContext *cx, JSObject *bStringObject ) {
+inline void* BStringData( JSContext *cx, JSObject *bStringObject ) {
 
 	RT_SAFE(
 		if ( JS_GET_CLASS( cx, bStringObject ) != BStringJSClass( cx ) )
@@ -78,7 +78,7 @@ inline char* BStringData( JSContext *cx, JSObject *bStringObject ) {
 }
 
 
-inline JSBool BStringGetDataAndLength( JSContext *cx, JSObject *bStringObject, char **data, size_t *dataLength ) {
+inline JSBool BStringGetDataAndLength( JSContext *cx, JSObject *bStringObject, void **data, size_t *dataLength ) {
 
 	RT_SAFE(
 		if ( JS_GET_CLASS( cx, bStringObject ) != BStringJSClass( cx ) )
@@ -87,7 +87,7 @@ inline JSBool BStringGetDataAndLength( JSContext *cx, JSObject *bStringObject, c
 	jsval lengthVal;
 	RT_CHECK_CALL( JS_GetReservedSlot(cx, bStringObject, SLOT_BSTRING_LENGTH, &lengthVal) );
 	*dataLength = JSVAL_IS_INT(lengthVal) ? JSVAL_TO_INT( lengthVal ) : 0;
-	*data = (char*)JS_GetPrivate(cx, bStringObject);
+	*data = JS_GetPrivate(cx, bStringObject);
 	return JS_TRUE;
 }
 

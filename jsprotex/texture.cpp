@@ -19,6 +19,8 @@
 
 #include "texture.h"
 
+#include "../jslang/bstringapi.h"
+
 #define _USE_MATH_DEFINES
 #include <math.h>
 #include <string.h>
@@ -285,7 +287,7 @@ DEFINE_FINALIZE() {
 
 DEFINE_CONSTRUCTOR() {
 
-	RT_ASSERT_CONSTRUCTING();
+	J_S_ASSERT_CONSTRUCTING();
 	J_S_ASSERT_THIS_CLASS();
 	RT_ASSERT_ARGC( 1 );
 	Texture *tex = (Texture *)malloc(sizeof(Texture));
@@ -2052,6 +2054,68 @@ DEFINE_FUNCTION( Copy ) { // (Texture)source, (int)x, (int)y
 }
 
 
+DEFINE_FUNCTION( Export ) { // (int)x, (int)y, (int)width, (int)height . Returns a BString
+
+	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE(tex);
+
+	int sChannels = tex->channels;
+	int sWidth = tex->width;
+	int sHeight = tex->height;
+
+	int dWidth, dHeight;
+
+	u_int8_t *buffer;
+	int bufferLength;
+
+	if ( J_ARGC == 0 ) { // copy the whole image
+	
+		bufferLength = sWidth * sHeight * sChannels;
+		buffer = (u_int8_t*)JS_malloc(cx, bufferLength);
+		memcpy(buffer, tex->cbuffer, bufferLength);
+	} else {
+		
+		J_S_ASSERT_ARG_MIN( 4 );
+
+		int px, py;
+		J_JSVAL_TO_INT32( J_ARG(1), px );
+		J_JSVAL_TO_INT32( J_ARG(2), py );
+		J_JSVAL_TO_INT32( J_ARG(3), dWidth );
+		J_JSVAL_TO_INT32( J_ARG(4), dHeight );
+
+		bufferLength = dWidth * dHeight * sChannels;
+		buffer = (u_int8_t*)JS_malloc(cx, bufferLength);
+
+		int posDst, posSrc;
+		int c;
+		int x, y;
+
+		for ( y = 0; y < dHeight; y++ )
+			for ( x = 0; x < dWidth; x++ ) {
+
+				int sx, sy; // position in source
+				
+				sx = x + px;
+				sy = y + py;
+
+				posDst = ( x + y * dWidth ) * sChannels;
+				posSrc = ( sx + sy * sWidth ) * sChannels;
+				for ( c = 0; c < sChannels; c++ )
+					buffer[posDst+c] = (u_int8_t)(MINMAX(tex->cbuffer[posSrc+c], 0, PMAX) * 256);
+			}
+	}
+
+	JSObject *bstr = NewBString(cx, buffer, bufferLength);
+
+	JS_DefineProperty(cx, bstr, "width", INT_TO_JSVAL(dWidth), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
+	JS_DefineProperty(cx, bstr, "height", INT_TO_JSVAL(dHeight), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
+	JS_DefineProperty(cx, bstr, "channels", INT_TO_JSVAL(sChannels), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
+
+	*rval = OBJECT_TO_JSVAL(bstr);
+	return JS_TRUE;
+}
+
+
 
 DEFINE_FUNCTION( Paste ) { // (Texture)texture, (int)x, (int)y, (bool)borderMode
 
@@ -2110,6 +2174,74 @@ DEFINE_FUNCTION( Paste ) { // (Texture)texture, (int)x, (int)y, (bool)borderMode
 	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 }
+
+
+DEFINE_FUNCTION( Import ) { // (BString)image, (int)x, (int)y
+
+	J_S_ASSERT_ARG_MIN(1);
+
+	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE(tex);
+	
+	J_S_ASSERT_OBJECT( J_ARG(1) );
+	JSObject *bstr = JSVAL_TO_OBJECT( J_ARG(1) );
+	J_S_ASSERT_CLASS( bstr, BStringJSClass(cx) );
+
+	int dWidth = tex->width;
+	int dHeight = tex->height;
+	int dChannels = tex->channels;
+	
+	int sWidth, sHeight, sChannels;
+	J_PROPERTY_TO_INT32( bstr, "width", sWidth );
+	J_PROPERTY_TO_INT32( bstr, "height", sHeight );
+	J_PROPERTY_TO_INT32( bstr, "channels", sChannels );
+	u_int8_t *buffer = (u_int8_t*)BStringData(cx, bstr);
+
+	int px, py;
+	if ( J_ARGC >= 3 ) {
+
+		J_JSVAL_TO_INT32( J_ARG(2), px );
+		J_JSVAL_TO_INT32( J_ARG(3), py );
+	} else {
+
+		px = 0;
+		py = 0;
+	}
+
+	BorderMode borderMode = borderWrap;
+
+	int x, y;
+	int dx, dy; // destination
+	int posDst, posSrc;
+	int c;
+
+	for ( y = 0; y < sHeight; y++ )
+		for ( x = 0; x < sWidth; x++ ) {
+
+			dx = x + px;
+			dy = y + py;
+			switch (borderMode) {
+				case borderWrap:
+					dx = Wrap(dx, dWidth);
+					dy = Wrap(dy, dHeight);
+					break;
+			case borderClamp:
+				if ( !(dx >= 0 && dx < dWidth && dy >= 0 && dy < dHeight) ) {
+					continue; // skip
+				}
+				break;
+			}
+
+			posDst = ( dx + dy * dWidth ) * dChannels;
+			posSrc = ( x + y * sWidth ) * sChannels;
+			for ( c = 0; c < sChannels; c++ )
+				tex->cbuffer[posDst+c] = buffer[posSrc+c] / (PTYPE)256;
+		}
+
+	*rval = OBJECT_TO_JSVAL(obj);
+	return JS_TRUE;
+}
+
 
 
 DEFINE_FUNCTION( Shift ) {
@@ -2749,6 +2881,8 @@ CONFIGURE_CLASS
 		FUNCTION( Trim )
 		FUNCTION( Copy )
 		FUNCTION( Paste )
+		FUNCTION( Export )
+		FUNCTION( Import )
 		FUNCTION( Flip )
 		FUNCTION( Shift )
 		FUNCTION( Convolution )

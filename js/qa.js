@@ -79,10 +79,16 @@
 	},
 	
 	ScriptObject: function(QA) {
+		
+		if ( typeof Script == 'undefined' ) {
+
+			QA.FAILED('"Script" object not found');
+		} else {
 	
-		var x = 1;
-		(new Script("x++")).exec();
-		QA.ASSERT( x, 2, 'script exec' );
+			var x = 1;
+			(new Script("x++")).exec();
+			QA.ASSERT( x, 2, 'script exec' );
+		}
 	},
 	
 	SharpVars: function(QA) {
@@ -101,11 +107,17 @@
 	},
 
 	Freeze: function(QA) {
+
+		if ( typeof Script == 'undefined' ) {
+
+			QA.FAILED('"Script" object not found');
+		} else {
 		
-		var s = new Script('{ a : 1 }');
-		QA.ASSERT( typeof s.freeze, 'function', 'has freeze function' );
-		if ( s.freeze )
-			s.freeze();
+			var s = new Script('{ a : 1 }');
+			QA.ASSERT( typeof s.freeze, 'function', 'has freeze function' );
+			if ( s.freeze )
+				s.freeze();
+		}
 	}
 
 
