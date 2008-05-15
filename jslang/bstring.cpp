@@ -20,7 +20,7 @@
 
 inline JSBool LengthSet( JSContext *cx, JSObject *obj, int bufferLength ) {
 
-	RT_CHECK_CALL( JS_SetReservedSlot(cx, obj, SLOT_BSTRING_LENGTH, INT_TO_JSVAL( bufferLength )) );
+	J_CHECK_CALL( JS_SetReservedSlot(cx, obj, SLOT_BSTRING_LENGTH, INT_TO_JSVAL( bufferLength )) );
 	return JS_TRUE;
 }
 
@@ -28,7 +28,7 @@ inline JSBool LengthSet( JSContext *cx, JSObject *obj, int bufferLength ) {
 inline JSBool LengthGet( JSContext *cx, JSObject *obj, int *bufferLength ) {
 
 	jsval bufferLengthVal;
-	RT_CHECK_CALL( JS_GetReservedSlot(cx, obj, SLOT_BSTRING_LENGTH, &bufferLengthVal) );
+	J_CHECK_CALL( JS_GetReservedSlot(cx, obj, SLOT_BSTRING_LENGTH, &bufferLengthVal) );
 	*bufferLength = JSVAL_IS_INT(bufferLengthVal) ? JSVAL_TO_INT( bufferLengthVal ) : 0;
 	return JS_TRUE;
 }
@@ -50,10 +50,80 @@ DEFINE_FINALIZE() {
 }
 
 
+inline JSBool JsvalToBString( JSContext *cx, JSObject *obj, jsval val ) {
+
+	size_t srcLen;
+	void *src, *dst = NULL;
+
+	if ( JsvalIsBString(cx, val) ) {
+		
+		BStringGetDataAndLength(cx, JSVAL_TO_OBJECT( val ), &src, &srcLen);
+		if ( srcLen > 0 ) {
+
+			dst = JS_malloc(cx, srcLen);
+			J_S_ASSERT_ALLOC( dst );
+			memcpy(dst, src, srcLen);
+		}
+	} else {
+		
+		JSString *jsstr = JS_ValueToString(cx, val);
+		srcLen = JS_GetStringLength(jsstr);
+		if ( srcLen > 0 ) {
+
+			dst = JS_malloc(cx, srcLen);
+			J_S_ASSERT_ALLOC( dst );
+			jschar *chars = JS_GetStringChars(jsstr);
+			for ( size_t i = 0; i < srcLen; i++ )
+				((char*)dst)[i] = (uint8)chars[i];
+		}
+	}
+
+	void *pv = JS_GetPrivate(cx, obj);
+	if ( pv != NULL )
+		JS_free(cx, pv);
+
+	J_CHECK_CALL( JS_SetPrivate(cx, obj, dst) );
+	J_CHECK_CALL( LengthSet(cx, obj, srcLen) );
+
+	return JS_TRUE;
+}
+
+
+JSBool BStringToJsval( JSContext *cx, JSObject *obj, jsval *val ) {
+
+	void *pv = JS_GetPrivate(cx, obj);
+	int length;
+	J_CHECK_CALL( LengthGet(cx, obj, &length) );
+	if ( pv == NULL || length == 0 ) {
+
+		*val = JS_GetEmptyStringValue(cx);
+	} else {
+
+		jschar *ucStr = (jschar*)JS_malloc(cx, (length + 1) * sizeof(jschar));
+		ucStr[length] = 0;
+		for ( int i = 0; i < length; i++ )
+			ucStr[i] = ((char*)pv)[i];
+		JSString *jsstr = JS_NewUCString(cx, ucStr, length);
+		*val = STRING_TO_JSVAL( jsstr );
+	}
+	return JS_TRUE;
+
+}
+
+
 DEFINE_CONSTRUCTOR() {
 
-//	J_S_ASSERT_CONSTRUCTING(); // construction is not mandatory
-//	J_S_ASSERT_THIS_CLASS();
+	if ( JS_IsConstructing(cx) == JS_FALSE ) { // supports this form (w/o new operator) : result.param1 = Blob('Hello World');
+
+		obj = JS_NewObject(cx, _class, NULL, NULL);
+		J_S_ASSERT( obj != NULL, "BString construction failed." );
+		*rval = OBJECT_TO_JSVAL(obj);
+	} else
+		J_S_ASSERT_THIS_CLASS();
+
+	if ( J_ARG_ISDEF(1) )
+		J_CHECK_CALL( JsvalToBString(cx, J_OBJ, J_ARG(1)) );
+
 	return JS_TRUE;
 }
 
@@ -62,69 +132,29 @@ DEFINE_FUNCTION_FAST( Set ) {
 	
 	JS_ClearScope(cx, J_FOBJ);
 
-	void *pv = JS_GetPrivate(cx, J_FOBJ);
-
 	*J_FRVAL = OBJECT_TO_JSVAL( J_FOBJ );
 
 	if ( !J_FARG_ISDEF(1) ) { // clear
 
+		void *pv = JS_GetPrivate(cx, J_FOBJ);
 		if (pv != NULL)
 			JS_free(cx, pv);
-		RT_CHECK_CALL( JS_SetPrivate(cx, J_FOBJ, NULL) );
-		RT_CHECK_CALL( LengthSet(cx, J_FOBJ, 0) );
+		J_CHECK_CALL( JS_SetPrivate(cx, J_FOBJ, NULL) );
+		J_CHECK_CALL( LengthSet(cx, J_FOBJ, 0) );
 		return JS_TRUE;
 	}
 
-	size_t srcLen;
-	void *src, *dst;
-
-	if ( JsvalIsBString(cx, J_FARG(1)) ) {
-		
-		BStringGetDataAndLength(cx, JSVAL_TO_OBJECT( J_FARG(1) ), &src, &srcLen);
-		if ( srcLen > 0 ) {
-
-			dst = JS_malloc(cx, srcLen);
-			RT_ASSERT_ALLOC( dst );
-			memcpy(dst, src, srcLen);
-		} else {
-
-			dst = NULL;
-		}
-	} else {
-		
-		JSString *jsstr = JS_ValueToString(cx, J_FARG(1));
-		J_FARG(1) = STRING_TO_JSVAL(jsstr);
-
-		srcLen = JS_GetStringLength(jsstr);
-		if ( srcLen > 0 ) {
-
-			dst = JS_malloc(cx, srcLen);
-			RT_ASSERT_ALLOC( dst );
-			jschar *chars = JS_GetStringChars(jsstr);
-			for ( size_t i = 0; i < srcLen; i++ )
-				((char*)dst)[i] = (uint8)chars[i];
-		} else {
-			
-			dst = NULL;
-		}
-	}
-
-	if ( pv != NULL )
-		JS_free(cx, pv);
-
-	RT_CHECK_CALL( JS_SetPrivate(cx, J_FOBJ, dst) );
-	RT_CHECK_CALL( LengthSet(cx, J_FOBJ, srcLen) );
-
+	J_CHECK_CALL( JsvalToBString(cx, J_FOBJ, J_FARG(1)) );
 	return JS_TRUE;
 }
 
 
 DEFINE_FUNCTION_FAST( Add ) {
 	
-	RT_ASSERT_ARGC( 1 );
+	J_S_ASSERT_ARG_MIN( 1 );
 
 	int length;
-	RT_CHECK_CALL( LengthGet(cx, J_FOBJ, &length) );
+	J_CHECK_CALL( LengthGet(cx, J_FOBJ, &length) );
 
 	size_t srcLen;
 	void *src, *dst;
@@ -135,7 +165,7 @@ DEFINE_FUNCTION_FAST( Add ) {
 		if ( srcLen > 0 ) {
 
 			dst = JS_malloc(cx, srcLen + length);
-			RT_ASSERT_ALLOC( dst );
+			J_S_ASSERT_ALLOC( dst );
 			memcpy(((int8_t*)dst) + length, src, srcLen);
 		} else {
 
@@ -150,7 +180,7 @@ DEFINE_FUNCTION_FAST( Add ) {
 		if ( srcLen > 0 ) {
 
 			dst = JS_malloc(cx, srcLen + length);
-			RT_ASSERT_ALLOC( dst );
+			J_S_ASSERT_ALLOC( dst );
 			jschar *chars = JS_GetStringChars(jsstr);
 			for ( size_t i = 0; i < srcLen; i++ )
 				((char*)dst)[i + length] = (uint8)chars[i];
@@ -167,8 +197,8 @@ DEFINE_FUNCTION_FAST( Add ) {
 		JS_free(cx, pv);
 	}
 
-	RT_CHECK_CALL( LengthSet(cx, J_FOBJ, srcLen + length) );
-	RT_CHECK_CALL( JS_SetPrivate(cx, J_FOBJ, dst) );
+	J_CHECK_CALL( LengthSet(cx, J_FOBJ, srcLen + length) );
+	J_CHECK_CALL( JS_SetPrivate(cx, J_FOBJ, dst) );
 
 	*J_FRVAL = OBJECT_TO_JSVAL( J_FOBJ );
 	return JS_TRUE;
@@ -177,14 +207,14 @@ DEFINE_FUNCTION_FAST( Add ) {
 
 DEFINE_FUNCTION_FAST( Substr ) { // http://developer.mozilla.org/en/docs/Core_JavaScript_1.5_Reference:Global_Objects:String:substr
 
-	RT_ASSERT_ARGC(1);
+	J_S_ASSERT_ARG_MIN(1);
 	void *pv = JS_GetPrivate(cx, J_FOBJ);
 	
 	int dataLength;
-	RT_CHECK_CALL( LengthGet(cx, J_FOBJ, &dataLength) );
+	J_CHECK_CALL( LengthGet(cx, J_FOBJ, &dataLength) );
 
 	int start;
-	RT_JSVAL_TO_INT32( J_FARG(1), start );
+	J_JSVAL_TO_INT32( J_FARG(1), start );
 
 	if ( start >= dataLength || start < -dataLength ) {
 
@@ -203,7 +233,7 @@ DEFINE_FUNCTION_FAST( Substr ) { // http://developer.mozilla.org/en/docs/Core_Ja
 	int length;
 	if ( J_FARG_ISDEF(2) ) {
 
-		RT_JSVAL_TO_INT32( J_FARG(2), length );
+		J_JSVAL_TO_INT32( J_FARG(2), length );
 		if ( length <= 0 ) {
 
 			*J_FRVAL = OBJECT_TO_JSVAL( EmptyBString(cx) );
@@ -219,7 +249,7 @@ DEFINE_FUNCTION_FAST( Substr ) { // http://developer.mozilla.org/en/docs/Core_Ja
 	// now 0 <= length < dataLength - start
 
 	void *buffer = JS_malloc(cx, length);
-	RT_ASSERT_ALLOC( buffer );
+	J_S_ASSERT_ALLOC( buffer );
 	memcpy(buffer, ((int8_t*)pv) + start, length);
 
 	*J_FRVAL = OBJECT_TO_JSVAL( NewBString(cx, buffer, length) );
@@ -241,42 +271,14 @@ DEFINE_FUNCTION_FAST( IndexOf ) {
 
 DEFINE_FUNCTION_FAST( valueOf ) {
 
-	void *pv = JS_GetPrivate(cx, J_FOBJ);
-	int length;
-	RT_CHECK_CALL( LengthGet(cx, J_FOBJ, &length) );
-	if ( pv == NULL || length == 0 ) {
-
-		*J_FRVAL = JS_GetEmptyStringValue(cx);
-	} else {
-
-		jschar *ucStr = (jschar*)JS_malloc(cx, (length + 1) * sizeof(jschar));
-		ucStr[length] = 0;
-		for ( int i = 0; i < length; i++ )
-			ucStr[i] = ((char*)pv)[i];
-		JSString *jsstr = JS_NewUCString(cx, ucStr, length);
-		*J_FRVAL = STRING_TO_JSVAL( jsstr );
-	}
+	J_CHECK_CALL( BStringToJsval(cx, J_FOBJ, J_FRVAL) );
 	return JS_TRUE;
 }
 
 
 DEFINE_FUNCTION_FAST( toString ) {
 
-	void *pv = JS_GetPrivate(cx, J_FOBJ);
-	int length;
-	RT_CHECK_CALL( LengthGet(cx, J_FOBJ, &length) );
-	if ( pv == NULL || length == 0 ) {
-
-		*J_FRVAL = JS_GetEmptyStringValue(cx);
-	} else {
-
-		jschar *ucStr = (jschar*)JS_malloc(cx, (length + 1) * sizeof(jschar));
-		ucStr[length] = 0;
-		for ( int i = 0; i < length; i++ )
-			ucStr[i] = ((char*)pv)[i];
-		JSString *jsstr = JS_NewUCString(cx, ucStr, length);
-		*J_FRVAL = STRING_TO_JSVAL( jsstr );
-	}
+	J_CHECK_CALL( BStringToJsval(cx, J_FOBJ, J_FRVAL) );
 	return JS_TRUE;
 }
 
@@ -284,7 +286,7 @@ DEFINE_FUNCTION_FAST( toString ) {
 DEFINE_PROPERTY( length ) {
 
 	int length;
-	RT_CHECK_CALL( LengthGet(cx, obj, &length) );
+	J_CHECK_CALL( LengthGet(cx, obj, &length) );
 	*vp = INT_TO_JSVAL( length );
 	return JS_TRUE;
 }
@@ -301,14 +303,14 @@ DEFINE_NEW_RESOLVE() { // support of data[n]
 		return JS_TRUE;
 
 	int length;
-	RT_CHECK_CALL( LengthGet(cx, obj, &length) );
+	J_CHECK_CALL( LengthGet(cx, obj, &length) );
 
 	if ( slot < 0 || slot >= length )
 		return JS_TRUE;
 
 	jschar chr = ((char*)pv)[slot];
 	JSString *str1 = JS_NewUCStringCopyN(cx, &chr, 1);
-	RT_ASSERT_ALLOC( str1 );
+	J_S_ASSERT_ALLOC( str1 );
 
 	JS_DefineProperty(cx, obj, (char*)slot, STRING_TO_JSVAL(str1), NULL, NULL, JSPROP_INDEX );
 
@@ -322,24 +324,24 @@ DEFINE_SET_PROPERTY() {
 		
 	void *pv = JS_GetPrivate(cx, obj);
 	if ( pv == NULL )
-		REPORT_ERROR("Out of range.");
+		J_REPORT_ERROR("Out of range.");
 
 	int length;
-	RT_CHECK_CALL( LengthGet(cx, obj, &length) );
+	J_CHECK_CALL( LengthGet(cx, obj, &length) );
 
-	RT_ASSERT_INT(id);
+	J_S_ASSERT_INT(id);
 	jsint slot = JSVAL_TO_INT( id );
 
 	if ( slot < 0 || slot >= length )
-		REPORT_ERROR("Out of range.");
+		J_REPORT_ERROR("Out of range.");
 
 	jschar chr = ((char*)pv)[slot];
 	JSString *str1 = JS_NewUCStringCopyN(cx, &chr, 1);
-	RT_ASSERT_ALLOC( str1 );
+	J_S_ASSERT_ALLOC( str1 );
 
-	RT_ASSERT_STRING(*vp);
+	J_S_ASSERT_STRING(*vp);
 	if ( JS_GetStringLength( JSVAL_TO_STRING(*vp) ) != 1 )
-		REPORT_ERROR("Invalid char.");
+		J_REPORT_ERROR("Invalid char.");
 
 	((char*)pv)[slot] = *JS_GetStringBytes( JSVAL_TO_STRING(*vp) );
 
