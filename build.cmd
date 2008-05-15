@@ -4,7 +4,7 @@ set platformSDKPath=C:\Program Files\Microsoft Platform SDK
 rem --------------------------------------------------------------------------
 @echo off
 
-set BUILD=release
+IF "%BUILD%"=="" set BUILD=release
 
 set prevDir=%CD%
 set prevPath=%PATH%
@@ -29,9 +29,11 @@ for /D %%f in (js*) do (
 		"%visualStudioPath%\VC\vcpackages\vcbuild" /useenv /rebuild %%g "%BUILD%|WIN32" >> build.log
 		if ERRORLEVEL 1 (
 		
-			echo ... failed.
+			echo ... failed !
 rem		if ERRORLEVEL 1 goto error
 		) ELSE (
+
+			echo ... done.
 
 			pushd %%~dg%%~pg%BUILD%
 			copy %%f.dll %%f.exe ..\..\%BUILD% 1>nul

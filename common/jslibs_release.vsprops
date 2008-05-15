@@ -15,7 +15,6 @@
 	-->
 	<Tool
 		Name="VCCLCompilerTool"
-		
 		AdditionalIncludeDirectories="..\js\src"
 		ExceptionHandling="0"
 		RuntimeLibrary="2"
