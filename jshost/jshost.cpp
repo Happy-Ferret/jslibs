@@ -415,6 +415,31 @@ JSContext *cx = NULL;
 //bool _finalized = false;
 void Finalize(void);
 
+
+
+
+
+static JSBool global_enumerate(JSContext *cx, JSObject *obj) { // see LAZY_STANDARD_CLASSES
+	
+	return JS_EnumerateStandardClasses(cx, obj);
+}
+
+static JSBool global_resolve(JSContext *cx, JSObject *obj, jsval id, uintN flags, JSObject **objp) { // see LAZY_STANDARD_CLASSES
+
+    if ((flags & JSRESOLVE_ASSIGNING) == 0) {
+        JSBool resolved;
+
+        if (!JS_ResolveStandardClass(cx, obj, id, &resolved))
+            return JS_FALSE;
+        if (resolved) {
+            *objp = obj;
+            return JS_TRUE;
+        }
+    }
+    return JS_TRUE;
+}
+
+
 int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[]) for UNICODE
 
 	JSBool unsafeMode = JS_FALSE;
@@ -485,18 +510,30 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 #endif
 
 	JSBool jsStatus;
+
 // global object
-	JSClass global_class = { NAME_GLOBAL_CLASS, 0, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, JS_FinalizeStub };
+	// doc: For full ECMAScript standard compliance, obj should be of a JSClass that has the JSCLASS_GLOBAL_FLAGS flag.
+	JSClass global_class = {
+		NAME_GLOBAL_CLASS, JSCLASS_GLOBAL_FLAGS | JSCLASS_NEW_RESOLVE,
+		JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, global_enumerate, (JSResolveOp) global_resolve, JS_ConvertStub, JS_FinalizeStub, // see LAZY_STANDARD_CLASSES
+		JSCLASS_NO_OPTIONAL_MEMBERS
+	};
 
 	globalObject = JS_NewObject(cx, &global_class, NULL, NULL);
 	RT_HOST_MAIN_ASSERT( globalObject != NULL, "unable to create the global object." );
+	
+	//	JS_SetGlobalObject(cx, globalObject); // not needed. Doc: As a side effect, JS_InitStandardClasses establishes obj as the global object for cx, if one is not already established. 
 
 // Standard classes
-	jsStatus = JS_InitStandardClasses(cx, globalObject); // use NULL instead of globalObject ?
-	RT_HOST_MAIN_ASSERT( jsStatus == JS_TRUE, "unable to initialize standard classes." );
+//	jsStatus = JS_InitStandardClasses(cx, globalObject); // use NULL instead of globalObject ?
+//	RT_HOST_MAIN_ASSERT( jsStatus == JS_TRUE, "unable to initialize standard classes." );
+
+	JS_SetGlobalObject(cx, globalObject); // see LAZY_STANDARD_CLASSES
+
+
 
 // global functions & properties
-	JS_DefineProperty(cx, globalObject, NAME_GLOBAL_GLOBAL_OBJECT, OBJECT_TO_JSVAL(JS_GetGlobalObject(cx)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
+	JS_DefineProperty( cx, globalObject, NAME_GLOBAL_GLOBAL_OBJECT, OBJECT_TO_JSVAL(JS_GetGlobalObject(cx)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
 	JS_DefineProperties( cx, globalObject, Global_PropertySpec );
 	JS_DefineFunction( cx, globalObject, NAME_GLOBAL_FUNCTION_LOAD_MODULE, LoadModule, 0, 0 );
 	JS_DefineFunction( cx, globalObject, NAME_GLOBAL_FUNCTION_UNLOAD_MODULE, UnloadModule, 0, 0 );
@@ -647,7 +684,6 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 
 	// You need to protect a JSScript (via a rooted script object) if and only if a garbage collection can occur between compilation and the start of execution.
 	jsval rval;
-
 	if ( !compileOnly )
 		jsStatus = JS_ExecuteScript( cx, globalObject, script, &rval ); // MUST be executed only once ( JSOPTION_COMPILE_N_GO )
 	else {
