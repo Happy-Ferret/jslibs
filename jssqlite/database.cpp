@@ -205,6 +205,10 @@ DEFINE_FUNCTION( Exec ) {
 	if ( argc >= 2 && argv[1] != JSVAL_VOID && JSVAL_IS_OBJECT(argv[1]) )
 		RT_CHECK_CALL( SqliteSetupBindings(cx, pStmt, JSVAL_TO_OBJECT(argv[1]) , NULL ) ); // "@" : the the argument passed to Exec(), ":" nothing
 	status = sqlite3_step( pStmt ); // The return value will be either SQLITE_BUSY, SQLITE_DONE, SQLITE_ROW, SQLITE_ERROR, or 	SQLITE_MISUSE.
+
+	if ( JS_IsExceptionPending(cx) )
+		return JS_FALSE;
+
 	switch (status) {
 		case SQLITE_ERROR:
 			return SqliteThrowError( cx, status, sqlite3_errcode(sqlite3_db_handle( pStmt )), sqlite3_errmsg(sqlite3_db_handle( pStmt )));
@@ -269,6 +273,9 @@ void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArg
 
 	SqliteFunctionCallUserData *data = (SqliteFunctionCallUserData*)sqlite3_user_data(sCx);
 
+	// need: sqlite3 *sqlite3_context_db_handle(sqlite3_context*); ??
+
+
 	JSContext *iterp = NULL;
 	JSContext *cx = JS_ContextIterator(data->rt, &iterp); // (TBD) change this for multithread
 	JSFunction *fun = data->function;
@@ -276,6 +283,8 @@ void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArg
 
 	jsval argv[128];
 	jsval rval;
+
+//	J_S_ASSERT( sizeof(argv)/sizeof(*argv) <= sArgc, "Too many arguments.");
 
 	int r = 0;
 	for ( ; r < sArgc; r++ ) {
@@ -288,7 +297,21 @@ void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArg
 		}
 	}
 
+	
 	if ( JS_CallFunction(cx, obj, fun, sArgc, argv, &rval) == JS_FALSE ) {
+/*
+		if ( JS_IsExceptionPending(cx) ) {
+
+			jsval ex;
+			JS_GetPendingException(cx, &ex);
+			JSErrorReport *err = JS_ErrorFromException(cx, ex);
+
+			if ( err == NULL ) {
+				return;
+			}
+			
+		}
+*/			
 
 		sqlite3_result_error(sCx, "Function call error", -1 ); // (TBD) better error message
 		goto bad;
