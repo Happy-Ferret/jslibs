@@ -12,6 +12,11 @@
 		QA.ASSERT( mod, mod1, 'LoadModule' );
 		QA.ASSERT( _configuration.unsafeMode, true, 'unsafe mode is active' );
 		QA.ASSERT( global.arguments[0], 'qarun.js', 'javascript program name' );
+	},
+
+	EvalFunction: function(QA) {
+
+		QA.ASSERT( typeof eval, 'function', 'eval function availability' );
 	}
 
 })

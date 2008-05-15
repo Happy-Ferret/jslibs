@@ -1,5 +1,44 @@
 ({
 
+	BString_construct_with_data: function(QA) {
+
+		LoadModule('jsstd');
+		LoadModule('jslang');
+		
+		var bstr = new BString('98765');
+		QA.ASSERT( String(bstr), '98765', 'string value' );
+	},
+	
+	BString_not_constructed: function(QA) {
+		
+		LoadModule('jsstd');
+		LoadModule('jslang');
+
+		var bstr = BString('98765');
+		QA.ASSERT( String(bstr), '98765', 'string value' );
+
+
+		var v = BString().Set('123');
+		QA.ASSERT( typeof v, 'object', 'variable type' );
+		QA.ASSERT( String(v), '123', 'content' );
+	},
+
+	BString_to_string: function(QA) {
+
+		LoadModule('jsstd');
+		LoadModule('jslang');
+		
+		QA.ASSERT( BString().Set('345').toString(), '345', 'string value' );
+	},
+
+	BString_valueOf: function(QA) {
+
+		LoadModule('jsstd');
+		LoadModule('jslang');
+
+		QA.ASSERT( BString().Set('567').valueOf(), '567', 'value of' );
+	},
+
 	BString: function(QA) {
 		
 		LoadModule('jsstd');

@@ -59,6 +59,7 @@ function MakeTests( testList, filter, QAAPI, iterate ) {
 
 		if ( !filter(testName) || testName[testName.indexOf(':')+1] == '_' )
 			continue;
+		
 		Print( testName, '\n' );
 		for ( var i = 0; i<iterate; i++ ) {
 
