@@ -363,12 +363,6 @@ JSBool EndSignalSetter(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////
-JSPropertySpec Global_PropertySpec[] = { // *name, tinyid, flags, getter, setter
-	{ "endSignal"    , 0    , JSPROP_SHARED | JSPROP_PERMANENT, EndSignalGetter, EndSignalSetter },
-	{ 0 }
-};
-
-//////////////////////////////////////////////////////////////////////////////////////////////
 
 #ifdef XP_WIN
 BOOL Interrupt(DWORD CtrlType) {
@@ -417,8 +411,6 @@ void Finalize(void);
 
 
 
-
-
 static JSBool global_enumerate(JSContext *cx, JSObject *obj) { // see LAZY_STANDARD_CLASSES
 	
 	return JS_EnumerateStandardClasses(cx, obj);
@@ -426,18 +418,27 @@ static JSBool global_enumerate(JSContext *cx, JSObject *obj) { // see LAZY_STAND
 
 static JSBool global_resolve(JSContext *cx, JSObject *obj, jsval id, uintN flags, JSObject **objp) { // see LAZY_STANDARD_CLASSES
 
-    if ((flags & JSRESOLVE_ASSIGNING) == 0) {
-        JSBool resolved;
+//	char *str;
+//	J_JSVAL_TO_STRING(id, str);
 
-        if (!JS_ResolveStandardClass(cx, obj, id, &resolved))
-            return JS_FALSE;
-        if (resolved) {
-            *objp = obj;
-            return JS_TRUE;
-        }
-    }
-    return JS_TRUE;
+	if ((flags & JSRESOLVE_ASSIGNING) == 0) {
+
+		JSBool resolved;
+		if (!JS_ResolveStandardClass(cx, obj, id, &resolved))
+			return JS_FALSE;
+		if (resolved) {
+			*objp = obj;
+			return JS_TRUE;
+		}
+	}
+	return JS_TRUE;
 }
+
+
+//JSBool InitScriptHost( JSContext *cx ) {
+//
+//	return JS_TRUE;
+//}
 
 
 int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[]) for UNICODE
@@ -515,7 +516,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	// doc: For full ECMAScript standard compliance, obj should be of a JSClass that has the JSCLASS_GLOBAL_FLAGS flag.
 	JSClass global_class = {
 		NAME_GLOBAL_CLASS, JSCLASS_GLOBAL_FLAGS | JSCLASS_NEW_RESOLVE,
-		JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, global_enumerate, (JSResolveOp) global_resolve, JS_ConvertStub, JS_FinalizeStub, // see LAZY_STANDARD_CLASSES
+		JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, global_enumerate, (JSResolveOp)global_resolve, JS_ConvertStub, JS_FinalizeStub, // see LAZY_STANDARD_CLASSES
 		JSCLASS_NO_OPTIONAL_MEMBERS
 	};
 
@@ -530,15 +531,11 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 
 	JS_SetGlobalObject(cx, globalObject); // see LAZY_STANDARD_CLASSES
 
-
-
 // global functions & properties
 	JS_DefineProperty( cx, globalObject, NAME_GLOBAL_GLOBAL_OBJECT, OBJECT_TO_JSVAL(JS_GetGlobalObject(cx)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
-	JS_DefineProperties( cx, globalObject, Global_PropertySpec );
+	JS_DefineProperty(cx, globalObject, "endSignal", JSVAL_VOID, EndSignalGetter, EndSignalSetter, JSPROP_SHARED | JSPROP_PERMANENT );
 	JS_DefineFunction( cx, globalObject, NAME_GLOBAL_FUNCTION_LOAD_MODULE, LoadModule, 0, 0 );
 	JS_DefineFunction( cx, globalObject, NAME_GLOBAL_FUNCTION_UNLOAD_MODULE, UnloadModule, 0, 0 );
-//	JS_DefineFunction( cx, globalObject, "test", global_test, 0, 0 );
-// JS_DefineFunction( cx, globalObject, "Module", _Module, 0, 0 );
 
 // Global configuration object
 	JSObject *configObject = GetConfigurationObject(cx);
@@ -633,19 +630,10 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	//  One way to use JSOPTION_VAROBJFIX would be to temporarily
 	//  JS_SetParent(cx, libobj, NULL) and JS_SetParent(cx, libobj, global)
 	//  around all JS_Evaluate*Script* and JS_Compile* API calls.)
+	// JSOPTION_RELIMIT:
+	//  Throw exception on any regular expression which backtracks more than n^3 times, where n is length of the input string
 
-
-/*
-
-//	gBranchLimit =
-	if ( !unsafeMode ) {
-
-		//JSBranchCallback oldBranchCallback = JS_SetBranchCallback(cx, BranchCallback);
-		JS_SetBranchCallback(cx, BranchCallback);
-		JS_ToggleOptions(cx, JSOPTION_NATIVE_BRANCH_CALLBACK);
-	}
-*/
-
+	// JSBranchCallback oldBranchCallback =
 	JS_SetBranchCallback(cx, BranchCallback);
 	JS_ToggleOptions(cx, JSOPTION_NATIVE_BRANCH_CALLBACK);
 
@@ -668,7 +656,8 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 		ungetc(b, file);
 		ungetc(s, file);
 	}
-	JS_GC(cx); // ...and also just before doing anything that requires compilation (since compilation disables GC until complete).
+
+//	JS_GC(cx); // ...and also just before doing anything that requires compilation (since compilation disables GC until complete).
 	script = JS_CompileFileHandle(cx, globalObject, scriptName, file);
 	// (TBD) fclose(file); ??
 

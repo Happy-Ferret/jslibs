@@ -18,10 +18,46 @@
 #define NI_READ_RESOURCE "_NI_READ_RESOURCE"
 typedef bool (*NIResourceRead)( void *pv, unsigned char *buf, unsigned int *amount );
 
+
 #define NI_READ_MATRIX44 "_NI_READ_MATRIX"
 // **pm
 //   in: a valid float[16]
 //  out: pointer provided as input OR another pointer to float
 typedef int (*NIMatrix44Read)(void *pv, float **pm); // **pm allows NIMatrix44Read to return its own data pointer ( should be const )
+
+
+// buffer access interface
+#define NI_BUFFER "_NI_BUFFER"
+typedef bool (*NIBuffer)( void *pv, void **buf, size_t *size );
+
+
+
+///////////////////////////////////////////////////////////////////////////////
+// Native Interface API
+
+typedef void (*FunctionPointer)(void);
+
+inline JSBool SetNativeInterface( JSContext *cx, JSObject *obj, const char *name, FunctionPointer function, void *descriptor ) {
+	
+	// Cannot be called while Finalize
+	// the following must works because spidermonkey will never call the getter or setter if it is not explicitly required by the script
+	return JS_DefineProperty(cx, obj, name, JSVAL_VOID, (JSPropertyOp)function, (JSPropertyOp)descriptor, JSPROP_READONLY | JSPROP_PERMANENT);
+}
+
+inline JSBool GetNativeInterface( JSContext *cx, JSObject *obj, const char *name, FunctionPointer *function, void **descriptor ) {
+
+	// Cannot be called while Finalize
+	uintN attrs;
+	JSBool found;
+	J_CHECK_CALL( JS_GetPropertyAttrsGetterAndSetter(cx, obj, name, &attrs, &found, (JSPropertyOp*)function, (JSPropertyOp*)descriptor) ); // NULL is supported for function and descriptor
+	return found;
+}
+
+inline JSBool RemoveNativeInterface( JSContext *cx, JSObject *obj, const char *name ) {
+	
+	// Cannot be called while Finalize
+	return JS_DeleteProperty(cx, obj, name);
+}
+
 
 #endif // _JSNATIVEINTERFACE_H_

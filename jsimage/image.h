@@ -19,7 +19,7 @@ inline JSClass* ImageJSClass( JSContext *cx ) {
 
 	static JSClass *jsClass = NULL;
 	if ( jsClass == NULL )
-		jsClass = GetClassByName(cx, "Image");
+		jsClass = GetGlobalClassByName(cx, "Image");
 	return jsClass;
 }
 

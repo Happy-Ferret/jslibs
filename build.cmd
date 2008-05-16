@@ -20,6 +20,8 @@ md .\%BUILD%
 copy .\js\src\WINNT5.1_OPT.OBJ\*.dll .\%BUILD%
 copy .\nspr\win32\dist\lib\nspr4.dll .\%BUILD%
 
+echo building %BUILD% version.
+
 for /D %%f in (js*) do (
 
 	for %%g in (%%f\*.sln) do (
@@ -33,7 +35,7 @@ for /D %%f in (js*) do (
 rem		if ERRORLEVEL 1 goto error
 		) ELSE (
 
-			echo ... done.
+			echo ... ok.
 
 			pushd %%~dg%%~pg%BUILD%
 			copy %%f.dll %%f.exe ..\..\%BUILD% 1>nul

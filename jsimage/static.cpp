@@ -38,9 +38,10 @@ extern "C" {
 
 BEGIN_STATIC
 
+
+
 //////////////////////////////////////////////////////////////////////////////
 //// JPEG
-
 
 #define INPUT_BUF_SIZE 4096
 
@@ -51,6 +52,7 @@ typedef struct {
   NIResourceRead read;
 } SourceMgr;
 typedef SourceMgr *SourceMgrPtr;
+
 
 METHODDEF(void) init_source(j_decompress_ptr cinfo) {
 }
@@ -157,7 +159,7 @@ DEFINE_FUNCTION( DecodeJpegImage ) {
 	int length = height * bytePerRow;
 	JOCTET * data = (JOCTET *)JS_malloc(cx, length);
 	J_S_ASSERT_ALLOC(data);
-	JSObject *bstringObj = NewBString(cx, (char*)data, length);
+	JSObject *bstringObj = NewBString(cx, data, length);
 	J_S_ASSERT( bstringObj, "Unable to create BString object." );
 	*rval = OBJECT_TO_JSVAL(bstringObj);
 	
@@ -180,22 +182,28 @@ DEFINE_FUNCTION( DecodeJpegImage ) {
 }
 
 
+DEFINE_FUNCTION( EncodeJpegImage ) {
+
+	REPORT_ERROR("TBD!"); // (TBD)
+	return JS_TRUE;
+}
+
+
 
 //////////////////////////////////////////////////////////////////////////////
 //// PNG
-
 
 typedef struct {
 	png_structp png;
 	png_infop info;
 	void *pv;
 	NIResourceRead read;
-} PngDescriptor;
+} PngReadUserStruct;
 
 
 static void _png_read( png_structp png_ptr, png_bytep data, png_size_t length ) {
 
-	PngDescriptor *desc = (PngDescriptor*)png_get_io_ptr(png_ptr);
+	PngReadUserStruct *desc = (PngReadUserStruct*)png_get_io_ptr(png_ptr);
 	desc->read(desc->pv, data, &length);
 //	if ( length == 0 )
 //		png_error(png_ptr, "Trying to read after EOF."); // png_warning()
@@ -204,24 +212,23 @@ static void _png_read( png_structp png_ptr, png_bytep data, png_size_t length ) 
 
 DEFINE_FUNCTION( DecodePngImage ) {
 
-	PngDescriptor desc;
+	PngReadUserStruct desc;
 
 	desc.png = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL );
-	RT_ASSERT( desc.png != NULL, "Unable to png_create_read_struct.");
+	J_S_ASSERT( desc.png != NULL, "Unable to png_create_read_struct.");
 	desc.info = png_create_info_struct(desc.png);
-	RT_ASSERT( desc.info != NULL, "Unable to png_create_info_struct.");
+	J_S_ASSERT( desc.info != NULL, "Unable to png_create_info_struct.");
 
 	GetNativeInterface(cx, JSVAL_TO_OBJECT(argv[0]), NI_READ_RESOURCE, (FunctionPointer*)&desc.read, &desc.pv);
-	RT_ASSERT( desc.read != NULL && desc.pv != NULL, "Unable to GetNativeResource." );
+	J_S_ASSERT( desc.read != NULL && desc.pv != NULL, "Unable to GetNativeResource." );
 
 	png_set_read_fn( desc.png, (voidp)&desc, _png_read );
    png_read_info(desc.png, desc.info);
 	RT_ASSERT( desc.info->height <= PNG_UINT_32_MAX/png_sizeof(png_bytep), "Image is too high to process with png_read_png()");
 
-	RT_ASSERT( png_set_interlace_handling(desc.png) == 1, "Cannot read interlaced image yet." );
+	J_S_ASSERT( png_set_interlace_handling(desc.png) == 1, "Cannot read interlaced image yet." );
 	
 // Load
-
 	png_set_strip_16(desc.png);
 	png_set_packing(desc.png);
 	if ((desc.png->bit_depth < 8) || (desc.png->color_type == PNG_COLOR_TYPE_PALETTE) || (png_get_valid(desc.png, desc.info, PNG_INFO_tRNS)))
@@ -238,7 +245,7 @@ DEFINE_FUNCTION( DecodePngImage ) {
 	int length = height * bytePerRow;
 	png_bytep data = (png_bytep)JS_malloc(cx, length);
 	J_S_ASSERT_ALLOC(data);
-	JSObject *bstringObj = NewBString(cx, (char*)data, length);
+	JSObject *bstringObj = NewBString(cx, data, length);
 	J_S_ASSERT( bstringObj, "Unable to create BString object." );
 	*rval = OBJECT_TO_JSVAL(bstringObj);
 
@@ -262,11 +269,107 @@ DEFINE_FUNCTION( DecodePngImage ) {
 
 
 
+typedef struct {
+	png_structp png;
+	png_infop info;
+	int pos;
+	void *buffer;
+} PngWriteUserStruct;
+
+
+void write_row_callback(png_structp png_ptr, png_bytep data, png_size_t size) {
+
+	PngWriteUserStruct *desc = (PngWriteUserStruct*)png_get_io_ptr(png_ptr);
+	memcpy((char*)desc->buffer + desc->pos, data, size);
+	desc->pos += size;
+}
+
+void output_flush_fn(png_structp png_ptr) {
+}
+
+DEFINE_FUNCTION_FAST( EncodePngImage ) {
+
+	J_S_ASSERT_ARG_MIN(1);
+
+	int compressionLevel;
+	if ( J_FARG_ISDEF(2) ) {
+
+		J_S_ASSERT_INT( J_FARG(2) );
+		compressionLevel = JSVAL_TO_INT( J_FARG(2) );
+		J_S_ASSERT( compressionLevel >= 0 && compressionLevel <= 9, "Invalid compression level." );
+	} else {
+		
+		compressionLevel = Z_DEFAULT_COMPRESSION;
+	}
+
+	J_S_ASSERT_OBJECT( J_FARG(1) );
+	JSObject *bstr = JSVAL_TO_OBJECT( J_FARG(1) );
+	J_S_ASSERT_CLASS( bstr, BStringJSClass(cx) );
+
+	int sWidth, sHeight, sChannels;
+	J_PROPERTY_TO_INT32( bstr, "width", sWidth );
+	J_PROPERTY_TO_INT32( bstr, "height", sHeight );
+	J_PROPERTY_TO_INT32( bstr, "channels", sChannels );
+	u_int8_t *sBuffer = (u_int8_t*)BStringData(cx, bstr);
+
+	PngWriteUserStruct desc;
+
+	desc.buffer = JS_malloc(cx, sWidth * sHeight * sChannels + 1024);
+	desc.pos = 0;
+
+	desc.png = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+	J_S_ASSERT( desc.png != NULL, "Unable to png_create_write_struct.");
+	desc.info = png_create_info_struct(desc.png);
+	J_S_ASSERT( desc.info != NULL, "Unable to png_create_info_struct.");
+
+	png_set_write_fn( desc.png, (voidp)&desc, write_row_callback, output_flush_fn );
+
+	int color_type;
+	switch (sChannels) {
+		case 1:
+			color_type = PNG_COLOR_TYPE_GRAY;
+			break;
+		case 2:
+			color_type = PNG_COLOR_TYPE_GRAY_ALPHA;
+			break;
+		case 3:
+			color_type = PNG_COLOR_TYPE_RGB;
+			break;
+		case 4:
+			color_type = PNG_COLOR_TYPE_RGB_ALPHA;
+			break;
+		default:
+			J_REPORT_ERROR("Format not supported.");
+	}
+
+	png_set_IHDR(desc.png, desc.info, sWidth, sHeight, 8, color_type, PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
+	png_set_compression_level(desc.png, compressionLevel);
+
+	png_write_info(desc.png, desc.info);
+	for ( int r = 0; r < sHeight; r++ )
+		png_write_row(desc.png, sBuffer + sWidth * r * sChannels);
+	png_write_end(desc.png, desc.info);
+
+	png_destroy_write_struct(&desc.png, &desc.info);
+
+	JS_realloc(cx, desc.buffer, desc.pos);
+
+	JSObject *encodedImage = NewBString(cx, desc.buffer, desc.pos);
+	J_S_ASSERT( encodedImage, "Unable to create BString object." );
+	*J_FRVAL = OBJECT_TO_JSVAL(encodedImage);
+
+	return JS_TRUE;
+}
+
+// (TBD) use these compilation options: PNG_SETJMP_NOT_SUPPORTED, PNG_NO_CONSOLE_IO, PNG_NO_STDIO, ...
+
 CONFIGURE_STATIC
 
 	BEGIN_STATIC_FUNCTION_SPEC
 		FUNCTION( DecodePngImage )
+		FUNCTION_FAST( EncodePngImage )
 		FUNCTION( DecodeJpegImage )
+		FUNCTION( EncodeJpegImage )
 	END_STATIC_FUNCTION_SPEC
 
 END_STATIC

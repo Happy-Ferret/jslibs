@@ -41,7 +41,7 @@ void z_Finalize(JSContext *cx, JSObject *obj) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSBool z_call(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+JSBool z_call(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) { // (TBD) add BString support 
 
 	JSObject *thisObj = JSVAL_TO_OBJECT(argv[-2]); // get 'this' object of the current object ...
 	// (TBD) check JS_InstanceOf( cx, thisObj, &NativeProc, NULL )

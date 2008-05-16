@@ -168,7 +168,7 @@ DEFINE_FUNCTION( Lock ) {
 }
 
 
-DEFINE_PROPERTY( contentGetter ) {
+DEFINE_PROPERTY( contentGetter ) { // (TBD) support BString
 
 	RT_ASSERT( (PRFileDesc *)JS_GetPrivate( cx, obj ) == NULL, "Cannot get content of an open file.");
 	jsval jsvalFileName;
@@ -226,7 +226,7 @@ DEFINE_PROPERTY( contentGetter ) {
 }
 
 
-DEFINE_PROPERTY( contentSetter ) {
+DEFINE_PROPERTY( contentSetter ) { // (TBD) support BString
 
 //	RT_ASSERT_DEFINED( *vp );
 	RT_ASSERT( (PRFileDesc *)JS_GetPrivate( cx, obj ) == NULL, "Cannot set content of an open file.");

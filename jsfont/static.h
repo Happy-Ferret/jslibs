@@ -12,27 +12,4 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-#include "stdafx.h"
-
-#include "static.h"
-#include "template.h"
-
-DEFINE_UNSAFE_MODE;
-
-EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
-
-	SET_UNSAFE_MODE( GetConfigurationValue(cx, NAME_CONFIGURATION_UNSAFE_MODE ) == JSVAL_TRUE );
-
-	INIT_STATIC();
-	INIT_CLASS( Template );
-
-	return JS_TRUE;
-}
-
-EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
-
-	return JS_FALSE;
-}
-
-EXTERN_C DLLEXPORT void ModuleFree() {
-}
+DECLARE_STATIC()

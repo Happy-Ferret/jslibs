@@ -15,24 +15,18 @@
 #include "stdafx.h"
 
 #include "static.h"
-#include "template.h"
 
-DEFINE_UNSAFE_MODE;
 
-EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
+BEGIN_STATIC
 
-	SET_UNSAFE_MODE( GetConfigurationValue(cx, NAME_CONFIGURATION_UNSAFE_MODE ) == JSVAL_TRUE );
 
-	INIT_STATIC();
-	INIT_CLASS( Template );
 
-	return JS_TRUE;
-}
+CONFIGURE_STATIC
 
-EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
+	BEGIN_STATIC_FUNCTION_SPEC
+	END_STATIC_FUNCTION_SPEC
 
-	return JS_FALSE;
-}
+	BEGIN_STATIC_PROPERTY_SPEC
+	END_STATIC_PROPERTY_SPEC
 
-EXTERN_C DLLEXPORT void ModuleFree() {
-}
+END_STATIC

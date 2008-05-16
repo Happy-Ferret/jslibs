@@ -244,7 +244,7 @@ DEFINE_FUNCTION_FAST( Clear ) {
 }
 
 
-DEFINE_PROPERTY( contentSetter ) {
+DEFINE_PROPERTY( contentSetter ) { // (TBD) support BString
 
 	ClassPrivate *pv = (ClassPrivate*)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE( pv );
@@ -277,7 +277,7 @@ DEFINE_PROPERTY( contentSetter ) {
 }
 
 
-DEFINE_PROPERTY( contentGetter ) {
+DEFINE_PROPERTY( contentGetter ) { // (TBD) support BString
 
 //	*vp = STRING_TO_JSVAL( JS_NewStringCopyZ(cx, "123456789ABC") );
 //	return JS_TRUE;

@@ -52,7 +52,7 @@ inline JSClass* TextureJSClass( JSContext *cx ) {
 
 	static JSClass *jsClass = NULL;
 	if ( jsClass == NULL )
-		jsClass = GetClassByName(cx, "Texture");
+		jsClass = GetGlobalClassByName(cx, "Texture");
 	return jsClass;
 }
 

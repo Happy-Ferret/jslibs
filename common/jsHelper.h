@@ -423,36 +423,6 @@ char *JsvalToString( JSContext *cx, jsval val ) {
 
 
 ///////////////////////////////////////////////////////////////////////////////
-// Native Interface mechanism
-
-typedef void (*FunctionPointer)(void);
-
-inline JSBool SetNativeInterface( JSContext *cx, JSObject *obj, const char *name, FunctionPointer function, void *descriptor ) {
-	
-	// Cannot be called while Finalize
-	// the following must works because spidermonkey will never call the getter or setter if it is not explicitly required by the script
-	J_CHECK_CALL( JS_DefineProperty(cx, obj, name, JSVAL_VOID, (JSPropertyOp)function, (JSPropertyOp)descriptor, JSPROP_READONLY | JSPROP_PERMANENT) );
-	return JS_TRUE;
-}
-
-inline JSBool GetNativeInterface( JSContext *cx, JSObject *obj, const char *name, FunctionPointer *function, void **descriptor ) {
-
-	// Cannot be called while Finalize
-	uintN attrs;
-	JSBool found;
-	J_CHECK_CALL( JS_GetPropertyAttrsGetterAndSetter(cx, obj, name, &attrs, &found, (JSPropertyOp*)function, (JSPropertyOp*)descriptor) ); // NULL is supported for function and descriptor
-	return JS_TRUE;
-}
-
-inline JSBool RemoveNativeInterface( JSContext *cx, JSObject *obj, const char *name ) {
-	
-	// Cannot be called while Finalize
-	J_CHECK_CALL( JS_DeleteProperty(cx, obj, name) );
-	return JS_TRUE;
-}
-
-
-///////////////////////////////////////////////////////////////////////////////
 // Helper functions
 
 inline bool IsPInfinity( JSContext *cx, jsval val ) {
@@ -536,7 +506,7 @@ inline JSBool CallFunction( JSContext *cx, JSObject *obj, jsval functionValue, j
 }
 
 // The following function wil only works if the class is defined in the global namespace.
-inline JSClass *GetClassByName(JSContext *cx, const char *className) {
+inline JSClass *GetGlobalClassByName(JSContext *cx, const char *className) {
 
 	JSObject *globalObj = JS_GetGlobalObject(cx);
 	if ( globalObj == NULL )
@@ -551,6 +521,8 @@ inline JSClass *GetClassByName(JSContext *cx, const char *className) {
 	JSFunction *fun = JS_ValueToFunction(cx, bstringConstructor);
 	if ( fun == NULL )
 		return NULL;
+	if ( !FUN_SLOW_NATIVE(fun) )
+		return NULL;
 	return fun->u.n.clasp; // (TBD) replace this by a jsapi.h call and remove dependency to jsarena.h and jsfun.h
 }
 
@@ -558,7 +530,5 @@ inline bool MaybeRealloc( int requested, int received ) {
 
 	return (100 * received / requested < 90) && (requested - received > 256);
 }
-
-
 
 #endif // _JSHELPER_H_

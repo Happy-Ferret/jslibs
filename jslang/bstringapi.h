@@ -24,7 +24,7 @@ inline JSClass* BStringJSClass( JSContext *cx ) {
 
 	static JSClass *jsClass = NULL;
 	if ( jsClass == NULL )
-		jsClass = GetClassByName(cx, "BString");
+		jsClass = GetGlobalClassByName(cx, "BString");
 	return jsClass;
 }
 
@@ -38,13 +38,15 @@ inline JSObject* NewBString( JSContext *cx, void *jsMallocatedBuffer, size_t buf
 	JSObject *obj = JS_NewObject(cx, bstringClass, NULL, NULL);
 	if ( obj == NULL )
 		return NULL;
-	JS_SetReservedSlot(cx, obj, SLOT_BSTRING_LENGTH, INT_TO_JSVAL( bufferLength ));
-	JS_SetPrivate(cx, obj, jsMallocatedBuffer);
+	if ( JS_SetReservedSlot(cx, obj, SLOT_BSTRING_LENGTH, INT_TO_JSVAL( bufferLength )) != JS_TRUE )
+		return NULL;
+	if ( JS_SetPrivate(cx, obj, jsMallocatedBuffer) != JS_TRUE )
+		return NULL;
 	return obj;
 }
 
 
-inline JSObject* EmptyBString( JSContext *cx ) {
+inline JSObject* NewEmptyBString( JSContext *cx ) {
 
 	JSClass *bstringClass = BStringJSClass(cx);
 	if ( bstringClass == NULL )
@@ -60,7 +62,7 @@ inline size_t BStringLength( JSContext *cx, JSObject *bStringObject ) {
 
 	RT_SAFE(
 		if ( JS_GET_CLASS( cx, bStringObject ) != BStringJSClass( cx ) )
-			return 0;
+			return 0; // (TBD) find a better error
 	);
 	jsval lengthVal;
 	RT_CHECK_CALL( JS_GetReservedSlot(cx, bStringObject, SLOT_BSTRING_LENGTH, &lengthVal) );
@@ -74,7 +76,7 @@ inline void* BStringData( JSContext *cx, JSObject *bStringObject ) {
 		if ( JS_GET_CLASS( cx, bStringObject ) != BStringJSClass( cx ) )
 			return NULL;
 	);
-	return (char*)JS_GetPrivate(cx, bStringObject);
+	return JS_GetPrivate(cx, bStringObject);
 }
 
 

@@ -15,7 +15,16 @@
 #include "stdafx.h"
 #include "bstringapi.h"
 
-//#include "../common/jsNativeInterface.h"
+#include "../common/jsNativeInterface.h"
+
+
+bool NativeInterfaceBuffer( void *pv, void **buf, size_t *size ) {
+
+	JSObject *obj = (JSObject*)pv;
+//	JS_GetPrivate(
+
+	return true;
+}
 
 
 inline JSBool LengthSet( JSContext *cx, JSObject *obj, int bufferLength ) {
@@ -122,7 +131,9 @@ DEFINE_CONSTRUCTOR() {
 		J_S_ASSERT_THIS_CLASS();
 
 	if ( J_ARG_ISDEF(1) )
-		J_CHECK_CALL( JsvalToBString(cx, J_OBJ, J_ARG(1)) );
+		J_CHECK_CALL( JsvalToBString(cx, obj, J_ARG(1)) );
+
+	SetNativeInterface(cx, J_OBJ, NI_BUFFER, (FunctionPointer)NativeInterfaceBuffer, obj);
 
 	return JS_TRUE;
 }
@@ -218,7 +229,7 @@ DEFINE_FUNCTION_FAST( Substr ) { // http://developer.mozilla.org/en/docs/Core_Ja
 
 	if ( start >= dataLength || start < -dataLength ) {
 
-		*J_FRVAL = OBJECT_TO_JSVAL( EmptyBString(cx) );
+		*J_FRVAL = OBJECT_TO_JSVAL( NewEmptyBString(cx) );
 		return JS_TRUE;
 	}
 
@@ -236,7 +247,7 @@ DEFINE_FUNCTION_FAST( Substr ) { // http://developer.mozilla.org/en/docs/Core_Ja
 		J_JSVAL_TO_INT32( J_FARG(2), length );
 		if ( length <= 0 ) {
 
-			*J_FRVAL = OBJECT_TO_JSVAL( EmptyBString(cx) );
+			*J_FRVAL = OBJECT_TO_JSVAL( NewEmptyBString(cx) );
 			return JS_TRUE;
 		}
 
