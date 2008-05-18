@@ -49,8 +49,7 @@ inline JSBool GetNativeInterface( JSContext *cx, JSObject *obj, const char *name
 	// Cannot be called while Finalize
 	uintN attrs;
 	JSBool found;
-	J_CHECK_CALL( JS_GetPropertyAttrsGetterAndSetter(cx, obj, name, &attrs, &found, (JSPropertyOp*)function, (JSPropertyOp*)descriptor) ); // NULL is supported for function and descriptor
-	return found;
+	return JS_GetPropertyAttrsGetterAndSetter(cx, obj, name, &attrs, &found, (JSPropertyOp*)function, (JSPropertyOp*)descriptor); // NULL is supported for function and descriptor
 }
 
 inline JSBool RemoveNativeInterface( JSContext *cx, JSObject *obj, const char *name ) {

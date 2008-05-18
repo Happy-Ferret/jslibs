@@ -63,7 +63,11 @@ DEFINE_FUNCTION_FAST( DrawChar ) {
 
 	status = FT_Load_Char( face, chr, FT_LOAD_RENDER );
 
-	size_t bufLength = face->glyph->bitmap.width * face->glyph->bitmap.rows * 1; // 1 channel
+	int width = face->glyph->bitmap.width;
+	int height = face->glyph->bitmap.rows;
+
+
+	size_t bufLength = width * height * 1; // 1 channel
 
 	void *buf = JS_malloc(cx, bufLength);
 
@@ -71,9 +75,20 @@ DEFINE_FUNCTION_FAST( DrawChar ) {
 	J_S_ASSERT( bstr != NULL, "Unable to create a BString." );
 	*J_FRVAL = OBJECT_TO_JSVAL( bstr );
 
-	JS_DefineProperty(cx, bstr, "width", INT_TO_JSVAL(face->glyph->bitmap.width), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
-	JS_DefineProperty(cx, bstr, "height", INT_TO_JSVAL(face->glyph->bitmap.rows), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
+	JS_DefineProperty(cx, bstr, "width", INT_TO_JSVAL(width), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
+	JS_DefineProperty(cx, bstr, "height", INT_TO_JSVAL(height), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
 	JS_DefineProperty(cx, bstr, "channels", INT_TO_JSVAL(1), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
+
+	memcpy( buf, face->glyph->bitmap.buffer, bufLength );
+	
+/*
+	for ( var y = 0; y < height; y++ ) {
+		
+		memcpy( (char*)buf + width * y, face->glyph->buffer
+		(char*)buf[width
+	}
+*/
+
 
 
 //	status = FT_Render_Glyph( face->glyph, FT_RENDER_MODE_NORMAL ); // FT_RENDER_MODE_NORMAL for 256 gray levels. FT_RENDER_MODE_MONO for monochrome
