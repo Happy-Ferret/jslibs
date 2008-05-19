@@ -94,7 +94,7 @@ DEFINE_FUNCTION( Bind ) {
 
 	if ( J_ARG_ISDEF(2) ) { // if we have a second argument and this argument is not undefined
 
-		char *host;
+		const char *host;
 		RT_JSVAL_TO_STRING( J_ARG(2), host );
 
 		if ( PR_StringToNetAddr(host, &addr) != PR_SUCCESS )
@@ -198,7 +198,7 @@ DEFINE_FUNCTION( Connect ) {
 	PRFileDesc *fd = (PRFileDesc*)JS_GetPrivate( cx, obj );
 	RT_ASSERT_RESOURCE( fd );
 
-	char *host;
+	const char *host;
 	RT_JSVAL_TO_STRING( J_ARG(1), host );
 
 	PRUint16 port;
@@ -267,7 +267,7 @@ DEFINE_FUNCTION( SendTo ) {
 		fd = PR_NewUDPSocket(); // allow to use SendTo as static function
 	RT_ASSERT_RESOURCE( fd );
 
-	char *host;
+	const char *host;
 	RT_JSVAL_TO_STRING( J_ARG(1), host );
 
 	PRUint16 port;
@@ -294,13 +294,13 @@ DEFINE_FUNCTION( SendTo ) {
 			return ThrowIoError(cx);
 	}
 
-	char *str;
-	int len;
+	const char *str;
+	size_t len;
 	RT_JSVAL_TO_STRING_AND_LENGTH( J_ARG(3), str, len );
 
 	PRInt32 res = PR_SendTo(fd, str, len, 0, &addr, PR_INTERVAL_NO_TIMEOUT );
 
-	PRInt32 sentAmount;
+	size_t sentAmount;
 	if ( res == -1 ) {
 
 		PRErrorCode errCode = PR_GetError();
@@ -410,8 +410,8 @@ DEFINE_FUNCTION( TransmitFile ) { // WORKS ONLY ON BLOCKING SOCKET !!!
 			flag = PR_TRANSMITFILE_CLOSE_SOCKET;
 	}
 
-	char *headers = NULL;
-	int headerLength = 0;
+	const char *headers = NULL;
+	size_t headerLength = 0;
 	if ( J_ARG_ISDEF(3) )
 		RT_JSVAL_TO_STRING_AND_LENGTH( J_ARG(3), headers, headerLength );
 
@@ -704,7 +704,7 @@ DEFINE_FUNCTION( GetHostsByName ) {
 
 	RT_ASSERT_ARGC( 1 );
 
-	char *host;
+	const char *host;
 	RT_JSVAL_TO_STRING( J_ARG(1), host );
 
 //	PRUint16 port;

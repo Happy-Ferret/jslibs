@@ -66,7 +66,7 @@ DEFINE_FUNCTION( GetParam ) {
 
 	if ( argc >= 1 ) {
 
-		char *paramName;
+		const char *paramName;
 		RT_JSVAL_TO_STRING( argv[0], paramName );
 		char *paramValue = FCGX_GetParam(paramName, _request.envp);
 		if ( paramValue != NULL ) {
@@ -118,11 +118,11 @@ DEFINE_FUNCTION( Read ) {
 
 DEFINE_FUNCTION( Write ) {
 
-	char *str;
-	int len;
+	const char *str;
+	size_t len;
 	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], str, len );
 	int result = FCGX_PutStr(str, len, _request.out);
-	if ( result >= 0 && result < len ) { // returns unwritten data
+	if ( result >= 0 && (size_t)result < len ) { // returns unwritten data
 
 		JSString *jsstr = JS_NewDependentString(cx, JSVAL_TO_STRING(argv[0]), result, len - result);
 		RT_ASSERT( jsstr != NULL, "Unable to create the NewDependentString." );
@@ -141,8 +141,8 @@ DEFINE_FUNCTION( Flush ) {
 
 DEFINE_FUNCTION( Log ) {
 
-	char *str;
-	int len;
+	const char *str;
+	size_t len;
 	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], str, len );
 	int result = FCGX_PutStr(str, len, _request.err);
 	RT_ASSERT( result != -1, "Unable to write to the log." );
@@ -160,13 +160,14 @@ DEFINE_FUNCTION( URLEncode ) {
 
 	RT_ASSERT_ARGC( 1 );
 	static unsigned char hex[] = "0123456789ABCDEF";
-	char *src;
-	int srcLen;
+	const char *src;
+	size_t srcLen;
 	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], src, srcLen );
 	char *dest = (char *)JS_malloc(cx, 3 * srcLen + 1);
 	RT_ASSERT_ALLOC( dest );
 
-	char *it, *it1;
+	const char *it;
+	char *it1;
 	for ( it = src, it1 = dest; it < src + srcLen; it++ )
 		if ( *it == ' ' )
 			*(it1++) = '+';
@@ -189,13 +190,14 @@ DEFINE_FUNCTION( URLEncode ) {
 DEFINE_FUNCTION( URLDecode ) {
 
 	RT_ASSERT_ARGC( 1 );
-	char *src;
-	int srcLen;
+	const char *src;
+	size_t srcLen;
 	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], src, srcLen );
 	char *dest = (char *)JS_malloc(cx, srcLen + 1);
 	RT_ASSERT_ALLOC( dest );
 
-	char *it, *it1;
+	const char *it;
+	char *it1;
 	for ( it = src, it1 = dest; it < src + srcLen; it++ )
 
 		if ( *it == '+' )

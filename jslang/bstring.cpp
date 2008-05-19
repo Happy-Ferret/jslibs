@@ -18,13 +18,6 @@
 #include "../common/jsNativeInterface.h"
 
 
-bool NativeInterfaceBuffer( void *pv, void **buf, size_t *size ) {
-
-	JSObject *obj = (JSObject*)pv;
-//	JS_GetPrivate(
-
-	return true;
-}
 
 
 inline JSBool LengthSet( JSContext *cx, JSObject *obj, int bufferLength ) {
@@ -39,6 +32,20 @@ inline JSBool LengthGet( JSContext *cx, JSObject *obj, int *bufferLength ) {
 	jsval bufferLengthVal;
 	J_CHECK_CALL( JS_GetReservedSlot(cx, obj, SLOT_BSTRING_LENGTH, &bufferLengthVal) );
 	*bufferLength = JSVAL_IS_INT(bufferLengthVal) ? JSVAL_TO_INT( bufferLengthVal ) : 0;
+	return JS_TRUE;
+}
+
+
+JSBool NativeInterfaceBuffer( JSContext *cx, void *pv, void **buf, int *size ) {
+
+	JSObject *obj = (JSObject*)pv;
+	if ( obj == NULL ) {
+
+		*buf = NULL;
+		return JS_TRUE;
+	}
+	*buf = JS_GetPrivate(cx, obj);
+	LengthGet(cx, obj, size);
 	return JS_TRUE;
 }
 
@@ -133,7 +140,7 @@ DEFINE_CONSTRUCTOR() {
 	if ( J_ARG_ISDEF(1) )
 		J_CHECK_CALL( JsvalToBString(cx, obj, J_ARG(1)) );
 
-	SetNativeInterface(cx, J_OBJ, NI_BUFFER, (FunctionPointer)NativeInterfaceBuffer, obj);
+	SetNativeInterface(cx, obj, NI_BUFFER_READ, (FunctionPointer)(NIBufferRead)NativeInterfaceBuffer, obj);
 
 	return JS_TRUE;
 }

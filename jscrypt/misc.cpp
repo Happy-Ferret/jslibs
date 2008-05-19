@@ -23,8 +23,8 @@ DEFINE_FUNCTION( Base64Encode ) {
 
 	RT_ASSERT_ARGC( 1 );
 	RT_ASSERT_STRING(argv[0]);
-	char *in;
-	int inLength;
+	const char *in;
+	size_t inLength;
 	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], in, inLength );
 
 	unsigned long outLength = 4 * ((inLength + 2) / 3) +1;
@@ -49,8 +49,8 @@ DEFINE_FUNCTION( Base64Decode ) {
 
 	RT_ASSERT_ARGC( 1 );
 	RT_ASSERT_STRING(argv[0]);
-	char *in;
-	int inLength;
+	const char *in;
+	size_t inLength;
 	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], in, inLength );
 
 	unsigned long outLength = 3 * (inLength-2) / 4 +1;
@@ -79,8 +79,8 @@ DEFINE_FUNCTION( HexEncode ) {
 	RT_ASSERT_ARGC( 1 );
 	RT_ASSERT_STRING(argv[0]);
 
-	char *in;
-	int inLength;
+	const char *in;
+	size_t inLength;
 	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], in, inLength );
 
 	unsigned long outLength = inLength * 2;
@@ -89,7 +89,7 @@ DEFINE_FUNCTION( HexEncode ) {
 	out[outLength] = '\0';
 
 	unsigned char c;
-	for ( int i=0; i<inLength; ++i ) {
+	for ( size_t i=0; i<inLength; ++i ) {
 
 		c = in[i];
 		out[i*2+0] = hex[ c >> 4 ];
@@ -121,8 +121,8 @@ DEFINE_FUNCTION( HexDecode ) {
 
 	RT_ASSERT_ARGC( 1 );
 	RT_ASSERT_STRING(argv[0]);
-	char *in;
-	int inLength;
+	const char *in;
+	size_t inLength;
 	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], in, inLength );
 
 	unsigned long outLength = inLength / 2;

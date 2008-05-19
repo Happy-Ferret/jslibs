@@ -15,11 +15,11 @@
 #ifndef _JSNATIVEINTERFACE_H_
 #define _JSNATIVEINTERFACE_H_
 
-#define NI_READ_RESOURCE "_NI_READ_RESOURCE"
+#define NI_READ_RESOURCE "_NIRR"
 typedef bool (*NIResourceRead)( void *pv, unsigned char *buf, unsigned int *amount );
 
 
-#define NI_READ_MATRIX44 "_NI_READ_MATRIX"
+#define NI_READ_MATRIX44 "_NIRM"
 // **pm
 //   in: a valid float[16]
 //  out: pointer provided as input OR another pointer to float
@@ -27,8 +27,8 @@ typedef int (*NIMatrix44Read)(void *pv, float **pm); // **pm allows NIMatrix44Re
 
 
 // buffer access interface
-#define NI_BUFFER "_NI_BUFFER"
-typedef bool (*NIBuffer)( void *pv, void **buf, size_t *size );
+#define NI_BUFFER_READ "_NIBR"
+typedef JSBool (*NIBufferRead)( JSContext *cx, void *pv, void * const *buf, size_t *size );
 
 
 

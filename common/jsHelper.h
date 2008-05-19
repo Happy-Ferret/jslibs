@@ -17,6 +17,8 @@
 
 #include "platform.h"
 
+#include "jsNativeInterface.h"
+
 #include <stdarg.h>
 
 #include <jsarena.h>
@@ -222,20 +224,41 @@
 ///////////////////////////////////////////////////////////////////////////////
 // conversion functions
 
-/* (TBD)
-char *JsvalToString( JSContext *cx, jsval val ) {
 
+inline JSBool JsvalToStringAndLength( JSContext *cx, jsval val, const char** buffer, size_t *size ) {
 
-//	if ( JSVAL_IS_STRING(val) ) {
-//		JSVAL_TO_STRING(val)
+	if ( JSVAL_IS_STRING(val) ) {
+		
+		JSString *str = JSVAL_TO_STRING(val);
+		*buffer = JS_GetStringBytes(str);
+		J_S_ASSERT( *buffer != NULL, "Invalid string." );
+		*size = JS_GetStringLength(str);
+		return JS_TRUE;
+	}
 
+	if ( JSVAL_IS_OBJECT(val) && !JSVAL_IS_NULL(val) ) {
 
-	JSObject *obj = JSVAL_TO_OBJECT(val);
-	if ( JS_GET_CLASS(cx, obj) == BStringJSClass(cx) )
-		return BStringData(cx, obj);
+		NIBufferRead fct;
+		void *pv;
+		J_CHECK_CALL( GetNativeInterface(cx, JSVAL_TO_OBJECT(val), NI_BUFFER_READ, (FunctionPointer*)&fct, &pv) );
+		if ( fct && pv )
+			J_CHECK_CALL( fct(cx, pv, (void**)buffer, size) );
+	}
 
+	JSString *str = JS_ValueToString(cx, val);
+	J_S_ASSERT( str != NULL, "Unable to convert to string." );
+	*buffer = JS_GetStringBytes(str);
+	J_S_ASSERT( *buffer != NULL, "Invalid string." );
+	*size = JS_GetStringLength(str);
+	return JS_TRUE;
 }
-*/
+
+inline JSBool JsvalToString( JSContext *cx, jsval val, const char** buffer ) {
+
+	size_t size;
+	return JsvalToStringAndLength( cx, val, buffer, &size );
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // conversion macros
@@ -299,21 +322,32 @@ char *JsvalToString( JSContext *cx, jsval val ) {
 	} \
 } while(0)
 
-
+/*
 #define J_JSVAL_TO_STRING( jsvalString, stringVariable ) do { \
 	JSString *__jsString = JS_ValueToString(cx, (jsvalString)); \
 	J_S_ASSERT( __jsString != NULL, J__ERRMSG_STRING_CONVERSION_FAILED ); \
 	(stringVariable) = JS_GetStringBytes(__jsString); \
 	J_S_ASSERT( (stringVariable) != NULL, J__ERRMSG_STRING_CONVERSION_FAILED ); \
 } while(0)
+*/
 
+#define J_JSVAL_TO_STRING( jsvalString, stringVariable ) do { \
+	size_t __tmp; \
+	J_CHECK_CALL( JsvalToString(cx, jsvalString, &stringVariable) ); \
+} while(0)
 
+/*
 #define J_JSVAL_TO_STRING_AND_LENGTH( jsvalString, stringVariable, lengthVariable ) do { \
 	JSString *__jsString = JS_ValueToString(cx,(jsvalString)); \
 	J_S_ASSERT( __jsString != NULL, J__ERRMSG_STRING_CONVERSION_FAILED ); \
 	(stringVariable) = JS_GetStringBytes(__jsString); \
 	J_S_ASSERT( (stringVariable) != NULL, J__ERRMSG_STRING_CONVERSION_FAILED ); \
 	(lengthVariable) = JS_GetStringLength(__jsString); \
+} while(0)
+*/
+
+#define J_JSVAL_TO_STRING_AND_LENGTH( jsvalString, stringVariable, lengthVariable ) do { \
+	J_CHECK_CALL( JsvalToStringAndLength(cx, jsvalString, &stringVariable, &lengthVariable) ); \
 } while(0)
 
 

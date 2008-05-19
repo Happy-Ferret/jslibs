@@ -91,7 +91,7 @@ DEFINE_CONSTRUCTOR() { // ( cipherName, hashName [, prngObject] [, PKCSVersion] 
 	J_S_ASSERT_THIS_CLASS();
 	RT_ASSERT_ARGC( 3 );
 
-	char *asymmetricCipherName;
+	const char *asymmetricCipherName;
 	RT_JSVAL_TO_STRING( argv[0], asymmetricCipherName );
 
 	AsymmetricCipher asymmetricCipher;
@@ -109,7 +109,7 @@ DEFINE_CONSTRUCTOR() { // ( cipherName, hashName [, prngObject] [, PKCSVersion] 
 
 	pv->cipher = asymmetricCipher;
 
-	char *hashName;
+	const char *hashName;
 	RT_JSVAL_TO_STRING( argv[1], hashName );
 	int hashIndex = find_hash(hashName);
 	RT_ASSERT_1( hashIndex != -1, "hash %s is not available.", hashName );
@@ -129,7 +129,7 @@ DEFINE_CONSTRUCTOR() { // ( cipherName, hashName [, prngObject] [, PKCSVersion] 
 
 	if ( argc >= 4 && argv[3] != JSVAL_VOID ) {
 
-		char *paddingName;
+		const char *paddingName;
 		RT_JSVAL_TO_STRING(argv[3], paddingName);
 
 		if ( strcmp(paddingName, "1_OAEP") == 0 ) {
@@ -218,8 +218,8 @@ DEFINE_FUNCTION( Encrypt ) { // ( data [, lparam] )
 
 	int hashIndex = find_hash(pv->hashDescriptor->name);
 
-	char *in;
-	int inLength;
+	const char *in;
+	size_t inLength;
 	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], in, inLength );
 
 	char out[4096];
@@ -266,8 +266,8 @@ DEFINE_FUNCTION( Decrypt ) { // ( encryptedData [, lparam] )
 	RT_ASSERT_RESOURCE( pv );
 	RT_ASSERT( pv->hasKey, "No key found." );
 
-	char *in;
-	int inLength;
+	const char *in;
+	size_t inLength;
 	RT_JSVAL_TO_STRING_AND_LENGTH(argv[0], in, inLength);
 
 	char out[4096];
@@ -331,8 +331,8 @@ DEFINE_FUNCTION( Sign ) { // ( data [, saltLength] )
 	int prngIndex;
 	RT_CHECK_CALL( SlotGetPrng(cx, obj, &prngIndex, &prngState) );
 
-	char *in;
-	int inLength;
+	const char *in;
+	size_t inLength;
 	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], in, inLength );
 
 	char out[4096];
@@ -381,12 +381,12 @@ DEFINE_FUNCTION( VerifySignature ) { // ( data, signature [, saltLength] )
 	RT_ASSERT_RESOURCE( pv );
 	RT_ASSERT( pv->hasKey, "No key found." );
 
-	char *data;
-	int dataLength;
+	const char *data;
+	size_t dataLength;
 	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], data, dataLength );
 
-	char *sign;
-	int signLength;
+	const char *sign;
+	size_t signLength;
 	RT_JSVAL_TO_STRING_AND_LENGTH( argv[1], sign, signLength );
 
 	int stat = 0; // default: failed
@@ -478,8 +478,8 @@ DEFINE_PROPERTY( keySetter ) {
 	AsymmetricCipherPrivate *pv = (AsymmetricCipherPrivate *)JS_GetPrivate( cx, obj );
 	RT_ASSERT_RESOURCE( pv );
 
-	char *key;
-	int keyLength;
+	const char *key;
+	size_t keyLength;
 	RT_JSVAL_TO_STRING_AND_LENGTH( *vp, key, keyLength );
 
 	int type;

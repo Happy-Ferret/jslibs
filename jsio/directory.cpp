@@ -51,7 +51,7 @@ DEFINE_FUNCTION( Open ) {
 	jsval jsvalDirectoryName;
 	JS_GetReservedSlot( cx, obj, SLOT_JSIO_DIR_NAME, &jsvalDirectoryName );
 	RT_ASSERT_DEFINED( jsvalDirectoryName );
-	char *directoryName;
+	const char *directoryName;
 	RT_JSVAL_TO_STRING(jsvalDirectoryName, directoryName);
 
 	PRDir *dd = PR_OpenDir( directoryName );
@@ -110,7 +110,7 @@ DEFINE_FUNCTION( Make ) {
 	jsval jsvalDirectoryName;
 	JS_GetReservedSlot( cx, obj, SLOT_JSIO_DIR_NAME, &jsvalDirectoryName );
 	RT_ASSERT_DEFINED( jsvalDirectoryName );
-	char *directoryName;
+	const char *directoryName;
 	RT_JSVAL_TO_STRING(jsvalDirectoryName, directoryName);
 	PRIntn mode = 0666;
 	if ( PR_MkDir(directoryName, mode) != PR_SUCCESS )
@@ -123,7 +123,7 @@ DEFINE_FUNCTION( Remove ) {
 	jsval jsvalDirectoryName;
 	JS_GetReservedSlot( cx, obj, SLOT_JSIO_DIR_NAME, &jsvalDirectoryName );
 	RT_ASSERT_DEFINED( jsvalDirectoryName );
-	char *directoryName;
+	const char *directoryName;
 	RT_JSVAL_TO_STRING(jsvalDirectoryName, directoryName);
 
 	if ( PR_RmDir(directoryName) != PR_SUCCESS ) { // PR_RmDir removes the directory specified by the pathname name. The directory must be empty. If the directory is not empty, PR_RmDir fails and PR_GetError returns the error code PR_DIRECTORY_NOT_EMPTY_ERROR.
@@ -145,7 +145,7 @@ DEFINE_PROPERTY( exist ) {
 	jsval jsvalDirectoryName;
 	JS_GetReservedSlot( cx, obj, SLOT_JSIO_DIR_NAME, &jsvalDirectoryName );
 	RT_ASSERT_DEFINED( jsvalDirectoryName );
-	char *directoryName;
+	const char *directoryName;
 	RT_JSVAL_TO_STRING(jsvalDirectoryName, directoryName);
 
 	PRDir *dd = PR_OpenDir( directoryName );
@@ -173,8 +173,8 @@ DEFINE_PROPERTY( name ) {
 DEFINE_FUNCTION( List ) {
 
 	RT_ASSERT_ARGC( 1 );
-	char *directoryName;
-	int directoryNameLength;
+	const char *directoryName;
+	size_t directoryNameLength;
 	RT_JSVAL_TO_STRING_AND_LENGTH( J_ARG(1), directoryName, directoryNameLength );
 	RT_ASSERT( directoryNameLength < PATH_MAX, "Path too long" );
 	PRDir *dd = PR_OpenDir( directoryName );

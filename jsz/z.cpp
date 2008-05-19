@@ -67,7 +67,7 @@ JSBool z_call(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval
 	method = JSVAL_TO_INT(jsvalMethod);
 
 // prepare input data
-	char *inputData = NULL;
+	const char *inputData = NULL;
 	size_t inputLength = 0;
 	if ( argc >= 1 ) {
 

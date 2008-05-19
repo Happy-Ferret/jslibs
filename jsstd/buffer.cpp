@@ -116,7 +116,7 @@ JSBool RefillBuffer( JSContext *cx, JSObject *obj, size_t neededAmount ) {
 }
 */
 
-JSBool FindInBuffer( JSContext *cx, JSObject *obj, char *needle, int needleLength, int *foundAt ) {
+JSBool FindInBuffer( JSContext *cx, JSObject *obj, const char *needle, int needleLength, int *foundAt ) {
 
 	// (TBD) optimise this function for needleLength == 1 (eg. '\0' in a string)
 	Queue *queue = (Queue*)JS_GetPrivate(cx, obj);
@@ -498,7 +498,7 @@ DEFINE_FUNCTION( Match ) {
 	RT_ASSERT_RESOURCE( JS_GetPrivate(cx, obj) ); // first, ensure that the object is valid
 	RT_ASSERT_STRING( J_ARG(1) );
 
-	char *str;
+	const char *str;
 	size_t len;
 	RT_JSVAL_TO_STRING_AND_LENGTH( J_ARG(1), str, len );
 
@@ -556,8 +556,8 @@ DEFINE_FUNCTION( Skip ) { // Skip( amount )
 DEFINE_FUNCTION( ReadUntil ) {
 
 	RT_ASSERT_ARGC( 1 );
-	char *boundary;
-	int boundaryLength;
+	const char *boundary;
+	size_t boundaryLength;
 	RT_JSVAL_TO_STRING_AND_LENGTH( J_ARG(1), boundary, boundaryLength );
 	bool skip;
 	if ( J_ARG_ISDEF(2) )
@@ -582,8 +582,8 @@ DEFINE_FUNCTION( ReadUntil ) {
 DEFINE_FUNCTION( IndexOf ) {
 
 	RT_ASSERT_ARGC( 1 );
-	char *boundary;
-	int boundaryLength;
+	const char *boundary;
+	size_t boundaryLength;
 	RT_JSVAL_TO_STRING_AND_LENGTH( J_ARG(1), boundary, boundaryLength );
 	int found;
 	RT_CHECK_CALL( FindInBuffer(cx, obj, boundary, boundaryLength, &found) );

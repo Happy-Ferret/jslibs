@@ -36,7 +36,7 @@ DEFINE_CONSTRUCTOR() {
 	J_S_ASSERT_CONSTRUCTING();
 	J_S_ASSERT_THIS_CLASS();
 
-	char *fileName;
+	const char *fileName;
 	if ( J_ARG_ISDEF(1) ) {
 
 		RT_JSVAL_TO_STRING( argv[0], fileName );
@@ -148,7 +148,7 @@ DEFINE_FUNCTION( Query ) {
 	sqlite3 *db = (sqlite3*)JS_GetPrivate( cx, obj );
 	RT_ASSERT_RESOURCE( db );
 
-	char *sqlQuery;
+	const char *sqlQuery;
 	RT_JSVAL_TO_STRING( argv[0], sqlQuery );
 
 	const char *szTail;
@@ -190,7 +190,7 @@ DEFINE_FUNCTION( Exec ) {
 	sqlite3 *db = (sqlite3*)JS_GetPrivate( cx, obj );
 	RT_ASSERT_RESOURCE( db );
 
-	char *sqlQuery;
+	const char *sqlQuery;
 	RT_JSVAL_TO_STRING( argv[0], sqlQuery );
 
 	const char *szTail;
@@ -380,7 +380,7 @@ DEFINE_SET_PROPERTY() {
 		sqlite3 *db = (sqlite3 *)JS_GetPrivate( cx, obj );
 		RT_ASSERT_RESOURCE( db );
 
-		char *fName;
+		const char *fName;
 		RT_JSVAL_TO_STRING( id, fName );
 
 		SqliteFunctionCallUserData *data = (SqliteFunctionCallUserData*)malloc(sizeof(SqliteFunctionCallUserData)); // (TBD) store this allocated pointer in a stack to be freed later

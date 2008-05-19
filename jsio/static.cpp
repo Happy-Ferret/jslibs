@@ -273,7 +273,7 @@ DEFINE_FUNCTION( Sleep ) {
 DEFINE_FUNCTION( GetEnv ) {
 
 	RT_ASSERT_ARGC(1);
-	char *name;
+	const char *name;
 	RT_JSVAL_TO_STRING( J_ARG(1), name );
 	char* value = PR_GetEnv(name); // If the environment variable is not defined, the function returns NULL.
 	if ( value != NULL ) { // this will cause an 'undefined' return value
@@ -405,8 +405,8 @@ DEFINE_FUNCTION_FAST( WaitSemaphore ) {
 
 	RT_ASSERT_ARGC( 1 );
 
-	char *name;
-	int nameLength;
+	const char *name;
+	size_t nameLength;
 	RT_JSVAL_TO_STRING_AND_LENGTH( J_FARG(1), name, nameLength );
 
 	PRUintn mode = PR_IRUSR | PR_IWUSR; // read write permission for owner.
@@ -449,8 +449,8 @@ DEFINE_FUNCTION_FAST( PostSemaphore ) {
 
 	RT_ASSERT_ARGC( 1 );
 
-	char *name;
-	int nameLength;
+	const char *name;
+	size_t nameLength;
 	RT_JSVAL_TO_STRING_AND_LENGTH( J_FARG(1), name, nameLength );
 
 	PRSem *semaphore = PR_OpenSemaphore(name, 0, 0, 0);
@@ -476,17 +476,17 @@ DEFINE_FUNCTION_FAST( CreateProcess_ ) {
 
 	RT_ASSERT_ARGC( 1 );
 
-	char *path;
+	const char *path;
 	RT_JSVAL_TO_STRING( J_FARG(1), path );
 
-	char **processArgv;
+	const char * *processArgv;
 	int processArgc;
 	if ( J_FARG_ISDEF(2) && JSVAL_IS_OBJECT(J_FARG(2)) && JS_IsArrayObject( cx, JSVAL_TO_OBJECT(J_FARG(2)) ) == JS_TRUE ) {
 
 		JSIdArray *idArray = JS_Enumerate( cx, JSVAL_TO_OBJECT(J_FARG(2)) ); // make a kind of auto-ptr for this
 		processArgc = idArray->length +1; // +1 is argv[0]
 
-		processArgv = (char**)malloc(sizeof(char**) * (processArgc +1)); // +1 is NULL
+		processArgv = (const char**)malloc(sizeof(const char**) * (processArgc +1)); // +1 is NULL
 		RT_ASSERT_ALLOC( processArgv );
 
 		for ( int i=0; i<processArgc -1; i++ ) { // -1 because argv[0]
@@ -495,7 +495,7 @@ DEFINE_FUNCTION_FAST( CreateProcess_ ) {
 			RT_CHECK_CALL( JS_IdToValue(cx, idArray->vector[i], &propVal ));
 			RT_CHECK_CALL( JS_GetElement(cx, JSVAL_TO_OBJECT(J_FARG(2)), JSVAL_TO_INT(propVal), &propVal )); // (TBD) optimize
 
-			char *tmp;
+			const char *tmp;
 			RT_JSVAL_TO_STRING( propVal, tmp );
 			processArgv[i+1] = tmp;
 		}
@@ -503,7 +503,7 @@ DEFINE_FUNCTION_FAST( CreateProcess_ ) {
 	} else {
 
 		processArgc = 0 +1; // +1 is argv[0]
-		processArgv = (char**)malloc(sizeof(char**) * (processArgc +1)); // +1 is NULL
+		processArgv = (const char**)malloc(sizeof(const char**) * (processArgc +1)); // +1 is NULL
 	}
 
 	processArgv[0] = path;
@@ -532,7 +532,7 @@ DEFINE_FUNCTION_FAST( CreateProcess_ ) {
 	PR_ProcessAttrSetStdioRedirect(psattr, PR_StandardOutput, stdout_child);
 
 	PRProcess *process;
-	process = PR_CreateProcess(path, processArgv, NULL, psattr);
+	process = PR_CreateProcess(path, (char * const *)processArgv, NULL, psattr); // (TBD) avoid cast to (char * const *)
 
 	PR_DestroyProcessAttr(psattr);
 	free(processArgv);

@@ -40,7 +40,7 @@ DEFINE_CONSTRUCTOR() {
 	J_S_ASSERT_THIS_CLASS();
 	RT_ASSERT_ARGC( 1 );
 
-	char *hashName;
+	const char *hashName;
 	RT_JSVAL_TO_STRING( argv[0], hashName );
 
 	int hashIndex = find_hash(hashName);
@@ -92,8 +92,8 @@ DEFINE_FUNCTION( Process ) {
 	RT_ASSERT_RESOURCE( privateData );
 
 	int err;
-	char *in;
-	int inLength;
+	const char *in;
+	size_t inLength;
 	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], in, inLength );
 
 	err = privateData->descriptor->process(&privateData->state, (const unsigned char *)in, inLength); // Process a block of memory though the hash
@@ -139,8 +139,8 @@ DEFINE_FUNCTION( Call ) {
 
 	int err;
 	
-	char *in;
-	int inLength;
+	const char *in;
+	size_t inLength;
 	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], in, inLength );
 	unsigned long outLength = privateData->descriptor->hashsize;
 	char *out = (char *)JS_malloc( cx, outLength );
@@ -210,7 +210,7 @@ DEFINE_PROPERTY( inputLength ) {
 DEFINE_FUNCTION( CipherHash ) {
 
 	RT_ASSERT_ARGC(1);
-	char *cipherName;
+	const char *cipherName;
 	RT_JSVAL_TO_STRING( argv[0], cipherName );
 	int cipherIndex = find_cipher(cipherName);
 	RT_ASSERT_1( cipherIndex >= 0, "Cipher not found: %s", cipherName );

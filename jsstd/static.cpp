@@ -38,10 +38,10 @@ DEFINE_FUNCTION( Expand ) {
 
 	RT_ASSERT_ARGC( 1 );
 
-	char *srcBegin;
-	int srcLen;
+	const char *srcBegin;
+	size_t srcLen;
 	RT_JSVAL_TO_STRING_AND_LENGTH( J_ARG(1), srcBegin, srcLen );
-	char *srcEnd = srcBegin + srcLen;
+	const char *srcEnd = srcBegin + srcLen;
 
 	JSObject *table;
 	if ( J_ARG_ISDEF(2) ) {
@@ -56,7 +56,7 @@ DEFINE_FUNCTION( Expand ) {
 	typedef struct {
 
 		const char *data;
-		long int length;
+		size_t length;
 	} Chunk;
 
 	int totalLength = 0;
@@ -64,7 +64,7 @@ DEFINE_FUNCTION( Expand ) {
 	void *stack;
 	StackInit( &stack );
 	Chunk *chunk;
-	char *tok;
+	const char *tok;
 	jsval val;
 
 	while (true) {
@@ -97,9 +97,9 @@ DEFINE_FUNCTION( Expand ) {
 			break;
 
 		char tmp = *tok;
-		*tok = 0;
+		*((char*)tok) = 0;
 		JS_GetProperty(cx, table, srcBegin, &val);
-		*tok = tmp;
+		*((char*)tok) = tmp;
 
 		chunk = (Chunk*)malloc(sizeof(Chunk));
 		RT_JSVAL_TO_STRING_AND_LENGTH( val, chunk->data, chunk->length );
@@ -285,7 +285,7 @@ DEFINE_FUNCTION( ASSERT ) {
 
 	if ( !assert ) {
 
-		char *message;
+		const char *message;
 		if ( J_ARG_ISDEF(2) )
 			RT_JSVAL_TO_STRING( J_ARG(2), message );
 		else
@@ -539,8 +539,8 @@ DEFINE_FUNCTION_FAST( Exec ) {
 DEFINE_FUNCTION( IsStatementValid ) {
 
 	RT_ASSERT_ARGC( 1 );
-	char *buffer;
-	int length;
+	const char *buffer;
+	size_t length;
 	RT_JSVAL_TO_STRING_AND_LENGTH( J_ARG(1), buffer, length );
 	*rval = JS_BufferIsCompilableUnit(cx, obj, buffer, length) == JS_TRUE ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;
@@ -561,8 +561,8 @@ DEFINE_FUNCTION( StrSet ) {
 
 	RT_ASSERT_ARGC( 2 );
 
-	char *chr;
-	int charLen;
+	const char *chr;
+	size_t charLen;
 	RT_JSVAL_TO_STRING_AND_LENGTH( J_ARG(1), chr, charLen );
 	
 	unsigned int count;

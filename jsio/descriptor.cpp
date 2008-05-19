@@ -270,11 +270,11 @@ DEFINE_FUNCTION( Write ) {
 	RT_ASSERT_ARGC( 1 );
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
 	RT_ASSERT_RESOURCE( fd );
-	char *str;
-	int len;
+	const char *str;
+	size_t len;
 	RT_JSVAL_TO_STRING_AND_LENGTH( J_ARG(1), str, len );
 
-	PRInt32 sentAmount;
+	size_t sentAmount;
 
 	PRInt32 res = PR_Write( fd, str, len );
 	if ( res == -1 ) {

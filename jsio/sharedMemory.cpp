@@ -101,7 +101,7 @@ DEFINE_CONSTRUCTOR() {
 	RT_ASSERT_CONSTRUCTING( _class );
 	RT_ASSERT_ARGC( 2 );
 
-	char *name;
+	const char *name;
 	RT_JSVAL_TO_STRING( J_ARG(1), name );
 
 	PRSize size;
@@ -172,8 +172,8 @@ DEFINE_FUNCTION_FAST( Write ) {
 	ClassPrivate *pv = (ClassPrivate*)JS_GetPrivate(cx, J_FOBJ);
 	RT_ASSERT_RESOURCE( pv );
 
-	char *data;
-	unsigned int dataLength;
+	const char *data;
+	size_t dataLength;
 	RT_JSVAL_TO_STRING_AND_LENGTH( J_FARG(1), data, dataLength );
 
 	PRSize offset = 0;
@@ -258,8 +258,8 @@ DEFINE_PROPERTY( contentSetter ) { // (TBD) support BString
 		RT_CHECK_CALL( Unlock(cx, pv) );
 	} else {
 
-		char *data;
-		unsigned int dataLength;
+		const char *data;
+		size_t dataLength;
 		RT_JSVAL_TO_STRING_AND_LENGTH( *vp, data, dataLength );
 
 		RT_ASSERT( sizeof(MemHeader) + dataLength <= pv->size, "SharedMemory too small to hold the given data." );

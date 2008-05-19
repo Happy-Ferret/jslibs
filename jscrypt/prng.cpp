@@ -64,7 +64,7 @@ DEFINE_CONSTRUCTOR() {
 
 	RT_ASSERT_ARGC( 1 );
 
-	char *prngName;
+	const char *prngName;
 	RT_JSVAL_TO_STRING( argv[0], prngName );
 
 	int prngIndex = find_prng(prngName);
@@ -96,8 +96,8 @@ DEFINE_FUNCTION( AddEntropy ) {
 	PrngPrivate *privateData = (PrngPrivate *)JS_GetPrivate( cx, obj );
 	J_S_ASSERT_RESOURCE( privateData );
 
-	char *entropy;
-	int entropyLength;
+	const char *entropy;
+	size_t entropyLength;
 	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], entropy, entropyLength );
 
 	int err;
@@ -150,8 +150,8 @@ DEFINE_PROPERTY( stateSetter ) {
 	PrngPrivate *privateData = (PrngPrivate *)JS_GetPrivate( cx, obj );
 	J_S_ASSERT_RESOURCE( privateData );
 
-	char *stateData;
-	int stateLength;
+	const char *stateData;
+	size_t stateLength;
 	RT_JSVAL_TO_STRING_AND_LENGTH( *vp, stateData, stateLength );
 	RT_ASSERT( stateLength == privateData->prng.export_size, "Invalid import size." );
 	int err = privateData->prng.pimport((unsigned char *)stateData, stateLength, &privateData->state);
