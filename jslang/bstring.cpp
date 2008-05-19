@@ -38,12 +38,8 @@ inline JSBool LengthGet( JSContext *cx, JSObject *obj, int *bufferLength ) {
 
 JSBool NativeInterfaceBuffer( JSContext *cx, void *pv, void **buf, int *size ) {
 
+	J_S_ASSERT_RESOURCE( pv );
 	JSObject *obj = (JSObject*)pv;
-	if ( obj == NULL ) {
-
-		*buf = NULL;
-		return JS_TRUE;
-	}
 	*buf = JS_GetPrivate(cx, obj);
 	LengthGet(cx, obj, size);
 	return JS_TRUE;
@@ -54,15 +50,7 @@ BEGIN_CLASS( BString )
 
 inline bool JsvalIsBString( JSContext *cx, jsval val ) {
 
-	return JSVAL_IS_OBJECT(val) && !JSVAL_IS_NULL(val) && JS_GET_CLASS(cx, JSVAL_TO_OBJECT(val)) == &classBString; // == BStringJSClass(cx);
-}
-
-
-DEFINE_FINALIZE() {
-
-	void *pv = JS_GetPrivate(cx, obj);
-	if (pv != NULL)
-		JS_free(cx, pv);
+	return JSVAL_IS_OBJECT(val) && !JSVAL_IS_NULL(val) && JS_GET_CLASS(cx, JSVAL_TO_OBJECT(val)) == _class;
 }
 
 
@@ -129,6 +117,14 @@ JSBool BStringToJsval( JSContext *cx, JSObject *obj, jsval *val ) {
 
 }
 
+
+
+DEFINE_FINALIZE() {
+
+	void *pv = JS_GetPrivate(cx, obj);
+	if (pv != NULL)
+		JS_free(cx, pv);
+}
 
 DEFINE_CONSTRUCTOR() {
 

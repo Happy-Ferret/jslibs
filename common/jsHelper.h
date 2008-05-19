@@ -241,8 +241,11 @@ inline JSBool JsvalToStringAndLength( JSContext *cx, jsval val, const char** buf
 		NIBufferRead fct;
 		void *pv;
 		J_CHECK_CALL( GetNativeInterface(cx, JSVAL_TO_OBJECT(val), NI_BUFFER_READ, (FunctionPointer*)&fct, &pv) );
-		if ( fct && pv )
+		if ( fct && pv ) {
+
 			J_CHECK_CALL( fct(cx, pv, (void**)buffer, size) );
+			return JS_TRUE;
+		}
 	}
 
 	JSString *str = JS_ValueToString(cx, val);

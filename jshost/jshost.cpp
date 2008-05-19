@@ -383,21 +383,29 @@ void Interrupt(int CtrlType) {
 
 static JSBool stderrFunction(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
-	JSString *str;
-	str = JS_ValueToString(cx, argv[0]);
-	RT_ASSERT( str != NULL, "Unable to convert argument to string.");
-	argv[0] = STRING_TO_JSVAL(str); // (TBD) needed ? YES
-	consoleStdErr( cx, JS_GetStringBytes(str), JS_GetStringLength(str) );
+//	JSString *str;
+//	str = JS_ValueToString(cx, argv[0]);
+//	RT_ASSERT( str != NULL, "Unable to convert argument to string.");
+//	argv[0] = STRING_TO_JSVAL(str); // (TBD) needed ? YES
+//	consoleStdErr( cx, JS_GetStringBytes(str), JS_GetStringLength(str) );
+	const char *buffer;
+	size_t length;
+	J_CHECK_CALL( JsvalToStringAndLength(cx, argv[0], &buffer, &length) );
+	consoleStdErr(cx, buffer, length);
 	return JS_TRUE;
 }
 
 static JSBool stdoutFunction(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
-	JSString *str;
-	str = JS_ValueToString(cx, argv[0]);
-	RT_ASSERT( str != NULL, "Unable to convert argument to string.");
-	argv[0] = STRING_TO_JSVAL(str); // (TBD) needed ? YES
-	consoleStdOut( cx, JS_GetStringBytes(str), JS_GetStringLength(str) );
+//	JSString *str;
+//	str = JS_ValueToString(cx, argv[0]);
+//	RT_ASSERT( str != NULL, "Unable to convert argument to string.");
+//	argv[0] = STRING_TO_JSVAL(str); // (TBD) needed ? YES
+	//consoleStdOut( cx, JS_GetStringBytes(str), JS_GetStringLength(str) );
+	const char *buffer;
+	size_t length;
+	J_CHECK_CALL( JsvalToStringAndLength(cx, argv[0], &buffer, &length) );
+	consoleStdOut(cx, buffer, length);
 	return JS_TRUE;
 }
 
