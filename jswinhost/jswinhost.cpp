@@ -15,7 +15,7 @@
 static JSBool LoadModule(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
 	RT_ASSERT_ARGC(1);
-	char *fileName;
+	const char *fileName;
 	RT_JSVAL_TO_STRING( argv[0], fileName );
 	char libFileName[PATH_MAX];
 	errno_t err = strcpy_s(libFileName, sizeof(libFileName), fileName);

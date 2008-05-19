@@ -49,8 +49,8 @@ DEFINE_FUNCTION( Write ) {
 	RT_ASSERT_ARGC( 1 );
 	HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
 	RT_ASSERT( hStdout != NULL, "Unable to create the stdout." );
-	char *str;
-	int len;
+	const char *str;
+	size_t len;
 	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], str, len );
 	DWORD written;
 	WriteConsole(hStdout, str, len, &written, NULL);
@@ -75,7 +75,7 @@ DEFINE_FUNCTION( Read ) {
 
 DEFINE_PROPERTY( titleSetter ) {
 
-	char *str;
+	const char *str;
 	RT_JSVAL_TO_STRING( *vp, str );
 	SetConsoleTitle(str);
 	return JS_TRUE;

@@ -27,7 +27,7 @@ BEGIN_STATIC
 DEFINE_FUNCTION( _ExtractIcon ) {
 	
 	RT_ASSERT_ARGC(1);
-	char *fileName;
+	const char *fileName;
 	UINT iconIndex = 0;
 	RT_JSVAL_TO_STRING( argv[0], fileName );
 	if ( argc >= 2 )
@@ -51,10 +51,10 @@ DEFINE_FUNCTION( _MessageBox ) {
 	
 	RT_ASSERT_ARGC(1);
 
-	char *text;
+	const char *text;
 	RT_JSVAL_TO_STRING( argv[0], text );
 
-	char *caption = NULL;
+	const char *caption = NULL;
 	if ( argc >= 2 && argv[1] != JSVAL_VOID )
 		RT_JSVAL_TO_STRING( argv[1], caption );
 	
@@ -73,7 +73,7 @@ DEFINE_FUNCTION( _CreateProcess ) {
 
 	RT_ASSERT_ARGC(1);
 
-	char *applicationName, *commandLine = NULL, *environment = NULL, *currentDirectory = NULL;
+	const char *applicationName, *commandLine = NULL, *environment = NULL, *currentDirectory = NULL;
 
 	RT_JSVAL_TO_STRING( argv[0], applicationName );
 
@@ -88,7 +88,7 @@ DEFINE_FUNCTION( _CreateProcess ) {
 
 	STARTUPINFO si = { sizeof(STARTUPINFO) };
 	PROCESS_INFORMATION pi;
-	BOOL st = CreateProcess( applicationName, commandLine, NULL, NULL, FALSE, 0, environment, currentDirectory, &si, &pi ); // doc: http://msdn2.microsoft.com/en-us/library/ms682425.aspx
+	BOOL st = CreateProcess( applicationName, (LPSTR)commandLine, NULL, NULL, FALSE, 0, (LPVOID)environment, currentDirectory, &si, &pi ); // doc: http://msdn2.microsoft.com/en-us/library/ms682425.aspx
 	if ( st = FALSE )
 		return WinThrowError(cx, GetLastError());
 	return JS_TRUE;
@@ -129,8 +129,8 @@ DEFINE_PROPERTY( clipboardSetter ) {
 
 		res = OpenClipboard(NULL);
 		RT_ASSERT( res != 0, "Unable to open the clipboard." );
-		char *str;
-		int len;
+		const char *str;
+		size_t len;
 		RT_JSVAL_TO_STRING_AND_LENGTH( *vp, str, len );
 		HGLOBAL hglbCopy = GlobalAlloc(GMEM_MOVEABLE, len + 1);
 		RT_ASSERT_ALLOC( hglbCopy );
@@ -155,8 +155,8 @@ DEFINE_FUNCTION( FileOpenDialog ) {
 
 	if ( argc >= 1 && argv[0] != JSVAL_VOID ) {
 		
-		char *str;
-		int len;
+		const char *str;
+		size_t len;
 		RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], str, len );
 		strcpy( filter, str );
 		for ( char *tmp = filter; tmp = strchr( tmp, '|' ); tmp++ )
@@ -167,7 +167,7 @@ DEFINE_FUNCTION( FileOpenDialog ) {
 
 	if ( argc >= 2 && argv[1] != JSVAL_VOID ) {
 
-		char *tmp;
+		const char *tmp;
 		RT_JSVAL_TO_STRING( argv[1], tmp );
 		strcpy( fileName, tmp );
 	} else {
@@ -192,7 +192,7 @@ DEFINE_FUNCTION( FileOpenDialog ) {
 DEFINE_FUNCTION( _ExpandEnvironmentStrings ) {
 
 	RT_ASSERT_ARGC(1);
-	char *src;
+	const char *src;
 	RT_JSVAL_TO_STRING( argv[0], src );
 	TCHAR dst[MAX_PATH];
 	DWORD res = ExpandEnvironmentStrings( src, dst, sizeof(dst) );

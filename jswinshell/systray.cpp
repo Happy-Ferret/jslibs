@@ -665,8 +665,8 @@ DEFINE_PROPERTY( textSetter ) {
 
 	PNOTIFYICONDATA nid = (PNOTIFYICONDATA)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(nid);
-	char *tipText;
-	int tipLen;
+	const char *tipText;
+	size_t tipLen;
 	RT_JSVAL_TO_STRING_AND_LENGTH( *vp, tipText, tipLen );
 	strncpy( nid->szTip, tipText, MIN(sizeof(nid->szTip)-1,tipLen) );
 	nid->uFlags |= NIF_TIP;

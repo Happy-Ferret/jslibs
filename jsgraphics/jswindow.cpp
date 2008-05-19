@@ -653,7 +653,7 @@ DEFINE_PROPERTY( title ) {
 
 	HWND hWnd = (HWND)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE(hWnd);
-	char *title;
+	const char *title;
 	RT_JSVAL_TO_STRING( *vp, title );
 	SetWindowText(hWnd, title);
 	return JS_TRUE;

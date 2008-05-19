@@ -332,7 +332,6 @@ inline JSBool JsvalToString( JSContext *cx, jsval val, const char** buffer ) {
 */
 
 #define J_JSVAL_TO_STRING( jsvalString, stringVariable ) do { \
-	size_t __tmp; \
 	J_CHECK_CALL( JsvalToString(cx, jsvalString, &stringVariable) ); \
 } while(0)
 
