@@ -76,8 +76,9 @@ inline JSBool JsvalToBString( JSContext *cx, JSObject *obj, jsval val ) {
 		BStringGetDataAndLength(cx, JSVAL_TO_OBJECT( val ), &src, &srcLen);
 		if ( srcLen > 0 ) {
 
-			dst = JS_malloc(cx, srcLen);
+			dst = JS_malloc(cx, srcLen +1);
 			J_S_ASSERT_ALLOC( dst );
+			((char*)dst)[srcLen] = '\0';
 			memcpy(dst, src, srcLen);
 		}
 	} else {
@@ -86,8 +87,10 @@ inline JSBool JsvalToBString( JSContext *cx, JSObject *obj, jsval val ) {
 		srcLen = JS_GetStringLength(jsstr);
 		if ( srcLen > 0 ) {
 
-			dst = JS_malloc(cx, srcLen);
+			dst = JS_malloc(cx, srcLen +1);
 			J_S_ASSERT_ALLOC( dst );
+			((char*)dst)[srcLen] = '\0';
+
 			jschar *chars = JS_GetStringChars(jsstr);
 			for ( size_t i = 0; i < srcLen; i++ )
 				((char*)dst)[i] = (uint8)chars[i];
@@ -182,8 +185,9 @@ DEFINE_FUNCTION_FAST( Add ) {
 		BStringGetDataAndLength(cx, JSVAL_TO_OBJECT( J_FARG(1) ), &src, &srcLen);
 		if ( srcLen > 0 ) {
 
-			dst = JS_malloc(cx, srcLen + length);
+			dst = JS_malloc(cx, srcLen + length +1);
 			J_S_ASSERT_ALLOC( dst );
+			((char*)dst)[srcLen + length] = '\0';
 			memcpy(((int8_t*)dst) + length, src, srcLen);
 		} else {
 
@@ -197,8 +201,9 @@ DEFINE_FUNCTION_FAST( Add ) {
 		srcLen = JS_GetStringLength(jsstr);
 		if ( srcLen > 0 ) {
 
-			dst = JS_malloc(cx, srcLen + length);
+			dst = JS_malloc(cx, srcLen + length +1);
 			J_S_ASSERT_ALLOC( dst );
+			((char*)dst)[srcLen + length] = '\0';
 			jschar *chars = JS_GetStringChars(jsstr);
 			for ( size_t i = 0; i < srcLen; i++ )
 				((char*)dst)[i + length] = (uint8)chars[i];
@@ -266,8 +271,10 @@ DEFINE_FUNCTION_FAST( Substr ) { // http://developer.mozilla.org/en/docs/Core_Ja
 
 	// now 0 <= length < dataLength - start
 
-	void *buffer = JS_malloc(cx, length);
+	void *buffer = JS_malloc(cx, length +1);
 	J_S_ASSERT_ALLOC( buffer );
+	((char*)buffer)[length] = '\0';
+
 	memcpy(buffer, ((int8_t*)pv) + start, length);
 
 	*J_FRVAL = OBJECT_TO_JSVAL( NewBString(cx, buffer, length) );
@@ -309,7 +316,7 @@ DEFINE_PROPERTY( length ) {
 	return JS_TRUE;
 }
 
-
+/*
 DEFINE_NEW_RESOLVE() { // support of data[n]
 
 	if (!JSVAL_IS_INT(id) || (flags & JSRESOLVE_ASSIGNING))
@@ -333,6 +340,34 @@ DEFINE_NEW_RESOLVE() { // support of data[n]
 	JS_DefineProperty(cx, obj, (char*)slot, STRING_TO_JSVAL(str1), NULL, NULL, JSPROP_INDEX );
 
 	*objp = obj;
+
+	return JS_TRUE;
+}
+*/
+
+
+DEFINE_GET_PROPERTY() {
+
+	if ( !JSVAL_IS_INT(id) )
+		return JS_TRUE;
+	
+	jsint slot = JSVAL_TO_INT( id );
+
+	void *pv = JS_GetPrivate(cx, obj);
+	if ( pv == NULL )
+		return JS_TRUE;
+
+	int length;
+	J_CHECK_CALL( LengthGet(cx, obj, &length) );
+
+	if ( slot < 0 || slot >= length )
+		return JS_TRUE;
+
+	jschar chr = ((char*)pv)[slot];
+	JSString *str1 = JS_NewUCStringCopyN(cx, &chr, 1);
+	J_S_ASSERT_ALLOC( str1 );
+
+	*vp = STRING_TO_JSVAL(str1);
 
 	return JS_TRUE;
 }
@@ -371,7 +406,8 @@ CONFIGURE_CLASS
 
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE
-	HAS_NEW_RESOLVE
+//	HAS_NEW_RESOLVE
+	HAS_GET_PROPERTY
 	HAS_SET_PROPERTY
 
 	BEGIN_FUNCTION_SPEC
