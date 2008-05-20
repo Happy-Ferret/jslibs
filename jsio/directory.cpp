@@ -112,7 +112,7 @@ DEFINE_FUNCTION( Make ) {
 	RT_ASSERT_DEFINED( jsvalDirectoryName );
 	const char *directoryName;
 	RT_JSVAL_TO_STRING(jsvalDirectoryName, directoryName);
-	PRIntn mode = 0666;
+	PRIntn mode = 0766; // the permissions need to be set to 766 (linux uses the eXecute bit on directory as permission to allow access to a directory).
 	if ( PR_MkDir(directoryName, mode) != PR_SUCCESS )
 		return ThrowIoError(cx);
 	return JS_TRUE;
