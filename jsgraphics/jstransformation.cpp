@@ -24,7 +24,7 @@
 #include <math.h>
 
 
-static int ReadMatrix( JSContext *cx, JSObject *obj, float **m) { // Doc: __declspec(noinline) tells the compiler to never inline a particular function.
+static int ReadMatrix(JSContext *cx, JSObject *obj, float **m) { // Doc: __declspec(noinline) tells the compiler to never inline a particular function.
 	
 	Matrix44 *objMatrix = (Matrix44*)JS_GetPrivate(cx, obj);
 	*m = objMatrix->raw; // returns its private pointer. Caller SHOULD not modify it
@@ -48,11 +48,10 @@ DEFINE_FINALIZE() {
 DEFINE_CONSTRUCTOR() {
 
 	J_S_ASSERT_CONSTRUCTING();
-
 	Matrix44 *m = Matrix44Alloc();
 	RT_ASSERT_ALLOC(m);
 //	Matrix44Identity(m);
-	JS_SetPrivate(cx, obj, m);
+	JS_SetPrivate(cx, J_OBJ, m);
 	J_CHECK_CALL( SetMatrix44ReadInterface(cx, obj, ReadMatrix) );
 	return JS_TRUE;
 }
@@ -91,7 +90,6 @@ DEFINE_FUNCTION_FAST( Load ) {
 	J_S_ASSERT_ARG_MIN(1);
 	Matrix44 *tm = (Matrix44*)JS_GetPrivate(cx, J_FOBJ);
 	RT_ASSERT_RESOURCE(tm);
-
 	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 
 	/* GetMatrixHelper already to the following

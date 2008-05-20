@@ -1124,17 +1124,14 @@ DEFINE_FUNCTION_FAST( DefineTextureImage ) {
 //	RT_ASSERT_INT(J_FARG(2)); // may be undefined
 	RT_ASSERT_OBJECT(J_FARG(3));
 
-	JSObject *tObj = JSVAL_TO_OBJECT(J_FARG(3));
-//	const char * className = JS_GET_CLASS(cx, tObj)->name;
-
 	GLsizei width, height;
 	GLenum format, type;
 	int channels;
 	const GLvoid *data;
 
+	JSObject *tObj = JSVAL_TO_OBJECT(J_FARG(3));
 
-//	if ( strcmp(className, "Texture" ) == 0 ) {
-	if ( TextureJSClass(cx) == JS_GET_CLASS(cx, tObj) ) {
+	if ( JS_GET_CLASS(cx, tObj) == TextureJSClass(cx) ) {
 
 		Texture *tex = (Texture *)JS_GetPrivate(cx, tObj);
 		RT_ASSERT_RESOURCE(tex);
@@ -1149,8 +1146,9 @@ DEFINE_FUNCTION_FAST( DefineTextureImage ) {
 		J_PROPERTY_TO_INT32( tObj, "width", width );
 		J_PROPERTY_TO_INT32( tObj, "height", height );
 		J_PROPERTY_TO_INT32( tObj, "channels", channels );
-		J_CHECK_CALL( JsvalToString(cx, OBJECT_TO_JSVAL(tObj), (const char**)&data ) );
-
+		size_t bufferLength;
+		J_CHECK_CALL( JsvalToStringAndLength(cx, OBJECT_TO_JSVAL(tObj), (const char**)&data, &bufferLength ) );
+		J_S_ASSERT( bufferLength == width * height * channels * 1, "Invalid image format." );
 		RT_ASSERT_RESOURCE(data);
 		type = GL_UNSIGNED_BYTE;
 	}

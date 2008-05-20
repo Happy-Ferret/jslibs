@@ -316,7 +316,9 @@ DEFINE_FUNCTION_FAST( EncodePngImage ) {
 	J_PROPERTY_TO_INT32( image, "height", sHeight );
 	J_PROPERTY_TO_INT32( image, "channels", sChannels );
 	const char *sBuffer;
-	J_CHECK_CALL( JsvalToString(cx, J_FARG(1), &sBuffer ) );
+	size_t bufferLength;
+	J_CHECK_CALL( JsvalToStringAndLength(cx, J_FARG(1), &sBuffer, &bufferLength ) );
+	J_S_ASSERT( bufferLength == sWidth * sHeight * sChannels * 1, "Invalid image format." );
 
 	PngWriteUserStruct desc;
 

@@ -68,7 +68,7 @@ inline JSBool GetStreamReadInterface( JSContext *cx, JSObject *obj, NIStreamRead
 // **pm
 //   in: a valid float[16]
 //  out: pointer provided as input OR another pointer to float
-typedef int (*NIMatrix44Read)( JSContext *cx, JSObject *obj, float **pm ); // **pm allows NIMatrix44Read to return its own data pointer ( should be const )
+typedef JSBool (*NIMatrix44Read)( JSContext *cx, JSObject *obj, float **pm ); // **pm allows NIMatrix44Read to return its own data pointer ( should be const )
 
 inline JSBool SetMatrix44ReadInterface( JSContext *cx, JSObject *obj, NIMatrix44Read fct ) {
 
