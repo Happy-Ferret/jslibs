@@ -13,6 +13,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
+#include <cstring>
 
 #include "../jslang/bstringapi.h"
 

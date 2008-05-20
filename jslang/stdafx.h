@@ -3,12 +3,8 @@
 // are changed infrequently
 //
 
-#pragma once
-
-#define WIN32_LEAN_AND_MEAN		// Exclude rarely-used stuff from Windows headers
-// TODO: reference additional headers your program requires here
-
-#include <windows.h>
+#ifndef stdafx_h___
+#define stdafx_h___
 
 #include "../common/platform.h"
 
@@ -20,3 +16,4 @@
 #include "../common/jsClass.h"
 #include "../common/jsConfiguration.h"
 
+#endif // stdafx_h___

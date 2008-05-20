@@ -13,6 +13,8 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
+#include <cstring>
+
 #include "bstringapi.h"
 
 #include "../common/jsNativeInterface.h"
@@ -140,8 +142,19 @@ DEFINE_CONSTRUCTOR() {
 	} else
 		J_S_ASSERT_THIS_CLASS();
 
-	if ( J_ARG_ISDEF(1) )
-		J_CHECK_CALL( JsvalToBString(cx, obj, J_ARG(1)) );
+	if ( J_ARG_ISDEF(1) ) {
+
+//		J_CHECK_CALL( JsvalToBString(cx, obj, J_ARG(1)) );
+
+		size_t length;
+		const char *sBuffer;
+		J_CHECK_CALL( JsvalToStringAndLength(cx, J_ARG(1), &sBuffer, &length) );
+		J_CHECK_CALL( LengthSet(cx, obj, length) );
+		void *dBuffer = JS_malloc(cx, length +1);
+		((char*)dBuffer)[length] = '\0';
+		memcpy(dBuffer, sBuffer, length);
+		JS_SetPrivate(cx, obj, dBuffer);
+	}
 
 	J_CHECK_CALL( SetBufferReadInterface(cx, obj, NativeInterfaceBufferRead) );
 
