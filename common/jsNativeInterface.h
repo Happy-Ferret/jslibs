@@ -15,47 +15,84 @@
 #ifndef _JSNATIVEINTERFACE_H_
 #define _JSNATIVEINTERFACE_H_
 
-#define NI_READ_RESOURCE "_NIRR"
-typedef bool (*NIResourceRead)( void *pv, unsigned char *buf, unsigned int *amount );
-
-
-#define NI_READ_MATRIX44 "_NIRM"
-// **pm
-//   in: a valid float[16]
-//  out: pointer provided as input OR another pointer to float
-typedef int (*NIMatrix44Read)(void *pv, float **pm); // **pm allows NIMatrix44Read to return its own data pointer ( should be const )
-
-
-// buffer access interface
-#define NI_BUFFER_READ "_NIBR"
-typedef JSBool (*NIBufferRead)( JSContext *cx, void *pv, void * const *buf, size_t *size );
-
-
-
 ///////////////////////////////////////////////////////////////////////////////
 // Native Interface API
 
 typedef void (*FunctionPointer)(void);
 
-inline JSBool SetNativeInterface( JSContext *cx, JSObject *obj, const char *name, FunctionPointer function, void *descriptor ) {
-	
+inline JSBool SetNativeInterface( JSContext *cx, JSObject *obj, const char *name, FunctionPointer function ) {
+
 	// Cannot be called while Finalize
 	// the following must works because spidermonkey will never call the getter or setter if it is not explicitly required by the script
-	return JS_DefineProperty(cx, obj, name, JSVAL_VOID, (JSPropertyOp)function, (JSPropertyOp)descriptor, JSPROP_READONLY | JSPROP_PERMANENT);
-}
-
-inline JSBool GetNativeInterface( JSContext *cx, JSObject *obj, const char *name, FunctionPointer *function, void **descriptor ) {
-
-	// Cannot be called while Finalize
-	uintN attrs;
-	JSBool found;
-	return JS_GetPropertyAttrsGetterAndSetter(cx, obj, name, &attrs, &found, (JSPropertyOp*)function, (JSPropertyOp*)descriptor); // NULL is supported for function and descriptor
-}
-
-inline JSBool RemoveNativeInterface( JSContext *cx, JSObject *obj, const char *name ) {
-	
-	// Cannot be called while Finalize
+	if ( function != NULL )
+		return JS_DefineProperty(cx, obj, name, JSVAL_VOID, (JSPropertyOp)function, (JSPropertyOp)NULL, JSPROP_READONLY | JSPROP_PERMANENT);
 	return JS_DeleteProperty(cx, obj, name);
+}
+
+
+inline JSBool GetNativeInterface( JSContext *cx, JSObject *obj, const char *name, FunctionPointer *function ) {
+
+	// Cannot be called while Finalize
+	if ( obj != NULL ) {
+
+		uintN attrs;
+		JSBool found;
+		JSPropertyOp tmp = NULL; //descriptor;
+		if ( JS_GetPropertyAttrsGetterAndSetter(cx, obj, name, &attrs, &found, (JSPropertyOp*)function, &tmp) != JS_TRUE )
+			return JS_FALSE;
+		if ( found )
+			return JS_TRUE;
+	}
+	*function = NULL;
+	return JS_TRUE;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+// Interfaces
+
+
+typedef JSBool (*NIStreamRead)( JSContext *cx, JSObject *obj, char *buf, unsigned int *amount );
+
+inline JSBool SetStreamReadInterface( JSContext *cx, JSObject *obj, NIStreamRead fct ) {
+
+	return SetNativeInterface(cx, obj, "_NISR", (FunctionPointer)fct);
+}
+
+inline JSBool GetStreamReadInterface( JSContext *cx, JSObject *obj, NIStreamRead *fct ) {
+	
+	return GetNativeInterface(cx, obj, "_NISR", (FunctionPointer*)fct);
+}
+
+
+// **pm
+//   in: a valid float[16]
+//  out: pointer provided as input OR another pointer to float
+typedef int (*NIMatrix44Read)( JSContext *cx, JSObject *obj, float **pm ); // **pm allows NIMatrix44Read to return its own data pointer ( should be const )
+
+inline JSBool SetMatrix44ReadInterface( JSContext *cx, JSObject *obj, NIMatrix44Read fct ) {
+
+	return SetNativeInterface(cx, obj, "_NIRM", (FunctionPointer)fct);
+}
+
+inline JSBool GetMatrix44ReadInterface( JSContext *cx, JSObject *obj, NIMatrix44Read *fct ) {
+	
+	return GetNativeInterface(cx, obj, "_NIRM", (FunctionPointer*)fct);
+}
+
+
+
+// buffer access interface
+typedef JSBool (*NIBufferRead)( JSContext *cx, JSObject *obj, const char **buf, size_t *size );
+
+inline JSBool SetBufferReadInterface( JSContext *cx, JSObject *obj, NIBufferRead fct ) {
+		
+	return SetNativeInterface(cx, obj, "_NIBR", (FunctionPointer)fct);
+}
+
+inline JSBool GetBufferReadInterface( JSContext *cx, JSObject *obj, NIBufferRead *fct ) {
+	
+	return GetNativeInterface(cx, obj, "_NIBR", (FunctionPointer*)fct);
 }
 
 

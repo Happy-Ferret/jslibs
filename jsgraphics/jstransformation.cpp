@@ -24,9 +24,10 @@
 #include <math.h>
 
 
-static int ReadMatrix(void *pv, float **m) { // Doc: __declspec(noinline) tells the compiler to never inline a particular function.
-
-	*m = ((Matrix44*)pv)->raw; // returns its private pointer. Caller SHOULD not modify it
+static int ReadMatrix( JSContext *cx, JSObject *obj, float **m) { // Doc: __declspec(noinline) tells the compiler to never inline a particular function.
+	
+	Matrix44 *objMatrix = (Matrix44*)JS_GetPrivate(cx, obj);
+	*m = objMatrix->raw; // returns its private pointer. Caller SHOULD not modify it
 	return true;
 }
 
@@ -52,8 +53,7 @@ DEFINE_CONSTRUCTOR() {
 	RT_ASSERT_ALLOC(m);
 //	Matrix44Identity(m);
 	JS_SetPrivate(cx, obj, m);
-	JSBool status = SetNativeInterface(cx, obj, NI_READ_MATRIX44, (FunctionPointer)ReadMatrix, m);
-	RT_ASSERT( status == JS_TRUE, "Unable SetNativeInterface." );
+	J_CHECK_CALL( SetMatrix44ReadInterface(cx, obj, ReadMatrix) );
 	return JS_TRUE;
 }
 

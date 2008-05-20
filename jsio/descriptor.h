@@ -18,4 +18,4 @@ DECLARE_CLASS( Descriptor )
 
 void FinalizeDescriptor(JSContext *cx, JSObject *obj);
 
-bool NativeInterfaceReadDescriptor( void *pv, unsigned char *buf, unsigned int *amount );
+JSBool NativeInterfaceStreamRead( JSContext *cx, JSObject *obj, char *buf, unsigned int *amount );

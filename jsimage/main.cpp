@@ -15,9 +15,9 @@
 #include "stdafx.h"
 
 DECLARE_STATIC()
-DECLARE_CLASS(Jpeg)
-DECLARE_CLASS(Png)
-DECLARE_CLASS(Image)
+//DECLARE_CLASS(Jpeg)
+//DECLARE_CLASS(Png)
+//DECLARE_CLASS(Image)
 
 #include "jspng.h"
 #include "jsjpeg.h"
@@ -31,9 +31,16 @@ extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj)
 	SET_UNSAFE_MODE( GetConfigurationValue(cx, "unsafeMode" ) == JSVAL_TRUE );
 
 	INIT_STATIC();
-	INIT_CLASS( Image );
-	INIT_CLASS( Png );
-	INIT_CLASS( Jpeg );
+//	INIT_CLASS( Image );
+//	INIT_CLASS( Png );
+//	INIT_CLASS( Jpeg );
+
+/*
+	need this:
+
+		var dec = new JpegDecoder();
+		var image = dec( new File('test.jpeg') );
+*/
 
 	return JS_TRUE;
 }

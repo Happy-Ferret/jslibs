@@ -26,15 +26,16 @@
 typedef struct {
 	png_structp png;
 	png_infop info;
-	void *pv;
-	NIResourceRead read;
+	JSContext *cx;
+	JSObject *obj;
+	NIStreamRead read;
 } PngDescriptor;
 
 
 void _png_read( png_structp png_ptr, png_bytep data, png_size_t length ) {
 
 	PngDescriptor *desc = (PngDescriptor*)png_get_io_ptr(png_ptr);
-	desc->read(desc->pv, data, &length);
+	desc->read(desc->cx, desc->obj, NULL, (char*)data, &length);
 //	if ( length == 0 )
 //		png_error(png_ptr, "Trying to read after EOF."); // png_warning()
 }
@@ -68,8 +69,9 @@ DEFINE_CONSTRUCTOR() {
 	desc->info = png_create_info_struct(desc->png);
 	RT_ASSERT( desc->info != NULL, "Unable to png_create_info_struct.");
 
-	GetNativeInterface(cx, JSVAL_TO_OBJECT(argv[0]), NI_READ_RESOURCE, (FunctionPointer*)&desc->read, &desc->pv);
-	RT_ASSERT( desc->read != NULL && desc->pv != NULL, "Unable to GetNativeResource." );
+	void *tmp;
+	GetNativeInterface(cx, JSVAL_TO_OBJECT(argv[0]), NI_STREAM_READ, (FunctionPointer*)&desc->read, &tmp);
+	RT_ASSERT( desc->read != NULL, "Unable to GetNativeResource." );
 
 	png_set_read_fn( desc->png, (voidp)desc, _png_read );
    png_read_info(desc->png, desc->info);
@@ -84,6 +86,9 @@ DEFINE_FUNCTION( Load ) {
 
 	PngDescriptor *desc = (PngDescriptor*)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( desc );
+
+	desc->cx = cx;
+	desc->obj = ???
 
 	png_set_strip_16(desc->png);
 	png_set_packing(desc->png);

@@ -28,36 +28,19 @@
 #include "../common/queue.h"
 
 
-/*
-// used by NativeInterface
-typedef struct {
-	JSRuntime *rt;
-	JSObject *obj;
-} JsCntxt;
-
-static bool NativeInterfaceReadBuffer( void *pv, unsigned char *buf, unsigned int *amount ) {
-
-	RT_SAFE( if ( pv == NULL ) return false );
-	JsCntxt *cntxt = (JsCntxt*)pv;
-	JSContext *cx = NULL;
-	JS_ContextIterator(cntxt->rt, &cx); // (TBD) find a better way to get a suitable cx ( beware: cx & threads )
-	JSObject *obj = cntxt->obj;
-	RT_SAFE( if ( obj == NULL || cx == NULL ) return false );
+static JSBool NativeInterfaceStreamRead( JSContext *cx, JSObject *obj, char *buf, size_t *amount ) {
 
 	#ifdef JS_THREADSAFE
 		JS_BeginRequest( cx ); // http://developer.mozilla.org/en/docs/JS_BeginRequest
 	#endif
 
-	JSBool status = ReadRawAmount(cx, obj, amount, (char*)buf);
-	if ( status != JS_TRUE )
-		return false;
+	J_CHECK_CALL( ReadRawAmount(cx, obj, amount, buf) );
 
 	#ifdef JS_THREADSAFE
 		JS_EndRequest( cx );
 	#endif
-	return true;
+	return JS_TRUE;
 }
-*/
 
 
 inline JSBool BufferLengthSet( JSContext *cx, JSObject *obj, size_t bufferLength ) {
@@ -383,19 +366,6 @@ DEFINE_FINALIZE() {
 	Queue *queue = (Queue*)JS_GetPrivate(cx, obj);
 	if ( queue != NULL ) {
 
-/*
-// remove NativeInterface
-// unable to call GetNativeInterface in Finalize !!!
-//		JsCntxt *cntxt;
-//		FunctionPointer fp;
-//		GetNativeInterface(cx, obj, NI_READ_RESOURCE, &fp, (void**)&cntxt);
-//		free(cntxt);
-//		RemoveNativeInterface(cx, obj, NI_READ_RESOURCE);
-*/
-
-//		jsval tmp;
-//		JS_GetReservedSlot(cx, obj, 0, &tmp );
-
 		while ( !QueueIsEmpty(queue) ) {
 
 			JSString **pNewStr = (JSString**)QueueShift(queue);
@@ -412,13 +382,7 @@ DEFINE_CONSTRUCTOR() {
 
 	J_S_ASSERT_CONSTRUCTING();
 	J_S_ASSERT_THIS_CLASS();
-/*
-	// prepare NativeInterface compatibility
-	JsCntxt *cntxt = (JsCntxt*)malloc(sizeof(JsCntxt)); // (TBD) fix this memory leak
-	cntxt->rt = JS_GetRuntime(cx); // beware: cx must exist during the life of this object !
-	cntxt->obj = obj;
-	SetNativeInterface(cx, obj, NI_READ_RESOURCE, (FunctionPointer)NativeInterfaceReadBuffer, cntxt);
-*/
+	J_CHECK_CALL( SetStreamReadInterface(cx, obj, NativeInterfaceStreamRead) );
 	Queue *queue = QueueConstruct();
 	RT_ASSERT_ALLOC(queue);
 	JS_SetPrivate(cx, obj, queue);

@@ -99,7 +99,8 @@ DEFINE_FUNCTION( Open ) {
 	if ( fd == NULL )
 		return ThrowIoError(cx);
 	JS_SetPrivate( cx, obj, fd );
-	SetNativeInterface(cx, obj, NI_READ_RESOURCE, (FunctionPointer)NativeInterfaceReadDescriptor, fd);
+	
+	J_CHECK_CALL( SetStreamReadInterface(cx, obj, NativeInterfaceStreamRead) );
 	*rval = OBJECT_TO_JSVAL(obj); // allows to write f.Open(...).Read()
 	return JS_TRUE;
 }

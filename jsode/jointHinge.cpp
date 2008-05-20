@@ -20,8 +20,8 @@ BEGIN_CLASS( JointHinge )
 
 DEFINE_CONSTRUCTOR() {
 
-	RT_ASSERT_CONSTRUCTING();
-	RT_ASSERT_THIS_CLASS();
+	J_S_ASSERT_CONSTRUCTING();
+	J_S_ASSERT_THIS_CLASS();
 	RT_ASSERT_ARGC(1);
 	ode::dWorldID worldId;
 	if ( ValToWorldID( cx, argv[0], &worldId) == JS_FALSE )

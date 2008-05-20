@@ -34,7 +34,7 @@ DEFINE_CONSTRUCTOR() {
 		RT_CHECK_CALL( ValToSpaceID(cx, argv[0], &space) );
 	ode::dGeomID geomId = ode::dCreateCapsule(space, 1, 1); // default radius and length are 1
 	JS_SetPrivate(cx, obj, geomId);
-	SetupReadMatrix(cx,obj,geomId); // (TBD) check return status
+	SetupReadMatrix(cx, obj); // (TBD) check return status
 	ode::dGeomSetData(geomId, obj); // 'obj' do not need to be rooted because Goem's data is reset to NULL when 'obj' is finalized.
 	return JS_TRUE;
 }

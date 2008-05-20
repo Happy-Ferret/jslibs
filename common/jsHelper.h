@@ -236,25 +236,25 @@ inline JSBool JsvalToStringAndLength( JSContext *cx, jsval val, const char** buf
 		return JS_TRUE;
 	}
 
-	if ( JSVAL_IS_OBJECT(val) && !JSVAL_IS_NULL(val) ) {
+	if ( JSVAL_IS_OBJECT(val) ) {
 
 		NIBufferRead fct;
-		void *pv;
-		J_CHECK_CALL( GetNativeInterface(cx, JSVAL_TO_OBJECT(val), NI_BUFFER_READ, (FunctionPointer*)&fct, &pv) );
-		if ( fct && pv ) {
+		J_CHECK_CALL( GetBufferReadInterface(cx, JSVAL_TO_OBJECT(val), &fct) );
+		if ( fct ) {
 
-			J_CHECK_CALL( fct(cx, pv, (void**)buffer, size) );
+			J_CHECK_CALL( fct(cx, JSVAL_TO_OBJECT(val), buffer, size) );
 			return JS_TRUE;
 		}
 	}
 
 	JSString *str = JS_ValueToString(cx, val);
-	J_S_ASSERT( str != NULL, "Unable to convert to string." );
+	J_S_ASSERT( str != NULL, J__ERRMSG_STRING_CONVERSION_FAILED );
 	*buffer = JS_GetStringBytes(str);
-	J_S_ASSERT( *buffer != NULL, "Invalid string." );
+	J_S_ASSERT( *buffer != NULL, J__ERRMSG_STRING_CONVERSION_FAILED );
 	*size = JS_GetStringLength(str);
 	return JS_TRUE;
 }
+
 
 inline JSBool JsvalToString( JSContext *cx, jsval val, const char** buffer ) {
 
@@ -267,6 +267,34 @@ inline JSBool JsvalToString( JSContext *cx, jsval val, const char** buffer ) {
 // conversion macros
 
 // (TBD) try to use real functions with __forceinline
+
+/*
+#define J_JSVAL_TO_STRING( jsvalString, stringVariable ) do { \
+	JSString *__jsString = JS_ValueToString(cx, (jsvalString)); \
+	J_S_ASSERT( __jsString != NULL, J__ERRMSG_STRING_CONVERSION_FAILED ); \
+	(stringVariable) = JS_GetStringBytes(__jsString); \
+	J_S_ASSERT( (stringVariable) != NULL, J__ERRMSG_STRING_CONVERSION_FAILED ); \
+} while(0)
+*/
+
+#define J_JSVAL_TO_STRING( jsvalString, stringVariable ) do { \
+	J_CHECK_CALL( JsvalToString(cx, jsvalString, &stringVariable) ); \
+} while(0)
+
+/*
+#define J_JSVAL_TO_STRING_AND_LENGTH( jsvalString, stringVariable, lengthVariable ) do { \
+	JSString *__jsString = JS_ValueToString(cx,(jsvalString)); \
+	J_S_ASSERT( __jsString != NULL, J__ERRMSG_STRING_CONVERSION_FAILED ); \
+	(stringVariable) = JS_GetStringBytes(__jsString); \
+	J_S_ASSERT( (stringVariable) != NULL, J__ERRMSG_STRING_CONVERSION_FAILED ); \
+	(lengthVariable) = JS_GetStringLength(__jsString); \
+} while(0)
+*/
+
+#define J_JSVAL_TO_STRING_AND_LENGTH( jsvalString, stringVariable, lengthVariable ) do { \
+	J_CHECK_CALL( JsvalToStringAndLength(cx, jsvalString, &stringVariable, &lengthVariable) ); \
+} while(0)
+
 
 #define J_JSVAL_TO_BOOL( jsval, boolVariable ) do { \
 	if ( JSVAL_IS_BOOLEAN(jsval) ) { \
@@ -323,33 +351,6 @@ inline JSBool JsvalToString( JSContext *cx, jsval val, const char** buffer ) {
 		uintVariable = (unsigned long)__doubleValue; \
 		J_S_ASSERT( __doubleValue == (double)((unsigned long)__doubleValue), J__ERRMSG_INT_CONVERSION_FAILED ); \
 	} \
-} while(0)
-
-/*
-#define J_JSVAL_TO_STRING( jsvalString, stringVariable ) do { \
-	JSString *__jsString = JS_ValueToString(cx, (jsvalString)); \
-	J_S_ASSERT( __jsString != NULL, J__ERRMSG_STRING_CONVERSION_FAILED ); \
-	(stringVariable) = JS_GetStringBytes(__jsString); \
-	J_S_ASSERT( (stringVariable) != NULL, J__ERRMSG_STRING_CONVERSION_FAILED ); \
-} while(0)
-*/
-
-#define J_JSVAL_TO_STRING( jsvalString, stringVariable ) do { \
-	J_CHECK_CALL( JsvalToString(cx, jsvalString, &stringVariable) ); \
-} while(0)
-
-/*
-#define J_JSVAL_TO_STRING_AND_LENGTH( jsvalString, stringVariable, lengthVariable ) do { \
-	JSString *__jsString = JS_ValueToString(cx,(jsvalString)); \
-	J_S_ASSERT( __jsString != NULL, J__ERRMSG_STRING_CONVERSION_FAILED ); \
-	(stringVariable) = JS_GetStringBytes(__jsString); \
-	J_S_ASSERT( (stringVariable) != NULL, J__ERRMSG_STRING_CONVERSION_FAILED ); \
-	(lengthVariable) = JS_GetStringLength(__jsString); \
-} while(0)
-*/
-
-#define J_JSVAL_TO_STRING_AND_LENGTH( jsvalString, stringVariable, lengthVariable ) do { \
-	J_CHECK_CALL( JsvalToStringAndLength(cx, jsvalString, &stringVariable, &lengthVariable) ); \
 } while(0)
 
 

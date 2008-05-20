@@ -19,9 +19,12 @@
 #include "world.h"
 #include "../common/jsNativeInterface.h"
 
-static int ReadMatrix(void *pv, float **pm) { // Doc: __declspec(noinline) tells the compiler to never inline a particular function.
+static JSBool ReadMatrix( JSContext *cx, JSObject *obj, float **pm) { // Doc: __declspec(noinline) tells the compiler to never inline a particular function.
 
-	ode::dBodyID id = (ode::dBodyID)pv;
+	//ode::dBodyID id = (ode::dBodyID)pv;
+	ode::dBodyID id = (ode::dBodyID)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE(id);
+
 	const ode::dReal * m43 = dBodyGetRotation( id );
 	const ode::dReal * pos = dBodyGetPosition( id );
 // (TBD) need center of mass ajustement ?
@@ -42,7 +45,7 @@ static int ReadMatrix(void *pv, float **pm) { // Doc: __declspec(noinline) tells
 	m[13] = pos[1];// - comy;
 	m[14] = pos[2];// - comz;
 	m[15] = 1;
-	return true;
+	return JS_TRUE;
 }
 
 BEGIN_CLASS( Body )
@@ -64,9 +67,9 @@ DEFINE_FINALIZE() {
 
 DEFINE_CONSTRUCTOR() {
 
-	RT_ASSERT_CONSTRUCTING();
+	J_S_ASSERT_CONSTRUCTING();
 //	RT_ASSERT_CLASS(&classBody);
-	RT_ASSERT_THIS_CLASS();
+	J_S_ASSERT_THIS_CLASS();
 
 	RT_ASSERT_ARGC(1);
 
@@ -83,7 +86,7 @@ DEFINE_CONSTRUCTOR() {
 //	ode::dBodySetData(bodyID, obj);
 
 //	ode::dBodySetData(bodyID,worldObject);
-	SetNativeInterface(cx, obj, NI_READ_MATRIX44, (FunctionPointer)ReadMatrix, bodyID); // (TBD) check return status
+	J_CHECK_CALL( SetMatrix44ReadInterface(cx, obj, ReadMatrix) );
 	return JS_TRUE;
 }
 

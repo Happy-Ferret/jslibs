@@ -27,9 +27,9 @@ check:
 #include "geom.h"
 #include "../common/jsNativeInterface.h"
 
-int ReadMatrix(void *pv, float **pm) { // Doc: __declspec(noinline) tells the compiler to never inline a particular function.
+JSBool ReadMatrix(JSContext *cx, JSObject *obj, float **pm) { // Doc: __declspec(noinline) tells the compiler to never inline a particular function.
 
-	ode::dGeomID geomID = (ode::dGeomID)pv;
+	ode::dGeomID geomID = (ode::dGeomID)JS_GetPrivate(cx, obj);
 
 	// read LOCAL position and rotation
 	const ode::dReal* pos = ode::dGeomGetPosition(geomID);
@@ -52,13 +52,13 @@ int ReadMatrix(void *pv, float **pm) { // Doc: __declspec(noinline) tells the co
 	m[13] = pos[1];
 	m[14] = pos[2];
 	m[15] = 1;
-	return true;
+	return JS_TRUE;
 }
 
 
-JSBool SetupReadMatrix(JSContext *cx, JSObject *obj, ode::dGeomID geomId) {
+JSBool SetupReadMatrix(JSContext *cx, JSObject *obj) {
 
-	return SetNativeInterface(cx, obj, NI_READ_MATRIX44, (FunctionPointer)ReadMatrix, geomId);
+	return SetMatrix44ReadInterface(cx, obj, ReadMatrix);
 }
 
 
@@ -121,20 +121,28 @@ DEFINE_PROPERTY( offset ) {
 	ode::dGeomID geom = (ode::dGeomID)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(geom);
 	if ( *vp == JSVAL_VOID ) {
+
 		ode::dGeomClearOffset(geom);
-	} else {
+		return JS_TRUE;
+	}
+
+	if ( JSVAL_IS_OBJECT(*vp) && !JSVAL_IS_NULL(*vp) ) {
+
+		JSObject *srcObj = JSVAL_TO_OBJECT(*vp);
 		float tmp[16], *m = tmp;
 		NIMatrix44Read ReadMatrix;
-		void *descriptor;
-		GetNativeInterface(cx, obj, NI_READ_MATRIX44, (FunctionPointer*)&ReadMatrix, &descriptor);
-		RT_ASSERT( ReadMatrix != NULL && descriptor != NULL, "Invalid matrix interface." );
-		ReadMatrix(descriptor, (float**)&m);
+		J_CHECK_CALL( GetMatrix44ReadInterface(cx, srcObj, &ReadMatrix) );
+		RT_ASSERT( ReadMatrix != NULL, "Invalid matrix interface." );
+		ReadMatrix( cx, srcObj, (float**)&m);
 		RT_ASSERT( *m != NULL, "Invalid matrix." );
 		ode::dMatrix3 m3 = { m[0], m[4], m[8], 0, m[1], m[5], m[9], 0, m[2], m[6], m[10], 0 }; // (TBD) check
 		ode::dGeomSetOffsetRotation(geom, m3);
 		ode::dGeomSetOffsetPosition(geom, m[3], m[7], m[11]);
+		return JS_TRUE;
 	}
-	return JS_TRUE;
+
+	J_REPORT_ERROR("Invalid source.");
+
 }
 
 
@@ -143,17 +151,23 @@ DEFINE_PROPERTY( tansformation ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE(geom);
-	float tmp[16], *m = tmp;
-	NIMatrix44Read ReadMatrix;
-	void *descriptor;
-	GetNativeInterface(cx, obj, NI_READ_MATRIX44, (FunctionPointer*)&ReadMatrix, &descriptor);
-	RT_ASSERT( ReadMatrix != NULL && descriptor != NULL, "Invalid matrix interface." );
-	ReadMatrix(descriptor, (float**)&m);
-	RT_ASSERT( *m != NULL, "Invalid matrix." );
-	ode::dMatrix3 m3 = { m[0], m[4], m[8], 0, m[1], m[5], m[9], 0, m[2], m[6], m[10], 0 }; // (TBD) check
-	ode::dGeomSetRotation(geom, m3);
-	ode::dGeomSetPosition(geom, m[3], m[7], m[11]);
-	return JS_TRUE;
+
+	if ( JSVAL_IS_OBJECT(*vp) && !JSVAL_IS_NULL(*vp) ) {
+
+		JSObject *srcObj = JSVAL_TO_OBJECT(*vp);
+		float tmp[16], *m = tmp;
+		NIMatrix44Read ReadMatrix;
+		J_CHECK_CALL( GetMatrix44ReadInterface(cx, srcObj, &ReadMatrix) );
+		RT_ASSERT( ReadMatrix != NULL, "Invalid matrix interface." );
+		ReadMatrix( cx, srcObj, (float**)&m);
+		RT_ASSERT( *m != NULL, "Invalid matrix." );
+		ode::dMatrix3 m3 = { m[0], m[4], m[8], 0, m[1], m[5], m[9], 0, m[2], m[6], m[10], 0 }; // (TBD) check
+		ode::dGeomSetOffsetRotation(geom, m3);
+		ode::dGeomSetOffsetPosition(geom, m[3], m[7], m[11]);
+		return JS_TRUE;
+	}
+
+	J_REPORT_ERROR("Invalid source.");
 }
 
 

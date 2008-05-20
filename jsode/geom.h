@@ -21,4 +21,4 @@ DECLARE_CLASS( GeomRay )
 
 DECLARE_CLASS( SurfaceParameters )
 
-JSBool SetupReadMatrix(JSContext *cx, JSObject *obj, ode::dGeomID geomId);
+JSBool SetupReadMatrix(JSContext *cx, JSObject *obj);

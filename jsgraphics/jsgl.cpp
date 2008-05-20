@@ -1125,12 +1125,13 @@ DEFINE_FUNCTION_FAST( DefineTextureImage ) {
 	RT_ASSERT_OBJECT(J_FARG(3));
 
 	JSObject *tObj = JSVAL_TO_OBJECT(J_FARG(3));
-	const char * className = JS_GET_CLASS(cx, tObj)->name;
+//	const char * className = JS_GET_CLASS(cx, tObj)->name;
 
 	GLsizei width, height;
 	GLenum format, type;
 	int channels;
-	GLvoid *data;
+	const GLvoid *data;
+
 
 //	if ( strcmp(className, "Texture" ) == 0 ) {
 	if ( TextureJSClass(cx) == JS_GET_CLASS(cx, tObj) ) {
@@ -1143,23 +1144,18 @@ DEFINE_FUNCTION_FAST( DefineTextureImage ) {
 		height = tex->height;
 		channels = tex->channels;
 		type = GL_FLOAT;
-	} else
-	if ( ImageJSClass(cx) == JS_GET_CLASS(cx, tObj) ) {
+	} else {
 
-		data = JS_GetPrivate(cx, tObj);
+		J_PROPERTY_TO_INT32( tObj, "width", width );
+		J_PROPERTY_TO_INT32( tObj, "height", height );
+		J_PROPERTY_TO_INT32( tObj, "channels", channels );
+		J_CHECK_CALL( JsvalToString(cx, OBJECT_TO_JSVAL(tObj), (const char**)&data ) );
+
 		RT_ASSERT_RESOURCE(data);
-		
-//		GetIntProperty(cx, tObj, "width", &width);
-//		GetIntProperty(cx, tObj, "height", &height);
-//		GetIntProperty(cx, tObj, "channels", &channels);
-
-		J_PROPERTY_TO_INT32(tObj, "width", width);
-		J_PROPERTY_TO_INT32(tObj, "height", height);
-		J_PROPERTY_TO_INT32(tObj, "channels", channels);
-
 		type = GL_UNSIGNED_BYTE;
-	} else
-		REPORT_ERROR("Invalid texture type.");
+	}
+// else
+//		REPORT_ERROR("Invalid texture type.");
 
 	if ( J_FARG_ISDEF(2) ) {
 		
@@ -1229,7 +1225,7 @@ DEFINE_PROPERTY(error) {
 }
 
 
-static int ReadMatrix(void *pv, float **m) {
+static int ReadMatrix(JSContext *cx, JSObject *obj, float **m) {
 
 	GLint matrixMode;
 	glGetIntegerv(GL_MATRIX_MODE, &matrixMode);
@@ -1250,8 +1246,7 @@ static int ReadMatrix(void *pv, float **m) {
 
 JSBool Init( JSContext *cx, JSObject *obj ) {
 
-	JSBool status = SetNativeInterface(cx, obj, NI_READ_MATRIX44, (FunctionPointer)ReadMatrix, NULL);
-	RT_ASSERT( status == JS_TRUE, "Unable SetNativeInterface." );
+	J_CHECK_CALL( SetMatrix44ReadInterface(cx, obj, ReadMatrix) );
 	return JS_TRUE;
 }
 

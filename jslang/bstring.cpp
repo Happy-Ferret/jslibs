@@ -27,7 +27,7 @@ inline JSBool LengthSet( JSContext *cx, JSObject *obj, int bufferLength ) {
 }
 
 
-inline JSBool LengthGet( JSContext *cx, JSObject *obj, int *bufferLength ) {
+inline JSBool LengthGet( JSContext *cx, JSObject *obj, size_t *bufferLength ) {
 
 	jsval bufferLengthVal;
 	J_CHECK_CALL( JS_GetReservedSlot(cx, obj, SLOT_BSTRING_LENGTH, &bufferLengthVal) );
@@ -35,13 +35,17 @@ inline JSBool LengthGet( JSContext *cx, JSObject *obj, int *bufferLength ) {
 	return JS_TRUE;
 }
 
+inline JSBool BufferGet( JSContext *cx, JSObject *obj, const char **buf ) {
 
-JSBool NativeInterfaceBuffer( JSContext *cx, void *pv, void **buf, int *size ) {
+	*buf = (const char*)JS_GetPrivate(cx, obj);
+	return JS_TRUE;
+}
 
-	J_S_ASSERT_RESOURCE( pv );
-	JSObject *obj = (JSObject*)pv;
-	*buf = JS_GetPrivate(cx, obj);
-	LengthGet(cx, obj, size);
+
+JSBool NativeInterfaceBufferRead( JSContext *cx, JSObject *obj, const char **buf, size_t *size ) {
+
+	J_CHECK_CALL( BufferGet(cx, obj, buf) );
+	J_CHECK_CALL( LengthGet(cx, obj, size) );
 	return JS_TRUE;
 }
 
@@ -99,7 +103,7 @@ inline JSBool JsvalToBString( JSContext *cx, JSObject *obj, jsval val ) {
 JSBool BStringToJsval( JSContext *cx, JSObject *obj, jsval *val ) {
 
 	void *pv = JS_GetPrivate(cx, obj);
-	int length;
+	size_t length;
 	J_CHECK_CALL( LengthGet(cx, obj, &length) );
 	if ( pv == NULL || length == 0 ) {
 
@@ -108,7 +112,7 @@ JSBool BStringToJsval( JSContext *cx, JSObject *obj, jsval *val ) {
 
 		jschar *ucStr = (jschar*)JS_malloc(cx, (length + 1) * sizeof(jschar));
 		ucStr[length] = 0;
-		for ( int i = 0; i < length; i++ )
+		for ( size_t i = 0; i < length; i++ )
 			ucStr[i] = ((char*)pv)[i];
 		JSString *jsstr = JS_NewUCString(cx, ucStr, length);
 		*val = STRING_TO_JSVAL( jsstr );
@@ -139,7 +143,7 @@ DEFINE_CONSTRUCTOR() {
 	if ( J_ARG_ISDEF(1) )
 		J_CHECK_CALL( JsvalToBString(cx, obj, J_ARG(1)) );
 
-	SetNativeInterface(cx, obj, NI_BUFFER_READ, (FunctionPointer)(NIBufferRead)NativeInterfaceBuffer, obj);
+	J_CHECK_CALL( SetBufferReadInterface(cx, obj, NativeInterfaceBufferRead) );
 
 	return JS_TRUE;
 }
@@ -170,7 +174,7 @@ DEFINE_FUNCTION_FAST( Add ) {
 	
 	J_S_ASSERT_ARG_MIN( 1 );
 
-	int length;
+	size_t length;
 	J_CHECK_CALL( LengthGet(cx, J_FOBJ, &length) );
 
 	size_t srcLen;
@@ -229,13 +233,13 @@ DEFINE_FUNCTION_FAST( Substr ) { // http://developer.mozilla.org/en/docs/Core_Ja
 	J_S_ASSERT_ARG_MIN(1);
 	void *pv = JS_GetPrivate(cx, J_FOBJ);
 	
-	int dataLength;
+	size_t dataLength;
 	J_CHECK_CALL( LengthGet(cx, J_FOBJ, &dataLength) );
 
 	int start;
 	J_JSVAL_TO_INT32( J_FARG(1), start );
 
-	if ( start >= dataLength || start < -dataLength ) {
+	if ( start >= (int)dataLength || start < -(int)dataLength ) {
 
 		*J_FRVAL = OBJECT_TO_JSVAL( NewEmptyBString(cx) );
 		return JS_TRUE;
@@ -244,7 +248,7 @@ DEFINE_FUNCTION_FAST( Substr ) { // http://developer.mozilla.org/en/docs/Core_Ja
 	if ( start < 0 ) 
 		start = dataLength + start;
 
-	if ( start < 0 || start >= dataLength )
+	if ( start < 0 || start >= (int)dataLength )
 		start = 0;
 
 	// now 0 <= start < dataLength
@@ -259,7 +263,7 @@ DEFINE_FUNCTION_FAST( Substr ) { // http://developer.mozilla.org/en/docs/Core_Ja
 			return JS_TRUE;
 		}
 
-		if ( start + length > dataLength )
+		if ( start + length > (int)dataLength )
 			length = dataLength - start;
 
 	} else
@@ -306,7 +310,7 @@ DEFINE_FUNCTION_FAST( toString ) {
 
 DEFINE_PROPERTY( length ) {
 
-	int length;
+	size_t length;
 	J_CHECK_CALL( LengthGet(cx, obj, &length) );
 	*vp = INT_TO_JSVAL( length );
 	return JS_TRUE;
@@ -353,10 +357,10 @@ DEFINE_GET_PROPERTY() {
 	if ( pv == NULL )
 		return JS_TRUE;
 
-	int length;
+	size_t length;
 	J_CHECK_CALL( LengthGet(cx, obj, &length) );
 
-	if ( slot < 0 || slot >= length )
+	if ( slot < 0 || slot >= (int)length )
 		return JS_TRUE;
 
 	jschar chr = ((char*)pv)[slot];
@@ -375,13 +379,13 @@ DEFINE_SET_PROPERTY() {
 	if ( pv == NULL )
 		J_REPORT_ERROR("Out of range.");
 
-	int length;
+	size_t length;
 	J_CHECK_CALL( LengthGet(cx, obj, &length) );
 
 	J_S_ASSERT_INT(id);
 	jsint slot = JSVAL_TO_INT( id );
 
-	if ( slot < 0 || slot >= length )
+	if ( slot < 0 || slot >= (int)length )
 		J_REPORT_ERROR("Out of range.");
 
 	jschar chr = ((char*)pv)[slot];

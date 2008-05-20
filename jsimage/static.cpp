@@ -46,10 +46,11 @@ BEGIN_STATIC
 #define INPUT_BUF_SIZE 4096
 
 typedef struct {
-  struct jpeg_source_mgr pub;	// public fields
-  JOCTET * buffer;
-  void *pv;
-  NIResourceRead read;
+	struct jpeg_source_mgr pub;	// public fields
+	JOCTET *buffer;
+	JSContext *cx;
+	JSObject *obj;
+	NIStreamRead read;
 } SourceMgr;
 typedef SourceMgr *SourceMgrPtr;
 
@@ -62,8 +63,9 @@ METHODDEF(boolean) fill_input_buffer(j_decompress_ptr cinfo) {
 
 	SourceMgrPtr src = (SourceMgrPtr) cinfo->src;
 
-	unsigned int amount = INPUT_BUF_SIZE;
-	src->read(src->pv, src->buffer, &amount);
+	size_t amount = INPUT_BUF_SIZE;
+//	src->read(src->pv, src->buffer, &amount);
+	src->read( src->cx, src->obj, (char*)src->buffer, &amount);
 	// (TBD) manage errors
 
 	if ( amount == 0 ) {
@@ -125,12 +127,16 @@ DEFINE_FUNCTION( DecodeJpegImage ) {
 	src->pub.bytes_in_buffer = 0; // forces fill_input_buffer on first read
 	src->pub.next_input_byte = NULL; // until buffer loaded
 
+	src->cx = cx; // required by NIStreamRead
+	src->obj = JSVAL_TO_OBJECT(argv[0]); // required by NIStreamRead
+
 // try to use a fast way to read the data
-	GetNativeInterface(cx, JSVAL_TO_OBJECT(argv[0]), NI_READ_RESOURCE, (FunctionPointer*)&src->read, &src->pv);
-	RT_ASSERT( src->read != NULL && src->pv != NULL, "Unable to GetNativeResource." );
+	J_CHECK_CALL( GetStreamReadInterface(cx, JSVAL_TO_OBJECT(argv[0]), &src->read) );
+	RT_ASSERT( src->read != NULL, "Unable to GetNativeResource." );
 
 // else use a 'classic' method to read the data ( like var data = resourceObject.Read(amount); )
-	if ( src->read == NULL || src->pv == NULL ) {
+	if ( src->read == NULL ) {
+
 		RT_ASSERT( false, "TO BE DONE" ); // (TBD) read without NI_READ_RESOURCE
 //		CxObj
 //		src->pv = resourceObject;
@@ -196,15 +202,16 @@ DEFINE_FUNCTION( EncodeJpegImage ) {
 typedef struct {
 	png_structp png;
 	png_infop info;
-	void *pv;
-	NIResourceRead read;
+	JSContext *cx;
+	JSObject *obj;
+	NIStreamRead read;
 } PngReadUserStruct;
 
 
 static void _png_read( png_structp png_ptr, png_bytep data, png_size_t length ) {
 
 	PngReadUserStruct *desc = (PngReadUserStruct*)png_get_io_ptr(png_ptr);
-	desc->read(desc->pv, data, &length);
+	desc->read(desc->cx, desc->obj, (char*)data, &length);
 //	if ( length == 0 )
 //		png_error(png_ptr, "Trying to read after EOF."); // png_warning()
 }
@@ -219,8 +226,8 @@ DEFINE_FUNCTION( DecodePngImage ) {
 	desc.info = png_create_info_struct(desc.png);
 	J_S_ASSERT( desc.info != NULL, "Unable to png_create_info_struct.");
 
-	GetNativeInterface(cx, JSVAL_TO_OBJECT(argv[0]), NI_READ_RESOURCE, (FunctionPointer*)&desc.read, &desc.pv);
-	J_S_ASSERT( desc.read != NULL && desc.pv != NULL, "Unable to GetNativeResource." );
+	J_CHECK_CALL( GetStreamReadInterface(cx, JSVAL_TO_OBJECT(argv[0]), &desc.read) );
+	J_S_ASSERT( desc.read != NULL, "Unable to GetNativeResource." );
 
 	png_set_read_fn( desc.png, (voidp)&desc, _png_read );
    png_read_info(desc.png, desc.info);
@@ -303,14 +310,13 @@ DEFINE_FUNCTION_FAST( EncodePngImage ) {
 	}
 
 	J_S_ASSERT_OBJECT( J_FARG(1) );
-	JSObject *bstr = JSVAL_TO_OBJECT( J_FARG(1) );
-	J_S_ASSERT_CLASS( bstr, BStringJSClass(cx) );
-
+	JSObject *image = JSVAL_TO_OBJECT( J_FARG(1) );
 	int sWidth, sHeight, sChannels;
-	J_PROPERTY_TO_INT32( bstr, "width", sWidth );
-	J_PROPERTY_TO_INT32( bstr, "height", sHeight );
-	J_PROPERTY_TO_INT32( bstr, "channels", sChannels );
-	u_int8_t *sBuffer = (u_int8_t*)BStringData(cx, bstr);
+	J_PROPERTY_TO_INT32( image, "width", sWidth );
+	J_PROPERTY_TO_INT32( image, "height", sHeight );
+	J_PROPERTY_TO_INT32( image, "channels", sChannels );
+	const char *sBuffer;
+	J_CHECK_CALL( JsvalToString(cx, J_FARG(1), &sBuffer ) );
 
 	PngWriteUserStruct desc;
 
@@ -347,7 +353,7 @@ DEFINE_FUNCTION_FAST( EncodePngImage ) {
 
 	png_write_info(desc.png, desc.info);
 	for ( int r = 0; r < sHeight; r++ )
-		png_write_row(desc.png, sBuffer + sWidth * r * sChannels);
+		png_write_row(desc.png, (png_bytep)sBuffer + sWidth * r * sChannels);
 	png_write_end(desc.png, desc.info);
 
 	png_destroy_write_struct(&desc.png, &desc.info);

@@ -59,7 +59,8 @@ extern "C" {
 typedef struct {
   struct jpeg_source_mgr pub;	// public fields
   JOCTET * buffer;
-  void *pv;
+  JSContext *cx;
+  JSObject *obj;
   NIResourceRead read;
 } SourceMgr;
 typedef SourceMgr *SourceMgrPtr;

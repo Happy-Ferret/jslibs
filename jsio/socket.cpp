@@ -74,7 +74,8 @@ DEFINE_FUNCTION( Shutdown ) {
 		how = PR_SHUTDOWN_BOTH; // default
 
 	if ( how == PR_SHUTDOWN_BOTH || how == PR_SHUTDOWN_RCV )
-		RemoveNativeInterface(cx, obj, NI_READ_RESOURCE);
+		J_CHECK_CALL( SetStreamReadInterface(cx, obj, NULL) );
+
 	if (PR_Shutdown( fd, how ) != PR_SUCCESS) // is this compatible with linger ?? need to check PR_WOULD_BLOCK_ERROR ???
 		return ThrowIoError(cx);
 
@@ -169,7 +170,7 @@ DEFINE_FUNCTION( Accept ) {
 	PRFileDesc *newFd = PR_Accept( fd, NULL, connectTimeout );
 	if ( newFd == NULL )
 		return ThrowIoError(cx);
-	SetNativeInterface(cx, obj, NI_READ_RESOURCE, (FunctionPointer)NativeInterfaceReadDescriptor, newFd);
+	J_CHECK_CALL( SetStreamReadInterface(cx, obj, NativeInterfaceStreamRead) );
 	JSObject *object = JS_NewObject( cx, &classSocket, NULL, NULL );
 	JS_SetPrivate( cx, object, newFd );
 	*rval = OBJECT_TO_JSVAL( object );
@@ -249,7 +250,7 @@ DEFINE_FUNCTION( Connect ) {
 	}
 	// see 	PR_GetConnectStatus or PR_ConnectContinue INSTEAD ???
 
-	SetNativeInterface(cx, obj, NI_READ_RESOURCE, (FunctionPointer)NativeInterfaceReadDescriptor, fd);
+	J_CHECK_CALL( SetStreamReadInterface(cx, obj, NativeInterfaceStreamRead) );
 	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 }

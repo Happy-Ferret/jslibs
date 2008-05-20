@@ -22,22 +22,25 @@
 #include "file.h"
 #include "socket.h"
 
-// open: 	SetNativeInterface(cx, obj, NI_READ_RESOURCE, (FunctionPointer)NativeInterfaceReadFile, fd);
+// open: 	SetNativeInterface(cx, obj, ...
 // close: 	RemoveNativeInterface(cx, obj, NI_READ_RESOURCE );
 
 
-bool NativeInterfaceReadDescriptor( void *pv, unsigned char *buf, unsigned int *amount ) {
+JSBool NativeInterfaceStreamRead( JSContext *cx, JSObject *obj, char *buf, size_t *amount ) {
 
-	PRFileDesc *fd = (PRFileDesc *)pv;
+	PRFileDesc *fd = (PRFileDesc*)JS_GetPrivate(cx, obj); // (PRFileDesc *)pv;
+	J_S_ASSERT_RESOURCE(fd);
+
 	PRInt32 ret;
 	PRPollDesc desc = { fd, PR_POLL_READ, 0 };
 	ret = PR_Poll( &desc, 1, PR_SecondsToInterval(10) ); // wait 10 seconds for data
 	if ( ret == -1 ) // if PR_Poll is not compatible with the file descriptor, just ignore the error ?
-		return false;
+		return ThrowIoError(cx); // returns later	
+
 	if ( ret == 0 ) { // timeout
 
 		*amount = 0;
-		return true; // no error, but no data
+		return JS_TRUE; // no error, but no data
 	}
 
 	ret = PR_Read(fd, buf, *amount);
@@ -45,18 +48,19 @@ bool NativeInterfaceReadDescriptor( void *pv, unsigned char *buf, unsigned int *
 
 		PRErrorCode errorCode = PR_GetError();
 		if ( errorCode != PR_WOULD_BLOCK_ERROR )// if non-blocking descriptor, this is a non-fatal error
-			return false; // real error			
+			return ThrowIoError(cx); // real error			
+
 		*amount = 0;
-		return true; // no error, but no data
+		return JS_TRUE; // no error, but no data
 	}
 	
 	if ( ret == 0 ) { // end of file / socket
 		
-		// (TBD)
+		// (TBD) ?
 	}
 
 	*amount = ret;
-	return true;
+	return JS_TRUE;
 }
 
 
@@ -104,7 +108,7 @@ DEFINE_FUNCTION( Close ) {
 	}
 	JS_SetPrivate( cx, obj, NULL );
 //	JS_ClearScope( cx, obj ); // help to clear readable, writable, exception
-	RemoveNativeInterface(cx, obj, NI_READ_RESOURCE );
+	J_CHECK_CALL( SetStreamReadInterface(cx, obj, NULL) );
 	return JS_TRUE;
 }
 

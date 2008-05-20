@@ -19,7 +19,6 @@
 DECLARE_CLASS(Transformation)
 
 
-
 /* This function tries to read a matrix44 from a Transformation object OR a NI_READ_MATRIX44 interface
  * *m MUST be a valid matrix pointer BUT m MAY be modified and replaced by a private matrix pointer ( in this case, you MUST copy the data )
  * see Load for an example
@@ -34,20 +33,23 @@ inline JSBool GetMatrixHelper( JSContext *cx, jsval val, Matrix44 **m ) {
 		RT_ASSERT_RESOURCE(m); // (TBD) good place to throw an error ? ( shouldn't be the caller's job ? )
 		return JS_TRUE;
 	}
-	else if ( J_JSVAL_IS_ARRAY( val ) ) {
+	
+	if ( J_JSVAL_IS_ARRAY( val ) ) {
 
 		jsuint length = 16;
 		J_JSVAL_TO_REAL_VECTOR( val, (*m)->raw, length );
 		J_S_ASSERT( length == 16, "Too few elements in the array." );
 		return JS_TRUE;
-	}	
-	else { // try to read the matrix using the NativeInterface system
+	}
+
+	if ( JSVAL_IS_OBJECT(val) && !JSVAL_IS_NULL(val) ) { // try to read the matrix using the NativeInterface system
 
 		NIMatrix44Read ReadMatrix;
-		void *descriptor;
-		GetNativeInterface(cx, JSVAL_TO_OBJECT(val), NI_READ_MATRIX44, (FunctionPointer*)&ReadMatrix, &descriptor);
-		RT_ASSERT( ReadMatrix != NULL, "Invalid matrix interface." ); // && descriptor != NULL // the descriptor is not always required
-		ReadMatrix(descriptor, (float**)m);
+		J_CHECK_CALL( GetMatrix44ReadInterface(cx, JSVAL_TO_OBJECT(val), &ReadMatrix ) );
+		RT_ASSERT( ReadMatrix != NULL, "Invalid matrix interface." ); // the descriptor is not always required
+		J_CHECK_CALL( ReadMatrix(cx, JSVAL_TO_OBJECT(val), (float**)m) );
 		return JS_TRUE;
 	}
+
+	J_REPORT_ERROR("Unable to read a 4x4 matrix.");
 }
