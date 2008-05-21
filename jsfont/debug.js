@@ -7,12 +7,11 @@ LoadModule('jsio');
 
 // DrawChar('1');
 
-var f = new Font('arial.ttf', true);
-
-f.SetSize(0, 50);
-
-var img = f.Draw('The ascender is the vertical distance from the ...');
-
+var f = new Font('arial.ttf');
+f.size = 100;
+//f.borderWidth = 100;
+//f.useKerning = true;
+var img = f.Draw('123');
 new File('text.png').content = EncodePngImage(img);
 
 

@@ -21,7 +21,13 @@
 #include FT_FREETYPE_H
 #include FT_GLYPH_H
 
+#define FONT_SLOT_BORDERWIDTH 0
+#define FONT_SLOT_USEKERNING 1
+#define FONT_SLOT_SIZE 2
+
 extern FT_Library _freetype;
+
+// FREETYPE_ERROR
 
 
 BEGIN_CLASS( Font ) // Start the definition of the class. It defines some symbols: _name, _class, _prototype
@@ -55,7 +61,6 @@ DEFINE_CONSTRUCTOR() { // Called when the object is constructed ( a = new Templa
 		faceIndex = 0;
 	}
 
-
 	FT_Face face;
 	FT_Error status;
 	status = FT_New_Face( _freetype, facePath, 0, &face );
@@ -68,7 +73,7 @@ DEFINE_CONSTRUCTOR() { // Called when the object is constructed ( a = new Templa
 	return JS_TRUE;
 }
 
-
+/*
 DEFINE_FUNCTION_FAST( SetSize ) {
 
 	J_S_ASSERT_ARG_MIN(2);
@@ -87,8 +92,7 @@ DEFINE_FUNCTION_FAST( SetSize ) {
 
 	return JS_TRUE;
 }
-
-
+*/
 
 DEFINE_FUNCTION_FAST( Draw ) {
 
@@ -98,35 +102,25 @@ DEFINE_FUNCTION_FAST( Draw ) {
 	J_S_ASSERT_RESOURCE(face);
 
 	JSString *jsstr = JS_ValueToString(cx, J_FARG(1));
+	J_S_ASSERT( jsstr != NULL, "Invalid string." );
 	jschar *str = JS_GetStringChars(jsstr);
+	J_S_ASSERT( str != NULL, "Invalid string." );
 	size_t strlen = JS_GetStringLength(jsstr);
 
-//	const char *str;
-//	J_CHECK_CALL( JsvalToStringAndLength(cx, J_FARG(1), &str, &strlen) );
+	if ( strlen == 0 )
+		return JS_TRUE;
 
+	jsval tmp;
 
-	bool useKerning;
-	if ( J_FARG_ISDEF(2) ) {
+	J_CHECK_CALL( JS_GetReservedSlot(cx, J_FOBJ, FONT_SLOT_BORDERWIDTH, &tmp) );
+	int borderWidth = JSVAL_IS_INT(tmp) ? JSVAL_TO_INT(tmp) : 0;
 
-		J_JSVAL_TO_BOOL( J_FARG(2), useKerning );
-		useKerning = useKerning && FT_HAS_KERNING( face );
-	} else {
+	J_CHECK_CALL( JS_GetReservedSlot(cx, J_FOBJ, FONT_SLOT_USEKERNING, &tmp) );
+	int useKerning = JSVAL_IS_BOOLEAN(tmp) ? JSVAL_TO_BOOLEAN(tmp) == JS_TRUE : false;
 
-		useKerning = false;
-	}
-
-	int borderWidth;
-	if ( J_FARG_ISDEF(3) ) {
-
-		J_JSVAL_TO_INT32( J_FARG(3), borderWidth );
-		J_S_ASSERT( borderWidth >= 0, "Invalid border size." );
-	} else {
-
-		borderWidth = 0;
-	}
+	J_S_ASSERT( face->size->metrics.height > 0, "Invalid font size." );
 
 	typedef struct {
-		
 		FT_Vector pos; // glyph origin on the baseline
 		FT_Glyph image; // glyph image
 	} Glyph;
@@ -167,14 +161,15 @@ DEFINE_FUNCTION_FAST( Draw ) {
 
 // allocates the resulting image buffer
 	size_t bufLength = width * height * 1; // 1 channel
-	char *buf = (char*)JS_malloc(cx, bufLength);
+
+	char *buf = (char*)JS_malloc(cx, bufLength); // JS_malloc do not supports 0 bytes size
+
 	JSObject *bstr = NewBString(cx, buf, bufLength);
 	J_S_ASSERT( bstr != NULL, "Unable to create a BString." ); // (TBD) free buf
 	JS_DefineProperty(cx, bstr, "width", INT_TO_JSVAL(width), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
 	JS_DefineProperty(cx, bstr, "height", INT_TO_JSVAL(height), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
 	JS_DefineProperty(cx, bstr, "channels", INT_TO_JSVAL(1), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
 	*J_FRVAL = OBJECT_TO_JSVAL( bstr );
-
 
 // render glyphs in the bitmap
 	memset(buf, 0, bufLength);
@@ -197,6 +192,7 @@ DEFINE_FUNCTION_FAST( Draw ) {
 	}
 
 	JS_free(cx, glyphs);
+
 	return JS_TRUE;
 }
 
@@ -237,18 +233,89 @@ DEFINE_PROPERTY( width ) {
 }
 
 
+DEFINE_PROPERTY( size ) {
+
+	FT_Face face = (FT_Face)JS_GetPrivate(cx, J_OBJ);
+	J_S_ASSERT_RESOURCE(face);
+
+	int size;
+	if ( *vp == JSVAL_VOID ) {
+
+		size = 0;
+	} else {
+
+		J_JSVAL_TO_INT32( *vp, size );
+		J_S_ASSERT( size >= 0, "Invalid font size." );
+	}
+
+	FT_Error status;
+	status = FT_Set_Pixel_Sizes(face, 0, size);
+	J_S_ASSERT( status == 0, "Unable to FT_Set_Pixel_Sizes." );
+	return JS_TRUE;
+}
+
+
+
+
+DEFINE_PROPERTY_GETTER( useKerning ) {
+
+	J_CHECK_CALL( JS_GetReservedSlot(cx, obj, FONT_SLOT_USEKERNING, vp) );
+	return JS_TRUE;
+}
+
+DEFINE_PROPERTY_SETTER( useKerning ) {
+
+	bool boolVal;
+	if ( *vp == JSVAL_VOID ) {
+
+		boolVal = false;
+	} else {
+
+		J_JSVAL_TO_BOOL( *vp, boolVal );
+	}
+	J_CHECK_CALL( JS_SetReservedSlot(cx, obj, FONT_SLOT_USEKERNING, BOOLEAN_TO_JSVAL(boolVal)) );
+	return JS_TRUE;
+}
+
+
+DEFINE_PROPERTY_GETTER( borderWidth ) {
+
+	J_CHECK_CALL( JS_GetReservedSlot(cx, obj, FONT_SLOT_BORDERWIDTH, vp) );
+	return JS_TRUE;
+}
+
+DEFINE_PROPERTY_SETTER( borderWidth ) {
+
+	int intVal;
+	if ( *vp == JSVAL_VOID ) {
+
+		intVal = 0;
+	} else {
+
+		J_JSVAL_TO_INT32( *vp, intVal );
+		J_S_ASSERT( intVal >= 0, "Invalid border size." );
+	}
+	J_CHECK_CALL( JS_SetReservedSlot(cx, obj, FONT_SLOT_BORDERWIDTH, INT_TO_JSVAL(intVal)) );
+	return JS_TRUE;
+}
+
+
 CONFIGURE_CLASS // This section containt the declaration and the configuration of the class
 
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE
 	HAS_PRIVATE
+	HAS_RESERVED_SLOTS(3)
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION_FAST(SetSize)
+//		FUNCTION_FAST(SetSize)
 		FUNCTION_FAST(Draw)
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
+		PROPERTY_WRITE_STORE(size)
+		PROPERTY(useKerning)
+		PROPERTY(borderWidth)
 		PROPERTY_WRITE_STORE(encoding)
 		PROPERTY_READ(ascender)
 		PROPERTY_READ(descender)
