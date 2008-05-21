@@ -50,7 +50,7 @@
 		QA.ASSERT( b.length, 4, 'length' );
 		QA.ASSERT( b[0], 'A', 'first item' );
 		QA.ASSERT( b[3], 'D', 'last item' );
-		QA.ASSERT( 2 in b, true, 'in operator' );
+		QA.ASSERT( 2 in b, true, 'in operator' ); // cf. DEFINE_NEW_RESOLVE
 		QA.ASSERT( 4 in b, false, 'in operator' );
 		QA.ASSERT( b[4], undefined, 'after last item' );
 		b.Add('XYZ');
