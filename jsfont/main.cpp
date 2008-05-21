@@ -15,20 +15,41 @@
 #include "stdafx.h"
 
 #include "static.h"
+#include "font.h"
+
+#include <ft2build.h>
+#include FT_FREETYPE_H
+
+FT_Library _freetype;
+
 
 DEFINE_UNSAFE_MODE;
+
 
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
 	SET_UNSAFE_MODE( GetConfigurationValue(cx, NAME_CONFIGURATION_UNSAFE_MODE ) == JSVAL_TRUE );
+
+	FT_Error status;
+	status = FT_Init_FreeType(&_freetype);
+	J_S_ASSERT( status == 0, "Unable to initialize FreeType2 library." );
+
 	INIT_STATIC();
+	INIT_CLASS(Font);
+
 	return JS_TRUE;
 }
+
 
 EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
 
 	return JS_FALSE;
 }
 
+
 EXTERN_C DLLEXPORT void ModuleFree() {
+
+	FT_Error status;
+	status = FT_Done_FreeType(_freetype);
+//	J_S_ASSERT( status == 0, "Unable to destroy FreeType2 library." );
 }

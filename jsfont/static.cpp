@@ -55,7 +55,6 @@ DEFINE_FUNCTION_FAST( DrawChar ) {
 	status = FT_New_Face( freetype, "arial.ttf", 0, &face );
 	// FT_New_Memory_Face
 	J_S_ASSERT( status == 0, "Unable to create the face." );
-
 	//	face->num_glyphs;
 
 	status = FT_Set_Char_Size( face, 0, 16*64, 100, 0 );
