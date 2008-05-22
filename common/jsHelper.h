@@ -73,7 +73,8 @@
 ///////////////////////////////////////////////////////////////////////////////
 // helper macros
 
-// new namespace for jslibs: J_
+#define J_MIN(a,b) ( (a) < (b) ? (a) : (b) )
+#define J_MAX(a,b) ( (a) > (b) ? (a) : (b) )
 
 // BEWARE: the following helper macros are only valid inside a JS Native function definition !
 
@@ -308,14 +309,14 @@ inline JSBool JsvalToString( JSContext *cx, jsval val, const char** buffer ) {
 } while(0)
 
 
-#define J_JSVAL_TO_REAL( jsval, floatVariable ) do { \
+#define J_JSVAL_TO_REAL( jsval, realVal ) do { \
 	if ( JSVAL_IS_DOUBLE(jsval) ) { \
-		floatVariable = *JSVAL_TO_DOUBLE(jsval); \
+		realVal = *JSVAL_TO_DOUBLE(jsval); \
 	} else { \
 		jsdouble __d; \
 		if (unlikely( JS_ValueToNumber( cx, jsval, &__d ) != JS_TRUE )) \
 			J_REPORT_ERROR( "Unable to convert to real." ); \
-		floatVariable = __d; \
+		realVal = __d; \
 	} \
 } while(0)
 
