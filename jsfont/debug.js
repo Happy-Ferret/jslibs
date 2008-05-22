@@ -8,12 +8,13 @@ LoadModule('jsio');
 // DrawChar('1');
 
 var f = new Font('arial.ttf');
-f.size = 100;
+f.size = 20;
 //f.borderWidth = 100;
 //f.useKerning = true;
-var img = f.Draw('123');
+f.letterSpacing = -10;
+
+Print( f.Draw('123456', true) );
+var img = f.Draw('123456');
+var img = f.Draw('123456');
 new File('text.png').content = EncodePngImage(img);
-
-
-
 

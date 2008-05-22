@@ -15,6 +15,8 @@
 #include "stdafx.h"
 #include "font.h"
 
+#include <math.h>
+
 #include "../jslang/bstringapi.h"
 
 #include <ft2build.h>
@@ -24,6 +26,7 @@
 #define FONT_SLOT_BORDERWIDTH 0
 #define FONT_SLOT_USEKERNING 1
 #define FONT_SLOT_SIZE 2
+#define FONT_SLOT_LETTERSPACING 3
 
 extern FT_Library _freetype;
 
@@ -94,12 +97,21 @@ DEFINE_FUNCTION_FAST( SetSize ) {
 }
 */
 
+
 DEFINE_FUNCTION_FAST( Draw ) {
 
 	J_S_ASSERT_ARG_MIN(1);
 
 	FT_Face face = (FT_Face)JS_GetPrivate(cx, J_FOBJ);
 	J_S_ASSERT_RESOURCE(face);
+
+
+	bool getWidthOnly;
+	if ( J_FARG_ISDEF(2) )
+		J_JSVAL_TO_BOOL(J_FARG(2), getWidthOnly);
+	else
+		getWidthOnly = false;
+
 
 	JSString *jsstr = JS_ValueToString(cx, J_FARG(1));
 	J_S_ASSERT( jsstr != NULL, "Invalid string." );
@@ -110,7 +122,11 @@ DEFINE_FUNCTION_FAST( Draw ) {
 	if ( strlen == 0 )
 		return JS_TRUE;
 
+
 	jsval tmp;
+
+	J_CHECK_CALL( JS_GetReservedSlot(cx, J_FOBJ, FONT_SLOT_LETTERSPACING, &tmp) );
+	int letterSpacing = JSVAL_IS_INT(tmp) ? JSVAL_TO_INT(tmp) : 0;
 
 	J_CHECK_CALL( JS_GetReservedSlot(cx, J_FOBJ, FONT_SLOT_BORDERWIDTH, &tmp) );
 	int borderWidth = JSVAL_IS_INT(tmp) ? JSVAL_TO_INT(tmp) : 0;
@@ -132,6 +148,17 @@ DEFINE_FUNCTION_FAST( Draw ) {
 	FT_Pos posX = 0;
 	FT_Pos posY = 0;
 	FT_UInt prevGlyphIndex = 0;
+/*
+	FT_Vector start;
+	FT_Matrix matrix;
+	float angle = 1;
+	start.x = 0;
+	start.y = 0;
+	matrix.xx = (FT_Fixed)( cos( angle ) * 0x10L );
+	matrix.xy = (FT_Fixed)(-sin( angle ) * 0x10L );
+	matrix.yx = (FT_Fixed)( sin( angle ) * 0x10L );
+	matrix.yy = (FT_Fixed)( cos( angle ) * 0x10L );
+*/
 
 	for ( i=0; i<strlen; i++ ) {
 
@@ -139,60 +166,68 @@ DEFINE_FUNCTION_FAST( Draw ) {
 		FT_Load_Glyph(face, glyphIndex, FT_LOAD_DEFAULT);
 		FT_Get_Glyph(face->glyph, &glyphs[i].image);
 
+//		FT_Glyph_Transform( glyphs[i].image, &matrix, NULL );
+
+		glyphs[i].pos.x = posX;
+		glyphs[i].pos.y = posY + face->size->metrics.ascender;
+
+		// prepare next char
 		if ( useKerning && prevGlyphIndex && glyphIndex ) {
 			
 			FT_Vector delta;
 			FT_Get_Kerning( face, prevGlyphIndex, glyphIndex, FT_KERNING_DEFAULT, &delta );
 			posX += delta.x;
 		}
-
-		glyphs[i].pos.x = posX;
-		glyphs[i].pos.y = posY + face->size->metrics.ascender;
-		
-		// prepare next char
-		posX += face->glyph->advance.x;
+		int adv = face->glyph->advance.x + (letterSpacing << 6);
+		posX += adv >= 0 ? adv : 0;
 		prevGlyphIndex = glyphIndex;
 	}
+	posX -= letterSpacing << 6; // we do not need the letterSpacing at the end of the text
 	posY += face->size->metrics.height;
    // here, text extents from (0,0) to (posX,posY)
 
 	int width = (posX >> 6) + borderWidth * 2; // * 2 because left and right border
 	int height = (posY >> 6) + borderWidth * 2; // ...
 
-// allocates the resulting image buffer
-	size_t bufLength = width * height * 1; // 1 channel
+	if ( getWidthOnly ) {
 
-	char *buf = (char*)JS_malloc(cx, bufLength); // JS_malloc do not supports 0 bytes size
+		*J_FRVAL = INT_TO_JSVAL( width );
+	} else {
 
-	JSObject *bstr = NewBString(cx, buf, bufLength);
-	J_S_ASSERT( bstr != NULL, "Unable to create a BString." ); // (TBD) free buf
-	JS_DefineProperty(cx, bstr, "width", INT_TO_JSVAL(width), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
-	JS_DefineProperty(cx, bstr, "height", INT_TO_JSVAL(height), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
-	JS_DefineProperty(cx, bstr, "channels", INT_TO_JSVAL(1), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
-	*J_FRVAL = OBJECT_TO_JSVAL( bstr );
+	// allocates the resulting image buffer
+		size_t bufLength = width * height * 1; // 1 channel
 
-// render glyphs in the bitmap
-	memset(buf, 0, bufLength);
-	for ( i=0; i<strlen; i++ ) {
-	
-		if ( glyphs[i].image->format != FT_GLYPH_FORMAT_BITMAP )
-			FT_Glyph_To_Bitmap( &(glyphs[i].image), FT_RENDER_MODE_NORMAL, 0, 1 );
-			
-		FT_BitmapGlyph bitmap = (FT_BitmapGlyph)glyphs[i].image;
+		char *buf = (char*)JS_malloc(cx, bufLength); // JS_malloc do not supports 0 bytes size
 
-		int dPosX = borderWidth + (glyphs[i].pos.x >> 6) + bitmap->left;
-		int dPosY = borderWidth + (glyphs[i].pos.y >> 6) - bitmap->top; // bitmap->top is the vertical distance from the pen position (on the baseline) to the topmost border of the glyph bitmap.
+		JSObject *bstr = NewBString(cx, buf, bufLength);
+		*J_FRVAL = OBJECT_TO_JSVAL( bstr );
+		J_S_ASSERT( bstr != NULL, "Unable to create a BString." ); // (TBD) free buf
+		JS_DefineProperty(cx, bstr, "width", INT_TO_JSVAL(width), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
+		JS_DefineProperty(cx, bstr, "height", INT_TO_JSVAL(height), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
+		JS_DefineProperty(cx, bstr, "channels", INT_TO_JSVAL(1), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
 
-		int x, y;
-		for ( y=0; y<bitmap->bitmap.rows; y++ )
-			for ( x=0; x<bitmap->bitmap.width; x++ )
-				buf[ (x+dPosX) + (y+dPosY) * width ] += bitmap->bitmap.buffer[ x + y * bitmap->bitmap.width ];
+	// render glyphs in the bitmap
+		memset(buf, 0, bufLength);
+		for ( i=0; i<strlen; i++ ) {
+		
+			if ( glyphs[i].image->format != FT_GLYPH_FORMAT_BITMAP )
+				FT_Glyph_To_Bitmap( &(glyphs[i].image), FT_RENDER_MODE_NORMAL, 0, 1 );
+				
+			FT_BitmapGlyph bitmap = (FT_BitmapGlyph)glyphs[i].image;
 
-		FT_Done_Glyph( glyphs[i].image );
+			int dPosX = borderWidth + (glyphs[i].pos.x >> 6) + bitmap->left;
+			int dPosY = borderWidth + (glyphs[i].pos.y >> 6) - bitmap->top; // bitmap->top is the vertical distance from the pen position (on the baseline) to the topmost border of the glyph bitmap.
+
+			int x, y;
+			for ( y=0; y<bitmap->bitmap.rows; y++ )
+				for ( x=0; x<bitmap->bitmap.width; x++ )
+					buf[ (x+dPosX) + (y+dPosY) * width ] |= (char)bitmap->bitmap.buffer[ x + y * bitmap->bitmap.width ];
+
+			FT_Done_Glyph( glyphs[i].image );
+		}
 	}
 
 	JS_free(cx, glyphs);
-
 	return JS_TRUE;
 }
 
@@ -300,15 +335,32 @@ DEFINE_PROPERTY_SETTER( borderWidth ) {
 }
 
 
+DEFINE_PROPERTY_GETTER( letterSpacing ) {
+
+	J_CHECK_CALL( JS_GetReservedSlot(cx, obj, FONT_SLOT_LETTERSPACING, vp) );
+	return JS_TRUE;
+}
+
+DEFINE_PROPERTY_SETTER( letterSpacing ) {
+
+	int intVal;
+	if ( *vp == JSVAL_VOID )
+		intVal = 0;
+	else
+		J_JSVAL_TO_INT32( *vp, intVal );
+	J_CHECK_CALL( JS_SetReservedSlot(cx, obj, FONT_SLOT_LETTERSPACING, INT_TO_JSVAL(intVal)) );
+	return JS_TRUE;
+}
+
+
 CONFIGURE_CLASS // This section containt the declaration and the configuration of the class
 
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE
 	HAS_PRIVATE
-	HAS_RESERVED_SLOTS(3)
+	HAS_RESERVED_SLOTS(4)
 
 	BEGIN_FUNCTION_SPEC
-//		FUNCTION_FAST(SetSize)
 		FUNCTION_FAST(Draw)
 	END_FUNCTION_SPEC
 
@@ -316,6 +368,7 @@ CONFIGURE_CLASS // This section containt the declaration and the configuration o
 		PROPERTY_WRITE_STORE(size)
 		PROPERTY(useKerning)
 		PROPERTY(borderWidth)
+		PROPERTY(letterSpacing)
 		PROPERTY_WRITE_STORE(encoding)
 		PROPERTY_READ(ascender)
 		PROPERTY_READ(descender)
@@ -352,5 +405,8 @@ END_CLASS
 	API: http://www.freetype.org/freetype2/docs/reference/ft2-base_interface.html#FT_Done_FreeType
 	Glyph API: http://www.freetype.org/freetype2/docs/reference/ft2-glyph_management.html
 	Tutorial: http://www.freetype.org/freetype2/docs/tutorial/step1.html
-*/
 
+	on-line demo: http://mbox.troja.mff.cuni.cz/~peak/ftdemo/index.cgi
+	-> code: http://www.koders.com/c/fid49219DA46C44B7DFDA3807DC8B0CADCEE972CEB7.aspx
+
+*/
