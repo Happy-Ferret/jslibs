@@ -22,11 +22,15 @@
 #include <ft2build.h>
 #include FT_FREETYPE_H
 #include FT_GLYPH_H
+#include FT_OUTLINE_H
+#include FT_SYNTHESIS_H
 
 #define FONT_SLOT_BORDERWIDTH 0
 #define FONT_SLOT_USEKERNING 1
 #define FONT_SLOT_SIZE 2
 #define FONT_SLOT_LETTERSPACING 3
+#define FONT_SLOT_ITALIC 4
+#define FONT_SLOT_BOLD 5
 
 extern FT_Library _freetype;
 
@@ -112,6 +116,10 @@ DEFINE_FUNCTION_FAST( Draw ) {
 	else
 		getWidthOnly = false;
 
+	bool keepTrailingSpace = false;
+	if ( J_FARG_ISDEF(3) )
+		J_JSVAL_TO_BOOL(J_FARG(3), keepTrailingSpace);
+
 
 	JSString *jsstr = JS_ValueToString(cx, J_FARG(1));
 	J_S_ASSERT( jsstr != NULL, "Invalid string." );
@@ -122,19 +130,36 @@ DEFINE_FUNCTION_FAST( Draw ) {
 	if ( strlen == 0 )
 		return JS_TRUE;
 
+	J_S_ASSERT( face->size->metrics.height > 0, "Invalid font size." );
 
 	jsval tmp;
 
+	float letterSpacingFactor = 1;
 	J_CHECK_CALL( JS_GetReservedSlot(cx, J_FOBJ, FONT_SLOT_LETTERSPACING, &tmp) );
-	int letterSpacing = JSVAL_IS_INT(tmp) ? JSVAL_TO_INT(tmp) : 0;
+	if ( tmp != JSVAL_VOID )
+		J_JSVAL_TO_REAL(tmp, letterSpacingFactor);
 
+	int borderWidth = 0;
 	J_CHECK_CALL( JS_GetReservedSlot(cx, J_FOBJ, FONT_SLOT_BORDERWIDTH, &tmp) );
-	int borderWidth = JSVAL_IS_INT(tmp) ? JSVAL_TO_INT(tmp) : 0;
+	if ( tmp != JSVAL_VOID )
+		J_JSVAL_TO_INT32(tmp, borderWidth);
 
+	int useKerning = true;
 	J_CHECK_CALL( JS_GetReservedSlot(cx, J_FOBJ, FONT_SLOT_USEKERNING, &tmp) );
-	int useKerning = JSVAL_IS_BOOLEAN(tmp) ? JSVAL_TO_BOOLEAN(tmp) == JS_TRUE : false;
+	if ( tmp != JSVAL_VOID )
+		J_JSVAL_TO_BOOL(tmp, useKerning);
 
-	J_S_ASSERT( face->size->metrics.height > 0, "Invalid font size." );
+	int isItalic = false;
+	J_CHECK_CALL( JS_GetReservedSlot(cx, J_FOBJ, FONT_SLOT_ITALIC, &tmp) );
+	if ( tmp != JSVAL_VOID )
+		J_JSVAL_TO_BOOL(tmp, isItalic);
+
+	int isBold = false;
+	J_CHECK_CALL( JS_GetReservedSlot(cx, J_FOBJ, FONT_SLOT_BOLD, &tmp) );
+	if ( tmp != JSVAL_VOID )
+		J_JSVAL_TO_BOOL(tmp, isBold);
+
+
 
 	typedef struct {
 		FT_Vector pos; // glyph origin on the baseline
@@ -148,41 +173,44 @@ DEFINE_FUNCTION_FAST( Draw ) {
 	FT_Pos posX = 0;
 	FT_Pos posY = 0;
 	FT_UInt prevGlyphIndex = 0;
-/*
-	FT_Vector start;
-	FT_Matrix matrix;
-	float angle = 1;
-	start.x = 0;
-	start.y = 0;
-	matrix.xx = (FT_Fixed)( cos( angle ) * 0x10L );
-	matrix.xy = (FT_Fixed)(-sin( angle ) * 0x10L );
-	matrix.yx = (FT_Fixed)( sin( angle ) * 0x10L );
-	matrix.yy = (FT_Fixed)( cos( angle ) * 0x10L );
-*/
+	int advance;
 
 	for ( i=0; i<strlen; i++ ) {
 
 		FT_UInt glyphIndex = FT_Get_Char_Index( face, str[i] );
 		FT_Load_Glyph(face, glyphIndex, FT_LOAD_DEFAULT);
+		if ( isItalic )
+			FT_GlyphSlot_Oblique(face->glyph);
+		if ( isBold )
+			FT_GlyphSlot_Embolden(face->glyph); // bold
 		FT_Get_Glyph(face->glyph, &glyphs[i].image);
-
-//		FT_Glyph_Transform( glyphs[i].image, &matrix, NULL );
 
 		glyphs[i].pos.x = posX;
 		glyphs[i].pos.y = posY + face->size->metrics.ascender;
 
 		// prepare next char
+		advance = 0;
 		if ( useKerning && prevGlyphIndex && glyphIndex ) {
 			
 			FT_Vector delta;
 			FT_Get_Kerning( face, prevGlyphIndex, glyphIndex, FT_KERNING_DEFAULT, &delta );
-			posX += delta.x;
+			advance += delta.x;
 		}
-		int adv = face->glyph->advance.x + (letterSpacing << 6);
-		posX += adv >= 0 ? adv : 0;
+
+//		posX += J_MAX( face->glyph->advance.x + (letterSpacing << 6), 0 );
+		advance += face->glyph->advance.x;
+		advance *= letterSpacingFactor;
+		posX += advance;
 		prevGlyphIndex = glyphIndex;
 	}
-	posX -= letterSpacing << 6; // we do not need the letterSpacing at the end of the text
+
+	if ( !keepTrailingSpace ) { // (TBD) enhance this
+
+		posX -= advance; // we do not need the letterSpacing at the end of the text
+//		posX += face->glyph->advance.x;
+		posX += face->glyph->metrics.horiBearingX + face->glyph->metrics.width;
+	}
+
 	posY += face->size->metrics.height;
    // here, text extents from (0,0) to (posX,posY)
 
@@ -300,15 +328,7 @@ DEFINE_PROPERTY_GETTER( useKerning ) {
 
 DEFINE_PROPERTY_SETTER( useKerning ) {
 
-	bool boolVal;
-	if ( *vp == JSVAL_VOID ) {
-
-		boolVal = false;
-	} else {
-
-		J_JSVAL_TO_BOOL( *vp, boolVal );
-	}
-	J_CHECK_CALL( JS_SetReservedSlot(cx, obj, FONT_SLOT_USEKERNING, BOOLEAN_TO_JSVAL(boolVal)) );
+	J_CHECK_CALL( JS_SetReservedSlot(cx, obj, FONT_SLOT_USEKERNING, *vp) );
 	return JS_TRUE;
 }
 
@@ -321,34 +341,46 @@ DEFINE_PROPERTY_GETTER( borderWidth ) {
 
 DEFINE_PROPERTY_SETTER( borderWidth ) {
 
-	int intVal;
-	if ( *vp == JSVAL_VOID ) {
-
-		intVal = 0;
-	} else {
-
-		J_JSVAL_TO_INT32( *vp, intVal );
-		J_S_ASSERT( intVal >= 0, "Invalid border size." );
-	}
-	J_CHECK_CALL( JS_SetReservedSlot(cx, obj, FONT_SLOT_BORDERWIDTH, INT_TO_JSVAL(intVal)) );
+	J_CHECK_CALL( JS_SetReservedSlot(cx, obj, FONT_SLOT_BORDERWIDTH, *vp) );
 	return JS_TRUE;
 }
 
 
-DEFINE_PROPERTY_GETTER( letterSpacing ) {
+DEFINE_PROPERTY_GETTER( letterSpacingFactor ) {
 
 	J_CHECK_CALL( JS_GetReservedSlot(cx, obj, FONT_SLOT_LETTERSPACING, vp) );
 	return JS_TRUE;
 }
 
-DEFINE_PROPERTY_SETTER( letterSpacing ) {
+DEFINE_PROPERTY_SETTER( letterSpacingFactor ) {
 
-	int intVal;
-	if ( *vp == JSVAL_VOID )
-		intVal = 0;
-	else
-		J_JSVAL_TO_INT32( *vp, intVal );
-	J_CHECK_CALL( JS_SetReservedSlot(cx, obj, FONT_SLOT_LETTERSPACING, INT_TO_JSVAL(intVal)) );
+	J_CHECK_CALL( JS_SetReservedSlot(cx, obj, FONT_SLOT_LETTERSPACING, *vp) );
+	return JS_TRUE;
+}
+
+
+DEFINE_PROPERTY_GETTER( italic ) {
+
+	J_CHECK_CALL( JS_GetReservedSlot(cx, obj, FONT_SLOT_ITALIC, vp) );
+	return JS_TRUE;
+}
+
+DEFINE_PROPERTY_SETTER( italic ) {
+
+	J_CHECK_CALL( JS_SetReservedSlot(cx, obj, FONT_SLOT_ITALIC, *vp) );
+	return JS_TRUE;
+}
+
+
+DEFINE_PROPERTY_GETTER( bold ) {
+
+	J_CHECK_CALL( JS_GetReservedSlot(cx, obj, FONT_SLOT_BOLD, vp) );
+	return JS_TRUE;
+}
+
+DEFINE_PROPERTY_SETTER( bold ) {
+
+	J_CHECK_CALL( JS_SetReservedSlot(cx, obj, FONT_SLOT_BOLD, *vp) );
 	return JS_TRUE;
 }
 
@@ -358,7 +390,7 @@ CONFIGURE_CLASS // This section containt the declaration and the configuration o
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE
 	HAS_PRIVATE
-	HAS_RESERVED_SLOTS(4)
+	HAS_RESERVED_SLOTS(6)
 
 	BEGIN_FUNCTION_SPEC
 		FUNCTION_FAST(Draw)
@@ -368,7 +400,9 @@ CONFIGURE_CLASS // This section containt the declaration and the configuration o
 		PROPERTY_WRITE_STORE(size)
 		PROPERTY(useKerning)
 		PROPERTY(borderWidth)
-		PROPERTY(letterSpacing)
+		PROPERTY(letterSpacingFactor)
+		PROPERTY(italic)
+		PROPERTY(bold)
 		PROPERTY_WRITE_STORE(encoding)
 		PROPERTY_READ(ascender)
 		PROPERTY_READ(descender)
