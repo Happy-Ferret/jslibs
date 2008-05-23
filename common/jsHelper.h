@@ -263,6 +263,46 @@ inline JSBool JsvalToString( JSContext *cx, jsval val, const char** buffer ) {
 	return JsvalToStringAndLength( cx, val, buffer, &size );
 }
 
+inline JSBool StringToJsval( JSContext *cx, jsval *val, const char* cstr ) {
+
+	JSString *jsstr = JS_NewStringCopyZ(cx, cstr);
+	if ( jsstr == NULL )
+		J_REPORT_ERROR( "Unable to create thye string." );
+	*val = STRING_TO_JSVAL(jsstr);
+	return JS_TRUE;
+}
+
+
+inline JSBool SetPropertyInt32( JSContext *cx, JSObject *obj, const char *propertyName, int32 intVal ) {
+
+	jsval val;
+	if ( INT_FITS_IN_JSVAL(intVal) )
+		val = INT_TO_JSVAL(intVal);
+	else
+		if (unlikely( JS_NewNumberValue(cx, intVal, &val) != JS_TRUE ))
+			J_REPORT_ERROR( "Unable to convert to a 32bit integer." );
+	if (unlikely( JS_DefineProperty(cx, obj, propertyName, val, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ) != JS_TRUE ))
+		J_REPORT_ERROR( "Unable to set the property." );
+	return JS_TRUE;
+}
+
+
+inline JSBool GetPropertyInt32( JSContext *cx, JSObject *obj, const char *propertyName, int32 *intVal ) {
+
+	jsval val;
+	if (unlikely( JS_GetProperty(cx, obj, propertyName, &val) != JS_TRUE ))
+		J_REPORT_ERROR( "Unable to read the property." );
+	if ( JSVAL_IS_INT(val) )
+		*intVal = JSVAL_TO_INT(val);
+	else
+		if (unlikely( JS_ValueToInt32(cx, val, intVal) != JS_TRUE ))
+			J_REPORT_ERROR( "Unable to convert to a 32bit integer." );
+	return JS_TRUE;
+}
+
+
+
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // conversion macros
