@@ -336,6 +336,7 @@ DEFINE_CONSTRUCTOR() {
 		tex->height = srcTex->height;
 		tex->channels = srcTex->channels;
 	}
+
 	JS_SetPrivate(cx, obj, tex);
 	J_CHECK_CALL( SetBufferReadInterface(cx, obj, NativeInterfaceBufferRead) );
 	return JS_TRUE;
@@ -2079,50 +2080,52 @@ DEFINE_FUNCTION_FAST( Export ) { // (int)x, (int)y, (int)width, (int)height . Re
 	u_int8_t *buffer;
 	int bufferLength;
 
+	int px, py;
+
 	if ( J_ARGC == 0 ) { // copy the whole image
-	
-		bufferLength = sWidth * sHeight * sChannels;
-		buffer = (u_int8_t*)JS_malloc(cx, bufferLength);
-		memcpy(buffer, tex->cbuffer, bufferLength);
+
+		px = 0;
+		py = 0;
+		dWidth = sWidth;
+		dHeight = sHeight;
 	} else {
 		
 		J_S_ASSERT_ARG_MIN( 4 );
-
 		int px, py;
 		J_JSVAL_TO_INT32( J_FARG(1), px );
 		J_JSVAL_TO_INT32( J_FARG(2), py );
 		J_JSVAL_TO_INT32( J_FARG(3), dWidth );
 		J_JSVAL_TO_INT32( J_FARG(4), dHeight );
-
-		bufferLength = dWidth * dHeight * sChannels;
-		buffer = (u_int8_t*)JS_malloc(cx, bufferLength);
-
-		int posDst, posSrc;
-		int c;
-		int x, y;
-
-		for ( y = 0; y < dHeight; y++ )
-			for ( x = 0; x < dWidth; x++ ) {
-
-				int sx, sy; // position in source
-				
-				sx = x + px;
-				sy = y + py;
-
-				posDst = ( x + y * dWidth ) * sChannels;
-				posSrc = ( sx + sy * sWidth ) * sChannels;
-				for ( c = 0; c < sChannels; c++ )
-					buffer[posDst+c] = (u_int8_t)(MINMAX(tex->cbuffer[posSrc+c], 0, PMAX) * 256);
-			}
 	}
 
+	bufferLength = dWidth * dHeight * sChannels;
+	buffer = (u_int8_t*)JS_malloc(cx, bufferLength);
+
+	int posDst, posSrc;
+	int c;
+	int x, y;
+
+	for ( y = 0; y < dHeight; y++ )
+		for ( x = 0; x < dWidth; x++ ) {
+
+			int sx, sy; // position in source
+			
+			sx = x + px;
+			sy = y + py;
+
+			posDst = ( x + y * dWidth ) * sChannels;
+			posSrc = ( sx + sy * sWidth ) * sChannels;
+			for ( c = 0; c < sChannels; c++ )
+				buffer[posDst+c] = (u_int8_t)(MINMAX(tex->cbuffer[posSrc+c], 0, PMAX) * 256);
+		}
+
+
 	JSObject *bstr = NewBString(cx, buffer, bufferLength);
-
-	JS_DefineProperty(cx, bstr, "width", INT_TO_JSVAL(dWidth), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
-	JS_DefineProperty(cx, bstr, "height", INT_TO_JSVAL(dHeight), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
-	JS_DefineProperty(cx, bstr, "channels", INT_TO_JSVAL(sChannels), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
-
 	*J_FRVAL = OBJECT_TO_JSVAL(bstr);
+	SetPropertyInt32(cx, bstr, "width", dWidth);
+	SetPropertyInt32(cx, bstr, "height", dHeight);
+	SetPropertyInt32(cx, bstr, "channels", sChannels);
+
 	return JS_TRUE;
 }
 
