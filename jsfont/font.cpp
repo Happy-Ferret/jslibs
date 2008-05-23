@@ -171,13 +171,12 @@ DEFINE_FUNCTION_FAST( DrawString ) {
 		J_JSVAL_TO_BOOL(J_FARG(3), getWidthOnly);
 
 
-
 	jsval tmp;
 
-	float letterSpacingFactor = 1;
+	int letterSpacing = 0;
 	J_CHECK_CALL( JS_GetReservedSlot(cx, J_FOBJ, FONT_SLOT_LETTERSPACING, &tmp) );
 	if ( tmp != JSVAL_VOID )
-		J_JSVAL_TO_REAL(tmp, letterSpacingFactor);
+		J_JSVAL_TO_INT32(tmp, letterSpacing);
 
 	int horizontalPadding = 0;
 	J_CHECK_CALL( JS_GetReservedSlot(cx, J_FOBJ, FONT_SLOT_HORIZONTALPADDING, &tmp) );
@@ -219,8 +218,6 @@ DEFINE_FUNCTION_FAST( DrawString ) {
 	FT_UInt prevGlyphIndex = 0;
 	FT_Pos advance = 0;
 
-	int glyphHeight = face->size->metrics.ascender + -face->size->metrics.descender;
-
 	for ( i=0; i<strlen; i++ ) {
 
 		FT_UInt glyphIndex = FT_Get_Char_Index( face, str[i] );
@@ -244,25 +241,20 @@ DEFINE_FUNCTION_FAST( DrawString ) {
 			advance += delta.x;
 		}
 		
-//		spaceToNextGlyph  = face->glyph->advance.x - (face->glyph->metrics.horiBearingX + face->glyph->metrics.width);
-
-		advance += face->glyph->advance.x;
-		advance += glyphHeight * letterSpacingFactor;
-
+		advance += face->glyph->advance.x + (letterSpacing << 6);
 		posX += advance;
 		prevGlyphIndex = glyphIndex;
 	}
 
 	if ( !keepTrailingSpace ) { // (TBD) enhance this
 
-		posX -= advance; // we do not need the letterSpacing at the end of the text
-		posX += face->glyph->metrics.horiBearingX + face->glyph->metrics.width; // but we need to advance by the glyph width.
+		posX += -advance + face->glyph->metrics.horiBearingX + face->glyph->metrics.width; // we do not need the letterSpacing at the end of the text, but we need to advance by the glyph width.
 	}
 
 	// Doc.	The ascender is the vertical distance from the horizontal baseline to the highest ‘character’ coordinate in a font face.
 	//			Unfortunately, font formats define the ascender differently. For some, it represents the ascent of all capital latin characters (without accents), 
 	//			for others it is the ascent of the highest accented character, and finally, other formats define it as being equal to global_bbox.yMax.
-	posY += glyphHeight;
+	posY += face->size->metrics.ascender + -face->size->metrics.descender;
 
    // here, text extents from (0,0) to (posX,posY)
 
@@ -417,12 +409,12 @@ DEFINE_PROPERTY_SETTER( verticalPadding ) {
 }
 
 
-DEFINE_PROPERTY_GETTER( letterSpacingFactor ) {
+DEFINE_PROPERTY_GETTER( letterSpacing ) {
 
 	return JS_GetReservedSlot(cx, obj, FONT_SLOT_LETTERSPACING, vp);
 }
 
-DEFINE_PROPERTY_SETTER( letterSpacingFactor ) {
+DEFINE_PROPERTY_SETTER( letterSpacing ) {
 
 	return JS_SetReservedSlot(cx, obj, FONT_SLOT_LETTERSPACING, *vp);
 }
@@ -468,7 +460,7 @@ CONFIGURE_CLASS // This section containt the declaration and the configuration o
 		PROPERTY(useKerning)
 		PROPERTY(horizontalPadding)
 		PROPERTY(verticalPadding)
-		PROPERTY(letterSpacingFactor)
+		PROPERTY(letterSpacing)
 		PROPERTY(italic)
 		PROPERTY(bold)
 		PROPERTY_WRITE_STORE(encoding)
