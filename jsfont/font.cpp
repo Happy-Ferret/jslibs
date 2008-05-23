@@ -25,17 +25,33 @@
 #include FT_OUTLINE_H
 #include FT_SYNTHESIS_H
 
-#define FONT_SLOT_BORDERWIDTH 0
-#define FONT_SLOT_USEKERNING 1
-#define FONT_SLOT_SIZE 2
-#define FONT_SLOT_LETTERSPACING 3
-#define FONT_SLOT_ITALIC 4
-#define FONT_SLOT_BOLD 5
+#define FONT_SLOT_HORIZONTALPADDING 0
+#define FONT_SLOT_VERTICALPADDING 1
+#define FONT_SLOT_USEKERNING 2
+#define FONT_SLOT_SIZE 3
+#define FONT_SLOT_LETTERSPACING 4
+#define FONT_SLOT_ITALIC 5
+#define FONT_SLOT_BOLD 6
 
 extern FT_Library _freetype;
 
-// FREETYPE_ERROR
+#define FTCHK( call ) do { \
+	if ( (call) != FT_Err_Ok ) { \
+		J_REPORT_ERROR("freetype error."); \
+	} \
+} while(0)
 
+/*
+typedef struct {
+	FT_Face face;
+	int borderWidth;
+	int borderHeight;
+	bool useKerning;
+	float letterSpacingFactor;
+	bool italic;
+	bool bold;
+} FaceInfo;
+*/
 
 BEGIN_CLASS( Font ) // Start the definition of the class. It defines some symbols: _name, _class, _prototype
 
@@ -58,23 +74,15 @@ DEFINE_CONSTRUCTOR() { // Called when the object is constructed ( a = new Templa
 	const char *facePath;
 	J_CHECK_CALL( JsvalToString(cx, J_ARG(1), &facePath) );
 
-	FT_Long faceIndex;
-
-	if ( J_ARG_ISDEF(2) ) {
-		
+	FT_Long faceIndex = 0;
+	if ( J_ARG_ISDEF(2) )
 		J_JSVAL_TO_INT32(J_ARG(2), faceIndex);
-	} else {
-		
-		faceIndex = 0;
-	}
 
 	FT_Face face;
-	FT_Error status;
-	status = FT_New_Face( _freetype, facePath, 0, &face );
+	FTCHK( FT_New_Face( _freetype, facePath, 0, &face ) );
 	// from memory: FT_New_Memory_Face
 	// see. FT_Open_Face
 
-	J_S_ASSERT_1( status == 0, "Unable to create font face (%s).", facePath );
 	J_S_ASSERT_RESOURCE(face);
 	J_CHECK_CALL( JS_SetPrivate(cx, obj, face) );
 	return JS_TRUE;
@@ -101,25 +109,52 @@ DEFINE_FUNCTION_FAST( SetSize ) {
 }
 */
 
-
-DEFINE_FUNCTION_FAST( Draw ) {
+DEFINE_FUNCTION_FAST( DrawChar ) {
 
 	J_S_ASSERT_ARG_MIN(1);
 
 	FT_Face face = (FT_Face)JS_GetPrivate(cx, J_FOBJ);
 	J_S_ASSERT_RESOURCE(face);
 
+	J_S_ASSERT( face->size->metrics.height > 0, "Invalid font size." );
 
-	bool getWidthOnly;
-	if ( J_FARG_ISDEF(2) )
-		J_JSVAL_TO_BOOL(J_FARG(2), getWidthOnly);
-	else
-		getWidthOnly = false;
+	JSString *jsstr = JS_ValueToString(cx, J_FARG(1));
+	J_S_ASSERT( jsstr != NULL, "Invalid string." );
+	J_S_ASSERT( JS_GetStringLength(jsstr) == 1, "Invalid char" );
+	jschar *str = JS_GetStringChars(jsstr);
+	J_S_ASSERT( str != NULL, "Invalid string." );
 
-	bool keepTrailingSpace = false;
-	if ( J_FARG_ISDEF(3) )
-		J_JSVAL_TO_BOOL(J_FARG(3), keepTrailingSpace);
+	FTCHK( FT_Load_Char(face, str[0], FT_LOAD_RENDER) );
 
+	int width = face->glyph->bitmap.width;
+	int height = face->glyph->bitmap.rows;
+
+	size_t bufLength = width * height * 1; // 1 channel
+
+	void *buf = JS_malloc(cx, bufLength);
+
+	JSObject *bstr = NewBString(cx, buf, bufLength);
+	J_S_ASSERT( bstr != NULL, "Unable to create a BString." );
+	*J_FRVAL = OBJECT_TO_JSVAL( bstr );
+
+	J_CHECK_CALL( SetPropertyInt32(cx, bstr, "width", width) );
+	J_CHECK_CALL( SetPropertyInt32(cx, bstr, "height", height) );
+	J_CHECK_CALL( SetPropertyInt32(cx, bstr, "channels", 1) );
+	memcpy( buf, face->glyph->bitmap.buffer, bufLength );
+
+	return JS_TRUE;
+}
+
+
+
+DEFINE_FUNCTION_FAST( DrawString ) {
+
+	J_S_ASSERT_ARG_MIN(1);
+
+	FT_Face face = (FT_Face)JS_GetPrivate(cx, J_FOBJ);
+	J_S_ASSERT_RESOURCE(face);
+
+	J_S_ASSERT( face->size->metrics.height > 0, "Invalid font size." );
 
 	JSString *jsstr = JS_ValueToString(cx, J_FARG(1));
 	J_S_ASSERT( jsstr != NULL, "Invalid string." );
@@ -127,10 +162,15 @@ DEFINE_FUNCTION_FAST( Draw ) {
 	J_S_ASSERT( str != NULL, "Invalid string." );
 	size_t strlen = JS_GetStringLength(jsstr);
 
-	if ( strlen == 0 )
-		return JS_TRUE;
+	bool keepTrailingSpace = false;
+	if ( J_FARG_ISDEF(2) )
+		J_JSVAL_TO_BOOL(J_FARG(2), keepTrailingSpace);
 
-	J_S_ASSERT( face->size->metrics.height > 0, "Invalid font size." );
+	bool getWidthOnly = false;
+	if ( J_FARG_ISDEF(3) )
+		J_JSVAL_TO_BOOL(J_FARG(3), getWidthOnly);
+
+
 
 	jsval tmp;
 
@@ -139,10 +179,15 @@ DEFINE_FUNCTION_FAST( Draw ) {
 	if ( tmp != JSVAL_VOID )
 		J_JSVAL_TO_REAL(tmp, letterSpacingFactor);
 
-	int borderWidth = 0;
-	J_CHECK_CALL( JS_GetReservedSlot(cx, J_FOBJ, FONT_SLOT_BORDERWIDTH, &tmp) );
+	int horizontalPadding = 0;
+	J_CHECK_CALL( JS_GetReservedSlot(cx, J_FOBJ, FONT_SLOT_HORIZONTALPADDING, &tmp) );
 	if ( tmp != JSVAL_VOID )
-		J_JSVAL_TO_INT32(tmp, borderWidth);
+		J_JSVAL_TO_INT32(tmp, horizontalPadding);
+
+	int verticalPadding = 0;
+	J_CHECK_CALL( JS_GetReservedSlot(cx, J_FOBJ, FONT_SLOT_VERTICALPADDING, &tmp) );
+	if ( tmp != JSVAL_VOID )
+		J_JSVAL_TO_INT32(tmp, verticalPadding);
 
 	int useKerning = true;
 	J_CHECK_CALL( JS_GetReservedSlot(cx, J_FOBJ, FONT_SLOT_USEKERNING, &tmp) );
@@ -160,30 +205,32 @@ DEFINE_FUNCTION_FAST( Draw ) {
 		J_JSVAL_TO_BOOL(tmp, isBold);
 
 
-
 	typedef struct {
 		FT_Vector pos; // glyph origin on the baseline
 		FT_Glyph image; // glyph image
 	} Glyph;
 
-	Glyph *glyphs = (Glyph*)JS_malloc(cx, sizeof(Glyph) * strlen);
+	Glyph *glyphs = (Glyph*)malloc(sizeof(Glyph) * strlen);
 
 	size_t i;
 
 	FT_Pos posX = 0;
 	FT_Pos posY = 0;
 	FT_UInt prevGlyphIndex = 0;
-	int advance;
+	FT_Pos advance = 0;
+
+	int glyphHeight = face->size->metrics.ascender + -face->size->metrics.descender;
 
 	for ( i=0; i<strlen; i++ ) {
 
 		FT_UInt glyphIndex = FT_Get_Char_Index( face, str[i] );
-		FT_Load_Glyph(face, glyphIndex, FT_LOAD_DEFAULT);
+		FTCHK( FT_Load_Glyph(face, glyphIndex, FT_LOAD_DEFAULT) );
 		if ( isItalic )
 			FT_GlyphSlot_Oblique(face->glyph);
 		if ( isBold )
-			FT_GlyphSlot_Embolden(face->glyph); // bold
-		FT_Get_Glyph(face->glyph, &glyphs[i].image);
+			FT_GlyphSlot_Embolden(face->glyph);
+
+		FTCHK( FT_Get_Glyph(face->glyph, &glyphs[i].image) );
 
 		glyphs[i].pos.x = posX;
 		glyphs[i].pos.y = posY + face->size->metrics.ascender;
@@ -193,13 +240,15 @@ DEFINE_FUNCTION_FAST( Draw ) {
 		if ( useKerning && prevGlyphIndex && glyphIndex ) {
 			
 			FT_Vector delta;
-			FT_Get_Kerning( face, prevGlyphIndex, glyphIndex, FT_KERNING_DEFAULT, &delta );
+			FTCHK( FT_Get_Kerning( face, prevGlyphIndex, glyphIndex, FT_KERNING_DEFAULT, &delta ) );
 			advance += delta.x;
 		}
+		
+//		spaceToNextGlyph  = face->glyph->advance.x - (face->glyph->metrics.horiBearingX + face->glyph->metrics.width);
 
-//		posX += J_MAX( face->glyph->advance.x + (letterSpacing << 6), 0 );
 		advance += face->glyph->advance.x;
-		advance *= letterSpacingFactor;
+		advance += glyphHeight * letterSpacingFactor;
+
 		posX += advance;
 		prevGlyphIndex = glyphIndex;
 	}
@@ -207,22 +256,25 @@ DEFINE_FUNCTION_FAST( Draw ) {
 	if ( !keepTrailingSpace ) { // (TBD) enhance this
 
 		posX -= advance; // we do not need the letterSpacing at the end of the text
-//		posX += face->glyph->advance.x;
-		posX += face->glyph->metrics.horiBearingX + face->glyph->metrics.width;
+		posX += face->glyph->metrics.horiBearingX + face->glyph->metrics.width; // but we need to advance by the glyph width.
 	}
 
-	posY += face->size->metrics.height;
+	// Doc.	The ascender is the vertical distance from the horizontal baseline to the highest ‘character’ coordinate in a font face.
+	//			Unfortunately, font formats define the ascender differently. For some, it represents the ascent of all capital latin characters (without accents), 
+	//			for others it is the ascent of the highest accented character, and finally, other formats define it as being equal to global_bbox.yMax.
+	posY += glyphHeight;
+
    // here, text extents from (0,0) to (posX,posY)
 
-	int width = (posX >> 6) + borderWidth * 2; // * 2 because left and right border
-	int height = (posY >> 6) + borderWidth * 2; // ...
+	int width = (posX >> 6) + horizontalPadding * 2; // * 2 because left and right border
+	int height = (posY >> 6) + verticalPadding * 2; // ...
 
 	if ( getWidthOnly ) {
 
 		*J_FRVAL = INT_TO_JSVAL( width );
 	} else {
 
-	// allocates the resulting image buffer
+		// allocates the resulting image buffer
 		size_t bufLength = width * height * 1; // 1 channel
 
 		char *buf = (char*)JS_malloc(cx, bufLength); // JS_malloc do not supports 0 bytes size
@@ -230,43 +282,43 @@ DEFINE_FUNCTION_FAST( Draw ) {
 		JSObject *bstr = NewBString(cx, buf, bufLength);
 		*J_FRVAL = OBJECT_TO_JSVAL( bstr );
 		J_S_ASSERT( bstr != NULL, "Unable to create a BString." ); // (TBD) free buf
-		JS_DefineProperty(cx, bstr, "width", INT_TO_JSVAL(width), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
-		JS_DefineProperty(cx, bstr, "height", INT_TO_JSVAL(height), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
-		JS_DefineProperty(cx, bstr, "channels", INT_TO_JSVAL(1), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
+		J_CHECK_CALL( SetPropertyInt32(cx, bstr, "width", width) );
+		J_CHECK_CALL( SetPropertyInt32(cx, bstr, "height", height) );
+		J_CHECK_CALL( SetPropertyInt32(cx, bstr, "channels", 1) );
 
-	// render glyphs in the bitmap
+		// render glyphs in the bitmap
 		memset(buf, 0, bufLength);
 		for ( i=0; i<strlen; i++ ) {
 		
 			if ( glyphs[i].image->format != FT_GLYPH_FORMAT_BITMAP )
-				FT_Glyph_To_Bitmap( &(glyphs[i].image), FT_RENDER_MODE_NORMAL, 0, 1 );
+				FTCHK( FT_Glyph_To_Bitmap( &(glyphs[i].image), FT_RENDER_MODE_NORMAL, 0, 1 ) );
 				
 			FT_BitmapGlyph bitmap = (FT_BitmapGlyph)glyphs[i].image;
 
-			int dPosX = borderWidth + (glyphs[i].pos.x >> 6) + bitmap->left;
-			int dPosY = borderWidth + (glyphs[i].pos.y >> 6) - bitmap->top; // bitmap->top is the vertical distance from the pen position (on the baseline) to the topmost border of the glyph bitmap.
+			int dPosX = horizontalPadding + (glyphs[i].pos.x >> 6) + bitmap->left;
+			int dPosY = verticalPadding + (glyphs[i].pos.y >> 6) - bitmap->top; // bitmap->top is the vertical distance from the pen position (on the baseline) to the topmost border of the glyph bitmap.
 
-			int x, y;
-			for ( y=0; y<bitmap->bitmap.rows; y++ )
-				for ( x=0; x<bitmap->bitmap.width; x++ )
-					buf[ (x+dPosX) + (y+dPosY) * width ] |= (char)bitmap->bitmap.buffer[ x + y * bitmap->bitmap.width ];
+			int x, y, px, py;
+			for ( y=0; y<bitmap->bitmap.rows; y++ ) {
 
+				py = dPosY + y;
+				if ( py >= 0 && py < height ) {
+
+					for ( x=0; x<bitmap->bitmap.width; x++ ) {
+						
+						px = dPosX + x;
+						if ( px >= 0 &&  px < width ) {
+
+							buf[ px + py * width ] |= (char)bitmap->bitmap.buffer[ x + y * bitmap->bitmap.width ];
+						}
+					}
+				}
+			}
 			FT_Done_Glyph( glyphs[i].image );
 		}
 	}
 
-	JS_free(cx, glyphs);
-	return JS_TRUE;
-}
-
-
-DEFINE_PROPERTY( encoding ) {
-
-	FT_Face face = (FT_Face)JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_RESOURCE(face);
-	int encoding;
-	J_JSVAL_TO_INT32( *vp, encoding );
-	FT_Select_Charmap(face, (FT_Encoding)encoding);
+	free(glyphs);
 	return JS_TRUE;
 }
 
@@ -301,87 +353,100 @@ DEFINE_PROPERTY( size ) {
 	FT_Face face = (FT_Face)JS_GetPrivate(cx, J_OBJ);
 	J_S_ASSERT_RESOURCE(face);
 
-	int size;
-	if ( *vp == JSVAL_VOID ) {
-
-		size = 0;
-	} else {
-
+	int size = 0;
+	if ( *vp != JSVAL_VOID )
 		J_JSVAL_TO_INT32( *vp, size );
-		J_S_ASSERT( size >= 0, "Invalid font size." );
-	}
 
-	FT_Error status;
-	status = FT_Set_Pixel_Sizes(face, 0, size);
-	J_S_ASSERT( status == 0, "Unable to FT_Set_Pixel_Sizes." );
+	J_S_ASSERT( size >= 0, "Invalid font size." );
+	FTCHK( FT_Set_Pixel_Sizes(face, size, size) );
 	return JS_TRUE;
 }
 
+
+DEFINE_PROPERTY( encoding ) {
+
+	FT_Face face = (FT_Face)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE(face);
+	int encoding;
+	J_JSVAL_TO_INT32( *vp, encoding );
+	FTCHK( FT_Select_Charmap(face, (FT_Encoding)encoding) );
+	return JS_TRUE;
+}
+
+
+DEFINE_PROPERTY( poscriptName ) {
+
+	FT_Face face = (FT_Face)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE(face);
+	J_CHECK_CALL( StringToJsval(cx, vp, FT_Get_Postscript_Name(face)) );
+	return JS_TRUE;
+}
 
 
 
 DEFINE_PROPERTY_GETTER( useKerning ) {
 
-	J_CHECK_CALL( JS_GetReservedSlot(cx, obj, FONT_SLOT_USEKERNING, vp) );
-	return JS_TRUE;
+	return JS_GetReservedSlot(cx, obj, FONT_SLOT_USEKERNING, vp);
 }
 
 DEFINE_PROPERTY_SETTER( useKerning ) {
 
-	J_CHECK_CALL( JS_SetReservedSlot(cx, obj, FONT_SLOT_USEKERNING, *vp) );
-	return JS_TRUE;
+	return JS_SetReservedSlot(cx, obj, FONT_SLOT_USEKERNING, *vp);
 }
 
 
-DEFINE_PROPERTY_GETTER( borderWidth ) {
+DEFINE_PROPERTY_GETTER( horizontalPadding ) {
 
-	J_CHECK_CALL( JS_GetReservedSlot(cx, obj, FONT_SLOT_BORDERWIDTH, vp) );
-	return JS_TRUE;
+	return JS_GetReservedSlot(cx, obj, FONT_SLOT_HORIZONTALPADDING, vp);
 }
 
-DEFINE_PROPERTY_SETTER( borderWidth ) {
+DEFINE_PROPERTY_SETTER( horizontalPadding ) {
 
-	J_CHECK_CALL( JS_SetReservedSlot(cx, obj, FONT_SLOT_BORDERWIDTH, *vp) );
-	return JS_TRUE;
+	return JS_SetReservedSlot(cx, obj, FONT_SLOT_HORIZONTALPADDING, *vp);
+}
+
+
+DEFINE_PROPERTY_GETTER( verticalPadding ) {
+
+	return JS_GetReservedSlot(cx, obj, FONT_SLOT_VERTICALPADDING, vp);
+}
+
+DEFINE_PROPERTY_SETTER( verticalPadding ) {
+
+	return JS_SetReservedSlot(cx, obj, FONT_SLOT_VERTICALPADDING, *vp);
 }
 
 
 DEFINE_PROPERTY_GETTER( letterSpacingFactor ) {
 
-	J_CHECK_CALL( JS_GetReservedSlot(cx, obj, FONT_SLOT_LETTERSPACING, vp) );
-	return JS_TRUE;
+	return JS_GetReservedSlot(cx, obj, FONT_SLOT_LETTERSPACING, vp);
 }
 
 DEFINE_PROPERTY_SETTER( letterSpacingFactor ) {
 
-	J_CHECK_CALL( JS_SetReservedSlot(cx, obj, FONT_SLOT_LETTERSPACING, *vp) );
-	return JS_TRUE;
+	return JS_SetReservedSlot(cx, obj, FONT_SLOT_LETTERSPACING, *vp);
 }
 
 
 DEFINE_PROPERTY_GETTER( italic ) {
 
-	J_CHECK_CALL( JS_GetReservedSlot(cx, obj, FONT_SLOT_ITALIC, vp) );
-	return JS_TRUE;
+	return JS_GetReservedSlot(cx, obj, FONT_SLOT_ITALIC, vp);
 }
 
 DEFINE_PROPERTY_SETTER( italic ) {
 
-	J_CHECK_CALL( JS_SetReservedSlot(cx, obj, FONT_SLOT_ITALIC, *vp) );
-	return JS_TRUE;
+	return JS_SetReservedSlot(cx, obj, FONT_SLOT_ITALIC, *vp);
 }
 
 
 DEFINE_PROPERTY_GETTER( bold ) {
 
-	J_CHECK_CALL( JS_GetReservedSlot(cx, obj, FONT_SLOT_BOLD, vp) );
-	return JS_TRUE;
+	return JS_GetReservedSlot(cx, obj, FONT_SLOT_BOLD, vp);
 }
 
 DEFINE_PROPERTY_SETTER( bold ) {
 
-	J_CHECK_CALL( JS_SetReservedSlot(cx, obj, FONT_SLOT_BOLD, *vp) );
-	return JS_TRUE;
+	return JS_SetReservedSlot(cx, obj, FONT_SLOT_BOLD, *vp);
 }
 
 
@@ -390,16 +455,19 @@ CONFIGURE_CLASS // This section containt the declaration and the configuration o
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE
 	HAS_PRIVATE
-	HAS_RESERVED_SLOTS(6)
+	HAS_RESERVED_SLOTS(7)
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION_FAST(Draw)
+		FUNCTION_FAST(DrawString)
+		FUNCTION_FAST(DrawChar)
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
+		PROPERTY_READ(poscriptName)
 		PROPERTY_WRITE_STORE(size)
 		PROPERTY(useKerning)
-		PROPERTY(borderWidth)
+		PROPERTY(horizontalPadding)
+		PROPERTY(verticalPadding)
 		PROPERTY(letterSpacingFactor)
 		PROPERTY(italic)
 		PROPERTY(bold)

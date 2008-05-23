@@ -192,10 +192,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\static.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\stdafx.cpp"
 				>
 				<FileConfiguration
@@ -223,10 +219,6 @@
 			>
 			<File
 				RelativePath=".\font.h"
-				>
-			</File>
-			<File
-				RelativePath=".\static.h"
 				>
 			</File>
 			<File

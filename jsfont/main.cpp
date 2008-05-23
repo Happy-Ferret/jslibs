@@ -14,7 +14,6 @@
 
 #include "stdafx.h"
 
-#include "static.h"
 #include "font.h"
 
 #include <ft2build.h>
@@ -34,7 +33,6 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	status = FT_Init_FreeType(&_freetype);
 	J_S_ASSERT( status == 0, "Unable to initialize FreeType2 library." );
 
-	INIT_STATIC();
 	INIT_CLASS(Font);
 
 	return JS_TRUE;
