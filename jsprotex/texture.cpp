@@ -85,10 +85,10 @@ extern "C" double genrand_real1(void);
 
 
 
-inline void TextureSetupBackBuffer( Texture *tex ) {
+inline void TextureSetupBackBuffer( JSContext *cx, Texture *tex ) {
 
 	if ( tex->cbackBuffer == NULL )
-		tex->cbackBuffer = (PTYPE*)malloc( tex->width * tex->height * tex->channels * sizeof(PTYPE) );
+		tex->cbackBuffer = (PTYPE*)JS_malloc(cx, tex->width * tex->height * tex->channels * sizeof(PTYPE) );
 }
 
 inline void TextureSwapBuffers( Texture *tex ) {
@@ -235,7 +235,7 @@ inline JSBool InitCurveData( JSContext* cx, jsval value, int length, float *curv
 
 		int curveArrayLength;
 		RT_CHECK_CALL( ArrayLength(cx, &curveArrayLength, value) );
-		float *curveArray = (float*)malloc( curveArrayLength * sizeof(float) );
+		float *curveArray = (float*)malloc( curveArrayLength * sizeof(float) ); // (TBD) free the curveArray ???
 		RT_CHECK_CALL( FloatArrayToVector(cx, curveArrayLength, &value, curveArray) );
 
 		for ( int i = 0; i < length; i++ )
@@ -285,10 +285,10 @@ DEFINE_FINALIZE() {
 	if ( tex != NULL ) {
 
 		if ( tex->cbackBuffer != NULL )
-			free(tex->cbackBuffer);
+			JS_free(cx, tex->cbackBuffer);
 		if ( tex->cbuffer != NULL )
-			free(tex->cbuffer);
-		free(tex);
+			JS_free(cx, tex->cbuffer);
+		JS_free(cx, tex);
 		JS_SetPrivate(cx, obj, NULL);
 	}
 }
@@ -299,13 +299,13 @@ DEFINE_CONSTRUCTOR() {
 	J_S_ASSERT_CONSTRUCTING();
 	J_S_ASSERT_THIS_CLASS();
 	RT_ASSERT_ARGC( 1 );
-	Texture *tex = (Texture *)malloc(sizeof(Texture));
+	Texture *tex = (Texture *)JS_malloc(cx, sizeof(Texture));
 	tex->cbackBuffer = NULL;
 
-	if ( !IsTexture(cx, J_ARG(1)) ) {
+	J_CHECK_CALL( SetBufferReadInterface(cx, obj, NativeInterfaceBufferRead) );
 
-		RT_ASSERT_ARGC( 3 );
-
+	if ( J_ARGC >= 3 ) {
+	
 		int width, height, channels;
 		RT_JSVAL_TO_INT32( J_ARG(1), width );
 		RT_JSVAL_TO_INT32( J_ARG(2), height );
@@ -315,31 +315,66 @@ DEFINE_CONSTRUCTOR() {
 		RT_ASSERT( height > 0, "Invalid height." );
 		RT_ASSERT( channels <= PMAXCHANNELS, "Too many channels." );
 
-		tex->cbuffer = (PTYPE*)malloc( width * height * channels * sizeof(PTYPE) ); // (TBD) try with js_malloc
+		tex->cbuffer = (PTYPE*)JS_malloc(cx, width * height * channels * sizeof(PTYPE) );
 		RT_ASSERT_ALLOC( tex->cbuffer );
 
 		tex->width = width;
 		tex->height = height;
 		tex->channels = channels;
+		JS_SetPrivate(cx, obj, tex);
+		return JS_TRUE;
+	}
 
-	} else { // copy constructor
+	if ( IsTexture(cx, J_ARG(1)) ) { // copy constructor
 
 		Texture *srcTex = (Texture *)JS_GetPrivate(cx, JSVAL_TO_OBJECT(J_ARG(1)));
 		RT_ASSERT_RESOURCE(srcTex);
 
 		int tsize = srcTex->width * srcTex->height * srcTex->channels;
-		tex->cbuffer = (PTYPE*)malloc( tsize * sizeof(PTYPE) ); // (TBD) try with js_malloc
+		tex->cbuffer = (PTYPE*)JS_malloc(cx, tsize * sizeof(PTYPE) );
 		RT_ASSERT_ALLOC( tex->cbuffer );
 
 		memcpy( tex->cbuffer, srcTex->cbuffer, tsize * sizeof(PTYPE) );
 		tex->width = srcTex->width;
 		tex->height = srcTex->height;
 		tex->channels = srcTex->channels;
+		JS_SetPrivate(cx, obj, tex);
+		return JS_TRUE;
 	}
 
-	JS_SetPrivate(cx, obj, tex);
-	J_CHECK_CALL( SetBufferReadInterface(cx, obj, NativeInterfaceBufferRead) );
-	return JS_TRUE;
+	if ( IsBString( cx, J_ARG(1) ) ) {
+
+		JSObject *bstr = JSVAL_TO_OBJECT( J_ARG(1) );
+
+		int dWidth = tex->width;
+		int dHeight = tex->height;
+		int dChannels = tex->channels;
+		
+		int32 sWidth, sHeight, sChannels;
+		GetPropertyInt32(cx, bstr, "width", &sWidth);
+		GetPropertyInt32(cx, bstr, "height", &sHeight);
+		GetPropertyInt32(cx, bstr, "channels", &sChannels);
+		u_int8_t *buffer = (u_int8_t*)BStringData(cx, bstr);
+
+		tex->width = sWidth;
+		tex->height = sHeight;
+		tex->channels = sChannels;
+
+
+		int tsize = sWidth * sHeight * sChannels;
+
+		tex->cbuffer = (PTYPE*)JS_malloc(cx, tsize * sizeof(PTYPE) );
+		RT_ASSERT_ALLOC( tex->cbuffer );
+
+		for ( int i=0; i<tsize; i++ )
+			tex->cbuffer[i] = buffer[i] / (PTYPE)256;
+
+		JS_SetPrivate(cx, obj, tex);
+
+		return JS_TRUE;
+	}
+
+	J_REPORT_ERROR( "Invalid arguments" );
 }
 
 
@@ -556,7 +591,7 @@ DEFINE_FUNCTION_FAST( Aliasing ) {
 	if ( argc >= 2 ) {
 
 		useCurve = true;
-		curve = (float*)malloc( count * sizeof(float) );
+		curve = (float*)malloc( count * sizeof(float) ); // (TBD) free curve ???
 		RT_CHECK_CALL( InitCurveData( cx, J_FARG(2), count, curve ) );
 	} else
 		useCurve = false;
@@ -578,6 +613,8 @@ DEFINE_FUNCTION_FAST( Aliasing ) {
 DEFINE_FUNCTION_FAST( Colorize ) {
 	// GIMP color to alpha: http://www.google.com/codesearch?hl=en&q=+gimp+%22color+to+alpha%22
 	// color exchange algo. : http://www.koders.com/c/fidB39DAC5A8DB8B6073D78FB23363C5E0541208B02.aspx
+
+	J_S_ASSERT_ARG_MAX(2);
 
 	Texture *tex = (Texture *)JS_GetPrivate(cx, J_FOBJ);
 	RT_ASSERT_RESOURCE(tex);
@@ -1221,7 +1258,7 @@ DEFINE_FUNCTION_FAST( Rotate90 ) { // (TBD) test it
 
 	int x, y;
 
-	TextureSetupBackBuffer(tex);
+	TextureSetupBackBuffer(cx, tex);
 
 	int pos, pos1;
 	int c;
@@ -1276,7 +1313,7 @@ DEFINE_FUNCTION_FAST( Flip ) {
 	RT_JSVAL_TO_BOOL( J_FARG(1), flipX );
 	RT_JSVAL_TO_BOOL( J_FARG(2), flipY );
 
-	TextureSetupBackBuffer(tex);
+	TextureSetupBackBuffer(cx, tex);
 
 	int width = tex->width;
 	int height = tex->height;
@@ -1342,7 +1379,7 @@ DEFINE_FUNCTION_FAST( RotoZoom ) { // source: FxGen
 	float	ys = sinVal * -th2;
 	float	yc = cosVal * -th2;
 
-	TextureSetupBackBuffer(tex);
+	TextureSetupBackBuffer(cx, tex);
 
 	unsigned int spx, spy; // position in the source
 	float prx, pry; // pixel ratio
@@ -1430,7 +1467,7 @@ DEFINE_FUNCTION_FAST( Resize ) {
 
 		BorderMode borderMode = borderWrap; // (TBD) from function arg
 
-		PTYPE *newBuffer = (PTYPE*)malloc( newWidth * newHeight * channels * sizeof(PTYPE) );
+		PTYPE *newBuffer = (PTYPE*)JS_malloc(cx, newWidth * newHeight * channels * sizeof(PTYPE) );
 		RT_ASSERT_ALLOC( newBuffer );
 
 		int spx, spy; // position in the source
@@ -1501,10 +1538,10 @@ DEFINE_FUNCTION_FAST( Resize ) {
 				}
 			}
 
-		free( tex->cbuffer );
+		JS_free(cx, tex->cbuffer );
 		if ( tex->cbackBuffer != NULL ) {
 
-			free( tex->cbackBuffer );
+			JS_free(cx, tex->cbackBuffer );
 			tex->cbackBuffer = NULL;
 		}
 		
@@ -1553,7 +1590,7 @@ DEFINE_FUNCTION_FAST( Convolution ) {
 	bool autoGain;
 	RT_JSVAL_TO_BOOL( J_FARG(3), autoGain );
 
-	TextureSetupBackBuffer(tex);
+	TextureSetupBackBuffer(cx, tex);
 
 	int offset = size / 2;
 	float sizeWeight = count;
@@ -1759,12 +1796,12 @@ DEFINE_FUNCTION_FAST( Normals ) {
 
 	if ( tex->channels != 3 && tex->cbackBuffer != NULL ) { // back buffer do not have the right format
 
-		free( tex->cbackBuffer );
+		JS_free(cx, tex->cbackBuffer );
 		tex->cbackBuffer = NULL;
 	}
 
 	if ( tex->cbackBuffer == NULL )
-		tex->cbackBuffer = (PTYPE*)malloc( tex->width * tex->height * 3 * sizeof(PTYPE) );
+		tex->cbackBuffer = (PTYPE*)JS_malloc(cx, tex->width * tex->height * 3 * sizeof(PTYPE) );
 
 	// from here, tex->cbackBuffer is a 3 channels buffer
 
@@ -1836,7 +1873,7 @@ DEFINE_FUNCTION_FAST( Normals ) {
 
 	if ( tex->channels != 3 ) {
 
-		free( tex->cbackBuffer );
+		JS_free(cx, tex->cbackBuffer );
 		tex->cbackBuffer = NULL;
 	}
 
@@ -1965,14 +2002,14 @@ DEFINE_FUNCTION_FAST( Trim ) { // (TBD) test this new version that use memcpy
 
 	if ( tex->cbackBuffer != NULL ) {
 
-		free( tex->cbackBuffer );
+		JS_free(cx, tex->cbackBuffer );
 		tex->cbackBuffer = NULL;
 	}
 
 	int srcLineLength = width * channels * sizeof(PTYPE);
 	int dstLineLength = newWidth * channels * sizeof(PTYPE);
 
-	tex->cbackBuffer = (PTYPE*)malloc( newHeight * dstLineLength );
+	tex->cbackBuffer = (PTYPE*)JS_malloc(cx, newHeight * dstLineLength );
 
 	char *pSrc = (char*)tex->cbuffer + ( x0 + y0 * width ) * channels * sizeof(PTYPE);
 	char *pDst = (char*)tex->cbackBuffer;
@@ -1999,7 +2036,7 @@ DEFINE_FUNCTION_FAST( Trim ) { // (TBD) test this new version that use memcpy
 */
 
 	TextureSwapBuffers(tex);
-	free( tex->cbackBuffer );
+	JS_free(cx, tex->cbackBuffer );
 	tex->cbackBuffer = NULL;
 
 	tex->width = newWidth;
@@ -2115,8 +2152,12 @@ DEFINE_FUNCTION_FAST( Export ) { // (int)x, (int)y, (int)width, (int)height . Re
 
 			posDst = ( x + y * dWidth ) * sChannels;
 			posSrc = ( sx + sy * sWidth ) * sChannels;
-			for ( c = 0; c < sChannels; c++ )
-				buffer[posDst+c] = (u_int8_t)(MINMAX(tex->cbuffer[posSrc+c], 0, PMAX) * 256);
+			for ( c = 0; c < sChannels; c++ ) {
+				
+				buffer[posDst+c] = (u_int8_t)(MINMAX(tex->cbuffer[posSrc+c] * 256, 0, 255));
+
+				//buffer[posDst+c] = (u_int8_t)(PNORM(tex->cbuffer[posSrc+c]) * 256);
+			}
 		}
 
 
@@ -2205,10 +2246,10 @@ DEFINE_FUNCTION_FAST( Import ) { // (BString)image, (int)x, (int)y
 	int dHeight = tex->height;
 	int dChannels = tex->channels;
 	
-	int sWidth, sHeight, sChannels;
-	J_PROPERTY_TO_INT32( bstr, "width", sWidth );
-	J_PROPERTY_TO_INT32( bstr, "height", sHeight );
-	J_PROPERTY_TO_INT32( bstr, "channels", sChannels );
+	int32 sWidth, sHeight, sChannels;
+	GetPropertyInt32(cx, bstr, "width", &sWidth);
+	GetPropertyInt32(cx, bstr, "height", &sHeight);
+	GetPropertyInt32(cx, bstr, "channels", &sChannels);
 	u_int8_t *buffer = (u_int8_t*)BStringData(cx, bstr);
 
 	int px, py;
@@ -2276,7 +2317,7 @@ DEFINE_FUNCTION_FAST( Shift ) {
 	int height = tex->height;
 	int channels = tex->channels;
 
-	TextureSetupBackBuffer(tex);
+	TextureSetupBackBuffer(cx, tex);
 
 	int x, y; // destination image x, y
 	int sx, sy; // source image x, y
@@ -2344,7 +2385,7 @@ DEFINE_FUNCTION_FAST( Displace ) {
 	else
 		factor = 1;
 
-	TextureSetupBackBuffer(tex);
+	TextureSetupBackBuffer(cx, tex);
 
 	BorderMode mode = borderWrap;
 
@@ -2549,10 +2590,10 @@ DEFINE_FUNCTION_FAST( AddGradiantLinear ) {
 	int height = tex->height;
 	int channels = tex->channels;
 
-	float *curvex = (float*)malloc( width * sizeof(float) );
+	float *curvex = (float*)malloc( width * sizeof(float) ); // (TBD) free curvex
 	RT_CHECK_CALL( InitCurveData( cx, J_FARG(1), width, curvex ) );
 
-	float *curvey = (float*)malloc( height * sizeof(float) );
+	float *curvey = (float*)malloc( height * sizeof(float) ); // (TBD) free curvey
 	RT_CHECK_CALL( InitCurveData( cx, J_FARG(2), height, curvey ) );
 
 	int x, y, c;
@@ -2592,7 +2633,7 @@ DEFINE_FUNCTION_FAST( AddGradiantRadial ) {
 	else
 		radius = MAX( width, height ) / 2.0;
 
-	float *curve = (float*)malloc( (int)radius * sizeof(float) );
+	float *curve = (float*)malloc( (int)radius * sizeof(float) ); // (TBD) free curve
 	InitCurveData(cx, J_FARG(1), (int)radius, curve);
 
 	float aspectRatio = (float)width / (float)height;
@@ -2652,7 +2693,7 @@ DEFINE_FUNCTION( AddGradiantRadial ) {
 
 	BorderMode borderMode = borderWrap;
 
-	float *curve = (float*)malloc( radius * sizeof(float) );
+	float *curve = (float*)malloc( radius * sizeof(float) ); // JS_malloc(cx,
 	InitCurveData( cx, J_FARG(4), radius, curve );
 
 	// draw
@@ -2718,7 +2759,7 @@ DEFINE_FUNCTION_FAST( AddCracks ) { // source: FxGen
 	PTYPE pixel[PMAXCHANNELS];
 	RT_CHECK_CALL( InitLevelData(cx, J_FARG(4), channels, pixel) );
 
-	float *curve = (float*)malloc( crackMaxLength * sizeof(float) );
+	float *curve = (float*)malloc( crackMaxLength * sizeof(float) ); // (TBD) free curve
 	InitCurveData( cx, J_FARG(5), crackMaxLength, curve );
 
 	// draw
