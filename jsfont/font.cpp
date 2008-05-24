@@ -209,7 +209,12 @@ DEFINE_FUNCTION_FAST( DrawString ) {
 		FT_Glyph image; // glyph image
 	} Glyph;
 
-	Glyph *glyphs = (Glyph*)malloc(sizeof(Glyph) * strlen);
+	Glyph glyphs_static[32]; // memory optimization only
+	Glyph *glyphs;
+	if ( strlen > sizeof(glyphs_static)/sizeof(*glyphs_static) )
+		glyphs = (Glyph*)malloc(sizeof(Glyph) * strlen);
+	else
+		glyphs = glyphs_static;
 
 	size_t i;
 
@@ -310,7 +315,8 @@ DEFINE_FUNCTION_FAST( DrawString ) {
 		}
 	}
 
-	free(glyphs);
+	if ( glyphs != glyphs_static ) // memory optimization only
+		free(glyphs);
 	return JS_TRUE;
 }
 
