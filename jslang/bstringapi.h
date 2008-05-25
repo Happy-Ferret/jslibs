@@ -28,6 +28,10 @@ inline JSClass* BStringJSClass( JSContext *cx ) {
 	return jsClass;
 }
 
+inline bool JsvalIsBString( JSContext *cx, jsval value ) {
+	
+	return ( JSVAL_IS_OBJECT( value ) && !JSVAL_IS_NULL( value ) && JS_GET_CLASS(cx, JSVAL_TO_OBJECT( value )) == BStringJSClass(cx) );
+}
 
 // NewBString takes ownership of jsMallocatedBuffer on success. Allocation must be done with JS_malloc
 inline JSObject* NewBString( JSContext *cx, void *jsMallocatedBuffer, size_t bufferLength ) {

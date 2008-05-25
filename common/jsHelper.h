@@ -111,9 +111,6 @@
 #define J_FRVAL (&JS_RVAL(cx, vp))
 
 
-#define J_JSVAL_IS_ARRAY(value) \
-	( JSVAL_IS_OBJECT(value) && JS_IsArrayObject( cx, JSVAL_TO_OBJECT(value) ) == JS_TRUE)
-
 #define J_JSVAL_IS_CLASS(value, jsClass) \
 	( JSVAL_IS_OBJECT(value) && !JSVAL_IS_NULL(value) && JS_GET_CLASS(cx, JSVAL_TO_OBJECT(value)) == (jsClass) )
 
@@ -512,6 +509,18 @@ inline bool IsNInfinity( JSContext *cx, jsval val ) {
 
 	return JS_GetNegativeInfinityValue(cx) == val;
 }
+
+inline bool JsvalIsFunction( JSContext *cx, jsval val ) {
+	return ( JSVAL_IS_OBJECT(val) && JS_TypeOfValue(cx, (val)) == JSTYPE_FUNCTION );
+}
+
+inline bool JsvalIsArray( JSContext *cx, jsval val ) {
+	return ( JSVAL_IS_OBJECT(val) && JS_IsArrayObject( cx, JSVAL_TO_OBJECT(val) ) == JS_TRUE );
+}
+
+#define J_JSVAL_IS_ARRAY(value) \
+	JsvalIsArray(cx, (value));
+
 
 inline bool InheritFrom( JSContext *cx, JSObject *obj, JSClass *clasp ) {
 
