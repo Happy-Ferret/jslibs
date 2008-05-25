@@ -204,12 +204,14 @@ inline JSBool InitLevelData( JSContext* cx, jsval value, int count, PTYPE *level
 			}			
 		}
 	}
+
+//	REPORT_ERROR("Invalid level data.");
 	return JS_TRUE;
 }
 
 
 // curve: number | function | array
-inline JSBool InitCurveData( JSContext* cx, jsval value, int length, float *curve ) {
+inline JSBool InitCurveData( JSContext* cx, jsval value, int length, float *curve ) { // length is the curve resolution
  
 	if ( JSVAL_IS_NUMBER(value) ) {
 		
@@ -218,20 +220,22 @@ inline JSBool InitCurveData( JSContext* cx, jsval value, int length, float *curv
 		PTYPE val = (PTYPE)dval;
 		for ( int i = 0; i < length; i++ )
 			curve[i] = val;
-	} else if ( JS_TypeOfValue( cx, value ) == JSTYPE_FUNCTION ) {
+	} else 
+	if ( JsvalIsFunction(cx, value) ) {
 
 		jsval val[2], resultValue;
 		jsdouble fval;
 		for ( int i = 0; i < length; i++ ) {
 			
-			fval = i / (float)length;
+			fval = i / (float)(length-1);
 			RT_CHECK_CALL( JS_NewDoubleValue(cx, fval, val) );
 			val[1] = INT_TO_JSVAL(i);
 			RT_CHECK_CALL( JS_CallFunctionValue(cx, JS_GetGlobalObject(cx), value, 2, val, &resultValue) );
 			RT_CHECK_CALL( JS_ValueToNumber(cx, resultValue, &fval) );
 			curve[i] = fval;
 		}
-	} else if ( JSVAL_IS_OBJECT(value) && JS_IsArrayObject( cx, JSVAL_TO_OBJECT(value) ) ) {
+	} else 
+	if ( JsvalIsArray(cx, value) ) {
 
 		int curveArrayLength;
 		RT_CHECK_CALL( ArrayLength(cx, &curveArrayLength, value) );
@@ -240,7 +244,18 @@ inline JSBool InitCurveData( JSContext* cx, jsval value, int length, float *curv
 
 		for ( int i = 0; i < length; i++ )
 			curve[i] = curveArray[ i * curveArrayLength / length ];
-	} else {
+	} else
+	if ( JsvalIsBString(cx, value) ) { // (TBD) test it
+
+		JSObject *bstrObj = JSVAL_TO_OBJECT(value);
+		size_t bstrLen;
+		u_int8_t *bstrData;
+		BStringGetDataAndLength( cx, bstrObj, (void**)&bstrData, &bstrLen );
+
+		for ( int i = 0; i < length; i++ )
+			curve[i] = bstrData[ i * bstrLen / length ] / 256;
+	}	
+	else {
 
 		for ( int i = 0; i < length; i++ )
 			curve[i] = PMAX;
@@ -342,7 +357,7 @@ DEFINE_CONSTRUCTOR() {
 		return JS_TRUE;
 	}
 
-	if ( IsBString( cx, J_ARG(1) ) ) {
+	if ( JsvalIsBString( cx, J_ARG(1) ) ) {
 
 		JSObject *bstr = JSVAL_TO_OBJECT( J_ARG(1) );
 
@@ -582,7 +597,7 @@ DEFINE_FUNCTION_FAST( Aliasing ) {
 	Texture *tex = (Texture *)JS_GetPrivate(cx, J_FOBJ);
 	RT_ASSERT_RESOURCE(tex);
 
-	PTYPE count;
+	long count;
 	RT_JSVAL_TO_UINT32( J_FARG(1), count );
 
 	bool useCurve;
@@ -599,8 +614,11 @@ DEFINE_FUNCTION_FAST( Aliasing ) {
 	int tsize = tex->width * tex->height * tex->channels;
 	
 	if ( useCurve )
-		for ( int i = 0; i < tsize; i++ )
-			tex->cbuffer[i] = curve[ (long)((count-1) * tex->cbuffer[i] / PMAX) ];
+		for ( int i = 0; i < tsize; i++ ) {
+			
+			long curveIndex = (long)(count * tex->cbuffer[i] / PMAX);
+			tex->cbuffer[i] = curve[MINMAX(curveIndex, 0, count-1)];
+		}
 	else
 		for ( int i = 0; i < tsize; i++ )
 			tex->cbuffer[i] = floor( count * tex->cbuffer[i] ) / count;
@@ -1098,6 +1116,7 @@ DEFINE_FUNCTION_FAST( Mult ) {
 	RT_ASSERT_RESOURCE(tex);
 	int channels = tex->channels;
 	int tsize = tex->width * tex->height * channels;
+
 	if ( IsTexture(cx, J_FARG(1)) ) {
 		
 		Texture *tex1;
@@ -1105,6 +1124,28 @@ DEFINE_FUNCTION_FAST( Mult ) {
 		RT_ASSERT( tex->width == tex1->width && tex->height == tex1->height && channels == tex1->channels, "Images must have the same size." );
 		for ( int i = 0; i < tsize; i++ )
 			tex->cbuffer[i] *= tex1->cbuffer[i];
+/* using Aliasing() seems more useful than Mult()
+	} else
+	if ( JsvalIsFunction(cx, J_FARG(1)) ) {
+		
+		J_S_ASSERT_ARG_MIN( 2 );
+		int aliasing;
+		J_JSVAL_TO_INT32( J_FARG(2), aliasing );
+
+		PTYPE *curve = (PTYPE*)malloc( sizeof(PTYPE) * aliasing );
+		RT_CHECK_CALL( InitCurveData(cx, J_FARG(1), aliasing, curve) );
+
+		int i, c, size = tex->width * tex->height;
+		for ( i = 0; i < size; i++ )
+			for ( c = 0; c < channels; c++ ) {
+
+				PTYPE *pval = &tex->cbuffer[i*channels+c];
+				int curveIndex = (long)( (aliasing-1) * *pval / PMAX );
+				*pval *= curve[MINMAX(curveIndex, 0, aliasing-1)];
+			}
+
+		free(curve);
+*/
 	} else {
 
 		PTYPE pixel[PMAXCHANNELS];
@@ -1114,6 +1155,7 @@ DEFINE_FUNCTION_FAST( Mult ) {
 			for ( c = 0; c < channels; c++ )
 				tex->cbuffer[i*channels+c] *= pixel[c];
 	}
+
 	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 	return JS_TRUE;
 }
