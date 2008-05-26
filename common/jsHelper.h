@@ -533,7 +533,7 @@ inline bool JsvalIsArray( JSContext *cx, jsval val ) {
 }
 
 #define J_JSVAL_IS_ARRAY(value) \
-	JsvalIsArray(cx, (value));
+	JsvalIsArray(cx, (value))
 
 
 inline bool InheritFrom( JSContext *cx, JSObject *obj, JSClass *clasp ) {
