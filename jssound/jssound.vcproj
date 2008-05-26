@@ -41,7 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories=""
+				AdditionalIncludeDirectories="..\libvorbis\src\include;..\libogg\src\include"
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB"
 				MinimalRebuild="true"
 				ExceptionHandling="0"
@@ -121,7 +121,7 @@
 				InlineFunctionExpansion="2"
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
-				AdditionalIncludeDirectories=""
+				AdditionalIncludeDirectories="..\libvorbis\src\include;..\libogg\src\include"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB"
 				ExceptionHandling="0"
 				BasicRuntimeChecks="0"
@@ -236,10 +236,6 @@
 		</Filter>
 		<File
 			RelativePath=".\debug.js"
-			>
-		</File>
-		<File
-			RelativePath=".\readme.txt"
 			>
 		</File>
 	</Files>

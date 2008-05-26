@@ -24,7 +24,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	SET_UNSAFE_MODE( GetConfigurationValue(cx, NAME_CONFIGURATION_UNSAFE_MODE ) == JSVAL_TRUE );
 
 	INIT_STATIC();
-	INIT_CLASS( Template );
+	INIT_CLASS( Sound );
 
 	return JS_TRUE;
 }
