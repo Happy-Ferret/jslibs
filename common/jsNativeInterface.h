@@ -20,6 +20,17 @@
 
 typedef void (*FunctionPointer)(void);
 
+inline JSBool HasNativeInterface( JSContext *cx, JSObject *obj, const char *name, bool *has ) {
+
+	if ( obj == NULL )
+		return JS_FALSE;
+	JSBool found;
+	if ( JS_HasProperty(cx, obj, name, &found) != JS_TRUE )
+		return JS_FALSE;
+	*has = found == JS_TRUE;
+	return JS_TRUE;
+}
+
 inline JSBool SetNativeInterface( JSContext *cx, JSObject *obj, const char *name, FunctionPointer function ) {
 
 	// Cannot be called while Finalize
@@ -51,8 +62,12 @@ inline JSBool GetNativeInterface( JSContext *cx, JSObject *obj, const char *name
 ///////////////////////////////////////////////////////////////////////////////
 // Interfaces
 
-
 typedef JSBool (*NIStreamRead)( JSContext *cx, JSObject *obj, char *buf, unsigned int *amount );
+
+inline JSBool HasStreamReadInterface( JSContext *cx, JSObject *obj, bool *has ) {
+
+	return HasNativeInterface(cx, obj, "_NISR", has);
+}
 
 inline JSBool SetStreamReadInterface( JSContext *cx, JSObject *obj, NIStreamRead fct ) {
 
@@ -70,6 +85,11 @@ inline JSBool GetStreamReadInterface( JSContext *cx, JSObject *obj, NIStreamRead
 //  out: pointer provided as input OR another pointer to float
 typedef JSBool (*NIMatrix44Read)( JSContext *cx, JSObject *obj, float **pm ); // **pm allows NIMatrix44Read to return its own data pointer ( should be const )
 
+inline JSBool HasMatrix44ReadInterface( JSContext *cx, JSObject *obj, bool *has ) {
+	
+	return HasNativeInterface(cx, obj, "_NIRM", has);
+}
+
 inline JSBool SetMatrix44ReadInterface( JSContext *cx, JSObject *obj, NIMatrix44Read fct ) {
 
 	return SetNativeInterface(cx, obj, "_NIRM", (FunctionPointer)fct);
@@ -84,6 +104,11 @@ inline JSBool GetMatrix44ReadInterface( JSContext *cx, JSObject *obj, NIMatrix44
 
 // buffer access interface
 typedef JSBool (*NIBufferRead)( JSContext *cx, JSObject *obj, const char **buf, size_t *size );
+
+inline JSBool HasBufferReadInterface( JSContext *cx, JSObject *obj, bool *has ) {
+
+	return HasNativeInterface(cx, obj, "_NIBR", has);
+}
 
 inline JSBool SetBufferReadInterface( JSContext *cx, JSObject *obj, NIBufferRead fct ) {
 		

@@ -223,6 +223,19 @@
 // conversion functions
 
 
+inline bool JsvalIsString( JSContext *cx, jsval val ) {
+
+	if ( JSVAL_IS_STRING(val) )
+		return true;
+	if ( !JSVAL_IS_OBJECT(val) || JSVAL_IS_NULL(val) )
+		return false;
+	bool hasBufferInterface;
+	if ( HasBufferReadInterface(cx, JSVAL_TO_OBJECT(val), &hasBufferInterface) != JS_TRUE )
+		return false;
+	return hasBufferInterface;
+}
+
+
 inline JSBool JsvalToStringAndLength( JSContext *cx, jsval val, const char** buffer, size_t *size ) {
 
 	if ( JSVAL_IS_STRING(val) ) {
@@ -234,7 +247,7 @@ inline JSBool JsvalToStringAndLength( JSContext *cx, jsval val, const char** buf
 		return JS_TRUE;
 	}
 
-	if ( JSVAL_IS_OBJECT(val) ) {
+	if ( JSVAL_IS_OBJECT(val) && !JSVAL_IS_NULL(val) ) {
 
 		NIBufferRead fct;
 		J_CHECK_CALL( GetBufferReadInterface(cx, JSVAL_TO_OBJECT(val), &fct) );
@@ -259,6 +272,7 @@ inline JSBool JsvalToString( JSContext *cx, jsval val, const char** buffer ) {
 	size_t size;
 	return JsvalToStringAndLength( cx, val, buffer, &size );
 }
+
 
 inline JSBool StringToJsval( JSContext *cx, jsval *val, const char* cstr ) {
 

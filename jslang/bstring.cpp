@@ -54,11 +54,12 @@ JSBool NativeInterfaceBufferRead( JSContext *cx, JSObject *obj, const char **buf
 
 BEGIN_CLASS( BString )
 
+/*
 inline bool JsvalIsBString( JSContext *cx, jsval val ) {
 
 	return JSVAL_IS_OBJECT(val) && !JSVAL_IS_NULL(val) && JS_GET_CLASS(cx, JSVAL_TO_OBJECT(val)) == _class;
 }
-
+*/
 
 inline JSBool JsvalToBString( JSContext *cx, JSObject *obj, jsval val ) {
 
@@ -120,7 +121,6 @@ JSBool BStringToJsval( JSContext *cx, JSObject *obj, jsval *val ) {
 		*val = STRING_TO_JSVAL( jsstr );
 	}
 	return JS_TRUE;
-
 }
 
 
