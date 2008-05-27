@@ -16,6 +16,8 @@
 
 #include "static.h"
 
+#include <cstring>
+
 #include "../common/jsNativeInterface.h"
 #include "../jslang/bstringapi.h"
 #include "../common/stack.h"
@@ -34,17 +36,58 @@ typedef struct {
 	NIStreamRead streamRead;
 } StreamReadInfo;
 
-
 size_t readStream( void *ptr, size_t size, size_t nmemb, void *datasource ) {
 
 	StreamReadInfo *info = (StreamReadInfo*)datasource;
+	size_t amount = size * nmemb;
 
-	size_t sizeToRead = size * nmemb;
-
-	if ( info->streamRead( info->cx, info->obj, (char*)ptr, &sizeToRead ) != JS_TRUE ) {
+	if ( info->streamRead( info->cx, info->obj, (char*)ptr, &amount ) != JS_TRUE ) {
 		// error
 	}
-	return sizeToRead;
+	return amount;
+}
+
+typedef struct {
+	const char *buffer;
+	size_t bufferLength;
+	size_t pos;
+} BufferReadInfo;
+
+size_t readBuffer( void *ptr, size_t size, size_t nmemb, void *datasource ) {
+
+	BufferReadInfo *info = (BufferReadInfo*)datasource;
+	size_t amount = size * nmemb;
+	if ( info->pos >= info->bufferLength )
+		return 0;
+	if ( info->pos + amount > info->bufferLength )
+		amount = info->bufferLength - info->pos;
+	memcpy( ptr, info->buffer + info->pos, amount );
+	info->pos += amount;
+	return amount;
+}
+
+int seekBuffer( void *datasource, ogg_int64_t offset, int whence ) {
+
+	BufferReadInfo *info = (BufferReadInfo*)datasource;
+	switch (whence) {
+	
+	case SEEK_SET: // #define SEEK_SET    0
+		info->pos = offset;
+		break;
+	case SEEK_END: // #define SEEK_END    2
+		info->pos = info->bufferLength - offset +1; // The implementation of SEEK_END should set the access cursor one past the last byte of accessible data, as would stdio fseek()
+		break;
+	case SEEK_CUR: // #define SEEK_CUR    1
+		info->pos += offset;
+		break;
+	}
+	return 0;
+}
+
+long tellBuffer(void *datasource) {
+
+	BufferReadInfo *info = (BufferReadInfo*)datasource;
+	return info->pos;
 }
 
 
@@ -53,20 +96,47 @@ BEGIN_STATIC
 DEFINE_FUNCTION_FAST( DecodeOggVorbis ) {
 	
 	J_S_ASSERT_ARG_MIN( 1 );
+	JSObject *oggStreamObj = JSVAL_TO_OBJECT( J_FARG(1) );
+	ov_callbacks callbacks = { 0,0,0,0 };
+	void *datasource;
 
+	if ( JsvalIsString(cx, J_FARG(1)) ) {
+
+		callbacks.read_func = readBuffer;
+		callbacks.seek_func = seekBuffer;
+		callbacks.tell_func = tellBuffer;
+		datasource = malloc( sizeof(BufferReadInfo) );
+		BufferReadInfo *readInfo = (BufferReadInfo*)datasource;
+		readInfo->pos = 0;
+		J_CHECK_CALL( JsvalToStringAndLength(cx, J_FARG(1), &readInfo->buffer, &readInfo->bufferLength) );
+		goto startDecode;
+	}
+	
 	J_S_ASSERT_OBJECT( J_FARG(1) );
 
-	JSObject *oggStreamObj = JSVAL_TO_OBJECT( J_FARG(1) );
-	
-	StreamReadInfo sri = { cx, oggStreamObj };
-	J_CHECK_CALL( GetStreamReadInterface(cx, oggStreamObj, &sri.streamRead) );
-	J_S_ASSERT( sri.streamRead != NULL, "Invalid data stream" );
+	NIStreamRead streamReader;
+	J_CHECK_CALL( GetStreamReadInterface(cx, oggStreamObj, &streamReader) );
+	if ( streamReader != NULL ) {
+
+		callbacks.read_func = readStream;
+		datasource = malloc( sizeof(StreamReadInfo) );
+		StreamReadInfo *readInfo = (StreamReadInfo*)datasource;
+		readInfo->cx = cx;
+		readInfo->obj = oggStreamObj;
+		readInfo->streamRead = streamReader;
+		goto startDecode;
+	}
+
+	REPORT_ERROR("Invalid data source.");
+
+
+startDecode:
 
 	OggVorbis_File oggFile;
-	ov_callbacks callbacks = { readStream, NULL, NULL, NULL };
-	ov_open_callbacks(&sri, &oggFile, NULL, 0, callbacks);
+	ov_open_callbacks(datasource, &oggFile, NULL, 0, callbacks);
 
-	//	ogg_int64_t totalPcmSamples = ov_pcm_total(&oggFile, 0); // OV_EINVAL
+// (TBD) if totalPcmSamples != OV_EINVAL, create the right buffer !
+//	ogg_int64_t totalPcmSamples = ov_pcm_total(&oggFile, 0); // OV_EINVAL
 
 	vorbis_info *info = ov_info(&oggFile, -1);
 	int bits = 16;
@@ -118,6 +188,7 @@ DEFINE_FUNCTION_FAST( DecodeOggVorbis ) {
 	SetPropertyInt32(cx, bstrObj, "channels", info->channels);
 
 	ov_clear(&oggFile); // beware: info must be valid
+	free(datasource);
 
 	// because the stack is LIFO, we have to start from the end.
 	buf += totalSize;
@@ -146,6 +217,8 @@ CONFIGURE_STATIC
 END_STATIC
 
 /*
+
+	Vorbisfile Documentation: http://xiph.org/vorbis/doc/vorbisfile/index.html
 
 	ogg files: http://xiph.org/vorbis/listen.html
 
