@@ -76,7 +76,7 @@ DEFINE_FUNCTION_FAST( DecodeOggVorbis ) {
 	void *stack;
 	StackInit(&stack);
 
-	int bufferSize = 4096 - 16; // try to alloc not more than one page
+	int bufferSize = 4096 - 32; // try to alloc not more than one page
 
 	long totalSize = 0;
 	long bytes;
@@ -107,8 +107,6 @@ DEFINE_FUNCTION_FAST( DecodeOggVorbis ) {
 
 	} while (bytes > 0);
 
-	ov_clear(&oggFile);
-
 	// convert data chunks into a single memory buffer.
 	char *buf = (char*)JS_malloc(cx, totalSize);
 	J_S_ASSERT_ALLOC(buf);
@@ -118,6 +116,8 @@ DEFINE_FUNCTION_FAST( DecodeOggVorbis ) {
 	SetPropertyInt32(cx, bstrObj, "bits", bits); // bits per sample
 	SetPropertyInt32(cx, bstrObj, "rate", info->rate);
 	SetPropertyInt32(cx, bstrObj, "channels", info->channels);
+
+	ov_clear(&oggFile); // beware: info must be valid
 
 	// because the stack is LIFO, we have to start from the end.
 	buf += totalSize;
