@@ -302,7 +302,7 @@ inline JSBool GetPropertyInt32( JSContext *cx, JSObject *obj, const char *proper
 
 	jsval val;
 	if (unlikely( JS_GetProperty(cx, obj, propertyName, &val) != JS_TRUE ))
-		J_REPORT_ERROR( "Unable to read the property." );
+		J_REPORT_ERROR_1( "Unable to read the property %s.", propertyName );
 	if ( JSVAL_IS_INT(val) )
 		*intVal = JSVAL_TO_INT(val);
 	else

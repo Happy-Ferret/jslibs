@@ -36,6 +36,7 @@
 #define FUNCTION_FAST(name) JS_FN( #name, name, 0, 0, 0 ),
 #define FUNCTION_FAST_ARGC(name,nargs) JS_FN( #name, name, 0, nargs, 0 ),
 #define FUNCTION2_FAST(name,nativeName) JS_FN( #name, nativeName, 0, 0, 0 ),
+#define FUNCTION2_FAST_ARGC(name,nativeName,nargs) JS_FN( #name, nativeName, 0, nargs, 0 ),
 
 #define FUNCTION(name) JS_FS( #name, name, 0, 0, 0 ),
 #define FUNCTION_ARGC(name,nargs) JS_FS( #name, name, nargs, 0, 0 ),
