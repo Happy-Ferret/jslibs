@@ -28,6 +28,7 @@
 //#include "math.h"
 
 #include <AL/al.h>
+#include <AL/alc.h>
 
 #define LOAD_OPENAL_EXTENSION( name, proto ) \
 	static proto name = (proto) alGetProcAddress( #name ); \
@@ -94,6 +95,81 @@ DEFINE_PROPERTY(error) {
 	return JS_TRUE;
 }
 
+DEFINE_FUNCTION_FAST( _PlaySound ) {
+
+	J_S_ASSERT_ARG_MIN( 1 );
+	J_S_ASSERT_OBJECT( J_FARG(1) );
+
+	JSObject *bstrObj = JSVAL_TO_OBJECT(J_FARG(1));
+
+	int32 rate;
+	int32 channels;
+	int32 bits;
+	GetPropertyInt32(cx, bstrObj, "rate", &rate);
+	GetPropertyInt32(cx, bstrObj, "channels", &channels);
+	GetPropertyInt32(cx, bstrObj, "bits", &bits);
+
+	const char *buffer;
+	size_t bufferLength;
+	JsvalToStringAndLength(cx, OBJECT_TO_JSVAL(bstrObj), &buffer, &bufferLength);
+	
+	ALint state;                // The state of the sound source
+	ALuint bufferID;            // The OpenAL sound buffer ID
+	ALuint sourceID;            // The OpenAL sound source
+	ALenum format;              // The sound data format
+
+	if (channels == 1)
+		format = bits == 16 ? AL_FORMAT_MONO16 : AL_FORMAT_MONO8;
+	else
+		format = bits == 16 ? AL_FORMAT_STEREO16 : AL_FORMAT_STEREO8;
+
+	// Create sound buffer and source
+	alGenBuffers(1, &bufferID);
+
+
+
+  alGenSources(1, &sourceID);
+
+  ALenum err = alGetError(); // 0xA004 = AL_INVALID_OPERATION
+
+
+  // Set the source and listener to the same location
+  alListener3i(AL_POSITION, 0,0,0 );
+  
+  
+  
+  alSource3i(sourceID, AL_POSITION, 0,0,0 );
+
+
+
+  // Upload sound data to buffer
+  alBufferData(bufferID, format, buffer, bufferLength, rate);
+
+  
+
+
+  // Attach sound buffer to source
+  alSourcei(sourceID, AL_BUFFER, bufferID);
+
+  // Finally, play the sound!!!
+  alSourcePlay(sourceID);
+
+  // This is a busy wait loop but should be good enough for example purpose
+  
+  do {
+    // Query the state of the souce
+    alGetSourcei(sourceID, AL_SOURCE_STATE, &state);
+
+  } while (state != AL_STOPPED);
+
+  // Clean up sound buffer and source
+  alDeleteBuffers(1, &bufferID);
+  alDeleteSources(1, &sourceID);
+
+
+  return JS_TRUE;
+}
+
 
 JSBool Init( JSContext *cx, JSObject *obj ) {
 
@@ -111,6 +187,9 @@ CONFIGURE_CLASS
 	END_CONST_INTEGER_SPEC
 
 	BEGIN_STATIC_FUNCTION_SPEC
+
+		FUNCTION2_FAST_ARGC( PlaySound, _PlaySound, 1 )
+
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC
