@@ -177,6 +177,8 @@ startDecode:
 
 	} while (bytes > 0);
 
+
+
 	// convert data chunks into a single memory buffer.
 	char *buf = (char*)JS_malloc(cx, totalSize);
 	J_S_ASSERT_ALLOC(buf);
@@ -216,15 +218,30 @@ CONFIGURE_STATIC
 
 END_STATIC
 
-/*
+/* 
 
-	Vorbisfile Documentation: http://xiph.org/vorbis/doc/vorbisfile/index.html
+	Vorbisfile Documentation:
+		http://xiph.org/vorbis/doc/vorbisfile/index.html
 
-	ogg files: http://xiph.org/vorbis/listen.html
+	ogg files:
+		http://xiph.org/vorbis/listen.html
 
-	ogg + OpenAL: http://www.gamedev.net/reference/articles/article2031.asp
+	ogg + OpenAL:
+		http://www.gamedev.net/reference/articles/article2031.asp
 
-	decoding wav files with libsndfile: http://www.mega-nerd.com/libsndfile/
-	decoding mp3 files with liblame: http://sourceforge.net/projects/lame (dl: http://sourceforge.net/project/showfiles.php?group_id=290)
+	decoding wav files with libsndfile:
+		http://www.mega-nerd.com/libsndfile/
+	
+	decoding mp3 files with liblame:
+		http://sourceforge.net/projects/lame (dl: http://sourceforge.net/project/showfiles.php?group_id=290)
 
+	external libraries used by audacity:
+		http://audacity.cvs.sourceforge.net/audacity/audacity-src/win/Projects/
+
+	other sound libraries: 
+		http://ccrma.stanford.edu/software/snd/sndlib/
+		http://www.68k.org/~michael/audiofile/
+
+	Reading/Writing .wav Files:
+		http://people.msoe.edu/~taylor/examples/wav.htm
 */
