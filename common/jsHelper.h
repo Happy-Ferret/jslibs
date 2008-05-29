@@ -251,11 +251,8 @@ inline JSBool JsvalToStringAndLength( JSContext *cx, jsval val, const char** buf
 
 		NIBufferRead fct;
 		J_CHECK_CALL( GetBufferReadInterface(cx, JSVAL_TO_OBJECT(val), &fct) );
-		if ( fct ) {
-
-			J_CHECK_CALL( fct(cx, JSVAL_TO_OBJECT(val), buffer, size) );
-			return JS_TRUE;
-		}
+		if ( fct )
+			return fct(cx, JSVAL_TO_OBJECT(val), buffer, size);
 	}
 
 	JSString *str = JS_ValueToString(cx, val);
@@ -271,6 +268,30 @@ inline JSBool JsvalToString( JSContext *cx, jsval val, const char** buffer ) {
 
 	size_t size;
 	return JsvalToStringAndLength( cx, val, buffer, &size );
+}
+
+
+inline JSBool JsvalToInt( JSContext *cx, jsval val, int *intVal ) {
+	
+	if ( JSVAL_IS_INT(val) )
+		*intVal = JSVAL_TO_INT(val);
+	else {
+		int32 tmp;
+		if (unlikely( JS_ValueToInt32(cx, val, &tmp) != JS_TRUE ))
+			J_REPORT_ERROR( "Unable to convert to a 32bit integer." );
+		*intVal = tmp;
+	}
+	return JS_TRUE;
+}
+
+inline JSBool IntToJsval( JSContext *cx, int intVal, jsval *val ) {
+
+	if ( INT_FITS_IN_JSVAL(intVal) )
+		*val = INT_TO_JSVAL(intVal);
+	else
+		if (unlikely( JS_NewNumberValue(cx, intVal, val) != JS_TRUE ))
+			J_REPORT_ERROR( "Unable to convert to a 32bit integer." );
+	return JS_TRUE;
 }
 
 
