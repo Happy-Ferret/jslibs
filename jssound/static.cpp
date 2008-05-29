@@ -26,15 +26,17 @@
 #include <vorbis/codec.h>
 #include <vorbis/vorbisfile.h>
 
+#include	<sndfile.h>
+
 
 // doc. For seek_func(), you *MUST* return -1 if the stream is unseekable
 
 typedef struct {
-
 	JSContext *cx;
 	JSObject *obj;
 	NIStreamRead streamRead;
 } StreamReadInfo;
+
 
 size_t readStream( void *ptr, size_t size, size_t nmemb, void *datasource ) {
 
@@ -47,93 +49,33 @@ size_t readStream( void *ptr, size_t size, size_t nmemb, void *datasource ) {
 	return amount;
 }
 
-typedef struct {
-	const char *buffer;
-	size_t bufferLength;
-	size_t pos;
-} BufferReadInfo;
-
-size_t readBuffer( void *ptr, size_t size, size_t nmemb, void *datasource ) {
-
-	BufferReadInfo *info = (BufferReadInfo*)datasource;
-	size_t amount = size * nmemb;
-	if ( info->pos >= info->bufferLength )
-		return 0;
-	if ( info->pos + amount > info->bufferLength )
-		amount = info->bufferLength - info->pos;
-	memcpy( ptr, info->buffer + info->pos, amount );
-	info->pos += amount;
-	return amount;
-}
-
-int seekBuffer( void *datasource, ogg_int64_t offset, int whence ) {
-
-	BufferReadInfo *info = (BufferReadInfo*)datasource;
-	switch (whence) {
-	
-	case SEEK_SET: // #define SEEK_SET    0
-		info->pos = offset;
-		break;
-	case SEEK_END: // #define SEEK_END    2
-		info->pos = info->bufferLength - offset +1; // The implementation of SEEK_END should set the access cursor one past the last byte of accessible data, as would stdio fseek()
-		break;
-	case SEEK_CUR: // #define SEEK_CUR    1
-		info->pos += offset;
-		break;
-	}
-	return 0;
-}
-
-long tellBuffer(void *datasource) {
-
-	BufferReadInfo *info = (BufferReadInfo*)datasource;
-	return info->pos;
-}
-
 
 BEGIN_STATIC
 
 DEFINE_FUNCTION_FAST( DecodeOggVorbis ) {
 	
 	J_S_ASSERT_ARG_MIN( 1 );
-	JSObject *oggStreamObj = JSVAL_TO_OBJECT( J_FARG(1) );
-	ov_callbacks callbacks = { 0,0,0,0 };
-	void *datasource;
-
-	if ( JsvalIsString(cx, J_FARG(1)) ) {
-
-		callbacks.read_func = readBuffer;
-		callbacks.seek_func = seekBuffer;
-		callbacks.tell_func = tellBuffer;
-		datasource = malloc( sizeof(BufferReadInfo) );
-		BufferReadInfo *readInfo = (BufferReadInfo*)datasource;
-		readInfo->pos = 0;
-		J_CHECK_CALL( JsvalToStringAndLength(cx, J_FARG(1), &readInfo->buffer, &readInfo->bufferLength) );
-		goto startDecode;
-	}
-	
 	J_S_ASSERT_OBJECT( J_FARG(1) );
 
+	JSObject *oggObj = JSVAL_TO_OBJECT( J_FARG(1) );
+	ov_callbacks callbacks = { 0,0,0,0 };
+	StreamReadInfo datasource;
+
 	NIStreamRead streamReader;
-	J_CHECK_CALL( GetStreamReadInterface(cx, oggStreamObj, &streamReader) );
+	J_CHECK_CALL( GetStreamReadInterface(cx, oggObj, &streamReader) );
 	if ( streamReader != NULL ) {
 
 		callbacks.read_func = readStream;
-		datasource = malloc( sizeof(StreamReadInfo) );
-		StreamReadInfo *readInfo = (StreamReadInfo*)datasource;
-		readInfo->cx = cx;
-		readInfo->obj = oggStreamObj;
-		readInfo->streamRead = streamReader;
-		goto startDecode;
+		datasource.cx = cx;
+		datasource.obj = oggObj;
+		datasource.streamRead = streamReader;
+	} else {
+
+		REPORT_ERROR("Invalid data source.");
 	}
 
-	REPORT_ERROR("Invalid data source.");
-
-
-startDecode:
-
 	OggVorbis_File oggFile;
-	ov_open_callbacks(datasource, &oggFile, NULL, 0, callbacks);
+	ov_open_callbacks(&datasource, &oggFile, NULL, 0, callbacks);
 
 // (TBD) if totalPcmSamples != OV_EINVAL, create the right buffer !
 //	ogg_int64_t totalPcmSamples = ov_pcm_total(&oggFile, 0); // OV_EINVAL
@@ -178,7 +120,6 @@ startDecode:
 	} while (bytes > 0);
 
 
-
 	// convert data chunks into a single memory buffer.
 	char *buf = (char*)JS_malloc(cx, totalSize);
 	J_S_ASSERT_ALLOC(buf);
@@ -190,7 +131,6 @@ startDecode:
 	SetPropertyInt32(cx, bstrObj, "channels", info->channels);
 
 	ov_clear(&oggFile); // beware: info must be valid
-	free(datasource);
 
 	// because the stack is LIFO, we have to start from the end.
 	buf += totalSize;
@@ -207,10 +147,54 @@ startDecode:
 }
 
 
+sf_count_t vio_get_filelen(void *user_data) {
+	return 0;
+}
+
+sf_count_t vio_seek(sf_count_t offset, int whence, void *user_data) {
+	return 0;
+}
+
+sf_count_t vio_read(void *ptr, sf_count_t count, void *user_data) {
+	return 0;
+}
+
+sf_count_t vio_write(const void *ptr, sf_count_t count, void *user_data) {
+	return 0;
+}
+
+sf_count_t vio_tell(void *user_data) {
+	return 0;
+}
+
+
+DEFINE_FUNCTION_FAST( DecodeSound ) {
+
+	J_S_ASSERT_ARG_MIN( 1 );
+	JSObject *inputObj = JSVAL_TO_OBJECT( J_FARG(1) );
+	SF_VIRTUAL_IO callbacks = { 0,0,0,0,0 };
+	void *datasource;
+
+	callbacks.get_filelen = vio_get_filelen;
+	callbacks.seek = vio_seek;
+	callbacks.read = vio_read;
+	callbacks.write = vio_write;
+	callbacks.tell = vio_tell;
+
+	SF_INFO sfinfo = {0};
+
+	SNDFILE *sf = sf_open_virtual(&callbacks, SFM_READ, &sfinfo, datasource);
+
+
+	return JS_TRUE;
+}
+
+
 CONFIGURE_STATIC
 
 	BEGIN_STATIC_FUNCTION_SPEC
 		FUNCTION_FAST( DecodeOggVorbis )
+		FUNCTION_FAST( DecodeSound )
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC

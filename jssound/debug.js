@@ -8,6 +8,7 @@ var f = new File('41_30secOgg-q0.ogg');
 
 //var pcm = DecodeOggVorbis(f);
 
-var pcm = DecodeOggVorbis(f.content);
+//var pcm = DecodeOggVorbis(f.content);
+var pcm = DecodeOggVorbis(Stream(f.content));
 
-Print(pcm.length);
+Print(pcm.length, '\n');
