@@ -38,6 +38,8 @@ typedef struct {
 } StreamReadInfo;
 
 
+BEGIN_STATIC
+
 size_t readStream( void *ptr, size_t size, size_t nmemb, void *datasource ) {
 
 	StreamReadInfo *info = (StreamReadInfo*)datasource;
@@ -49,46 +51,36 @@ size_t readStream( void *ptr, size_t size, size_t nmemb, void *datasource ) {
 	return amount;
 }
 
+static ov_callbacks ovCallbacks = { readStream,0,0,0 };
 
-BEGIN_STATIC
 
 DEFINE_FUNCTION_FAST( DecodeOggVorbis ) {
 	
 	J_S_ASSERT_ARG_MIN( 1 );
 	J_S_ASSERT_OBJECT( J_FARG(1) );
-
-	JSObject *oggObj = JSVAL_TO_OBJECT( J_FARG(1) );
-	ov_callbacks callbacks = { 0,0,0,0 };
-	StreamReadInfo datasource;
+	JSObject *StreamObj = JSVAL_TO_OBJECT( J_FARG(1) );
 
 	NIStreamRead streamReader;
-	J_CHECK_CALL( GetStreamReadInterface(cx, oggObj, &streamReader) );
-	if ( streamReader != NULL ) {
+	J_CHECK_CALL( GetStreamReadInterface(cx, StreamObj, &streamReader) );
+	J_S_ASSERT( streamReader != NULL, "Invalid stream." );
 
-		callbacks.read_func = readStream;
-		datasource.cx = cx;
-		datasource.obj = oggObj;
-		datasource.streamRead = streamReader;
-	} else {
+	StreamReadInfo datasource = { cx, StreamObj, streamReader };
+	OggVorbis_File descriptor;
+	ov_open_callbacks(&datasource, &descriptor, NULL, 0, ovCallbacks);
 
-		REPORT_ERROR("Invalid data source.");
-	}
+	// (TBD) manage errors
 
-	OggVorbis_File oggFile;
-	ov_open_callbacks(&datasource, &oggFile, NULL, 0, callbacks);
-
-// (TBD) if totalPcmSamples != OV_EINVAL, create the right buffer !
-//	ogg_int64_t totalPcmSamples = ov_pcm_total(&oggFile, 0); // OV_EINVAL
-
-	vorbis_info *info = ov_info(&oggFile, -1);
+	vorbis_info *info = ov_info(&descriptor, -1);
 	int bits = 16;
 
-	int bitStream;
+	J_S_ASSERT( bits == 1 || bits == 2, "Unsupported bits count." );
+	J_S_ASSERT( info->channels == 1 || info->channels == 2, "Unsupported channel count." );
 
+	int bitStream;
 	void *stack;
 	StackInit(&stack);
 
-	int bufferSize = 4096 - 32; // try to alloc not more than one page
+	int bufferSize = 4096 - 32; // try to alloc less than one page
 
 	long totalSize = 0;
 	long bytes;
@@ -99,11 +91,13 @@ DEFINE_FUNCTION_FAST( DecodeOggVorbis ) {
 
 		StackPush(&stack, buffer);
 
-		bytes = ov_read(&oggFile, buffer+sizeof(int), bufferSize-sizeof(int), 0, bits/8, 1, &bitStream);
+		bytes = ov_read(&descriptor, buffer+sizeof(int), bufferSize-sizeof(int), 0, bits / 8, 1, &bitStream);
 
 		if ( bytes < 0 ) { // 0 indicates EOF
 		
 			*(int*)buffer = 0;
+
+			// (TBD) manage errors
 
 			if ( bytes == OV_HOLE ) { // indicates there was an interruption in the data. (one of: garbage between pages, loss of sync followed by recapture, or a corrupt page)
 				
@@ -119,7 +113,6 @@ DEFINE_FUNCTION_FAST( DecodeOggVorbis ) {
 
 	} while (bytes > 0);
 
-
 	// convert data chunks into a single memory buffer.
 	char *buf = (char*)JS_malloc(cx, totalSize);
 	J_S_ASSERT_ALLOC(buf);
@@ -130,7 +123,7 @@ DEFINE_FUNCTION_FAST( DecodeOggVorbis ) {
 	SetPropertyInt32(cx, bstrObj, "rate", info->rate);
 	SetPropertyInt32(cx, bstrObj, "channels", info->channels);
 
-	ov_clear(&oggFile); // beware: info must be valid
+	ov_clear(&descriptor); // beware: info must be valid
 
 	// because the stack is LIFO, we have to start from the end.
 	buf += totalSize;
@@ -147,43 +140,112 @@ DEFINE_FUNCTION_FAST( DecodeOggVorbis ) {
 }
 
 
-sf_count_t vio_get_filelen(void *user_data) {
+sf_count_t SfGetFilelen(void *user_data) {
+	
+	StreamReadInfo *datasource = (StreamReadInfo *)user_data;
+
+
 	return 0;
 }
 
-sf_count_t vio_seek(sf_count_t offset, int whence, void *user_data) {
+sf_count_t SfSeek(sf_count_t offset, int whence, void *user_data) {
+
+	StreamReadInfo *datasource = (StreamReadInfo *)user_data;
+
 	return 0;
 }
 
-sf_count_t vio_read(void *ptr, sf_count_t count, void *user_data) {
+sf_count_t SfRead(void *ptr, sf_count_t count, void *user_data) {
+
+	StreamReadInfo *datasource = (StreamReadInfo *)user_data;
+
 	return 0;
 }
 
-sf_count_t vio_write(const void *ptr, sf_count_t count, void *user_data) {
+sf_count_t SfTell(void *user_data) {
+
+	StreamReadInfo *datasource = (StreamReadInfo *)user_data;
+
 	return 0;
 }
 
-sf_count_t vio_tell(void *user_data) {
-	return 0;
-}
+static SF_VIRTUAL_IO sfCallbacks = { SfGetFilelen, SfSeek, SfRead, 0, SfTell };
 
 
 DEFINE_FUNCTION_FAST( DecodeSound ) {
 
 	J_S_ASSERT_ARG_MIN( 1 );
-	JSObject *inputObj = JSVAL_TO_OBJECT( J_FARG(1) );
-	SF_VIRTUAL_IO callbacks = { 0,0,0,0,0 };
-	void *datasource;
+	J_S_ASSERT_OBJECT( J_FARG(1) );
+	JSObject *StreamObj = JSVAL_TO_OBJECT( J_FARG(1) );
 
-	callbacks.get_filelen = vio_get_filelen;
-	callbacks.seek = vio_seek;
-	callbacks.read = vio_read;
-	callbacks.write = vio_write;
-	callbacks.tell = vio_tell;
+	NIStreamRead streamReader;
+	J_CHECK_CALL( GetStreamReadInterface(cx, StreamObj, &streamReader) );
+	J_S_ASSERT( streamReader != NULL, "Invalid stream." );
+	StreamReadInfo datasource = { cx, StreamObj, streamReader };
 
-	SF_INFO sfinfo = {0};
+	SF_INFO info = {0};
+	SNDFILE *descriptor = sf_open_virtual(&sfCallbacks, SFM_READ, &info, &datasource);
 
-	SNDFILE *sf = sf_open_virtual(&callbacks, SFM_READ, &sfinfo, datasource);
+	J_S_ASSERT( descriptor != NULL, "Invalid stream content." );
+
+	int bits = 16;
+
+	J_S_ASSERT( info.channels == 1 || info.channels == 2, "Unsupported channel count." );
+
+
+	void *stack;
+	StackInit(&stack);
+
+	int bufferSize = 4096 - 32; // try to alloc less than one page
+
+	long totalSize = 0;
+	sf_count_t bytes;
+	do {
+
+		char *buffer = (char*)malloc(bufferSize);
+		J_S_ASSERT_ALLOC(buffer);
+
+		StackPush(&stack, buffer);
+
+		bytes = sf_read_raw(descriptor,  buffer+sizeof(int), bufferSize-sizeof(int));
+
+//		bytes = ov_read(&descriptor, buffer+sizeof(int), bufferSize-sizeof(int), 0, bits / 8, 1, &bitStream);
+
+		if ( bytes <= 0 ) { // 0 indicates EOF
+		
+
+
+		} else {
+
+			*(int*)buffer = bytes;
+			totalSize += bytes;
+		}
+
+	} while (bytes > 0);
+
+
+	// convert data chunks into a single memory buffer.
+	char *buf = (char*)JS_malloc(cx, totalSize);
+	J_S_ASSERT_ALLOC(buf);
+	JSObject *bstrObj = NewBString(cx, buf, totalSize);
+	J_S_ASSERT( bstrObj != NULL, "Unable to create the BString object.");
+	*J_FRVAL = OBJECT_TO_JSVAL(bstrObj);
+	SetPropertyInt32(cx, bstrObj, "bits", bits); // bits per sample
+	SetPropertyInt32(cx, bstrObj, "rate", info.samplerate);
+	SetPropertyInt32(cx, bstrObj, "channels", info.channels);
+
+	sf_close(descriptor);
+
+	// because the stack is LIFO, we have to start from the end.
+	buf += totalSize;
+	while( !StackIsEnd(&stack) ) {
+		
+		char *buffer = (char *)StackPop(&stack);
+		int size = *(int*)buffer;
+		buf = buf - size;
+		memcpy( buf, buffer+sizeof(int), size );
+		free(buffer);
+	}
 
 
 	return JS_TRUE;
