@@ -22,10 +22,9 @@
 
 
 
-inline JSBool LengthSet( JSContext *cx, JSObject *obj, int bufferLength ) {
+inline JSBool LengthSet( JSContext *cx, JSObject *obj, size_t bufferLength ) {
 
-	J_CHECK_CALL( JS_SetReservedSlot(cx, obj, SLOT_BSTRING_LENGTH, INT_TO_JSVAL( bufferLength )) );
-	return JS_TRUE;
+	return JS_SetReservedSlot(cx, obj, SLOT_BSTRING_LENGTH, INT_TO_JSVAL( bufferLength ));
 }
 
 

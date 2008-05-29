@@ -211,6 +211,10 @@
 					/>
 				</FileConfiguration>
 			</File>
+			<File
+				RelativePath=".\stream.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -227,6 +231,10 @@
 			</File>
 			<File
 				RelativePath=".\stdafx.h"
+				>
+			</File>
+			<File
+				RelativePath=".\stream.h"
 				>
 			</File>
 		</Filter>

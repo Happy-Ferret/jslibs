@@ -143,6 +143,25 @@
 		d.Set('123456');
 		d.Set(d.Substr(0,3));
 		QA.ASSERT( ''+d, '123', 'self substr' )
+	},
+
+	SimpleStreamTest: function(QA) {	
+
+		var bstring = new BString("1234567");
+		var stream = Stream(bstring);
+
+		QA.ASSERT( stream.position, 0, 'initial stream position' )
+		QA.ASSERT( stream.Read(3), '123', 'stream Read()' )
+		QA.ASSERT( stream.position, 3, 'stream position after Read()' )
+		QA.ASSERT( stream.Read(0), '', 'read 0 bytes on the stream' )
+		QA.ASSERT( stream.position, 3, 'stream position after Read(0)' )
+		QA.ASSERT( stream.Read(100), '4567', 'read more than the stream size' )
+		QA.ASSERT( stream.position, 7, 'stream position after reading more than the stream size' )
+
+		stream.position = 0;
+		QA.ASSERT( stream.Read(bstring.length), '1234567', 'read the exact length' )
+
+
 	}
 	
 })

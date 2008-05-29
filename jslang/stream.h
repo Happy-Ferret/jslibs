@@ -14,21 +14,3 @@
 
 #include "stdafx.h"
 
-DECLARE_CLASS( BString )
-DECLARE_CLASS( Stream )
-
-DEFINE_UNSAFE_MODE
-
-EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
-
-	JSObject *globalObject = JS_GetGlobalObject(cx);
-	RT_ASSERT( obj == globalObject, "This module must be load into the global namespace" );
-//	obj = JS_GetGlobalObject(cx); // avoid LoadModule.call( foo, 'jslang' );
-
-	SET_UNSAFE_MODE( GetConfigurationValue(cx, "unsafeMode" ) == JSVAL_TRUE );
-
-	INIT_CLASS( BString );
-	INIT_CLASS( Stream );
-
-	return JS_TRUE;
-}

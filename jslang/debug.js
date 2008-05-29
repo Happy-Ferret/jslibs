@@ -1,11 +1,12 @@
 LoadModule('jslang');
 LoadModule('jsstd');
 
-Print( BString );
+Print( BString, '\n' );
 
-var b = new BString();
+var b = new BString('123');
 
-b.Add('abc');
-b.Add(b);
+var stream = Stream(b);
 
-Print(b);
+Print( b.length, '\n' );
+Print( stream.Read(10), '\n' );
+
