@@ -3,7 +3,7 @@
 	BString_construct_with_data: function(QA) {
 
 		LoadModule('jsstd');
-		LoadModule('jslang');
+//		LoadModule('jslang');
 		
 		var bstr = new BString('98765');
 		QA.ASSERT( String(bstr), '98765', 'string value' );
@@ -12,7 +12,7 @@
 	BString_not_constructed: function(QA) {
 		
 		LoadModule('jsstd');
-		LoadModule('jslang');
+//		LoadModule('jslang');
 
 		var bstr = BString('98765');
 		QA.ASSERT( String(bstr), '98765', 'string value' );
@@ -26,7 +26,7 @@
 	BString_to_string: function(QA) {
 
 		LoadModule('jsstd');
-		LoadModule('jslang');
+//		LoadModule('jslang');
 		
 		QA.ASSERT( BString().Set('345').toString(), '345', 'string value' );
 	},
@@ -34,7 +34,7 @@
 	BString_valueOf: function(QA) {
 
 		LoadModule('jsstd');
-		LoadModule('jslang');
+//		LoadModule('jslang');
 
 		QA.ASSERT( BString().Set('567').valueOf(), '567', 'value of' );
 	},
@@ -42,7 +42,7 @@
 	BString: function(QA) {
 		
 		LoadModule('jsstd');
-		LoadModule('jslang');
+//		LoadModule('jslang');
 	
 		var b = new BString();
 		b.Add( 'ABCD' );
@@ -66,7 +66,7 @@
 	BStringSubstr: function(QA) {
 	
 		LoadModule('jsstd');
-		LoadModule('jslang');
+//		LoadModule('jslang');
 
 		var b = new BString();
 		b.Add( 'ABCDEF' );
@@ -87,7 +87,7 @@
 	BStringSetter: function(QA) {
 	
 		LoadModule('jsstd');
-		LoadModule('jslang');
+//		LoadModule('jslang');
 
 		var b = new BString();
 		b.Add( 'ABCDEF' );
@@ -105,7 +105,7 @@
 	BStringEquality: function(QA) {
 		
 		LoadModule('jsstd');
-		LoadModule('jslang');
+//		LoadModule('jslang');
 
 		var b = new BString();
 		b.Add( 'ABCDEF' );
@@ -120,7 +120,7 @@
 	BStringSelfReference: function(QA) {
 
 		LoadModule('jsstd');
-		LoadModule('jslang');
+//		LoadModule('jslang');
 
 		var a = new BString();
 		a.Set();
