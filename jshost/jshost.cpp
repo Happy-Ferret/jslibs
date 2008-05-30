@@ -542,9 +542,6 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 
 	JS_SetGlobalObject(cx, globalObject); // see LAZY_STANDARD_CLASSES
 
-// init static modules
-	jslangInit(cx, globalObject);
-
 // global functions & properties
 	JS_DefineProperty( cx, globalObject, NAME_GLOBAL_GLOBAL_OBJECT, OBJECT_TO_JSVAL(JS_GetGlobalObject(cx)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
 	JS_DefineProperty(cx, globalObject, "endSignal", JSVAL_VOID, EndSignalGetter, EndSignalSetter, JSPROP_SHARED | JSPROP_PERMANENT );
@@ -566,6 +563,11 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	value = BOOLEAN_TO_JSVAL(unsafeMode);
 	jsStatus = JS_SetProperty(cx, configObject, NAME_CONFIGURATION_UNSAFE_MODE, &value);
 	RT_HOST_MAIN_ASSERT( jsStatus != JS_FALSE, "Unable to set store unsafeMode into configuration." );
+
+
+// init static modules
+	jslangInit(cx, globalObject);
+
 
 // script name
   const char *scriptName = *argumentVector;
