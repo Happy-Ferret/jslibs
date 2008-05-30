@@ -187,6 +187,7 @@ sf_count_t SfSeek(sf_count_t offset, int whence, void *user_data) {
 			JS_GetProperty(pv->cx, pv->obj, "position", &tmpVal);
 			if ( tmpVal == JSVAL_VOID )
 				return -1;
+			JsvalToInt(pv->cx, tmpVal, &position);
 			if ( offset > 0 || -offset > position + available )
 				return -1;
 			JsvalToInt(pv->cx, tmpVal, &position);
