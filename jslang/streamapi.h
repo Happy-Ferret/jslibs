@@ -19,22 +19,29 @@
 #include "../common/jsNativeInterface.h"
 
 
+//	jsid idRead;
+//	JS_ValueToId(cx, STRING_TO_JSVAL(JS_InternString(cx, "_NISR")), &idRead);
+
 // read data from a stream object that implements NIStreamRead or a javascript function Read( amount )
-inline JSBool JSStreamRead(JSContext *cx, JSObject *obj, char *buf, unsigned int *amount ) {
+inline JSBool JSStreamRead(JSContext *cx, JSObject *obj, char *buffer, unsigned int *amount ) {
 
 	NIStreamRead fct;
 	J_CHECK_CALL( GetStreamReadInterface(cx, obj, &fct) );
 	if ( fct != NULL ) {
 
-		J_CHECK_CALL( fct(cx, obj, buffer, &amount) );
+		J_CHECK_CALL( fct(cx, obj, buffer, amount) );
 	} else {
 		
 		jsval tmpVal, rval;
-		IntToJsval(cx, amount, &tmpVal);
+		IntToJsval(cx, *amount, &tmpVal);
 		if ( JS_CallFunctionName(cx, obj, "Read", 1, &tmpVal, &rval) != JS_TRUE )
 			REPORT_ERROR( "The object do not have a Read() function." );
-		J_CHECK_CALL( JsvalToString(cx, rval, &buffer) );
+		const char *tmpBuf;
+		size_t size;
+		J_CHECK_CALL( JsvalToStringAndLength(cx, rval, &tmpBuf, &size) );
+		memcpy(buffer, tmpBuf, size);
 	}
+
 	return JS_TRUE;
 }
 
