@@ -50,6 +50,9 @@
 #include "../common/jsConfiguration.h"
 #include "../moduleManager/moduleManager.h"
 
+// static modules
+#include "../jslang/jslang.h"
+
 // to be used in the main() function only
 #define RT_HOST_MAIN_ASSERT( condition, errorMessage ) \
 	if ( !(condition) ) { consoleStdErr( cx, errorMessage, sizeof(errorMessage)-1 ); return -1; }
@@ -538,6 +541,9 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 //	RT_HOST_MAIN_ASSERT( jsStatus == JS_TRUE, "unable to initialize standard classes." );
 
 	JS_SetGlobalObject(cx, globalObject); // see LAZY_STANDARD_CLASSES
+
+// init static modules
+	jslangInit(cx, globalObject);
 
 // global functions & properties
 	JS_DefineProperty( cx, globalObject, NAME_GLOBAL_GLOBAL_OBJECT, OBJECT_TO_JSVAL(JS_GetGlobalObject(cx)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );

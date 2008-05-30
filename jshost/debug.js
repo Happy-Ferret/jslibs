@@ -2,6 +2,8 @@ LoadModule('jsstd');
 LoadModule('jsio');
 
 
+Print( BString );
+
 
 try {
 

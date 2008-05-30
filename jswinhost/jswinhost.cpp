@@ -12,6 +12,9 @@
 #include "../moduleManager/moduleManager.h"
 #include "../common/jsConfiguration.h"
 
+#include "../jslang/jslang.h"
+
+
 static JSBool LoadModule(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
 	RT_ASSERT_ARGC(1);
@@ -254,6 +257,8 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 	jsStatus = JS_InitStandardClasses(cx, globalObject);
 	if ( jsStatus == JS_FALSE )
 		return -1;
+
+	jslangInit(cx, globalObject);
 
 // global functions & properties
 	JS_DefineProperty(cx, globalObject, NAME_GLOBAL_GLOBAL_OBJECT, OBJECT_TO_JSVAL(JS_GetGlobalObject(cx)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT);

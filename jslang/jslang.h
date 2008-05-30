@@ -14,20 +14,15 @@
 
 #include "stdafx.h"
 
-#include "jslang.h"
+#ifndef _JSLANG_H_
+#define _JSLANG_H_
 
-DEFINE_UNSAFE_MODE
+DECLARE_CLASS( BString )
+DECLARE_CLASS( Stream )
 
-JSBool jslangInit(JSContext *cx, JSObject *obj) {
+JSBool jslangInit(JSContext *cx, JSObject *obj);
 
-	JSObject *globalObject = JS_GetGlobalObject(cx);
-	RT_ASSERT( obj == globalObject, "This module must be load into the global namespace" );
-//	obj = JS_GetGlobalObject(cx); // avoid LoadModule.call( foo, 'jslang' );
 
-	SET_UNSAFE_MODE( GetConfigurationValue(cx, "unsafeMode" ) == JSVAL_TRUE );
+#endif // _JSLANG_H_
 
-	INIT_CLASS( BString );
-	INIT_CLASS( Stream );
 
-	return JS_TRUE;
-}
