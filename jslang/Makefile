@@ -1,4 +1,4 @@
-TARGET     = jslang.so
+TARGET     = jslang.a
 SRC        = $(wildcard *.cpp)
 INCLUDES   =
 STATICLIBS =
