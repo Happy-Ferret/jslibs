@@ -169,6 +169,32 @@ DEFINE_FUNCTION( Lock ) {
 }
 
 
+DEFINE_PROPERTY( positionSetter ) { // todoc
+
+	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
+	RT_ASSERT_RESOURCE( fd );
+	PRInt64 offset;
+	jsdouble doubleOffset;
+	J_CHECK_CALL( JS_ValueToNumber( cx, *vp, &doubleOffset ) );
+	offset = (PRInt64)doubleOffset;
+	PRInt64 ret = PR_Seek64( fd, offset, PR_SEEK_SET );
+	if ( ret == -1 )
+		return ThrowIoError(cx);
+	return JS_TRUE;
+}
+
+DEFINE_PROPERTY( positionGetter ) { // todoc
+
+	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
+	RT_ASSERT_RESOURCE( fd );
+	PRInt64 ret = PR_Seek64( fd, 0, PR_SEEK_CUR );
+	if ( ret == -1 )
+		return ThrowIoError(cx);
+	J_CHECK_CALL( JS_NewNumberValue(cx, ret, vp) );
+	return JS_TRUE;
+}
+
+
 DEFINE_PROPERTY( contentGetter ) { // (TBD) support BString
 
 	RT_ASSERT( (PRFileDesc *)JS_GetPrivate( cx, obj ) == NULL, "Cannot get content of an open file.");
@@ -385,6 +411,7 @@ CONFIGURE_CLASS
 	BEGIN_PROPERTY_SPEC
 		PROPERTY( name )
 		PROPERTY( content )
+		PROPERTY( position )
 		PROPERTY_READ( exist )
 		PROPERTY_READ( info )
 	END_PROPERTY_SPEC

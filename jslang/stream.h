@@ -13,4 +13,3 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-

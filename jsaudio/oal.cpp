@@ -102,12 +102,10 @@ DEFINE_FUNCTION_FAST( _PlaySound ) {
 
 	JSObject *bstrObj = JSVAL_TO_OBJECT(J_FARG(1));
 
-	int32 rate;
-	int32 channels;
-	int32 bits;
-	GetPropertyInt32(cx, bstrObj, "rate", &rate);
-	GetPropertyInt32(cx, bstrObj, "channels", &channels);
-	GetPropertyInt32(cx, bstrObj, "bits", &bits);
+	int rate, channels, bits;
+	GetPropertyInt(cx, bstrObj, "rate", &rate);
+	GetPropertyInt(cx, bstrObj, "channels", &channels);
+	GetPropertyInt(cx, bstrObj, "bits", &bits);
 
 	const char *buffer;
 	size_t bufferLength;

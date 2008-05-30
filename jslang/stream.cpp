@@ -132,6 +132,24 @@ DEFINE_PROPERTY( positionSetter ) {
 	return JS_TRUE;
 }
 
+DEFINE_PROPERTY( available ) {
+
+	J_CHECK_CALL( JS_GetReservedSlot(cx, obj, SLOT_STREAM_SOURCE, vp) ); // use vp as a tmp variable
+	JSObject *srcObj;
+	if ( JSVAL_IS_OBJECT( *vp ) )
+		srcObj = JSVAL_TO_OBJECT( *vp );
+	else
+		J_CHECK_CALL( JS_ValueToObject(cx, *vp, &srcObj) );
+	int length, position;
+	J_CHECK_CALL( PositionGet(cx, obj, &position) );
+	JS_GetProperty(cx, srcObj, "length", vp); // use vp as a tmp variable
+	if ( *vp == JSVAL_VOID )
+		return JS_TRUE; // if length is not defined, the returned value is undefined
+	J_CHECK_CALL( JsvalToInt(cx, *vp, &length) );
+	J_CHECK_CALL( IntToJsval(cx, length - position, vp ) );
+	return JS_TRUE;
+}
+
 
 CONFIGURE_CLASS
 
@@ -144,6 +162,7 @@ CONFIGURE_CLASS
 
 	BEGIN_PROPERTY_SPEC
 		PROPERTY(position)
+		PROPERTY_READ(available)
 	END_PROPERTY_SPEC
 
 END_CLASS

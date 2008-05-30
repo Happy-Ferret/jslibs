@@ -40,14 +40,12 @@ typedef struct {
 
 BEGIN_STATIC
 
-size_t readStream( void *ptr, size_t size, size_t nmemb, void *datasource ) {
+size_t readStream( void *ptr, size_t size, size_t nmemb, void *pv ) {
 
-	StreamReadInfo *info = (StreamReadInfo*)datasource;
+	StreamReadInfo *info = (StreamReadInfo*)pv;
 	size_t amount = size * nmemb;
-
-	if ( info->streamRead( info->cx, info->obj, (char*)ptr, &amount ) != JS_TRUE ) {
-		// error
-	}
+	if ( info->streamRead( info->cx, info->obj, (char*)ptr, &amount ) != JS_TRUE )
+		return -1; // (TBD) check for a better error
 	return amount;
 }
 
@@ -64,9 +62,9 @@ DEFINE_FUNCTION_FAST( DecodeOggVorbis ) {
 	J_CHECK_CALL( GetStreamReadInterface(cx, StreamObj, &streamReader) );
 	J_S_ASSERT( streamReader != NULL, "Invalid stream." );
 
-	StreamReadInfo datasource = { cx, StreamObj, streamReader };
+	StreamReadInfo pv = { cx, StreamObj, streamReader };
 	OggVorbis_File descriptor;
-	ov_open_callbacks(&datasource, &descriptor, NULL, 0, ovCallbacks);
+	ov_open_callbacks(&pv, &descriptor, NULL, 0, ovCallbacks);
 
 	// (TBD) manage errors
 
@@ -80,7 +78,7 @@ DEFINE_FUNCTION_FAST( DecodeOggVorbis ) {
 	void *stack;
 	StackInit(&stack);
 
-	int bufferSize = 4096 - 32; // try to alloc less than one page
+	int bufferSize = 4096 - 16; // try to alloc less than one page
 
 	long totalSize = 0;
 	long bytes;
@@ -119,9 +117,9 @@ DEFINE_FUNCTION_FAST( DecodeOggVorbis ) {
 	JSObject *bstrObj = NewBString(cx, buf, totalSize);
 	J_S_ASSERT( bstrObj != NULL, "Unable to create the BString object.");
 	*J_FRVAL = OBJECT_TO_JSVAL(bstrObj);
-	SetPropertyInt32(cx, bstrObj, "bits", bits); // bits per sample
-	SetPropertyInt32(cx, bstrObj, "rate", info->rate);
-	SetPropertyInt32(cx, bstrObj, "channels", info->channels);
+	SetPropertyInt(cx, bstrObj, "bits", bits); // bits per sample
+	SetPropertyInt(cx, bstrObj, "rate", info->rate);
+	SetPropertyInt(cx, bstrObj, "channels", info->channels);
 
 	ov_clear(&descriptor); // beware: info must be valid
 
@@ -140,34 +138,87 @@ DEFINE_FUNCTION_FAST( DecodeOggVorbis ) {
 }
 
 
+
 sf_count_t SfGetFilelen(void *user_data) {
-	
-	StreamReadInfo *datasource = (StreamReadInfo *)user_data;
 
-
-	return 0;
+	StreamReadInfo *pv = (StreamReadInfo *)user_data;
+	jsval tmpVal;
+	int position, available;
+	JS_GetProperty(pv->cx, pv->obj, "position", &tmpVal);
+	if ( tmpVal == JSVAL_VOID )
+		return -1;
+	JsvalToInt(pv->cx, tmpVal, &position);
+	JS_GetProperty(pv->cx, pv->obj, "available", &tmpVal);
+	if ( tmpVal == JSVAL_VOID )
+		return -1;
+	JsvalToInt(pv->cx, tmpVal, &available);
+	return position + available;
 }
+
 
 sf_count_t SfSeek(sf_count_t offset, int whence, void *user_data) {
 
-	StreamReadInfo *datasource = (StreamReadInfo *)user_data;
+	StreamReadInfo *pv = (StreamReadInfo *)user_data;
+	
+	jsval tmpVal;
+	int position, available;
 
-	return 0;
-}
-
-sf_count_t SfRead(void *ptr, sf_count_t count, void *user_data) {
-
-	StreamReadInfo *datasource = (StreamReadInfo *)user_data;
-
-	return 0;
+	switch (whence) {
+		case SEEK_SET:
+			if ( offset < 0 )
+				return -1;
+			IntToJsval(pv->cx, offset, &tmpVal);
+			JS_SetProperty(pv->cx, pv->obj, "position", &tmpVal);
+			return 0;
+		case SEEK_CUR:
+			JS_GetProperty(pv->cx, pv->obj, "position", &tmpVal);
+			if ( tmpVal == JSVAL_VOID )
+				return -1;
+			JsvalToInt(pv->cx, tmpVal, &position);
+			position += offset;
+			IntToJsval(pv->cx, position, &tmpVal);
+			JS_SetProperty(pv->cx, pv->obj, "position", &tmpVal);
+			return 0;
+		case SEEK_END:
+			JS_GetProperty(pv->cx, pv->obj, "available", &tmpVal);
+			if ( tmpVal == JSVAL_VOID )
+				return -1;
+			JsvalToInt(pv->cx, tmpVal, &available);
+			JS_GetProperty(pv->cx, pv->obj, "position", &tmpVal);
+			if ( tmpVal == JSVAL_VOID )
+				return -1;
+			if ( offset > 0 || -offset > position + available )
+				return -1;
+			JsvalToInt(pv->cx, tmpVal, &position);
+			IntToJsval(pv->cx, position + available + offset, &tmpVal); // the pointer is set to the size of the file plus offset.
+			JS_SetProperty(pv->cx, pv->obj, "position", &tmpVal);
+			return 0;
+	}
+	return -1;
 }
 
 sf_count_t SfTell(void *user_data) {
 
-	StreamReadInfo *datasource = (StreamReadInfo *)user_data;
-
-	return 0;
+	StreamReadInfo *pv = (StreamReadInfo *)user_data;
+	jsval tmpVal;
+	int position;
+	JS_GetProperty(pv->cx, pv->obj, "position", &tmpVal);
+	if ( tmpVal == JSVAL_VOID )
+		return -1;
+	JsvalToInt(pv->cx, tmpVal, &position);
+	return position;
 }
+
+sf_count_t SfRead(void *ptr, sf_count_t count, void *user_data) {
+
+	StreamReadInfo *pv = (StreamReadInfo *)user_data;
+
+	size_t amount = count;
+	if ( pv->streamRead( pv->cx, pv->obj, (char*)ptr, &amount ) != JS_TRUE )
+		return -1; // (TBD) find a better error
+	return amount;
+}
+
 
 static SF_VIRTUAL_IO sfCallbacks = { SfGetFilelen, SfSeek, SfRead, 0, SfTell };
 
@@ -181,47 +232,52 @@ DEFINE_FUNCTION_FAST( DecodeSound ) {
 	NIStreamRead streamReader;
 	J_CHECK_CALL( GetStreamReadInterface(cx, StreamObj, &streamReader) );
 	J_S_ASSERT( streamReader != NULL, "Invalid stream." );
-	StreamReadInfo datasource = { cx, StreamObj, streamReader };
-
+	StreamReadInfo pv = { cx, StreamObj, streamReader };
 	SF_INFO info = {0};
-	SNDFILE *descriptor = sf_open_virtual(&sfCallbacks, SFM_READ, &info, &datasource);
+	SNDFILE *descriptor = sf_open_virtual(&sfCallbacks, SFM_READ, &info, &pv);
 
-	J_S_ASSERT( descriptor != NULL, "Invalid stream content." );
+	J_S_ASSERT_1( sf_error(descriptor) == SF_ERR_NO_ERROR, "sndfile error: %d", sf_error(descriptor) );
+	J_S_ASSERT( descriptor != NULL, "Invalid stream." );
 
-	int bits = 16;
+	if ( JS_IsExceptionPending(cx) )
+		return JS_FALSE;
 
 	J_S_ASSERT( info.channels == 1 || info.channels == 2, "Unsupported channel count." );
 
+	sf_command(descriptor, SFC_SET_SCALE_FLOAT_INT_READ, NULL, SF_TRUE); // Doc. Set/clear the scale factor when integer (short/int) data is read from a file containing floating point data.
 
 	void *stack;
 	StackInit(&stack);
 
-	int bufferSize = 4096 - 32; // try to alloc less than one page
+	int bufferSize = 16384 - 16; // try to alloc less than one page
 
 	long totalSize = 0;
-	sf_count_t bytes;
+	sf_count_t items;
 	do {
 
 		char *buffer = (char*)malloc(bufferSize);
 		J_S_ASSERT_ALLOC(buffer);
-
 		StackPush(&stack, buffer);
-
-		bytes = sf_read_raw(descriptor,  buffer+sizeof(int), bufferSize-sizeof(int));
-
-//		bytes = ov_read(&descriptor, buffer+sizeof(int), bufferSize-sizeof(int), 0, bits / 8, 1, &bitStream);
-
-		if ( bytes <= 0 ) { // 0 indicates EOF
 		
+		char *data = buffer+sizeof(int);
+		int *len = (int*)buffer;
+		int maxlen = bufferSize - sizeof(int);
 
+		items = sf_read_short(descriptor, (short*)data, maxlen/sizeof(short)); // bits per sample
+
+		J_S_ASSERT_1( sf_error(descriptor) == SF_ERR_NO_ERROR, "sndfile error: %d", sf_error(descriptor) );
+
+		if ( items <= 0 ) { // 0 indicates EOF
+
+			*len = 0;
 
 		} else {
 
-			*(int*)buffer = bytes;
-			totalSize += bytes;
+			*len = items * sizeof(short);
+			totalSize += items * sizeof(short);
 		}
 
-	} while (bytes > 0);
+	} while (items > 0);
 
 
 	// convert data chunks into a single memory buffer.
@@ -230,9 +286,9 @@ DEFINE_FUNCTION_FAST( DecodeSound ) {
 	JSObject *bstrObj = NewBString(cx, buf, totalSize);
 	J_S_ASSERT( bstrObj != NULL, "Unable to create the BString object.");
 	*J_FRVAL = OBJECT_TO_JSVAL(bstrObj);
-	SetPropertyInt32(cx, bstrObj, "bits", bits); // bits per sample
-	SetPropertyInt32(cx, bstrObj, "rate", info.samplerate);
-	SetPropertyInt32(cx, bstrObj, "channels", info.channels);
+	SetPropertyInt(cx, bstrObj, "bits", 16); // bits per sample
+	SetPropertyInt(cx, bstrObj, "rate", info.samplerate);
+	SetPropertyInt(cx, bstrObj, "channels", info.channels);
 
 	sf_close(descriptor);
 
@@ -246,8 +302,7 @@ DEFINE_FUNCTION_FAST( DecodeSound ) {
 		memcpy( buf, buffer+sizeof(int), size );
 		free(buffer);
 	}
-
-
+	
 	return JS_TRUE;
 }
 

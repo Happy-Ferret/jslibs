@@ -137,9 +137,9 @@ DEFINE_FUNCTION_FAST( DrawChar ) {
 	J_S_ASSERT( bstr != NULL, "Unable to create a BString." );
 	*J_FRVAL = OBJECT_TO_JSVAL( bstr );
 
-	J_CHECK_CALL( SetPropertyInt32(cx, bstr, "width", width) );
-	J_CHECK_CALL( SetPropertyInt32(cx, bstr, "height", height) );
-	J_CHECK_CALL( SetPropertyInt32(cx, bstr, "channels", 1) );
+	J_CHECK_CALL( SetPropertyInt(cx, bstr, "width", width) );
+	J_CHECK_CALL( SetPropertyInt(cx, bstr, "height", height) );
+	J_CHECK_CALL( SetPropertyInt(cx, bstr, "channels", 1) );
 	memcpy( buf, face->glyph->bitmap.buffer, bufLength );
 
 	return JS_TRUE;
@@ -279,9 +279,9 @@ DEFINE_FUNCTION_FAST( DrawString ) {
 		JSObject *bstr = NewBString(cx, buf, bufLength);
 		*J_FRVAL = OBJECT_TO_JSVAL( bstr );
 		J_S_ASSERT( bstr != NULL, "Unable to create a BString." ); // (TBD) free buf
-		J_CHECK_CALL( SetPropertyInt32(cx, bstr, "width", width) );
-		J_CHECK_CALL( SetPropertyInt32(cx, bstr, "height", height) );
-		J_CHECK_CALL( SetPropertyInt32(cx, bstr, "channels", 1) );
+		J_CHECK_CALL( SetPropertyInt(cx, bstr, "width", width) );
+		J_CHECK_CALL( SetPropertyInt(cx, bstr, "height", height) );
+		J_CHECK_CALL( SetPropertyInt(cx, bstr, "channels", 1) );
 
 		// render glyphs in the bitmap
 		memset(buf, 0, bufLength);

@@ -237,6 +237,10 @@
 				RelativePath=".\stream.h"
 				>
 			</File>
+			<File
+				RelativePath=".\streamapi.h"
+				>
+			</File>
 		</Filter>
 		<File
 			RelativePath=".\debug.js"

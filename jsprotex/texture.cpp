@@ -365,10 +365,10 @@ DEFINE_CONSTRUCTOR() {
 		int dHeight = tex->height;
 		int dChannels = tex->channels;
 		
-		int32 sWidth, sHeight, sChannels;
-		GetPropertyInt32(cx, bstr, "width", &sWidth);
-		GetPropertyInt32(cx, bstr, "height", &sHeight);
-		GetPropertyInt32(cx, bstr, "channels", &sChannels);
+		int sWidth, sHeight, sChannels;
+		GetPropertyInt(cx, bstr, "width", &sWidth);
+		GetPropertyInt(cx, bstr, "height", &sHeight);
+		GetPropertyInt(cx, bstr, "channels", &sChannels);
 		u_int8_t *buffer = (u_int8_t*)BStringData(cx, bstr);
 
 		tex->width = sWidth;
@@ -2205,9 +2205,9 @@ DEFINE_FUNCTION_FAST( Export ) { // (int)x, (int)y, (int)width, (int)height . Re
 
 	JSObject *bstr = NewBString(cx, buffer, bufferLength);
 	*J_FRVAL = OBJECT_TO_JSVAL(bstr);
-	SetPropertyInt32(cx, bstr, "width", dWidth);
-	SetPropertyInt32(cx, bstr, "height", dHeight);
-	SetPropertyInt32(cx, bstr, "channels", sChannels);
+	SetPropertyInt(cx, bstr, "width", dWidth);
+	SetPropertyInt(cx, bstr, "height", dHeight);
+	SetPropertyInt(cx, bstr, "channels", sChannels);
 
 	return JS_TRUE;
 }
@@ -2288,10 +2288,10 @@ DEFINE_FUNCTION_FAST( Import ) { // (BString)image, (int)x, (int)y
 	int dHeight = tex->height;
 	int dChannels = tex->channels;
 	
-	int32 sWidth, sHeight, sChannels;
-	GetPropertyInt32(cx, bstr, "width", &sWidth);
-	GetPropertyInt32(cx, bstr, "height", &sHeight);
-	GetPropertyInt32(cx, bstr, "channels", &sChannels);
+	int sWidth, sHeight, sChannels;
+	GetPropertyInt(cx, bstr, "width", &sWidth);
+	GetPropertyInt(cx, bstr, "height", &sHeight);
+	GetPropertyInt(cx, bstr, "channels", &sChannels);
 	u_int8_t *buffer = (u_int8_t*)BStringData(cx, bstr);
 
 	int px, py;

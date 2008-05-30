@@ -23,6 +23,7 @@
 
 #include <jsarena.h>
 #include <jsfun.h>
+#include <jsobj.h>
 
 //#include "../jslang/bstringapi.h"
 
@@ -305,30 +306,35 @@ inline JSBool StringToJsval( JSContext *cx, jsval *val, const char* cstr ) {
 }
 
 
-inline JSBool SetPropertyInt32( JSContext *cx, JSObject *obj, const char *propertyName, int32 intVal ) {
+inline JSBool SetPropertyInt( JSContext *cx, JSObject *obj, const char *propertyName, int intVal ) {
 
 	jsval val;
 	if ( INT_FITS_IN_JSVAL(intVal) )
 		val = INT_TO_JSVAL(intVal);
 	else
 		if (unlikely( JS_NewNumberValue(cx, intVal, &val) != JS_TRUE ))
-			J_REPORT_ERROR( "Unable to convert to a 32bit integer." );
-	if (unlikely( JS_DefineProperty(cx, obj, propertyName, val, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ) != JS_TRUE ))
+			J_REPORT_ERROR( "Unable to convert to an integer." );
+//	if (unlikely( JS_DefineProperty(cx, obj, propertyName, val, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ) != JS_TRUE ))
+	if (unlikely( JS_SetProperty(cx, obj, propertyName, &val ) != JS_TRUE ))
 		J_REPORT_ERROR( "Unable to set the property." );
 	return JS_TRUE;
 }
 
 
-inline JSBool GetPropertyInt32( JSContext *cx, JSObject *obj, const char *propertyName, int32 *intVal ) {
+inline JSBool GetPropertyInt( JSContext *cx, JSObject *obj, const char *propertyName, int *intVal ) {
 
 	jsval val;
-	if (unlikely( JS_GetProperty(cx, obj, propertyName, &val) != JS_TRUE ))
+	if (unlikely( JS_GetProperty(cx, obj, propertyName, &val) != JS_TRUE )) // cf. OBJ_GET_PROPERTY(...
 		J_REPORT_ERROR_1( "Unable to read the property %s.", propertyName );
 	if ( JSVAL_IS_INT(val) )
 		*intVal = JSVAL_TO_INT(val);
-	else
-		if (unlikely( JS_ValueToInt32(cx, val, intVal) != JS_TRUE ))
-			J_REPORT_ERROR( "Unable to convert to a 32bit integer." );
+	else {
+		
+		int32 tmp;
+		if (unlikely( JS_ValueToInt32(cx, val, &tmp) != JS_TRUE ))
+			J_REPORT_ERROR( "Unable to convert to an integer." );
+		*intVal = tmp;
+	}
 	return JS_TRUE;
 }
 

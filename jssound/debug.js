@@ -10,7 +10,10 @@ var f = new File('41_30secOgg-q0.ogg');
 
 //var pcm = DecodeOggVorbis(f.content);
 
+
 var f = new File('41_30secOgg-q0.wav');
-var pcm = DecodeSound(Stream(f.content));
+f.Open( File.RDONLY );
+
+var pcm = DecodeSound(f);
 
 Print(pcm.length, '\n');
