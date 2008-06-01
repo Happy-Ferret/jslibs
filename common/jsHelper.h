@@ -114,10 +114,6 @@
 
 
 
-
-
-
-
 // check: used to forward an error.
 #define J_CHK( status ) \
 	if (unlikely(!(status))) { goto bad; }
@@ -127,7 +123,7 @@
 	if (unlikely( !(status) )) { \
 		if ( !JS_IsExceptionPending(cx) ) \
 			JS_ReportError(cx, (errorMessage J__CODE_LOCATION)); \
-		goto bad; \
+		return JS_FALSE; \
 	}
 
 // check with message and argument (printf like)
@@ -135,12 +131,8 @@
 	if (unlikely( !(status) )) { \
 		if ( !JS_IsExceptionPending(cx) ) \
 			JS_ReportError(cx, (errorMessage J__CODE_LOCATION), (arg)); \
-		goto bad; \
+		return JS_FALSE; \
 	}
-
-#define J_DEFBAD { bad: return JS_FALSE; }
-
-
 
 
 

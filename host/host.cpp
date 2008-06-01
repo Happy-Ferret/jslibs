@@ -16,8 +16,9 @@
 
 #include <string.h>
 
+#ifdef XP_UNIX
 #include <dlfcn.h> // cf. dlerror() in LoadModule()
-
+#endif
 
 #include <jsprf.h>
 #include <jsstddef.h>
@@ -284,7 +285,8 @@ JSContext* CreateHost(size_t maxMem, size_t maxAlloc) {
 	JS_SetGCParameter(rt, JSGC_MAX_MALLOC_BYTES, maxAlloc); /* # of JS_malloc bytes before last ditch GC */
 
 	JSContext *cx = JS_NewContext(rt, 8192L); // set the chunk size of the stack pool to 8192. see http://groups.google.com/group/mozilla.dev.tech.js-engine/browse_thread/thread/be9f404b623acf39/9efdfca81be99ca3
-	J_CHKM( cx != NULL, "unable to create the context." );
+	if ( cx == NULL )
+		return NULL; //, "unable to create the context." );
 
 	// Info: Increasing JSContext stack size slows down my scripts:
 	//   http://groups.google.com/group/mozilla.dev.tech.js-engine/browse_thread/thread/be9f404b623acf39/9efdfca81be99ca3
@@ -328,7 +330,8 @@ JSContext* CreateHost(size_t maxMem, size_t maxAlloc) {
 	JS_SetBranchCallback(cx, BranchCallback);
 
 	JSObject *globalObject = JS_NewObject(cx, &global_class, NULL, NULL);
-	J_CHKM( globalObject != NULL, "unable to create the global object." );
+	if ( globalObject == NULL )
+		return NULL; //, "unable to create the global object." );
 	
 	//	JS_SetGlobalObject(cx, globalObject); // not needed. Doc: As a side effect, JS_InitStandardClasses establishes obj as the global object for cx, if one is not already established. 
 
@@ -339,8 +342,6 @@ JSContext* CreateHost(size_t maxMem, size_t maxAlloc) {
 	JS_SetGlobalObject(cx, globalObject); // see LAZY_STANDARD_CLASSES
 
 	return cx;
-bad:
-	return NULL;
 }
 
 
@@ -375,8 +376,6 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, JSFastNative stdOut, JSFastNati
 	J_CHKM( jslangInit(cx, globalObject), "Unable to initialize jslang." );
 
 	return JS_TRUE;
-bad:
-	return JS_FALSE;
 }
 
 
