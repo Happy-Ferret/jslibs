@@ -226,7 +226,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	HOST_MAIN_ASSERT( len != 0, "unable to GetModuleFileName." );
 #else // XP_WIN
 	GetAbsoluteModulePath(hostFullPath, sizeof(hostFullPath), argv[0]);
-	RT_HOST_MAIN_ASSERT( hostFullPath[0] != '\0', "unable to get module FileName." );
+	HOST_MAIN_ASSERT( hostFullPath[0] != '\0', "unable to get module FileName." );
 //	int len = readlink("/proc/self/exe", moduleFileName, sizeof(moduleFileName)); // doc: readlink does not append a NUL character to buf.
 //	moduleFileName[len] = '\0';
 //	strcpy(hostFullPath, argv[0]);
