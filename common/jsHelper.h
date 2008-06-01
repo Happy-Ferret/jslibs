@@ -112,6 +112,38 @@
 #define J_FRVAL (&JS_RVAL(cx, vp))
 
 
+
+
+
+
+
+
+// check: used to forward an error.
+#define J_CHK( status ) \
+	if (unlikely(!(status))) { goto bad; }
+
+// check with message: if status is false, a js exception is rised if it is not already pending.
+#define J_CHKM( status, errorMessage ) \
+	if (unlikely( !(status) )) { \
+		if ( !JS_IsExceptionPending(cx) ) \
+			JS_ReportError(cx, (errorMessage J__CODE_LOCATION)); \
+		goto bad; \
+	}
+
+// check with message and argument (printf like)
+#define J_CHKM1( status, errorMessage, arg ) \
+	if (unlikely( !(status) )) { \
+		if ( !JS_IsExceptionPending(cx) ) \
+			JS_ReportError(cx, (errorMessage J__CODE_LOCATION), (arg)); \
+		goto bad; \
+	}
+
+#define J_DEFBAD { bad: return JS_FALSE; }
+
+
+
+
+
 #define J_JSVAL_IS_CLASS(value, jsClass) \
 	( JSVAL_IS_OBJECT(value) && !JSVAL_IS_NULL(value) && JS_GET_CLASS(cx, JSVAL_TO_OBJECT(value)) == (jsClass) )
 
@@ -305,6 +337,15 @@ inline JSBool StringToJsval( JSContext *cx, jsval *val, const char* cstr ) {
 	return JS_TRUE;
 }
 
+inline JSBool StringAndLengthToJsval( JSContext *cx, jsval *val, const char* cstr, size_t length ) {
+
+	JSString *jsstr = JS_NewStringCopyN(cx, cstr, length);
+	if ( jsstr == NULL )
+		J_REPORT_ERROR( "Unable to create thye string." );
+	*val = STRING_TO_JSVAL(jsstr);
+	return JS_TRUE;
+}
+
 
 inline JSBool SetPropertyInt( JSContext *cx, JSObject *obj, const char *propertyName, int intVal ) {
 
@@ -314,8 +355,9 @@ inline JSBool SetPropertyInt( JSContext *cx, JSObject *obj, const char *property
 	else
 		if (unlikely( JS_NewNumberValue(cx, intVal, &val) != JS_TRUE ))
 			J_REPORT_ERROR( "Unable to convert to an integer." );
-//	if (unlikely( JS_DefineProperty(cx, obj, propertyName, val, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ) != JS_TRUE ))
-	if (unlikely( JS_SetProperty(cx, obj, propertyName, &val ) != JS_TRUE ))
+	// Doc. http://developer.mozilla.org/en/docs/JS_DefineUCProperty
+	if (unlikely( JS_DefineProperty(cx, obj, propertyName, val, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ) != JS_TRUE ))
+//	if (unlikely( JS_SetProperty(cx, obj, propertyName, &val ) != JS_TRUE ))
 		J_REPORT_ERROR( "Unable to set the property." );
 	return JS_TRUE;
 }

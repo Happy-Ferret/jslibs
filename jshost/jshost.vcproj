@@ -21,7 +21,7 @@
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="1"
 			InheritedPropertySheets="..\common\jslibs_debug.vsprops"
-			CharacterSet="0"
+			CharacterSet="2"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -99,7 +99,7 @@
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="1"
 			InheritedPropertySheets="..\common\jslibs_release.vsprops"
-			CharacterSet="0"
+			CharacterSet="2"
 			WholeProgramOptimization="1"
 			>
 			<Tool
@@ -221,10 +221,6 @@
 		</Filter>
 		<File
 			RelativePath=".\debug.js"
-			>
-		</File>
-		<File
-			RelativePath=".\ReadMe.txt"
 			>
 		</File>
 	</Files>

@@ -11,3 +11,17 @@
 #include <time.h>
 #include <errno.h>
 #include <windows.h>
+
+
+
+#include "../common/platform.h"
+
+#include "jsstddef.h"
+#include <jsapi.h>
+
+#include "jsprf.h"
+
+#include "../common/jsNames.h"
+#include "../common/jshelper.h"
+
+#include "../host/host.h"

@@ -13,6 +13,14 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
+
+#ifdef XP_UNIX
+	#include <dlfcn.h>
+#endif
+
+#include "../common/queue.h"
+#include "../common/jsNames.h"
+
 #include "moduleManager.h"
 
 #ifdef XP_UNIX

@@ -14,52 +14,12 @@
 
 #include "stdafx.h"
 
-#define NOATEXIT
-
-#include "../common/platform.h"
-
-#include <fcntl.h>
-#ifdef XP_WIN
-	#include <io.h>
-#endif
-
-#ifdef XP_UNIX
-	#include <unistd.h>
-	#include <dlfcn.h>
-#endif //XP_UNIX
-
-//#include <stdio.h>
-#include <stdlib.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <string.h>
-#include <time.h>
-#include <errno.h>
-// #include <limits.h> // included by ../common/platform.h
-#include <signal.h>
-//	#include <dlfcn.h>
-
-#include <jsapi.h>
-#include "jsstddef.h"
-#include "jsprf.h"
-#include "jsscript.h"
-#include "jscntxt.h"
-
-#include "../common/jsNames.h"
-#include "../common/jsHelper.h"
-#include "../common/jsConfiguration.h"
-#include "../moduleManager/moduleManager.h"
-
-// static modules
-#include "../jslang/jslang.h"
-
 // to be used in the main() function only
-#define RT_HOST_MAIN_ASSERT( condition, errorMessage ) \
-	if ( !(condition) ) { consoleStdErr( cx, errorMessage, sizeof(errorMessage)-1 ); return -1; }
+#define HOST_MAIN_ASSERT( condition, errorMessage ) \
+	if ( !(condition) ) { fprintf(stderr, errorMessage ); return EXIT_FAILURE; }
 
 
 #ifdef XP_UNIX
-
 void GetAbsoluteModulePath( char* moduleFileName, size_t size, char *modulePath ) {
 
 	if ( modulePath[0] == PATH_SEPARATOR ) { //  /jshost
@@ -122,250 +82,29 @@ void GetAbsoluteModulePath( char* moduleFileName, size_t size, char *modulePath 
 
 	moduleFileName[0] = '\0';
 	return;
-
 }
-
 #endif //XP_UNIX
 
 
-int consoleStdOut( JSContext *, const char *data, int length ) {
-
-	return write( 1, data, length );
-}
-
-int consoleStdErr( JSContext *, const char *data, int length ) {
-
-	return write( 2, data, length );
-}
-
-
-// function copied from ../js/src/js.c
-static void ErrorReporter(JSContext *cx, const char *message, JSErrorReport *report) {
-
-    int i, j, k, n;
-    char *prefix, *tmp;
-    const char *ctmp;
-	char *msg;
-
-    if (!report) {
-
-		consoleStdOut( cx, message, strlen(message) );
-		consoleStdOut( cx, "\n", 1 );
-		return;
-    }
-
-	// check if we should report warnings
-	if ( JSREPORT_IS_WARNING(report->flags) && GetConfigurationValue(cx, NAME_CONFIGURATION_UNSAFE_MODE ) == JSVAL_TRUE )
-		return;
-
-//	if (JSREPORT_IS_EXCEPTION(report->flags))
-//		return;
-
-    prefix = NULL;
-    if (report->filename)
-        prefix = JS_smprintf("%s:", report->filename);
-    if (report->lineno) {
-        tmp = prefix;
-        prefix = JS_smprintf("%s%u: ", tmp ? tmp : "", report->lineno);
-        JS_free(cx, tmp);
-    }
-    if (JSREPORT_IS_WARNING(report->flags)) {
-        tmp = prefix;
-        prefix = JS_smprintf("%s%swarning: ",
-                             tmp ? tmp : "",
-                             JSREPORT_IS_STRICT(report->flags) ? "strict " : "");
-        JS_free(cx, tmp);
-    }
-
-    /* embedded newlines -- argh! */
-    while ((ctmp = strchr(message, '\n')) != 0) {
-        ctmp++;
-        if (prefix)
-            consoleStdErr( cx, prefix, strlen(prefix) );
-        consoleStdErr( cx, message, ctmp - message );
-        message = ctmp;
-    }
-
-    /* If there were no filename or lineno, the prefix might be empty */
-    if (prefix)
-	    consoleStdErr( cx, prefix, strlen(prefix) );
-    consoleStdErr( cx, message, strlen(message) );
-
-    if (!report->linebuf) {
-        consoleStdErr(cx, "\n", 1);
-        goto out;
-    }
-
-    /* report->linebuf usually ends with a newline. */
-    n = strlen(report->linebuf);
-    msg = JS_smprintf(":\n%s%s%s%s",
-            prefix,
-            report->linebuf,
-            (n > 0 && report->linebuf[n-1] == '\n') ? "" : "\n",
-            prefix);
-	 consoleStdErr( cx, msg, strlen(msg) );
-    n = PTRDIFF(report->tokenptr, report->linebuf, char);
-    for (i = j = 0; i < n; i++) {
-        if (report->linebuf[i] == '\t') {
-            for (k = (j + 8) & ~7; j < k; j++) {
-                consoleStdErr( cx, ".", 1);
-            }
-            continue;
-        }
-        consoleStdErr( cx, ".", 1);
-        j++;
-    }
-    consoleStdErr( cx, "^\n", 2);
- out:
-//    if (!JSREPORT_IS_WARNING(report->flags))
-//        gExitCode = EXITCODE_RUNTIME_ERROR;
-    JS_free(cx, prefix);
-}
-
-/*
-static void LoadErrorReporter(JSContext *cx, const char *message, JSErrorReport *report) {
-    if (!report) {
-        fprintf(gErrFile, "%s\n", message);
-        return;
-    }
-
-    // Ignore any exceptions
-    if (JSREPORT_IS_EXCEPTION(report->flags))
-        return;
-
-    // Otherwise, fall back to the ordinary error reporter.
-    ErrorReporter(cx, message, report);
-}
-*/
-
-
-
-/*
-// function copied from mozilla/js/src/js.c
-static uint32 gBranchLimit = 1000000;
-static uint32 gBranchCount;
-static JSBool BranchCallback(JSContext *cx, JSScript *script) {
-
-	if (++g
-	Count == gBranchLimit) {
-
-		char *msg;
-		if (script) {
-
-			if (script->filename) {
-
-				msg = JS_smprintf("%s:", script->filename);
-				consoleStdErr(cx, msg, strlen(msg));
-			}
-			msg = JS_smprintf("%u: script branch callback (%u callbacks)\n", script->lineno, gBranchLimit);
-			consoleStdErr(cx, msg, strlen(msg));
-		} else {
-
-			msg = JS_smprintf("native branch callback (%u callbacks)\n", gBranchLimit);
-			consoleStdErr(cx, msg, strlen(msg));
-		}
-		gBranchCount = 0;
-		return JS_FALSE;
-	}
-
-	if ((gBranchCount & 0x3fff) == 1)
-		JS_MaybeGC(cx);
-	return JS_TRUE;
-}
-*/
-
-static u_int32_t gBranchCount = 1;
-static JSBool BranchCallback(JSContext *cx, JSScript *script) {
-
-	if ((++gBranchCount & (0x1000-1)) != 1) // every 4096
-		return JS_TRUE;
-	JS_MaybeGC(cx);
-	return JS_TRUE;
-}
-
-
-static JSBool LoadModule(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
-
-	RT_ASSERT_ARGC(1);
-
-	const char *fileName;
-	RT_JSVAL_TO_STRING( argv[0], fileName );
-	char libFileName[PATH_MAX];
-	strcpy( libFileName, fileName );
-	strcat( libFileName, DLL_EXT );
-
-// MAC OSX: 	'@executable_path' ??
-//	if ( !ModuleIsLoaded( libFileName ) ) {
-
-		ModuleId id = ModuleLoad(libFileName, cx, obj);
-
-#ifdef XP_UNIX
-
-	RT_ASSERT_2( id != 0, "Unable to load the module \"%s\": %s", libFileName, dlerror() );
-#else // XP_UNIX
-
-		RT_ASSERT_1( id != 0, "Unable to load the module \"%s\".", libFileName );
-#endif // XP_UNIX
-
-	//	RT_ASSERT_2( id != 0, "Unable to load the module %s (error:%d).", libFileName, GetLastError() ); // (TBD) rewrite this for Linux
-	//	RT_ASSERT_2( id != 0, "Unable to load the module %s (error:%s).", libFileName, dlerror() );
-		RT_CHECK_CALL( JS_NewNumberValue(cx, id, rval) ); // (TBD) really needed ? yes, UnloadModule need this ID
-//	} else { // module already loaded
-//	}
-//	*rval = JSVAL_TRUE;
-	return JS_TRUE;
-}
-
-
-static JSBool UnloadModule(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
-
-	RT_ASSERT_ARGC(1);
-	jsdouble dVal;
-	RT_CHECK_CALL( JS_ValueToNumber(cx, argv[0], &dVal) );
-	ModuleId id = (ModuleId)dVal;
-
-	if ( ModuleIsUnloadable(id) ) {
-
-		bool st = ModuleUnload(id, cx);
-		RT_ASSERT( st == true, "Unable to unload the module" );
-		*rval = JSVAL_TRUE;
-	} else {
-		*rval = JSVAL_FALSE;
-	}
-	return JS_TRUE;
-}
-
-
-	//var str = "12345";
-	//print(str); // -> 12345
-	//test( str );
-	//print(str); // -> 1X345
-
-//static JSBool global_test(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
-//
-//	JSString *jssMesage = JS_ValueToString(cx, argv[0]);
-//	JS_GetStringBytes(jssMesage)[1] = 'X';
-//
-//	return JS_TRUE;
-//}
-
+//////////////////////////////////////////////////////////////////////////////////////////////
 
 
 bool gEndSignal = false;
 
 JSBool EndSignalGetter(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 
-	*vp = BOOLEAN_TO_JSVAL( gEndSignal );
+	*vp = BOOLEAN_TO_JSVAL( gEndSignal == true );
 	return JS_TRUE;
 }
 
 JSBool EndSignalSetter(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 
-	RT_JSVAL_TO_BOOL(*vp, gEndSignal);
+	JSBool tmp;
+	JS_ValueToBoolean(cx, *vp, &tmp);
+	gEndSignal = tmp == JS_TRUE;
 	return JS_TRUE;
 }
 
-//////////////////////////////////////////////////////////////////////////////////////////////
 
 #ifdef XP_WIN
 BOOL Interrupt(DWORD CtrlType) {
@@ -384,88 +123,52 @@ void Interrupt(int CtrlType) {
 #endif // XP_WIN
 
 
-static JSBool stderrFunction(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+//////////////////////////////////////////////////////////////////////////////////////////////
 
-//	JSString *str;
-//	str = JS_ValueToString(cx, argv[0]);
-//	RT_ASSERT( str != NULL, "Unable to convert argument to string.");
-//	argv[0] = STRING_TO_JSVAL(str); // (TBD) needed ? YES
-//	consoleStdErr( cx, JS_GetStringBytes(str), JS_GetStringLength(str) );
+
+
+static JSBool stderrFunction(JSContext *cx, uintN argc, jsval *vp) {
+
 	const char *buffer;
 	size_t length;
-	J_CHECK_CALL( JsvalToStringAndLength(cx, argv[0], &buffer, &length) );
-	consoleStdErr(cx, buffer, length);
+	J_CHK( JsvalToStringAndLength(cx, J_FARG(1), &buffer, &length) );
+	write(2, buffer, length);
 	return JS_TRUE;
+bad:
+	return JS_FALSE;
 }
 
-static JSBool stdoutFunction(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+static JSBool stdoutFunction(JSContext *cx, uintN argc, jsval *vp) {
 
-//	JSString *str;
-//	str = JS_ValueToString(cx, argv[0]);
-//	RT_ASSERT( str != NULL, "Unable to convert argument to string.");
-//	argv[0] = STRING_TO_JSVAL(str); // (TBD) needed ? YES
-	//consoleStdOut( cx, JS_GetStringBytes(str), JS_GetStringLength(str) );
 	const char *buffer;
 	size_t length;
-	J_CHECK_CALL( JsvalToStringAndLength(cx, argv[0], &buffer, &length) );
-	consoleStdOut(cx, buffer, length);
+	J_CHK( JsvalToStringAndLength(cx, J_FARG(1), &buffer, &length) );
+	write(1, buffer, length);
 	return JS_TRUE;
+bad:
+	return JS_FALSE;
 }
 
 
-JSScript *script = NULL;
-JSRuntime *rt = NULL;
-JSContext *cx = NULL;
-
-//bool _finalized = false;
-void Finalize(void);
-
-
-
-static JSBool global_enumerate(JSContext *cx, JSObject *obj) { // see LAZY_STANDARD_CLASSES
-	
-	return JS_EnumerateStandardClasses(cx, obj);
-}
-
-static JSBool global_resolve(JSContext *cx, JSObject *obj, jsval id, uintN flags, JSObject **objp) { // see LAZY_STANDARD_CLASSES
-
-//	char *str;
-//	J_JSVAL_TO_STRING(id, str);
-
-	if ((flags & JSRESOLVE_ASSIGNING) == 0) {
-
-		JSBool resolved;
-		if (!JS_ResolveStandardClass(cx, obj, id, &resolved))
-			return JS_FALSE;
-		if (resolved) {
-			*objp = obj;
-			return JS_TRUE;
-		}
-	}
-	return JS_TRUE;
-}
-
-
-//JSBool InitScriptHost( JSContext *cx ) {
-//
-//	return JS_TRUE;
-//}
-
+//////////////////////////////////////////////////////////////////////////////////////////////
 
 int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[]) for UNICODE
 
-	JSBool unsafeMode = JS_FALSE;
-	JSObject *globalObject;
+	#ifdef XP_WIN
+	BOOL status = SetConsoleCtrlHandler((PHANDLER_ROUTINE)&Interrupt, TRUE);
+	HOST_MAIN_ASSERT( status == TRUE, "Unable to set console handler" );
+	#else
+	signal(SIGINT,Interrupt);
+	signal(SIGTERM,Interrupt);
+	#endif // XP_WIN
 
-//	unsigned long maxbytes = 64L * 1024L * 1024L;
-	
 	uint32 maxMem = (uint32)-1; // by default, there are no limit
 	uint32 maxAlloc = (uint32)-1; // by default, there are no limit
 
+	bool unsafeMode = false;
 	bool compileOnly = false;
 
 	char** argumentVector = argv;
-
 	for ( argumentVector++; argumentVector[0] && argumentVector[0][0] == '-'; argumentVector++ )
 		switch ( argumentVector[0][1] ) {
 			case 'm': // maxbytes (GC)
@@ -485,94 +188,19 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 				break;
 	}
 
-	rt = JS_NewRuntime(0); // maxMem specifies the number of allocated bytes after which garbage collection is run.
-	RT_HOST_MAIN_ASSERT( rt != NULL, "unable to create the runtime." ); // (TBD) fix Warning: uninitialized local variable 'cx'
+	JSContext *cx = CreateHost(maxMem, maxAlloc);
+	HOST_MAIN_ASSERT( cx != NULL, "unable to create a javascript execution context" );
 
+	HOST_MAIN_ASSERT( InitHost(cx, unsafeMode, stdoutFunction, stderrFunction), "unable to initialize the host.") ;
 
-//call of  'js_malloc'  acts on  'runtime->gcMallocBytes'
-//do gc IF rt->gcMallocBytes >= rt->gcMaxMallocBytes
-
-	JS_SetGCParameter(rt, JSGC_MAX_BYTES, maxMem); /* maximum nominal heap before last ditch GC */
-	JS_SetGCParameter(rt, JSGC_MAX_MALLOC_BYTES, maxAlloc); /* # of JS_malloc bytes before last ditch GC */
-
-	cx = JS_NewContext(rt, 8192L); // set the chunk size of the stack pool to 8192. see http://groups.google.com/group/mozilla.dev.tech.js-engine/browse_thread/thread/be9f404b623acf39/9efdfca81be99ca3
-	RT_HOST_MAIN_ASSERT( cx != NULL, "unable to create the context." );
-
-	JS_SetScriptStackQuota( cx, JS_DEFAULT_SCRIPT_STACK_QUOTA ); // good place to manage stack limit ( that is 32MB by default )
-	//	btw, JS_SetScriptStackQuota ( see also JS_SetThreadStackLimit )
-
-	JS_SetVersion( cx, (JSVersion)JS_VERSION );
-	// (TBD) set into configuration file
-
-// error management
-	JS_SetErrorReporter(cx, ErrorReporter);
-
-
-#ifdef XP_WIN
-	BOOL status = SetConsoleCtrlHandler((PHANDLER_ROUTINE)&Interrupt, TRUE);
-	RT_HOST_MAIN_ASSERT( status == TRUE, "Unable to set console handler" );
-#else
-	signal(SIGINT,Interrupt);
-	signal(SIGTERM,Interrupt);
-#endif // XP_WIN
-
-
-#ifdef JS_THREADSAFE
-    JS_BeginRequest(cx);
-#endif
-
-	JSBool jsStatus;
-
-// global object
-	// doc: For full ECMAScript standard compliance, obj should be of a JSClass that has the JSCLASS_GLOBAL_FLAGS flag.
-	JSClass global_class = {
-		NAME_GLOBAL_CLASS, JSCLASS_GLOBAL_FLAGS | JSCLASS_NEW_RESOLVE,
-		JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, global_enumerate, (JSResolveOp)global_resolve, JS_ConvertStub, JS_FinalizeStub, // see LAZY_STANDARD_CLASSES
-		JSCLASS_NO_OPTIONAL_MEMBERS
-	};
-
-	globalObject = JS_NewObject(cx, &global_class, NULL, NULL);
-	RT_HOST_MAIN_ASSERT( globalObject != NULL, "unable to create the global object." );
-	
-	//	JS_SetGlobalObject(cx, globalObject); // not needed. Doc: As a side effect, JS_InitStandardClasses establishes obj as the global object for cx, if one is not already established. 
-
-// Standard classes
-//	jsStatus = JS_InitStandardClasses(cx, globalObject); // use NULL instead of globalObject ?
-//	RT_HOST_MAIN_ASSERT( jsStatus == JS_TRUE, "unable to initialize standard classes." );
-
-	JS_SetGlobalObject(cx, globalObject); // see LAZY_STANDARD_CLASSES
-
-// global functions & properties
-	JS_DefineProperty( cx, globalObject, NAME_GLOBAL_GLOBAL_OBJECT, OBJECT_TO_JSVAL(JS_GetGlobalObject(cx)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
+	JSObject *globalObject = JS_GetGlobalObject(cx);
 	JS_DefineProperty(cx, globalObject, "endSignal", JSVAL_VOID, EndSignalGetter, EndSignalSetter, JSPROP_SHARED | JSPROP_PERMANENT );
-	JS_DefineFunction( cx, globalObject, NAME_GLOBAL_FUNCTION_LOAD_MODULE, LoadModule, 0, 0 );
-	JS_DefineFunction( cx, globalObject, NAME_GLOBAL_FUNCTION_UNLOAD_MODULE, UnloadModule, 0, 0 );
-
-// Global configuration object
-	JSObject *configObject = GetConfigurationObject(cx);
-	RT_HOST_MAIN_ASSERT( configObject != NULL, "failed to get/create configuration object." );
-
-	jsval value = OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunction(cx, stderrFunction, 1, 0, NULL, NULL))); // If you do not assign a name to the function, it is assigned the name "anonymous".
-	jsStatus = JS_SetProperty(cx, configObject, NAME_CONFIGURATION_STDERR, &value);
-	RT_HOST_MAIN_ASSERT( jsStatus != JS_FALSE, "Unable to set store stderr into configuration." );
-
-	value = OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunction(cx, stdoutFunction, 1, 0, NULL, NULL))); // If you do not assign a name to the function, it is assigned the name "anonymous".
-	jsStatus = JS_SetProperty(cx, configObject, NAME_CONFIGURATION_STDOUT, &value);
-	RT_HOST_MAIN_ASSERT( jsStatus != JS_FALSE, "Unable to set store stdout into configuration." );
-
-	value = BOOLEAN_TO_JSVAL(unsafeMode);
-	jsStatus = JS_SetProperty(cx, configObject, NAME_CONFIGURATION_UNSAFE_MODE, &value);
-	RT_HOST_MAIN_ASSERT( jsStatus != JS_FALSE, "Unable to set store unsafeMode into configuration." );
-
-
-// init static modules
-	jslangInit(cx, globalObject);
-
 
 // script name
   const char *scriptName = *argumentVector;
-  RT_HOST_MAIN_ASSERT( scriptName != NULL, "no script specified" );
+  HOST_MAIN_ASSERT( scriptName != NULL, "no script specified" );
 
+/*
 // arguments
 	JSObject *argsObj = JS_NewArrayObject(cx, 0, NULL);
 	RT_HOST_MAIN_ASSERT( argsObj != NULL, "unable to create argument array." );
@@ -587,6 +215,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 		jsStatus = JS_DefineElement(cx, argsObj, index++, STRING_TO_JSVAL(str), NULL, NULL, JSPROP_ENUMERATE);
 		RT_HOST_MAIN_ASSERT( jsStatus == JS_TRUE, "unable to define the argument." );
 	}
+*/
 
 	char hostFullPath[PATH_MAX +1];
 
@@ -594,17 +223,13 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 // get hostpath and hostname
 	HINSTANCE hInstance = (HINSTANCE)GetModuleHandle(NULL);
 	DWORD len = GetModuleFileName(hInstance, hostFullPath, sizeof(hostFullPath));
-	RT_HOST_MAIN_ASSERT( len != 0, "unable to GetModuleFileName." );
+	HOST_MAIN_ASSERT( len != 0, "unable to GetModuleFileName." );
 #else // XP_WIN
-
 	GetAbsoluteModulePath(hostFullPath, sizeof(hostFullPath), argv[0]);
 	RT_HOST_MAIN_ASSERT( hostFullPath[0] != '\0', "unable to get module FileName." );
-
 //	int len = readlink("/proc/self/exe", moduleFileName, sizeof(moduleFileName)); // doc: readlink does not append a NUL character to buf.
 //	moduleFileName[len] = '\0';
-
 //	strcpy(hostFullPath, argv[0]);
-
 #endif // XP_WIN
 
 	char *hostPath, *hostName;
@@ -624,141 +249,23 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	JS_DefineProperty(cx, globalObject, NAME_GLOBAL_SCRIPT_HOST_PATH, STRING_TO_JSVAL(JS_NewStringCopyZ(cx, hostPath)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT);
 	JS_DefineProperty(cx, globalObject, NAME_GLOBAL_SCRIPT_HOST_NAME, STRING_TO_JSVAL(JS_NewStringCopyZ(cx, hostName)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT);
 
-// language options
-// options
-//	uint32 options = JSOPTION_VAROBJFIX | JSOPTION_XML | JSOPTION_COMPILE_N_GO;
-//	if ( !unsafeMode )
-//		options |= JSOPTION_STRICT;
-//	JS_SetOptions(cx, options );
-
-	JS_SetOptions(cx, JSOPTION_VAROBJFIX | JSOPTION_STRICT | JSOPTION_XML | JSOPTION_COMPILE_N_GO | JSOPTION_RELIMIT );
-  // JSOPTION_COMPILE_N_GO:
-	//  caller of JS_Compile*Script promises to execute compiled script once only; enables compile-time scope chain resolution of consts.
-  // JSOPTION_DONT_REPORT_UNCAUGHT:
-	//  When returning from the outermost API call, prevent uncaught exceptions from being converted to error reports
-	// JSOPTION_VAROBJFIX:
-	//  Not quite: with JSOPTION_VAROBJFIX, both explicitly declared global
-	//  variables (var x) and implicit ones (x = 42 where no x exists yet in the
-	//  scope chain) both go in the last object on the parent-linked scope
-	//  chain.  Without that option, explicit globals go in the first object on
-	//  the scope chain, while implicit globals go on the last.
-	//  ---
-	//  One way to use JSOPTION_VAROBJFIX would be to temporarily
-	//  JS_SetParent(cx, libobj, NULL) and JS_SetParent(cx, libobj, global)
-	//  around all JS_Evaluate*Script* and JS_Compile* API calls.)
-	// JSOPTION_RELIMIT:
-	//  Throw exception on any regular expression which backtracks more than n^3 times, where n is length of the input string
-
-	// JSBranchCallback oldBranchCallback =
-	JS_SetBranchCallback(cx, BranchCallback);
-	JS_ToggleOptions(cx, JSOPTION_NATIVE_BRANCH_CALLBACK);
-
 // compile & executes the script
 
-//	script = JS_CompileFile( cx, globalObject, scriptName );
+	int exitValue;
 
-// shebang support
-	FILE *file = fopen(scriptName, "r");
-	RT_HOST_MAIN_ASSERT( file != NULL, "Script file cannot be opened." );
+	jsval rval;
+	if ( !ExecuteScript(cx, scriptName, compileOnly, argc-1, argv+1, &rval) ) {
 
-	char s = getc(file);
-	char b = getc(file);
-	if ( s == '#' && b == '!' ) {
-
-		ungetc('/', file);
-		ungetc('/', file);
+		exitValue = EXIT_FAILURE;
 	} else {
 
-		ungetc(b, file);
-		ungetc(s, file);
+		if ( JSVAL_IS_INT(rval) && JSVAL_TO_INT(rval) >= 0 )
+			exitValue = JSVAL_TO_INT(rval);
+		else
+			exitValue = EXIT_SUCCESS;
 	}
 
-//	JS_GC(cx); // ...and also just before doing anything that requires compilation (since compilation disables GC until complete).
-	script = JS_CompileFileHandle(cx, globalObject, scriptName, file);
-	// (TBD) fclose(file); ??
-
-//	JS_AddRoot(cx, &script);
-
-//  JSScript *script = LoadScript( cx, globalObject, scriptName, saveCompiledScripts );
-	RT_HOST_MAIN_ASSERT( script != NULL, "unable to compile the script." );
-
-#ifndef NOATEXIT
-	int atexitStatus = atexit(Finalize); // returns the value 0 if successful; otherwise the value -1 is returned and the global variable errno is set to indicate the error.
-	RT_HOST_MAIN_ASSERT( atexitStatus == 0, "unable to setup exit." );
-#endif // NOATEXIT
-
-	// You need to protect a JSScript (via a rooted script object) if and only if a garbage collection can occur between compilation and the start of execution.
-	jsval rval;
-	if ( !compileOnly )
-		jsStatus = JS_ExecuteScript( cx, globalObject, script, &rval ); // MUST be executed only once ( JSOPTION_COMPILE_N_GO )
-	else {
-		rval = JSVAL_VOID;
-		jsStatus = JS_TRUE;
-	}
-
-	// doc: If a script executes successfully, JS_ExecuteScript returns JS_TRUE. Otherwise it returns JS_FALSE. On failure, your application should assume that rval is undefined.
-	// if jsStatus != JS_TRUE, an error has been throw while the execution, so there is no need to throw another error
-
-//		printf( "Last executed line %s:%d", script->filename, JS_PCToLineNumber( cx, script, script->code ) ); // if it right ?
-// (TBD) enhance this
-
-  int exitValue;
-  if ( jsStatus == JS_TRUE )
-	  if ( JSVAL_IS_INT(rval) && JSVAL_TO_INT(rval) >= 0 )
-		  exitValue = JSVAL_TO_INT(rval);
-	  else
-		  exitValue = EXIT_SUCCESS;
-  else
-	  exitValue = EXIT_FAILURE;
-
-#ifndef NOATEXIT
-	exit(exitValue);
-#else
-	Finalize();
-	return exitValue;
-#endif // NOATEXIT
-
-}
-
-
-void Finalize() { // called by the system on exit(), or at the end of the main.
-
-//	if ( _finalized )
-//		return;
-
-	// because atexit(Terminate); is  set just before the JS_ExecuteScript, rt, cx, script ARE defined.
-
-#ifdef JS_THREADSAFE
-    JS_EndRequest(cx);
-#endif
-
-//	JS_RemoveRoot(cx, &script);
-
-	if ( script != NULL )
-		JS_DestroyScript(cx, script);
-
-//  printf("script result: %s\n", JS_GetStringBytes(JS_ValueToString(cx, rval)));
-
-	ModuleReleaseAll(cx);
-
-//	JS_GC(cx); // try to break linked objects
-// (TBD) don't
-
-// cleanup
-	// For each context you've created
-	JS_DestroyContext(cx); // (TBD) is JS_DestroyContextNoGC faster ?
-
-	// For each runtime
-	JS_DestroyRuntime(rt);
-
-	// And finally
-	JS_ShutDown();
-
-// Beware: because JS engine allocate memory from the DLL, all memory must be disallocated before releasing the DLL
-	// free used modules
-	ModuleFreeAll();
-	// (TBD) make rt, cx, script, ... global and finish them
-
+	DestroyHost(cx);
 
 #ifdef XP_WIN
 	SetConsoleCtrlHandler((PHANDLER_ROUTINE)&Interrupt, FALSE);
@@ -767,10 +274,9 @@ void Finalize() { // called by the system on exit(), or at the end of the main.
 	signal(SIGINT, SIG_DFL);
 	signal(SIGTERM, SIG_DFL);
 #endif // XP_WIN
-
-//	_finalized = true;
+	
+	return exitValue;
 }
-
 
 
 
