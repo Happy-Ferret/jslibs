@@ -14,6 +14,11 @@
 
 #include "stdafx.h"
 
+#include <string.h>
+
+#include <dlfcn.h> // cf. dlerror() in LoadModule()
+
+
 #include <jsprf.h>
 #include <jsstddef.h>
 
@@ -25,6 +30,7 @@
 
 // static modules
 #include "../jslang/jslang.h"
+
 
 
 #include "host.h"
@@ -469,4 +475,3 @@ JSBool ExecuteScript( JSContext *cx, const char *scriptFileName, bool compileOnl
 bad:
 	return JS_FALSE;
 }
-

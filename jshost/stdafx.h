@@ -27,7 +27,6 @@
 #include <errno.h>
 // #include <limits.h> // included by ../common/platform.h
 #include <signal.h>
-//	#include <dlfcn.h>
 
 #include <jsapi.h>
 
