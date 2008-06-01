@@ -19,6 +19,7 @@
 #include <cstring>
 
 #include "../common/jsNativeInterface.h"
+#include "../jslang/streamapi.h"
 #include "../jslang/bstringapi.h"
 #include "../common/stack.h"
 
@@ -71,7 +72,7 @@ DEFINE_FUNCTION_FAST( DecodeOggVorbis ) {
 	vorbis_info *info = ov_info(&descriptor, -1);
 	int bits = 16;
 
-	J_S_ASSERT( bits == 1 || bits == 2, "Unsupported bits count." );
+	J_S_ASSERT( bits != 8 || bits == 16, "Unsupported bits count." );
 	J_S_ASSERT( info->channels == 1 || info->channels == 2, "Unsupported channel count." );
 
 	int bitStream;
@@ -117,9 +118,9 @@ DEFINE_FUNCTION_FAST( DecodeOggVorbis ) {
 	JSObject *bstrObj = NewBString(cx, buf, totalSize);
 	J_S_ASSERT( bstrObj != NULL, "Unable to create the BString object.");
 	*J_FRVAL = OBJECT_TO_JSVAL(bstrObj);
-	SetPropertyInt(cx, bstrObj, "bits", bits); // bits per sample
-	SetPropertyInt(cx, bstrObj, "rate", info->rate);
-	SetPropertyInt(cx, bstrObj, "channels", info->channels);
+	J_CHECK_CALL( SetPropertyInt(cx, bstrObj, "bits", bits) ); // bits per sample
+	J_CHECK_CALL( SetPropertyInt(cx, bstrObj, "rate", info->rate) );
+	J_CHECK_CALL( SetPropertyInt(cx, bstrObj, "channels", info->channels) );
 
 	ov_clear(&descriptor); // beware: info must be valid
 
@@ -143,15 +144,19 @@ sf_count_t SfGetFilelen(void *user_data) {
 
 	StreamReadInfo *pv = (StreamReadInfo *)user_data;
 	jsval tmpVal;
-	int position, available;
+
+	int position;
 	JS_GetProperty(pv->cx, pv->obj, "position", &tmpVal);
 	if ( tmpVal == JSVAL_VOID )
 		return -1;
 	JsvalToInt(pv->cx, tmpVal, &position);
+
+	int available;
 	JS_GetProperty(pv->cx, pv->obj, "available", &tmpVal);
 	if ( tmpVal == JSVAL_VOID )
 		return -1;
 	JsvalToInt(pv->cx, tmpVal, &available);
+
 	return position + available;
 }
 
@@ -170,30 +175,36 @@ sf_count_t SfSeek(sf_count_t offset, int whence, void *user_data) {
 			IntToJsval(pv->cx, offset, &tmpVal);
 			JS_SetProperty(pv->cx, pv->obj, "position", &tmpVal);
 			return 0;
+
 		case SEEK_CUR:
 			JS_GetProperty(pv->cx, pv->obj, "position", &tmpVal);
 			if ( tmpVal == JSVAL_VOID )
 				return -1;
 			JsvalToInt(pv->cx, tmpVal, &position);
+
 			position += offset;
 			IntToJsval(pv->cx, position, &tmpVal);
 			JS_SetProperty(pv->cx, pv->obj, "position", &tmpVal);
 			return 0;
+
 		case SEEK_END:
 			JS_GetProperty(pv->cx, pv->obj, "available", &tmpVal);
 			if ( tmpVal == JSVAL_VOID )
 				return -1;
 			JsvalToInt(pv->cx, tmpVal, &available);
+
 			JS_GetProperty(pv->cx, pv->obj, "position", &tmpVal);
 			if ( tmpVal == JSVAL_VOID )
 				return -1;
 			JsvalToInt(pv->cx, tmpVal, &position);
+
 			if ( offset > 0 || -offset > position + available )
 				return -1;
 			JsvalToInt(pv->cx, tmpVal, &position);
 			IntToJsval(pv->cx, position + available + offset, &tmpVal); // the pointer is set to the size of the file plus offset.
 			JS_SetProperty(pv->cx, pv->obj, "position", &tmpVal);
 			return 0;
+
 	}
 	return -1;
 }
@@ -202,11 +213,13 @@ sf_count_t SfTell(void *user_data) {
 
 	StreamReadInfo *pv = (StreamReadInfo *)user_data;
 	jsval tmpVal;
+
 	int position;
 	JS_GetProperty(pv->cx, pv->obj, "position", &tmpVal);
 	if ( tmpVal == JSVAL_VOID )
 		return -1;
 	JsvalToInt(pv->cx, tmpVal, &position);
+
 	return position;
 }
 
@@ -287,9 +300,9 @@ DEFINE_FUNCTION_FAST( DecodeSound ) {
 	JSObject *bstrObj = NewBString(cx, buf, totalSize);
 	J_S_ASSERT( bstrObj != NULL, "Unable to create the BString object.");
 	*J_FRVAL = OBJECT_TO_JSVAL(bstrObj);
-	SetPropertyInt(cx, bstrObj, "bits", 16); // bits per sample
-	SetPropertyInt(cx, bstrObj, "rate", info.samplerate);
-	SetPropertyInt(cx, bstrObj, "channels", info.channels);
+	J_CHECK_CALL( SetPropertyInt(cx, bstrObj, "bits", 16) ); // bits per sample
+	J_CHECK_CALL( SetPropertyInt(cx, bstrObj, "rate", info.samplerate) );
+	J_CHECK_CALL( SetPropertyInt(cx, bstrObj, "channels", info.channels) );
 
 	sf_close(descriptor);
 

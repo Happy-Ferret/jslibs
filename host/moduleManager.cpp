@@ -15,10 +15,9 @@
 #include "stdafx.h"
 
 #ifdef XP_UNIX
-	#include <dlfcn.h>
+#include <dlfcn.h>
 #endif
 
-#include "../common/queue.h"
 #include "../common/jsNames.h"
 
 #include "moduleManager.h"

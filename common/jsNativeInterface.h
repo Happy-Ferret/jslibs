@@ -26,8 +26,10 @@ inline JSBool HasNativeInterface( JSContext *cx, JSObject *obj, const char *name
 
 	if ( obj == NULL )
 		return JS_FALSE;
+
 	JSBool found;
-	if ( JS_HasProperty(cx, obj, name, &found) != JS_TRUE )
+	// Doc: Determine whether a property is already physically present on a JSObject.
+	if ( JS_AlreadyHasOwnProperty(cx, obj, name, &found) != JS_TRUE )
 		return JS_FALSE;
 	*has = found == JS_TRUE;
 	return JS_TRUE;
