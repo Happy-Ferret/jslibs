@@ -81,13 +81,13 @@ inline JSBool SetStreamReadInterface( JSContext *cx, JSObject *obj, NIStreamRead
 }
 
 inline JSBool GetStreamReadInterface( JSContext *cx, JSObject *obj, NIStreamRead *fct ) {
-	
+
 	return GetNativeInterface(cx, obj, "_NISR", (FunctionPointer*)fct);
 }
 */
 
 
-
+/*
 // buffer access interface
 typedef JSBool (*NIBufferRead)( JSContext *cx, JSObject *obj, const char **buf, size_t *size );
 
@@ -97,15 +97,15 @@ inline JSBool HasBufferReadInterface( JSContext *cx, JSObject *obj, bool *has ) 
 }
 
 inline JSBool SetBufferReadInterface( JSContext *cx, JSObject *obj, NIBufferRead fct ) {
-		
+
 	return SetNativeInterface(cx, obj, "_NIBR", (FunctionPointer)fct);
 }
 
 inline JSBool GetBufferReadInterface( JSContext *cx, JSObject *obj, NIBufferRead *fct ) {
-	
+
 	return GetNativeInterface(cx, obj, "_NIBR", (FunctionPointer*)fct);
 }
-
+*/
 
 
 // **pm
@@ -114,7 +114,7 @@ inline JSBool GetBufferReadInterface( JSContext *cx, JSObject *obj, NIBufferRead
 typedef JSBool (*NIMatrix44Read)( JSContext *cx, JSObject *obj, float **pm ); // **pm allows NIMatrix44Read to return its own data pointer ( should be const )
 
 inline JSBool HasMatrix44ReadInterface( JSContext *cx, JSObject *obj, bool *has ) {
-	
+
 	return HasNativeInterface(cx, obj, "_NIRM", has);
 }
 
@@ -124,7 +124,7 @@ inline JSBool SetMatrix44ReadInterface( JSContext *cx, JSObject *obj, NIMatrix44
 }
 
 inline JSBool GetMatrix44ReadInterface( JSContext *cx, JSObject *obj, NIMatrix44Read *fct ) {
-	
+
 	return GetNativeInterface(cx, obj, "_NIRM", (FunctionPointer*)fct);
 }
 

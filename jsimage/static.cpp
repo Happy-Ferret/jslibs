@@ -15,7 +15,7 @@
 #include "stdafx.h"
 
 #include "../jslang/bstringapi.h"
-#include "../jslang/streamapi.h"
+#include "../common/NIStreamRead.h"
 
 //#include "../common/jsNativeInterface.h"
 #include "static.h"

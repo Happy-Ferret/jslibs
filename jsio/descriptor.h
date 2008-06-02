@@ -12,7 +12,7 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-#include "../jslang/streamapi.h"
+#include "../common/NIStreamRead.h"
 
 DECLARE_CLASS( Descriptor )
 

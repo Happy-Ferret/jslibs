@@ -15,18 +15,15 @@
 #include "stdafx.h"
 #include <cstring>
 
+#include "../common/jsHelper.h"
+
 #include "bstringapi.h"
-
-#include "../common/jsNativeInterface.h"
-
-
 
 
 inline JSBool LengthSet( JSContext *cx, JSObject *obj, size_t bufferLength ) {
 
 	return JS_SetReservedSlot(cx, obj, SLOT_BSTRING_LENGTH, INT_TO_JSVAL( bufferLength ));
 }
-
 
 inline JSBool LengthGet( JSContext *cx, JSObject *obj, size_t *bufferLength ) {
 
@@ -50,6 +47,7 @@ JSBool NativeInterfaceBufferRead( JSContext *cx, JSObject *obj, const char **buf
 	return JS_TRUE;
 }
 
+NIBufferGet pNativeInterfaceBufferRead = NativeInterfaceBufferRead;
 
 BEGIN_CLASS( BString )
 
@@ -155,7 +153,7 @@ DEFINE_CONSTRUCTOR() {
 		JS_SetPrivate(cx, obj, dBuffer);
 	}
 
-	J_CHECK_CALL( SetBufferReadInterface(cx, obj, NativeInterfaceBufferRead) );
+	J_CHECK_CALL( SetBufferGetInterface(cx, obj, &pNativeInterfaceBufferRead) );
 
 	return JS_TRUE;
 }

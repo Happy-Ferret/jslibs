@@ -18,11 +18,10 @@
 
 #include <cstring>
 
-#include "../common/jsNativeInterface.h"
-#include "../jslang/streamapi.h"
 #include "../jslang/bstringapi.h"
 #include "../common/stack.h"
 
+#include "../common/NIStreamRead.h"
 
 #include <vorbis/codec.h>
 #include <vorbis/vorbisfile.h>

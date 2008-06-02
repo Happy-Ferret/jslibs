@@ -13,9 +13,6 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-#include "../common/jsNativeInterface.h"
-
-#include "../jslang/streamapi.h"
 
 #include <pprio.h> // nspr/include/nspr/private
 #include <string.h>

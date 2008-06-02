@@ -267,7 +267,7 @@ inline JSBool InitCurveData( JSContext* cx, jsval value, int length, float *curv
 
 BEGIN_CLASS( Texture )
 
-JSBool NativeInterfaceBufferRead( JSContext *cx, JSObject *obj, const char **buf, size_t *size ) {
+JSBool NativeInterfaceBufferGet( JSContext *cx, JSObject *obj, const char **buf, size_t *size ) {
 
 	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( tex );
@@ -275,6 +275,8 @@ JSBool NativeInterfaceBufferRead( JSContext *cx, JSObject *obj, const char **buf
 	*size = tex->width * tex->height * tex->channels * sizeof(PTYPE);
 	return JS_TRUE;
 }
+
+NIBufferGet pNativeInterfaceBufferGet = NativeInterfaceBufferGet;
 
 
 inline bool IsTexture( JSContext *cx, jsval value ) {
@@ -317,7 +319,7 @@ DEFINE_CONSTRUCTOR() {
 	Texture *tex = (Texture *)JS_malloc(cx, sizeof(Texture));
 	tex->cbackBuffer = NULL;
 
-	J_CHECK_CALL( SetBufferReadInterface(cx, obj, NativeInterfaceBufferRead) );
+	J_CHECK_CALL( SetBufferGetInterface(cx, obj, &pNativeInterfaceBufferGet) );
 
 	if ( J_ARGC >= 3 ) {
 	
@@ -2979,8 +2981,10 @@ CONFIGURE_CLASS
 		FUNCTION_FAST( Trim )
 		FUNCTION_FAST( Copy )
 		FUNCTION_FAST( Paste )
+
 		FUNCTION_FAST( Export )
 		FUNCTION_FAST( Import )
+
 		FUNCTION_FAST( Flip )
 		FUNCTION_FAST( Shift )
 		FUNCTION_FAST( Convolution )

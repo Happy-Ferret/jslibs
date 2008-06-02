@@ -24,9 +24,6 @@
 #include "stdafx.h"
 #include "buffer.h"
 
-#include "../jslang/streamapi.h"
-
-//#include "../common/jsNativeInterface.h"
 #include "../common/queue.h"
 
 
