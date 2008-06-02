@@ -7,6 +7,14 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jsaudio", "jsaudio.vcproj",
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OpenAL32", "..\openal\src\OpenAL-Windows\OpenAL32\OpenAL32.vcproj", "{DC6C7281-068A-4BEC-8A37-6613198345F5}"
+	ProjectSection(ProjectDependencies) = postProject
+		{9E16DFA7-61EB-45D9-97A1-B590A3C5FCA1} = {9E16DFA7-61EB-45D9-97A1-B590A3C5FCA1}
+		{DEA4F3E4-75DB-4C78-947C-40BB7FFD3B44} = {DEA4F3E4-75DB-4C78-947C-40BB7FFD3B44}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ALc", "..\openal\src\OpenAL-Windows\Alc\ALc.vcproj", "{9E16DFA7-61EB-45D9-97A1-B590A3C5FCA1}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ALu", "..\openal\src\OpenAL-Windows\Alu\ALu.vcproj", "{DEA4F3E4-75DB-4C78-947C-40BB7FFD3B44}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -22,6 +30,14 @@ Global
 		{DC6C7281-068A-4BEC-8A37-6613198345F5}.Debug|Win32.Build.0 = Debug|Win32
 		{DC6C7281-068A-4BEC-8A37-6613198345F5}.Release|Win32.ActiveCfg = Release|Win32
 		{DC6C7281-068A-4BEC-8A37-6613198345F5}.Release|Win32.Build.0 = Release|Win32
+		{9E16DFA7-61EB-45D9-97A1-B590A3C5FCA1}.Debug|Win32.ActiveCfg = Debug|Win32
+		{9E16DFA7-61EB-45D9-97A1-B590A3C5FCA1}.Debug|Win32.Build.0 = Debug|Win32
+		{9E16DFA7-61EB-45D9-97A1-B590A3C5FCA1}.Release|Win32.ActiveCfg = Release|Win32
+		{9E16DFA7-61EB-45D9-97A1-B590A3C5FCA1}.Release|Win32.Build.0 = Release|Win32
+		{DEA4F3E4-75DB-4C78-947C-40BB7FFD3B44}.Debug|Win32.ActiveCfg = Debug|Win32
+		{DEA4F3E4-75DB-4C78-947C-40BB7FFD3B44}.Debug|Win32.Build.0 = Debug|Win32
+		{DEA4F3E4-75DB-4C78-947C-40BB7FFD3B44}.Release|Win32.ActiveCfg = Release|Win32
+		{DEA4F3E4-75DB-4C78-947C-40BB7FFD3B44}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
