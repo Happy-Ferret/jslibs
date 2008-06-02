@@ -23,6 +23,8 @@
 #include "semaphore.h"
 #include "static.h"
 
+#include "../jslang/streamapi.h"
+
 DEFINE_UNSAFE_MODE
 
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {

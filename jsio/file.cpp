@@ -13,7 +13,8 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-#include "../common/jsNativeInterface.h"
+//#include "../common/jsNativeInterface.h"
+#include "../jslang/streamapi.h"
 
 #include <pprio.h> // nspr/include/nspr/private
 
@@ -100,7 +101,8 @@ DEFINE_FUNCTION( Open ) {
 		return ThrowIoError(cx);
 	JS_SetPrivate( cx, obj, fd );
 	
-	J_CHECK_CALL( SetStreamReadInterface(cx, obj, NativeInterfaceStreamRead) );
+//	J_CHECK_CALL( SetStreamReadInterface(cx, obj, NativeInterfaceStreamRead) );
+	J_CHK( SetStreamReadInterface(cx, obj, &pNativeInterfaceStreamRead) );
 	*rval = OBJECT_TO_JSVAL(obj); // allows to write f.Open(...).Read()
 	return JS_TRUE;
 }

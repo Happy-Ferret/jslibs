@@ -13,7 +13,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-#include "../common/jsNativeInterface.h"
+//#include "../common/jsNativeInterface.h"
 
 #include "descriptor.h"
 #include "pipe.h"

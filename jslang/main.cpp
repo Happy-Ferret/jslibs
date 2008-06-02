@@ -29,9 +29,6 @@ JSBool jslangInit(JSContext *cx, JSObject *obj) {
 	INIT_CLASS( BString );
 	INIT_CLASS( Stream );
 
-//	jsid idRead;
-//	JS_ValueToId(cx, STRING_TO_JSVAL(JS_InternString(cx, "_NISR")), &idRead);
-
 
 	return JS_TRUE;
 }

@@ -15,8 +15,9 @@
 #include "stdafx.h"
 
 #include "../jslang/bstringapi.h"
+#include "../jslang/streamapi.h"
 
-#include "../common/jsNativeInterface.h"
+//#include "../common/jsNativeInterface.h"
 #include "static.h"
 
 
@@ -50,7 +51,7 @@ typedef struct {
 	JOCTET *buffer;
 	JSContext *cx;
 	JSObject *obj;
-	NIStreamRead read;
+//	NIStreamRead read;
 } SourceMgr;
 typedef SourceMgr *SourceMgrPtr;
 
@@ -65,7 +66,10 @@ METHODDEF(boolean) fill_input_buffer(j_decompress_ptr cinfo) {
 
 	size_t amount = INPUT_BUF_SIZE;
 //	src->read(src->pv, src->buffer, &amount);
-	src->read( src->cx, src->obj, (char*)src->buffer, &amount);
+//	src->read( src->cx, src->obj, (char*)src->buffer, &amount);
+	StreamReadInterface( src->cx, src->obj, (char*)src->buffer, &amount);
+
+
 	// (TBD) manage errors
 
 	if ( amount == 0 ) {
@@ -131,17 +135,18 @@ DEFINE_FUNCTION( DecodeJpegImage ) {
 	src->obj = JSVAL_TO_OBJECT(argv[0]); // required by NIStreamRead
 
 // try to use a fast way to read the data
-	J_CHECK_CALL( GetStreamReadInterface(cx, JSVAL_TO_OBJECT(argv[0]), &src->read) );
-	RT_ASSERT( src->read != NULL, "Unable to GetNativeResource." );
+//	J_CHECK_CALL( GetStreamReadInterface(cx, JSVAL_TO_OBJECT(argv[0]), &src->read) );
+
+//	RT_ASSERT( src->read != NULL, "Unable to GetNativeResource." );
 
 // else use a 'classic' method to read the data ( like var data = resourceObject.Read(amount); )
-	if ( src->read == NULL ) {
+//	if ( src->read == NULL ) {
 
-		RT_ASSERT( false, "TO BE DONE" ); // (TBD) read without NI_READ_RESOURCE
+//		RT_ASSERT( false, "TO BE DONE" ); // (TBD) read without NI_READ_RESOURCE
 //		CxObj
 //		src->pv = resourceObject;
 //		src->read = ReadUsingJsMethod;
-	}
+//	}
 
 //	JSBool status = GetNativeResource(cx, JSVAL_TO_OBJECT(argv[0]), &src->pv, &src->read, NULL );
 //	RT_ASSERT( status == JS_TRUE, "Unable to GetNativeResource." );
@@ -204,14 +209,16 @@ typedef struct {
 	png_infop info;
 	JSContext *cx;
 	JSObject *obj;
-	NIStreamRead read;
+//	NIStreamRead read;
 } PngReadUserStruct;
 
 
 static void _png_read( png_structp png_ptr, png_bytep data, png_size_t length ) {
 
 	PngReadUserStruct *desc = (PngReadUserStruct*)png_get_io_ptr(png_ptr);
-	desc->read(desc->cx, desc->obj, (char*)data, &length);
+//	desc->read(desc->cx, desc->obj, (char*)data, &length);
+	StreamReadInterface(desc->cx, desc->obj, (char*)data, &length);
+
 //	if ( length == 0 )
 //		png_error(png_ptr, "Trying to read after EOF."); // png_warning()
 }
@@ -226,8 +233,8 @@ DEFINE_FUNCTION( DecodePngImage ) {
 	desc.info = png_create_info_struct(desc.png);
 	J_S_ASSERT( desc.info != NULL, "Unable to png_create_info_struct.");
 
-	J_CHECK_CALL( GetStreamReadInterface(cx, JSVAL_TO_OBJECT(argv[0]), &desc.read) );
-	J_S_ASSERT( desc.read != NULL, "Unable to GetNativeResource." );
+//	J_CHECK_CALL( GetStreamReadInterface(cx, JSVAL_TO_OBJECT(argv[0]), &desc.read) );
+//	J_S_ASSERT( desc.read != NULL, "Unable to GetNativeResource." );
 
 	png_set_read_fn( desc.png, (voidp)&desc, _png_read );
    png_read_info(desc.png, desc.info);

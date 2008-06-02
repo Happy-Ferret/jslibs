@@ -15,6 +15,8 @@
 #include "stdafx.h"
 #include "../common/jsNativeInterface.h"
 
+#include "../jslang/streamapi.h"
+
 #include <pprio.h> // nspr/include/nspr/private
 #include <string.h>
 
@@ -63,6 +65,8 @@ JSBool NativeInterfaceStreamRead( JSContext *cx, JSObject *obj, char *buf, size_
 	return JS_TRUE;
 }
 
+extern NIStreamRead pNativeInterfaceStreamRead = NativeInterfaceStreamRead;
+
 
 void FinalizeDescriptor(JSContext *cx, JSObject *obj) {
 
@@ -108,7 +112,8 @@ DEFINE_FUNCTION( Close ) {
 	}
 	JS_SetPrivate( cx, obj, NULL );
 //	JS_ClearScope( cx, obj ); // help to clear readable, writable, exception
-	J_CHECK_CALL( SetStreamReadInterface(cx, obj, NULL) );
+//	J_CHECK_CALL( SetStreamReadInterface(cx, obj, NULL) );
+	J_CHK( SetStreamReadInterface(cx, obj, NULL) );
 	return JS_TRUE;
 }
 

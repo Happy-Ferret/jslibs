@@ -13,7 +13,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-#include "../common/jsNativeInterface.h"
+//#include "../common/jsNativeInterface.h"
 
 #include "descriptor.h"
 #include "file.h"
@@ -170,7 +170,8 @@ DEFINE_FUNCTION( Accept ) {
 	PRFileDesc *newFd = PR_Accept( fd, NULL, connectTimeout );
 	if ( newFd == NULL )
 		return ThrowIoError(cx);
-	J_CHECK_CALL( SetStreamReadInterface(cx, obj, NativeInterfaceStreamRead) );
+//	J_CHECK_CALL( SetStreamReadInterface(cx, obj, NativeInterfaceStreamRead) );
+	J_CHECK_CALL( SetStreamReadInterface(cx, obj, &pNativeInterfaceStreamRead) );
 	JSObject *object = JS_NewObject( cx, &classSocket, NULL, NULL );
 	JS_SetPrivate( cx, object, newFd );
 	*rval = OBJECT_TO_JSVAL( object );
@@ -250,7 +251,8 @@ DEFINE_FUNCTION( Connect ) {
 	}
 	// see 	PR_GetConnectStatus or PR_ConnectContinue INSTEAD ???
 
-	J_CHECK_CALL( SetStreamReadInterface(cx, obj, NativeInterfaceStreamRead) );
+//	J_CHECK_CALL( SetStreamReadInterface(cx, obj, NativeInterfaceStreamRead) );
+	J_CHECK_CALL( SetStreamReadInterface(cx, obj, &pNativeInterfaceStreamRead) );
 	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 }

@@ -15,7 +15,7 @@
 #include "stdafx.h"
 #include <string.h>
 
-#include "../common/jsNativeInterface.h"
+//#include "../common/jsNativeInterface.h"
 
 #include "semaphore.h"
 

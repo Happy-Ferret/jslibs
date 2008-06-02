@@ -35,7 +35,7 @@
 typedef struct {
 	JSContext *cx;
 	JSObject *obj;
-	NIStreamRead streamRead;
+//	NIStreamRead streamRead;
 } StreamReadInfo;
 
 
@@ -45,8 +45,11 @@ size_t readStream( void *ptr, size_t size, size_t nmemb, void *pv ) {
 
 	StreamReadInfo *info = (StreamReadInfo*)pv;
 	size_t amount = size * nmemb;
-	if ( info->streamRead( info->cx, info->obj, (char*)ptr, &amount ) != JS_TRUE )
+//	if ( info->streamRead( info->cx, info->obj, (char*)ptr, &amount ) != JS_TRUE )
+//		return -1; // (TBD) check for a better error
+	if ( StreamReadInterface(info->cx, info->obj, (char*)ptr, &amount) != JS_TRUE )
 		return -1; // (TBD) check for a better error
+
 	return amount;
 }
 
@@ -59,11 +62,11 @@ DEFINE_FUNCTION_FAST( DecodeOggVorbis ) {
 	J_S_ASSERT_OBJECT( J_FARG(1) );
 	JSObject *StreamObj = JSVAL_TO_OBJECT( J_FARG(1) );
 
-	NIStreamRead streamReader;
-	J_CHECK_CALL( GetStreamReadInterface(cx, StreamObj, &streamReader) );
-	J_S_ASSERT( streamReader != NULL, "Invalid stream." );
+//	NIStreamRead streamReader;
+//	J_CHECK_CALL( GetStreamReadInterface(cx, StreamObj, &streamReader) );
+//	J_S_ASSERT( streamReader != NULL, "Invalid stream." );
 
-	StreamReadInfo pv = { cx, StreamObj, streamReader };
+	StreamReadInfo pv = { cx, StreamObj };
 	OggVorbis_File descriptor;
 	ov_open_callbacks(&pv, &descriptor, NULL, 0, ovCallbacks);
 
@@ -228,7 +231,9 @@ sf_count_t SfRead(void *ptr, sf_count_t count, void *user_data) {
 	StreamReadInfo *pv = (StreamReadInfo *)user_data;
 
 	size_t amount = count;
-	if ( pv->streamRead( pv->cx, pv->obj, (char*)ptr, &amount ) != JS_TRUE )
+//	if ( pv->streamRead( pv->cx, pv->obj, (char*)ptr, &amount ) != JS_TRUE )
+//		return -1; // (TBD) find a better error
+	if ( StreamReadInterface( pv->cx, pv->obj, (char*)ptr, &amount ) != JS_TRUE )
 		return -1; // (TBD) find a better error
 	return amount;
 }
@@ -243,10 +248,11 @@ DEFINE_FUNCTION_FAST( DecodeSound ) {
 	J_S_ASSERT_OBJECT( J_FARG(1) );
 	JSObject *StreamObj = JSVAL_TO_OBJECT( J_FARG(1) );
 
-	NIStreamRead streamReader;
-	J_CHECK_CALL( GetStreamReadInterface(cx, StreamObj, &streamReader) );
-	J_S_ASSERT( streamReader != NULL, "Invalid stream." );
-	StreamReadInfo pv = { cx, StreamObj, streamReader };
+//	NIStreamRead streamReader;
+//	J_CHECK_CALL( GetStreamReadInterface(cx, StreamObj, &streamReader) );
+//	J_S_ASSERT( streamReader != NULL, "Invalid stream." );
+
+	StreamReadInfo pv = { cx, StreamObj };
 	SF_INFO info = {0};
 	SNDFILE *descriptor = sf_open_virtual(&sfCallbacks, SFM_READ, &info, &pv);
 

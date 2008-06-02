@@ -66,6 +66,7 @@ inline JSBool GetNativeInterface( JSContext *cx, JSObject *obj, const char *name
 ///////////////////////////////////////////////////////////////////////////////
 // Interfaces
 
+/*
 typedef JSBool (*NIStreamRead)( JSContext *cx, JSObject *obj, char *buf, unsigned int *amount );
 
 inline JSBool HasStreamReadInterface( JSContext *cx, JSObject *obj, bool *has ) {
@@ -83,7 +84,7 @@ inline JSBool GetStreamReadInterface( JSContext *cx, JSObject *obj, NIStreamRead
 	
 	return GetNativeInterface(cx, obj, "_NISR", (FunctionPointer*)fct);
 }
-
+*/
 
 
 
