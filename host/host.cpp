@@ -471,6 +471,4 @@ JSBool ExecuteScript( JSContext *cx, const char *scriptFileName, bool compileOnl
 	J_CHKM( JS_DeleteProperty(cx, globalObject, NAME_GLOBAL_ARGUMENTS ), "Unable to remove argument property" );
 
 	return JS_TRUE;
-bad:
-	return JS_FALSE;
 }

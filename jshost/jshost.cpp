@@ -134,8 +134,6 @@ static JSBool stderrFunction(JSContext *cx, uintN argc, jsval *vp) {
 	J_CHK( JsvalToStringAndLength(cx, J_FARG(1), &buffer, &length) );
 	write(2, buffer, length);
 	return JS_TRUE;
-bad:
-	return JS_FALSE;
 }
 
 static JSBool stdoutFunction(JSContext *cx, uintN argc, jsval *vp) {
@@ -145,8 +143,6 @@ static JSBool stdoutFunction(JSContext *cx, uintN argc, jsval *vp) {
 	J_CHK( JsvalToStringAndLength(cx, J_FARG(1), &buffer, &length) );
 	write(1, buffer, length);
 	return JS_TRUE;
-bad:
-	return JS_FALSE;
 }
 
 
