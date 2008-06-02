@@ -126,22 +126,28 @@ void Interrupt(int CtrlType) {
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 
+static JSBool stdoutFunction(JSContext *cx, uintN argc, jsval *vp) {
+
+	const char *buffer;
+	size_t length;
+	for ( uintN i = 0; i < argc; i++ ) {
+
+		J_CHK( JsvalToStringAndLength(cx, J_FARG(1+i), &buffer, &length) );
+		write(1, buffer, length);
+	}
+	return JS_TRUE;
+}
+
 
 static JSBool stderrFunction(JSContext *cx, uintN argc, jsval *vp) {
 
 	const char *buffer;
 	size_t length;
-	J_CHK( JsvalToStringAndLength(cx, J_FARG(1), &buffer, &length) );
-	write(2, buffer, length);
-	return JS_TRUE;
-}
-
-static JSBool stdoutFunction(JSContext *cx, uintN argc, jsval *vp) {
-
-	const char *buffer;
-	size_t length;
-	J_CHK( JsvalToStringAndLength(cx, J_FARG(1), &buffer, &length) );
-	write(1, buffer, length);
+	for ( uintN i = 0; i < argc; i++ ) {
+		
+		J_CHK( JsvalToStringAndLength(cx, J_FARG(i+1), &buffer, &length) );
+		write(2, buffer, length);
+	}
 	return JS_TRUE;
 }
 

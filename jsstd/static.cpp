@@ -30,8 +30,6 @@
 	#define O_BINARY 0
 #endif
 
-extern JSFunction *stdoutFunction;
-
 BEGIN_STATIC
 
 DEFINE_FUNCTION( Expand ) {
@@ -370,6 +368,12 @@ DEFINE_FUNCTION_FAST( TimeCounter ) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 DEFINE_FUNCTION_FAST( Print ) {
 
+	JSObject *globalObject = JS_GetGlobalObject(cx);
+	jsval fct = GetConfigurationValue(cx, NAME_CONFIGURATION_STDOUT);
+	if ( JS_TypeOfValue(cx, fct) == JSTYPE_FUNCTION )
+		J_CHK( JS_CallFunctionValue(cx, globalObject, fct, J_ARGC, &J_FARG(1), J_FRVAL) );
+
+/*
 	if ( stdoutFunction == NULL )
 		return JS_TRUE; // nowhere to write, but don't failed
 	
@@ -377,6 +381,7 @@ DEFINE_FUNCTION_FAST( Print ) {
 
 	for (uintN i = 0; i < J_ARGC; i++)
 		RT_CHECK_CALL( JS_CallFunction(cx, J_FOBJ, stdoutFunction, 1, &J_FARG(1+i), J_FRVAL) );
+*/
 	return JS_TRUE;
 }
 
