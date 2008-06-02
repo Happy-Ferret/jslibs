@@ -116,7 +116,7 @@
 
 // check: used to forward an error.
 #define J_CHK( status ) \
-	if (unlikely(!(status))) { goto bad; }
+	if (unlikely(!(status))) { return JS_FALSE; }
 
 // check with message: if status is false, a js exception is rised if it is not already pending.
 #define J_CHKM( status, errorMessage ) \
