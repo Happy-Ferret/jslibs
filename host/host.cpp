@@ -422,7 +422,7 @@ JSBool ExecuteScript( JSContext *cx, const char *scriptFileName, bool compileOnl
 		
 		JSString *str = JS_NewStringCopyZ(cx, argv[index]);
 		J_CHKM( str != NULL, "unable to store the argument." );
-		J_CHKM( JS_DefineElement(cx, argsObj, index++, STRING_TO_JSVAL(str), NULL, NULL, JSPROP_ENUMERATE), "unable to define the argument." );
+		J_CHKM( JS_DefineElement(cx, argsObj, index, STRING_TO_JSVAL(str), NULL, NULL, JSPROP_ENUMERATE), "unable to define the argument." );
 	}
 
 // compile & executes the script
