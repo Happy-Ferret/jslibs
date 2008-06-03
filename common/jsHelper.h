@@ -696,7 +696,7 @@ inline JSClass *GetGlobalClassByName(JSContext *cx, const char *className) {
 
 inline bool MaybeRealloc( int requested, int received ) {
 
-	return (100 * received / requested < 90) && (requested - received > 256);
+	return requested != 0 && (100 * received / requested < 90) && (requested - received > 256);
 }
 
 
