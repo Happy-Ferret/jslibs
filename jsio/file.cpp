@@ -58,6 +58,7 @@ DEFINE_CONSTRUCTOR() {
 	RT_ASSERT_ARGC(1);
 	JS_SetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, J_ARG(1) );
 	JS_SetPrivate(cx, obj, NULL); // (TBD) optional ?
+	InitStreamReadInterface(cx, obj);
 	return JS_TRUE;
 }
 
@@ -100,7 +101,10 @@ DEFINE_FUNCTION( Open ) {
 	JS_SetPrivate( cx, obj, fd );
 	
 //	J_CHECK_CALL( SetStreamReadInterface(cx, obj, NativeInterfaceStreamRead) );
+
+	J_CHK( InitStreamReadInterface(cx, obj) );
 	J_CHK( SetStreamReadInterface(cx, obj, NativeInterfaceStreamRead) );
+
 	*rval = OBJECT_TO_JSVAL(obj); // allows to write f.Open(...).Read()
 	return JS_TRUE;
 }

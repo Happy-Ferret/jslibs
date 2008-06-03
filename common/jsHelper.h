@@ -15,8 +15,11 @@
 #ifndef _JSHELPER_H_
 #define _JSHELPER_H_
 
-inline bool HasBufferGetInterface( JSContext *cx, JSObject *obj );
-inline JSBool BufferGetInterface(JSContext *cx, JSObject *obj, const char **buf, size_t *size);
+typedef JSBool (*NIStreamRead)( JSContext *cx, JSObject *obj, char *buffer, size_t *amount );
+typedef JSBool (*NIBufferGet)( JSContext *cx, JSObject *obj, const char **buffer, size_t *size );
+
+inline NIBufferGet BufferGetNativeInterface( JSContext *cx, JSObject *obj );
+inline NIBufferGet BufferGetInterface( JSContext *cx, JSObject *obj );
 
 #include "platform.h"
 
@@ -261,7 +264,7 @@ inline bool JsvalIsString( JSContext *cx, jsval val ) {
 		return true;
 	if ( !JSVAL_IS_OBJECT(val) || JSVAL_IS_NULL(val) )
 		return false;
-	return HasBufferGetInterface(cx, JSVAL_TO_OBJECT(val));
+	return BufferGetInterface(cx, JSVAL_TO_OBJECT(val)) != NULL;
 }
 
 
@@ -276,8 +279,12 @@ inline JSBool JsvalToStringAndLength( JSContext *cx, jsval val, const char** buf
 		return JS_TRUE;
 	}
 
-	if ( JSVAL_IS_OBJECT(val) && !JSVAL_IS_NULL(val) && HasBufferGetInterface(cx, JSVAL_TO_OBJECT(val) ) )
-		return BufferGetInterface(cx, JSVAL_TO_OBJECT(val), buffer, size);
+	if ( JSVAL_IS_OBJECT(val) && !JSVAL_IS_NULL(val) ) {
+
+		NIBufferGet fct = BufferGetNativeInterface(cx, JSVAL_TO_OBJECT(val));
+		if ( fct )
+			return fct(cx, JSVAL_TO_OBJECT(val), buffer, size);
+	}
 
 	JSString *str = JS_ValueToString(cx, val);
 	J_S_ASSERT( str != NULL, J__ERRMSG_STRING_CONVERSION_FAILED );
@@ -693,121 +700,54 @@ inline bool MaybeRealloc( int requested, int received ) {
 }
 
 
+
+
 ///////////////////////////////////////////////////////////////////////////////
 // NativeInterface
 
-//#define J_JSVAL_TO_FUNCTIONPTR(val) ((jsval)JSVAL_TO_PRIVATE(val) >> 1)
-//#define J_FUNCTIONPTR_TO_JSVAL(ptr) (PRIVATE_TO_JSVAL((jsval)ptr << 1))
-//#define J_FUNCTIONPTR_FIT_IN_JSVAL(ptr) (sizeof(ptr) <= sizeof(jsval) && (((jsval)ptr<<1)>>1) == (jsval)ptr)
-
-/*
-inline JSBool SetNativeInterface( JSContext *cx, JSObject *obj, jsid iid, void* pFct ) {
+inline JSBool GetNativeInterface( JSContext *cx, JSObject *obj, jsid iid, void **nativeFct ) {
 
 	jsval tmp;
-	if ( pFct != NULL ) {
+	J_CHKM( OBJ_GET_PROPERTY(cx, obj, iid, &tmp), "Unable to get the native interface.");
+	if ( JSVAL_IS_INT(tmp) ) {
 
-		J_S_ASSERT( J_FUNCTIONPTR_FIT_IN_JSVAL(pFct), "Unable to store the function pointer." );
-		tmp = PRIVATE_TO_JSVAL((jsval)pFct << 1);
-
-		JS_DefineProperty(cx, obj,   JSPROP_READONLY | JSPROP_PERMANENT
-
-		OBJ_SET_PROPERTY(cx, obj, iid, &tmp ); // JSPROP_READONLY | JSPROP_PERMANENT);
-
-		OBJ_SET_ATTRIBUTES(cx, obj, iid, 
-
-		return JS_TRUE;
+		*nativeFct = (void*)JSVAL_TO_INT(tmp);
 	} else {
 
-		return OBJ_DELETE_PROPERTY(cx, obj, iid, &tmp);
+		*nativeFct = NULL;
 	}
-}
-*/
-
-inline bool HasNativeInterface( JSContext *cx, JSObject *obj, jsid iid ) {
-/*
-	jsval tmp;
-	if ( OBJ_GET_PROPERTY(cx, obj, iid, &tmp) != JS_TRUE ) // use OBJ_LOOKUP_PROPERTY ??
-		return false;
-	return tmp != JSVAL_VOID;
-*/
-	if ( !OBJ_IS_NATIVE(obj) ) {
-
-		JSObject *obj2;
-		JSProperty *prop;
-		if ( OBJ_LOOKUP_PROPERTY(cx, obj, iid, &obj2, &prop) == JS_TRUE ) {
-
-			if (prop)
-				OBJ_DROP_PROPERTY(cx, obj2, prop);
-			return obj == obj2;
-		}
-	}
-	return false;
+	return JS_TRUE;
 }
 
-inline JSBool BookNativeInterface( JSContext *cx, JSObject *obj, const char *name ) {
+
+inline JSBool ReserveNativeInterface( JSContext *cx, JSObject *obj, const char *name ) {
 
 	J_CHK( JS_DefineProperty(cx, obj, name, JSVAL_VOID, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ) );
+	return JS_TRUE;
+}
+
+
+inline JSBool SetNativeInterface( JSContext *cx, JSObject *obj, const char *name, void *nativeFct ) {
+
+	jsval tmp;
+	if ( nativeFct != NULL ) {
+
+		J_S_ASSERT( INT_FITS_IN_JSVAL((unsigned int)nativeFct), "Unable to store the Native Interface." );
+		tmp = INT_TO_JSVAL(nativeFct);
+		J_CHK( JS_SetProperty(cx, obj, name, &tmp ) );
+	} else {
+		
+		tmp = JSVAL_VOID;
+		J_CHK( JS_SetProperty(cx, obj, name, &tmp ) );
+	}
 	return JS_TRUE;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 // NativeInterface StreamRead
 
-#define NI_STREAMREAD_NAME "_NI_Read"
+inline JSBool JSStreamRead( JSContext *cx, JSObject *obj, char *buffer, size_t *amount ) {
 
-typedef JSBool (*NIStreamRead)( JSContext *cx, JSObject *obj, char *buf, size_t *amount );
-
-static jsid streamReadPropId = 0; // (TBD) try to make this higher than module-static
-
-inline jsid GetStreamReadPropId(JSContext *cx) {
-
-	if ( streamReadPropId != 0 )
-		return streamReadPropId;
-	if ( JS_ValueToId(cx, STRING_TO_JSVAL(JS_InternString(cx, NI_STREAMREAD_NAME)), &streamReadPropId) != JS_TRUE )
-		return 0;
-	return streamReadPropId;
-}
-
-inline bool HasStreamReadInterface( JSContext *cx, JSObject *obj ) {
-	
-	if ( HasNativeInterface( cx, obj, GetStreamReadPropId(cx) ) )
-		return true;
-//	JSBool found;
-//	if ( JS_HasProperty(cx, obj, "Read", &found ) != JS_TRUE )
-//		return false;
-//	return found == JS_TRUE;
-	return false;
-}
-
-inline JSBool SetStreamReadInterface( JSContext *cx, JSObject *obj, NIStreamRead pFct ) {
-
-	jsval tmp;
-	if ( pFct != NULL ) {
-
-		J_S_ASSERT( INT_FITS_IN_JSVAL((unsigned int)pFct), "Unable to store the Native Interface." );
-		tmp = INT_TO_JSVAL(pFct);
-		J_CHK( JS_SetProperty(cx, obj, NI_STREAMREAD_NAME, &tmp ) );
-	} else {
-		
-//		J_CHK( JS_DeleteProperty(cx, obj, NI_STREAMREAD_NAME) );
-		tmp = JSVAL_VOID;
-		J_CHK( JS_SetProperty(cx, obj, NI_STREAMREAD_NAME, &tmp ) );
-	}
-	return JS_TRUE;
-}
-
-// read data from a stream object that implements NIStreamRead or a javascript function Read( amount ) if the NIStreamRead is not available.
-inline JSBool StreamReadInterface( JSContext *cx, JSObject *obj, char *buffer, size_t *amount ) {
-
-	jsval tmp;
-	J_CHKM( OBJ_GET_PROPERTY(cx, obj, GetStreamReadPropId(cx), &tmp), "Unable to get the native interface.");
-	if ( JSVAL_IS_INT(tmp) ) {
-
-		NIStreamRead pFct = (NIStreamRead)JSVAL_TO_INT(tmp);
-		J_S_ASSERT( pFct != NULL, "Invalid Native Interface." );
-		J_CHK( pFct(cx, obj, buffer, amount) );
-	}
-	
 	jsval tmpVal, rval;
 	IntToJsval(cx, *amount, &tmpVal);
 	J_CHKM( JS_CallFunctionName(cx, obj, "Read", 1, &tmpVal, &rval), "Read() function not found.");
@@ -816,75 +756,76 @@ inline JSBool StreamReadInterface( JSContext *cx, JSObject *obj, char *buffer, s
 	J_CHK( JsvalToStringAndLength(cx, rval, &tmpBuf, &size) );
 	*amount = J_MIN(size, *amount);
 	memcpy(buffer, tmpBuf, *amount);
-
 	return JS_TRUE;
+}
+
+inline JSBool InitStreamReadInterface( JSContext *cx, JSObject *obj ) {
+	
+	return ReserveNativeInterface(cx, obj, "_NI_StreamRead" );
+}
+
+inline JSBool SetStreamReadInterface( JSContext *cx, JSObject *obj, NIStreamRead pFct ) {
+
+	return SetNativeInterface( cx, obj, "_NI_StreamRead", pFct );
+}
+
+inline NIStreamRead StreamReadInterface( JSContext *cx, JSObject *obj ) {
+
+	static jsid propId = 0; // (TBD) try to make this higher than module-static
+	if ( !propId )
+		if ( JS_ValueToId(cx, STRING_TO_JSVAL(JS_InternString(cx, "_NI_StreamRead")), &propId) != JS_TRUE )
+			return NULL;
+	void *streamRead;
+	if ( GetNativeInterface( cx, obj, propId, &streamRead ) != JS_TRUE )
+		return NULL;
+	if ( streamRead )
+		return (NIStreamRead)streamRead;
+	return JSStreamRead;
 }
 
 
 ///////////////////////////////////////////////////////////////////////////////
 // NativeInterface BufferGet
 
-#define NI_BUFFERGET_NAME "_NI_Get"
-
-typedef JSBool (*NIBufferGet)( JSContext *cx, JSObject *obj, const char **buf, size_t *size );
-
-static jsid bufferGetPropId = 0; // (TBD) try to make this higher than module-static
-
-inline jsid GetBufferGetPropId(JSContext *cx) {
-
-	if ( bufferGetPropId != 0 )
-		return bufferGetPropId;
-	if ( JS_ValueToId(cx, STRING_TO_JSVAL(JS_InternString(cx, NI_BUFFERGET_NAME)), &bufferGetPropId) != JS_TRUE )
-		return 0;
-	return bufferGetPropId;
-}
-
-inline bool HasBufferGetInterface( JSContext *cx, JSObject *obj ) {
-
-	if ( HasNativeInterface( cx, obj, GetBufferGetPropId(cx) ) )
-		return true;
-//	JSBool found;
-//	if ( JS_HasProperty(cx, obj, "Read", &found ) != JS_TRUE )
-//		return false;
-//	return found == JS_TRUE;
-	return false;
-}
-
-inline JSBool SetBufferGetInterface( JSContext *cx, JSObject *obj, NIBufferGet pFct ) {
-
-	jsval tmp;
-	if ( pFct != NULL ) {
-
-		J_S_ASSERT( INT_FITS_IN_JSVAL((unsigned int)pFct), "Unable to store the Native Interface." );
-		tmp = INT_TO_JSVAL(pFct);
-		J_CHK( JS_SetProperty(cx, obj, NI_BUFFERGET_NAME, &tmp ) );
-	} else {
-		
-//		J_CHK( JS_DeleteProperty(cx, obj, NI_BUFFERGET_NAME) );
-		tmp = JSVAL_VOID;
-		J_CHK( JS_SetProperty(cx, obj, NI_BUFFERGET_NAME, &tmp ) );
-	}
-	return JS_TRUE;
-}
-
-inline JSBool BufferGetInterface( JSContext *cx, JSObject *obj, const char **buffer, size_t *size ) {
-
-	jsval tmp;
-	J_CHKM( OBJ_GET_PROPERTY(cx, obj, GetBufferGetPropId(cx), &tmp), "Unable to get the native interface.");
-	if ( JSVAL_IS_INT(tmp) ) {
-
-		NIBufferGet pFct = (NIBufferGet)JSVAL_TO_INT(tmp);
-		J_S_ASSERT( pFct != NULL, "Invalid Native Interface." );
-		J_CHK( pFct(cx, obj, buffer, size) );
-		return JS_TRUE;
-	}
+inline JSBool JSBufferGet( JSContext *cx, JSObject *obj, const char **buffer, size_t *size ) {
 
 	jsval rval;
 	J_CHKM( JS_CallFunctionName(cx, obj, "Get", 0, NULL, &rval), "Get() function not found."); // do not use toString() !?
 	J_CHK( JsvalToStringAndLength(cx, rval, buffer, size) );
-
 	return JS_TRUE;
+}
+
+inline JSBool InitBufferGetInterface( JSContext *cx, JSObject *obj ) {
+	
+	return ReserveNativeInterface(cx, obj, "_NI_BufferGet" );
+}
+
+inline JSBool SetBufferGetInterface( JSContext *cx, JSObject *obj, NIBufferGet pFct ) {
+
+	return SetNativeInterface( cx, obj, "_NI_BufferGet", pFct );
+}
+
+inline NIBufferGet BufferGetNativeInterface( JSContext *cx, JSObject *obj ) {
+
+	static jsid propId = 0; // (TBD) try to make this higher than module-static
+	if ( !propId )
+		if ( JS_ValueToId(cx, STRING_TO_JSVAL(JS_InternString(cx, "_NI_BufferGet")), &propId) != JS_TRUE )
+			return NULL;
+	void *fct;
+	if ( GetNativeInterface( cx, obj, propId, &fct ) != JS_TRUE )
+		return NULL;
+	return (NIBufferGet)fct;
+}
+
+inline NIBufferGet BufferGetInterface( JSContext *cx, JSObject *obj ) {
+
+	void *fct = BufferGetNativeInterface(cx, obj);
+	if ( fct )
+		return (NIBufferGet)fct;
+	return JSBufferGet;
 }
 
 
 #endif // _JSHELPER_H_
+
+

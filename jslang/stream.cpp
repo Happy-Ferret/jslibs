@@ -44,8 +44,9 @@ JSBool StreamRead( JSContext *cx, JSObject *obj, char *buf, unsigned int *amount
 	J_CHECK_CALL( PositionGet(cx, obj, &position) );
 	jsval source;
 	J_CHECK_CALL( JS_GetReservedSlot(cx, obj, SLOT_STREAM_SOURCE, &source) );
-	size_t length;
+
 	const char *buffer;
+	size_t length;
 	J_CHECK_CALL( JsvalToStringAndLength(cx, source, &buffer, &length) );
 
 	if ( length - position <= 0 ) { // position >= length
@@ -56,6 +57,7 @@ JSBool StreamRead( JSContext *cx, JSObject *obj, char *buf, unsigned int *amount
 
 	if ( position + *amount > length )
 		*amount = length - position;
+
 	memcpy( buf, buffer+position, *amount );
 	position += *amount;
 	PositionSet(cx, obj, position);
@@ -82,7 +84,8 @@ DEFINE_CONSTRUCTOR() {
 
 	J_CHECK_CALL( JS_SetReservedSlot(cx, obj, SLOT_STREAM_SOURCE, J_ARG(1)) );
 	J_CHECK_CALL( PositionSet(cx, obj, 0) );
-//	J_CHECK_CALL( SetStreamReadInterface(cx, obj, StreamRead) );
+
+	J_CHK( InitStreamReadInterface(cx, obj) );
 	J_CHK( SetStreamReadInterface(cx, obj, StreamRead) );
 	
 	return JS_TRUE;

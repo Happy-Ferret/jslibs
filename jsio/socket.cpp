@@ -50,6 +50,9 @@ DEFINE_CONSTRUCTOR() {
 		return ThrowIoError(cx);
 
 	RT_CHECK_CALL( JS_SetPrivate( cx, obj, fd ) );
+
+	InitStreamReadInterface(cx, obj);
+
 	return JS_TRUE;
 }
 
@@ -174,6 +177,9 @@ DEFINE_FUNCTION( Accept ) {
 	JSObject *object = JS_NewObject( cx, &classSocket, NULL, NULL );
 	JS_SetPrivate( cx, object, newFd );
 	*rval = OBJECT_TO_JSVAL( object );
+
+	InitStreamReadInterface(cx, object);
+
 	return JS_TRUE;
 }
 

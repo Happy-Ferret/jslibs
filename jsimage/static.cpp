@@ -66,7 +66,10 @@ METHODDEF(boolean) fill_input_buffer(j_decompress_ptr cinfo) {
 	size_t amount = INPUT_BUF_SIZE;
 //	src->read(src->pv, src->buffer, &amount);
 //	src->read( src->cx, src->obj, (char*)src->buffer, &amount);
-	StreamReadInterface( src->cx, src->obj, (char*)src->buffer, &amount);
+
+//	StreamReadInterface( src->cx, src->obj, (char*)src->buffer, &amount);
+
+	StreamReadInterface( src->cx, src->obj )(src->cx, src->obj, (char*)src->buffer, &amount);
 
 
 	// (TBD) manage errors
@@ -216,7 +219,7 @@ static void _png_read( png_structp png_ptr, png_bytep data, png_size_t length ) 
 
 	PngReadUserStruct *desc = (PngReadUserStruct*)png_get_io_ptr(png_ptr);
 //	desc->read(desc->cx, desc->obj, (char*)data, &length);
-	StreamReadInterface(desc->cx, desc->obj, (char*)data, &length);
+	StreamReadInterface(desc->cx, desc->obj)(desc->cx, desc->obj, (char*)data, &length);
 
 //	if ( length == 0 )
 //		png_error(png_ptr, "Trying to read after EOF."); // png_warning()

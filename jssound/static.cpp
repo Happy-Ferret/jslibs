@@ -44,7 +44,7 @@ size_t readStream( void *ptr, size_t size, size_t nmemb, void *pv ) {
 	size_t amount = size * nmemb;
 //	if ( info->streamRead( info->cx, info->obj, (char*)ptr, &amount ) != JS_TRUE )
 //		return -1; // (TBD) check for a better error
-	if ( StreamReadInterface(info->cx, info->obj, (char*)ptr, &amount) != JS_TRUE )
+	if ( StreamReadInterface(info->cx, info->obj)(info->cx, info->obj, (char*)ptr, &amount) != JS_TRUE )
 		return -1; // (TBD) check for a better error
 
 	return amount;
@@ -230,7 +230,7 @@ sf_count_t SfRead(void *ptr, sf_count_t count, void *user_data) {
 	size_t amount = count;
 //	if ( pv->streamRead( pv->cx, pv->obj, (char*)ptr, &amount ) != JS_TRUE )
 //		return -1; // (TBD) find a better error
-	if ( StreamReadInterface( pv->cx, pv->obj, (char*)ptr, &amount ) != JS_TRUE )
+	if ( StreamReadInterface( pv->cx, pv->obj)( pv->cx, pv->obj, (char*)ptr, &amount ) != JS_TRUE )
 		return -1; // (TBD) find a better error
 	return amount;
 }
