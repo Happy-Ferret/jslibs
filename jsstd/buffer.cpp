@@ -41,7 +41,6 @@ static JSBool NativeInterfaceStreamRead( JSContext *cx, JSObject *obj, char *buf
 	return JS_TRUE;
 }
 
-extern NIStreamRead pNativeInterfaceStreamRead = NativeInterfaceStreamRead;
 
 inline JSBool BufferLengthSet( JSContext *cx, JSObject *obj, size_t bufferLength ) {
 
@@ -383,7 +382,7 @@ DEFINE_CONSTRUCTOR() {
 	J_S_ASSERT_CONSTRUCTING();
 	J_S_ASSERT_THIS_CLASS();
 //	J_CHECK_CALL( SetStreamReadInterface(cx, obj, NativeInterfaceStreamRead) );
-	J_CHECK_CALL( SetStreamReadInterface(cx, obj, &pNativeInterfaceStreamRead) );
+	J_CHECK_CALL( SetStreamReadInterface(cx, obj, NativeInterfaceStreamRead) );
 	Queue *queue = QueueConstruct();
 	RT_ASSERT_ALLOC(queue);
 	JS_SetPrivate(cx, obj, queue);

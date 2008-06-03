@@ -40,14 +40,13 @@ inline JSBool BufferGet( JSContext *cx, JSObject *obj, const char **buf ) {
 }
 
 
-JSBool NativeInterfaceBufferRead( JSContext *cx, JSObject *obj, const char **buf, size_t *size ) {
+JSBool NativeInterfaceBufferGet( JSContext *cx, JSObject *obj, const char **buf, size_t *size ) {
 
 	J_CHECK_CALL( BufferGet(cx, obj, buf) );
 	J_CHECK_CALL( LengthGet(cx, obj, size) );
 	return JS_TRUE;
 }
 
-NIBufferGet pNativeInterfaceBufferRead = NativeInterfaceBufferRead;
 
 BEGIN_CLASS( BString )
 
@@ -153,7 +152,7 @@ DEFINE_CONSTRUCTOR() {
 		JS_SetPrivate(cx, obj, dBuffer);
 	}
 
-	J_CHECK_CALL( SetBufferGetInterface(cx, obj, &pNativeInterfaceBufferRead) );
+	J_CHECK_CALL( SetBufferGetInterface(cx, obj, NativeInterfaceBufferGet) );
 
 	return JS_TRUE;
 }

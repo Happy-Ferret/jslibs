@@ -12,14 +12,12 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-#include "../common/NIStreamRead.h"
-
 DECLARE_CLASS( Descriptor )
 
 #define SLOT_JSIO_DESCRIPTOR_IMPORTED 0
 
 void FinalizeDescriptor(JSContext *cx, JSObject *obj);
 
-extern NIStreamRead pNativeInterfaceStreamRead;
+//extern NIStreamRead pNativeInterfaceStreamRead;
 
-//JSBool NativeInterfaceStreamRead( JSContext *cx, JSObject *obj, char *buf, unsigned int *amount );
+JSBool NativeInterfaceStreamRead( JSContext *cx, JSObject *obj, char *buf, size_t *amount );

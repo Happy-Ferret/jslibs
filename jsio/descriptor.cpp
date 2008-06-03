@@ -62,8 +62,6 @@ JSBool NativeInterfaceStreamRead( JSContext *cx, JSObject *obj, char *buf, size_
 	return JS_TRUE;
 }
 
-extern NIStreamRead pNativeInterfaceStreamRead = NativeInterfaceStreamRead;
-
 
 void FinalizeDescriptor(JSContext *cx, JSObject *obj) {
 

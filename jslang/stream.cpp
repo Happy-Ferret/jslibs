@@ -62,8 +62,6 @@ JSBool StreamRead( JSContext *cx, JSObject *obj, char *buf, unsigned int *amount
 	return JS_TRUE;
 }
 
-static NIStreamRead pStreamRead = StreamRead;
-
 
 BEGIN_CLASS( Stream )
 
@@ -85,7 +83,7 @@ DEFINE_CONSTRUCTOR() {
 	J_CHECK_CALL( JS_SetReservedSlot(cx, obj, SLOT_STREAM_SOURCE, J_ARG(1)) );
 	J_CHECK_CALL( PositionSet(cx, obj, 0) );
 //	J_CHECK_CALL( SetStreamReadInterface(cx, obj, StreamRead) );
-	J_CHK( SetStreamReadInterface(cx, obj, &pStreamRead) );
+	J_CHK( SetStreamReadInterface(cx, obj, StreamRead) );
 	
 	return JS_TRUE;
 }

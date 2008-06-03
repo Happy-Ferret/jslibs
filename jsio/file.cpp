@@ -100,7 +100,7 @@ DEFINE_FUNCTION( Open ) {
 	JS_SetPrivate( cx, obj, fd );
 	
 //	J_CHECK_CALL( SetStreamReadInterface(cx, obj, NativeInterfaceStreamRead) );
-	J_CHK( SetStreamReadInterface(cx, obj, &pNativeInterfaceStreamRead) );
+	J_CHK( SetStreamReadInterface(cx, obj, NativeInterfaceStreamRead) );
 	*rval = OBJECT_TO_JSVAL(obj); // allows to write f.Open(...).Read()
 	return JS_TRUE;
 }

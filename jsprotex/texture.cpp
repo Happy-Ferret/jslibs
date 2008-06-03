@@ -276,8 +276,6 @@ JSBool NativeInterfaceBufferGet( JSContext *cx, JSObject *obj, const char **buf,
 	return JS_TRUE;
 }
 
-NIBufferGet pNativeInterfaceBufferGet = NativeInterfaceBufferGet;
-
 
 inline bool IsTexture( JSContext *cx, jsval value ) {
 	
@@ -319,7 +317,7 @@ DEFINE_CONSTRUCTOR() {
 	Texture *tex = (Texture *)JS_malloc(cx, sizeof(Texture));
 	tex->cbackBuffer = NULL;
 
-	J_CHECK_CALL( SetBufferGetInterface(cx, obj, &pNativeInterfaceBufferGet) );
+	J_CHECK_CALL( SetBufferGetInterface(cx, obj, NativeInterfaceBufferGet) );
 
 	if ( J_ARGC >= 3 ) {
 	

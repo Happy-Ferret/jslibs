@@ -54,6 +54,17 @@ JSBool Unlock( JSContext *cx, ClassPrivate *pv ) {
 }
 
 
+JSBool BufferGet( JSContext *cx, JSObject *obj, const char **buf, size_t *size ) {
+
+	ClassPrivate *pv = (ClassPrivate*)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE( pv );
+	MemHeader *mh = (MemHeader*)pv->mem;
+	*buf = (char *)pv->mem + sizeof(MemHeader);
+	*size = mh->currentDataLength;
+	return JS_TRUE;
+}
+
+
 BEGIN_CLASS( SharedMemory )
 
 DEFINE_FINALIZE() {
@@ -159,6 +170,8 @@ DEFINE_CONSTRUCTOR() {
 		return ThrowIoError(cx);
 
 	RT_CHECK_CALL( JS_SetPrivate(cx, obj, pv) );
+
+	J_CHK( SetBufferGetInterface(cx, obj, BufferGet) );
 
 	return JS_TRUE;
 }

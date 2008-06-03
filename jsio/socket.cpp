@@ -170,7 +170,7 @@ DEFINE_FUNCTION( Accept ) {
 	if ( newFd == NULL )
 		return ThrowIoError(cx);
 //	J_CHECK_CALL( SetStreamReadInterface(cx, obj, NativeInterfaceStreamRead) );
-	J_CHECK_CALL( SetStreamReadInterface(cx, obj, &pNativeInterfaceStreamRead) );
+	J_CHECK_CALL( SetStreamReadInterface(cx, obj, NativeInterfaceStreamRead) );
 	JSObject *object = JS_NewObject( cx, &classSocket, NULL, NULL );
 	JS_SetPrivate( cx, object, newFd );
 	*rval = OBJECT_TO_JSVAL( object );
@@ -251,7 +251,7 @@ DEFINE_FUNCTION( Connect ) {
 	// see 	PR_GetConnectStatus or PR_ConnectContinue INSTEAD ???
 
 //	J_CHECK_CALL( SetStreamReadInterface(cx, obj, NativeInterfaceStreamRead) );
-	J_CHECK_CALL( SetStreamReadInterface(cx, obj, &pNativeInterfaceStreamRead) );
+	J_CHECK_CALL( SetStreamReadInterface(cx, obj, NativeInterfaceStreamRead) );
 	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 }
