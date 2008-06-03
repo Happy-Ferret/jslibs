@@ -33,7 +33,7 @@ echo building %BUILD% version.
 
 for /D %%f in (js*) do (
 
-	for %%g in (%%f\*.sln) do (
+	for %%g in ("%%f\*.sln") do (
 		
 		echo building %%g ...
 		echo ******************************************************************************* >> build.log
