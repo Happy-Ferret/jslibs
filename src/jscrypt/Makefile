@@ -7,7 +7,7 @@ SHAREDLIBS =
 DEFINES    = -DLTM_DESC
 DEPENDS    = ../../libs/libtommath/Makefile ../../libs/libtomcrypt/Makefile
 
-include ../common/rules.mk
+include ../rules.mk
 
 #
 #note:
