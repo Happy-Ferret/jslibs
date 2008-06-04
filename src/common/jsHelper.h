@@ -768,7 +768,7 @@ inline JSBool InitStreamReadInterface( JSContext *cx, JSObject *obj ) {
 
 inline JSBool SetStreamReadInterface( JSContext *cx, JSObject *obj, NIStreamRead pFct ) {
 
-	return SetNativeInterface( cx, obj, "_NI_StreamRead", pFct );
+	return SetNativeInterface( cx, obj, "_NI_StreamRead", (void*)pFct );
 }
 
 inline NIStreamRead StreamReadNativeInterface( JSContext *cx, JSObject *obj ) {
@@ -785,7 +785,7 @@ inline NIStreamRead StreamReadNativeInterface( JSContext *cx, JSObject *obj ) {
 
 inline NIStreamRead StreamReadInterface( JSContext *cx, JSObject *obj ) {
 
-	void *fct = StreamReadNativeInterface(cx, obj);
+	void *fct = (void*)StreamReadNativeInterface(cx, obj);
 	if ( fct )
 		return (NIStreamRead)fct;
 	return JSStreamRead;
@@ -810,7 +810,7 @@ inline JSBool InitBufferGetInterface( JSContext *cx, JSObject *obj ) {
 
 inline JSBool SetBufferGetInterface( JSContext *cx, JSObject *obj, NIBufferGet pFct ) {
 
-	return SetNativeInterface( cx, obj, "_NI_BufferGet", pFct );
+	return SetNativeInterface( cx, obj, "_NI_BufferGet", (void*)pFct );
 }
 
 inline NIBufferGet BufferGetNativeInterface( JSContext *cx, JSObject *obj ) {
@@ -827,7 +827,7 @@ inline NIBufferGet BufferGetNativeInterface( JSContext *cx, JSObject *obj ) {
 
 inline NIBufferGet BufferGetInterface( JSContext *cx, JSObject *obj ) {
 
-	void *fct = BufferGetNativeInterface(cx, obj);
+	void *fct = (void*)BufferGetNativeInterface(cx, obj);
 	if ( fct )
 		return (NIBufferGet)fct;
 	return JSBufferGet;
