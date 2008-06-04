@@ -4,4 +4,4 @@ INCLUDES   =
 STATICLIBS =
 SHAREDLIBS =
 
-include ../../common/rules.mk
+include ../common/rules.mk

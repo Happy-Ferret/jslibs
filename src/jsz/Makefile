@@ -5,4 +5,4 @@ STATICLIBS = -L../../libs/zlib/src -lz
 SHAREDLIBS =
 DEPENDS    = ../../libs/zlib/Makefile
 
-include ../../common/rules.mk
+include ../common/rules.mk

@@ -5,4 +5,4 @@ STATICLIBS = -L../../libs/fastcgi/??? -lz
 SHAREDLIBS =
 DEPENDS    = ../../libs/fastcgi/Makefile
 
-include ../../common/rules.mk
+include ../common/rules.mk
