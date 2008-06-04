@@ -24,7 +24,7 @@ OpenAL 1.1 SDK for Windows
 
 Windows compilation issues:
 
-requirement:
+BUILD REQUIREMENTS:
 	Microsoft Platform SDK
 
 	Microsoft DirectX 9+
@@ -38,6 +38,5 @@ requirement:
 
 	Remove any reference to odbc libraries from link
 
-	add user32.lib and ole32.lib
-
+	add user32.lib and ole32.lib in OpenAL-Windows\OpenAL32\OpenAL32.vcproj
 
