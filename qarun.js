@@ -166,4 +166,4 @@ if ( perfTest ) {
 
 processPriority = savePrio || 0; // savePrio may be undefined
 
-Print( QAAPI.issues + ' issues found' );
+Print( QAAPI.issues + ' issues found\n' );

@@ -1,5 +1,12 @@
 ({
 
+	Arguments: function(QA) {
+	
+		QA.ASSERT( global.arguments[2], 'arg2', 'script argument 2' );
+		QA.ASSERT( global.arguments[3], 'arg3', 'script argument 3' );
+		QA.ASSERT( global.arguments[4], 'arg4', 'script argument 3' );
+	},
+
 	GlobalVariables: function(QA) {
 		
 		QA.ASSERT( scripthostpath.length > 0, true, 'script host path' );
