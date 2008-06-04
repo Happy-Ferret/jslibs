@@ -20,7 +20,7 @@
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
-			InheritedPropertySheets="..\common\jslibs_debug.vsprops"
+			InheritedPropertySheets="..\jslibs_debug.vsprops"
 			CharacterSet="2"
 			>
 			<Tool
@@ -99,7 +99,7 @@
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
-			InheritedPropertySheets="..\common\jslibs_release.vsprops"
+			InheritedPropertySheets="..\jslibs_release.vsprops"
 			CharacterSet="2"
 			WholeProgramOptimization="1"
 			>

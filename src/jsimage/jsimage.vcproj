@@ -20,7 +20,7 @@
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
-			InheritedPropertySheets="..\common\jslibs_debug.vsprops"
+			InheritedPropertySheets="..\jslibs_debug.vsprops"
 			CharacterSet="1"
 			>
 			<Tool
@@ -95,7 +95,7 @@
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
-			InheritedPropertySheets="..\common\jslibs_release.vsprops"
+			InheritedPropertySheets="..\jslibs_release.vsprops"
 			CharacterSet="1"
 			WholeProgramOptimization="1"
 			>
@@ -192,7 +192,7 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories="..\libjpeg\src"
+						AdditionalIncludeDirectories="..\..\libs\libjpeg\src"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -201,7 +201,7 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories="..\libjpeg\src"
+						AdditionalIncludeDirectories="..\..\libs\libjpeg\src"
 					/>
 				</FileConfiguration>
 			</File>
@@ -214,7 +214,7 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories="..\libpng\src;..\zlib\src"
+						AdditionalIncludeDirectories="..\..\libs\libpng\src;..\..\libs\zlib\src"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -223,7 +223,7 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories="..\libpng\src;..\zlib\src"
+						AdditionalIncludeDirectories="..\..\libs\libpng\src;..\..\libs\zlib\src"
 					/>
 				</FileConfiguration>
 			</File>
@@ -239,7 +239,7 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories="..\libjpeg\src;..\libpng\src;..\zlib\src"
+						AdditionalIncludeDirectories="..\..\libs\libjpeg\src;..\..\libs\libpng\src;..\..\libs\zlib\src"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -247,7 +247,7 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories="..\libjpeg\src;..\libpng\src;..\zlib\src"
+						AdditionalIncludeDirectories="..\..\libs\libjpeg\src;..\..\libs\libpng\src;..\..\libs\zlib\src"
 					/>
 				</FileConfiguration>
 			</File>

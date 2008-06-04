@@ -1,4 +1,4 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 9.00
 # Visual C++ Express 2005
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jsfastcgi", "jsfastcgi.vcproj", "{8E39C1A5-5B89-49B6-B84A-FEECC6B67EF6}"
@@ -6,7 +6,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jsfastcgi", "jsfastcgi.vcpr
 		{FC086FCC-32C5-49B3-825E-28F9727BB459} = {FC086FCC-32C5-49B3-825E-28F9727BB459}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "fastcgi", "..\fastcgi\fastcgi.vcproj", "{FC086FCC-32C5-49B3-825E-28F9727BB459}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "fastcgi", "..\..\libs\fastcgi\fastcgi.vcproj", "{FC086FCC-32C5-49B3-825E-28F9727BB459}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

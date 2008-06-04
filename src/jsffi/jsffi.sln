@@ -1,4 +1,3 @@
-﻿
 Microsoft Visual Studio Solution File, Format Version 9.00
 # Visual C++ Express 2005
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jsffi", "jsffi.vcproj", "{10537403-E0A7-4883-87ED-6D2F42420372}"
@@ -6,7 +5,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jsffi", "jsffi.vcproj", "{1
 		{FC6F5103-3A36-447D-9398-17D69D14467C} = {FC6F5103-3A36-447D-9398-17D69D14467C}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libffi", "..\libffi\libffi.vcproj", "{FC6F5103-3A36-447D-9398-17D69D14467C}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libffi", "..\..\libs\libffi\libffi.vcproj", "{FC6F5103-3A36-447D-9398-17D69D14467C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -15,7 +15,7 @@
 	-->
 	<Tool
 		Name="VCCLCompilerTool"
-		AdditionalIncludeDirectories="..\js\src"
+		AdditionalIncludeDirectories="..\..\libs\js\src"
 		ExceptionHandling="0"
 		RuntimeLibrary="2"
 	/>
@@ -31,7 +31,7 @@
 		GenerateDebugInformation="true"
 		IgnoreAllDefaultLibraries="false"
 		IgnoreDefaultLibraryNames="libc.lib, libcmt.lib, libcd.lib, libcmtd.lib, msvcrtd.lib"
-		AdditionalDependencies="..\js\src\WINNT5.1_OPT.OBJ\js32.lib kernel32.lib $(NoInherit) $(StopEvaluating)"
+		AdditionalDependencies="..\..\libs\js\src\WINNT5.1_OPT.OBJ\js32.lib kernel32.lib $(NoInherit) $(StopEvaluating)"
 	/>
 	
 	<Tool

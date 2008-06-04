@@ -26,12 +26,12 @@ set > build.log
 md .\%BUILD%
 
 
-copy .\js\src\WINNT5.1_OPT.OBJ\*.dll .\%BUILD%
-copy .\nspr\win32\dist\lib\nspr4.dll .\%BUILD%
+copy .\libs\js\src\WINNT5.1_OPT.OBJ\*.dll .\%BUILD%
+copy .\libs\nspr\win32\dist\lib\nspr4.dll .\%BUILD%
 
 echo building %BUILD% version.
 
-for /D %%f in (js*) do (
+for /D %%f in (src\js*) do (
 
 	for %%g in ("%%f\*.sln") do (
 		

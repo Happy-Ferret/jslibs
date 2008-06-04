@@ -1,4 +1,3 @@
-﻿
 Microsoft Visual Studio Solution File, Format Version 9.00
 # Visual C++ Express 2005
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jssound", "jssound.vcproj", "{C79FB5B8-46EA-48A1-AFF1-546E92F03F12}"
@@ -7,17 +6,17 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jssound", "jssound.vcproj",
 		{69DEA591-D760-48EE-93B8-2A3DF3AB9503} = {69DEA591-D760-48EE-93B8-2A3DF3AB9503}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libvorbisfile", "..\libvorbis\libvorbisfile.vcproj", "{CEBDE98B-A6AA-46E6-BC79-FAAF823DB9EC}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libvorbisfile", "..\..\libs\libvorbis\libvorbisfile.vcproj", "{CEBDE98B-A6AA-46E6-BC79-FAAF823DB9EC}"
 	ProjectSection(ProjectDependencies) = postProject
 		{53EC80AD-D1DC-4783-B1E9-D3E77B097BF4} = {53EC80AD-D1DC-4783-B1E9-D3E77B097BF4}
 		{3A214E06-B95E-4D61-A291-1F8DF2EC10FD} = {3A214E06-B95E-4D61-A291-1F8DF2EC10FD}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libvorbis", "..\libvorbis\libvorbis.vcproj", "{3A214E06-B95E-4D61-A291-1F8DF2EC10FD}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libvorbis", "..\..\libs\libvorbis\libvorbis.vcproj", "{3A214E06-B95E-4D61-A291-1F8DF2EC10FD}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ogg_static", "..\libogg\libogg.vcproj", "{53EC80AD-D1DC-4783-B1E9-D3E77B097BF4}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ogg_static", "..\..\libs\libogg\libogg.vcproj", "{53EC80AD-D1DC-4783-B1E9-D3E77B097BF4}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libsndfile", "..\libsndfile\libsndfile.vcproj", "{69DEA591-D760-48EE-93B8-2A3DF3AB9503}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libsndfile", "..\..\libs\libsndfile\libsndfile.vcproj", "{69DEA591-D760-48EE-93B8-2A3DF3AB9503}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

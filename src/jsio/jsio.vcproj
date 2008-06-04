@@ -20,7 +20,7 @@
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
-			InheritedPropertySheets="..\common\jslibs_debug.vsprops"
+			InheritedPropertySheets="..\jslibs_debug.vsprops"
 			CharacterSet="2"
 			>
 			<Tool
@@ -41,7 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../nspr/win32/dist/include/nspr;../nspr/win32/dist/include/nspr/private"
+				AdditionalIncludeDirectories="../../libs/nspr/win32/dist/include/nspr;../../libs/nspr/win32/dist/include/nspr/private"
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB"
 				MinimalRebuild="true"
 				ExceptionHandling="0"
@@ -63,7 +63,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="../nspr/win32/dist/lib/nspr4.lib"
+				AdditionalDependencies="../../libs/nspr/win32/dist/lib/nspr4.lib"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				TargetMachine="1"
@@ -98,7 +98,7 @@
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
-			InheritedPropertySheets="..\common\jslibs_release.vsprops"
+			InheritedPropertySheets="..\jslibs_release.vsprops"
 			CharacterSet="2"
 			WholeProgramOptimization="1"
 			>
@@ -122,7 +122,7 @@
 				InlineFunctionExpansion="2"
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
-				AdditionalIncludeDirectories="../nspr/win32/dist/include/nspr;../nspr/win32/dist/include/nspr/private"
+				AdditionalIncludeDirectories="../../libs/nspr/win32/dist/include/nspr;../../libs/nspr/win32/dist/include/nspr/private"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB"
 				ExceptionHandling="0"
 				BasicRuntimeChecks="0"
@@ -144,7 +144,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="../nspr/win32/dist/lib/nspr4.lib"
+				AdditionalDependencies="../../libs/nspr/win32/dist/lib/nspr4.lib"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				OptimizeReferences="2"

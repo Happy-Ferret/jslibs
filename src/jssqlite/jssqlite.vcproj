@@ -20,7 +20,7 @@
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
-			InheritedPropertySheets="..\common\jslibs_debug.vsprops"
+			InheritedPropertySheets="..\jslibs_debug.vsprops"
 			CharacterSet="1"
 			>
 			<Tool
@@ -41,7 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\sqlite\src"
+				AdditionalIncludeDirectories="..\..\libs\sqlite\src"
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -95,7 +95,7 @@
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
-			InheritedPropertySheets="..\common\jslibs_release.vsprops"
+			InheritedPropertySheets="..\jslibs_release.vsprops"
 			CharacterSet="1"
 			WholeProgramOptimization="1"
 			>
@@ -116,7 +116,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\sqlite\src"
+				AdditionalIncludeDirectories="..\..\libs\sqlite\src"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB"
 				UsePrecompiledHeader="2"
 				WarningLevel="3"

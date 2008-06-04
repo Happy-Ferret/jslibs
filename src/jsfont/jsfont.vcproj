@@ -20,7 +20,7 @@
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
-			InheritedPropertySheets="..\common\jslibs_debug.vsprops"
+			InheritedPropertySheets="..\jslibs_debug.vsprops"
 			CharacterSet="2"
 			>
 			<Tool
@@ -41,7 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\freetype\src\include"
+				AdditionalIncludeDirectories="..\..\libs\freetype\src\include"
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB"
 				MinimalRebuild="true"
 				ExceptionHandling="0"
@@ -97,7 +97,7 @@
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
-			InheritedPropertySheets="..\common\jslibs_release.vsprops"
+			InheritedPropertySheets="..\jslibs_release.vsprops"
 			CharacterSet="2"
 			WholeProgramOptimization="1"
 			>
@@ -121,7 +121,7 @@
 				InlineFunctionExpansion="2"
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
-				AdditionalIncludeDirectories="..\freetype\src\include"
+				AdditionalIncludeDirectories="..\..\libs\freetype\src\include"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB"
 				ExceptionHandling="0"
 				BasicRuntimeChecks="0"

@@ -1,4 +1,3 @@
-﻿
 Microsoft Visual Studio Solution File, Format Version 9.00
 # Visual C++ Express 2005
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jscrypt", "jscrypt.vcproj", "{A3794FD9-62E8-4B2C-8C9F-AF1A1DD97CB7}"
@@ -7,9 +6,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jscrypt", "jscrypt.vcproj",
 		{A313FEE1-C052-491B-80A4-07559D95AF84} = {A313FEE1-C052-491B-80A4-07559D95AF84}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libtomcrypt", "..\libtomcrypt\libtomcrypt.vcproj", "{A313FEE1-C052-491B-80A4-07559D95AF84}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libtomcrypt", "..\..\libs\libtomcrypt\libtomcrypt.vcproj", "{A313FEE1-C052-491B-80A4-07559D95AF84}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libtommath", "..\libtommath\libtommath.vcproj", "{986623D2-6B30-4F35-B08E-89FA00E9582D}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libtommath", "..\..\libs\libtommath\libtommath.vcproj", "{986623D2-6B30-4F35-B08E-89FA00E9582D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
