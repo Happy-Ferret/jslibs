@@ -40,3 +40,7 @@ BUILD REQUIREMENTS:
 
 	add user32.lib and ole32.lib in OpenAL-Windows\OpenAL32\OpenAL32.vcproj
 
+
+TBD:
+  - fix the following error while building in command line:
+      .\OpenAL32.rc(10) : fatal error RC1015: cannot open include file 'afxres.h'.
