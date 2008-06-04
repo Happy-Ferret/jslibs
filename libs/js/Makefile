@@ -1,4 +1,4 @@
-include ../../common/subdirs.mk
+include ../subdirs.mk
 
 ifeq ($(BUILD),dbg)
 	LIBJS_DIR = Linux_All_DBG.OBJ

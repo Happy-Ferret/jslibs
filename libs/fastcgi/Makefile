@@ -1,4 +1,4 @@
-include ../common/subdirs.mk
+include ../subdirs.mk
 
 TARGET_FILES = ./???/libz.a
 CFLAGS += -fPIC
