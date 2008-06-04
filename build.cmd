@@ -22,6 +22,20 @@ call "%visualStudioPath%\VC\vcvarsall.bat" x86
 date /T > build.log
 set > build.log
 
+pushd .\libs\js
+IF BUILD. == release. (
+	call build_msdev8_OPT.bat
+) ELSE (
+	call build_msdev8_DBG.bat
+)
+popd
+
+pushd .\libs\nspr
+call build_msdev8.bat
+popd
+
+
+
 
 md .\%BUILD%
 

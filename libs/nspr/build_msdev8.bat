@@ -9,6 +9,8 @@ call "C:\Program Files\Microsoft Visual Studio 8\VC\vcvarsall.bat" x86
 	rem --enable-optimize --disable-debug
 	rem --enable-win32-target=WIN95 --enable-debug-rtl  --with-dist-prefix=..
 
+cd /D x:\ && echo the drive X: must be available to build nspr, else modify build_msdev8.bat && exit
+
 subst x: "%CD%"
 pushd x:
 
@@ -30,4 +32,3 @@ subst x: /D
 set PATH=%prevPath%
 cd /D %prevDir%
 
-pause
