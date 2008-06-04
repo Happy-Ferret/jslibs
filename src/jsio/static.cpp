@@ -561,6 +561,8 @@ DEFINE_FUNCTION_FAST( CreateProcess_ ) {
 
 		JSObject *fdout = JS_NewObject( cx, &classPipe, NULL, NULL );
 		RT_CHECK_CALL( JS_SetPrivate( cx, fdout, stdout_parent ) );
+		J_CHK( InitStreamReadInterface(cx, fdout) );
+		J_CHK( SetStreamReadInterface(cx, fdout, NativeInterfaceStreamRead) );
 
 		jsval vector[] = { OBJECT_TO_JSVAL( fdin ), OBJECT_TO_JSVAL( fdout ) };
 		JSObject *arrObj = JS_NewArrayObject(cx, 2, vector);

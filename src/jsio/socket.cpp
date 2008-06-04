@@ -50,9 +50,7 @@ DEFINE_CONSTRUCTOR() {
 		return ThrowIoError(cx);
 
 	RT_CHECK_CALL( JS_SetPrivate( cx, obj, fd ) );
-
-	InitStreamReadInterface(cx, obj);
-
+	J_CHK( InitStreamReadInterface(cx, obj) );
 	return JS_TRUE;
 }
 
@@ -75,7 +73,7 @@ DEFINE_FUNCTION( Shutdown ) {
 	else
 		how = PR_SHUTDOWN_BOTH; // default
 
-	if ( how == PR_SHUTDOWN_BOTH || how == PR_SHUTDOWN_RCV )
+	if ( how == PR_SHUTDOWN_RCV )
 		J_CHECK_CALL( SetStreamReadInterface(cx, obj, NULL) );
 
 	if (PR_Shutdown( fd, how ) != PR_SUCCESS) // is this compatible with linger ?? need to check PR_WOULD_BLOCK_ERROR ???
@@ -172,13 +170,18 @@ DEFINE_FUNCTION( Accept ) {
 	PRFileDesc *newFd = PR_Accept( fd, NULL, connectTimeout );
 	if ( newFd == NULL )
 		return ThrowIoError(cx);
+
 //	J_CHECK_CALL( SetStreamReadInterface(cx, obj, NativeInterfaceStreamRead) );
-	J_CHECK_CALL( SetStreamReadInterface(cx, obj, NativeInterfaceStreamRead) );
+
+//	J_CHK( SetStreamReadInterface(cx, obj, NativeInterfaceStreamRead) );
+
 	JSObject *object = JS_NewObject( cx, &classSocket, NULL, NULL );
 	JS_SetPrivate( cx, object, newFd );
-	*rval = OBJECT_TO_JSVAL( object );
 
-	InitStreamReadInterface(cx, object);
+	J_CHK( InitStreamReadInterface(cx, object) );
+	J_CHK( SetStreamReadInterface(cx, object, NativeInterfaceStreamRead) );
+
+	*rval = OBJECT_TO_JSVAL( object );
 
 	return JS_TRUE;
 }
