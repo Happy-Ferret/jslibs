@@ -1,13 +1,13 @@
 TARGET     = jscrypt.so
 SRC        = $(wildcard *.cpp)
-INCLUDES   = -I../libtommath/src -I../libtomcrypt/src/src/headers
-#STATICLIBS =  -L../libtommath/src -ltommath -L../libtomcrypt/src -ltomcrypt
-STATICLIBS = ../libtomcrypt/src/libtomcrypt.a ../libtommath/src/libtommath.a
+INCLUDES   = -I../../libs/libtommath/src -I../../libs/libtomcrypt/src/src/headers
+#STATICLIBS =  -L../../libs/libtommath/src -ltommath -L../../libs/libtomcrypt/src -ltomcrypt
+STATICLIBS = ../../libs/libtomcrypt/src/libtomcrypt.a ../../libs/libtommath/src/libtommath.a
 SHAREDLIBS =
 DEFINES    = -DLTM_DESC
-DEPENDS    = ../libtommath/Makefile ../libtomcrypt/Makefile
+DEPENDS    = ../../libs/libtommath/Makefile ../../libs/libtomcrypt/Makefile
 
-include ../common/rules.mk
+include ../../common/rules.mk
 
 #
 #note:

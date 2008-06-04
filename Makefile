@@ -1,6 +1,6 @@
 BUILD ?= opt
 
-SUBDIRS := js jshost jslang jsstd nspr jsio jsobjex jssqlite jsz jscrypt jsdebug
+SUBDIRS := libs/js src/jshost src/jslang src/jsstd src/nspr src/jsio src/jsobjex src/jssqlite src/jsz src/jscrypt src/jsdebug
 
 .PHONY: $(SUBDIRS)
 $(SUBDIRS):

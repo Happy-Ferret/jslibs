@@ -1,8 +1,8 @@
 TARGET     = jsfastcgi.so
 SRC        = $(wildcard *.cpp)
-INCLUDES   = -I../fastcgi/src/include
-STATICLIBS = -L../fastcgi/??? -lz
+INCLUDES   = -I../../libs/fastcgi/src/include
+STATICLIBS = -L../../libs/fastcgi/??? -lz
 SHAREDLIBS =
-DEPENDS    = ../fastcgi/Makefile
+DEPENDS    = ../../libs/fastcgi/Makefile
 
-include ../common/rules.mk
+include ../../common/rules.mk
