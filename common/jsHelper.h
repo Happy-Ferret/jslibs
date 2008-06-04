@@ -23,6 +23,8 @@ inline NIBufferGet BufferGetInterface( JSContext *cx, JSObject *obj );
 
 #include "platform.h"
 
+#include <cstring>
+
 #include <stdarg.h>
 
 #include <jsarena.h>
@@ -769,7 +771,7 @@ inline JSBool SetStreamReadInterface( JSContext *cx, JSObject *obj, NIStreamRead
 	return SetNativeInterface( cx, obj, "_NI_StreamRead", pFct );
 }
 
-inline NIStreamRead StreamReadInterface( JSContext *cx, JSObject *obj ) {
+inline NIStreamRead StreamReadNativeInterface( JSContext *cx, JSObject *obj ) {
 
 	static jsid propId = 0; // (TBD) try to make this higher than module-static
 	if ( !propId )
@@ -778,8 +780,14 @@ inline NIStreamRead StreamReadInterface( JSContext *cx, JSObject *obj ) {
 	void *streamRead;
 	if ( GetNativeInterface( cx, obj, propId, &streamRead ) != JS_TRUE )
 		return NULL;
-	if ( streamRead )
-		return (NIStreamRead)streamRead;
+	return (NIStreamRead)streamRead;
+}
+
+inline NIStreamRead StreamReadInterface( JSContext *cx, JSObject *obj ) {
+
+	void *fct = StreamReadNativeInterface(cx, obj);
+	if ( fct )
+		return (NIStreamRead)fct;
 	return JSStreamRead;
 }
 
