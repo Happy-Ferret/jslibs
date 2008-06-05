@@ -52,3 +52,12 @@ EXTERN_C DLLEXPORT void ModuleFree() {
 	if ( PR_Initialized() == PR_TRUE )
 		PR_Cleanup();
 }
+
+#ifdef XP_WIN
+BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
+
+	if ( fdwReason == DLL_PROCESS_ATTACH )
+		DisableThreadLibraryCalls(hinstDLL);
+	return TRUE;
+}
+#endif // XP_WIN

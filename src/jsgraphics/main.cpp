@@ -32,3 +32,12 @@ extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj)
 	INIT_CLASS( Ogl )
 	return JS_TRUE;
 }
+
+#ifdef XP_WIN
+BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
+
+	if ( fdwReason == DLL_PROCESS_ATTACH )
+		DisableThreadLibraryCalls(hinstDLL);
+	return TRUE;
+}
+#endif // XP_WIN

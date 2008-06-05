@@ -51,3 +51,12 @@ EXTERN_C DLLEXPORT void ModuleFree() {
 	status = FT_Done_FreeType(_freetype);
 //	J_S_ASSERT( status == 0, "Unable to destroy FreeType2 library." );
 }
+
+#ifdef XP_WIN
+BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
+
+	if ( fdwReason == DLL_PROCESS_ATTACH )
+		DisableThreadLibraryCalls(hinstDLL);
+	return TRUE;
+}
+#endif // XP_WIN

@@ -43,7 +43,7 @@ extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj)
 	}
 
 	if (!alcMakeContextCurrent(context)) {
-	
+
 		alcDestroyContext (context);
 		alcCloseDevice (device);
 		J_REPORT_ERROR("ALUT_ERROR_MAKE_CONTEXT_CURRENT");
@@ -62,7 +62,7 @@ EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
 
 	if (!alcMakeContextCurrent (NULL))
 		J_REPORT_ERROR("ALUT_ERROR_MAKE_CONTEXT_CURRENT");
-	
+
 	device = alcGetContextsDevice (context);
 	if (alcGetError (device) != ALC_NO_ERROR )
 		J_REPORT_ERROR("ALUT_ERROR_ALC_ERROR_ON_ENTRY");
@@ -70,7 +70,7 @@ EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
 	alcDestroyContext (context);
 	if (alcGetError (device) != ALC_NO_ERROR)
 		J_REPORT_ERROR("ALUT_ERROR_DESTROY_CONTEXT");
-	
+
 	if (!alcCloseDevice (device))
 		J_REPORT_ERROR("ALUT_ERROR_CLOSE_DEVICE");
 
@@ -80,3 +80,12 @@ EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
 EXTERN_C DLLEXPORT void ModuleFree() {
 
 }
+
+#ifdef XP_WIN
+BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
+
+	if ( fdwReason == DLL_PROCESS_ATTACH )
+		DisableThreadLibraryCalls(hinstDLL);
+	return TRUE;
+}
+#endif // XP_WIN

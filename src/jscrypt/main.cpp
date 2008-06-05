@@ -35,10 +35,10 @@ extern "C" DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	int regStatus;
 
 	const struct ltc_cipher_descriptor * cipherList[] = {
-		&blowfish_desc, 
-		&rc5_desc, 
-		&rc6_desc, 
-		&rc2_desc, 
+		&blowfish_desc,
+		&rc5_desc,
+		&rc6_desc,
+		&rc2_desc,
 		&saferp_desc,
 		&safer_k64_desc, &safer_k128_desc, &safer_sk64_desc, &safer_sk128_desc,
 		&rijndael_desc, &aes_desc,
@@ -56,7 +56,7 @@ extern "C" DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 //		&multi2_desc,
 	};
 	for ( int i=0; i<sizeof(cipherList)/sizeof(*cipherList); i++ ) {
-		
+
 		regStatus = register_cipher(cipherList[i]);
 		RT_ASSERT_1( regStatus != -1, "Unable to load cipher %s", cipherList[i]->name );
 	}
@@ -79,7 +79,7 @@ extern "C" DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 		&rmd320_desc,
 	};
 	for ( int i=0; i<sizeof(hashList)/sizeof(*hashList); i++ ) {
-		
+
 		regStatus = register_hash(hashList[i]);
 		RT_ASSERT_1( regStatus != -1, "Unable to load hash %s", hashList[i]->name );
 	}
@@ -92,7 +92,7 @@ extern "C" DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 		&sober128_desc,
 	};
 	for ( int i=0; i<sizeof(prngList)/sizeof(*prngList); i++ ) {
-		
+
 		regStatus = register_prng(prngList[i]);
 		RT_ASSERT_1( regStatus != -1, "Unable to load prng %s", prngList[i]->name );
 	}
@@ -107,3 +107,13 @@ extern "C" DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	INIT_CLASS( Hash );
 	return JS_TRUE;
 }
+
+
+#ifdef XP_WIN
+BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
+
+	if ( fdwReason == DLL_PROCESS_ATTACH )
+		DisableThreadLibraryCalls(hinstDLL);
+	return TRUE;
+}
+#endif // XP_WIN
