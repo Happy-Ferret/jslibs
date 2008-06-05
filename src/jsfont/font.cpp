@@ -120,7 +120,7 @@ DEFINE_FUNCTION_FAST( DrawChar ) {
 
 	JSString *jsstr = JS_ValueToString(cx, J_FARG(1));
 	J_S_ASSERT( jsstr != NULL, "Invalid string." );
-	J_S_ASSERT( JS_GetStringLength(jsstr) == 1, "Invalid char" );
+	J_S_ASSERT( J_STRING_LENGTH(jsstr) == 1, "Invalid char" );
 	jschar *str = JS_GetStringChars(jsstr);
 	J_S_ASSERT( str != NULL, "Invalid string." );
 
@@ -160,7 +160,7 @@ DEFINE_FUNCTION_FAST( DrawString ) {
 	J_S_ASSERT( jsstr != NULL, "Invalid string." );
 	jschar *str = JS_GetStringChars(jsstr);
 	J_S_ASSERT( str != NULL, "Invalid string." );
-	size_t strlen = JS_GetStringLength(jsstr);
+	size_t strlen = J_STRING_LENGTH(jsstr);
 
 	bool keepTrailingSpace = false;
 	if ( J_FARG_ISDEF(2) )

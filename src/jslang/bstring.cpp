@@ -75,7 +75,7 @@ inline JSBool JsvalToBString( JSContext *cx, JSObject *obj, jsval val ) {
 	} else {
 		
 		JSString *jsstr = JS_ValueToString(cx, val);
-		srcLen = JS_GetStringLength(jsstr);
+		srcLen = J_STRING_LENGTH(jsstr);
 		if ( srcLen > 0 ) {
 
 			dst = JS_malloc(cx, srcLen +1);
@@ -208,7 +208,7 @@ DEFINE_FUNCTION_FAST( Add ) {
 		JSString *jsstr = JS_ValueToString(cx, J_FARG(1));
 		J_FARG(1) = STRING_TO_JSVAL(jsstr);
 
-		srcLen = JS_GetStringLength(jsstr);
+		srcLen = J_STRING_LENGTH(jsstr);
 		if ( srcLen > 0 ) {
 
 			dst = JS_malloc(cx, srcLen + length +1);
@@ -403,7 +403,7 @@ DEFINE_SET_PROPERTY() {
 	J_S_ASSERT_ALLOC( str1 );
 
 	J_S_ASSERT_STRING(*vp);
-	if ( JS_GetStringLength( JSVAL_TO_STRING(*vp) ) != 1 )
+	if ( J_STRING_LENGTH( JSVAL_TO_STRING(*vp) ) != 1 )
 		J_REPORT_ERROR("Invalid char.");
 
 	((char*)pv)[slot] = *JS_GetStringBytes( JSVAL_TO_STRING(*vp) );

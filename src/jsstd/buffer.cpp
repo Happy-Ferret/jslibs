@@ -115,7 +115,7 @@ JSBool FindInBuffer( JSContext *cx, JSObject *obj, const char *needle, int needl
 
 		JSString **pNewStr = (JSString**)QueueGetData(it);
 		chunk = JS_GetStringBytes(*pNewStr);
-		chunkLength = JS_GetStringLength(*pNewStr);
+		chunkLength = J_STRING_LENGTH(*pNewStr);
 //		RT_JSVAL_TO_STRING_AND_LENGTH( *pNewStr, chunk, chunkLength );
 
 		for ( i = 0; i < chunkLength; i++ ) {
@@ -196,7 +196,7 @@ JSBool ReadOneChunk( JSContext *cx, JSObject *obj, jsval *rval ) {
 	Queue *queue = (Queue*)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE( queue );
 	JSString **pNewStr = (JSString**)QueueShift(queue);
-	bufferLength -= JS_GetStringLength(*pNewStr);
+	bufferLength -= J_STRING_LENGTH(*pNewStr);
 	RT_CHECK_CALL( BufferLengthSet(cx, obj, bufferLength) ); // update buffer size
 	*rval = STRING_TO_JSVAL(*pNewStr); // result (Rooted)
 	RT_CHECK_CALL( JS_RemoveRoot(cx, pNewStr) ); // removeRoot
@@ -246,7 +246,7 @@ JSBool ReadRawAmount( JSContext *cx, JSObject *obj, size_t *amount, char *str ) 
 		JSString **pNewStr = (JSString**)QueueGetData(QueueBegin(queue)); // just get the data, do not shift the queue
 
 		char *chunk = JS_GetStringBytes(*pNewStr);
-		size_t chunkLen = JS_GetStringLength(*pNewStr);
+		size_t chunkLen = J_STRING_LENGTH(*pNewStr);
 //		RT_JSVAL_TO_STRING_AND_LENGTH( *pNewStr, chunk, chunkLength );
 
 		if ( chunkLen <= remainToRead ) {
@@ -317,7 +317,7 @@ JSBool UnReadChunk( JSContext *cx, JSObject *obj, JSString *chunk ) {
 	Queue *queue = (Queue*)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE( queue );
 
-	size_t length = JS_GetStringLength(chunk);
+	size_t length = J_STRING_LENGTH(chunk);
 	if ( length == 0 ) // optimization & RULES
 		return JS_TRUE;
 	JSString **pNewStr = (JSString**)malloc(sizeof(JSString*));
@@ -396,7 +396,7 @@ DEFINE_CONSTRUCTOR() {
 			*pNewStr = JSVAL_TO_STRING( J_ARG(1) );
 			RT_CHECK_CALL( JS_AddRoot(cx, pNewStr) );
 			QueuePush( queue, pNewStr );
-			RT_CHECK_CALL( BufferLengthAdd(cx, obj, JS_GetStringLength(*pNewStr)) );
+			RT_CHECK_CALL( BufferLengthAdd(cx, obj, J_STRING_LENGTH(*pNewStr)) );
 		} else if ( JSVAL_IS_OBJECT( J_ARG(1) ) ) {
 
 			RT_CHECK_CALL( AddBuffer(cx, obj, JSVAL_TO_OBJECT( J_ARG(1) )) );
@@ -432,7 +432,7 @@ DEFINE_FUNCTION( Write ) {
 	RT_ASSERT_RESOURCE(queue);
 
 	JSString *str = JSVAL_TO_STRING( J_ARG(1) );
-	size_t strLen = JS_GetStringLength(str);
+	size_t strLen = J_STRING_LENGTH(str);
 
 	if ( strLen == 0 )
 		return JS_TRUE;

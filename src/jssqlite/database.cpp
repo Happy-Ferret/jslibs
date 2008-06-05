@@ -360,7 +360,7 @@ void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArg
 		case JSTYPE_STRING: {
 			JSString *jsstr = JS_ValueToString(cx, rval);
 			// (TBD) GC protect (root) jsstr
-			sqlite3_result_text(sCx, JS_GetStringBytes(jsstr), JS_GetStringLength(jsstr), SQLITE_STATIC); // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT // cf.  int sqlite3_bind_text16(sqlite3_stmt*, int, const void*, int n, void(*)(void*));
+			sqlite3_result_text(sCx, JS_GetStringBytes(jsstr), J_STRING_LENGTH(jsstr), SQLITE_STATIC); // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT // cf.  int sqlite3_bind_text16(sqlite3_stmt*, int, const void*, int n, void(*)(void*));
 			break;
 		}
 		default:

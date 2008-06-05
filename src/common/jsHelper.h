@@ -30,6 +30,7 @@ inline NIBufferGet BufferGetInterface( JSContext *cx, JSObject *obj );
 #include <jsarena.h>
 #include <jsfun.h>
 #include <jsobj.h>
+#include <jsstr.h>
 
 //#include "../jslang/bstringapi.h"
 
@@ -260,6 +261,10 @@ inline NIBufferGet BufferGetInterface( JSContext *cx, JSObject *obj );
 // conversion functions
 
 
+//#define J_STRING_LENGTH(str) (JS_GetStringLength(str));
+#define J_STRING_LENGTH(str) (JSSTRING_LENGTH(str));
+
+
 inline bool JsvalIsString( JSContext *cx, jsval val ) {
 
 	if ( JSVAL_IS_STRING(val) )
@@ -277,7 +282,7 @@ inline JSBool JsvalToStringAndLength( JSContext *cx, jsval val, const char** buf
 		JSString *str = JSVAL_TO_STRING(val);
 		*buffer = JS_GetStringBytes(str);
 		J_S_ASSERT( *buffer != NULL, "Invalid string." );
-		*size = JS_GetStringLength(str);
+		*size = J_STRING_LENGTH(str);
 		return JS_TRUE;
 	}
 
@@ -292,7 +297,7 @@ inline JSBool JsvalToStringAndLength( JSContext *cx, jsval val, const char** buf
 	J_S_ASSERT( str != NULL, J__ERRMSG_STRING_CONVERSION_FAILED );
 	*buffer = JS_GetStringBytes(str);
 	J_S_ASSERT( *buffer != NULL, J__ERRMSG_STRING_CONVERSION_FAILED );
-	*size = JS_GetStringLength(str);
+	*size = J_STRING_LENGTH(str);
 	return JS_TRUE;
 }
 
@@ -345,7 +350,6 @@ inline JSBool StringAndLengthToJsval( JSContext *cx, jsval *val, const char* cst
 	*val = STRING_TO_JSVAL(jsstr);
 	return JS_TRUE;
 }
-
 
 inline JSBool SetPropertyInt( JSContext *cx, JSObject *obj, const char *propertyName, int intVal ) {
 

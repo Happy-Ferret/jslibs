@@ -137,7 +137,7 @@ static JSBool InternString(JSContext *cx, uintN argc, jsval *vp) {
 	str = JS_ValueToString(cx, vp[2]);
 	if (!str)
 		return JS_FALSE;
-	if (!JS_InternUCStringN(cx, JS_GetStringChars(str), JS_GetStringLength(str))) {
+	if (!JS_InternUCStringN(cx, JS_GetStringChars(str), J_STRING_LENGTH(str))) {
 
 		return JS_FALSE;
 	}
