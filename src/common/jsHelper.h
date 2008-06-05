@@ -261,8 +261,8 @@ inline NIBufferGet BufferGetInterface( JSContext *cx, JSObject *obj );
 // conversion functions
 
 
-//#define J_STRING_LENGTH(str) (JS_GetStringLength(str));
-#define J_STRING_LENGTH(str) (JSSTRING_LENGTH(str));
+//#define J_STRING_LENGTH(str) (JS_GetStringLength(str))
+#define J_STRING_LENGTH(str) (JSSTRING_LENGTH(str))
 
 
 inline bool JsvalIsString( JSContext *cx, jsval val ) {
