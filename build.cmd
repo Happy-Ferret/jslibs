@@ -23,7 +23,7 @@ date /T > build.log
 set > build.log
 
 pushd .\libs\js
-IF BUILD. == release. (
+IF "%BUILD%" == "release" (
 	call build_msdev8_OPT.bat
 ) ELSE (
 	call build_msdev8_DBG.bat
