@@ -256,14 +256,16 @@ inline NIBufferGet BufferGetInterface( JSContext *cx, JSObject *obj );
 #define J_S_ASSERT_ALLOC(pointer) \
 	if (unlikely( (pointer) == NULL )) { J_REPORT_WARNING( J__ERRMSG_OUT_OF_MEMORY ); JS_ReportOutOfMemory(cx); return JS_FALSE; }
 
+
+
 ///////////////////////////////////////////////////////////////////////////////
-// conversion functions
+// test and conversion functions
 
 
 //#define J_STRING_LENGTH(str) (JS_GetStringLength(str))
 #define J_STRING_LENGTH(str) (JSSTRING_LENGTH(str))
 
-
+/*
 inline bool JsvalIsString( JSContext *cx, jsval val ) {
 
 	if ( JSVAL_IS_STRING(val) )
@@ -272,7 +274,9 @@ inline bool JsvalIsString( JSContext *cx, jsval val ) {
 		return false;
 	return BufferGetInterface(cx, JSVAL_TO_OBJECT(val)) != NULL;
 }
+*/
 
+#define J_JSVAL_IS_STRING(val) ( JSVAL_IS_STRING(val) || (JSVAL_IS_OBJECT(val) && !JSVAL_IS_NULL(val) && BufferGetInterface(cx, JSVAL_TO_OBJECT(val)) != NULL) )
 
 inline JSBool JsvalToStringAndLength( JSContext *cx, jsval val, const char** buffer, size_t *size ) {
 
@@ -341,6 +345,7 @@ inline JSBool JsvalToInt( JSContext *cx, jsval val, int *intVal ) {
 	return JS_TRUE;
 }
 
+
 inline JSBool IntToJsval( JSContext *cx, int intVal, jsval *val ) {
 
 	if ( INT_FITS_IN_JSVAL(intVal) )
@@ -350,7 +355,6 @@ inline JSBool IntToJsval( JSContext *cx, int intVal, jsval *val ) {
 			J_REPORT_ERROR( "Unable to convert to a 32bit integer." );
 	return JS_TRUE;
 }
-
 
 
 
@@ -489,7 +493,7 @@ inline JSBool JsvalToBool( JSContext *cx, jsval val, bool *bval ) {
 
 
 #define J_JSVAL_TO_UINT32( jsvalUInt, uintVariable ) do { \
-	if ( JSVAL_IS_INT(jsvalUInt) && JSVAL_TO_INT(jsvalUInt) >= 0 ) { \
+	if ( JSVAL_IS_INT(jsvalUInt) ) { \
 		uintVariable = JSVAL_TO_INT(jsvalUInt); \
 	} else { \
 		jsdouble __doubleValue; \
@@ -498,6 +502,7 @@ inline JSBool JsvalToBool( JSContext *cx, jsval val, bool *bval ) {
 		uintVariable = (unsigned long)__doubleValue; \
 		J_S_ASSERT( __doubleValue == (double)((unsigned long)__doubleValue), J__ERRMSG_INT_CONVERSION_FAILED ); \
 	} \
+	J_S_ASSERT( uintVariable >= 0, "Unable to convert to a 32bit unsigned integer." ); \
 } while(0)
 
 
@@ -563,6 +568,8 @@ inline JSBool JsvalToBool( JSContext *cx, jsval val, bool *bval ) {
 } while(0)
 
 
+
+
 // DEPRECATED macro
 #define J_CHECK_CALL J_CHK
 #define RT_CHECK_CALL J_CHECK_CALL
@@ -597,14 +604,14 @@ inline JSBool JsvalToBool( JSContext *cx, jsval val, bool *bval ) {
 	J_S_ASSERT_CONSTRUCTING(); \
 	J_S_ASSERT_THIS_CLASS(); \
 } while(0)
-
-
 #define RT_JSVAL_TO_BOOL J_JSVAL_TO_BOOL
 #define RT_JSVAL_TO_REAL J_JSVAL_TO_REAL
 #define RT_JSVAL_TO_INT32 J_JSVAL_TO_INT32
 #define RT_JSVAL_TO_UINT32 J_JSVAL_TO_UINT32
 #define RT_JSVAL_TO_STRING J_JSVAL_TO_STRING
 #define RT_JSVAL_TO_STRING_AND_LENGTH J_JSVAL_TO_STRING_AND_LENGTH
+
+
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -685,6 +692,16 @@ inline bool HasProperty( JSContext *cx, JSObject *obj, const char *propertyName 
 	return ( status == JS_TRUE && found != JS_FALSE );
 }
 
+/*
+#define J_HAS_PROPERTY( object, propertyName, has ) do { \
+	uintN __attr;
+	JSBool __found;
+	JSBool __status = JS_GetPropertyAttributes(cx, obj, propertyName, &__attr, &__found);
+	(has) = ( __status == JS_TRUE && __found != JS_FALSE );
+} while(0)
+*/
+
+
 inline JSBool CallFunction( JSContext *cx, JSObject *obj, jsval functionValue, jsval *rval, uintN argc, ... ) {
 
 	va_list ap;
@@ -701,6 +718,7 @@ inline JSBool CallFunction( JSContext *cx, JSObject *obj, jsval functionValue, j
 		*rval = rvalTmp;
 	return JS_TRUE;
 }
+
 
 // The following function wil only works if the class is defined in the global namespace.
 inline JSClass *GetGlobalClassByName(JSContext *cx, const char *className) {
@@ -723,11 +741,11 @@ inline JSClass *GetGlobalClassByName(JSContext *cx, const char *className) {
 	return fun->u.n.clasp; // (TBD) replace this by a jsapi.h call and remove dependency to jsarena.h and jsfun.h
 }
 
+
 inline bool MaybeRealloc( int requested, int received ) {
 
 	return requested != 0 && (100 * received / requested < 90) && (requested - received > 256);
 }
-
 
 
 
