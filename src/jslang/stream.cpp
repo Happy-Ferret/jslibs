@@ -153,6 +153,12 @@ DEFINE_PROPERTY( available ) {
 	return JS_TRUE;
 }
 
+DEFINE_PROPERTY( source ) {
+
+	J_CHECK_CALL( JS_GetReservedSlot(cx, obj, SLOT_STREAM_SOURCE, vp) );
+	return JS_TRUE;
+}
+
 
 CONFIGURE_CLASS
 
@@ -166,6 +172,7 @@ CONFIGURE_CLASS
 	BEGIN_PROPERTY_SPEC
 		PROPERTY(position)
 		PROPERTY_READ(available)
+		PROPERTY_READ(source)
 	END_PROPERTY_SPEC
 
 END_CLASS
