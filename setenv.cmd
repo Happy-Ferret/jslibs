@@ -2,9 +2,9 @@ echo off
 
 IF "%BUILD%"=="" set BUILD=release
 
-IF "%BUILD%"=="release" set PATH=%CD%\js\src\WINNT5.1_OPT.OBJ;%PATH%
-IF "%BUILD%"=="debug" set PATH=%CD%\js\src\WINNT5.1_DBG.OBJ;%PATH%
+IF "%BUILD%"=="release" set PATH=%CD%\libs\js\src\WINNT5.1_OPT.OBJ;%PATH%
+IF "%BUILD%"=="debug" set PATH=%CD%\libs\js\src\WINNT5.1_DBG.OBJ;%PATH%
 
-set PATH=%PATH%;%CD%\jshost\%BUILD%;%CD%\jswinhost\%BUILD%;%CD%\jslang\%BUILD%;%CD%\jsstd\%BUILD%;%CD%\jsio\%BUILD%;%CD%\nspr\win32\dist\lib;%CD%\jssqlite\%BUILD%;%CD%\jsobjex\%BUILD%;%CD%\jsz\%BUILD%;%CD%\jscrypt\%BUILD%;%CD%\jswinshell\%BUILD%;%CD%\jstest\%BUILD%;%CD%\jsdebug\%BUILD%;%CD%\jsimage\%BUILD%
+set PATH=%PATH%;%CD%\src\jshost\%BUILD%;%CD%\src\jswinhost\%BUILD%;%CD%\src\jslang\%BUILD%;%CD%\src\jsstd\%BUILD%;%CD%\src\jsio\%BUILD%;%CD%\libs\nspr\win32\dist\lib;%CD%\src\jssqlite\%BUILD%;%CD%\src\jsobjex\%BUILD%;%CD%\src\jsz\%BUILD%;%CD%\src\jscrypt\%BUILD%;%CD%\src\jswinshell\%BUILD%;%CD%\src\jsdebug\%BUILD%;%CD%\src\jsimage\%BUILD%
 
 echo jslibs %BUILD% environment set.

@@ -131,7 +131,6 @@
 
 	Binding: function(QA) {
 	
-		LoadModule('jslang');
 		LoadModule('jssqlite');
 		var db = new Database();
 
@@ -181,7 +180,6 @@
 	
 	_FunctionBinding: function(QA) {
 	
-		LoadModule('jslang');
 		LoadModule('jssqlite');
 	
 		var db = new Database('');

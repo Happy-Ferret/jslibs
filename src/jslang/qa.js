@@ -50,9 +50,15 @@
 		QA.ASSERT( b.length, 4, 'length' );
 		QA.ASSERT( b[0], 'A', 'first item' );
 		QA.ASSERT( b[3], 'D', 'last item' );
-		QA.ASSERT( 2 in b, true, 'in operator' ); // cf. DEFINE_NEW_RESOLVE
-		QA.ASSERT( 4 in b, false, 'in operator' );
+
+//		QA.ASSERT( 2 in b, true, 'in operator' ); // cf. DEFINE_NEW_RESOLVE
+		QA.ASSERT( b[2], 'C', '[] operator' );
+
+//		QA.ASSERT( 4 in b, false, 'in operator' ); // cf. DEFINE_NEW_RESOLVE
+		QA.ASSERT( b[4], undefined, '[] operator' );
+
 		QA.ASSERT( b[4], undefined, 'after last item' );
+
 		b.Add('XYZ');
 		QA.ASSERT( b.length, 7, 'length' );
 		QA.ASSERT( b[6], 'Z', 'last item' );
@@ -62,6 +68,12 @@
 		QA.ASSERT( b.length, 0, 'length' );
 	},
 
+	BStringErrors: function(QA) {
+	
+		var b = new BString();
+		b.Add( 'ABCD' );
+		QA.ASSERT_EXCEPTION( function() b[5] = 'X', RangeError, 'set an out-of-range item' );
+	},
 
 	BStringSubstr: function(QA) {
 	
@@ -149,6 +161,7 @@
 
 		var bstring = new BString("1234567");
 		var stream = Stream(bstring);
+		QA.ASSERT( stream.source, bstring, 'source object' )
 
 		QA.ASSERT( stream.position, 0, 'initial stream position' )
 		QA.ASSERT( String(stream.Read(3)), '123', 'stream Read()' )
@@ -160,7 +173,29 @@
 
 		stream.position = 0;
 		QA.ASSERT( String(stream.Read(bstring.length)), '1234567', 'read the exact length' )
+	},
 
+	StreamAdd: function(QA) {
+
+		var bstring = new BString("1234");
+		var stream = Stream(bstring);
+
+		QA.ASSERT( String(stream.Read(3)), '123', 'stream Read()' )
+		bstring.Add('ABC');
+		QA.ASSERT( bstring.length, 7, 'stream source length' )
+		QA.ASSERT( String(stream.Read(3)), '4AB', 'stream Read()' )
+		QA.ASSERT( stream.position, 6, 'stream position' )
+	},
+
+	
+	JavascriptStream: function(QA) {
+	
+		function strm() {
+			this.Read = function(amount) {
+			}
+		}
 	}
+	
+	
 	
 })

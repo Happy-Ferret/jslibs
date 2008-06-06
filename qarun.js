@@ -8,12 +8,13 @@ LoadModule('jsdebug');
 function MakeTestList(directory) {
 
 	var dirList = Directory.List(directory, Directory.SKIP_BOTH | Directory.SKIP_FILE | Directory.SKIP_OTHER );
+	
 	dirList.sort();
 
 	var testList = {};
 	for each ( var dirName in dirList ) {
 
-		var f = new File(dirName + '/qa.js');
+		var f = new File(directory+'/'+dirName + '/qa.js');
 		if ( f.exist ) {
 
 			var qatests = Exec(f.name, false);
@@ -154,7 +155,7 @@ if ( perfTest ) {
 	processPriority = -1;
 }
 
-MakeTests(MakeTestList('.'), new RegExp(arguments[1]||'.*', 'i'), QAAPI, 3);
+MakeTests(MakeTestList('src'), new RegExp(arguments[1]||'.*', 'i'), QAAPI, 3);
 
 if ( perfTest ) {
 
