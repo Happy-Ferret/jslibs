@@ -33,6 +33,7 @@
 #define NAME_CONFIGURATION_STDERR "stderr"
 #define NAME_CONFIGURATION_STDOUT "stdout"
 #define NAME_CONFIGURATION_UNSAFE_MODE "unsafeMode"
+#define NAME_CONFIGURATION_GETERRORMESSAGE "_getErrorMessage"
 
 #define NAME_MODULE_INIT "ModuleInit"
 #define NAME_MODULE_RELEASE "ModuleRelease"

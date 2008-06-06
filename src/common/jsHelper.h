@@ -152,9 +152,6 @@ inline NIBufferGet BufferGetInterface( JSContext *cx, JSObject *obj );
 #define J_JSVAL_IS_CLASS(value, jsClass) \
 	( JSVAL_IS_OBJECT(value) && !JSVAL_IS_NULL(value) && JS_GET_CLASS(cx, JSVAL_TO_OBJECT(value)) == (jsClass) )
 
-#define J_CHECK_CALL( functionCall ) \
-	do { if (unlikely( (functionCall) == JS_FALSE )) { return JS_FALSE; } } while(0)
-
 
 #define J_IS_SAFE_MODE(code) \
 
@@ -163,6 +160,7 @@ inline NIBufferGet BufferGetInterface( JSContext *cx, JSObject *obj );
 
 #define J_UNSAFE(code) \
 	do { if (likely( _unsafeMode )) {code;} } while(0)
+
 
 
 // Reports warnings. May be disabled in unsafemode
@@ -185,6 +183,7 @@ inline NIBufferGet BufferGetInterface( JSContext *cx, JSObject *obj );
 
 #define J_REPORT_ERROR_2(errorMessage, arg1, arg2) \
 	do { JS_ReportError( cx, (errorMessage J__CODE_LOCATION), (arg1), (arg2) ); return JS_FALSE; } while(0)
+
 
 
 // J_S_ stands for (J)slibs _ (S)afemode _ and mean that these macros will only be meaningful when unsafemode is false (see jslibs unsafemode).
@@ -304,9 +303,29 @@ inline JSBool JsvalToStringAndLength( JSContext *cx, jsval val, const char** buf
 
 inline JSBool JsvalToString( JSContext *cx, jsval val, const char** buffer ) {
 
-	size_t size;
+	size_t size; //unused
 	return JsvalToStringAndLength( cx, val, buffer, &size );
 }
+
+
+inline JSBool StringToJsval( JSContext *cx, jsval *val, const char* cstr ) {
+
+	JSString *jsstr = JS_NewStringCopyZ(cx, cstr);
+	if ( jsstr == NULL )
+		J_REPORT_ERROR( "Unable to create thye string." );
+	*val = STRING_TO_JSVAL(jsstr);
+	return JS_TRUE;
+}
+
+inline JSBool StringAndLengthToJsval( JSContext *cx, jsval *val, const char* cstr, size_t length ) {
+
+	JSString *jsstr = JS_NewStringCopyN(cx, cstr, length);
+	if ( jsstr == NULL )
+		J_REPORT_ERROR( "Unable to create thye string." );
+	*val = STRING_TO_JSVAL(jsstr);
+	return JS_TRUE;
+}
+
 
 
 inline JSBool JsvalToInt( JSContext *cx, jsval val, int *intVal ) {
@@ -333,23 +352,7 @@ inline JSBool IntToJsval( JSContext *cx, int intVal, jsval *val ) {
 }
 
 
-inline JSBool StringToJsval( JSContext *cx, jsval *val, const char* cstr ) {
 
-	JSString *jsstr = JS_NewStringCopyZ(cx, cstr);
-	if ( jsstr == NULL )
-		J_REPORT_ERROR( "Unable to create thye string." );
-	*val = STRING_TO_JSVAL(jsstr);
-	return JS_TRUE;
-}
-
-inline JSBool StringAndLengthToJsval( JSContext *cx, jsval *val, const char* cstr, size_t length ) {
-
-	JSString *jsstr = JS_NewStringCopyN(cx, cstr, length);
-	if ( jsstr == NULL )
-		J_REPORT_ERROR( "Unable to create thye string." );
-	*val = STRING_TO_JSVAL(jsstr);
-	return JS_TRUE;
-}
 
 inline JSBool SetPropertyInt( JSContext *cx, JSObject *obj, const char *propertyName, int intVal ) {
 
@@ -402,9 +405,11 @@ inline JSBool GetPropertyInt( JSContext *cx, JSObject *obj, const char *property
 } while(0)
 */
 
+/*
 #define J_JSVAL_TO_STRING( jsvalString, stringVariable ) do { \
 	J_CHECK_CALL( JsvalToString(cx, jsvalString, &stringVariable) ); \
 } while(0)
+*/
 
 /*
 #define J_JSVAL_TO_STRING_AND_LENGTH( jsvalString, stringVariable, lengthVariable ) do { \
@@ -416,9 +421,26 @@ inline JSBool GetPropertyInt( JSContext *cx, JSObject *obj, const char *property
 } while(0)
 */
 
+/*
 #define J_JSVAL_TO_STRING_AND_LENGTH( jsvalString, stringVariable, lengthVariable ) do { \
 	J_CHECK_CALL( JsvalToStringAndLength(cx, jsvalString, &stringVariable, &lengthVariable) ); \
 } while(0)
+*/
+
+/*
+inline JSBool JsvalToBool( JSContext *cx, jsval val, bool *bval ) {
+
+	if ( JSVAL_IS_BOOLEAN(val) ) {
+
+		*bval = JSVAL_TO_BOOLEAN(val) == JS_TRUE;
+		return JS_TRUE;
+	}
+	JSBool b;
+	J_CHKM( JS_ValueToBoolean(cx, val, &b), "Unable to convert to boolean." );
+	*bval = b == JS_TRUE;
+	return JS_TRUE;
+}
+*/
 
 
 #define J_JSVAL_TO_BOOL( jsval, boolVariable ) do { \
@@ -427,7 +449,7 @@ inline JSBool GetPropertyInt( JSContext *cx, JSObject *obj, const char *property
 	} else { \
 		JSBool __b; \
 		if (unlikely( JS_ValueToBoolean( cx, jsval, &__b ) != JS_TRUE )) \
-			J_REPORT_ERROR( "Unable to convert to integer." ); \
+			J_REPORT_ERROR( "Unable to convert to boolean." ); \
 		boolVariable = (__b == JS_TRUE); \
 	} \
 } while(0)
@@ -542,6 +564,7 @@ inline JSBool GetPropertyInt( JSContext *cx, JSObject *obj, const char *property
 
 
 // DEPRECATED macro
+#define J_CHECK_CALL J_CHK
 #define RT_CHECK_CALL J_CHECK_CALL
 #define RT_SAFE J_SAFE
 #define RT_UNSAFE J_UNSAFE

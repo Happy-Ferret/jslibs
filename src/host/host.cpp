@@ -20,6 +20,25 @@
 #include <dlfcn.h> // cf. dlerror() in LoadModule()
 #endif
 
+#include "../common/errors.h"
+
+JSErrorFormatString errorFormatString[J_ErrLimit] = {
+#define MSG_DEF(name, number, count, exception, format) \
+    { format, count, exception } ,
+#include "../common/errors.msg"
+#undef MSG_DEF
+};
+
+static const JSErrorFormatString *GetErrorMessage(void *userRef, const char *locale, const uintN errorNumber) {
+
+	if ((errorNumber > 0) && (errorNumber < J_ErrLimit))
+		return &errorFormatString[errorNumber];
+	return NULL;
+}
+
+static const void *pGetErrorMessage = &GetErrorMessage;
+
+
 #include <jsprf.h>
 #include <jsstddef.h>
 
@@ -31,8 +50,6 @@
 
 // static modules
 #include "../jslang/jslang.h"
-
-
 
 #include "host.h"
 
@@ -189,7 +206,7 @@ static JSBool LoadModule(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, 
 	RT_ASSERT_ARGC(1);
 
 	const char *fileName;
-	RT_JSVAL_TO_STRING( argv[0], fileName );
+	J_CHK( JsvalToString(cx, argv[0], &fileName) );
 	char libFileName[PATH_MAX];
 	strcpy( libFileName, fileName );
 	strcat( libFileName, DLL_EXT );
@@ -260,14 +277,14 @@ static JSBool global_resolve(JSContext *cx, JSObject *obj, jsval id, uintN flags
 	return JS_TRUE;
 }
 
-
 // global object
 	// doc: For full ECMAScript standard compliance, obj should be of a JSClass that has the JSCLASS_GLOBAL_FLAGS flag.
-	static JSClass global_class = {
-		NAME_GLOBAL_CLASS, JSCLASS_GLOBAL_FLAGS | JSCLASS_NEW_RESOLVE,
-		JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, global_enumerate, (JSResolveOp)global_resolve, JS_ConvertStub, JS_FinalizeStub, // see LAZY_STANDARD_CLASSES
-		JSCLASS_NO_OPTIONAL_MEMBERS
-	};
+static JSClass global_class = {
+	NAME_GLOBAL_CLASS, JSCLASS_GLOBAL_FLAGS | JSCLASS_NEW_RESOLVE,
+	JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, 
+	global_enumerate, (JSResolveOp)global_resolve, JS_ConvertStub, JS_FinalizeStub, // see LAZY_STANDARD_CLASSES
+	JSCLASS_NO_OPTIONAL_MEMBERS
+};
 
 
 
@@ -354,14 +371,17 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, JSFastNative stdOut, JSFastNati
 	JSObject *globalObject = JS_GetGlobalObject(cx);
 	J_CHKM( globalObject != NULL, "Global object not found." );
 
+// Global configuration object
+	JSObject *configObject = GetConfigurationObject(cx);
+	J_CHKM( configObject != NULL, "failed to get/create configuration object." );
+
+// make GetErrorMessage available from any module
+	J_CHK( JS_DefineProperty(cx, configObject, NAME_CONFIGURATION_GETERRORMESSAGE, PRIVATE_TO_JSVAL(&pGetErrorMessage), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
+
 // global functions & properties
 	J_CHKM( JS_DefineProperty( cx, globalObject, NAME_GLOBAL_GLOBAL_OBJECT, OBJECT_TO_JSVAL(JS_GetGlobalObject(cx)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ), "unable to define a property." );
 	J_CHKM( JS_DefineFunction( cx, globalObject, NAME_GLOBAL_FUNCTION_LOAD_MODULE, LoadModule, 0, 0 ), "unable to define a property." );
 	J_CHKM( JS_DefineFunction( cx, globalObject, NAME_GLOBAL_FUNCTION_UNLOAD_MODULE, UnloadModule, 0, 0 ), "unable to define a property." );
-
-// Global configuration object
-	JSObject *configObject = GetConfigurationObject(cx);
-	J_CHKM( configObject != NULL, "failed to get/create configuration object." );
 
 
 	jsval value;
@@ -374,7 +394,6 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, JSFastNative stdOut, JSFastNati
 
 // init static modules
 	J_CHKM( jslangInit(cx, globalObject), "Unable to initialize jslang." );
-
 	return JS_TRUE;
 }
 

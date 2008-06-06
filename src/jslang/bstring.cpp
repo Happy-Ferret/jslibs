@@ -13,6 +13,9 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
+
+#include "../common/errors.h"
+
 #include <cstring>
 
 #include "../common/jsHelper.h"
@@ -327,7 +330,7 @@ DEFINE_PROPERTY( length ) {
 }
 
 /*
-DEFINE_NEW_RESOLVE() { // support of data[n]
+DEFINE_NEW_RESOLVE() { // support of data[n]  and  n in data
 
 	if (!JSVAL_IS_INT(id) || (flags & JSRESOLVE_ASSIGNING))
 		return JS_TRUE;
@@ -384,10 +387,10 @@ DEFINE_GET_PROPERTY() {
 
 
 DEFINE_SET_PROPERTY() {
-		
+
 	void *pv = JS_GetPrivate(cx, obj);
 	if ( pv == NULL )
-		J_REPORT_ERROR("Out of range.");
+		return J_ReportError(cx, JSSMSG_OUT_OF_RANGE);
 
 	size_t length;
 	J_CHECK_CALL( LengthGet(cx, obj, &length) );
@@ -396,7 +399,7 @@ DEFINE_SET_PROPERTY() {
 	jsint slot = JSVAL_TO_INT( id );
 
 	if ( slot < 0 || slot >= (int)length )
-		J_REPORT_ERROR("Out of range.");
+		return J_ReportError(cx, JSSMSG_OUT_OF_RANGE);
 
 	jschar chr = ((char*)pv)[slot];
 	JSString *str1 = JS_NewUCStringCopyN(cx, &chr, 1);

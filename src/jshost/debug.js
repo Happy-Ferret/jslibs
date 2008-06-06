@@ -1,9 +1,15 @@
 LoadModule('jsstd');
-LoadModule('jsio');
+//LoadModule('jsio');
 
 
-Print( BString );
+Print( BString, '\n' );
 
+var b = new BString('123');
+
+b[3] = '4';
+
+
+Halt();
 
 try {
 

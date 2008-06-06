@@ -197,6 +197,10 @@
 				>
 			</File>
 		</Filter>
+		<File
+			RelativePath="..\common\errors.msg"
+			>
+		</File>
 	</Files>
 	<Globals>
 	</Globals>
