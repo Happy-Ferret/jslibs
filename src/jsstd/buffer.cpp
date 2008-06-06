@@ -464,7 +464,7 @@ DEFINE_FUNCTION( Match ) {
 
 	const char *str;
 	size_t len;
-	RT_JSVAL_TO_STRING_AND_LENGTH( J_ARG(1), str, len );
+	J_JSVAL_TO_STRING_AND_LENGTH( J_ARG(1), str, len );
 
 	char *src = (char *)malloc(len);
 	size_t amount = len;

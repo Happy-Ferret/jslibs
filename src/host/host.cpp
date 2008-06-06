@@ -36,7 +36,7 @@ static const JSErrorFormatString *GetErrorMessage(void *userRef, const char *loc
 	return NULL;
 }
 
-static const void *pGetErrorMessage = &GetErrorMessage;
+static const void *pGetErrorMessage = &GetErrorMessage; // global variable !
 
 
 #include <jsprf.h>
@@ -191,7 +191,7 @@ static JSBool BranchCallback(JSContext *cx, JSScript *script) {
 */
 
 
-static u_int32_t gBranchCount = 1;
+static u_int32_t gBranchCount = 1; // global variable !
 static JSBool BranchCallback(JSContext *cx, JSScript *script) {
 
 	if ((++gBranchCount & (0x1000-1)) != 1) // every 4096
@@ -279,7 +279,8 @@ static JSBool global_resolve(JSContext *cx, JSObject *obj, jsval id, uintN flags
 
 // global object
 	// doc: For full ECMAScript standard compliance, obj should be of a JSClass that has the JSCLASS_GLOBAL_FLAGS flag.
-static JSClass global_class = {
+static JSClass global_class = { // global variable !
+
 	NAME_GLOBAL_CLASS, JSCLASS_GLOBAL_FLAGS | JSCLASS_NEW_RESOLVE,
 	JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, 
 	global_enumerate, (JSResolveOp)global_resolve, JS_ConvertStub, JS_FinalizeStub, // see LAZY_STANDARD_CLASSES

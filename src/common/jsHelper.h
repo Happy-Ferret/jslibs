@@ -304,12 +304,19 @@ inline JSBool JsvalToStringAndLength( JSContext *cx, jsval val, const char** buf
 	return JS_TRUE;
 }
 
+#define J_JSVAL_TO_STRING_AND_LENGTH( val, str, len ) do { \
+	J_CHK( JsvalToStringAndLength(cx, (val), &(str), &(len)) ); \
+} while(0)
 
 inline JSBool JsvalToString( JSContext *cx, jsval val, const char** buffer ) {
 
 	size_t size; //unused
 	return JsvalToStringAndLength( cx, val, buffer, &size );
 }
+
+#define J_JSVAL_TO_STRING( val, str ) do { \
+	J_CHK( JsvalToString(cx, (val), &(str)) ); \
+} while(0)
 
 
 inline JSBool StringToJsval( JSContext *cx, jsval *val, const char* cstr ) {
@@ -329,7 +336,6 @@ inline JSBool StringAndLengthToJsval( JSContext *cx, jsval *val, const char* cst
 	*val = STRING_TO_JSVAL(jsstr);
 	return JS_TRUE;
 }
-
 
 
 inline JSBool JsvalToInt( JSContext *cx, jsval val, int *intVal ) {
@@ -457,6 +463,7 @@ inline JSBool JsvalToBool( JSContext *cx, jsval val, bool *bval ) {
 		boolVariable = (__b == JS_TRUE); \
 	} \
 } while(0)
+
 
 
 #define J_JSVAL_TO_REAL( jsval, realVal ) do { \
