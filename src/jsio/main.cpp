@@ -17,6 +17,7 @@
 #include "descriptor.h"
 #include "pipe.h"
 #include "file.h"
+#include "memoryMapped.h"
 #include "socket.h"
 #include "directory.h"
 #include "sharedMemory.h"
@@ -34,6 +35,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	INIT_CLASS( Descriptor );
 	INIT_CLASS( Pipe );
 	INIT_CLASS( File );
+	INIT_CLASS( MemoryMapped );
 	INIT_CLASS( Socket );
 	INIT_CLASS( Directory );
 	INIT_CLASS( SharedMemory );

@@ -1,8 +1,12 @@
 LoadModule('jsstd');
 LoadModule('jsio');
 
+var f = new File('directory.cpp');
+f.Open("r");
 
-Socket.GetHostsByName('fqsdvfqsdfv');
+var m = new MemoryMapped(f);
+Print(m);
+
 
 Halt();
 
