@@ -54,7 +54,7 @@ JSBool Unlock( JSContext *cx, ClassPrivate *pv ) {
 }
 
 
-JSBool BufferGet( JSContext *cx, JSObject *obj, const char **buf, size_t *size ) {
+static JSBool BufferGet( JSContext *cx, JSObject *obj, const char **buf, size_t *size ) {
 
 	ClassPrivate *pv = (ClassPrivate*)JS_GetPrivate(cx, obj);
 	RT_ASSERT_RESOURCE( pv );
