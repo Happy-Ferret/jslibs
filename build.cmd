@@ -60,7 +60,7 @@ for /D %%f in (src\js*) do (
 rem		if ERRORLEVEL 1 goto error
 		) ELSE (
 
-			echo ... ok.
+rem			echo ... ok.
 
 			pushd %%~dg%%~pg%BUILD%
 			copy %%f.dll %%f.exe ..\..\%BUILD% 1>nul

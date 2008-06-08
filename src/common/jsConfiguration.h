@@ -16,7 +16,7 @@
 #define _JSCONFIGURATION_H_
 
 #include "../common/jsNames.h"
-
+#include "../common/jsHelper.h"
 
 inline JSObject *GetConfigurationObject(JSContext *cx) {
 
@@ -45,7 +45,7 @@ inline JSObject *GetConfigurationObject(JSContext *cx) {
 
 
 // returns JSVAL_VOID on errors
-inline jsval GetConfigurationValue( JSContext *cx, const char *name ) {
+inline jsval GetConfigurationValue(JSContext *cx, const char *name) {
 
 	JSObject *configurationObject;
 	jsval value;
@@ -55,6 +55,22 @@ inline jsval GetConfigurationValue( JSContext *cx, const char *name ) {
 	if ( JS_GetProperty(cx, configurationObject, name, &value) != JS_TRUE )
 		return JSVAL_VOID;
 	return value;
+}
+
+inline JSBool SetConfigurationPrivateValue(JSContext *cx, const char *name, jsval value) {
+
+	JSObject *configObject = GetConfigurationObject(cx);
+	J_S_ASSERT( configObject != NULL, "Unable to get configuration object" );
+	J_CHKM1( JS_DefineProperty(cx, configObject, name, value, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ), "Unable to store %1 configuration item.", name );
+	return JS_TRUE;
+}
+
+inline JSBool SetConfigurationValue(JSContext *cx, const char *name, jsval value) {
+
+	JSObject *configObject = GetConfigurationObject(cx);
+	J_S_ASSERT( configObject != NULL, "Unable to get configuration object" );
+	J_CHKM1( JS_DefineProperty(cx, configObject, name, value, NULL, NULL, JSPROP_ENUMERATE), "Unable to store %1 configuration item.", name );
+	return JS_TRUE;
 }
 
 #endif // _JSCONFIGURATION_H_

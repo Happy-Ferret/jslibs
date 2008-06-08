@@ -21,7 +21,6 @@
 #define NAME_CONFIGURATION_OBJECT "_configuration"
 
 #define NAME_GLOBAL_ARGUMENTS "arguments"
-#define NAME_GLOBAL_ARGUMENT "argument"
 #define NAME_GLOBAL_SCRIPT_HOST_PATH "scripthostpath"
 #define NAME_GLOBAL_SCRIPT_HOST_NAME "scripthostname"
 #define NAME_GLOBAL_FIRST_INSTANCE "isfirstinstance"

@@ -309,10 +309,10 @@ JSContext* CreateHost(size_t maxMem, size_t maxAlloc) {
 	// Info: Increasing JSContext stack size slows down my scripts:
 	//   http://groups.google.com/group/mozilla.dev.tech.js-engine/browse_thread/thread/be9f404b623acf39/9efdfca81be99ca3
 
-	JS_SetScriptStackQuota( cx, JS_DEFAULT_SCRIPT_STACK_QUOTA ); // good place to manage stack limit ( that is 32MB by default )
+	JS_SetScriptStackQuota(cx, JS_DEFAULT_SCRIPT_STACK_QUOTA); // good place to manage stack limit ( that is 32MB by default )
 	//	btw, JS_SetScriptStackQuota ( see also JS_SetThreadStackLimit )
 
-	JS_SetVersion( cx, (JSVersion)JS_VERSION );
+	JS_SetVersion(cx, (JSVersion)JS_VERSION);
 	// (TBD) set into configuration file
 
 
@@ -372,26 +372,22 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, JSFastNative stdOut, JSFastNati
 	JSObject *globalObject = JS_GetGlobalObject(cx);
 	J_CHKM( globalObject != NULL, "Global object not found." );
 
-// Global configuration object
-	JSObject *configObject = GetConfigurationObject(cx);
-	J_CHKM( configObject != NULL, "failed to get/create configuration object." );
-
 // make GetErrorMessage available from any module
-	J_CHK( JS_DefineProperty(cx, configObject, NAME_CONFIGURATION_GETERRORMESSAGE, PRIVATE_TO_JSVAL(&pGetErrorMessage), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
+	J_CHK( SetConfigurationPrivateValue(cx, NAME_CONFIGURATION_GETERRORMESSAGE, PRIVATE_TO_JSVAL(&pGetErrorMessage)) );
 
 // global functions & properties
 	J_CHKM( JS_DefineProperty( cx, globalObject, NAME_GLOBAL_GLOBAL_OBJECT, OBJECT_TO_JSVAL(JS_GetGlobalObject(cx)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ), "unable to define a property." );
 	J_CHKM( JS_DefineFunction( cx, globalObject, NAME_GLOBAL_FUNCTION_LOAD_MODULE, LoadModule, 0, 0 ), "unable to define a property." );
 	J_CHKM( JS_DefineFunction( cx, globalObject, NAME_GLOBAL_FUNCTION_UNLOAD_MODULE, UnloadModule, 0, 0 ), "unable to define a property." );
 
+	J_CHK( SetConfigurationValue(cx, NAME_CONFIGURATION_UNSAFE_MODE, BOOLEAN_TO_JSVAL(unsafeMode)) );
 
 	jsval value;
 	value = OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunction(cx, (JSNative)stdErr, 1, JSFUN_FAST_NATIVE, NULL, NULL))); // If you do not assign a name to the function, it is assigned the name "anonymous".
-	J_CHKM( JS_SetProperty(cx, configObject, NAME_CONFIGURATION_STDERR, &value), "Unable to set store stderr into configuration." );
+	J_CHK( SetConfigurationValue(cx, NAME_CONFIGURATION_STDERR, value) );
+
 	value = OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunction(cx, (JSNative)stdOut, 1, JSFUN_FAST_NATIVE, NULL, NULL))); // If you do not assign a name to the function, it is assigned the name "anonymous".
-	J_CHKM( JS_SetProperty(cx, configObject, NAME_CONFIGURATION_STDOUT, &value), "Unable to set store stdout into configuration." );
-	value = BOOLEAN_TO_JSVAL(unsafeMode);
-	J_CHKM( JS_SetProperty(cx, configObject, NAME_CONFIGURATION_UNSAFE_MODE, &value), "Unable to set store unsafeMode into configuration." );
+	J_CHK( SetConfigurationValue(cx, NAME_CONFIGURATION_STDOUT, value) );
 
 // init static modules
 	J_CHKM( jslangInit(cx, globalObject), "Unable to initialize jslang." );
