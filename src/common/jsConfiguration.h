@@ -45,16 +45,16 @@ inline JSObject *GetConfigurationObject(JSContext *cx) {
 
 
 // returns JSVAL_VOID on errors
-inline jsval GetConfigurationValue(JSContext *cx, const char *name) {
+inline JSBool GetConfigurationValue(JSContext *cx, const char *name, jsval *value) {
 
-	JSObject *configurationObject;
-	jsval value;
-	configurationObject = GetConfigurationObject(cx);
-	if (configurationObject == NULL)
-		return JSVAL_VOID;
-	if ( JS_GetProperty(cx, configurationObject, name, &value) != JS_TRUE )
-		return JSVAL_VOID;
-	return value;
+	JSObject *configurationObject = GetConfigurationObject(cx);
+	if (configurationObject == NULL) {
+		
+		*value = JSVAL_VOID;
+		return JS_TRUE;
+	}
+	J_CHK( JS_GetProperty(cx, configurationObject, name, value) );
+	return JS_TRUE;
 }
 
 inline JSBool SetConfigurationPrivateValue(JSContext *cx, const char *name, jsval value) {

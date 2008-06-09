@@ -217,5 +217,12 @@ void ModuleFreeAll() {
 Program Library HOWTO
 	http://www.faqs.org/docs/Linux-HOWTO/Program-Library-HOWTO.html
 
+Dynamic-Link Library Search Order
+	http://msdn.microsoft.com/library/default.asp?url=/library/en-us/dllproc/base/dynamic-link_library_search_order.asp
+
+Dynamic-Link Library Redirection
+	http://msdn.microsoft.com/library/default.asp?url=/library/en-us/dllproc/base/dynamic_link_library_redirection.asp
+
+
 
 */

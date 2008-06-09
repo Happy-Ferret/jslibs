@@ -39,23 +39,22 @@
 #include "string.h"
 
 
-extern JSFunction *stdoutFunction;
-
-
 int _puts(JSContext *cx, const char *str) {
 
-	size_t len = strlen(str);
-	if ( stdoutFunction == NULL )
-		return EOF;
-	JSString *jsstr = JS_NewStringCopyN(cx, str, len);
-	if ( jsstr == NULL )
-		return EOF;
-//	jsstr = JS_ConcatStrings(cx, jsstr, JS_NewStringCopyZ(cx, "\n"));
-	jsval rval, strval = STRING_TO_JSVAL(jsstr);
-	if ( JS_CallFunction(cx, NULL, stdoutFunction, 1, &strval, &rval) == JS_TRUE )
-		return len;
-	else
-		return EOF;
+	jsval stdoutFunction;
+	GetConfigurationValue(cx, NAME_CONFIGURATION_STDOUT, &stdoutFunction); // (TBD) manage errors
+	if ( JS_TypeOfValue(cx, stdoutFunction) == JSTYPE_FUNCTION ) {
+
+		size_t len = strlen(str);
+		JSString *jsstr = JS_NewStringCopyN(cx, str, len);
+		if ( jsstr == NULL )
+			return EOF;
+	//	jsstr = JS_ConcatStrings(cx, jsstr, JS_NewStringCopyZ(cx, "\n"));
+		jsval rval, strval = STRING_TO_JSVAL(jsstr);
+		if ( JS_CallFunctionValue(cx, JS_GetGlobalObject(cx), stdoutFunction, 1, &strval, &rval) == JS_TRUE )
+			return len;
+	}
+	return EOF;
 }
 
 

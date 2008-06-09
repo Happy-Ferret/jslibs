@@ -22,22 +22,26 @@
 #include "buffer.h"
 #include "pack.h"
 
+//extern JSFunction *stdoutFunction;
+//JSFunction *stdoutFunction = NULL;
 
-DEFINE_UNSAFE_MODE;
-
-
-extern JSFunction *stdoutFunction;
-JSFunction *stdoutFunction = NULL;
+static bool _defaultUnsafeMode = false;
+extern bool *_pUnsafeMode = &_defaultUnsafeMode;
 
 
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
 // read configuration
-	jsval stdoutFunctionValue = GetConfigurationValue(cx, NAME_CONFIGURATION_STDOUT);
+//	jsval stdoutFunctionValue = GetConfigurationValue(cx, NAME_CONFIGURATION_STDOUT);
 //	RT_ASSERT( stdoutFunctionValue != JSVAL_VOID, "Unable to read stdout function from configuration object." );
-	stdoutFunction = JS_ValueToFunction(cx, stdoutFunctionValue); // returns NULL if the function is not defined
+//	stdoutFunction = JS_ValueToFunction(cx, stdoutFunctionValue); // returns NULL if the function is not defined
 
-	SET_UNSAFE_MODE( GetConfigurationValue(cx, NAME_CONFIGURATION_UNSAFE_MODE ) == JSVAL_TRUE );
+//	SET_UNSAFE_MODE( GetConfigurationValue(cx, NAME_CONFIGURATION_UNSAFE_MODE ) == JSVAL_TRUE );
+	jsval unsafeModePtrVal;
+	J_CHK( GetConfigurationValue(cx, NAME_CONFIGURATION_UNSAFE_MODE_PTR, &unsafeModePtrVal) );
+	if ( unsafeModePtrVal != JSVAL_VOID )
+		_pUnsafeMode = (bool*)JSVAL_TO_PRIVATE(unsafeModePtrVal);
+
 
 	INIT_STATIC();
 	INIT_CLASS( Data );

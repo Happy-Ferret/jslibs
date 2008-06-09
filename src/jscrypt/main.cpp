@@ -24,11 +24,15 @@
 #include "hash.h"
 #include "cipher.h"
 
-DEFINE_UNSAFE_MODE;
+static bool _defaultUnsafeMode = false;
+extern bool *_pUnsafeMode = &_defaultUnsafeMode;
 
 extern "C" DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
-	SET_UNSAFE_MODE( GetConfigurationValue(cx, "unsafeMode" ) == JSVAL_TRUE );
+	jsval unsafeModePtrVal;
+	J_CHK( GetConfigurationValue(cx, NAME_CONFIGURATION_UNSAFE_MODE_PTR, &unsafeModePtrVal) );
+	if ( unsafeModePtrVal != JSVAL_VOID )
+		_pUnsafeMode = (bool*)JSVAL_TO_PRIVATE(unsafeModePtrVal);
 
 	ltc_mp = ltm_desc; // register math
 
@@ -96,8 +100,6 @@ extern "C" DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 		regStatus = register_prng(prngList[i]);
 		RT_ASSERT_1( regStatus != -1, "Unable to load prng %s", prngList[i]->name );
 	}
-
-	SET_UNSAFE_MODE( GetConfigurationValue(cx, NAME_CONFIGURATION_UNSAFE_MODE ) == JSVAL_TRUE );
 
 	INIT_STATIC();
 	INIT_CLASS( CryptError );

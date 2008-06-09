@@ -13,14 +13,26 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-
 #include <string.h>
 
 #ifdef XP_UNIX
 #include <dlfcn.h> // cf. dlerror() in LoadModule()
 #endif
 
+#include <jsprf.h>
+#include <jsstddef.h>
+
+#include "moduleManager.h"
+
+#include "../common/jsHelper.h"
+#include "../common/jsNames.h"
+#include "../common/jsConfiguration.h"
 #include "../common/errors.h"
+
+#include "../jslang/jslang.h"
+
+#include "host.h"
+
 
 JSErrorFormatString errorFormatString[J_ErrLimit] = {
 #define MSG_DEF(name, number, count, exception, format) \
@@ -36,22 +48,12 @@ static const JSErrorFormatString *GetErrorMessage(void *userRef, const char *loc
 	return NULL;
 }
 
-static const void *pGetErrorMessage = &GetErrorMessage; // global variable !
+static const void *_pGetErrorMessage = &GetErrorMessage; // global variable !
 
+static bool _unsafeMode = false; // global variable !
+extern bool *_pUnsafeMode = &_unsafeMode; // global variable !
 
-#include <jsprf.h>
-#include <jsstddef.h>
-
-#include "moduleManager.h"
-
-#include "../common/jsHelper.h"
-#include "../common/jsNames.h"
-#include "../common/jsConfiguration.h"
-
-// static modules
-#include "../jslang/jslang.h"
-
-#include "host.h"
+static u_int32_t gBranchCount = 1; // global variable !
 
 
 //#define RT_HOST_MAIN_ASSERT( condition, errorMessage )
@@ -60,8 +62,9 @@ static const void *pGetErrorMessage = &GetErrorMessage; // global variable !
 
 void stdErrRouter( JSContext *cx, const char *message, size_t length ) {
 
-	JSObject *globalObject = JS_GetGlobalObject(cx);
-	jsval fct = GetConfigurationValue(cx, NAME_CONFIGURATION_STDERR);
+	JSObject *globalObject = JS_GetGlobalObject(cx); // (TBD) manage errors
+	jsval fct;
+	GetConfigurationValue(cx, NAME_CONFIGURATION_STDERR, &fct); // (TBD) manage errors
 	if ( JS_TypeOfValue(cx, fct) == JSTYPE_FUNCTION ) {
 
 		jsval rval, strVal;
@@ -87,8 +90,10 @@ static void ErrorReporter(JSContext *cx, const char *message, JSErrorReport *rep
     }
 
 	// check if we should report warnings
-	if ( JSREPORT_IS_WARNING(report->flags) && GetConfigurationValue(cx, NAME_CONFIGURATION_UNSAFE_MODE ) == JSVAL_TRUE )
-		return;
+	if ( JSREPORT_IS_WARNING(report->flags) )
+//		if ( GetConfigurationValue(cx, NAME_CONFIGURATION_UNSAFE_MODE ) == JSVAL_TRUE )
+		if ( _unsafeMode )
+			return;
 
 //	if (JSREPORT_IS_EXCEPTION(report->flags))
 //		return;
@@ -154,44 +159,6 @@ static void ErrorReporter(JSContext *cx, const char *message, JSErrorReport *rep
     JS_free(cx, prefix);
 }
 
-
-
-/*
-// function copied from mozilla/js/src/js.c
-static uint32 gBranchLimit = 1000000;
-static uint32 gBranchCount;
-static JSBool BranchCallback(JSContext *cx, JSScript *script) {
-
-	if (++g
-	Count == gBranchLimit) {
-
-		char *msg;
-		if (script) {
-
-			if (script->filename) {
-
-				msg = JS_smprintf("%s:", script->filename);
-				consoleStdErr(cx, msg, strlen(msg));
-			}
-			msg = JS_smprintf("%u: script branch callback (%u callbacks)\n", script->lineno, gBranchLimit);
-			consoleStdErr(cx, msg, strlen(msg));
-		} else {
-
-			msg = JS_smprintf("native branch callback (%u callbacks)\n", gBranchLimit);
-			consoleStdErr(cx, msg, strlen(msg));
-		}
-		gBranchCount = 0;
-		return JS_FALSE;
-	}
-
-	if ((gBranchCount & 0x3fff) == 1)
-		JS_MaybeGC(cx);
-	return JS_TRUE;
-}
-*/
-
-
-static u_int32_t gBranchCount = 1; // global variable !
 static JSBool BranchCallback(JSContext *cx, JSScript *script) {
 
 	if ((++gBranchCount & (0x1000-1)) != 1) // every 4096
@@ -204,32 +171,21 @@ static JSBool BranchCallback(JSContext *cx, JSScript *script) {
 static JSBool LoadModule(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
 	RT_ASSERT_ARGC(1);
-
 	const char *fileName;
 	J_CHK( JsvalToString(cx, argv[0], &fileName) );
 	char libFileName[PATH_MAX];
 	strcpy( libFileName, fileName );
 	strcat( libFileName, DLL_EXT );
-
 // MAC OSX: 	'@executable_path' ??
-//	if ( !ModuleIsLoaded( libFileName ) ) {
-
-		ModuleId id = ModuleLoad(libFileName, cx, obj);
+	ModuleId id = ModuleLoad(libFileName, cx, obj);
 
 #ifdef XP_UNIX
-
 	RT_ASSERT_2( id != 0, "Unable to load the module \"%s\": %s", libFileName, dlerror() );
 #else // XP_UNIX
-
-		RT_ASSERT_1( id != 0, "Unable to load the module \"%s\".", libFileName );
+	RT_ASSERT_2( id != 0, "Unable to load the module \"%s\": %d", libFileName, GetLastError() );
 #endif // XP_UNIX
 
-	//	RT_ASSERT_2( id != 0, "Unable to load the module %s (error:%d).", libFileName, GetLastError() ); // (TBD) rewrite this for Linux
-	//	RT_ASSERT_2( id != 0, "Unable to load the module %s (error:%s).", libFileName, dlerror() );
-		RT_CHECK_CALL( JS_NewNumberValue(cx, id, rval) ); // (TBD) really needed ? yes, UnloadModule need this ID
-//	} else { // module already loaded
-//	}
-//	*rval = JSVAL_TRUE;
+	RT_CHECK_CALL( JS_NewNumberValue(cx, id, rval) ); // (TBD) really needed ? yes, UnloadModule need this ID
 	return JS_TRUE;
 }
 
@@ -247,11 +203,11 @@ static JSBool UnloadModule(JSContext *cx, JSObject *obj, uintN argc, jsval *argv
 		RT_ASSERT( st == true, "Unable to unload the module" );
 		*rval = JSVAL_TRUE;
 	} else {
+
 		*rval = JSVAL_FALSE;
 	}
 	return JS_TRUE;
 }
-
 
 
 static JSBool global_enumerate(JSContext *cx, JSObject *obj) { // see LAZY_STANDARD_CLASSES
@@ -260,9 +216,6 @@ static JSBool global_enumerate(JSContext *cx, JSObject *obj) { // see LAZY_STAND
 }
 
 static JSBool global_resolve(JSContext *cx, JSObject *obj, jsval id, uintN flags, JSObject **objp) { // see LAZY_STANDARD_CLASSES
-
-//	char *str;
-//	J_JSVAL_TO_STRING(id, str);
 
 	if ((flags & JSRESOLVE_ASSIGNING) == 0) {
 
@@ -278,7 +231,7 @@ static JSBool global_resolve(JSContext *cx, JSObject *obj, jsval id, uintN flags
 }
 
 // global object
-	// doc: For full ECMAScript standard compliance, obj should be of a JSClass that has the JSCLASS_GLOBAL_FLAGS flag.
+// doc: For full ECMAScript standard compliance, obj should be of a JSClass that has the JSCLASS_GLOBAL_FLAGS flag.
 static JSClass global_class = { // global variable !
 
 	NAME_GLOBAL_CLASS, JSCLASS_GLOBAL_FLAGS | JSCLASS_NEW_RESOLVE,
@@ -326,7 +279,7 @@ JSContext* CreateHost(size_t maxMem, size_t maxAlloc) {
 	//		options |= JSOPTION_STRICT;
 	//	JS_SetOptions(cx, options );
 
-	JS_SetOptions(cx, JSOPTION_VAROBJFIX | JSOPTION_XML | JSOPTION_COMPILE_N_GO | JSOPTION_RELIMIT | JSOPTION_NATIVE_BRANCH_CALLBACK );
+	JS_SetOptions(cx, JSOPTION_VAROBJFIX | JSOPTION_XML | JSOPTION_COMPILE_N_GO | JSOPTION_RELIMIT | JSOPTION_NATIVE_BRANCH_CALLBACK);
   // JSOPTION_COMPILE_N_GO:
 	//  caller of JS_Compile*Script promises to execute compiled script once only; enables compile-time scope chain resolution of consts.
   // JSOPTION_DONT_REPORT_UNCAUGHT:
@@ -366,29 +319,37 @@ JSContext* CreateHost(size_t maxMem, size_t maxAlloc) {
 
 JSBool InitHost( JSContext *cx, bool unsafeMode, JSFastNative stdOut, JSFastNative stdErr ) {
 
-	if ( unsafeMode )
+	_unsafeMode = unsafeMode;
+
+	if ( _unsafeMode )
 		JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_STRICT);
 
 	JSObject *globalObject = JS_GetGlobalObject(cx);
 	J_CHKM( globalObject != NULL, "Global object not found." );
 
 // make GetErrorMessage available from any module
-	J_CHK( SetConfigurationPrivateValue(cx, NAME_CONFIGURATION_GETERRORMESSAGE, PRIVATE_TO_JSVAL(&pGetErrorMessage)) );
+	J_CHK( SetConfigurationPrivateValue(cx, NAME_CONFIGURATION_GETERRORMESSAGE, PRIVATE_TO_JSVAL(&_pGetErrorMessage)) );
 
 // global functions & properties
 	J_CHKM( JS_DefineProperty( cx, globalObject, NAME_GLOBAL_GLOBAL_OBJECT, OBJECT_TO_JSVAL(JS_GetGlobalObject(cx)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ), "unable to define a property." );
 	J_CHKM( JS_DefineFunction( cx, globalObject, NAME_GLOBAL_FUNCTION_LOAD_MODULE, LoadModule, 0, 0 ), "unable to define a property." );
 	J_CHKM( JS_DefineFunction( cx, globalObject, NAME_GLOBAL_FUNCTION_UNLOAD_MODULE, UnloadModule, 0, 0 ), "unable to define a property." );
 
-	J_CHK( SetConfigurationValue(cx, NAME_CONFIGURATION_UNSAFE_MODE, BOOLEAN_TO_JSVAL(unsafeMode)) );
+//	J_CHK( SetConfigurationValue(cx, NAME_CONFIGURATION_UNSAFE_MODE, BOOLEAN_TO_JSVAL(_unsafeMode)) );
+	J_CHK( SetConfigurationValue(cx, NAME_CONFIGURATION_UNSAFE_MODE_PTR, PRIVATE_TO_JSVAL(&_unsafeMode)) );
 
 	jsval value;
-	value = OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunction(cx, (JSNative)stdErr, 1, JSFUN_FAST_NATIVE, NULL, NULL))); // If you do not assign a name to the function, it is assigned the name "anonymous".
-	J_CHK( SetConfigurationValue(cx, NAME_CONFIGURATION_STDERR, value) );
+	if ( stdErr != NULL ) {
 
-	value = OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunction(cx, (JSNative)stdOut, 1, JSFUN_FAST_NATIVE, NULL, NULL))); // If you do not assign a name to the function, it is assigned the name "anonymous".
-	J_CHK( SetConfigurationValue(cx, NAME_CONFIGURATION_STDOUT, value) );
+		value = OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunction(cx, (JSNative)stdErr, 1, JSFUN_FAST_NATIVE, NULL, NULL))); // If you do not assign a name to the function, it is assigned the name "anonymous".
+		J_CHK( SetConfigurationValue(cx, NAME_CONFIGURATION_STDERR, value) );
+	}
 
+	if ( stdOut != NULL ) {
+		
+		value = OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunction(cx, (JSNative)stdOut, 1, JSFUN_FAST_NATIVE, NULL, NULL))); // If you do not assign a name to the function, it is assigned the name "anonymous".
+		J_CHK( SetConfigurationValue(cx, NAME_CONFIGURATION_STDOUT, value) );
+	}
 // init static modules
 	J_CHKM( jslangInit(cx, globalObject), "Unable to initialize jslang." );
 	return JS_TRUE;
@@ -399,27 +360,18 @@ void DestroyHost( JSContext *cx ) {
 
 	JSRuntime *rt = JS_GetRuntime(cx);
 
-//  printf("script result: %s\n", JS_GetStringBytes(JS_ValueToString(cx, rval)));
-
 	ModuleReleaseAll(cx);
 
 //	JS_GC(cx); // try to break linked objects
 // (TBD) don't
 
 // cleanup
-	// For each context you've created
 	JS_DestroyContext(cx); // (TBD) is JS_DestroyContextNoGC faster ?
-
-	// For each runtime
 	JS_DestroyRuntime(rt);
-
-	// And finally
 	JS_ShutDown();
 
 // Beware: because JS engine allocate memory from the DLL, all memory must be disallocated before releasing the DLL
-	// free used modules
 	ModuleFreeAll();
-	// (TBD) make rt, cx, script, ... global and finish them
 }
 
 
@@ -464,27 +416,18 @@ JSBool ExecuteScript( JSContext *cx, const char *scriptFileName, bool compileOnl
 
 	JSScript *script = JS_CompileFileHandle(cx, globalObject, scriptFileName, file);
 	J_CHKM1( script != NULL, "Unable to compile the script %s.", scriptFileName );
-
-	// (TBD) fclose(file); ??
-
-//	JS_AddRoot(cx, &script);
-
-//  JSScript *script = LoadScript( cx, globalObject, scriptName, saveCompiledScripts );
-
+	fclose(file);
 
 	// You need to protect a JSScript (via a rooted script object) if and only if a garbage collection can occur between compilation and the start of execution.
 
 	if ( !compileOnly ) {
-		// MUST be executed only once ( JSOPTION_COMPILE_N_GO )
-		J_CHK( JS_ExecuteScript( cx, globalObject, script, rval ) );
+
+		J_CHK( JS_ExecuteScript( cx, globalObject, script, rval ) ); // MUST be executed only once ( JSOPTION_COMPILE_N_GO )
 	} else {
+
 		*rval = JSVAL_VOID;
 	}
 
-	if ( script != NULL )
-		JS_DestroyScript(cx, script);
-
 	J_CHKM( JS_DeleteProperty(cx, globalObject, NAME_GLOBAL_ARGUMENTS ), "Unable to remove argument property" );
-
 	return JS_TRUE;
 }

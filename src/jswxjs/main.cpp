@@ -29,7 +29,8 @@ typedef void (*WXJS_DESTROY_PROC)();
 typedef void (*WXJS_ERROR_PROC)(JSErrorReporter er);
 
 
-DEFINE_UNSAFE_MODE
+static bool _defaultUnsafeMode = false;
+extern bool *_pUnsafeMode = &_defaultUnsafeMode;
 
 static HMODULE _moduleList[MAX_WXJS_MODULES] = { NULL };
 
@@ -77,7 +78,11 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 //	RT_ASSERT( stdoutFunctionValue != JSVAL_VOID, "Unable to read stdout function from configuration object." );
 //	stdoutFunction = JS_ValueToFunction(cx, stdoutFunctionValue); // returns NULL if the function is not defined
 
-	SET_UNSAFE_MODE( GetConfigurationValue(cx, "unsafeMode" ) == JSVAL_TRUE );
+	jsval unsafeModePtrVal;
+	J_CHK( GetConfigurationValue(cx, NAME_CONFIGURATION_UNSAFE_MODE_PTR, &unsafeModePtrVal) );
+	if ( unsafeModePtrVal != JSVAL_VOID )
+		_pUnsafeMode = (bool*)JSVAL_TO_PRIVATE(unsafeModePtrVal);
+
 
 	INIT_STATIC();
 	return JS_TRUE;

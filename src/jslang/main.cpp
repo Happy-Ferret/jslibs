@@ -16,19 +16,23 @@
 
 #include "jslang.h"
 
-DEFINE_UNSAFE_MODE
+//static bool _defaultUnsafeMode = false;
+//extern bool *_pUnsafeMode = &_defaultUnsafeMode;
 
 JSBool jslangInit(JSContext *cx, JSObject *obj) {
+
+//	jsval unsafeModePtrVal;
+//	J_CHK( GetConfigurationValue(cx, NAME_CONFIGURATION_UNSAFE_MODE_PTR, &unsafeModePtrVal) );
+//	if ( unsafeModePtrVal != JSVAL_VOID )
+//		_pUnsafeMode = (bool*)JSVAL_TO_PRIVATE(unsafeModePtrVal);
+
 
 	JSObject *globalObject = JS_GetGlobalObject(cx);
 	RT_ASSERT( obj == globalObject, "This module must be load into the global namespace" );
 //	obj = JS_GetGlobalObject(cx); // avoid LoadModule.call( foo, 'jslang' );
 
-	SET_UNSAFE_MODE( GetConfigurationValue(cx, "unsafeMode" ) == JSVAL_TRUE );
-
 	INIT_CLASS( BString );
 	INIT_CLASS( Stream );
-
 
 	return JS_TRUE;
 }

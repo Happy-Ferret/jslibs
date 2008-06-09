@@ -15,19 +15,15 @@
 #include "stdafx.h"
 #include "static.h"
 
-DEFINE_UNSAFE_MODE
-
-
-extern JSFunction *stdoutFunction;
-JSFunction *stdoutFunction = NULL;
-
+static bool _defaultUnsafeMode = false;
+extern bool *_pUnsafeMode = &_defaultUnsafeMode;
 
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
-	SET_UNSAFE_MODE( GetConfigurationValue(cx, "unsafeMode" ) == JSVAL_TRUE );
-
-	jsval stdoutFunctionValue = GetConfigurationValue(cx, NAME_CONFIGURATION_STDOUT);
-	stdoutFunction = JS_ValueToFunction(cx, stdoutFunctionValue); // returns NULL if the function is not defined
+	jsval unsafeModePtrVal;
+	J_CHK( GetConfigurationValue(cx, NAME_CONFIGURATION_UNSAFE_MODE_PTR, &unsafeModePtrVal) );
+	if ( unsafeModePtrVal != JSVAL_VOID )
+		_pUnsafeMode = (bool*)JSVAL_TO_PRIVATE(unsafeModePtrVal);
 
 	INIT_STATIC();
 

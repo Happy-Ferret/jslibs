@@ -17,11 +17,15 @@
 #include "static.h"
 #include "template.h"
 
-DEFINE_UNSAFE_MODE;
+static bool _defaultUnsafeMode = false;
+extern bool *_pUnsafeMode = &_defaultUnsafeMode;
 
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
-	SET_UNSAFE_MODE( GetConfigurationValue(cx, NAME_CONFIGURATION_UNSAFE_MODE ) == JSVAL_TRUE );
+	jsval unsafeModePtrVal;
+	J_CHK( GetConfigurationValue(cx, NAME_CONFIGURATION_UNSAFE_MODE_PTR, &unsafeModePtrVal) );
+	if ( unsafeModePtrVal != JSVAL_VOID )
+		_pUnsafeMode = (bool*)JSVAL_TO_PRIVATE(unsafeModePtrVal);
 
 	INIT_STATIC();
 	INIT_CLASS( Template );

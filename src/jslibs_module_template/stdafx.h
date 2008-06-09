@@ -12,7 +12,6 @@
 #include <jsapi.h>
 #include "../common/jsNames.h"
 
-#define USE_UNSAFE_MODE
 #include "../common/jsHelper.h"
 #include "../common/jsClass.h"
 #include "../common/jsConfiguration.h"

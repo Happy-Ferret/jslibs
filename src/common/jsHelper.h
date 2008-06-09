@@ -34,9 +34,15 @@ inline NIBufferGet BufferGetInterface( JSContext *cx, JSObject *obj );
 
 //#include "../jslang/bstringapi.h"
 
+#ifdef DEBUG
+	#define IFDEBUG(expr) expr
+#else
+	#define IFDEBUG(expr)
+#endif // DEBUG
 
 // unsafe mode management
 
+/*
 #ifdef USE_UNSAFE_MODE
 	extern bool _unsafeMode;
 #else
@@ -46,7 +52,9 @@ inline NIBufferGet BufferGetInterface( JSContext *cx, JSObject *obj );
 #define DEFINE_UNSAFE_MODE	bool _unsafeMode = false;
 
 #define SET_UNSAFE_MODE(polarity) _unsafeMode = (polarity);
+*/
 
+extern bool *_pUnsafeMode;
 
 ///////////////////////////////////////////////////////////////////////////////
 // common error messages
@@ -55,10 +63,12 @@ inline NIBufferGet BufferGetInterface( JSContext *cx, JSObject *obj );
 #define J__TOSTRING(x) J__STRINGIFY(x)
 
 #ifdef DEBUG
-	#define J__CODE_LOCATION " (in " __FILE__ ":" J__TOSTRING(__LINE__) ")"
+	#define J__CODE_LOCATION __FILE__ ":" J__TOSTRING(__LINE__)
 #else
 	#define J__CODE_LOCATION ""
 #endif // DEBUG
+
+
 
 #define J__ERRMSG_NO_CONSTRUCT "This object cannot be construct."
 #define J__ERRMSG_NEED_CONSTRUCTION "Construction is needed for this object."
@@ -132,7 +142,7 @@ inline NIBufferGet BufferGetInterface( JSContext *cx, JSObject *obj );
 	do { \
 		if (unlikely( !(status) )) { \
 			if ( !JS_IsExceptionPending(cx) ) \
-				JS_ReportError(cx, (errorMessage J__CODE_LOCATION)); \
+				JS_ReportError(cx, (errorMessage IFDEBUG(" (@" J__CODE_LOCATION ")"))); \
 			return JS_FALSE; \
 		} \
 	} while(0) \
@@ -142,7 +152,7 @@ inline NIBufferGet BufferGetInterface( JSContext *cx, JSObject *obj );
 	do { \
 		if (unlikely( !(status) )) { \
 			if ( !JS_IsExceptionPending(cx) ) \
-				JS_ReportError(cx, (errorMessage J__CODE_LOCATION), (arg)); \
+				JS_ReportError(cx, (errorMessage IFDEBUG(" (@" J__CODE_LOCATION ")")), (arg)); \
 			return JS_FALSE; \
 		} \
 	} while(0) \
@@ -156,46 +166,46 @@ inline NIBufferGet BufferGetInterface( JSContext *cx, JSObject *obj );
 #define J_IS_SAFE_MODE(code) \
 
 #define J_SAFE(code) \
-	do { if (unlikely( !_unsafeMode )) {code;} } while(0)
+	do { if (unlikely( !*_pUnsafeMode )) {code;} } while(0)
 
 #define J_UNSAFE(code) \
-	do { if (likely( _unsafeMode )) {code;} } while(0)
+	do { if (likely( *_pUnsafeMode )) {code;} } while(0)
 
 
 
 // Reports warnings. May be disabled in unsafemode
 #define J_REPORT_WARNING(errorMessage) \
-	do { JS_ReportWarning( cx, (errorMessage J__CODE_LOCATION) ); } while(0)
+	do { JS_ReportWarning( cx, (errorMessage IFDEBUG(" (@" J__CODE_LOCATION ")")) ); } while(0)
 
 #define J_REPORT_WARNING_1(errorMessage, arg) \
-	do { JS_ReportWarning( cx, (errorMessage J__CODE_LOCATION), (arg) ); } while(0)
+	do { JS_ReportWarning( cx, (errorMessage IFDEBUG(" (@" J__CODE_LOCATION ")")), (arg) ); } while(0)
 
 #define J_REPORT_WARNING_2(errorMessage, arg1, arg2) \
-	do { JS_ReportWarning( cx, (errorMessage J__CODE_LOCATION), (arg1), (arg2) ); } while(0)
+	do { JS_ReportWarning( cx, (errorMessage IFDEBUG(" (@" J__CODE_LOCATION ")")), (arg1), (arg2) ); } while(0)
 
 
 // Reports a fatal errors, script must stop as soon as possible.
 #define J_REPORT_ERROR(errorMessage) \
-	do { JS_ReportError( cx, (errorMessage J__CODE_LOCATION) ); return JS_FALSE; } while(0)
+	do { JS_ReportError( cx, (errorMessage IFDEBUG(" (@" J__CODE_LOCATION ")")) ); return JS_FALSE; } while(0)
 
 #define J_REPORT_ERROR_1(errorMessage, arg) \
-	do { JS_ReportError( cx, (errorMessage J__CODE_LOCATION), (arg) ); return JS_FALSE; } while(0)
+	do { JS_ReportError( cx, (errorMessage IFDEBUG(" (@" J__CODE_LOCATION ")")), (arg) ); return JS_FALSE; } while(0)
 
 #define J_REPORT_ERROR_2(errorMessage, arg1, arg2) \
-	do { JS_ReportError( cx, (errorMessage J__CODE_LOCATION), (arg1), (arg2) ); return JS_FALSE; } while(0)
+	do { JS_ReportError( cx, (errorMessage IFDEBUG(" (@" J__CODE_LOCATION ")")), (arg1), (arg2) ); return JS_FALSE; } while(0)
 
 
 
 // J_S_ stands for (J)slibs _ (S)afemode _ and mean that these macros will only be meaningful when unsafemode is false (see jslibs unsafemode).
 
 #define J_S_ASSERT( condition, errorMessage ) \
-	do { if (unlikely( !_unsafeMode && !(condition) )) { JS_ReportError( cx, (errorMessage J__CODE_LOCATION) ); return JS_FALSE; } } while(0)
+	do { if (unlikely( !*_pUnsafeMode && !(condition) )) { JS_ReportError( cx, errorMessage IFDEBUG(" (" #condition " @" J__CODE_LOCATION ")") ); return JS_FALSE; } } while(0)
 
 #define J_S_ASSERT_1( condition, errorMessage, arg ) \
-	do { if (unlikely( !_unsafeMode && !(condition) )) { JS_ReportError( cx, (errorMessage J__CODE_LOCATION), (arg) ); return JS_FALSE; } } while(0)
+	do { if (unlikely( !*_pUnsafeMode && !(condition) )) { JS_ReportError( cx, errorMessage IFDEBUG(" (" #condition " @" J__CODE_LOCATION ")"), (arg) ); return JS_FALSE; } } while(0)
 
 #define J_S_ASSERT_2( condition, errorMessage, arg1, arg2 ) \
-	do { if (unlikely( !_unsafeMode && !(condition) )) { JS_ReportError( cx, (errorMessage J__CODE_LOCATION), (arg1), (arg2) ); return JS_FALSE; } } while(0)
+	do { if (unlikely( !*_pUnsafeMode && !(condition) )) { JS_ReportError( cx, errorMessage IFDEBUG(" (" #condition " @" J__CODE_LOCATION ")"), (arg1), (arg2) ); return JS_FALSE; } } while(0)
 
 
 #define J_S_ASSERT_ARG_MIN(minCount) \
@@ -307,6 +317,30 @@ inline JSBool JsvalToStringAndLength( JSContext *cx, jsval val, const char** buf
 #define J_JSVAL_TO_STRING_AND_LENGTH( val, str, len ) do { \
 	J_CHK( JsvalToStringAndLength(cx, (val), &(str), &(len)) ); \
 } while(0)
+
+
+inline JSBool JsvalToStringLength( JSContext *cx, jsval val, size_t *length ) {
+
+	if ( JSVAL_IS_STRING(val) ) {
+
+		*length = J_STRING_LENGTH( JSVAL_TO_STRING( val ) );
+		return JS_TRUE;
+	}
+
+	if ( JSVAL_IS_OBJECT(val) && !JSVAL_IS_NULL(val) ) {
+
+		NIBufferGet fct = BufferGetNativeInterface(cx, JSVAL_TO_OBJECT(val));
+		const char* tmp;
+		if ( fct )
+			return fct(cx, JSVAL_TO_OBJECT(val), &tmp, length);
+	}
+
+	JSString *str = JS_ValueToString(cx, val);
+	J_S_ASSERT( str != NULL, J__ERRMSG_STRING_CONVERSION_FAILED );
+	*length = J_STRING_LENGTH(str);
+	return JS_TRUE;
+}
+
 
 inline JSBool JsvalToString( JSContext *cx, jsval val, const char** buffer ) {
 

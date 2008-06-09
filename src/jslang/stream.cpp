@@ -145,7 +145,7 @@ DEFINE_PROPERTY( available ) {
 		J_CHECK_CALL( JS_ValueToObject(cx, *vp, &srcObj) );
 	int length, position;
 	J_CHECK_CALL( PositionGet(cx, obj, &position) );
-	JS_GetProperty(cx, srcObj, "length", vp); // use vp as a tmp variable
+	J_CHK( JS_GetProperty(cx, srcObj, "length", vp) ); // use vp as a tmp variable
 	if ( *vp == JSVAL_VOID )
 		return JS_TRUE; // if length is not defined, the returned value is undefined
 	J_CHECK_CALL( JsvalToInt(cx, *vp, &length) );

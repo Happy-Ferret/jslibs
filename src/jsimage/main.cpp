@@ -22,13 +22,15 @@ DECLARE_STATIC()
 #include "jspng.h"
 #include "jsjpeg.h"
 
-DEFINE_UNSAFE_MODE
+static bool _defaultUnsafeMode = false;
+extern bool *_pUnsafeMode = &_defaultUnsafeMode;
 
 extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
-//	JS_DefineProperty(cx, obj, MODULE_NAME "_build", INT_TO_JSVAL(atoi(_revision+6)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ); // 6 is the size of "$Rev: "
-
-	SET_UNSAFE_MODE( GetConfigurationValue(cx, "unsafeMode" ) == JSVAL_TRUE );
+	jsval unsafeModePtrVal;
+	J_CHK( GetConfigurationValue(cx, NAME_CONFIGURATION_UNSAFE_MODE_PTR, &unsafeModePtrVal) );
+	if ( unsafeModePtrVal != JSVAL_VOID )
+		_pUnsafeMode = (bool*)JSVAL_TO_PRIVATE(unsafeModePtrVal);
 
 	INIT_STATIC();
 //	INIT_CLASS( Image );

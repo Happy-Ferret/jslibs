@@ -13,6 +13,7 @@
 #define XP_WIN
 #include <jsapi.h>
 #include "../common/jsNames.h"
+#include "../common/jsConfiguration.h"
 #include "../common/jsHelper.h"
 #include "../common/jsClass.h"
 

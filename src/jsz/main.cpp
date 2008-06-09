@@ -17,9 +17,16 @@
 #include "zError.h"
 #include "z.h"
 
+static bool _defaultUnsafeMode = false;
+extern bool *_pUnsafeMode = &_defaultUnsafeMode;
+
 extern "C" DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
-//	JS_DefineProperty(cx, obj, MODULE_NAME "_build", INT_TO_JSVAL(atoi(_revision+6)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ); // 6 is the size of "$Rev: "
+	jsval unsafeModePtrVal;
+	J_CHK( GetConfigurationValue(cx, NAME_CONFIGURATION_UNSAFE_MODE_PTR, &unsafeModePtrVal) );
+	if ( unsafeModePtrVal != JSVAL_VOID )
+		_pUnsafeMode = (bool*)JSVAL_TO_PRIVATE(unsafeModePtrVal);
+
 
 	zInitClass( cx, obj );
 	InitErrorClass( cx, obj );
@@ -35,17 +42,3 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
 }
 #endif // XP_WIN
 
-/*
-BOOL APIENTRY DllMain( HANDLE hModule, DWORD  ul_reason_for_call, LPVOID lpReserved ) {
-
-  switch (ul_reason_for_call) {
-
-	  case DLL_PROCESS_ATTACH:
-	  case DLL_THREAD_ATTACH:
-	  case DLL_THREAD_DETACH:
-	  case DLL_PROCESS_DETACH:
-		  break;
-  }
-  return TRUE;
-}
-*/

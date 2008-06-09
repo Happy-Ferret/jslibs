@@ -35,7 +35,8 @@ static JSBool J_ReportError( JSContext *cx, J_ErrNum name ) {
 	static JSErrorCallback errorCallback = NULL;
 	if ( errorCallback == NULL ) {
 
-		jsval tmp = GetConfigurationValue(cx, NAME_CONFIGURATION_GETERRORMESSAGE);
+		jsval tmp;
+		J_CHK( GetConfigurationValue(cx, NAME_CONFIGURATION_GETERRORMESSAGE, &tmp) );
 		if ( tmp != JSVAL_VOID ) {
 			errorCallback = *(JSErrorCallback*)JSVAL_TO_PRIVATE(tmp);
 		} else {

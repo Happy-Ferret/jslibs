@@ -11,3 +11,5 @@
 #include <stdlib.h>
 
 #include "../common/jsHelper.h"
+#include "../common/jsNames.h"
+#include "../common/jsConfiguration.h"

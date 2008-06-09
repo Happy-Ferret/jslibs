@@ -369,7 +369,8 @@ DEFINE_FUNCTION_FAST( TimeCounter ) {
 DEFINE_FUNCTION_FAST( Print ) {
 
 	JSObject *globalObject = JS_GetGlobalObject(cx);
-	jsval fct = GetConfigurationValue(cx, NAME_CONFIGURATION_STDOUT);
+	jsval fct;
+	J_CHK( GetConfigurationValue(cx, NAME_CONFIGURATION_STDOUT, &fct) );
 	if ( JS_TypeOfValue(cx, fct) == JSTYPE_FUNCTION )
 		J_CHK( JS_CallFunctionValue(cx, globalObject, fct, J_ARGC, &J_FARG(1), J_FRVAL) );
 
