@@ -574,6 +574,7 @@ err:
 DEFINE_FUNCTION( Read ) { // Read( [ amount | <undefined> ] )
 
 	RT_ASSERT_RESOURCE( JS_GetPrivate(cx, obj) ); // first, ensure that the object is valid
+
 	if ( J_ARGC == 1 && J_ARG(1) == JSVAL_VOID ) { // read the next chunk (of an unknown length) (read something as fast as possible)
 
 		RT_CHECK_CALL( ReadOneChunk(cx, obj, rval) );
@@ -658,12 +659,57 @@ DEFINE_FUNCTION( Unread ) {
 	return JS_TRUE;
 }
 
-/*
+
 DEFINE_FUNCTION( toString ) {
+/*
+	RT_ASSERT_RESOURCE( JS_GetPrivate(cx, obj) ); // first, ensure that the object is valid
+	size_t amount;
+	RT_CHECK_CALL( BufferLengthGet(cx, obj, &amount) ); // no arguments then read the whole buffer
+	RT_CHECK_CALL( ReadAmount(cx, obj, amount, rval) );
+	JSString jsstr = JS_ValueToString(cx, *rval);
+	J_S_ASSERT( jsstr != NULL, "Unable to convert to string." );
+	*rval = STRING_TO_JSVAL( jsstr );
+	return JS_TRUE;
+*/
+
+	Queue *queue = (Queue*)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE( queue );
+
+	size_t bufferLength;
+	J_CHK( BufferLengthGet(cx, obj, &bufferLength) );
+	if ( bufferLength == 0 ) {
+
+		*rval = STRING_TO_JSVAL( JS_GetEmptyStringValue(cx) );
+		return JS_TRUE;
+	}
+
+	char *buffer = (char*)JS_malloc(cx, bufferLength +1);
+	J_S_ASSERT_ALLOC( buffer );
+	buffer[bufferLength] = '\0';
+
+	size_t pos = 0;
+
+	while ( !QueueIsEmpty(queue) ) {
+
+		jsval *pNewStr = (jsval*)QueueShift(queue);
+		const char *chunkBuf;
+		size_t chunkLen;
+		J_CHK( JsvalToStringAndLength(cx, *pNewStr, &chunkBuf, &chunkLen) );
+		memcpy(buffer + pos, chunkBuf, chunkLen);
+		pos += chunkLen;
+		J_CHK( JS_RemoveRoot(cx, pNewStr) );
+		free(pNewStr);
+	}
+
+	J_CHK( BufferLengthSet(cx, obj, 0) );
+
+	JSString *str = JS_NewString(cx, buffer, bufferLength);
+	J_S_ASSERT_ALLOC( str );
+	*rval = STRING_TO_JSVAL(str);
 
 	return JS_TRUE;
 }
-*/
+
 
 DEFINE_PROPERTY( length ) {
 
@@ -686,8 +732,8 @@ CONFIGURE_CLASS
 		FUNCTION(IndexOf)
 		FUNCTION(Match)
 		FUNCTION(Skip)
-//		FUNCTION(toString)
-		FUNCTION_ALIAS(toString, Read) // used when the buffer has to be transformed into a string
+		FUNCTION(toString)
+//		FUNCTION_ALIAS(toString, Read) // used when the buffer has to be transformed into a string
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
