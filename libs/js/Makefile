@@ -12,6 +12,14 @@ else
 	POSBUILD = strip $(TARGET_FILES)
 endif
 
+ifeq ($(BITS),32)
+	CFLAGS += -m32
+endif
+
+ifeq ($(BITS),64)
+	CFLAGS += -m64
+endif
+
 TARGET_FILES = ./src/$(LIBJS_DIR)/libjs.so
 
 all::
