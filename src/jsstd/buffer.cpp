@@ -617,12 +617,10 @@ DEFINE_PROPERTY( length ) {
 
 DEFINE_TRACE() {
 
-	JSContext *cx = trc->context;
-	Queue *queue = (Queue*)JS_GetPrivate(cx, obj);
-	if ( !queue )
-		return;
-	for ( QueueCell *it = QueueBegin(queue); it; it = QueueNext(it) )
-		JS_CALL_VALUE_TRACER(trc, *(jsval*)QueueGetData(it), "Buffer::queueItem");
+	Queue *queue = (Queue*)JS_GetPrivate(trc->context, obj);
+	if ( queue )
+		for ( QueueCell *it = QueueBegin(queue); it; it = QueueNext(it) )
+			JS_CALL_VALUE_TRACER(trc, *(jsval*)QueueGetData(it), "jsstd/Buffer/bufferQueueItem");
 }
 
 
