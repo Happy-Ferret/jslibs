@@ -14,8 +14,6 @@
 
 DECLARE_CLASS( Buffer )
 
-#define SLOT_BUFFER_LENGTH 0
-
 JSBool WriteRawData( JSContext *cx, JSObject *obj, size_t amount, char *str );
 
 JSBool ReadRawAmount( JSContext *cx, JSObject *obj, size_t *amount, char *str );
