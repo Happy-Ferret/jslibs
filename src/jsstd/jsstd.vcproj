@@ -185,6 +185,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\Buffer2.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\data.cpp"
 				>
 			</File>
@@ -228,6 +232,10 @@
 			>
 			<File
 				RelativePath=".\buffer.h"
+				>
+			</File>
+			<File
+				RelativePath=".\Buffer2.h"
 				>
 			</File>
 			<File
