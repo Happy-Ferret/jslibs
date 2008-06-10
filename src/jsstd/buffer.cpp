@@ -579,7 +579,7 @@ DEFINE_PROPERTY( length ) {
 }
 
 
-DEFINE_TRACE() {
+DEFINE_TRACER() {
 
 	BufferPrivate *pv = (BufferPrivate*)JS_GetPrivate(trc->context, obj);
 	if ( pv )
@@ -594,8 +594,7 @@ CONFIGURE_CLASS
 
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE
-
-	HAS_TRACE
+	HAS_TRACER
 
 	BEGIN_FUNCTION_SPEC
 		FUNCTION(Clear)

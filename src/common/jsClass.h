@@ -31,7 +31,7 @@
 #define DEFINE_RESOLVE() static JSBool Resolve(JSContext *cx, JSObject *obj, jsval id)
 #define DEFINE_NEW_RESOLVE() static JSBool NewResolve(JSContext *cx, JSObject *obj, jsval id, uintN flags, JSObject **objp)
 #define DEFINE_ENUMERATE() static JSBool Enumerate(JSContext *cx, JSObject *obj)
-#define DEFINE_TRACE() static void Trace(JSTracer *trc, JSObject *obj)
+#define DEFINE_TRACER() static void Tracer(JSTracer *trc, JSObject *obj)
 
 // function declaration
 #define FUNCTION_FAST(name) JS_FN( #name, name, 0, 0, 0 ),
@@ -176,7 +176,7 @@ struct JSLIBS_ConstIntegerSpec {
 #define HAS_RESOLVE   _class->resolve = Resolve;
 #define HAS_NEW_RESOLVE   _class->resolve = (JSResolveOp)NewResolve; _class->flags |= JSCLASS_NEW_RESOLVE;
 #define HAS_ENUMERATE  _class->enumerate = Enumerate;
-#define HAS_TRACE   _class->mark = (JSMarkOp)Trace; _class->flags |= JSCLASS_MARK_IS_TRACE;
+#define HAS_TRACER   _class->mark = (JSMarkOp)Tracer; _class->flags |= JSCLASS_MARK_IS_TRACE;
 
 #define HAS_INIT  _init = Init;
 
