@@ -76,8 +76,8 @@ inline JSBool PushJsval( JSContext *cx, Queue *queue, jsval value ) {
 	jsval *pItem = (jsval*)malloc(sizeof(jsval));
 	J_S_ASSERT_ALLOC( pItem );
 	*pItem = value;
-	if ( JSVAL_IS_GCTHING(*pItem) )
-		J_CHK( J_ADD_ROOT(cx, pItem) );
+//	if ( JSVAL_IS_GCTHING(*pItem) )
+//		J_CHK( J_ADD_ROOT(cx, pItem) ); // cf. Trace callback
 	QueuePush( queue, pItem );
 	return JS_TRUE;
 }
@@ -88,8 +88,8 @@ inline JSBool UnshiftJsval( JSContext *cx, Queue *queue, jsval value ) {
 	jsval *pItem = (jsval*)malloc(sizeof(jsval));
 	J_S_ASSERT_ALLOC( pItem );
 	*pItem = value;
-	if ( JSVAL_IS_GCTHING(*pItem) )
-		J_CHK( J_ADD_ROOT(cx, pItem) );
+//	if ( JSVAL_IS_GCTHING(*pItem) )
+//		J_CHK( J_ADD_ROOT(cx, pItem) ); // cf. Trace callback
 	QueueUnshift( queue, pItem );
 	return JS_TRUE;
 }
@@ -98,8 +98,8 @@ inline JSBool UnshiftJsval( JSContext *cx, Queue *queue, jsval value ) {
 inline JSBool ShiftJsval( JSContext *cx, Queue *queue, jsval *value ) {
 
 	jsval *pItem = (jsval*)QueueShift(queue);
-	if ( JSVAL_IS_GCTHING(*pItem) )
-		J_REMOVE_ROOT(cx, pItem);
+//	if ( JSVAL_IS_GCTHING(*pItem) )
+//		J_REMOVE_ROOT(cx, pItem); // cf. Trace callback
 	if ( value != NULL )
 		*value = *pItem;
 	free(pItem);
@@ -610,8 +610,19 @@ DEFINE_FUNCTION( toString ) {
 
 DEFINE_PROPERTY( length ) {
 
-	J_CHK( JS_GetReservedSlot(cx, obj, SLOT_BUFFER_LENGTH, vp ) );
+	J_CHK( JS_GetReservedSlot(cx, obj, SLOT_BUFFER_LENGTH, vp) );
 	return JS_TRUE;
+}
+
+
+DEFINE_TRACE() {
+
+	JSContext *cx = trc->context;
+	Queue *queue = (Queue*)JS_GetPrivate(cx, obj);
+	if ( !queue )
+		return;
+	for ( QueueCell *it = QueueBegin(queue); it; it = QueueNext(it) )
+		JS_CALL_VALUE_TRACER(trc, *(jsval*)QueueGetData(it), "Buffer::queueItem");
 }
 
 
@@ -622,6 +633,8 @@ CONFIGURE_CLASS
 
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE
+
+	HAS_TRACE
 
 	BEGIN_FUNCTION_SPEC
 		FUNCTION(Clear)

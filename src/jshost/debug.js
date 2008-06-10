@@ -2,11 +2,13 @@ LoadModule('jsstd');
 //LoadModule('jsio');
 
 
-Print( BString, '\n' );
 
-var b = new BString('123');
+var xxx = new Buffer();
+xxx.Write([123]);
 
-//b[3] = '4';
+
+
+
 
 
 Halt();
