@@ -129,6 +129,13 @@ extern bool *_pUnsafeMode;
 #define J_FRVAL (&JS_RVAL(cx, vp))
 
 
+#ifdef DEBUG
+	#define J_ADD_ROOT(cx, rp) (JS_AddNamedRoot((cx), (void*)(rp), J__CODE_LOCATION))
+#else
+	#define J_ADD_ROOT(cx, rp) (JS_AddRoot((cx),(void*)(rp)))
+#endif // DEBUG
+
+#define J_REMOVE_ROOT(cx, rp) (JS_RemoveRoot((cx),(void*)(rp)))
 
 
 // check: used to forward an error.
@@ -288,6 +295,7 @@ inline bool JsvalIsString( JSContext *cx, jsval val ) {
 
 #define J_JSVAL_IS_STRING(val) ( JSVAL_IS_STRING(val) || (JSVAL_IS_OBJECT(val) && !JSVAL_IS_NULL(val) && BufferGetInterface(cx, JSVAL_TO_OBJECT(val)) != NULL) )
 
+
 inline JSBool JsvalToStringAndLength( JSContext *cx, jsval val, const char** buffer, size_t *size ) {
 
 	if ( JSVAL_IS_STRING(val) ) {
@@ -323,7 +331,7 @@ inline JSBool JsvalToStringLength( JSContext *cx, jsval val, size_t *length ) {
 
 	if ( JSVAL_IS_STRING(val) ) {
 
-		*length = J_STRING_LENGTH( JSVAL_TO_STRING( val ) );
+		*length = J_STRING_LENGTH( JSVAL_TO_STRING(val) );
 		return JS_TRUE;
 	}
 
@@ -347,6 +355,7 @@ inline JSBool JsvalToString( JSContext *cx, jsval val, const char** buffer ) {
 	size_t size; //unused
 	return JsvalToStringAndLength( cx, val, buffer, &size );
 }
+
 
 #define J_JSVAL_TO_STRING( val, str ) do { \
 	J_CHK( JsvalToString(cx, (val), &(str)) ); \

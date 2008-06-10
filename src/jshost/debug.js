@@ -6,7 +6,7 @@ Print( BString, '\n' );
 
 var b = new BString('123');
 
-b[3] = '4';
+//b[3] = '4';
 
 
 Halt();

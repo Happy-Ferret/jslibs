@@ -113,7 +113,13 @@
 		buf.Write('45');
 		QA.ASSERT( buf.length, 3, 'content length' );
 	},
+	
+	BufferMissingUnRoot: function(QA) {
 
+		var buf = new Buffer();
+		buf.Write('1234');
+		buf.Read(4);
+	},	
 
 	PackEndianTest: function(QA) {
 		

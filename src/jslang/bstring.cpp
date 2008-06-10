@@ -66,7 +66,7 @@ inline JSBool JsvalToBString( JSContext *cx, JSObject *obj, jsval val ) {
 	void *src, *dst = NULL;
 
 	if ( JsvalIsBString(cx, val) ) {
-		
+
 		BStringGetDataAndLength(cx, JSVAL_TO_OBJECT( val ), &src, &srcLen);
 		if ( srcLen > 0 ) {
 
@@ -76,7 +76,7 @@ inline JSBool JsvalToBString( JSContext *cx, JSObject *obj, jsval val ) {
 			memcpy(dst, src, srcLen);
 		}
 	} else {
-		
+
 		JSString *jsstr = JS_ValueToString(cx, val);
 		srcLen = J_STRING_LENGTH(jsstr);
 		if ( srcLen > 0 ) {
@@ -163,7 +163,7 @@ DEFINE_CONSTRUCTOR() {
 
 
 DEFINE_FUNCTION_FAST( Set ) {
-	
+
 	JS_ClearScope(cx, J_FOBJ);
 
 	*J_FRVAL = OBJECT_TO_JSVAL( J_FOBJ );
@@ -184,7 +184,7 @@ DEFINE_FUNCTION_FAST( Set ) {
 
 
 DEFINE_FUNCTION_FAST( Add ) {
-	
+
 	J_S_ASSERT_ARG_MIN( 1 );
 
 	size_t length;
@@ -194,7 +194,7 @@ DEFINE_FUNCTION_FAST( Add ) {
 	void *src, *dst;
 
 	if ( JsvalIsBString(cx, J_FARG(1)) ) {
-		
+
 		BStringGetDataAndLength(cx, JSVAL_TO_OBJECT( J_FARG(1) ), &src, &srcLen);
 		if ( srcLen > 0 ) {
 
@@ -207,7 +207,7 @@ DEFINE_FUNCTION_FAST( Add ) {
 			dst = NULL;
 		}
 	} else {
-		
+
 		JSString *jsstr = JS_ValueToString(cx, J_FARG(1));
 		J_FARG(1) = STRING_TO_JSVAL(jsstr);
 
@@ -221,14 +221,14 @@ DEFINE_FUNCTION_FAST( Add ) {
 			for ( size_t i = 0; i < srcLen; i++ )
 				((char*)dst)[i + length] = (uint8)chars[i];
 		} else {
-			
+
 			dst = NULL;
 		}
 	}
 
 	void *pv = JS_GetPrivate(cx, J_FOBJ);
 	if ( pv != NULL ) {
-		
+
 		memcpy(dst, pv, length);
 		JS_free(cx, pv);
 	}
@@ -245,7 +245,7 @@ DEFINE_FUNCTION_FAST( Substr ) { // http://developer.mozilla.org/en/docs/Core_Ja
 
 	J_S_ASSERT_ARG_MIN(1);
 	void *pv = JS_GetPrivate(cx, J_FOBJ);
-	
+
 	size_t dataLength;
 	J_CHECK_CALL( LengthGet(cx, J_FOBJ, &dataLength) );
 
@@ -258,7 +258,7 @@ DEFINE_FUNCTION_FAST( Substr ) { // http://developer.mozilla.org/en/docs/Core_Ja
 		return JS_TRUE;
 	}
 
-	if ( start < 0 ) 
+	if ( start < 0 )
 		start = dataLength + start;
 
 	if ( start < 0 || start >= (int)dataLength )
@@ -316,7 +316,20 @@ DEFINE_FUNCTION_FAST( valueOf ) {
 
 DEFINE_FUNCTION_FAST( toString ) {
 
-	J_CHECK_CALL( BStringToJsval(cx, J_FOBJ, J_FRVAL) );
+//	J_CHECK_CALL( BStringToJsval(cx, J_FOBJ, J_FRVAL) );
+
+	size_t length;
+	J_CHK( LengthGet(cx, J_FOBJ, &length) );
+	char *newBuffer = (char*)JS_malloc(cx, length +1);
+	J_S_ASSERT_ALLOC( newBuffer );
+	newBuffer[length] = '\0';
+	const char *bstrBuf;
+	J_CHK( BufferGet(cx, J_FOBJ, &bstrBuf) );
+	memcpy(newBuffer, bstrBuf, length);
+	JSString *str = JS_NewString(cx, newBuffer, length);
+	J_S_ASSERT_ALLOC(str);
+	*J_FRVAL = STRING_TO_JSVAL(str);
+
 	return JS_TRUE;
 }
 
@@ -363,7 +376,7 @@ DEFINE_GET_PROPERTY() {
 
 	if ( !JSVAL_IS_INT(id) )
 		return JS_TRUE;
-	
+
 	jsint slot = JSVAL_TO_INT( id );
 
 	void *pv = JS_GetPrivate(cx, obj);

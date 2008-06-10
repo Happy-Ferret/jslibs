@@ -29,13 +29,13 @@ inline JSClass* BStringJSClass( JSContext *cx ) {
 }
 
 inline bool JsvalIsBString( JSContext *cx, jsval value ) {
-	
+
 	return ( JSVAL_IS_OBJECT( value ) && !JSVAL_IS_NULL( value ) && JS_GET_CLASS(cx, JSVAL_TO_OBJECT( value )) == BStringJSClass(cx) );
 }
 
 // NewBString takes ownership of jsMallocatedBuffer on success. Allocation must be done with JS_malloc
 inline JSObject* NewBString( JSContext *cx, void *jsMallocatedBuffer, size_t bufferLength ) {
-		
+
 	JSClass *bstringClass = BStringJSClass(cx);
 	if ( bstringClass == NULL )
 		return NULL;
@@ -47,6 +47,17 @@ inline JSObject* NewBString( JSContext *cx, void *jsMallocatedBuffer, size_t buf
 	if ( JS_SetPrivate(cx, obj, jsMallocatedBuffer) != JS_TRUE )
 		return NULL;
 	return obj;
+}
+
+
+inline JSBool NewBStringCopyN(JSContext *cx, const char *data, size_t amount, JSObject **bstrObj) {
+
+	char *bstrBuf = (char*)JS_malloc(cx, amount);
+	J_S_ASSERT_ALLOC( bstrBuf );
+	memcpy( bstrBuf, data, amount );
+	*bstrObj = NewBString(cx, bstrBuf, amount);
+	RT_ASSERT( *bstrObj != NULL, "Unable to create a BString." );
+	return JS_TRUE;
 }
 
 
