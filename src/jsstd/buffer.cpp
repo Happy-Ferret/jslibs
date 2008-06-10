@@ -38,18 +38,8 @@ struct BufferPrivate {
 
 static JSBool NativeInterfaceStreamRead( JSContext *cx, JSObject *obj, char *buf, size_t *amount ) {
 
-	#ifdef JS_THREADSAFE
-		JS_BeginRequest( cx ); // http://developer.mozilla.org/en/docs/JS_BeginRequest
-	#endif
-
-	J_CHK( ReadRawAmount(cx, obj, amount, buf) );
-
-	#ifdef JS_THREADSAFE
-		JS_EndRequest( cx );
-	#endif
-	return JS_TRUE;
+	return ReadRawAmount(cx, obj, amount, buf);
 }
-
 
 
 inline JSBool PushJsval( JSContext *cx, Queue *queue, jsval value ) {
@@ -57,9 +47,7 @@ inline JSBool PushJsval( JSContext *cx, Queue *queue, jsval value ) {
 	jsval *pItem = (jsval*)malloc(sizeof(jsval));
 	J_S_ASSERT_ALLOC( pItem );
 	*pItem = value;
-//	if ( JSVAL_IS_GCTHING(*pItem) )
-//		J_CHK( J_ADD_ROOT(cx, pItem) ); // cf. Trace callback
-	QueuePush( queue, pItem );
+	QueuePush( queue, pItem ); // no need to JS_AddRoot *pItem, see Tracer callback
 	return JS_TRUE;
 }
 
@@ -69,18 +57,14 @@ inline JSBool UnshiftJsval( JSContext *cx, Queue *queue, jsval value ) {
 	jsval *pItem = (jsval*)malloc(sizeof(jsval));
 	J_S_ASSERT_ALLOC( pItem );
 	*pItem = value;
-//	if ( JSVAL_IS_GCTHING(*pItem) )
-//		J_CHK( J_ADD_ROOT(cx, pItem) ); // cf. Trace callback
-	QueueUnshift( queue, pItem );
+	QueueUnshift( queue, pItem ); // no need to JS_AddRoot *pItem, see Tracer callback
 	return JS_TRUE;
 }
 
 
 inline JSBool ShiftJsval( JSContext *cx, Queue *queue, jsval *value ) {
 
-	jsval *pItem = (jsval*)QueueShift(queue);
-//	if ( JSVAL_IS_GCTHING(*pItem) )
-//		J_REMOVE_ROOT(cx, pItem); // cf. Trace callback
+	jsval *pItem = (jsval*)QueueShift(queue);  // no need to JS_RemoveRoot *pItem, see Tracer callback
 	if ( value != NULL )
 		*value = *pItem;
 	free(pItem);
@@ -88,7 +72,8 @@ inline JSBool ShiftJsval( JSContext *cx, Queue *queue, jsval *value ) {
 }
 
 
-inline JSBool BufferRefillRequest( JSContext *cx, JSObject *obj, size_t missing ) { // missing = missing amount of data to complete the request
+// missing = missing amount of data to complete the request
+inline JSBool BufferRefillRequest( JSContext *cx, JSObject *obj, size_t missing ) {
 
 	jsval rval, fctVal;
 	J_CHK( JS_GetProperty(cx, obj, "onunderflow", &fctVal) );
@@ -97,7 +82,6 @@ inline JSBool BufferRefillRequest( JSContext *cx, JSObject *obj, size_t missing 
 		JS_CallFunctionValue(cx, obj, fctVal, sizeof(argv)/sizeof(*argv), argv, &rval);
 	return JS_TRUE;
 }
-
 
 
 JSBool AddBuffer( JSContext *cx, JSObject *destBuffer, JSObject *srcBuffer ) {
@@ -205,9 +189,7 @@ JSBool ReadRawAmount( JSContext *cx, JSObject *obj, size_t *amount, char *str ) 
 			remainToRead = 0; // adjust remaining required data length
 		}
 	}
-
 	pv->length -= *amount;
-
 	return JS_TRUE;
 }
 
@@ -247,7 +229,6 @@ JSBool ReadAmount( JSContext *cx, JSObject *obj, size_t amount, jsval *rval ) {
 	JSObject *bstr = NewBString(cx, str, amount);
 	J_S_ASSERT( bstr != NULL, "Unable to create the BString." );
 	*rval = OBJECT_TO_JSVAL(bstr);
-
 	return JS_TRUE;
 }
 
@@ -256,7 +237,6 @@ JSBool UnReadChunk( JSContext *cx, JSObject *obj, jsval chunk ) {
 
 	BufferPrivate *pv = (BufferPrivate*)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( pv );
-
 	size_t length;
 	J_CHK( JsvalToStringLength(cx, chunk, &length) );
 	if ( length == 0 ) // optimization && RULES
@@ -357,12 +337,10 @@ DEFINE_CONSTRUCTOR() {
 			J_CHK( JsvalToStringLength(cx, J_ARG(1), &length) );
 			if ( length == 0 )
 				return JS_TRUE;
-
 			pv->length += length;
 			J_CHK( PushJsval(cx, pv->queue, J_ARG(1)) );
 		}
 	}
-
 	return JS_TRUE;
 }
 
@@ -371,7 +349,6 @@ DEFINE_FUNCTION( Clear ) {
 
 	BufferPrivate *pv = (BufferPrivate*)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( pv );
-
 	while ( !QueueIsEmpty(pv->queue) )
 		J_CHK( ShiftJsval(cx, pv->queue, NULL) );
 	pv->length = 0;
@@ -404,7 +381,6 @@ DEFINE_FUNCTION( Write ) {
 		J_CHK( JsvalToString(cx, J_ARG(1), &buf) );
 
 		//	(TBD) use JS_NewDependentString if arg 1 is a JSString
-
 		JSObject* bstrObj;
 		NewBStringCopyN(cx, buf, amount, &bstrObj);
 		item = OBJECT_TO_JSVAL(bstrObj);
@@ -427,7 +403,6 @@ DEFINE_FUNCTION( Match ) {
 
 	const char *str;
 	size_t len;
-
 	J_CHK( JsvalToStringAndLength(cx, J_ARG(1), &str, &len) );
 
 	char *src = (char *)malloc(len);
@@ -550,7 +525,6 @@ DEFINE_FUNCTION( toString ) {
 	buffer[pv->length] = '\0';
 
 	size_t pos = 0;
-
 	while ( !QueueIsEmpty(pv->queue) ) {
 
 		J_CHK( ShiftJsval(cx, pv->queue, rval) );
@@ -564,9 +538,7 @@ DEFINE_FUNCTION( toString ) {
 	JSString *str = JS_NewString(cx, buffer, pv->length);
 	J_S_ASSERT_ALLOC( str );
 	*rval = STRING_TO_JSVAL(str);
-
 	pv->length = 0;
-
 	return JS_TRUE;
 }
 
