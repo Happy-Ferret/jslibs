@@ -305,6 +305,9 @@ end:
 }
 
 
+
+
+
 BEGIN_CLASS( Buffer )
 
 DEFINE_FINALIZE() {
@@ -336,7 +339,8 @@ DEFINE_CONSTRUCTOR() {
 
 	if ( J_ARG_ISDEF(1) ) {
 
-		if ( JSVAL_IS_OBJECT(J_ARG(1)) && !JSVAL_IS_NULL(J_ARG(1)) && J_JSVAL_IS_CLASS(J_ARG(1), _class) ) {
+		// (TBD) loop over all args
+		if ( J_JSVAL_IS_CLASS(J_ARG(1), _class) ) {
 
 			return AddBuffer(cx, obj, JSVAL_TO_OBJECT( J_ARG(1) ));
 		} else {
@@ -351,6 +355,7 @@ DEFINE_CONSTRUCTOR() {
 	}
 	return JS_TRUE;
 }
+
 
 
 DEFINE_FUNCTION( Clear ) {
@@ -498,6 +503,7 @@ DEFINE_FUNCTION( Unread ) {
 	*rval = J_ARG(1);
 	return JS_TRUE;
 }
+
 
 // Note:  String( { toString:function() { return [1,2,3]} } );  throws the following error: "can't convert Object to string"
 DEFINE_FUNCTION( toString ) {
