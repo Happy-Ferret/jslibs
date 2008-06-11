@@ -131,9 +131,11 @@ JSBool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *objAt,
 				if ( JS_GET_CLASS(cx, JSVAL_TO_OBJECT(val)) == BStringJSClass(cx) ) { // beware: with SQLite, blob != text
 
 					JSObject *bstringObject = JSVAL_TO_OBJECT(val);
-					void *data = BStringData(cx, bstringObject);
+					const char *data;
+					BStringBuffer(cx, bstringObject, &data);
 					//J_S_ASSERT( data != NULL, "Invalid BString object.")
-					int length = BStringLength(cx, bstringObject);
+					size_t length;
+					BStringLength(cx, bstringObject, &length);
 					sqlite3_bind_blob(pStmt, param, data, length, SQLITE_STATIC); // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT
 					break;
 				}

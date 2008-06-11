@@ -250,7 +250,7 @@ inline JSBool InitCurveData( JSContext* cx, jsval value, int length, float *curv
 		JSObject *bstrObj = JSVAL_TO_OBJECT(value);
 		size_t bstrLen;
 		u_int8_t *bstrData;
-		BStringGetDataAndLength( cx, bstrObj, (void**)&bstrData, &bstrLen );
+		BStringGetBufferAndLength( cx, bstrObj, (void**)&bstrData, &bstrLen );
 
 		for ( int i = 0; i < length; i++ )
 			curve[i] = bstrData[ i * bstrLen / length ] / 256;
@@ -369,7 +369,10 @@ DEFINE_CONSTRUCTOR() {
 		GetPropertyInt(cx, bstr, "width", &sWidth);
 		GetPropertyInt(cx, bstr, "height", &sHeight);
 		GetPropertyInt(cx, bstr, "channels", &sChannels);
-		u_int8_t *buffer = (u_int8_t*)BStringData(cx, bstr);
+
+		const char *buffer;
+//		u_int8_t *buffer = (u_int8_t*)
+		J_CHK( BStringBuffer(cx, bstr, &buffer) );
 
 		tex->width = sWidth;
 		tex->height = sHeight;
@@ -2292,7 +2295,11 @@ DEFINE_FUNCTION_FAST( Import ) { // (BString)image, (int)x, (int)y
 	GetPropertyInt(cx, bstr, "width", &sWidth);
 	GetPropertyInt(cx, bstr, "height", &sHeight);
 	GetPropertyInt(cx, bstr, "channels", &sChannels);
-	u_int8_t *buffer = (u_int8_t*)BStringData(cx, bstr);
+
+	//u_int8_t *buffer = (u_int8_t*)BStringData(cx, bstr);
+
+	const char *buffer;
+	J_CHK( BStringBuffer(cx, bstr, &buffer) );
 
 	int px, py;
 	if ( J_ARGC >= 3 ) {
