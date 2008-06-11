@@ -14,24 +14,22 @@ Set Lib=%DirectXPath%\Lib\x86;%Lib%
 Set Include=%DirectXPath%\Include;%Include%
 
 call "%platformSDKPath%\SetEnv.Cmd" /XP32 /RETAIL
-
 call "%visualStudioPath%\VC\vcvarsall.bat" x86
 
-
-
 date /T > build.log
-set > build.log
+set >> build.log
+
 
 pushd .\libs\js
 IF "%BUILD%" == "release" (
-	call build_msdev8_OPT.bat
+	call build_msdev8_OPT.bat >> build.log
 ) ELSE (
-	call build_msdev8_DBG.bat
+	call build_msdev8_DBG.bat >> build.log
 )
 popd
 
 pushd .\libs\nspr
-call build_msdev8.bat
+call build_msdev8.bat >> build.log
 popd
 
 
