@@ -85,10 +85,8 @@ var QAAPI = new function() {
 
 	this.ASSERT_TYPE = function( value, type, testName ) {
 		
-		if ( typeof(value) != type && !(value instanceof type) ) {
-			
+		if ( typeof(value) != type && !(value instanceof type) )
 			this.REPORT( (testName||'') + ' (@'+Locate(-1)+'), Invalid type, '+(type.name)+' is expected' );
-		}
 	}
 
 	this.FAILED = function( message ) {
@@ -107,7 +105,7 @@ var QAAPI = new function() {
 			// good
 		} catch(ex) {
 			
-			this.REPORT( 'Invalid exception ('+ex.constructor.name+') for: '+message );
+			this.REPORT( 'Invalid exception ('+ex.constructor.name+' != '+exType.constructor.name+') for: '+message );
 		}
 	} 
 
@@ -122,6 +120,19 @@ var QAAPI = new function() {
 		}
 	}
 
+	this.ASSERT_STR = function( value, expect, testName ) {
+	
+		value = String(value);
+		expect = String(expect);
+
+		if ( value != expect ) {
+		
+			value = '('+typeof(value)+')'+ String(value).substr(0,50).quote()+'...';
+			expect = '('+typeof(expect)+')'+ String(expect).substr(0,50).quote()+'...';
+			this.REPORT( (testName||'') + ', (@'+Locate(-1)+'), '+value+' != '+expect );
+		}
+	}
+
    this.ASSERT_HAS_PROPERTIES = function( obj, names ) {
    	
    	for each ( var p in names.split(/\s*,\s*/) )
@@ -129,11 +140,11 @@ var QAAPI = new function() {
 	  			this.REPORT( 'property '+p+' not found' );
    }
 
-	 this.GC = function() {
+	this.GC = function() {
 
-	 	 CollectGarbage();
-	   CollectGarbage();
-	 }
+		CollectGarbage();
+		CollectGarbage();
+	}
 	
    this.RandomString = function(length) { // [0-9A-Za-z]
 

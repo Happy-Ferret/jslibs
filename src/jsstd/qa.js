@@ -25,7 +25,7 @@
 		b.Write('gggg');
 		var t = b.Read();
 
-		QA.ASSERT( t, 'eeeeffffgggg', 'buffer match' );
+		QA.ASSERT_STR( t, 'eeeeffffgggg', 'buffer match' );
 	},
 
 
@@ -50,7 +50,7 @@
 		s += 'Y'
 		QA.GC();
 
-		QA.ASSERT( buf.Read(30), '12345X6789ZzZzZzZzZzZzZzZzZzZz', 'Read(30)' );
+		QA.ASSERT_STR( buf.Read(30), '12345X6789ZzZzZzZzZzZzZzZzZzZz', 'Read(30)' );
 
 		buf.Write('1234');
 		buf.Write('5');
@@ -58,9 +58,9 @@
 		buf.Write('6789');
 		
 		QA.ASSERT( buf.Read(undefined), '1234', 'undefined read' );
-		QA.ASSERT( buf.Read(7), '56789Zz', 'read(7)' );
-		QA.ASSERT( buf.Read(1), 'Z', 'read(1)' );
-		QA.ASSERT( buf.Read(), 'z', 'read()' );
+		QA.ASSERT_STR( buf.Read(7), '56789Zz', 'read(7)' );
+		QA.ASSERT_STR( buf.Read(1), 'Z', 'read(1)' );
+		QA.ASSERT_STR( buf.Read(), 'z', 'read()' );
 	},
 
 
@@ -68,9 +68,63 @@
 	
 		var b = new Buffer();
 		b.Write('123');
-		QA.ASSERT( b.Read(1), '1', 'buffer read' );	
+		QA.ASSERT_STR( b.Read(1), '1', 'buffer read' );	
 	},
 
+
+	Buffer_toString: function(QA) {
+	
+		var b = new Buffer('12345');
+		b.Write('678');
+		b.Write('9');
+		b.Write('');
+		QA.ASSERT_STR( b, '123456789', 'buffer toString' );	
+	},
+
+	Buffer_valueOf: function(QA) {
+	
+		var b = new Buffer('12345');
+		b.Write('678');
+		b.Write('9');
+		b.Write('');
+		QA.ASSERT_STR( b.valueOf(), '123456789', 'buffer valueOf' );	
+	},
+	
+
+	Buffer_valuesStore: function(QA) {
+	
+		var b = new Buffer();
+		b.Write({ toString:function(){return '01'} });
+		b.Write([2,3]);
+		b.Write(4567);
+		b.Write(8.9);
+		QA.ASSERT_STR( b.Read(), '012,345678.9', 'buffer read stored values' );	
+	},
+
+
+	Buffer_valuesStore: function(QA) {
+	
+		var b = new Buffer();
+		b.Write({ toString:function(){return '01'} });
+		b.Write([2,3]);
+		b.Write(4567);
+		b.Write(8.9);
+		QA.ASSERT_STR( b.Read(3), '012', 'buffer read stored values' );	
+		QA.ASSERT_STR( b.Read(3), ',34', 'buffer read stored values' );	
+		QA.ASSERT_STR( b.Read(2), '56', 'buffer read stored values' );	
+		QA.ASSERT_STR( b.Read(3), '78.', 'buffer read stored values' );	
+		QA.ASSERT_STR( b.Read(1), '9', 'buffer read stored values' );	
+	},
+
+	Buffer_andBString: function(QA) {
+
+		var str = new BString('123');
+		var b = new Buffer();
+		b.Write(str);
+		str.Add('456');
+		b.Write('7');
+		QA.ASSERT_STR( b.Read(), '1237', 'buffer containing a BString' );
+	},
 
 	BufferIndexOf: function(QA) {
 	
@@ -92,9 +146,9 @@
 		buf.Write('14ccc');
 		var buf2 = new Buffer(buf);
 		buf2.Write('buffer2');
-		QA.ASSERT( buf2.ReadUntil('114'), 'xxxaaabb', 'ReadUntil' );
+		QA.ASSERT_STR( buf2.ReadUntil('114'), 'xxxaaabb', 'ReadUntil' );
 		QA.ASSERT( typeof buf2, 'object', 'buffer type' );
-		QA.ASSERT( String(buf2), 'cccbuffer2', 'remaining' );
+		QA.ASSERT_STR( buf2, 'cccbuffer2', 'remaining' );
 	},
 
 
@@ -105,7 +159,7 @@
 		buf.Write('6');
 		buf.Write('');
 		buf.Write('789');
-		QA.ASSERT( buf.Read(2), '12', 'Read(int)' );
+		QA.ASSERT_STR( buf.Read(2), '12', 'Read(int)' );
 		buf.Clear();
 		QA.ASSERT( buf.length, 0, 'empty length' );
 		QA.ASSERT( buf.Read(), '', 'empty content' );
@@ -131,7 +185,7 @@
 			var pack = new Pack(buf);
 			var v = 0x71727374;
 			pack.WriteInt(v, 4, false);
-			QA.ASSERT( buf.Read(), 'tsrq', 'check stored data' );
+			QA.ASSERT_STR( buf.Read(), 'tsrq', 'check stored data' );
 		} else {
 		
 			report('this test is missing');
@@ -153,7 +207,7 @@
 		var buf = new Buffer();
 		buf.Write('\xAA\xBB\xCC\xDD');
 		var pack = new Pack(buf);
-		QA.ASSERT( pack.ReadString(4), "\xAA\xBB\xCC\xDD", 'ReadString' );
+		QA.ASSERT_STR( pack.ReadString(4), "\xAA\xBB\xCC\xDD", 'ReadString' );
 	},
 
 
@@ -239,7 +293,7 @@
 
 		var o = { title:'My HTML Page', titi:1234, toString:function() { return Expand( this.text, this ) } };
 		o.text = '<html><title>$(title)</title>\n'
-		QA.ASSERT( String(o), '<html><title>My HTML Page</title>\n', 'expand string' );
+		QA.ASSERT_STR( o, '<html><title>My HTML Page</title>\n', 'expand string' );
 	},
 
 	ExecXDR: function(QA) {
@@ -344,7 +398,7 @@
 		</text>
 		
 		QA.ASSERT( typeof t, 'xml', 'text type' );
-		QA.ASSERT( String(t), "\n\t\tthis is\n\t\ta multiline\n\n\t\ttext\n\t\t", 'text' );
+		QA.ASSERT_STR( t, "\n\t\tthis is\n\t\ta multiline\n\n\t\ttext\n\t\t", 'text' );
 	}
 	
 	
