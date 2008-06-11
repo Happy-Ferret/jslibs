@@ -34,16 +34,19 @@
 #define DEFINE_TRACER() static void Tracer(JSTracer *trc, JSObject *obj)
 
 // function declaration
+#define FUNCTION(name) JS_FS( #name, name, 0, 0, 0 ),
 #define FUNCTION_FAST(name) JS_FN( #name, name, 0, 0, 0 ),
+
+#define FUNCTION_ARGC(name,nargs) JS_FS( #name, name, nargs, 0, 0 ),
 #define FUNCTION_FAST_ARGC(name,nargs) JS_FN( #name, name, 0, nargs, 0 ),
+
+#define FUNCTION2(name,nativeName) JS_FS( #name, nativeName, 0, 0, 0 ),
 #define FUNCTION2_FAST(name,nativeName) JS_FN( #name, nativeName, 0, 0, 0 ),
+
 #define FUNCTION2_FAST_ARGC(name,nativeName,nargs) JS_FN( #name, nativeName, 0, nargs, 0 ),
 
-#define FUNCTION(name) JS_FS( #name, name, 0, 0, 0 ),
-#define FUNCTION_ARGC(name,nargs) JS_FS( #name, name, nargs, 0, 0 ),
-#define FUNCTION2(name,nativeName) JS_FS( #name, nativeName, 0, 0, 0 ),
-
 #define FUNCTION_ALIAS(alias, name) JS_FS( #alias, name, 0, 0, 0 ),
+#define FUNCTION_FAST_ALIAS(alias, name) JS_FN( #alias, name, 0, 0, 0 ),
 
 // properties
 #define BEGIN_PROPERTY_SPEC JSPropertySpec _tmp_ps[] = { // *name, tinyid, flags, getter, setter

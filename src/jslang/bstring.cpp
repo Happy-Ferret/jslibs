@@ -28,46 +28,26 @@ inline JSBool LengthSet( JSContext *cx, JSObject *obj, size_t bufferLength ) {
 	return JS_SetReservedSlot(cx, obj, SLOT_BSTRING_LENGTH, INT_TO_JSVAL( bufferLength ));
 }
 
-inline JSBool LengthGet( JSContext *cx, JSObject *obj, size_t *bufferLength ) {
-
-	jsval bufferLengthVal;
-	J_CHECK_CALL( JS_GetReservedSlot(cx, obj, SLOT_BSTRING_LENGTH, &bufferLengthVal) );
-	*bufferLength = JSVAL_IS_INT(bufferLengthVal) ? JSVAL_TO_INT( bufferLengthVal ) : 0;
-	return JS_TRUE;
-}
-
-inline JSBool BufferGet( JSContext *cx, JSObject *obj, const char **buf ) {
-
-	*buf = (const char*)JS_GetPrivate(cx, obj);
-	return JS_TRUE;
-}
-
 
 JSBool NativeInterfaceBufferGet( JSContext *cx, JSObject *obj, const char **buf, size_t *size ) {
 
-	J_CHECK_CALL( BufferGet(cx, obj, buf) );
-	J_CHECK_CALL( LengthGet(cx, obj, size) );
+	J_CHK( BStringLength(cx, obj, size) );
+	J_CHK( BStringBuffer(cx, obj, buf) );
 	return JS_TRUE;
 }
 
 
 BEGIN_CLASS( BString )
 
-/*
-inline bool JsvalIsBString( JSContext *cx, jsval val ) {
 
-	return JSVAL_IS_OBJECT(val) && !JSVAL_IS_NULL(val) && JS_GET_CLASS(cx, JSVAL_TO_OBJECT(val)) == _class;
-}
-*/
-
-inline JSBool JsvalToBString( JSContext *cx, JSObject *obj, jsval val ) {
+inline JSBool JsvalToBString( JSContext *cx, jsval val, JSObject **obj ) {
 
 	size_t srcLen;
 	void *src, *dst = NULL;
 
 	if ( JsvalIsBString(cx, val) ) {
 
-		BStringGetDataAndLength(cx, JSVAL_TO_OBJECT( val ), &src, &srcLen);
+		BStringGetBufferAndLength(cx, JSVAL_TO_OBJECT( val ), &src, &srcLen);
 		if ( srcLen > 0 ) {
 
 			dst = JS_malloc(cx, srcLen +1);
@@ -78,6 +58,7 @@ inline JSBool JsvalToBString( JSContext *cx, JSObject *obj, jsval val ) {
 	} else {
 
 		JSString *jsstr = JS_ValueToString(cx, val);
+		J_S_ASSERT( jsstr != NULL, "Unable to convert to string." );
 		srcLen = J_STRING_LENGTH(jsstr);
 		if ( srcLen > 0 ) {
 
@@ -85,39 +66,32 @@ inline JSBool JsvalToBString( JSContext *cx, JSObject *obj, jsval val ) {
 			J_S_ASSERT_ALLOC( dst );
 			((char*)dst)[srcLen] = '\0';
 
+			// (TBD) try to know if the string is deflated befor using JS_GetStringChars ??
 			jschar *chars = JS_GetStringChars(jsstr);
 			for ( size_t i = 0; i < srcLen; i++ )
 				((char*)dst)[i] = (uint8)chars[i];
 		}
 	}
-
-	void *pv = JS_GetPrivate(cx, obj);
-	if ( pv != NULL )
-		JS_free(cx, pv);
-
-	J_CHECK_CALL( JS_SetPrivate(cx, obj, dst) );
-	J_CHECK_CALL( LengthSet(cx, obj, srcLen) );
-
+	*obj = NewBString(cx, dst, srcLen);
 	return JS_TRUE;
 }
 
 
-JSBool BStringToJsval( JSContext *cx, JSObject *obj, jsval *val ) {
+JSBool BStringToJSString( JSContext *cx, JSObject *obj, JSString **jsstr ) {
 
 	void *pv = JS_GetPrivate(cx, obj);
 	size_t length;
-	J_CHECK_CALL( LengthGet(cx, obj, &length) );
+	J_CHECK_CALL( BStringLength(cx, obj, &length) );
 	if ( pv == NULL || length == 0 ) {
 
-		*val = JS_GetEmptyStringValue(cx);
+		*jsstr = JSVAL_TO_STRING( JS_GetEmptyStringValue(cx) );
 	} else {
 
 		jschar *ucStr = (jschar*)JS_malloc(cx, (length + 1) * sizeof(jschar));
 		ucStr[length] = 0;
 		for ( size_t i = 0; i < length; i++ )
-			ucStr[i] = ((char*)pv)[i];
-		JSString *jsstr = JS_NewUCString(cx, ucStr, length);
-		*val = STRING_TO_JSVAL( jsstr );
+			ucStr[i] = ((unsigned char*)pv)[i]; // see js_InflateString in jsstr.c
+		*jsstr = JS_NewUCString(cx, ucStr, length);
 	}
 	return JS_TRUE;
 }
@@ -131,6 +105,7 @@ DEFINE_FINALIZE() {
 		JS_free(cx, pv);
 }
 
+
 DEFINE_CONSTRUCTOR() {
 
 	if ( JS_IsConstructing(cx) == JS_FALSE ) { // supports this form (w/o new operator) : result.param1 = Blob('Hello World');
@@ -142,8 +117,6 @@ DEFINE_CONSTRUCTOR() {
 		J_S_ASSERT_THIS_CLASS();
 
 	if ( J_ARG_ISDEF(1) ) {
-
-//		J_CHECK_CALL( JsvalToBString(cx, obj, J_ARG(1)) );
 
 		size_t length;
 		const char *sBuffer;
@@ -161,7 +134,7 @@ DEFINE_CONSTRUCTOR() {
 	return JS_TRUE;
 }
 
-
+/*
 DEFINE_FUNCTION_FAST( Set ) {
 
 	JS_ClearScope(cx, J_FOBJ);
@@ -181,21 +154,23 @@ DEFINE_FUNCTION_FAST( Set ) {
 	J_CHECK_CALL( JsvalToBString(cx, J_FOBJ, J_FARG(1)) );
 	return JS_TRUE;
 }
+*/
 
 
 DEFINE_FUNCTION_FAST( Add ) {
 
 	J_S_ASSERT_ARG_MIN( 1 );
+	J_S_ASSERT_ARG_MAX( 1 );
 
 	size_t length;
-	J_CHECK_CALL( LengthGet(cx, J_FOBJ, &length) );
+	J_CHECK_CALL( BStringLength(cx, J_FOBJ, &length) );
 
 	size_t srcLen;
 	void *src, *dst;
 
 	if ( JsvalIsBString(cx, J_FARG(1)) ) {
 
-		BStringGetDataAndLength(cx, JSVAL_TO_OBJECT( J_FARG(1) ), &src, &srcLen);
+		BStringGetBufferAndLength(cx, JSVAL_TO_OBJECT( J_FARG(1) ), &src, &srcLen);
 		if ( srcLen > 0 ) {
 
 			dst = JS_malloc(cx, srcLen + length +1);
@@ -226,6 +201,7 @@ DEFINE_FUNCTION_FAST( Add ) {
 		}
 	}
 
+/* mutable BString are no more supported
 	void *pv = JS_GetPrivate(cx, J_FOBJ);
 	if ( pv != NULL ) {
 
@@ -237,8 +213,19 @@ DEFINE_FUNCTION_FAST( Add ) {
 	J_CHECK_CALL( JS_SetPrivate(cx, J_FOBJ, dst) );
 
 	*J_FRVAL = OBJECT_TO_JSVAL( J_FOBJ );
+*/
+
+	JSObject *newBStrObj = JS_NewObject(cx, _class, NULL, NULL);
+	J_S_ASSERT( newBStrObj != NULL, "Unable to create the new BString" );
+
+	J_CHECK_CALL( LengthSet(cx, newBStrObj, srcLen + length) );
+	J_CHECK_CALL( JS_SetPrivate(cx, newBStrObj, dst) );
+
+	*J_FRVAL = OBJECT_TO_JSVAL( newBStrObj );
+
 	return JS_TRUE;
 }
+
 
 
 DEFINE_FUNCTION_FAST( Substr ) { // http://developer.mozilla.org/en/docs/Core_JavaScript_1.5_Reference:Global_Objects:String:substr
@@ -247,7 +234,7 @@ DEFINE_FUNCTION_FAST( Substr ) { // http://developer.mozilla.org/en/docs/Core_Ja
 	void *pv = JS_GetPrivate(cx, J_FOBJ);
 
 	size_t dataLength;
-	J_CHECK_CALL( LengthGet(cx, J_FOBJ, &dataLength) );
+	J_CHECK_CALL( BStringLength(cx, J_FOBJ, &dataLength) );
 
 	int start;
 	J_JSVAL_TO_INT32( J_FARG(1), start );
@@ -307,29 +294,12 @@ DEFINE_FUNCTION_FAST( IndexOf ) {
 */
 
 
-DEFINE_FUNCTION_FAST( valueOf ) {
+DEFINE_FUNCTION_FAST( toString ) { // and valueOf
 
-	J_CHECK_CALL( BStringToJsval(cx, J_FOBJ, J_FRVAL) );
-	return JS_TRUE;
-}
-
-
-DEFINE_FUNCTION_FAST( toString ) {
-
-//	J_CHECK_CALL( BStringToJsval(cx, J_FOBJ, J_FRVAL) );
-
-	size_t length;
-	J_CHK( LengthGet(cx, J_FOBJ, &length) );
-	char *newBuffer = (char*)JS_malloc(cx, length +1);
-	J_S_ASSERT_ALLOC( newBuffer );
-	newBuffer[length] = '\0';
-	const char *bstrBuf;
-	J_CHK( BufferGet(cx, J_FOBJ, &bstrBuf) );
-	memcpy(newBuffer, bstrBuf, length);
-	JSString *str = JS_NewString(cx, newBuffer, length);
-	J_S_ASSERT_ALLOC(str);
-	*J_FRVAL = STRING_TO_JSVAL(str);
-
+	JSString *jsstr;
+	J_CHK( BStringToJSString(cx, J_FOBJ, &jsstr) );
+	J_S_ASSERT( jsstr != NULL, "Unable to convert BString to String." );
+	*J_FRVAL = STRING_TO_JSVAL(jsstr);
 	return JS_TRUE;
 }
 
@@ -337,10 +307,11 @@ DEFINE_FUNCTION_FAST( toString ) {
 DEFINE_PROPERTY( length ) {
 
 	size_t length;
-	J_CHECK_CALL( LengthGet(cx, obj, &length) );
+	J_CHECK_CALL( BStringLength(cx, obj, &length) );
 	*vp = INT_TO_JSVAL( length );
 	return JS_TRUE;
 }
+
 
 /*
 DEFINE_NEW_RESOLVE() { // support of data[n]  and  n in data
@@ -384,7 +355,7 @@ DEFINE_GET_PROPERTY() {
 		return JS_TRUE;
 
 	size_t length;
-	J_CHECK_CALL( LengthGet(cx, obj, &length) );
+	J_CHECK_CALL( BStringLength(cx, obj, &length) );
 
 	if ( slot < 0 || slot >= (int)length )
 		return JS_TRUE;
@@ -398,7 +369,7 @@ DEFINE_GET_PROPERTY() {
 	return JS_TRUE;
 }
 
-
+/* mutable BString are no more supported
 DEFINE_SET_PROPERTY() {
 
 	void *pv = JS_GetPrivate(cx, obj);
@@ -426,7 +397,7 @@ DEFINE_SET_PROPERTY() {
 
 	return JS_TRUE;
 }
-
+*/
 
 CONFIGURE_CLASS
 
@@ -434,14 +405,14 @@ CONFIGURE_CLASS
 	HAS_FINALIZE
 //	HAS_NEW_RESOLVE
 	HAS_GET_PROPERTY
-	HAS_SET_PROPERTY
+//	HAS_SET_PROPERTY
 
 	BEGIN_FUNCTION_SPEC
 		FUNCTION_FAST(Add)
-		FUNCTION_FAST(Set)
+//		FUNCTION_FAST(Set)
 		FUNCTION_FAST(Substr)
-		FUNCTION_FAST(valueOf)
 		FUNCTION_FAST(toString)
+		FUNCTION_FAST_ALIAS(valueOf, toString)
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC

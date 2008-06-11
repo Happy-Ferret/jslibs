@@ -14,7 +14,7 @@
 
 DECLARE_CLASS( Buffer )
 
-JSBool WriteRawData( JSContext *cx, JSObject *obj, size_t amount, char *str );
+JSBool WriteRawChunk( JSContext *cx, JSObject *obj, size_t amount, const char *str );
 
 JSBool ReadRawAmount( JSContext *cx, JSObject *obj, size_t *amount, char *str );
 JSBool ReadAmount( JSContext *cx, JSObject *obj, size_t amount, jsval *rval );

@@ -49,7 +49,6 @@ inline JSObject* NewBString( JSContext *cx, void *jsMallocatedBuffer, size_t buf
 	return obj;
 }
 
-
 inline JSBool NewBStringCopyN(JSContext *cx, const char *data, size_t amount, JSObject **bstrObj) {
 
 	char *bstrBuf = (char*)JS_malloc(cx, amount);
@@ -73,34 +72,32 @@ inline JSObject* NewEmptyBString( JSContext *cx ) {
 }
 
 
-inline size_t BStringLength( JSContext *cx, JSObject *bStringObject ) {
+inline JSBool BStringLength( JSContext *cx, JSObject *bStringObject, size_t *length ) {
 
-	RT_SAFE(
-		if ( JS_GET_CLASS( cx, bStringObject ) != BStringJSClass( cx ) )
-			return 0; // (TBD) find a better error
-	);
+	J_S_ASSERT_CLASS(bStringObject, BStringJSClass( cx ));
 	jsval lengthVal;
-	RT_CHECK_CALL( JS_GetReservedSlot(cx, bStringObject, SLOT_BSTRING_LENGTH, &lengthVal) );
-	return JSVAL_IS_INT(lengthVal) ? JSVAL_TO_INT( lengthVal ) : 0;
+	J_CHK( JS_GetReservedSlot(cx, bStringObject, SLOT_BSTRING_LENGTH, &lengthVal) );
+	*length = JSVAL_IS_INT(lengthVal) ? JSVAL_TO_INT( lengthVal ) : 0;
+	return JS_TRUE;
 }
 
 
-inline void* BStringData( JSContext *cx, JSObject *bStringObject ) {
+inline JSBool BStringBuffer( JSContext *cx, JSObject *bStringObject, const char **buffer ) {
 
-	RT_SAFE(
-		if ( JS_GET_CLASS( cx, bStringObject ) != BStringJSClass( cx ) )
-			return NULL;
-	);
-	return JS_GetPrivate(cx, bStringObject);
+	J_S_ASSERT_CLASS(bStringObject, BStringJSClass( cx ));
+	*buffer = (const char *)JS_GetPrivate(cx, bStringObject);
+	return JS_TRUE;
 }
 
 
-inline JSBool BStringGetDataAndLength( JSContext *cx, JSObject *bStringObject, void **data, size_t *dataLength ) {
 
-	RT_SAFE(
+inline JSBool BStringGetBufferAndLength( JSContext *cx, JSObject *bStringObject, void **data, size_t *dataLength ) {
+
+	J_SAFE_BEGIN
 		if ( JS_GET_CLASS( cx, bStringObject ) != BStringJSClass( cx ) )
 			return JS_FALSE;
-	);
+	J_SAFE_END
+
 	jsval lengthVal;
 	RT_CHECK_CALL( JS_GetReservedSlot(cx, bStringObject, SLOT_BSTRING_LENGTH, &lengthVal) );
 	*dataLength = JSVAL_IS_INT(lengthVal) ? JSVAL_TO_INT( lengthVal ) : 0;

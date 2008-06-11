@@ -280,7 +280,7 @@ DEFINE_FUNCTION( WriteInt ) {
 
 	RT_ASSERT( !outOfRange, "Value size too big to be stored." );
 
-	RT_CHECK_CALL( WriteRawData(cx, bufferObject, size, (char*)data) );
+	RT_CHECK_CALL( WriteRawChunk(cx, bufferObject, size, (char*)data) );
 
 	return JS_TRUE;
 }

@@ -1,6 +1,12 @@
 LoadModule('jsstd');
 
-//var xxx = new Buffer(BString('1234'));
 
-var xxx = new Buffer();
-xxx.Write([123]);
+
+var str = new BString('123');
+var b = new Buffer();
+b.Write(str);
+str.Add('456');
+b.Write('7');
+
+Print( b.Read() );
+	

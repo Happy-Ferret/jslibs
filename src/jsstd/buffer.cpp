@@ -17,8 +17,6 @@
 // - the buffer MUST NOT contains an empty chunk ( else memory leak during bugger life time )
 // - reading a greater amount that the buffer length make 'onunderflow' property to be called until the size of the buffer do not grows any more.
 // - reading only one chunk of data ( with .Read(undefined); ) on an empty buffer just make one call to 'onunderflow' property.
-// - buffer length is stored in SLOT_BUFFER_LENGTH, and MUST always be up to date.
-// - each buffer chunk is a JSString** that is rooted before being stored in the chunk queue.
 //
 
 #include "stdafx.h"
@@ -102,11 +100,24 @@ JSBool AddBuffer( JSContext *cx, JSObject *destBuffer, JSObject *srcBuffer ) {
 }
 
 
-JSBool WriteRawData( JSContext *cx, JSObject *obj, size_t amount, char *str ) {
+JSBool WriteChunk( JSContext *cx, JSObject *obj, jsval chunk ) {
 
 	BufferPrivate *pv = (BufferPrivate*)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( pv );
+	size_t strLen;
+	J_CHK( JsvalToStringLength(cx, chunk, &strLen) );
+	if ( strLen == 0 ) // optimization & RULES
+		return JS_TRUE;
+	J_CHK( PushJsval(cx, pv->queue, chunk) );
+	pv->length += strLen;
+	return JS_TRUE;
+}
 
+
+JSBool WriteRawChunk( JSContext *cx, JSObject *obj, size_t amount, const char *str ) {
+
+	BufferPrivate *pv = (BufferPrivate*)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE( pv );
 	JSObject* bstrObj;
 	J_CHK( NewBStringCopyN(cx, str, amount, &bstrObj) );
 	J_CHK( PushJsval(cx, pv->queue, OBJECT_TO_JSVAL(bstrObj)) );
@@ -115,7 +126,32 @@ JSBool WriteRawData( JSContext *cx, JSObject *obj, size_t amount, char *str ) {
 }
 
 
-JSBool ReadOneChunk( JSContext *cx, JSObject *obj, jsval *rval ) {
+JSBool UnReadChunk( JSContext *cx, JSObject *obj, jsval chunk ) {
+
+	BufferPrivate *pv = (BufferPrivate*)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE( pv );
+	size_t length;
+	J_CHK( JsvalToStringLength(cx, chunk, &length) );
+	if ( length == 0 ) // optimization && RULES
+		return JS_TRUE;
+	J_CHK( UnshiftJsval(cx, pv->queue, chunk) );
+	pv->length += length;
+	return JS_TRUE;
+}
+
+
+JSBool UnReadRawChunk( JSContext *cx, JSObject *obj, char *data, size_t length ) {
+
+	if ( length == 0 ) // optimization & RULES
+		return JS_TRUE;
+	JSObject* bstrObj;
+	J_CHK( NewBStringCopyN(cx, data, length, &bstrObj) );
+	J_CHK( UnReadChunk(cx, obj, OBJECT_TO_JSVAL(bstrObj)) );
+	return JS_TRUE;
+}
+
+
+JSBool ReadChunk( JSContext *cx, JSObject *obj, jsval *rval ) {
 
 	BufferPrivate *pv = (BufferPrivate*)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( pv );
@@ -153,10 +189,9 @@ JSBool ReadRawAmount( JSContext *cx, JSObject *obj, size_t *amount, char *str ) 
 
 			bufferLengthBeforeRefillRequest = pv->length;
 			J_CHK( BufferRefillRequest(cx, obj, *amount - pv->length) );
+		} while( pv->length < *amount && pv->length > bufferLengthBeforeRefillRequest ); // see RULES ( at the top of this file )
 
-		} while( *amount > pv->length && pv->length > bufferLengthBeforeRefillRequest ); // see RULES ( at the top of this file )
-
-		if ( *amount > pv->length ) // we definitively cannot read the required amount of data, then read the whole buffer.
+		if ( pv->length < *amount ) // we definitively cannot read the required amount of data, then read the whole buffer.
 			*amount = pv->length;
 	}
 
@@ -202,7 +237,7 @@ JSBool ReadAmount( JSContext *cx, JSObject *obj, size_t amount, jsval *rval ) {
 		return JS_TRUE;
 	}
 
-	char *str = (char*)JS_malloc(cx, amount + 1); // (TBD) memory leak if ReadRawAmount failed
+	char *str = (char*)JS_malloc(cx, amount +1); // (TBD) memory leak if ReadRawAmount failed
 	J_S_ASSERT_ALLOC(str);
 
 	// (TBD) IMPORTANT: here, amount should be MIN( amount, buffer_size ). This can avoid an useless memory allocation.
@@ -218,42 +253,15 @@ JSBool ReadAmount( JSContext *cx, JSObject *obj, size_t amount, jsval *rval ) {
 
 	str[amount] = '\0'; // (TBD) explain this
 
-	// (TBD) if amount after calling ReadRawAmount is smaller than before, realloc the buffer
 	if ( MaybeRealloc( requestedAmount, amount ) ) {
 
-		str = (char*)JS_realloc(cx, str, amount + 1);
+		str = (char*)JS_realloc(cx, str, amount +1);
 		J_S_ASSERT_ALLOC(str);
 	}
 
-//	*rval = STRING_TO_JSVAL(JS_NewString(cx, str, amount));
 	JSObject *bstr = NewBString(cx, str, amount);
 	J_S_ASSERT( bstr != NULL, "Unable to create the BString." );
 	*rval = OBJECT_TO_JSVAL(bstr);
-	return JS_TRUE;
-}
-
-
-JSBool UnReadChunk( JSContext *cx, JSObject *obj, jsval chunk ) {
-
-	BufferPrivate *pv = (BufferPrivate*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE( pv );
-	size_t length;
-	J_CHK( JsvalToStringLength(cx, chunk, &length) );
-	if ( length == 0 ) // optimization && RULES
-		return JS_TRUE;
-	J_CHK( UnshiftJsval(cx, pv->queue, chunk) );
-	pv->length += length;
-	return JS_TRUE;
-}
-
-
-JSBool UnReadRawChunk( JSContext *cx, JSObject *obj, char *data, size_t length ) {
-
-	if ( length == 0 ) // optimization & RULES
-		return JS_TRUE;
-	JSObject* bstrObj;
-	J_CHK( NewBStringCopyN(cx, data, length, &bstrObj) );
-	J_CHK( UnReadChunk(cx, obj, OBJECT_TO_JSVAL(bstrObj)) );
 	return JS_TRUE;
 }
 
@@ -330,7 +338,7 @@ DEFINE_CONSTRUCTOR() {
 
 		if ( JSVAL_IS_OBJECT(J_ARG(1)) && !JSVAL_IS_NULL(J_ARG(1)) && J_JSVAL_IS_CLASS(J_ARG(1), _class) ) {
 
-			J_CHK( AddBuffer(cx, obj, JSVAL_TO_OBJECT( J_ARG(1) )) );
+			return AddBuffer(cx, obj, JSVAL_TO_OBJECT( J_ARG(1) ));
 		} else {
 
 			size_t length;
@@ -338,7 +346,7 @@ DEFINE_CONSTRUCTOR() {
 			if ( length == 0 )
 				return JS_TRUE;
 			pv->length += length;
-			J_CHK( PushJsval(cx, pv->queue, J_ARG(1)) );
+			return PushJsval(cx, pv->queue, J_ARG(1));
 		}
 	}
 	return JS_TRUE;
@@ -362,38 +370,24 @@ DEFINE_FUNCTION( Write ) {
 	J_S_ASSERT_RESOURCE( pv );
 	J_S_ASSERT_ARG_MIN( 1 );
 
-	size_t strLen;
-	J_CHK( JsvalToStringLength(cx, J_ARG(1), &strLen) );
-
-	if ( strLen == 0 )
-		return JS_TRUE;
-
-	jsval item;
-
-	size_t amount;
 	if ( J_ARG_ISDEF(2) ) {
+
+		size_t amount, strLen;
+		const char *buf;
+		J_CHK( JsvalToStringAndLength(cx, J_ARG(1), &buf, &strLen) );
+
+		if ( strLen == 0 )
+			return JS_TRUE;
 
 		RT_JSVAL_TO_INT32( J_ARG(2), amount );
 		if ( amount > strLen )
 			amount = strLen;
 
-		const char *buf;
-		J_CHK( JsvalToString(cx, J_ARG(1), &buf) );
-
-		//	(TBD) use JS_NewDependentString if arg 1 is a JSString
-		JSObject* bstrObj;
-		NewBStringCopyN(cx, buf, amount, &bstrObj);
-		item = OBJECT_TO_JSVAL(bstrObj);
-
+		return WriteRawChunk(cx, obj, amount, buf);
 	} else {
-
-		item = J_ARG(1);
-		amount = strLen;
+		
+		return WriteChunk(cx, obj, J_ARG(1));
 	}
-
-	J_CHK( PushJsval(cx, pv->queue, item) );
-	pv->length += amount;
-	return JS_TRUE;
 }
 
 
@@ -427,11 +421,8 @@ DEFINE_FUNCTION( Read ) { // Read( [ amount | <undefined> ] )
 	BufferPrivate *pv = (BufferPrivate*)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( pv );
 
-	if ( J_ARGC == 1 && J_ARG(1) == JSVAL_VOID ) { // read the next chunk (of an unknown length) (read something as fast as possible)
-
-		J_CHK( ReadOneChunk(cx, obj, rval) );
-		return JS_TRUE;
-	}
+	if ( J_ARGC == 1 && J_ARG(1) == JSVAL_VOID ) // read the next chunk (of an unknown length) (read something as fast as possible)
+		return ReadChunk(cx, obj, rval);
 
 	size_t amount;
 	if ( J_ARG_ISDEF(1) )
@@ -508,7 +499,7 @@ DEFINE_FUNCTION( Unread ) {
 	return JS_TRUE;
 }
 
-
+// Note:  String( { toString:function() { return [1,2,3]} } );  throws the following error: "can't convert Object to string"
 DEFINE_FUNCTION( toString ) {
 
 	BufferPrivate *pv = (BufferPrivate*)JS_GetPrivate(cx, obj);
@@ -539,6 +530,16 @@ DEFINE_FUNCTION( toString ) {
 	J_S_ASSERT_ALLOC( str );
 	*rval = STRING_TO_JSVAL(str);
 	pv->length = 0;
+
+	// we have to return a real string !
+	//char *bstrBuf = (char*)JS_malloc(cx, pv->length);
+	//J_S_ASSERT_ALLOC( bstrBuf );
+	//size_t amount = pv->length;
+	//J_CHK( ReadRawAmount(cx, obj, &amount, bstrBuf) );
+	//JSObject *bstrObj = NewBString(cx, bstrBuf, pv->length);
+	//J_S_ASSERT( bstrObj != NULL, "Unable to create the BString." );
+	//*J_RVAL = OBJECT_TO_JSVAL(bstrObj);
+	
 	return JS_TRUE;
 }
 

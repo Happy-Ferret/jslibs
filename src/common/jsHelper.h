@@ -170,14 +170,21 @@ extern bool *_pUnsafeMode;
 	( JSVAL_IS_OBJECT(value) && !JSVAL_IS_NULL(value) && JS_GET_CLASS(cx, JSVAL_TO_OBJECT(value)) == (jsClass) )
 
 
-#define J_IS_SAFE_MODE(code) \
+//#define J_IS_SAFE_MODE(code) \
+
+
+#define J_SAFE_BEGIN if (unlikely( !*_pUnsafeMode )) {
+#define J_SAFE_END }
+
+#define J_UNSAFE_BEGIN if (likely( *_pUnsafeMode ))
+#define J_UNSAFE_END }
+
 
 #define J_SAFE(code) \
 	do { if (unlikely( !*_pUnsafeMode )) {code;} } while(0)
 
 #define J_UNSAFE(code) \
 	do { if (likely( *_pUnsafeMode )) {code;} } while(0)
-
 
 
 // Reports warnings. May be disabled in unsafemode

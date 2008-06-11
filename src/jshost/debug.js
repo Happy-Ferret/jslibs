@@ -2,12 +2,10 @@ LoadModule('jsstd');
 //LoadModule('jsio');
 
 
-
-var xxx = new Buffer();
-xxx.Write([123]);
-
-
-
+var buf = new Buffer();
+buf.Write('\xAA\xBB\xCC\xDD');
+var pack = new Pack(buf);
+Print( pack.ReadString(3).toString().quote() );
 
 
 
