@@ -369,13 +369,17 @@ DEFINE_GET_PROPERTY() {
 	return JS_TRUE;
 }
 
-/* mutable BString are no more supported
+
 DEFINE_SET_PROPERTY() {
+	
+	J_S_ASSERT( !JSVAL_IS_NUMBER(id), "Cannot modify immutable string" );
+
+/* mutable BString are no more supported
 
 	void *pv = JS_GetPrivate(cx, obj);
+
 	if ( pv == NULL )
 		return J_ReportError(cx, JSSMSG_OUT_OF_RANGE);
-
 	size_t length;
 	J_CHECK_CALL( LengthGet(cx, obj, &length) );
 
@@ -394,10 +398,10 @@ DEFINE_SET_PROPERTY() {
 		J_REPORT_ERROR("Invalid char.");
 
 	((char*)pv)[slot] = *JS_GetStringBytes( JSVAL_TO_STRING(*vp) );
-
+*/
 	return JS_TRUE;
 }
-*/
+
 
 CONFIGURE_CLASS
 
@@ -405,7 +409,7 @@ CONFIGURE_CLASS
 	HAS_FINALIZE
 //	HAS_NEW_RESOLVE
 	HAS_GET_PROPERTY
-//	HAS_SET_PROPERTY
+	HAS_SET_PROPERTY
 
 	BEGIN_FUNCTION_SPEC
 		FUNCTION_FAST(Add)
