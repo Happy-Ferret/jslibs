@@ -27,6 +27,7 @@
 #include "../common/queue.h"
 #include "../jslang/bstringapi.h"
 
+
 struct BufferPrivate {
 
 	size_t length;
@@ -82,30 +83,26 @@ inline JSBool BufferRefillRequest( JSContext *cx, JSObject *obj, size_t missing 
 }
 
 
-JSBool AddBuffer( JSContext *cx, JSObject *destBuffer, JSObject *srcBuffer ) {
-
-	J_S_ASSERT_CLASS( destBuffer, &classBuffer );
-	BufferPrivate *dpv = (BufferPrivate*)JS_GetPrivate(cx, destBuffer);
-	J_S_ASSERT_RESOURCE( dpv );
-
-	J_S_ASSERT_CLASS( srcBuffer, &classBuffer );
-	BufferPrivate *spv = (BufferPrivate*)JS_GetPrivate(cx, srcBuffer);
-	J_S_ASSERT_RESOURCE( spv );
-
-	for ( QueueCell *it = QueueBegin(spv->queue); it; it = QueueNext(it) )
-		J_CHK( PushJsval(cx, dpv->queue, *(jsval*)QueueGetData(it)) );
-	dpv->length += spv->length;
-
-	return JS_TRUE;
-}
-
-
 JSBool WriteChunk( JSContext *cx, JSObject *obj, jsval chunk ) {
 
 	BufferPrivate *pv = (BufferPrivate*)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( pv );
+
+	if ( !JSVAL_IS_STRING(chunk) && !JsvalIsBString(cx, chunk) ) {
+
+		JSString *jsstr = JS_ValueToString(cx, chunk);
+		J_S_ASSERT( jsstr != NULL, "Unable to convert the chunk into a string." );
+		chunk = STRING_TO_JSVAL(jsstr);
+	}
+
+	// here, chunk is a JSString or a BString
+
 	size_t strLen;
-	J_CHK( JsvalToStringLength(cx, chunk, &strLen) );
+	if ( JSVAL_IS_STRING( chunk ) )
+		strLen = J_STRING_LENGTH( JSVAL_TO_STRING( chunk ) );
+	else
+		BStringLength(cx, JSVAL_TO_OBJECT( chunk ), &strLen);
+//	J_CHK( JsvalToStringLength(cx, chunk, &strLen) );
 	if ( strLen == 0 ) // optimization & RULES
 		return JS_TRUE;
 	J_CHK( PushJsval(cx, pv->queue, chunk) );
@@ -130,12 +127,25 @@ JSBool UnReadChunk( JSContext *cx, JSObject *obj, jsval chunk ) {
 
 	BufferPrivate *pv = (BufferPrivate*)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( pv );
-	size_t length;
-	J_CHK( JsvalToStringLength(cx, chunk, &length) );
-	if ( length == 0 ) // optimization && RULES
+
+	if ( !JSVAL_IS_STRING(chunk) && !JsvalIsBString(cx, chunk) ) {
+
+		JSString *jsstr = JS_ValueToString(cx, chunk);
+		J_S_ASSERT( jsstr != NULL, "Unable to convert the chunk into a string." );
+		chunk = STRING_TO_JSVAL(jsstr);
+	}
+	// here, chunk is a JSString or a BString
+
+	size_t strLen;
+	if ( JSVAL_IS_STRING( chunk ) )
+		strLen = J_STRING_LENGTH( JSVAL_TO_STRING( chunk ) );
+	else
+		BStringLength(cx, JSVAL_TO_OBJECT( chunk ), &strLen);
+//	J_CHK( JsvalToStringLength(cx, chunk, &length) );
+	if ( strLen == 0 ) // optimization && RULES
 		return JS_TRUE;
 	J_CHK( UnshiftJsval(cx, pv->queue, chunk) );
-	pv->length += length;
+	pv->length += strLen;
 	return JS_TRUE;
 }
 
@@ -273,7 +283,9 @@ JSBool FindInBuffer( JSContext *cx, JSObject *obj, const char *needle, size_t ne
 	J_S_ASSERT_RESOURCE( pv );
 
 	size_t pos = 0;
-	char *buf = (char*)malloc(needleLength); // the "ring buffer"
+
+	char staticBuffer[128];
+	char *buf = needleLength <= sizeof(staticBuffer) ? staticBuffer : (char*)malloc(needleLength); // the "ring buffer"
 
 	size_t chunkLength;
 	const char *chunk;
@@ -300,12 +312,28 @@ JSBool FindInBuffer( JSContext *cx, JSObject *obj, const char *needle, size_t ne
 
 	*foundAt = -1;
 end:
-	free(buf); // free the "ring buffer"
+	if ( buf != staticBuffer )
+		free(buf); // free the "ring buffer"
 	return JS_TRUE;
 }
 
 
+JSBool AddBuffer( JSContext *cx, JSObject *destBuffer, JSObject *srcBuffer ) {
 
+	J_S_ASSERT_CLASS( destBuffer, &classBuffer );
+	BufferPrivate *dpv = (BufferPrivate*)JS_GetPrivate(cx, destBuffer);
+	J_S_ASSERT_RESOURCE( dpv );
+
+	J_S_ASSERT_CLASS( srcBuffer, &classBuffer );
+	BufferPrivate *spv = (BufferPrivate*)JS_GetPrivate(cx, srcBuffer);
+	J_S_ASSERT_RESOURCE( spv );
+
+	for ( QueueCell *it = QueueBegin(spv->queue); it; it = QueueNext(it) )
+		J_CHK( PushJsval(cx, dpv->queue, *(jsval*)QueueGetData(it)) );
+	dpv->length += spv->length;
+
+	return JS_TRUE;
+}
 
 
 BEGIN_CLASS( Buffer )
