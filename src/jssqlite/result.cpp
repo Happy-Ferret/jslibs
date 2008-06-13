@@ -132,7 +132,7 @@ JSBool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *objAt,
 
 					JSObject *bstringObject = JSVAL_TO_OBJECT(val);
 					const char *data;
-					BStringBuffer(cx, bstringObject, &data);
+					BStringBuffer(cx, bstringObject, (const void **)&data);
 					//J_S_ASSERT( data != NULL, "Invalid BString object.")
 					size_t length;
 					BStringLength(cx, bstringObject, &length);

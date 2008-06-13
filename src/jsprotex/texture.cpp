@@ -372,7 +372,7 @@ DEFINE_CONSTRUCTOR() {
 
 		const char *buffer;
 //		u_int8_t *buffer = (u_int8_t*)
-		J_CHK( BStringBuffer(cx, bstr, &buffer) );
+		J_CHK( BStringBuffer(cx, bstr, (const void **)&buffer) );
 
 		tex->width = sWidth;
 		tex->height = sHeight;
@@ -2299,7 +2299,7 @@ DEFINE_FUNCTION_FAST( Import ) { // (BString)image, (int)x, (int)y
 	//u_int8_t *buffer = (u_int8_t*)BStringData(cx, bstr);
 
 	const char *buffer;
-	J_CHK( BStringBuffer(cx, bstr, &buffer) );
+	J_CHK( BStringBuffer(cx, bstr, (const void **)&buffer) );
 
 	int px, py;
 	if ( J_ARGC >= 3 ) {

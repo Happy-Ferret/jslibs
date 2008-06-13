@@ -32,7 +32,7 @@ inline JSBool LengthSet( JSContext *cx, JSObject *obj, size_t bufferLength ) {
 JSBool NativeInterfaceBufferGet( JSContext *cx, JSObject *obj, const char **buf, size_t *size ) {
 
 	J_CHK( BStringLength(cx, obj, size) );
-	J_CHK( BStringBuffer(cx, obj, buf) );
+	J_CHK( BStringBuffer(cx, obj, (const void **)buf) );
 	return JS_TRUE;
 }
 
