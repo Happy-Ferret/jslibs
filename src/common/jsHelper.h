@@ -286,8 +286,9 @@ extern bool *_pUnsafeMode;
 // test and conversion functions
 
 
-//#define J_STRING_LENGTH(str) (JS_GetStringLength(str))
-#define J_STRING_LENGTH(str) (JSSTRING_LENGTH(str))
+//#define J_STRING_LENGTH(jsstr) (JS_GetStringLength(jsstr))
+#define J_STRING_LENGTH(jsstr) (JSSTRING_LENGTH(jsstr))
+
 
 /*
 inline bool JsvalIsString( JSContext *cx, jsval val ) {

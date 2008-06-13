@@ -28,9 +28,9 @@ inline JSClass* BStringJSClass( JSContext *cx ) {
 	return jsClass;
 }
 
-inline bool JsvalIsBString( JSContext *cx, jsval value ) {
+inline bool JsvalIsBString( JSContext *cx, jsval val ) {
 
-	return ( JSVAL_IS_OBJECT( value ) && !JSVAL_IS_NULL( value ) && JS_GET_CLASS(cx, JSVAL_TO_OBJECT( value )) == BStringJSClass(cx) );
+	return ( JSVAL_IS_OBJECT(val) && !JSVAL_IS_NULL(val) && JS_GET_CLASS(cx, JSVAL_TO_OBJECT(val)) == BStringJSClass(cx) );
 }
 
 // NewBString takes ownership of jsMallocatedBuffer on success. Allocation must be done with JS_malloc
@@ -49,7 +49,7 @@ inline JSObject* NewBString( JSContext *cx, void *jsMallocatedBuffer, size_t buf
 	return obj;
 }
 
-inline JSBool NewBStringCopyN(JSContext *cx, const char *data, size_t amount, JSObject **bstrObj) {
+inline JSBool NewBStringCopyN(JSContext *cx, const void *data, size_t amount, JSObject **bstrObj) {
 
 	char *bstrBuf = (char*)JS_malloc(cx, amount);
 	J_S_ASSERT_ALLOC( bstrBuf );
@@ -82,10 +82,10 @@ inline JSBool BStringLength( JSContext *cx, JSObject *bStringObject, size_t *len
 }
 
 
-inline JSBool BStringBuffer( JSContext *cx, JSObject *bStringObject, const char **buffer ) {
+inline JSBool BStringBuffer( JSContext *cx, JSObject *bStringObject, const void **buffer ) {
 
 	J_S_ASSERT_CLASS(bStringObject, BStringJSClass( cx ));
-	*buffer = (const char *)JS_GetPrivate(cx, bStringObject);
+	*buffer = JS_GetPrivate(cx, bStringObject);
 	return JS_TRUE;
 }
 
@@ -93,11 +93,7 @@ inline JSBool BStringBuffer( JSContext *cx, JSObject *bStringObject, const char 
 
 inline JSBool BStringGetBufferAndLength( JSContext *cx, JSObject *bStringObject, void **data, size_t *dataLength ) {
 
-	J_SAFE_BEGIN
-		if ( JS_GET_CLASS( cx, bStringObject ) != BStringJSClass( cx ) )
-			return JS_FALSE;
-	J_SAFE_END
-
+	J_S_ASSERT_CLASS(bStringObject, BStringJSClass( cx ));
 	jsval lengthVal;
 	RT_CHECK_CALL( JS_GetReservedSlot(cx, bStringObject, SLOT_BSTRING_LENGTH, &lengthVal) );
 	*dataLength = JSVAL_IS_INT(lengthVal) ? JSVAL_TO_INT( lengthVal ) : 0;
