@@ -8,5 +8,6 @@ b.Write(str);
 str.Add('456');
 b.Write('7');
 
-Print( b.Read() );
+
+Print( b.Skip(4) );
 	

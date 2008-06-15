@@ -72,13 +72,21 @@ inline JSBool ShiftJsval( JSContext *cx, Queue *queue, jsval *value ) {
 
 
 // missing = missing amount of data to complete the request
-inline JSBool BufferRefillRequest( JSContext *cx, JSObject *obj, size_t missing ) {
+inline JSBool BufferRefill( JSContext *cx, JSObject *obj, size_t amount ) {
 
+	BufferPrivate *pv = (BufferPrivate*)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE( pv );
 	jsval rval, fctVal;
+	size_t bufferLengthBeforeRefillRequest;
 	J_CHK( JS_GetProperty(cx, obj, "onunderflow", &fctVal) );
-	jsval argv[] = { OBJECT_TO_JSVAL(obj), INT_TO_JSVAL(missing) };
-	if ( JsvalIsFunction(cx, fctVal) )
-		JS_CallFunctionValue(cx, obj, fctVal, sizeof(argv)/sizeof(*argv), argv, &rval);
+	if ( !JsvalIsFunction(cx, fctVal) )
+		return JS_TRUE; // cannot refil, onunderflow is not defined
+	do {
+
+		bufferLengthBeforeRefillRequest = pv->length;
+		jsval argv[] = { OBJECT_TO_JSVAL(obj), INT_TO_JSVAL(amount - pv->length) };
+		J_CHK( JS_CallFunctionValue(cx, obj, fctVal, sizeof(argv)/sizeof(*argv), argv, &rval) );
+	} while( pv->length < amount && pv->length > bufferLengthBeforeRefillRequest ); // see RULES ( at the top of this file )
 	return JS_TRUE;
 }
 
@@ -168,7 +176,7 @@ JSBool ReadChunk( JSContext *cx, JSObject *obj, jsval *rval ) {
 
 	if ( pv->length == 0 ) { // if buffer is empty, try to refill it.
 
-		J_CHK( BufferRefillRequest(cx, obj, 0) );
+		J_CHK( BufferRefill(cx, obj, 1) ); // at least 1 more byte
 		if ( pv->length == 0 ) { // the data are definitively exhausted
 
 			*rval = JS_GetEmptyStringValue(cx);
@@ -189,21 +197,13 @@ JSBool ReadRawAmount( JSContext *cx, JSObject *obj, size_t *amount, char *str ) 
 	if ( *amount == 0 ) // optimization
 		return JS_TRUE;
 
+	J_S_ASSERT( *amount > 0, "Invalid amount requested." );
+
 	BufferPrivate *pv = (BufferPrivate*)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( pv );
 
-	if ( pv->length < *amount || pv->length == 0 ) { // more that the available data is required, then try to refill the buffer
-
-		size_t bufferLengthBeforeRefillRequest;
-		do {
-
-			bufferLengthBeforeRefillRequest = pv->length;
-			J_CHK( BufferRefillRequest(cx, obj, *amount - pv->length) );
-		} while( pv->length < *amount && pv->length > bufferLengthBeforeRefillRequest ); // see RULES ( at the top of this file )
-
-		if ( pv->length < *amount ) // we definitively cannot read the required amount of data, then read the whole buffer.
-			*amount = pv->length;
-	}
+	if ( pv->length < *amount )
+		J_CHK( BufferRefill(cx, obj, *amount) );
 
 	if ( *amount == 0 ) // another optimization
 		return JS_TRUE;
@@ -235,6 +235,54 @@ JSBool ReadRawAmount( JSContext *cx, JSObject *obj, size_t *amount, char *str ) 
 		}
 	}
 	pv->length -= *amount;
+	return JS_TRUE;
+}
+
+JSBool BufferSkipAmount( JSContext *cx, JSObject *obj, size_t amount ) {
+
+	if ( amount == 0 ) // optimization
+		return JS_TRUE;
+
+	BufferPrivate *pv = (BufferPrivate*)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE( pv );
+
+	if ( pv->length < amount )
+		J_CHK( BufferRefill(cx, obj, amount) );
+
+	if ( pv->length < amount ) {
+
+		amount = pv->length - amount;
+		while ( !QueueIsEmpty(pv->queue) )
+			J_CHK( ShiftJsval(cx, pv->queue, NULL) );
+		pv->length = 0;
+		return JS_TRUE;
+	}		
+
+	size_t remainToRead = amount;
+	while ( remainToRead > 0 ) { // while there is something to read,
+
+		jsval item;
+		J_CHK( ShiftJsval(cx, pv->queue, &item) );
+
+		size_t chunkLen;
+		J_CHK( JsvalToStringLength(cx, item, &chunkLen) );
+
+		if ( chunkLen <= remainToRead ) {
+
+			remainToRead -= chunkLen;
+		} else {
+
+			size_t chunkLen;
+			const char *chunk;
+			J_CHK( JsvalToStringAndLength(cx, item, &chunk, &chunkLen) );
+
+			JSObject *bstrObj;
+			J_CHK( NewBStringCopyN(cx, chunk + remainToRead, chunkLen - remainToRead, &bstrObj) );
+			UnshiftJsval(cx, pv->queue, OBJECT_TO_JSVAL( bstrObj ));
+			remainToRead = 0; // adjust remaining required data length
+		}
+	}
+	pv->length -= amount;
 	return JS_TRUE;
 }
 
@@ -471,13 +519,15 @@ DEFINE_FUNCTION( Read ) { // Read( [ amount | <undefined> ] )
 
 DEFINE_FUNCTION( Skip ) { // Skip( amount )
 
+	BufferPrivate *pv = (BufferPrivate*)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE( pv );
 	J_S_ASSERT_ARG_MIN( 1 );
-
 	size_t amount;
 	RT_JSVAL_TO_INT32( J_ARG(1), amount );
 	J_S_ASSERT( amount >= 0, "Invalid amount" );
-	J_CHK( ReadAmount(cx, obj, amount, rval) ); // (TBD) optimization: skip without reading the data.
-	*rval = JSVAL_VOID;
+	size_t prevBufferLength = pv->length;
+	J_CHK( BufferSkipAmount(cx, obj, amount) ); // (TBD) optimization: skip without reading the data.
+	*rval = BOOLEAN_TO_JSVAL( pv->length == prevBufferLength - amount ); // function returns true on sucessful skip operation
 	return JS_TRUE;
 }
 
