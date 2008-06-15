@@ -14,6 +14,9 @@ Set Lib=%DirectXPath%\Lib\x86;%Lib%
 Set Include=%DirectXPath%\Include;%Include%
 
 call "%platformSDKPath%\SetEnv.Cmd" /XP32 /RETAIL
+rem The following line is needed for OpenAL compilation (.\OpenAL32.rc(10) : fatal error RC1015: cannot open include file 'afxres.h'.)
+set Include=%Include%;%MSSdk%\Include\mfc;%MSSdk%\Include\atl
+
 call "%visualStudioPath%\VC\vcvarsall.bat" x86
 
 date /T > build.log
