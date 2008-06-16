@@ -72,7 +72,6 @@
 	},
 
 
-
 	Exceptions: function(QA) {
 	
 		LoadModule('jssqlite');
@@ -156,11 +155,10 @@
 	NamedVariables: function(QA) {
 
 		LoadModule('jssqlite');
-		var db = new Database('test_sqlite_database');
+		var db = new Database();
 		var res = db.Exec('SELECT @varTest', { varTest:123} );
 		QA.ASSERT( res, 123, 'row result' );
 		db.Close();
-		new File('test_sqlite_database').Delete();
 	},
 
 
@@ -168,13 +166,15 @@
 
 		LoadModule('jssqlite');
 	
-		var db = new Database('test_sqlite_database');
-		var row = db.Query('SELECT ?+?+?', {0:2,1:2,2:2,3:2,length:3}).Row();
+		var db = new Database();
 	
-		QA.ASSERT( Number(row), 6, 'row result' );
+		var res = db.Exec( 'select ?+?+?', [2, 3, 4] );
+		QA.ASSERT( res, 9, 'addition using question mark' );
+
+		var row = db.Query('SELECT ?+?+?', {0:2,1:2,2:2,3:2,length:3}).Row();
+		QA.ASSERT( Number(row), 6, 'addition using question mark' );
 
 		db.Close();
-		new File('test_sqlite_database').Delete();
 	},
 	
 	
