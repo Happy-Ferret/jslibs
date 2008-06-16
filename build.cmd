@@ -64,7 +64,8 @@ rem		if ERRORLEVEL 1 goto error
 rem			echo ... ok.
 
 			pushd %%~dg%%~pg%BUILD%
-			copy %%f.dll %%f.exe ..\..\%BUILD% 1>nul
+			copy %%~nf.dll ..\..\..\%BUILD% 1>nul
+			copy %%~nf.exe ..\..\..\%BUILD% 1>nul
 			popd
 		)
 	)
