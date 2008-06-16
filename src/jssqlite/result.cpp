@@ -237,6 +237,7 @@ DEFINE_FUNCTION( Step ) {
 
 	switch (status) {
 		case SQLITE_ERROR:
+		case SQLITE_SCHEMA:
 			return SqliteThrowError( cx, status, sqlite3_errcode(sqlite3_db_handle( pStmt )), sqlite3_errmsg(sqlite3_db_handle( pStmt )));
 		case SQLITE_MISUSE: // means that the this routine was called inappropriately. Perhaps it was called on a virtual machine that had already been finalized or on one that had previously returned SQLITE_ERROR or SQLITE_DONE. Or it could be the case that a database connection is being used by a different thread than the one it was created it.
 			REPORT_ERROR( "this routine was called inappropriately" );
@@ -247,7 +248,7 @@ DEFINE_FUNCTION( Step ) {
 			*rval = JSVAL_TRUE;
 			return JS_TRUE;
 	}
-	REPORT_ERROR_1("uncatch error (%d)", status );
+	REPORT_ERROR_1("invalid case (status:%d)", status );
 }
 
 

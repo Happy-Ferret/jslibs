@@ -37,17 +37,22 @@ DEFINE_CONSTRUCTOR() {
 	J_S_ASSERT_THIS_CLASS();
 
 	const char *fileName;
-	if ( J_ARG_ISDEF(1) ) {
-
-		RT_JSVAL_TO_STRING( argv[0], fileName );
-	} else {
-
+	if ( J_ARG_ISDEF(1) ) // todoc
+		RT_JSVAL_TO_STRING(  J_ARG(1), fileName );
+	else
 		fileName = ":memory:";
-	}
+
+	int flags; // todoc
+	if ( J_ARG_ISDEF(2) )
+		flags = JSVAL_TO_INT( J_ARG(2) );
+	else
+		flags = SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE; // default
 
 	sqlite3 *db;
-	int status = sqlite3_open( fileName, &db ); // see. sqlite3_open_v2()
-	if ( status != SQLITE_OK )
+//	int status = sqlite3_open( fileName, &db ); // see. sqlite3_open_v2()
+	int status = sqlite3_open_v2( fileName, &db, flags, NULL );
+
+	if ( status != SQLITE_OK || db == NULL  )
 		return SqliteThrowError( cx, status, sqlite3_errcode(db), sqlite3_errmsg(db) );
 
 	sqlite3_extended_result_codes(db, true); // SQLite 3.3.8
@@ -149,17 +154,17 @@ DEFINE_FUNCTION( Query ) {
 	RT_ASSERT_RESOURCE( db );
 
 	const char *sqlQuery;
-	RT_JSVAL_TO_STRING( argv[0], sqlQuery );
+	size_t sqlQueryLength;
+	J_CHK( JsvalToStringAndLength(cx, J_ARG(1), &sqlQuery, &sqlQueryLength) );
 
 	const char *szTail;
 	sqlite3_stmt *pStmt;
-	int status = sqlite3_prepare( db, sqlQuery, -1, &pStmt, &szTail ); // If the next argument, "nBytes", is less than zero, then zSql is read up to the first nul terminator.
+	int status = sqlite3_prepare_v2( db, sqlQuery, sqlQueryLength, &pStmt, &szTail ); // If the next argument, "nBytes", is less than zero, then zSql is read up to the first nul terminator.
 	if ( status != SQLITE_OK )
 		return SqliteThrowError( cx, status, sqlite3_errcode(db), sqlite3_errmsg(db) );
-	RT_ASSERT_1( *szTail == '\0', "too many SQL statements (%s)", szTail ); // for the moment, do not support multiple statements
-
-	if ( pStmt == NULL ) // if there is an error, *ppStmt may be set to NULL. If the input text contained no SQL (if the input is and empty string or a comment) then *ppStmt is set to NULL.
-		REPORT_ERROR( "Invalid SQL string." );
+	RT_ASSERT( *szTail == '\0', "too many SQL statements." ); // for the moment, do not support multiple statements
+//	if ( pStmt == NULL ) // if there is an error, *ppStmt may be set to NULL. If the input text contained no SQL (if the input is and empty string or a comment) then *ppStmt is set to NULL.
+//		REPORT_ERROR( "Invalid SQL string." );
 
 	// remember the statement for later finalization
 	jsval v;
@@ -178,7 +183,6 @@ DEFINE_FUNCTION( Query ) {
 	if ( argc >= 2 && argv[1] != JSVAL_VOID && JSVAL_IS_OBJECT(argv[1]) )
 		JS_SetReservedSlot(cx, dbStatement, SLOT_RESULT_QUERY_ARGUMENT_OBJECT, argv[1]);
 
-
 	return JS_TRUE;
 }
 
@@ -191,15 +195,20 @@ DEFINE_FUNCTION( Exec ) {
 	RT_ASSERT_RESOURCE( db );
 
 	const char *sqlQuery;
-	RT_JSVAL_TO_STRING( argv[0], sqlQuery );
+//	RT_JSVAL_TO_STRING( argv[0], sqlQuery );
+	size_t sqlQueryLength;
+	J_CHK( JsvalToStringAndLength(cx, J_ARG(1), &sqlQuery, &sqlQueryLength) );
 
 	const char *szTail;
 	sqlite3_stmt *pStmt;
 	int status;
-	status = sqlite3_prepare( db, sqlQuery, -1, &pStmt, &szTail ); // If the next argument, "nBytes", is less than zero, then zSql is read up to the first nul terminator.
+	status = sqlite3_prepare_v2( db, sqlQuery, sqlQueryLength, &pStmt, &szTail ); // If the next argument, "nBytes", is less than zero, then zSql is read up to the first nul terminator.
 	if ( status != SQLITE_OK )
 		return SqliteThrowError( cx, status, sqlite3_errcode(db), sqlite3_errmsg(db) );
-	RT_ASSERT_1( *szTail == '\0', "Too many SQL statements (%s).", szTail ); // for the moment, do not support multiple statements
+	RT_ASSERT( *szTail == '\0', "Too many SQL statements." ); // for the moment, do not support multiple statements
+//	if ( pStmt == NULL ) // if there is an error, *ppStmt may be set to NULL. If the input text contained no SQL (if the input is and empty string or a comment) then *ppStmt is set to NULL.
+//		REPORT_ERROR( "Invalid SQL string." );
+
 	// (TBD) support multiple statements
 
 	if ( argc >= 2 && argv[1] != JSVAL_VOID && JSVAL_IS_OBJECT(argv[1]) )
@@ -215,12 +224,13 @@ DEFINE_FUNCTION( Exec ) {
 		case SQLITE_MISUSE: // means that the this routine was called inappropriately. Perhaps it was called on a virtual machine that had already been finalized or on one that had previously returned SQLITE_ERROR or SQLITE_DONE. Or it could be the case that a database connection is being used by a different thread than the one it was created it.
 			REPORT_ERROR( "This routine was called inappropriately." );
 		case SQLITE_DONE: // means that the statement has finished executing successfully. sqlite3_step() should not be called again on this virtual machine without first calling sqlite3_reset() to reset the virtual machine back to its initial state.
-			//			REPORT_ERROR( "No result found." );
 			*rval = JSVAL_VOID;
 			break;
 		case SQLITE_ROW:
 			RT_CHECK_CALL( SqliteColumnToJsval(cx, pStmt, 0, rval) );
 			break;
+		default:
+			REPORT_ERROR_1("invalid case (status:%d)", status );
 	}
 
 	status = sqlite3_finalize( pStmt );
@@ -406,6 +416,10 @@ DEFINE_SET_PROPERTY() {
 
 CONFIGURE_CLASS
 
+	HAS_SET_PROPERTY
+	HAS_PRIVATE
+	HAS_RESERVED_SLOTS(2)
+
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE
 
@@ -424,8 +438,20 @@ CONFIGURE_CLASS
 		PROPERTY_READ( version )
 	END_STATIC_PROPERTY_SPEC
 
-	HAS_SET_PROPERTY
-	HAS_PRIVATE
-	HAS_RESERVED_SLOTS(2)
+	// todoc
+	BEGIN_CONST_INTEGER_SPEC
+		CONST_INTEGER( READONLY       , SQLITE_OPEN_READONLY       )
+		CONST_INTEGER( READWRITE      , SQLITE_OPEN_READWRITE      )
+		CONST_INTEGER( CREATE         , SQLITE_OPEN_CREATE         )
+		CONST_INTEGER( DELETEONCLOSE  , SQLITE_OPEN_DELETEONCLOSE  )
+		CONST_INTEGER( EXCLUSIVE      , SQLITE_OPEN_EXCLUSIVE      )
+		CONST_INTEGER( MAIN_DB        , SQLITE_OPEN_MAIN_DB        )
+		CONST_INTEGER( TEMP_DB        , SQLITE_OPEN_TEMP_DB        )
+		CONST_INTEGER( TRANSIENT_DB   , SQLITE_OPEN_TRANSIENT_DB   )
+		CONST_INTEGER( MAIN_JOURNAL   , SQLITE_OPEN_MAIN_JOURNAL   )
+		CONST_INTEGER( TEMP_JOURNAL   , SQLITE_OPEN_TEMP_JOURNAL   )
+		CONST_INTEGER( SUBJOURNAL     , SQLITE_OPEN_SUBJOURNAL     )
+		CONST_INTEGER( MASTER_JOURNAL , SQLITE_OPEN_MASTER_JOURNAL )
+	END_CONST_INTEGER_SPEC
 
 END_CLASS
