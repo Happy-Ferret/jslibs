@@ -18,7 +18,7 @@
 		QA.ASSERT( String(bstr), '98765', 'string value' );
 
 
-		var v = BString().Set('123');
+		var v = BString('123');
 		QA.ASSERT( typeof v, 'object', 'variable type' );
 		QA.ASSERT( String(v), '123', 'content' );
 	},
@@ -28,7 +28,7 @@
 		LoadModule('jsstd');
 //		LoadModule('jslang');
 		
-		QA.ASSERT( BString().Set('345').toString(), '345', 'string value' );
+		QA.ASSERT( BString('345').toString(), '345', 'string value' );
 	},
 
 	BString_valueOf: function(QA) {
@@ -36,7 +36,7 @@
 		LoadModule('jsstd');
 //		LoadModule('jslang');
 
-		QA.ASSERT( BString().Set('567').valueOf(), '567', 'value of' );
+		QA.ASSERT( BString('567').valueOf(), '567', 'value of' );
 	},
 
 	BString: function(QA) {
@@ -45,7 +45,7 @@
 //		LoadModule('jslang');
 	
 		var b = new BString();
-		b.Add( 'ABCD' );
+		b = b.Add( 'ABCD' );
 		QA.ASSERT( String(b), 'ABCD', 'content' );
 		QA.ASSERT( b.length, 4, 'length' );
 		QA.ASSERT( b[0], 'A', 'first item' );
@@ -59,13 +59,13 @@
 
 		QA.ASSERT( b[4], undefined, 'after last item' );
 
-		b.Add('XYZ');
+		b = b.Add('XYZ');
 		QA.ASSERT( b.length, 7, 'length' );
 		QA.ASSERT( b[6], 'Z', 'last item' );
 		QA.ASSERT( b.toString(), 'ABCDXYZ', 'toString' );
 		QA.ASSERT( String(b.valueOf()), 'ABCDXYZ', 'valueof' );
-		b.Set();
-		QA.ASSERT( b.length, 0, 'length' );
+//		b.Set();
+//		QA.ASSERT( b.length, 0, 'length' );
 	},
 
 	BStringErrors: function(QA) {
@@ -81,7 +81,7 @@
 //		LoadModule('jslang');
 
 		var b = new BString();
-		b.Add( 'ABCDEF' );
+		b = b.Add( 'ABCDEF' );
 		QA.ASSERT( ''+b.Substr(0), 'ABCDEF', 'substr' );
 		QA.ASSERT( ''+b.Substr(1), 'BCDEF', 'substr' );
 		QA.ASSERT( ''+b.Substr(2,3), 'CDE', 'substr' );
@@ -96,7 +96,7 @@
 	},
 
 
-	BStringSetter: function(QA) {
+	_BStringSetter: function(QA) { // this test do not have any sense with immutable objects
 	
 		LoadModule('jsstd');
 //		LoadModule('jslang');
@@ -120,7 +120,7 @@
 //		LoadModule('jslang');
 
 		var b = new BString();
-		b.Add( 'ABCDEF' );
+		b = b.Add( 'ABCDEF' );
 
 		QA.ASSERT( b == 'ABCDEF', true, 'string and BString equality' )
 		QA.ASSERT( 'ABCDEF' == b, true, 'string and BString equality' )
@@ -129,7 +129,7 @@
 	},
 
 
-	BStringSelfReference: function(QA) {
+	_BStringSelfReference: function(QA) { // this test do not have any sense with immutable objects
 
 		LoadModule('jsstd');
 //		LoadModule('jslang');
@@ -179,12 +179,17 @@
 
 		var bstring = new BString("1234");
 		var stream = Stream(bstring);
-
+		bstring = bstring.Add('ABC');
 		QA.ASSERT( String(stream.Read(3)), '123', 'stream Read()' )
-		bstring.Add('ABC');
-		QA.ASSERT( bstring.length, 7, 'stream source length' )
-		QA.ASSERT( String(stream.Read(3)), '4AB', 'stream Read()' )
-		QA.ASSERT( stream.position, 6, 'stream position' )
+		bstring = bstring.Add('DEF');
+		QA.ASSERT( bstring.length, 10, 'stream source length' )
+		QA.ASSERT( String(stream.Read(3)), '4', 'stream Read()' )
+		QA.ASSERT( stream.position, 4, 'stream position' )
+
+		var s1 = Stream(bstring);
+		QA.ASSERT( s1.position, 0, 'stream position' )
+		QA.ASSERT( s1.available, 10, 'stream source length' )
+		QA.ASSERT( String(s1.Read(3)), '123', 'stream Read()' )
 	},
 
 	

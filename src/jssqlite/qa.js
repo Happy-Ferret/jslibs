@@ -136,7 +136,7 @@
 
 		var result1 = db.Query('SELECT :toto');
 		
-		result1.toto = new BString().Set('12' + '\0' + '34');
+		result1.toto = new BString('12' + '\0' + '34');
 
 		QA.ASSERT( result1.Row()[0].length, 5, 'using binding' );
 		QA.ASSERT( db.changes, 0, 'changes' );
