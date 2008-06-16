@@ -33,7 +33,6 @@
 
 #include "host.h"
 
-
 JSErrorFormatString errorFormatString[J_ErrLimit] = {
 #define MSG_DEF(name, number, count, exception, format) \
     { format, count, exception } ,
@@ -48,6 +47,7 @@ static const JSErrorFormatString *GetErrorMessage(void *userRef, const char *loc
 	return NULL;
 }
 
+
 static const void *_pGetErrorMessage = &GetErrorMessage; // global variable !
 
 static bool _unsafeMode = false; // global variable !
@@ -55,22 +55,63 @@ extern bool *_pUnsafeMode = &_unsafeMode; // global variable !
 
 static u_int32_t gBranchCount = 1; // global variable !
 
+static HostOutput hostStdOut = NULL; // global variable !
+static HostOutput hostStdErr = NULL; // global variable !
+
 
 //#define RT_HOST_MAIN_ASSERT( condition, errorMessage )
 //	if ( !(condition) ) { consoleStdErr( cx, errorMessage, sizeof(errorMessage)-1 ); return -1; }
 
 
+static JSBool JSDefaultStdoutFunction(JSContext *cx, uintN argc, jsval *vp) {
+
+	if ( hostStdOut == NULL )
+		return JS_TRUE;
+	const char *buffer;
+	size_t length;
+	for ( uintN i = 0; i < argc; i++ ) {
+
+		J_CHK( JsvalToStringAndLength(cx, J_FARG(i+1), &buffer, &length) );
+		hostStdOut(buffer, length);
+	}
+	return JS_TRUE;
+}
+
+
+static JSBool JSDefaultStderrFunction(JSContext *cx, uintN argc, jsval *vp) {
+
+	if ( hostStdErr == NULL )
+		return JS_TRUE;
+	const char *buffer;
+	size_t length;
+	for ( uintN i = 0; i < argc; i++ ) {
+
+		J_CHK( JsvalToStringAndLength(cx, J_FARG(i+1), &buffer, &length) );
+		hostStdErr(buffer, length);
+	}
+	return JS_TRUE;
+}
+
+
 void stdErrRouter( JSContext *cx, const char *message, size_t length ) {
 
-	JSObject *globalObject = JS_GetGlobalObject(cx); // (TBD) manage errors
-	jsval fct;
-	GetConfigurationValue(cx, NAME_CONFIGURATION_STDERR, &fct); // (TBD) manage errors
-	if ( JS_TypeOfValue(cx, fct) == JSTYPE_FUNCTION ) {
+	JSObject *globalObject = JS_GetGlobalObject(cx);
+	if ( globalObject != NULL ) {
 
-		jsval rval, strVal;
-		StringAndLengthToJsval(cx, &strVal, message, length);
-		JS_CallFunctionValue(cx, globalObject, fct, 1, &strVal, &rval);
+		jsval fct;
+		if ( GetConfigurationValue(cx, NAME_CONFIGURATION_STDERR, &fct) == JS_TRUE ) {
+			if ( JS_TypeOfValue(cx, fct) == JSTYPE_FUNCTION ) {
+
+				jsval rval, strVal;
+				StringAndLengthToJsval(cx, &strVal, message, length);
+				JS_CallFunctionValue(cx, globalObject, fct, 1, &strVal, &rval);
+				return;
+			}
+		}
 	}
+
+	if ( hostStdErr != NULL )
+		hostStdErr(message, length); // else, use the default.
 }
 
 
@@ -159,6 +200,7 @@ static void ErrorReporter(JSContext *cx, const char *message, JSErrorReport *rep
     JS_free(cx, prefix);
 }
 
+
 static JSBool BranchCallback(JSContext *cx, JSScript *script) {
 
 	if ((++gBranchCount & (0x1000-1)) != 1) // every 4096
@@ -211,7 +253,7 @@ static JSBool UnloadModule(JSContext *cx, JSObject *obj, uintN argc, jsval *argv
 
 
 static JSBool global_enumerate(JSContext *cx, JSObject *obj) { // see LAZY_STANDARD_CLASSES
-	
+
 	return JS_EnumerateStandardClasses(cx, obj);
 }
 
@@ -235,7 +277,7 @@ static JSBool global_resolve(JSContext *cx, JSObject *obj, jsval id, uintN flags
 static JSClass global_class = { // global variable !
 
 	NAME_GLOBAL_CLASS, JSCLASS_GLOBAL_FLAGS | JSCLASS_NEW_RESOLVE,
-	JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, 
+	JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub,
 	global_enumerate, (JSResolveOp)global_resolve, JS_ConvertStub, JS_FinalizeStub, // see LAZY_STANDARD_CLASSES
 	JSCLASS_NO_OPTIONAL_MEMBERS
 };
@@ -303,8 +345,8 @@ JSContext* CreateHost(size_t maxMem, size_t maxAlloc) {
 	JSObject *globalObject = JS_NewObject(cx, &global_class, NULL, NULL);
 	if ( globalObject == NULL )
 		return NULL; //, "unable to create the global object." );
-	
-	//	JS_SetGlobalObject(cx, globalObject); // not needed. Doc: As a side effect, JS_InitStandardClasses establishes obj as the global object for cx, if one is not already established. 
+
+	//	JS_SetGlobalObject(cx, globalObject); // not needed. Doc: As a side effect, JS_InitStandardClasses establishes obj as the global object for cx, if one is not already established.
 
 // Standard classes
 //	jsStatus = JS_InitStandardClasses(cx, globalObject); // use NULL instead of globalObject ?
@@ -317,7 +359,9 @@ JSContext* CreateHost(size_t maxMem, size_t maxAlloc) {
 
 
 
-JSBool InitHost( JSContext *cx, bool unsafeMode, JSFastNative stdOut, JSFastNative stdErr ) {
+
+
+JSBool InitHost( JSContext *cx, bool unsafeMode, HostOutput stdOut, HostOutput stdErr ) {
 
 	_unsafeMode = unsafeMode;
 
@@ -338,18 +382,17 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, JSFastNative stdOut, JSFastNati
 //	J_CHK( SetConfigurationValue(cx, NAME_CONFIGURATION_UNSAFE_MODE, BOOLEAN_TO_JSVAL(_unsafeMode)) );
 	J_CHK( SetConfigurationValue(cx, NAME_CONFIGURATION_UNSAFE_MODE_PTR, PRIVATE_TO_JSVAL(&_unsafeMode)) );
 
+	hostStdOut = stdOut;
+	hostStdErr = stdErr;
+
 	jsval value;
-	if ( stdErr != NULL ) {
+	value = OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunction(cx, (JSNative)JSDefaultStdoutFunction, 1, JSFUN_FAST_NATIVE, NULL, NULL))); // If you do not assign a name to the function, it is assigned the name "anonymous".
+	J_CHK( SetConfigurationValue(cx, NAME_CONFIGURATION_STDOUT, value) );
 
-		value = OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunction(cx, (JSNative)stdErr, 1, JSFUN_FAST_NATIVE, NULL, NULL))); // If you do not assign a name to the function, it is assigned the name "anonymous".
-		J_CHK( SetConfigurationValue(cx, NAME_CONFIGURATION_STDERR, value) );
-	}
+	value = OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunction(cx, (JSNative)JSDefaultStderrFunction, 1, JSFUN_FAST_NATIVE, NULL, NULL))); // If you do not assign a name to the function, it is assigned the name "anonymous".
+	J_CHK( SetConfigurationValue(cx, NAME_CONFIGURATION_STDERR, value) );
 
-	if ( stdOut != NULL ) {
-		
-		value = OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunction(cx, (JSNative)stdOut, 1, JSFUN_FAST_NATIVE, NULL, NULL))); // If you do not assign a name to the function, it is assigned the name "anonymous".
-		J_CHK( SetConfigurationValue(cx, NAME_CONFIGURATION_STDOUT, value) );
-	}
+
 // init static modules
 	J_CHKM( jslangInit(cx, globalObject), "Unable to initialize jslang." );
 	return JS_TRUE;
@@ -364,6 +407,10 @@ void DestroyHost( JSContext *cx ) {
 
 //	JS_GC(cx); // try to break linked objects
 // (TBD) don't
+
+	RemoveConfiguration(cx);
+
+	JS_SetGlobalObject(cx, JSVAL_TO_OBJECT(JSVAL_NULL)); // remove the global object
 
 // cleanup
 	JS_DestroyContext(cx); // (TBD) is JS_DestroyContextNoGC faster ?
@@ -387,7 +434,7 @@ JSBool ExecuteScript( JSContext *cx, const char *scriptFileName, bool compileOnl
 	J_CHKM( JS_DefineProperty(cx, globalObject, NAME_GLOBAL_ARGUMENTS, OBJECT_TO_JSVAL(argsObj), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT), "unable to store the argument array." );
 
 	for ( int index = 0; index < argc; index++ ) {
-		
+
 		JSString *str = JS_NewStringCopyZ(cx, argv[index]);
 		J_CHKM( str != NULL, "unable to store the argument." );
 		J_CHKM( JS_DefineElement(cx, argsObj, index, STRING_TO_JSVAL(str), NULL, NULL, JSPROP_ENUMERATE), "unable to define the argument." );

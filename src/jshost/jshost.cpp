@@ -119,28 +119,14 @@ void Interrupt(int CtrlType) {
 #endif // XP_WIN
 
 
-static JSBool stdoutFunction(JSContext *cx, uintN argc, jsval *vp) {
+int HostStdout( const char *buffer, size_t length ) {
 
-	const char *buffer;
-	size_t length;
-	for ( uintN i = 0; i < argc; i++ ) {
-
-		J_CHK( JsvalToStringAndLength(cx, J_FARG(1+i), &buffer, &length) );
-		write(1, buffer, length);
-	}
-	return JS_TRUE;
+	return write(fileno(stdout), buffer, length);
 }
 
-static JSBool stderrFunction(JSContext *cx, uintN argc, jsval *vp) {
+int HostStderr( const char *buffer, size_t length ) {
 
-	const char *buffer;
-	size_t length;
-	for ( uintN i = 0; i < argc; i++ ) {
-		
-		J_CHK( JsvalToStringAndLength(cx, J_FARG(i+1), &buffer, &length) );
-		write(2, buffer, length);
-	}
-	return JS_TRUE;
+	return write(fileno(stderr), buffer, length);
 }
 
 
@@ -185,7 +171,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	JSContext *cx = CreateHost(maxMem, maxAlloc);
 	HOST_MAIN_ASSERT( cx != NULL, "unable to create a javascript execution context" );
 
-	HOST_MAIN_ASSERT( InitHost(cx, unsafeMode, stdoutFunction, stderrFunction), "unable to initialize the host." );
+	HOST_MAIN_ASSERT( InitHost(cx, unsafeMode, HostStdout, HostStderr), "unable to initialize the host." );
 
 	JSObject *globalObject = JS_GetGlobalObject(cx);
 	JS_DefineProperty(cx, globalObject, "endSignal", JSVAL_VOID, EndSignalGetter, EndSignalSetter, JSPROP_SHARED | JSPROP_PERMANENT );

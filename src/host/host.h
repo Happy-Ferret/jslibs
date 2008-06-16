@@ -18,8 +18,11 @@
 
 #include <jsapi.h>
 
+typedef int (*HostOutput)( const char *buffer, size_t length );
+
+
 JSContext* CreateHost(size_t maxMem, size_t maxAlloc);
-JSBool InitHost( JSContext *cx, bool unsafeMode, JSFastNative stdOut, JSFastNative stdErr );
+JSBool InitHost( JSContext *cx, bool unsafeMode, HostOutput stdOut, HostOutput stdErr );
 void DestroyHost( JSContext *cx );
 JSBool ExecuteScript( JSContext *cx, const char *scriptFileName, bool compileOnly, int argc, const char * const * argv, jsval *rval );
 

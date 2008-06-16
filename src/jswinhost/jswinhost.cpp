@@ -59,21 +59,13 @@ static JSBool stdoutFunction(JSContext *cx, JSObject *obj, uintN argc, jsval *ar
 }
 */
 
-
-
-static JSBool noopFunction(JSContext *cx, uintN argc, jsval *vp) {
-
-	return JS_TRUE;
-}
-
-
 int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow ) {
 
 	JSContext *cx = CreateHost(-1, -1);
 	if ( cx == NULL )
 		return -1;
 
-	if ( !InitHost(cx, true, noopFunction, noopFunction) )
+	if ( !InitHost(cx, true, NULL, NULL) )
 		return -1;
 
 	errno_t err;

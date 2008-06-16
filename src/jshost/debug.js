@@ -1,6 +1,13 @@
 LoadModule('jsstd');
 //LoadModule('jsio');
 
+_configuration.stderr = function(msg) { Print('XXX'+msg); }
+
+Print( 'test' )
+
+asdfAS()
+
+Halt();
 
 var buf = new Buffer();
 buf.Write('\xAA\xBB\xCC\xDD');
