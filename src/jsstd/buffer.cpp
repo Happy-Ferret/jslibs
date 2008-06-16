@@ -209,6 +209,9 @@ JSBool ReadRawAmount( JSContext *cx, JSObject *obj, size_t *amount, char *str ) 
 		return JS_TRUE;
 
 	char *ptr = str;
+
+	*amount = J_MIN( *amount, pv->length );
+
 	size_t remainToRead = *amount;
 
 	while ( remainToRead > 0 ) { // while there is something to read,
