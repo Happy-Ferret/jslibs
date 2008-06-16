@@ -36,6 +36,15 @@ extern "C" DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	return JS_TRUE;
 }
 
+
+extern "C" DLLEXPORT void ModuleRelease (JSContext *cx) {
+
+	REMOVE_CLASS( SqliteError );
+	REMOVE_CLASS( Result );
+	REMOVE_CLASS( Database );
+}
+
+
 #ifdef XP_WIN
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
 

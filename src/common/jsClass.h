@@ -124,6 +124,18 @@ struct JSLIBS_ConstIntegerSpec {
 	extern JSClass class##CLASSNAME; \
 	extern JSObject *prototype##CLASSNAME; \
 
+
+static JSBool RemoveClass( JSContext *cx, JSClass *cl ) {
+
+	// (TBD)
+	// JS_InitClass( ... ?
+	return JS_TRUE;
+}
+
+
+#define REMOVE_CLASS( CLASSNAME ) \
+	RemoveClass( cx, &class##CLASSNAME );
+
 #define INIT_CLASS( CLASSNAME ) \
 	InitializeClass##CLASSNAME(cx, obj); \
 

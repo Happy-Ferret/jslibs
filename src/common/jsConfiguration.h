@@ -18,6 +18,14 @@
 #include "../common/jsNames.h"
 #include "../common/jsHelper.h"
 
+inline JSBool RemoveConfiguration(JSContext *cx) {
+
+	JSObject *globalObject = JS_GetGlobalObject(cx);
+	J_S_ASSERT( globalObject != NULL, "Unable to find the global object." );
+	return JS_DeleteProperty(cx, globalObject, NAME_CONFIGURATION_OBJECT);
+}
+
+
 inline JSObject *GetConfigurationObject(JSContext *cx) {
 
 	JSObject *globalObject = JS_GetGlobalObject(cx);
