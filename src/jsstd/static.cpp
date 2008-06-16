@@ -111,7 +111,9 @@ DEFINE_FUNCTION( Expand ) {
 
 	StackReverse(&stack);
 
-	char *expandedString = (char*)JS_malloc(cx, totalLength);
+	char *expandedString = (char*)JS_malloc(cx, totalLength +1);
+	J_S_ASSERT_ALLOC( expandedString );
+	expandedString[totalLength] = '\0';
 
 	char *tmp = expandedString;
 	while ( !StackIsEnd(&stack) ) {
