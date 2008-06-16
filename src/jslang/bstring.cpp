@@ -215,6 +215,12 @@ DEFINE_FUNCTION_FAST( Add ) {
 	*J_FRVAL = OBJECT_TO_JSVAL( J_FOBJ );
 */
 
+// copy the begining
+	void *pv = JS_GetPrivate(cx, J_FOBJ);
+	if ( pv != NULL )
+		memcpy(dst, pv, length);
+
+
 	JSObject *newBStrObj = JS_NewObject(cx, _class, NULL, NULL);
 	J_S_ASSERT( newBStrObj != NULL, "Unable to create the new BString" );
 
