@@ -38,11 +38,13 @@ DEFINE_FUNCTION( Expand ) {
 
 	const char *srcBegin;
 	size_t srcLen;
-	RT_JSVAL_TO_STRING_AND_LENGTH( J_ARG(1), srcBegin, srcLen );
+	
+	J_CHK( JsvalToStringAndLength(cx, J_ARG(1), &srcBegin, &srcLen) );
+	J_S_ASSERT( srcBegin[srcLen] == '\0', "Invalid input string." ); // else strstr may failed.
 	const char *srcEnd = srcBegin + srcLen;
 
 	JSObject *table;
-	if ( J_ARG_ISDEF(2) ) {
+	if ( J_ARG_ISDEF(2) ) { // todoc: this is a special behavior
 
 		RT_ASSERT_OBJECT( J_ARG(2) );
 		table = JSVAL_TO_OBJECT( J_ARG(2) );
@@ -57,19 +59,18 @@ DEFINE_FUNCTION( Expand ) {
 		size_t length;
 	} Chunk;
 
-	int totalLength = 0;
 
 	void *stack;
 	StackInit( &stack );
 	Chunk *chunk;
 	const char *tok;
 	jsval val;
+	int totalLength = 0;
 
-	while (true) {
+	while ( *srcBegin != '\0' ) {
 
 		tok = strstr(srcBegin, "$(");
-
-		if ( tok == NULL ) {
+		if ( tok == NULL ) { // not found
 
 			chunk = (Chunk*)malloc(sizeof(Chunk));
 			chunk->data = srcBegin;
@@ -85,48 +86,42 @@ DEFINE_FUNCTION( Expand ) {
 		totalLength += chunk->length;
 		StackPush( &stack, chunk );
 
-		srcBegin = tok + 2;
-//		if ( srcBegin >= srcEnd )
-//			break;
-
-		tok = strstr(srcBegin, ")");
-
-		if ( tok == NULL )
+		srcBegin = tok + 2; // length of "$("
+		tok = strchr(srcBegin, ')'); // tok = strstr(srcBegin, ")"); // slower for only one char
+		if ( tok == NULL ) // not found
 			break;
 
+		// (TBD) try to replace the following code
 		char tmp = *tok;
 		*((char*)tok) = 0;
-		JS_GetProperty(cx, table, srcBegin, &val);
+		J_CHK( JS_GetProperty(cx, table, srcBegin, &val) );
 		*((char*)tok) = tmp;
 
-		chunk = (Chunk*)malloc(sizeof(Chunk));
-		RT_JSVAL_TO_STRING_AND_LENGTH( val, chunk->data, chunk->length );
-		totalLength += chunk->length;
-		StackPush( &stack, chunk );
+		if ( val != JSVAL_VOID ) { // todoc: undefined or not-defined values are ignored
 
-		srcBegin = tok + 1; // (TBD) check buffer overflow
-//		if ( srcBegin >= srcEnd )
-//			break;
+			chunk = (Chunk*)malloc(sizeof(Chunk));
+			RT_JSVAL_TO_STRING_AND_LENGTH( val, chunk->data, chunk->length );
+			totalLength += chunk->length;
+			StackPush( &stack, chunk );
+		}
+
+		srcBegin = tok + 1; // length of ")"
 	}
-
-	StackReverse(&stack);
 
 	char *expandedString = (char*)JS_malloc(cx, totalLength +1);
 	J_S_ASSERT_ALLOC( expandedString );
 	expandedString[totalLength] = '\0';
 
-	char *tmp = expandedString;
+	expandedString += totalLength;
 	while ( !StackIsEnd(&stack) ) {
 
 		Chunk *chunk = (Chunk*)StackPop(&stack);
-		memcpy(tmp, chunk->data, chunk->length);
-		tmp += chunk->length;
+		expandedString -= chunk->length;
+		memcpy(expandedString, chunk->data, chunk->length);
 		free(chunk);
 	}
 
 	*rval = STRING_TO_JSVAL( JS_NewString(cx, expandedString, totalLength) );
-
-//	js_GetFrameCallObject
 	return JS_TRUE;
 }
 
