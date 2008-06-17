@@ -32,6 +32,7 @@
 #define DEFINE_NEW_RESOLVE() static JSBool NewResolve(JSContext *cx, JSObject *obj, jsval id, uintN flags, JSObject **objp)
 #define DEFINE_ENUMERATE() static JSBool Enumerate(JSContext *cx, JSObject *obj)
 #define DEFINE_TRACER() static void Tracer(JSTracer *trc, JSObject *obj)
+#define DEFINE_INIT() static JSBool Init(JSContext *cx, JSObject *obj)
 
 // function declaration
 #define FUNCTION(name) JS_FS( #name, name, 0, 0, 0 ),

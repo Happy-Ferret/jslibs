@@ -33,6 +33,8 @@ BEGIN_CLASS( Database )
 
 DEFINE_CONSTRUCTOR() {
 
+//	int isThreadSafe = sqlite3_threadsafe();
+
 	J_S_ASSERT_CONSTRUCTING();
 	J_S_ASSERT_THIS_CLASS();
 
@@ -51,6 +53,7 @@ DEFINE_CONSTRUCTOR() {
 	sqlite3 *db;
 //	int status = sqlite3_open( fileName, &db ); // see. sqlite3_open_v2()
 	int status = sqlite3_open_v2( fileName, &db, flags, NULL );
+
 
 	if ( status != SQLITE_OK || db == NULL  )
 		return SqliteThrowError( cx, status, sqlite3_errcode(db), sqlite3_errmsg(db) );
@@ -190,6 +193,8 @@ DEFINE_FUNCTION( Query ) {
 
 DEFINE_FUNCTION( Exec ) {
 
+	// see sqlite3_exec()
+
 	RT_ASSERT_ARGC( 1 );
 	sqlite3 *db = (sqlite3*)JS_GetPrivate( cx, obj );
 	RT_ASSERT_RESOURCE( db );
@@ -213,7 +218,7 @@ DEFINE_FUNCTION( Exec ) {
 
 	if ( argc >= 2 && argv[1] != JSVAL_VOID && JSVAL_IS_OBJECT(argv[1]) )
 		RT_CHECK_CALL( SqliteSetupBindings(cx, pStmt, JSVAL_TO_OBJECT(argv[1]) , NULL ) ); // "@" : the the argument passed to Exec(), ":" nothing
-	status = sqlite3_step( pStmt ); // The return value will be either SQLITE_BUSY, SQLITE_DONE, SQLITE_ROW, SQLITE_ERROR, or 	SQLITE_MISUSE.
+	status = sqlite3_step( pStmt ); // Evaluates the statement. The return value will be either SQLITE_BUSY, SQLITE_DONE, SQLITE_ROW, SQLITE_ERROR, or 	SQLITE_MISUSE.
 
 	if ( JS_IsExceptionPending(cx) )
 		return JS_FALSE;
@@ -268,6 +273,12 @@ DEFINE_PROPERTY( version ) {
 
 	*vp = STRING_TO_JSVAL(JS_NewStringCopyZ(cx,(const char *)sqlite3_libversion()));
   return JS_TRUE;
+}
+
+DEFINE_PROPERTY( memoryUsed ) {
+
+	*vp = INT_TO_JSVAL( sqlite3_memory_used() );
+	return JS_TRUE;
 }
 
 
@@ -436,6 +447,7 @@ CONFIGURE_CLASS
 
 	BEGIN_STATIC_PROPERTY_SPEC
 		PROPERTY_READ( version )
+		PROPERTY_READ( memoryUsed )
 	END_STATIC_PROPERTY_SPEC
 
 	// todoc

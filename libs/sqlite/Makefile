@@ -3,7 +3,7 @@ include ../subdirs.mk
 TARGET_FILES = ./src/libsqlite3.a
 
 CC=gcc
-CFLAGS += -fPIC
+CFLAGS += -fPIC -DSQLITE_THREADSAFE=0 -DSQLITE_SYSTEM_MALLOC
 
 ifeq ($(BUILD),opt)
 CFLAGS += -O3
