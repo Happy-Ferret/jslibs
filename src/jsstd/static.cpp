@@ -59,7 +59,6 @@ DEFINE_FUNCTION( Expand ) {
 		size_t length;
 	} Chunk;
 
-
 	void *stack;
 	StackInit( &stack );
 	Chunk *chunk;
@@ -100,7 +99,7 @@ DEFINE_FUNCTION( Expand ) {
 		if ( val != JSVAL_VOID ) { // todoc: undefined or not-defined values are ignored
 
 			chunk = (Chunk*)malloc(sizeof(Chunk));
-			RT_JSVAL_TO_STRING_AND_LENGTH( val, chunk->data, chunk->length );
+			J_CHK( JsvalToStringAndLength(cx, val, &chunk->data, &chunk->length) );
 			totalLength += chunk->length;
 			StackPush( &stack, chunk );
 		}
@@ -121,7 +120,9 @@ DEFINE_FUNCTION( Expand ) {
 		free(chunk);
 	}
 
-	*rval = STRING_TO_JSVAL( JS_NewString(cx, expandedString, totalLength) );
+	JSString *jsstr = JS_NewString(cx, expandedString, totalLength);
+	J_S_ASSERT_ALLOC( jsstr );
+	*rval = STRING_TO_JSVAL( jsstr );
 	return JS_TRUE;
 }
 
