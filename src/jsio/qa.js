@@ -1,3 +1,4 @@
+// don't remove this first line !! ( see MemoryMapped test )
 ({
 
 	SystemInfo: function(QA) {
@@ -381,6 +382,21 @@
 		QA.ASSERT( 'currentWorkingDirectory' in global, true, 'has currentWorkingDirectory' );
 		QA.ASSERT( typeof currentWorkingDirectory, 'string', 'current working directory' );
 		QA.ASSERT( currentWorkingDirectory.length >= 1, true, 'cwd length' );
+	},
+
+
+	MemoryMapped: function(QA, name) {
+
+		var thisFilename = name.split(':')[0];
+		
+		var m = new MemoryMapped(new File(thisFilename).Open('r'));
+		
+		QA.ASSERT( m.file instanceof File, true, 'instanceof .file memeber' );
+
+		QA.ASSERT_STR( new Stream(m).Read(15), '// don\'t remove', 'convert to a Stream (1)' );
+		QA.ASSERT_STR( new Stream(m).Read(15), '// don\'t remove', 'convert to a Stream (2)' );
+
+		QA.ASSERT_STR( Stringify(m).substr(0,15), '// don\'t remove', 'stringify it' );
 	}
 
 })

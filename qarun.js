@@ -19,7 +19,7 @@ function MakeTestList(directory) {
 
 			var qatests = Exec(f.name, false);
 			for ( var testName in qatests )
-				testList[ dirName + ':' + testName ] = qatests[testName];
+				testList[ f.name + ':' + testName ] = qatests[testName];
 		}
 	}
 	return testList;
@@ -64,7 +64,7 @@ function MakeTests( testList, filter, QAAPI, iterate ) {
 		Print( testName, '\n' );
 		for ( var i = 0; i<iterate; i++ ) {
 
-			testList[testName](QAAPI);
+			testList[testName](QAAPI, testName);
 			CollectGarbage();
 			if ( endSignal )
 				return;

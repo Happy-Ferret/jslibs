@@ -194,13 +194,24 @@
 
 	
 	JavascriptStream: function(QA) {
-	
-		function strm() {
+		
+		var buf = new Buffer('abcdefghi');
+
+		function myStream() {
 			this.Read = function(amount) {
+				
+				return buf.Read(2);
 			}
 		}
+		
+		QA.ASSERT( Stringify(myStream), 'abcdefghi', 'force string conversion' );
+	},
+	
+	
+	Stringify: function(QA) {
+	
+		QA.ASSERT( 'test', Stringify('test'), 'force string conversion' );
 	}
-	
-	
+
 	
 })

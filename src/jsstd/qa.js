@@ -6,6 +6,7 @@
 		LoadModule('jsstd');
 
 		var b = new Buffer();
+		b.Read(0);
 		b.Write('aaa');
 		b.Write('');
 		b.Write('bbXb');
@@ -23,6 +24,7 @@
 		b.Write('eeee');
 		b.Write('ffff');
 		b.Write('gggg');
+		b.Read(0);
 		var t = b.Read();
 
 		QA.ASSERT_STR( t, 'eeeeffffgggg', 'buffer match' );
@@ -285,16 +287,41 @@
 	
 	
 	Expand: function(QA) {
-	
-		QA.ASSERT( Expand(' $(h) $(w)', { h:'Hello', w:'World' }), ' Hello World', 'expanding a string' );
-	},
-	
-	ExpandToString: function(QA) {
 
+		QA.ASSERT( Expand('', { h:'Hello', w:'World' }), '', 'expanding an empty string' );
+
+		QA.ASSERT( Expand('Hello World'), 'Hello World', 'expanding a simple string' );
+
+		QA.ASSERT( Expand(' $(h) $(w)', { h:'Hello', w:'World' }), ' Hello World', 'expanding a string' );
+
+		QA.ASSERT( Expand(' $(h) $(w', { h:'Hello', w:'World' }), ' Hello ', 'expanding a bugous string' );
+
+		QA.ASSERT( Expand(' $(h) $(', { h:'Hello', w:'World' }), ' Hello ', 'expanding a bugous string' );
+
+		QA.ASSERT( Expand(' $(h) $', { h:'Hello', w:'World' }), ' Hello $', 'expanding a string' );
+
+		QA.ASSERT( Expand(' $(h)', { h:'Hello', w:'World' }), ' Hello', 'expanding a string' );
+		
+		var obj = {
+			toString: function() {
+				return 'Hello';
+			}
+		}
+		QA.ASSERT( Expand('$(h)', { h:obj }), 'Hello', 'expanding a string' );
+		
+		var obj1 = {
+			
+			Expand:Expand,
+			x:123,
+			y:'456',
+		}
+		QA.ASSERT( obj1.Expand('$(x)$(y)'), '123456', 'expanding a string using this as map' );
+		
 		var o = { title:'My HTML Page', titi:1234, toString:function() { return Expand( this.text, this ) } };
 		o.text = '<html><title>$(title)</title>\n'
-		QA.ASSERT_STR( o, '<html><title>My HTML Page</title>\n', 'expand string' );
+		QA.ASSERT_STR( o, '<html><title>My HTML Page</title>\n', 'expand string using this object' );
 	},
+
 
 	ExecXDR: function(QA) {
 		
