@@ -31,6 +31,19 @@
 #endif
 
 BEGIN_STATIC
+/**
+=== Static functions ===
+**/
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/**doc
+ * ,,string,, *Expand*( str [, obj] )
+  Return an expanded string using key/value stored in _obj_.
+  ===== example: =====
+  {{{
+  Expand(' $(h) $(w)', { h:'Hello', w:'World' }); // returns "Hello World"
+  }}}
+**/
 
 DEFINE_FUNCTION( Expand ) {
 
@@ -126,8 +139,12 @@ DEFINE_FUNCTION( Expand ) {
 	return JS_TRUE;
 }
 
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/**doc
+ * *InternString*( string )
+  Make an interned string, a string that is automatically shared with other code that needs a string with the same value.
+**/
+
 // source: http://mxr.mozilla.org/mozilla/source/js/src/js.c
 static JSBool InternString(JSContext *cx, uintN argc, jsval *vp) {
 
@@ -144,6 +161,12 @@ static JSBool InternString(JSContext *cx, uintN argc, jsval *vp) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/**doc
+ * *Seal*( obj )
+  Prevents all write access to the object, either to add a new property, delete an existing property, 
+  or set the value or attributes of an existing property.
+**/
+
 DEFINE_FUNCTION( Seal ) {
 
 	RT_ASSERT_ARGC(1);
@@ -159,6 +182,11 @@ DEFINE_FUNCTION( Seal ) {
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/**doc
+ * *Clear*( obj )
+  Removes all properties and elements from _obj_ in a single operation.
+**/
+
 DEFINE_FUNCTION( Clear ) {
 
 	RT_ASSERT_ARGC( 1 );
@@ -174,6 +202,29 @@ DEFINE_FUNCTION( Clear ) {
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/**doc
+ * ,,scope,, *SetScope*( obj, scopeObject )
+  Set the scope object of _obj_.
+  ===== example: =====
+  {{{
+  function foo() {
+    
+    var data = 55;
+    function bar() { Print( data, '\n' ); }
+    var old = SetScope( bar, {data:7} );
+    bar();
+    var old = SetScope( bar, old );
+    bar();
+  }
+  foo();
+  }}}
+  prints:
+  {{{
+  7
+  55
+  }}}
+**/
+
 DEFINE_FUNCTION( SetScope ) {
 
 	RT_ASSERT_ARGC( 2 );
@@ -188,6 +239,10 @@ DEFINE_FUNCTION( SetScope ) {
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/**doc
+ * ,,boolean,, *isConstructing*
+  Determines whether or not the function currently executing was called as a constructor.
+**/
 DEFINE_PROPERTY( isConstructing ) {
 
 	*vp = BOOLEAN_TO_JSVAL( JS_IsConstructing(cx) );
@@ -196,6 +251,10 @@ DEFINE_PROPERTY( isConstructing ) {
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/**doc
+ * *HideProperties*( obj, propertyName1 [, propertyName2 [, ... ] ] )
+  Hide properties from for-in loop.
+**/
 DEFINE_FUNCTION( HideProperties ) {
 
 	RT_ASSERT_ARGC( 2 );
@@ -240,6 +299,15 @@ DEFINE_FUNCTION( HideProperties ) {
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/**doc
+ * ,,integer,, *IdOf*( value )
+  Returns an integer value that is a unique identifier of _value_ .
+  ===== example: =====
+  {{{
+  var myObj = {};
+  Print( IdOf(myObj), '\n' );
+  }}}
+**/
 DEFINE_FUNCTION_FAST( IdOf ) {
 
 	jsid id;
@@ -257,6 +325,10 @@ DEFINE_FUNCTION_FAST( IdOf ) {
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/**doc
+ * *Warning*( string )
+  Report a warning.
+**/
 // note:
 //  warning is reported on stderr ( jshost.exe test.js 2>NUL )
 // (TBD) update this note ?
@@ -272,6 +344,17 @@ DEFINE_FUNCTION_FAST( Warning ) {
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/**doc
+ * void *ASSERT*( expression [, failureMessage ] )
+  If the argument expression compares equal to zero, the failureMessage is written to the standard error device and the program stops its execution.
+  ===== example: =
+  {{{
+  var foo = ['a', 'b', 'c'];
+  ASSERT( i >= 0 || i < 3, 'Invalid value.' );
+  Print( foo[i] );
+  }}}
+**/
+
 DEFINE_FUNCTION( ASSERT ) {
 
 	RT_ASSERT_ARGC( 1 );
@@ -293,6 +376,10 @@ DEFINE_FUNCTION( ASSERT ) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/**doc
+ * *CollectGarbage*()
+  Performs garbage collection in the JS memory pool.
+**/
 DEFINE_FUNCTION_FAST( CollectGarbage ) {
 
 	#ifdef JS_THREADSAFE
@@ -310,6 +397,11 @@ DEFINE_FUNCTION_FAST( CollectGarbage ) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/**doc
+ * *MaybeCollectGarbage*()
+  Performs a conditional garbage collection of JS objects, doubles, and strings that are no longer needed by a script executing.
+  This offers the JavaScript engine an opportunity to perform garbage collection if needed.
+**/
 DEFINE_FUNCTION_FAST( MaybeCollectGarbage ) {
 
 	#ifdef JS_THREADSAFE
