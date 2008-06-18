@@ -166,6 +166,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\static.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\stdafx.cpp"
 				>
 				<FileConfiguration
@@ -205,6 +209,10 @@
 			</File>
 			<File
 				RelativePath=".\jslang.h"
+				>
+			</File>
+			<File
+				RelativePath=".\static.h"
 				>
 			</File>
 			<File

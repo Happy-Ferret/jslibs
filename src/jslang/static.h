@@ -12,18 +12,3 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-#include "stdafx.h"
-
-#ifndef _JSLANG_H_
-#define _JSLANG_H_
-
-DECLARE_CLASS( BString )
-DECLARE_CLASS( Stream )
-DECLARE_STATIC()
-
-JSBool jslangInit(JSContext *cx, JSObject *obj);
-
-
-#endif // _JSLANG_H_
-
-

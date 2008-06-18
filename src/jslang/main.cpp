@@ -33,6 +33,7 @@ JSBool jslangInit(JSContext *cx, JSObject *obj) {
 
 	INIT_CLASS( BString );
 	INIT_CLASS( Stream );
+	INIT_STATIC();
 
 	return JS_TRUE;
 }
