@@ -30,6 +30,17 @@
 		QA.ASSERT_STR( t, 'eeeeffffgggg', 'buffer match' );
 	},
 
+	BufferTest2: function(QA) {
+		
+		LoadModule('jsstd');
+
+		var b = new Buffer("abcdefghi");
+		b.Read(2);
+		b.Read(2);
+		b.Read(2);
+		b.Read(2);
+		QA.ASSERT_STR( b.Read(2), 'i', 'buffer match' );
+	},
 
 	BufferUnderflow: function(QA) {
 		

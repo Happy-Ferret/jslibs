@@ -99,14 +99,12 @@ void stdErrRouter( JSContext *cx, const char *message, size_t length ) {
 	if ( globalObject != NULL ) {
 
 		jsval fct;
-		if ( GetConfigurationValue(cx, NAME_CONFIGURATION_STDERR, &fct) == JS_TRUE ) {
-			if ( JS_TypeOfValue(cx, fct) == JSTYPE_FUNCTION ) {
+		if ( GetConfigurationValue(cx, NAME_CONFIGURATION_STDERR, &fct) == JS_TRUE && JsvalIsFunction(cx, fct) ) {
 
-				jsval rval, strVal;
-				StringAndLengthToJsval(cx, &strVal, message, length);
-				JS_CallFunctionValue(cx, globalObject, fct, 1, &strVal, &rval);
-				return;
-			}
+			jsval rval, strVal;
+			StringAndLengthToJsval(cx, &strVal, message, length);
+			JS_CallFunctionValue(cx, globalObject, fct, 1, &strVal, &rval);
+			return;
 		}
 	}
 

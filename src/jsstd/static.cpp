@@ -31,12 +31,16 @@
 #endif
 
 BEGIN_STATIC
-/**
+/**doc g1
 === Static functions ===
 **/
 
+/**doc g2
+=== Static properties ===
+**/
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/**doc
+/**doc g1
  * ,,string,, *Expand*( str [, obj] )
   Return an expanded string using key/value stored in _obj_.
   ===== example: =====
@@ -51,7 +55,7 @@ DEFINE_FUNCTION( Expand ) {
 
 	const char *srcBegin;
 	size_t srcLen;
-	
+
 	J_CHK( JsvalToStringAndLength(cx, J_ARG(1), &srcBegin, &srcLen) );
 	J_S_ASSERT( srcBegin[srcLen] == '\0', "Invalid input string." ); // else strstr may failed.
 	const char *srcEnd = srcBegin + srcLen;
@@ -163,7 +167,7 @@ static JSBool InternString(JSContext *cx, uintN argc, jsval *vp) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
  * *Seal*( obj )
-  Prevents all write access to the object, either to add a new property, delete an existing property, 
+  Prevents all write access to the object, either to add a new property, delete an existing property,
   or set the value or attributes of an existing property.
 **/
 
@@ -208,7 +212,7 @@ DEFINE_FUNCTION( Clear ) {
   ===== example: =====
   {{{
   function foo() {
-    
+
     var data = 55;
     function bar() { Print( data, '\n' ); }
     var old = SetScope( bar, {data:7} );
@@ -421,7 +425,7 @@ DEFINE_FUNCTION_FAST( MaybeCollectGarbage ) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 DEFINE_PROPERTY( disableGarbageCollection ) {
 // <shaver>	you could install a vetoing callback!
-// <crowder>	oh, true	
+// <crowder>	oh, true
 
 //	JS_SetGCCallback(cx, ..
 
@@ -433,7 +437,7 @@ DEFINE_PROPERTY( disableGarbageCollection ) {
 
 		JS_LOCK_GC(JS_GetRuntime(cx));
 	} else {
-		
+
 		JS_UNLOCK_GC(JS_GetRuntime(cx));
 	}
 
@@ -467,7 +471,7 @@ DEFINE_FUNCTION_FAST( Print ) {
 /*
 	if ( stdoutFunction == NULL )
 		return JS_TRUE; // nowhere to write, but don't failed
-	
+
 	JS_SET_RVAL(cx, vp, JSVAL_VOID);
 
 	for (uintN i = 0; i < J_ARGC; i++)
@@ -660,7 +664,7 @@ DEFINE_FUNCTION( StrSet ) {
 	const char *chr;
 	size_t charLen;
 	RT_JSVAL_TO_STRING_AND_LENGTH( J_ARG(1), chr, charLen );
-	
+
 	unsigned int count;
 	RT_JSVAL_TO_UINT32( J_ARG(2), count );
 
@@ -668,7 +672,7 @@ DEFINE_FUNCTION( StrSet ) {
 	RT_ASSERT_ALLOC( buf );
 	buf[count] = '\0';
 
-	memset(buf, chr[0], count); 
+	memset(buf, chr[0], count);
 
 	JSString *jsstr = JS_NewString(cx, buf, count);
 

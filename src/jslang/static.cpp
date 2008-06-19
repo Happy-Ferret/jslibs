@@ -37,10 +37,15 @@ DEFINE_FUNCTION( Stringify ) { // todoc
 			void *stack;
 			StackInit(&stack);
 			
+			size_t defaultChunkSize = 64; // 4096 - sizeof(size_t); // try to reach a multiple of the system page size
+//			size_t waste = 0;
+//			size_t round = 0;
+
+
 			size_t length;
 			do {
-
-				length = 8192 - sizeof(size_t); // try to reach a multiple of the system page size
+				
+				length = defaultChunkSize;
 
 				void *chunk = malloc(length + sizeof(size_t));
 				J_S_ASSERT_ALLOC( chunk );
@@ -53,6 +58,14 @@ DEFINE_FUNCTION( Stringify ) { // todoc
 
 				*chunkDataLength = length;
 				total += length;
+
+//				round++;
+//				waste += defaultChunkSize - length;
+
+				if ( length < defaultChunkSize )
+					defaultChunkSize = defaultChunkSize / 2 + 8;
+				else
+					defaultChunkSize = defaultChunkSize * 2 / 3 + 8;
 
 			} while ( length != 0 );
 
@@ -73,7 +86,7 @@ DEFINE_FUNCTION( Stringify ) { // todoc
 				free(chunk);
 			}
 		
-			JSString *jsstr = JS_NewString(cx, newBuffer, length);
+			JSString *jsstr = JS_NewString(cx, newBuffer, total);
 			J_S_ASSERT_ALLOC( jsstr );
 			*J_RVAL = STRING_TO_JSVAL( jsstr );
 			return JS_TRUE;

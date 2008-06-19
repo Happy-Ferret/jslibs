@@ -686,7 +686,7 @@ inline bool IsNInfinity( JSContext *cx, jsval val ) {
 }
 
 inline bool JsvalIsFunction( JSContext *cx, jsval val ) {
-	return ( JSVAL_IS_OBJECT(val) && JS_TypeOfValue(cx, (val)) == JSTYPE_FUNCTION );
+	return ( JS_TypeOfValue(cx, (val)) == JSTYPE_FUNCTION );
 }
 
 inline bool JsvalIsArray( JSContext *cx, jsval val ) {
@@ -891,6 +891,11 @@ inline NIStreamRead StreamReadInterface( JSContext *cx, JSObject *obj ) {
 	void *fct = (void*)StreamReadNativeInterface(cx, obj);
 	if ( fct )
 		return (NIStreamRead)fct;
+
+	jsval res;
+	if ( JS_GetProperty(cx, obj, "Read", &res) != JS_TRUE || !JsvalIsFunction(cx, res) )
+		return NULL;
+
 	return JSStreamRead;
 }
 
@@ -933,6 +938,11 @@ inline NIBufferGet BufferGetInterface( JSContext *cx, JSObject *obj ) {
 	void *fct = (void*)BufferGetNativeInterface(cx, obj);
 	if ( fct )
 		return (NIBufferGet)fct;
+
+	jsval res;
+	if ( JS_GetProperty(cx, obj, "Get", &res) != JS_TRUE || !JsvalIsFunction(cx, res) )
+		return NULL;
+
 	return JSBufferGet;
 }
 
