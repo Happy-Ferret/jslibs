@@ -12,10 +12,17 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-#include "stdafx.h"
+/**doc o:1 f:jsstd.wiki
+summary jsstd module
+#labels doc
 
-//#define MODULE_NAME "jsstd"
-//static const char *_revision = "$Rev$";
+- [http://jslibs.googlecode.com/svn/trunk/jsstd/ source] - [JSLibs main] -
+
+= jsstd module =
+**/
+
+
+#include "stdafx.h"
 
 #include "static.h"
 #include "data.h"

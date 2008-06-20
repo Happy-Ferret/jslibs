@@ -31,16 +31,15 @@
 #endif
 
 BEGIN_STATIC
-/**doc g1
+/**doc g:sf
 === Static functions ===
 **/
-
-/**doc g2
+/**doc g:sp
 === Static properties ===
 **/
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/**doc g1
+/**doc g:sf
  * ,,string,, *Expand*( str [, obj] )
   Return an expanded string using key/value stored in _obj_.
   ===== example: =====
@@ -243,7 +242,7 @@ DEFINE_FUNCTION( SetScope ) {
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/**doc
+/**doc g:sp
  * ,,boolean,, *isConstructing*
   Determines whether or not the function currently executing was called as a constructor.
 **/
@@ -314,16 +313,50 @@ DEFINE_FUNCTION( HideProperties ) {
 **/
 DEFINE_FUNCTION_FAST( IdOf ) {
 
+	J_S_ASSERT_ARG_MIN( 1 );		
+	J_S_ASSERT_ARG_MAX( 1 );		
+
 	jsid id;
 	if ( JSVAL_IS_OBJECT( J_FARG(1) ) )
-		RT_CHECK_CALL( JS_GetObjectId(cx, JSVAL_TO_OBJECT( J_FARG(1) ), &id) );
+		J_CHK( JS_GetObjectId(cx, JSVAL_TO_OBJECT( J_FARG(1) ), &id) );
 	else
-		RT_CHECK_CALL( JS_ValueToId(cx, J_FARG(1), &id) );
+		J_CHK( JS_ValueToId(cx, J_FARG(1), &id) );
 
 	if ( INT_FITS_IN_JSVAL(id) )
 		*J_FRVAL = INT_TO_JSVAL(id);
 	else
-		JS_NewNumberValue(cx, (JSUword)id, J_FRVAL); // src: ... JSDOUBLE_IS_INT(d, i) && INT_FITS_IN_JSVAL(i) ...
+		J_CHK( JS_NewNumberValue(cx, (JSUword)id, J_FRVAL) ); // src: ... JSDOUBLE_IS_INT(d, i) && INT_FITS_IN_JSVAL(i) ...
+	return JS_TRUE;
+}
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/**doc
+ * ,,value,, *FromId*( id )
+  Returns the value that corresponts to the given id. This is the reciprocal of IdOf() function.
+  ===== example: =====
+  {{{
+  var myObj = {};
+  Print( FromId(IdOf(myObj)) == myObj, '\n' ); // returns true
+  }}}
+
+**/
+DEFINE_FUNCTION_FAST( FromId ) {
+	
+	J_S_ASSERT_ARG_MIN( 1 );		
+	J_S_ASSERT_ARG_MAX( 1 );		
+
+	jsid id;
+	if ( JSVAL_IS_INT( J_FARG(1) ) ) {
+		id = JSVAL_TO_INT( J_FARG(1) );
+	} else {
+		jsdouble d;
+		J_CHK( JS_ValueToNumber(cx, J_FARG(1), &d) );
+		id = d;
+	}
+	J_CHK( JS_IdToValue(cx, id, J_FRVAL) );
 	return JS_TRUE;
 }
 
@@ -423,6 +456,11 @@ DEFINE_FUNCTION_FAST( MaybeCollectGarbage ) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/**doc g2
+ * ,,boolean,, disableGarbageCollection
+  Set to true, this property desactivates the garbage collector.
+**/
+
 DEFINE_PROPERTY( disableGarbageCollection ) {
 // <shaver>	you could install a vetoing callback!
 // <crowder>	oh, true
@@ -452,6 +490,11 @@ DEFINE_PROPERTY( disableGarbageCollection ) {
 //}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/**doc
+ * ,,real,, *TimeCounter*()
+  Returns the current value of a high-resolution time counter in millisecond.
+  The returned value is a relative time value.
+**/
 DEFINE_FUNCTION_FAST( TimeCounter ) {
 
 	JS_NewNumberValue(cx, AccurateTimeCounter(), J_FRVAL);
@@ -460,6 +503,14 @@ DEFINE_FUNCTION_FAST( TimeCounter ) {
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/**doc
+ * void *Print*( value1 [, value2 [, ...]] )
+  Display _val_ to the output (the screen by default).
+  ===== example: =====
+  {{{
+  Print( 'Hello World', '\n' );
+  }}}
+**/
 DEFINE_FUNCTION_FAST( Print ) {
 
 	JSObject *globalObject = JS_GetGlobalObject(cx);
@@ -595,6 +646,19 @@ static JSScript* LoadScript(JSContext *cx, JSObject *obj, const char *fileName, 
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/**doc
+ * ,,value,, *Exec*( fileName [, useAndSaveCompiledScript = true] )
+  Executes the script specified by _fileName_.
+  If _useAndSaveCompiledScript_ is true, the function load and save a compiled version (using XDR format) of the script on the disk ( adding 'xrd' to _fileName_ ).
+  If the compiled file is not found, the uncompiled version is used instead.
+  ===== return value: =
+  This function returns the last evaluated statement of the script.
+  ===== example: =====
+  {{{
+  var foo = Exec('constants.js'); // loads constants.js or constants.jsxrd if available.
+  }}}
+**/
+
 // function copied from mozilla/js/src/js.c
 DEFINE_FUNCTION_FAST( Exec ) {
 
@@ -635,7 +699,13 @@ DEFINE_FUNCTION_FAST( Exec ) {
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//
+/**doc
+ * ,,boolean,, *IsStatementValid*( statementString )
+  Returns true if _statementString_ is a valid Javascript statement.
+  The intent is to support interactive compilation, accumulate lines in a buffer until IsStatementValid returns true, then pass it to an eval.
+  This function is useful to write an interactive console.
+**/
+
 DEFINE_FUNCTION( IsStatementValid ) {
 
 	RT_ASSERT_ARGC( 1 );
@@ -648,13 +718,16 @@ DEFINE_FUNCTION( IsStatementValid ) {
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//
+/**doc
+ * void *Halt*()
+  Stop the execution of the program. This is a ungraceful way to finish a program.
+**/
 DEFINE_FUNCTION( Halt ) {
 
 	return JS_FALSE;
 }
 
-
+/*
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 DEFINE_FUNCTION( StrSet ) {
@@ -681,6 +754,7 @@ DEFINE_FUNCTION( StrSet ) {
 
 	return JS_TRUE;
 }
+*/
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -721,10 +795,11 @@ CONFIGURE_STATIC
 		FUNCTION_FAST( CollectGarbage )
 		FUNCTION_FAST( MaybeCollectGarbage )
 		FUNCTION_FAST( IdOf )
+		FUNCTION_FAST( FromId )
 		FUNCTION_FAST( Warning )
 		FUNCTION( ASSERT )
 		FUNCTION_FAST( Halt )
-		FUNCTION( StrSet )
+//		FUNCTION( StrSet )
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC

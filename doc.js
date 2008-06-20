@@ -1,6 +1,8 @@
 LoadModule('jsstd');
 LoadModule('jsio');
 
+function Map() ({ __proto__:null });
+
 function RecursiveDir(path, callback) {
 	
 	(function(path) {
@@ -23,28 +25,82 @@ function RecursiveDir(path, callback) {
 	})(path);
 }
 
-var docExpr = /\/\*\*doc( .*\r?\n)?((.*\r?\n)*?)\*\*\//g;
-var hidden = /\/\./;
-var sourceCode = /\.(h|cpp|c)$/;
 
-RecursiveDir( './src', function(file) {
+function CreateItemList() {
 
-	if ( !hidden(file.name) && sourceCode(file.name) ) {
-		
-		var code = file.content;
-		docExpr.lastIndex = 0;
-		var res;
-		while( res = docExpr(code) ) {
+	var docExpr = /\/\*\*doc(?: (.*)\r?\n)?((.*\r?\n)*?)\*\*\//g;
+	var hidden = /\/\./;
+	var sourceCode = /\.(h|cpp|c)$/;
 
-			 Print('attr:'+res[1], '\n');
-			 Print('text:'+res[2], '\n');
+	var itemList = [];
+
+	RecursiveDir( './src', function(file) {
+
+		if ( !hidden(file.name) && sourceCode(file.name) ) {
+
+			var source = file.content;
+			docExpr.lastIndex = 0;
+			var res;
+			while( res = docExpr(source) ) {
+
+				var item = Map();
+				itemList.push(item);
+
+				item.filePath = file.name;
+				item.path = file.name.substr(0, file.name.lastIndexOf('/'));
+				item.lastDir = item.path.substr(item.path.lastIndexOf('/')+1);
+				item.fileName = file.name.substr(file.name.lastIndexOf('/')+1);
+				item.wikiText = res[2];
+				item.source = source;
+				item.sourceIndex = docExpr.lastIndex - item.wikiText.length;
+				
+//				var attr = Map();
+				var attr = {};
+				item.attributs = attr;
+				
+				if ( res[1] )
+					for each ( var a in res[1].split(' ') ) {
+
+						var s = a.split(':');
+						attr[s[0]] = s[1];
+					}
+			}
 		}
+	});
+
+	return itemList;
+}
+
+
+function docBuilder(itemList) {
+
+	itemList.sort(function(a,b) (b.attributs.o||0) - (a.attributs.o||0)); // o||0 manages: x > undefined and undefined > x
+	
+	
+	var doc = <doc/>;
+
+	var wikiFile;
+	for ( var [i,item] in Iterator(itemList) ) {
+		
+		if ( item.attributs.f )
+			wikiFile = item.attributs.f;
+
+		doc[wikiFile]
+
+		var currentFile = doc[wikiFile] || (doc[wikiFile] = []);
+		
+		if ( item.attributs.g )
+		
+		currentFile
+	
+		
+		Print( item.path,' ', item.attributs.toSource(), '\n' );
+	
+
 	}
-});
+}
 
-
-/*
-
+docBuilder(CreateItemList());
 
 
 
@@ -54,20 +110,9 @@ RecursiveDir( './src', function(file) {
 **/
 
 
-/**doc #example #HideProperties
+/**doc #example #HideProperties 
   var foo = ['a', 'b', 'c'];
   ASSERT( i >= 0 || i < 3, 'Invalid value.' );
   Print( foo[i] );
 **/
 
-
-
-
-
-
-
-
-
-
-
-*/

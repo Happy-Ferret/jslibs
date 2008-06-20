@@ -386,8 +386,19 @@ JSBool AddBuffer( JSContext *cx, JSObject *destBuffer, JSObject *srcBuffer ) {
 	return JS_TRUE;
 }
 
+/**doc
+== jsstd::Buffer class ==
+ Buffer class is a simple buffer that allows arbitrary length input and output.
+**/
 
 BEGIN_CLASS( Buffer )
+
+/**doc g:f
+=== Functions ===
+**/
+/**doc g:p
+=== Properties ===
+**/
 
 DEFINE_FINALIZE() {
 
