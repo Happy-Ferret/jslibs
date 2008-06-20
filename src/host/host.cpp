@@ -48,7 +48,7 @@ static const JSErrorFormatString *GetErrorMessage(void *userRef, const char *loc
 }
 
 
-static const void *_pGetErrorMessage = &GetErrorMessage; // global variable !
+static const void *_pGetErrorMessage = (const void*)&GetErrorMessage; //global variable !
 
 static bool _unsafeMode = false; // global variable !
 extern bool *_pUnsafeMode = &_unsafeMode; // global variable !
