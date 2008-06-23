@@ -1,14 +1,28 @@
 LoadModule('jsstd');
 LoadModule('jsio');
 
+
 var f = new File('directory.cpp');
 f.Open("r");
+f.Read(10);
+Print( f.available, '\n' );
+f.Read(10);
+Print( f.available, '\n' );
+f.Read(10000);
+Print( f.available, '\n' );
 
+
+
+Halt();
+
+var f = new File('directory.cpp');
+f.Open("r");
 var m = new MemoryMapped(f);
 Print(m);
 
 
 Halt();
+
 
 processPriority = 2;
 while (!endSignal) {

@@ -16,11 +16,14 @@
 #include "prng.h"
 
 
-
+/**doc
+----
+== jscrypt::Prng class ==
+ This class is used to create pseudo random number generators objects.
+**/
 BEGIN_CLASS( Prng )
 
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 DEFINE_FINALIZE() {
 
 	PrngPrivate *privateData = (PrngPrivate *)JS_GetPrivate( cx, obj );
@@ -31,32 +34,19 @@ DEFINE_FINALIZE() {
 	}
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-DEFINE_FUNCTION( Call ) {
+/**doc
+=== Functions ===
+**/
 
-	JSObject *thisObj = JSVAL_TO_OBJECT(argv[-2]); // get 'this' object of the current object ...
-	// (TBD) check JS_InstanceOf( cx, thisObj, &NativeProc, NULL )
-
-	RT_ASSERT_ARGC( 1 );
-	RT_ASSERT_CLASS( thisObj, _class );
-	PrngPrivate *privateData = (PrngPrivate *)JS_GetPrivate( cx, thisObj );
-	J_S_ASSERT_RESOURCE( privateData );
-
-	unsigned long readCount;
-	RT_JSVAL_TO_INT32( argv[0], readCount );
-
-	char *pr = (char*)JS_malloc( cx, readCount );
-	J_S_ASSERT_ALLOC( pr );
-	unsigned long hasRead = privateData->prng.read( (unsigned char*)pr, readCount, &privateData->state );
-	RT_ASSERT( hasRead == readCount, "unable to read prng." );
-
-	JSString *randomString = JS_NewString( cx, pr, hasRead );
-	RT_ASSERT( randomString != NULL, "unable to create the random string." );
-	*rval = STRING_TO_JSVAL(randomString);
-	return JS_TRUE;
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/**doc
+ * *_Constructor_*( prngName )
+  Constructs a pseudo random number generator object using the given algorithm:
+   * yarrow
+   * fortuna
+   * rc4
+   * sprng
+   * sober128
+**/
 DEFINE_CONSTRUCTOR() {
 
 	J_S_ASSERT_CONSTRUCTING();
@@ -88,7 +78,46 @@ DEFINE_CONSTRUCTOR() {
 	return JS_TRUE;
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/**doc
+ * *_Call operator_*( size )
+  Returns _size_ bytes of pseudo-random data.
+  ===== example: =====
+  {{{
+  LoadModule('jsstd');
+  LoadModule('jscrypt');
+  var myGen = new Prng('yarrow');
+  myGen.AutoEntropy(128); // give more entropy
+  Print(HexEncode(myGen(100))); // prints random data
+  }}}
+**/
+DEFINE_FUNCTION( Call ) {
+
+	JSObject *thisObj = JSVAL_TO_OBJECT(argv[-2]); // get 'this' object of the current object ...
+	// (TBD) check JS_InstanceOf( cx, thisObj, &NativeProc, NULL )
+
+	RT_ASSERT_ARGC( 1 );
+	RT_ASSERT_CLASS( thisObj, _class );
+	PrngPrivate *privateData = (PrngPrivate *)JS_GetPrivate( cx, thisObj );
+	J_S_ASSERT_RESOURCE( privateData );
+
+	unsigned long readCount;
+	RT_JSVAL_TO_INT32( argv[0], readCount );
+
+	char *pr = (char*)JS_malloc( cx, readCount );
+	J_S_ASSERT_ALLOC( pr );
+	unsigned long hasRead = privateData->prng.read( (unsigned char*)pr, readCount, &privateData->state );
+	RT_ASSERT( hasRead == readCount, "unable to read prng." );
+
+	JSString *randomString = JS_NewString( cx, pr, hasRead );
+	RT_ASSERT( randomString != NULL, "unable to create the random string." );
+	*rval = STRING_TO_JSVAL(randomString);
+	return JS_TRUE;
+}
+
+/**doc
+ * *AddEntropy*( data )
+  Add _data_ as entropy (randomness) to the current prng.
+**/
 DEFINE_FUNCTION( AddEntropy ) {
 
 	RT_ASSERT_ARGC( 1 );
@@ -110,7 +139,10 @@ DEFINE_FUNCTION( AddEntropy ) {
 	return JS_TRUE;
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/**doc
+ * *AutoEntropy*( size )
+  Automaticaly add _size_ bits of entropy to the current prng.
+**/
 DEFINE_FUNCTION( AutoEntropy ) {
 
 	RT_ASSERT_ARGC( 1 );
@@ -125,6 +157,15 @@ DEFINE_FUNCTION( AutoEntropy ) {
 	return JS_TRUE;
 }
 
+
+/**doc
+=== Static properties ===
+**/
+
+/**doc
+ * ,,object,, *list*
+  Contains the list of all available prng and their feature. The list is a javascript object that map cipher names (key) with another object (value) that contain information.
+**/
 
 DEFINE_PROPERTY( stateGetter ) {
 

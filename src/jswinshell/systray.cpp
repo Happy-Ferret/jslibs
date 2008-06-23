@@ -264,9 +264,20 @@ DWORD WINAPI WinThread( LPVOID lpParam ) {
 }
 
 
+/**doc
+----
+== jswinshell::Systray class ==
+**/
 BEGIN_CLASS( Systray )
 
+/**doc
+=== Functions ===
+**/
 
+/**doc
+ * *_Constructor_*()
+  TBD
+**/
 DEFINE_CONSTRUCTOR() {
 
 	RT_ASSERT_CONSTRUCTING(_class);
@@ -322,6 +333,10 @@ DEFINE_FINALIZE() {
 	}
 }
 
+/**doc
+ * void *Close*()
+  TBD
+**/
 DEFINE_FUNCTION( Close ) {
 
 	NOTIFYICONDATA *nid = (NOTIFYICONDATA*)JS_GetPrivate(cx, obj);
@@ -334,6 +349,11 @@ DEFINE_FUNCTION( Close ) {
 }
 
 
+/**doc
+ * bool *ProcessEvents*()
+  Precess all pending events of the systray. 
+  The function returns true if at least one of the event function ( see Remarks below ) returns true.
+**/
 DEFINE_FUNCTION( ProcessEvents ) {
 
 	NOTIFYICONDATA *nid = (NOTIFYICONDATA*)JS_GetPrivate(cx, obj);
@@ -427,6 +447,10 @@ DEFINE_FUNCTION( ProcessEvents ) {
 }
 
 
+/**doc
+ * *Focus*()
+  TBD
+**/
 DEFINE_FUNCTION( Focus ) {
 
 	PNOTIFYICONDATA nid = (PNOTIFYICONDATA)JS_GetPrivate(cx, obj);
@@ -436,6 +460,10 @@ DEFINE_FUNCTION( Focus ) {
 }
 
 
+/**doc
+ * void *PopupMenu*()
+  TBD
+**/
 DEFINE_FUNCTION( PopupMenu ) {
 
 	PNOTIFYICONDATA nid = (PNOTIFYICONDATA)JS_GetPrivate(cx, obj);
@@ -570,6 +598,10 @@ DEFINE_FUNCTION( CallDefault ) {
 }
 */
 
+/**doc
+ * ??? *Position*( ??? )
+  TBD
+**/
 DEFINE_FUNCTION( Position ) {
 
 	PNOTIFYICONDATA nid = (PNOTIFYICONDATA)JS_GetPrivate(cx, obj);
@@ -595,6 +627,10 @@ DEFINE_FUNCTION( Position ) {
 }
 
 
+/**doc
+ * ??? *Rect*( ??? )
+  TBD
+**/
 DEFINE_FUNCTION( Rect ) {
 
 	HWND hWndTrayWnd = GetTrayNotifyWnd();
@@ -622,7 +658,13 @@ DEFINE_FUNCTION( Rect ) {
 }
 
 
+/**doc
+=== Properties ===
+**/
 
+/**doc
+ * ,,[Icon] | null,, *icon* ,,write-only,,
+**/
 DEFINE_PROPERTY( icon ) {
 
 	HICON hIcon;
@@ -650,6 +692,10 @@ DEFINE_PROPERTY( icon ) {
 	return JS_TRUE;
 }
 
+/**doc
+ * boolean *visible* ,,write-only,,
+  TBD
+**/
 DEFINE_PROPERTY( visible ) {
 
 	JSBool state;
@@ -661,6 +707,10 @@ DEFINE_PROPERTY( visible ) {
 	return JS_TRUE;
 }
 
+/**doc
+ * string *text*
+  TBD
+**/
 DEFINE_PROPERTY( textSetter ) {
 
 	PNOTIFYICONDATA nid = (PNOTIFYICONDATA)JS_GetPrivate(cx, obj);
@@ -684,6 +734,26 @@ DEFINE_PROPERTY( textGetter ) {
 	return JS_TRUE;
 }
 
+/**doc
+ * ,,Object,, *menu*
+   * string | function *menu.commandName.text*
+   * bool | function *menu.commandName.checked*
+   * bool | function *menu.commandName.grayed*
+   * bool *menu.commandName.separator*
+   * bool *menu.commandName.default*
+   * [Icon] | function *menu.commandName.icon*
+
+  ===== example: =====
+  {{{
+  tray.menu = { { text:"enable", checked:true }, { text:"delete", grayed:true }, { separator:true }, exit:"Exit" }
+  }}} 
+  = =
+  If the value of _text_, _checked_, _grayed_ or _icon_ is a function, it is called and the return value is used.
+  ===== example: =====
+  {{{
+  tray.menu = { { text:"enable", checked:function() { return isChecked } }, ...
+  }}}
+**/
 DEFINE_PROPERTY( menuSetter ) {
 
 	JS_SetReservedSlot(cx, obj, SLOT_SYSTRAY_MENU, *vp);
@@ -695,6 +765,19 @@ DEFINE_PROPERTY( menuGetter ) {
 	JS_GetReservedSlot(cx, obj, SLOT_SYSTRAY_MENU, vp);
 	return JS_TRUE;
 }
+
+/**doc
+=== Remarks ===
+ The following functions are called when you call ProcessEvents() according the events received by the tray icon.
+  * onfocus
+  * onblur
+  * onchar
+  * oncommand
+  * onmousemove
+  * onmousedown
+  * onmouseup
+  * onmousedblclick
+**/
 
 CONFIGURE_CLASS
 
@@ -725,6 +808,32 @@ CONFIGURE_CLASS
 	HAS_RESERVED_SLOTS(1)
 
 END_CLASS
+
+/**doc
+=== Examples ===
+{{{
+var s = new Systray();
+
+s.icon = new Icon(new Png(new File('calendar.png').Open(File.RDONLY)).Load());
+s.text = "calendar";
+s.menu = { exit_cmd:"exit" }
+
+s.onmousedown = function(button) {
+ if ( button == 2 )
+  s.PopupMenu();
+}
+
+s.oncommand = function(id) {
+ if ( id == 'exit_cmd' )
+  exit = true;
+}
+
+while ( !exit ) {
+ s.ProcessEvents();
+ Sleep(100);
+}
+}}}
+**/
 
 
 /*

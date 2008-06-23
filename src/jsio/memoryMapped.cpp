@@ -34,6 +34,10 @@ static JSBool BufferGet( JSContext *cx, JSObject *obj, const char **buf, size_t 
 	return JS_TRUE;
 }
 
+/**doc
+----
+== jsio::File class ==
+**/
 
 BEGIN_CLASS( MemoryMapped )
 
@@ -48,7 +52,14 @@ DEFINE_FINALIZE() {
 	}
 }
 
+/**doc
+=== Functions ===
+**/
 
+/**doc
+ * *_Constructor_*( fileDescriptor )
+  Creates a new memory-mapped object using the given open file descriptor.
+**/
 DEFINE_CONSTRUCTOR() {
 
 	J_S_ASSERT_CONSTRUCTING();
@@ -102,6 +113,14 @@ DEFINE_CONSTRUCTOR() {
 	return JS_TRUE;
 }
 
+/**doc
+=== Properties ===
+**/
+
+/**doc
+ * *file* http://jslibs.googlecode.com/svn/wiki/readonly.png
+  This is the file descriptor used to construct this object.
+**/
 DEFINE_PROPERTY( file ) {
 
 	J_CHK( JS_GetReservedSlot(cx, obj, MEMORYMAPPED_SLOT_FILE, vp) );
@@ -122,3 +141,13 @@ CONFIGURE_CLASS
 	END_PROPERTY_SPEC
 
 END_CLASS
+
+/**doc
+=== Example ===
+{{{
+var f = new File('directory.cpp');
+f.Open("r");
+var m = new MemoryMapped(f);
+Print(m);
+}}}
+**/

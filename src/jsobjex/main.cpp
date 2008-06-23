@@ -19,6 +19,15 @@
 
 #include "objex.h"
 
+/**doc t:header
+#summary jsobjex module
+#labels doc
+= jsobjex module =
+ jsobjex is a module that contains only ObjEx class.
+**/
+
+/**doc t:footer
+**/
 extern "C" DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
 //	JS_DefineProperty(cx, obj, MODULE_NAME "_build", INT_TO_JSVAL(atoi(_revision+6)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ); // 6 is the size of "$Rev: "

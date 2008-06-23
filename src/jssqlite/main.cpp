@@ -21,6 +21,18 @@
 static bool _defaultUnsafeMode = false;
 extern bool *_pUnsafeMode = &_defaultUnsafeMode;
 
+/** t:header
+#summary jssqlite module
+#labels doc
+- [http://jslibs.googlecode.com/svn/trunk/jssqlite/ source] - [JSLibs main] -
+= jssqlite module =
+**/
+
+/** t:footer
+----
+- [http://jslibs.googlecode.com/svn/trunk/jssqlite/ source] - [#jssqlite_module top] - [JSLibs main] -
+**/
+
 extern "C" DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
 	jsval unsafeModePtrVal;

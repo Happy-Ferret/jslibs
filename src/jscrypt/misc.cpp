@@ -18,7 +18,14 @@
 
 BEGIN_STATIC
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/**doc
+=== Static functions ===
+**/
+
+/**doc
+ * ,,string,, *Base64Encode*( string )
+  Encode the given _string_ using base64 encoding.
+**/
 DEFINE_FUNCTION( Base64Encode ) {
 
 	RT_ASSERT_ARGC( 1 );
@@ -44,8 +51,11 @@ DEFINE_FUNCTION( Base64Encode ) {
 	return JS_TRUE;
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-DEFINE_FUNCTION( Base64Decode ) {
+/**doc
+ * ,,string,, *Base64Decode*( string )
+  Encode the given _string_ using base64 encoding.
+**/
+DEFINE_FUNCTION( Base64Decode ) {// (TBD) use BString
 
 	RT_ASSERT_ARGC( 1 );
 	RT_ASSERT_STRING(argv[0]);
@@ -71,7 +81,10 @@ DEFINE_FUNCTION( Base64Decode ) {
 }
 
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/**doc
+ * ,,string,, *HexEncode*( string )
+  Encode the given _string_ using hexadecimal encoding.
+**/
 DEFINE_FUNCTION( HexEncode ) {
 
 	static const char hex[] = "0123456789ABCDEF";
@@ -105,8 +118,11 @@ DEFINE_FUNCTION( HexEncode ) {
 
 #define XX 0
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-DEFINE_FUNCTION( HexDecode ) {
+/**doc
+ * ,,string,, *HexDecode*( string )
+  Decode the given _string_ using hexadecimal encoding.
+**/
+DEFINE_FUNCTION( HexDecode ) { // (TBD) use BString
 
 	static const unsigned char unhex[] = {
 

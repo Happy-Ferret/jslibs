@@ -27,6 +27,20 @@
 static bool _defaultUnsafeMode = false;
 extern bool *_pUnsafeMode = &_defaultUnsafeMode;
 
+/**doc t:header
+#summary jsio module
+#labels doc
+- [http://jslibs.googlecode.com/svn/trunk/jsio/ source] - [JSLibs main] -
+= jsio module =
+ This module is based on Netscape Portable Runtime (NSPR) that provides a platform-neutral API for system level and libc like functions.
+ NSPR API is used in the Mozilla client, many of Netscape/AOL/iPlanet's and other software offerings.
+**/
+
+/**doc t:footer
+----
+- [http://jslibs.googlecode.com/svn/trunk/jsio/ source] - [#jsio_module top] - [JSLibs main] -
+**/
+
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
 	jsval unsafeModePtrVal;

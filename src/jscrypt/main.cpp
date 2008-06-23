@@ -27,6 +27,22 @@
 static bool _defaultUnsafeMode = false;
 extern bool *_pUnsafeMode = &_defaultUnsafeMode;
 
+/**doc t:header
+#summary jscrypt module
+#labels doc
+- [http://jslibs.googlecode.com/svn/trunk/jscrypt/ source] - [JSLibs main] -
+= jscrypt module =
+ jscrypt is a cryptographic toolkit that provides developers with a vast array of well known published block ciphers,
+ one-way hash functions, chaining modes, pseudo-random number generators, public key cryptography and a plethora of other routines.
+ The underlying native code of this module is based on [http://libtom.org/ LibTom library].
+**/
+
+/**doc t:footer
+----
+- [http://jslibs.googlecode.com/svn/trunk/jscrypt/ source] - [#jscrypt_module top] - [JSLibs main] -
+**/
+
+
 extern "C" DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
 	jsval unsafeModePtrVal;

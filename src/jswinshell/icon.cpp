@@ -17,7 +17,27 @@
 
 #include "stdlib.h"
 
+/**doc
+----
+== jswinshell::Icon class ==
+**/
 BEGIN_CLASS( Icon )
+
+/**doc
+=== Functions ===
+**/
+
+/**doc
+ * *_Constructor_*( <image | integer> )
+  Icon constructor accepts an [Image] object or a integer. 
+  = =
+  The integer value can be one of:
+  * `0`: IDI_APPLICATION
+  * `1`: IDI_QUESTION
+  * `2`: IDI_INFORMATION
+  * `3`: IDI_WARNING
+  * `4`: IDI_ERROR
+**/
 
 DEFINE_CONSTRUCTOR() {
 

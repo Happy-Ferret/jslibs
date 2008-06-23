@@ -29,6 +29,12 @@
 #define SLOT_METHOD 0
 //#define SLOT_EOF 1
 
+
+/**doc
+----
+== jsz::Z class ==
+**/
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void z_Finalize(JSContext *cx, JSObject *obj) {
 
@@ -40,7 +46,36 @@ void z_Finalize(JSContext *cx, JSObject *obj) {
 	}
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/**doc
+=== Functions ===
+**/
+
+/**doc
+ * ,,string,, *Call operator*( [ inputData [, forceFinish = false ] ] )
+  This function process _inputData_ as a stream.
+  If _forceFinish_ is true, the _inputData_ and any buffered data are flushed to the _outputData_.
+  If this function is call without any argument, All remaining data are flushed.
+  If eof has already reach, the function returns an empty _outputData_ string.
+  ===== example: =
+  {{{
+  var compress = new Z( Z.DEFLATE );
+  var compressedData = compress( 'Hello ');
+  compressedData += compress( 'world' );
+  compressedData += compress(); // flush
+  }}}
+  ===== example: =
+  {{{
+  var compress = new Z( Z.DEFLATE );
+  var compressedData = compress( 'Hello ');
+  compressedData += compress( 'world', true ); // flush
+  }}}
+  ===== example: =
+  {{{
+  var compressedData = new Z( Z.DEFLATE )( 'Hello world', true ); // flush
+  }}}
+**/
+
+
 JSBool z_call(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) { // (TBD) add BString support 
 
 	JSObject *thisObj = JSVAL_TO_OBJECT(argv[-2]); // get 'this' object of the current object ...
@@ -143,7 +178,20 @@ JSClass z_class = { "Z", JSCLASS_HAS_PRIVATE | JSCLASS_HAS_RESERVED_SLOTS(1), //
   0,0, z_call
 };
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/**doc
+ * *_Constructor_*( method [, compressionLevel ] )
+  Constructs a new inflater or deflater object.
+  = =
+  The _method_ can be Z.DEFLATE to compress data or Z.INFLATE to decompress data.
+  The compression level is like this: 0 <= _compressionLevel_ <= 9.
+  ===== note: =
+   For Z.INFLATE method, _compressionLevel_ argument is useless ( no sense )
+  ===== example: =
+  {{{
+  var compress = new Z( Z.DEFLATE, 9 );
+  }}}
+**/
 JSBool z_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
 	if ( !JS_IsConstructing(cx) ) {
@@ -203,7 +251,15 @@ JSFunctionSpec z_FunctionSpec[] = { // *name, call, nargs, flags, extra
  { 0 }
 };
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/**doc
+=== Properties ===
+**/
+
+/**doc
+ * *eof* http://jslibs.googlecode.com/svn/wiki/readonly.png
+  Is `true` if the end of the stream has been reach.
+**/
+
 JSBool z_getter_eof(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 
 	z_streamp stream = (z_streamp)JS_GetPrivate( cx, obj );
@@ -220,7 +276,11 @@ JSBool z_getter_eof(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 	return JS_TRUE;
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/**doc
+ * *adler32* http://jslibs.googlecode.com/svn/wiki/readonly.png
+  Contains the adler32 checksum of the data.
+  [http://en.wikipedia.org/wiki/Adler_checksum more].
+**/
 JSBool z_getter_adler32(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 
 	z_streamp stream = (z_streamp)JS_GetPrivate( cx, obj );
@@ -235,6 +295,14 @@ JSBool z_getter_adler32(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 
 	return JS_TRUE;
 }
+
+/**doc
+ * *lengthIn* http://jslibs.googlecode.com/svn/wiki/readonly.png
+  Contains the current total amount of input data.
+
+ * *lengthOut* http://jslibs.googlecode.com/svn/wiki/readonly.png
+  Contains the current total amount of output data.
+**/
 
 #define LENGTH_IN 1
 #define LENGTH_OUT 2
@@ -263,12 +331,31 @@ JSPropertySpec z_PropertySpec[] = { // *name, tinyid, flags, getter, setter
   { 0 }
 };
 
+
+/**doc
+=== Static Properties ===
+**
+
+/**doc
+ * *idealInputLength* http://jslibs.googlecode.com/svn/wiki/readonly.png
+  This is the ideal size of input data to avoid buffer management overload.
+**/
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 JSBool z_static_getter_idealInputLength(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 
 	JS_NewNumberValue( cx, Buffer::staticBufferLength, vp );
 	return JS_TRUE;
 }
+
+/**doc
+=== Constants ===
+ * Z.`DEFLATE`
+  Compression method.
+
+ * Z.`INFLATE`
+  Decompression method.
+**/
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 JSBool z_static_getter_constant(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
@@ -292,6 +379,37 @@ JSObject *zInitClass( JSContext *cx, JSObject *obj ) {
 
 	return JS_InitClass( cx, obj, NULL, &z_class, z_construct, 1, z_PropertySpec, z_FunctionSpec, z_static_PropertySpec, NULL );
 }
+
+/**doc
+=== example ===
+{{{
+var deflate = new Z( Z.DEFLATE, 9 );
+var clearData;
+var compressedData;
+
+for ( var i = 10; i >= 0; --i ) {
+
+	var chunk = randomString(10000);
+	compressedData += deflate( chunk );
+	clearData += chunk;
+}
+compressedData += deflate(); // flush
+
+
+var inflate = new Z( Z.INFLATE );
+var clearData2 = inflate( compressedData, true );
+
+Print( 'ratio:' + compressedData.length + ': ' + Math.round( 100 * compressedData.length / clearData.length ) + '%','\n');
+if ( clearData2 != clearData )
+
+	Print('error!!!','\n');
+}
+}}}
+
+[http://jslibs.googlecode.com/svn/trunk/jsz/debug.js code snippet]
+
+**/
+
 
 
 /****************************************************************

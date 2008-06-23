@@ -99,11 +99,11 @@ void Network64ToHost64( void *pval ) {
 
 
 /**doc
+----
 == jsstd::Pack class ==
  Pack is a class that helps to convert binary data into Integer, Real or String and to write an integer in a binary data string.
  The Pack class manages the system endian or network endian.
 **/
-
 BEGIN_CLASS( Pack )
 
 DEFINE_FINALIZE() {
@@ -115,7 +115,6 @@ DEFINE_FINALIZE() {
  * *_Constructor_*( buffer )
   Constructs a Pack object from a Buffer object. This is the only way to read or write binary data.
 **/
-
 DEFINE_CONSTRUCTOR() {
 
 	J_S_ASSERT_CONSTRUCTING();
@@ -127,7 +126,14 @@ DEFINE_CONSTRUCTOR() {
 	return JS_TRUE;
 }
 
+/**doc
+=== Functions ===
+**/
 
+/**doc
+ * ,,integer,, *ReadInt*( size, [isSigned = false], [isNetworkEndian = false] )
+  TBD
+**/
 DEFINE_FUNCTION( ReadInt ) {
 
 	RT_ASSERT_ARGC(1);
@@ -139,13 +145,13 @@ DEFINE_FUNCTION( ReadInt ) {
 
 	size_t size;
 	RT_JSVAL_TO_INT32( J_ARG(1), size );
-	
+
 	bool isSigned;
 	if ( J_ARG_ISDEF(2) )
 		RT_JSVAL_TO_BOOL( J_ARG(2), isSigned );
 	else
 		isSigned = false;
-	
+
 	bool netConv;
 	if ( J_ARG_ISDEF(3) )
 		RT_JSVAL_TO_BOOL( J_ARG(3), netConv );
@@ -201,7 +207,7 @@ DEFINE_FUNCTION( ReadInt ) {
 			if (netConv)
 				Network64ToHost64(data);
 			if ( isSigned ) {
-				
+
 				int64_t val = *(int64_t*)data;
 				RT_CHECK_CALL( JS_NewNumberValue(cx, val, rval) );
 			} else {
@@ -227,9 +233,12 @@ DEFINE_FUNCTION( Test ) {
 	return JS_TRUE;
 }
 
-
+/**doc
+ * *WriteInt*( size, [isSigned = false [, isNetworkEndian = false]] )
+  TBD
+**/
 DEFINE_FUNCTION( WriteInt ) {
-	
+
 	RT_ASSERT_ARGC(2);
 
 	jsval bufferVal;
@@ -241,7 +250,7 @@ DEFINE_FUNCTION( WriteInt ) {
 
 	size_t size;
 	RT_JSVAL_TO_INT32( J_ARG(2), size );
-	
+
 	bool isSigned;
 	if ( J_ARG_ISDEF(3) )
 		RT_JSVAL_TO_BOOL( J_ARG(3), isSigned );
@@ -295,7 +304,10 @@ DEFINE_FUNCTION( WriteInt ) {
 	return JS_TRUE;
 }
 
-
+/**doc
+ * ,,real,, *ReadReal*( size )
+  TBD
+**/
 DEFINE_FUNCTION( ReadReal ) {
 
 	RT_ASSERT_ARGC(1);
@@ -330,7 +342,10 @@ DEFINE_FUNCTION( ReadReal ) {
 	return JS_TRUE;
 }
 
-
+/**doc
+ * ,,string,, ReadString( length )
+  TBD
+**/
 DEFINE_FUNCTION( ReadString ) {
 
 	jsval bufferVal;
@@ -339,13 +354,13 @@ DEFINE_FUNCTION( ReadString ) {
 	JSObject *bufferObject = JSVAL_TO_OBJECT( bufferVal );
 
 	if ( J_ARG_ISDEF(1) ) {
-		
+
 		size_t amount;
 		RT_JSVAL_TO_INT32( J_ARG(1), amount );
 		RT_ASSERT( amount >= 0, "Invalid amount" );
 		RT_CHECK_CALL( ReadAmount(cx, bufferObject, amount, rval) );
 	} else {
-		
+
 		// get a chunk
 		// check if it contains '\0'
 		// else store it and get a new chunk...
@@ -358,19 +373,39 @@ DEFINE_FUNCTION( ReadString ) {
 	return JS_TRUE;
 }
 
+/**doc
+=== Properties ===
+**/
 
+/**doc
+ * *buffer*
+  Is the current Buffer object.
+**/
 DEFINE_PROPERTY( buffer ) {
 
 	RT_CHECK_CALL( JS_GetReservedSlot(cx, obj, SLOT_PACK_BUFFEROBJECT, vp ) );
 	return JS_TRUE;
 }
 
+
+/**doc
+=== Static properties ===
+**/
+
+/**doc
+ * *systemIntSize*
+  Is the size (in Byte) of a system int.
+**/
 DEFINE_PROPERTY( systemIntSize ) {
 
 	*vp = INT_TO_JSVAL( sizeof(int) );
 	return JS_TRUE;
 }
 
+/**doc
+ * *systemBigEndian*
+  Is <true> if the system endian is BigEndian else is <false>.
+**/
 DEFINE_PROPERTY( systemBigEndian ) {
 
 	*vp = BOOLEAN_TO_JSVAL( systemEndian == BigEndian );

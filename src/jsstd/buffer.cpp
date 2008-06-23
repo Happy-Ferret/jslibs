@@ -259,7 +259,7 @@ JSBool BufferSkipAmount( JSContext *cx, JSObject *obj, size_t amount ) {
 			J_CHK( ShiftJsval(cx, pv->queue, NULL) );
 		pv->length = 0;
 		return JS_TRUE;
-	}		
+	}
 
 	size_t remainToRead = amount;
 	while ( remainToRead > 0 ) { // while there is something to read,
@@ -386,19 +386,14 @@ JSBool AddBuffer( JSContext *cx, JSObject *destBuffer, JSObject *srcBuffer ) {
 	return JS_TRUE;
 }
 
+
 /**doc
+----
 == jsstd::Buffer class ==
  Buffer class is a simple buffer that allows arbitrary length input and output.
 **/
 
 BEGIN_CLASS( Buffer )
-
-/**doc g:f
-=== Functions ===
-**/
-/**doc g:p
-=== Properties ===
-**/
 
 DEFINE_FINALIZE() {
 
@@ -414,6 +409,16 @@ DEFINE_FINALIZE() {
 }
 
 
+/**doc
+=== Functions ===
+**/
+
+/**doc
+ * *_Constructor_*( [string | Buffer object] )
+  Constructs a Buffer object.
+  If a string is given as argument, the buffer is initialized with this string.
+  If buffer object is given, the buffer is initialized with this existing buffer object (kind of copy constructor).
+**/
 DEFINE_CONSTRUCTOR() {
 
 	J_S_ASSERT_CONSTRUCTING();
@@ -447,7 +452,10 @@ DEFINE_CONSTRUCTOR() {
 }
 
 
-
+/**doc
+ * *Clear*()
+  TBD
+**/
 DEFINE_FUNCTION( Clear ) {
 
 	BufferPrivate *pv = (BufferPrivate*)JS_GetPrivate(cx, obj);
@@ -459,6 +467,10 @@ DEFINE_FUNCTION( Clear ) {
 }
 
 
+/**doc
+ * *Write*( data [, length] )
+  Add _data_ in the buffer. If _length_ is used, only the first _length_ bytes of _data_ are added.
+**/
 DEFINE_FUNCTION( Write ) {
 
 	BufferPrivate *pv = (BufferPrivate*)JS_GetPrivate(cx, obj);
@@ -480,12 +492,16 @@ DEFINE_FUNCTION( Write ) {
 
 		return WriteRawChunk(cx, obj, amount, buf);
 	} else {
-		
+
 		return WriteChunk(cx, obj, J_ARG(1));
 	}
 }
 
 
+/**doc
+ * ,,boolean,, *Match*( string )
+  TBD
+**/
 DEFINE_FUNCTION( Match ) {
 
 	J_S_ASSERT_ARG_MIN( 1 );
@@ -511,6 +527,18 @@ err:
 }
 
 
+/**doc
+ * ,,string,, *Read*( [ amount ] )
+  Read _amount_ data in the buffer. If _amount_ is omited, The whole buffer is returned.
+  = =
+  If _amount_ == undefined, an arbitrary (ideal) amount of data is returned. Use this when you don't know how many data you have to read.
+  ===== example: =====
+  {{{
+  var chunk = buffer.Read(undefined);
+  }}}
+  ===== note: =====
+  The read operation never blocks, even if the requested amount of data is greater than the buffer length.
+**/
 DEFINE_FUNCTION( Read ) { // Read( [ amount | <undefined> ] )
 
 	BufferPrivate *pv = (BufferPrivate*)JS_GetPrivate(cx, obj);
@@ -531,6 +559,10 @@ DEFINE_FUNCTION( Read ) { // Read( [ amount | <undefined> ] )
 }
 
 
+/**doc
+ * *Skip*( length )
+  Skip _length_ bytes of data from the buffer.
+**/
 DEFINE_FUNCTION( Skip ) { // Skip( amount )
 
 	BufferPrivate *pv = (BufferPrivate*)JS_GetPrivate(cx, obj);
@@ -546,6 +578,11 @@ DEFINE_FUNCTION( Skip ) { // Skip( amount )
 }
 
 
+/**doc
+ * ,,string,, *ReadUntil*( boundaryString [, skip] )
+  Reads the buffer until it match the _boundaryString_, else it returns <undefined>.
+  If _skip_ argument is <true>, the _boundaryString_ is skiped from the buffer.
+**/
 DEFINE_FUNCTION( ReadUntil ) {
 
 	J_S_ASSERT_ARG_MIN( 1 );
@@ -574,6 +611,10 @@ DEFINE_FUNCTION( ReadUntil ) {
 }
 
 
+/**doc
+ * ,,integer,, *IndexOf*( string )
+  Find _string_ in the buffer and returns the offset of the first letter. If not found, this function returns -1.
+**/
 DEFINE_FUNCTION( IndexOf ) {
 
 	J_S_ASSERT_ARG_MIN( 1 );
@@ -587,6 +628,17 @@ DEFINE_FUNCTION( IndexOf ) {
 }
 
 
+/**doc
+ * ,,string,, *Unread*( _data_ )
+  Insert _data_ at the begining of the buffer. This function can undo a read operation. The returned value is _data_.
+  ===== example: =====
+  {{{
+  function Peek(len) {
+
+    return buffer.Unread( buffer.Read(len) );
+  }
+  }}}
+**/
 DEFINE_FUNCTION( Unread ) {
 
 	J_S_ASSERT_ARG_MIN( 1 );
@@ -596,6 +648,11 @@ DEFINE_FUNCTION( Unread ) {
 	return JS_TRUE;
 }
 
+
+/**doc
+ * ,,string,, *toString*()
+  Converts the whole content of the buffer to a string (BString).
+**/
 
 // Note:  String( { toString:function() { return [1,2,3]} } );  throws the following error: "can't convert Object to string"
 DEFINE_FUNCTION( toString ) {
@@ -637,11 +694,19 @@ DEFINE_FUNCTION( toString ) {
 	//JSObject *bstrObj = NewBString(cx, bstrBuf, pv->length);
 	//J_S_ASSERT( bstrObj != NULL, "Unable to create the BString." );
 	//*J_RVAL = OBJECT_TO_JSVAL(bstrObj);
-	
+
 	return JS_TRUE;
 }
 
 
+/**doc
+=== Properties ===
+**/
+
+/**doc
+ * ,,integer,, *length* http://jslibs.googlecode.com/svn/wiki/readonly.png
+  Is the current length of the buffer.
+**/
 DEFINE_PROPERTY( length ) {
 
 	BufferPrivate *pv = (BufferPrivate*)JS_GetPrivate(cx, obj);
@@ -658,6 +723,26 @@ DEFINE_TRACER() {
 			JS_CALL_VALUE_TRACER(trc, *(jsval*)QueueGetData(it), "jsstd/Buffer:bufferQueueItem");
 }
 
+
+/**doc
+=== Callback functions ===
+ * *onunderflow*( _bufferObject_ )
+  This function is called by the buffer when its length is less than the requested amount of data.
+  _bufferObject_ is the buffer object that caused the call.
+  This function is called only once by read operation.
+  ===== example: =
+  {{{
+  var buffer = new Buffer();
+  buffer.onunderflow = function(b) {
+    b.Write('some more data...');
+  }
+  buffer.Read(10000);
+  buffer.Read(undefined);
+  }}}
+
+=== Remarks ===
+ Buffer class supports _NI_READ_RESOURCE_.
+**/
 
 CONFIGURE_CLASS
 
@@ -684,3 +769,26 @@ CONFIGURE_CLASS
 	END_PROPERTY_SPEC
 
 END_CLASS
+
+
+/**doc
+=== example ===
+ {{{
+ var buf = new Buffer();
+ buf.Write('1234');
+ buf.Write('5');
+ buf.Write('');
+ buf.Write('6789');
+ Print( buf.Read() );
+ }}}
+
+=== example ===
+ {{{
+ var buf = new Buffer();
+ buf.Write('0123456789');
+ Print( buf.Read(4) );
+ Print( buf.Read(1) );
+ Print( buf.Read(1) );
+ Print( buf.Read(4) );
+ }}}
+**/

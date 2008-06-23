@@ -17,9 +17,21 @@
 
 #include "stdlib.h"
 
+/**doc
+----
+== jswinshell::Console class ==
+**/
+
 BEGIN_CLASS( Console )
 
+/**doc
+=== Functions ===
+**/
 
+/**doc
+ * *_Constructor_*()
+  TBD
+**/
 DEFINE_CONSTRUCTOR() {
 
 	J_S_ASSERT_CONSTRUCTING();
@@ -36,6 +48,10 @@ DEFINE_FINALIZE() {
 	BOOL res = FreeConsole();
 }
 
+/**doc
+ * void *Close*()
+  TBD
+**/
 DEFINE_FUNCTION( Close ) {
 
 	BOOL res = FreeConsole();
@@ -44,7 +60,10 @@ DEFINE_FUNCTION( Close ) {
 }
 
 
-DEFINE_FUNCTION( Write ) {
+/**doc
+ * void *Write*( string )
+  TBD
+**/DEFINE_FUNCTION( Write ) {
 	
 	RT_ASSERT_ARGC( 1 );
 	HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -59,7 +78,10 @@ DEFINE_FUNCTION( Write ) {
 }
 
 
-DEFINE_FUNCTION( Read ) {
+/**doc
+ * string *Read*( amount )
+  TBD
+**/DEFINE_FUNCTION( Read ) {
 	
 	RT_ASSERT_ARGC( 1 );
 	HANDLE hStdin = GetStdHandle(STD_INPUT_HANDLE);
@@ -72,6 +94,15 @@ DEFINE_FUNCTION( Read ) {
 	CloseHandle(hStdin);
 	return JS_TRUE;
 }
+
+/**doc
+=== Properties ===
+**/
+
+/**doc
+ * *title*
+  Get or set the title of the console window.
+**/
 
 DEFINE_PROPERTY( titleSetter ) {
 
@@ -112,3 +143,12 @@ CONFIGURE_CLASS
 //	HAS_PRIVATE
 
 END_CLASS
+
+/**doc
+=== Examples ===
+{{{
+var cons = new Console();
+cons.title = 'My console';
+cons.Write('Hello world');
+}}}
+**/

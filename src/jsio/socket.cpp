@@ -19,6 +19,12 @@
 
 #define MAX_IP_STRING 39 // IPv4 & IPv6
 
+/**doc
+----
+== jsio::Socket class ^jsio::Descriptor^ ==
+ Socket class is used to create a non-blocking TCP socket.
+**/
+
 BEGIN_CLASS( Socket )
 
 
@@ -27,6 +33,14 @@ DEFINE_FINALIZE() {
 	FinalizeDescriptor(cx, obj); // defined in descriptor.cpp
 }
 
+/**doc
+=== Functions ===
+**/
+
+/**doc
+ * *_Constructor_*( [type = Socket.TCP] )
+  Type can be Socket.TCP or Socket.UDP.
+**/
 DEFINE_CONSTRUCTOR() {
 
 	RT_ASSERT_CONSTRUCTING(_class);
@@ -55,10 +69,18 @@ DEFINE_CONSTRUCTOR() {
 }
 
 
-///////////////////////////////////////////////////////////////////////////////
-// arg[0] =  false: SHUTDOWN_RCV | true: SHUTDOWN_SEND | else it will SHUTDOWN_BOTH
-DEFINE_FUNCTION( Shutdown ) {
-
+/**doc
+ * *Shutdown*( [ _what_ ] )
+  Shut down part of a full-duplex connection on a socket.
+  = =
+  if _what_ is <true>, further receives will be disallowed.
+  = =
+  if _what_ is <false>, further sends will be disallowed.
+  = =
+  if _what_ is ommited or <undefined>,  further sends and receives will be disallowed 
+**/
+DEFINE_FUNCTION( Shutdown ) { // arg[0] =  false: SHUTDOWN_RCV | true: SHUTDOWN_SEND | else it will SHUTDOWN_BOTH
+	
 	PRFileDesc *fd = (PRFileDesc*)JS_GetPrivate( cx, obj );
 	RT_ASSERT_RESOURCE( fd );
 
@@ -83,6 +105,12 @@ DEFINE_FUNCTION( Shutdown ) {
 }
 
 
+/**doc
+ * *Bind*( port [, ip] )
+  Bind an ip address to a socket.
+  _ip_ is the address to which the socket will be bound.
+  If _address_ is ommited, any address is will match.
+**/
 DEFINE_FUNCTION( Bind ) {
 
 	RT_ASSERT_ARGC( 1 ); // need port number (at least)
@@ -127,7 +155,12 @@ DEFINE_FUNCTION( Bind ) {
 }
 
 
-///////////////////////////////////////////////////////////////////////////////
+/**doc
+ * *Listen*( [ backlogSize = 8 ] )
+   Listen for connections on a socket.
+   _backlogSize_ specifies the maximum length of the queue of pending connections.
+**/
+
 //Q. PR_ConnectContinue() returns PR_SUCCESS whereas the server socket didn't PR_Accept() the connection.
 //A. This behavior is reasonable if you have called PR_Listen on the
 //   server socket.  After PR_Listen socket is called, the OS will
@@ -152,7 +185,11 @@ DEFINE_FUNCTION( Listen ) {
 }
 
 
-///////////////////////////////////////////////////////////////////////////////
+/**doc
+ * ,,Socket,, *Accept*()
+  Accept a connection on a socket.
+  This function returns a connected jsio::Socket.
+**/
 DEFINE_FUNCTION( Accept ) {
 
 	PRFileDesc *fd = (PRFileDesc*)JS_GetPrivate( cx, obj );
@@ -187,8 +224,12 @@ DEFINE_FUNCTION( Accept ) {
 }
 
 
+/**doc
+ * ,,this,, *Connect*( host, port [, timeout] )
+  Initiate a connection on a socket.
+**/
 
-///////////////////////////////////////////////////////////////////////////////
+
 // Non-blocking BSD socket connections
 //   http://cr.yp.to/docs/connect.html
 //
@@ -267,6 +308,11 @@ DEFINE_FUNCTION( Connect ) {
 
 
 
+/**doc
+ * ,,string,, *SendTo*( host, port, string )
+  Send a specified number of bytes from an unconnected socket.
+  See. Static functions.
+**/
 DEFINE_FUNCTION( SendTo ) {
 
 	RT_ASSERT_ARGC( 3 );
@@ -336,6 +382,11 @@ DEFINE_FUNCTION( SendTo ) {
 
 
 
+/**doc
+ * ,,string,, *RecvFrom*()
+  Receive all data from socket which may or may not be connected.
+  See. Static functions.
+**/
 DEFINE_FUNCTION( RecvFrom ) {
 
 	RT_ASSERT_CLASS( obj, _class );
@@ -400,6 +451,18 @@ DEFINE_FUNCTION( RecvFrom ) {
 
 
 
+/**doc
+ * *TransmitFile*( fileDescriptor [, close [, headers [, timeout]]] )
+  Sends a complete file pointed by _fileDescriptor_ across a socket.
+  = =
+  _headers_ is a string that contains the headers to send across the socket prior to sending the file.
+  = =
+  Optionally, _close_ flag specifies that transmitfile should close the socket after sending the data.
+  = =
+  _timeout_ is the time limit for completion of the transmit operation.
+  ===== note: =====
+   This function only works with blocking sockets.
+**/
 DEFINE_FUNCTION( TransmitFile ) { // WORKS ONLY ON BLOCKING SOCKET !!!
 
 	RT_ASSERT_ARGC( 1 );
@@ -444,8 +507,21 @@ DEFINE_FUNCTION( TransmitFile ) { // WORKS ONLY ON BLOCKING SOCKET !!!
 }
 
 
+/**doc
+=== Properties ===
+**/
 
-///////////////////////////////////////////////////////////////////////////////
+
+/**doc
+ * *connectContinue* http://jslibs.googlecode.com/svn/wiki/readonly.png
+  Test if a nonblocking connect has completed.
+  Is <true> if the socket is connected.
+  = =
+  Is <undefined> if the operation is still in progress.
+  = =
+  Is <false> if the connection is refused.
+**/
+
 // http://developer.mozilla.org/en/docs/PR_GetConnectStatus
 // After PR_Connect on a nonblocking socket fails with PR_IN_PROGRESS_ERROR,
 // you may wait for the connection to complete by calling PR_Poll on the socket with the in_flags PR_POLL_WRITE | PR_POLL_EXCEPT.
@@ -489,6 +565,10 @@ DEFINE_PROPERTY( connectContinue ) {
 }
 
 
+/**doc
+ * *connectionClosed* http://jslibs.googlecode.com/svn/wiki/readonly.png
+  Check if the socket connection is closed.
+**/
 DEFINE_PROPERTY( connectionClosed ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
@@ -525,7 +605,39 @@ DEFINE_PROPERTY( connectionClosed ) {
 }
 
 
-///////////////////////////////////////////////////////////////////////////////
+/**doc
+ * ,,int,, *linger*
+  The time to linger on close if data present.
+  A value of zero means no linger.
+  
+ * ,,bool,, *noDelay*
+  Don't delay send to coalesce packets.
+  
+ * ,,bool,, *reuseAddr*
+  Allow local address reuse.
+
+ * ,,bool,, *keepAlive*
+  Keep connections alive.
+  
+ * ,,int,, *recvBufferSize*
+  Receive buffer size.
+  
+ * ,,int,, *sendBufferSize*
+  Send buffer size.
+  
+ * ,,int,, *maxSegment*
+  Maximum segment size.
+  
+ * ,,bool,, *nonblocking*
+  Non-blocking (network) I/O.
+  
+ * ,,bool,, *broadcast*
+  Enable broadcast.
+  
+ * ,,bool,, *multicastLoopback*
+  IP multicast loopback.
+**/
+
 enum {
 	linger = PR_SockOpt_Linger,
 	noDelay = PR_SockOpt_NoDelay,
@@ -539,7 +651,6 @@ enum {
 	multicastLoopback = PR_SockOpt_McastLoopback
 };
 
-///////////////////////////////////////////////////////////////////////////////
 DEFINE_PROPERTY( OptionSetter ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
@@ -611,7 +722,7 @@ DEFINE_PROPERTY( OptionSetter ) {
 	return JS_TRUE;
 }
 
-///////////////////////////////////////////////////////////////////////////////
+
 DEFINE_PROPERTY( OptionGetter ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
@@ -660,6 +771,12 @@ DEFINE_PROPERTY( OptionGetter ) {
 	return JS_TRUE;
 }
 
+
+/**doc
+ * ,,string,, *peerName* http://jslibs.googlecode.com/svn/wiki/readonly.png
+  Get name of the connected peer.
+  Return the network address for the connected peer socket.
+**/
 DEFINE_PROPERTY( peerName ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
@@ -674,6 +791,11 @@ DEFINE_PROPERTY( peerName ) {
 	return JS_TRUE;
 }
 
+/**doc
+ * ,,int,, *peerPort* http://jslibs.googlecode.com/svn/wiki/readonly.png
+  Get port of the connected peer.
+  Return the port for the connected peer socket.
+**/
 DEFINE_PROPERTY( peerPort ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
@@ -685,6 +807,11 @@ DEFINE_PROPERTY( peerPort ) {
 	return JS_TRUE;
 }
 
+/**doc
+ * ,,string,, *sockName* http://jslibs.googlecode.com/svn/wiki/readonly.png
+  Get socket name.
+  Return the network address for this socket.
+**/
 DEFINE_PROPERTY( sockName ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
@@ -699,6 +826,11 @@ DEFINE_PROPERTY( sockName ) {
 	return JS_TRUE;
 }
 
+/**doc
+ * ,,int,, *sockPort* http://jslibs.googlecode.com/svn/wiki/readonly.png
+  Get socket port.
+  Return the port for this socket.
+**/
 DEFINE_PROPERTY( sockPort ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
@@ -711,6 +843,14 @@ DEFINE_PROPERTY( sockPort ) {
 }
 
 
+/**doc
+=== Static functions ===
+**/
+
+/**doc
+ * ,,array,, *GetHostsByName*( hostName )
+  Lookup a host by name and returns the results in a javascript array.
+**/
 DEFINE_FUNCTION( GetHostsByName ) {
 
 	RT_ASSERT_ARGC( 1 );
@@ -764,6 +904,23 @@ DEFINE_FUNCTION( GetHostsByName ) {
 	return JS_TRUE;
 }
 
+/**doc
+ * *SendTo* ...
+ 	see Socket::SendTo
+ 
+ * *RecvFrom* ...
+ 	see Socket::RecvFrom
+**/
+
+
+/**doc
+=== Constants ===
+**/
+
+/**doc
+ * Socket.TCP
+ * Socket.UDP
+**/
 
 CONFIGURE_CLASS
 

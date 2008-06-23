@@ -23,7 +23,16 @@
 #define _SKIP_DIRECTORY 64
 #define _SKIP_OTHER 128
 
+/**doc
+----
+== jsio::Directory class ==
+ This class manages directory I/O Functions.
+**/
 BEGIN_CLASS( Directory )
+
+/**doc
+=== Functions ===
+**/
 
 DEFINE_FINALIZE() {
 
@@ -36,7 +45,9 @@ DEFINE_FINALIZE() {
 	}
 }
 
-
+/**doc
+ * *_Constructor_*( directoryName )
+**/
 DEFINE_CONSTRUCTOR() {
 
 	RT_ASSERT_CONSTRUCTING( _class );
@@ -45,7 +56,10 @@ DEFINE_CONSTRUCTOR() {
 	return JS_TRUE;
 }
 
-
+/**doc
+ * ,,this,, *Open*()
+  Open the directory.
+**/
 DEFINE_FUNCTION( Open ) {
 
 	jsval jsvalDirectoryName;
@@ -64,6 +78,10 @@ DEFINE_FUNCTION( Open ) {
 }
 
 
+/**doc
+ * *Close*()
+  Close the specified directory.
+**/
 DEFINE_FUNCTION( Close ) {
 
 	PRDir *dd = (PRDir *)JS_GetPrivate( cx, obj );
@@ -75,6 +93,10 @@ DEFINE_FUNCTION( Close ) {
 }
 
 
+/**doc
+ * ,,string,, *Read*( [, flags = Directory.SKIP_NONE ] )
+  Returns a item of the current directory and go to the next.
+**/
 DEFINE_FUNCTION( Read ) {
 
 	PRDir *dd = (PRDir *)JS_GetPrivate( cx, obj );
@@ -105,6 +127,10 @@ DEFINE_FUNCTION( Read ) {
 }
 
 
+/**doc
+ * *Make*()
+  Create the directory given in the constructor.
+**/
 DEFINE_FUNCTION( Make ) {
 
 	jsval jsvalDirectoryName;
@@ -118,6 +144,11 @@ DEFINE_FUNCTION( Make ) {
 	return JS_TRUE;
 }
 
+/**doc
+ * int *Remove*()
+  Removes the directory given in the constructor.
+  If the directory is not empty, Remove() returns <false> else it returns <true>.
+**/
 DEFINE_FUNCTION( Remove ) {
 
 	jsval jsvalDirectoryName;
@@ -139,7 +170,14 @@ DEFINE_FUNCTION( Remove ) {
 	return JS_TRUE;
 }
 
+/**doc
+=== Properties ===
+**/
 
+/**doc
+ * *exist* http://jslibs.googlecode.com/svn/wiki/readonly.png
+  Check if the directory exists.
+**/
 DEFINE_PROPERTY( exist ) {
 
 	jsval jsvalDirectoryName;
@@ -163,6 +201,10 @@ DEFINE_PROPERTY( exist ) {
 }
 
 
+/**doc
+ * *name* http://jslibs.googlecode.com/svn/wiki/readonly.png
+  Returns the name of the directory.
+**/
 DEFINE_PROPERTY( name ) {
 
 	JS_GetReservedSlot( cx, obj, SLOT_JSIO_DIR_NAME, vp );
@@ -170,6 +212,22 @@ DEFINE_PROPERTY( name ) {
 }
 
 
+/**doc
+=== Static functions ===
+**/
+
+/**doc
+ * ,,array,, *List*( name [, flags = Directory.SKIP_DOT] )
+  Returns all entries in the directory _name_.
+  ===== Note: =====
+   This function supports additional flags: Directory.`SKIP_FILE`, Directory.`SKIP_DIRECTORY`, Directory.`SKIP_OTHER`
+  ===== exemple: =====
+  {{{
+  LoadModule('jsstd');
+  LoadModule('jsio');
+  Print( Directory.List('.').join('\n'), '\n' );
+  }}}
+**/
 DEFINE_FUNCTION( List ) {
 
 	RT_ASSERT_ARGC( 1 );
@@ -235,6 +293,20 @@ DEFINE_FUNCTION( List ) {
 	return JS_TRUE;
 }
 
+/**doc
+=== Constants ===
+
+ * Directory.`SKIP_NONE`
+  Do not skip any files.
+ * Directory.`SKIP_DOT`
+  Skip the directory entry "." representing the current directory.    
+ * Directory.`SKIP_DOT_DOT`
+  Skip the directory entry ".." representing the parent directory.
+ * Directory.`SKIP_BOTH`
+  Skip both "." and ".." ( same as Directory.`SKIP_DOT` | Directory.`SKIP_DOT_DOT` )
+ * Directory.`SKIP_HIDDEN`
+  Skip hidden files. On Windows platforms and the Mac OS, this value identifies files with the "hidden" attribute set. On Unix platform, this value identifies files whose names begin with a period (".").
+**/
 
 CONFIGURE_CLASS
 
@@ -274,3 +346,45 @@ CONFIGURE_CLASS
 	HAS_RESERVED_SLOTS(1)
 
 END_CLASS
+
+/**doc
+=== Example ===
+{{{
+var dir = new Directory( 'c:/tmp' );
+dir.Open();
+for ( var entry; ( entry = dir.Read() ); ) {
+
+	var file = new File(dir.name+'/'+entry);
+	Print( entry + ' ('+ file.info.type +')', '\n');
+}
+}}}
+
+=== Example ===
+{{{
+function RecursiveDir(path) {
+	
+	var testList = [];
+	(function(path) {
+
+		var dir = new Directory(path);
+		dir.Open();
+		for ( var entry; ( entry = dir.Read(Directory.SKIP_BOTH) ); ) {
+
+			var file = new File(dir.name+'/'+entry);
+			switch ( file.info.type ) {
+				case File.FILE_DIRECTORY:
+					arguments.callee(file.name);
+					break;
+				case File.FILE_FILE:
+					testList.push(file.name);
+					break;
+			}
+		}
+		dir.Close();
+	})(path);
+	return testList;
+}
+
+Print( RecursiveDir('jshost').join('\n') );
+}}}
+**/

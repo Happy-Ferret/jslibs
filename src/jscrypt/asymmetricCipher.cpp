@@ -58,6 +58,10 @@ JSBool SlotGetPrng(JSContext *cx, JSObject *obj, int *prngIndex, prng_state **pr
 }
 
 
+/**doc
+----
+== jscrypt::AsymmetricCipher class ==
+**/
 BEGIN_CLASS( AsymmetricCipher )
 
 
@@ -84,7 +88,32 @@ DEFINE_FINALIZE() {
 	free(pv);
 }
 
+/**doc
+=== Functions ===
+**/
 
+/**doc
+ * *_Constructor_*( cipherName, hashName [, prngObject] [, PKCSVersion = 1_OAEP] )
+  Creates a new Asymmetric Cipher object.
+  _cipherName_ is a string that contains the name of the Asymmetric Cipher algorithm:
+   * rsa
+   * ecc
+   * dsa
+   = =
+  _hashName_ indicates which hash will be used to create the PSS encoding.
+  It should be the same as the hash used to hash the message being signed.
+  See Hash class for available names.
+   = =
+  _prngObject_ is an instantiated Prng object. Its current state will be used for key creation, data encryption/decryption, data signature/signature check.
+   This argument can be ommited if you aim to decrypt data only.
+   = =
+  _PKCSVersion_ is a string that contains the padding version used by RSA to encrypt/decrypd data.
+   * 1_OAEP (for PKCS #1 v2.1 encryption)
+   * 1_V1_5 (for PKCS #1 v1.5 encryption)
+   If omitted, the default value is 1_OAEP
+   = =
+   Only RSA use this argument.
+**/
 DEFINE_CONSTRUCTOR() { // ( cipherName, hashName [, prngObject] [, PKCSVersion] )
 
 	J_S_ASSERT_CONSTRUCTING();
@@ -147,7 +176,18 @@ DEFINE_CONSTRUCTOR() { // ( cipherName, hashName [, prngObject] [, PKCSVersion] 
 	return JS_TRUE;
 }
 
-
+/**doc
+ * *!CreateKeys*( keySize )
+  Create RSA public and private keys.
+  = =
+  _keySize_ is the size of the key in bits (the value of _keySize_ is the modulus size).
+  ==== note: =====
+   supported RSA keySize: from 1024 to 4096 bits
+   = =
+   supported ECC keySize: 112, 128, 160, 192, 224, 256, 384, 521, 528 bits
+   = =
+   supported DSA keySize (Bits of Security): ???, 80, 120, 140, 160, ??? bits
+**/
 DEFINE_FUNCTION( CreateKeys ) { // ( bitsSize )
 
 	RT_ASSERT_ARGC( 1 );
@@ -202,8 +242,12 @@ DEFINE_FUNCTION( CreateKeys ) { // ( bitsSize )
 	return JS_TRUE;
 }
 
-
-
+/**doc
+ * ,,string,, *Encrypt*( data [, lparam] )
+  This function returns the encrypted _data_ using a previously created or imported public key.
+  = =
+  _data_ is the string to encrypt (usualy cipher keys).
+**/
 DEFINE_FUNCTION( Encrypt ) { // ( data [, lparam] )
 
 	RT_ASSERT_ARGC( 1 );
@@ -257,7 +301,20 @@ DEFINE_FUNCTION( Encrypt ) { // ( data [, lparam] )
 	return JS_TRUE;
 }
 
-
+/**doc
+ * ,,string,, *Decrypt*( encryptedData [, lparam] )
+  This function decrypts the given _encryptedData_ using a previously created or imported private key.
+  = =
+  _encryptedData_ is the string that has to be decrypted (usualy cipher keys).
+  ===== note: =====
+   The lparam variable is an additional system specific tag that can be applied to the encoding.
+   This is useful to identify which system encoded the message. 
+   If no variance is desired then lparam can be ignored or set to <undefined>.
+   = =
+   If it does not match what was used during encoding this function will not decode the packet.
+   = =  
+   When performing v1.5 RSA decryption, the hash and lparam parameters are totally ignored.
+**/
 DEFINE_FUNCTION( Decrypt ) { // ( encryptedData [, lparam] )
 
 	RT_ASSERT_ARGC( 1 );
@@ -317,7 +374,13 @@ DEFINE_FUNCTION( Decrypt ) { // ( encryptedData [, lparam] )
 	return JS_TRUE;
 }
 
-
+/**doc
+ * ,,string,, *Sign*( data [, saltLength] )
+  This function returns the signature of the given _data_.
+  Because this process is slow, this function usualy used to sign a small amount of data, like hash digest.
+  = =
+  _saltLength_ is only used with RSA signatures. (default value is 16)
+**/
 DEFINE_FUNCTION( Sign ) { // ( data [, saltLength] )
 
 	RT_ASSERT_ARGC( 1 );
@@ -372,7 +435,12 @@ DEFINE_FUNCTION( Sign ) { // ( data [, saltLength] )
 	return JS_TRUE;
 }
 
-
+/**doc
+ * ,,string,, *VerifySignature*( data, signature [, saltLength] )
+  This function returns <true> if the _data_ match the data used to create the _signature_.
+  = =
+  _saltLength_ is only used with RSA signatures. (default value is 16)
+**/
 DEFINE_FUNCTION( VerifySignature ) { // ( data, signature [, saltLength] )
 
 	RT_ASSERT_ARGC( 2 );
@@ -421,7 +489,14 @@ DEFINE_FUNCTION( VerifySignature ) { // ( data, signature [, saltLength] )
 	return JS_TRUE;
 }
 
+/**doc
+=== Properties ===
+**/
 
+/**doc
+ * *blockLength* http://jslibs.googlecode.com/svn/wiki/readonly.png
+  TBD
+**/
 DEFINE_PROPERTY( blockLength ) {
 
 	RT_ASSERT_CLASS( obj, _class );
@@ -446,7 +521,10 @@ DEFINE_PROPERTY( blockLength ) {
 	return JS_TRUE;
 }
 
-
+/**doc
+ * *keySize* http://jslibs.googlecode.com/svn/wiki/readonly.png
+  TBD
+**/
 DEFINE_PROPERTY( keySize ) {
 
 	RT_ASSERT_CLASS( obj, _class );
@@ -471,6 +549,14 @@ DEFINE_PROPERTY( keySize ) {
 	return JS_TRUE;
 }
 
+
+/**doc
+ * ,,string,, *privateKey*
+  The private key encoded using PKCS #1. (Public Key Cryptographic Standard #1 v2.0 padding)
+
+ * ,,string,, *publicKey*
+  The public key encoded using PKCS #1. (Public Key Cryptographic Standard #1 v2.0 padding)
+**/
 
 DEFINE_PROPERTY( keySetter ) {
 
@@ -581,3 +667,27 @@ CONFIGURE_CLASS
 	HAS_RESERVED_SLOTS( 1 )
 
 END_CLASS
+
+/**doc
+=== Example ===
+Data (or key) encryption using RSA:
+{{{
+LoadModule('jsstd');
+LoadModule('jscrypt');
+var fortuna = new Prng('fortuna');
+fortuna.AutoEntropy(123); // give more entropy
+
+//Alice
+var alice = new AsymmetricCipher('RSA', 'md5', fortuna);
+alice.CreateKeys(1024);
+var publicKey = alice.publicKey;
+
+//Bob
+var bob = new AsymmetricCipher('RSA', 'md5', fortuna);
+bob.publicKey = publicKey;
+var encryptedData = bob.Encrypt('Alice, I love you !');
+
+//Alice
+Print( alice.Decrypt(encryptedData), '\n' );
+}}}
+**/

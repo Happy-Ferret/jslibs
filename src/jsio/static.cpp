@@ -21,6 +21,32 @@
 
 BEGIN_STATIC
 
+/**doc
+=== Static functions ===
+**/
+
+/**doc
+ * ,,int,, *Poll*( _descriptorArray_ [, _timeout_ = undefined ] )
+  This function listen for a readable, writable or exception event on each descriptor in _descriptorArray_.
+  When an event occurs, the function tries to call the corresponding property (function) on the descriptor.
+  = =
+  The function returns the number of events that occurs or 0 if the function timed out.
+  ===== note: =
+   The property is NOT cleared by the function.
+   If you want to stop receiving an event, you have to remove the property by yourself. eg. `delete socket1.writable`.
+  = =
+  The second argument, _timeout_, defines the number of milliseconds the function has to wait before returning if no event has occured.
+  _timeout_ can be undefined OR omited, in this case, no timeout is used.
+  ===== beware: =
+   No timeout means that the function will wait endless for events.
+  ===== example: =
+  {{{
+  socket1.readable = function(soc) { Print( soc.Recv(); ) }
+  var count = Poll( [socket1, socket2], 1000 );
+  if ( count == 0 )
+    Print( 'Nothing has been recived' );
+  }}}
+**/
 DEFINE_FUNCTION( Poll ) {
 
 	PRInt32 result;
@@ -191,6 +217,10 @@ failed: // goto is the cheaper solution
 	return JS_FALSE;
 }
 
+/**doc
+ * ,,bool,, *IsReadable*( _descriptor_ )
+  Returns true if the _descriptor_ can be read without blocking.
+**/
 DEFINE_FUNCTION( IsReadable ) {
 
 	RT_ASSERT_ARGC( 1 );
@@ -217,7 +247,10 @@ DEFINE_FUNCTION( IsReadable ) {
 	return JS_TRUE;
 }
 
-
+/**doc
+ * ,,bool,, *IsWritable*()
+  Returns true if the _descriptor_ can be write without blocking.
+**/
 DEFINE_FUNCTION( IsWritable ) {
 
 	RT_ASSERT_ARGC( 1 );
@@ -245,6 +278,10 @@ DEFINE_FUNCTION( IsWritable ) {
 }
 
 
+/**doc
+ * ,,int,, *IntervalNow*()
+  Returns the milliseconds value of NSPR's free-running interval timer.
+**/
 DEFINE_FUNCTION( IntervalNow ) {
 
 	PRUint32 interval = PR_IntervalToMilliseconds( PR_IntervalNow() );
@@ -253,6 +290,10 @@ DEFINE_FUNCTION( IntervalNow ) {
 }
 
 
+/**doc
+ * ,,int,, *UIntervalNow*()
+  Returns the microseconds value of NSPR's free-running interval timer.
+**/
 DEFINE_FUNCTION_FAST( UIntervalNow ) {
 
 	PRUint32 interval = PR_IntervalToMicroseconds( PR_IntervalNow() );
@@ -261,6 +302,10 @@ DEFINE_FUNCTION_FAST( UIntervalNow ) {
 }
 
 
+/**doc
+ * *Sleep*( _milliseconds_ )
+  Sleeps _milliseconds_ milliseconds.
+**/
 DEFINE_FUNCTION( Sleep ) {
 
 	uint32 timeout;
@@ -270,6 +315,10 @@ DEFINE_FUNCTION( Sleep ) {
 }
 
 
+/**doc
+ * ,,string,, *GetEnv*( name )
+  Retrieve the value of the given environment variable.
+**/
 DEFINE_FUNCTION( GetEnv ) {
 
 	RT_ASSERT_ARGC(1);
@@ -287,6 +336,10 @@ DEFINE_FUNCTION( GetEnv ) {
 }
 
 
+/**doc
+ * ,,string,, *GetRandomNoise*( size )
+  Returns a random string of _size_ bytes.
+**/
 DEFINE_FUNCTION( GetRandomNoise ) {
 
 	RT_ASSERT_ARGC( 1 );
@@ -300,7 +353,7 @@ DEFINE_FUNCTION( GetRandomNoise ) {
 		JS_free(cx, buf);
 		REPORT_ERROR( "PR_GetRandomNoise is not implemented on this platform." );
 	}
-	JSString *jsstr = JS_NewString(cx, (char*)buf, size);
+	JSString *jsstr = JS_NewString(cx, (char*)buf, size); // (TBD) bstring
 	RT_ASSERT_ALLOC( jsstr );
 	*rval = STRING_TO_JSVAL(jsstr);
 	return JS_TRUE;
@@ -332,75 +385,12 @@ DEFINE_FUNCTION( hton ) {
 
 */
 
-DEFINE_PROPERTY( hostName ) {
-
-	char tmp[SYS_INFO_BUFFER_LENGTH];
-	PRStatus status = PR_GetSystemInfo( PR_SI_HOSTNAME, tmp, sizeof(tmp) );
-	if ( status != PR_SUCCESS )
-		return ThrowIoError(cx);
-	JSString *jsstr = JS_NewStringCopyZ(cx,tmp);
-	RT_ASSERT_ALLOC( jsstr );
-	*vp = STRING_TO_JSVAL(jsstr);
-	return JS_TRUE;
-}
 
 
-DEFINE_PROPERTY( physicalMemorySize ) {
-	
-	PRUint64 mem = PR_GetPhysicalMemorySize();
-	RT_CHECK_CALL( JS_NewNumberValue(cx, (jsdouble)mem, vp) );
-	return JS_TRUE;
-}
-
-
-DEFINE_PROPERTY( systemInfo ) {
-
-	if ( *vp == JSVAL_VOID ) {
-
-		char tmp[SYS_INFO_BUFFER_LENGTH];
-		
-		JSObject *info = JS_NewObject(cx, NULL, NULL, NULL);
-		RT_ASSERT_ALLOC( info );
-		*vp = OBJECT_TO_JSVAL( info );
-
-		PRStatus status;
-//		jsval tmpVal;
-		JSString *jsstr;
-
-		// (TBD) these properties must be read-only !!
-
-		status = PR_GetSystemInfo( PR_SI_ARCHITECTURE, tmp, sizeof(tmp) );
-		if ( status != PR_SUCCESS )
-			return ThrowIoError(cx);
-		jsstr = JS_NewStringCopyZ(cx,tmp);
-		RT_ASSERT_ALLOC( jsstr );
-//		tmpVal = STRING_TO_JSVAL(jsstr); 
-//		JS_SetProperty(cx, info, "architecture", &tmpVal);
-		RT_CHECK_CALL( JS_DefineProperty(cx, info, "architecture", STRING_TO_JSVAL(jsstr), NULL, NULL, JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT) );
-
-		status = PR_GetSystemInfo( PR_SI_SYSNAME, tmp, sizeof(tmp) );
-		if ( status != PR_SUCCESS )
-			return ThrowIoError(cx);
-		jsstr = JS_NewStringCopyZ(cx,tmp);
-		RT_ASSERT_ALLOC( jsstr );
-//		tmpVal = STRING_TO_JSVAL(jsstr); 
-//		JS_SetProperty(cx, info, "name", &tmpVal);
-		RT_CHECK_CALL( JS_DefineProperty(cx, info, "name", STRING_TO_JSVAL(jsstr), NULL, NULL, JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT) );
-
-		status = PR_GetSystemInfo( PR_SI_RELEASE, tmp, sizeof(tmp) );
-		if ( status != PR_SUCCESS )
-			return ThrowIoError(cx);
-		jsstr = JS_NewStringCopyZ(cx,tmp);
-		RT_ASSERT_ALLOC( jsstr );
-//		tmpVal = STRING_TO_JSVAL(jsstr); 
-//		JS_SetProperty(cx, info, "release", &tmpVal);
-		RT_CHECK_CALL( JS_DefineProperty(cx, info, "release", STRING_TO_JSVAL(jsstr), NULL, NULL, JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT) );
-	}
-
-	return JS_TRUE;
-}
-
-
+/**doc
+ * ,,???,, *WaitSemaphore*( ??? )
+  TBD
+**/
 DEFINE_FUNCTION_FAST( WaitSemaphore ) {
 
 	RT_ASSERT_ARGC( 1 );
@@ -444,7 +434,10 @@ DEFINE_FUNCTION_FAST( WaitSemaphore ) {
 }
 
 
-
+/**doc
+ * ,,???,, *PostSemaphore*( ??? )
+  TBD
+**/
 DEFINE_FUNCTION_FAST( PostSemaphore ) {
 
 	RT_ASSERT_ARGC( 1 );
@@ -472,6 +465,12 @@ DEFINE_FUNCTION_FAST( PostSemaphore ) {
 
 
 
+/**doc
+ * ,,value,, *CreateProcess*( path [, argv [, waitExit ]] )
+  This function starts a new process optionaly using the array _argv_ for arguments or <undefined>.
+  If _waitExit_ is true, the function waits the end of the process and returns its exit code.
+  If _waitExit_ is not true, the function immediately returns an array that contains an input pipe and an output pipe to the current process stdin and stdout.
+**/
 DEFINE_FUNCTION_FAST( CreateProcess_ ) {
 
 	RT_ASSERT_ARGC( 1 );
@@ -572,7 +571,108 @@ DEFINE_FUNCTION_FAST( CreateProcess_ ) {
 	return JS_TRUE;
 }
 
+/**doc
+=== Static properties ===
+**/
 
+/**doc
+ * ,,string,, *hostName* http://jslibs.googlecode.com/svn/wiki/readonly.png
+  Is the hostname with the domain name (if any)
+**/
+DEFINE_PROPERTY( hostName ) {
+
+	char tmp[SYS_INFO_BUFFER_LENGTH];
+	/* doc:
+			Suppose the name of the host is configured as "foo.bar.com". 
+			If PR_SI_HOSTNAME is specified, "foo" is returned. 
+			If PR_SI_HOSTNAME_UNTRUNCATED is specified, "foo.bar.com" is returned.
+			On the other hand, if the name of the host is configured as just "foo", 
+			both PR_SI_HOSTNAME and PR_SI_HOSTNAME_UNTRUNCATED return "foo". 
+	*/
+	PRStatus status = PR_GetSystemInfo( PR_SI_HOSTNAME_UNTRUNCATED, tmp, sizeof(tmp) );
+	if ( status != PR_SUCCESS )
+		return ThrowIoError(cx);
+	JSString *jsstr = JS_NewStringCopyZ(cx,tmp);
+	RT_ASSERT_ALLOC( jsstr );
+	*vp = STRING_TO_JSVAL(jsstr);
+	return JS_TRUE;
+}
+
+
+/**doc
+ * ,,int,, *physicalMemorySize* http://jslibs.googlecode.com/svn/wiki/readonly.png
+  Is the amount of physical RAM in the system in bytes.
+**/
+DEFINE_PROPERTY( physicalMemorySize ) {
+	
+	PRUint64 mem = PR_GetPhysicalMemorySize();
+	RT_CHECK_CALL( JS_NewNumberValue(cx, (jsdouble)mem, vp) );
+	return JS_TRUE;
+}
+
+
+/**doc
+ * ,,object,, *systemInfo* http://jslibs.googlecode.com/svn/wiki/readonly.png
+  Returns an object that contains an _architecture_, a _name_ and a _release_ property.
+**/
+DEFINE_PROPERTY( systemInfo ) {
+
+	if ( *vp == JSVAL_VOID ) {
+
+		char tmp[SYS_INFO_BUFFER_LENGTH];
+		
+		JSObject *info = JS_NewObject(cx, NULL, NULL, NULL);
+		RT_ASSERT_ALLOC( info );
+		*vp = OBJECT_TO_JSVAL( info );
+
+		PRStatus status;
+//		jsval tmpVal;
+		JSString *jsstr;
+
+		// (TBD) these properties must be read-only !!
+
+		status = PR_GetSystemInfo( PR_SI_ARCHITECTURE, tmp, sizeof(tmp) );
+		if ( status != PR_SUCCESS )
+			return ThrowIoError(cx);
+		jsstr = JS_NewStringCopyZ(cx,tmp);
+		RT_ASSERT_ALLOC( jsstr );
+//		tmpVal = STRING_TO_JSVAL(jsstr); 
+//		JS_SetProperty(cx, info, "architecture", &tmpVal);
+		RT_CHECK_CALL( JS_DefineProperty(cx, info, "architecture", STRING_TO_JSVAL(jsstr), NULL, NULL, JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT) );
+
+		status = PR_GetSystemInfo( PR_SI_SYSNAME, tmp, sizeof(tmp) );
+		if ( status != PR_SUCCESS )
+			return ThrowIoError(cx);
+		jsstr = JS_NewStringCopyZ(cx,tmp);
+		RT_ASSERT_ALLOC( jsstr );
+//		tmpVal = STRING_TO_JSVAL(jsstr); 
+//		JS_SetProperty(cx, info, "name", &tmpVal);
+		RT_CHECK_CALL( JS_DefineProperty(cx, info, "name", STRING_TO_JSVAL(jsstr), NULL, NULL, JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT) );
+
+		status = PR_GetSystemInfo( PR_SI_RELEASE, tmp, sizeof(tmp) );
+		if ( status != PR_SUCCESS )
+			return ThrowIoError(cx);
+		jsstr = JS_NewStringCopyZ(cx,tmp);
+		RT_ASSERT_ALLOC( jsstr );
+//		tmpVal = STRING_TO_JSVAL(jsstr); 
+//		JS_SetProperty(cx, info, "release", &tmpVal);
+		RT_CHECK_CALL( JS_DefineProperty(cx, info, "release", STRING_TO_JSVAL(jsstr), NULL, NULL, JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT) );
+	}
+
+	return JS_TRUE;
+}
+
+
+
+
+/**doc
+ * ,,int,, *processPriority*
+  Is the current process priority among the following values:
+   * `-1`: low
+   * ` 0`: normal
+   * ` 1`: high
+   * ` 2`: urgent
+**/
 DEFINE_PROPERTY( processPriorityGetter ) {
 
 	PRThreadPriority priority = PR_GetThreadPriority(PR_GetCurrentThread());
@@ -596,7 +696,6 @@ DEFINE_PROPERTY( processPriorityGetter ) {
 	*vp = INT_TO_JSVAL( priorityValue );
 	return JS_TRUE;
 }
-
 
 DEFINE_PROPERTY( processPrioritySetter ) {
 
@@ -626,6 +725,10 @@ DEFINE_PROPERTY( processPrioritySetter ) {
 
 
 
+/**doc
+ * *currentWorkingDirectory*
+  Is the current working directory
+**/
 DEFINE_PROPERTY( currentWorkingDirectory ) {
 	
 	char buf[PATH_MAX];

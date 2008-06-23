@@ -165,7 +165,17 @@ JSBool SqliteColumnToJsval( JSContext *cx, sqlite3_stmt *pStmt, int iCol, jsval 
 	return JS_TRUE;
 }
 
+/**doc
+----
+== jssqlite::Result class ==
 
+ A Result object is used to store a compiled SQL statement ready to be executed.
+ = =
+ When a statement has been prepared with Database.*Query* function, you need to execute it ( with *Step* function ) before any data can be read.
+ However, some properties (like *columnCount*, ... ) can be read before the first *Step* has been done.
+ ===== Note: =====
+  You cannot construct this class yourself.
+**/
 BEGIN_CLASS( Result )
 
 DEFINE_FINALIZE() {
@@ -187,7 +197,14 @@ DEFINE_FINALIZE() {
 	}
 }
 
+/**doc
+=== Functions ===
+**/
 
+/**doc
+ * void *Close*()
+  Close the current [Result] object.
+**/
 DEFINE_FUNCTION( Close ) {
 
 	sqlite3_stmt *pStmt = (sqlite3_stmt *)JS_GetPrivate( cx, obj );
@@ -208,6 +225,11 @@ DEFINE_FUNCTION( Close ) {
 }
 
 
+/**doc
+ * bool *Step*()
+  Executes the previously evaluated SQL statement.
+  Returns true if another row is ready. false if the last line has been reached.
+**/
 DEFINE_FUNCTION( Step ) {
 
 	sqlite3_stmt *pStmt = (sqlite3_stmt *)JS_GetPrivate( cx, obj );
@@ -252,6 +274,10 @@ DEFINE_FUNCTION( Step ) {
 }
 
 
+/**doc
+ * val *Col*( int )
+  Returns the current value of the _int_ column
+**/
 DEFINE_FUNCTION( Col ) {
 
 	RT_ASSERT_ARGC( 1 );
@@ -263,7 +289,14 @@ DEFINE_FUNCTION( Col ) {
 	return JS_TRUE;
 }
 
-
+/**doc
+ * val *Row*( [, namedRows = false ] )
+  Executes the SQL statement and returns the resulting row.
+  If namedRows is true, the returned value is an objet that contain columnName:value pair.
+  If namedRows is false, the function returns an array of value.
+  ===== beware: =====
+   The *Step* function is called before each *Row* call.
+**/
 DEFINE_FUNCTION( Row ) {
 
 	sqlite3_stmt *pStmt = (sqlite3_stmt *)JS_GetPrivate( cx, obj );
@@ -300,6 +333,10 @@ DEFINE_FUNCTION( Row ) {
 }
 
 
+/**doc
+ * void *Reset*()
+  Resets the current [Result] object to its first line.
+**/
 DEFINE_FUNCTION( Reset ) {
 
 	sqlite3_stmt *pStmt = (sqlite3_stmt *)JS_GetPrivate( cx, obj );
@@ -310,7 +347,14 @@ DEFINE_FUNCTION( Reset ) {
 	return JS_TRUE;
 }
 
+/**doc
+=== Properties ===
+**/
 
+/**doc
+ * *columnCount* http://jslibs.googlecode.com/svn/wiki/readonly.png
+  Hold the number of columns of the current [Result]
+**/
 DEFINE_PROPERTY( columnCount ) {
 
 	sqlite3_stmt *pStmt = (sqlite3_stmt *)JS_GetPrivate( cx, obj );
@@ -320,6 +364,10 @@ DEFINE_PROPERTY( columnCount ) {
 }
 
 
+/**doc
+ * *columnNames* http://jslibs.googlecode.com/svn/wiki/readonly.png
+  Hold an [http://developer.mozilla.org/en/docs/Core_JavaScript_1.5_Reference:Objects:Array Array] that contain the index:name of the columns.
+**/
 DEFINE_PROPERTY( columnNames ) {
 
 	sqlite3_stmt *pStmt = (sqlite3_stmt *)JS_GetPrivate( cx, obj );
@@ -337,6 +385,10 @@ DEFINE_PROPERTY( columnNames ) {
 }
 
 
+/**doc
+ * *columnIndexes* http://jslibs.googlecode.com/svn/wiki/readonly.png
+  Hold an [http://developer.mozilla.org/en/docs/Core_JavaScript_1.5_Reference:Objects:Object Object] that contain the name:index of the columns.
+**/
 DEFINE_PROPERTY( columnIndexes ) {
 
 	sqlite3_stmt *pStmt = (sqlite3_stmt *)JS_GetPrivate( cx, obj );
@@ -353,6 +405,11 @@ DEFINE_PROPERTY( columnIndexes ) {
   return JS_TRUE;
 }
 
+
+/**doc
+ * *expired* http://jslibs.googlecode.com/svn/wiki/readonly.png
+  Indicates if the SQL statement must be re-evaluated.
+**/
 DEFINE_PROPERTY( expired ) {
 
 	sqlite3_stmt *pStmt = (sqlite3_stmt *)JS_GetPrivate( cx, obj );

@@ -32,7 +32,10 @@ struct CipherPrivate {
 	void *symmetric_XXX;
 };
 
-
+/**doc
+----
+== jscrypt::Cipher class ==
+**/
 BEGIN_CLASS( Cipher )
 
 DEFINE_FINALIZE() {
@@ -71,8 +74,64 @@ DEFINE_FINALIZE() {
 	free(privateData);
 }
 
+/**doc
+=== Functions ===
+**/
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/**doc
+ * *_Constructor_*( modeName, cipherName, key, [IV], [arg], [rounds] )
+  Constructs a Cipher object using the given information:
+  = =
+  _modeName_ is the block cipher modes of operation:
+   * ECB (Electronic codebook)
+   * CFB (Cipher feedback)
+   * OFB (Output Feedback)
+   * CBC (Cipher Block Chaining)
+   * CTR (CounTeR)
+   * LRW
+   * F8
+  = =
+  _cipherName_ is the name of the cipher used for data encryption/decryption:
+   * blowfish 
+   * rc5 
+   * rc6 
+   * rc2 
+   * saferp
+   * safer_k64, safer_k128, safer_sk64, safer_sk128
+   * rijndael, aes
+   * rijndael_enc, aes_enc
+   * xtea
+   * twofish
+   * des &des3
+   * cast5
+   * noekeon
+   * skipjack
+   * khazad
+   * anubis
+   * kseed
+   * kasumi
+  = =
+  _key_ is the encryption/decryption key:
+   The encryption key.
+  = =
+  _IV_ is the first initialization vector:
+   The IV value is the initialization vector to be used with the cipher. 
+   You must fill the IV yourself and it is assumed they are the same length as the block size of the cipher you choose.
+   It is important that the IV be random for each unique message you want to encrypt.
+   ===== note: =====
+   This argument is invalid in ECB mode.
+  = = 
+  _arg_ is either the tweak key for the LRW mode or the salt value for the F8 mode.
+   ===== note: =====
+   In LRW mode, the tweak value must have the same size as the _key_
+   ===== note: =====
+   In other modes _arg_ must be undefined.
+  = = 
+  _rounds_ is the number of rounds to use:
+   The requested number of rounds.  
+   ===== note: =====
+   If the argument is omitted, a default value is used.
+**/
 // mode, cipher, key, IV
 DEFINE_CONSTRUCTOR() {
 
@@ -207,7 +266,11 @@ DEFINE_CONSTRUCTOR() {
 	return JS_TRUE;
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/**doc
+ * ,,string,, *Encrypt*( string )
+  Encrypts the given _string_ using the current cipher.
+**/
 DEFINE_FUNCTION( Encrypt ) {
 
 	RT_ASSERT_THIS_CLASS();
@@ -260,7 +323,10 @@ DEFINE_FUNCTION( Encrypt ) {
 	return JS_TRUE;
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/**doc
+ * ,,string,, *Decrypt*( string )
+  Decrypts the given _string_ using the current cipher.
+**/
 DEFINE_FUNCTION( Decrypt ) {
 
 	RT_ASSERT_ARGC( 1 );
@@ -310,7 +376,14 @@ DEFINE_FUNCTION( Decrypt ) {
 	return JS_TRUE;
 }
 
+/**doc
+=== Properties ===
+**/
 
+/**doc
+ * ,,number,, *blockLength*
+  Is the block length of the current cipher.
+**/
 DEFINE_PROPERTY( blockLength ) {
 
 	RT_ASSERT_CLASS( obj, _class );
@@ -321,6 +394,10 @@ DEFINE_PROPERTY( blockLength ) {
 }
 
 
+/**doc
+ * ,,number,, *keySize*
+  Is the key size of the current cipher.
+**/
 DEFINE_PROPERTY( keySize ) {
 
 	RT_ASSERT_CLASS( obj, _class );
@@ -331,6 +408,10 @@ DEFINE_PROPERTY( keySize ) {
 }
 
 
+/**doc
+ * ,,string,, *name*
+  Is the name of the current cipher.
+**/
 DEFINE_PROPERTY( name ) {
 
 	RT_ASSERT_CLASS( obj, _class );
@@ -343,6 +424,10 @@ DEFINE_PROPERTY( name ) {
 }
 
 
+/**doc
+ * ,,string,, *IV*
+  Set or get the current initialization vector of the cipher.
+**/
 DEFINE_PROPERTY( IVSetter ) {
 
 	RT_ASSERT_CLASS( obj, _class );
@@ -410,7 +495,6 @@ DEFINE_PROPERTY( IVSetter ) {
 	return JS_TRUE;
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 DEFINE_PROPERTY( IVGetter ) {
 
 	RT_ASSERT_CLASS( obj, _class );
@@ -483,7 +567,14 @@ DEFINE_PROPERTY( IVGetter ) {
 }
 
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/**doc
+=== Static properties ===
+**/
+
+/**doc
+ * ,,object,, *list*
+  Contains the list of all available ciphers and their feature. The list is a javascript object that map cipher names (key) with another object (value) that contain information.
+**/
 DEFINE_PROPERTY( list ) {
 
 	if ( *vp == JSVAL_VOID ) {

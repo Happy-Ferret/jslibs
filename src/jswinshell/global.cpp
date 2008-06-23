@@ -23,7 +23,14 @@
 
 BEGIN_STATIC
 
+/**doc
+=== Static functions ===
+**/
 
+/**doc
+ * *ExtractIcon*( fileName [, iconIndex ] )
+  TBD
+**/
 DEFINE_FUNCTION( _ExtractIcon ) {
 	
 	RT_ASSERT_ARGC(1);
@@ -46,7 +53,10 @@ DEFINE_FUNCTION( _ExtractIcon ) {
 	return JS_TRUE;
 }
 
-
+/**doc
+ * *MessageBox*( content [, caption [, style ] ] )
+  TBD
+**/
 DEFINE_FUNCTION( _MessageBox ) {
 	
 	RT_ASSERT_ARGC(1);
@@ -69,6 +79,14 @@ DEFINE_FUNCTION( _MessageBox ) {
 }
 
 
+/**doc
+ * *CreateProcess*( applicationName , [ commandLine ], [ environment ], [ currentDirectory ] )
+  TBD
+ ===== example: =====
+ {{{
+ CreateProcess( 'C:\\WINDOWS\\system32\\calc.exe', undefined, undefined, 'c:\\' );
+ }}}
+**/
 DEFINE_FUNCTION( _CreateProcess ) {
 
 	RT_ASSERT_ARGC(1);
@@ -95,58 +113,14 @@ DEFINE_FUNCTION( _CreateProcess ) {
 }
 
 
-DEFINE_PROPERTY( clipboardGetter ) {
-
-	BOOL res = OpenClipboard(NULL);
-	RT_ASSERT( res != 0, "Unable to open the clipboard." );
-	if ( IsClipboardFormatAvailable(CF_TEXT) == 0 ) {
-
-		*vp = JSVAL_NULL;
-	} else {
-
-		HANDLE hglb = GetClipboardData(CF_TEXT);
-		RT_ASSERT_RESOURCE( hglb );
-		LPTSTR lptstr = (LPTSTR)GlobalLock(hglb);
-		RT_ASSERT( lptstr != NULL, "Unable to lock memory." );
-		JSString *str = JS_NewStringCopyZ(cx, lptstr);
-		RT_ASSERT( str != NULL, "Unable to create the string.");
-		*vp = STRING_TO_JSVAL(str);
-		GlobalUnlock(hglb);
-		CloseClipboard();
-	}
-	return JS_TRUE;
-}
-
-
-DEFINE_PROPERTY( clipboardSetter ) {
-
-	BOOL res = OpenClipboard(NULL);
-	RT_ASSERT( res != 0, "Unable to open the clipboard." );
-	EmptyClipboard(); // doc: If the application specifies a NULL window handle when opening the clipboard, EmptyClipboard succeeds but sets the clipboard owner to NULL. Note that this causes SetClipboardData to fail.
-	CloseClipboard();
-
-	if ( *vp != JSVAL_VOID ) {
-
-		res = OpenClipboard(NULL);
-		RT_ASSERT( res != 0, "Unable to open the clipboard." );
-		const char *str;
-		size_t len;
-		RT_JSVAL_TO_STRING_AND_LENGTH( *vp, str, len );
-		HGLOBAL hglbCopy = GlobalAlloc(GMEM_MOVEABLE, len + 1);
-		RT_ASSERT_ALLOC( hglbCopy );
-		LPTSTR lptstrCopy = (LPTSTR)GlobalLock(hglbCopy); 
-		RT_ASSERT( lptstrCopy != NULL, "Unable to lock memory." );
-		memcpy(lptstrCopy, str, len + 1);
-		lptstrCopy[len] = 0;
-		GlobalUnlock(hglbCopy);
-		HANDLE h = SetClipboardData(CF_TEXT,hglbCopy);
-		RT_ASSERT( h != NULL, "Unable to SetClipboardData." );
-		CloseClipboard();
-	}
-	return JS_TRUE;
-}
-
-
+/**doc
+ * *FileOpenDialog*( filters | `undefined` [, defaultFileName ] );
+  TBD
+ ===== example: =====
+ {{{
+ FileOpenDialog( 'executable files|*.exe;*.com;*.cmd;*.bat|all files|*.*' );
+ }}}
+**/
 DEFINE_FUNCTION( FileOpenDialog ) {
 
 	OPENFILENAME ofn = { sizeof(OPENFILENAME) };
@@ -189,6 +163,10 @@ DEFINE_FUNCTION( FileOpenDialog ) {
 	return JS_TRUE;
 }
 
+
+/**doc
+ * string *ExpandEnvironmentStrings*( sourceString )
+**/
 DEFINE_FUNCTION( _ExpandEnvironmentStrings ) {
 
 	RT_ASSERT_ARGC(1);
@@ -201,6 +179,11 @@ DEFINE_FUNCTION( _ExpandEnvironmentStrings ) {
 	return JS_TRUE;
 }
 
+
+/**doc
+ * *Sleep*( time )
+  TBD
+**/
 DEFINE_FUNCTION( _Sleep ) {
 
 	RT_ASSERT_ARGC(1);
@@ -210,6 +193,12 @@ DEFINE_FUNCTION( _Sleep ) {
 	return JS_TRUE;
 }
 
+
+/**doc
+ * *MessageBeep*( value )
+  Plays a waveform sound.
+  The waveform sound for each sound type is identified by an entry in the registry.
+**/
 DEFINE_FUNCTION( _MessageBeep ) {
 
 	UINT type = -1;
@@ -220,6 +209,10 @@ DEFINE_FUNCTION( _MessageBeep ) {
 }
 
 
+/**doc
+ * *Beep*( freq, duration )
+  TBD
+**/
 DEFINE_FUNCTION( _Beep ) {
 
 	RT_ASSERT_ARGC(2);
@@ -230,6 +223,63 @@ DEFINE_FUNCTION( _Beep ) {
 	return JS_TRUE;
 }
 
+/**doc
+=== Static properties ===
+**/
+
+/**doc
+ * string *clipboard*
+  TBD
+**/
+DEFINE_PROPERTY( clipboardGetter ) {
+
+	BOOL res = OpenClipboard(NULL);
+	RT_ASSERT( res != 0, "Unable to open the clipboard." );
+	if ( IsClipboardFormatAvailable(CF_TEXT) == 0 ) {
+
+		*vp = JSVAL_NULL;
+	} else {
+
+		HANDLE hglb = GetClipboardData(CF_TEXT);
+		RT_ASSERT_RESOURCE( hglb );
+		LPTSTR lptstr = (LPTSTR)GlobalLock(hglb);
+		RT_ASSERT( lptstr != NULL, "Unable to lock memory." );
+		JSString *str = JS_NewStringCopyZ(cx, lptstr);
+		RT_ASSERT( str != NULL, "Unable to create the string.");
+		*vp = STRING_TO_JSVAL(str);
+		GlobalUnlock(hglb);
+		CloseClipboard();
+	}
+	return JS_TRUE;
+}
+
+DEFINE_PROPERTY( clipboardSetter ) {
+
+	BOOL res = OpenClipboard(NULL);
+	RT_ASSERT( res != 0, "Unable to open the clipboard." );
+	EmptyClipboard(); // doc: If the application specifies a NULL window handle when opening the clipboard, EmptyClipboard succeeds but sets the clipboard owner to NULL. Note that this causes SetClipboardData to fail.
+	CloseClipboard();
+
+	if ( *vp != JSVAL_VOID ) {
+
+		res = OpenClipboard(NULL);
+		RT_ASSERT( res != 0, "Unable to open the clipboard." );
+		const char *str;
+		size_t len;
+		RT_JSVAL_TO_STRING_AND_LENGTH( *vp, str, len );
+		HGLOBAL hglbCopy = GlobalAlloc(GMEM_MOVEABLE, len + 1);
+		RT_ASSERT_ALLOC( hglbCopy );
+		LPTSTR lptstrCopy = (LPTSTR)GlobalLock(hglbCopy); 
+		RT_ASSERT( lptstrCopy != NULL, "Unable to lock memory." );
+		memcpy(lptstrCopy, str, len + 1);
+		lptstrCopy[len] = 0;
+		GlobalUnlock(hglbCopy);
+		HANDLE h = SetClipboardData(CF_TEXT,hglbCopy);
+		RT_ASSERT( h != NULL, "Unable to SetClipboardData." );
+		CloseClipboard();
+	}
+	return JS_TRUE;
+}
 
 CONFIGURE_STATIC
 

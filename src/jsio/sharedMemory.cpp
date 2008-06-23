@@ -65,6 +65,12 @@ static JSBool BufferGet( JSContext *cx, JSObject *obj, const char **buf, size_t 
 }
 
 
+/**doc
+----
+== jsio::SharedMemory class ==
+ This class manages shared memory between two or more process.
+**/
+
 BEGIN_CLASS( SharedMemory )
 
 DEFINE_FINALIZE() {
@@ -98,13 +104,21 @@ DEFINE_FINALIZE() {
 	}
 }
 
-/* doc.
-The unix implementation may use SysV IPC shared memory, Posix
-shared memory, or memory mapped files; the filename may used to
-define the namespace. On Windows, the name is significant, but
-there is no file associated with name.
-*/
+// doc.
+// The unix implementation may use SysV IPC shared memory, Posix
+// shared memory, or memory mapped files; the filename may used to
+// define the namespace. On Windows, the name is significant, but
+// there is no file associated with name.
 
+
+/**doc
+=== Functions ===
+**/
+
+/**doc
+ * *_Constructor_*( name, size [, mode] )
+  Creates a named shared memory area of _size_ bytes using _mode_ linux-like rights.
+**/
 DEFINE_CONSTRUCTOR() {
 
 	RT_ASSERT_CONSTRUCTING( _class );
@@ -177,6 +191,10 @@ DEFINE_CONSTRUCTOR() {
 }
 
 
+/**doc
+ * *Write*( data [, offset] )
+  Write _data_ at _offset_ in the shared memory.
+**/
 DEFINE_FUNCTION_FAST( Write ) {
 
 	RT_ASSERT_ARGC( 1 );
@@ -206,6 +224,10 @@ DEFINE_FUNCTION_FAST( Write ) {
 }
 
 
+/**doc
+ * ,,string,, *Read*( length [, offset] )
+  Read _length_ bytes from _offset_ in the shared memory.
+**/
 DEFINE_FUNCTION_FAST( Read ) {
 
 	ClassPrivate *pv = (ClassPrivate*)JS_GetPrivate(cx, J_FOBJ);
@@ -239,6 +261,10 @@ DEFINE_FUNCTION_FAST( Read ) {
 }
 
 
+/**doc
+ * *Clear*()
+  TBD
+**/
 DEFINE_FUNCTION_FAST( Clear ) {
 
 	RT_ASSERT_ARGC( 1 );
@@ -254,7 +280,14 @@ DEFINE_FUNCTION_FAST( Clear ) {
 	return JS_TRUE;
 }
 
+/**doc
+=== Properties ===
+**/
 
+/**doc
+ * ,,string,, *content*
+  Read or write the whole content of the shared memory. Setting <undefined> as value clears the memory area.
+**/
 DEFINE_PROPERTY( contentSetter ) { // (TBD) support BString
 
 	ClassPrivate *pv = (ClassPrivate*)JS_GetPrivate(cx, obj);
@@ -394,3 +427,17 @@ CONFIGURE_CLASS
 	HAS_PRIVATE
 
 END_CLASS
+
+/**doc
+=== Exemple ===
+{{{
+LoadModule('jsstd');
+LoadModule('jsio');
+
+var mem1 = new SharedMemory( 'mytest', 100 );
+mem1.Write('foo');
+
+var mem2 = new SharedMemory( 'mytest', 100 );
+Print( mem2.Read(3), '\n' );
+}}}
+**/

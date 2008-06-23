@@ -22,6 +22,13 @@
 
 #include "zError.h"
 
+/**doc
+----
+== jsz::ZError class ==
+You cannot construct this class.
+Its aim is to throw as an exception on any zlib runtime error.
+**/
+
 JSClass ZError_class = {
   "ZError", JSCLASS_HAS_RESERVED_SLOTS(2),
   JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub,

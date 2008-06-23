@@ -127,6 +127,64 @@ JSObject *objexInitClass( JSContext *cx, JSObject *obj ) {
 	return JS_InitClass( cx, obj, NULL, &objex_class, Constructor, 0, NULL, NULL, NULL, objex_static_FunctionSpec );
 }
 
+/**doc
+----
+== jsobjex::ObjEx class ==
+ [http://code.google.com/p/jslibs/ home] *>* [JSLibs] *>* [jsobjex] *>* [ObjEx] - [http://jslibs.googlecode.com/svn/trunk/jsobjex/objex.cpp http://jslibs.googlecode.com/svn/wiki/source.png]
+
+=== Description ===
+
+ This class give the ability to spy properties changes. One can listen for add, del, set and set events on the object.
+ = =
+ It is possible to store an hidden auxiliary object that can be access using ObjEx.Aux( _ObjEx object_ ) static function.
+
+=== Functions ===
+
+ * ,,constructor,, *ObjEx*( _addCallback_, _delCallback_, _getCallback_, _setCallback_, _auxObject_ )
+  ===== note: =
+  _addCallback_, _delCallback_, _getCallback_, _setCallback_ can be undefined.
+
+=== Static Functions ===
+
+ * _value_ *Aux*( _ObjEx object_ )
+  Returns the _auxObject_ stored in the _ObjEx object_. 
+
+=== Events / Callbacks ===
+
+ function _addCallback_, _delCallback_, _getCallback_, _setCallback_ are called according to the operation done on the object.
+ = =
+ arguments are: ( propertyName, propertyValue, auxObject, callbackIndex )
+ 
+ * propertyName : the name of the property being handled
+ * propertyValue : the value of the property being handled
+ * auxObject : the _auxObject_ provided to the constructor
+ * callbackIndex : an integer that has the folowing value: 0 for addCallback, 1 for delCallback, 2 for getCallback, 3 for setCallback.
+ 
+=== Example ===
+{{{
+function addCallback( name, value ) {
+	
+  Print('adding ' + name + ' = ' + value);
+}
+
+var obj = new ObjEx( addCallback, undefined, undefined, undefined, null );
+
+obj.foo = 123;
+obj.foo = 456;
+}}}
+prints:
+{{{
+adding foo = 123
+}}}
+Note that _addCallback_ is called only when the property is being added, in opposition to _setCallback_ that is called each time the value is changed.
+
+=== Example ===
+
+ http://jsircbot.googlecode.com/svn/trunk/dataObject.js
+
+**/
+
+
 
 /****************************************************************
 

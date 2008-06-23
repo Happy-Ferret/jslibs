@@ -127,3 +127,47 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 
 	return 0;
 }
+
+/**doc
+#summary jswinhost executable
+#labels doc
+
+= jswinhost executable =
+ [http://code.google.com/p/jslibs/ home] *>* [JSLibs] *>* [jswinhost] - [http://jslibs.googlecode.com/svn/trunk/jswinhost/jswinhost.cpp http://jslibs.googlecode.com/svn/wiki/source.png]
+
+=== Description ===
+
+jswinhost ( javascript windows host ) is a small executable file that run javascript programs under a windows environment.
+The main difference with jshost is the jswinhost do not popup any windows
+
+=== Functions ===
+
+ * status *LoadModule*( moduleFileName )
+  same as [jshost]
+
+=== Properties ===
+
+ * object *global* http://jslibs.googlecode.com/svn/wiki/readonly.png
+ * string *argument*
+  the whole command line
+
+=== Configuration object ===
+ see [jshost]
+
+=== Remarks ===
+
+There is no way to specify the script to execute using the command line. You have to create a .js file using the name of the host.
+By default, jswinhost.exe is the name of the host and jswinhost.js is the script the host execute.
+ 
+Because jwinshost do not use a console window, errors and printed messages will not be displayed.
+
+However, you can write your own output system:
+{{{
+LoadModule('jswinshell');
+configuration.stdout = new Console().Write;
+configuration.stderr = MessageBox;
+LoadModule('jsstd');
+Print('toto');
+hkqjsfhkqsdu_error();
+}}}
+**/

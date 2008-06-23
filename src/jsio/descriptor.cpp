@@ -84,9 +84,16 @@ void FinalizeDescriptor(JSContext *cx, JSObject *obj) {
 	}
 }
 
-
+/**doc
+----
+== jsio::Descriptor class ==
+**/
 BEGIN_CLASS( Descriptor )
 
+
+/**doc
+=== Functions ===
+**/
 
 DEFINE_CONSTRUCTOR() {
 
@@ -94,6 +101,10 @@ DEFINE_CONSTRUCTOR() {
 }
 
 
+/**doc
+ * *Close*()
+  Close the descriptor.
+**/
 DEFINE_FUNCTION( Close ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
@@ -241,6 +252,11 @@ JSBool ReadAllToJsval(JSContext *cx, PRFileDesc *fd, jsval *rval ) {
 }
 
 
+/**doc
+ * ,,val,, *Read*( [amount] )
+  Read _amount_ bytes of data from the current descriptor. If _amount_ is ommited, the whole available data is read. 
+  If the descriptor is exhausted (eof or disconnected), this function returns <undefined>.
+**/
 DEFINE_FUNCTION( Read ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate(cx, obj);
@@ -269,6 +285,10 @@ DEFINE_FUNCTION( Read ) {
 }
 
 
+/**doc
+ * ,,string,, *Write*( data )
+  If the whole data cannot be written, Write returns that have not be written.
+**/
 DEFINE_FUNCTION( Write ) {
 
 	RT_ASSERT_ARGC( 1 );
@@ -323,6 +343,10 @@ DEFINE_FUNCTION( Write ) {
 }
 
 
+/**doc
+ * *Sync*()
+  Sync any buffered data for a fd to its backing device.
+**/
 DEFINE_FUNCTION( Sync ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
@@ -336,6 +360,14 @@ DEFINE_FUNCTION( Sync ) {
 }
 
 
+/**doc
+=== Properties ===
+**/
+
+/**doc
+ * *available* http://jslibs.googlecode.com/svn/wiki/readonly.png
+  Determine the amount of data in bytes available for reading on the descriptor.
+ **/
 DEFINE_PROPERTY( available ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
@@ -354,6 +386,10 @@ DEFINE_PROPERTY( available ) {
 }
 
 
+/**doc
+ * *type* http://jslibs.googlecode.com/svn/wiki/readonly.png
+  see constants.
+**/
 DEFINE_PROPERTY( type ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
@@ -363,6 +399,26 @@ DEFINE_PROPERTY( type ) {
 }
 
 
+/**doc
+ * *closed* http://jslibs.googlecode.com/svn/wiki/readonly.png
+  Is true if the file descriptor has been closed.
+  ===== beware: =====
+   Do not confuse with disconnected.
+**/
+DEFINE_PROPERTY( closed ) {
+
+	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
+	*vp = BOOLEAN_TO_JSVAL( fd == NULL );
+	return JS_TRUE;
+}
+
+/**doc
+=== Static functions ===
+**/
+
+/**doc
+ * *Import*( nativeDescriptor )
+**/
 DEFINE_FUNCTION( Import ) {
 
 	RT_ASSERT_ARGC(2);
@@ -421,14 +477,18 @@ DEFINE_FUNCTION( Import ) {
 	return JS_TRUE;
 }
 
-
-DEFINE_PROPERTY( closed ) {
-
-	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
-	*vp = BOOLEAN_TO_JSVAL( fd == NULL );
-	return JS_TRUE;
-}
-
+/**doc
+=== Constants ===
+ * *`DESC_FILE`*
+ 
+ * *`DESC_SOCKET_TCP`*
+ 
+ * *`DESC_SOCKET_UDP`*
+ 
+ * *`DESC_LAYERED`*
+ 
+ * *`DESC_PIPE`*
+**/
 
 CONFIGURE_CLASS
 

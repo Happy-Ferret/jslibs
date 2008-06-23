@@ -14,6 +14,25 @@
 
 #include "stdafx.h"
 
+/**doc
+----
+== jsio::IoError class ==
+
+ You cannot construct this class.
+ Its aim is to throw as an exception on any NSPR runtime error.
+
+=== Properties ===
+
+ * int *os* http://jslibs.googlecode.com/svn/wiki/readonly.png
+ * int *code* http://jslibs.googlecode.com/svn/wiki/readonly.png
+ * string *text* http://jslibs.googlecode.com/svn/wiki/readonly.png
+
+=== Exemple ===
+
+{{{
+TBD
+}}}
+**/
 
 BEGIN_CLASS( IoError )
 

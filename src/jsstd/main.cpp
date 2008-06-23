@@ -12,16 +12,6 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-/**doc o:1 f:jsstd.wiki
-summary jsstd module
-#labels doc
-
-- [http://jslibs.googlecode.com/svn/trunk/jsstd/ source] - [JSLibs main] -
-
-= jsstd module =
-**/
-
-
 #include "stdafx.h"
 
 #include "static.h"
@@ -35,6 +25,17 @@ summary jsstd module
 static bool _defaultUnsafeMode = false;
 extern bool *_pUnsafeMode = &_defaultUnsafeMode;
 
+/**doc t:header
+summary jsstd module
+#labels doc
+- [http://jslibs.googlecode.com/svn/trunk/jsstd/ source] - [JSLibs main] -
+= jsstd module =
+**/
+
+/**doc t:footer
+----
+- [http://jslibs.googlecode.com/svn/trunk/jsstd/ source] - [#jsstd_module top] - [JSLibs main] -
+**/
 
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 

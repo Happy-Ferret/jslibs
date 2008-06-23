@@ -237,3 +237,100 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	
 	return exitValue;
 }
+
+/**doc
+#summary jshost executable
+#labels doc
+
+= jshost executable =
+ [http://code.google.com/p/jslibs/ home] *>* [JSLibs] *>* [jshost] - [http://jslibs.googlecode.com/svn/trunk/jshost/jshost.cpp http://jslibs.googlecode.com/svn/wiki/source.png]
+
+=== Description ===
+
+jshost ( javascript host ) is a small executable file that run javascript programs.
+The main features are:
+ * Lightweight
+  The binary executable file is less than 60KB
+ * Minimalist internal API
+  LoadModule is enough, everything else can be added using dynamic loadable modules.
+
+=== Command line options ===
+ * `-m` <size>
+  Specifies the maximum memory usage of the script.
+ * `-n`  <size>
+  Specifies the number of allocated megabytes after which garbage collection is run.
+ * `-u` <0 or 1>
+  Avoid any runtime checks (this is a kind of "release mode") and disable the display of warnings.
+
+
+=== Global functions ===
+
+ * status *LoadModule*( moduleFileName )
+  Loads and initialize the specified module.
+  Do not provide the file extension in _moduleFileName_.
+  ===== exemple: =
+  {{{
+  LoadModule('jsstd');
+  Print( 'Unsafe mode: '+configuration.unsafeMode, '\n' );
+  }}}
+  ===== note: =
+  You can avoid LoadModule to use the global object like this:
+  {{{
+  var std = {};
+  LoadModule.call( std, 'jsstd' );
+  std.Print( std.IdOf(1234), '\n' );
+  std.Print( std.IdOf(1234), '\n' );
+  }}}
+
+=== Global properties ===
+
+ * *arguments*
+  The command-line arguments ( given after command line options ).
+  {{{
+  }}}
+  Exemple:
+  {{{
+  for ( var i in arguments ) {
+    
+    Print( 'argument['+i+'] = '+arguments[i] ,'\n' );
+  }
+  ...
+  c:\>jshost -w 0 -u 0 foo bar
+  argument[0] = foo
+  argument[1] = bar
+  }}}
+
+ * *endSignal* http://jslibs.googlecode.com/svn/wiki/readonly.png
+  Is true if a break signal ( ctrl-c, .. ) has been sent. This event can be reset.
+
+=== Configuration object ===
+
+jshost create a global _configuration_ global to provide other modules 
+some useful informations like `stdout` access and `unsafeMode` flag.
+
+== Remarks ==
+
+=== Generated filename extensions are ===
+ * ".dll" : for windows
+ * ".so" : for linux
+
+=== Modules entry points signature are ===
+|| `"ModuleInit"` || `JSBool (*ModuleInitFunction)(JSContext *, JSObject *)` ||
+|| `"ModuleRelease"` || `void (*ModuleReleaseFunction)(JSContext *cx)` ||
+|| `"ModuleFree"` || `void (*ModuleFreeFunction)(void)` ||
+
+
+=== Exemple (win32) ===
+{{{
+extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj) {
+
+ InitFileClass(cx, obj);
+ InitDirectoryClass(cx, obj);
+ InitSocketClass(cx, obj);
+ InitErrorClass(cx, obj);
+ InitGlobal(cx, obj);
+
+ return JS_TRUE;
+}
+}}}
+**/

@@ -44,14 +44,24 @@ PRIntn FileOpenFlagsFromString( const char *strFlags, int length ) {
 	return flags;
 }
 
+/**doc
+----
+== jsio::File class ^jsio::Descriptor^ ==
+**/
 BEGIN_CLASS( File )
+
+/**doc
+=== Functions ===
+**/
 
 DEFINE_FINALIZE() {
 
 	FinalizeDescriptor(cx, obj); // defined in descriptor.cpp
 }
 
-
+/**doc
+ * *_Constructor_*( fileName )
+**/
 DEFINE_CONSTRUCTOR() {
 
 	RT_ASSERT_CONSTRUCTING( _class );
@@ -62,7 +72,14 @@ DEFINE_CONSTRUCTOR() {
 	return JS_TRUE;
 }
 
-
+/**doc
+ * ,,this,, *Open*( flags [, mode] )
+  Open a file for reading, writing, or both.
+  = =
+  _flags_ is either a combinaison of open mode constants or a string that contains fopen like flags (+, r, w, a).
+  = =
+  The functions returns the file object itself (this), this allows to write things like: `new File('foo.txt').Open('r').Read();`
+**/
 DEFINE_FUNCTION( Open ) {
 
 	RT_ASSERT_ARGC(1);
@@ -110,7 +127,10 @@ DEFINE_FUNCTION( Open ) {
 }
 
 
-
+/**doc
+ * int *Seek*( [ offset = 0 [, whence = File.`SEEK_SET` ] ] )
+  Moves read-write file offset.
+**/
 DEFINE_FUNCTION( Seek ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
@@ -144,6 +164,11 @@ DEFINE_FUNCTION( Seek ) {
 }
 
 
+/**doc
+ * int *Delete*()
+  Delete a file from the filesystem.
+  The operation may fail if the file is open.
+**/
 DEFINE_FUNCTION( Delete ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
@@ -159,6 +184,11 @@ DEFINE_FUNCTION( Delete ) {
 }
 
 
+/**doc
+ * *Lock*( state )
+  Lock or unlock a file for exclusive access.
+  _state_ can be <true> or <false>.
+**/
 DEFINE_FUNCTION( Lock ) {
 
 	RT_ASSERT_ARGC( 1 );
@@ -173,6 +203,14 @@ DEFINE_FUNCTION( Lock ) {
 }
 
 
+/**doc
+=== Properties ===
+**/
+
+/**doc
+ * *position*
+  Get or set the current position of the file pointer.
+**/
 DEFINE_PROPERTY( positionSetter ) { // todoc
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
@@ -199,6 +237,11 @@ DEFINE_PROPERTY( positionGetter ) { // todoc
 }
 
 
+/**doc
+ * *content*
+  Get or set the content of the file. If the file does not exist, content is <undefined>.
+  Setting content with <undefined> deletes the file.
+**/
 DEFINE_PROPERTY( contentGetter ) { // (TBD) support BString
 
 	RT_ASSERT( (PRFileDesc *)JS_GetPrivate( cx, obj ) == NULL, "Cannot get content of an open file.");
@@ -293,12 +336,15 @@ DEFINE_PROPERTY( contentSetter ) { // (TBD) support BString
 }
 
 
+/**doc
+ * *name*
+  Contains the name of the file. Changing this value will rename the file.
+**/
 DEFINE_PROPERTY( nameGetter ) {
 
 	JS_GetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, vp );
 	return JS_TRUE;
 }
-
 
 DEFINE_PROPERTY( nameSetter ) {
 
@@ -319,6 +365,10 @@ DEFINE_PROPERTY( nameSetter ) {
 }
 
 
+/**doc
+ * *exist* http://jslibs.googlecode.com/svn/wiki/readonly.png
+  Contains true if the file exists.
+**/
 DEFINE_PROPERTY( exist ) {
 
 	jsval jsvalFileName;
@@ -333,6 +383,13 @@ DEFINE_PROPERTY( exist ) {
 }
 
 
+/**doc
+ * *info* http://jslibs.googlecode.com/svn/wiki/readonly.png
+  This property works with opened and closed files.
+  Contains an object that has the following properties:
+   * type : the type of the file
+   * size : the size of the file
+**/
 DEFINE_PROPERTY( info ) {
 
 	PRFileInfo fileInfo;
@@ -373,7 +430,20 @@ DEFINE_PROPERTY( info ) {
 	return JS_TRUE;
 }
 
+/**doc
+=== Static properties ===
+**/
 
+/**doc
+ * *stdin* http://jslibs.googlecode.com/svn/wiki/readonly.png
+  Is a jsio::File that represents the standard input.
+  
+ * *stdout* http://jslibs.googlecode.com/svn/wiki/readonly.png
+  Is a jsio::File that represents the standard output.
+  
+ * *stderr* http://jslibs.googlecode.com/svn/wiki/readonly.png
+  Is a jsio::File that represents the standard error.
+**/
 DEFINE_PROPERTY( standard ) {
 
 	if ( *vp == JSVAL_VOID ) {
@@ -393,6 +463,30 @@ DEFINE_PROPERTY( standard ) {
 	}
 	return JS_TRUE;
 }
+
+/**doc
+=== Constants ===
+**/
+
+/**doc
+ * *Open* mode
+  * File.`RDONLY`
+  * File.`WRONLY`
+  * File.`RDWR`
+  * File.`CREATE_FILE`
+  * File.`APPEND`
+  * File.`TRUNCATE`
+  * File.`SYNC`
+  * File.`EXCL`
+ * *Seek* mode
+  * File.`SEEK_SET`
+  * File.`SEEK_CUR`
+  * File.`SEEK_END`
+ * *info.type*
+  * File.`FILE_FILE`
+  * File.`FILE_DIRECTORY`
+  * File.`FILE_OTHER`
+**/
 
 
 CONFIGURE_CLASS
@@ -447,3 +541,31 @@ CONFIGURE_CLASS
 	END_CONST_DOUBLE_SPEC
 
 END_CLASS
+
+/**doc
+=== Remark ===
+ An opened file can be accessed using _NativeInterfaceReadFile_ interface
+
+=== Example ===
+{{{
+LoadModule('jsstd');
+LoadModule('jsio');
+
+try {
+
+	var file = new File('file_test.txt');
+	if ( file.exist ) {
+		file.Open( File.RDONLY );
+		print( 'file content:\n' + file.Read() );
+		file.Close();
+	}
+
+} catch ( ex if ex instanceof IoError ) {
+
+	Print( 'IOError: ' + ex.text, '\n' );
+} catch( ex ) {
+
+	throw ex;
+}
+}}}
+**/

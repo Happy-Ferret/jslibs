@@ -15,6 +15,36 @@
 #include "stdafx.h"
 #include "error.h"
 
+/**doc
+----
+== jssqlite::SqliteError class ==
+
+ Its aim is to be throw as an exception on any SQLite runtime error.
+
+ ===== Note: =====
+  You cannot construct this class.
+
+=== Properties ===
+
+ * int *code* http://jslibs.googlecode.com/svn/wiki/readonly.png
+ * string *text* http://jslibs.googlecode.com/svn/wiki/readonly.png
+
+=== Exemple ===
+{{{
+try {
+	
+	db.Exec('yfiqwygqiwye'); // generate an error
+
+} catch ( ex if ex instanceof SqliteError ) {
+
+	Print( 'SqliteError: ' + ex.text + '('+ex.code+')', '\n' );
+} catch( ex ) {
+
+	throw ex;
+}
+}}}
+**/
+
 BEGIN_CLASS( SqliteError )
 
 DEFINE_CONSTRUCTOR() {

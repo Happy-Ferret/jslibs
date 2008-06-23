@@ -27,10 +27,21 @@
 
 // (TBD) add User-defined Collation Sequences ( http://www.sqlite.org/datatype3.html )
 
+/**doc
+-------------------------------------------------------------------------------
+== jssqlite::Database class ==
+**/
 
 BEGIN_CLASS( Database )
 
+/**doc
+=== Functions ===
+**/
 
+/**doc
+ * *_Constructor_*( fileName )
+  This constructs a new database object. _fileName_ is the database file.
+**/
 DEFINE_CONSTRUCTOR() {
 
 //	int isThreadSafe = sqlite3_threadsafe();
@@ -116,6 +127,12 @@ DEFINE_FINALIZE() {
 }
 
 
+/**doc
+ * void *Close*()
+  Close the database and all its opened [Result] objects.
+  ===== note: =
+   It is recommended to close all [Result] objects before closing the database.
+**/
 DEFINE_FUNCTION( Close ) {
 
 	sqlite3 *db = (sqlite3 *)JS_GetPrivate( cx, obj );
@@ -149,6 +166,30 @@ DEFINE_FUNCTION( Close ) {
 }
 
 
+/**doc
+ * [Result] *Query*( sqlStr [, obj ] )
+  Evaluates a SQL string and return a [Result] object.
+  _obj_ is bind to the SQL statement and can be access using '@' char ( see. *Exec* ).
+  If you create new properties to the [Result] object,
+  you can access then in the _sqlStr_ using ':' char.
+  '?' allows you access obj as an array ( see examples )
+  ===== example: =
+  {{{
+  var result = db.Query('SELECT name FROM table WHERE id=:userId' );
+  result.userId = 1341;
+  Print( result.Col(0) );
+  }}}
+  ===== example: =
+  {{{
+  var result = db.Query('SELECT name FROM table WHERE id=@userId', { userId:1341 } );
+  Print( result.Col(0) );
+  }}}
+  ===== example: =
+  {{{
+  var result = db.Query('SELECT ? FROM ? WHERE id=?', ['name','table', 1341] ); // array-like {0:'name', 1:'table', 2:1341, length:3} works too. 
+  Print( result.Col(0) );
+  }}}
+**/
 DEFINE_FUNCTION( Query ) {
 
 	RT_ASSERT_ARGC( 1 );
@@ -191,6 +232,21 @@ DEFINE_FUNCTION( Query ) {
 
 
 
+/**doc
+ * val *Exec*( sqlStr [, obj ] )
+  Evaluates a SQL string and return the result ( first line, first column ).
+  ===== example: =
+  {{{
+  var version = db.Exec('PRAGMA user_version');
+  db.Exec('PRAGMA user_version = 5');
+  }}}
+  If you provide an _obj_ as second argument to this function,
+  _obj_ is bind to the sql statement.
+  You can use it like this:
+  {{{
+  db.Exec('PRAGMA user_version = @ver', { ver:5 } );
+  }}}
+**/
 DEFINE_FUNCTION( Exec ) {
 
 	// see sqlite3_exec()
@@ -245,8 +301,13 @@ DEFINE_FUNCTION( Exec ) {
 	return JS_TRUE;
 }
 
+/**doc
+=== Properties ===
+**/
 
-
+/**doc
+ * *lastInsertRowid* http://jslibs.googlecode.com/svn/wiki/readonly.png
+**/
 DEFINE_PROPERTY( lastInsertRowid ) {
 
 	sqlite3 *db = (sqlite3 *)JS_GetPrivate( cx, obj );
@@ -256,6 +317,9 @@ DEFINE_PROPERTY( lastInsertRowid ) {
 }
 
 
+/**doc
+ * *changes* http://jslibs.googlecode.com/svn/wiki/readonly.png
+**/
 DEFINE_PROPERTY( changes ) {
 
 	sqlite3 *db = (sqlite3 *)JS_GetPrivate( cx, obj );
@@ -269,12 +333,23 @@ DEFINE_PROPERTY( changes ) {
 }
 
 
+/**doc
+=== Static Functions ===
+**/
+
+/**doc
+ * *version* http://jslibs.googlecode.com/svn/wiki/readonly.png
+  Hold the current version of the database engine.
+**/
 DEFINE_PROPERTY( version ) {
 
 	*vp = STRING_TO_JSVAL(JS_NewStringCopyZ(cx,(const char *)sqlite3_libversion()));
   return JS_TRUE;
 }
 
+/**doc
+ * *memoryUsed* http://jslibs.googlecode.com/svn/wiki/readonly.png
+**/
 DEFINE_PROPERTY( memoryUsed ) {
 
 	*vp = INT_TO_JSVAL( sqlite3_memory_used() );
@@ -396,6 +471,17 @@ bad:
 }
 
 
+/**doc
+=== Remarks ===
+ * Add SQL functions implemented in JavaScript.
+  Any function properties stored to a [Database] object can be used in the SQL string.
+  ===== example: =
+  {{{
+  var db = new Database('myDatabase');
+  db.multBy10 = function(a) { return a * 10 }
+  Print( db.Exec('SELECT multBy10(123)') ); // prints: 1230
+  }}}
+**/
 DEFINE_SET_PROPERTY() {
 
 	if ( JSVAL_IS_OBJECT(*vp) && *vp != JSVAL_NULL && JS_ObjectIsFunction(cx, JSVAL_TO_OBJECT(*vp) ) ) {
@@ -424,6 +510,7 @@ DEFINE_SET_PROPERTY() {
 	}
 	return JS_TRUE;
 }
+
 
 CONFIGURE_CLASS
 
@@ -467,3 +554,16 @@ CONFIGURE_CLASS
 	END_CONST_INTEGER_SPEC
 
 END_CLASS
+
+/**doc
+
+=== Examples ===
+
+{{{
+Print('database version: ' + Database.version ,'\n' );
+
+var obj = { foo:BString('qqwe\00\00fv1234') };
+Print( 'testFunc = ' + db.Exec('SELECT length(:foo)', obj  ) ,'\n' );
+}}}
+**/
+
