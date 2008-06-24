@@ -27,9 +27,21 @@ function RecursiveDir(path, callback) {
 }
 
 
-function CreateDocItemList() {
+function ExpandText(text, api, item) {
 
-	var docExpr = /\/\*\*doc(?: (.*)\r?\n)?((.*\r?\n)*?)\*\*\//g;
+	return text.replace(/\$\w+(\(.*?\))?/g, function(fct) {
+		try {
+			return eval(fct, api);
+		} catch(ex) {
+			return '';
+		}
+	});
+}
+
+
+function CreateDocItemList(api) {
+
+	var docExpr = /\/\*\*doc([^]*?)(?:\r?\n([^]*?))?\*\*\//g;
 	var hidden = /\/\./;
 	var sourceCode = /\.(h|cpp|c)$/;
 
@@ -53,7 +65,7 @@ function CreateDocItemList() {
 				item.path = file.name.substr(0, file.name.lastIndexOf('/'));
 				item.lastDir = item.path.substr(item.path.lastIndexOf('/')+1);
 				item.fileName = file.name.substr(file.name.lastIndexOf('/')+1);
-				item.text = res[2];
+				item.text = res[2]||'';
 				item.source = source;
 				item.sourceIndex = docExpr.lastIndex - item.text.length;
 				
@@ -66,10 +78,12 @@ function CreateDocItemList() {
 						var s = a.split(':');
 						attr[s[0]] = s[1];
 					}
+				delete attr[''];
+				
+				item.text = ExpandText(item.text, api, item);
 			}
 		}
 	});
-
 	return itemList;
 }
 
@@ -95,14 +109,26 @@ function FlattenGroup( groupList ) {
 }
 
 
-var itemList = CreateDocItemList();
 
-// make module and file group
+var api = {
+
+	$READONLY:'http://jslibs.googlecode.com/svn/wiki/readonly.png',
+	$IMG:function(name) {
+	
+		return 'http://jslibs.googlecode.com/svn/wiki/'+name+'.png';
+	}
+
+};
+
+
+var itemList = CreateDocItemList(api);
+
+// group docitems by module then by file.
 var moduleList = MakeGroups( itemList, function(item) item.lastDir );
 for ( var module in moduleList )
 	moduleList[module] = MakeGroups( moduleList[module], function(item) item.filePath );
 
-// order doc items by group ( g:* )
+// in each file, group docitems based on their 'group' attribute ( any following docitems without a group name is moved in the group too ).
 for each ( var module in moduleList )
 	for ( var filePath in module )
 		module[filePath] = FlattenGroup( MakeGroups( module[filePath], function(item, prevGroup) item.attr.g || prevGroup ) );
@@ -118,21 +144,13 @@ for each ( var module in moduleList )
 	} );
 */
 
-
-// sort files in each module
+// sort files in each module according to the value of 'fileIndex' attribute. Only the first docitem of each file is tested.
+var fileIndexValues = { top:-Infinity, bottom:+Infinity }; // 0 is for undefined items
+function NormalizeFileIndexValue(value) isNaN(value) ? fileIndexValues[value]||0 : value;
 for each ( var module in moduleList )
+	module.sort(function(a,b) NormalizeFileIndexValue(a[0].attr.fileIndex) - NormalizeFileIndexValue(b[0].attr.fileIndex) );
 
-	module.sort(function(a,b) {
-		for each ( var item in a )
-			if ( item.fileName == 'static.cpp' )
-				return -1;
-		return 1;
-	} );
-
-
-
-
-// move to the top of its module the docitem that contains t:header	
+// move to the top of its module the docitem that contains t:header ( and footer to the bottom )
 for each ( var module in moduleList )
 	for each ( var file in module )
 		for ( var i in file ) {
@@ -150,7 +168,6 @@ for each ( var module in moduleList )
 			}
 		}
 
-
 // write the doc
 for each ( var module in moduleList ) {
 
@@ -162,6 +179,5 @@ for each ( var module in moduleList ) {
 			f.Write( item.text ); 
 	f.Close();
 }
-
 
 Print('Done.');
