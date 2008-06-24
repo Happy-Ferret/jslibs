@@ -494,7 +494,7 @@ DEFINE_FUNCTION( VerifySignature ) { // ( data, signature [, saltLength] )
 **/
 
 /**doc
- * *blockLength* http://jslibs.googlecode.com/svn/wiki/readonly.png
+ * *blockLength* $READONLY
   TBD
 **/
 DEFINE_PROPERTY( blockLength ) {
@@ -522,7 +522,7 @@ DEFINE_PROPERTY( blockLength ) {
 }
 
 /**doc
- * *keySize* http://jslibs.googlecode.com/svn/wiki/readonly.png
+ * *keySize* $READONLY
   TBD
 **/
 DEFINE_PROPERTY( keySize ) {

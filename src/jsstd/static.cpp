@@ -32,6 +32,9 @@
 
 BEGIN_STATIC
 
+/**doc fileIndex:top **/
+
+
 /**doc
 === Static functions ===
 **/

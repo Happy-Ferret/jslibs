@@ -300,7 +300,7 @@ The main features are:
   argument[1] = bar
   }}}
 
- * *endSignal* http://jslibs.googlecode.com/svn/wiki/readonly.png
+ * *endSignal* $READONLY
   Is true if a break signal ( ctrl-c, .. ) has been sent. This event can be reset.
 
 === Configuration object ===

@@ -365,7 +365,7 @@ DEFINE_FUNCTION( Sync ) {
 **/
 
 /**doc
- * *available* http://jslibs.googlecode.com/svn/wiki/readonly.png
+ * *available* $READONLY
   Determine the amount of data in bytes available for reading on the descriptor.
  **/
 DEFINE_PROPERTY( available ) {
@@ -387,7 +387,7 @@ DEFINE_PROPERTY( available ) {
 
 
 /**doc
- * *type* http://jslibs.googlecode.com/svn/wiki/readonly.png
+ * *type* $READONLY
   see constants.
 **/
 DEFINE_PROPERTY( type ) {
@@ -400,7 +400,7 @@ DEFINE_PROPERTY( type ) {
 
 
 /**doc
- * *closed* http://jslibs.googlecode.com/svn/wiki/readonly.png
+ * *closed* $READONLY
   Is true if the file descriptor has been closed.
   ===== beware: =====
    Do not confuse with disconnected.

@@ -26,8 +26,8 @@
 
 === Properties ===
 
- * int *code* http://jslibs.googlecode.com/svn/wiki/readonly.png
- * string *text* http://jslibs.googlecode.com/svn/wiki/readonly.png
+ * int *code* $READONLY
+ * string *text* $READONLY
 
 === Exemple ===
 {{{

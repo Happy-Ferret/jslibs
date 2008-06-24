@@ -175,7 +175,7 @@ DEFINE_FUNCTION( Remove ) {
 **/
 
 /**doc
- * *exist* http://jslibs.googlecode.com/svn/wiki/readonly.png
+ * *exist* $READONLY
   Check if the directory exists.
 **/
 DEFINE_PROPERTY( exist ) {
@@ -202,7 +202,7 @@ DEFINE_PROPERTY( exist ) {
 
 
 /**doc
- * *name* http://jslibs.googlecode.com/svn/wiki/readonly.png
+ * *name* $READONLY
   Returns the name of the directory.
 **/
 DEFINE_PROPERTY( name ) {

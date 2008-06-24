@@ -256,7 +256,7 @@ JSFunctionSpec z_FunctionSpec[] = { // *name, call, nargs, flags, extra
 **/
 
 /**doc
- * *eof* http://jslibs.googlecode.com/svn/wiki/readonly.png
+ * *eof* $READONLY
   Is `true` if the end of the stream has been reach.
 **/
 
@@ -277,7 +277,7 @@ JSBool z_getter_eof(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 }
 
 /**doc
- * *adler32* http://jslibs.googlecode.com/svn/wiki/readonly.png
+ * *adler32* $READONLY
   Contains the adler32 checksum of the data.
   [http://en.wikipedia.org/wiki/Adler_checksum more].
 **/
@@ -297,10 +297,10 @@ JSBool z_getter_adler32(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 }
 
 /**doc
- * *lengthIn* http://jslibs.googlecode.com/svn/wiki/readonly.png
+ * *lengthIn* $READONLY
   Contains the current total amount of input data.
 
- * *lengthOut* http://jslibs.googlecode.com/svn/wiki/readonly.png
+ * *lengthOut* $READONLY
   Contains the current total amount of output data.
 **/
 
@@ -337,7 +337,7 @@ JSPropertySpec z_PropertySpec[] = { // *name, tinyid, flags, getter, setter
 **
 
 /**doc
- * *idealInputLength* http://jslibs.googlecode.com/svn/wiki/readonly.png
+ * *idealInputLength* $READONLY
   This is the ideal size of input data to avoid buffer management overload.
 **/
 

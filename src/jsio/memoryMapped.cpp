@@ -118,7 +118,7 @@ DEFINE_CONSTRUCTOR() {
 **/
 
 /**doc
- * *file* http://jslibs.googlecode.com/svn/wiki/readonly.png
+ * *file* $READONLY
   This is the file descriptor used to construct this object.
 **/
 DEFINE_PROPERTY( file ) {

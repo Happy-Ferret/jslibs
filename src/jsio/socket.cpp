@@ -513,7 +513,7 @@ DEFINE_FUNCTION( TransmitFile ) { // WORKS ONLY ON BLOCKING SOCKET !!!
 
 
 /**doc
- * *connectContinue* http://jslibs.googlecode.com/svn/wiki/readonly.png
+ * *connectContinue* $READONLY
   Test if a nonblocking connect has completed.
   Is <true> if the socket is connected.
   = =
@@ -566,7 +566,7 @@ DEFINE_PROPERTY( connectContinue ) {
 
 
 /**doc
- * *connectionClosed* http://jslibs.googlecode.com/svn/wiki/readonly.png
+ * *connectionClosed* $READONLY
   Check if the socket connection is closed.
 **/
 DEFINE_PROPERTY( connectionClosed ) {
@@ -773,7 +773,7 @@ DEFINE_PROPERTY( OptionGetter ) {
 
 
 /**doc
- * ,,string,, *peerName* http://jslibs.googlecode.com/svn/wiki/readonly.png
+ * ,,string,, *peerName* $READONLY
   Get name of the connected peer.
   Return the network address for the connected peer socket.
 **/
@@ -792,7 +792,7 @@ DEFINE_PROPERTY( peerName ) {
 }
 
 /**doc
- * ,,int,, *peerPort* http://jslibs.googlecode.com/svn/wiki/readonly.png
+ * ,,int,, *peerPort* $READONLY
   Get port of the connected peer.
   Return the port for the connected peer socket.
 **/
@@ -808,7 +808,7 @@ DEFINE_PROPERTY( peerPort ) {
 }
 
 /**doc
- * ,,string,, *sockName* http://jslibs.googlecode.com/svn/wiki/readonly.png
+ * ,,string,, *sockName* $READONLY
   Get socket name.
   Return the network address for this socket.
 **/
@@ -827,7 +827,7 @@ DEFINE_PROPERTY( sockName ) {
 }
 
 /**doc
- * ,,int,, *sockPort* http://jslibs.googlecode.com/svn/wiki/readonly.png
+ * ,,int,, *sockPort* $READONLY
   Get socket port.
   Return the port for this socket.
 **/

@@ -23,9 +23,9 @@
 
 === Properties ===
 
- * int *os* http://jslibs.googlecode.com/svn/wiki/readonly.png
- * int *code* http://jslibs.googlecode.com/svn/wiki/readonly.png
- * string *text* http://jslibs.googlecode.com/svn/wiki/readonly.png
+ * int *os* $READONLY
+ * int *code* $READONLY
+ * string *text* $READONLY
 
 === Exemple ===
 

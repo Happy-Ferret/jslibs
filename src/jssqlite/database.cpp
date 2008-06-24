@@ -306,7 +306,7 @@ DEFINE_FUNCTION( Exec ) {
 **/
 
 /**doc
- * *lastInsertRowid* http://jslibs.googlecode.com/svn/wiki/readonly.png
+ * *lastInsertRowid* $READONLY
 **/
 DEFINE_PROPERTY( lastInsertRowid ) {
 
@@ -318,7 +318,7 @@ DEFINE_PROPERTY( lastInsertRowid ) {
 
 
 /**doc
- * *changes* http://jslibs.googlecode.com/svn/wiki/readonly.png
+ * *changes* $READONLY
 **/
 DEFINE_PROPERTY( changes ) {
 
@@ -338,7 +338,7 @@ DEFINE_PROPERTY( changes ) {
 **/
 
 /**doc
- * *version* http://jslibs.googlecode.com/svn/wiki/readonly.png
+ * *version* $READONLY
   Hold the current version of the database engine.
 **/
 DEFINE_PROPERTY( version ) {
@@ -348,7 +348,7 @@ DEFINE_PROPERTY( version ) {
 }
 
 /**doc
- * *memoryUsed* http://jslibs.googlecode.com/svn/wiki/readonly.png
+ * *memoryUsed* $READONLY
 **/
 DEFINE_PROPERTY( memoryUsed ) {
 

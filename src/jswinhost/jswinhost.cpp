@@ -147,7 +147,7 @@ The main difference with jshost is the jswinhost do not popup any windows
 
 === Properties ===
 
- * object *global* http://jslibs.googlecode.com/svn/wiki/readonly.png
+ * object *global* $READONLY
  * string *argument*
   the whole command line
 

@@ -19,7 +19,10 @@
 #include "descriptor.h"
 #include "pipe.h"
 
+/**doc fileIndex:top **/
+
 BEGIN_STATIC
+
 
 /**doc
 === Static functions ===
@@ -84,7 +87,7 @@ DEFINE_FUNCTION( Poll ) {
 
 	PRPollDesc staticPollDesc[32];
 	PRPollDesc *pollDesc = staticPollDesc; // Optimization to avoid dynamic allocation when it is possible
-	
+
 	if ( idArray->length > (signed)(sizeof(staticPollDesc) / sizeof(staticPollDesc[0])) )
 		pollDesc = (PRPollDesc*) malloc(idArray->length * sizeof(PRPollDesc));
 
@@ -153,7 +156,7 @@ DEFINE_FUNCTION( Poll ) {
 			jsval cbArgv[2] = { arrayItem, (outFlag & PR_POLL_HUP) ? JSVAL_TRUE : JSVAL_FALSE }; // fd, hup_flag
 
 			if ( outFlag & PR_POLL_ERR ) {
-				
+
 				JS_GetProperty( cx, fdObj, "error", &prop );
 				if ( JS_TypeOfValue( cx, prop ) == JSTYPE_FUNCTION )
 					if ( JS_CallFunctionValue( cx, fdObj, prop, sizeof(cbArgv)/sizeof(*cbArgv), cbArgv, &ret ) == JS_FALSE ) // JS_CallFunction() DO NOT WORK !!!
@@ -173,7 +176,7 @@ DEFINE_FUNCTION( Poll ) {
 				goto failed;
 
 			if ( outFlag & PR_POLL_HUP ) {
-				
+
 				JS_GetProperty( cx, fdObj, "hangup", &prop );
 				if ( JS_TypeOfValue( cx, prop ) == JSTYPE_FUNCTION )
 					if ( JS_CallFunctionValue( cx, fdObj, prop, sizeof(cbArgv)/sizeof(*cbArgv), cbArgv, &ret ) == JS_FALSE ) // JS_CallFunction() DO NOT WORK !!!
@@ -183,7 +186,7 @@ DEFINE_FUNCTION( Poll ) {
 				goto failed;
 
 			if ( outFlag & PR_POLL_READ ) {
-				
+
 				JS_GetProperty( cx, fdObj, "readable", &prop );
 				if ( JS_TypeOfValue( cx, prop ) == JSTYPE_FUNCTION )
 					if ( JS_CallFunctionValue( cx, fdObj, prop, sizeof(cbArgv)/sizeof(*cbArgv), cbArgv, &ret ) == JS_FALSE ) // JS_CallFunction() DO NOT WORK !!!
@@ -193,7 +196,7 @@ DEFINE_FUNCTION( Poll ) {
 				goto failed;
 
 			if ( outFlag & PR_POLL_WRITE ) {
-			
+
 				JS_GetProperty( cx, fdObj, "writable", &prop );
 				if ( JS_TypeOfValue( cx, prop ) == JSTYPE_FUNCTION )
 					if ( JS_CallFunctionValue( cx, fdObj, prop, sizeof(cbArgv)/sizeof(*cbArgv), cbArgv, &ret ) == JS_FALSE ) // JS_CallFunction() DO NOT WORK !!!
@@ -369,15 +372,15 @@ DEFINE_FUNCTION( GetRandomNoise ) {
 
 
 DEFINE_FUNCTION( hton ) {
-	
-	RT_ASSERT_ARGC( 1 );	
+
+	RT_ASSERT_ARGC( 1 );
 
 	PRUint32 val;
 	RT_JSVAL_TO_UINT32( J_ARG(1), val );
 
 	val = PR_ntohl(val);
 
-	if ( 
+	if (
 
 	PR_htonll
 	return JS_TRUE;
@@ -498,7 +501,7 @@ DEFINE_FUNCTION_FAST( CreateProcess_ ) {
 			RT_JSVAL_TO_STRING( propVal, tmp );
 			processArgv[i+1] = tmp;
 		}
-		JS_DestroyIdArray( cx, idArray );	
+		JS_DestroyIdArray( cx, idArray );
 	} else {
 
 		processArgc = 0 +1; // +1 is argv[0]
@@ -543,7 +546,7 @@ DEFINE_FUNCTION_FAST( CreateProcess_ ) {
 	PR_Close(stdout_child);
 
 	if ( waitEnd ) {
-		
+
 		PRInt32 exitValue;
 		status = PR_WaitProcess( process, &exitValue );
 		if ( status != PR_SUCCESS )
@@ -576,18 +579,18 @@ DEFINE_FUNCTION_FAST( CreateProcess_ ) {
 **/
 
 /**doc
- * ,,string,, *hostName* http://jslibs.googlecode.com/svn/wiki/readonly.png
+ * ,,string,, *hostName* $READONLY
   Is the hostname with the domain name (if any)
 **/
 DEFINE_PROPERTY( hostName ) {
 
 	char tmp[SYS_INFO_BUFFER_LENGTH];
 	/* doc:
-			Suppose the name of the host is configured as "foo.bar.com". 
-			If PR_SI_HOSTNAME is specified, "foo" is returned. 
+			Suppose the name of the host is configured as "foo.bar.com".
+			If PR_SI_HOSTNAME is specified, "foo" is returned.
 			If PR_SI_HOSTNAME_UNTRUNCATED is specified, "foo.bar.com" is returned.
-			On the other hand, if the name of the host is configured as just "foo", 
-			both PR_SI_HOSTNAME and PR_SI_HOSTNAME_UNTRUNCATED return "foo". 
+			On the other hand, if the name of the host is configured as just "foo",
+			both PR_SI_HOSTNAME and PR_SI_HOSTNAME_UNTRUNCATED return "foo".
 	*/
 	PRStatus status = PR_GetSystemInfo( PR_SI_HOSTNAME_UNTRUNCATED, tmp, sizeof(tmp) );
 	if ( status != PR_SUCCESS )
@@ -600,11 +603,11 @@ DEFINE_PROPERTY( hostName ) {
 
 
 /**doc
- * ,,int,, *physicalMemorySize* http://jslibs.googlecode.com/svn/wiki/readonly.png
+ * ,,int,, *physicalMemorySize* $READONLY
   Is the amount of physical RAM in the system in bytes.
 **/
 DEFINE_PROPERTY( physicalMemorySize ) {
-	
+
 	PRUint64 mem = PR_GetPhysicalMemorySize();
 	RT_CHECK_CALL( JS_NewNumberValue(cx, (jsdouble)mem, vp) );
 	return JS_TRUE;
@@ -612,7 +615,7 @@ DEFINE_PROPERTY( physicalMemorySize ) {
 
 
 /**doc
- * ,,object,, *systemInfo* http://jslibs.googlecode.com/svn/wiki/readonly.png
+ * ,,object,, *systemInfo* $READONLY
   Returns an object that contains an _architecture_, a _name_ and a _release_ property.
 **/
 DEFINE_PROPERTY( systemInfo ) {
@@ -620,7 +623,7 @@ DEFINE_PROPERTY( systemInfo ) {
 	if ( *vp == JSVAL_VOID ) {
 
 		char tmp[SYS_INFO_BUFFER_LENGTH];
-		
+
 		JSObject *info = JS_NewObject(cx, NULL, NULL, NULL);
 		RT_ASSERT_ALLOC( info );
 		*vp = OBJECT_TO_JSVAL( info );
@@ -636,7 +639,7 @@ DEFINE_PROPERTY( systemInfo ) {
 			return ThrowIoError(cx);
 		jsstr = JS_NewStringCopyZ(cx,tmp);
 		RT_ASSERT_ALLOC( jsstr );
-//		tmpVal = STRING_TO_JSVAL(jsstr); 
+//		tmpVal = STRING_TO_JSVAL(jsstr);
 //		JS_SetProperty(cx, info, "architecture", &tmpVal);
 		RT_CHECK_CALL( JS_DefineProperty(cx, info, "architecture", STRING_TO_JSVAL(jsstr), NULL, NULL, JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT) );
 
@@ -645,7 +648,7 @@ DEFINE_PROPERTY( systemInfo ) {
 			return ThrowIoError(cx);
 		jsstr = JS_NewStringCopyZ(cx,tmp);
 		RT_ASSERT_ALLOC( jsstr );
-//		tmpVal = STRING_TO_JSVAL(jsstr); 
+//		tmpVal = STRING_TO_JSVAL(jsstr);
 //		JS_SetProperty(cx, info, "name", &tmpVal);
 		RT_CHECK_CALL( JS_DefineProperty(cx, info, "name", STRING_TO_JSVAL(jsstr), NULL, NULL, JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT) );
 
@@ -654,7 +657,7 @@ DEFINE_PROPERTY( systemInfo ) {
 			return ThrowIoError(cx);
 		jsstr = JS_NewStringCopyZ(cx,tmp);
 		RT_ASSERT_ALLOC( jsstr );
-//		tmpVal = STRING_TO_JSVAL(jsstr); 
+//		tmpVal = STRING_TO_JSVAL(jsstr);
 //		JS_SetProperty(cx, info, "release", &tmpVal);
 		RT_CHECK_CALL( JS_DefineProperty(cx, info, "release", STRING_TO_JSVAL(jsstr), NULL, NULL, JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT) );
 	}
@@ -730,7 +733,7 @@ DEFINE_PROPERTY( processPrioritySetter ) {
   Is the current working directory
 **/
 DEFINE_PROPERTY( currentWorkingDirectory ) {
-	
+
 	char buf[PATH_MAX];
 
 #ifdef XP_WIN
@@ -761,7 +764,7 @@ CONFIGURE_STATIC
 		FUNCTION_FAST( PostSemaphore )
 		FUNCTION2_FAST( CreateProcess, CreateProcess_ )
 	END_STATIC_FUNCTION_SPEC
-	
+
 	BEGIN_STATIC_PROPERTY_SPEC
 		PROPERTY_READ( hostName )
 		PROPERTY_READ( physicalMemorySize )

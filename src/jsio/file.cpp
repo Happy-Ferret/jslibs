@@ -366,7 +366,7 @@ DEFINE_PROPERTY( nameSetter ) {
 
 
 /**doc
- * *exist* http://jslibs.googlecode.com/svn/wiki/readonly.png
+ * *exist* $READONLY
   Contains true if the file exists.
 **/
 DEFINE_PROPERTY( exist ) {
@@ -384,7 +384,7 @@ DEFINE_PROPERTY( exist ) {
 
 
 /**doc
- * *info* http://jslibs.googlecode.com/svn/wiki/readonly.png
+ * *info* $READONLY
   This property works with opened and closed files.
   Contains an object that has the following properties:
    * type : the type of the file
@@ -435,13 +435,13 @@ DEFINE_PROPERTY( info ) {
 **/
 
 /**doc
- * *stdin* http://jslibs.googlecode.com/svn/wiki/readonly.png
+ * *stdin* $READONLY
   Is a jsio::File that represents the standard input.
   
- * *stdout* http://jslibs.googlecode.com/svn/wiki/readonly.png
+ * *stdout* $READONLY
   Is a jsio::File that represents the standard output.
   
- * *stderr* http://jslibs.googlecode.com/svn/wiki/readonly.png
+ * *stderr* $READONLY
   Is a jsio::File that represents the standard error.
 **/
 DEFINE_PROPERTY( standard ) {

@@ -23,6 +23,9 @@
 
 BEGIN_STATIC
 
+/**doc fileIndex:top **/
+
+
 /**doc
 === Static functions ===
 **/
@@ -32,7 +35,7 @@ BEGIN_STATIC
   TBD
 **/
 DEFINE_FUNCTION( _ExtractIcon ) {
-	
+
 	RT_ASSERT_ARGC(1);
 	const char *fileName;
 	UINT iconIndex = 0;
@@ -58,7 +61,7 @@ DEFINE_FUNCTION( _ExtractIcon ) {
   TBD
 **/
 DEFINE_FUNCTION( _MessageBox ) {
-	
+
 	RT_ASSERT_ARGC(1);
 
 	const char *text;
@@ -67,7 +70,7 @@ DEFINE_FUNCTION( _MessageBox ) {
 	const char *caption = NULL;
 	if ( argc >= 2 && argv[1] != JSVAL_VOID )
 		RT_JSVAL_TO_STRING( argv[1], caption );
-	
+
 	UINT type = 0;
 	if ( argc >= 3 )
 		RT_JSVAL_TO_INT32( argv[2], type );
@@ -128,13 +131,13 @@ DEFINE_FUNCTION( FileOpenDialog ) {
 	char filter[255];
 
 	if ( argc >= 1 && argv[0] != JSVAL_VOID ) {
-		
+
 		const char *str;
 		size_t len;
 		RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], str, len );
 		strcpy( filter, str );
 		for ( char *tmp = filter; tmp = strchr( tmp, '|' ); tmp++ )
-			*tmp = '\0'; // doc: Pointer to a buffer containing pairs of null-terminated filter strings. 
+			*tmp = '\0'; // doc: Pointer to a buffer containing pairs of null-terminated filter strings.
 		filter[len+1] = '\0'; // The last string in the buffer must be terminated by two NULL characters.
 		ofn.lpstrFilter = filter;
 	}
@@ -269,7 +272,7 @@ DEFINE_PROPERTY( clipboardSetter ) {
 		RT_JSVAL_TO_STRING_AND_LENGTH( *vp, str, len );
 		HGLOBAL hglbCopy = GlobalAlloc(GMEM_MOVEABLE, len + 1);
 		RT_ASSERT_ALLOC( hglbCopy );
-		LPTSTR lptstrCopy = (LPTSTR)GlobalLock(hglbCopy); 
+		LPTSTR lptstrCopy = (LPTSTR)GlobalLock(hglbCopy);
 		RT_ASSERT( lptstrCopy != NULL, "Unable to lock memory." );
 		memcpy(lptstrCopy, str, len + 1);
 		lptstrCopy[len] = 0;

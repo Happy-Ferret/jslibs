@@ -704,7 +704,7 @@ DEFINE_FUNCTION( toString ) {
 **/
 
 /**doc
- * ,,integer,, *length* http://jslibs.googlecode.com/svn/wiki/readonly.png
+ * ,,integer,, *length* $READONLY
   Is the current length of the buffer.
 **/
 DEFINE_PROPERTY( length ) {

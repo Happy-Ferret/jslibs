@@ -352,7 +352,7 @@ DEFINE_FUNCTION( Reset ) {
 **/
 
 /**doc
- * *columnCount* http://jslibs.googlecode.com/svn/wiki/readonly.png
+ * *columnCount* $READONLY
   Hold the number of columns of the current [Result]
 **/
 DEFINE_PROPERTY( columnCount ) {
@@ -365,7 +365,7 @@ DEFINE_PROPERTY( columnCount ) {
 
 
 /**doc
- * *columnNames* http://jslibs.googlecode.com/svn/wiki/readonly.png
+ * *columnNames* $READONLY
   Hold an [http://developer.mozilla.org/en/docs/Core_JavaScript_1.5_Reference:Objects:Array Array] that contain the index:name of the columns.
 **/
 DEFINE_PROPERTY( columnNames ) {
@@ -386,7 +386,7 @@ DEFINE_PROPERTY( columnNames ) {
 
 
 /**doc
- * *columnIndexes* http://jslibs.googlecode.com/svn/wiki/readonly.png
+ * *columnIndexes* $READONLY
   Hold an [http://developer.mozilla.org/en/docs/Core_JavaScript_1.5_Reference:Objects:Object Object] that contain the name:index of the columns.
 **/
 DEFINE_PROPERTY( columnIndexes ) {
@@ -407,7 +407,7 @@ DEFINE_PROPERTY( columnIndexes ) {
 
 
 /**doc
- * *expired* http://jslibs.googlecode.com/svn/wiki/readonly.png
+ * *expired* $READONLY
   Indicates if the SQL statement must be re-evaluated.
 **/
 DEFINE_PROPERTY( expired ) {
