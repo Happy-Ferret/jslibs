@@ -663,7 +663,7 @@ DEFINE_FUNCTION( Rect ) {
 **/
 
 /**doc
- * ,,[Icon] | null,, *icon* ,,write-only,,
+ * $RET Icon | $RET null *icon* $WRITEONLY
 **/
 DEFINE_PROPERTY( icon ) {
 
@@ -693,7 +693,7 @@ DEFINE_PROPERTY( icon ) {
 }
 
 /**doc
- * boolean *visible* ,,write-only,,
+ * $BOOL *visible* $WRITEONLY
   TBD
 **/
 DEFINE_PROPERTY( visible ) {
@@ -735,7 +735,7 @@ DEFINE_PROPERTY( textGetter ) {
 }
 
 /**doc
- * ,,Object,, *menu*
+ * $OBJ *menu*
    * string | function *menu.commandName.text*
    * bool | function *menu.commandName.checked*
    * bool | function *menu.commandName.grayed*

@@ -17,7 +17,14 @@
 #include "geom.h"
 #include "../common/jsNativeInterface.h"
 
+/**doc
+$CLASS_HEADER Geom
+**/
 BEGIN_CLASS( GeomCapsule )
+
+/**doc
+=== Functions ===
+**/
 
 DEFINE_FINALIZE() {
 
@@ -26,6 +33,10 @@ DEFINE_FINALIZE() {
 		ode::dGeomSetData(geomId, NULL);
 }
 
+/**doc
+ * *_Constructor_*( space )
+  TBD
+**/
 DEFINE_CONSTRUCTOR() {
 
 	RT_ASSERT_CONSTRUCTING(&classGeomCapsule);
@@ -39,7 +50,14 @@ DEFINE_CONSTRUCTOR() {
 	return JS_TRUE;
 }
 
+/**doc
+=== Properties ===
+**/
 
+/**doc
+ * $REAL *radius*
+  TBD
+**/
 DEFINE_PROPERTY( radiusSetter ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JS_GetPrivate(cx, obj);
@@ -63,7 +81,10 @@ DEFINE_PROPERTY( radiusGetter ) {
 	return JS_TRUE;
 }
 
-
+/**doc
+ * $REAL *length*
+  Is the length of the capsule.
+**/
 DEFINE_PROPERTY( lengthSetter ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JS_GetPrivate(cx, obj);

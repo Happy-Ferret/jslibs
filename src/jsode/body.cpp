@@ -137,22 +137,22 @@ DEFINE_FUNCTION( IsConnectedTo ) {
 **/
 
 /**doc
- * ,,vec3,, *position*
+ * $RET vec3 *position*
   dBodySetPosition
 
- * ,,vec4,, *quaternion*
+ * $RET vec4 *quaternion*
   dBodySetQuaternion
  
- * ,,vec3,, *linearVel*
+ * $RET vec3 *linearVel*
   dBodySetLinearVel
   
- * ,,vec3,, *angularVel*
+ * $RET vec3 *angularVel*
   dBodySetAngularVel
  
- * ,,vec3,, *force*
+ * $RET vec3 *force*
   dBodySetForce
  
- * ,,vec3,, *torque*
+ * $RET vec3 *torque*
   dBodySetTorque
 **/
 enum { position, quaternion, linearVel, angularVel, force, torque };
@@ -229,7 +229,7 @@ DEFINE_PROPERTY( vectorSetter ) {
 }
 
 /**doc
- * *mass* http://jslibs.googlecode.com/svn/wiki/readonly.png
+ * *mass* $READONLY
   Is the mass object (jsode::Mass) of the body.
 **/
 DEFINE_PROPERTY( mass ) {

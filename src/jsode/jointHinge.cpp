@@ -16,8 +16,19 @@
 #include "world.h"
 #include "joint.h"
 
+/**doc
+$CLASS_HEADER Joint
+**/
 BEGIN_CLASS( JointHinge )
 
+/**doc
+=== Functions ===
+**/
+
+/**doc
+ * *_Constructor_*( world )
+  TBD
+**/
 DEFINE_CONSTRUCTOR() {
 
 	J_S_ASSERT_CONSTRUCTING();
@@ -31,6 +42,31 @@ DEFINE_CONSTRUCTOR() {
 	return JS_TRUE;
 }
 
+
+/**doc
+ * $FNAME( torque )
+  TBD
+**/
+DEFINE_FUNCTION( AddTorque ) {
+
+	RT_ASSERT_ARGC(1);
+	ode::dJointID jointId = (ode::dJointID)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE(jointId);
+	jsdouble torque;
+	JS_ValueToNumber(cx, argv[0], &torque);
+	ode::dJointAddHingeTorque(jointId, torque);
+	return JS_TRUE;
+}
+
+
+/**doc
+=== Properties ===
+**/
+
+/**doc
+ * $RET vec3 *anchor*
+  TBD
+**/
 DEFINE_PROPERTY( anchorSetter ) {
 
 	ode::dJointID jointId = (ode::dJointID)JS_GetPrivate(cx, obj);
@@ -51,6 +87,10 @@ DEFINE_PROPERTY( anchorGetter ) {
 	return JS_TRUE;
 }
 
+/**doc
+ * $RET vec3 *anchor2* $READONLY
+  TBD
+**/
 DEFINE_PROPERTY( anchor2 ) { // read only
 
 	ode::dJointID jointId = (ode::dJointID)JS_GetPrivate(cx, obj);
@@ -61,6 +101,10 @@ DEFINE_PROPERTY( anchor2 ) { // read only
 	return JS_TRUE;
 }
 
+/**doc
+ * $RET vec3 *axis*
+  Get or set the axis of the joint.
+**/
 DEFINE_PROPERTY( axisSetter ) {
 
 	ode::dJointID jointId = (ode::dJointID)JS_GetPrivate(cx, obj);
@@ -81,6 +125,10 @@ DEFINE_PROPERTY( axisGetter ) {
 	return JS_TRUE;
 }
 
+/**doc
+ * $REAL *angle* $READONLY
+  Get the current angle.
+**/
 DEFINE_PROPERTY( angle ) {
 
 	ode::dJointID jointId = (ode::dJointID)JS_GetPrivate(cx, obj);
@@ -89,6 +137,10 @@ DEFINE_PROPERTY( angle ) {
 	return JS_TRUE;
 }
 
+/**doc
+ * $REAL *angleRate* $READONLY
+  Get the current rotation speed.
+**/
 DEFINE_PROPERTY( angleRate ) {
 
 	ode::dJointID jointId = (ode::dJointID)JS_GetPrivate(cx, obj);
@@ -96,18 +148,6 @@ DEFINE_PROPERTY( angleRate ) {
 	JS_NewDoubleValue(cx, ode::dJointGetHingeAngleRate(jointId), vp);
 	return JS_TRUE;
 }
-
-DEFINE_FUNCTION( AddTorque ) {
-
-	RT_ASSERT_ARGC(1);
-	ode::dJointID jointId = (ode::dJointID)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE(jointId);
-	jsdouble torque;
-	JS_ValueToNumber(cx, argv[0], &torque);
-	ode::dJointAddHingeTorque(jointId, torque);
-	return JS_TRUE;
-}
-
 
 CONFIGURE_CLASS
 

@@ -186,7 +186,7 @@ DEFINE_FUNCTION( Listen ) {
 
 
 /**doc
- * ,,Socket,, *Accept*()
+ * $RET Socket *Accept*()
   Accept a connection on a socket.
   This function returns a connected jsio::Socket.
 **/
@@ -225,7 +225,7 @@ DEFINE_FUNCTION( Accept ) {
 
 
 /**doc
- * ,,this,, *Connect*( host, port [, timeout] )
+ * $RET this *Connect*( host, port [, timeout] )
   Initiate a connection on a socket.
 **/
 
@@ -309,7 +309,7 @@ DEFINE_FUNCTION( Connect ) {
 
 
 /**doc
- * ,,string,, *SendTo*( host, port, string )
+ * $STR *SendTo*( host, port, string )
   Send a specified number of bytes from an unconnected socket.
   See. Static functions.
 **/
@@ -383,7 +383,7 @@ DEFINE_FUNCTION( SendTo ) {
 
 
 /**doc
- * ,,string,, *RecvFrom*()
+ * $STR *RecvFrom*()
   Receive all data from socket which may or may not be connected.
   See. Static functions.
 **/
@@ -606,35 +606,35 @@ DEFINE_PROPERTY( connectionClosed ) {
 
 
 /**doc
- * ,,int,, *linger*
+ * $INT *linger*
   The time to linger on close if data present.
   A value of zero means no linger.
   
- * ,,bool,, *noDelay*
+ * $BOOL *noDelay*
   Don't delay send to coalesce packets.
   
- * ,,bool,, *reuseAddr*
+ * $BOOL *reuseAddr*
   Allow local address reuse.
 
- * ,,bool,, *keepAlive*
+ * $BOOL *keepAlive*
   Keep connections alive.
   
- * ,,int,, *recvBufferSize*
+ * $INT *recvBufferSize*
   Receive buffer size.
   
- * ,,int,, *sendBufferSize*
+ * $INT *sendBufferSize*
   Send buffer size.
   
- * ,,int,, *maxSegment*
+ * $INT *maxSegment*
   Maximum segment size.
   
- * ,,bool,, *nonblocking*
+ * $BOOL *nonblocking*
   Non-blocking (network) I/O.
   
- * ,,bool,, *broadcast*
+ * $BOOL *broadcast*
   Enable broadcast.
   
- * ,,bool,, *multicastLoopback*
+ * $BOOL *multicastLoopback*
   IP multicast loopback.
 **/
 
@@ -773,7 +773,7 @@ DEFINE_PROPERTY( OptionGetter ) {
 
 
 /**doc
- * ,,string,, *peerName* $READONLY
+ * $STR *peerName* $READONLY
   Get name of the connected peer.
   Return the network address for the connected peer socket.
 **/
@@ -792,7 +792,7 @@ DEFINE_PROPERTY( peerName ) {
 }
 
 /**doc
- * ,,int,, *peerPort* $READONLY
+ * $INT *peerPort* $READONLY
   Get port of the connected peer.
   Return the port for the connected peer socket.
 **/
@@ -808,7 +808,7 @@ DEFINE_PROPERTY( peerPort ) {
 }
 
 /**doc
- * ,,string,, *sockName* $READONLY
+ * $STR *sockName* $READONLY
   Get socket name.
   Return the network address for this socket.
 **/
@@ -827,7 +827,7 @@ DEFINE_PROPERTY( sockName ) {
 }
 
 /**doc
- * ,,int,, *sockPort* $READONLY
+ * $INT *sockPort* $READONLY
   Get socket port.
   Return the port for this socket.
 **/
@@ -848,7 +848,7 @@ DEFINE_PROPERTY( sockPort ) {
 **/
 
 /**doc
- * ,,array,, *GetHostsByName*( hostName )
+ * $RET array *GetHostsByName*( hostName )
   Lookup a host by name and returns the results in a javascript array.
 **/
 DEFINE_FUNCTION( GetHostsByName ) {

@@ -42,7 +42,7 @@ BEGIN_STATIC
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
- * ,,string,, *Expand*( str [, obj] )
+ * $STR *Expand*( str [, obj] )
   Return an expanded string using key/value stored in _obj_.
   ===== example: =====
   {{{
@@ -208,7 +208,7 @@ DEFINE_FUNCTION( Clear ) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
- * ,,scope,, *SetScope*( obj, scopeObject )
+ * $OBJ *SetScope*( obj, scopeObject )
   Set the scope object of _obj_.
   ===== example: =====
   {{{
@@ -292,7 +292,7 @@ DEFINE_FUNCTION( HideProperties ) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
- * ,,integer,, *IdOf*( value )
+ * $INT *IdOf*( value )
   Returns an integer value that is a unique identifier of _value_ .
   ===== example: =====
   {{{
@@ -323,7 +323,7 @@ DEFINE_FUNCTION_FAST( IdOf ) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
- * ,,value,, *FromId*( id )
+ * $VAL *FromId*( id )
   Returns the value that corresponts to the given id. This is the reciprocal of IdOf() function.
   ===== example: =====
   {{{
@@ -453,7 +453,7 @@ DEFINE_FUNCTION_FAST( MaybeCollectGarbage ) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
- * ,,real,, *TimeCounter*()
+ * $REAL *TimeCounter*()
   Returns the current value of a high-resolution time counter in millisecond.
   The returned value is a relative time value.
 **/
@@ -609,7 +609,7 @@ static JSScript* LoadScript(JSContext *cx, JSObject *obj, const char *fileName, 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
- * ,,value,, *Exec*( fileName [, useAndSaveCompiledScript = true] )
+ * $VAL *Exec*( fileName [, useAndSaveCompiledScript = true] )
   Executes the script specified by _fileName_.
   If _useAndSaveCompiledScript_ is true, the function load and save a compiled version (using XDR format) of the script on the disk ( adding 'xrd' to _fileName_ ).
   If the compiled file is not found, the uncompiled version is used instead.
@@ -662,7 +662,7 @@ DEFINE_FUNCTION_FAST( Exec ) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
- * ,,boolean,, *IsStatementValid*( statementString )
+ * $BOOL *IsStatementValid*( statementString )
   Returns true if _statementString_ is a valid Javascript statement.
   The intent is to support interactive compilation, accumulate lines in a buffer until IsStatementValid returns true, then pass it to an eval.
   This function is useful to write an interactive console.
@@ -727,7 +727,7 @@ DEFINE_FUNCTION( StrSet ) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
- * ,,boolean,, *isConstructing*
+ * $BOOL *isConstructing*
   Determines whether or not the function currently executing was called as a constructor.
 **/
 DEFINE_PROPERTY( isConstructing ) {
@@ -739,7 +739,7 @@ DEFINE_PROPERTY( isConstructing ) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
- * ,,boolean,, disableGarbageCollection
+ * $BOOL disableGarbageCollection
   Set to true, this property desactivates the garbage collector.
 **/
 DEFINE_PROPERTY( disableGarbageCollection ) {

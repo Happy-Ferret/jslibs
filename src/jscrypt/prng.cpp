@@ -163,7 +163,7 @@ DEFINE_FUNCTION( AutoEntropy ) {
 **/
 
 /**doc
- * ,,object,, *list*
+ * $OBJ *list*
   Contains the list of all available prng and their feature. The list is a javascript object that map cipher names (key) with another object (value) that contain information.
 **/
 

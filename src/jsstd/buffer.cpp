@@ -499,7 +499,7 @@ DEFINE_FUNCTION( Write ) {
 
 
 /**doc
- * ,,boolean,, *Match*( string )
+ * $BOOL *Match*( string )
   TBD
 **/
 DEFINE_FUNCTION( Match ) {
@@ -528,7 +528,7 @@ err:
 
 
 /**doc
- * ,,string,, *Read*( [ amount ] )
+ * $STR *Read*( [ amount ] )
   Read _amount_ data in the buffer. If _amount_ is omited, The whole buffer is returned.
   = =
   If _amount_ == undefined, an arbitrary (ideal) amount of data is returned. Use this when you don't know how many data you have to read.
@@ -579,7 +579,7 @@ DEFINE_FUNCTION( Skip ) { // Skip( amount )
 
 
 /**doc
- * ,,string,, *ReadUntil*( boundaryString [, skip] )
+ * $STR *ReadUntil*( boundaryString [, skip] )
   Reads the buffer until it match the _boundaryString_, else it returns <undefined>.
   If _skip_ argument is <true>, the _boundaryString_ is skiped from the buffer.
 **/
@@ -612,7 +612,7 @@ DEFINE_FUNCTION( ReadUntil ) {
 
 
 /**doc
- * ,,integer,, *IndexOf*( string )
+ * $INT *IndexOf*( string )
   Find _string_ in the buffer and returns the offset of the first letter. If not found, this function returns -1.
 **/
 DEFINE_FUNCTION( IndexOf ) {
@@ -629,7 +629,7 @@ DEFINE_FUNCTION( IndexOf ) {
 
 
 /**doc
- * ,,string,, *Unread*( _data_ )
+ * $STR *Unread*( _data_ )
   Insert _data_ at the begining of the buffer. This function can undo a read operation. The returned value is _data_.
   ===== example: =====
   {{{
@@ -650,7 +650,7 @@ DEFINE_FUNCTION( Unread ) {
 
 
 /**doc
- * ,,string,, *toString*()
+ * $STR *toString*()
   Converts the whole content of the buffer to a string (BString).
 **/
 
@@ -704,7 +704,7 @@ DEFINE_FUNCTION( toString ) {
 **/
 
 /**doc
- * ,,integer,, *length* $READONLY
+ * $INT *length* $READONLY
   Is the current length of the buffer.
 **/
 DEFINE_PROPERTY( length ) {

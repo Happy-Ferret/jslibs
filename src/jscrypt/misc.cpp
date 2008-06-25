@@ -25,7 +25,7 @@ BEGIN_STATIC
 **/
 
 /**doc
- * ,,string,, *Base64Encode*( string )
+ * $STR *Base64Encode*( string )
   Encode the given _string_ using base64 encoding.
 **/
 DEFINE_FUNCTION( Base64Encode ) {
@@ -54,7 +54,7 @@ DEFINE_FUNCTION( Base64Encode ) {
 }
 
 /**doc
- * ,,string,, *Base64Decode*( string )
+ * $STR *Base64Decode*( string )
   Encode the given _string_ using base64 encoding.
 **/
 DEFINE_FUNCTION( Base64Decode ) {// (TBD) use BString
@@ -84,7 +84,7 @@ DEFINE_FUNCTION( Base64Decode ) {// (TBD) use BString
 
 
 /**doc
- * ,,string,, *HexEncode*( string )
+ * $STR *HexEncode*( string )
   Encode the given _string_ using hexadecimal encoding.
 **/
 DEFINE_FUNCTION( HexEncode ) {
@@ -121,7 +121,7 @@ DEFINE_FUNCTION( HexEncode ) {
 #define XX 0
 
 /**doc
- * ,,string,, *HexDecode*( string )
+ * $STR *HexDecode*( string )
   Decode the given _string_ using hexadecimal encoding.
 **/
 DEFINE_FUNCTION( HexDecode ) { // (TBD) use BString

@@ -17,8 +17,14 @@
 #include "geom.h"
 #include "../common/jsNativeInterface.h"
 
+/**doc
+$CLASS_HEADER Geom
+**/
 BEGIN_CLASS( GeomRay )
 
+/**doc
+=== Functions ===
+**/
 DEFINE_FINALIZE() {
 
 	ode::dGeomID geomId = (ode::dGeomID)JS_GetPrivate(cx, obj);
@@ -26,6 +32,10 @@ DEFINE_FINALIZE() {
 		ode::dGeomSetData(geomId, NULL);
 }
 
+/**doc
+ * *_Constructor_*( space )
+  TBD
+**/
 DEFINE_CONSTRUCTOR() {
 
 	RT_ASSERT_CONSTRUCTING(&classGeomRay);
@@ -40,6 +50,10 @@ DEFINE_CONSTRUCTOR() {
 }
 
 
+/**doc
+ * $REAL *length*
+  TBD
+**/
 DEFINE_PROPERTY( lengthSetter ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JS_GetPrivate(cx, obj);
@@ -60,6 +74,10 @@ DEFINE_PROPERTY( lengthGetter ) {
 }
 
 
+/**doc
+ * $RET vec3 *start*
+  TBD
+**/
 DEFINE_PROPERTY( startSetter ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JS_GetPrivate(cx, obj);
@@ -82,6 +100,10 @@ DEFINE_PROPERTY( startGetter ) {
 }
 
 
+/**doc
+ * $RET vec3 *direction*
+  TBD
+**/
 DEFINE_PROPERTY( directionSetter ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JS_GetPrivate(cx, obj);

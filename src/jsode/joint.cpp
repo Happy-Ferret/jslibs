@@ -223,16 +223,16 @@ DEFINE_PROPERTY( useFeedback ) {
 }
 
 /**doc
- * ,,vec3,, *body1Force*
+ * $RET vec3 *body1Force*
   Is the current force vector that applies to the body1 if feedback is activated.
 
- * ,,vec3,, *body1Torque*
+ * $RET vec3 *body1Torque*
   Is the current torque vector that applies to the body1 if feedback is activated.
 
-  * ,,vec3,, *body2Force*
+  * $RET vec3 *body2Force*
   Is the current force vector that applies to the body2 if feedback is activated.
 
- * ,,vec3,, *body2Torque*
+ * $RET vec3 *body2Torque*
   Is the current torque vector that applies to the body2 if feedback is activated.
 **/
 enum { body1Force, body1Torque, body2Force, body2Torque };
@@ -285,21 +285,21 @@ DEFINE_PROPERTY( feedbackVectorGetter ) {
 }
 
 /**doc
- * ,,real,, *loStop*
+ * $REAL *loStop*
 
- * ,,real,, *hiStop*
+ * $REAL *hiStop*
 
- * ,,real,, *bounce*
+ * $REAL *bounce*
 
- * ,,real,, *CFM*
+ * $REAL *CFM*
 
- * ,,real,, *stopERP*
+ * $REAL *stopERP*
 
- * ,,real,, *stopCFM*
+ * $REAL *stopCFM*
 
- * ,,real,, *velocity*
+ * $REAL *velocity*
 
- * ,,real,, *maxForce*
+ * $REAL *maxForce*
 **/
 enum { loStop, hiStop, bounce, CFM, stopERP, stopCFM, velocity, maxForce };
 

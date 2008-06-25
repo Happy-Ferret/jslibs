@@ -17,8 +17,14 @@
 #include "geom.h"
 #include "../common/jsNativeInterface.h"
 
+/**doc
+$CLASS_HEADER Geom
+**/
 BEGIN_CLASS( GeomSphere )
 
+/**doc
+=== Functions ===
+**/
 
 DEFINE_FINALIZE() {
 
@@ -26,6 +32,11 @@ DEFINE_FINALIZE() {
 	if ( geomId != NULL )
 		ode::dGeomSetData(geomId, NULL);
 }
+
+/**doc
+ * *_Constructor_*( space )
+  TBD
+**/
 
 DEFINE_CONSTRUCTOR() {
 
@@ -40,6 +51,13 @@ DEFINE_CONSTRUCTOR() {
 	return JS_TRUE;
 }
 
+/**doc
+=== Properties ===
+**/
+
+/**doc
+ * $REAL *radius*
+**/
 DEFINE_PROPERTY( radiusSetter ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JS_GetPrivate(cx, obj);

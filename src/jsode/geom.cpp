@@ -62,8 +62,19 @@ JSBool SetupReadMatrix(JSContext *cx, JSObject *obj) {
 }
 
 
+/**doc
+$CLASS_HEADER
+**/
 BEGIN_CLASS( Geom )
 
+/**doc
+=== Functions ===
+**/
+
+/**doc
+ * *Destroy*()
+  dGeomSetData NULL, dGeomDestroy
+**/
 DEFINE_FUNCTION( Destroy ) {
 
 	ode::dGeomID geomId = (ode::dGeomID)JS_GetPrivate(cx, obj);
@@ -74,6 +85,14 @@ DEFINE_FUNCTION( Destroy ) {
 	return JS_TRUE;
 }
 
+/**doc
+=== Properties ===
+**/
+
+/**doc
+ * $BOOL *enable*
+  Is the status of the geometry.
+**/
 
 DEFINE_PROPERTY( enableSetter ) {
 
@@ -97,7 +116,10 @@ DEFINE_PROPERTY( enableGetter ) {
 	return JS_TRUE;
 }
 
-
+/**doc
+ * $RET body *body*
+  Bind the current geometry to the given body object.
+**/
 DEFINE_PROPERTY( body ) {
 
 	// (TBD) check if the obj's private data is the right body. else ERROR
@@ -114,6 +136,13 @@ DEFINE_PROPERTY( body ) {
 	return JS_TRUE;
 }
 
+
+/**doc
+ * *offset*
+  Sets the position and rotation of the geometry to its center of mass.
+  = =
+  Use <undefined> value to reset the geometry offset.
+**/
 
 // setting undefined means clear the offset
 DEFINE_PROPERTY( offset ) {
@@ -140,13 +169,13 @@ DEFINE_PROPERTY( offset ) {
 		ode::dGeomSetOffsetPosition(geom, m[3], m[7], m[11]);
 		return JS_TRUE;
 	}
-
 	J_REPORT_ERROR("Invalid source.");
-
 }
 
-
-
+/**doc
+ * *tansformation*
+  Sets the position and rotation of the geometry to its center of mass.
+**/
 DEFINE_PROPERTY( tansformation ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JS_GetPrivate(cx, obj);
@@ -166,11 +195,13 @@ DEFINE_PROPERTY( tansformation ) {
 		ode::dGeomSetOffsetPosition(geom, m[3], m[7], m[11]);
 		return JS_TRUE;
 	}
-
 	J_REPORT_ERROR("Invalid source.");
 }
 
-
+/**doc
+ * $RET vec3 *position*
+  Is the current position of the geometry.
+**/
 DEFINE_PROPERTY( positionGetter ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JS_GetPrivate(cx, obj);
@@ -214,6 +245,23 @@ DEFINE_PROPERTY( offsetPositionSetter ) {
 	return JS_TRUE;
 }
 */
+
+
+/**doc
+=== Callback functions ===
+ * *impact*(index, thisGeom, againstGeom, position);
+  This function is called each time two geometries collide together.
+  _index_ is the index of the collision between step and step+1.
+  = =
+  _thisGeom_ is the geometry that is colliding (usualy, `this` object).
+  = =
+  _againstGeom_ is the geometry against with this geometry is colliding (the other Geom).
+  = =
+  $RET vec3 _position_ is the position of the impact point in world position.
+
+$H note
+ This class exports a NI_READ_MATRIX44 interface to read the current body's position.
+**/
 
 
 CONFIGURE_CLASS

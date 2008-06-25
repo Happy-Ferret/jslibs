@@ -57,25 +57,25 @@ DEFINE_CONSTRUCTOR() {
 **/
 
 /**doc
- * ,,real,, *mu*
+ * $REAL *mu*
  
- * ,,real,, *mu2*
+ * $REAL *mu2*
  
- * ,,real,, *bounce*
+ * $REAL *bounce*
  
- * ,,real,, *bounceVel*
+ * $REAL *bounceVel*
  
- * ,,real,, *softERP*
+ * $REAL *softERP*
  
- * ,,real,, *softCFM*
+ * $REAL *softCFM*
  
- * ,,real,, *motion1*
+ * $REAL *motion1*
  
- * ,,real,, *motion2*
+ * $REAL *motion2*
  
- * ,,real,, *slip1*
+ * $REAL *slip1*
  
- * ,,real,, *slip2*
+ * $REAL *slip2*
 **/
 
 enum { mu, mu2, bounce, bounceVel, softERP, softCFM, motion1, motion2, slip1, slip2 };

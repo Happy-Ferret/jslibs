@@ -225,7 +225,7 @@ DEFINE_FUNCTION_FAST( Write ) {
 
 
 /**doc
- * ,,string,, *Read*( length [, offset] )
+ * $STR *Read*( length [, offset] )
   Read _length_ bytes from _offset_ in the shared memory.
 **/
 DEFINE_FUNCTION_FAST( Read ) {
@@ -285,7 +285,7 @@ DEFINE_FUNCTION_FAST( Clear ) {
 **/
 
 /**doc
- * ,,string,, *content*
+ * $STR *content*
   Read or write the whole content of the shared memory. Setting <undefined> as value clears the memory area.
 **/
 DEFINE_PROPERTY( contentSetter ) { // (TBD) support BString

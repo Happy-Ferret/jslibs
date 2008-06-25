@@ -131,7 +131,7 @@ DEFINE_CONSTRUCTOR() {
 **/
 
 /**doc
- * ,,integer,, *ReadInt*( size, [isSigned = false], [isNetworkEndian = false] )
+ * $INT *ReadInt*( size, [isSigned = false], [isNetworkEndian = false] )
   TBD
 **/
 DEFINE_FUNCTION( ReadInt ) {
@@ -305,7 +305,7 @@ DEFINE_FUNCTION( WriteInt ) {
 }
 
 /**doc
- * ,,real,, *ReadReal*( size )
+ * $REAL *ReadReal*( size )
   TBD
 **/
 DEFINE_FUNCTION( ReadReal ) {
@@ -343,7 +343,7 @@ DEFINE_FUNCTION( ReadReal ) {
 }
 
 /**doc
- * ,,string,, ReadString( length )
+ * $STR ReadString( length )
   TBD
 **/
 DEFINE_FUNCTION( ReadString ) {

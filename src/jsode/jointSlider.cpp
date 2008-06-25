@@ -16,8 +16,19 @@
 #include "world.h"
 #include "joint.h"
 
+/**doc
+$CLASS_HEADER Joint
+**/
 BEGIN_CLASS( JointSlider )
 
+/**doc
+=== Functions ===
+**/
+
+/**doc
+ * *_Constructor_*( world )
+  TBD
+**/
 DEFINE_CONSTRUCTOR() {
 
 	RT_ASSERT_CONSTRUCTING(_class);
@@ -30,6 +41,14 @@ DEFINE_CONSTRUCTOR() {
 	return JS_TRUE;
 }
 
+/**doc
+=== Properties ===
+**/
+
+/**doc
+ * $RET vec3 *axis*
+  TBD
+**/
 DEFINE_PROPERTY( axisSetter ) {
 
 	ode::dJointID jointId = (ode::dJointID)JS_GetPrivate(cx, obj);
@@ -50,6 +69,10 @@ DEFINE_PROPERTY( axisGetter ) {
 	return JS_TRUE;
 }
 
+/**doc
+ * $REAL *position* $READONLY
+  TBD
+**/
 DEFINE_PROPERTY( position ) {
 
 	ode::dJointID jointId = (ode::dJointID)JS_GetPrivate(cx, obj);
@@ -57,6 +80,11 @@ DEFINE_PROPERTY( position ) {
 	JS_NewDoubleValue(cx, ode::dJointGetSliderPosition(jointId), vp);
 	return JS_TRUE;
 }
+
+/**doc
+ * $REAL *positionRate* $READONLY
+  TBD
+**/
 
 DEFINE_PROPERTY( positionRate ) {
 

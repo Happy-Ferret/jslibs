@@ -140,7 +140,7 @@ JSObject *objexInitClass( JSContext *cx, JSObject *obj ) {
 
 === Functions ===
 
- * ,,constructor,, *ObjEx*( _addCallback_, _delCallback_, _getCallback_, _setCallback_, _auxObject_ )
+ * *_Constructor_*( _addCallback_, _delCallback_, _getCallback_, _setCallback_, _auxObject_ )
   ===== note: =
   _addCallback_, _delCallback_, _getCallback_, _setCallback_ can be undefined.
 

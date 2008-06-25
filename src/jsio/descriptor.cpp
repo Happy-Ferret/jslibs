@@ -253,7 +253,7 @@ JSBool ReadAllToJsval(JSContext *cx, PRFileDesc *fd, jsval *rval ) {
 
 
 /**doc
- * ,,val,, *Read*( [amount] )
+ * $VAL *Read*( [amount] )
   Read _amount_ bytes of data from the current descriptor. If _amount_ is ommited, the whole available data is read. 
   If the descriptor is exhausted (eof or disconnected), this function returns <undefined>.
 **/
@@ -286,7 +286,7 @@ DEFINE_FUNCTION( Read ) {
 
 
 /**doc
- * ,,string,, *Write*( data )
+ * $STR *Write*( data )
   If the whole data cannot be written, Write returns that have not be written.
 **/
 DEFINE_FUNCTION( Write ) {

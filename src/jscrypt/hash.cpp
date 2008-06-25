@@ -148,7 +148,7 @@ DEFINE_FUNCTION( Process ) {
 
 
 /**doc
- * ,,string,, *Done*()
+ * $STR *Done*()
   Terminate the hash and get the digest in a binary format.
   ===== example: =====
   {{{
@@ -180,7 +180,7 @@ DEFINE_FUNCTION( Done ) {
 
 
 /**doc
- * ,,string,, *_Call operator_*( string )
+ * $STR *_Call operator_*( string )
   This is the call operator of the object. It simplifies the usage of hashes and allows a digest calculation in one call only.
   When called with a string as argument, it Process a block of memory though the hash
   Compute the hash until the function is called without arguments or end is <true>. In this case, the function returns the hash of the whole given data.
@@ -243,7 +243,7 @@ DEFINE_FUNCTION( Call ) {
 **/
 
 /**doc
- * ,,string,, *name*
+ * $STR *name*
   Name of the current hash.
 **/
 DEFINE_PROPERTY( name ) {
@@ -258,7 +258,7 @@ DEFINE_PROPERTY( name ) {
 }
 
 /**doc
- * ,,number,, *blockSize*
+ * $INT *blockSize*
   Input block size in octets.
 **/
 DEFINE_PROPERTY( blockSize ) {
@@ -271,7 +271,7 @@ DEFINE_PROPERTY( blockSize ) {
 }	
 
 /**doc
- * ,,number,, *length*
+ * $INT *length*
   Size of the digest in octets.
 **/
 DEFINE_PROPERTY( length ) {
@@ -284,7 +284,7 @@ DEFINE_PROPERTY( length ) {
 }	
 
 /**doc
- * ,,number,, *inputLength*
+ * $INT *inputLength*
   Length of the processed data.
 **/
 DEFINE_PROPERTY( inputLength ) {
@@ -326,7 +326,7 @@ DEFINE_FUNCTION( CipherHash ) {
 **/
 
 /**doc
- * ,,object,, *list*
+ * $OBJ *list*
   Contains the list of all available hash and their feature. The list is a javascript object that map hash names (key) with another object (value) that contain information.
   ===== example: =====
   {{{

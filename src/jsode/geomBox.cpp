@@ -17,7 +17,14 @@
 #include "geom.h"
 #include "../common/jsNativeInterface.h"
 
+/**doc
+$CLASS_HEADER Geom
+**/
 BEGIN_CLASS( GeomBox )
+
+/**doc
+=== Functions ===
+**/
 
 DEFINE_FINALIZE() {
 
@@ -26,6 +33,10 @@ DEFINE_FINALIZE() {
 		ode::dGeomSetData(geomId, NULL);
 }
 
+/**doc
+ * *_Constructor_*( space )
+  TBD
+**/
 DEFINE_CONSTRUCTOR() {
 
 	RT_ASSERT_CONSTRUCTING(&classGeomBox);
@@ -40,6 +51,14 @@ DEFINE_CONSTRUCTOR() {
 	return JS_TRUE;
 }
 
+/**doc
+=== Properties ===
+**/
+
+/**doc
+ * $RET vec3 *lengths*
+  Is the x, y, z size of the box.
+**/
 DEFINE_PROPERTY( lengthsSetter ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JS_GetPrivate(cx, obj);

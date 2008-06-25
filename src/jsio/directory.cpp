@@ -57,7 +57,7 @@ DEFINE_CONSTRUCTOR() {
 }
 
 /**doc
- * ,,this,, *Open*()
+ * $RET this *Open*()
   Open the directory.
 **/
 DEFINE_FUNCTION( Open ) {
@@ -94,7 +94,7 @@ DEFINE_FUNCTION( Close ) {
 
 
 /**doc
- * ,,string,, *Read*( [, flags = Directory.SKIP_NONE ] )
+ * $STR *Read*( [, flags = Directory.SKIP_NONE ] )
   Returns a item of the current directory and go to the next.
 **/
 DEFINE_FUNCTION( Read ) {
@@ -217,7 +217,7 @@ DEFINE_PROPERTY( name ) {
 **/
 
 /**doc
- * ,,array,, *List*( name [, flags = Directory.SKIP_DOT] )
+ * $RET array *List*( name [, flags = Directory.SKIP_DOT] )
   Returns all entries in the directory _name_.
   ===== Note: =====
    This function supports additional flags: Directory.`SKIP_FILE`, Directory.`SKIP_DIRECTORY`, Directory.`SKIP_OTHER`

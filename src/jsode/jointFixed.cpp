@@ -16,8 +16,18 @@
 #include "world.h"
 #include "joint.h"
 
+/**doc
+$CLASS_HEADER Joint
+**/
 BEGIN_CLASS( JointFixed )
 
+/**doc
+=== Functions ===
+**/
+
+/**doc
+ * *_Constructor_*( world )
+**/
 DEFINE_CONSTRUCTOR() {
 
 	RT_ASSERT_CONSTRUCTING(_class);
@@ -30,6 +40,10 @@ DEFINE_CONSTRUCTOR() {
 	return JS_TRUE;
 }
 
+/**doc
+ * *Set*()
+  Set the current position of body1 and body2 as fixed.
+**/
 DEFINE_FUNCTION( Set ) {
 
 	ode::dJointID jointId = (ode::dJointID)JS_GetPrivate(cx, obj);

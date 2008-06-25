@@ -243,7 +243,7 @@ DEFINE_FUNCTION( CreateKeys ) { // ( bitsSize )
 }
 
 /**doc
- * ,,string,, *Encrypt*( data [, lparam] )
+ * $STR *Encrypt*( data [, lparam] )
   This function returns the encrypted _data_ using a previously created or imported public key.
   = =
   _data_ is the string to encrypt (usualy cipher keys).
@@ -302,7 +302,7 @@ DEFINE_FUNCTION( Encrypt ) { // ( data [, lparam] )
 }
 
 /**doc
- * ,,string,, *Decrypt*( encryptedData [, lparam] )
+ * $STR *Decrypt*( encryptedData [, lparam] )
   This function decrypts the given _encryptedData_ using a previously created or imported private key.
   = =
   _encryptedData_ is the string that has to be decrypted (usualy cipher keys).
@@ -375,7 +375,7 @@ DEFINE_FUNCTION( Decrypt ) { // ( encryptedData [, lparam] )
 }
 
 /**doc
- * ,,string,, *Sign*( data [, saltLength] )
+ * $STR *Sign*( data [, saltLength] )
   This function returns the signature of the given _data_.
   Because this process is slow, this function usualy used to sign a small amount of data, like hash digest.
   = =
@@ -436,7 +436,7 @@ DEFINE_FUNCTION( Sign ) { // ( data [, saltLength] )
 }
 
 /**doc
- * ,,string,, *VerifySignature*( data, signature [, saltLength] )
+ * $STR *VerifySignature*( data, signature [, saltLength] )
   This function returns <true> if the _data_ match the data used to create the _signature_.
   = =
   _saltLength_ is only used with RSA signatures. (default value is 16)
@@ -551,10 +551,10 @@ DEFINE_PROPERTY( keySize ) {
 
 
 /**doc
- * ,,string,, *privateKey*
+ * $STR *privateKey*
   The private key encoded using PKCS #1. (Public Key Cryptographic Standard #1 v2.0 padding)
 
- * ,,string,, *publicKey*
+ * $STR *publicKey*
   The public key encoded using PKCS #1. (Public Key Cryptographic Standard #1 v2.0 padding)
 **/
 

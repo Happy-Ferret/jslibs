@@ -259,7 +259,7 @@ DEFINE_FUNCTION( Step ) {
 **/
 
 /**doc
- * ,,vec3,, *gravity*
+ * $RET vec3 *gravity*
   TBD
 **/
 DEFINE_PROPERTY( gravityGetter ) {
@@ -343,7 +343,7 @@ DEFINE_PROPERTY( realGetter ) {
 }
 
 /**doc
- * ,,Body object,, *env* $READONLY
+ * $RET body *env* $READONLY
   Returns the environment object that is the fixed body of this world (like the ground).
 **/
 DEFINE_PROPERTY( env ) {

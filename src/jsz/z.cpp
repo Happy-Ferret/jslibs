@@ -51,7 +51,7 @@ void z_Finalize(JSContext *cx, JSObject *obj) {
 **/
 
 /**doc
- * ,,string,, *Call operator*( [ inputData [, forceFinish = false ] ] )
+ * $STR *Call operator*( [ inputData [, forceFinish = false ] ] )
   This function process _inputData_ as a stream.
   If _forceFinish_ is true, the _inputData_ and any buffered data are flushed to the _outputData_.
   If this function is call without any argument, All remaining data are flushed.

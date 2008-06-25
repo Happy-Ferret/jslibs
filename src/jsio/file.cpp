@@ -73,7 +73,7 @@ DEFINE_CONSTRUCTOR() {
 }
 
 /**doc
- * ,,this,, *Open*( flags [, mode] )
+ * $RET this *Open*( flags [, mode] )
   Open a file for reading, writing, or both.
   = =
   _flags_ is either a combinaison of open mode constants or a string that contains fopen like flags (+, r, w, a).

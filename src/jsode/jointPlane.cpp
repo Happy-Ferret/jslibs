@@ -16,8 +16,19 @@
 #include "world.h"
 #include "joint.h"
 
+/**doc
+$CLASS_HEADER Joint
+**/
 BEGIN_CLASS( JointPlane )
 
+/**doc
+=== Functions ===
+**/
+
+/**doc
+ * *_Constructor_*( world )
+  TBD
+**/
 DEFINE_CONSTRUCTOR() {
 
 	RT_ASSERT_CONSTRUCTING(_class);

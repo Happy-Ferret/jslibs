@@ -268,7 +268,7 @@ DEFINE_CONSTRUCTOR() {
 
 
 /**doc
- * ,,string,, *Encrypt*( string )
+ * $STR *Encrypt*( string )
   Encrypts the given _string_ using the current cipher.
 **/
 DEFINE_FUNCTION( Encrypt ) {
@@ -324,7 +324,7 @@ DEFINE_FUNCTION( Encrypt ) {
 }
 
 /**doc
- * ,,string,, *Decrypt*( string )
+ * $STR *Decrypt*( string )
   Decrypts the given _string_ using the current cipher.
 **/
 DEFINE_FUNCTION( Decrypt ) {
@@ -381,7 +381,7 @@ DEFINE_FUNCTION( Decrypt ) {
 **/
 
 /**doc
- * ,,number,, *blockLength*
+ * $INT *blockLength*
   Is the block length of the current cipher.
 **/
 DEFINE_PROPERTY( blockLength ) {
@@ -395,7 +395,7 @@ DEFINE_PROPERTY( blockLength ) {
 
 
 /**doc
- * ,,number,, *keySize*
+ * $INT *keySize*
   Is the key size of the current cipher.
 **/
 DEFINE_PROPERTY( keySize ) {
@@ -409,7 +409,7 @@ DEFINE_PROPERTY( keySize ) {
 
 
 /**doc
- * ,,string,, *name*
+ * $STR *name*
   Is the name of the current cipher.
 **/
 DEFINE_PROPERTY( name ) {
@@ -425,7 +425,7 @@ DEFINE_PROPERTY( name ) {
 
 
 /**doc
- * ,,string,, *IV*
+ * $STR *IV*
   Set or get the current initialization vector of the cipher.
 **/
 DEFINE_PROPERTY( IVSetter ) {
@@ -572,7 +572,7 @@ DEFINE_PROPERTY( IVGetter ) {
 **/
 
 /**doc
- * ,,object,, *list*
+ * $OBJ *list*
   Contains the list of all available ciphers and their feature. The list is a javascript object that map cipher names (key) with another object (value) that contain information.
 **/
 DEFINE_PROPERTY( list ) {
