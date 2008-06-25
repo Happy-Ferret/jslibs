@@ -1,6 +1,122 @@
 LoadModule('jsstd');
 LoadModule('jsio');
 
+
+var api = {
+	$H: function(cx, item) {
+
+		cx.center = '===== '+ReadArg(cx)+': =====';
+	},
+
+	$FNAME: function(cx, item) {
+
+		var res = /DEFINE_(\w*)\( *(\w*) *\)/(item.source.substring(item.followingSourceTextStart, item.followingSourceTextEnd));
+		if ( res ) {
+			cx.center = '*'+res[2]+'*';
+		} else
+			cx.center = '???';
+	},
+	
+	$INCLUDE: function(cx, item) {
+	
+		cx.center = new File(ReadArg(cx)).content;
+	},
+
+	$CLASS_HEADER: function(cx, item) {
+		
+		var className;
+
+		var res = /BEGIN_CLASS\( *(\w*) *\)/(item.source.substring(item.followingSourceTextStart, item.followingSourceTextEnd));
+		if ( res ) {
+			className = res[1];
+		} else
+			className = '???';
+		
+		var inheritFrom = ReadArg(cx);
+		
+		cx.center = '== '+item.lastDir+'::'+className+' class '+(inheritFrom ? '^'+item.lastDir+'::'+inheritFrom+'^ ==';
+	},
+	
+	$MHEADER: function(cx, item) {
+
+		cx.center = '#summary '+item.lastDir+' module\n' + '#labels doc\n' + '- [http://jslibs.googlecode.com/svn/trunk/'+item.lastDir+'/ source] - [JSLibs main] -\n'+'= '+item.lastDir+' module =';
+	},
+
+	$MFOOTER: function(cx, item) {
+
+		cx.center = '----\n- [http://jslibs.googlecode.com/svn/trunk/'+item.lastDir+'/ source] - [#'+item.lastDir+'_module top] - [JSLibs main] -';
+	},
+
+	$READONLY:'http://jslibs.googlecode.com/svn/wiki/readonly.png',
+	$VAL:',,value,,',
+	$INT:',,integer,,',
+	$REAL:',,real,,',
+	$STR:',,string,,',
+	$OBJ:',,object,,',
+	$BOOL:',,boolean,,',
+	$VOID:'',
+	$LF:'= =',
+};
+
+
+
+function ReadCx(cx, re) {
+
+    re.lastIndex = 0;
+    res = re(cx.right);
+    if (res) {
+        cx.right = cx.right.substr(re.lastIndex);
+        return res;
+    } else {
+        return [];
+    }
+}
+
+function ReadArg(cx) ReadCx(cx, /([^\s]+)/g)[1]||'';
+
+
+function RegQuote(str) {
+
+    var quote = '$^*+?.()[]{}|\\';
+    var res = '';
+    for each ( c in str )
+        res += quote.indexOf(c) != -1 ? ('\\' + c) : c;
+    return res;
+}
+
+function ExpandText(str, api, item) {
+
+//    var re = /\$\w*/g;
+    var re = new RegExp([RegQuote(p) for ( p in api ) ].join('|'),'g');
+    var cx= {left: "", center: "", right: str};
+    for (var i = 0; i < 10; i++) {
+
+        re.lastIndex = 0;
+        var res = re(cx.right);
+        if (!res) {
+            cx.left += cx.right;
+            break;
+        }
+        cx.center = res[0];
+        cx.left += cx.right.substr(0, re.lastIndex - cx.center.length);
+        cx.right = cx.right.substr(re.lastIndex);
+        
+        if ( cx.center in api ) {
+        
+				var apiItem = api[cx.center];
+				if ( apiItem instanceof Function )
+					apiItem(cx, item);
+				else
+					cx.center = apiItem;
+			}
+        
+        cx.left += cx.center;
+    }
+    return cx.left;
+}
+
+
+
 //function Map() ({ __proto__:null });
 function Map() ({});
 
@@ -26,19 +142,6 @@ function RecursiveDir(path, callback) {
 	})(path);
 }
 
-
-function ExpandText(text, api, item) {
-
-	return text.replace(/\$\w+(\(.*?\))?/g, function(fct) {
-		try {
-			return eval(fct, api);
-		} catch(ex) {
-			return '';
-		}
-	});
-}
-
-
 function CreateDocItemList(api) {
 
 	var docExpr = /\/\*\*doc([^]*?)(?:\r?\n([^]*?))?\*\*\//g;
@@ -54,10 +157,13 @@ function CreateDocItemList(api) {
 
 			var source = file.content;
 			docExpr.lastIndex = 0;
-			var res;
+			var res, item;
 			while( res = docExpr(source) ) {
 
-				var item = Map();
+				if ( item ) // adjust the previous followingTextEnd
+					item.followingSourceTextEnd = docExpr.lastIndex - res[0].length;
+				
+				item = Map();
 				itemList.push(item);
 				
 				item.index = index++;
@@ -67,7 +173,8 @@ function CreateDocItemList(api) {
 				item.fileName = file.name.substr(file.name.lastIndexOf('/')+1);
 				item.text = res[2]||'';
 				item.source = source;
-				item.sourceIndex = docExpr.lastIndex - item.text.length;
+				item.followingSourceTextStart = docExpr.lastIndex;
+				item.followingSourceTextEnd = source.length;
 				
 				var attr = Map();
 				item.attr = attr;
@@ -109,16 +216,6 @@ function FlattenGroup( groupList ) {
 }
 
 
-
-var api = {
-
-	$READONLY:'http://jslibs.googlecode.com/svn/wiki/readonly.png',
-	$IMG:function(name) {
-	
-		return 'http://jslibs.googlecode.com/svn/wiki/'+name+'.png';
-	}
-
-};
 
 
 var itemList = CreateDocItemList(api);
