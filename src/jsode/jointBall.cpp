@@ -16,8 +16,18 @@
 #include "world.h"
 #include "joint.h"
 
+/**doc
+$CLASS_HEADER Joint
+**/
 BEGIN_CLASS( JointBall )
 
+/**doc
+=== Functions ===
+**/
+
+/**doc
+ * *_Constructor_*( world )
+**/
 DEFINE_CONSTRUCTOR() {
 
 	RT_ASSERT_CONSTRUCTING(_class);
@@ -30,6 +40,14 @@ DEFINE_CONSTRUCTOR() {
 	return JS_TRUE;
 }
 
+
+/**doc
+=== Properties ===
+**/
+
+/**doc
+ * ,,vec3,, *anchor*
+**/
 DEFINE_PROPERTY( anchorSetter ) {
 
 	ode::dJointID jointId = (ode::dJointID)JS_GetPrivate(cx, obj);
@@ -50,6 +68,9 @@ DEFINE_PROPERTY( anchorGetter ) {
 	return JS_TRUE;
 }
 
+/**doc
+ * ,,vec3,, *anchor2* $READONLY
+**/
 DEFINE_PROPERTY( anchor2 ) { // read only
 
 	ode::dJointID jointId = (ode::dJointID)JS_GetPrivate(cx, obj);

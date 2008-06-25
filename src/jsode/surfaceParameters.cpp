@@ -15,6 +15,9 @@
 #include "stdafx.h"
 #include "joint.h"
 
+/**doc
+$CLASS_HEADER
+**/
 BEGIN_CLASS( SurfaceParameters )
 
 
@@ -26,7 +29,15 @@ DEFINE_FINALIZE() {
 	JS_SetPrivate(cx, obj, NULL);
 }
 
+/**doc
+=== Functions ===
+**/
 
+/**doc
+ * *_Constructor_*()
+ ===== note: =====
+  by default, mu is set to Infinity.
+**/
 DEFINE_CONSTRUCTOR() {
 
 	static ode::dSurfaceParameters initSurfaceParameters = {0};
@@ -40,6 +51,32 @@ DEFINE_CONSTRUCTOR() {
 }
 
 #define SETBIT(value, mask, polarity) ((value) = (polarity) ? (value) | (mask) : (value) & ~(mask) )
+
+/**doc
+=== Properties ===
+**/
+
+/**doc
+ * ,,real,, *mu*
+ 
+ * ,,real,, *mu2*
+ 
+ * ,,real,, *bounce*
+ 
+ * ,,real,, *bounceVel*
+ 
+ * ,,real,, *softERP*
+ 
+ * ,,real,, *softCFM*
+ 
+ * ,,real,, *motion1*
+ 
+ * ,,real,, *motion2*
+ 
+ * ,,real,, *slip1*
+ 
+ * ,,real,, *slip2*
+**/
 
 enum { mu, mu2, bounce, bounceVel, softERP, softCFM, motion1, motion2, slip1, slip2 };
 
@@ -124,6 +161,10 @@ DEFINE_PROPERTY( surfaceSetter ) {
 	return JS_TRUE;
 }
 
+/**doc
+ ===== note: =====
+  Use <undefined> as value to reset the property.
+**/
 
 
 CONFIGURE_CLASS

@@ -22,6 +22,9 @@ check this:
 #include "stdafx.h"
 #include "space.h"
 
+/**doc
+$CLASS_HEADER
+**/
 BEGIN_CLASS( Space )
 
 
@@ -34,7 +37,13 @@ DEFINE_FINALIZE() {
 }
 */
 
+/**doc
+=== Functions ===
+**/
 
+/**doc
+ * *_Constructor_*( parentSpace )
+**/
 
 DEFINE_CONSTRUCTOR() {
 

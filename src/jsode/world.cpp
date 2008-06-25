@@ -129,8 +129,11 @@ static void nearCallback(void *data, ode::dGeomID o1, ode::dGeomID o2) {
 	}
 }
 
-
+/**doc
+$CLASS_HEADER
+**/
 BEGIN_CLASS( World )
+
 
 DEFINE_FINALIZE() {
 
@@ -144,6 +147,18 @@ DEFINE_FINALIZE() {
 		JS_SetPrivate(cx,obj,NULL);
 	}
 }
+
+/**doc
+=== Functions ===
+**/
+
+/**doc
+ * *_Constructor_*()
+  dWorldCreate
+  ===== note: =====
+   This function creates also a Space (space) object and a SurfaceParameters object (defaultSurfaceParameters).
+**/
+
 
 DEFINE_CONSTRUCTOR() {
 
@@ -170,13 +185,21 @@ DEFINE_CONSTRUCTOR() {
 	return JS_TRUE;
 }
 
-
+/**doc
+ * *Destroy*()
+  TBD
+**/
 DEFINE_FUNCTION( Destroy ) {
 
 	Finalize(cx, obj); // shortcut
 	return JS_TRUE;
 }
 
+/**doc
+ * *Step*( time [, iterations] )
+  ===== note: =====
+   If the _iterations_ argument is given, this uses an iterative method that takes time on the order of m*N and memory on the order of m, where m is the total number of constraint rows and N is the number of iterations.
+**/
 
 DEFINE_FUNCTION( Step ) {
 
@@ -231,6 +254,14 @@ DEFINE_FUNCTION( Step ) {
 	return JS_TRUE;
 }
 
+/**doc
+=== Properties ===
+**/
+
+/**doc
+ * ,,vec3,, *gravity*
+  TBD
+**/
 DEFINE_PROPERTY( gravityGetter ) {
 
 	ode::dWorldID worldID = (ode::dWorldID)JS_GetPrivate( cx, obj );
@@ -251,6 +282,16 @@ DEFINE_PROPERTY( gravitySetter ) {
 	return JS_TRUE;
 }
 
+/**doc
+ * $REAL *ERP*
+  dWorldGetERP
+ 
+ * $REAL *CFM*
+  dWorldGetCFM
+
+ * $REAL *contactSurfaceLayer*
+  dWorldGetContactSurfaceLayer
+**/
 
 enum { ERP, CFM, /*quickStepNumIterations,*/ contactSurfaceLayer };
 
@@ -301,7 +342,10 @@ DEFINE_PROPERTY( realGetter ) {
 	return JS_TRUE;
 }
 
-
+/**doc
+ * ,,Body object,, *env* $READONLY
+  Returns the environment object that is the fixed body of this world (like the ground).
+**/
 DEFINE_PROPERTY( env ) {
 
 	if ( *vp == JSVAL_VOID ) { //  create it if it does not exist and store it (cf. PROPERTY_READ_STORE)
@@ -313,6 +357,16 @@ DEFINE_PROPERTY( env ) {
 	}
 	return JS_TRUE;
 }
+
+/**doc
+ * *defaultSurfaceParameters* $READONLY
+  This defines the default properties of the colliding grometries surfaces.
+  = =
+  The property is read-only but not i'ts content.
+ 
+ * *space* $READONLY
+  This is the default space object that is bound to the world.
+**/
 
 CONFIGURE_CLASS
 

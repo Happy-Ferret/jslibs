@@ -19,6 +19,9 @@
 
 #include "math.h"
 
+/**doc
+$CLASS_HEADER
+**/
 BEGIN_CLASS( Joint )
 
 	// Api: dBodyID dJointGetBody (dJointID, int index);
@@ -62,24 +65,14 @@ inline JSBool SetJoint( JSContext *cx, JSObject *obj, jsval *b1, jsval *b2 ) {
 }
 
 
-DEFINE_PROPERTY( body1 ) {
+/**doc
+=== Functions ===
+**/
 
-	jsval b2;
-	JS_GetProperty(cx, obj, "body2", &b2);
-	RT_CHECK_CALL( SetJoint(cx, obj, vp, &b2) );
-	return JS_TRUE;
-}
-
-
-DEFINE_PROPERTY( body2 ) {
-
-	jsval b1;
-	JS_GetProperty(cx, obj, "body1", &b1);
-	RT_CHECK_CALL( SetJoint(cx, obj, &b1, vp) );
-	return JS_TRUE;
-}
-
-
+/**doc
+ * *Destroy*()
+  TBD
+**/
 DEFINE_FUNCTION( Destroy ) {
 
 	RT_ASSERT( InheritFrom(cx, obj, _class), J__ERRMSG_INVALID_CLASS );
@@ -170,8 +163,41 @@ ode::dReal JointGetParam( ode::dJointID jointId, int parameter ) {
 	return 0;
 }
 
+/**doc
+=== Properties ===
+**/
+
+/**doc
+ * *body1*
+  Set the first body of the joint.
+**/
+DEFINE_PROPERTY( body1 ) {
+
+	jsval b2;
+	JS_GetProperty(cx, obj, "body2", &b2);
+	RT_CHECK_CALL( SetJoint(cx, obj, vp, &b2) );
+	return JS_TRUE;
+}
 
 
+/**doc
+ * *body2*
+  Set the second body of the joint.
+**/
+DEFINE_PROPERTY( body2 ) {
+
+	jsval b1;
+	JS_GetProperty(cx, obj, "body1", &b1);
+	RT_CHECK_CALL( SetJoint(cx, obj, &b1, vp) );
+	return JS_TRUE;
+}
+
+/**doc
+ * *useFeedback*
+  Set to <true> activates the feedback, and <false> to desactivates it.
+  = =
+  Using feedback will allows body1Force, body1Torque, body2Force and body2Torque to be used.
+**/
 DEFINE_PROPERTY( useFeedback ) {
 
 	ode::dJointID jointId = (ode::dJointID)JS_GetPrivate( cx, obj );
@@ -196,7 +222,19 @@ DEFINE_PROPERTY( useFeedback ) {
 	return JS_TRUE;
 }
 
+/**doc
+ * ,,vec3,, *body1Force*
+  Is the current force vector that applies to the body1 if feedback is activated.
 
+ * ,,vec3,, *body1Torque*
+  Is the current torque vector that applies to the body1 if feedback is activated.
+
+  * ,,vec3,, *body2Force*
+  Is the current force vector that applies to the body2 if feedback is activated.
+
+ * ,,vec3,, *body2Torque*
+  Is the current torque vector that applies to the body2 if feedback is activated.
+**/
 enum { body1Force, body1Torque, body2Force, body2Torque };
 
 DEFINE_PROPERTY( feedbackVectorSetter ) {
@@ -246,7 +284,23 @@ DEFINE_PROPERTY( feedbackVectorGetter ) {
 	return JS_TRUE;
 }
 
+/**doc
+ * ,,real,, *loStop*
 
+ * ,,real,, *hiStop*
+
+ * ,,real,, *bounce*
+
+ * ,,real,, *CFM*
+
+ * ,,real,, *stopERP*
+
+ * ,,real,, *stopCFM*
+
+ * ,,real,, *velocity*
+
+ * ,,real,, *maxForce*
+**/
 enum { loStop, hiStop, bounce, CFM, stopERP, stopCFM, velocity, maxForce };
 
 DEFINE_PROPERTY( jointParamSetter ) {

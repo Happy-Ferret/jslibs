@@ -48,6 +48,9 @@ static JSBool ReadMatrix( JSContext *cx, JSObject *obj, float **pm) { // Doc: __
 	return JS_TRUE;
 }
 
+/**doc
+$CLASS_HEADER
+**/
 BEGIN_CLASS( Body )
 
 
@@ -64,6 +67,14 @@ DEFINE_FINALIZE() {
 */
 }
 
+/**doc
+=== Functions ===
+**/
+
+/**doc
+ * *_Constructor_*( _world_ )
+  TBD
+**/
 
 DEFINE_CONSTRUCTOR() {
 
@@ -90,7 +101,10 @@ DEFINE_CONSTRUCTOR() {
 	return JS_TRUE;
 }
 
-
+/**doc
+ * $VOID *Destroy*()
+  TBD dBodyDestroy
+**/
 DEFINE_FUNCTION( Destroy ) {
 
 	RT_ASSERT_CLASS(obj, &classBody);
@@ -102,7 +116,10 @@ DEFINE_FUNCTION( Destroy ) {
 	return JS_TRUE;
 }
 
-
+/**doc
+ * $BOOL *IsConnectedTo*( _body_ )
+  TBD dAreConnected
+**/
 DEFINE_FUNCTION( IsConnectedTo ) {
 
 	RT_ASSERT_ARGC(1);
@@ -115,7 +132,29 @@ DEFINE_FUNCTION( IsConnectedTo ) {
 	return JS_TRUE;
 }
 
+/**doc
+=== Properties ===
+**/
 
+/**doc
+ * ,,vec3,, *position*
+  dBodySetPosition
+
+ * ,,vec4,, *quaternion*
+  dBodySetQuaternion
+ 
+ * ,,vec3,, *linearVel*
+  dBodySetLinearVel
+  
+ * ,,vec3,, *angularVel*
+  dBodySetAngularVel
+ 
+ * ,,vec3,, *force*
+  dBodySetForce
+ 
+ * ,,vec3,, *torque*
+  dBodySetTorque
+**/
 enum { position, quaternion, linearVel, angularVel, force, torque };
 
 DEFINE_PROPERTY( vectorGetter ) {
@@ -189,7 +228,10 @@ DEFINE_PROPERTY( vectorSetter ) {
 	return JS_TRUE;
 }
 
-
+/**doc
+ * *mass* http://jslibs.googlecode.com/svn/wiki/readonly.png
+  Is the mass object (jsode::Mass) of the body.
+**/
 DEFINE_PROPERTY( mass ) {
 
 	if ( *vp == JSVAL_VOID ) { // if mass do not exist, we have to create it and store it
@@ -216,6 +258,12 @@ DEFINE_PROPERTY( mass ) {
 //	ode::dBodySetMass(bodyID, mass);
 //	return JS_TRUE;
 //}
+
+
+/**doc
+=== note: ===
+ This class exports a NI_READ_MATRIX44 interface to read the current body's position.
+**/
 
 CONFIGURE_CLASS
 

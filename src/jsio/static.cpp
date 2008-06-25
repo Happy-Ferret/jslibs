@@ -29,20 +29,20 @@ BEGIN_STATIC
 **/
 
 /**doc
- * ,,int,, *Poll*( _descriptorArray_ [, _timeout_ = undefined ] )
+ * $INT *Pool*( _descriptorArray_ [, _timeout_ = undefined ] )
   This function listen for a readable, writable or exception event on each descriptor in _descriptorArray_.
   When an event occurs, the function tries to call the corresponding property (function) on the descriptor.
-  = =
+  $LF
   The function returns the number of events that occurs or 0 if the function timed out.
-  ===== note: =
+  $H note
    The property is NOT cleared by the function.
    If you want to stop receiving an event, you have to remove the property by yourself. eg. `delete socket1.writable`.
-  = =
+  $LF
   The second argument, _timeout_, defines the number of milliseconds the function has to wait before returning if no event has occured.
   _timeout_ can be undefined OR omited, in this case, no timeout is used.
-  ===== beware: =
+  $H beware
    No timeout means that the function will wait endless for events.
-  ===== example: =
+  $H example
   {{{
   socket1.readable = function(soc) { Print( soc.Recv(); ) }
   var count = Poll( [socket1, socket2], 1000 );
@@ -221,7 +221,7 @@ failed: // goto is the cheaper solution
 }
 
 /**doc
- * ,,bool,, *IsReadable*( _descriptor_ )
+ * $BOOL $FNAME( _descriptor_ )
   Returns true if the _descriptor_ can be read without blocking.
 **/
 DEFINE_FUNCTION( IsReadable ) {
@@ -251,7 +251,7 @@ DEFINE_FUNCTION( IsReadable ) {
 }
 
 /**doc
- * ,,bool,, *IsWritable*()
+ * $BOOL $FNAME()
   Returns true if the _descriptor_ can be write without blocking.
 **/
 DEFINE_FUNCTION( IsWritable ) {
@@ -282,7 +282,7 @@ DEFINE_FUNCTION( IsWritable ) {
 
 
 /**doc
- * ,,int,, *IntervalNow*()
+ * $INT $FNAME()
   Returns the milliseconds value of NSPR's free-running interval timer.
 **/
 DEFINE_FUNCTION( IntervalNow ) {
@@ -294,7 +294,7 @@ DEFINE_FUNCTION( IntervalNow ) {
 
 
 /**doc
- * ,,int,, *UIntervalNow*()
+ * $INT $FNAME()
   Returns the microseconds value of NSPR's free-running interval timer.
 **/
 DEFINE_FUNCTION_FAST( UIntervalNow ) {
@@ -306,7 +306,7 @@ DEFINE_FUNCTION_FAST( UIntervalNow ) {
 
 
 /**doc
- * *Sleep*( _milliseconds_ )
+ * $VOID $FNAME( _milliseconds_ )
   Sleeps _milliseconds_ milliseconds.
 **/
 DEFINE_FUNCTION( Sleep ) {
@@ -319,7 +319,7 @@ DEFINE_FUNCTION( Sleep ) {
 
 
 /**doc
- * ,,string,, *GetEnv*( name )
+ * $STR $FNAME( name )
   Retrieve the value of the given environment variable.
 **/
 DEFINE_FUNCTION( GetEnv ) {
@@ -340,7 +340,7 @@ DEFINE_FUNCTION( GetEnv ) {
 
 
 /**doc
- * ,,string,, *GetRandomNoise*( size )
+ * $STR $FNAME( size )
   Returns a random string of _size_ bytes.
 **/
 DEFINE_FUNCTION( GetRandomNoise ) {
@@ -391,8 +391,12 @@ DEFINE_FUNCTION( hton ) {
 
 
 /**doc
- * ,,???,, *WaitSemaphore*( ??? )
-  TBD
+ * $VOID $FNAME( semaphoreName )
+  Tests the value of the semaphore.
+  If the value of the semaphore is > 0, the value of the semaphore is decremented and the function returns.
+  If the value of the semaphore is 0, the function blocks until the value becomes > 0, then the semaphore is decremented and the function returns.
+  ===== note: =====
+  The "test and decrement" operation is performed atomically.
 **/
 DEFINE_FUNCTION_FAST( WaitSemaphore ) {
 
@@ -438,8 +442,8 @@ DEFINE_FUNCTION_FAST( WaitSemaphore ) {
 
 
 /**doc
- * ,,???,, *PostSemaphore*( ??? )
-  TBD
+ * $VOID $FNAME( semaphoreName )
+  Increments the value of a specified semaphore.
 **/
 DEFINE_FUNCTION_FAST( PostSemaphore ) {
 
@@ -469,7 +473,7 @@ DEFINE_FUNCTION_FAST( PostSemaphore ) {
 
 
 /**doc
- * ,,value,, *CreateProcess*( path [, argv [, waitExit ]] )
+ * $VAL *CreateProcess*( path [, argv [, waitExit ]] )
   This function starts a new process optionaly using the array _argv_ for arguments or <undefined>.
   If _waitExit_ is true, the function waits the end of the process and returns its exit code.
   If _waitExit_ is not true, the function immediately returns an array that contains an input pipe and an output pipe to the current process stdin and stdout.
@@ -579,8 +583,8 @@ DEFINE_FUNCTION_FAST( CreateProcess_ ) {
 **/
 
 /**doc
- * ,,string,, *hostName* $READONLY
-  Is the hostname with the domain name (if any)
+ * $STR $FNAME $READONLY
+  Is the host name with the domain name (if any).
 **/
 DEFINE_PROPERTY( hostName ) {
 
@@ -603,7 +607,7 @@ DEFINE_PROPERTY( hostName ) {
 
 
 /**doc
- * ,,int,, *physicalMemorySize* $READONLY
+ * $INT $FNAME $READONLY
   Is the amount of physical RAM in the system in bytes.
 **/
 DEFINE_PROPERTY( physicalMemorySize ) {
@@ -615,7 +619,7 @@ DEFINE_PROPERTY( physicalMemorySize ) {
 
 
 /**doc
- * ,,object,, *systemInfo* $READONLY
+ * $OBJ $FNAME $READONLY
   Returns an object that contains an _architecture_, a _name_ and a _release_ property.
 **/
 DEFINE_PROPERTY( systemInfo ) {
@@ -669,7 +673,7 @@ DEFINE_PROPERTY( systemInfo ) {
 
 
 /**doc
- * ,,int,, *processPriority*
+ * $INT $FNAME
   Is the current process priority among the following values:
    * `-1`: low
    * ` 0`: normal
@@ -729,7 +733,7 @@ DEFINE_PROPERTY( processPrioritySetter ) {
 
 
 /**doc
- * *currentWorkingDirectory*
+ * $STR $FNAME $READONLY
   Is the current working directory
 **/
 DEFINE_PROPERTY( currentWorkingDirectory ) {

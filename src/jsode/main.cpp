@@ -38,6 +38,23 @@ void messageHandler(int errnum, const char *msg, va_list ap) {
 //	abort(); // http://msdn2.microsoft.com/en-us/library/k089yyh0(VS.80).aspx
 }
 
+
+/**doc t:header
+$MHEADER
+ jsode is a module that manages support to ODE.
+ ODE is an open source, high performance library for simulating rigid body dynamics.
+ It is fully featured, stable, mature and platform independent with an easy to use C/C++ API.
+ It has advanced joint types and integrated collision detection with friction.
+ ODE is useful for simulating vehicles, objects in virtual reality environments and virtual creatures.
+ It is currently used in many computer games, 3D authoring tools and simulation tools.
+ $H note
+  In the following API description, ,,vec3,, type is a js 3 dimentions array like `[1, 3,5, 0]`
+**/
+
+/**doc t:footer
+$MFOOTER
+**/
+
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
 	ode::dSetErrorHandler(messageHandler);

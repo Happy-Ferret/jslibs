@@ -16,7 +16,12 @@
 #include "body.h"
 #include "mass.h"
 
+
+
 // (TBD) Mass object seems to be useless. Try to merge Body with Mass
+/**doc
+$CLASS_HEADER
+**/
 BEGIN_CLASS( Mass )
 
 JSBool GetBodyAndMass(JSContext *cx, JSObject *massObject, ode::dBodyID *pBodyID, ode::dMass *pMass) {
@@ -30,7 +35,14 @@ JSBool GetBodyAndMass(JSContext *cx, JSObject *massObject, ode::dBodyID *pBodyID
 	ode::dBodyGetMass(*pBodyID, pMass);
 	return JS_TRUE;
 }
+/**doc
+=== Functions ===
+**/
 
+/**doc
+ * *Translate*( vec3 )
+  TBD dMassTranslate + dBodySetMass
+**/
 
 DEFINE_FUNCTION( Translate ) {
 
@@ -45,7 +57,10 @@ DEFINE_FUNCTION( Translate ) {
 	return JS_TRUE;
 }
 
-
+/**doc
+ * *Adjust*( mass )
+  TBD dBodyGetMass, dMassAdjust, dBodySetMass
+**/
 DEFINE_FUNCTION( Adjust ) {
 
 	RT_ASSERT_ARGC(1);
@@ -60,6 +75,10 @@ DEFINE_FUNCTION( Adjust ) {
 }
 
 
+/**doc
+ * *SetZero*()
+  TBD dBodyGetMass, dMassSetZero, dBodySetMass
+**/
 DEFINE_FUNCTION( SetZero ) {
 
 	ode::dBodyID bodyID;
@@ -71,6 +90,10 @@ DEFINE_FUNCTION( SetZero ) {
 }
 
 
+/**doc
+ * *SetBoxTotal*( mass, vec3 )
+  TBD dBodyGetMass, dMassSetBoxTotal, dBodySetMass
+**/
 DEFINE_FUNCTION( SetBoxTotal ) {
 
 	RT_ASSERT_ARGC(2);
@@ -92,6 +115,14 @@ DEFINE_FUNCTION( SetBoxTotal ) {
 }
 
 
+/**doc
+=== Properties ===
+**/
+
+/**doc
+ * *value*
+  TBD dBodyGetMass, dBodySetMass
+**/
 DEFINE_PROPERTY( valueSetter ) {
 
 	ode::dBodyID bodyID;
@@ -115,6 +146,11 @@ DEFINE_PROPERTY( valueGetter ) {
 }
 
 
+/**doc
+ * *center*
+  TBD dBodyGetMass, dBodySetMass
+  get/set a _vec3_
+**/
 DEFINE_PROPERTY( centerSetter ) {
 
 	ode::dBodyID bodyID;

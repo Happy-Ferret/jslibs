@@ -85,7 +85,9 @@ DEFINE_FUNCTION( Print ) {
 */
 
 
-
+/**doc
+=== Static functions ===
+**/
 BEGIN_STATIC
 
 
@@ -195,7 +197,10 @@ DumpScope(JSContext *cx, JSObject *obj, FILE *fp)
 }
 
 
-
+/**doc
+ * *DumpStats( [ filename [, type [, ...] ] ] )
+  type: 'gc' | 'arena' | 'atom' | 'global' | variable
+**/
 
 static JSBool
 DumpStats(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
@@ -279,6 +284,11 @@ DumpStats(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 
 #ifdef DEBUG
 
+
+/**doc
+ * *DumpHeap( [ filename [, startThing [, thingToFind [, maxDepth [, thingToIgnore] ] ] ] ] )
+  This function in only available in DEBUG mode.
+**/
 static JSBool
 DumpHeap(JSContext *cx, uintN argc, jsval *vp)
 {
@@ -453,6 +463,10 @@ TrapHandler(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval,
     return JSTRAP_CONTINUE;
 }
 
+/**doc
+ * $VOID *Trap( ??? )
+  TBD
+**/
 static JSBool
 Trap(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
@@ -472,6 +486,10 @@ Trap(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
     return JS_SetTrap(cx, script, script->code + i, TrapHandler, str);
 }
 
+/**doc
+ * *Untrap( ??? )
+  TBD
+**/
 static JSBool
 Untrap(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
@@ -484,6 +502,10 @@ Untrap(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
     return JS_TRUE;
 }
 
+/**doc
+ * *LineToPC*( ??? )
+  TBD
+**/
 static JSBool
 LineToPC(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
@@ -505,6 +527,11 @@ LineToPC(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
     return JS_TRUE;
 }
 
+/**doc
+ * *PCToLine*( ??? )
+  TBD
+**/
+
 static JSBool
 PCToLine(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
@@ -521,7 +548,10 @@ PCToLine(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
     return JS_TRUE;
 }
 
-
+/**doc
+ * $OBJ *Locate( nFrame );
+  Returns the current script name and line number. nFrame is the number of stack frames to go back (0 is the current stack frame).
+**/
 DEFINE_FUNCTION(Locate) {
 
 	RT_ASSERT_ARGC( 1 );
@@ -592,7 +622,10 @@ JSBool GCCallTrace(JSContext *cx, JSGCStatus status) {
 	return JS_TRUE;
 }
 
-
+/**doc
+ * *TraceGC( [ filename ] )
+  TBD
+**/
 static JSBool
 TraceGC(JSContext *cx, uintN argc, jsval *vp)
 {
@@ -740,7 +773,10 @@ bool GetProcInfo( pid_t pid, LinuxProcInfo *pinfo ) {
 
 
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/**doc
+ * *currentMemoryUsage*
+  TBD
+**/
 DEFINE_PROPERTY( currentMemoryUsage ) {
 
 	uint32 bytes;
@@ -764,7 +800,10 @@ DEFINE_PROPERTY( currentMemoryUsage ) {
 	return JS_TRUE;
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/**doc
+ * *peakMemoryUsage*
+  TBD
+**/
 DEFINE_PROPERTY( peakMemoryUsage ) {
 
 	uint32 bytes;
@@ -797,7 +836,10 @@ DEFINE_PROPERTY( peakMemoryUsage ) {
 }
 
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/**doc
+ * *privateMemoryUsage*
+  TBD
+**/
 DEFINE_PROPERTY( privateMemoryUsage ) {
 
 	uint32 bytes;
@@ -822,6 +864,15 @@ DEFINE_PROPERTY( privateMemoryUsage ) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+/**doc
+=== Static properties ===
+**/
+
+/**doc
+ * *gcMallocBytes*
+  TBD
+**/
+
 DEFINE_PROPERTY( gcMallocBytes ) {
 
     uint32 *pbytes, bytes;
@@ -834,6 +885,11 @@ DEFINE_PROPERTY( gcMallocBytes ) {
 	 RT_CHECK_CALL( JS_NewNumberValue(cx, bytes, vp) );
 	return JS_TRUE;
 }
+
+/**doc
+ * *gcBytes*
+  TBD
+**/
 
 DEFINE_PROPERTY( gcBytes ) {
 
