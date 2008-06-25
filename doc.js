@@ -34,7 +34,7 @@ var api = {
 		
 		var inheritFrom = ReadArg(cx);
 		
-		cx.center = '== '+item.lastDir+'::'+className+' class '+(inheritFrom ? '^'+item.lastDir+'::'+inheritFrom+'^ ==';
+		cx.center = '== '+item.lastDir+'::'+className+' class '+(inheritFrom ? '^'+item.lastDir+'::'+inheritFrom+'^ ==' : '' );
 	},
 	
 	$MHEADER: function(cx, item) {
@@ -48,6 +48,12 @@ var api = {
 	},
 
 	$READONLY:'http://jslibs.googlecode.com/svn/wiki/readonly.png',
+
+	$RET:function(cx, item) {
+	
+		cx.center = ',,'+ReadArg(cx)+',,';
+	},
+
 	$VAL:',,value,,',
 	$INT:',,integer,,',
 	$REAL:',,real,,',
@@ -55,6 +61,7 @@ var api = {
 	$OBJ:',,object,,',
 	$BOOL:',,boolean,,',
 	$VOID:'',
+
 	$LF:'= =',
 };
 
@@ -273,7 +280,7 @@ for each ( var module in moduleList ) {
 	f.Open('w');
 	for each ( var file in module )
 		for each ( var item in file )
-			f.Write( item.text ); 
+			f.Write( item.text + '\n' ); 
 	f.Close();
 }
 
