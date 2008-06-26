@@ -47,7 +47,7 @@ void z_Finalize(JSContext *cx, JSObject *obj) {
 }
 
 /**doc
-=== Functions ===
+=== Methods ===
 **/
 
 /**doc

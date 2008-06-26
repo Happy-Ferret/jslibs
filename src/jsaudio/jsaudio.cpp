@@ -15,7 +15,7 @@
 #include "stdafx.h"
 #include "template.h"
 
-BEGIN_CLASS( Template )
+BEGIN_CLASS( Audio )
 
 DEFINE_FINALIZE() {
 }

@@ -40,7 +40,7 @@ void messageHandler(int errnum, const char *msg, va_list ap) {
 
 
 /**doc t:header
-$MHEADER
+$MODULE_HEADER
  jsode is a module that manages support to ODE.
  ODE is an open source, high performance library for simulating rigid body dynamics.
  It is fully featured, stable, mature and platform independent with an easy to use C/C++ API.
@@ -52,7 +52,7 @@ $MHEADER
 **/
 
 /**doc t:footer
-$MFOOTER
+$MODULE_FOOTER
 **/
 
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {

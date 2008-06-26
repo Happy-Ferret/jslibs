@@ -85,14 +85,13 @@ void FinalizeDescriptor(JSContext *cx, JSObject *obj) {
 }
 
 /**doc
-----
-== jsio::Descriptor class ==
+$CLASS_HEADER
 **/
 BEGIN_CLASS( Descriptor )
 
 
 /**doc
-=== Functions ===
+=== Methods ===
 **/
 
 DEFINE_CONSTRUCTOR() {

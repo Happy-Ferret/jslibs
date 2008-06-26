@@ -33,8 +33,7 @@ struct CipherPrivate {
 };
 
 /**doc
-----
-== jscrypt::Cipher class ==
+$CLASS_HEADER
 **/
 BEGIN_CLASS( Cipher )
 
@@ -75,7 +74,7 @@ DEFINE_FINALIZE() {
 }
 
 /**doc
-=== Functions ===
+=== Methods ===
 **/
 
 /**doc

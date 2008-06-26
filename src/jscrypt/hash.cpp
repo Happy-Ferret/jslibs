@@ -24,11 +24,9 @@ struct HashPrivate {
 
 
 /**doc
-----
-== jscrypt::Hash class ==
+$CLASS_HEADER
  This class is used to create block Hash objects.
 **/
-
 BEGIN_CLASS( Hash )
 
 DEFINE_FINALIZE() {
@@ -41,7 +39,7 @@ DEFINE_FINALIZE() {
 }
 
 /**doc
-=== Functions ===
+=== Methods ===
 **/
 
 /**doc

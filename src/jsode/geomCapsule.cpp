@@ -23,7 +23,7 @@ $CLASS_HEADER Geom
 BEGIN_CLASS( GeomCapsule )
 
 /**doc
-=== Functions ===
+=== Methods ===
 **/
 
 DEFINE_FINALIZE() {

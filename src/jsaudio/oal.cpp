@@ -35,6 +35,10 @@
 	RT_ASSERT_1( name != NULL, "OpenAL extension %s unavailable.", #name );
 
 
+
+/**doc
+$CLASS_HEADER
+**/
 BEGIN_CLASS( Oal )
 
 /*

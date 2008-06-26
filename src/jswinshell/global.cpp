@@ -21,9 +21,9 @@
 #include <Commdlg.h>
 #include <shlobj.h>
 
-BEGIN_STATIC
-
 /**doc fileIndex:top **/
+
+BEGIN_STATIC
 
 
 /**doc

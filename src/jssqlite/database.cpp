@@ -28,19 +28,35 @@
 // (TBD) add User-defined Collation Sequences ( http://www.sqlite.org/datatype3.html )
 
 /**doc
--------------------------------------------------------------------------------
-== jssqlite::Database class ==
+$CLASS_HEADER
 **/
-
 BEGIN_CLASS( Database )
 
 /**doc
-=== Functions ===
+=== Methods ===
 **/
 
 /**doc
- * *_Constructor_*( fileName )
+ * *_Constructor_*( fileName | undefined [, flags]  )
   This constructs a new database object. _fileName_ is the database file.
+  = =
+  If _fileName_ is an empty string, a temporary database is opened.
+  = =
+  If _fileName_ is ommited or undefined, an in-memory database is created.
+  = =
+  _flags_ can be one of the following constant:
+   * $CONST READONLY
+   * $CONST READWRITE
+   * $CONST CREATE
+   * $CONST DELETEONCLOSE
+   * $CONST EXCLUSIVE
+   * $CONST MAIN_DB
+   * $CONST TEMP_DB
+   * $CONST TRANSIENT_DB
+   * $CONST MAIN_JOURNAL
+   * $CONST TEMP_JOURNAL
+   * $CONST SUBJOURNAL
+   * $CONST MASTER_JOURNAL
 **/
 DEFINE_CONSTRUCTOR() {
 
@@ -50,7 +66,7 @@ DEFINE_CONSTRUCTOR() {
 	J_S_ASSERT_THIS_CLASS();
 
 	const char *fileName;
-	if ( J_ARG_ISDEF(1) ) // todoc
+	if ( J_ARG_ISDEF(1) )
 		RT_JSVAL_TO_STRING(  J_ARG(1), fileName );
 	else
 		fileName = ":memory:";
@@ -537,7 +553,6 @@ CONFIGURE_CLASS
 		PROPERTY_READ( memoryUsed )
 	END_STATIC_PROPERTY_SPEC
 
-	// todoc
 	BEGIN_CONST_INTEGER_SPEC
 		CONST_INTEGER( READONLY       , SQLITE_OPEN_READONLY       )
 		CONST_INTEGER( READWRITE      , SQLITE_OPEN_READWRITE      )

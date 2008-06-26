@@ -14,13 +14,16 @@
 
 #include "stdafx.h"
 
-/**doc
-----
-== jsio::IoError class ==
 
+/**doc
+$CLASS_HEADER
  You cannot construct this class.
  Its aim is to throw as an exception on any NSPR runtime error.
+**/
+BEGIN_CLASS( IoError )
 
+
+/**doc
 === Properties ===
 
  * int *os* $READONLY
@@ -34,7 +37,6 @@ TBD
 }}}
 **/
 
-BEGIN_CLASS( IoError )
 
 DEFINE_CONSTRUCTOR() {
 

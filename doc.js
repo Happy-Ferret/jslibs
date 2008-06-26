@@ -3,23 +3,30 @@ LoadModule('jsio');
 
 
 var api = {
+
 	$H: function(cx, item) {
 
 		cx.center = '===== '+ReadArg(cx)+': =====';
 	},
 
-	$FNAME: function(cx, item) {
+	$INAME: function(cx, item) {
 
 		var res = /DEFINE_(\w*)\( *(\w*) *\)/(item.source.substring(item.followingSourceTextStart, item.followingSourceTextEnd));
 		if ( res ) {
-			cx.center = '*'+res[2]+'*';
+			if ( res[1] == 'CONSTRUCTOR' ) {
+			
+				cx.center = '*_constructor_*';
+			} else {
+				
+				cx.center = '*'+res[2]+'*';
+			}
 		} else
 			cx.center = '???';
 	},
 	
 	$INCLUDE: function(cx, item) {
 	
-		cx.center = new File(ReadArg(cx)).content;
+		cx.center = new File(item.path+'/'+ReadArg(cx)).content;
 	},
 
 	$CLASS_HEADER: function(cx, item) {
@@ -37,22 +44,37 @@ var api = {
 		cx.center = '== '+item.lastDir+'::'+className+' class '+(inheritFrom ? '^'+item.lastDir+'::'+inheritFrom+'^ ==' : '' );
 	},
 	
-	$MHEADER: function(cx, item) {
+	$MODULE_HEADER: function(cx, item) {
 
-		cx.center = '#summary '+item.lastDir+' module\n' + '#labels doc\n' + '- [http://jslibs.googlecode.com/svn/trunk/'+item.lastDir+'/ source] - [JSLibs main] -\n'+'= '+item.lastDir+' module =';
+		cx.center = '#summary '+item.lastDir+' module\n' + '#labels doc\n' + '- [http://jslibs.googlecode.com/svn/trunk/'+item.path+'/ source] - [JSLibs main] -\n'+'= '+item.lastDir+' module =';
 	},
 
-	$MFOOTER: function(cx, item) {
+	$MODULE_FOOTER: function(cx, item) {
 
-		cx.center = '----\n- [http://jslibs.googlecode.com/svn/trunk/'+item.lastDir+'/ source] - [#'+item.lastDir+'_module top] - [JSLibs main] -';
+		cx.center = '----\n- [#'+item.lastDir+'_module top] - [JSLibs main] - [http://jslibs.googlecode.com/svn/trunk/'+item.path+'/ source] - [http://jslibs.googlecode.com/svn/trunk/'+item.path+'/qa.js QA] -';
 	},
 
 	$READONLY:'http://jslibs.googlecode.com/svn/wiki/readonly.png',
+
+	$WRITEONLY:',,write-only !,,',
 
 	$RET:function(cx, item) {
 	
 		cx.center = ',,'+ReadArg(cx)+',,';
 	},
+	
+//	$OP:'Instances properties',
+//	$CP:'Class properties',
+
+// === Static functions ===
+// === Static properties ===
+// === Constants ===
+
+// === Methods ===
+// === Properties ===
+// === Examples ===
+
+
 
 	$VAL:',,value,,',
 	$INT:',,integer,,',
@@ -61,6 +83,11 @@ var api = {
 	$OBJ:',,object,,',
 	$BOOL:',,boolean,,',
 	$VOID:'',
+
+	$CONST:function(cx, item) {
+	
+		cx.center = '`'+ReadArg(cx)+'`';
+	},
 
 	$LF:'= =',
 };
@@ -93,7 +120,6 @@ function RegQuote(str) {
 
 function ExpandText(str, api, item) {
 
-//    var re = /\$\w*/g;
     var re = new RegExp([RegQuote(p) for ( p in api ) ].join('|'),'g');
     var cx= {left: "", center: "", right: str};
     for (var i = 0; i < 10; i++) {

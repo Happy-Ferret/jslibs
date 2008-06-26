@@ -99,8 +99,7 @@ void Network64ToHost64( void *pval ) {
 
 
 /**doc
-----
-== jsstd::Pack class ==
+$CLASS_HEADER
  Pack is a class that helps to convert binary data into Integer, Real or String and to write an integer in a binary data string.
  The Pack class manages the system endian or network endian.
 **/
@@ -127,7 +126,7 @@ DEFINE_CONSTRUCTOR() {
 }
 
 /**doc
-=== Functions ===
+=== Methods ===
 **/
 
 /**doc

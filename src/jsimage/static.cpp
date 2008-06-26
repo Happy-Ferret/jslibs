@@ -36,6 +36,8 @@ extern "C" {
 #include <png.h>
 
 
+/**doc fileIndex:top **/
+
 BEGIN_STATIC
 
 

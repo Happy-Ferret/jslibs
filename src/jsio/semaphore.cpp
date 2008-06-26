@@ -18,6 +18,9 @@
 #include "semaphore.h"
 
 
+/**doc
+$CLASS_HEADER
+**/
 BEGIN_CLASS( Semaphore )
 
 

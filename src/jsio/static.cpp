@@ -221,7 +221,7 @@ failed: // goto is the cheaper solution
 }
 
 /**doc
- * $BOOL $FNAME( _descriptor_ )
+ * $BOOL $INAME( _descriptor_ )
   Returns true if the _descriptor_ can be read without blocking.
 **/
 DEFINE_FUNCTION( IsReadable ) {
@@ -251,7 +251,7 @@ DEFINE_FUNCTION( IsReadable ) {
 }
 
 /**doc
- * $BOOL $FNAME()
+ * $BOOL $INAME()
   Returns true if the _descriptor_ can be write without blocking.
 **/
 DEFINE_FUNCTION( IsWritable ) {
@@ -282,7 +282,7 @@ DEFINE_FUNCTION( IsWritable ) {
 
 
 /**doc
- * $INT $FNAME()
+ * $INT $INAME()
   Returns the milliseconds value of NSPR's free-running interval timer.
 **/
 DEFINE_FUNCTION( IntervalNow ) {
@@ -294,7 +294,7 @@ DEFINE_FUNCTION( IntervalNow ) {
 
 
 /**doc
- * $INT $FNAME()
+ * $INT $INAME()
   Returns the microseconds value of NSPR's free-running interval timer.
 **/
 DEFINE_FUNCTION_FAST( UIntervalNow ) {
@@ -306,7 +306,7 @@ DEFINE_FUNCTION_FAST( UIntervalNow ) {
 
 
 /**doc
- * $VOID $FNAME( _milliseconds_ )
+ * $VOID $INAME( _milliseconds_ )
   Sleeps _milliseconds_ milliseconds.
 **/
 DEFINE_FUNCTION( Sleep ) {
@@ -319,7 +319,7 @@ DEFINE_FUNCTION( Sleep ) {
 
 
 /**doc
- * $STR $FNAME( name )
+ * $STR $INAME( name )
   Retrieve the value of the given environment variable.
 **/
 DEFINE_FUNCTION( GetEnv ) {
@@ -340,7 +340,7 @@ DEFINE_FUNCTION( GetEnv ) {
 
 
 /**doc
- * $STR $FNAME( size )
+ * $STR $INAME( size )
   Returns a random string of _size_ bytes.
 **/
 DEFINE_FUNCTION( GetRandomNoise ) {
@@ -391,7 +391,7 @@ DEFINE_FUNCTION( hton ) {
 
 
 /**doc
- * $VOID $FNAME( semaphoreName )
+ * $VOID $INAME( semaphoreName )
   Tests the value of the semaphore.
   If the value of the semaphore is > 0, the value of the semaphore is decremented and the function returns.
   If the value of the semaphore is 0, the function blocks until the value becomes > 0, then the semaphore is decremented and the function returns.
@@ -442,7 +442,7 @@ DEFINE_FUNCTION_FAST( WaitSemaphore ) {
 
 
 /**doc
- * $VOID $FNAME( semaphoreName )
+ * $VOID $INAME( semaphoreName )
   Increments the value of a specified semaphore.
 **/
 DEFINE_FUNCTION_FAST( PostSemaphore ) {
@@ -583,7 +583,7 @@ DEFINE_FUNCTION_FAST( CreateProcess_ ) {
 **/
 
 /**doc
- * $STR $FNAME $READONLY
+ * $STR $INAME $READONLY
   Is the host name with the domain name (if any).
 **/
 DEFINE_PROPERTY( hostName ) {
@@ -607,7 +607,7 @@ DEFINE_PROPERTY( hostName ) {
 
 
 /**doc
- * $INT $FNAME $READONLY
+ * $INT $INAME $READONLY
   Is the amount of physical RAM in the system in bytes.
 **/
 DEFINE_PROPERTY( physicalMemorySize ) {
@@ -619,7 +619,7 @@ DEFINE_PROPERTY( physicalMemorySize ) {
 
 
 /**doc
- * $OBJ $FNAME $READONLY
+ * $OBJ $INAME $READONLY
   Returns an object that contains an _architecture_, a _name_ and a _release_ property.
 **/
 DEFINE_PROPERTY( systemInfo ) {
@@ -673,7 +673,7 @@ DEFINE_PROPERTY( systemInfo ) {
 
 
 /**doc
- * $INT $FNAME
+ * $INT $INAME
   Is the current process priority among the following values:
    * `-1`: low
    * ` 0`: normal
@@ -733,7 +733,7 @@ DEFINE_PROPERTY( processPrioritySetter ) {
 
 
 /**doc
- * $STR $FNAME $READONLY
+ * $STR $INAME $READONLY
   Is the current working directory
 **/
 DEFINE_PROPERTY( currentWorkingDirectory ) {

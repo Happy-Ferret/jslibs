@@ -140,7 +140,7 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 jswinhost ( javascript windows host ) is a small executable file that run javascript programs under a windows environment.
 The main difference with jshost is the jswinhost do not popup any windows
 
-=== Functions ===
+=== Methods ===
 
  * status *LoadModule*( moduleFileName )
   same as [jshost]

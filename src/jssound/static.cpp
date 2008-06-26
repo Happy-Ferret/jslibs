@@ -36,6 +36,8 @@ typedef struct {
 } StreamReadInfo;
 
 
+/**doc fileIndex:top **/
+
 BEGIN_STATIC
 
 size_t readStream( void *ptr, size_t size, size_t nmemb, void *pv ) {
@@ -53,8 +55,14 @@ size_t readStream( void *ptr, size_t size, size_t nmemb, void *pv ) {
 static ov_callbacks ovCallbacks = { readStream,0,0,0 };
 
 
+/**doc
+ * $RET soundObject $INAME( streamObject )
+  Decodes a ogg vorbis sample to a sound object.
+  = =
+  The streamObject argument is any object that supports the StreamRead Native Interface ( file, socket, new Stream(buffer), ... )
+**/
 DEFINE_FUNCTION_FAST( DecodeOggVorbis ) {
-	
+
 	J_S_ASSERT_ARG_MIN( 1 );
 	J_S_ASSERT_OBJECT( J_FARG(1) );
 	JSObject *StreamObj = JSVAL_TO_OBJECT( J_FARG(1) );
@@ -93,15 +101,15 @@ DEFINE_FUNCTION_FAST( DecodeOggVorbis ) {
 		bytes = ov_read(&descriptor, buffer+sizeof(int), bufferSize-sizeof(int), 0, bits / 8, 1, &bitStream);
 
 		if ( bytes < 0 ) { // 0 indicates EOF
-		
+
 			*(int*)buffer = 0;
 
 			// (TBD) manage errors
 
 			if ( bytes == OV_HOLE ) { // indicates there was an interruption in the data. (one of: garbage between pages, loss of sync followed by recapture, or a corrupt page)
-				
+
 			} else if ( bytes == OV_EINVAL ) { // doc. indicates that an invalid stream section was supplied to libvorbisfile, or the requested link is corrupt.
-				
+
 				break;
 			}
 		} else {
@@ -127,7 +135,7 @@ DEFINE_FUNCTION_FAST( DecodeOggVorbis ) {
 	// because the stack is LIFO, we have to start from the end.
 	buf += totalSize;
 	while( !StackIsEnd(&stack) ) {
-		
+
 		char *buffer = (char *)StackPop(&stack);
 		int size = *(int*)buffer;
 		buf = buf - size;
@@ -164,7 +172,7 @@ sf_count_t SfGetFilelen(void *user_data) {
 sf_count_t SfSeek(sf_count_t offset, int whence, void *user_data) {
 
 	StreamReadInfo *pv = (StreamReadInfo *)user_data;
-	
+
 	jsval tmpVal;
 	int position, available;
 
@@ -239,6 +247,12 @@ sf_count_t SfRead(void *ptr, sf_count_t count, void *user_data) {
 static SF_VIRTUAL_IO sfCallbacks = { SfGetFilelen, SfSeek, SfRead, 0, SfTell };
 
 
+/**doc
+ * $RET soundObject $INAME( streamObject )
+  Decodes a sample from any supported sound format to a sound object.
+  = =
+  The streamObject argument is any object that supports the StreamRead Native Interface ( file, socket, new Stream(buffer), ... )
+**/
 DEFINE_FUNCTION_FAST( DecodeSound ) {
 
 	J_S_ASSERT_ARG_MIN( 1 );
@@ -275,7 +289,7 @@ DEFINE_FUNCTION_FAST( DecodeSound ) {
 		char *buffer = (char*)malloc(bufferSize);
 		J_S_ASSERT_ALLOC(buffer);
 		StackPush(&stack, buffer);
-		
+
 		char *data = buffer+sizeof(int);
 		int *len = (int*)buffer;
 		int maxlen = bufferSize - sizeof(int);
@@ -312,14 +326,14 @@ DEFINE_FUNCTION_FAST( DecodeSound ) {
 	// because the stack is LIFO, we have to start from the end.
 	buf += totalSize;
 	while( !StackIsEnd(&stack) ) {
-		
+
 		char *buffer = (char *)StackPop(&stack);
 		int size = *(int*)buffer;
 		buf = buf - size;
 		memcpy( buf, buffer+sizeof(int), size );
 		free(buffer);
 	}
-	
+
 	return JS_TRUE;
 }
 
@@ -336,7 +350,7 @@ CONFIGURE_STATIC
 
 END_STATIC
 
-/* 
+/*
 
 	Vorbisfile Documentation:
 		http://xiph.org/vorbis/doc/vorbisfile/index.html
@@ -349,14 +363,14 @@ END_STATIC
 
 	decoding wav files with libsndfile:
 		http://www.mega-nerd.com/libsndfile/
-	
+
 	decoding mp3 files with liblame:
 		http://sourceforge.net/projects/lame (dl: http://sourceforge.net/project/showfiles.php?group_id=290)
 
 	external libraries used by audacity:
 		http://audacity.cvs.sourceforge.net/audacity/audacity-src/win/Projects/
 
-	other sound libraries: 
+	other sound libraries:
 		http://ccrma.stanford.edu/software/snd/sndlib/
 		http://www.68k.org/~michael/audiofile/
 

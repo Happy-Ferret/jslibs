@@ -35,10 +35,8 @@ static JSBool BufferGet( JSContext *cx, JSObject *obj, const char **buf, size_t 
 }
 
 /**doc
-----
-== jsio::File class ==
+$CLASS_HEADER
 **/
-
 BEGIN_CLASS( MemoryMapped )
 
 DEFINE_FINALIZE() {
@@ -53,7 +51,7 @@ DEFINE_FINALIZE() {
 }
 
 /**doc
-=== Functions ===
+=== Methods ===
 **/
 
 /**doc

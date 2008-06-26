@@ -40,6 +40,9 @@ typedef struct {
 //}
 
 
+/**doc
+$CLASS_HEADER
+**/
 BEGIN_CLASS( Window )
 
 //void Finalize(JSContext *cx, JSObject *obj) {

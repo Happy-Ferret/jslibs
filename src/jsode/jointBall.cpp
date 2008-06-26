@@ -22,7 +22,7 @@ $CLASS_HEADER Joint
 BEGIN_CLASS( JointBall )
 
 /**doc
-=== Functions ===
+=== Methods ===
 **/
 
 /**doc

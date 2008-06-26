@@ -37,6 +37,9 @@ JSBool NativeInterfaceBufferGet( JSContext *cx, JSObject *obj, const char **buf,
 }
 
 
+/**doc
+$CLASS_HEADER
+**/
 BEGIN_CLASS( BString )
 
 
@@ -105,7 +108,12 @@ DEFINE_FINALIZE() {
 		JS_free(cx, pv);
 }
 
-
+/**doc
+ * $INAME()
+  Creates an object that can contain binary data.
+  $H note
+  When called in a non-constructor context, Object behaves identically.
+**/
 DEFINE_CONSTRUCTOR() {
 
 	if ( JS_IsConstructing(cx) == JS_FALSE ) { // supports this form (w/o new operator) : result.param1 = Blob('Hello World');
@@ -156,7 +164,10 @@ DEFINE_FUNCTION_FAST( Set ) {
 }
 */
 
-
+/**doc
+ * $RET BString $INAME( ??? )
+  TBD
+**/
 DEFINE_FUNCTION_FAST( Add ) {
 
 	J_S_ASSERT_ARG_MIN( 1 );
@@ -234,6 +245,10 @@ DEFINE_FUNCTION_FAST( Add ) {
 
 
 
+/**doc
+ * $RET ??? $INAME
+  TBD
+**/
 DEFINE_FUNCTION_FAST( Substr ) { // http://developer.mozilla.org/en/docs/Core_JavaScript_1.5_Reference:Global_Objects:String:substr
 
 	J_S_ASSERT_ARG_MIN(1);
@@ -300,6 +315,10 @@ DEFINE_FUNCTION_FAST( IndexOf ) {
 */
 
 
+/**doc
+ * $STR ??? $INAME
+  TBD
+**/
 DEFINE_FUNCTION_FAST( toString ) { // and valueOf
 
 	JSString *jsstr;
@@ -310,6 +329,10 @@ DEFINE_FUNCTION_FAST( toString ) { // and valueOf
 }
 
 
+/**doc
+ * $INT ??? $INAME
+  TBD
+**/
 DEFINE_PROPERTY( length ) {
 
 	size_t length;
@@ -349,6 +372,11 @@ DEFINE_NEW_RESOLVE() { // support of data[n]  and  n in data
 */
 
 
+/**doc
+ * $RET char *_[] operator_*
+  TBD
+**/
+
 DEFINE_GET_PROPERTY() {
 
 	if ( !JSVAL_IS_INT(id) )
@@ -377,7 +405,7 @@ DEFINE_GET_PROPERTY() {
 
 
 DEFINE_SET_PROPERTY() {
-	
+
 	J_S_ASSERT( !JSVAL_IS_NUMBER(id), "Cannot modify immutable string" );
 
 /* mutable BString are no more supported

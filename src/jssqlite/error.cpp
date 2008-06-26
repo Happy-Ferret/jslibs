@@ -16,14 +16,14 @@
 #include "error.h"
 
 /**doc
-----
-== jssqlite::SqliteError class ==
-
+$CLASS_HEADER
  Its aim is to be throw as an exception on any SQLite runtime error.
+ $H note
+ You cannot construct this class.
+**/
+BEGIN_CLASS( SqliteError )
 
- ===== Note: =====
-  You cannot construct this class.
-
+/**doc
 === Properties ===
 
  * int *code* $READONLY
@@ -44,8 +44,6 @@ try {
 }
 }}}
 **/
-
-BEGIN_CLASS( SqliteError )
 
 DEFINE_CONSTRUCTOR() {
 

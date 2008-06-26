@@ -31,6 +31,9 @@ static int ReadMatrix(JSContext *cx, JSObject *obj, float **m) { // Doc: __decls
 	return true;
 }
 
+/**doc
+$CLASS_HEADER
+**/
 BEGIN_CLASS( Transformation )
 
 

@@ -65,6 +65,9 @@ JSBool StreamRead( JSContext *cx, JSObject *obj, char *buf, unsigned int *amount
 }
 
 
+/**doc
+$CLASS_HEADER
+**/
 BEGIN_CLASS( Stream )
 
 

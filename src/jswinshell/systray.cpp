@@ -265,13 +265,12 @@ DWORD WINAPI WinThread( LPVOID lpParam ) {
 
 
 /**doc
-----
-== jswinshell::Systray class ==
+$CLASS_HEADER
 **/
 BEGIN_CLASS( Systray )
 
 /**doc
-=== Functions ===
+=== Methods ===
 **/
 
 /**doc

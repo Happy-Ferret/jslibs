@@ -265,6 +265,9 @@ inline JSBool InitCurveData( JSContext* cx, jsval value, int length, float *curv
 
 
 
+/**doc
+$CLASS_HEADER
+**/
 BEGIN_CLASS( Texture )
 
 JSBool NativeInterfaceBufferGet( JSContext *cx, JSObject *obj, const char **buf, size_t *size ) {

@@ -20,13 +20,12 @@
 #include "objex.h"
 
 /**doc t:header
-#summary jsobjex module
-#labels doc
-= jsobjex module =
+$MODULE_HEADER
  jsobjex is a module that contains only ObjEx class.
 **/
 
 /**doc t:footer
+$MODULE_FOOTER
 **/
 extern "C" DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 

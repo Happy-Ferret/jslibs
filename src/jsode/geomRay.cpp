@@ -23,7 +23,7 @@ $CLASS_HEADER Geom
 BEGIN_CLASS( GeomRay )
 
 /**doc
-=== Functions ===
+=== Methods ===
 **/
 DEFINE_FINALIZE() {
 

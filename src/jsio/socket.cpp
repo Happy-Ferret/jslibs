@@ -20,11 +20,9 @@
 #define MAX_IP_STRING 39 // IPv4 & IPv6
 
 /**doc
-----
-== jsio::Socket class ^jsio::Descriptor^ ==
+$CLASS_HEADER Descriptor
  Socket class is used to create a non-blocking TCP socket.
 **/
-
 BEGIN_CLASS( Socket )
 
 
@@ -34,7 +32,7 @@ DEFINE_FINALIZE() {
 }
 
 /**doc
-=== Functions ===
+=== Methods ===
 **/
 
 /**doc

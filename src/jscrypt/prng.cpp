@@ -18,7 +18,7 @@
 
 /**doc
 ----
-== jscrypt::Prng class ==
+$CLASS_HEADER
  This class is used to create pseudo random number generators objects.
 **/
 BEGIN_CLASS( Prng )
@@ -35,7 +35,7 @@ DEFINE_FINALIZE() {
 }
 
 /**doc
-=== Functions ===
+=== Methods ===
 **/
 
 /**doc

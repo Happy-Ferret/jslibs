@@ -15,6 +15,9 @@
 #include "stdafx.h"
 #include "error.h"
 
+/**doc
+$CLASS_HEADER
+**/
 BEGIN_CLASS( WinError )
 
 DEFINE_CONSTRUCTOR() {

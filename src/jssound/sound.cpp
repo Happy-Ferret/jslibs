@@ -15,6 +15,7 @@
 #include "stdafx.h"
 #include "sound.h"
 
+
 BEGIN_CLASS( Sound ) // Start the definition of the class. It defines some symbols: _name, _class, _prototype
 
 DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are no remaing references to this object.

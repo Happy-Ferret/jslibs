@@ -25,8 +25,8 @@
 /**doc
 ----
 == jsz::ZError class ==
-You cannot construct this class.
-Its aim is to throw as an exception on any zlib runtime error.
+ You cannot construct this class.
+ Its aim is to throw as an exception on any zlib runtime error.
 **/
 
 JSClass ZError_class = {

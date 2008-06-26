@@ -17,6 +17,8 @@
 #include "static.h"
 
 
+/**doc fileIndex:top **/
+
 BEGIN_STATIC
 
 

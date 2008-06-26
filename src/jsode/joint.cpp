@@ -66,7 +66,7 @@ inline JSBool SetJoint( JSContext *cx, JSObject *obj, jsval *b1, jsval *b2 ) {
 
 
 /**doc
-=== Functions ===
+=== Methods ===
 **/
 
 /**doc

@@ -20,10 +20,19 @@
 
 #include "../common/stack.h"
 
+/**doc fileIndex:top **/
+
 BEGIN_STATIC
 
+/**doc
+=== Static functions ==
+**/
 
-DEFINE_FUNCTION( Stringify ) { // todoc
+/**doc
+ * $STR $INAME( value )
+  This function converts any value of stream into a string.
+**/
+DEFINE_FUNCTION( Stringify ) {
 
 	J_S_ASSERT_ARG_MIN(1);
 	J_S_ASSERT_ARG_MAX(1);

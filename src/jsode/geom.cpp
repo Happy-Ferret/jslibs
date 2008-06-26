@@ -68,7 +68,7 @@ $CLASS_HEADER
 BEGIN_CLASS( Geom )
 
 /**doc
-=== Functions ===
+=== Methods ===
 **/
 
 /**doc

@@ -45,13 +45,12 @@ PRIntn FileOpenFlagsFromString( const char *strFlags, int length ) {
 }
 
 /**doc
-----
-== jsio::File class ^jsio::Descriptor^ ==
+$CLASS_HEADER Descriptor
 **/
 BEGIN_CLASS( File )
 
 /**doc
-=== Functions ===
+=== Methods ===
 **/
 
 DEFINE_FINALIZE() {
@@ -209,9 +208,9 @@ DEFINE_FUNCTION( Lock ) {
 
 /**doc
  * *position*
-  Get or set the current position of the file pointer.
+  Get or set the current position of the file pointer. Same as Seek() function used with SEEK_SET.
 **/
-DEFINE_PROPERTY( positionSetter ) { // todoc
+DEFINE_PROPERTY( positionSetter ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
 	RT_ASSERT_RESOURCE( fd );
@@ -225,7 +224,7 @@ DEFINE_PROPERTY( positionSetter ) { // todoc
 	return JS_TRUE;
 }
 
-DEFINE_PROPERTY( positionGetter ) { // todoc
+DEFINE_PROPERTY( positionGetter ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
 	RT_ASSERT_RESOURCE( fd );

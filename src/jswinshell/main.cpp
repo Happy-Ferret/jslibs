@@ -24,14 +24,11 @@ static bool _defaultUnsafeMode = false;
 extern bool *_pUnsafeMode = &_defaultUnsafeMode;
 
 /**doc t:header
-#summary jswinshell module
-#labels doc
-
-= jswinshell module =
- [http://code.google.com/p/jslibs/ home] *>* [JSLibs] *>* [jswinshell] - [http://jslibs.googlecode.com/svn/trunk/jswinshell/ http://jslibs.googlecode.com/svn/wiki/source.png]
+$MODULE_HEADER
 **/
 
 /**doc t:footer
+$MODULE_FOOTER
 **/
 
 extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj) {

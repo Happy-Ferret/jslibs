@@ -21,16 +21,12 @@ static bool _defaultUnsafeMode = false;
 extern bool *_pUnsafeMode = &_defaultUnsafeMode;
 
 /**doc t:header
-#summary jsz module
-#labels doc
-
-= jsz module =
-This module manage zlib data compression and decompression.
-[http://en.wikipedia.org/wiki/Zlib more].
+$MODULE_HEADER
+ This module manage zlib data compression and decompression. [http://en.wikipedia.org/wiki/Zlib more].
 **/
 
 /**doc t:footer
-
+$MODULE_FOOTER
 **/
 extern "C" DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
@@ -38,7 +34,6 @@ extern "C" DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	J_CHK( GetConfigurationValue(cx, NAME_CONFIGURATION_UNSAFE_MODE_PTR, &unsafeModePtrVal) );
 	if ( unsafeModePtrVal != JSVAL_VOID )
 		_pUnsafeMode = (bool*)JSVAL_TO_PRIVATE(unsafeModePtrVal);
-
 
 	zInitClass( cx, obj );
 	InitErrorClass( cx, obj );

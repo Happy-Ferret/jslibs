@@ -69,6 +69,9 @@ Manage GL extensions:
 
 
 
+/**doc
+$CLASS_HEADER
+**/
 BEGIN_CLASS( Ogl )
 
 

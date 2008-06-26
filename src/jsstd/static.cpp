@@ -30,9 +30,9 @@
 	#define O_BINARY 0
 #endif
 
-BEGIN_STATIC
-
 /**doc fileIndex:top **/
+
+BEGIN_STATIC
 
 
 /**doc

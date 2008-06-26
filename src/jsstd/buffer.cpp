@@ -388,11 +388,9 @@ JSBool AddBuffer( JSContext *cx, JSObject *destBuffer, JSObject *srcBuffer ) {
 
 
 /**doc
-----
-== jsstd::Buffer class ==
+$CLASS_HEADER
  Buffer class is a simple buffer that allows arbitrary length input and output.
 **/
-
 BEGIN_CLASS( Buffer )
 
 DEFINE_FINALIZE() {
@@ -410,7 +408,7 @@ DEFINE_FINALIZE() {
 
 
 /**doc
-=== Functions ===
+=== Methods ===
 **/
 
 /**doc

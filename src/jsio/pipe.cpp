@@ -17,6 +17,9 @@
 #include "descriptor.h"
 #include "pipe.h"
 
+/**doc
+$CLASS_HEADER
+**/
 BEGIN_CLASS( Pipe )
 
 DEFINE_FINALIZE() {

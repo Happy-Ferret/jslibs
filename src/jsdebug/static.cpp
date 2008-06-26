@@ -85,11 +85,13 @@ DEFINE_FUNCTION( Print ) {
 */
 
 
+/**doc fileIndex:top **/
+
+BEGIN_STATIC
+
 /**doc
 === Static functions ===
 **/
-BEGIN_STATIC
-
 
 /*
 static void

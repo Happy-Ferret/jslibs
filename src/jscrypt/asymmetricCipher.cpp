@@ -59,8 +59,7 @@ JSBool SlotGetPrng(JSContext *cx, JSObject *obj, int *prngIndex, prng_state **pr
 
 
 /**doc
-----
-== jscrypt::AsymmetricCipher class ==
+$CLASS_HEADER
 **/
 BEGIN_CLASS( AsymmetricCipher )
 
@@ -89,7 +88,7 @@ DEFINE_FINALIZE() {
 }
 
 /**doc
-=== Functions ===
+=== Methods ===
 **/
 
 /**doc

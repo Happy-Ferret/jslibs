@@ -23,7 +23,7 @@ $CLASS_HEADER Geom
 BEGIN_CLASS( GeomPlane )
 
 /**doc
-=== Functions ===
+=== Methods ===
 **/
 
 DEFINE_FINALIZE() {

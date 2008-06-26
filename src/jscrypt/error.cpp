@@ -16,6 +16,9 @@
 #include "error.h"
 
 
+/**doc
+$CLASS_HEADER
+**/
 BEGIN_CLASS( CryptError )
 
 DEFINE_CONSTRUCTOR() {

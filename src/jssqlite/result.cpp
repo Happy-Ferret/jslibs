@@ -166,9 +166,7 @@ JSBool SqliteColumnToJsval( JSContext *cx, sqlite3_stmt *pStmt, int iCol, jsval 
 }
 
 /**doc
-----
-== jssqlite::Result class ==
-
+$CLASS_HEADER
  A Result object is used to store a compiled SQL statement ready to be executed.
  = =
  When a statement has been prepared with Database.*Query* function, you need to execute it ( with *Step* function ) before any data can be read.
@@ -177,6 +175,7 @@ JSBool SqliteColumnToJsval( JSContext *cx, sqlite3_stmt *pStmt, int iCol, jsval 
   You cannot construct this class yourself.
 **/
 BEGIN_CLASS( Result )
+
 
 DEFINE_FINALIZE() {
 
@@ -198,7 +197,7 @@ DEFINE_FINALIZE() {
 }
 
 /**doc
-=== Functions ===
+=== Methods ===
 **/
 
 /**doc

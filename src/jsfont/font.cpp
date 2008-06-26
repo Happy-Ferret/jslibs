@@ -53,6 +53,9 @@ typedef struct {
 } FaceInfo;
 */
 
+/**doc
+$CLASS_HEADER
+**/
 BEGIN_CLASS( Font ) // Start the definition of the class. It defines some symbols: _name, _class, _prototype
 
 DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are no remaing references to this object.
@@ -65,6 +68,10 @@ DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are
 	}
 }
 
+/**doc
+ * $INAME()
+  TBD
+**/
 DEFINE_CONSTRUCTOR() { // Called when the object is constructed ( a = new Template() ) or activated ( a = Template() ). To distinguish the cases, use JS_IsConstructing() or use the RT_ASSERT_CONSTRUCTING() macro.
 
 	J_S_ASSERT_CONSTRUCTING();
@@ -109,6 +116,10 @@ DEFINE_FUNCTION_FAST( SetSize ) {
 }
 */
 
+/**doc
+ * $RET imageObject $INAME( string )
+  TBD
+**/
 DEFINE_FUNCTION_FAST( DrawChar ) {
 
 	J_S_ASSERT_ARG_MIN(1);
@@ -147,6 +158,10 @@ DEFINE_FUNCTION_FAST( DrawChar ) {
 
 
 
+/**doc
+ * $RET imageObject $INAME( string )
+  TBD
+**/
 DEFINE_FUNCTION_FAST( DrawString ) {
 
 	J_S_ASSERT_ARG_MIN(1);
@@ -240,12 +255,12 @@ DEFINE_FUNCTION_FAST( DrawString ) {
 		// prepare next char
 		advance = 0;
 		if ( useKerning && prevGlyphIndex && glyphIndex ) {
-			
+
 			FT_Vector delta;
 			FTCHK( FT_Get_Kerning( face, prevGlyphIndex, glyphIndex, FT_KERNING_DEFAULT, &delta ) );
 			advance += delta.x;
 		}
-		
+
 		advance += face->glyph->advance.x + (letterSpacing << 6);
 		posX += advance;
 		prevGlyphIndex = glyphIndex;
@@ -257,7 +272,7 @@ DEFINE_FUNCTION_FAST( DrawString ) {
 	}
 
 	// Doc.	The ascender is the vertical distance from the horizontal baseline to the highest ‘character’ coordinate in a font face.
-	//			Unfortunately, font formats define the ascender differently. For some, it represents the ascent of all capital latin characters (without accents), 
+	//			Unfortunately, font formats define the ascender differently. For some, it represents the ascent of all capital latin characters (without accents),
 	//			for others it is the ascent of the highest accented character, and finally, other formats define it as being equal to global_bbox.yMax.
 	posY += face->size->metrics.ascender + -face->size->metrics.descender;
 
@@ -286,10 +301,10 @@ DEFINE_FUNCTION_FAST( DrawString ) {
 		// render glyphs in the bitmap
 		memset(buf, 0, bufLength);
 		for ( i=0; i<strlen; i++ ) {
-		
+
 			if ( glyphs[i].image->format != FT_GLYPH_FORMAT_BITMAP )
 				FTCHK( FT_Glyph_To_Bitmap( &(glyphs[i].image), FT_RENDER_MODE_NORMAL, 0, 1 ) );
-				
+
 			FT_BitmapGlyph bitmap = (FT_BitmapGlyph)glyphs[i].image;
 
 			int dPosX = horizontalPadding + (glyphs[i].pos.x >> 6) + bitmap->left;
@@ -302,7 +317,7 @@ DEFINE_FUNCTION_FAST( DrawString ) {
 				if ( py >= 0 && py < height ) {
 
 					for ( x=0; x<bitmap->bitmap.width; x++ ) {
-						
+
 						px = dPosX + x;
 						if ( px >= 0 &&  px < width ) {
 
@@ -321,6 +336,10 @@ DEFINE_FUNCTION_FAST( DrawString ) {
 }
 
 
+/**doc
+ * $INT $INAME $READONLY
+  TBD
+**/
 DEFINE_PROPERTY( ascender ) {
 
 	FT_Face face = (FT_Face)JS_GetPrivate(cx, J_FOBJ);
@@ -328,7 +347,11 @@ DEFINE_PROPERTY( ascender ) {
 	*vp = INT_TO_JSVAL(face->size->metrics.ascender >> 6);
 	return JS_TRUE;
 }
-	
+
+/**doc
+ * $INT $INAME $READONLY
+  TBD
+**/
 DEFINE_PROPERTY( descender ) {
 
 	FT_Face face = (FT_Face)JS_GetPrivate(cx, J_FOBJ);
@@ -337,6 +360,10 @@ DEFINE_PROPERTY( descender ) {
 	return JS_TRUE;
 }
 
+/**doc
+ * $INT $INAME $READONLY
+  TBD
+**/
 DEFINE_PROPERTY( width ) {
 
 	FT_Face face = (FT_Face)JS_GetPrivate(cx, J_FOBJ);
@@ -346,6 +373,10 @@ DEFINE_PROPERTY( width ) {
 }
 
 
+/**doc
+ * $INT $INAME $READONLY
+  TBD
+**/
 DEFINE_PROPERTY( size ) {
 
 	FT_Face face = (FT_Face)JS_GetPrivate(cx, J_OBJ);
@@ -361,6 +392,10 @@ DEFINE_PROPERTY( size ) {
 }
 
 
+/**doc
+ * $INT $INAME $WRITEONLY
+  TBD
+**/
 DEFINE_PROPERTY( encoding ) {
 
 	FT_Face face = (FT_Face)JS_GetPrivate(cx, obj);
@@ -372,6 +407,10 @@ DEFINE_PROPERTY( encoding ) {
 }
 
 
+/**doc
+ * $INT $INAME $READONLY
+  TBD
+**/
 DEFINE_PROPERTY( poscriptName ) {
 
 	FT_Face face = (FT_Face)JS_GetPrivate(cx, obj);
@@ -382,6 +421,10 @@ DEFINE_PROPERTY( poscriptName ) {
 
 
 
+/**doc
+ * $BOOL $INAME
+  TBD
+**/
 DEFINE_PROPERTY_GETTER( useKerning ) {
 
 	return JS_GetReservedSlot(cx, obj, FONT_SLOT_USEKERNING, vp);
@@ -393,6 +436,10 @@ DEFINE_PROPERTY_SETTER( useKerning ) {
 }
 
 
+/**doc
+ * $INT $INAME
+  TBD
+**/
 DEFINE_PROPERTY_GETTER( horizontalPadding ) {
 
 	return JS_GetReservedSlot(cx, obj, FONT_SLOT_HORIZONTALPADDING, vp);
@@ -404,6 +451,10 @@ DEFINE_PROPERTY_SETTER( horizontalPadding ) {
 }
 
 
+/**doc
+ * $INT $INAME
+  TBD
+**/
 DEFINE_PROPERTY_GETTER( verticalPadding ) {
 
 	return JS_GetReservedSlot(cx, obj, FONT_SLOT_VERTICALPADDING, vp);
@@ -415,6 +466,10 @@ DEFINE_PROPERTY_SETTER( verticalPadding ) {
 }
 
 
+/**doc
+ * $INT $INAME
+  TBD
+**/
 DEFINE_PROPERTY_GETTER( letterSpacing ) {
 
 	return JS_GetReservedSlot(cx, obj, FONT_SLOT_LETTERSPACING, vp);
@@ -426,6 +481,10 @@ DEFINE_PROPERTY_SETTER( letterSpacing ) {
 }
 
 
+/**doc
+ * $BOOL $INAME
+  TBD
+**/
 DEFINE_PROPERTY_GETTER( italic ) {
 
 	return JS_GetReservedSlot(cx, obj, FONT_SLOT_ITALIC, vp);
@@ -437,6 +496,10 @@ DEFINE_PROPERTY_SETTER( italic ) {
 }
 
 
+/**doc
+ * $BOOL $INAME
+  TBD
+**/
 DEFINE_PROPERTY_GETTER( bold ) {
 
 	return JS_GetReservedSlot(cx, obj, FONT_SLOT_BOLD, vp);

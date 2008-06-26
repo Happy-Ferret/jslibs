@@ -16,9 +16,10 @@
 #include "misc.h"
 
 
+/**doc fileIndex:top **/
+
 BEGIN_STATIC
 
-/**doc fileIndex:top **/
 
 /**doc
 === Static functions ===

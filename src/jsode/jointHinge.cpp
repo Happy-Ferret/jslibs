@@ -22,7 +22,7 @@ $CLASS_HEADER Joint
 BEGIN_CLASS( JointHinge )
 
 /**doc
-=== Functions ===
+=== Methods ===
 **/
 
 /**doc
@@ -44,7 +44,7 @@ DEFINE_CONSTRUCTOR() {
 
 
 /**doc
- * $FNAME( torque )
+ * $INAME( torque )
   TBD
 **/
 DEFINE_FUNCTION( AddTorque ) {

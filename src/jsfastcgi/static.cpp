@@ -38,6 +38,7 @@ void onExit() {
 //	longjmp(env,0); // if the value argument of longjmp is 0, setjmp returns 1.
 }
 
+/**doc fileIndex:top **/
 
 BEGIN_STATIC
 

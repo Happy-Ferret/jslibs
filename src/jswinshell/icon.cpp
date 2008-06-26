@@ -18,13 +18,12 @@
 #include "stdlib.h"
 
 /**doc
-----
-== jswinshell::Icon class ==
+$CLASS_HEADER
 **/
 BEGIN_CLASS( Icon )
 
 /**doc
-=== Functions ===
+=== Methods ===
 **/
 
 /**doc

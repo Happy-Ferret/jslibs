@@ -26,15 +26,11 @@ static bool _defaultUnsafeMode = false;
 extern bool *_pUnsafeMode = &_defaultUnsafeMode;
 
 /**doc t:header
-summary jsstd module
-#labels doc
-- [http://jslibs.googlecode.com/svn/trunk/jsstd/ source] - [JSLibs main] -
-= jsstd module =
+$MODULE_HEADER
 **/
 
 /**doc t:footer
-----
-- [http://jslibs.googlecode.com/svn/trunk/jsstd/ source] - [#jsstd_module top] - [JSLibs main] -
+$MODULE_FOOTER
 **/
 
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {

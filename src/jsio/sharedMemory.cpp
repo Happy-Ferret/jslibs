@@ -66,11 +66,9 @@ static JSBool BufferGet( JSContext *cx, JSObject *obj, const char **buf, size_t 
 
 
 /**doc
-----
-== jsio::SharedMemory class ==
+$CLASS_HEADER
  This class manages shared memory between two or more process.
 **/
-
 BEGIN_CLASS( SharedMemory )
 
 DEFINE_FINALIZE() {
@@ -112,7 +110,7 @@ DEFINE_FINALIZE() {
 
 
 /**doc
-=== Functions ===
+=== Methods ===
 **/
 
 /**doc

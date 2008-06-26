@@ -23,7 +23,7 @@ $CLASS_HEADER Geom
 BEGIN_CLASS( GeomSphere )
 
 /**doc
-=== Functions ===
+=== Methods ===
 **/
 
 DEFINE_FINALIZE() {

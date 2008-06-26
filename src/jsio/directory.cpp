@@ -24,14 +24,13 @@
 #define _SKIP_OTHER 128
 
 /**doc
-----
-== jsio::Directory class ==
+$CLASS_HEADER
  This class manages directory I/O Functions.
 **/
 BEGIN_CLASS( Directory )
 
 /**doc
-=== Functions ===
+=== Methods ===
 **/
 
 DEFINE_FINALIZE() {

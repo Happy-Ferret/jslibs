@@ -36,7 +36,7 @@ JSBool GetBodyAndMass(JSContext *cx, JSObject *massObject, ode::dBodyID *pBodyID
 	return JS_TRUE;
 }
 /**doc
-=== Functions ===
+=== Methods ===
 **/
 
 /**doc

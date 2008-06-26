@@ -19,13 +19,13 @@ static bool _defaultUnsafeMode = false;
 extern bool *_pUnsafeMode = &_defaultUnsafeMode;
 
 /**doc t:header
-$MHEADER
+$MODULE_HEADER
  This module is based on Netscape Portable Runtime (NSPR) that provides a platform-neutral API for system level and libc like functions.
  NSPR API is used in the Mozilla client, many of Netscape/AOL/iPlanet's and other software offerings.
 **/
 
 /**doc t:footer
-$MFOOTER
+$MODULE_FOOTER
 **/
 
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
