@@ -2,11 +2,13 @@ LoadModule('jsstd');
 LoadModule('jsio');
 
 
+var api_DEF = {};
+
 var api = {
 
 	$H: function(cx, item) {
 
-		cx.center = '===== '+ReadArg(cx)+': =====';
+		cx.center = '===== '+ReadEol(cx)+': =====';
 	},
 
 	$INAME: function(cx, item) {
@@ -41,7 +43,7 @@ var api = {
 		
 		var inheritFrom = ReadArg(cx);
 		
-		cx.center = '== '+item.lastDir+'::'+className+' class '+(inheritFrom ? '^'+item.lastDir+'::'+inheritFrom+'^ ==' : '' );
+		cx.center = '== '+item.lastDir+'::'+className+' class '+(inheritFrom ? '^'+item.lastDir+'::'+inheritFrom+'^' : '' )+' ==';
 	},
 	
 	$MODULE_HEADER: function(cx, item) {
@@ -57,6 +59,12 @@ var api = {
 	$READONLY:'http://jslibs.googlecode.com/svn/wiki/readonly.png',
 
 	$WRITEONLY:',,write-only !,,',
+
+	$ARG:function(cx, item) {
+	
+		cx.center = '_'+ReadArg(cx)+'_';
+	},
+
 
 	$RET:function(cx, item) {
 	
@@ -83,6 +91,7 @@ var api = {
 	$OBJ:',,object,,',
 	$BOOL:',,boolean,,',
 	$VOID:'',
+	$THIS:'this object',
 
 	$CONST:function(cx, item) {
 	
@@ -90,6 +99,21 @@ var api = {
 	},
 
 	$LF:'= =',
+
+   $SET: function(cx, item) {
+
+		var key = ReadArg(cx);
+		var value = ReadEol(cx, true);
+   	api_DEF[key] = value;
+   	cx.center = '';
+   },
+
+   $: function(cx, item) { // beware: it MUST be the last in the list !!!
+   
+		var key = ReadArg(cx);
+   	cx.center = api_DEF[key];
+   },
+
 };
 
 
@@ -106,7 +130,8 @@ function ReadCx(cx, re) {
     }
 }
 
-function ReadArg(cx) ReadCx(cx, /([^\s]+)/g)[1]||'';
+function ReadArg(cx) ReadCx(cx, / *([^\s\r\n]*)/g)[1]||'';
+function ReadEol(cx, eatEol) ReadCx(cx, new RegExp(' *([^\r\n]*)' + (eatEol ? '\r?\n' : ''),'g'))[1]||'';
 
 
 function RegQuote(str) {
@@ -305,8 +330,11 @@ for each ( var module in moduleList ) {
 	var f = new File( moduleName+'_.wiki' );
 	f.Open('w');
 	for each ( var file in module )
-		for each ( var item in file )
-			f.Write( item.text + '\n' ); 
+		for each ( var item in file ) {
+		
+			if ( !('hidden' in item.attr) )
+				f.Write( item.text + '\n' ); 
+		}
 	f.Close();
 }
 
