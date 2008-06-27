@@ -71,7 +71,7 @@ DEFINE_CONSTRUCTOR() {
 	else
 		fileName = ":memory:";
 
-	int flags; // todoc
+	int flags;
 	if ( J_ARG_ISDEF(2) )
 		flags = JSVAL_TO_INT( J_ARG(2) );
 	else
@@ -571,7 +571,6 @@ CONFIGURE_CLASS
 END_CLASS
 
 /**doc
-
 === Examples ===
 
 {{{

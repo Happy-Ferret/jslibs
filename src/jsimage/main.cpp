@@ -25,6 +25,17 @@ DECLARE_STATIC()
 static bool _defaultUnsafeMode = false;
 extern bool *_pUnsafeMode = &_defaultUnsafeMode;
 
+/**doc t:header
+$MODULE_HEADER
+ This module manage jpeg and png image decomppression and png image compression.
+ Supported output format:
+  1:Gray 2:Gray,Alpha 3:Red,Green,Blue 4:Red,Green,Blue,Alpha
+**/
+
+/**doc t:footer
+$MODULE_FOOTER
+**/
+
 extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
 	jsval unsafeModePtrVal;

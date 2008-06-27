@@ -20,6 +20,16 @@
 static bool _defaultUnsafeMode = false;
 extern bool *_pUnsafeMode = &_defaultUnsafeMode;
 
+/**doc t:header
+$MODULE_HEADER
+ Support wav, aiff, au, voc, sd2, flac, ... sound format using libsndfile
+ and ogg vorbis using libogg and libvorbis.
+**/
+
+/**doc t:footer
+$MODULE_FOOTER
+**/
+
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
 	jsval unsafeModePtrVal;

@@ -25,6 +25,14 @@ static ALCcontext *context;
 static bool _defaultUnsafeMode = false;
 extern bool *_pUnsafeMode = &_defaultUnsafeMode;
 
+/**doc t:header
+$MODULE_HEADER
+ Support 2D and 3D sound source and listener using OpenAL library.
+**/
+
+/**doc t:footer
+$MODULE_FOOTER
+**/
 
 extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 

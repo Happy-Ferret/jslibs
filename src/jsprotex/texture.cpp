@@ -263,11 +263,14 @@ inline JSBool InitCurveData( JSContext* cx, jsval value, int length, float *curv
 	return JS_TRUE;
 }
 
-
+/**doc
+$SET pval pixel component intensity value
+**/
 
 /**doc
 $CLASS_HEADER
 **/
+
 BEGIN_CLASS( Texture )
 
 JSBool NativeInterfaceBufferGet( JSContext *cx, JSObject *obj, const char **buf, size_t *size ) {
@@ -311,7 +314,36 @@ DEFINE_FINALIZE() {
 	}
 }
 
+/**doc
+=== Properties ===
+**/
 
+/**doc
+ * $INAME( width, height, channels )
+ * $INAME( textureObject )
+ * $INAME( imageObject )
+  Creates a new Texture object.
+  $H arguments:
+   * height: height of texture.
+   * width: width of texture.
+   * channels: number of channels of the texture (current limit is 4).
+   = =
+   * textureObject: an existing Texture object.
+   = =
+   * imageObject: an existing Image object (From a jpeg image for example)
+  $H note
+   jsprotex uses single precision values per channel. The visibles values are in range [0,1].
+   The darker value is 0.0 and the brighter value is 1.0.
+  $H example
+  {{{
+  LoadModule('jsstd');
+  LoadModule('jsimage');
+  
+  var image = DecodePngImage( new File('picture.png').Open("r") );
+  var tex = new Texture(image);
+  tex.NormalizeLevels();
+  }}}
+**/
 DEFINE_CONSTRUCTOR() {
 
 	J_S_ASSERT_CONSTRUCTING();
@@ -399,6 +431,11 @@ DEFINE_CONSTRUCTOR() {
 }
 
 
+/**doc
+ * $VOID $INAME()
+  Free the memory allocated by the current texture.
+  This operation is not mendatory but can be usefull to free memory.
+**/
 DEFINE_FUNCTION( Free ) {
 
 	RT_ASSERT_CLASS(obj, _class);
@@ -406,6 +443,20 @@ DEFINE_FUNCTION( Free ) {
 	return JS_TRUE;
 }
 
+/**doc
+ * $RET thistextureObject $INAME( textureObject )
+  Swaps the content of two textures.
+  $H example:
+  {{{
+  function AddAlphaChannel( tex ) {
+    
+    if ( tex.channels == 1 )
+      new Texture(tex.width, tex.height, 2).SetChannel(0, tex, 0).Swap(tex);
+    else if ( tex.channels == 3 )
+      new Texture(tex.width, tex.height, 4).SetChannel(0, tex, 0).SetChannel(1, tex, 1).SetChannel(2, tex, 2).Swap(tex);
+  }
+  }}}
+**/
 // PTYPE ok
 DEFINE_FUNCTION_FAST( Swap ) {
 
@@ -421,6 +472,10 @@ DEFINE_FUNCTION_FAST( Swap ) {
 	return JS_TRUE;
 }
 
+/**doc
+ * $THIS $INAME( [channel] )
+  Clears (set to 0) the given _channel_ or all channels if the method is called without argument.
+**/
 // PTYPE ok
 DEFINE_FUNCTION_FAST( ClearChannel ) {
 
@@ -430,7 +485,6 @@ DEFINE_FUNCTION_FAST( ClearChannel ) {
 	if ( argc == 0 ) { // clear all channels
 
 		memset(tex->cbuffer, 0, tex->width * tex->height * tex->channels * sizeof(PTYPE));
-		*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 	} else
 	if ( argc >= 1 ) {
 
@@ -449,11 +503,26 @@ DEFINE_FUNCTION_FAST( ClearChannel ) {
 			ptr += channels;
 		}
 	}
+	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 	return JS_TRUE;
 }
 
+/**doc
+ * $THIS $INAME( destinationChannel, textureObject, sourceChannel )
+  Replace the _destinationChannel_ channel of the current texture with the _sourceChannel_ channel of the _textureObject_.
+  $H example:
+  {{{
+  function NoiseChannel( tex, channel ) {
+
+    var tmp = new Texture(tex.width, tex.height, 1);
+    tmp.AddNoise();
+    tex.SetChannel(channel, tmp, 0);
+    tmp.Free();
+  }
+  }}}
+**/
 // PTYPE ok
-DEFINE_FUNCTION_FAST( SetChannel ) { // dstChannel,   tex1, srcChannel
+DEFINE_FUNCTION_FAST( SetChannel ) {
 
 	RT_ASSERT_ARGC( 3 );
 	Texture *tex = (Texture *)JS_GetPrivate(cx, J_FOBJ);
@@ -484,6 +553,10 @@ DEFINE_FUNCTION_FAST( SetChannel ) { // dstChannel,   tex1, srcChannel
 }
 
 
+/**doc
+ * $THIS $INAME()
+  Does a conversion from RGB (Red, Green, Blue) to HSV (Hue, Saturation, Value) colorspace.
+**/
 // (TBD) PTYPE
 DEFINE_FUNCTION_FAST( ToHLS ) { // (TBD) test it
 
@@ -551,6 +624,10 @@ inline float HLSToRGB_hue( float n1, float n2, float hue) { // helper function f
 	return( n1 );
 }
 
+/**doc
+ * $THIS $INAME()
+  Does a conversion from HSV (Hue, Saturation, Value) to RGB (Red, Green, Blue) colorspace.
+**/
 // (TBD) PTYPE
 DEFINE_FUNCTION_FAST( ToRGB ) { // (TBD) test it
 	// see http://svn.gnome.org/viewcvs/gimp/trunk/libgimpcolor/gimpcolorspace.c?view=markup
@@ -596,6 +673,28 @@ DEFINE_FUNCTION_FAST( ToRGB ) { // (TBD) test it
 	return JS_TRUE;
 }
 
+/**doc
+ * $THIS $INAME( count [, curveInfo] )
+  Reduce the number of values used for each channel.
+  If _curveInfo_ is not provided, each channel is processed in a linear manner using the following formula:
+   floor( count * colorValue ) / count
+  $H note:
+  channels are processed independently.
+  $H note:
+  For further information about _curveInfo_, see the curveInfo section.
+  $H example 1:
+  {{{
+  var t = Cloud(size, 0.5);
+  t.Aliasing(2);
+  }}}
+  $H example 2:
+  {{{
+  const curveLinear = function(v) { return v }
+  var t = Cloud(size, 0.5);
+  t.Aliasing(8,curveLinear);
+  t.BoxBlur(3,3)
+  }}}
+**/
 // PTYPE ok
 DEFINE_FUNCTION_FAST( Aliasing ) {
 
@@ -633,6 +732,20 @@ DEFINE_FUNCTION_FAST( Aliasing ) {
 	return JS_TRUE;
 }
 
+/**doc
+ * $THIS $INAME( fromColorInfo, toColorInfo )
+  $H note:
+  For further information about _fromColorInfo_ and _toColorInfo_, see the ColorInfo section.
+  $H example:
+  {{{
+  const BLUE = [0,0,1,1];
+  const WHITE = [1,1,1,1];
+  
+  var texture = new Texture( 100, 100, 3 );
+  ...
+  texture.Colorize( WHITE, BLUE, 0 );
+  }}}
+**/
 // PTYPE ok
 DEFINE_FUNCTION_FAST( Colorize ) {
 	// GIMP color to alpha: http://www.google.com/codesearch?hl=en&q=+gimp+%22color+to+alpha%22
@@ -686,6 +799,20 @@ DEFINE_FUNCTION_FAST( Colorize ) {
 }
 
 
+/**doc
+ * $THIS $INAME( sourceTexture, sourceColorInfo [, power = 1] )
+  Extracts the given color from the _sourceTexture_ and put it in the current texture.
+  $H arguments
+  * $RES Texture sourceTexture: ???
+  * $RES Color sourceColorInfo: ???
+  * $REAL power
+  $H note:
+  The current texture must have only one channel.
+  $H example:
+  {{{
+  t1.ExtractColor(t, BLACK, 2);
+  }}}
+**/
 // PTYPE ok
 DEFINE_FUNCTION_FAST( ExtractColor ) {
 
@@ -726,6 +853,12 @@ DEFINE_FUNCTION_FAST( ExtractColor ) {
 	return JS_TRUE;
 }
 
+/**doc
+ * $THIS $INAME()
+  Changes the range of $pval of all channels. The resulting range is [0,1]
+  $H note:
+  Normalization is sometimes called contrast stretching.
+**/
 // PTYPE ok
 DEFINE_FUNCTION_FAST( NormalizeLevels ) {
 
@@ -752,6 +885,13 @@ DEFINE_FUNCTION_FAST( NormalizeLevels ) {
 	return JS_TRUE;
 }
 
+/**doc
+ * $THIS $INAME( min, max )
+  $pval that are out of the [min,max] range are forced to [min,max] range.
+  $H arguments
+   * $REAL min: low value
+   * $REAL max: high value
+**/
 // PTYPE ok
 DEFINE_FUNCTION_FAST( ClampLevels ) { // (TBD) check if this algo is right
 
@@ -779,6 +919,13 @@ DEFINE_FUNCTION_FAST( ClampLevels ) { // (TBD) check if this algo is right
 }
 
 
+/**doc
+ * $THIS $INAME( min, max )
+  $pval that are out of the [min,max] range are forced to [0,1] range.
+  $H arguments
+   * $REAL min: low value
+   * $REAL max: high value
+**/
 // PTYPE ok
 DEFINE_FUNCTION_FAST( CutLevels ) { // (TBD) check if this algo is right
 
@@ -861,6 +1008,10 @@ DEFINE_FUNCTION_FAST( CutLevels ) {
 }
 */
 
+/**doc
+ * $THIS $INAME()
+  Each $pval is mathematically inverted ( v = 1 / v ).
+**/
 // PTYPE ok
 DEFINE_FUNCTION_FAST( InvertLevels ) { // level = 1 / level
 
@@ -873,6 +1024,10 @@ DEFINE_FUNCTION_FAST( InvertLevels ) { // level = 1 / level
 	return JS_TRUE;
 }
 
+/**doc
+ * $THIS $INAME()
+  Each $pval is set to its mathematical opposite ( v = -v ).
+**/
 // PTYPE ok
 DEFINE_FUNCTION_FAST( OppositeLevels ) { // level = -level
 
@@ -885,6 +1040,10 @@ DEFINE_FUNCTION_FAST( OppositeLevels ) { // level = -level
 	return JS_TRUE;
 }
 
+/**doc
+ * $THIS $INAME( power )
+  Each $pval is powered by _power_ ( v = v ^ _power_ ).
+**/
 // PTYPE ok
 DEFINE_FUNCTION_FAST( PowLevels ) { // 
 
@@ -904,6 +1063,10 @@ DEFINE_FUNCTION_FAST( PowLevels ) { //
 }
 
 
+/**doc
+ * $THIS $INAME( power )
+  Each $pval is powered by _power_ ( v = v ^ _power_ ).
+**/
 // PTYPE ok
 DEFINE_FUNCTION_FAST( MirrorLevels ) {
 
@@ -941,6 +1104,12 @@ DEFINE_FUNCTION_FAST( MirrorLevels ) {
 	return JS_TRUE;
 }
 
+/**doc
+ * $THIS $INAME( modulo )
+  $H arguments:
+   * $INT _module_: 
+  Each $pval is the moduloed by _modulo_ ( v = v % _modulo_ ).
+**/
 // PTYPE ok
 DEFINE_FUNCTION_FAST( WrapLevels ) { // real modulo
 
@@ -964,6 +1133,12 @@ DEFINE_FUNCTION_FAST( WrapLevels ) { // real modulo
 	return JS_TRUE;
 }
 
+/**doc
+ * $THIS $INAME( [colorInfo] )
+  $H arguments:
+   * colorInfo :
+  TBD
+**/
 // PTYPE ok
 DEFINE_FUNCTION_FAST( AddNoise ) {
 
@@ -995,6 +1170,13 @@ DEFINE_FUNCTION_FAST( AddNoise ) {
 }
 
 
+/**doc
+ * $RET ??? $INAME( sourceTexture [, mode] )
+  Desaturates _sourceTexture_ texture an put the result in the current texture.
+  $H arguments:
+   * $RES Texture _sourceTexture_: 
+   * $INT _mode_: is either 0 (desaturateLightness), 1 (desaturateSum), 2 (desaturateAverage).
+**/
 // PTYPE ok
 DEFINE_FUNCTION_FAST( Desaturate ) {
 
@@ -1052,6 +1234,12 @@ DEFINE_FUNCTION_FAST( Desaturate ) {
 	return JS_TRUE;
 }
 
+
+/**doc
+ * $THIS $INAME( textureObject )
+ * $THIS $INAME( colorInfo )
+  Set a texture with another texture (_textureObject_) or a given color (_colorInfo_).
+**/
 // PTYPE ok
 DEFINE_FUNCTION_FAST( Set ) {
 
@@ -1086,6 +1274,12 @@ DEFINE_FUNCTION_FAST( Set ) {
 	return JS_TRUE;
 }
 
+
+/**doc
+ * $THIS $INAME( textureObject )
+ * $THIS $INAME( colorInfo )
+  Mathematically adds a texture (_textureObject_) or a given color (_colorInfo_) to the current texture.
+**/
 // PTYPE ok
 DEFINE_FUNCTION_FAST( Add ) {
 
@@ -1114,6 +1308,12 @@ DEFINE_FUNCTION_FAST( Add ) {
 	return JS_TRUE;
 }
 
+
+/**doc
+ * $THIS $INAME( textureObject )
+ * $THIS $INAME( colorInfo )
+  Mathematically multiply a texture (_textureObject_) or a given color (_colorInfo_) to the current texture.
+**/
 // PTYPE ok
 DEFINE_FUNCTION_FAST( Mult ) {
 
@@ -1166,6 +1366,18 @@ DEFINE_FUNCTION_FAST( Mult ) {
 	return JS_TRUE;
 }
 
+
+/**doc
+ * $THIS $INAME( textureObject1, textureObject2 )
+ * $THIS $INAME( textureObject1, colorInfo )
+  $H arguments
+   * $RES Texture _textureObject1_: the first texture.
+   * $RES Texture _textureObject2_: the second texture.
+   * $RES _colorInfo_: the color info.
+  Mathematically blends a texture (_textureObject_) or a given color (_colorInfo_) to the current texture.
+  = =
+  The blend fornula is: this pixel = blend * _textureObject1_ + (1-blend) * _textureObject2_ pixel or _colorInfo_
+**/
 // PTYPE ok
 DEFINE_FUNCTION_FAST( Blend ) { // texture1, blenderTexture|blenderColor
 
@@ -1219,6 +1431,11 @@ DEFINE_FUNCTION_FAST( Blend ) { // texture1, blenderTexture|blenderColor
 	return JS_TRUE;
 }
 
+
+/**doc
+ * $THIS SetPixel( x, y, colorInfo )
+  Sets the color of the given pixel.
+**/
 // PTYPE ok
 DEFINE_FUNCTION_FAST( _SetPixel ) { // x, y, levels
 
@@ -1246,6 +1463,10 @@ DEFINE_FUNCTION_FAST( _SetPixel ) { // x, y, levels
 	return JS_TRUE;
 }
 
+/**doc
+ * $THIS $INAME( x0, y0, x1, y1, colorInfo )
+  Draws a rectangle of the _colorInfo_ color over the current texture.
+**/
 // PTYPE ok
 DEFINE_FUNCTION_FAST( SetRectangle ) {
 
@@ -1288,6 +1509,12 @@ DEFINE_FUNCTION_FAST( SetRectangle ) {
 }
 
 
+/**doc
+ * $THIS $INAME( count )
+  Make _count_ 90 degres rotations.
+  $H node:
+  _count_ may be negative.
+**/
 DEFINE_FUNCTION_FAST( Rotate90 ) { // (TBD) test it
 
 	RT_ASSERT_ARGC( 1 );
@@ -1350,6 +1577,13 @@ DEFINE_FUNCTION_FAST( Rotate90 ) { // (TBD) test it
 }
 
 
+/**doc
+ * $THIS $INAME( horizontally, vertically )
+  Flips the current texture horizontally, vertically or both.
+  $H arguments
+   * $BOOL _horizontally_: flips the texture horizontally.
+   * $BOOL _vertically_: flips the texture vertically.
+**/
 DEFINE_FUNCTION_FAST( Flip ) {
 
 	RT_ASSERT_ARGC( 2 );
@@ -1383,6 +1617,16 @@ DEFINE_FUNCTION_FAST( Flip ) {
 }
 
 
+/**doc
+ * $THIS $INAME( centerX, centerY, zoomX, zoomY, rotations )
+  Make a zoom and a rotation of the current texture.
+  $H arguments
+   * $REAL _centerX_: the center of the zoom or rotation.
+   * $REAL _centerY_: 
+   * $REAL _zoomX_: the zoom factor (use 1 for none).
+   * $REAL _zoomY_: 
+   * $REAL _rotations_: the number of totations to do. 0.25 is 90 degres (use 0 for none).
+**/
 DEFINE_FUNCTION_FAST( RotoZoom ) { // source: FxGen
 
 	RT_ASSERT_ARGC( 5 );
@@ -1494,6 +1738,10 @@ DEFINE_FUNCTION_FAST( RotoZoom ) { // source: FxGen
 }
 
 
+/**doc
+ * $RET ??? $INAME ???
+  TBD
+**/
 // PTYPE ok
 DEFINE_FUNCTION_FAST( Resize ) {
 
@@ -1603,6 +1851,10 @@ DEFINE_FUNCTION_FAST( Resize ) {
 }
 
 
+/**doc
+ * $RET ??? $INAME ???
+  TBD
+**/
 // (TBD) PTYPE
 DEFINE_FUNCTION_FAST( Convolution ) {
 
@@ -1739,6 +1991,10 @@ DEFINE_FUNCTION_FAST( Convolution ) {
 }
 
 
+/**doc
+ * $RET ??? $INAME ???
+  TBD
+**/
 DEFINE_FUNCTION_FAST( BoxBlur ) {
 
 	RT_ASSERT_ARGC( 2 );
@@ -1805,6 +2061,10 @@ DEFINE_FUNCTION_FAST( BoxBlur ) {
 }
 
 
+/**doc
+ * $RET ??? $INAME ???
+  TBD
+**/
 DEFINE_FUNCTION_FAST( NormalizeVectors ) {
 
 	Texture *tex = (Texture *)JS_GetPrivate(cx, J_FOBJ);
@@ -1836,6 +2096,10 @@ DEFINE_FUNCTION_FAST( NormalizeVectors ) {
 }
 
 
+/**doc
+ * $RET ??? $INAME ???
+  TBD
+**/
 // (TBD) PTYPE
 DEFINE_FUNCTION_FAST( Normals ) {
 
@@ -1932,6 +2196,10 @@ DEFINE_FUNCTION_FAST( Normals ) {
 }
 
 
+/**doc
+ * $RET ??? $INAME ???
+  TBD
+**/
 // (TBD) PTYPE
 DEFINE_FUNCTION_FAST( Light ) {
 	// Simple Lighting: http://www.gamasutra.com/features/19990416/intel_simd_04.htm
@@ -2028,6 +2296,10 @@ DEFINE_FUNCTION_FAST( Light ) {
 
 
 
+/**doc
+ * $RET ??? $INAME ???
+  TBD
+**/
 DEFINE_FUNCTION_FAST( Trim ) { // (TBD) test this new version that use memcpy
 
 	RT_ASSERT_ARGC( 4 );
@@ -2095,6 +2367,10 @@ DEFINE_FUNCTION_FAST( Trim ) { // (TBD) test this new version that use memcpy
 }
 
 
+/**doc
+ * $RET ??? $INAME ???
+  TBD
+**/
 DEFINE_FUNCTION_FAST( Copy ) { // (Texture)source, (int)x, (int)y
 
 	RT_ASSERT_ARGC( 3 );
@@ -2150,7 +2426,10 @@ DEFINE_FUNCTION_FAST( Copy ) { // (Texture)source, (int)x, (int)y
 	return JS_TRUE;
 }
 
-
+/**doc
+ * $RET ??? $INAME ???
+  TBD
+**/
 DEFINE_FUNCTION_FAST( Export ) { // (int)x, (int)y, (int)width, (int)height . Returns a BString
 
 	Texture *tex = (Texture *)JS_GetPrivate(cx, J_FOBJ);
@@ -2219,6 +2498,10 @@ DEFINE_FUNCTION_FAST( Export ) { // (int)x, (int)y, (int)width, (int)height . Re
 }
 
 
+/**doc
+ * $RET ??? $INAME ???
+  TBD
+**/
 
 DEFINE_FUNCTION_FAST( Paste ) { // (Texture)texture, (int)x, (int)y, (bool)borderMode
 
@@ -2278,6 +2561,10 @@ DEFINE_FUNCTION_FAST( Paste ) { // (Texture)texture, (int)x, (int)y, (bool)borde
 	return JS_TRUE;
 }
 
+/**doc
+ * $RET ??? $INAME ???
+  TBD
+**/
 
 DEFINE_FUNCTION_FAST( Import ) { // (BString)image, (int)x, (int)y
 
@@ -2350,6 +2637,10 @@ DEFINE_FUNCTION_FAST( Import ) { // (BString)image, (int)x, (int)y
 }
 
 
+/**doc
+ * $RET ??? $INAME ???
+  TBD
+**/
 
 DEFINE_FUNCTION_FAST( Shift ) {
 	// (TBD) I think it is possible to do the Shift operation without using a second buffer.
@@ -2413,6 +2704,10 @@ DEFINE_FUNCTION_FAST( Shift ) {
 	return JS_TRUE;
 }
 
+/**doc
+ * $RET ??? $INAME ???
+  TBD
+**/
 // (TBD) PTYPE
 DEFINE_FUNCTION_FAST( Displace ) {
 
@@ -2495,6 +2790,10 @@ DEFINE_FUNCTION_FAST( Displace ) {
 }
 
 
+/**doc
+ * $RET ??? $INAME ???
+  TBD
+**/
 DEFINE_FUNCTION_FAST( Cells ) { // source: FxGen
 
 	RT_ASSERT_ARGC( 2 );
@@ -2585,6 +2884,10 @@ DEFINE_FUNCTION_FAST( Cells ) { // source: FxGen
 	return JS_TRUE;
 }
 
+/**doc
+ * $RET ??? $INAME ???
+  TBD
+**/
 
 DEFINE_FUNCTION_FAST( AddGradiantQuad ) {
 
@@ -2630,6 +2933,10 @@ DEFINE_FUNCTION_FAST( AddGradiantQuad ) {
 	return JS_TRUE;
 }
 
+/**doc
+ * $RET ??? $INAME ???
+  TBD
+**/
 
 DEFINE_FUNCTION_FAST( AddGradiantLinear ) {
 
@@ -2662,6 +2969,10 @@ DEFINE_FUNCTION_FAST( AddGradiantLinear ) {
 	return JS_TRUE;
 }
 
+/**doc
+ * $RET ??? $INAME ???
+  TBD
+**/
 
 DEFINE_FUNCTION_FAST( AddGradiantRadial ) {
 
@@ -2787,6 +3098,10 @@ DEFINE_FUNCTION( AddGradiantRadial ) {
 */
 
 
+/**doc
+ * $RET ??? $INAME ???
+  TBD
+**/
 
 DEFINE_FUNCTION_FAST( AddCracks ) { // source: FxGen
 
@@ -2852,80 +3167,11 @@ DEFINE_FUNCTION_FAST( AddCracks ) { // source: FxGen
 }
 
 
-DEFINE_PROPERTY( vmax ) {
 
-	RT_CHECK_CALL( JS_NewNumberValue(cx, PMAX, vp) );
-	return JS_TRUE;
-}
-
-
-DEFINE_PROPERTY( width ) {
-
-	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE(tex);
-	jsdouble d = tex->width;
-	RT_CHECK_CALL( JS_NewNumberValue(cx, d, vp) );
-	return JS_TRUE;
-}
-
-
-DEFINE_PROPERTY( height ) {
-
-	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE(tex);
-	jsdouble d = tex->height;
-	RT_CHECK_CALL( JS_NewNumberValue(cx, d, vp) );
-	return JS_TRUE;
-}
-
-
-DEFINE_PROPERTY( channels ) {
-
-	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE(tex);
-	jsdouble d = tex->channels;
-	RT_CHECK_CALL( JS_NewNumberValue(cx, d, vp) );
-	return JS_TRUE;
-}
-
-
-DEFINE_FUNCTION_FAST( RandSeed ) {
-
-	RT_ASSERT_ARGC(1);
-	unsigned long seed;
-	RT_JSVAL_TO_UINT32(J_FARG(1), seed);
-	init_genrand(seed);
-	return JS_TRUE;
-}
-
-
-DEFINE_FUNCTION_FAST( RandInt ) {
-
-	int i = genrand_int31();
-	*J_FRVAL = INT_TO_JSVAL(i);
-	return JS_TRUE;
-}
-
-
-DEFINE_FUNCTION_FAST( RandReal ) {
-
-	jsdouble d = genrand_real1();
-	RT_CHECK_CALL( JS_NewNumberValue(cx, d, J_FRVAL) );
-	return JS_TRUE;
-}
-
-
-//DEFINE_FUNCTION( Noise ) {
-//
-//	RT_ASSERT_ARGC(1);
-//	unsigned long seed;
-//	RT_JSVAL_TO_UINT32(J_FARG(1), seed);
-//	jsdouble d = NoiseInt(seed);
-//	RT_CHECK_CALL( JS_NewNumberValue(cx, d, rval) );
-//	return JS_TRUE;
-//}
-
-
+/**doc
+ * $RET ??? $INAME
+  TBD
+**/
 DEFINE_FUNCTION_FAST( PixelAt ) {
 
 	RT_ASSERT_ARGC(2);
@@ -2950,6 +3196,113 @@ DEFINE_FUNCTION_FAST( PixelAt ) {
 	}
 	return JS_TRUE;
 }
+
+/**doc
+=== Properties ===
+**/
+
+
+/**doc
+ * $RET ??? $INAME
+  TBD
+**/
+DEFINE_PROPERTY( vmax ) {
+
+	RT_CHECK_CALL( JS_NewNumberValue(cx, PMAX, vp) );
+	return JS_TRUE;
+}
+
+
+/**doc
+ * $RET ??? $INAME
+  TBD
+**/
+DEFINE_PROPERTY( width ) {
+
+	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE(tex);
+	jsdouble d = tex->width;
+	RT_CHECK_CALL( JS_NewNumberValue(cx, d, vp) );
+	return JS_TRUE;
+}
+
+
+/**doc
+ * $RET ??? $INAME
+  TBD
+**/
+DEFINE_PROPERTY( height ) {
+
+	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE(tex);
+	jsdouble d = tex->height;
+	RT_CHECK_CALL( JS_NewNumberValue(cx, d, vp) );
+	return JS_TRUE;
+}
+
+
+/**doc
+ * $RET ??? $INAME
+  TBD
+**/
+DEFINE_PROPERTY( channels ) {
+
+	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
+	RT_ASSERT_RESOURCE(tex);
+	jsdouble d = tex->channels;
+	RT_CHECK_CALL( JS_NewNumberValue(cx, d, vp) );
+	return JS_TRUE;
+}
+
+
+/**doc
+ * $RET ??? $INAME
+  TBD
+**/
+DEFINE_FUNCTION_FAST( RandSeed ) {
+
+	RT_ASSERT_ARGC(1);
+	unsigned long seed;
+	RT_JSVAL_TO_UINT32(J_FARG(1), seed);
+	init_genrand(seed);
+	return JS_TRUE;
+}
+
+
+/**doc
+ * $RET ??? $INAME
+  TBD
+**/
+DEFINE_FUNCTION_FAST( RandInt ) {
+
+	int i = genrand_int31();
+	*J_FRVAL = INT_TO_JSVAL(i);
+	return JS_TRUE;
+}
+
+
+/**doc
+ * $RET ??? $INAME
+  TBD
+**/
+DEFINE_FUNCTION_FAST( RandReal ) {
+
+	jsdouble d = genrand_real1();
+	RT_CHECK_CALL( JS_NewNumberValue(cx, d, J_FRVAL) );
+	return JS_TRUE;
+}
+
+
+//DEFINE_FUNCTION( Noise ) {
+//
+//	RT_ASSERT_ARGC(1);
+//	unsigned long seed;
+//	RT_JSVAL_TO_UINT32(J_FARG(1), seed);
+//	jsdouble d = NoiseInt(seed);
+//	RT_CHECK_CALL( JS_NewNumberValue(cx, d, rval) );
+//	return JS_TRUE;
+//}
+
 
 
 #ifdef _DEBUG
@@ -3053,6 +3406,31 @@ CONFIGURE_CLASS
 //	HAS_RESERVED_SLOTS(1)
 
 END_CLASS
+
+/**doc
+=== Examples ===
+{{{
+function Cloud( size, amp ) {
+
+	var octaves = Math.log(size) / Math.LN2;
+	var a = 1, s = 1;
+	var cloud = new Texture(s, s, 1);
+	cloud.ClearChannel();
+	while ( octaves-- > 0 ) {
+		
+		cloud.AddNoise(a);
+		a *= amp;
+		s *= 2;
+		cloud.Resize(s, s, false);
+		cloud.BoxBlur(5, 5);
+	}
+	cloud.NormalizeLevels();
+	return cloud;
+}
+}}}
+**/
+
+
 
 /*
 

@@ -107,7 +107,14 @@ METHODDEF(void) skip_input_data(j_decompress_ptr cinfo, long num_bytes) {
 METHODDEF(void) term_source(j_decompress_ptr cinfo) {
 }
 
-
+/**doc
+ * $RET imageObject $INAME( streamObject )
+  This function returns an image object that represents the decompressed jpeg image given as argument.
+  = =
+  The streamObject argument is any object that supports the StreamRead Native Interface ( file, socket, new Stream(buffer), ... )
+  = =
+  For further details about stream objects, see jslang::Stream object and NativeInterface mechanism.
+**/
 DEFINE_FUNCTION( DecodeJpegImage ) {
 
 	jpeg_decompress_struct cinfo;
@@ -177,7 +184,7 @@ DEFINE_FUNCTION( DecodeJpegImage ) {
 	JSObject *bstringObj = NewBString(cx, data, length);
 	J_S_ASSERT( bstringObj, "Unable to create BString object." );
 	*rval = OBJECT_TO_JSVAL(bstringObj);
-	
+
 	JS_DefineProperty(cx, bstringObj, "channels", INT_TO_JSVAL(channels), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
 	JS_DefineProperty(cx, bstringObj, "width", INT_TO_JSVAL(width), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
 	JS_DefineProperty(cx, bstringObj, "height", INT_TO_JSVAL(height), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
@@ -228,6 +235,14 @@ static void _png_read( png_structp png_ptr, png_bytep data, png_size_t length ) 
 }
 
 
+/**doc
+ * $RET imageObject $INAME( streamObject )
+  This function returns an image object that represents the decompressed png image given as argument.
+  = =
+  The streamObject argument is any object that supports the StreamRead Native Interface ( file, socket, new Stream(buffer), ... )
+  = =
+  For further details about stream objects, see jslang::Stream object and NativeInterface mechanism.
+**/
 DEFINE_FUNCTION( DecodePngImage ) {
 
 	PngReadUserStruct desc;
@@ -245,7 +260,7 @@ DEFINE_FUNCTION( DecodePngImage ) {
 	RT_ASSERT( desc.info->height <= PNG_UINT_32_MAX/png_sizeof(png_bytep), "Image is too high to process with png_read_png()");
 
 	J_S_ASSERT( png_set_interlace_handling(desc.png) == 1, "Cannot read interlaced image yet." );
-	
+
 // Load
 	png_set_strip_16(desc.png);
 	png_set_packing(desc.png);
@@ -316,7 +331,7 @@ DEFINE_FUNCTION_FAST( EncodePngImage ) {
 		compressionLevel = JSVAL_TO_INT( J_FARG(2) );
 		J_S_ASSERT( compressionLevel >= 0 && compressionLevel <= 9, "Invalid compression level." );
 	} else {
-		
+
 		compressionLevel = Z_DEFAULT_COMPRESSION;
 	}
 

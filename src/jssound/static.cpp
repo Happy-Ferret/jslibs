@@ -60,6 +60,20 @@ static ov_callbacks ovCallbacks = { readStream,0,0,0 };
   Decodes a ogg vorbis sample to a sound object.
   = =
   The streamObject argument is any object that supports the StreamRead Native Interface ( file, socket, new Stream(buffer), ... )
+  = =
+  For further details about stream objects, see jslang::Stream object and NativeInterface mechanism.
+  $H example
+  {{{
+  LoadModule('jsstd');
+  LoadModule('jsio');
+  LoadModule('jssound');
+
+  var file = new File('41_30secOgg-q0.ogg');
+  var buffer = file.content;
+  var stream = new Stream(buffer);
+  var mySoundObject = DecodeOggVorbis(stream);
+  Print('sample length: ', mySoundObject.length, '\n');
+  }}}
 **/
 DEFINE_FUNCTION_FAST( DecodeOggVorbis ) {
 
@@ -154,16 +168,16 @@ sf_count_t SfGetFilelen(void *user_data) {
 	jsval tmpVal;
 
 	int position;
-	JS_GetProperty(pv->cx, pv->obj, "position", &tmpVal);
+	JS_GetProperty(pv->cx, pv->obj, "position", &tmpVal); // (TBD) manage error
 	if ( tmpVal == JSVAL_VOID )
 		return -1;
-	JsvalToInt(pv->cx, tmpVal, &position);
+	JsvalToInt(pv->cx, tmpVal, &position); // (TBD) manage error
 
 	int available;
-	JS_GetProperty(pv->cx, pv->obj, "available", &tmpVal);
+	JS_GetProperty(pv->cx, pv->obj, "available", &tmpVal); // (TBD) manage error
 	if ( tmpVal == JSVAL_VOID )
 		return -1;
-	JsvalToInt(pv->cx, tmpVal, &available);
+	JsvalToInt(pv->cx, tmpVal, &available); // (TBD) manage error
 
 	return position + available;
 }
@@ -180,19 +194,19 @@ sf_count_t SfSeek(sf_count_t offset, int whence, void *user_data) {
 		case SEEK_SET:
 			if ( offset < 0 )
 				return -1;
-			IntToJsval(pv->cx, offset, &tmpVal);
-			JS_SetProperty(pv->cx, pv->obj, "position", &tmpVal);
+			IntToJsval(pv->cx, offset, &tmpVal); // (TBD) manage error
+			JS_SetProperty(pv->cx, pv->obj, "position", &tmpVal); // (TBD) manage error
 			return 0;
 
 		case SEEK_CUR:
-			JS_GetProperty(pv->cx, pv->obj, "position", &tmpVal);
+			JS_GetProperty(pv->cx, pv->obj, "position", &tmpVal); // (TBD) manage error
 			if ( tmpVal == JSVAL_VOID )
 				return -1;
-			JsvalToInt(pv->cx, tmpVal, &position);
+			JsvalToInt(pv->cx, tmpVal, &position); // (TBD) manage error
 
 			position += offset;
-			IntToJsval(pv->cx, position, &tmpVal);
-			JS_SetProperty(pv->cx, pv->obj, "position", &tmpVal);
+			IntToJsval(pv->cx, position, &tmpVal); // (TBD) manage error
+			JS_SetProperty(pv->cx, pv->obj, "position", &tmpVal); // (TBD) manage error
 			return 0;
 
 		case SEEK_END:
@@ -252,10 +266,13 @@ static SF_VIRTUAL_IO sfCallbacks = { SfGetFilelen, SfSeek, SfRead, 0, SfTell };
   Decodes a sample from any supported sound format to a sound object.
   = =
   The streamObject argument is any object that supports the StreamRead Native Interface ( file, socket, new Stream(buffer), ... )
+  = =
+  For further details about stream objects, see jslang::Stream object and NativeInterface mechanism.
 **/
 DEFINE_FUNCTION_FAST( DecodeSound ) {
 
 	J_S_ASSERT_ARG_MIN( 1 );
+
 	J_S_ASSERT_OBJECT( J_FARG(1) );
 	JSObject *StreamObj = JSVAL_TO_OBJECT( J_FARG(1) );
 

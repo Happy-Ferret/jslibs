@@ -19,6 +19,18 @@
 //static bool _defaultUnsafeMode = false;
 //extern bool *_pUnsafeMode = &_defaultUnsafeMode;
 
+
+/**doc t:header
+$MODULE_HEADER
+ This module contains all common classes used by other jslibs modules.
+ $H note
+  This module is automatically loaded by jshost and jswinhost. Then LoadModule call is not needed.
+**/
+
+/**doc t:footer
+$MODULE_FOOTER
+**/
+
 JSBool jslangInit(JSContext *cx, JSObject *obj) {
 
 //	jsval unsafeModePtrVal;

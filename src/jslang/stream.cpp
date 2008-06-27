@@ -70,7 +70,17 @@ $CLASS_HEADER
 **/
 BEGIN_CLASS( Stream )
 
-
+/**doc
+ * $INAME( bufferObject )
+  Creates an object that transforms any buffer-like objects into a stream.
+  = =
+  buffer-like objects are: string, BString, and objects that implements BufferRead NativeInterface.
+  = =
+  $H note
+  When called in a non-constructor context, Object behaves identically.
+  $H NativeInterface
+  Stream objects implements the StreamRead NativeInterface.
+**/
 DEFINE_CONSTRUCTOR() {
 
 	J_S_ASSERT_ARG_MIN( 1 );
@@ -85,16 +95,22 @@ DEFINE_CONSTRUCTOR() {
 		J_S_ASSERT_THIS_CLASS();
 	}
 
+	J_S_ASSERT( !JSVAL_IS_VOID(J_ARG(1)) && !JSVAL_IS_NULL(J_ARG(1)), "Invalid stream source." );
+
 	J_CHECK_CALL( JS_SetReservedSlot(cx, obj, SLOT_STREAM_SOURCE, J_ARG(1)) );
 	J_CHECK_CALL( PositionSet(cx, obj, 0) );
 
 	J_CHK( InitStreamReadInterface(cx, obj) );
 	J_CHK( SetStreamReadInterface(cx, obj, StreamRead) );
-	
+
 	return JS_TRUE;
 }
 
 
+/**doc
+ * $RET BString $INAME( amount )
+  Read _amount_ of data into the stream.
+**/
 DEFINE_FUNCTION_FAST( Read ) {
 
 	J_S_ASSERT_ARG_MIN( 1 );
@@ -121,6 +137,10 @@ DEFINE_FUNCTION_FAST( Read ) {
 }
 
 
+/**doc
+ * $INT $INAME
+  Get or set the stream pointer position.
+**/
 DEFINE_PROPERTY( positionGetter ) {
 
 	int position;
@@ -138,6 +158,10 @@ DEFINE_PROPERTY( positionSetter ) {
 	return JS_TRUE;
 }
 
+/**doc
+ * $INT $INAME $READONLY
+  The remaining data from the stream pointer position to the end of the stream.
+**/
 DEFINE_PROPERTY( available ) {
 
 	J_CHECK_CALL( JS_GetReservedSlot(cx, obj, SLOT_STREAM_SOURCE, vp) ); // use vp as a tmp variable
@@ -156,12 +180,20 @@ DEFINE_PROPERTY( available ) {
 	return JS_TRUE;
 }
 
+/**doc
+ * $OBJ $INAME
+  The object used to create the steam.
+**/
 DEFINE_PROPERTY( source ) {
 
 	J_CHECK_CALL( JS_GetReservedSlot(cx, obj, SLOT_STREAM_SOURCE, vp) );
 	return JS_TRUE;
 }
 
+/**doc
+=== note ===
+ Basically, a Stream is nothing else that a buffer with a stream pointer position.
+**/
 
 CONFIGURE_CLASS
 

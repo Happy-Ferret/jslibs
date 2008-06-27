@@ -44,7 +44,19 @@ BEGIN_STATIC
 /**doc
  * $STR *Expand*( str [, obj] )
   Return an expanded string using key/value stored in _obj_.
-  ===== example: =====
+  = =
+  If _obj_ is omitted, the current object is used to look for key/value.
+  $H example
+   {{{
+   function Test() {
+     this.Expand = Expand;
+     this.a = 123;
+   }
+   Print( new Test().Expand('$(a)') );
+	}}}
+  $H note
+   undefined values are ignored in the resulting string.
+  $H example
   {{{
   Expand(' $(h) $(w)', { h:'Hello', w:'World' }); // returns "Hello World"
   }}}
@@ -62,7 +74,7 @@ DEFINE_FUNCTION( Expand ) {
 	const char *srcEnd = srcBegin + srcLen;
 
 	JSObject *table;
-	if ( J_ARG_ISDEF(2) ) { // todoc: this is a special behavior
+	if ( J_ARG_ISDEF(2) ) {
 
 		RT_ASSERT_OBJECT( J_ARG(2) );
 		table = JSVAL_TO_OBJECT( J_ARG(2) );
@@ -114,7 +126,7 @@ DEFINE_FUNCTION( Expand ) {
 		J_CHK( JS_GetProperty(cx, table, srcBegin, &val) );
 		*((char*)tok) = tmp;
 
-		if ( val != JSVAL_VOID ) { // todoc: undefined or not-defined values are ignored
+		if ( val != JSVAL_VOID ) {
 
 			chunk = (Chunk*)malloc(sizeof(Chunk));
 			J_CHK( JsvalToStringAndLength(cx, val, &chunk->data, &chunk->length) );

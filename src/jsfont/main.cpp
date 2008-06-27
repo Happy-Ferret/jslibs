@@ -24,6 +24,16 @@ FT_Library _freetype;
 static bool _defaultUnsafeMode = false;
 extern bool *_pUnsafeMode = &_defaultUnsafeMode;
 
+/**doc t:header
+$MODULE_HEADER
+ Support text rendering (text to image) from the following font format:
+ TrueType, Type 1, CID-keyed Type 1, CFF, OpenType TrueType, OpenType CFF,
+ SFNT-based bitmap, X11 PCF, Windows FNT, BDF, PFR, Type 42
+**/
+
+/**doc t:footer
+$MODULE_FOOTER
+**/
 
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
