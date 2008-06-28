@@ -1173,7 +1173,7 @@ DEFINE_FUNCTION_FAST( AddNoise ) {
 	int i, tsize = tex->width * tex->height * channels;
 	if ( fullLevel )
 		for ( i = 0; i < tsize; i++ )
-			tex->cbuffer[i] = PRAND;
+			tex->cbuffer[i] += PRAND;
 	else
 		for ( i = 0; i < tsize; i++ )
 			tex->cbuffer[i] += PRAND * pixel[i % channels] / PMAX; //(TBD) test if i%channels works fine, else use double for loop
@@ -1248,9 +1248,12 @@ DEFINE_FUNCTION_FAST( Desaturate ) {
 
 
 /**doc
- * $THIS $INAME( textureObject )
- * $THIS $INAME( colorInfo )
-  Set a texture with another texture (_textureObject_) or a given color (_colorInfo_).
+ * $THIS $INAME( otherTexture )
+ * $THIS $INAME( color )
+  $H arguments
+   $ARG Texture otherTexture: 
+   $ARG colorInfo color: 
+  Set a texture with another texture or a given _color_.
 **/
 // PTYPE ok
 DEFINE_FUNCTION_FAST( Set ) {
@@ -3733,6 +3736,8 @@ END_CLASS
 
 /**doc
 === Examples ===
+$H example 1
+ Some utility functions.
 {{{
 function Cloud( size, amp ) {
 
@@ -3751,9 +3756,7 @@ function Cloud( size, amp ) {
 	cloud.NormalizeLevels();
 	return cloud;
 }
-}}}
 
-{{{
 function DesaturateLuminosity( tex ) {
 	
 	tex.Mult([0.2126, 0.7152, 0.0722]);
@@ -3761,9 +3764,7 @@ function DesaturateLuminosity( tex ) {
 	tex.Swap(tmp);
 	tmp.Free();
 }
-}}}
 
-{{{
 function AddAlphaChannel( tex ) {
 
 	if ( tex.channels == 1 )
@@ -3773,6 +3774,8 @@ function AddAlphaChannel( tex ) {
 }
 }}}
 
+$H example 2
+ This is a complete example that displays a texture in real-time in a OpenGL environment.
 {{{
 LoadModule('jsstd');
 LoadModule('jsio');
@@ -3780,56 +3783,48 @@ LoadModule('jsgraphics');
 LoadModule('jsprotex');
 LoadModule('jsimage');
 
-var texture = new Texture(128, 128, 3);
-texture.Set(0);
-
-// play here for static textures
-
-function UpdateTexture(imageIndex) {
-
-	// play here for dynamic textures
-	texture.AddNoise();
-}
-
-var win = new Window();
-win.Open();
-win.CreateOpenGLContext();
-win.rect = [200,200,800,800];
-
-function ResizeWindow(w, h) {
-
-	with (Ogl) {
-	
-		Viewport(0,0,w,h);
-		MatrixMode(PROJECTION);
-		LoadIdentity();
-		Ortho(0,0,10,10, -1, 1);
-	}
-	Render();
-}
-
 with (Ogl) {
+
+	var texture = new Texture(128, 128, 3);
+	texture.Set(0);
+	// play here for static textures
+
+	function UpdateTexture(imageIndex) {
+
+		// play here for dynamic textures
+		texture.Set(0);
+		texture.AddNoise(1);
+	}
+
+	var win = new Window();
+	win.Open();
+	win.CreateOpenGLContext();
+	win.rect = [200,200,800,800];
+
+	function ResizeWindow(w, h) {
+
+		Ogl.Viewport(0,0,w,h);
+		Ogl.MatrixMode(PROJECTION);
+		Ogl.LoadIdentity();
+		Ogl.Ortho(0,0,10,10, -1, 1);
+		Render();
+	}
 
 	ShadeModel(FLAT);
 	FrontFace(CCW);
 	ClearColor(0, 0, 0, 0);
 	Enable(TEXTURE_2D);
-	var tid = GenTexture();
+	tid = GenTexture();
 	BindTexture(TEXTURE_2D, tid);
 	TexParameter(TEXTURE_2D, TEXTURE_MIN_FILTER, NEAREST); // GL_LINEAR
 	TexParameter(TEXTURE_2D, TEXTURE_MAG_FILTER, NEAREST);
 	Clear( COLOR_BUFFER_BIT | DEPTH_BUFFER_BIT );
-}
 
-function Render(imageIndex) {
-
-	with (Ogl) {
-	
-		MatrixMode(MODELVIEW);
+	function Render(imageIndex) {
 
 		UpdateTexture();
 		DefineTextureImage(TEXTURE_2D, undefined, texture);
-		
+		MatrixMode(MODELVIEW);
 		LoadIdentity();
 		Scale(1, -1, 1);
 		Color(1,1,1);
@@ -3843,22 +3838,20 @@ function Render(imageIndex) {
 		TexCoord( 0, 1 );
 		Vertex( -1, 1 );
 		End();
+		win.SwapBuffers();
+		MaybeCollectGarbage();
 	}
-	win.SwapBuffers();
-	MaybeCollectGarbage();
+
+	win.onsize = ResizeWindow;
+	var end = false;
+	win.onkeydown = function( key, l ) { end = ( key == 0x1B ) }
+	while (!end) {
+
+		win.ProcessEvents();
+		Render();
+	}
+	win.Close();
 }
-
-win.onsize = ResizeWindow;
-
-var end = false;
-win.onkeydown = function( key, l ) { end = ( key == 0x1B ) }
-while (!end) {
-
-	win.ProcessEvents();
-	Render();
-}
-
-win.Close();
 }}}
 **/
 
