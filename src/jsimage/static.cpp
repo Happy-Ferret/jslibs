@@ -142,8 +142,9 @@ DEFINE_FUNCTION( DecodeJpegImage ) {
 	src->pub.bytes_in_buffer = 0; // forces fill_input_buffer on first read
 	src->pub.next_input_byte = NULL; // until buffer loaded
 
+	J_S_ASSERT_OBJECT( J_ARG(1) );
+	src->obj = JSVAL_TO_OBJECT( J_ARG(1) ); // required by NIStreamRead
 	src->cx = cx; // required by NIStreamRead
-	src->obj = JSVAL_TO_OBJECT(argv[0]); // required by NIStreamRead
 
 // try to use a fast way to read the data
 //	J_CHECK_CALL( GetStreamReadInterface(cx, JSVAL_TO_OBJECT(argv[0]), &src->read) );
@@ -254,6 +255,10 @@ DEFINE_FUNCTION( DecodePngImage ) {
 
 //	J_CHECK_CALL( GetStreamReadInterface(cx, JSVAL_TO_OBJECT(argv[0]), &desc.read) );
 //	J_S_ASSERT( desc.read != NULL, "Unable to GetNativeResource." );
+
+	J_S_ASSERT_OBJECT( J_ARG(1) );
+	desc.obj = JSVAL_TO_OBJECT( J_ARG(1) );
+	desc.cx = cx;
 
 	png_set_read_fn( desc.png, (voidp)&desc, _png_read );
    png_read_info(desc.png, desc.info);
