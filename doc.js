@@ -43,7 +43,10 @@ var api = {
 		
 		var inheritFrom = ReadArg(cx);
 		
-		cx.center = '----\n== '+item.lastDir+'::'+className+' class '+(inheritFrom ? '^'+item.lastDir+'::'+inheritFrom+'^' : '' )+' ==';
+		cx.center = '----\n== '+item.lastDir+'::'+className+' class ';
+		cx.center += inheritFrom ? '^'+item.lastDir+'::'+inheritFrom+'^' : '';
+		cx.center += ' ==';
+		cx.center += '\n- [http://jslibs.googlecode.com/svn/trunk/'+item.path+'/'+item.fileName+' src] - [#'+item.lastDir+'_module top] -';
 	},
 	
 	$MODULE_HEADER: function(cx, item) {
@@ -62,7 +65,9 @@ var api = {
 
 	$ARG:function(cx, item) {
 	
-		cx.center = '_'+ReadArg(cx)+'_';
+		var type = ReadArg(cx);
+		var name = ReadArg(cx);
+		cx.center = '# ,,'+type+',, _'+name+'_';
 	},
 
 
@@ -96,7 +101,7 @@ var api = {
 	$OBJ:',,object,,',
 	$BOOL:',,boolean,,',
 	$VOID:'',
-	$THIS:'this object',
+	$THIS:',,this,,',
 
 	$CONST:function(cx, item) {
 	
@@ -135,7 +140,7 @@ function ReadCx(cx, re) {
     }
 }
 
-function ReadArg(cx) ReadCx(cx, / *([^\s\r\n]*)/g)[1]||'';
+function ReadArg(cx) ReadCx(cx, / *([\w]*)/g)[1]||'';
 function ReadEol(cx, eatEol) ReadCx(cx, new RegExp(' *([^\r\n]*)' + (eatEol ? '\r?\n' : ''),'g'))[1]||'';
 
 
