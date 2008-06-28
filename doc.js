@@ -43,7 +43,7 @@ var api = {
 		
 		var inheritFrom = ReadArg(cx);
 		
-		cx.center = '== '+item.lastDir+'::'+className+' class '+(inheritFrom ? '^'+item.lastDir+'::'+inheritFrom+'^' : '' )+' ==';
+		cx.center = '----\n== '+item.lastDir+'::'+className+' class '+(inheritFrom ? '^'+item.lastDir+'::'+inheritFrom+'^' : '' )+' ==';
 	},
 	
 	$MODULE_HEADER: function(cx, item) {
@@ -67,6 +67,11 @@ var api = {
 
 
 	$RET:function(cx, item) {
+	
+		cx.center = ',,'+ReadArg(cx)+',,';
+	},
+
+	$TYPE:function(cx, item) {
 	
 		cx.center = ',,'+ReadArg(cx)+',,';
 	},
