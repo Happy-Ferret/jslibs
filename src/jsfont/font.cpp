@@ -69,24 +69,27 @@ DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are
 }
 
 /**doc
- * $INAME()
-  TBD
+ * $INAME( filePathName [, faceIndex = 0] )
+  $H arguments
+   $ARG string filePathName: the path of the font file.
+   $ARG integer faceIndex: the index of the face to use.
+  Creates a new Font object and seletc the face to use.
 **/
-DEFINE_CONSTRUCTOR() { // Called when the object is constructed ( a = new Template() ) or activated ( a = Template() ). To distinguish the cases, use JS_IsConstructing() or use the RT_ASSERT_CONSTRUCTING() macro.
+DEFINE_CONSTRUCTOR() {
 
 	J_S_ASSERT_CONSTRUCTING();
 	J_S_ASSERT_THIS_CLASS();
 	J_S_ASSERT_ARG_MIN(1);
 
-	const char *facePath;
-	J_CHECK_CALL( JsvalToString(cx, J_ARG(1), &facePath) );
+	const char *filePathName;
+	J_CHECK_CALL( JsvalToString(cx, J_ARG(1), &filePathName) );
 
 	FT_Long faceIndex = 0;
 	if ( J_ARG_ISDEF(2) )
 		J_JSVAL_TO_INT32(J_ARG(2), faceIndex);
 
 	FT_Face face;
-	FTCHK( FT_New_Face( _freetype, facePath, 0, &face ) );
+	FTCHK( FT_New_Face( _freetype, filePathName, faceIndex, &face ) );
 	// from memory: FT_New_Memory_Face
 	// see. FT_Open_Face
 
@@ -94,6 +97,11 @@ DEFINE_CONSTRUCTOR() { // Called when the object is constructed ( a = new Templa
 	J_CHECK_CALL( JS_SetPrivate(cx, obj, face) );
 	return JS_TRUE;
 }
+
+/**doc
+=== Methods ===
+**/
+
 
 /*
 DEFINE_FUNCTION_FAST( SetSize ) {
@@ -117,8 +125,11 @@ DEFINE_FUNCTION_FAST( SetSize ) {
 */
 
 /**doc
- * $RET imageObject $INAME( string )
-  TBD
+ * $TYPE imageObject $INAME( oneChar )
+  Draws one char with the current face.
+  $H arguments
+   $ARG string oneChar: string of one char.
+  Function returns an image object that contains the char.
 **/
 DEFINE_FUNCTION_FAST( DrawChar ) {
 
@@ -159,8 +170,13 @@ DEFINE_FUNCTION_FAST( DrawChar ) {
 
 
 /**doc
- * $RET imageObject $INAME( string )
-  TBD
+ * $TYPE imageObject | $TYPE integer $INAME( text [, keepTrailingSpace = false] [, getWidthOnly = false ] )
+  Draws a string with the current face.
+  $H arguments
+   $ARG string text: the single-line text to draw.
+   $ARG boolean keepTrailingSpace: if true, the last letter separator space is keept.
+   $ARG boolean getWidthOnly: if true, the function will return the length (in pixel) of the _text_.
+  Function returns an image object that contains the text or the length of the text in pixel.
 **/
 DEFINE_FUNCTION_FAST( DrawString ) {
 
@@ -335,10 +351,15 @@ DEFINE_FUNCTION_FAST( DrawString ) {
 	return JS_TRUE;
 }
 
+/**doc
+=== Properties ===
+**/
 
 /**doc
  * $INT $INAME $READONLY
-  TBD
+  is the ascender length (in pixel) of the current face.
+  $H note
+   The ascender is the portion of a letter in a Latin-derived alphabet that extends above the mean line of a font. That is, the part of the letter that is taller than the font's x-height.
 **/
 DEFINE_PROPERTY( ascender ) {
 
@@ -350,7 +371,9 @@ DEFINE_PROPERTY( ascender ) {
 
 /**doc
  * $INT $INAME $READONLY
-  TBD
+  is the descender length (in pixel) of the current face.
+  $H note
+   The descender is the portion of a letter in a Latin alphabet that extends below the baseline of a font. For example, in the letter y, the descender would be the "tail," or that portion of the diagonal line which lies below the v created by the two lines converging.
 **/
 DEFINE_PROPERTY( descender ) {
 
@@ -362,7 +385,7 @@ DEFINE_PROPERTY( descender ) {
 
 /**doc
  * $INT $INAME $READONLY
-  TBD
+  is the maximum width (in pixel) of the current face.
 **/
 DEFINE_PROPERTY( width ) {
 
@@ -374,8 +397,8 @@ DEFINE_PROPERTY( width ) {
 
 
 /**doc
- * $INT $INAME $READONLY
-  TBD
+ * $INT $INAME
+  is the size (in pixel) of the current face.
 **/
 DEFINE_PROPERTY( size ) {
 
@@ -393,8 +416,28 @@ DEFINE_PROPERTY( size ) {
 
 
 /**doc
- * $INT $INAME $WRITEONLY
-  TBD
+ * $TYPE enum $INAME
+  is the current encoding.
+  $H supported encodings
+   * Font.NONE
+   * Font.MS_SYMBOL
+   * Font.UNICODE
+   * Font.SJIS
+   * Font.GB2312
+   * Font.BIG5
+   * Font.WANSUNG
+   * Font.JOHAB
+   * Font.MS_SJIS
+   * Font.MS_GB2312
+   * Font.MS_BIG5
+   * Font.MS_WANSUNG
+   * Font.MS_JOHAB
+   * Font.ADOBE_STANDARD
+   * Font.ADOBE_EXPERT
+   * Font.ADOBE_CUSTOM
+   * Font.ADOBE_LATIN_1
+   * Font.OLD_LATIN_2
+   * Font.APPLE_ROMAN
 **/
 DEFINE_PROPERTY( encoding ) {
 
@@ -409,7 +452,7 @@ DEFINE_PROPERTY( encoding ) {
 
 /**doc
  * $INT $INAME $READONLY
-  TBD
+  is the postscript name of the face.
 **/
 DEFINE_PROPERTY( poscriptName ) {
 
@@ -423,7 +466,9 @@ DEFINE_PROPERTY( poscriptName ) {
 
 /**doc
  * $BOOL $INAME
-  TBD
+  enable or disable kerning usage for the current face.
+  $H note
+   Kerning is the process of adjusting letter spacing in a proportional font. In a well-kerned font, the two-dimensional blank spaces between each pair of letters all have similar area.
 **/
 DEFINE_PROPERTY_GETTER( useKerning ) {
 
@@ -438,7 +483,7 @@ DEFINE_PROPERTY_SETTER( useKerning ) {
 
 /**doc
  * $INT $INAME
-  TBD
+  is the size (in pixel) of the horizontal padding of any drawn text i.e. the space before and after the text.
 **/
 DEFINE_PROPERTY_GETTER( horizontalPadding ) {
 
@@ -453,7 +498,7 @@ DEFINE_PROPERTY_SETTER( horizontalPadding ) {
 
 /**doc
  * $INT $INAME
-  TBD
+  is the size (in pixel) of the vertical padding of any drawn text i.e. the space above and below the text.
 **/
 DEFINE_PROPERTY_GETTER( verticalPadding ) {
 
@@ -468,7 +513,7 @@ DEFINE_PROPERTY_SETTER( verticalPadding ) {
 
 /**doc
  * $INT $INAME
-  TBD
+  is the length (in pixel) of the additional space added between each letter in a text.
 **/
 DEFINE_PROPERTY_GETTER( letterSpacing ) {
 
@@ -483,7 +528,7 @@ DEFINE_PROPERTY_SETTER( letterSpacing ) {
 
 /**doc
  * $BOOL $INAME
-  TBD
+  enable or disable italic.
 **/
 DEFINE_PROPERTY_GETTER( italic ) {
 
@@ -498,7 +543,7 @@ DEFINE_PROPERTY_SETTER( italic ) {
 
 /**doc
  * $BOOL $INAME
-  TBD
+  enable or disable bold.
 **/
 DEFINE_PROPERTY_GETTER( bold ) {
 
@@ -562,6 +607,39 @@ CONFIGURE_CLASS // This section containt the declaration and the configuration o
 	END_CONST_INTEGER_SPEC
 
 END_CLASS
+
+
+/**doc
+=== Examples ===
+$H example 1
+ Write "Hello world" in the file text.png
+{{{
+LoadModule('jslang');
+LoadModule('jsstd');
+LoadModule('jsfont');
+LoadModule('jsimage');
+LoadModule('jsprotex');
+LoadModule('jsio');
+
+var f = new Font('arial.ttf');
+f.size = 100;
+f.verticalPadding = -16;
+var img = f.DrawString('Hello world', true);
+
+var t = new Texture(img);
+var t1 = new Texture(t);
+
+t.BoxBlur(10,10);
+t1.OppositeLevels();
+t.Add(t1);
+t.OppositeLevels();
+t.Add(1);
+
+new File('text.png').content = EncodePngImage(t.Export());}}}
+}}}
+**/
+
+
 
 
 /*
