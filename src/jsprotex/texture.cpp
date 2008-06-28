@@ -3147,6 +3147,9 @@ DEFINE_FUNCTION_FAST( AddGradiantQuad ) {
    $ARG curveInfo curveInfoY:
   $H example 1
   {{{
+  const curveHalfSine = function(v) Math.cos(v*Math.PI/2);
+  const curveOne = function() 1;
+  
   texture.Set(0); // clears the texture
   texture.AddGradiantLinear(curveHalfSine, curveOne);
   }}}
@@ -3195,6 +3198,8 @@ DEFINE_FUNCTION_FAST( AddGradiantLinear ) {
    $ARG boolean drawToCorner: If true, the curve goes from the center to the corner, else from the center to the edge.
   $H example 1
   {{{
+  const curveHalfSine = function(v) Math.cos(v*Math.PI/2);
+  
   texture.AddGradiantRadial(curveHalfSine);
   }}}
   $H example 2
@@ -3345,7 +3350,7 @@ DEFINE_FUNCTION( AddGradiantRadial ) {
 
   texture.AddCracks( 10, 10000, 0.1, 1, curveLinear );
 
-  texture.AddCracks( 10, 10000, 0.1, 1, function(v) { return Texture.RandReal() } );
+  texture.AddCracks( 10, 10000, 0.1, 1, function(v) Texture.RandReal() );
   }}}
 **/
 DEFINE_FUNCTION_FAST( AddCracks ) { // source: FxGen
@@ -3588,7 +3593,7 @@ static JSBool Test(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval 
 /**doc
 === Definitions ===
  * *$pval*
-  A $pval is the value of one channel of a pixel.
+  The $pval is the value of a channel of a pixel.
   In a RGB texture, each pixel has 3 components (Red, Green and Blue) and each one represents a light intensity.
 
 === Special values and data types ===
