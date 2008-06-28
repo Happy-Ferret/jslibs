@@ -129,7 +129,8 @@ DEFINE_FUNCTION_FAST( SetSize ) {
   Draws one char with the current face.
   $H arguments
    $ARG string oneChar: string of one char.
-  Function returns an image object that contains the char.
+  $H return value
+   Function returns an image object that contains the char.
 **/
 DEFINE_FUNCTION_FAST( DrawChar ) {
 
@@ -176,7 +177,8 @@ DEFINE_FUNCTION_FAST( DrawChar ) {
    $ARG string text: the single-line text to draw.
    $ARG boolean keepTrailingSpace: if true, the last letter separator space is keept.
    $ARG boolean getWidthOnly: if true, the function will return the length (in pixel) of the _text_.
-  Function returns an image object that contains the text or the length of the text in pixel.
+  $H return value
+   Function returns an image object that contains the text or the length of the text in pixel.
 **/
 DEFINE_FUNCTION_FAST( DrawString ) {
 
