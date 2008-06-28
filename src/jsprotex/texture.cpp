@@ -316,10 +316,6 @@ DEFINE_FINALIZE() {
 }
 
 /**doc
-=== Methods ===
-**/
-
-/**doc
  * $INAME( width, height, channels )
  * $INAME( sourceTexture )
  * $INAME( image )
@@ -429,6 +425,9 @@ DEFINE_CONSTRUCTOR() {
 	J_REPORT_ERROR( "Invalid arguments" );
 }
 
+/**doc
+=== Methods ===
+**/
 
 /**doc
  * $VOID $INAME()
@@ -2622,8 +2621,15 @@ DEFINE_FUNCTION_FAST( Paste ) { // (Texture)texture, (int)x, (int)y, (bool)borde
 
 
 /**doc
- * $TYPE ImageObject $INAME( x, y, width, height )
-  Creates an image object from the current texture.
+ * $TYPE ImageObject $INAME( [x, y, width, height] )
+  Creates an image object from the whole or a part of current texture.
+  $H arguments
+   $ARG integer x:
+   $ARG integer y:
+   $ARG integer width:
+   $ARG integer height:
+  $H return value
+   returns an image object.
   $H example
   {{{
   var f = new Font('arial.ttf');
@@ -3332,11 +3338,11 @@ DEFINE_FUNCTION( AddGradiantRadial ) {
 
 
 /**doc
- * $THIS $INAME( count, crackMaxLength, wayVariation, color, curve )
+ * $THIS $INAME( count, crackLength, wayVariation [, color = 1] [, curve = 1] )
   Adds cracks to the current texture. TBD
   $H arguments
    $ARG integer count: number of cracks to draw.
-   $ARG integer crackMaxLength: length of each crack.
+   $ARG integer crackLength: length of each crack.
    $ARG real wayVariation: the variation of each crack (eg. 0 is straight and 1 is randomly curved).
    $ARG colorInfo color: the color of the crack.
    $ARG curveInfo curve: the curve that defines the intensity of each point of the crack.
@@ -3374,10 +3380,23 @@ DEFINE_FUNCTION_FAST( AddCracks ) { // source: FxGen
 	RT_JSVAL_TO_REAL( J_FARG(3), variation );
 
 	PTYPE pixel[PMAXCHANNELS];
-	RT_CHECK_CALL( InitLevelData(cx, J_FARG(4), channels, pixel) );
+	if ( J_FARG_ISDEF(4) ) {
+		
+		RT_CHECK_CALL( InitLevelData(cx, J_FARG(4), channels, pixel) );
+	} else {
+		for ( int i=0; i<PMAXCHANNELS; i++ )
+			pixel[i] = PMAX;
+	}
 
-	float *curve = (float*)malloc( crackMaxLength * sizeof(float) ); // (TBD) free curve
-	InitCurveData( cx, J_FARG(5), crackMaxLength, curve );
+
+	float *curve = (float*)malloc( crackMaxLength * sizeof(float) );
+	if ( J_FARG_ISDEF(5) ) {
+
+		J_CHK( InitCurveData( cx, J_FARG(5), crackMaxLength, curve ) );
+	} else {
+		for ( int i=0; i<crackMaxLength; i++ )
+			curve[i] = PMAX;
+	}
 
 	// draw
 	int pos, c;
@@ -3412,6 +3431,7 @@ DEFINE_FUNCTION_FAST( AddCracks ) { // source: FxGen
 			a = a + variation*(2 * genrand_real1() - 1);
 		}
 	}
+	free(curve);
 	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 	return JS_TRUE;
 }
@@ -3420,7 +3440,12 @@ DEFINE_FUNCTION_FAST( AddCracks ) { // source: FxGen
 
 /**doc
  * $TYPE Array $INAME( x, y )
-  Returns the pixel value at position (x, y) in the current texture. If the texture is RGB, an array of 3 values is returned.
+  Read the value of a pixel in the current texture.
+  $H arguments
+   $ARG integer x
+   $ARG integer y
+  $H return value
+   returns the pixel value at position (x, y) in the current texture. If the texture is RGB, an array of 3 values is returned.
   $H example
   {{{
   var texture = new Texture(20,20,3);
@@ -3591,6 +3616,14 @@ static JSBool Test(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval 
 
 
 /**doc
+=== Note ===
+ Nearly all methods returns _this_ object. This allows to easily chain texture operations.
+ $H example
+ {{{
+ var texture = new Texture(64,64,3);
+ texture.Set(0).AddNoise().AddCracks(10, 100, 0, BLUE, 1);
+ }}}
+
 === Definitions ===
  * *$pval*
   The $pval is the value of a channel of a pixel.
@@ -3779,7 +3812,25 @@ function AddAlphaChannel( tex ) {
 }
 }}}
 
-$H example 2
+$H example 3
+ This example shows how to save a texture to the disk.
+{{{
+LoadModule('jsstd');
+LoadModule('jsio');
+LoadModule('jsprotex');
+LoadModule('jsimage');
+
+var bacteria = new Texture(256,256,3);
+bacteria.Set(0);
+bacteria.AddCracks(100, 100, 2, undefined, function(v) v);
+bacteria.BoxBlur(5,5);
+bacteria.MirrorLevels(0.5, false);
+bacteria.BoxBlur(2,2);
+
+new File('test.png').content = EncodePngImage(bacteria.Export());
+}}}
+
+$H example 3
  This is a complete example that displays a texture in real-time in a OpenGL environment.
 {{{
 LoadModule('jsstd');
