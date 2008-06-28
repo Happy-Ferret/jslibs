@@ -2,6 +2,7 @@ LoadModule('jsstd');
 LoadModule('jsio');
 LoadModule('jsgraphics');
 LoadModule('jsprotex');
+LoadModule('jsimage');
 
 
 const RED = [1,0,0,1];
@@ -104,40 +105,59 @@ var t0 = IntervalNow();
 
 function time() IntervalNow() - t0;
 
-var size = 256;
+var size = 512;
 var texture = new Texture(size, size, 3);
 
-function UpdateTexture(imageIndex) {
+//	var myImage = DecodeJpegImage( new File('301_0185.jpg').Open('r') );
+	var file = new File('button2.png').Open('r');
+	var myImage = DecodePngImage( file );
+	file.Close();
+
+	texture.Set(0);
+//	texture.Import( myImage, 0, 0 );
+
+  
+  Texture.RandSeed(1234);
+  Print( Texture.RandReal(), '\n' );
+  Print( Texture.RandReal(), '\n' );
+  Print( Texture.RandReal(), '\n' );
+
+
+function UpdateTexture(imageIndex) { // ===============
+
+	Texture.RandSeed(123);
+
+//  texture.Set(0); // clears the texture
+//  texture.AddCracks( 1000, 10, 0.1, 1, function(v) { return Texture.RandReal() } );
+
+
+
+return;
+
+	var bump = Cloud( size, 0.5 );
+	bump.Normals();
+	texture.Set(1);
+	texture.Light( bump, [-1, -1, 1], 0, [0.1, 0.3, 0.4], 0.2, 0.5, 10 );
+
+return;
+
 
 //texture.SetRectangle(0,0,1,1, [1,0,0]);	
 
 	Texture.RandSeed(0);
 	texture.ClearChannel();
-	
 	texture.AddGradiantRadial( [1], 0 );
-	
-	return;
+return;
 	
 	texture = Cloud( size, 0.5 * Math.sin(time()/1000) );
-	
-
-	
 	texture.CutLevels(0.49,0.51);
 	texture.BoxBlur(4,4);
-	
-	
 	texture.MirrorLevels(0.5);
 	texture.PowLevels(0.5)
-	
 //texture.AddGradiantQuad(BLUE, GREEN, RED, YELLOW);
-
-
 //	texture.SetRectangle( 1*size/4, 1*size/4, 3*size/4, 3*size/4, WHITE );
 //	texture.RotoZoom( 0, 0, 1, 1, time()/10000 );
 	//texture.RotoZoom( 0, 0, 1, 0.5, 0 );
-
-
-
 //texture.Shift(time()/10,0);
 
 //	var displace = new Texture(size, size, 2);
@@ -518,9 +538,11 @@ function Render(imageIndex) {
 		MatrixMode(MODELVIEW);
 
 		UpdateTexture();
-		DefineTextureImage(TEXTURE_2D, texture);
+		
+		DefineTextureImage(TEXTURE_2D, undefined, texture);
 		
 		LoadIdentity();
+    Scale(1, -1, 1);
 		Translate(0,0,0);
 		Color(1,1,1);
 		Begin(QUADS);

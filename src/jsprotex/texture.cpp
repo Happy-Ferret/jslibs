@@ -23,6 +23,7 @@
 
 #define _USE_MATH_DEFINES
 #include <math.h>
+#include <cstring>
 #include <string.h>
 
 
@@ -256,7 +257,7 @@ inline JSBool InitCurveData( JSContext* cx, jsval value, int length, float *curv
 			curve[i] = bstrData[ i * bstrLen / length ] / 256;
 	}	
 	else {
-
+      // (TBD) throws an error ?
 		for ( int i = 0; i < length; i++ )
 			curve[i] = PMAX;
 	}
@@ -1435,6 +1436,8 @@ DEFINE_FUNCTION_FAST( Blend ) { // texture1, blenderTexture|blenderColor
 /**doc
  * $THIS SetPixel( x, y, colorInfo )
   Sets the color of the given pixel.
+  $note:
+  If x and y are wrapped to the image width and height.
 **/
 // PTYPE ok
 DEFINE_FUNCTION_FAST( _SetPixel ) { // x, y, levels
@@ -1739,8 +1742,13 @@ DEFINE_FUNCTION_FAST( RotoZoom ) { // source: FxGen
 
 
 /**doc
- * $RET ??? $INAME ???
+ * $THIS $INAME( newWidth, newHeight, [interpolate = false [, borderMode = Texture.borderWrap ]] )
   TBD
+  $H arguments
+  * $INT _newWidth_:
+  * $INT _newHeight_:
+  * $BOOL _interpolate_: activates the linear interpolation.
+  * $INT _borderMode_: how to manage the border. either borderClamp, borderWrap, borderMirror, borderValue.
 **/
 // PTYPE ok
 DEFINE_FUNCTION_FAST( Resize ) {
@@ -1753,15 +1761,27 @@ DEFINE_FUNCTION_FAST( Resize ) {
 	int channels = tex->channels;
 
 	int newWidth, newHeight;
-	bool interpolate;
 	RT_JSVAL_TO_REAL( J_FARG(1), newWidth );
 	RT_JSVAL_TO_REAL( J_FARG(2), newHeight );
 
+	bool interpolate;
+	if ( J_FARG_ISDEF(3) )
+		RT_JSVAL_TO_BOOL( J_FARG(3), interpolate );
+	else
+		interpolate = false;
+
+	BorderMode borderMode; // (TBD) from function arg
+	if ( J_FARG_ISDEF(4) ) {
+		
+		int tmp;
+		J_JSVAL_TO_INT32( J_FARG(4), tmp );
+		borderMode = (BorderMode)tmp;
+	} else
+		borderMode = borderWrap;
+
+
 	if ( newWidth != width || newHeight != height ) { // nothing to do
 		
-		RT_JSVAL_TO_BOOL( J_FARG(3), interpolate );
-
-		BorderMode borderMode = borderWrap; // (TBD) from function arg
 
 		PTYPE *newBuffer = (PTYPE*)JS_malloc(cx, newWidth * newHeight * channels * sizeof(PTYPE) );
 		RT_ASSERT_ALLOC( newBuffer );
@@ -1813,6 +1833,8 @@ DEFINE_FUNCTION_FAST( Resize ) {
 						case borderValue:
 							// (TBD)
 							break;
+						default:
+							J_REPORT_ERROR( "Invalid border mode." );
 					}
 
 					ratio1 = (1.f - prx) * (1.f - pry);
@@ -1852,8 +1874,24 @@ DEFINE_FUNCTION_FAST( Resize ) {
 
 
 /**doc
- * $RET ??? $INAME ???
+ * $THIS $INAME( kernel, borderMode [, autoGain = Texture.borderWrap], [ autoGain = true ] );
   TBD
+  $H arguments
+  * $RES Array _kernel_: kernel is a square matrix
+  * $INT _borderMode_: how to manage the border. either borderClamp, borderWrap, borderMirror, borderValue.
+  * $BOOL _autoGain_:
+  $H example:
+  {{{
+  const kernelGaussian = [0,3,10,3,0, 3,16,26,16,3, 10,26,26,26,10, 3,16,26,16,3, 0,3,10,3,0 ];
+  const kernelGaussian2 = [2,4,5,4,2, 4,9,12,9,4, 5,12,15,12,5, 4,9,12,9,4, 2,4,5,4,2]; // G(r) = pow(E,-r*r/(2*o*o))/sqrt(2*PI*o);
+  const kernelEmboss = [-1,0,0, 0,0,0 ,0,0,1];
+  const kernelLaplacian = [-1,-1,-1, -1,8,-1, -1,-1,-1];
+  const kernelLaplacian4 = [0,-1,0, -1,4,-1 ,0,-1,0];
+  const kernelShift = [0,0,0, 0,0,0 ,0,0,1];
+  const kernelEmboss = [-1,0,0, 0,0,0 ,0,0,1];
+  const kernelCrystals = [0,-1,0, -1,5,-1, 0,-1,0];
+  ...
+  texture.Convolution(kernelGaussian);
 **/
 // (TBD) PTYPE
 DEFINE_FUNCTION_FAST( Convolution ) {
@@ -1878,7 +1916,7 @@ DEFINE_FUNCTION_FAST( Convolution ) {
 	RT_ASSERT( size * size == count, "Invalid convolution kernel size.");
 
 	BorderMode borderMode;
-	if ( argc >= 2 && !JSVAL_IS_VOID(J_FARG(2)) ) {
+	if ( J_FARG_ISDEF(2) ) {
 
 		int tmp;
 		RT_JSVAL_TO_INT32( J_FARG(2), tmp );
@@ -1888,7 +1926,11 @@ DEFINE_FUNCTION_FAST( Convolution ) {
 
 	float gain;
 	bool autoGain;
-	RT_JSVAL_TO_BOOL( J_FARG(3), autoGain );
+
+	if ( J_FARG_ISDEF(3) )
+		RT_JSVAL_TO_BOOL( J_FARG(3), autoGain );
+	else
+		autoGain = true;
 
 	TextureSetupBackBuffer(cx, tex);
 
@@ -1971,6 +2013,8 @@ DEFINE_FUNCTION_FAST( Convolution ) {
 								pixel[c] += tex->cbuffer[pos+c] * ratio;
 						}
 					break;
+				default:
+					J_REPORT_ERROR( "Invalid border mode." );
 			}
 
 //			if ( gain == 0 )
@@ -1992,8 +2036,23 @@ DEFINE_FUNCTION_FAST( Convolution ) {
 
 
 /**doc
- * $RET ??? $INAME ???
-  TBD
+ * $THIS $INAME( blurWidth, blurHeight )
+  Apply a box blur of the given width and height.
+  $H note:
+   BoxBlur is very fast but the result is not very smooth.
+  $H example:
+  {{{
+  function AddPixels(t, count) {
+   while ( count-- > 0 )
+    t.SetPixel(Texture.RandInt(), Texture.RandInt(), 1);
+  }
+  
+  var texture = new Texture(128, 128, 3);
+  texture.Set(0);
+  AddPixels(texture, 100);
+  texture.BoxBlur(20,20);
+  texture.NormalizeLevels();
+  }}}
 **/
 DEFINE_FUNCTION_FAST( BoxBlur ) {
 
@@ -2062,8 +2121,8 @@ DEFINE_FUNCTION_FAST( BoxBlur ) {
 
 
 /**doc
- * $RET ??? $INAME ???
-  TBD
+ * $THIS $INAME()
+  Converts each pixel into a vector, normalize this vector, then store the vector as a pixel.
 **/
 DEFINE_FUNCTION_FAST( NormalizeVectors ) {
 
@@ -2097,8 +2156,8 @@ DEFINE_FUNCTION_FAST( NormalizeVectors ) {
 
 
 /**doc
- * $RET ??? $INAME ???
-  TBD
+ * $THIS $INAME( [ amplify = 1 ] );
+  Converts the texture to a normals map using the Sobel filter.
 **/
 // (TBD) PTYPE
 DEFINE_FUNCTION_FAST( Normals ) {
@@ -2197,8 +2256,23 @@ DEFINE_FUNCTION_FAST( Normals ) {
 
 
 /**doc
- * $RET ??? $INAME ???
+ * $THIS $INAME( normalsTexture, lightPosition, ambiantColor, diffuseColor, specularColor, bumpPower, specularPower )
   TBD
+  $H arguments:
+  * $TYPE Texture normalsTexture:
+  * $TYPE Array lightPosition: is the position of the light in a 3D space ( [x, y, z] )
+  * $TYPE colorInfo ambiantColor: 
+  * $TYPE colorInfo diffuseColor:
+  * $TYPE colorInfo specularColor:
+  * $REAL bumpPower:
+  * $REAL specularPower:
+  $H example:
+  {{{
+  var bump = new Texture(size, size, 3).Cells(8, 0).Add( new Texture(size, size, 3).Cells(8, 1).OppositeLevels() ); // broken floor
+  bump.Normals();
+  texture.Set(1);
+  texture.Light( bump, [-1, -1, 1], 0, [0.1, 0.3, 0.4], 0.2, 0.5, 10 );
+  }}}
 **/
 // (TBD) PTYPE
 DEFINE_FUNCTION_FAST( Light ) {
@@ -2221,7 +2295,7 @@ DEFINE_FUNCTION_FAST( Light ) {
 	RT_ASSERT( normals->width == tex->width && normals->height == tex->height, "Invalid normals texture size." );
 
 	Vector3 lightPos;
-	FloatArrayToVector(cx, 3, &J_FARG(2), lightPos.raw );
+	J_CHK( FloatArrayToVector(cx, 3, &J_FARG(2), lightPos.raw ) );
 
 	PTYPE ambient[3];
 	RT_CHECK_CALL( InitLevelData(cx, J_FARG(3), 3, ambient) );
@@ -2297,8 +2371,8 @@ DEFINE_FUNCTION_FAST( Light ) {
 
 
 /**doc
- * $RET ??? $INAME ???
-  TBD
+ * $THIS $INAME( x0, y0, x1, y1 )
+  Remove the part of the texture that is outside the rectangle (x1,y1) (x2,y2).
 **/
 DEFINE_FUNCTION_FAST( Trim ) { // (TBD) test this new version that use memcpy
 
@@ -2368,10 +2442,15 @@ DEFINE_FUNCTION_FAST( Trim ) { // (TBD) test this new version that use memcpy
 
 
 /**doc
- * $RET ??? $INAME ???
-  TBD
+ * $THIS $INAME( sourceTexture, x, y [, borderMode = Texture.borderClamp] )
+  Copy _sourceTexture_ in the current texture at the position (_x_, _y_).
+  $H arguments:
+  * $TYPE Texture sourceTexture:
+  * $INT x:
+  * $INT y:
+  * $INT borderMode: one of borderWrap, borderClamp.
 **/
-DEFINE_FUNCTION_FAST( Copy ) { // (Texture)source, (int)x, (int)y
+DEFINE_FUNCTION_FAST( Copy ) {
 
 	RT_ASSERT_ARGC( 3 );
 
@@ -2385,7 +2464,14 @@ DEFINE_FUNCTION_FAST( Copy ) { // (Texture)source, (int)x, (int)y
 	RT_JSVAL_TO_INT32( J_FARG(2), px );
 	RT_JSVAL_TO_INT32( J_FARG(3), py );
 
-	BorderMode borderMode = borderClamp; //
+	BorderMode borderMode; // (TBD) from function arg
+	if ( J_FARG_ISDEF(4) ) {
+		
+		int tmp;
+		J_JSVAL_TO_INT32( J_FARG(4), tmp );
+		borderMode = (BorderMode)tmp;
+	} else
+		borderMode = borderClamp;
 
 	int channels = tex->channels;
 
@@ -2414,6 +2500,8 @@ DEFINE_FUNCTION_FAST( Copy ) { // (Texture)source, (int)x, (int)y
 				if ( !(sx >= 0 && sx < srcTexWidth && sy >= 0 && sy < srcTexHeight) )
 					continue; // skip
 				break;
+			default:
+				J_REPORT_ERROR( "Invalid border mode." );
 			}
 
 			posDst = ( x + y * texWidth ) * channels;
@@ -2426,11 +2514,105 @@ DEFINE_FUNCTION_FAST( Copy ) { // (Texture)source, (int)x, (int)y
 	return JS_TRUE;
 }
 
+
 /**doc
- * $RET ??? $INAME ???
-  TBD
+ * $THIS $INAME( texture, x, y, borderMode )
+  Paste _sourceTexture_ in the current texture at the position (_x_, _y_).
+  $H arguments:
+  * $TYPE Texture sourceTexture:
+  * $INT x:
+  * $INT y:
+  * $INT borderMode: one of borderWrap, borderClamp.
 **/
-DEFINE_FUNCTION_FAST( Export ) { // (int)x, (int)y, (int)width, (int)height . Returns a BString
+DEFINE_FUNCTION_FAST( Paste ) { // (Texture)texture, (int)x, (int)y, (bool)borderMode
+
+	RT_ASSERT_ARGC( 4 );
+
+	Texture *tex1, *tex = (Texture *)JS_GetPrivate(cx, J_FOBJ);
+	RT_ASSERT_RESOURCE(tex);
+
+	RT_CHECK_CALL( ValueToTexture(cx, J_FARG(1), &tex1) );
+	RT_ASSERT( tex->channels == tex1->channels, "Invalid channel count." );
+
+	int px, py; // position
+	RT_JSVAL_TO_INT32( J_FARG(2), px );
+	RT_JSVAL_TO_INT32( J_FARG(3), py );
+
+	BorderMode borderMode;
+	if ( J_FARG_ISDEF(4) ) {
+		
+		int tmp;
+		J_JSVAL_TO_INT32( J_FARG(4), tmp );
+		borderMode = (BorderMode)tmp;
+	} else
+		borderMode = borderClamp;
+
+	int channels = tex->channels;
+
+	int texWidth = tex->width;
+	int texHeight = tex->height;
+
+	int tex1Width = tex1->width;
+	int tex1Height = tex1->height;
+
+	int x, y;
+	int dx, dy; // destination
+	int posDst, posSrc;
+	int c;
+
+	for ( y = 0; y < tex1Height; y++ )
+		for ( x = 0; x < tex1Width; x++ ) {
+
+			dx = x + px;
+			dy = y + py;
+			switch (borderMode) {
+				case borderWrap:
+					dx = Wrap(dx, texWidth);
+					dy = Wrap(dy, texHeight);
+					break;
+			case borderClamp:
+				if ( !(dx >= 0 && dx < texWidth && dy >= 0 && dy < texHeight) ) {
+					continue; // skip
+				}
+				break;
+			default:
+				J_REPORT_ERROR( "Invalid border mode." );
+			}
+
+			posDst = ( dx + dy * texWidth ) * channels;
+			posSrc = ( x + y * tex1Width ) * channels;
+			for ( c = 0; c < channels; c++ )
+				tex->cbuffer[posDst+c] = tex1->cbuffer[posSrc+c];
+		}
+
+	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
+	return JS_TRUE;
+}
+
+
+/**doc
+ * $RET imageObject $INAME( x, y, width, height )
+  Creates an image object from the current texture.
+  $H example:
+  {{{
+  var f = new Font('arial.ttf');
+  f.size = 100;
+  f.verticalPadding = -16;
+  var img = f.DrawString('Hello world', true);
+  
+  var t = new Texture(img);
+  var t1 = new Texture(t);
+
+  t.BoxBlur(10,10);
+  t1.OppositeLevels();
+  t.Add(t1);
+  t.OppositeLevels();
+  t.Add(1);
+  
+  new File('text.png').content = EncodePngImage(t.Export());  
+  }}}
+**/
+DEFINE_FUNCTION_FAST( Export ) { // (int)x, (int)y, (int)width, (int)height. Returns a BString
 
 	Texture *tex = (Texture *)JS_GetPrivate(cx, J_FOBJ);
 	J_S_ASSERT_RESOURCE(tex);
@@ -2481,12 +2663,11 @@ DEFINE_FUNCTION_FAST( Export ) { // (int)x, (int)y, (int)width, (int)height . Re
 			posSrc = ( sx + sy * sWidth ) * sChannels;
 			for ( c = 0; c < sChannels; c++ ) {
 				
-				buffer[posDst+c] = (u_int8_t)(MINMAX(tex->cbuffer[posSrc+c] * 256, 0, 255));
+				buffer[posDst+c] = (u_int8_t)(MINMAX(tex->cbuffer[posSrc+c] * 256.f, 0, 255));
 
 				//buffer[posDst+c] = (u_int8_t)(PNORM(tex->cbuffer[posSrc+c]) * 256);
 			}
 		}
-
 
 	JSObject *bstr = NewBString(cx, buffer, bufferLength);
 	*J_FRVAL = OBJECT_TO_JSVAL(bstr);
@@ -2498,74 +2679,28 @@ DEFINE_FUNCTION_FAST( Export ) { // (int)x, (int)y, (int)width, (int)height . Re
 }
 
 
-/**doc
- * $RET ??? $INAME ???
-  TBD
-**/
-
-DEFINE_FUNCTION_FAST( Paste ) { // (Texture)texture, (int)x, (int)y, (bool)borderMode
-
-	RT_ASSERT_ARGC( 4 );
-
-	Texture *tex1, *tex = (Texture *)JS_GetPrivate(cx, J_FOBJ);
-	RT_ASSERT_RESOURCE(tex);
-
-	RT_CHECK_CALL( ValueToTexture(cx, J_FARG(1), &tex1) );
-	RT_ASSERT( tex->channels == tex1->channels, "Invalid channel count." );
-
-	int px, py; // position
-	RT_JSVAL_TO_INT32( J_FARG(2), px );
-	RT_JSVAL_TO_INT32( J_FARG(3), py );
-	bool borderMode;
-	RT_JSVAL_TO_BOOL( J_FARG(4), borderMode );
-
-	borderMode = borderClamp; //
-
-	int channels = tex->channels;
-
-	int texWidth = tex->width;
-	int texHeight = tex->height;
-
-	int tex1Width = tex1->width;
-	int tex1Height = tex1->height;
-
-	int x, y;
-	int dx, dy; // destination
-	int posDst, posSrc;
-	int c;
-
-	for ( y = 0; y < tex1Height; y++ )
-		for ( x = 0; x < tex1Width; x++ ) {
-
-			dx = x + px;
-			dy = y + py;
-			switch (borderMode) {
-				case borderWrap:
-					dx = Wrap(dx, texWidth);
-					dy = Wrap(dy, texHeight);
-					break;
-			case borderClamp:
-				if ( !(dx >= 0 && dx < texWidth && dy >= 0 && dy < texHeight) ) {
-					continue; // skip
-				}
-				break;
-			}
-
-			posDst = ( dx + dy * texWidth ) * channels;
-			posSrc = ( x + y * tex1Width ) * channels;
-			for ( c = 0; c < channels; c++ )
-				tex->cbuffer[posDst+c] = tex1->cbuffer[posSrc+c];
-		}
-
-	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
-	return JS_TRUE;
-}
 
 /**doc
- * $RET ??? $INAME ???
-  TBD
+ * $THIS $INAME( image, x, y [, borderMode] )
+  Draws the _image_ over the current texture at position (_x_, _y_).
+  $H arguments:
+  * $OBJ image: 
+  * $INT x: 
+  * $INT y:
+  * $INT borderMode: one of borderWrap, borderClamp.
+  $H example:
+  {{{
+  var file = new File('myImage.png').Open('r'); // note: Open() returns the file object.
+  var image = DecodePngImage( file );
+  file.Close();
+  texture.Import( image, 0, 0 );
+  
+  Ogl.MatrixMode(MODELVIEW);
+  Ogl.DefineTextureImage(TEXTURE_2D, undefined, texture);
+  Ogl.LoadIdentity();
+  ...
+  }}}
 **/
-
 DEFINE_FUNCTION_FAST( Import ) { // (BString)image, (int)x, (int)y
 
 	J_S_ASSERT_ARG_MIN(1);
@@ -2576,6 +2711,20 @@ DEFINE_FUNCTION_FAST( Import ) { // (BString)image, (int)x, (int)y
 	J_S_ASSERT_OBJECT( J_FARG(1) );
 	JSObject *bstr = JSVAL_TO_OBJECT( J_FARG(1) );
 	J_S_ASSERT_CLASS( bstr, BStringJSClass(cx) );
+
+	int px, py;
+	J_JSVAL_TO_INT32( J_FARG(2), px );
+	J_JSVAL_TO_INT32( J_FARG(3), py );
+
+	BorderMode borderMode;
+	if ( J_FARG_ISDEF(4) ) {
+		
+		int tmp;
+		J_JSVAL_TO_INT32( J_FARG(4), tmp );
+		borderMode = (BorderMode)tmp;
+	} else
+		borderMode = borderClamp;
+
 
 	int dWidth = tex->width;
 	int dHeight = tex->height;
@@ -2588,21 +2737,8 @@ DEFINE_FUNCTION_FAST( Import ) { // (BString)image, (int)x, (int)y
 
 	//u_int8_t *buffer = (u_int8_t*)BStringData(cx, bstr);
 
-	const char *buffer;
+	const u_int8_t *buffer;
 	J_CHK( BStringBuffer(cx, bstr, (const void **)&buffer) );
-
-	int px, py;
-	if ( J_ARGC >= 3 ) {
-
-		J_JSVAL_TO_INT32( J_FARG(2), px );
-		J_JSVAL_TO_INT32( J_FARG(3), py );
-	} else {
-
-		px = 0;
-		py = 0;
-	}
-
-	BorderMode borderMode = borderWrap;
 
 	int x, y;
 	int dx, dy; // destination
@@ -2624,12 +2760,15 @@ DEFINE_FUNCTION_FAST( Import ) { // (BString)image, (int)x, (int)y
 					continue; // skip
 				}
 				break;
+
+			default:
+				J_REPORT_ERROR( "Invalid border mode." );
 			}
 
 			posDst = ( dx + dy * dWidth ) * dChannels;
 			posSrc = ( x + y * sWidth ) * sChannels;
 			for ( c = 0; c < sChannels; c++ )
-				tex->cbuffer[posDst+c] = buffer[posSrc+c] / (PTYPE)256;
+				tex->cbuffer[posDst+c] = buffer[posSrc+c] / (PTYPE)256.f;
 		}
 
 	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
@@ -2638,8 +2777,12 @@ DEFINE_FUNCTION_FAST( Import ) { // (BString)image, (int)x, (int)y
 
 
 /**doc
- * $RET ??? $INAME ???
-  TBD
+ * $THIS $INAME( offsetX, offsetY [, borderMode] )
+  Shift the current image.
+  $H arguments:
+  * $INT offsetX: 
+  * $INT offsetY:
+  * $INT borderMode: one of borderWrap, borderClamp, borderMirror, borderValue
 **/
 
 DEFINE_FUNCTION_FAST( Shift ) {
@@ -2654,7 +2797,14 @@ DEFINE_FUNCTION_FAST( Shift ) {
 	RT_JSVAL_TO_INT32( J_FARG(1), offsetX );
 	RT_JSVAL_TO_INT32( J_FARG(2), offsetY );
 
-	BorderMode mode = borderWrap;
+	BorderMode borderMode;
+	if ( J_FARG_ISDEF(3) ) {
+		
+		int tmp;
+		J_JSVAL_TO_INT32( J_FARG(3), tmp );
+		borderMode = (BorderMode)tmp;
+	} else
+		borderMode = borderClamp;
 
 	int width = tex->width;
 	int height = tex->height;
@@ -2671,7 +2821,7 @@ DEFINE_FUNCTION_FAST( Shift ) {
 			sx = x + offsetX;
 			sy = y + offsetY;
 
-			switch (mode) {
+			switch (borderMode) {
 				case borderWrap:
 					sx = Wrap(sx, width);
 					sy = Wrap(sy, height);
@@ -2695,6 +2845,9 @@ DEFINE_FUNCTION_FAST( Shift ) {
 					if ( sy < 0 )  sy = 0;
 					if ( sy >= height )  sy = height - 1;
 					break;
+
+				default:
+					J_REPORT_ERROR( "Invalid border mode." );
 			}
 			for ( c = 0; c < channels; c++ ) 
 				tex->cbackBuffer[(x + y * width) * channels + c] = tex->cbuffer[(sx + sy * width) * channels + c];
@@ -2705,8 +2858,12 @@ DEFINE_FUNCTION_FAST( Shift ) {
 }
 
 /**doc
- * $RET ??? $INAME ???
-  TBD
+ * $THIS $INAME( displaceTexture, factor [, borderMode] )
+  Move each pixel of the texture according to the 
+  $H arguments:
+  * $TYPE Texture displaceTexture: is a texture that contains displacement vectors.
+  * $REAL factor: displacement factor of each pixel.
+  * $INT borderMode: one of borderWrap, borderClamp, borderMirror, borderValue
 **/
 // (TBD) PTYPE
 DEFINE_FUNCTION_FAST( Displace ) {
@@ -2777,6 +2934,8 @@ DEFINE_FUNCTION_FAST( Displace ) {
 					if ( sx >= width )  sx = width - sx;
 					if ( sy >= height )  sy = width - sy;
 					break;
+				default:
+					J_REPORT_ERROR( "Invalid border mode." );
 			}
 			
 			pos = (x + y * width) * channels;
@@ -2791,8 +2950,11 @@ DEFINE_FUNCTION_FAST( Displace ) {
 
 
 /**doc
- * $RET ??? $INAME ???
-  TBD
+ * $THIS $INAME( density, regularity )
+  Draws cells in the current texture.
+  $H arguments:
+  * $INT density:
+  * $REAL regularity: 
 **/
 DEFINE_FUNCTION_FAST( Cells ) { // source: FxGen
 
@@ -2884,11 +3046,25 @@ DEFINE_FUNCTION_FAST( Cells ) { // source: FxGen
 	return JS_TRUE;
 }
 
-/**doc
- * $RET ??? $INAME ???
-  TBD
-**/
 
+/**doc
+ * $THIS $INAME( topLeft, topRight, bottomLeft, bottomRight )
+  Add a quad radiant to the current texture
+  $H arguments:
+  * $TYPE colorInfo topLeft:
+  * $TYPE colorInfo topRight:
+  * $TYPE colorInfo bottomLeft:
+  * $TYPE colorInfo bottomRight:
+  $H example:
+  {{{
+  const RED = [1,0,0,1];
+  const BLUE = [0,0,1,1];
+  const BLACK = [0,0,0,1];
+  
+  texture.Set(0); // clears the texture
+  texture.AddGradiantQuad(BLACK, RED, BLUE, BLACK);
+  }}}
+**/
 DEFINE_FUNCTION_FAST( AddGradiantQuad ) {
 
 	RT_ASSERT_ARGC( 4 );
@@ -2934,10 +3110,21 @@ DEFINE_FUNCTION_FAST( AddGradiantQuad ) {
 }
 
 /**doc
- * $RET ??? $INAME ???
-  TBD
+ * $THIS $INAME( curveInfoX, curveInfoY )
+  Add a linear radiant using a curve for X and Y. Each point of the curve is the light intensity of a pixel.
+  $H arguments:
+  * $TYPE curveInfo curveInfoX:
+  * $TYPE curveInfo curveInfoY:
+  $H example 1:
+  {{{
+  texture.Set(0); // clears the texture
+  texture.AddGradiantLinear(curveHalfSine, curveOne);
+  }}}
+  $H example 2:
+  {{{
+  texture.AddGradiantLinear([0,1,0], [0,1,0]);
+  }}}
 **/
-
 DEFINE_FUNCTION_FAST( AddGradiantLinear ) {
 
 	RT_ASSERT_ARGC( 2 );
@@ -2969,11 +3156,22 @@ DEFINE_FUNCTION_FAST( AddGradiantLinear ) {
 	return JS_TRUE;
 }
 
-/**doc
- * $RET ??? $INAME ???
-  TBD
-**/
 
+/**doc
+ * $THIS $INAME( curveInfo [, drawToCorner = false] )
+  Add a radial radiant using a curve from the center to the outside. Each point of the curve is the light intensity of a pixel.
+  $H arguments:
+  * $TYPE curveInfo curveInfo:
+  * $BOOL drawToCorner: If true, the curve goes from the center to the corner, else from the center to the edge.
+  $H example 1:
+  {{{
+  texture.AddGradiantRadial(curveHalfSine);
+  }}}
+  $H example 2:
+  {{{
+  texture.AddGradiantRadial([0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1], true);
+  }}}
+**/
 DEFINE_FUNCTION_FAST( AddGradiantRadial ) {
 
 	RT_ASSERT_ARGC( 1 );
@@ -2985,10 +3183,10 @@ DEFINE_FUNCTION_FAST( AddGradiantRadial ) {
 	int channels = tex->channels;
 
 	bool drawToCorner;
-	if ( argc >= 2 )
+	if ( J_FARG_ISDEF(2) )
 		RT_JSVAL_TO_BOOL( J_FARG(2), drawToCorner );
 	else
-		drawToCorner = true;
+		drawToCorner = false;
 
 	float radius;
 	if ( drawToCorner )
@@ -3099,10 +3297,27 @@ DEFINE_FUNCTION( AddGradiantRadial ) {
 
 
 /**doc
- * $RET ??? $INAME ???
-  TBD
-**/
+ * $THIS $INAME( count, crackMaxLength, variation, colorInfo, curveInfo )
+  Adds cracks to the current texture. TBD
+  $H arguments:
+  * $INT count:
+  * $INT crackMaxLength:
+  * $REAL variation:
+  * colorInfo:
+  * curveInfo:
+  $H note:
+  The curve is computed before each crack is drawn.
+  $H examples:
+  {{{
+  texture.AddCracks( 1000, 10, 0, RED, 1 );
+  
+  texture.AddCracks( 100, 100, 0, 1, [1,0,1,0,1,0,1,0,1] );
 
+  texture.AddCracks( 10, 10000, 0.1, 1, curveLinear );
+
+  texture.AddCracks( 10, 10000, 0.1, 1, function(v) { return Texture.RandReal() } );
+  }}}
+**/
 DEFINE_FUNCTION_FAST( AddCracks ) { // source: FxGen
 
 	RT_ASSERT_ARGC( 2 );
@@ -3169,8 +3384,15 @@ DEFINE_FUNCTION_FAST( AddCracks ) { // source: FxGen
 
 
 /**doc
- * $RET ??? $INAME
-  TBD
+ * $TYPE Array $INAME( x, y )
+  Returns the pixel value at position (x, y) in the current texture. If the texture is RGB, an array of 3 values is returned.
+  $H example:
+  {{{
+  var texture = new Texture(20,20,3);
+  texture.Set([0.1, 0.2, 0.3]);
+  var pixel = texture.PixelAt(10,10);
+  Print( 'Red: '+pixel[0], 'Green: '+pixel[1], 'Blue: '+pixel[2] );
+  }}}
 **/
 DEFINE_FUNCTION_FAST( PixelAt ) {
 
@@ -3197,14 +3419,17 @@ DEFINE_FUNCTION_FAST( PixelAt ) {
 	return JS_TRUE;
 }
 
+
 /**doc
 === Properties ===
 **/
 
 
 /**doc
- * $RET ??? $INAME
-  TBD
+ * $REAL $INAME
+  Is the higher $pval. Higher values are not brighter.
+  = =
+  See Normalize() function.
 **/
 DEFINE_PROPERTY( vmax ) {
 
@@ -3214,8 +3439,8 @@ DEFINE_PROPERTY( vmax ) {
 
 
 /**doc
- * $RET ??? $INAME
-  TBD
+ * $INT $INAME
+  Width of the texture in pixel.
 **/
 DEFINE_PROPERTY( width ) {
 
@@ -3228,8 +3453,8 @@ DEFINE_PROPERTY( width ) {
 
 
 /**doc
- * $RET ??? $INAME
-  TBD
+ * $INT $INAME
+  Height of the texture in pixel.
 **/
 DEFINE_PROPERTY( height ) {
 
@@ -3242,8 +3467,8 @@ DEFINE_PROPERTY( height ) {
 
 
 /**doc
- * $RET ??? $INAME
-  TBD
+ * $INT $INAME
+  Number of channels of the texture.
 **/
 DEFINE_PROPERTY( channels ) {
 
@@ -3256,8 +3481,25 @@ DEFINE_PROPERTY( channels ) {
 
 
 /**doc
- * $RET ??? $INAME
-  TBD
+=== Static functions ===
+**/
+
+/**doc
+ * $VOID $INAME( seed )
+  Resets a random sequence of the Mersenne Twister random number generator.
+  $H example:
+  {{{
+  Texture.RandSeed(1234);
+  Print( Texture.RandReal(), '\n' );
+  Print( Texture.RandReal(), '\n' );
+  Print( Texture.RandReal(), '\n' );
+  }}}
+  will always prints:
+  {{{
+  0.19151945020806033
+  0.4976636663772314
+  0.6221087664882906
+  }}}
 **/
 DEFINE_FUNCTION_FAST( RandSeed ) {
 
@@ -3270,8 +3512,8 @@ DEFINE_FUNCTION_FAST( RandSeed ) {
 
 
 /**doc
- * $RET ??? $INAME
-  TBD
+ * $INT $INAME
+  Generates a random number on [0,0x7fffffff]-interval
 **/
 DEFINE_FUNCTION_FAST( RandInt ) {
 
@@ -3282,8 +3524,8 @@ DEFINE_FUNCTION_FAST( RandInt ) {
 
 
 /**doc
- * $RET ??? $INAME
-  TBD
+ * $REAL $INAME
+  Generates a random number on [0,1]-real-interval
 **/
 DEFINE_FUNCTION_FAST( RandReal ) {
 
@@ -3306,14 +3548,64 @@ DEFINE_FUNCTION_FAST( RandReal ) {
 
 
 #ifdef _DEBUG
-
 static JSBool Test(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
 	return JS_FALSE;
 }
-
 #endif // _DEBUG
 
+
+/**doc
+
+=== Definitions ===
+*$pval*
+ A $pval is the value of one channel of a pixel.
+ In a RGB texture, each pixel has 3 components (Red, Green and Blue) and each one represents a light intensity.
+
+=== Special values and data types ===
+
+* *colorInfo*
+ _colorInfo_ can be one of the following type:
+ * real: in this case, the same value is used for each channel (eg. 0.5 gor gray).
+ * Array: that contains the $pval of each channel (eg. [1,1,1] is white in RGB mode).
+ * string: the string represents an HTML color like #1100AA or #8800AAFF (depending the number of channels)
+ $H examples:
+ {{{
+ const RED = [1,0,0,1];
+ const GREEN = [0,1,0,1];
+ const BLUE = [0,0,1,1];
+ const MAGENTA = [1,0,1,1];
+ const CYAN = [0,1,1,1];
+ const YELLOW = [1,1,0,1];
+ const GRAY = [.5,.5,.5,1];
+ const BLACK = [0,0,0,1];
+ const WHITE = [1,1,1,1];
+ }}}
+
+* *curveInfo*
+ _curveInfo_ describes a curve and can be one of the following type:
+ * real: this describes a constant curve.
+ * function($REAL posX, £INT indexX): the function is called and must returns values for each curve point.
+ * Array: an Array that describes the curve (no interpolation is done between values).
+ * buffer: a BString or a string that contains the curve data.
+ $H examples:
+ {{{
+ const curveLinear = function(v) { return v }
+ const curveHalfSine = function(v) { return Math.cos(v*Math.PI/2) }
+ const curveSine = function(v) { return Math.sin(v*Math.PI) }
+ const curveInverse = function(v) { return 1/v }
+ const curveSquare = function(v) { return v*v }
+ const curveDot = function(v,i) { return i%2 }
+ const curveZero = function(v,i) { return 0 }
+ const curveOne = function(v,i) { return 1 }
+ function GaussianCurveGenerator(c) { return function(x) { return Math.exp( -(x*x)/(2*c*c) ) } }
+
+ texture.AddGradiantRadial( GaussianCurveGenerator( 0.5 ) );
+ }}}
+
+* *imageObject*
+ TBD
+**/
 
 CONFIGURE_CLASS
 
@@ -3390,17 +3682,17 @@ CONFIGURE_CLASS
 //		FUNCTION_FAST( Noise )
 	END_STATIC_FUNCTION_SPEC
 
-	BEGIN_CONST_DOUBLE_SPEC
-		CONST_DOUBLE( borderClamp, borderClamp )
-		CONST_DOUBLE( borderWrap, borderWrap )
-		CONST_DOUBLE( borderMirror, borderMirror )
-		CONST_DOUBLE( borderValue, borderValue )
+	BEGIN_CONST_INTEGER_SPEC
+		CONST_INTEGER( borderClamp, borderClamp )
+		CONST_INTEGER( borderWrap, borderWrap )
+		CONST_INTEGER( borderMirror, borderMirror )
+		CONST_INTEGER( borderValue, borderValue )
 
-		CONST_DOUBLE( desaturateLightness, desaturateLightness )
-		CONST_DOUBLE( desaturateSum, desaturateSum )
-		CONST_DOUBLE( desaturateAverage, desaturateAverage )
+		CONST_INTEGER( desaturateLightness, desaturateLightness )
+		CONST_INTEGER( desaturateSum, desaturateSum )
+		CONST_INTEGER( desaturateAverage, desaturateAverage )
 		
-	END_CONST_DOUBLE_SPEC
+	END_CONST_INTEGER_SPEC
 
 	HAS_PRIVATE
 //	HAS_RESERVED_SLOTS(1)
