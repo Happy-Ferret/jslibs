@@ -685,10 +685,10 @@ DEFINE_FUNCTION_FAST( ToRGB ) { // (TBD) test it
    $ARG integer count: the number of different $pval in the resulting texture.
    $ARG curveInfo curve: the transformation curve used for each value. For further information about ,,curveInfo,, , see lower.
   $H note
-  If _curveInfo_ is not provided, each channel is processed in a linear manner using the following formula:
-   floor( count `*` colorValue ) / count
+   If _curveInfo_ is not provided, each channel is processed in a linear manner using the following formula:
+    floor( count `*` colorValue ) / count
   $H note
-  Each channel are processed independently.
+   Each channel are processed independently.
   $H example 1
   {{{
   var t = Cloud(size, 0.5);
@@ -815,7 +815,7 @@ DEFINE_FUNCTION_FAST( Colorize ) {
    $ARG colorInfo sourceColorInfo: The color to extract.
    $ARG real strength: The strength of the exraction.
   $H note
-  The current texture must have only one channel because the method only extracts one color.
+   The current texture must have only one channel because the method only extracts one color.
   $H example
   {{{
   t1.ExtractColor(t, RED, 10);
@@ -1388,7 +1388,7 @@ DEFINE_FUNCTION_FAST( Mult ) {
    $ARG Texture blendTexture: the texture that contains the blending coefficients for each pixel.
    $ARG colorInfo color: the color (ratio) ised to blend the current texture with _otherTexture_
   $H note
-  The blend fornula is: this pixel = blend `*` _textureObject1_ + (1-blend) `*` _textureObject2_ pixel or _colorInfo_
+   The blend fornula is: this pixel = blend `*` _textureObject1_ + (1-blend) `*` _textureObject2_ pixel or _colorInfo_
   $H example
   {{{
   var tmp = new Texture(size, size, 1);
@@ -1455,7 +1455,7 @@ DEFINE_FUNCTION_FAST( Blend ) { // texture1, blenderTexture|blenderColor
  * $THIS *SetPixel*( x, y, colorInfo )
   Sets the color of the given pixel.
   $H note
-  If x and y are wrapped to the image width and height.
+   If x and y are wrapped to the image width and height.
 **/
 // PTYPE ok
 DEFINE_FUNCTION_FAST( _SetPixel ) { // x, y, levels
@@ -3333,7 +3333,7 @@ DEFINE_FUNCTION( AddGradiantRadial ) {
    $ARG colorInfo color: the color of the crack.
    $ARG curveInfo curve: the curve that defines the intensity of each point of the crack.
   $H note
-  The curve is computed before each crack is drawn.
+   The curve is computed before each crack is drawn.
   $H examples
   {{{
   texture.AddCracks( 1000, 10, 0, RED, 1 );
@@ -3583,61 +3583,60 @@ static JSBool Test(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval 
 
 
 /**doc
-
 === Definitions ===
-*$pval*
- A $pval is the value of one channel of a pixel.
- In a RGB texture, each pixel has 3 components (Red, Green and Blue) and each one represents a light intensity.
+ * *$pval*
+  A $pval is the value of one channel of a pixel.
+  In a RGB texture, each pixel has 3 components (Red, Green and Blue) and each one represents a light intensity.
 
 === Special values and data types ===
 
-* *borderMode*
- * Texture.borderWrap: get the pixel from the the other side (opposite edge).
- * Texture.borderClamp: do not take any other pixel.
- * Texture.borderMirror: take the pixel from this edge but in a reverse way (like a mirror).
- * Texture.borderValue: use the pixel of the current border.
+ * *borderMode*
+  * Texture.borderWrap: get the pixel from the the other side (opposite edge).
+  * Texture.borderClamp: do not take any other pixel.
+  * Texture.borderMirror: take the pixel from this edge but in a reverse way (like a mirror).
+  * Texture.borderValue: use the pixel of the current border.
 
-* *colorInfo*
- _colorInfo_ can be one of the following type:
- * real: in this case, the same value is used for each channel (eg. 0.5 gor gray).
- * Array: that contains the $pval of each channel (eg. [1,1,1] is white in RGB mode).
- * string: the string represents an HTML color like #1100AA or #8800AAFF (depending the number of channels)
- $H examples
- {{{
- const RED = [1,0,0,1];
- const GREEN = [0,1,0,1];
- const BLUE = [0,0,1,1];
- const MAGENTA = [1,0,1,1];
- const CYAN = [0,1,1,1];
- const YELLOW = [1,1,0,1];
- const GRAY = [.5,.5,.5,1];
- const BLACK = [0,0,0,1];
- const WHITE = [1,1,1,1];
- }}}
+ * *colorInfo*
+  a _colorInfo_ can be one of the following type:
+  * _real_: in this case, the same value is used for each channel (eg. 0.5 gor gray).
+  * _Array_: that contains the $pval of each channel (eg. [1,1,1] is white in RGB mode).
+  * _string_: the string represents an HTML color like #1100AA or #8800AAFF (depending the number of channels)
+  $H examples
+  {{{
+  const RED = [1,0,0,1];
+  const GREEN = [0,1,0,1];
+  const BLUE = [0,0,1,1];
+  const MAGENTA = [1,0,1,1];
+  const CYAN = [0,1,1,1];
+  const YELLOW = [1,1,0,1];
+  const GRAY = [.5,.5,.5,1];
+  const BLACK = [0,0,0,1];
+  const WHITE = [1,1,1,1];
+  }}}
 
-* *curveInfo*
- _curveInfo_ describes a curve and can be one of the following type:
- * real: this describes a constant curve.
- * function($REAL posX, £INT indexX): the function is called and must returns values for each curve point.
- * Array: an Array that describes the curve (no interpolation is done between values).
- * buffer: a BString or a string that contains the curve data.
- $H examples
- {{{
- const curveLinear = function(v) { return v }
- const curveHalfSine = function(v) { return Math.cos(v*Math.PI/2) }
- const curveSine = function(v) { return Math.sin(v*Math.PI) }
- const curveInverse = function(v) { return 1/v }
- const curveSquare = function(v) { return v*v }
- const curveDot = function(v,i) { return i%2 }
- const curveZero = function(v,i) { return 0 }
- const curveOne = function(v,i) { return 1 }
- function GaussianCurveGenerator(c) { return function(x) { return Math.exp( -(x*x)/(2*c*c) ) } }
+ * *curveInfo*
+  _curveInfo_ describes a curve and can be one of the following type:
+   * _real_: this describes a constant curve.
+   * _function($REAL posX, £INT indexX)_: the function is called and must returns values for each curve point.
+   * _Array_: an Array that describes the curve (no interpolation is done between values).
+   * _buffer_: a BString or a string that contains the curve data.
+  $H examples
+  {{{
+  const curveLinear = function(v) { return v }
+  const curveHalfSine = function(v) { return Math.cos(v*Math.PI/2) }
+  const curveSine = function(v) { return Math.sin(v*Math.PI) }
+  const curveInverse = function(v) { return 1/v }
+  const curveSquare = function(v) { return v*v }
+  const curveDot = function(v,i) { return i%2 }
+  const curveZero = function(v,i) { return 0 }
+  const curveOne = function(v,i) { return 1 }
+  function GaussianCurveGenerator(c) { return function(x) { return Math.exp( -(x*x)/(2*c*c) ) } }
+  
+  texture.AddGradiantRadial( GaussianCurveGenerator( 0.5 ) );
+  }}}
 
- texture.AddGradiantRadial( GaussianCurveGenerator( 0.5 ) );
- }}}
-
-* *ImageObject*
- TBD
+ * *ImageObject*
+  TBD
 **/
 
 CONFIGURE_CLASS
@@ -3752,6 +3751,114 @@ function Cloud( size, amp ) {
 	cloud.NormalizeLevels();
 	return cloud;
 }
+}}}
+
+{{{
+function DesaturateLuminosity( tex ) {
+	
+	tex.Mult([0.2126, 0.7152, 0.0722]);
+	var tmp = new Texture(tex.width, tex.height, 1).Desaturate(tex, Texture.desaturateSum);
+	tex.Swap(tmp);
+	tmp.Free();
+}
+}}}
+
+{{{
+function AddAlphaChannel( tex ) {
+
+	if ( tex.channels == 1 )
+		new Texture(tex.width, tex.height, 2).SetChannel(0, tex, 0).Swap(tex);
+	else if ( tex.channels == 3 )
+		new Texture(tex.width, tex.height, 4).SetChannel(0, tex, 0).SetChannel(1, tex, 1).SetChannel(2, tex, 2).Swap(tex);
+}
+}}}
+
+{{{
+LoadModule('jsstd');
+LoadModule('jsio');
+LoadModule('jsgraphics');
+LoadModule('jsprotex');
+LoadModule('jsimage');
+
+var texture = new Texture(128, 128, 3);
+texture.Set(0);
+
+// play here for static textures
+
+function UpdateTexture(imageIndex) {
+
+	// play here for dynamic textures
+	texture.AddNoise();
+}
+
+var win = new Window();
+win.Open();
+win.CreateOpenGLContext();
+win.rect = [200,200,800,800];
+
+function ResizeWindow(w, h) {
+
+	with (Ogl) {
+	
+		Viewport(0,0,w,h);
+		MatrixMode(PROJECTION);
+		LoadIdentity();
+		Ortho(0,0,10,10, -1, 1);
+	}
+	Render();
+}
+
+with (Ogl) {
+
+	ShadeModel(FLAT);
+	FrontFace(CCW);
+	ClearColor(0, 0, 0, 0);
+	Enable(TEXTURE_2D);
+	var tid = GenTexture();
+	BindTexture(TEXTURE_2D, tid);
+	TexParameter(TEXTURE_2D, TEXTURE_MIN_FILTER, NEAREST); // GL_LINEAR
+	TexParameter(TEXTURE_2D, TEXTURE_MAG_FILTER, NEAREST);
+	Clear( COLOR_BUFFER_BIT | DEPTH_BUFFER_BIT );
+}
+
+function Render(imageIndex) {
+
+	with (Ogl) {
+	
+		MatrixMode(MODELVIEW);
+
+		UpdateTexture();
+		DefineTextureImage(TEXTURE_2D, undefined, texture);
+		
+		LoadIdentity();
+		Scale(1, -1, 1);
+		Color(1,1,1);
+		Begin(QUADS);
+		TexCoord( 0, 0 );
+		Vertex( -1, -1, 0 );
+		TexCoord( 1, 0, 0 );
+		Vertex( 1, -1 );
+		TexCoord( 1, 1 );
+		Vertex( 1, 1 );
+		TexCoord( 0, 1 );
+		Vertex( -1, 1 );
+		End();
+	}
+	win.SwapBuffers();
+	MaybeCollectGarbage();
+}
+
+win.onsize = ResizeWindow;
+
+var end = false;
+win.onkeydown = function( key, l ) { end = ( key == 0x1B ) }
+while (!end) {
+
+	win.ProcessEvents();
+	Render();
+}
+
+win.Close();
 }}}
 **/
 
