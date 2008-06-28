@@ -316,22 +316,20 @@ DEFINE_FINALIZE() {
 }
 
 /**doc
-=== Properties ===
+=== Methods ===
 **/
 
 /**doc
  * $INAME( width, height, channels )
- * $INAME( textureObject )
- * $INAME( imageObject )
+ * $INAME( sourceTexture )
+ * $INAME( image )
   Creates a new Texture object.
-  $H arguments:
-   * height: height of texture.
-   * width: width of texture.
-   * channels: number of channels of the texture (current limit is 4).
-   = =
-   * textureObject: an existing Texture object.
-   = =
-   * imageObject: an existing Image object (From a jpeg image for example)
+  $H arguments
+   $ARG integer height: height of texture.
+   $ARG integer width: width of texture.
+   $ARG integer channels: number of channels of the texture (current limit is 4). Channel has a meaning only in a few part of the API like ToHLS(), ToRGB(), ...
+   $ARG Texture sourceTexture: an existing Texture object (acs like a copy constructor).
+   $ARG ImageObject image: an existing Image object (From a jpeg image for example)
   $H note
    jsprotex uses single precision values per channel. The visibles values are in range [0,1].
    The darker value is 0.0 and the brighter value is 1.0.
@@ -445,9 +443,11 @@ DEFINE_FUNCTION( Free ) {
 }
 
 /**doc
- * $RET thistextureObject $INAME( textureObject )
-  Swaps the content of two textures.
-  $H example:
+ * $THIS $INAME( otherTexture )
+  Swaps the content of two textures the current one and _otherTexture_.
+  $H arguments
+   $ARG Texture otherTexture: texture object against witch the exchange is done.
+  $H example
   {{{
   function AddAlphaChannel( tex ) {
     
@@ -509,9 +509,13 @@ DEFINE_FUNCTION_FAST( ClearChannel ) {
 }
 
 /**doc
- * $THIS $INAME( destinationChannel, textureObject, sourceChannel )
-  Replace the _destinationChannel_ channel of the current texture with the _sourceChannel_ channel of the _textureObject_.
-  $H example:
+ * $THIS $INAME( destinationChannel, otherTexture, sourceChannel )
+  Replace the _destinationChannel_ channel of the current texture with the _sourceChannel_ channel of the _otherTexture_.
+  $H arguments
+   $ARG integer destinationChannel: a channel of the current texture.
+   $ARG Texture otherTexture: the texture from witch a channel will be imported.
+   $ARG integer destinationChannel: the channel of the _otherTexture_ to be imported.
+  $H example
   {{{
   function NoiseChannel( tex, channel ) {
 
@@ -675,25 +679,27 @@ DEFINE_FUNCTION_FAST( ToRGB ) { // (TBD) test it
 }
 
 /**doc
- * $THIS $INAME( count [, curveInfo] )
+ * $THIS $INAME( count [, curve] )
   Reduce the number of values used for each channel.
+  $H arguments
+   $ARG integer count: the number of different $pval in the resulting texture.
+   $ARG curveInfo curve: the transformation curve used for each value. For further information about ,,curveInfo,, , see lower.
+  $H note
   If _curveInfo_ is not provided, each channel is processed in a linear manner using the following formula:
-   floor( count * colorValue ) / count
-  $H note:
-  channels are processed independently.
-  $H note:
-  For further information about _curveInfo_, see the curveInfo section.
-  $H example 1:
+   floor( count `*` colorValue ) / count
+  $H note
+  Each channel are processed independently.
+  $H example 1
   {{{
   var t = Cloud(size, 0.5);
   t.Aliasing(2);
   }}}
-  $H example 2:
+  $H example 2
   {{{
   const curveLinear = function(v) { return v }
   var t = Cloud(size, 0.5);
-  t.Aliasing(8,curveLinear);
-  t.BoxBlur(3,3)
+  t.Aliasing(8, curveLinear);
+  t.BoxBlur(3, 3)
   }}}
 **/
 // PTYPE ok
@@ -735,9 +741,10 @@ DEFINE_FUNCTION_FAST( Aliasing ) {
 
 /**doc
  * $THIS $INAME( fromColorInfo, toColorInfo )
-  $H note:
-  For further information about _fromColorInfo_ and _toColorInfo_, see the ColorInfo section.
-  $H example:
+  $H arguments
+   $ARG colorInfo fromColorInfo: The color to be changed.
+   $ARG colorInfo toColorInfo: The substitute color. For further information about ,,colorInfo,, see below.
+  $H example
   {{{
   const BLUE = [0,0,1,1];
   const WHITE = [1,1,1,1];
@@ -801,17 +808,17 @@ DEFINE_FUNCTION_FAST( Colorize ) {
 
 
 /**doc
- * $THIS $INAME( sourceTexture, sourceColorInfo [, power = 1] )
-  Extracts the given color from the _sourceTexture_ and put it in the current texture.
+ * $THIS $INAME( sourceTexture, sourceColorInfo [, strength = 1] )
+  Fill the current texture with a given color from _sourceTexture_.
   $H arguments
-  * $RES Texture sourceTexture: ???
-  * $RES Color sourceColorInfo: ???
-  * $REAL power
-  $H note:
-  The current texture must have only one channel.
-  $H example:
+   $ARG Texture sourceTexture: the texture from witch the color will be extracted.
+   $ARG colorInfo sourceColorInfo: The color to extract.
+   $ARG real strength: The strength of the exraction.
+  $H note
+  The current texture must have only one channel because the method only extracts one color.
+  $H example
   {{{
-  t1.ExtractColor(t, BLACK, 2);
+  t1.ExtractColor(t, RED, 10);
   }}}
 **/
 // PTYPE ok
@@ -856,9 +863,9 @@ DEFINE_FUNCTION_FAST( ExtractColor ) {
 
 /**doc
  * $THIS $INAME()
-  Changes the range of $pval of all channels. The resulting range is [0,1]
-  $H note:
-  Normalization is sometimes called contrast stretching.
+  Changes the range of each $pval of the texture. The resulting range of each $pval will be [0,1]
+  $H note
+   Normalization is sometimes called contrast stretching.
 **/
 // PTYPE ok
 DEFINE_FUNCTION_FAST( NormalizeLevels ) {
@@ -886,12 +893,13 @@ DEFINE_FUNCTION_FAST( NormalizeLevels ) {
 	return JS_TRUE;
 }
 
+
 /**doc
  * $THIS $INAME( min, max )
-  $pval that are out of the [min,max] range are forced to [min,max] range.
+  All $pval that are out of the [min,max] range are forced to [min,max] range.
   $H arguments
-   * $REAL min: low value
-   * $REAL max: high value
+   $ARG real min: low value
+   $ARG real max: high value
 **/
 // PTYPE ok
 DEFINE_FUNCTION_FAST( ClampLevels ) { // (TBD) check if this algo is right
@@ -922,10 +930,10 @@ DEFINE_FUNCTION_FAST( ClampLevels ) { // (TBD) check if this algo is right
 
 /**doc
  * $THIS $INAME( min, max )
-  $pval that are out of the [min,max] range are forced to [0,1] range.
+  All $pval that are out of the [min,max] range are forced to [0,1] range.
   $H arguments
-   * $REAL min: low value
-   * $REAL max: high value
+   $ARG real min: low value
+   $ARG real max: high value
 **/
 // PTYPE ok
 DEFINE_FUNCTION_FAST( CutLevels ) { // (TBD) check if this algo is right
@@ -1065,8 +1073,11 @@ DEFINE_FUNCTION_FAST( PowLevels ) { //
 
 
 /**doc
- * $THIS $INAME( power )
-  Each $pval is powered by _power_ ( v = v ^ _power_ ).
+ * $THIS $INAME( threshold, mirrorFromTop )
+  Each $pval is mirrored toward the top or the bottom.
+  $H arguments
+   $ARG real threshold: the point from the values are reflected.
+   $ARG boolean mirrorFromTop: if true, the values over _threshold_ are reflected toward the bottom, else values under _threshold_ are reflected toward the top.
 **/
 // PTYPE ok
 DEFINE_FUNCTION_FAST( MirrorLevels ) {
@@ -1107,9 +1118,9 @@ DEFINE_FUNCTION_FAST( MirrorLevels ) {
 
 /**doc
  * $THIS $INAME( modulo )
-  $H arguments:
-   * $INT _module_: 
-  Each $pval is the moduloed by _modulo_ ( v = v % _modulo_ ).
+  Each $pval is moduloed by _modulo_ ( v = v % _modulo_ ).
+  $H arguments
+   $ARG inteer modulo: TBD
 **/
 // PTYPE ok
 DEFINE_FUNCTION_FAST( WrapLevels ) { // real modulo
@@ -1135,10 +1146,10 @@ DEFINE_FUNCTION_FAST( WrapLevels ) { // real modulo
 }
 
 /**doc
- * $THIS $INAME( [colorInfo] )
-  $H arguments:
-   * colorInfo :
-  TBD
+ * $THIS $INAME( [color] )
+  Adds a random noise to the current texture.
+  $H arguments
+   $ARG colorInfo color: noise color.
 **/
 // PTYPE ok
 DEFINE_FUNCTION_FAST( AddNoise ) {
@@ -1172,11 +1183,11 @@ DEFINE_FUNCTION_FAST( AddNoise ) {
 
 
 /**doc
- * $RET ??? $INAME( sourceTexture [, mode] )
+ * $THIS $INAME( sourceTexture [, mode] )
   Desaturates _sourceTexture_ texture an put the result in the current texture.
-  $H arguments:
-   * $RES Texture _sourceTexture_: 
-   * $INT _mode_: is either 0 (desaturateLightness), 1 (desaturateSum), 2 (desaturateAverage).
+  $H arguments
+   $ARG Texture sourceTexture: texture from witch the desaturation will be done.
+   $ARG integer mode: is the type of desaturation, either Texture.desaturateLightness, Texture.desaturateSum or Texture.desaturateAverage
 **/
 // PTYPE ok
 DEFINE_FUNCTION_FAST( Desaturate ) {
@@ -1369,15 +1380,22 @@ DEFINE_FUNCTION_FAST( Mult ) {
 
 
 /**doc
- * $THIS $INAME( textureObject1, textureObject2 )
- * $THIS $INAME( textureObject1, colorInfo )
-  $H arguments
-   * $RES Texture _textureObject1_: the first texture.
-   * $RES Texture _textureObject2_: the second texture.
-   * $RES _colorInfo_: the color info.
+ * $THIS $INAME( otherTexture, blendTexture )
+ * $THIS $INAME( otherTexture, color )
   Mathematically blends a texture (_textureObject_) or a given color (_colorInfo_) to the current texture.
-  = =
-  The blend fornula is: this pixel = blend * _textureObject1_ + (1-blend) * _textureObject2_ pixel or _colorInfo_
+  $H arguments
+   $ARG Texture otherTexture: the texture to blend with the current one.
+   $ARG Texture blendTexture: the texture that contains the blending coefficients for each pixel.
+   $ARG colorInfo color: the color (ratio) ised to blend the current texture with _otherTexture_
+  $H note
+  The blend fornula is: this pixel = blend `*` _textureObject1_ + (1-blend) `*` _textureObject2_ pixel or _colorInfo_
+  $H example
+  {{{
+  var tmp = new Texture(size, size, 1);
+  tmp.ClearChannel();
+  tmp.SetRectangle(10,10,size-10,size-10,1);
+  t.Blend(tmp, 0.7);
+  }}}
 **/
 // PTYPE ok
 DEFINE_FUNCTION_FAST( Blend ) { // texture1, blenderTexture|blenderColor
@@ -1434,9 +1452,9 @@ DEFINE_FUNCTION_FAST( Blend ) { // texture1, blenderTexture|blenderColor
 
 
 /**doc
- * $THIS SetPixel( x, y, colorInfo )
+ * $THIS *SetPixel*( x, y, colorInfo )
   Sets the color of the given pixel.
-  $note:
+  $H note
   If x and y are wrapped to the image width and height.
 **/
 // PTYPE ok
@@ -1467,8 +1485,14 @@ DEFINE_FUNCTION_FAST( _SetPixel ) { // x, y, levels
 }
 
 /**doc
- * $THIS $INAME( x0, y0, x1, y1, colorInfo )
+ * $THIS $INAME( x0, y0, x1, y1, color )
   Draws a rectangle of the _colorInfo_ color over the current texture.
+  $H arguments
+   $ARG integer x0:
+   $ARG integer y0:
+   $ARG integer x1:
+   $ARG integer y1:
+   $ARG colorInfo color:
 **/
 // PTYPE ok
 DEFINE_FUNCTION_FAST( SetRectangle ) {
@@ -1515,8 +1539,10 @@ DEFINE_FUNCTION_FAST( SetRectangle ) {
 /**doc
  * $THIS $INAME( count )
   Make _count_ 90 degres rotations.
-  $H node:
-  _count_ may be negative.
+  $H arguments
+   $ARG integer count: the number of integer rotation to perform with the current texture. _count_ may be negative.
+  $H note
+   For non-integer rotations, see RotoZoom() function.
 **/
 DEFINE_FUNCTION_FAST( Rotate90 ) { // (TBD) test it
 
@@ -1584,8 +1610,8 @@ DEFINE_FUNCTION_FAST( Rotate90 ) { // (TBD) test it
  * $THIS $INAME( horizontally, vertically )
   Flips the current texture horizontally, vertically or both.
   $H arguments
-   * $BOOL _horizontally_: flips the texture horizontally.
-   * $BOOL _vertically_: flips the texture vertically.
+   $ARG boolean horizontally: flips the texture horizontally (against x axis).
+   $ARG boolean vertically: flips the texture vertically (against y axis).
 **/
 DEFINE_FUNCTION_FAST( Flip ) {
 
@@ -1622,13 +1648,13 @@ DEFINE_FUNCTION_FAST( Flip ) {
 
 /**doc
  * $THIS $INAME( centerX, centerY, zoomX, zoomY, rotations )
-  Make a zoom and a rotation of the current texture.
+  Make a zoom and/or a rotation of the current texture.
   $H arguments
-   * $REAL _centerX_: the center of the zoom or rotation.
-   * $REAL _centerY_: 
-   * $REAL _zoomX_: the zoom factor (use 1 for none).
-   * $REAL _zoomY_: 
-   * $REAL _rotations_: the number of totations to do. 0.25 is 90 degres (use 0 for none).
+   $ARG real centerX: coordinate of the center of the zoom or rotation.
+   $ARG real centerY: 
+   $ARG real zoomX: the zoom factor (use 1 for none).
+   $ARG real zoomY: 
+   $ARG real rotations: the number of totations to perform. 0.25 is 90 degres (use 0 for none).
 **/
 DEFINE_FUNCTION_FAST( RotoZoom ) { // source: FxGen
 
@@ -1743,12 +1769,12 @@ DEFINE_FUNCTION_FAST( RotoZoom ) { // source: FxGen
 
 /**doc
  * $THIS $INAME( newWidth, newHeight, [interpolate = false [, borderMode = Texture.borderWrap ]] )
-  TBD
+  Resize the current texture.
   $H arguments
-  * $INT _newWidth_:
-  * $INT _newHeight_:
-  * $BOOL _interpolate_: activates the linear interpolation.
-  * $INT _borderMode_: how to manage the border. either borderClamp, borderWrap, borderMirror, borderValue.
+   $ARG integer newWidth:
+   $ARG integer newHeight:
+   $ARG boolean interpolate: uses a linear interpolation.
+   $ARG enum borderMode: how to manage the border. either Texture.borderClamp, Texture.borderWrap, Texture.borderMirror or Texture.borderValue.
 **/
 // PTYPE ok
 DEFINE_FUNCTION_FAST( Resize ) {
@@ -1875,12 +1901,14 @@ DEFINE_FUNCTION_FAST( Resize ) {
 
 /**doc
  * $THIS $INAME( kernel, borderMode [, autoGain = Texture.borderWrap], [ autoGain = true ] );
-  TBD
+  Apply a convolution to the current texture using _kernel_ factors.
   $H arguments
-  * $RES Array _kernel_: kernel is a square matrix
-  * $INT _borderMode_: how to manage the border. either borderClamp, borderWrap, borderMirror, borderValue.
-  * $BOOL _autoGain_:
-  $H example:
+   $ARG Array kernel: kernel is a square matrix
+   $ARG enum borderMode: how to manage the border. either Texture.borderClamp, Texture.borderWrap, Texture.borderMirror or Texture.borderValue.
+   $ARG boolean autoGain: automatically ajust the weight of the _kernel_ 
+  $H note
+   The convolution is a complex transformation that could be very slow with big kernels.
+  $H example
   {{{
   const kernelGaussian = [0,3,10,3,0, 3,16,26,16,3, 10,26,26,26,10, 3,16,26,16,3, 0,3,10,3,0 ];
   const kernelGaussian2 = [2,4,5,4,2, 4,9,12,9,4, 5,12,15,12,5, 4,9,12,9,4, 2,4,5,4,2]; // G(r) = pow(E,-r*r/(2*o*o))/sqrt(2*PI*o);
@@ -1892,6 +1920,7 @@ DEFINE_FUNCTION_FAST( Resize ) {
   const kernelCrystals = [0,-1,0, -1,5,-1, 0,-1,0];
   ...
   texture.Convolution(kernelGaussian);
+  }}}
 **/
 // (TBD) PTYPE
 DEFINE_FUNCTION_FAST( Convolution ) {
@@ -2038,9 +2067,9 @@ DEFINE_FUNCTION_FAST( Convolution ) {
 /**doc
  * $THIS $INAME( blurWidth, blurHeight )
   Apply a box blur of the given width and height.
-  $H note:
+  $H note
    BoxBlur is very fast but the result is not very smooth.
-  $H example:
+  $H example
   {{{
   function AddPixels(t, count) {
    while ( count-- > 0 )
@@ -2257,16 +2286,16 @@ DEFINE_FUNCTION_FAST( Normals ) {
 
 /**doc
  * $THIS $INAME( normalsTexture, lightPosition, ambiantColor, diffuseColor, specularColor, bumpPower, specularPower )
-  TBD
-  $H arguments:
-  * $TYPE Texture normalsTexture:
-  * $TYPE Array lightPosition: is the position of the light in a 3D space ( [x, y, z] )
-  * $TYPE colorInfo ambiantColor: 
-  * $TYPE colorInfo diffuseColor:
-  * $TYPE colorInfo specularColor:
-  * $REAL bumpPower:
-  * $REAL specularPower:
-  $H example:
+  Floodlight the current texture using the _normalsTexture_ as bump map.
+  $H arguments
+   $ARG Texture normalsTexture: the bump map where each pixel is a 3D vector.
+   $ARG Array lightPosition: is the position of the light in a 3D space ( [x, y, z] )
+   $ARG colorInfo ambiantColor: 
+   $ARG colorInfo diffuseColor:
+   $ARG colorInfo specularColor:
+   $ARG real bumpPower:
+   $ARG real specularPower:
+  $H example
   {{{
   var bump = new Texture(size, size, 3).Cells(8, 0).Add( new Texture(size, size, 3).Cells(8, 1).OppositeLevels() ); // broken floor
   bump.Normals();
@@ -2369,10 +2398,9 @@ DEFINE_FUNCTION_FAST( Light ) {
 }
 
 
-
 /**doc
  * $THIS $INAME( x0, y0, x1, y1 )
-  Remove the part of the texture that is outside the rectangle (x1,y1) (x2,y2).
+  Remove the part of the texture that is outside the rectangle (x1,y1)-(x2,y2).
 **/
 DEFINE_FUNCTION_FAST( Trim ) { // (TBD) test this new version that use memcpy
 
@@ -2444,11 +2472,11 @@ DEFINE_FUNCTION_FAST( Trim ) { // (TBD) test this new version that use memcpy
 /**doc
  * $THIS $INAME( sourceTexture, x, y [, borderMode = Texture.borderClamp] )
   Copy _sourceTexture_ in the current texture at the position (_x_, _y_).
-  $H arguments:
-  * $TYPE Texture sourceTexture:
-  * $INT x:
-  * $INT y:
-  * $INT borderMode: one of borderWrap, borderClamp.
+  $H arguments
+   $ARG Texture sourceTexture:
+   $ARG integer x:
+   $ARG integer y:
+   $ARG enum borderMode: one of Texture.borderWrap or Texture.borderClamp.
 **/
 DEFINE_FUNCTION_FAST( Copy ) {
 
@@ -2518,11 +2546,11 @@ DEFINE_FUNCTION_FAST( Copy ) {
 /**doc
  * $THIS $INAME( texture, x, y, borderMode )
   Paste _sourceTexture_ in the current texture at the position (_x_, _y_).
-  $H arguments:
-  * $TYPE Texture sourceTexture:
-  * $INT x:
-  * $INT y:
-  * $INT borderMode: one of borderWrap, borderClamp.
+  $H arguments
+   $ARG Texture sourceTexture:
+   $ARG integer x:
+   $ARG integer y:
+   $ARG enum borderMode: one of Texture.borderWrap or Texture.borderClamp.
 **/
 DEFINE_FUNCTION_FAST( Paste ) { // (Texture)texture, (int)x, (int)y, (bool)borderMode
 
@@ -2591,9 +2619,9 @@ DEFINE_FUNCTION_FAST( Paste ) { // (Texture)texture, (int)x, (int)y, (bool)borde
 
 
 /**doc
- * $RET imageObject $INAME( x, y, width, height )
+ * $TYPE ImageObject $INAME( x, y, width, height )
   Creates an image object from the current texture.
-  $H example:
+  $H example
   {{{
   var f = new Font('arial.ttf');
   f.size = 100;
@@ -2681,14 +2709,14 @@ DEFINE_FUNCTION_FAST( Export ) { // (int)x, (int)y, (int)width, (int)height. Ret
 
 
 /**doc
- * $THIS $INAME( image, x, y [, borderMode] )
+ * $THIS $INAME( sourceImage, x, y [, borderMode] )
   Draws the _image_ over the current texture at position (_x_, _y_).
-  $H arguments:
-  * $OBJ image: 
-  * $INT x: 
-  * $INT y:
-  * $INT borderMode: one of borderWrap, borderClamp.
-  $H example:
+  $H arguments
+   $ARG ImageObject sourceImage:
+   $ARG integer x: X position of the image in the current texture.
+   $ARG integer y: Y position of the image in the current texture.
+   $ARG enum borderMode: one of Texture.borderWrap, Texture.borderClamp.
+  $H example
   {{{
   var file = new File('myImage.png').Open('r'); // note: Open() returns the file object.
   var image = DecodePngImage( file );
@@ -2779,12 +2807,11 @@ DEFINE_FUNCTION_FAST( Import ) { // (BString)image, (int)x, (int)y
 /**doc
  * $THIS $INAME( offsetX, offsetY [, borderMode] )
   Shift the current image.
-  $H arguments:
-  * $INT offsetX: 
-  * $INT offsetY:
-  * $INT borderMode: one of borderWrap, borderClamp, borderMirror, borderValue
+  $H arguments
+   $ARG integer offsetX: 
+   $ARG integer offsetY:
+   $ARG enum borderMode: one of Texture.borderWrap, Texture.borderClamp, Texture.borderMirror or Texture.borderValue.
 **/
-
 DEFINE_FUNCTION_FAST( Shift ) {
 	// (TBD) I think it is possible to do the Shift operation without using a second buffer.
 
@@ -2860,10 +2887,10 @@ DEFINE_FUNCTION_FAST( Shift ) {
 /**doc
  * $THIS $INAME( displaceTexture, factor [, borderMode] )
   Move each pixel of the texture according to the 
-  $H arguments:
-  * $TYPE Texture displaceTexture: is a texture that contains displacement vectors.
-  * $REAL factor: displacement factor of each pixel.
-  * $INT borderMode: one of borderWrap, borderClamp, borderMirror, borderValue
+  $H arguments
+   $ARG Texture displaceTexture: is a texture that contains displacement vectors.
+   $ARG real factor: displacement factor of each pixel.
+   $ARG enum borderMode: one of Texture.borderWrap, Texture.borderClamp, Texture.borderMirror or Texture.borderValue.
 **/
 // (TBD) PTYPE
 DEFINE_FUNCTION_FAST( Displace ) {
@@ -2952,9 +2979,9 @@ DEFINE_FUNCTION_FAST( Displace ) {
 /**doc
  * $THIS $INAME( density, regularity )
   Draws cells in the current texture.
-  $H arguments:
-  * $INT density:
-  * $REAL regularity: 
+  $H arguments
+   $ARG integer density: 
+   $ARG real regularity: 
 **/
 DEFINE_FUNCTION_FAST( Cells ) { // source: FxGen
 
@@ -3050,12 +3077,12 @@ DEFINE_FUNCTION_FAST( Cells ) { // source: FxGen
 /**doc
  * $THIS $INAME( topLeft, topRight, bottomLeft, bottomRight )
   Add a quad radiant to the current texture
-  $H arguments:
-  * $TYPE colorInfo topLeft:
-  * $TYPE colorInfo topRight:
-  * $TYPE colorInfo bottomLeft:
-  * $TYPE colorInfo bottomRight:
-  $H example:
+  $H arguments
+   $ARG colorInfo topLeft: color of the top-left corner.
+   $ARG colorInfo topRight: color of the top-right corner.
+   $ARG colorInfo bottomLeft: color of the bottom-left corner.
+   $ARG colorInfo bottomRight: color of the bottom-right corner.
+  $H example
   {{{
   const RED = [1,0,0,1];
   const BLUE = [0,0,1,1];
@@ -3112,15 +3139,15 @@ DEFINE_FUNCTION_FAST( AddGradiantQuad ) {
 /**doc
  * $THIS $INAME( curveInfoX, curveInfoY )
   Add a linear radiant using a curve for X and Y. Each point of the curve is the light intensity of a pixel.
-  $H arguments:
-  * $TYPE curveInfo curveInfoX:
-  * $TYPE curveInfo curveInfoY:
-  $H example 1:
+  $H arguments
+   $ARG curveInfo curveInfoX:
+   $ARG curveInfo curveInfoY:
+  $H example 1
   {{{
   texture.Set(0); // clears the texture
   texture.AddGradiantLinear(curveHalfSine, curveOne);
   }}}
-  $H example 2:
+  $H example 2
   {{{
   texture.AddGradiantLinear([0,1,0], [0,1,0]);
   }}}
@@ -3160,14 +3187,14 @@ DEFINE_FUNCTION_FAST( AddGradiantLinear ) {
 /**doc
  * $THIS $INAME( curveInfo [, drawToCorner = false] )
   Add a radial radiant using a curve from the center to the outside. Each point of the curve is the light intensity of a pixel.
-  $H arguments:
-  * $TYPE curveInfo curveInfo:
-  * $BOOL drawToCorner: If true, the curve goes from the center to the corner, else from the center to the edge.
-  $H example 1:
+  $H arguments
+   $ARG curveInfo curveInfo:
+   $ARG boolean drawToCorner: If true, the curve goes from the center to the corner, else from the center to the edge.
+  $H example 1
   {{{
   texture.AddGradiantRadial(curveHalfSine);
   }}}
-  $H example 2:
+  $H example 2
   {{{
   texture.AddGradiantRadial([0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1], true);
   }}}
@@ -3297,17 +3324,17 @@ DEFINE_FUNCTION( AddGradiantRadial ) {
 
 
 /**doc
- * $THIS $INAME( count, crackMaxLength, variation, colorInfo, curveInfo )
+ * $THIS $INAME( count, crackMaxLength, wayVariation, color, curve )
   Adds cracks to the current texture. TBD
-  $H arguments:
-  * $INT count:
-  * $INT crackMaxLength:
-  * $REAL variation:
-  * colorInfo:
-  * curveInfo:
-  $H note:
+  $H arguments
+   $ARG integer count: number of cracks to draw.
+   $ARG integer crackMaxLength: length of each crack.
+   $ARG real wayVariation: the variation of each crack (eg. 0 is straight and 1 is randomly curved).
+   $ARG colorInfo color: the color of the crack.
+   $ARG curveInfo curve: the curve that defines the intensity of each point of the crack.
+  $H note
   The curve is computed before each crack is drawn.
-  $H examples:
+  $H examples
   {{{
   texture.AddCracks( 1000, 10, 0, RED, 1 );
   
@@ -3386,7 +3413,7 @@ DEFINE_FUNCTION_FAST( AddCracks ) { // source: FxGen
 /**doc
  * $TYPE Array $INAME( x, y )
   Returns the pixel value at position (x, y) in the current texture. If the texture is RGB, an array of 3 values is returned.
-  $H example:
+  $H example
   {{{
   var texture = new Texture(20,20,3);
   texture.Set([0.1, 0.2, 0.3]);
@@ -3487,7 +3514,7 @@ DEFINE_PROPERTY( channels ) {
 /**doc
  * $VOID $INAME( seed )
   Resets a random sequence of the Mersenne Twister random number generator.
-  $H example:
+  $H example
   {{{
   Texture.RandSeed(1234);
   Print( Texture.RandReal(), '\n' );
@@ -3564,12 +3591,18 @@ static JSBool Test(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval 
 
 === Special values and data types ===
 
+* *borderMode*
+ * Texture.borderWrap: get the pixel from the the other side (opposite edge).
+ * Texture.borderClamp: do not take any other pixel.
+ * Texture.borderMirror: take the pixel from this edge but in a reverse way (like a mirror).
+ * Texture.borderValue: use the pixel of the current border.
+
 * *colorInfo*
  _colorInfo_ can be one of the following type:
  * real: in this case, the same value is used for each channel (eg. 0.5 gor gray).
  * Array: that contains the $pval of each channel (eg. [1,1,1] is white in RGB mode).
  * string: the string represents an HTML color like #1100AA or #8800AAFF (depending the number of channels)
- $H examples:
+ $H examples
  {{{
  const RED = [1,0,0,1];
  const GREEN = [0,1,0,1];
@@ -3588,7 +3621,7 @@ static JSBool Test(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval 
  * function($REAL posX, £INT indexX): the function is called and must returns values for each curve point.
  * Array: an Array that describes the curve (no interpolation is done between values).
  * buffer: a BString or a string that contains the curve data.
- $H examples:
+ $H examples
  {{{
  const curveLinear = function(v) { return v }
  const curveHalfSine = function(v) { return Math.cos(v*Math.PI/2) }
@@ -3603,7 +3636,7 @@ static JSBool Test(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval 
  texture.AddGradiantRadial( GaussianCurveGenerator( 0.5 ) );
  }}}
 
-* *imageObject*
+* *ImageObject*
  TBD
 **/
 
