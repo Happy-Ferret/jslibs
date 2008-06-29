@@ -136,34 +136,36 @@ var api = {
 
 function ReadCx(cx, re) {
 
-    re.lastIndex = 0;
     res = re(cx.right);
     if (res) {
-        cx.right = cx.right.substr(re.lastIndex);
+        cx.right = cx.right.substr(res[0].length);
         return res;
     } else {
         return [];
     }
 }
 
-function ReadArg(cx) ReadCx(cx, / *([\w_]*)/g)[1]||'';
-function ReadEol(cx, eatEol) ReadCx(cx, new RegExp(' *([^\r\n]*)' + (eatEol ? '\r?\n' : ''),'g'))[1]||'';
+function ReadArg(cx) ReadCx(cx, / *([\w_]*)/)[1]||'';
+function ReadEol(cx, eatEol) ReadCx(cx, new RegExp(' *([^\n]*)' + (eatEol ? '\n' : '')))[1]||'';
 
 
 function RegQuote(str) {
 
-    var quote = '$^*+?.()[]{}|\\';
+    var quote = '\\^$*+?.|()[]{}';
     var res = '';
     for each ( c in str )
-        res += quote.indexOf(c) != -1 ? ('\\' + c) : c;
+        res += quote.indexOf(c) != -1 ? '\\' + c : c;
     return res;
 }
 
 function ExpandText(str, api, item) {
 
-    var re = new RegExp([RegQuote(p) for ( p in api ) ].join('|'),'g');
-    var cx= {left: "", center: "", right: str};
-    for (var i = 0; i < 10; i++) {
+    var re = new RegExp([RegQuote(p) for ( p in api ) ].join('|'), 'g');
+    
+    Print('reg: '+re.source );
+    
+    var cx= {left: '', center: '', right: str};
+    for(;;) {
 
         re.lastIndex = 0;
         var res = re(cx.right);
@@ -190,7 +192,7 @@ function ExpandText(str, api, item) {
 }
 
 
-function CountStr( str, source ) {
+function CountStr(str, source) {
 
 	var count = 0;
 	if (str)
@@ -223,20 +225,21 @@ function RecursiveDir(path, callback) {
 	})(path);
 }
 
-function CreateDocItemList(api) {
+function CreateDocItemList(startDir, api) {
 
-	var docExpr = /\/\*\*doc([^]*?)(?:\r?\n([^]*?))?\*\*\//g;
+	var docExpr = /\/\*\*doc([^]*?)(?:\n([^]*?))?\*\*\//g;
 	var hidden = /\/\./;
 	var sourceCode = /\.(h|cpp|c)$/;
 
 	var itemList = [];
 	var index = 0;
 
-	RecursiveDir( './src', function(file) {
+	RecursiveDir( startDir, function(file) {
 
 		if ( !hidden(file.name) && sourceCode(file.name) ) {
 
 			var source = file.content;
+			source = source.replace(/\r\n|\r/g, '\n'); // cleanup
 			docExpr.lastIndex = 0;
 			var res, item;
 			while( res = docExpr(source) ) {
@@ -271,8 +274,7 @@ function CreateDocItemList(api) {
 				
 				// cleanup item.text
 				
-				item.text = item.text.replace('\r\n','\n');
-				
+			
 				var tabPos;
 				if ( (tabPos = item.text.indexOf('\t')) != -1 ) {
 				
@@ -310,7 +312,7 @@ function FlattenGroup( groupList ) {
 
 
 
-var itemList = CreateDocItemList(api);
+var itemList = CreateDocItemList('./src', api);
 
 // group docitems by module then by file.
 var moduleList = MakeGroups( itemList, function(item) item.lastDir );
