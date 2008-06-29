@@ -1830,6 +1830,17 @@ JSBool Init( JSContext *cx, JSObject *obj ) {
 	return JS_TRUE;
 }
 
+/**doc
+=== details ===
+ [http://www.glprogramming.com/blue/ OpenGL API Documentation]
+**/
+
+
+/**doc
+=== Native Interface ===
+ *NIMatrix44Read*: the current matrix. See MatrixMode() to specifiy which matrix stack is the target forsubsequent matrix operations.
+**/
+
 
 CONFIGURE_CLASS
 

@@ -227,7 +227,7 @@ DEFINE_FUNCTION( Close ) {
   }}}
   $H example 3
   {{{
-  var result = db.Query('SELECT ? FROM table WHERE id=?', ['name', 1341] ); // array-like {0:'name', 1:1341, length:2} works too. 
+  var result = db.Query('SELECT ? FROM table WHERE id=?', ['name', 1341] ); // array-like {0:'name', 1:1341, length:2} works too.
   Print( result.Col(0) );
   }}}
 **/
@@ -275,7 +275,7 @@ DEFINE_FUNCTION( Query ) {
 
 /**doc
  * $VAL $INAME( sqlStr [, map ] )
-  Evaluates a SQL string and return the result in one operation. 
+  Evaluates a SQL string and return the result in one operation.
   $H arguments
    $ARG string sqlStr: is the SQL statement.
    $ARG Object map: if given, this argument is bind (as a key:value variable map) to the SQL statement.
@@ -445,7 +445,7 @@ void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArg
 		}
 	}
 
-	
+
 	if ( JS_CallFunction(cx, obj, fun, sArgc, argv, &rval) == JS_FALSE ) {
 /*
 		if ( JS_IsExceptionPending(cx) ) {
@@ -457,9 +457,9 @@ void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArg
 			if ( err == NULL ) {
 				return;
 			}
-			
+
 		}
-*/			
+*/
 
 		sqlite3_result_error(sCx, "Function call error", -1 ); // (TBD) better error message
 		goto bad;
@@ -615,7 +615,7 @@ END_CLASS
  $H example 1
  {{{
  Print('database version: ' + Database.version ,'\n' );
- 
+
  var obj = { foo:BString('qqwe\00\00fv1234') };
  Print( 'testFunc = ' + db.Exec('SELECT length(:foo)', obj  ) ,'\n' );
  }}}
@@ -630,15 +630,15 @@ try {
  db.Exec('insert into t1 (a,b,c) values (5,6,7)');
  db.Exec('insert into t1 (a,b,c) values (2,3,4)');
  db.Exec('insert into t1 (a,b,c) values ("a","b","c")');
- 
+
  var res = db.Query('SELECT a,c from t1');
- 
+
  Print( res.Row().toSource(), '\n' );
  Print( res.Row().toSource(), '\n' );
  Print( res.Row().toSource(), '\n' );
- 
- } catch ( ex if ex instanceof SqliteError ) { 
-  
+
+ } catch ( ex if ex instanceof SqliteError ) {
+
   Print( 'SQLite error '+ex.code+': '+ex.text+'\n' );
  }
  **/
