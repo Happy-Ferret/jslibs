@@ -23,7 +23,6 @@ extern bool *_pUnsafeMode = &_defaultUnsafeMode;
 
 /**doc t:header
 $MODULE_HEADER
- test
 **/
 
 /**doc t:footer

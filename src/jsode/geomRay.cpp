@@ -75,7 +75,7 @@ DEFINE_PROPERTY( lengthGetter ) {
 
 
 /**doc
- * $RET vec3 *start*
+ * $TYPE vec3 *start*
   TBD
 **/
 DEFINE_PROPERTY( startSetter ) {
@@ -101,7 +101,7 @@ DEFINE_PROPERTY( startGetter ) {
 
 
 /**doc
- * $RET vec3 *direction*
+ * $TYPE vec3 *direction*
   TBD
 **/
 DEFINE_PROPERTY( directionSetter ) {

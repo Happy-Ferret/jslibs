@@ -32,15 +32,15 @@ BEGIN_CLASS( SqliteError )
 === Exemple ===
 {{{
 try {
-	
-	db.Exec('yfiqwygqiwye'); // generate an error
+
+  db.Exec('yfiqwygqiwye'); // generate an error
 
 } catch ( ex if ex instanceof SqliteError ) {
 
-	Print( 'SqliteError: ' + ex.text + '('+ex.code+')', '\n' );
+   Print( 'SqliteError: ' + ex.text + '('+ex.code+')', '\n' );
 } catch( ex ) {
 
-	throw ex;
+   throw ex;
 }
 }}}
 **/

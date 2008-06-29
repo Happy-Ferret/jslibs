@@ -29,10 +29,6 @@ $CLASS_HEADER
 **/
 BEGIN_CLASS( Directory )
 
-/**doc
-=== Methods ===
-**/
-
 DEFINE_FINALIZE() {
 
 	PRDir *dd = (PRDir *)JS_GetPrivate( cx, obj );
@@ -45,7 +41,10 @@ DEFINE_FINALIZE() {
 }
 
 /**doc
- * *_Constructor_*( directoryName )
+ * $INAME( directoryName )
+  Creates a new Directory object.
+  $H arguments
+   $ARG string directoryName
 **/
 DEFINE_CONSTRUCTOR() {
 
@@ -56,7 +55,11 @@ DEFINE_CONSTRUCTOR() {
 }
 
 /**doc
- * $RET this *Open*()
+=== Methods ===
+**/
+
+/**doc
+ * $THIS $INAME()
   Open the directory.
 **/
 DEFINE_FUNCTION( Open ) {
@@ -78,7 +81,7 @@ DEFINE_FUNCTION( Open ) {
 
 
 /**doc
- * *Close*()
+ * $VOID $INAME()
   Close the specified directory.
 **/
 DEFINE_FUNCTION( Close ) {
@@ -93,8 +96,12 @@ DEFINE_FUNCTION( Close ) {
 
 
 /**doc
- * $STR *Read*( [, flags = Directory.SKIP_NONE ] )
-  Returns a item of the current directory and go to the next.
+ * $STR $INAME( [, flags = Directory.SKIP_NONE ] )
+   Reads an item of the current directory and go to the next.
+  $H arguments
+   $ARG enum flags: specifies how special files are processed.
+  $H return value
+   $STR a directory item.
 **/
 DEFINE_FUNCTION( Read ) {
 
@@ -127,7 +134,7 @@ DEFINE_FUNCTION( Read ) {
 
 
 /**doc
- * *Make*()
+ * $VOID $INAME()
   Create the directory given in the constructor.
 **/
 DEFINE_FUNCTION( Make ) {
@@ -144,9 +151,10 @@ DEFINE_FUNCTION( Make ) {
 }
 
 /**doc
- * int *Remove*()
+ * $BOOL $INAME()
   Removes the directory given in the constructor.
-  If the directory is not empty, Remove() returns <false> else it returns <true>.
+  $H return value
+   $BOOL returns <false> If the directory is not empty else it returns <true>.
 **/
 DEFINE_FUNCTION( Remove ) {
 
@@ -174,7 +182,7 @@ DEFINE_FUNCTION( Remove ) {
 **/
 
 /**doc
- * *exist* $READONLY
+ * $INAME $READONLY
   Check if the directory exists.
 **/
 DEFINE_PROPERTY( exist ) {
@@ -201,7 +209,7 @@ DEFINE_PROPERTY( exist ) {
 
 
 /**doc
- * *name* $READONLY
+ * $INAME $READONLY
   Returns the name of the directory.
 **/
 DEFINE_PROPERTY( name ) {
@@ -216,11 +224,16 @@ DEFINE_PROPERTY( name ) {
 **/
 
 /**doc
- * $RET array *List*( name [, flags = Directory.SKIP_DOT] )
-  Returns all entries in the directory _name_.
-  ===== Note: =====
+ * $TYPE Array $INAME( dirName [, flags = Directory.SKIP_DOT] )
+  Read all entries of a directory at once.
+  $H arguments
+   $ARG string dirName: is the path of the directory.
+   $ARG enum flags: specifies how special files are processed.
+  $H return value
+   returns all entries in the directory _name_.
+  $H note
    This function supports additional flags: Directory.`SKIP_FILE`, Directory.`SKIP_DIRECTORY`, Directory.`SKIP_OTHER`
-  ===== exemple: =====
+  $H example
   {{{
   LoadModule('jsstd');
   LoadModule('jsio');
@@ -294,7 +307,6 @@ DEFINE_FUNCTION( List ) {
 
 /**doc
 === Constants ===
-
  * Directory.`SKIP_NONE`
   Do not skip any files.
  * Directory.`SKIP_DOT`
@@ -353,35 +365,33 @@ var dir = new Directory( 'c:/tmp' );
 dir.Open();
 for ( var entry; ( entry = dir.Read() ); ) {
 
-	var file = new File(dir.name+'/'+entry);
-	Print( entry + ' ('+ file.info.type +')', '\n');
+   var file = new File(dir.name+'/'+entry);
+   Print( entry + ' ('+ file.info.type +')', '\n');
 }
 }}}
 
 === Example ===
 {{{
 function RecursiveDir(path) {
-	
-	var testList = [];
-	(function(path) {
-
-		var dir = new Directory(path);
-		dir.Open();
-		for ( var entry; ( entry = dir.Read(Directory.SKIP_BOTH) ); ) {
-
-			var file = new File(dir.name+'/'+entry);
-			switch ( file.info.type ) {
-				case File.FILE_DIRECTORY:
-					arguments.callee(file.name);
-					break;
-				case File.FILE_FILE:
-					testList.push(file.name);
-					break;
-			}
-		}
-		dir.Close();
-	})(path);
-	return testList;
+   var testList = [];
+   (function(path) {
+      var dir = new Directory(path);
+      dir.Open();
+      for ( var entry; ( entry = dir.Read(Directory.SKIP_BOTH) ); ) {
+         
+         var file = new File(dir.name+'/'+entry);
+         switch ( file.info.type ) {
+            case File.FILE_DIRECTORY:
+               arguments.callee(file.name);
+               break;
+            case File.FILE_FILE:
+               testList.push(file.name);
+               break;
+         }
+      }
+      dir.Close();
+   })(path);
+   return testList;
 }
 
 Print( RecursiveDir('jshost').join('\n') );

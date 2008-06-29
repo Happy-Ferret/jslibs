@@ -92,14 +92,17 @@ DEFINE_FUNCTION_FAST( MultiTexCoord ) {
 }
 */
 
+/**doc
+=== Static properties ===
+**/
 
-DEFINE_PROPERTY(error) {
-
-	*vp = INT_TO_JSVAL(alGetError());
-	return JS_TRUE;
-}
-
-DEFINE_FUNCTION_FAST( _PlaySound ) {
+/**doc
+ * $VOID $INAME( sound )
+  Plays a sound on the default playback device.
+  $H arguments
+   $ARG soundObject sound: sound object to play.
+**/
+DEFINE_FUNCTION_FAST( PlaySound_ ) {
 
 	J_S_ASSERT_ARG_MIN( 1 );
 	J_S_ASSERT_OBJECT( J_FARG(1) );
@@ -168,8 +171,23 @@ DEFINE_FUNCTION_FAST( _PlaySound ) {
   alDeleteBuffers(1, &bufferID);
   alDeleteSources(1, &sourceID);
 
+  *J_FRVAL = JSVAL_VOID;
 
   return JS_TRUE;
+}
+
+/**doc
+=== Static properties ===
+**/
+
+/**doc
+ * $INAME $READONLY
+  Obtain the most recent error generated in the AL state machine.
+**/
+DEFINE_PROPERTY(error) {
+
+	*vp = INT_TO_JSVAL(alGetError());
+	return JS_TRUE;
 }
 
 
@@ -190,7 +208,7 @@ CONFIGURE_CLASS
 
 	BEGIN_STATIC_FUNCTION_SPEC
 
-		FUNCTION2_FAST_ARGC( PlaySound, _PlaySound, 1 )
+		FUNCTION2_FAST_ARGC( PlaySound, PlaySound_, 1 )
 
 	END_STATIC_FUNCTION_SPEC
 

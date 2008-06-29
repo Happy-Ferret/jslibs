@@ -46,7 +46,7 @@ DEFINE_CONSTRUCTOR() {
 **/
 
 /**doc
- * $RET vec3 *axis*
+ * $TYPE vec3 *axis*
   TBD
 **/
 DEFINE_PROPERTY( axisSetter ) {

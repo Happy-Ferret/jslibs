@@ -53,7 +53,7 @@ BEGIN_STATIC
      this.a = 123;
    }
    Print( new Test().Expand('$(a)') );
-	}}}
+   }}}
   $H note
    undefined values are ignored in the resulting string.
   $H example

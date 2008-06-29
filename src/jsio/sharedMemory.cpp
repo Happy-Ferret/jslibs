@@ -110,11 +110,7 @@ DEFINE_FINALIZE() {
 
 
 /**doc
-=== Methods ===
-**/
-
-/**doc
- * *_Constructor_*( name, size [, mode] )
+ * $INAME( name, size [, mode] )
   Creates a named shared memory area of _size_ bytes using _mode_ linux-like rights.
 **/
 DEFINE_CONSTRUCTOR() {
@@ -188,9 +184,12 @@ DEFINE_CONSTRUCTOR() {
 	return JS_TRUE;
 }
 
+/**doc
+=== Methods ===
+**/
 
 /**doc
- * *Write*( data [, offset] )
+ * $INAME( data [, offset] )
   Write _data_ at _offset_ in the shared memory.
 **/
 DEFINE_FUNCTION_FAST( Write ) {
@@ -223,7 +222,7 @@ DEFINE_FUNCTION_FAST( Write ) {
 
 
 /**doc
- * $STR *Read*( length [, offset] )
+ * $STR $INAME( length [, offset] )
   Read _length_ bytes from _offset_ in the shared memory.
 **/
 DEFINE_FUNCTION_FAST( Read ) {
@@ -260,8 +259,8 @@ DEFINE_FUNCTION_FAST( Read ) {
 
 
 /**doc
- * *Clear*()
-  TBD
+ * $INAME()
+  Clears the content of the shared memory.
 **/
 DEFINE_FUNCTION_FAST( Clear ) {
 
@@ -283,7 +282,7 @@ DEFINE_FUNCTION_FAST( Clear ) {
 **/
 
 /**doc
- * $STR *content*
+ * $STR $INAME
   Read or write the whole content of the shared memory. Setting <undefined> as value clears the memory area.
 **/
 DEFINE_PROPERTY( contentSetter ) { // (TBD) support BString

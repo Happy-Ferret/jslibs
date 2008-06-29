@@ -223,16 +223,16 @@ DEFINE_PROPERTY( useFeedback ) {
 }
 
 /**doc
- * $RET vec3 *body1Force*
+ * $TYPE vec3 *body1Force*
   Is the current force vector that applies to the body1 if feedback is activated.
 
- * $RET vec3 *body1Torque*
+ * $TYPE vec3 *body1Torque*
   Is the current torque vector that applies to the body1 if feedback is activated.
 
-  * $RET vec3 *body2Force*
+  * $TYPE vec3 *body2Force*
   Is the current force vector that applies to the body2 if feedback is activated.
 
- * $RET vec3 *body2Torque*
+ * $TYPE vec3 *body2Torque*
   Is the current torque vector that applies to the body2 if feedback is activated.
 **/
 enum { body1Force, body1Torque, body2Force, body2Torque };

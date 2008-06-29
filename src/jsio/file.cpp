@@ -72,7 +72,7 @@ DEFINE_CONSTRUCTOR() {
 }
 
 /**doc
- * $RET this *Open*( flags [, mode] )
+ * $TYPE this *Open*( flags [, mode] )
   Open a file for reading, writing, or both.
   = =
   _flags_ is either a combinaison of open mode constants or a string that contains fopen like flags (+, r, w, a).
@@ -552,19 +552,19 @@ LoadModule('jsio');
 
 try {
 
-	var file = new File('file_test.txt');
-	if ( file.exist ) {
-		file.Open( File.RDONLY );
-		print( 'file content:\n' + file.Read() );
-		file.Close();
-	}
+   var file = new File('file_test.txt');
+   if ( file.exist ) {
+      file.Open( File.RDONLY );
+      Print( 'file content:\n' + file.Read() );
+      file.Close();
+   }
 
 } catch ( ex if ex instanceof IoError ) {
-
-	Print( 'IOError: ' + ex.text, '\n' );
+   
+   Print( 'IOError: ' + ex.text, '\n' );
 } catch( ex ) {
-
-	throw ex;
+   
+   throw ex;
 }
 }}}
 **/

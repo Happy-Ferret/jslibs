@@ -56,7 +56,7 @@ DEFINE_CONSTRUCTOR() {
 **/
 
 /**doc
- * $RET vec3 *lengths*
+ * $TYPE vec3 *lengths*
   Is the x, y, z size of the box.
 **/
 DEFINE_PROPERTY( lengthsSetter ) {

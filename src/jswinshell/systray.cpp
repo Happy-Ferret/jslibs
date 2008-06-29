@@ -662,7 +662,7 @@ DEFINE_FUNCTION( Rect ) {
 **/
 
 /**doc
- * $RET Icon | $RET null *icon* $WRITEONLY
+ * $TYPE Icon | $TYPE null *icon* $WRITEONLY
 **/
 DEFINE_PROPERTY( icon ) {
 

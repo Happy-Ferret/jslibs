@@ -108,7 +108,7 @@ DEFINE_CONSTRUCTOR() {
 
 
 /**doc
- * $RET BString $INAME( amount )
+ * $TYPE BString $INAME( amount )
   Read _amount_ of data into the stream.
 **/
 DEFINE_FUNCTION_FAST( Read ) {

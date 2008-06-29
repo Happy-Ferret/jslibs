@@ -64,7 +64,7 @@ DEFINE_FUNCTION( AddTorque ) {
 **/
 
 /**doc
- * $RET vec3 *anchor*
+ * $TYPE vec3 *anchor*
   TBD
 **/
 DEFINE_PROPERTY( anchorSetter ) {
@@ -88,7 +88,7 @@ DEFINE_PROPERTY( anchorGetter ) {
 }
 
 /**doc
- * $RET vec3 *anchor2* $READONLY
+ * $TYPE vec3 *anchor2* $READONLY
   TBD
 **/
 DEFINE_PROPERTY( anchor2 ) { // read only
@@ -102,7 +102,7 @@ DEFINE_PROPERTY( anchor2 ) { // read only
 }
 
 /**doc
- * $RET vec3 *axis*
+ * $TYPE vec3 *axis*
   Get or set the axis of the joint.
 **/
 DEFINE_PROPERTY( axisSetter ) {

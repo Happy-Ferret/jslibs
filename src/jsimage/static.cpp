@@ -108,7 +108,7 @@ METHODDEF(void) term_source(j_decompress_ptr cinfo) {
 }
 
 /**doc
- * $RET imageObject $INAME( streamObject )
+ * $TYPE imageObject $INAME( streamObject )
   This function returns an image object that represents the decompressed jpeg image given as argument.
   = =
   The streamObject argument is any object that supports the StreamRead Native Interface ( file, socket, new Stream(buffer), ... )
@@ -237,7 +237,7 @@ static void _png_read( png_structp png_ptr, png_bytep data, png_size_t length ) 
 
 
 /**doc
- * $RET imageObject $INAME( streamObject )
+ * $TYPE imageObject $INAME( streamObject )
   This function returns an image object that represents the decompressed png image given as argument.
   = =
   The streamObject argument is any object that supports the StreamRead Native Interface ( file, socket, new Stream(buffer), ... )

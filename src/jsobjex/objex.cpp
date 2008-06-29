@@ -163,8 +163,8 @@ JSObject *objexInitClass( JSContext *cx, JSObject *obj ) {
 === Example ===
 {{{
 function addCallback( name, value ) {
-	
-  Print('adding ' + name + ' = ' + value);
+
+   Print('adding ' + name + ' = ' + value);
 }
 
 var obj = new ObjEx( addCallback, undefined, undefined, undefined, null );

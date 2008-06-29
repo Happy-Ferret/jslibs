@@ -171,7 +171,7 @@ $CLASS_HEADER
  = =
  When a statement has been prepared with Database.*Query* function, you need to execute it ( with *Step* function ) before any data can be read.
  However, some properties (like *columnCount*, ... ) can be read before the first *Step* has been done.
- ===== Note: =====
+ $H note
   You cannot construct this class yourself.
 **/
 BEGIN_CLASS( Result )
@@ -201,8 +201,8 @@ DEFINE_FINALIZE() {
 **/
 
 /**doc
- * void *Close*()
-  Close the current [Result] object.
+ * $VOID $INAME()
+  Close the current Result object.
 **/
 DEFINE_FUNCTION( Close ) {
 
@@ -225,9 +225,10 @@ DEFINE_FUNCTION( Close ) {
 
 
 /**doc
- * bool *Step*()
-  Executes the previously evaluated SQL statement.
-  Returns true if another row is ready. false if the last line has been reached.
+ * $BOOL $INAME()
+  Executes one step in the previously evaluated SQL statement.
+  $H return value
+   returns $BOOL true if another row is ready. $BOOL false if the last line has been reached.
 **/
 DEFINE_FUNCTION( Step ) {
 
@@ -274,8 +275,10 @@ DEFINE_FUNCTION( Step ) {
 
 
 /**doc
- * val *Col*( int )
-  Returns the current value of the _int_ column
+ * $VAL $INAME( colIndex )
+  Returns the current value of the _colIndex_ ^th^ column.
+  $H arguments
+   $ARG integer colIndex
 **/
 DEFINE_FUNCTION( Col ) {
 
@@ -289,12 +292,16 @@ DEFINE_FUNCTION( Col ) {
 }
 
 /**doc
- * val *Row*( [, namedRows = false ] )
-  Executes the SQL statement and returns the resulting row.
-  If namedRows is true, the returned value is an objet that contain columnName:value pair.
-  If namedRows is false, the function returns an array of value.
-  ===== beware: =====
-   The *Step* function is called before each *Row* call.
+ * $VAL $INAME( [namedRows = false] )
+  Executes one step of the the current SQL statement and returns the resulting row of data.
+  $H arguments
+   $ARG boolean namedRows: if true, the function returns an objet containing {columnName:value} pair. else it returns an array of value.
+  $H note
+   The *Step* function is internally called before each *Row* call.
+  $H example
+  {{{
+  TBD
+  }}}
 **/
 DEFINE_FUNCTION( Row ) {
 
@@ -333,8 +340,8 @@ DEFINE_FUNCTION( Row ) {
 
 
 /**doc
- * void *Reset*()
-  Resets the current [Result] object to its first line.
+ * $VOID $INAME()
+  Resets the current Result object to its initial state.
 **/
 DEFINE_FUNCTION( Reset ) {
 
@@ -346,12 +353,13 @@ DEFINE_FUNCTION( Reset ) {
 	return JS_TRUE;
 }
 
+
 /**doc
 === Properties ===
 **/
 
 /**doc
- * *columnCount* $READONLY
+ * $INT $INAME $READONLY
   Hold the number of columns of the current [Result]
 **/
 DEFINE_PROPERTY( columnCount ) {
@@ -364,8 +372,15 @@ DEFINE_PROPERTY( columnCount ) {
 
 
 /**doc
- * *columnNames* $READONLY
+ * $TYPE Array $INAME $READONLY
   Hold an [http://developer.mozilla.org/en/docs/Core_JavaScript_1.5_Reference:Objects:Array Array] that contain the index:name of the columns.
+  $H example
+  {{{
+  var db = new Database();
+  db.Exec('create table t1 (a,b,c);');
+  var res = db.Query('SELECT a,c from t1');
+  Print( res.columnNames.toSource(), '\n' ); // prints: ["a", "c"]
+  }}}
 **/
 DEFINE_PROPERTY( columnNames ) {
 
@@ -385,8 +400,15 @@ DEFINE_PROPERTY( columnNames ) {
 
 
 /**doc
- * *columnIndexes* $READONLY
+ * $TYPE Object $INAME $READONLY
   Hold an [http://developer.mozilla.org/en/docs/Core_JavaScript_1.5_Reference:Objects:Object Object] that contain the name:index of the columns.
+  $H example
+  {{{
+  var db = new Database();
+  db.Exec('create table t1 (a,b,c);');
+  var res = db.Query('SELECT a,c from t1');
+  Print( res.columnIndexes.toSource(), '\n' ); // prints: ({a:0, c:1})
+  }}}
 **/
 DEFINE_PROPERTY( columnIndexes ) {
 
@@ -406,7 +428,7 @@ DEFINE_PROPERTY( columnIndexes ) {
 
 
 /**doc
- * *expired* $READONLY
+ * *expired* $READONLY $DEPRECATED
   Indicates if the SQL statement must be re-evaluated.
 **/
 DEFINE_PROPERTY( expired ) {

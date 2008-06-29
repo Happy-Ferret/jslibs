@@ -46,7 +46,7 @@ DEFINE_CONSTRUCTOR() {
 **/
 
 /**doc
- * $RET vec3 *anchor*
+ * $TYPE vec3 *anchor*
 **/
 DEFINE_PROPERTY( anchorSetter ) {
 
@@ -69,7 +69,7 @@ DEFINE_PROPERTY( anchorGetter ) {
 }
 
 /**doc
- * $RET vec3 *anchor2* $READONLY
+ * $TYPE vec3 *anchor2* $READONLY
 **/
 DEFINE_PROPERTY( anchor2 ) { // read only
 

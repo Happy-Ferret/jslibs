@@ -165,7 +165,7 @@ DEFINE_FUNCTION_FAST( Set ) {
 */
 
 /**doc
- * $RET BString $INAME( ??? )
+ * $TYPE BString $INAME( ??? )
   TBD
 **/
 DEFINE_FUNCTION_FAST( Add ) {
@@ -246,7 +246,7 @@ DEFINE_FUNCTION_FAST( Add ) {
 
 
 /**doc
- * $RET ??? $INAME
+ * $TYPE ??? $INAME
   TBD
 **/
 DEFINE_FUNCTION_FAST( Substr ) { // http://developer.mozilla.org/en/docs/Core_JavaScript_1.5_Reference:Global_Objects:String:substr
@@ -373,7 +373,7 @@ DEFINE_NEW_RESOLVE() { // support of data[n]  and  n in data
 
 
 /**doc
- * $RET char *_[] operator_*
+ * $TYPE char *_[] operator_*
   TBD
 **/
 

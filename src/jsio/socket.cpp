@@ -184,7 +184,7 @@ DEFINE_FUNCTION( Listen ) {
 
 
 /**doc
- * $RET Socket *Accept*()
+ * $TYPE Socket *Accept*()
   Accept a connection on a socket.
   This function returns a connected jsio::Socket.
 **/
@@ -223,7 +223,7 @@ DEFINE_FUNCTION( Accept ) {
 
 
 /**doc
- * $RET this *Connect*( host, port [, timeout] )
+ * $TYPE this *Connect*( host, port [, timeout] )
   Initiate a connection on a socket.
 **/
 
@@ -846,7 +846,7 @@ DEFINE_PROPERTY( sockPort ) {
 **/
 
 /**doc
- * $RET array *GetHostsByName*( hostName )
+ * $TYPE array *GetHostsByName*( hostName )
   Lookup a host by name and returns the results in a javascript array.
 **/
 DEFINE_FUNCTION( GetHostsByName ) {
@@ -904,10 +904,10 @@ DEFINE_FUNCTION( GetHostsByName ) {
 
 /**doc
  * *SendTo* ...
- 	see Socket::SendTo
+  see Socket::SendTo
  
  * *RecvFrom* ...
- 	see Socket::RecvFrom
+  see Socket::RecvFrom
 **/
 
 

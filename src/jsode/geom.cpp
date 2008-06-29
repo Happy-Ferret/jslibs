@@ -117,7 +117,7 @@ DEFINE_PROPERTY( enableGetter ) {
 }
 
 /**doc
- * $RET body *body*
+ * $TYPE body *body*
   Bind the current geometry to the given body object.
 **/
 DEFINE_PROPERTY( body ) {
@@ -199,7 +199,7 @@ DEFINE_PROPERTY( tansformation ) {
 }
 
 /**doc
- * $RET vec3 *position*
+ * $TYPE vec3 *position*
   Is the current position of the geometry.
 **/
 DEFINE_PROPERTY( positionGetter ) {
@@ -257,7 +257,7 @@ DEFINE_PROPERTY( offsetPositionSetter ) {
   = =
   _againstGeom_ is the geometry against with this geometry is colliding (the other Geom).
   = =
-  $RET vec3 _position_ is the position of the impact point in world position.
+  $TYPE vec3 _position_ is the position of the impact point in world position.
 
 $H note
  This class exports a NI_READ_MATRIX44 interface to read the current body's position.

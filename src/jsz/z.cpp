@@ -389,9 +389,9 @@ var compressedData;
 
 for ( var i = 10; i >= 0; --i ) {
 
-	var chunk = randomString(10000);
-	compressedData += deflate( chunk );
-	clearData += chunk;
+   var chunk = randomString(10000);
+   compressedData += deflate( chunk );
+   clearData += chunk;
 }
 compressedData += deflate(); // flush
 
@@ -402,7 +402,7 @@ var clearData2 = inflate( compressedData, true );
 Print( 'ratio:' + compressedData.length + ': ' + Math.round( 100 * compressedData.length / clearData.length ) + '%','\n');
 if ( clearData2 != clearData )
 
-	Print('error!!!','\n');
+   Print('error!!!','\n');
 }
 }}}
 

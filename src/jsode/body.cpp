@@ -137,22 +137,22 @@ DEFINE_FUNCTION( IsConnectedTo ) {
 **/
 
 /**doc
- * $RET vec3 *position*
+ * $TYPE vec3 *position*
   dBodySetPosition
 
- * $RET vec4 *quaternion*
+ * $TYPE vec4 *quaternion*
   dBodySetQuaternion
  
- * $RET vec3 *linearVel*
+ * $TYPE vec3 *linearVel*
   dBodySetLinearVel
   
- * $RET vec3 *angularVel*
+ * $TYPE vec3 *angularVel*
   dBodySetAngularVel
  
- * $RET vec3 *force*
+ * $TYPE vec3 *force*
   dBodySetForce
  
- * $RET vec3 *torque*
+ * $TYPE vec3 *torque*
   dBodySetTorque
 **/
 enum { position, quaternion, linearVel, angularVel, force, torque };

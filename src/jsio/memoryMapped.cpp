@@ -51,12 +51,10 @@ DEFINE_FINALIZE() {
 }
 
 /**doc
-=== Methods ===
-**/
-
-/**doc
- * *_Constructor_*( fileDescriptor )
-  Creates a new memory-mapped object using the given open file descriptor.
+ * $INAME( file )
+  Creates a new memory-mapped object using the given opened file descriptor.
+  $H arguments
+   $ARG File file: any opened file descriptor.
 **/
 DEFINE_CONSTRUCTOR() {
 
@@ -117,7 +115,7 @@ DEFINE_CONSTRUCTOR() {
 
 /**doc
  * *file* $READONLY
-  This is the file descriptor used to construct this object.
+  is the file descriptor used to construct this object.
 **/
 DEFINE_PROPERTY( file ) {
 

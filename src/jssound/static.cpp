@@ -56,12 +56,12 @@ static ov_callbacks ovCallbacks = { readStream,0,0,0 };
 
 
 /**doc
- * $RET soundObject $INAME( streamObject )
+ * $TYPE soundObject $INAME( stream )
   Decodes a ogg vorbis sample to a sound object.
-  = =
-  The streamObject argument is any object that supports the StreamRead Native Interface ( file, socket, new Stream(buffer), ... )
-  = =
-  For further details about stream objects, see jslang::Stream object and NativeInterface mechanism.
+  $H arguments
+   $ARG streamObject stream: any object that has a Read function or that supports the StreamRead Native Interface ( file, socket, new Stream(buffer), ... ). For further details about stream objects, see jslang::Stream object and NativeInterface mechanism. 
+  $H return value
+   returns a sound object in a 16-bit per sample format.
   $H example
   {{{
   LoadModule('jsstd');
@@ -262,12 +262,12 @@ static SF_VIRTUAL_IO sfCallbacks = { SfGetFilelen, SfSeek, SfRead, 0, SfTell };
 
 
 /**doc
- * $RET soundObject $INAME( streamObject )
+ * $TYPE soundObject $INAME( stream )
   Decodes a sample from any supported sound format to a sound object.
-  = =
-  The streamObject argument is any object that supports the StreamRead Native Interface ( file, socket, new Stream(buffer), ... )
-  = =
-  For further details about stream objects, see jslang::Stream object and NativeInterface mechanism.
+  $H arguments
+   $ARG streamObject stream: any object that has a Read function or that supports the StreamRead Native Interface ( file, socket, new Stream(buffer), ... ). For further details about stream objects, see jslang::Stream object and NativeInterface mechanism.
+  $H return value
+   returns a sound object in a 16-bit per sample format.
 **/
 DEFINE_FUNCTION_FAST( DecodeSound ) {
 
@@ -366,6 +366,38 @@ CONFIGURE_STATIC
 	END_STATIC_PROPERTY_SPEC
 
 END_STATIC
+
+/**doc
+=== Examples ===
+ $H example 1
+ {{{
+ LoadModule('jsstd');
+ LoadModule('jsio');
+ LoadModule('jssound');
+ 
+ var file = new File('41_30secOgg-q0.wav');
+ file.Open('r');
+ var pcm = DecodeSound(file);
+ file.Close();
+ Print('sample length: '+pcm.length, '\n');
+ }}}
+
+ $H example 2
+ {{{
+ LoadModule('jsstd');
+ LoadModule('jsio');
+ LoadModule('jssound');
+ 
+ var file = new File('41_30secOgg-q0.wav');
+ var buffer = file.content;
+ var stream = new Stream(buffer);
+ var pcm = DecodeSound(stream);
+ 
+ Print('sample length: '+pcm.length, '\n');
+ }}}
+**/
+
+
 
 /*
 

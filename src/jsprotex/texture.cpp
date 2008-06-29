@@ -1460,7 +1460,7 @@ DEFINE_FUNCTION_FAST( Blend ) { // texture1, blenderTexture|blenderColor
    If x and y are wrapped to the image width and height.
 **/
 // PTYPE ok
-DEFINE_FUNCTION_FAST( _SetPixel ) { // x, y, levels
+DEFINE_FUNCTION_FAST( SetPixel_ ) { // x, y, levels
 
 	RT_ASSERT_ARGC( 3 );
 
@@ -3695,7 +3695,7 @@ CONFIGURE_CLASS
 		FUNCTION_FAST( Desaturate )
 		FUNCTION_FAST( Colorize )
 		FUNCTION_FAST( ExtractColor )
-		FUNCTION2_FAST( SetPixel, _SetPixel )
+		FUNCTION2_FAST( SetPixel, SetPixel_ )
 		FUNCTION_FAST( SetRectangle )
 		FUNCTION_FAST( AddNoise )
 		FUNCTION_FAST( Set )
@@ -3707,10 +3707,8 @@ CONFIGURE_CLASS
 		FUNCTION_FAST( Trim )
 		FUNCTION_FAST( Copy )
 		FUNCTION_FAST( Paste )
-
 		FUNCTION_FAST( Export )
 		FUNCTION_FAST( Import )
-
 		FUNCTION_FAST( Flip )
 		FUNCTION_FAST( Shift )
 		FUNCTION_FAST( Convolution )
@@ -3779,36 +3777,36 @@ $H example 1
 {{{
 function Cloud( size, amp ) {
 
-	var octaves = Math.log(size) / Math.LN2;
-	var a = 1, s = 1;
-	var cloud = new Texture(s, s, 1);
-	cloud.ClearChannel();
-	while ( octaves-- > 0 ) {
-		
-		cloud.AddNoise(a);
-		a *= amp;
-		s *= 2;
-		cloud.Resize(s, s, false);
-		cloud.BoxBlur(5, 5);
-	}
-	cloud.NormalizeLevels();
-	return cloud;
+   var octaves = Math.log(size) / Math.LN2;
+   var a = 1, s = 1;
+   var cloud = new Texture(s, s, 1);
+   cloud.ClearChannel();
+   while ( octaves-- > 0 ) {
+      
+      cloud.AddNoise(a);
+      a *= amp;
+      s *= 2;
+      cloud.Resize(s, s, false);
+      cloud.BoxBlur(5, 5);
+   }
+   cloud.NormalizeLevels();
+   return cloud;
 }
 
 function DesaturateLuminosity( tex ) {
-	
-	tex.Mult([0.2126, 0.7152, 0.0722]);
-	var tmp = new Texture(tex.width, tex.height, 1).Desaturate(tex, Texture.desaturateSum);
-	tex.Swap(tmp);
-	tmp.Free();
+   
+   tex.Mult([0.2126, 0.7152, 0.0722]);
+   var tmp = new Texture(tex.width, tex.height, 1).Desaturate(tex, Texture.desaturateSum);
+   tex.Swap(tmp);
+   tmp.Free();
 }
 
 function AddAlphaChannel( tex ) {
 
-	if ( tex.channels == 1 )
-		new Texture(tex.width, tex.height, 2).SetChannel(0, tex, 0).Swap(tex);
-	else if ( tex.channels == 3 )
-		new Texture(tex.width, tex.height, 4).SetChannel(0, tex, 0).SetChannel(1, tex, 1).SetChannel(2, tex, 2).Swap(tex);
+   if ( tex.channels == 1 )
+      new Texture(tex.width, tex.height, 2).SetChannel(0, tex, 0).Swap(tex);
+   else if ( tex.channels == 3 )
+      new Texture(tex.width, tex.height, 4).SetChannel(0, tex, 0).SetChannel(1, tex, 1).SetChannel(2, tex, 2).Swap(tex);
 }
 }}}
 
@@ -3840,73 +3838,73 @@ LoadModule('jsprotex');
 LoadModule('jsimage');
 
 with (Ogl) {
+   
+   var texture = new Texture(128, 128, 3);
+   texture.Set(0);
+   // play here for static textures
 
-	var texture = new Texture(128, 128, 3);
-	texture.Set(0);
-	// play here for static textures
+   function UpdateTexture(imageIndex) {
 
-	function UpdateTexture(imageIndex) {
+      // play here for dynamic textures
+      texture.Set(0);
+      texture.AddNoise(1);
+   }
 
-		// play here for dynamic textures
-		texture.Set(0);
-		texture.AddNoise(1);
-	}
+   var win = new Window();
+   win.Open();
+   win.CreateOpenGLContext();
+   win.rect = [200,200,800,800];
 
-	var win = new Window();
-	win.Open();
-	win.CreateOpenGLContext();
-	win.rect = [200,200,800,800];
+   function ResizeWindow(w, h) {
 
-	function ResizeWindow(w, h) {
+      Ogl.Viewport(0,0,w,h);
+      Ogl.MatrixMode(PROJECTION);
+      Ogl.LoadIdentity();
+      Ogl.Ortho(0,0,10,10, -1, 1);
+      Render();
+   }
 
-		Ogl.Viewport(0,0,w,h);
-		Ogl.MatrixMode(PROJECTION);
-		Ogl.LoadIdentity();
-		Ogl.Ortho(0,0,10,10, -1, 1);
-		Render();
-	}
+   ShadeModel(FLAT);
+   FrontFace(CCW);
+   ClearColor(0, 0, 0, 0);
+   Enable(TEXTURE_2D);
+   tid = GenTexture();
+   BindTexture(TEXTURE_2D, tid);
+   TexParameter(TEXTURE_2D, TEXTURE_MIN_FILTER, NEAREST); // GL_LINEAR
+   TexParameter(TEXTURE_2D, TEXTURE_MAG_FILTER, NEAREST);
+   Clear( COLOR_BUFFER_BIT | DEPTH_BUFFER_BIT );
 
-	ShadeModel(FLAT);
-	FrontFace(CCW);
-	ClearColor(0, 0, 0, 0);
-	Enable(TEXTURE_2D);
-	tid = GenTexture();
-	BindTexture(TEXTURE_2D, tid);
-	TexParameter(TEXTURE_2D, TEXTURE_MIN_FILTER, NEAREST); // GL_LINEAR
-	TexParameter(TEXTURE_2D, TEXTURE_MAG_FILTER, NEAREST);
-	Clear( COLOR_BUFFER_BIT | DEPTH_BUFFER_BIT );
+   function Render(imageIndex) {
 
-	function Render(imageIndex) {
+      UpdateTexture();
+      DefineTextureImage(TEXTURE_2D, undefined, texture);
+      MatrixMode(MODELVIEW);
+      LoadIdentity();
+      Scale(1, -1, 1);
+      Color(1,1,1);
+      Begin(QUADS);
+      TexCoord( 0, 0 );
+      Vertex( -1, -1, 0 );
+      TexCoord( 1, 0, 0 );
+      Vertex( 1, -1 );
+      TexCoord( 1, 1 );
+      Vertex( 1, 1 );
+      TexCoord( 0, 1 );
+      Vertex( -1, 1 );
+      End();
+      win.SwapBuffers();
+      MaybeCollectGarbage();
+   }
 
-		UpdateTexture();
-		DefineTextureImage(TEXTURE_2D, undefined, texture);
-		MatrixMode(MODELVIEW);
-		LoadIdentity();
-		Scale(1, -1, 1);
-		Color(1,1,1);
-		Begin(QUADS);
-		TexCoord( 0, 0 );
-		Vertex( -1, -1, 0 );
-		TexCoord( 1, 0, 0 );
-		Vertex( 1, -1 );
-		TexCoord( 1, 1 );
-		Vertex( 1, 1 );
-		TexCoord( 0, 1 );
-		Vertex( -1, 1 );
-		End();
-		win.SwapBuffers();
-		MaybeCollectGarbage();
-	}
+   win.onsize = ResizeWindow;
+   var end = false;
+   win.onkeydown = function( key, l ) { end = ( key == 0x1B ) }
+   while (!end) {
 
-	win.onsize = ResizeWindow;
-	var end = false;
-	win.onkeydown = function( key, l ) { end = ( key == 0x1B ) }
-	while (!end) {
-
-		win.ProcessEvents();
-		Render();
-	}
-	win.Close();
+      win.ProcessEvents();
+      Render();
+   }
+   win.Close();
 }
 }}}
 **/

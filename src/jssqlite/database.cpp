@@ -32,31 +32,31 @@ $CLASS_HEADER
 **/
 BEGIN_CLASS( Database )
 
-/**doc
-=== Methods ===
-**/
 
 /**doc
- * *_Constructor_*( fileName | undefined [, flags]  )
-  This constructs a new database object. _fileName_ is the database file.
-  = =
-  If _fileName_ is an empty string, a temporary database is opened.
-  = =
-  If _fileName_ is ommited or undefined, an in-memory database is created.
-  = =
-  _flags_ can be one of the following constant:
-   * $CONST READONLY
-   * $CONST READWRITE
-   * $CONST CREATE
-   * $CONST DELETEONCLOSE
-   * $CONST EXCLUSIVE
-   * $CONST MAIN_DB
-   * $CONST TEMP_DB
-   * $CONST TRANSIENT_DB
-   * $CONST MAIN_JOURNAL
-   * $CONST TEMP_JOURNAL
-   * $CONST SUBJOURNAL
-   * $CONST MASTER_JOURNAL
+ * $INAME( [fileName] [, flags] )
+  Creates a new Database object.
+  $H arguments
+   $ARG string fileName: is the file name of the database, or an empty string for a temporary database.
+    If omitted or <undefined>, an in-memory database is created.
+   $ARG enum flags: can be one of the following constant:
+    * $CONST READONLY
+    * $CONST READWRITE
+    * $CONST CREATE
+    * $CONST DELETEONCLOSE
+    * $CONST EXCLUSIVE
+    * $CONST MAIN_DB
+    * $CONST TEMP_DB
+    * $CONST TRANSIENT_DB
+    * $CONST MAIN_JOURNAL
+    * $CONST TEMP_JOURNAL
+    * $CONST SUBJOURNAL
+    * $CONST MASTER_JOURNAL
+  $H example
+  {{{
+  var db = new Database();
+  db.Exec('create table t1 (a,b,c);');
+  }}}
 **/
 DEFINE_CONSTRUCTOR() {
 
@@ -144,9 +144,14 @@ DEFINE_FINALIZE() {
 
 
 /**doc
- * void *Close*()
+=== Methods ===
+**/
+
+
+/**doc
+ * $VOID $INAME()
   Close the database and all its opened [Result] objects.
-  ===== note: =
+  $H note
    It is recommended to close all [Result] objects before closing the database.
 **/
 DEFINE_FUNCTION( Close ) {
@@ -183,26 +188,46 @@ DEFINE_FUNCTION( Close ) {
 
 
 /**doc
- * [Result] *Query*( sqlStr [, obj ] )
-  Evaluates a SQL string and return a [Result] object.
-  _obj_ is bind to the SQL statement and can be access using '@' char ( see. *Exec* ).
-  If you create new properties to the [Result] object,
-  you can access then in the _sqlStr_ using ':' char.
-  '?' allows you access obj as an array ( see examples )
-  ===== example: =
+ * $TYPE Result $INAME( sqlStr [, map ] )
+  Evaluates a SQL string and returns a Result object ready to be executed.
+  $H arguments
+   $ARG string sqlStr:
+   $ARG Object map: _map_ is bind to the SQL statement and can be access using '@' char ( see. *Exec* ). If you create new properties on the [Result] object, you can access then in the _sqlStr_ using ':' char. '?' allows you access the _map_ as an array ( see examples ).
+    $H example 1
+    {{{
+    var res = db.Query('SELECT :test1 + 5');
+    res.test1 = 123;
+    Print( res.Row().toSource() ); // Prints: [128]
+    }}}
+    $H example 2
+    {{{
+    var res = db.Query('SELECT @test2 + 5', {test2:6});
+    Print( res.Row().toSource() ); // Prints: [11]
+    }}}
+    $H example 3
+    {{{
+    var res = db.Query('SELECT ? + ?', [ 4, 5 ]);
+    Print( res.Row().toSource() ); // Prints: [9]
+    }}}
+  $H return value
+   returns a new Result object.
+  $H beware
+   There are some limitation in variable bindings. For example, they cannot be used to specify a table name.
+   `db.Query('SELECT * FROM ?', ['myTable']);` will failed with this exception: `SQLite error 1: near "?": syntax error`
+  $H example 1
   {{{
   var result = db.Query('SELECT name FROM table WHERE id=:userId' );
   result.userId = 1341;
   Print( result.Col(0) );
   }}}
-  ===== example: =
+  $H example 2
   {{{
   var result = db.Query('SELECT name FROM table WHERE id=@userId', { userId:1341 } );
   Print( result.Col(0) );
   }}}
-  ===== example: =
+  $H example 3
   {{{
-  var result = db.Query('SELECT ? FROM ? WHERE id=?', ['name','table', 1341] ); // array-like {0:'name', 1:'table', 2:1341, length:3} works too. 
+  var result = db.Query('SELECT ? FROM table WHERE id=?', ['name', 1341] ); // array-like {0:'name', 1:1341, length:2} works too. 
   Print( result.Col(0) );
   }}}
 **/
@@ -249,18 +274,23 @@ DEFINE_FUNCTION( Query ) {
 
 
 /**doc
- * val *Exec*( sqlStr [, obj ] )
-  Evaluates a SQL string and return the result ( first line, first column ).
-  ===== example: =
+ * $VAL $INAME( sqlStr [, map ] )
+  Evaluates a SQL string and return the result in one operation. 
+  $H arguments
+   $ARG string sqlStr: is the SQL statement.
+   $ARG Object map: if given, this argument is bind (as a key:value variable map) to the SQL statement.
+    $H example
+    {{{
+    db.Exec('PRAGMA user_version = @ver', { ver:5 } );
+    }}}
+  $H return value
+   returns the first line and first column of the result.
+  $H details
+   [http://www.sqlite.org/capi3ref.html#sqlite3_bind_blob documentation]
+  $H example
   {{{
   var version = db.Exec('PRAGMA user_version');
   db.Exec('PRAGMA user_version = 5');
-  }}}
-  If you provide an _obj_ as second argument to this function,
-  _obj_ is bind to the sql statement.
-  You can use it like this:
-  {{{
-  db.Exec('PRAGMA user_version = @ver', { ver:5 } );
   }}}
 **/
 DEFINE_FUNCTION( Exec ) {
@@ -322,7 +352,10 @@ DEFINE_FUNCTION( Exec ) {
 **/
 
 /**doc
- * *lastInsertRowid* $READONLY
+ * $INAME $READONLY
+  is the rowid of the most recent successful INSERT into the database from the database connection shown in the first argument. If no successful inserts have ever occurred on this database connection, zero is returned.
+  $H details
+   [http://www.sqlite.org/capi3ref.html#sqlite3_last_insert_rowid documentation]
 **/
 DEFINE_PROPERTY( lastInsertRowid ) {
 
@@ -334,7 +367,10 @@ DEFINE_PROPERTY( lastInsertRowid ) {
 
 
 /**doc
- * *changes* $READONLY
+ * $INAME $READONLY
+  is the number of database rows that were changed or inserted or deleted by the most recently completed SQL statement on the connection specified by the first parameter. Only changes that are directly specified by the INSERT, UPDATE, or DELETE statement are counted.
+  $H details
+   [http://www.sqlite.org/capi3ref.html#sqlite3_changes documentation]
 **/
 DEFINE_PROPERTY( changes ) {
 
@@ -527,6 +563,10 @@ DEFINE_SET_PROPERTY() {
 	return JS_TRUE;
 }
 
+/**doc
+=== Note ===
+ BString object is interpreted as a database Blob
+**/
 
 CONFIGURE_CLASS
 
@@ -572,12 +612,33 @@ END_CLASS
 
 /**doc
 === Examples ===
+ $H example 1
+ {{{
+ Print('database version: ' + Database.version ,'\n' );
+ 
+ var obj = { foo:BString('qqwe\00\00fv1234') };
+ Print( 'testFunc = ' + db.Exec('SELECT length(:foo)', obj  ) ,'\n' );
+ }}}
+ $H example 2
+LoadModule('jsstd');
+LoadModule('jssqlite');
 
-{{{
-Print('database version: ' + Database.version ,'\n' );
+try {
 
-var obj = { foo:BString('qqwe\00\00fv1234') };
-Print( 'testFunc = ' + db.Exec('SELECT length(:foo)', obj  ) ,'\n' );
-}}}
-**/
-
+ var db = new Database();
+ db.Exec('create table t1 (a,b,c);');
+ db.Exec('insert into t1 (a,b,c) values (5,6,7)');
+ db.Exec('insert into t1 (a,b,c) values (2,3,4)');
+ db.Exec('insert into t1 (a,b,c) values ("a","b","c")');
+ 
+ var res = db.Query('SELECT a,c from t1');
+ 
+ Print( res.Row().toSource(), '\n' );
+ Print( res.Row().toSource(), '\n' );
+ Print( res.Row().toSource(), '\n' );
+ 
+ } catch ( ex if ex instanceof SqliteError ) { 
+  
+  Print( 'SQLite error '+ex.code+': '+ex.text+'\n' );
+ }
+ **/
