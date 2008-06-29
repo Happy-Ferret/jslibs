@@ -132,6 +132,7 @@ var api = {
 
 };
 
+var apiRe = new RegExp([RegQuote(p) for ( p in api ) ].join('|'), 'g');
 
 
 function ReadCx(cx, re) {
@@ -146,7 +147,7 @@ function ReadCx(cx, re) {
 }
 
 function ReadArg(cx) ReadCx(cx, / *([\w_]*)/)[1]||'';
-function ReadEol(cx, eatEol) ReadCx(cx, new RegExp(' *([^\n]*)' + (eatEol ? '\n' : '')))[1]||'';
+function ReadEol(cx, eatEol) ReadCx(cx, eatEol ? / *([^\n]*)\n?/ : / *([^\n]*)/ )[1]||'';
 
 
 function RegQuote(str) {
@@ -158,22 +159,21 @@ function RegQuote(str) {
     return res;
 }
 
-function ExpandText(str, api, item) {
 
-    var re = new RegExp([RegQuote(p) for ( p in api ) ].join('|'), 'g');
-    
-    var cx= {left: '', center: '', right: str};
+function ExpandText(str, api, apiRe, item) {
+
+    var cx = {left: '', center: '', right: str};
     for(;;) {
 
-        re.lastIndex = 0;
-        var res = re(cx.right);
+        apiRe.lastIndex = 0;
+        var res = apiRe(cx.right);
         if (!res) {
             cx.left += cx.right;
             break;
         }
         cx.center = res[0];
-        cx.left += cx.right.substr(0, re.lastIndex - cx.center.length);
-        cx.right = cx.right.substr(re.lastIndex);
+        cx.left += cx.right.substr(0, apiRe.lastIndex - cx.center.length);
+        cx.right = cx.right.substr(apiRe.lastIndex);
         
         if ( cx.center in api ) {
         
@@ -279,7 +279,7 @@ function CreateDocItemList(startDir, api) {
 					Print('TAB detected at ' + item.filePath + ':' + (CountStr('\n', item.source.substring(0, item.followingSourceTextStart - item.text.length + tabPos))+1), '\n');
 				}
 				
-				item.text = ExpandText(item.text, api, item);
+				item.text = ExpandText(item.text, api, apiRe, item);
 			}
 		}
 	});
