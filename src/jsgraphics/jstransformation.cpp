@@ -36,7 +36,6 @@ $CLASS_HEADER
 **/
 BEGIN_CLASS( Transformation )
 
-
 DEFINE_FINALIZE() {
 
 	Matrix44 *m = (Matrix44*)JS_GetPrivate(cx, obj);
@@ -47,7 +46,10 @@ DEFINE_FINALIZE() {
 	}
 }
 
-
+/**doc
+ * $INAME()
+  Creates a new uninitialized Transformation object.
+**/
 DEFINE_CONSTRUCTOR() {
 
 	J_S_ASSERT_CONSTRUCTING();
@@ -60,6 +62,10 @@ DEFINE_CONSTRUCTOR() {
 }
 
 
+/**doc
+ * $THIS $INAME()
+  Reset the current transformation.
+**/
 DEFINE_FUNCTION_FAST( Clear ) {
 
 	Matrix44 *tm = (Matrix44*)JS_GetPrivate(cx, J_FOBJ);
@@ -69,6 +75,11 @@ DEFINE_FUNCTION_FAST( Clear ) {
 	return JS_TRUE;
 }
 
+
+/**doc
+ * $THIS $INAME()
+  Clear the rotation part of the current transformation.
+**/
 DEFINE_FUNCTION_FAST( ClearRotation ) {
 
 	Matrix44 *tm = (Matrix44*)JS_GetPrivate(cx, J_FOBJ);
@@ -78,6 +89,11 @@ DEFINE_FUNCTION_FAST( ClearRotation ) {
 	return JS_TRUE;
 }
 
+
+/**doc
+ * $THIS $INAME()
+  Clear the translation part of the current transformation.
+**/
 DEFINE_FUNCTION_FAST( ClearTranslation ) {
 
 	Matrix44 *tm = (Matrix44*)JS_GetPrivate(cx, J_FOBJ);
@@ -88,6 +104,12 @@ DEFINE_FUNCTION_FAST( ClearTranslation ) {
 }
 
 
+/**doc
+ * $THIS $INAME( matrix )
+  Load a 4x4 matrix as the current transformation.
+  $H arguments
+   $ARG value matrix: an Array or an object that supports NIMatrix44Read native interface.
+**/
 DEFINE_FUNCTION_FAST( Load ) {
 
 	J_S_ASSERT_ARG_MIN(1);
@@ -128,6 +150,12 @@ DEFINE_FUNCTION_FAST( Load ) {
 }
 
 
+/**doc
+ * $THIS $INAME( matrix )
+  Load the rotation part of another matrix to the current matrix.
+  $H arguments
+   $ARG value matrix: an Array or an object that supports NIMatrix44Read native interface.
+**/
 DEFINE_FUNCTION_FAST( LoadRotation ) {
 
 	RT_ASSERT_ARGC(1);
@@ -148,6 +176,14 @@ DEFINE_FUNCTION_FAST( LoadRotation ) {
 	return JS_TRUE;
 }
 
+
+
+/**doc
+ * $THIS $INAME( matrix )
+  Load the translation part of another matrix to the current matrix.
+  $H arguments
+   $ARG value matrix: an Array or an object that supports NIMatrix44Read native interface.
+**/
 DEFINE_FUNCTION_FAST( LoadTranslation ) {
 
 	RT_ASSERT_ARGC(1);
@@ -163,6 +199,14 @@ DEFINE_FUNCTION_FAST( LoadTranslation ) {
 }
 
 
+/**doc
+ * $THIS $INAME( x, y, z )
+  Sets the translation part of the current transformation.
+  $H arguments
+   $ARG real x
+   $ARG real y
+   $ARG real z
+**/
 DEFINE_FUNCTION_FAST( Translation ) {
 
 	RT_ASSERT_ARGC(3); // x, y, z
@@ -183,6 +227,14 @@ DEFINE_FUNCTION_FAST( Translation ) {
 }
 
 
+/**doc
+ * $THIS $INAME( x, y, z )
+  Apply a translation to the current ransformation.
+  $H arguments
+   $ARG real x
+   $ARG real y
+   $ARG real z
+**/
 DEFINE_FUNCTION_FAST( Translate ) {
 
 	RT_ASSERT_ARGC(3); // x, y, z
@@ -201,6 +253,15 @@ DEFINE_FUNCTION_FAST( Translate ) {
 }
 
 
+/**doc
+ * $THIS $INAME( angle, x, y, z )
+  Sets the rotation part of the current transformation.
+  $H arguments
+   $ARG real angle in degres
+   $ARG real x
+   $ARG real y
+   $ARG real z
+**/
 DEFINE_FUNCTION_FAST( Rotation ) {
 
 	RT_ASSERT_ARGC(1);
@@ -221,6 +282,15 @@ DEFINE_FUNCTION_FAST( Rotation ) {
 }
 
 
+/**doc
+ * $THIS $INAME( angle, x, y, z )
+  Apply a rotation to the current ransformation.
+  $H arguments
+   $ARG real angle in degres
+   $ARG real x
+   $ARG real y
+   $ARG real z
+**/
 DEFINE_FUNCTION_FAST( Rotate ) {
 
 	RT_ASSERT_ARGC(4); // angle, x, y, z
@@ -242,6 +312,12 @@ DEFINE_FUNCTION_FAST( Rotate ) {
 }
 
 
+/**doc
+ * $THIS $INAME( angle )
+  Set the rotation around the X axis.
+  $H arguments
+   $ARG real angle in degres
+**/
 DEFINE_FUNCTION_FAST( RotationX ) {
 
 	RT_ASSERT_ARGC(1); // angle
@@ -257,6 +333,12 @@ DEFINE_FUNCTION_FAST( RotationX ) {
 }
 
 
+/**doc
+ * $THIS $INAME( angle )
+  Set the rotation around the Y axis.
+  $H arguments
+   $ARG real angle in degres
+**/
 DEFINE_FUNCTION_FAST( RotationY ) {
 
 	RT_ASSERT_ARGC(1); // angle
@@ -272,6 +354,12 @@ DEFINE_FUNCTION_FAST( RotationY ) {
 }
 
 
+/**doc
+ * $THIS $INAME( angle )
+  Set the rotation around the Z axis.
+  $H arguments
+   $ARG real angle in degres
+**/
 DEFINE_FUNCTION_FAST( RotationZ ) {
 
 	RT_ASSERT_ARGC(1); // angle
@@ -287,6 +375,14 @@ DEFINE_FUNCTION_FAST( RotationZ ) {
 }
 
 
+/**doc
+ * $THIS $INAME( x, y, z )
+  unavailable: need to be fixed.
+  $H arguments
+   $ARG real x
+   $ARG real y
+   $ARG real z
+**/
 DEFINE_FUNCTION_FAST( LookAt ) {
 
 	REPORT_ERROR("LookAt is buggy !! dont' use it");
@@ -308,6 +404,10 @@ DEFINE_FUNCTION_FAST( LookAt ) {
 }
 
 
+/**doc
+ * $THIS $INAME()
+  invert the current transformation.
+**/
 DEFINE_FUNCTION_FAST( Invert ) {
 
 	Matrix44 *m = (Matrix44*)JS_GetPrivate(cx, J_FOBJ);
@@ -318,6 +418,12 @@ DEFINE_FUNCTION_FAST( Invert ) {
 }
 
 
+/**doc
+ * $THIS $INAME( newTransformation )
+  apply a _newTransformation_ to the current transformation.
+  $H arguments
+   $ARG value newTransformation: an Array or an object that supports NIMatrix44Read native interface.
+**/
 DEFINE_FUNCTION_FAST( Product ) {
 
 	RT_ASSERT_ARGC(1);
@@ -331,6 +437,12 @@ DEFINE_FUNCTION_FAST( Product ) {
 }
 
 
+/**doc
+ * $THIS $INAME( otherTransformation )
+  apply the current transformation to the _otherTransformation_ and stores the result to the current transformation.
+  $H arguments
+   $ARG value otherTransformation: an Array or an object that supports NIMatrix44Read native interface.
+**/
 DEFINE_FUNCTION_FAST( ReverseProduct ) {
 
 	RT_ASSERT_ARGC(1);
@@ -344,6 +456,12 @@ DEFINE_FUNCTION_FAST( ReverseProduct ) {
 }
 
 
+/**doc
+ * $VOID $INAME( vector )
+  transforms the 3D or 4D _vector_ by the current transformation.
+  $H arguments
+   $ARG Array vector
+**/
 DEFINE_FUNCTION_FAST( TransformVector ) {
 
 	J_S_ASSERT_ARG_MIN(1);
@@ -399,6 +517,19 @@ DEFINE_FUNCTION_FAST( TransformVector ) {
 	return JS_TRUE;
 }
 
+/**doc
+=== Properties ===
+ * $REAL *0..15*
+  Get or set a element of the current transformation matrix.
+  $H example
+  {{{
+  var t = new Transformation();
+  t.Clear();
+  t[3] = 1;
+  t[7] = 2;
+  t[11] = 3;
+  }}}
+**/
 
 
 /*
@@ -442,6 +573,10 @@ DEFINE_SET_PROPERTY() {
 	return JS_TRUE;
 }
 
+/**doc
+=== Native Interface ===
+ *NIMatrix44Read*: the current transformation matrix.
+**/
 
 CONFIGURE_CLASS
 
