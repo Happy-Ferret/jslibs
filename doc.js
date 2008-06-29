@@ -20,7 +20,11 @@ var api = {
 				cx.center = '*_constructor_*';
 			} else {
 				
-				cx.center = '*'+res[2]+'*';
+				 var identifierName = res[2];
+				 if ( identifierName[identifierName.length-1] == '_' )
+					  identifierName = identifierName.substring(0, identifierName.length - 1);
+				
+				cx.center = '*'+identifierName+'*';
 			}
 		} else
 			cx.center = '???';
@@ -62,6 +66,8 @@ var api = {
 	$READONLY:'http://jslibs.googlecode.com/svn/wiki/readonly.png',
 
 	$WRITEONLY:',,write-only !,,',
+	
+	$DEPRECATED: '{`DEPRECATED`}',
 
 	$ARG:function(cx, item) {
 	
@@ -140,7 +146,7 @@ function ReadCx(cx, re) {
     }
 }
 
-function ReadArg(cx) ReadCx(cx, / *([\w]*)/g)[1]||'';
+function ReadArg(cx) ReadCx(cx, / *([\w_]*)/g)[1]||'';
 function ReadEol(cx, eatEol) ReadCx(cx, new RegExp(' *([^\r\n]*)' + (eatEol ? '\r?\n' : ''),'g'))[1]||'';
 
 
@@ -184,6 +190,13 @@ function ExpandText(str, api, item) {
 }
 
 
+function CountStr( str, source ) {
+
+	var count = 0;
+	if (str)
+		for ( var pos = 0; (pos = source.indexOf(str, pos)) != -1; pos += str.length, count++ );
+	return count;		
+}
 
 //function Map() ({ __proto__:null });
 function Map() ({});
@@ -241,6 +254,7 @@ function CreateDocItemList(api) {
 				item.fileName = file.name.substr(file.name.lastIndexOf('/')+1);
 				item.text = res[2]||'';
 				item.source = source;
+//				item.docTextStart = docExpr.lastIndex - res[2].length;
 				item.followingSourceTextStart = docExpr.lastIndex;
 				item.followingSourceTextEnd = source.length;
 				
@@ -254,6 +268,16 @@ function CreateDocItemList(api) {
 						attr[s[0]] = s[1];
 					}
 				delete attr[''];
+				
+				// cleanup item.text
+				
+				item.text = item.text.replace('\r\n','\n');
+				
+				var tabPos;
+				if ( (tabPos = item.text.indexOf('\t')) != -1 ) {
+				
+					Print('TAB detected at ' + item.filePath + ':' + (CountStr('\n', item.source.substring(0, item.followingSourceTextStart - item.text.length + tabPos))+1), '\n');
+				}
 				
 				item.text = ExpandText(item.text, api, item);
 			}
