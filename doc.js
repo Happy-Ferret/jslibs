@@ -162,8 +162,6 @@ function ExpandText(str, api, item) {
 
     var re = new RegExp([RegQuote(p) for ( p in api ) ].join('|'), 'g');
     
-    Print('reg: '+re.source );
-    
     var cx= {left: '', center: '', right: str};
     for(;;) {
 
