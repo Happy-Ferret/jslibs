@@ -38,13 +38,8 @@ DEFINE_FINALIZE() {
 */
 
 /**doc
-=== Methods ===
+ * $INAME( parentSpace )
 **/
-
-/**doc
- * *_Constructor_*( parentSpace )
-**/
-
 DEFINE_CONSTRUCTOR() {
 
 	RT_ASSERT_CONSTRUCTING(&classSpace);

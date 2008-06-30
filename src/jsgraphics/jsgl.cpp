@@ -23,7 +23,7 @@ Manage GL extensions:
 
 #include "jsgl.h"
 #include "jswindow.h"
-#include "../common/jsNativeInterface.h"
+//#include "../common/jsNativeInterface.h"
 
 #include "jstransformation.h"
 
@@ -69,7 +69,7 @@ Manage GL extensions:
 
 
 
-/**doc
+/**doc fileIndex:top
 $CLASS_HEADER
 **/
 BEGIN_CLASS( Ogl )
@@ -84,7 +84,7 @@ BEGIN_CLASS( Ogl )
   $H arguments
    $ARG GLenum pname
   $H return value
-   $BOOL value of a selected parameter.
+   value of a selected parameter.
   $H OpenGL API
    glGetBooleanv
 **/
@@ -103,9 +103,9 @@ DEFINE_FUNCTION_FAST( GetBoolean ) {
  * $INT | $ARRAY $INAME( pname [, count] )
   $H arguments
    $ARG GLenum pname
-   $ARG integer count: is the number of expected values. If _count_ is specified, the function will returns an array of values, else a single value.
+   $ARG integer count: is the number of expected values. If _count_ is defined, the function will returns an array of values, else it returns a single value.
   $H return value
-   $INT | $TYPE Array value or values of a selected parameter.
+   value or values of a selected parameter.
   $H OpenGL API
    glGetIntegerv
 **/
@@ -133,7 +133,7 @@ DEFINE_FUNCTION_FAST( GetInteger ) {
 	} else {
 
 		*J_FRVAL = INT_TO_JSVAL( params[0] );
-	}	
+	}
 	return JS_TRUE;
 }
 
@@ -142,9 +142,9 @@ DEFINE_FUNCTION_FAST( GetInteger ) {
  * $REAL | $ARRAY $INAME( pname [, count] )
   $H arguments
    $ARG GLenum pname
-   $ARG integer count: is the number of expected values. If _count_ is specified, the function will returns an array of values, else a single value.
+   $ARG integer count: is the number of expected values. If _count_ is defined, the function will returns an array of values, else a single value.
   $H return value
-   $REAL | $ARRAY value or values of a selected parameter.
+   single value or Array of values of the selected parameter.
   $H OpenGL API
    glGetDoublev
 **/
@@ -172,7 +172,7 @@ DEFINE_FUNCTION_FAST( GetDouble ) {
 	} else {
 
 		RT_CHECK_CALL( JS_NewDoubleValue(cx, params[0], J_FRVAL) );
-	}	
+	}
 	return JS_TRUE;
 }
 
@@ -356,8 +356,8 @@ DEFINE_FUNCTION_FAST( Color ) {
 	JS_ValueToNumber(cx, J_FARG(1), &r);
 	JS_ValueToNumber(cx, J_FARG(2), &g);
 	JS_ValueToNumber(cx, J_FARG(3), &b);
-	if ( J_ARGC >= 4 ) {
-		
+	if ( J_FARG_ISDEF(4) ) {
+
 		JS_ValueToNumber(cx, J_FARG(4), &a);
 		glColor4d(r, g, b, a);
 	} else {
@@ -395,9 +395,9 @@ DEFINE_FUNCTION_FAST( Color ) {
 /**doc
  * $VOID $INAME( s [, t [, r]] )
   $H arguments
-   $ARG real nx
-   $ARG real ny
-   $ARG real nz
+   $ARG real s
+   $ARG real t
+   $ARG real r
   $H OpenGL API
    glTexCoord1d, glTexCoord2d, glTexCoord3d
 **/
@@ -408,23 +408,23 @@ DEFINE_FUNCTION_FAST( TexCoord ) {
 	jsdouble s;
 	JS_ValueToNumber(cx, J_FARG(1), &s);
 	if ( J_ARGC == 1 ) {
-	
+
 		glTexCoord1d(s);
-		return JS_TRUE;	
+		return JS_TRUE;
 	}
 	jsdouble t;
 	JS_ValueToNumber(cx, J_FARG(2), &t);
 	if ( J_ARGC == 2 ) {
 
 		glTexCoord2d(s, t);
-		return JS_TRUE;	
+		return JS_TRUE;
 	}
 	jsdouble r;
 	JS_ValueToNumber(cx, J_FARG(3), &r);
 	if ( J_ARGC == 3 ) {
 
 		glTexCoord3d(s, t, r);
-		return JS_TRUE;	
+		return JS_TRUE;
 	}
 	REPORT_ERROR("Invalid argument.");
 	return JS_TRUE;
@@ -453,7 +453,7 @@ DEFINE_FUNCTION_FAST( TexParameter ) {
 		return JS_TRUE;
 	}
 	if ( JSVAL_IS_DOUBLE(J_FARG(3)) ) {
-	
+
 		jsdouble param;
 		RT_CHECK_CALL( JS_ValueToNumber(cx, J_FARG(3), &param) );
 		glTexParameterf( JSVAL_TO_INT( J_FARG(1) ), JSVAL_TO_INT( J_FARG(2) ), param );
@@ -534,7 +534,7 @@ DEFINE_FUNCTION_FAST( LightModel ) {
 		return JS_TRUE;
 	}
 	if ( JSVAL_IS_DOUBLE(J_FARG(2)) ) {
-	
+
 		jsdouble param;
 		RT_CHECK_CALL( JS_ValueToNumber(cx, J_FARG(2), &param) );
 		glLightModelf( JSVAL_TO_INT( J_FARG(1) ), param );
@@ -575,7 +575,7 @@ DEFINE_FUNCTION_FAST( Light ) {
 		return JS_TRUE;
 	}
 	if ( JSVAL_IS_DOUBLE(J_FARG(3)) ) {
-	
+
 		jsdouble param;
 		RT_CHECK_CALL( JS_ValueToNumber(cx, J_FARG(3), &param) );
 		glLightf( JSVAL_TO_INT( J_FARG(1) ), JSVAL_TO_INT( J_FARG(2) ), param );
@@ -616,7 +616,7 @@ DEFINE_FUNCTION_FAST( Material ) {
 		return JS_TRUE;
 	}
 	if ( JSVAL_IS_DOUBLE(J_FARG(3)) ) {
-	
+
 		jsdouble param;
 		RT_CHECK_CALL( JS_ValueToNumber(cx, J_FARG(3), &param) );
 		glMaterialf( JSVAL_TO_INT( J_FARG(1) ), JSVAL_TO_INT( J_FARG(2) ), param );
@@ -643,7 +643,7 @@ DEFINE_FUNCTION_FAST( Material ) {
    glEnable
 **/
 DEFINE_FUNCTION_FAST( Enable ) {
-	
+
 	RT_ASSERT_ARGC(1);
 	RT_ASSERT_INT(J_FARG(1));
 	glEnable( JSVAL_TO_INT(J_FARG(1)) );
@@ -660,7 +660,7 @@ DEFINE_FUNCTION_FAST( Enable ) {
    glDisable
 **/
 DEFINE_FUNCTION_FAST( Disable ) {
-	
+
 	RT_ASSERT_ARGC(1);
 	RT_ASSERT_INT(J_FARG(1));
 	glDisable( JSVAL_TO_INT(J_FARG(1)) );
@@ -1037,7 +1037,7 @@ DEFINE_FUNCTION_FAST( Perspective ) {
 
 //	GLint prevMatrixMode;
 //	glGetIntegerv(GL_MATRIX_MODE, &prevMatrixMode); // GL_MODELVIEW
-	
+
 	GLint viewport[4];
 	glGetIntegerv( GL_VIEWPORT, viewport );
 	double aspect = double(viewport[2]) / double(viewport[3]);
@@ -1155,7 +1155,7 @@ DEFINE_FUNCTION_FAST( Rotate ) {
 
 
 /**doc
- * $VOID $INAME( x, y, z )
+ * $VOID $INAME( x, y [, z = 0] )
   $H arguments
    $ARG real x
    $ARG real y
@@ -1169,7 +1169,10 @@ DEFINE_FUNCTION_FAST( Translate ) {
 	jsdouble x, y, z;
 	JS_ValueToNumber(cx, J_FARG(1), &x);
 	JS_ValueToNumber(cx, J_FARG(2), &y);
-	JS_ValueToNumber(cx, J_FARG(3), &z);
+	if ( J_FARG_ISDEF(3) )
+		JS_ValueToNumber(cx, J_FARG(3), &z);
+	else
+		z = 0;
 	glTranslated(x, y, z);
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
@@ -1177,7 +1180,7 @@ DEFINE_FUNCTION_FAST( Translate ) {
 
 
 /**doc
- * $VOID $INAME( x, y, z )
+ * $VOID $INAME( x, y [, z = 0] )
   $H arguments
    $ARG real x
    $ARG real y
@@ -1191,7 +1194,10 @@ DEFINE_FUNCTION_FAST( Scale ) {
 	jsdouble x, y, z;
 	JS_ValueToNumber(cx, J_FARG(1), &x);
 	JS_ValueToNumber(cx, J_FARG(2), &y);
-	JS_ValueToNumber(cx, J_FARG(3), &z);
+	if ( J_FARG_ISDEF(3) )
+		JS_ValueToNumber(cx, J_FARG(3), &z);
+	else
+		z = 0;
 	glScaled(x, y, z);
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
@@ -1259,7 +1265,7 @@ DEFINE_FUNCTION_FAST( CallList ) {
 	*J_FRVAL = JSVAL_VOID;
 
 	if (JSVAL_IS_INT( J_FARG(1) )) {
-	
+
 		GLuint list = JSVAL_TO_INT(J_FARG(1));
 		glCallList(list);
 		return JS_TRUE;
@@ -1512,7 +1518,7 @@ DEFINE_FUNCTION_FAST( GenBuffer ) {
    glBindBufferARB
 **/
 DEFINE_FUNCTION_FAST( BindBuffer ) {
-	
+
 	LOAD_OPENGL_EXTENSION( glBindBufferARB, PFNGLBINDBUFFERARBPROC );
 
 	RT_ASSERT_ARGC(2);
@@ -1628,28 +1634,28 @@ DEFINE_FUNCTION_FAST( MultiTexCoord ) {
 
 	RT_ASSERT_INT(J_FARG(1));
 	GLenum target = JSVAL_TO_INT(J_FARG(1));
-	
+
 	*J_FRVAL = JSVAL_VOID;
 	jsdouble s;
 	JS_ValueToNumber(cx, J_FARG(2), &s);
 	if ( J_ARGC == 2 ) {
-	
+
 		glMultiTexCoord1d(target, s);
-		return JS_TRUE;	
+		return JS_TRUE;
 	}
 	jsdouble t;
 	JS_ValueToNumber(cx, J_FARG(3), &t);
 	if ( J_ARGC == 3 ) {
 
 		glMultiTexCoord2d(target, s, t);
-		return JS_TRUE;	
+		return JS_TRUE;
 	}
 	jsdouble r;
 	JS_ValueToNumber(cx, J_FARG(4), &r);
 	if ( J_ARGC == 4 ) {
 
 		glMultiTexCoord3d(target, s, t, r);
-		return JS_TRUE;	
+		return JS_TRUE;
 	}
 	REPORT_ERROR("Invalid argument.");
 	return JS_TRUE;
@@ -1713,7 +1719,7 @@ DEFINE_FUNCTION_FAST( DefineTextureImage ) {
 //		REPORT_ERROR("Invalid texture type.");
 
 	if ( J_FARG_ISDEF(2) ) {
-		
+
 		RT_ASSERT_INT(J_FARG(2));
 		format = JSVAL_TO_INT(J_FARG(2));
 	} else {
@@ -1732,7 +1738,7 @@ DEFINE_FUNCTION_FAST( DefineTextureImage ) {
 				format = GL_RGBA;
 				break;
 		}
-	}	
+	}
 
 	glPixelStorei( GL_UNPACK_ALIGNMENT, 1 );
 	glTexImage2D( JSVAL_TO_INT(J_FARG(1)), 0, format, width, height, 0, format, type, data );
@@ -1805,7 +1811,7 @@ DEFINE_PROPERTY(error) {
 }
 
 
-static int ReadMatrix(JSContext *cx, JSObject *obj, float **m) {
+static int MatrixGet(JSContext *cx, JSObject *obj, float **m) {
 
 	GLint matrixMode;
 	glGetIntegerv(GL_MATRIX_MODE, &matrixMode);
@@ -1826,7 +1832,7 @@ static int ReadMatrix(JSContext *cx, JSObject *obj, float **m) {
 
 JSBool Init( JSContext *cx, JSObject *obj ) {
 
-	J_CHECK_CALL( SetMatrix44ReadInterface(cx, obj, ReadMatrix) );
+	J_CHECK_CALL( SetMatrix44ReadInterface(cx, obj, MatrixGet) );
 	return JS_TRUE;
 }
 
@@ -2543,7 +2549,7 @@ CONFIGURE_CLASS
 
 
 	BEGIN_STATIC_FUNCTION_SPEC
-		
+
 		FUNCTION_FAST_ARGC(GetBoolean, 1) // pname
 		FUNCTION_FAST_ARGC(GetInteger, 1) // pname
 		FUNCTION_FAST_ARGC(GetDouble, 1) // pname

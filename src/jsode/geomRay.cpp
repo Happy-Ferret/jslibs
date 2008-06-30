@@ -15,16 +15,13 @@
 #include "stdafx.h"
 #include "space.h"
 #include "geom.h"
-#include "../common/jsNativeInterface.h"
+//#include "../common/jsNativeInterface.h"
 
 /**doc
 $CLASS_HEADER Geom
 **/
 BEGIN_CLASS( GeomRay )
 
-/**doc
-=== Methods ===
-**/
 DEFINE_FINALIZE() {
 
 	ode::dGeomID geomId = (ode::dGeomID)JS_GetPrivate(cx, obj);
@@ -33,7 +30,7 @@ DEFINE_FINALIZE() {
 }
 
 /**doc
- * *_Constructor_*( space )
+ * $INAME( space )
   TBD
 **/
 DEFINE_CONSTRUCTOR() {
@@ -49,9 +46,8 @@ DEFINE_CONSTRUCTOR() {
 	return JS_TRUE;
 }
 
-
 /**doc
- * $REAL *length*
+ * $REAL $INAME
   TBD
 **/
 DEFINE_PROPERTY( lengthSetter ) {
@@ -75,7 +71,7 @@ DEFINE_PROPERTY( lengthGetter ) {
 
 
 /**doc
- * $TYPE vec3 *start*
+ * $TYPE vec3 $INAME
   TBD
 **/
 DEFINE_PROPERTY( startSetter ) {
@@ -101,7 +97,7 @@ DEFINE_PROPERTY( startGetter ) {
 
 
 /**doc
- * $TYPE vec3 *direction*
+ * $TYPE vec3 $INAME
   TBD
 **/
 DEFINE_PROPERTY( directionSetter ) {

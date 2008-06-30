@@ -16,7 +16,7 @@
 #include "error.h"
 
 
-/**doc
+/**doc fileIndex:bottom
 $CLASS_HEADER
 **/
 BEGIN_CLASS( CryptError )

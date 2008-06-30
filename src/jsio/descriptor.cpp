@@ -34,7 +34,7 @@ JSBool NativeInterfaceStreamRead( JSContext *cx, JSObject *obj, char *buf, size_
 	PRPollDesc desc = { fd, PR_POLL_READ, 0 };
 	ret = PR_Poll( &desc, 1, PR_SecondsToInterval(10) ); // wait 10 seconds for data
 	if ( ret == -1 ) // if PR_Poll is not compatible with the file descriptor, just ignore the error ?
-		return ThrowIoError(cx); // returns later	
+		return ThrowIoError(cx); // returns later
 
 	if ( ret == 0 ) { // timeout
 
@@ -47,14 +47,14 @@ JSBool NativeInterfaceStreamRead( JSContext *cx, JSObject *obj, char *buf, size_
 
 		PRErrorCode errorCode = PR_GetError();
 		if ( errorCode != PR_WOULD_BLOCK_ERROR )// if non-blocking descriptor, this is a non-fatal error
-			return ThrowIoError(cx); // real error			
+			return ThrowIoError(cx); // real error
 
 		*amount = 0;
 		return JS_TRUE; // no error, but no data
 	}
-	
+
 	if ( ret == 0 ) { // end of file / socket
-		
+
 		// (TBD) ?
 	}
 
@@ -67,7 +67,7 @@ void FinalizeDescriptor(JSContext *cx, JSObject *obj) {
 
 	PRFileDesc *fd = (PRFileDesc*)JS_GetPrivate( cx, obj );
 	if ( fd != NULL ) { // check if not already closed
-		
+
 		jsval imported;
 		JS_GetReservedSlot(cx, obj, SLOT_JSIO_DESCRIPTOR_IMPORTED, &imported);
 		if ( imported != JSVAL_TRUE ) { // Descriptor was inported, then do not close it
@@ -84,21 +84,20 @@ void FinalizeDescriptor(JSContext *cx, JSObject *obj) {
 	}
 }
 
-/**doc
+/**doc fileIndex:top
 $CLASS_HEADER
 **/
 BEGIN_CLASS( Descriptor )
 
-
-/**doc
-=== Methods ===
-**/
 
 DEFINE_CONSTRUCTOR() {
 
 	J_REPORT_ERROR( J__ERRMSG_NO_CONSTRUCT ); // BUT constructor must be defined
 }
 
+/**doc
+=== Methods ===
+**/
 
 /**doc
  * *Close*()
@@ -185,7 +184,7 @@ JSBool ReadAllToJsval(JSContext *cx, PRFileDesc *fd, jsval *rval ) {
 		chunkList[chunkListContentLength++] = chunk;
 
 		PRInt32 res = PR_Read( fd, chunk + sizeof(int), currentReadLength ); // chunk + sizeof(int) gives the position where the data can be written. Size to read is currentReadLength
-		
+
 		if ( res > 0 ) {
 
 			receivedAmount = res;
@@ -203,7 +202,7 @@ JSBool ReadAllToJsval(JSContext *cx, PRFileDesc *fd, jsval *rval ) {
 			receivedAmount = 0;
 			break; // no error, no data received, we cannot reach currentReadLength
 		} else if ( res == 0 ) { // end of file/socket
-			
+
 			if ( totalLength > 0 ) { // we reach eof BUT we have read some data.
 
 				free(chunkList[--chunkListContentLength]); // cancel the last chunk
@@ -253,7 +252,7 @@ JSBool ReadAllToJsval(JSContext *cx, PRFileDesc *fd, jsval *rval ) {
 
 /**doc
  * $VAL *Read*( [amount] )
-  Read _amount_ bytes of data from the current descriptor. If _amount_ is ommited, the whole available data is read. 
+  Read _amount_ bytes of data from the current descriptor. If _amount_ is ommited, the whole available data is read.
   If the descriptor is exhausted (eof or disconnected), this function returns <undefined>.
 **/
 DEFINE_FUNCTION( Read ) {
@@ -262,14 +261,14 @@ DEFINE_FUNCTION( Read ) {
 	RT_ASSERT_RESOURCE( fd );
 
 	if ( J_ARG_ISDEF(1) ) {
-		
+
 		PRInt32 amount;
 		RT_JSVAL_TO_INT32( J_ARG(1), amount );
 
 //		if ( amount == 0 ) // (TBD) check if it is good to use this ( even if amount is 0, we must call Read
 //			*rval = JS_GetEmptyStringValue(cx);
 //		else
-			
+
 		RT_CHECK_CALL( ReadToJsval(cx, fd, amount, rval) );
 
 	} else { // amount value is NOT provided, then try to read all
@@ -305,7 +304,7 @@ DEFINE_FUNCTION( Write ) {
 		PRErrorCode errCode = PR_GetError();
 /*
 		if ( errCode == PR_CONNECT_RESET_ERROR ) { // 10054
-			
+
 			// WSAECONNRESET (error 10054)
 			// Connection reset by peer. An existing connection
 			// was forcibly closed by the remote host. This
@@ -468,7 +467,7 @@ DEFINE_FUNCTION( Import ) {
 	if ( fd == NULL )
 		return ThrowIoError(cx);
 
-	RT_ASSERT_ALLOC( descriptorObject ); 
+	RT_ASSERT_ALLOC( descriptorObject );
 	RT_CHECK_CALL( JS_SetPrivate(cx, descriptorObject, (void*)fd) );
 	RT_CHECK_CALL( JS_SetReservedSlot(cx, descriptorObject, SLOT_JSIO_DESCRIPTOR_IMPORTED, JSVAL_TRUE) );
 
@@ -479,13 +478,13 @@ DEFINE_FUNCTION( Import ) {
 /**doc
 === Constants ===
  * *`DESC_FILE`*
- 
+
  * *`DESC_SOCKET_TCP`*
- 
+
  * *`DESC_SOCKET_UDP`*
- 
+
  * *`DESC_LAYERED`*
- 
+
  * *`DESC_PIPE`*
 **/
 

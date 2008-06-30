@@ -15,7 +15,7 @@
 #include "stdafx.h"
 #include "data.h"
 
-#include "../common/jsNativeInterface.h"
+//#include "../common/jsNativeInterface.h"
 #include "../common/queue.h"
 
 BEGIN_CLASS( Data )

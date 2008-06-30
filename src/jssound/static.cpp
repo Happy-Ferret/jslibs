@@ -36,7 +36,7 @@ typedef struct {
 } StreamReadInfo;
 
 
-/**doc fileIndex:top **/
+/**doc fileIndex:topmost **/
 
 BEGIN_STATIC
 
@@ -59,7 +59,7 @@ static ov_callbacks ovCallbacks = { readStream,0,0,0 };
  * $TYPE soundObject $INAME( stream )
   Decodes a ogg vorbis sample to a sound object.
   $H arguments
-   $ARG streamObject stream: any object that has a Read function or that supports the StreamRead Native Interface ( file, socket, new Stream(buffer), ... ). For further details about stream objects, see jslang::Stream object and NativeInterface mechanism. 
+   $ARG streamObject stream: any object that has a Read function or that supports the NIStreamRead Native Interface ( file, socket, new Stream(buffer), ... ). For further details about stream objects, see jslang::Stream object and NativeInterface mechanism.
   $H return value
    returns a sound object in a 16-bit per sample format.
   $H example
@@ -265,7 +265,7 @@ static SF_VIRTUAL_IO sfCallbacks = { SfGetFilelen, SfSeek, SfRead, 0, SfTell };
  * $TYPE soundObject $INAME( stream )
   Decodes a sample from any supported sound format to a sound object.
   $H arguments
-   $ARG streamObject stream: any object that has a Read function or that supports the StreamRead Native Interface ( file, socket, new Stream(buffer), ... ). For further details about stream objects, see jslang::Stream object and NativeInterface mechanism.
+   $ARG streamObject stream: any object that has a Read function or that supports the NIStreamRead Native Interface ( file, socket, new Stream(buffer), ... ). For further details about stream objects, see jslang::Stream object and native interface mechanism.
   $H return value
    returns a sound object in a 16-bit per sample format.
 **/

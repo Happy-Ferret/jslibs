@@ -270,11 +270,7 @@ $CLASS_HEADER
 BEGIN_CLASS( Systray )
 
 /**doc
-=== Methods ===
-**/
-
-/**doc
- * *_Constructor_*()
+ * $INAME()
   TBD
 **/
 DEFINE_CONSTRUCTOR() {
@@ -332,8 +328,13 @@ DEFINE_FINALIZE() {
 	}
 }
 
+
 /**doc
- * void *Close*()
+=== Methods ===
+**/
+
+/**doc
+ * $VOID $INAME()
   TBD
 **/
 DEFINE_FUNCTION( Close ) {
@@ -349,7 +350,7 @@ DEFINE_FUNCTION( Close ) {
 
 
 /**doc
- * bool *ProcessEvents*()
+ * $BOOL $INAME()
   Precess all pending events of the systray. 
   The function returns true if at least one of the event function ( see Remarks below ) returns true.
 **/
@@ -447,7 +448,7 @@ DEFINE_FUNCTION( ProcessEvents ) {
 
 
 /**doc
- * *Focus*()
+ * $VOID $INAME()
   TBD
 **/
 DEFINE_FUNCTION( Focus ) {
@@ -460,7 +461,7 @@ DEFINE_FUNCTION( Focus ) {
 
 
 /**doc
- * void *PopupMenu*()
+ * $VOID $INAME()
   TBD
 **/
 DEFINE_FUNCTION( PopupMenu ) {
@@ -598,7 +599,7 @@ DEFINE_FUNCTION( CallDefault ) {
 */
 
 /**doc
- * ??? *Position*( ??? )
+ * $TYPE Array $INAME( [reusableArray] )
   TBD
 **/
 DEFINE_FUNCTION( Position ) {
@@ -627,7 +628,7 @@ DEFINE_FUNCTION( Position ) {
 
 
 /**doc
- * ??? *Rect*( ??? )
+ * $TYPE Array $INAME( [reusableArray] )
   TBD
 **/
 DEFINE_FUNCTION( Rect ) {
@@ -662,7 +663,7 @@ DEFINE_FUNCTION( Rect ) {
 **/
 
 /**doc
- * $TYPE Icon | $TYPE null *icon* $WRITEONLY
+ * $TYPE Icon | $TYPE null $INAME $WRITEONLY
 **/
 DEFINE_PROPERTY( icon ) {
 
@@ -692,7 +693,7 @@ DEFINE_PROPERTY( icon ) {
 }
 
 /**doc
- * $BOOL *visible* $WRITEONLY
+ * $BOOL $INAME $WRITEONLY
   TBD
 **/
 DEFINE_PROPERTY( visible ) {
@@ -707,7 +708,7 @@ DEFINE_PROPERTY( visible ) {
 }
 
 /**doc
- * string *text*
+ * $STR $INAME
   TBD
 **/
 DEFINE_PROPERTY( textSetter ) {
@@ -734,14 +735,13 @@ DEFINE_PROPERTY( textGetter ) {
 }
 
 /**doc
- * $OBJ *menu*
-   * string | function *menu.commandName.text*
-   * bool | function *menu.commandName.checked*
-   * bool | function *menu.commandName.grayed*
-   * bool *menu.commandName.separator*
-   * bool *menu.commandName.default*
-   * [Icon] | function *menu.commandName.icon*
-
+ * $OBJ $INAME
+  * string | function *menu.commandName.text*
+  * bool | function *menu.commandName.checked*
+  * bool | function *menu.commandName.grayed*
+  * bool *menu.commandName.separator*
+  * bool *menu.commandName.default*
+  * [Icon] | function *menu.commandName.icon*
   ===== example: =====
   {{{
   tray.menu = { { text:"enable", checked:true }, { text:"delete", grayed:true }, { separator:true }, exit:"Exit" }

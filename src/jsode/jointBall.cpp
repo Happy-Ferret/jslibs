@@ -22,11 +22,7 @@ $CLASS_HEADER Joint
 BEGIN_CLASS( JointBall )
 
 /**doc
-=== Methods ===
-**/
-
-/**doc
- * *_Constructor_*( world )
+ * $INAME( world )
 **/
 DEFINE_CONSTRUCTOR() {
 
@@ -46,7 +42,7 @@ DEFINE_CONSTRUCTOR() {
 **/
 
 /**doc
- * $TYPE vec3 *anchor*
+ * $TYPE vec3 $INAME
 **/
 DEFINE_PROPERTY( anchorSetter ) {
 
@@ -69,7 +65,7 @@ DEFINE_PROPERTY( anchorGetter ) {
 }
 
 /**doc
- * $TYPE vec3 *anchor2* $READONLY
+ * $TYPE vec3 $INAME $READONLY
 **/
 DEFINE_PROPERTY( anchor2 ) { // read only
 

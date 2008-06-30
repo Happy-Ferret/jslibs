@@ -23,11 +23,7 @@ $CLASS_HEADER
 BEGIN_CLASS( Console )
 
 /**doc
-=== Methods ===
-**/
-
-/**doc
- * *_Constructor_*()
+ * $INAME()
   TBD
 **/
 DEFINE_CONSTRUCTOR() {
@@ -46,8 +42,13 @@ DEFINE_FINALIZE() {
 	BOOL res = FreeConsole();
 }
 
+
 /**doc
- * void *Close*()
+=== Methods ===
+**/
+
+/**doc
+ * $VOID $INAME()
   TBD
 **/
 DEFINE_FUNCTION( Close ) {
@@ -59,7 +60,7 @@ DEFINE_FUNCTION( Close ) {
 
 
 /**doc
- * void *Write*( string )
+ * $VOID $INAME( string )
   TBD
 **/DEFINE_FUNCTION( Write ) {
 	
@@ -77,7 +78,7 @@ DEFINE_FUNCTION( Close ) {
 
 
 /**doc
- * string *Read*( amount )
+ * $STR $INAME( amount )
   TBD
 **/DEFINE_FUNCTION( Read ) {
 	
@@ -98,10 +99,9 @@ DEFINE_FUNCTION( Close ) {
 **/
 
 /**doc
- * *title*
+ * $STR $INAME
   Get or set the title of the console window.
 **/
-
 DEFINE_PROPERTY( titleSetter ) {
 
 	const char *str;

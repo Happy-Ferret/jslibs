@@ -27,7 +27,7 @@
 
 // (TBD) add User-defined Collation Sequences ( http://www.sqlite.org/datatype3.html )
 
-/**doc
+/**doc fileIndex:top
 $CLASS_HEADER
 **/
 BEGIN_CLASS( Database )

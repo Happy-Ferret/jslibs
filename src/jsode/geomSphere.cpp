@@ -15,16 +15,12 @@
 #include "stdafx.h"
 #include "space.h"
 #include "geom.h"
-#include "../common/jsNativeInterface.h"
+//#include "../common/jsNativeInterface.h"
 
 /**doc
 $CLASS_HEADER Geom
 **/
 BEGIN_CLASS( GeomSphere )
-
-/**doc
-=== Methods ===
-**/
 
 DEFINE_FINALIZE() {
 
@@ -34,7 +30,7 @@ DEFINE_FINALIZE() {
 }
 
 /**doc
- * *_Constructor_*( space )
+ * $INAME( space )
   TBD
 **/
 
@@ -56,7 +52,7 @@ DEFINE_CONSTRUCTOR() {
 **/
 
 /**doc
- * $REAL *radius*
+ * $REAL $INAME
 **/
 DEFINE_PROPERTY( radiusSetter ) {
 

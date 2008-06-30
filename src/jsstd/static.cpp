@@ -30,7 +30,7 @@
 	#define O_BINARY 0
 #endif
 
-/**doc fileIndex:top **/
+/**doc fileIndex:topmost **/
 
 BEGIN_STATIC
 
@@ -625,9 +625,9 @@ static JSScript* LoadScript(JSContext *cx, JSObject *obj, const char *fileName, 
   Executes the script specified by _fileName_.
   If _useAndSaveCompiledScript_ is true, the function load and save a compiled version (using XDR format) of the script on the disk ( adding 'xrd' to _fileName_ ).
   If the compiled file is not found, the uncompiled version is used instead.
-  ===== return value: =====
-  This function returns the last evaluated statement of the script.
-  ===== example: =====
+  $H return value
+   returns the last evaluated statement of the script.
+  $H example
   {{{
   var foo = Exec('constants.js'); // loads constants.js or constants.jsxrd if available.
   }}}

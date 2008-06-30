@@ -32,6 +32,8 @@ struct CipherPrivate {
 	void *symmetric_XXX;
 };
 
+/**doc fileIndex:top **/
+
 /**doc
 $CLASS_HEADER
 **/
@@ -42,7 +44,7 @@ DEFINE_FINALIZE() {
 	CipherPrivate *privateData = (CipherPrivate *)JS_GetPrivate( cx, obj );
 	if ( privateData == NULL ) // is already finished ?
 		return;
-	
+
 	int err;
 	switch ( privateData->mode ) {
 		case mode_ecb:
@@ -74,62 +76,48 @@ DEFINE_FINALIZE() {
 }
 
 /**doc
-=== Methods ===
-**/
-
-/**doc
- * *_Constructor_*( modeName, cipherName, key, [IV], [arg], [rounds] )
-  Constructs a Cipher object using the given information:
-  = =
-  _modeName_ is the block cipher modes of operation:
-   * ECB (Electronic codebook)
-   * CFB (Cipher feedback)
-   * OFB (Output Feedback)
-   * CBC (Cipher Block Chaining)
-   * CTR (CounTeR)
-   * LRW
-   * F8
-  = =
-  _cipherName_ is the name of the cipher used for data encryption/decryption:
-   * blowfish 
-   * rc5 
-   * rc6 
-   * rc2 
-   * saferp
-   * safer_k64, safer_k128, safer_sk64, safer_sk128
-   * rijndael, aes
-   * rijndael_enc, aes_enc
-   * xtea
-   * twofish
-   * des &des3
-   * cast5
-   * noekeon
-   * skipjack
-   * khazad
-   * anubis
-   * kseed
-   * kasumi
-  = =
-  _key_ is the encryption/decryption key:
-   The encryption key.
-  = =
-  _IV_ is the first initialization vector:
-   The IV value is the initialization vector to be used with the cipher. 
-   You must fill the IV yourself and it is assumed they are the same length as the block size of the cipher you choose.
-   It is important that the IV be random for each unique message you want to encrypt.
-   ===== note: =====
-   This argument is invalid in ECB mode.
-  = = 
-  _arg_ is either the tweak key for the LRW mode or the salt value for the F8 mode.
-   ===== note: =====
-   In LRW mode, the tweak value must have the same size as the _key_
-   ===== note: =====
-   In other modes _arg_ must be undefined.
-  = = 
-  _rounds_ is the number of rounds to use:
-   The requested number of rounds.  
-   ===== note: =====
-   If the argument is omitted, a default value is used.
+ * $INAME( modeName, cipherName, key, [IV], [arg], [rounds] )
+  Constructs a Cipher object that use _cipherName_ algorithm for performing encryption and decryption.
+  $H arguments
+   $ARG string modeName: is the block cipher modes of operation:
+    * ECB (Electronic codebook)
+    * CFB (Cipher feedback)
+    * OFB (Output Feedback)
+    * CBC (Cipher Block Chaining)
+    * CTR (CounTeR)
+    * LRW
+    * F8
+   $ARG string cipherName: is the name of the cipher algorithm used for data encryption and decryption:
+    * blowfish
+    * rc5
+    * rc6
+    * rc2
+    * saferp
+    * safer_k64, safer_k128, safer_sk64, safer_sk128
+    * rijndael, aes
+    * rijndael_enc, aes_enc
+    * xtea
+    * twofish
+    * des, des3
+    * cast5
+    * noekeon
+    * skipjack
+    * khazad
+    * anubis
+    * kseed
+    * kasumi
+   $ARG string key: is the encryption/decryption key.
+   $ARG string IV:
+    _IV_ is the first initialization vector:
+    The IV value is the initialization vector to be used with the cipher.
+    You must fill the IV yourself and it is assumed they are the same length as the block size of the cipher you choose.
+    It is important that the IV be random for each unique message you want to encrypt.
+    $H beware
+     This argument is invalid in ECB block mode.
+   $ARG string arg: is either the tweak key for the LRW mode or the salt value for the F8 mode. In other modes _arg_ must be undefined.
+    $H beware
+     In LRW mode, the tweak value must have the same length as the _key_.
+   $ARG integer rounds: is the number of rounds to do with the current sipher. If the argument is omitted, a default value is used.
 **/
 // mode, cipher, key, IV
 DEFINE_CONSTRUCTOR() {
@@ -265,9 +253,12 @@ DEFINE_CONSTRUCTOR() {
 	return JS_TRUE;
 }
 
+/**doc
+=== Methods ===
+**/
 
 /**doc
- * $STR *Encrypt*( string )
+ * $STR $INAME( string )
   Encrypts the given _string_ using the current cipher.
 **/
 DEFINE_FUNCTION( Encrypt ) {
@@ -323,7 +314,7 @@ DEFINE_FUNCTION( Encrypt ) {
 }
 
 /**doc
- * $STR *Decrypt*( string )
+ * $STR $INAME( string )
   Decrypts the given _string_ using the current cipher.
 **/
 DEFINE_FUNCTION( Decrypt ) {
@@ -380,7 +371,7 @@ DEFINE_FUNCTION( Decrypt ) {
 **/
 
 /**doc
- * $INT *blockLength*
+ * $INT $INAME $READONLY
   Is the block length of the current cipher.
 **/
 DEFINE_PROPERTY( blockLength ) {
@@ -394,7 +385,7 @@ DEFINE_PROPERTY( blockLength ) {
 
 
 /**doc
- * $INT *keySize*
+ * $INT $INAME $READONLY
   Is the key size of the current cipher.
 **/
 DEFINE_PROPERTY( keySize ) {
@@ -408,7 +399,7 @@ DEFINE_PROPERTY( keySize ) {
 
 
 /**doc
- * $STR *name*
+ * $STR $INAME $READONLY
   Is the name of the current cipher.
 **/
 DEFINE_PROPERTY( name ) {
@@ -424,7 +415,7 @@ DEFINE_PROPERTY( name ) {
 
 
 /**doc
- * $STR *IV*
+ * $STR $INAME
   Set or get the current initialization vector of the cipher.
 **/
 DEFINE_PROPERTY( IVSetter ) {
@@ -571,7 +562,7 @@ DEFINE_PROPERTY( IVGetter ) {
 **/
 
 /**doc
- * $OBJ *list*
+ * $OBJ $INAME $READONLY
   Contains the list of all available ciphers and their feature. The list is a javascript object that map cipher names (key) with another object (value) that contain information.
 **/
 DEFINE_PROPERTY( list ) {

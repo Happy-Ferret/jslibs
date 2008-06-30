@@ -22,11 +22,7 @@ $CLASS_HEADER Joint
 BEGIN_CLASS( JointSlider )
 
 /**doc
-=== Methods ===
-**/
-
-/**doc
- * *_Constructor_*( world )
+ * $INAME( world )
   TBD
 **/
 DEFINE_CONSTRUCTOR() {
@@ -46,7 +42,7 @@ DEFINE_CONSTRUCTOR() {
 **/
 
 /**doc
- * $TYPE vec3 *axis*
+ * $TYPE vec3 $INAME
   TBD
 **/
 DEFINE_PROPERTY( axisSetter ) {
@@ -70,7 +66,7 @@ DEFINE_PROPERTY( axisGetter ) {
 }
 
 /**doc
- * $REAL *position* $READONLY
+ * $REAL $INAME $READONLY
   TBD
 **/
 DEFINE_PROPERTY( position ) {
@@ -82,7 +78,7 @@ DEFINE_PROPERTY( position ) {
 }
 
 /**doc
- * $REAL *positionRate* $READONLY
+ * $REAL $INAME $READONLY
   TBD
 **/
 

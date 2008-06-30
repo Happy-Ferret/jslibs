@@ -129,7 +129,7 @@ static void nearCallback(void *data, ode::dGeomID o1, ode::dGeomID o2) {
 	}
 }
 
-/**doc
+/**doc fileIndex:top
 $CLASS_HEADER
 **/
 BEGIN_CLASS( World )
@@ -149,21 +149,15 @@ DEFINE_FINALIZE() {
 }
 
 /**doc
-=== Methods ===
-**/
-
-/**doc
- * *_Constructor_*()
+ * $INAME()
   dWorldCreate
   ===== note: =====
    This function creates also a Space (space) object and a SurfaceParameters object (defaultSurfaceParameters).
 **/
-
-
 DEFINE_CONSTRUCTOR() {
 
-	RT_ASSERT_CONSTRUCTING();
-	RT_ASSERT_THIS_CLASS();
+	J_S_ASSERT_CONSTRUCTING();
+	J_S_ASSERT_THIS_CLASS();
 
 	ode::dWorldID worldId = ode::dWorldCreate();
 	JS_SetPrivate(cx, obj, worldId);
@@ -186,7 +180,11 @@ DEFINE_CONSTRUCTOR() {
 }
 
 /**doc
- * *Destroy*()
+=== Methods ===
+**/
+
+/**doc
+ * $INAME()
   TBD
 **/
 DEFINE_FUNCTION( Destroy ) {
@@ -196,7 +194,7 @@ DEFINE_FUNCTION( Destroy ) {
 }
 
 /**doc
- * *Step*( time [, iterations] )
+ * $INAME( time [, iterations] )
   ===== note: =====
    If the _iterations_ argument is given, this uses an iterative method that takes time on the order of m*N and memory on the order of m, where m is the total number of constraint rows and N is the number of iterations.
 **/
@@ -259,7 +257,7 @@ DEFINE_FUNCTION( Step ) {
 **/
 
 /**doc
- * $TYPE vec3 *gravity*
+ * $TYPE vec3 $INAME
   TBD
 **/
 DEFINE_PROPERTY( gravityGetter ) {
@@ -285,7 +283,7 @@ DEFINE_PROPERTY( gravitySetter ) {
 /**doc
  * $REAL *ERP*
   dWorldGetERP
- 
+
  * $REAL *CFM*
   dWorldGetCFM
 
@@ -343,7 +341,7 @@ DEFINE_PROPERTY( realGetter ) {
 }
 
 /**doc
- * $TYPE body *env* $READONLY
+ * $TYPE Body $INAME $READONLY
   Returns the environment object that is the fixed body of this world (like the ground).
 **/
 DEFINE_PROPERTY( env ) {
@@ -363,7 +361,7 @@ DEFINE_PROPERTY( env ) {
   This defines the default properties of the colliding grometries surfaces.
   = =
   The property is read-only but not i'ts content.
- 
+
  * *space* $READONLY
   This is the default space object that is bound to the world.
 **/

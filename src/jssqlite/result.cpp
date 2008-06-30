@@ -228,7 +228,7 @@ DEFINE_FUNCTION( Close ) {
  * $BOOL $INAME()
   Executes one step in the previously evaluated SQL statement.
   $H return value
-   returns $BOOL true if another row is ready. $BOOL false if the last line has been reached.
+   returns true if another row is ready. false if the last line has been reached.
 **/
 DEFINE_FUNCTION( Step ) {
 

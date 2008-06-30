@@ -15,7 +15,7 @@
 #include "stdafx.h"
 
 
-/**doc
+/**doc fileIndex:bottom
 $CLASS_HEADER
  You cannot construct this class.
  Its aim is to throw as an exception on any NSPR runtime error.

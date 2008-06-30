@@ -64,7 +64,7 @@ DEFINE_CONSTRUCTOR() {
 
 /**doc
  * $THIS $INAME()
-  Reset the current transformation.
+  Reset the current transformation (set to identity).
 **/
 DEFINE_FUNCTION_FAST( Clear ) {
 

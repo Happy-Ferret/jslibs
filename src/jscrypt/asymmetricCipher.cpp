@@ -77,7 +77,7 @@ DEFINE_FINALIZE() {
 				break;
 			case ecc:
 				ecc_free( &pv->key.eccKey );
-				break;	 
+				break;
 			case dsa:
 				dsa_free( &pv->key.dsaKey );
 				break;
@@ -88,30 +88,20 @@ DEFINE_FINALIZE() {
 }
 
 /**doc
-=== Methods ===
-**/
-
-/**doc
- * *_Constructor_*( cipherName, hashName [, prngObject] [, PKCSVersion = 1_OAEP] )
+ * $INAME( cipherName, hashName [, prngObject] [, PKCSVersion = 1_OAEP] )
   Creates a new Asymmetric Cipher object.
-  _cipherName_ is a string that contains the name of the Asymmetric Cipher algorithm:
-   * rsa
-   * ecc
-   * dsa
-   = =
-  _hashName_ indicates which hash will be used to create the PSS encoding.
-  It should be the same as the hash used to hash the message being signed.
-  See Hash class for available names.
-   = =
-  _prngObject_ is an instantiated Prng object. Its current state will be used for key creation, data encryption/decryption, data signature/signature check.
-   This argument can be ommited if you aim to decrypt data only.
-   = =
-  _PKCSVersion_ is a string that contains the padding version used by RSA to encrypt/decrypd data.
-   * 1_OAEP (for PKCS #1 v2.1 encryption)
-   * 1_V1_5 (for PKCS #1 v1.5 encryption)
-   If omitted, the default value is 1_OAEP
-   = =
-   Only RSA use this argument.
+  $H arguments
+   $ARG string cipherName: is a string that contains the name of the Asymmetric Cipher algorithm:
+    * rsa
+    * ecc
+    * dsa
+   $ARG string hashName: is the hash that will be used to create the PSS (Probabilistic Signature Scheme) encoding. It should be the same as the hash used to hash the message being signed. See Hash class for available names.
+   $ARG Object prngObject: is an instantiated Prng object. Its current state will be used for key creation, data encryption/decryption, data signature/signature check. This argument can be ommited if you aim to decrypt data only.
+   $ARG string PKCSVersion: is a string that contains the padding version used by RSA to encrypt/decrypd data:
+    * 1_OAEP (for PKCS #1 v2.1 encryption)
+    * 1_V1_5 (for PKCS #1 v1.5 encryption)
+    If omitted, the default value is 1_OAEP.
+    Only RSA use this argument.
 **/
 DEFINE_CONSTRUCTOR() { // ( cipherName, hashName [, prngObject] [, PKCSVersion] )
 
@@ -176,7 +166,11 @@ DEFINE_CONSTRUCTOR() { // ( cipherName, hashName [, prngObject] [, PKCSVersion] 
 }
 
 /**doc
- * *!CreateKeys*( keySize )
+=== Methods ===
+**/
+
+/**doc
+ * $INAME( keySize )
   Create RSA public and private keys.
   = =
   _keySize_ is the size of the key in bits (the value of _keySize_ is the modulus size).
@@ -207,12 +201,12 @@ DEFINE_FUNCTION( CreateKeys ) { // ( bitsSize )
 			int e = 65537; // typical values are 3, 17, 257 and 65537
 			int modulusSize = keySize / 8; // Bytes
 			err = rsa_make_key( prngState, prngIndex, modulusSize, e, &pv->key.rsaKey );
-			break;			 
+			break;
 		}
 		case ecc: {
 			int modulusSize = keySize / 8; // Bytes
 			err = ecc_make_key( prngState, prngIndex, modulusSize, &pv->key.eccKey );
-			break;			 
+			break;
 		}
 		case dsa: {
 			//Bits of Security / group size / modulus size
@@ -229,20 +223,20 @@ DEFINE_FUNCTION( CreateKeys ) { // ( bitsSize )
 			//dsa_verify_key(&pv->key.dsaKey, &stat);
 			//if (stat != 1) { // If the result is stat = 1 the DSA key is valid (as far as valid mathematics are concerned).
 			//}
-			break;			 
+			break;
 		}
 		default:
 			REPORT_ERROR("Invalid case.");
 	}
 	if (err != CRYPT_OK)
-		return ThrowCryptError(cx, err); // (TBD) free something ? 
+		return ThrowCryptError(cx, err); // (TBD) free something ?
 
 	pv->hasKey = true;
 	return JS_TRUE;
 }
 
 /**doc
- * $STR *Encrypt*( data [, lparam] )
+ * $STR $INAME( data [, lparam] )
   This function returns the encrypted _data_ using a previously created or imported public key.
   = =
   _data_ is the string to encrypt (usualy cipher keys).
@@ -277,16 +271,16 @@ DEFINE_FUNCTION( Encrypt ) { // ( data [, lparam] )
 			if (argc >= 2 && argv[1] != JSVAL_VOID)
 				RT_JSVAL_TO_STRING_AND_LENGTH(argv[1], in, inLength);
 			err = rsa_encrypt_key_ex( (unsigned char *)in, inLength, (unsigned char *)out, &outLength, lparam, lparamlen, prngState, prngIndex, hashIndex, pv->padding, &pv->key.rsaKey ); // ltc_mp.rsa_me()
-			break;			 
+			break;
 		}
 		case ecc: {
 			RT_ASSERT_ALLOC( out );
 			err = ecc_encrypt_key( (unsigned char *)in, inLength, (unsigned char *)out, &outLength, prngState, prngIndex, hashIndex, &pv->key.eccKey );
-			break;			 
+			break;
 		}
 		case dsa: {
 			err = dsa_encrypt_key( (unsigned char *)in, inLength, (unsigned char *)out, &outLength, prngState, prngIndex, hashIndex, &pv->key.dsaKey );
-			break;			 
+			break;
 		}
 		default:
 			REPORT_ERROR("Invalid case.");
@@ -301,17 +295,17 @@ DEFINE_FUNCTION( Encrypt ) { // ( data [, lparam] )
 }
 
 /**doc
- * $STR *Decrypt*( encryptedData [, lparam] )
+ * $STR $INAME( encryptedData [, lparam] )
   This function decrypts the given _encryptedData_ using a previously created or imported private key.
   = =
   _encryptedData_ is the string that has to be decrypted (usualy cipher keys).
   ===== note: =====
    The lparam variable is an additional system specific tag that can be applied to the encoding.
-   This is useful to identify which system encoded the message. 
+   This is useful to identify which system encoded the message.
    If no variance is desired then lparam can be ignored or set to <undefined>.
    = =
    If it does not match what was used during encoding this function will not decode the packet.
-   = =  
+   = =
    When performing v1.5 RSA decryption, the hash and lparam parameters are totally ignored.
 **/
 DEFINE_FUNCTION( Decrypt ) { // ( encryptedData [, lparam] )
@@ -332,7 +326,7 @@ DEFINE_FUNCTION( Decrypt ) { // ( encryptedData [, lparam] )
 	int err = -1; // default
 	switch ( pv->cipher ) {
 		case rsa: {
-			
+
 			int hashIndex = find_hash(pv->hashDescriptor->name);
 
 			unsigned char *lparam = NULL; // default: lparam not used
@@ -344,7 +338,7 @@ DEFINE_FUNCTION( Decrypt ) { // ( encryptedData [, lparam] )
 			err = rsa_decrypt_key_ex( (unsigned char *)in, inLength, (unsigned char *)out, &outLength, lparam, lparamlen, hashIndex, pv->padding, &stat, &pv->key.rsaKey );
 			// doc: if all went well pt == pt2, l2 == 16, res == 1
 			if ( err == CRYPT_OK && stat != 1 ) {
-				
+
 				*rval = JSVAL_VOID;
 				return JS_TRUE;
 			}
@@ -361,7 +355,7 @@ DEFINE_FUNCTION( Decrypt ) { // ( encryptedData [, lparam] )
 		default:
 			REPORT_ERROR("Invalid case.");
 	}
-		
+
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err); // (TBD) free something ?
 
@@ -374,7 +368,7 @@ DEFINE_FUNCTION( Decrypt ) { // ( encryptedData [, lparam] )
 }
 
 /**doc
- * $STR *Sign*( data [, saltLength] )
+ * $STR $INAME( data [, saltLength] )
   This function returns the signature of the given _data_.
   Because this process is slow, this function usualy used to sign a small amount of data, like hash digest.
   = =
@@ -435,7 +429,7 @@ DEFINE_FUNCTION( Sign ) { // ( data [, saltLength] )
 }
 
 /**doc
- * $STR *VerifySignature*( data, signature [, saltLength] )
+ * $STR $INAME( data, signature [, saltLength] )
   This function returns <true> if the _data_ match the data used to create the _signature_.
   = =
   _saltLength_ is only used with RSA signatures. (default value is 16)
@@ -465,7 +459,7 @@ DEFINE_FUNCTION( VerifySignature ) { // ( data, signature [, saltLength] )
 				RT_JSVAL_TO_INT32(argv[2], saltLength);
 
 			int hashIndex = find_hash(pv->hashDescriptor->name);
-			
+
 			rsa_verify_hash_ex( (unsigned char *)sign, signLength, (unsigned char *)data, dataLength, LTC_LTC_PKCS_1_PSS, hashIndex, saltLength, &stat, &pv->key.rsaKey );
 			break;
 		}
@@ -493,7 +487,7 @@ DEFINE_FUNCTION( VerifySignature ) { // ( data, signature [, saltLength] )
 **/
 
 /**doc
- * *blockLength* $READONLY
+ * $INAME $READONLY
   TBD
 **/
 DEFINE_PROPERTY( blockLength ) {
@@ -521,7 +515,7 @@ DEFINE_PROPERTY( blockLength ) {
 }
 
 /**doc
- * *keySize* $READONLY
+ * $INAME $READONLY
   TBD
 **/
 DEFINE_PROPERTY( keySize ) {
@@ -550,10 +544,10 @@ DEFINE_PROPERTY( keySize ) {
 
 
 /**doc
- * $STR *privateKey*
+ * $STR $INAME
   The private key encoded using PKCS #1. (Public Key Cryptographic Standard #1 v2.0 padding)
 
- * $STR *publicKey*
+ * $STR $INAME
   The public key encoded using PKCS #1. (Public Key Cryptographic Standard #1 v2.0 padding)
 **/
 

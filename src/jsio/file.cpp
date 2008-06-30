@@ -49,17 +49,13 @@ $CLASS_HEADER Descriptor
 **/
 BEGIN_CLASS( File )
 
-/**doc
-=== Methods ===
-**/
-
 DEFINE_FINALIZE() {
 
 	FinalizeDescriptor(cx, obj); // defined in descriptor.cpp
 }
 
 /**doc
- * *_Constructor_*( fileName )
+ * $INAME( fileName )
 **/
 DEFINE_CONSTRUCTOR() {
 
@@ -72,7 +68,11 @@ DEFINE_CONSTRUCTOR() {
 }
 
 /**doc
- * $TYPE this *Open*( flags [, mode] )
+=== Methods ===
+**/
+
+/**doc
+ * $THIS $INAME( flags [, mode] )
   Open a file for reading, writing, or both.
   = =
   _flags_ is either a combinaison of open mode constants or a string that contains fopen like flags (+, r, w, a).
@@ -118,7 +118,7 @@ DEFINE_FUNCTION( Open ) {
 	
 //	J_CHECK_CALL( SetStreamReadInterface(cx, obj, NativeInterfaceStreamRead) );
 
-	J_CHK( InitStreamReadInterface(cx, obj) );
+	J_CHK( InitStreamReadInterface(cx, obj) ); // this reserves the NativeInterface, then it can be switched on/off safely (see Descriptor::Close)
 	J_CHK( SetStreamReadInterface(cx, obj, NativeInterfaceStreamRead) );
 
 	*rval = OBJECT_TO_JSVAL(obj); // allows to write f.Open(...).Read()
@@ -127,7 +127,7 @@ DEFINE_FUNCTION( Open ) {
 
 
 /**doc
- * int *Seek*( [ offset = 0 [, whence = File.`SEEK_SET` ] ] )
+ * $INT $INAME( [ offset = 0 [, whence = File.`SEEK_SET` ] ] )
   Moves read-write file offset.
 **/
 DEFINE_FUNCTION( Seek ) {
@@ -164,7 +164,7 @@ DEFINE_FUNCTION( Seek ) {
 
 
 /**doc
- * int *Delete*()
+ * $INT $INAME()
   Delete a file from the filesystem.
   The operation may fail if the file is open.
 **/
@@ -184,7 +184,7 @@ DEFINE_FUNCTION( Delete ) {
 
 
 /**doc
- * *Lock*( state )
+ * $VOID $INAME( state )
   Lock or unlock a file for exclusive access.
   _state_ can be <true> or <false>.
 **/
@@ -207,7 +207,7 @@ DEFINE_FUNCTION( Lock ) {
 **/
 
 /**doc
- * *position*
+ * $INT $INAME
   Get or set the current position of the file pointer. Same as Seek() function used with SEEK_SET.
 **/
 DEFINE_PROPERTY( positionSetter ) {
@@ -237,7 +237,7 @@ DEFINE_PROPERTY( positionGetter ) {
 
 
 /**doc
- * *content*
+ * $STR $INAME
   Get or set the content of the file. If the file does not exist, content is <undefined>.
   Setting content with <undefined> deletes the file.
 **/
@@ -336,7 +336,7 @@ DEFINE_PROPERTY( contentSetter ) { // (TBD) support BString
 
 
 /**doc
- * *name*
+ * $STR $INAME
   Contains the name of the file. Changing this value will rename the file.
 **/
 DEFINE_PROPERTY( nameGetter ) {
@@ -365,7 +365,7 @@ DEFINE_PROPERTY( nameSetter ) {
 
 
 /**doc
- * *exist* $READONLY
+ * $BOOL $INAME $READONLY
   Contains true if the file exists.
 **/
 DEFINE_PROPERTY( exist ) {
@@ -383,7 +383,7 @@ DEFINE_PROPERTY( exist ) {
 
 
 /**doc
- * *info* $READONLY
+ * $OBJ $INAME $READONLY
   This property works with opened and closed files.
   Contains an object that has the following properties:
    * type : the type of the file
@@ -434,13 +434,13 @@ DEFINE_PROPERTY( info ) {
 **/
 
 /**doc
- * *stdin* $READONLY
+ * $TYPE File *stdin* $READONLY
   Is a jsio::File that represents the standard input.
   
- * *stdout* $READONLY
+ * $TYPE File *stdout* $READONLY
   Is a jsio::File that represents the standard output.
   
- * *stderr* $READONLY
+ * $TYPE File *stderr* $READONLY
   Is a jsio::File that represents the standard error.
 **/
 DEFINE_PROPERTY( standard ) {
@@ -485,6 +485,12 @@ DEFINE_PROPERTY( standard ) {
   * File.`FILE_FILE`
   * File.`FILE_DIRECTORY`
   * File.`FILE_OTHER`
+**/
+
+
+/**doc
+=== Native Interface ===
+ *NIStreamRead*: Read the file as a stream.
 **/
 
 
@@ -542,9 +548,6 @@ CONFIGURE_CLASS
 END_CLASS
 
 /**doc
-=== Remark ===
- An opened file can be accessed using _NativeInterfaceReadFile_ interface
-
 === Example ===
 {{{
 LoadModule('jsstd');

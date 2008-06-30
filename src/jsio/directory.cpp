@@ -101,7 +101,7 @@ DEFINE_FUNCTION( Close ) {
   $H arguments
    $ARG enum flags: specifies how special files are processed.
   $H return value
-   $STR a directory item.
+   returns a single directory item.
 **/
 DEFINE_FUNCTION( Read ) {
 
@@ -154,7 +154,7 @@ DEFINE_FUNCTION( Make ) {
  * $BOOL $INAME()
   Removes the directory given in the constructor.
   $H return value
-   $BOOL returns <false> If the directory is not empty else it returns <true>.
+   returns <false> If the directory is not empty else it returns <true>.
 **/
 DEFINE_FUNCTION( Remove ) {
 

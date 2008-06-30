@@ -30,13 +30,9 @@ DEFINE_FINALIZE() {
 }
 
 /**doc
-=== Methods ===
-**/
-
-/**doc
- * *_Constructor_*()
- ===== note: =====
-  by default, mu is set to Infinity.
+ * $INAME()
+  $H note
+   by default, mu is set to Infinity.
 **/
 DEFINE_CONSTRUCTOR() {
 
@@ -76,6 +72,10 @@ DEFINE_CONSTRUCTOR() {
  * $REAL *slip1*
  
  * $REAL *slip2*
+ 
+ $H note
+  Use <undefined> as value to reset the property.
+
 **/
 
 enum { mu, mu2, bounce, bounceVel, softERP, softCFM, motion1, motion2, slip1, slip2 };
@@ -160,11 +160,6 @@ DEFINE_PROPERTY( surfaceSetter ) {
 //	dContactApprox1	= 0x3000
 	return JS_TRUE;
 }
-
-/**doc
- ===== note: =====
-  Use <undefined> as value to reset the property.
-**/
 
 
 CONFIGURE_CLASS

@@ -16,7 +16,7 @@
 #include "error.h"
 
 /**doc
-$CLASS_HEADER
+$CLASS_HEADER fileIndex:bottom
  Its aim is to be throw as an exception on any SQLite runtime error.
  $H note
  You cannot construct this class.

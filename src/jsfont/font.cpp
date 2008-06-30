@@ -53,6 +53,8 @@ typedef struct {
 } FaceInfo;
 */
 
+/**doc fileIndex:top **/
+
 /**doc
 $CLASS_HEADER
 **/
@@ -130,7 +132,7 @@ DEFINE_FUNCTION_FAST( SetSize ) {
   $H arguments
    $ARG string oneChar: string of one char.
   $H return value
-   Function returns an image object that contains the char.
+   returns an image object that contains the char.
 **/
 DEFINE_FUNCTION_FAST( DrawChar ) {
 
@@ -178,7 +180,7 @@ DEFINE_FUNCTION_FAST( DrawChar ) {
    $ARG boolean keepTrailingSpace: if true, the last letter separator space is keept.
    $ARG boolean getWidthOnly: if true, the function will return the length (in pixel) of the _text_.
   $H return value
-   Function returns an image object that contains the text or the length of the text in pixel.
+   returns an image object that contains the text or the length of the text in pixel.
 **/
 DEFINE_FUNCTION_FAST( DrawString ) {
 

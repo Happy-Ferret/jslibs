@@ -85,7 +85,7 @@ DEFINE_FUNCTION( Print ) {
 */
 
 
-/**doc fileIndex:top **/
+/**doc fileIndex:topmost **/
 
 BEGIN_STATIC
 

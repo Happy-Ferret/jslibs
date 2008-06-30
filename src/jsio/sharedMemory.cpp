@@ -184,6 +184,7 @@ DEFINE_CONSTRUCTOR() {
 	return JS_TRUE;
 }
 
+
 /**doc
 === Methods ===
 **/
@@ -404,6 +405,11 @@ DEFINE_PROPERTY( xdrGetter ) {
 	return JS_TRUE;
 }
 */
+
+/**doc
+=== Native Interface ===
+ *NIBufferGet*
+**/
 
 CONFIGURE_CLASS
 

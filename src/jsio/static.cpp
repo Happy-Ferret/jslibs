@@ -19,7 +19,7 @@
 #include "descriptor.h"
 #include "pipe.h"
 
-/**doc fileIndex:top **/
+/**doc fileIndex:topmost **/
 
 BEGIN_STATIC
 

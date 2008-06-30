@@ -406,13 +406,8 @@ DEFINE_FINALIZE() {
 	}
 }
 
-
 /**doc
-=== Methods ===
-**/
-
-/**doc
- * *_Constructor_*( [string | Buffer object] )
+ * $INAME( [string | Buffer object] )
   Constructs a Buffer object.
   If a string is given as argument, the buffer is initialized with this string.
   If buffer object is given, the buffer is initialized with this existing buffer object (kind of copy constructor).
@@ -451,7 +446,11 @@ DEFINE_CONSTRUCTOR() {
 
 
 /**doc
- * *Clear*()
+=== Methods ===
+**/
+
+/**doc
+ * $INAME()
   TBD
 **/
 DEFINE_FUNCTION( Clear ) {
@@ -466,7 +465,7 @@ DEFINE_FUNCTION( Clear ) {
 
 
 /**doc
- * *Write*( data [, length] )
+ * $INAME( data [, length] )
   Add _data_ in the buffer. If _length_ is used, only the first _length_ bytes of _data_ are added.
 **/
 DEFINE_FUNCTION( Write ) {
@@ -497,7 +496,7 @@ DEFINE_FUNCTION( Write ) {
 
 
 /**doc
- * $BOOL *Match*( string )
+ * $BOOL $INAME( string )
   TBD
 **/
 DEFINE_FUNCTION( Match ) {
@@ -526,7 +525,7 @@ err:
 
 
 /**doc
- * $STR *Read*( [ amount ] )
+ * $STR $INAME( [ amount ] )
   Read _amount_ data in the buffer. If _amount_ is omited, The whole buffer is returned.
   = =
   If _amount_ == undefined, an arbitrary (ideal) amount of data is returned. Use this when you don't know how many data you have to read.
@@ -558,7 +557,7 @@ DEFINE_FUNCTION( Read ) { // Read( [ amount | <undefined> ] )
 
 
 /**doc
- * *Skip*( length )
+ * $INAME( length )
   Skip _length_ bytes of data from the buffer.
 **/
 DEFINE_FUNCTION( Skip ) { // Skip( amount )
@@ -577,7 +576,7 @@ DEFINE_FUNCTION( Skip ) { // Skip( amount )
 
 
 /**doc
- * $STR *ReadUntil*( boundaryString [, skip] )
+ * $STR $INAME( boundaryString [, skip] )
   Reads the buffer until it match the _boundaryString_, else it returns <undefined>.
   If _skip_ argument is <true>, the _boundaryString_ is skiped from the buffer.
 **/
@@ -610,7 +609,7 @@ DEFINE_FUNCTION( ReadUntil ) {
 
 
 /**doc
- * $INT *IndexOf*( string )
+ * $INT $INAME( string )
   Find _string_ in the buffer and returns the offset of the first letter. If not found, this function returns -1.
 **/
 DEFINE_FUNCTION( IndexOf ) {
@@ -627,7 +626,7 @@ DEFINE_FUNCTION( IndexOf ) {
 
 
 /**doc
- * $STR *Unread*( _data_ )
+ * $STR $INAME( _data_ )
   Insert _data_ at the begining of the buffer. This function can undo a read operation. The returned value is _data_.
   ===== example: =====
   {{{
@@ -648,7 +647,7 @@ DEFINE_FUNCTION( Unread ) {
 
 
 /**doc
- * $STR *toString*()
+ * $STR $INAME()
   Converts the whole content of the buffer to a string (BString).
 **/
 
@@ -702,7 +701,7 @@ DEFINE_FUNCTION( toString ) {
 **/
 
 /**doc
- * $INT *length* $READONLY
+ * $INT $INAME $READONLY
   Is the current length of the buffer.
 **/
 DEFINE_PROPERTY( length ) {
@@ -737,10 +736,13 @@ DEFINE_TRACER() {
   buffer.Read(10000);
   buffer.Read(undefined);
   }}}
-
-=== Remarks ===
- Buffer class supports _NI_READ_RESOURCE_.
 **/
+
+/**doc
+=== Native Interface ===
+ *NIStreamRead*
+**/
+
 
 CONFIGURE_CLASS
 

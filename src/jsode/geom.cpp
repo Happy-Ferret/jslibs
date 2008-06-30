@@ -25,7 +25,7 @@ check:
 #include "stdafx.h"
 #include "body.h"
 #include "geom.h"
-#include "../common/jsNativeInterface.h"
+//#include "../common/jsNativeInterface.h"
 
 JSBool ReadMatrix(JSContext *cx, JSObject *obj, float **pm) { // Doc: __declspec(noinline) tells the compiler to never inline a particular function.
 
@@ -58,7 +58,7 @@ JSBool ReadMatrix(JSContext *cx, JSObject *obj, float **pm) { // Doc: __declspec
 
 JSBool SetupReadMatrix(JSContext *cx, JSObject *obj) {
 
-	return SetMatrix44ReadInterface(cx, obj, ReadMatrix);
+	return SetMatrix44GetInterface(cx, obj, ReadMatrix);
 }
 
 
@@ -159,10 +159,16 @@ DEFINE_PROPERTY( offset ) {
 
 		JSObject *srcObj = JSVAL_TO_OBJECT(*vp);
 		float tmp[16], *m = tmp;
-		NIMatrix44Read ReadMatrix;
-		J_CHECK_CALL( GetMatrix44ReadInterface(cx, srcObj, &ReadMatrix) );
-		RT_ASSERT( ReadMatrix != NULL, "Invalid matrix interface." );
-		ReadMatrix( cx, srcObj, (float**)&m);
+
+		NIMatrix44Get matrixGet = Matrix44GetInterface(cx, srcObj);
+		RT_ASSERT( matrixGet != NULL, "Invalid matrix interface." );
+		matrixGet(cx, srcObj, &m);
+
+//		NIMatrix44Get GetMatrix;
+//		J_CHECK_CALL( GetMatrix44GetInterface(cx, srcObj, &GetMatrix) );
+//		RT_ASSERT( ReadMatrix != NULL, "Invalid matrix interface." );
+//		ReadMatrix( cx, srcObj, (float**)&m);
+
 		RT_ASSERT( *m != NULL, "Invalid matrix." );
 		ode::dMatrix3 m3 = { m[0], m[4], m[8], 0, m[1], m[5], m[9], 0, m[2], m[6], m[10], 0 }; // (TBD) check
 		ode::dGeomSetOffsetRotation(geom, m3);
@@ -185,11 +191,18 @@ DEFINE_PROPERTY( tansformation ) {
 
 		JSObject *srcObj = JSVAL_TO_OBJECT(*vp);
 		float tmp[16], *m = tmp;
+
+		NIMatrix44Get matrixGet = Matrix44GetInterface(cx, srcObj);
+		RT_ASSERT( matrixGet != NULL, "Invalid matrix interface." );
+		matrixGet(cx, srcObj, &m);
+
+/*
 		NIMatrix44Read ReadMatrix;
 		J_CHECK_CALL( GetMatrix44ReadInterface(cx, srcObj, &ReadMatrix) );
 		RT_ASSERT( ReadMatrix != NULL, "Invalid matrix interface." );
 		ReadMatrix( cx, srcObj, (float**)&m);
 		RT_ASSERT( *m != NULL, "Invalid matrix." );
+*/		
 		ode::dMatrix3 m3 = { m[0], m[4], m[8], 0, m[1], m[5], m[9], 0, m[2], m[6], m[10], 0 }; // (TBD) check
 		ode::dGeomSetOffsetRotation(geom, m3);
 		ode::dGeomSetOffsetPosition(geom, m[3], m[7], m[11]);
@@ -258,11 +271,12 @@ DEFINE_PROPERTY( offsetPositionSetter ) {
   _againstGeom_ is the geometry against with this geometry is colliding (the other Geom).
   = =
   $TYPE vec3 _position_ is the position of the impact point in world position.
-
-$H note
- This class exports a NI_READ_MATRIX44 interface to read the current body's position.
 **/
 
+/**doc
+=== Native Interface ===
+ *NIMatrix44Read*: is the current geometry's position.
+**/
 
 CONFIGURE_CLASS
 

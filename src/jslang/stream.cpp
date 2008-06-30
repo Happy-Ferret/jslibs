@@ -74,12 +74,10 @@ BEGIN_CLASS( Stream )
  * $INAME( bufferObject )
   Creates an object that transforms any buffer-like objects into a stream.
   = =
-  buffer-like objects are: string, BString, and objects that implements BufferRead NativeInterface.
+  buffer-like objects are: string, BString, and any objects that implements NIBufferGet native interface.
   = =
   $H note
   When called in a non-constructor context, Object behaves identically.
-  $H NativeInterface
-  Stream objects implements the StreamRead NativeInterface.
 **/
 DEFINE_CONSTRUCTOR() {
 
@@ -193,6 +191,12 @@ DEFINE_PROPERTY( source ) {
 /**doc
 === note ===
  Basically, a Stream is nothing else that a buffer with a stream pointer position.
+**/
+
+
+/**doc
+=== Native Interface ===
+ *NIStreamRead*
 **/
 
 CONFIGURE_CLASS

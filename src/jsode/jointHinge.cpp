@@ -26,7 +26,7 @@ BEGIN_CLASS( JointHinge )
 **/
 
 /**doc
- * *_Constructor_*( world )
+ * $INAME( world )
   TBD
 **/
 DEFINE_CONSTRUCTOR() {
@@ -44,7 +44,7 @@ DEFINE_CONSTRUCTOR() {
 
 
 /**doc
- * $INAME( torque )
+ * $VOID $INAME( torque )
   TBD
 **/
 DEFINE_FUNCTION( AddTorque ) {
@@ -64,7 +64,7 @@ DEFINE_FUNCTION( AddTorque ) {
 **/
 
 /**doc
- * $TYPE vec3 *anchor*
+ * $TYPE vec3 $INAME
   TBD
 **/
 DEFINE_PROPERTY( anchorSetter ) {
@@ -88,7 +88,7 @@ DEFINE_PROPERTY( anchorGetter ) {
 }
 
 /**doc
- * $TYPE vec3 *anchor2* $READONLY
+ * $TYPE vec3 $INAME $READONLY
   TBD
 **/
 DEFINE_PROPERTY( anchor2 ) { // read only
@@ -102,7 +102,7 @@ DEFINE_PROPERTY( anchor2 ) { // read only
 }
 
 /**doc
- * $TYPE vec3 *axis*
+ * $TYPE vec3 $INAME
   Get or set the axis of the joint.
 **/
 DEFINE_PROPERTY( axisSetter ) {
@@ -126,7 +126,7 @@ DEFINE_PROPERTY( axisGetter ) {
 }
 
 /**doc
- * $REAL *angle* $READONLY
+ * $REAL $INAME $READONLY
   Get the current angle.
 **/
 DEFINE_PROPERTY( angle ) {
@@ -138,7 +138,7 @@ DEFINE_PROPERTY( angle ) {
 }
 
 /**doc
- * $REAL *angleRate* $READONLY
+ * $REAL $INAME $READONLY
   Get the current rotation speed.
 **/
 DEFINE_PROPERTY( angleRate ) {

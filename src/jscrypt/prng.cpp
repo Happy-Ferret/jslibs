@@ -17,7 +17,6 @@
 
 
 /**doc
-----
 $CLASS_HEADER
  This class is used to create pseudo random number generators objects.
 **/
@@ -35,17 +34,15 @@ DEFINE_FINALIZE() {
 }
 
 /**doc
-=== Methods ===
-**/
-
-/**doc
- * *_Constructor_*( prngName )
-  Constructs a pseudo random number generator object using the given algorithm:
-   * yarrow
-   * fortuna
-   * rc4
-   * sprng
-   * sober128
+ * $INAME( prngName )
+  Constructs a pseudo random number generator object using the given algorithm.
+  $H arguments
+   $ARG string prngName: is a string that contains the name of the Asymmetric Cipher algorithm:
+    * yarrow
+    * fortuna
+    * rc4
+    * sprng
+    * sober128
 **/
 DEFINE_CONSTRUCTOR() {
 
@@ -79,7 +76,12 @@ DEFINE_CONSTRUCTOR() {
 }
 
 /**doc
- * *_Call operator_*( size )
+=== Methods ===
+**/
+
+
+/**doc
+ * $STR $INAME( size )
   Returns _size_ bytes of pseudo-random data.
   ===== example: =====
   {{{
@@ -115,7 +117,7 @@ DEFINE_FUNCTION( Call ) {
 }
 
 /**doc
- * *AddEntropy*( data )
+ * $VOID $INAME( data )
   Add _data_ as entropy (randomness) to the current prng.
 **/
 DEFINE_FUNCTION( AddEntropy ) {
@@ -140,7 +142,7 @@ DEFINE_FUNCTION( AddEntropy ) {
 }
 
 /**doc
- * *AutoEntropy*( size )
+ * $VOID $INAME( size )
   Automaticaly add _size_ bits of entropy to the current prng.
 **/
 DEFINE_FUNCTION( AutoEntropy ) {
@@ -163,10 +165,9 @@ DEFINE_FUNCTION( AutoEntropy ) {
 **/
 
 /**doc
- * $OBJ *list*
-  Contains the list of all available prng and their feature. The list is a javascript object that map cipher names (key) with another object (value) that contain information.
+ * $STR $INAME
+  is the current state of the prng.
 **/
-
 DEFINE_PROPERTY( stateGetter ) {
 
 	RT_ASSERT_CLASS( obj, _class );
@@ -183,7 +184,6 @@ DEFINE_PROPERTY( stateGetter ) {
 	*vp = STRING_TO_JSVAL( JS_NewString(cx, stateData, size) );
 	return JS_TRUE;
 }
-
 
 DEFINE_PROPERTY( stateSetter ) {
 
@@ -202,7 +202,10 @@ DEFINE_PROPERTY( stateSetter ) {
 }
 
 
-
+/**doc
+ * $STR $INAME $READONLY
+  TBD
+**/
 DEFINE_PROPERTY( name ) {
 
 	RT_ASSERT_CLASS( obj, _class );
@@ -213,6 +216,10 @@ DEFINE_PROPERTY( name ) {
 	return JS_TRUE;
 }
 
+/**doc
+ * $OBJ $INAME $READONLY
+  Contains the list of all available prng and their feature. The list is a javascript object that map cipher names (key) with another object (value) that contain information.
+**/
 DEFINE_PROPERTY( list ) {
 
 	if ( *vp == JSVAL_VOID ) {

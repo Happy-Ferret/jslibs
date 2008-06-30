@@ -138,8 +138,6 @@ JSObject *objexInitClass( JSContext *cx, JSObject *obj ) {
  = =
  It is possible to store an hidden auxiliary object that can be access using ObjEx.Aux( _ObjEx object_ ) static function.
 
-=== Methods ===
-
  * *_Constructor_*( _addCallback_, _delCallback_, _getCallback_, _setCallback_, _auxObject_ )
   ===== note: =
   _addCallback_, _delCallback_, _getCallback_, _setCallback_ can be undefined.

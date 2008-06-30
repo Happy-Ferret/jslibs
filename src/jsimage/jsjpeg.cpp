@@ -34,7 +34,7 @@ steps:
 */
 
 #include "stdafx.h"
-#include "../common/jsNativeInterface.h"
+//#include "../common/jsNativeInterface.h"
 
 #include "image.h"
 

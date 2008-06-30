@@ -16,7 +16,7 @@
 #include "misc.h"
 
 
-/**doc fileIndex:top **/
+/**doc fileIndex:topmost **/
 
 BEGIN_STATIC
 

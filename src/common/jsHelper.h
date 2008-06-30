@@ -17,6 +17,8 @@
 
 typedef JSBool (*NIStreamRead)( JSContext *cx, JSObject *obj, char *buffer, size_t *amount );
 typedef JSBool (*NIBufferGet)( JSContext *cx, JSObject *obj, const char **buffer, size_t *size );
+typedef JSBool (*NIMatrix44Get)( JSContext *cx, JSObject *obj, float **pm );
+
 
 inline NIBufferGet BufferGetNativeInterface( JSContext *cx, JSObject *obj );
 inline NIBufferGet BufferGetInterface( JSContext *cx, JSObject *obj );
@@ -947,6 +949,54 @@ inline NIBufferGet BufferGetInterface( JSContext *cx, JSObject *obj ) {
 }
 
 
+///////////////////////////////////////////////////////////////////////////////
+// NativeInterface Matrix44Get
+
+/*
+inline JSBool JSMatrix44Get( JSContext *cx, JSObject *obj, const char **buffer, size_t *size ) {
+
+	jsval rval;
+	J_CHKM( JS_CallFunctionName(cx, obj, "Get", 0, NULL, &rval), "Get() function not found."); // do not use toString() !?
+	J_CHK( JsvalToStringAndLength(cx, rval, buffer, size) );
+	return JS_TRUE;
+}
+*/
+
+inline JSBool InitMatrix44GetInterface( JSContext *cx, JSObject *obj ) {
+	
+	return ReserveNativeInterface(cx, obj, "_NIMatrix44Get" );
+}
+
+inline JSBool SetMatrix44GetInterface( JSContext *cx, JSObject *obj, NIMatrix44Get pFct ) {
+
+	return SetNativeInterface( cx, obj, "_NI_Matrix44Get", (void*)pFct );
+}
+
+inline NIMatrix44Get Matrix44GetNativeInterface( JSContext *cx, JSObject *obj ) {
+
+	static jsid propId = 0; // (TBD) try to make this higher than module-static
+	if ( !propId )
+		if ( JS_ValueToId(cx, STRING_TO_JSVAL(JS_InternString(cx, "_NI_Matrix44Get")), &propId) != JS_TRUE )
+			return NULL;
+	void *fct;
+	if ( GetNativeInterface( cx, obj, propId, &fct ) != JS_TRUE )
+		return NULL;
+	return (NIMatrix44Get)fct;
+}
+
+inline NIMatrix44Get Matrix44GetInterface( JSContext *cx, JSObject *obj ) {
+
+	void *fct = (void*)Matrix44GetNativeInterface(cx, obj);
+	if ( fct )
+		return (NIMatrix44Get)fct;
+/*
+	jsval res;
+	if ( JS_GetProperty(cx, obj, "Get", &res) != JS_TRUE || !JsvalIsFunction(cx, res) )
+		return NULL;
+	return JSMatrix44Get;
+*/
+	return NULL;
+}
 #endif // _JSHELPER_H_
 
 

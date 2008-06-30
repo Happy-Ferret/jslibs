@@ -35,12 +35,14 @@ JSBool GetBodyAndMass(JSContext *cx, JSObject *massObject, ode::dBodyID *pBodyID
 	ode::dBodyGetMass(*pBodyID, pMass);
 	return JS_TRUE;
 }
+
+
 /**doc
 === Methods ===
 **/
 
 /**doc
- * *Translate*( vec3 )
+ * $VOID $INAME( vec3 )
   TBD dMassTranslate + dBodySetMass
 **/
 
@@ -58,7 +60,7 @@ DEFINE_FUNCTION( Translate ) {
 }
 
 /**doc
- * *Adjust*( mass )
+ * $VOID $INAME( mass )
   TBD dBodyGetMass, dMassAdjust, dBodySetMass
 **/
 DEFINE_FUNCTION( Adjust ) {
@@ -76,7 +78,7 @@ DEFINE_FUNCTION( Adjust ) {
 
 
 /**doc
- * *SetZero*()
+ * $VOID $INAME()
   TBD dBodyGetMass, dMassSetZero, dBodySetMass
 **/
 DEFINE_FUNCTION( SetZero ) {
@@ -91,7 +93,7 @@ DEFINE_FUNCTION( SetZero ) {
 
 
 /**doc
- * *SetBoxTotal*( mass, vec3 )
+ * $INAME( mass, vec3 )
   TBD dBodyGetMass, dMassSetBoxTotal, dBodySetMass
 **/
 DEFINE_FUNCTION( SetBoxTotal ) {
@@ -120,7 +122,7 @@ DEFINE_FUNCTION( SetBoxTotal ) {
 **/
 
 /**doc
- * *value*
+ * $REAL $INAME
   TBD dBodyGetMass, dBodySetMass
 **/
 DEFINE_PROPERTY( valueSetter ) {
@@ -147,7 +149,7 @@ DEFINE_PROPERTY( valueGetter ) {
 
 
 /**doc
- * *center*
+ * $TYPE vec3 $INAME
   TBD dBodyGetMass, dBodySetMass
   get/set a _vec3_
 **/

@@ -22,11 +22,7 @@ $CLASS_HEADER Joint
 BEGIN_CLASS( JointFixed )
 
 /**doc
-=== Methods ===
-**/
-
-/**doc
- * *_Constructor_*( world )
+ * $INAME( world )
 **/
 DEFINE_CONSTRUCTOR() {
 
@@ -41,7 +37,11 @@ DEFINE_CONSTRUCTOR() {
 }
 
 /**doc
- * *Set*()
+=== Methods ===
+**/
+
+/**doc
+ * $INAME()
   Set the current position of body1 and body2 as fixed.
 **/
 DEFINE_FUNCTION( Set ) {

@@ -32,11 +32,7 @@ DEFINE_FINALIZE() {
 }
 
 /**doc
-=== Methods ===
-**/
-
-/**doc
- * *_Constructor_*( [type = Socket.TCP] )
+ * $INAME( [type = Socket.TCP] )
   Type can be Socket.TCP or Socket.UDP.
 **/
 DEFINE_CONSTRUCTOR() {
@@ -66,9 +62,12 @@ DEFINE_CONSTRUCTOR() {
 	return JS_TRUE;
 }
 
+/**doc
+=== Methods ===
+**/
 
 /**doc
- * *Shutdown*( [ _what_ ] )
+ * $INAME( [ _what_ ] )
   Shut down part of a full-duplex connection on a socket.
   = =
   if _what_ is <true>, further receives will be disallowed.
@@ -104,7 +103,7 @@ DEFINE_FUNCTION( Shutdown ) { // arg[0] =  false: SHUTDOWN_RCV | true: SHUTDOWN_
 
 
 /**doc
- * *Bind*( port [, ip] )
+ * $INAME( port [, ip] )
   Bind an ip address to a socket.
   _ip_ is the address to which the socket will be bound.
   If _address_ is ommited, any address is will match.
@@ -154,7 +153,7 @@ DEFINE_FUNCTION( Bind ) {
 
 
 /**doc
- * *Listen*( [ backlogSize = 8 ] )
+ * $INAME( [ backlogSize = 8 ] )
    Listen for connections on a socket.
    _backlogSize_ specifies the maximum length of the queue of pending connections.
 **/
@@ -184,7 +183,7 @@ DEFINE_FUNCTION( Listen ) {
 
 
 /**doc
- * $TYPE Socket *Accept*()
+ * $TYPE Socket $INAME()
   Accept a connection on a socket.
   This function returns a connected jsio::Socket.
 **/
@@ -223,7 +222,7 @@ DEFINE_FUNCTION( Accept ) {
 
 
 /**doc
- * $TYPE this *Connect*( host, port [, timeout] )
+ * $TYPE this $INAME( host, port [, timeout] )
   Initiate a connection on a socket.
 **/
 
@@ -307,7 +306,7 @@ DEFINE_FUNCTION( Connect ) {
 
 
 /**doc
- * $STR *SendTo*( host, port, string )
+ * $STR $INAME( host, port, string )
   Send a specified number of bytes from an unconnected socket.
   See. Static functions.
 **/
@@ -381,7 +380,7 @@ DEFINE_FUNCTION( SendTo ) {
 
 
 /**doc
- * $STR *RecvFrom*()
+ * $STR $INAME()
   Receive all data from socket which may or may not be connected.
   See. Static functions.
 **/
@@ -450,7 +449,7 @@ DEFINE_FUNCTION( RecvFrom ) {
 
 
 /**doc
- * *TransmitFile*( fileDescriptor [, close [, headers [, timeout]]] )
+ * $INAME( fileDescriptor [, close [, headers [, timeout]]] )
   Sends a complete file pointed by _fileDescriptor_ across a socket.
   = =
   _headers_ is a string that contains the headers to send across the socket prior to sending the file.
@@ -511,7 +510,7 @@ DEFINE_FUNCTION( TransmitFile ) { // WORKS ONLY ON BLOCKING SOCKET !!!
 
 
 /**doc
- * *connectContinue* $READONLY
+ * $INAME $READONLY
   Test if a nonblocking connect has completed.
   Is <true> if the socket is connected.
   = =
@@ -564,7 +563,7 @@ DEFINE_PROPERTY( connectContinue ) {
 
 
 /**doc
- * *connectionClosed* $READONLY
+ * $INAME $READONLY
   Check if the socket connection is closed.
 **/
 DEFINE_PROPERTY( connectionClosed ) {
@@ -771,7 +770,7 @@ DEFINE_PROPERTY( OptionGetter ) {
 
 
 /**doc
- * $STR *peerName* $READONLY
+ * $STR $INAME $READONLY
   Get name of the connected peer.
   Return the network address for the connected peer socket.
 **/
@@ -790,7 +789,7 @@ DEFINE_PROPERTY( peerName ) {
 }
 
 /**doc
- * $INT *peerPort* $READONLY
+ * $INT $INAME $READONLY
   Get port of the connected peer.
   Return the port for the connected peer socket.
 **/
@@ -806,7 +805,7 @@ DEFINE_PROPERTY( peerPort ) {
 }
 
 /**doc
- * $STR *sockName* $READONLY
+ * $STR $INAME $READONLY
   Get socket name.
   Return the network address for this socket.
 **/
@@ -825,7 +824,7 @@ DEFINE_PROPERTY( sockName ) {
 }
 
 /**doc
- * $INT *sockPort* $READONLY
+ * $INT $INAME $READONLY
   Get socket port.
   Return the port for this socket.
 **/
@@ -846,7 +845,7 @@ DEFINE_PROPERTY( sockPort ) {
 **/
 
 /**doc
- * $TYPE array *GetHostsByName*( hostName )
+ * $ARRAY $INAME( hostName )
   Lookup a host by name and returns the results in a javascript array.
 **/
 DEFINE_FUNCTION( GetHostsByName ) {
@@ -918,6 +917,11 @@ DEFINE_FUNCTION( GetHostsByName ) {
 /**doc
  * Socket.TCP
  * Socket.UDP
+**/
+
+/**doc
+=== Native Interface ===
+ *NIStreamRead*
 **/
 
 CONFIGURE_CLASS

@@ -17,7 +17,7 @@
 #include "mass.h"
 #include "body.h"
 #include "world.h"
-#include "../common/jsNativeInterface.h"
+//#include "../common/jsNativeInterface.h"
 
 static JSBool ReadMatrix( JSContext *cx, JSObject *obj, float **pm) { // Doc: __declspec(noinline) tells the compiler to never inline a particular function.
 
@@ -68,11 +68,7 @@ DEFINE_FINALIZE() {
 }
 
 /**doc
-=== Methods ===
-**/
-
-/**doc
- * *_Constructor_*( _world_ )
+ * $INAME( _world_ )
   TBD
 **/
 
@@ -97,12 +93,16 @@ DEFINE_CONSTRUCTOR() {
 //	ode::dBodySetData(bodyID, obj);
 
 //	ode::dBodySetData(bodyID,worldObject);
-	J_CHECK_CALL( SetMatrix44ReadInterface(cx, obj, ReadMatrix) );
+	J_CHECK_CALL( SetMatrix44GetInterface(cx, obj, ReadMatrix) );
 	return JS_TRUE;
 }
 
 /**doc
- * $VOID *Destroy*()
+=== Methods ===
+**/
+
+/**doc
+ * $VOID $INAME()
   TBD dBodyDestroy
 **/
 DEFINE_FUNCTION( Destroy ) {
@@ -117,7 +117,7 @@ DEFINE_FUNCTION( Destroy ) {
 }
 
 /**doc
- * $BOOL *IsConnectedTo*( _body_ )
+ * $BOOL $INAME( _body_ )
   TBD dAreConnected
 **/
 DEFINE_FUNCTION( IsConnectedTo ) {
@@ -229,7 +229,7 @@ DEFINE_PROPERTY( vectorSetter ) {
 }
 
 /**doc
- * *mass* $READONLY
+ * $INAME $READONLY
   Is the mass object (jsode::Mass) of the body.
 **/
 DEFINE_PROPERTY( mass ) {
@@ -261,8 +261,8 @@ DEFINE_PROPERTY( mass ) {
 
 
 /**doc
-=== note: ===
- This class exports a NI_READ_MATRIX44 interface to read the current body's position.
+=== Native Interface ===
+ *NIMatrix44Read*: is the current body's position.
 **/
 
 CONFIGURE_CLASS

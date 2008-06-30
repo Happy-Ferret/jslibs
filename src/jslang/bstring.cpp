@@ -436,6 +436,10 @@ DEFINE_SET_PROPERTY() {
 	return JS_TRUE;
 }
 
+/**doc
+=== Native Interface ===
+ *NIBufferGet*
+**/
 
 CONFIGURE_CLASS
 

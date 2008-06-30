@@ -22,11 +22,7 @@ $CLASS_HEADER Joint
 BEGIN_CLASS( JointPlane )
 
 /**doc
-=== Methods ===
-**/
-
-/**doc
- * *_Constructor_*( world )
+ * $INAME( world )
   TBD
 **/
 DEFINE_CONSTRUCTOR() {

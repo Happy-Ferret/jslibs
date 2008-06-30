@@ -16,7 +16,7 @@
 #include "stdafx.h"
 #include "pack.h"
 
-#include "../common/jsNativeInterface.h"
+//#include "../common/jsNativeInterface.h"
 
 #include "../common/jsConversionHelper.h"
 
@@ -111,7 +111,7 @@ DEFINE_FINALIZE() {
 }
 
 /**doc
- * *_Constructor_*( buffer )
+ * $INAME( buffer )
   Constructs a Pack object from a Buffer object. This is the only way to read or write binary data.
 **/
 DEFINE_CONSTRUCTOR() {

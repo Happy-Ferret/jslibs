@@ -70,7 +70,7 @@ inline JSBool SetJoint( JSContext *cx, JSObject *obj, jsval *b1, jsval *b2 ) {
 **/
 
 /**doc
- * *Destroy*()
+ * $INAME()
   TBD
 **/
 DEFINE_FUNCTION( Destroy ) {
@@ -168,7 +168,7 @@ ode::dReal JointGetParam( ode::dJointID jointId, int parameter ) {
 **/
 
 /**doc
- * *body1*
+ * $TYPE Body $INAME
   Set the first body of the joint.
 **/
 DEFINE_PROPERTY( body1 ) {
@@ -181,7 +181,7 @@ DEFINE_PROPERTY( body1 ) {
 
 
 /**doc
- * *body2*
+ * $TYPE Body $INAME
   Set the second body of the joint.
 **/
 DEFINE_PROPERTY( body2 ) {
@@ -193,7 +193,7 @@ DEFINE_PROPERTY( body2 ) {
 }
 
 /**doc
- * *useFeedback*
+ * $BOOL $INAME
   Set to <true> activates the feedback, and <false> to desactivates it.
   = =
   Using feedback will allows body1Force, body1Torque, body2Force and body2Torque to be used.

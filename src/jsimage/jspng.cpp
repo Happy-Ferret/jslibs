@@ -16,7 +16,7 @@
 
 #include "image.h"
 
-#include "../common/jsNativeInterface.h"
+//#include "../common/jsNativeInterface.h"
 
 #include "png.h"
 

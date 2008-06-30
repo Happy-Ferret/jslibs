@@ -21,6 +21,14 @@
 static bool _defaultUnsafeMode = false;
 extern bool *_pUnsafeMode = &_defaultUnsafeMode;
 
+/**doc t:header
+$MODULE_HEADER
+**/
+
+/**doc t:footer
+$MODULE_FOOTER
+**/
+
 extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
 	jsval unsafeModePtrVal;

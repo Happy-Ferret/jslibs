@@ -23,11 +23,7 @@ $CLASS_HEADER
 BEGIN_CLASS( Icon )
 
 /**doc
-=== Methods ===
-**/
-
-/**doc
- * *_Constructor_*( <image | integer> )
+ * $INAME( <image | integer> )
   Icon constructor accepts an [Image] object or a integer. 
   = =
   The integer value can be one of:
