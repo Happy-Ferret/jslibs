@@ -15,12 +15,23 @@ var api = {
 
 		var res = /DEFINE_(\w*)\( *(\w*) *\)/(item.source.substring(item.followingSourceTextStart, item.followingSourceTextEnd));
 		if ( res ) {
+		
+			if ( res[2] == 'Call' ) {
+			
+				cx.center = '*_call operator_*';
+			} else
 			if ( res[1] == 'CONSTRUCTOR' ) {
 			
 				cx.center = '*_constructor_*';
 			} else {
 				
 				 var identifierName = res[2];
+				 
+				 if ( res[1].indexOf('PROPERTY') != -1 && ( identifierName.indexOf('Setter') != -1 || identifierName.indexOf('Getter') != -1 ) ) {
+				 	
+				 	identifierName = identifierName.substring(0, identifierName.length - 6);
+				 }
+
 				 if ( identifierName[identifierName.length-1] == '_' )
 					  identifierName = identifierName.substring(0, identifierName.length - 1);
 				
@@ -135,6 +146,15 @@ var api = {
 
 var apiRe = new RegExp([RegQuote(p) for ( p in api ) ].join('|'), 'g');
 
+
+
+
+function ParseArguments(str) {
+
+    var args = [], reg = /"((?:\\?.)*?)"|[^ ]+/g;
+    for (var res; res = reg(str); args.push(res[1] != null ? res[1] : res[0] ));
+    return args;
+}
 
 function ReadCx(cx, re) {
 
@@ -335,7 +355,7 @@ for each ( var module in moduleList )
 */
 
 // sort files in each module according to the value of 'fileIndex' attribute. Only the first docitem of each file is tested.
-var fileIndexValues = { top:-Infinity, bottom:+Infinity }; // 0 is for undefined items
+var fileIndexValues = { topmost:-Infinity, top:-1, bottom:1, bottommost:+Infinity }; // 0 is for undefined items
 function NormalizeFileIndexValue(value) isNaN(value) ? fileIndexValues[value]||0 : value;
 for each ( var module in moduleList )
 	module.sort(function(a,b) NormalizeFileIndexValue(a[0].attr.fileIndex) - NormalizeFileIndexValue(b[0].attr.fileIndex) );
