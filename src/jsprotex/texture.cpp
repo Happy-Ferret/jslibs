@@ -2706,7 +2706,7 @@ DEFINE_FUNCTION_FAST( Export ) { // (int)x, (int)y, (int)width, (int)height. Ret
 			}
 		}
 
-	JSObject *bstr = NewBString(cx, buffer, bufferLength);
+	JSObject *bstr = J_NewBinaryString(cx, buffer, bufferLength);
 	*J_FRVAL = OBJECT_TO_JSVAL(bstr);
 	SetPropertyInt(cx, bstr, "width", dWidth);
 	SetPropertyInt(cx, bstr, "height", dHeight);

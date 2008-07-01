@@ -328,7 +328,7 @@ inline bool JsvalIsString( JSContext *cx, jsval val ) {
 #define J_JSVAL_IS_STRING(val) ( JSVAL_IS_STRING(val) || (JSVAL_IS_OBJECT(val) && !JSVAL_IS_NULL(val) && BufferGetInterface(cx, JSVAL_TO_OBJECT(val)) != NULL) )
 
 
-inline JSObject* J_NewBinaryString( JSContext *cx, char* buffer, size_t length ) {
+inline JSObject* J_NewBinaryString( JSContext *cx, void* buffer, size_t length ) {
 
 	static JSClass *bstringClass = NULL;
 	if ( bstringClass == NULL )
@@ -346,7 +346,7 @@ inline JSObject* J_NewBinaryString( JSContext *cx, char* buffer, size_t length )
 			goto err;
 	} else {
 		
-		JSString *jsstr = JS_NewString(cx, buffer, length);
+		JSString *jsstr = JS_NewString(cx, (char*)buffer, length);
 		if ( jsstr == NULL )
 			goto err;
 		if ( JS_ValueToObject(cx, STRING_TO_JSVAL(jsstr), &binaryString) != JS_TRUE )
@@ -354,10 +354,23 @@ inline JSObject* J_NewBinaryString( JSContext *cx, char* buffer, size_t length )
 	}
 	return binaryString;
 err:
-	JS_free(cx, buffer);
+	JS_free(cx, buffer); // (TBD) check if it is needed
 	return NULL;
 }
 
+
+
+inline JSObject* J_NewBinaryStringCopyN( JSContext *cx, const void *data, size_t amount ) {
+
+	char *bstrBuf = (char*)JS_malloc(cx, amount);
+	if ( bstrBuf == NULL )
+		return NULL;
+	memcpy( bstrBuf, data, amount );
+	JSObject *binaryString = J_NewBinaryString(cx, bstrBuf, amount);
+	if ( binaryString == NULL )
+		return NULL;
+	return binaryString;
+}
 
 inline JSBool JsvalToStringAndLength( JSContext *cx, jsval val, const char** buffer, size_t *size ) {
 

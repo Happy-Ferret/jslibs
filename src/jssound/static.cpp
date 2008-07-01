@@ -137,7 +137,7 @@ DEFINE_FUNCTION_FAST( DecodeOggVorbis ) {
 	// convert data chunks into a single memory buffer.
 	char *buf = (char*)JS_malloc(cx, totalSize);
 	J_S_ASSERT_ALLOC(buf);
-	JSObject *bstrObj = NewBString(cx, buf, totalSize);
+	JSObject *bstrObj = J_NewBinaryString(cx, buf, totalSize);
 	J_S_ASSERT( bstrObj != NULL, "Unable to create the BString object.");
 	*J_FRVAL = OBJECT_TO_JSVAL(bstrObj);
 	J_CHECK_CALL( SetPropertyInt(cx, bstrObj, "bits", bits) ); // bits per sample
@@ -331,7 +331,7 @@ DEFINE_FUNCTION_FAST( DecodeSound ) {
 	// convert data chunks into a single memory buffer.
 	char *buf = (char*)JS_malloc(cx, totalSize);
 	J_S_ASSERT_ALLOC(buf);
-	JSObject *bstrObj = NewBString(cx, buf, totalSize);
+	JSObject *bstrObj = J_NewBinaryString(cx, buf, totalSize);
 	J_S_ASSERT( bstrObj != NULL, "Unable to create the BString object.");
 	*J_FRVAL = OBJECT_TO_JSVAL(bstrObj);
 	J_CHECK_CALL( SetPropertyInt(cx, bstrObj, "bits", 16) ); // bits per sample

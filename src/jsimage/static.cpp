@@ -182,7 +182,7 @@ DEFINE_FUNCTION( DecodeJpegImage ) {
 	int length = height * bytePerRow;
 	JOCTET * data = (JOCTET *)JS_malloc(cx, length);
 	J_S_ASSERT_ALLOC(data);
-	JSObject *bstringObj = NewBString(cx, data, length);
+	JSObject *bstringObj = J_NewBinaryString(cx, data, length);
 	J_S_ASSERT( bstringObj, "Unable to create BString object." );
 	*rval = OBJECT_TO_JSVAL(bstringObj);
 
@@ -283,7 +283,7 @@ DEFINE_FUNCTION( DecodePngImage ) {
 	int length = height * bytePerRow;
 	png_bytep data = (png_bytep)JS_malloc(cx, length);
 	J_S_ASSERT_ALLOC(data);
-	JSObject *bstringObj = NewBString(cx, data, length);
+	JSObject *bstringObj = J_NewBinaryString(cx, data, length);
 	J_S_ASSERT( bstringObj, "Unable to create BString object." );
 	*rval = OBJECT_TO_JSVAL(bstringObj);
 
@@ -393,7 +393,7 @@ DEFINE_FUNCTION_FAST( EncodePngImage ) {
 
 	JS_realloc(cx, desc.buffer, desc.pos);
 
-	JSObject *encodedImage = NewBString(cx, desc.buffer, desc.pos);
+	JSObject *encodedImage = J_NewBinaryString(cx, desc.buffer, desc.pos);
 	J_S_ASSERT( encodedImage, "Unable to create BString object." );
 	*J_FRVAL = OBJECT_TO_JSVAL(encodedImage);
 

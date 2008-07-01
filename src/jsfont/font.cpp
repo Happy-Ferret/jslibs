@@ -158,7 +158,7 @@ DEFINE_FUNCTION_FAST( DrawChar ) {
 
 	void *buf = JS_malloc(cx, bufLength);
 
-	JSObject *bstr = NewBString(cx, buf, bufLength);
+	JSObject *bstr = J_NewBinaryString(cx, buf, bufLength);
 	J_S_ASSERT( bstr != NULL, "Unable to create a BString." );
 	*J_FRVAL = OBJECT_TO_JSVAL( bstr );
 
@@ -311,7 +311,7 @@ DEFINE_FUNCTION_FAST( DrawString ) {
 
 		char *buf = (char*)JS_malloc(cx, bufLength); // JS_malloc do not supports 0 bytes size
 
-		JSObject *bstr = NewBString(cx, buf, bufLength);
+		JSObject *bstr = J_NewBinaryString(cx, buf, bufLength);
 		*J_FRVAL = OBJECT_TO_JSVAL( bstr );
 		J_S_ASSERT( bstr != NULL, "Unable to create a BString." ); // (TBD) free buf
 		J_CHECK_CALL( SetPropertyInt(cx, bstr, "width", width) );

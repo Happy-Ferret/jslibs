@@ -46,7 +46,7 @@ JSBool SqliteToJsval( JSContext *cx, sqlite3_value *value, jsval *rval ) {
 				void *data = JS_malloc(cx, length);
 				J_S_ASSERT_ALLOC(data);
 				memcpy(data, sqlite3_value_blob(value), length);
-				JSObject *bstringObj = NewBString(cx, data, length);
+				JSObject *bstringObj = J_NewBinaryString(cx, data, length);
 				J_S_ASSERT( bstringObj != NULL, "Unable to create BString." );
 				*rval = OBJECT_TO_JSVAL( bstringObj );
 			}
