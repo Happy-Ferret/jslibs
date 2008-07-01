@@ -42,7 +42,7 @@ BEGIN_STATIC
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
- * $STR *Expand*( str [, obj] )
+ * $STR $INAME( str [, obj] )
   Return an expanded string using key/value stored in _obj_.
   = =
   If _obj_ is omitted, the current object is used to look for key/value.
@@ -61,7 +61,6 @@ BEGIN_STATIC
   Expand(' $(h) $(w)', { h:'Hello', w:'World' }); // returns "Hello World"
   }}}
 **/
-
 DEFINE_FUNCTION( Expand ) {
 
 	RT_ASSERT_ARGC( 1 );
@@ -158,10 +157,9 @@ DEFINE_FUNCTION( Expand ) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
- * *InternString*( string )
+ * $VOID $INAME( string )
   Make an interned string, a string that is automatically shared with other code that needs a string with the same value.
 **/
-
 // source: http://mxr.mozilla.org/mozilla/source/js/src/js.c
 static JSBool InternString(JSContext *cx, uintN argc, jsval *vp) {
 
@@ -179,11 +177,10 @@ static JSBool InternString(JSContext *cx, uintN argc, jsval *vp) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
- * *Seal*( obj )
+ * $VOID $INAME( obj )
   Prevents all write access to the object, either to add a new property, delete an existing property,
   or set the value or attributes of an existing property.
 **/
-
 DEFINE_FUNCTION( Seal ) {
 
 	RT_ASSERT_ARGC(1);
@@ -200,10 +197,9 @@ DEFINE_FUNCTION( Seal ) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
- * *Clear*( obj )
+ * $VOID $INAME( obj )
   Removes all properties and elements from _obj_ in a single operation.
 **/
-
 DEFINE_FUNCTION( Clear ) {
 
 	RT_ASSERT_ARGC( 1 );
@@ -220,7 +216,7 @@ DEFINE_FUNCTION( Clear ) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
- * $OBJ *SetScope*( obj, scopeObject )
+ * $OBJ $INAME( obj, scopeObject )
   Set the scope object of _obj_.
   ===== example: =====
   {{{
@@ -241,7 +237,6 @@ DEFINE_FUNCTION( Clear ) {
   55
   }}}
 **/
-
 DEFINE_FUNCTION( SetScope ) {
 
 	RT_ASSERT_ARGC( 2 );
@@ -256,7 +251,7 @@ DEFINE_FUNCTION( SetScope ) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
- * *HideProperties*( obj, propertyName1 [, propertyName2 [, ... ] ] )
+ * $VOID $INAME( obj, propertyName1 [, propertyName2 [, ... ] ] )
   Hide properties from for-in loop.
 **/
 DEFINE_FUNCTION( HideProperties ) {
@@ -304,7 +299,7 @@ DEFINE_FUNCTION( HideProperties ) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
- * $INT *IdOf*( value )
+ * $INT $INAME( value )
   Returns an integer value that is a unique identifier of _value_ .
   ===== example: =====
   {{{
@@ -335,7 +330,7 @@ DEFINE_FUNCTION_FAST( IdOf ) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
- * $VAL *FromId*( id )
+ * $VAL $INAME( id )
   Returns the value that corresponts to the given id. This is the reciprocal of IdOf() function.
   ===== example: =====
   {{{
@@ -363,7 +358,7 @@ DEFINE_FUNCTION_FAST( FromId ) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
- * *Warning*( string )
+ * $VOID $INAME( string )
   Report a warning.
 **/
 // note:
@@ -382,7 +377,7 @@ DEFINE_FUNCTION_FAST( Warning ) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
- * void *ASSERT*( expression [, failureMessage ] )
+ * $VOID $INAME( expression [, failureMessage ] )
   If the argument expression compares equal to zero, the failureMessage is written to the standard error device and the program stops its execution.
   ===== example: =
   {{{
@@ -391,7 +386,6 @@ DEFINE_FUNCTION_FAST( Warning ) {
   Print( foo[i] );
   }}}
 **/
-
 DEFINE_FUNCTION( ASSERT ) {
 
 	RT_ASSERT_ARGC( 1 );
@@ -414,7 +408,7 @@ DEFINE_FUNCTION( ASSERT ) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
- * *CollectGarbage*()
+ * $VOID $INAME()
   Performs garbage collection in the JS memory pool.
 **/
 DEFINE_FUNCTION_FAST( CollectGarbage ) {
@@ -435,7 +429,7 @@ DEFINE_FUNCTION_FAST( CollectGarbage ) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
- * *MaybeCollectGarbage*()
+ * $VOID $INAME()
   Performs a conditional garbage collection of JS objects, doubles, and strings that are no longer needed by a script executing.
   This offers the JavaScript engine an opportunity to perform garbage collection if needed.
 **/
@@ -465,7 +459,7 @@ DEFINE_FUNCTION_FAST( MaybeCollectGarbage ) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
- * $REAL *TimeCounter*()
+ * $REAL $INAME()
   Returns the current value of a high-resolution time counter in millisecond.
   The returned value is a relative time value.
 **/
@@ -476,9 +470,68 @@ DEFINE_FUNCTION_FAST( TimeCounter ) {
 }
 
 
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
- * void *Print*( value1 [, value2 [, ...]] )
+ * $STR $INAME( $STR str, $INT count )
+  Returns the string that is _count_ times _str_.
+**/
+DEFINE_FUNCTION_FAST( StringRepeat ) {
+
+	J_S_ASSERT_ARG_MIN(2);
+
+	size_t count;
+	J_JSVAL_TO_INT32( J_FARG(2), count );
+	if ( count == 0 ) {
+		
+		*J_FRVAL = JS_GetEmptyStringValue(cx);
+		return JS_TRUE;
+	}
+
+	const char *buf;
+	size_t len;
+	J_CHK( JsvalToStringAndLength(cx, J_FARG(1), &buf, &len) );
+
+	if ( len == 0 ) {
+		
+		*J_FRVAL = JS_GetEmptyStringValue(cx);
+		return JS_TRUE;
+	}
+
+	if ( count == 1 ) {
+		
+		*J_FRVAL = STRING_TO_JSVAL( JS_ValueToString(cx, J_FARG(1)) ); // force string conversion because we must return a string.
+		return JS_TRUE;
+	}
+
+	size_t newLen = len * count;
+
+	char *newBuf = (char *)JS_malloc(cx, newLen +1);
+	J_S_ASSERT_ALLOC(newBuf);
+	newBuf[newLen] = '\0';
+
+	if ( len == 1 ) {
+		
+		memset(newBuf, *buf, newLen);
+	} else {
+		
+		char *tmp = newBuf;
+		size_t i, j;
+		for ( i=0; i<count; i++ )
+			for ( j=0; j<len; j++ )
+				*(tmp++) = buf[j];
+	}
+
+	JSString *jsstr = JS_NewString(cx, newBuf, newLen);
+	J_S_ASSERT_ALLOC(jsstr);
+	*J_FRVAL = STRING_TO_JSVAL( jsstr );
+	return JS_TRUE;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/**doc
+ * $VOID $INAME( value1 [, value2 [, ...]] )
   Display _val_ to the output (the screen by default).
   ===== example: =====
   {{{
@@ -621,7 +674,7 @@ static JSScript* LoadScript(JSContext *cx, JSObject *obj, const char *fileName, 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
- * $VAL *Exec*( fileName [, useAndSaveCompiledScript = true] )
+ * $VAL $INAME( fileName [, useAndSaveCompiledScript = true] )
   Executes the script specified by _fileName_.
   If _useAndSaveCompiledScript_ is true, the function load and save a compiled version (using XDR format) of the script on the disk ( adding 'xrd' to _fileName_ ).
   If the compiled file is not found, the uncompiled version is used instead.
@@ -674,7 +727,7 @@ DEFINE_FUNCTION_FAST( Exec ) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
- * $BOOL *IsStatementValid*( statementString )
+ * $BOOL $INAME( statementString )
   Returns true if _statementString_ is a valid Javascript statement.
   The intent is to support interactive compilation, accumulate lines in a buffer until IsStatementValid returns true, then pass it to an eval.
   This function is useful to write an interactive console.
@@ -693,7 +746,7 @@ DEFINE_FUNCTION( IsStatementValid ) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
- * void *Halt*()
+ * $VOID $INAME()
   Stop the execution of the program. This is a ungraceful way to finish a program.
 **/
 DEFINE_FUNCTION( Halt ) {
@@ -739,7 +792,7 @@ DEFINE_FUNCTION( StrSet ) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
- * $BOOL *isConstructing*
+ * $BOOL $INAME
   Determines whether or not the function currently executing was called as a constructor.
 **/
 DEFINE_PROPERTY( isConstructing ) {
@@ -751,7 +804,7 @@ DEFINE_PROPERTY( isConstructing ) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
- * $BOOL disableGarbageCollection
+ * $BOOL $INAME
   Set to true, this property desactivates the garbage collector.
 **/
 DEFINE_PROPERTY( disableGarbageCollection ) {
@@ -809,6 +862,7 @@ CONFIGURE_STATIC
 		FUNCTION( HideProperties )
 		FUNCTION_FAST( Exec )
 		FUNCTION( IsStatementValid )
+		FUNCTION_FAST( StringRepeat )
 		FUNCTION_FAST( Print )
 		FUNCTION_FAST( TimeCounter )
 		FUNCTION_FAST( CollectGarbage )
