@@ -31,10 +31,12 @@ BEGIN_STATIC
 **/
 
 /**doc
- * *ExtractIcon*( fileName [, iconIndex ] )
-  TBD
+ * $TYPE Icon $INAME( fileName [, iconIndex ] )
+  Retrieves an icon from the specified executable file, DLL, or icon file.
+  $H beware
+   This function is not supported for icons in 16-bit executables and DLLs.
 **/
-DEFINE_FUNCTION( _ExtractIcon ) {
+DEFINE_FUNCTION( ExtractIcon_ ) {
 
 	RT_ASSERT_ARGC(1);
 	const char *fileName;
@@ -57,10 +59,45 @@ DEFINE_FUNCTION( _ExtractIcon ) {
 }
 
 /**doc
- * *MessageBox*( content [, caption [, style ] ] )
-  TBD
+ * $INT $INAME( content [, caption [, style ] ] )
+  Displays a modal dialog box that contains a system icon, a set of buttons, and a brief application-specific message, such as status or error information.
+  The message box returns an integer value that indicates which button the user clicked.
+  $H arguments
+   $ARG string content: the message to be displayed.
+   $ARG string caption: the dialog box title.
+   $ARG integer style: specifies the contents and behavior of the dialog box. This parameter can be a combination of flags from the following groups of flags:
+    * MB_ABORTRETRYIGNORE
+    * MB_CANCELTRYCONTINUE
+    * MB_HELP
+    * MB_OK
+    * MB_OKCANCEL
+    * MB_RETRYCANCEL
+    * MB_YESNO
+    * MB_YESNOCANCEL
+    * MB_ICONEXCLAMATION
+    * MB_ICONWARNING
+    * MB_ICONINFORMATION
+    * MB_ICONASTERISK
+    * MB_ICONQUESTION
+    * MB_ICONSTOP
+    * MB_ICONERROR
+    * MB_ICONHAND
+    * MB_DEFBUTTON1
+    * MB_DEFBUTTON2
+    * MB_DEFBUTTON3
+    * MB_DEFBUTTON4
+    * MB_APPLMODAL
+    * MB_SYSTEMMODAL
+    * MB_TASKMODAL
+    * MB_DEFAULT_DESKTOP_ONLY
+    * MB_RIGHT
+    * MB_RTLREADING
+    * MB_SETFOREGROUND
+    * MB_TOPMOST
+    * MB_SERVICE_NOTIFICATION
+    * MB_SERVICE_NOTIFICATION_NT3X
 **/
-DEFINE_FUNCTION( _MessageBox ) {
+DEFINE_FUNCTION( MessageBox_ ) {
 
 	RT_ASSERT_ARGC(1);
 
@@ -83,14 +120,19 @@ DEFINE_FUNCTION( _MessageBox ) {
 
 
 /**doc
- * *CreateProcess*( applicationName , [ commandLine ], [ environment ], [ currentDirectory ] )
-  TBD
- ===== example: =====
+ * $VOID $INAME( applicationPath , [ commandLine ], [ environment ], [ currentDirectory ] )
+  Creates a new process.
+ $H arguments
+  $ARG string applicationPath
+  $ARG string commandLine
+  $ARG string environment
+  $ARG string currentDirectory
+ $H example
  {{{
  CreateProcess( 'C:\\WINDOWS\\system32\\calc.exe', undefined, undefined, 'c:\\' );
  }}}
 **/
-DEFINE_FUNCTION( _CreateProcess ) {
+DEFINE_FUNCTION( CreateProcess_ ) {
 
 	RT_ASSERT_ARGC(1);
 
@@ -117,9 +159,9 @@ DEFINE_FUNCTION( _CreateProcess ) {
 
 
 /**doc
- * *FileOpenDialog*( filters | `undefined` [, defaultFileName ] );
-  TBD
- ===== example: =====
+ * $STR | $TYPE undefined $INAME( filters | `undefined` [, defaultFileName ] );
+  Creates an Open dialog box that lets the user specify the drive, directory, and the name of a file.
+ $H example
  {{{
  FileOpenDialog( 'executable files|*.exe;*.com;*.cmd;*.bat|all files|*.*' );
  }}}
@@ -168,9 +210,10 @@ DEFINE_FUNCTION( FileOpenDialog ) {
 
 
 /**doc
- * string *ExpandEnvironmentStrings*( sourceString )
+ * $STR $INAME( sourceString )
+  Expands environment-variable strings and replaces them with the values defined for the current user.
 **/
-DEFINE_FUNCTION( _ExpandEnvironmentStrings ) {
+DEFINE_FUNCTION( ExpandEnvironmentStrings_ ) {
 
 	RT_ASSERT_ARGC(1);
 	const char *src;
@@ -184,10 +227,10 @@ DEFINE_FUNCTION( _ExpandEnvironmentStrings ) {
 
 
 /**doc
- * *Sleep*( time )
-  TBD
+ * $VOID $INAME( milliseconds )
+  Suspends the execution of the current process until the time-out interval elapses.
 **/
-DEFINE_FUNCTION( _Sleep ) {
+DEFINE_FUNCTION( Sleep_ ) {
 
 	RT_ASSERT_ARGC(1);
 	uint32 timeout;
@@ -198,11 +241,18 @@ DEFINE_FUNCTION( _Sleep ) {
 
 
 /**doc
- * *MessageBeep*( value )
-  Plays a waveform sound.
-  The waveform sound for each sound type is identified by an entry in the registry.
+ * $VOID $INAME( type )
+  Plays a waveform sound. The waveform sound for each sound type is identified by an entry in the registry.
+  $H arguments
+   $ARG integer type:
+    * -1 : Simple beep. If the sound card is not available, the sound is generated using the speaker.
+    * 0 : MB_OK SystemDefault
+    * 0x40 : MB_ICONASTERISK SystemAsterisk
+    * 0x30 : MB_ICONEXCLAMATION SystemExclamation
+    * 0x10 : MB_ICONHAND SystemHand
+    * 0x20 : MB_ICONQUESTION SystemQuestion
 **/
-DEFINE_FUNCTION( _MessageBeep ) {
+DEFINE_FUNCTION( MessageBeep_ ) {
 
 	UINT type = -1;
 	if ( argc >= 1 )
@@ -213,10 +263,12 @@ DEFINE_FUNCTION( _MessageBeep ) {
 
 
 /**doc
- * *Beep*( freq, duration )
-  TBD
+ * $VOID $INAME( hertzFrequency, millisecondsDuration )
+  Generates simple tones on the speaker.
+  $H note
+   The function is synchronous, it does not return control to its caller until the sound finishes.
 **/
-DEFINE_FUNCTION( _Beep ) {
+DEFINE_FUNCTION( Beep_ ) {
 
 	RT_ASSERT_ARGC(2);
 	DWORD freq, duration;
@@ -231,8 +283,8 @@ DEFINE_FUNCTION( _Beep ) {
 **/
 
 /**doc
- * string *clipboard*
-  TBD
+ * $STR $INAME
+  Places or retrieves text data from the clipboard.
 **/
 DEFINE_PROPERTY( clipboardGetter ) {
 
@@ -287,18 +339,22 @@ DEFINE_PROPERTY( clipboardSetter ) {
 CONFIGURE_STATIC
 
 	BEGIN_STATIC_FUNCTION_SPEC
-		FUNCTION2( MessageBox, _MessageBox )
-		FUNCTION2( CreateProcess, _CreateProcess )
-		FUNCTION2( ExtractIcon, _ExtractIcon )
-		FUNCTION2( ExpandEnvironmentStrings, _ExpandEnvironmentStrings )
+		FUNCTION2( MessageBox, MessageBox_ )
+		FUNCTION2( CreateProcess, CreateProcess_ )
+		FUNCTION2( ExtractIcon, ExtractIcon_ )
+		FUNCTION2( ExpandEnvironmentStrings, ExpandEnvironmentStrings_ )
 		FUNCTION( FileOpenDialog )
-		FUNCTION2( Sleep, _Sleep )
-		FUNCTION2( MessageBeep, _MessageBeep )
-		FUNCTION2( Beep, _Beep )
+		FUNCTION2( Sleep, Sleep_ )
+		FUNCTION2( MessageBeep, MessageBeep_ )
+		FUNCTION2( Beep, Beep_ )
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC
 		PROPERTY( clipboard )
 	END_STATIC_PROPERTY_SPEC
+
+//	BEGIN_CONST_INTEGER_SPEC
+//	END_CONST_INTEGER_SPEC
+
 
 END_STATIC

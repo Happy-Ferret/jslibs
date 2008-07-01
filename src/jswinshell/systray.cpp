@@ -271,7 +271,7 @@ BEGIN_CLASS( Systray )
 
 /**doc
  * $INAME()
-  TBD
+  Creates a Systray object.
 **/
 DEFINE_CONSTRUCTOR() {
 
@@ -335,7 +335,7 @@ DEFINE_FINALIZE() {
 
 /**doc
  * $VOID $INAME()
-  TBD
+  Close the Systray.
 **/
 DEFINE_FUNCTION( Close ) {
 
@@ -449,7 +449,7 @@ DEFINE_FUNCTION( ProcessEvents ) {
 
 /**doc
  * $VOID $INAME()
-  TBD
+  Puts the systray into the foreground. Keyboard input is directed to the systray.
 **/
 DEFINE_FUNCTION( Focus ) {
 
@@ -462,7 +462,7 @@ DEFINE_FUNCTION( Focus ) {
 
 /**doc
  * $VOID $INAME()
-  TBD
+  Opens the systray menu.
 **/
 DEFINE_FUNCTION( PopupMenu ) {
 
@@ -599,8 +599,18 @@ DEFINE_FUNCTION( CallDefault ) {
 */
 
 /**doc
- * $TYPE Array $INAME( [reusableArray] )
-  TBD
+ * $ARRAY $INAME( [reusableArray] )
+  Returns the [x,y] position pointed by the mouse pointer in the systray icon.
+  $H note
+   If you provide a _reusableArray_, the function will use it to store the values.
+  $H example
+  {{{
+  systray.onmousemove = function( x, y ) {
+
+    var pos = systray.Position();
+    Print( x-pos[0], ', ', y-pos[1], '\n' );
+  }
+  }}}
 **/
 DEFINE_FUNCTION( Position ) {
 
@@ -628,8 +638,10 @@ DEFINE_FUNCTION( Position ) {
 
 
 /**doc
- * $TYPE Array $INAME( [reusableArray] )
-  TBD
+ * $ARRAY $INAME( [reusableArray] )
+  Returns the dimensions [left, top, width, height] of the systray rectangle.
+  $H note
+   If you provide a _reusableArray_, the function will use it to store the values.
 **/
 DEFINE_FUNCTION( Rect ) {
 
@@ -664,6 +676,7 @@ DEFINE_FUNCTION( Rect ) {
 
 /**doc
  * $TYPE Icon | $TYPE null $INAME $WRITEONLY
+  This is the Icon to be used as systray icon.
 **/
 DEFINE_PROPERTY( icon ) {
 
@@ -694,7 +707,9 @@ DEFINE_PROPERTY( icon ) {
 
 /**doc
  * $BOOL $INAME $WRITEONLY
-  TBD
+  Show or hide the systray icon.
+  $H beware
+   you cannot use this property to get the current visibility of the icon.
 **/
 DEFINE_PROPERTY( visible ) {
 
@@ -709,7 +724,7 @@ DEFINE_PROPERTY( visible ) {
 
 /**doc
  * $STR $INAME
-  TBD
+  Get of set the tooltip text of the systray icon.
 **/
 DEFINE_PROPERTY( textSetter ) {
 
@@ -742,13 +757,13 @@ DEFINE_PROPERTY( textGetter ) {
   * bool *menu.commandName.separator*
   * bool *menu.commandName.default*
   * [Icon] | function *menu.commandName.icon*
-  ===== example: =====
+  $H example
   {{{
   tray.menu = { { text:"enable", checked:true }, { text:"delete", grayed:true }, { separator:true }, exit:"Exit" }
   }}} 
   = =
   If the value of _text_, _checked_, _grayed_ or _icon_ is a function, it is called and the return value is used.
-  ===== example: =====
+  $H example
   {{{
   tray.menu = { { text:"enable", checked:function() { return isChecked } }, ...
   }}}
@@ -766,7 +781,7 @@ DEFINE_PROPERTY( menuGetter ) {
 }
 
 /**doc
-=== Remarks ===
+=== Callback functions ===
  The following functions are called when you call ProcessEvents() according the events received by the tray icon.
   * onfocus
   * onblur
@@ -776,6 +791,16 @@ DEFINE_PROPERTY( menuGetter ) {
   * onmousedown
   * onmouseup
   * onmousedblclick
+ $H example
+  {{{
+  var s = new Systray();
+  s.icon = new Icon( 0 );
+  s.onmousedown = function( button ) { 
+
+    MessageBeep();
+    s.PopupMenu();
+  }
+  }}}
 **/
 
 CONFIGURE_CLASS
@@ -808,30 +833,126 @@ CONFIGURE_CLASS
 
 END_CLASS
 
-/**doc
+/**doc tab:2
 === Examples ===
-{{{
-var s = new Systray();
+ $H example 1
+ {{{
+ var s = new Systray();
+ 
+ s.icon = new Icon(new Png(new File('calendar.png').Open(File.RDONLY)).Load());
+ s.text = "calendar";
+ s.menu = { exit_cmd:"exit" }
+ 
+ s.onmousedown = function(button) {
+   if ( button == 2 )
+     s.PopupMenu();
+ }
 
-s.icon = new Icon(new Png(new File('calendar.png').Open(File.RDONLY)).Load());
-s.text = "calendar";
-s.menu = { exit_cmd:"exit" }
+ s.oncommand = function(id) {
+   if ( id == 'exit_cmd' )
+     exit = true;
+ }
 
-s.onmousedown = function(button) {
- if ( button == 2 )
-  s.PopupMenu();
-}
+ while ( !exit ) {
+   s.ProcessEvents();
+   Sleep(100);
+ }
+ }}}
 
-s.oncommand = function(id) {
- if ( id == 'exit_cmd' )
-  exit = true;
-}
+ $H example 2
+ {{{
+ LoadModule('jsstd');
+ LoadModule('jswinshell');
+ 
+ // MessageBox() Flags
+ const MB = {
+	OK                  :0x000000,
+	OKCANCEL            :0x000001,
+	ABORTRETRYIGNORE    :0x000002,
+	YESNOCANCEL         :0x000003,
+	YESNO               :0x000004,
+	RETRYCANCEL         :0x000005,
+	CANCELTRYCONTINUE   :0x000006,
 
-while ( !exit ) {
- s.ProcessEvents();
- Sleep(100);
-}
-}}}
+	ICONHAND            :0x000010,
+	ICONQUESTION        :0x000020,
+	ICONEXCLAMATION     :0x000030,
+	ICONASTERISK        :0x000040,
+	USERICON            :0x000080,
+	ICONWARNING         :0x000030,
+	ICONERROR           :0x000010,
+	ICONINFORMATION     :0x000040,
+	ICONSTOP            :0x000010,
+
+	DEFBUTTON1          :0x000000,
+	DEFBUTTON2          :0x000100,
+	DEFBUTTON3          :0x000200,
+	DEFBUTTON4          :0x000300,
+
+	APPLMODAL           :0x000000,
+	SYSTEMMODAL         :0x001000,
+	TASKMODAL           :0x002000,
+	HELP                :0x004000,
+	NOFOCUS             :0x008000,
+
+	SETFOREGROUND       :0x010000,
+	DEFAULT_DESKTOP_ONLY:0x020000,
+	TOPMOST             :0x040000,
+	RIGHT               :0x080000,
+
+	RTLREADING          :0x100000
+ };
+ 
+ 
+ // Dialog Box Command IDs
+ const ID = {
+ 	OK      :1,
+ 	CANCEL  :2,
+ 	ABORT   :3,
+ 	RETRY   :4,
+ 	IGNORE  :5,
+ 	YES     :6,
+ 	NO      :7,
+ 	CLOSE   :8,
+ 	HELP    :9,
+ 	TRYAGAIN:10,
+ 	CONTINUE:11,
+ 
+ 	TIMEOUT :32000
+ };
+ 
+ var s = new Systray();
+ s.icon = new Icon( 0 );
+ s.menu = { add:'Add', exit:'Exit', s1:{ separator:true } };
+ s.onmousedown = function( button ) { 
+ 
+ 	s.PopupMenu();
+ }
+ 
+ s.oncommand = function( id, button ) {
+ 
+ 	switch ( id ) {
+ 		case 'exit':
+ 			return true;
+ 		case 'add':
+ 			var fileName = FileOpenDialog( 'executable files|*.exe;*.com;*.cmd;*.bat|all files|*.*' );
+ 			if ( !fileName )
+ 				return;
+ 			var icon = ExtractIcon( fileName );
+ 			var text = fileName.substr( fileName.lastIndexOf( '\\' ) + 1 );
+ 			s.menu[fileName] = { icon:icon, text:text };
+ 			break;
+ 		default:
+ 			if ( button == 1 )
+ 				CreateProcess( id );
+ 			else
+ 				if ( MessageBox( 'Remove item: ' + id + '? ', 'Question', MB.YESNO) == ID.YES )
+ 					delete s.menu[id];
+ 		}
+ }
+ 
+ do { Sleep(100) } while ( !s.ProcessEvents() );
+ }}}
 **/
 
 

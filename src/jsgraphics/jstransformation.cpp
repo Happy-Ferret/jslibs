@@ -519,18 +519,7 @@ DEFINE_FUNCTION_FAST( TransformVector ) {
 
 /**doc
 === Properties ===
- * $REAL *0..15*
-  Get or set a element of the current transformation matrix.
-  $H example
-  {{{
-  var t = new Transformation();
-  t.Clear();
-  t[3] = 1;
-  t[7] = 2;
-  t[11] = 3;
-  }}}
 **/
-
 
 /*
 DEFINE_NEW_RESOLVE() {
@@ -545,6 +534,18 @@ DEFINE_NEW_RESOLVE() {
 }
 */
 
+/**doc
+ * $REAL $INAME
+  Get or set a element of the current transformation matrix.
+  $H example
+  {{{
+  var t = new Transformation();
+  t.Clear();
+  t[3] = 1;
+  t[7] = 2;
+  t[11] = 3;
+  }}}
+**/
 DEFINE_GET_PROPERTY() {
 
 	if ( JSVAL_IS_INT(id) ) {

@@ -142,6 +142,12 @@ DEFINE_CONSTRUCTOR() {
 	return JS_TRUE;
 }
 
+
+/**doc
+=== Methods ===
+**/
+
+
 /*
 DEFINE_FUNCTION_FAST( Set ) {
 
@@ -165,8 +171,8 @@ DEFINE_FUNCTION_FAST( Set ) {
 */
 
 /**doc
- * $TYPE BString $INAME( ??? )
-  TBD
+ * $TYPE BString $INAME( data )
+  Add any kind of data to the current bstring and returns the result.
 **/
 DEFINE_FUNCTION_FAST( Add ) {
 
@@ -181,7 +187,9 @@ DEFINE_FUNCTION_FAST( Add ) {
 
 	if ( JsvalIsBString(cx, J_FARG(1)) ) {
 
-		BStringGetBufferAndLength(cx, JSVAL_TO_OBJECT( J_FARG(1) ), &src, &srcLen);
+		//BStringGetBufferAndLength(cx, JSVAL_TO_OBJECT( J_FARG(1) ), &src, &srcLen);
+		JsvalToStringAndLength( cx, J_FARG(1), (const char**)&src, &srcLen);
+
 		if ( srcLen > 0 ) {
 
 			dst = JS_malloc(cx, srcLen + length +1);
@@ -246,10 +254,15 @@ DEFINE_FUNCTION_FAST( Add ) {
 
 
 /**doc
- * $TYPE ??? $INAME
-  TBD
+ * $TYPE BString $INAME( start [, length ] )
+  Returns the bytes in a string beginning at the specified location through the specified number of characters.
+  $H arguments
+   $ARG integer start: location at which to begin extracting characters (an integer between 0 and one less than the length of the string). 
+   $ARG integer length: the number of characters to extract.
+  $H details
+   fc. [http://developer.mozilla.org/en/docs/Core_JavaScript_1.5_Reference:Global_Objects:String:substr JavaScript substr]
 **/
-DEFINE_FUNCTION_FAST( Substr ) { // http://developer.mozilla.org/en/docs/Core_JavaScript_1.5_Reference:Global_Objects:String:substr
+DEFINE_FUNCTION_FAST( Substr ) {
 
 	J_S_ASSERT_ARG_MIN(1);
 	void *pv = JS_GetPrivate(cx, J_FOBJ);
@@ -316,8 +329,10 @@ DEFINE_FUNCTION_FAST( IndexOf ) {
 
 
 /**doc
- * $STR ??? $INAME
-  TBD
+ * $STR $INAME()
+  Returns a JavaScript string version of the current BString object.
+  $H beware
+   This function may be called automatically by the JavaScript engine when it needs to convert the BString object to a JS string.
 **/
 DEFINE_FUNCTION_FAST( toString ) { // and valueOf
 
@@ -328,10 +343,13 @@ DEFINE_FUNCTION_FAST( toString ) { // and valueOf
 	return JS_TRUE;
 }
 
+/**doc
+=== Properties ===
+**/
 
 /**doc
  * $INT ??? $INAME
-  TBD
+  is the length of the current BString.
 **/
 DEFINE_PROPERTY( length ) {
 
@@ -373,10 +391,9 @@ DEFINE_NEW_RESOLVE() { // support of data[n]  and  n in data
 
 
 /**doc
- * $TYPE char *_[] operator_*
-  TBD
+ * $TYPE char $INAME $READONLY
+  Used to access the character in the _N_th position where _N_ is a positive integer between 0 and one less than the value of length.
 **/
-
 DEFINE_GET_PROPERTY() {
 
 	if ( !JSVAL_IS_INT(id) )
@@ -435,6 +452,12 @@ DEFINE_SET_PROPERTY() {
 */
 	return JS_TRUE;
 }
+
+
+/**doc
+=== Note ===
+ BStrings are immutable. This mean that its content cannot be modified after it is created.
+**/
 
 /**doc
 === Native Interface ===

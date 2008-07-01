@@ -204,7 +204,7 @@ DEFINE_PROPERTY( stateSetter ) {
 
 /**doc
  * $STR $INAME $READONLY
-  TBD
+  is the name of the current prng.
 **/
 DEFINE_PROPERTY( name ) {
 

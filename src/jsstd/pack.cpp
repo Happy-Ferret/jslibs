@@ -130,8 +130,8 @@ DEFINE_CONSTRUCTOR() {
 **/
 
 /**doc
- * $INT *ReadInt*( size, [isSigned = false], [isNetworkEndian = false] )
-  TBD
+ * $INT $INAME( size, [isSigned = false], [isNetworkEndian = false] )
+  Read an integer on the current stream. cf. systemIntSize property.
 **/
 DEFINE_FUNCTION( ReadInt ) {
 
@@ -221,8 +221,7 @@ DEFINE_FUNCTION( ReadInt ) {
 	return JS_TRUE;
 }
 
-
-
+#ifdef DEBUG
 DEFINE_FUNCTION( Test ) {
 
 	int32_t c;
@@ -231,10 +230,11 @@ DEFINE_FUNCTION( Test ) {
 
 	return JS_TRUE;
 }
+#endif
 
 /**doc
- * *WriteInt*( size, [isSigned = false [, isNetworkEndian = false]] )
-  TBD
+ * $VOID $INAME( size, [isSigned = false [, isNetworkEndian = false]] )
+  Write an integer to the current stream. cf. systemIntSize property.
 **/
 DEFINE_FUNCTION( WriteInt ) {
 
@@ -304,8 +304,8 @@ DEFINE_FUNCTION( WriteInt ) {
 }
 
 /**doc
- * $REAL *ReadReal*( size )
-  TBD
+ * $REAL $INAME( size )
+  Read a 4-byte single precision real (float) or a 8-byte double precision real (double) on the current stream.
 **/
 DEFINE_FUNCTION( ReadReal ) {
 
@@ -342,8 +342,8 @@ DEFINE_FUNCTION( ReadReal ) {
 }
 
 /**doc
- * $STR ReadString( length )
-  TBD
+ * $STR $INAME( length )
+  Read a string of the specifiex _length_ on the current stream.
 **/
 DEFINE_FUNCTION( ReadString ) {
 
@@ -392,7 +392,7 @@ DEFINE_PROPERTY( buffer ) {
 **/
 
 /**doc
- * *systemIntSize*
+ * $INAME $READONLY
   Is the size (in Byte) of a system int.
 **/
 DEFINE_PROPERTY( systemIntSize ) {
@@ -402,7 +402,7 @@ DEFINE_PROPERTY( systemIntSize ) {
 }
 
 /**doc
- * *systemBigEndian*
+ * $INAME $READONLY
   Is <true> if the system endian is BigEndian else is <false>.
 **/
 DEFINE_PROPERTY( systemBigEndian ) {
@@ -429,7 +429,9 @@ CONFIGURE_CLASS
 		FUNCTION(ReadReal)
 		FUNCTION(ReadString)
 		FUNCTION(WriteInt)
+#ifdef DEBUG
 		FUNCTION(Test)
+#endif
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC

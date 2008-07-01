@@ -1119,7 +1119,7 @@ DEFINE_FUNCTION_FAST( MirrorLevels ) {
  * $THIS $INAME( modulo )
   Each $pval is moduloed by _modulo_ ( v = v % _modulo_ ).
   $H arguments
-   $ARG inteer modulo: TBD
+   $REAL modulo: the non-integer modulo
 **/
 // PTYPE ok
 DEFINE_FUNCTION_FAST( WrapLevels ) { // real modulo
@@ -3339,7 +3339,7 @@ DEFINE_FUNCTION( AddGradiantRadial ) {
 
 /**doc
  * $THIS $INAME( count, crackLength, wayVariation [, color = 1] [, curve = 1] )
-  Adds cracks to the current texture. TBD
+  Adds cracks to the current texture.
   $H arguments
    $ARG integer count: number of cracks to draw.
    $ARG integer crackLength: length of each crack.
@@ -3677,7 +3677,7 @@ static JSBool Test(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval 
   }}}
 
  * *ImageObject*
-  TBD
+  An image object is nothing else that a buffer of data with a width, a height and a channels properties.
 **/
 
 CONFIGURE_CLASS

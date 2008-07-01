@@ -14,8 +14,9 @@
 
 #include "stdafx.h"
 
+/**doc fileIndex:bottom **/
 
-/**doc fileIndex:bottom
+/**doc
 $CLASS_HEADER
  You cannot construct this class.
  Its aim is to throw as an exception on any NSPR runtime error.
@@ -29,14 +30,7 @@ BEGIN_CLASS( IoError )
  * int *os* $READONLY
  * int *code* $READONLY
  * string *text* $READONLY
-
-=== Exemple ===
-
-{{{
-TBD
-}}}
 **/
-
 
 DEFINE_CONSTRUCTOR() {
 

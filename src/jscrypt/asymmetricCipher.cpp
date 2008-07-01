@@ -487,8 +487,8 @@ DEFINE_FUNCTION( VerifySignature ) { // ( data, signature [, saltLength] )
 **/
 
 /**doc
- * $INAME $READONLY
-  TBD
+ * $INT $INAME $READONLY
+  is the maximum length of data that can be processed at once.
 **/
 DEFINE_PROPERTY( blockLength ) {
 
@@ -515,8 +515,8 @@ DEFINE_PROPERTY( blockLength ) {
 }
 
 /**doc
- * $INAME $READONLY
-  TBD
+ * $INT $INAME $READONLY
+  is the size of the current key.
 **/
 DEFINE_PROPERTY( keySize ) {
 
@@ -544,10 +544,10 @@ DEFINE_PROPERTY( keySize ) {
 
 
 /**doc
- * $STR $INAME
+ * $STR *privateKey*
   The private key encoded using PKCS #1. (Public Key Cryptographic Standard #1 v2.0 padding)
 
- * $STR $INAME
+ * $STR *publicKey*
   The public key encoded using PKCS #1. (Public Key Cryptographic Standard #1 v2.0 padding)
 **/
 

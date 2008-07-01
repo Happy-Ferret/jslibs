@@ -24,7 +24,8 @@ BEGIN_CLASS( Console )
 
 /**doc
  * $INAME()
-  TBD
+  Creates a new Console object.
+  $H only one console per p.rocess is allowed. the construction fails if the calling process already has a console.
 **/
 DEFINE_CONSTRUCTOR() {
 
@@ -49,7 +50,7 @@ DEFINE_FINALIZE() {
 
 /**doc
  * $VOID $INAME()
-  TBD
+  Detach the current process from its console.
 **/
 DEFINE_FUNCTION( Close ) {
 
@@ -60,9 +61,12 @@ DEFINE_FUNCTION( Close ) {
 
 
 /**doc
- * $VOID $INAME( string )
-  TBD
-**/DEFINE_FUNCTION( Write ) {
+ * $VOID $INAME( text )
+  Write text to the console.
+  $H arguments
+   $ARG string text
+**/
+DEFINE_FUNCTION( Write ) {
 	
 	RT_ASSERT_ARGC( 1 );
 	HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -79,8 +83,11 @@ DEFINE_FUNCTION( Close ) {
 
 /**doc
  * $STR $INAME( amount )
-  TBD
-**/DEFINE_FUNCTION( Read ) {
+  Read _amount_ bytes of text from the console.
+  $H arguments
+   $ARG integer amount
+**/
+DEFINE_FUNCTION( Read ) {
 	
 	RT_ASSERT_ARGC( 1 );
 	HANDLE hStdin = GetStdHandle(STD_INPUT_HANDLE);

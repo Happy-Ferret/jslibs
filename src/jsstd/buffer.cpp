@@ -450,8 +450,8 @@ DEFINE_CONSTRUCTOR() {
 **/
 
 /**doc
- * $INAME()
-  TBD
+ * $VOID $INAME()
+  Empty the whole buffer.
 **/
 DEFINE_FUNCTION( Clear ) {
 
@@ -496,8 +496,13 @@ DEFINE_FUNCTION( Write ) {
 
 
 /**doc
- * $BOOL $INAME( string )
-  TBD
+ * $BOOL $INAME( str [, consume = false ] )
+  Check if the given string _str_ matchs to the next data in the buffer. 
+  $H arguments
+   $ARG string str
+   $ARG boolean consume: if false, just check if it match without consuming data, else, read and check.
+  $H return value
+   true if it matchs, else false.
 **/
 DEFINE_FUNCTION( Match ) {
 
@@ -517,6 +522,15 @@ DEFINE_FUNCTION( Match ) {
 		*rval = JSVAL_FALSE;
 	else
 		*rval = strncmp( str, src, len ) == 0 ? JSVAL_TRUE : JSVAL_FALSE;
+
+	bool consume;
+	if ( J_ARG_ISDEF(2) )
+		J_JSVAL_TO_BOOL( J_ARG(2), consume );
+	else
+		consume = false;
+	
+	if ( !consume )
+		J_CHK( UnReadRawChunk(cx, obj, src, amount) );
 
 err:
 	free(src);

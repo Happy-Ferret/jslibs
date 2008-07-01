@@ -298,10 +298,6 @@ DEFINE_FUNCTION( Col ) {
    $ARG boolean namedRows: if true, the function returns an objet containing {columnName:value} pair. else it returns an array of value.
   $H note
    The *Step* function is internally called before each *Row* call.
-  $H example
-  {{{
-  TBD
-  }}}
 **/
 DEFINE_FUNCTION( Row ) {
 
