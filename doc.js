@@ -6,6 +6,23 @@ var api_DEF = {};
 
 var api = {
 
+	'\t': function(cx, item) {
+		
+		if ( !isNaN(item.attr.tab) )
+			cx.center = StringRepeat(' ', item.attr.tab);
+		else {
+		
+			var offset = cx.left.length;
+			Print('AMBIGUOUS TAB at ' + item.filePath + ':' + (CountStr('\n', item.source.substring(0, item.followingSourceTextStart - item.text.length + offset))+1), '\n');
+		}
+	},
+
+	TBD: function(cx, item) {
+
+		var offset = cx.left.length;
+		Print('TBD: ' + item.filePath + ':' + (CountStr('\n', item.source.substring(0, item.followingSourceTextStart - item.text.length + offset))+1), '\n');
+	},
+
 	$H: function(cx, item) {
 
 		cx.center = '===== '+ReadEol(cx)+': =====';
@@ -19,6 +36,10 @@ var api = {
 			if ( res[2] == 'Call' ) {
 			
 				cx.center = '*_call operator_*';
+			} else
+			if ( res[1] == 'GET_PROPERTY' ) {
+		
+				cx.center = '*_[N] operator_*';
 			} else
 			if ( res[1] == 'CONSTRUCTOR' ) {
 			
@@ -294,11 +315,6 @@ function CreateDocItemList(startDir, api) {
 				// cleanup item.text
 				
 			
-				var tabPos;
-				if ( (tabPos = item.text.indexOf('\t')) != -1 ) {
-				
-					Print('TAB detected at ' + item.filePath + ':' + (CountStr('\n', item.source.substring(0, item.followingSourceTextStart - item.text.length + tabPos))+1), '\n');
-				}
 				
 				item.text = ExpandText(item.text, api, apiRe, item);
 			}
