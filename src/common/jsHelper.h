@@ -283,10 +283,32 @@ extern bool *_pUnsafeMode;
 	if (unlikely( (pointer) == NULL )) { J_REPORT_WARNING( J__ERRMSG_OUT_OF_MEMORY ); JS_ReportOutOfMemory(cx); return JS_FALSE; }
 
 
+///////////////////////////////////////////////////////////////////////////////
+// 
+
+// The following function wil only works if the class is defined in the global namespace.
+inline JSClass *GetGlobalClassByName(JSContext *cx, const char *className) {
+
+	JSObject *globalObj = JS_GetGlobalObject(cx);
+	if ( globalObj == NULL )
+		return NULL;
+	jsval bstringConstructor;
+	if ( JS_LookupProperty(cx, globalObj, className, &bstringConstructor) != JS_TRUE )
+		return NULL;
+//	if ( bstringConstructor == JSVAL_VOID )
+//		return NULL;
+	if ( JS_TypeOfValue(cx, bstringConstructor) != JSTYPE_FUNCTION )
+		return NULL;
+	JSFunction *fun = JS_ValueToFunction(cx, bstringConstructor);
+	if ( fun == NULL )
+		return NULL;
+	if ( !FUN_SLOW_NATIVE(fun) )
+		return NULL;
+	return fun->u.n.clasp; // (TBD) replace this by a jsapi.h call and remove dependency to jsarena.h and jsfun.h
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 // test and conversion functions
-
 
 //#define J_STRING_LENGTH(jsstr) (JS_GetStringLength(jsstr))
 #define J_STRING_LENGTH(jsstr) (JSSTRING_LENGTH(jsstr))
@@ -304,6 +326,37 @@ inline bool JsvalIsString( JSContext *cx, jsval val ) {
 */
 
 #define J_JSVAL_IS_STRING(val) ( JSVAL_IS_STRING(val) || (JSVAL_IS_OBJECT(val) && !JSVAL_IS_NULL(val) && BufferGetInterface(cx, JSVAL_TO_OBJECT(val)) != NULL) )
+
+
+inline JSObject* J_NewBinaryString( JSContext *cx, char* buffer, size_t length ) {
+
+	static JSClass *bstringClass = NULL;
+	if ( bstringClass == NULL )
+		bstringClass = GetGlobalClassByName(cx, "BString");
+
+	JSObject *binaryString;
+	if ( bstringClass != NULL ) { // we has BString, jslang is loaded present
+		
+		binaryString = JS_NewObject(cx, bstringClass, NULL, NULL);
+		if ( binaryString == NULL )
+			goto err;
+		if ( JS_SetReservedSlot(cx, binaryString, 0, INT_TO_JSVAL( length )) != JS_TRUE )
+			goto err;
+		if ( JS_SetPrivate(cx, binaryString, buffer) != JS_TRUE )
+			goto err;
+	} else {
+		
+		JSString *jsstr = JS_NewString(cx, buffer, length);
+		if ( jsstr == NULL )
+			goto err;
+		if ( JS_ValueToObject(cx, STRING_TO_JSVAL(jsstr), &binaryString) != JS_TRUE )
+			goto err;
+	}
+	return binaryString;
+err:
+	JS_free(cx, buffer);
+	return NULL;
+}
 
 
 inline JSBool JsvalToStringAndLength( JSContext *cx, jsval val, const char** buffer, size_t *size ) {
@@ -779,27 +832,6 @@ inline JSBool CallFunction( JSContext *cx, JSObject *obj, jsval functionValue, j
 	return JS_TRUE;
 }
 
-
-// The following function wil only works if the class is defined in the global namespace.
-inline JSClass *GetGlobalClassByName(JSContext *cx, const char *className) {
-
-	JSObject *globalObj = JS_GetGlobalObject(cx);
-	if ( globalObj == NULL )
-		return NULL;
-	jsval bstringConstructor;
-	if ( JS_LookupProperty(cx, globalObj, className, &bstringConstructor) != JS_TRUE )
-		return NULL;
-//	if ( bstringConstructor == JSVAL_VOID )
-//		return NULL;
-	if ( JS_TypeOfValue(cx, bstringConstructor) != JSTYPE_FUNCTION )
-		return NULL;
-	JSFunction *fun = JS_ValueToFunction(cx, bstringConstructor);
-	if ( fun == NULL )
-		return NULL;
-	if ( !FUN_SLOW_NATIVE(fun) )
-		return NULL;
-	return fun->u.n.clasp; // (TBD) replace this by a jsapi.h call and remove dependency to jsarena.h and jsfun.h
-}
 
 
 inline bool MaybeRealloc( int requested, int received ) {
