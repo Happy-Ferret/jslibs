@@ -110,7 +110,7 @@ DEFINE_CONSTRUCTOR() { // ( cipherName, hashName [, prngObject] [, PKCSVersion] 
 	RT_ASSERT_ARGC( 3 );
 
 	const char *asymmetricCipherName;
-	RT_JSVAL_TO_STRING( argv[0], asymmetricCipherName );
+	J_CHK( JsvalToString(cx, argv[0], &asymmetricCipherName) );
 
 	AsymmetricCipher asymmetricCipher;
 	if ( strcasecmp( asymmetricCipherName, "RSA" ) == 0 )
@@ -128,7 +128,7 @@ DEFINE_CONSTRUCTOR() { // ( cipherName, hashName [, prngObject] [, PKCSVersion] 
 	pv->cipher = asymmetricCipher;
 
 	const char *hashName;
-	RT_JSVAL_TO_STRING( argv[1], hashName );
+	J_CHK( JsvalToString(cx, argv[1], &hashName) );
 	int hashIndex = find_hash(hashName);
 	RT_ASSERT_1( hashIndex != -1, "hash %s is not available.", hashName );
 	pv->hashDescriptor = &hash_descriptor[hashIndex];
@@ -148,7 +148,7 @@ DEFINE_CONSTRUCTOR() { // ( cipherName, hashName [, prngObject] [, PKCSVersion] 
 	if ( argc >= 4 && argv[3] != JSVAL_VOID ) {
 
 		const char *paddingName;
-		RT_JSVAL_TO_STRING(argv[3], paddingName);
+		J_CHK( JsvalToString(cx, argv[3], &paddingName) );
 
 		if ( strcmp(paddingName, "1_OAEP") == 0 ) {
 

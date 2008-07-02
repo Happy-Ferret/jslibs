@@ -127,7 +127,7 @@ DEFINE_CONSTRUCTOR() {
 	RT_ASSERT_ARGC( 3 );
 
 	const char *modeName;
-	RT_JSVAL_TO_STRING( argv[0], modeName );
+	J_CHK( JsvalToString(cx, argv[0], &modeName) );
 
 	CryptMode mode;
 	if ( strcasecmp( modeName, "ECB" ) == 0 )
@@ -148,7 +148,7 @@ DEFINE_CONSTRUCTOR() {
 		REPORT_ERROR_1("Invalid mode %s", modeName);
 
 	const char *cipherName;
-	RT_JSVAL_TO_STRING( argv[1], cipherName );
+	J_CHK( JsvalToString(cx, argv[1], &cipherName) );
 
 	const char *key;
 	size_t keyLength;

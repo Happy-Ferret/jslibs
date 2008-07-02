@@ -68,7 +68,7 @@ DEFINE_FUNCTION( GetParam ) {
 	if ( argc >= 1 ) {
 
 		const char *paramName;
-		RT_JSVAL_TO_STRING( argv[0], paramName );
+		J_CHK( JsvalToString(cx, argv[0], &paramName) );
 		char *paramValue = FCGX_GetParam(paramName, _request.envp);
 		if ( paramValue != NULL ) {
 

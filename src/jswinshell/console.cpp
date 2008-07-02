@@ -112,7 +112,7 @@ DEFINE_FUNCTION( Read ) {
 DEFINE_PROPERTY( titleSetter ) {
 
 	const char *str;
-	RT_JSVAL_TO_STRING( *vp, str );
+	J_CHK( JsvalToString(cx, *vp, &str) );
 	SetConsoleTitle(str);
 	return JS_TRUE;
 }

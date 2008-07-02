@@ -68,7 +68,7 @@ DEFINE_CONSTRUCTOR() {
 	RT_ASSERT_ARGC( 1 );
 
 	const char *hashName;
-	RT_JSVAL_TO_STRING( argv[0], hashName );
+	J_CHK( JsvalToString(cx, argv[0], &hashName) );
 
 	int hashIndex = find_hash(hashName);
 	RT_ASSERT_1( hashIndex != -1, "hash %s is not available", hashName );
@@ -313,7 +313,7 @@ DEFINE_FUNCTION( CipherHash ) {
 
 	RT_ASSERT_ARGC(1);
 	const char *cipherName;
-	RT_JSVAL_TO_STRING( argv[0], cipherName );
+	J_CHK( JsvalToString(cx, argv[0], &cipherName) );
 	int cipherIndex = find_cipher(cipherName);
 	RT_ASSERT_1( cipherIndex >= 0, "Cipher not found: %s", cipherName );
 	int err;

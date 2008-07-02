@@ -397,7 +397,7 @@ DEFINE_FUNCTION( ASSERT ) {
 
 		const char *message;
 		if ( J_ARG_ISDEF(2) )
-			RT_JSVAL_TO_STRING( J_ARG(2), message );
+			J_CHK( JsvalToString(cx, J_ARG(2), &message) );
 		else
 			message = "Assertion failed.";
 		JS_ReportError( cx, message );
@@ -699,7 +699,7 @@ DEFINE_FUNCTION_FAST( Exec ) {
 	RT_ASSERT_ARGC( 1 );
 	bool saveCompiledScripts = !( J_FARG_ISDEF(2) && J_FARG(2) == JSVAL_FALSE );
 
-	RT_JSVAL_TO_STRING( J_FARG(1), filename );
+	J_CHK( JsvalToString(cx, J_FARG(1), &filename) );
 	errno = 0;
 	//        older = JS_SetErrorReporter(cx, LoadErrorReporter);
 	oldopts = JS_GetOptions(cx);

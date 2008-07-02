@@ -121,7 +121,7 @@ DEFINE_FUNCTION( Bind ) {
 	if ( J_ARG_ISDEF(2) ) { // if we have a second argument and this argument is not undefined
 
 		const char *host;
-		RT_JSVAL_TO_STRING( J_ARG(2), host );
+		J_CHK( JsvalToString(cx, J_ARG(2), &host) );
 
 		if ( PR_StringToNetAddr(host, &addr) != PR_SUCCESS )
 			return ThrowIoError(cx);
@@ -247,7 +247,7 @@ DEFINE_FUNCTION( Connect ) {
 	RT_ASSERT_RESOURCE( fd );
 
 	const char *host;
-	RT_JSVAL_TO_STRING( J_ARG(1), host );
+	J_CHK( JsvalToString(cx, J_ARG(1), &host) );
 
 	PRUint16 port;
 	RT_JSVAL_TO_INT32( J_ARG(2), port );
@@ -322,7 +322,7 @@ DEFINE_FUNCTION( SendTo ) {
 	RT_ASSERT_RESOURCE( fd );
 
 	const char *host;
-	RT_JSVAL_TO_STRING( J_ARG(1), host );
+	J_CHK( JsvalToString(cx, J_ARG(1), &host) );
 
 	PRUint16 port;
 	RT_JSVAL_TO_INT32( J_ARG(2), port );
@@ -853,7 +853,7 @@ DEFINE_FUNCTION( GetHostsByName ) {
 	RT_ASSERT_ARGC( 1 );
 
 	const char *host;
-	RT_JSVAL_TO_STRING( J_ARG(1), host );
+	J_CHK( JsvalToString(cx, J_ARG(1), &host) );
 
 //	PRUint16 port;
 //	RT_JSVAL_TO_INT32( J_ARG(1), port );

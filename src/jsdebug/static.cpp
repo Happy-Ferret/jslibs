@@ -220,7 +220,7 @@ DumpStats(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 	if ( J_ARG_ISDEF( 1 ) ) {
 
 		const char *fileName;
-		RT_JSVAL_TO_STRING( J_ARG( 1 ), fileName );
+		J_CHK( JsvalToString(cx, J_ARG( 1 ), &fileName) );
 		if ( fileName[0] != '\0' ) {
 		
 			gOutFile = fopen(fileName, "w");

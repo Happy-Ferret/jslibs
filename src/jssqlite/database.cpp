@@ -67,7 +67,7 @@ DEFINE_CONSTRUCTOR() {
 
 	const char *fileName;
 	if ( J_ARG_ISDEF(1) )
-		RT_JSVAL_TO_STRING(  J_ARG(1), fileName );
+		J_CHK( JsvalToString(cx, J_ARG(1), &fileName) );
 	else
 		fileName = ":memory:";
 
@@ -542,7 +542,7 @@ DEFINE_SET_PROPERTY() {
 		RT_ASSERT_RESOURCE( db );
 
 		const char *fName;
-		RT_JSVAL_TO_STRING( id, fName );
+		J_CHK( JsvalToString(cx, id, &fName) );
 
 		SqliteFunctionCallUserData *data = (SqliteFunctionCallUserData*)malloc(sizeof(SqliteFunctionCallUserData)); // (TBD) store this allocated pointer in a stack to be freed later
 		data->rt = JS_GetRuntime(cx);

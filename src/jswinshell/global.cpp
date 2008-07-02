@@ -41,7 +41,7 @@ DEFINE_FUNCTION( ExtractIcon_ ) {
 	RT_ASSERT_ARGC(1);
 	const char *fileName;
 	UINT iconIndex = 0;
-	RT_JSVAL_TO_STRING( argv[0], fileName );
+	J_CHK( JsvalToString(cx, argv[0], &fileName) );
 	if ( argc >= 2 )
 		RT_JSVAL_TO_INT32( argv[1], iconIndex );
 	HINSTANCE hInst = (HINSTANCE)GetModuleHandle(NULL);
@@ -111,11 +111,11 @@ DEFINE_FUNCTION( MessageBox_ ) {
 	RT_ASSERT_ARGC(1);
 
 	const char *text;
-	RT_JSVAL_TO_STRING( argv[0], text );
+	J_CHK( JsvalToString(cx, argv[0], &text) );
 
 	const char *caption = NULL;
 	if ( argc >= 2 && argv[1] != JSVAL_VOID )
-		RT_JSVAL_TO_STRING( argv[1], caption );
+		J_CHK( JsvalToString(cx, argv[1], &caption) );
 
 	UINT type = 0;
 	if ( argc >= 3 )
@@ -147,16 +147,16 @@ DEFINE_FUNCTION( CreateProcess_ ) {
 
 	const char *applicationName, *commandLine = NULL, *environment = NULL, *currentDirectory = NULL;
 
-	RT_JSVAL_TO_STRING( argv[0], applicationName );
+	J_CHK( JsvalToString(cx, argv[0], &applicationName) );
 
 	if ( argc >= 2 && argv[1] != JSVAL_VOID )
-		RT_JSVAL_TO_STRING( argv[1], commandLine );
+		J_CHK( JsvalToString(cx, argv[1], &commandLine) );
 
 	if ( argc >= 3 && argv[2] != JSVAL_VOID  )
-		RT_JSVAL_TO_STRING( argv[2], environment );
+		J_CHK( JsvalToString(cx, argv[2], &environment) );
 
 	if ( argc >= 4 && argv[3] != JSVAL_VOID  )
-		RT_JSVAL_TO_STRING( argv[3], currentDirectory );
+		J_CHK( JsvalToString(cx, argv[3], &currentDirectory) );
 
 	STARTUPINFO si = { sizeof(STARTUPINFO) };
 	PROCESS_INFORMATION pi;
@@ -196,7 +196,7 @@ DEFINE_FUNCTION( FileOpenDialog ) {
 	if ( argc >= 2 && argv[1] != JSVAL_VOID ) {
 
 		const char *tmp;
-		RT_JSVAL_TO_STRING( argv[1], tmp );
+		J_CHK( JsvalToString(cx, argv[1], &tmp) );
 		strcpy( fileName, tmp );
 	} else {
 		*fileName = '\0';
@@ -226,7 +226,7 @@ DEFINE_FUNCTION( ExpandEnvironmentStrings_ ) {
 
 	RT_ASSERT_ARGC(1);
 	const char *src;
-	RT_JSVAL_TO_STRING( argv[0], src );
+	J_CHK( JsvalToString(cx, argv[0], &src) );
 	TCHAR dst[MAX_PATH];
 	DWORD res = ExpandEnvironmentStrings( src, dst, sizeof(dst) );
 	RT_ASSERT( res != 0, "Unable to ExpandEnvironmentStrings." );

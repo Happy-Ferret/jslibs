@@ -52,7 +52,7 @@ DEFINE_CONSTRUCTOR() {
 	RT_ASSERT_ARGC( 1 );
 
 	const char *prngName;
-	RT_JSVAL_TO_STRING( argv[0], prngName );
+	J_CHK( JsvalToString(cx, argv[0], &prngName) );
 
 	int prngIndex = find_prng(prngName);
 	RT_ASSERT_1( prngIndex != -1, "prng %s is not available", prngName );

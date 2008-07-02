@@ -326,7 +326,7 @@ DEFINE_FUNCTION( GetEnv ) {
 
 	RT_ASSERT_ARGC(1);
 	const char *name;
-	RT_JSVAL_TO_STRING( J_ARG(1), name );
+	J_CHK( JsvalToString(cx, J_ARG(1), &name) );
 	char* value = PR_GetEnv(name); // If the environment variable is not defined, the function returns NULL.
 	if ( value != NULL ) { // this will cause an 'undefined' return value
 
@@ -483,7 +483,7 @@ DEFINE_FUNCTION_FAST( CreateProcess_ ) {
 	RT_ASSERT_ARGC( 1 );
 
 	const char *path;
-	RT_JSVAL_TO_STRING( J_FARG(1), path );
+	J_CHK( JsvalToString(cx, J_FARG(1), &path) );
 
 	const char * *processArgv;
 	int processArgc;
@@ -502,7 +502,7 @@ DEFINE_FUNCTION_FAST( CreateProcess_ ) {
 			RT_CHECK_CALL( JS_GetElement(cx, JSVAL_TO_OBJECT(J_FARG(2)), JSVAL_TO_INT(propVal), &propVal )); // (TBD) optimize
 
 			const char *tmp;
-			RT_JSVAL_TO_STRING( propVal, tmp );
+			J_CHK( JsvalToString(cx, propVal, &tmp) );
 			processArgv[i+1] = tmp;
 		}
 		JS_DestroyIdArray( cx, idArray );

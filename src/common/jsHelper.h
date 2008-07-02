@@ -438,9 +438,9 @@ inline JSBool JsvalToString( JSContext *cx, jsval val, const char** buffer ) {
 }
 
 
-#define J_JSVAL_TO_STRING( val, str ) do { \
-	J_CHK( JsvalToString(cx, (val), &(str)) ); \
-} while(0)
+//#define J_JSVAL_TO_STRING( val, str ) do { \
+//	J_CHK( JsvalToString(cx, (val), &(str)) ); \
+//} while(0)
 
 
 inline JSBool StringToJsval( JSContext *cx, jsval *val, const char* cstr ) {
@@ -739,7 +739,7 @@ inline JSBool JsvalToBool( JSContext *cx, jsval val, bool *bval ) {
 #define RT_JSVAL_TO_REAL J_JSVAL_TO_REAL
 #define RT_JSVAL_TO_INT32 J_JSVAL_TO_INT32
 #define RT_JSVAL_TO_UINT32 J_JSVAL_TO_UINT32
-#define RT_JSVAL_TO_STRING J_JSVAL_TO_STRING
+//#define RT_JSVAL_TO_STRING J_JSVAL_TO_STRING
 //#define RT_JSVAL_TO_STRING_AND_LENGTH J_JSVAL_TO_STRING_AND_LENGTH
 
 

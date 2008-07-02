@@ -119,7 +119,7 @@ DEFINE_CONSTRUCTOR() {
 	RT_ASSERT_ARGC( 2 );
 
 	const char *name;
-	RT_JSVAL_TO_STRING( J_ARG(1), name );
+	J_CHK( JsvalToString(cx, J_ARG(1), &name) );
 
 	PRSize size;
 	RT_JSVAL_TO_INT32( J_ARG(2), size );

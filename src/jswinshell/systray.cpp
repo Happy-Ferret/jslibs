@@ -488,7 +488,7 @@ DEFINE_FUNCTION( PopupMenu ) {
 
 		if ( JSVAL_IS_STRING(item) ) {
 
-			RT_JSVAL_TO_STRING( item, newItem );
+			J_CHK( JsvalToString(cx, item, &newItem) );
 			AppendMenu(hMenu, uFlags, list->vector[i], newItem);
 		} else if ( JSVAL_IS_OBJECT(item) && !JSVAL_IS_NULL(item) ) {
 			
@@ -503,7 +503,7 @@ DEFINE_FUNCTION( PopupMenu ) {
 					RT_CHECK_CALL( CallFunction(cx, obj, itemVal, &itemVal, 2, item, key) );
 				}
 				if ( itemVal != JSVAL_VOID ) {
-					RT_JSVAL_TO_STRING( itemVal, newItem );
+					J_CHK( JsvalToString(cx, itemVal, &newItem) );
 				}
 			}
 
