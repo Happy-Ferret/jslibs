@@ -122,8 +122,7 @@ var QAAPI = new function() {
 
 	this.ASSERT_STR = function( value, expect, testName ) {
 	
-		value = String(value);
-		expect = String(expect);
+//		value = String(value); expect = String(expect); // not needed because we use the != sign, not !== sign
 
 		if ( value != expect ) {
 		
