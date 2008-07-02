@@ -1,6 +1,22 @@
 ({
 
 
+	StringRepeat: function(QA) {
+			
+		QA.ASSERT( StringRepeat( '', 0 ), '', '0 x empty' );
+		QA.ASSERT( StringRepeat( '', 1 ), '', '1 x empty' );
+		QA.ASSERT( StringRepeat( '', 10 ), '', '10 x empty' );
+		
+		QA.ASSERT( StringRepeat( 'a', 0 ), '', '0 x 1 char' );
+		QA.ASSERT( StringRepeat( 'a', 1 ), 'a', '1 x 1 char' );
+		QA.ASSERT( StringRepeat( 'a', 10 ), 'aaaaaaaaaa', '10 x 1 char' );
+		
+		QA.ASSERT( StringRepeat( 'abc', 0 ), '', '0 x string' );
+		QA.ASSERT( StringRepeat( 'abc', 1 ), 'abc', '1 x string' );
+		QA.ASSERT( StringRepeat( 'abc', 10 ), 'abcabcabcabcabcabcabcabcabcabc', '10 x string' );
+	},
+	
+
 	BufferTest1: function(QA) {
 		
 		LoadModule('jsstd');
@@ -186,7 +202,28 @@
 		var buf = new Buffer();
 		buf.Write('1234');
 		buf.Read(4);
-	},	
+	},
+	
+	BufferSource: function(QA) {
+
+		var buf = new Buffer('123');
+		buf.source = Stream('456');
+		delete buf.source;
+		QA.ASSERT( buf.length, 3, 'length' );
+		QA.ASSERT_STR( buf.Read(6), '123', 'read' );
+
+		var buf1 = new Buffer('123');
+		buf1.source = Stream('456');
+		QA.ASSERT( buf1.length, 3, 'length' );
+		QA.ASSERT_STR( buf1.Read(6), '123456', 'read' );
+
+		var buf2 = new Buffer('123');
+		buf2.source = {
+			Read: function(count) StringRepeat('x',count)
+		}
+		QA.ASSERT( buf2.length, 3, 'length' );
+		QA.ASSERT_STR( buf2.Read(6), '123xxx', 'read' );
+	},
 
 	PackEndianTest: function(QA) {
 		
@@ -416,10 +453,10 @@
 	
 	StrChr: function(QA) {
 
-		var str1 = StrSet('y', 100);
+		var str1 = StringRepeat('y', 100);
 		QA.ASSERT( [ c for each ( c in str1 ) if (c == 'y') ].length, 100, 'all chars are good' );
 		
-		var str = StrSet('x', 10000);
+		var str = StringRepeat('x', 10000);
 		QA.ASSERT( str.length, 10000, 'string length' );
 		QA.ASSERT( str[0], 'x', 'first char' );
 		QA.ASSERT( str[9999], 'x', 'last char' );
@@ -438,7 +475,6 @@
 		QA.ASSERT( typeof t, 'xml', 'text type' );
 		QA.ASSERT_STR( t, "\n\t\tthis is\n\t\ta multiline\n\n\t\ttext\n\t\t", 'text' );
 	}
-	
 	
 	
 })

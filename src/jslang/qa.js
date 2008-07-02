@@ -204,7 +204,7 @@
 			}
 		}
 		
-		QA.ASSERT( Stringify(myStream), 'abcdefghi', 'force string conversion' );
+		QA.ASSERT( Stringify( new myStream), 'abcdefghi', 'force string conversion' );
 	},
 	
 	

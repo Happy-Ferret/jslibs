@@ -6,7 +6,7 @@
 
 		var md5 = new Hash('md5');
 		md5.Process('foobarxxx');
-		QA.ASSERT( md5.Done(), "\b\t\xAA\xC0\x10\xB1G\xA8\xC71'}*\x80\x07\xBF", 'digest integrity' );
+		QA.ASSERT_STR( md5.Done(), "\b\t\xAA\xC0\x10\xB1G\xA8\xC71'}*\x80\x07\xBF", 'digest integrity' );
 	},
 
 
@@ -37,7 +37,7 @@
 		var secretMessage = QA.RandomString(bob.blockLength);
 		var encryptedData = bob.Encrypt( secretMessage );
 		//Alice
-		QA.ASSERT( alice.Decrypt(encryptedData), secretMessage, 'data integrity' );
+		QA.ASSERT_STR( alice.Decrypt(encryptedData), secretMessage, 'data integrity' );
 	},
 
 
@@ -60,7 +60,7 @@
 		rsa1.publicKey = rsaPubKey;
 		var rsaEncryptedData = rsa1.Encrypt( plainText );
 
-		QA.ASSERT( plainText, rsa.Decrypt( rsaEncryptedData ), 'data integrity' );
+		QA.ASSERT_STR( plainText, rsa.Decrypt( rsaEncryptedData ), 'data integrity' );
 	},
 
 	Cipher1: function(QA) {
@@ -74,7 +74,7 @@
 		var encryptedText = cr.Encrypt(data);
 		var cr = new Cipher('CFB', "cast5", "my  key of  16B ", IV );
 		
-		QA.ASSERT( cr.Decrypt(encryptedText), data, 'crypy/decript with Cast5 cipher using CFB mode' );
+		QA.ASSERT_STR( cr.Decrypt(encryptedText), data, 'crypy/decript with Cast5 cipher using CFB mode' );
 	},
 	
 

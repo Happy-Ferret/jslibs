@@ -5,8 +5,8 @@
 		QA.GC();
 		var mem0 = privateMemoryUsage;
 
-		var str1 = StrSet('x', 1000000);
-		StrSet('x', 1000000);
+		var str1 = StringRepeat('x', 1000000);
+		StringRepeat('x', 1000000);
 		QA.GC();
 		
 		var diff = privateMemoryUsage - mem0;
