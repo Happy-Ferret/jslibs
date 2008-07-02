@@ -136,6 +136,7 @@ var api = {
 	$INT:',,integer,,',
 	$REAL:',,real,,',
 	$STR:',,string,,',
+	$DATA:',,bstring,,',
 	$OBJ:',,Object,,',
 	$ARRAY:',,Array,,',
 	$BOOL:',,boolean,,',
