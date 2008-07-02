@@ -236,7 +236,7 @@ DEFINE_FUNCTION( CreateKeys ) { // ( bitsSize )
 }
 
 /**doc
- * $STR $INAME( data [, lparam] )
+ * $DATA $INAME( data [, lparam] )
   This function returns the encrypted _data_ using a previously created or imported public key.
   = =
   _data_ is the string to encrypt (usualy cipher keys).
@@ -287,15 +287,18 @@ DEFINE_FUNCTION( Encrypt ) { // ( data [, lparam] )
 	}
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err); // (TBD) free something ?
-	JSString *jssOut = JS_NewStringCopyN(cx, out, outLength);
+//	JSString *jssOut = JS_NewStringCopyN(cx, out, outLength);
+	JSObject *jssOut = J_NewBinaryStringCopyN(cx, out, outLength);
 	zeromem(out, sizeof(out)); // safe clear
 	RT_ASSERT_ALLOC( jssOut );
-	*rval = STRING_TO_JSVAL( jssOut );
+//	*rval = STRING_TO_JSVAL( jssOut );
+	*rval = OBJECT_TO_JSVAL( jssOut );
 	return JS_TRUE;
 }
 
+
 /**doc
- * $STR $INAME( encryptedData [, lparam] )
+ * $DATA $INAME( encryptedData [, lparam] )
   This function decrypts the given _encryptedData_ using a previously created or imported private key.
   = =
   _encryptedData_ is the string that has to be decrypted (usualy cipher keys).
@@ -360,10 +363,12 @@ DEFINE_FUNCTION( Decrypt ) { // ( encryptedData [, lparam] )
 		return ThrowCryptError(cx, err); // (TBD) free something ?
 
 	out[outLength] = '\0';
-	JSString *jssOut = JS_NewStringCopyN( cx, out, outLength );
+//	JSString *jssOut = JS_NewStringCopyN( cx, out, outLength );
+	JSObject *jssOut = J_NewBinaryStringCopyN( cx, out, outLength );
 	zeromem(out, sizeof(out));
 	RT_ASSERT_ALLOC( jssOut );
-	*rval = STRING_TO_JSVAL(jssOut);
+//	*rval = STRING_TO_JSVAL(jssOut);
+	*rval = OBJECT_TO_JSVAL(jssOut);
 	return JS_TRUE;
 }
 

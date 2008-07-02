@@ -246,7 +246,7 @@ inline JSBool InitCurveData( JSContext* cx, jsval value, int length, float *curv
 		for ( int i = 0; i < length; i++ )
 			curve[i] = curveArray[ i * curveArrayLength / length ];
 	} else
-	if ( JsvalIsBString(cx, value) ) { // (TBD) test it
+	if ( JsvalIsBString(cx, value) ) { // (TBD) test it. Replace JsvalIsBString with something more generic like JsvalIsData that will match for string, bstring, NIBufferGet, ...
 
 		JSObject *bstrObj = JSVAL_TO_OBJECT(value);
 		size_t bstrLen;
@@ -1902,7 +1902,7 @@ DEFINE_FUNCTION_FAST( Resize ) {
 
 
 /**doc
- * $THIS $INAME( kernel, borderMode [, autoGain = Texture.borderWrap], [ autoGain = true ] );
+ * $THIS $INAME( kernel, borderMode [, autoGain = Texture.borderWrap], [ autoGain = true ] )
   Apply a convolution to the current texture using _kernel_ factors.
   $H arguments
    $ARG Array kernel: kernel is a square matrix
@@ -2187,7 +2187,7 @@ DEFINE_FUNCTION_FAST( NormalizeVectors ) {
 
 
 /**doc
- * $THIS $INAME( [ amplify = 1 ] );
+ * $THIS $INAME( [ amplify = 1 ] )
   Converts the texture to a normals map using the Sobel filter.
 **/
 // (TBD) PTYPE

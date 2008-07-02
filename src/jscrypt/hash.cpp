@@ -117,8 +117,8 @@ DEFINE_FUNCTION( Init ) {
 
 
 /**doc
- * $INAME( string )
-  Process a block of memory though the hash.
+ * $VOID $INAME( data )
+  Process a block of data though the hash.
 **/
 DEFINE_FUNCTION( Process ) {
 
@@ -145,7 +145,7 @@ DEFINE_FUNCTION( Process ) {
 
 
 /**doc
- * $STR $INAME()
+ * $DATA $INAME()
   Terminate the hash and get the digest in a binary format.
   ===== example: =====
   {{{
@@ -169,15 +169,17 @@ DEFINE_FUNCTION( Done ) {
 	err = privateData->descriptor->done(&privateData->state, (unsigned char*)out); // Terminate the hash to get the digest
 	if ( err != CRYPT_OK )
 		return ThrowCryptError(cx, err);
-	JSString *jssHashData = JS_NewString( cx, out, outLength );
+//	JSString *jssHashData = JS_NewString( cx, out, outLength );
+	JSObject *jssHashData = J_NewBinaryString( cx, out, outLength );
 	RT_ASSERT( jssHashData != NULL, "unable to create the hash string." );
-	*rval = STRING_TO_JSVAL(jssHashData);
+//	*rval = STRING_TO_JSVAL(jssHashData);
+	*rval = OBJECT_TO_JSVAL(jssHashData);
 	return JS_TRUE;
 }
 
 
 /**doc
- * $STR $INAME( string )
+ * $DATA $INAME( data )
   This is the call operator of the object. It simplifies the usage of hashes and allows a digest calculation in one call only.
   When called with a string as argument, it Process a block of memory though the hash
   Compute the hash until the function is called without arguments or end is <true>. In this case, the function returns the hash of the whole given data.
@@ -229,9 +231,11 @@ DEFINE_FUNCTION( Call ) {
 		return ThrowCryptError(cx, err);
 	privateData->inputLength = 0;
 
-	JSString *jssHashData = JS_NewString( cx, out, outLength );
+//	JSString *jssHashData = JS_NewString( cx, out, outLength );
+	JSObject *jssHashData = J_NewBinaryString( cx, out, outLength );
 	RT_ASSERT_ALLOC( jssHashData );
-	*rval = STRING_TO_JSVAL(jssHashData);
+//	*rval = STRING_TO_JSVAL(jssHashData);
+	*rval = OBJECT_TO_JSVAL(jssHashData);
 	return JS_TRUE;
 }
 

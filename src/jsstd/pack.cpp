@@ -113,6 +113,8 @@ DEFINE_FINALIZE() {
 /**doc
  * $INAME( buffer )
   Constructs a Pack object from a Buffer object. This is the only way to read or write binary data.
+  $H arguments
+   $ARG Buffer buffer
 **/
 DEFINE_CONSTRUCTOR() {
 
@@ -163,7 +165,7 @@ DEFINE_FUNCTION( ReadInt ) {
 	RT_CHECK_CALL( ReadRawAmount(cx, bufferObject, &amount, (char*)data) );
 	if ( amount < size ) { // not enough data to complete the requested operation, then unread the few data we have read.
 
-		RT_CHECK_CALL( UnReadRawChunk(cx, bufferObject, (char*)data, amount) );
+		RT_CHECK_CALL( UnReadRawChunk(cx, bufferObject, (char*)data, amount) ); // incompatible with NIStreamRead
 		*rval = JSVAL_VOID;
 		return JS_TRUE;
 	}
@@ -236,7 +238,7 @@ DEFINE_FUNCTION( Test ) {
  * $VOID $INAME( size, [isSigned = false [, isNetworkEndian = false]] )
   Write an integer to the current stream. cf. systemIntSize property.
 **/
-DEFINE_FUNCTION( WriteInt ) {
+DEFINE_FUNCTION( WriteInt ) { // incompatible with NIStreamRead
 
 	RT_ASSERT_ARGC(2);
 
@@ -323,7 +325,7 @@ DEFINE_FUNCTION( ReadReal ) {
 	RT_CHECK_CALL( ReadRawAmount(cx, bufferObject, &amount, (char*)data) );
 	if ( amount < size ) { // not enough data to complete the requested operation, then unread the few data we read
 
-		RT_CHECK_CALL( UnReadRawChunk(cx, bufferObject, (char*)data, amount) );
+		RT_CHECK_CALL( UnReadRawChunk(cx, bufferObject, (char*)data, amount) ); // incompatible with NIStreamRead
 		*rval = JSVAL_VOID;
 		return JS_TRUE;
 	}
@@ -377,7 +379,7 @@ DEFINE_FUNCTION( ReadString ) {
 **/
 
 /**doc
- * *buffer*
+ * $TYPE Buffer *buffer*
   Is the current Buffer object.
 **/
 DEFINE_PROPERTY( buffer ) {

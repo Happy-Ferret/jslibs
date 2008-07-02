@@ -76,7 +76,7 @@ void z_Finalize(JSContext *cx, JSObject *obj) {
 **/
 
 
-JSBool z_call(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) { // (TBD) add BString support 
+JSBool z_call(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
 	JSObject *thisObj = JSVAL_TO_OBJECT(argv[-2]); // get 'this' object of the current object ...
 	// (TBD) check JS_InstanceOf( cx, thisObj, &NativeProc, NULL )
@@ -151,14 +151,15 @@ JSBool z_call(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval
 	unsigned char *outputData = (unsigned char*)JS_malloc( cx, outputLength +1 ); // +1 for '\0' char
 	outputData[outputLength] = 0; // (TBD) understand WHY !? outputLength info is not enough ??
 	buffer.Read(outputData);
-	JSString *jssOutputData = JS_NewString( cx, (char*)outputData, outputLength );
+//	JSString *jssOutputData = JS_NewString( cx, (char*)outputData, outputLength );
+	JSObject *jssOutputData = J_NewBinaryString( cx, (char*)outputData, outputLength );
 	if ( jssOutputData == NULL ) {
 
-		JS_free( cx, outputData ); // JS_NewString takes ownership of bytes on success, avoiding a copy; but on error (signified by null return), it leaves bytes owned by the caller. So the caller must free bytes in the error case, if it has no use for them.
-		JS_ReportError( cx, "out of memory" );
+		JS_ReportError( cx, "unable to create the resulting string" );
 		return JS_FALSE;
 	}
-	*rval = STRING_TO_JSVAL(jssOutputData);
+//	*rval = STRING_TO_JSVAL(jssOutputData);
+	*rval = OBJECT_TO_JSVAL(jssOutputData);
 
 // close the stream and free resources
 	if ( xflateStatus == Z_STREAM_END ) {

@@ -335,18 +335,18 @@ inline JSObject* J_NewBinaryString( JSContext *cx, void* buffer, size_t length )
 		bstringClass = GetGlobalClassByName(cx, "BString");
 
 	JSObject *binaryString;
-	if ( bstringClass != NULL ) { // we has BString, jslang is loaded present
+	if ( bstringClass != NULL ) { // we have BString class, jslang is present.
 		
 		binaryString = JS_NewObject(cx, bstringClass, NULL, NULL);
 		if ( binaryString == NULL )
 			goto err;
-		if ( JS_SetReservedSlot(cx, binaryString, 0, INT_TO_JSVAL( length )) != JS_TRUE )
+		if ( JS_SetReservedSlot(cx, binaryString, 0, INT_TO_JSVAL( length )) != JS_TRUE ) // 0 for SLOT_BSTRING_LENGTH !!!
 			goto err;
 		if ( JS_SetPrivate(cx, binaryString, buffer) != JS_TRUE )
 			goto err;
 	} else {
 		
-		JSString *jsstr = JS_NewString(cx, (char*)buffer, length);
+		JSString *jsstr = JS_NewString(cx, (char*)buffer, length); // JS_NewString takes ownership of bytes on success, avoiding a copy; but on error (signified by null return), it leaves bytes owned by the caller. So the caller must free bytes in the error case, if it has no use for them.
 		if ( jsstr == NULL )
 			goto err;
 		if ( JS_ValueToObject(cx, STRING_TO_JSVAL(jsstr), &binaryString) != JS_TRUE )
@@ -354,7 +354,7 @@ inline JSObject* J_NewBinaryString( JSContext *cx, void* buffer, size_t length )
 	}
 	return binaryString;
 err:
-	JS_free(cx, buffer); // (TBD) check if it is needed
+	JS_free(cx, buffer); // JS_NewString do not free the buffer on error.
 	return NULL;
 }
 
@@ -362,6 +362,7 @@ err:
 
 inline JSObject* J_NewBinaryStringCopyN( JSContext *cx, const void *data, size_t amount ) {
 
+	// possible optimization: if BString is not abailable, copy data into JSString's jschar to avoid js_InflateString.
 	char *bstrBuf = (char*)JS_malloc(cx, amount);
 	if ( bstrBuf == NULL )
 		return NULL;
@@ -374,7 +375,7 @@ inline JSObject* J_NewBinaryStringCopyN( JSContext *cx, const void *data, size_t
 
 inline JSBool JsvalToStringAndLength( JSContext *cx, jsval val, const char** buffer, size_t *size ) {
 
-	if ( JSVAL_IS_STRING(val) ) {
+	if ( JSVAL_IS_STRING(val) ) { // for string literals
 
 		JSString *str = JSVAL_TO_STRING(val);
 		*buffer = JS_GetStringBytes(str);
@@ -383,12 +384,14 @@ inline JSBool JsvalToStringAndLength( JSContext *cx, jsval val, const char** buf
 		return JS_TRUE;
 	}
 
-	if ( JSVAL_IS_OBJECT(val) && !JSVAL_IS_NULL(val) ) {
+	if ( JSVAL_IS_OBJECT(val) && !JSVAL_IS_NULL(val) ) { // for NIBufferGet support
 
 		NIBufferGet fct = BufferGetNativeInterface(cx, JSVAL_TO_OBJECT(val));
 		if ( fct )
 			return fct(cx, JSVAL_TO_OBJECT(val), buffer, size);
 	}
+
+	// for anything else
 
 	JSString *str = JS_ValueToString(cx, val);
 	J_S_ASSERT( str != NULL, J__ERRMSG_STRING_CONVERSION_FAILED );
@@ -397,6 +400,7 @@ inline JSBool JsvalToStringAndLength( JSContext *cx, jsval val, const char** buf
 	*size = J_STRING_LENGTH(str);
 	return JS_TRUE;
 }
+
 
 #define J_JSVAL_TO_STRING_AND_LENGTH( val, str, len ) do { \
 	J_CHK( JsvalToStringAndLength(cx, (val), &(str), &(len)) ); \

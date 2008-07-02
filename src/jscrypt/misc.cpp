@@ -58,7 +58,7 @@ DEFINE_FUNCTION( Base64Encode ) {
  * $STR *Base64Decode*( string )
   Encode the given _string_ using base64 encoding.
 **/
-DEFINE_FUNCTION( Base64Decode ) {// (TBD) use BString
+DEFINE_FUNCTION( Base64Decode ) {
 
 	RT_ASSERT_ARGC( 1 );
 	RT_ASSERT_STRING(argv[0]);
@@ -76,9 +76,9 @@ DEFINE_FUNCTION( Base64Decode ) {// (TBD) use BString
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err);
 
-	JSString *jssOutData = JS_NewString( cx, out, outLength );
+	JSObject *jssOutData = J_NewBinaryString( cx, out, outLength );
 	RT_ASSERT( jssOutData != NULL, "unable to create the plaintext string." );
-	*rval = STRING_TO_JSVAL(jssOutData);
+	*rval = OBJECT_TO_JSVAL(jssOutData);
 
 	return JS_TRUE;
 }
@@ -125,7 +125,7 @@ DEFINE_FUNCTION( HexEncode ) {
  * $STR *HexDecode*( string )
   Decode the given _string_ using hexadecimal encoding.
 **/
-DEFINE_FUNCTION( HexDecode ) { // (TBD) use BString
+DEFINE_FUNCTION( HexDecode ) {
 
 	static const unsigned char unhex[] = {
 
@@ -152,9 +152,11 @@ DEFINE_FUNCTION( HexDecode ) { // (TBD) use BString
 	for ( unsigned long i=0; i<outLength; ++i )
 		out[i] = unhex[ (unsigned char)in[i*2] ] << 4 | unhex[ (unsigned char)in[i*2+1] ];
 
-	JSString *jssOutData = JS_NewString( cx, out, outLength );
+//	JSString *jssOutData = JS_NewString( cx, out, outLength );
+	JSObject *jssOutData = J_NewBinaryString( cx, out, outLength );
 	RT_ASSERT( jssOutData != NULL, "unable to create the plaintext string." );
-	*rval = STRING_TO_JSVAL(jssOutData);
+//	*rval = STRING_TO_JSVAL(jssOutData);
+	*rval = OBJECT_TO_JSVAL(jssOutData);
 
 	return JS_TRUE;
 }

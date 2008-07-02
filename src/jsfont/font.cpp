@@ -313,7 +313,7 @@ DEFINE_FUNCTION_FAST( DrawString ) {
 
 		JSObject *bstr = J_NewBinaryString(cx, buf, bufLength);
 		*J_FRVAL = OBJECT_TO_JSVAL( bstr );
-		J_S_ASSERT( bstr != NULL, "Unable to create a BString." ); // (TBD) free buf
+		J_S_ASSERT( bstr != NULL, "Unable to create a binary string." );
 		J_CHECK_CALL( SetPropertyInt(cx, bstr, "width", width) );
 		J_CHECK_CALL( SetPropertyInt(cx, bstr, "height", height) );
 		J_CHECK_CALL( SetPropertyInt(cx, bstr, "channels", 1) );

@@ -258,8 +258,8 @@ DEFINE_CONSTRUCTOR() {
 **/
 
 /**doc
- * $STR $INAME( string )
-  Encrypts the given _string_ using the current cipher.
+ * $DATA $INAME( data )
+  Encrypts the given _data_ using the current cipher.
 **/
 DEFINE_FUNCTION( Encrypt ) {
 
@@ -307,15 +307,15 @@ DEFINE_FUNCTION( Encrypt ) {
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err);
 
-	JSString *jssCt = JS_NewString( cx, ct, ptLength );
+	JSObject *jssCt = J_NewBinaryString( cx, ct, ptLength );
 	RT_ASSERT_ALLOC( jssCt );
-	*rval = STRING_TO_JSVAL(jssCt);
+	*rval = OBJECT_TO_JSVAL(jssCt);
 	return JS_TRUE;
 }
 
 /**doc
- * $STR $INAME( string )
-  Decrypts the given _string_ using the current cipher.
+ * $DATA $INAME( data )
+  Decrypts the given _data_ using the current cipher.
 **/
 DEFINE_FUNCTION( Decrypt ) {
 
@@ -360,9 +360,11 @@ DEFINE_FUNCTION( Decrypt ) {
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err);
 
-	JSString *jssCt = JS_NewString( cx, pt, ctLength );
+//	JSString *jssCt = JS_NewString( cx, pt, ctLength );
+	JSObject *jssCt = J_NewBinaryString( cx, pt, ctLength );
 	RT_ASSERT_ALLOC( jssCt );
-	*rval = STRING_TO_JSVAL(jssCt);
+//	*rval = STRING_TO_JSVAL(jssCt);
+	*rval = OBJECT_TO_JSVAL(jssCt);
 	return JS_TRUE;
 }
 

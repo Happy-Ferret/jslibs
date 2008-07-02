@@ -110,9 +110,11 @@ DEFINE_FUNCTION( Call ) {
 	unsigned long hasRead = privateData->prng.read( (unsigned char*)pr, readCount, &privateData->state );
 	RT_ASSERT( hasRead == readCount, "unable to read prng." );
 
-	JSString *randomString = JS_NewString( cx, pr, hasRead );
+//	JSString *randomString = JS_NewString( cx, pr, hasRead );
+	JSObject *randomString = J_NewBinaryString( cx, pr, hasRead );
 	RT_ASSERT( randomString != NULL, "unable to create the random string." );
-	*rval = STRING_TO_JSVAL(randomString);
+//	*rval = STRING_TO_JSVAL(randomString);
+	*rval = OBJECT_TO_JSVAL(randomString);
 	return JS_TRUE;
 }
 
@@ -165,7 +167,7 @@ DEFINE_FUNCTION( AutoEntropy ) {
 **/
 
 /**doc
- * $STR $INAME
+ * $DATA $INAME
   is the current state of the prng.
 **/
 DEFINE_PROPERTY( stateGetter ) {
@@ -181,7 +183,8 @@ DEFINE_PROPERTY( stateGetter ) {
 	if ( err != CRYPT_OK )
 		return ThrowCryptError(cx, err);
 	RT_ASSERT( stateLength == size, "Invalid export size." );
-	*vp = STRING_TO_JSVAL( JS_NewString(cx, stateData, size) );
+//	*vp = STRING_TO_JSVAL( JS_NewString(cx, stateData, size) );
+	*vp = OBJECT_TO_JSVAL( J_NewBinaryString(cx, stateData, size) );
 	return JS_TRUE;
 }
 
