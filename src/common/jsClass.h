@@ -113,10 +113,21 @@ struct JSLIBS_ConstIntegerSpec {
 	JSBool InitializeStatic(JSContext *cx, JSObject *obj) { \
 	JSFunctionSpec *_staticFunctionSpec = NULL; \
 	JSPropertySpec *_staticPropertySpec = NULL; \
+	JSConstDoubleSpec *_constDoubleSpec = NULL; \
+	JSLIBS_ConstIntegerSpec *_constIntegerSpec = NULL; \
 
 #define END_STATIC \
 	if ( _staticFunctionSpec != NULL ) JS_DefineFunctions(cx, obj, _staticFunctionSpec); \
 	if ( _staticPropertySpec != NULL ) JS_DefineProperties(cx, obj, _staticPropertySpec); \
+	if ( _constIntegerSpec != NULL ) { \
+	  JSObject *dstObj = obj; \
+		for (; _constIntegerSpec->name; _constIntegerSpec++) \
+		if ( JS_DefineProperty(cx, dstObj, _constIntegerSpec->name, INT_TO_JSVAL(_constIntegerSpec->ival), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) != JS_TRUE ) \
+			return JS_FALSE; \
+	} \
+	if ( _constDoubleSpec != NULL ) \
+		if ( JS_DefineConstDoubles(cx, obj, _constDoubleSpec) != JS_TRUE ) \
+			return JS_FALSE; \
 	return JS_TRUE; } \
 
 // class definition

@@ -66,36 +66,45 @@ DEFINE_FUNCTION( ExtractIcon_ ) {
    $ARG string content: the message to be displayed.
    $ARG string caption: the dialog box title.
    $ARG integer style: specifies the contents and behavior of the dialog box. This parameter can be a combination of flags from the following groups of flags:
-    * MB_ABORTRETRYIGNORE
-    * MB_CANCELTRYCONTINUE
-    * MB_HELP
-    * MB_OK
-    * MB_OKCANCEL
-    * MB_RETRYCANCEL
-    * MB_YESNO
-    * MB_YESNOCANCEL
-    * MB_ICONEXCLAMATION
-    * MB_ICONWARNING
-    * MB_ICONINFORMATION
-    * MB_ICONASTERISK
-    * MB_ICONQUESTION
-    * MB_ICONSTOP
-    * MB_ICONERROR
-    * MB_ICONHAND
-    * MB_DEFBUTTON1
-    * MB_DEFBUTTON2
-    * MB_DEFBUTTON3
-    * MB_DEFBUTTON4
-    * MB_APPLMODAL
-    * MB_SYSTEMMODAL
-    * MB_TASKMODAL
-    * MB_DEFAULT_DESKTOP_ONLY
-    * MB_RIGHT
-    * MB_RTLREADING
-    * MB_SETFOREGROUND
-    * MB_TOPMOST
-    * MB_SERVICE_NOTIFICATION
-    * MB_SERVICE_NOTIFICATION_NT3X
+    * ABORTRETRYIGNORE
+    * CANCELTRYCONTINUE
+    * HELP
+    * OK
+    * OKCANCEL
+    * RETRYCANCEL
+    * YESNO
+    * YESNOCANCEL
+    * ICONEXCLAMATION
+    * ICONWARNING
+    * ICONINFORMATION
+    * ICONASTERISK
+    * ICONQUESTION
+    * ICONSTOP
+    * ICONERROR
+    * ICONHAND
+    * DEFBUTTON1
+    * DEFBUTTON2
+    * DEFBUTTON3
+    * DEFBUTTON4
+    * APPLMODAL
+    * SYSTEMMODAL
+    * TASKMODAL
+    * DEFAULT_DESKTOP_ONLY
+    * RIGHT
+    * RTLREADING
+    * SETFOREGROUND
+    * TOPMOST
+  $H return value
+   * IDABORT: Abort button was selected.
+   * IDCANCEL: Cancel button was selected.
+   * IDCONTINUE: Continue button was selected.
+   * IDIGNORE: Ignore button was selected.
+   * IDNO: No button was selected.
+   * IDOK: OK button was selected.
+   * IDRETRY: Retry button was selected.
+   * IDTRYAGAIN: Try Again button was selected.
+   * IDYES: Yes button was selected.
+   * 32000: timeout ???
 **/
 DEFINE_FUNCTION( MessageBox_ ) {
 
@@ -159,7 +168,7 @@ DEFINE_FUNCTION( CreateProcess_ ) {
 
 
 /**doc
- * $STR | $TYPE undefined $INAME( filters | `undefined` [, defaultFileName ] );
+ * $STR | $TYPE undefined $INAME( [ filters ] [, defaultFileName ] )
   Creates an Open dialog box that lets the user specify the drive, directory, and the name of a file.
  $H example
  {{{
@@ -247,10 +256,10 @@ DEFINE_FUNCTION( Sleep_ ) {
    $ARG integer type:
     * -1 : Simple beep. If the sound card is not available, the sound is generated using the speaker.
     * 0 : MB_OK SystemDefault
-    * 0x40 : MB_ICONASTERISK SystemAsterisk
-    * 0x30 : MB_ICONEXCLAMATION SystemExclamation
-    * 0x10 : MB_ICONHAND SystemHand
-    * 0x20 : MB_ICONQUESTION SystemQuestion
+    * ICONASTERISK: SystemAsterisk
+    * ICONEXCLAMATION: SystemExclamation
+    * ICONHAND: SystemHand
+    * ICONQUESTION: SystemQuestion
 **/
 DEFINE_FUNCTION( MessageBeep_ ) {
 
@@ -353,8 +362,47 @@ CONFIGURE_STATIC
 		PROPERTY( clipboard )
 	END_STATIC_PROPERTY_SPEC
 
-//	BEGIN_CONST_INTEGER_SPEC
-//	END_CONST_INTEGER_SPEC
+	BEGIN_CONST_INTEGER_SPEC
+		CONST_INTEGER(ABORTRETRYIGNORE				,MB_ABORTRETRYIGNORE           )
+		CONST_INTEGER(CANCELTRYCONTINUE				,MB_CANCELTRYCONTINUE			 )
+		CONST_INTEGER(HELP								,MB_HELP								 )
+		CONST_INTEGER(OK									,MB_OK								 )
+		CONST_INTEGER(OKCANCEL							,MB_OKCANCEL						 )
+		CONST_INTEGER(RETRYCANCEL						,MB_RETRYCANCEL					 )
+		CONST_INTEGER(YESNO								,MB_YESNO							 )
+		CONST_INTEGER(YESNOCANCEL						,MB_YESNOCANCEL					 )
+		CONST_INTEGER(ICONEXCLAMATION					,MB_ICONEXCLAMATION				 )
+		CONST_INTEGER(ICONWARNING						,MB_ICONWARNING					 )
+		CONST_INTEGER(ICONINFORMATION					,MB_ICONINFORMATION				 )
+		CONST_INTEGER(ICONASTERISK						,MB_ICONASTERISK					 )
+		CONST_INTEGER(ICONQUESTION						,MB_ICONQUESTION					 )
+		CONST_INTEGER(ICONSTOP							,MB_ICONSTOP						 )
+		CONST_INTEGER(ICONERROR							,MB_ICONERROR						 )
+		CONST_INTEGER(ICONHAND							,MB_ICONHAND						 )
+		CONST_INTEGER(DEFBUTTON1						,MB_DEFBUTTON1						 )
+		CONST_INTEGER(DEFBUTTON2						,MB_DEFBUTTON2						 )
+		CONST_INTEGER(DEFBUTTON3						,MB_DEFBUTTON3						 )
+		CONST_INTEGER(DEFBUTTON4						,MB_DEFBUTTON4						 )
+		CONST_INTEGER(APPLMODAL							,MB_APPLMODAL						 )
+		CONST_INTEGER(SYSTEMMODAL						,MB_SYSTEMMODAL					 )
+		CONST_INTEGER(TASKMODAL							,MB_TASKMODAL						 )
+		CONST_INTEGER(DEFAULT_DESKTOP_ONLY			,MB_DEFAULT_DESKTOP_ONLY		 )
+		CONST_INTEGER(RIGHT								,MB_RIGHT							 )
+		CONST_INTEGER(RTLREADING						,MB_RTLREADING						 )
+		CONST_INTEGER(SETFOREGROUND					,MB_SETFOREGROUND					 )
+		CONST_INTEGER(TOPMOST							,MB_TOPMOST							 )
+//		CONST_INTEGER(SERVICE_NOTIFICATION			,MB_SERVICE_NOTIFICATION		 )
+//		CONST_INTEGER(SERVICE_NOTIFICATION_NT3X	,MB_SERVICE_NOTIFICATION_NT3X	 )
 
+		CONST_INTEGER(IDABORT     ,IDABORT    )
+		CONST_INTEGER(IDCANCEL	  ,IDCANCEL	  )
+		CONST_INTEGER(IDCONTINUE  ,IDCONTINUE )
+		CONST_INTEGER(IDIGNORE	  ,IDIGNORE	  )
+		CONST_INTEGER(IDNO		  ,IDNO		  )
+		CONST_INTEGER(IDOK		  ,IDOK		  )
+		CONST_INTEGER(IDRETRY	  ,IDRETRY	  )
+		CONST_INTEGER(IDTRYAGAIN  ,IDTRYAGAIN )
+		CONST_INTEGER(IDYES		  ,IDYES		  )
+	END_CONST_INTEGER_SPEC
 
 END_STATIC
