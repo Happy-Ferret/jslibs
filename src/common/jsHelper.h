@@ -314,19 +314,7 @@ inline JSClass *GetGlobalClassByName(JSContext *cx, const char *className) {
 #define J_STRING_LENGTH(jsstr) (JSSTRING_LENGTH(jsstr))
 
 
-/*
-inline bool JsvalIsString( JSContext *cx, jsval val ) {
-
-	if ( JSVAL_IS_STRING(val) )
-		return true;
-	if ( !JSVAL_IS_OBJECT(val) || JSVAL_IS_NULL(val) )
-		return false;
-	return BufferGetInterface(cx, JSVAL_TO_OBJECT(val)) != NULL;
-}
-*/
-
 #define J_JSVAL_IS_STRING(val) ( JSVAL_IS_STRING(val) || (JSVAL_IS_OBJECT(val) && !JSVAL_IS_NULL(val) && BufferGetInterface(cx, JSVAL_TO_OBJECT(val)) != NULL) )
-
 
 inline JSObject* J_NewBinaryString( JSContext *cx, void* buffer, size_t length ) {
 
@@ -357,8 +345,6 @@ err:
 	JS_free(cx, buffer); // JS_NewString do not free the buffer on error.
 	return NULL;
 }
-
-
 
 inline JSObject* J_NewBinaryStringCopyN( JSContext *cx, const void *data, size_t amount ) {
 
@@ -402,12 +388,6 @@ inline JSBool JsvalToStringAndLength( JSContext *cx, jsval val, const char** buf
 	return JS_TRUE;
 }
 
-
-//#define J_JSVAL_TO_STRING_AND_LENGTH( val, str, len ) do { \
-//	J_CHK( JsvalToStringAndLength(cx, (val), &(str), &(len)) ); \
-//} while(0)
-
-
 inline JSBool JsvalToStringLength( JSContext *cx, jsval val, size_t *length ) {
 
 	if ( JSVAL_IS_STRING(val) ) {
@@ -436,11 +416,6 @@ inline JSBool JsvalToString( JSContext *cx, jsval val, const char** buffer ) {
 	size_t size; //unused
 	return JsvalToStringAndLength( cx, val, buffer, &size );
 }
-
-
-//#define J_JSVAL_TO_STRING( val, str ) do { \
-//	J_CHK( JsvalToString(cx, (val), &(str)) ); \
-//} while(0)
 
 
 inline JSBool StringToJsval( JSContext *cx, jsval *val, const char* cstr ) {
@@ -503,7 +478,6 @@ inline JSBool SetPropertyInt( JSContext *cx, JSObject *obj, const char *property
 	return JS_TRUE;
 }
 
-
 inline JSBool GetPropertyInt( JSContext *cx, JSObject *obj, const char *propertyName, int *intVal ) {
 
 	jsval val;
@@ -521,6 +495,39 @@ inline JSBool GetPropertyInt( JSContext *cx, JSObject *obj, const char *property
 	return JS_TRUE;
 }
 
+#define J_JSVAL_TO_INT32( jsvalInt, intVariable ) do { \
+	if ( JSVAL_IS_INT(jsvalInt) ) { \
+		intVariable = JSVAL_TO_INT(jsvalInt); \
+	} else { \
+		int32 __intVal; \
+		if (unlikely( JS_ValueToInt32( cx, jsvalInt, &__intVal ) != JS_TRUE )) \
+			J_REPORT_ERROR( "Unable to convert to a 32bit integer." ); \
+		intVariable = __intVal; \
+	} \
+} while(0)
+
+
+#define J_PROPERTY_TO_INT32( jsobject, propertyName, intVariable ) do { \
+	jsval __tmpVal; \
+	J_CHECK_CALL( JS_GetProperty(cx, jsobject, propertyName, &__tmpVal) ); \
+	J_JSVAL_TO_INT32( __tmpVal, intVariable ); \
+} while(0)
+
+
+
+#define J_JSVAL_TO_UINT32( jsvalUInt, uintVariable ) do { \
+	if ( JSVAL_IS_INT(jsvalUInt) ) { \
+		uintVariable = JSVAL_TO_INT(jsvalUInt); \
+	} else { \
+		jsdouble __doubleValue; \
+		if (unlikely( JS_ValueToNumber(cx, jsvalUInt, &__doubleValue ) != JS_TRUE )) \
+			J_REPORT_ERROR( "Unable to convert to a 32bit unsigned integer." ); \
+		uintVariable = (unsigned long)__doubleValue; \
+		J_S_ASSERT( __doubleValue == (double)((unsigned long)__doubleValue), J__ERRMSG_INT_CONVERSION_FAILED ); \
+	} \
+	J_S_ASSERT( uintVariable >= 0, "Unable to convert to a 32bit unsigned integer." ); \
+} while(0)
+
 
 
 
@@ -528,38 +535,7 @@ inline JSBool GetPropertyInt( JSContext *cx, JSObject *obj, const char *property
 ///////////////////////////////////////////////////////////////////////////////
 // conversion macros
 
-// (TBD) try to use real functions with __forceinline
-
-/*
-#define J_JSVAL_TO_STRING( jsvalString, stringVariable ) do { \
-	JSString *__jsString = JS_ValueToString(cx, (jsvalString)); \
-	J_S_ASSERT( __jsString != NULL, J__ERRMSG_STRING_CONVERSION_FAILED ); \
-	(stringVariable) = JS_GetStringBytes(__jsString); \
-	J_S_ASSERT( (stringVariable) != NULL, J__ERRMSG_STRING_CONVERSION_FAILED ); \
-} while(0)
-*/
-
-/*
-#define J_JSVAL_TO_STRING( jsvalString, stringVariable ) do { \
-	J_CHECK_CALL( JsvalToString(cx, jsvalString, &stringVariable) ); \
-} while(0)
-*/
-
-/*
-#define J_JSVAL_TO_STRING_AND_LENGTH( jsvalString, stringVariable, lengthVariable ) do { \
-	JSString *__jsString = JS_ValueToString(cx,(jsvalString)); \
-	J_S_ASSERT( __jsString != NULL, J__ERRMSG_STRING_CONVERSION_FAILED ); \
-	(stringVariable) = JS_GetStringBytes(__jsString); \
-	J_S_ASSERT( (stringVariable) != NULL, J__ERRMSG_STRING_CONVERSION_FAILED ); \
-	(lengthVariable) = JS_GetStringLength(__jsString); \
-} while(0)
-*/
-
-/*
-#define J_JSVAL_TO_STRING_AND_LENGTH( jsvalString, stringVariable, lengthVariable ) do { \
-	J_CHECK_CALL( JsvalToStringAndLength(cx, jsvalString, &stringVariable, &lengthVariable) ); \
-} while(0)
-*/
+// (TBD) try to use real functions with __forceinline ?
 
 /*
 inline JSBool JsvalToBool( JSContext *cx, jsval val, bool *bval ) {
@@ -602,39 +578,6 @@ inline JSBool JsvalToBool( JSContext *cx, jsval val, bool *bval ) {
 } while(0)
 
 
-
-#define J_JSVAL_TO_INT32( jsvalInt, intVariable ) do { \
-	if ( JSVAL_IS_INT(jsvalInt) ) { \
-		intVariable = JSVAL_TO_INT(jsvalInt); \
-	} else { \
-		int32 __intVal; \
-		if (unlikely( JS_ValueToInt32( cx, jsvalInt, &__intVal ) != JS_TRUE )) \
-			J_REPORT_ERROR( "Unable to convert to a 32bit integer." ); \
-		intVariable = __intVal; \
-	} \
-} while(0)
-
-
-#define J_PROPERTY_TO_INT32( jsobject, propertyName, intVariable ) do { \
-	jsval __tmpVal; \
-	J_CHECK_CALL( JS_GetProperty(cx, jsobject, propertyName, &__tmpVal) ); \
-	J_JSVAL_TO_INT32( __tmpVal, intVariable ); \
-} while(0)
-
-
-
-#define J_JSVAL_TO_UINT32( jsvalUInt, uintVariable ) do { \
-	if ( JSVAL_IS_INT(jsvalUInt) ) { \
-		uintVariable = JSVAL_TO_INT(jsvalUInt); \
-	} else { \
-		jsdouble __doubleValue; \
-		if (unlikely( JS_ValueToNumber(cx, jsvalUInt, &__doubleValue ) != JS_TRUE )) \
-			J_REPORT_ERROR( "Unable to convert to a 32bit unsigned integer." ); \
-		uintVariable = (unsigned long)__doubleValue; \
-		J_S_ASSERT( __doubleValue == (double)((unsigned long)__doubleValue), J__ERRMSG_INT_CONVERSION_FAILED ); \
-	} \
-	J_S_ASSERT( uintVariable >= 0, "Unable to convert to a 32bit unsigned integer." ); \
-} while(0)
 
 
 #define J_FILL_JSVAL_ARRAY( vector, length, jsvalVariable ) do { \
@@ -739,10 +682,6 @@ inline JSBool JsvalToBool( JSContext *cx, jsval val, bool *bval ) {
 #define RT_JSVAL_TO_REAL J_JSVAL_TO_REAL
 #define RT_JSVAL_TO_INT32 J_JSVAL_TO_INT32
 #define RT_JSVAL_TO_UINT32 J_JSVAL_TO_UINT32
-//#define RT_JSVAL_TO_STRING J_JSVAL_TO_STRING
-//#define RT_JSVAL_TO_STRING_AND_LENGTH J_JSVAL_TO_STRING_AND_LENGTH
-
-
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -802,18 +741,6 @@ inline JSBool SetNamedPrivate( JSContext *cx, JSObject *obj, const char *name, c
 }
 */
 
-/*
-inline JSBool GetIntProperty( JSContext *cx, JSObject *obj, const char *propertyName, int *value ) {
-
-	jsval tmp;
-	int32 int32Value;
-	if ( JS_GetProperty(cx, obj, propertyName, &tmp) == JS_FALSE )
-		return JS_FALSE;
-	JS_ValueToInt32(cx, tmp, &int32Value);
-	*value = int32Value;
-	return JS_TRUE;
-}
-*/
 
 inline bool HasProperty( JSContext *cx, JSObject *obj, const char *propertyName ) {
 
