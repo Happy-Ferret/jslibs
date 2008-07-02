@@ -47,7 +47,7 @@ try {
 
 DEFINE_CONSTRUCTOR() {
 
-	REPORT_ERROR( "This object cannot be construct." );
+	J_REPORT_ERROR( "This object cannot be construct." );
 	return JS_TRUE;
 }
 
@@ -79,9 +79,9 @@ END_CLASS
 
 JSBool SqliteThrowError( JSContext *cx, int status, int errorCode, const char *errorMsg ) {
 
-	RT_SAFE(	JS_ReportWarning( cx, "SqliteError exception" ) );
+	J_SAFE(	JS_ReportWarning( cx, "SqliteError exception" ) );
 	JSObject *error = JS_NewObject( cx, &classSqliteError, NULL, NULL ); // (TBD) understand why classSqliteError must have a constructor to be throwed in an exception
-	RT_ASSERT( error != NULL, "Unable to create SqliteError object." );
+	J_S_ASSERT( error != NULL, "Unable to create SqliteError object." );
 	JS_SetReservedSlot( cx, error, SLOT_SQLITE_ERROR_CODE, INT_TO_JSVAL(errorCode) );
 	JS_SetReservedSlot( cx, error, SLOT_SQLITE_ERROR_TEXT, STRING_TO_JSVAL(JS_NewStringCopyZ( cx, errorMsg )) );
 	JS_SetPendingException( cx, OBJECT_TO_JSVAL( error ) );

@@ -22,7 +22,7 @@ BEGIN_CLASS( WinError )
 
 DEFINE_CONSTRUCTOR() {
 
-	REPORT_ERROR( "This object cannot be construct." );
+	J_REPORT_ERROR( "This object cannot be construct." );
 	return JS_TRUE;
 }
 
@@ -61,9 +61,9 @@ END_CLASS
 
 JSBool WinThrowError( JSContext *cx, DWORD errorCode ) {
 
-	RT_SAFE(	JS_ReportWarning( cx, "WinError exception" ) );
+	J_SAFE(	JS_ReportWarning( cx, "WinError exception" ) );
 	JSObject *error = JS_NewObject( cx, &classWinError, NULL, NULL ); // (TBD) understand why it must have a constructor to be throwed in an exception
-	RT_ASSERT( error != NULL, "Unable to create WinError object." );
+	J_S_ASSERT( error != NULL, "Unable to create WinError object." );
 	JS_SetReservedSlot( cx, error, SLOT_WIN_ERROR_CODE, INT_TO_JSVAL(errorCode) );
 	JS_SetPendingException( cx, OBJECT_TO_JSVAL( error ) );
 	return JS_FALSE;

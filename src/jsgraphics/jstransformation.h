@@ -29,10 +29,10 @@ inline JSBool GetMatrixHelper( JSContext *cx, jsval val, Matrix44 **m ) {
 	JSObject *matrixObj = JSVAL_TO_OBJECT(val);
 
 	NIMatrix44Read Matrix44Read;
-	J_CHECK_CALL( GetMatrix44ReadInterface(cx, matrixObj, &Matrix44Read) );
+	J_CHK( GetMatrix44ReadInterface(cx, matrixObj, &Matrix44Read) );
 	if ( Matrix44Read != NULL ) {
 
-		J_CHECK_CALL( Matrix44Read(cx, matrixObj, (float**)m) );
+		J_CHK( Matrix44Read(cx, matrixObj, (float**)m) );
 		return JS_TRUE;
 	}
 

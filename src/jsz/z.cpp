@@ -109,7 +109,7 @@ JSBool z_call(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval
 		J_CHK( JsvalToStringAndLength(cx, argv[0], &inputData, &inputLength) );
 
 //		JSString *jssData = JS_ValueToString( cx, argv[0] );
-//		RT_ASSERT_ALLOC( jssData );
+//		J_S_ASSERT_ALLOC( jssData );
 //		argv[0] = STRING_TO_JSVAL( jssData );
 //		inputLength = JS_GetStringLength( jssData );
 //		inputData = JS_GetStringBytes( jssData ); // no copy is done, we read directly in the string hold by SM

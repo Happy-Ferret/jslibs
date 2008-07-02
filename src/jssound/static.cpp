@@ -82,7 +82,7 @@ DEFINE_FUNCTION_FAST( DecodeOggVorbis ) {
 	JSObject *StreamObj = JSVAL_TO_OBJECT( J_FARG(1) );
 
 //	NIStreamRead streamReader;
-//	J_CHECK_CALL( GetStreamReadInterface(cx, StreamObj, &streamReader) );
+//	J_CHK( GetStreamReadInterface(cx, StreamObj, &streamReader) );
 //	J_S_ASSERT( streamReader != NULL, "Invalid stream." );
 
 	StreamReadInfo pv = { cx, StreamObj };
@@ -140,9 +140,9 @@ DEFINE_FUNCTION_FAST( DecodeOggVorbis ) {
 	JSObject *bstrObj = J_NewBinaryString(cx, buf, totalSize);
 	J_S_ASSERT( bstrObj != NULL, "Unable to create the BString object.");
 	*J_FRVAL = OBJECT_TO_JSVAL(bstrObj);
-	J_CHECK_CALL( SetPropertyInt(cx, bstrObj, "bits", bits) ); // bits per sample
-	J_CHECK_CALL( SetPropertyInt(cx, bstrObj, "rate", info->rate) );
-	J_CHECK_CALL( SetPropertyInt(cx, bstrObj, "channels", info->channels) );
+	J_CHK( SetPropertyInt(cx, bstrObj, "bits", bits) ); // bits per sample
+	J_CHK( SetPropertyInt(cx, bstrObj, "rate", info->rate) );
+	J_CHK( SetPropertyInt(cx, bstrObj, "channels", info->channels) );
 
 	ov_clear(&descriptor); // beware: info must be valid
 
@@ -277,7 +277,7 @@ DEFINE_FUNCTION_FAST( DecodeSound ) {
 	JSObject *StreamObj = JSVAL_TO_OBJECT( J_FARG(1) );
 
 //	NIStreamRead streamReader;
-//	J_CHECK_CALL( GetStreamReadInterface(cx, StreamObj, &streamReader) );
+//	J_CHK( GetStreamReadInterface(cx, StreamObj, &streamReader) );
 //	J_S_ASSERT( streamReader != NULL, "Invalid stream." );
 
 	StreamReadInfo pv = { cx, StreamObj };
@@ -334,9 +334,9 @@ DEFINE_FUNCTION_FAST( DecodeSound ) {
 	JSObject *bstrObj = J_NewBinaryString(cx, buf, totalSize);
 	J_S_ASSERT( bstrObj != NULL, "Unable to create the BString object.");
 	*J_FRVAL = OBJECT_TO_JSVAL(bstrObj);
-	J_CHECK_CALL( SetPropertyInt(cx, bstrObj, "bits", 16) ); // bits per sample
-	J_CHECK_CALL( SetPropertyInt(cx, bstrObj, "rate", info.samplerate) );
-	J_CHECK_CALL( SetPropertyInt(cx, bstrObj, "channels", info.channels) );
+	J_CHK( SetPropertyInt(cx, bstrObj, "bits", 16) ); // bits per sample
+	J_CHK( SetPropertyInt(cx, bstrObj, "rate", info.samplerate) );
+	J_CHK( SetPropertyInt(cx, bstrObj, "channels", info.channels) );
 
 	sf_close(descriptor);
 

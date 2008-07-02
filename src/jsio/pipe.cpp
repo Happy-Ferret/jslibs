@@ -30,8 +30,8 @@ DEFINE_FINALIZE() {
 /*
 DEFINE_CONSTRUCTOR() {
 
-	RT_ASSERT_CONSTRUCTING( _class );
-	RT_ASSERT_ARGC(1);
+	J_S_ASSERT_CONSTRUCTING( _class );
+	J_S_ASSERT_ARG_MIN(1);
 	JS_SetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, J_ARG(1) );
 	JS_SetPrivate(cx, obj, NULL); // (TBD) optional ?
 	return JS_TRUE;

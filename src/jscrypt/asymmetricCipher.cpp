@@ -46,14 +46,14 @@ struct AsymmetricCipherPrivate {
 JSBool SlotGetPrng(JSContext *cx, JSObject *obj, int *prngIndex, prng_state **prngState) {
 
 	jsval prngVal;
-	RT_CHECK_CALL( JS_GetReservedSlot(cx, obj, ASYMMETRIC_CIPHER_PRNG_SLOT, &prngVal) );
-	RT_ASSERT_OBJECT(	prngVal );
-	RT_ASSERT_CLASS( JSVAL_TO_OBJECT(prngVal), &classPrng );
+	J_CHK( JS_GetReservedSlot(cx, obj, ASYMMETRIC_CIPHER_PRNG_SLOT, &prngVal) );
+	J_S_ASSERT_OBJECT(	prngVal );
+	J_S_ASSERT_CLASS( JSVAL_TO_OBJECT(prngVal), &classPrng );
 	PrngPrivate *prngPrivate = (PrngPrivate *)JS_GetPrivate(cx, JSVAL_TO_OBJECT(prngVal));
-	RT_ASSERT_RESOURCE( prngPrivate );
+	J_S_ASSERT_RESOURCE( prngPrivate );
 	*prngState = &prngPrivate->state;
 	*prngIndex = find_prng(prngPrivate->prng.name);
-	RT_ASSERT_1( *prngIndex != -1, "prng %s is not available.", prngPrivate->prng.name );
+	J_S_ASSERT_1( *prngIndex != -1, "prng %s is not available.", prngPrivate->prng.name );
 	return JS_TRUE;
 }
 
@@ -107,7 +107,7 @@ DEFINE_CONSTRUCTOR() { // ( cipherName, hashName [, prngObject] [, PKCSVersion] 
 
 	J_S_ASSERT_CONSTRUCTING();
 	J_S_ASSERT_THIS_CLASS();
-	RT_ASSERT_ARGC( 3 );
+	J_S_ASSERT_ARG_MIN( 3 );
 
 	const char *asymmetricCipherName;
 	J_CHK( JsvalToString(cx, argv[0], &asymmetricCipherName) );
@@ -120,27 +120,27 @@ DEFINE_CONSTRUCTOR() { // ( cipherName, hashName [, prngObject] [, PKCSVersion] 
 	else if ( strcasecmp( asymmetricCipherName, "DSA" ) == 0 )
 		asymmetricCipher = dsa;
 	else
-		REPORT_ERROR_1("Invalid asymmetric cipher %s.", asymmetricCipherName);
+		J_REPORT_ERROR_1("Invalid asymmetric cipher %s.", asymmetricCipherName);
 
 	AsymmetricCipherPrivate *pv = (AsymmetricCipherPrivate *)malloc( sizeof(AsymmetricCipherPrivate) );
-	RT_ASSERT_ALLOC( pv );
+	J_S_ASSERT_ALLOC( pv );
 
 	pv->cipher = asymmetricCipher;
 
 	const char *hashName;
 	J_CHK( JsvalToString(cx, argv[1], &hashName) );
 	int hashIndex = find_hash(hashName);
-	RT_ASSERT_1( hashIndex != -1, "hash %s is not available.", hashName );
+	J_S_ASSERT_1( hashIndex != -1, "hash %s is not available.", hashName );
 	pv->hashDescriptor = &hash_descriptor[hashIndex];
 
 	if ( argc >= 3 ) {
 
-		RT_ASSERT_OBJECT(	argv[2] );
-		RT_ASSERT_CLASS( JSVAL_TO_OBJECT(argv[2]), &classPrng );
-		RT_CHECK_CALL( JS_SetReservedSlot(cx, obj, ASYMMETRIC_CIPHER_PRNG_SLOT, argv[2]) );
+		J_S_ASSERT_OBJECT(	argv[2] );
+		J_S_ASSERT_CLASS( JSVAL_TO_OBJECT(argv[2]), &classPrng );
+		J_CHK( JS_SetReservedSlot(cx, obj, ASYMMETRIC_CIPHER_PRNG_SLOT, argv[2]) );
 	} else {
 
-		RT_CHECK_CALL( JS_SetReservedSlot(cx, obj, ASYMMETRIC_CIPHER_PRNG_SLOT, JSVAL_VOID) );
+		J_CHK( JS_SetReservedSlot(cx, obj, ASYMMETRIC_CIPHER_PRNG_SLOT, JSVAL_VOID) );
 	}
 
 	pv->padding = LTC_LTC_PKCS_1_OAEP;
@@ -157,7 +157,7 @@ DEFINE_CONSTRUCTOR() { // ( cipherName, hashName [, prngObject] [, PKCSVersion] 
 
 			pv->padding = LTC_LTC_PKCS_1_V1_5;
 		} else
-			REPORT_ERROR("Invalid padding version.");
+			J_REPORT_ERROR("Invalid padding version.");
 	}
 
 	pv->hasKey = false;
@@ -183,17 +183,17 @@ DEFINE_CONSTRUCTOR() { // ( cipherName, hashName [, prngObject] [, PKCSVersion] 
 **/
 DEFINE_FUNCTION( CreateKeys ) { // ( bitsSize )
 
-	RT_ASSERT_ARGC( 1 );
-	RT_ASSERT_CLASS( obj, _class );
+	J_S_ASSERT_ARG_MIN( 1 );
+	J_S_ASSERT_CLASS( obj, _class );
 	AsymmetricCipherPrivate *pv = (AsymmetricCipherPrivate *)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE( pv );
+	J_S_ASSERT_RESOURCE( pv );
 
 	prng_state *prngState;
 	int prngIndex;
-	RT_CHECK_CALL( SlotGetPrng(cx, obj, &prngIndex, &prngState) );
+	J_CHK( SlotGetPrng(cx, obj, &prngIndex, &prngState) );
 
 	int32 keySize;
-	RT_JSVAL_TO_INT32( argv[0], keySize );
+	J_JSVAL_TO_INT32( argv[0], keySize );
 
 	int err = -1; // default
 	switch ( pv->cipher ) {
@@ -226,7 +226,7 @@ DEFINE_FUNCTION( CreateKeys ) { // ( bitsSize )
 			break;
 		}
 		default:
-			REPORT_ERROR("Invalid case.");
+			J_REPORT_ERROR("Invalid case.");
 	}
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err); // (TBD) free something ?
@@ -243,15 +243,15 @@ DEFINE_FUNCTION( CreateKeys ) { // ( bitsSize )
 **/
 DEFINE_FUNCTION( Encrypt ) { // ( data [, lparam] )
 
-	RT_ASSERT_ARGC( 1 );
-	RT_ASSERT_CLASS( obj, _class );
+	J_S_ASSERT_ARG_MIN( 1 );
+	J_S_ASSERT_CLASS( obj, _class );
 	AsymmetricCipherPrivate *pv = (AsymmetricCipherPrivate *)JS_GetPrivate( cx, obj );
-	RT_ASSERT_RESOURCE( pv );
-	RT_ASSERT( pv->hasKey, "No key found." );
+	J_S_ASSERT_RESOURCE( pv );
+	J_S_ASSERT( pv->hasKey, "No key found." );
 
 	prng_state *prngState;
 	int prngIndex;
-	RT_CHECK_CALL( SlotGetPrng(cx, obj, &prngIndex, &prngState) );
+	J_CHK( SlotGetPrng(cx, obj, &prngIndex, &prngState) );
 
 	int hashIndex = find_hash(pv->hashDescriptor->name);
 
@@ -274,7 +274,7 @@ DEFINE_FUNCTION( Encrypt ) { // ( data [, lparam] )
 			break;
 		}
 		case ecc: {
-			RT_ASSERT_ALLOC( out );
+			J_S_ASSERT_ALLOC( out );
 			err = ecc_encrypt_key( (unsigned char *)in, inLength, (unsigned char *)out, &outLength, prngState, prngIndex, hashIndex, &pv->key.eccKey );
 			break;
 		}
@@ -283,14 +283,14 @@ DEFINE_FUNCTION( Encrypt ) { // ( data [, lparam] )
 			break;
 		}
 		default:
-			REPORT_ERROR("Invalid case.");
+			J_REPORT_ERROR("Invalid case.");
 	}
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err); // (TBD) free something ?
 //	JSString *jssOut = JS_NewStringCopyN(cx, out, outLength);
 	JSObject *jssOut = J_NewBinaryStringCopyN(cx, out, outLength);
 	zeromem(out, sizeof(out)); // safe clear
-	RT_ASSERT_ALLOC( jssOut );
+	J_S_ASSERT_ALLOC( jssOut );
 //	*rval = STRING_TO_JSVAL( jssOut );
 	*rval = OBJECT_TO_JSVAL( jssOut );
 	return JS_TRUE;
@@ -313,11 +313,11 @@ DEFINE_FUNCTION( Encrypt ) { // ( data [, lparam] )
 **/
 DEFINE_FUNCTION( Decrypt ) { // ( encryptedData [, lparam] )
 
-	RT_ASSERT_ARGC( 1 );
-	RT_ASSERT_CLASS( obj, _class );
+	J_S_ASSERT_ARG_MIN( 1 );
+	J_S_ASSERT_CLASS( obj, _class );
 	AsymmetricCipherPrivate *pv = (AsymmetricCipherPrivate *)JS_GetPrivate( cx, obj );
-	RT_ASSERT_RESOURCE( pv );
-	RT_ASSERT( pv->hasKey, "No key found." );
+	J_S_ASSERT_RESOURCE( pv );
+	J_S_ASSERT( pv->hasKey, "No key found." );
 
 	const char *in;
 	size_t inLength;
@@ -356,7 +356,7 @@ DEFINE_FUNCTION( Decrypt ) { // ( encryptedData [, lparam] )
 			break;
 		}
 		default:
-			REPORT_ERROR("Invalid case.");
+			J_REPORT_ERROR("Invalid case.");
 	}
 
 	if (err != CRYPT_OK)
@@ -366,7 +366,7 @@ DEFINE_FUNCTION( Decrypt ) { // ( encryptedData [, lparam] )
 //	JSString *jssOut = JS_NewStringCopyN( cx, out, outLength );
 	JSObject *jssOut = J_NewBinaryStringCopyN( cx, out, outLength );
 	zeromem(out, sizeof(out));
-	RT_ASSERT_ALLOC( jssOut );
+	J_S_ASSERT_ALLOC( jssOut );
 //	*rval = STRING_TO_JSVAL(jssOut);
 	*rval = OBJECT_TO_JSVAL(jssOut);
 	return JS_TRUE;
@@ -381,16 +381,16 @@ DEFINE_FUNCTION( Decrypt ) { // ( encryptedData [, lparam] )
 **/
 DEFINE_FUNCTION( Sign ) { // ( data [, saltLength] )
 
-	RT_ASSERT_ARGC( 1 );
-	RT_ASSERT_CLASS( obj, _class );
+	J_S_ASSERT_ARG_MIN( 1 );
+	J_S_ASSERT_CLASS( obj, _class );
 	AsymmetricCipherPrivate *pv = (AsymmetricCipherPrivate *)JS_GetPrivate( cx, obj );
-	RT_ASSERT_RESOURCE( pv );
+	J_S_ASSERT_RESOURCE( pv );
 
-	RT_ASSERT( pv->hasKey, "No key found." );
+	J_S_ASSERT( pv->hasKey, "No key found." );
 
 	prng_state *prngState;
 	int prngIndex;
-	RT_CHECK_CALL( SlotGetPrng(cx, obj, &prngIndex, &prngState) );
+	J_CHK( SlotGetPrng(cx, obj, &prngIndex, &prngState) );
 
 	const char *in;
 	size_t inLength;
@@ -407,7 +407,7 @@ DEFINE_FUNCTION( Sign ) { // ( data [, saltLength] )
 			// int saltLength = 16; // OR saltLength = mp_unsigned_bin_size((mp_int*)(pv->key.rsaKey.N)) - hash_descriptor[hashIndex].hashsize - 2  -1;
 			int saltLength = RSA_SIGN_DEFAULT_SALT_LENGTH;
 			if ( argc >= 2 && argv[1] != JSVAL_VOID )
-				RT_JSVAL_TO_INT32(argv[1], saltLength);
+				J_JSVAL_TO_INT32(argv[1], saltLength);
 
 			err = rsa_sign_hash_ex( (unsigned char *)in, inLength, (unsigned char *)out, &outLength, LTC_LTC_PKCS_1_PSS, prngState, prngIndex, hashIndex, saltLength, &pv->key.rsaKey );
 			break;
@@ -421,14 +421,14 @@ DEFINE_FUNCTION( Sign ) { // ( data [, saltLength] )
 			break;
 		}
 		default:
-			REPORT_ERROR("Invalid case.");
+			J_REPORT_ERROR("Invalid case.");
 	}
 
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err); // (TBD) free something ?
 	JSString *jssOut = JS_NewStringCopyN( cx, out, outLength );
 	zeromem(out, sizeof(out));
-	RT_ASSERT_ALLOC( jssOut );
+	J_S_ASSERT_ALLOC( jssOut );
 	*rval = STRING_TO_JSVAL(jssOut);
 	return JS_TRUE;
 }
@@ -441,11 +441,11 @@ DEFINE_FUNCTION( Sign ) { // ( data [, saltLength] )
 **/
 DEFINE_FUNCTION( VerifySignature ) { // ( data, signature [, saltLength] )
 
-	RT_ASSERT_ARGC( 2 );
-	RT_ASSERT_CLASS( obj, _class );
+	J_S_ASSERT_ARG_MIN( 2 );
+	J_S_ASSERT_CLASS( obj, _class );
 	AsymmetricCipherPrivate *pv = (AsymmetricCipherPrivate *)JS_GetPrivate( cx, obj );
-	RT_ASSERT_RESOURCE( pv );
-	RT_ASSERT( pv->hasKey, "No key found." );
+	J_S_ASSERT_RESOURCE( pv );
+	J_S_ASSERT( pv->hasKey, "No key found." );
 
 	const char *data;
 	size_t dataLength;
@@ -461,7 +461,7 @@ DEFINE_FUNCTION( VerifySignature ) { // ( data, signature [, saltLength] )
 		case rsa: {
 			int saltLength = RSA_SIGN_DEFAULT_SALT_LENGTH; // default
 			if ( argc >= 3 && argv[2] != JSVAL_VOID )
-				RT_JSVAL_TO_INT32(argv[2], saltLength);
+				J_JSVAL_TO_INT32(argv[2], saltLength);
 
 			int hashIndex = find_hash(pv->hashDescriptor->name);
 
@@ -477,7 +477,7 @@ DEFINE_FUNCTION( VerifySignature ) { // ( data, signature [, saltLength] )
 			break;
 		}
 		default:
-			REPORT_ERROR("Invalid case.");
+			J_REPORT_ERROR("Invalid case.");
 	}
 
 	if (err != CRYPT_OK)
@@ -497,10 +497,10 @@ DEFINE_FUNCTION( VerifySignature ) { // ( data, signature [, saltLength] )
 **/
 DEFINE_PROPERTY( blockLength ) {
 
-	RT_ASSERT_CLASS( obj, _class );
+	J_S_ASSERT_CLASS( obj, _class );
 	AsymmetricCipherPrivate *pv = (AsymmetricCipherPrivate *)JS_GetPrivate( cx, obj );
-	RT_ASSERT_RESOURCE( pv );
-	RT_ASSERT( pv->hasKey, "No key found." );
+	J_S_ASSERT_RESOURCE( pv );
+	J_S_ASSERT( pv->hasKey, "No key found." );
 	int blockLength;
 	switch ( pv->cipher ) {
 		case rsa:
@@ -513,7 +513,7 @@ DEFINE_PROPERTY( blockLength ) {
 			blockLength = pv->hashDescriptor->hashsize; // seems OK
 			break;
 		default:
-			REPORT_ERROR("Invalid case.");
+			J_REPORT_ERROR("Invalid case.");
 	}
 	*vp = INT_TO_JSVAL( blockLength );
 	return JS_TRUE;
@@ -525,10 +525,10 @@ DEFINE_PROPERTY( blockLength ) {
 **/
 DEFINE_PROPERTY( keySize ) {
 
-	RT_ASSERT_CLASS( obj, _class );
+	J_S_ASSERT_CLASS( obj, _class );
 	AsymmetricCipherPrivate *pv = (AsymmetricCipherPrivate *)JS_GetPrivate( cx, obj );
-	RT_ASSERT_RESOURCE( pv );
-	RT_ASSERT( pv->hasKey, "No key found." );
+	J_S_ASSERT_RESOURCE( pv );
+	J_S_ASSERT( pv->hasKey, "No key found." );
 	int keySize;
 	switch ( pv->cipher ) {
 		case rsa:
@@ -541,7 +541,7 @@ DEFINE_PROPERTY( keySize ) {
 			keySize = mp_unsigned_bin_size((mp_int*)(pv->key.dsaKey.y)) * 8; // ???
 			break;
 		default:
-			REPORT_ERROR("Invalid case.");
+			J_REPORT_ERROR("Invalid case.");
 	}
 	*vp = INT_TO_JSVAL( keySize );
 	return JS_TRUE;
@@ -558,34 +558,34 @@ DEFINE_PROPERTY( keySize ) {
 
 DEFINE_PROPERTY( keySetter ) {
 
-	RT_ASSERT_CLASS( obj, _class );
+	J_S_ASSERT_CLASS( obj, _class );
 	AsymmetricCipherPrivate *pv = (AsymmetricCipherPrivate *)JS_GetPrivate( cx, obj );
-	RT_ASSERT_RESOURCE( pv );
+	J_S_ASSERT_RESOURCE( pv );
 
 	const char *key;
 	size_t keyLength;
 	J_CHK( JsvalToStringAndLength(cx, *vp, &key, &keyLength) );
 
 	int type;
-	RT_JSVAL_TO_INT32( id, type );
+	J_JSVAL_TO_INT32( id, type );
 
 	int err = -1; // default
 	switch ( pv->cipher ) {
 		case rsa:
 			err = rsa_import( (unsigned char *)key, keyLength, &pv->key.rsaKey );
-			RT_ASSERT( pv->key.rsaKey.type == type, "Invalid key type." );
+			J_S_ASSERT( pv->key.rsaKey.type == type, "Invalid key type." );
 			break;
 		case ecc:
 			err = ecc_import( (unsigned char *)key, keyLength, &pv->key.eccKey );
-			RT_ASSERT( pv->key.rsaKey.type == type, "Invalid key type." );
+			J_S_ASSERT( pv->key.rsaKey.type == type, "Invalid key type." );
 			break;
 		case dsa:
 			err = dsa_import( (unsigned char *)key, keyLength, &pv->key.dsaKey );
-			RT_ASSERT( pv->key.rsaKey.type == type, "Invalid key type." );
+			J_S_ASSERT( pv->key.rsaKey.type == type, "Invalid key type." );
 			//dsa_verify_key(
 			break;
 		default:
-			REPORT_ERROR("Invalid case.");
+			J_REPORT_ERROR("Invalid case.");
 	}
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err); // (TBD) free something ?
@@ -597,15 +597,15 @@ DEFINE_PROPERTY( keySetter ) {
 
 DEFINE_PROPERTY( keyGetter ) {
 
-	RT_ASSERT_CLASS( obj, _class );
+	J_S_ASSERT_CLASS( obj, _class );
 	AsymmetricCipherPrivate *pv = (AsymmetricCipherPrivate *)JS_GetPrivate( cx, obj );
-	RT_ASSERT_RESOURCE( pv );
-	RT_ASSERT( pv->hasKey, "No key found." );
+	J_S_ASSERT_RESOURCE( pv );
+	J_S_ASSERT( pv->hasKey, "No key found." );
 
 	JSBool jsErr;
 	int32 type;
 	jsErr = JS_ValueToInt32(cx, id, &type);
-	RT_ASSERT( jsErr == JS_TRUE, "Invalid operation." );
+	J_S_ASSERT( jsErr == JS_TRUE, "Invalid operation." );
 
 	char key[4096];
 	unsigned long keyLength = sizeof(key);
@@ -622,13 +622,13 @@ DEFINE_PROPERTY( keyGetter ) {
 			err = dsa_export( (unsigned char *)key, &keyLength, type, &pv->key.dsaKey );
 			break;
 		default:
-			REPORT_ERROR("Invalid case.");
+			J_REPORT_ERROR("Invalid case.");
 	}
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err); // (TBD) free something ?
 
 	JSString *jssKey = JS_NewStringCopyN(cx, key, keyLength);
-	RT_ASSERT( jssKey != NULL, "unable to create the key string." );
+	J_S_ASSERT( jssKey != NULL, "unable to create the key string." );
 	*vp = STRING_TO_JSVAL(jssKey);
 	zeromem(key, sizeof(key)); // safe clean
 	return JS_TRUE;

@@ -136,7 +136,7 @@ void ReadUsingJsMethod( void *pv, unsigned char *data, unsigned int *length ) {
 //	char *stringData = JS_GetStringBytes(str);
 
 	char *stringData;
-	RT_JSVAL_TO_STRING_AND_LENGTH( rval, stringData, *length );
+	J_JSVAL_TO_STRING_AND_LENGTH( rval, stringData, *length );
 
 	// (TBD) check if not NULL
 	memcpy(data, stringData, *length); // (TBD) hard but try to avoid the useless copy of data
@@ -158,10 +158,10 @@ DEFINE_CONSTRUCTOR() {
 
 	J_S_ASSERT_CONSTRUCTING();
 	J_S_ASSERT_THIS_CLASS();
-	RT_ASSERT_ARGC(1);
+	J_S_ASSERT_ARG_MIN(1);
 
 	j_decompress_ptr cinfo = (j_decompress_ptr)malloc(sizeof(jpeg_decompress_struct)); // (TBD) free
-	RT_ASSERT_ALLOC(cinfo);
+	J_S_ASSERT_ALLOC(cinfo);
 
 // setup error structure
 	jpeg_error_mgr *err = (jpeg_error_mgr *)malloc(sizeof(jpeg_error_mgr));
@@ -187,18 +187,18 @@ DEFINE_CONSTRUCTOR() {
 
 // try to use a fast way to read the data
 	GetNativeInterface(cx, JSVAL_TO_OBJECT(argv[0]), NI_READ_RESOURCE, (FunctionPointer*)&src->read, &src->pv);
-	RT_ASSERT( src->read != NULL && src->pv != NULL, "Unable to GetNativeResource." );
+	J_S_ASSERT( src->read != NULL && src->pv != NULL, "Unable to GetNativeResource." );
 
 // else use a 'classic' method to read the data ( like var data = resourceObject.Read(amount); )
 	if ( src->read == NULL || src->pv == NULL ) {
-		RT_ASSERT( false, "TO BE DONE" ); // (TBD) read without NI_READ_RESOURCE
+		J_S_ASSERT( false, "TO BE DONE" ); // (TBD) read without NI_READ_RESOURCE
 //		CxObj
 //		src->pv = resourceObject;
 //		src->read = ReadUsingJsMethod;
 	}
 
 //	JSBool status = GetNativeResource(cx, JSVAL_TO_OBJECT(argv[0]), &src->pv, &src->read, NULL );
-//	RT_ASSERT( status == JS_TRUE, "Unable to GetNativeResource." );
+//	J_S_ASSERT( status == JS_TRUE, "Unable to GetNativeResource." );
 
 // read image headers
 	jpeg_read_header(cinfo, TRUE); //we passed TRUE to reject a tables-only JPEG file as an error.
@@ -228,7 +228,7 @@ DEFINE_FUNCTION( Load ) {
 	int channels = cinfo->output_components;
 
 	JOCTET * data = (JOCTET *)malloc(height * bytePerRow);
-	RT_ASSERT_ALLOC(data);
+	J_S_ASSERT_ALLOC(data);
 	JSObject *image = NewImage(cx, width, height, channels, data);
 	*rval = OBJECT_TO_JSVAL(image);
 

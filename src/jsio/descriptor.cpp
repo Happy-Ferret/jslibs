@@ -106,7 +106,7 @@ DEFINE_CONSTRUCTOR() {
 DEFINE_FUNCTION( Close ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
-	RT_ASSERT( fd != NULL, "file is closed." );
+	J_S_ASSERT( fd != NULL, "file is closed." );
 	PRStatus status = PR_Close( fd );
 	if (status != PR_SUCCESS) {
 
@@ -116,7 +116,7 @@ DEFINE_FUNCTION( Close ) {
 	}
 	JS_SetPrivate( cx, obj, NULL );
 //	JS_ClearScope( cx, obj ); // help to clear readable, writable, exception
-//	J_CHECK_CALL( SetStreamReadInterface(cx, obj, NULL) );
+//	J_CHK( SetStreamReadInterface(cx, obj, NULL) );
 	J_CHK( SetStreamReadInterface(cx, obj, NULL) );
 	return JS_TRUE;
 }
@@ -125,7 +125,7 @@ DEFINE_FUNCTION( Close ) {
 JSBool ReadToJsval(JSContext *cx, PRFileDesc *fd, int amount, jsval *rval ) {
 
 	char *buf = (char*)JS_malloc( cx, amount + 1 );
-	RT_ASSERT_ALLOC(buf);
+	J_S_ASSERT_ALLOC(buf);
 	buf[amount] = '\0';
 // (TBD) use BString
 //	JSObject bstringObj = NewBString(cx, buf, amount);
@@ -154,11 +154,11 @@ JSBool ReadToJsval(JSContext *cx, PRFileDesc *fd, int amount, jsval *rval ) {
 	if ( MaybeRealloc(amount, res) ) {
 
 		buf = (char*)JS_realloc(cx, buf, res + 1); // realloc the string using its real size
-		RT_ASSERT_ALLOC(buf);
+		J_S_ASSERT_ALLOC(buf);
 	}
 
 	JSString *str = JS_NewString(cx, buf, res);
-	RT_ASSERT_ALLOC(str);
+	J_S_ASSERT_ALLOC(str);
 	*rval = STRING_TO_JSVAL(str); // GC protection is ok with this ?
 	return JS_TRUE;
 }
@@ -244,7 +244,7 @@ JSBool ReadAllToJsval(JSContext *cx, PRFileDesc *fd, jsval *rval ) {
 	}
 	free(chunkList);
 	JSString *jsstr = JS_NewString(cx, jsData, totalLength);
-	RT_ASSERT_ALLOC(jsstr);
+	J_S_ASSERT_ALLOC(jsstr);
 	*rval = STRING_TO_JSVAL( jsstr );
 	return JS_TRUE;
 }
@@ -258,26 +258,26 @@ JSBool ReadAllToJsval(JSContext *cx, PRFileDesc *fd, jsval *rval ) {
 DEFINE_FUNCTION( Read ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE( fd );
+	J_S_ASSERT_RESOURCE( fd );
 
 	if ( J_ARG_ISDEF(1) ) {
 
 		PRInt32 amount;
-		RT_JSVAL_TO_INT32( J_ARG(1), amount );
+		J_JSVAL_TO_INT32( J_ARG(1), amount );
 
 //		if ( amount == 0 ) // (TBD) check if it is good to use this ( even if amount is 0, we must call Read
 //			*rval = JS_GetEmptyStringValue(cx);
 //		else
 
-		RT_CHECK_CALL( ReadToJsval(cx, fd, amount, rval) );
+		J_CHK( ReadToJsval(cx, fd, amount, rval) );
 
 	} else { // amount value is NOT provided, then try to read all
 
 		PRInt32 available = PR_Available( fd );
 		if ( available != -1 ) // we can use the 'available' information
-			RT_CHECK_CALL( ReadToJsval(cx, fd, available, rval) );
+			J_CHK( ReadToJsval(cx, fd, available, rval) );
 		else // 'available' is not usable with this fd type, then we used a buffered read ( aka read while there is someting to read )
-			RT_CHECK_CALL( ReadAllToJsval(cx, fd, rval) );
+			J_CHK( ReadAllToJsval(cx, fd, rval) );
 	}
 	return JS_TRUE;
 }
@@ -289,9 +289,9 @@ DEFINE_FUNCTION( Read ) {
 **/
 DEFINE_FUNCTION( Write ) {
 
-	RT_ASSERT_ARGC( 1 );
+	J_S_ASSERT_ARG_MIN( 1 );
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
-	RT_ASSERT_RESOURCE( fd );
+	J_S_ASSERT_RESOURCE( fd );
 	const char *str;
 	size_t len;
 	J_CHK( JsvalToStringAndLength(cx, J_ARG(1), &str, &len) );
@@ -348,7 +348,7 @@ DEFINE_FUNCTION( Write ) {
 DEFINE_FUNCTION( Sync ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
-	RT_ASSERT_RESOURCE( fd );
+	J_S_ASSERT_RESOURCE( fd );
 
 	PRStatus status = PR_Sync(fd);
 	if ( status == PR_FAILURE )
@@ -369,7 +369,7 @@ DEFINE_FUNCTION( Sync ) {
 DEFINE_PROPERTY( available ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
-	RT_ASSERT_RESOURCE( fd );
+	J_S_ASSERT_RESOURCE( fd );
 
 	PRInt64 available = PR_Available64( fd ); // For a normal file, these are the bytes beyond the current file pointer.
 	if ( available == -1 )
@@ -391,7 +391,7 @@ DEFINE_PROPERTY( available ) {
 DEFINE_PROPERTY( type ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
-	RT_ASSERT_RESOURCE( fd );
+	J_S_ASSERT_RESOURCE( fd );
 	*vp = INT_TO_JSVAL( (int)PR_GetDescType(fd) );
 	return JS_TRUE;
 }
@@ -419,9 +419,9 @@ DEFINE_PROPERTY( closed ) {
 **/
 DEFINE_FUNCTION( Import ) {
 
-	RT_ASSERT_ARGC(2);
+	J_S_ASSERT_ARG_MIN(2);
 	int stdfd;
-	RT_JSVAL_TO_INT32( J_ARG(1), stdfd );
+	J_JSVAL_TO_INT32( J_ARG(1), stdfd );
 	PRInt32 osfd;
 	switch (stdfd) {
 		case 0:
@@ -434,11 +434,11 @@ DEFINE_FUNCTION( Import ) {
 			osfd = PR_FileDesc2NativeHandle(PR_STDERR);
 			break;
 		default:
-			REPORT_ERROR("Unsupported standard handle.");
+			J_REPORT_ERROR("Unsupported standard handle.");
 	}
 
 	int tmp;
-	RT_JSVAL_TO_INT32( J_ARG(2), tmp );
+	J_JSVAL_TO_INT32( J_ARG(2), tmp );
 	PRDescType type = (PRDescType)tmp;
 
 	PRFileDesc *fd;
@@ -462,14 +462,14 @@ DEFINE_FUNCTION( Import ) {
 			descriptorObject = JS_NewObject(cx, &classFile, NULL, NULL); // (TBD) check if proto is needed !
 			break;
 		default:
-			REPORT_ERROR("Invalid descriptor type.");
+			J_REPORT_ERROR("Invalid descriptor type.");
 	}
 	if ( fd == NULL )
 		return ThrowIoError(cx);
 
-	RT_ASSERT_ALLOC( descriptorObject );
-	RT_CHECK_CALL( JS_SetPrivate(cx, descriptorObject, (void*)fd) );
-	RT_CHECK_CALL( JS_SetReservedSlot(cx, descriptorObject, SLOT_JSIO_DESCRIPTOR_IMPORTED, JSVAL_TRUE) );
+	J_S_ASSERT_ALLOC( descriptorObject );
+	J_CHK( JS_SetPrivate(cx, descriptorObject, (void*)fd) );
+	J_CHK( JS_SetReservedSlot(cx, descriptorObject, SLOT_JSIO_DESCRIPTOR_IMPORTED, JSVAL_TRUE) );
 
 	*rval = OBJECT_TO_JSVAL(descriptorObject);
 	return JS_TRUE;

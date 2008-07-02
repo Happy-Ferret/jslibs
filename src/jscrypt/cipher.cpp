@@ -124,7 +124,7 @@ DEFINE_CONSTRUCTOR() {
 
 	J_S_ASSERT_CONSTRUCTING();
 	J_S_ASSERT_THIS_CLASS();
-	RT_ASSERT_ARGC( 3 );
+	J_S_ASSERT_ARG_MIN( 3 );
 
 	const char *modeName;
 	J_CHK( JsvalToString(cx, argv[0], &modeName) );
@@ -145,7 +145,7 @@ DEFINE_CONSTRUCTOR() {
 	else if ( strcasecmp( modeName, "F8" ) == 0 )
 		mode = mode_f8;
 	else
-		REPORT_ERROR_1("Invalid mode %s", modeName);
+		J_REPORT_ERROR_1("Invalid mode %s", modeName);
 
 	const char *cipherName;
 	J_CHK( JsvalToString(cx, argv[1], &cipherName) );
@@ -166,82 +166,82 @@ DEFINE_CONSTRUCTOR() {
 
    int numRounds = 0; // default value, us a default number of rounds.
 	if ( argc >= 6 && argv[5] != JSVAL_VOID )
-		RT_JSVAL_TO_INT32( numRounds, argv[5] );
+		J_JSVAL_TO_INT32( numRounds, argv[5] );
 
 	CipherPrivate *privateData = (CipherPrivate*)malloc( sizeof(CipherPrivate) );
-	RT_ASSERT_ALLOC( privateData );
+	J_S_ASSERT_ALLOC( privateData );
 
 	privateData->mode = mode;
 
 	int cipherIndex = find_cipher(cipherName);
-	RT_ASSERT_1( cipherIndex != -1, "cipher %s is not available", cipherName );
+	J_S_ASSERT_1( cipherIndex != -1, "cipher %s is not available", cipherName );
 	ltc_cipher_descriptor *cipher = &cipher_descriptor[cipherIndex];
 
 	privateData->descriptor = cipher;
-	RT_ASSERT_1( cipher->test() == CRYPT_OK, "%s cipher test failed.", cipherName );
+	J_S_ASSERT_1( cipher->test() == CRYPT_OK, "%s cipher test failed.", cipherName );
 
 	int err;
 	switch ( mode ) {
 		case mode_ecb: {
 			privateData->symmetric_XXX = malloc( sizeof(symmetric_ECB) );
-			RT_ASSERT_ALLOC( privateData->symmetric_XXX );
-			RT_ASSERT_2( (int)keyLength >= cipher->min_key_length && (int)(int)keyLength <= cipher->max_key_length, "Invalid key length (need [%d,%d]  bytes)", cipher->min_key_length, cipher->max_key_length );
-//			RT_ASSERT( IV == NULL, "Initialization vector is invalid for this mode." );
-			RT_ASSERT( optarg == NULL, "invalid 'arg' argument for this mode." );
+			J_S_ASSERT_ALLOC( privateData->symmetric_XXX );
+			J_S_ASSERT_2( (int)keyLength >= cipher->min_key_length && (int)(int)keyLength <= cipher->max_key_length, "Invalid key length (need [%d,%d]  bytes)", cipher->min_key_length, cipher->max_key_length );
+//			J_S_ASSERT( IV == NULL, "Initialization vector is invalid for this mode." );
+			J_S_ASSERT( optarg == NULL, "invalid 'arg' argument for this mode." );
 			err = ecb_start( cipherIndex, (unsigned char *)key, (int)keyLength, numRounds, (symmetric_ECB *)privateData->symmetric_XXX );
 			break;
 		}
 		case mode_cfb: {
 			privateData->symmetric_XXX = malloc( sizeof(symmetric_CFB) );
-			RT_ASSERT_ALLOC( privateData->symmetric_XXX );
-			RT_ASSERT_2( (int)keyLength >= cipher->min_key_length && (int)keyLength <= cipher->max_key_length, "Invalid key length (need [%d,%d]  bytes)", cipher->min_key_length, cipher->max_key_length );
-//			RT_ASSERT_1( IVLength == cipher->block_length, "This cipher require a IV length of %d", cipher->block_length );
-			RT_ASSERT( optarg == NULL, "invalid 'arg' argument for this mode." );
+			J_S_ASSERT_ALLOC( privateData->symmetric_XXX );
+			J_S_ASSERT_2( (int)keyLength >= cipher->min_key_length && (int)keyLength <= cipher->max_key_length, "Invalid key length (need [%d,%d]  bytes)", cipher->min_key_length, cipher->max_key_length );
+//			J_S_ASSERT_1( IVLength == cipher->block_length, "This cipher require a IV length of %d", cipher->block_length );
+			J_S_ASSERT( optarg == NULL, "invalid 'arg' argument for this mode." );
 			err = cfb_start( cipherIndex, (unsigned char *)IV, (unsigned char *)key, (int)keyLength, numRounds, (symmetric_CFB *)privateData->symmetric_XXX );
 			break;
 		}
 		case mode_ofb: {
 			privateData->symmetric_XXX = malloc( sizeof(symmetric_OFB) );
-			RT_ASSERT_ALLOC( privateData->symmetric_XXX );
-			RT_ASSERT_2( (int)keyLength >= cipher->min_key_length && (int)keyLength <= cipher->max_key_length, "Invalid key length (need [%d,%d]  bytes)", cipher->min_key_length, cipher->max_key_length );
-//			RT_ASSERT_1( IVLength == cipher->block_length, "This cipher require a IV length of %d", cipher->block_length );
-			RT_ASSERT( optarg == NULL, "invalid 'arg' argument for this mode." );
+			J_S_ASSERT_ALLOC( privateData->symmetric_XXX );
+			J_S_ASSERT_2( (int)keyLength >= cipher->min_key_length && (int)keyLength <= cipher->max_key_length, "Invalid key length (need [%d,%d]  bytes)", cipher->min_key_length, cipher->max_key_length );
+//			J_S_ASSERT_1( IVLength == cipher->block_length, "This cipher require a IV length of %d", cipher->block_length );
+			J_S_ASSERT( optarg == NULL, "invalid 'arg' argument for this mode." );
 			err = ofb_start( cipherIndex, (unsigned char *)IV, (unsigned char *)key, (int)keyLength, numRounds, (symmetric_OFB *)privateData->symmetric_XXX );
 			break;
 		}
 		case mode_cbc: {
 			privateData->symmetric_XXX = malloc( sizeof(symmetric_CBC) );
-			RT_ASSERT_ALLOC( privateData->symmetric_XXX );
-			RT_ASSERT_2( (int)keyLength >= cipher->min_key_length && (int)keyLength <= cipher->max_key_length, "Invalid key length (need [%d,%d]  bytes)", cipher->min_key_length, cipher->max_key_length );
-//			RT_ASSERT_1( IVLength == cipher->block_length, "This cipher require a IV length of %d", cipher->block_length );
-			RT_ASSERT( optarg == NULL, "invalid 'arg' argument for this mode." );
+			J_S_ASSERT_ALLOC( privateData->symmetric_XXX );
+			J_S_ASSERT_2( (int)keyLength >= cipher->min_key_length && (int)keyLength <= cipher->max_key_length, "Invalid key length (need [%d,%d]  bytes)", cipher->min_key_length, cipher->max_key_length );
+//			J_S_ASSERT_1( IVLength == cipher->block_length, "This cipher require a IV length of %d", cipher->block_length );
+			J_S_ASSERT( optarg == NULL, "invalid 'arg' argument for this mode." );
 			err = cbc_start( cipherIndex, (unsigned char *)IV, (unsigned char *)key, (int)keyLength, numRounds, (symmetric_CBC *)privateData->symmetric_XXX );
 			break;
 		}
 		case mode_ctr: {
 			privateData->symmetric_XXX = malloc( sizeof(symmetric_CTR) );
-			RT_ASSERT_ALLOC( privateData->symmetric_XXX );
-			RT_ASSERT_2( (int)keyLength >= cipher->min_key_length && (int)keyLength <= (size_t)cipher->max_key_length, "Invalid key length (need [%d,%d]  bytes)", cipher->min_key_length, cipher->max_key_length );
-//			RT_ASSERT_1( IVLength == cipher->block_length, "This cipher require a IV length of %d", cipher->block_length );
-			RT_ASSERT( optarg == NULL, "invalid 'arg' argument for this mode." );
+			J_S_ASSERT_ALLOC( privateData->symmetric_XXX );
+			J_S_ASSERT_2( (int)keyLength >= cipher->min_key_length && (int)keyLength <= (size_t)cipher->max_key_length, "Invalid key length (need [%d,%d]  bytes)", cipher->min_key_length, cipher->max_key_length );
+//			J_S_ASSERT_1( IVLength == cipher->block_length, "This cipher require a IV length of %d", cipher->block_length );
+			J_S_ASSERT( optarg == NULL, "invalid 'arg' argument for this mode." );
 			err = ctr_start( cipherIndex, (unsigned char *)IV, (unsigned char *)key, (int)keyLength, numRounds, CTR_COUNTER_LITTLE_ENDIAN, (symmetric_CTR *)privateData->symmetric_XXX );
 			break;
 		}
 		case mode_lrw: {
 			privateData->symmetric_XXX = malloc( sizeof(symmetric_LRW) );
-			RT_ASSERT_ALLOC( privateData->symmetric_XXX );
-			RT_ASSERT_2( (int)keyLength >= cipher->min_key_length && (int)keyLength <= cipher->max_key_length, "Invalid key length (need [%d,%d]  bytes)", cipher->min_key_length, cipher->max_key_length );
-//			RT_ASSERT_1( IVLength == cipher->block_length, "This cipher require a IV length of %d", cipher->block_length );
-			RT_ASSERT_1( optargLength == (int)keyLength, "The tweak length must be %d bytes length (key size)", (int)keyLength );
+			J_S_ASSERT_ALLOC( privateData->symmetric_XXX );
+			J_S_ASSERT_2( (int)keyLength >= cipher->min_key_length && (int)keyLength <= cipher->max_key_length, "Invalid key length (need [%d,%d]  bytes)", cipher->min_key_length, cipher->max_key_length );
+//			J_S_ASSERT_1( IVLength == cipher->block_length, "This cipher require a IV length of %d", cipher->block_length );
+			J_S_ASSERT_1( optargLength == (int)keyLength, "The tweak length must be %d bytes length (key size)", (int)keyLength );
 			err = lrw_start( cipherIndex, (unsigned char *)IV, (unsigned char *)key, (int)keyLength, (unsigned char *)optarg, numRounds, (symmetric_LRW *)privateData->symmetric_XXX );
 			break;
 		}
 		case mode_f8: {
 			privateData->symmetric_XXX = malloc( sizeof(symmetric_F8) );
-			RT_ASSERT_ALLOC( privateData->symmetric_XXX );
-			RT_ASSERT_2( (int)keyLength >= cipher->min_key_length && (int)keyLength <= cipher->max_key_length, "Invalid key length (need [%d,%d]  bytes)", cipher->min_key_length, cipher->max_key_length );
-//			RT_ASSERT_1( IVLength == cipher->block_length, "This cipher require a IV length of %d", cipher->block_length );
-			RT_ASSERT( optargLength > 0, "This mode need the salt argument" );
+			J_S_ASSERT_ALLOC( privateData->symmetric_XXX );
+			J_S_ASSERT_2( (int)keyLength >= cipher->min_key_length && (int)keyLength <= cipher->max_key_length, "Invalid key length (need [%d,%d]  bytes)", cipher->min_key_length, cipher->max_key_length );
+//			J_S_ASSERT_1( IVLength == cipher->block_length, "This cipher require a IV length of %d", cipher->block_length );
+			J_S_ASSERT( optargLength > 0, "This mode need the salt argument" );
 			err = f8_start( cipherIndex, (unsigned char *)IV, (unsigned char *)key, (int)keyLength, (unsigned char *)optarg, optargLength, numRounds, (symmetric_F8 *)privateData->symmetric_XXX );
 			break;
 		}
@@ -263,23 +263,23 @@ DEFINE_CONSTRUCTOR() {
 **/
 DEFINE_FUNCTION( Encrypt ) {
 
-	RT_ASSERT_THIS_CLASS();
-	RT_ASSERT_ARGC( 1 );
+	J_S_ASSERT_THIS_CLASS();
+	J_S_ASSERT_ARG_MIN( 1 );
 	CipherPrivate *privateData = (CipherPrivate *)JS_GetPrivate( cx, obj );
-	RT_ASSERT_RESOURCE( privateData );
+	J_S_ASSERT_RESOURCE( privateData );
 
 	const char *pt;
 	size_t ptLength;
 	J_CHK( JsvalToStringAndLength(cx, argv[0], &pt, &ptLength) );
 
 	char *ct = (char *)JS_malloc( cx, ptLength +1 );
-	RT_ASSERT_ALLOC( ct );
+	J_S_ASSERT_ALLOC( ct );
 	ct[ptLength] = '\0';
 
 	int err;
 	switch ( privateData->mode ) {
 		case mode_ecb:
-			RT_ASSERT_1( ptLength == privateData->descriptor->block_length, "This mode require a %d bytes block of data", privateData->descriptor->block_length );
+			J_S_ASSERT_1( ptLength == privateData->descriptor->block_length, "This mode require a %d bytes block of data", privateData->descriptor->block_length );
 			err = ecb_encrypt( (const unsigned char *)pt, (unsigned char *)ct, ptLength, (symmetric_ECB *)privateData->symmetric_XXX );
 			break;
 		case mode_cfb:
@@ -289,14 +289,14 @@ DEFINE_FUNCTION( Encrypt ) {
 			err = ofb_encrypt( (const unsigned char *)pt, (unsigned char *)ct, ptLength, (symmetric_OFB *)privateData->symmetric_XXX );
 			break;
 		case mode_cbc:
-			RT_ASSERT_1( ptLength == privateData->descriptor->block_length, "This mode require a %d bytes block of data", privateData->descriptor->block_length );
+			J_S_ASSERT_1( ptLength == privateData->descriptor->block_length, "This mode require a %d bytes block of data", privateData->descriptor->block_length );
 			err = cbc_encrypt( (const unsigned char *)pt, (unsigned char *)ct, ptLength, (symmetric_CBC *)privateData->symmetric_XXX );
 			break;
 		case mode_ctr:
 			err = ctr_encrypt( (const unsigned char *)pt, (unsigned char *)ct, ptLength, (symmetric_CTR *)privateData->symmetric_XXX );
 			break;
 		case mode_lrw:
-			RT_ASSERT_1( ptLength == privateData->descriptor->block_length, "This mode require a %d bytes block of data", privateData->descriptor->block_length );
+			J_S_ASSERT_1( ptLength == privateData->descriptor->block_length, "This mode require a %d bytes block of data", privateData->descriptor->block_length );
 			err = lrw_encrypt( (const unsigned char *)pt, (unsigned char *)ct, ptLength, (symmetric_LRW *)privateData->symmetric_XXX );
 			break;
 		case mode_f8:
@@ -308,7 +308,7 @@ DEFINE_FUNCTION( Encrypt ) {
 		return ThrowCryptError(cx, err);
 
 	JSObject *jssCt = J_NewBinaryString( cx, ct, ptLength );
-	RT_ASSERT_ALLOC( jssCt );
+	J_S_ASSERT_ALLOC( jssCt );
 	*rval = OBJECT_TO_JSVAL(jssCt);
 	return JS_TRUE;
 }
@@ -319,17 +319,17 @@ DEFINE_FUNCTION( Encrypt ) {
 **/
 DEFINE_FUNCTION( Decrypt ) {
 
-	RT_ASSERT_ARGC( 1 );
-	RT_ASSERT_CLASS( obj, _class );
+	J_S_ASSERT_ARG_MIN( 1 );
+	J_S_ASSERT_CLASS( obj, _class );
 	CipherPrivate *privateData = (CipherPrivate *)JS_GetPrivate( cx, obj );
-	RT_ASSERT_RESOURCE( privateData );
+	J_S_ASSERT_RESOURCE( privateData );
 
 	const char *ct;
 	size_t ctLength;
 	J_CHK( JsvalToStringAndLength(cx, argv[0], &ct, &ctLength) );
 
 	char *pt = (char *)JS_malloc( cx, ctLength +1 );
-	RT_ASSERT_ALLOC( pt );
+	J_S_ASSERT_ALLOC( pt );
 	pt[ctLength] = '\0';
 
 	int err;
@@ -362,7 +362,7 @@ DEFINE_FUNCTION( Decrypt ) {
 
 //	JSString *jssCt = JS_NewString( cx, pt, ctLength );
 	JSObject *jssCt = J_NewBinaryString( cx, pt, ctLength );
-	RT_ASSERT_ALLOC( jssCt );
+	J_S_ASSERT_ALLOC( jssCt );
 //	*rval = STRING_TO_JSVAL(jssCt);
 	*rval = OBJECT_TO_JSVAL(jssCt);
 	return JS_TRUE;
@@ -378,9 +378,9 @@ DEFINE_FUNCTION( Decrypt ) {
 **/
 DEFINE_PROPERTY( blockLength ) {
 
-	RT_ASSERT_CLASS( obj, _class );
+	J_S_ASSERT_CLASS( obj, _class );
 	CipherPrivate *privateData = (CipherPrivate *)JS_GetPrivate( cx, obj );
-	RT_ASSERT_RESOURCE( privateData );
+	J_S_ASSERT_RESOURCE( privateData );
 	*vp = INT_TO_JSVAL( privateData->descriptor->block_length );
 	return JS_TRUE;
 }
@@ -392,9 +392,9 @@ DEFINE_PROPERTY( blockLength ) {
 **/
 DEFINE_PROPERTY( keySize ) {
 
-	RT_ASSERT_CLASS( obj, _class );
+	J_S_ASSERT_CLASS( obj, _class );
 	CipherPrivate *privateData = (CipherPrivate *)JS_GetPrivate( cx, obj );
-	RT_ASSERT_RESOURCE( privateData );
+	J_S_ASSERT_RESOURCE( privateData );
 	*vp = INT_TO_JSVAL( privateData->descriptor->keysize );
 	return JS_TRUE;
 }
@@ -406,11 +406,11 @@ DEFINE_PROPERTY( keySize ) {
 **/
 DEFINE_PROPERTY( name ) {
 
-	RT_ASSERT_CLASS( obj, _class );
+	J_S_ASSERT_CLASS( obj, _class );
 	CipherPrivate *privateData = (CipherPrivate *)JS_GetPrivate( cx, obj );
-	RT_ASSERT_RESOURCE( privateData );
+	J_S_ASSERT_RESOURCE( privateData );
 	JSString *jsstr = JS_NewStringCopyZ(cx, privateData->descriptor->name);
-	RT_ASSERT_ALLOC( jsstr );
+	J_S_ASSERT_ALLOC( jsstr );
 	*vp = STRING_TO_JSVAL( jsstr );
 	return JS_TRUE;
 }
@@ -422,9 +422,9 @@ DEFINE_PROPERTY( name ) {
 **/
 DEFINE_PROPERTY( IVSetter ) {
 
-	RT_ASSERT_CLASS( obj, _class );
+	J_S_ASSERT_CLASS( obj, _class );
 	CipherPrivate *privateData = (CipherPrivate *)JS_GetPrivate( cx, obj );
-	RT_ASSERT_RESOURCE( privateData );
+	J_S_ASSERT_RESOURCE( privateData );
 
 	const char *IV;
 	size_t IVLength;
@@ -433,10 +433,10 @@ DEFINE_PROPERTY( IVSetter ) {
 	int err;
 	switch ( privateData->mode ) {
 		case mode_ecb:
-			REPORT_ERROR("No IV in ECB mode");
+			J_REPORT_ERROR("No IV in ECB mode");
 		case mode_cfb: {
 			symmetric_CFB *tmp = (symmetric_CFB *)privateData->symmetric_XXX;
-			RT_ASSERT_1( IVLength == tmp->blocklen, "This cipher require a IV length of %d", tmp->blocklen );
+			J_S_ASSERT_1( IVLength == tmp->blocklen, "This cipher require a IV length of %d", tmp->blocklen );
 			err = cfb_setiv( (const unsigned char *)IV, IVLength, tmp );
 			if (err != CRYPT_OK)
 				return ThrowCryptError(cx, err);
@@ -444,7 +444,7 @@ DEFINE_PROPERTY( IVSetter ) {
 		}
 		case mode_ofb: {
 			symmetric_OFB *tmp = (symmetric_OFB *)privateData->symmetric_XXX;
-			RT_ASSERT_1( IVLength == tmp->blocklen, "This cipher require a IV length of %d", tmp->blocklen );
+			J_S_ASSERT_1( IVLength == tmp->blocklen, "This cipher require a IV length of %d", tmp->blocklen );
 			err = ofb_setiv( (const unsigned char *)IV, IVLength, tmp );
 			if (err != CRYPT_OK)
 				return ThrowCryptError(cx, err);
@@ -452,7 +452,7 @@ DEFINE_PROPERTY( IVSetter ) {
 		}
 		case mode_cbc: {
 			symmetric_CBC *tmp = (symmetric_CBC *)privateData->symmetric_XXX;
-			RT_ASSERT_1( IVLength == tmp->blocklen, "This cipher require a IV length of %d", tmp->blocklen );
+			J_S_ASSERT_1( IVLength == tmp->blocklen, "This cipher require a IV length of %d", tmp->blocklen );
 			err = cbc_setiv( (const unsigned char *)IV, IVLength, tmp );
 			if (err != CRYPT_OK)
 				return ThrowCryptError(cx, err);
@@ -460,7 +460,7 @@ DEFINE_PROPERTY( IVSetter ) {
 		}
 		case mode_ctr: {
 			symmetric_CTR *tmp = (symmetric_CTR *)privateData->symmetric_XXX;
-			RT_ASSERT_1( IVLength == tmp->blocklen, "This cipher require a IV length of %d", tmp->blocklen );
+			J_S_ASSERT_1( IVLength == tmp->blocklen, "This cipher require a IV length of %d", tmp->blocklen );
 			err = ctr_setiv( (const unsigned char *)IV, IVLength, tmp );
 			if (err != CRYPT_OK)
 				return ThrowCryptError(cx, err);
@@ -468,7 +468,7 @@ DEFINE_PROPERTY( IVSetter ) {
 		}
 		case mode_lrw: {
 			symmetric_LRW *tmp = (symmetric_LRW *)privateData->symmetric_XXX;
-			RT_ASSERT_1( IVLength == 16, "This cipher require a IV length of %d", 16 );
+			J_S_ASSERT_1( IVLength == 16, "This cipher require a IV length of %d", 16 );
 			err = lrw_setiv( (const unsigned char *)IV, IVLength, tmp );
 			if (err != CRYPT_OK)
 				return ThrowCryptError(cx, err);
@@ -476,7 +476,7 @@ DEFINE_PROPERTY( IVSetter ) {
 		}
 		case mode_f8: {
 			symmetric_F8 *tmp = (symmetric_F8 *)privateData->symmetric_XXX;
-			RT_ASSERT_1( IVLength == tmp->blocklen, "This cipher require a IV length of %d", tmp->blocklen );
+			J_S_ASSERT_1( IVLength == tmp->blocklen, "This cipher require a IV length of %d", tmp->blocklen );
 			err = f8_setiv( (const unsigned char *)IV, IVLength, tmp );
 			if (err != CRYPT_OK)
 				return ThrowCryptError(cx, err);
@@ -489,9 +489,9 @@ DEFINE_PROPERTY( IVSetter ) {
 
 DEFINE_PROPERTY( IVGetter ) {
 
-	RT_ASSERT_CLASS( obj, _class );
+	J_S_ASSERT_CLASS( obj, _class );
 	CipherPrivate *privateData = (CipherPrivate *)JS_GetPrivate( cx, obj );
-	RT_ASSERT_RESOURCE( privateData );
+	J_S_ASSERT_RESOURCE( privateData );
 
 	char *IV = NULL;
 	unsigned long IVLength;
@@ -500,12 +500,12 @@ DEFINE_PROPERTY( IVGetter ) {
 	switch ( privateData->mode ) {
 
 		case mode_ecb:
-			REPORT_ERROR("No IV in ECB mode");
+			J_REPORT_ERROR("No IV in ECB mode");
 		case mode_cfb: {
 			symmetric_CFB *tmp = (symmetric_CFB *)privateData->symmetric_XXX;
 			IVLength = tmp->blocklen;
 			IV = (char*)JS_malloc( cx, IVLength );
-			RT_ASSERT_ALLOC( IV );
+			J_S_ASSERT_ALLOC( IV );
 			err = cfb_getiv( (unsigned char *)IV, &IVLength, tmp );
 			break;
 		}
@@ -513,7 +513,7 @@ DEFINE_PROPERTY( IVGetter ) {
 			symmetric_OFB *tmp = (symmetric_OFB *)privateData->symmetric_XXX;
 			IVLength = tmp->blocklen;
 			IV = (char*)JS_malloc( cx, IVLength );
-			RT_ASSERT_ALLOC( IV );
+			J_S_ASSERT_ALLOC( IV );
 			err = ofb_getiv( (unsigned char *)IV, &IVLength, tmp );
 			break;
 		}
@@ -521,7 +521,7 @@ DEFINE_PROPERTY( IVGetter ) {
 			symmetric_CBC *tmp = (symmetric_CBC *)privateData->symmetric_XXX;
 			IVLength = tmp->blocklen;
 			IV = (char*)JS_malloc( cx, IVLength );
-			RT_ASSERT_ALLOC( IV );
+			J_S_ASSERT_ALLOC( IV );
 			err = cbc_getiv( (unsigned char *)IV, &IVLength, tmp );
 			break;
 		}
@@ -529,7 +529,7 @@ DEFINE_PROPERTY( IVGetter ) {
 			symmetric_CTR *tmp = (symmetric_CTR *)privateData->symmetric_XXX;
 			IVLength = tmp->blocklen;
 			IV = (char*)JS_malloc( cx, IVLength );
-			RT_ASSERT_ALLOC( IV );
+			J_S_ASSERT_ALLOC( IV );
 			err = ctr_getiv( (unsigned char *)IV, &IVLength, tmp );
 			break;
 		}
@@ -537,7 +537,7 @@ DEFINE_PROPERTY( IVGetter ) {
 			symmetric_LRW *tmp = (symmetric_LRW *)privateData->symmetric_XXX;
 			IVLength = 16;
 			IV = (char*)JS_malloc( cx, IVLength );
-			RT_ASSERT_ALLOC( IV );
+			J_S_ASSERT_ALLOC( IV );
 			err = lrw_getiv( (unsigned char *)IV, &IVLength, tmp );
 			break;
 		}
@@ -545,7 +545,7 @@ DEFINE_PROPERTY( IVGetter ) {
 			symmetric_F8 *tmp = (symmetric_F8 *)privateData->symmetric_XXX;
 			IVLength = tmp->blocklen;
 			IV = (char*)JS_malloc( cx, IVLength );
-			RT_ASSERT_ALLOC( IV );
+			J_S_ASSERT_ALLOC( IV );
 			err = f8_getiv( (unsigned char *)IV, &IVLength, tmp );
 			break;
 		}
@@ -553,7 +553,7 @@ DEFINE_PROPERTY( IVGetter ) {
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err);
 	JSString *jssIV = JS_NewString(cx, IV, IVLength);
-	RT_ASSERT( jssIV != NULL, "unable to create the IV string." );
+	J_S_ASSERT( jssIV != NULL, "unable to create the IV string." );
 	*vp = STRING_TO_JSVAL(jssIV);
 	return JS_TRUE;
 }
@@ -572,7 +572,7 @@ DEFINE_PROPERTY( list ) {
 	if ( *vp == JSVAL_VOID ) {
 
 		JSObject *list = JS_NewObject( cx, NULL, NULL, NULL );
-		RT_ASSERT_ALLOC( list );
+		J_S_ASSERT_ALLOC( list );
 		*vp = OBJECT_TO_JSVAL(list);
 		jsval value;
 		int i;

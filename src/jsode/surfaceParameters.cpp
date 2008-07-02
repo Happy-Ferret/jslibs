@@ -37,11 +37,11 @@ DEFINE_FINALIZE() {
 DEFINE_CONSTRUCTOR() {
 
 	static ode::dSurfaceParameters initSurfaceParameters = {0};
-	RT_ASSERT_CONSTRUCTING(_class);
+	J_S_ASSERT_CONSTRUCTING(_class);
 	ode::dSurfaceParameters *data = (ode::dSurfaceParameters*)malloc(sizeof(ode::dSurfaceParameters));
 	*data = initSurfaceParameters;
 	data->mu = dInfinity;
-	RT_ASSERT_ALLOC(data);
+	J_S_ASSERT_ALLOC(data);
 	JS_SetPrivate(cx, obj, data);
 	return JS_TRUE;
 }
@@ -85,8 +85,8 @@ DEFINE_PROPERTY_NULL( surfaceGetter )
 DEFINE_PROPERTY( surfaceSetter ) {
 
 	ode::dSurfaceParameters *surface = (ode::dSurfaceParameters*)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE(surface); // (TBD) check if NULL is meaningful for joints !
-	RT_ASSERT_NUMBER( *vp );
+	J_S_ASSERT_RESOURCE(surface); // (TBD) check if NULL is meaningful for joints !
+	J_S_ASSERT_NUMBER( *vp );
 	
 	ode::dReal value;
 	bool set;

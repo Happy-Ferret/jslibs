@@ -210,7 +210,7 @@ static JSBool BranchCallback(JSContext *cx, JSScript *script) {
 
 static JSBool LoadModule(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
-	RT_ASSERT_ARGC(1);
+	J_S_ASSERT_ARG_MIN(1);
 	const char *fileName;
 	J_CHK( JsvalToString(cx, argv[0], &fileName) );
 	char libFileName[PATH_MAX];
@@ -220,27 +220,27 @@ static JSBool LoadModule(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, 
 	ModuleId id = ModuleLoad(libFileName, cx, obj);
 
 #ifdef XP_UNIX
-	RT_ASSERT_2( id != 0, "Unable to load the module \"%s\": %s", libFileName, dlerror() );
+	J_S_ASSERT_2( id != 0, "Unable to load the module \"%s\": %s", libFileName, dlerror() );
 #else // XP_UNIX
-	RT_ASSERT_2( id != 0, "Unable to load the module \"%s\": %d", libFileName, GetLastError() );
+	J_S_ASSERT_2( id != 0, "Unable to load the module \"%s\": %d", libFileName, GetLastError() );
 #endif // XP_UNIX
 
-	RT_CHECK_CALL( JS_NewNumberValue(cx, id, rval) ); // (TBD) really needed ? yes, UnloadModule need this ID
+	J_CHK( JS_NewNumberValue(cx, id, rval) ); // (TBD) really needed ? yes, UnloadModule need this ID
 	return JS_TRUE;
 }
 
 
 static JSBool UnloadModule(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
-	RT_ASSERT_ARGC(1);
+	J_S_ASSERT_ARG_MIN(1);
 	jsdouble dVal;
-	RT_CHECK_CALL( JS_ValueToNumber(cx, argv[0], &dVal) );
+	J_CHK( JS_ValueToNumber(cx, argv[0], &dVal) );
 	ModuleId id = (ModuleId)dVal;
 
 	if ( ModuleIsUnloadable(id) ) {
 
 		bool st = ModuleUnload(id, cx);
-		RT_ASSERT( st == true, "Unable to unload the module" );
+		J_S_ASSERT( st == true, "Unable to unload the module" );
 		*rval = JSVAL_TRUE;
 	} else {
 

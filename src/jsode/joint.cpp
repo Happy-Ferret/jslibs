@@ -46,7 +46,7 @@ DEFINE_PROPERTY( body2 ) {
 inline JSBool SetJoint( JSContext *cx, JSObject *obj, jsval *b1, jsval *b2 ) {
 
 	ode::dJointID jointID = (ode::dJointID)JS_GetPrivate( cx, obj );
-	RT_ASSERT_RESOURCE( jointID );
+	J_S_ASSERT_RESOURCE( jointID );
 
 	if ( *b1 == JSVAL_VOID || *b2 == JSVAL_VOID )
 		ode::dJointAttach(jointID, 0, 0); // detach it. The only way to attach it to the world environment is to use World.env
@@ -55,10 +55,10 @@ inline JSBool SetJoint( JSContext *cx, JSObject *obj, jsval *b1, jsval *b2 ) {
 	ode::dBodyID bId2 = 0;
 
 	if ( *b1 != JSVAL_VOID )
-		RT_CHECK_CALL( ValToBodyID(cx, *b1, &bId1) );
+		J_CHK( ValToBodyID(cx, *b1, &bId1) );
 
 	if ( *b2 != JSVAL_VOID )
-		RT_CHECK_CALL( ValToBodyID(cx, *b2, &bId2) );
+		J_CHK( ValToBodyID(cx, *b2, &bId2) );
 
 	ode::dJointAttach(jointID, bId1, bId2);
 	return JS_TRUE;
@@ -75,9 +75,9 @@ inline JSBool SetJoint( JSContext *cx, JSObject *obj, jsval *b1, jsval *b2 ) {
 **/
 DEFINE_FUNCTION( Destroy ) {
 
-	RT_ASSERT( InheritFrom(cx, obj, _class), J__ERRMSG_INVALID_CLASS );
+	J_S_ASSERT( InheritFrom(cx, obj, _class), J__ERRMSG_INVALID_CLASS );
 	ode::dJointID jointId = (ode::dJointID)JS_GetPrivate( cx, obj );
-	RT_ASSERT_RESOURCE( jointId );
+	J_S_ASSERT_RESOURCE( jointId );
 
 	ode::dJointFeedback *currentFeedback = ode::dJointGetFeedback(jointId);
 	if ( currentFeedback != NULL )
@@ -94,25 +94,25 @@ DEFINE_FUNCTION( Destroy ) {
 /*
 DEFINE_FUNCTION( Attach ) {
 
-	RT_ASSERT_ARGC(2);
-	RT_ASSERT( IsInstanceOf(cx, obj, thisClass), RT_ERROR_INVALID_CLASS );
+	J_S_ASSERT_ARG_MIN(2);
+	J_S_ASSERT( IsInstanceOf(cx, obj, thisClass), RT_ERROR_INVALID_CLASS );
 
 	ode::dJointID jointID = (ode::dJointID)JS_GetPrivate( cx, obj );
-	RT_ASSERT( jointID != NULL, RT_ERROR_NOT_INITIALIZED );
+	J_S_ASSERT( jointID != NULL, RT_ERROR_NOT_INITIALIZED );
 
 	JSObject *body1Object, *body2Object;
 
 	JS_ValueToObject(cx, argv[0], &body1Object);
-	RT_ASSERT_CLASS(body1Object, &classBody);
+	J_S_ASSERT_CLASS(body1Object, &classBody);
 	JS_SetReservedSlot(cx, obj, JOINT_SLOT_BODY1, argv[0]);
 	ode::dBodyID bodyID1 = (ode::dBodyID)JS_GetPrivate(cx, body1Object);
-//	RT_ASSERT(bodyID != NULL, RT_ERROR_NOT_INITIALIZED);
+//	J_S_ASSERT(bodyID != NULL, RT_ERROR_NOT_INITIALIZED);
 
 	JS_ValueToObject(cx, argv[1], &body2Object);
-	RT_ASSERT_CLASS(body2Object, &classBody);
+	J_S_ASSERT_CLASS(body2Object, &classBody);
 	JS_SetReservedSlot(cx, obj, JOINT_SLOT_BODY2, argv[1]);
 	ode::dBodyID bodyID2 = (ode::dBodyID)JS_GetPrivate(cx, body2Object);
-//	RT_ASSERT(bodyID != NULL, RT_ERROR_NOT_INITIALIZED);
+//	J_S_ASSERT(bodyID != NULL, RT_ERROR_NOT_INITIALIZED);
 
 	ode::dJointAttach(jointID, bodyID1, bodyID2);
 	return JS_TRUE;
@@ -175,7 +175,7 @@ DEFINE_PROPERTY( body1 ) {
 
 	jsval b2;
 	JS_GetProperty(cx, obj, "body2", &b2);
-	RT_CHECK_CALL( SetJoint(cx, obj, vp, &b2) );
+	J_CHK( SetJoint(cx, obj, vp, &b2) );
 	return JS_TRUE;
 }
 
@@ -188,7 +188,7 @@ DEFINE_PROPERTY( body2 ) {
 
 	jsval b1;
 	JS_GetProperty(cx, obj, "body1", &b1);
-	RT_CHECK_CALL( SetJoint(cx, obj, &b1, vp) );
+	J_CHK( SetJoint(cx, obj, &b1, vp) );
 	return JS_TRUE;
 }
 
@@ -201,7 +201,7 @@ DEFINE_PROPERTY( body2 ) {
 DEFINE_PROPERTY( useFeedback ) {
 
 	ode::dJointID jointId = (ode::dJointID)JS_GetPrivate( cx, obj );
-	RT_ASSERT_RESOURCE( jointId );
+	J_S_ASSERT_RESOURCE( jointId );
 
 	JSBool b;
 	JS_ValueToBoolean(cx, *vp, &b);
@@ -211,7 +211,7 @@ DEFINE_PROPERTY( useFeedback ) {
 	if ( currentFeedback == NULL && b == JS_TRUE ) {
 
 		ode::dJointFeedback *fb = (ode::dJointFeedback*)malloc(sizeof(ode::dJointFeedback));
-		RT_ASSERT_ALLOC(fb);
+		J_S_ASSERT_ALLOC(fb);
 		ode::dJointSetFeedback(jointId, fb);
 	} else if ( currentFeedback != NULL && b == JS_FALSE ) {
 
@@ -240,9 +240,9 @@ enum { body1Force, body1Torque, body2Force, body2Torque };
 DEFINE_PROPERTY( feedbackVectorSetter ) {
 
 	ode::dJointID jointId = (ode::dJointID)JS_GetPrivate( cx, obj );
-	RT_ASSERT_RESOURCE( jointId );
+	J_S_ASSERT_RESOURCE( jointId );
 	ode::dJointFeedback *feedback = ode::dJointGetFeedback(jointId);
-	RT_ASSERT( feedback != NULL, "Feedback is disabled." );
+	J_S_ASSERT( feedback != NULL, "Feedback is disabled." );
 	switch(JSVAL_TO_INT(id)) {
 		case body1Force:
 			FloatArrayToVector(cx, 3, vp, feedback->f1);
@@ -264,9 +264,9 @@ DEFINE_PROPERTY( feedbackVectorSetter ) {
 DEFINE_PROPERTY( feedbackVectorGetter ) {
 
 	ode::dJointID jointId = (ode::dJointID)JS_GetPrivate( cx, obj );
-	RT_ASSERT_RESOURCE( jointId );
+	J_S_ASSERT_RESOURCE( jointId );
 	ode::dJointFeedback *feedback = ode::dJointGetFeedback(jointId);
-	RT_ASSERT( feedback != NULL, "Feedback is disabled." );
+	J_S_ASSERT( feedback != NULL, "Feedback is disabled." );
 	switch(JSVAL_TO_INT(id)) {
 		case body1Force:
 			FloatVectorToArray(cx, 3, feedback->f1, vp);
@@ -306,8 +306,8 @@ enum { loStop, hiStop, bounce, CFM, stopERP, stopCFM, velocity, maxForce };
 DEFINE_PROPERTY( jointParamSetter ) {
 
 	ode::dJointID jointId = (ode::dJointID)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE(jointId);
-	RT_ASSERT_NUMBER( *vp );
+	J_S_ASSERT_RESOURCE(jointId);
+	J_S_ASSERT_NUMBER( *vp );
 
 	int parameter;
 	switch(JSVAL_TO_INT(id)) {
@@ -344,7 +344,7 @@ DEFINE_PROPERTY( jointParamSetter ) {
 DEFINE_PROPERTY( jointParamGetter ) {
 
 	ode::dJointID jointId = (ode::dJointID)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE(jointId);
+	J_S_ASSERT_RESOURCE(jointId);
 	int parameter;
 	switch(JSVAL_TO_INT(id)) {
 		case loStop:

@@ -40,7 +40,7 @@ JSBool jslangInit(JSContext *cx, JSObject *obj) {
 
 
 	JSObject *globalObject = JS_GetGlobalObject(cx);
-	RT_ASSERT( obj == globalObject, "This module must be load into the global namespace" );
+	J_S_ASSERT( obj == globalObject, "This module must be load into the global namespace" );
 //	obj = JS_GetGlobalObject(cx); // avoid LoadModule.call( foo, 'jslang' );
 
 	INIT_CLASS( BString );

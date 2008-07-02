@@ -48,8 +48,8 @@ DEFINE_FINALIZE() {
 **/
 DEFINE_CONSTRUCTOR() {
 
-	RT_ASSERT_CONSTRUCTING( _class );
-	RT_ASSERT_ARGC( 1 );
+	J_S_ASSERT_CONSTRUCTING( _class );
+	J_S_ASSERT_ARG_MIN( 1 );
 	JS_SetReservedSlot( cx, obj, SLOT_JSIO_DIR_NAME, J_ARG(1) );
 	return JS_TRUE;
 }
@@ -66,7 +66,7 @@ DEFINE_FUNCTION( Open ) {
 
 	jsval jsvalDirectoryName;
 	JS_GetReservedSlot( cx, obj, SLOT_JSIO_DIR_NAME, &jsvalDirectoryName );
-	RT_ASSERT_DEFINED( jsvalDirectoryName );
+	J_S_ASSERT_DEFINED( jsvalDirectoryName );
 	const char *directoryName;
 	J_CHK( JsvalToString(cx, jsvalDirectoryName, &directoryName) );
 
@@ -87,7 +87,7 @@ DEFINE_FUNCTION( Open ) {
 DEFINE_FUNCTION( Close ) {
 
 	PRDir *dd = (PRDir *)JS_GetPrivate( cx, obj );
-	RT_ASSERT( dd != NULL, "directory is closed" );
+	J_S_ASSERT( dd != NULL, "directory is closed" );
 	if ( PR_CloseDir(dd) != PR_SUCCESS )
 		return ThrowIoError(cx);
 	JS_SetPrivate( cx, obj, NULL );
@@ -106,7 +106,7 @@ DEFINE_FUNCTION( Close ) {
 DEFINE_FUNCTION( Read ) {
 
 	PRDir *dd = (PRDir *)JS_GetPrivate( cx, obj );
-	RT_ASSERT( dd != NULL, "directory is closed" );
+	J_S_ASSERT( dd != NULL, "directory is closed" );
 
 	PRDirFlags flags = PR_SKIP_NONE;
 	if ( J_ARG_ISDEF(1) ) {
@@ -141,7 +141,7 @@ DEFINE_FUNCTION( Make ) {
 
 	jsval jsvalDirectoryName;
 	JS_GetReservedSlot( cx, obj, SLOT_JSIO_DIR_NAME, &jsvalDirectoryName );
-	RT_ASSERT_DEFINED( jsvalDirectoryName );
+	J_S_ASSERT_DEFINED( jsvalDirectoryName );
 	const char *directoryName;
 	J_CHK( JsvalToString(cx, jsvalDirectoryName, &directoryName) );
 	PRIntn mode = 0766; // the permissions need to be set to 766 (linux uses the eXecute bit on directory as permission to allow access to a directory).
@@ -160,7 +160,7 @@ DEFINE_FUNCTION( Remove ) {
 
 	jsval jsvalDirectoryName;
 	JS_GetReservedSlot( cx, obj, SLOT_JSIO_DIR_NAME, &jsvalDirectoryName );
-	RT_ASSERT_DEFINED( jsvalDirectoryName );
+	J_S_ASSERT_DEFINED( jsvalDirectoryName );
 	const char *directoryName;
 	J_CHK( JsvalToString(cx, jsvalDirectoryName, &directoryName) );
 
@@ -189,7 +189,7 @@ DEFINE_PROPERTY( exist ) {
 
 	jsval jsvalDirectoryName;
 	JS_GetReservedSlot( cx, obj, SLOT_JSIO_DIR_NAME, &jsvalDirectoryName );
-	RT_ASSERT_DEFINED( jsvalDirectoryName );
+	J_S_ASSERT_DEFINED( jsvalDirectoryName );
 	const char *directoryName;
 	J_CHK( JsvalToString(cx, jsvalDirectoryName, &directoryName) );
 
@@ -242,11 +242,11 @@ DEFINE_PROPERTY( name ) {
 **/
 DEFINE_FUNCTION( List ) {
 
-	RT_ASSERT_ARGC( 1 );
+	J_S_ASSERT_ARG_MIN( 1 );
 	const char *directoryName;
 	size_t directoryNameLength;
 	J_CHK( JsvalToStringAndLength(cx, J_ARG(1), &directoryName, &directoryNameLength) );
-	RT_ASSERT( directoryNameLength < PATH_MAX, "Path too long" );
+	J_S_ASSERT( directoryNameLength < PATH_MAX, "Path too long" );
 	PRDir *dd = PR_OpenDir( directoryName );
 	if ( dd == NULL )
 		return ThrowIoError(cx);
@@ -255,12 +255,12 @@ DEFINE_FUNCTION( List ) {
 	if ( J_ARG_ISDEF( 2 ) ) {
 
 		int32 tmp;
-		RT_CHECK_CALL( JS_ValueToInt32( cx, J_ARG(2), &tmp ) );
+		J_CHK( JS_ValueToInt32( cx, J_ARG(2), &tmp ) );
 		flags = (PRDirFlags)tmp;
 	}
 
 	JSObject *addrJsObj = JS_NewArrayObject(cx, 0, NULL);
-	RT_ASSERT_ALLOC( addrJsObj );
+	J_S_ASSERT_ALLOC( addrJsObj );
 	*rval = OBJECT_TO_JSVAL( addrJsObj );
 
 	int index = 0;
@@ -298,8 +298,8 @@ DEFINE_FUNCTION( List ) {
 		}
 
 		JSString *jsStr = JS_NewStringCopyZ( cx, dirEntry->name );
-		RT_ASSERT_ALLOC( jsStr );
-		RT_CHECK_CALL(	JS_DefineElement(cx, addrJsObj, index++, STRING_TO_JSVAL(jsStr), NULL, NULL, JSPROP_ENUMERATE) );
+		J_S_ASSERT_ALLOC( jsStr );
+		J_CHK(	JS_DefineElement(cx, addrJsObj, index++, STRING_TO_JSVAL(jsStr), NULL, NULL, JSPROP_ENUMERATE) );
 	}
 
 	return JS_TRUE;

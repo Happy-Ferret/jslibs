@@ -58,26 +58,26 @@ DEFINE_CONSTRUCTOR() {
 
 	J_S_ASSERT_CONSTRUCTING();
 	J_S_ASSERT_THIS_CLASS();
-	RT_ASSERT_ARGC(1);
+	J_S_ASSERT_ARG_MIN(1);
 
 	PngDescriptor *desc = (PngDescriptor*)malloc(sizeof(PngDescriptor));
-	RT_ASSERT_ALLOC(desc);
+	J_S_ASSERT_ALLOC(desc);
 	JS_SetPrivate(cx, obj, desc);
 
 	desc->png = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL );
-	RT_ASSERT( desc->png != NULL, "Unable to png_create_read_struct.");
+	J_S_ASSERT( desc->png != NULL, "Unable to png_create_read_struct.");
 	desc->info = png_create_info_struct(desc->png);
-	RT_ASSERT( desc->info != NULL, "Unable to png_create_info_struct.");
+	J_S_ASSERT( desc->info != NULL, "Unable to png_create_info_struct.");
 
 	void *tmp;
 	GetNativeInterface(cx, JSVAL_TO_OBJECT(argv[0]), NI_STREAM_READ, (FunctionPointer*)&desc->read, &tmp);
-	RT_ASSERT( desc->read != NULL, "Unable to GetNativeResource." );
+	J_S_ASSERT( desc->read != NULL, "Unable to GetNativeResource." );
 
 	png_set_read_fn( desc->png, (voidp)desc, _png_read );
    png_read_info(desc->png, desc->info);
-	RT_ASSERT( desc->info->height <= PNG_UINT_32_MAX/png_sizeof(png_bytep), "Image is too high to process with png_read_png()");
+	J_S_ASSERT( desc->info->height <= PNG_UINT_32_MAX/png_sizeof(png_bytep), "Image is too high to process with png_read_png()");
 
-	RT_ASSERT( png_set_interlace_handling(desc->png) == 1, "Cannot read interlaced image yet." );
+	J_S_ASSERT( png_set_interlace_handling(desc->png) == 1, "Cannot read interlaced image yet." );
 	return JS_TRUE;
 }
 
@@ -104,7 +104,7 @@ DEFINE_FUNCTION( Load ) {
 // read & store
 
 	png_bytep data = (png_bytep)malloc(height * bytePerRow);
-	RT_ASSERT_ALLOC(data);
+	J_S_ASSERT_ALLOC(data);
 	JSObject *image = NewImage(cx, width, height, channels, data);
 	*rval = OBJECT_TO_JSVAL(image);
 

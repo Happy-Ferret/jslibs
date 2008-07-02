@@ -34,7 +34,7 @@ BEGIN_CLASS( IoError )
 
 DEFINE_CONSTRUCTOR() {
 
-	REPORT_ERROR( "This object cannot be construct." ); // but constructor must be defined
+	J_REPORT_ERROR( "This object cannot be construct." ); // but constructor must be defined
 	return JS_TRUE;
 }
 
@@ -61,7 +61,7 @@ DEFINE_PROPERTY( text ) {
 
 DEFINE_FUNCTION( toString ) {
 
-	RT_CHECK_CALL( text(cx, obj, 0, rval) );
+	J_CHK( text(cx, obj, 0, rval) );
 	return JS_TRUE;
 }
 

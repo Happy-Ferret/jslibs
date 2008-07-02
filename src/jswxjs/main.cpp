@@ -36,22 +36,22 @@ static HMODULE _moduleList[MAX_WXJS_MODULES] = { NULL };
 
 DEFINE_FUNCTION( LoadWXJSModule ) {
 
-	RT_ASSERT_ARGC(1);
+	J_S_ASSERT_ARG_MIN(1);
 	const char *fileName;
 	J_CHK( JsvalToString(cx, argv[0], &fileName) );
 	char libFileName[PATH_MAX];
 	strcpy( libFileName, fileName );
 	strcat( libFileName, DLL_EXT );
 	HMODULE module = ::LoadLibrary(libFileName);
-	RT_ASSERT_2( module != NULL, "Unable to load the library %s (error:%d).", libFileName, GetLastError() );
+	J_S_ASSERT_2( module != NULL, "Unable to load the library %s (error:%d).", libFileName, GetLastError() );
 	int i;
 	for ( i = 0; _moduleList[i] != NULL; ++i ); // find a free module slot
-	RT_ASSERT( i < 32, "unable to load more libraries" );
+	J_S_ASSERT( i < 32, "unable to load more libraries" );
 	_moduleList[i] = module;
 
 	WXJS_INIT_PROC moduleInit = (WXJS_INIT_PROC)::GetProcAddress( module, WXJS_INIT_CLASS );
 
-	RT_ASSERT_1( moduleInit != NULL, "Module initialization function not found in %s.", libFileName );
+	J_S_ASSERT_1( moduleInit != NULL, "Module initialization function not found in %s.", libFileName );
 	*rval = moduleInit( cx, obj ) ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;
 }
@@ -75,7 +75,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
 // read configuration
 //	jsval stdoutFunctionValue = GetConfigurationValue(cx, "stdout");
-//	RT_ASSERT( stdoutFunctionValue != JSVAL_VOID, "Unable to read stdout function from configuration object." );
+//	J_S_ASSERT( stdoutFunctionValue != JSVAL_VOID, "Unable to read stdout function from configuration object." );
 //	stdoutFunction = JS_ValueToFunction(cx, stdoutFunctionValue); // returns NULL if the function is not defined
 
 	jsval unsafeModePtrVal;

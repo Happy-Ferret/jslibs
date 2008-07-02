@@ -35,10 +35,10 @@ DEFINE_FINALIZE() {
 **/
 DEFINE_CONSTRUCTOR() {
 
-	RT_ASSERT_CONSTRUCTING(&classGeomRay);
+	J_S_ASSERT_CONSTRUCTING(&classGeomRay);
 	ode::dSpaceID space = 0;
 	if ( argc >= 1 ) // place it in a space ?
-		RT_CHECK_CALL( ValToSpaceID(cx, argv[0], &space) );
+		J_CHK( ValToSpaceID(cx, argv[0], &space) );
 	ode::dGeomID geomId = ode::dCreateRay(space, 1); // default ray length is 1
 	JS_SetPrivate(cx, obj, geomId);
 	SetupReadMatrix(cx, obj); // (TBD) check return status
@@ -53,8 +53,8 @@ DEFINE_CONSTRUCTOR() {
 DEFINE_PROPERTY( lengthSetter ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE( geom );
-	RT_ASSERT_NUMBER( *vp );
+	J_S_ASSERT_RESOURCE( geom );
+	J_S_ASSERT_NUMBER( *vp );
 	jsdouble radius;
 	JS_ValueToNumber(cx, *vp, &radius);
 	ode::dGeomRaySetLength(geom, radius);
@@ -64,7 +64,7 @@ DEFINE_PROPERTY( lengthSetter ) {
 DEFINE_PROPERTY( lengthGetter ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE( geom );
+	J_S_ASSERT_RESOURCE( geom );
 	JS_NewDoubleValue(cx, ode::dGeomRayGetLength(geom), vp); // see JS_NewNumberValue and JS_NewDouble
 	return JS_TRUE;
 }
@@ -77,7 +77,7 @@ DEFINE_PROPERTY( lengthGetter ) {
 DEFINE_PROPERTY( startSetter ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE( geom );
+	J_S_ASSERT_RESOURCE( geom );
 	ode::dVector3 start, dir;
 	ode::dGeomRayGet(geom, start, dir);
 	FloatArrayToVector(cx, 3, vp, start);
@@ -88,7 +88,7 @@ DEFINE_PROPERTY( startSetter ) {
 DEFINE_PROPERTY( startGetter ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE( geom );
+	J_S_ASSERT_RESOURCE( geom );
 	ode::dVector3 start, dir;
 	ode::dGeomRayGet(geom, start, dir);
 	FloatVectorToArray(cx, 3, start, vp);
@@ -103,7 +103,7 @@ DEFINE_PROPERTY( startGetter ) {
 DEFINE_PROPERTY( directionSetter ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE( geom );
+	J_S_ASSERT_RESOURCE( geom );
 	ode::dVector3 start, dir;
 	ode::dGeomRayGet(geom, start, dir);
 	FloatArrayToVector(cx, 3, vp, dir);
@@ -114,7 +114,7 @@ DEFINE_PROPERTY( directionSetter ) {
 DEFINE_PROPERTY( directionGetter ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE( geom );
+	J_S_ASSERT_RESOURCE( geom );
 	ode::dVector3 start, dir;
 	ode::dGeomRayGet(geom, start, dir);
 	FloatVectorToArray(cx, 3, dir, vp);

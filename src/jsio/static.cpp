@@ -59,16 +59,16 @@ DEFINE_FUNCTION( Poll ) {
 
 	// http://developer.mozilla.org/en/docs/PR_Poll
 
-	RT_ASSERT_ARGC( 1 );
+	J_S_ASSERT_ARG_MIN( 1 );
 
-	RT_ASSERT_ARRAY( J_ARG(1) );
+	J_S_ASSERT_ARRAY( J_ARG(1) );
 	JSIdArray *idArray = JS_Enumerate( cx, JSVAL_TO_OBJECT(J_ARG(1)) ); // make a kind of auto-ptr for this
 
 	PRIntervalTime pr_timeout;
 	if ( J_ARG_ISDEF(2) ) {
 
 		uint32 tmp;
-		RT_JSVAL_TO_UINT32( J_ARG(2), tmp );
+		J_JSVAL_TO_UINT32( J_ARG(2), tmp );
 		pr_timeout = PR_MillisecondsToInterval(tmp);
 	} else {
 
@@ -95,13 +95,13 @@ DEFINE_FUNCTION( Poll ) {
 	for ( i = 0; i < idArray->length; i++ ) {
 
 		jsval propVal;
-		RT_CHECK_CALL( JS_IdToValue(cx, idArray->vector[i], &propVal ));
-		RT_CHECK_CALL( JS_GetElement(cx, JSVAL_TO_OBJECT(J_ARG(1)), JSVAL_TO_INT(propVal), &propVal ));
-		RT_ASSERT_OBJECT( propVal );
+		J_CHK( JS_IdToValue(cx, idArray->vector[i], &propVal ));
+		J_CHK( JS_GetElement(cx, JSVAL_TO_OBJECT(J_ARG(1)), JSVAL_TO_INT(propVal), &propVal ));
+		J_S_ASSERT_OBJECT( propVal );
 		JSObject *fdObj = JSVAL_TO_OBJECT( propVal );
-		RT_ASSERT( InheritFrom(cx, fdObj, &classDescriptor), J__ERRMSG_INVALID_CLASS );
+		J_S_ASSERT( InheritFrom(cx, fdObj, &classDescriptor), J__ERRMSG_INVALID_CLASS );
 		PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, fdObj );
-//		RT_ASSERT_RESOURCE( fd ); // fd == NULL is supported !
+//		J_S_ASSERT_RESOURCE( fd ); // fd == NULL is supported !
 
 		pollDesc[i].fd = fd; // fd is A pointer to a PRFileDesc object representing a socket or a pollable event.  This field can be set to NULL to indicate to PR_Poll that this PRFileDesc object should be ignored.
 		pollDesc[i].in_flags = 0;
@@ -146,8 +146,8 @@ DEFINE_FUNCTION( Poll ) {
 		for ( i = 0; i < idArray->length; i++ ) {
 
 			jsval arrayItem;
-			RT_CHECK_CALL( JS_IdToValue(cx, idArray->vector[i], &arrayItem) );
-			RT_CHECK_CALL( JS_GetElement(cx, JSVAL_TO_OBJECT(J_ARG(1)), JSVAL_TO_INT(arrayItem), &arrayItem) );
+			J_CHK( JS_IdToValue(cx, idArray->vector[i], &arrayItem) );
+			J_CHK( JS_GetElement(cx, JSVAL_TO_OBJECT(J_ARG(1)), JSVAL_TO_INT(arrayItem), &arrayItem) );
 			if ( arrayItem == JSVAL_VOID ) // socket has been removed from the list while js func "poll()" is runing
 				continue;
 			JSObject *fdObj = JSVAL_TO_OBJECT( arrayItem ); //JS_ValueToObject
@@ -226,18 +226,18 @@ failed: // goto is the cheaper solution
 **/
 DEFINE_FUNCTION( IsReadable ) {
 
-	RT_ASSERT_ARGC( 1 );
+	J_S_ASSERT_ARG_MIN( 1 );
 
 	JSObject *descriptorObj = JSVAL_TO_OBJECT( J_ARG(1) );
-	RT_ASSERT( InheritFrom(cx, descriptorObj, &classDescriptor), J__ERRMSG_INVALID_CLASS );
+	J_S_ASSERT( InheritFrom(cx, descriptorObj, &classDescriptor), J__ERRMSG_INVALID_CLASS );
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, descriptorObj );
-//	RT_ASSERT_RESOURCE( fd ); // fd == NULL is supported !
+//	J_S_ASSERT_RESOURCE( fd ); // fd == NULL is supported !
 
 	PRIntervalTime prTimeout;
 	if ( J_ARG_ISDEF(2) ) {
 
 		uint32 timeout;
-		RT_JSVAL_TO_UINT32( J_ARG(2), timeout );
+		J_JSVAL_TO_UINT32( J_ARG(2), timeout );
 		prTimeout = PR_MillisecondsToInterval(timeout);
 	} else
 		prTimeout = PR_INTERVAL_NO_WAIT; //PR_INTERVAL_NO_TIMEOUT;
@@ -256,18 +256,18 @@ DEFINE_FUNCTION( IsReadable ) {
 **/
 DEFINE_FUNCTION( IsWritable ) {
 
-	RT_ASSERT_ARGC( 1 );
+	J_S_ASSERT_ARG_MIN( 1 );
 
 	JSObject *descriptorObj = JSVAL_TO_OBJECT( J_ARG(1) );
-	RT_ASSERT( InheritFrom(cx, descriptorObj, &classDescriptor), J__ERRMSG_INVALID_CLASS );
+	J_S_ASSERT( InheritFrom(cx, descriptorObj, &classDescriptor), J__ERRMSG_INVALID_CLASS );
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, descriptorObj );
-//	RT_ASSERT_RESOURCE( fd ); // fd == NULL is supported !
+//	J_S_ASSERT_RESOURCE( fd ); // fd == NULL is supported !
 
 	PRIntervalTime prTimeout;
 	if ( J_ARG_ISDEF(2) ) {
 
 		uint32 timeout;
-		RT_JSVAL_TO_UINT32( J_ARG(2), timeout );
+		J_JSVAL_TO_UINT32( J_ARG(2), timeout );
 		prTimeout = PR_MillisecondsToInterval(timeout);
 	} else
 		prTimeout = PR_INTERVAL_NO_WAIT; //PR_INTERVAL_NO_TIMEOUT;
@@ -312,7 +312,7 @@ DEFINE_FUNCTION_FAST( UIntervalNow ) {
 DEFINE_FUNCTION( Sleep ) {
 
 	uint32 timeout;
-	RT_CHECK_CALL( JS_ValueToECMAUint32( cx, J_ARG(1), &timeout ) );
+	J_CHK( JS_ValueToECMAUint32( cx, J_ARG(1), &timeout ) );
 	PR_Sleep( PR_MillisecondsToInterval(timeout) );
 	return JS_TRUE;
 }
@@ -324,7 +324,7 @@ DEFINE_FUNCTION( Sleep ) {
 **/
 DEFINE_FUNCTION( GetEnv ) {
 
-	RT_ASSERT_ARGC(1);
+	J_S_ASSERT_ARG_MIN(1);
 	const char *name;
 	J_CHK( JsvalToString(cx, J_ARG(1), &name) );
 	char* value = PR_GetEnv(name); // If the environment variable is not defined, the function returns NULL.
@@ -332,7 +332,7 @@ DEFINE_FUNCTION( GetEnv ) {
 
 //		JSString *jsstr = JS_NewExternalString(cx, (jschar*)value, strlen(value), JS_AddExternalStringFinalizer(NULL)); only works with unicode strings
 		JSString *jsstr = JS_NewStringCopyZ(cx,value);
-		RT_ASSERT_ALLOC( jsstr );
+		J_S_ASSERT_ALLOC( jsstr );
 		*rval = STRING_TO_JSVAL(jsstr);
 	}
 	return JS_TRUE;
@@ -345,19 +345,19 @@ DEFINE_FUNCTION( GetEnv ) {
 **/
 DEFINE_FUNCTION( GetRandomNoise ) {
 
-	RT_ASSERT_ARGC( 1 );
-	RT_ASSERT_INT( J_ARG(1) );
+	J_S_ASSERT_ARG_MIN( 1 );
+	J_S_ASSERT_INT( J_ARG(1) );
 	PRSize rndSize = JSVAL_TO_INT( J_ARG(1) );
 	void *buf = (void*)JS_malloc(cx, rndSize);
-	RT_ASSERT_ALLOC( buf );
+	J_S_ASSERT_ALLOC( buf );
 	PRSize size = PR_GetRandomNoise(buf, rndSize);
 	if ( size <= 0 ) {
 
 		JS_free(cx, buf);
-		REPORT_ERROR( "PR_GetRandomNoise is not implemented on this platform." );
+		J_REPORT_ERROR( "PR_GetRandomNoise is not implemented on this platform." );
 	}
 	JSString *jsstr = JS_NewString(cx, (char*)buf, size); // (TBD) bstring
-	RT_ASSERT_ALLOC( jsstr );
+	J_S_ASSERT_ALLOC( jsstr );
 	*rval = STRING_TO_JSVAL(jsstr);
 	return JS_TRUE;
 }
@@ -373,10 +373,10 @@ DEFINE_FUNCTION( GetRandomNoise ) {
 
 DEFINE_FUNCTION( hton ) {
 
-	RT_ASSERT_ARGC( 1 );
+	J_S_ASSERT_ARG_MIN( 1 );
 
 	PRUint32 val;
-	RT_JSVAL_TO_UINT32( J_ARG(1), val );
+	J_JSVAL_TO_UINT32( J_ARG(1), val );
 
 	val = PR_ntohl(val);
 
@@ -400,7 +400,7 @@ DEFINE_FUNCTION( hton ) {
 **/
 DEFINE_FUNCTION_FAST( WaitSemaphore ) {
 
-	RT_ASSERT_ARGC( 1 );
+	J_S_ASSERT_ARG_MIN( 1 );
 
 	const char *name;
 	size_t nameLength;
@@ -408,7 +408,7 @@ DEFINE_FUNCTION_FAST( WaitSemaphore ) {
 
 	PRUintn mode = PR_IRUSR | PR_IWUSR; // read write permission for owner.
 	if ( J_FARG_ISDEF(2) )
-		RT_JSVAL_TO_INT32( J_FARG(2), mode );
+		J_JSVAL_TO_INT32( J_FARG(2), mode );
 
 	bool isCreation = true;
 	PRSem *semaphore = PR_OpenSemaphore(name, PR_SEM_EXCL | PR_SEM_CREATE, mode, 1); // fail if already exists
@@ -447,7 +447,7 @@ DEFINE_FUNCTION_FAST( WaitSemaphore ) {
 **/
 DEFINE_FUNCTION_FAST( PostSemaphore ) {
 
-	RT_ASSERT_ARGC( 1 );
+	J_S_ASSERT_ARG_MIN( 1 );
 
 	const char *name;
 	size_t nameLength;
@@ -480,7 +480,7 @@ DEFINE_FUNCTION_FAST( PostSemaphore ) {
 **/
 DEFINE_FUNCTION_FAST( CreateProcess_ ) {
 
-	RT_ASSERT_ARGC( 1 );
+	J_S_ASSERT_ARG_MIN( 1 );
 
 	const char *path;
 	J_CHK( JsvalToString(cx, J_FARG(1), &path) );
@@ -493,13 +493,13 @@ DEFINE_FUNCTION_FAST( CreateProcess_ ) {
 		processArgc = idArray->length +1; // +1 is argv[0]
 
 		processArgv = (const char**)malloc(sizeof(const char**) * (processArgc +1)); // +1 is NULL
-		RT_ASSERT_ALLOC( processArgv );
+		J_S_ASSERT_ALLOC( processArgv );
 
 		for ( int i=0; i<processArgc -1; i++ ) { // -1 because argv[0]
 
 			jsval propVal;
-			RT_CHECK_CALL( JS_IdToValue(cx, idArray->vector[i], &propVal ));
-			RT_CHECK_CALL( JS_GetElement(cx, JSVAL_TO_OBJECT(J_FARG(2)), JSVAL_TO_INT(propVal), &propVal )); // (TBD) optimize
+			J_CHK( JS_IdToValue(cx, idArray->vector[i], &propVal ));
+			J_CHK( JS_GetElement(cx, JSVAL_TO_OBJECT(J_FARG(2)), JSVAL_TO_INT(propVal), &propVal )); // (TBD) optimize
 
 			const char *tmp;
 			J_CHK( JsvalToString(cx, propVal, &tmp) );
@@ -517,7 +517,7 @@ DEFINE_FUNCTION_FAST( CreateProcess_ ) {
 
 	bool waitEnd = false;
 	if ( J_FARG_ISDEF(3) )
-		RT_JSVAL_TO_BOOL( J_FARG(3), waitEnd );
+		J_JSVAL_TO_BOOL( J_FARG(3), waitEnd );
 
 	PRFileDesc* stdout_child;
 	PRFileDesc* stdout_parent;
@@ -563,10 +563,10 @@ DEFINE_FUNCTION_FAST( CreateProcess_ ) {
 //			return ThrowIoError(cx);
 
 		JSObject *fdin = JS_NewObject( cx, &classPipe, NULL, NULL );
-		RT_CHECK_CALL( JS_SetPrivate( cx, fdin, stdin_parent ) );
+		J_CHK( JS_SetPrivate( cx, fdin, stdin_parent ) );
 
 		JSObject *fdout = JS_NewObject( cx, &classPipe, NULL, NULL );
-		RT_CHECK_CALL( JS_SetPrivate( cx, fdout, stdout_parent ) );
+		J_CHK( JS_SetPrivate( cx, fdout, stdout_parent ) );
 		J_CHK( InitStreamReadInterface(cx, fdout) );
 		J_CHK( SetStreamReadInterface(cx, fdout, NativeInterfaceStreamRead) );
 
@@ -600,7 +600,7 @@ DEFINE_PROPERTY( hostName ) {
 	if ( status != PR_SUCCESS )
 		return ThrowIoError(cx);
 	JSString *jsstr = JS_NewStringCopyZ(cx,tmp);
-	RT_ASSERT_ALLOC( jsstr );
+	J_S_ASSERT_ALLOC( jsstr );
 	*vp = STRING_TO_JSVAL(jsstr);
 	return JS_TRUE;
 }
@@ -613,7 +613,7 @@ DEFINE_PROPERTY( hostName ) {
 DEFINE_PROPERTY( physicalMemorySize ) {
 
 	PRUint64 mem = PR_GetPhysicalMemorySize();
-	RT_CHECK_CALL( JS_NewNumberValue(cx, (jsdouble)mem, vp) );
+	J_CHK( JS_NewNumberValue(cx, (jsdouble)mem, vp) );
 	return JS_TRUE;
 }
 
@@ -629,7 +629,7 @@ DEFINE_PROPERTY( systemInfo ) {
 		char tmp[SYS_INFO_BUFFER_LENGTH];
 
 		JSObject *info = JS_NewObject(cx, NULL, NULL, NULL);
-		RT_ASSERT_ALLOC( info );
+		J_S_ASSERT_ALLOC( info );
 		*vp = OBJECT_TO_JSVAL( info );
 
 		PRStatus status;
@@ -642,28 +642,28 @@ DEFINE_PROPERTY( systemInfo ) {
 		if ( status != PR_SUCCESS )
 			return ThrowIoError(cx);
 		jsstr = JS_NewStringCopyZ(cx,tmp);
-		RT_ASSERT_ALLOC( jsstr );
+		J_S_ASSERT_ALLOC( jsstr );
 //		tmpVal = STRING_TO_JSVAL(jsstr);
 //		JS_SetProperty(cx, info, "architecture", &tmpVal);
-		RT_CHECK_CALL( JS_DefineProperty(cx, info, "architecture", STRING_TO_JSVAL(jsstr), NULL, NULL, JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT) );
+		J_CHK( JS_DefineProperty(cx, info, "architecture", STRING_TO_JSVAL(jsstr), NULL, NULL, JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT) );
 
 		status = PR_GetSystemInfo( PR_SI_SYSNAME, tmp, sizeof(tmp) );
 		if ( status != PR_SUCCESS )
 			return ThrowIoError(cx);
 		jsstr = JS_NewStringCopyZ(cx,tmp);
-		RT_ASSERT_ALLOC( jsstr );
+		J_S_ASSERT_ALLOC( jsstr );
 //		tmpVal = STRING_TO_JSVAL(jsstr);
 //		JS_SetProperty(cx, info, "name", &tmpVal);
-		RT_CHECK_CALL( JS_DefineProperty(cx, info, "name", STRING_TO_JSVAL(jsstr), NULL, NULL, JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT) );
+		J_CHK( JS_DefineProperty(cx, info, "name", STRING_TO_JSVAL(jsstr), NULL, NULL, JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT) );
 
 		status = PR_GetSystemInfo( PR_SI_RELEASE, tmp, sizeof(tmp) );
 		if ( status != PR_SUCCESS )
 			return ThrowIoError(cx);
 		jsstr = JS_NewStringCopyZ(cx,tmp);
-		RT_ASSERT_ALLOC( jsstr );
+		J_S_ASSERT_ALLOC( jsstr );
 //		tmpVal = STRING_TO_JSVAL(jsstr);
 //		JS_SetProperty(cx, info, "release", &tmpVal);
-		RT_CHECK_CALL( JS_DefineProperty(cx, info, "release", STRING_TO_JSVAL(jsstr), NULL, NULL, JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT) );
+		J_CHK( JS_DefineProperty(cx, info, "release", STRING_TO_JSVAL(jsstr), NULL, NULL, JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT) );
 	}
 
 	return JS_TRUE;
@@ -698,7 +698,7 @@ DEFINE_PROPERTY( processPriorityGetter ) {
 			priorityValue = 2;
 			break;
 		default:
-			REPORT_ERROR( "Invalid thread priority." );
+			J_REPORT_ERROR( "Invalid thread priority." );
 	}
 	*vp = INT_TO_JSVAL( priorityValue );
 	return JS_TRUE;
@@ -707,7 +707,7 @@ DEFINE_PROPERTY( processPriorityGetter ) {
 DEFINE_PROPERTY( processPrioritySetter ) {
 
 	int priorityValue;
-	RT_JSVAL_TO_INT32( *vp, priorityValue );
+	J_JSVAL_TO_INT32( *vp, priorityValue );
 	PRThreadPriority priority;
 	switch (priorityValue) {
 		case -1:
@@ -723,7 +723,7 @@ DEFINE_PROPERTY( processPrioritySetter ) {
 			priority = PR_PRIORITY_URGENT;
 			break;
 		default:
-			REPORT_ERROR( "Invalid thread priority." );
+			J_REPORT_ERROR( "Invalid thread priority." );
 	}
 	PRThread *thread = PR_GetCurrentThread();
 	PR_SetThreadPriority( thread, priority );
@@ -747,7 +747,7 @@ DEFINE_PROPERTY( currentWorkingDirectory ) {
 #endif // XP_WIN
 
 	JSString *str = JS_NewStringCopyZ(cx, buf);
-	RT_ASSERT_ALLOC( str );
+	J_S_ASSERT_ALLOC( str );
 	*vp = STRING_TO_JSVAL( str );
 	return JS_TRUE;
 }

@@ -51,22 +51,22 @@ DEFINE_FINALIZE() {
 
 DEFINE_CONSTRUCTOR() {
 
-	RT_ASSERT_CONSTRUCTING( _class );
-	RT_ASSERT_ARGC( 2 );
+	J_S_ASSERT_CONSTRUCTING( _class );
+	J_S_ASSERT_ARG_MIN( 2 );
 
 	const char *name;
 	size_t nameLength;
 	J_CHK( JsvalToStringAndLength(cx, J_ARG(1), &name, &nameLength) );
 
-	RT_ASSERT( nameLength < PATH_MAX, "Semaphoer name too long." );
+	J_S_ASSERT( nameLength < PATH_MAX, "Semaphoer name too long." );
 
 	PRUintn count = 0;
 	if ( J_ARG_ISDEF(2) )
-		RT_JSVAL_TO_INT32( J_ARG(2), count );
+		J_JSVAL_TO_INT32( J_ARG(2), count );
 
 	PRUintn mode = PR_IRUSR | PR_IWUSR; // read write permission for owner.
 	if ( J_ARG_ISDEF(3) )
-		RT_JSVAL_TO_INT32( J_ARG(3), mode );
+		J_JSVAL_TO_INT32( J_ARG(3), mode );
 
 	bool isCreation = true;
 	PRSem *semaphore = PR_OpenSemaphore(name, PR_SEM_EXCL | PR_SEM_CREATE, mode, count); // fail if already exists
@@ -80,13 +80,13 @@ DEFINE_CONSTRUCTOR() {
 	}
 
 	ClassPrivate *pv = (ClassPrivate*)malloc( sizeof(ClassPrivate) );
-	RT_ASSERT_ALLOC( pv );
+	J_S_ASSERT_ALLOC( pv );
 
 	strcpy( pv->name, name );
 	pv->semaphore = semaphore;
 	pv->owner = isCreation;
 
-	RT_CHECK_CALL( JS_SetPrivate(cx, J_OBJ, pv) );
+	J_CHK( JS_SetPrivate(cx, J_OBJ, pv) );
 
 	return JS_TRUE;
 }
@@ -95,7 +95,7 @@ DEFINE_CONSTRUCTOR() {
 DEFINE_FUNCTION_FAST( Wait ) {
 
 	ClassPrivate *pv = (ClassPrivate*)JS_GetPrivate(cx, J_FOBJ);
-	RT_ASSERT_RESOURCE( pv );
+	J_S_ASSERT_RESOURCE( pv );
 
 	PRStatus status;
 	status = PR_WaitSemaphore( pv->semaphore );
@@ -108,7 +108,7 @@ DEFINE_FUNCTION_FAST( Wait ) {
 DEFINE_FUNCTION_FAST( Post ) {
 
 	ClassPrivate *pv = (ClassPrivate*)JS_GetPrivate(cx, J_FOBJ);
-	RT_ASSERT_RESOURCE( pv );
+	J_S_ASSERT_RESOURCE( pv );
 	
 	PRStatus status;
 	status = PR_PostSemaphore( pv->semaphore );

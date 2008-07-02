@@ -84,7 +84,7 @@ DEFINE_CONSTRUCTOR() {
 	J_S_ASSERT_ARG_MIN(1);
 
 	const char *filePathName;
-	J_CHECK_CALL( JsvalToString(cx, J_ARG(1), &filePathName) );
+	J_CHK( JsvalToString(cx, J_ARG(1), &filePathName) );
 
 	FT_Long faceIndex = 0;
 	if ( J_ARG_ISDEF(2) )
@@ -96,7 +96,7 @@ DEFINE_CONSTRUCTOR() {
 	// see. FT_Open_Face
 
 	J_S_ASSERT_RESOURCE(face);
-	J_CHECK_CALL( JS_SetPrivate(cx, obj, face) );
+	J_CHK( JS_SetPrivate(cx, obj, face) );
 	return JS_TRUE;
 }
 
@@ -162,9 +162,9 @@ DEFINE_FUNCTION_FAST( DrawChar ) {
 	J_S_ASSERT( bstr != NULL, "Unable to create a BString." );
 	*J_FRVAL = OBJECT_TO_JSVAL( bstr );
 
-	J_CHECK_CALL( SetPropertyInt(cx, bstr, "width", width) );
-	J_CHECK_CALL( SetPropertyInt(cx, bstr, "height", height) );
-	J_CHECK_CALL( SetPropertyInt(cx, bstr, "channels", 1) );
+	J_CHK( SetPropertyInt(cx, bstr, "width", width) );
+	J_CHK( SetPropertyInt(cx, bstr, "height", height) );
+	J_CHK( SetPropertyInt(cx, bstr, "channels", 1) );
 	memcpy( buf, face->glyph->bitmap.buffer, bufLength );
 
 	return JS_TRUE;
@@ -209,32 +209,32 @@ DEFINE_FUNCTION_FAST( DrawString ) {
 	jsval tmp;
 
 	int letterSpacing = 0;
-	J_CHECK_CALL( JS_GetReservedSlot(cx, J_FOBJ, FONT_SLOT_LETTERSPACING, &tmp) );
+	J_CHK( JS_GetReservedSlot(cx, J_FOBJ, FONT_SLOT_LETTERSPACING, &tmp) );
 	if ( tmp != JSVAL_VOID )
 		J_JSVAL_TO_INT32(tmp, letterSpacing);
 
 	int horizontalPadding = 0;
-	J_CHECK_CALL( JS_GetReservedSlot(cx, J_FOBJ, FONT_SLOT_HORIZONTALPADDING, &tmp) );
+	J_CHK( JS_GetReservedSlot(cx, J_FOBJ, FONT_SLOT_HORIZONTALPADDING, &tmp) );
 	if ( tmp != JSVAL_VOID )
 		J_JSVAL_TO_INT32(tmp, horizontalPadding);
 
 	int verticalPadding = 0;
-	J_CHECK_CALL( JS_GetReservedSlot(cx, J_FOBJ, FONT_SLOT_VERTICALPADDING, &tmp) );
+	J_CHK( JS_GetReservedSlot(cx, J_FOBJ, FONT_SLOT_VERTICALPADDING, &tmp) );
 	if ( tmp != JSVAL_VOID )
 		J_JSVAL_TO_INT32(tmp, verticalPadding);
 
 	int useKerning = true;
-	J_CHECK_CALL( JS_GetReservedSlot(cx, J_FOBJ, FONT_SLOT_USEKERNING, &tmp) );
+	J_CHK( JS_GetReservedSlot(cx, J_FOBJ, FONT_SLOT_USEKERNING, &tmp) );
 	if ( tmp != JSVAL_VOID )
 		J_JSVAL_TO_BOOL(tmp, useKerning);
 
 	int isItalic = false;
-	J_CHECK_CALL( JS_GetReservedSlot(cx, J_FOBJ, FONT_SLOT_ITALIC, &tmp) );
+	J_CHK( JS_GetReservedSlot(cx, J_FOBJ, FONT_SLOT_ITALIC, &tmp) );
 	if ( tmp != JSVAL_VOID )
 		J_JSVAL_TO_BOOL(tmp, isItalic);
 
 	int isBold = false;
-	J_CHECK_CALL( JS_GetReservedSlot(cx, J_FOBJ, FONT_SLOT_BOLD, &tmp) );
+	J_CHK( JS_GetReservedSlot(cx, J_FOBJ, FONT_SLOT_BOLD, &tmp) );
 	if ( tmp != JSVAL_VOID )
 		J_JSVAL_TO_BOOL(tmp, isBold);
 
@@ -314,9 +314,9 @@ DEFINE_FUNCTION_FAST( DrawString ) {
 		JSObject *bstr = J_NewBinaryString(cx, buf, bufLength);
 		*J_FRVAL = OBJECT_TO_JSVAL( bstr );
 		J_S_ASSERT( bstr != NULL, "Unable to create a binary string." );
-		J_CHECK_CALL( SetPropertyInt(cx, bstr, "width", width) );
-		J_CHECK_CALL( SetPropertyInt(cx, bstr, "height", height) );
-		J_CHECK_CALL( SetPropertyInt(cx, bstr, "channels", 1) );
+		J_CHK( SetPropertyInt(cx, bstr, "width", width) );
+		J_CHK( SetPropertyInt(cx, bstr, "height", height) );
+		J_CHK( SetPropertyInt(cx, bstr, "channels", 1) );
 
 		// render glyphs in the bitmap
 		memset(buf, 0, bufLength);
@@ -462,7 +462,7 @@ DEFINE_PROPERTY( poscriptName ) {
 
 	FT_Face face = (FT_Face)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE(face);
-	J_CHECK_CALL( StringToJsval(cx, vp, FT_Get_Postscript_Name(face)) );
+	J_CHK( StringToJsval(cx, vp, FT_Get_Postscript_Name(face)) );
 	return JS_TRUE;
 }
 

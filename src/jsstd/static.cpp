@@ -63,7 +63,7 @@ BEGIN_STATIC
 **/
 DEFINE_FUNCTION( Expand ) {
 
-	RT_ASSERT_ARGC( 1 );
+	J_S_ASSERT_ARG_MIN( 1 );
 
 	const char *srcBegin;
 	size_t srcLen;
@@ -75,7 +75,7 @@ DEFINE_FUNCTION( Expand ) {
 	JSObject *table;
 	if ( J_ARG_ISDEF(2) ) {
 
-		RT_ASSERT_OBJECT( J_ARG(2) );
+		J_S_ASSERT_OBJECT( J_ARG(2) );
 		table = JSVAL_TO_OBJECT( J_ARG(2) );
 	} else {
 
@@ -183,12 +183,12 @@ static JSBool InternString(JSContext *cx, uintN argc, jsval *vp) {
 **/
 DEFINE_FUNCTION( Seal ) {
 
-	RT_ASSERT_ARGC(1);
+	J_S_ASSERT_ARG_MIN(1);
 	JSBool deep;
-	RT_ASSERT_OBJECT( J_ARG(1) );
-	//RT_CHECK_CALL( JS_ValueToObject(cx, J_ARG(1), &obj) );
+	J_S_ASSERT_OBJECT( J_ARG(1) );
+	//J_CHK( JS_ValueToObject(cx, J_ARG(1), &obj) );
 	if ( J_ARG_ISDEF(2) )
-		RT_CHECK_CALL( JS_ValueToBoolean( cx, J_ARG(2), &deep ) );
+		J_CHK( JS_ValueToBoolean( cx, J_ARG(2), &deep ) );
 	else
 		deep = JS_FALSE;
 	return JS_SealObject(cx, JSVAL_TO_OBJECT(J_ARG(1)), deep);
@@ -202,8 +202,8 @@ DEFINE_FUNCTION( Seal ) {
 **/
 DEFINE_FUNCTION( Clear ) {
 
-	RT_ASSERT_ARGC( 1 );
-//	RT_ASSERT_OBJECT(J_ARG(1));
+	J_S_ASSERT_ARG_MIN( 1 );
+//	J_S_ASSERT_OBJECT(J_ARG(1));
 	if ( JSVAL_IS_OBJECT( J_ARG(1) ) ) {
 
 		JS_ClearScope(cx, JSVAL_TO_OBJECT( J_ARG(1) ));
@@ -239,13 +239,13 @@ DEFINE_FUNCTION( Clear ) {
 **/
 DEFINE_FUNCTION( SetScope ) {
 
-	RT_ASSERT_ARGC( 2 );
+	J_S_ASSERT_ARG_MIN( 2 );
 	JSObject *o;
 	JS_ValueToObject(cx, J_ARG(1), &o);
 	JSObject *p;
 	JS_ValueToObject(cx, J_ARG(2), &p);
 	*rval = OBJECT_TO_JSVAL(JS_GetParent(cx, o));
-	RT_CHECK_CALL( JS_SetParent(cx, o, p) );
+	J_CHK( JS_SetParent(cx, o, p) );
 	return JS_TRUE;
 }
 
@@ -256,9 +256,9 @@ DEFINE_FUNCTION( SetScope ) {
 **/
 DEFINE_FUNCTION( HideProperties ) {
 
-	RT_ASSERT_ARGC( 2 );
+	J_S_ASSERT_ARG_MIN( 2 );
 	JSObject *object;
-	RT_CHECK_CALL( JS_ValueToObject( cx, J_ARG(1), &object ) );
+	J_CHK( JS_ValueToObject( cx, J_ARG(1), &object ) );
 //	const char *propertyName;
 //	uintN attributes;
 	for ( uintN i = 1; i < J_ARGC; i++ ) {
@@ -268,29 +268,29 @@ DEFINE_FUNCTION( HideProperties ) {
 		JSObject *obj2;
 		JSProperty *prop;
 
-		RT_CHECK_CALL( JS_ValueToId(cx, J_ARG(1+i), &id) );
-		RT_CHECK_CALL( OBJ_LOOKUP_PROPERTY(cx, object, id, &obj2, &prop) );
+		J_CHK( JS_ValueToId(cx, J_ARG(1+i), &id) );
+		J_CHK( OBJ_LOOKUP_PROPERTY(cx, object, id, &obj2, &prop) );
 		if (!prop || object != obj2) { // not found
 
 			if (prop)
 				OBJ_DROP_PROPERTY(cx, obj2, prop);
-			REPORT_ERROR( "Invalid property name." );
+			J_REPORT_ERROR( "Invalid property name." );
 		}
-		RT_CHECK_CALL( OBJ_GET_ATTRIBUTES(cx, object, id, prop, &attrs) );
+		J_CHK( OBJ_GET_ATTRIBUTES(cx, object, id, prop, &attrs) );
 		attrs &= ~JSPROP_ENUMERATE;
-		RT_CHECK_CALL( OBJ_SET_ATTRIBUTES(cx, object, id, prop, &attrs) );
+		J_CHK( OBJ_SET_ATTRIBUTES(cx, object, id, prop, &attrs) );
 		OBJ_DROP_PROPERTY(cx, object, prop);
 
 /*
 	JSBool found;
 		...
 		propertyName = JS_GetStringBytes( JS_ValueToString( cx, J_ARG(i+1) ) );
-		RT_ASSERT_1( propertyName != NULL, "Invalid property name (%s).", propertyName );
-		RT_CHECK_CALL( JS_GetPropertyAttributes( cx, object, propertyName, &attributes, &found ) );
+		J_S_ASSERT_1( propertyName != NULL, "Invalid property name (%s).", propertyName );
+		J_CHK( JS_GetPropertyAttributes( cx, object, propertyName, &attributes, &found ) );
 		if ( found == JS_FALSE )
 			continue;
 		attributes &= ~JSPROP_ENUMERATE;
-		RT_CHECK_CALL( JS_SetPropertyAttributes( cx, object, propertyName, attributes, &found ) );
+		J_CHK( JS_SetPropertyAttributes( cx, object, propertyName, attributes, &found ) );
 */
 	}
 	return JS_TRUE;
@@ -367,7 +367,7 @@ DEFINE_FUNCTION_FAST( FromId ) {
 DEFINE_FUNCTION_FAST( Warning ) {
 
 	JSString *jssMesage = JS_ValueToString(cx, J_FARG(1));
-	RT_ASSERT_ALLOC( jssMesage );
+	J_S_ASSERT_ALLOC( jssMesage );
 //	J_ARG(1) = STRING_TO_JSVAL(jssMesage);
 	JS_ReportWarning( cx, "%s", JS_GetStringBytes(jssMesage) );
 	*J_FRVAL = JSVAL_VOID;
@@ -388,10 +388,10 @@ DEFINE_FUNCTION_FAST( Warning ) {
 **/
 DEFINE_FUNCTION( ASSERT ) {
 
-	RT_ASSERT_ARGC( 1 );
+	J_S_ASSERT_ARG_MIN( 1 );
 
 	bool assert;
-	RT_JSVAL_TO_BOOL( J_ARG(1), assert );
+	J_JSVAL_TO_BOOL( J_ARG(1), assert );
 
 	if ( !assert ) {
 
@@ -553,7 +553,7 @@ DEFINE_FUNCTION_FAST( Print ) {
 	JS_SET_RVAL(cx, vp, JSVAL_VOID);
 
 	for (uintN i = 0; i < J_ARGC; i++)
-		RT_CHECK_CALL( JS_CallFunction(cx, J_FOBJ, stdoutFunction, 1, &J_FARG(1+i), J_FRVAL) );
+		J_CHK( JS_CallFunction(cx, J_FOBJ, stdoutFunction, 1, &J_FARG(1+i), J_FRVAL) );
 */
 	return JS_TRUE;
 }
@@ -696,7 +696,7 @@ DEFINE_FUNCTION_FAST( Exec ) {
 	//  JSErrorReporter older;
 	uint32 oldopts;
 
-	RT_ASSERT_ARGC( 1 );
+	J_S_ASSERT_ARG_MIN( 1 );
 	bool saveCompiledScripts = !( J_FARG_ISDEF(2) && J_FARG(2) == JSVAL_FALSE );
 
 	J_CHK( JsvalToString(cx, J_FARG(1), &filename) );
@@ -735,7 +735,7 @@ DEFINE_FUNCTION_FAST( Exec ) {
 
 DEFINE_FUNCTION( IsStatementValid ) {
 
-	RT_ASSERT_ARGC( 1 );
+	J_S_ASSERT_ARG_MIN( 1 );
 	const char *buffer;
 	size_t length;
 	J_CHK( JsvalToStringAndLength(cx, J_ARG(1), &buffer, &length) );
@@ -759,24 +759,24 @@ DEFINE_FUNCTION( Halt ) {
 //
 DEFINE_FUNCTION( StrSet ) {
 
-	RT_ASSERT_ARGC( 2 );
+	J_S_ASSERT_ARG_MIN( 2 );
 
 	const char *chr;
 	size_t charLen;
-	RT_JSVAL_TO_STRING_AND_LENGTH( J_ARG(1), chr, charLen );
+	J_JSVAL_TO_STRING_AND_LENGTH( J_ARG(1), chr, charLen );
 
 	unsigned int count;
-	RT_JSVAL_TO_UINT32( J_ARG(2), count );
+	J_JSVAL_TO_UINT32( J_ARG(2), count );
 
 	char *buf = (char*)JS_malloc(cx, count +1);
-	RT_ASSERT_ALLOC( buf );
+	J_S_ASSERT_ALLOC( buf );
 	buf[count] = '\0';
 
 	memset(buf, chr[0], count);
 
 	JSString *jsstr = JS_NewString(cx, buf, count);
 
-	RT_ASSERT_ALLOC( jsstr );
+	J_S_ASSERT_ALLOC( jsstr );
 	*J_RVAL = STRING_TO_JSVAL( jsstr );
 
 	return JS_TRUE;
@@ -814,7 +814,7 @@ DEFINE_PROPERTY( disableGarbageCollection ) {
 //	JS_SetGCCallback(cx, ..
 
 	bool disableGC;
-	RT_JSVAL_TO_BOOL( *vp, disableGC );
+	J_JSVAL_TO_BOOL( *vp, disableGC );
 
 
 	if ( disableGC ) {

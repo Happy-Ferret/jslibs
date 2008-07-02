@@ -35,10 +35,10 @@ DEFINE_FINALIZE() {
 **/
 DEFINE_CONSTRUCTOR() {
 
-	RT_ASSERT_CONSTRUCTING(&classGeomPlane);
+	J_S_ASSERT_CONSTRUCTING(&classGeomPlane);
 	ode::dSpaceID space = 0;
 	if ( argc >= 1 ) // place it in a space ?
-		RT_CHECK_CALL( ValToSpaceID(cx, argv[0], &space) );
+		J_CHK( ValToSpaceID(cx, argv[0], &space) );
 	ode::dGeomID geomId = ode::dCreatePlane(space, 0,0,1,0); // default lengths are 1
 	JS_SetPrivate(cx, obj, geomId);
 	SetupReadMatrix(cx, obj); // (TBD) check return status
@@ -50,8 +50,8 @@ DEFINE_CONSTRUCTOR() {
 DEFINE_PROPERTY( lengthsSetter ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE( geom );
-	//RT_ASSERT_NUMBER( *vp );
+	J_S_ASSERT_RESOURCE( geom );
+	//J_S_ASSERT_NUMBER( *vp );
 	ode::dVector3 vector;
 	FloatArrayToVector(cx, 3, vp, vector);
 	ode::dGeomPlaneSetLengths(geom, vector[0], vector[1], vector[2]);
@@ -61,7 +61,7 @@ DEFINE_PROPERTY( lengthsSetter ) {
 DEFINE_PROPERTY( lengthsGetter ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE( geom );
+	J_S_ASSERT_RESOURCE( geom );
 	ode::dVector3 result;
 	ode::dGeomPlaneGetLengths(geom, result);
 	FloatVectorToArray(cx, 3, result, vp);

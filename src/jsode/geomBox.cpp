@@ -35,7 +35,7 @@ DEFINE_FINALIZE() {
 **/
 DEFINE_CONSTRUCTOR() {
 
-	RT_ASSERT_CONSTRUCTING(&classGeomBox);
+	J_S_ASSERT_CONSTRUCTING(&classGeomBox);
 	ode::dSpaceID space = 0;
 	if ( argc >= 1 ) // place it in a space ?
 		if ( ValToSpaceID(cx, argv[0], &space) == JS_FALSE )
@@ -58,8 +58,8 @@ DEFINE_CONSTRUCTOR() {
 DEFINE_PROPERTY( lengthsSetter ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE( geom );
-	RT_ASSERT_NUMBER( *vp );
+	J_S_ASSERT_RESOURCE( geom );
+	J_S_ASSERT_NUMBER( *vp );
 	ode::dVector3 vector;
 	FloatArrayToVector(cx, 3, vp, vector);
 	ode::dGeomBoxSetLengths(geom, vector[0], vector[1], vector[2]);
@@ -69,7 +69,7 @@ DEFINE_PROPERTY( lengthsSetter ) {
 DEFINE_PROPERTY( lengthsGetter ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE( geom );
+	J_S_ASSERT_RESOURCE( geom );
 	ode::dVector3 result;
 	ode::dGeomBoxGetLengths(geom, result);
 	FloatVectorToArray(cx, 3, result, vp);

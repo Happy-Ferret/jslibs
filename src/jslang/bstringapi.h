@@ -55,7 +55,7 @@ inline JSBool NewBStringCopyN(JSContext *cx, const void *data, size_t amount, JS
 	J_S_ASSERT_ALLOC( bstrBuf );
 	memcpy( bstrBuf, data, amount );
 	*bstrObj = NewBString(cx, bstrBuf, amount);
-	RT_ASSERT( *bstrObj != NULL, "Unable to create a BString." );
+	J_S_ASSERT( *bstrObj != NULL, "Unable to create a BString." );
 	return JS_TRUE;
 }
 
@@ -95,7 +95,7 @@ inline JSBool BStringGetBufferAndLength( JSContext *cx, JSObject *bStringObject,
 
 	J_S_ASSERT_CLASS(bStringObject, BStringJSClass( cx ));
 	jsval lengthVal;
-	RT_CHECK_CALL( JS_GetReservedSlot(cx, bStringObject, SLOT_BSTRING_LENGTH, &lengthVal) );
+	J_CHK( JS_GetReservedSlot(cx, bStringObject, SLOT_BSTRING_LENGTH, &lengthVal) );
 	*dataLength = JSVAL_IS_INT(lengthVal) ? JSVAL_TO_INT( lengthVal ) : 0;
 	*data = JS_GetPrivate(cx, bStringObject);
 	return JS_TRUE;

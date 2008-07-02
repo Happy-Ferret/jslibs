@@ -78,7 +78,7 @@ BEGIN_CLASS( Geom )
 DEFINE_FUNCTION( Destroy ) {
 
 	ode::dGeomID geomId = (ode::dGeomID)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE( geomId );
+	J_S_ASSERT_RESOURCE( geomId );
 	ode::dGeomSetData(geomId, NULL); // perhaps useless
 	ode::dGeomDestroy(geomId);
 	JS_SetPrivate(cx, obj, NULL);
@@ -97,7 +97,7 @@ DEFINE_FUNCTION( Destroy ) {
 DEFINE_PROPERTY( enableSetter ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE(geom);
+	J_S_ASSERT_RESOURCE(geom);
 	JSBool enableState;
 	JS_ValueToBoolean(cx, *vp, &enableState);
 	if ( enableState )
@@ -111,7 +111,7 @@ DEFINE_PROPERTY( enableSetter ) {
 DEFINE_PROPERTY( enableGetter ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE( geom );
+	J_S_ASSERT_RESOURCE( geom );
 	*vp = ode::dGeomIsEnabled(geom) == 1 ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;
 }
@@ -124,11 +124,11 @@ DEFINE_PROPERTY( body ) {
 
 	// (TBD) check if the obj's private data is the right body. else ERROR
 	//ode::dGeomID geom = (ode::dGeomID)JS_GetPrivate(cx, obj);
-	//RT_ASSERT_RESOURCE( geom );
+	//J_S_ASSERT_RESOURCE( geom );
 	//ode::dBodyID bodyId = dGeomGetBody(geom);
 
 	ode::dGeomID geom = (ode::dGeomID)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE( geom );
+	J_S_ASSERT_RESOURCE( geom );
 	ode::dBodyID bodyId;
 	if ( ValToBodyID(cx, *vp, &bodyId) == JS_FALSE )
 		return JS_FALSE;
@@ -148,7 +148,7 @@ DEFINE_PROPERTY( body ) {
 DEFINE_PROPERTY( offset ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE(geom);
+	J_S_ASSERT_RESOURCE(geom);
 	if ( *vp == JSVAL_VOID ) {
 
 		ode::dGeomClearOffset(geom);
@@ -161,15 +161,15 @@ DEFINE_PROPERTY( offset ) {
 		float tmp[16], *m = tmp;
 
 		NIMatrix44Get matrixGet = Matrix44GetInterface(cx, srcObj);
-		RT_ASSERT( matrixGet != NULL, "Invalid matrix interface." );
+		J_S_ASSERT( matrixGet != NULL, "Invalid matrix interface." );
 		matrixGet(cx, srcObj, &m);
 
 //		NIMatrix44Get GetMatrix;
-//		J_CHECK_CALL( GetMatrix44GetInterface(cx, srcObj, &GetMatrix) );
-//		RT_ASSERT( ReadMatrix != NULL, "Invalid matrix interface." );
+//		J_CHK( GetMatrix44GetInterface(cx, srcObj, &GetMatrix) );
+//		J_S_ASSERT( ReadMatrix != NULL, "Invalid matrix interface." );
 //		ReadMatrix( cx, srcObj, (float**)&m);
 
-		RT_ASSERT( *m != NULL, "Invalid matrix." );
+		J_S_ASSERT( *m != NULL, "Invalid matrix." );
 		ode::dMatrix3 m3 = { m[0], m[4], m[8], 0, m[1], m[5], m[9], 0, m[2], m[6], m[10], 0 }; // (TBD) check
 		ode::dGeomSetOffsetRotation(geom, m3);
 		ode::dGeomSetOffsetPosition(geom, m[3], m[7], m[11]);
@@ -185,7 +185,7 @@ DEFINE_PROPERTY( offset ) {
 DEFINE_PROPERTY( tansformation ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE(geom);
+	J_S_ASSERT_RESOURCE(geom);
 
 	if ( JSVAL_IS_OBJECT(*vp) && !JSVAL_IS_NULL(*vp) ) {
 
@@ -193,15 +193,15 @@ DEFINE_PROPERTY( tansformation ) {
 		float tmp[16], *m = tmp;
 
 		NIMatrix44Get matrixGet = Matrix44GetInterface(cx, srcObj);
-		RT_ASSERT( matrixGet != NULL, "Invalid matrix interface." );
+		J_S_ASSERT( matrixGet != NULL, "Invalid matrix interface." );
 		matrixGet(cx, srcObj, &m);
 
 /*
 		NIMatrix44Read ReadMatrix;
-		J_CHECK_CALL( GetMatrix44ReadInterface(cx, srcObj, &ReadMatrix) );
-		RT_ASSERT( ReadMatrix != NULL, "Invalid matrix interface." );
+		J_CHK( GetMatrix44ReadInterface(cx, srcObj, &ReadMatrix) );
+		J_S_ASSERT( ReadMatrix != NULL, "Invalid matrix interface." );
 		ReadMatrix( cx, srcObj, (float**)&m);
-		RT_ASSERT( *m != NULL, "Invalid matrix." );
+		J_S_ASSERT( *m != NULL, "Invalid matrix." );
 */		
 		ode::dMatrix3 m3 = { m[0], m[4], m[8], 0, m[1], m[5], m[9], 0, m[2], m[6], m[10], 0 }; // (TBD) check
 		ode::dGeomSetOffsetRotation(geom, m3);
@@ -218,7 +218,7 @@ DEFINE_PROPERTY( tansformation ) {
 DEFINE_PROPERTY( positionGetter ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE(geom);
+	J_S_ASSERT_RESOURCE(geom);
 	const ode::dReal *vector = ode::dGeomGetPosition(geom);
 	FloatVectorToArray(cx, 3, vector, vp);
 	return JS_TRUE;
@@ -228,7 +228,7 @@ DEFINE_PROPERTY( positionGetter ) {
 DEFINE_PROPERTY( positionSetter ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE(geom);
+	J_S_ASSERT_RESOURCE(geom);
 	ode::dVector3 vector;
 	FloatArrayToVector(cx, 3, vp, vector);
 	ode::dGeomSetPosition( geom, vector[0], vector[1], vector[2] );
@@ -241,7 +241,7 @@ DEFINE_PROPERTY( positionSetter ) {
 DEFINE_PROPERTY( offsetPositionGetter ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE(geom);
+	J_S_ASSERT_RESOURCE(geom);
 	const ode::dReal *vector = ode::dGeomGetOffsetPosition(geom); // (TBD) dGeomGetOffsetRotation
 	FloatVectorToArray(cx, 3, vector, vp);
 	return JS_TRUE;
@@ -251,7 +251,7 @@ DEFINE_PROPERTY( offsetPositionGetter ) {
 DEFINE_PROPERTY( offsetPositionSetter ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE(geom);
+	J_S_ASSERT_RESOURCE(geom);
 	ode::dVector3 vector;
 	FloatArrayToVector(cx, 3, vp, vector);
 	ode::dGeomSetOffsetPosition( geom, vector[0], vector[1], vector[2] ); // (TBD) dGeomSetOffsetWorldRotation

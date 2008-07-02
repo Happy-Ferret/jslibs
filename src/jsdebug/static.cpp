@@ -79,7 +79,7 @@ DEFINE_FUNCTION( Print ) {
 	if ( stdoutFunction == NULL )
 		return JS_TRUE; // nowhere to write, but don't failed
 	for (uintN i = 0; i<argc; i++)
-		RT_CHECK_CALL( JS_CallFunction(cx, obj, stdoutFunction, 1, &argv[i], rval) );
+		J_CHK( JS_CallFunction(cx, obj, stdoutFunction, 1, &argv[i], rval) );
 	return JS_TRUE;
 }
 */
@@ -224,7 +224,7 @@ DumpStats(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 		if ( fileName[0] != '\0' ) {
 		
 			gOutFile = fopen(fileName, "w");
-			RT_ASSERT_2( gOutFile, "can't open %s: %s", fileName, strerror(errno));
+			J_S_ASSERT_2( gOutFile, "can't open %s: %s", fileName, strerror(errno));
 		}
 	}
 	FILE *gErrFile = gOutFile;
@@ -476,7 +476,7 @@ Trap(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
     JSScript *script;
     int32 i;
 
-	 RT_ASSERT_ARGC( 1 );
+	 J_S_ASSERT_ARG_MIN( 1 );
 
     argc--;
     str = JS_ValueToString(cx, argv[argc]);
@@ -516,7 +516,7 @@ LineToPC(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
     uintN lineno;
     jsbytecode *pc;
 
-	 RT_ASSERT_ARGC( 1 );
+	 J_S_ASSERT_ARG_MIN( 1 );
 
 	 script = cx->fp->down->script;
     if (!GetTrapArgs(cx, argc, argv, &script, &i))
@@ -556,10 +556,10 @@ PCToLine(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 **/
 DEFINE_FUNCTION(Locate) {
 
-	RT_ASSERT_ARGC( 1 );
+	J_S_ASSERT_ARG_MIN( 1 );
 	int32 frame;
-	RT_JSVAL_TO_INT32( argv[0], frame );
-	RT_ASSERT(frame <= 0, "Frame number must be <= 0");
+	J_JSVAL_TO_INT32( argv[0], frame );
+	J_S_ASSERT(frame <= 0, "Frame number must be <= 0");
 
 	JSStackFrame *fp = NULL;
 	for ( JS_FrameIterator(cx, &fp); fp; JS_FrameIterator(cx, &fp) ) {
@@ -798,7 +798,7 @@ DEFINE_PROPERTY( currentMemoryUsage ) {
 
 #endif // XP_WIN
 
-	RT_CHECK_CALL( JS_NewNumberValue(cx, bytes, vp) );
+	J_CHK( JS_NewNumberValue(cx, bytes, vp) );
 	return JS_TRUE;
 }
 
@@ -817,7 +817,7 @@ DEFINE_PROPERTY( peakMemoryUsage ) {
 	HANDLE hProcess;
 	hProcess = GetCurrentProcess();
 	if (!GetProcessWorkingSetSize(hProcess, &dwMin, &dwMax))
-		REPORT_ERROR_1("GetProcessWorkingSetSize failed (%d)\n", GetLastError());
+		J_REPORT_ERROR_1("GetProcessWorkingSetSize failed (%d)\n", GetLastError());
 //	printf("Minimum working set: %lu Kbytes\n", dwMin/1024);
 //	printf("Maximum working set: %lu Kbytes\n", dwMax/1024);
 	bytes = dwMax;
@@ -829,11 +829,11 @@ DEFINE_PROPERTY( peakMemoryUsage ) {
 	bytes = pmc.PeakWorkingSetSize; // same value as "windows task manager" "peak mem usage"
 #else
 
-	REPORT_ERROR("Not implemented yet.");
+	J_REPORT_ERROR("Not implemented yet.");
 
 #endif // XP_WIN
 
-	RT_CHECK_CALL( JS_NewNumberValue(cx, bytes, vp) );
+	J_CHK( JS_NewNumberValue(cx, bytes, vp) );
 	return JS_TRUE;
 }
 
@@ -855,11 +855,11 @@ DEFINE_PROPERTY( privateMemoryUsage ) {
 	bytes = pmc.WorkingSetSize; // same value as "windows task manager" "mem usage"
 #else
 
-	REPORT_ERROR("Not implemented yet.");
+	J_REPORT_ERROR("Not implemented yet.");
 
 #endif // XP_WIN
 
-	RT_CHECK_CALL( JS_NewNumberValue(cx, bytes, vp) );
+	J_CHK( JS_NewNumberValue(cx, bytes, vp) );
 	return JS_TRUE;
 }
 
@@ -884,7 +884,7 @@ DEFINE_PROPERTY( gcMallocBytes ) {
     pbytes = &cx->runtime->gcMallocBytes;
 #endif
     bytes = *pbytes;
-	 RT_CHECK_CALL( JS_NewNumberValue(cx, bytes, vp) );
+	 J_CHK( JS_NewNumberValue(cx, bytes, vp) );
 	return JS_TRUE;
 }
 
@@ -902,7 +902,7 @@ DEFINE_PROPERTY( gcBytes ) {
 	 pbytes = &cx->runtime->gcBytes;
 #endif
     bytes = *pbytes;
-	 RT_CHECK_CALL( JS_NewNumberValue(cx, bytes, vp) );
+	 J_CHK( JS_NewNumberValue(cx, bytes, vp) );
 	return JS_TRUE;
 }
 
@@ -918,20 +918,20 @@ DEFINE_PROPERTY( gcZeal ) {
 
 #ifdef JS_GC_ZEAL
 	int zeal;
-	RT_JSVAL_TO_INT32( *vp, zeal );
+	J_JSVAL_TO_INT32( *vp, zeal );
 	JS_SetGCZeal(cx, zeal);
 	return JS_TRUE;
 #else
-	REPORT_ERROR("Available in Debug mode only.");
+	J_REPORT_ERROR("Available in Debug mode only.");
 #endif // JS_GC_ZEAL
 }
 
 DEFINE_FUNCTION( DumpObjectPrivate ) {
 
-	RT_ASSERT_ARGC( 1 );
-	RT_ASSERT_OBJECT( J_ARG( 1 ) );
+	J_S_ASSERT_ARG_MIN( 1 );
+	J_S_ASSERT_OBJECT( J_ARG( 1 ) );
 	unsigned int n = (unsigned int)JS_GetPrivate(cx, JSVAL_TO_OBJECT( J_ARG( 1 ) ));
-	RT_CHECK_CALL( JS_NewNumberValue(cx, (double)n, J_RVAL) );
+	J_CHK( JS_NewNumberValue(cx, (double)n, J_RVAL) );
 	return JS_TRUE;
 }
 

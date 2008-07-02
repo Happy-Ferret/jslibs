@@ -147,21 +147,21 @@ DEFINE_FUNCTION( DecodeJpegImage ) {
 	src->cx = cx; // required by NIStreamRead
 
 // try to use a fast way to read the data
-//	J_CHECK_CALL( GetStreamReadInterface(cx, JSVAL_TO_OBJECT(argv[0]), &src->read) );
+//	J_CHK( GetStreamReadInterface(cx, JSVAL_TO_OBJECT(argv[0]), &src->read) );
 
-//	RT_ASSERT( src->read != NULL, "Unable to GetNativeResource." );
+//	J_S_ASSERT( src->read != NULL, "Unable to GetNativeResource." );
 
 // else use a 'classic' method to read the data ( like var data = resourceObject.Read(amount); )
 //	if ( src->read == NULL ) {
 
-//		RT_ASSERT( false, "TO BE DONE" ); // (TBD) read without NI_READ_RESOURCE
+//		J_S_ASSERT( false, "TO BE DONE" ); // (TBD) read without NI_READ_RESOURCE
 //		CxObj
 //		src->pv = resourceObject;
 //		src->read = ReadUsingJsMethod;
 //	}
 
 //	JSBool status = GetNativeResource(cx, JSVAL_TO_OBJECT(argv[0]), &src->pv, &src->read, NULL );
-//	RT_ASSERT( status == JS_TRUE, "Unable to GetNativeResource." );
+//	J_S_ASSERT( status == JS_TRUE, "Unable to GetNativeResource." );
 
 // read image headers
 	jpeg_read_header(&cinfo, TRUE); //we passed TRUE to reject a tables-only JPEG file as an error.
@@ -207,7 +207,7 @@ DEFINE_FUNCTION( DecodeJpegImage ) {
 
 DEFINE_FUNCTION( EncodeJpegImage ) {
 
-	REPORT_ERROR("TBD!"); // (TBD)
+	J_REPORT_ERROR("TBD!"); // (TBD)
 	return JS_TRUE;
 }
 
@@ -253,7 +253,7 @@ DEFINE_FUNCTION( DecodePngImage ) {
 	desc.info = png_create_info_struct(desc.png);
 	J_S_ASSERT( desc.info != NULL, "Unable to png_create_info_struct.");
 
-//	J_CHECK_CALL( GetStreamReadInterface(cx, JSVAL_TO_OBJECT(argv[0]), &desc.read) );
+//	J_CHK( GetStreamReadInterface(cx, JSVAL_TO_OBJECT(argv[0]), &desc.read) );
 //	J_S_ASSERT( desc.read != NULL, "Unable to GetNativeResource." );
 
 	J_S_ASSERT_OBJECT( J_ARG(1) );
@@ -262,7 +262,7 @@ DEFINE_FUNCTION( DecodePngImage ) {
 
 	png_set_read_fn( desc.png, (voidp)&desc, _png_read );
    png_read_info(desc.png, desc.info);
-	RT_ASSERT( desc.info->height <= PNG_UINT_32_MAX/png_sizeof(png_bytep), "Image is too high to process with png_read_png()");
+	J_S_ASSERT( desc.info->height <= PNG_UINT_32_MAX/png_sizeof(png_bytep), "Image is too high to process with png_read_png()");
 
 	J_S_ASSERT( png_set_interlace_handling(desc.png) == 1, "Cannot read interlaced image yet." );
 
@@ -348,7 +348,7 @@ DEFINE_FUNCTION_FAST( EncodePngImage ) {
 	J_PROPERTY_TO_INT32( image, "channels", sChannels );
 	const char *sBuffer;
 	size_t bufferLength;
-	J_CHECK_CALL( JsvalToStringAndLength(cx, J_FARG(1), &sBuffer, &bufferLength ) );
+	J_CHK( JsvalToStringAndLength(cx, J_FARG(1), &sBuffer, &bufferLength ) );
 	J_S_ASSERT( bufferLength == sWidth * sHeight * sChannels * 1, "Invalid image format." );
 
 	PngWriteUserStruct desc;

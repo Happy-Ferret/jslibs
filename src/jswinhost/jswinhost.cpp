@@ -5,16 +5,16 @@
 int consoleStdOut( JSContext *cx, const char *data, int length ) {
 
 	JSObject *obj = GetConfigurationObject(cx);
-	RT_ASSERT( obj != NULL, "Unable to get GetConfigurationObject" );
+	J_S_ASSERT( obj != NULL, "Unable to get GetConfigurationObject" );
 	jsval functionVal;
 	JS_GetProperty(cx, obj, "stdout", &functionVal);
 	if ( functionVal != JSVAL_VOID ) {
 
-		RT_ASSERT_FUNCTION( functionVal );
+		J_S_ASSERT_FUNCTION( functionVal );
 		JSString *str = JS_NewStringCopyN(cx, data, length);
-		RT_ASSERT_ALLOC( str ); 
+		J_S_ASSERT_ALLOC( str ); 
 		jsval rval, arg = STRING_TO_JSVAL(str);
-		RT_CHECK_CALL ( JS_CallFunctionValue(cx, obj, functionVal, 1, &arg, &rval) );
+		J_CHK ( JS_CallFunctionValue(cx, obj, functionVal, 1, &arg, &rval) );
 	}
 	return length;
 }
@@ -22,16 +22,16 @@ int consoleStdOut( JSContext *cx, const char *data, int length ) {
 int consoleStdErr( JSContext *cx, const char *data, int length ) {
 
 	JSObject *obj = GetConfigurationObject(cx);
-	RT_ASSERT( obj != NULL, "Unable to get GetConfigurationObject" );
+	J_S_ASSERT( obj != NULL, "Unable to get GetConfigurationObject" );
 	jsval functionVal;
 	JS_GetProperty(cx, obj, "stderr", &functionVal);
 	if ( functionVal != JSVAL_VOID ) {
 
-		RT_ASSERT_FUNCTION( functionVal );
+		J_S_ASSERT_FUNCTION( functionVal );
 		JSString *str = JS_NewStringCopyN(cx, data, length);
-		RT_ASSERT_ALLOC( str ); 
+		J_S_ASSERT_ALLOC( str ); 
 		jsval rval, arg = STRING_TO_JSVAL(str);
-		RT_CHECK_CALL( JS_CallFunctionValue(cx, obj, functionVal, 1, &arg, &rval) );
+		J_CHK( JS_CallFunctionValue(cx, obj, functionVal, 1, &arg, &rval) );
 	}
 	return length;
 }
@@ -42,7 +42,7 @@ static JSBool stderrFunction(JSContext *cx, JSObject *obj, uintN argc, jsval *ar
 
 	JSString *str;
 	str = JS_ValueToString(cx, argv[0]);
-	RT_ASSERT( str != NULL, "Unable to convert argument to string.");
+	J_S_ASSERT( str != NULL, "Unable to convert argument to string.");
 	argv[0] = STRING_TO_JSVAL(str); // (TBD) needed ?
 	consoleStdErr( cx, JS_GetStringBytes(str), JS_GetStringLength(str) );
 	return JS_TRUE;
@@ -52,7 +52,7 @@ static JSBool stdoutFunction(JSContext *cx, JSObject *obj, uintN argc, jsval *ar
 
 	JSString *str;
 	str = JS_ValueToString(cx, argv[0]);
-	RT_ASSERT( str != NULL, "Unable to convert argument to string.");
+	J_S_ASSERT( str != NULL, "Unable to convert argument to string.");
 	argv[0] = STRING_TO_JSVAL(str); // (TBD) needed ?
 	consoleStdOut( cx, JS_GetStringBytes(str), JS_GetStringLength(str) );
 	return JS_TRUE;
@@ -85,14 +85,14 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 
 	CHAR scriptName[PATH_MAX];
 	err = strncpy_s(scriptName, sizeof(scriptName), moduleName, moduleNameLen );
-	RT_ASSERT( err == 0, "Buffer overflow." );
+	J_S_ASSERT( err == 0, "Buffer overflow." );
 //	DWORD scriptNameLen = GetModuleFileName(hInstance, scriptName, sizeof(scriptName));
 	char *dotPos = strrchr(scriptName, '.');
 	if ( dotPos == NULL )
 		return -1;
 	*dotPos = '\0';
 	err = strcat_s( scriptName, sizeof(scriptName), ".js" );
-	RT_ASSERT( err == 0, "Buffer overflow." );
+	J_S_ASSERT( err == 0, "Buffer overflow." );
 
 	//If you need to detect whether another instance already exists, create a uniquely named mutex using the CreateMutex function. 
 	//CreateMutex will succeed even if the mutex already exists, but the function will return ERROR_ALREADY_EXISTS. 
@@ -102,9 +102,9 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 	// (TBD) use file index as mutexName. note: If the file is on an NTFS volume, you can get a unique 64 bit identifier for it with GetFileInformationByHandle.  The 64 bit identifier is the "file index". 
 	char mutexName[PATH_MAX];// = "jswinhost_";
 	err = strncpy_s(mutexName, sizeof(mutexName), moduleName, moduleNameLen );
-	RT_ASSERT( err == 0, "Buffer overflow." );
+	J_S_ASSERT( err == 0, "Buffer overflow." );
 	err = strcat_s(mutexName, sizeof(mutexName), name);
-	RT_ASSERT( err == 0, "Buffer overflow." );
+	J_S_ASSERT( err == 0, "Buffer overflow." );
 	SetLastError(0);
 	HANDLE instanceCheckMutex = CreateMutex( NULL, TRUE, mutexName );
 	bool hasPrevInstance = GetLastError() == ERROR_ALREADY_EXISTS;

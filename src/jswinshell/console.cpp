@@ -34,7 +34,7 @@ DEFINE_CONSTRUCTOR() {
 
 	BOOL res = AllocConsole();
 	SetConsoleTitle("");
-	RT_ASSERT( res != 0, "Unable to create the console." );
+	J_S_ASSERT( res != 0, "Unable to create the console." );
 	return JS_TRUE;
 }
 
@@ -55,7 +55,7 @@ DEFINE_FINALIZE() {
 DEFINE_FUNCTION( Close ) {
 
 	BOOL res = FreeConsole();
-	RT_ASSERT( res != 0, "Unable to free the console." );
+	J_S_ASSERT( res != 0, "Unable to free the console." );
 	return JS_TRUE;
 }
 
@@ -68,9 +68,9 @@ DEFINE_FUNCTION( Close ) {
 **/
 DEFINE_FUNCTION( Write ) {
 	
-	RT_ASSERT_ARGC( 1 );
+	J_S_ASSERT_ARG_MIN( 1 );
 	HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
-	RT_ASSERT( hStdout != NULL, "Unable to create the stdout." );
+	J_S_ASSERT( hStdout != NULL, "Unable to create the stdout." );
 	const char *str;
 	size_t len;
 	J_CHK( JsvalToStringAndLength(cx, argv[0], &str, &len) );
@@ -89,13 +89,13 @@ DEFINE_FUNCTION( Write ) {
 **/
 DEFINE_FUNCTION( Read ) {
 	
-	RT_ASSERT_ARGC( 1 );
+	J_S_ASSERT_ARG_MIN( 1 );
 	HANDLE hStdin = GetStdHandle(STD_INPUT_HANDLE);
-	RT_ASSERT( hStdin != NULL, "Unable to create the stdin." );
+	J_S_ASSERT( hStdin != NULL, "Unable to create the stdin." );
 	char buffer[8192];
 	DWORD read;
 	BOOL res = ReadConsole(hStdin, buffer, sizeof(buffer), &read, NULL);
-	RT_ASSERT( res > 0, "Unable to ReadConsole." );
+	J_S_ASSERT( res > 0, "Unable to ReadConsole." );
 	*rval = STRING_TO_JSVAL(JS_NewStringCopyN(cx, buffer, read));
 	CloseHandle(hStdin);
 	return JS_TRUE;
@@ -121,7 +121,7 @@ DEFINE_PROPERTY( titleGetter ) {
 
 	char buffer[2048];
 	DWORD res = GetConsoleTitle(buffer, sizeof(buffer));
-	RT_ASSERT( res >= 0, "Unable to GetConsoleTitle." );
+	J_S_ASSERT( res >= 0, "Unable to GetConsoleTitle." );
 	if ( res == 0 )
 		*vp = JS_GetEmptyStringValue(cx);
 	else

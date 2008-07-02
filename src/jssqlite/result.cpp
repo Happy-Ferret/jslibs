@@ -36,10 +36,10 @@ JSBool SqliteToJsval( JSContext *cx, sqlite3_value *value, jsval *rval ) {
 			if ( INT_FITS_IN_JSVAL(i) )
 				*rval = INT_TO_JSVAL( i );
 			else
-				RT_CHECK_CALL( JS_NewNumberValue(cx, i, rval ) );
+				J_CHK( JS_NewNumberValue(cx, i, rval ) );
 			break;
 		case SQLITE_FLOAT:
-			RT_CHECK_CALL( JS_NewNumberValue( cx, sqlite3_value_double(value), rval ) );
+			J_CHK( JS_NewNumberValue( cx, sqlite3_value_double(value), rval ) );
 			break;
 		case SQLITE_BLOB: {
 				int length = sqlite3_value_bytes(value);
@@ -58,7 +58,7 @@ JSBool SqliteToJsval( JSContext *cx, sqlite3_value *value, jsval *rval ) {
 			*rval = STRING_TO_JSVAL(JS_NewStringCopyZ(cx,(const char *)sqlite3_value_text(value)));
 			break;
 		default:
-			REPORT_ERROR( "Unable to convert data.");
+			J_REPORT_ERROR( "Unable to convert data.");
 	}
 	return JS_TRUE;
 }
@@ -74,7 +74,7 @@ JSBool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *objAt,
 		const char *name = sqlite3_bind_parameter_name( pStmt, param );
 		// doc: Parameters of the form "?" have no name. ... If the value n is out of range or if the n-th parameter is nameless, then NULL is returned.
 
-//		RT_ASSERT( name != NULL, "Binding is out of range." ); // (TBD) better error message
+//		J_S_ASSERT( name != NULL, "Binding is out of range." ); // (TBD) better error message
 
 		jsval val;
 		
@@ -152,7 +152,7 @@ JSBool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *objAt,
 				}
 				break;
 			default:
-				REPORT_ERROR("Unsupported data type"); // (TBD) better error message
+				J_REPORT_ERROR("Unsupported data type"); // (TBD) better error message
 		}
 	}
 	return JS_TRUE;
@@ -161,7 +161,7 @@ JSBool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *objAt,
 
 JSBool SqliteColumnToJsval( JSContext *cx, sqlite3_stmt *pStmt, int iCol, jsval *rval ) {
 
-	RT_CHECK_CALL( SqliteToJsval(cx, sqlite3_column_value(pStmt, iCol), rval) );
+	J_CHK( SqliteToJsval(cx, sqlite3_column_value(pStmt, iCol), rval) );
 	return JS_TRUE;
 }
 
@@ -207,12 +207,12 @@ DEFINE_FINALIZE() {
 DEFINE_FUNCTION( Close ) {
 
 	sqlite3_stmt *pStmt = (sqlite3_stmt *)JS_GetPrivate( cx, obj );
-	RT_ASSERT_RESOURCE( pStmt );
+	J_S_ASSERT_RESOURCE( pStmt );
 	JS_SetPrivate( cx, obj, NULL );
 
 	jsval v;
-	RT_CHECK_CALL( JS_GetReservedSlot(cx, obj, SLOT_RESULT_DATABASE, &v) );
-	RT_CHECK_CALL( JS_GetReservedSlot(cx, JSVAL_TO_OBJECT(v), SLOT_SQLITE_DATABASE_STATEMENT_STACK, &v) );
+	J_CHK( JS_GetReservedSlot(cx, obj, SLOT_RESULT_DATABASE, &v) );
+	J_CHK( JS_GetReservedSlot(cx, JSVAL_TO_OBJECT(v), SLOT_SQLITE_DATABASE_STATEMENT_STACK, &v) );
 	void *stack = JSVAL_TO_PRIVATE(v);
 	StackReplaceData( &stack, pStmt, NULL );
 
@@ -233,7 +233,7 @@ DEFINE_FUNCTION( Close ) {
 DEFINE_FUNCTION( Step ) {
 
 	sqlite3_stmt *pStmt = (sqlite3_stmt *)JS_GetPrivate( cx, obj );
-	RT_ASSERT_RESOURCE( pStmt );
+	J_S_ASSERT_RESOURCE( pStmt );
 
 	// check if bindings are up to date
 	jsval bindingUpToDate;
@@ -247,7 +247,7 @@ DEFINE_FUNCTION( Step ) {
 			argObj = JSVAL_TO_OBJECT(queryArgument);
 
 		JS_SetReservedSlot(cx, obj, SLOT_RESULT_BINDING_UP_TO_DATE, BOOLEAN_TO_JSVAL(JS_TRUE));
-		RT_CHECK_CALL( SqliteSetupBindings(cx, pStmt, argObj, obj ) ); // ":" use result object. "@" is the object passed to Query()
+		J_CHK( SqliteSetupBindings(cx, pStmt, argObj, obj ) ); // ":" use result object. "@" is the object passed to Query()
 		// doc: The sqlite3_bind_*() routines must be called AFTER sqlite3_prepare() or sqlite3_reset() and BEFORE sqlite3_step().
 		//      Bindings are not cleared by the sqlite3_reset() routine. Unbound parameters are interpreted as NULL.
 	}
@@ -262,7 +262,7 @@ DEFINE_FUNCTION( Step ) {
 		case SQLITE_SCHEMA:
 			return SqliteThrowError( cx, status, sqlite3_errcode(sqlite3_db_handle( pStmt )), sqlite3_errmsg(sqlite3_db_handle( pStmt )));
 		case SQLITE_MISUSE: // means that the this routine was called inappropriately. Perhaps it was called on a virtual machine that had already been finalized or on one that had previously returned SQLITE_ERROR or SQLITE_DONE. Or it could be the case that a database connection is being used by a different thread than the one it was created it.
-			REPORT_ERROR( "this routine was called inappropriately" );
+			J_REPORT_ERROR( "this routine was called inappropriately" );
 		case SQLITE_DONE: // means that the statement has finished executing successfully. sqlite3_step() should not be called again on this virtual machine without first calling sqlite3_reset() to reset the virtual machine back to its initial state.
 			*rval = JSVAL_FALSE;
 			return JS_TRUE;
@@ -270,7 +270,7 @@ DEFINE_FUNCTION( Step ) {
 			*rval = JSVAL_TRUE;
 			return JS_TRUE;
 	}
-	REPORT_ERROR_1("invalid case (status:%d)", status );
+	J_REPORT_ERROR_1("invalid case (status:%d)", status );
 }
 
 
@@ -282,9 +282,9 @@ DEFINE_FUNCTION( Step ) {
 **/
 DEFINE_FUNCTION( Col ) {
 
-	RT_ASSERT_ARGC( 1 );
+	J_S_ASSERT_ARG_MIN( 1 );
 	sqlite3_stmt *pStmt = (sqlite3_stmt *)JS_GetPrivate( cx, obj );
-	RT_ASSERT_RESOURCE( pStmt );
+	J_S_ASSERT_RESOURCE( pStmt );
 	int32 col;
 	JS_ValueToInt32( cx, argv[0], &col );
 	SqliteColumnToJsval( cx, pStmt, col, rval );
@@ -302,9 +302,9 @@ DEFINE_FUNCTION( Col ) {
 DEFINE_FUNCTION( Row ) {
 
 	sqlite3_stmt *pStmt = (sqlite3_stmt *)JS_GetPrivate( cx, obj );
-	RT_ASSERT_RESOURCE( pStmt );
+	J_S_ASSERT_RESOURCE( pStmt );
 
-	RT_CHECK_CALL( Step( cx, obj, 0, NULL, rval ) ); // if something goes wrong in Result_step ( error report has already been set )
+	J_CHK( Step( cx, obj, 0, NULL, rval ) ); // if something goes wrong in Result_step ( error report has already been set )
 
 	if ( *rval == JSVAL_FALSE ) { // the statement has finished executing successfully
 
@@ -324,7 +324,7 @@ DEFINE_FUNCTION( Row ) {
 	jsval colJsValue;
 	for ( int col = 0; col < columnCount; ++col ) {
 
-		RT_CHECK_CALL( SqliteColumnToJsval(cx, pStmt, col, &colJsValue ) ); // if something goes wrong in SqliteColumnToJsval, error report has already been set.
+		J_CHK( SqliteColumnToJsval(cx, pStmt, col, &colJsValue ) ); // if something goes wrong in SqliteColumnToJsval, error report has already been set.
 
 		if ( namedRows )
 			JS_SetProperty( cx, row, sqlite3_column_name( pStmt, col ), &colJsValue );
@@ -342,7 +342,7 @@ DEFINE_FUNCTION( Row ) {
 DEFINE_FUNCTION( Reset ) {
 
 	sqlite3_stmt *pStmt = (sqlite3_stmt *)JS_GetPrivate( cx, obj );
-	RT_ASSERT_RESOURCE( pStmt );
+	J_S_ASSERT_RESOURCE( pStmt );
 	int status = sqlite3_reset(pStmt);
 	if ( status != SQLITE_OK )
 		return SqliteThrowError( cx, status, sqlite3_errcode(sqlite3_db_handle(pStmt)), sqlite3_errmsg(sqlite3_db_handle(pStmt)) );
@@ -361,7 +361,7 @@ DEFINE_FUNCTION( Reset ) {
 DEFINE_PROPERTY( columnCount ) {
 
 	sqlite3_stmt *pStmt = (sqlite3_stmt *)JS_GetPrivate( cx, obj );
-	RT_ASSERT_RESOURCE( pStmt );
+	J_S_ASSERT_RESOURCE( pStmt );
 	*vp = INT_TO_JSVAL(sqlite3_column_count(pStmt));
 	return JS_TRUE;
 }
@@ -381,7 +381,7 @@ DEFINE_PROPERTY( columnCount ) {
 DEFINE_PROPERTY( columnNames ) {
 
 	sqlite3_stmt *pStmt = (sqlite3_stmt *)JS_GetPrivate( cx, obj );
-	RT_ASSERT_RESOURCE( pStmt );
+	J_S_ASSERT_RESOURCE( pStmt );
 	JSObject *columnNames = JS_NewArrayObject(cx, 0, NULL);
 	*vp = OBJECT_TO_JSVAL( columnNames );
 	int columnCount = sqlite3_column_count( pStmt ); // sqlite3_column_count AND NOT sqlite3_data_count because this function can be called before sqlite3_step
@@ -409,7 +409,7 @@ DEFINE_PROPERTY( columnNames ) {
 DEFINE_PROPERTY( columnIndexes ) {
 
 	sqlite3_stmt *pStmt = (sqlite3_stmt *)JS_GetPrivate( cx, obj );
-	RT_ASSERT_RESOURCE( pStmt );
+	J_S_ASSERT_RESOURCE( pStmt );
 	JSObject *columnIndexes = JS_NewObject( cx, NULL, NULL, NULL );
 	*vp = OBJECT_TO_JSVAL( columnIndexes );
 	int columnCount = sqlite3_column_count( pStmt );
@@ -430,7 +430,7 @@ DEFINE_PROPERTY( columnIndexes ) {
 DEFINE_PROPERTY( expired ) {
 
 	sqlite3_stmt *pStmt = (sqlite3_stmt *)JS_GetPrivate( cx, obj );
-	RT_ASSERT_RESOURCE( pStmt );
+	J_S_ASSERT_RESOURCE( pStmt );
 	*vp = sqlite3_expired(pStmt) ? JSVAL_TRUE : JSVAL_FALSE;
   return JS_TRUE;
 }

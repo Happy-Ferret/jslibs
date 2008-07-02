@@ -35,10 +35,10 @@ DEFINE_FINALIZE() {
 **/
 DEFINE_CONSTRUCTOR() {
 
-	RT_ASSERT_CONSTRUCTING(&classGeomCapsule);
+	J_S_ASSERT_CONSTRUCTING(&classGeomCapsule);
 	ode::dSpaceID space = 0;
 	if ( argc >= 1 ) // place it in a space ?
-		RT_CHECK_CALL( ValToSpaceID(cx, argv[0], &space) );
+		J_CHK( ValToSpaceID(cx, argv[0], &space) );
 	ode::dGeomID geomId = ode::dCreateCapsule(space, 1, 1); // default radius and length are 1
 	JS_SetPrivate(cx, obj, geomId);
 	SetupReadMatrix(cx, obj); // (TBD) check return status
@@ -57,8 +57,8 @@ DEFINE_CONSTRUCTOR() {
 DEFINE_PROPERTY( radiusSetter ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE( geom );
-	RT_ASSERT_NUMBER( *vp );
+	J_S_ASSERT_RESOURCE( geom );
+	J_S_ASSERT_NUMBER( *vp );
 	ode::dReal radius, length;
 	ode::dGeomCapsuleGetParams(geom, &radius, &length);
 	jsdouble value;
@@ -70,7 +70,7 @@ DEFINE_PROPERTY( radiusSetter ) {
 DEFINE_PROPERTY( radiusGetter ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE( geom );
+	J_S_ASSERT_RESOURCE( geom );
 	ode::dReal radius, length;
 	ode::dGeomCapsuleGetParams(geom, &radius, &length);
 	JS_NewDoubleValue(cx, radius, vp); // see JS_NewNumberValue and JS_NewDouble
@@ -84,8 +84,8 @@ DEFINE_PROPERTY( radiusGetter ) {
 DEFINE_PROPERTY( lengthSetter ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE( geom );
-	RT_ASSERT_NUMBER( *vp );
+	J_S_ASSERT_RESOURCE( geom );
+	J_S_ASSERT_NUMBER( *vp );
 	ode::dReal radius, length;
 	ode::dGeomCapsuleGetParams(geom, &radius, &length);
 	jsdouble value;
@@ -97,7 +97,7 @@ DEFINE_PROPERTY( lengthSetter ) {
 DEFINE_PROPERTY( lengthGetter ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE( geom );
+	J_S_ASSERT_RESOURCE( geom );
 	ode::dReal radius, length;
 	ode::dGeomCapsuleGetParams(geom, &radius, &length);
 	JS_NewDoubleValue(cx, length, vp); // see JS_NewNumberValue and JS_NewDouble

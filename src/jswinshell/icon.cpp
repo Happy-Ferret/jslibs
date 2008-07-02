@@ -38,7 +38,7 @@ DEFINE_CONSTRUCTOR() {
 
 	J_S_ASSERT_CONSTRUCTING();
 	J_S_ASSERT_THIS_CLASS();
-	RT_ASSERT_ARGC(1);
+	J_S_ASSERT_ARG_MIN(1);
 
 	jsval iconVal = argv[0];
 
@@ -69,16 +69,16 @@ DEFINE_CONSTRUCTOR() {
 		HINSTANCE hInst = (HINSTANCE)GetModuleHandle(NULL);
 		JSObject *imgObj = JSVAL_TO_OBJECT(iconVal);
 
-		RT_ASSERT_CLASS_NAME(imgObj, "Image"); // (TBD) need something better/safer ?
+		J_S_ASSERT_CLASS_NAME(imgObj, "Image"); // (TBD) need something better/safer ?
 		jsval tmp;
 		JS_GetProperty(cx, imgObj, "width", &tmp);
-		RT_ASSERT_INT(tmp);
+		J_S_ASSERT_INT(tmp);
 		int width = JSVAL_TO_INT(tmp);
 		JS_GetProperty(cx, imgObj, "height", &tmp);
-		RT_ASSERT_INT(tmp);
+		J_S_ASSERT_INT(tmp);
 		int height = JSVAL_TO_INT(tmp);
 		JS_GetProperty(cx, imgObj, "channels", &tmp);
-		RT_ASSERT_INT(tmp);
+		J_S_ASSERT_INT(tmp);
 		int channels = JSVAL_TO_INT(tmp);
 		unsigned char *imageData = (unsigned char*)JS_GetPrivate(cx, imgObj);
 
@@ -112,11 +112,11 @@ DEFINE_CONSTRUCTOR() {
 		hIcon = CreateIconIndirect( &ii );
 		DeleteObject(colorBMP);
 		DeleteObject(maskBMP); 
-		RT_ASSERT( hIcon != NULL, "Unable to create the icon." );
+		J_S_ASSERT( hIcon != NULL, "Unable to create the icon." );
 	}
 
 	HICON *phIcon = (HICON*)malloc(sizeof(HICON)); // this is needed because JS_SetPrivate stores ONLY alligned values
-	RT_ASSERT_ALLOC( phIcon );
+	J_S_ASSERT_ALLOC( phIcon );
 	*phIcon = hIcon;
 	JS_SetPrivate(cx, obj, phIcon);
 	return JS_TRUE;

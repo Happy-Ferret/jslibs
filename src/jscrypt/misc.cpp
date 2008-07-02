@@ -31,8 +31,8 @@ BEGIN_STATIC
 **/
 DEFINE_FUNCTION( Base64Encode ) {
 
-	RT_ASSERT_ARGC( 1 );
-	RT_ASSERT_STRING(argv[0]);
+	J_S_ASSERT_ARG_MIN( 1 );
+	J_S_ASSERT_STRING(argv[0]);
 	const char *in;
 	size_t inLength;
 	J_CHK( JsvalToStringAndLength(cx, argv[0], &in, &inLength) );
@@ -40,7 +40,7 @@ DEFINE_FUNCTION( Base64Encode ) {
 	unsigned long outLength = 4 * ((inLength + 2) / 3) +1;
 	char *out = (char *)JS_malloc( cx, outLength +1 );
 	out[outLength] = '\0';
-	RT_ASSERT_ALLOC( out );
+	J_S_ASSERT_ALLOC( out );
 
 	int err;
 	err = base64_encode( (const unsigned char *)in, inLength, (unsigned char *)out, &outLength );
@@ -48,7 +48,7 @@ DEFINE_FUNCTION( Base64Encode ) {
 		return ThrowCryptError(cx, err);
 
 	JSString *jssOutData = JS_NewString( cx, out, outLength );
-	RT_ASSERT( jssOutData != NULL, "unable to create the base64 string." );
+	J_S_ASSERT( jssOutData != NULL, "unable to create the base64 string." );
 	*rval = STRING_TO_JSVAL(jssOutData);
 
 	return JS_TRUE;
@@ -60,15 +60,15 @@ DEFINE_FUNCTION( Base64Encode ) {
 **/
 DEFINE_FUNCTION( Base64Decode ) {
 
-	RT_ASSERT_ARGC( 1 );
-	RT_ASSERT_STRING(argv[0]);
+	J_S_ASSERT_ARG_MIN( 1 );
+	J_S_ASSERT_STRING(argv[0]);
 	const char *in;
 	size_t inLength;
 	J_CHK( JsvalToStringAndLength(cx, argv[0], &in, &inLength) );
 
 	unsigned long outLength = 3 * (inLength-2) / 4 +1;
 	char *out = (char *)JS_malloc(cx, outLength +1);
-	RT_ASSERT_ALLOC( out );
+	J_S_ASSERT_ALLOC( out );
 	out[outLength] = '\0';
 
 	int err;
@@ -77,7 +77,7 @@ DEFINE_FUNCTION( Base64Decode ) {
 		return ThrowCryptError(cx, err);
 
 	JSObject *jssOutData = J_NewBinaryString( cx, out, outLength );
-	RT_ASSERT( jssOutData != NULL, "unable to create the plaintext string." );
+	J_S_ASSERT( jssOutData != NULL, "unable to create the plaintext string." );
 	*rval = OBJECT_TO_JSVAL(jssOutData);
 
 	return JS_TRUE;
@@ -92,8 +92,8 @@ DEFINE_FUNCTION( HexEncode ) {
 
 	static const char hex[] = "0123456789ABCDEF";
 
-	RT_ASSERT_ARGC( 1 );
-	RT_ASSERT_STRING(argv[0]);
+	J_S_ASSERT_ARG_MIN( 1 );
+	J_S_ASSERT_STRING(argv[0]);
 
 	const char *in;
 	size_t inLength;
@@ -101,7 +101,7 @@ DEFINE_FUNCTION( HexEncode ) {
 
 	unsigned long outLength = inLength * 2;
 	char *out = (char *)JS_malloc(cx, outLength +1);
-	RT_ASSERT_ALLOC( out );
+	J_S_ASSERT_ALLOC( out );
 	out[outLength] = '\0';
 
 	unsigned char c;
@@ -113,7 +113,7 @@ DEFINE_FUNCTION( HexEncode ) {
 	}
 
 	JSString *jssOutData = JS_NewString( cx, out, outLength );
-	RT_ASSERT( jssOutData != NULL, "unable to create the hex string." );
+	J_S_ASSERT( jssOutData != NULL, "unable to create the hex string." );
 	*rval = STRING_TO_JSVAL(jssOutData);
 
 	return JS_TRUE;
@@ -138,15 +138,15 @@ DEFINE_FUNCTION( HexDecode ) {
 		XX, 10, 11, 12, 13, 14, 15, XX, XX, XX, XX, XX, XX, XX, XX, XX
 	};
 
-	RT_ASSERT_ARGC( 1 );
-	RT_ASSERT_STRING(argv[0]);
+	J_S_ASSERT_ARG_MIN( 1 );
+	J_S_ASSERT_STRING(argv[0]);
 	const char *in;
 	size_t inLength;
 	J_CHK( JsvalToStringAndLength(cx, argv[0], &in, &inLength) );
 
 	unsigned long outLength = inLength / 2;
 	char *out = (char *)JS_malloc(cx, outLength +1);
-	RT_ASSERT_ALLOC( out );
+	J_S_ASSERT_ALLOC( out );
 	out[outLength] = '\0';
 
 	for ( unsigned long i=0; i<outLength; ++i )
@@ -154,7 +154,7 @@ DEFINE_FUNCTION( HexDecode ) {
 
 //	JSString *jssOutData = JS_NewString( cx, out, outLength );
 	JSObject *jssOutData = J_NewBinaryString( cx, out, outLength );
-	RT_ASSERT( jssOutData != NULL, "unable to create the plaintext string." );
+	J_S_ASSERT( jssOutData != NULL, "unable to create the plaintext string." );
 //	*rval = STRING_TO_JSVAL(jssOutData);
 	*rval = OBJECT_TO_JSVAL(jssOutData);
 

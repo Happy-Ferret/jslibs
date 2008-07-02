@@ -49,7 +49,7 @@ BEGIN_CLASS( Window )
 //	JS_GetPrivate(cx, obj);
 //}
 //static JSBool ClassConstruct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
-//	RT_ASSERT( JS_IsConstructing(cx) && JS_GET_CLASS(cx,obj) == thisClass, RT_ERROR_INVALID_CLASS );
+//	J_S_ASSERT( JS_IsConstructing(cx) && JS_GET_CLASS(cx,obj) == thisClass, RT_ERROR_INVALID_CLASS );
 //	return JS_TRUE;
 //}
 //	JSBool Call(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
@@ -82,10 +82,10 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 			JS_GetProperty(cx, obj, "onchar", &functionVal);
 			if ( functionVal != JSVAL_VOID ) {
 
-				RT_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." ); // (TBD) return value of assert is not compatible with this function (WndProc)
+				J_S_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." ); // (TBD) return value of assert is not compatible with this function (WndProc)
 				char c = wParam;
 				jsval argv[] = { STRING_TO_JSVAL(JS_NewStringCopyN(cx, &c, 1)), INT_TO_JSVAL(lParam) };
-				RT_CHECK_CALL( JS_CallFunctionValue(cx, obj, functionVal, COUNTOF(argv), argv, &rval) );
+				J_CHK( JS_CallFunctionValue(cx, obj, functionVal, COUNTOF(argv), argv, &rval) );
 				return 0;
 			}
 			break;
@@ -93,9 +93,9 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 			JS_GetProperty(cx, obj, "onkeyup", &functionVal);
 			if ( functionVal != JSVAL_VOID ) {
 
-				RT_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." );
+				J_S_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." );
 				jsval argv[] = { INT_TO_JSVAL(wParam), INT_TO_JSVAL(lParam) };
-				RT_CHECK_CALL( JS_CallFunctionValue(cx, obj, functionVal, COUNTOF(argv), argv, &rval) );
+				J_CHK( JS_CallFunctionValue(cx, obj, functionVal, COUNTOF(argv), argv, &rval) );
 				return 0;
 			}
 			break;
@@ -103,9 +103,9 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 			JS_GetProperty(cx, obj, "onkeydown", &functionVal);
 			if ( functionVal != JSVAL_VOID ) {
 
-				RT_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." );
+				J_S_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." );
 				jsval argv[] = { INT_TO_JSVAL(wParam), INT_TO_JSVAL(lParam) };
-				RT_CHECK_CALL( JS_CallFunctionValue(cx, obj, functionVal, COUNTOF(argv), argv, &rval) );
+				J_CHK( JS_CallFunctionValue(cx, obj, functionVal, COUNTOF(argv), argv, &rval) );
 				return 0;
 			}
 			break;
@@ -113,9 +113,9 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 			JS_GetProperty(cx, obj, "onactivate", &functionVal);
 			if ( functionVal != JSVAL_VOID ) {
 
-				RT_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." );
+				J_S_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." );
 				jsval argv[] = { BOOLEAN_TO_JSVAL(wParam != WA_INACTIVE) };
-				RT_CHECK_CALL( JS_CallFunctionValue(cx, obj, functionVal, COUNTOF(argv), argv, &rval) );
+				J_CHK( JS_CallFunctionValue(cx, obj, functionVal, COUNTOF(argv), argv, &rval) );
 				return 0;
 			}
 			break;
@@ -124,9 +124,9 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 			JS_GetProperty(cx, obj, "onsize", &functionVal);
 			if ( functionVal != JSVAL_VOID ) {
 
-				RT_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." );
+				J_S_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." );
 				jsval argv[] = { INT_TO_JSVAL((short)LOWORD(lParam)), INT_TO_JSVAL((short)HIWORD(lParam)) };
-				RT_CHECK_CALL( JS_CallFunctionValue(cx, obj, functionVal, COUNTOF(argv), argv, &rval) );
+				J_CHK( JS_CallFunctionValue(cx, obj, functionVal, COUNTOF(argv), argv, &rval) );
 				return 0;
 			}
 			break;
@@ -134,9 +134,9 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 			JS_GetProperty(cx, obj, "onmousemove", &functionVal);
 			if ( functionVal != JSVAL_VOID ) {
 
-				RT_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." );
+				J_S_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." );
 				jsval argv[] = { INT_TO_JSVAL(MAKEPOINTS(lParam).x), INT_TO_JSVAL(MAKEPOINTS(lParam).y), BOOLEAN_TO_JSVAL(wParam & MK_LBUTTON), BOOLEAN_TO_JSVAL(wParam & MK_RBUTTON), BOOLEAN_TO_JSVAL(wParam & MK_MBUTTON) };
-				RT_CHECK_CALL( JS_CallFunctionValue(cx, obj, functionVal, COUNTOF(argv), argv, &rval) );
+				J_CHK( JS_CallFunctionValue(cx, obj, functionVal, COUNTOF(argv), argv, &rval) );
 				return 0;
 			}
 			break;
@@ -144,9 +144,9 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 			JS_GetProperty(cx, obj, "onmousewheel", &functionVal);
 			if ( functionVal != JSVAL_VOID ) {
 
-				RT_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." );
+				J_S_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." );
 				jsval argv[] = { INT_TO_JSVAL( GET_WHEEL_DELTA_WPARAM(wParam)/WHEEL_DELTA ), BOOLEAN_TO_JSVAL(wParam & MK_LBUTTON), BOOLEAN_TO_JSVAL(wParam & MK_RBUTTON), BOOLEAN_TO_JSVAL(wParam & MK_MBUTTON) };
-				RT_CHECK_CALL( JS_CallFunctionValue(cx, obj, functionVal, COUNTOF(argv), argv, &rval) );
+				J_CHK( JS_CallFunctionValue(cx, obj, functionVal, COUNTOF(argv), argv, &rval) );
 				return 0;
 			}
 			break;
@@ -159,13 +159,13 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 				// xPos = GET_X_LPARAM(lParam);
 				// yPos = GET_Y_LPARAM(lParam);
 
-				RT_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." );
+				J_S_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." );
 				jsval argv[] = {
 					INT_TO_JSVAL( message==WM_LBUTTONDOWN ? 1 : message==WM_RBUTTONDOWN ? 2 : message==WM_MBUTTONDOWN ? 3 : 0 ), JSVAL_TRUE };
 //					BOOLEAN_TO_JSVAL(wParam & MK_LBUTTON),
 //					BOOLEAN_TO_JSVAL(wParam & MK_RBUTTON),
 //					BOOLEAN_TO_JSVAL(wParam & MK_MBUTTON) };
-				RT_CHECK_CALL( JS_CallFunctionValue(cx, obj, functionVal, COUNTOF(argv), argv, &rval) );
+				J_CHK( JS_CallFunctionValue(cx, obj, functionVal, COUNTOF(argv), argv, &rval) );
 				return 0;
 			}
 			break;
@@ -178,9 +178,9 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 				// xPos = GET_X_LPARAM(lParam);
 				// yPos = GET_Y_LPARAM(lParam);
 
-				RT_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." );
+				J_S_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." );
 				jsval argv[] = { INT_TO_JSVAL( message==WM_LBUTTONUP ? 1 : message==WM_RBUTTONUP ? 2 : message==WM_MBUTTONUP ? 3 : 0 ), JSVAL_FALSE };
-				RT_CHECK_CALL( JS_CallFunctionValue(cx, obj, functionVal, COUNTOF(argv), argv, &rval) );
+				J_CHK( JS_CallFunctionValue(cx, obj, functionVal, COUNTOF(argv), argv, &rval) );
 				return 0;
 			}
 			break;
@@ -199,21 +199,21 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 DEFINE_CONSTRUCTOR() {
 
 //	JSClass *test = JS_GetClass(obj);
-	RT_ASSERT_CLASS( obj, _class );
+	J_S_ASSERT_CLASS( obj, _class );
 	HINSTANCE hInst = (HINSTANCE)GetModuleHandle(NULL);
-	RT_ASSERT( hInst != NULL, "Unable to GetModuleHandle." );
+	J_S_ASSERT( hInst != NULL, "Unable to GetModuleHandle." );
 
 	// hCursor doc: To use a predefined cursors, the application must set the hInstance parameter to NULL and the lpCursorName parameter to one the cursor values.
 	WNDCLASS wc = { CS_HREDRAW | CS_VREDRAW | CS_OWNDC, (WNDPROC)WndProc, 0, 0, hInst, LoadIcon((HINSTANCE)NULL, IDI_APPLICATION), LoadCursor((HINSTANCE) NULL, IDC_ARROW), NULL, NULL, WINDOW_CLASS_NAME };
 	ATOM rc = RegisterClass(&wc);
-	RT_ASSERT( rc != 0, "Unable to RegisterClass." );
+	J_S_ASSERT( rc != 0, "Unable to RegisterClass." );
 
 // http://nehe.gamedev.net/data/lessons/lesson.asp?lesson=01
 //	AdjustWindowRectEx(&WindowRect, dwStyle, FALSE, dwExStyle);
 
 	HWND hWnd = CreateWindow( (LPSTR)rc, NULL,    WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN | WS_CLIPSIBLINGS,
 	                          CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,    (HWND)NULL, (HMENU)NULL, hInst, (LPVOID)NULL);
-	RT_ASSERT( hWnd != NULL, "Unable to CreateWindow." );
+	J_S_ASSERT( hWnd != NULL, "Unable to CreateWindow." );
 	JS_SetPrivate(cx, obj, hWnd);
 
 	CxObj *cxobj = (CxObj*)malloc(sizeof(CxObj));
@@ -221,9 +221,9 @@ DEFINE_CONSTRUCTOR() {
 	cxobj->obj = obj;
 
 	DWORD err;
-	RT_SAFE(SetLastError(0));
+	J_SAFE(SetLastError(0));
 	LONG prevWindowLong = SetWindowLong(hWnd, GWL_USERDATA, (LONG)cxobj );
-	RT_ASSERT_1( prevWindowLong != 0 || (err=GetLastError()) == 0, "Unable to SetWindowLong. (error %d)", err );
+	J_S_ASSERT_1( prevWindowLong != 0 || (err=GetLastError()) == 0, "Unable to SetWindowLong. (error %d)", err );
 	return JS_TRUE;
 }
 
@@ -234,13 +234,13 @@ bool TrackMouseLeave( HWND hWnd ) {
 	trackMouseEvent.dwFlags = TME_LEAVE;
 	trackMouseEvent.hwndTrack = hWnd;
 	return TrackMouseEvent(&trackMouseEvent) != 0;
-//	RT_ASSERT_1( status != 0, "Unable to TrackMouseEvent.(%d)", GetLastError() );
+//	J_S_ASSERT_1( status != 0, "Unable to TrackMouseEvent.(%d)", GetLastError() );
 }
 
 DEFINE_FUNCTION( Open ) {
 
 	HWND hWnd = (HWND)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE( hWnd );
+	J_S_ASSERT_RESOURCE( hWnd );
 
 	ShowWindow(hWnd, SW_SHOWNORMAL);
 	SetForegroundWindow(hWnd);
@@ -253,7 +253,7 @@ DEFINE_FUNCTION( Open ) {
 DEFINE_FUNCTION( ProcessEvents ) {
 
 	HWND hWnd = (HWND)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE( hWnd );
+	J_S_ASSERT_RESOURCE( hWnd );
 
 //	jsval functionVal;
 	int msgCount;
@@ -264,12 +264,12 @@ DEFINE_FUNCTION( ProcessEvents ) {
 /*
 		JS_GetProperty(cx, obj, "onidle", &functionVal);
 		if ( functionVal != JSVAL_VOID ) {
-			RT_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." );
-			RT_CHECK_CALL( JS_CallFunctionValue(cx, obj, functionVal, 0, NULL, rval) );
+			J_S_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." );
+			J_CHK( JS_CallFunctionValue(cx, obj, functionVal, 0, NULL, rval) );
 		}
 */
 
-		RT_SAFE( msgCount = 0 );
+		J_SAFE( msgCount = 0 );
 		while(PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) { //GetInputState() // determines whether there are mouse-button or keyboard messages in the calling thread's message queue.
 
 			if (JS_IsExceptionPending(cx)) // need JS_ErrorFromException(...) ??
@@ -282,7 +282,7 @@ DEFINE_FUNCTION( ProcessEvents ) {
 				*rval = INT_TO_JSVAL((int)msg.wParam);
 //				quit = true;
 			}
-			RT_ASSERT( ++msgCount < 100, "Message loop deadlock detected." );
+			J_S_ASSERT( ++msgCount < 100, "Message loop deadlock detected." );
 		}
 
 //	} while(!quit);
@@ -296,7 +296,7 @@ DEFINE_FUNCTION( Close ) {
 // some events can occur after this point, then we NUST keep cxobj as long as possible
 
 	HWND hWnd = (HWND)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE( hWnd );
+	J_S_ASSERT_RESOURCE( hWnd );
 
 	CxObj *cxobj = (CxObj*)GetWindowLong(hWnd, GWL_USERDATA);
 	DestroyWindow(hWnd);
@@ -319,7 +319,7 @@ static JSBool Exit(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval 
 
 DEFINE_FUNCTION( WaitForMessage ) {
 
-	RT_ASSERT_ARGC(1);
+	J_S_ASSERT_ARG_MIN(1);
 	int32 val;
 	JS_ValueToInt32(cx, argv[0], &val);
 
@@ -361,30 +361,30 @@ static JSBool _SwapBuffers(JSContext *cx, JSObject *obj, uintN argc, jsval *argv
 
 	glFlush();
 	glFinish();
-	RT_ASSERT( JS_GET_CLASS(cx,obj) == _class, RT_ERROR_INVALID_CLASS );
+	J_S_ASSERT( JS_GET_CLASS(cx,obj) == _class, RT_ERROR_INVALID_CLASS );
 	HDC hDC = wglGetCurrentDC();
-	RT_ASSERT( hDC != NULL, "Could not get the Current Device Context." );
+	J_S_ASSERT( hDC != NULL, "Could not get the Current Device Context." );
 	BOOL res = SwapBuffers(hDC); // Doc: With multithread applications, flush the drawing commands in any other threads drawing to the same window before calling SwapBuffers.
-	RT_ASSERT_1( res, "Unable to SwapBuffers.(%x)", GetLastError() );
+	J_S_ASSERT_1( res, "Unable to SwapBuffers.(%x)", GetLastError() );
 	return JS_TRUE;
 }
 */
 
 DEFINE_FUNCTION( CreateOpenGLContext ) {
 
-//	RT_ASSERT( JS_IsConstructing(cx) && JS_GET_CLASS(cx,obj) == _class, RT_ERROR_INVALID_CLASS );
-//	RT_ASSERT_ARGC(1);
-//	RT_ASSERT_OBJECT(argv[0]);
-//	RT_ASSERT_CLASS(JSVAL_TO_OBJECT(argv[0]), &classWindow);
+//	J_S_ASSERT( JS_IsConstructing(cx) && JS_GET_CLASS(cx,obj) == _class, RT_ERROR_INVALID_CLASS );
+//	J_S_ASSERT_ARG_MIN(1);
+//	J_S_ASSERT_OBJECT(argv[0]);
+//	J_S_ASSERT_CLASS(JSVAL_TO_OBJECT(argv[0]), &classWindow);
 
 	HWND hWnd = (HWND)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE( hWnd );
+	J_S_ASSERT_RESOURCE( hWnd );
 
 //	JS_SetReservedSlot(cx, obj, SLOT_WINDOW_OBJECT, argv[0]); // avoid being GC while Gl is in use
 
 	BOOL res;
 	HDC hDC = GetDC(hWnd);
-	RT_ASSERT( hDC != NULL, "Could not get window Device Context." );
+	J_S_ASSERT( hDC != NULL, "Could not get window Device Context." );
 
 	// PFD_DRAW_TO_BITMAP : http://msdn.microsoft.com/library/default.asp?url=/library/en-us/dnopen/html/msdn_gl6.asp
 
@@ -410,23 +410,23 @@ DEFINE_FUNCTION( CreateOpenGLContext ) {
 	};
 
 	int pixelFormat = ChoosePixelFormat(hDC, &pfd);
-	RT_ASSERT( pixelFormat != 0, "Could not Find A Suitable OpenGL PixelFormat." );
+	J_S_ASSERT( pixelFormat != 0, "Could not Find A Suitable OpenGL PixelFormat." );
 
 	// If you are using the Win32 interface (as opposed to GLUT), call DescribePixelFormat() and check the returned dwFlags bitfield.
 	// If PFD_GENERIC_ACCELERATED is clear and PFD_GENERIC_FORMAT is set, then the pixel format is only supported by the generic implementation.
 	// Hardware acceleration is not possible for this format. For hardware acceleration, you need to choose a different format.
 	DescribePixelFormat(hDC, pixelFormat, sizeof(PIXELFORMATDESCRIPTOR), &pfd); // (TBD) check return value for error
 	bool hasNoAccel = (pfd.dwFlags & PFD_GENERIC_FORMAT) != 0 && (pfd.dwFlags & PFD_GENERIC_ACCELERATED) == 0;
-	RT_ASSERT( hasNoAccel == false, "Hardware acceleration is not possible for this format." );
+	J_S_ASSERT( hasNoAccel == false, "Hardware acceleration is not possible for this format." );
 
 	res = SetPixelFormat(hDC,pixelFormat,&pfd);
-	RT_ASSERT( res, "Could not Set The PixelFormat." );
+	J_S_ASSERT( res, "Could not Set The PixelFormat." );
 
 	HGLRC hRC = wglCreateContext(hDC);
-	RT_ASSERT_1( hRC != NULL , "Cannot Create A GL Rendering Context. (%x)", GetLastError() );
+	J_S_ASSERT_1( hRC != NULL , "Cannot Create A GL Rendering Context. (%x)", GetLastError() );
 
 	res = wglMakeCurrent(hDC,hRC);
-	RT_ASSERT_1( res, "Cannot Activate The GL Rendering Context. (%x)", GetLastError());
+	J_S_ASSERT_1( res, "Cannot Activate The GL Rendering Context. (%x)", GetLastError());
 
 //  wglMakeCurrent(NULL,NULL); // This step is not required, but it can help find errors, especially when you are using multiple rendering contexts.
 //  wglDeleteContext(hRC);
@@ -440,11 +440,11 @@ static JSBool _SwapBuffers(JSContext *cx, JSObject *obj, uintN argc, jsval *argv
 
 //	glFlush();
 //	glFinish();
-//	RT_ASSERT( JS_GET_CLASS(cx,obj) == _class, RT_ERROR_INVALID_CLASS );
+//	J_S_ASSERT( JS_GET_CLASS(cx,obj) == _class, RT_ERROR_INVALID_CLASS );
 	HDC hDC = wglGetCurrentDC(); // (TBD) un-specialize from OpenGL
-	RT_ASSERT( hDC != NULL, "Could not get the Current Device Context." );
+	J_S_ASSERT( hDC != NULL, "Could not get the Current Device Context." );
 	BOOL res = SwapBuffers(hDC); // Doc: With multithread applications, flush the drawing commands in any other threads drawing to the same window before calling SwapBuffers.
-	RT_ASSERT_1( res, "Unable to SwapBuffers.(%x)", GetLastError() );
+	J_S_ASSERT_1( res, "Unable to SwapBuffers.(%x)", GetLastError() );
 	return JS_TRUE;
 }
 
@@ -454,7 +454,7 @@ DEFINE_FUNCTION( Mode ) {
 	LONG status;
 	if ( argc > 0 ) {
 
-		RT_ASSERT_ARGC(3);
+		J_S_ASSERT_ARG_MIN(3);
 		int32 bits;
 		JSBool fullscreen;
 
@@ -477,7 +477,7 @@ DEFINE_FUNCTION( Mode ) {
 
 		status = ChangeDisplaySettings(NULL, 0);
 	}
-	RT_ASSERT_1( status == DISP_CHANGE_SUCCESSFUL, "Unable to ChangeDisplaySettings.(%d)", status);
+	J_S_ASSERT_1( status == DISP_CHANGE_SUCCESSFUL, "Unable to ChangeDisplaySettings.(%d)", status);
 	return JS_TRUE;
 }
 
@@ -491,7 +491,7 @@ DEFINE_PROPERTY( clipCursor ) {
 	RECT r;
 	GetWindowRect(hWnd, &r);
 	BOOL sysStatus = ClipCursor( clip ? &r : NULL );
-	RT_ASSERT( sysStatus != 0, "Unable to ClipCursor." );
+	J_S_ASSERT( sysStatus != 0, "Unable to ClipCursor." );
 	return JS_TRUE;
 }
 
@@ -511,7 +511,7 @@ DEFINE_PROPERTY( absoluteClipCursor ) {
 	} else {
 		sysStatus = ClipCursor( NULL );
 	}
-	RT_ASSERT( sysStatus != 0, "Unable to ClipCursor." );
+	J_S_ASSERT( sysStatus != 0, "Unable to ClipCursor." );
 	return JS_TRUE;
 }
 
@@ -539,7 +539,7 @@ DEFINE_PROPERTY( clientRect ) {
 	if ( !J_JSVAL_IS_ARRAY(*vp) ) {
 
 		arrayObj = JS_NewArrayObject(cx, 0, NULL);
-		RT_ASSERT_ALLOC(arrayObj);
+		J_S_ASSERT_ALLOC(arrayObj);
 		*vp = OBJECT_TO_JSVAL(arrayObj);
 	} else { // reusing the stored array is a good idea.
 
@@ -548,13 +548,13 @@ DEFINE_PROPERTY( clientRect ) {
 
 	jsval value;
 	value = INT_TO_JSVAL(r.left);
-	J_CHECK_CALL( JS_SetElement(cx, arrayObj, 0, &value) );
+	J_CHK( JS_SetElement(cx, arrayObj, 0, &value) );
 	value = INT_TO_JSVAL(r.top);
-	J_CHECK_CALL( JS_SetElement(cx, arrayObj, 1, &value) );
+	J_CHK( JS_SetElement(cx, arrayObj, 1, &value) );
 	value = INT_TO_JSVAL(r.right);
-	J_CHECK_CALL( JS_SetElement(cx, arrayObj, 2, &value) );
+	J_CHK( JS_SetElement(cx, arrayObj, 2, &value) );
 	value = INT_TO_JSVAL(r.bottom);
-	J_CHECK_CALL( JS_SetElement(cx, arrayObj, 3, &value) );
+	J_CHK( JS_SetElement(cx, arrayObj, 3, &value) );
 	return JS_TRUE;
 }
 
@@ -572,13 +572,13 @@ DEFINE_PROPERTY( rectGetter ) {
 		JSObject *arrayObj = JSVAL_TO_OBJECT(*vp);
 		jsval value;
 		value = INT_TO_JSVAL(r.left);
-		J_CHECK_CALL( JS_SetElement(cx, arrayObj, 0, &value) );
+		J_CHK( JS_SetElement(cx, arrayObj, 0, &value) );
 		value = INT_TO_JSVAL(r.top);
-		J_CHECK_CALL( JS_SetElement(cx, arrayObj, 1, &value) );
+		J_CHK( JS_SetElement(cx, arrayObj, 1, &value) );
 		value = INT_TO_JSVAL(r.right);
-		J_CHECK_CALL( JS_SetElement(cx, arrayObj, 2, &value) );
+		J_CHK( JS_SetElement(cx, arrayObj, 2, &value) );
 		value = INT_TO_JSVAL(r.bottom);
-		J_CHECK_CALL( JS_SetElement(cx, arrayObj, 3, &value) );
+		J_CHK( JS_SetElement(cx, arrayObj, 3, &value) );
 	} else {
 */
 	int vector[] = { r.left, r.top, r.right, r.bottom };
@@ -597,7 +597,7 @@ DEFINE_PROPERTY( rectSetter ) {
 //	IntArrayToVector(cx, 4, vp, v);
 	jsuint length;
 	J_JSVAL_TO_INT_VECTOR(*vp, v, length);
-	RT_ASSERT( length == 4, "Invalid element count." );
+	J_S_ASSERT( length == 4, "Invalid element count." );
 
 	SetWindowPos(hWnd, 0, v[0], v[1], v[2] - v[0], v[3] - v[1], SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_NOACTIVATE);
 	return JS_TRUE;
@@ -611,7 +611,7 @@ DEFINE_PROPERTY( cursorAbsolutePositionSetter ) {
 	int vec[2];
 	IntArrayToVector(cx, 2, vp, vec);
 	BOOL sysStatus = SetCursorPos(vec[0], vec[1]); // http://windowssdk.msdn.microsoft.com/en-us/library/ms648394.aspx
-	RT_ASSERT( sysStatus != 0, "Unable to SetCursorPos." );
+	J_S_ASSERT( sysStatus != 0, "Unable to SetCursorPos." );
 	return JS_TRUE;
 }
 
@@ -636,7 +636,7 @@ DEFINE_PROPERTY( cursorPositionSetter ) {
 	POINT pt = { vec[0], vec[1] };
 	ClientToScreen(hWnd, &pt);
 	BOOL sysStatus = SetCursorPos(pt.x, pt.y); // http://windowssdk.msdn.microsoft.com/en-us/library/ms648394.aspx
-	RT_ASSERT( sysStatus != 0, "Unable to SetCursorPos." );
+	J_S_ASSERT( sysStatus != 0, "Unable to SetCursorPos." );
 	return JS_TRUE;
 }
 

@@ -24,7 +24,7 @@
 inline JSBool PositionSet( JSContext *cx, JSObject *obj, int position ) {
 
 	jsval tmp;
-	J_CHECK_CALL( IntToJsval(cx, position, &tmp) );
+	J_CHK( IntToJsval(cx, position, &tmp) );
 	return JS_SetReservedSlot(cx, obj, SLOT_STREAM_POSITION, tmp);
 }
 
@@ -32,8 +32,8 @@ inline JSBool PositionSet( JSContext *cx, JSObject *obj, int position ) {
 inline JSBool PositionGet( JSContext *cx, JSObject *obj, int *position ) {
 
 	jsval tmp;
-	J_CHECK_CALL( JS_GetReservedSlot(cx, obj, SLOT_STREAM_POSITION, &tmp) );
-	J_CHECK_CALL( JsvalToInt(cx, tmp, position) );
+	J_CHK( JS_GetReservedSlot(cx, obj, SLOT_STREAM_POSITION, &tmp) );
+	J_CHK( JsvalToInt(cx, tmp, position) );
 	return JS_TRUE;
 }
 
@@ -41,13 +41,13 @@ inline JSBool PositionGet( JSContext *cx, JSObject *obj, int *position ) {
 JSBool StreamRead( JSContext *cx, JSObject *obj, char *buf, unsigned int *amount ) {
 
 	int position;
-	J_CHECK_CALL( PositionGet(cx, obj, &position) );
+	J_CHK( PositionGet(cx, obj, &position) );
 	jsval source;
-	J_CHECK_CALL( JS_GetReservedSlot(cx, obj, SLOT_STREAM_SOURCE, &source) );
+	J_CHK( JS_GetReservedSlot(cx, obj, SLOT_STREAM_SOURCE, &source) );
 
 	const char *buffer;
 	size_t length;
-	J_CHECK_CALL( JsvalToStringAndLength(cx, source, &buffer, &length) );
+	J_CHK( JsvalToStringAndLength(cx, source, &buffer, &length) );
 
 	if ( length - position <= 0 ) { // position >= length
 
@@ -95,8 +95,8 @@ DEFINE_CONSTRUCTOR() {
 
 	J_S_ASSERT( !JSVAL_IS_VOID(J_ARG(1)) && !JSVAL_IS_NULL(J_ARG(1)), "Invalid stream source." );
 
-	J_CHECK_CALL( JS_SetReservedSlot(cx, obj, SLOT_STREAM_SOURCE, J_ARG(1)) );
-	J_CHECK_CALL( PositionSet(cx, obj, 0) );
+	J_CHK( JS_SetReservedSlot(cx, obj, SLOT_STREAM_SOURCE, J_ARG(1)) );
+	J_CHK( PositionSet(cx, obj, 0) );
 
 	J_CHK( InitStreamReadInterface(cx, obj) );
 	J_CHK( SetStreamReadInterface(cx, obj, StreamRead) );
@@ -114,13 +114,13 @@ DEFINE_FUNCTION_FAST( Read ) {
 	J_S_ASSERT_ARG_MIN( 1 );
 
 	int amount;
-	J_CHECK_CALL( JsvalToInt(cx, J_FARG(1), &amount) );
+	J_CHK( JsvalToInt(cx, J_FARG(1), &amount) );
 
 	char *buffer = (char*)JS_malloc(cx, amount +1);
 	J_S_ASSERT_ALLOC(buffer);
 
 	size_t readAmount = amount;
-	J_CHECK_CALL( StreamRead(cx, J_FOBJ, buffer, &readAmount ) );
+	J_CHK( StreamRead(cx, J_FOBJ, buffer, &readAmount ) );
 
 	if ( MaybeRealloc(amount, readAmount) )
 		buffer = (char*)JS_realloc(cx, buffer, readAmount +1);
@@ -142,7 +142,7 @@ DEFINE_FUNCTION_FAST( Read ) {
 DEFINE_PROPERTY( positionGetter ) {
 
 	int position;
-	J_CHECK_CALL( PositionGet(cx, obj, &position) );
+	J_CHK( PositionGet(cx, obj, &position) );
 	*vp = INT_TO_JSVAL( position );
 	return JS_TRUE;
 }
@@ -150,9 +150,9 @@ DEFINE_PROPERTY( positionGetter ) {
 DEFINE_PROPERTY( positionSetter ) {
 
 	int position;
-	J_CHECK_CALL( JsvalToInt(cx, *vp, &position) );
+	J_CHK( JsvalToInt(cx, *vp, &position) );
 	J_S_ASSERT( position >= 0, "Invalid stream position." );
-	J_CHECK_CALL( PositionSet(cx, obj, position) );
+	J_CHK( PositionSet(cx, obj, position) );
 	return JS_TRUE;
 }
 
@@ -162,19 +162,19 @@ DEFINE_PROPERTY( positionSetter ) {
 **/
 DEFINE_PROPERTY( available ) {
 
-	J_CHECK_CALL( JS_GetReservedSlot(cx, obj, SLOT_STREAM_SOURCE, vp) ); // use vp as a tmp variable
+	J_CHK( JS_GetReservedSlot(cx, obj, SLOT_STREAM_SOURCE, vp) ); // use vp as a tmp variable
 	JSObject *srcObj;
 	if ( JSVAL_IS_OBJECT( *vp ) )
 		srcObj = JSVAL_TO_OBJECT( *vp );
 	else
-		J_CHECK_CALL( JS_ValueToObject(cx, *vp, &srcObj) );
+		J_CHK( JS_ValueToObject(cx, *vp, &srcObj) );
 	int length, position;
-	J_CHECK_CALL( PositionGet(cx, obj, &position) );
+	J_CHK( PositionGet(cx, obj, &position) );
 	J_CHK( JS_GetProperty(cx, srcObj, "length", vp) ); // use vp as a tmp variable
 	if ( *vp == JSVAL_VOID )
 		return JS_TRUE; // if length is not defined, the returned value is undefined
-	J_CHECK_CALL( JsvalToInt(cx, *vp, &length) );
-	J_CHECK_CALL( IntToJsval(cx, length - position, vp ) );
+	J_CHK( JsvalToInt(cx, *vp, &length) );
+	J_CHK( IntToJsval(cx, length - position, vp ) );
 	return JS_TRUE;
 }
 
@@ -184,7 +184,7 @@ DEFINE_PROPERTY( available ) {
 **/
 DEFINE_PROPERTY( source ) {
 
-	J_CHECK_CALL( JS_GetReservedSlot(cx, obj, SLOT_STREAM_SOURCE, vp) );
+	J_CHK( JS_GetReservedSlot(cx, obj, SLOT_STREAM_SOURCE, vp) );
 	return JS_TRUE;
 }
 

@@ -153,16 +153,16 @@ bool ModuleIsUnloadable( ModuleId id ) {
 
 bool ModuleUnload( ModuleId id, JSContext *cx ) {
 
-//	RT_ASSERT( id != 0, "Invalid module id." );
+//	J_S_ASSERT( id != 0, "Invalid module id." );
 
 	return false;
 
 //	jsdouble dVal;
-//	RT_CHECK_CALL( JS_ValueToNumber(cx, argv[0], &dVal) );
+//	J_CHK( JS_ValueToNumber(cx, argv[0], &dVal) );
 
 /*
 	jsdouble dVal;
-	RT_CHECK_CALL( JS_ValueToNumber(cx, argv[0], &dVal) );
+	J_CHK( JS_ValueToNumber(cx, argv[0], &dVal) );
 	HMODULE module = (HMODULE)(unsigned int)dVal;
 
 	for ( int i = sizeof(_moduleList) / sizeof(*_moduleList) - 1; i >= 0; --i ) // beware: 'i' must be signed // start from the end

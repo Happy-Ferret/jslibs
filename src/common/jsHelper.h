@@ -286,20 +286,18 @@ extern bool *_pUnsafeMode;
 ///////////////////////////////////////////////////////////////////////////////
 // 
 
-// The following function wil only works if the class is defined in the global namespace.
+// The following function wil only works if the class is defined in the global namespace (say global object)
 inline JSClass *GetGlobalClassByName(JSContext *cx, const char *className) {
 
 	JSObject *globalObj = JS_GetGlobalObject(cx);
 	if ( globalObj == NULL )
 		return NULL;
-	jsval bstringConstructor;
-	if ( JS_LookupProperty(cx, globalObj, className, &bstringConstructor) != JS_TRUE )
+	jsval classConstructor;
+	if ( JS_LookupProperty(cx, globalObj, className, &classConstructor) != JS_TRUE )
 		return NULL;
-//	if ( bstringConstructor == JSVAL_VOID )
-//		return NULL;
-	if ( JS_TypeOfValue(cx, bstringConstructor) != JSTYPE_FUNCTION )
+	if ( JS_TypeOfValue(cx, classConstructor) != JSTYPE_FUNCTION )
 		return NULL;
-	JSFunction *fun = JS_ValueToFunction(cx, bstringConstructor);
+	JSFunction *fun = JS_ValueToFunction(cx, classConstructor);
 	if ( fun == NULL )
 		return NULL;
 	if ( !FUN_SLOW_NATIVE(fun) )
@@ -378,8 +376,7 @@ inline JSBool JsvalToStringAndLength( JSContext *cx, jsval val, const char** buf
 			return fct(cx, JSVAL_TO_OBJECT(val), buffer, size);
 	}
 
-	// for anything else
-
+	// and for anything else ...
 	JSString *str = JS_ValueToString(cx, val);
 	J_S_ASSERT( str != NULL, J__ERRMSG_STRING_CONVERSION_FAILED );
 	*buffer = JS_GetStringBytes(str);
@@ -404,7 +401,7 @@ inline JSBool JsvalToStringLength( JSContext *cx, jsval val, size_t *length ) {
 			return fct(cx, JSVAL_TO_OBJECT(val), &tmp, length);
 	}
 
-	JSString *str = JS_ValueToString(cx, val);
+	JSString *str = JS_ValueToString(cx, val); // unfortunately, we have to convert to a string to know its length
 	J_S_ASSERT( str != NULL, J__ERRMSG_STRING_CONVERSION_FAILED );
 	*length = J_STRING_LENGTH(str);
 	return JS_TRUE;
@@ -509,7 +506,7 @@ inline JSBool GetPropertyInt( JSContext *cx, JSObject *obj, const char *property
 
 #define J_PROPERTY_TO_INT32( jsobject, propertyName, intVariable ) do { \
 	jsval __tmpVal; \
-	J_CHECK_CALL( JS_GetProperty(cx, jsobject, propertyName, &__tmpVal) ); \
+	J_CHK( JS_GetProperty(cx, jsobject, propertyName, &__tmpVal) ); \
 	J_JSVAL_TO_INT32( __tmpVal, intVariable ); \
 } while(0)
 
@@ -527,7 +524,6 @@ inline JSBool GetPropertyInt( JSContext *cx, JSObject *obj, const char *property
 	} \
 	J_S_ASSERT( uintVariable >= 0, "Unable to convert to a 32bit unsigned integer." ); \
 } while(0)
-
 
 
 
@@ -586,12 +582,12 @@ inline JSBool JsvalToBool( JSContext *cx, jsval val, bool *bval ) {
 
 #define J_INT_VECTOR_TO_JSVAL( vector, length, jsvalVariable ) do { \
 	JSObject *__arrayObj = JS_NewArrayObject(cx, 0, NULL); \
-	RT_ASSERT_ALLOC(__arrayObj); \
+	J_S_ASSERT_ALLOC(__arrayObj); \
 	(jsvalVariable) = OBJECT_TO_JSVAL(__arrayObj); \
 	jsval __tmpValue; \
 	for ( jsint __i=0; __i<(length); ++__i ) { \
 		__tmpValue = INT_TO_JSVAL((vector)[__i]); \
-		J_CHECK_CALL( JS_SetElement(cx, __arrayObj, __i, &__tmpValue) ); \
+		J_CHK( JS_SetElement(cx, __arrayObj, __i, &__tmpValue) ); \
 	} \
 } while(0)
 
@@ -600,12 +596,12 @@ inline JSBool JsvalToBool( JSContext *cx, jsval val, bool *bval ) {
 	J_S_ASSERT_ARRAY(jsvalArray); \
 	JSObject *__arrayObj = JSVAL_TO_OBJECT(jsvalArray); \
 	jsuint __length; \
-	J_CHECK_CALL( JS_GetArrayLength(cx, __arrayObj, &__length) ); \
+	J_CHK( JS_GetArrayLength(cx, __arrayObj, &__length) ); \
 	(lengthVariable) = __length; \
 	J_S_ASSERT( __length <= sizeof(vectorVariable), "Too many elements in the array." ); \
 	jsval __arrayElt; \
 	for ( jsuint __i=0; __i<__length; __i++ ) { \
-		J_CHECK_CALL( JS_GetElement(cx, __arrayObj, __i, &__arrayElt) ); \
+		J_CHK( JS_GetElement(cx, __arrayObj, __i, &__arrayElt) ); \
 		J_S_ASSERT_INT(__arrayElt); \
 		(vectorVariable)[__i] = JSVAL_TO_INT(__arrayElt); \
 	} \
@@ -620,14 +616,14 @@ inline JSBool JsvalToBool( JSContext *cx, jsval val, bool *bval ) {
 	J_S_ASSERT_ARRAY(jsvalArray); \
 	JSObject *__arrayObj = JSVAL_TO_OBJECT(jsvalArray); \
 	jsuint __length; \
-	J_CHECK_CALL( JS_GetArrayLength(cx, __arrayObj, &__length) ); \
+	J_CHK( JS_GetArrayLength(cx, __arrayObj, &__length) ); \
 	lengthVariable = __length; \
 	J_S_ASSERT( __length <= (lengthVariable), "Too many elements in the array." ); \
 	jsval __arrayElt; \
 	double __eltValue; \
 	for ( jsuint __i=0; __i<__length; __i++ ) { \
-		J_CHECK_CALL( JS_GetElement(cx, __arrayObj, __i, &__arrayElt) ); \
-		J_CHECK_CALL( JS_ValueToNumber(cx, __arrayElt, &__eltValue) ); \
+		J_CHK( JS_GetElement(cx, __arrayObj, __i, &__arrayElt) ); \
+		J_CHK( JS_ValueToNumber(cx, __arrayElt, &__eltValue) ); \
 		(vectorVariable)[__i] = __eltValue; \
 	} \
 } while(0)
@@ -637,52 +633,17 @@ inline JSBool JsvalToBool( JSContext *cx, jsval val, bool *bval ) {
 	J_S_ASSERT_ARRAY(jsvalArray); \
 	JSObject *__arrayObj = JSVAL_TO_OBJECT(jsvalArray); \
 	jsuint __length; \
-	J_CHECK_CALL( JS_GetArrayLength(cx, __arrayObj, &__length) ); \
+	J_CHK( JS_GetArrayLength(cx, __arrayObj, &__length) ); \
 	lengthVariable = __length; \
 } while(0)
 
 
-
-
-// DEPRECATED macro
-#define J_CHECK_CALL J_CHK
-#define RT_CHECK_CALL J_CHECK_CALL
-#define RT_SAFE J_SAFE
-#define RT_UNSAFE J_UNSAFE
-#define REPORT_WARNING J_REPORT_WARNING
-#define REPORT_WARNING_1 J_REPORT_WARNING_1
-#define REPORT_WARNING_2 J_REPORT_WARNING_2
-#define REPORT_ERROR J_REPORT_ERROR
-#define REPORT_ERROR_1 J_REPORT_ERROR_1
-#define REPORT_ERROR_2 J_REPORT_ERROR_2
-#define RT_ASSERT J_S_ASSERT
-#define RT_ASSERT_1 J_S_ASSERT_1
-#define RT_ASSERT_2 J_S_ASSERT_2
-#define RT_ASSERT_TYPE J_S_ASSERT_TYPE
-#define RT_ASSERT_DEFINED J_S_ASSERT_DEFINED
-#define RT_ASSERT_OBJECT J_S_ASSERT_OBJECT
-#define RT_ASSERT_ARRAY J_S_ASSERT_ARRAY
-
-#define RT_ASSERT_INT J_S_ASSERT_INT
-#define RT_ASSERT_NUMBER J_S_ASSERT_NUMBER
-#define RT_ASSERT_STRING J_S_ASSERT_STRING
-#define RT_ASSERT_FUNCTION J_S_ASSERT_FUNCTION
-#define RT_ASSERT_ALLOC J_S_ASSERT_ALLOC
-#define RT_ASSERT_RESOURCE J_S_ASSERT_RESOURCE
-#define RT_ASSERT_CLASS J_S_ASSERT_CLASS
-#define RT_ASSERT_THIS_CLASS J_S_ASSERT_THIS_CLASS
-#define RT_ASSERT_CLASS_NAME J_S_ASSERT_CLASS_NAME
-#define RT_ASSERT_ARGC J_S_ASSERT_ARG_MIN
-#define RT_ASSERT_ARGC_MAX J_S_ASSERT_ARG_MAX
-#define RT_ASSERT_CONSTRUCTING(_class) do { \
+/*
+#define J_S_ASSERT_CONSTRUCTING(_class) do { \
 	J_S_ASSERT_CONSTRUCTING(); \
 	J_S_ASSERT_THIS_CLASS(); \
 } while(0)
-#define RT_JSVAL_TO_BOOL J_JSVAL_TO_BOOL
-#define RT_JSVAL_TO_REAL J_JSVAL_TO_REAL
-#define RT_JSVAL_TO_INT32 J_JSVAL_TO_INT32
-#define RT_JSVAL_TO_UINT32 J_JSVAL_TO_UINT32
-
+*/
 
 ///////////////////////////////////////////////////////////////////////////////
 // Helper functions
@@ -771,18 +732,18 @@ inline JSBool CallFunction( JSContext *cx, JSObject *obj, jsval functionValue, j
 		argv[i] = va_arg(ap, jsval);
 	va_end(ap);
 	J_S_ASSERT_FUNCTION( functionValue );
-	J_CHECK_CALL( JS_CallFunctionValue(cx, obj, functionValue, argc, argv, &rvalTmp) ); // NULL is NOT supported for &rvalTmp ( last arg of JS_CallFunctionValue )
+	J_CHK( JS_CallFunctionValue(cx, obj, functionValue, argc, argv, &rvalTmp) ); // NULL is NOT supported for &rvalTmp ( last arg of JS_CallFunctionValue )
 	if ( rval != NULL )
 		*rval = rvalTmp;
 	return JS_TRUE;
 }
 
 
-
 inline bool MaybeRealloc( int requested, int received ) {
 
 	return requested != 0 && (100 * received / requested < 90) && (requested - received > 256);
 }
+
 
 
 
@@ -803,13 +764,11 @@ inline JSBool GetNativeInterface( JSContext *cx, JSObject *obj, jsid iid, void *
 	return JS_TRUE;
 }
 
-
 inline JSBool ReserveNativeInterface( JSContext *cx, JSObject *obj, const char *name ) {
 
 	J_CHK( JS_DefineProperty(cx, obj, name, JSVAL_VOID, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ) );
 	return JS_TRUE;
 }
-
 
 inline JSBool SetNativeInterface( JSContext *cx, JSObject *obj, const char *name, void *nativeFct ) {
 
@@ -826,6 +785,7 @@ inline JSBool SetNativeInterface( JSContext *cx, JSObject *obj, const char *name
 	}
 	return JS_TRUE;
 }
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // NativeInterface StreamRead
@@ -974,6 +934,5 @@ inline NIMatrix44Get Matrix44GetInterface( JSContext *cx, JSObject *obj ) {
 */
 	return NULL;
 }
+
 #endif // _JSHELPER_H_
-
-

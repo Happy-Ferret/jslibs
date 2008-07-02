@@ -38,20 +38,20 @@ BEGIN_STATIC
 **/
 DEFINE_FUNCTION( ExtractIcon_ ) {
 
-	RT_ASSERT_ARGC(1);
+	J_S_ASSERT_ARG_MIN(1);
 	const char *fileName;
 	UINT iconIndex = 0;
 	J_CHK( JsvalToString(cx, argv[0], &fileName) );
 	if ( argc >= 2 )
-		RT_JSVAL_TO_INT32( argv[1], iconIndex );
+		J_JSVAL_TO_INT32( argv[1], iconIndex );
 	HINSTANCE hInst = (HINSTANCE)GetModuleHandle(NULL);
-	RT_ASSERT( hInst != NULL, "Unable to GetModuleHandle." );
+	J_S_ASSERT( hInst != NULL, "Unable to GetModuleHandle." );
 	HICON hIcon = ExtractIcon( hInst, fileName, iconIndex ); // see SHGetFileInfo(
 	if ( hIcon == NULL )
 		return WinThrowError(cx, GetLastError());
 	JSObject *icon = JS_NewObject(cx, &classIcon, NULL, NULL);
 	HICON *phIcon = (HICON*)malloc(sizeof(HICON)); // this is needed because JS_SetPrivate stores ONLY alligned values
-	RT_ASSERT_ALLOC( phIcon );
+	J_S_ASSERT_ALLOC( phIcon );
 	*phIcon = hIcon;
 	JS_SetPrivate(cx, icon, phIcon);
 	*rval = OBJECT_TO_JSVAL(icon);
@@ -108,7 +108,7 @@ DEFINE_FUNCTION( ExtractIcon_ ) {
 **/
 DEFINE_FUNCTION( MessageBox_ ) {
 
-	RT_ASSERT_ARGC(1);
+	J_S_ASSERT_ARG_MIN(1);
 
 	const char *text;
 	J_CHK( JsvalToString(cx, argv[0], &text) );
@@ -119,10 +119,10 @@ DEFINE_FUNCTION( MessageBox_ ) {
 
 	UINT type = 0;
 	if ( argc >= 3 )
-		RT_JSVAL_TO_INT32( argv[2], type );
+		J_JSVAL_TO_INT32( argv[2], type );
 
 	int res = MessageBox(NULL, text, caption, type);
-	RT_ASSERT( res != 0, "MessageBox call Failed." );
+	J_S_ASSERT( res != 0, "MessageBox call Failed." );
 	*rval = INT_TO_JSVAL( res );
 	return JS_TRUE;
 }
@@ -143,7 +143,7 @@ DEFINE_FUNCTION( MessageBox_ ) {
 **/
 DEFINE_FUNCTION( CreateProcess_ ) {
 
-	RT_ASSERT_ARGC(1);
+	J_S_ASSERT_ARG_MIN(1);
 
 	const char *applicationName, *commandLine = NULL, *environment = NULL, *currentDirectory = NULL;
 
@@ -208,7 +208,7 @@ DEFINE_FUNCTION( FileOpenDialog ) {
 	BOOL res = GetOpenFileName(&ofn); // doc: http://msdn.microsoft.com/library/default.asp?url=/library/en-us/winui/winui/windowsuserinterface/userinput/commondialogboxlibrary/commondialogboxreference/commondialogboxstructures/openfilename.asp
 	DWORD err = CommDlgExtendedError();
 
-	RT_ASSERT( res == TRUE || err == 0, "Unable to GetOpenFileName." );
+	J_S_ASSERT( res == TRUE || err == 0, "Unable to GetOpenFileName." );
 
 	if ( res == FALSE && err == 0 )
 		*rval = JSVAL_VOID;
@@ -224,12 +224,12 @@ DEFINE_FUNCTION( FileOpenDialog ) {
 **/
 DEFINE_FUNCTION( ExpandEnvironmentStrings_ ) {
 
-	RT_ASSERT_ARGC(1);
+	J_S_ASSERT_ARG_MIN(1);
 	const char *src;
 	J_CHK( JsvalToString(cx, argv[0], &src) );
 	TCHAR dst[MAX_PATH];
 	DWORD res = ExpandEnvironmentStrings( src, dst, sizeof(dst) );
-	RT_ASSERT( res != 0, "Unable to ExpandEnvironmentStrings." );
+	J_S_ASSERT( res != 0, "Unable to ExpandEnvironmentStrings." );
 	*rval = STRING_TO_JSVAL( JS_NewStringCopyN(cx, dst, res) );
 	return JS_TRUE;
 }
@@ -241,9 +241,9 @@ DEFINE_FUNCTION( ExpandEnvironmentStrings_ ) {
 **/
 DEFINE_FUNCTION( Sleep_ ) {
 
-	RT_ASSERT_ARGC(1);
+	J_S_ASSERT_ARG_MIN(1);
 	uint32 timeout;
-	RT_JSVAL_TO_INT32( argv[0], timeout );
+	J_JSVAL_TO_INT32( argv[0], timeout );
 	Sleep(timeout);
 	return JS_TRUE;
 }
@@ -265,7 +265,7 @@ DEFINE_FUNCTION( MessageBeep_ ) {
 
 	UINT type = -1;
 	if ( argc >= 1 )
-		RT_JSVAL_TO_INT32( argv[0], type );
+		J_JSVAL_TO_INT32( argv[0], type );
 	MessageBeep(type);
 	return JS_TRUE;
 }
@@ -279,10 +279,10 @@ DEFINE_FUNCTION( MessageBeep_ ) {
 **/
 DEFINE_FUNCTION( Beep_ ) {
 
-	RT_ASSERT_ARGC(2);
+	J_S_ASSERT_ARG_MIN(2);
 	DWORD freq, duration;
-	RT_JSVAL_TO_INT32( argv[0], freq );
-	RT_JSVAL_TO_INT32( argv[1], duration );
+	J_JSVAL_TO_INT32( argv[0], freq );
+	J_JSVAL_TO_INT32( argv[1], duration );
 	Beep(freq, duration);
 	return JS_TRUE;
 }
@@ -298,18 +298,18 @@ DEFINE_FUNCTION( Beep_ ) {
 DEFINE_PROPERTY( clipboardGetter ) {
 
 	BOOL res = OpenClipboard(NULL);
-	RT_ASSERT( res != 0, "Unable to open the clipboard." );
+	J_S_ASSERT( res != 0, "Unable to open the clipboard." );
 	if ( IsClipboardFormatAvailable(CF_TEXT) == 0 ) {
 
 		*vp = JSVAL_NULL;
 	} else {
 
 		HANDLE hglb = GetClipboardData(CF_TEXT);
-		RT_ASSERT_RESOURCE( hglb );
+		J_S_ASSERT_RESOURCE( hglb );
 		LPTSTR lptstr = (LPTSTR)GlobalLock(hglb);
-		RT_ASSERT( lptstr != NULL, "Unable to lock memory." );
+		J_S_ASSERT( lptstr != NULL, "Unable to lock memory." );
 		JSString *str = JS_NewStringCopyZ(cx, lptstr);
-		RT_ASSERT( str != NULL, "Unable to create the string.");
+		J_S_ASSERT( str != NULL, "Unable to create the string.");
 		*vp = STRING_TO_JSVAL(str);
 		GlobalUnlock(hglb);
 		CloseClipboard();
@@ -320,26 +320,26 @@ DEFINE_PROPERTY( clipboardGetter ) {
 DEFINE_PROPERTY( clipboardSetter ) {
 
 	BOOL res = OpenClipboard(NULL);
-	RT_ASSERT( res != 0, "Unable to open the clipboard." );
+	J_S_ASSERT( res != 0, "Unable to open the clipboard." );
 	EmptyClipboard(); // doc: If the application specifies a NULL window handle when opening the clipboard, EmptyClipboard succeeds but sets the clipboard owner to NULL. Note that this causes SetClipboardData to fail.
 	CloseClipboard();
 
 	if ( *vp != JSVAL_VOID ) {
 
 		res = OpenClipboard(NULL);
-		RT_ASSERT( res != 0, "Unable to open the clipboard." );
+		J_S_ASSERT( res != 0, "Unable to open the clipboard." );
 		const char *str;
 		size_t len;
 		J_CHK( JsvalToStringAndLength(cx, *vp, &str, &len) );
 		HGLOBAL hglbCopy = GlobalAlloc(GMEM_MOVEABLE, len + 1);
-		RT_ASSERT_ALLOC( hglbCopy );
+		J_S_ASSERT_ALLOC( hglbCopy );
 		LPTSTR lptstrCopy = (LPTSTR)GlobalLock(hglbCopy);
-		RT_ASSERT( lptstrCopy != NULL, "Unable to lock memory." );
+		J_S_ASSERT( lptstrCopy != NULL, "Unable to lock memory." );
 		memcpy(lptstrCopy, str, len + 1);
 		lptstrCopy[len] = 0;
 		GlobalUnlock(hglbCopy);
 		HANDLE h = SetClipboardData(CF_TEXT,hglbCopy);
-		RT_ASSERT( h != NULL, "Unable to SetClipboardData." );
+		J_S_ASSERT( h != NULL, "Unable to SetClipboardData." );
 		CloseClipboard();
 	}
 	return JS_TRUE;

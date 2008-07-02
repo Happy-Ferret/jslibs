@@ -32,7 +32,7 @@
 
 #define LOAD_OPENAL_EXTENSION( name, proto ) \
 	static proto name = (proto) alGetProcAddress( #name ); \
-	RT_ASSERT_1( name != NULL, "OpenAL extension %s unavailable.", #name );
+	J_S_ASSERT_1( name != NULL, "OpenAL extension %s unavailable.", #name );
 
 
 
@@ -44,8 +44,8 @@ BEGIN_CLASS( Oal )
 /*
 DEFINE_FUNCTION_FAST( GetBoolean ) {
 
-	RT_ASSERT_ARGC(1);
-	RT_ASSERT_INT(J_FARG(1));
+	J_S_ASSERT_ARG_MIN(1);
+	J_S_ASSERT_INT(J_FARG(1));
 	GLboolean params;
 	glGetBooleanv(JSVAL_TO_INT(J_FARG(1)), &params);
 	*J_FRVAL = BOOLEAN_TO_JSVAL(params);
@@ -60,9 +60,9 @@ DEFINE_FUNCTION_FAST( MultiTexCoord ) {
 	LOAD_OPENGL_EXTENSION( glMultiTexCoord2d, PFNGLMULTITEXCOORD2DARBPROC );
 	LOAD_OPENGL_EXTENSION( glMultiTexCoord3d, PFNGLMULTITEXCOORD3DARBPROC );
 
-	RT_ASSERT_ARGC(2);
+	J_S_ASSERT_ARG_MIN(2);
 
-	RT_ASSERT_INT(J_FARG(1));
+	J_S_ASSERT_INT(J_FARG(1));
 	GLenum target = JSVAL_TO_INT(J_FARG(1));
 	
 	*J_FRVAL = JSVAL_VOID;
@@ -87,7 +87,7 @@ DEFINE_FUNCTION_FAST( MultiTexCoord ) {
 		glMultiTexCoord3d(target, s, t, r);
 		return JS_TRUE;	
 	}
-	REPORT_ERROR("Invalid argument.");
+	J_REPORT_ERROR("Invalid argument.");
 	return JS_TRUE;
 }
 */
@@ -110,9 +110,9 @@ DEFINE_FUNCTION_FAST( PlaySound_ ) {
 	JSObject *bstrObj = JSVAL_TO_OBJECT(J_FARG(1));
 
 	int rate, channels, bits;
-	J_CHECK_CALL( GetPropertyInt(cx, bstrObj, "rate", &rate) );
-	J_CHECK_CALL( GetPropertyInt(cx, bstrObj, "channels", &channels) );
-	J_CHECK_CALL( GetPropertyInt(cx, bstrObj, "bits", &bits) );
+	J_CHK( GetPropertyInt(cx, bstrObj, "rate", &rate) );
+	J_CHK( GetPropertyInt(cx, bstrObj, "channels", &channels) );
+	J_CHK( GetPropertyInt(cx, bstrObj, "bits", &bits) );
 
 	const char *buffer;
 	size_t bufferLength;

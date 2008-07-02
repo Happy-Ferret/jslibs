@@ -59,8 +59,8 @@ DEFINE_FINALIZE() {
 **/
 DEFINE_CONSTRUCTOR() {
 
-	RT_ASSERT_CONSTRUCTING( _class );
-	RT_ASSERT_ARGC(1);
+	J_S_ASSERT_CONSTRUCTING( _class );
+	J_S_ASSERT_ARG_MIN(1);
 	JS_SetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, J_ARG(1) );
 	JS_SetPrivate(cx, obj, NULL); // (TBD) optional ?
 	InitStreamReadInterface(cx, obj);
@@ -81,12 +81,12 @@ DEFINE_CONSTRUCTOR() {
 **/
 DEFINE_FUNCTION( Open ) {
 
-	RT_ASSERT_ARGC(1);
-	RT_ASSERT( JS_GetPrivate( cx, obj ) == NULL, "File is already open." );
+	J_S_ASSERT_ARG_MIN(1);
+	J_S_ASSERT( JS_GetPrivate( cx, obj ) == NULL, "File is already open." );
 
 	jsval jsvalFileName;
 	JS_GetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName );
-	RT_ASSERT_DEFINED( jsvalFileName );
+	J_S_ASSERT_DEFINED( jsvalFileName );
 	const char *fileName;
 	J_CHK( JsvalToString(cx, jsvalFileName, &fileName) );
 
@@ -105,7 +105,7 @@ DEFINE_FUNCTION( Open ) {
 	PRIntn mode;
 	if ( J_ARG_ISDEF(2) ) {
 		
-		RT_JSVAL_TO_INT32( J_ARG(2), mode );
+		J_JSVAL_TO_INT32( J_ARG(2), mode );
 	} else {
 
 		mode = PR_IRUSR + PR_IWUSR; // read write permission, owner
@@ -116,7 +116,7 @@ DEFINE_FUNCTION( Open ) {
 		return ThrowIoError(cx);
 	JS_SetPrivate( cx, obj, fd );
 	
-//	J_CHECK_CALL( SetStreamReadInterface(cx, obj, NativeInterfaceStreamRead) );
+//	J_CHK( SetStreamReadInterface(cx, obj, NativeInterfaceStreamRead) );
 
 	J_CHK( InitStreamReadInterface(cx, obj) ); // this reserves the NativeInterface, then it can be switched on/off safely (see Descriptor::Close)
 	J_CHK( SetStreamReadInterface(cx, obj, NativeInterfaceStreamRead) );
@@ -133,7 +133,7 @@ DEFINE_FUNCTION( Open ) {
 DEFINE_FUNCTION( Seek ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
-	RT_ASSERT( fd != NULL, "File is closed." );
+	J_S_ASSERT( fd != NULL, "File is closed." );
 
 	PRInt64 offset;
 	if ( J_ARG_ISDEF(1) ) {
@@ -171,10 +171,10 @@ DEFINE_FUNCTION( Seek ) {
 DEFINE_FUNCTION( Delete ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
-	RT_ASSERT( fd == NULL, "Cannot delete an open file." );
+	J_S_ASSERT( fd == NULL, "Cannot delete an open file." );
 	jsval jsvalFileName;
 	JS_GetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName );
-	RT_ASSERT_DEFINED( jsvalFileName );
+	J_S_ASSERT_DEFINED( jsvalFileName );
 	const char *fileName;
 	J_CHK( JsvalToString(cx, jsvalFileName, &fileName) );
 	if ( PR_Delete(fileName) != PR_SUCCESS )
@@ -190,11 +190,11 @@ DEFINE_FUNCTION( Delete ) {
 **/
 DEFINE_FUNCTION( Lock ) {
 
-	RT_ASSERT_ARGC( 1 );
+	J_S_ASSERT_ARG_MIN( 1 );
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
-	RT_ASSERT_RESOURCE( fd );
+	J_S_ASSERT_RESOURCE( fd );
 	bool doLock;
-	RT_JSVAL_TO_BOOL( J_ARG(1), doLock );
+	J_JSVAL_TO_BOOL( J_ARG(1), doLock );
 	PRStatus st = doLock ? PR_LockFile(fd) : PR_UnlockFile(fd);
 	if ( st != PR_SUCCESS )
 		return ThrowIoError(cx);
@@ -213,10 +213,10 @@ DEFINE_FUNCTION( Lock ) {
 DEFINE_PROPERTY( positionSetter ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
-	RT_ASSERT_RESOURCE( fd );
+	J_S_ASSERT_RESOURCE( fd );
 	PRInt64 offset;
 	jsdouble doubleOffset;
-	J_CHECK_CALL( JS_ValueToNumber( cx, *vp, &doubleOffset ) );
+	J_CHK( JS_ValueToNumber( cx, *vp, &doubleOffset ) );
 	offset = (PRInt64)doubleOffset;
 	PRInt64 ret = PR_Seek64( fd, offset, PR_SEEK_SET );
 	if ( ret == -1 )
@@ -227,11 +227,11 @@ DEFINE_PROPERTY( positionSetter ) {
 DEFINE_PROPERTY( positionGetter ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
-	RT_ASSERT_RESOURCE( fd );
+	J_S_ASSERT_RESOURCE( fd );
 	PRInt64 ret = PR_Seek64( fd, 0, PR_SEEK_CUR );
 	if ( ret == -1 )
 		return ThrowIoError(cx);
-	J_CHECK_CALL( JS_NewNumberValue(cx, ret, vp) );
+	J_CHK( JS_NewNumberValue(cx, ret, vp) );
 	return JS_TRUE;
 }
 
@@ -243,10 +243,10 @@ DEFINE_PROPERTY( positionGetter ) {
 **/
 DEFINE_PROPERTY( contentGetter ) { // (TBD) support BString
 
-	RT_ASSERT( (PRFileDesc *)JS_GetPrivate( cx, obj ) == NULL, "Cannot get content of an open file.");
+	J_S_ASSERT( (PRFileDesc *)JS_GetPrivate( cx, obj ) == NULL, "Cannot get content of an open file.");
 	jsval jsvalFileName;
 	JS_GetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName );
-	RT_ASSERT_DEFINED( jsvalFileName );
+	J_S_ASSERT_DEFINED( jsvalFileName );
 	const char *fileName;
 	J_CHK( JsvalToString(cx, jsvalFileName, &fileName) );
 
@@ -270,7 +270,7 @@ DEFINE_PROPERTY( contentGetter ) { // (TBD) support BString
 	if ( available == -1 )
 		return ThrowIoError(cx);
 	char *buf = (char*)JS_malloc( cx, available +1 );
-	RT_ASSERT_ALLOC(buf);
+	J_S_ASSERT_ALLOC(buf);
 	buf[available] = '\0';
 
 	PRInt32 res = PR_Read( fd, buf, available );
@@ -290,10 +290,10 @@ DEFINE_PROPERTY( contentGetter ) { // (TBD) support BString
 	if ( MaybeRealloc( available, res ) ) { // should never occured
 
 		buf = (char*)JS_realloc(cx, buf, res + 1); // realloc the string using its real size
-		RT_ASSERT_ALLOC(buf);
+		J_S_ASSERT_ALLOC(buf);
 	}
 	JSString *str = JS_NewString( cx, (char*)buf, res );
-	RT_ASSERT_ALLOC(str);
+	J_S_ASSERT_ALLOC(str);
 	*vp = STRING_TO_JSVAL(str);
 	return JS_TRUE;
 }
@@ -301,11 +301,11 @@ DEFINE_PROPERTY( contentGetter ) { // (TBD) support BString
 
 DEFINE_PROPERTY( contentSetter ) { // (TBD) support BString
 
-//	RT_ASSERT_DEFINED( *vp );
-	RT_ASSERT( (PRFileDesc *)JS_GetPrivate( cx, obj ) == NULL, "Cannot set content of an open file.");
+//	J_S_ASSERT_DEFINED( *vp );
+	J_S_ASSERT( (PRFileDesc *)JS_GetPrivate( cx, obj ) == NULL, "Cannot set content of an open file.");
 	jsval jsvalFileName;
 	JS_GetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName );
-	RT_ASSERT_DEFINED( jsvalFileName );
+	J_S_ASSERT_DEFINED( jsvalFileName );
 	const char *fileName;
 	J_CHK( JsvalToString(cx, jsvalFileName, &fileName) );
 	if ( *vp == JSVAL_VOID ) {
@@ -328,7 +328,7 @@ DEFINE_PROPERTY( contentSetter ) { // (TBD) support BString
 	PRInt32 bytesSent = PR_Write( fd, buf, len );
 	if ( bytesSent == -1 )
 		return ThrowIoError(cx);
-	RT_ASSERT( bytesSent == len, "unable to set content" );
+	J_S_ASSERT( bytesSent == len, "unable to set content" );
 	if ( PR_Close(fd) != PR_SUCCESS )
 		return ThrowIoError(cx);
 	return JS_TRUE;
@@ -347,13 +347,13 @@ DEFINE_PROPERTY( nameGetter ) {
 
 DEFINE_PROPERTY( nameSetter ) {
 
-	RT_ASSERT_DEFINED( *vp );
+	J_S_ASSERT_DEFINED( *vp );
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
-	RT_ASSERT( fd == NULL, "Cannot rename an open file.");
+	J_S_ASSERT( fd == NULL, "Cannot rename an open file.");
 	jsval jsvalFileName;
 	JS_GetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName );
-	RT_ASSERT_DEFINED( jsvalFileName );
+	J_S_ASSERT_DEFINED( jsvalFileName );
 	const char *fromFileName, *toFileName;
 	J_CHK( JsvalToString(cx, jsvalFileName, &fromFileName) );
 	J_CHK( JsvalToString(cx, *vp, &toFileName) );
@@ -373,7 +373,7 @@ DEFINE_PROPERTY( exist ) {
 	jsval jsvalFileName;
 //	JS_GetProperty( cx, obj, "fileName", &jsvalFileName );
 	JS_GetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName );
-	RT_ASSERT_DEFINED( jsvalFileName );
+	J_S_ASSERT_DEFINED( jsvalFileName );
 	const char *fileName;
 	J_CHK( JsvalToString(cx, jsvalFileName, &fileName) );
 	PRStatus status = PR_Access( fileName, PR_ACCESS_EXISTS );
@@ -399,7 +399,7 @@ DEFINE_PROPERTY( info ) {
 
 		jsval jsvalFileName;
 		JS_GetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName );
-		RT_ASSERT_DEFINED( jsvalFileName );
+		J_S_ASSERT_DEFINED( jsvalFileName );
 		const char *fileName;
 		J_CHK( JsvalToString(cx, jsvalFileName, &fileName) );
 

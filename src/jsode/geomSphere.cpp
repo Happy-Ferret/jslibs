@@ -36,10 +36,10 @@ DEFINE_FINALIZE() {
 
 DEFINE_CONSTRUCTOR() {
 
-	RT_ASSERT_CONSTRUCTING(&classGeomSphere);
+	J_S_ASSERT_CONSTRUCTING(&classGeomSphere);
 	ode::dSpaceID space = 0;
 	if ( argc >= 1 ) // place it in a space ?
-		RT_CHECK_CALL( ValToSpaceID(cx, argv[0], &space) );
+		J_CHK( ValToSpaceID(cx, argv[0], &space) );
 	ode::dGeomID geomId = ode::dCreateSphere(space, 1); // default radius is 1
 	JS_SetPrivate(cx, obj, geomId);
 	SetupReadMatrix(cx, obj); // (TBD) check return status
@@ -57,8 +57,8 @@ DEFINE_CONSTRUCTOR() {
 DEFINE_PROPERTY( radiusSetter ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE( geom );
-	RT_ASSERT_NUMBER( *vp );
+	J_S_ASSERT_RESOURCE( geom );
+	J_S_ASSERT_NUMBER( *vp );
 	jsdouble radius;
 	JS_ValueToNumber(cx, *vp, &radius);
 	ode::dGeomSphereSetRadius(geom, radius);
@@ -68,7 +68,7 @@ DEFINE_PROPERTY( radiusSetter ) {
 DEFINE_PROPERTY( radiusGetter ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE( geom );
+	J_S_ASSERT_RESOURCE( geom );
 	JS_NewDoubleValue(cx, ode::dGeomSphereGetRadius(geom), vp); // see JS_NewNumberValue and JS_NewDouble
 	return JS_TRUE;
 }

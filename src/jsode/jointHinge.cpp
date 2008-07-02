@@ -33,7 +33,7 @@ DEFINE_CONSTRUCTOR() {
 
 	J_S_ASSERT_CONSTRUCTING();
 	J_S_ASSERT_THIS_CLASS();
-	RT_ASSERT_ARGC(1);
+	J_S_ASSERT_ARG_MIN(1);
 	ode::dWorldID worldId;
 	if ( ValToWorldID( cx, argv[0], &worldId) == JS_FALSE )
 		return JS_FALSE;
@@ -49,9 +49,9 @@ DEFINE_CONSTRUCTOR() {
 **/
 DEFINE_FUNCTION( AddTorque ) {
 
-	RT_ASSERT_ARGC(1);
+	J_S_ASSERT_ARG_MIN(1);
 	ode::dJointID jointId = (ode::dJointID)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE(jointId);
+	J_S_ASSERT_RESOURCE(jointId);
 	jsdouble torque;
 	JS_ValueToNumber(cx, argv[0], &torque);
 	ode::dJointAddHingeTorque(jointId, torque);
@@ -70,7 +70,7 @@ DEFINE_FUNCTION( AddTorque ) {
 DEFINE_PROPERTY( anchorSetter ) {
 
 	ode::dJointID jointId = (ode::dJointID)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE(jointId); // (TBD) check if NULL is meaningful for joints !
+	J_S_ASSERT_RESOURCE(jointId); // (TBD) check if NULL is meaningful for joints !
 	ode::dVector3 vector;
 	FloatArrayToVector(cx, 3, vp, vector);
 	ode::dJointSetHingeAnchor( jointId, vector[0], vector[1], vector[2] );
@@ -80,7 +80,7 @@ DEFINE_PROPERTY( anchorSetter ) {
 DEFINE_PROPERTY( anchorGetter ) {
 
 	ode::dJointID jointId = (ode::dJointID)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE(jointId);
+	J_S_ASSERT_RESOURCE(jointId);
 	ode::dVector3 vector;
 	ode::dJointGetHingeAnchor(jointId,vector);
 	FloatVectorToArray(cx, 3, vector, vp);
@@ -94,7 +94,7 @@ DEFINE_PROPERTY( anchorGetter ) {
 DEFINE_PROPERTY( anchor2 ) { // read only
 
 	ode::dJointID jointId = (ode::dJointID)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE(jointId);
+	J_S_ASSERT_RESOURCE(jointId);
 	ode::dVector3 vector;
 	ode::dJointGetHingeAnchor2(jointId,vector);
 	FloatVectorToArray(cx, 3, vector, vp);
@@ -108,7 +108,7 @@ DEFINE_PROPERTY( anchor2 ) { // read only
 DEFINE_PROPERTY( axisSetter ) {
 
 	ode::dJointID jointId = (ode::dJointID)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE(jointId); // (TBD) check if NULL is meaningful for joints !
+	J_S_ASSERT_RESOURCE(jointId); // (TBD) check if NULL is meaningful for joints !
 	ode::dVector3 vector;
 	FloatArrayToVector(cx, 3, vp, vector);
 	ode::dJointSetHingeAxis( jointId, vector[0], vector[1], vector[2] );
@@ -118,7 +118,7 @@ DEFINE_PROPERTY( axisSetter ) {
 DEFINE_PROPERTY( axisGetter ) {
 
 	ode::dJointID jointId = (ode::dJointID)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE(jointId);
+	J_S_ASSERT_RESOURCE(jointId);
 	ode::dVector3 vector;
 	ode::dJointGetHingeAxis(jointId,vector);
 	FloatVectorToArray(cx, 3, vector, vp);
@@ -132,7 +132,7 @@ DEFINE_PROPERTY( axisGetter ) {
 DEFINE_PROPERTY( angle ) {
 
 	ode::dJointID jointId = (ode::dJointID)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE(jointId);
+	J_S_ASSERT_RESOURCE(jointId);
 	JS_NewDoubleValue(cx, ode::dJointGetHingeAngle(jointId), vp);
 	return JS_TRUE;
 }
@@ -144,7 +144,7 @@ DEFINE_PROPERTY( angle ) {
 DEFINE_PROPERTY( angleRate ) {
 
 	ode::dJointID jointId = (ode::dJointID)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE(jointId);
+	J_S_ASSERT_RESOURCE(jointId);
 	JS_NewDoubleValue(cx, ode::dJointGetHingeAngleRate(jointId), vp);
 	return JS_TRUE;
 }

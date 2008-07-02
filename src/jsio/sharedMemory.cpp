@@ -57,7 +57,7 @@ JSBool Unlock( JSContext *cx, ClassPrivate *pv ) {
 static JSBool BufferGet( JSContext *cx, JSObject *obj, const char **buf, size_t *size ) {
 
 	ClassPrivate *pv = (ClassPrivate*)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE( pv );
+	J_S_ASSERT_RESOURCE( pv );
 	MemHeader *mh = (MemHeader*)pv->mem;
 	*buf = (char *)pv->mem + sizeof(MemHeader);
 	*size = mh->currentDataLength;
@@ -115,18 +115,18 @@ DEFINE_FINALIZE() {
 **/
 DEFINE_CONSTRUCTOR() {
 
-	RT_ASSERT_CONSTRUCTING( _class );
-	RT_ASSERT_ARGC( 2 );
+	J_S_ASSERT_CONSTRUCTING( _class );
+	J_S_ASSERT_ARG_MIN( 2 );
 
 	const char *name;
 	J_CHK( JsvalToString(cx, J_ARG(1), &name) );
 
 	PRSize size;
-	RT_JSVAL_TO_INT32( J_ARG(2), size );
+	J_JSVAL_TO_INT32( J_ARG(2), size );
 
 	PRUintn mode = PR_IRUSR | PR_IWUSR; // read write permission for owner.
 	if ( J_ARG_ISDEF(3) )
-		RT_JSVAL_TO_INT32( J_ARG(3), mode );
+		J_JSVAL_TO_INT32( J_ARG(3), mode );
 
 	char semName[PATH_MAX];
 	strcpy(semName, name);
@@ -157,7 +157,7 @@ DEFINE_CONSTRUCTOR() {
 		return ThrowIoError(cx);
 
 	ClassPrivate *pv = (ClassPrivate*)malloc( sizeof(ClassPrivate) );
-	RT_ASSERT_ALLOC( pv );
+	J_S_ASSERT_ALLOC( pv );
 
 	strcpy(pv->name, name);
 	pv->shm = shm;
@@ -177,7 +177,7 @@ DEFINE_CONSTRUCTOR() {
 	if ( status != PR_SUCCESS )
 		return ThrowIoError(cx);
 
-	RT_CHECK_CALL( JS_SetPrivate(cx, obj, pv) );
+	J_CHK( JS_SetPrivate(cx, obj, pv) );
 
 	J_CHK( SetBufferGetInterface(cx, obj, BufferGet) );
 
@@ -195,9 +195,9 @@ DEFINE_CONSTRUCTOR() {
 **/
 DEFINE_FUNCTION_FAST( Write ) {
 
-	RT_ASSERT_ARGC( 1 );
+	J_S_ASSERT_ARG_MIN( 1 );
 	ClassPrivate *pv = (ClassPrivate*)JS_GetPrivate(cx, J_FOBJ);
-	RT_ASSERT_RESOURCE( pv );
+	J_S_ASSERT_RESOURCE( pv );
 
 	const char *data;
 	size_t dataLength;
@@ -205,18 +205,18 @@ DEFINE_FUNCTION_FAST( Write ) {
 
 	PRSize offset = 0;
 	if ( J_FARG_ISDEF(2) )
-		RT_JSVAL_TO_INT32( J_FARG(2), offset );
+		J_JSVAL_TO_INT32( J_FARG(2), offset );
 
-	RT_ASSERT( sizeof(MemHeader) + offset + dataLength <= pv->size, "SharedMemory too small to hold the given data." );
+	J_S_ASSERT( sizeof(MemHeader) + offset + dataLength <= pv->size, "SharedMemory too small to hold the given data." );
 
-	RT_CHECK_CALL( Lock(cx, pv) );
+	J_CHK( Lock(cx, pv) );
 
 	MemHeader *mh = (MemHeader*)pv->mem;
 	if ( offset + dataLength > mh->currentDataLength )
 		mh->currentDataLength = offset + dataLength;
 	memmove(	(char *)pv->mem + sizeof(MemHeader) + offset, data, dataLength );
 
-	RT_CHECK_CALL( Unlock(cx, pv) );
+	J_CHK( Unlock(cx, pv) );
 
 	return JS_TRUE;
 }
@@ -229,18 +229,18 @@ DEFINE_FUNCTION_FAST( Write ) {
 DEFINE_FUNCTION_FAST( Read ) {
 
 	ClassPrivate *pv = (ClassPrivate*)JS_GetPrivate(cx, J_FOBJ);
-	RT_ASSERT_RESOURCE( pv );
+	J_S_ASSERT_RESOURCE( pv );
 
 	unsigned int offset = 0;
 	if ( J_FARG_ISDEF(2) )
-		RT_JSVAL_TO_INT32( J_FARG(2), offset );
+		J_JSVAL_TO_INT32( J_FARG(2), offset );
 
-	RT_CHECK_CALL( Lock(cx, pv) );
+	J_CHK( Lock(cx, pv) );
 	MemHeader *mh = (MemHeader*)pv->mem;
 	
 	unsigned int dataLength;
 	if ( J_FARG_ISDEF(1) )
-		RT_JSVAL_TO_INT32( J_FARG(1), dataLength );
+		J_JSVAL_TO_INT32( J_FARG(1), dataLength );
 	else
 		dataLength = mh->currentDataLength;
 
@@ -249,10 +249,10 @@ DEFINE_FUNCTION_FAST( Read ) {
 
 	memmove(	data, (char *)pv->mem + sizeof(MemHeader) + offset, dataLength );
 
-	RT_CHECK_CALL( Unlock(cx, pv) );
+	J_CHK( Unlock(cx, pv) );
 	
 	JSString *jss = JS_NewString(cx, data, dataLength);
-	RT_ASSERT_ALLOC( jss );
+	J_S_ASSERT_ALLOC( jss );
 	*J_FRVAL = STRING_TO_JSVAL( jss );
 	
 	return JS_TRUE;
@@ -265,15 +265,15 @@ DEFINE_FUNCTION_FAST( Read ) {
 **/
 DEFINE_FUNCTION_FAST( Clear ) {
 
-	RT_ASSERT_ARGC( 1 );
+	J_S_ASSERT_ARG_MIN( 1 );
 	ClassPrivate *pv = (ClassPrivate*)JS_GetPrivate(cx, J_FOBJ);
-	RT_ASSERT_RESOURCE( pv );
+	J_S_ASSERT_RESOURCE( pv );
 
-	RT_CHECK_CALL( Lock(cx, pv) );
+	J_CHK( Lock(cx, pv) );
 	MemHeader *mh = (MemHeader*)pv->mem;
 	mh->currentDataLength = 0;
 	memset( (char *)pv->mem + sizeof(MemHeader), 0, pv->size - sizeof(MemHeader) );
-	RT_CHECK_CALL( Unlock(cx, pv) );
+	J_CHK( Unlock(cx, pv) );
 
 	return JS_TRUE;
 }
@@ -289,31 +289,31 @@ DEFINE_FUNCTION_FAST( Clear ) {
 DEFINE_PROPERTY( contentSetter ) { // (TBD) support BString
 
 	ClassPrivate *pv = (ClassPrivate*)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE( pv );
+	J_S_ASSERT_RESOURCE( pv );
 
 	if ( *vp == JSVAL_VOID ) {
 
-		RT_CHECK_CALL( Lock(cx, pv) );
+		J_CHK( Lock(cx, pv) );
 		MemHeader *mh = (MemHeader*)pv->mem;
 		mh->currentDataLength = 0;
 		memset( (char *)pv->mem + sizeof(MemHeader), 0, pv->size - sizeof(MemHeader) );
-		RT_CHECK_CALL( Unlock(cx, pv) );
+		J_CHK( Unlock(cx, pv) );
 	} else {
 
 		const char *data;
 		size_t dataLength;
 		J_CHK( JsvalToStringAndLength(cx, *vp, &data, &dataLength) );
 
-		RT_ASSERT( sizeof(MemHeader) + dataLength <= pv->size, "SharedMemory too small to hold the given data." );
+		J_S_ASSERT( sizeof(MemHeader) + dataLength <= pv->size, "SharedMemory too small to hold the given data." );
 
-		RT_CHECK_CALL( Lock(cx, pv) );
+		J_CHK( Lock(cx, pv) );
 
 		MemHeader *mh = (MemHeader*)pv->mem;
 		if ( dataLength > mh->currentDataLength )
 			mh->currentDataLength = dataLength;
 		memmove(	(char *)pv->mem + sizeof(MemHeader), data, dataLength );
 
-		RT_CHECK_CALL( Unlock(cx, pv) );
+		J_CHK( Unlock(cx, pv) );
 	}
 	return JS_TRUE;
 }
@@ -324,9 +324,9 @@ DEFINE_PROPERTY( contentGetter ) { // (TBD) support BString
 //	*vp = STRING_TO_JSVAL( JS_NewStringCopyZ(cx, "123456789ABC") );
 //	return JS_TRUE;
 	ClassPrivate *pv = (ClassPrivate*)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE( pv );
+	J_S_ASSERT_RESOURCE( pv );
 
-	RT_CHECK_CALL( Lock(cx, pv) );
+	J_CHK( Lock(cx, pv) );
 
 	MemHeader *mh = (MemHeader*)pv->mem;
 
@@ -336,10 +336,10 @@ DEFINE_PROPERTY( contentGetter ) { // (TBD) support BString
 
 	memmove(	data, (char *)pv->mem + sizeof(MemHeader), dataLength );
 
-	RT_CHECK_CALL( Unlock(cx, pv) );
+	J_CHK( Unlock(cx, pv) );
 
 	JSString *jss = JS_NewString(cx, data, dataLength);
-	RT_ASSERT_ALLOC( jss );
+	J_S_ASSERT_ALLOC( jss );
 	*vp = STRING_TO_JSVAL( jss );
 
 	return JS_TRUE;
@@ -357,19 +357,19 @@ TypeError: can't XDR class Array
 DEFINE_PROPERTY( xdrSetter ) {
 
 	ClassPrivate *pv = (ClassPrivate*)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE( pv );
+	J_S_ASSERT_RESOURCE( pv );
 
-	RT_CHECK_CALL( Lock(cx, pv) );
+	J_CHK( Lock(cx, pv) );
 	MemHeader *mh = (MemHeader*)pv->mem;
 
 	JSXDRState *xdr = JS_XDRNewMem(cx, JSXDR_ENCODE);
-	RT_ASSERT( xdr, "Unable to create XDR encoder." );
+	J_S_ASSERT( xdr, "Unable to create XDR encoder." );
 
-	RT_CHECK_CALL( JS_XDRValue( xdr, vp ) );
+	J_CHK( JS_XDRValue( xdr, vp ) );
 
 	uint32 length;
 	void *buffer = JS_XDRMemGetData( xdr, &length );
-	RT_ASSERT( buffer, "Unable to create XDR data." );
+	J_S_ASSERT( buffer, "Unable to create XDR data." );
 
 	memmove( (char*)pv->mem + sizeof(MemHeader), buffer, length );
 
@@ -377,7 +377,7 @@ DEFINE_PROPERTY( xdrSetter ) {
 
 	JS_XDRDestroy( xdr );
 
-	RT_CHECK_CALL( Unlock(cx, pv) );
+	J_CHK( Unlock(cx, pv) );
 
 	return JS_TRUE;
 }
@@ -386,22 +386,22 @@ DEFINE_PROPERTY( xdrSetter ) {
 DEFINE_PROPERTY( xdrGetter ) {
 
 	ClassPrivate *pv = (ClassPrivate*)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE( pv );
+	J_S_ASSERT_RESOURCE( pv );
 
-	RT_CHECK_CALL( Lock(cx, pv) );
+	J_CHK( Lock(cx, pv) );
 	MemHeader *mh = (MemHeader*)pv->mem;
 	
 	JSXDRState *xdr = JS_XDRNewMem(cx, JSXDR_DECODE);
-	RT_ASSERT( xdr, "Unable to create XDR decoder." );
+	J_S_ASSERT( xdr, "Unable to create XDR decoder." );
 
 	JS_XDRMemSetData( xdr, (char*)pv->mem + sizeof(MemHeader), mh->currentDataLength );
 
-	RT_CHECK_CALL( JS_XDRValue(xdr, vp) );
+	J_CHK( JS_XDRValue(xdr, vp) );
 
 	JS_XDRMemSetData(xdr, NULL, 0);
 	JS_XDRDestroy(xdr);
 
-	RT_CHECK_CALL( Unlock(cx, pv) );
+	J_CHK( Unlock(cx, pv) );
 	return JS_TRUE;
 }
 */

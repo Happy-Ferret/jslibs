@@ -75,16 +75,16 @@ DEFINE_FINALIZE() {
 DEFINE_CONSTRUCTOR() {
 
 	J_S_ASSERT_CONSTRUCTING();
-//	RT_ASSERT_CLASS(&classBody);
+//	J_S_ASSERT_CLASS(&classBody);
 	J_S_ASSERT_THIS_CLASS();
 
-	RT_ASSERT_ARGC(1);
+	J_S_ASSERT_ARG_MIN(1);
 
 	ode::dWorldID worldId;
 	ValToWorldID(cx, argv[0], &worldId);
 
 	ode::dBodyID bodyID = ode::dBodyCreate(worldId);
-	RT_ASSERT( bodyID != NULL, "unable to create the body." );
+	J_S_ASSERT( bodyID != NULL, "unable to create the body." );
 
 	JS_SetPrivate(cx, obj, bodyID);
 	JS_SetReservedSlot(cx, obj, BODY_SLOT_WORLD, argv[0]);
@@ -93,7 +93,7 @@ DEFINE_CONSTRUCTOR() {
 //	ode::dBodySetData(bodyID, obj);
 
 //	ode::dBodySetData(bodyID,worldObject);
-	J_CHECK_CALL( SetMatrix44GetInterface(cx, obj, ReadMatrix) );
+	J_CHK( SetMatrix44GetInterface(cx, obj, ReadMatrix) );
 	return JS_TRUE;
 }
 
@@ -107,9 +107,9 @@ DEFINE_CONSTRUCTOR() {
 **/
 DEFINE_FUNCTION( Destroy ) {
 
-	RT_ASSERT_CLASS(obj, &classBody);
+	J_S_ASSERT_CLASS(obj, &classBody);
 	ode::dBodyID bodyId = (ode::dBodyID)JS_GetPrivate( cx, obj );
-	RT_ASSERT_RESOURCE( bodyId ); // (TBD) manage world-connected ( when bodyId == 0 )
+	J_S_ASSERT_RESOURCE( bodyId ); // (TBD) manage world-connected ( when bodyId == 0 )
 	dBodyDestroy(bodyId);
 	JS_SetPrivate(cx, obj, NULL);
 	JS_SetReservedSlot(cx, obj, BODY_SLOT_WORLD, JSVAL_VOID);
@@ -122,10 +122,10 @@ DEFINE_FUNCTION( Destroy ) {
 **/
 DEFINE_FUNCTION( IsConnectedTo ) {
 
-	RT_ASSERT_ARGC(1);
-	RT_ASSERT_CLASS(obj, &classBody);
+	J_S_ASSERT_ARG_MIN(1);
+	J_S_ASSERT_CLASS(obj, &classBody);
 	ode::dBodyID thisBodyID = (ode::dBodyID)JS_GetPrivate( cx, obj );
-	RT_ASSERT_RESOURCE( thisBodyID );
+	J_S_ASSERT_RESOURCE( thisBodyID );
 	ode::dBodyID bodyId;
 	ValToBodyID(cx, argv[0], &bodyId);
 	ode::dAreConnected(thisBodyID, bodyId);
@@ -160,7 +160,7 @@ enum { position, quaternion, linearVel, angularVel, force, torque };
 DEFINE_PROPERTY( vectorGetter ) {
 
 	ode::dBodyID bodyID = (ode::dBodyID)JS_GetPrivate(cx, obj);
-	RT_ASSERT_RESOURCE( bodyID );
+	J_S_ASSERT_RESOURCE( bodyID );
 	const ode::dReal *vector;
 	int dim;
 	switch(JSVAL_TO_INT(id)) {
@@ -197,7 +197,7 @@ DEFINE_PROPERTY( vectorGetter ) {
 DEFINE_PROPERTY( vectorSetter ) {
 
 	ode::dBodyID bodyID = (ode::dBodyID)JS_GetPrivate( cx, obj );
-	RT_ASSERT_RESOURCE( bodyID );
+	J_S_ASSERT_RESOURCE( bodyID );
 	ode::dVector3 vector;
 	switch(JSVAL_TO_INT(id)) {
 		case position:
@@ -237,7 +237,7 @@ DEFINE_PROPERTY( mass ) {
 	if ( *vp == JSVAL_VOID ) { // if mass do not exist, we have to create it and store it
 
 		JSObject *massObject = JS_NewObject(cx, &classMass, NULL, NULL);
-		RT_ASSERT(massObject != NULL, "unable to construct Mass object.");
+		J_S_ASSERT(massObject != NULL, "unable to construct Mass object.");
 		JS_SetReservedSlot(cx, massObject, MASS_SLOT_BODY, OBJECT_TO_JSVAL(obj));
 		*vp = OBJECT_TO_JSVAL(massObject);
 	}
@@ -248,12 +248,12 @@ DEFINE_PROPERTY( mass ) {
 //JSBool body_set_mass(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 //
 //	ode::dBodyID bodyID = (ode::dBodyID)JS_GetPrivate( cx, obj );
-//	RT_ASSERT( bodyID != NULL, RT_ERROR_NOT_INITIALIZED );
+//	J_S_ASSERT( bodyID != NULL, RT_ERROR_NOT_INITIALIZED );
 //	JSObject *massObject;
 //	JS_ValueToObject(cx, *vp, &massObject);
-//	RT_ASSERT_CLASS(massObject, &mass_class);
+//	J_S_ASSERT_CLASS(massObject, &mass_class);
 //	ode::dMass *mass = (ode::dMass*)JS_GetPrivate(cx, massObject);
-//	RT_ASSERT(mass != NULL, RT_ERROR_NOT_INITIALIZED);
+//	J_S_ASSERT(mass != NULL, RT_ERROR_NOT_INITIALIZED);
 //
 //	ode::dBodySetMass(bodyID, mass);
 //	return JS_TRUE;

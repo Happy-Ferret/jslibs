@@ -84,7 +84,7 @@ JSBool BStringToJSString( JSContext *cx, JSObject *obj, JSString **jsstr ) {
 
 	void *pv = JS_GetPrivate(cx, obj);
 	size_t length;
-	J_CHECK_CALL( BStringLength(cx, obj, &length) );
+	J_CHK( BStringLength(cx, obj, &length) );
 	if ( pv == NULL || length == 0 ) {
 
 		*jsstr = JSVAL_TO_STRING( JS_GetEmptyStringValue(cx) );
@@ -128,8 +128,8 @@ DEFINE_CONSTRUCTOR() {
 
 		size_t length;
 		const char *sBuffer;
-		J_CHECK_CALL( JsvalToStringAndLength(cx, J_ARG(1), &sBuffer, &length) );
-		J_CHECK_CALL( LengthSet(cx, obj, length) );
+		J_CHK( JsvalToStringAndLength(cx, J_ARG(1), &sBuffer, &length) );
+		J_CHK( LengthSet(cx, obj, length) );
 		void *dBuffer = JS_malloc(cx, length +1);
 		((char*)dBuffer)[length] = '\0';
 		memcpy(dBuffer, sBuffer, length);
@@ -160,12 +160,12 @@ DEFINE_FUNCTION_FAST( Set ) {
 		void *pv = JS_GetPrivate(cx, J_FOBJ);
 		if (pv != NULL)
 			JS_free(cx, pv);
-		J_CHECK_CALL( JS_SetPrivate(cx, J_FOBJ, NULL) );
-		J_CHECK_CALL( LengthSet(cx, J_FOBJ, 0) );
+		J_CHK( JS_SetPrivate(cx, J_FOBJ, NULL) );
+		J_CHK( LengthSet(cx, J_FOBJ, 0) );
 		return JS_TRUE;
 	}
 
-	J_CHECK_CALL( JsvalToBString(cx, J_FOBJ, J_FARG(1)) );
+	J_CHK( JsvalToBString(cx, J_FOBJ, J_FARG(1)) );
 	return JS_TRUE;
 }
 */
@@ -180,7 +180,7 @@ DEFINE_FUNCTION_FAST( Add ) {
 	J_S_ASSERT_ARG_MAX( 1 );
 
 	size_t length;
-	J_CHECK_CALL( BStringLength(cx, J_FOBJ, &length) );
+	J_CHK( BStringLength(cx, J_FOBJ, &length) );
 
 	size_t srcLen;
 	void *src, *dst;
@@ -228,8 +228,8 @@ DEFINE_FUNCTION_FAST( Add ) {
 		JS_free(cx, pv);
 	}
 
-	J_CHECK_CALL( LengthSet(cx, J_FOBJ, srcLen + length) );
-	J_CHECK_CALL( JS_SetPrivate(cx, J_FOBJ, dst) );
+	J_CHK( LengthSet(cx, J_FOBJ, srcLen + length) );
+	J_CHK( JS_SetPrivate(cx, J_FOBJ, dst) );
 
 	*J_FRVAL = OBJECT_TO_JSVAL( J_FOBJ );
 */
@@ -243,8 +243,8 @@ DEFINE_FUNCTION_FAST( Add ) {
 	JSObject *newBStrObj = JS_NewObject(cx, _class, NULL, NULL);
 	J_S_ASSERT( newBStrObj != NULL, "Unable to create the new BString" );
 
-	J_CHECK_CALL( LengthSet(cx, newBStrObj, srcLen + length) );
-	J_CHECK_CALL( JS_SetPrivate(cx, newBStrObj, dst) );
+	J_CHK( LengthSet(cx, newBStrObj, srcLen + length) );
+	J_CHK( JS_SetPrivate(cx, newBStrObj, dst) );
 
 	*J_FRVAL = OBJECT_TO_JSVAL( newBStrObj );
 
@@ -268,7 +268,7 @@ DEFINE_FUNCTION_FAST( Substr ) {
 	void *pv = JS_GetPrivate(cx, J_FOBJ);
 
 	size_t dataLength;
-	J_CHECK_CALL( BStringLength(cx, J_FOBJ, &dataLength) );
+	J_CHK( BStringLength(cx, J_FOBJ, &dataLength) );
 
 	int start;
 	J_JSVAL_TO_INT32( J_FARG(1), start );
@@ -319,11 +319,11 @@ DEFINE_FUNCTION_FAST( Substr ) {
 /*
 DEFINE_FUNCTION_FAST( IndexOf ) {
 
-	RT_ASSERT_ARGC(1);
+	J_S_ASSERT_ARG_MIN(1);
 
 	int start = 0;
 	if ( J_FARG_ISDEF(2) )
-		RT_JSVAL_TO_INT32( J_FARG(2), start );
+		J_JSVAL_TO_INT32( J_FARG(2), start );
 }
 */
 
@@ -354,7 +354,7 @@ DEFINE_FUNCTION_FAST( toString ) { // and valueOf
 DEFINE_PROPERTY( length ) {
 
 	size_t length;
-	J_CHECK_CALL( BStringLength(cx, obj, &length) );
+	J_CHK( BStringLength(cx, obj, &length) );
 	*vp = INT_TO_JSVAL( length );
 	return JS_TRUE;
 }
@@ -372,7 +372,7 @@ DEFINE_NEW_RESOLVE() { // support of data[n]  and  n in data
 		return JS_TRUE;
 
 	int length;
-	J_CHECK_CALL( LengthGet(cx, obj, &length) );
+	J_CHK( LengthGet(cx, obj, &length) );
 
 	if ( slot < 0 || slot >= length )
 		return JS_TRUE;
@@ -406,7 +406,7 @@ DEFINE_GET_PROPERTY() {
 		return JS_TRUE;
 
 	size_t length;
-	J_CHECK_CALL( BStringLength(cx, obj, &length) );
+	J_CHK( BStringLength(cx, obj, &length) );
 
 	if ( slot < 0 || slot >= (int)length )
 		return JS_TRUE;
@@ -432,7 +432,7 @@ DEFINE_SET_PROPERTY() {
 	if ( pv == NULL )
 		return J_ReportError(cx, JSSMSG_OUT_OF_RANGE);
 	size_t length;
-	J_CHECK_CALL( LengthGet(cx, obj, &length) );
+	J_CHK( LengthGet(cx, obj, &length) );
 
 	J_S_ASSERT_INT(id);
 	jsint slot = JSVAL_TO_INT( id );

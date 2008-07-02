@@ -57,13 +57,13 @@ static void nearCallback(void *data, ode::dGeomID o1, ode::dGeomID o2) {
 		if ( obj1 != NULL ) { // assert that the javascript object (over the Geom) is not finalized
 
 			JS_GetProperty(cx, obj1, COLLIDE_FEEDBACK_FUNCTION_NAME, &func1);
-			RT_SAFE( if ( func1 != JSVAL_VOID && JS_TypeOfValue(cx, func1) != JSTYPE_FUNCTION ) { JS_ReportError(cx, J__ERRMSG_UNEXPECTED_TYPE " Function expected."); return; } ); // we need a function, nothing else
+			J_SAFE( if ( func1 != JSVAL_VOID && JS_TypeOfValue(cx, func1) != JSTYPE_FUNCTION ) { JS_ReportError(cx, J__ERRMSG_UNEXPECTED_TYPE " Function expected."); return; } ); // we need a function, nothing else
 		}
 
 		if ( obj2 != NULL ) { // assert that the javascript object (over the Geom) is not finalized
 
 			JS_GetProperty(cx, obj2, COLLIDE_FEEDBACK_FUNCTION_NAME, &func2);
-			RT_SAFE( if ( func2 != JSVAL_VOID && JS_TypeOfValue(cx, func2) != JSTYPE_FUNCTION ) { JS_ReportError(cx, J__ERRMSG_UNEXPECTED_TYPE " Function expected."); return; } ); // we need a function, nothing else
+			J_SAFE( if ( func2 != JSVAL_VOID && JS_TypeOfValue(cx, func2) != JSTYPE_FUNCTION ) { JS_ReportError(cx, J__ERRMSG_UNEXPECTED_TYPE " Function expected."); return; } ); // we need a function, nothing else
 		}
 
 		for ( int i=0; i<n; i++ ) {
@@ -162,18 +162,18 @@ DEFINE_CONSTRUCTOR() {
 	ode::dWorldID worldId = ode::dWorldCreate();
 	JS_SetPrivate(cx, obj, worldId);
 	//ode::dJointGroupID contactgroup = ode::dJointGroupCreate(0);
-	//RT_ASSERT( contactgroup != NULL, "Unable to create contact group." );
+	//J_S_ASSERT( contactgroup != NULL, "Unable to create contact group." );
 	//JS_SetReservedSlot(cx, obj, WORLD_SLOT_CONTACTGROUP, PRIVATE_TO_JSVAL(contactgroup));
 
 	JSObject *spaceObject = JS_ConstructObject(cx, &classSpace, NULL, NULL); // no arguments = create a topmost space object
-	RT_ASSERT( spaceObject != NULL, "Unable to construct Space for the World." );
+	J_S_ASSERT( spaceObject != NULL, "Unable to construct Space for the World." );
 	JS_DefineProperty(cx, obj, WORLD_SPACE_PROPERTY_NAME, OBJECT_TO_JSVAL(spaceObject), NULL, NULL, JSPROP_PERMANENT | JSPROP_READONLY);
 
 //	JS_SetReservedSlot(cx, obj, WORLD_SLOT_SPACE, PRIVATE_TO_JSVAL(spaceObject));
 //	JS_DefineObject(cx, obj, WORLD_SPACE_PROPERTY_NAME, &classSpace, NULL, JSPROP_PERMANENT|JSPROP_READONLY );
 
 	JSObject *surfaceParameters = JS_ConstructObject(cx, &classSurfaceParameters, NULL, NULL);
-	RT_ASSERT( surfaceParameters != NULL, "Unable to construct classSurfaceParameters." );
+	J_S_ASSERT( surfaceParameters != NULL, "Unable to construct classSurfaceParameters." );
 	JS_DefineProperty(cx, obj, DEFAULT_SURFACE_PARAMETERS_PROPERTY_NAME, OBJECT_TO_JSVAL(surfaceParameters), NULL, NULL, JSPROP_PERMANENT | JSPROP_READONLY );
 
 	return JS_TRUE;
@@ -201,10 +201,10 @@ DEFINE_FUNCTION( Destroy ) {
 
 DEFINE_FUNCTION( Step ) {
 
-	RT_ASSERT_ARGC(1);
-	RT_ASSERT_CLASS(obj, &classWorld);
+	J_S_ASSERT_ARG_MIN(1);
+	J_S_ASSERT_CLASS(obj, &classWorld);
 	ode::dWorldID worldID = (ode::dWorldID)JS_GetPrivate( cx, obj );
-	RT_ASSERT_RESOURCE(worldID);
+	J_S_ASSERT_RESOURCE(worldID);
 	jsdouble value;
 	JS_ValueToNumber(cx, argv[0], &value);
 
@@ -216,16 +216,16 @@ DEFINE_FUNCTION( Step ) {
 	ode::dSpaceID spaceId;
 	jsval val;
 	JS_GetProperty(cx, obj, WORLD_SPACE_PROPERTY_NAME, &val);
-	RT_ASSERT_DEFINED( val );
-	RT_CHECK_CALL( ValToSpaceID(cx, val, &spaceId) );
+	J_S_ASSERT_DEFINED( val );
+	J_CHK( ValToSpaceID(cx, val, &spaceId) );
 
 	jsval defaultSurfaceParametersObject;
 	JS_GetProperty(cx, obj, DEFAULT_SURFACE_PARAMETERS_PROPERTY_NAME, &defaultSurfaceParametersObject);
-	RT_ASSERT_DEFINED( defaultSurfaceParametersObject );
-	RT_ASSERT_OBJECT( defaultSurfaceParametersObject );
-	RT_ASSERT_CLASS( JSVAL_TO_OBJECT(defaultSurfaceParametersObject), &classSurfaceParameters ); // (TBD) simplify RT_ASSERT
+	J_S_ASSERT_DEFINED( defaultSurfaceParametersObject );
+	J_S_ASSERT_OBJECT( defaultSurfaceParametersObject );
+	J_S_ASSERT_CLASS( JSVAL_TO_OBJECT(defaultSurfaceParametersObject), &classSurfaceParameters ); // (TBD) simplify RT_ASSERT
 	ode::dSurfaceParameters *defaultSurfaceParameters = (ode::dSurfaceParameters*)JS_GetPrivate(cx, JSVAL_TO_OBJECT(defaultSurfaceParametersObject)); // beware: local variable !
-	RT_ASSERT_RESOURCE( defaultSurfaceParameters );
+	J_S_ASSERT_RESOURCE( defaultSurfaceParameters );
 
 //	JS_GetReservedSlot(cx, obj, WORLD_SLOT_CONTACTGROUP, &val);
 //	ode::dJointGroupID contactgroup = (ode::dJointGroupID)JSVAL_TO_PRIVATE(val);
@@ -238,7 +238,7 @@ DEFINE_FUNCTION( Step ) {
 
 	if ( argc >= 2 ) {
 
-		RT_ASSERT_INT(argv[1]);
+		J_S_ASSERT_INT(argv[1]);
 		ode::dWorldSetQuickStepNumIterations(worldID, JSVAL_TO_INT(argv[1]));
 		ode::dWorldQuickStep(worldID, value);
 	} else {
@@ -263,7 +263,7 @@ DEFINE_FUNCTION( Step ) {
 DEFINE_PROPERTY( gravityGetter ) {
 
 	ode::dWorldID worldID = (ode::dWorldID)JS_GetPrivate( cx, obj );
-	RT_ASSERT_RESOURCE( worldID );
+	J_S_ASSERT_RESOURCE( worldID );
 	ode::dVector3 gravity;
 	ode::dWorldGetGravity(worldID, gravity);
 	FloatVectorToArray(cx, 3, gravity, vp);
@@ -273,7 +273,7 @@ DEFINE_PROPERTY( gravityGetter ) {
 DEFINE_PROPERTY( gravitySetter ) {
 
 	ode::dWorldID worldID = (ode::dWorldID)JS_GetPrivate( cx, obj );
-	RT_ASSERT_RESOURCE( worldID );
+	J_S_ASSERT_RESOURCE( worldID );
 	ode::dVector3 gravity;
 	FloatArrayToVector(cx, 3, vp, gravity);
 	ode::dWorldSetGravity( worldID, gravity[0], gravity[1], gravity[2] );
@@ -296,7 +296,7 @@ enum { ERP, CFM, /*quickStepNumIterations,*/ contactSurfaceLayer };
 DEFINE_PROPERTY( realSetter ) {
 
 	ode::dWorldID worldID = (ode::dWorldID)JS_GetPrivate( cx, obj );
-	RT_ASSERT_RESOURCE( worldID );
+	J_S_ASSERT_RESOURCE( worldID );
 	jsdouble value;
 	JS_ValueToNumber(cx, *vp, &value);
 	switch(JSVAL_TO_INT(id)) {
@@ -320,7 +320,7 @@ DEFINE_PROPERTY( realSetter ) {
 DEFINE_PROPERTY( realGetter ) {
 
 	ode::dWorldID worldID = (ode::dWorldID)JS_GetPrivate( cx, obj );
-	RT_ASSERT_RESOURCE( worldID );
+	J_S_ASSERT_RESOURCE( worldID );
 	jsdouble value;
 	switch(JSVAL_TO_INT(id)) {
 		case ERP:
@@ -349,7 +349,7 @@ DEFINE_PROPERTY( env ) {
 	if ( *vp == JSVAL_VOID ) { //  create it if it does not exist and store it (cf. PROPERTY_READ_STORE)
 
 		JSObject *staticBody = JS_NewObject(cx, &classBody, NULL, NULL);
-		RT_ASSERT_ALLOC(staticBody);
+		J_S_ASSERT_ALLOC(staticBody);
 		JS_SetPrivate(cx, staticBody, (ode::dBodyID)0);
 		*vp = OBJECT_TO_JSVAL(staticBody);
 	}

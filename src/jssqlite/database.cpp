@@ -157,7 +157,7 @@ DEFINE_FINALIZE() {
 DEFINE_FUNCTION( Close ) {
 
 	sqlite3 *db = (sqlite3 *)JS_GetPrivate( cx, obj );
-	RT_ASSERT_RESOURCE( db );
+	J_S_ASSERT_RESOURCE( db );
 	JS_SetPrivate( cx, obj, NULL );
 	int status;
 	sqlite3_interrupt(db);
@@ -168,7 +168,7 @@ DEFINE_FUNCTION( Close ) {
 	stack = JSVAL_TO_PRIVATE(v);
 	StackFreeContent( &stack );
 	// finalize open database statements
-	RT_CHECK_CALL( JS_GetReservedSlot(cx, obj, SLOT_SQLITE_DATABASE_STATEMENT_STACK, &v) );
+	J_CHK( JS_GetReservedSlot(cx, obj, SLOT_SQLITE_DATABASE_STATEMENT_STACK, &v) );
 	stack = JSVAL_TO_PRIVATE(v);
 	while ( !StackIsEnd(&stack) ) {
 
@@ -233,10 +233,10 @@ DEFINE_FUNCTION( Close ) {
 **/
 DEFINE_FUNCTION( Query ) {
 
-	RT_ASSERT_ARGC( 1 );
+	J_S_ASSERT_ARG_MIN( 1 );
 
 	sqlite3 *db = (sqlite3*)JS_GetPrivate( cx, obj );
-	RT_ASSERT_RESOURCE( db );
+	J_S_ASSERT_RESOURCE( db );
 
 	const char *sqlQuery;
 	size_t sqlQueryLength;
@@ -247,9 +247,9 @@ DEFINE_FUNCTION( Query ) {
 	int status = sqlite3_prepare_v2( db, sqlQuery, sqlQueryLength, &pStmt, &szTail ); // If the next argument, "nBytes", is less than zero, then zSql is read up to the first nul terminator.
 	if ( status != SQLITE_OK )
 		return SqliteThrowError( cx, status, sqlite3_errcode(db), sqlite3_errmsg(db) );
-	RT_ASSERT( *szTail == '\0', "too many SQL statements." ); // for the moment, do not support multiple statements
+	J_S_ASSERT( *szTail == '\0', "too many SQL statements." ); // for the moment, do not support multiple statements
 //	if ( pStmt == NULL ) // if there is an error, *ppStmt may be set to NULL. If the input text contained no SQL (if the input is and empty string or a comment) then *ppStmt is set to NULL.
-//		REPORT_ERROR( "Invalid SQL string." );
+//		J_REPORT_ERROR( "Invalid SQL string." );
 
 	// remember the statement for later finalization
 	jsval v;
@@ -297,12 +297,12 @@ DEFINE_FUNCTION( Exec ) {
 
 	// see sqlite3_exec()
 
-	RT_ASSERT_ARGC( 1 );
+	J_S_ASSERT_ARG_MIN( 1 );
 	sqlite3 *db = (sqlite3*)JS_GetPrivate( cx, obj );
-	RT_ASSERT_RESOURCE( db );
+	J_S_ASSERT_RESOURCE( db );
 
 	const char *sqlQuery;
-//	RT_JSVAL_TO_STRING( argv[0], sqlQuery );
+//	J_JSVAL_TO_STRING( argv[0], sqlQuery );
 	size_t sqlQueryLength;
 	J_CHK( JsvalToStringAndLength(cx, J_ARG(1), &sqlQuery, &sqlQueryLength) );
 
@@ -312,14 +312,14 @@ DEFINE_FUNCTION( Exec ) {
 	status = sqlite3_prepare_v2( db, sqlQuery, sqlQueryLength, &pStmt, &szTail ); // If the next argument, "nBytes", is less than zero, then zSql is read up to the first nul terminator.
 	if ( status != SQLITE_OK )
 		return SqliteThrowError( cx, status, sqlite3_errcode(db), sqlite3_errmsg(db) );
-	RT_ASSERT( *szTail == '\0', "Too many SQL statements." ); // for the moment, do not support multiple statements
+	J_S_ASSERT( *szTail == '\0', "Too many SQL statements." ); // for the moment, do not support multiple statements
 //	if ( pStmt == NULL ) // if there is an error, *ppStmt may be set to NULL. If the input text contained no SQL (if the input is and empty string or a comment) then *ppStmt is set to NULL.
-//		REPORT_ERROR( "Invalid SQL string." );
+//		J_REPORT_ERROR( "Invalid SQL string." );
 
 	// (TBD) support multiple statements
 
 	if ( argc >= 2 && argv[1] != JSVAL_VOID && JSVAL_IS_OBJECT(argv[1]) )
-		RT_CHECK_CALL( SqliteSetupBindings(cx, pStmt, JSVAL_TO_OBJECT(argv[1]) , NULL ) ); // "@" : the the argument passed to Exec(), ":" nothing
+		J_CHK( SqliteSetupBindings(cx, pStmt, JSVAL_TO_OBJECT(argv[1]) , NULL ) ); // "@" : the the argument passed to Exec(), ":" nothing
 	status = sqlite3_step( pStmt ); // Evaluates the statement. The return value will be either SQLITE_BUSY, SQLITE_DONE, SQLITE_ROW, SQLITE_ERROR, or 	SQLITE_MISUSE.
 
 	if ( JS_IsExceptionPending(cx) )
@@ -329,15 +329,15 @@ DEFINE_FUNCTION( Exec ) {
 		case SQLITE_ERROR:
 			return SqliteThrowError( cx, status, sqlite3_errcode(sqlite3_db_handle( pStmt )), sqlite3_errmsg(sqlite3_db_handle( pStmt )));
 		case SQLITE_MISUSE: // means that the this routine was called inappropriately. Perhaps it was called on a virtual machine that had already been finalized or on one that had previously returned SQLITE_ERROR or SQLITE_DONE. Or it could be the case that a database connection is being used by a different thread than the one it was created it.
-			REPORT_ERROR( "This routine was called inappropriately." );
+			J_REPORT_ERROR( "This routine was called inappropriately." );
 		case SQLITE_DONE: // means that the statement has finished executing successfully. sqlite3_step() should not be called again on this virtual machine without first calling sqlite3_reset() to reset the virtual machine back to its initial state.
 			*rval = JSVAL_VOID;
 			break;
 		case SQLITE_ROW:
-			RT_CHECK_CALL( SqliteColumnToJsval(cx, pStmt, 0, rval) );
+			J_CHK( SqliteColumnToJsval(cx, pStmt, 0, rval) );
 			break;
 		default:
-			REPORT_ERROR_1("invalid case (status:%d)", status );
+			J_REPORT_ERROR_1("invalid case (status:%d)", status );
 	}
 
 	status = sqlite3_finalize( pStmt );
@@ -360,7 +360,7 @@ DEFINE_FUNCTION( Exec ) {
 DEFINE_PROPERTY( lastInsertRowid ) {
 
 	sqlite3 *db = (sqlite3 *)JS_GetPrivate( cx, obj );
-	RT_ASSERT_RESOURCE( db );
+	J_S_ASSERT_RESOURCE( db );
 	JS_NewNumberValue( cx, sqlite3_last_insert_rowid(db), vp ); // use JS_NewNumberValue because sqlite3_last_insert_rowid returns int64
   return JS_TRUE;
 }
@@ -375,7 +375,7 @@ DEFINE_PROPERTY( lastInsertRowid ) {
 DEFINE_PROPERTY( changes ) {
 
 	sqlite3 *db = (sqlite3 *)JS_GetPrivate( cx, obj );
-	RT_ASSERT_RESOURCE( db );
+	J_S_ASSERT_RESOURCE( db );
 
 	// This function returns the number of database rows that were changed (or inserted or deleted) by the most recently completed INSERT, UPDATE, or DELETE statement.
 	// Only changes that are directly specified by the INSERT, UPDATE, or DELETE statement are counted. Auxiliary changes caused by triggers are not counted. Use the sqlite3_total_changes() function to find the total number of changes including changes caused by triggers.
@@ -539,7 +539,7 @@ DEFINE_SET_PROPERTY() {
 	if ( JSVAL_IS_OBJECT(*vp) && *vp != JSVAL_NULL && JS_ObjectIsFunction(cx, JSVAL_TO_OBJECT(*vp) ) ) {
 
 		sqlite3 *db = (sqlite3 *)JS_GetPrivate( cx, obj );
-		RT_ASSERT_RESOURCE( db );
+		J_S_ASSERT_RESOURCE( db );
 
 		const char *fName;
 		J_CHK( JsvalToString(cx, id, &fName) );

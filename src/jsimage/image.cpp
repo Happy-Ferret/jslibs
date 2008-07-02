@@ -32,8 +32,8 @@ DEFINE_FINALIZE() {
 
 DEFINE_FUNCTION( Alloc ) {
 
-	RT_ASSERT_CLASS(obj, _class);
-	RT_ASSERT_ARGC(1);
+	J_S_ASSERT_CLASS(obj, _class);
+	J_S_ASSERT_ARG_MIN(1);
 
 	void *data = JS_GetPrivate(cx, obj);
 	if ( data != NULL )
@@ -52,7 +52,7 @@ DEFINE_CONSTRUCTOR() {
 	J_S_ASSERT_CONSTRUCTING();
 	J_S_ASSERT_THIS_CLASS();
 	JSFunction *allocFunction = JS_NewFunction(cx, Alloc, 0, 0, NULL, "Alloc");
-	RT_ASSERT( allocFunction != NULL, "Unable to create allocation function." );
+	J_S_ASSERT( allocFunction != NULL, "Unable to create allocation function." );
 	JSObject *functionObject = JS_GetFunctionObject(allocFunction);
 	JS_SetReservedSlot(cx, obj, SLOT_FUNCTION_ALLOC, OBJECT_TO_JSVAL(functionObject));
 	return JS_TRUE;
@@ -72,7 +72,7 @@ DEFINE_FUNCTION( Free ) {
 
 DEFINE_FUNCTION( Trim ) {
 
-	RT_ASSERT_ARGC(1);
+	J_S_ASSERT_ARG_MIN(1);
 	int vect[4];
 	IntArrayToVector(cx, 4, &argv[0], vect);
 	int x = vect[0];
@@ -94,7 +94,7 @@ DEFINE_FUNCTION( Trim ) {
 	int channels = JSVAL_TO_INT(tmp);
 	// assume that we have 1 Byte/channel
 
-	RT_ASSERT( !(x<0 || x1<0 || x>width || x1>width || y<0 || y1<0 || y>height || y1>height), "Invalid size." );
+	J_S_ASSERT( !(x<0 || x1<0 || x>width || x1>width || y<0 || y1<0 || y>height || y1>height), "Invalid size." );
 
 	JSBool reuseBuffer = false; // default
 	if ( argc >= 2 )
@@ -136,7 +136,7 @@ DEFINE_FUNCTION( Trim ) {
 
 DEFINE_FUNCTION( Gamma ) {
 
-	RT_ASSERT_ARGC(1);
+	J_S_ASSERT_ARG_MIN(1);
 
 	return JS_TRUE;
 }
