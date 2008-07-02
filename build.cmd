@@ -25,14 +25,14 @@ set >> build.log
 
 pushd .\libs\js
 IF "%BUILD%" == "release" (
-	call build_msdev8_OPT.bat >> build.log
+	call build_msdev8_OPT.bat >> build.log 2>&1
 ) ELSE (
-	call build_msdev8_DBG.bat >> build.log
+	call build_msdev8_DBG.bat >> build.log 2>&1
 )
 popd
 
 pushd .\libs\nspr
-call build_msdev8.bat >> build.log
+call build_msdev8.bat >> build.log 2>&1
 popd
 
 
@@ -54,7 +54,7 @@ for /D %%f in (src\js*) do (
 		echo ******************************************************************************* >> build.log
 		echo ******************************************************************************* >> build.log
 		rem VCBUILD Options: http://msdn2.microsoft.com/en-us/library/cz553aa1(VS.80).aspx
-		"%visualStudioPath%\VC\vcpackages\vcbuild" /useenv /rebuild %%g "%BUILD%|WIN32" >> build.log
+		"%visualStudioPath%\VC\vcpackages\vcbuild" /useenv /rebuild %%g "%BUILD%|WIN32" >> build.log 2>&1
 		if ERRORLEVEL 1 (
 		
 			echo ... failed !
