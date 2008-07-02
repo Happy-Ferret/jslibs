@@ -27,6 +27,8 @@
 #include "../common/queue.h"
 #include "../jslang/bstringapi.h"
 
+//#define SLOT_SOURCE 0
+
 
 struct BufferPrivate {
 
@@ -70,25 +72,6 @@ inline JSBool ShiftJsval( JSContext *cx, Queue *queue, jsval *value ) {
 	return JS_TRUE;
 }
 
-
-// missing = missing amount of data to complete the request
-inline JSBool BufferRefill( JSContext *cx, JSObject *obj, size_t amount ) {
-
-	BufferPrivate *pv = (BufferPrivate*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE( pv );
-	jsval rval, fctVal;
-	size_t bufferLengthBeforeRefillRequest;
-	J_CHK( JS_GetProperty(cx, obj, "onunderflow", &fctVal) );
-	if ( !JsvalIsFunction(cx, fctVal) )
-		return JS_TRUE; // cannot refil, onunderflow is not defined
-	do {
-
-		bufferLengthBeforeRefillRequest = pv->length;
-		jsval argv[] = { OBJECT_TO_JSVAL(obj), INT_TO_JSVAL(amount - pv->length) };
-		J_CHK( JS_CallFunctionValue(cx, obj, fctVal, sizeof(argv)/sizeof(*argv), argv, &rval) );
-	} while( pv->length < amount && pv->length > bufferLengthBeforeRefillRequest ); // see RULES ( at the top of this file )
-	return JS_TRUE;
-}
 
 
 JSBool WriteChunk( JSContext *cx, JSObject *obj, jsval chunk ) {
@@ -156,6 +139,65 @@ JSBool UnReadChunk( JSContext *cx, JSObject *obj, jsval chunk ) {
 	pv->length += strLen;
 	return JS_TRUE;
 }
+
+
+
+
+/*
+inline JSBool BufferRefill( JSContext *cx, JSObject *obj, size_t amount ) { // amount = total needed amount
+
+	BufferPrivate *pv = (BufferPrivate*)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE( pv );
+	jsval rval, fctVal;
+	size_t bufferLengthBeforeRefillRequest;
+	J_CHK( JS_GetProperty(cx, obj, "onunderflow", &fctVal) );
+	if ( !JsvalIsFunction(cx, fctVal) )
+		return JS_TRUE; // cannot refil, onunderflow is not defined
+	do {
+
+		bufferLengthBeforeRefillRequest = pv->length;
+		jsval argv[] = { OBJECT_TO_JSVAL(obj), INT_TO_JSVAL(amount - pv->length) }; // missing amount of data to complete the request at once.
+		J_CHK( JS_CallFunctionValue(cx, obj, fctVal, sizeof(argv)/sizeof(*argv), argv, &rval) );
+	} while( pv->length < amount && pv->length > bufferLengthBeforeRefillRequest ); // see RULES ( at the top of this file )
+	return JS_TRUE;
+}
+*/
+
+inline JSBool BufferRefill( JSContext *cx, JSObject *obj, size_t amount ) { // amount = total needed amount
+
+	jsval srcVal;
+	J_CHK( JS_GetProperty(cx, obj, "source", &srcVal) );
+//	J_CHK( JS_GetReservedSlot(cx, obj, SLOT_SOURCE, &srcVal) );
+
+	if ( srcVal == JSVAL_VOID ) // undefined or <undefined> or deleted, ...
+		return JS_TRUE;
+
+	J_S_ASSERT_OBJECT(srcVal);
+
+	JSObject *srcObj = JSVAL_TO_OBJECT( srcVal );
+
+	NIStreamRead nisr = StreamReadInterface(cx, srcObj);
+	J_S_ASSERT( nisr != NULL, "Invalid source object" );
+
+	char *buf = (char*)JS_malloc(cx, amount);
+	J_S_ASSERT_ALLOC( buf );
+
+	size_t len = amount;
+	
+	J_CHK( nisr(cx, srcObj, buf, &len) ); // (TBD) loop like with onunderflow
+
+	if ( MaybeRealloc(amount, len) )
+		buf = (char*)JS_realloc(cx, buf, len);
+
+	JSObject *chunk = J_NewBinaryString(cx, buf, len);
+
+	J_S_ASSERT( chunk != NULL, "Unable to create a binary string" );
+
+	J_CHK( WriteChunk(cx, obj, OBJECT_TO_JSVAL( chunk )) );
+
+	return JS_TRUE;
+}
+
 
 
 JSBool UnReadRawChunk( JSContext *cx, JSObject *obj, char *data, size_t length ) {
@@ -662,7 +704,7 @@ DEFINE_FUNCTION( Unread ) {
 
 /**doc
  * $STR $INAME()
-  Converts the whole content of the buffer to a string (BString).
+  Converts the whole content of the buffer to a string.
 **/
 
 // Note:  String( { toString:function() { return [1,2,3]} } );  throws the following error: "can't convert Object to string"
@@ -726,6 +768,13 @@ DEFINE_PROPERTY( length ) {
 }
 
 
+//DEFINE_PROPERTY( source ) { // do not support: delete buf.source
+//
+//	J_CHK( JS_SetReservedSlot(cx, obj, SLOT_SOURCE, *vp) );
+//	return JS_TRUE;
+//}
+
+
 DEFINE_TRACER() {
 
 	BufferPrivate *pv = (BufferPrivate*)JS_GetPrivate(trc->context, obj);
@@ -735,21 +784,51 @@ DEFINE_TRACER() {
 }
 
 
-/**doc
-=== Callback functions ===
- * *onunderflow*( _bufferObject_ )
-  This function is called by the buffer when its length is less than the requested amount of data.
-  _bufferObject_ is the buffer object that caused the call.
-  This function is called only once by read operation.
-  ===== example: =
-  {{{
-  var buffer = new Buffer();
-  buffer.onunderflow = function(b) {
-    b.Write('some more data...');
-  }
-  buffer.Read(10000);
-  buffer.Read(undefined);
-  }}}
+/* previous doc:
+ * *onunderflow*( bufferObject, missingAmount )
+  This function is called by the Buffer when its length is less than the requested amount of data.
+  $H arguments
+   $ARG Buffer bufferObject: is the buffer object that caused the call.
+   $ARG integer missingAmount: is the  missing amount of data to complete the request at once.
+  This function is called until the buffer size do not grow any more.
+*/
+
+/**doc tab:2
+ * $OBJ *source*
+  The source property can contains any NIStreamRead compatible object. The Buffer uses this object when its length is less than the requested amount of data. Any extra data returned by the NIStreamRead object is keept in the buffer and will be used at the next read operation.
+	$H example 1
+   {{{
+	var buf1 = new Buffer('123');
+	buf1.source = Stream('456');
+	QA.ASSERT( buf1.length, 3, 'length' );
+	Print( buf2.Read(6) ); // prints: '123456'
+	}}}
+
+	$H example 2
+	{{{
+	var buf2 = new Buffer('123');
+	buf2.source = new function() {
+		this.Read = function(count) StringRepeat('x',count);
+	}
+	Print( buf2.Read(6) ); // prints: '123xxx'
+	}}}
+
+	$H example 3
+	{{{
+	var first = new Buffer();
+	first.source = new Buffer();
+	first.source.source = new Buffer('123');
+	Print( first.Read(4) ); // prints: '123'
+	}}}
+
+	$H example 4
+	 Create a long chain ( pack << buffer << buffer << stream )
+	{{{
+	var p = new Pack(new Buffer());
+	p.buffer.source = new Buffer();
+	p.buffer.source.source = Stream('\x12\x34');
+	Print( (p.ReadInt(2, false, true)).toString(16) ); // prints: '1234'
+	}}}
 **/
 
 /**doc
@@ -757,10 +836,10 @@ DEFINE_TRACER() {
  *NIStreamRead*
 **/
 
-
 CONFIGURE_CLASS
 
 	HAS_PRIVATE
+	HAS_RESERVED_SLOTS(1)
 
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE
@@ -780,6 +859,7 @@ CONFIGURE_CLASS
 
 	BEGIN_PROPERTY_SPEC
 		PROPERTY_READ(length)
+//		PROPERTY_WRITE_STORE(source)
 	END_PROPERTY_SPEC
 
 END_CLASS
