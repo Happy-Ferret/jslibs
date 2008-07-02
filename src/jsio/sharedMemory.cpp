@@ -201,7 +201,7 @@ DEFINE_FUNCTION_FAST( Write ) {
 
 	const char *data;
 	size_t dataLength;
-	RT_JSVAL_TO_STRING_AND_LENGTH( J_FARG(1), data, dataLength );
+	J_CHK( JsvalToStringAndLength(cx, J_FARG(1), &data, &dataLength) );
 
 	PRSize offset = 0;
 	if ( J_FARG_ISDEF(2) )
@@ -302,7 +302,7 @@ DEFINE_PROPERTY( contentSetter ) { // (TBD) support BString
 
 		const char *data;
 		size_t dataLength;
-		RT_JSVAL_TO_STRING_AND_LENGTH( *vp, data, dataLength );
+		J_CHK( JsvalToStringAndLength(cx, *vp, &data, &dataLength) );
 
 		RT_ASSERT( sizeof(MemHeader) + dataLength <= pv->size, "SharedMemory too small to hold the given data." );
 

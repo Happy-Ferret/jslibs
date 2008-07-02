@@ -294,7 +294,7 @@ DEFINE_FUNCTION( Write ) {
 	RT_ASSERT_RESOURCE( fd );
 	const char *str;
 	size_t len;
-	RT_JSVAL_TO_STRING_AND_LENGTH( J_ARG(1), str, len );
+	J_CHK( JsvalToStringAndLength(cx, J_ARG(1), &str, &len) );
 
 	size_t sentAmount;
 

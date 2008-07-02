@@ -350,7 +350,7 @@ DEFINE_FUNCTION( SendTo ) {
 
 	const char *str;
 	size_t len;
-	RT_JSVAL_TO_STRING_AND_LENGTH( J_ARG(3), str, len );
+	J_CHK( JsvalToStringAndLength(cx, J_ARG(3), &str, &len) );
 
 	PRInt32 res = PR_SendTo(fd, str, len, 0, &addr, PR_INTERVAL_NO_TIMEOUT );
 
@@ -484,7 +484,7 @@ DEFINE_FUNCTION( TransmitFile ) { // WORKS ONLY ON BLOCKING SOCKET !!!
 	const char *headers = NULL;
 	size_t headerLength = 0;
 	if ( J_ARG_ISDEF(3) )
-		RT_JSVAL_TO_STRING_AND_LENGTH( J_ARG(3), headers, headerLength );
+		J_CHK( JsvalToStringAndLength(cx, J_ARG(3), &headers, &headerLength) );
 
 	PRIntervalTime connectTimeout;
 	if ( J_ARG_ISDEF(4) ) {

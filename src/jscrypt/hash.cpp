@@ -132,7 +132,7 @@ DEFINE_FUNCTION( Process ) {
 	int err;
 	const char *in;
 	size_t inLength;
-	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], in, inLength );
+	J_CHK( JsvalToStringAndLength(cx, argv[0], &in, &inLength) );
 
 	err = privateData->descriptor->process(&privateData->state, (const unsigned char *)in, inLength); // Process a block of memory though the hash
 	if ( err != CRYPT_OK )
@@ -209,7 +209,7 @@ DEFINE_FUNCTION( Call ) {
 	
 	const char *in;
 	size_t inLength;
-	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], in, inLength );
+	J_CHK( JsvalToStringAndLength(cx, argv[0], &in, &inLength) );
 	unsigned long outLength = privateData->descriptor->hashsize;
 	char *out = (char *)JS_malloc( cx, outLength );
 	RT_ASSERT_ALLOC( out );

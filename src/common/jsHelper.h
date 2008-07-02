@@ -373,6 +373,7 @@ inline JSObject* J_NewBinaryStringCopyN( JSContext *cx, const void *data, size_t
 	return binaryString;
 }
 
+
 inline JSBool JsvalToStringAndLength( JSContext *cx, jsval val, const char** buffer, size_t *size ) {
 
 	if ( JSVAL_IS_STRING(val) ) { // for string literals
@@ -402,9 +403,9 @@ inline JSBool JsvalToStringAndLength( JSContext *cx, jsval val, const char** buf
 }
 
 
-#define J_JSVAL_TO_STRING_AND_LENGTH( val, str, len ) do { \
-	J_CHK( JsvalToStringAndLength(cx, (val), &(str), &(len)) ); \
-} while(0)
+//#define J_JSVAL_TO_STRING_AND_LENGTH( val, str, len ) do { \
+//	J_CHK( JsvalToStringAndLength(cx, (val), &(str), &(len)) ); \
+//} while(0)
 
 
 inline JSBool JsvalToStringLength( JSContext *cx, jsval val, size_t *length ) {
@@ -739,7 +740,7 @@ inline JSBool JsvalToBool( JSContext *cx, jsval val, bool *bval ) {
 #define RT_JSVAL_TO_INT32 J_JSVAL_TO_INT32
 #define RT_JSVAL_TO_UINT32 J_JSVAL_TO_UINT32
 #define RT_JSVAL_TO_STRING J_JSVAL_TO_STRING
-#define RT_JSVAL_TO_STRING_AND_LENGTH J_JSVAL_TO_STRING_AND_LENGTH
+//#define RT_JSVAL_TO_STRING_AND_LENGTH J_JSVAL_TO_STRING_AND_LENGTH
 
 
 

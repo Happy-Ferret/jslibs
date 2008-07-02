@@ -98,7 +98,7 @@ DEFINE_FUNCTION( Open ) {
 
 		const char *strFlags;
 		size_t len;
-		RT_JSVAL_TO_STRING_AND_LENGTH( J_ARG(1), strFlags, len );
+		J_CHK( JsvalToStringAndLength(cx, J_ARG(1), &strFlags, &len) );
 		flags = FileOpenFlagsFromString(strFlags, len);
 	}
 
@@ -324,7 +324,7 @@ DEFINE_PROPERTY( contentSetter ) { // (TBD) support BString
 		return ThrowIoError(cx);
 	const char *buf;
 	size_t len;
-	RT_JSVAL_TO_STRING_AND_LENGTH( *vp, buf, len );
+	J_CHK( JsvalToStringAndLength(cx, *vp, &buf, &len) );
 	PRInt32 bytesSent = PR_Write( fd, buf, len );
 	if ( bytesSent == -1 )
 		return ThrowIoError(cx);

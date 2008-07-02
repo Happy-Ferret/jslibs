@@ -732,7 +732,7 @@ DEFINE_PROPERTY( textSetter ) {
 	RT_ASSERT_RESOURCE(nid);
 	const char *tipText;
 	size_t tipLen;
-	RT_JSVAL_TO_STRING_AND_LENGTH( *vp, tipText, tipLen );
+	J_CHK( JsvalToStringAndLength(cx, *vp, &tipText, &tipLen) );
 	strncpy( nid->szTip, tipText, MIN(sizeof(nid->szTip)-1,tipLen) );
 	nid->uFlags |= NIF_TIP;
 	BOOL status = Shell_NotifyIcon(NIM_MODIFY, nid);

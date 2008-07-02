@@ -152,17 +152,17 @@ DEFINE_CONSTRUCTOR() {
 
 	const char *key;
 	size_t keyLength;
-	RT_JSVAL_TO_STRING_AND_LENGTH( argv[2], key, keyLength );
+	J_CHK( JsvalToStringAndLength(cx, argv[2], &key, &keyLength) );
 
 	const char *IV = NULL;
 	size_t IVLength = 0;
 	if ( argc >= 4 && argv[3] != JSVAL_VOID )
-		RT_JSVAL_TO_STRING_AND_LENGTH( argv[3], IV, IVLength );
+		J_CHK( JsvalToStringAndLength(cx, argv[3], &IV, &IVLength ) );
 
 	const char *optarg = NULL;
 	size_t optargLength = 0;
 	if ( argc >= 5 && argv[4] != JSVAL_VOID )
-		RT_JSVAL_TO_STRING_AND_LENGTH( argv[4], optarg, optargLength );
+		J_CHK( JsvalToStringAndLength(cx, argv[4], &optarg, &optargLength ) );
 
    int numRounds = 0; // default value, us a default number of rounds.
 	if ( argc >= 6 && argv[5] != JSVAL_VOID )
@@ -270,7 +270,7 @@ DEFINE_FUNCTION( Encrypt ) {
 
 	const char *pt;
 	size_t ptLength;
-	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], pt, ptLength );
+	J_CHK( JsvalToStringAndLength(cx, argv[0], &pt, &ptLength) );
 
 	char *ct = (char *)JS_malloc( cx, ptLength +1 );
 	RT_ASSERT_ALLOC( ct );
@@ -326,7 +326,7 @@ DEFINE_FUNCTION( Decrypt ) {
 
 	const char *ct;
 	size_t ctLength;
-	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], ct, ctLength );
+	J_CHK( JsvalToStringAndLength(cx, argv[0], &ct, &ctLength) );
 
 	char *pt = (char *)JS_malloc( cx, ctLength +1 );
 	RT_ASSERT_ALLOC( pt );
@@ -428,7 +428,7 @@ DEFINE_PROPERTY( IVSetter ) {
 
 	const char *IV;
 	size_t IVLength;
-	RT_JSVAL_TO_STRING_AND_LENGTH( *vp, IV, IVLength );
+	J_CHK( JsvalToStringAndLength(cx, *vp, &IV, &IVLength) );
 
 	int err;
 	switch ( privateData->mode ) {

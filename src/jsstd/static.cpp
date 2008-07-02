@@ -738,7 +738,7 @@ DEFINE_FUNCTION( IsStatementValid ) {
 	RT_ASSERT_ARGC( 1 );
 	const char *buffer;
 	size_t length;
-	RT_JSVAL_TO_STRING_AND_LENGTH( J_ARG(1), buffer, length );
+	J_CHK( JsvalToStringAndLength(cx, J_ARG(1), &buffer, &length) );
 	*rval = JS_BufferIsCompilableUnit(cx, obj, buffer, length) == JS_TRUE ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;
 }

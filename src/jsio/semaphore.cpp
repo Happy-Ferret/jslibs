@@ -56,7 +56,7 @@ DEFINE_CONSTRUCTOR() {
 
 	const char *name;
 	size_t nameLength;
-	RT_JSVAL_TO_STRING_AND_LENGTH( J_ARG(1), name, nameLength );
+	J_CHK( JsvalToStringAndLength(cx, J_ARG(1), &name, &nameLength) );
 
 	RT_ASSERT( nameLength < PATH_MAX, "Semaphoer name too long." );
 

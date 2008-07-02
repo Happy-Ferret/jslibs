@@ -131,7 +131,7 @@ DEFINE_FUNCTION( AddEntropy ) {
 
 	const char *entropy;
 	size_t entropyLength;
-	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], entropy, entropyLength );
+	J_CHK( JsvalToStringAndLength(cx, argv[0], &entropy, &entropyLength) );
 
 	int err;
 	err = privateData->prng.add_entropy( (const unsigned char *)entropy, entropyLength, &privateData->state );
@@ -196,7 +196,7 @@ DEFINE_PROPERTY( stateSetter ) {
 
 	const char *stateData;
 	size_t stateLength;
-	RT_JSVAL_TO_STRING_AND_LENGTH( *vp, stateData, stateLength );
+	J_CHK( JsvalToStringAndLength(cx, *vp, &stateData, &stateLength) );
 	RT_ASSERT( stateLength == privateData->prng.export_size, "Invalid import size." );
 	int err = privateData->prng.pimport((unsigned char *)stateData, stateLength, &privateData->state);
 	if ( err != CRYPT_OK )

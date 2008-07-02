@@ -106,7 +106,7 @@ JSBool z_call(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval
 	size_t inputLength = 0;
 	if ( argc >= 1 ) {
 
-		RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], inputData, inputLength );
+		J_CHK( JsvalToStringAndLength(cx, argv[0], &inputData, &inputLength) );
 
 //		JSString *jssData = JS_ValueToString( cx, argv[0] );
 //		RT_ASSERT_ALLOC( jssData );

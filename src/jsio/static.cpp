@@ -404,7 +404,7 @@ DEFINE_FUNCTION_FAST( WaitSemaphore ) {
 
 	const char *name;
 	size_t nameLength;
-	RT_JSVAL_TO_STRING_AND_LENGTH( J_FARG(1), name, nameLength );
+	J_CHK( JsvalToStringAndLength(cx, J_FARG(1), &name, &nameLength) );
 
 	PRUintn mode = PR_IRUSR | PR_IWUSR; // read write permission for owner.
 	if ( J_FARG_ISDEF(2) )
@@ -451,7 +451,7 @@ DEFINE_FUNCTION_FAST( PostSemaphore ) {
 
 	const char *name;
 	size_t nameLength;
-	RT_JSVAL_TO_STRING_AND_LENGTH( J_FARG(1), name, nameLength );
+	J_CHK( JsvalToStringAndLength(cx, J_FARG(1), &name, &nameLength) );
 
 	PRSem *semaphore = PR_OpenSemaphore(name, 0, 0, 0);
 

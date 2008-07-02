@@ -245,7 +245,7 @@ DEFINE_FUNCTION( List ) {
 	RT_ASSERT_ARGC( 1 );
 	const char *directoryName;
 	size_t directoryNameLength;
-	RT_JSVAL_TO_STRING_AND_LENGTH( J_ARG(1), directoryName, directoryNameLength );
+	J_CHK( JsvalToStringAndLength(cx, J_ARG(1), &directoryName, &directoryNameLength) );
 	RT_ASSERT( directoryNameLength < PATH_MAX, "Path too long" );
 	PRDir *dd = PR_OpenDir( directoryName );
 	if ( dd == NULL )

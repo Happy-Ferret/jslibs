@@ -186,7 +186,7 @@ inline JSBool InitLevelData( JSContext* cx, jsval value, int count, PTYPE *level
 
 		const char *color;
 		size_t length;
-		RT_JSVAL_TO_STRING_AND_LENGTH( value, color, length );
+		J_CHK( JsvalToStringAndLength(cx, value, &color, &length) );
 		if ( *color++ == '#' && ((int)length-1) / 2 >= count ) {
 				
 			unsigned char val;

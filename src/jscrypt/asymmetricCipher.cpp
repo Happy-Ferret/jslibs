@@ -257,7 +257,7 @@ DEFINE_FUNCTION( Encrypt ) { // ( data [, lparam] )
 
 	const char *in;
 	size_t inLength;
-	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], in, inLength );
+	J_CHK( JsvalToStringAndLength( cx, argv[0], &in, &inLength ) );
 
 	char out[4096];
 	unsigned long outLength = sizeof(out);
@@ -269,7 +269,7 @@ DEFINE_FUNCTION( Encrypt ) { // ( data [, lparam] )
 			unsigned char *lparam = NULL; // default: lparam not used
 			unsigned long lparamlen = 0;
 			if (argc >= 2 && argv[1] != JSVAL_VOID)
-				RT_JSVAL_TO_STRING_AND_LENGTH(argv[1], in, inLength);
+				J_CHK( JsvalToStringAndLength(cx, argv[1], &in, &inLength) );
 			err = rsa_encrypt_key_ex( (unsigned char *)in, inLength, (unsigned char *)out, &outLength, lparam, lparamlen, prngState, prngIndex, hashIndex, pv->padding, &pv->key.rsaKey ); // ltc_mp.rsa_me()
 			break;
 		}
@@ -321,7 +321,7 @@ DEFINE_FUNCTION( Decrypt ) { // ( encryptedData [, lparam] )
 
 	const char *in;
 	size_t inLength;
-	RT_JSVAL_TO_STRING_AND_LENGTH(argv[0], in, inLength);
+	J_CHK( JsvalToStringAndLength(cx, argv[0], &in, &inLength) );
 
 	char out[4096];
 	unsigned long outLength = sizeof(out);
@@ -335,7 +335,7 @@ DEFINE_FUNCTION( Decrypt ) { // ( encryptedData [, lparam] )
 			unsigned char *lparam = NULL; // default: lparam not used
 			unsigned long lparamlen = 0;
 			if (argc >= 2 && argv[1] != JSVAL_VOID)
-				RT_JSVAL_TO_STRING_AND_LENGTH( argv[1], in, inLength );
+				J_CHK( JsvalToStringAndLength(cx, argv[1], &in, &inLength) );
 
 			int stat = 0; // default: failed
 			err = rsa_decrypt_key_ex( (unsigned char *)in, inLength, (unsigned char *)out, &outLength, lparam, lparamlen, hashIndex, pv->padding, &stat, &pv->key.rsaKey );
@@ -394,7 +394,7 @@ DEFINE_FUNCTION( Sign ) { // ( data [, saltLength] )
 
 	const char *in;
 	size_t inLength;
-	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], in, inLength );
+	J_CHK( JsvalToStringAndLength(cx, argv[0], &in, &inLength) );
 
 	char out[4096];
 	unsigned long outLength = sizeof(out);
@@ -449,11 +449,11 @@ DEFINE_FUNCTION( VerifySignature ) { // ( data, signature [, saltLength] )
 
 	const char *data;
 	size_t dataLength;
-	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], data, dataLength );
+	J_CHK( JsvalToStringAndLength(cx, argv[0], &data, &dataLength ) );
 
 	const char *sign;
 	size_t signLength;
-	RT_JSVAL_TO_STRING_AND_LENGTH( argv[1], sign, signLength );
+	J_CHK( JsvalToStringAndLength(cx, argv[1], &sign, &signLength) );
 
 	int stat = 0; // default: failed
 	int err = -1; // default: Invalid error code
@@ -564,7 +564,7 @@ DEFINE_PROPERTY( keySetter ) {
 
 	const char *key;
 	size_t keyLength;
-	RT_JSVAL_TO_STRING_AND_LENGTH( *vp, key, keyLength );
+	J_CHK( JsvalToStringAndLength(cx, *vp, &key, &keyLength) );
 
 	int type;
 	RT_JSVAL_TO_INT32( id, type );

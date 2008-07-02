@@ -185,7 +185,7 @@ DEFINE_FUNCTION( FileOpenDialog ) {
 
 		const char *str;
 		size_t len;
-		RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], str, len );
+		J_CHK( JsvalToStringAndLength(cx, argv[0], &str, &len) );
 		strcpy( filter, str );
 		for ( char *tmp = filter; tmp = strchr( tmp, '|' ); tmp++ )
 			*tmp = '\0'; // doc: Pointer to a buffer containing pairs of null-terminated filter strings.
@@ -330,7 +330,7 @@ DEFINE_PROPERTY( clipboardSetter ) {
 		RT_ASSERT( res != 0, "Unable to open the clipboard." );
 		const char *str;
 		size_t len;
-		RT_JSVAL_TO_STRING_AND_LENGTH( *vp, str, len );
+		J_CHK( JsvalToStringAndLength(cx, *vp, &str, &len) );
 		HGLOBAL hglbCopy = GlobalAlloc(GMEM_MOVEABLE, len + 1);
 		RT_ASSERT_ALLOC( hglbCopy );
 		LPTSTR lptstrCopy = (LPTSTR)GlobalLock(hglbCopy);

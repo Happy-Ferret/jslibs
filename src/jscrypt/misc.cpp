@@ -35,7 +35,7 @@ DEFINE_FUNCTION( Base64Encode ) {
 	RT_ASSERT_STRING(argv[0]);
 	const char *in;
 	size_t inLength;
-	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], in, inLength );
+	J_CHK( JsvalToStringAndLength(cx, argv[0], &in, &inLength) );
 
 	unsigned long outLength = 4 * ((inLength + 2) / 3) +1;
 	char *out = (char *)JS_malloc( cx, outLength +1 );
@@ -64,7 +64,7 @@ DEFINE_FUNCTION( Base64Decode ) {
 	RT_ASSERT_STRING(argv[0]);
 	const char *in;
 	size_t inLength;
-	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], in, inLength );
+	J_CHK( JsvalToStringAndLength(cx, argv[0], &in, &inLength) );
 
 	unsigned long outLength = 3 * (inLength-2) / 4 +1;
 	char *out = (char *)JS_malloc(cx, outLength +1);
@@ -97,7 +97,7 @@ DEFINE_FUNCTION( HexEncode ) {
 
 	const char *in;
 	size_t inLength;
-	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], in, inLength );
+	J_CHK( JsvalToStringAndLength(cx, argv[0], &in, &inLength) );
 
 	unsigned long outLength = inLength * 2;
 	char *out = (char *)JS_malloc(cx, outLength +1);
@@ -142,7 +142,7 @@ DEFINE_FUNCTION( HexDecode ) {
 	RT_ASSERT_STRING(argv[0]);
 	const char *in;
 	size_t inLength;
-	RT_JSVAL_TO_STRING_AND_LENGTH( argv[0], in, inLength );
+	J_CHK( JsvalToStringAndLength(cx, argv[0], &in, &inLength) );
 
 	unsigned long outLength = inLength / 2;
 	char *out = (char *)JS_malloc(cx, outLength +1);
