@@ -1,5 +1,21 @@
 ({
 
+	NativeInterface: function(QA) {
+
+		var stream = new Stream('456');
+		QA.ASSERT( !isNaN(stream._NI_StreamRead), true, 'NativeInterface system' )
+	},
+
+	NativeInterfaceSecurity: function(QA) {
+
+		var stream = new Stream('456');
+		var prev = stream._NI_StreamRead;
+		stream._NI_StreamRead = 123456;
+		QA.ASSERT( stream._NI_StreamRead, prev, 'NativeInterface security' )
+		stream._NI_StreamRead = 987654;
+		QA.ASSERT( stream._NI_StreamRead, prev, 'NativeInterface security' )
+	},
+
 	BString_construct_with_data: function(QA) {
 
 		LoadModule('jsstd');

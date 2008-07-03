@@ -34,12 +34,12 @@ JSBool NativeInterfaceStreamRead( JSContext *cx, JSObject *obj, char *buf, size_
 	PRPollDesc desc = { fd, PR_POLL_READ, 0 };
 	ret = PR_Poll( &desc, 1, PR_SecondsToInterval(10) ); // wait 10 seconds for data
 	if ( ret == -1 ) // if PR_Poll is not compatible with the file descriptor, just ignore the error ?
-		return ThrowIoError(cx); // returns later
+		return ThrowIoError(cx);
 
 	if ( ret == 0 ) { // timeout
 
 		*amount = 0;
-		return JS_TRUE; // no error, but no data
+		return JS_TRUE; // no data, but it is not an error.
 	}
 
 	ret = PR_Read(fd, buf, *amount);
@@ -48,14 +48,13 @@ JSBool NativeInterfaceStreamRead( JSContext *cx, JSObject *obj, char *buf, size_
 		PRErrorCode errorCode = PR_GetError();
 		if ( errorCode != PR_WOULD_BLOCK_ERROR )// if non-blocking descriptor, this is a non-fatal error
 			return ThrowIoError(cx); // real error
-
 		*amount = 0;
-		return JS_TRUE; // no error, but no data
+		return JS_TRUE; // no data yet, but it is not an error.
 	}
 
-	if ( ret == 0 ) { // end of file / socket
-
-		// (TBD) ?
+	if ( ret == 0 ) { // end of file is reached or the network connection is closed.
+		
+		// (TBD) something to do ?
 	}
 
 	*amount = ret;
@@ -487,6 +486,12 @@ DEFINE_FUNCTION( Import ) {
 
  * *`DESC_PIPE`*
 **/
+
+/**doc
+=== Native Interface ===
+ *NIStreamRead*: Read the file as a stream.
+**/
+
 
 CONFIGURE_CLASS
 

@@ -42,7 +42,8 @@ DEFINE_FINALIZE() {
 **/
 DEFINE_CONSTRUCTOR() {
 
-	J_S_ASSERT_CONSTRUCTING(&classSpace);
+	J_S_ASSERT_CONSTRUCTING();
+	J_S_ASSERT_THIS_CLASS();
 	ode::dSpaceID parentSpace = 0;
 	if ( argc >= 1 )
 		if ( ValToSpaceID(cx, argv[0], &parentSpace) == JS_FALSE )

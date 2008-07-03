@@ -165,6 +165,9 @@ inline JSBool BufferRefill( JSContext *cx, JSObject *obj, size_t amount ) { // a
 
 inline JSBool BufferRefill( JSContext *cx, JSObject *obj, size_t amount ) { // amount = total needed amount
 
+	BufferPrivate *pv = (BufferPrivate*)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE( pv );
+
 	jsval srcVal;
 	J_CHK( JS_GetProperty(cx, obj, "source", &srcVal) );
 //	J_CHK( JS_GetReservedSlot(cx, obj, SLOT_SOURCE, &srcVal) );
@@ -179,21 +182,31 @@ inline JSBool BufferRefill( JSContext *cx, JSObject *obj, size_t amount ) { // a
 	NIStreamRead nisr = StreamReadInterface(cx, srcObj);
 	J_S_ASSERT( nisr != NULL, "Invalid source object" );
 
-	char *buf = (char*)JS_malloc(cx, amount);
-	J_S_ASSERT_ALLOC( buf );
+	size_t len, prevBufferLength;
 
-	size_t len = amount;
-	
-	J_CHK( nisr(cx, srcObj, buf, &len) ); // (TBD) loop like with onunderflow
+	do {
+		
+		prevBufferLength = pv->length;
+		len = amount - pv->length;
 
-	if ( MaybeRealloc(amount, len) )
-		buf = (char*)JS_realloc(cx, buf, len);
+		char *buf = (char*)JS_malloc(cx, len);
+		J_S_ASSERT_ALLOC( buf );
 
-	JSObject *chunk = J_NewBinaryString(cx, buf, len);
+		J_CHK( nisr(cx, srcObj, buf, &len) );
+		
+		if ( len == 0 ) {
 
-	J_S_ASSERT( chunk != NULL, "Unable to create a binary string" );
+			JS_free(cx, buf);
+		} else {
+		
+			if ( MaybeRealloc(amount, len) )
+				buf = (char*)JS_realloc(cx, buf, len);
+			JSObject *chunk = J_NewBinaryString(cx, buf, len);
+			J_S_ASSERT( chunk != NULL, "Unable to create a binary string" );
+			J_CHK( WriteChunk(cx, obj, OBJECT_TO_JSVAL( chunk )) );
+		}
 
-	J_CHK( WriteChunk(cx, obj, OBJECT_TO_JSVAL( chunk )) );
+	} while( pv->length < amount && pv->length > prevBufferLength ); // see RULES ( at the top of this file )
 
 	return JS_TRUE;
 }
@@ -796,6 +809,14 @@ DEFINE_TRACER() {
 /**doc tab:2
  * $OBJ *source*
   The source property can contains any NIStreamRead compatible object. The Buffer uses this object when its length is less than the requested amount of data. Any extra data returned by the NIStreamRead object is keept in the buffer and will be used at the next read operation.
+  $H beware
+   The .source function called by the Buffer MUST return the exact or less than the  required size else the remaining is lost (not stored in the buffer).
+  $H note
+   You can use the Write() function in .source like:
+	{{{
+   buf.source = { Read:function(count) { times++; buf.Write(toto) } };
+   }}}
+   
 	$H example 1
    {{{
 	var buf1 = new Buffer('123');

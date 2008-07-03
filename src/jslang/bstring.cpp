@@ -136,7 +136,7 @@ DEFINE_CONSTRUCTOR() {
 		JS_SetPrivate(cx, obj, dBuffer);
 	}
 
-	J_CHK( InitBufferGetInterface(cx, obj) );
+	J_CHK( ReserveBufferGetInterface(cx, obj) );
 	J_CHK( SetBufferGetInterface(cx, obj, NativeInterfaceBufferGet) );
 
 	return JS_TRUE;

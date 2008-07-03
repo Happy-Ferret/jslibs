@@ -37,7 +37,8 @@ DEFINE_FINALIZE() {
 **/
 DEFINE_CONSTRUCTOR() {
 
-	J_S_ASSERT_CONSTRUCTING(_class);
+	J_S_ASSERT_CONSTRUCTING();
+	J_S_ASSERT_THIS_CLASS();
 
 	int descType;
 	if ( J_ARG_ISDEF(1) )
@@ -58,7 +59,7 @@ DEFINE_CONSTRUCTOR() {
 		return ThrowIoError(cx);
 
 	J_CHK( JS_SetPrivate( cx, obj, fd ) );
-	J_CHK( InitStreamReadInterface(cx, obj) );
+	J_CHK( ReserveStreamReadInterface(cx, obj) );
 	return JS_TRUE;
 }
 
@@ -212,7 +213,7 @@ DEFINE_FUNCTION( Accept ) {
 	JSObject *object = JS_NewObject( cx, &classSocket, NULL, NULL );
 	JS_SetPrivate( cx, object, newFd );
 
-	J_CHK( InitStreamReadInterface(cx, object) );
+	J_CHK( ReserveStreamReadInterface(cx, object) );
 	J_CHK( SetStreamReadInterface(cx, object, NativeInterfaceStreamRead) );
 
 	*rval = OBJECT_TO_JSVAL( object );

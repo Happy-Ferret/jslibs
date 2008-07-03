@@ -35,7 +35,8 @@ DEFINE_FINALIZE() {
 **/
 DEFINE_CONSTRUCTOR() {
 
-	J_S_ASSERT_CONSTRUCTING(&classGeomBox);
+	J_S_ASSERT_CONSTRUCTING();
+	J_S_ASSERT_THIS_CLASS();
 	ode::dSpaceID space = 0;
 	if ( argc >= 1 ) // place it in a space ?
 		if ( ValToSpaceID(cx, argv[0], &space) == JS_FALSE )

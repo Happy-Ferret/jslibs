@@ -23,7 +23,8 @@ DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are
 
 DEFINE_CONSTRUCTOR() { // Called when the object is constructed ( a = new Template() ) or activated ( a = Template() ). To distinguish the cases, use JS_IsConstructing() or use the J_S_ASSERT_CONSTRUCTING() macro.
 
-	J_S_ASSERT_CONSTRUCTING(_class);
+	J_S_ASSERT_CONSTRUCTING();
+	J_S_ASSERT_THIS_CLASS();
 	return JS_TRUE;
 }
 

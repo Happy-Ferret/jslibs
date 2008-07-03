@@ -638,13 +638,6 @@ inline JSBool JsvalToBool( JSContext *cx, jsval val, bool *bval ) {
 } while(0)
 
 
-/*
-#define J_S_ASSERT_CONSTRUCTING(_class) do { \
-	J_S_ASSERT_CONSTRUCTING(); \
-	J_S_ASSERT_THIS_CLASS(); \
-} while(0)
-*/
-
 ///////////////////////////////////////////////////////////////////////////////
 // Helper functions
 
@@ -741,7 +734,7 @@ inline JSBool CallFunction( JSContext *cx, JSObject *obj, jsval functionValue, j
 
 inline bool MaybeRealloc( int requested, int received ) {
 
-	return requested != 0 && (100 * received / requested < 90) && (requested - received > 256);
+	return requested != 0 && (128 * received / requested < 115) && (requested - received > 32); // instead using percent, I use per-128
 }
 
 
@@ -777,7 +770,10 @@ inline JSBool SetNativeInterface( JSContext *cx, JSObject *obj, const char *name
 
 		J_S_ASSERT( INT_FITS_IN_JSVAL((unsigned int)nativeFct), "Unable to store the Native Interface." );
 		tmp = INT_TO_JSVAL(nativeFct);
-		J_CHK( JS_SetProperty(cx, obj, name, &tmp ) );
+//		J_CHK( JS_SetProperty(cx, obj, name, &tmp ) );
+	J_CHK( JS_DefineProperty(cx, obj, name, tmp, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ) );
+
+
 	} else {
 		
 		tmp = JSVAL_VOID;
@@ -795,6 +791,13 @@ inline JSBool JSStreamRead( JSContext *cx, JSObject *obj, char *buffer, size_t *
 	jsval tmpVal, rval;
 	IntToJsval(cx, *amount, &tmpVal);
 	J_CHKM( JS_CallFunctionName(cx, obj, "Read", 1, &tmpVal, &rval), "Read() function not found.");
+
+	if ( rval == JSVAL_VOID ) {
+		
+		*amount = 0;
+		return JS_TRUE;
+	}
+
 	const char *tmpBuf;
 	size_t size;
 	J_CHK( JsvalToStringAndLength(cx, rval, &tmpBuf, &size) );
@@ -803,7 +806,7 @@ inline JSBool JSStreamRead( JSContext *cx, JSObject *obj, char *buffer, size_t *
 	return JS_TRUE;
 }
 
-inline JSBool InitStreamReadInterface( JSContext *cx, JSObject *obj ) {
+inline JSBool ReserveStreamReadInterface( JSContext *cx, JSObject *obj ) {
 	
 	return ReserveNativeInterface(cx, obj, "_NI_StreamRead" );
 }
@@ -850,7 +853,7 @@ inline JSBool JSBufferGet( JSContext *cx, JSObject *obj, const char **buffer, si
 	return JS_TRUE;
 }
 
-inline JSBool InitBufferGetInterface( JSContext *cx, JSObject *obj ) {
+inline JSBool ReserveBufferGetInterface( JSContext *cx, JSObject *obj ) {
 	
 	return ReserveNativeInterface(cx, obj, "_NI_BufferGet" );
 }
@@ -899,7 +902,7 @@ inline JSBool JSMatrix44Get( JSContext *cx, JSObject *obj, const char **buffer, 
 }
 */
 
-inline JSBool InitMatrix44GetInterface( JSContext *cx, JSObject *obj ) {
+inline JSBool ReserveMatrix44GetInterface( JSContext *cx, JSObject *obj ) {
 	
 	return ReserveNativeInterface(cx, obj, "_NIMatrix44Get" );
 }

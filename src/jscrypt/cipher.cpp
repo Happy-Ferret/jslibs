@@ -552,9 +552,11 @@ DEFINE_PROPERTY( IVGetter ) {
 	}
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err);
-	JSString *jssIV = JS_NewString(cx, IV, IVLength);
+//	JSString *jssIV = JS_NewString(cx, IV, IVLength);
+	JSObject *jssIV = J_NewBinaryString(cx, IV, IVLength);
 	J_S_ASSERT( jssIV != NULL, "unable to create the IV string." );
-	*vp = STRING_TO_JSVAL(jssIV);
+//	*vp = STRING_TO_JSVAL(jssIV);
+	*vp = OBJECT_TO_JSVAL(jssIV);
 	return JS_TRUE;
 }
 

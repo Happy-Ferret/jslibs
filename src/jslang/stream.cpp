@@ -98,7 +98,7 @@ DEFINE_CONSTRUCTOR() {
 	J_CHK( JS_SetReservedSlot(cx, obj, SLOT_STREAM_SOURCE, J_ARG(1)) );
 	J_CHK( PositionSet(cx, obj, 0) );
 
-	J_CHK( InitStreamReadInterface(cx, obj) );
+	J_CHK( ReserveStreamReadInterface(cx, obj) );
 	J_CHK( SetStreamReadInterface(cx, obj, StreamRead) );
 
 	return JS_TRUE;

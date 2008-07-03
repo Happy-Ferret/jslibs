@@ -61,11 +61,14 @@
 	BufferUnderflow: function(QA) {
 		
 		LoadModule('jsstd');
-
+		
+		var times = 0;
 		var toto = 'Zz';
 
 		var buf = new Buffer();
-		buf.onunderflow = function(buf) { buf.Write(toto) }
+//		buf.onunderflow = function(buf) { buf.Write(toto) }
+//		buf.source = { Read:function(count) { times++; return toto; } };
+		buf.source = { Read:function(count) { times++; buf.Write(toto) } };
 		buf.Write('1234');
 		buf.Write('5');
 		buf.Write('');
@@ -79,7 +82,13 @@
 		s += 'Y'
 		QA.GC();
 
+		QA.ASSERT( buf.length, 10, 'length before read 30' );
+
 		QA.ASSERT_STR( buf.Read(30), '12345X6789ZzZzZzZzZzZzZzZzZzZz', 'Read(30)' );
+
+		QA.ASSERT( buf.length, 0, 'length after read 30' );
+
+		QA.ASSERT( times, 10, 'times .source stream has been called' );
 
 		buf.Write('1234');
 		buf.Write('5');
@@ -219,10 +228,18 @@
 
 		var buf2 = new Buffer('123');
 		buf2.source = {
-			Read: function(count) StringRepeat('x',count)
+			Read: function(count) { return StringRepeat('x',count) }
 		}
 		QA.ASSERT( buf2.length, 3, 'length' );
 		QA.ASSERT_STR( buf2.Read(6), '123xxx', 'read' );
+
+
+		var buf3 = new Buffer('123');
+		buf3.source = {
+			Read: function(count) { buf3.Write( StringRepeat('x',count) ) }
+		}
+		QA.ASSERT( buf3.length, 3, 'length' );
+		QA.ASSERT_STR( buf3.Read(6), '123xxx', 'read' );
 	},
 
 	PackEndianTest: function(QA) {

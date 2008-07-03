@@ -426,10 +426,12 @@ DEFINE_FUNCTION( Sign ) { // ( data [, saltLength] )
 
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err); // (TBD) free something ?
-	JSString *jssOut = JS_NewStringCopyN( cx, out, outLength );
+//	JSString *jssOut = JS_NewStringCopyN( cx, out, outLength );
+	JSObject *jssOut = J_NewBinaryStringCopyN( cx, out, outLength );
 	zeromem(out, sizeof(out));
 	J_S_ASSERT_ALLOC( jssOut );
-	*rval = STRING_TO_JSVAL(jssOut);
+//	*rval = STRING_TO_JSVAL(jssOut);
+	*rval = OBJECT_TO_JSVAL(jssOut);
 	return JS_TRUE;
 }
 
@@ -627,9 +629,11 @@ DEFINE_PROPERTY( keyGetter ) {
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err); // (TBD) free something ?
 
-	JSString *jssKey = JS_NewStringCopyN(cx, key, keyLength);
+//	JSString *jssKey = JS_NewStringCopyN(cx, key, keyLength);
+	JSObject *jssKey = J_NewBinaryStringCopyN(cx, key, keyLength);
 	J_S_ASSERT( jssKey != NULL, "unable to create the key string." );
-	*vp = STRING_TO_JSVAL(jssKey);
+//	*vp = STRING_TO_JSVAL(jssKey);
+	*vp = OBJECT_TO_JSVAL(jssKey);
 	zeromem(key, sizeof(key)); // safe clean
 	return JS_TRUE;
 }

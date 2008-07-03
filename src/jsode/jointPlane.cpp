@@ -27,7 +27,8 @@ BEGIN_CLASS( JointPlane )
 **/
 DEFINE_CONSTRUCTOR() {
 
-	J_S_ASSERT_CONSTRUCTING(_class);
+	J_S_ASSERT_CONSTRUCTING();
+	J_S_ASSERT_THIS_CLASS();
 	J_S_ASSERT_ARG_MIN(1);
 	ode::dWorldID worldId;
 	if ( ValToWorldID( cx, argv[0], &worldId) == JS_FALSE )

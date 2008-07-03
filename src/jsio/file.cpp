@@ -59,11 +59,12 @@ DEFINE_FINALIZE() {
 **/
 DEFINE_CONSTRUCTOR() {
 
-	J_S_ASSERT_CONSTRUCTING( _class );
+	J_S_ASSERT_CONSTRUCTING();
+	J_S_ASSERT_THIS_CLASS();
 	J_S_ASSERT_ARG_MIN(1);
 	JS_SetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, J_ARG(1) );
 	JS_SetPrivate(cx, obj, NULL); // (TBD) optional ?
-	InitStreamReadInterface(cx, obj);
+	ReserveStreamReadInterface(cx, obj);
 	return JS_TRUE;
 }
 
@@ -118,7 +119,7 @@ DEFINE_FUNCTION( Open ) {
 	
 //	J_CHK( SetStreamReadInterface(cx, obj, NativeInterfaceStreamRead) );
 
-	J_CHK( InitStreamReadInterface(cx, obj) ); // this reserves the NativeInterface, then it can be switched on/off safely (see Descriptor::Close)
+	J_CHK( ReserveStreamReadInterface(cx, obj) ); // this reserves the NativeInterface, then it can be switched on/off safely (see Descriptor::Close)
 	J_CHK( SetStreamReadInterface(cx, obj, NativeInterfaceStreamRead) );
 
 	*rval = OBJECT_TO_JSVAL(obj); // allows to write f.Open(...).Read()

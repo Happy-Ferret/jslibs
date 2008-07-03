@@ -275,7 +275,8 @@ BEGIN_CLASS( Systray )
 **/
 DEFINE_CONSTRUCTOR() {
 
-	J_S_ASSERT_CONSTRUCTING(_class);
+	J_S_ASSERT_CONSTRUCTING();
+	J_S_ASSERT_THIS_CLASS();
 
 	HINSTANCE hInst = (HINSTANCE)GetModuleHandle(NULL);
 	J_S_ASSERT( hInst != NULL, "Unable to GetModuleHandle." );
