@@ -2,15 +2,31 @@ LoadModule('jsstd');
 LoadModule('jsio');
 
 
-var f = new File('directory.cpp');
-f.Open("r");
-f.Read(10);
-Print( f.available, '\n' );
-f.Read(10);
-Print( f.available, '\n' );
-f.Read(10000);
-Print( f.available, '\n' );
 
+ var b = new Buffer({ __proto__: Stream('1234') });
+ 
+ Print( b.Read(2) );
+
+
+
+Halt();
+
+//var tmp = new File('test.txt');
+//tmp.Open('w');
+//tmp.Write('123');
+
+
+var f = new File('test.txt');
+
+try {
+
+	f.Move('..');
+
+} catch ( ex if ex instanceof IoError ) { 
+	
+	if ( ex.code != -5936 )
+		throw(ex);
+}
 
 
 Halt();

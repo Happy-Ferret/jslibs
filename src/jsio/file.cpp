@@ -202,6 +202,47 @@ DEFINE_FUNCTION( Lock ) {
 	return JS_TRUE;
 }
 
+/**doc
+ * $VOID $INAME( directory )
+  Move the file to another directory.
+**/
+DEFINE_FUNCTION( Move ) {
+
+	J_S_ASSERT_ARG_MIN( 1 );
+	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
+	J_S_ASSERT( fd == NULL, "Cannot move an open file." );
+
+	jsval jsvalFileName;
+	JS_GetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName );
+	J_S_ASSERT_DEFINED( jsvalFileName );
+	const char *fileName;
+	J_CHK( JsvalToString(cx, jsvalFileName, &fileName) );
+
+	const char *destDirName;
+	size_t destDirNameLength;
+	J_CHK( JsvalToStringAndLength(cx, J_ARG(1), &destDirName, &destDirNameLength) );
+
+	const char *fileNameOnly = strrchr(fileName, '/');
+	if ( fileNameOnly == NULL )
+		fileNameOnly = fileName;
+
+	J_S_ASSERT( destDirNameLength + strlen(fileNameOnly) + 1 < PATH_MAX, "Invalid file name." );
+
+	char destFileName[PATH_MAX];
+	strcpy(destFileName, destDirName);
+	strcat(destFileName, "/");
+	strcat(destFileName, fileNameOnly);
+
+	if ( PR_Rename(fileName, destFileName) != PR_SUCCESS )
+		return ThrowIoError(cx);
+	
+	JSString *jsstr = JS_NewStringCopyZ(cx, destFileName);
+	J_S_ASSERT_ALLOC( jsstr );
+
+	J_CHK( JS_SetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, STRING_TO_JSVAL(jsstr) ) );
+	
+	return JS_TRUE;
+}
 
 /**doc
 === Properties ===
@@ -338,7 +379,7 @@ DEFINE_PROPERTY( contentSetter ) { // (TBD) support BString
 
 /**doc
  * $STR $INAME
-  Contains the name of the file. Changing this value will rename the file.
+  Contains the name of the file. Changing this value will rename or move the file.
 **/
 DEFINE_PROPERTY( nameGetter ) {
 
@@ -510,6 +551,7 @@ CONFIGURE_CLASS
 		FUNCTION( Seek )
 		FUNCTION( Delete )
 		FUNCTION( Lock )
+		FUNCTION( Move )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
