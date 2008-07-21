@@ -1,12 +1,33 @@
 LoadModule('jsstd');
 
 
-		var buf2 = new Buffer('123');
-		buf2.source = {
-			Read: function(count) { return 'xcv' }
-		}
 
-		Print( buf2.Read(6) );
+
+ function ReadFromFile() {
+
+  Print('*** read from the file\n');
+  return StringRepeat('x',5);
+ }
+ 
+ var buf = new Buffer({ Read:function() { buf.Write(ReadFromFile()); }})
+
+ for ( var i=0; i<15; i++ )
+  Print( buf.Read(1), '\n' )
+
+
+
+
+
+Halt()
+
+
+		var buf2 = new Buffer({
+			Read: function(count) { return 'xcv' }
+		});
+
+		Print( buf2.length, '\n' );
+		Print( buf2.Read(100), '\n' );
+		Print( buf2.length, '\n' );
 
 
 

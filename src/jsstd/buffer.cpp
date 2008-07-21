@@ -27,7 +27,7 @@
 #include "../common/queue.h"
 #include "../jslang/bstringapi.h"
 
-//#define SLOT_SOURCE 0
+#define SLOT_SOURCE 0
 
 
 struct BufferPrivate {
@@ -169,17 +169,17 @@ inline JSBool BufferRefill( JSContext *cx, JSObject *obj, size_t amount ) { // a
 	J_S_ASSERT_RESOURCE( pv );
 
 	jsval srcVal;
-	J_CHK( JS_GetProperty(cx, obj, "source", &srcVal) );
-//	J_CHK( JS_GetReservedSlot(cx, obj, SLOT_SOURCE, &srcVal) );
+//	J_CHK( JS_GetProperty(cx, obj, "source", &srcVal) );
+	J_CHK( JS_GetReservedSlot(cx, obj, SLOT_SOURCE, &srcVal) );
 
-	if ( srcVal == JSVAL_VOID ) // undefined or <undefined> or deleted, ...
+	if ( srcVal == JSVAL_VOID ) // no source for refill
 		return JS_TRUE;
 
 	J_S_ASSERT_OBJECT(srcVal);
 
 	JSObject *srcObj = JSVAL_TO_OBJECT( srcVal );
 
-	NIStreamRead nisr = StreamReadInterface(cx, srcObj);
+	NIStreamRead nisr = StreamReadInterface(cx, srcObj); // get native or non-native StreamRead function
 	J_S_ASSERT( nisr != NULL, "Invalid source object" );
 
 	size_t len, prevBufferLength;
@@ -461,11 +461,53 @@ DEFINE_FINALIZE() {
 	}
 }
 
-/**doc
- * $INAME( [string | Buffer object] )
-  Constructs a Buffer object.
+/* prev doc:
   If a string is given as argument, the buffer is initialized with this string.
   If buffer object is given, the buffer is initialized with this existing buffer object (kind of copy constructor).
+*/
+
+/**doc
+ * $INAME( [source] )
+  Constructs a Buffer object.
+  $H arguments
+   $ARG streamObject source: any object that supports NIStreamRead interface. The Buffer uses this object when its length is less than the requested amount of data.
+   $H beware
+    When used by the Buffer, the source MUST return the exact or less data than the required size else the remaining is lost (not stored in the buffer).
+   $H note
+    You can use the Write() function in the source like:
+    {{{
+    var buf = new Buffer({ Read:function(count) { buf.Write('some data') } });
+    }}}
+  
+  $H example 1
+  {{{
+  var buf1 = new Buffer(Stream('456'));
+  buf1.Write('123');
+  Print( buf1.Read(6) ); // prints: '123456'
+  }}}
+
+  $H example 2
+  {{{
+  var buf1 = new Buffer(Stream('123'));
+  Print( buf1.Read(1) ,'\n'); // prints: '1'
+  Print( buf1.Read(1) ,'\n'); // prints: '2'
+  Print( buf1.Read(1) ,'\n'); // prints: '3'
+  }}}
+
+  $H example 3
+  {{{
+  var buf2 = new Buffer(new function() {
+   this.Read = function(count) StringRepeat('x',count);
+  });
+  Print( buf2.Read(6) ); // prints: 'xxxxxx'
+  }}}
+
+  $H example 4
+   Create a long chain ( pack << buffer << buffer << stream )
+  {{{
+  var p = new Pack(new Buffer(new Buffer(Stream('\x12\x34'))));
+  Print( (p.ReadInt(2, false, true)).toString(16) ); // prints: '1234'
+  }}}
 **/
 DEFINE_CONSTRUCTOR() {
 
@@ -482,6 +524,7 @@ DEFINE_CONSTRUCTOR() {
 
 	if ( J_ARG_ISDEF(1) ) {
 
+/*
 		// (TBD) loop over all args
 		if ( J_JSVAL_IS_CLASS(J_ARG(1), _class) ) {
 
@@ -495,9 +538,39 @@ DEFINE_CONSTRUCTOR() {
 			pv->length += length;
 			return PushJsval(cx, pv->queue, J_ARG(1));
 		}
+*/
+		
+		J_S_ASSERT_OBJECT( J_ARG(1) );
+		J_CHK( JS_SetReservedSlot(cx, obj, SLOT_SOURCE, J_ARG(1)) );
+
 	}
 	return JS_TRUE;
 }
+
+/**doc
+=== Methods ===
+**/
+
+/*
+DEFINE_FUNCTION( Clone ) {
+
+		// (TBD) loop over all args
+		if ( J_JSVAL_IS_CLASS(J_ARG(1), _class) ) {
+
+			return AddBuffer(cx, obj, JSVAL_TO_OBJECT( J_ARG(1) ));
+		} else {
+
+			size_t length;
+			J_CHK( JsvalToStringLength(cx, J_ARG(1), &length) );
+			if ( length == 0 )
+				return JS_TRUE;
+			pv->length += length;
+			return PushJsval(cx, pv->queue, J_ARG(1));
+		}
+
+	return JS_TRUE;
+}
+*/
 
 
 /**doc
@@ -806,7 +879,7 @@ DEFINE_TRACER() {
   This function is called until the buffer size do not grow any more.
 */
 
-/**doc tab:2
+/** prev doc
  * $OBJ *source*
   The source property can contains any NIStreamRead compatible object. The Buffer uses this object when its length is less than the requested amount of data. Any extra data returned by the NIStreamRead object is keept in the buffer and will be used at the next read operation.
   $H beware
@@ -887,7 +960,7 @@ END_CLASS
 
 
 /**doc
-=== example ===
+=== example 1 ===
  {{{
  var buf = new Buffer();
  buf.Write('1234');
@@ -897,7 +970,7 @@ END_CLASS
  Print( buf.Read() );
  }}}
 
-=== example ===
+=== example 2 ===
  {{{
  var buf = new Buffer();
  buf.Write('0123456789');
@@ -906,4 +979,20 @@ END_CLASS
  Print( buf.Read(1) );
  Print( buf.Read(4) );
  }}}
+
+
+=== example 3 ===
+ Buffered read from a stream.
+ {{{	
+ function ReadFromFile() {
+
+  Print('*** read from the file\n');
+  return StringRepeat('x',5);
+ }
+ 
+ var buf = new Buffer({ Read:function() { buf.Write(ReadFromFile()); }})
+
+ for ( var i=0; i<15; i++ )
+  Print( buf.Read(1), '\n' )
+}}}
 **/
