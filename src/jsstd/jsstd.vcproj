@@ -185,11 +185,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\data.cpp"
+				RelativePath=".\main.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\main.cpp"
+				RelativePath=".\map.cpp"
 				>
 			</File>
 			<File
@@ -231,7 +231,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\data.h"
+				RelativePath=".\map.h"
 				>
 			</File>
 			<File

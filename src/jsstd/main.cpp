@@ -15,7 +15,7 @@
 #include "stdafx.h"
 
 #include "static.h"
-#include "data.h"
+#include "map.h"
 #include "buffer.h"
 #include "pack.h"
 
@@ -48,7 +48,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
 
 	INIT_STATIC();
-	INIT_CLASS( Data );
+	INIT_CLASS( Map );
 	INIT_CLASS( Buffer );
 	INIT_CLASS( Pack );
 
