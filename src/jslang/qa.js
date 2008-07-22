@@ -211,16 +211,18 @@
 	
 	JavascriptStream: function(QA) {
 		
-		var buf = new Buffer('abcdefghi');
+		var buf = new Buffer();
+		buf.Write('abcdefghi');
 
 		function myStream() {
+		
 			this.Read = function(amount) {
 				
 				return buf.Read(2);
 			}
 		}
 		
-		QA.ASSERT( Stringify( new myStream), 'abcdefghi', 'force string conversion' );
+		QA.ASSERT( Stringify( new myStream() ), 'abcdefghi', 'force string conversion' );
 	},
 	
 	

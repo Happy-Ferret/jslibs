@@ -356,9 +356,15 @@ DEFINE_FUNCTION( GetRandomNoise ) {
 		JS_free(cx, buf);
 		J_REPORT_ERROR( "PR_GetRandomNoise is not implemented on this platform." );
 	}
-	JSString *jsstr = JS_NewString(cx, (char*)buf, size); // (TBD) bstring
-	J_S_ASSERT_ALLOC( jsstr );
-	*rval = STRING_TO_JSVAL(jsstr);
+
+//	JSString *jsstr = JS_NewString(cx, (char*)buf, size); // (TBD) bstring
+//	J_S_ASSERT_ALLOC( jsstr );
+//	*rval = STRING_TO_JSVAL(jsstr);
+
+	JSObject *jsstr = J_NewBinaryString( cx, buf, size );
+	J_S_ASSERT_ALLOC(jsstr);
+	*rval = OBJECT_TO_JSVAL(jsstr);
+
 	return JS_TRUE;
 }
 

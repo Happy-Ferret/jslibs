@@ -88,7 +88,7 @@
 
 				QA.ASSERT( IsReadable(s), true, 'socket is readable' );
 				QA.ASSERT( IsWritable(s), true, 'socket is writable' );
-				QA.ASSERT( s.Read(), '1234', 'read data match' );
+				QA.ASSERT_STR( s.Read(), '1234', 'read data match' );
 				count++;
 			}
 		}
@@ -132,7 +132,7 @@
 		s2.readable = function(s) {
 
 			var [data, ip, port] = s.RecvFrom();
-			QA.ASSERT( data, '1234', 'received data' );
+			QA.ASSERT_STR( data, '1234', 'received data' );
 		}
 
 		var s1 = new Socket( Socket.UDP );
@@ -229,11 +229,11 @@
 		mem.Write('123', 0);
 		mem.Write('ABC', 9);
 		var mem2 = new SharedMemory( 'qa_tmp_sm.txt', 100 );
-		QA.ASSERT( mem2.Read(), '123456789ABC', 'content' );
+		QA.ASSERT_STR( mem2.Read(), '123456789ABC', 'content' );
 		QA.ASSERT( mem2.content.length, 12, 'used memory length' );
-		QA.ASSERT( mem2.content, '123456789ABC', 'content' );
+		QA.ASSERT_STR( mem2.content, '123456789ABC', 'content' );
 		mem2.Write('Z',99);
-		QA.ASSERT( mem.Read(1, 99), 'Z', 'writing at the end' );
+		QA.ASSERT_STR( mem.Read(1, 99), 'Z', 'writing at the end' );
 	},
 
 
@@ -255,13 +255,33 @@
 		f.Close();
 		f.Open(File.CREATE_FILE | File.RDWR);
 		f.Seek(1);
-		QA.ASSERT( f.Read(), 'bcd', 'read file' );
+		QA.ASSERT_STR( f.Read(), 'bcd', 'read file' );
 		f.Close();
 		f.Delete();	
 		QA.ASSERT( f.exist, false, 'file delete' );
 	},
 
 
+	FileInfo: function(QA) {
+	
+		var f = new File('qa_tmp_file_FileInfo.txt');
+		
+		QA.ASSERT( f.exist, false, 'file delete' );
+
+		f.content = 'xx'
+		QA.ASSERT( f.info.size, 2, 'file size' );
+
+		QA.ASSERT( Math.abs( f.info.modifyTime - new Date().getTime() ) < 2000, true, 'file date' );
+
+		f.content = 'xxx';
+		QA.ASSERT( f.info.size, 3, 'file size' );
+
+		QA.ASSERT( f.info.type, File.FILE_FILE, 'file type' );
+
+		f.Delete();
+	},
+	
+	
 	FileContent: function(QA) {
 
 		var data = String(new Date());
@@ -269,7 +289,7 @@
 		QA.ASSERT( f.exist, false, 'file exist' );
 		f.content = data;
 		QA.ASSERT( f.exist, true, 'file exist' );
-		QA.ASSERT( f.content, data, 'file content' );
+		QA.ASSERT_STR( f.content, data, 'file content' );
 		f.content = undefined;
 		QA.ASSERT( f.exist, false, 'file exist' );
 	},

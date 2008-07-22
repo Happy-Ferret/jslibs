@@ -1,11 +1,12 @@
 LoadModule('jsstd');
 LoadModule('jsio');
 
-
-
- var b = new Buffer({ __proto__: Stream('1234') });
- 
- Print( b.Read(2) );
+var f = new File('test.txt');
+f.info.toto = 123;
+f.content = 'xx'
+Print( f.info.size, '\n' );
+f.content = 'xxx'
+Print( f.info.toto, '\n' );
 
 
 

@@ -50,13 +50,15 @@
 		
 		LoadModule('jsstd');
 
-		var b = new Buffer("abcdefghi");
+		var b = new Buffer();
+		b.Write("abcdefghi");
 		b.Read(2);
 		b.Read(2);
 		b.Read(2);
 		b.Read(2);
 		QA.ASSERT_STR( b.Read(2), 'i', 'buffer match' );
 	},
+
 
 	BufferUnderflow: function(QA) {
 		
@@ -65,10 +67,8 @@
 		var times = 0;
 		var toto = 'Zz';
 
-		var buf = new Buffer();
-//		buf.onunderflow = function(buf) { buf.Write(toto) }
-//		buf.source = { Read:function(count) { times++; return toto; } };
-		buf.source = { Read:function(count) { times++; buf.Write(toto) } };
+		var buf = new Buffer({ Read:function(count) { times++; buf.Write(toto) } });
+
 		buf.Write('1234');
 		buf.Write('5');
 		buf.Write('');
@@ -102,6 +102,32 @@
 	},
 
 
+
+	BufferCopy: function(QA) {
+
+		var b1 = new Buffer();
+		b1.Write('1');
+		b1.Write('');
+		b1.Write('1');
+		b1.Write('1');
+
+		QA.ASSERT( b1.length, 3, 'source buffer length' );
+
+		var b2 = new Buffer();
+		b2.Write('aaa');
+
+		b2.Write(b1);
+		QA.ASSERT( b1.length, 3, 'source buffer length' );
+
+		b2.Write('bbb');
+		b2.Write(b1);
+		QA.ASSERT( b1.length, 3, 'source buffer length' );
+
+		QA.ASSERT_STR( b2.toString(), 'aaa111bbb111', 'buffer content' );	
+		
+		QA.ASSERT_STR( b1.toString(), '111', 'source buffer content' );	
+	},
+	
 	BufferSimpleRead: function(QA) {
 	
 		var b = new Buffer();
@@ -112,7 +138,8 @@
 
 	Buffer_toString: function(QA) {
 	
-		var b = new Buffer('12345');
+		var b = new Buffer();
+		b.Write('12345');
 		b.Write('678');
 		b.Write('9');
 		b.Write('');
@@ -121,7 +148,8 @@
 
 	Buffer_valueOf: function(QA) {
 	
-		var b = new Buffer('12345');
+		var b = new Buffer();
+		b.Write('12345');
 		b.Write('678');
 		b.Write('9');
 		b.Write('');
@@ -178,15 +206,16 @@
 	
 	BufferReadUntil: function(QA) {
 	
-		var buf = new Buffer('xxx');
+		var buf = new Buffer();
+		buf.Write('xxx');
+
 		buf.Write('aaa');
 		buf.Write('bb1');
 		buf.Write('14ccc');
-		var buf2 = new Buffer(buf);
-		buf2.Write('buffer2');
-		QA.ASSERT_STR( buf2.ReadUntil('114'), 'xxxaaabb', 'ReadUntil' );
-		QA.ASSERT( typeof buf2, 'object', 'buffer type' );
-		QA.ASSERT_STR( buf2, 'cccbuffer2', 'remaining' );
+		buf.Write('buffer2');
+		QA.ASSERT_STR( buf.ReadUntil('114'), 'xxxaaabb', 'ReadUntil' );
+		QA.ASSERT( typeof buf, 'object', 'buffer type' );
+		QA.ASSERT_STR( buf, 'cccbuffer2', 'remaining' );
 	},
 
 
@@ -215,29 +244,31 @@
 	
 	BufferSource: function(QA) {
 
-		var buf = new Buffer('123');
-		buf.source = Stream('456');
-		delete buf.source;
-		QA.ASSERT( buf.length, 3, 'length' );
-		QA.ASSERT_STR( buf.Read(6), '123', 'read' );
+		var buf = new Buffer(Stream('456'));
+		buf.Write('123');
 
-		var buf1 = new Buffer('123');
-		buf1.source = Stream('456');
+
+		QA.ASSERT( buf.length, 3, 'length' );
+		QA.ASSERT_STR( buf.Read(6), '123456', 'read' );
+
+		var buf1 = new Buffer(Stream('456'));
+		buf1.Write('123');
+		
 		QA.ASSERT( buf1.length, 3, 'length' );
 		QA.ASSERT_STR( buf1.Read(6), '123456', 'read' );
 
-		var buf2 = new Buffer('123');
-		buf2.source = {
+		var buf2 = new Buffer({
 			Read: function(count) { return StringRepeat('x',count) }
-		}
+		});
+		buf2.Write('123');
 		QA.ASSERT( buf2.length, 3, 'length' );
 		QA.ASSERT_STR( buf2.Read(6), '123xxx', 'read' );
 
 
-		var buf3 = new Buffer('123');
-		buf3.source = {
+		var buf3 = new Buffer({
 			Read: function(count) { buf3.Write( StringRepeat('x',count) ) }
-		}
+		});
+		buf3.Write('123');
 		QA.ASSERT( buf3.length, 3, 'length' );
 		QA.ASSERT_STR( buf3.Read(6), '123xxx', 'read' );
 	},

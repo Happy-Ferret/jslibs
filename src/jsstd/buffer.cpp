@@ -594,13 +594,18 @@ DEFINE_FUNCTION( Clear ) {
 
 /**doc
  * $INAME( data [, length] )
+ * $INAME( buffer )
   Add _data_ in the buffer. If _length_ is used, only the first _length_ bytes of _data_ are added.
+  The second form allow to add another whole buffer in the current buffer.
 **/
 DEFINE_FUNCTION( Write ) {
 
 	BufferPrivate *pv = (BufferPrivate*)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( pv );
 	J_S_ASSERT_ARG_MIN( 1 );
+
+	if ( J_JSVAL_IS_CLASS(J_ARG(1), _class ) )
+		return AddBuffer(cx, obj, JSVAL_TO_OBJECT( J_ARG(1) ));
 
 	if ( J_ARG_ISDEF(2) ) {
 
@@ -782,7 +787,7 @@ DEFINE_FUNCTION( Unread ) {
 
 	J_S_ASSERT_ARG_MIN( 1 );
 	J_S_ASSERT_ARG_MAX( 1 ); // discourages one to use Unread like Write
-	J_CHK( UnReadChunk(cx, obj, J_ARG(1)) ); // no need to use JS_NewDependentString (see js_NewDependentString in jsstr.c)
+	J_CHK( UnReadChunk(cx, obj, J_ARG(1)) );
 	*rval = J_ARG(1);
 	return JS_TRUE;
 }

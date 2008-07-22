@@ -251,10 +251,14 @@ DEFINE_FUNCTION_FAST( Read ) {
 	memmove(	data, (char *)pv->mem + sizeof(MemHeader) + offset, dataLength );
 
 	J_CHK( Unlock(cx, pv) );
-	
-	JSString *jss = JS_NewString(cx, data, dataLength);
-	J_S_ASSERT_ALLOC( jss );
-	*J_FRVAL = STRING_TO_JSVAL( jss );
+
+//	JSString *jss = JS_NewString(cx, data, dataLength);
+//	J_S_ASSERT_ALLOC( jss );
+//	*J_FRVAL = STRING_TO_JSVAL( jss );
+
+	JSObject *jss = J_NewBinaryString( cx, data, dataLength );
+	J_S_ASSERT_ALLOC(jss);
+	*J_FRVAL = OBJECT_TO_JSVAL(jss);
 	
 	return JS_TRUE;
 }
@@ -339,9 +343,14 @@ DEFINE_PROPERTY( contentGetter ) { // (TBD) support BString
 
 	J_CHK( Unlock(cx, pv) );
 
-	JSString *jss = JS_NewString(cx, data, dataLength);
-	J_S_ASSERT_ALLOC( jss );
-	*vp = STRING_TO_JSVAL( jss );
+//	JSString *jss = JS_NewString(cx, data, dataLength);
+//	J_S_ASSERT_ALLOC( jss );
+//	*vp = STRING_TO_JSVAL( jss );
+
+	JSObject *jss = J_NewBinaryString( cx, data, dataLength );
+	J_S_ASSERT_ALLOC(jss);
+	*vp = OBJECT_TO_JSVAL(jss);
+
 
 	return JS_TRUE;
 }

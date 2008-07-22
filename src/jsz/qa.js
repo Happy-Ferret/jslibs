@@ -34,9 +34,9 @@
 		var inflate = new Z(Z.INFLATE);
 		var source = 'x';
 		var str = deflate(source, true);	
-		QA.ASSERT( str, "x\x9C\xAB\0\0\0y\0y", 'deflate result' );
+		QA.ASSERT_STR( str, "x\x9C\xAB\0\0\0y\0y", 'deflate result' );
 		var result = inflate(str, true);
-		QA.ASSERT( result, source, 'inflate result' );
+		QA.ASSERT_STR( result, source, 'inflate result' );
 	},
 
 	InflateDeflate2: function(QA) {
@@ -46,7 +46,7 @@
 		var source = QA.RandomString(10000);
 		var str = deflate(source, true);	
 		var result = inflate(str, true);
-		QA.ASSERT( result, source, 'inflate result' );
+		QA.ASSERT_STR( result, source, 'inflate result' );
 	},
 
 	InflateDeflateHuge: function(QA) {

@@ -1,7 +1,22 @@
 LoadModule('jsstd');
 
 
+var b1 = new Buffer();
+b1.Write('1');
+b1.Write('');
+b1.Write('1');
+b1.Write('1');
 
+var b2 = new Buffer();
+b2.Write('aaa');
+b2.Write(b1);
+b2.Write('bbb');
+b2.Write(b1);
+
+Print( b2);
+
+
+Halt();
 
  function ReadFromFile() {
 

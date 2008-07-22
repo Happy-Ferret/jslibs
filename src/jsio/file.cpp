@@ -255,7 +255,7 @@ DEFINE_FUNCTION( Move ) {
 DEFINE_PROPERTY( positionSetter ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
-	J_S_ASSERT_RESOURCE( fd );
+	J_S_ASSERT( fd != NULL, "File is closed." );
 	PRInt64 offset;
 	jsdouble doubleOffset;
 	J_CHK( JS_ValueToNumber( cx, *vp, &doubleOffset ) );
@@ -269,7 +269,7 @@ DEFINE_PROPERTY( positionSetter ) {
 DEFINE_PROPERTY( positionGetter ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
-	J_S_ASSERT_RESOURCE( fd );
+	J_S_ASSERT( fd != NULL, "File is closed." );
 	PRInt64 ret = PR_Seek64( fd, 0, PR_SEEK_CUR );
 	if ( ret == -1 )
 		return ThrowIoError(cx);
@@ -334,9 +334,15 @@ DEFINE_PROPERTY( contentGetter ) { // (TBD) support BString
 		buf = (char*)JS_realloc(cx, buf, res + 1); // realloc the string using its real size
 		J_S_ASSERT_ALLOC(buf);
 	}
-	JSString *str = JS_NewString( cx, (char*)buf, res );
+
+//	JSString *str = JS_NewString( cx, (char*)buf, res );
+//	J_S_ASSERT_ALLOC(str);
+//	*vp = STRING_TO_JSVAL(str);
+
+	JSObject *str = J_NewBinaryString( cx, buf, res );
 	J_S_ASSERT_ALLOC(str);
-	*vp = STRING_TO_JSVAL(str);
+	*vp = OBJECT_TO_JSVAL(str);
+
 	return JS_TRUE;
 }
 
@@ -428,8 +434,22 @@ DEFINE_PROPERTY( exist ) {
  * $OBJ $INAME $READONLY
   This property works with opened and closed files.
   Contains an object that has the following properties:
-   * type : the type of the file
-   * size : the size of the file
+   * type : Type of file.
+   * size : Size, in bytes, of file's contents.
+   * creationTime : Creation time (elapsed milliseconds since 1970.1.1).
+   * modifyTime : Last modification time (elapsed milliseconds since 1970.1.1).
+  $H note
+   Time is relative to midnight (00:00:00), January 1, 1970 Greenwich Mean Time (GMT).
+  $H beware
+   File time resolution depends of hte underlying filesystem.
+   $LF
+	eg. the resolution of create time on FAT is 10 milliseconds, while write time has a resolution of 2 seconds and access time has a resolution of 1 day.
+  $H example
+   {{{
+   var f = new File('test.txt');
+	f.content = '123';
+   Print( new Date( f.info.modifyTime ) );
+   }}}
 **/
 DEFINE_PROPERTY( info ) {
 
@@ -452,21 +472,27 @@ DEFINE_PROPERTY( info ) {
 	if ( status != PR_SUCCESS )
 		return ThrowIoError(cx);
 
-	JSObject *fileTypeObj = JS_NewObject( cx, NULL, NULL, NULL );
-	*vp = OBJECT_TO_JSVAL( fileTypeObj );
+	JSObject *fileInfoObj;
+	if ( JSVAL_IS_OBJECT(*vp) ) {
 
-	// (TBD) these properties must be read-only !!
-	jsval jsvalType = INT_TO_JSVAL((int)fileInfo.type);
-	JS_SetProperty( cx, fileTypeObj, "type", &jsvalType );
+		fileInfoObj = JSVAL_TO_OBJECT(*vp);
+	} else {
 
-	jsval jsvalSize = INT_TO_JSVAL(fileInfo.size);
-	JS_SetProperty( cx, fileTypeObj, "size", &jsvalSize );
+		fileInfoObj = JS_NewObject( cx, NULL, NULL, NULL );
+		*vp = OBJECT_TO_JSVAL( fileInfoObj );
+	}
 
-	jsval jsvalCreationTime = INT_TO_JSVAL(fileInfo.creationTime);
-	JS_SetProperty( cx, fileTypeObj, "creationTime", &jsvalCreationTime );
+	J_CHK( JS_DefineProperty(cx, fileInfoObj, "type", INT_TO_JSVAL((int)fileInfo.type), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT | JSPROP_ENUMERATE) );
 
-	jsval jsvalModifyTime = INT_TO_JSVAL(fileInfo.modifyTime);
-	JS_SetProperty( cx, fileTypeObj, "modifyTime", &jsvalModifyTime );
+	J_CHK( JS_DefineProperty(cx, fileInfoObj, "size", INT_TO_JSVAL(fileInfo.size), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT | JSPROP_ENUMERATE) );
+
+	jsval dateValue;
+
+	J_CHK( JS_NewNumberValue(cx, fileInfo.creationTime / (jsdouble)1000, &dateValue) );
+	J_CHK( JS_DefineProperty(cx, fileInfoObj, "creationTime", dateValue, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT | JSPROP_ENUMERATE) );
+
+	J_CHK( JS_NewNumberValue(cx, fileInfo.modifyTime / (jsdouble)1000, &dateValue) );
+	J_CHK( JS_DefineProperty(cx, fileInfoObj, "modifyTime", dateValue, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT | JSPROP_ENUMERATE) );
 
 	return JS_TRUE;
 }
@@ -559,7 +585,7 @@ CONFIGURE_CLASS
 		PROPERTY( content )
 		PROPERTY( position )
 		PROPERTY_READ( exist )
-		PROPERTY_READ( info )
+		PROPERTY_READ_STORE( info )
 	END_PROPERTY_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC

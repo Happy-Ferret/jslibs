@@ -422,9 +422,14 @@ DEFINE_FUNCTION( RecvFrom ) {
 	jsval data;
 	if (res > 0) {
 
-		JSString *strBuffer = JS_NewString(cx, buffer, res);
-		J_S_ASSERT_ALLOC( strBuffer ); // (TBD) else free buffer
-		data = STRING_TO_JSVAL(strBuffer);
+//		JSString *strBuffer = JS_NewString(cx, buffer, res);
+//		J_S_ASSERT_ALLOC( strBuffer ); // (TBD) else free buffer
+//		data = STRING_TO_JSVAL(strBuffer);
+
+		JSObject *strBuffer = J_NewBinaryString( cx, buffer, res );
+		J_S_ASSERT_ALLOC(strBuffer);
+		data = OBJECT_TO_JSVAL(strBuffer);
+
 		*rval = data; // protect from GC
 	} else if (res == 0) {
 		
