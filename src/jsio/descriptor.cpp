@@ -27,6 +27,8 @@
 
 JSBool NativeInterfaceStreamRead( JSContext *cx, JSObject *obj, char *buf, size_t *amount ) {
 
+	J_S_ASSERT_CLASS(obj, &classDescriptor);
+
 	PRFileDesc *fd = (PRFileDesc*)JS_GetPrivate(cx, obj); // (PRFileDesc *)pv;
 	J_S_ASSERT_RESOURCE(fd);
 

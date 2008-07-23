@@ -746,7 +746,24 @@ inline bool MaybeRealloc( int requested, int received ) {
 inline JSBool GetNativeInterface( JSContext *cx, JSObject *obj, jsid iid, void **nativeFct ) {
 
 	jsval tmp;
+/*
+	JSObject *obj2;
+	JSProperty *prop;
+	J_CHKM( OBJ_LOOKUP_PROPERTY(cx, obj, iid, &obj2, &prop), "Unable to get the native interface.");
+
+	if ( prop == NULL ) {
+
+		*nativeFct = NULL;
+		return JS_TRUE;
+	}
+
+	J_CHK( JS_IdToValue(cx, prop->id, &tmp) );
+*/
+
 	J_CHKM( OBJ_GET_PROPERTY(cx, obj, iid, &tmp), "Unable to get the native interface.");
+
+	// (TBD) ensure that iid is found on obj and not its prototype chain. workaround: check the class inside the nativeInterface function. (eg. J_S_ASSERT_CLASS(obj, &classStream); )
+
 	if ( JSVAL_IS_INT(tmp) ) {
 
 		*nativeFct = (void*)JSVAL_TO_INT(tmp);

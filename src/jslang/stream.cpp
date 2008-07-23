@@ -20,6 +20,7 @@
 #define SLOT_STREAM_SOURCE 0
 #define SLOT_STREAM_POSITION 1
 
+DECLARE_CLASS( Stream );
 
 inline JSBool PositionSet( JSContext *cx, JSObject *obj, int position ) {
 
@@ -39,6 +40,8 @@ inline JSBool PositionGet( JSContext *cx, JSObject *obj, int *position ) {
 
 
 JSBool StreamRead( JSContext *cx, JSObject *obj, char *buf, unsigned int *amount ) {
+
+	J_S_ASSERT_CLASS(obj, &classStream);
 
 	int position;
 	J_CHK( PositionGet(cx, obj, &position) );

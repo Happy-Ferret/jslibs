@@ -2,8 +2,12 @@ LoadModule('jsstd');
 LoadModule('jsio');
 
 
-var stream = new Stream('456');
-Print( stream._NI_StreamRead, '\n' )
+//Stringify( Stream('1234') );
+
+Stringify( { __proto__: Stream('1234') } );
+
+Halt();
+
 
 
 
