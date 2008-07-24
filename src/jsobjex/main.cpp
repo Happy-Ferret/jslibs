@@ -14,10 +14,12 @@
 
 #include "stdafx.h"
 
-//#define MODULE_NAME "jstemplate"
-//static const char *_revision = "$Rev$";
-
 #include "objex.h"
+
+static bool _defaultUnsafeMode = false;
+extern bool *_pUnsafeMode = &_defaultUnsafeMode;
+
+DECLARE_CLASS( ObjEx )
 
 /**doc t:header
 $MODULE_HEADER
@@ -27,11 +29,15 @@ $MODULE_HEADER
 /**doc t:footer
 $MODULE_FOOTER
 **/
-extern "C" DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
+EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
-//	JS_DefineProperty(cx, obj, MODULE_NAME "_build", INT_TO_JSVAL(atoi(_revision+6)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ); // 6 is the size of "$Rev: "
+	jsval unsafeModePtrVal;
+	J_CHK( GetConfigurationValue(cx, NAME_CONFIGURATION_UNSAFE_MODE_PTR, &unsafeModePtrVal) );
+	if ( unsafeModePtrVal != JSVAL_VOID )
+		_pUnsafeMode = (bool*)JSVAL_TO_PRIVATE(unsafeModePtrVal);
 
-	objexInitClass( cx, obj );
+	INIT_CLASS( ObjEx );
+
 	return JS_TRUE;
 }
 

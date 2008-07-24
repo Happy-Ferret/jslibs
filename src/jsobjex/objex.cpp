@@ -10,154 +10,135 @@
 #define SET_SLOT 3
 #define AUX_SLOT 4
 
-JSBool NotifyObject( int slotIndex, JSContext *cx, JSObject *obj, jsval id, jsval *vp ) {
 
-	// (TBD) because in constructor we do JS_SetPrototype(cx, obj, NULL) to create a 'true' empty object, is the next line useful ?
+/**doc
+$CLASS_HEADER
+ This class give the ability to spy properties changes. One can listen for add, del, set and set events on the object.
+ It is also possible to store an hidden auxiliary value that can be access using ObjEx.Aux( _ObjEx object_ ) static function.
+**/
+BEGIN_CLASS( ObjEx )
+
+
+inline JSBool NotifyObject( int slotIndex, JSContext *cx, JSObject *obj, jsval id, jsval *vp ) {
+
+// (TBD) because in constructor we do JS_SetPrototype(cx, obj, NULL) to create a 'true' empty object, is the next lines useful ?
 
 //	if ( JSVAL_IS_VOID(*vp) && strcmp( JS_GetStringBytes(JS_ValueToString(cx,id)), "__iterator__" ) == 0 ) // we don't want to override the iterator
 //		return JS_TRUE;
-
 	jsid idid;
-	JS_ValueToId(cx, id, &idid);
+	J_CHK( JS_ValueToId(cx, id, &idid) );
 	if ( idid == ATOM_TO_JSID(cx->runtime->atomState.iteratorAtom) ) // (TBD) check if it is faster
 		return JS_TRUE;
 
+// (TBD) returns the current value too (cf.	JS_LookupProperty(cx, obj, )
+
 	jsval slot;
-	JS_GetReservedSlot( cx, obj, slotIndex , &slot );
+	J_CHK( JS_GetReservedSlot( cx, obj, slotIndex , &slot ) );
 	if ( JSVAL_IS_VOID(slot) )
 		return JS_TRUE;
 	jsval aux;
-	JS_GetReservedSlot( cx, obj, AUX_SLOT, &aux );
+	J_CHK( JS_GetReservedSlot( cx, obj, AUX_SLOT, &aux ) );
 	jsval args[] = { id, *vp, aux, INT_TO_JSVAL(slotIndex) }; // ( propertyName, propertyValue, auxObject, callbackIndex )
 	return JS_CallFunctionValue( cx, obj, slot, sizeof(args)/sizeof(jsval), args, vp );
 }
 
-JSBool objex_addProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
+JSBool AddProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 
 	return NotifyObject( ADD_SLOT, cx, obj, id, vp );
 }
 
-JSBool objex_delProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
+JSBool DelProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 
 	return NotifyObject( DEL_SLOT, cx, obj, id, vp );
 }
 
-JSBool objex_getProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
+JSBool GetProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 
 	return NotifyObject( GET_SLOT, cx, obj, id, vp );
 }
 
-JSBool objex_setProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
+JSBool SetProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 
 	return NotifyObject( SET_SLOT, cx, obj, id, vp );
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSClass objex_class = { "ObjEx", JSCLASS_HAS_RESERVED_SLOTS(5) /*| JSCLASS_NEW_RESOLVE | JSCLASS_SHARE_ALL_PROPERTIES */,
-  objex_addProperty, objex_delProperty, objex_getProperty, objex_setProperty,
-  JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, JS_FinalizeStub
-};
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/**doc
+ * $INAME( [addCallback], [delCallback], [getCallback], [setCallback] [, auxObject] )
+  Constructs a ObjEx object.
+  $H arguments
+   $ARG Function addCallback: called when the property is added to the object.
+   $ARG Function delCallback: called when the property is deleted form the object.
+   $ARG Function getCallback: called when the property is read form the object.
+   $ARG Function setCallback: called when the property is changed. This include when the property is added.
+   $ARG Value auxObject:
+  $H note
+   addCallback, delCallback, getCallback, setCallback: can be set to <undefined> value.
+  $H behavior
+   addCallback, delCallback, getCallback, setCallback functions are called according to the operation done on the object.
+	These callback functions are called with the following arguments:
+	propertyName, propertyValue, auxObject, callbackIndex
+   * propertyName : the name of the property being handled.
+   * propertyValue : the value of the property being handled.
+   * auxObject : the _auxObject_ provided to the constructor.
+   * callbackIndex : an integer that has the folowing value: 0 for addCallback, 1 for delCallback, 2 for getCallback, 3 for setCallback.
+  $H note
+	addCallback callback function is called only when the property is being added, in opposition to _setCallback_ that is called each time the value is changed.
+**/
 DEFINE_CONSTRUCTOR() {
 
-	if ( !JS_IsConstructing(cx) ) {
+	J_S_ASSERT_CONSTRUCTING();
+	for ( uintN i = 0; i < J_ARGC && i < 4; i++ )
+		if ( J_ARG_ISDEF(i+1) ) {
 
-		JS_ReportError( cx, "need to be construct" );
-		return JS_FALSE;
-	}
-
-	for ( uintN i=0; i<argc && i<4; i++ ) {
-
-		if ( JS_TypeOfValue( cx, argv[i] ) != JSTYPE_FUNCTION && !JSVAL_IS_VOID(argv[i]) ) {
-
-			JS_ReportError( cx, "function or undefined expected" );
-			return JS_FALSE;
+			J_S_ASSERT_FUNCTION(J_ARG(i+1));
+			J_CHK( JS_SetReservedSlot( cx, obj, i, J_ARG(i+1) ) );
 		}
-		JS_SetReservedSlot( cx, obj, i, argv[i] );
-	}
-
-	if ( argc >= 5 ) // AUX object
-		JS_SetReservedSlot( cx, obj, AUX_SLOT, argv[4] );
-
-	JS_SetPrototype(cx, obj, NULL); // this creates an empty object ( without __proto__, __parent__, toString, ... )
+	if ( J_ARGC >= 5 ) // AUX object
+		J_CHK( JS_SetReservedSlot( cx, obj, AUX_SLOT, J_ARG(5) ) );
+	J_CHK( JS_SetPrototype(cx, obj, NULL) ); // this creates an empty object ( without __proto__, __parent__, toString, ... )
 	return JS_TRUE;
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-DEFINE_FUNCTION_FAST( Aux ) {
-
-	if ( J_ARGC < 1 ) {
-
-		JS_ReportError( cx, "missing argument" );
-		return JS_FALSE;
-	}
-
-	if ( !JSVAL_IS_OBJECT(J_FARG(1)) || J_FARG(1) == JSVAL_NULL ) {
-
-		JS_ReportError( cx, "object expected" );
-		return JS_FALSE;
-	}
-
-	JSObject *object = JSVAL_TO_OBJECT(J_FARG(1));
-
-	if ( JS_GET_CLASS(cx,object) != &objex_class  ) {
-
-		JS_ReportError( cx, "%s object expected", objex_class.name );
-		return JS_FALSE;
-	}
-
-  JS_GetReservedSlot( cx, object, AUX_SLOT, J_FRVAL );
-
-	if ( J_ARGC >= 2 )
-	  JS_SetReservedSlot( cx, object, AUX_SLOT, J_FARG(2) );
-
-	return JS_TRUE;
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSFunctionSpec objex_static_FunctionSpec[] = {
-	FUNCTION_FAST( Aux )
-	JS_FS_END
-};
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSObject *objexInitClass( JSContext *cx, JSObject *obj ) {
-
-	return JS_InitClass( cx, obj, NULL, &objex_class, Constructor, 0, NULL, NULL, NULL, objex_static_FunctionSpec );
 }
 
 /**doc
-----
-== jsobjex::ObjEx class ==
- [http://code.google.com/p/jslibs/ home] *>* [JSLibs] *>* [jsobjex] *>* [ObjEx] - [http://jslibs.googlecode.com/svn/trunk/jsobjex/objex.cpp http://jslibs.googlecode.com/svn/wiki/source.png]
+=== Static functions ===
+**/
 
-=== Description ===
 
- This class give the ability to spy properties changes. One can listen for add, del, set and set events on the object.
- = =
- It is possible to store an hidden auxiliary object that can be access using ObjEx.Aux( _ObjEx object_ ) static function.
+/**doc
+ * $INAME( objex [, newAux] )
+  Returns the _auxObject_ stored in the _objex_.
+  If newAux is given, it replaces the current auxiliary value of _objex_.
+**/
+DEFINE_FUNCTION_FAST( Aux ) {
 
- * *_Constructor_*( _addCallback_, _delCallback_, _getCallback_, _setCallback_, _auxObject_ )
-  ===== note: =
-  _addCallback_, _delCallback_, _getCallback_, _setCallback_ can be undefined.
+	J_S_ASSERT_ARG_MIN(1);
+	J_S_ASSERT_OBJECT( J_FARG(1) );
+	JSObject *object = JSVAL_TO_OBJECT(J_FARG(1));
+	J_S_ASSERT_CLASS( object, _class );
+	J_CHK( JS_GetReservedSlot( cx, object, AUX_SLOT, J_FRVAL ) );
+	if ( J_ARG_ISDEF(2) )
+	  J_CHK( JS_SetReservedSlot( cx, object, AUX_SLOT, J_FARG(2) ) );
+	return JS_TRUE;
+}
 
-=== Static Functions ===
+CONFIGURE_CLASS
 
- * _value_ *Aux*( _ObjEx object_ )
-  Returns the _auxObject_ stored in the _ObjEx object_. 
+	HAS_RESERVED_SLOTS(5)
+	HAS_CONSTRUCTOR
 
-=== Events / Callbacks ===
+	HAS_ADD_PROPERTY
+	HAS_DEL_PROPERTY
+	HAS_GET_PROPERTY
+	HAS_SET_PROPERTY
 
- function _addCallback_, _delCallback_, _getCallback_, _setCallback_ are called according to the operation done on the object.
- = =
- arguments are: ( propertyName, propertyValue, auxObject, callbackIndex )
- 
- * propertyName : the name of the property being handled
- * propertyValue : the value of the property being handled
- * auxObject : the _auxObject_ provided to the constructor
- * callbackIndex : an integer that has the folowing value: 0 for addCallback, 1 for delCallback, 2 for getCallback, 3 for setCallback.
- 
+	BEGIN_STATIC_FUNCTION_SPEC
+		FUNCTION_FAST(Aux)
+	END_STATIC_FUNCTION_SPEC
+
+END_CLASS
+
+/**doc
 === Example ===
 {{{
 function addCallback( name, value ) {
@@ -174,7 +155,6 @@ prints:
 {{{
 adding foo = 123
 }}}
-Note that _addCallback_ is called only when the property is being added, in opposition to _setCallback_ that is called each time the value is changed.
 
 === Example ===
 
@@ -184,7 +164,7 @@ Note that _addCallback_ is called only when the property is being added, in oppo
 
 
 
-/****************************************************************
+/*
 
 http://groups.google.fr/group/netscape.public.mozilla.jseng/browse_frm/thread/ac4f3a3713ec2c21/075fb093b7d39ab5?lnk=st&q=JSCLASS_SHARE_ALL_PROPERTIES&rnum=2&hl=fr#075fb093b7d39ab5
 	Of course -- JSClass.getProperty and JSClass.setProperty can mirror
@@ -193,7 +173,6 @@ http://groups.google.fr/group/netscape.public.mozilla.jseng/browse_frm/thread/ac
 	SpiderMonkey.  Then for each get or set, the appropriate JSClass hook
 	will be called and you can fetch or store using your map.
 	/be
-
 
 with JSCLASS_SHARE_ALL_PROPERTIES :
 	o.a = 123;
