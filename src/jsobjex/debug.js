@@ -1,6 +1,22 @@
 LoadModule('jsstd');
 LoadModule('jsobjex');
 
+
+function setCallback() {
+	
+  Print( Array.slice(arguments).toSource(), '\n' );
+}
+
+var obj = new ObjEx( undefined, undefined, undefined, setCallback );
+
+obj.foo = 123;
+obj.foo = 456;
+obj.foo = 789;
+
+
+
+Halt();
+
 function addCallback( name, value ) {
 	
   Print('adding ' + name + ' = ' + value, '\n');
