@@ -314,7 +314,15 @@ inline JSClass *GetGlobalClassByName(JSContext *cx, const char *className) {
 
 #define J_JSVAL_IS_STRING(val) ( JSVAL_IS_STRING(val) || (JSVAL_IS_OBJECT(val) && !JSVAL_IS_NULL(val) && BufferGetInterface(cx, JSVAL_TO_OBJECT(val)) != NULL) )
 
-inline JSObject* J_NewBinaryString( JSContext *cx, void* buffer, size_t length ) {
+
+// Note: Empty BString must acts like an empty string ''.
+inline JSBool J_NewBinaryString( JSContext *cx, void* buffer, size_t length, jsval *vp ) {
+
+	if ( length == 0 ) {
+		
+		*vp = JS_GetEmptyStringValue(cx);
+		return JS_TRUE;
+	}
 
 	static JSClass *bstringClass = NULL;
 	if ( bstringClass == NULL )
@@ -330,31 +338,35 @@ inline JSObject* J_NewBinaryString( JSContext *cx, void* buffer, size_t length )
 			goto err;
 		if ( JS_SetPrivate(cx, binaryString, buffer) != JS_TRUE )
 			goto err;
+		*vp = OBJECT_TO_JSVAL(binaryString);
 	} else {
 		
 		JSString *jsstr = JS_NewString(cx, (char*)buffer, length); // JS_NewString takes ownership of bytes on success, avoiding a copy; but on error (signified by null return), it leaves bytes owned by the caller. So the caller must free bytes in the error case, if it has no use for them.
 		if ( jsstr == NULL )
 			goto err;
-		if ( JS_ValueToObject(cx, STRING_TO_JSVAL(jsstr), &binaryString) != JS_TRUE )
-			goto err;
+		*vp = STRING_TO_JSVAL(jsstr);
 	}
-	return binaryString;
+	return JS_TRUE;
 err:
+	*vp = JSVAL_VOID;
 	JS_free(cx, buffer); // JS_NewString do not free the buffer on error.
-	return NULL;
+	return JS_FALSE;
 }
 
-inline JSObject* J_NewBinaryStringCopyN( JSContext *cx, const void *data, size_t amount ) {
+inline JSBool J_NewBinaryStringCopyN( JSContext *cx, const void *data, size_t amount, jsval *vp ) {
+
+	if ( amount == 0 ) {
+		
+		*vp = JS_GetEmptyStringValue(cx);
+		return JS_TRUE;
+	}
 
 	// possible optimization: if BString is not abailable, copy data into JSString's jschar to avoid js_InflateString.
 	char *bstrBuf = (char*)JS_malloc(cx, amount);
-	if ( bstrBuf == NULL )
-		return NULL;
+	J_S_ASSERT_ALLOC( bstrBuf );
 	memcpy( bstrBuf, data, amount );
-	JSObject *binaryString = J_NewBinaryString(cx, bstrBuf, amount);
-	if ( binaryString == NULL )
-		return NULL;
-	return binaryString;
+	J_CHK( J_NewBinaryString(cx, bstrBuf, amount, vp) );
+	return JS_TRUE;
 }
 
 

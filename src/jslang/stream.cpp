@@ -130,9 +130,7 @@ DEFINE_FUNCTION_FAST( Read ) {
 
 	buffer[readAmount] = '\0';
 
-	JSObject *bstrObj = J_NewBinaryString(cx, buffer, readAmount);
-	J_S_ASSERT( bstrObj != NULL, "Unable to create a BString object." );
-	*J_FRVAL = OBJECT_TO_JSVAL(bstrObj);
+	J_CHK( J_NewBinaryString(cx, buffer, readAmount, J_FRVAL) );
 
 	return JS_TRUE;
 }

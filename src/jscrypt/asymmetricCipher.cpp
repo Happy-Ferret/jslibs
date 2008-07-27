@@ -287,12 +287,10 @@ DEFINE_FUNCTION( Encrypt ) { // ( data [, lparam] )
 	}
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err); // (TBD) free something ?
-//	JSString *jssOut = JS_NewStringCopyN(cx, out, outLength);
-	JSObject *jssOut = J_NewBinaryStringCopyN(cx, out, outLength);
+
+	J_CHK( J_NewBinaryStringCopyN(cx, out, outLength, rval) );
 	zeromem(out, sizeof(out)); // safe clear
-	J_S_ASSERT_ALLOC( jssOut );
-//	*rval = STRING_TO_JSVAL( jssOut );
-	*rval = OBJECT_TO_JSVAL( jssOut );
+
 	return JS_TRUE;
 }
 
@@ -363,12 +361,10 @@ DEFINE_FUNCTION( Decrypt ) { // ( encryptedData [, lparam] )
 		return ThrowCryptError(cx, err); // (TBD) free something ?
 
 	out[outLength] = '\0';
-//	JSString *jssOut = JS_NewStringCopyN( cx, out, outLength );
-	JSObject *jssOut = J_NewBinaryStringCopyN( cx, out, outLength );
+
+	J_CHK( J_NewBinaryStringCopyN( cx, out, outLength, rval ) );
 	zeromem(out, sizeof(out));
-	J_S_ASSERT_ALLOC( jssOut );
-//	*rval = STRING_TO_JSVAL(jssOut);
-	*rval = OBJECT_TO_JSVAL(jssOut);
+
 	return JS_TRUE;
 }
 
@@ -426,12 +422,10 @@ DEFINE_FUNCTION( Sign ) { // ( data [, saltLength] )
 
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err); // (TBD) free something ?
-//	JSString *jssOut = JS_NewStringCopyN( cx, out, outLength );
-	JSObject *jssOut = J_NewBinaryStringCopyN( cx, out, outLength );
+
+	J_CHK( J_NewBinaryStringCopyN( cx, out, outLength, rval ) );
 	zeromem(out, sizeof(out));
-	J_S_ASSERT_ALLOC( jssOut );
-//	*rval = STRING_TO_JSVAL(jssOut);
-	*rval = OBJECT_TO_JSVAL(jssOut);
+
 	return JS_TRUE;
 }
 
@@ -629,12 +623,9 @@ DEFINE_PROPERTY( keyGetter ) {
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err); // (TBD) free something ?
 
-//	JSString *jssKey = JS_NewStringCopyN(cx, key, keyLength);
-	JSObject *jssKey = J_NewBinaryStringCopyN(cx, key, keyLength);
-	J_S_ASSERT( jssKey != NULL, "unable to create the key string." );
-//	*vp = STRING_TO_JSVAL(jssKey);
-	*vp = OBJECT_TO_JSVAL(jssKey);
+	J_CHK( J_NewBinaryStringCopyN(cx, key, keyLength, vp) );
 	zeromem(key, sizeof(key)); // safe clean
+
 	return JS_TRUE;
 }
 

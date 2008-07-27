@@ -76,9 +76,7 @@ DEFINE_FUNCTION( Base64Decode ) {
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err);
 
-	JSObject *jssOutData = J_NewBinaryString( cx, out, outLength );
-	J_S_ASSERT( jssOutData != NULL, "unable to create the plaintext string." );
-	*rval = OBJECT_TO_JSVAL(jssOutData);
+	J_CHK( J_NewBinaryString( cx, out, outLength, rval ) );
 
 	return JS_TRUE;
 }
@@ -152,11 +150,7 @@ DEFINE_FUNCTION( HexDecode ) {
 	for ( unsigned long i=0; i<outLength; ++i )
 		out[i] = unhex[ (unsigned char)in[i*2] ] << 4 | unhex[ (unsigned char)in[i*2+1] ];
 
-//	JSString *jssOutData = JS_NewString( cx, out, outLength );
-	JSObject *jssOutData = J_NewBinaryString( cx, out, outLength );
-	J_S_ASSERT( jssOutData != NULL, "unable to create the plaintext string." );
-//	*rval = STRING_TO_JSVAL(jssOutData);
-	*rval = OBJECT_TO_JSVAL(jssOutData);
+	J_CHK( J_NewBinaryString( cx, out, outLength, rval ) );
 
 	return JS_TRUE;
 }

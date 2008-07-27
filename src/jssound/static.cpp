@@ -137,9 +137,14 @@ DEFINE_FUNCTION_FAST( DecodeOggVorbis ) {
 	// convert data chunks into a single memory buffer.
 	char *buf = (char*)JS_malloc(cx, totalSize);
 	J_S_ASSERT_ALLOC(buf);
-	JSObject *bstrObj = J_NewBinaryString(cx, buf, totalSize);
+
+	jsval bstr;
+	J_CHK( J_NewBinaryString(cx, buf, totalSize, &bstr) );
+	JSObject *bstrObj;
+	J_CHK( JS_ValueToObject(cx, bstr, &bstrObj) );
 	J_S_ASSERT( bstrObj != NULL, "Unable to create the BString object.");
 	*J_FRVAL = OBJECT_TO_JSVAL(bstrObj);
+
 	J_CHK( SetPropertyInt(cx, bstrObj, "bits", bits) ); // bits per sample
 	J_CHK( SetPropertyInt(cx, bstrObj, "rate", info->rate) );
 	J_CHK( SetPropertyInt(cx, bstrObj, "channels", info->channels) );
@@ -331,9 +336,18 @@ DEFINE_FUNCTION_FAST( DecodeSound ) {
 	// convert data chunks into a single memory buffer.
 	char *buf = (char*)JS_malloc(cx, totalSize);
 	J_S_ASSERT_ALLOC(buf);
-	JSObject *bstrObj = J_NewBinaryString(cx, buf, totalSize);
+
+//	JSObject *bstrObj = J_NewBinaryString(cx, buf, totalSize);
+//	J_S_ASSERT( bstrObj != NULL, "Unable to create the BString object.");
+//	*J_FRVAL = OBJECT_TO_JSVAL(bstrObj);
+
+	jsval bstr;
+	J_CHK( J_NewBinaryString(cx, buf, totalSize, &bstr) );
+	JSObject *bstrObj;
+	J_CHK( JS_ValueToObject(cx, bstr, &bstrObj) );
 	J_S_ASSERT( bstrObj != NULL, "Unable to create the BString object.");
 	*J_FRVAL = OBJECT_TO_JSVAL(bstrObj);
+
 	J_CHK( SetPropertyInt(cx, bstrObj, "bits", 16) ); // bits per sample
 	J_CHK( SetPropertyInt(cx, bstrObj, "rate", info.samplerate) );
 	J_CHK( SetPropertyInt(cx, bstrObj, "channels", info.channels) );

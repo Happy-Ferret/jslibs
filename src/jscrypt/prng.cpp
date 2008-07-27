@@ -110,11 +110,8 @@ DEFINE_FUNCTION( Call ) {
 	unsigned long hasRead = privateData->prng.read( (unsigned char*)pr, readCount, &privateData->state );
 	J_S_ASSERT( hasRead == readCount, "unable to read prng." );
 
-//	JSString *randomString = JS_NewString( cx, pr, hasRead );
-	JSObject *randomString = J_NewBinaryString( cx, pr, hasRead );
-	J_S_ASSERT( randomString != NULL, "unable to create the random string." );
-//	*rval = STRING_TO_JSVAL(randomString);
-	*rval = OBJECT_TO_JSVAL(randomString);
+	J_CHK( J_NewBinaryString( cx, pr, hasRead, rval ) );
+
 	return JS_TRUE;
 }
 
@@ -183,8 +180,8 @@ DEFINE_PROPERTY( stateGetter ) {
 	if ( err != CRYPT_OK )
 		return ThrowCryptError(cx, err);
 	J_S_ASSERT( stateLength == size, "Invalid export size." );
-//	*vp = STRING_TO_JSVAL( JS_NewString(cx, stateData, size) );
-	*vp = OBJECT_TO_JSVAL( J_NewBinaryString(cx, stateData, size) );
+
+	J_CHK( J_NewBinaryString(cx, stateData, size, vp) );
 	return JS_TRUE;
 }
 

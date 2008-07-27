@@ -339,9 +339,7 @@ DEFINE_PROPERTY( contentGetter ) { // (TBD) support BString
 //	J_S_ASSERT_ALLOC(str);
 //	*vp = STRING_TO_JSVAL(str);
 
-	JSObject *str = J_NewBinaryString( cx, buf, res );
-	J_S_ASSERT_ALLOC(str);
-	*vp = OBJECT_TO_JSVAL(str);
+	J_CHK( J_NewBinaryString( cx, buf, res, vp ) );
 
 	return JS_TRUE;
 }

@@ -2706,11 +2706,15 @@ DEFINE_FUNCTION_FAST( Export ) { // (int)x, (int)y, (int)width, (int)height. Ret
 			}
 		}
 
-	JSObject *bstr = J_NewBinaryString(cx, buffer, bufferLength);
-	*J_FRVAL = OBJECT_TO_JSVAL(bstr);
-	SetPropertyInt(cx, bstr, "width", dWidth);
-	SetPropertyInt(cx, bstr, "height", dHeight);
-	SetPropertyInt(cx, bstr, "channels", sChannels);
+	jsval bstr;
+	J_CHK( J_NewBinaryString(cx, buffer, bufferLength, &bstr ) );
+	JSObject *bstrObj;
+	J_CHK( JS_ValueToObject(cx, bstr, &bstrObj) );
+	*J_FRVAL = OBJECT_TO_JSVAL( bstrObj );
+	
+	SetPropertyInt(cx, bstrObj, "width", dWidth);
+	SetPropertyInt(cx, bstrObj, "height", dHeight);
+	SetPropertyInt(cx, bstrObj, "channels", sChannels);
 
 	return JS_TRUE;
 }

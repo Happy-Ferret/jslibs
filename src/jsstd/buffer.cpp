@@ -106,9 +106,9 @@ JSBool WriteRawChunk( JSContext *cx, JSObject *obj, size_t amount, const char *s
 
 	BufferPrivate *pv = (BufferPrivate*)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( pv );
-	JSObject* bstrObj = J_NewBinaryStringCopyN(cx, str, amount);
-	J_S_ASSERT( bstrObj != NULL, "Unable to create the binary string." );
-	J_CHK( PushJsval(cx, pv->queue, OBJECT_TO_JSVAL(bstrObj)) );
+	jsval bstr;
+	J_CHK( J_NewBinaryStringCopyN(cx, str, amount, &bstr) );
+	J_CHK( PushJsval(cx, pv->queue, bstr) );
 	pv->length += amount;
 	return JS_TRUE;
 }
@@ -201,9 +201,9 @@ inline JSBool BufferRefill( JSContext *cx, JSObject *obj, size_t amount ) { // a
 		
 			if ( MaybeRealloc(amount, len) )
 				buf = (char*)JS_realloc(cx, buf, len);
-			JSObject *chunk = J_NewBinaryString(cx, buf, len);
-			J_S_ASSERT( chunk != NULL, "Unable to create a binary string" );
-			J_CHK( WriteChunk(cx, obj, OBJECT_TO_JSVAL( chunk )) );
+			jsval bstr;
+			J_CHK( J_NewBinaryString(cx, buf, len, &bstr) );
+			J_CHK( WriteChunk(cx, obj, bstr) );
 		}
 
 	} while( pv->length < amount && pv->length > prevBufferLength ); // see RULES ( at the top of this file )
@@ -217,9 +217,9 @@ JSBool UnReadRawChunk( JSContext *cx, JSObject *obj, char *data, size_t length )
 
 	if ( length == 0 ) // optimization & RULES
 		return JS_TRUE;
-	JSObject* bstrObj = J_NewBinaryStringCopyN(cx, data, length);
-	J_S_ASSERT( bstrObj != NULL, "Unable to create the binary string." );
-	J_CHK( UnReadChunk(cx, obj, OBJECT_TO_JSVAL(bstrObj)) );
+	jsval bstr;
+	J_CHK( J_NewBinaryStringCopyN(cx, data, length, &bstr) );
+	J_CHK( UnReadChunk(cx, obj, bstr) );
 	return JS_TRUE;
 }
 
@@ -286,9 +286,9 @@ JSBool ReadRawAmount( JSContext *cx, JSObject *obj, size_t *amount, char *str ) 
 		} else { // chunkLen > remain: this is the last chunk we have to manage. we only get a part of it chunk and we 'unread' the remaining.
 
 			memcpy(ptr, chunk, remainToRead);
-			JSObject *bstrObj = J_NewBinaryStringCopyN(cx, chunk + remainToRead, chunkLen - remainToRead);
-			J_S_ASSERT( bstrObj != NULL, "Unable to create the binary string." );
-			UnshiftJsval(cx, pv->queue, OBJECT_TO_JSVAL( bstrObj ));
+			jsval bstr;
+			J_CHK( J_NewBinaryStringCopyN(cx, chunk + remainToRead, chunkLen - remainToRead, &bstr) );
+			UnshiftJsval(cx, pv->queue, bstr);
 			remainToRead = 0; // adjust remaining required data length
 		}
 	}
@@ -334,9 +334,9 @@ JSBool BufferSkipAmount( JSContext *cx, JSObject *obj, size_t amount ) {
 			const char *chunk;
 			J_CHK( JsvalToStringAndLength(cx, item, &chunk, &chunkLen) );
 
-			JSObject *bstrObj = J_NewBinaryStringCopyN(cx, chunk + remainToRead, chunkLen - remainToRead);
-			J_S_ASSERT( bstrObj != NULL, "Unable to create the binary string." );
-			UnshiftJsval(cx, pv->queue, OBJECT_TO_JSVAL( bstrObj ));
+			jsval bstr;
+			J_CHK( J_NewBinaryStringCopyN(cx, chunk + remainToRead, chunkLen - remainToRead, &bstr) );
+			UnshiftJsval(cx, pv->queue, bstr);
 			remainToRead = 0; // adjust remaining required data length
 		}
 	}
@@ -375,9 +375,7 @@ JSBool ReadAmount( JSContext *cx, JSObject *obj, size_t amount, jsval *rval ) {
 		J_S_ASSERT_ALLOC(str);
 	}
 
-	JSObject *bstr = J_NewBinaryString(cx, str, amount);
-	J_S_ASSERT( bstr != NULL, "Unable to create the BString." );
-	*rval = OBJECT_TO_JSVAL(bstr);
+	J_CHK( J_NewBinaryString(cx, str, amount, rval) );
 	return JS_TRUE;
 }
 

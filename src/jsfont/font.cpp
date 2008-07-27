@@ -158,13 +158,15 @@ DEFINE_FUNCTION_FAST( DrawChar ) {
 
 	void *buf = JS_malloc(cx, bufLength);
 
-	JSObject *bstr = J_NewBinaryString(cx, buf, bufLength);
-	J_S_ASSERT( bstr != NULL, "Unable to create a BString." );
-	*J_FRVAL = OBJECT_TO_JSVAL( bstr );
+	jsval bstr;
+	J_CHK( J_NewBinaryString(cx, buf, bufLength, &bstr) );
+	JSObject *bstrObj;
+	J_CHK( JS_ValueToObject(cx, bstr, &bstrObj) );
+	*J_FRVAL = OBJECT_TO_JSVAL( bstrObj );
 
-	J_CHK( SetPropertyInt(cx, bstr, "width", width) );
-	J_CHK( SetPropertyInt(cx, bstr, "height", height) );
-	J_CHK( SetPropertyInt(cx, bstr, "channels", 1) );
+	J_CHK( SetPropertyInt(cx, bstrObj, "width", width) );
+	J_CHK( SetPropertyInt(cx, bstrObj, "height", height) );
+	J_CHK( SetPropertyInt(cx, bstrObj, "channels", 1) );
 	memcpy( buf, face->glyph->bitmap.buffer, bufLength );
 
 	return JS_TRUE;
@@ -311,12 +313,15 @@ DEFINE_FUNCTION_FAST( DrawString ) {
 
 		char *buf = (char*)JS_malloc(cx, bufLength); // JS_malloc do not supports 0 bytes size
 
-		JSObject *bstr = J_NewBinaryString(cx, buf, bufLength);
-		*J_FRVAL = OBJECT_TO_JSVAL( bstr );
-		J_S_ASSERT( bstr != NULL, "Unable to create a binary string." );
-		J_CHK( SetPropertyInt(cx, bstr, "width", width) );
-		J_CHK( SetPropertyInt(cx, bstr, "height", height) );
-		J_CHK( SetPropertyInt(cx, bstr, "channels", 1) );
+		jsval bstr;
+		J_CHK( J_NewBinaryString(cx, buf, bufLength, &bstr) );
+		JSObject *bstrObj;
+		J_CHK( JS_ValueToObject(cx, bstr, &bstrObj) );
+		*J_FRVAL = OBJECT_TO_JSVAL( bstrObj );
+
+		J_CHK( SetPropertyInt(cx, bstrObj, "width", width) );
+		J_CHK( SetPropertyInt(cx, bstrObj, "height", height) );
+		J_CHK( SetPropertyInt(cx, bstrObj, "channels", 1) );
 
 		// render glyphs in the bitmap
 		memset(buf, 0, bufLength);

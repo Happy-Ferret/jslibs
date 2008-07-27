@@ -426,10 +426,7 @@ DEFINE_FUNCTION( RecvFrom ) {
 //		J_S_ASSERT_ALLOC( strBuffer ); // (TBD) else free buffer
 //		data = STRING_TO_JSVAL(strBuffer);
 
-		JSObject *strBuffer = J_NewBinaryString( cx, buffer, res );
-		J_S_ASSERT_ALLOC(strBuffer);
-		data = OBJECT_TO_JSVAL(strBuffer);
-
+		J_CHK( J_NewBinaryString( cx, buffer, res, &data ) );
 		*rval = data; // protect from GC
 	} else if (res == 0) {
 		

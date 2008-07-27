@@ -256,9 +256,7 @@ DEFINE_FUNCTION_FAST( Read ) {
 //	J_S_ASSERT_ALLOC( jss );
 //	*J_FRVAL = STRING_TO_JSVAL( jss );
 
-	JSObject *jss = J_NewBinaryString( cx, data, dataLength );
-	J_S_ASSERT_ALLOC(jss);
-	*J_FRVAL = OBJECT_TO_JSVAL(jss);
+	J_CHK( J_NewBinaryString( cx, data, dataLength, J_FRVAL ) );
 	
 	return JS_TRUE;
 }
@@ -347,10 +345,7 @@ DEFINE_PROPERTY( contentGetter ) { // (TBD) support BString
 //	J_S_ASSERT_ALLOC( jss );
 //	*vp = STRING_TO_JSVAL( jss );
 
-	JSObject *jss = J_NewBinaryString( cx, data, dataLength );
-	J_S_ASSERT_ALLOC(jss);
-	*vp = OBJECT_TO_JSVAL(jss);
-
+	J_CHK( J_NewBinaryString( cx, data, dataLength, vp ) );
 
 	return JS_TRUE;
 }

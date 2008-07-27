@@ -54,6 +54,12 @@
 
 		QA.ASSERT( BString('567').valueOf(), '567', 'value of' );
 	},
+	
+	BString_boolean: function(QA) {
+	
+		QA.ASSERT( !!BString(''), !!(''), 'empty BString cast to boolean' );
+		QA.ASSERT( !!BString('a'), !!('a'), 'empty BString cast to boolean' );
+	},
 
 	BString: function(QA) {
 		

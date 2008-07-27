@@ -169,11 +169,9 @@ DEFINE_FUNCTION( Done ) {
 	err = privateData->descriptor->done(&privateData->state, (unsigned char*)out); // Terminate the hash to get the digest
 	if ( err != CRYPT_OK )
 		return ThrowCryptError(cx, err);
-//	JSString *jssHashData = JS_NewString( cx, out, outLength );
-	JSObject *jssHashData = J_NewBinaryString( cx, out, outLength );
-	J_S_ASSERT( jssHashData != NULL, "unable to create the hash string." );
-//	*rval = STRING_TO_JSVAL(jssHashData);
-	*rval = OBJECT_TO_JSVAL(jssHashData);
+
+	J_CHK( J_NewBinaryString( cx, out, outLength, rval ) );
+
 	return JS_TRUE;
 }
 
@@ -231,11 +229,8 @@ DEFINE_FUNCTION( Call ) {
 		return ThrowCryptError(cx, err);
 	privateData->inputLength = 0;
 
-//	JSString *jssHashData = JS_NewString( cx, out, outLength );
-	JSObject *jssHashData = J_NewBinaryString( cx, out, outLength );
-	J_S_ASSERT_ALLOC( jssHashData );
-//	*rval = STRING_TO_JSVAL(jssHashData);
-	*rval = OBJECT_TO_JSVAL(jssHashData);
+	J_CHK( J_NewBinaryString( cx, out, outLength, rval ) );
+
 	return JS_TRUE;
 }
 

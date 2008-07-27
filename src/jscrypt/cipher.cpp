@@ -307,9 +307,8 @@ DEFINE_FUNCTION( Encrypt ) {
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err);
 
-	JSObject *jssCt = J_NewBinaryString( cx, ct, ptLength );
-	J_S_ASSERT_ALLOC( jssCt );
-	*rval = OBJECT_TO_JSVAL(jssCt);
+	J_CHK( J_NewBinaryString( cx, ct, ptLength, rval ) );
+
 	return JS_TRUE;
 }
 
@@ -360,11 +359,8 @@ DEFINE_FUNCTION( Decrypt ) {
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err);
 
-//	JSString *jssCt = JS_NewString( cx, pt, ctLength );
-	JSObject *jssCt = J_NewBinaryString( cx, pt, ctLength );
-	J_S_ASSERT_ALLOC( jssCt );
-//	*rval = STRING_TO_JSVAL(jssCt);
-	*rval = OBJECT_TO_JSVAL(jssCt);
+	J_CHK( J_NewBinaryString( cx, pt, ctLength, rval ) );
+
 	return JS_TRUE;
 }
 
@@ -552,11 +548,9 @@ DEFINE_PROPERTY( IVGetter ) {
 	}
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err);
-//	JSString *jssIV = JS_NewString(cx, IV, IVLength);
-	JSObject *jssIV = J_NewBinaryString(cx, IV, IVLength);
-	J_S_ASSERT( jssIV != NULL, "unable to create the IV string." );
-//	*vp = STRING_TO_JSVAL(jssIV);
-	*vp = OBJECT_TO_JSVAL(jssIV);
+
+	J_CHK( J_NewBinaryString( cx, IV, IVLength, vp ) );
+
 	return JS_TRUE;
 }
 
