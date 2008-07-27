@@ -89,10 +89,8 @@ JSBool WriteChunk( JSContext *cx, JSObject *obj, jsval chunk ) {
 	// here, chunk is a JSString or a BString
 
 	size_t strLen;
-	if ( JSVAL_IS_STRING( chunk ) )
-		strLen = J_STRING_LENGTH( JSVAL_TO_STRING( chunk ) );
-	else
-		BStringLength(cx, JSVAL_TO_OBJECT( chunk ), &strLen);
+	J_CHK( JsvalToStringLength(cx, chunk, &strLen) );
+
 //	J_CHK( JsvalToStringLength(cx, chunk, &strLen) );
 	if ( strLen == 0 ) // optimization & RULES
 		return JS_TRUE;
@@ -128,11 +126,8 @@ JSBool UnReadChunk( JSContext *cx, JSObject *obj, jsval chunk ) {
 	// here, chunk is a JSString or a BString
 
 	size_t strLen;
-	if ( JSVAL_IS_STRING( chunk ) )
-		strLen = J_STRING_LENGTH( JSVAL_TO_STRING( chunk ) );
-	else
-		BStringLength(cx, JSVAL_TO_OBJECT( chunk ), &strLen);
-//	J_CHK( JsvalToStringLength(cx, chunk, &length) );
+	J_CHK( JsvalToStringLength(cx, chunk, &strLen) );
+
 	if ( strLen == 0 ) // optimization && RULES
 		return JS_TRUE;
 	J_CHK( UnshiftJsval(cx, pv->queue, chunk) );

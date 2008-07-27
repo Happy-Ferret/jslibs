@@ -23,6 +23,25 @@
 #include "bstringapi.h"
 
 
+
+inline JSBool BStringLength( JSContext *cx, JSObject *bStringObject, size_t *length ) {
+
+	J_S_ASSERT_CLASS(bStringObject, BStringJSClass( cx ));
+	jsval lengthVal;
+	J_CHK( JS_GetReservedSlot(cx, bStringObject, SLOT_BSTRING_LENGTH, &lengthVal) );
+	*length = JSVAL_IS_INT(lengthVal) ? JSVAL_TO_INT( lengthVal ) : 0;
+	return JS_TRUE;
+}
+
+
+inline JSBool BStringBuffer( JSContext *cx, JSObject *bStringObject, const void **buffer ) {
+
+	J_S_ASSERT_CLASS(bStringObject, BStringJSClass( cx ));
+	*buffer = JS_GetPrivate(cx, bStringObject);
+	return JS_TRUE;
+}
+
+
 inline JSBool LengthSet( JSContext *cx, JSObject *obj, size_t bufferLength ) {
 
 	return JS_SetReservedSlot(cx, obj, SLOT_BSTRING_LENGTH, INT_TO_JSVAL( bufferLength ));
@@ -42,7 +61,7 @@ $CLASS_HEADER
 **/
 BEGIN_CLASS( BString )
 
-
+/*
 inline JSBool JsvalToBString( JSContext *cx, jsval val, JSObject **obj ) {
 
 	size_t srcLen;
@@ -75,10 +94,11 @@ inline JSBool JsvalToBString( JSContext *cx, jsval val, JSObject **obj ) {
 				((char*)dst)[i] = (uint8)chars[i];
 		}
 	}
+
 	*obj = NewBString(cx, dst, srcLen);
 	return JS_TRUE;
 }
-
+*/
 
 JSBool BStringToJSString( JSContext *cx, JSObject *obj, JSString **jsstr ) {
 
@@ -275,7 +295,7 @@ DEFINE_FUNCTION_FAST( Substr ) {
 
 	if ( start >= (int)dataLength || start < -(int)dataLength ) {
 
-		*J_FRVAL = OBJECT_TO_JSVAL( NewEmptyBString(cx) );
+		*J_FRVAL = JS_GetEmptyStringValue(cx);
 		return JS_TRUE;
 	}
 
@@ -293,7 +313,7 @@ DEFINE_FUNCTION_FAST( Substr ) {
 		J_JSVAL_TO_INT32( J_FARG(2), length );
 		if ( length <= 0 ) {
 
-			*J_FRVAL = OBJECT_TO_JSVAL( NewEmptyBString(cx) );
+			*J_FRVAL = JS_GetEmptyStringValue(cx);
 			return JS_TRUE;
 		}
 
@@ -311,21 +331,33 @@ DEFINE_FUNCTION_FAST( Substr ) {
 
 	memcpy(buffer, ((int8_t*)pv) + start, length);
 
-	*J_FRVAL = OBJECT_TO_JSVAL( NewBString(cx, buffer, length) );
+	if ( length == 0 )
+		*J_FRVAL = JS_GetEmptyStringValue(cx);
+	else
+		J_CHK( J_NewBinaryString(cx, buffer, length, J_FRVAL) );
+
 	return JS_TRUE;
 }
 
 
-/*
-DEFINE_FUNCTION_FAST( IndexOf ) {
+/**doc
+ * $INT $INAME( searchValue [, fromIndex] )
+  Returns the index within the calling BString object of the first occurrence of the specified value, starting the search at fromIndex, or -1 if the value is not found.
+  $H arguments
+   $ARG string searchValue: A string representing the value to search for.
+   $ARG integer fromIndex: The location within the calling string to start the search from. It can be any integer between 0 and the length of the string. The default value is 0.
+  $H details
+   fc. [http://developer.mozilla.org/en/docs/Core_JavaScript_1.5_Reference:Global_Objects:String:indexOf]
+**/
+DEFINE_FUNCTION_FAST( indexOf ) {
 
 	J_S_ASSERT_ARG_MIN(1);
 
-	int start = 0;
-	if ( J_FARG_ISDEF(2) )
-		J_JSVAL_TO_INT32( J_FARG(2), start );
+	J_REPORT_ERROR( "TBD" );
+// (TBD)
+
+	return JS_TRUE;
 }
-*/
 
 
 /**doc
@@ -454,6 +486,15 @@ DEFINE_SET_PROPERTY() {
 }
 
 
+
+//DEFINE_CONVERT() {
+//
+//	if ( type == JSTYPE_BOOLEAN ) {
+//	}
+//	return JS_TRUE;
+//}
+
+
 /**doc
 === Note ===
  BStrings are immutable. This mean that its content cannot be modified after it is created.
@@ -472,10 +513,14 @@ CONFIGURE_CLASS
 	HAS_GET_PROPERTY
 	HAS_SET_PROPERTY
 
+//	HAS_CONVERT
+
 	BEGIN_FUNCTION_SPEC
 		FUNCTION_FAST(Add)
 //		FUNCTION_FAST(Set)
 		FUNCTION_FAST(Substr)
+		FUNCTION_FAST(indexOf)
+
 		FUNCTION_FAST(toString)
 		FUNCTION_FAST_ALIAS(valueOf, toString)
 	END_FUNCTION_SPEC

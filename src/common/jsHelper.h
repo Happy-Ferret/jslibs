@@ -369,6 +369,18 @@ inline JSBool J_NewBinaryStringCopyN( JSContext *cx, const void *data, size_t am
 	return JS_TRUE;
 }
 
+inline bool JsvalIsString( JSContext *cx, jsval val ) {
+
+	if ( JSVAL_IS_STRING(val) )
+		return true;
+	NIBufferGet fct = BufferGetNativeInterface(cx, JSVAL_TO_OBJECT(val));
+	if ( fct )
+		return true;
+	return false;
+//	if ( JSVAL_IS_OBJECT(val) && !JSVAL_IS_NULL(val) && JS_GET_CLASS(cx, JSVAL_TO_OBJECT(val)) == BStringJSClass(cx) )
+//		return true;
+}
+
 
 inline JSBool JsvalToStringAndLength( JSContext *cx, jsval val, const char** buffer, size_t *size ) {
 

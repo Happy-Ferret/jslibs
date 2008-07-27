@@ -250,8 +250,10 @@ inline JSBool InitCurveData( JSContext* cx, jsval value, int length, float *curv
 
 		JSObject *bstrObj = JSVAL_TO_OBJECT(value);
 		size_t bstrLen;
-		u_int8_t *bstrData;
-		BStringGetBufferAndLength( cx, bstrObj, (void**)&bstrData, &bstrLen );
+		const u_int8_t *bstrData;
+
+//		BStringGetBufferAndLength( cx, bstrObj, (void**)&bstrData, &bstrLen );
+		J_CHK( JsvalToStringAndLength( cx, value, (const char **)&bstrData, &bstrLen ) );
 
 		for ( int i = 0; i < length; i++ )
 			curve[i] = bstrData[ i * bstrLen / length ] / 256;
@@ -387,22 +389,25 @@ DEFINE_CONSTRUCTOR() {
 		return JS_TRUE;
 	}
 
-	if ( JsvalIsBString( cx, J_ARG(1) ) ) {
+	if ( JsvalIsString( cx, J_ARG(1) ) ) {
 
-		JSObject *bstr = JSVAL_TO_OBJECT( J_ARG(1) );
+		JSObject *bstrObj;
+//		bstrObj = JSVAL_TO_OBJECT( J_ARG(1) );
+		J_CHK( JS_ValueToObject(cx, J_ARG(1), &bstrObj) );
 
 		int dWidth = tex->width;
 		int dHeight = tex->height;
 		int dChannels = tex->channels;
 		
 		int sWidth, sHeight, sChannels;
-		GetPropertyInt(cx, bstr, "width", &sWidth);
-		GetPropertyInt(cx, bstr, "height", &sHeight);
-		GetPropertyInt(cx, bstr, "channels", &sChannels);
+		J_CHK( GetPropertyInt(cx, bstrObj, "width", &sWidth) );
+		J_CHK( GetPropertyInt(cx, bstrObj, "height", &sHeight) );
+		J_CHK( GetPropertyInt(cx, bstrObj, "channels", &sChannels) );
 
 		const char *buffer;
 //		u_int8_t *buffer = (u_int8_t*)
-		J_CHK( BStringBuffer(cx, bstr, (const void **)&buffer) );
+//		J_CHK( BStringBuffer(cx, bstr, (const void **)&buffer) );
+		J_CHK( JsvalToString(cx, J_ARG(1), (const char **)&buffer) );
 
 		tex->width = sWidth;
 		tex->height = sHeight;
@@ -2779,7 +2784,9 @@ DEFINE_FUNCTION_FAST( Import ) { // (BString)image, (int)x, (int)y
 	//u_int8_t *buffer = (u_int8_t*)BStringData(cx, bstr);
 
 	const u_int8_t *buffer;
-	J_CHK( BStringBuffer(cx, bstr, (const void **)&buffer) );
+//	J_CHK( BStringBuffer(cx, bstr, (const void **)&buffer) );
+
+	J_CHK( JsvalToString(cx, J_FARG(1), (const char **)&buffer) );
 
 	int x, y;
 	int dx, dy; // destination
