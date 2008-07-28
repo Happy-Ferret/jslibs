@@ -170,40 +170,46 @@
 		}
 	},
 
+
 	TCPGet: function(QA) {
 
-		var hostList = ['proxy', 'www.google.com', 'localhost']; // try to find a web server on port 80
-		var host;
+		LoadModule('jsio');
+
+		var res, host, hostList = ['proxy', 'www.google.com', 'localhost']; // try to find a web server on port 80
 		do {
 
 			host = hostList.shift();
-			var res = Socket.GetHostsByName(host);
+			res = Socket.GetHostsByName(host);
 		} while ( !res || res.length == 0 );
+		
+		QA.ASSERT( res && res.length > 0, true, 'unable to find a host' );
+
 		
 		try {
 			
-			var response;
+			var response = '';
 		
 			var soc = new Socket();
 			soc.nonblocking = true;
 			soc.Connect( host, 80 );
 			soc.writable = function(s) {
-
+			
 				QA.ASSERT_TYPE( s, Socket,  'object is a Socket' );
 				QA.ASSERT( s.closed , false,  'Socket descriptor is closed' );
 
 				delete soc.writable;
 				QA.ASSERT_HAS_PROPERTIES( s, 'Write' );
-				s.Write('GET\r\n');
+				s.Write('GET\r\n\r\n');
 			}
-
 			soc.readable = function(s) {
 				
-				response += s.Read();
+				var res = s.Read();
+				if ( res )
+					response += res;
 			}
-
+			
 			var i = 0;
-			while( ++i < 10 )
+			while( ++i < 100 )
 				Poll([soc], 20);
 				
 		} catch( ex if ex instanceof IoError ) {
@@ -214,9 +220,11 @@
 				return;
 			}
 		}
-		QA.ASSERT( !!response, true, 'host response length ('+host+')' );
+		
+		QA.ASSERT( response.length > 0, true, 'has response contant from '+host );
 	},
-	
+
+
 	ClosingSocket: function(QA) {
 
 		var soc = new Socket();
