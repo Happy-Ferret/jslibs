@@ -1,5 +1,20 @@
 ({
 
+	ReadOnlyGlobalClasses: function(QA) {
+
+		var bstr = BString;
+		BString = null;
+		QA.ASSERT( BString, bstr, 'BString integrity' );
+
+		var bstr = BString;
+		BString = function() {}
+		QA.ASSERT( BString, bstr, 'BString integrity' );
+
+		var bstr1 = BString;
+		delete global.BString;
+		QA.ASSERT( BString, bstr1, 'BString integrity' );
+	},
+
 	NativeInterface: function(QA) {
 
 		var stream = new Stream('456');

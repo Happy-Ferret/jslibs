@@ -182,6 +182,9 @@ static JSBool RemoveClass( JSContext *cx, JSClass *cl ) {
 			if ( JS_DefineProperty(cx, dstObj, _constIntegerSpec->name, INT_TO_JSVAL(_constIntegerSpec->ival), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) != JS_TRUE ) \
 				return JS_FALSE; \
 		} \
+		JSBool found; \
+		J_CHK( JS_SetPropertyAttributes(cx, obj, _class->name, JSPROP_READONLY | JSPROP_PERMANENT, &found) ); \
+		J_CHKM( found, "Unable to set class flags" ); \
 		if ( _constDoubleSpec != NULL ) \
 			if ( JS_DefineConstDoubles(cx, _constructor ? JS_GetConstructor(cx, *_prototype) : *_prototype, _constDoubleSpec) != JS_TRUE ) \
 				return JS_FALSE; \
