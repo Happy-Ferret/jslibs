@@ -1,8 +1,9 @@
 ({
 
-
 	StringRepeat: function(QA) {
 			
+		LoadModule('jsstd');
+
 		QA.ASSERT( StringRepeat( '', 0 ), '', '0 x empty' );
 		QA.ASSERT( StringRepeat( '', 1 ), '', '1 x empty' );
 		QA.ASSERT( StringRepeat( '', 10 ), '', '10 x empty' );
@@ -16,6 +17,23 @@
 		QA.ASSERT( StringRepeat( 'abc', 10 ), 'abcabcabcabcabcabcabcabcabcabc', '10 x string' );
 	},
 	
+
+	EmptyBuffer: function(QA) {
+
+		LoadModule('jsstd');
+	
+		var b = new Buffer();
+		QA.ASSERT( typeof b.Read(), 'string', 'empty buffer read' );
+
+		QA.ASSERT( b.Read(), '', 'empty buffer read' );
+
+		b.Write('a');
+		QA.ASSERT( typeof b.Read(), 'object', 'buffer read' );
+	
+		b.Write('a');
+		QA.ASSERT( b.Read() instanceof BString, true, 'buffer read' );
+	},
+
 
 	BufferTest1: function(QA) {
 		

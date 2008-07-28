@@ -76,6 +76,7 @@ function MakeTests( testList, filter, QAAPI, iterate ) {
 var QAAPI = new function() {
 	
 	this.issues = 0;
+	this.testCount = 0;
 
 	this.REPORT = function( message ) {
 
@@ -85,6 +86,7 @@ var QAAPI = new function() {
 
 	this.ASSERT_TYPE = function( value, type, testName ) {
 		
+		this.testCount++;
 		if ( typeof(value) != type && !(value instanceof type) )
 			this.REPORT( (testName||'') + ' (@'+Locate(-1)+'), Invalid type, '+(type.name)+' is expected' );
 	}
@@ -96,6 +98,7 @@ var QAAPI = new function() {
 	
 	this.ASSERT_EXCEPTION = function( fct, exType, message ) {
 		
+		this.testCount++;
 		try {
 		
 			fct();
@@ -112,6 +115,7 @@ var QAAPI = new function() {
 
 	this.ASSERT = function( value, expect, testName ) {
 
+		this.testCount++;
 		if ( value !== expect ) {
 		
 			value = '('+typeof(value)+')'+ String(value).substr(0,50).quote()+'...';
@@ -122,6 +126,7 @@ var QAAPI = new function() {
 
 	this.ASSERT_STR = function( value, expect, testName ) {
 	
+		this.testCount++;
 //		value = String(value); expect = String(expect); // not needed because we use the != sign, not !== sign
 
 		if ( value != expect ) {
@@ -134,9 +139,12 @@ var QAAPI = new function() {
 
    this.ASSERT_HAS_PROPERTIES = function( obj, names ) {
    	
-   	for each ( var p in names.split(/\s*,\s*/) )
+   	for each ( var p in names.split(/\s*,\s*/) ) {
+   	
+			this.testCount++;
    		if ( !(p in obj) )
 	  			this.REPORT( 'property '+p+' not found' );
+	  	}
    }
 
 	this.GC = function() {
@@ -153,28 +161,16 @@ var QAAPI = new function() {
    }
 }
 
-var perfTest = false;
+var savePrio = processPriority;
+processPriority = 2;
 
-if ( perfTest ) {
-
-	var t0 = TimeCounter();
-	var savePrio = processPriority;
-	processPriority = 2;
-} else {
-
-	processPriority = -1;
-}
+var t0 = TimeCounter();
 
 MakeTests(MakeTestList('src'), new RegExp(arguments[1]||'.*', 'i'), QAAPI, 3);
 
-if ( perfTest ) {
-
-	var t = TimeCounter() - t0;
-	
-	Print( 'Time: '+t.toFixed(2) + 'ms.' );
-	
-}
-
+var t = TimeCounter() - t0;
 processPriority = savePrio || 0; // savePrio may be undefined
 
-Print( QAAPI.issues + ' issues found\n' );
+Print( 'Time: '+t.toFixed(2) + 'ms.\n' );
+Print( QAAPI.testCount + ' tests done.\n' );
+Print( QAAPI.issues + ' issues found.\n' );

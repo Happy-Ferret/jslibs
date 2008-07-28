@@ -16,6 +16,49 @@
 		QA.ASSERT( stream._NI_StreamRead, prev, 'NativeInterface security' )
 	},
 
+	BStringAPI: function(QA) {
+
+		LoadModule('jsstd');
+		
+		QA.ASSERT( BString('123456').indexOf(''), 0, 'BString indexOf' )
+		QA.ASSERT( BString('123456').indexOf('1'), 0, 'BString indexOf' )
+		QA.ASSERT( BString('123456').indexOf('2'), 1, 'BString indexOf' )
+		QA.ASSERT( BString('123456').indexOf('6'), 5, 'BString indexOf' )
+		QA.ASSERT( BString('123456').indexOf('7'), -1, 'BString indexOf' )
+		QA.ASSERT( BString('12341234').indexOf('2',1), 1, 'BString indexOf' )
+		QA.ASSERT( BString('12341234').indexOf('2',2), 5, 'BString indexOf' )
+		QA.ASSERT( BString('123').indexOf('3',-10), 2, 'BString indexOf' )
+		QA.ASSERT( BString('123').indexOf('3',10), -1, 'BString indexOf' )
+		QA.ASSERT( BString('1231234').indexOf('1234'), 3, 'BString indexOf' )
+		QA.ASSERT( BString('12345').indexOf('12345'), 0, 'BString indexOf' )
+
+		QA.ASSERT( BString('123').lastIndexOf('3', 100), 2, 'BString lastIndexOf' )
+		QA.ASSERT( BString('123').lastIndexOf('3',-100), -1, 'BString lastIndexOf' )
+		QA.ASSERT( BString('123456').lastIndexOf('123456'), 0, 'BString lastIndexOf' )
+		QA.ASSERT( BString('12341234').lastIndexOf('2'), 5, 'BString lastIndexOf' )
+		QA.ASSERT( BString('123').lastIndexOf('1',0), 0, 'BString lastIndexOf' )
+		QA.ASSERT( BString('123456').lastIndexOf('12'), 0, 'BString lastIndexOf' )
+		QA.ASSERT( BString('123456').lastIndexOf('56'), 4, 'BString lastIndexOf' )
+		QA.ASSERT( BString('0123456789').lastIndexOf('567', 4), -1, 'BString lastIndexOf' )
+		QA.ASSERT( BString('0123456789').lastIndexOf('56789', 5), 5, 'BString lastIndexOf' )
+		QA.ASSERT( BString('12341234').lastIndexOf('1234'), 4, 'BString lastIndexOf' )
+		QA.ASSERT( BString('12341234').lastIndexOf('1234', 4), 4, 'BString lastIndexOf' )
+		QA.ASSERT( BString('12341234').lastIndexOf('1234', 3), 0, 'BString lastIndexOf' )
+		
+		QA.ASSERT( isNaN( BString('').charCodeAt(0) ), true, 'BString charCodeAt' )
+		QA.ASSERT( BString('1').charCodeAt(0), 49, 'BString charCodeAt' )
+		QA.ASSERT( BString('1').charCodeAt(), 49, 'BString charCodeAt' )
+		QA.ASSERT( isNaN( BString('1').charCodeAt(-1) ), true, 'BString charCodeAt' )
+		QA.ASSERT( isNaN( BString('1').charCodeAt(1) ), true, 'BString charCodeAt' )
+		
+		QA.ASSERT( BString('').charAt(0), '', 'BString charAt' )
+		QA.ASSERT( BString('1').charAt(0), '1', 'BString charAt' )
+		QA.ASSERT( BString('1').charAt(), '1', 'BString charAt' )
+		QA.ASSERT( BString('1').charAt(-1), '', 'BString charAt' )
+		QA.ASSERT( BString('1').charAt(1), '', 'BString charAt' )
+		
+	},
+	
 	BString_construct_with_data: function(QA) {
 
 		LoadModule('jsstd');
@@ -57,8 +100,11 @@
 	
 	BString_boolean: function(QA) {
 	
-		QA.ASSERT( !!BString(''), !!(''), 'empty BString cast to boolean' );
-		QA.ASSERT( !!BString('a'), !!('a'), 'empty BString cast to boolean' );
+		QA.ASSERT( !!BString(''), true, 'empty BString cast to boolean' );
+		QA.ASSERT( !!BString('x'), true, 'non-empty BString cast to boolean' );
+	
+//		QA.ASSERT( !!BString(''), !!(''), 'empty BString cast to boolean' );
+//		QA.ASSERT( !!BString('a'), !!('a'), 'empty BString cast to boolean' );
 	},
 
 	BString: function(QA) {

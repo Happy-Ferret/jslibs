@@ -1,5 +1,11 @@
 // don't remove this first line !! ( see MemoryMapped test )
 ({
+	
+	TypeTest: function(QA) {
+	
+		var f = new File('');
+		QA.ASSERT( f instanceof Descriptor, true, 'Descriptor inheritance' );
+	},
 
 	SystemInfo: function(QA) {
 
@@ -50,6 +56,12 @@
 	},
 
 
+	Hostname: function(QA) {
+		
+		QA.ASSERT( GetEnv('COMPUTERNAME').toLowerCase(), hostName.toLowerCase(), 'COMPUTERNAME and hostName' );
+	},
+	
+	
 	GetHostByName: function(QA) {
 
 		var res = Socket.GetHostsByName('localhost');
@@ -57,6 +69,10 @@
 
 		var res = Socket.GetHostsByName(hostName);
 		QA.ASSERT( res.length >= 1, true, 'find hostName' );
+
+		var res = Socket.GetHostsByName(QA.RandomString(25));
+		QA.ASSERT_TYPE( res, Array );
+		QA.ASSERT( res.length, 0, 'find nonexistent hostName' );
 	},
 
 
@@ -156,7 +172,7 @@
 
 	TCPGet: function(QA) {
 
-		var hostList = ['www.google.com', 'proxy', 'localhost']; // try to find a web server on port 80
+		var hostList = ['proxy', 'www.google.com', 'localhost']; // try to find a web server on port 80
 		var host;
 		do {
 
@@ -198,7 +214,7 @@
 				return;
 			}
 		}
-		QA.ASSERT( !!response, true, 'host response length' );
+		QA.ASSERT( !!response, true, 'host response length ('+host+')' );
 	},
 	
 	ClosingSocket: function(QA) {
@@ -349,11 +365,14 @@
 
 
 	CreateProcessReadPipe: function(QA) {
-		
+	
 		switch (systemInfo.name) {
 			case 'Windows_NT':
 				
-				var res = CreateProcess('C:\\WINDOWS\\system32\\cmd.exe', ['/c', 'dir']);
+				var cmdPath = GetEnv('ComSpec');
+				QA.ASSERT( cmdPath.indexOf('cmd') != -1, true, 'cmd.exe path' );
+
+				var res = CreateProcess(cmdPath, ['/c', 'dir']);
 				QA.ASSERT_TYPE( res, Array, 'CreateProcess returns an array' );
 				QA.ASSERT( res.length, 2, 'CreateProcess array length' );
 				QA.ASSERT_TYPE( res[0], Descriptor, 'process stdin type' );
@@ -370,7 +389,7 @@
 		switch (systemInfo.name) {
 			case 'Windows_NT':
 				
-				var res = CreateProcess('cmd.exe', ['/c', 'dir'], true);
+				var res = CreateProcess('cmd.exe', ['/c', 'dir'], true); // PATH is used
 				QA.ASSERT_TYPE( res, 'number', 'CreateProcess returns an array' );
 				break;
 			default:
