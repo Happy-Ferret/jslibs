@@ -64,7 +64,7 @@ DEFINE_CONSTRUCTOR() {
 	J_S_ASSERT_OBJECT( J_ARG(1) );
 
 	JSObject *fdObj = JSVAL_TO_OBJECT( J_ARG(1) );
-	J_S_ASSERT_CLASS( fdObj, &classFile );
+	J_S_ASSERT_CLASS( fdObj, classFile );
 	J_CHK( JS_SetReservedSlot(cx, obj, MEMORYMAPPED_SLOT_FILE, J_ARG(1)) ); // avoid the file to be GCed while being used by MemoryMapped
 
 	PRFileDesc *fd = (PRFileDesc*)JS_GetPrivate(cx, fdObj);

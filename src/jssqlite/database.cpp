@@ -259,7 +259,7 @@ DEFINE_FUNCTION( Query ) {
 	JS_SetReservedSlot(cx, obj, SLOT_SQLITE_DATABASE_STATEMENT_STACK, PRIVATE_TO_JSVAL(stack));
 
 	// create the Result (statement) object
-	JSObject *dbStatement = JS_NewObject( cx, &classResult, NULL, NULL );
+	JSObject *dbStatement = JS_NewObject( cx, classResult, NULL, NULL );
 	JS_SetPrivate( cx, dbStatement, pStmt );
 	JS_SetReservedSlot(cx, dbStatement, SLOT_RESULT_DATABASE, OBJECT_TO_JSVAL( obj )); // link to avoid GC
 	// (TBD) enhance

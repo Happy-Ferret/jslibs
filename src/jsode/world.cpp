@@ -165,14 +165,14 @@ DEFINE_CONSTRUCTOR() {
 	//J_S_ASSERT( contactgroup != NULL, "Unable to create contact group." );
 	//JS_SetReservedSlot(cx, obj, WORLD_SLOT_CONTACTGROUP, PRIVATE_TO_JSVAL(contactgroup));
 
-	JSObject *spaceObject = JS_ConstructObject(cx, &classSpace, NULL, NULL); // no arguments = create a topmost space object
+	JSObject *spaceObject = JS_ConstructObject(cx, classSpace, NULL, NULL); // no arguments = create a topmost space object
 	J_S_ASSERT( spaceObject != NULL, "Unable to construct Space for the World." );
 	JS_DefineProperty(cx, obj, WORLD_SPACE_PROPERTY_NAME, OBJECT_TO_JSVAL(spaceObject), NULL, NULL, JSPROP_PERMANENT | JSPROP_READONLY);
 
 //	JS_SetReservedSlot(cx, obj, WORLD_SLOT_SPACE, PRIVATE_TO_JSVAL(spaceObject));
 //	JS_DefineObject(cx, obj, WORLD_SPACE_PROPERTY_NAME, &classSpace, NULL, JSPROP_PERMANENT|JSPROP_READONLY );
 
-	JSObject *surfaceParameters = JS_ConstructObject(cx, &classSurfaceParameters, NULL, NULL);
+	JSObject *surfaceParameters = JS_ConstructObject(cx, classSurfaceParameters, NULL, NULL);
 	J_S_ASSERT( surfaceParameters != NULL, "Unable to construct classSurfaceParameters." );
 	JS_DefineProperty(cx, obj, DEFAULT_SURFACE_PARAMETERS_PROPERTY_NAME, OBJECT_TO_JSVAL(surfaceParameters), NULL, NULL, JSPROP_PERMANENT | JSPROP_READONLY );
 
@@ -202,7 +202,7 @@ DEFINE_FUNCTION( Destroy ) {
 DEFINE_FUNCTION( Step ) {
 
 	J_S_ASSERT_ARG_MIN(1);
-	J_S_ASSERT_CLASS(obj, &classWorld);
+	J_S_ASSERT_CLASS(obj, classWorld);
 	ode::dWorldID worldID = (ode::dWorldID)JS_GetPrivate( cx, obj );
 	J_S_ASSERT_RESOURCE(worldID);
 	jsdouble value;
@@ -223,7 +223,7 @@ DEFINE_FUNCTION( Step ) {
 	JS_GetProperty(cx, obj, DEFAULT_SURFACE_PARAMETERS_PROPERTY_NAME, &defaultSurfaceParametersObject);
 	J_S_ASSERT_DEFINED( defaultSurfaceParametersObject );
 	J_S_ASSERT_OBJECT( defaultSurfaceParametersObject );
-	J_S_ASSERT_CLASS( JSVAL_TO_OBJECT(defaultSurfaceParametersObject), &classSurfaceParameters ); // (TBD) simplify RT_ASSERT
+	J_S_ASSERT_CLASS( JSVAL_TO_OBJECT(defaultSurfaceParametersObject), classSurfaceParameters ); // (TBD) simplify RT_ASSERT
 	ode::dSurfaceParameters *defaultSurfaceParameters = (ode::dSurfaceParameters*)JS_GetPrivate(cx, JSVAL_TO_OBJECT(defaultSurfaceParametersObject)); // beware: local variable !
 	J_S_ASSERT_RESOURCE( defaultSurfaceParameters );
 
@@ -348,7 +348,7 @@ DEFINE_PROPERTY( env ) {
 
 	if ( *vp == JSVAL_VOID ) { //  create it if it does not exist and store it (cf. PROPERTY_READ_STORE)
 
-		JSObject *staticBody = JS_NewObject(cx, &classBody, NULL, NULL);
+		JSObject *staticBody = JS_NewObject(cx, classBody, NULL, NULL);
 		J_S_ASSERT_ALLOC(staticBody);
 		JS_SetPrivate(cx, staticBody, (ode::dBodyID)0);
 		*vp = OBJECT_TO_JSVAL(staticBody);

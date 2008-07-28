@@ -197,8 +197,7 @@ inline JSBool BufferRefill( JSContext *cx, JSObject *obj, size_t amount ) { // a
 			if ( MaybeRealloc(amount, len) )
 				buf = (char*)JS_realloc(cx, buf, len);
 			jsval bstr;
-			J_CHK( J_NewBinaryString(cx, buf, len, &bstr) );
-			J_CHK( WriteChunk(cx, obj, bstr) );
+			J_CHK( WriteRawChunk(cx, obj, len, buf) );
 		}
 
 	} while( pv->length < amount && pv->length > prevBufferLength ); // see RULES ( at the top of this file )
@@ -419,11 +418,11 @@ end:
 
 JSBool AddBuffer( JSContext *cx, JSObject *destBuffer, JSObject *srcBuffer ) {
 
-	J_S_ASSERT_CLASS( destBuffer, &classBuffer );
+	J_S_ASSERT_CLASS( destBuffer, classBuffer );
 	BufferPrivate *dpv = (BufferPrivate*)JS_GetPrivate(cx, destBuffer);
 	J_S_ASSERT_RESOURCE( dpv );
 
-	J_S_ASSERT_CLASS( srcBuffer, &classBuffer );
+	J_S_ASSERT_CLASS( srcBuffer, classBuffer );
 	BufferPrivate *spv = (BufferPrivate*)JS_GetPrivate(cx, srcBuffer);
 	J_S_ASSERT_RESOURCE( spv );
 
@@ -667,13 +666,15 @@ err:
 /**doc
  * $STR $INAME( [ amount ] )
   Read _amount_ data in the buffer. If _amount_ is omited, The whole buffer is returned.
+  $H beware	
+   This function returns a BString or a string literal as empty string.
   = =
   If _amount_ == undefined, an arbitrary (ideal) amount of data is returned. Use this when you don't know how many data you have to read.
-  ===== example: =====
+  $H example
   {{{
   var chunk = buffer.Read(undefined);
   }}}
-  ===== note: =====
+  $H note
   The read operation never blocks, even if the requested amount of data is greater than the buffer length.
 **/
 DEFINE_FUNCTION( Read ) { // Read( [ amount | <undefined> ] )

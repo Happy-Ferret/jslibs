@@ -81,6 +81,9 @@
 #define DEFINE_GET_PROPERTY() static JSBool GetProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
 #define DEFINE_SET_PROPERTY() static JSBool SetProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
 
+// JSExtendedClass
+#define DEFINE_EQUALITY() static JSBool Equality(JSContext *cx, JSObject *obj, jsval v, JSBool *bp)
+#define DEFINE_WRAPPED_OBJECT() static JSObject* WrappedObject(JSContext *cx, JSObject *obj)
 
 struct JSLIBS_ConstIntegerSpec {
 	JSInt32         ival;
@@ -133,7 +136,7 @@ struct JSLIBS_ConstIntegerSpec {
 // class definition
 #define DECLARE_CLASS( CLASSNAME ) \
 	extern JSBool (*InitializeClass##CLASSNAME)(JSContext *cx, JSObject *obj); \
-	extern JSClass class##CLASSNAME; \
+	extern JSClass *class##CLASSNAME; \
 	extern JSObject *prototype##CLASSNAME; \
 
 
@@ -146,15 +149,15 @@ static JSBool RemoveClass( JSContext *cx, JSClass *cl ) {
 
 
 #define REMOVE_CLASS( CLASSNAME ) \
-	RemoveClass( cx, &class##CLASSNAME );
+	RemoveClass( cx, class##CLASSNAME );
 
 #define INIT_CLASS( CLASSNAME ) \
 	InitializeClass##CLASSNAME(cx, obj); \
 
 #define BEGIN_CLASS(CLASSNAME) \
-	static const char *_name = #CLASSNAME; \
-	JSClass class##CLASSNAME = {0}; \
-	static JSClass *_class = &class##CLASSNAME; \
+	static JSExtendedClass _xclass = { { #CLASSNAME, 0, JS_PropertyStub , JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_EnumerateStub, JS_ResolveStub , JS_ConvertStub, JS_FinalizeStub, JSCLASS_NO_OPTIONAL_MEMBERS }, 0}; \
+	JSClass *class##CLASSNAME = &_xclass.base; \
+	static JSClass *_class = &_xclass.base; \
 	JSObject *prototype##CLASSNAME = NULL; \
 	static JSObject **_prototype = &prototype##CLASSNAME; \
 	static JSBool _InitializeClass(JSContext *cx, JSObject *obj); \
@@ -162,8 +165,6 @@ static JSBool RemoveClass( JSContext *cx, JSClass *cl ) {
 
 #define CONFIGURE_CLASS \
 	static JSBool _InitializeClass(JSContext *cx, JSObject *obj) { \
-		JSClass _tmp_class = { _name, 0, JS_PropertyStub , JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_EnumerateStub, JS_ResolveStub , JS_ConvertStub, JS_FinalizeStub, JSCLASS_NO_OPTIONAL_MEMBERS }; \
-		*_class = _tmp_class; \
 		JSNative _constructor = NULL; \
 		JSFunctionSpec *_functionSpec = NULL, *_staticFunctionSpec = NULL; \
 		JSPropertySpec *_propertySpec = NULL, *_staticPropertySpec = NULL; \
@@ -204,6 +205,10 @@ static JSBool RemoveClass( JSContext *cx, JSClass *cl ) {
 #define HAS_NEW_RESOLVE   _class->resolve = (JSResolveOp)NewResolve; _class->flags |= JSCLASS_NEW_RESOLVE;
 #define HAS_ENUMERATE  _class->enumerate = Enumerate;
 #define HAS_TRACER   _class->mark = (JSMarkOp)Tracer; _class->flags |= JSCLASS_MARK_IS_TRACE;
+
+// JSExtendedClass
+#define HAS_EQUALITY _xclass.base.flags |= JSCLASS_IS_EXTENDED; _xclass.equality = Equality;
+#define HAS_WRAPPED_OBJECT _xclass.base.flags |= JSCLASS_IS_EXTENDED; _xclass.wrappedObject = WrappedObject;
 
 #define HAS_INIT  _init = Init;
 

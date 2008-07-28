@@ -20,7 +20,7 @@ inline JSBool ValToBodyID( JSContext *cx, jsval val, ode::dBodyID *bodyId ) {
 
 	J_S_ASSERT_OBJECT(val);
 	JSObject *obj = JSVAL_TO_OBJECT(val);
-	J_S_ASSERT_CLASS(obj,&classBody);
+	J_S_ASSERT_CLASS(obj, classBody);
 	*bodyId = (ode::dBodyID)JS_GetPrivate(cx,obj); // (TBD) ! manage null body ( environment connected; see world.body property )
 	// *bodyId == NULL is not an error !
 	// (TBD) use another way to detect if body is correct

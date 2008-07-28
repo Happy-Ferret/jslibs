@@ -560,7 +560,7 @@ DEFINE_FUNCTION( PopupMenu ) {
 				}
 				if ( itemVal != JSVAL_VOID ) {
 					JSObject *iconObj = JSVAL_TO_OBJECT(itemVal);
-					J_S_ASSERT_CLASS( iconObj, &classIcon );
+					J_S_ASSERT_CLASS( iconObj, classIcon );
 					HICON *phIcon = (HICON*)JS_GetPrivate(cx, iconObj);
 					J_S_ASSERT_RESOURCE(phIcon);
 					HBITMAP hBMP = MenuItemBitmapFromIcon(*phIcon);
@@ -685,7 +685,7 @@ DEFINE_PROPERTY( icon ) {
 	if ( JSVAL_IS_OBJECT(*vp) && *vp != JSVAL_NULL ) {
 
 		JSObject *iconObj = JSVAL_TO_OBJECT(*vp);
-		J_S_ASSERT_CLASS( iconObj, &classIcon );
+		J_S_ASSERT_CLASS( iconObj, classIcon );
 		HICON *phIcon = (HICON*)JS_GetPrivate(cx, iconObj);
 		J_S_ASSERT_RESOURCE( phIcon );
 		hIcon = *phIcon;

@@ -288,7 +288,7 @@ JSBool NativeInterfaceBufferGet( JSContext *cx, JSObject *obj, const char **buf,
 
 inline bool IsTexture( JSContext *cx, jsval value ) {
 	
-	return ( JSVAL_IS_OBJECT( value ) && JS_GET_CLASS(cx, JSVAL_TO_OBJECT( value )) == &classTexture );
+	return ( JSVAL_IS_OBJECT( value ) && JS_GET_CLASS(cx, JSVAL_TO_OBJECT( value )) == classTexture );
 }
 
 
@@ -296,7 +296,7 @@ JSBool ValueToTexture( JSContext* cx, jsval value, Texture **tex ) {
 	
 	J_S_ASSERT_OBJECT( value );
 	JSObject *texObj = JSVAL_TO_OBJECT( value );
-	J_S_ASSERT_CLASS( texObj, &classTexture );
+	J_S_ASSERT_CLASS( texObj, classTexture );
 	*tex = (Texture *)JS_GetPrivate(cx, texObj);
 	J_S_ASSERT_RESOURCE(tex);
 	return JS_TRUE;

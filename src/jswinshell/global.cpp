@@ -49,7 +49,7 @@ DEFINE_FUNCTION( ExtractIcon_ ) {
 	HICON hIcon = ExtractIcon( hInst, fileName, iconIndex ); // see SHGetFileInfo(
 	if ( hIcon == NULL )
 		return WinThrowError(cx, GetLastError());
-	JSObject *icon = JS_NewObject(cx, &classIcon, NULL, NULL);
+	JSObject *icon = JS_NewObject(cx, classIcon, NULL, NULL);
 	HICON *phIcon = (HICON*)malloc(sizeof(HICON)); // this is needed because JS_SetPrivate stores ONLY alligned values
 	J_S_ASSERT_ALLOC( phIcon );
 	*phIcon = hIcon;

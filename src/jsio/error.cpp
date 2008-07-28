@@ -101,7 +101,7 @@ JSBool ThrowIoErrorArg( JSContext *cx, PRErrorCode errorCode, PRInt32 osError ) 
 */
 
 	JS_ReportWarning( cx, "IoError exception" );
-	JSObject *error = JS_NewObject( cx, &classIoError, NULL, NULL );
+	JSObject *error = JS_NewObject( cx, classIoError, NULL, NULL );
 	JS_SetReservedSlot( cx, error, 0, INT_TO_JSVAL(errorCode) );
 	JS_SetReservedSlot( cx, error, 1, INT_TO_JSVAL(osError) );
 	JS_SetPendingException( cx, OBJECT_TO_JSVAL( error ) );

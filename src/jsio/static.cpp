@@ -99,7 +99,7 @@ DEFINE_FUNCTION( Poll ) {
 		J_CHK( JS_GetElement(cx, JSVAL_TO_OBJECT(J_ARG(1)), JSVAL_TO_INT(propVal), &propVal ));
 		J_S_ASSERT_OBJECT( propVal );
 		JSObject *fdObj = JSVAL_TO_OBJECT( propVal );
-		J_S_ASSERT( InheritFrom(cx, fdObj, &classDescriptor), J__ERRMSG_INVALID_CLASS );
+		J_S_ASSERT( InheritFrom(cx, fdObj, classDescriptor), J__ERRMSG_INVALID_CLASS );
 		PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, fdObj );
 //		J_S_ASSERT_RESOURCE( fd ); // fd == NULL is supported !
 
@@ -229,7 +229,7 @@ DEFINE_FUNCTION( IsReadable ) {
 	J_S_ASSERT_ARG_MIN( 1 );
 
 	JSObject *descriptorObj = JSVAL_TO_OBJECT( J_ARG(1) );
-	J_S_ASSERT( InheritFrom(cx, descriptorObj, &classDescriptor), J__ERRMSG_INVALID_CLASS );
+	J_S_ASSERT( InheritFrom(cx, descriptorObj, classDescriptor), J__ERRMSG_INVALID_CLASS );
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, descriptorObj );
 //	J_S_ASSERT_RESOURCE( fd ); // fd == NULL is supported !
 
@@ -259,7 +259,7 @@ DEFINE_FUNCTION( IsWritable ) {
 	J_S_ASSERT_ARG_MIN( 1 );
 
 	JSObject *descriptorObj = JSVAL_TO_OBJECT( J_ARG(1) );
-	J_S_ASSERT( InheritFrom(cx, descriptorObj, &classDescriptor), J__ERRMSG_INVALID_CLASS );
+	J_S_ASSERT( InheritFrom(cx, descriptorObj, classDescriptor), J__ERRMSG_INVALID_CLASS );
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, descriptorObj );
 //	J_S_ASSERT_RESOURCE( fd ); // fd == NULL is supported !
 
@@ -566,10 +566,10 @@ DEFINE_FUNCTION_FAST( CreateProcess_ ) {
 //		if ( status != PR_SUCCESS )
 //			return ThrowIoError(cx);
 
-		JSObject *fdin = JS_NewObject( cx, &classPipe, NULL, NULL );
+		JSObject *fdin = JS_NewObject( cx, classPipe, NULL, NULL );
 		J_CHK( JS_SetPrivate( cx, fdin, stdin_parent ) );
 
-		JSObject *fdout = JS_NewObject( cx, &classPipe, NULL, NULL );
+		JSObject *fdout = JS_NewObject( cx, classPipe, NULL, NULL );
 		J_CHK( JS_SetPrivate( cx, fdout, stdout_parent ) );
 		J_CHK( ReserveStreamReadInterface(cx, fdout) );
 		J_CHK( SetStreamReadInterface(cx, fdout, NativeInterfaceStreamRead) );

@@ -48,7 +48,7 @@ JSBool SlotGetPrng(JSContext *cx, JSObject *obj, int *prngIndex, prng_state **pr
 	jsval prngVal;
 	J_CHK( JS_GetReservedSlot(cx, obj, ASYMMETRIC_CIPHER_PRNG_SLOT, &prngVal) );
 	J_S_ASSERT_OBJECT(	prngVal );
-	J_S_ASSERT_CLASS( JSVAL_TO_OBJECT(prngVal), &classPrng );
+	J_S_ASSERT_CLASS( JSVAL_TO_OBJECT(prngVal), classPrng );
 	PrngPrivate *prngPrivate = (PrngPrivate *)JS_GetPrivate(cx, JSVAL_TO_OBJECT(prngVal));
 	J_S_ASSERT_RESOURCE( prngPrivate );
 	*prngState = &prngPrivate->state;
@@ -136,7 +136,7 @@ DEFINE_CONSTRUCTOR() { // ( cipherName, hashName [, prngObject] [, PKCSVersion] 
 	if ( argc >= 3 ) {
 
 		J_S_ASSERT_OBJECT(	argv[2] );
-		J_S_ASSERT_CLASS( JSVAL_TO_OBJECT(argv[2]), &classPrng );
+		J_S_ASSERT_CLASS( JSVAL_TO_OBJECT(argv[2]), classPrng );
 		J_CHK( JS_SetReservedSlot(cx, obj, ASYMMETRIC_CIPHER_PRNG_SLOT, argv[2]) );
 	} else {
 

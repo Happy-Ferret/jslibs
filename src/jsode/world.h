@@ -26,7 +26,7 @@ inline JSBool ValToWorldID( JSContext *cx, jsval val, ode::dWorldID *worldId ) {
 
 	J_S_ASSERT_OBJECT(val);
 	JSObject *worldObject = JSVAL_TO_OBJECT(val);
-	J_S_ASSERT_CLASS(worldObject,&classWorld);
+	J_S_ASSERT_CLASS(worldObject, classWorld);
 	*worldId = (ode::dWorldID)JS_GetPrivate(cx,worldObject);
 	return JS_TRUE;
 }

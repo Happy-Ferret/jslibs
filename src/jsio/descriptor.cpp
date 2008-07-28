@@ -27,7 +27,7 @@
 
 JSBool NativeInterfaceStreamRead( JSContext *cx, JSObject *obj, char *buf, size_t *amount ) {
 
-	J_S_ASSERT_CLASS(obj, &classDescriptor);
+	J_S_ASSERT_CLASS(obj, classDescriptor);
 
 	PRFileDesc *fd = (PRFileDesc*)JS_GetPrivate(cx, obj); // (PRFileDesc *)pv;
 	J_S_ASSERT_RESOURCE(fd);
@@ -262,6 +262,8 @@ JSBool ReadAllToJsval(JSContext *cx, PRFileDesc *fd, jsval *rval ) {
  * $VAL *Read*( [amount] )
   Read _amount_ bytes of data from the current descriptor. If _amount_ is ommited, the whole available data is read.
   If the descriptor is exhausted (eof or disconnected), this function returns <undefined>.
+  $H beware	
+   This function returns a BString or a string literal as empty string.
 **/
 DEFINE_FUNCTION( Read ) {
 
@@ -455,19 +457,19 @@ DEFINE_FUNCTION( Import ) {
 	switch (type) {
 		case PR_DESC_FILE:
 			fd = PR_ImportFile(osfd);
-			descriptorObject = JS_NewObject(cx, &classFile, NULL, NULL); // (TBD) check if proto is needed !
+			descriptorObject = JS_NewObject(cx, classFile, NULL, NULL); // (TBD) check if proto is needed !
 			break;
 		case PR_DESC_SOCKET_TCP:
 			fd = PR_ImportTCPSocket(osfd);
-			descriptorObject = JS_NewObject(cx, &classSocket, NULL, NULL); // (TBD) check if proto is needed !
+			descriptorObject = JS_NewObject(cx, classSocket, NULL, NULL); // (TBD) check if proto is needed !
 			break;
 		case PR_DESC_SOCKET_UDP:
 			fd = PR_ImportUDPSocket(osfd);
-			descriptorObject = JS_NewObject(cx, &classSocket, NULL, NULL); // (TBD) check if proto is needed !
+			descriptorObject = JS_NewObject(cx, classSocket, NULL, NULL); // (TBD) check if proto is needed !
 			break;
 		case PR_DESC_PIPE:
 			fd = PR_ImportPipe(osfd);
-			descriptorObject = JS_NewObject(cx, &classFile, NULL, NULL); // (TBD) check if proto is needed !
+			descriptorObject = JS_NewObject(cx, classFile, NULL, NULL); // (TBD) check if proto is needed !
 			break;
 		default:
 			J_REPORT_ERROR("Invalid descriptor type.");

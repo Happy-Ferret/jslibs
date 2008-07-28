@@ -107,7 +107,7 @@ DEFINE_CONSTRUCTOR() {
 **/
 DEFINE_FUNCTION( Destroy ) {
 
-	J_S_ASSERT_CLASS(obj, &classBody);
+	J_S_ASSERT_CLASS(obj, classBody);
 	ode::dBodyID bodyId = (ode::dBodyID)JS_GetPrivate( cx, obj );
 	J_S_ASSERT_RESOURCE( bodyId ); // (TBD) manage world-connected ( when bodyId == 0 )
 	dBodyDestroy(bodyId);
@@ -123,7 +123,7 @@ DEFINE_FUNCTION( Destroy ) {
 DEFINE_FUNCTION( IsConnectedTo ) {
 
 	J_S_ASSERT_ARG_MIN(1);
-	J_S_ASSERT_CLASS(obj, &classBody);
+	J_S_ASSERT_CLASS(obj, classBody);
 	ode::dBodyID thisBodyID = (ode::dBodyID)JS_GetPrivate( cx, obj );
 	J_S_ASSERT_RESOURCE( thisBodyID );
 	ode::dBodyID bodyId;
@@ -236,7 +236,7 @@ DEFINE_PROPERTY( mass ) {
 
 	if ( *vp == JSVAL_VOID ) { // if mass do not exist, we have to create it and store it
 
-		JSObject *massObject = JS_NewObject(cx, &classMass, NULL, NULL);
+		JSObject *massObject = JS_NewObject(cx, classMass, NULL, NULL);
 		J_S_ASSERT(massObject != NULL, "unable to construct Mass object.");
 		JS_SetReservedSlot(cx, massObject, MASS_SLOT_BODY, OBJECT_TO_JSVAL(obj));
 		*vp = OBJECT_TO_JSVAL(massObject);

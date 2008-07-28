@@ -210,7 +210,7 @@ DEFINE_FUNCTION( Accept ) {
 
 //	J_CHK( SetStreamReadInterface(cx, obj, NativeInterfaceStreamRead) );
 
-	JSObject *object = JS_NewObject( cx, &classSocket, NULL, NULL );
+	JSObject *object = JS_NewObject( cx, classSocket, NULL, NULL );
 	JS_SetPrivate( cx, object, newFd );
 
 	J_CHK( ReserveStreamReadInterface(cx, object) );
@@ -471,7 +471,7 @@ DEFINE_FUNCTION( TransmitFile ) { // WORKS ONLY ON BLOCKING SOCKET !!!
 
 	J_S_ASSERT_OBJECT( J_ARG(1) );
 	JSObject *fileObj = JSVAL_TO_OBJECT( J_ARG(1) );
-	J_S_ASSERT_CLASS( fileObj, &classFile );
+	J_S_ASSERT_CLASS( fileObj, classFile );
 	PRFileDesc *fileFd = (PRFileDesc*)JS_GetPrivate( cx, fileObj );
 	J_S_ASSERT_RESOURCE( fileFd );
 
