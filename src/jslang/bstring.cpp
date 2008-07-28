@@ -34,10 +34,10 @@ inline JSBool BStringLength( JSContext *cx, JSObject *bStringObject, size_t *len
 }
 
 
-inline JSBool BStringBuffer( JSContext *cx, JSObject *bStringObject, const void **buffer ) {
+inline JSBool BStringBuffer( JSContext *cx, JSObject *bStringObject, const char **buffer ) {
 
 	J_S_ASSERT_CLASS(bStringObject, BStringJSClass( cx ));
-	*buffer = JS_GetPrivate(cx, bStringObject);
+	*buffer = (char*)JS_GetPrivate(cx, bStringObject);
 	return JS_TRUE;
 }
 
@@ -51,7 +51,7 @@ inline JSBool LengthSet( JSContext *cx, JSObject *obj, size_t bufferLength ) {
 JSBool NativeInterfaceBufferGet( JSContext *cx, JSObject *obj, const char **buf, size_t *size ) {
 
 	J_CHK( BStringLength(cx, obj, size) );
-	J_CHK( BStringBuffer(cx, obj, (const void **)buf) );
+	J_CHK( BStringBuffer(cx, obj, buf) );
 	return JS_TRUE;
 }
 
@@ -100,6 +100,7 @@ inline JSBool JsvalToBString( JSContext *cx, jsval val, JSObject **obj ) {
 }
 */
 
+
 JSBool BStringToJSString( JSContext *cx, JSObject *obj, JSString **jsstr ) {
 
 	void *pv = JS_GetPrivate(cx, obj);
@@ -127,6 +128,7 @@ DEFINE_FINALIZE() {
 	if (pv != NULL)
 		JS_free(cx, pv);
 }
+
 
 /**doc
  * $INAME()
@@ -192,7 +194,7 @@ DEFINE_FUNCTION_FAST( Set ) {
 
 /**doc
  * $TYPE BString $INAME( data )
-  Add any kind of data to the current bstring and returns the result.
+  Add any kind of data to the current bstring and returns the result. The resulting value is a BString event its content is empty.
 **/
 DEFINE_FUNCTION_FAST( Add ) {
 
@@ -272,7 +274,6 @@ DEFINE_FUNCTION_FAST( Add ) {
 }
 
 
-
 /**doc
  * $TYPE BString $INAME( start [, length ] )
   Returns the bytes in a string beginning at the specified location through the specified number of characters.
@@ -285,7 +286,9 @@ DEFINE_FUNCTION_FAST( Add ) {
 DEFINE_FUNCTION_FAST( Substr ) {
 
 	J_S_ASSERT_ARG_MIN(1);
-	void *pv = JS_GetPrivate(cx, J_FOBJ);
+
+	const char *bstrBuffer;
+	J_CHK( BStringBuffer(cx, J_FOBJ, &bstrBuffer) );
 
 	size_t dataLength;
 	J_CHK( BStringLength(cx, J_FOBJ, &dataLength) );
@@ -329,12 +332,8 @@ DEFINE_FUNCTION_FAST( Substr ) {
 	J_S_ASSERT_ALLOC( buffer );
 	((char*)buffer)[length] = '\0';
 
-	memcpy(buffer, ((int8_t*)pv) + start, length);
-
-	if ( length == 0 )
-		*J_FRVAL = JS_GetEmptyStringValue(cx);
-	else
-		J_CHK( J_NewBinaryString(cx, buffer, length, J_FRVAL) );
+	memcpy(buffer, ((int8_t*)bstrBuffer) + start, length);
+	J_CHK( J_NewBinaryString(cx, buffer, length, J_FRVAL) );
 
 	return JS_TRUE;
 }
@@ -353,9 +352,192 @@ DEFINE_FUNCTION_FAST( indexOf ) {
 
 	J_S_ASSERT_ARG_MIN(1);
 
-	J_REPORT_ERROR( "TBD" );
-// (TBD)
+	const char *sBuffer;
+	size_t sLength;
+	J_CHK( JsvalToStringAndLength(cx, J_FARG(1), &sBuffer, &sLength) );
 
+	if ( sLength == 0 ) {
+
+		*J_FRVAL = INT_TO_JSVAL(0);
+		return JS_TRUE;
+	}
+
+	size_t length;
+	J_CHK( BStringLength(cx, J_FOBJ, &length) );
+
+	long start;
+	if ( J_FARG_ISDEF(2) ) {
+		
+		J_S_ASSERT_INT( J_FARG(2) );
+		start = JSVAL_TO_INT( J_FARG(2) );
+
+		if ( start < 0 )
+			start = 0;
+		else if ( start + sLength > length ) {
+
+			*J_FRVAL = INT_TO_JSVAL(-1);
+			return JS_TRUE;
+		} 
+
+	} else {
+
+		start = 0;
+	}
+
+	const char *buffer;
+	J_CHK( BStringBuffer(cx, J_FOBJ, &buffer) );
+
+	for ( size_t i = start; i < length; i++ ) {
+
+		size_t j;
+		for ( j = 0; j < sLength && buffer[i+j] == sBuffer[j]; j++ );
+		if ( j == sLength ) {
+			
+			J_CHK( JS_NewNumberValue(cx, i, J_FRVAL) );
+			return JS_TRUE;
+		}
+	}
+
+	*J_FRVAL = INT_TO_JSVAL(-1);
+	return JS_TRUE;
+}
+
+
+/**doc
+ * $INT $INAME( searchValue [, fromIndex] )
+  Returns the index within the calling BString object of the last occurrence of the specified value, or -1 if not found. The calling string is searched backward, starting at fromIndex.
+  $H arguments
+   $ARG string searchValue: A string representing the value to search for.
+   $ARG integer fromIndex: The location within the calling string to start the search from, indexed from left to right. It can be any integer between 0 and the length of the string. The default value is the length of the string.
+  $H details
+   fc. [http://developer.mozilla.org/en/docs/Core_JavaScript_1.5_Reference:Objects:String:lastIndexOf]
+**/
+DEFINE_FUNCTION_FAST( lastIndexOf ) {
+
+	J_S_ASSERT_ARG_MIN(1);
+
+	const char *sBuffer;
+	size_t sLength;
+	J_CHK( JsvalToStringAndLength(cx, J_FARG(1), &sBuffer, &sLength) );
+
+	if ( sLength == 0 ) {
+
+		*J_FRVAL = INT_TO_JSVAL(0);
+		return JS_TRUE;
+	}
+
+	const char *buffer;
+	size_t length;
+	J_CHK( BStringBuffer(cx, J_FOBJ, &buffer) );
+	J_CHK( BStringLength(cx, J_FOBJ, &length) );
+
+	long start;
+	if ( J_FARG_ISDEF(2) ) {
+		
+		J_S_ASSERT_INT( J_FARG(2) );
+		start = JSVAL_TO_INT( J_FARG(2) );
+
+		if ( start < 0 ) {
+
+			*J_FRVAL = INT_TO_JSVAL(-1);
+			return JS_TRUE;
+		} 
+
+		if ( start + sLength > length ) {
+			
+			start = length - sLength;
+		} 
+		
+	} else {
+
+		start = length - sLength;
+	}
+
+	for ( long i = start; i >= 0; i-- ) {
+
+		size_t j;
+		for ( j = 0; j < sLength && buffer[i+j] == sBuffer[j]; j++ );
+		if ( j == sLength ) {
+			
+			J_CHK( JS_NewNumberValue(cx, i, J_FRVAL) );
+			return JS_TRUE;
+		}
+	}
+
+	*J_FRVAL = INT_TO_JSVAL(-1);
+	return JS_TRUE;
+}
+
+
+/**doc
+ * $STR $INAME( index )
+  Returns the specified character from a string. 
+  $H details
+   fc. [http://developer.mozilla.org/en/docs/Core_JavaScript_1.5_Reference:Global_Objects:String:charAt]
+**/
+DEFINE_FUNCTION_FAST( charAt ) {
+
+	long index;
+	if ( J_FARG_ISDEF(1) ) {
+
+		J_S_ASSERT_INT( J_FARG(1) );
+		index = JSVAL_TO_INT( J_FARG(1) );
+	} else {
+		
+		index = 0;
+	}
+
+	size_t length;
+	J_CHK( BStringLength(cx, J_FOBJ, &length) );
+
+	if ( length == 0 || index < 0 || (unsigned)index >= length ) {
+		
+		*J_FRVAL = JS_GetEmptyStringValue(cx);
+		return JS_TRUE;
+	}
+
+	const char *buffer;
+	J_CHK( BStringBuffer(cx, J_FOBJ, &buffer) );
+
+	jschar chr = ((char*)buffer)[index];
+	JSString *str1 = JS_NewUCStringCopyN(cx, &chr, 1);
+	J_S_ASSERT_ALLOC( str1 );
+	*J_FRVAL = STRING_TO_JSVAL(str1);
+
+	return JS_TRUE;
+}
+
+
+/**doc
+ * $INT $INAME( index )
+  Returns a number indicating the ASCII value of the character at the given index.
+  $H details
+   fc. [http://developer.mozilla.org/en/docs/Core_JavaScript_1.5_Reference:Global_Objects:String:charCodeAt]
+**/
+DEFINE_FUNCTION_FAST( charCodeAt ) {
+
+	long index;
+	if ( J_FARG_ISDEF(1) ) {
+
+		J_S_ASSERT_INT( J_FARG(1) );
+		index = JSVAL_TO_INT( J_FARG(1) );
+	} else {
+		
+		index = 0;
+	}
+
+	size_t length;
+	J_CHK( BStringLength(cx, J_FOBJ, &length) );
+
+	if ( length == 0 || index < 0 || (unsigned)index >= length ) {
+		
+		*J_FRVAL = JS_GetNaNValue(cx);
+		return JS_TRUE;
+	}
+
+	const char *buffer;
+	J_CHK( BStringBuffer(cx, J_FOBJ, &buffer) );
+	*J_FRVAL = INT_TO_JSVAL( buffer[index] );
 	return JS_TRUE;
 }
 
@@ -374,6 +556,7 @@ DEFINE_FUNCTION_FAST( toString ) { // and valueOf
 	*J_FRVAL = STRING_TO_JSVAL(jsstr);
 	return JS_TRUE;
 }
+
 
 /**doc
 === Properties ===
@@ -520,7 +703,9 @@ CONFIGURE_CLASS
 //		FUNCTION_FAST(Set)
 		FUNCTION_FAST(Substr)
 		FUNCTION_FAST(indexOf)
-
+		FUNCTION_FAST(lastIndexOf)
+		FUNCTION_FAST(charCodeAt)
+		FUNCTION_FAST(charAt)
 		FUNCTION_FAST(toString)
 		FUNCTION_FAST_ALIAS(valueOf, toString)
 	END_FUNCTION_SPEC
