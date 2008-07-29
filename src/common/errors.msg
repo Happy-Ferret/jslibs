@@ -24,3 +24,28 @@ MSG_DEF(JSSMSG_FILE_SCRIPTS_ONLY,        4, 0, JSEXN_NONE, "only works on JS scr
 MSG_DEF(JSSMSG_UNEXPECTED_EOF,           5, 1, JSEXN_NONE, "unexpected EOF in {0}") 
 MSG_DEF(JSSMSG_DOEXP_USAGE,              6, 0, JSEXN_NONE, "usage: doexp obj id") 
 */
+
+/* errors to manage:
+
+- Out of memory.
+- Internal error: <what>.
+- Method called on the wrong object.
+- conversion failed / failed to convert to <type> ( Unable to convert to boolean )
+- Failed to <do something> ( the underlying native or spidermonkey API failed )
+- Unable to <do something>, <why> ( logical error, misuse of jslibs API )
+- Invalid operation: <what> ( API misuse )
+- Invalid or uninitialized object.
+- Invalid argument count. ( misuse of jslibs API )
+- Invalid argument value. ( misuse of jslibs API )
+- Invalid data type <type> ( invalid type, Array expected )
+- Value out of range: <info?>
+- Limit reach: <what>
+
+- Missing <what> (an identified thing is missing to continue properly)
+
+- Object cannot be constructed.
+- Construction form is required.
+- Not implemented yet.
+- Available in Debug mode only.
+
+*/

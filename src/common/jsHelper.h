@@ -443,7 +443,7 @@ inline JSBool StringToJsval( JSContext *cx, jsval *val, const char* cstr ) {
 
 	JSString *jsstr = JS_NewStringCopyZ(cx, cstr);
 	if ( jsstr == NULL )
-		J_REPORT_ERROR( "Unable to create thye string." );
+		J_REPORT_ERROR( "Unable to create the string." );
 	*val = STRING_TO_JSVAL(jsstr);
 	return JS_TRUE;
 }
@@ -452,7 +452,7 @@ inline JSBool StringAndLengthToJsval( JSContext *cx, jsval *val, const char* cst
 
 	JSString *jsstr = JS_NewStringCopyN(cx, cstr, length);
 	if ( jsstr == NULL )
-		J_REPORT_ERROR( "Unable to create thye string." );
+		J_REPORT_ERROR( "Unable to create the string." );
 	*val = STRING_TO_JSVAL(jsstr);
 	return JS_TRUE;
 }

@@ -59,7 +59,7 @@ DEFINE_CONSTRUCTOR() {
 	size_t nameLength;
 	J_CHK( JsvalToStringAndLength(cx, J_ARG(1), &name, &nameLength) );
 
-	J_S_ASSERT( nameLength < PATH_MAX, "Semaphoer name too long." );
+	J_S_ASSERT( nameLength < PATH_MAX, "Semaphore name too long." );
 
 	PRUintn count = 0;
 	if ( J_ARG_ISDEF(2) )
