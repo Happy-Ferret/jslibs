@@ -155,7 +155,7 @@
 	
 		var b = new BString();
 		b.Add( 'ABCD' );
-		QA.ASSERT_EXCEPTION( function() b[5] = 'X', RangeError, 'set an out-of-range item' );
+		QA.ASSERT_EXCEPTION( function() b[5] = 'X', Error, 'set an out-of-range item' );
 	},
 
 	BStringSubstr: function(QA) {
@@ -296,6 +296,21 @@
 	Stringify: function(QA) {
 	
 		QA.ASSERT( 'test', Stringify('test'), 'force string conversion' );
+		
+		var len = 0;
+		var b = new Buffer();
+		for ( var i = 0; i < 500; i++ ) {
+			
+			len += i;
+			b.Write(QA.RandomString(i));
+		}
+
+		QA.ASSERT( b.length, len, 'buffer length' );
+		
+		var s = Stringify(b);
+
+		QA.ASSERT( s.length, len, 'string length' );
+
 	}
 
 	

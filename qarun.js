@@ -77,18 +77,20 @@ var QAAPI = new function() {
 	
 	this.issues = 0;
 	this.testCount = 0;
+	this.errors = [];
 
 	this.REPORT = function( message ) {
 
 		this.issues++;
-		Print( ' - ' + message, '\n' );
+		this.errors.push(message);
+//		Print( ' - ' + message, '\n' );
 	}
 
 	this.ASSERT_TYPE = function( value, type, testName ) {
 		
 		this.testCount++;
 		if ( typeof(value) != type && !(value instanceof type) )
-			this.REPORT( (testName||'') + ' (@'+Locate(-1)+'), Invalid type, '+(type.name)+' is expected' );
+			this.REPORT( Locate(-1)+' '+(testName||'?')+', Invalid type, '+(type.name)+' is expected' );
 	}
 
 	this.FAILED = function( message ) {
@@ -102,13 +104,13 @@ var QAAPI = new function() {
 		try {
 		
 			fct();
-			this.REPORT( 'Failure not detected: '+message );
+			this.REPORT( Locate(-1)+' Failure not detected: '+message );
 		} catch(ex if ex instanceof exType) {
 
 			// good
 		} catch(ex) {
 			
-			this.REPORT( 'Invalid exception ('+ex.constructor.name+' != '+exType.constructor.name+') for: '+message );
+			this.REPORT( Locate(-1)+' Invalid exception ('+ex.constructor.name+' != '+exType.constructor.name+') for: '+message );
 		}
 	} 
 
@@ -118,9 +120,9 @@ var QAAPI = new function() {
 		this.testCount++;
 		if ( value !== expect ) {
 		
-			value = '('+typeof(value)+')'+ String(value).substr(0,50).quote()+'...';
-			expect = '('+typeof(expect)+')'+ String(expect).substr(0,50).quote()+'...';
-			this.REPORT( (testName||'') + ', (@'+Locate(-1)+'), '+value+' != '+expect );
+			value = '('+(''+typeof(value)).substr(0,3)+')'+ String(value).substr(0,50).quote()+'...';
+			expect = '('+(''+typeof(expect)).substr(0,3)+')'+ String(expect).substr(0,50).quote()+'...';
+			this.REPORT( Locate(-1)+' '+(testName||'?') + ', '+value+' != '+expect );
 		}
 	}
 
@@ -131,9 +133,9 @@ var QAAPI = new function() {
 
 		if ( value != expect ) {
 		
-			value = '('+typeof(value)+')'+ String(value).substr(0,50).quote()+'...';
-			expect = '('+typeof(expect)+')'+ String(expect).substr(0,50).quote()+'...';
-			this.REPORT( (testName||'') + ', (@'+Locate(-1)+'), '+value+' != '+expect );
+			value = '('+(''+typeof(value)).substr(0,3)+')'+ String(value).substr(0,50).quote()+'...';
+			expect = '('+(''+typeof(expect)).substr(0,3)+')'+ String(expect).substr(0,50).quote()+'...';
+			this.REPORT( Locate(-1)+' '+(testName||'?') + ', '+value+' != '+expect );
 		}
 	}
 
@@ -143,7 +145,7 @@ var QAAPI = new function() {
    	
 			this.testCount++;
    		if ( !(p in obj) )
-	  			this.REPORT( 'property '+p+' not found' );
+	  			this.REPORT( Locate(-1)+' Property '+p+' not found' );
 	  	}
    }
 
@@ -171,6 +173,12 @@ MakeTests(MakeTestList('src'), new RegExp(arguments[1]||'.*', 'i'), QAAPI, 3);
 var t = TimeCounter() - t0;
 processPriority = savePrio || 0; // savePrio may be undefined
 
-Print( 'Time: '+t.toFixed(2) + 'ms.\n' );
-Print( QAAPI.testCount + ' tests done.\n' );
-Print( QAAPI.issues + ' issues found.\n' );
+Print( '\n', QAAPI.issues + ' issues / ' + QAAPI.testCount + ' tests in ' + t.toFixed(2) + 'ms.\n' );
+QAAPI.errors.sort();
+QAAPI.errors.reduce( function(previousValue, currentValue, index, array) {
+
+    if ( previousValue != currentValue )
+		Print( '- ' + currentValue, '\n' );
+    return currentValue;
+}, undefined);
+

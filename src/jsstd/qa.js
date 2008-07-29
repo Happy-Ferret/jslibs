@@ -18,6 +18,25 @@
 	},
 	
 
+	BufferAccess: function(QA) {
+
+		var b = new Buffer();
+		b.Write('');
+		b.Write('123');
+		b.Write('');
+		b.Write('456');
+		b.Write('');
+		b.Write('789');
+		b.Write('');
+		
+		var res = b[-1]+b[0]+b[1]+b[2]+b[3]+b[4]+b[5]+b[6]+b[7]+b[8]+b[9]+b[10];
+
+		QA.ASSERT( res.length, 9, 'resulting length' );
+		QA.ASSERT( res, '123456789', 'resulting string' );
+		QA.ASSERT( b.toString(), res, 'resulting string' );
+	},
+
+
 	EmptyBuffer: function(QA) {
 
 		LoadModule('jsstd');
@@ -76,7 +95,6 @@
 		b.Read(2);
 		QA.ASSERT_STR( b.Read(2), 'i', 'buffer match' );
 	},
-
 
 	BufferUnderflow: function(QA) {
 		
@@ -164,6 +182,20 @@
 		QA.ASSERT_STR( b, '123456789', 'buffer toString' );	
 	},
 
+
+	Buffer_toString_consumption: function(QA) {
+
+		var b = new Buffer();
+		b.Write('123');
+		
+		var str1 = b.toString();
+		var str2 = b.toString();
+
+		QA.ASSERT( str2.length, str1.length, 'toString Buffer consumption' );
+		QA.ASSERT( str1, '123', 'first toString result' );
+		QA.ASSERT( str2, '123', 'second toString result' );
+	},
+	
 	Buffer_valueOf: function(QA) {
 	
 		var b = new Buffer();
