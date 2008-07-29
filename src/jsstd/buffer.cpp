@@ -72,6 +72,11 @@ inline JSBool ShiftJsval( JSContext *cx, Queue *queue, jsval *value ) {
 	return JS_TRUE;
 }
 
+inline JSBool PeekJsval( JSContext *cx, QueueCell *cell, jsval *value ) {
+
+	*value = *(jsval*)QueueGetData(cell);  // no need to JS_RemoveRoot *pItem, see Tracer callback
+	return JS_TRUE;
+}
 
 
 JSBool WriteChunk( JSContext *cx, JSObject *obj, jsval chunk ) {
@@ -196,7 +201,6 @@ inline JSBool BufferRefill( JSContext *cx, JSObject *obj, size_t amount ) { // a
 		
 			if ( MaybeRealloc(amount, len) )
 				buf = (char*)JS_realloc(cx, buf, len);
-			jsval bstr;
 			J_CHK( WriteRawChunk(cx, obj, len, buf) );
 		}
 
@@ -289,6 +293,7 @@ JSBool ReadRawAmount( JSContext *cx, JSObject *obj, size_t *amount, char *str ) 
 	pv->length -= *amount;
 	return JS_TRUE;
 }
+
 
 JSBool BufferSkipAmount( JSContext *cx, JSObject *obj, size_t amount ) {
 
@@ -389,7 +394,7 @@ JSBool FindInBuffer( JSContext *cx, JSObject *obj, const char *needle, size_t ne
 	const char *chunk;
 	size_t i, j;
 
-	for ( QueueCell *it = pv->queue->begin; it; it = it->next ) {
+	for ( QueueCell *it = QueueBegin(pv->queue); it; it = QueueNext(it) ) {
 
 		jsval *pNewStr = (jsval*)QueueGetData(it);
 		J_CHK( JsvalToStringAndLength(cx, *pNewStr, &chunk, &chunkLength) );
@@ -790,6 +795,8 @@ DEFINE_FUNCTION( Unread ) {
 /**doc
  * $STR $INAME()
   Converts the whole content of the buffer to a string.
+  $H note
+   The buffer is not modified.
 **/
 
 // Note:  String( { toString:function() { return [1,2,3]} } );  throws the following error: "can't convert Object to string"
@@ -809,9 +816,12 @@ DEFINE_FUNCTION( toString ) {
 	buffer[pv->length] = '\0';
 
 	size_t pos = 0;
-	while ( !QueueIsEmpty(pv->queue) ) {
+//	while ( !QueueIsEmpty(pv->queue) ) {
+	for ( QueueCell *it = QueueBegin(pv->queue); it; it = QueueNext(it) ) {
 
-		J_CHK( ShiftJsval(cx, pv->queue, rval) );
+//		J_CHK( ShiftJsval(cx, pv->queue, rval) );
+		J_CHK( PeekJsval(cx, it, rval) );
+
 		const char *chunkBuf;
 		size_t chunkLen;
 		J_CHK( JsvalToStringAndLength(cx, *rval, &chunkBuf, &chunkLen) );
@@ -822,9 +832,10 @@ DEFINE_FUNCTION( toString ) {
 	JSString *str = JS_NewString(cx, buffer, pv->length);
 	J_S_ASSERT_ALLOC( str );
 	*rval = STRING_TO_JSVAL(str);
-	pv->length = 0;
+//	pv->length = 0;
 
-	// we have to return a real string !
+
+	// we have to return a real string !?
 	//char *bstrBuf = (char*)JS_malloc(cx, pv->length);
 	//J_S_ASSERT_ALLOC( bstrBuf );
 	//size_t amount = pv->length;
@@ -835,6 +846,61 @@ DEFINE_FUNCTION( toString ) {
 
 	return JS_TRUE;
 }
+
+
+
+/**doc
+ * $TYPE char $INAME $READONLY
+  Used to access the character in the _N_th position where _N_ is a positive integer between 0 and one less than the value of length.
+**/
+DEFINE_GET_PROPERTY() {
+
+	if ( !JSVAL_IS_INT(id) )
+		return JS_TRUE;
+
+	long slot = JSVAL_TO_INT( id );
+
+	BufferPrivate *pv = (BufferPrivate*)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE( pv );
+
+	if ( slot >= 0 && (unsigned)slot < pv->length ) {
+		
+		size_t offset = 0;
+
+		size_t chunkLength;
+		const char *chunk;
+
+		for ( QueueCell *it = QueueBegin(pv->queue); it; it = QueueNext(it) ) {
+
+			jsval *pNewStr = (jsval*)QueueGetData(it);
+			J_CHK( JsvalToStringLength(cx, *pNewStr, &chunkLength) );
+
+			if ( (unsigned)slot >= offset && (unsigned)slot < offset + chunkLength ) {
+
+				J_CHK( JsvalToString(cx, *pNewStr, &chunk) );
+
+				jschar chr = ((char*)chunk)[slot - offset];
+				JSString *str1 = JS_NewUCStringCopyN(cx, &chr, 1);
+				J_S_ASSERT_ALLOC( str1 );
+				*vp = STRING_TO_JSVAL(str1);
+				return JS_TRUE;
+			}
+			offset += chunkLength;
+		}
+	}
+
+	*vp = JS_GetEmptyStringValue(cx);
+	return JS_TRUE;
+}
+
+
+DEFINE_SET_PROPERTY() {
+
+	J_S_ASSERT( !JSVAL_IS_NUMBER(id), "Operation not allowed." );
+	return JS_TRUE;
+}
+
+
 
 
 /**doc
@@ -937,6 +1003,9 @@ CONFIGURE_CLASS
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE
 	HAS_TRACER
+
+	HAS_GET_PROPERTY
+	HAS_SET_PROPERTY
 
 	BEGIN_FUNCTION_SPEC
 		FUNCTION(Clear)

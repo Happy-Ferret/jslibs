@@ -1,5 +1,28 @@
 LoadModule('jsstd');
 
+var b = new Buffer();
+b.Write('123');
+
+b.toString();
+Print( b.toString() )
+
+Halt();
+
+
+var b = new Buffer();
+b.Write('');
+b.Write('123');
+b.Write('');
+b.Write('456');
+b.Write('');
+b.Write('789');
+b.Write('');
+
+Print(   b[-1]+b[0]+b[1]+b[2]+b[3]+b[4]+b[5]+b[6]+b[7]+b[8]+b[9]+b[10]  , '\n' );
+
+
+Halt();
+
 
 var b1 = new Buffer();
 b1.Write('1');
