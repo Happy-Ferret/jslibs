@@ -281,9 +281,9 @@ static JSClass global_class = { // global variable !
 };
 
 
-
 JSContext* CreateHost(size_t maxMem, size_t maxAlloc) {
 
+//	JS_SetCStringsAreUTF8(); // don't use !
 	JSRuntime *rt = JS_NewRuntime(0); // maxMem specifies the number of allocated bytes after which garbage collection is run.
 //	J_CHKM( rt != NULL, "unable to create the runtime." ); // (TBD) fix Warning: uninitialized local variable 'cx'
 	if ( rt == NULL )
