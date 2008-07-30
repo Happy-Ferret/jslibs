@@ -237,7 +237,7 @@
 		var str = new BString('123');
 		var b = new Buffer();
 		b.Write(str);
-		str.Add('456');
+		str.concat('456');
 		b.Write('7');
 		QA.ASSERT_STR( b.Read(), '1237', 'buffer containing a BString' );
 	},

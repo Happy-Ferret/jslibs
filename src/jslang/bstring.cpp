@@ -138,15 +138,20 @@ DEFINE_FINALIZE() {
 **/
 DEFINE_CONSTRUCTOR() {
 
-	if ( JS_IsConstructing(cx) == JS_FALSE ) { // supports this form (w/o new operator) : result.param1 = Blob('Hello World');
+	if ( JS_IsConstructing(cx) != JS_TRUE ) { // supports this form (w/o new operator) : result.param1 = Blob('Hello World');
+
+		//if ( J_ARGC == 0 || J_ARG(1) == JS_GetEmptyStringValue(cx) ) {
+		//	
+		//	*rval = JS_GetEmptyStringValue(cx);
+		//	return JS_TRUE;
+		//}
 
 		obj = JS_NewObject(cx, _class, NULL, NULL);
 		J_S_ASSERT( obj != NULL, "BString construction failed." );
 		*rval = OBJECT_TO_JSVAL(obj);
-	} else
-		J_S_ASSERT_THIS_CLASS();
+	}
 
-	if ( J_ARG_ISDEF(1) ) {
+	if ( J_ARGC >= 1 ) {
 
 		size_t length;
 		const char *sBuffer;
@@ -193,13 +198,15 @@ DEFINE_FUNCTION_FAST( Set ) {
 */
 
 /**doc
- * $TYPE BString $INAME( data )
-  Add any kind of data to the current bstring and returns the result. The resulting value is a BString event its content is empty.
+ * $TYPE BString $INAME( data [,data1 [,...]] )
+  Combines the text of two or more strings and returns a new string.
+  $H details
+   http://developer.mozilla.org/en/docs/Core_JavaScript_1.5_Reference:Global_Objects:String:concat
 **/
-DEFINE_FUNCTION_FAST( Add ) {
+DEFINE_FUNCTION_FAST( concat ) {
 
+/*
 	J_S_ASSERT_ARG_MIN( 1 );
-	J_S_ASSERT_ARG_MAX( 1 );
 
 	size_t length;
 	J_CHK( BStringLength(cx, J_FOBJ, &length) );
@@ -242,21 +249,7 @@ DEFINE_FUNCTION_FAST( Add ) {
 		}
 	}
 
-/* mutable BString are no more supported
-	void *pv = JS_GetPrivate(cx, J_FOBJ);
-	if ( pv != NULL ) {
-
-		memcpy(dst, pv, length);
-		JS_free(cx, pv);
-	}
-
-	J_CHK( LengthSet(cx, J_FOBJ, srcLen + length) );
-	J_CHK( JS_SetPrivate(cx, J_FOBJ, dst) );
-
-	*J_FRVAL = OBJECT_TO_JSVAL( J_FOBJ );
-*/
-
-// copy the begining
+	// copy the begining
 	void *pv = JS_GetPrivate(cx, J_FOBJ);
 	if ( pv != NULL )
 		memcpy(dst, pv, length);
@@ -269,7 +262,57 @@ DEFINE_FUNCTION_FAST( Add ) {
 	J_CHK( JS_SetPrivate(cx, newBStrObj, dst) );
 
 	*J_FRVAL = OBJECT_TO_JSVAL( newBStrObj );
+*/
 
+	J_S_ASSERT_ARG_MIN( 1 );
+
+	size_t thisLength;
+	const char *thisBuffer;
+	J_CHK( BStringBuffer(cx, J_FOBJ, &thisBuffer) );
+	J_CHK( BStringLength(cx, J_FOBJ, &thisLength) );
+
+	size_t dstLen = thisLength;
+
+	unsigned int arg;
+	for ( arg = 1; arg <= J_ARGC; arg++ ) {
+	
+		if ( JsvalIsBString(cx, J_FARG(arg)) ) {
+
+			size_t tmp;
+			J_CHK( BStringLength(cx, JSVAL_TO_OBJECT( J_FARG(arg) ), &tmp) );
+			dstLen += tmp;
+		
+		} else {
+
+			JSString *jsstr = JS_ValueToString(cx, J_FARG(arg));
+			J_FARG(arg) = STRING_TO_JSVAL(jsstr);
+			dstLen += J_STRING_LENGTH(jsstr);
+		}
+	}
+
+	char *dst = (char*)JS_malloc(cx, dstLen +1);
+	J_S_ASSERT_ALLOC( dst );
+	dst[dstLen] = '\0';
+
+	char *tmp = dst;
+
+	if ( thisLength > 0 ) {
+
+		memcpy(tmp, thisBuffer, thisLength);
+		tmp += thisLength;
+	}
+
+	for ( arg = 1; arg <= J_ARGC; arg++ ) {
+		
+		const char *buffer;
+		size_t length;
+		J_CHK( JsvalToStringAndLength(cx, J_FARG(arg), &buffer, &length) );
+
+		memcpy(tmp, buffer, length);
+		tmp += length;
+	}
+
+	J_CHK( J_NewBinaryString(cx, dst, dstLen, J_FRVAL) );
 	return JS_TRUE;
 }
 
@@ -278,12 +321,12 @@ DEFINE_FUNCTION_FAST( Add ) {
  * $TYPE BString $INAME( start [, length ] )
   Returns the bytes in a string beginning at the specified location through the specified number of characters.
   $H arguments
-   $ARG integer start: location at which to begin extracting characters (an integer between 0 and one less than the length of the string). 
+   $ARG integer start: location at which to begin extracting characters (an integer between 0 and one less than the length of the string).
    $ARG integer length: the number of characters to extract.
   $H details
    fc. [http://developer.mozilla.org/en/docs/Core_JavaScript_1.5_Reference:Global_Objects:String:substr JavaScript substr]
 **/
-DEFINE_FUNCTION_FAST( Substr ) {
+DEFINE_FUNCTION_FAST( substr ) {
 
 	J_S_ASSERT_ARG_MIN(1);
 
@@ -367,7 +410,7 @@ DEFINE_FUNCTION_FAST( indexOf ) {
 
 	long start;
 	if ( J_FARG_ISDEF(2) ) {
-		
+
 		J_S_ASSERT_INT( J_FARG(2) );
 		start = JSVAL_TO_INT( J_FARG(2) );
 
@@ -377,7 +420,7 @@ DEFINE_FUNCTION_FAST( indexOf ) {
 
 			*J_FRVAL = INT_TO_JSVAL(-1);
 			return JS_TRUE;
-		} 
+		}
 
 	} else {
 
@@ -392,7 +435,7 @@ DEFINE_FUNCTION_FAST( indexOf ) {
 		size_t j;
 		for ( j = 0; j < sLength && buffer[i+j] == sBuffer[j]; j++ );
 		if ( j == sLength ) {
-			
+
 			J_CHK( JS_NewNumberValue(cx, i, J_FRVAL) );
 			return JS_TRUE;
 		}
@@ -433,7 +476,7 @@ DEFINE_FUNCTION_FAST( lastIndexOf ) {
 
 	long start;
 	if ( J_FARG_ISDEF(2) ) {
-		
+
 		J_S_ASSERT_INT( J_FARG(2) );
 		start = JSVAL_TO_INT( J_FARG(2) );
 
@@ -441,13 +484,13 @@ DEFINE_FUNCTION_FAST( lastIndexOf ) {
 
 			*J_FRVAL = INT_TO_JSVAL(-1);
 			return JS_TRUE;
-		} 
+		}
 
 		if ( start + sLength > length ) {
-			
+
 			start = length - sLength;
-		} 
-		
+		}
+
 	} else {
 
 		start = length - sLength;
@@ -458,7 +501,7 @@ DEFINE_FUNCTION_FAST( lastIndexOf ) {
 		size_t j;
 		for ( j = 0; j < sLength && buffer[i+j] == sBuffer[j]; j++ );
 		if ( j == sLength ) {
-			
+
 			J_CHK( JS_NewNumberValue(cx, i, J_FRVAL) );
 			return JS_TRUE;
 		}
@@ -471,7 +514,7 @@ DEFINE_FUNCTION_FAST( lastIndexOf ) {
 
 /**doc
  * $STR $INAME( index )
-  Returns the specified character from a string. 
+  Returns the specified character from a string.
   $H details
    fc. [http://developer.mozilla.org/en/docs/Core_JavaScript_1.5_Reference:Global_Objects:String:charAt]
 **/
@@ -483,7 +526,7 @@ DEFINE_FUNCTION_FAST( charAt ) {
 		J_S_ASSERT_INT( J_FARG(1) );
 		index = JSVAL_TO_INT( J_FARG(1) );
 	} else {
-		
+
 		index = 0;
 	}
 
@@ -491,7 +534,7 @@ DEFINE_FUNCTION_FAST( charAt ) {
 	J_CHK( BStringLength(cx, J_FOBJ, &length) );
 
 	if ( length == 0 || index < 0 || (unsigned)index >= length ) {
-		
+
 		*J_FRVAL = JS_GetEmptyStringValue(cx);
 		return JS_TRUE;
 	}
@@ -522,7 +565,7 @@ DEFINE_FUNCTION_FAST( charCodeAt ) {
 		J_S_ASSERT_INT( J_FARG(1) );
 		index = JSVAL_TO_INT( J_FARG(1) );
 	} else {
-		
+
 		index = 0;
 	}
 
@@ -530,7 +573,7 @@ DEFINE_FUNCTION_FAST( charCodeAt ) {
 	J_CHK( BStringLength(cx, J_FOBJ, &length) );
 
 	if ( length == 0 || index < 0 || (unsigned)index >= length ) {
-		
+
 		*J_FRVAL = JS_GetNaNValue(cx);
 		return JS_TRUE;
 	}
@@ -670,6 +713,28 @@ DEFINE_SET_PROPERTY() {
 
 
 
+DEFINE_EQUALITY() {
+
+	if ( J_JSVAL_IS_CLASS(v, _class) ) {
+		
+		const char *buf1, *buf2;
+		size_t len1, len2;
+		J_CHK( BStringBuffer(cx, obj, &buf1) );
+		J_CHK( BStringLength(cx, obj, &len1) );
+		J_CHK( BStringBuffer(cx, JSVAL_TO_OBJECT(v), &buf2) );
+		J_CHK( BStringLength(cx, JSVAL_TO_OBJECT(v), &len2) );
+		
+		if ( len1 == len2 && memcmp(buf1, buf2, len1) == 0 ) {
+
+			*bp = JS_TRUE;
+			return JS_TRUE;
+		}
+	}
+	*bp = JS_FALSE;
+	return JS_TRUE;
+}
+
+
 //DEFINE_CONVERT() {
 //
 //	if ( type == JSTYPE_BOOLEAN ) {
@@ -692,16 +757,18 @@ CONFIGURE_CLASS
 
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE
-//	HAS_NEW_RESOLVE
 	HAS_GET_PROPERTY
 	HAS_SET_PROPERTY
+	HAS_EQUALITY
 
+//	HAS_NEW_RESOLVE
+//	HAS_ENUMERATE
 //	HAS_CONVERT
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION_FAST(Add)
+		FUNCTION_FAST(concat)
 //		FUNCTION_FAST(Set)
-		FUNCTION_FAST(Substr)
+		FUNCTION_FAST(substr)
 		FUNCTION_FAST(indexOf)
 		FUNCTION_FAST(lastIndexOf)
 		FUNCTION_FAST(charCodeAt)

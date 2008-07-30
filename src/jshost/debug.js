@@ -2,14 +2,20 @@ LoadModule('jsstd');
 LoadModule('jsio');
 
 
-//Stringify( Stream('1234') );
+var b = BString('123');
 
-Stringify( { __proto__: Stream('1234') } );
+Print( b.concat(b,BString('456'),789,'abc') );
+
 
 Halt();
 
 
+Print( new String('abc') == new String('abc') );
 
+Halt();
+
+
+Stringify( { __proto__: Stream('1234') } );
 
 Halt();
 

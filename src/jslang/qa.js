@@ -73,7 +73,7 @@
 		QA.ASSERT( BString('1').charAt(1), '', 'BString charAt' )
 		
 	},
-	
+
 	BString_construct_with_data: function(QA) {
 
 		LoadModule('jsstd');
@@ -113,22 +113,13 @@
 		QA.ASSERT( BString('567').valueOf(), '567', 'value of' );
 	},
 	
-	BString_boolean: function(QA) {
-	
-		QA.ASSERT( !!BString(''), true, 'empty BString cast to boolean' );
-		QA.ASSERT( !!BString('x'), true, 'non-empty BString cast to boolean' );
-	
-//		QA.ASSERT( !!BString(''), !!(''), 'empty BString cast to boolean' );
-//		QA.ASSERT( !!BString('a'), !!('a'), 'empty BString cast to boolean' );
-	},
-
 	BString: function(QA) {
 		
 		LoadModule('jsstd');
 //		LoadModule('jslang');
 	
 		var b = new BString();
-		b = b.Add( 'ABCD' );
+		b = b.concat( 'ABCD' );
 		QA.ASSERT( String(b), 'ABCD', 'content' );
 		QA.ASSERT( b.length, 4, 'length' );
 		QA.ASSERT( b[0], 'A', 'first item' );
@@ -142,7 +133,7 @@
 
 		QA.ASSERT( b[4], undefined, 'after last item' );
 
-		b = b.Add('XYZ');
+		b = b.concat('XYZ');
 		QA.ASSERT( b.length, 7, 'length' );
 		QA.ASSERT( b[6], 'Z', 'last item' );
 		QA.ASSERT( b.toString(), 'ABCDXYZ', 'toString' );
@@ -154,28 +145,37 @@
 	BStringErrors: function(QA) {
 	
 		var b = new BString();
-		b.Add( 'ABCD' );
+		b.concat( 'ABCD' ); // ????
 		QA.ASSERT_EXCEPTION( function() b[5] = 'X', Error, 'set an out-of-range item' );
 	},
 
-	BStringSubstr: function(QA) {
+
+	BString_concat: function(QA) {
+
+		var b = BString('123');
+		var res = b.concat(b,BString('456'),789,'abc');
+		QA.ASSERT_STR( res, '123123456789abc', 'BString concat' );
+	},
+
+
+	BString_substr: function(QA) {
 	
 		LoadModule('jsstd');
 //		LoadModule('jslang');
 
 		var b = new BString();
-		b = b.Add( 'ABCDEF' );
-		QA.ASSERT( ''+b.Substr(0), 'ABCDEF', 'substr' );
-		QA.ASSERT( ''+b.Substr(1), 'BCDEF', 'substr' );
-		QA.ASSERT( ''+b.Substr(2,3), 'CDE', 'substr' );
-		QA.ASSERT( ''+b.Substr(-2,2), 'EF', 'substr' );
-		QA.ASSERT( ''+b.Substr(-2,3), 'EF', 'substr' );
-		QA.ASSERT( ''+b.Substr(0,6), 'ABCDEF', 'substr' );
-		QA.ASSERT( ''+b.Substr(0,7), 'ABCDEF', 'substr' );
-		QA.ASSERT( ''+b.Substr(0,-2), '', 'substr' );
-		QA.ASSERT( ''+b.Substr(6), '', 'substr' );
-		QA.ASSERT( ''+b.Substr(-6), 'ABCDEF', 'substr' );
-		QA.ASSERT( ''+b.Substr(-7,2), '', 'substr' );
+		b = b.concat( 'ABCDEF' );
+		QA.ASSERT( ''+b.substr(0), 'ABCDEF', 'substr' );
+		QA.ASSERT( ''+b.substr(1), 'BCDEF', 'substr' );
+		QA.ASSERT( ''+b.substr(2,3), 'CDE', 'substr' );
+		QA.ASSERT( ''+b.substr(-2,2), 'EF', 'substr' );
+		QA.ASSERT( ''+b.substr(-2,3), 'EF', 'substr' );
+		QA.ASSERT( ''+b.substr(0,6), 'ABCDEF', 'substr' );
+		QA.ASSERT( ''+b.substr(0,7), 'ABCDEF', 'substr' );
+		QA.ASSERT( ''+b.substr(0,-2), '', 'substr' );
+		QA.ASSERT( ''+b.substr(6), '', 'substr' );
+		QA.ASSERT( ''+b.substr(-6), 'ABCDEF', 'substr' );
+		QA.ASSERT( ''+b.substr(-7,2), '', 'substr' );
 	},
 
 
@@ -184,10 +184,9 @@
 		LoadModule('jsstd');
 //		LoadModule('jslang');
 
-		var b = new BString();
-		b.Add( 'ABCDEF' );
+		var b = new BString('ABCDEF');
 		b[0] = 'X';
-		QA.ASSERT( ''+b.Substr(0,1), 'X', 'setter' );
+		QA.ASSERT( ''+b.substr(0,1), 'X', 'setter' );
 		b[5] = 'W';
 		QA.ASSERT( ''+b[5], 'W', 'setted value' );
 		b[5] = 'W';
@@ -196,19 +195,62 @@
 		QA.ASSERT_EXCEPTION( function() { b[6] = 'Z'; }, Error, 'out of range' );
 	},
 	
+	BString_boolean: function(QA) {
+	
+		QA.ASSERT( !!BString(''), true, 'empty BString cast to boolean' );
+		QA.ASSERT( !!BString('x'), true, 'non-empty BString cast to boolean' );
+	
+//		QA.ASSERT( !!BString(''), !!(''), 'empty BString cast to boolean' );
+//		QA.ASSERT( !!BString('a'), !!('a'), 'empty BString cast to boolean' );
+	},
 	
 	BStringEquality: function(QA) {
 		
 		LoadModule('jsstd');
-//		LoadModule('jslang');
 
-		var b = new BString();
-		b = b.Add( 'ABCDEF' );
+		var b = new BString('ABCDEF');
 
 		QA.ASSERT( b == 'ABCDEF', true, 'string and BString equality' )
 		QA.ASSERT( 'ABCDEF' == b, true, 'string and BString equality' )
 
 		QA.ASSERT( b === 'ABCDEF', false, 'string and BString equality and same type' )
+
+		QA.ASSERT( (BString('abc') == BString('abc')), true, 'BString == BString' )
+		QA.ASSERT( (BString('abc') == BString('xyz')), false, 'BString == BString' )
+	},
+
+	BStringStringSimilarity: function(QA) {
+
+//		QA.ASSERT( (new BString('abc') == new BString('abc')), (new String('abc') == new String('abc')), 'new a == a' );
+//		QA.ASSERT( (new BString('abc') != new BString('abc')), (new String('abc') != new String('abc')), 'new a != a' );
+		QA.ASSERT( (new BString('abc') == new BString('xxx')), (new String('abc') == new String('xxx')), 'new a == b' );
+		QA.ASSERT( (new BString('abc') != new BString('xxx')), (new String('abc') != new String('xxx')), 'new a != b' );
+		QA.ASSERT( (new BString('abc') === new BString('abc')), (new String('abc') === new String('abc')), 'new a === a' );
+		QA.ASSERT( (new BString('abc') !== new BString('abc')), (new String('abc') !== new String('abc')), 'new a !== a' );
+		QA.ASSERT( (new BString('abc') === new BString('xxx')), (new String('abc') === new String('xxx')), 'new a === b' );
+		QA.ASSERT( (new BString('abc') !== new BString('xxx')), (new String('abc') !== new String('xxx')), 'new a !== b' );
+//		QA.ASSERT( (new BString()), (new String()), 'new ()' );
+//		QA.ASSERT( (new BString('')), (new String('')), 'new ()' );
+		QA.ASSERT( (!!new BString('')), (!!new String('')), 'new !!""' );
+		QA.ASSERT( (!!new BString('abc')), (!!new String('abc')), 'new !!a' );
+
+
+		QA.ASSERT( (BString('abc') == BString('abc')), (String('abc') == String('abc')), 'a == a' );
+		QA.ASSERT( (BString('abc') != BString('abc')), (String('abc') != String('abc')), 'a != a' );
+		QA.ASSERT( (BString('abc') == BString('xxx')), (String('abc') == String('xxx')), 'a == b' );
+		QA.ASSERT( (BString('abc') != BString('xxx')), (String('abc') != String('xxx')), 'a != b' );
+//?		QA.ASSERT( (BString('abc') === BString('abc')), (String('abc') === String('abc')), 'a === a' );
+//?		QA.ASSERT( (BString('abc') !== BString('abc')), (String('abc') !== String('abc')), 'a !== a' );
+		QA.ASSERT( (BString('abc') === BString('xxx')), (String('abc') === String('xxx')), 'a === b' );
+		QA.ASSERT( (BString('abc') !== BString('xxx')), (String('abc') !== String('xxx')), 'a !== b' );
+//		QA.ASSERT( (BString()), (String()), '()' );
+//?		QA.ASSERT( (BString('')), (String('')), '("")' );
+//		QA.ASSERT( (!!BString('')), (!!String('')), '!!""' );
+		QA.ASSERT( (!!BString('abc')), (!!String('abc')), '!!a' );
+
+//		QA.ASSERT( (BString(undefined)), (String(undefined)), '(undefined)' );
+		QA.ASSERT( (BString('') == ''), (String('') == ''), '== ""' );
+		QA.ASSERT( (BString('abc') == 'abc'), (String('abc') == 'abc'), ' Str(a) == "a" ' );
 	},
 
 
@@ -236,7 +278,7 @@
 
 		var d = new BString();
 		d.Set('123456');
-		d.Set(d.Substr(0,3));
+		d.Set(d.substr(0,3));
 		QA.ASSERT( ''+d, '123', 'self substr' )
 	},
 
@@ -262,9 +304,9 @@
 
 		var bstring = new BString("1234");
 		var stream = Stream(bstring);
-		bstring = bstring.Add('ABC');
+		bstring = bstring.concat('ABC');
 		QA.ASSERT( String(stream.Read(3)), '123', 'stream Read()' )
-		bstring = bstring.Add('DEF');
+		bstring = bstring.concat('DEF');
 		QA.ASSERT( bstring.length, 10, 'stream source length' )
 		QA.ASSERT( String(stream.Read(3)), '4', 'stream Read()' )
 		QA.ASSERT( stream.position, 4, 'stream position' )
