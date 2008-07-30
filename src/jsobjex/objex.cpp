@@ -90,14 +90,14 @@ JSBool SetProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
    addCallback, delCallback, getCallback, setCallback: can be set to <undefined> value.
   $H behavior
    addCallback, delCallback, getCallback, setCallback functions are called according to the operation done on the object.
-	These callback functions are called with the following arguments:
-	propertyName, propertyValue, auxObject, callbackIndex
+   These callback functions are called with the following arguments:
+    propertyName, propertyValue, auxObject, callbackIndex
    * propertyName : the name of the property being handled.
    * propertyValue : the value of the property being handled.
    * auxObject : the _auxObject_ provided to the constructor.
    * callbackIndex : an integer that has the folowing value: 0 for addCallback, 1 for delCallback, 2 for getCallback, 3 for setCallback.
   $H note
-	addCallback callback function is called only when the property is being added, in opposition to _setCallback_ that is called each time the value is changed.
+   addCallback callback function is called only when the property is being added, in opposition to _setCallback_ that is called each time the value is changed.
 **/
 DEFINE_CONSTRUCTOR() {
 

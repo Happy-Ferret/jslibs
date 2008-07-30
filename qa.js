@@ -163,17 +163,16 @@ var QAAPI = new function() {
    }
 }
 
+var loops = 4;
+
 var savePrio = processPriority;
 processPriority = 2;
-
 var t0 = TimeCounter();
-
-MakeTests(MakeTestList('src'), new RegExp(arguments[1]||'.*', 'i'), QAAPI, 3);
-
+MakeTests(MakeTestList('src'), new RegExp(arguments[1]||'.*', 'i'), QAAPI, loops);
 var t = TimeCounter() - t0;
 processPriority = savePrio || 0; // savePrio may be undefined
 
-Print( '\n', QAAPI.issues + ' issues / ' + QAAPI.testCount + ' tests in ' + t.toFixed(2) + 'ms.\n' );
+Print( '\n', QAAPI.issues + ' issues / ' + QAAPI.testCount + ' tests in ' + t.toFixed(2) + 'ms ('+loops+' loops).\n' );
 QAAPI.errors.sort();
 QAAPI.errors.reduce( function(previousValue, currentValue, index, array) {
 

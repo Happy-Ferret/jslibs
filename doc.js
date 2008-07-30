@@ -279,7 +279,7 @@ function CreateDocItemList(startDir, api) {
 
 		if ( !hidden(file.name) && sourceCode(file.name) ) {
 
-			var source = file.content;
+			var source = String(file.content);
 			source = source.replace(/\r\n|\r/g, '\n'); // cleanup
 			docExpr.lastIndex = 0;
 			var res, item;
@@ -399,7 +399,7 @@ for each ( var module in moduleList )
 for each ( var module in moduleList ) {
 
 	var moduleName = module[0][0].lastDir;
-	var f = new File( moduleName+'_.wiki' );
+	var f = new File( moduleName+'.wiki' );
 	f.Open('w');
 	for each ( var file in module )
 		for each ( var item in file ) {

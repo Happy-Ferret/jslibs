@@ -185,7 +185,7 @@ inline JSBool BufferRefill( JSContext *cx, JSObject *obj, size_t amount ) { // a
 	size_t len, prevBufferLength;
 
 	do {
-		
+
 		prevBufferLength = pv->length;
 		len = amount - pv->length;
 
@@ -193,12 +193,12 @@ inline JSBool BufferRefill( JSContext *cx, JSObject *obj, size_t amount ) { // a
 		J_S_ASSERT_ALLOC( buf );
 
 		J_CHK( nisr(cx, srcObj, buf, &len) );
-		
+
 		if ( len == 0 ) {
 
 			JS_free(cx, buf);
 		} else {
-		
+
 			if ( MaybeRealloc(amount, len) )
 				buf = (char*)JS_realloc(cx, buf, len);
 			J_CHK( WriteRawChunk(cx, obj, len, buf) );
@@ -475,7 +475,7 @@ DEFINE_FINALIZE() {
     {{{
     var buf = new Buffer({ Read:function(count) { buf.Write('some data') } });
     }}}
-  
+
   $H example 1
   {{{
   var buf1 = new Buffer(Stream('456'));
@@ -536,7 +536,7 @@ DEFINE_CONSTRUCTOR() {
 			return PushJsval(cx, pv->queue, J_ARG(1));
 		}
 */
-		
+
 		J_S_ASSERT_OBJECT( J_ARG(1) );
 		J_CHK( JS_SetReservedSlot(cx, obj, SLOT_SOURCE, J_ARG(1)) );
 
@@ -627,7 +627,7 @@ DEFINE_FUNCTION( Write ) {
 
 /**doc
  * $BOOL $INAME( str [, consume = false ] )
-  Check if the given string _str_ matchs to the next data in the buffer. 
+  Check if the given string _str_ matchs to the next data in the buffer.
   $H arguments
    $ARG string str
    $ARG boolean consume: if false, just check if it match without consuming data, else, read and check.
@@ -658,7 +658,7 @@ DEFINE_FUNCTION( Match ) {
 		J_JSVAL_TO_BOOL( J_ARG(2), consume );
 	else
 		consume = false;
-	
+
 	if ( !consume )
 		J_CHK( UnReadRawChunk(cx, obj, src, amount) );
 
@@ -671,7 +671,7 @@ err:
 /**doc
  * $STR $INAME( [ amount ] )
   Read _amount_ data in the buffer. If _amount_ is omited, The whole buffer is returned.
-  $H beware	
+  $H beware
    This function returns a BString or a string literal as empty string.
   = =
   If _amount_ == undefined, an arbitrary (ideal) amount of data is returned. Use this when you don't know how many data you have to read.
@@ -864,7 +864,7 @@ DEFINE_GET_PROPERTY() {
 	J_S_ASSERT_RESOURCE( pv );
 
 	if ( slot >= 0 && (unsigned)slot < pv->length ) {
-		
+
 		size_t offset = 0;
 
 		size_t chunkLength;
@@ -954,7 +954,7 @@ DEFINE_TRACER() {
 	{{{
    buf.source = { Read:function(count) { times++; buf.Write(toto) } };
    }}}
-   
+
 	$H example 1
    {{{
 	var buf1 = new Buffer('123');
@@ -1051,13 +1051,13 @@ END_CLASS
 
 === example 3 ===
  Buffered read from a stream.
- {{{	
+ {{{
  function ReadFromFile() {
 
   Print('*** read from the file\n');
   return StringRepeat('x',5);
  }
- 
+
  var buf = new Buffer({ Read:function() { buf.Write(ReadFromFile()); }})
 
  for ( var i=0; i<15; i++ )

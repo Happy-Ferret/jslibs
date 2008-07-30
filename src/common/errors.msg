@@ -27,24 +27,23 @@ MSG_DEF(JSSMSG_DOEXP_USAGE,              6, 0, JSEXN_NONE, "usage: doexp obj id"
 
 /* errors to manage:
 
-- Out of memory.
 - Internal error: <what>.
-- Method called on the wrong object.
-- conversion failed / failed to convert to <type> ( Unable to convert to boolean )
+- Missing <something> (an identified thing is missing to continue properly)
 - Failed to <do something> ( the underlying native or spidermonkey API failed )
-- Unable to <do something>, <why> ( logical error, misuse of jslibs API )
+- Unable to <do something>, <why> ( logical error, misuse of jslibs API, Object cannot be constructed )
 - Invalid operation: <what> ( API misuse )
-- Invalid or uninitialized object.
+
+- Invalid or uninitialized object (Method called on the wrong object.)
 - Invalid argument count. ( misuse of jslibs API )
 - Invalid argument value. ( misuse of jslibs API )
 - Invalid data type <type> ( invalid type, Array expected )
+- conversion failed / failed to convert to <type> ( Unable to convert to boolean )
 - Value out of range: <info?>
 - Limit reach: <what>
 
-- Missing <what> (an identified thing is missing to continue properly)
-
 - Object cannot be constructed.
 - Construction form is required.
+
 - Not implemented yet.
 - Available in Debug mode only.
 

@@ -21,7 +21,7 @@
 
 
 PRIntn FileOpenFlagsFromString( const char *strFlags, int length ) {
-	
+
 	if ( length == 0 || length > 2 )
 		return 0;
 	if ( length == 2 && strFlags[1] != '+' )
@@ -33,10 +33,10 @@ PRIntn FileOpenFlagsFromString( const char *strFlags, int length ) {
 	PRIntn flags;
 	if ( c == 'r' )
 		flags = plus ? PR_RDWR : PR_RDONLY;
-	else 
+	else
 		if ( c == 'w' )
 			flags = plus ? PR_CREATE_FILE | PR_TRUNCATE | PR_RDWR : PR_CREATE_FILE | PR_TRUNCATE | PR_WRONLY;
-		else 
+		else
 			if ( c == 'a' )
 				flags = plus ? PR_CREATE_FILE | PR_APPEND | PR_RDWR : PR_CREATE_FILE | PR_APPEND | PR_WRONLY;
 			else
@@ -93,7 +93,7 @@ DEFINE_FUNCTION( Open ) {
 
 	PRIntn flags;
 	if ( JSVAL_IS_INT( J_ARG(1) ) ) {
-	
+
 		flags = JSVAL_TO_INT( J_ARG(1) );
 	} else {
 
@@ -105,7 +105,7 @@ DEFINE_FUNCTION( Open ) {
 
 	PRIntn mode;
 	if ( J_ARG_ISDEF(2) ) {
-		
+
 		J_JSVAL_TO_INT32( J_ARG(2), mode );
 	} else {
 
@@ -116,7 +116,7 @@ DEFINE_FUNCTION( Open ) {
 	if ( fd == NULL )
 		return ThrowIoError(cx);
 	JS_SetPrivate( cx, obj, fd );
-	
+
 //	J_CHK( SetStreamReadInterface(cx, obj, NativeInterfaceStreamRead) );
 
 	J_CHK( ReserveStreamReadInterface(cx, obj) ); // this reserves the NativeInterface, then it can be switched on/off safely (see Descriptor::Close)
@@ -235,12 +235,12 @@ DEFINE_FUNCTION( Move ) {
 
 	if ( PR_Rename(fileName, destFileName) != PR_SUCCESS )
 		return ThrowIoError(cx);
-	
+
 	JSString *jsstr = JS_NewStringCopyZ(cx, destFileName);
 	J_S_ASSERT_ALLOC( jsstr );
 
 	J_CHK( JS_SetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, STRING_TO_JSVAL(jsstr) ) );
-	
+
 	return JS_TRUE;
 }
 
@@ -441,11 +441,11 @@ DEFINE_PROPERTY( exist ) {
   $H beware
    File time resolution depends of hte underlying filesystem.
    $LF
-	eg. the resolution of create time on FAT is 10 milliseconds, while write time has a resolution of 2 seconds and access time has a resolution of 1 day.
+   eg. the resolution of create time on FAT is 10 milliseconds, while write time has a resolution of 2 seconds and access time has a resolution of 1 day.
   $H example
    {{{
    var f = new File('test.txt');
-	f.content = '123';
+   f.content = '123';
    Print( new Date( f.info.modifyTime ) );
    }}}
 **/
@@ -502,10 +502,10 @@ DEFINE_PROPERTY( info ) {
 /**doc
  * $TYPE File *stdin* $READONLY
   Is a jsio::File that represents the standard input.
-  
+
  * $TYPE File *stdout* $READONLY
   Is a jsio::File that represents the standard output.
-  
+
  * $TYPE File *stderr* $READONLY
   Is a jsio::File that represents the standard error.
 **/
@@ -630,10 +630,10 @@ try {
    }
 
 } catch ( ex if ex instanceof IoError ) {
-   
+
    Print( 'IOError: ' + ex.text, '\n' );
 } catch( ex ) {
-   
+
    throw ex;
 }
 }}}
