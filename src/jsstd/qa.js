@@ -50,7 +50,7 @@
 		QA.ASSERT( typeof b.Read(), 'object', 'buffer read' );
 	
 		b.Write('a');
-		QA.ASSERT( b.Read() instanceof BString, true, 'buffer read' );
+		QA.ASSERT( b.Read() instanceof Blob, true, 'buffer read' );
 	},
 
 
@@ -232,14 +232,14 @@
 		QA.ASSERT_STR( b.Read(1), '9', 'buffer read stored values' );	
 	},
 
-	Buffer_andBString: function(QA) {
+	Buffer_andBlob: function(QA) {
 
-		var str = new BString('123');
+		var str = new Blob('123');
 		var b = new Buffer();
 		b.Write(str);
 		str.concat('456');
 		b.Write('7');
-		QA.ASSERT_STR( b.Read(), '1237', 'buffer containing a BString' );
+		QA.ASSERT_STR( b.Read(), '1237', 'buffer containing a Blob' );
 	},
 
 	BufferIndexOf: function(QA) {

@@ -18,7 +18,7 @@
 
 #include <cstring>
 
-#include "../jslang/bstringapi.h"
+#include "../jslang/blobapi.h"
 #include "../common/stack.h"
 
 #include <vorbis/codec.h>
@@ -142,7 +142,7 @@ DEFINE_FUNCTION_FAST( DecodeOggVorbis ) {
 	J_CHK( J_NewBinaryString(cx, buf, totalSize, &bstr) );
 	JSObject *bstrObj;
 	J_CHK( JS_ValueToObject(cx, bstr, &bstrObj) );
-	J_S_ASSERT( bstrObj != NULL, "Unable to create the BString object.");
+	J_S_ASSERT( bstrObj != NULL, "Unable to create the Blob object.");
 	*J_FRVAL = OBJECT_TO_JSVAL(bstrObj);
 
 	J_CHK( SetPropertyInt(cx, bstrObj, "bits", bits) ); // bits per sample
@@ -338,14 +338,14 @@ DEFINE_FUNCTION_FAST( DecodeSound ) {
 	J_S_ASSERT_ALLOC(buf);
 
 //	JSObject *bstrObj = J_NewBinaryString(cx, buf, totalSize);
-//	J_S_ASSERT( bstrObj != NULL, "Unable to create the BString object.");
+//	J_S_ASSERT( bstrObj != NULL, "Unable to create the Blob object.");
 //	*J_FRVAL = OBJECT_TO_JSVAL(bstrObj);
 
 	jsval bstr;
 	J_CHK( J_NewBinaryString(cx, buf, totalSize, &bstr) );
 	JSObject *bstrObj;
 	J_CHK( JS_ValueToObject(cx, bstr, &bstrObj) );
-	J_S_ASSERT( bstrObj != NULL, "Unable to create the BString object.");
+	J_S_ASSERT( bstrObj != NULL, "Unable to create the Blob object.");
 	*J_FRVAL = OBJECT_TO_JSVAL(bstrObj);
 
 	J_CHK( SetPropertyInt(cx, bstrObj, "bits", 16) ); // bits per sample

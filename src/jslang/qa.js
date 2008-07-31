@@ -2,17 +2,17 @@
 
 	ReadOnlyGlobalClasses: function(QA) {
 
-		var bstr = BString;
-		BString = null;
-		QA.ASSERT( BString, bstr, 'BString integrity' );
+		var bstr = Blob;
+		Blob = null;
+		QA.ASSERT( Blob, bstr, 'Blob integrity' );
 
-		var bstr = BString;
-		BString = function() {}
-		QA.ASSERT( BString, bstr, 'BString integrity' );
+		var bstr = Blob;
+		Blob = function() {}
+		QA.ASSERT( Blob, bstr, 'Blob integrity' );
 
-		var bstr1 = BString;
-		delete global.BString;
-		QA.ASSERT( BString, bstr1, 'BString integrity' );
+		var bstr1 = Blob;
+		delete global.Blob;
+		QA.ASSERT( Blob, bstr1, 'Blob integrity' );
 	},
 
 	NativeInterface: function(QA) {
@@ -31,94 +31,94 @@
 		QA.ASSERT( stream._NI_StreamRead, prev, 'NativeInterface security' )
 	},
 
-	BStringAPI: function(QA) {
+	BlobAPI: function(QA) {
 
 		LoadModule('jsstd');
 		
-		QA.ASSERT( BString('123456').indexOf(''), 0, 'BString indexOf' )
-		QA.ASSERT( BString('123456').indexOf('1'), 0, 'BString indexOf' )
-		QA.ASSERT( BString('123456').indexOf('2'), 1, 'BString indexOf' )
-		QA.ASSERT( BString('123456').indexOf('6'), 5, 'BString indexOf' )
-		QA.ASSERT( BString('123456').indexOf('7'), -1, 'BString indexOf' )
-		QA.ASSERT( BString('12341234').indexOf('2',1), 1, 'BString indexOf' )
-		QA.ASSERT( BString('12341234').indexOf('2',2), 5, 'BString indexOf' )
-		QA.ASSERT( BString('123').indexOf('3',-10), 2, 'BString indexOf' )
-		QA.ASSERT( BString('123').indexOf('3',10), -1, 'BString indexOf' )
-		QA.ASSERT( BString('1231234').indexOf('1234'), 3, 'BString indexOf' )
-		QA.ASSERT( BString('12345').indexOf('12345'), 0, 'BString indexOf' )
+		QA.ASSERT( Blob('123456').indexOf(''), 0, 'Blob indexOf' )
+		QA.ASSERT( Blob('123456').indexOf('1'), 0, 'Blob indexOf' )
+		QA.ASSERT( Blob('123456').indexOf('2'), 1, 'Blob indexOf' )
+		QA.ASSERT( Blob('123456').indexOf('6'), 5, 'Blob indexOf' )
+		QA.ASSERT( Blob('123456').indexOf('7'), -1, 'Blob indexOf' )
+		QA.ASSERT( Blob('12341234').indexOf('2',1), 1, 'Blob indexOf' )
+		QA.ASSERT( Blob('12341234').indexOf('2',2), 5, 'Blob indexOf' )
+		QA.ASSERT( Blob('123').indexOf('3',-10), 2, 'Blob indexOf' )
+		QA.ASSERT( Blob('123').indexOf('3',10), -1, 'Blob indexOf' )
+		QA.ASSERT( Blob('1231234').indexOf('1234'), 3, 'Blob indexOf' )
+		QA.ASSERT( Blob('12345').indexOf('12345'), 0, 'Blob indexOf' )
 
-		QA.ASSERT( BString('123').lastIndexOf('3', 100), 2, 'BString lastIndexOf' )
-		QA.ASSERT( BString('123').lastIndexOf('3',-100), -1, 'BString lastIndexOf' )
-		QA.ASSERT( BString('123456').lastIndexOf('123456'), 0, 'BString lastIndexOf' )
-		QA.ASSERT( BString('12341234').lastIndexOf('2'), 5, 'BString lastIndexOf' )
-		QA.ASSERT( BString('123').lastIndexOf('1',0), 0, 'BString lastIndexOf' )
-		QA.ASSERT( BString('123456').lastIndexOf('12'), 0, 'BString lastIndexOf' )
-		QA.ASSERT( BString('123456').lastIndexOf('56'), 4, 'BString lastIndexOf' )
-		QA.ASSERT( BString('0123456789').lastIndexOf('567', 4), -1, 'BString lastIndexOf' )
-		QA.ASSERT( BString('0123456789').lastIndexOf('56789', 5), 5, 'BString lastIndexOf' )
-		QA.ASSERT( BString('12341234').lastIndexOf('1234'), 4, 'BString lastIndexOf' )
-		QA.ASSERT( BString('12341234').lastIndexOf('1234', 4), 4, 'BString lastIndexOf' )
-		QA.ASSERT( BString('12341234').lastIndexOf('1234', 3), 0, 'BString lastIndexOf' )
+		QA.ASSERT( Blob('123').lastIndexOf('3', 100), 2, 'Blob lastIndexOf' )
+		QA.ASSERT( Blob('123').lastIndexOf('3',-100), -1, 'Blob lastIndexOf' )
+		QA.ASSERT( Blob('123456').lastIndexOf('123456'), 0, 'Blob lastIndexOf' )
+		QA.ASSERT( Blob('12341234').lastIndexOf('2'), 5, 'Blob lastIndexOf' )
+		QA.ASSERT( Blob('123').lastIndexOf('1',0), 0, 'Blob lastIndexOf' )
+		QA.ASSERT( Blob('123456').lastIndexOf('12'), 0, 'Blob lastIndexOf' )
+		QA.ASSERT( Blob('123456').lastIndexOf('56'), 4, 'Blob lastIndexOf' )
+		QA.ASSERT( Blob('0123456789').lastIndexOf('567', 4), -1, 'Blob lastIndexOf' )
+		QA.ASSERT( Blob('0123456789').lastIndexOf('56789', 5), 5, 'Blob lastIndexOf' )
+		QA.ASSERT( Blob('12341234').lastIndexOf('1234'), 4, 'Blob lastIndexOf' )
+		QA.ASSERT( Blob('12341234').lastIndexOf('1234', 4), 4, 'Blob lastIndexOf' )
+		QA.ASSERT( Blob('12341234').lastIndexOf('1234', 3), 0, 'Blob lastIndexOf' )
 		
-		QA.ASSERT( isNaN( BString('').charCodeAt(0) ), true, 'BString charCodeAt' )
-		QA.ASSERT( BString('1').charCodeAt(0), 49, 'BString charCodeAt' )
-		QA.ASSERT( BString('1').charCodeAt(), 49, 'BString charCodeAt' )
-		QA.ASSERT( isNaN( BString('1').charCodeAt(-1) ), true, 'BString charCodeAt' )
-		QA.ASSERT( isNaN( BString('1').charCodeAt(1) ), true, 'BString charCodeAt' )
+		QA.ASSERT( isNaN( Blob('').charCodeAt(0) ), true, 'Blob charCodeAt' )
+		QA.ASSERT( Blob('1').charCodeAt(0), 49, 'Blob charCodeAt' )
+		QA.ASSERT( Blob('1').charCodeAt(), 49, 'Blob charCodeAt' )
+		QA.ASSERT( isNaN( Blob('1').charCodeAt(-1) ), true, 'Blob charCodeAt' )
+		QA.ASSERT( isNaN( Blob('1').charCodeAt(1) ), true, 'Blob charCodeAt' )
 		
-		QA.ASSERT( BString('').charAt(0), '', 'BString charAt' )
-		QA.ASSERT( BString('1').charAt(0), '1', 'BString charAt' )
-		QA.ASSERT( BString('1').charAt(), '1', 'BString charAt' )
-		QA.ASSERT( BString('1').charAt(-1), '', 'BString charAt' )
-		QA.ASSERT( BString('1').charAt(1), '', 'BString charAt' )
+		QA.ASSERT( Blob('').charAt(0), '', 'Blob charAt' )
+		QA.ASSERT( Blob('1').charAt(0), '1', 'Blob charAt' )
+		QA.ASSERT( Blob('1').charAt(), '1', 'Blob charAt' )
+		QA.ASSERT( Blob('1').charAt(-1), '', 'Blob charAt' )
+		QA.ASSERT( Blob('1').charAt(1), '', 'Blob charAt' )
 		
 	},
 
-	BString_construct_with_data: function(QA) {
+	Blob_construct_with_data: function(QA) {
 
 		LoadModule('jsstd');
 //		LoadModule('jslang');
 		
-		var bstr = new BString('98765');
+		var bstr = new Blob('98765');
 		QA.ASSERT( String(bstr), '98765', 'string value' );
 	},
 	
-	BString_not_constructed: function(QA) {
+	Blob_not_constructed: function(QA) {
 		
 		LoadModule('jsstd');
 //		LoadModule('jslang');
 
-		var bstr = BString('98765');
+		var bstr = Blob('98765');
 		QA.ASSERT( String(bstr), '98765', 'string value' );
 
 
-		var v = BString('123');
+		var v = Blob('123');
 		QA.ASSERT( typeof v, 'object', 'variable type' );
 		QA.ASSERT( String(v), '123', 'content' );
 	},
 
-	BString_to_string: function(QA) {
+	Blob_to_string: function(QA) {
 
 		LoadModule('jsstd');
 //		LoadModule('jslang');
 		
-		QA.ASSERT( BString('345').toString(), '345', 'string value' );
+		QA.ASSERT( Blob('345').toString(), '345', 'string value' );
 	},
 
-	BString_valueOf: function(QA) {
+	Blob_valueOf: function(QA) {
 
 		LoadModule('jsstd');
 //		LoadModule('jslang');
 
-		QA.ASSERT( BString('567').valueOf(), '567', 'value of' );
+		QA.ASSERT( Blob('567').valueOf(), '567', 'value of' );
 	},
 	
-	BString: function(QA) {
+	Blob: function(QA) {
 		
 		LoadModule('jsstd');
 //		LoadModule('jslang');
 	
-		var b = new BString();
+		var b = new Blob();
 		b = b.concat( 'ABCD' );
 		QA.ASSERT( String(b), 'ABCD', 'content' );
 		QA.ASSERT( b.length, 4, 'length' );
@@ -142,28 +142,28 @@
 //		QA.ASSERT( b.length, 0, 'length' );
 	},
 
-	BStringErrors: function(QA) {
+	BlobErrors: function(QA) {
 	
-		var b = new BString();
+		var b = new Blob();
 		b.concat( 'ABCD' ); // ????
 		QA.ASSERT_EXCEPTION( function() b[5] = 'X', Error, 'set an out-of-range item' );
 	},
 
 
-	BString_concat: function(QA) {
+	Blob_concat: function(QA) {
 
-		var b = BString('123');
-		var res = b.concat(b,BString('456'),789,'abc');
-		QA.ASSERT_STR( res, '123123456789abc', 'BString concat' );
+		var b = Blob('123');
+		var res = b.concat(b,Blob('456'),789,'abc');
+		QA.ASSERT_STR( res, '123123456789abc', 'Blob concat' );
 	},
 
 
-	BString_substr: function(QA) {
+	Blob_substr: function(QA) {
 	
 		LoadModule('jsstd');
 //		LoadModule('jslang');
 
-		var b = new BString();
+		var b = new Blob();
 		b = b.concat( 'ABCDEF' );
 		QA.ASSERT( ''+b.substr(0), 'ABCDEF', 'substr' );
 		QA.ASSERT( ''+b.substr(1), 'BCDEF', 'substr' );
@@ -179,19 +179,19 @@
 	},
 
 
-	BString_str_property: function(QA) {
+	Blob_str_property: function(QA) {
 
-		var b = BString('123');
+		var b = Blob('123');
 		QA.ASSERT_TYPE( b.str, 'string', '.str is String' );
 	},
 
 
-	_BStringSetter: function(QA) { // this test do not have any sense with immutable objects
+	_BlobSetter: function(QA) { // this test do not have any sense with immutable objects
 	
 		LoadModule('jsstd');
 //		LoadModule('jslang');
 
-		var b = new BString('ABCDEF');
+		var b = new Blob('ABCDEF');
 		b[0] = 'X';
 		QA.ASSERT( ''+b.substr(0,1), 'X', 'setter' );
 		b[5] = 'W';
@@ -202,88 +202,88 @@
 		QA.ASSERT_EXCEPTION( function() { b[6] = 'Z'; }, Error, 'out of range' );
 	},
 	
-	BString_boolean: function(QA) {
+	Blob_boolean: function(QA) {
 	
-		QA.ASSERT( !!BString(''), true, 'empty BString cast to boolean' );
-		QA.ASSERT( !!BString('x'), true, 'non-empty BString cast to boolean' );
+		QA.ASSERT( !!Blob(''), true, 'empty Blob cast to boolean' );
+		QA.ASSERT( !!Blob('x'), true, 'non-empty Blob cast to boolean' );
 	
-//		QA.ASSERT( !!BString(''), !!(''), 'empty BString cast to boolean' );
-//		QA.ASSERT( !!BString('a'), !!('a'), 'empty BString cast to boolean' );
+//		QA.ASSERT( !!Blob(''), !!(''), 'empty Blob cast to boolean' );
+//		QA.ASSERT( !!Blob('a'), !!('a'), 'empty Blob cast to boolean' );
 	},
 	
-	BStringEquality: function(QA) {
+	BlobEquality: function(QA) {
 		
 		LoadModule('jsstd');
 
-		var b = new BString('ABCDEF');
+		var b = new Blob('ABCDEF');
 
-		QA.ASSERT( b == 'ABCDEF', true, 'string and BString equality' )
-		QA.ASSERT( 'ABCDEF' == b, true, 'string and BString equality' )
+		QA.ASSERT( b == 'ABCDEF', true, 'string and Blob equality' )
+		QA.ASSERT( 'ABCDEF' == b, true, 'string and Blob equality' )
 
-		QA.ASSERT( b === 'ABCDEF', false, 'string and BString equality and same type' )
+		QA.ASSERT( b === 'ABCDEF', false, 'string and Blob equality and same type' )
 
-		QA.ASSERT( (BString('abc') == BString('abc')), true, 'BString == BString' )
-		QA.ASSERT( (BString('abc') == BString('xyz')), false, 'BString == BString' )
+		QA.ASSERT( (Blob('abc') == Blob('abc')), true, 'Blob == Blob' )
+		QA.ASSERT( (Blob('abc') == Blob('xyz')), false, 'Blob == Blob' )
 	},
 
-	BStringStringSimilarity: function(QA) {
+	BlobStringSimilarity: function(QA) {
 
-//		QA.ASSERT( (new BString('abc') == new BString('abc')), (new String('abc') == new String('abc')), 'new a == a' );
-//		QA.ASSERT( (new BString('abc') != new BString('abc')), (new String('abc') != new String('abc')), 'new a != a' );
-		QA.ASSERT( (new BString('abc') == new BString('xxx')), (new String('abc') == new String('xxx')), 'new a == b' );
-		QA.ASSERT( (new BString('abc') != new BString('xxx')), (new String('abc') != new String('xxx')), 'new a != b' );
-		QA.ASSERT( (new BString('abc') === new BString('abc')), (new String('abc') === new String('abc')), 'new a === a' );
-		QA.ASSERT( (new BString('abc') !== new BString('abc')), (new String('abc') !== new String('abc')), 'new a !== a' );
-		QA.ASSERT( (new BString('abc') === new BString('xxx')), (new String('abc') === new String('xxx')), 'new a === b' );
-		QA.ASSERT( (new BString('abc') !== new BString('xxx')), (new String('abc') !== new String('xxx')), 'new a !== b' );
-//		QA.ASSERT( (new BString()), (new String()), 'new ()' );
-//		QA.ASSERT( (new BString('')), (new String('')), 'new ()' );
-		QA.ASSERT( (!!new BString('')), (!!new String('')), 'new !!""' );
-		QA.ASSERT( (!!new BString('abc')), (!!new String('abc')), 'new !!a' );
+//		QA.ASSERT( (new Blob('abc') == new Blob('abc')), (new String('abc') == new String('abc')), 'new a == a' );
+//		QA.ASSERT( (new Blob('abc') != new Blob('abc')), (new String('abc') != new String('abc')), 'new a != a' );
+		QA.ASSERT( (new Blob('abc') == new Blob('xxx')), (new String('abc') == new String('xxx')), 'new a == b' );
+		QA.ASSERT( (new Blob('abc') != new Blob('xxx')), (new String('abc') != new String('xxx')), 'new a != b' );
+		QA.ASSERT( (new Blob('abc') === new Blob('abc')), (new String('abc') === new String('abc')), 'new a === a' );
+		QA.ASSERT( (new Blob('abc') !== new Blob('abc')), (new String('abc') !== new String('abc')), 'new a !== a' );
+		QA.ASSERT( (new Blob('abc') === new Blob('xxx')), (new String('abc') === new String('xxx')), 'new a === b' );
+		QA.ASSERT( (new Blob('abc') !== new Blob('xxx')), (new String('abc') !== new String('xxx')), 'new a !== b' );
+//		QA.ASSERT( (new Blob()), (new String()), 'new ()' );
+//		QA.ASSERT( (new Blob('')), (new String('')), 'new ()' );
+		QA.ASSERT( (!!new Blob('')), (!!new String('')), 'new !!""' );
+		QA.ASSERT( (!!new Blob('abc')), (!!new String('abc')), 'new !!a' );
 
 
-		QA.ASSERT( (BString('abc') == BString('abc')), (String('abc') == String('abc')), 'a == a' );
-		QA.ASSERT( (BString('abc') != BString('abc')), (String('abc') != String('abc')), 'a != a' );
-		QA.ASSERT( (BString('abc') == BString('xxx')), (String('abc') == String('xxx')), 'a == b' );
-		QA.ASSERT( (BString('abc') != BString('xxx')), (String('abc') != String('xxx')), 'a != b' );
-//?		QA.ASSERT( (BString('abc') === BString('abc')), (String('abc') === String('abc')), 'a === a' );
-//?		QA.ASSERT( (BString('abc') !== BString('abc')), (String('abc') !== String('abc')), 'a !== a' );
-		QA.ASSERT( (BString('abc') === BString('xxx')), (String('abc') === String('xxx')), 'a === b' );
-		QA.ASSERT( (BString('abc') !== BString('xxx')), (String('abc') !== String('xxx')), 'a !== b' );
-//		QA.ASSERT( (BString()), (String()), '()' );
-//?		QA.ASSERT( (BString('')), (String('')), '("")' );
-//		QA.ASSERT( (!!BString('')), (!!String('')), '!!""' );
-		QA.ASSERT( (!!BString('abc')), (!!String('abc')), '!!a' );
+		QA.ASSERT( (Blob('abc') == Blob('abc')), (String('abc') == String('abc')), 'a == a' );
+		QA.ASSERT( (Blob('abc') != Blob('abc')), (String('abc') != String('abc')), 'a != a' );
+		QA.ASSERT( (Blob('abc') == Blob('xxx')), (String('abc') == String('xxx')), 'a == b' );
+		QA.ASSERT( (Blob('abc') != Blob('xxx')), (String('abc') != String('xxx')), 'a != b' );
+//?		QA.ASSERT( (Blob('abc') === Blob('abc')), (String('abc') === String('abc')), 'a === a' );
+//?		QA.ASSERT( (Blob('abc') !== Blob('abc')), (String('abc') !== String('abc')), 'a !== a' );
+		QA.ASSERT( (Blob('abc') === Blob('xxx')), (String('abc') === String('xxx')), 'a === b' );
+		QA.ASSERT( (Blob('abc') !== Blob('xxx')), (String('abc') !== String('xxx')), 'a !== b' );
+//		QA.ASSERT( (Blob()), (String()), '()' );
+//?		QA.ASSERT( (Blob('')), (String('')), '("")' );
+//		QA.ASSERT( (!!Blob('')), (!!String('')), '!!""' );
+		QA.ASSERT( (!!Blob('abc')), (!!String('abc')), '!!a' );
 
-//		QA.ASSERT( (BString(undefined)), (String(undefined)), '(undefined)' );
-		QA.ASSERT( (BString('') == ''), (String('') == ''), '== ""' );
-		QA.ASSERT( (BString('abc') == 'abc'), (String('abc') == 'abc'), ' Str(a) == "a" ' );
+//		QA.ASSERT( (Blob(undefined)), (String(undefined)), '(undefined)' );
+		QA.ASSERT( (Blob('') == ''), (String('') == ''), '== ""' );
+		QA.ASSERT( (Blob('abc') == 'abc'), (String('abc') == 'abc'), ' Str(a) == "a" ' );
 	},
 
 
-	_BStringSelfReference: function(QA) { // this test do not have any sense with immutable objects
+	_BlobSelfReference: function(QA) { // this test do not have any sense with immutable objects
 
 		LoadModule('jsstd');
 //		LoadModule('jslang');
 
-		var a = new BString();
+		var a = new Blob();
 		a.Set();
 		a.Set( 'ABCDEF' );
 		a.Add(a);
 		QA.ASSERT( ''+a, 'ABCDEFABCDEF', 'self add' )
 	
-		var b = new BString();
+		var b = new Blob();
 		b.Set( 'ABCDEF' );
 		b.Add( '12345' );
 		b.Set(b);
 		QA.ASSERT( ''+b, 'ABCDEF12345', 'self set' )
 
-		var c = new BString();
+		var c = new Blob();
 		c.Set('');
 		c.Add(c);
 		QA.ASSERT( ''+c, '', 'self add empty' )
 
-		var d = new BString();
+		var d = new Blob();
 		d.Set('123456');
 		d.Set(d.substr(0,3));
 		QA.ASSERT( ''+d, '123', 'self substr' )
@@ -291,9 +291,9 @@
 
 	SimpleStreamTest: function(QA) {	
 
-		var bstring = new BString("1234567");
-		var stream = Stream(bstring);
-		QA.ASSERT( stream.source, bstring, 'source object' )
+		var blob = new Blob("1234567");
+		var stream = Stream(blob);
+		QA.ASSERT( stream.source, blob, 'source object' )
 
 		QA.ASSERT( stream.position, 0, 'initial stream position' )
 		QA.ASSERT( String(stream.Read(3)), '123', 'stream Read()' )
@@ -304,21 +304,21 @@
 		QA.ASSERT( stream.position, 7, 'stream position after reading more than the stream size' )
 
 		stream.position = 0;
-		QA.ASSERT( String(stream.Read(bstring.length)), '1234567', 'read the exact length' )
+		QA.ASSERT( String(stream.Read(blob.length)), '1234567', 'read the exact length' )
 	},
 
 	StreamAdd: function(QA) {
 
-		var bstring = new BString("1234");
-		var stream = Stream(bstring);
-		bstring = bstring.concat('ABC');
+		var blob = new Blob("1234");
+		var stream = Stream(blob);
+		blob = blob.concat('ABC');
 		QA.ASSERT( String(stream.Read(3)), '123', 'stream Read()' )
-		bstring = bstring.concat('DEF');
-		QA.ASSERT( bstring.length, 10, 'stream source length' )
+		blob = blob.concat('DEF');
+		QA.ASSERT( blob.length, 10, 'stream source length' )
 		QA.ASSERT( String(stream.Read(3)), '4', 'stream Read()' )
 		QA.ASSERT( stream.position, 4, 'stream position' )
 
-		var s1 = Stream(bstring);
+		var s1 = Stream(blob);
 		QA.ASSERT( s1.position, 0, 'stream position' )
 		QA.ASSERT( s1.available, 10, 'stream source length' )
 		QA.ASSERT( String(s1.Read(3)), '123', 'stream Read()' )

@@ -20,7 +20,7 @@
 #include "buffer.h"
 
 #include "../common/queue.h"
-#include "../jslang/bstringapi.h"
+#include "../jslang/blobapi.h"
 
 #define BUFFER2_SLOT_QUEUE 0
 

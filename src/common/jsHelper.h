@@ -34,7 +34,7 @@ inline NIBufferGet BufferGetInterface( JSContext *cx, JSObject *obj );
 #include <jsobj.h>
 #include <jsstr.h>
 
-//#include "../jslang/bstringapi.h"
+//#include "../jslang/blobapi.h"
 
 #ifdef DEBUG
 	#define IFDEBUG(expr) expr
@@ -315,7 +315,7 @@ inline JSClass *GetGlobalClassByName(JSContext *cx, const char *className) {
 #define J_JSVAL_IS_STRING(val) ( JSVAL_IS_STRING(val) || (JSVAL_IS_OBJECT(val) && !JSVAL_IS_NULL(val) && BufferGetInterface(cx, JSVAL_TO_OBJECT(val)) != NULL) )
 
 
-// Note: Empty BString must acts like an empty string ''.
+// Note: Empty Blob must acts like an empty string ''.
 inline JSBool J_NewBinaryString( JSContext *cx, void* buffer, size_t length, jsval *vp ) {
 
 	if ( length == 0 ) {
@@ -324,14 +324,14 @@ inline JSBool J_NewBinaryString( JSContext *cx, void* buffer, size_t length, jsv
 		return JS_TRUE;
 	}
 
-	static JSClass *bstringClass = NULL;
-	if ( bstringClass == NULL )
-		bstringClass = GetGlobalClassByName(cx, "BString");
+	static JSClass *blobClass = NULL;
+	if ( blobClass == NULL )
+		blobClass = GetGlobalClassByName(cx, "Blob");
 
 	JSObject *binaryString;
-	if ( bstringClass != NULL ) { // we have BString class, jslang is present.
+	if ( blobClass != NULL ) { // we have Blob class, jslang is present.
 		
-		binaryString = JS_NewObject(cx, bstringClass, NULL, NULL);
+		binaryString = JS_NewObject(cx, blobClass, NULL, NULL);
 		if ( binaryString == NULL )
 			goto err;
 		if ( JS_SetReservedSlot(cx, binaryString, 0, INT_TO_JSVAL( length )) != JS_TRUE ) // 0 for SLOT_BSTRING_LENGTH !!!
@@ -361,7 +361,7 @@ inline JSBool J_NewBinaryStringCopyN( JSContext *cx, const void *data, size_t am
 		return JS_TRUE;
 	}
 
-	// possible optimization: if BString is not abailable, copy data into JSString's jschar to avoid js_InflateString.
+	// possible optimization: if Blob is not abailable, copy data into JSString's jschar to avoid js_InflateString.
 	char *bstrBuf = (char*)JS_malloc(cx, amount);
 	J_S_ASSERT_ALLOC( bstrBuf );
 	memcpy( bstrBuf, data, amount );
@@ -377,7 +377,7 @@ inline bool JsvalIsString( JSContext *cx, jsval val ) {
 	if ( fct )
 		return true;
 	return false;
-//	if ( JSVAL_IS_OBJECT(val) && !JSVAL_IS_NULL(val) && JS_GET_CLASS(cx, JSVAL_TO_OBJECT(val)) == BStringJSClass(cx) )
+//	if ( JSVAL_IS_OBJECT(val) && !JSVAL_IS_NULL(val) && JS_GET_CLASS(cx, JSVAL_TO_OBJECT(val)) == BlobJSClass(cx) )
 //		return true;
 }
 

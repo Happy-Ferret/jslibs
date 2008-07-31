@@ -19,7 +19,7 @@
 
 //#include "jstransformation.h"
 
-#include "../jslang/bstring.h"
+#include "../jslang/blob.h"
 
 //TextureJSClass
 

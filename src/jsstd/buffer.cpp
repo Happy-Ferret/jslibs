@@ -25,7 +25,7 @@
 #include "buffer.h"
 
 #include "../common/queue.h"
-#include "../jslang/bstringapi.h"
+#include "../jslang/blobapi.h"
 
 #define SLOT_SOURCE 0
 
@@ -84,14 +84,14 @@ JSBool WriteChunk( JSContext *cx, JSObject *obj, jsval chunk ) {
 	BufferPrivate *pv = (BufferPrivate*)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( pv );
 
-	if ( !JSVAL_IS_STRING(chunk) && !JsvalIsBString(cx, chunk) ) {
+	if ( !JSVAL_IS_STRING(chunk) && !JsvalIsBlob(cx, chunk) ) {
 
 		JSString *jsstr = JS_ValueToString(cx, chunk);
 		J_S_ASSERT( jsstr != NULL, "Unable to convert the chunk into a string." );
 		chunk = STRING_TO_JSVAL(jsstr);
 	}
 
-	// here, chunk is a JSString or a BString
+	// here, chunk is a JSString or a Blob
 
 	size_t strLen;
 	J_CHK( JsvalToStringLength(cx, chunk, &strLen) );
@@ -122,13 +122,13 @@ JSBool UnReadChunk( JSContext *cx, JSObject *obj, jsval chunk ) {
 	BufferPrivate *pv = (BufferPrivate*)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( pv );
 
-	if ( !JSVAL_IS_STRING(chunk) && !JsvalIsBString(cx, chunk) ) {
+	if ( !JSVAL_IS_STRING(chunk) && !JsvalIsBlob(cx, chunk) ) {
 
 		JSString *jsstr = JS_ValueToString(cx, chunk);
 		J_S_ASSERT( jsstr != NULL, "Unable to convert the chunk into a string." );
 		chunk = STRING_TO_JSVAL(jsstr);
 	}
-	// here, chunk is a JSString or a BString
+	// here, chunk is a JSString or a Blob
 
 	size_t strLen;
 	J_CHK( JsvalToStringLength(cx, chunk, &strLen) );
@@ -672,7 +672,7 @@ err:
  * $STR $INAME( [ amount ] )
   Read _amount_ data in the buffer. If _amount_ is omited, The whole buffer is returned.
   $H beware
-   This function returns a BString or a string literal as empty string.
+   This function returns a Blob or a string literal as empty string.
   = =
   If _amount_ == undefined, an arbitrary (ideal) amount of data is returned. Use this when you don't know how many data you have to read.
   $H example
@@ -840,8 +840,8 @@ DEFINE_FUNCTION( toString ) {
 	//J_S_ASSERT_ALLOC( bstrBuf );
 	//size_t amount = pv->length;
 	//J_CHK( ReadRawAmount(cx, obj, &amount, bstrBuf) );
-	//JSObject *bstrObj = NewBString(cx, bstrBuf, pv->length);
-	//J_S_ASSERT( bstrObj != NULL, "Unable to create the BString." );
+	//JSObject *bstrObj = NewBlob(cx, bstrBuf, pv->length);
+	//J_S_ASSERT( bstrObj != NULL, "Unable to create the Blob." );
 	//*J_RVAL = OBJECT_TO_JSVAL(bstrObj);
 
 	return JS_TRUE;

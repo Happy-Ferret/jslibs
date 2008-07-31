@@ -283,7 +283,7 @@ DEFINE_PROPERTY( positionGetter ) {
   Get or set the content of the file. If the file does not exist, content is <undefined>.
   Setting content with <undefined> deletes the file.
 **/
-DEFINE_PROPERTY( contentGetter ) { // (TBD) support BString
+DEFINE_PROPERTY( contentGetter ) { // (TBD) support Blob
 
 	J_S_ASSERT( (PRFileDesc *)JS_GetPrivate( cx, obj ) == NULL, "Cannot get content of an open file.");
 	jsval jsvalFileName;
@@ -345,7 +345,7 @@ DEFINE_PROPERTY( contentGetter ) { // (TBD) support BString
 }
 
 
-DEFINE_PROPERTY( contentSetter ) { // (TBD) support BString
+DEFINE_PROPERTY( contentSetter ) { // (TBD) support Blob
 
 //	J_S_ASSERT_DEFINED( *vp );
 	J_S_ASSERT( (PRFileDesc *)JS_GetPrivate( cx, obj ) == NULL, "Cannot set content of an open file.");

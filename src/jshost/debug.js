@@ -2,9 +2,9 @@ LoadModule('jsstd');
 LoadModule('jsio');
 
 
-var b = BString('123');
+var b = Blob('123');
 
-Print( b.concat(b,BString('456'),789,'abc') );
+Print( b.concat(b,Blob('456'),789,'abc') );
 
 
 Halt();

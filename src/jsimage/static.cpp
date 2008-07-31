@@ -14,7 +14,7 @@
 
 #include "stdafx.h"
 
-#include "../jslang/bstringapi.h"
+#include "../jslang/blobapi.h"
 
 //#include "../common/jsNativeInterface.h"
 #include "static.h"
@@ -186,14 +186,14 @@ DEFINE_FUNCTION( DecodeJpegImage ) {
 	jsval bstr;
 	J_CHK( J_NewBinaryString(cx, data, length, &bstr) );
 
-	JSObject *bstringObj;
-	J_CHK( JS_ValueToObject(cx, bstr, &bstringObj) );
-	J_S_ASSERT( bstringObj, "Unable to create BString object." );
-	*rval = OBJECT_TO_JSVAL(bstringObj);
+	JSObject *blobObj;
+	J_CHK( JS_ValueToObject(cx, bstr, &blobObj) );
+	J_S_ASSERT( blobObj, "Unable to create Blob object." );
+	*rval = OBJECT_TO_JSVAL(blobObj);
 
-	JS_DefineProperty(cx, bstringObj, "channels", INT_TO_JSVAL(channels), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
-	JS_DefineProperty(cx, bstringObj, "width", INT_TO_JSVAL(width), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
-	JS_DefineProperty(cx, bstringObj, "height", INT_TO_JSVAL(height), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
+	JS_DefineProperty(cx, blobObj, "channels", INT_TO_JSVAL(channels), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
+	JS_DefineProperty(cx, blobObj, "width", INT_TO_JSVAL(width), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
+	JS_DefineProperty(cx, blobObj, "height", INT_TO_JSVAL(height), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
 
 	// cinfo->rec_outbuf_height : recomanded scanline height ( 1, 2 or 4 )
 	while (cinfo.output_scanline < cinfo.output_height) {
@@ -291,14 +291,14 @@ DEFINE_FUNCTION( DecodePngImage ) {
 
 	jsval bstr;
 	J_CHK( J_NewBinaryString(cx, data, length, &bstr) );
-	JSObject *bstringObj;
-	J_CHK( JS_ValueToObject(cx, bstr, &bstringObj) );
-	J_S_ASSERT( bstringObj, "Unable to create BString object." );
-	*rval = OBJECT_TO_JSVAL(bstringObj);
+	JSObject *blobObj;
+	J_CHK( JS_ValueToObject(cx, bstr, &blobObj) );
+	J_S_ASSERT( blobObj, "Unable to create Blob object." );
+	*rval = OBJECT_TO_JSVAL(blobObj);
 
-	JS_DefineProperty(cx, bstringObj, "channels", INT_TO_JSVAL(channels), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
-	JS_DefineProperty(cx, bstringObj, "width", INT_TO_JSVAL(width), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
-	JS_DefineProperty(cx, bstringObj, "height", INT_TO_JSVAL(height), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
+	JS_DefineProperty(cx, blobObj, "channels", INT_TO_JSVAL(channels), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
+	JS_DefineProperty(cx, blobObj, "width", INT_TO_JSVAL(width), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
+	JS_DefineProperty(cx, blobObj, "height", INT_TO_JSVAL(height), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
 
 
 	// int number_of_passes = png_set_interlace_handling(desc.png);

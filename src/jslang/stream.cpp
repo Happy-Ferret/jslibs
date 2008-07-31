@@ -15,7 +15,7 @@
 #include "stdafx.h"
 #include <cstring>
 
-#include "bstringapi.h"
+#include "blobapi.h"
 
 #define SLOT_STREAM_SOURCE 0
 #define SLOT_STREAM_POSITION 1
@@ -77,7 +77,7 @@ BEGIN_CLASS( Stream )
  * $INAME( bufferObject )
   Creates an object that transforms any buffer-like objects into a stream.
   = =
-  buffer-like objects are: string, BString, and any objects that implements NIBufferGet native interface.
+  buffer-like objects are: string, Blob, and any objects that implements NIBufferGet native interface.
   = =
   $H note
   When called in a non-constructor context, Object behaves identically.
@@ -109,7 +109,7 @@ DEFINE_CONSTRUCTOR() {
 
 
 /**doc
- * $TYPE BString $INAME( amount )
+ * $TYPE Blob $INAME( amount )
   Read _amount_ of data into the stream.
 **/
 DEFINE_FUNCTION_FAST( Read ) {

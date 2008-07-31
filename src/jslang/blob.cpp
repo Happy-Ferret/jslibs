@@ -20,13 +20,13 @@
 
 #include "../common/jsHelper.h"
 
-#include "bstringapi.h"
+#include "blobapi.h"
 
 
 
-inline JSBool BStringLength( JSContext *cx, JSObject *bStringObject, size_t *length ) {
+inline JSBool BlobLength( JSContext *cx, JSObject *bStringObject, size_t *length ) {
 
-	J_S_ASSERT_CLASS(bStringObject, BStringJSClass( cx ));
+	J_S_ASSERT_CLASS(bStringObject, BlobJSClass( cx ));
 	jsval lengthVal;
 	J_CHK( JS_GetReservedSlot(cx, bStringObject, SLOT_BSTRING_LENGTH, &lengthVal) );
 	*length = JSVAL_IS_INT(lengthVal) ? JSVAL_TO_INT( lengthVal ) : 0;
@@ -34,9 +34,9 @@ inline JSBool BStringLength( JSContext *cx, JSObject *bStringObject, size_t *len
 }
 
 
-inline JSBool BStringBuffer( JSContext *cx, JSObject *bStringObject, const char **buffer ) {
+inline JSBool BlobBuffer( JSContext *cx, JSObject *bStringObject, const char **buffer ) {
 
-	J_S_ASSERT_CLASS(bStringObject, BStringJSClass( cx ));
+	J_S_ASSERT_CLASS(bStringObject, BlobJSClass( cx ));
 	*buffer = (char*)JS_GetPrivate(cx, bStringObject);
 	return JS_TRUE;
 }
@@ -50,8 +50,8 @@ inline JSBool LengthSet( JSContext *cx, JSObject *obj, size_t bufferLength ) {
 
 JSBool NativeInterfaceBufferGet( JSContext *cx, JSObject *obj, const char **buf, size_t *size ) {
 
-	J_CHK( BStringLength(cx, obj, size) );
-	J_CHK( BStringBuffer(cx, obj, buf) );
+	J_CHK( BlobLength(cx, obj, size) );
+	J_CHK( BlobBuffer(cx, obj, buf) );
 	return JS_TRUE;
 }
 
@@ -59,17 +59,17 @@ JSBool NativeInterfaceBufferGet( JSContext *cx, JSObject *obj, const char **buf,
 /**doc
 $CLASS_HEADER
 **/
-BEGIN_CLASS( BString )
+BEGIN_CLASS( Blob )
 
 /*
-inline JSBool JsvalToBString( JSContext *cx, jsval val, JSObject **obj ) {
+inline JSBool JsvalToBlob( JSContext *cx, jsval val, JSObject **obj ) {
 
 	size_t srcLen;
 	void *src, *dst = NULL;
 
-	if ( JsvalIsBString(cx, val) ) {
+	if ( JsvalIsBlob(cx, val) ) {
 
-		BStringGetBufferAndLength(cx, JSVAL_TO_OBJECT( val ), &src, &srcLen);
+		BlobGetBufferAndLength(cx, JSVAL_TO_OBJECT( val ), &src, &srcLen);
 		if ( srcLen > 0 ) {
 
 			dst = JS_malloc(cx, srcLen +1);
@@ -95,17 +95,17 @@ inline JSBool JsvalToBString( JSContext *cx, jsval val, JSObject **obj ) {
 		}
 	}
 
-	*obj = NewBString(cx, dst, srcLen);
+	*obj = NewBlob(cx, dst, srcLen);
 	return JS_TRUE;
 }
 */
 
 
-JSBool BStringToJSString( JSContext *cx, JSObject *obj, JSString **jsstr ) {
+JSBool BlobToJSString( JSContext *cx, JSObject *obj, JSString **jsstr ) {
 
 	void *pv = JS_GetPrivate(cx, obj);
 	size_t length;
-	J_CHK( BStringLength(cx, obj, &length) );
+	J_CHK( BlobLength(cx, obj, &length) );
 	if ( pv == NULL || length == 0 ) {
 
 		*jsstr = JSVAL_TO_STRING( JS_GetEmptyStringValue(cx) );
@@ -147,7 +147,7 @@ DEFINE_CONSTRUCTOR() {
 		//}
 
 		obj = JS_NewObject(cx, _class, NULL, NULL);
-		J_S_ASSERT( obj != NULL, "BString construction failed." );
+		J_S_ASSERT( obj != NULL, "Blob construction failed." );
 		*rval = OBJECT_TO_JSVAL(obj);
 	}
 
@@ -192,13 +192,13 @@ DEFINE_FUNCTION_FAST( Set ) {
 		return JS_TRUE;
 	}
 
-	J_CHK( JsvalToBString(cx, J_FOBJ, J_FARG(1)) );
+	J_CHK( JsvalToBlob(cx, J_FOBJ, J_FARG(1)) );
 	return JS_TRUE;
 }
 */
 
 /**doc
- * $TYPE BString $INAME( data [,data1 [,...]] )
+ * $TYPE Blob $INAME( data [,data1 [,...]] )
   Combines the text of two or more strings and returns a new string.
   $H details
    http://developer.mozilla.org/en/docs/Core_JavaScript_1.5_Reference:Global_Objects:String:concat
@@ -209,14 +209,14 @@ DEFINE_FUNCTION_FAST( concat ) {
 	J_S_ASSERT_ARG_MIN( 1 );
 
 	size_t length;
-	J_CHK( BStringLength(cx, J_FOBJ, &length) );
+	J_CHK( BlobLength(cx, J_FOBJ, &length) );
 
 	size_t srcLen;
 	void *src, *dst;
 
-	if ( JsvalIsBString(cx, J_FARG(1)) ) {
+	if ( JsvalIsBlob(cx, J_FARG(1)) ) {
 
-		//BStringGetBufferAndLength(cx, JSVAL_TO_OBJECT( J_FARG(1) ), &src, &srcLen);
+		//BlobGetBufferAndLength(cx, JSVAL_TO_OBJECT( J_FARG(1) ), &src, &srcLen);
 		JsvalToStringAndLength( cx, J_FARG(1), (const char**)&src, &srcLen);
 
 		if ( srcLen > 0 ) {
@@ -256,7 +256,7 @@ DEFINE_FUNCTION_FAST( concat ) {
 
 
 	JSObject *newBStrObj = JS_NewObject(cx, _class, NULL, NULL);
-	J_S_ASSERT( newBStrObj != NULL, "Unable to create the new BString" );
+	J_S_ASSERT( newBStrObj != NULL, "Unable to create the new Blob" );
 
 	J_CHK( LengthSet(cx, newBStrObj, srcLen + length) );
 	J_CHK( JS_SetPrivate(cx, newBStrObj, dst) );
@@ -268,18 +268,18 @@ DEFINE_FUNCTION_FAST( concat ) {
 
 	size_t thisLength;
 	const char *thisBuffer;
-	J_CHK( BStringBuffer(cx, J_FOBJ, &thisBuffer) );
-	J_CHK( BStringLength(cx, J_FOBJ, &thisLength) );
+	J_CHK( BlobBuffer(cx, J_FOBJ, &thisBuffer) );
+	J_CHK( BlobLength(cx, J_FOBJ, &thisLength) );
 
 	size_t dstLen = thisLength;
 
 	unsigned int arg;
 	for ( arg = 1; arg <= J_ARGC; arg++ ) {
 	
-		if ( JsvalIsBString(cx, J_FARG(arg)) ) {
+		if ( JsvalIsBlob(cx, J_FARG(arg)) ) {
 
 			size_t tmp;
-			J_CHK( BStringLength(cx, JSVAL_TO_OBJECT( J_FARG(arg) ), &tmp) );
+			J_CHK( BlobLength(cx, JSVAL_TO_OBJECT( J_FARG(arg) ), &tmp) );
 			dstLen += tmp;
 		
 		} else {
@@ -318,7 +318,7 @@ DEFINE_FUNCTION_FAST( concat ) {
 
 
 /**doc
- * $TYPE BString $INAME( start [, length ] )
+ * $TYPE Blob $INAME( start [, length ] )
   Returns the bytes in a string beginning at the specified location through the specified number of characters.
   $H arguments
    $ARG integer start: location at which to begin extracting characters (an integer between 0 and one less than the length of the string).
@@ -331,10 +331,10 @@ DEFINE_FUNCTION_FAST( substr ) {
 	J_S_ASSERT_ARG_MIN(1);
 
 	const char *bstrBuffer;
-	J_CHK( BStringBuffer(cx, J_FOBJ, &bstrBuffer) );
+	J_CHK( BlobBuffer(cx, J_FOBJ, &bstrBuffer) );
 
 	size_t dataLength;
-	J_CHK( BStringLength(cx, J_FOBJ, &dataLength) );
+	J_CHK( BlobLength(cx, J_FOBJ, &dataLength) );
 
 	int start;
 	J_JSVAL_TO_INT32( J_FARG(1), start );
@@ -384,7 +384,7 @@ DEFINE_FUNCTION_FAST( substr ) {
 
 /**doc
  * $INT $INAME( searchValue [, fromIndex] )
-  Returns the index within the calling BString object of the first occurrence of the specified value, starting the search at fromIndex, or -1 if the value is not found.
+  Returns the index within the calling Blob object of the first occurrence of the specified value, starting the search at fromIndex, or -1 if the value is not found.
   $H arguments
    $ARG string searchValue: A string representing the value to search for.
    $ARG integer fromIndex: The location within the calling string to start the search from. It can be any integer between 0 and the length of the string. The default value is 0.
@@ -406,7 +406,7 @@ DEFINE_FUNCTION_FAST( indexOf ) {
 	}
 
 	size_t length;
-	J_CHK( BStringLength(cx, J_FOBJ, &length) );
+	J_CHK( BlobLength(cx, J_FOBJ, &length) );
 
 	long start;
 	if ( J_FARG_ISDEF(2) ) {
@@ -428,7 +428,7 @@ DEFINE_FUNCTION_FAST( indexOf ) {
 	}
 
 	const char *buffer;
-	J_CHK( BStringBuffer(cx, J_FOBJ, &buffer) );
+	J_CHK( BlobBuffer(cx, J_FOBJ, &buffer) );
 
 	for ( size_t i = start; i < length; i++ ) {
 
@@ -448,7 +448,7 @@ DEFINE_FUNCTION_FAST( indexOf ) {
 
 /**doc
  * $INT $INAME( searchValue [, fromIndex] )
-  Returns the index within the calling BString object of the last occurrence of the specified value, or -1 if not found. The calling string is searched backward, starting at fromIndex.
+  Returns the index within the calling Blob object of the last occurrence of the specified value, or -1 if not found. The calling string is searched backward, starting at fromIndex.
   $H arguments
    $ARG string searchValue: A string representing the value to search for.
    $ARG integer fromIndex: The location within the calling string to start the search from, indexed from left to right. It can be any integer between 0 and the length of the string. The default value is the length of the string.
@@ -471,8 +471,8 @@ DEFINE_FUNCTION_FAST( lastIndexOf ) {
 
 	const char *buffer;
 	size_t length;
-	J_CHK( BStringBuffer(cx, J_FOBJ, &buffer) );
-	J_CHK( BStringLength(cx, J_FOBJ, &length) );
+	J_CHK( BlobBuffer(cx, J_FOBJ, &buffer) );
+	J_CHK( BlobLength(cx, J_FOBJ, &length) );
 
 	long start;
 	if ( J_FARG_ISDEF(2) ) {
@@ -531,7 +531,7 @@ DEFINE_FUNCTION_FAST( charAt ) {
 	}
 
 	size_t length;
-	J_CHK( BStringLength(cx, J_FOBJ, &length) );
+	J_CHK( BlobLength(cx, J_FOBJ, &length) );
 
 	if ( length == 0 || index < 0 || (unsigned)index >= length ) {
 
@@ -540,7 +540,7 @@ DEFINE_FUNCTION_FAST( charAt ) {
 	}
 
 	const char *buffer;
-	J_CHK( BStringBuffer(cx, J_FOBJ, &buffer) );
+	J_CHK( BlobBuffer(cx, J_FOBJ, &buffer) );
 
 	jschar chr = ((char*)buffer)[index];
 	JSString *str1 = JS_NewUCStringCopyN(cx, &chr, 1);
@@ -570,7 +570,7 @@ DEFINE_FUNCTION_FAST( charCodeAt ) {
 	}
 
 	size_t length;
-	J_CHK( BStringLength(cx, J_FOBJ, &length) );
+	J_CHK( BlobLength(cx, J_FOBJ, &length) );
 
 	if ( length == 0 || index < 0 || (unsigned)index >= length ) {
 
@@ -579,7 +579,7 @@ DEFINE_FUNCTION_FAST( charCodeAt ) {
 	}
 
 	const char *buffer;
-	J_CHK( BStringBuffer(cx, J_FOBJ, &buffer) );
+	J_CHK( BlobBuffer(cx, J_FOBJ, &buffer) );
 	*J_FRVAL = INT_TO_JSVAL( buffer[index] );
 	return JS_TRUE;
 }
@@ -587,15 +587,15 @@ DEFINE_FUNCTION_FAST( charCodeAt ) {
 
 /**doc
  * $STR $INAME()
-  Returns a JavaScript string version of the current BString object.
+  Returns a JavaScript string version of the current Blob object.
   $H beware
-   This function may be called automatically by the JavaScript engine when it needs to convert the BString object to a JS string.
+   This function may be called automatically by the JavaScript engine when it needs to convert the Blob object to a JS string.
 **/
 DEFINE_FUNCTION_FAST( toString ) { // and valueOf
 
 	JSString *jsstr;
-	J_CHK( BStringToJSString(cx, J_FOBJ, &jsstr) );
-	J_S_ASSERT( jsstr != NULL, "Unable to convert BString to String." );
+	J_CHK( BlobToJSString(cx, J_FOBJ, &jsstr) );
+	J_S_ASSERT( jsstr != NULL, "Unable to convert Blob to String." );
 	*J_FRVAL = STRING_TO_JSVAL(jsstr);
 	return JS_TRUE;
 }
@@ -607,12 +607,12 @@ DEFINE_FUNCTION_FAST( toString ) { // and valueOf
 
 /**doc
  * $INT ??? $INAME
-  is the length of the current BString.
+  is the length of the current Blob.
 **/
 DEFINE_PROPERTY( length ) {
 
 	size_t length;
-	J_CHK( BStringLength(cx, obj, &length) );
+	J_CHK( BlobLength(cx, obj, &length) );
 	*vp = INT_TO_JSVAL( length );
 	return JS_TRUE;
 }
@@ -621,15 +621,15 @@ DEFINE_PROPERTY( length ) {
 
 /**doc
  * $INT ??? $INAME
-  is the JavaScript string version of the BString (see toString() function).
+  is the JavaScript string version of the Blob (see toString() function).
 **/
 DEFINE_PROPERTY( str ) {
 	
 	if ( *vp == JSVAL_VOID ) {
 
 		JSString *jsstr;
-		J_CHK( BStringToJSString(cx, obj, &jsstr) );
-		J_S_ASSERT( jsstr != NULL, "Unable to convert BString to String." );
+		J_CHK( BlobToJSString(cx, obj, &jsstr) );
+		J_S_ASSERT( jsstr != NULL, "Unable to convert Blob to String." );
 		*vp = STRING_TO_JSVAL(jsstr);
 	}
 	return JS_TRUE;
@@ -682,7 +682,7 @@ DEFINE_GET_PROPERTY() {
 		return JS_TRUE;
 
 	size_t length;
-	J_CHK( BStringLength(cx, obj, &length) );
+	J_CHK( BlobLength(cx, obj, &length) );
 
 	if ( slot < 0 || slot >= (int)length )
 		return JS_TRUE;
@@ -701,7 +701,7 @@ DEFINE_SET_PROPERTY() {
 
 	J_S_ASSERT( !JSVAL_IS_NUMBER(id), "Cannot modify immutable string" );
 
-/* mutable BString are no more supported
+/* mutable Blob are no more supported
 
 	void *pv = JS_GetPrivate(cx, obj);
 
@@ -737,10 +737,10 @@ DEFINE_EQUALITY() {
 		
 		const char *buf1, *buf2;
 		size_t len1, len2;
-		J_CHK( BStringBuffer(cx, obj, &buf1) );
-		J_CHK( BStringLength(cx, obj, &len1) );
-		J_CHK( BStringBuffer(cx, JSVAL_TO_OBJECT(v), &buf2) );
-		J_CHK( BStringLength(cx, JSVAL_TO_OBJECT(v), &len2) );
+		J_CHK( BlobBuffer(cx, obj, &buf1) );
+		J_CHK( BlobLength(cx, obj, &len1) );
+		J_CHK( BlobBuffer(cx, JSVAL_TO_OBJECT(v), &buf2) );
+		J_CHK( BlobLength(cx, JSVAL_TO_OBJECT(v), &len2) );
 		
 		if ( len1 == len2 && memcmp(buf1, buf2, len1) == 0 ) {
 
@@ -763,7 +763,7 @@ DEFINE_EQUALITY() {
 
 /**doc
 === Note ===
- BStrings are immutable. This mean that its content cannot be modified after it is created.
+ Blobs are immutable. This mean that its content cannot be modified after it is created.
 **/
 
 /**doc

@@ -14,7 +14,7 @@
 
 #include "stdafx.h"
 
-#include "../jslang/bstringapi.h"
+#include "../jslang/blobapi.h"
 
 #include "error.h"
 #include "result.h"
@@ -494,7 +494,7 @@ void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArg
 				sqlite3_result_null(sCx);
 				break;
 			}
-			if ( JS_GET_CLASS(cx, JSVAL_TO_OBJECT(rval)) == BStringJSClass(cx) ) { // beware: with SQLite, blob != text
+			if ( JS_GET_CLASS(cx, JSVAL_TO_OBJECT(rval)) == BlobJSClass(cx) ) { // beware: with SQLite, blob != text
 
 				const char *data;
 				size_t length;
@@ -562,7 +562,7 @@ DEFINE_SET_PROPERTY() {
 
 /**doc
 === Note ===
- BString object is interpreted as a database Blob
+ jslibs Blob object is interpreted as a blob database type.
 **/
 
 CONFIGURE_CLASS
@@ -613,7 +613,7 @@ END_CLASS
  {{{
  Print('database version: ' + Database.version ,'\n' );
 
- var obj = { foo:BString('qqwe\00\00fv1234') };
+ var obj = { foo:Blob('qqwe\00\00fv1234') };
  Print( 'testFunc = ' + db.Exec('SELECT length(:foo)', obj  ) ,'\n' );
  }}}
  $H example 2

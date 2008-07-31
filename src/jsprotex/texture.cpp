@@ -19,7 +19,7 @@
 
 #include "texture.h"
 
-#include "../jslang/bstringapi.h"
+#include "../jslang/blobapi.h"
 
 #define _USE_MATH_DEFINES
 #include <math.h>
@@ -246,13 +246,13 @@ inline JSBool InitCurveData( JSContext* cx, jsval value, int length, float *curv
 		for ( int i = 0; i < length; i++ )
 			curve[i] = curveArray[ i * curveArrayLength / length ];
 	} else
-	if ( JsvalIsBString(cx, value) ) { // (TBD) test it. Replace JsvalIsBString with something more generic like JsvalIsData that will match for string, bstring, NIBufferGet, ...
+	if ( JsvalIsBlob(cx, value) ) { // (TBD) test it. Replace JsvalIsBlob with something more generic like JsvalIsData that will match for string, blob, NIBufferGet, ...
 
 		JSObject *bstrObj = JSVAL_TO_OBJECT(value);
 		size_t bstrLen;
 		const u_int8_t *bstrData;
 
-//		BStringGetBufferAndLength( cx, bstrObj, (void**)&bstrData, &bstrLen );
+//		BlobGetBufferAndLength( cx, bstrObj, (void**)&bstrData, &bstrLen );
 		J_CHK( JsvalToStringAndLength( cx, value, (const char **)&bstrData, &bstrLen ) );
 
 		for ( int i = 0; i < length; i++ )
@@ -406,7 +406,7 @@ DEFINE_CONSTRUCTOR() {
 
 		const char *buffer;
 //		u_int8_t *buffer = (u_int8_t*)
-//		J_CHK( BStringBuffer(cx, bstr, (const void **)&buffer) );
+//		J_CHK( BlobBuffer(cx, bstr, (const void **)&buffer) );
 		J_CHK( JsvalToString(cx, J_ARG(1), (const char **)&buffer) );
 
 		tex->width = sWidth;
@@ -2654,7 +2654,7 @@ DEFINE_FUNCTION_FAST( Paste ) { // (Texture)texture, (int)x, (int)y, (bool)borde
   new File('text.png').content = EncodePngImage(t.Export());  
   }}}
 **/
-DEFINE_FUNCTION_FAST( Export ) { // (int)x, (int)y, (int)width, (int)height. Returns a BString
+DEFINE_FUNCTION_FAST( Export ) { // (int)x, (int)y, (int)width, (int)height. Returns a Blob
 
 	Texture *tex = (Texture *)JS_GetPrivate(cx, J_FOBJ);
 	J_S_ASSERT_RESOURCE(tex);
@@ -2747,7 +2747,7 @@ DEFINE_FUNCTION_FAST( Export ) { // (int)x, (int)y, (int)width, (int)height. Ret
   ...
   }}}
 **/
-DEFINE_FUNCTION_FAST( Import ) { // (BString)image, (int)x, (int)y
+DEFINE_FUNCTION_FAST( Import ) { // (Blob)image, (int)x, (int)y
 
 	J_S_ASSERT_ARG_MIN(1);
 
@@ -2756,7 +2756,7 @@ DEFINE_FUNCTION_FAST( Import ) { // (BString)image, (int)x, (int)y
 	
 	J_S_ASSERT_OBJECT( J_FARG(1) );
 	JSObject *bstr = JSVAL_TO_OBJECT( J_FARG(1) );
-	J_S_ASSERT_CLASS( bstr, BStringJSClass(cx) );
+	J_S_ASSERT_CLASS( bstr, BlobJSClass(cx) );
 
 	int px, py;
 	J_JSVAL_TO_INT32( J_FARG(2), px );
@@ -2781,10 +2781,10 @@ DEFINE_FUNCTION_FAST( Import ) { // (BString)image, (int)x, (int)y
 	GetPropertyInt(cx, bstr, "height", &sHeight);
 	GetPropertyInt(cx, bstr, "channels", &sChannels);
 
-	//u_int8_t *buffer = (u_int8_t*)BStringData(cx, bstr);
+	//u_int8_t *buffer = (u_int8_t*)BlobData(cx, bstr);
 
 	const u_int8_t *buffer;
-//	J_CHK( BStringBuffer(cx, bstr, (const void **)&buffer) );
+//	J_CHK( BlobBuffer(cx, bstr, (const void **)&buffer) );
 
 	J_CHK( JsvalToString(cx, J_FARG(1), (const char **)&buffer) );
 
@@ -3671,7 +3671,7 @@ static JSBool Test(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval 
    * _real_: this describes a constant curve.
    * _function($REAL posX, £INT indexX)_: the function is called and must returns values for each curve point.
    * _Array_: an Array that describes the curve (no interpolation is done between values).
-   * _buffer_: a BString or a string that contains the curve data.
+   * _buffer_: a Blob or a string that contains the curve data.
   $H examples
   {{{
   const curveLinear = function(v) { return v }

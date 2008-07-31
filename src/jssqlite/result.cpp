@@ -15,7 +15,7 @@
 #include "stdafx.h"
 #include <cstring>
 
-#include "../jslang/bstringapi.h"
+#include "../jslang/blobapi.h"
 
 #include "error.h"
 #include "result.h"
@@ -126,7 +126,7 @@ JSBool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *objAt,
 					break;
 				}
 
-				if ( JS_GET_CLASS(cx, JSVAL_TO_OBJECT(val)) == BStringJSClass(cx) ) { // beware: with SQLite, blob != text
+				if ( JS_GET_CLASS(cx, JSVAL_TO_OBJECT(val)) == BlobJSClass(cx) ) { // beware: with SQLite, blob != text
 
 					size_t length;
 					const char *data;

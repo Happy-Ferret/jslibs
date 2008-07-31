@@ -289,7 +289,7 @@ DEFINE_FUNCTION_FAST( Clear ) {
  * $STR $INAME
   Read or write the whole content of the shared memory. Setting <undefined> as value clears the memory area.
 **/
-DEFINE_PROPERTY( contentSetter ) { // (TBD) support BString
+DEFINE_PROPERTY( contentSetter ) { // (TBD) support Blob
 
 	ClassPrivate *pv = (ClassPrivate*)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( pv );
@@ -322,7 +322,7 @@ DEFINE_PROPERTY( contentSetter ) { // (TBD) support BString
 }
 
 
-DEFINE_PROPERTY( contentGetter ) { // (TBD) support BString
+DEFINE_PROPERTY( contentGetter ) { // (TBD) support Blob
 
 //	*vp = STRING_TO_JSVAL( JS_NewStringCopyZ(cx, "123456789ABC") );
 //	return JS_TRUE;

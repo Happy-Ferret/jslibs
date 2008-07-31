@@ -128,9 +128,9 @@ JSBool ReadToJsval(JSContext *cx, PRFileDesc *fd, int amount, jsval *rval ) {
 	char *buf = (char*)JS_malloc( cx, amount + 1 );
 	J_S_ASSERT_ALLOC(buf);
 	buf[amount] = '\0';
-// (TBD) use BString
-//	JSObject bstringObj = NewBString(cx, buf, amount);
-//	*rval = OBJECT_TO_JSVAL(bstringObj);
+// (TBD) use Blob
+//	JSObject blobObj = NewBlob(cx, buf, amount);
+//	*rval = OBJECT_TO_JSVAL(blobObj);
 
 	PRInt32 res = PR_Read( fd, buf, amount );
 
@@ -234,7 +234,7 @@ JSBool ReadAllToJsval(JSContext *cx, PRFileDesc *fd, jsval *rval ) {
 		return JS_TRUE;
 	}
 
-// (TBD) use BString
+// (TBD) use Blob
 	char *jsData = (char*)JS_malloc(cx, totalLength + 1);
 	jsData[totalLength] = '\0';
 	char *ptr = jsData + totalLength; // starts from the end
@@ -263,7 +263,7 @@ JSBool ReadAllToJsval(JSContext *cx, PRFileDesc *fd, jsval *rval ) {
   Read _amount_ bytes of data from the current descriptor. If _amount_ is ommited, the whole available data is read.
   If the descriptor is exhausted (eof or disconnected), this function returns <undefined>.
   $H beware	
-   This function returns a BString or a string literal as empty string.
+   This function returns a Blob or a string literal as empty string.
 **/
 DEFINE_FUNCTION( Read ) {
 

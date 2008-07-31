@@ -28,7 +28,7 @@ Manage GL extensions:
 #include "jstransformation.h"
 
 #include "../jsimage/image.h"
-#include "../jslang/bstring.h"
+#include "../jslang/blob.h"
 #include "../jsprotex/texture.h"
 //TextureJSClass
 

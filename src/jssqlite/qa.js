@@ -135,7 +135,7 @@
 
 		var result1 = db.Query('SELECT :toto');
 		
-		result1.toto = new BString('12' + '\0' + '34');
+		result1.toto = new Blob('12' + '\0' + '34');
 
 		QA.ASSERT( result1.Row()[0].length, 5, 'using binding' );
 		QA.ASSERT( db.changes, 0, 'changes' );
@@ -187,7 +187,7 @@
 		db.testFun = function(a) { return a*10 }
 		db.jseval = function(s){ return eval(s) };
 		
-		var blob = new BString();
+		var blob = new Blob();
 		blob.Set('qqwe\00\00fv1234');
 		var res = db.Exec('SELECT testFun(123), length(:toto), jseval("null") is null', {toto:blob, aaa:null});
 

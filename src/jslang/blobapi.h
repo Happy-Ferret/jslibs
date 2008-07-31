@@ -20,29 +20,29 @@
 #define SLOT_BSTRING_LENGTH 0
 
 
-inline JSClass* BStringJSClass( JSContext *cx ) {
+inline JSClass* BlobJSClass( JSContext *cx ) {
 
 	static JSClass *jsClass = NULL;
 	if ( jsClass == NULL )
-		jsClass = GetGlobalClassByName(cx, "BString");
+		jsClass = GetGlobalClassByName(cx, "Blob");
 	return jsClass;
 }
 
 
-inline bool JsvalIsBString( JSContext *cx, jsval val ) {
+inline bool JsvalIsBlob( JSContext *cx, jsval val ) {
 
-	return ( JSVAL_IS_OBJECT(val) && !JSVAL_IS_NULL(val) && JS_GET_CLASS(cx, JSVAL_TO_OBJECT(val)) == BStringJSClass(cx) );
+	return ( JSVAL_IS_OBJECT(val) && !JSVAL_IS_NULL(val) && JS_GET_CLASS(cx, JSVAL_TO_OBJECT(val)) == BlobJSClass(cx) );
 }
 
 /*
 
-// NewBString takes ownership of jsMallocatedBuffer on success. Allocation must be done with JS_malloc
-inline JSObject* NewBString( JSContext *cx, void *jsMallocatedBuffer, size_t bufferLength ) {
+// NewBlob takes ownership of jsMallocatedBuffer on success. Allocation must be done with JS_malloc
+inline JSObject* NewBlob( JSContext *cx, void *jsMallocatedBuffer, size_t bufferLength ) {
 
-	JSClass *bstringClass = BStringJSClass(cx);
-	if ( bstringClass == NULL )
+	JSClass *blobClass = BlobJSClass(cx);
+	if ( blobClass == NULL )
 		return NULL;
-	JSObject *obj = JS_NewObject(cx, bstringClass, NULL, NULL);
+	JSObject *obj = JS_NewObject(cx, blobClass, NULL, NULL);
 	if ( obj == NULL )
 		return NULL;
 	if ( JS_SetReservedSlot(cx, obj, SLOT_BSTRING_LENGTH, INT_TO_JSVAL( bufferLength )) != JS_TRUE )
@@ -52,22 +52,22 @@ inline JSObject* NewBString( JSContext *cx, void *jsMallocatedBuffer, size_t buf
 	return obj;
 }
 
-inline JSBool NewBStringCopyN(JSContext *cx, const void *data, size_t amount, JSObject **bstrObj) {
+inline JSBool NewBlobCopyN(JSContext *cx, const void *data, size_t amount, JSObject **bstrObj) {
 
 	char *bstrBuf = (char*)JS_malloc(cx, amount);
 	J_S_ASSERT_ALLOC( bstrBuf );
 	memcpy( bstrBuf, data, amount );
-	*bstrObj = NewBString(cx, bstrBuf, amount);
-	J_S_ASSERT( *bstrObj != NULL, "Unable to create a BString." );
+	*bstrObj = NewBlob(cx, bstrBuf, amount);
+	J_S_ASSERT( *bstrObj != NULL, "Unable to create a Blob." );
 	return JS_TRUE;
 }
 
-inline JSObject* NewEmptyBString( JSContext *cx ) {
+inline JSObject* NewEmptyBlob( JSContext *cx ) {
 
-	JSClass *bstringClass = BStringJSClass(cx);
-	if ( bstringClass == NULL )
+	JSClass *blobClass = BlobJSClass(cx);
+	if ( blobClass == NULL )
 		return NULL;
-	JSObject *obj = JS_NewObject(cx, bstringClass, NULL, NULL);
+	JSObject *obj = JS_NewObject(cx, blobClass, NULL, NULL);
 	if ( obj == NULL )
 		return NULL;
 	return obj;
@@ -75,9 +75,9 @@ inline JSObject* NewEmptyBString( JSContext *cx ) {
 
 
 
-inline JSBool BStringLength( JSContext *cx, JSObject *bStringObject, size_t *length ) {
+inline JSBool BlobLength( JSContext *cx, JSObject *bStringObject, size_t *length ) {
 
-	J_S_ASSERT_CLASS(bStringObject, BStringJSClass( cx ));
+	J_S_ASSERT_CLASS(bStringObject, BlobJSClass( cx ));
 	jsval lengthVal;
 	J_CHK( JS_GetReservedSlot(cx, bStringObject, SLOT_BSTRING_LENGTH, &lengthVal) );
 	*length = JSVAL_IS_INT(lengthVal) ? JSVAL_TO_INT( lengthVal ) : 0;
@@ -85,17 +85,17 @@ inline JSBool BStringLength( JSContext *cx, JSObject *bStringObject, size_t *len
 }
 
 
-inline JSBool BStringBuffer( JSContext *cx, JSObject *bStringObject, const void **buffer ) {
+inline JSBool BlobBuffer( JSContext *cx, JSObject *bStringObject, const void **buffer ) {
 
-	J_S_ASSERT_CLASS(bStringObject, BStringJSClass( cx ));
+	J_S_ASSERT_CLASS(bStringObject, BlobJSClass( cx ));
 	*buffer = JS_GetPrivate(cx, bStringObject);
 	return JS_TRUE;
 }
 
 
-inline JSBool BStringGetBufferAndLength( JSContext *cx, JSObject *bStringObject, void **data, size_t *dataLength ) {
+inline JSBool BlobGetBufferAndLength( JSContext *cx, JSObject *bStringObject, void **data, size_t *dataLength ) {
 
-	J_S_ASSERT_CLASS(bStringObject, BStringJSClass( cx ));
+	J_S_ASSERT_CLASS(bStringObject, BlobJSClass( cx ));
 	jsval lengthVal;
 	J_CHK( JS_GetReservedSlot(cx, bStringObject, SLOT_BSTRING_LENGTH, &lengthVal) );
 	*dataLength = JSVAL_IS_INT(lengthVal) ? JSVAL_TO_INT( lengthVal ) : 0;

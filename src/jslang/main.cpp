@@ -43,7 +43,7 @@ JSBool jslangInit(JSContext *cx, JSObject *obj) {
 	J_S_ASSERT( obj == globalObject, "This module must be load into the global namespace" );
 //	obj = JS_GetGlobalObject(cx); // avoid LoadModule.call( foo, 'jslang' );
 
-	INIT_CLASS( BString );
+	INIT_CLASS( Blob );
 	INIT_CLASS( Stream );
 	INIT_STATIC();
 
