@@ -172,7 +172,6 @@ extern bool *_pUnsafeMode;
 	( JSVAL_IS_OBJECT(value) && !JSVAL_IS_NULL(value) && JS_GET_CLASS(cx, JSVAL_TO_OBJECT(value)) == (jsClass) )
 
 
-//#define J_IS_SAFE_MODE(code) \
 
 
 #define J_SAFE_BEGIN if (unlikely( !*_pUnsafeMode )) {
@@ -284,7 +283,7 @@ extern bool *_pUnsafeMode;
 
 
 ///////////////////////////////////////////////////////////////////////////////
-// 
+//
 
 // The following function wil only works if the class is defined in the global namespace (say global object)
 inline JSClass *GetGlobalClassByName(JSContext *cx, const char *className) {
@@ -319,7 +318,7 @@ inline JSClass *GetGlobalClassByName(JSContext *cx, const char *className) {
 inline JSBool J_NewBlob( JSContext *cx, void* buffer, size_t length, jsval *vp ) {
 
 	if ( length == 0 ) {
-		
+
 		*vp = JS_GetEmptyStringValue(cx);
 		return JS_TRUE;
 	}
@@ -330,7 +329,7 @@ inline JSBool J_NewBlob( JSContext *cx, void* buffer, size_t length, jsval *vp )
 
 	JSObject *blob;
 	if ( blobClass != NULL ) { // we have Blob class, jslang is present.
-		
+
 		blob = JS_NewObject(cx, blobClass, NULL, NULL);
 		if ( blob == NULL )
 			goto err;
@@ -340,7 +339,7 @@ inline JSBool J_NewBlob( JSContext *cx, void* buffer, size_t length, jsval *vp )
 			goto err;
 		*vp = OBJECT_TO_JSVAL(blob);
 	} else {
-		
+
 		JSString *jsstr = JS_NewString(cx, (char*)buffer, length); // JS_NewString takes ownership of bytes on success, avoiding a copy; but on error (signified by null return), it leaves bytes owned by the caller. So the caller must free bytes in the error case, if it has no use for them.
 		if ( jsstr == NULL )
 			goto err;
@@ -356,7 +355,7 @@ err:
 inline JSBool J_NewBlobCopyN( JSContext *cx, const void *data, size_t amount, jsval *vp ) {
 
 	if ( amount == 0 ) {
-		
+
 		*vp = JS_GetEmptyStringValue(cx);
 		return JS_TRUE;
 	}
@@ -816,7 +815,7 @@ inline JSBool SetNativeInterface( JSContext *cx, JSObject *obj, const char *name
 
 
 	} else {
-		
+
 		tmp = JSVAL_VOID;
 		J_CHK( JS_SetProperty(cx, obj, name, &tmp ) );
 	}
@@ -834,7 +833,7 @@ inline JSBool JSStreamRead( JSContext *cx, JSObject *obj, char *buffer, size_t *
 	J_CHKM( JS_CallFunctionName(cx, obj, "Read", 1, &tmpVal, &rval), "Read() function not found.");
 
 	if ( rval == JSVAL_VOID ) {
-		
+
 		*amount = 0;
 		return JS_TRUE;
 	}
@@ -848,7 +847,7 @@ inline JSBool JSStreamRead( JSContext *cx, JSObject *obj, char *buffer, size_t *
 }
 
 inline JSBool ReserveStreamReadInterface( JSContext *cx, JSObject *obj ) {
-	
+
 	return ReserveNativeInterface(cx, obj, "_NI_StreamRead" );
 }
 
@@ -895,7 +894,7 @@ inline JSBool JSBufferGet( JSContext *cx, JSObject *obj, const char **buffer, si
 }
 
 inline JSBool ReserveBufferGetInterface( JSContext *cx, JSObject *obj ) {
-	
+
 	return ReserveNativeInterface(cx, obj, "_NI_BufferGet" );
 }
 
@@ -944,7 +943,7 @@ inline JSBool JSMatrix44Get( JSContext *cx, JSObject *obj, const char **buffer, 
 */
 
 inline JSBool ReserveMatrix44GetInterface( JSContext *cx, JSObject *obj ) {
-	
+
 	return ReserveNativeInterface(cx, obj, "_NIMatrix44Get" );
 }
 
