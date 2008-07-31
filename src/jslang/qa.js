@@ -179,6 +179,13 @@
 	},
 
 
+	BString_str_property: function(QA) {
+
+		var b = BString('123');
+		QA.ASSERT_TYPE( b.str, 'string', '.str is String' );
+	},
+
+
 	_BStringSetter: function(QA) { // this test do not have any sense with immutable objects
 	
 		LoadModule('jsstd');

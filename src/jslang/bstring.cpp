@@ -618,6 +618,24 @@ DEFINE_PROPERTY( length ) {
 }
 
 
+
+/**doc
+ * $INT ??? $INAME
+  is the JavaScript string version of the BString (see toString() function).
+**/
+DEFINE_PROPERTY( str ) {
+	
+	if ( *vp == JSVAL_VOID ) {
+
+		JSString *jsstr;
+		J_CHK( BStringToJSString(cx, obj, &jsstr) );
+		J_S_ASSERT( jsstr != NULL, "Unable to convert BString to String." );
+		*vp = STRING_TO_JSVAL(jsstr);
+	}
+	return JS_TRUE;
+}
+
+
 /*
 DEFINE_NEW_RESOLVE() { // support of data[n]  and  n in data
 
@@ -779,6 +797,7 @@ CONFIGURE_CLASS
 
 	BEGIN_PROPERTY_SPEC
 		PROPERTY_READ(length)
+		PROPERTY_READ_STORE(str)
 	END_PROPERTY_SPEC
 
 	HAS_PRIVATE
