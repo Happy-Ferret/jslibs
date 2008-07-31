@@ -162,7 +162,7 @@ JSBool ReadToJsval(JSContext *cx, PRFileDesc *fd, int amount, jsval *rval ) {
 //	J_S_ASSERT_ALLOC(str);
 //	*rval = STRING_TO_JSVAL(str); // GC protection is ok with this ?
 
-	J_CHK( J_NewBinaryString( cx, buf, res, rval ) );
+	J_CHK( J_NewBlob( cx, buf, res, rval ) );
 
 	return JS_TRUE;
 }
@@ -252,7 +252,7 @@ JSBool ReadAllToJsval(JSContext *cx, PRFileDesc *fd, jsval *rval ) {
 //	J_S_ASSERT_ALLOC(jsstr);
 //	*rval = STRING_TO_JSVAL( jsstr );
 
-	J_CHK( J_NewBinaryString( cx, jsData, totalLength, rval ) );
+	J_CHK( J_NewBlob( cx, jsData, totalLength, rval ) );
 	
 	return JS_TRUE;
 }

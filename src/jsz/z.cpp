@@ -151,7 +151,7 @@ JSBool z_call(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval
 	unsigned char *outputData = (unsigned char*)JS_malloc( cx, outputLength +1 ); // +1 for '\0' char
 	outputData[outputLength] = 0; // (TBD) understand WHY !? outputLength info is not enough ??
 	buffer.Read(outputData);
-	J_CHK( J_NewBinaryString( cx, (char*)outputData, outputLength, rval ) );
+	J_CHK( J_NewBlob( cx, (char*)outputData, outputLength, rval ) );
 
 // close the stream and free resources
 	if ( xflateStatus == Z_STREAM_END ) {

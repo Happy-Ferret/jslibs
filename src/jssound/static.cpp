@@ -139,7 +139,7 @@ DEFINE_FUNCTION_FAST( DecodeOggVorbis ) {
 	J_S_ASSERT_ALLOC(buf);
 
 	jsval bstr;
-	J_CHK( J_NewBinaryString(cx, buf, totalSize, &bstr) );
+	J_CHK( J_NewBlob(cx, buf, totalSize, &bstr) );
 	JSObject *bstrObj;
 	J_CHK( JS_ValueToObject(cx, bstr, &bstrObj) );
 	J_S_ASSERT( bstrObj != NULL, "Unable to create the Blob object.");
@@ -337,12 +337,12 @@ DEFINE_FUNCTION_FAST( DecodeSound ) {
 	char *buf = (char*)JS_malloc(cx, totalSize);
 	J_S_ASSERT_ALLOC(buf);
 
-//	JSObject *bstrObj = J_NewBinaryString(cx, buf, totalSize);
+//	JSObject *bstrObj = J_NewBlob(cx, buf, totalSize);
 //	J_S_ASSERT( bstrObj != NULL, "Unable to create the Blob object.");
 //	*J_FRVAL = OBJECT_TO_JSVAL(bstrObj);
 
 	jsval bstr;
-	J_CHK( J_NewBinaryString(cx, buf, totalSize, &bstr) );
+	J_CHK( J_NewBlob(cx, buf, totalSize, &bstr) );
 	JSObject *bstrObj;
 	J_CHK( JS_ValueToObject(cx, bstr, &bstrObj) );
 	J_S_ASSERT( bstrObj != NULL, "Unable to create the Blob object.");

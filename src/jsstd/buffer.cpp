@@ -110,7 +110,7 @@ JSBool WriteRawChunk( JSContext *cx, JSObject *obj, size_t amount, const char *s
 	BufferPrivate *pv = (BufferPrivate*)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( pv );
 	jsval bstr;
-	J_CHK( J_NewBinaryStringCopyN(cx, str, amount, &bstr) );
+	J_CHK( J_NewBlobCopyN(cx, str, amount, &bstr) );
 	J_CHK( PushJsval(cx, pv->queue, bstr) );
 	pv->length += amount;
 	return JS_TRUE;
@@ -216,7 +216,7 @@ JSBool UnReadRawChunk( JSContext *cx, JSObject *obj, char *data, size_t length )
 	if ( length == 0 ) // optimization & RULES
 		return JS_TRUE;
 	jsval bstr;
-	J_CHK( J_NewBinaryStringCopyN(cx, data, length, &bstr) );
+	J_CHK( J_NewBlobCopyN(cx, data, length, &bstr) );
 	J_CHK( UnReadChunk(cx, obj, bstr) );
 	return JS_TRUE;
 }
@@ -285,7 +285,7 @@ JSBool ReadRawAmount( JSContext *cx, JSObject *obj, size_t *amount, char *str ) 
 
 			memcpy(ptr, chunk, remainToRead);
 			jsval bstr;
-			J_CHK( J_NewBinaryStringCopyN(cx, chunk + remainToRead, chunkLen - remainToRead, &bstr) );
+			J_CHK( J_NewBlobCopyN(cx, chunk + remainToRead, chunkLen - remainToRead, &bstr) );
 			UnshiftJsval(cx, pv->queue, bstr);
 			remainToRead = 0; // adjust remaining required data length
 		}
@@ -334,7 +334,7 @@ JSBool BufferSkipAmount( JSContext *cx, JSObject *obj, size_t amount ) {
 			J_CHK( JsvalToStringAndLength(cx, item, &chunk, &chunkLen) );
 
 			jsval bstr;
-			J_CHK( J_NewBinaryStringCopyN(cx, chunk + remainToRead, chunkLen - remainToRead, &bstr) );
+			J_CHK( J_NewBlobCopyN(cx, chunk + remainToRead, chunkLen - remainToRead, &bstr) );
 			UnshiftJsval(cx, pv->queue, bstr);
 			remainToRead = 0; // adjust remaining required data length
 		}
@@ -374,7 +374,7 @@ JSBool ReadAmount( JSContext *cx, JSObject *obj, size_t amount, jsval *rval ) {
 		J_S_ASSERT_ALLOC(str);
 	}
 
-	J_CHK( J_NewBinaryString(cx, str, amount, rval) );
+	J_CHK( J_NewBlob(cx, str, amount, rval) );
 	return JS_TRUE;
 }
 

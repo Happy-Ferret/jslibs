@@ -307,7 +307,7 @@ DEFINE_FUNCTION( Encrypt ) {
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err);
 
-	J_CHK( J_NewBinaryString( cx, ct, ptLength, rval ) );
+	J_CHK( J_NewBlob( cx, ct, ptLength, rval ) );
 
 	return JS_TRUE;
 }
@@ -359,7 +359,7 @@ DEFINE_FUNCTION( Decrypt ) {
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err);
 
-	J_CHK( J_NewBinaryString( cx, pt, ctLength, rval ) );
+	J_CHK( J_NewBlob( cx, pt, ctLength, rval ) );
 
 	return JS_TRUE;
 }
@@ -549,7 +549,7 @@ DEFINE_PROPERTY( IVGetter ) {
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err);
 
-	J_CHK( J_NewBinaryString( cx, IV, IVLength, vp ) );
+	J_CHK( J_NewBlob( cx, IV, IVLength, vp ) );
 
 	return JS_TRUE;
 }

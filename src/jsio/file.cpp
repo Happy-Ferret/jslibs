@@ -339,7 +339,7 @@ DEFINE_PROPERTY( contentGetter ) { // (TBD) support Blob
 //	J_S_ASSERT_ALLOC(str);
 //	*vp = STRING_TO_JSVAL(str);
 
-	J_CHK( J_NewBinaryString( cx, buf, res, vp ) );
+	J_CHK( J_NewBlob( cx, buf, res, vp ) );
 
 	return JS_TRUE;
 }

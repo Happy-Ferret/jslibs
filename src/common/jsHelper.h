@@ -316,7 +316,7 @@ inline JSClass *GetGlobalClassByName(JSContext *cx, const char *className) {
 
 
 // Note: Empty Blob must acts like an empty string ''.
-inline JSBool J_NewBinaryString( JSContext *cx, void* buffer, size_t length, jsval *vp ) {
+inline JSBool J_NewBlob( JSContext *cx, void* buffer, size_t length, jsval *vp ) {
 
 	if ( length == 0 ) {
 		
@@ -328,17 +328,17 @@ inline JSBool J_NewBinaryString( JSContext *cx, void* buffer, size_t length, jsv
 	if ( blobClass == NULL )
 		blobClass = GetGlobalClassByName(cx, "Blob");
 
-	JSObject *binaryString;
+	JSObject *blob;
 	if ( blobClass != NULL ) { // we have Blob class, jslang is present.
 		
-		binaryString = JS_NewObject(cx, blobClass, NULL, NULL);
-		if ( binaryString == NULL )
+		blob = JS_NewObject(cx, blobClass, NULL, NULL);
+		if ( blob == NULL )
 			goto err;
-		if ( JS_SetReservedSlot(cx, binaryString, 0, INT_TO_JSVAL( length )) != JS_TRUE ) // 0 for SLOT_BSTRING_LENGTH !!!
+		if ( JS_SetReservedSlot(cx, blob, 0, INT_TO_JSVAL( length )) != JS_TRUE ) // 0 for SLOT_BLOB_LENGTH !!!
 			goto err;
-		if ( JS_SetPrivate(cx, binaryString, buffer) != JS_TRUE )
+		if ( JS_SetPrivate(cx, blob, buffer) != JS_TRUE )
 			goto err;
-		*vp = OBJECT_TO_JSVAL(binaryString);
+		*vp = OBJECT_TO_JSVAL(blob);
 	} else {
 		
 		JSString *jsstr = JS_NewString(cx, (char*)buffer, length); // JS_NewString takes ownership of bytes on success, avoiding a copy; but on error (signified by null return), it leaves bytes owned by the caller. So the caller must free bytes in the error case, if it has no use for them.
@@ -353,7 +353,7 @@ err:
 	return JS_FALSE;
 }
 
-inline JSBool J_NewBinaryStringCopyN( JSContext *cx, const void *data, size_t amount, jsval *vp ) {
+inline JSBool J_NewBlobCopyN( JSContext *cx, const void *data, size_t amount, jsval *vp ) {
 
 	if ( amount == 0 ) {
 		
@@ -362,10 +362,10 @@ inline JSBool J_NewBinaryStringCopyN( JSContext *cx, const void *data, size_t am
 	}
 
 	// possible optimization: if Blob is not abailable, copy data into JSString's jschar to avoid js_InflateString.
-	char *bstrBuf = (char*)JS_malloc(cx, amount);
-	J_S_ASSERT_ALLOC( bstrBuf );
-	memcpy( bstrBuf, data, amount );
-	J_CHK( J_NewBinaryString(cx, bstrBuf, amount, vp) );
+	char *blobBuf = (char*)JS_malloc(cx, amount);
+	J_S_ASSERT_ALLOC( blobBuf );
+	memcpy( blobBuf, data, amount );
+	J_CHK( J_NewBlob(cx, blobBuf, amount, vp) );
 	return JS_TRUE;
 }
 

@@ -183,11 +183,11 @@ DEFINE_FUNCTION( DecodeJpegImage ) {
 	JOCTET * data = (JOCTET *)JS_malloc(cx, length);
 	J_S_ASSERT_ALLOC(data);
 
-	jsval bstr;
-	J_CHK( J_NewBinaryString(cx, data, length, &bstr) );
+	jsval blobVal;
+	J_CHK( J_NewBlob(cx, data, length, &blobVal) );
 
 	JSObject *blobObj;
-	J_CHK( JS_ValueToObject(cx, bstr, &blobObj) );
+	J_CHK( JS_ValueToObject(cx, blobVal, &blobObj) );
 	J_S_ASSERT( blobObj, "Unable to create Blob object." );
 	*rval = OBJECT_TO_JSVAL(blobObj);
 
@@ -289,10 +289,10 @@ DEFINE_FUNCTION( DecodePngImage ) {
 	png_bytep data = (png_bytep)JS_malloc(cx, length);
 	J_S_ASSERT_ALLOC(data);
 
-	jsval bstr;
-	J_CHK( J_NewBinaryString(cx, data, length, &bstr) );
+	jsval blobVal;
+	J_CHK( J_NewBlob(cx, data, length, &blobVal) );
 	JSObject *blobObj;
-	J_CHK( JS_ValueToObject(cx, bstr, &blobObj) );
+	J_CHK( JS_ValueToObject(cx, blobVal, &blobObj) );
 	J_S_ASSERT( blobObj, "Unable to create Blob object." );
 	*rval = OBJECT_TO_JSVAL(blobObj);
 
@@ -401,7 +401,7 @@ DEFINE_FUNCTION_FAST( EncodePngImage ) {
 	png_destroy_write_struct(&desc.png, &desc.info);
 
 	JS_realloc(cx, desc.buffer, desc.pos);
-	J_CHK( J_NewBinaryString(cx, desc.buffer, desc.pos, J_FRVAL) );
+	J_CHK( J_NewBlob(cx, desc.buffer, desc.pos, J_FRVAL) );
 
 	return JS_TRUE;
 }

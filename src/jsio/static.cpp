@@ -361,7 +361,7 @@ DEFINE_FUNCTION( GetRandomNoise ) {
 //	J_S_ASSERT_ALLOC( jsstr );
 //	*rval = STRING_TO_JSVAL(jsstr);
 
-	J_CHK( J_NewBinaryString( cx, buf, size, rval ) );
+	J_CHK( J_NewBlob( cx, buf, size, rval ) );
 
 	return JS_TRUE;
 }

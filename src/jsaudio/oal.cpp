@@ -233,16 +233,16 @@ DEFINE_FUNCTION_FAST( PlaySound_ ) {
 	J_S_ASSERT_ARG_MIN( 1 );
 	J_S_ASSERT_OBJECT( J_FARG(1) );
 
-	JSObject *bstrObj = JSVAL_TO_OBJECT(J_FARG(1));
+	JSObject *blobObj = JSVAL_TO_OBJECT(J_FARG(1));
 
 	int rate, channels, bits;
-	J_CHK( GetPropertyInt(cx, bstrObj, "rate", &rate) );
-	J_CHK( GetPropertyInt(cx, bstrObj, "channels", &channels) );
-	J_CHK( GetPropertyInt(cx, bstrObj, "bits", &bits) );
+	J_CHK( GetPropertyInt(cx, blobObj, "rate", &rate) );
+	J_CHK( GetPropertyInt(cx, blobObj, "channels", &channels) );
+	J_CHK( GetPropertyInt(cx, blobObj, "bits", &bits) );
 
 	const char *buffer;
 	size_t bufferLength;
-	JsvalToStringAndLength(cx, OBJECT_TO_JSVAL(bstrObj), &buffer, &bufferLength);
+	JsvalToStringAndLength(cx, OBJECT_TO_JSVAL(blobObj), &buffer, &bufferLength);
 	
 	ALint state;                // The state of the sound source
 	ALuint bufferID;            // The OpenAL sound buffer ID

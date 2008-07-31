@@ -24,27 +24,27 @@
 
 
 
-inline JSBool BlobLength( JSContext *cx, JSObject *bStringObject, size_t *length ) {
+inline JSBool BlobLength( JSContext *cx, JSObject *blobObject, size_t *length ) {
 
-	J_S_ASSERT_CLASS(bStringObject, BlobJSClass( cx ));
+	J_S_ASSERT_CLASS(blobObject, BlobJSClass( cx ));
 	jsval lengthVal;
-	J_CHK( JS_GetReservedSlot(cx, bStringObject, SLOT_BSTRING_LENGTH, &lengthVal) );
+	J_CHK( JS_GetReservedSlot(cx, blobObject, SLOT_BLOB_LENGTH, &lengthVal) );
 	*length = JSVAL_IS_INT(lengthVal) ? JSVAL_TO_INT( lengthVal ) : 0;
 	return JS_TRUE;
 }
 
 
-inline JSBool BlobBuffer( JSContext *cx, JSObject *bStringObject, const char **buffer ) {
+inline JSBool BlobBuffer( JSContext *cx, JSObject *blobObject, const char **buffer ) {
 
-	J_S_ASSERT_CLASS(bStringObject, BlobJSClass( cx ));
-	*buffer = (char*)JS_GetPrivate(cx, bStringObject);
+	J_S_ASSERT_CLASS(blobObject, BlobJSClass( cx ));
+	*buffer = (char*)JS_GetPrivate(cx, blobObject);
 	return JS_TRUE;
 }
 
 
 inline JSBool LengthSet( JSContext *cx, JSObject *obj, size_t bufferLength ) {
 
-	return JS_SetReservedSlot(cx, obj, SLOT_BSTRING_LENGTH, INT_TO_JSVAL( bufferLength ));
+	return JS_SetReservedSlot(cx, obj, SLOT_BLOB_LENGTH, INT_TO_JSVAL( bufferLength ));
 }
 
 
@@ -312,7 +312,7 @@ DEFINE_FUNCTION_FAST( concat ) {
 		tmp += length;
 	}
 
-	J_CHK( J_NewBinaryString(cx, dst, dstLen, J_FRVAL) );
+	J_CHK( J_NewBlob(cx, dst, dstLen, J_FRVAL) );
 	return JS_TRUE;
 }
 
@@ -376,7 +376,7 @@ DEFINE_FUNCTION_FAST( substr ) {
 	((char*)buffer)[length] = '\0';
 
 	memcpy(buffer, ((int8_t*)bstrBuffer) + start, length);
-	J_CHK( J_NewBinaryString(cx, buffer, length, J_FRVAL) );
+	J_CHK( J_NewBlob(cx, buffer, length, J_FRVAL) );
 
 	return JS_TRUE;
 }

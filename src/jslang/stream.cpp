@@ -130,7 +130,7 @@ DEFINE_FUNCTION_FAST( Read ) {
 
 	buffer[readAmount] = '\0';
 
-	J_CHK( J_NewBinaryString(cx, buffer, readAmount, J_FRVAL) );
+	J_CHK( J_NewBlob(cx, buffer, readAmount, J_FRVAL) );
 
 	return JS_TRUE;
 }

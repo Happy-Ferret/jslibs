@@ -12,12 +12,12 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-#ifndef _BSTRINGAPI_H_
-#define _BSTRINGAPI_H_
+#ifndef _BLOBAPI_H_
+#define _BLOBAPI_H_
 
 #include "../common/jsHelper.h"
 
-#define SLOT_BSTRING_LENGTH 0
+#define SLOT_BLOB_LENGTH 0
 
 
 inline JSClass* BlobJSClass( JSContext *cx ) {
@@ -45,7 +45,7 @@ inline JSObject* NewBlob( JSContext *cx, void *jsMallocatedBuffer, size_t buffer
 	JSObject *obj = JS_NewObject(cx, blobClass, NULL, NULL);
 	if ( obj == NULL )
 		return NULL;
-	if ( JS_SetReservedSlot(cx, obj, SLOT_BSTRING_LENGTH, INT_TO_JSVAL( bufferLength )) != JS_TRUE )
+	if ( JS_SetReservedSlot(cx, obj, SLOT_BLOB_LENGTH, INT_TO_JSVAL( bufferLength )) != JS_TRUE )
 		return NULL;
 	if ( JS_SetPrivate(cx, obj, jsMallocatedBuffer) != JS_TRUE )
 		return NULL;
@@ -79,7 +79,7 @@ inline JSBool BlobLength( JSContext *cx, JSObject *bStringObject, size_t *length
 
 	J_S_ASSERT_CLASS(bStringObject, BlobJSClass( cx ));
 	jsval lengthVal;
-	J_CHK( JS_GetReservedSlot(cx, bStringObject, SLOT_BSTRING_LENGTH, &lengthVal) );
+	J_CHK( JS_GetReservedSlot(cx, bStringObject, SLOT_BLOB_LENGTH, &lengthVal) );
 	*length = JSVAL_IS_INT(lengthVal) ? JSVAL_TO_INT( lengthVal ) : 0;
 	return JS_TRUE;
 }
@@ -97,7 +97,7 @@ inline JSBool BlobGetBufferAndLength( JSContext *cx, JSObject *bStringObject, vo
 
 	J_S_ASSERT_CLASS(bStringObject, BlobJSClass( cx ));
 	jsval lengthVal;
-	J_CHK( JS_GetReservedSlot(cx, bStringObject, SLOT_BSTRING_LENGTH, &lengthVal) );
+	J_CHK( JS_GetReservedSlot(cx, bStringObject, SLOT_BLOB_LENGTH, &lengthVal) );
 	*dataLength = JSVAL_IS_INT(lengthVal) ? JSVAL_TO_INT( lengthVal ) : 0;
 	*data = JS_GetPrivate(cx, bStringObject);
 	return JS_TRUE;

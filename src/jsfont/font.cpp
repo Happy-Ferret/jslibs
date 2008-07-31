@@ -158,15 +158,15 @@ DEFINE_FUNCTION_FAST( DrawChar ) {
 
 	void *buf = JS_malloc(cx, bufLength);
 
-	jsval bstr;
-	J_CHK( J_NewBinaryString(cx, buf, bufLength, &bstr) );
-	JSObject *bstrObj;
-	J_CHK( JS_ValueToObject(cx, bstr, &bstrObj) );
-	*J_FRVAL = OBJECT_TO_JSVAL( bstrObj );
+	jsval blobVal;
+	J_CHK( J_NewBlob(cx, buf, bufLength, &blobVal) );
+	JSObject *blobObj;
+	J_CHK( JS_ValueToObject(cx, blobVal, &blobObj) );
+	*J_FRVAL = OBJECT_TO_JSVAL( blobObj );
 
-	J_CHK( SetPropertyInt(cx, bstrObj, "width", width) );
-	J_CHK( SetPropertyInt(cx, bstrObj, "height", height) );
-	J_CHK( SetPropertyInt(cx, bstrObj, "channels", 1) );
+	J_CHK( SetPropertyInt(cx, blobObj, "width", width) );
+	J_CHK( SetPropertyInt(cx, blobObj, "height", height) );
+	J_CHK( SetPropertyInt(cx, blobObj, "channels", 1) );
 	memcpy( buf, face->glyph->bitmap.buffer, bufLength );
 
 	return JS_TRUE;
@@ -313,15 +313,15 @@ DEFINE_FUNCTION_FAST( DrawString ) {
 
 		char *buf = (char*)JS_malloc(cx, bufLength); // JS_malloc do not supports 0 bytes size
 
-		jsval bstr;
-		J_CHK( J_NewBinaryString(cx, buf, bufLength, &bstr) );
-		JSObject *bstrObj;
-		J_CHK( JS_ValueToObject(cx, bstr, &bstrObj) );
-		*J_FRVAL = OBJECT_TO_JSVAL( bstrObj );
+		jsval blobVal;
+		J_CHK( J_NewBlob(cx, buf, bufLength, &blobVal) );
+		JSObject *blobObj;
+		J_CHK( JS_ValueToObject(cx, blobVal, &blobObj) );
+		*J_FRVAL = OBJECT_TO_JSVAL( blobObj );
 
-		J_CHK( SetPropertyInt(cx, bstrObj, "width", width) );
-		J_CHK( SetPropertyInt(cx, bstrObj, "height", height) );
-		J_CHK( SetPropertyInt(cx, bstrObj, "channels", 1) );
+		J_CHK( SetPropertyInt(cx, blobObj, "width", width) );
+		J_CHK( SetPropertyInt(cx, blobObj, "height", height) );
+		J_CHK( SetPropertyInt(cx, blobObj, "channels", 1) );
 
 		// render glyphs in the bitmap
 		memset(buf, 0, bufLength);

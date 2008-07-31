@@ -1785,9 +1785,9 @@ DEFINE_FUNCTION_FAST( RenderToImage ) {
 	void *pixels = malloc(size);
 	glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
 
-	JSObject *bstr = NewImage(cx, tWidth, tHeight, 4, pixels);
-	J_S_ASSERT_ALLOC(bstr);
-	*J_FRVAL = OBJECT_TO_JSVAL(bstr);
+	JSObject *blobObj = NewImage(cx, tWidth, tHeight, 4, pixels);
+	J_S_ASSERT_ALLOC(blobObj);
+	*J_FRVAL = OBJECT_TO_JSVAL(blobObj);
 
 	glDeleteTextures(1, &texture);
 	return JS_TRUE;

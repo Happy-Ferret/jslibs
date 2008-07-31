@@ -170,7 +170,7 @@ DEFINE_FUNCTION( Done ) {
 	if ( err != CRYPT_OK )
 		return ThrowCryptError(cx, err);
 
-	J_CHK( J_NewBinaryString( cx, out, outLength, rval ) );
+	J_CHK( J_NewBlob( cx, out, outLength, rval ) );
 
 	return JS_TRUE;
 }
@@ -229,7 +229,7 @@ DEFINE_FUNCTION( Call ) {
 		return ThrowCryptError(cx, err);
 	privateData->inputLength = 0;
 
-	J_CHK( J_NewBinaryString( cx, out, outLength, rval ) );
+	J_CHK( J_NewBlob( cx, out, outLength, rval ) );
 
 	return JS_TRUE;
 }

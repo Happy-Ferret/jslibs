@@ -110,7 +110,7 @@ DEFINE_FUNCTION( Call ) {
 	unsigned long hasRead = privateData->prng.read( (unsigned char*)pr, readCount, &privateData->state );
 	J_S_ASSERT( hasRead == readCount, "unable to read prng." );
 
-	J_CHK( J_NewBinaryString( cx, pr, hasRead, rval ) );
+	J_CHK( J_NewBlob( cx, pr, hasRead, rval ) );
 
 	return JS_TRUE;
 }
@@ -181,7 +181,7 @@ DEFINE_PROPERTY( stateGetter ) {
 		return ThrowCryptError(cx, err);
 	J_S_ASSERT( stateLength == size, "Invalid export size." );
 
-	J_CHK( J_NewBinaryString(cx, stateData, size, vp) );
+	J_CHK( J_NewBlob(cx, stateData, size, vp) );
 	return JS_TRUE;
 }
 

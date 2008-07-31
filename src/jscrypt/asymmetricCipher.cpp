@@ -288,7 +288,7 @@ DEFINE_FUNCTION( Encrypt ) { // ( data [, lparam] )
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err); // (TBD) free something ?
 
-	J_CHK( J_NewBinaryStringCopyN(cx, out, outLength, rval) );
+	J_CHK( J_NewBlobCopyN(cx, out, outLength, rval) );
 	zeromem(out, sizeof(out)); // safe clear
 
 	return JS_TRUE;
@@ -362,7 +362,7 @@ DEFINE_FUNCTION( Decrypt ) { // ( encryptedData [, lparam] )
 
 	out[outLength] = '\0';
 
-	J_CHK( J_NewBinaryStringCopyN( cx, out, outLength, rval ) );
+	J_CHK( J_NewBlobCopyN( cx, out, outLength, rval ) );
 	zeromem(out, sizeof(out));
 
 	return JS_TRUE;
@@ -423,7 +423,7 @@ DEFINE_FUNCTION( Sign ) { // ( data [, saltLength] )
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err); // (TBD) free something ?
 
-	J_CHK( J_NewBinaryStringCopyN( cx, out, outLength, rval ) );
+	J_CHK( J_NewBlobCopyN( cx, out, outLength, rval ) );
 	zeromem(out, sizeof(out));
 
 	return JS_TRUE;
@@ -623,7 +623,7 @@ DEFINE_PROPERTY( keyGetter ) {
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err); // (TBD) free something ?
 
-	J_CHK( J_NewBinaryStringCopyN(cx, key, keyLength, vp) );
+	J_CHK( J_NewBlobCopyN(cx, key, keyLength, vp) );
 	zeromem(key, sizeof(key)); // safe clean
 
 	return JS_TRUE;

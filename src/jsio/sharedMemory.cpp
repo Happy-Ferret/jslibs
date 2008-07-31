@@ -256,7 +256,7 @@ DEFINE_FUNCTION_FAST( Read ) {
 //	J_S_ASSERT_ALLOC( jss );
 //	*J_FRVAL = STRING_TO_JSVAL( jss );
 
-	J_CHK( J_NewBinaryString( cx, data, dataLength, J_FRVAL ) );
+	J_CHK( J_NewBlob( cx, data, dataLength, J_FRVAL ) );
 	
 	return JS_TRUE;
 }
@@ -345,7 +345,7 @@ DEFINE_PROPERTY( contentGetter ) { // (TBD) support Blob
 //	J_S_ASSERT_ALLOC( jss );
 //	*vp = STRING_TO_JSVAL( jss );
 
-	J_CHK( J_NewBinaryString( cx, data, dataLength, vp ) );
+	J_CHK( J_NewBlob( cx, data, dataLength, vp ) );
 
 	return JS_TRUE;
 }
