@@ -242,7 +242,7 @@ DEFINE_FUNCTION_FAST( PlaySound_ ) {
 
 	const char *buffer;
 	size_t bufferLength;
-	JsvalToStringAndLength(cx, OBJECT_TO_JSVAL(blobObj), &buffer, &bufferLength);
+	JsvalToStringAndLength(cx, OBJECT_TO_JSVAL(blobObj), &buffer, &bufferLength); // warning: GC on the returned buffer !
 	
 	ALint state;                // The state of the sound source
 	ALuint bufferID;            // The OpenAL sound buffer ID

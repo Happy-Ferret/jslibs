@@ -389,7 +389,8 @@ DEFINE_CONSTRUCTOR() {
 		return JS_TRUE;
 	}
 
-	if ( JsvalIsString( cx, J_ARG(1) ) ) {
+//	if ( JsvalIsDataBuffer( cx, J_ARG(1) ) ) {
+	if ( JSVAL_IS_STRING(J_ARG(1)) || JSVAL_IS_OBJECT(J_ARG(1)) && BufferGetInterface(cx, JSVAL_TO_OBJECT(J_ARG(1))) != NULL ) {
 
 		JSObject *bstrObj;
 //		bstrObj = JSVAL_TO_OBJECT( J_ARG(1) );
@@ -407,7 +408,7 @@ DEFINE_CONSTRUCTOR() {
 		const char *buffer;
 //		u_int8_t *buffer = (u_int8_t*)
 //		J_CHK( BlobBuffer(cx, bstr, (const void **)&buffer) );
-		J_CHK( JsvalToString(cx, J_ARG(1), (const char **)&buffer) );
+		J_CHK( JsvalToString(cx, J_ARG(1), (const char **)&buffer) ); // warning: GC on the returned buffer !
 
 		tex->width = sWidth;
 		tex->height = sHeight;
@@ -1465,7 +1466,7 @@ DEFINE_FUNCTION_FAST( Blend ) { // texture1, blenderTexture|blenderColor
    If x and y are wrapped to the image width and height.
 **/
 // PTYPE ok
-DEFINE_FUNCTION_FAST( SetPixel_ ) { // x, y, levels
+DEFINE_FUNCTION_FAST( SetPixel ) { // x, y, levels
 
 	J_S_ASSERT_ARG_MIN( 3 );
 
@@ -3619,7 +3620,7 @@ DEFINE_FUNCTION_FAST( RandReal ) {
 
 
 #ifdef _DEBUG
-static JSBool Test(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+static JSBool _Test(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
 	return JS_FALSE;
 }
@@ -3706,7 +3707,7 @@ CONFIGURE_CLASS
 		FUNCTION_FAST( Desaturate )
 		FUNCTION_FAST( Colorize )
 		FUNCTION_FAST( ExtractColor )
-		FUNCTION2_FAST( SetPixel, SetPixel_ )
+		FUNCTION_FAST( SetPixel )
 		FUNCTION_FAST( SetRectangle )
 		FUNCTION_FAST( AddNoise )
 		FUNCTION_FAST( Set )

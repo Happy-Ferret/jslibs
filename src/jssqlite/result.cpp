@@ -299,7 +299,7 @@ DEFINE_FUNCTION( Row ) {
 	sqlite3_stmt *pStmt = (sqlite3_stmt *)JS_GetPrivate( cx, obj );
 	J_S_ASSERT_RESOURCE( pStmt );
 
-	J_CHK( Step( cx, obj, 0, NULL, rval ) ); // if something goes wrong in Result_step ( error report has already been set )
+	J_CHK( _Step( cx, obj, 0, NULL, rval ) ); // if something goes wrong in Result_step ( error report has already been set )
 
 	if ( *rval == JSVAL_FALSE ) { // the statement has finished executing successfully
 

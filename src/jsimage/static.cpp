@@ -355,15 +355,17 @@ DEFINE_FUNCTION_FAST( EncodePngImage ) {
 	J_PROPERTY_TO_INT32( image, "width", sWidth );
 	J_PROPERTY_TO_INT32( image, "height", sHeight );
 	J_PROPERTY_TO_INT32( image, "channels", sChannels );
-	const char *sBuffer;
-	size_t bufferLength;
-	J_CHK( JsvalToStringAndLength(cx, J_FARG(1), &sBuffer, &bufferLength ) );
-	J_S_ASSERT( bufferLength == sWidth * sHeight * sChannels * 1, "Invalid image format." );
 
 	PngWriteUserStruct desc;
 
 	desc.buffer = JS_malloc(cx, sWidth * sHeight * sChannels + 1024);
+	J_S_ASSERT_ALLOC( desc.buffer );
 	desc.pos = 0;
+
+	const char *sBuffer;
+	size_t bufferLength;
+	J_CHK( JsvalToStringAndLength(cx, J_FARG(1), &sBuffer, &bufferLength ) ); // warning: GC on the returned buffer !
+	J_S_ASSERT( bufferLength == sWidth * sHeight * sChannels * 1, "Invalid image format." );
 
 	desc.png = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
 	J_S_ASSERT( desc.png != NULL, "Unable to png_create_write_struct.");

@@ -12,6 +12,5 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-JSObject *InitErrorClass( JSContext *cx, JSObject *obj );
+DECLARE_CLASS( ZError )
 JSBool ThrowZError( JSContext *cx, int errorCode, const char *errorMessage );
-

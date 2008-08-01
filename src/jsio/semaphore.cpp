@@ -55,12 +55,6 @@ DEFINE_CONSTRUCTOR() {
 	J_S_ASSERT_THIS_CLASS();
 	J_S_ASSERT_ARG_MIN( 2 );
 
-	const char *name;
-	size_t nameLength;
-	J_CHK( JsvalToStringAndLength(cx, J_ARG(1), &name, &nameLength) );
-
-	J_S_ASSERT( nameLength < PATH_MAX, "Semaphore name too long." );
-
 	PRUintn count = 0;
 	if ( J_ARG_ISDEF(2) )
 		J_JSVAL_TO_INT32( J_ARG(2), count );
@@ -68,6 +62,11 @@ DEFINE_CONSTRUCTOR() {
 	PRUintn mode = PR_IRUSR | PR_IWUSR; // read write permission for owner.
 	if ( J_ARG_ISDEF(3) )
 		J_JSVAL_TO_INT32( J_ARG(3), mode );
+
+	const char *name;
+	size_t nameLength;
+	J_CHK( JsvalToStringAndLength(cx, J_ARG(1), &name, &nameLength) );
+	J_S_ASSERT( nameLength < PATH_MAX, "Semaphore name too long." );
 
 	bool isCreation = true;
 	PRSem *semaphore = PR_OpenSemaphore(name, PR_SEM_EXCL | PR_SEM_CREATE, mode, count); // fail if already exists
@@ -83,7 +82,8 @@ DEFINE_CONSTRUCTOR() {
 	ClassPrivate *pv = (ClassPrivate*)malloc( sizeof(ClassPrivate) );
 	J_S_ASSERT_ALLOC( pv );
 
-	strcpy( pv->name, name );
+	strcpy( pv->name, name ); // (TBD) use memcpy instead ?
+
 	pv->semaphore = semaphore;
 	pv->owner = isCreation;
 

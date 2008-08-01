@@ -34,7 +34,6 @@ inline NIBufferGet BufferGetInterface( JSContext *cx, JSObject *obj );
 #include <jsobj.h>
 #include <jsstr.h>
 
-//#include "../jslang/blobapi.h"
 
 #ifdef DEBUG
 	#define IFDEBUG(expr) expr
@@ -288,6 +287,8 @@ extern bool *_pUnsafeMode;
 // The following function wil only works if the class is defined in the global namespace (say global object)
 inline JSClass *GetGlobalClassByName(JSContext *cx, const char *className) {
 
+	// see.  js_FindClassObject(cx, NULL, INT_TO_JSID(JSProto_StopIteration), &v))
+
 	JSObject *globalObj = JS_GetGlobalObject(cx);
 	if ( globalObj == NULL )
 		return NULL;
@@ -314,10 +315,9 @@ inline JSClass *GetGlobalClassByName(JSContext *cx, const char *className) {
 #define J_JSVAL_IS_STRING(val) ( JSVAL_IS_STRING(val) || (JSVAL_IS_OBJECT(val) && !JSVAL_IS_NULL(val) && BufferGetInterface(cx, JSVAL_TO_OBJECT(val)) != NULL) )
 
 
-// Note: Empty Blob must acts like an empty string ''.
 inline JSBool J_NewBlob( JSContext *cx, void* buffer, size_t length, jsval *vp ) {
 
-	if ( length == 0 ) {
+	if ( length == 0 ) { // Empty Blob must acts like an empty string: !'' == true
 
 		*vp = JS_GetEmptyStringValue(cx);
 		return JS_TRUE;
@@ -331,13 +331,13 @@ inline JSBool J_NewBlob( JSContext *cx, void* buffer, size_t length, jsval *vp )
 	if ( blobClass != NULL ) { // we have Blob class, jslang is present.
 
 		blob = JS_NewObject(cx, blobClass, NULL, NULL);
+		*vp = OBJECT_TO_JSVAL(blob);
 		if ( blob == NULL )
 			goto err;
 		if ( JS_SetReservedSlot(cx, blob, 0, INT_TO_JSVAL( length )) != JS_TRUE ) // 0 for SLOT_BLOB_LENGTH !!!
 			goto err;
-		if ( JS_SetPrivate(cx, blob, buffer) != JS_TRUE )
+		if ( JS_SetPrivate(cx, blob, buffer) != JS_TRUE ) // blob data
 			goto err;
-		*vp = OBJECT_TO_JSVAL(blob);
 	} else {
 
 		JSString *jsstr = JS_NewString(cx, (char*)buffer, length); // JS_NewString takes ownership of bytes on success, avoiding a copy; but on error (signified by null return), it leaves bytes owned by the caller. So the caller must free bytes in the error case, if it has no use for them.
@@ -347,20 +347,21 @@ inline JSBool J_NewBlob( JSContext *cx, void* buffer, size_t length, jsval *vp )
 	}
 	return JS_TRUE;
 err:
-	*vp = JSVAL_VOID;
-	JS_free(cx, buffer); // JS_NewString do not free the buffer on error.
+	*vp = JSVAL_VOID; // needed ?
+	JS_free(cx, buffer); // JS_NewString does not free the buffer on error.
 	return JS_FALSE;
 }
 
+
 inline JSBool J_NewBlobCopyN( JSContext *cx, const void *data, size_t amount, jsval *vp ) {
 
-	if ( amount == 0 ) {
+	if ( amount == 0 ) { // Empty Blob must acts like an empty string: !'' == true
 
 		*vp = JS_GetEmptyStringValue(cx);
 		return JS_TRUE;
 	}
 
-	// possible optimization: if Blob is not abailable, copy data into JSString's jschar to avoid js_InflateString.
+	// possible optimization: if Blob class is not abailable, copy data into JSString's jschar to avoid js_InflateString.
 	char *blobBuf = (char*)JS_malloc(cx, amount);
 	J_S_ASSERT_ALLOC( blobBuf );
 	memcpy( blobBuf, data, amount );
@@ -368,26 +369,32 @@ inline JSBool J_NewBlobCopyN( JSContext *cx, const void *data, size_t amount, js
 	return JS_TRUE;
 }
 
-inline bool JsvalIsString( JSContext *cx, jsval val ) {
+/*
+inline bool JsvalIsDataBuffer( JSContext *cx, jsval val ) {
 
 	if ( JSVAL_IS_STRING(val) )
 		return true;
-	NIBufferGet fct = BufferGetNativeInterface(cx, JSVAL_TO_OBJECT(val));
+
+	if ( !JSVAL_IS_OBJECT(val) )
+		return false;
+//	NIBufferGet fct = BufferGetNativeInterface(cx, JSVAL_TO_OBJECT(val)); // why not BufferGetInterface() ?
+	NIBufferGet fct = BufferGetInterface(cx, JSVAL_TO_OBJECT(val));
 	if ( fct )
 		return true;
 	return false;
 //	if ( JSVAL_IS_OBJECT(val) && !JSVAL_IS_NULL(val) && JS_GET_CLASS(cx, JSVAL_TO_OBJECT(val)) == BlobJSClass(cx) )
 //		return true;
 }
+*/
 
-
+// beware: caller should keep a reference to buffer as short time as possible, because it is difficult to protect it from GC.
 inline JSBool JsvalToStringAndLength( JSContext *cx, jsval val, const char** buffer, size_t *size ) {
 
 	if ( JSVAL_IS_STRING(val) ) { // for string literals
 
 		JSString *str = JSVAL_TO_STRING(val);
-		*buffer = JS_GetStringBytes(str);
-		J_S_ASSERT( *buffer != NULL, "Invalid string." );
+		*buffer = JS_GetStringBytes(str); // JS_GetStringBytes never returns NULL
+//		J_S_ASSERT( *buffer != NULL, "Invalid string." );
 		*size = J_STRING_LENGTH(str);
 		return JS_TRUE;
 	}
@@ -400,13 +407,14 @@ inline JSBool JsvalToStringAndLength( JSContext *cx, jsval val, const char** buf
 	}
 
 	// and for anything else ...
-	JSString *str = JS_ValueToString(cx, val);
+	JSString *str = JS_ValueToString(cx, val); // GC protection needed !
 	J_S_ASSERT( str != NULL, J__ERRMSG_STRING_CONVERSION_FAILED );
-	*buffer = JS_GetStringBytes(str);
-	J_S_ASSERT( *buffer != NULL, J__ERRMSG_STRING_CONVERSION_FAILED );
 	*size = J_STRING_LENGTH(str);
+	*buffer = JS_GetStringBytes(str); // JS_GetStringBytes never returns NULL
+//	J_S_ASSERT( *buffer != NULL, J__ERRMSG_STRING_CONVERSION_FAILED );
 	return JS_TRUE;
 }
+
 
 inline JSBool JsvalToStringLength( JSContext *cx, jsval val, size_t *length ) {
 
@@ -424,7 +432,11 @@ inline JSBool JsvalToStringLength( JSContext *cx, jsval val, size_t *length ) {
 			return fct(cx, JSVAL_TO_OBJECT(val), &tmp, length);
 	}
 
-	JSString *str = JS_ValueToString(cx, val); // unfortunately, we have to convert to a string to know its length
+	// unfortunately, we have to convert to a string to know its length
+	JSString *str = JS_ValueToString(cx, val); // no GC protection needed.
+
+	// *val = STRING_TO_JSVAL(str); <-- (TBD) to solve the GC issue.
+
 	J_S_ASSERT( str != NULL, J__ERRMSG_STRING_CONVERSION_FAILED );
 	*length = J_STRING_LENGTH(str);
 	return JS_TRUE;
@@ -446,6 +458,7 @@ inline JSBool StringToJsval( JSContext *cx, jsval *val, const char* cstr ) {
 	*val = STRING_TO_JSVAL(jsstr);
 	return JS_TRUE;
 }
+
 
 inline JSBool StringAndLengthToJsval( JSContext *cx, jsval *val, const char* cstr, size_t length ) {
 
@@ -888,7 +901,7 @@ inline NIStreamRead StreamReadInterface( JSContext *cx, JSObject *obj ) {
 inline JSBool JSBufferGet( JSContext *cx, JSObject *obj, const char **buffer, size_t *size ) {
 
 	jsval rval;
-	J_CHKM( JS_CallFunctionName(cx, obj, "Get", 0, NULL, &rval), "Get() function not found."); // do not use toString() !?
+	J_CHKM( JS_CallFunctionName(cx, obj, "Get", 0, NULL, &rval), "Get() function not found."); // do not use toString() !? no !
 	J_CHK( JsvalToStringAndLength(cx, rval, buffer, size) );
 	return JS_TRUE;
 }
@@ -922,7 +935,7 @@ inline NIBufferGet BufferGetInterface( JSContext *cx, JSObject *obj ) {
 		return (NIBufferGet)fct;
 
 	jsval res;
-	if ( JS_GetProperty(cx, obj, "Get", &res) != JS_TRUE || !JsvalIsFunction(cx, res) )
+	if ( JS_GetProperty(cx, obj, "Get", &res) != JS_TRUE || !JsvalIsFunction(cx, res) ) // do not use toString() directly, but Get can call toString().
 		return NULL;
 
 	return JSBufferGet;

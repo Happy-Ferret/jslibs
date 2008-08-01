@@ -2,9 +2,14 @@ LoadModule('jsstd');
 LoadModule('jsio');
 
 
-var b = Blob('123');
 
-Print( b.concat(b,Blob('456'),789,'abc') );
+var b = new Blob();
+b = b.concat( 'ABCD' );
+
+Print( ''+b );
+
+
+//Print( ''+b );
 
 
 Halt();

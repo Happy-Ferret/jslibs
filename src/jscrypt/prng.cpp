@@ -92,7 +92,7 @@ DEFINE_CONSTRUCTOR() {
   Print(HexEncode(myGen(100))); // prints random data
   }}}
 **/
-DEFINE_FUNCTION( Call ) {
+DEFINE_CALL() {
 
 	JSObject *thisObj = JSVAL_TO_OBJECT(argv[-2]); // get 'this' object of the current object ...
 	// (TBD) check JS_InstanceOf( cx, thisObj, &NativeProc, NULL )

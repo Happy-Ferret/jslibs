@@ -128,7 +128,7 @@ DEFINE_FUNCTION( Expand ) {
 		if ( val != JSVAL_VOID ) {
 
 			chunk = (Chunk*)malloc(sizeof(Chunk));
-			J_CHK( JsvalToStringAndLength(cx, val, &chunk->data, &chunk->length) );
+			J_CHK( JsvalToStringAndLength(cx, val, &chunk->data, &chunk->length) ); // warning: GC on the returned buffer !
 			totalLength += chunk->length;
 			StackPush( &stack, chunk );
 		}
@@ -161,7 +161,7 @@ DEFINE_FUNCTION( Expand ) {
   Make an interned string, a string that is automatically shared with other code that needs a string with the same value.
 **/
 // source: http://mxr.mozilla.org/mozilla/source/js/src/js.c
-static JSBool InternString(JSContext *cx, uintN argc, jsval *vp) {
+DEFINE_FUNCTION_FAST( InternString ) {
 
 	JSString *str;
 	str = JS_ValueToString(cx, vp[2]);
@@ -490,7 +490,7 @@ DEFINE_FUNCTION_FAST( StringRepeat ) {
 
 	const char *buf;
 	size_t len;
-	J_CHK( JsvalToStringAndLength(cx, J_FARG(1), &buf, &len) );
+	J_CHK( JsvalToStringAndLength(cx, J_FARG(1), &buf, &len) ); // warning: GC on the returned buffer !
 
 	if ( len == 0 ) {
 		
@@ -690,7 +690,6 @@ static JSScript* LoadScript(JSContext *cx, JSObject *obj, const char *fileName, 
 DEFINE_FUNCTION_FAST( Exec ) {
 
 	//  uintN i;
-	const char *filename;
 	JSScript *script;
 	JSBool ok;
 	//  JSErrorReporter older;
@@ -699,12 +698,14 @@ DEFINE_FUNCTION_FAST( Exec ) {
 	J_S_ASSERT_ARG_MIN( 1 );
 	bool saveCompiledScripts = !( J_FARG_ISDEF(2) && J_FARG(2) == JSVAL_FALSE );
 
-	J_CHK( JsvalToString(cx, J_FARG(1), &filename) );
 	errno = 0;
 	//        older = JS_SetErrorReporter(cx, LoadErrorReporter);
 	oldopts = JS_GetOptions(cx);
 	JS_SetOptions(cx, oldopts | JSOPTION_COMPILE_N_GO);
 	// script = JS_CompileFile(cx, obj, filename);
+	const char *filename;
+	J_CHK( JsvalToString(cx, J_FARG(1), &filename) );
+
 	script = LoadScript( cx, J_FOBJ, filename, saveCompiledScripts );
 	if (!script) {
 		ok = JS_FALSE;

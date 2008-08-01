@@ -191,7 +191,7 @@ DEFINE_FUNCTION( Done ) {
   Print( HexEncode( md5('foobar') ) ); // prints: 3858F62230AC3C915F300C664312C63F
   }}}
 **/
-DEFINE_FUNCTION( Call ) {
+DEFINE_CALL() {
 
 	JSObject *thisObj = JSVAL_TO_OBJECT(argv[-2]); // get 'this' object of the current object ...
 	// (TBD) check JS_InstanceOf( cx, thisObj, &NativeProc, NULL )
@@ -204,13 +204,14 @@ DEFINE_FUNCTION( Call ) {
 	J_S_ASSERT_RESOURCE( privateData );
 
 	int err;
-	
-	const char *in;
-	size_t inLength;
-	J_CHK( JsvalToStringAndLength(cx, argv[0], &in, &inLength) );
+
 	unsigned long outLength = privateData->descriptor->hashsize;
 	char *out = (char *)JS_malloc( cx, outLength );
 	J_S_ASSERT_ALLOC( out );
+
+	const char *in;
+	size_t inLength;
+	J_CHK( JsvalToStringAndLength(cx, argv[0], &in, &inLength) );
 
 	err = privateData->descriptor->init(&privateData->state);
 	if (err != CRYPT_OK)

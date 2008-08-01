@@ -18,7 +18,7 @@
 
 #include <cstring>
 
-#include "../jslang/blobapi.h"
+//#include "../jslang/blobapi.h"
 #include "../common/stack.h"
 
 #include <vorbis/codec.h>

@@ -39,7 +39,7 @@ extern "C" DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	
 	if ( sqlite3_enable_shared_cache(true) != SQLITE_OK ) {
 		
-		// manage error
+		// (TBD) manage error
 	}
 
 

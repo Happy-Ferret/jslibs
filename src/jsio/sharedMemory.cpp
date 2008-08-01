@@ -119,15 +119,15 @@ DEFINE_CONSTRUCTOR() {
 	J_S_ASSERT_THIS_CLASS();
 	J_S_ASSERT_ARG_MIN( 2 );
 
-	const char *name;
-	J_CHK( JsvalToString(cx, J_ARG(1), &name) );
-
 	PRSize size;
 	J_JSVAL_TO_INT32( J_ARG(2), size );
 
 	PRUintn mode = PR_IRUSR | PR_IWUSR; // read write permission for owner.
 	if ( J_ARG_ISDEF(3) )
 		J_JSVAL_TO_INT32( J_ARG(3), mode );
+
+	const char *name;
+	J_CHK( JsvalToString(cx, J_ARG(1), &name) );
 
 	char semName[PATH_MAX];
 	strcpy(semName, name);
@@ -200,13 +200,13 @@ DEFINE_FUNCTION_FAST( Write ) {
 	ClassPrivate *pv = (ClassPrivate*)JS_GetPrivate(cx, J_FOBJ);
 	J_S_ASSERT_RESOURCE( pv );
 
-	const char *data;
-	size_t dataLength;
-	J_CHK( JsvalToStringAndLength(cx, J_FARG(1), &data, &dataLength) );
-
 	PRSize offset = 0;
 	if ( J_FARG_ISDEF(2) )
 		J_JSVAL_TO_INT32( J_FARG(2), offset );
+
+	const char *data;
+	size_t dataLength;
+	J_CHK( JsvalToStringAndLength(cx, J_FARG(1), &data, &dataLength) );
 
 	J_S_ASSERT( sizeof(MemHeader) + offset + dataLength <= pv->size, "SharedMemory too small to hold the given data." );
 
@@ -252,10 +252,6 @@ DEFINE_FUNCTION_FAST( Read ) {
 
 	J_CHK( Unlock(cx, pv) );
 
-//	JSString *jss = JS_NewString(cx, data, dataLength);
-//	J_S_ASSERT_ALLOC( jss );
-//	*J_FRVAL = STRING_TO_JSVAL( jss );
-
 	J_CHK( J_NewBlob( cx, data, dataLength, J_FRVAL ) );
 	
 	return JS_TRUE;
@@ -289,7 +285,7 @@ DEFINE_FUNCTION_FAST( Clear ) {
  * $STR $INAME
   Read or write the whole content of the shared memory. Setting <undefined> as value clears the memory area.
 **/
-DEFINE_PROPERTY( contentSetter ) { // (TBD) support Blob
+DEFINE_PROPERTY( contentSetter ) {
 
 	ClassPrivate *pv = (ClassPrivate*)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( pv );
@@ -322,10 +318,8 @@ DEFINE_PROPERTY( contentSetter ) { // (TBD) support Blob
 }
 
 
-DEFINE_PROPERTY( contentGetter ) { // (TBD) support Blob
+DEFINE_PROPERTY( contentGetter ) {
 
-//	*vp = STRING_TO_JSVAL( JS_NewStringCopyZ(cx, "123456789ABC") );
-//	return JS_TRUE;
 	ClassPrivate *pv = (ClassPrivate*)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( pv );
 
@@ -340,10 +334,6 @@ DEFINE_PROPERTY( contentGetter ) { // (TBD) support Blob
 	memmove(	data, (char *)pv->mem + sizeof(MemHeader), dataLength );
 
 	J_CHK( Unlock(cx, pv) );
-
-//	JSString *jss = JS_NewString(cx, data, dataLength);
-//	J_S_ASSERT_ALLOC( jss );
-//	*vp = STRING_TO_JSVAL( jss );
 
 	J_CHK( J_NewBlob( cx, data, dataLength, vp ) );
 

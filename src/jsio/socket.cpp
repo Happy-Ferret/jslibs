@@ -247,9 +247,6 @@ DEFINE_FUNCTION( Connect ) {
 	PRFileDesc *fd = (PRFileDesc*)JS_GetPrivate( cx, obj );
 	J_S_ASSERT_RESOURCE( fd );
 
-	const char *host;
-	J_CHK( JsvalToString(cx, J_ARG(1), &host) );
-
 	PRUint16 port;
 	J_JSVAL_TO_INT32( J_ARG(2), port );
 
@@ -261,6 +258,9 @@ DEFINE_FUNCTION( Connect ) {
 		connectTimeout = PR_MillisecondsToInterval(timeoutInMilliseconds);
 	} else
 		connectTimeout = PR_INTERVAL_NO_TIMEOUT;
+
+	const char *host;
+	J_CHK( JsvalToString(cx, J_ARG(1), &host) );
 
 	PRNetAddr addr;
 
@@ -322,11 +322,11 @@ DEFINE_FUNCTION( SendTo ) {
 		fd = PR_NewUDPSocket(); // allow to use SendTo as static function
 	J_S_ASSERT_RESOURCE( fd );
 
-	const char *host;
-	J_CHK( JsvalToString(cx, J_ARG(1), &host) );
-
 	PRUint16 port;
 	J_JSVAL_TO_INT32( J_ARG(2), port );
+
+	const char *host;
+	J_CHK( JsvalToString(cx, J_ARG(1), &host) );
 
 	PRNetAddr addr;
 
@@ -422,10 +422,6 @@ DEFINE_FUNCTION( RecvFrom ) {
 	jsval data;
 	if (res > 0) {
 
-//		JSString *strBuffer = JS_NewString(cx, buffer, res);
-//		J_S_ASSERT_ALLOC( strBuffer ); // (TBD) else free buffer
-//		data = STRING_TO_JSVAL(strBuffer);
-
 		J_CHK( J_NewBlob( cx, buffer, res, &data ) );
 		*rval = data; // protect from GC
 	} else if (res == 0) {
@@ -484,11 +480,6 @@ DEFINE_FUNCTION( TransmitFile ) { // WORKS ONLY ON BLOCKING SOCKET !!!
 			flag = PR_TRANSMITFILE_CLOSE_SOCKET;
 	}
 
-	const char *headers = NULL;
-	size_t headerLength = 0;
-	if ( J_ARG_ISDEF(3) )
-		J_CHK( JsvalToStringAndLength(cx, J_ARG(3), &headers, &headerLength) );
-
 	PRIntervalTime connectTimeout;
 	if ( J_ARG_ISDEF(4) ) {
 
@@ -498,7 +489,12 @@ DEFINE_FUNCTION( TransmitFile ) { // WORKS ONLY ON BLOCKING SOCKET !!!
 	} else
 		connectTimeout = PR_INTERVAL_NO_TIMEOUT;
 
-	PRInt32 bytes = PR_TransmitFile( socketFd, fileFd, NULL, 0, flag, connectTimeout );
+	const char *headers = NULL;
+	size_t headerLength = 0;
+	if ( J_ARG_ISDEF(3) )
+		J_CHK( JsvalToStringAndLength(cx, J_ARG(3), &headers, &headerLength) );
+
+	PRInt32 bytes = PR_TransmitFile( socketFd, fileFd, headers, headerLength, flag, connectTimeout );
 	if ( bytes == -1 )
 		return ThrowIoError(cx);
 
@@ -855,9 +851,6 @@ DEFINE_FUNCTION( GetHostsByName ) {
 
 	J_S_ASSERT_ARG_MIN( 1 );
 
-	const char *host;
-	J_CHK( JsvalToString(cx, J_ARG(1), &host) );
-
 //	PRUint16 port;
 //	J_JSVAL_TO_INT32( J_ARG(1), port );
 
@@ -870,6 +863,9 @@ DEFINE_FUNCTION( GetHostsByName ) {
 
 	JSObject *addrJsObj = JS_NewArrayObject(cx, 0, NULL);
 	J_S_ASSERT_ALLOC( addrJsObj );
+
+	const char *host;
+	J_CHK( JsvalToString(cx, J_ARG(1), &host) );
 
 	if ( PR_GetHostByName( host, netdbBuf, sizeof(netdbBuf), &hostEntry ) != PR_SUCCESS ) {
 

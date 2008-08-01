@@ -1,6 +1,23 @@
 LoadModule('jsstd');
 LoadModule('jsio');
 
+	var f = new File('asdfasdfasdf.txt');
+	f.Read();
+
+Halt();
+
+try {
+
+	var f = new File('asdfasdfasdf.txt');
+	f.Read();
+
+} catch ( ex if ex instanceof IoError ) { 
+	
+}
+
+
+Halt();
+
 var f = new File('test.txt');
 f.info.toto = 123;
 f.content = 'xx'

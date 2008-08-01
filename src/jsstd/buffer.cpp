@@ -608,7 +608,7 @@ DEFINE_FUNCTION( Write ) {
 
 		size_t amount, strLen;
 		const char *buf;
-		J_CHK( JsvalToStringAndLength(cx, J_ARG(1), &buf, &strLen) );
+		J_CHK( JsvalToStringAndLength(cx, J_ARG(1), &buf, &strLen) ); // warning: GC on the returned buffer !
 
 		if ( strLen == 0 )
 			return JS_TRUE;
@@ -640,7 +640,7 @@ DEFINE_FUNCTION( Match ) {
 
 	const char *str;
 	size_t len;
-	J_CHK( JsvalToStringAndLength(cx, J_ARG(1), &str, &len) );
+	J_CHK( JsvalToStringAndLength(cx, J_ARG(1), &str, &len) ); // warning: GC on the returned buffer !
 
 	char *src = (char *)malloc(len);
 	size_t amount = len;
@@ -732,7 +732,7 @@ DEFINE_FUNCTION( ReadUntil ) {
 	const char *boundary;
 	size_t boundaryLength;
 
-	J_CHK( JsvalToStringAndLength(cx, J_ARG(1), &boundary, &boundaryLength) );
+	J_CHK( JsvalToStringAndLength(cx, J_ARG(1), &boundary, &boundaryLength) ); // warning: GC on the returned buffer !
 
 	bool skip;
 	if ( J_ARG_ISDEF(2) )
@@ -763,7 +763,7 @@ DEFINE_FUNCTION( IndexOf ) {
 	J_S_ASSERT_ARG_MIN( 1 );
 	const char *boundary;
 	size_t boundaryLength;
-	J_CHK( JsvalToStringAndLength(cx, J_ARG(1), &boundary, &boundaryLength) );
+	J_CHK( JsvalToStringAndLength(cx, J_ARG(1), &boundary, &boundaryLength) ); // warning: GC on the returned buffer !
 	int found;
 	J_CHK( FindInBuffer(cx, obj, boundary, boundaryLength, &found) );
 	*rval = INT_TO_JSVAL(found);

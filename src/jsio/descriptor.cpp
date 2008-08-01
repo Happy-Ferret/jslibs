@@ -128,9 +128,6 @@ JSBool ReadToJsval(JSContext *cx, PRFileDesc *fd, int amount, jsval *rval ) {
 	char *buf = (char*)JS_malloc( cx, amount + 1 );
 	J_S_ASSERT_ALLOC(buf);
 	buf[amount] = '\0';
-// (TBD) use Blob
-//	JSObject blobObj = NewBlob(cx, buf, amount);
-//	*rval = OBJECT_TO_JSVAL(blobObj);
 
 	PRInt32 res = PR_Read( fd, buf, amount );
 
@@ -157,10 +154,6 @@ JSBool ReadToJsval(JSContext *cx, PRFileDesc *fd, int amount, jsval *rval ) {
 		buf = (char*)JS_realloc(cx, buf, res + 1); // realloc the string using its real size
 		J_S_ASSERT_ALLOC(buf);
 	}
-
-//	JSString *str = JS_NewString(cx, buf, res);
-//	J_S_ASSERT_ALLOC(str);
-//	*rval = STRING_TO_JSVAL(str); // GC protection is ok with this ?
 
 	J_CHK( J_NewBlob( cx, buf, res, rval ) );
 
@@ -234,7 +227,6 @@ JSBool ReadAllToJsval(JSContext *cx, PRFileDesc *fd, jsval *rval ) {
 		return JS_TRUE;
 	}
 
-// (TBD) use Blob
 	char *jsData = (char*)JS_malloc(cx, totalLength + 1);
 	jsData[totalLength] = '\0';
 	char *ptr = jsData + totalLength; // starts from the end
@@ -248,10 +240,6 @@ JSBool ReadAllToJsval(JSContext *cx, PRFileDesc *fd, jsval *rval ) {
 	}
 	free(chunkList);
 	
-//	JSString *jsstr = JS_NewString(cx, jsData, totalLength);
-//	J_S_ASSERT_ALLOC(jsstr);
-//	*rval = STRING_TO_JSVAL( jsstr );
-
 	J_CHK( J_NewBlob( cx, jsData, totalLength, rval ) );
 	
 	return JS_TRUE;
@@ -342,7 +330,7 @@ DEFINE_FUNCTION( Write ) {
 		sentAmount = res;
 
 	if ( sentAmount < len )
-		*rval = STRING_TO_JSVAL( JS_NewDependentString(cx, JSVAL_TO_STRING( J_ARG(1) ), sentAmount, len - sentAmount) ); // return unsent data
+		*rval = STRING_TO_JSVAL( JS_NewDependentString(cx, JSVAL_TO_STRING( J_ARG(1) ), sentAmount, len - sentAmount) ); // return unsent data // (TBD) use Blob ?
 	else if ( sentAmount == 0 )
 		*rval = J_ARG(1); // nothing has been sent
 	else

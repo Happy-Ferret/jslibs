@@ -14,13 +14,11 @@
 
 #include "stdafx.h"
 
-//#include <jsdbgapi.h>
-//#include <jscntxt.h>
-//#include <jsscript.h>
+#include "zError.h"
 
 #include <zlib.h>
 
-#include "zError.h"
+/**doc fileIndex:bottom **/
 
 /**doc
 ----
@@ -29,26 +27,22 @@
  Its aim is to throw as an exception on any zlib runtime error.
 **/
 
-JSClass ZError_class = {
-  "ZError", JSCLASS_HAS_RESERVED_SLOTS(2),
-  JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub,
-  JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, JS_FinalizeStub
-};
+BEGIN_CLASS( ZError )
 
 
-JSBool ZError_getter_code(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
+DEFINE_PROPERTY( code ) {
 
 	JS_GetReservedSlot( cx, obj, 0, vp );
-  return JS_TRUE;
+	return JS_TRUE;
 }
 
-JSBool ZError_getter_text(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
+DEFINE_PROPERTY( text ) {
 
 	JS_GetReservedSlot( cx, obj, 1, vp );
 	return JS_TRUE;
 }
 
-JSBool ZError_getter_const(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
+DEFINE_PROPERTY( const ) {
 
 	JS_GetReservedSlot( cx, obj, 0, vp );
 	int errorCode = JSVAL_TO_INT(*vp);
@@ -88,51 +82,47 @@ JSBool ZError_getter_const(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 
 	JSString *str = JS_NewStringCopyZ( cx, errStr );
 	*vp = STRING_TO_JSVAL( str );
-  return JS_TRUE;
-}
-
-
-JSPropertySpec ZError_PropertySpec[] = { // *name, tinyid, flags, getter, setter
-  { "code",  0, JSPROP_READONLY|JSPROP_PERMANENT, ZError_getter_code, NULL },
-  { "text",  0, JSPROP_READONLY|JSPROP_PERMANENT, ZError_getter_text, NULL },
-  { "const",  0, JSPROP_READONLY|JSPROP_PERMANENT, ZError_getter_const, NULL },
-  { 0 }
-};
-
-
-JSBool ZError_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
-
 	return JS_TRUE;
 }
 
 
-JSBool ThrowZError( JSContext *cx, int errorCode, const char *errorMessage ) {
+DEFINE_FUNCTION( toString ) {
 
-/*
-	const char * filename = NULL;
-	uintN lineno;
-  for (JSStackFrame *fp = cx->fp; fp; fp = fp->down)
-      if (fp->script && fp->pc) {
-
-          filename = fp->script->filename;
-          lineno = JS_PCToLineNumber(cx, fp->script, fp->pc);
-          break;
-      }
-	JS_ReportWarning( cx, "ThrowZError %s:%d", filename, lineno );
-*/
-
-	JS_ReportWarning( cx, "ZError exception" );
-
-	JSObject *error = JS_NewObject( cx, &ZError_class, NULL, NULL );
-
-	JS_SetReservedSlot( cx, error, 0, INT_TO_JSVAL(errorCode) );
-	JS_SetReservedSlot( cx, error, 1, errorMessage != NULL ? STRING_TO_JSVAL(JS_NewStringCopyZ( cx, errorMessage )) : JSVAL_VOID );
-
-	JS_SetPendingException( cx, OBJECT_TO_JSVAL( error ) );
-  return JS_FALSE;
+	J_CHK( _text(cx, obj, 0, rval) );
+	return JS_TRUE;
 }
 
-JSObject *InitErrorClass( JSContext *cx, JSObject *obj ) {
+DEFINE_HAS_INSTANCE() { // see issue#52
 
-	return JS_InitClass( cx, obj, NULL, &ZError_class, ZError_construct, 0, ZError_PropertySpec, NULL, NULL, NULL );
+	*bp = !JSVAL_IS_PRIMITIVE(v) && OBJ_GET_CLASS(cx, JSVAL_TO_OBJECT(v)) == _class;
+	return JS_TRUE;
+}
+
+
+CONFIGURE_CLASS
+
+	HAS_HAS_INSTANCE // see issue#52
+
+	BEGIN_PROPERTY_SPEC
+		PROPERTY_READ( code )
+		PROPERTY_READ( text )
+		PROPERTY_READ( const )
+	END_PROPERTY_SPEC
+
+	BEGIN_FUNCTION_SPEC
+		FUNCTION(toString)
+	END_FUNCTION_SPEC
+
+	HAS_RESERVED_SLOTS(2)
+
+END_CLASS
+
+
+JSBool ThrowZError( JSContext *cx, int errorCode, const char *errorMessage ) {
+
+	JSObject *error = JS_NewObject( cx, _class, NULL, NULL );
+	JS_SetPendingException( cx, OBJECT_TO_JSVAL( error ) );
+	JS_SetReservedSlot( cx, error, 0, INT_TO_JSVAL(errorCode) );
+	JS_SetReservedSlot( cx, error, 1, errorMessage != NULL ? STRING_TO_JSVAL(JS_NewStringCopyZ( cx, errorMessage )) : JSVAL_VOID );
+  return JS_FALSE;
 }

@@ -205,7 +205,7 @@ DumpScope(JSContext *cx, JSObject *obj, FILE *fp)
 **/
 
 static JSBool
-DumpStats(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+_DumpStats(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
     uintN i;
     JSString *str;
@@ -292,7 +292,7 @@ DumpStats(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
   This function in only available in DEBUG mode.
 **/
 static JSBool
-DumpHeap(JSContext *cx, uintN argc, jsval *vp)
+_DumpHeap(JSContext *cx, uintN argc, jsval *vp)
 {
 
     char *fileName;
@@ -470,7 +470,7 @@ TrapHandler(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval,
   TBD
 **/
 static JSBool
-Trap(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+_Trap(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
     JSString *str;
     JSScript *script;
@@ -493,7 +493,7 @@ Trap(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
   TBD
 **/
 static JSBool
-Untrap(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+_Untrap(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
     JSScript *script;
     int32 i;
@@ -509,7 +509,7 @@ Untrap(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
   TBD
 **/
 static JSBool
-LineToPC(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+_LineToPC(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
     JSScript *script;
     int32 i;
@@ -535,7 +535,7 @@ LineToPC(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 **/
 
 static JSBool
-PCToLine(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+_PCToLine(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
     JSScript *script;
     int32 i;
@@ -629,7 +629,7 @@ JSBool GCCallTrace(JSContext *cx, JSGCStatus status) {
   TBD
 **/
 static JSBool
-TraceGC(JSContext *cx, uintN argc, jsval *vp)
+_TraceGC(JSContext *cx, uintN argc, jsval *vp)
 {
 
 	if ( argc > 0 ) { // start GC dump

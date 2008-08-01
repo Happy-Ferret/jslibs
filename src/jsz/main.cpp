@@ -35,8 +35,8 @@ extern "C" DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	if ( unsafeModePtrVal != JSVAL_VOID )
 		_pUnsafeMode = (bool*)JSVAL_TO_PRIVATE(unsafeModePtrVal);
 
+	INIT_CLASS( ZError );
 	zInitClass( cx, obj );
-	InitErrorClass( cx, obj );
 	return JS_TRUE;
 }
 

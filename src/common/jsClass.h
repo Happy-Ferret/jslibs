@@ -22,8 +22,8 @@
 #define END_STATIC_FUNCTION_SPEC {0}}; _staticFunctionSpec = _tmp_sfs;
 
 // function definition
-#define DEFINE_FUNCTION_FAST(name) static JSBool name(JSContext *cx, uintN argc, jsval *vp)
-#define DEFINE_FUNCTION(name) static JSBool name(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+#define DEFINE_FUNCTION_FAST(name) static JSBool _##name(JSContext *cx, uintN argc, jsval *vp)
+#define DEFINE_FUNCTION(name) static JSBool _##name(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 #define DEFINE_CONSTRUCTOR() static JSBool Constructor(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 #define DEFINE_OBJECT_CONSTRUCTOR() static JSBool ObjectConstructor(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 #define DEFINE_FINALIZE() static void Finalize(JSContext *cx, JSObject *obj)
@@ -35,19 +35,14 @@
 #define DEFINE_INIT() static JSBool Init(JSContext *cx, JSObject *obj)
 
 // function declaration
-#define FUNCTION(name) JS_FS( #name, name, 0, 0, 0 ),
-#define FUNCTION_FAST(name) JS_FN( #name, name, 0, 0, 0 ),
+#define FUNCTION(name) JS_FS( #name, _##name, 0, 0, 0 ),
+#define FUNCTION_FAST(name) JS_FN( #name, _##name, 0, 0, 0 ),
 
-#define FUNCTION_ARGC(name,nargs) JS_FS( #name, name, nargs, 0, 0 ),
-#define FUNCTION_FAST_ARGC(name,nargs) JS_FN( #name, name, 0, nargs, 0 ),
+#define FUNCTION_ARGC(name,nargs) JS_FS( #name, _##name, nargs, 0, 0 ),
+#define FUNCTION_FAST_ARGC(name,nargs) JS_FN( #name, _##name, 0, nargs, 0 ),
 
-#define FUNCTION2(name,nativeName) JS_FS( #name, nativeName, 0, 0, 0 ),
-#define FUNCTION2_FAST(name,nativeName) JS_FN( #name, nativeName, 0, 0, 0 ),
-
-#define FUNCTION2_FAST_ARGC(name,nativeName,nargs) JS_FN( #name, nativeName, 0, nargs, 0 ),
-
-#define FUNCTION_ALIAS(alias, name) JS_FS( #alias, name, 0, 0, 0 ),
-#define FUNCTION_FAST_ALIAS(alias, name) JS_FN( #alias, name, 0, 0, 0 ),
+#define FUNCTION_ALIAS(alias, name) JS_FS( #alias, _##name, 0, 0, 0 ),
+#define FUNCTION_FAST_ALIAS(alias, name) JS_FN( #alias, _##name, 0, 0, 0 ),
 
 // properties
 #define BEGIN_PROPERTY_SPEC JSPropertySpec _tmp_ps[] = { // *name, tinyid, flags, getter, setter
@@ -56,23 +51,24 @@
 #define END_STATIC_PROPERTY_SPEC {0}}; _staticPropertySpec = _tmp_sps;
 
 // property declaration
-#define DEFINE_PROPERTY(name) static JSBool name(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
-#define DEFINE_PROPERTY_GETTER(name) static JSBool name##Getter(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
-#define DEFINE_PROPERTY_SETTER(name) static JSBool name##Setter(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
-#define DEFINE_PROPERTY_NULL(name) static JSPropertyOp name = NULL;
+#define DEFINE_PROPERTY(name) static JSBool _##name(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
+#define DEFINE_PROPERTY_GETTER(name) static JSBool _##name##Getter(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
+#define DEFINE_PROPERTY_SETTER(name) static JSBool _##name##Setter(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
+#define DEFINE_PROPERTY_NULL(name) static JSPropertyOp _##name = NULL;
 
 // property definition
-#define PROPERTY(name)       { #name, 0, JSPROP_PERMANENT|JSPROP_SHARED, name##Getter, name##Setter },
-#define PROPERTY_STORE(name) { #name, 0, JSPROP_PERMANENT              , name##Getter, name##Setter },
-#define PROPERTY_READ(name)       { #name, 0, JSPROP_PERMANENT|JSPROP_READONLY|JSPROP_SHARED, name, NULL }, // (TBD) rename into PROPERTY_GETTER
-#define PROPERTY_READ_STORE(name) { #name, 0, JSPROP_PERMANENT|JSPROP_READONLY              , name, NULL },
-#define PROPERTY_WRITE(name)       { #name, 0, JSPROP_PERMANENT|JSPROP_SHARED, NULL, name }, // (TBD) rename into PROPERTY_SETTER
-#define PROPERTY_WRITE_STORE(name) { #name, 0, JSPROP_PERMANENT              , NULL, name },
-#define PROPERTY_SWITCH(name, function)       { #name, name, JSPROP_PERMANENT|JSPROP_SHARED, function##Getter, function##Setter }, // Used to define multiple properties with only one pari of getter/setter functions ( an enum has to be defiend ... less than 256 items ! )
-#define PROPERTY_SWITCH_STORE(name, function) { #name, name, JSPROP_PERMANENT, function##Getter, function##Setter },
-#define PROPERTY_SWITCH_READ_STORE(name, function) { #name, name, JSPROP_PERMANENT|JSPROP_READONLY, function##Getter, NULL },
+#define PROPERTY(name)       { #name, 0, JSPROP_PERMANENT|JSPROP_SHARED, _##name##Getter, _##name##Setter },
+#define PROPERTY_STORE(name) { #name, 0, JSPROP_PERMANENT              , _##name##Getter, _##name##Setter },
+#define PROPERTY_READ(name)       { #name, 0, JSPROP_PERMANENT|JSPROP_READONLY|JSPROP_SHARED, _##name, NULL }, // (TBD) rename into PROPERTY_GETTER
+#define PROPERTY_READ_STORE(name) { #name, 0, JSPROP_PERMANENT|JSPROP_READONLY              , _##name, NULL },
+#define PROPERTY_WRITE(name)       { #name, 0, JSPROP_PERMANENT|JSPROP_SHARED, NULL, _##name }, // (TBD) rename into PROPERTY_SETTER
+#define PROPERTY_WRITE_STORE(name) { #name, 0, JSPROP_PERMANENT              , NULL, _##name },
+#define PROPERTY_SWITCH(name, function)       { #name, name, JSPROP_PERMANENT|JSPROP_SHARED, _##function##Getter, _##function##Setter }, // Used to define multiple properties with only one pari of getter/setter functions ( an enum has to be defiend ... less than 256 items ! )
+#define PROPERTY_SWITCH_STORE(name, function) { #name, name, JSPROP_PERMANENT, _##function##Getter, _##function##Setter },
+#define PROPERTY_SWITCH_READ_STORE(name, function) { #name, name, JSPROP_PERMANENT|JSPROP_READONLY, _##function##Getter, NULL },
 
-#define PROPERTY_CREATE(name,id,flags,getter,setter) { #name, id, flags, getter, setter },
+#define _NULL NULL
+#define PROPERTY_CREATE(name,id,flags,getter,setter) { #name, id, flags, _##getter, _##setter },
 #define PROPERTY_DEFINE(name) { #name, 0, JSPROP_PERMANENT, NULL, NULL },
 
 // add del get set
@@ -80,6 +76,10 @@
 #define DEFINE_DEL_PROPERTY() static JSBool DelProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
 #define DEFINE_GET_PROPERTY() static JSBool GetProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
 #define DEFINE_SET_PROPERTY() static JSBool SetProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
+
+#define DEFINE_HAS_INSTANCE() static JSBool HasInstance(JSContext *cx, JSObject *obj, jsval v, JSBool *bp)
+
+#define DEFINE_CALL() static JSBool Call(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 
 // JSExtendedClass
 #define DEFINE_EQUALITY() static JSBool Equality(JSContext *cx, JSObject *obj, jsval v, JSBool *bp)
@@ -208,6 +208,7 @@ static JSBool RemoveClass( JSContext *cx, JSClass *cl ) {
 #define HAS_NEW_RESOLVE   _class->resolve = (JSResolveOp)NewResolve; _class->flags |= JSCLASS_NEW_RESOLVE;
 #define HAS_ENUMERATE  _class->enumerate = Enumerate;
 #define HAS_TRACER   _class->mark = (JSMarkOp)Tracer; _class->flags |= JSCLASS_MARK_IS_TRACE;
+#define HAS_HAS_INSTANCE _class->hasInstance = HasInstance;
 
 // JSExtendedClass
 #define HAS_EQUALITY _xclass.base.flags |= JSCLASS_IS_EXTENDED; _xclass.equality = Equality;

@@ -65,17 +65,17 @@ DEFINE_CONSTRUCTOR() {
 	J_S_ASSERT_CONSTRUCTING();
 	J_S_ASSERT_THIS_CLASS();
 
-	const char *fileName;
-	if ( J_ARG_ISDEF(1) )
-		J_CHK( JsvalToString(cx, J_ARG(1), &fileName) );
-	else
-		fileName = ":memory:";
-
 	int flags;
 	if ( J_ARG_ISDEF(2) )
 		flags = JSVAL_TO_INT( J_ARG(2) );
 	else
 		flags = SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE; // default
+
+	const char *fileName;
+	if ( J_ARG_ISDEF(1) )
+		J_CHK( JsvalToString(cx, J_ARG(1), &fileName) );
+	else
+		fileName = ":memory:";
 
 	sqlite3 *db;
 //	int status = sqlite3_open( fileName, &db ); // see. sqlite3_open_v2()
@@ -538,9 +538,6 @@ DEFINE_SET_PROPERTY() {
 		sqlite3 *db = (sqlite3 *)JS_GetPrivate( cx, obj );
 		J_S_ASSERT_RESOURCE( db );
 
-		const char *fName;
-		J_CHK( JsvalToString(cx, id, &fName) );
-
 		SqliteFunctionCallUserData *data = (SqliteFunctionCallUserData*)malloc(sizeof(SqliteFunctionCallUserData)); // (TBD) store this allocated pointer in a stack to be freed later
 		data->rt = JS_GetRuntime(cx);
 		data->object = obj;
@@ -552,6 +549,9 @@ DEFINE_SET_PROPERTY() {
 		void *stack = JSVAL_TO_PRIVATE(v);
 		StackPush( &stack, data );
 		JS_SetReservedSlot(cx, obj, SLOT_SQLITE_DATABASE_FUNCTION_CALL_STACK, PRIVATE_TO_JSVAL(stack));
+
+		const char *fName;
+		J_CHK( JsvalToString(cx, id, &fName) );
 
 		int status = sqlite3_create_function(db, fName, -1, SQLITE_ANY /*SQLITE_UTF8*/, data, sqlite_function_call, NULL, NULL);
 		if ( status != SQLITE_OK )

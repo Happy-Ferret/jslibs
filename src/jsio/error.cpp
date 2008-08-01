@@ -32,11 +32,13 @@ BEGIN_CLASS( IoError )
  * string *text* $READONLY
 **/
 
+/* see issue#52
 DEFINE_CONSTRUCTOR() {
 
-	J_REPORT_ERROR( "This object cannot be construct." ); // but constructor must be defined
+	J_REPORT_ERROR( "This object cannot be construct." ); // (TBD) remove constructor and define HAS_HAS_INSTANCE
 	return JS_TRUE;
 }
+*/
 
 DEFINE_PROPERTY( code ) {
 
@@ -61,13 +63,21 @@ DEFINE_PROPERTY( text ) {
 
 DEFINE_FUNCTION( toString ) {
 
-	J_CHK( text(cx, obj, 0, rval) );
+	J_CHK( _text(cx, obj, 0, rval) );
 	return JS_TRUE;
 }
 
+DEFINE_HAS_INSTANCE() { // see issue#52
+
+	*bp = !JSVAL_IS_PRIMITIVE(v) && OBJ_GET_CLASS(cx, JSVAL_TO_OBJECT(v)) == _class;
+	return JS_TRUE;
+}
+
+
 CONFIGURE_CLASS
 
-	HAS_CONSTRUCTOR
+//	HAS_CONSTRUCTOR // see issue#52
+	HAS_HAS_INSTANCE // see issue#52
 
 	BEGIN_PROPERTY_SPEC
 		PROPERTY_READ( code )
@@ -100,11 +110,11 @@ JSBool ThrowIoErrorArg( JSContext *cx, PRErrorCode errorCode, PRInt32 osError ) 
 	JS_ReportWarning( cx, "ThrowNSPRError %s:%d", filename, lineno );
 */
 
-	JS_ReportWarning( cx, "IoError exception" );
+//	JS_ReportWarning( cx, "IoError exception" );
 	JSObject *error = JS_NewObject( cx, classIoError, NULL, NULL );
+	JS_SetPendingException( cx, OBJECT_TO_JSVAL( error ) );
 	JS_SetReservedSlot( cx, error, 0, INT_TO_JSVAL(errorCode) );
 	JS_SetReservedSlot( cx, error, 1, INT_TO_JSVAL(osError) );
-	JS_SetPendingException( cx, OBJECT_TO_JSVAL( error ) );
 	return JS_FALSE;
 }
 

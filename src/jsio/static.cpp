@@ -357,10 +357,6 @@ DEFINE_FUNCTION( GetRandomNoise ) {
 		J_REPORT_ERROR( "PR_GetRandomNoise is not implemented on this platform." );
 	}
 
-//	JSString *jsstr = JS_NewString(cx, (char*)buf, size); // (TBD) blob
-//	J_S_ASSERT_ALLOC( jsstr );
-//	*rval = STRING_TO_JSVAL(jsstr);
-
 	J_CHK( J_NewBlob( cx, buf, size, rval ) );
 
 	return JS_TRUE;
@@ -406,13 +402,13 @@ DEFINE_FUNCTION_FAST( WaitSemaphore ) {
 
 	J_S_ASSERT_ARG_MIN( 1 );
 
-	const char *name;
-	size_t nameLength;
-	J_CHK( JsvalToStringAndLength(cx, J_FARG(1), &name, &nameLength) );
-
 	PRUintn mode = PR_IRUSR | PR_IWUSR; // read write permission for owner.
 	if ( J_FARG_ISDEF(2) )
 		J_JSVAL_TO_INT32( J_FARG(2), mode );
+
+	const char *name;
+	size_t nameLength;
+	J_CHK( JsvalToStringAndLength(cx, J_FARG(1), &name, &nameLength) );
 
 	bool isCreation = true;
 	PRSem *semaphore = PR_OpenSemaphore(name, PR_SEM_EXCL | PR_SEM_CREATE, mode, 1); // fail if already exists
@@ -482,12 +478,9 @@ DEFINE_FUNCTION_FAST( PostSemaphore ) {
   If _waitExit_ is true, the function waits the end of the process and returns its exit code.
   If _waitExit_ is not true, the function immediately returns an array that contains an input pipe and an output pipe to the current process stdin and stdout.
 **/
-DEFINE_FUNCTION_FAST( CreateProcess_ ) {
+DEFINE_FUNCTION_FAST( CreateProcess ) {
 
 	J_S_ASSERT_ARG_MIN( 1 );
-
-	const char *path;
-	J_CHK( JsvalToString(cx, J_FARG(1), &path) );
 
 	const char * *processArgv;
 	int processArgc;
@@ -506,7 +499,7 @@ DEFINE_FUNCTION_FAST( CreateProcess_ ) {
 			J_CHK( JS_GetElement(cx, JSVAL_TO_OBJECT(J_FARG(2)), JSVAL_TO_INT(propVal), &propVal )); // (TBD) optimize
 
 			const char *tmp;
-			J_CHK( JsvalToString(cx, propVal, &tmp) );
+			J_CHK( JsvalToString(cx, propVal, &tmp) ); // warning: GC on the returned buffer !
 			processArgv[i+1] = tmp;
 		}
 		JS_DestroyIdArray( cx, idArray );
@@ -515,6 +508,9 @@ DEFINE_FUNCTION_FAST( CreateProcess_ ) {
 		processArgc = 0 +1; // +1 is argv[0]
 		processArgv = (const char**)malloc(sizeof(const char**) * (processArgc +1)); // +1 is NULL
 	}
+
+	const char *path;
+	J_CHK( JsvalToString(cx, J_FARG(1), &path) );
 
 	processArgv[0] = path;
 	processArgv[processArgc] = NULL;
@@ -770,7 +766,7 @@ CONFIGURE_STATIC
 		FUNCTION( GetRandomNoise )
 		FUNCTION_FAST( WaitSemaphore )
 		FUNCTION_FAST( PostSemaphore )
-		FUNCTION2_FAST( CreateProcess, CreateProcess_ )
+		FUNCTION_FAST( CreateProcess )
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC

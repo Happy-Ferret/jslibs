@@ -85,12 +85,6 @@ DEFINE_FUNCTION( Open ) {
 	J_S_ASSERT_ARG_MIN(1);
 	J_S_ASSERT( JS_GetPrivate( cx, obj ) == NULL, "File is already open." );
 
-	jsval jsvalFileName;
-	JS_GetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName );
-	J_S_ASSERT_DEFINED( jsvalFileName );
-	const char *fileName;
-	J_CHK( JsvalToString(cx, jsvalFileName, &fileName) );
-
 	PRIntn flags;
 	if ( JSVAL_IS_INT( J_ARG(1) ) ) {
 
@@ -111,6 +105,12 @@ DEFINE_FUNCTION( Open ) {
 
 		mode = PR_IRUSR + PR_IWUSR; // read write permission, owner
 	}
+
+	jsval jsvalFileName;
+	JS_GetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName );
+	J_S_ASSERT_DEFINED( jsvalFileName );
+	const char *fileName;
+	J_CHK( JsvalToString(cx, jsvalFileName, &fileName) );
 
 	PRFileDesc *fd = PR_Open( fileName, flags, mode ); // The mode parameter is currently applicable only on Unix platforms.
 	if ( fd == NULL )
@@ -216,11 +216,11 @@ DEFINE_FUNCTION( Move ) {
 	JS_GetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName );
 	J_S_ASSERT_DEFINED( jsvalFileName );
 	const char *fileName;
-	J_CHK( JsvalToString(cx, jsvalFileName, &fileName) );
+	J_CHK( JsvalToString(cx, jsvalFileName, &fileName) ); // warning: GC on the returned buffer !
 
 	const char *destDirName;
 	size_t destDirNameLength;
-	J_CHK( JsvalToStringAndLength(cx, J_ARG(1), &destDirName, &destDirNameLength) );
+	J_CHK( JsvalToStringAndLength(cx, J_ARG(1), &destDirName, &destDirNameLength) ); // warning: GC on the returned buffer !
 
 	const char *fileNameOnly = strrchr(fileName, '/');
 	if ( fileNameOnly == NULL )
@@ -283,7 +283,7 @@ DEFINE_PROPERTY( positionGetter ) {
   Get or set the content of the file. If the file does not exist, content is <undefined>.
   Setting content with <undefined> deletes the file.
 **/
-DEFINE_PROPERTY( contentGetter ) { // (TBD) support Blob
+DEFINE_PROPERTY( contentGetter ) {
 
 	J_S_ASSERT( (PRFileDesc *)JS_GetPrivate( cx, obj ) == NULL, "Cannot get content of an open file.");
 	jsval jsvalFileName;
@@ -335,17 +335,13 @@ DEFINE_PROPERTY( contentGetter ) { // (TBD) support Blob
 		J_S_ASSERT_ALLOC(buf);
 	}
 
-//	JSString *str = JS_NewString( cx, (char*)buf, res );
-//	J_S_ASSERT_ALLOC(str);
-//	*vp = STRING_TO_JSVAL(str);
-
 	J_CHK( J_NewBlob( cx, buf, res, vp ) );
 
 	return JS_TRUE;
 }
 
 
-DEFINE_PROPERTY( contentSetter ) { // (TBD) support Blob
+DEFINE_PROPERTY( contentSetter ) {
 
 //	J_S_ASSERT_DEFINED( *vp );
 	J_S_ASSERT( (PRFileDesc *)JS_GetPrivate( cx, obj ) == NULL, "Cannot set content of an open file.");
@@ -401,8 +397,8 @@ DEFINE_PROPERTY( nameSetter ) {
 	JS_GetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName );
 	J_S_ASSERT_DEFINED( jsvalFileName );
 	const char *fromFileName, *toFileName;
-	J_CHK( JsvalToString(cx, jsvalFileName, &fromFileName) );
-	J_CHK( JsvalToString(cx, *vp, &toFileName) );
+	J_CHK( JsvalToString(cx, jsvalFileName, &fromFileName) ); // warning: GC on the returned buffer !
+	J_CHK( JsvalToString(cx, *vp, &toFileName) ); // warning: GC on the returned buffer !
 	if ( PR_Rename(fromFileName, toFileName) != PR_SUCCESS ) // if status == PR_FILE_EXISTS_ERROR ...
 		return ThrowIoError(cx);
 	JS_SetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, *vp );

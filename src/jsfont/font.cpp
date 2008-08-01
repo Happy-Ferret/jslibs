@@ -83,12 +83,12 @@ DEFINE_CONSTRUCTOR() {
 	J_S_ASSERT_THIS_CLASS();
 	J_S_ASSERT_ARG_MIN(1);
 
-	const char *filePathName;
-	J_CHK( JsvalToString(cx, J_ARG(1), &filePathName) );
-
 	FT_Long faceIndex = 0;
 	if ( J_ARG_ISDEF(2) )
 		J_JSVAL_TO_INT32(J_ARG(2), faceIndex);
+
+	const char *filePathName;
+	J_CHK( JsvalToString(cx, J_ARG(1), &filePathName) );
 
 	FT_Face face;
 	FTCHK( FT_New_Face( _freetype, filePathName, faceIndex, &face ) );

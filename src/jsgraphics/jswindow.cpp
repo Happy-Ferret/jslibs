@@ -745,7 +745,7 @@ CONFIGURE_CLASS
 //		FUNCTION(Exit)
 		FUNCTION(WaitForMessage)
 		FUNCTION(CreateOpenGLContext)
-		FUNCTION2(SwapBuffers, _SwapBuffers)
+		FUNCTION(SwapBuffers)
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC

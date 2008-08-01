@@ -104,7 +104,8 @@ DEFINE_FUNCTION( Stringify ) {
 
 	const char *buffer;
 	size_t length;
-	J_CHK( JsvalToStringAndLength(cx, J_ARG(1), &buffer, &length) ); // this include NIBufferGet compatible objects
+	 // this include NIBufferGet compatible objects
+	J_CHK( JsvalToStringAndLength(cx, J_ARG(1), &buffer, &length) ); // warning: GC on the returned buffer !
 
 	char *newBuffer = (char*)JS_malloc(cx, length +1);
 	J_S_ASSERT_ALLOC( newBuffer );

@@ -51,7 +51,7 @@ DEFINE_CONSTRUCTOR() {
 
 	J_S_ASSERT_CONSTRUCTING();
 	J_S_ASSERT_THIS_CLASS();
-	JSFunction *allocFunction = JS_NewFunction(cx, Alloc, 0, 0, NULL, "Alloc");
+	JSFunction *allocFunction = JS_NewFunction(cx, _Alloc, 0, 0, NULL, "Alloc");
 	J_S_ASSERT( allocFunction != NULL, "Unable to create allocation function." );
 	JSObject *functionObject = JS_GetFunctionObject(allocFunction);
 	JS_SetReservedSlot(cx, obj, SLOT_FUNCTION_ALLOC, OBJECT_TO_JSVAL(functionObject));

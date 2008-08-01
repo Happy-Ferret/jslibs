@@ -36,16 +36,16 @@ BEGIN_STATIC
   $H beware
    This function is not supported for icons in 16-bit executables and DLLs.
 **/
-DEFINE_FUNCTION( ExtractIcon_ ) {
+DEFINE_FUNCTION( ExtractIcon ) {
 
 	J_S_ASSERT_ARG_MIN(1);
-	const char *fileName;
 	UINT iconIndex = 0;
-	J_CHK( JsvalToString(cx, argv[0], &fileName) );
 	if ( argc >= 2 )
 		J_JSVAL_TO_INT32( argv[1], iconIndex );
 	HINSTANCE hInst = (HINSTANCE)GetModuleHandle(NULL);
 	J_S_ASSERT( hInst != NULL, "Unable to GetModuleHandle." );
+	const char *fileName;
+	J_CHK( JsvalToString(cx, argv[0], &fileName) );
 	HICON hIcon = ExtractIcon( hInst, fileName, iconIndex ); // see SHGetFileInfo(
 	if ( hIcon == NULL )
 		return WinThrowError(cx, GetLastError());
@@ -106,20 +106,20 @@ DEFINE_FUNCTION( ExtractIcon_ ) {
    * IDYES: Yes button was selected.
    * 32000: timeout ???
 **/
-DEFINE_FUNCTION( MessageBox_ ) {
+DEFINE_FUNCTION( MessageBox ) {
 
 	J_S_ASSERT_ARG_MIN(1);
 
-	const char *text;
-	J_CHK( JsvalToString(cx, argv[0], &text) );
+	UINT type = 0;
+	if ( argc >= 3 )
+		J_JSVAL_TO_INT32( argv[2], type );
 
 	const char *caption = NULL;
 	if ( argc >= 2 && argv[1] != JSVAL_VOID )
 		J_CHK( JsvalToString(cx, argv[1], &caption) );
 
-	UINT type = 0;
-	if ( argc >= 3 )
-		J_JSVAL_TO_INT32( argv[2], type );
+	const char *text;
+	J_CHK( JsvalToString(cx, argv[0], &text) );
 
 	int res = MessageBox(NULL, text, caption, type);
 	J_S_ASSERT( res != 0, "MessageBox call Failed." );
@@ -141,22 +141,22 @@ DEFINE_FUNCTION( MessageBox_ ) {
  CreateProcess( 'C:\\WINDOWS\\system32\\calc.exe', undefined, undefined, 'c:\\' );
  }}}
 **/
-DEFINE_FUNCTION( CreateProcess_ ) {
+DEFINE_FUNCTION( CreateProcess ) {
 
 	J_S_ASSERT_ARG_MIN(1);
 
 	const char *applicationName, *commandLine = NULL, *environment = NULL, *currentDirectory = NULL;
 
-	J_CHK( JsvalToString(cx, argv[0], &applicationName) );
+	J_CHK( JsvalToString(cx, argv[0], &applicationName) ); // warning: GC on the returned buffer !
 
 	if ( argc >= 2 && argv[1] != JSVAL_VOID )
-		J_CHK( JsvalToString(cx, argv[1], &commandLine) );
+		J_CHK( JsvalToString(cx, argv[1], &commandLine) ); // warning: GC on the returned buffer !
 
 	if ( argc >= 3 && argv[2] != JSVAL_VOID  )
-		J_CHK( JsvalToString(cx, argv[2], &environment) );
+		J_CHK( JsvalToString(cx, argv[2], &environment) ); // warning: GC on the returned buffer !
 
 	if ( argc >= 4 && argv[3] != JSVAL_VOID  )
-		J_CHK( JsvalToString(cx, argv[3], &currentDirectory) );
+		J_CHK( JsvalToString(cx, argv[3], &currentDirectory) ); // warning: GC on the returned buffer !
 
 	STARTUPINFO si = { sizeof(STARTUPINFO) };
 	PROCESS_INFORMATION pi;
@@ -222,7 +222,7 @@ DEFINE_FUNCTION( FileOpenDialog ) {
  * $STR $INAME( sourceString )
   Expands environment-variable strings and replaces them with the values defined for the current user.
 **/
-DEFINE_FUNCTION( ExpandEnvironmentStrings_ ) {
+DEFINE_FUNCTION( ExpandEnvironmentStrings ) {
 
 	J_S_ASSERT_ARG_MIN(1);
 	const char *src;
@@ -239,7 +239,7 @@ DEFINE_FUNCTION( ExpandEnvironmentStrings_ ) {
  * $VOID $INAME( milliseconds )
   Suspends the execution of the current process until the time-out interval elapses.
 **/
-DEFINE_FUNCTION( Sleep_ ) {
+DEFINE_FUNCTION( Sleep ) {
 
 	J_S_ASSERT_ARG_MIN(1);
 	uint32 timeout;
@@ -261,7 +261,7 @@ DEFINE_FUNCTION( Sleep_ ) {
     * ICONHAND: SystemHand
     * ICONQUESTION: SystemQuestion
 **/
-DEFINE_FUNCTION( MessageBeep_ ) {
+DEFINE_FUNCTION( MessageBeep ) {
 
 	UINT type = -1;
 	if ( argc >= 1 )
@@ -277,7 +277,7 @@ DEFINE_FUNCTION( MessageBeep_ ) {
   $H note
    The function is synchronous, it does not return control to its caller until the sound finishes.
 **/
-DEFINE_FUNCTION( Beep_ ) {
+DEFINE_FUNCTION( Beep ) {
 
 	J_S_ASSERT_ARG_MIN(2);
 	DWORD freq, duration;
@@ -348,14 +348,14 @@ DEFINE_PROPERTY( clipboardSetter ) {
 CONFIGURE_STATIC
 
 	BEGIN_STATIC_FUNCTION_SPEC
-		FUNCTION2( MessageBox, MessageBox_ )
-		FUNCTION2( CreateProcess, CreateProcess_ )
-		FUNCTION2( ExtractIcon, ExtractIcon_ )
-		FUNCTION2( ExpandEnvironmentStrings, ExpandEnvironmentStrings_ )
+		FUNCTION( MessageBox )
+		FUNCTION( CreateProcess )
+		FUNCTION( ExtractIcon )
+		FUNCTION( ExpandEnvironmentStrings )
 		FUNCTION( FileOpenDialog )
-		FUNCTION2( Sleep, Sleep_ )
-		FUNCTION2( MessageBeep, MessageBeep_ )
-		FUNCTION2( Beep, Beep_ )
+		FUNCTION( Sleep )
+		FUNCTION( MessageBeep )
+		FUNCTION( Beep )
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC

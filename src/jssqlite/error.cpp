@@ -45,11 +45,13 @@ try {
 }}}
 **/
 
+/* see issue#52
 DEFINE_CONSTRUCTOR() {
 
-	J_REPORT_ERROR( "This object cannot be construct." );
+	J_REPORT_ERROR( "This object cannot be construct." ); // (TBD) remove constructor and define HAS_HAS_INSTANCE
 	return JS_TRUE;
 }
+*/
 
 DEFINE_PROPERTY( code ) {
 
@@ -63,9 +65,16 @@ DEFINE_PROPERTY( text ) {
 	return JS_TRUE;
 }
 
+DEFINE_HAS_INSTANCE() { // see issue#52
+
+	*bp = !JSVAL_IS_PRIMITIVE(v) && OBJ_GET_CLASS(cx, JSVAL_TO_OBJECT(v)) == _class;
+	return JS_TRUE;
+}
+
 CONFIGURE_CLASS
 
-	HAS_CONSTRUCTOR
+//	HAS_CONSTRUCTOR // see issue#52
+	HAS_HAS_INSTANCE // see issue#52
 
 	BEGIN_PROPERTY_SPEC
 		PROPERTY_READ( code )
@@ -79,12 +88,12 @@ END_CLASS
 
 JSBool SqliteThrowError( JSContext *cx, int status, int errorCode, const char *errorMsg ) {
 
-	J_SAFE(	JS_ReportWarning( cx, "SqliteError exception" ) );
+//	J_SAFE(	JS_ReportWarning( cx, "SqliteError exception" ) );
 	JSObject *error = JS_NewObject( cx, classSqliteError, NULL, NULL ); // (TBD) understand why classSqliteError must have a constructor to be throwed in an exception
-	J_S_ASSERT( error != NULL, "Unable to create SqliteError object." );
+//	J_S_ASSERT( error != NULL, "Unable to create SqliteError object." );
+	JS_SetPendingException( cx, OBJECT_TO_JSVAL( error ) );
 	JS_SetReservedSlot( cx, error, SLOT_SQLITE_ERROR_CODE, INT_TO_JSVAL(errorCode) );
 	JS_SetReservedSlot( cx, error, SLOT_SQLITE_ERROR_TEXT, STRING_TO_JSVAL(JS_NewStringCopyZ( cx, errorMsg )) );
-	JS_SetPendingException( cx, OBJECT_TO_JSVAL( error ) );
 	return JS_FALSE;
 }
 

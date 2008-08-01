@@ -29,7 +29,8 @@ inline JSBool BlobLength( JSContext *cx, JSObject *blobObject, size_t *length ) 
 	J_S_ASSERT_CLASS(blobObject, BlobJSClass( cx ));
 	jsval lengthVal;
 	J_CHK( JS_GetReservedSlot(cx, blobObject, SLOT_BLOB_LENGTH, &lengthVal) );
-	*length = JSVAL_IS_INT(lengthVal) ? JSVAL_TO_INT( lengthVal ) : 0;
+	J_S_ASSERT_INT( lengthVal );
+	*length = JSVAL_TO_INT( lengthVal );
 	return JS_TRUE;
 }
 
@@ -39,12 +40,6 @@ inline JSBool BlobBuffer( JSContext *cx, JSObject *blobObject, const char **buff
 	J_S_ASSERT_CLASS(blobObject, BlobJSClass( cx ));
 	*buffer = (char*)JS_GetPrivate(cx, blobObject);
 	return JS_TRUE;
-}
-
-
-inline JSBool LengthSet( JSContext *cx, JSObject *obj, size_t bufferLength ) {
-
-	return JS_SetReservedSlot(cx, obj, SLOT_BLOB_LENGTH, INT_TO_JSVAL( bufferLength ));
 }
 
 
@@ -106,7 +101,7 @@ JSBool BlobToJSString( JSContext *cx, JSObject *obj, JSString **jsstr ) {
 	void *pv = JS_GetPrivate(cx, obj);
 	size_t length;
 	J_CHK( BlobLength(cx, obj, &length) );
-	if ( pv == NULL || length == 0 ) {
+	if ( length == 0 ) {
 
 		*jsstr = JSVAL_TO_STRING( JS_GetEmptyStringValue(cx) );
 	} else {
@@ -131,7 +126,7 @@ DEFINE_FINALIZE() {
 
 
 /**doc
- * $INAME()
+ * $INAME( [data] )
   Creates an object that can contain binary data.
   $H note
   When called in a non-constructor context, Object behaves identically.
@@ -139,12 +134,6 @@ DEFINE_FINALIZE() {
 DEFINE_CONSTRUCTOR() {
 
 	if ( JS_IsConstructing(cx) != JS_TRUE ) { // supports this form (w/o new operator) : result.param1 = Blob('Hello World');
-
-		//if ( J_ARGC == 0 || J_ARG(1) == JS_GetEmptyStringValue(cx) ) {
-		//	
-		//	*rval = JS_GetEmptyStringValue(cx);
-		//	return JS_TRUE;
-		//}
 
 		obj = JS_NewObject(cx, _class, NULL, NULL);
 		J_S_ASSERT( obj != NULL, "Blob construction failed." );
@@ -155,17 +144,22 @@ DEFINE_CONSTRUCTOR() {
 
 		size_t length;
 		const char *sBuffer;
-		J_CHK( JsvalToStringAndLength(cx, J_ARG(1), &sBuffer, &length) );
-		J_CHK( LengthSet(cx, obj, length) );
+		J_CHK( JsvalToStringAndLength(cx, J_ARG(1), &sBuffer, &length) ); // warning: GC on the returned buffer !
+
 		void *dBuffer = JS_malloc(cx, length +1);
+		J_S_ASSERT_ALLOC( dBuffer );
 		((char*)dBuffer)[length] = '\0';
 		memcpy(dBuffer, sBuffer, length);
-		JS_SetPrivate(cx, obj, dBuffer);
+		J_CHK( JS_SetPrivate(cx, obj, dBuffer) );
+		J_CHK( JS_SetReservedSlot(cx, obj, SLOT_BLOB_LENGTH, INT_TO_JSVAL(length) ) );
+	} else {
+
+		J_CHK( JS_SetPrivate(cx, obj, NULL) );
+		J_CHK( JS_SetReservedSlot(cx, obj, SLOT_BLOB_LENGTH, INT_TO_JSVAL(0) ) );
 	}
 
 	J_CHK( ReserveBufferGetInterface(cx, obj) );
 	J_CHK( SetBufferGetInterface(cx, obj, NativeInterfaceBufferGet) );
-
 	return JS_TRUE;
 }
 
@@ -175,28 +169,6 @@ DEFINE_CONSTRUCTOR() {
 **/
 
 
-/*
-DEFINE_FUNCTION_FAST( Set ) {
-
-	JS_ClearScope(cx, J_FOBJ);
-
-	*J_FRVAL = OBJECT_TO_JSVAL( J_FOBJ );
-
-	if ( !J_FARG_ISDEF(1) ) { // clear
-
-		void *pv = JS_GetPrivate(cx, J_FOBJ);
-		if (pv != NULL)
-			JS_free(cx, pv);
-		J_CHK( JS_SetPrivate(cx, J_FOBJ, NULL) );
-		J_CHK( LengthSet(cx, J_FOBJ, 0) );
-		return JS_TRUE;
-	}
-
-	J_CHK( JsvalToBlob(cx, J_FOBJ, J_FARG(1)) );
-	return JS_TRUE;
-}
-*/
-
 /**doc
  * $TYPE Blob $INAME( data [,data1 [,...]] )
   Combines the text of two or more strings and returns a new string.
@@ -204,65 +176,6 @@ DEFINE_FUNCTION_FAST( Set ) {
    http://developer.mozilla.org/en/docs/Core_JavaScript_1.5_Reference:Global_Objects:String:concat
 **/
 DEFINE_FUNCTION_FAST( concat ) {
-
-/*
-	J_S_ASSERT_ARG_MIN( 1 );
-
-	size_t length;
-	J_CHK( BlobLength(cx, J_FOBJ, &length) );
-
-	size_t srcLen;
-	void *src, *dst;
-
-	if ( JsvalIsBlob(cx, J_FARG(1)) ) {
-
-		//BlobGetBufferAndLength(cx, JSVAL_TO_OBJECT( J_FARG(1) ), &src, &srcLen);
-		JsvalToStringAndLength( cx, J_FARG(1), (const char**)&src, &srcLen);
-
-		if ( srcLen > 0 ) {
-
-			dst = JS_malloc(cx, srcLen + length +1);
-			J_S_ASSERT_ALLOC( dst );
-			((char*)dst)[srcLen + length] = '\0';
-			memcpy(((int8_t*)dst) + length, src, srcLen);
-		} else {
-
-			dst = NULL;
-		}
-	} else {
-
-		JSString *jsstr = JS_ValueToString(cx, J_FARG(1));
-		J_FARG(1) = STRING_TO_JSVAL(jsstr);
-
-		srcLen = J_STRING_LENGTH(jsstr);
-		if ( srcLen > 0 ) {
-
-			dst = JS_malloc(cx, srcLen + length +1);
-			J_S_ASSERT_ALLOC( dst );
-			((char*)dst)[srcLen + length] = '\0';
-			jschar *chars = JS_GetStringChars(jsstr);
-			for ( size_t i = 0; i < srcLen; i++ )
-				((char*)dst)[i + length] = (uint8)chars[i];
-		} else {
-
-			dst = NULL;
-		}
-	}
-
-	// copy the begining
-	void *pv = JS_GetPrivate(cx, J_FOBJ);
-	if ( pv != NULL )
-		memcpy(dst, pv, length);
-
-
-	JSObject *newBStrObj = JS_NewObject(cx, _class, NULL, NULL);
-	J_S_ASSERT( newBStrObj != NULL, "Unable to create the new Blob" );
-
-	J_CHK( LengthSet(cx, newBStrObj, srcLen + length) );
-	J_CHK( JS_SetPrivate(cx, newBStrObj, dst) );
-
-	*J_FRVAL = OBJECT_TO_JSVAL( newBStrObj );
-*/
 
 	J_S_ASSERT_ARG_MIN( 1 );
 
@@ -397,7 +310,7 @@ DEFINE_FUNCTION_FAST( indexOf ) {
 
 	const char *sBuffer;
 	size_t sLength;
-	J_CHK( JsvalToStringAndLength(cx, J_FARG(1), &sBuffer, &sLength) );
+	J_CHK( JsvalToStringAndLength(cx, J_FARG(1), &sBuffer, &sLength) ); // warning: GC on the returned buffer !
 
 	if ( sLength == 0 ) {
 
@@ -461,7 +374,7 @@ DEFINE_FUNCTION_FAST( lastIndexOf ) {
 
 	const char *sBuffer;
 	size_t sLength;
-	J_CHK( JsvalToStringAndLength(cx, J_FARG(1), &sBuffer, &sLength) );
+	J_CHK( JsvalToStringAndLength(cx, J_FARG(1), &sBuffer, &sLength) ); // warning: GC on the returned buffer !
 
 	if ( sLength == 0 ) {
 
@@ -606,7 +519,7 @@ DEFINE_FUNCTION_FAST( toString ) { // and valueOf
 **/
 
 /**doc
- * $INT ??? $INAME
+ * $INT $INAME
   is the length of the current Blob.
 **/
 DEFINE_PROPERTY( length ) {
@@ -620,7 +533,7 @@ DEFINE_PROPERTY( length ) {
 
 
 /**doc
- * $INT ??? $INAME
+ * $INT $INAME
   is the JavaScript string version of the Blob (see toString() function).
 **/
 DEFINE_PROPERTY( str ) {
@@ -634,36 +547,6 @@ DEFINE_PROPERTY( str ) {
 	}
 	return JS_TRUE;
 }
-
-
-/*
-DEFINE_NEW_RESOLVE() { // support of data[n]  and  n in data
-
-	if (!JSVAL_IS_INT(id) || (flags & JSRESOLVE_ASSIGNING))
-		return JS_TRUE;
-	jsint slot = JSVAL_TO_INT( id );
-
-	void *pv = JS_GetPrivate(cx, obj);
-	if ( pv == NULL )
-		return JS_TRUE;
-
-	int length;
-	J_CHK( LengthGet(cx, obj, &length) );
-
-	if ( slot < 0 || slot >= length )
-		return JS_TRUE;
-
-	jschar chr = ((char*)pv)[slot];
-	JSString *str1 = JS_NewUCStringCopyN(cx, &chr, 1);
-	J_S_ASSERT_ALLOC( str1 );
-
-	JS_DefineProperty(cx, obj, (char*)slot, STRING_TO_JSVAL(str1), NULL, NULL, JSPROP_INDEX );
-
-	*objp = obj;
-
-	return JS_TRUE;
-}
-*/
 
 
 /**doc
@@ -700,35 +583,8 @@ DEFINE_GET_PROPERTY() {
 DEFINE_SET_PROPERTY() {
 
 	J_S_ASSERT( !JSVAL_IS_NUMBER(id), "Cannot modify immutable string" );
-
-/* mutable Blob are no more supported
-
-	void *pv = JS_GetPrivate(cx, obj);
-
-	if ( pv == NULL )
-		return J_ReportError(cx, JSSMSG_OUT_OF_RANGE);
-	size_t length;
-	J_CHK( LengthGet(cx, obj, &length) );
-
-	J_S_ASSERT_INT(id);
-	jsint slot = JSVAL_TO_INT( id );
-
-	if ( slot < 0 || slot >= (int)length )
-		return J_ReportError(cx, JSSMSG_OUT_OF_RANGE);
-
-	jschar chr = ((char*)pv)[slot];
-	JSString *str1 = JS_NewUCStringCopyN(cx, &chr, 1);
-	J_S_ASSERT_ALLOC( str1 );
-
-	J_S_ASSERT_STRING(*vp);
-	if ( J_STRING_LENGTH( JSVAL_TO_STRING(*vp) ) != 1 )
-		J_REPORT_ERROR("Invalid char.");
-
-	((char*)pv)[slot] = *JS_GetStringBytes( JSVAL_TO_STRING(*vp) );
-*/
 	return JS_TRUE;
 }
-
 
 
 DEFINE_EQUALITY() {
@@ -752,15 +608,6 @@ DEFINE_EQUALITY() {
 	return JS_TRUE;
 }
 
-
-//DEFINE_CONVERT() {
-//
-//	if ( type == JSTYPE_BOOLEAN ) {
-//	}
-//	return JS_TRUE;
-//}
-
-
 /**doc
 === Note ===
  Blobs are immutable. This mean that its content cannot be modified after it is created.
@@ -773,19 +620,16 @@ DEFINE_EQUALITY() {
 
 CONFIGURE_CLASS
 
+	HAS_PRIVATE
+	HAS_RESERVED_SLOTS(1)
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE
 	HAS_GET_PROPERTY
 	HAS_SET_PROPERTY
 	HAS_EQUALITY
 
-//	HAS_NEW_RESOLVE
-//	HAS_ENUMERATE
-//	HAS_CONVERT
-
 	BEGIN_FUNCTION_SPEC
 		FUNCTION_FAST(concat)
-//		FUNCTION_FAST(Set)
 		FUNCTION_FAST(substr)
 		FUNCTION_FAST(indexOf)
 		FUNCTION_FAST(lastIndexOf)
@@ -799,8 +643,5 @@ CONFIGURE_CLASS
 		PROPERTY_READ(length)
 		PROPERTY_READ_STORE(str)
 	END_PROPERTY_SPEC
-
-	HAS_PRIVATE
-	HAS_RESERVED_SLOTS(1)
 
 END_CLASS

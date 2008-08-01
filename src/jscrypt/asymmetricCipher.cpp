@@ -330,13 +330,13 @@ DEFINE_FUNCTION( Decrypt ) { // ( encryptedData [, lparam] )
 
 			int hashIndex = find_hash(pv->hashDescriptor->name);
 
-			unsigned char *lparam = NULL; // default: lparam not used
-			unsigned long lparamlen = 0;
+			const char *lparam = NULL; // default: lparam not used
+			size_t lparamlen = 0;
 			if (argc >= 2 && argv[1] != JSVAL_VOID)
-				J_CHK( JsvalToStringAndLength(cx, argv[1], &in, &inLength) );
+				J_CHK( JsvalToStringAndLength(cx, argv[1], &lparam, &lparamlen) );
 
 			int stat = 0; // default: failed
-			err = rsa_decrypt_key_ex( (unsigned char *)in, inLength, (unsigned char *)out, &outLength, lparam, lparamlen, hashIndex, pv->padding, &stat, &pv->key.rsaKey );
+			err = rsa_decrypt_key_ex( (unsigned char *)in, inLength, (unsigned char *)out, &outLength, (const unsigned char *)lparam, lparamlen, hashIndex, pv->padding, &stat, &pv->key.rsaKey );
 			// doc: if all went well pt == pt2, l2 == 16, res == 1
 			if ( err == CRYPT_OK && stat != 1 ) {
 
@@ -445,11 +445,11 @@ DEFINE_FUNCTION( VerifySignature ) { // ( data, signature [, saltLength] )
 
 	const char *data;
 	size_t dataLength;
-	J_CHK( JsvalToStringAndLength(cx, argv[0], &data, &dataLength ) );
+	J_CHK( JsvalToStringAndLength(cx, argv[0], &data, &dataLength ) ); // warning: GC on the returned buffer !
 
 	const char *sign;
 	size_t signLength;
-	J_CHK( JsvalToStringAndLength(cx, argv[1], &sign, &signLength) );
+	J_CHK( JsvalToStringAndLength(cx, argv[1], &sign, &signLength) ); // warning: GC on the returned buffer !
 
 	int stat = 0; // default: failed
 	int err = -1; // default: Invalid error code
@@ -558,12 +558,12 @@ DEFINE_PROPERTY( keySetter ) {
 	AsymmetricCipherPrivate *pv = (AsymmetricCipherPrivate *)JS_GetPrivate( cx, obj );
 	J_S_ASSERT_RESOURCE( pv );
 
+	int type;
+	J_JSVAL_TO_INT32( id, type );
+
 	const char *key;
 	size_t keyLength;
 	J_CHK( JsvalToStringAndLength(cx, *vp, &key, &keyLength) );
-
-	int type;
-	J_JSVAL_TO_INT32( id, type );
 
 	int err = -1; // default
 	switch ( pv->cipher ) {

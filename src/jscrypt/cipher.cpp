@@ -127,7 +127,7 @@ DEFINE_CONSTRUCTOR() {
 	J_S_ASSERT_ARG_MIN( 3 );
 
 	const char *modeName;
-	J_CHK( JsvalToString(cx, argv[0], &modeName) );
+	J_CHK( JsvalToString(cx, argv[0], &modeName) ); // warning: GC on the returned buffer !
 
 	CryptMode mode;
 	if ( strcasecmp( modeName, "ECB" ) == 0 )
@@ -148,21 +148,21 @@ DEFINE_CONSTRUCTOR() {
 		J_REPORT_ERROR_1("Invalid mode %s", modeName);
 
 	const char *cipherName;
-	J_CHK( JsvalToString(cx, argv[1], &cipherName) );
+	J_CHK( JsvalToString(cx, argv[1], &cipherName) ); // warning: GC on the returned buffer !
 
 	const char *key;
 	size_t keyLength;
-	J_CHK( JsvalToStringAndLength(cx, argv[2], &key, &keyLength) );
+	J_CHK( JsvalToStringAndLength(cx, argv[2], &key, &keyLength) ); // warning: GC on the returned buffer !
 
 	const char *IV = NULL;
 	size_t IVLength = 0;
 	if ( argc >= 4 && argv[3] != JSVAL_VOID )
-		J_CHK( JsvalToStringAndLength(cx, argv[3], &IV, &IVLength ) );
+		J_CHK( JsvalToStringAndLength(cx, argv[3], &IV, &IVLength ) ); // warning: GC on the returned buffer !
 
 	const char *optarg = NULL;
 	size_t optargLength = 0;
 	if ( argc >= 5 && argv[4] != JSVAL_VOID )
-		J_CHK( JsvalToStringAndLength(cx, argv[4], &optarg, &optargLength ) );
+		J_CHK( JsvalToStringAndLength(cx, argv[4], &optarg, &optargLength ) ); // warning: GC on the returned buffer !
 
    int numRounds = 0; // default value, us a default number of rounds.
 	if ( argc >= 6 && argv[5] != JSVAL_VOID )
@@ -270,7 +270,7 @@ DEFINE_FUNCTION( Encrypt ) {
 
 	const char *pt;
 	size_t ptLength;
-	J_CHK( JsvalToStringAndLength(cx, argv[0], &pt, &ptLength) );
+	J_CHK( JsvalToStringAndLength(cx, argv[0], &pt, &ptLength) ); // warning: GC on the returned buffer !
 
 	char *ct = (char *)JS_malloc( cx, ptLength +1 );
 	J_S_ASSERT_ALLOC( ct );
@@ -325,7 +325,7 @@ DEFINE_FUNCTION( Decrypt ) {
 
 	const char *ct;
 	size_t ctLength;
-	J_CHK( JsvalToStringAndLength(cx, argv[0], &ct, &ctLength) );
+	J_CHK( JsvalToStringAndLength(cx, argv[0], &ct, &ctLength) ); // warning: GC on the returned buffer !
 
 	char *pt = (char *)JS_malloc( cx, ctLength +1 );
 	J_S_ASSERT_ALLOC( pt );
