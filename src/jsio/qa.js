@@ -56,7 +56,7 @@
 	},
 
 
-	Hostname: function(QA) {
+	_Hostname: function(QA) { // need to be fixed for linux platform
 		
 		QA.ASSERT( GetEnv('COMPUTERNAME').toLowerCase(), hostName.toLowerCase(), 'COMPUTERNAME and hostName' );
 	},
