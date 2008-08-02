@@ -13,15 +13,11 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-
-#include "../common/errors.h"
-
 #include <cstring>
 
+#include "../common/errors.h"
 #include "../common/jsHelper.h"
-
 #include "blobapi.h"
-
 
 
 inline JSBool BlobLength( JSContext *cx, JSObject *blobObject, size_t *length ) {

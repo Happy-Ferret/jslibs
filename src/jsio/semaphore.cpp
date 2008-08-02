@@ -82,7 +82,9 @@ DEFINE_CONSTRUCTOR() {
 	ClassPrivate *pv = (ClassPrivate*)malloc( sizeof(ClassPrivate) );
 	J_S_ASSERT_ALLOC( pv );
 
-	strcpy( pv->name, name ); // (TBD) use memcpy instead ?
+//	strcpy( pv->name, name ); // (TBD) use memcpy instead ?
+	memcpy(pv->name, name, nameLength);
+	pv->name[nameLength] = '\0';
 
 	pv->semaphore = semaphore;
 	pv->owner = isCreation;
