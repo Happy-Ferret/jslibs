@@ -779,6 +779,33 @@ inline bool MaybeRealloc( int requested, int received ) {
 ///////////////////////////////////////////////////////////////////////////////
 // NativeInterface
 
+inline JSBool ReserveNativeInterface( JSContext *cx, JSObject *obj, const char *name ) {
+
+	J_CHK( JS_DefineProperty(cx, obj, name, JSVAL_VOID, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ) );
+	return JS_TRUE;
+}
+
+inline JSBool SetNativeInterface( JSContext *cx, JSObject *obj, const char *name, void *nativeFct ) {
+
+	jsval tmp;
+	if ( nativeFct != NULL ) {
+
+//		J_S_ASSERT( INT_FITS_IN_JSVAL((unsigned int)nativeFct), "Unable to store the Native Interface." );
+		J_S_ASSERT( JSVAL_TO_PRIVATE( PRIVATE_TO_JSVAL(nativeFct) ) == nativeFct, "Unable to store the Native Interface." );
+
+		tmp = PRIVATE_TO_JSVAL(nativeFct);
+//		J_CHK( JS_SetProperty(cx, obj, name, &tmp ) );
+	J_CHK( JS_DefineProperty(cx, obj, name, tmp, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ) );
+
+
+	} else {
+
+		tmp = JSVAL_VOID;
+		J_CHK( JS_SetProperty(cx, obj, name, &tmp ) );
+	}
+	return JS_TRUE;
+}
+
 inline JSBool GetNativeInterface( JSContext *cx, JSObject *obj, jsid iid, void **nativeFct ) {
 
 	jsval tmp;
@@ -800,40 +827,21 @@ inline JSBool GetNativeInterface( JSContext *cx, JSObject *obj, jsid iid, void *
 
 	// (TBD) ensure that iid is found on obj and not its prototype chain. workaround: check the class inside the nativeInterface function. (eg. J_S_ASSERT_CLASS(obj, &classStream); )
 
+/*
 	if ( JSVAL_IS_INT(tmp) ) {
 
-		*nativeFct = (void*)JSVAL_TO_INT(tmp);
+		*nativeFct = (void*)JSVAL_TO_PRIVATE(tmp);
 	} else {
 
 		*nativeFct = NULL;
 	}
+*/
+	*nativeFct = (void*)JSVAL_TO_PRIVATE(tmp);
+
 	return JS_TRUE;
 }
 
-inline JSBool ReserveNativeInterface( JSContext *cx, JSObject *obj, const char *name ) {
 
-	J_CHK( JS_DefineProperty(cx, obj, name, JSVAL_VOID, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ) );
-	return JS_TRUE;
-}
-
-inline JSBool SetNativeInterface( JSContext *cx, JSObject *obj, const char *name, void *nativeFct ) {
-
-	jsval tmp;
-	if ( nativeFct != NULL ) {
-
-		J_S_ASSERT( INT_FITS_IN_JSVAL((unsigned int)nativeFct), "Unable to store the Native Interface." );
-		tmp = INT_TO_JSVAL(nativeFct);
-//		J_CHK( JS_SetProperty(cx, obj, name, &tmp ) );
-	J_CHK( JS_DefineProperty(cx, obj, name, tmp, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ) );
-
-
-	} else {
-
-		tmp = JSVAL_VOID;
-		J_CHK( JS_SetProperty(cx, obj, name, &tmp ) );
-	}
-	return JS_TRUE;
-}
 
 
 ///////////////////////////////////////////////////////////////////////////////
