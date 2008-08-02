@@ -836,7 +836,11 @@ inline JSBool GetNativeInterface( JSContext *cx, JSObject *obj, jsid iid, void *
 		*nativeFct = NULL;
 	}
 */
-	*nativeFct = (void*)JSVAL_TO_PRIVATE(tmp);
+
+	if ( tmp == JSVAL_VOID )
+		*nativeFct = NULL;
+	else
+		*nativeFct = (void*)JSVAL_TO_PRIVATE(tmp);
 
 	return JS_TRUE;
 }
