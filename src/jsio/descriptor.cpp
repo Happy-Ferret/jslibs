@@ -16,6 +16,7 @@
 
 #include <pprio.h> // nspr/include/nspr/private
 #include <string.h>
+#include <cstring>
 
 #include "descriptor.h"
 #include "file.h"
@@ -329,9 +330,15 @@ DEFINE_FUNCTION( Write ) {
 	} else
 		sentAmount = res;
 
-	if ( sentAmount < len )
-		*rval = STRING_TO_JSVAL( JS_NewDependentString(cx, JSVAL_TO_STRING( J_ARG(1) ), sentAmount, len - sentAmount) ); // return unsent data // (TBD) use Blob ?
-	else if ( sentAmount == 0 )
+	if ( sentAmount < len ) {
+		//*rval = STRING_TO_JSVAL( JS_NewDependentString(cx, JSVAL_TO_STRING( J_ARG(1) ), sentAmount, len - sentAmount) ); // return unsent data // (TBD) use Blob ?
+		
+		char *buffer = (char*)JS_malloc(cx, len - sentAmount +1);
+		J_S_ASSERT_ALLOC(buffer);
+		buffer[len - sentAmount] = '\0';
+		memcpy(buffer, str, len - sentAmount);
+		J_CHK( J_NewBlob(cx, buffer, len - sentAmount, rval) );
+	} else if ( sentAmount == 0 )
 		*rval = J_ARG(1); // nothing has been sent
 	else
 		*rval = JS_GetEmptyStringValue(cx); // nothing remains
