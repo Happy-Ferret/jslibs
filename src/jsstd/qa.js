@@ -336,7 +336,7 @@
 			QA.ASSERT_STR( buf.Read(), 'tsrq', 'check stored data' );
 		} else {
 		
-			report('this test is missing');
+			QA.FAILED('this test is missing');
 		}
 	},
 

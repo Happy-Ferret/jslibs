@@ -28,7 +28,8 @@
 
 	Noise: function(QA) {
 	
-		QA.ASSERT( GetRandomNoise(8).length, 8, 'random noise' );
+		QA.ASSERT( GetRandomNoise(1).length, 1, 'random noise 1 byte' );
+		QA.ASSERT( GetRandomNoise(3).length, 3, 'random noise 3 bytes' );
 	},
 
 
@@ -56,9 +57,17 @@
 	},
 
 
-	_Hostname: function(QA) { // need to be fixed for linux platform
-		
-		QA.ASSERT( GetEnv('COMPUTERNAME').toLowerCase(), hostName.toLowerCase(), 'COMPUTERNAME and hostName' );
+	Hostname: function(QA) { // need to be fixed for linux platform
+
+
+		switch (systemInfo.name) {
+			case 'Windows_NT':
+				
+				QA.ASSERT( GetEnv('COMPUTERNAME').toLowerCase(), hostName.toLowerCase(), 'COMPUTERNAME and hostName' );
+				break;
+			default:
+				QA.FAILED('(TBD) no test available for this system.');
+		}
 	},
 	
 	

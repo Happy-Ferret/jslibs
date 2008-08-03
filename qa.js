@@ -79,7 +79,7 @@ var QAAPI = new function() {
 	this.testCount = 0;
 	this.errors = [];
 
-	this.REPORT = function( message ) {
+	var REPORT = function( message ) {
 
 		this.issues++;
 		this.errors.push(message);
@@ -90,12 +90,12 @@ var QAAPI = new function() {
 		
 		this.testCount++;
 		if ( typeof(value) != type && !(value instanceof type) )
-			this.REPORT( Locate(-1)+' '+(testName||'?')+', Invalid type, '+(type.name)+' is expected' );
+			REPORT( Locate(-1)+' '+(testName||'?')+', Invalid type, '+(type.name)+' is expected' );
 	}
 
 	this.FAILED = function( message ) {
 
-		this.REPORT( message );
+		REPORT( Locate(-1)+' '+message );
 	}
 	
 	this.ASSERT_EXCEPTION = function( fct, exType, message ) {
@@ -104,13 +104,13 @@ var QAAPI = new function() {
 		try {
 		
 			fct();
-			this.REPORT( Locate(-1)+' Failure not detected: '+message );
+			REPORT( Locate(-1)+' Failure not detected: '+message );
 		} catch(ex if ex instanceof exType) {
 
 			// good
 		} catch(ex) {
 			
-			this.REPORT( Locate(-1)+' Invalid exception ('+ex.constructor.name+' != '+exType.constructor.name+') for: '+message );
+			REPORT( Locate(-1)+' Invalid exception ('+ex.constructor.name+' != '+exType.constructor.name+') for: '+message );
 		}
 	} 
 
@@ -122,7 +122,7 @@ var QAAPI = new function() {
 		
 			value = '('+(''+typeof(value)).substr(0,3)+')'+ String(value).substr(0,50).quote()+'...';
 			expect = '('+(''+typeof(expect)).substr(0,3)+')'+ String(expect).substr(0,50).quote()+'...';
-			this.REPORT( Locate(-1)+' '+(testName||'?') + ', '+value+' != '+expect );
+			REPORT( Locate(-1)+' '+(testName||'?') + ', '+value+' != '+expect );
 		}
 	}
 
@@ -135,7 +135,7 @@ var QAAPI = new function() {
 		
 			value = '('+(''+typeof(value)).substr(0,3)+')'+ String(value).substr(0,50).quote()+'...';
 			expect = '('+(''+typeof(expect)).substr(0,3)+')'+ String(expect).substr(0,50).quote()+'...';
-			this.REPORT( Locate(-1)+' '+(testName||'?') + ', '+value+' != '+expect );
+			REPORT( Locate(-1)+' '+(testName||'?') + ', '+value+' != '+expect );
 		}
 	}
 
@@ -145,7 +145,7 @@ var QAAPI = new function() {
    	
 			this.testCount++;
    		if ( !(p in obj) )
-	  			this.REPORT( Locate(-1)+' Property '+p+' not found' );
+	  			REPORT( Locate(-1)+' Property '+p+' not found' );
 	  	}
    }
 
