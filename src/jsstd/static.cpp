@@ -852,6 +852,22 @@ DEFINE_PROPERTY( processPrioritySetter ) {
 */
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+#ifdef DEBUG
+
+DEFINE_FUNCTION( Test ) {
+
+	J_S_ASSERT_ARG_MIN(2);
+	J_S_ASSERT_OBJECT( J_ARG(1) );
+	J_S_ASSERT_OBJECT( J_ARG(2) );
+
+	J_CHK( SwapObjects(cx, JSVAL_TO_OBJECT(J_ARG(1)), JSVAL_TO_OBJECT(J_ARG(2)) ) );
+
+	return JS_TRUE;
+}
+
+#endif // DEBUG
+
+
 CONFIGURE_STATIC
 
 	BEGIN_STATIC_FUNCTION_SPEC
@@ -874,6 +890,9 @@ CONFIGURE_STATIC
 		FUNCTION( ASSERT )
 		FUNCTION_FAST( Halt )
 //		FUNCTION( StrSet )
+#ifdef DEBUG
+		FUNCTION( Test )
+#endif // DEBUG
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC

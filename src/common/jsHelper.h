@@ -31,6 +31,7 @@ inline NIBufferGet BufferGetInterface( JSContext *cx, JSObject *obj );
 
 #include <jsarena.h>
 #include <jsfun.h>
+#include <jsscope.h>
 #include <jsobj.h>
 #include <jsstr.h>
 
@@ -677,6 +678,35 @@ inline JSBool JsvalToBool( JSContext *cx, jsval val, bool *bval ) {
 ///////////////////////////////////////////////////////////////////////////////
 // Helper functions
 
+inline bool SwapObjects( JSContext *cx, JSObject *obj1, JSObject *obj2 ) {
+
+	if ( obj1 == NULL || obj2 == NULL )
+		return JS_FALSE;
+
+// When JSObject.dslots is not null, JSObject.dslots[-1] records the number of available slots.
+//	JSScope *s1 = OBJ_SCOPE(obj1);
+
+//js_ObjectOps.newObjectMap(cx, obj2->map->nrefs, obj2->map->ops, JS_GET_CLASS(cx, obj2), obj1);
+
+	//	JSObjectMap *map1 = obj1->map->ops->newObjectMap(cx, obj2->map->nrefs, obj2->map->ops, JS_GET_CLASS(cx, obj2), obj2);
+
+	// exchange object contents
+	JSObject tmp = *obj1;
+	*obj1 = *obj2;
+	*obj2 = tmp;
+
+	// fix scope owners
+	OBJ_SCOPE(obj1)->object = obj1;
+	OBJ_SCOPE(obj2)->object = obj2;
+
+	// fix referencing objects count
+	jsrefcount nrefs = obj1->map->nrefs;
+	obj1->map->nrefs = obj2->map->nrefs;
+	obj2->map->nrefs = nrefs;
+
+	return JS_TRUE;
+}
+
 inline bool IsPInfinity( JSContext *cx, jsval val ) {
 
 	return JS_GetPositiveInfinityValue(cx) == val;
@@ -824,6 +854,11 @@ inline JSBool GetNativeInterface( JSContext *cx, JSObject *obj, jsid iid, void *
 */
 
 	J_CHKM( OBJ_GET_PROPERTY(cx, obj, iid, &tmp), "Unable to get the native interface.");
+
+
+//	obj->map->ops->;
+
+
 
 	// (TBD) ensure that iid is found on obj and not its prototype chain. workaround: check the class inside the nativeInterface function. (eg. J_S_ASSERT_CLASS(obj, &classStream); )
 
