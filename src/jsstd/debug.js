@@ -1,31 +1,18 @@
 LoadModule('jsstd');
 
 
-		LoadModule('jsstd');
+var obj1 = { name:"Object 1", a:1,  b:2, c:3, d:4 };
+var obj2 = { name:"Object 2", e:5 };
 
-		var b = new Buffer();
-		b.Read(0);
-		b.Write('aaa');
-		b.Write('');
-		b.Write('bbXb');
-		b.Write('');
-		b.Write('ccc');
-		b.Read(2);
-		b.ReadUntil('X');
-		b.Skip(2);
-		b.Match('cc');
-		b.Unread('ddd');
-		b.Match('ddd');
-		b.Match('ZZZ');
-		b.ReadUntil('ZZZ');
-		b.Read(1000);
-		b.Write('eeee');
-		b.Write('ffff');
-		b.Write('gggg');
-		b.Read(0);
-		var t = b.Read();
+Test( obj1, obj2 );
+
+Print( 'swap done.', "\n" );
+
+Print( 'obj1.name=', obj1.name, "\n" );
+Print( 'obj2.name=', obj2.name, "\n" );
 
 
+obj1.name = 123;
 
 Halt();
 

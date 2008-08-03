@@ -341,7 +341,14 @@ DEFINE_FUNCTION( GetEnv ) {
 
 /**doc
  * $STR $INAME( size )
-  Returns a random string of _size_ bytes.
+  Provides, depending on platform, a random value.
+  The length of the random value is dependent on platform and the platform's ability to provide a random value at that moment.
+  $H beware
+   Calls to $INAME() may use a lot of CPU on some platforms.
+   Some platforms may block for up to a few seconds while they accumulate some noise.
+	Busy machines generate lots of noise, but care is advised when using $INAME() frequently in your application.
+  $H note
+   [http://developer.mozilla.org/en/docs/PR_GetRandomNoise NSPR API]
 **/
 DEFINE_FUNCTION( GetRandomNoise ) {
 
