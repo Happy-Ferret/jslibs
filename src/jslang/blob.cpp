@@ -604,6 +604,141 @@ DEFINE_EQUALITY() {
 	return JS_TRUE;
 }
 
+static JSBool MakeBlobToString(JSContext *cx, JSObject *obj) {
+
+    JSObjectMap *map, *oldmap;
+    uint32 i, length;
+
+	J_S_ASSERT_CLASS(obj, classBlob);
+
+	JSObject *strObj;
+	JSString *jsstr;
+	J_CHK( BlobToJSString(cx, obj, &jsstr) );
+	J_S_ASSERT( jsstr != NULL, "Unable to convert Blob to String." );
+	J_CHK( JS_ValueToObject(cx, STRING_TO_JSVAL(jsstr), &strObj) );
+
+	map = js_ObjectOps.newObjectMap(cx, obj->map->nrefs, strObj->map->ops, JS_GET_CLASS(cx, strObj), obj);
+
+	J_CHK( map );
+
+	length = (obj)->dslots ? (uint32)(obj)->dslots[-1] : 0;
+	if (length) {
+		map->freeslot = STOBJ_NSLOTS(obj) + JS_INITIAL_NSLOTS;
+		obj->dslots[-1] = JS_INITIAL_NSLOTS + length;
+	} else {
+		map->freeslot = STOBJ_NSLOTS(obj);
+	}
+
+			/* Create new properties pointing to existing values in dslots */
+//			for (i = 0; i < length; i++) {
+//				...
+
+    /* Render our formerly-reserved count property GC-safe. */
+    obj->fslots[1] = JSVAL_VOID; // 1 for HAS_RESERVED_SLOTS(1)
+
+    /* Make sure we preserve any flags borrowing bits in JSSLOT_CLASS. */
+	 obj->fslots[JSSLOT_CLASS] ^= (jsval) classBlob;
+    obj->fslots[JSSLOT_CLASS] |= (jsval) JS_GET_CLASS(cx, strObj);
+
+    /* Swap in our new map. */
+	 oldmap = obj->map;
+    obj->map = map;
+
+	 oldmap->ops->destroyObjectMap(cx, oldmap);
+
+    return JS_TRUE;
+}
+
+
+DEFINE_NEW_RESOLVE() {
+
+	if ( flags & JSRESOLVE_QUALIFIED ) {
+
+		const char *name = JS_GetStringBytes(JS_ValueToString(cx, id));
+
+/*
+		bool found;
+		jsid jid;
+		JSObject *obj2;
+		JSProperty *prop;
+
+		J_CHK( JS_ValueToId(cx, id, &jid) );
+		JSObject *proto = JS_GetPrototype(cx, obj);
+		J_CHK( OBJ_LOOKUP_PROPERTY(cx, proto, jid, &obj2, &prop) );
+		if (prop)
+			OBJ_DROP_PROPERTY(cx, obj2, prop);
+
+		found = prop != NULL;
+
+*/
+		jsval rslot;
+		JS_GetReservedSlot(cx, obj, SLOT_BLOB_LENGTH, &rslot);
+
+		if ( rslot != JSVAL_VOID ) {
+
+			J_CHKM( MakeBlobToString(cx, obj), "Unable to transform the Blob into a String." );
+
+			*objp = obj;
+		}
+
+
+
+
+
+
+/*
+			jsid jid;
+			JSProperty *prop;
+			J_CHK( JS_ValueToId(cx, id, &jid) );
+			J_CHK( OBJ_LOOKUP_PROPERTY(cx, strObj, jid, objp, &prop) );
+			if (prop)
+				OBJ_DROP_PROPERTY(cx, *objp, prop);
+
+
+			JSObject tmp = *obj;
+			*obj = *strObj;
+			
+			((JSScope*)obj->map)->object = ((JSScope*)tmp.map)->object;
+*/			
+		
+
+/*
+			jsid jid;
+			JSObject *obj2;
+			JSProperty *prop;		
+			J_CHK( JS_ValueToId(cx, id, &jid) );
+	//		JSObject *proto = JS_GetPrototype(cx, obj);
+			J_CHK( OBJ_LOOKUP_PROPERTY(cx, strObj, jid, &obj2, &prop) );
+*/
+
+/*		
+		if (prop) {
+
+			OBJ_DROP_PROPERTY(cx, obj2, prop);
+		}
+*/
+//			*objp = strObj;
+
+//			J_CHK( SwapObjects( cx, obj, strObj ) );
+//			obj = strObj;
+
+//			LOCKED_OBJ_GET_SLOT(strObj, 19);
+
+//			jsval v;
+//			JS_GetProperty(cx, obj, "match", &v);
+
+//			v += 0;
+
+
+		return JS_TRUE;
+	
+//		J_S_ASSERT_1( ok, "%1 not found", name );
+	}
+
+	return JS_TRUE;
+}
+
+
 /**doc
 === Note ===
  Blobs are immutable. This mean that its content cannot be modified after it is created.
@@ -623,6 +758,8 @@ CONFIGURE_CLASS
 	HAS_GET_PROPERTY
 	HAS_SET_PROPERTY
 	HAS_EQUALITY
+
+	HAS_NEW_RESOLVE
 
 	BEGIN_FUNCTION_SPEC
 		FUNCTION_FAST(concat)

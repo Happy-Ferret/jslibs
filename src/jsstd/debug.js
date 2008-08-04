@@ -1,22 +1,35 @@
 LoadModule('jsstd');
 
-
 var obj1 = { name:"Object 1", a:1,  b:2, c:3, d:4, e:5, f:6, g:7 };
-var obj2 = { a:'xxx', name:"Object 2" };
-
-var x = obj1;
-
-Test( obj1, obj2 );
-
-Print( 'swap done.', "\n" );
-
-Print( 'obj1.name=', obj1.name, "\n" );
-Print( 'obj2.name=', obj2.name, "\n" );
 
 
 
 
-obj1.name = 123;
+function test() {
+
+	var obj2 = new String();
+
+	var x = obj1;
+
+	Test( obj1, obj2 );
+
+	Print( 'swap done.', "\n" );
+
+//	Print( 'obj1.name=', obj1.name, "\n" );
+//	Print( 'obj2.name=', obj2.name, "\n" );
+
+}
+
+var toto = function(){}
+toto.prototype = obj1;
+var t = new toto;
+
+CollectGarbage();
+
+test()
+
+Print( 'obj1.length=', obj1.length, "\n" );
+
 
 Halt();
 

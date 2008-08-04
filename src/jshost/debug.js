@@ -4,6 +4,14 @@ LoadModule('jsio');
 
 
 var b = new Blob();
+
+Print( b.replace, '\n' );
+Print( b.replace('ab','cd'), '\n' );
+
+
+Halt();
+
+
 b = b.concat( 'ABCD' );
 
 Print( ''+b );
@@ -13,6 +21,23 @@ Print( ''+b );
 
 
 Halt();
+
+
+
+//Stringify(new Buffer());
+/*
+var b = new Blob();
+b._NI_BufferGet = 123;
+Print( b._NI_BufferGet );
+*/
+
+var o = { _NI_BufferGet:123 }
+Stringify(o);
+
+
+
+Halt();
+
 
 
 Print( new String('abc') == new String('abc') );
