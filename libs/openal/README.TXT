@@ -10,6 +10,8 @@ OpenAL website:
 OpenAL SVN:
 	branch: Win1-1-2_Spec1-0 for the last Windows code before the transition towards OpenAL 1.1 began
 	svn checkout http://www.openal.org/repos/openal/trunk openal
+	http://www.openal.org/repos/openal/trunk ??
+	svn://connect.creativelabs.com/OpenAL
 
 OpenAL Installer for Windows
 	http://developer.creative.com/articles/article.asp?cat=1&sbcat=31&top=38&aid=46=======
