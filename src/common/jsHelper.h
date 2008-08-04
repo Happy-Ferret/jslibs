@@ -702,7 +702,7 @@ inline bool SwapObjects( JSContext *cx, JSObject *obj1, JSObject *obj2 ) {
 	OBJ_SCOPE(obj1)->object = obj1;
 	OBJ_SCOPE(obj2)->object = obj2;
 
-	// fix referencing objects count
+	// fix referencing objects count  ?????
 	jsrefcount nrefs = obj1->map->nrefs;
 	obj1->map->nrefs = obj2->map->nrefs;
 	obj2->map->nrefs = nrefs;

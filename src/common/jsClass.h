@@ -111,6 +111,7 @@ struct JSLIBS_ConstIntegerSpec {
 #define HAS_CONVERT   _class->convert = Convert;
 #define HAS_RESOLVE   _class->resolve = Resolve;
 #define HAS_NEW_RESOLVE   _class->flags |= JSCLASS_NEW_RESOLVE; _class->resolve = (JSResolveOp)NewResolve;
+#define HAS_NEW_RESOLVE_GETS_START   _class->flags |= JSCLASS_NEW_RESOLVE_GETS_START;
 #define HAS_ENUMERATE  _class->enumerate = Enumerate;
 #define HAS_TRACER   _class->flags |= JSCLASS_MARK_IS_TRACE; _class->mark = (JSMarkOp)Tracer;
 #define HAS_HAS_INSTANCE _class->hasInstance = HasInstance;
