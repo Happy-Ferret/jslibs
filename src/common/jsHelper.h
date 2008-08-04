@@ -34,6 +34,9 @@ inline NIBufferGet BufferGetInterface( JSContext *cx, JSObject *obj );
 #include <jsscope.h>
 #include <jsobj.h>
 #include <jsstr.h>
+#include <jsscript.h>
+#include <jscntxt.h>
+#include <jsinterp.h>
 
 
 #ifdef DEBUG
@@ -804,83 +807,45 @@ inline bool MaybeRealloc( int requested, int received ) {
 }
 
 
-
-
 ///////////////////////////////////////////////////////////////////////////////
 // NativeInterface
 
 inline JSBool ReserveNativeInterface( JSContext *cx, JSObject *obj, const char *name ) {
 
-	J_CHK( JS_DefineProperty(cx, obj, name, JSVAL_VOID, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ) );
+	J_CHK( JS_DefineProperty(cx, obj, name, JSVAL_FALSE, NULL, (JSPropertyOp)-1, JSPROP_READONLY | JSPROP_PERMANENT ) );
 	return JS_TRUE;
 }
 
 inline JSBool SetNativeInterface( JSContext *cx, JSObject *obj, const char *name, void *nativeFct ) {
 
-	jsval tmp;
 	if ( nativeFct != NULL ) {
 
-//		J_S_ASSERT( INT_FITS_IN_JSVAL((unsigned int)nativeFct), "Unable to store the Native Interface." );
-		J_S_ASSERT( JSVAL_TO_PRIVATE( PRIVATE_TO_JSVAL(nativeFct) ) == nativeFct, "Unable to store the Native Interface." );
-
-		tmp = PRIVATE_TO_JSVAL(nativeFct);
-//		J_CHK( JS_SetProperty(cx, obj, name, &tmp ) );
-	J_CHK( JS_DefineProperty(cx, obj, name, tmp, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ) );
-
-
+		J_CHK( JS_DefineProperty(cx, obj, name, JSVAL_TRUE, NULL, (JSPropertyOp)nativeFct, JSPROP_READONLY | JSPROP_PERMANENT ) );
 	} else {
 
-		tmp = JSVAL_VOID;
-		J_CHK( JS_SetProperty(cx, obj, name, &tmp ) );
+		J_CHK( JS_DeleteProperty(cx, obj, name) );
+		J_CHK( ReserveNativeInterface(cx, obj, name) );
 	}
 	return JS_TRUE;
 }
 
-inline JSBool GetNativeInterface( JSContext *cx, JSObject *obj, jsid iid, void **nativeFct ) {
+inline JSBool GetNativeInterface( JSContext *cx, JSObject *obj, JSObject **obj2p, jsid iid, void **nativeFct ) {
 
-	jsval tmp;
-/*
-	JSObject *obj2;
+//	JSObject *obj2;
 	JSProperty *prop;
-	J_CHKM( OBJ_LOOKUP_PROPERTY(cx, obj, iid, &obj2, &prop), "Unable to get the native interface.");
+	J_CHKM( OBJ_LOOKUP_PROPERTY(cx, obj, iid, obj2p, &prop), "Unable to get the native interface.");
 
-	if ( prop == NULL ) {
-
-		*nativeFct = NULL;
-		return JS_TRUE;
-	}
-
-	J_CHK( JS_IdToValue(cx, prop->id, &tmp) );
-*/
-
-	J_CHKM( OBJ_GET_PROPERTY(cx, obj, iid, &tmp), "Unable to get the native interface.");
-
-
-//	obj->map->ops->;
-
-
-
-	// (TBD) ensure that iid is found on obj and not its prototype chain. workaround: check the class inside the nativeInterface function. (eg. J_S_ASSERT_CLASS(obj, &classStream); )
-
-/*
-	if ( JSVAL_IS_INT(tmp) ) {
-
-		*nativeFct = (void*)JSVAL_TO_PRIVATE(tmp);
-	} else {
-
-		*nativeFct = NULL;
-	}
-*/
-
-	if ( tmp == JSVAL_VOID )
-		*nativeFct = NULL;
+//	const char *name = JS_GetStringBytes(JS_ValueToString(cx, iid));
+	if ( prop && obj == *obj2p && ((JSScopeProperty*)prop)->setter != (JSPropertyOp)-1 )
+		*nativeFct = ((JSScopeProperty*)prop)->setter; // is NULL if obj is non-native
 	else
-		*nativeFct = (void*)JSVAL_TO_PRIVATE(tmp);
+		*nativeFct = NULL;
+
+	if ( prop )
+		OBJ_DROP_PROPERTY(cx, *obj2p, prop);
 
 	return JS_TRUE;
 }
-
-
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -923,7 +888,8 @@ inline NIStreamRead StreamReadNativeInterface( JSContext *cx, JSObject *obj ) {
 		if ( JS_ValueToId(cx, STRING_TO_JSVAL(JS_InternString(cx, "_NI_StreamRead")), &propId) != JS_TRUE )
 			return NULL;
 	void *streamRead;
-	if ( GetNativeInterface( cx, obj, propId, &streamRead ) != JS_TRUE )
+	JSObject *obj2;
+	if ( GetNativeInterface( cx, obj, &obj2, propId, &streamRead ) != JS_TRUE )
 		return NULL;
 	return (NIStreamRead)streamRead;
 }
@@ -970,7 +936,8 @@ inline NIBufferGet BufferGetNativeInterface( JSContext *cx, JSObject *obj ) {
 		if ( JS_ValueToId(cx, STRING_TO_JSVAL(JS_InternString(cx, "_NI_BufferGet")), &propId) != JS_TRUE )
 			return NULL;
 	void *fct;
-	if ( GetNativeInterface( cx, obj, propId, &fct ) != JS_TRUE )
+	JSObject *obj2;
+	if ( GetNativeInterface( cx, obj, &obj2, propId, &fct ) != JS_TRUE )
 		return NULL;
 	return (NIBufferGet)fct;
 }
@@ -1019,7 +986,8 @@ inline NIMatrix44Get Matrix44GetNativeInterface( JSContext *cx, JSObject *obj ) 
 		if ( JS_ValueToId(cx, STRING_TO_JSVAL(JS_InternString(cx, "_NI_Matrix44Get")), &propId) != JS_TRUE )
 			return NULL;
 	void *fct;
-	if ( GetNativeInterface( cx, obj, propId, &fct ) != JS_TRUE )
+	JSObject *obj2;
+	if ( GetNativeInterface( cx, obj, &obj2, propId, &fct ) != JS_TRUE )
 		return NULL;
 	return (NIMatrix44Get)fct;
 }
