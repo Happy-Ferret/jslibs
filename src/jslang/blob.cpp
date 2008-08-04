@@ -604,7 +604,8 @@ DEFINE_EQUALITY() {
 	return JS_TRUE;
 }
 
-static JSBool MakeBlobToString(JSContext *cx, JSObject *obj) {
+
+static JSBool MutateToJSString(JSContext *cx, JSObject *obj) {
 
     JSObjectMap *map, *oldmap;
     uint32 i, length;
@@ -617,8 +618,8 @@ static JSBool MakeBlobToString(JSContext *cx, JSObject *obj) {
 	J_S_ASSERT( jsstr != NULL, "Unable to convert Blob to String." );
 	J_CHK( JS_ValueToObject(cx, STRING_TO_JSVAL(jsstr), &strObj) );
 
-	map = js_ObjectOps.newObjectMap(cx, obj->map->nrefs, strObj->map->ops, JS_GET_CLASS(cx, strObj), obj);
 
+	map = js_ObjectOps.newObjectMap(cx, obj->map->nrefs, strObj->map->ops, JS_GET_CLASS(cx, strObj), obj); //or strObj->map->ops->newObjectMap ???
 	J_CHK( map );
 
 	length = (obj)->dslots ? (uint32)(obj)->dslots[-1] : 0;
@@ -629,111 +630,129 @@ static JSBool MakeBlobToString(JSContext *cx, JSObject *obj) {
 		map->freeslot = STOBJ_NSLOTS(obj);
 	}
 
-			/* Create new properties pointing to existing values in dslots */
-//			for (i = 0; i < length; i++) {
-//				...
+    ///* Create new properties pointing to existing values in dslots */
+    //for (i = 0; i < length; i++) {
+    //    jsid id;
+    //    JSScopeProperty *sprop;
 
-    /* Render our formerly-reserved count property GC-safe. */
-    obj->fslots[1] = JSVAL_VOID; // 1 for HAS_RESERVED_SLOTS(1)
+    //    if (!JS_ValueToId(cx, INT_TO_JSVAL(i), &id))
+    //        goto out_bad;
 
-    /* Make sure we preserve any flags borrowing bits in JSSLOT_CLASS. */
-	 obj->fslots[JSSLOT_CLASS] ^= (jsval) classBlob;
-    obj->fslots[JSSLOT_CLASS] |= (jsval) JS_GET_CLASS(cx, strObj);
+    //    if (obj->dslots[i] == JSVAL_HOLE) {
+    //        obj->dslots[i] = JSVAL_VOID;
+    //        continue;
+    //    }
 
-    /* Swap in our new map. */
-	 oldmap = obj->map;
-    obj->map = map;
+    //    sprop = js_AddScopeProperty(cx, (JSScope *)map, id, NULL, NULL,
+    //                                i + JS_INITIAL_NSLOTS, JSPROP_ENUMERATE,
+    //                                0, 0);
+    //    if (!sprop)
+    //        goto out_bad;
+    //}
 
-	 oldmap->ops->destroyObjectMap(cx, oldmap);
+	obj->fslots[JSSLOT_PROTO] = strObj->fslots[JSSLOT_PROTO];
+	 
+	obj->fslots[JSSLOT_PARENT] = strObj->fslots[JSSLOT_PARENT];
 
-    return JS_TRUE;
-}
+	// Make sure we preserve any flags borrowing bits in JSSLOT_CLASS.
+	obj->fslots[JSSLOT_CLASS] ^= (jsval) classBlob;
+	obj->fslots[JSSLOT_CLASS] |= (jsval) JS_GET_CLASS(cx, strObj);
+
+	obj->fslots[JSSLOT_PRIVATE] = strObj->fslots[JSSLOT_PRIVATE];
+
+	/* Swap in our new map. */
+	oldmap = obj->map;
+	obj->map = map;
+	oldmap->ops->destroyObjectMap(cx, oldmap);
+	return JS_TRUE;
+	}
 
 
 DEFINE_NEW_RESOLVE() {
 
-	if ( flags & JSRESOLVE_QUALIFIED ) {
+	return JS_TRUE;
 
-		const char *name = JS_GetStringBytes(JS_ValueToString(cx, id));
+	const char *name = JS_GetStringBytes(JS_ValueToString(cx, id));
+
+	if ( JS_GET_CLASS(cx, obj) != _class )
+		return JS_TRUE;
+
+	if ( !(flags & JSRESOLVE_QUALIFIED) )
+		return JS_TRUE;
+
+	if ( (flags & JSRESOLVE_ASSIGNING) )
+		return JS_TRUE;
+
+
+	
+	jsid propId;
+	JSObject *obj2;
+	JSProperty *prop;
+	J_CHK( JS_ValueToId(cx, id, &propId) );
+
+
+
+		J_CHK( OBJ_LOOKUP_PROPERTY(cx, prototypeBlob, propId, objp, &prop) );
+
+	if ( JS_GetPrototype(cx, obj) == prototypeBlob ) {
+		printf( "test" );
+	}
+
+		if (prop)
+			OBJ_DROP_PROPERTY(cx, *objp, prop);
+
+//	JSObject *proto = JS_GetPrototype(cx, obj);
+
+//	J_CHK( OBJ_LOOKUP_PROPERTY(cx, obj, propId, objp, &prop) );
+
+	jsval rslot;
+	JS_GetReservedSlot(cx, obj, SLOT_BLOB_LENGTH, &rslot);
+
+
+
+//		jsval v;
+//		J_CHK( JS_LookupPropertyWithFlags(cx, obj, name, flags, &v) );
+
+
+
+//		if ( prop == NULL ) {
+//
+//			J_CHKM( MutateToJSString(cx, obj), "Unable to transform the Blob into a String." );
+//			*objp = obj;
+//		}
+
+
+
+/* good
+	jsval rslot;
+	JS_GetReservedSlot(cx, obj, SLOT_BLOB_LENGTH, &rslot);
+	if ( rslot != JSVAL_VOID ) {
+
+		J_CHKM( MutateToJSString(cx, obj), "Unable to transform the Blob into a String." );
+		*objp = obj;
+	}
+*/
 
 /*
-		bool found;
+		jsid jid;
+		JSProperty *prop;
+		J_CHK( JS_ValueToId(cx, id, &jid) );
+		J_CHK( OBJ_LOOKUP_PROPERTY(cx, strObj, jid, objp, &prop) );
+		if (prop)
+			OBJ_DROP_PROPERTY(cx, *objp, prop);
+		JSObject tmp = *obj;
+		*obj = *strObj;
+		((JSScope*)obj->map)->object = ((JSScope*)tmp.map)->object;
+*/
+
+/*
 		jsid jid;
 		JSObject *obj2;
-		JSProperty *prop;
-
+		JSProperty *prop;		
 		J_CHK( JS_ValueToId(cx, id, &jid) );
-		JSObject *proto = JS_GetPrototype(cx, obj);
-		J_CHK( OBJ_LOOKUP_PROPERTY(cx, proto, jid, &obj2, &prop) );
-		if (prop)
-			OBJ_DROP_PROPERTY(cx, obj2, prop);
-
-		found = prop != NULL;
-
+//		JSObject *proto = JS_GetPrototype(cx, obj);
+		J_CHK( OBJ_LOOKUP_PROPERTY(cx, strObj, jid, &obj2, &prop) );
 */
-		jsval rslot;
-		JS_GetReservedSlot(cx, obj, SLOT_BLOB_LENGTH, &rslot);
-
-		if ( rslot != JSVAL_VOID ) {
-
-			J_CHKM( MakeBlobToString(cx, obj), "Unable to transform the Blob into a String." );
-
-			*objp = obj;
-		}
-
-
-
-
-
-
-/*
-			jsid jid;
-			JSProperty *prop;
-			J_CHK( JS_ValueToId(cx, id, &jid) );
-			J_CHK( OBJ_LOOKUP_PROPERTY(cx, strObj, jid, objp, &prop) );
-			if (prop)
-				OBJ_DROP_PROPERTY(cx, *objp, prop);
-
-
-			JSObject tmp = *obj;
-			*obj = *strObj;
-			
-			((JSScope*)obj->map)->object = ((JSScope*)tmp.map)->object;
-*/			
-		
-
-/*
-			jsid jid;
-			JSObject *obj2;
-			JSProperty *prop;		
-			J_CHK( JS_ValueToId(cx, id, &jid) );
-	//		JSObject *proto = JS_GetPrototype(cx, obj);
-			J_CHK( OBJ_LOOKUP_PROPERTY(cx, strObj, jid, &obj2, &prop) );
-*/
-
-/*		
-		if (prop) {
-
-			OBJ_DROP_PROPERTY(cx, obj2, prop);
-		}
-*/
-//			*objp = strObj;
-
-//			J_CHK( SwapObjects( cx, obj, strObj ) );
-//			obj = strObj;
-
-//			LOCKED_OBJ_GET_SLOT(strObj, 19);
-
-//			jsval v;
-//			JS_GetProperty(cx, obj, "match", &v);
-
-//			v += 0;
-
-
-		return JS_TRUE;
-	
-//		J_S_ASSERT_1( ok, "%1 not found", name );
-	}
 
 	return JS_TRUE;
 }

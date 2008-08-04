@@ -1,13 +1,36 @@
 LoadModule('jsstd');
 LoadModule('jsio');
 
+var b = new Blob('abcdef');
 
 
-var b = new Blob();
-
-Print( b.replace, '\n' );
+//Print( b.concat, '\n' );
+Print( b.concat('123'), '\n' );
 Print( b.replace('ab','cd'), '\n' );
 
+
+Halt();
+
+b.prop1 = 11;
+b.prop2 = 22;
+b.prop3 = 33;
+b.prop4 = 44;
+b.prop5 = 55;
+b.prop6 = 66;
+b.prop7 = 77;
+
+Print( b.concat, '\n' );
+
+
+Print( b.replace, '\n' );
+
+Print( b.replace('ab','cd'), '\n' );
+
+
+
+Print( b.prop5, '\n' );
+
+Print( b instanceof String, '\n' );
 
 Halt();
 
