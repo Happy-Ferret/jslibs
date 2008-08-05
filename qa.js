@@ -84,8 +84,12 @@ function MakeRandomTests( testList, QAAPI ) {
 
 	var list = [];
 
-	for ( var testName in testList )
+	for ( var testName in testList ) {
+
+		if ( testName[testName.indexOf(':')+1] == '_' )
+			continue;
 		list.push([testName, testList[testName]]);
+	}
 	
 	while ( !endSignal ) {
 		
