@@ -274,7 +274,7 @@ JSBool ReadRawAmount( JSContext *cx, JSObject *obj, size_t *amount, char *str ) 
 
 		size_t chunkLen;
 		const char *chunk;
-		J_CHK( JsvalToStringAndLength(cx, item, &chunk, &chunkLen) );
+		J_CHK( JsvalToStringAndLength(cx, &item, &chunk, &chunkLen) ); // (TBD) GC protect item ? (can be a JSString or a NIBufferGet)
 
 		if ( chunkLen <= remainToRead ) {
 
@@ -331,7 +331,7 @@ JSBool BufferSkipAmount( JSContext *cx, JSObject *obj, size_t amount ) {
 
 			size_t chunkLen;
 			const char *chunk;
-			J_CHK( JsvalToStringAndLength(cx, item, &chunk, &chunkLen) );
+			J_CHK( JsvalToStringAndLength(cx, &item, &chunk, &chunkLen) );
 
 			jsval bstr;
 			J_CHK( J_NewBlobCopyN(cx, chunk + remainToRead, chunkLen - remainToRead, &bstr) );
@@ -397,7 +397,7 @@ JSBool FindInBuffer( JSContext *cx, JSObject *obj, const char *needle, size_t ne
 	for ( QueueCell *it = QueueBegin(pv->queue); it; it = QueueNext(it) ) {
 
 		jsval *pNewStr = (jsval*)QueueGetData(it);
-		J_CHK( JsvalToStringAndLength(cx, *pNewStr, &chunk, &chunkLength) );
+		J_CHK( JsvalToStringAndLength(cx, pNewStr, &chunk, &chunkLength) );
 		for ( i = 0; i < chunkLength; i++ ) {
 
 			buf[pos++ % needleLength] = chunk[i]; // store one more char of the chunk in the ring buffer
@@ -608,7 +608,7 @@ DEFINE_FUNCTION( Write ) {
 
 		size_t amount, strLen;
 		const char *buf;
-		J_CHK( JsvalToStringAndLength(cx, J_ARG(1), &buf, &strLen) ); // warning: GC on the returned buffer !
+		J_CHK( JsvalToStringAndLength(cx, &J_ARG(1), &buf, &strLen) ); // warning: GC on the returned buffer !
 
 		if ( strLen == 0 )
 			return JS_TRUE;
@@ -640,7 +640,7 @@ DEFINE_FUNCTION( Match ) {
 
 	const char *str;
 	size_t len;
-	J_CHK( JsvalToStringAndLength(cx, J_ARG(1), &str, &len) ); // warning: GC on the returned buffer !
+	J_CHK( JsvalToStringAndLength(cx, &J_ARG(1), &str, &len) ); // warning: GC on the returned buffer !
 
 	char *src = (char *)malloc(len);
 	size_t amount = len;
@@ -732,7 +732,7 @@ DEFINE_FUNCTION( ReadUntil ) {
 	const char *boundary;
 	size_t boundaryLength;
 
-	J_CHK( JsvalToStringAndLength(cx, J_ARG(1), &boundary, &boundaryLength) ); // warning: GC on the returned buffer !
+	J_CHK( JsvalToStringAndLength(cx, &J_ARG(1), &boundary, &boundaryLength) ); // warning: GC on the returned buffer !
 
 	bool skip;
 	if ( J_ARG_ISDEF(2) )
@@ -763,7 +763,7 @@ DEFINE_FUNCTION( IndexOf ) {
 	J_S_ASSERT_ARG_MIN( 1 );
 	const char *boundary;
 	size_t boundaryLength;
-	J_CHK( JsvalToStringAndLength(cx, J_ARG(1), &boundary, &boundaryLength) ); // warning: GC on the returned buffer !
+	J_CHK( JsvalToStringAndLength(cx, &J_ARG(1), &boundary, &boundaryLength) ); // warning: GC on the returned buffer !
 	int found;
 	J_CHK( FindInBuffer(cx, obj, boundary, boundaryLength, &found) );
 	*rval = INT_TO_JSVAL(found);
@@ -824,7 +824,7 @@ DEFINE_FUNCTION( toString ) {
 
 		const char *chunkBuf;
 		size_t chunkLen;
-		J_CHK( JsvalToStringAndLength(cx, *rval, &chunkBuf, &chunkLen) );
+		J_CHK( JsvalToStringAndLength(cx, rval, &chunkBuf, &chunkLen) );
 		memcpy(buffer + pos, chunkBuf, chunkLen);
 		pos += chunkLen;
 	}
@@ -877,7 +877,7 @@ DEFINE_GET_PROPERTY() {
 
 			if ( (unsigned)slot >= offset && (unsigned)slot < offset + chunkLength ) {
 
-				J_CHK( JsvalToString(cx, *pNewStr, &chunk) );
+				J_CHK( JsvalToString(cx, pNewStr, &chunk) ); // items in the queue are GC protected.
 
 				jschar chr = ((char*)chunk)[slot - offset];
 				JSString *str1 = JS_NewUCStringCopyN(cx, &chr, 1);

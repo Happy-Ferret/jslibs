@@ -130,7 +130,7 @@ JSBool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *objAt,
 
 					size_t length;
 					const char *data;
-					J_CHK( JsvalToStringAndLength(cx, val, &data, &length) );
+					J_CHK( JsvalToStringAndLength(cx, &val, &data, &length) );
 					sqlite3_bind_blob(pStmt, param, data, length, SQLITE_STATIC); // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT
 					break;
 				}
@@ -142,7 +142,7 @@ JSBool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *objAt,
 				// (TBD) GC protect (root) jsstr
 				const char *str;
 				size_t strLen;
-				J_CHK( JsvalToStringAndLength(cx, val, &str, &strLen) );
+				J_CHK( JsvalToStringAndLength(cx, &val, &str, &strLen) );
 				sqlite3_bind_text(pStmt, param, str, strLen, SQLITE_STATIC); // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT
 				}
 				break;

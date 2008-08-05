@@ -73,7 +73,7 @@ DEFINE_FUNCTION( Write ) {
 	J_S_ASSERT( hStdout != NULL, "Unable to create the stdout." );
 	const char *str;
 	size_t len;
-	J_CHK( JsvalToStringAndLength(cx, argv[0], &str, &len) );
+	J_CHK( JsvalToStringAndLength(cx, &argv[0], &str, &len) );
 	DWORD written;
 	WriteConsole(hStdout, str, len, &written, NULL);
 	CloseHandle(hStdout);
@@ -112,7 +112,7 @@ DEFINE_FUNCTION( Read ) {
 DEFINE_PROPERTY( titleSetter ) {
 
 	const char *str;
-	J_CHK( JsvalToString(cx, *vp, &str) );
+	J_CHK( JsvalToString(cx, vp, &str) );
 	SetConsoleTitle(str);
 	return JS_TRUE;
 }

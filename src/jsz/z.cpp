@@ -106,7 +106,7 @@ JSBool z_call(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval
 	size_t inputLength = 0;
 	if ( argc >= 1 ) {
 
-		J_CHK( JsvalToStringAndLength(cx, argv[0], &inputData, &inputLength) ); // warning: GC on the returned buffer !
+		J_CHK( JsvalToStringAndLength(cx, &argv[0], &inputData, &inputLength) ); // warning: GC on the returned buffer !
 
 //		JSString *jssData = JS_ValueToString( cx, argv[0] );
 //		J_S_ASSERT_ALLOC( jssData );

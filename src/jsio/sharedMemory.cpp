@@ -127,7 +127,7 @@ DEFINE_CONSTRUCTOR() {
 		J_JSVAL_TO_INT32( J_ARG(3), mode );
 
 	const char *name;
-	J_CHK( JsvalToString(cx, J_ARG(1), &name) );
+	J_CHK( JsvalToString(cx, &J_ARG(1), &name) );
 
 	char semName[PATH_MAX];
 	strcpy(semName, name);
@@ -206,7 +206,7 @@ DEFINE_FUNCTION_FAST( Write ) {
 
 	const char *data;
 	size_t dataLength;
-	J_CHK( JsvalToStringAndLength(cx, J_FARG(1), &data, &dataLength) );
+	J_CHK( JsvalToStringAndLength(cx, &J_FARG(1), &data, &dataLength) );
 
 	J_S_ASSERT( sizeof(MemHeader) + offset + dataLength <= pv->size, "SharedMemory too small to hold the given data." );
 
@@ -301,7 +301,7 @@ DEFINE_PROPERTY( contentSetter ) {
 
 		const char *data;
 		size_t dataLength;
-		J_CHK( JsvalToStringAndLength(cx, *vp, &data, &dataLength) );
+		J_CHK( JsvalToStringAndLength(cx, vp, &data, &dataLength) );
 
 		J_S_ASSERT( sizeof(MemHeader) + dataLength <= pv->size, "SharedMemory too small to hold the given data." );
 

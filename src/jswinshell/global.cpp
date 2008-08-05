@@ -45,7 +45,7 @@ DEFINE_FUNCTION( ExtractIcon ) {
 	HINSTANCE hInst = (HINSTANCE)GetModuleHandle(NULL);
 	J_S_ASSERT( hInst != NULL, "Unable to GetModuleHandle." );
 	const char *fileName;
-	J_CHK( JsvalToString(cx, argv[0], &fileName) );
+	J_CHK( JsvalToString(cx, &argv[0], &fileName) );
 	HICON hIcon = ExtractIcon( hInst, fileName, iconIndex ); // see SHGetFileInfo(
 	if ( hIcon == NULL )
 		return WinThrowError(cx, GetLastError());
@@ -116,10 +116,10 @@ DEFINE_FUNCTION( MessageBox ) {
 
 	const char *caption = NULL;
 	if ( argc >= 2 && argv[1] != JSVAL_VOID )
-		J_CHK( JsvalToString(cx, argv[1], &caption) );
+		J_CHK( JsvalToString(cx, &argv[1], &caption) );
 
 	const char *text;
-	J_CHK( JsvalToString(cx, argv[0], &text) );
+	J_CHK( JsvalToString(cx, &argv[0], &text) );
 
 	int res = MessageBox(NULL, text, caption, type);
 	J_S_ASSERT( res != 0, "MessageBox call Failed." );
@@ -147,16 +147,16 @@ DEFINE_FUNCTION( CreateProcess ) {
 
 	const char *applicationName, *commandLine = NULL, *environment = NULL, *currentDirectory = NULL;
 
-	J_CHK( JsvalToString(cx, argv[0], &applicationName) ); // warning: GC on the returned buffer !
+	J_CHK( JsvalToString(cx, &argv[0], &applicationName) ); // warning: GC on the returned buffer !
 
 	if ( argc >= 2 && argv[1] != JSVAL_VOID )
-		J_CHK( JsvalToString(cx, argv[1], &commandLine) ); // warning: GC on the returned buffer !
+		J_CHK( JsvalToString(cx, &argv[1], &commandLine) ); // warning: GC on the returned buffer !
 
 	if ( argc >= 3 && argv[2] != JSVAL_VOID  )
-		J_CHK( JsvalToString(cx, argv[2], &environment) ); // warning: GC on the returned buffer !
+		J_CHK( JsvalToString(cx, &argv[2], &environment) ); // warning: GC on the returned buffer !
 
 	if ( argc >= 4 && argv[3] != JSVAL_VOID  )
-		J_CHK( JsvalToString(cx, argv[3], &currentDirectory) ); // warning: GC on the returned buffer !
+		J_CHK( JsvalToString(cx, &argv[3], &currentDirectory) ); // warning: GC on the returned buffer !
 
 	STARTUPINFO si = { sizeof(STARTUPINFO) };
 	PROCESS_INFORMATION pi;
@@ -185,7 +185,7 @@ DEFINE_FUNCTION( FileOpenDialog ) {
 
 		const char *str;
 		size_t len;
-		J_CHK( JsvalToStringAndLength(cx, argv[0], &str, &len) );
+		J_CHK( JsvalToStringAndLength(cx, &argv[0], &str, &len) );
 		strcpy( filter, str );
 		for ( char *tmp = filter; tmp = strchr( tmp, '|' ); tmp++ )
 			*tmp = '\0'; // doc: Pointer to a buffer containing pairs of null-terminated filter strings.
@@ -196,7 +196,7 @@ DEFINE_FUNCTION( FileOpenDialog ) {
 	if ( argc >= 2 && argv[1] != JSVAL_VOID ) {
 
 		const char *tmp;
-		J_CHK( JsvalToString(cx, argv[1], &tmp) );
+		J_CHK( JsvalToString(cx, &argv[1], &tmp) );
 		strcpy( fileName, tmp );
 	} else {
 		*fileName = '\0';
@@ -226,7 +226,7 @@ DEFINE_FUNCTION( ExpandEnvironmentStrings ) {
 
 	J_S_ASSERT_ARG_MIN(1);
 	const char *src;
-	J_CHK( JsvalToString(cx, argv[0], &src) );
+	J_CHK( JsvalToString(cx, &argv[0], &src) );
 	TCHAR dst[MAX_PATH];
 	DWORD res = ExpandEnvironmentStrings( src, dst, sizeof(dst) );
 	J_S_ASSERT( res != 0, "Unable to ExpandEnvironmentStrings." );
@@ -330,7 +330,7 @@ DEFINE_PROPERTY( clipboardSetter ) {
 		J_S_ASSERT( res != 0, "Unable to open the clipboard." );
 		const char *str;
 		size_t len;
-		J_CHK( JsvalToStringAndLength(cx, *vp, &str, &len) );
+		J_CHK( JsvalToStringAndLength(cx, vp, &str, &len) );
 		HGLOBAL hglbCopy = GlobalAlloc(GMEM_MOVEABLE, len + 1);
 		J_S_ASSERT_ALLOC( hglbCopy );
 		LPTSTR lptstrCopy = (LPTSTR)GlobalLock(hglbCopy);

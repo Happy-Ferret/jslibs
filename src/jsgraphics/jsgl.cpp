@@ -1710,7 +1710,8 @@ DEFINE_FUNCTION_FAST( DefineTextureImage ) {
 		J_PROPERTY_TO_INT32( tObj, "height", height );
 		J_PROPERTY_TO_INT32( tObj, "channels", channels );
 		size_t bufferLength;
-		J_CHK( JsvalToStringAndLength(cx, OBJECT_TO_JSVAL(tObj), (const char**)&data, &bufferLength ) );
+		jsval tVal = OBJECT_TO_JSVAL(tObj);
+		J_CHK( JsvalToStringAndLength(cx, &tVal, (const char**)&data, &bufferLength ) );
 		J_S_ASSERT( bufferLength == width * height * channels * 1, "Invalid image format." );
 		J_S_ASSERT_RESOURCE(data);
 		type = GL_UNSIGNED_BYTE;

@@ -122,7 +122,7 @@ DEFINE_FUNCTION( Bind ) {
 	if ( J_ARG_ISDEF(2) ) { // if we have a second argument and this argument is not undefined
 
 		const char *host;
-		J_CHK( JsvalToString(cx, J_ARG(2), &host) );
+		J_CHK( JsvalToString(cx, &J_ARG(2), &host) );
 
 		if ( PR_StringToNetAddr(host, &addr) != PR_SUCCESS )
 			return ThrowIoError(cx);
@@ -260,7 +260,7 @@ DEFINE_FUNCTION( Connect ) {
 		connectTimeout = PR_INTERVAL_NO_TIMEOUT;
 
 	const char *host;
-	J_CHK( JsvalToString(cx, J_ARG(1), &host) );
+	J_CHK( JsvalToString(cx, &J_ARG(1), &host) );
 
 	PRNetAddr addr;
 
@@ -326,7 +326,7 @@ DEFINE_FUNCTION( SendTo ) {
 	J_JSVAL_TO_INT32( J_ARG(2), port );
 
 	const char *host;
-	J_CHK( JsvalToString(cx, J_ARG(1), &host) );
+	J_CHK( JsvalToString(cx, &J_ARG(1), &host) );
 
 	PRNetAddr addr;
 
@@ -351,7 +351,7 @@ DEFINE_FUNCTION( SendTo ) {
 
 	const char *str;
 	size_t len;
-	J_CHK( JsvalToStringAndLength(cx, J_ARG(3), &str, &len) );
+	J_CHK( JsvalToStringAndLength(cx, &J_ARG(3), &str, &len) );
 
 	PRInt32 res = PR_SendTo(fd, str, len, 0, &addr, PR_INTERVAL_NO_TIMEOUT );
 
@@ -492,7 +492,7 @@ DEFINE_FUNCTION( TransmitFile ) { // WORKS ONLY ON BLOCKING SOCKET !!!
 	const char *headers = NULL;
 	size_t headerLength = 0;
 	if ( J_ARG_ISDEF(3) )
-		J_CHK( JsvalToStringAndLength(cx, J_ARG(3), &headers, &headerLength) );
+		J_CHK( JsvalToStringAndLength(cx, &J_ARG(3), &headers, &headerLength) );
 
 	PRInt32 bytes = PR_TransmitFile( socketFd, fileFd, headers, headerLength, flag, connectTimeout );
 	if ( bytes == -1 )
@@ -865,7 +865,7 @@ DEFINE_FUNCTION( GetHostsByName ) {
 	J_S_ASSERT_ALLOC( addrJsObj );
 
 	const char *host;
-	J_CHK( JsvalToString(cx, J_ARG(1), &host) );
+	J_CHK( JsvalToString(cx, &J_ARG(1), &host) );
 
 	if ( PR_GetHostByName( host, netdbBuf, sizeof(netdbBuf), &hostEntry ) != PR_SUCCESS ) {
 

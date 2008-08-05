@@ -88,7 +88,7 @@ DEFINE_CONSTRUCTOR() {
 		J_JSVAL_TO_INT32(J_ARG(2), faceIndex);
 
 	const char *filePathName;
-	J_CHK( JsvalToString(cx, J_ARG(1), &filePathName) );
+	J_CHK( JsvalToString(cx, &J_ARG(1), &filePathName) );
 
 	FT_Face face;
 	FTCHK( FT_New_Face( _freetype, filePathName, faceIndex, &face ) );

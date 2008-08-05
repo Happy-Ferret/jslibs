@@ -489,7 +489,7 @@ DEFINE_FUNCTION( PopupMenu ) {
 
 		if ( JSVAL_IS_STRING(item) ) {
 
-			J_CHK( JsvalToString(cx, item, &newItem) );
+			J_CHK( JsvalToString(cx, &item, &newItem) );
 			AppendMenu(hMenu, uFlags, list->vector[i], newItem);
 		} else if ( JSVAL_IS_OBJECT(item) && !JSVAL_IS_NULL(item) ) {
 			
@@ -504,7 +504,7 @@ DEFINE_FUNCTION( PopupMenu ) {
 					J_CHK( CallFunction(cx, obj, itemVal, &itemVal, 2, item, key) );
 				}
 				if ( itemVal != JSVAL_VOID ) {
-					J_CHK( JsvalToString(cx, itemVal, &newItem) );
+					J_CHK( JsvalToString(cx, &itemVal, &newItem) );
 				}
 			}
 
@@ -733,7 +733,7 @@ DEFINE_PROPERTY( textSetter ) {
 	J_S_ASSERT_RESOURCE(nid);
 	const char *tipText;
 	size_t tipLen;
-	J_CHK( JsvalToStringAndLength(cx, *vp, &tipText, &tipLen) );
+	J_CHK( JsvalToStringAndLength(cx, vp, &tipText, &tipLen) );
 	strncpy( nid->szTip, tipText, MIN(sizeof(nid->szTip)-1,tipLen) );
 	nid->uFlags |= NIF_TIP;
 	BOOL status = Shell_NotifyIcon(NIM_MODIFY, nid);

@@ -68,7 +68,7 @@ DEFINE_FUNCTION( GetParam ) {
 	if ( argc >= 1 ) {
 
 		const char *paramName;
-		J_CHK( JsvalToString(cx, argv[0], &paramName) );
+		J_CHK( JsvalToString(cx, &argv[0], &paramName) );
 		char *paramValue = FCGX_GetParam(paramName, _request.envp);
 		if ( paramValue != NULL ) {
 
@@ -121,7 +121,7 @@ DEFINE_FUNCTION( Write ) {
 
 	const char *str;
 	size_t len;
-	J_CHK( JsvalToStringAndLength(cx, argv[0], &str, &len) );
+	J_CHK( JsvalToStringAndLength(cx, &argv[0], &str, &len) );
 	int result = FCGX_PutStr(str, len, _request.out);
 	if ( result >= 0 && (size_t)result < len ) { // returns unwritten data
 
@@ -144,7 +144,7 @@ DEFINE_FUNCTION( Log ) {
 
 	const char *str;
 	size_t len;
-	J_CHK( JsvalToStringAndLength(cx, argv[0], &str, &len) );
+	J_CHK( JsvalToStringAndLength(cx, &argv[0], &str, &len) );
 	int result = FCGX_PutStr(str, len, _request.err);
 	J_S_ASSERT( result != -1, "Unable to write to the log." );
 	FCGX_FFlush(_request.err);
@@ -163,7 +163,7 @@ DEFINE_FUNCTION( URLEncode ) {
 	static unsigned char hex[] = "0123456789ABCDEF";
 	const char *src;
 	size_t srcLen;
-	J_CHK( JsvalToStringAndLength(cx, argv[0], &src, &srcLen) );
+	J_CHK( JsvalToStringAndLength(cx, &argv[0], &src, &srcLen) );
 	char *dest = (char *)JS_malloc(cx, 3 * srcLen + 1);
 	J_S_ASSERT_ALLOC( dest );
 
@@ -193,7 +193,7 @@ DEFINE_FUNCTION( URLDecode ) {
 	J_S_ASSERT_ARG_MIN( 1 );
 	const char *src;
 	size_t srcLen;
-	J_CHK( JsvalToStringAndLength(cx, argv[0], &src, &srcLen) );
+	J_CHK( JsvalToStringAndLength(cx, &argv[0], &src, &srcLen) );
 	char *dest = (char *)JS_malloc(cx, srcLen + 1);
 	J_S_ASSERT_ALLOC( dest );
 

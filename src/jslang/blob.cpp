@@ -140,7 +140,7 @@ DEFINE_CONSTRUCTOR() {
 
 		size_t length;
 		const char *sBuffer;
-		J_CHK( JsvalToStringAndLength(cx, J_ARG(1), &sBuffer, &length) ); // warning: GC on the returned buffer !
+		J_CHK( JsvalToStringAndLength(cx, &J_ARG(1), &sBuffer, &length) ); // warning: GC on the returned buffer !
 
 		void *dBuffer = JS_malloc(cx, length +1);
 		J_S_ASSERT_ALLOC( dBuffer );
@@ -215,7 +215,7 @@ DEFINE_FUNCTION_FAST( concat ) {
 		
 		const char *buffer;
 		size_t length;
-		J_CHK( JsvalToStringAndLength(cx, J_FARG(arg), &buffer, &length) );
+		J_CHK( JsvalToStringAndLength(cx, &J_FARG(arg), &buffer, &length) );
 
 		memcpy(tmp, buffer, length);
 		tmp += length;
@@ -306,7 +306,7 @@ DEFINE_FUNCTION_FAST( indexOf ) {
 
 	const char *sBuffer;
 	size_t sLength;
-	J_CHK( JsvalToStringAndLength(cx, J_FARG(1), &sBuffer, &sLength) ); // warning: GC on the returned buffer !
+	J_CHK( JsvalToStringAndLength(cx, &J_FARG(1), &sBuffer, &sLength) ); // warning: GC on the returned buffer !
 
 	if ( sLength == 0 ) {
 
@@ -370,7 +370,7 @@ DEFINE_FUNCTION_FAST( lastIndexOf ) {
 
 	const char *sBuffer;
 	size_t sLength;
-	J_CHK( JsvalToStringAndLength(cx, J_FARG(1), &sBuffer, &sLength) ); // warning: GC on the returned buffer !
+	J_CHK( JsvalToStringAndLength(cx, &J_FARG(1), &sBuffer, &sLength) ); // warning: GC on the returned buffer !
 
 	if ( sLength == 0 ) {
 

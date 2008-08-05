@@ -38,7 +38,7 @@ DEFINE_FUNCTION( LoadWXJSModule ) {
 
 	J_S_ASSERT_ARG_MIN(1);
 	const char *fileName;
-	J_CHK( JsvalToString(cx, argv[0], &fileName) );
+	J_CHK( JsvalToString(cx, &argv[0], &fileName) );
 	char libFileName[PATH_MAX];
 	strcpy( libFileName, fileName );
 	strcat( libFileName, DLL_EXT );

@@ -326,7 +326,7 @@ DEFINE_FUNCTION( GetEnv ) {
 
 	J_S_ASSERT_ARG_MIN(1);
 	const char *name;
-	J_CHK( JsvalToString(cx, J_ARG(1), &name) );
+	J_CHK( JsvalToString(cx, &J_ARG(1), &name) );
 	char* value = PR_GetEnv(name); // If the environment variable is not defined, the function returns NULL.
 	if ( value != NULL ) { // this will cause an 'undefined' return value
 
@@ -415,7 +415,7 @@ DEFINE_FUNCTION_FAST( WaitSemaphore ) {
 
 	const char *name;
 	size_t nameLength;
-	J_CHK( JsvalToStringAndLength(cx, J_FARG(1), &name, &nameLength) );
+	J_CHK( JsvalToStringAndLength(cx, &J_FARG(1), &name, &nameLength) );
 
 	bool isCreation = true;
 	PRSem *semaphore = PR_OpenSemaphore(name, PR_SEM_EXCL | PR_SEM_CREATE, mode, 1); // fail if already exists
@@ -458,7 +458,7 @@ DEFINE_FUNCTION_FAST( PostSemaphore ) {
 
 	const char *name;
 	size_t nameLength;
-	J_CHK( JsvalToStringAndLength(cx, J_FARG(1), &name, &nameLength) );
+	J_CHK( JsvalToStringAndLength(cx, &J_FARG(1), &name, &nameLength) );
 
 	PRSem *semaphore = PR_OpenSemaphore(name, 0, 0, 0);
 
@@ -506,7 +506,7 @@ DEFINE_FUNCTION_FAST( CreateProcess ) {
 			J_CHK( JS_GetElement(cx, JSVAL_TO_OBJECT(J_FARG(2)), JSVAL_TO_INT(propVal), &propVal )); // (TBD) optimize
 
 			const char *tmp;
-			J_CHK( JsvalToString(cx, propVal, &tmp) ); // warning: GC on the returned buffer !
+			J_CHK( JsvalToString(cx, &propVal, &tmp) ); // warning: GC on the returned buffer !
 			processArgv[i+1] = tmp;
 		}
 		JS_DestroyIdArray( cx, idArray );
@@ -517,7 +517,7 @@ DEFINE_FUNCTION_FAST( CreateProcess ) {
 	}
 
 	const char *path;
-	J_CHK( JsvalToString(cx, J_FARG(1), &path) );
+	J_CHK( JsvalToString(cx, &J_FARG(1), &path) );
 
 	processArgv[0] = path;
 	processArgv[processArgc] = NULL;

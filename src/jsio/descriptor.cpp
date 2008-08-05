@@ -293,7 +293,7 @@ DEFINE_FUNCTION( Write ) {
 	J_S_ASSERT_RESOURCE( fd );
 	const char *str;
 	size_t len;
-	J_CHK( JsvalToStringAndLength(cx, J_ARG(1), &str, &len) );
+	J_CHK( JsvalToStringAndLength(cx, &J_ARG(1), &str, &len) );
 
 	size_t sentAmount;
 

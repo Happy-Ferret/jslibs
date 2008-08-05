@@ -52,7 +52,7 @@ DEFINE_CONSTRUCTOR() {
 	J_S_ASSERT_ARG_MIN( 1 );
 
 	const char *prngName;
-	J_CHK( JsvalToString(cx, argv[0], &prngName) );
+	J_CHK( JsvalToString(cx, &argv[0], &prngName) );
 
 	int prngIndex = find_prng(prngName);
 	J_S_ASSERT_1( prngIndex != -1, "prng %s is not available", prngName );
@@ -128,7 +128,7 @@ DEFINE_FUNCTION( AddEntropy ) {
 
 	const char *entropy;
 	size_t entropyLength;
-	J_CHK( JsvalToStringAndLength(cx, argv[0], &entropy, &entropyLength) );
+	J_CHK( JsvalToStringAndLength(cx, &argv[0], &entropy, &entropyLength) );
 
 	int err;
 	err = privateData->prng.add_entropy( (const unsigned char *)entropy, entropyLength, &privateData->state );
@@ -193,7 +193,7 @@ DEFINE_PROPERTY( stateSetter ) {
 
 	const char *stateData;
 	size_t stateLength;
-	J_CHK( JsvalToStringAndLength(cx, *vp, &stateData, &stateLength) );
+	J_CHK( JsvalToStringAndLength(cx, vp, &stateData, &stateLength) );
 	J_S_ASSERT( stateLength == privateData->prng.export_size, "Invalid import size." );
 	int err = privateData->prng.pimport((unsigned char *)stateData, stateLength, &privateData->state);
 	if ( err != CRYPT_OK )

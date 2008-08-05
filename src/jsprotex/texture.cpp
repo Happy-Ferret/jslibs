@@ -186,7 +186,7 @@ inline JSBool InitLevelData( JSContext* cx, jsval value, int count, PTYPE *level
 
 		const char *color;
 		size_t length;
-		J_CHK( JsvalToStringAndLength(cx, value, &color, &length) );
+		J_CHK( JsvalToStringAndLength(cx, &value, &color, &length) );
 		if ( *color++ == '#' && ((int)length-1) / 2 >= count ) {
 				
 			unsigned char val;
@@ -253,7 +253,7 @@ inline JSBool InitCurveData( JSContext* cx, jsval value, int length, float *curv
 		const u_int8_t *bstrData;
 
 //		BlobGetBufferAndLength( cx, bstrObj, (void**)&bstrData, &bstrLen );
-		J_CHK( JsvalToStringAndLength( cx, value, (const char **)&bstrData, &bstrLen ) );
+		J_CHK( JsvalToStringAndLength( cx, &value, (const char **)&bstrData, &bstrLen ) );
 
 		for ( int i = 0; i < length; i++ )
 			curve[i] = bstrData[ i * bstrLen / length ] / 256;
@@ -408,7 +408,7 @@ DEFINE_CONSTRUCTOR() {
 		const char *buffer;
 //		u_int8_t *buffer = (u_int8_t*)
 //		J_CHK( BlobBuffer(cx, bstr, (const void **)&buffer) );
-		J_CHK( JsvalToString(cx, J_ARG(1), (const char **)&buffer) ); // warning: GC on the returned buffer !
+		J_CHK( JsvalToString(cx, &J_ARG(1), (const char **)&buffer) ); // warning: GC on the returned buffer !
 
 		tex->width = sWidth;
 		tex->height = sHeight;
@@ -2787,7 +2787,7 @@ DEFINE_FUNCTION_FAST( Import ) { // (Blob)image, (int)x, (int)y
 	const u_int8_t *buffer;
 //	J_CHK( BlobBuffer(cx, bstr, (const void **)&buffer) );
 
-	J_CHK( JsvalToString(cx, J_FARG(1), (const char **)&buffer) );
+	J_CHK( JsvalToString(cx, &J_FARG(1), (const char **)&buffer) );
 
 	int x, y;
 	int dx, dy; // destination

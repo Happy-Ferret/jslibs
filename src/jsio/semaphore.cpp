@@ -65,7 +65,7 @@ DEFINE_CONSTRUCTOR() {
 
 	const char *name;
 	size_t nameLength;
-	J_CHK( JsvalToStringAndLength(cx, J_ARG(1), &name, &nameLength) );
+	J_CHK( JsvalToStringAndLength(cx, &J_ARG(1), &name, &nameLength) );
 	J_S_ASSERT( nameLength < PATH_MAX, "Semaphore name too long." );
 
 	bool isCreation = true;

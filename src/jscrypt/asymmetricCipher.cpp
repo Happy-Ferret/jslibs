@@ -110,7 +110,7 @@ DEFINE_CONSTRUCTOR() { // ( cipherName, hashName [, prngObject] [, PKCSVersion] 
 	J_S_ASSERT_ARG_MIN( 3 );
 
 	const char *asymmetricCipherName;
-	J_CHK( JsvalToString(cx, argv[0], &asymmetricCipherName) );
+	J_CHK( JsvalToString(cx, &argv[0], &asymmetricCipherName) );
 
 	AsymmetricCipher asymmetricCipher;
 	if ( strcasecmp( asymmetricCipherName, "RSA" ) == 0 )
@@ -128,7 +128,7 @@ DEFINE_CONSTRUCTOR() { // ( cipherName, hashName [, prngObject] [, PKCSVersion] 
 	pv->cipher = asymmetricCipher;
 
 	const char *hashName;
-	J_CHK( JsvalToString(cx, argv[1], &hashName) );
+	J_CHK( JsvalToString(cx, &argv[1], &hashName) );
 	int hashIndex = find_hash(hashName);
 	J_S_ASSERT_1( hashIndex != -1, "hash %s is not available.", hashName );
 	pv->hashDescriptor = &hash_descriptor[hashIndex];
@@ -148,7 +148,7 @@ DEFINE_CONSTRUCTOR() { // ( cipherName, hashName [, prngObject] [, PKCSVersion] 
 	if ( argc >= 4 && argv[3] != JSVAL_VOID ) {
 
 		const char *paddingName;
-		J_CHK( JsvalToString(cx, argv[3], &paddingName) );
+		J_CHK( JsvalToString(cx, &argv[3], &paddingName) );
 
 		if ( strcmp(paddingName, "1_OAEP") == 0 ) {
 
@@ -257,7 +257,7 @@ DEFINE_FUNCTION( Encrypt ) { // ( data [, lparam] )
 
 	const char *in;
 	size_t inLength;
-	J_CHK( JsvalToStringAndLength( cx, argv[0], &in, &inLength ) );
+	J_CHK( JsvalToStringAndLength( cx, &argv[0], &in, &inLength ) );
 
 	char out[4096];
 	unsigned long outLength = sizeof(out);
@@ -269,7 +269,7 @@ DEFINE_FUNCTION( Encrypt ) { // ( data [, lparam] )
 			unsigned char *lparam = NULL; // default: lparam not used
 			unsigned long lparamlen = 0;
 			if (argc >= 2 && argv[1] != JSVAL_VOID)
-				J_CHK( JsvalToStringAndLength(cx, argv[1], &in, &inLength) );
+				J_CHK( JsvalToStringAndLength(cx, &argv[1], &in, &inLength) );
 			err = rsa_encrypt_key_ex( (unsigned char *)in, inLength, (unsigned char *)out, &outLength, lparam, lparamlen, prngState, prngIndex, hashIndex, pv->padding, &pv->key.rsaKey ); // ltc_mp.rsa_me()
 			break;
 		}
@@ -319,7 +319,7 @@ DEFINE_FUNCTION( Decrypt ) { // ( encryptedData [, lparam] )
 
 	const char *in;
 	size_t inLength;
-	J_CHK( JsvalToStringAndLength(cx, argv[0], &in, &inLength) );
+	J_CHK( JsvalToStringAndLength(cx, &argv[0], &in, &inLength) );
 
 	char out[4096];
 	unsigned long outLength = sizeof(out);
@@ -333,7 +333,7 @@ DEFINE_FUNCTION( Decrypt ) { // ( encryptedData [, lparam] )
 			const char *lparam = NULL; // default: lparam not used
 			size_t lparamlen = 0;
 			if (argc >= 2 && argv[1] != JSVAL_VOID)
-				J_CHK( JsvalToStringAndLength(cx, argv[1], &lparam, &lparamlen) );
+				J_CHK( JsvalToStringAndLength(cx, &argv[1], &lparam, &lparamlen) );
 
 			int stat = 0; // default: failed
 			err = rsa_decrypt_key_ex( (unsigned char *)in, inLength, (unsigned char *)out, &outLength, (const unsigned char *)lparam, lparamlen, hashIndex, pv->padding, &stat, &pv->key.rsaKey );
@@ -390,7 +390,7 @@ DEFINE_FUNCTION( Sign ) { // ( data [, saltLength] )
 
 	const char *in;
 	size_t inLength;
-	J_CHK( JsvalToStringAndLength(cx, argv[0], &in, &inLength) );
+	J_CHK( JsvalToStringAndLength(cx, &argv[0], &in, &inLength) );
 
 	char out[4096];
 	unsigned long outLength = sizeof(out);
@@ -445,11 +445,11 @@ DEFINE_FUNCTION( VerifySignature ) { // ( data, signature [, saltLength] )
 
 	const char *data;
 	size_t dataLength;
-	J_CHK( JsvalToStringAndLength(cx, argv[0], &data, &dataLength ) ); // warning: GC on the returned buffer !
+	J_CHK( JsvalToStringAndLength(cx, &argv[0], &data, &dataLength ) ); // warning: GC on the returned buffer !
 
 	const char *sign;
 	size_t signLength;
-	J_CHK( JsvalToStringAndLength(cx, argv[1], &sign, &signLength) ); // warning: GC on the returned buffer !
+	J_CHK( JsvalToStringAndLength(cx, &argv[1], &sign, &signLength) ); // warning: GC on the returned buffer !
 
 	int stat = 0; // default: failed
 	int err = -1; // default: Invalid error code
@@ -563,7 +563,7 @@ DEFINE_PROPERTY( keySetter ) {
 
 	const char *key;
 	size_t keyLength;
-	J_CHK( JsvalToStringAndLength(cx, *vp, &key, &keyLength) );
+	J_CHK( JsvalToStringAndLength(cx, vp, &key, &keyLength) );
 
 	int err = -1; // default
 	switch ( pv->cipher ) {

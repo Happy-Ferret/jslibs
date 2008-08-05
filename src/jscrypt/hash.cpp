@@ -68,7 +68,7 @@ DEFINE_CONSTRUCTOR() {
 	J_S_ASSERT_ARG_MIN( 1 );
 
 	const char *hashName;
-	J_CHK( JsvalToString(cx, argv[0], &hashName) );
+	J_CHK( JsvalToString(cx, &argv[0], &hashName) );
 
 	int hashIndex = find_hash(hashName);
 	J_S_ASSERT_1( hashIndex != -1, "hash %s is not available", hashName );
@@ -132,7 +132,7 @@ DEFINE_FUNCTION( Process ) {
 	int err;
 	const char *in;
 	size_t inLength;
-	J_CHK( JsvalToStringAndLength(cx, argv[0], &in, &inLength) );
+	J_CHK( JsvalToStringAndLength(cx, &argv[0], &in, &inLength) );
 
 	err = privateData->descriptor->process(&privateData->state, (const unsigned char *)in, inLength); // Process a block of memory though the hash
 	if ( err != CRYPT_OK )
@@ -211,7 +211,7 @@ DEFINE_CALL() {
 
 	const char *in;
 	size_t inLength;
-	J_CHK( JsvalToStringAndLength(cx, argv[0], &in, &inLength) );
+	J_CHK( JsvalToStringAndLength(cx, &argv[0], &in, &inLength) );
 
 	err = privateData->descriptor->init(&privateData->state);
 	if (err != CRYPT_OK)
@@ -309,7 +309,7 @@ DEFINE_FUNCTION( CipherHash ) {
 
 	J_S_ASSERT_ARG_MIN(1);
 	const char *cipherName;
-	J_CHK( JsvalToString(cx, argv[0], &cipherName) );
+	J_CHK( JsvalToString(cx, &argv[0], &cipherName) );
 	int cipherIndex = find_cipher(cipherName);
 	J_S_ASSERT_1( cipherIndex >= 0, "Cipher not found: %s", cipherName );
 	int err;

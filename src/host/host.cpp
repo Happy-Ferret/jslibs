@@ -71,7 +71,7 @@ static JSBool JSDefaultStdoutFunction(JSContext *cx, uintN argc, jsval *vp) {
 	size_t length;
 	for ( uintN i = 0; i < argc; i++ ) {
 
-		J_CHK( JsvalToStringAndLength(cx, J_FARG(i+1), &buffer, &length) );
+		J_CHK( JsvalToStringAndLength(cx, &J_FARG(i+1), &buffer, &length) );
 		hostStdOut(buffer, length);
 	}
 	return JS_TRUE;
@@ -86,7 +86,7 @@ static JSBool JSDefaultStderrFunction(JSContext *cx, uintN argc, jsval *vp) {
 	size_t length;
 	for ( uintN i = 0; i < argc; i++ ) {
 
-		J_CHK( JsvalToStringAndLength(cx, J_FARG(i+1), &buffer, &length) );
+		J_CHK( JsvalToStringAndLength(cx, &J_FARG(i+1), &buffer, &length) );
 		hostStdErr(buffer, length);
 	}
 	return JS_TRUE;
@@ -212,7 +212,7 @@ static JSBool LoadModule(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, 
 
 	J_S_ASSERT_ARG_MIN(1);
 	const char *fileName;
-	J_CHK( JsvalToString(cx, argv[0], &fileName) );
+	J_CHK( JsvalToString(cx, &argv[0], &fileName) );
 	char libFileName[PATH_MAX];
 	strcpy( libFileName, fileName );
 	strcat( libFileName, DLL_EXT );

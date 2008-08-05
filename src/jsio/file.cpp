@@ -93,7 +93,7 @@ DEFINE_FUNCTION( Open ) {
 
 		const char *strFlags;
 		size_t len;
-		J_CHK( JsvalToStringAndLength(cx, J_ARG(1), &strFlags, &len) );
+		J_CHK( JsvalToStringAndLength(cx, &J_ARG(1), &strFlags, &len) );
 		flags = FileOpenFlagsFromString(strFlags, len);
 	}
 
@@ -110,7 +110,7 @@ DEFINE_FUNCTION( Open ) {
 	JS_GetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName );
 	J_S_ASSERT_DEFINED( jsvalFileName );
 	const char *fileName;
-	J_CHK( JsvalToString(cx, jsvalFileName, &fileName) );
+	J_CHK( JsvalToString(cx, &jsvalFileName, &fileName) );
 
 	PRFileDesc *fd = PR_Open( fileName, flags, mode ); // The mode parameter is currently applicable only on Unix platforms.
 	if ( fd == NULL )
@@ -177,7 +177,7 @@ DEFINE_FUNCTION( Delete ) {
 	JS_GetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName );
 	J_S_ASSERT_DEFINED( jsvalFileName );
 	const char *fileName;
-	J_CHK( JsvalToString(cx, jsvalFileName, &fileName) );
+	J_CHK( JsvalToString(cx, &jsvalFileName, &fileName) );
 	if ( PR_Delete(fileName) != PR_SUCCESS )
 		return ThrowIoError(cx);
 	return JS_TRUE;
@@ -216,11 +216,11 @@ DEFINE_FUNCTION( Move ) {
 	JS_GetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName );
 	J_S_ASSERT_DEFINED( jsvalFileName );
 	const char *fileName;
-	J_CHK( JsvalToString(cx, jsvalFileName, &fileName) ); // warning: GC on the returned buffer !
+	J_CHK( JsvalToString(cx, &jsvalFileName, &fileName) ); // warning: GC on the returned buffer !
 
 	const char *destDirName;
 	size_t destDirNameLength;
-	J_CHK( JsvalToStringAndLength(cx, J_ARG(1), &destDirName, &destDirNameLength) ); // warning: GC on the returned buffer !
+	J_CHK( JsvalToStringAndLength(cx, &J_ARG(1), &destDirName, &destDirNameLength) ); // warning: GC on the returned buffer !
 
 	const char *fileNameOnly = strrchr(fileName, '/');
 	if ( fileNameOnly == NULL )
@@ -290,7 +290,7 @@ DEFINE_PROPERTY( contentGetter ) {
 	JS_GetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName );
 	J_S_ASSERT_DEFINED( jsvalFileName );
 	const char *fileName;
-	J_CHK( JsvalToString(cx, jsvalFileName, &fileName) );
+	J_CHK( JsvalToString(cx, &jsvalFileName, &fileName) );
 
 	PRStatus status = PR_Access( fileName, PR_ACCESS_READ_OK ); // We want to read the whole file, then first check if the file is readable
 	if ( status != PR_SUCCESS ) {
@@ -349,7 +349,7 @@ DEFINE_PROPERTY( contentSetter ) {
 	JS_GetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName );
 	J_S_ASSERT_DEFINED( jsvalFileName );
 	const char *fileName;
-	J_CHK( JsvalToString(cx, jsvalFileName, &fileName) );
+	J_CHK( JsvalToString(cx, &jsvalFileName, &fileName) );
 	if ( *vp == JSVAL_VOID ) {
 
 		if ( PR_Delete(fileName) != PR_SUCCESS ) {
@@ -366,7 +366,7 @@ DEFINE_PROPERTY( contentSetter ) {
 		return ThrowIoError(cx);
 	const char *buf;
 	size_t len;
-	J_CHK( JsvalToStringAndLength(cx, *vp, &buf, &len) );
+	J_CHK( JsvalToStringAndLength(cx, vp, &buf, &len) );
 	PRInt32 bytesSent = PR_Write( fd, buf, len );
 	if ( bytesSent == -1 )
 		return ThrowIoError(cx);
@@ -397,8 +397,8 @@ DEFINE_PROPERTY( nameSetter ) {
 	JS_GetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName );
 	J_S_ASSERT_DEFINED( jsvalFileName );
 	const char *fromFileName, *toFileName;
-	J_CHK( JsvalToString(cx, jsvalFileName, &fromFileName) ); // warning: GC on the returned buffer !
-	J_CHK( JsvalToString(cx, *vp, &toFileName) ); // warning: GC on the returned buffer !
+	J_CHK( JsvalToString(cx, &jsvalFileName, &fromFileName) ); // warning: GC on the returned buffer !
+	J_CHK( JsvalToString(cx, vp, &toFileName) ); // warning: GC on the returned buffer !
 	if ( PR_Rename(fromFileName, toFileName) != PR_SUCCESS ) // if status == PR_FILE_EXISTS_ERROR ...
 		return ThrowIoError(cx);
 	JS_SetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, *vp );
@@ -417,7 +417,7 @@ DEFINE_PROPERTY( exist ) {
 	JS_GetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName );
 	J_S_ASSERT_DEFINED( jsvalFileName );
 	const char *fileName;
-	J_CHK( JsvalToString(cx, jsvalFileName, &fileName) );
+	J_CHK( JsvalToString(cx, &jsvalFileName, &fileName) );
 	PRStatus status = PR_Access( fileName, PR_ACCESS_EXISTS );
 	*vp = BOOLEAN_TO_JSVAL( status == PR_SUCCESS );
 	return JS_TRUE;
@@ -457,7 +457,7 @@ DEFINE_PROPERTY( info ) {
 		JS_GetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName );
 		J_S_ASSERT_DEFINED( jsvalFileName );
 		const char *fileName;
-		J_CHK( JsvalToString(cx, jsvalFileName, &fileName) );
+		J_CHK( JsvalToString(cx, &jsvalFileName, &fileName) );
 
 		status = PR_GetFileInfo( fileName, &fileInfo );
 	} else

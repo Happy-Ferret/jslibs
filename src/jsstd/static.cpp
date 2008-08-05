@@ -68,7 +68,7 @@ DEFINE_FUNCTION( Expand ) {
 	const char *srcBegin;
 	size_t srcLen;
 
-	J_CHK( JsvalToStringAndLength(cx, J_ARG(1), &srcBegin, &srcLen) );
+	J_CHK( JsvalToStringAndLength(cx, &J_ARG(1), &srcBegin, &srcLen) );
 	J_S_ASSERT( srcBegin[srcLen] == '\0', "Invalid input string." ); // else strstr may failed.
 	const char *srcEnd = srcBegin + srcLen;
 
@@ -128,7 +128,7 @@ DEFINE_FUNCTION( Expand ) {
 		if ( val != JSVAL_VOID ) {
 
 			chunk = (Chunk*)malloc(sizeof(Chunk));
-			J_CHK( JsvalToStringAndLength(cx, val, &chunk->data, &chunk->length) ); // warning: GC on the returned buffer !
+			J_CHK( JsvalToStringAndLength(cx, &val, &chunk->data, &chunk->length) ); // warning: GC on the returned buffer !
 			totalLength += chunk->length;
 			StackPush( &stack, chunk );
 		}
@@ -397,7 +397,7 @@ DEFINE_FUNCTION( ASSERT ) {
 
 		const char *message;
 		if ( J_ARG_ISDEF(2) )
-			J_CHK( JsvalToString(cx, J_ARG(2), &message) );
+			J_CHK( JsvalToString(cx, &J_ARG(2), &message) );
 		else
 			message = "Assertion failed.";
 		JS_ReportError( cx, message );
@@ -490,7 +490,7 @@ DEFINE_FUNCTION_FAST( StringRepeat ) {
 
 	const char *buf;
 	size_t len;
-	J_CHK( JsvalToStringAndLength(cx, J_FARG(1), &buf, &len) ); // warning: GC on the returned buffer !
+	J_CHK( JsvalToStringAndLength(cx, &J_FARG(1), &buf, &len) ); // warning: GC on the returned buffer !
 
 	if ( len == 0 ) {
 		
@@ -704,7 +704,7 @@ DEFINE_FUNCTION_FAST( Exec ) {
 	JS_SetOptions(cx, oldopts | JSOPTION_COMPILE_N_GO);
 	// script = JS_CompileFile(cx, obj, filename);
 	const char *filename;
-	J_CHK( JsvalToString(cx, J_FARG(1), &filename) );
+	J_CHK( JsvalToString(cx, &J_FARG(1), &filename) );
 
 	script = LoadScript( cx, J_FOBJ, filename, saveCompiledScripts );
 	if (!script) {
@@ -739,7 +739,7 @@ DEFINE_FUNCTION( IsStatementValid ) {
 	J_S_ASSERT_ARG_MIN( 1 );
 	const char *buffer;
 	size_t length;
-	J_CHK( JsvalToStringAndLength(cx, J_ARG(1), &buffer, &length) );
+	J_CHK( JsvalToStringAndLength(cx, &J_ARG(1), &buffer, &length) );
 	*rval = JS_BufferIsCompilableUnit(cx, obj, buffer, length) == JS_TRUE ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;
 }

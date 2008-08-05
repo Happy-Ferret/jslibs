@@ -35,7 +35,7 @@ DEFINE_FUNCTION( Base64Encode ) {
 	J_S_ASSERT_STRING(argv[0]);
 	const char *in;
 	size_t inLength;
-	J_CHK( JsvalToStringAndLength(cx, argv[0], &in, &inLength) ); // warning: GC on the returned buffer !
+	J_CHK( JsvalToStringAndLength(cx, &argv[0], &in, &inLength) ); // warning: GC on the returned buffer !
 
 	unsigned long outLength = 4 * ((inLength + 2) / 3) +1;
 	char *out = (char *)JS_malloc( cx, outLength +1 );
@@ -64,7 +64,7 @@ DEFINE_FUNCTION( Base64Decode ) {
 	J_S_ASSERT_STRING(argv[0]);
 	const char *in;
 	size_t inLength;
-	J_CHK( JsvalToStringAndLength(cx, argv[0], &in, &inLength) ); // warning: GC on the returned buffer !
+	J_CHK( JsvalToStringAndLength(cx, &argv[0], &in, &inLength) ); // warning: GC on the returned buffer !
 
 	unsigned long outLength = 3 * (inLength-2) / 4 +1;
 	char *out = (char *)JS_malloc(cx, outLength +1);
@@ -95,7 +95,7 @@ DEFINE_FUNCTION( HexEncode ) {
 
 	const char *in;
 	size_t inLength;
-	J_CHK( JsvalToStringAndLength(cx, argv[0], &in, &inLength) ); // warning: GC on the returned buffer !
+	J_CHK( JsvalToStringAndLength(cx, &argv[0], &in, &inLength) ); // warning: GC on the returned buffer !
 
 	unsigned long outLength = inLength * 2;
 	char *out = (char *)JS_malloc(cx, outLength +1);
@@ -140,7 +140,7 @@ DEFINE_FUNCTION( HexDecode ) {
 	J_S_ASSERT_STRING(argv[0]);
 	const char *in;
 	size_t inLength;
-	J_CHK( JsvalToStringAndLength(cx, argv[0], &in, &inLength) ); // warning: GC on the returned buffer !
+	J_CHK( JsvalToStringAndLength(cx, &argv[0], &in, &inLength) ); // warning: GC on the returned buffer !
 
 	unsigned long outLength = inLength / 2;
 	char *out = (char *)JS_malloc(cx, outLength +1);

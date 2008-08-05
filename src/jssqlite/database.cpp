@@ -73,7 +73,7 @@ DEFINE_CONSTRUCTOR() {
 
 	const char *fileName;
 	if ( J_ARG_ISDEF(1) )
-		J_CHK( JsvalToString(cx, J_ARG(1), &fileName) );
+		J_CHK( JsvalToString(cx, &J_ARG(1), &fileName) );
 	else
 		fileName = ":memory:";
 
@@ -240,7 +240,7 @@ DEFINE_FUNCTION( Query ) {
 
 	const char *sqlQuery;
 	size_t sqlQueryLength;
-	J_CHK( JsvalToStringAndLength(cx, J_ARG(1), &sqlQuery, &sqlQueryLength) );
+	J_CHK( JsvalToStringAndLength(cx, &J_ARG(1), &sqlQuery, &sqlQueryLength) );
 
 	const char *szTail;
 	sqlite3_stmt *pStmt;
@@ -304,7 +304,7 @@ DEFINE_FUNCTION( Exec ) {
 	const char *sqlQuery;
 //	J_JSVAL_TO_STRING( argv[0], sqlQuery );
 	size_t sqlQueryLength;
-	J_CHK( JsvalToStringAndLength(cx, J_ARG(1), &sqlQuery, &sqlQueryLength) );
+	J_CHK( JsvalToStringAndLength(cx, &J_ARG(1), &sqlQuery, &sqlQueryLength) );
 
 	const char *szTail;
 	sqlite3_stmt *pStmt;
@@ -498,7 +498,7 @@ void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArg
 
 				const char *data;
 				size_t length;
-				JsvalToStringAndLength(cx, rval, &data, &length);
+				JsvalToStringAndLength(cx, &rval, &data, &length);
 				sqlite3_result_blob(sCx, data, length, SQLITE_STATIC); // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT
 				break;
 			}
@@ -551,7 +551,7 @@ DEFINE_SET_PROPERTY() {
 		JS_SetReservedSlot(cx, obj, SLOT_SQLITE_DATABASE_FUNCTION_CALL_STACK, PRIVATE_TO_JSVAL(stack));
 
 		const char *fName;
-		J_CHK( JsvalToString(cx, id, &fName) );
+		J_CHK( JsvalToString(cx, &id, &fName) );
 
 		int status = sqlite3_create_function(db, fName, -1, SQLITE_ANY /*SQLITE_UTF8*/, data, sqlite_function_call, NULL, NULL);
 		if ( status != SQLITE_OK )

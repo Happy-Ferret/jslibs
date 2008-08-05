@@ -69,7 +69,7 @@ DEFINE_FUNCTION( Open ) {
 	JS_GetReservedSlot( cx, obj, SLOT_JSIO_DIR_NAME, &jsvalDirectoryName );
 	J_S_ASSERT_DEFINED( jsvalDirectoryName );
 	const char *directoryName;
-	J_CHK( JsvalToString(cx, jsvalDirectoryName, &directoryName) );
+	J_CHK( JsvalToString(cx, &jsvalDirectoryName, &directoryName) );
 
 	PRDir *dd = PR_OpenDir( directoryName );
 	if ( dd == NULL )
@@ -144,7 +144,7 @@ DEFINE_FUNCTION( Make ) {
 	JS_GetReservedSlot( cx, obj, SLOT_JSIO_DIR_NAME, &jsvalDirectoryName );
 	J_S_ASSERT_DEFINED( jsvalDirectoryName );
 	const char *directoryName;
-	J_CHK( JsvalToString(cx, jsvalDirectoryName, &directoryName) );
+	J_CHK( JsvalToString(cx, &jsvalDirectoryName, &directoryName) );
 	PRIntn mode = 0766; // the permissions need to be set to 766 (linux uses the eXecute bit on directory as permission to allow access to a directory).
 	if ( PR_MkDir(directoryName, mode) != PR_SUCCESS )
 		return ThrowIoError(cx);
@@ -163,7 +163,7 @@ DEFINE_FUNCTION( Remove ) {
 	JS_GetReservedSlot( cx, obj, SLOT_JSIO_DIR_NAME, &jsvalDirectoryName );
 	J_S_ASSERT_DEFINED( jsvalDirectoryName );
 	const char *directoryName;
-	J_CHK( JsvalToString(cx, jsvalDirectoryName, &directoryName) );
+	J_CHK( JsvalToString(cx, &jsvalDirectoryName, &directoryName) );
 
 	if ( PR_RmDir(directoryName) != PR_SUCCESS ) { // PR_RmDir removes the directory specified by the pathname name. The directory must be empty. If the directory is not empty, PR_RmDir fails and PR_GetError returns the error code PR_DIRECTORY_NOT_EMPTY_ERROR.
 
@@ -192,7 +192,7 @@ DEFINE_PROPERTY( exist ) {
 	JS_GetReservedSlot( cx, obj, SLOT_JSIO_DIR_NAME, &jsvalDirectoryName );
 	J_S_ASSERT_DEFINED( jsvalDirectoryName );
 	const char *directoryName;
-	J_CHK( JsvalToString(cx, jsvalDirectoryName, &directoryName) );
+	J_CHK( JsvalToString(cx, &jsvalDirectoryName, &directoryName) );
 
 	PRDir *dd = PR_OpenDir( directoryName );
 
@@ -246,7 +246,7 @@ DEFINE_FUNCTION( List ) {
 	J_S_ASSERT_ARG_MIN( 1 );
 	const char *directoryName;
 	size_t directoryNameLength;
-	J_CHK( JsvalToStringAndLength(cx, J_ARG(1), &directoryName, &directoryNameLength) );
+	J_CHK( JsvalToStringAndLength(cx, &J_ARG(1), &directoryName, &directoryNameLength) );
 	J_S_ASSERT( directoryNameLength < PATH_MAX, "Path too long" );
 	PRDir *dd = PR_OpenDir( directoryName );
 	if ( dd == NULL )

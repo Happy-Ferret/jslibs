@@ -50,7 +50,7 @@ JSBool StreamRead( JSContext *cx, JSObject *obj, char *buf, unsigned int *amount
 
 	const char *buffer;
 	size_t length;
-	J_CHK( JsvalToStringAndLength(cx, source, &buffer, &length) );
+	J_CHK( JsvalToStringAndLength(cx, &source, &buffer, &length) ); // (TBD) GC protect source
 
 	if ( length - position <= 0 ) { // position >= length
 
