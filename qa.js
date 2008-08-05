@@ -64,12 +64,42 @@ function MakeTests( testList, filter, QAAPI, iterate ) {
 		Print( testName, '\n' );
 		for ( var i = 0; i<iterate; i++ ) {
 
-			testList[testName](QAAPI, testName);
+			try {
+
+				testList[testName](QAAPI, testName);
+			} catch(ex) {
+				
+				QAAPI.REPORT(testName+' '+ex.toString());
+			}
 			CollectGarbage();
 			if ( endSignal )
 				return;
 		}
 	}
+}
+
+
+
+function MakeRandomTests( testList, QAAPI ) {
+
+	var list = [];
+
+	for ( var testName in testList )
+		list.push([testName, testList[testName]]);
+	
+	while ( !endSignal ) {
+		
+		var idx = Math.floor(Math.random() * list.length);
+		
+		try {
+
+			list[idx][1](QAAPI, list[idx][0]);
+		} catch(ex) {
+
+			QAAPI.REPORT(testName+' '+ex.toString());
+		}
+	}
+
 }
 
 
@@ -79,7 +109,7 @@ var QAAPI = new function() {
 	this.testCount = 0;
 	this.errors = [];
 
-	var REPORT = function( message ) {
+	this.REPORT = function( message ) {
 
 		this.issues++;
 		this.errors.push(message);
@@ -90,12 +120,12 @@ var QAAPI = new function() {
 		
 		this.testCount++;
 		if ( typeof(value) != type && !(value instanceof type) )
-			REPORT( Locate(-1)+' '+(testName||'?')+', Invalid type, '+(type.name)+' is expected' );
+			this.REPORT( Locate(-1)+' '+(testName||'?')+', Invalid type, '+(type.name)+' is expected' );
 	}
 
 	this.FAILED = function( message ) {
 
-		REPORT( Locate(-1)+' '+message );
+		this.REPORT( Locate(-1)+' '+message );
 	}
 	
 	this.ASSERT_EXCEPTION = function( fct, exType, message ) {
@@ -104,13 +134,13 @@ var QAAPI = new function() {
 		try {
 		
 			fct();
-			REPORT( Locate(-1)+' Failure not detected: '+message );
+			this.REPORT( Locate(-1)+' Failure not detected: '+message );
 		} catch(ex if ex instanceof exType) {
 
 			// good
 		} catch(ex) {
 			
-			REPORT( Locate(-1)+' Invalid exception ('+ex.constructor.name+' != '+exType.constructor.name+') for: '+message );
+			this.REPORT( Locate(-1)+' Invalid exception ('+ex.constructor.name+' != '+exType.constructor.name+') for: '+message );
 		}
 	} 
 
@@ -122,7 +152,7 @@ var QAAPI = new function() {
 		
 			value = '('+(''+typeof(value)).substr(0,3)+')'+ String(value).substr(0,50).quote()+'...';
 			expect = '('+(''+typeof(expect)).substr(0,3)+')'+ String(expect).substr(0,50).quote()+'...';
-			REPORT( Locate(-1)+' '+(testName||'?') + ', '+value+' != '+expect );
+			this.REPORT( Locate(-1)+' '+(testName||'?') + ', '+value+' != '+expect );
 		}
 	}
 
@@ -135,7 +165,7 @@ var QAAPI = new function() {
 		
 			value = '('+(''+typeof(value)).substr(0,3)+')'+ String(value).substr(0,50).quote()+'...';
 			expect = '('+(''+typeof(expect)).substr(0,3)+')'+ String(expect).substr(0,50).quote()+'...';
-			REPORT( Locate(-1)+' '+(testName||'?') + ', '+value+' != '+expect );
+			this.REPORT( Locate(-1)+' '+(testName||'?') + ', '+value+' != '+expect );
 		}
 	}
 
@@ -145,7 +175,7 @@ var QAAPI = new function() {
    	
 			this.testCount++;
    		if ( !(p in obj) )
-	  			REPORT( Locate(-1)+' Property '+p+' not found' );
+	  			this.REPORT( Locate(-1)+' Property '+p+' not found' );
 	  	}
    }
 
@@ -168,7 +198,13 @@ var loops = 4;
 var savePrio = processPriority;
 processPriority = 2;
 var t0 = TimeCounter();
-MakeTests(MakeTestList('src'), new RegExp(arguments[1]||'.*', 'i'), QAAPI, loops);
+
+if ( arguments[1] == '-r' )
+	MakeRandomTests(MakeTestList('src'), QAAPI);
+else
+	MakeTests(MakeTestList('src'), new RegExp(arguments[1]||'.*', 'i'), QAAPI, loops);
+
+
 var t = TimeCounter() - t0;
 processPriority = savePrio || 0; // savePrio may be undefined
 

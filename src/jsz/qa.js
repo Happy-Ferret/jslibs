@@ -30,6 +30,8 @@
 
 	InflateDeflate1: function(QA) {
 	
+		LoadModule('jsz');
+		
 		var deflate = new Z(Z.DEFLATE);
 		var inflate = new Z(Z.INFLATE);
 		var source = 'x';
@@ -40,6 +42,8 @@
 	},
 
 	InflateDeflate2: function(QA) {
+	
+		LoadModule('jsz');
 
 		var deflate = new Z(Z.DEFLATE);
 		var inflate = new Z(Z.INFLATE);
@@ -51,6 +55,8 @@
 
 	InflateDeflateHuge: function(QA) {
 
+		LoadModule('jsz');
+		
 		var deflate = new Z(Z.DEFLATE);
 		var inflate = new Z(Z.INFLATE);
 
@@ -64,6 +70,8 @@
 	},
 	
 	EofMethods: function(QA) {
+	
+		LoadModule('jsz');
 
 		var source = QA.RandomString(10000);
 

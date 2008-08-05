@@ -31,6 +31,121 @@
 		QA.ASSERT( stream._NI_StreamRead, prev, 'NativeInterface security' )
 	},
 
+	BlobMutation_properties: function(QA) {
+	
+		var b = new Blob('abcdef');
+		b.prop1 = 11; b.prop2 = 22; b.prop3 = 33; b.prop4 = 44; b.prop5 = 55; b.prop6 = 66; b.prop7 = 77;
+		b.replace; // force mutation
+		QA.ASSERT( b instanceof Blob, false, 'is not Blob' )
+		QA.ASSERT( b instanceof String, true, 'is String' )
+		QA.ASSERT( b.prop1+b.prop2+b.prop3+b.prop4+b.prop5+b.prop6+b.prop7, 308, 'properties are preserved' )
+	},
+
+	BlobMutation_concat: function(QA) {
+	
+		var b1 = new Blob('abcdef');
+		var b2 = b1.concat('123');
+		QA.ASSERT_STR( b2, 'abcdef123', 'concat result' )
+		
+		QA.ASSERT( b1 instanceof Blob, true, 'is Blob' )
+		QA.ASSERT( b1 instanceof String, false, 'is not String' )
+
+		QA.ASSERT_TYPE( b2, Blob )
+		QA.ASSERT( b2 instanceof String, false, 'is not String' )
+	},
+
+	BlobMutation_replace: function(QA) {
+	
+		var b1 = new Blob('abcdef');
+		var b2 = b1.replace('bcde', '123');
+
+		QA.ASSERT_STR( b2, 'a123f', 'replace result' )
+		
+		QA.ASSERT( b1 instanceof Blob, false, 'is not Blob' )
+		QA.ASSERT_TYPE( b1, String )
+
+		QA.ASSERT_TYPE( b2, 'string' )
+	},
+
+	BlobMutation_avoid: function(QA) {
+
+		var b = new Blob('123');
+		QA.ASSERT( b.length, 3, 'Blob length' );
+		QA.ASSERT_TYPE( b, Blob )
+
+		var b = new Blob('123');
+		QA.ASSERT( b.toString(), '123', 'Blob toString' );
+		QA.ASSERT_TYPE( b, Blob )
+
+		var b = new Blob('123');
+		QA.ASSERT( b.valueOf(), '123', 'Blob valueOf' );
+		QA.ASSERT_TYPE( b, Blob )
+
+		var b = new Blob('123');
+		b.constructor;
+		b.__proto__;
+		QA.ASSERT_TYPE( b, Blob )
+
+
+		// now all at once
+		
+		var b = new Blob('123');
+		QA.ASSERT( b.length, 3, 'Blob length' );
+		QA.ASSERT( b.toString(), '123', 'Blob toString' );
+		QA.ASSERT( b.valueOf(), '123', 'Blob valueOf' );
+		b.constructor;
+		b.__proto__;
+		QA.ASSERT( b == '123', true );
+		QA.ASSERT( b == Blob('123'), true );
+		QA.ASSERT( b == new Blob('123'), true );
+		QA.ASSERT_TYPE( b, Blob )
+		
+		
+		var c = Blob('abcd');
+		c.replace = function() {}
+		c.replace();
+		QA.ASSERT_TYPE( c, Blob )
+
+		
+		var d = Blob('abcd');
+		d.__proto__ = { replace: function() {} }
+		QA.ASSERT( d instanceof String, false )
+		d.replace();
+		QA.ASSERT( d instanceof String, false )
+
+
+		var e = Blob('abcd');
+		e.__proto__ = { __proto__:e.__proto__, replace: function() {} }
+		QA.ASSERT( e instanceof Blob, true )
+		QA.ASSERT( e instanceof String, false )
+		e.replace();
+		QA.ASSERT( e instanceof Blob, true )
+		QA.ASSERT( e instanceof String, false )
+		e.match;
+		QA.ASSERT( e instanceof Blob, true )
+		QA.ASSERT( e instanceof String, false )
+	},
+
+
+	BlobMutation_reliability: function(QA) {
+
+		var b = new Blob('123');
+		b.replace;
+		
+		QA.ASSERT( b == '123', true, 'string comparaison' );
+		QA.ASSERT( b === '123', false, 'string and type comparaison' );
+
+		QA.ASSERT( b.length, 3, 'string length' );
+
+		var b1 = Blob('123');
+		QA.ASSERT_STR( b == b1, false, 'String == Blob' );
+		QA.ASSERT_STR( b1 == b, false, 'Blob == String' ); // see EQUALITY hook
+		QA.ASSERT_TYPE( b1, Blob )
+
+		QA.ASSERT_TYPE( b, String )
+	},
+
+
 	BlobAPI: function(QA) {
 
 		LoadModule('jsstd');
@@ -179,7 +294,7 @@
 	},
 
 
-	Blob_str_property: function(QA) {
+	_Blob_str_property: function(QA) { // has been removed
 
 		var b = Blob('123');
 		QA.ASSERT_TYPE( b.str, 'string', '.str is String' );
