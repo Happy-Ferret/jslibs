@@ -91,7 +91,7 @@
 		var count = Poll([], 100);
 		var t = IntervalNow() - t0;
 		QA.ASSERT( count, 0, 'descriptor event count' );
-		QA.ASSERT( t >= 100 && t < 120, true, 'poll timeout' );
+		QA.ASSERT( t >= 90 && t < 150, true, 'poll timeout (may fail if high CPU load)' );
 	},
 
 
@@ -249,19 +249,22 @@
 		var t0 = IntervalNow();
 		Sleep(250);
 		var t = IntervalNow() - t0;
-		QA.ASSERT( t >= 250 && t < 270, true, 'time accuracy' );
+		QA.ASSERT( t >= 249 && t < 275, true, 'time accuracy (may fail if high CPU load)' ); 
 	},
 
 
 	SharedMemory: function(QA) {
 		
 		LoadModule('jsio');
-		var mem = new SharedMemory( 'qa_tmp_sm.txt', 100 );
+		
+		var fileName = 'qa'+QA.RandomString(10)+'.tmp';
+		
+		var mem = new SharedMemory( fileName, 100 );
 		mem.content = 'xxxxxx789';
 		mem.Write('xxx456');
 		mem.Write('123', 0);
 		mem.Write('ABC', 9);
-		var mem2 = new SharedMemory( 'qa_tmp_sm.txt', 100 );
+		var mem2 = new SharedMemory( fileName, 100 );
 		QA.ASSERT_STR( mem2.Read(), '123456789ABC', 'content' );
 		QA.ASSERT( mem2.content.length, 12, 'used memory length' );
 		QA.ASSERT_STR( mem2.content, '123456789ABC', 'content' );

@@ -95,13 +95,13 @@ function MakeRandomTests( testList, QAAPI ) {
 		
 		var idx = Math.floor(Math.random() * list.length);
 		
-		try {
+//		try {
 
 			list[idx][1](QAAPI, list[idx][0]);
-		} catch(ex) {
+//		} catch(ex) {
 
-			QAAPI.REPORT(testName+' '+ex.toString());
-		}
+//			QAAPI.REPORT(testName+' '+ex.toSource());
+//		}
 	}
 
 }
@@ -203,11 +203,14 @@ var savePrio = processPriority;
 processPriority = 2;
 var t0 = TimeCounter();
 
-if ( arguments[1] == '-r' )
+if ( arguments[1] == '-r' ) {
+	
+	loops = 1;
 	MakeRandomTests(MakeTestList('src'), QAAPI);
-else
+} else {
+	
 	MakeTests(MakeTestList('src'), new RegExp(arguments[1]||'.*', 'i'), QAAPI, loops);
-
+}
 
 var t = TimeCounter() - t0;
 processPriority = savePrio || 0; // savePrio may be undefined
