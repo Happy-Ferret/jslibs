@@ -579,6 +579,29 @@ DEFINE_FUNCTION(Locate) {
 	return JS_TRUE;
 }
 
+/**doc
+ * $OBJ *LocateLine( nFrame );
+  Returns the current script line number. nFrame is the number of stack frames to go back (0 is the current stack frame).
+**/
+DEFINE_FUNCTION(LocateLine) {
+
+	J_S_ASSERT_ARG_MIN( 1 );
+	int32 frame;
+	J_JSVAL_TO_INT32( argv[0], frame );
+	J_S_ASSERT(frame <= 0, "Frame number must be <= 0");
+
+	JSStackFrame *fp = NULL;
+	for ( JS_FrameIterator(cx, &fp); fp; JS_FrameIterator(cx, &fp) ) {
+		
+		jsbytecode *pc = JS_GetFramePC(cx,fp);
+		if ( fp->script && pc && !frame++ ) {
+
+			*rval = INT_TO_JSVAL(JS_PCToLineNumber(cx, JS_GetFrameScript(cx, fp), pc));
+			break;
+		}
+	}
+	return JS_TRUE;
+}
 
 
 static bool hasGCTrace = false;
@@ -949,6 +972,7 @@ CONFIGURE_STATIC
 		FUNCTION( LineToPC )
 		FUNCTION( PCToLine )
 		FUNCTION( Locate )
+		FUNCTION( LocateLine )
 
 		FUNCTION( DumpObjectPrivate )
 	END_STATIC_FUNCTION_SPEC

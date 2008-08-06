@@ -65,6 +65,38 @@ static JSBool BufferGet( JSContext *cx, JSObject *obj, const char **buf, size_t 
 }
 
 
+JSBool CloseSharedMemory( JSContext *cx, JSObject *obj ) {
+
+	ClassPrivate *pv = (ClassPrivate*)JS_GetPrivate(cx, J_OBJ);
+
+	PRStatus status;
+	status = PR_WaitSemaphore( pv->accessSem );
+	
+	MemHeader *mh = (MemHeader*)pv->mem;
+
+	mh->accessCount--;
+	bool isLast = (mh->accessCount == 0);
+
+	status = PR_DetachSharedMemory(pv->shm, pv->mem);
+	status = PR_PostSemaphore(pv->accessSem);
+	status = PR_CloseSemaphore(pv->accessSem);
+
+	if ( isLast ) {
+	
+		status = PR_DeleteSharedMemory(pv->name);
+		char semName[PATH_MAX];
+		strcpy(semName, pv->name);
+		strcat(semName, SEMAPHORE_EXTENSION);
+		status = PR_DeleteSemaphore(semName);
+	}
+
+	free(pv->name);
+	JS_SetPrivate(cx, J_OBJ, NULL);
+
+	return JS_TRUE;
+}
+
+
 /**doc
 $CLASS_HEADER
  This class manages shared memory between two or more process.
@@ -73,32 +105,9 @@ BEGIN_CLASS( SharedMemory )
 
 DEFINE_FINALIZE() {
 
-	ClassPrivate *pv = (ClassPrivate*)JS_GetPrivate(cx, J_OBJ);
-	if ( pv != NULL ) {
-
-		PRStatus status;
-		status = PR_WaitSemaphore( pv->accessSem );
+	if ( JS_GetPrivate(cx, J_OBJ) != NULL ) {
 		
-		MemHeader *mh = (MemHeader*)pv->mem;
-
-		mh->accessCount--;
-		bool isLast = (mh->accessCount == 0);
-
-		status = PR_DetachSharedMemory(pv->shm, pv->mem);
-		status = PR_PostSemaphore(pv->accessSem);
-		status = PR_CloseSemaphore(pv->accessSem);
-
-		if ( isLast ) {
-		
-			status = PR_DeleteSharedMemory(pv->name);
-			char semName[PATH_MAX];
-			strcpy(semName, pv->name);
-			strcat(semName, SEMAPHORE_EXTENSION);
-			status = PR_DeleteSemaphore(semName);
-		}
-
-		free(pv->name);
-		JS_SetPrivate(cx, J_OBJ, NULL);
+		CloseSharedMemory(cx, obj);
 	}
 }
 
@@ -277,6 +286,20 @@ DEFINE_FUNCTION_FAST( Clear ) {
 	return JS_TRUE;
 }
 
+
+/**doc
+ * $INAME()
+  Close the shared memory.
+**/
+DEFINE_FUNCTION_FAST( Close ) {
+
+	ClassPrivate *pv = (ClassPrivate*)JS_GetPrivate(cx, J_FOBJ);
+	J_S_ASSERT_RESOURCE( pv );
+	J_CHK( CloseSharedMemory(cx, J_FOBJ) );
+	return JS_TRUE;
+}
+
+
 /**doc
 === Properties ===
 **/
@@ -415,6 +438,7 @@ CONFIGURE_CLASS
 		FUNCTION_FAST( Read )
 		FUNCTION_FAST( Write )
 		FUNCTION_FAST( Clear )
+		FUNCTION_FAST( Close )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
