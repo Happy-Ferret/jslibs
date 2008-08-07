@@ -682,6 +682,7 @@ inline JSBool JsvalToBool( JSContext *cx, jsval val, bool *bval ) {
 ///////////////////////////////////////////////////////////////////////////////
 // Helper functions
 
+/* properly
 inline bool SwapObjects( JSContext *cx, JSObject *obj1, JSObject *obj2 ) {
 
 	if ( obj1 == NULL || obj2 == NULL )
@@ -710,6 +711,8 @@ inline bool SwapObjects( JSContext *cx, JSObject *obj1, JSObject *obj2 ) {
 
 	return JS_TRUE;
 }
+*/
+
 
 inline bool IsPInfinity( JSContext *cx, jsval val ) {
 
@@ -784,16 +787,35 @@ inline bool HasProperty( JSContext *cx, JSObject *obj, const char *propertyName 
 */
 
 
-inline JSBool CallFunction( JSContext *cx, JSObject *obj, jsval functionValue, jsval *rval, uintN argc, ... ) {
+inline JSBool JL_CallFunction( JSContext *cx, JSObject *obj, jsval functionValue, jsval *rval, uintN argc, ... ) {
 
 	va_list ap;
 	jsval argv[16]; // argc MUST be <= 16
 	jsval rvalTmp;
-	J_S_ASSERT( argc <= sizeof(argv)/sizeof(jsval), "Too many arguments." );
+	J_S_ASSERT( argc <= sizeof(argv)/sizeof(*argv), "Too many arguments." );
 	va_start(ap, argc);
 	for ( uintN i = 0; i < argc; i++ )
 		argv[i] = va_arg(ap, jsval);
 	va_end(ap);
+	J_S_ASSERT_FUNCTION( functionValue );
+	J_CHK( JS_CallFunctionValue(cx, obj, functionValue, argc, argv, &rvalTmp) ); // NULL is NOT supported for &rvalTmp ( last arg of JS_CallFunctionValue )
+	if ( rval != NULL )
+		*rval = rvalTmp;
+	return JS_TRUE;
+}
+
+inline JSBool JL_CallFunctionName( JSContext *cx, JSObject *obj, const char* functionName, jsval *rval, uintN argc, ... ) {
+
+	va_list ap;
+	jsval argv[16]; // argc MUST be <= 16
+	jsval rvalTmp;
+	J_S_ASSERT( argc <= sizeof(argv)/sizeof(*argv), "Too many arguments." );
+	va_start(ap, argc);
+	for ( uintN i = 0; i < argc; i++ )
+		argv[i] = va_arg(ap, jsval);
+	va_end(ap);
+	jsval functionValue;
+	J_CHKM( JS_GetProperty(cx, obj, functionName, &functionValue), "Unable to access the function." );
 	J_S_ASSERT_FUNCTION( functionValue );
 	J_CHK( JS_CallFunctionValue(cx, obj, functionValue, argc, argv, &rvalTmp) ); // NULL is NOT supported for &rvalTmp ( last arg of JS_CallFunctionValue )
 	if ( rval != NULL )
