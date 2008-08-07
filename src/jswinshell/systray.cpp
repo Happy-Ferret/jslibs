@@ -383,19 +383,19 @@ DEFINE_FUNCTION( ProcessEvents ) {
 				case WM_SETFOCUS:
 					JS_GetProperty(cx, obj, "onfocus", &functionVal);
 					if ( functionVal != JSVAL_VOID )
-						J_CHK( CallFunction( cx, obj, functionVal, rval, 1, JSVAL_TRUE ) );
+						J_CHK( JL_CallFunction( cx, obj, functionVal, rval, 1, JSVAL_TRUE ) );
 					break;
 				case WM_KILLFOCUS:
 					JS_GetProperty(cx, obj, "onblur", &functionVal);
 					if ( functionVal != JSVAL_VOID )
-						J_CHK( CallFunction( cx, obj, functionVal, rval, 1, JSVAL_FALSE ) );
+						J_CHK( JL_CallFunction( cx, obj, functionVal, rval, 1, JSVAL_FALSE ) );
 					break;
 				case WM_CHAR:
 					JS_GetProperty(cx, obj, "onchar", &functionVal);
 					if ( functionVal != JSVAL_VOID ) {
 						
 						char c = wParam;
-						J_CHK( CallFunction( cx, obj, functionVal, rval, 1, STRING_TO_JSVAL( JS_NewStringCopyN(cx, &c, 1) ) ) );
+						J_CHK( JL_CallFunction( cx, obj, functionVal, rval, 1, STRING_TO_JSVAL( JS_NewStringCopyN(cx, &c, 1) ) ) );
 					}
 					break;
 				case WM_COMMAND:
@@ -404,7 +404,7 @@ DEFINE_FUNCTION( ProcessEvents ) {
 
 						jsval key;
 						J_CHK( JS_IdToValue(cx, (jsid)wParam, &key) );
-						J_CHK( CallFunction( cx, obj, functionVal, rval, 2, key, INT_TO_JSVAL( mButton ) ) );
+						J_CHK( JL_CallFunction( cx, obj, functionVal, rval, 2, key, INT_TO_JSVAL( mButton ) ) );
 					}
 					break;
 				case MSG_TRAY_CALLBACK:
@@ -412,28 +412,28 @@ DEFINE_FUNCTION( ProcessEvents ) {
 						case WM_MOUSEMOVE:
 							JS_GetProperty(cx, obj, "onmousemove", &functionVal);
 							if ( functionVal != JSVAL_VOID )
-								J_CHK( CallFunction( cx, obj, functionVal, rval, 2, INT_TO_JSVAL( mouseX ), INT_TO_JSVAL( mouseY ) ) );
+								J_CHK( JL_CallFunction( cx, obj, functionVal, rval, 2, INT_TO_JSVAL( mouseX ), INT_TO_JSVAL( mouseY ) ) );
 							break;
 						case WM_LBUTTONDOWN:
 						case WM_MBUTTONDOWN:
 						case WM_RBUTTONDOWN:
 							JS_GetProperty(cx, obj, "onmousedown", &functionVal);
 							if ( functionVal != JSVAL_VOID )
-								J_CHK( CallFunction( cx, obj, functionVal, rval, 2, INT_TO_JSVAL( lParam==WM_LBUTTONDOWN ? 1 : lParam==WM_RBUTTONDOWN ? 2 : lParam==WM_MBUTTONDOWN ? 3 : 0 ), JSVAL_TRUE ) );
+								J_CHK( JL_CallFunction( cx, obj, functionVal, rval, 2, INT_TO_JSVAL( lParam==WM_LBUTTONDOWN ? 1 : lParam==WM_RBUTTONDOWN ? 2 : lParam==WM_MBUTTONDOWN ? 3 : 0 ), JSVAL_TRUE ) );
 							break;
 						case WM_LBUTTONUP:
 						case WM_MBUTTONUP:
 						case WM_RBUTTONUP:
 							JS_GetProperty(cx, obj, "onmouseup", &functionVal);
 							if ( functionVal != JSVAL_VOID )
-								J_CHK( CallFunction( cx, obj, functionVal, rval, 2, INT_TO_JSVAL( lParam==WM_LBUTTONUP ? 1 : lParam==WM_RBUTTONUP ? 2 : lParam==WM_MBUTTONUP ? 3 : 0 ), JSVAL_FALSE ) );
+								J_CHK( JL_CallFunction( cx, obj, functionVal, rval, 2, INT_TO_JSVAL( lParam==WM_LBUTTONUP ? 1 : lParam==WM_RBUTTONUP ? 2 : lParam==WM_MBUTTONUP ? 3 : 0 ), JSVAL_FALSE ) );
 							break;
 						case WM_LBUTTONDBLCLK:
 						case WM_MBUTTONDBLCLK:
 						case WM_RBUTTONDBLCLK:
 							JS_GetProperty(cx, obj, "onmousedblclick", &functionVal);
 							if ( functionVal != JSVAL_VOID )
-								CallFunction( cx, obj, functionVal, rval, 1, INT_TO_JSVAL( lParam==WM_LBUTTONDBLCLK ? 1 : lParam==WM_RBUTTONDBLCLK ? 2 : lParam==WM_MBUTTONDBLCLK ? 3 : 0 ) );
+								JL_CallFunction( cx, obj, functionVal, rval, 1, INT_TO_JSVAL( lParam==WM_LBUTTONDBLCLK ? 1 : lParam==WM_RBUTTONDBLCLK ? 2 : lParam==WM_MBUTTONDBLCLK ? 3 : 0 ) );
 							break;
 					} // switch lParam
 			} //  switch message
@@ -501,7 +501,7 @@ DEFINE_FUNCTION( PopupMenu ) {
 				if ( JS_TypeOfValue(cx, itemVal) == JSTYPE_FUNCTION ) {
 
 					J_CHK( JS_IdToValue(cx, list->vector[i], &key) );
-					J_CHK( CallFunction(cx, obj, itemVal, &itemVal, 2, item, key) );
+					J_CHK( JL_CallFunction(cx, obj, itemVal, &itemVal, 2, item, key) );
 				}
 				if ( itemVal != JSVAL_VOID ) {
 					J_CHK( JsvalToString(cx, &itemVal, &newItem) );
@@ -513,7 +513,7 @@ DEFINE_FUNCTION( PopupMenu ) {
 				if ( JS_TypeOfValue(cx, itemVal) == JSTYPE_FUNCTION ) {
 
 					J_CHK( JS_IdToValue(cx, list->vector[i], &key) );
-					J_CHK( CallFunction(cx, obj, itemVal, &itemVal, 2, item, key) );
+					J_CHK( JL_CallFunction(cx, obj, itemVal, &itemVal, 2, item, key) );
 				}
 				if ( itemVal != JSVAL_VOID ) {
 					JSBool boolVal;
@@ -528,7 +528,7 @@ DEFINE_FUNCTION( PopupMenu ) {
 				if ( JS_TypeOfValue(cx, itemVal) == JSTYPE_FUNCTION ) {
 
 					J_CHK( JS_IdToValue(cx, list->vector[i], &key) );
-					J_CHK( CallFunction(cx, obj, itemVal, &itemVal, 2, item, key) );
+					J_CHK( JL_CallFunction(cx, obj, itemVal, &itemVal, 2, item, key) );
 				}
 
 				if ( itemVal != JSVAL_VOID ) {
@@ -556,7 +556,7 @@ DEFINE_FUNCTION( PopupMenu ) {
 				if ( JS_TypeOfValue(cx, itemVal) == JSTYPE_FUNCTION ) {
 
 					J_CHK( JS_IdToValue(cx, list->vector[i], &key) );
-					J_CHK( CallFunction(cx, obj, itemVal, &itemVal, 2, item, key) );
+					J_CHK( JL_CallFunction(cx, obj, itemVal, &itemVal, 2, item, key) );
 				}
 				if ( itemVal != JSVAL_VOID ) {
 					JSObject *iconObj = JSVAL_TO_OBJECT(itemVal);
