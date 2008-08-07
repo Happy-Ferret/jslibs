@@ -121,11 +121,17 @@ DEFINE_FUNCTION( Stringify ) {
 
 DEFINE_FUNCTION( Test ) {
 
+/*
 	J_S_ASSERT_ARG_MIN(2);
 	J_S_ASSERT_OBJECT( J_ARG(1) );
 	J_S_ASSERT_OBJECT( J_ARG(2) );
 
 	J_CHK( SwapObjects(cx, JSVAL_TO_OBJECT(J_ARG(1)), JSVAL_TO_OBJECT(J_ARG(2)) ) );
+*/
+
+	jsval ret;
+	JSBool res = JL_CallFunctionName(cx, JS_GetGlobalObject(cx), "getProgram", &ret, 0);
+
 
 	return JS_TRUE;
 }

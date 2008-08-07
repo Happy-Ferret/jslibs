@@ -1,12 +1,10 @@
 LoadModule('jsstd');
 LoadModule('jsio');
 
-var b = new Blob('abcdef');
 
-
-//Print( b.concat, '\n' );
-Print( b.concat('123'), '\n' );
-Print( b.replace('ab','cd'), '\n' );
+	var d = Blob('abcd');
+	d.__proto__ = { replace: function() {} }
+	
 
 
 Halt();
