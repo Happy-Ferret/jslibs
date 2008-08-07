@@ -1,18 +1,15 @@
-({
+LoadModule('jssqlite');
 
-	InMemoryDatabase: function(QA) {
+/// InMemory Database [ftr]
 
-		LoadModule('jssqlite');
 		var db = new Database();
 		var res = db.Exec('SELECT 1');
 		QA.ASSERT( res, 1, 'select 1' );
 		db.Close();
-	},
 
 
-	InMemoryDatabaseCreateTable: function(QA) {
-	
-		LoadModule('jssqlite');
+/// InMemory Database Create table [ftr]
+		
 		try {
 
 			var db = new Database();
@@ -27,12 +24,9 @@
 			
 			QA.FAILED( 'SqliteError: ' + ex.text + '('+ex.code+')' );
 		}
-	},
 
 
-	ResultFormat: function(QA) {
-	
-		LoadModule('jssqlite');
+/// Result format [ftr]
 
 		var db = new Database();
 		var res = db.Exec('create table a (b integer primary key, c varchar, d integer)');
@@ -69,12 +63,9 @@
 
 		db.Close();
 
-	},
 
+/// exceptions [ftr]
 
-	Exceptions: function(QA) {
-	
-		LoadModule('jssqlite');
 		var db = new Database();
 
 		try {
@@ -88,12 +79,9 @@
 			QA.ASSERT( ex.text, 'no such table: a', 'exception text' );
 		}
 		db.Close();
-	},
-	
 
-	QueryNoData: function(QA) {
-		
-		LoadModule('jssqlite');
+
+/// Query no data [ftr]
 
 		var db = new Database();
 
@@ -112,12 +100,10 @@
 		QA.ASSERT( result.Row()[0], 1, 'row 1' );
 		QA.ASSERT( result.Row()[0], 2, 'row 2' );
 		QA.ASSERT( result.Row()[0], 2, 'row 3' );
-	},
 
 
-	DatabaseFile: function(QA) {
-	
-		LoadModule('jssqlite');
+/// Database file [ftr]
+
 		var db = new Database('test_sqlite_database');
 		db.Close();
 
@@ -125,12 +111,10 @@
 		QA.ASSERT( file.exist, true, 'database file exist' );
 		file.Delete();
 		QA.ASSERT( file.exist, false, 'database file exist' );
-	},
 
 
-	Binding: function(QA) {
-	
-		LoadModule('jssqlite');
+/// Bindings [ftr]
+
 		var db = new Database();
 
 		var result1 = db.Query('SELECT :toto');
@@ -141,31 +125,24 @@
 		QA.ASSERT( db.changes, 0, 'changes' );
 		result1.Close();
 		db.Close();
-	},
 
 
-	Version: function(QA) {
+/// version [ftr]
 
-		LoadModule('jssqlite');
 		QA.ASSERT( Database.version[1], '.', 'version string' );
 		QA.ASSERT( Database.version[3], '.', 'version string' );
-	},
 
 
-	NamedVariables: function(QA) {
+/// named variables [ftr]
 
-		LoadModule('jssqlite');
 		var db = new Database();
 		var res = db.Exec('SELECT @varTest', { varTest:123} );
 		QA.ASSERT( res, 123, 'row result' );
 		db.Close();
-	},
 
 
-	QuestionMark: function(QA) {
+/// question mark [ftr]
 
-		LoadModule('jssqlite');
-	
 		var db = new Database();
 	
 		var res = db.Exec( 'select ?+?+?', [2, 3, 4] );
@@ -175,25 +152,19 @@
 		QA.ASSERT( Number(row), 6, 'addition using question mark' );
 
 		db.Close();
-	},
-	
-	
-	_FunctionBinding: function(QA) {
-	
-		LoadModule('jssqlite');
-	
+
+
+/// Function binding [ftr]
+
 		var db = new Database('');
 	
 		db.testFun = function(a) { return a*10 }
 		db.jseval = function(s){ return eval(s) };
 		
-		var blob = new Blob();
-		blob.Set('qqwe\00\00fv1234');
+		var blob = new Blob('qqwe\00\00fv1234');
 		var res = db.Exec('SELECT testFun(123), length(:toto), jseval("null") is null', {toto:blob, aaa:null});
 
 		QA.ASSERT( res, 1230, 'row result' );
 
 		db.Close();
-	}
 
-})

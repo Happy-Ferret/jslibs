@@ -1,6 +1,6 @@
-({
+LoadModule('jsstd');
 
-	ReadOnlyGlobalClasses: function(QA) {
+/// ReadOnlyGlobalClasses [ftr]
 
 		var bstr = Blob;
 		Blob = null;
@@ -13,15 +13,15 @@
 		var bstr1 = Blob;
 		delete global.Blob;
 		QA.ASSERT( Blob, bstr1, 'Blob integrity' );
-	},
 
-	NativeInterface: function(QA) {
+
+/// NativeInterface [ftr]
 
 		var stream = new Stream('456');
 		QA.ASSERT( !isNaN(stream._NI_StreamRead), true, 'NativeInterface system' )
-	},
 
-	NativeInterfaceSecurity: function(QA) {
+
+/// NativeInterface security [ftr]
 
 		var stream = new Stream('456');
 		var prev = stream._NI_StreamRead;
@@ -29,9 +29,9 @@
 		QA.ASSERT( stream._NI_StreamRead, prev, 'NativeInterface security' )
 		stream._NI_StreamRead = 987654;
 		QA.ASSERT( stream._NI_StreamRead, prev, 'NativeInterface security' )
-	},
 
-	BlobMutation_properties: function(QA) {
+
+/// Blob mutation keep properties [ftr]
 	
 		var b = new Blob('abcdef');
 		b.prop1 = 11; b.prop2 = 22; b.prop3 = 33; b.prop4 = 44; b.prop5 = 55; b.prop6 = 66; b.prop7 = 77;
@@ -39,10 +39,10 @@
 		QA.ASSERT( b instanceof Blob, false, 'is not Blob' )
 		QA.ASSERT( b instanceof String, true, 'is String' )
 		QA.ASSERT( b.prop1+b.prop2+b.prop3+b.prop4+b.prop5+b.prop6+b.prop7, 308, 'properties are preserved' )
-	},
 
-	BlobMutation_concat: function(QA) {
-	
+
+/// Blob no mutation on concat [ftr]
+
 		var b1 = new Blob('abcdef');
 		var b2 = b1.concat('123');
 		QA.ASSERT_STR( b2, 'abcdef123', 'concat result' )
@@ -52,10 +52,10 @@
 
 		QA.ASSERT_TYPE( b2, Blob )
 		QA.ASSERT( b2 instanceof String, false, 'is not String' )
-	},
 
-	BlobMutation_replace: function(QA) {
-	
+
+/// Blob mutation on replace [ftr]
+
 		var b1 = new Blob('abcdef');
 		var b2 = b1.replace('bcde', '123');
 
@@ -65,9 +65,9 @@
 		QA.ASSERT_TYPE( b1, String )
 
 		QA.ASSERT_TYPE( b2, 'string' )
-	},
 
-	BlobMutation_avoid: function(QA) {
+
+/// Blob avoid mutation [ftr]
 
 		var b = new Blob('123');
 		QA.ASSERT( b.length, 3, 'Blob length' );
@@ -124,10 +124,9 @@
 		e.match;
 		QA.ASSERT( e instanceof Blob, true )
 		QA.ASSERT( e instanceof String, false )
-	},
 
 
-	BlobMutation_reliability: function(QA) {
+/// Blob mutation reliability [ftr]
 
 		var b = new Blob('123');
 		b.replace;
@@ -143,12 +142,9 @@
 		QA.ASSERT_TYPE( b1, Blob )
 
 		QA.ASSERT_TYPE( b, String )
-	},
 
 
-	BlobAPI: function(QA) {
-
-		LoadModule('jsstd');
+/// Blob API [ftr]
 		
 		QA.ASSERT( Blob('123456').indexOf(''), 0, 'Blob indexOf' )
 		QA.ASSERT( Blob('123456').indexOf('1'), 0, 'Blob indexOf' )
@@ -186,52 +182,35 @@
 		QA.ASSERT( Blob('1').charAt(), '1', 'Blob charAt' )
 		QA.ASSERT( Blob('1').charAt(-1), '', 'Blob charAt' )
 		QA.ASSERT( Blob('1').charAt(1), '', 'Blob charAt' )
-		
-	},
 
-	Blob_construct_with_data: function(QA) {
 
-		LoadModule('jsstd');
-//		LoadModule('jslang');
+/// Blob construct with data [ftr]
 		
 		var bstr = new Blob('98765');
 		QA.ASSERT( String(bstr), '98765', 'string value' );
-	},
-	
-	Blob_not_constructed: function(QA) {
-		
-		LoadModule('jsstd');
-//		LoadModule('jslang');
+
+
+/// Blob not constructed [ftr]
 
 		var bstr = Blob('98765');
 		QA.ASSERT( String(bstr), '98765', 'string value' );
 
-
 		var v = Blob('123');
 		QA.ASSERT( typeof v, 'object', 'variable type' );
 		QA.ASSERT( String(v), '123', 'content' );
-	},
 
-	Blob_to_string: function(QA) {
 
-		LoadModule('jsstd');
-//		LoadModule('jslang');
-		
+/// Blob toString [ftr]
+
 		QA.ASSERT( Blob('345').toString(), '345', 'string value' );
-	},
 
-	Blob_valueOf: function(QA) {
 
-		LoadModule('jsstd');
-//		LoadModule('jslang');
+/// Blob valueOf [ftr]
 
 		QA.ASSERT( Blob('567').valueOf(), '567', 'value of' );
-	},
-	
-	Blob: function(QA) {
-		
-		LoadModule('jsstd');
-//		LoadModule('jslang');
+
+
+/// Blob misc [ftr]
 	
 		var b = new Blob();
 		b = b.concat( 'ABCD' );
@@ -255,28 +234,23 @@
 		QA.ASSERT( String(b.valueOf()), 'ABCDXYZ', 'valueof' );
 //		b.Set();
 //		QA.ASSERT( b.length, 0, 'length' );
-	},
 
-	BlobErrors: function(QA) {
-	
+
+/// Blob errors [ftr]
+
 		var b = new Blob();
 		b.concat( 'ABCD' ); // ????
 		QA.ASSERT_EXCEPTION( function() b[5] = 'X', Error, 'set an out-of-range item' );
-	},
 
 
-	Blob_concat: function(QA) {
+/// Blob concat [ftr]
 
 		var b = Blob('123');
 		var res = b.concat(b,Blob('456'),789,'abc');
 		QA.ASSERT_STR( res, '123123456789abc', 'Blob concat' );
-	},
 
 
-	Blob_substr: function(QA) {
-	
-		LoadModule('jsstd');
-//		LoadModule('jslang');
+/// Blob substr [ftr]
 
 		var b = new Blob();
 		b = b.concat( 'ABCDEF' );
@@ -291,20 +265,9 @@
 		QA.ASSERT( ''+b.substr(6), '', 'substr' );
 		QA.ASSERT( ''+b.substr(-6), 'ABCDEF', 'substr' );
 		QA.ASSERT( ''+b.substr(-7,2), '', 'substr' );
-	},
 
 
-	_Blob_str_property: function(QA) { // has been removed
-
-		var b = Blob('123');
-		QA.ASSERT_TYPE( b.str, 'string', '.str is String' );
-	},
-
-
-	_BlobSetter: function(QA) { // this test do not have any sense with immutable objects
-	
-		LoadModule('jsstd');
-//		LoadModule('jslang');
+/// Blob setter [ftrd]
 
 		var b = new Blob('ABCDEF');
 		b[0] = 'X';
@@ -315,20 +278,17 @@
 		QA.ASSERT( String(b), 'XBCDEW', 'setter' );
 		QA.ASSERT_EXCEPTION( function() { b[-1] = 'Y'; }, Error, 'out of range' );
 		QA.ASSERT_EXCEPTION( function() { b[6] = 'Z'; }, Error, 'out of range' );
-	},
-	
-	Blob_boolean: function(QA) {
+
+
+/// Blob boolean test [ftr]
 	
 		QA.ASSERT( !!Blob(''), true, 'empty Blob cast to boolean' );
 		QA.ASSERT( !!Blob('x'), true, 'non-empty Blob cast to boolean' );
-	
 //		QA.ASSERT( !!Blob(''), !!(''), 'empty Blob cast to boolean' );
 //		QA.ASSERT( !!Blob('a'), !!('a'), 'empty Blob cast to boolean' );
-	},
-	
-	BlobEquality: function(QA) {
-		
-		LoadModule('jsstd');
+
+
+/// Blob equality operator [ftr]
 
 		var b = new Blob('ABCDEF');
 
@@ -339,9 +299,9 @@
 
 		QA.ASSERT( (Blob('abc') == Blob('abc')), true, 'Blob == Blob' )
 		QA.ASSERT( (Blob('abc') == Blob('xyz')), false, 'Blob == Blob' )
-	},
 
-	BlobStringSimilarity: function(QA) {
+
+/// Blob and String similarity [ftr]
 
 //		QA.ASSERT( (new Blob('abc') == new Blob('abc')), (new String('abc') == new String('abc')), 'new a == a' );
 //		QA.ASSERT( (new Blob('abc') != new Blob('abc')), (new String('abc') != new String('abc')), 'new a != a' );
@@ -373,38 +333,9 @@
 //		QA.ASSERT( (Blob(undefined)), (String(undefined)), '(undefined)' );
 		QA.ASSERT( (Blob('') == ''), (String('') == ''), '== ""' );
 		QA.ASSERT( (Blob('abc') == 'abc'), (String('abc') == 'abc'), ' Str(a) == "a" ' );
-	},
 
 
-	_BlobSelfReference: function(QA) { // this test do not have any sense with immutable objects
-
-		LoadModule('jsstd');
-//		LoadModule('jslang');
-
-		var a = new Blob();
-		a.Set();
-		a.Set( 'ABCDEF' );
-		a.Add(a);
-		QA.ASSERT( ''+a, 'ABCDEFABCDEF', 'self add' )
-	
-		var b = new Blob();
-		b.Set( 'ABCDEF' );
-		b.Add( '12345' );
-		b.Set(b);
-		QA.ASSERT( ''+b, 'ABCDEF12345', 'self set' )
-
-		var c = new Blob();
-		c.Set('');
-		c.Add(c);
-		QA.ASSERT( ''+c, '', 'self add empty' )
-
-		var d = new Blob();
-		d.Set('123456');
-		d.Set(d.substr(0,3));
-		QA.ASSERT( ''+d, '123', 'self substr' )
-	},
-
-	SimpleStreamTest: function(QA) {	
+/// Stream [ftr]
 
 		var blob = new Blob("1234567");
 		var stream = Stream(blob);
@@ -420,9 +351,9 @@
 
 		stream.position = 0;
 		QA.ASSERT( String(stream.Read(blob.length)), '1234567', 'read the exact length' )
-	},
 
-	StreamAdd: function(QA) {
+
+/// Stream add [ftr]
 
 		var blob = new Blob("1234");
 		var stream = Stream(blob);
@@ -437,11 +368,10 @@
 		QA.ASSERT( s1.position, 0, 'stream position' )
 		QA.ASSERT( s1.available, 10, 'stream source length' )
 		QA.ASSERT( String(s1.Read(3)), '123', 'stream Read()' )
-	},
 
-	
-	JavascriptStream: function(QA) {
-		
+
+/// non-native Stream [ftr]
+
 		var buf = new Buffer();
 		buf.Write('abcdefghi');
 
@@ -454,10 +384,9 @@
 		}
 		
 		QA.ASSERT( Stringify( new myStream() ), 'abcdefghi', 'force string conversion' );
-	},
-	
-	
-	Stringify: function(QA) {
+
+
+/// Stringify function [ftr]
 	
 		QA.ASSERT( 'test', Stringify('test'), 'force string conversion' );
 		
@@ -475,7 +404,3 @@
 
 		QA.ASSERT( s.length, len, 'string length' );
 
-	}
-
-	
-})

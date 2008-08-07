@@ -1,13 +1,13 @@
 // don't remove this first line !! ( see MemoryMapped test )
-({
-	
-	TypeTest: function(QA) {
-	
+LoadModule('jsio');
+
+/// File ancestor [ftr]
+
 		var f = new File('');
 		QA.ASSERT( f instanceof Descriptor, true, 'Descriptor inheritance' );
-	},
 
-	SystemInfo: function(QA) {
+
+/// system info [ftr]
 
 		QA.ASSERT( typeof systemInfo, 'object', 'system info' );
 		var res = delete systemInfo.architecture;
@@ -17,30 +17,26 @@
 		var res = delete systemInfo.release;
 		QA.ASSERT( res, false, 'delete a property' );
 		QA.ASSERT_HAS_PROPERTIES( systemInfo, 'architecture,name,release' );
-	},
 
 
-	PhysicalMemory: function(QA) {
+/// physical memory [ftr]
 
 		QA.ASSERT( physicalMemorySize == physicalMemorySize && physicalMemorySize > 1000000, true, 'physical Memory Size' );
-	},
 
 
-	Noise: function(QA) {
-	
+/// Noise generation 
+		
 		QA.ASSERT( GetRandomNoise(1).length, 1, 'random noise 1 byte' );
 		QA.ASSERT( GetRandomNoise(3).length, 3, 'random noise 3 bytes' );
-	},
 
 
-	Environment: function(QA) {
+/// environment variables [ft]
 		
 		QA.ASSERT( GetEnv('PATH').length > 1, true, 'get an environment' );
 		QA.ASSERT( GetEnv('sdfrwetwergfqwuyoruiqwye'), undefined, 'undefined environment variable' );
-	},
 
 
-	ProcessPriority: function(QA) {
+/// process priority [ftr]
 	
 		var save = processPriority;
 		
@@ -54,11 +50,9 @@
 		QA.ASSERT( processPriority, 2, 'is thread priority 2' );
 		
 		processPriority = save;
-	},
 
 
-	Hostname: function(QA) { // need to be fixed for linux platform
-
+/// host name [ft]
 
 		switch (systemInfo.name) {
 			case 'Windows_NT':
@@ -68,10 +62,9 @@
 			default:
 				QA.FAILED('(TBD) no test available for this system.');
 		}
-	},
-	
-	
-	GetHostByName: function(QA) {
+
+
+/// GetHostByName function [u]
 
 		var res = Socket.GetHostsByName('localhost');
 		QA.ASSERT( res.indexOf('127.0.0.1') != -1, true, 'localhost is 127.0.0.1' );
@@ -82,20 +75,18 @@
 		var res = Socket.GetHostsByName(QA.RandomString(25));
 		QA.ASSERT_TYPE( res, Array );
 		QA.ASSERT( res.length, 0, 'find nonexistent hostName' );
-	},
 
 
-	EmptyPoll: function(QA) {
-		
+/// empty poll [tr]
+
 		var t0 = IntervalNow();
 		var count = Poll([], 100);
 		var t = IntervalNow() - t0;
 		QA.ASSERT( count, 0, 'descriptor event count' );
 		QA.ASSERT( t >= 90 && t < 150, true, 'poll timeout (may fail if high CPU load)' );
-	},
 
 
-	NonBlockingTCPSocket: function(QA) {
+/// Non-blocking TCP Socket [tr]
 
 		var count = 0;
 		var dlist = [];
@@ -147,9 +138,9 @@
 				clientSocket.Write('1234');
 			}
 		}
-	},
 
-	NonBlockingUDPSocket: function(QA) {
+
+/// Non-blocking UDP Socket [tr]
 	
 		var s2 = new Socket( Socket.UDP );
 		s2.nonblocking = true;
@@ -177,12 +168,9 @@
 				s1.Write('1234');
 			}
 		}
-	},
 
 
-	TCPGet: function(QA) {
-
-		LoadModule('jsio');
+/// TCP get
 
 		var res, host, hostList = ['proxy', 'www.google.com', 'localhost']; // try to find a web server on port 80
 		do {
@@ -231,33 +219,51 @@
 		}
 		
 		QA.ASSERT( response.length > 0, true, 'has response contant from '+host );
-	},
 
 
-	ClosingSocket: function(QA) {
+/// closing Socket [ftr]
 
 		var soc = new Socket();
 		QA.ASSERT( soc.type, Descriptor.DESC_SOCKET_TCP, 'descriptor type' );
 		QA.ASSERT( soc.closed, false, 'socket is not closed' );
 		soc.Close();		
 		QA.ASSERT( soc.closed, true, 'socket is closed' );
-	},
 
 
-	Interval: function(QA) {
+/// time interval [tr]
 
 		var t0 = IntervalNow();
 		Sleep(250);
 		var t = IntervalNow() - t0;
-		QA.ASSERT( t >= 249 && t < 275, true, 'time accuracy (may fail if high CPU load)' ); 
-	},
+		QA.ASSERT( t >= 249 && t < 275, true, 'time accuracy' );
 
 
-	SharedMemory: function(QA) {
+/// shared memory simple test 1 [ftr]
+
+		var fileName = 'qa'+QA.RandomString(10);
+		var mem = new SharedMemory( fileName, 100 );
+		mem.content = ' abcdef ';
+		QA.ASSERT_STR( mem.content, ' abcdef ', 'content' );
+		mem.Close();
 		
-		LoadModule('jsio');
+
+/// shared memory simple test 2 [ftr]
+
+		var fileName = 'qa'+QA.RandomString(10);
 		
-		var fileName = 'qa'+QA.RandomString(10)+'.tmp';
+		var mem = new SharedMemory( fileName, 100 );
+		mem.content = 'xxxxxx789';
+		mem.Write('xxx456');
+		mem.Write('123', 0);
+		mem.Write('ABC', 9);
+		QA.ASSERT_STR( mem.Read(), '123456789ABC', 'content' );
+		QA.ASSERT_STR( mem.content, '123456789ABC', 'content' );
+		mem.Close();
+
+
+/// shared memory [ftr]
+
+		var fileName = 'qa'+QA.RandomString(10);
 		
 		var mem = new SharedMemory( fileName, 100 );
 		mem.content = 'xxxxxx789';
@@ -270,20 +276,20 @@
 		QA.ASSERT_STR( mem2.content, '123456789ABC', 'content' );
 		mem2.Write('Z',99);
 		QA.ASSERT_STR( mem.Read(1, 99), 'Z', 'writing at the end' );
-	},
+		mem.Close();
+		mem2.Close();
 
 
-	StdFile: function(QA) {
+/// standard file descriptors [ftr]
 		
 		QA.ASSERT_HAS_PROPERTIES( File, 'stdin,stdout,stderr' );
 		QA.ASSERT( File.stdin.type, File.FILE_FILE, 'stdin file type');
 		QA.ASSERT( File.stdout.type, File.FILE_FILE, 'stdout file type');
 		QA.ASSERT( File.stderr.type, File.FILE_FILE, 'stderr file type');
-	},
 
 
-	FileIO: function(QA) {
-	
+/// File I/O [ftr]
+
 		var f = new File('qa_tmp_file.txt')
 		f.Open(File.CREATE_FILE | File.RDWR);
 		f.Write('abcd');
@@ -295,10 +301,9 @@
 		f.Close();
 		f.Delete();	
 		QA.ASSERT( f.exist, false, 'file delete' );
-	},
 
 
-	FileInfo: function(QA) {
+/// File info [ftr]
 	
 		var f = new File('qa_tmp_file_FileInfo.txt');
 		
@@ -315,10 +320,9 @@
 		QA.ASSERT( f.info.type, File.FILE_FILE, 'file type' );
 
 		f.Delete();
-	},
-	
-	
-	FileContent: function(QA) {
+
+
+/// File content [ftr]
 
 		var data = String(new Date());
 		var f = new File('qa_tmp_content.txt');
@@ -328,11 +332,10 @@
 		QA.ASSERT_STR( f.content, data, 'file content' );
 		f.content = undefined;
 		QA.ASSERT( f.exist, false, 'file exist' );
-	},
 
 
-	FileException: function(QA) {
-	
+/// File exception [ftr]
+
 		var f = new File('qa_tmp_notfound.txt')
 		try {
 			f.Open(File.RDONLY);
@@ -345,35 +348,31 @@
 			
 			QA.ASSERT( false, true, 'IoError type' );
 		}
-	},
 
 
-	FileConst: function(QA) {
+/// File constants [ftr]
 	
 		QA.ASSERT_HAS_PROPERTIES( File, 'RDONLY,WRONLY,RDWR,CREATE_FILE,APPEND,TRUNCATE,SYNC,EXCL' );
 		QA.ASSERT_HAS_PROPERTIES( File, 'SEEK_SET,SEEK_CUR,SEEK_END' );
 		QA.ASSERT_HAS_PROPERTIES( File, 'FILE_FILE,FILE_DIRECTORY,FILE_OTHER' );
-	},
 
 
-	DirectoryConst: function(QA) {
+/// Directory constants [ftr]
 		
 		delete Directory.SKIP_DOT_DOT;
 		QA.ASSERT_HAS_PROPERTIES( Directory, 'SKIP_NONE,SKIP_DOT,SKIP_DOT_DOT,SKIP_BOTH,SKIP_HIDDEN' );
-	},
 
 
-	Directory: function(QA) {
+/// Directory [ftr]
 		
 		var f = new File('qa_tmp_dir.txt');
 		f.content = 'test';
 		var dir = Directory.List('./.', Directory.SKIP_BOTH | Directory.SKIP_DIRECTORY | Directory.SKIP_OTHER );
 		QA.ASSERT( dir.indexOf('qa_tmp_dir.txt') != -1, true, 'directory listing' );
 		f.content = undefined;
-	},
 
 
-	DirectoryExist: function(QA) {
+/// Directory exist [ftr]
 		
 		var d = new Directory('.');
 		QA.ASSERT( d.exist, true, 'directory exist' );
@@ -381,10 +380,9 @@
 		QA.ASSERT( d1.exist, false, 'directory exist' );
 		delete d1.name;
 		QA.ASSERT( d1.name, 'qa_directory_do_not_exist', 'directory name' );
-	},
 
 
-	CreateProcessReadPipe: function(QA) {
+/// create process read pipe
 	
 		switch (systemInfo.name) {
 			case 'Windows_NT':
@@ -402,10 +400,10 @@
 			default:
 				QA.FAILED('(TBD) no test available for this system.');
 		}
-	},
-	
-	CreateProcessWaitExit: function(QA) {
-		
+
+
+/// create process wait for exit
+
 		switch (systemInfo.name) {
 			case 'Windows_NT':
 				
@@ -415,9 +413,9 @@
 			default:
 				QA.FAILED('(TBD) no test available for this system.');
 		}
-	},
-	
-	CreateProcessErrorDetection: function(QA) {
+
+
+/// create process error detection [ftr]
 		
 		switch (systemInfo.name) {
 			case 'Windows_NT':
@@ -433,20 +431,18 @@
 			default:
 				QA.FAILED('(TBD) no test available for this system.');
 		}
-	},
 
 
-	CWD: function(QA) {
+/// current working directory [ftr]
 	
 		QA.ASSERT( 'currentWorkingDirectory' in global, true, 'has currentWorkingDirectory' );
 		QA.ASSERT( typeof currentWorkingDirectory, 'string', 'current working directory' );
 		QA.ASSERT( currentWorkingDirectory.length >= 1, true, 'cwd length' );
-	},
 
 
-	MemoryMapped: function(QA, name) {
+/// MemoryMapped class [ftr]
 
-		var thisFilename = name.split(':')[0];
+		var thisFilename = ITEM.file;
 		
 		var m = new MemoryMapped(new File(thisFilename).Open('r'));
 		
@@ -456,6 +452,3 @@
 		QA.ASSERT_STR( new Stream(m).Read(15), '// don\'t remove', 'convert to a Stream (2)' );
 
 		QA.ASSERT_STR( Stringify(m).substr(0,15), '// don\'t remove', 'stringify it' );
-	}
-
-})

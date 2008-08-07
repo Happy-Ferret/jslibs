@@ -1,8 +1,6 @@
-({
+LoadModule('jsstd');
 
-	StringRepeat: function(QA) {
-			
-		LoadModule('jsstd');
+/// StringRepeat function [ftr]
 
 		QA.ASSERT( StringRepeat( '', 0 ), '', '0 x empty' );
 		QA.ASSERT( StringRepeat( '', 1 ), '', '1 x empty' );
@@ -15,10 +13,9 @@
 		QA.ASSERT( StringRepeat( 'abc', 0 ), '', '0 x string' );
 		QA.ASSERT( StringRepeat( 'abc', 1 ), 'abc', '1 x string' );
 		QA.ASSERT( StringRepeat( 'abc', 10 ), 'abcabcabcabcabcabcabcabcabcabc', '10 x string' );
-	},
-	
 
-	BufferAccess: function(QA) {
+
+/// Buffer access [ftr]
 
 		var b = new Buffer();
 		b.Write('');
@@ -31,16 +28,16 @@
 		
 		var res = b[-1]+b[0]+b[1]+b[2]+b[3]+b[4]+b[5]+b[6]+b[7]+b[8]+b[9]+b[10];
 
+
 		QA.ASSERT( res.length, 9, 'resulting length' );
+
 		QA.ASSERT( res, '123456789', 'resulting string' );
 		QA.ASSERT( b.toString(), res, 'resulting string' );
-	},
 
 
-	EmptyBuffer: function(QA) {
 
-		LoadModule('jsstd');
-	
+/// empty Buffer [ftr]
+
 		var b = new Buffer();
 		QA.ASSERT( typeof b.Read(), 'string', 'empty buffer read' );
 
@@ -51,13 +48,10 @@
 	
 		b.Write('a');
 		QA.ASSERT( b.Read() instanceof Blob, true, 'buffer read' );
-	},
 
 
-	BufferTest1: function(QA) {
+/// Buffer test 1 [ftr]
 		
-		LoadModule('jsstd');
-
 		var b = new Buffer();
 		b.Read(0);
 		b.Write('aaa');
@@ -81,11 +75,9 @@
 		var t = b.Read();
 
 		QA.ASSERT_STR( t, 'eeeeffffgggg', 'buffer match' );
-	},
 
-	BufferTest2: function(QA) {
-		
-		LoadModule('jsstd');
+
+/// Buffer test 2 [ftr]
 
 		var b = new Buffer();
 		b.Write("abcdefghi");
@@ -94,11 +86,9 @@
 		b.Read(2);
 		b.Read(2);
 		QA.ASSERT_STR( b.Read(2), 'i', 'buffer match' );
-	},
 
-	BufferUnderflow: function(QA) {
-		
-		LoadModule('jsstd');
+
+/// Buffer underflow [ftr]
 		
 		var times = 0;
 		var toto = 'Zz';
@@ -135,11 +125,9 @@
 		QA.ASSERT_STR( buf.Read(7), '56789Zz', 'read(7)' );
 		QA.ASSERT_STR( buf.Read(1), 'Z', 'read(1)' );
 		QA.ASSERT_STR( buf.Read(), 'z', 'read()' );
-	},
 
 
-
-	BufferCopy: function(QA) {
+/// Buffer copy [ftr]
 
 		var b1 = new Buffer();
 		b1.Write('1');
@@ -162,17 +150,17 @@
 		QA.ASSERT_STR( b2.toString(), 'aaa111bbb111', 'buffer content' );	
 		
 		QA.ASSERT_STR( b1.toString(), '111', 'source buffer content' );	
-	},
-	
-	BufferSimpleRead: function(QA) {
+
+
+/// Buffer simple read [ftr]
 	
 		var b = new Buffer();
 		b.Write('123');
 		QA.ASSERT_STR( b.Read(1), '1', 'buffer read' );	
-	},
 
 
-	Buffer_toString: function(QA) {
+
+/// Buffer toString [ftr]
 	
 		var b = new Buffer();
 		b.Write('12345');
@@ -180,10 +168,9 @@
 		b.Write('9');
 		b.Write('');
 		QA.ASSERT_STR( b, '123456789', 'buffer toString' );	
-	},
 
 
-	Buffer_toString_consumption: function(QA) {
+/// Buffer toString consumption [ftr]
 
 		var b = new Buffer();
 		b.Write('123');
@@ -194,9 +181,9 @@
 		QA.ASSERT( str2.length, str1.length, 'toString Buffer consumption' );
 		QA.ASSERT( str1, '123', 'first toString result' );
 		QA.ASSERT( str2, '123', 'second toString result' );
-	},
-	
-	Buffer_valueOf: function(QA) {
+
+
+/// Buffer valueOf [ftr]
 	
 		var b = new Buffer();
 		b.Write('12345');
@@ -204,10 +191,9 @@
 		b.Write('9');
 		b.Write('');
 		QA.ASSERT_STR( b.valueOf(), '123456789', 'buffer valueOf' );	
-	},
-	
 
-	Buffer_valuesStore: function(QA) {
+
+/// Buffer values store [ftr]
 	
 		var b = new Buffer();
 		b.Write({ toString:function(){return '01'} });
@@ -215,10 +201,9 @@
 		b.Write(4567);
 		b.Write(8.9);
 		QA.ASSERT_STR( b.Read(), '012,345678.9', 'buffer read stored values' );	
-	},
 
 
-	Buffer_valuesStore: function(QA) {
+/// Buffer values store [ftr]
 	
 		var b = new Buffer();
 		b.Write({ toString:function(){return '01'} });
@@ -230,9 +215,9 @@
 		QA.ASSERT_STR( b.Read(2), '56', 'buffer read stored values' );	
 		QA.ASSERT_STR( b.Read(3), '78.', 'buffer read stored values' );	
 		QA.ASSERT_STR( b.Read(1), '9', 'buffer read stored values' );	
-	},
 
-	Buffer_andBlob: function(QA) {
+
+/// Buffer and Blob [ftr]
 
 		var str = new Blob('123');
 		var b = new Buffer();
@@ -240,9 +225,9 @@
 		str.concat('456');
 		b.Write('7');
 		QA.ASSERT_STR( b.Read(), '1237', 'buffer containing a Blob' );
-	},
 
-	BufferIndexOf: function(QA) {
+
+/// Buffer IndexOf [ftr]
 	
 		var b = new Buffer();
 		b.Write('abcd');
@@ -251,11 +236,10 @@
 		b.Write('');
 		b.Write('fghij');
 		QA.ASSERT( b.IndexOf('def'), 3, 'buffer read' );	
-	},
-	
-	
-	BufferReadUntil: function(QA) {
-	
+
+
+/// Buffer readUntil [ftr]
+
 		var buf = new Buffer();
 		buf.Write('xxx');
 
@@ -266,10 +250,9 @@
 		QA.ASSERT_STR( buf.ReadUntil('114'), 'xxxaaabb', 'ReadUntil' );
 		QA.ASSERT( typeof buf, 'object', 'buffer type' );
 		QA.ASSERT_STR( buf, 'cccbuffer2', 'remaining' );
-	},
 
 
-	BufferMisc: function(QA) {
+/// Buffer misc [ftr]
 
 		var buf = new Buffer();
 		buf.Write('12345');
@@ -283,16 +266,16 @@
 		buf.Write('4');
 		buf.Write('45');
 		QA.ASSERT( buf.length, 3, 'content length' );
-	},
-	
-	BufferMissingUnRoot: function(QA) {
+
+
+/// Buffer missing unroot [ftr]
 
 		var buf = new Buffer();
 		buf.Write('1234');
 		buf.Read(4);
-	},
-	
-	BufferSource: function(QA) {
+
+
+/// Buffer Source [ftr]
 
 		var buf = new Buffer(Stream('456'));
 		buf.Write('123');
@@ -321,11 +304,9 @@
 		buf3.Write('123');
 		QA.ASSERT( buf3.length, 3, 'length' );
 		QA.ASSERT_STR( buf3.Read(6), '123xxx', 'read' );
-	},
 
-	PackEndianTest: function(QA) {
-		
-		LoadModule('jsstd');
+
+/// Pack endian [ftr]
 	
 		if ( Pack.systemBigEndian == false ) {
 		
@@ -338,30 +319,25 @@
 		
 			QA.FAILED('this test is missing');
 		}
-	},
 
 
-	PackReadInt: function(QA) {
+/// Pack read integer [ftr]
 
 		var buf = new Buffer();
 		buf.Write('\xAA\xBB\xCC\xDD');
 		var pack = new Pack(buf);
 		QA.ASSERT( pack.ReadInt(4, false, true).toString(16), 'aabbccdd', 'ReadInt' );
-	},	
-	
-	
-	PackReadString: function(QA) {
+
+
+/// Pack read string [ftr]
 
 		var buf = new Buffer();
 		buf.Write('\xAA\xBB\xCC\xDD');
 		var pack = new Pack(buf);
 		QA.ASSERT_STR( pack.ReadString(4), "\xAA\xBB\xCC\xDD", 'ReadString' );
-	},
 
 
-	Pack: function(QA) {
-
-		LoadModule('jsstd');
+/// Pack class [ftr]
 
 		var buf = new Buffer();
 		var pack = new Pack(buf);
@@ -381,12 +357,11 @@
 		v = 65432;
 		pack.WriteInt(v, 2);
 		QA.ASSERT( v, pack.ReadInt(2), 'data validity' );
-	},
-	
-	GarbageCollector: function(QA) {
+
+
+/// Garbage collector [r]
 		
 		LoadModule('jsdebug');
-		LoadModule('jsstd');
 		
 		var str = QA.RandomString(1024*1024);
 		
@@ -399,9 +374,8 @@
 //		QA.ASSERT( gcBytes, str.length, 'lot of allocated memory' );
 		
 		CollectGarbage();
-	},
-	
-	IdOf: function(QA) {
+
+/// IdOf function [ftr]
 		
 		var t1 = IdOf('uroiquwyeroquiwyeroquwyeroquwyeroquwreyouqwhelqwfvqlwefvlqwhjvlqwefjvlqw12412h5oiu2f34hovcu312gofuiv3124gfovi23gfvo23y4gfov234yugfvo23ufgvwperiughweoigh23oi7o2h3vg7o2374o23g74hgo32i74gho23i7ghov237ihg');
 		var xx = '23y2378vg239784gf293v87gfv293874gfv932847gfv';
@@ -412,27 +386,26 @@
 		var o = {};
 		var p = {};
 		QA.ASSERT( IdOf(o.constructor), IdOf(o.constructor), 'object constructor index' );
-	},
-	
-	
-	HideProperties: function(QA) {
+
+
+/// hide properties [ftr]
 	
 		var o = { a:1, b:2, c:3, d:4 };
 		HideProperties(o, 'b', 'c');
 		QA.ASSERT( o.b, 2, 'do not delete' );
 		QA.ASSERT( [p for each (p in o)].join(','), '1,4', 'visible properties' );
-	},
-	
-	SetScope: function(QA) {
+
+
+/// SetScope function [ftr]
 
 		var data = 55;
 		function bar() { QA.ASSERT( data, 7, 'modified scope' ); }
 		var old = SetScope( bar, {data:7, QA:QA} );
 		bar();
-	},
-	
-	
-	Expand: function(QA) {
+
+
+
+/// Expand function [ftr]
 
 		QA.ASSERT( Expand('', { h:'Hello', w:'World' }), '', 'expanding an empty string' );
 
@@ -466,10 +439,9 @@
 		var o = { title:'My HTML Page', titi:1234, toString:function() { return Expand( this.text, this ) } };
 		o.text = '<html><title>$(title)</title>\n'
 		QA.ASSERT_STR( o, '<html><title>My HTML Page</title>\n', 'expand string using this object' );
-	},
 
 
-	ExecXDR: function(QA) {
+/// Exec using XDR [ftr]
 		
 		LoadModule('jsio');
 	
@@ -502,28 +474,26 @@
 			QA.ASSERT( ex.constructor, Error, 'Exec exception' );
 			QA.ASSERT( ex.message.substr(0,21), 'Unable to load Script', 'error message' );
 		}
-	},
-	
-	
-	Clear: function(QA) {
+
+
+/// Clear function [ftr]
+
+		var o = { x:5, y:6, z:7 };
+		QA.ASSERT( 'z' in o, true, 'has z property' );
+		Clear(o);
+		QA.ASSERT( 'z' in o, false, 'property z is cleared' );
+
+
+/// Clear on an array [ftr]
 	
 		var o = { x:5, y:6, z:7 };
 		QA.ASSERT( 'z' in o, true, 'has z property' );
 		Clear(o);
 		QA.ASSERT( 'z' in o, false, 'property z is cleared' );
-	},
 
 
-	ClearOnAnArray: function(QA) {
-	
-		var o = { x:5, y:6, z:7 };
-		QA.ASSERT( 'z' in o, true, 'has z property' );
-		Clear(o);
-		QA.ASSERT( 'z' in o, false, 'property z is cleared' );
-	},
-	
 
-	Seal: function(QA) {
+/// Seal function [ftr]
 		
 		var o = { a:1 };
 		Seal(o);
@@ -538,18 +508,16 @@
 			QA.ASSERT( ex.constructor, Error, 'object access exception' );
 			QA.ASSERT( ex.message, 'o.a is read-only', 'error message' );
 		}
-	},
-	
-	
-	IsStatementValid: function(QA) {
+
+
+/// IsStatementValid  function [ftr]
 		
 		QA.ASSERT( IsStatementValid( 'for ( var i; i<10; i++ )' ), false, 'invalid statement' );
 		QA.ASSERT( IsStatementValid( 'for ( var i; i<10; i++ );' ), true, 'valid statement' );
 		QA.ASSERT( IsStatementValid( '{a,b,c} = { a:1, b:2, c:3 }' ), true, 'valid statement' );
-	},
 
-	
-	StrChr: function(QA) {
+
+/// StrChr function [ftr]
 
 		var str1 = StringRepeat('y', 100);
 		QA.ASSERT( [ c for each ( c in str1 ) if (c == 'y') ].length, 100, 'all chars are good' );
@@ -558,10 +526,10 @@
 		QA.ASSERT( str.length, 10000, 'string length' );
 		QA.ASSERT( str[0], 'x', 'first char' );
 		QA.ASSERT( str[9999], 'x', 'last char' );
-	},
-	
-	
-	MultiLineStringUsingE4X: function(QA) {
+
+
+
+/// MultiLineStringUsingE4X [ftr]
 				
 		var t = <text>
 		this is
@@ -572,7 +540,3 @@
 		
 		QA.ASSERT( typeof t, 'xml', 'text type' );
 		QA.ASSERT_STR( t, "\n\t\tthis is\n\t\ta multiline\n\n\t\ttext\n\t\t", 'text' );
-	}
-	
-	
-})

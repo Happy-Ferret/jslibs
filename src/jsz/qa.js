@@ -1,18 +1,16 @@
-({
+LoadModule('jsz');
 
-	DeflateRatio1: function(QA) {
-
-		LoadModule('jsz');
+/// deflate ratio 1 [ftr]
+		
 		var uncompressezText = 'jjjjjjjjjjjssssssssssssssssssslllllliiiiiiiibbsssssssssssssss';
 		var level = 9; // 0..9
 		var compressedText = new Z(Z.DEFLATE, level)(uncompressezText, true);
 		var ratio = (100*compressedText.length/uncompressezText.length).toFixed(2)+'%';
 		QA.ASSERT( ratio, '37.70%', 'Bad compression ratio' );
-	},
-	
-	DeflateRatio2: function(QA) {
 
-		LoadModule('jsz');
+
+/// deflate ratio 2 [ftr]
+		
 		var uncompressezText = 'zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz';
 
 		var deflater = new Z(Z.DEFLATE, 9);
@@ -25,12 +23,9 @@
 		QA.ASSERT( deflater.adler32, 2686765097, 'adler32' );
 		QA.ASSERT( deflater.lengthIn, 420, 'lengthIn property' );
 		QA.ASSERT( deflater.lengthOut, 28, 'lengthOut property' );
-	},
 
 
-	InflateDeflate1: function(QA) {
-	
-		LoadModule('jsz');
+/// inflate / deflate [ftr]
 		
 		var deflate = new Z(Z.DEFLATE);
 		var inflate = new Z(Z.INFLATE);
@@ -39,11 +34,9 @@
 		QA.ASSERT_STR( str, "x\x9C\xAB\0\0\0y\0y", 'deflate result' );
 		var result = inflate(str, true);
 		QA.ASSERT_STR( result, source, 'inflate result' );
-	},
 
-	InflateDeflate2: function(QA) {
-	
-		LoadModule('jsz');
+
+/// inflate / deflate 2 [fr]
 
 		var deflate = new Z(Z.DEFLATE);
 		var inflate = new Z(Z.INFLATE);
@@ -51,12 +44,10 @@
 		var str = deflate(source, true);	
 		var result = inflate(str, true);
 		QA.ASSERT_STR( result, source, 'inflate result' );
-	},
 
-	InflateDeflateHuge: function(QA) {
 
-		LoadModule('jsz');
-		
+/// inflate / deflate huge [r]
+
 		var deflate = new Z(Z.DEFLATE);
 		var inflate = new Z(Z.INFLATE);
 
@@ -67,11 +58,9 @@
 		QA.ASSERT( deflate.lengthIn, 2000000 , 'input length' );
 		QA.ASSERT( deflate.lengthIn, inflate.lengthOut, 'in and out length' );
 		QA.ASSERT( deflate.adler32, inflate.adler32, 'adler32 match' );
-	},
-	
-	EofMethods: function(QA) {
-	
-		LoadModule('jsz');
+
+
+/// end of data methods [ftr]
 
 		var source = QA.RandomString(10000);
 
@@ -84,6 +73,5 @@
 		
 		QA.ASSERT( deflate1.lengthOut <= deflate2.lengthOut, true, 'lengthOut' );
 		QA.ASSERT( deflate1.adler32, deflate2.adler32 , 'adler32' );
-	}
 
-})
+

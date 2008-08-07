@@ -1,8 +1,6 @@
-({
+LoadModule('jsobjex');
 
-	callbackTest: function(QA) {
-		
-		LoadModule('jsobjex');
+/// callback functions [ftr]
 		
 		var aux = {};
 		
@@ -45,23 +43,19 @@
 
 		QA.ASSERT( addCallbackCalls, 1, 'addCallback calls count' );
 		QA.ASSERT( setCallbackCalls, 2, 'setCallback calls count' );
-	},
-	
-	setterTest: function(QA) {
-		
-		LoadModule('jsobjex');
-		
+
+
+/// setter [ftr]
+
 		function MyException() {}
 		function SetOnceObject() new ObjEx( undefined,undefined,undefined, function(name, value) this[name] ? (function() { throw new MyException() })() : value );
 		var o = SetOnceObject();
 		o.abc = 123;
 		QA.ASSERT_EXCEPTION( function() {  o.abc = 456;  }, MyException, 'using setter' );
-	},
 
-	dataObject: function(QA) {
-		
-		LoadModule('jsobjex');
-	
+
+/// data slot [ftr]
+
 		function newDataNode(parent) new ObjEx(undefined,undefined,newDataNode.get,undefined,{listenerList:[],parent:parent});
 
 		newDataNode.get = function( name, value, aux ) (name in this) ? value : (this[name] = newDataNode(this));
@@ -96,6 +90,3 @@
 		setData( test.aaa.bbb.ccc.ddd.eee, 1234 );
 		QA.ASSERT( getData(test.aaa.bbb.ccc.ddd.eee), 1234, 'check data in the tree' );
 		QA.ASSERT( getData(test.aaa.bbb.ccc.ddd), undefined, 'check data in the tree' );
-	}
-
-})

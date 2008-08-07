@@ -1,35 +1,9 @@
-_configuration.unsafeMode = true;
-
 LoadModule('jsstd');
 LoadModule('jsio');
 LoadModule('jsdebug');
 
-
-function MakeTestList(directory) {
-
-	var dirList = Directory.List(directory, Directory.SKIP_BOTH | Directory.SKIP_FILE | Directory.SKIP_OTHER );
+function RecursiveDir(path, callback) {
 	
-	dirList.sort();
-
-	var testList = {};
-	for each ( var dirName in dirList ) {
-
-		var f = new File(directory+'/'+dirName + '/qa.js');
-		if ( f.exist ) {
-
-			var qatests = Exec(f.name, false);
-			for ( var testName in qatests )
-				testList[ f.name + ':' + testName ] = qatests[testName];
-		}
-	}
-	return testList;
-}
-
-
-
-function RecursiveDir(path) {
-	
-	var testList = [];
 	(function(path) {
 
 		var dir = new Directory(path);
@@ -42,144 +16,156 @@ function RecursiveDir(path) {
 					arguments.callee(file.name);
 					break;
 				case File.FILE_FILE:
-					testList.push(file.name);
+					callback(file);
 					break;
 			}
 		}
 		dir.Close();
 	})(path);
-	
-	return testList;
 }
 
 
+function CreateQaItemList(startDir, filter) {
 
-function MakeTests( testList, filter, QAAPI, iterate ) {
+	var hidden = /\/\./;
+	var qaFile = /\qa.js$/;
 
-	for ( var testName in testList ) {
-
-		if ( !filter(testName) || testName[testName.indexOf(':')+1] == '_' )
-			continue;
+	var newQaItem = /^\/\/\/\s*(.*?)\s*$/;
+	
+	var GetFlags = function(str) {
 		
-		Print( testName, '\n' );
-		for ( var i = 0; i<iterate; i++ ) {
+		var flags = {};
+		var res = /\[(.*?)\]/(str);
+		if ( res )
+			for each ( f in res[1] )
+				flags[f] = true;
+		return flags;
+	}
 
-			try {
+	var itemList = [];
+	var index = 0;
 
-				testList[testName](QAAPI, testName);
-			} catch(ex) {
+	RecursiveDir( startDir, function(file) {
+	
+		if ( !hidden(file.name) && qaFile(file.name) ) {
+
+			var source = String(file.content);
+			source = source.replace(/\r\n|\r/g, '\n'); // cleanup
+			
+			var lines = source.split('\n');
+			
+			var item = { file:file.name, line:1, flags:'', code:[], init:true }; // initialization item
+			
+			for ( var l in lines ) {
 				
-				QAAPI.REPORT(testName+' '+ex.toString());
+				var res = newQaItem(lines[l]);
+				if ( res ) {
+					
+					itemList.push(item);
+					item = { file:file.name, line:Number(l)+1, name:res[1], flags:GetFlags(res[1]), code:[] };
+				}
+				item.code.push(lines[l]);
 			}
-			CollectGarbage();
-			if ( endSignal )
-				return;
+			itemList.push(item);
+		}
+	})
+	
+	for each ( var item in itemList ) {
+
+		try {
+		
+			item.relativeLineNumber = LocateLine(0); item.func = new Function('QA', 'ITEM', item.code.join('\n'));
+		} catch(ex) {
+			
+			Print( ex + ' at ' + item.file + ':' + (item.line + ex.lineNumber - item.relativeLineNumber) + ' ('+item.name+')', '\n' );
 		}
 	}
+
+	itemList = [ item for each ( item in itemList ) if ( !filter || item.init || ( filter(item.name) && !item.flags.d ) ) ];
+	itemList = itemList.sort( function(a,b) a.init ? -1 : 1 );
+	return itemList;
 }
 
 
-
-function MakeRandomTests( testList, QAAPI ) {
-
-	var list = [];
-
-	for ( var testName in testList ) {
-
-		if ( testName[testName.indexOf(':')+1] == '_' )
-			continue;
-		list.push([testName, testList[testName]]);
-	}
-	
-	while ( !endSignal ) {
-		
-		var idx = Math.floor(Math.random() * list.length);
-		
-//		try {
-
-			list[idx][1](QAAPI, list[idx][0]);
-//		} catch(ex) {
-
-//			QAAPI.REPORT(testName+' '+ex.toSource());
-//		}
-	}
-
-}
-
+var currentItem;
+var issues = 0;
+var testCount = 0;
+var errors = [];
 
 var QAAPI = new function() {
+
+	function CodeLocation() {
+		
+		return currentItem.file+':'+( LocateLine(-2) - currentItem.relativeLineNumber + currentItem.line);
+	}
 	
-	this.issues = 0;
-	this.testCount = 0;
-	this.errors = [];
+	function FormatVariable(val) {
+
+		if ( typeof(val) == 'string' ) {
+		
+			if ( val.length > 50 )
+				return val.substr(0, 47).quote()+'...';
+			return val.quote();
+		}
+		if ( val instanceof Array )
+			return '['+val+']';
+		return val;
+	}
 
 	this.REPORT = function( message ) {
 
-		this.issues++;
-		this.errors.push(message);
-//		Print( ' - ' + message, '\n' );
+		issues++;
+		errors.push(message);
 	}
 
 	this.ASSERT_TYPE = function( value, type, testName ) {
-		
-		this.testCount++;
+
+		testCount++;
 		if ( typeof(value) != type && !(value instanceof type) )
-			this.REPORT( Locate(-1)+' '+(testName||'?')+', Invalid type, '+(type.name)+' is expected' );
+			this.REPORT( CodeLocation()+' '+(testName||'?')+', Invalid type, '+(type.name)+' is expected' );
 	}
 
 	this.FAILED = function( message ) {
 
-		this.REPORT( Locate(-1)+' '+message );
+		this.REPORT( CodeLocation()+' '+message );
 	}
 	
-	this.ASSERT_EXCEPTION = function( fct, exType, message ) {
+	this.ASSERT_EXCEPTION = function( fct, exType, testName ) {
 		
-		this.testCount++;
+		testCount++;
 		try {
 		
 			fct();
-			this.REPORT( Locate(-1)+' Failure not detected: '+message );
+			this.REPORT( CodeLocation()+' Failure not detected: '+testName );
 		} catch(ex if ex instanceof exType) {
-
 			// good
 		} catch(ex) {
 			
-			this.REPORT( Locate(-1)+' Invalid exception ('+ex.constructor.name+' != '+exType.constructor.name+') for: '+message );
+			this.REPORT( CodeLocation()+' Invalid exception ('+ex.constructor.name+' != '+exType.constructor.name+') for: '+testName );
 		}
 	} 
 
-
 	this.ASSERT = function( value, expect, testName ) {
 
-		this.testCount++;
-		if ( value !== expect ) {
-		
-			value = '('+(''+typeof(value)).substr(0,3)+')'+ String(value).substr(0,50).quote()+'...';
-			expect = '('+(''+typeof(expect)).substr(0,3)+')'+ String(expect).substr(0,50).quote()+'...';
-			this.REPORT( Locate(-1)+' '+(testName||'?') + ', '+value+' != '+expect );
-		}
+		testCount++;
+		if ( value !== expect )
+			this.REPORT( CodeLocation()+' '+(testName||'?') + ', '+FormatVariable(value)+' != '+FormatVariable(expect) );
 	}
 
 	this.ASSERT_STR = function( value, expect, testName ) {
 	
-		this.testCount++;
-//		value = String(value); expect = String(expect); // not needed because we use the != sign, not !== sign
-
-		if ( value != expect ) {
-		
-			value = '('+(''+typeof(value)).substr(0,3)+')'+ String(value).substr(0,50).quote()+'...';
-			expect = '('+(''+typeof(expect)).substr(0,3)+')'+ String(expect).substr(0,50).quote()+'...';
-			this.REPORT( Locate(-1)+' '+(testName||'?') + ', '+value+' != '+expect );
-		}
+		testCount++;
+		if ( value != expect ) // value = String(value); expect = String(expect); // not needed because we use the != sign, not !== sign
+			this.REPORT( CodeLocation()+' '+(testName||'?') + ', '+FormatVariable(value)+' != '+FormatVariable(expect) );
 	}
 
    this.ASSERT_HAS_PROPERTIES = function( obj, names ) {
    	
    	for each ( var p in names.split(/\s*,\s*/) ) {
    	
-			this.testCount++;
+			testCount++;
    		if ( !(p in obj) )
-	  			this.REPORT( Locate(-1)+' Property '+p+' not found' );
+	  			this.REPORT( CodeLocation()+' Property '+p+' not found' );
 	  	}
    }
 
@@ -197,30 +183,101 @@ var QAAPI = new function() {
    }
 }
 
-var loops = 4;
+
+function LaunchTests(itemList, repeat) {
+
+	if ( repeat == undefined )
+		repeat = 1;
+
+	for each ( currentItem in itemList ) {
+
+		try {
+			
+			for ( var i = 0; i < repeat; i++ )
+				currentItem.func(QAAPI, currentItem);
+			CollectGarbage();
+		} catch(ex) {
+
+			QAAPI.REPORT( ex + ' at ' + currentItem.file + ':' + (ex.lineNumber - currentItem.relativeLineNumber + currentItem.line) + ' ('+currentItem.name+')' );
+		}
+
+		if ( endSignal )
+			break;
+	}
+}
+
+
+function LaunchRandomTests(itemList) {
+
+	for each ( var item in itemList ) {
+
+		if ( item.init )
+			item.func(QAAPI, currentItem);
+		else
+			break; // list is sorted, init are first.
+	}
+
+	while ( !endSignal ) {
+
+		currentItem = itemList[Math.floor(Math.random() * itemList.length)];
+		
+		if ( currentItem.flags.d || !currentItem.flags.f )
+			continue;
+
+		try {
+			
+			currentItem.func(QAAPI, currentItem);
+		} catch(ex) {
+
+			Print( ex + ' at ' + currentItem.file + ':' + (ex.lineNumber - currentItem.relativeLineNumber + currentItem.line) + ' ('+currentItem.name+')' );
+			Print('\n');
+		}
+	}
+}
+
+
+
+_configuration.unsafeMode = true;
 
 var savePrio = processPriority;
 processPriority = 2;
+
 var t0 = TimeCounter();
 
+var repeat = 4;
+
 if ( arguments[1] == '-r' ) {
+
 	
-	loops = 1;
-	MakeRandomTests(MakeTestList('src'), QAAPI);
+	LaunchRandomTests(CreateQaItemList('src', undefined));
+
+	repeat = 1;	// ...
+
 } else {
-	
-	MakeTests(MakeTestList('src'), new RegExp(arguments[1]||'.*', 'i'), QAAPI, loops);
+
+	LaunchTests(CreateQaItemList('src', new RegExp(arguments[1] || '.*', 'i')), repeat);
 }
 
 var t = TimeCounter() - t0;
+
 processPriority = savePrio || 0; // savePrio may be undefined
 
-Print( '\n', QAAPI.issues + ' issues / ' + QAAPI.testCount + ' tests in ' + t.toFixed(2) + 'ms ('+loops+' loops).\n' );
-QAAPI.errors.sort();
-QAAPI.errors.reduce( function(previousValue, currentValue, index, array) {
+
+Print( '\n', QAAPI.issues + ' issues / ' + testCount + ' tests in ' + t.toFixed(2) + 'ms ('+repeat+' repeat).\n' );
+errors.sort();
+errors.reduce( function(previousValue, currentValue, index, array) {
 
     if ( previousValue != currentValue )
 		Print( '- ' + currentValue, '\n' );
     return currentValue;
 }, undefined);
 
+
+/* flags:
+
+	d for desactivated: the test is disabled.
+	f for fast: the test execution is fast. Time should be less that 10ms.
+	t for time: the test execution time is always the same. The test do not use any variable-execution-time function (CollectGarbage, Poll, Socket, ...)
+	r for reliable: external parameters (like the platform, CPU load, TCP/IP connection, weather, ...) cannot make the test to fail.
+
+*/
