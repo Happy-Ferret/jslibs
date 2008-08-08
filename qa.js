@@ -193,6 +193,8 @@ function LaunchTests(itemList, repeat) {
 
 		try {
 			
+			Print( currentItem.name, '\n' );
+			
 			for ( var i = 0; i < repeat; i++ )
 				currentItem.func(QAAPI, currentItem);
 			CollectGarbage();
@@ -247,7 +249,6 @@ var t0 = TimeCounter();
 var repeat = 4;
 
 if ( arguments[1] == '-r' ) {
-
 	
 	LaunchRandomTests(CreateQaItemList('src', undefined));
 
@@ -263,7 +264,7 @@ var t = TimeCounter() - t0;
 processPriority = savePrio || 0; // savePrio may be undefined
 
 
-Print( '\n', QAAPI.issues + ' issues / ' + testCount + ' tests in ' + t.toFixed(2) + 'ms ('+repeat+' repeat).\n' );
+Print( '\n', issues + ' issues / ' + testCount + ' tests in ' + t.toFixed(2) + 'ms ('+repeat+' repeat).\n' );
 errors.sort();
 errors.reduce( function(previousValue, currentValue, index, array) {
 

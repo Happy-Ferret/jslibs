@@ -83,7 +83,7 @@ LoadModule('jsio');
 		var count = Poll([], 100);
 		var t = IntervalNow() - t0;
 		QA.ASSERT( count, 0, 'descriptor event count' );
-		QA.ASSERT( t >= 90 && t < 150, true, 'poll timeout (may fail if high CPU load)' );
+		QA.ASSERT( t >= 99 && t < 110, true, 'poll timeout (may fail if high CPU load) t='+t );
 
 
 /// Non-blocking TCP Socket [tr]
@@ -138,6 +138,14 @@ LoadModule('jsio');
 				clientSocket.Write('1234');
 			}
 		}
+
+/// Creating a lot of sockets [ftr]
+
+	var s = [];
+	for ( var i=0 ; i < 1000 ; i++ ) {
+	
+		s.push(new Socket( Socket.TCP ));
+	}
 
 
 /// Non-blocking UDP Socket [tr]
