@@ -62,8 +62,11 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				IgnoreDefaultLibraryNames=""
+				ModuleDefinitionFile="jsvst.def"
 				GenerateDebugInformation="true"
 				SubSystem="2"
+				EntryPointSymbol=""
 				TargetMachine="1"
 			/>
 			<Tool
@@ -136,10 +139,13 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				IgnoreDefaultLibraryNames=""
+				ModuleDefinitionFile="jsvst.def"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
+				EntryPointSymbol=""
 				TargetMachine="1"
 			/>
 			<Tool
