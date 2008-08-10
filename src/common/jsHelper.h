@@ -814,10 +814,7 @@ inline JSBool JL_CallFunctionName( JSContext *cx, JSObject *obj, const char* fun
 	for ( uintN i = 0; i < argc; i++ )
 		argv[i] = va_arg(ap, jsval);
 	va_end(ap);
-	jsval functionValue;
-	J_CHKM( JS_GetProperty(cx, obj, functionName, &functionValue), "Unable to access the function." );
-	J_S_ASSERT_FUNCTION( functionValue );
-	J_CHK( JS_CallFunctionValue(cx, obj, functionValue, argc, argv, &rvalTmp) ); // NULL is NOT supported for &rvalTmp ( last arg of JS_CallFunctionValue )
+	J_CHK( JS_CallFunctionName(cx, obj, functionName, argc, argv, &rvalTmp) ); // NULL is NOT supported for &rvalTmp ( last arg of JS_CallFunctionValue )
 	if ( rval != NULL )
 		*rval = rvalTmp;
 	return JS_TRUE;

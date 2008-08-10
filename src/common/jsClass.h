@@ -28,11 +28,13 @@ struct JSLIBS_ConstIntegerSpec {
 #define BEGIN_CONST_INTEGER_SPEC JSLIBS_ConstIntegerSpec _tmp_cis[] = {
 #define END_CONST_INTEGER_SPEC {0}}; _constIntegerSpec = _tmp_cis;
 #define CONST_INTEGER(name,value) { value, #name },
+#define CONST_INTEGER_SINGLE(name) { name, #name },
 
 // const double
 #define BEGIN_CONST_DOUBLE_SPEC JSConstDoubleSpec _tmp_cds[] = { // dval; *name; flags; spare[3];
 #define END_CONST_DOUBLE_SPEC {0}}; _constDoubleSpec = _tmp_cds;
 #define CONST_DOUBLE(name,value) { value, #name },
+#define CONST_DOUBLE_SINGLE(name) { name, #name },
 
 // functions
 #define BEGIN_FUNCTION_SPEC JSFunctionSpec _tmp_fs[] = { // *name, call, nargs, flags, extra

@@ -2,9 +2,11 @@ LoadModule('jsstd');
 LoadModule('jsio');
 
 
-	var d = Blob('abcd');
-	d.__proto__ = { replace: function() {} }
-	
+Test( {} );
+
+Print( 'Done.' );
+
+Test( {} );
 
 
 Halt();
