@@ -17,11 +17,12 @@
 #include "../host/host.h"
 #include "../common/jsClass.h"
 
-
 #include <public.sdk/source/vst2.x/audioeffectx.h>
 
-DECLARE_CLASS( AudioEffect );
+#include "audiomaster.h"
 
+DECLARE_CLASS( AudioMaster );
+DECLARE_CLASS( VSTPlugin );
 
 class JsVst : public AudioEffectX {
 private:
@@ -75,15 +76,26 @@ public:
 		DestroyHost(cx);
 	}
 
-	JsVst( audioMasterCallback audioMaster ) : AudioEffectX (audioMaster, 1, 1) { 	// 1 program, 1 parameter only
-	
-		cx = CreateHost(-1, -1);
-		InitHost(cx, true, NULL, NULL);
-		InitializeClassAudioEffect(cx, JS_GetGlobalObject(cx));
+	JsVst( audioMasterCallback audioMaster ) 
+	: AudioEffectX (audioMaster, 0, 0) {
 
-//		jsAudioEffect = JS_NewObject(cx, classAudioEffect, NULL, NULL);
-		jsAudioEffect = JS_DefineObject(cx, JS_GetGlobalObject(cx), "vst", classAudioEffect, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
+		JSContext *cx = CreateHost(-1, -1);
+		InitHost(cx, true, NULL, NULL);
+		JSObject *audioMasterObject = CreateAudioMasterObject(cx, audioMaster);
+		JSObject *jsAudioEffect = JS_DefineObject(cx, JS_GetGlobalObject(cx), "ae", classVSTPlugin, NULL, NULL);
 		JS_SetPrivate(cx, jsAudioEffect, this);
+
+		ExecuteScript(cx, "vst.js", false, 0, NULL, &_rval);
+
+
+		//jsval rval, fval;
+		//JSBool res = JS_GetProperty(cx, jsAudioEffect, "init", &fval);
+		//if ( res == JS_TRUE && JsvalIsFunction(cx, fval) ) {
+
+		//	JSBool res = JL_CallFunction(cx, jsAudioEffect, fval, &rval, 0);
+		//}
+
+
 
 		JS_AddRoot(cx, &_rval);
 		JS_AddRoot(cx, &_arg);
@@ -93,15 +105,14 @@ public:
 //		strcpy( scriptFileName, pdir );
 //		strcat( scriptFileName, "vst.js" );
 
-		ExecuteScript(cx, "vst.js", false, 0, NULL, &_rval);
 
 		// overides constructor data
 		cEffect.numPrograms = 2;
 		cEffect.numParams = 2;
 
-	setNumInputs (2);		// stereo in
-	setNumOutputs (2);		// stereo out
-	setUniqueID ('JVST');	// identify
+		setNumInputs (2);		// stereo in
+		setNumOutputs (2);		// stereo out
+		setUniqueID ('JVST');	// identify
 
 	}
 
@@ -475,7 +486,7 @@ public:
 /**doc
 $CLASS_HEADER
 **/
-BEGIN_CLASS( AudioEffect )
+BEGIN_CLASS( VSTPlugin )
 
 DEFINE_HAS_INSTANCE() {
 
@@ -607,16 +618,20 @@ extern "C" {
 	#define VST_EXPORT
 #endif
 
+
 VST_EXPORT AEffect* VSTPluginMain(audioMasterCallback audioMaster) {
 
 	// Get VST Version of the Host
 	if (!audioMaster (0, audioMasterVersion, 0, 0, 0, 0))
 		return 0;  // old version
 
+
+//	jsAudioEffect = JS_DefineObject(cx, JS_GetGlobalObject(cx), "vst", classAudioEffect, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
+
+
 	// Create the AudioEffect
 	AudioEffect* effect = new JsVst(audioMaster);
-	if (!effect)
-		return 0;
+
 
 	// Return the VST AEffect structur
 	return effect->getAeffect ();
