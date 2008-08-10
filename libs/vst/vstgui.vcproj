@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8,00"
-	Name="vst"
-	ProjectGUID="{D4BEBD98-DA8D-4A28-8AE6-FDE860E3E51F}"
-	RootNamespace="vst"
+	Name="vstgui"
+	ProjectGUID="{46DCDC4C-871B-41A4-A1B1-20167273345F}"
+	RootNamespace="vstgui"
 	Keyword="Win32Proj"
 	>
 	<Platforms>
@@ -40,8 +40,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="src"
-				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;_CRT_SECURE_NO_WARNINGS=1"
+				AdditionalIncludeDirectories="src;src\public.sdk\source\vst2.x"
+				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;WINDOWS;_CRT_SECURE_NO_WARNINGS=1"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -61,7 +61,6 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				ModuleDefinitionFile=""
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -104,8 +103,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="src"
-				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;_CRT_SECURE_NO_WARNINGS=1"
+				AdditionalIncludeDirectories="src;src\public.sdk\source\vst2.x"
+				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;WINDOWS;_CRT_SECURE_NO_WARNINGS=1"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
@@ -123,7 +122,6 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				ModuleDefinitionFile=""
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -151,11 +149,31 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath=".\src\public.sdk\source\vst2.x\audioeffect.cpp"
+				RelativePath=".\src\vstgui.sf\vstgui\aeffguieditor.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\src\public.sdk\source\vst2.x\audioeffectx.cpp"
+				RelativePath=".\src\vstgui.sf\vstgui\cfileselector.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\vstgui.sf\vstgui\cscrollview.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\vstgui.sf\vstgui\ctabview.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\vstgui.sf\vstgui\plugguieditor.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\vstgui.sf\vstgui\vstcontrols.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\vstgui.sf\vstgui\vstgui.cpp"
 				>
 			</File>
 		</Filter>
@@ -165,15 +183,51 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath=".\src\public.sdk\source\vst2.x\aeffeditor.h"
+				RelativePath=".\src\vstgui.sf\vstgui\aeffguieditor.h"
 				>
 			</File>
 			<File
-				RelativePath=".\src\public.sdk\source\vst2.x\audioeffect.h"
+				RelativePath=".\src\vstgui.sf\vstgui\cfileselector.h"
 				>
 			</File>
 			<File
-				RelativePath=".\src\public.sdk\source\vst2.x\audioeffectx.h"
+				RelativePath=".\src\vstgui.sf\vstgui\cscrollview.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\vstgui.sf\vstgui\ctabview.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\vstgui.sf\vstgui\plugguieditor.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\vstgui.sf\vstgui\vstcontrols.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\vstgui.sf\vstgui\vstgui.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\vstgui.sf\vstgui\vstkeycode.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\vstgui.sf\vstgui\vstplugscarbon.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\vstgui.sf\vstgui\vstplugsmac.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\vstgui.sf\vstgui\vstplugsmacho.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\vstgui.sf\vstgui\vstplugsquartz.h"
 				>
 			</File>
 		</Filter>
