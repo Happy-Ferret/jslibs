@@ -28,29 +28,26 @@ class JsVst : public AudioEffectX {
 private:
 
 	JSContext *cx;
-	JSObject *jsAudioEffect;
+	JSObject *vstPlugin;
 	jsval _arg, _rval;
 
 	inline jsval GetFunction( const char *functionName ) {
 	
 		jsval fval;
-		JSBool res = JS_GetProperty(cx, jsAudioEffect, functionName, &fval);
+		JSBool res = JS_GetProperty(cx, vstPlugin, functionName, &fval);
 		return res == JS_TRUE && JsvalIsFunction(cx, fval) ? fval : JSVAL_VOID;
 	}
 
 	inline JSBool MaybeReportException() {
 
 		if ( JS_IsExceptionPending(cx) ) { // let the script manage its non-fatal errors.
-		
-//			if (!JS_EnterLocalRootScope(cx))
-//				return JS_FALSE;
 
 			jsval fval = GetFunction("catch");
 			if ( fval != JSVAL_VOID ) {
 
 				jsval rval, ex;
 				J_CHK( JS_GetPendingException(cx, &ex) );
-				J_CHK( JS_CallFunctionValue(cx, jsAudioEffect, fval, 1, &ex, &rval) );
+				J_CHK( JS_CallFunctionValue(cx, vstPlugin, fval, 1, &ex, &rval) );
 				
 				// if the catch() function returns something, we report it as an error
 				if ( JSVAL_IS_OBJECT(rval) ) {
@@ -61,11 +58,8 @@ private:
 				}
 			}
 		}
-
-//		JS_LeaveLocalRootScope(cx);
 		return JS_TRUE;
 	}
-
 
 public:
 
@@ -79,41 +73,35 @@ public:
 	JsVst( audioMasterCallback audioMaster ) 
 	: AudioEffectX (audioMaster, 0, 0) {
 
-		JSContext *cx = CreateHost(-1, -1);
+		cx = CreateHost(-1, -1);
 		InitHost(cx, true, NULL, NULL);
-		JSObject *audioMasterObject = CreateAudioMasterObject(cx, audioMaster);
-		JSObject *jsAudioEffect = JS_DefineObject(cx, JS_GetGlobalObject(cx), "ae", classVSTPlugin, NULL, NULL);
-		JS_SetPrivate(cx, jsAudioEffect, this);
-
-		ExecuteScript(cx, "vst.js", false, 0, NULL, &_rval);
-
-
-		//jsval rval, fval;
-		//JSBool res = JS_GetProperty(cx, jsAudioEffect, "init", &fval);
-		//if ( res == JS_TRUE && JsvalIsFunction(cx, fval) ) {
-
-		//	JSBool res = JL_CallFunction(cx, jsAudioEffect, fval, &rval, 0);
-		//}
-
-
+//		JSObject *audioMasterObject = CreateAudioMasterObject(cx, audioMaster);
 
 		JS_AddRoot(cx, &_rval);
 		JS_AddRoot(cx, &_arg);
+
+		InitializeClassAudioMaster(cx, JS_GetGlobalObject(cx));
+		InitializeClassVSTPlugin(cx, JS_GetGlobalObject(cx));
+
+		vstPlugin = JS_DefineObject(cx, JS_GetGlobalObject(cx), "vstPlugin", classVSTPlugin, NULL, NULL);
+		JS_SetPrivate(cx, vstPlugin, this);
+
+		ExecuteScript(cx, "vstPlugin.js", false, 0, NULL, &_rval);
 
 //		const char *pdir = (const char*)this->getDirectory(); // FSSpec on MAC, else char* 
 //		char scriptFileName[PATH_MAX +1];
 //		strcpy( scriptFileName, pdir );
 //		strcat( scriptFileName, "vst.js" );
+	}
 
+	void SetNumPrograms( VstInt32 numPrograms ) {
+	
+		cEffect.numPrograms = numPrograms;
+	}
 
-		// overides constructor data
-		cEffect.numPrograms = 2;
-		cEffect.numParams = 2;
-
-		setNumInputs (2);		// stereo in
-		setNumOutputs (2);		// stereo out
-		setUniqueID ('JVST');	// identify
-
+	void SetNumParams( VstInt32 numParams ) {
+	
+		cEffect.numParams = numParams;
 	}
 
 	VstIntPtr dispatcher(VstInt32 opcode, VstInt32 index, VstIntPtr value, void* ptr, float opt) {
@@ -122,9 +110,8 @@ public:
 		if ( fval != JSVAL_VOID ) {
 
 			JS_NewNumberValue(cx, opt, &_arg);
-			JSBool res = JL_CallFunction(cx, jsAudioEffect, fval, &_rval, 4, INT_TO_JSVAL(opcode), INT_TO_JSVAL(index), INT_TO_JSVAL(value), _arg ); // , STRING_TO_JSVAL(JS_NewStringCopyZ(cx, ptr))
+			JSBool res = JL_CallFunction(cx, vstPlugin, fval, &_rval, 4, INT_TO_JSVAL(opcode), INT_TO_JSVAL(index), INT_TO_JSVAL(value), _arg ); // , STRING_TO_JSVAL(JS_NewStringCopyZ(cx, ptr))
 		}
-
 		return AudioEffectX::dispatcher(opcode, index, value, ptr, opt);
 	}
 
@@ -134,7 +121,7 @@ public:
 		jsval fval = GetFunction( "open" );
 		if ( fval != JSVAL_VOID ) {
 
-			JSBool res = JL_CallFunction(cx, jsAudioEffect, fval, &_rval, 0 );
+			JSBool res = JL_CallFunction(cx, vstPlugin, fval, &_rval, 0 );
 			if ( res == JS_TRUE )
 				return;
 		}
@@ -148,7 +135,7 @@ public:
 		jsval fval = GetFunction( "close" );
 		if ( fval != JSVAL_VOID ) {
 
-			JSBool res = JL_CallFunction(cx, jsAudioEffect, fval, &_rval, 0 );
+			JSBool res = JL_CallFunction(cx, vstPlugin, fval, &_rval, 0 );
 			if ( res == JS_TRUE )
 				return;
 		}
@@ -157,7 +144,8 @@ public:
 	}
 
 
-	void processReplacing (float** inputs, float** outputs, VstInt32 sampleFrames) {
+	// H->P 
+	void processReplacing(float** inputs, float** outputs, VstInt32 sampleFrames) {
 
 		float *in1 = inputs[0];
 		float *in2 = inputs[1];
@@ -170,25 +158,14 @@ public:
 		} 
 	}
 
-
-	// H->P
-	//Called when a parameter changed.
-	//
-	//Parameters are the individual parameter settings the user can adjust. A VST Host can automate these parameters. Set parameter index to value.
-	//
-	//Parameters:
-	//    	index 	Index of the parameter to change
-	//    	value 	A float value between 0.0 and 1.0 inclusive
-	//
-	//Note:
-	//    Parameter values, like all VST parameters, are declared as floats with an inclusive range of 0.0 to 1.0. How data is presented to the user is merely in the user-interface handling. This is a convention, but still worth regarding. Maybe the VST-Host's automation system depends on this range. 
+	// H->P Called when a parameter changed.
 	void setParameter(VstInt32 index, float value) {
 		
 		jsval fval = GetFunction( "setParameter" );
 		if ( fval != JSVAL_VOID ) {
 
 			JS_NewNumberValue(cx, value, &_arg);
-			JSBool res = JL_CallFunction(cx, jsAudioEffect, fval, &_rval, 2, INT_TO_JSVAL(index), _arg );
+			JSBool res = JL_CallFunction(cx, vstPlugin, fval, &_rval, 2, INT_TO_JSVAL(index), _arg );
 			if ( res == JS_TRUE )
 				return;
 		}
@@ -196,12 +173,13 @@ public:
 		return AudioEffectX::setParameter(index, value);
 	}
 
+	// H->P 
 	float getParameter(VstInt32 index) {
 
 		jsval fval = GetFunction( "getParameter" );
 		if ( fval != JSVAL_VOID ) {
 
-			JSBool res = JL_CallFunction(cx, jsAudioEffect, fval, &_rval, 1, INT_TO_JSVAL(index) );
+			JSBool res = JL_CallFunction(cx, vstPlugin, fval, &_rval, 1, INT_TO_JSVAL(index) );
 			if ( res == JS_TRUE && JSVAL_IS_NUMBER(_rval) ) {
 
 				jsdouble d;
@@ -213,14 +191,13 @@ public:
 		return AudioEffectX::getParameter(index);
 	}
 
-
 	// H->P Return the index to the current program. 
 	VstInt32 getProgram() {
 		
 		jsval fval = GetFunction( "getProgram" );
 		if ( fval != JSVAL_VOID ) {
 
-			JSBool res = JL_CallFunction(cx, jsAudioEffect, fval, &_rval, 0);
+			JSBool res = JL_CallFunction(cx, vstPlugin, fval, &_rval, 0);
 			if ( res == JS_TRUE && JSVAL_IS_INT(_rval) )
 				return JSVAL_TO_INT(_rval);
 		}
@@ -234,7 +211,7 @@ public:
 		jsval fval = GetFunction( "setProgram" );
 		if ( fval != JSVAL_VOID ) {
 
-			JSBool res = JL_CallFunction(cx, jsAudioEffect, fval, &_rval, 1, INT_TO_JSVAL(program));
+			JSBool res = JL_CallFunction(cx, vstPlugin, fval, &_rval, 1, INT_TO_JSVAL(program));
 			if ( res == JS_TRUE )
 				return;
 		}
@@ -248,7 +225,7 @@ public:
 		jsval fval = GetFunction( "setProgramName" );
 		if ( fval != JSVAL_VOID ) {
 
-			JSBool res = JL_CallFunction(cx, jsAudioEffect, fval, &_rval, 1, STRING_TO_JSVAL(JS_NewStringCopyZ(cx, name)));
+			JSBool res = JL_CallFunction(cx, vstPlugin, fval, &_rval, 1, STRING_TO_JSVAL(JS_NewStringCopyZ(cx, name)));
 			if ( res == JS_TRUE )
 				return;
 		}
@@ -262,7 +239,7 @@ public:
 		jsval fval = GetFunction( "getProgramName" );
 		if ( fval != JSVAL_VOID ) {
 
-			JSBool res = JL_CallFunction(cx, jsAudioEffect, fval, &_rval, 0);
+			JSBool res = JL_CallFunction(cx, vstPlugin, fval, &_rval, 0);
 			if ( res == JS_TRUE ) {
 				
 				JSString *jsstr = JS_ValueToString(cx, _rval);
@@ -282,7 +259,7 @@ public:
 		jsval fval = GetFunction( "getParameterLabel" );
 		if ( fval != JSVAL_VOID ) {
 
-			JSBool res = JL_CallFunction(cx, jsAudioEffect, fval, &_rval, 1, INT_TO_JSVAL(index));
+			JSBool res = JL_CallFunction(cx, vstPlugin, fval, &_rval, 1, INT_TO_JSVAL(index));
 			if ( res == JS_TRUE ) {
 				
 				JSString *jsstr = JS_ValueToString(cx, _rval);
@@ -302,7 +279,7 @@ public:
 		jsval fval = GetFunction( "getParameterDisplay" );
 		if ( fval != JSVAL_VOID ) {
 
-			JSBool res = JL_CallFunction(cx, jsAudioEffect, fval, &_rval, 1, INT_TO_JSVAL(index));
+			JSBool res = JL_CallFunction(cx, vstPlugin, fval, &_rval, 1, INT_TO_JSVAL(index));
 			if ( res == JS_TRUE ) {
 				
 				JSString *jsstr = JS_ValueToString(cx, _rval);
@@ -322,7 +299,7 @@ public:
 		jsval fval = GetFunction( "getParameterName" );
 		if ( fval != JSVAL_VOID ) {
 
-			JSBool res = JL_CallFunction(cx, jsAudioEffect, fval, &_rval, 1, INT_TO_JSVAL(index));
+			JSBool res = JL_CallFunction(cx, vstPlugin, fval, &_rval, 1, INT_TO_JSVAL(index));
 			if ( res == JS_TRUE ) {
 				
 				JSString *jsstr = JS_ValueToString(cx, _rval);
@@ -352,7 +329,7 @@ public:
 		jsval fval = GetFunction( "canDo" );
 		if ( fval != JSVAL_VOID ) {
 
-			JSBool res = JL_CallFunction(cx, jsAudioEffect, fval, &_rval, 1, STRING_TO_JSVAL(JS_NewStringCopyZ(cx, text)));
+			JSBool res = JL_CallFunction(cx, vstPlugin, fval, &_rval, 1, STRING_TO_JSVAL(JS_NewStringCopyZ(cx, text)));
 			if ( res == JS_TRUE ) {
 				
 				if ( JSVAL_IS_VOID(_rval) )
@@ -372,7 +349,7 @@ public:
 		jsval fval = GetFunction( "getProgramNameIndexed" );
 		if ( fval != JSVAL_VOID ) {
 
-			JSBool res = JL_CallFunction(cx, jsAudioEffect, fval, &_rval, 1, INT_TO_JSVAL(index));
+			JSBool res = JL_CallFunction(cx, vstPlugin, fval, &_rval, 1, INT_TO_JSVAL(index));
 			if ( res == JS_TRUE ) {
 
 				if ( !JSVAL_IS_STRING(_rval) ) // end of list
@@ -395,7 +372,7 @@ public:
 		jsval fval = GetFunction( "getPlugCategory" );
 		if ( fval != JSVAL_VOID ) {
 
-			JSBool res = JL_CallFunction(cx, jsAudioEffect, fval, &_rval, 0);
+			JSBool res = JL_CallFunction(cx, vstPlugin, fval, &_rval, 0);
 			if ( res == JS_TRUE && JSVAL_IS_INT(_rval) ) {
 				
 				int cat = JSVAL_TO_INT(_rval);
@@ -414,7 +391,7 @@ public:
 		jsval fval = GetFunction( "getProductString" );
 		if ( fval != JSVAL_VOID ) {
 
-			JSBool res = JL_CallFunction(cx, jsAudioEffect, fval, &_rval, 0);
+			JSBool res = JL_CallFunction(cx, vstPlugin, fval, &_rval, 0);
 			if ( res == JS_TRUE ) {
 				
 				JSString *jsstr = JS_ValueToString(cx, _rval);
@@ -434,7 +411,7 @@ public:
 		jsval fval = GetFunction( "getVendorString" );
 		if ( fval != JSVAL_VOID ) {
 
-			JSBool res = JL_CallFunction(cx, jsAudioEffect, fval, &_rval, 0);
+			JSBool res = JL_CallFunction(cx, vstPlugin, fval, &_rval, 0);
 			if ( res == JS_TRUE ) {
 				
 				JSString *jsstr = JS_ValueToString(cx, _rval);
@@ -461,7 +438,7 @@ public:
 		jsval fval = GetFunction( "setBypass" );
 		if ( fval != JSVAL_VOID ) {
 
-			JSBool res = JL_CallFunction(cx, jsAudioEffect, fval, &_rval, 1, onOff ? JS_TRUE : JS_FALSE);
+			JSBool res = JL_CallFunction(cx, vstPlugin, fval, &_rval, 1, onOff ? JS_TRUE : JS_FALSE);
 			if ( res == JS_TRUE ) {
 				
 				JSBool b;
@@ -488,6 +465,89 @@ $CLASS_HEADER
 **/
 BEGIN_CLASS( VSTPlugin )
 
+
+DEFINE_PROPERTY( canProcessReplacing ) {
+
+	if ( *vp != JSVAL_VOID ) {
+
+		JsVst *vstPlugin = (JsVst *)JS_GetPrivate(cx, obj);
+		J_S_ASSERT_RESOURCE( vstPlugin );
+		J_S_ASSERT_BOOLEAN( *vp );
+		vstPlugin->canProcessReplacing( JSVAL_TO_BOOLEAN(*vp) == JS_TRUE ? true : false );
+	}
+	return JS_TRUE;
+}
+
+
+DEFINE_PROPERTY( numPrograms ) {
+
+	if ( *vp != JSVAL_VOID ) {
+
+		JsVst *vstPlugin = (JsVst *)JS_GetPrivate(cx, obj);
+		J_S_ASSERT_RESOURCE( vstPlugin );
+		J_S_ASSERT_INT( *vp );
+		vstPlugin->SetNumPrograms( JSVAL_TO_INT(*vp) );
+	}
+	return JS_TRUE;
+}
+
+
+DEFINE_PROPERTY( numParams ) {
+
+	if ( *vp != JSVAL_VOID ) {
+
+		JsVst *vstPlugin = (JsVst *)JS_GetPrivate(cx, obj);
+		J_S_ASSERT_RESOURCE( vstPlugin );
+		J_S_ASSERT_INT( *vp );
+		vstPlugin->SetNumParams( JSVAL_TO_INT(*vp) );
+	}
+	return JS_TRUE;
+}
+
+
+DEFINE_PROPERTY( numInputs ) {
+
+	if ( *vp != JSVAL_VOID ) {
+
+		JsVst *vstPlugin = (JsVst *)JS_GetPrivate(cx, obj);
+		J_S_ASSERT_RESOURCE( vstPlugin );
+		J_S_ASSERT_INT( *vp );
+		vstPlugin->setNumInputs( JSVAL_TO_INT(*vp) );
+	}
+	return JS_TRUE;
+}
+
+
+DEFINE_PROPERTY( numOutputs ) {
+
+	if ( *vp != JSVAL_VOID ) {
+
+		JsVst *vstPlugin = (JsVst *)JS_GetPrivate(cx, obj);
+		J_S_ASSERT_RESOURCE( vstPlugin );
+		J_S_ASSERT_INT( *vp );
+		vstPlugin->setNumOutputs( JSVAL_TO_INT(*vp) );
+	}
+	return JS_TRUE;
+}
+
+
+DEFINE_PROPERTY( uniqueID ) {
+
+	if ( *vp != JSVAL_VOID ) {
+
+		JsVst *vstPlugin = (JsVst *)JS_GetPrivate(cx, obj);
+		J_S_ASSERT_RESOURCE( vstPlugin );
+		J_S_ASSERT_STRING( *vp );
+		JSString *jsstr = JS_ValueToString(cx, *vp);
+		J_S_ASSERT( JS_GetStringLength(jsstr) == 4, "Invalid ID length" );
+		char *str = JS_GetStringBytes(jsstr);
+		VstInt32 id = CCONST( str[0], str[1], str[2], str[3] );
+		vstPlugin->setUniqueID( id );
+	}
+	return JS_TRUE;
+}
+
+
 DEFINE_HAS_INSTANCE() {
 
 	*bp = !JSVAL_IS_PRIMITIVE(v) && OBJ_GET_CLASS(cx, JSVAL_TO_OBJECT(v)) == _class;
@@ -501,6 +561,10 @@ CONFIGURE_CLASS
 	HAS_HAS_INSTANCE
 
 	BEGIN_PROPERTY_SPEC
+		PROPERTY_WRITE_STORE( numPrograms )
+		PROPERTY_WRITE_STORE( numParams )
+		PROPERTY_WRITE_STORE( numInputs )
+		PROPERTY_WRITE_STORE( numOutputs )
 	END_PROPERTY_SPEC
 
 	BEGIN_FUNCTION_SPEC
@@ -624,15 +688,8 @@ VST_EXPORT AEffect* VSTPluginMain(audioMasterCallback audioMaster) {
 	// Get VST Version of the Host
 	if (!audioMaster (0, audioMasterVersion, 0, 0, 0, 0))
 		return 0;  // old version
-
-
-//	jsAudioEffect = JS_DefineObject(cx, JS_GetGlobalObject(cx), "vst", classAudioEffect, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
-
-
 	// Create the AudioEffect
 	AudioEffect* effect = new JsVst(audioMaster);
-
-
 	// Return the VST AEffect structur
 	return effect->getAeffect ();
 }

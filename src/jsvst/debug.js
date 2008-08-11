@@ -1,16 +1,13 @@
-// WARNING: rename it into vst.js
+// WARNING: rename it into vstPlugin.js
 
 LoadModule('jsio');
 LoadModule('jswinshell');
-
-	var f = new File('D:\Franck\Mes documents\MyMusic\VSTplugins\jsvst.log');
-	f.content = 'test';
 
 var log = [];
 function Log(str) log.push(str);
 
 var opcodeName = {};
-with ( AudioEffect ) {
+with ( vstPlugin ) {
 
 	opcodeName[	effOpen ] = 'effOpen';
 	opcodeName[	effClose ] = 'effClose';
@@ -75,13 +72,17 @@ with ( AudioEffect ) {
 }
 
 
-vst.dispatcher = function(opcode, index, value, opt) {
+vstPlugin.numPrograms = 1;
+vstPlugin.numParams = 5;
+
+
+vstPlugin.dispatcher = function(opcode, index, value, opt) {
 	
 	Log( 'opcode: '+opcodeName[opcode] + ' index: '+index + ' value: '+value + ' opt: '+opt );
 }
 
 
-vst.close = function() {
+vstPlugin.close = function() {
 
 	var c = new Console();
 	Log('Press <enter> to continue...');
@@ -89,13 +90,13 @@ vst.close = function() {
 	c.Read();
 }
 
-vst.getParameterName = function(index) {
+vstPlugin.getParameterName = function(index) {
 
 //	Log('getParameterName');
 	return index < 10 ? 'test' : undefined;
 }
 
-vst.getParameterLabel = function(index) {
+vstPlugin.getParameterLabel = function(index) {
 	
 //	Log('getParameterLabel');
 	return index < 10 ? 'test' : undefined;
