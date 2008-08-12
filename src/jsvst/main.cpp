@@ -21,6 +21,7 @@
 
 #include "audiomaster.h"
 
+DECLARE_CLASS( MidiEvent );
 DECLARE_CLASS( AudioMaster );
 DECLARE_CLASS( VSTPlugin );
 
@@ -35,9 +36,10 @@ private:
 	
 		jsval fval;
 		JSBool res = JS_GetProperty(cx, vstPlugin, functionName, &fval);
-		return res == JS_TRUE && JsvalIsFunction(cx, fval) ? fval : JSVAL_VOID;
+		return res == JS_TRUE && JsvalIsFunction(cx, fval) ? fval : JSVAL_VOID; // or return JSVAL_NULL to allow: if ( fval ) ...
 	}
 
+	// let the script manage its errors.
 	inline JSBool MaybeReportException() {
 
 		if ( JS_IsExceptionPending(cx) ) { // let the script manage its non-fatal errors.
@@ -80,6 +82,7 @@ public:
 		JS_AddRoot(cx, &_rval);
 		JS_AddRoot(cx, &_arg);
 
+		InitializeClassMidiEvent(cx, JS_GetGlobalObject(cx));
 		InitializeClassAudioMaster(cx, JS_GetGlobalObject(cx));
 		InitializeClassVSTPlugin(cx, JS_GetGlobalObject(cx));
 
@@ -125,7 +128,7 @@ public:
 			if ( res == JS_TRUE )
 				return;
 		}
-		MaybeReportException(); // let the script manage its errors.
+		MaybeReportException();
 		return AudioEffectX::open();
 	}
 
@@ -139,7 +142,7 @@ public:
 			if ( res == JS_TRUE )
 				return;
 		}
-		MaybeReportException(); // let the script manage its errors.
+		MaybeReportException();
 		return AudioEffectX::close();
 	}
 
@@ -158,6 +161,35 @@ public:
 		} 
 	}
 
+	// H->P 
+	VstInt32 processEvents(VstEvents* events) {
+
+		jsval jsProcessMidiEvent = GetFunction( "procesMidiEvent" );
+		jsval jsSysExEvent = GetFunction( "procesSysExEvent" );
+
+		for ( int i = 0; i < events->numEvents; i++ ) {
+
+			if ( events->events[i]->type == kVstMidiType && jsProcessMidiEvent != JSVAL_VOID ) {
+
+				VstMidiEvent* event = (VstMidiEvent*)events->events[i];
+				JSObject *jsMidiEvent = JS_NewObject(cx, classMidiEvent, NULL, NULL);
+				JS_SetPrivate(cx, jsMidiEvent, event);
+				JSBool res = JL_CallFunction(cx, vstPlugin, jsProcessMidiEvent, &_rval, 1, OBJECT_TO_JSVAL(jsMidiEvent));
+				if ( res != JS_TRUE )
+					MaybeReportException();
+				continue;
+			}
+
+			if ( events->events[i]->type == kVstSysExType && jsSysExEvent != JSVAL_VOID ) {
+			
+			}
+		}
+
+		return AudioEffectX::processEvents(events);
+	}
+
+
+
 	// H->P Called when a parameter changed.
 	void setParameter(VstInt32 index, float value) {
 		
@@ -169,7 +201,7 @@ public:
 			if ( res == JS_TRUE )
 				return;
 		}
-		MaybeReportException(); // let the script manage its errors.
+		MaybeReportException();
 		return AudioEffectX::setParameter(index, value);
 	}
 
@@ -187,7 +219,7 @@ public:
 				return d;
 			}
 		}
-		MaybeReportException(); // let the script manage its errors.
+		MaybeReportException();
 		return AudioEffectX::getParameter(index);
 	}
 
@@ -201,7 +233,7 @@ public:
 			if ( res == JS_TRUE && JSVAL_IS_INT(_rval) )
 				return JSVAL_TO_INT(_rval);
 		}
-		MaybeReportException(); // let the script manage its errors.
+		MaybeReportException();
 		return AudioEffectX::getProgram();
 	}
 
@@ -215,7 +247,7 @@ public:
 			if ( res == JS_TRUE )
 				return;
 		}
-		MaybeReportException(); // let the script manage its errors.
+		MaybeReportException();
 		return AudioEffectX::setProgram(program);
 	}
 
@@ -229,7 +261,7 @@ public:
 			if ( res == JS_TRUE )
 				return;
 		}
-		MaybeReportException(); // let the script manage its errors.
+		MaybeReportException();
 		return AudioEffectX::setProgramName(name);
 	}
 
@@ -249,7 +281,7 @@ public:
 				return;
 			}
 		}
-		MaybeReportException(); // let the script manage its errors.
+		MaybeReportException();
 		return AudioEffectX::getProgramName(name);
 	}
 
@@ -269,7 +301,7 @@ public:
 				return;
 			}
 		}
-		MaybeReportException(); // let the script manage its errors.
+		MaybeReportException();
 		return AudioEffectX::getParameterLabel(index, label);
 	}
 
@@ -289,7 +321,7 @@ public:
 				return;
 			}
 		}
-		MaybeReportException(); // let the script manage its errors.
+		MaybeReportException();
 		return AudioEffectX::getParameterDisplay(index, text);
 	}
 
@@ -309,14 +341,20 @@ public:
 				return;
 			}
 		}
-		MaybeReportException(); // let the script manage its errors.
+		MaybeReportException();
 		return AudioEffectX::getParameterName(index, text);
 	}
 
 
 	// H->P
 	//Reports what the plug-in is able to do (plugCanDos in audioeffectx.cpp).
-	//Report what the plug-in is able to do. In general you can but don't have to report whatever you support or not support via canDo. Some application functionality may require some specific reply, but in that case you will probably know. Best is to report whatever you know for sure. A Host application cannot make assumptions about the presence of the new 2.x features of a plug-in. Ignoring this inquiry methods and trying to access a 2.x feature from a 1.0 plug, or vice versa, will mean the plug-in or Host application will break. It is not the end-users job to pick and choose which plug-ins can be supported by which Host.
+	//Report what the plug-in is able to do. In general you can but don't have to report whatever you support 
+	//or not support via canDo. Some application functionality may require some specific reply, 
+	//but in that case you will probably know. Best is to report whatever you know for sure. 
+	//A Host application cannot make assumptions about the presence of the new 2.x features of a plug-in. 
+	//Ignoring this inquiry methods and trying to access a 2.x feature from a 1.0 plug, or vice versa, 
+	//will mean the plug-in or Host application will break. 
+	//It is not the end-users job to pick and choose which plug-ins can be supported by which Host.
 	//Parameters: text 	A string from plugCanDos
 	//Returns:
 	//        * 0: don't know (default)
@@ -339,7 +377,7 @@ public:
 				return b == JS_TRUE ? 1 : -1; // 1: yes, -1: no
 			}
 		}
-		MaybeReportException(); // let the script manage its errors.
+		MaybeReportException();
 		return AudioEffectX::canDo(text);
 	}
 
@@ -362,7 +400,7 @@ public:
 				return true;
 			}
 		}
-		MaybeReportException(); // let the script manage its errors.
+		MaybeReportException();
 		return AudioEffectX::getProgramNameIndexed(category, index, text);
 	}
 
@@ -381,7 +419,7 @@ public:
 				return (VstPlugCategory)cat;
 			}
 		}
-		MaybeReportException(); // let the script manage its errors.
+		MaybeReportException();
 		return AudioEffectX::getPlugCategory();
 	}
 
@@ -401,7 +439,7 @@ public:
 				return true;
 			}
 		}
-		MaybeReportException(); // let the script manage its errors.
+		MaybeReportException();
 		return AudioEffectX::getProductString(text);
 	}
 
@@ -421,7 +459,7 @@ public:
 				return true;
 			}
 		}
-		MaybeReportException(); // let the script manage its errors.
+		MaybeReportException();
 		return AudioEffectX::getVendorString(text);
 	}
 
@@ -446,9 +484,88 @@ public:
 				return b == JS_TRUE ? true : false;
 			}
 		}
-		MaybeReportException(); // let the script manage its errors.
+		MaybeReportException();
 		return AudioEffectX::setBypass(onOff);
 	}
+
+	VstInt32 getMidiProgramName(VstInt32 channel, MidiProgramName* mpn) {
+
+		jsval fval = GetFunction( "getMidiProgramName" );
+		if ( fval != JSVAL_VOID ) {
+
+			JSObject *jsMpn = JS_NewObject(cx, NULL, NULL, NULL);
+			
+			JSBool res = JL_CallFunction(cx, vstPlugin, fval, &_rval, 3, INT_TO_JSVAL(channel), INT_TO_JSVAL(mpn->thisProgramIndex), OBJECT_TO_JSVAL(jsMpn));
+			if ( res == JS_TRUE && JSVAL_IS_INT(_rval) ) {
+
+				JS_GetProperty(cx, jsMpn, "name", &_arg);
+				JSString *jsstrName = JS_ValueToString(cx, _arg);
+				_arg = STRING_TO_JSVAL(jsstrName);
+				const char *name = JS_GetStringBytes(jsstrName);
+				strncpy(mpn->name, name, kVstMaxNameLen);
+
+				JS_GetProperty(cx, jsMpn, "midiProgram", &_arg);
+				if ( _arg == JSVAL_VOID ) {
+					mpn->midiProgram = -1;
+				} else {
+					int32 i;
+					JS_ValueToInt32(cx, _arg, &i);
+					if ( i < 0 || i > 127 ) {
+						JS_ReportError(cx, "Invalid midiProgram value.");
+						return 0;
+					}
+					mpn->midiProgram = i;
+				}
+
+				JS_GetProperty(cx, jsMpn, "midiBankMsb", &_arg);
+				if ( _arg == JSVAL_VOID ) {
+					mpn->midiBankMsb = -1;
+				} else {
+					int32 i;
+					JS_ValueToInt32(cx, _arg, &i);
+					if ( i < 0 || i > 127 ) {
+						JS_ReportError(cx, "Invalid midiBankMsb value.");
+						return 0;
+					}
+					mpn->midiBankMsb = i;
+				}
+
+				JS_GetProperty(cx, jsMpn, "midiBankLsb", &_arg);
+				if ( _arg == JSVAL_VOID ) {
+					mpn->midiBankLsb = -1;
+				} else {
+					int32 i;
+					JS_ValueToInt32(cx, _arg, &i);
+					if ( i < 0 || i > 127 ) {
+						JS_ReportError(cx, "Invalid midiBankLsb value.");
+						return 0;
+					}
+					mpn->midiBankLsb = i;
+				}
+
+				JS_GetProperty(cx, jsMpn, "parentCategoryIndex", &_arg);
+				if ( _arg == JSVAL_VOID ) {
+					mpn->parentCategoryIndex = -1;
+				} else {
+					int32 i;
+					JS_ValueToInt32(cx, _arg, &i);
+					mpn->midiBankLsb = i;
+				}
+
+				JS_GetProperty(cx, jsMpn, "isOmny", &_arg);
+				JSBool b;
+				JS_ValueToBoolean(cx, _arg, &b);
+				mpn->flags = b == JS_TRUE ? kMidiIsOmni : 0;
+
+				return JSVAL_TO_INT(_rval);
+			}
+		}
+
+		MaybeReportException();
+		return AudioEffectX::getMidiProgramName(channel, mpn);
+	}
+
+
 
 	bool string2parameter(long index, char *text) {
 
@@ -478,6 +595,19 @@ DEFINE_PROPERTY( canProcessReplacing ) {
 	return JS_TRUE;
 }
 
+/* perhaps later
+DEFINE_PROPERTY( canDoubleReplacing ) {
+
+	if ( *vp != JSVAL_VOID ) {
+
+		JsVst *vstPlugin = (JsVst *)JS_GetPrivate(cx, obj);
+		J_S_ASSERT_RESOURCE( vstPlugin );
+		J_S_ASSERT_BOOLEAN( *vp );
+		vstPlugin->canDoubleReplacing( JSVAL_TO_BOOLEAN(*vp) == JS_TRUE ? true : false );
+	}
+	return JS_TRUE;
+}
+*/
 
 DEFINE_PROPERTY( numPrograms ) {
 
@@ -544,6 +674,32 @@ DEFINE_PROPERTY( uniqueID ) {
 		VstInt32 id = CCONST( str[0], str[1], str[2], str[3] );
 		vstPlugin->setUniqueID( id );
 	}
+	return JS_TRUE;
+}
+
+DEFINE_FUNCTION_FAST( sendVstEventToHost ) {
+
+	J_S_ASSERT_ARG_MIN( 1 );
+	J_S_ASSERT_OBJECT( J_FARG(1) );
+
+	JsVst *vstPlugin = (JsVst *)JS_GetPrivate(cx, J_FOBJ);
+	J_S_ASSERT_RESOURCE( vstPlugin );
+
+	JSObject *eventObj = JSVAL_TO_OBJECT( J_FARG(1) );
+
+	if ( JS_InstanceOf(cx, eventObj, classMidiEvent, NULL) == JS_TRUE ) {
+
+		VstMidiEvent *pv = (VstMidiEvent*)JS_GetPrivate(cx, eventObj);
+		J_S_ASSERT_RESOURCE(pv);
+
+		VstEvents events;
+		events.numEvents = 1;
+		events.events[0] = (VstEvent*)pv;
+		events.events[0]->type = kVstMidiType;
+		events.events[0]->byteSize = sizeof(VstMidiEvent);
+		vstPlugin->sendVstEventsToHost(&events);
+	}
+
 	return JS_TRUE;
 }
 

@@ -191,6 +191,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\midievent.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\stdafx.cpp"
 				>
 				<FileConfiguration
