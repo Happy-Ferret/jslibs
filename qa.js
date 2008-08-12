@@ -193,7 +193,7 @@ function LaunchTests(itemList, repeat) {
 
 		try {
 			
-			Print( currentItem.name, '\n' );
+			currentItem.name && Print( currentItem.name, '\n' );
 			
 			for ( var i = 0; i < repeat; i++ )
 				currentItem.func(QAAPI, currentItem);
