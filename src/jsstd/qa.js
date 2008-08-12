@@ -540,3 +540,17 @@ LoadModule('jsstd');
 		
 		QA.ASSERT( typeof t, 'xml', 'text type' );
 		QA.ASSERT_STR( t, "\n\t\tthis is\n\t\ta multiline\n\n\t\ttext\n\t\t", 'text' );
+
+
+/// Sandbox global objects
+	
+	var res = Sandbox.Eval();
+	QA.ASSERT( res.Math != Math, true, 'Global objects' );
+
+
+/// Sandbox outside access
+	
+	LoadModule('jsio');
+	var res = Sandbox.Eval('typeof File');
+	QA.ASSERT( res != typeof File, true, 'File access' );
+

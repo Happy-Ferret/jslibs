@@ -19,6 +19,8 @@
 #include "buffer.h"
 #include "pack.h"
 
+DECLARE_CLASS( Sandbox )
+
 //extern JSFunction *stdoutFunction;
 //JSFunction *stdoutFunction = NULL;
 
@@ -46,12 +48,11 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	if ( unsafeModePtrVal != JSVAL_VOID )
 		_pUnsafeMode = (bool*)JSVAL_TO_PRIVATE(unsafeModePtrVal);
 
-
 	INIT_STATIC();
 	INIT_CLASS( Map );
+	INIT_CLASS( Sandbox );
 	INIT_CLASS( Buffer );
 	INIT_CLASS( Pack );
-
 	return JS_TRUE;
 }
 

@@ -197,6 +197,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\sandbox.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\static.cpp"
 				>
 			</File>
