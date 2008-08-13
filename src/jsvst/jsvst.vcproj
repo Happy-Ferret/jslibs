@@ -44,6 +44,7 @@
 				AdditionalIncludeDirectories="..\..\libs\js\src;..\..\libs\vst\src"
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB"
 				MinimalRebuild="true"
+				ExceptionHandling="1"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				UsePrecompiledHeader="2"
@@ -122,6 +123,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="..\..\libs\js\src;..\..\libs\vst\src"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB"
+				ExceptionHandling="1"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="2"
 				WarningLevel="3"
@@ -213,6 +215,10 @@
 						UsePrecompiledHeader="1"
 					/>
 				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\vstplugin.cpp"
+				>
 			</File>
 		</Filter>
 		<Filter
