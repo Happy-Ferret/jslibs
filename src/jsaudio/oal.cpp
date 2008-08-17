@@ -228,7 +228,7 @@ DEFINE_FUNCTION_FAST( GetDouble ) {
   $H arguments
    $ARG soundObject sound: sound object to play.
 **/
-DEFINE_FUNCTION_FAST( PlaySound_ ) {
+DEFINE_FUNCTION_FAST( PlaySound ) {
 
 	J_S_ASSERT_ARG_MIN( 1 );
 	J_S_ASSERT_OBJECT( J_FARG(1) );
@@ -242,7 +242,8 @@ DEFINE_FUNCTION_FAST( PlaySound_ ) {
 
 	const char *buffer;
 	size_t bufferLength;
-	JsvalToStringAndLength(cx, OBJECT_TO_JSVAL(blobObj), &buffer, &bufferLength); // warning: GC on the returned buffer !
+	jsval tmp = OBJECT_TO_JSVAL(blobObj);
+	JsvalToStringAndLength(cx, &tmp, &buffer, &bufferLength); // warning: GC on the returned buffer !
 	
 	ALint state;                // The state of the sound source
 	ALuint bufferID;            // The OpenAL sound buffer ID
@@ -273,25 +274,43 @@ DEFINE_FUNCTION_FAST( PlaySound_ ) {
   // Attach sound buffer to source
   alSourcei(sourceID, AL_BUFFER, bufferID);
 
-  // Finally, play the sound!!!
-  alSourcePlay(sourceID);
 
   // This is a busy wait loop but should be good enough for example purpose
   
-  do {
-    // Query the state of the souce
-    alGetSourcei(sourceID, AL_SOURCE_STATE, &state);
+  {
+  // get the remaining time to play
+  ALint offset;
+  alGetSourcei(sourceID, AL_SAMPLE_OFFSET, &offset);
 
-  } while (state != AL_STOPPED);
+  ALint freq, bits, channels, size;
+  alGetBufferi(bufferID, AL_FREQUENCY, &freq);
+  alGetBufferi(bufferID, AL_BITS, &bits);
+  alGetBufferi(bufferID, AL_CHANNELS, &channels);
+  alGetBufferi(bufferID, AL_SIZE, &size);
 
+	size_t totalTime = size / (channels * (bits/8) * freq) * 1000;
+
+	// Finally, play the sound!!!
+	alSourcePlay(sourceID);
+
+	Sleep(totalTime);
+
+	// Query the state of the souce
+	alGetSourcei(sourceID, AL_SOURCE_STATE, &state); // do { } while (state != AL_STOPPED);
+  }
+		
   // Clean up sound buffer and source
   alDeleteBuffers(1, &bufferID);
   alDeleteSources(1, &sourceID);
 
-  *J_FRVAL = JSVAL_VOID;
+//  *J_FRVAL = JSVAL_VOID;
 
   return JS_TRUE;
 }
+
+
+
+
 
 
 /**doc
@@ -397,7 +416,7 @@ CONFIGURE_CLASS
 		FUNCTION_FAST_ARGC( GetInteger, 2 )
 		FUNCTION_FAST_ARGC( GetDouble, 2 )
 
-		FUNCTION2_FAST_ARGC( PlaySound, PlaySound_, 1 ) // non-openal API
+		FUNCTION_FAST_ARGC( PlaySound, 1 ) // non-openal API
 
 	END_STATIC_FUNCTION_SPEC
 
@@ -406,3 +425,10 @@ CONFIGURE_CLASS
 	END_STATIC_PROPERTY_SPEC
 
 END_CLASS
+
+
+/*
+ogg test files:
+	http://xiph.org/vorbis/listen.html
+
+*/

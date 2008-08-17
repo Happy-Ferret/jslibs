@@ -30,7 +30,7 @@ BUILD REQUIREMENTS:
 	Microsoft Platform SDK
 
 	Microsoft DirectX 9+
-		- you only need to install header and libraries files.
+		- you only need to install header (.h) and libraries (.lib) files.
 
 	In Tools > Options > Projects and Solutions > VC++ Directories > Include files, add the following directories if they are missing:
 		$(ProgramFiles)\Microsoft Platform SDK\include
