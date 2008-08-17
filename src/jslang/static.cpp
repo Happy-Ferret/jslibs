@@ -129,11 +129,20 @@ DEFINE_FUNCTION( Test ) {
 	J_CHK( SwapObjects(cx, JSVAL_TO_OBJECT(J_ARG(1)), JSVAL_TO_OBJECT(J_ARG(2)) ) );
 */
 
+
+	jsval val;
+	JS_GetProperty(cx, JS_GetGlobalObject(cx), "test2", &val);
+	JSBool res = JL_CallFunction( cx, JS_GetGlobalObject(cx), val, rval, 0);
+
+
+	JSBool hasEx = JS_IsExceptionPending(cx);
+
+/*
 	JS_SetPendingException(cx, J_ARG(1));
 //	JS_ReportPendingException(cx);
 	JS_ReportPendingException(cx);
 	JS_ClearPendingException(cx);
-
+*/
 
 
 	return JS_TRUE;

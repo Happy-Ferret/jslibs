@@ -1,8 +1,17 @@
 LoadModule('jsstd');
 LoadModule('jsio');
 
+test2 = function() {
+	
+//	throw "123";
+
+qsdf;
+}
 
 Test( {} );
+
+
+
 
 Print( 'Done.' );
 
