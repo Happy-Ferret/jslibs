@@ -13,241 +13,48 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
+#include <cstring>
 
 #include "../host/host.h"
 #include "../common/jsClass.h"
+#include "jsapihelper.h"
 
 #include <public.sdk/source/vst2.x/audioeffectx.h>
 
 #include "audiomaster.h"
+#include "midievent.h"
 
 DECLARE_CLASS( MidiEvent );
 DECLARE_CLASS( AudioMaster );
 DECLARE_CLASS( VSTPlugin );
 
-class JsException {
-public:
-	JsException( JSContext *cx, const char *text ) {
-		
-		JS_ReportError(cx, text);
-	}
-};
-
-class JsvalHelper {
-protected:
-	virtual JSContext * JsContext() = 0;
-
-	inline jsval GetProperty( JSObject *obj, const char *propertyName ) {
-	
-		jsval val;
-		if ( !JS_GetProperty(JsContext(), obj, propertyName, &val) )
-			throw JsException(JsContext(), "cannot get the property");
-		return val;
-	}
-
-	inline void SetProperty( JSObject *obj, const char *propertyName, jsval val ) {
-	
-		if ( !JS_SetProperty(JsContext(), obj, propertyName, &val) )
-			throw JsException(JsContext(), "cannot set the property");
-	}
-
-	inline int JsvalToInt( jsval val ) {
-		
-		int32 i;
-		if ( !JS_ValueToInt32(JsContext(), val, &i) )
-			throw JsException(JsContext(), "cannot convert to integer");
-		return i;
-	}
-
-	inline jsval IntToJsval( int i ) {
-	
-		if ( INT_FITS_IN_JSVAL(i) )
-			return INT_TO_JSVAL(i);
-		jsval rval;
-		if ( !JS_NewNumberValue(JsContext(), i, &rval) )
-			throw JsException(JsContext(), "cannot convert integer to jsval");
-		return rval;
-	}
-
-	inline double JsvalToDouble( jsval val ) {
-		
-		jsdouble d;
-		if ( !JS_ValueToNumber(JsContext(), val, &d) )
-			throw JsException(JsContext(), "cannot convert to double");
-		if ( DOUBLE_TO_JSVAL(&d) == JS_GetNaNValue(JsContext()) ) // (TBD) needed ?
-			throw JsException(JsContext(), "not a number");
-		return d;
-	}
-
-	inline jsval DoubleToJsval( double d ) {
-	
-		jsval rval;
-		if ( !JS_NewNumberValue(JsContext(), d, &rval) )
-			throw JsException(JsContext(), "cannot convert double to jsval");
-		if ( rval == JS_GetNaNValue(JsContext()) ) // (TBD) needed ?
-			throw JsException(JsContext(), "not a number");
-		return rval;
-	}
-
-	inline bool JsvalToBool( jsval val ) {
-		
-		JSBool b;
-		if ( !JS_ValueToBoolean(JsContext(), val, &b) )
-			throw JsException(JsContext(), "cannot convert to boolean");
-		return b == JS_TRUE;
-	}
-
-	inline jsval BoolToJsval( bool b ) {
-	
-		return b ? JSVAL_TRUE : JSVAL_FALSE;
-	}
-
-	inline const char * JsvalToString( jsval val ) {
-		
-		JSString *jsstr = JS_ValueToString(JsContext(), val);
-		if ( jsstr == NULL )
-			throw JsException(JsContext(), "cannot convert to string");
-		return JS_GetStringBytes(jsstr); // never fails
-	}
-
-	inline jsval StringToJsval( const char *str ) {
-
-		JSString *jsstr = JS_NewStringCopyZ(JsContext(), str);
-		if ( jsstr == NULL )
-			throw JsException(JsContext(), "cannot create the string");
-		return STRING_TO_JSVAL(jsstr);
-	}
-
-	inline jsval StringToJsval( const char *str, size_t length ) {
-
-		JSString *jsstr = JS_NewStringCopyN(JsContext(), str, length);
-		if ( jsstr == NULL )
-			throw JsException(JsContext(), "cannot create the string");
-		return STRING_TO_JSVAL(jsstr);
-	}
-
-	inline int CheckRange( int value, int min, int max ) {
-		
-		if ( value < min || value > max )
-			throw JsException(JsContext(), "value out of range");
-		return value;
-	}
-	
-	inline bool InstanceOf( JSObject *obj, JSClass *jsClass ) {
-		
-		return JS_InstanceOf(JsContext(), obj, jsClass, NULL) == JS_TRUE;
-	}
-
-	inline bool InstanceOf( jsval val, JSClass *jsClass ) {
-
-		if ( !JSVAL_IS_PRIMITIVE(val) )
-			return false;
-		return JS_InstanceOf(JsContext(), JSVAL_TO_OBJECT(val), jsClass, NULL) == JS_TRUE;
-	}
-
-	inline bool JsvalIsFunction( jsval val ) {
-		
-		return JS_TypeOfValue(JsContext(), val) == JSTYPE_FUNCTION;
-	}
-
-	inline bool JsvalIsString( jsval val ) {
-
-		if ( JSVAL_IS_STRING(val) )
-			return true;
-		if ( !JSVAL_IS_PRIMITIVE(val) )
-			return false;
-		JSObject *stringPrototype;
-		JS_GetClassObject(JsContext(), JS_GetGlobalObject(JsContext()), JSProto_String, &stringPrototype);
-		if ( JS_GetPrototype(JsContext(), JSVAL_TO_OBJECT(val)) == stringPrototype )
-			return true;
-		return false;
-	}
-
-	inline jsval FunctionCall0( JSObject *obj, jsval fval ) {
-
-		jsval rval;
-		if ( !JS_CallFunctionValue(JsContext(), obj, fval, 0, NULL, &rval) )
-			throw JsException(JsContext(), "unable to call the function" );
-		return rval;
-	}
-
-	inline jsval FunctionCall1( JSObject *obj, jsval fval, jsval arg1 ) {
-
-		jsval rval;
-		if ( !JS_CallFunctionValue(JsContext(), obj, fval, 1, &arg1, &rval) )
-			throw JsException(JsContext(), "unable to call the function" );
-		return rval;
-	}
-
-	inline jsval FunctionCall2( JSObject *obj, jsval fval, jsval arg1, jsval arg2 ) {
-
-		jsval rval, args[] = { arg1, arg2 };
-		if ( !JS_CallFunctionValue(JsContext(), obj, fval, 2, args, &rval) )
-			throw JsException(JsContext(), "unable to call the function" );
-		return rval;
-	}
-
-	inline jsval FunctionCall3( JSObject *obj, jsval fval, jsval arg1, jsval arg2, jsval arg3 ) {
-
-		jsval rval, args[] = { arg1, arg2, arg3 };
-		if ( !JS_CallFunctionValue(JsContext(), obj, fval, sizeof(args)/sizeof(*args), args, &rval) )
-			throw JsException(JsContext(), "unable to call the function" );
-		return rval;
-	}
-
-	inline jsval FunctionCall4( JSObject *obj, jsval fval, jsval arg1, jsval arg2, jsval arg3, jsval arg4 ) {
-
-		jsval rval, args[] = { arg1, arg2, arg3, arg4 };
-		if ( !JS_CallFunctionValue(JsContext(), obj, fval, sizeof(args)/sizeof(*args), args, &rval) )
-			throw JsException(JsContext(), "unable to call the function" );
-		return rval;
-	}
-
-	inline jsval FunctionCall5( JSObject *obj, jsval fval, jsval arg1, jsval arg2, jsval arg3, jsval arg4, jsval arg5 ) {
-
-		jsval rval, args[] = { arg1, arg2, arg3, arg4, arg5 };
-		if ( !JS_CallFunctionValue(JsContext(), obj, fval, sizeof(args)/sizeof(*args), args, &rval) )
-			throw JsException(JsContext(), "unable to call the function" );
-		return rval;
-	}
-};
-
-
-
-
-
-class JsVst : public AudioEffectX, public JsvalHelper {
+class JsVst : public AudioEffectX, private JSApiHelper {
 private:
 
-	JSContext *cx;
+	JSContext *_cx;
 	JSObject *vstPlugin;
 	jsval _arg, _rval;
 
-	JSContext * JsContext() {
-		
-		return cx;
-	}
-
 	void ManageException() {
 	
-		if ( JS_IsExceptionPending(cx) ) {
+		if ( JS_IsExceptionPending(_cx) ) {
 
 			jsval fval, rval, ex;
 			fval = GetProperty(vstPlugin, "catch");
 			if ( JsvalIsFunction(fval) ) {
 
-				JS_GetPendingException(cx, &ex);
-				JS_CallFunctionValue(cx, vstPlugin, fval, 1, &ex, &rval);
-				if ( JSVAL_IS_OBJECT(rval) )
-					JS_SetPendingException(cx, rval);
+				JS_GetPendingException(_cx, &ex);
+				JS_CallFunctionValue(_cx, vstPlugin, fval, 1, &ex, &rval);
+				if ( JSVAL_IS_VOID(rval) )
+					JS_ClearPendingException(_cx);
 				else
-					JS_ClearPendingException(cx);
+					JS_SetPendingException(_cx, rval);
 			}
 
-			if ( JS_IsExceptionPending(cx) ) {
+			if ( JS_IsExceptionPending(_cx) ) {
 				
-				JS_ReportPendingException(cx);
-				JS_ClearPendingException(cx);
+				JS_ReportPendingException(_cx);
+				JS_ClearPendingException(_cx);
 			}
 		}
 	}
@@ -256,32 +63,36 @@ public:
 
 	~JsVst() {
 
-		JS_RemoveRoot(cx, &_arg);
-		JS_RemoveRoot(cx, &_rval);
-		DestroyHost(cx);
+		JS_RemoveRoot(_cx, &_arg);
+		JS_RemoveRoot(_cx, &_rval);
+		DestroyHost(_cx);
 	}
 
-	JsVst( audioMasterCallback audioMaster ) 
-	: AudioEffectX (audioMaster, 0, 0) {
+	JsVst( audioMasterCallback audioMaster ) : AudioEffectX(audioMaster, 0, 0), JSApiHelper(_cx) {
 
-		cx = CreateHost(-1, -1);
-		InitHost(cx, true, NULL, NULL);
+		_cx = CreateHost(-1, -1);
+		InitHost(_cx, true, NULL, NULL);
+		JS_SetOptions(_cx, JSOPTION_DONT_REPORT_UNCAUGHT);
 
-		JS_AddRoot(cx, &_rval);
-		JS_AddRoot(cx, &_arg);
+		JS_AddRoot(_cx, &_rval);
+		JS_AddRoot(_cx, &_arg);
 
-		InitializeClassMidiEvent(cx, JS_GetGlobalObject(cx));
-		InitializeClassAudioMaster(cx, JS_GetGlobalObject(cx));
-		InitializeClassVSTPlugin(cx, JS_GetGlobalObject(cx));
+		InitializeClassMidiEvent(_cx, JS_GetGlobalObject(_cx));
+		InitializeClassAudioMaster(_cx, JS_GetGlobalObject(_cx));
+		InitializeClassVSTPlugin(_cx, JS_GetGlobalObject(_cx));
 
-		JSObject *audioMasterObject = CreateAudioMasterObject(cx, audioMaster);
+		JSObject *audioMasterObject = CreateAudioMasterObject(_cx, audioMaster);
 		_arg = OBJECT_TO_JSVAL(audioMasterObject);
-		JS_SetProperty( cx, JS_GetGlobalObject(cx), "audioMaster", &_arg );
+		JS_SetProperty(_cx, JS_GetGlobalObject(_cx), "audioMaster", &_arg);
 
-		vstPlugin = JS_DefineObject(cx, JS_GetGlobalObject(cx), "vstPlugin", classVSTPlugin, NULL, NULL);
-		JS_SetPrivate(cx, vstPlugin, this);
+		vstPlugin = JS_DefineObject(_cx, JS_GetGlobalObject(_cx), "vstPlugin", classVSTPlugin, NULL, NULL);
+		JS_SetPrivate(_cx, vstPlugin, this);
 
-		ExecuteScript(cx, "vstPlugin.js", false, 0, NULL, &_rval);
+		JSBool status = ExecuteScript(_cx, "vstPlugin.js", false, 0, NULL, &_rval);
+//		if ( !status )
+//			MessageBox(NULL, "script compilation error", "Error", 0);
+
+
 
 //		const char *pdir = (const char*)this->getDirectory(); // FSSpec on MAC, else char* 
 //		char scriptFileName[PATH_MAX +1];
@@ -301,25 +112,41 @@ public:
 		cEffect.numParams = numParams;
 	}
 
-	// H->
+private:
+
+	// H->P
 	VstIntPtr dispatcher(VstInt32 opcode, VstInt32 index, VstIntPtr value, void* ptr, float opt) {
 
-		jsval fval = GetProperty(vstPlugin, "dispatcher");
-		if ( JsvalIsFunction(fval) )
-			FunctionCall4(vstPlugin, fval, IntToJsval(opcode), IntToJsval(index), IntToJsval(value), DoubleToJsval(opt) ); // , STRING_TO_JSVAL(JS_NewStringCopyZ(cx, ptr))
+		try {
+
+			jsval fval = GetProperty(vstPlugin, "dispatcher");
+			
+			// for DEBUG only ?
+			if ( JsvalIsFunction(fval) ) {
+
+				char *tmp = (char*)ptr;
+/*
+				switch (opcode) {
+					case effCanDo:
+					case effGetParamDisplay:
+						break;
+					default:
+						tmp = NULL;
+				}
+*/
+				FunctionCall5(vstPlugin, fval, IntToJsval(opcode), IntToJsval(index), IntToJsval(value), StringToJsval(""), RealToJsval(opt) ); // , STRING_TO_JSVAL(JS_NewStringCopyZ(cx, ptr))
+			}
+		} catch( JsException ) { ManageException(); }
+
 		return AudioEffectX::dispatcher(opcode, index, value, ptr, opt);
 	}
-
 
 	void open() {
 
 		try {
 			jsval fval = GetProperty(vstPlugin, "open");
-			if ( JsvalIsFunction(fval) ) {
-
-				FunctionCall0(vstPlugin, fval);
-				return;
-			}
+			if ( JsvalIsFunction(fval) )
+				return (void) FunctionCall0(vstPlugin, fval);
 		} catch( JsException ) { ManageException(); }
 		return AudioEffectX::open();
 	}
@@ -328,11 +155,8 @@ public:
 
 		try {
 			jsval fval = GetProperty(vstPlugin, "close");
-			if ( JsvalIsFunction(fval) ) {
-
-				FunctionCall0(vstPlugin, fval);
-				return;
-			}
+			if ( JsvalIsFunction(fval) )
+				return (void) FunctionCall0(vstPlugin, fval);
 		} catch( JsException ) { ManageException(); }
 		return AudioEffectX::close();
 	}
@@ -341,11 +165,8 @@ public:
 
 		try {
 			jsval fval = GetProperty(vstPlugin, "suspend");
-			if ( JsvalIsFunction(fval) ) {
-
-				FunctionCall0(vstPlugin, fval);
-				return;
-			}
+			if ( JsvalIsFunction(fval) )
+				return (void) FunctionCall0(vstPlugin, fval);
 		} catch( JsException ) { ManageException(); }
 		return AudioEffectX::suspend();
 	}
@@ -354,237 +175,41 @@ public:
 
 		try {
 			jsval fval = GetProperty(vstPlugin, "resume");
-			if ( JsvalIsFunction(fval) ) {
-
-				FunctionCall0(vstPlugin, fval);
-				return;
-			}
+			if ( JsvalIsFunction(fval) )
+				return (void) FunctionCall0(vstPlugin, fval);
 		} catch( JsException ) { ManageException(); }
 		return AudioEffectX::resume();
 	}
 
-
-
-	// H->P 
-	void processReplacing(float** inputs, float** outputs, VstInt32 sampleFrames) {
-
-		float *in1 = inputs[0];
-		float *in2 = inputs[1];
-		float *out1 = outputs[0]; 
-		float *out2 = outputs[1]; 
-		while (--sampleFrames >= 0) { 
-
-			(*out1++) = (*in1++); 
-			(*out2++) = (*in2++); 
-		} 
-	}
-
-	// H->P 
-	VstInt32 processEvents(VstEvents* events) {
+	VstInt32 startProcess() {
 
 		try {
-			jsval jsProcessMidiEvent = GetProperty(vstPlugin, "procesMidiEvent");
-			if ( !JsvalIsFunction(jsProcessMidiEvent) ) // optimization
-				jsProcessMidiEvent = JSVAL_VOID;
-			jsval jsSysExEvent = GetProperty(vstPlugin, "procesSysExEvent");
-			if ( !JsvalIsFunction(jsSysExEvent) ) // optimization
-				jsSysExEvent = JSVAL_VOID;
-
-			for ( int i = 0; i < events->numEvents; i++ ) {
-
-				if ( events->events[i]->type == kVstMidiType && !JSVAL_IS_VOID(jsProcessMidiEvent) ) {
-
-					JSObject *jsMidiEvent = JS_NewObject(cx, classMidiEvent, NULL, NULL);
-					JS_SetPrivate(cx, jsMidiEvent, (VstMidiEvent*)events->events[i]);
-					FunctionCall1(vstPlugin, jsProcessMidiEvent, OBJECT_TO_JSVAL(jsMidiEvent));
-				} else
-				if ( events->events[i]->type == kVstSysExType && !JSVAL_IS_VOID(jsSysExEvent) ) {
-
-					// (TBD)
-				}
-			}
-		} catch( JsException ) { ManageException(); }
-		return AudioEffectX::processEvents(events);
-	}
-
-	// H->P Called when a parameter changed.
-	void setParameter(VstInt32 index, float value) {
-		
-		try {
-			jsval fval = GetProperty(vstPlugin, "setParameter");
+			jsval fval = GetProperty(vstPlugin, "startProcess");
 			if ( JsvalIsFunction(fval) ) {
 
-				FunctionCall2(vstPlugin, fval, IntToJsval(index), DoubleToJsval(value) );
-				return;
+				FunctionCall0(vstPlugin, fval);
+				return 1; // (TBD) ???
 			}
 		} catch( JsException ) { ManageException(); }
-		return AudioEffectX::setParameter(index, value);
+		return AudioEffectX::startProcess();
 	}
 
-	// H->P 
-	float getParameter(VstInt32 index) {
-		
-		try {
-			jsval fval = GetProperty(vstPlugin, "getParameter");
-			if ( JsvalIsFunction(fval) )
-				return JsvalToDouble(FunctionCall1(vstPlugin, fval, IntToJsval(index)));
-		} catch( JsException ) { ManageException(); }
-		return AudioEffectX::getParameter(index);
-	}
-
-	// H->P Return the index to the current program. 
-	VstInt32 getProgram() {
-		
-		try {
-			jsval fval = GetProperty(vstPlugin, "getProgram");
-			if ( JsvalIsFunction(fval) )
-				return JsvalToInt(FunctionCall0(vstPlugin, fval));
-		} catch( JsException ) { ManageException(); }
-		return AudioEffectX::getProgram();
-	}
-
-	// H->P Set the current program.
-	void setProgram(VstInt32 program) {
+	VstInt32 stopProcess() {
 
 		try {
-			jsval fval = GetProperty(vstPlugin, "setProgram");
-			if ( JsvalIsFunction(fval) ) {
-				
-				FunctionCall1(vstPlugin, fval, IntToJsval(program));
-				return;
-			}
-		} catch( JsException ) { ManageException(); }
-		return AudioEffectX::setProgram(program);
-	}
-
-	// H->P Stuff the name field of the current program with name. Limited to kVstMaxProgNameLen. The program name is displayed in the rack, and can be edited by the user.
-	void setProgramName(char *name) {
-	
-		try {
-			jsval fval = GetProperty(vstPlugin, "setProgramName");
+			jsval fval = GetProperty(vstPlugin, "stopProcess");
 			if ( JsvalIsFunction(fval) ) {
 
-				FunctionCall1(vstPlugin, fval, StringToJsval(name));
-				return;
+				FunctionCall0(vstPlugin, fval);
+				return 1; // (TBD) ???
 			}
 		} catch( JsException ) { ManageException(); }
-		return AudioEffectX::setProgramName(name);
-	}
-
-	// H->P Stuff name with the name of the current program. Limited to kVstMaxProgNameLen. The program name is displayed in the rack, and can be edited by the user.
-	void getProgramName(char *name) {
-
-		try {
-			jsval fval = GetProperty(vstPlugin, "getProgramName");
-			if ( JsvalIsFunction(fval) ) {
-
-				_rval = FunctionCall0(vstPlugin, fval);
-				strncpy(name, JsvalToString(_rval), kVstMaxProgNameLen); // truncate
-				name[kVstMaxProgNameLen-1] = '\0';
-				return;
-			}
-		} catch( JsException ) { ManageException(); }
-		return AudioEffectX::getProgramName(name);
-	}
-
-	// H->P Stuff label with the units in which parameter index is displayed.
-	void getParameterLabel(VstInt32 index, char* label) {
-
-		try {
-			jsval fval = GetProperty(vstPlugin, "getParameterLabel");
-			if ( JsvalIsFunction(fval) ) {
-
-				_rval = FunctionCall1(vstPlugin, fval, IntToJsval(index));
-				strncpy(label, JsvalToString(_rval), kVstMaxParamStrLen); // truncate
-				label[kVstMaxParamStrLen-1] = '\0';
-			}
-		} catch( JsException ) { ManageException(); }
-		return AudioEffectX::getParameterLabel(index, label);
-	}
-
-	// H->P Stuff text with a string representation ("0.5", "-3", "PLATE", etc...) of the value of parameter index. Limited to kVstMaxParamStrLen. 
-	void getParameterDisplay(VstInt32 index, char *text) {
-
-		try {
-			jsval fval = GetProperty(vstPlugin, "getParameterDisplay");
-			if ( JsvalIsFunction(fval) ) {
-
-				_rval = FunctionCall1(vstPlugin, fval, IntToJsval(index));
-				strncpy(text, JsvalToString(_rval), kVstMaxParamStrLen); // truncate
-				text[kVstMaxParamStrLen-1] = '\0';
-				return;
-			}
-		} catch( JsException ) { ManageException(); }
-		return AudioEffectX::getParameterDisplay(index, text);
-	}
-
-	// H->P Stuff text with the name ("Time", "Gain", "RoomType", etc...) of parameter index. Limited to kVstMaxParamStrLen. 
-	void getParameterName(VstInt32 index, char* text) {
-
-		try {
-			jsval fval = GetProperty(vstPlugin, "getParameterName");
-			if ( JsvalIsFunction(fval) ) {
-
-				_rval = FunctionCall1(vstPlugin, fval, IntToJsval(index));
-				strncpy(text, JsvalToString(_rval), kVstMaxParamStrLen); // truncate
-				text[kVstMaxParamStrLen-1] = '\0';
-				return;
-			}
-		} catch( JsException ) { ManageException(); }
-		return AudioEffectX::getParameterName(index, text);
+		return AudioEffectX::stopProcess();
 	}
 
 
-	// H->P
-	//Reports what the plug-in is able to do (plugCanDos in audioeffectx.cpp).
-	//Report what the plug-in is able to do. In general you can but don't have to report whatever you support 
-	//or not support via canDo. Some application functionality may require some specific reply, 
-	//but in that case you will probably know. Best is to report whatever you know for sure. 
-	//A Host application cannot make assumptions about the presence of the new 2.x features of a plug-in. 
-	//Ignoring this inquiry methods and trying to access a 2.x feature from a 1.0 plug, or vice versa, 
-	//will mean the plug-in or Host application will break. 
-	//It is not the end-users job to pick and choose which plug-ins can be supported by which Host.
-	//Parameters: text 	A string from plugCanDos
-	//Returns:
-	//        * 0: don't know (default)
-	//        * 1: yes
-	//        * -1: no
-	//Note:
-	//    This should be supported. 
-	VstInt32 canDo(char* text) {
-
-		try {
-			jsval fval = GetProperty(vstPlugin, "canDo");
-			if ( JsvalIsFunction(fval) ) {
-
-				_rval = FunctionCall1(vstPlugin, fval, StringToJsval(text));
-				if ( JSVAL_IS_VOID(_rval) )
-						return 0; // 0: don't know (default)
-				return JsvalToBool(_rval) ? 1 : -1; // 1: yes, -1: no
-			}
-		} catch( JsException ) { ManageException(); }
-		return AudioEffectX::canDo(text);
-	}
-
-	// H->P Fill text with name of program index (category deprecated in VST 2.4). Allows a Host application to list the plug-in's programs (presets).
-	bool getProgramNameIndexed(VstInt32 category, VstInt32 index, char *text) {
-
-		try {
-			jsval fval = GetProperty(vstPlugin, "getProgramNameIndexed");
-			if ( JsvalIsFunction(fval) ) {
-
-				_rval = FunctionCall1(vstPlugin, fval, IntToJsval(index));
-				if ( !JsvalIsString(_rval) ) // end of list
-					return false;
-				strncpy(text, JsvalToString(_rval), kVstMaxProgNameLen); // truncate
-				text[kVstMaxProgNameLen-1] = '\0';
-				return true;
-			}
-		} catch( JsException ) { ManageException(); }
-		return AudioEffectX::getProgramNameIndexed(category, index, text);
-	}
-
-	// H->P Specify a category that fits the plug (VstPlugCategory). 
+	// H->P Specify a category that fits the plug (VstPlugCategory).
+	// (TBD) move to a class variable
 	VstPlugCategory getPlugCategory () {
 
 		try {
@@ -604,16 +229,15 @@ public:
 		return AudioEffectX::getPlugCategory();
 	}
 
-	// H->P Fill text with a string identifying the product name. text 	A string up to 64 chars 
+	// H->P Fill text with a string identifying the product name. text 	A string up to 64 chars
+	// (TBD) move to a class variable
 	bool getProductString(char* text) {
 
 		try {
 			jsval fval = GetProperty(vstPlugin, "getProductString");
 			if ( JsvalIsFunction(fval) ) {
 
-				_rval = FunctionCall0(vstPlugin, fval);
-				strncpy(text, JsvalToString(_rval), kVstMaxProductStrLen); // truncate
-				text[kVstMaxProductStrLen-1] = '\0';
+				CopyJsvalToString(FunctionCall0(vstPlugin, fval), text, kVstMaxProductStrLen);
 				return true;
 			}
 		} catch( JsException ) { ManageException(); }
@@ -621,79 +245,469 @@ public:
 	}
 
 	// H->P Fill text with a string identifying the vendor.  text 	A string up to 64 chars 
+	// (TBD) move to a class variable
 	bool getVendorString(char* text) {
 
 		try {
 			jsval fval = GetProperty(vstPlugin, "getVendorString");
 			if ( JsvalIsFunction(fval) ) {
 
-				_rval = FunctionCall0(vstPlugin, fval);
-				strncpy(text, JsvalToString(_rval), kVstMaxVendorStrLen); // truncate
-				text[kVstMaxVendorStrLen-1] = '\0';
+				CopyJsvalToString(FunctionCall0(vstPlugin, fval), text, kVstMaxVendorStrLen);
 				return true;
 			}
 		} catch( JsException ) { ManageException(); }
 		return AudioEffectX::getVendorString(text);
 	}
 
+	// H->P Return vendor-specific version.
+	// (TBD) move to a class variable
+	VstInt32 getVendorVersion() {
+
+		try {
+			jsval fval = GetProperty(vstPlugin, "getVendorVersion");
+			if ( JsvalIsFunction(fval) )
+				return JsvalToInt(FunctionCall0(vstPlugin, fval));
+		} catch( JsException ) { ManageException(); }
+		return AudioEffectX::getVendorVersion();
+	}
+
+
+	// H->P Fill text with a string identifying the effect. 
+	// (TBD) move to a class variable
+	bool getEffectName(char* name) {
+
+		try {
+			jsval fval = GetProperty(vstPlugin, "getEffectName");
+			if ( JsvalIsFunction(fval) )
+				return CopyJsvalToString(FunctionCall0(vstPlugin, fval), name, kVstMaxEffectNameLen), true;
+		} catch( JsException ) { ManageException(); }
+		return AudioEffectX::getEffectName(name);
+	}
+
+
+	// H->P 
+	void processReplacing(float** inputs, float** outputs, VstInt32 sampleFrames) {
+/*
+		float *in1 = inputs[0];
+		float *in2 = inputs[1];
+		float *out1 = outputs[0]; 
+		float *out2 = outputs[1]; 
+		while (--sampleFrames >= 0) { 
+
+			(*out1++) = (*in1++); 
+			(*out2++) = (*in2++); 
+		} 
+*/
+	}
+
+
+	// H->P 
+	VstInt32 processEvents(VstEvents* events) {
+
+		try {
+			jsval jsProcessMidiEvent = GetProperty(vstPlugin, "procesMidiEvent");
+			if ( !JsvalIsFunction(jsProcessMidiEvent) ) // optimization
+				jsProcessMidiEvent = JSVAL_VOID;
+			jsval jsSysExEvent = GetProperty(vstPlugin, "procesSysExEvent");
+			if ( !JsvalIsFunction(jsSysExEvent) ) // optimization
+				jsSysExEvent = JSVAL_VOID;
+
+			for ( int i = 0; i < events->numEvents; i++ ) {
+
+				if ( events->events[i]->type == kVstMidiType && !JSVAL_IS_VOID(jsProcessMidiEvent) ) {
+
+					JSObject *jsMidiEvent = CreateMidiEventObject(_cx, (VstMidiEvent*)events->events[i]);
+					FunctionCall1(vstPlugin, jsProcessMidiEvent, OBJECT_TO_JSVAL(jsMidiEvent));
+				} else
+				if ( events->events[i]->type == kVstSysExType && !JSVAL_IS_VOID(jsSysExEvent) ) {
+
+					// (TBD)
+				}
+			}
+		} catch( JsException ) { ManageException(); }
+		return AudioEffectX::processEvents(events);
+	}
+
+
+	bool canParameterBeAutomated(VstInt32 index) {
+
+		try {
+			jsval fval = GetProperty(vstPlugin, "canParameterBeAutomated");
+			if ( JsvalIsFunction(fval) )
+				return JsvalToBool(FunctionCall1(vstPlugin, fval, IntToJsval(index)));
+		} catch( JsException ) { ManageException(); }
+		return AudioEffectX::canParameterBeAutomated(index);
+	}
+
+
+	void setParameterAutomated(VstInt32 index, float value) {
+
+		try {
+			jsval fval = GetProperty(vstPlugin, "setParameterAutomated");
+			if ( JsvalIsFunction(fval) )
+				return (void) FunctionCall2(vstPlugin, fval, IntToJsval(index), RealToJsval(value));
+		} catch( JsException ) { ManageException(); }
+		return AudioEffectX::setParameterAutomated(index, value);
+	}
+
+
+	// H->P Called when a parameter changed.
+	void setParameter(VstInt32 index, float value) {
+		
+		try {
+			jsval fval = GetProperty(vstPlugin, "setParameter");
+			if ( JsvalIsFunction(fval) )
+				return (void) FunctionCall2(vstPlugin, fval, IntToJsval(index), RealToJsval(value));
+		} catch( JsException ) { ManageException(); }
+		return AudioEffectX::setParameter(index, value);
+	}
+
+
+	// first call: return 1 = plug CAN convert string2Parameter, 0 = plug CANNOT convert string2Parameter
+	// next calls: return 1 = conversion successful, 0 = fail
+	bool string2parameter(long index, char *text) {
+
+		try {
+			jsval fval = GetProperty(vstPlugin, "string2parameter");
+			if ( JsvalIsFunction(fval) ) {
+
+				_rval = FunctionCall2(vstPlugin, fval, IntToJsval(index), StringToJsval(text) );
+				if ( text == NULL )
+					return JsvalToBool(_rval);
+
+				if ( JSVAL_IS_NUMBER(_rval) ) {
+					setParameter(index, JsvalToReal(_rval));
+					return true;
+				} else
+					return false;
+			}
+		} catch ( JsException ) { ManageException(); }
+		return AudioEffectX::string2parameter(index, text);
+	}
+
+	// H->P 
+	float getParameter(VstInt32 index) {
+		
+		try {
+			jsval fval = GetProperty(vstPlugin, "getParameter");
+			if ( JsvalIsFunction(fval) )
+				return JsvalToReal(FunctionCall1(vstPlugin, fval, IntToJsval(index)));
+		} catch( JsException ) { ManageException(); }
+		return AudioEffectX::getParameter(index);
+	}
+
+
+	// return: 1 = successful
+	bool getParameterProperties(VstInt32 index, VstParameterProperties* p) {
+
+		try {
+			jsval fval = GetProperty(vstPlugin, "getParameterProperties");
+			if ( JsvalIsFunction(fval) ) {
+
+				JSObject *obj = JS_NewObject(_cx, NULL, NULL, NULL);
+				FunctionCall1(vstPlugin, fval, OBJECT_TO_JSVAL(obj));
+				
+				p->flags = 0;
+
+				CopyJsvalToString(AssertDefined(GetProperty(obj, "label")), p->label, kVstMaxLabelLen);
+				CopyJsvalToString(AssertDefined(GetProperty(obj, "shortLabel")), p->shortLabel, kVstMaxShortLabelLen);
+// (TBD) finish !			
+			}
+
+		} catch( JsException ) { ManageException(); }
+		return AudioEffectX::getParameterProperties(index, p);
+	}
+
+	// H->P Stuff label with the units in which parameter index is displayed.
+	void getParameterLabel(VstInt32 index, char* label) {
+
+		try {
+			jsval fval = GetProperty(vstPlugin, "getParameterLabel");
+			if ( JsvalIsFunction(fval) )
+				return CopyJsvalToString(FunctionCall1(vstPlugin, fval, IntToJsval(index)), label, kVstMaxParamStrLen);
+		} catch( JsException ) { ManageException(); }
+		return AudioEffectX::getParameterLabel(index, label);
+	}
+
+	// H->P Stuff text with a string representation ("0.5", "-3", "PLATE", etc...) of the value of parameter index. Limited to kVstMaxParamStrLen. 
+	void getParameterDisplay(VstInt32 index, char *text) {
+
+		try {
+			jsval fval = GetProperty(vstPlugin, "getParameterDisplay");
+			if ( JsvalIsFunction(fval) )
+				return CopyJsvalToString(FunctionCall1(vstPlugin, fval, IntToJsval(index)), text, kVstMaxParamStrLen);
+		} catch( JsException ) { ManageException(); }
+		return AudioEffectX::getParameterDisplay(index, text);
+	}
+
+	// H->P Stuff text with the name ("Time", "Gain", "RoomType", etc...) of parameter index. Limited to kVstMaxParamStrLen. 
+	void getParameterName(VstInt32 index, char* text) {
+
+		try {
+			jsval fval = GetProperty(vstPlugin, "getParameterName");
+			if ( JsvalIsFunction(fval) )
+				return CopyJsvalToString(FunctionCall1(vstPlugin, fval, IntToJsval(index)), text, kVstMaxParamStrLen);
+		} catch( JsException ) { ManageException(); }
+		return AudioEffectX::getParameterName(index, text);
+	}
+
+
+	// H->P Return the index to the current program. 
+	VstInt32 getProgram() {
+		
+		try {
+			jsval fval = GetProperty(vstPlugin, "getProgram");
+			if ( JsvalIsFunction(fval) )
+				return JsvalToInt(FunctionCall0(vstPlugin, fval));
+		} catch( JsException ) { ManageException(); }
+		return AudioEffectX::getProgram();
+	}
+
+	// H->P Set the current program.
+	void setProgram(VstInt32 program) {
+
+		try {
+			jsval fval = GetProperty(vstPlugin, "setProgram");
+			if ( JsvalIsFunction(fval) )
+				FunctionCall1(vstPlugin, fval, IntToJsval(program));
+		} catch( JsException ) { ManageException(); }
+		return AudioEffectX::setProgram(program);
+	}
+
+	bool beginSetProgram() {
+	
+		try {
+			jsval fval = GetProperty(vstPlugin, "beginSetProgram");
+			if ( JsvalIsFunction(fval) )
+				return JsvalToBool(FunctionCall0(vstPlugin, fval));
+		} catch( JsException ) { ManageException(); }
+		return AudioEffectX::beginSetProgram();
+	}
+
+	bool endSetProgram() {
+	
+		try {
+			jsval fval = GetProperty(vstPlugin, "endSetProgram");
+			if ( JsvalIsFunction(fval) )
+				return JsvalToBool(FunctionCall0(vstPlugin, fval));
+		} catch( JsException ) { ManageException(); }
+		return AudioEffectX::endSetProgram();
+	}
+
+
+	// H->P Stuff the name field of the current program with name. Limited to kVstMaxProgNameLen. The program name is displayed in the rack, and can be edited by the user.
+	void setProgramName(char *name) {
+	
+		try {
+			jsval fval = GetProperty(vstPlugin, "setProgramName");
+			if ( JsvalIsFunction(fval) )
+				return (void) FunctionCall1(vstPlugin, fval, StringToJsval(name));
+		} catch( JsException ) { ManageException(); }
+		return AudioEffectX::setProgramName(name);
+	}
+
+	// H->P Stuff name with the name of the current program. Limited to kVstMaxProgNameLen. The program name is displayed in the rack, and can be edited by the user.
+	void getProgramName(char *name) {
+
+		try {
+			jsval fval = GetProperty(vstPlugin, "getProgramName");
+			if ( JsvalIsFunction(fval) )
+				return CopyJsvalToString(FunctionCall0(vstPlugin, fval), name, kVstMaxProgNameLen);
+		} catch( JsException ) { ManageException(); }
+		return AudioEffectX::getProgramName(name);
+	}
+
+
+	// H->P
+	VstInt32 canDo(char* text) {
+
+		try {
+			jsval fval = GetProperty(vstPlugin, "canDo");
+			if ( JsvalIsFunction(fval) ) {
+
+				_rval = FunctionCall1(vstPlugin, fval, StringToJsval(text));
+				if ( JSVAL_IS_VOID(_rval) || _rval == JSVAL_ZERO )
+						return 0; // 0: don't know (default)
+				return JsvalToBool(_rval) ? 1 : -1; // 1: yes, -1: no
+			}
+		} catch( JsException ) { ManageException(); }
+		return AudioEffectX::canDo(text);
+	}
+
+	// H->P Fill text with name of program index (category deprecated in VST 2.4). Allows a Host application to list the plug-in's programs (presets).
+	// return: 1 = OK, 0 = fail
+	bool getProgramNameIndexed(VstInt32 category, VstInt32 index, char *text) {
+
+		try {
+			jsval fval = GetProperty(vstPlugin, "getProgramNameIndexed");
+			if ( JsvalIsFunction(fval) ) {
+
+				_rval = FunctionCall2(vstPlugin, fval, IntToJsval(category), IntToJsval(index));
+				if ( JSVAL_IS_VOID(_rval) ) // end of list
+					return false;
+				CopyJsvalToString(_rval, text, kVstMaxProgNameLen);
+				return true;
+			}
+		} catch( JsException ) { ManageException(); }
+		return AudioEffectX::getProgramNameIndexed(category, index, text);
+	}
+
 
 	// H->P For 'soft-bypass' (this could be automated (in Audio Thread) that why you could NOT call iochanged (if needed) in this function, do it in fxidle).
-   //      process still called (if Supported) although the plug-in was bypassed. Some plugs need to stay 'alive' even when bypassed.
-	//      An example is a surround decoder which has more inputs than outputs and must maintain some reasonable signal distribution even when being bypassed.
-	//      A CanDo 'bypass' allows to ask the plug-in if it supports soft bypass or not.
-	//      Returns:
-	//			  true: supports SoftBypass, process will be called, the plug-in should compensate its latency, and copy inputs to outputs
-	//			  false: doesn't support SoftBypass, process will not be called, the Host should bypass the process call
 	bool setBypass(bool onOff) {
 		
 		try {
 			jsval fval = GetProperty(vstPlugin, "setBypass");
-			if ( JsvalIsFunction(fval) ) {
-
-				_rval = FunctionCall1(vstPlugin, fval, BoolToJsval(onOff));
-				return JsvalToBool(_rval);
-			}
+			if ( JsvalIsFunction(fval) )
+				return JsvalToBool(FunctionCall1(vstPlugin, fval, BoolToJsval(onOff)));
 		} catch( JsException ) { ManageException(); }
 		return AudioEffectX::setBypass(onOff);
 	}
 
+
+// <MIDI>
+
+	VstInt32 getNumMidiInputChannels() {
+
+		try {
+			jsval fval = GetProperty(vstPlugin, "getNumMidiInputChannels");
+			if ( JsvalIsFunction(fval) )
+				return JsvalToInt(FunctionCall0(vstPlugin, fval));
+		} catch( JsException ) { ManageException(); }
+		return AudioEffectX::getNumMidiInputChannels();
+	}
+
+	VstInt32 getNumMidiOutputChannels() {
+
+		try {
+			jsval fval = GetProperty(vstPlugin, "getNumMidiOutputChannels");
+			if ( JsvalIsFunction(fval) )
+				return JsvalToInt(FunctionCall0(vstPlugin, fval));
+		} catch( JsException ) { ManageException(); }
+		return AudioEffectX::getNumMidiOutputChannels();
+	}
+
+
+	// Plugin Return true if the #MidiProgramNames, #MidiKeyNames or #MidiControllerNames had changed on this MIDI channel.
+	bool hasMidiProgramsChanged(VstInt32 channel) {
+		
+		try {
+			jsval fval = GetProperty(vstPlugin, "hasMidiProgramsChanged");
+			if ( JsvalIsFunction(fval) )
+				return JsvalToBool(FunctionCall1(vstPlugin, fval, IntToJsval(channel)));
+		} catch( JsException ) { ManageException(); }
+		return AudioEffectX::hasMidiProgramsChanged(channel);
+	}
+
+	// return: number of used programIndexes. if 0 is returned, no MidiProgramNames supported.
 	VstInt32 getMidiProgramName(VstInt32 channel, MidiProgramName* mpn) {
 
 		try {
 			jsval fval = GetProperty(vstPlugin, "getMidiProgramName");
 			if ( JsvalIsFunction(fval) ) {
 
-				JSObject *jsMpn = JS_NewObject(cx, NULL, NULL, NULL);
+				JSObject *jsMpn = JS_NewObject(_cx, NULL, NULL, NULL);
 				_rval = FunctionCall3(vstPlugin, fval, IntToJsval(channel), IntToJsval(mpn->thisProgramIndex), OBJECT_TO_JSVAL(jsMpn));
 				if ( !JSVAL_IS_INT(_rval) )
-					throw JsException(cx, "invalid return value");
-				strncpy(mpn->name, JsvalToString(GetProperty(jsMpn, "name")), kVstMaxNameLen);
-				mpn->name[kVstMaxNameLen] = '\0';
+					throw JsException(_cx, "invalid return value (need integer)");
+				VstInt32 ret = JsvalToInt(_rval);
+				if ( ret == 0 )
+					return 0;
+				CopyJsvalToString(GetProperty(jsMpn, "name"), mpn->name, kVstMaxNameLen);
 				_arg = GetProperty(jsMpn, "midiProgram");
-				mpn->midiProgram = JSVAL_IS_VOID(_arg) ? -1 : CheckRange(JsvalToInt(_arg), 0, 127);
+				mpn->midiProgram = JSVAL_IS_VOID(_arg) ? -1 : AssertRange(JsvalToInt(_arg), 0, 127);
 				_arg = GetProperty(jsMpn, "midiBankMsb");
-				mpn->midiBankMsb = JSVAL_IS_VOID(_arg) ? -1 : CheckRange(JsvalToInt(_arg), 0, 127);
+				mpn->midiBankMsb = JSVAL_IS_VOID(_arg) ? -1 : AssertRange(JsvalToInt(_arg), 0, 127);
 				_arg = GetProperty(jsMpn, "midiBankLsb");
-				mpn->midiBankLsb = JSVAL_IS_VOID(_arg) ? -1 : CheckRange(JsvalToInt(_arg), 0, 127);
+				mpn->midiBankLsb = JSVAL_IS_VOID(_arg) ? -1 : AssertRange(JsvalToInt(_arg), 0, 127);
 				_arg = GetProperty(jsMpn, "parentCategoryIndex");
 				mpn->parentCategoryIndex = JSVAL_IS_VOID(_arg) ? -1 : JsvalToInt(_arg);
 				mpn->flags = JsvalToBool(GetProperty(jsMpn, "isOmny")) ? kMidiIsOmni : 0;
-				return JsvalToInt(_rval);
+				return ret;
 			}
 		} catch ( JsException ) { ManageException(); }
 		return AudioEffectX::getMidiProgramName(channel, mpn);
 	}
 
 
+	VstInt32 getCurrentMidiProgram(VstInt32 channel, MidiProgramName* currentProgram)  {
+		
+		try {
+			jsval fval = GetProperty(vstPlugin, "getCurrentMidiProgram");
+			if ( JsvalIsFunction(fval) ) {
+
+				_rval = FunctionCall1(vstPlugin, fval, IntToJsval(channel));
+				if ( !JSVAL_IS_INT(_rval) )
+					throw JsException(_cx, "invalid return value (need integer)");
+				VstInt32 prog = JsvalToInt(_rval);
+				currentProgram->thisProgramIndex = prog;
+				getMidiProgramName(channel, currentProgram); // (TBD) is this ok ?
+				return prog;
+			}
+		} catch ( JsException ) { ManageException(); }
+		return AudioEffectX::getCurrentMidiProgram(channel, currentProgram);
+	}
+
+
+/*
+	// return: number of used categoryIndexes. if 0 is returned, no MidiProgramCategories supported.
+	VstInt32 getMidiProgramCategory(VstInt32 channel, MidiProgramCategory* category) {
+
+// [ ['name'], 
+
+		try {
+			jsval fval = GetProperty(vstPlugin, "getMidiProgramCategory");
+			if ( JsvalIsFunction(fval) ) {
+
+//				JSObject *jsMpn = JS_NewObject(_cx, NULL, NULL, NULL);
+
+				_rval = FunctionCall2(vstPlugin, fval, JsvalToInt(channel), JsvalToInt(category->thisCategoryIndex) );
+				
+				category->flags = 0;
+
+				if ( JSVAL_IS_VOID(_rval) ) {
+
+					category->name[0] = '\0';
+					category->parentCategoryIndex = -1; // -1:no parent category
+					return 1;
+				}
+				CopyJsvalToString(_rval, category->name, kVstMaxNameLen);
+???
+
+// http://asseca.com/vst-24-specs/efGetMidiProgramCategory.html
+				return 1; 
+			}
+		} catch( JsException ) { ManageException(); }
+		return AudioEffectX::getMidiProgramCategory(channel, category);
+	}
+*/
+
+	bool getMidiKeyName(VstInt32 channel, MidiKeyName* keyName) {
+
+		try {
+			jsval fval = GetProperty(vstPlugin, "getMidiKeyName");
+			if ( JsvalIsFunction(fval) ) {
+
+				_rval = FunctionCall3(vstPlugin, fval, JsvalToInt(channel), JsvalToInt(keyName->thisProgramIndex), JsvalToInt(keyName->thisKeyNumber) );
+				if ( JSVAL_IS_VOID(_rval) )
+					return false; // If 0 is returned, no MidiKeyNames are defined for 'thisProgramIndex'.
+				CopyJsvalToString(_rval, keyName->keyName, kVstMaxNameLen);
+				keyName->flags = 0;
+				keyName->reserved = 0;
+				return true;
+			}
+		} catch( JsException ) { ManageException(); }
+		return AudioEffectX::getMidiKeyName(channel, keyName);
+	}
+
+// </MIDI>
+
 	void setSampleRate(float sampleRate) {
 
 		try {
 			jsval fval = GetProperty(vstPlugin, "setSampleRate");
-			if ( JsvalIsFunction(fval) ) {
-
-				FunctionCall1(vstPlugin, fval, DoubleToJsval(sampleRate));
-				return;
-			}
+			if ( JsvalIsFunction(fval) )
+				FunctionCall1(vstPlugin, fval, RealToJsval(sampleRate));
 		} catch( JsException ) { ManageException(); }
 		return AudioEffectX::setSampleRate(sampleRate);
 	}
@@ -703,11 +717,8 @@ public:
 	
 		try {
 			jsval fval = GetProperty(vstPlugin, "setBlockSize");
-			if ( JsvalIsFunction(fval) ) {
-
+			if ( JsvalIsFunction(fval) )
 				FunctionCall1(vstPlugin, fval, IntToJsval(sampleRate));
-				return;
-			}
 		} catch( JsException ) { ManageException(); }
 		return AudioEffectX::setBlockSize(sampleRate);
 	}
@@ -719,18 +730,14 @@ public:
 			jsval fval = GetProperty(vstPlugin, "getInputProperties");
 			if ( JsvalIsFunction(fval) ) {
 
-				JSObject *tmpObj = JS_NewObject(cx, NULL, NULL, NULL);
+				JSObject *tmpObj = JS_NewObject(_cx, NULL, NULL, NULL);
 				_rval = FunctionCall2(vstPlugin, fval, IntToJsval(index), OBJECT_TO_JSVAL(tmpObj));
-
-				strncpy(properties->label, JsvalToString(GetProperty(tmpObj, "label")), kVstMaxLabelLen);
-				properties->label[kVstMaxLabelLen] = '\0';
-
-				strncpy(properties->shortLabel, JsvalToString(GetProperty(tmpObj, "shortLabel")), kVstMaxShortLabelLen);
-				properties->shortLabel[kVstMaxShortLabelLen] = '\0';
-
+				if ( !JSVAL_IS_BOOLEAN(_rval) )
+					throw JsException(_cx, "invalid return value (need boolean)");
+				CopyJsvalToString(GetProperty(tmpObj, "label"), properties->label, kVstMaxLabelLen);
+				CopyJsvalToString(GetProperty(tmpObj, "shortLabel"), properties->shortLabel, kVstMaxShortLabelLen);
 				properties->flags = JsvalToInt(GetProperty(tmpObj, "flags"));
 				properties->arrangementType = JsvalToInt(GetProperty(tmpObj, "arrangementType"));
-				
 				return JsvalToBool(_rval);
 			}
 		} catch ( JsException ) { ManageException(); }
@@ -743,18 +750,14 @@ public:
 			jsval fval = GetProperty(vstPlugin, "getOutputProperties");
 			if ( JsvalIsFunction(fval) ) {
 
-				JSObject *tmpObj = JS_NewObject(cx, NULL, NULL, NULL);
+				JSObject *tmpObj = JS_NewObject(_cx, NULL, NULL, NULL);
 				_rval = FunctionCall2(vstPlugin, fval, IntToJsval(index), OBJECT_TO_JSVAL(tmpObj));
-
-				strncpy(properties->label, JsvalToString(GetProperty(tmpObj, "label")), kVstMaxLabelLen);
-				properties->label[kVstMaxLabelLen] = '\0';
-
-				strncpy(properties->shortLabel, JsvalToString(GetProperty(tmpObj, "shortLabel")), kVstMaxShortLabelLen);
-				properties->shortLabel[kVstMaxShortLabelLen] = '\0';
-
+				if ( !JSVAL_IS_BOOLEAN(_rval) )
+					throw JsException(_cx, "invalid return value (need boolean)");
+				CopyJsvalToString(GetProperty(tmpObj, "label"), properties->label, kVstMaxLabelLen);
+				CopyJsvalToString(GetProperty(tmpObj, "shortLabel"), properties->shortLabel, kVstMaxShortLabelLen);
 				properties->flags = JsvalToInt(GetProperty(tmpObj, "flags"));
 				properties->arrangementType = JsvalToInt(GetProperty(tmpObj, "arrangementType"));
-				
 				return JsvalToBool(_rval);
 			}
 		} catch ( JsException ) { ManageException(); }
@@ -762,15 +765,16 @@ public:
 	}
 
 
+	bool getSpeakerArrangement(VstSpeakerArrangement** pluginInput, VstSpeakerArrangement** pluginOutput) {
 
+		return AudioEffectX::getSpeakerArrangement(pluginInput, pluginOutput);	
+	}
+	
+	bool setSpeakerArrangement(VstSpeakerArrangement* pluginInput, VstSpeakerArrangement* pluginOutput) {
 
-	bool string2parameter(long index, char *text) {
-
-		// ???
-		return AudioEffectX::string2parameter(index, text);
+		return AudioEffectX::setSpeakerArrangement(pluginInput, pluginOutput);	
 	}
 };
-
 
 
 
@@ -778,6 +782,32 @@ public:
 $CLASS_HEADER
 **/
 BEGIN_CLASS( VSTPlugin )
+
+
+DEFINE_PROPERTY( hostLanguage ) {
+
+	JsVst *vstPlugin = (JsVst *)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE( vstPlugin );
+	VstInt32 lang = vstPlugin->getHostLanguage();
+	*vp = INT_TO_JSVAL(lang);
+	return JS_TRUE;
+}
+
+DEFINE_PROPERTY( directory ) {
+
+	JsVst *vstPlugin = (JsVst *)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE( vstPlugin );
+	void *dirName = vstPlugin->getDirectory();
+	if ( dirName != NULL ) {
+		
+		*vp = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, (char*)dirName));
+	} else {
+
+		*vp = JSVAL_VOID;
+	}
+	return JS_TRUE;
+}
+
 
 DEFINE_PROPERTY( canProcessReplacing ) {
 
@@ -792,57 +822,35 @@ DEFINE_PROPERTY( canProcessReplacing ) {
 }
 
 /* perhaps later
-DEFINE_PROPERTY( canDoubleReplacing ) {
-
-	if ( *vp != JSVAL_VOID ) {
-
-		JsVst *vstPlugin = (JsVst *)JS_GetPrivate(cx, obj);
-		J_S_ASSERT_RESOURCE( vstPlugin );
-		J_S_ASSERT_BOOLEAN( *vp );
-		vstPlugin->canDoubleReplacing( JSVAL_TO_BOOLEAN(*vp) == JS_TRUE ? true : false );
-	}
-	return JS_TRUE;
-}
+DEFINE_PROPERTY( canDoubleReplacing ) { }
 */
 
 DEFINE_PROPERTY( numPrograms ) {
 
-	if ( JSVAL_IS_VOID(*vp) ) {
-
-		JsVst *vstPlugin = (JsVst *)JS_GetPrivate(cx, obj);
-		J_S_ASSERT_RESOURCE( vstPlugin );
-		J_S_ASSERT_INT( *vp );
-		vstPlugin->SetNumPrograms( JSVAL_TO_INT(*vp) );
-	}
+	JsVst *vstPlugin = (JsVst *)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE( vstPlugin );
+	J_S_ASSERT_INT( *vp );
+	vstPlugin->SetNumPrograms( JSVAL_TO_INT(*vp) );
 	return JS_TRUE;
 }
-
 
 DEFINE_PROPERTY( numParams ) {
 
-	if ( JSVAL_IS_VOID(*vp) ) {
-
-		JsVst *vstPlugin = (JsVst *)JS_GetPrivate(cx, obj);
-		J_S_ASSERT_RESOURCE( vstPlugin );
-		J_S_ASSERT_INT( *vp );
-		vstPlugin->SetNumParams( JSVAL_TO_INT(*vp) );
-	}
+	JsVst *vstPlugin = (JsVst *)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE( vstPlugin );
+	J_S_ASSERT_INT( *vp );
+	vstPlugin->SetNumParams( JSVAL_TO_INT(*vp) );
 	return JS_TRUE;
 }
-
 
 DEFINE_PROPERTY( numInputs ) {
 
-	if ( JSVAL_IS_VOID(*vp) ) {
-
-		JsVst *vstPlugin = (JsVst *)JS_GetPrivate(cx, obj);
-		J_S_ASSERT_RESOURCE( vstPlugin );
-		J_S_ASSERT_INT( *vp );
-		vstPlugin->setNumInputs( JSVAL_TO_INT(*vp) );
-	}
+	JsVst *vstPlugin = (JsVst *)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE( vstPlugin );
+	J_S_ASSERT_INT( *vp );
+	vstPlugin->setNumInputs( JSVAL_TO_INT(*vp) );
 	return JS_TRUE;
 }
-
 
 DEFINE_PROPERTY( numOutputs ) {
 
@@ -856,24 +864,206 @@ DEFINE_PROPERTY( numOutputs ) {
 	return JS_TRUE;
 }
 
+DEFINE_PROPERTY( samplePos ) {
 
-DEFINE_PROPERTY( uniqueID ) {
+	JsVst *vstPlugin = (JsVst *)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE( vstPlugin );
+	VstTimeInfo* info = vstPlugin->getTimeInfo(0); // samplePos always valid
+	if ( info != NULL )
+		J_CHK( JS_NewNumberValue(cx, info->samplePos, vp ) );
+	else
+		*vp = JSVAL_VOID;
+	return JS_TRUE;
+}
 
-	if ( JSVAL_IS_VOID(*vp) ) {
+DEFINE_PROPERTY( sampleRate ) {
 
-		JsVst *vstPlugin = (JsVst *)JS_GetPrivate(cx, obj);
-		J_S_ASSERT_RESOURCE( vstPlugin );
-		J_S_ASSERT_STRING( *vp );
-		JSString *jsstr = JS_ValueToString(cx, *vp);
-		J_S_ASSERT( JS_GetStringLength(jsstr) == 4, "Invalid ID length" );
-		char *str = JS_GetStringBytes(jsstr);
-		VstInt32 id = CCONST( str[0], str[1], str[2], str[3] );
-		vstPlugin->setUniqueID( id );
-	}
+	JsVst *vstPlugin = (JsVst *)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE( vstPlugin );
+	VstTimeInfo* info = vstPlugin->getTimeInfo(0); // sampleRate always valid
+	if ( info != NULL )
+		J_CHK( JS_NewNumberValue(cx, info->sampleRate, vp ) );
+	else
+		*vp = JSVAL_VOID;
+	return JS_TRUE;
+}
+
+DEFINE_PROPERTY( nanoSeconds ) {
+
+	JsVst *vstPlugin = (JsVst *)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE( vstPlugin );
+	VstTimeInfo* info = vstPlugin->getTimeInfo(kVstNanosValid);
+	if ( info != NULL || (info->flags & kVstNanosValid) )
+		J_CHK( JS_NewNumberValue(cx, info->nanoSeconds, vp ) );
+	else
+		*vp = JSVAL_VOID;
+	return JS_TRUE;
+}
+
+DEFINE_PROPERTY( ppqPos ) {
+
+	JsVst *vstPlugin = (JsVst *)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE( vstPlugin );
+	VstTimeInfo* info = vstPlugin->getTimeInfo(kVstPpqPosValid);
+	if ( info != NULL || (info->flags & kVstPpqPosValid) )
+		J_CHK( JS_NewNumberValue(cx, info->ppqPos, vp ) );
+	else
+		*vp = JSVAL_VOID;
+	return JS_TRUE;
+}
+
+DEFINE_PROPERTY( tempo ) {
+
+	JsVst *vstPlugin = (JsVst *)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE( vstPlugin );
+	VstTimeInfo* info = vstPlugin->getTimeInfo(kVstTempoValid);
+	if ( info != NULL || (info->flags & kVstTempoValid) )
+		J_CHK( JS_NewNumberValue(cx, info->tempo, vp ) );
+	else
+		*vp = JSVAL_VOID;
+	return JS_TRUE;
+}
+
+DEFINE_PROPERTY( barStartPos ) {
+
+	JsVst *vstPlugin = (JsVst *)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE( vstPlugin );
+	VstTimeInfo* info = vstPlugin->getTimeInfo(kVstBarsValid);
+	if ( info != NULL || (info->flags & kVstBarsValid) )
+		J_CHK( JS_NewNumberValue(cx, info->barStartPos, vp ) );
+	else
+		*vp = JSVAL_VOID;
+	return JS_TRUE;
+}
+
+DEFINE_PROPERTY( cycleStartPos ) {
+
+	JsVst *vstPlugin = (JsVst *)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE( vstPlugin );
+	VstTimeInfo* info = vstPlugin->getTimeInfo(kVstCyclePosValid);
+	if ( info != NULL || (info->flags & kVstCyclePosValid) )
+		J_CHK( JS_NewNumberValue(cx, info->cycleStartPos, vp ) );
+	else
+		*vp = JSVAL_VOID;
+	return JS_TRUE;
+}
+
+DEFINE_PROPERTY( cycleEndPos ) {
+
+	JsVst *vstPlugin = (JsVst *)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE( vstPlugin );
+	VstTimeInfo* info = vstPlugin->getTimeInfo(kVstCyclePosValid);
+	if ( info != NULL || (info->flags & kVstCyclePosValid) )
+		J_CHK( JS_NewNumberValue(cx, info->cycleEndPos, vp ) );
+	else
+		*vp = JSVAL_VOID;
+	return JS_TRUE;
+}
+
+DEFINE_PROPERTY( timeSigNumerator ) {
+
+	JsVst *vstPlugin = (JsVst *)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE( vstPlugin );
+	VstTimeInfo* info = vstPlugin->getTimeInfo(kVstTimeSigValid);
+	if ( info != NULL || (info->flags & kVstTimeSigValid) )
+		*vp = INT_TO_JSVAL(info->timeSigNumerator);
+	else
+		*vp = JSVAL_VOID;
+	return JS_TRUE;
+}
+
+DEFINE_PROPERTY( timeSigDenominator ) {
+
+	JsVst *vstPlugin = (JsVst *)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE( vstPlugin );
+	VstTimeInfo* info = vstPlugin->getTimeInfo(kVstTimeSigValid);
+	if ( info != NULL || (info->flags & kVstTimeSigValid) )
+		*vp = INT_TO_JSVAL(info->timeSigDenominator);
+	else
+		*vp = JSVAL_VOID;
+	return JS_TRUE;
+}
+
+DEFINE_PROPERTY( smpteOffset ) {
+
+	JsVst *vstPlugin = (JsVst *)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE( vstPlugin );
+	VstTimeInfo* info = vstPlugin->getTimeInfo(kVstSmpteValid);
+	if ( info != NULL || (info->flags & kVstSmpteValid) )
+		*vp = INT_TO_JSVAL(info->smpteOffset);
+	else
+		*vp = JSVAL_VOID;
+	return JS_TRUE;
+}
+
+DEFINE_PROPERTY( smpteFrameRate ) {
+
+	JsVst *vstPlugin = (JsVst *)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE( vstPlugin );
+	VstTimeInfo* info = vstPlugin->getTimeInfo(kVstSmpteValid);
+	if ( info != NULL || (info->flags & kVstSmpteValid) )
+		*vp = INT_TO_JSVAL(info->smpteFrameRate);
+	else
+		*vp = JSVAL_VOID;
+	return JS_TRUE;
+}
+
+DEFINE_PROPERTY( samplesToNextClock ) {
+
+	JsVst *vstPlugin = (JsVst *)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE( vstPlugin );
+	VstTimeInfo* info = vstPlugin->getTimeInfo(kVstClockValid);
+	if ( info != NULL || (info->flags & kVstClockValid) )
+		*vp = INT_TO_JSVAL(info->samplesToNextClock);
+	else
+		*vp = JSVAL_VOID;
 	return JS_TRUE;
 }
 
 
+
+DEFINE_PROPERTY( inputLatency ) {
+
+	JsVst *vstPlugin = (JsVst *)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE( vstPlugin );
+	*vp = JSVAL_TO_INT( vstPlugin->getInputLatency() );
+	return JS_TRUE;
+}
+
+DEFINE_PROPERTY( outputLatency ) {
+
+	JsVst *vstPlugin = (JsVst *)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE( vstPlugin );
+	*vp = JSVAL_TO_INT( vstPlugin->getOutputLatency() );
+	return JS_TRUE;
+}
+
+
+DEFINE_PROPERTY( initialDelay ) {
+
+	J_S_ASSERT_INT( *vp );
+	JsVst *vstPlugin = (JsVst *)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE( vstPlugin );
+	vstPlugin->setInitialDelay( JSVAL_TO_INT( *vp ) );
+	return JS_TRUE;
+}
+
+
+DEFINE_PROPERTY( uniqueID ) {
+
+	JsVst *vstPlugin = (JsVst *)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE( vstPlugin );
+	J_S_ASSERT_STRING( *vp );
+	JSString *jsstr = JS_ValueToString(cx, *vp);
+	J_S_ASSERT( JS_GetStringLength(jsstr) == 4, "Invalid ID length" );
+	char *str = JS_GetStringBytes(jsstr);
+	VstInt32 vstid = CCONST( str[0], str[1], str[2], str[3] );
+	vstPlugin->setUniqueID( vstid );
+	return JS_TRUE;
+}
+
+
+// Send MIDI events back to Host application
 DEFINE_FUNCTION_FAST( sendVstEventToHost ) {
 
 	J_S_ASSERT_ARG_MIN( 1 );
@@ -884,19 +1074,21 @@ DEFINE_FUNCTION_FAST( sendVstEventToHost ) {
 
 	JSObject *eventObj = JSVAL_TO_OBJECT( J_FARG(1) );
 
+	bool res;
+
 	if ( JS_InstanceOf(cx, eventObj, classMidiEvent, NULL) == JS_TRUE ) {
 
 		VstMidiEvent *pv = (VstMidiEvent*)JS_GetPrivate(cx, eventObj);
 		J_S_ASSERT_RESOURCE(pv);
 
-		VstEvents events;
+		VstEvents events; // has already 2 allocated events ?
 		events.numEvents = 1;
+		events.events[1] = NULL;
 		events.events[0] = (VstEvent*)pv;
-		events.events[0]->type = kVstMidiType;
-		events.events[0]->byteSize = sizeof(VstMidiEvent);
-		vstPlugin->sendVstEventsToHost(&events);
+		res = vstPlugin->sendVstEventsToHost(&events);
 	}
 
+	*J_FRVAL = res ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;
 }
 
@@ -914,18 +1106,50 @@ CONFIGURE_CLASS
 	HAS_HAS_INSTANCE
 
 	BEGIN_PROPERTY_SPEC
+
+		PROPERTY_READ( hostLanguage )
+		PROPERTY_READ( directory )
+
 		PROPERTY_WRITE_STORE( numPrograms )
 		PROPERTY_WRITE_STORE( numParams )
 		PROPERTY_WRITE_STORE( numInputs )
 		PROPERTY_WRITE_STORE( numOutputs )
+		PROPERTY_WRITE_STORE( uniqueID )
+
+		PROPERTY_WRITE_STORE( inputLatency )
+		PROPERTY_WRITE_STORE( outputLatency )
+
+		PROPERTY_READ( samplePos )
+		PROPERTY_READ( sampleRate )
+		PROPERTY_READ( nanoSeconds )
+		PROPERTY_READ( ppqPos )
+		PROPERTY_READ( tempo )
+		PROPERTY_READ( barStartPos )
+		PROPERTY_READ( cycleStartPos )
+		PROPERTY_READ( cycleEndPos )
+		PROPERTY_READ( timeSigNumerator )
+		PROPERTY_READ( timeSigDenominator )
+		PROPERTY_READ( smpteOffset )
+		PROPERTY_READ( smpteFrameRate )
+		PROPERTY_READ( samplesToNextClock )
+		PROPERTY_WRITE_STORE( initialDelay )
 	END_PROPERTY_SPEC
 
 	BEGIN_FUNCTION_SPEC
+		FUNCTION_FAST_ARGC( sendVstEventToHost, 1 )
 	END_FUNCTION_SPEC
 
 	BEGIN_CONST_INTEGER_SPEC
 
-		// Plug-in Categories
+		// Language code returned by audioMasterGetLanguage / VstHostLanguage
+		CONST_INTEGER_SINGLE( kVstLangEnglish )
+		CONST_INTEGER_SINGLE( kVstLangGerman )
+		CONST_INTEGER_SINGLE( kVstLangFrench )
+		CONST_INTEGER_SINGLE( kVstLangItalian )
+		CONST_INTEGER_SINGLE( kVstLangSpanish )
+		CONST_INTEGER_SINGLE( kVstLangJapanese )
+
+		// Plug-in Categories / VstPlugCategory
 		CONST_INTEGER_SINGLE( kPlugCategUnknown )        // Unknown, category not implemented
 		CONST_INTEGER_SINGLE( kPlugCategEffect )			 // Simple Effect
 		CONST_INTEGER_SINGLE( kPlugCategSynth )			 // VST Instrument (Synths, samplers,...)
@@ -939,7 +1163,7 @@ CONFIGURE_CLASS
 		CONST_INTEGER_SINGLE( kPlugCategShell )			 // Plug-in is container of other plug-ins  @see effShellGetNextPlugin
 		CONST_INTEGER_SINGLE( kPlugCategGenerator )		 // ToneGenerator, ...
 
-		// Speaker Arrangement Types
+		// Speaker Arrangement Types / VstSpeakerArrangementType
 		CONST_INTEGER_SINGLE( kSpeakerArrUserDefined )     // user defined
 		CONST_INTEGER_SINGLE( kSpeakerArrEmpty )				// empty arrangement
 		CONST_INTEGER_SINGLE( kSpeakerArrMono )				// M
@@ -972,15 +1196,14 @@ CONFIGURE_CLASS
 		CONST_INTEGER_SINGLE( kSpeakerArr81Music )			// L R C Lfe Ls Rs Cs Sl Sr 
 		CONST_INTEGER_SINGLE( kSpeakerArr102 )					// L R C Lfe Ls Rs Tfl Tfc Tfr Trl Trr Lfe2
 
-		// Flags used in #VstPinProperties
+		// Flags used in #VstPinProperties / VstPinPropertiesFlags
 		CONST_INTEGER_SINGLE( kVstPinIsActive )   // pin is active, ignored by Host
 		CONST_INTEGER_SINGLE( kVstPinIsStereo )   // pin is first of a stereo pair
 		CONST_INTEGER_SINGLE( kVstPinUseSpeaker )	// #VstPinProperties::arrangementType is valid and can be used to get the wanted arrangement
 
 
-
-
-		// opcode names
+		// DEBUG only ??
+		// opcode names / AEffectOpcodes
 		// vst 1.x
 		CONST_INTEGER_SINGLE( effOpen )
 		CONST_INTEGER_SINGLE( effClose )
@@ -1082,12 +1305,12 @@ extern "C" {
 VST_EXPORT AEffect* VSTPluginMain(audioMasterCallback audioMaster) {
 
 	// Get VST Version of the Host
-	if (!audioMaster (0, audioMasterVersion, 0, 0, 0, 0))
+	if (!audioMaster(0, audioMasterVersion, 0, 0, 0, 0))
 		return 0;  // old version
 	// Create the AudioEffect
 	AudioEffect* effect = new JsVst(audioMaster);
 	// Return the VST AEffect structur
-	return effect->getAeffect ();
+	return effect->getAeffect();
 }
 
 // support for old hosts not looking for VSTPluginMain
@@ -1115,6 +1338,7 @@ BOOL WINAPI DllMain (HINSTANCE hInst, DWORD dwReason, LPVOID lpvReserved)
 }
 } // extern "C"
 #endif
+
 
 
 /* functions called by the host:
@@ -1205,3 +1429,4 @@ vst 2.x
 
 */
 
+// VST 2.4 specifications: http://asseca.com/vst-24-specs/index.html

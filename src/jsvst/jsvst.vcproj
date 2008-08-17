@@ -231,6 +231,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\midievent.h"
+				>
+			</File>
+			<File
 				RelativePath=".\stdafx.h"
 				>
 			</File>

@@ -33,15 +33,23 @@ BEGIN_CLASS( MidiEvent )
 DEFINE_FINALIZE() {
 
 	void *pv = JS_GetPrivate(cx, obj);
-	if ( pv )
-		JS_free(cx, pv);
+	if ( pv ) {
+
+		jsval constructed;
+		JS_GetReservedSlot(cx, obj, 0, &constructed);
+		if ( constructed != JSVAL_VOID )
+			JS_free(cx, pv);
+	}
 }
 
 
 DEFINE_CONSTRUCTOR() {
 
 	J_S_ASSERT_CONSTRUCTING();
+	J_CHK( JS_SetReservedSlot(cx, obj, 0, JSVAL_TRUE) );
 	VstMidiEvent *pv = (VstMidiEvent*)JS_malloc(cx, sizeof(VstMidiEvent));
+	pv->byteSize = sizeof(VstMidiEvent);
+	pv->type = kVstMidiType;
 	J_S_ASSERT_ALLOC(pv);
 	JS_SetPrivate(cx, obj, pv);
 	return JS_TRUE;
@@ -182,7 +190,7 @@ DEFINE_PROPERTY_GETTER( status ) {
 
 	VstMidiEvent *pv = (VstMidiEvent*)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE(pv);
-	*vp = INT_TO_JSVAL(pv->midiData[0] >> 4);
+	*vp = INT_TO_JSVAL(((unsigned char) pv->midiData[0]) >> 4);
 	return JS_TRUE;
 }
 
@@ -216,6 +224,32 @@ DEFINE_PROPERTY_SETTER( channel ) {
 	pv->midiData[0] = (pv->midiData[0] & 0xF0) | (value & 0x0F);
 	return JS_TRUE;
 }
+
+
+/*
+DEFINE_PROPERTY_GETTER( noteOn ) {
+
+	VstMidiEvent *pv = (VstMidiEvent*)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE(pv);
+
+
+	*vp = INT_TO_JSVAL(pv->midiData[0] & 0x0F); // 0..15
+	return JS_TRUE;
+}
+
+DEFINE_PROPERTY_SETTER( noteOn ) {
+
+	VstMidiEvent *pv = (VstMidiEvent*)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE(pv);
+	J_S_ASSERT_INT( *vp );
+	unsigned int value = JSVAL_TO_INT( *vp );
+	J_S_ASSERT( value >= 0 && value <= 15, "Invalid channel value.");
+	pv->midiData[0] = (pv->midiData[0] & 0xF0) | (value & 0x0F);
+	return JS_TRUE;
+}
+*/
+
+
 
 
 DEFINE_PROPERTY_GETTER( value1 ) {
@@ -256,9 +290,13 @@ DEFINE_PROPERTY_SETTER( value2 ) {
 }
 
 
+
+
+
 CONFIGURE_CLASS
 
 	HAS_PRIVATE
+	HAS_RESERVED_SLOTS(1)
 	HAS_FINALIZE
 	HAS_CONSTRUCTOR
 
@@ -281,3 +319,13 @@ CONFIGURE_CLASS
 
 END_CLASS
 
+
+
+JSObject* CreateMidiEventObject( JSContext *cx, VstMidiEvent *midiEvent ) {
+
+	JSObject *midiEventObject = JS_NewObject(cx, classMidiEvent, NULL, NULL);
+	if ( midiEventObject == NULL )
+		return NULL;
+	JS_SetPrivate(cx, midiEventObject, midiEvent);
+	return midiEventObject;
+}
