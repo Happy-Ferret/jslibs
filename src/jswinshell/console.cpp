@@ -15,6 +15,8 @@
 #include "stdafx.h"
 #include "console.h"
 
+#include "error.h"
+
 #include "stdlib.h"
 
 /**doc
@@ -32,15 +34,16 @@ DEFINE_CONSTRUCTOR() {
 	J_S_ASSERT_CONSTRUCTING();
 	J_S_ASSERT_THIS_CLASS();
 
-	BOOL res = AllocConsole();
+	BOOL status = AllocConsole();
+	if ( status == FALSE )
+		return WinThrowError(cx, GetLastError());
 	SetConsoleTitle("");
-	J_S_ASSERT( res != 0, "Unable to create the console." );
 	return JS_TRUE;
 }
 
 DEFINE_FINALIZE() {
 
-	BOOL res = FreeConsole();
+//	BOOL res = FreeConsole();
 }
 
 
@@ -54,8 +57,14 @@ DEFINE_FINALIZE() {
 **/
 DEFINE_FUNCTION( Close ) {
 
-	BOOL res = FreeConsole();
-	J_S_ASSERT( res != 0, "Unable to free the console." );
+//	HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
+//	CloseHandle(hStdout);
+//	HANDLE hStdin = GetStdHandle(STD_INPUT_HANDLE);
+//	CloseHandle(hStdin);
+	BOOL status = FreeConsole();
+	if ( status == FALSE )
+		return WinThrowError(cx, GetLastError());
+//	J_S_ASSERT( res != 0, "Unable to free the console." );
 	return JS_TRUE;
 }
 
@@ -70,13 +79,15 @@ DEFINE_FUNCTION( Write ) {
 	
 	J_S_ASSERT_ARG_MIN( 1 );
 	HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
-	J_S_ASSERT( hStdout != NULL, "Unable to create the stdout." );
+	if ( hStdout == NULL )
+		return WinThrowError(cx, GetLastError());
 	const char *str;
 	size_t len;
 	J_CHK( JsvalToStringAndLength(cx, &argv[0], &str, &len) );
 	DWORD written;
-	WriteConsole(hStdout, str, len, &written, NULL);
-	CloseHandle(hStdout);
+	BOOL status = WriteConsole(hStdout, str, len, &written, NULL);
+	if ( status == FALSE )
+		return WinThrowError(cx, GetLastError());
 	return JS_TRUE;
 }
 
@@ -91,13 +102,14 @@ DEFINE_FUNCTION( Read ) {
 	
 	J_S_ASSERT_ARG_MIN( 1 );
 	HANDLE hStdin = GetStdHandle(STD_INPUT_HANDLE);
-	J_S_ASSERT( hStdin != NULL, "Unable to create the stdin." );
+	if ( hStdin == NULL )
+		return WinThrowError(cx, GetLastError());
 	char buffer[8192];
 	DWORD read;
 	BOOL res = ReadConsole(hStdin, buffer, sizeof(buffer), &read, NULL);
-	J_S_ASSERT( res > 0, "Unable to ReadConsole." );
+	if ( res == 0 )
+		return WinThrowError(cx, GetLastError());
 	*rval = STRING_TO_JSVAL(JS_NewStringCopyN(cx, buffer, read));
-	CloseHandle(hStdin);
 	return JS_TRUE;
 }
 
