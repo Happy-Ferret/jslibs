@@ -857,7 +857,7 @@ inline JSBool GetNativeInterface( JSContext *cx, JSObject *obj, JSObject **obj2p
 
 //	const char *name = JS_GetStringBytes(JS_ValueToString(cx, iid));
 	if ( prop && obj == *obj2p && ((JSScopeProperty*)prop)->setter != (JSPropertyOp)-1 )
-		*nativeFct = ((JSScopeProperty*)prop)->setter; // is NULL if obj is non-native
+		*nativeFct = (void*)((JSScopeProperty*)prop)->setter; // is NULL if obj is non-native
 	else
 		*nativeFct = NULL;
 
