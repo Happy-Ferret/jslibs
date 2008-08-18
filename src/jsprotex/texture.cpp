@@ -405,7 +405,7 @@ DEFINE_CONSTRUCTOR() {
 		J_CHK( GetPropertyInt(cx, bstrObj, "height", &sHeight) );
 		J_CHK( GetPropertyInt(cx, bstrObj, "channels", &sChannels) );
 
-		const char *buffer;
+		const u_int8_t *buffer;
 //		u_int8_t *buffer = (u_int8_t*)
 //		J_CHK( BlobBuffer(cx, bstr, (const void **)&buffer) );
 		J_CHK( JsvalToString(cx, &J_ARG(1), (const char **)&buffer) ); // warning: GC on the returned buffer !
@@ -421,7 +421,7 @@ DEFINE_CONSTRUCTOR() {
 		J_S_ASSERT_ALLOC( tex->cbuffer );
 
 		for ( int i=0; i<tsize; i++ )
-			tex->cbuffer[i] = buffer[i] / (PTYPE)256;
+			tex->cbuffer[i] = buffer[i] / (PTYPE)256.f;
 
 		JS_SetPrivate(cx, obj, tex);
 
