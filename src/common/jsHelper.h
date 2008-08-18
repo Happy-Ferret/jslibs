@@ -334,7 +334,9 @@ inline JSBool J_NewBlob( JSContext *cx, void* buffer, size_t length, jsval *vp )
 	JSObject *blob;
 	if ( blobClass != NULL ) { // we have Blob class, jslang is present.
 
-		blob = JS_NewObject(cx, blobClass, NULL, NULL);
+//		blob = JS_NewObject(cx, blobClass, NULL, NULL);
+		blob = JS_ConstructObject(cx, blobClass, NULL, NULL); // need to be constructed else Buffer NativeInterface will not be set !
+
 		*vp = OBJECT_TO_JSVAL(blob);
 		if ( blob == NULL )
 			goto err;

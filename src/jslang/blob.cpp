@@ -39,18 +39,31 @@ inline JSBool BlobBuffer( JSContext *cx, JSObject *blobObject, const char **buff
 }
 
 
-JSBool NativeInterfaceBufferGet( JSContext *cx, JSObject *obj, const char **buf, size_t *size ) {
-
-	J_CHK( BlobLength(cx, obj, size) );
-	J_CHK( BlobBuffer(cx, obj, buf) );
-	return JS_TRUE;
-}
-
-
 /**doc
 $CLASS_HEADER
 **/
 BEGIN_CLASS( Blob )
+
+JSBool NativeInterfaceBufferGet( JSContext *cx, JSObject *obj, const char **buf, size_t *size ) {
+
+	if ( JS_GET_CLASS(cx, obj) == classBlob ) {
+
+		J_CHK( BlobLength(cx, obj, size) );
+		J_CHK( BlobBuffer(cx, obj, buf) );
+		return JS_TRUE;
+	}
+
+/* (TBD) manage BufferGet for mutated Blob ( use JS_GetStringBytes ... )
+	static JSObject *stringPrototype = NULL;
+	if ( stringPrototype == NULL )
+		J_CHK( JS_GetClassObject(cx, JS_GetGlobalObject(cx), JSProto_String, &stringPrototype) );
+
+	if ( JS_GetPrototype(cx, obj) == stringPrototype ) {
+	}
+*/
+	return JS_FALSE;
+}
+
 
 /*
 inline JSBool JsvalToBlob( JSContext *cx, jsval val, JSObject **obj ) {

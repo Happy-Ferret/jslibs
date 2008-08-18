@@ -31,6 +31,27 @@ LoadModule('jsstd');
 		QA.ASSERT( stream._NI_StreamRead, prev, 'NativeInterface security' )
 
 
+/// Blob BufferGet NativeInterface
+
+		LoadModule('jsstd');
+		var buffer = new Buffer();
+		buffer.Write('123');
+		var blob = buffer.Read(2);
+		QA.ASSERT( blob.length, 2, 'buffer.Read() length' )
+		QA.ASSERT( blob instanceof Blob, true, 'buffer.Read() returns a Blob' )
+		QA.ASSERT( '_NI_BufferGet' in blob, true, 'returned Blob has _NI_BufferGet' );
+		QA.ASSERT( blob._NI_BufferGet, true, 'returned Blob _NI_BufferGet is active' );
+
+/// Blob mutation preserves BufferGet NativeInterface
+
+		var b = new Blob();
+		QA.ASSERT( b._NI_BufferGet, true, 'constructed Blob has _NI_BufferGet enabled' );
+		b.replace('bcde', '123'); // force Blob mutation
+		QA.ASSERT( b instanceof String, true, 'Blob has mutated to String' );
+		QA.ASSERT( '_NI_BufferGet' in b, true, 'mutated Blob has _NI_BufferGet' );
+		QA.ASSERT( b._NI_BufferGet, false, 'mutated Blob _NI_BufferGet is disactivated' );
+
+
 /// Blob mutation keep properties [ftr]
 	
 		var b = new Blob('abcdef');
