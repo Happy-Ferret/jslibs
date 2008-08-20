@@ -1,21 +1,10 @@
 LoadModule('jsstd');
 LoadModule('jsio');
 
-test2 = function() {
-	
-//	throw "123";
 
-qsdf;
-}
+var b = new Blob();
 
-Test( {} );
-
-
-
-
-Print( 'Done.' );
-
-Test( {} );
+Print( b instanceof String );
 
 
 Halt();

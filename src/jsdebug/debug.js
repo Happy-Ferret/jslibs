@@ -1,15 +1,15 @@
+
 LoadModule('jsstd');
 LoadModule('jsdebug');
-Print('hello\n');
 
+function toto( o ) {
 
-function abc() {
-
-Print( '@'+Locate(0), '\n' );
-
+	o.i++;
+	
 }
-abc();
 
-toto = 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX';
 
-DumpStats('global');
+Trap( 8, 'Print(Locate(0))');
+
+
+toto({i:1});
