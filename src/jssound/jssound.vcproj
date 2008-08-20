@@ -188,7 +188,15 @@
 				>
 			</File>
 			<File
+				RelativePath=".\oggvorbisdecoder.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\sound.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\soundfiledecoder.cpp"
 				>
 			</File>
 			<File

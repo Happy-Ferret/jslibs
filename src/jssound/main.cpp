@@ -30,6 +30,10 @@ $MODULE_HEADER
 $MODULE_FOOTER
 **/
 
+DECLARE_CLASS(SoundFileDecoder)
+DECLARE_CLASS(OggVorbisDecoder)
+
+
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
 	jsval unsafeModePtrVal;
@@ -40,6 +44,8 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
 	INIT_STATIC();
 	INIT_CLASS( Sound );
+
+	INIT_CLASS( SoundFileDecoder );
 
 	return JS_TRUE;
 }
