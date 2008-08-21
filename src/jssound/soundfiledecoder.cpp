@@ -155,7 +155,7 @@ DEFINE_FINALIZE() {
    LoadModule('jsstd');
    LoadModule('jsio');
    LoadModule('jssound');
-   var file = new File('41_30secOgg-q0.wav');
+   var file = new File('41_30secOgg-q0.wav'); // file: http://xiph.org/vorbis/listen.html
    file.Open('r');
    var dec = new SoundFileDecoder( file );
    Print( dec.bits, '\n' );
@@ -222,12 +222,15 @@ DEFINE_CONSTRUCTOR() {
    $ARG integer frames: the number of frames to decode. A frame is a sample of sound.
   $H return value
    returns a Blob object that has the following properties set: bits, rate, channels, frames
+  $H beware
+   If all data has been decoded and the Read function is called again, the return expression is evaluated to false.
+	This is because an empty Blob must be evaluated as false, like string literals ( !empty_blob == !"" )
   $H example
   {{{
   LoadModule('jsstd');
   LoadModule('jsio');
   LoadModule('jssound');
-  var file = new File('41_30secOgg-q0.wav');
+  var file = new File('41_30secOgg-q0.wav'); // file: http://xiph.org/vorbis/listen.html
   file.Open('r');
   var dec = new SoundFileDecoder( file );
   var block = dec.Read(10000);

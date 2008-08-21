@@ -76,7 +76,7 @@ DEFINE_FINALIZE() {
    LoadModule('jsstd');
    LoadModule('jsio');
    LoadModule('jssound');
-   var file = new File('41_30secOgg-q0.ogg');
+   var file = new File('41_30secOgg-q0.ogg'); // file: http://xiph.org/vorbis/listen.html
    file.Open('r');
    var dec = new OggVorbisDecoder( file );
    Print( dec.bits, '\n' );
@@ -131,12 +131,15 @@ DEFINE_CONSTRUCTOR() {
    $ARG integer frames: the number of frames to decode. A frame is a sample of sound.
   $H return value
    returns a Blob object that has the following properties set: bits, rate, channels, frames
+  $H beware
+   If all data has been decoded and the Read function is called again, the return expression is evaluated to false.
+	This is because an empty Blob must be evaluated as false, like string literals ( !empty_blob == !"" )
   $H example
   {{{
   LoadModule('jsstd');
   LoadModule('jsio');
   LoadModule('jssound');
-  var file = new File('41_30secOgg-q0.ogg');
+  var file = new File('41_30secOgg-q0.ogg'); // file: http://xiph.org/vorbis/listen.html
   file.Open('r');
   var dec = new OggVorbisDecoder( file );
   var block = dec.Read(10000);
@@ -265,46 +268,6 @@ DEFINE_FUNCTION_FAST( Read ) {
 			free(buffer);
 		}
 	}
-/*
-
-	int bitStream;
-	void *stack;
-	StackInit(&stack);
-
-	int bufferSize = 4096 - 16; // try to alloc less than one page
-
-	long totalSize = 0;
-	long bytes;
-	do {
-
-		char *buffer = (char*)malloc(bufferSize);
-		J_S_ASSERT_ALLOC(buffer);
-
-		StackPush(&stack, buffer);
-
-		bytes = ov_read(&pv->ofDescriptor, buffer+sizeof(int), bufferSize-sizeof(int), 0, pv->bits / 8, 1, &bitStream);
-
-		if ( bytes < 0 ) { // 0 indicates EOF
-
-			*(int*)buffer = 0;
-
-			// (TBD) manage errors
-
-			if ( bytes == OV_HOLE ) { // indicates there was an interruption in the data. (one of: garbage between pages, loss of sync followed by recapture, or a corrupt page)
-
-			} else if ( bytes == OV_EINVAL ) { // doc. indicates that an invalid stream section was supplied to libvorbisfile, or the requested link is corrupt.
-
-				break;
-			}
-		} else {
-
-			*(int*)buffer = bytes;
-			totalSize += bytes;
-		}
-
-	} while (bytes > 0);
-*/
-
 	pv->cx = NULL; // see definition
 
 	jsval blobVal;
