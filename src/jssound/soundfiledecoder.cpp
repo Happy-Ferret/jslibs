@@ -21,11 +21,16 @@
 
 #define SLOT_INPUT_STREAM 0
 
+/**doc fileIndex:top
+$CLASS_HEADER
+ The SoundFileDecoder support various data format decoding.
+ Main supported formats are: wav, aiff, au, voc, sd2, flac, ...
+ For more information about supported formats, see http://www.mega-nerd.com/libsndfile/
+**/
 BEGIN_CLASS( SoundFileDecoder )
 
 typedef struct {
 	JSContext *cx; // temporary set to the current JSContext while sndfile API is called !
-//	JSObject *thisObj; // the SoundFileDecoder object
 	JSObject *streamObject;
 	SNDFILE *sfDescriptor;
 	SF_INFO sfInfo;
@@ -140,6 +145,28 @@ DEFINE_FINALIZE() {
 	}
 }
 
+/**doc
+ * $INAME( stream )
+  Creates a new SoundFileDecoder object.
+  $H arguments
+   $ARG streamObject stream: is the data stream from where encoded data are read from.
+  $H example
+   {{{
+   LoadModule('jsstd');
+   LoadModule('jsio');
+   LoadModule('jssound');
+   var file = new File('41_30secOgg-q0.wav');
+   file.Open('r');
+   var dec = new SoundFileDecoder( file );
+   Print( dec.bits, '\n' );
+   Print( dec.channels, '\n' );
+   Print( dec.rate, '\n' );
+	do {
+		var block = dec.Read(10000);
+		Print( 'frames: '+block.frames, '\n' );
+	} while(block);
+   }}}
+**/
 DEFINE_CONSTRUCTOR() {
 
 	J_S_ASSERT_CONSTRUCTING();
@@ -148,8 +175,10 @@ DEFINE_CONSTRUCTOR() {
 	J_S_ASSERT_OBJECT( J_ARG(1) );
 
 	Private *pv = (Private*)malloc(sizeof(Private));
+	J_S_ASSERT_ALLOC(pv);
+	J_CHK( JS_SetPrivate(cx, obj, pv) );
 
-	J_CHK( JS_SetReservedSlot(cx, obj, SLOT_INPUT_STREAM, J_ARG(1) ) ); // used to keep a root on it only.
+	J_CHK( JS_SetReservedSlot(cx, obj, SLOT_INPUT_STREAM, J_ARG(1) ) );
 	pv->streamObject = JSVAL_TO_OBJECT(J_ARG(1));
 
 	SF_INFO tmp = {0};
@@ -157,7 +186,6 @@ DEFINE_CONSTRUCTOR() {
 	
 	pv->cx = cx;
 	pv->sfDescriptor = sf_open_virtual(&sfCallbacks, SFM_READ, &pv->sfInfo, pv);
-	
 	pv->bits = 16;
 
 	if ( JS_IsExceptionPending(cx) )
@@ -175,16 +203,40 @@ DEFINE_CONSTRUCTOR() {
 	}
 
 	pv->cx = NULL; // see definition
-	J_CHK( JS_SetPrivate(cx, obj, pv) );
-
 	return JS_TRUE;
 }
 
 /**doc
- * $TYPE soundObject $INAME( frames )
-  Decodes _frames_ frapes from the stream.
+=== Methods ===
 **/
-DEFINE_FUNCTION_FAST( Read ) {
+
+
+// doc:
+//   Unless the end of the file was reached during the read, the return value should equal the number of items requested. 
+
+
+/**doc
+ * $TYPE soundObject $INAME( [frames] )
+  Decodes a piece of audio data. If _frames_ argument is omited, the whole stream is decoded.
+  $H arguments
+   $ARG integer frames: the number of frames to decode. A frame is a sample of sound.
+  $H return value
+   returns a Blob object that has the following properties set: bits, rate, channels, frames
+  $H example
+  {{{
+  LoadModule('jsstd');
+  LoadModule('jsio');
+  LoadModule('jssound');
+  var file = new File('41_30secOgg-q0.wav');
+  file.Open('r');
+  var dec = new SoundFileDecoder( file );
+  var block = dec.Read(10000);
+  Print( 'rezolution: '+block.bits+' per channel', '\n' );
+  Print( block.channels == 2 ? 'stereo' : 'mono', '\n' );
+  Print( block.rate+' frames/seconds', '\n' );
+  Print( 'time: '+(block.frames/block.rate)+' seconds', '\n' );
+  }}}
+**/DEFINE_FUNCTION_FAST( Read ) {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, J_FOBJ);
 	J_S_ASSERT_RESOURCE(pv);
@@ -211,11 +263,8 @@ DEFINE_FUNCTION_FAST( Read ) {
 
 		totalSize = items * sizeof(short);
 
-		if ( MaybeRealloc(amount, totalSize) ) {
-
+		if ( MaybeRealloc(amount, totalSize) )
 			buf = (char*)realloc(buf, totalSize);
-			J_S_ASSERT_ALLOC(buf);
-		}
 
 	} else {
 
@@ -287,6 +336,28 @@ DEFINE_FUNCTION_FAST( Read ) {
 }
 
 
+
+/**doc
+=== Properties ===
+**/
+
+/**doc
+ * object $INAME $READONLY
+  Is the stream object where encoded audio data are read from.
+**/
+DEFINE_PROPERTY( inputStream ) {
+
+	Private *pv = (Private*)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE(pv);
+	J_CHK( JS_GetReservedSlot(cx, obj, SLOT_INPUT_STREAM, vp) );
+	return JS_TRUE;
+}
+
+
+/**doc
+ * $INT $INAME $READONLY
+  Is the number of bits per frame and per channel.
+**/
 DEFINE_PROPERTY( bits ) {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
@@ -295,6 +366,10 @@ DEFINE_PROPERTY( bits ) {
 	return JS_TRUE;
 }
 
+/**doc
+ * $INT $INAME $READONLY
+  Is the number of frames per seconds of the sound.
+**/
 DEFINE_PROPERTY( rate ) {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
@@ -303,6 +378,10 @@ DEFINE_PROPERTY( rate ) {
 	return JS_TRUE;
 }
 
+/**doc
+ * $INT $INAME $READONLY
+  Is the number of channels of the sound. 1 is mono, 2 is stereo.
+**/
 DEFINE_PROPERTY( channels ) {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
@@ -311,6 +390,11 @@ DEFINE_PROPERTY( channels ) {
 	return JS_TRUE;
 }
 
+/**doc
+ * $INT $INAME $READONLY
+  Is the length (in frames) of the sound.
+  To compute the duration of the sound, use (frames/rate)
+**/
 DEFINE_PROPERTY( frames ) {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);

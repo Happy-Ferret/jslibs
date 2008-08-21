@@ -15,7 +15,7 @@
 #include "stdafx.h"
 
 #include "static.h"
-#include "sound.h"
+//#include "sound.h"
 
 static bool _defaultUnsafeMode = false;
 extern bool *_pUnsafeMode = &_defaultUnsafeMode;
@@ -43,9 +43,10 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
 
 	INIT_STATIC();
-	INIT_CLASS( Sound );
+//	INIT_CLASS( Sound );
 
 	INIT_CLASS( SoundFileDecoder );
+	INIT_CLASS( OggVorbisDecoder );
 
 	return JS_TRUE;
 }

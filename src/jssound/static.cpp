@@ -56,7 +56,7 @@ static ov_callbacks ovCallbacks = { readStream,0,0,0 };
 
 
 /**doc
- * $TYPE soundObject $INAME( stream )
+ * $TYPE soundObject $INAME( stream ) $DEPRECATED
   Decodes a ogg vorbis sample to a sound object.
   $H arguments
    $ARG streamObject stream: any object that has a Read function or that supports the NIStreamRead Native Interface ( file, socket, new Stream(buffer), ... ). For further details about stream objects, see jslang::Stream object and NativeInterface mechanism.
@@ -75,6 +75,7 @@ static ov_callbacks ovCallbacks = { readStream,0,0,0 };
   Print('sample length: ', mySoundObject.length, '\n');
   }}}
 **/
+
 DEFINE_FUNCTION_FAST( DecodeOggVorbis ) {
 
 	J_S_ASSERT_ARG_MIN( 1 );
@@ -267,7 +268,7 @@ static SF_VIRTUAL_IO sfCallbacks = { SfGetFilelen, SfSeek, SfRead, 0, SfTell };
 
 
 /**doc
- * $TYPE soundObject $INAME( stream )
+ * $TYPE soundObject $INAME( stream ) $DEPRECATED
   Decodes a sample from any supported sound format to a sound object.
   $H arguments
    $ARG streamObject stream: any object that has a Read function or that supports the NIStreamRead Native Interface ( file, socket, new Stream(buffer), ... ). For further details about stream objects, see jslang::Stream object and native interface mechanism.
