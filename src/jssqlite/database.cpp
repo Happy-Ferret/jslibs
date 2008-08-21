@@ -386,7 +386,7 @@ DEFINE_PROPERTY( changes ) {
 
 
 /**doc
-=== Static Functions ===
+=== Static Properties ===
 **/
 
 /**doc
