@@ -105,7 +105,7 @@ var t0 = IntervalNow();
 
 function time() IntervalNow() - t0;
 
-var size = 512;
+var size = 128;
 var texture = new Texture(size, size, 3);
 
 //	var myImage = DecodeJpegImage( new File('301_0185.jpg').Open('r') );
@@ -116,19 +116,28 @@ var texture = new Texture(size, size, 3);
 	texture.Set(0);
 //	texture.Import( myImage, 0, 0 );
 
-  
-  Texture.RandSeed(1234);
-  Print( Texture.RandReal(), '\n' );
-  Print( Texture.RandReal(), '\n' );
-  Print( Texture.RandReal(), '\n' );
 
+function UpdateTexture(imageIndex) { // <<<<<<<<<<<<<<<<<-----------------------------------
 
-function UpdateTexture(imageIndex) { // ===============
+	Sleep(10);
 
-	Texture.RandSeed(123);
+//	Texture.RandSeed(123);
 
-//  texture.Set(0); // clears the texture
+  texture.Set(0); // clears the texture
 //  texture.AddCracks( 1000, 10, 0.1, 1, function(v) { return Texture.RandReal() } );
+  
+  texture.ForEachPixels(function(x, y, pixel) {
+  
+		if ( x == y ) {
+		
+			pixel[0] = 1;
+			pixel[1] = 1;
+			pixel[2] = 1;
+			return pixel;
+		}
+  
+  });
+  
 
 
 

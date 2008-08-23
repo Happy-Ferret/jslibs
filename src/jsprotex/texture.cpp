@@ -256,7 +256,7 @@ inline JSBool InitCurveData( JSContext* cx, jsval value, int length, float *curv
 		J_CHK( JsvalToStringAndLength( cx, &value, (const char **)&bstrData, &bstrLen ) );
 
 		for ( int i = 0; i < length; i++ )
-			curve[i] = bstrData[ i * bstrLen / length ] / 256;
+			curve[i] = (PTYPE)bstrData[ i * bstrLen / length ] / 255.f; // (TBD) check
 	}	
 	else {
       // (TBD) throws an error ?
@@ -329,7 +329,7 @@ DEFINE_FINALIZE() {
    $ARG Texture sourceTexture: an existing Texture object (acs like a copy constructor).
    $ARG ImageObject image: an existing Image object (From a jpeg image for example)
   $H note
-   jsprotex uses single precision values per channel. The visibles values are in range [0,1].
+   jsprotex uses single precision values per channel. The visibles values are in range [ 0,1 ].
    The darker value is 0.0 and the brighter value is 1.0.
   $H example
   {{{
@@ -421,7 +421,7 @@ DEFINE_CONSTRUCTOR() {
 		J_S_ASSERT_ALLOC( tex->cbuffer );
 
 		for ( int i=0; i<tsize; i++ )
-			tex->cbuffer[i] = buffer[i] / (PTYPE)256.f;
+			tex->cbuffer[i] = (PTYPE)buffer[i] / (PTYPE)255.f; // map [0 -> 255] to [0.0 -> 1.0]
 
 		JS_SetPrivate(cx, obj, tex);
 
@@ -479,7 +479,7 @@ DEFINE_FUNCTION_FAST( Swap ) {
 }
 
 /**doc
- * $THIS $INAME( [channel] )
+ * $THIS $INAME( [ channel ] )
   Clears (set to 0) the given _channel_ or all channels if the method is called without argument.
 **/
 // PTYPE ok
@@ -684,7 +684,7 @@ DEFINE_FUNCTION_FAST( ToRGB ) { // (TBD) test it
 }
 
 /**doc
- * $THIS $INAME( count [, curve] )
+ * $THIS $INAME( count [ , curve] )
   Reduce the number of values used for each channel.
   $H arguments
    $ARG integer count: the number of different $pval in the resulting texture.
@@ -751,8 +751,8 @@ DEFINE_FUNCTION_FAST( Aliasing ) {
    $ARG colorInfo toColorInfo: The substitute color. For further information about ,,colorInfo,, see below.
   $H example
   {{{
-  const BLUE = [0,0,1,1];
-  const WHITE = [1,1,1,1];
+  const BLUE = [ 0,0,1,1 ];
+  const WHITE = [ 1,1,1,1 ];
   
   var texture = new Texture( 100, 100, 3 );
   ...
@@ -813,7 +813,7 @@ DEFINE_FUNCTION_FAST( Colorize ) {
 
 
 /**doc
- * $THIS $INAME( sourceTexture, sourceColorInfo [, strength = 1] )
+ * $THIS $INAME( sourceTexture, sourceColorInfo [ , strength = 1] )
   Fill the current texture with a given color from _sourceTexture_.
   $H arguments
    $ARG Texture sourceTexture: the texture from witch the color will be extracted.
@@ -868,7 +868,7 @@ DEFINE_FUNCTION_FAST( ExtractColor ) {
 
 /**doc
  * $THIS $INAME()
-  Changes the range of each $pval of the texture. The resulting range of each $pval will be [0,1]
+  Changes the range of each $pval of the texture. The resulting range of each $pval will be [ 0,1 ]
   $H note
    Normalization is sometimes called contrast stretching.
 **/
@@ -901,7 +901,7 @@ DEFINE_FUNCTION_FAST( NormalizeLevels ) {
 
 /**doc
  * $THIS $INAME( min, max )
-  All $pval that are out of the [min,max] range are forced to [min,max] range.
+  All $pval that are out of the [ min,max ] range are forced to [ min,max ] range.
   $H arguments
    $ARG real min: low value
    $ARG real max: high value
@@ -935,7 +935,7 @@ DEFINE_FUNCTION_FAST( ClampLevels ) { // (TBD) check if this algo is right
 
 /**doc
  * $THIS $INAME( min, max )
-  All $pval that are out of the [min,max] range are forced to [0,1] range.
+  All $pval that are out of the [ min,max ] range are forced to [ 0,1 ] range.
   $H arguments
    $ARG real min: low value
    $ARG real max: high value
@@ -1151,7 +1151,7 @@ DEFINE_FUNCTION_FAST( WrapLevels ) { // real modulo
 }
 
 /**doc
- * $THIS $INAME( [color] )
+ * $THIS $INAME( [ color ] )
   Adds a random noise to the current texture.
   $H arguments
    $ARG colorInfo color: noise color.
@@ -1188,7 +1188,7 @@ DEFINE_FUNCTION_FAST( AddNoise ) {
 
 
 /**doc
- * $THIS $INAME( sourceTexture [, mode] )
+ * $THIS $INAME( sourceTexture [ , mode] )
   Desaturates _sourceTexture_ texture an put the result in the current texture.
   $H arguments
    $ARG Texture sourceTexture: texture from witch the desaturation will be done.
@@ -1776,7 +1776,7 @@ DEFINE_FUNCTION_FAST( RotoZoom ) { // source: FxGen
 
 
 /**doc
- * $THIS $INAME( newWidth, newHeight, [interpolate = false [, borderMode = Texture.borderWrap ]] )
+ * $THIS $INAME( newWidth, newHeight, [ interpolate = false [, borderMode = Texture.borderWrap ]] )
   Resize the current texture.
   $H arguments
    $ARG integer newWidth:
@@ -1908,14 +1908,16 @@ DEFINE_FUNCTION_FAST( Resize ) {
 
 
 /**doc
- * $THIS $INAME( kernel, borderMode [, autoGain = Texture.borderWrap], [ autoGain = true ] )
+ * $THIS $INAME( kernel, [ borderMode = Texture.borderWrap ] )
   Apply a convolution to the current texture using _kernel_ factors.
   $H arguments
    $ARG Array kernel: kernel is a square matrix
    $ARG enum borderMode: how to manage the border. either Texture.borderClamp, Texture.borderWrap, Texture.borderMirror or Texture.borderValue.
-   $ARG boolean autoGain: automatically ajust the weight of the _kernel_ 
   $H note
    The convolution is a complex transformation that could be very slow with big kernels.
+  $H note
+   Because convolution apples a factor to each point of the texture,
+	it is recomanded to normalize the levels of the texture using Mult() or NormalizeLevels()
   $H example
   {{{
   const kernelGaussian = [0,3,10,3,0, 3,16,26,16,3, 10,26,26,26,10, 3,16,26,16,3, 0,3,10,3,0 ];
@@ -1928,13 +1930,13 @@ DEFINE_FUNCTION_FAST( Resize ) {
   const kernelCrystals = [0,-1,0, -1,5,-1, 0,-1,0];
   ...
   texture.Convolution(kernelGaussian);
+  texture.NormalizeLevels();
   }}}
 **/
 // (TBD) PTYPE
 DEFINE_FUNCTION_FAST( Convolution ) {
 
 	// (TBD) accumulate precalculated pixels ? ( like BoxBlur )
-
 	J_S_ASSERT_ARG_MIN( 1 );
 
 	Texture *tex = (Texture *)JS_GetPrivate(cx, J_FOBJ);
@@ -1961,14 +1963,6 @@ DEFINE_FUNCTION_FAST( Convolution ) {
 	} else
 		borderMode = borderWrap;
 
-	float gain;
-	bool autoGain;
-
-	if ( J_FARG_ISDEF(3) )
-		J_JSVAL_TO_BOOL( J_FARG(3), autoGain );
-	else
-		autoGain = true;
-
 	TextureSetupBackBuffer(cx, tex);
 
 	int offset = size / 2;
@@ -1983,7 +1977,6 @@ DEFINE_FUNCTION_FAST( Convolution ) {
 	for ( y = 0; y < height; y++ )
 		for ( x = 0; x < width; x++ ) {
 
-			gain = 0;
 			for ( c = 0; c < channels; c++ )
 				pixel[c] = 0;
 
@@ -1995,7 +1988,6 @@ DEFINE_FUNCTION_FAST( Convolution ) {
 				
 							pos = (Wrap(x + vx-offset, width) + Wrap(y + vy-offset, height) * width) * channels;
 							ratio =  kernel[vx + vy * size];
-							gain += ratio;
 							for ( c = 0; c < channels; c++ )
 								pixel[c] += tex->cbuffer[pos+c] * ratio;
 						}
@@ -2020,7 +2012,6 @@ DEFINE_FUNCTION_FAST( Convolution ) {
 
 							pos = (sx + sy * width)*channels;
 							ratio =  kernel[vx + vy * size];
-							gain += ratio;
 							for ( c = 0; c < channels; c++ )
 								pixel[c] += tex->cbuffer[pos+c] * ratio;
 						}
@@ -2045,7 +2036,6 @@ DEFINE_FUNCTION_FAST( Convolution ) {
 							
 							pos = (sx + sy * width)*channels;
 							ratio =  kernel[vx + vy * size];
-							gain += ratio;
 							for ( c = 0; c < channels; c++ )
 								pixel[c] += tex->cbuffer[pos+c] * ratio;
 						}
@@ -2054,20 +2044,97 @@ DEFINE_FUNCTION_FAST( Convolution ) {
 					J_REPORT_ERROR( "Invalid border mode." );
 			}
 
-//			if ( gain == 0 )
-//				gain = 1;
-
 			pos = (x + y * width) * channels;
-			for ( c = 0; c < channels; c++ ) {
-
-				// (TBD) manage gain
-				tex->cbackBuffer[pos+c] = pixel[c];// / gain;
-			}
+			for ( c = 0; c < channels; c++ )
+				tex->cbackBuffer[pos+c] = pixel[c];
 		}
 
 	free(kernel);
 	TextureSwapBuffers(tex);
 	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
+	return JS_TRUE;
+}
+
+/**doc
+ * $THIS $INAME( function )
+  Call _function_ for each pixel of the texture. the function is called with the arguments (x, y, pixel) where pixel is an array of levels.
+  $H note
+   Because a JS function is called for each pixel, the processing could be very slow.
+  $H example
+   draws a line from (0,0) to (100,100)
+  {{{
+  var texture = new Texture(100, 100, 3); // RGB texture
+  texture.Set(0); // clears the texture
+  texture.ForEachPixels(function(x, y, pixel) {
+   if ( x == y ) {
+    pixel[0] = 1; // Red
+    pixel[1] = 1; // Green
+    pixel[2] = 1; // Blue
+    return pixel;
+   }
+  });
+  }}}
+**/
+DEFINE_FUNCTION_FAST( ForEachPixels ) {
+
+	J_S_ASSERT_ARG_MIN( 1 );
+	J_S_ASSERT_FUNCTION( J_FARG(1) );
+
+	jsval functionValue = J_FARG(1);
+
+	Texture *tex = (Texture *)JS_GetPrivate(cx, J_FOBJ);
+	J_S_ASSERT_RESOURCE(tex);
+	int width = tex->width;
+	int height = tex->height;
+	int channels = tex->channels;
+
+	TextureSetupBackBuffer(cx, tex);
+
+	jsval callArgv[3];
+	jsval callRval;
+
+	JSObject *cArrayObj = JS_NewArrayObject(cx, channels, NULL);
+	callArgv[2] = OBJECT_TO_JSVAL(cArrayObj);
+
+	for ( int y = 0; y < height; y++ ) {
+
+		for ( int x = 0; x < width; x++ ) {
+
+			size_t pos = (x+y*width)*channels;
+
+			callArgv[0] = INT_TO_JSVAL(x);
+			callArgv[1] = INT_TO_JSVAL(y);
+			for ( int c = 0; c < channels; c++ ) {
+
+				jsval level;
+				JS_NewNumberValue(cx, tex->cbuffer[pos+c], &level);
+				JS_SetElement(cx, cArrayObj, c, &level); 
+			}
+
+			if ( !JS_CallFunctionValue(cx, J_FOBJ, functionValue, 3, callArgv, &callRval) )
+				return JS_FALSE;
+			
+			if ( JsvalIsArray(cx, callRval) ) {
+				
+				JSObject *returnedArray = JSVAL_TO_OBJECT(callRval);
+
+				for ( int c = 0; c < channels; c++ ) {
+
+					jsval level;
+					jsdouble d;
+					JS_GetElement(cx, returnedArray, c, &level);
+					JS_ValueToNumber(cx, level, &d);
+					tex->cbackBuffer[pos+c] = d;
+				}
+			} else {
+
+				for ( int c = 0; c < channels; c++ )
+					tex->cbackBuffer[pos+c] = tex->cbuffer[pos+c];
+			}
+		}
+	}
+	TextureSwapBuffers(tex);
+
 	return JS_TRUE;
 }
 
@@ -2297,7 +2364,7 @@ DEFINE_FUNCTION_FAST( Normals ) {
   Floodlight the current texture using the _normalsTexture_ as bump map.
   $H arguments
    $ARG Texture normalsTexture: the bump map where each pixel is a 3D vector.
-   $ARG Array lightPosition: is the position of the light in a 3D space ( [x, y, z] )
+   $ARG Array lightPosition: is the position of the light in a 3D space ( [ x, y, z ] )
    $ARG colorInfo ambiantColor: 
    $ARG colorInfo diffuseColor:
    $ARG colorInfo specularColor:
@@ -2307,6 +2374,7 @@ DEFINE_FUNCTION_FAST( Normals ) {
   {{{
   var bump = new Texture(size, size, 3).Cells(8, 0).Add( new Texture(size, size, 3).Cells(8, 1).OppositeLevels() ); // broken floor
   bump.Normals();
+  var texture = new Texture(size, size, 3);
   texture.Set(1);
   texture.Light( bump, [-1, -1, 1], 0, [0.1, 0.3, 0.4], 0.2, 0.5, 10 );
   }}}
@@ -2478,7 +2546,7 @@ DEFINE_FUNCTION_FAST( Trim ) { // (TBD) test this new version that use memcpy
 
 
 /**doc
- * $THIS $INAME( sourceTexture, x, y [, borderMode = Texture.borderClamp] )
+ * $THIS $INAME( sourceTexture, x, y [ , borderMode = Texture.borderClamp] )
   Copy _sourceTexture_ in the current texture at the position (_x_, _y_).
   $H arguments
    $ARG Texture sourceTexture:
@@ -2627,7 +2695,7 @@ DEFINE_FUNCTION_FAST( Paste ) { // (Texture)texture, (int)x, (int)y, (bool)borde
 
 
 /**doc
- * $TYPE ImageObject $INAME( [x, y, width, height] )
+ * $TYPE ImageObject $INAME( [ x, y, width, height] )
   Creates an image object from the whole or a part of current texture.
   $H arguments
    $ARG integer x:
@@ -2706,9 +2774,8 @@ DEFINE_FUNCTION_FAST( Export ) { // (int)x, (int)y, (int)width, (int)height. Ret
 			posSrc = ( sx + sy * sWidth ) * sChannels;
 			for ( c = 0; c < sChannels; c++ ) {
 				
-				buffer[posDst+c] = (u_int8_t)(MINMAX(tex->cbuffer[posSrc+c] * 256.f, 0, 255));
-
 				//buffer[posDst+c] = (u_int8_t)(PNORM(tex->cbuffer[posSrc+c]) * 256);
+				buffer[posDst+c] = (u_int8_t)(MINMAX(tex->cbuffer[posSrc+c] * 255.f, 0, 255)); // map [0.0 -> 1.0] to [0 -> 255]
 			}
 		}
 
@@ -2728,7 +2795,7 @@ DEFINE_FUNCTION_FAST( Export ) { // (int)x, (int)y, (int)width, (int)height. Ret
 
 
 /**doc
- * $THIS $INAME( sourceImage, x, y [, borderMode] )
+ * $THIS $INAME( sourceImage, x, y [ , borderMode] )
   Draws the _image_ over the current texture at position (_x_, _y_).
   $H arguments
    $ARG ImageObject sourceImage:
@@ -2817,7 +2884,7 @@ DEFINE_FUNCTION_FAST( Import ) { // (Blob)image, (int)x, (int)y
 			posDst = ( dx + dy * dWidth ) * dChannels;
 			posSrc = ( x + y * sWidth ) * sChannels;
 			for ( c = 0; c < sChannels; c++ )
-				tex->cbuffer[posDst+c] = buffer[posSrc+c] / (PTYPE)256.f;
+				tex->cbuffer[posDst+c] = (PTYPE)buffer[posSrc+c] / (PTYPE)255.f;
 		}
 
 	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
@@ -2826,7 +2893,7 @@ DEFINE_FUNCTION_FAST( Import ) { // (Blob)image, (int)x, (int)y
 
 
 /**doc
- * $THIS $INAME( offsetX, offsetY [, borderMode] )
+ * $THIS $INAME( offsetX, offsetY [ , borderMode] )
   Shift the current image.
   $H arguments
    $ARG integer offsetX: 
@@ -2906,7 +2973,7 @@ DEFINE_FUNCTION_FAST( Shift ) {
 }
 
 /**doc
- * $THIS $INAME( displaceTexture, factor [, borderMode] )
+ * $THIS $INAME( displaceTexture, factor [ , borderMode] )
   Move each pixel of the texture according to the 
   $H arguments
    $ARG Texture displaceTexture: is a texture that contains displacement vectors.
@@ -3209,7 +3276,7 @@ DEFINE_FUNCTION_FAST( AddGradiantLinear ) {
 
 
 /**doc
- * $THIS $INAME( curveInfo [, drawToCorner = false] )
+ * $THIS $INAME( curveInfo [ , drawToCorner = false] )
   Add a radial radiant using a curve from the center to the outside. Each point of the curve is the light intensity of a pixel.
   $H arguments
    $ARG curveInfo curveInfo:
@@ -3350,7 +3417,7 @@ DEFINE_FUNCTION( AddGradiantRadial ) {
 
 
 /**doc
- * $THIS $INAME( count, crackLength, wayVariation [, color = 1] [, curve = 1] )
+ * $THIS $INAME( count, crackLength, wayVariation [ , color = 1] [ , curve = 1] )
   Adds cracks to the current texture.
   $H arguments
    $ARG integer count: number of cracks to draw.
@@ -3360,6 +3427,8 @@ DEFINE_FUNCTION( AddGradiantRadial ) {
    $ARG curveInfo curve: the curve that defines the intensity of each point of the crack.
   $H note
    The curve is computed before each crack is drawn.
+  $H beware
+   Adding cracks on a white texture does nothing.
   $H examples
   {{{
   texture.AddCracks( 1000, 10, 0, RED, 1 );
@@ -3389,7 +3458,10 @@ DEFINE_FUNCTION_FAST( AddCracks ) { // source: FxGen
 	J_JSVAL_TO_INT32( J_FARG(2), crackMaxLength );
 	
 	float variation;
-	J_JSVAL_TO_REAL( J_FARG(3), variation );
+	if ( J_FARG_ISDEF(3) )
+		J_JSVAL_TO_REAL( J_FARG(3), variation );
+	else
+		variation = 0;
 
 	PTYPE pixel[PMAXCHANNELS];
 	if ( J_FARG_ISDEF(4) ) {
@@ -3416,6 +3488,7 @@ DEFINE_FUNCTION_FAST( AddCracks ) { // source: FxGen
 	//Process operator
 	int n = 0;
 	while( n++ < count ) {
+
 		float x = genrand_real1() * width;
 		float y = genrand_real1() * height;
 		float a = 2.f * M_PI * genrand_real1();
@@ -3490,6 +3563,36 @@ DEFINE_FUNCTION_FAST( PixelAt ) {
 	}
 	return JS_TRUE;
 }
+
+
+/**doc
+ * $THIS $INAME()
+  Returns the [ lowest,highest ] level value of the texture.
+**/
+// PTYPE ok
+DEFINE_FUNCTION_FAST( LevelRange ) {
+
+	Texture *tex = (Texture *)JS_GetPrivate(cx, J_FOBJ);
+	J_S_ASSERT_RESOURCE(tex);
+
+	PTYPE min = PMAXLIMIT;
+	PTYPE max = PMINLIMIT;
+	PTYPE tmp;
+
+	int tsize = tex->width * tex->height * tex->channels;
+	for ( int i = 0; i < tsize; i++ ) {
+
+		tmp = tex->cbuffer[i]; 
+		if ( tmp > max )
+			max = tmp;
+		else if ( tmp < min )
+			min = tmp;
+	}
+	PTYPE vector[] = { min, max };
+	J_REAL_VECTOR_TO_JSVAL(vector, 2, *J_FRVAL);
+	return JS_TRUE;
+}
+
 
 
 /**doc
@@ -3585,7 +3688,7 @@ DEFINE_FUNCTION_FAST( RandSeed ) {
 
 /**doc
  * $INT $INAME
-  Generates a random number on [0,0x7fffffff]-interval
+  Generates a random number on [ 0,0x7fffffff ]-interval
 **/
 DEFINE_FUNCTION_FAST( RandInt ) {
 
@@ -3597,7 +3700,7 @@ DEFINE_FUNCTION_FAST( RandInt ) {
 
 /**doc
  * $REAL $INAME
-  Generates a random number on [0,1]-real-interval
+  Generates a random number on [ 0,1 ]-real-interval
 **/
 DEFINE_FUNCTION_FAST( RandReal ) {
 
@@ -3652,7 +3755,7 @@ static JSBool _Test(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval
  * *colorInfo*
   a _colorInfo_ can be one of the following type:
   * _real_: in this case, the same value is used for each channel (eg. 0.5 gor gray).
-  * _Array_: that contains the $pval of each channel (eg. [1,1,1] is white in RGB mode).
+  * _Array_: that contains the $pval of each channel (eg. [ 1,1,1 ] is white in RGB mode).
   * _string_: the string represents an HTML color like #1100AA or #8800AAFF (depending the number of channels)
   $H examples
   {{{
@@ -3724,6 +3827,7 @@ CONFIGURE_CLASS
 		FUNCTION_FAST( Flip )
 		FUNCTION_FAST( Shift )
 		FUNCTION_FAST( Convolution )
+		FUNCTION_FAST( ForEachPixels )
 		FUNCTION_FAST( Normals )
 		FUNCTION_FAST( NormalizeVectors )
 		FUNCTION_FAST( Light )
@@ -3744,6 +3848,7 @@ CONFIGURE_CLASS
 		FUNCTION_FAST( AddGradiantLinear )
 		FUNCTION_FAST( AddGradiantRadial )
 		FUNCTION_FAST( PixelAt )
+		FUNCTION_FAST( LevelRange )
 
 #ifdef _DEBUG
 		FUNCTION( Test )
@@ -3822,7 +3927,7 @@ function AddAlphaChannel( tex ) {
 }
 }}}
 
-$H example 3
+$H example 2
  This example shows how to save a texture to the disk.
 {{{
 LoadModule('jsstd');
