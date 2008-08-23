@@ -1,5 +1,6 @@
-OpenAL wikipedia:
-	http://en.wikipedia.org/wiki/Openal
+Download:
+	http://connect.creativelabs.com/openal/Downloads/Forms/AllItems.aspx
+
 
 OpenAL tutorial:
 	http://www.devmaster.net/articles.php?catID=6

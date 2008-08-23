@@ -370,11 +370,73 @@ DEFINE_FUNCTION_FAST( DecodeSound ) {
 }
 
 
+/**doc
+ * $ARRAY $INAME( sound )
+  Split 
+  $H arguments
+   $ARG soundObject sound
+  $H return value
+   returns an array that contains each individual channel of the sound.
+**/
+DEFINE_FUNCTION_FAST( SplitChannels ) {
+
+	J_S_ASSERT_ARG_MIN( 1 );
+
+	J_S_ASSERT_OBJECT( J_FARG(1) );
+
+	JSObject *blobObj = JSVAL_TO_OBJECT(J_FARG(1));
+
+	int rate, channelCount, bits, frames;
+	J_CHK( GetPropertyInt(cx, blobObj, "rate", &rate) );
+	J_CHK( GetPropertyInt(cx, blobObj, "channels", &channelCount) );
+	J_CHK( GetPropertyInt(cx, blobObj, "bits", &bits) );
+	J_CHK( GetPropertyInt(cx, blobObj, "frames", &frames) );
+
+	const char *buffer;
+	size_t bufferLength;
+	jsval tmp = OBJECT_TO_JSVAL(blobObj);
+//	JS_AddRoot(&tmp);
+	JsvalToStringAndLength(cx, &tmp, &buffer, &bufferLength); // warning: GC on the returned buffer !
+
+	JSObject *monoArray = JS_NewArrayObject(cx, 0, NULL); 
+	*J_FRVAL = OBJECT_TO_JSVAL(monoArray);
+
+
+	JSObject *channels[8];
+
+	for ( int c = 0; c < channelCount; c++ ) {
+
+		int totalSize = frames * (bits/8);
+		char *buf = (char*)JS_malloc(cx, totalSize);
+
+		for (
+
+		jsval blobVal;
+		J_CHK( J_NewBlob(cx, buf, totalSize, &blobVal) );
+		JSObject *blobObj;
+		J_CHK( JS_ValueToObject(cx, blobVal, &blobObj) );
+		J_S_ASSERT( blobObj != NULL, "Unable to create the Blob object.");
+		channels[c] = blobObj;
+
+		J_CHK( SetPropertyInt(cx, blobObj, "bits", bits) );
+		J_CHK( SetPropertyInt(cx, blobObj, "rate", rate) );
+		J_CHK( SetPropertyInt(cx, blobObj, "channels", 1) );
+		J_CHK( SetPropertyInt(cx, blobObj, "frames", frames ) );
+	}
+
+	return JS_TRUE;
+}
+
+
+
+
+
 CONFIGURE_STATIC
 
 	BEGIN_STATIC_FUNCTION_SPEC
-		FUNCTION_FAST( DecodeOggVorbis )
-		FUNCTION_FAST( DecodeSound )
+//		FUNCTION_FAST( DecodeOggVorbis )
+//		FUNCTION_FAST( DecodeSound )
+		FUNCTION_FAST( SplitChannels )
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC

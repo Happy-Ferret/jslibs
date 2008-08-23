@@ -26,6 +26,7 @@
 /**doc fileIndex:top
 $CLASS_HEADER
  The OggVorbisDecoder support ogg vorbis data format decoding.
+
 **/
 BEGIN_CLASS( OggVorbisDecoder )
 
@@ -40,7 +41,7 @@ typedef struct {
 
 
 
-static size_t readStream( void *ptr, size_t size, size_t nmemb, void *privateData ) {
+static size_t read_func( void *ptr, size_t size, size_t nmemb, void *privateData ) {
 
 	Private *pv = (Private*)privateData;
 
@@ -52,7 +53,74 @@ static size_t readStream( void *ptr, size_t size, size_t nmemb, void *privateDat
 	return amount;
 }
 
-static ov_callbacks ovCallbacks = { readStream, 0, 0, 0 };
+static int seek_func(void *datasource, ogg_int64_t offset, int whence) {
+
+//	return -1;
+
+	Private *pv = (Private*)datasource;
+
+	jsval tmpVal;
+	int position, available;
+
+	switch (whence) {
+		case SEEK_SET:
+			if ( offset < 0 )
+				return -1;
+			IntToJsval(pv->cx, offset, &tmpVal); // (TBD) manage error
+			JS_SetProperty(pv->cx, pv->streamObject, "position", &tmpVal); // (TBD) manage error
+			return 0;
+
+		case SEEK_CUR:
+			JS_GetProperty(pv->cx, pv->streamObject, "position", &tmpVal); // (TBD) manage error
+			if ( tmpVal == JSVAL_VOID ) //
+				return -1;
+			if ( offset == 0 ) // no move, just tested, but let -1 to be return if no position property available.
+				return 0;
+			JsvalToInt(pv->cx, tmpVal, &position); // (TBD) manage error
+			position += offset;
+			IntToJsval(pv->cx, position, &tmpVal); // (TBD) manage error
+			JS_SetProperty(pv->cx, pv->streamObject, "position", &tmpVal); // (TBD) manage error
+			return 0;
+
+		case SEEK_END:
+			JS_GetProperty(pv->cx, pv->streamObject, "available", &tmpVal);
+			if ( tmpVal == JSVAL_VOID )
+				return -1;
+			JsvalToInt(pv->cx, tmpVal, &available);
+
+			JS_GetProperty(pv->cx, pv->streamObject, "position", &tmpVal);
+			if ( tmpVal == JSVAL_VOID )
+				return -1;
+			JsvalToInt(pv->cx, tmpVal, &position);
+
+			if ( offset > 0 || -offset > position + available )
+				return -1;
+			JsvalToInt(pv->cx, tmpVal, &position);
+			IntToJsval(pv->cx, position + available + offset, &tmpVal); // the pointer is set to the size of the file plus offset.
+			JS_SetProperty(pv->cx, pv->streamObject, "position", &tmpVal);
+			return 0;
+	}
+	return -1; // doc: you *MUST* return -1 if the stream is unseekable
+}
+
+
+
+
+static long tell_func(void *datasource) {
+
+	Private *pv = (Private*)datasource;
+	jsval tmpVal;
+
+	int position;
+	JS_GetProperty(pv->cx, pv->streamObject, "position", &tmpVal);
+	if ( tmpVal == JSVAL_VOID )
+		return -1;
+	JsvalToInt(pv->cx, tmpVal, &position);
+	return position;
+}
+
+
+static ov_callbacks ovCallbacks = { read_func, seek_func, 0, tell_func };
 
 
 DEFINE_FINALIZE() {
@@ -68,7 +136,7 @@ DEFINE_FINALIZE() {
 
 /**doc
  * $INAME( stream )
-  Creates a new OggVorbisDecoder object.
+  Creates a new OggVorbisDecoder object. Seekable and non-seekable streams are supported.
   $H arguments
    $ARG streamObject stream: is the data stream from where encoded data are read from.
   $H example
@@ -103,10 +171,11 @@ DEFINE_CONSTRUCTOR() {
 	pv->streamObject = JSVAL_TO_OBJECT(J_ARG(1));
 
 	pv->cx = cx;
-	ov_open_callbacks(pv, &pv->ofDescriptor, NULL, 0, ovCallbacks);
-	// (TBD) manage errors
+	int result = ov_open_callbacks(pv, &pv->ofDescriptor, NULL, 0, ovCallbacks);
+	J_S_ASSERT(result == 0, "Invalid ogg vorbis descriptor.");
 
 	pv->ofInfo = ov_info(&pv->ofDescriptor, -1);
+	J_S_ASSERT(pv->ofInfo != NULL, "Invalid ogg vorbis info.");
 
 	pv->bits = 16;
 
@@ -274,7 +343,7 @@ DEFINE_FUNCTION_FAST( Read ) {
 	J_CHK( J_NewBlob(cx, buf, totalSize, &blobVal) );
 	JSObject *blobObj;
 	J_CHK( JS_ValueToObject(cx, blobVal, &blobObj) );
-	J_S_ASSERT( blobVal != NULL, "Unable to create the Blob object.");
+	J_S_ASSERT( blobObj != NULL, "Unable to create the Blob object.");
 	*J_FRVAL = OBJECT_TO_JSVAL(blobVal);
 
 	J_CHK( SetPropertyInt(cx, blobObj, "bits", pv->bits) ); // bits per sample
@@ -352,8 +421,8 @@ DEFINE_PROPERTY( frames ) {
 		*vp = JSVAL_VOID;
 		return JS_TRUE;
 	}
-	size_t frames = pcmTotal / pv->ofInfo->channels; // (TBD) ???
-	*vp = INT_TO_JSVAL( frames );
+//	size_t frames = pcmTotal / pv->ofInfo->channels; // (TBD) ???
+	*vp = INT_TO_JSVAL( pcmTotal );
 	return JS_TRUE;
 }
 

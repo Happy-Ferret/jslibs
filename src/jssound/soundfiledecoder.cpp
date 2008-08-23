@@ -147,7 +147,7 @@ DEFINE_FINALIZE() {
 
 /**doc
  * $INAME( stream )
-  Creates a new SoundFileDecoder object.
+  Creates a new SoundFileDecoder object. Only seekable streams are supported.
   $H arguments
    $ARG streamObject stream: is the data stream from where encoded data are read from.
   $H example
@@ -327,7 +327,7 @@ DEFINE_CONSTRUCTOR() {
 	J_CHK( J_NewBlob(cx, buf, totalSize, &blobVal) );
 	JSObject *blobObj;
 	J_CHK( JS_ValueToObject(cx, blobVal, &blobObj) );
-	J_S_ASSERT( blobVal != NULL, "Unable to create the Blob object.");
+	J_S_ASSERT( blobObj != NULL, "Unable to create the Blob object.");
 	*J_FRVAL = OBJECT_TO_JSVAL(blobVal);
 
 	J_CHK( SetPropertyInt(cx, blobObj, "bits", pv->bits) ); // bits per sample

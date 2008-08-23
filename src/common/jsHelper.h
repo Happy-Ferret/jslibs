@@ -490,6 +490,19 @@ inline JSBool JsvalToInt( JSContext *cx, jsval val, int *intVal ) {
 	return JS_TRUE;
 }
 
+inline JSBool JsvalToUInt( JSContext *cx, jsval val, unsigned int *uintVal ) {
+
+	if ( JSVAL_IS_INT(val) )
+		*uintVal = JSVAL_TO_INT(val);
+	else {
+
+		jsdouble d;
+		J_CHKM( JS_ValueToNumber(cx, val, &d), "Unable to convert to a 32bit integer." );
+		*uintVal = (unsigned int)d;
+	}
+	return JS_TRUE;
+}
+
 
 inline JSBool IntToJsval( JSContext *cx, int intVal, jsval *val ) {
 
@@ -501,6 +514,16 @@ inline JSBool IntToJsval( JSContext *cx, int intVal, jsval *val ) {
 	return JS_TRUE;
 }
 
+
+inline JSBool UIntToJsval( JSContext *cx, unsigned int uintVal, jsval *val ) {
+
+	if ( uintVal <= JSVAL_INT_MAX )
+		*val = INT_TO_JSVAL(uintVal);
+	else
+		if (unlikely( JS_NewNumberValue(cx, uintVal, val) != JS_TRUE ))
+			J_REPORT_ERROR( "Unable to convert to a 32bit integer." );
+	return JS_TRUE;
+}
 
 
 inline JSBool SetPropertyInt( JSContext *cx, JSObject *obj, const char *propertyName, int intVal ) {
@@ -617,10 +640,9 @@ inline JSBool JsvalToBool( JSContext *cx, jsval val, bool *bval ) {
 } while(0)
 
 
-
-
-#define J_FILL_JSVAL_ARRAY( vector, length, jsvalVariable ) do { \
-} while(0)
+// (TBD) ?
+//#define J_FILL_JSVAL_ARRAY( vector, length, jsvalVariable ) do { \
+//} while(0)
 
 
 #define J_INT_VECTOR_TO_JSVAL( vector, length, jsvalVariable ) do { \
@@ -650,8 +672,16 @@ inline JSBool JsvalToBool( JSContext *cx, jsval val, bool *bval ) {
 	} \
 } while(0)
 
-// (TBD)
+
 #define J_REAL_VECTOR_TO_JSVAL( vector, length, jsvalVariable ) do { \
+	JSObject *__arrayObj = JS_NewArrayObject(cx, 0, NULL); \
+	J_S_ASSERT_ALLOC(__arrayObj); \
+	(jsvalVariable) = OBJECT_TO_JSVAL(__arrayObj); \
+	jsval __tmpValue; \
+	for ( jsint __i=0; __i<(length); ++__i ) { \
+		J_CHK( JS_NewNumberValue(cx, (vector)[__i], &__tmpValue) ); \
+		J_CHK( JS_SetElement(cx, __arrayObj, __i, &__tmpValue) ); \
+	} \
 } while(0)
 
 
