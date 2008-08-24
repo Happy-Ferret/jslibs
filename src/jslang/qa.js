@@ -42,6 +42,17 @@ LoadModule('jsstd');
 		QA.ASSERT( '_NI_BufferGet' in blob, true, 'returned Blob has _NI_BufferGet' );
 		QA.ASSERT( blob._NI_BufferGet, true, 'returned Blob _NI_BufferGet is active' );
 
+
+/// Mutated Blob BufferGet NativeInterface
+
+		var b = new Blob('123');
+		b.replace; // force mutation
+		QA.ASSERT(  b instanceof String, true, 'blob is a String' )
+		QA.ASSERT(  b._NI_BufferGet, true, 'mutated blob has _NI_BufferGet' )
+		
+		
+
+
 /// Blob mutation preserves BufferGet NativeInterface
 
 		var b = new Blob();

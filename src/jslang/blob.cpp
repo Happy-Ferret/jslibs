@@ -53,15 +53,10 @@ JSBool NativeInterfaceBufferGet( JSContext *cx, JSObject *obj, const char **buf,
 		return JS_TRUE;
 	}
 
-/* (TBD) manage BufferGet for mutated Blob ( use JS_GetStringBytes ... )
-	static JSObject *stringPrototype = NULL;
-	if ( stringPrototype == NULL )
-		J_CHK( JS_GetClassObject(cx, JS_GetGlobalObject(cx), JSProto_String, &stringPrototype) );
-
-	if ( JS_GetPrototype(cx, obj) == stringPrototype ) {
-	}
-*/
-	return JS_FALSE;
+	JSString *jsstr = JS_ValueToString(cx, OBJECT_TO_JSVAL(obj));
+	*buf = JS_GetStringBytes(jsstr);
+	*size = JS_GetStringLength(jsstr);
+	return JS_TRUE;
 }
 
 
@@ -602,7 +597,7 @@ DEFINE_EQUALITY() {
 
 static JSBool MutateToJSString(JSContext *cx, JSObject *obj) {
 
-	J_CHK( SetBufferGetInterface(cx, obj, NULL) );
+//	J_CHK( SetBufferGetInterface(cx, obj, NULL) );
 
 	const char *buffer;
 	size_t length;
