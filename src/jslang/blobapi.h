@@ -17,8 +17,6 @@
 
 #include "../common/jsHelper.h"
 
-#define SLOT_BLOB_LENGTH 0
-
 
 inline JSClass* BlobJSClass( JSContext *cx ) {
 

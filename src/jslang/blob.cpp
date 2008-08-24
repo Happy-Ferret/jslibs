@@ -19,12 +19,15 @@
 #include "../common/jsHelper.h"
 #include "blobapi.h"
 
+#define SLOT_BLOB_LENGTH 0
 
 inline JSBool BlobLength( JSContext *cx, JSObject *blobObject, size_t *length ) {
 
 	J_S_ASSERT_CLASS(blobObject, BlobJSClass( cx ));
 	jsval lengthVal;
 	J_CHK( JS_GetReservedSlot(cx, blobObject, SLOT_BLOB_LENGTH, &lengthVal) );
+	if ( lengthVal == JSVAL_VOID )  // invalidated
+		J_REPORT_ERROR("Invalidated blob.");
 	J_S_ASSERT_INT( lengthVal );
 	*length = JSVAL_TO_INT( lengthVal );
 	return JS_TRUE;
@@ -172,6 +175,19 @@ DEFINE_CONSTRUCTOR() {
 === Methods ===
 **/
 
+
+/**doc
+ * $VOID $INAME()
+**/
+DEFINE_FUNCTION_FAST( Free ) {
+
+	void *pv = JS_GetPrivate(cx, J_FOBJ);
+	JS_free(cx, pv);
+	J_CHK( JS_SetPrivate(cx, J_FOBJ, NULL) );
+	J_CHK( JS_SetReservedSlot(cx, J_FOBJ, SLOT_BLOB_LENGTH, JSVAL_VOID) ); // invalidate the blob.
+	JS_ClearScope(cx, J_FOBJ);
+	return JS_TRUE;
+}
 
 /**doc
  * $TYPE Blob $INAME( data [,data1 [,...]] )
@@ -679,6 +695,7 @@ CONFIGURE_CLASS
 	HAS_NEW_RESOLVE
 
 	BEGIN_FUNCTION_SPEC
+		FUNCTION_FAST(Free)
 		FUNCTION_FAST(concat)
 		FUNCTION_FAST(substr)
 		FUNCTION_FAST(indexOf)
