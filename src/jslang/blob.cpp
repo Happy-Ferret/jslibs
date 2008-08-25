@@ -19,15 +19,25 @@
 #include "../common/jsHelper.h"
 #include "blobapi.h"
 
+// SLOT_BLOB_LENGTH is the size of the content of the blob OR JSVAL_VOID if the blob has been invalidated (see Blob::Free() method)
 #define SLOT_BLOB_LENGTH 0
+
+
+inline bool IsBlobValid( JSContext *cx, JSObject *blobObject ) {
+
+	jsval lengthVal;
+	J_CHK( JS_GetReservedSlot(cx, blobObject, SLOT_BLOB_LENGTH, &lengthVal) );
+	return lengthVal == JSVAL_VOID ? false : true;
+}
+
 
 inline JSBool BlobLength( JSContext *cx, JSObject *blobObject, size_t *length ) {
 
 	J_S_ASSERT_CLASS(blobObject, BlobJSClass( cx ));
 	jsval lengthVal;
 	J_CHK( JS_GetReservedSlot(cx, blobObject, SLOT_BLOB_LENGTH, &lengthVal) );
-	if ( lengthVal == JSVAL_VOID )  // invalidated
-		J_REPORT_ERROR("Invalidated blob.");
+//	if ( lengthVal == JSVAL_VOID )  // invalidated
+//		J_REPORT_ERROR("Invalidated blob.");
 	J_S_ASSERT_INT( lengthVal );
 	*length = JSVAL_TO_INT( lengthVal );
 	return JS_TRUE;
@@ -50,6 +60,11 @@ BEGIN_CLASS( Blob )
 JSBool NativeInterfaceBufferGet( JSContext *cx, JSObject *obj, const char **buf, size_t *size ) {
 
 	if ( JS_GET_CLASS(cx, obj) == classBlob ) {
+		
+		if ( !IsBlobValid(cx, obj) ) {
+
+			J_REPORT_ERROR("Invalid Blob object.");
+		}
 
 		J_CHK( BlobLength(cx, obj, size) );
 		J_CHK( BlobBuffer(cx, obj, buf) );
@@ -101,27 +116,6 @@ inline JSBool JsvalToBlob( JSContext *cx, jsval val, JSObject **obj ) {
 	return JS_TRUE;
 }
 */
-
-
-JSBool BlobToJSString( JSContext *cx, JSObject *obj, JSString **jsstr ) {
-
-	void *pv = JS_GetPrivate(cx, obj);
-	size_t length;
-	J_CHK( BlobLength(cx, obj, &length) );
-	if ( length == 0 ) {
-
-		*jsstr = JSVAL_TO_STRING( JS_GetEmptyStringValue(cx) );
-	} else {
-
-		jschar *ucStr = (jschar*)JS_malloc(cx, (length + 1) * sizeof(jschar));
-		ucStr[length] = 0;
-		for ( size_t i = 0; i < length; i++ )
-			ucStr[i] = ((unsigned char*)pv)[i]; // see js_InflateString in jsstr.c
-		*jsstr = JS_NewUCString(cx, ucStr, length);
-	}
-	return JS_TRUE;
-}
-
 
 
 DEFINE_FINALIZE() {
@@ -185,9 +179,12 @@ DEFINE_FUNCTION_FAST( Free ) {
 	JS_free(cx, pv);
 	J_CHK( JS_SetPrivate(cx, J_FOBJ, NULL) );
 	J_CHK( JS_SetReservedSlot(cx, J_FOBJ, SLOT_BLOB_LENGTH, JSVAL_VOID) ); // invalidate the blob.
+	// removes all of obj's own properties, except the special __proto__ and __parent__ properties, in a single operation.
+	// Properties belonging to objects on obj's prototype chain are not affected.
 	JS_ClearScope(cx, J_FOBJ);
 	return JS_TRUE;
 }
+
 
 /**doc
  * $TYPE Blob $INAME( data [,data1 [,...]] )
@@ -524,10 +521,24 @@ DEFINE_FUNCTION_FAST( charCodeAt ) {
   $H beware
    This function may be called automatically by the JavaScript engine when it needs to convert the Blob object to a JS string.
 **/
-DEFINE_FUNCTION_FAST( toString ) { // and valueOf
+DEFINE_FUNCTION_FAST( toString ) { // and valueOf ?
 
+	void *pv = JS_GetPrivate(cx, J_FOBJ);
+	size_t length;
+	J_CHK( BlobLength(cx, J_FOBJ, &length) );
 	JSString *jsstr;
-	J_CHK( BlobToJSString(cx, J_FOBJ, &jsstr) );
+	if ( length == 0 ) {
+
+		jsstr = JSVAL_TO_STRING( JS_GetEmptyStringValue(cx) );
+	} else {
+
+		jschar *ucStr = (jschar*)JS_malloc(cx, (length + 1) * sizeof(jschar));
+		ucStr[length] = 0;
+		for ( size_t i = 0; i < length; i++ )
+			ucStr[i] = ((unsigned char*)pv)[i]; // see js_InflateString in jsstr.c
+		jsstr = JS_NewUCString(cx, ucStr, length);
+	}
+
 	J_S_ASSERT( jsstr != NULL, "Unable to convert Blob to String." );
 	*J_FRVAL = STRING_TO_JSVAL(jsstr);
 	return JS_TRUE;
@@ -584,7 +595,7 @@ DEFINE_GET_PROPERTY() {
 
 DEFINE_SET_PROPERTY() {
 
-	J_S_ASSERT( !JSVAL_IS_NUMBER(id), "Cannot modify immutable string" );
+	J_S_ASSERT( !JSVAL_IS_NUMBER(id), "Cannot modify immutable objects" );
 	return JS_TRUE;
 }
 
@@ -592,6 +603,11 @@ DEFINE_SET_PROPERTY() {
 DEFINE_EQUALITY() {
 
 	if ( J_JSVAL_IS_CLASS(v, _class) ) {
+
+		if ( !IsBlobValid(cx,obj) || !IsBlobValid(cx,JSVAL_TO_OBJECT(v)) ) {
+			
+			J_REPORT_ERROR("Invalid Blob object.");
+		}
 		
 		const char *buf1, *buf2;
 		size_t len1, len2;
@@ -612,8 +628,6 @@ DEFINE_EQUALITY() {
 
 
 static JSBool MutateToJSString(JSContext *cx, JSObject *obj) {
-
-//	J_CHK( SetBufferGetInterface(cx, obj, NULL) );
 
 	const char *buffer;
 	size_t length;
@@ -637,9 +651,15 @@ static JSBool MutateToJSString(JSContext *cx, JSObject *obj) {
 
 DEFINE_NEW_RESOLVE() {
 
+	if ( !IsBlobValid(cx, obj) ) {
+
+		J_REPORT_ERROR("Invalid Blob object.");
+	}
+
 	if ( !(flags & JSRESOLVE_QUALIFIED) || (flags & JSRESOLVE_ASSIGNING) )
 		return JS_TRUE;
 
+	// (TBD) check if needed
 	// check if obj is a Blob
 	if ( JS_GetPrototype(cx, obj) != prototypeBlob )
 		return JS_TRUE;
