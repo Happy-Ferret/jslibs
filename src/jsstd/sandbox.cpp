@@ -49,6 +49,8 @@ BEGIN_CLASS( Sandbox )
 **/
 DEFINE_FUNCTION_FAST( Eval ) {
 
+	J_S_ASSERT_CLASS( J_FOBJ, _class );
+
 	JSContext *scx = JS_NewContext(JS_GetRuntime(cx), 8192L); // see host/host.cpp
 	if (!scx) {
 
