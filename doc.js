@@ -95,11 +95,11 @@ var api = {
 		cx.center = '----\n- [#'+item.lastDir+'_module top] - [JSLibs main] - [http://jslibs.googlecode.com/svn/trunk/'+item.path+'/ source] - [http://jslibs.googlecode.com/svn/trunk/'+item.path+'/qa.js QA] -';
 	},
 
-	$READONLY:'http://jslibs.googlecode.com/svn/wiki/readonly.png',
+	$READONLY:' http://jslibs.googlecode.com/svn/wiki/readonly.png ',
 
 	$WRITEONLY:',,write-only !,,',
 	
-	$DEPRECATED: '{`DEPRECATED`}',
+	$DEPRECATED: ' http://jslibs.googlecode.com/svn/wiki/deprecated.png ',
 
 	$ARG:function(cx, item) {
 	
