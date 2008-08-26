@@ -148,7 +148,7 @@ var QAAPI = new function() {
 	this.ASSERT = function( value, expect, testName ) {
 
 		testCount++;
-		if ( value !== expect )
+		if ( value !== expect && !(isNaN(value) && isNaN(expect)) )
 			this.REPORT( CodeLocation()+' '+(testName||'?') + ', '+FormatVariable(value)+' != '+FormatVariable(expect) );
 	}
 

@@ -190,7 +190,7 @@ DEFINE_FUNCTION_FAST( Free ) {
  * $TYPE Blob $INAME( data [,data1 [,...]] )
   Combines the text of two or more strings and returns a new string.
   $H details
-   http://developer.mozilla.org/en/docs/Core_JavaScript_1.5_Reference:Global_Objects:String:concat
+   [http://developer.mozilla.org/index.php?title=En/Core_JavaScript_1.5_Reference/Global_Objects/String/concat]
 **/
 DEFINE_FUNCTION_FAST( concat ) {
 
@@ -254,7 +254,7 @@ DEFINE_FUNCTION_FAST( concat ) {
    $ARG integer start: location at which to begin extracting characters (an integer between 0 and one less than the length of the string).
    $ARG integer length: the number of characters to extract.
   $H details
-   fc. [http://developer.mozilla.org/en/docs/Core_JavaScript_1.5_Reference:Global_Objects:String:substr JavaScript substr]
+   fc. [http://developer.mozilla.org/index.php?title=En/Core_JavaScript_1.5_Reference/Global_Objects/String/substr]
 **/
 DEFINE_FUNCTION_FAST( substr ) {
 
@@ -312,6 +312,77 @@ DEFINE_FUNCTION_FAST( substr ) {
 }
 
 
+
+/**doc
+ * $TYPE Blob $INAME( indexA, [ indexB ] )
+  Extracts characters from indexA up to but not including indexB. In particular: 
+   * If indexA equals indexB, substring returns an empty string.
+   * If indexB is omitted, substring extracts characters to the end of the blob.
+   * If either argument is less than 0 or is NaN, it is treated as if it were 0.
+   * If either argument is greater than stringName.length, it is treated as if it were stringName.length. 
+   If indexA is larger than indexB, then the effect of substring is as if the two arguments were swapped; for example, str.substring(1, 0) == str.substring(0, 1). 
+  $H arguments
+   $ARG integer indexA: An integer between 0 and one less than the length of the blob.
+   $ARG integer indexB: (optional) An integer between 0 and the length of the blob.
+  $H details
+   fc. [http://developer.mozilla.org/index.php?title=En/Core_JavaScript_1.5_Reference/Global_Objects/String/substring]
+**/
+DEFINE_FUNCTION_FAST( substring ) {
+
+	if ( J_ARGC == 0 ) {
+		
+		*J_FRVAL = J_FARG(1);
+		return JS_TRUE;
+	}
+
+	const char *bstrBuffer;
+	J_CHK( BlobBuffer(cx, J_FOBJ, &bstrBuffer) );
+	size_t dataLength;
+	J_CHK( BlobLength(cx, J_FOBJ, &dataLength) );
+
+	int indexA, indexB;
+
+	if ( J_FARG(1) == JS_GetNaNValue(cx) || JSVAL_IS_INT(J_FARG(1)) && JSVAL_TO_INT(J_FARG(1)) < 0 )
+		indexA = 0;
+	else
+		J_JSVAL_TO_INT32( J_FARG(1), indexA );
+	
+	if ( J_FARG_ISDEF(2) )
+		if ( J_FARG(2) == JS_GetNaNValue(cx) || JSVAL_IS_INT(J_FARG(2)) && JSVAL_TO_INT(J_FARG(2)) < 0 )
+			indexB = 0;
+		else
+			J_JSVAL_TO_INT32( J_FARG(1), indexA );
+	else
+		indexB = dataLength - 1;
+
+
+	if ( indexA > indexB ) {
+
+		int tmp = indexB;
+		indexB = indexA;
+		indexA = tmp;
+	}
+
+	if ( indexA == indexB ) {
+
+		*J_FRVAL = JS_GetEmptyStringValue(cx);
+		return JS_TRUE;
+	}
+
+
+	int length = indexB - indexA;
+
+	void *buffer = JS_malloc(cx, length +1);
+	J_S_ASSERT_ALLOC( buffer );
+	((char*)buffer)[length] = '\0';
+
+	memcpy(buffer, ((int8_t*)bstrBuffer) + indexA, length);
+	J_CHK( J_NewBlob(cx, buffer, length, J_FRVAL) );
+
+	return JS_TRUE;
+}
+
+
 /**doc
  * $INT $INAME( searchValue [, fromIndex] )
   Returns the index within the calling Blob object of the first occurrence of the specified value, starting the search at fromIndex, or -1 if the value is not found.
@@ -319,7 +390,7 @@ DEFINE_FUNCTION_FAST( substr ) {
    $ARG string searchValue: A string representing the value to search for.
    $ARG integer fromIndex: The location within the calling string to start the search from. It can be any integer between 0 and the length of the string. The default value is 0.
   $H details
-   fc. [http://developer.mozilla.org/en/docs/Core_JavaScript_1.5_Reference:Global_Objects:String:indexOf]
+   fc. [http://developer.mozilla.org/index.php?title=En/Core_JavaScript_1.5_Reference/Global_Objects/String/indexOf]
 **/
 DEFINE_FUNCTION_FAST( indexOf ) {
 
@@ -383,7 +454,7 @@ DEFINE_FUNCTION_FAST( indexOf ) {
    $ARG string searchValue: A string representing the value to search for.
    $ARG integer fromIndex: The location within the calling string to start the search from, indexed from left to right. It can be any integer between 0 and the length of the string. The default value is the length of the string.
   $H details
-   fc. [http://developer.mozilla.org/en/docs/Core_JavaScript_1.5_Reference:Objects:String:lastIndexOf]
+   fc. [http://developer.mozilla.org/index.php?title=En/Core_JavaScript_1.5_Reference/Global_Objects/String/lastIndexOf]
 **/
 DEFINE_FUNCTION_FAST( lastIndexOf ) {
 
@@ -446,7 +517,7 @@ DEFINE_FUNCTION_FAST( lastIndexOf ) {
  * $STR $INAME( index )
   Returns the specified character from a string.
   $H details
-   fc. [http://developer.mozilla.org/en/docs/Core_JavaScript_1.5_Reference:Global_Objects:String:charAt]
+   fc. [http://developer.mozilla.org/index.php?title=En/Core_JavaScript_1.5_Reference/Global_Objects/String/charAt]
 **/
 DEFINE_FUNCTION_FAST( charAt ) {
 
@@ -485,15 +556,25 @@ DEFINE_FUNCTION_FAST( charAt ) {
  * $INT $INAME( index )
   Returns a number indicating the ASCII value of the character at the given index.
   $H details
-   fc. [http://developer.mozilla.org/en/docs/Core_JavaScript_1.5_Reference:Global_Objects:String:charCodeAt]
+   fc. [http://developer.mozilla.org/index.php?title=En/Core_JavaScript_1.5_Reference/Global_Objects/String/charCodeAt]
 **/
 DEFINE_FUNCTION_FAST( charCodeAt ) {
 
 	long index;
 	if ( J_FARG_ISDEF(1) ) {
 
-		J_S_ASSERT_INT( J_FARG(1) );
-		index = JSVAL_TO_INT( J_FARG(1) );
+		jsval arg1 = J_FARG(1);
+		if ( !JSVAL_IS_INT(arg1) ) {
+
+			if ( arg1 == JS_GetNegativeInfinityValue(cx) || arg1 == JS_GetPositiveInfinityValue(cx) ) {
+				
+				*J_FRVAL = JS_GetNaNValue(cx);
+				return JS_TRUE;
+			}
+			J_REPORT_ERROR( J__ERRMSG_UNEXPECTED_TYPE " Integer expected." );
+			return JS_FALSE;
+		}
+		index = JSVAL_TO_INT(arg1);
 	} else {
 
 		index = 0;
@@ -627,29 +708,12 @@ DEFINE_EQUALITY() {
 }
 
 
-static JSBool MutateToJSString(JSContext *cx, JSObject *obj) {
-
-	const char *buffer;
-	size_t length;
-	J_CHK( BlobBuffer(cx, obj, &buffer) );
-	J_CHK( BlobLength(cx, obj, &length) );
-	// ownership of buffer is given to the JSString
-	JSString *jsstr = JS_NewString(cx, (char*)buffer, length); // JS_NewString don't accepts (const char *)
-	JSObject *strObj;
-	J_CHK( JS_ValueToObject(cx, STRING_TO_JSVAL(jsstr), &strObj) );
-
-	obj->fslots[JSSLOT_PROTO] = strObj->fslots[JSSLOT_PROTO];
-	// Make sure we preserve any flags borrowing bits in JSSLOT_CLASS.
-	obj->fslots[JSSLOT_CLASS] ^= (jsval) JS_GET_CLASS(cx, obj);
-	obj->fslots[JSSLOT_CLASS] |= (jsval) JS_GET_CLASS(cx, strObj);
-	obj->fslots[JSSLOT_PRIVATE] = strObj->fslots[JSSLOT_PRIVATE];
-	obj->map->ops = strObj->map->ops;
-
-	return JS_TRUE;
-}
-
-
 DEFINE_NEW_RESOLVE() {
+
+	// (TBD) check if needed: yes else var s = new Blob('this is a string object');Print( s.substring() ); will failed
+	// check if obj is a Blob
+	if ( JS_GetPrototype(cx, obj) != prototypeBlob )
+		return JS_TRUE;
 
 	if ( !IsBlobValid(cx, obj) ) {
 
@@ -659,13 +723,9 @@ DEFINE_NEW_RESOLVE() {
 	if ( !(flags & JSRESOLVE_QUALIFIED) || (flags & JSRESOLVE_ASSIGNING) )
 		return JS_TRUE;
 
-	// (TBD) check if needed
-	// check if obj is a Blob
-	if ( JS_GetPrototype(cx, obj) != prototypeBlob )
-		return JS_TRUE;
-
 	jsid propId;
 	J_CHK( JS_ValueToId(cx, id, &propId) );
+
 
 	// search propId in Blob's prototype
 	JSProperty *prop;
@@ -687,7 +747,24 @@ DEFINE_NEW_RESOLVE() {
 
 	*objp = NULL; // let the engin find the property on the String's prototype.
 
-	J_CHKM( MutateToJSString(cx, obj), "Unable to transform the Blob into a String." );
+
+	const char *buffer;
+	size_t length;
+	J_CHK( BlobBuffer(cx, obj, &buffer) );
+	J_CHK( BlobLength(cx, obj, &length) );
+	// ownership of buffer is given to the JSString
+	JSString *jsstr = JS_NewString(cx, (char*)buffer, length); // JS_NewString don't accepts (const char *)
+	JSObject *strObj;
+	J_CHK( JS_ValueToObject(cx, STRING_TO_JSVAL(jsstr), &strObj) );
+
+	obj->fslots[JSSLOT_PROTO] = strObj->fslots[JSSLOT_PROTO];
+	// Make sure we preserve any flags borrowing bits in JSSLOT_CLASS.
+	obj->fslots[JSSLOT_CLASS] ^= (jsval) JS_GET_CLASS(cx, obj);
+	obj->fslots[JSSLOT_CLASS] |= (jsval) JS_GET_CLASS(cx, strObj);
+	obj->fslots[JSSLOT_PRIVATE] = strObj->fslots[JSSLOT_PRIVATE];
+	obj->map->ops = strObj->map->ops;
+
+//	J_CHKM( MutateToJSString(cx, obj), "Unable to transform the Blob into a String." );
 //	const char *debug_name = JS_GetStringBytes(JS_ValueToString(cx, id));
 	return JS_TRUE;
 }
@@ -718,6 +795,7 @@ CONFIGURE_CLASS
 		FUNCTION_FAST(Free)
 		FUNCTION_FAST(concat)
 		FUNCTION_FAST(substr)
+		FUNCTION_FAST(substring)
 		FUNCTION_FAST(indexOf)
 		FUNCTION_FAST(lastIndexOf)
 		FUNCTION_FAST(charCodeAt)
