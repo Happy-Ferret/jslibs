@@ -341,14 +341,25 @@ DEFINE_FUNCTION_FAST( substring ) {
 	J_CHK( BlobLength(cx, J_FOBJ, &dataLength) );
 
 	int indexA, indexB;
+/*
+	jsval arg1 = J_FARG(1);
+	jsval arg2 = J_FARG(1);
 
-	if ( J_FARG(1) == JS_GetNaNValue(cx) || JSVAL_IS_INT(J_FARG(1)) && JSVAL_TO_INT(J_FARG(1)) < 0 )
+	if ( JSVAL_IS_INT(arg1) )
+		indexA = JSVAL_TO_INT(arg1)
+	else {
+		
+		if ( arg1 == JS_GetPositiveInfinityValue(cx) )
+	}
+*/
+
+	if ( J_FARG(1) == JS_GetNaNValue(cx) || JSVAL_IS_INT(J_FARG(1)) && JSVAL_TO_INT(J_FARG(1)) < 0 || J_FARG(1) == JS_GetNegativeInfinityValue(cx) )
 		indexA = 0;
 	else
 		J_JSVAL_TO_INT32( J_FARG(1), indexA );
 	
 	if ( J_FARG_ISDEF(2) )
-		if ( J_FARG(2) == JS_GetNaNValue(cx) || JSVAL_IS_INT(J_FARG(2)) && JSVAL_TO_INT(J_FARG(2)) < 0 )
+		if ( J_FARG(2) == JS_GetNaNValue(cx) || JSVAL_IS_INT(J_FARG(2)) && JSVAL_TO_INT(J_FARG(2)) < 0 || J_FARG(2) == JS_GetNegativeInfinityValue(cx) )
 			indexB = 0;
 		else
 			J_JSVAL_TO_INT32( J_FARG(1), indexA );

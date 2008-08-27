@@ -121,15 +121,6 @@ DEFINE_FUNCTION( Stringify ) {
 
 DEFINE_FUNCTION( Test ) {
 
-
-	NIBufferGet get = BufferGetNativeInterface(cx, JSVAL_TO_OBJECT( J_ARG(1) ));
-
-	const char *data;
-	size_t length;
-	get(cx, JSVAL_TO_OBJECT( J_ARG(1) ), &data, &length);
-
-
-
 	return JS_TRUE;
 }
 

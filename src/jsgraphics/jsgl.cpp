@@ -1180,7 +1180,7 @@ DEFINE_FUNCTION_FAST( Translate ) {
 
 
 /**doc
- * $VOID $INAME( x, y [, z = 0] )
+ * $VOID $INAME( x, y [, z = 1] )
   $H arguments
    $ARG real x
    $ARG real y
@@ -1190,14 +1190,14 @@ DEFINE_FUNCTION_FAST( Translate ) {
 **/
 DEFINE_FUNCTION_FAST( Scale ) {
 
-	J_S_ASSERT_ARG_MIN(3);
+	J_S_ASSERT_ARG_MIN(2);
 	jsdouble x, y, z;
 	JS_ValueToNumber(cx, J_FARG(1), &x);
 	JS_ValueToNumber(cx, J_FARG(2), &y);
 	if ( J_FARG_ISDEF(3) )
 		JS_ValueToNumber(cx, J_FARG(3), &z);
 	else
-		z = 0;
+		z = 1;
 	glScaled(x, y, z);
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;

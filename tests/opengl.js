@@ -1,54 +1,8 @@
 LoadModule('jsstd');
 LoadModule('jsio');
 LoadModule('jsgraphics');
-
-
-
-
-function Cube() {
-
-	with (Ogl) {
-		Begin(QUADS);		// Draw The Cube Using quads
-
-		Color(1,0,0);
-		Vertex( 0.5, 0.5,-0.5);	// Top Right Of The Quad (Right)
-		Vertex( 0.5, 0.5, 0.5);	// Top Left Of The Quad (Right)
-		Vertex( 0.5,-0.5, 0.5);	// Bottom Left Of The Quad (Right)
-		Vertex( 0.5,-0.5,-0.5);	// Bottom Right Of The Quad (Right)
-
-		Color(0.5,0,0);
-		Vertex(-0.5, 0.5, 0.5);	// Top Right Of The Quad (Left)
-		Vertex(-0.5, 0.5,-0.5);	// Top Left Of The Quad (Left)
-		Vertex(-0.5,-0.5,-0.5);	// Bottom Left Of The Quad (Left)
-		Vertex(-0.5,-0.5, 0.5);	// Bottom Right Of The Quad (Left)
-
-		Color(0,1,0);
-		Vertex( 0.5, 0.5,-0.5);	// Top Right Of The Quad (Top)
-		Vertex(-0.5, 0.5,-0.5);	// Top Left Of The Quad (Top)
-		Vertex(-0.5, 0.5, 0.5);	// Bottom Left Of The Quad (Top)
-		Vertex( 0.5, 0.5, 0.5);	// Bottom Right Of The Quad (Top)
-
-		Color(0,0.5,0);
-		Vertex( 0.5,-0.5, 0.5);	// Top Right Of The Quad (Bottom)
-		Vertex(-0.5,-0.5, 0.5);	// Top Left Of The Quad (Bottom)
-		Vertex(-0.5,-0.5,-0.5);	// Bottom Left Of The Quad (Bottom)
-		Vertex( 0.5,-0.5,-0.5);	// Bottom Right Of The Quad (Bottom)
-
-		Color(0,0,1);
-		Vertex( 0.5, 0.5, 0.5);	// Top Right Of The Quad (Front)
-		Vertex(-0.5, 0.5, 0.5);	// Top Left Of The Quad (Front)
-		Vertex(-0.5,-0.5, 0.5);	// Bottom Left Of The Quad (Front)
-		Vertex( 0.5,-0.5, 0.5);	// Bottom Right Of The Quad (Front)
-
-		Color(0,0,0.5);
-		Vertex( 0.5,-0.5,-0.5);	// Top Right Of The Quad (Back)
-		Vertex(-0.5,-0.5,-0.5);	// Top Left Of The Quad (Back)
-		Vertex(-0.5, 0.5,-0.5);	// Bottom Left Of The Quad (Back)
-		Vertex( 0.5, 0.5,-0.5);	// Bottom Right Of The Quad (Back)
-		End();
-	}
-}
-
+LoadModule('jsprotex');
+LoadModule('jsfont');
 
 
 var win = new Window();
@@ -56,40 +10,65 @@ win.CreateOpenGLContext();
 win.Open();
 
 function ResizeWindow(w, h) {
-
-	Ogl.Viewport(0,0,w,h);
-	Ogl.MatrixMode(Ogl.PROJECTION);
-	Ogl.LoadIdentity();
-	Ogl.Ortho(0,0,10,10, 0, 100);
-//	Ogl.Perspective( 90, -1000, 1000 );
-	MatrixMode(MODELVIEW);
-
-}
-
-//var rect = win.rect;
-//ResizeWindow( rect[2]-rect[0], rect[3]-rect[1] );
-
-
-with (Ogl) {
-	ShadeModel(FLAT);
-	FrontFace(CCW);
-
-	ClearColor(0.1,0.15,0.2,1);	
-
-	ClearDepth(1);
-//	Enable(DEPTH_TEST); // !!!!
-	DepthFunc(LESS);
-
-//	DepthRange(1000, -1000);
 	
-	Hint(PERSPECTIVE_CORRECTION_HINT, NICEST);
-	Hint(LINE_SMOOTH_HINT, DONT_CARE);		
-	Enable(LINE_SMOOTH);
-	LineWidth(1);
+	with (Ogl) {
+	
+		Viewport(0,0,w,h);
+		MatrixMode(PROJECTION);
+		LoadIdentity();
+		Perspective( 90, 0.001, 1000 );
+		MatrixMode(MODELVIEW);
+	}
 }
 
 
-var z = 0;
+var rect = win.rect;
+ResizeWindow( rect[2]-rect[0], rect[3]-rect[1] );
+
+
+with (Ogl) { // Init OpenGL
+
+	ShadeModel(FLAT);
+	ClearColor(0.2, 0.3, 0.5, 0);
+	Enable(TEXTURE_2D);
+
+	Enable(ALPHA_TEST);
+	
+	FrontFace(FRONT_FACE);
+
+	Enable(DEPTH_TEST);
+//	DepthFunc(ALWAYS);
+
+	Enable(CULL_FACE);
+	CullFace(FRONT);
+
+	Enable(BLEND); //Enable alpha blending
+	BlendFunc(SRC_ALPHA, ONE_MINUS_SRC_COLOR);
+	
+//	AlphaFunc( LESS, 1 ); // http://www.opengl.org/documentation/specs/man_pages/hardcopy/GL/html/gl/alphafunc.html
+	
+
+	var tid = GenTexture();
+	BindTexture(TEXTURE_2D, tid);
+	TexParameter(TEXTURE_2D, TEXTURE_MIN_FILTER, LINEAR); // GL_LINEAR
+	TexParameter(TEXTURE_2D, TEXTURE_MAG_FILTER, LINEAR);
+
+	var f = new Font('c:\\windows\\fonts\\arial.ttf');
+	f.size = 100;
+	f.verticalPadding = -16;
+	var img = f.DrawString('Hello world', true);
+	var t = new Texture(img);
+	
+	var n = new Texture(t.width, t.height, 2);
+	n.SetChannel(0, t, 0);
+	n.SetChannel(1, t, 0);
+
+	n.Resize(256,256, true);
+	DefineTextureImage(TEXTURE_2D, undefined, n);
+}
+
+
+var angle = 0;
 
 function Render() {
 
@@ -97,23 +76,60 @@ function Render() {
 	
 		Clear(COLOR_BUFFER_BIT | DEPTH_BUFFER_BIT);
 		LoadIdentity();
-		Translate(0,0,z);
-		Cube();
-		
-		Print( z, '\n' );
-		z -= 0.1;
+		Translate(0,0,-2);
+		Rotate(angle, 0,1,0);
+		Scale(1,-0.25,1);
+
+		for ( var i = 0; i < 10; i++ ) {
+			
+			Translate(0, 0, 0.05);
+
+			Color(1,1,1, 1);
+			Begin(QUADS);
+			
+			TexCoord( 0, 0 );
+			Vertex( -1, -1 );
+			
+			TexCoord( 1, 0 );
+			Vertex( 1, -1 );
+			
+			TexCoord( 1, 1 );
+			Vertex( 1, 1 );
+			
+			TexCoord( 0, 1 );
+			Vertex( -1, 1 );
+			
+			End();
+
+
+			Begin(QUADS);
+			
+			TexCoord( 0, 0 );
+			Vertex( -1, -1 );
+			
+			TexCoord( 0, 1 );
+			Vertex( -1, 1 );
+			
+			TexCoord( 1, 1 );
+			Vertex( 1, 1 );
+			
+			TexCoord( 1, 0 );
+			Vertex( 1, -1 );
+			
+			End();
+
+		}
+
+		angle += 1;
 	}
 
 	win.SwapBuffers();
-	Sleep(100);
 }
 
 
-var end = false;
-
 win.onkeydown = function( key, l ) {
 
-	end = ( key == Window.VK_ESCAPE );
+	endSignal = ( key == 27 );
 }
 
 win.onsize = function(w,h) {
@@ -122,7 +138,7 @@ win.onsize = function(w,h) {
 	Render();
 }
 
-while (!end && !endSignal) {
+while (!endSignal) {
 
 	win.ProcessEvents();
 	Render();

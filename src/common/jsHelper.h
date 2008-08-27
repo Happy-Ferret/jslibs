@@ -526,6 +526,42 @@ inline JSBool UIntToJsval( JSContext *cx, unsigned int uintVal, jsval *val ) {
 }
 
 
+
+inline JSBool JsvalToBool( JSContext *cx, const jsval val, bool *b ) {
+
+	if ( JSVAL_IS_BOOLEAN(val) ) {
+		
+		*b = (JSVAL_TO_BOOLEAN(val) == JS_TRUE);
+		return JS_TRUE;
+	} else {
+		JSBool tmp;
+		if (unlikely( JS_ValueToBoolean( cx, val, &tmp ) != JS_TRUE ))
+			J_REPORT_ERROR( "Unable to convert to boolean." );
+		*b = (tmp == JS_TRUE);
+		return JS_TRUE;
+	}
+}
+
+
+inline JSBool JsvalToDouble( JSContext *cx, jsval val, double *d ) {
+
+	if ( JSVAL_IS_DOUBLE(val) ) {
+		
+		*d = *JSVAL_TO_DOUBLE(val);
+		return JS_TRUE;
+	} else {
+
+		jsdouble tmp;
+		if (unlikely( JS_ValueToNumber( cx, val, &tmp ) != JS_TRUE ))
+			J_REPORT_ERROR( "Unable to convert to real." );
+		*d = tmp;
+		return JS_TRUE;
+	}
+}
+
+
+
+
 inline JSBool SetPropertyInt( JSContext *cx, JSObject *obj, const char *propertyName, int intVal ) {
 
 	jsval val;
