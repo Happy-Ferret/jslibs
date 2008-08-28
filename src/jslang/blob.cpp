@@ -171,11 +171,27 @@ DEFINE_CONSTRUCTOR() {
 
 
 /**doc
- * $VOID $INAME()
+ * $VOID $INAME( [ wipe = false ] )
+  Frees the memory allocated by the blob and invalidates the blob.
+  $H arguments
+   $ARG boolean wipe: clears the buffer before freeing it. This is useful when the blob contains sensitive data.
 **/
 DEFINE_FUNCTION_FAST( Free ) {
 
 	void *pv = JS_GetPrivate(cx, J_FOBJ);
+
+	if ( J_FARG_ISDEF(1) ) {
+
+		bool wipe;
+		J_CHK( JsvalToBool(cx, J_FARG(1), &wipe ) );
+		if ( wipe ) {
+
+			size_t length;
+			J_CHK( BlobLength(cx, J_FOBJ, &length) );
+			memset(pv, 0, length);
+		}
+	}
+
 	JS_free(cx, pv);
 	J_CHK( JS_SetPrivate(cx, J_FOBJ, NULL) );
 	J_CHK( JS_SetReservedSlot(cx, J_FOBJ, SLOT_BLOB_LENGTH, JSVAL_VOID) ); // invalidate the blob.
