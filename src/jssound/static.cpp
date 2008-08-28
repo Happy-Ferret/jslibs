@@ -401,10 +401,7 @@ DEFINE_FUNCTION_FAST( SplitChannels ) {
 	JSObject *monoArray = JS_NewArrayObject(cx, 0, NULL); 
 	*J_FRVAL = OBJECT_TO_JSVAL(monoArray);
 
-/*
-	JSObject *channels[8]; // max
-
-	for ( int c = 0; c < channelCount; c++ ) {
+	for ( size_t c = 0; c < channelCount; c++ ) {
 
 		size_t totalSize = frames * (bits/8);
 		char *buf = (char*)JS_malloc(cx, totalSize);
@@ -422,17 +419,17 @@ DEFINE_FUNCTION_FAST( SplitChannels ) {
 
 		jsval blobVal;
 		J_CHK( J_NewBlob(cx, buf, totalSize, &blobVal) );
+		J_CHK( JS_SetElement(cx, monoArray, c, &blobVal) );
 		JSObject *blobObj;
 		J_CHK( JS_ValueToObject(cx, blobVal, &blobObj) );
 		J_S_ASSERT( blobObj != NULL, "Unable to create the Blob object.");
-		channels[c] = blobObj;
-
 		J_CHK( SetPropertyInt(cx, blobObj, "bits", bits) );
 		J_CHK( SetPropertyInt(cx, blobObj, "rate", rate) );
 		J_CHK( SetPropertyInt(cx, blobObj, "channels", 1) );
 		J_CHK( SetPropertyInt(cx, blobObj, "frames", frames ) );
+
 	}
-*/
+
 	return JS_TRUE;
 }
 
