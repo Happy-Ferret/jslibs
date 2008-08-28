@@ -386,30 +386,39 @@ DEFINE_FUNCTION_FAST( SplitChannels ) {
 
 	JSObject *blobObj = JSVAL_TO_OBJECT(J_FARG(1));
 
-	int rate, channelCount, bits, frames;
-	J_CHK( GetPropertyInt(cx, blobObj, "rate", &rate) );
-	J_CHK( GetPropertyInt(cx, blobObj, "channels", &channelCount) );
-	J_CHK( GetPropertyInt(cx, blobObj, "bits", &bits) );
-	J_CHK( GetPropertyInt(cx, blobObj, "frames", &frames) );
+	unsigned int rate, channelCount, bits, frames;
+	J_CHK( GetPropertyUInt(cx, blobObj, "rate", &rate) );
+	J_CHK( GetPropertyUInt(cx, blobObj, "channels", &channelCount) );
+	J_CHK( GetPropertyUInt(cx, blobObj, "bits", &bits) );
+	J_CHK( GetPropertyUInt(cx, blobObj, "frames", &frames) );
 
-	const char *buffer;
-	size_t bufferLength;
+	const char *srcBuf;
+	size_t srcBufLength;
 	jsval tmp = OBJECT_TO_JSVAL(blobObj);
 //	JS_AddRoot(&tmp);
-	JsvalToStringAndLength(cx, &tmp, &buffer, &bufferLength); // warning: GC on the returned buffer !
+	JsvalToStringAndLength(cx, &tmp, &srcBuf, &srcBufLength); // warning: GC on the returned buffer !
 
 	JSObject *monoArray = JS_NewArrayObject(cx, 0, NULL); 
 	*J_FRVAL = OBJECT_TO_JSVAL(monoArray);
 
-
-	JSObject *channels[8];
+/*
+	JSObject *channels[8]; // max
 
 	for ( int c = 0; c < channelCount; c++ ) {
 
-		int totalSize = frames * (bits/8);
+		size_t totalSize = frames * (bits/8);
 		char *buf = (char*)JS_malloc(cx, totalSize);
 
-		for (
+		if ( bits == 16 ) {
+
+			for ( size_t frame = 0; frame < frames; frame++ )
+				((u_int16_t*)buf)[frame] = ((u_int16_t*)srcBuf)[frame*c];
+		} else
+		if ( bits == 8 ) {
+
+			for ( size_t frame = 0; frame < frames; frame++ )
+				((u_int8_t*)buf)[frame] = ((u_int8_t*)srcBuf)[frame*c];
+		}
 
 		jsval blobVal;
 		J_CHK( J_NewBlob(cx, buf, totalSize, &blobVal) );
@@ -423,7 +432,7 @@ DEFINE_FUNCTION_FAST( SplitChannels ) {
 		J_CHK( SetPropertyInt(cx, blobObj, "channels", 1) );
 		J_CHK( SetPropertyInt(cx, blobObj, "frames", frames ) );
 	}
-
+*/
 	return JS_TRUE;
 }
 
