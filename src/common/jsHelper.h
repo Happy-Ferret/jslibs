@@ -119,9 +119,9 @@ extern bool *_pUnsafeMode;
 #define J_FSARG( n ) ( argc >= (n) ? JS_ARGV(cx,vp)[(n)-1] : JSVAL_VOID )
 
 // returns true if the ARGument n is DEFined
-#define J_ARG_ISDEF( n ) ( argc >= (n) && argv[(n)-1] != JSVAL_VOID )
+#define J_ARG_ISDEF( n ) ( argc >= (n) && !JSVAL_IS_VOID( argv[(n)-1] ) )
 // same for fast native
-#define J_FARG_ISDEF( n ) ( argc >= (n) && JS_ARGV(cx,vp)[(n)-1] != JSVAL_VOID )
+#define J_FARG_ISDEF( n ) ( argc >= (n) && !JSVAL_IS_VOID(JS_ARGV(cx,vp)[(n)-1]) )
 
 // is the current obj (this)
 #define J_OBJ (obj)
@@ -477,52 +477,67 @@ inline JSBool StringAndLengthToJsval( JSContext *cx, jsval *val, const char* cst
 }
 
 
-inline JSBool JsvalToInt( JSContext *cx, jsval val, int *intVal ) {
+inline JSBool JsvalToInt( JSContext *cx, jsval val, int *i ) {
 
-	if ( JSVAL_IS_INT(val) )
-		*intVal = JSVAL_TO_INT(val);
-	else {
+	if ( JSVAL_IS_INT(val) ) {
+
+		*i = JSVAL_TO_INT(val);
+		return JS_TRUE;
+	} else {
+		
 		int32 tmp;
 		if (unlikely( JS_ValueToInt32(cx, val, &tmp) != JS_TRUE ))
 			J_REPORT_ERROR( "Unable to convert to a 32bit integer." );
-		*intVal = tmp;
+		*i = tmp;
+		return JS_TRUE;
 	}
-	return JS_TRUE;
 }
 
-inline JSBool JsvalToUInt( JSContext *cx, jsval val, unsigned int *uintVal ) {
+inline JSBool JsvalToUInt( JSContext *cx, jsval val, unsigned int *ui ) {
 
-	if ( JSVAL_IS_INT(val) )
-		*uintVal = JSVAL_TO_INT(val);
-	else {
+	if ( JSVAL_IS_INT(val) ) {
+
+		if (unlikely( JSVAL_TO_INT(val) < 0 ))
+			J_REPORT_ERROR( "Unable to convert to an unsigned integer." );
+		*ui = JSVAL_TO_INT(val);
+		return JS_TRUE;
+	} else {
 
 		jsdouble d;
 		J_CHKM( JS_ValueToNumber(cx, val, &d), "Unable to convert to a 32bit integer." );
-		*uintVal = (unsigned int)d;
+		*ui = (unsigned int)d;
+		return JS_TRUE;
 	}
-	return JS_TRUE;
 }
 
 
-inline JSBool IntToJsval( JSContext *cx, int intVal, jsval *val ) {
+inline JSBool IntToJsval( JSContext *cx, int i, jsval *val ) {
 
-	if ( INT_FITS_IN_JSVAL(intVal) )
-		*val = INT_TO_JSVAL(intVal);
-	else
-		if (unlikely( JS_NewNumberValue(cx, intVal, val) != JS_TRUE ))
+	if ( INT_FITS_IN_JSVAL(i) ) {
+		
+		*val = INT_TO_JSVAL(i);
+		return JS_TRUE;
+	} else {
+
+		if (unlikely( JS_NewNumberValue(cx, i, val) != JS_TRUE ))
 			J_REPORT_ERROR( "Unable to convert to a 32bit integer." );
-	return JS_TRUE;
+		return JS_TRUE;
+	}
 }
 
 
-inline JSBool UIntToJsval( JSContext *cx, unsigned int uintVal, jsval *val ) {
+inline JSBool UIntToJsval( JSContext *cx, unsigned int ui, jsval *val ) {
 
-	if ( uintVal <= JSVAL_INT_MAX )
-		*val = INT_TO_JSVAL(uintVal);
-	else
-		if (unlikely( JS_NewNumberValue(cx, uintVal, val) != JS_TRUE ))
+	if ( ui <= JSVAL_INT_MAX ) {
+
+		*val = INT_TO_JSVAL(ui);
+		return JS_TRUE;
+	} else {
+
+		if (unlikely( JS_NewNumberValue(cx, ui, val) != JS_TRUE ))
 			J_REPORT_ERROR( "Unable to convert to a 32bit integer." );
-	return JS_TRUE;
+		return JS_TRUE;
+	}
 }
 
 
@@ -534,6 +549,7 @@ inline JSBool JsvalToBool( JSContext *cx, const jsval val, bool *b ) {
 		*b = (JSVAL_TO_BOOLEAN(val) == JS_TRUE);
 		return JS_TRUE;
 	} else {
+
 		JSBool tmp;
 		if (unlikely( JS_ValueToBoolean( cx, val, &tmp ) != JS_TRUE ))
 			J_REPORT_ERROR( "Unable to convert to boolean." );
@@ -565,11 +581,8 @@ inline JSBool JsvalToDouble( JSContext *cx, jsval val, double *d ) {
 inline JSBool SetPropertyInt( JSContext *cx, JSObject *obj, const char *propertyName, int intVal ) {
 
 	jsval val;
-	if ( INT_FITS_IN_JSVAL(intVal) )
-		val = INT_TO_JSVAL(intVal);
-	else
-		if (unlikely( JS_NewNumberValue(cx, intVal, &val) != JS_TRUE ))
-			J_REPORT_ERROR( "Unable to convert to an integer." );
+	J_CHK( IntToJsval(cx, intVal, &val) );
+
 	// Doc. http://developer.mozilla.org/en/docs/JS_DefineUCProperty
 	if (unlikely( JS_DefineProperty(cx, obj, propertyName, val, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ) != JS_TRUE ))
 //	if (unlikely( JS_SetProperty(cx, obj, propertyName, &val ) != JS_TRUE ))
@@ -582,18 +595,22 @@ inline JSBool GetPropertyInt( JSContext *cx, JSObject *obj, const char *property
 	jsval val;
 	if (unlikely( JS_GetProperty(cx, obj, propertyName, &val) != JS_TRUE )) // cf. OBJ_GET_PROPERTY(...
 		J_REPORT_ERROR_1( "Unable to read the property %s.", propertyName );
-	if ( JSVAL_IS_INT(val) )
-		*intVal = JSVAL_TO_INT(val);
-	else {
-
-		int32 tmp;
-		if (unlikely( JS_ValueToInt32(cx, val, &tmp) != JS_TRUE ))
-			J_REPORT_ERROR( "Unable to convert to an integer." );
-		*intVal = tmp;
-	}
+	J_CHK( JsvalToInt(cx, val, intVal) );
 	return JS_TRUE;
 }
 
+inline JSBool GetPropertyUInt( JSContext *cx, JSObject *obj, const char *propertyName, unsigned int *ui ) {
+
+	jsval val;
+	if (unlikely( JS_GetProperty(cx, obj, propertyName, &val) != JS_TRUE )) // cf. OBJ_GET_PROPERTY(...
+		J_REPORT_ERROR_1( "Unable to read the property %s.", propertyName );
+	J_CHK( JsvalToUInt(cx, val, ui) );
+	return JS_TRUE;
+}
+
+
+
+// deprecated. see JsvalToInt
 #define J_JSVAL_TO_INT32( jsvalInt, intVariable ) do { \
 	if ( JSVAL_IS_INT(jsvalInt) ) { \
 		intVariable = JSVAL_TO_INT(jsvalInt); \
@@ -606,6 +623,7 @@ inline JSBool GetPropertyInt( JSContext *cx, JSObject *obj, const char *property
 } while(0)
 
 
+// deprecated. see GetPropertyInt
 #define J_PROPERTY_TO_INT32( jsobject, propertyName, intVariable ) do { \
 	jsval __tmpVal; \
 	J_CHK( JS_GetProperty(cx, jsobject, propertyName, &__tmpVal) ); \
@@ -613,7 +631,7 @@ inline JSBool GetPropertyInt( JSContext *cx, JSObject *obj, const char *property
 } while(0)
 
 
-
+// deprecated. see JsvalToUInt
 #define J_JSVAL_TO_UINT32( jsvalUInt, uintVariable ) do { \
 	if ( JSVAL_IS_INT(jsvalUInt) ) { \
 		uintVariable = JSVAL_TO_INT(jsvalUInt); \
