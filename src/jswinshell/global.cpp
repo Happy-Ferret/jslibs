@@ -41,7 +41,7 @@ DEFINE_FUNCTION( ExtractIcon ) {
 	J_S_ASSERT_ARG_MIN(1);
 	UINT iconIndex = 0;
 	if ( argc >= 2 )
-		J_JSVAL_TO_INT32( argv[1], iconIndex );
+		J_JSVAL_TO_UINT32( argv[1], iconIndex );
 	HINSTANCE hInst = (HINSTANCE)GetModuleHandle(NULL);
 	J_S_ASSERT( hInst != NULL, "Unable to GetModuleHandle." );
 	const char *fileName;
@@ -112,7 +112,7 @@ DEFINE_FUNCTION( MessageBox ) {
 
 	UINT type = 0;
 	if ( argc >= 3 )
-		J_JSVAL_TO_INT32( argv[2], type );
+		J_JSVAL_TO_UINT32( argv[2], type );
 
 	const char *caption = NULL;
 	if ( argc >= 2 && argv[1] != JSVAL_VOID )
@@ -242,8 +242,8 @@ DEFINE_FUNCTION( ExpandEnvironmentStrings ) {
 DEFINE_FUNCTION( Sleep ) {
 
 	J_S_ASSERT_ARG_MIN(1);
-	uint32 timeout;
-	J_JSVAL_TO_INT32( argv[0], timeout );
+	unsigned int timeout;
+	J_JSVAL_TO_UINT32( argv[0], timeout );
 	Sleep(timeout);
 	return JS_TRUE;
 }
@@ -265,7 +265,7 @@ DEFINE_FUNCTION( MessageBeep ) {
 
 	UINT type = -1;
 	if ( argc >= 1 )
-		J_JSVAL_TO_INT32( argv[0], type );
+		J_JSVAL_TO_UINT32( argv[0], type );
 	MessageBeep(type);
 	return JS_TRUE;
 }
@@ -280,9 +280,9 @@ DEFINE_FUNCTION( MessageBeep ) {
 DEFINE_FUNCTION( Beep ) {
 
 	J_S_ASSERT_ARG_MIN(2);
-	DWORD freq, duration;
-	J_JSVAL_TO_INT32( argv[0], freq );
-	J_JSVAL_TO_INT32( argv[1], duration );
+	unsigned int freq, duration;
+	J_JSVAL_TO_UINT32( argv[0], freq );
+	J_JSVAL_TO_UINT32( argv[1], duration );
 	Beep(freq, duration);
 	return JS_TRUE;
 }

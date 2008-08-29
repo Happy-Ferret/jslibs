@@ -271,7 +271,7 @@ DEFINE_FUNCTION_FAST( Fog ) {
 		glFogf( JSVAL_TO_INT(J_FARG(1)), param );
 		return JS_TRUE;
 	}
-	if ( J_JSVAL_IS_ARRAY(J_FARG(2)) ) {
+	if ( JsvalIsArray(cx, J_FARG(2)) ) {
 
 		GLfloat params[16];
 		jsuint length;
@@ -316,7 +316,7 @@ DEFINE_FUNCTION_FAST( Vertex ) {
 
 	J_S_ASSERT_ARG_MIN(2);
 
-//	if ( J_JSVAL_IS_ARRAY(J_FARG(1)) ) {
+//	if ( JsvalIsArray(cx, J_FARG(1)) ) {
 //	}
 
 //	float vec[3];
@@ -459,7 +459,7 @@ DEFINE_FUNCTION_FAST( TexParameter ) {
 		glTexParameterf( JSVAL_TO_INT( J_FARG(1) ), JSVAL_TO_INT( J_FARG(2) ), param );
 		return JS_TRUE;
 	}
-	if ( J_JSVAL_IS_ARRAY(J_FARG(3)) ) {
+	if ( JsvalIsArray(cx, J_FARG(3)) ) {
 
 		GLfloat params[16];
 		jsuint length;
@@ -501,7 +501,7 @@ DEFINE_FUNCTION_FAST( TexEnv ) {
 		glTexEnvf( JSVAL_TO_INT(J_FARG(1)), JSVAL_TO_INT(J_FARG(2)), param );
 		return JS_TRUE;
 	}
-	if ( J_JSVAL_IS_ARRAY(J_FARG(3)) ) {
+	if ( JsvalIsArray(cx, J_FARG(3)) ) {
 
 		GLfloat params[16];
 		jsuint length;
@@ -540,7 +540,7 @@ DEFINE_FUNCTION_FAST( LightModel ) {
 		glLightModelf( JSVAL_TO_INT( J_FARG(1) ), param );
 		return JS_TRUE;
 	}
-	if ( J_JSVAL_IS_ARRAY(J_FARG(2)) ) {
+	if ( JsvalIsArray(cx, J_FARG(2)) ) {
 
 		GLfloat params[16];
 		jsuint length;
@@ -581,7 +581,7 @@ DEFINE_FUNCTION_FAST( Light ) {
 		glLightf( JSVAL_TO_INT( J_FARG(1) ), JSVAL_TO_INT( J_FARG(2) ), param );
 		return JS_TRUE;
 	}
-	if ( J_JSVAL_IS_ARRAY(J_FARG(3)) ) {
+	if ( JsvalIsArray(cx, J_FARG(3)) ) {
 
 		GLfloat params[16];
 		jsuint length;
@@ -622,7 +622,7 @@ DEFINE_FUNCTION_FAST( Material ) {
 		glMaterialf( JSVAL_TO_INT( J_FARG(1) ), JSVAL_TO_INT( J_FARG(2) ), param );
 		return JS_TRUE;
 	}
-	if ( J_JSVAL_IS_ARRAY(J_FARG(3)) ) {
+	if ( JsvalIsArray(cx, J_FARG(3)) ) {
 
 		GLfloat params[16];
 		jsuint length;
@@ -1270,7 +1270,7 @@ DEFINE_FUNCTION_FAST( CallList ) {
 		glCallList(list);
 		return JS_TRUE;
 	}
-	else if (J_JSVAL_IS_ARRAY( J_FARG(1) )) {
+	else if (JsvalIsArray(cx, J_FARG(1))) {
 
 		JSObject *jsArray = JSVAL_TO_OBJECT(J_FARG(1));
 		jsuint length;
@@ -1561,7 +1561,7 @@ DEFINE_FUNCTION_FAST( PointParameter ) {
 		glPointParameterf( JSVAL_TO_INT(J_FARG(1)), param );
 		return JS_TRUE;
 	}
-	if ( J_JSVAL_IS_ARRAY(J_FARG(2)) ) {
+	if ( JsvalIsArray(cx, J_FARG(2)) ) {
 
 		GLfloat params[16];
 		jsuint length;
@@ -1705,7 +1705,7 @@ DEFINE_FUNCTION_FAST( DefineTextureImage ) {
 		channels = tex->channels;
 		type = GL_FLOAT;
 	} else {
-
+		
 		J_PROPERTY_TO_INT32( tObj, "width", width );
 		J_PROPERTY_TO_INT32( tObj, "height", height );
 		J_PROPERTY_TO_INT32( tObj, "channels", channels );

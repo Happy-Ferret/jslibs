@@ -714,8 +714,9 @@ DEFINE_FUNCTION_FAST( Aliasing ) {
 	Texture *tex = (Texture *)JS_GetPrivate(cx, J_FOBJ);
 	J_S_ASSERT_RESOURCE(tex);
 
-	long count;
+	size_t count;
 	J_JSVAL_TO_UINT32( J_FARG(1), count );
+	J_S_ASSERT( count >= 1, "Invalid aliasing levels count." );
 
 	bool useCurve;
 
@@ -734,7 +735,7 @@ DEFINE_FUNCTION_FAST( Aliasing ) {
 		for ( int i = 0; i < tsize; i++ ) {
 			
 			long curveIndex = (long)(count * tex->cbuffer[i] / PMAX);
-			tex->cbuffer[i] = curve[MINMAX(curveIndex, 0, count-1)];
+			tex->cbuffer[i] = curve[MINMAX(curveIndex, 0, (signed)count-1)];
 		}
 	else
 		for ( int i = 0; i < tsize; i++ )
@@ -777,7 +778,7 @@ DEFINE_FUNCTION_FAST( Colorize ) {
 	PTYPE colorDst[PMAXCHANNELS];
 	J_CHK( InitLevelData(cx, J_FARG(2), channels, colorDst) );
 
-	float power;
+	double power;
 	if ( argc >= 3 )
 		J_JSVAL_TO_REAL(J_FARG(3), power);
 	else
@@ -843,7 +844,7 @@ DEFINE_FUNCTION_FAST( ExtractColor ) {
 	PTYPE color[PMAXCHANNELS];
 	J_CHK( InitLevelData(cx, J_FARG(2), srcChannels, color) );
 
-	float power;
+	double power;
 	if ( argc >= 3 )
 		J_JSVAL_TO_REAL(J_FARG(3), power);
 	else
@@ -914,7 +915,7 @@ DEFINE_FUNCTION_FAST( ClampLevels ) { // (TBD) check if this algo is right
 	Texture *tex = (Texture *)JS_GetPrivate(cx, J_FOBJ);
 	J_S_ASSERT_RESOURCE(tex);
 
-	PTYPE min, max;
+	double min, max;
 	J_JSVAL_TO_REAL( J_FARG(1), min );
 	J_JSVAL_TO_REAL( J_FARG(2), max );
 
@@ -948,7 +949,7 @@ DEFINE_FUNCTION_FAST( CutLevels ) { // (TBD) check if this algo is right
 	Texture *tex = (Texture *)JS_GetPrivate(cx, J_FOBJ);
 	J_S_ASSERT_RESOURCE(tex);
 
-	PTYPE min, max;
+	double min, max;
 	J_JSVAL_TO_REAL( J_FARG(1), min );
 	J_JSVAL_TO_REAL( J_FARG(2), max );
 
@@ -1066,7 +1067,7 @@ DEFINE_FUNCTION_FAST( PowLevels ) { //
 
 	J_S_ASSERT_ARG_MIN( 1 );
 
-	float power;
+	double power;
 	J_JSVAL_TO_REAL( J_FARG(1), power );
 
 	int tsize = tex->width * tex->height * tex->channels;
@@ -1091,7 +1092,7 @@ DEFINE_FUNCTION_FAST( MirrorLevels ) {
 
 	Texture *tex = (Texture *)JS_GetPrivate(cx, J_FOBJ);
 	J_S_ASSERT_RESOURCE(tex);
-	PTYPE threshold;
+	double threshold;
 	J_JSVAL_TO_REAL( J_FARG(1), threshold );
 	
 	bool mirrorTop;
@@ -1135,7 +1136,7 @@ DEFINE_FUNCTION_FAST( WrapLevels ) { // real modulo
 	Texture *tex = (Texture *)JS_GetPrivate(cx, J_FOBJ);
 	J_S_ASSERT_RESOURCE(tex);
 
-	PTYPE wrap;
+	double wrap;
 	J_JSVAL_TO_REAL(J_FARG(1), wrap);
 
 	PTYPE div;
@@ -1677,11 +1678,11 @@ DEFINE_FUNCTION_FAST( RotoZoom ) { // source: FxGen
 	int newWidth = width;
 	int newHeight = height;
 
-	float centerX, centerY;
+	double centerX, centerY;
 	J_JSVAL_TO_REAL( J_FARG(1), centerX );
 	J_JSVAL_TO_REAL( J_FARG(2), centerY );
 
-	float zoomX, zoomY;
+	double zoomX, zoomY;
 	J_JSVAL_TO_REAL( J_FARG(3), zoomX );
 	J_JSVAL_TO_REAL( J_FARG(4), zoomY );
 
@@ -1691,7 +1692,7 @@ DEFINE_FUNCTION_FAST( RotoZoom ) { // source: FxGen
 //	zoomY = 0.5 - ( zoomY / 2 );
 //	zoomY = exp( zoomY * 6 );
 
-	float rotate;
+	double rotate;
 	J_JSVAL_TO_REAL( J_FARG(5), rotate ); // 1 for 1 turn
 
 	rotate = M_PI * 2 * rotate;
@@ -1792,11 +1793,11 @@ DEFINE_FUNCTION_FAST( Resize ) {
 	J_S_ASSERT_RESOURCE(tex);
 	int width = tex->width;
 	int height = tex->height;
-	int channels = tex->channels;
+	unsigned int channels = tex->channels;
 
-	int newWidth, newHeight;
-	J_JSVAL_TO_REAL( J_FARG(1), newWidth );
-	J_JSVAL_TO_REAL( J_FARG(2), newHeight );
+	size_t newWidth, newHeight;
+	J_JSVAL_TO_UINT32( J_FARG(1), newWidth );
+	J_JSVAL_TO_UINT32( J_FARG(2), newHeight );
 
 	bool interpolate;
 	if ( J_FARG_ISDEF(3) )
@@ -1824,7 +1825,7 @@ DEFINE_FUNCTION_FAST( Resize ) {
 		float prx, pry; // pixel ratio
 		float rx = (float)width / newWidth; // texture ratio x
 		float ry = (float)height / newHeight; // texture ratio y
-		int x, y, c;
+		size_t x, y, c;
 
 		int pos, pos1, pos2, pos3, pos4; // offset in the buffer
 		float ratio1, ratio2, ratio3, ratio4; // pixel value ratio
@@ -2280,7 +2281,7 @@ DEFINE_FUNCTION_FAST( Normals ) {
 
 	// from here, tex->cbackBuffer is a 3 channels buffer
 
-	float amp;
+	double amp;
 	if ( argc >= 1 )
 		J_JSVAL_TO_REAL( J_FARG(1), amp );
 	else
@@ -2413,13 +2414,13 @@ DEFINE_FUNCTION_FAST( Light ) {
 	J_CHK( InitLevelData(cx, J_FARG(5), 3, specular) );
 	bool specularTexture = false;
 	
-	float bumpPower; // (TBD) default value
+	double bumpPower; // (TBD) default value
 	if ( argc >= 6 )
 		J_JSVAL_TO_REAL( J_FARG(6), bumpPower );
 	else
 		bumpPower = 1;
 
-	float specularPower; // (TBD) default value
+	double specularPower; // (TBD) default value
 	if ( argc >= 7 )
 		J_JSVAL_TO_REAL( J_FARG(7), specularPower );
 	else
@@ -2998,7 +2999,7 @@ DEFINE_FUNCTION_FAST( Displace ) {
 	J_S_ASSERT( width == tex1->width && height == tex1->height, "Textures must have the same size." );
 	J_S_ASSERT( tex1->channels >= 2, "Displacement texture must have 2 or more channels." );
 
-	float factor;
+	double factor;
 	if ( argc >= 2 )
 		J_JSVAL_TO_REAL( J_FARG(2), factor );
 	else
@@ -3076,7 +3077,7 @@ DEFINE_FUNCTION_FAST( Cells ) { // source: FxGen
 	J_S_ASSERT_ARG_MIN( 2 );
 
 	int density;
-	float regularity;
+	double regularity;
 	J_JSVAL_TO_INT32( J_FARG(1), density );
 	J_JSVAL_TO_REAL( J_FARG(2), regularity );
 
@@ -3457,7 +3458,7 @@ DEFINE_FUNCTION_FAST( AddCracks ) { // source: FxGen
 	int crackMaxLength;
 	J_JSVAL_TO_INT32( J_FARG(2), crackMaxLength );
 	
-	float variation;
+	double variation;
 	if ( J_FARG_ISDEF(3) )
 		J_JSVAL_TO_REAL( J_FARG(3), variation );
 	else
@@ -3588,8 +3589,11 @@ DEFINE_FUNCTION_FAST( LevelRange ) {
 		else if ( tmp < min )
 			min = tmp;
 	}
-	PTYPE vector[] = { min, max };
-	J_REAL_VECTOR_TO_JSVAL(vector, 2, *J_FRVAL);
+	double vector[] = { min, max };
+
+//	J_REAL_VECTOR_TO_JSVAL(vector, 2, *J_FRVAL);
+	J_CHK( DoubleVectorToJsval(cx, vector, 2, J_FRVAL) );
+
 	return JS_TRUE;
 }
 
@@ -3679,7 +3683,7 @@ DEFINE_PROPERTY( channels ) {
 DEFINE_FUNCTION_FAST( RandSeed ) {
 
 	J_S_ASSERT_ARG_MIN(1);
-	unsigned long seed;
+	unsigned int seed;
 	J_JSVAL_TO_UINT32(J_FARG(1), seed);
 	init_genrand(seed);
 	return JS_TRUE;

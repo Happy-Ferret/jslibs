@@ -129,11 +129,11 @@ DEFINE_CONSTRUCTOR() {
 	J_S_ASSERT_ARG_MIN( 2 );
 
 	PRSize size;
-	J_JSVAL_TO_INT32( J_ARG(2), size );
+	J_JSVAL_TO_UINT32( J_ARG(2), size );
 
 	PRUintn mode = PR_IRUSR | PR_IWUSR; // read write permission for owner.
 	if ( J_ARG_ISDEF(3) )
-		J_JSVAL_TO_INT32( J_ARG(3), mode );
+		J_JSVAL_TO_UINT32( J_ARG(3), mode );
 
 	const char *name;
 	J_CHK( JsvalToString(cx, &J_ARG(1), &name) );
@@ -211,7 +211,7 @@ DEFINE_FUNCTION_FAST( Write ) {
 
 	PRSize offset = 0;
 	if ( J_FARG_ISDEF(2) )
-		J_JSVAL_TO_INT32( J_FARG(2), offset );
+		J_JSVAL_TO_UINT32( J_FARG(2), offset );
 
 	const char *data;
 	size_t dataLength;
@@ -243,14 +243,14 @@ DEFINE_FUNCTION_FAST( Read ) {
 
 	unsigned int offset = 0;
 	if ( J_FARG_ISDEF(2) )
-		J_JSVAL_TO_INT32( J_FARG(2), offset );
+		J_JSVAL_TO_UINT32( J_FARG(2), offset );
 
 	J_CHK( Lock(cx, pv) );
 	MemHeader *mh = (MemHeader*)pv->mem;
 	
 	unsigned int dataLength;
 	if ( J_FARG_ISDEF(1) )
-		J_JSVAL_TO_INT32( J_FARG(1), dataLength );
+		J_JSVAL_TO_UINT32( J_FARG(1), dataLength );
 	else
 		dataLength = mh->currentDataLength;
 

@@ -36,10 +36,14 @@ inline JSBool GetMatrixHelper( JSContext *cx, jsval val, Matrix44 **m ) {
 		return JS_TRUE;
 	}
 
-	if ( J_JSVAL_IS_ARRAY( val ) ) {
+	if ( JsvalIsArray(cx, val) ) {
 
 		jsuint length = 16;
+		
 		J_JSVAL_TO_REAL_VECTOR( val, (*m)->raw, length );
+
+
+
 		J_S_ASSERT( length == 16, "Too few elements in the array." );
 		return JS_TRUE;
 	}

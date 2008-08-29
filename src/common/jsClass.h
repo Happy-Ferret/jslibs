@@ -132,7 +132,7 @@ struct JSLIBS_ConstIntegerSpec {
 	JSBool InitializeStatic(JSContext *cx, JSObject *obj);
 
 #define INIT_STATIC() \
-	InitializeStatic(cx, obj); \
+	InitializeStatic(cx, obj)
 
 #define BEGIN_STATIC
 
@@ -141,7 +141,7 @@ struct JSLIBS_ConstIntegerSpec {
 	JSFunctionSpec *_staticFunctionSpec = NULL; \
 	JSPropertySpec *_staticPropertySpec = NULL; \
 	JSConstDoubleSpec *_constDoubleSpec = NULL; \
-	JSLIBS_ConstIntegerSpec *_constIntegerSpec = NULL; \
+	JSLIBS_ConstIntegerSpec *_constIntegerSpec = NULL;
 
 #define END_STATIC \
 	if ( _staticFunctionSpec != NULL ) JS_DefineFunctions(cx, obj, _staticFunctionSpec); \
@@ -155,13 +155,13 @@ struct JSLIBS_ConstIntegerSpec {
 	if ( _constDoubleSpec != NULL ) \
 		if ( JS_DefineConstDoubles(cx, obj, _constDoubleSpec) != JS_TRUE ) \
 			return JS_FALSE; \
-	return JS_TRUE; } \
+	return JS_TRUE; }
 
 // class definition
 #define DECLARE_CLASS( CLASSNAME ) \
 	extern JSBool (*InitializeClass##CLASSNAME)(JSContext *cx, JSObject *obj); \
 	extern JSClass *class##CLASSNAME; \
-	extern JSObject *prototype##CLASSNAME; \
+	extern JSObject *prototype##CLASSNAME; 
 
 
 static JSBool RemoveClass( JSContext *cx, JSClass *cl ) {
@@ -173,10 +173,10 @@ static JSBool RemoveClass( JSContext *cx, JSClass *cl ) {
 
 
 #define REMOVE_CLASS( CLASSNAME ) \
-	RemoveClass( cx, class##CLASSNAME );
+	RemoveClass( cx, class##CLASSNAME )
 
 #define INIT_CLASS( CLASSNAME ) \
-	InitializeClass##CLASSNAME(cx, obj); \
+	InitializeClass##CLASSNAME(cx, obj)
 
 #define BEGIN_CLASS(CLASSNAME) \
 	static JSExtendedClass _xclass = { { #CLASSNAME, 0, JS_PropertyStub , JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_EnumerateStub, JS_ResolveStub , JS_ConvertStub, JS_FinalizeStub, JSCLASS_NO_OPTIONAL_MEMBERS }, 0}; \
@@ -185,7 +185,7 @@ static JSBool RemoveClass( JSContext *cx, JSClass *cl ) {
 	JSObject *prototype##CLASSNAME = NULL; \
 	static JSObject **_prototype = &prototype##CLASSNAME; \
 	static JSBool _InitializeClass(JSContext *cx, JSObject *obj); \
-	JSBool (*InitializeClass##CLASSNAME)(JSContext *cx, JSObject *obj) = _InitializeClass; \
+	JSBool (*InitializeClass##CLASSNAME)(JSContext *cx, JSObject *obj) = _InitializeClass;
 
 #define CONFIGURE_CLASS \
 	static JSBool _InitializeClass(JSContext *cx, JSObject *obj) { \
@@ -196,7 +196,7 @@ static JSBool RemoveClass( JSContext *cx, JSClass *cl ) {
 		JSLIBS_ConstIntegerSpec *_constIntegerSpec = NULL; \
 		JSObject *_tmp_prototype = NULL; \
 		JSObject **_parentPrototype = &_tmp_prototype; \
-		JSBool (* _init)(JSContext *cx, JSObject *obj) = NULL; \
+		JSBool (* _init)(JSContext *cx, JSObject *obj) = NULL;
 
 #define END_CLASS \
 		*_prototype = JS_InitClass(cx, obj, *_parentPrototype, _class, _constructor, 0, _propertySpec, _functionSpec, _staticPropertySpec, _staticFunctionSpec); \
@@ -216,6 +216,6 @@ static JSBool RemoveClass( JSContext *cx, JSClass *cl ) {
 			if ( _init(cx, _constructor ? JS_GetConstructor(cx, *_prototype) : *_prototype) != JS_TRUE ) \
 				return JS_FALSE; \
 		return JS_TRUE; \
-	} \
+	}
 
 #endif // _JSCLASS_H_

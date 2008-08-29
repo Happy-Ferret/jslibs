@@ -100,7 +100,7 @@ DEFINE_FUNCTION( GetParam ) {
 DEFINE_FUNCTION( Read ) {
 
 	J_S_ASSERT_ARG_MIN( 1 );
-	int len;
+	size_t len;
 	J_JSVAL_TO_UINT32( argv[0], len );
 	char* str = (char*)JS_malloc(cx, len + 1);
 	int result = FCGX_GetStr( str, len, _request.in );

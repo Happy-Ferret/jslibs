@@ -41,12 +41,11 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	if ( unsafeModePtrVal != JSVAL_VOID )
 		_pUnsafeMode = (bool*)JSVAL_TO_PRIVATE(unsafeModePtrVal);
 
-
-	INIT_STATIC();
+	J_CHK( INIT_STATIC() );
 //	INIT_CLASS( Sound );
 
-	INIT_CLASS( SoundFileDecoder );
-	INIT_CLASS( OggVorbisDecoder );
+	J_CHK( INIT_CLASS( SoundFileDecoder ) );
+	J_CHK( INIT_CLASS( OggVorbisDecoder ) );
 
 	return JS_TRUE;
 }

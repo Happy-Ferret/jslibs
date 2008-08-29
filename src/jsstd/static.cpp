@@ -481,7 +481,7 @@ DEFINE_FUNCTION_FAST( StringRepeat ) {
 	J_S_ASSERT_ARG_MIN(2);
 
 	size_t count;
-	J_JSVAL_TO_INT32( J_FARG(2), count );
+	J_JSVAL_TO_UINT32( J_FARG(2), count );
 	if ( count == 0 ) {
 		
 		*J_FRVAL = JS_GetEmptyStringValue(cx);

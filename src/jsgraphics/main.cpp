@@ -29,20 +29,19 @@ $MODULE_HEADER
 $MODULE_FOOTER
 **/
 
-extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj) {
+EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
 	jsval unsafeModePtrVal;
 	J_CHK( GetConfigurationValue(cx, NAME_CONFIGURATION_UNSAFE_MODE_PTR, &unsafeModePtrVal) );
 	if ( unsafeModePtrVal != JSVAL_VOID )
 		_pUnsafeMode = (bool*)JSVAL_TO_PRIVATE(unsafeModePtrVal);
 
-
 #ifdef XP_WIN
-	INIT_CLASS( Window )
+	J_CHK( INIT_CLASS( Window ) );
 #endif
 
-	INIT_CLASS( Transformation )
-	INIT_CLASS( Ogl )
+	J_CHK( INIT_CLASS( Transformation ) );
+	J_CHK( INIT_CLASS( Ogl ) );
 	return JS_TRUE;
 }
 

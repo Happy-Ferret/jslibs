@@ -21,7 +21,6 @@
 
 static ALCcontext *context;
 
-
 static bool _defaultUnsafeMode = false;
 extern bool *_pUnsafeMode = &_defaultUnsafeMode;
 
@@ -34,7 +33,7 @@ $MODULE_HEADER
 $MODULE_FOOTER
 **/
 
-extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj) {
+EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
 	jsval unsafeModePtrVal;
 	J_CHK( GetConfigurationValue(cx, NAME_CONFIGURATION_UNSAFE_MODE_PTR, &unsafeModePtrVal) );
@@ -62,7 +61,7 @@ extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj)
 		J_REPORT_ERROR("ALUT_ERROR_MAKE_CONTEXT_CURRENT");
 	}
 
-	INIT_CLASS( Oal )
+	J_CHK( INIT_CLASS( Oal ) );
 
 	return JS_TRUE;
 }
@@ -90,9 +89,11 @@ EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
 	return JS_FALSE;
 }
 
+
 EXTERN_C DLLEXPORT void ModuleFree() {
 
 }
+
 
 #ifdef XP_WIN
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {

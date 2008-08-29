@@ -536,7 +536,7 @@ DEFINE_PROPERTY( clientRect ) {
 	GetClientRect(hWnd, &r);
 
 	JSObject *arrayObj;
-	if ( !J_JSVAL_IS_ARRAY(*vp) ) {
+	if ( !JsvalIsArray(cx, *vp) ) {
 
 		arrayObj = JS_NewArrayObject(cx, 0, NULL);
 		J_S_ASSERT_ALLOC(arrayObj);
@@ -595,8 +595,11 @@ DEFINE_PROPERTY( rectSetter ) {
 	int v[4];
 
 //	IntArrayToVector(cx, 4, vp, v);
-	jsuint length;
-	J_JSVAL_TO_INT_VECTOR(*vp, v, length);
+	unsigned int length;
+
+//	J_JSVAL_TO_INT_VECTOR(*vp, v, length);
+	J_CHK( JsvalToIntVector(cx, *vp, v, 4, &length) );
+
 	J_S_ASSERT( length == 4, "Invalid element count." );
 
 	SetWindowPos(hWnd, 0, v[0], v[1], v[2] - v[0], v[3] - v[1], SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_NOACTIVATE);

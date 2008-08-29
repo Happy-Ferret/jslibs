@@ -613,7 +613,7 @@ DEFINE_FUNCTION( Write ) {
 		if ( strLen == 0 )
 			return JS_TRUE;
 
-		J_JSVAL_TO_INT32( J_ARG(2), amount );
+		J_JSVAL_TO_UINT32( J_ARG(2), amount );
 		if ( amount > strLen )
 			amount = strLen;
 
@@ -692,7 +692,7 @@ DEFINE_FUNCTION( Read ) { // Read( [ amount | <undefined> ] )
 
 	size_t amount;
 	if ( J_ARG_ISDEF(1) )
-		J_JSVAL_TO_INT32( J_ARG(1), amount );
+		J_JSVAL_TO_UINT32( J_ARG(1), amount );
 	else
 		amount = pv->length;
 
@@ -712,7 +712,7 @@ DEFINE_FUNCTION( Skip ) { // Skip( amount )
 	J_S_ASSERT_RESOURCE( pv );
 	J_S_ASSERT_ARG_MIN( 1 );
 	size_t amount;
-	J_JSVAL_TO_INT32( J_ARG(1), amount );
+	J_JSVAL_TO_UINT32( J_ARG(1), amount );
 	J_S_ASSERT( amount >= 0, "Invalid amount" );
 	size_t prevBufferLength = pv->length;
 	J_CHK( BufferSkipAmount(cx, obj, amount) ); // (TBD) optimization: skip without reading the data.

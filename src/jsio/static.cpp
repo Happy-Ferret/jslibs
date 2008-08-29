@@ -67,7 +67,7 @@ DEFINE_FUNCTION( Poll ) {
 	PRIntervalTime pr_timeout;
 	if ( J_ARG_ISDEF(2) ) {
 
-		uint32 tmp;
+		PRUint32 tmp;
 		J_JSVAL_TO_UINT32( J_ARG(2), tmp );
 		pr_timeout = PR_MillisecondsToInterval(tmp);
 	} else {
@@ -236,7 +236,7 @@ DEFINE_FUNCTION( IsReadable ) {
 	PRIntervalTime prTimeout;
 	if ( J_ARG_ISDEF(2) ) {
 
-		uint32 timeout;
+		PRUint32 timeout;
 		J_JSVAL_TO_UINT32( J_ARG(2), timeout );
 		prTimeout = PR_MillisecondsToInterval(timeout);
 	} else
@@ -266,7 +266,7 @@ DEFINE_FUNCTION( IsWritable ) {
 	PRIntervalTime prTimeout;
 	if ( J_ARG_ISDEF(2) ) {
 
-		uint32 timeout;
+		PRUint32 timeout;
 		J_JSVAL_TO_UINT32( J_ARG(2), timeout );
 		prTimeout = PR_MillisecondsToInterval(timeout);
 	} else
@@ -411,7 +411,7 @@ DEFINE_FUNCTION_FAST( WaitSemaphore ) {
 
 	PRUintn mode = PR_IRUSR | PR_IWUSR; // read write permission for owner.
 	if ( J_FARG_ISDEF(2) )
-		J_JSVAL_TO_INT32( J_FARG(2), mode );
+		J_JSVAL_TO_UINT32( J_FARG(2), mode );
 
 	const char *name;
 	size_t nameLength;

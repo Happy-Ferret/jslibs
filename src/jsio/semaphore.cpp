@@ -57,11 +57,11 @@ DEFINE_CONSTRUCTOR() {
 
 	PRUintn count = 0;
 	if ( J_ARG_ISDEF(2) )
-		J_JSVAL_TO_INT32( J_ARG(2), count );
+		J_JSVAL_TO_UINT32( J_ARG(2), count );
 
 	PRUintn mode = PR_IRUSR | PR_IWUSR; // read write permission for owner.
 	if ( J_ARG_ISDEF(3) )
-		J_JSVAL_TO_INT32( J_ARG(3), mode );
+		J_JSVAL_TO_UINT32( J_ARG(3), mode );
 
 	const char *name;
 	size_t nameLength;

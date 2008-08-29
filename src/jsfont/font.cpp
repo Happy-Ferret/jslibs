@@ -83,7 +83,8 @@ DEFINE_CONSTRUCTOR() {
 	J_S_ASSERT_THIS_CLASS();
 	J_S_ASSERT_ARG_MIN(1);
 
-	FT_Long faceIndex = 0;
+//	FT_Long faceIndex = 0;
+	int faceIndex = 0;
 	if ( J_ARG_ISDEF(2) )
 		J_JSVAL_TO_INT32(J_ARG(2), faceIndex);
 
@@ -225,17 +226,17 @@ DEFINE_FUNCTION_FAST( DrawString ) {
 	if ( tmp != JSVAL_VOID )
 		J_JSVAL_TO_INT32(tmp, verticalPadding);
 
-	int useKerning = true;
+	bool useKerning = true;
 	J_CHK( JS_GetReservedSlot(cx, J_FOBJ, FONT_SLOT_USEKERNING, &tmp) );
 	if ( tmp != JSVAL_VOID )
 		J_JSVAL_TO_BOOL(tmp, useKerning);
 
-	int isItalic = false;
+	bool isItalic = false;
 	J_CHK( JS_GetReservedSlot(cx, J_FOBJ, FONT_SLOT_ITALIC, &tmp) );
 	if ( tmp != JSVAL_VOID )
 		J_JSVAL_TO_BOOL(tmp, isItalic);
 
-	int isBold = false;
+	bool isBold = false;
 	J_CHK( JS_GetReservedSlot(cx, J_FOBJ, FONT_SLOT_BOLD, &tmp) );
 	if ( tmp != JSVAL_VOID )
 		J_JSVAL_TO_BOOL(tmp, isBold);

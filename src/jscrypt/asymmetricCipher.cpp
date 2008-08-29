@@ -192,8 +192,8 @@ DEFINE_FUNCTION( CreateKeys ) { // ( bitsSize )
 	int prngIndex;
 	J_CHK( SlotGetPrng(cx, obj, &prngIndex, &prngState) );
 
-	int32 keySize;
-	J_JSVAL_TO_INT32( argv[0], keySize );
+	unsigned int keySize;
+	J_JSVAL_TO_UINT32( argv[0], keySize );
 
 	int err = -1; // default
 	switch ( pv->cipher ) {

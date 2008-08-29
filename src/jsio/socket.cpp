@@ -116,8 +116,9 @@ DEFINE_FUNCTION( Bind ) {
 	J_S_ASSERT_RESOURCE( fd );
 
 	PRNetAddr addr;
-	PRUint16 port;
-	J_JSVAL_TO_INT32( J_ARG(1), port );
+	unsigned int port;
+	J_JSVAL_TO_UINT32( J_ARG(1), port );
+	J_S_ASSERT( port < 65536, "Invalid port number." );
 
 	if ( J_ARG_ISDEF(2) ) { // if we have a second argument and this argument is not undefined
 
@@ -197,7 +198,7 @@ DEFINE_FUNCTION( Accept ) {
 	if ( J_ARG_ISDEF(1) ) {
 
 		PRUint32 timeoutInMilliseconds;
-		J_JSVAL_TO_INT32( J_ARG(1), timeoutInMilliseconds );
+		J_JSVAL_TO_UINT32( J_ARG(1), timeoutInMilliseconds );
 		connectTimeout = PR_MillisecondsToInterval(timeoutInMilliseconds);
 	} else
 		connectTimeout = PR_INTERVAL_NO_TIMEOUT;
@@ -247,14 +248,15 @@ DEFINE_FUNCTION( Connect ) {
 	PRFileDesc *fd = (PRFileDesc*)JS_GetPrivate( cx, obj );
 	J_S_ASSERT_RESOURCE( fd );
 
-	PRUint16 port;
-	J_JSVAL_TO_INT32( J_ARG(2), port );
+	unsigned int port;
+	J_JSVAL_TO_UINT32( J_ARG(2), port );
+	J_S_ASSERT( port < 65536, "Invalid port number." );
 
 	PRIntervalTime connectTimeout;
 	if ( J_ARG_ISDEF(3) ) {
 
 		PRUint32 timeoutInMilliseconds;
-		J_JSVAL_TO_INT32( J_ARG(3), timeoutInMilliseconds );
+		J_JSVAL_TO_UINT32( J_ARG(3), timeoutInMilliseconds );
 		connectTimeout = PR_MillisecondsToInterval(timeoutInMilliseconds);
 	} else
 		connectTimeout = PR_INTERVAL_NO_TIMEOUT;
@@ -322,8 +324,9 @@ DEFINE_FUNCTION( SendTo ) {
 		fd = PR_NewUDPSocket(); // allow to use SendTo as static function
 	J_S_ASSERT_RESOURCE( fd );
 
-	PRUint16 port;
-	J_JSVAL_TO_INT32( J_ARG(2), port );
+	unsigned int port;
+	J_JSVAL_TO_UINT32( J_ARG(2), port );
+	J_S_ASSERT( port < 65536, "Invalid port number." );
 
 	const char *host;
 	J_CHK( JsvalToString(cx, &J_ARG(1), &host) );
@@ -417,7 +420,7 @@ DEFINE_FUNCTION( RecvFrom ) {
 	JSString *strPeerName = JS_NewStringCopyZ(cx, peerName);
 	J_S_ASSERT_ALLOC(strPeerName); // (TBD) else free buffer ? ( or, this is a fatal error, program should stop )
 
-	int port = PR_NetAddrInetPort(&addr);
+	PRUint16 port = PR_NetAddrInetPort(&addr);
 
 	jsval data;
 	if (res > 0) {
@@ -484,7 +487,7 @@ DEFINE_FUNCTION( TransmitFile ) { // WORKS ONLY ON BLOCKING SOCKET !!!
 	if ( J_ARG_ISDEF(4) ) {
 
 		PRUint32 timeoutInMilliseconds;
-		J_JSVAL_TO_INT32( J_ARG(4), timeoutInMilliseconds );
+		J_JSVAL_TO_UINT32( J_ARG(4), timeoutInMilliseconds );
 		connectTimeout = PR_MillisecondsToInterval(timeoutInMilliseconds);
 	} else
 		connectTimeout = PR_INTERVAL_NO_TIMEOUT;

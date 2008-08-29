@@ -557,7 +557,7 @@ _PCToLine(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 DEFINE_FUNCTION(Locate) {
 
 	J_S_ASSERT_ARG_MIN( 1 );
-	int32 frame;
+	int frame;
 	J_JSVAL_TO_INT32( argv[0], frame );
 	J_S_ASSERT(frame <= 0, "Frame number must be <= 0");
 
@@ -586,7 +586,7 @@ DEFINE_FUNCTION(Locate) {
 DEFINE_FUNCTION(LocateLine) {
 
 	J_S_ASSERT_ARG_MIN( 1 );
-	int32 frame;
+	int frame;
 	J_JSVAL_TO_INT32( argv[0], frame );
 	J_S_ASSERT(frame <= 0, "Frame number must be <= 0");
 

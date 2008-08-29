@@ -166,7 +166,7 @@ DEFINE_CONSTRUCTOR() {
 
    int numRounds = 0; // default value, us a default number of rounds.
 	if ( argc >= 6 && argv[5] != JSVAL_VOID )
-		J_JSVAL_TO_INT32( numRounds, argv[5] );
+		J_JSVAL_TO_INT32( argv[5], numRounds );
 
 	CipherPrivate *privateData = (CipherPrivate*)malloc( sizeof(CipherPrivate) );
 	J_S_ASSERT_ALLOC( privateData );

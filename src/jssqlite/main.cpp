@@ -29,29 +29,27 @@ $MODULE_HEADER
 $MODULE_FOOTER
 **/
 
-extern "C" DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
+EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
 	jsval unsafeModePtrVal;
 	J_CHK( GetConfigurationValue(cx, NAME_CONFIGURATION_UNSAFE_MODE_PTR, &unsafeModePtrVal) );
 	if ( unsafeModePtrVal != JSVAL_VOID )
 		_pUnsafeMode = (bool*)JSVAL_TO_PRIVATE(unsafeModePtrVal);
 
-	
 	if ( sqlite3_enable_shared_cache(true) != SQLITE_OK ) {
 		
-		// (TBD) manage error
+		J_REPORT_ERROR( "Unable to enable shared cache." );
 	}
 
-
-	INIT_CLASS( SqliteError )
-	INIT_CLASS( Result )
-	INIT_CLASS( Database )
+	J_CHK( INIT_CLASS( SqliteError ) );
+	J_CHK( INIT_CLASS( Result ) );
+	J_CHK( INIT_CLASS( Database ) );
 
 	return JS_TRUE;
 }
 
 
-extern "C" DLLEXPORT void ModuleRelease (JSContext *cx) {
+EXTERN_C DLLEXPORT void ModuleRelease (JSContext *cx) {
 
 	REMOVE_CLASS( SqliteError );
 	REMOVE_CLASS( Result );

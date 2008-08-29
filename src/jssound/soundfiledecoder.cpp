@@ -253,7 +253,7 @@ DEFINE_CONSTRUCTOR() {
 	if ( J_FARG_ISDEF(1) ) {
 
 		size_t frames;
-		J_JSVAL_TO_INT32(J_FARG(1), frames);
+		J_JSVAL_TO_UINT32(J_FARG(1), frames);
 
 		size_t amount = frames * pv->sfInfo.channels * pv->bits/8; // amount in bytes
 		buf = (char*)malloc(amount);

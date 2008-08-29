@@ -118,7 +118,7 @@ DEFINE_FUNCTION_FAST( Load ) {
 	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 
 	/* GetMatrixHelper already to the following
-	if ( J_JSVAL_IS_ARRAY( J_FARG(1) ) ) {
+	if ( JsvalIsArray(cx, J_FARG(1)) ) {
 
 		jsuint length = 16;
 		J_JSVAL_TO_REAL_VECTOR( J_FARG(1), &(*tm->raw), length );
@@ -471,7 +471,8 @@ DEFINE_FUNCTION_FAST( TransformVector ) {
 	J_S_ASSERT_RESOURCE(tm);
 
 	jsuint length;
-	J_JSVAL_TO_ARRAY_LENGTH( J_FARG(1), length );
+//	J_JSVAL_TO_ARRAY_LENGTH( J_FARG(1), length );
+	J_CHK( JS_GetArrayLength(cx, JSVAL_TO_OBJECT(J_FARG(1)), &length) ); \
 
 	if ( length == 3 ) {
 
