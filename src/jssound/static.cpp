@@ -372,7 +372,7 @@ DEFINE_FUNCTION_FAST( DecodeSound ) {
 
 /**doc
  * $ARRAY $INAME( sound )
-  Split 
+  Split channels of the _sound_ into an Array of monaural sound object.
   $H arguments
    $ARG soundObject sound
   $H return value
@@ -381,25 +381,23 @@ DEFINE_FUNCTION_FAST( DecodeSound ) {
 DEFINE_FUNCTION_FAST( SplitChannels ) {
 
 	J_S_ASSERT_ARG_MIN( 1 );
-
 	J_S_ASSERT_OBJECT( J_FARG(1) );
 
-	JSObject *blobObj = JSVAL_TO_OBJECT(J_FARG(1));
-
 	unsigned int rate, channelCount, bits, frames;
-	J_CHK( GetPropertyUInt(cx, blobObj, "rate", &rate) );
-	J_CHK( GetPropertyUInt(cx, blobObj, "channels", &channelCount) );
-	J_CHK( GetPropertyUInt(cx, blobObj, "bits", &bits) );
-	J_CHK( GetPropertyUInt(cx, blobObj, "frames", &frames) );
+	JSObject *srcBlobObj = JSVAL_TO_OBJECT(J_FARG(1));
+	J_CHK( GetPropertyUInt(cx, srcBlobObj, "rate", &rate) );
+	J_CHK( GetPropertyUInt(cx, srcBlobObj, "channels", &channelCount) );
+	J_CHK( GetPropertyUInt(cx, srcBlobObj, "bits", &bits) );
+	J_CHK( GetPropertyUInt(cx, srcBlobObj, "frames", &frames) );
+
+	J_S_ASSERT( bits == 8 || bits == 16, "Invalid channel sound resolution." );
 
 	const char *srcBuf;
 	size_t srcBufLength;
-	jsval tmp = OBJECT_TO_JSVAL(blobObj);
-//	JS_AddRoot(&tmp);
-	JsvalToStringAndLength(cx, &tmp, &srcBuf, &srcBufLength); // warning: GC on the returned buffer !
+	JsvalToStringAndLength(cx, &J_FARG(1), &srcBuf, &srcBufLength);
 
-	JSObject *monoArray = JS_NewArrayObject(cx, 0, NULL); 
-	*J_FRVAL = OBJECT_TO_JSVAL(monoArray);
+	JSObject *destArray = JS_NewArrayObject(cx, 0, NULL); 
+	*J_FRVAL = OBJECT_TO_JSVAL(destArray);
 
 	for ( size_t c = 0; c < channelCount; c++ ) {
 
@@ -409,33 +407,36 @@ DEFINE_FUNCTION_FAST( SplitChannels ) {
 		if ( bits == 16 ) {
 
 			for ( size_t frame = 0; frame < frames; frame++ )
-				((u_int16_t*)buf)[frame] = ((u_int16_t*)srcBuf)[frame*c];
+				((int16_t*)buf)[frame] = ((int16_t*)srcBuf)[frame*channelCount+c];
 		} else
 		if ( bits == 8 ) {
 
 			for ( size_t frame = 0; frame < frames; frame++ )
-				((u_int8_t*)buf)[frame] = ((u_int8_t*)srcBuf)[frame*c];
+				((int8_t*)buf)[frame] = ((int8_t*)srcBuf)[frame*channelCount+c];
 		}
 
 		jsval blobVal;
 		J_CHK( J_NewBlob(cx, buf, totalSize, &blobVal) );
-		J_CHK( JS_SetElement(cx, monoArray, c, &blobVal) );
 		JSObject *blobObj;
 		J_CHK( JS_ValueToObject(cx, blobVal, &blobObj) );
 		J_S_ASSERT( blobObj != NULL, "Unable to create the Blob object.");
+		blobVal = OBJECT_TO_JSVAL(blobObj);
+		J_CHK( JS_SetElement(cx, destArray, c, &blobVal) );
+
 		J_CHK( SetPropertyInt(cx, blobObj, "bits", bits) );
 		J_CHK( SetPropertyInt(cx, blobObj, "rate", rate) );
 		J_CHK( SetPropertyInt(cx, blobObj, "channels", 1) );
 		J_CHK( SetPropertyInt(cx, blobObj, "frames", frames ) );
-
 	}
 
 	return JS_TRUE;
 }
 
 
-
-
+/**doc
+=== Note ===
+ SoundObject concatenation an be achieved using .concat() method. This works becuase a sound object is a Blob with some extra properties.
+**/
 
 CONFIGURE_STATIC
 
