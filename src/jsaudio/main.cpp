@@ -17,9 +17,13 @@
 #include <AL/al.h>
 #include <AL/alc.h>
 
-#include "oal.h"
+DECLARE_CLASS(Oal)
+DECLARE_CLASS(OalBuffer)
+DECLARE_CLASS(OalSource)
+DECLARE_CLASS(OalListener)
 
-static ALCcontext *context;
+
+//static ALCcontext *context = NULL;
 
 static bool _defaultUnsafeMode = false;
 extern bool *_pUnsafeMode = &_defaultUnsafeMode;
@@ -40,20 +44,28 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	if ( unsafeModePtrVal != JSVAL_VOID )
 		_pUnsafeMode = (bool*)JSVAL_TO_PRIVATE(unsafeModePtrVal);
 
-// Initialize the OpenAL library (cf. alutInit)
+	//J_S_ASSERT( context == NULL, "Invalid initialization context." );
+
+	ALCcontext *context;
 	ALCdevice *device;
 
+	// Initialize the OpenAL library (cf. alutInit)
+
+// Doc: alcOpenDevice() open the Device specified. Current options are:
+//   "Generic Hardware"
+//   "Generic Software"
+//   "DirectSound3D" (for legacy)
+//   "DirectSound"
+//   "MMSYSTEM"
+// If no device name is specified, we will attempt to use DS3D.
 	device = alcOpenDevice (NULL);
 	if (device == NULL)
 		J_REPORT_ERROR("ALUT_ERROR_OPEN_DEVICE");
-
 	context = alcCreateContext (device, NULL);
 	if (context == NULL) {
-
 		alcCloseDevice (device);
 		J_REPORT_ERROR("ALUT_ERROR_CREATE_CONTEXT");
 	}
-
 	if (!alcMakeContextCurrent(context)) {
 
 		alcDestroyContext (context);
@@ -62,6 +74,9 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	}
 
 	J_CHK( INIT_CLASS( Oal ) );
+	J_CHK( INIT_CLASS( OalBuffer ) );
+	J_CHK( INIT_CLASS( OalSource ) );
+	J_CHK( INIT_CLASS( OalListener ) );
 
 	return JS_TRUE;
 }
@@ -69,24 +84,24 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
 EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
 
+	ALCcontext *context = alcGetCurrentContext();
+	if ( context == NULL )
+		J_REPORT_ERROR("Unable to get the current context.");
+
 	// cf. alutExit
 	ALCdevice *device;
-
 	if (!alcMakeContextCurrent (NULL))
 		J_REPORT_ERROR("ALUT_ERROR_MAKE_CONTEXT_CURRENT");
-
 	device = alcGetContextsDevice (context);
 	if (alcGetError (device) != ALC_NO_ERROR )
 		J_REPORT_ERROR("ALUT_ERROR_ALC_ERROR_ON_ENTRY");
-
 	alcDestroyContext (context);
 	if (alcGetError (device) != ALC_NO_ERROR)
 		J_REPORT_ERROR("ALUT_ERROR_DESTROY_CONTEXT");
-
 	if (!alcCloseDevice (device))
 		J_REPORT_ERROR("ALUT_ERROR_CLOSE_DEVICE");
 
-	return JS_FALSE;
+	return JS_TRUE;
 }
 
 

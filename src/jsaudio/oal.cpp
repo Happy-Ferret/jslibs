@@ -13,19 +13,6 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-//#include "jsobj.h"
-
-#include "oal.h"
-
-//#include "jstransformation.h"
-
-#include "../jslang/blob.h"
-
-//TextureJSClass
-
-
-//#define _USE_MATH_DEFINES
-//#include "math.h"
 
 #include <AL/al.h>
 #include <AL/alc.h>
@@ -33,7 +20,6 @@
 #define LOAD_OPENAL_EXTENSION( name, proto ) \
 	static proto name = (proto) alGetProcAddress( #name ); \
 	J_S_ASSERT_1( name != NULL, "OpenAL extension %s unavailable.", #name );
-
 
 
 /**doc
@@ -44,6 +30,82 @@ BEGIN_CLASS( Oal )
 /**doc
 === Static functions ===
 **/
+
+
+/**doc
+ * $VOID $INAME( value )
+  $H arguments
+   $ARG Number value
+  $H OpenAL API
+   alDopplerFactor
+**/
+DEFINE_FUNCTION_FAST( DopplerFactor ) {
+
+	J_S_ASSERT_ARG_MIN(1);
+	J_S_ASSERT_INT(J_FARG(1));
+	float value;
+	J_CHK( JsvalToFloat(cx, J_FARG(1), &value) );
+	alDopplerFactor( value );
+	*J_FRVAL = JSVAL_VOID;
+	return JS_TRUE;
+}
+
+
+/**doc
+ * $VOID $INAME( value )
+  $H arguments
+   $ARG Number value
+  $H OpenAL API
+   alDopplerVelocity
+**/
+DEFINE_FUNCTION_FAST( DopplerVelocity ) {
+
+	J_S_ASSERT_ARG_MIN(1);
+	J_S_ASSERT_INT(J_FARG(1));
+	float value;
+	J_CHK( JsvalToFloat(cx, J_FARG(1), &value) );
+	alDopplerVelocity( value );
+	*J_FRVAL = JSVAL_VOID;
+	return JS_TRUE;
+}
+
+
+/**doc
+ * $VOID $INAME( value )
+  $H arguments
+   $ARG Number value
+  $H OpenAL API
+   alSpeedOfSound
+**/
+DEFINE_FUNCTION_FAST( SpeedOfSound ) {
+
+	J_S_ASSERT_ARG_MIN(1);
+	J_S_ASSERT_INT(J_FARG(1));
+	float value;
+	J_CHK( JsvalToFloat(cx, J_FARG(1), &value) );
+	alSpeedOfSound( value );
+	*J_FRVAL = JSVAL_VOID;
+	return JS_TRUE;
+}
+
+
+/**doc
+ * $VOID $INAME( distanceModel )
+  $H arguments
+   $ARG Integer value
+  $H OpenAL API
+   alDistanceModel
+**/
+DEFINE_FUNCTION_FAST( DistanceModel ) {
+
+	J_S_ASSERT_ARG_MIN(1);
+	J_S_ASSERT_INT(J_FARG(1));
+	unsigned int distanceModel;
+	J_CHK( JsvalToUInt(cx, J_FARG(1), &distanceModel) );
+	alDistanceModel( distanceModel );
+	*J_FRVAL = JSVAL_VOID;
+	return JS_TRUE;
+}
 
 
 /**doc
@@ -235,23 +297,24 @@ DEFINE_FUNCTION_FAST( Listener ) {
 	J_S_ASSERT_INT(J_FARG(1));
 
 	*J_FRVAL = JSVAL_VOID;
-	if ( JSVAL_IS_INT(J_FARG(3)) ) {
+	if ( JSVAL_IS_INT(J_FARG(2)) ) {
 
 		alListeneri( JSVAL_TO_INT( J_FARG(1) ), JSVAL_TO_INT( J_FARG(2) ) );
 		return JS_TRUE;
 	}
-	if ( JSVAL_IS_DOUBLE(J_FARG(3)) ) {
+	if ( JSVAL_IS_DOUBLE(J_FARG(2)) ) {
 
 		jsdouble param;
 		J_CHK( JS_ValueToNumber(cx, J_FARG(2), &param) );
 		alListenerf( JSVAL_TO_INT( J_FARG(1) ), param );
 		return JS_TRUE;
 	}
-	if ( J_JSVAL_IS_ARRAY(J_FARG(3)) ) {
+	if ( JsvalIsArray(cx, J_FARG(2)) ) {
 
 		ALfloat params[16];
-		jsuint length;
-		J_JSVAL_TO_REAL_VECTOR( J_FARG(2), params, length );
+		size_t length;
+//		J_JSVAL_TO_REAL_VECTOR( J_FARG(2), params, length );
+		J_CHK( JsvalToFloatVector(cx, J_FARG(2), params, 16, &length) );
 		alListenerfv( JSVAL_TO_INT(J_FARG(1)), params );
 		return JS_TRUE;
 	}
@@ -270,7 +333,7 @@ DEFINE_FUNCTION_FAST( Listener ) {
   $H return value
    single value or Array of values of the selected parameter.
   $H OpenAL API
-   alGetListenerf
+   alGetListenerfv
 **/
 DEFINE_FUNCTION_FAST( GetListenerReal ) {
 
@@ -278,7 +341,7 @@ DEFINE_FUNCTION_FAST( GetListenerReal ) {
 	J_S_ASSERT_INT(J_FARG(1));
 
 	ALfloat params[16]; // (TBD) check if it is the max amount of data that alGetSourcef may returns.
-	alGetListenerf(JSVAL_TO_INT(J_FARG(1)), params);
+	alGetListenerfv(JSVAL_TO_INT(J_FARG(1)), params);
 
 	if ( J_FARG_ISDEF(2) ) {
 
@@ -347,7 +410,7 @@ DEFINE_FUNCTION_FAST( Source ) {
 		alSourcef( sid, JSVAL_TO_INT( J_FARG(2) ), param );
 		return JS_TRUE;
 	}
-	if ( J_JSVAL_IS_ARRAY(J_FARG(3)) ) {
+	if ( JsvalIsArray(cx, J_FARG(3)) ) {
 
 		ALfloat params[16];
 		jsuint length;
@@ -470,6 +533,7 @@ DEFINE_FUNCTION_FAST( DeleteSource ) {
 /**doc
  * $VOID $INAME( source, buffer | bufferArray )
   $H arguments
+   $ARG integer source: the source id.
    $ARG integer buffer: the buffer id.
    $ARG Array bufferArray: an Array of buffer id.
   $H OpenAL API
@@ -487,14 +551,16 @@ DEFINE_FUNCTION_FAST( SourceQueueBuffers ) {
 		ALuint buffer;
 		J_CHK( JsvalToUInt(cx, J_FARG(2), &buffer) );
 		alSourceQueueBuffers( sid, 1, &buffer );
+		ALenum err = alGetError();
 		return JS_TRUE;
 	}
 
-	if ( J_JSVAL_IS_ARRAY(J_FARG(2)) ) {
+	if ( JsvalIsArray(cx, J_FARG(2)) ) {
 
 		ALuint params[1024];
- 		jsuint length = sizeof(params)/sizeof(*params);
-		J_JSVAL_TO_INT_VECTOR( J_FARG(2), params, length );
+ 		unsigned int length = sizeof(params)/sizeof(*params);
+//		J_JSVAL_TO_INT_VECTOR( J_FARG(2), params, length );
+		J_CHK( JsvalToUIntVector(cx, J_FARG(2), params, sizeof(params)/sizeof(*params), &length) );
 		alSourceQueueBuffers( sid, length, params );
 		ALenum err = alGetError();
 		return JS_TRUE;
@@ -529,11 +595,14 @@ DEFINE_FUNCTION_FAST( SourceUnqueueBuffers ) {
 		return JS_TRUE;
 	}
 
-	if ( J_JSVAL_IS_ARRAY(J_FARG(2)) ) {
+	if ( JsvalIsArray(cx, J_FARG(2)) ) {
 
 		ALuint params[1024];
-		jsuint length;
-		J_JSVAL_TO_INT_VECTOR( J_FARG(2), params, length );
+		unsigned int length;
+
+//		J_JSVAL_TO_INT_VECTOR( J_FARG(2), params, length );
+		J_CHK( JsvalToUIntVector(cx, J_FARG(2), params, sizeof(params)/sizeof(*params), &length) );
+
 		alSourceUnqueueBuffers( sid, length, params );
 		return JS_TRUE;
 	}
@@ -582,12 +651,95 @@ DEFINE_FUNCTION_FAST( Buffer ) {
 
 	// Upload sound data to buffer
 	alBufferData(bufferID, format, buffer, bufferLength, rate);
-	ALenum err = alGetError(); // 0xA004 = AL_INVALID_OPERATION
+	ALenum err = alGetError(); // 0xA004 (= AL_INVALID_OPERATION
 	// (TBD) throw exception ?
 
 	J_CHK( UIntToJsval(cx, bufferID, J_FRVAL) );
 	return JS_TRUE;
 }
+
+
+
+/**doc
+ * $REAL | $ARRAY $INAME( source, pname [, count] )
+  $H arguments
+   $ARG integer source:
+   $ARG ALenum pname:
+   $ARG integer count: is the number of expected values. If _count_ is defined, the function will returns an array of values, else a single value.
+  $H return value
+   single value or Array of values of the selected parameter.
+  $H OpenAL API
+   alGetBufferfv
+**/
+DEFINE_FUNCTION_FAST( GetBufferReal ) {
+
+	J_S_ASSERT_ARG_MIN(1);
+	J_S_ASSERT_INT(J_FARG(1));
+
+	ALfloat params[16]; // (TBD) check if it is the max amount of data that alGetSourcef may returns.
+	alGetBufferfv(JSVAL_TO_INT(J_FARG(1)), JSVAL_TO_INT(J_FARG(2)), params);
+
+	if ( J_FARG_ISDEF(2) ) {
+
+		J_S_ASSERT_INT( J_FARG(2) );
+		int count = JSVAL_TO_INT( J_FARG(2) );
+		JSObject *arrayObj = JS_NewArrayObject(cx, 0, NULL);
+		J_S_ASSERT_ALLOC(arrayObj);
+		*J_FRVAL = OBJECT_TO_JSVAL(arrayObj);
+		jsval tmpValue;
+		while (count--) {
+
+			J_CHK( JS_NewDoubleValue(cx, params[count], &tmpValue) );
+			J_CHK( JS_SetElement(cx, arrayObj, count, &tmpValue) );
+		}
+	} else {
+
+		J_CHK( JS_NewDoubleValue(cx, params[0], J_FRVAL) );
+	}
+	return JS_TRUE;
+}
+
+
+/**doc
+ * $INT | $ARRAY $INAME( source, pname [, count] )
+  $H arguments
+   $ARG integer source:
+   $ARG ALenum pname:
+   $ARG integer count: is the number of expected values. If _count_ is defined, the function will returns an array of values, else a single value.
+  $H return value
+   single value or Array of values of the selected parameter.
+  $H OpenAL API
+   alGetBufferiv
+**/
+DEFINE_FUNCTION_FAST( GetBufferInteger ) {
+
+	J_S_ASSERT_ARG_MIN(1);
+	J_S_ASSERT_INT(J_FARG(1));
+
+	ALint params[16]; // (TBD) check if it is the max amount of data that alGetSourcef may returns.
+	alGetBufferiv(JSVAL_TO_INT(J_FARG(1)), JSVAL_TO_INT(J_FARG(2)), params);
+
+	if ( J_FARG_ISDEF(2) ) {
+
+		J_S_ASSERT_INT( J_FARG(2) );
+		int count = JSVAL_TO_INT( J_FARG(2) );
+		JSObject *arrayObj = JS_NewArrayObject(cx, 0, NULL);
+		J_S_ASSERT_ALLOC(arrayObj);
+		*J_FRVAL = OBJECT_TO_JSVAL(arrayObj);
+		jsval tmpValue;
+		while (count--) {
+
+			J_CHK( JS_NewDoubleValue(cx, params[count], &tmpValue) );
+			J_CHK( JS_SetElement(cx, arrayObj, count, &tmpValue) );
+		}
+	} else {
+
+		J_CHK( JS_NewDoubleValue(cx, params[0], J_FRVAL) );
+	}
+	return JS_TRUE;
+}
+
+
 
 
 
@@ -778,7 +930,7 @@ DEFINE_FUNCTION_FAST( PlaySound ) {
 **/
 
 /**doc
- * $INAME $READONLY
+ * $INAME
   Obtain the most recent error generated in the AL state machine.
 **/
 DEFINE_PROPERTY(error) {
@@ -787,16 +939,16 @@ DEFINE_PROPERTY(error) {
 	return JS_TRUE;
 }
 
+/*
+DEFINE_PROPERTY_SETTER(error) {
 
-JSBool Init( JSContext *cx, JSObject *obj ) {
-
+	J_S_ASSERT( *vp == JSVAL_VOID, "Invalid error value." );
+	alSetError(AL_NONE);
 	return JS_TRUE;
 }
-
+*/
 
 CONFIGURE_CLASS
-
-	HAS_INIT
 
 	BEGIN_CONST_INTEGER_SPEC
 		CONST_INTEGER( NONE                      ,AL_NONE                       )
@@ -868,6 +1020,11 @@ CONFIGURE_CLASS
 
 	BEGIN_STATIC_FUNCTION_SPEC
 
+		FUNCTION_FAST_ARGC( DopplerFactor, 1 )
+		FUNCTION_FAST_ARGC( DopplerVelocity, 1 )
+		FUNCTION_FAST_ARGC( SpeedOfSound, 1 )
+		FUNCTION_FAST_ARGC( DistanceModel, 1 )
+
 		FUNCTION_FAST_ARGC( Enable, 1 )
 		FUNCTION_FAST_ARGC( Disable, 1 )
 		FUNCTION_FAST_ARGC( IsEnabled, 1 )
@@ -886,13 +1043,13 @@ CONFIGURE_CLASS
 		FUNCTION_FAST_ARGC( SourceQueueBuffers, 2 )
 		FUNCTION_FAST_ARGC( SourceUnqueueBuffers, 2 )
 		FUNCTION_FAST_ARGC( Buffer, 1 )
+		FUNCTION_FAST_ARGC( GetBufferReal, 3 )
+		FUNCTION_FAST_ARGC( GetBufferInteger, 3 )
 		FUNCTION_FAST_ARGC( DeleteBuffer, 1 )
 		FUNCTION_FAST_ARGC( PlaySource, 1 )
 		FUNCTION_FAST_ARGC( StopSource, 1 )
 		FUNCTION_FAST_ARGC( PauseSource, 1 )
 		FUNCTION_FAST_ARGC( RewindSource, 1 )
-
-
 
 		FUNCTION_FAST_ARGC( PlaySound, 1 ) // non-openal API
 
