@@ -49,7 +49,7 @@
 	#pragma warning(disable : 4100) // warning C4100: 'xxx' : unreferenced formal parameter
 
 	#pragma warning(error : 4715) // force error for:  not all control paths return a value
-
+	#pragma warning(error : 4018)  // force error for:  warning C4018: '<' : signed/unsigned mismatch
 #endif // #ifdef WIN32
 
 #include <limits.h>

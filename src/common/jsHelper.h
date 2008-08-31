@@ -683,6 +683,12 @@ inline JSBool UIntToJsval( JSContext *cx, unsigned int ui, jsval *val ) {
 }
 
 
+inline JSBool BoolToJsval( JSContext *cx, bool b, jsval *val ) {
+
+	*val = b ? JSVAL_TRUE : JSVAL_FALSE;
+	return JS_TRUE;
+}
+
 
 inline JSBool JsvalToBool( JSContext *cx, const jsval val, bool *b ) {
 

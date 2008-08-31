@@ -188,5 +188,14 @@ inline void QueueInsertCellAfter( Queue *queue, QueueCell *prevCell, void *data 
 	prevCell->next = newCell;
 }
 
+/*
+inline QueueCell *SearchFirstData( Queue *queue, void *data ) {
+
+	for ( QueueCell *it = QueueBegin(queue); it; it = QueueNext(it) )
+		if ( QueueGetData(it) == data )
+			return it;
+	return NULL;
+}
+*/
 
 #endif // _QUEUE_H_
