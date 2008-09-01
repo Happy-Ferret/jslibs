@@ -243,18 +243,27 @@ DEFINE_PROPERTY( feedbackVectorSetter ) {
 	J_S_ASSERT_RESOURCE( jointId );
 	ode::dJointFeedback *feedback = ode::dJointGetFeedback(jointId);
 	J_S_ASSERT( feedback != NULL, "Feedback is disabled." );
+	size_t length;
 	switch(JSVAL_TO_INT(id)) {
 		case body1Force:
-			FloatArrayToVector(cx, 3, vp, feedback->f1);
+			//FloatArrayToVector(cx, 3, vp, feedback->f1);
+			J_CHK( JsvalToFloatVector(cx, *vp, feedback->f1, 3, &length) );
+			J_S_ASSERT( length == 3, "Invalid array size." );
 			break;
 		case body1Torque:
-			FloatArrayToVector(cx, 3, vp, feedback->t1);
+			//FloatArrayToVector(cx, 3, vp, feedback->t1);
+			J_CHK( JsvalToFloatVector(cx, *vp, feedback->t1, 3, &length) );
+			J_S_ASSERT( length == 3, "Invalid array size." );
 			break;
 		case body2Force:
-			FloatArrayToVector(cx, 3, vp, feedback->f2);
+			//FloatArrayToVector(cx, 3, vp, feedback->f2);
+			J_CHK( JsvalToFloatVector(cx, *vp, feedback->f2, 3, &length) );
+			J_S_ASSERT( length == 3, "Invalid array size." );
 			break;
 		case body2Torque:
-			FloatArrayToVector(cx, 3, vp, feedback->t2);
+			//FloatArrayToVector(cx, 3, vp, feedback->t2);
+			J_CHK( JsvalToFloatVector(cx, *vp, feedback->t2, 3, &length) );
+			J_S_ASSERT( length == 3, "Invalid array size." );
 			break;
 	}
 	return JS_TRUE;
@@ -269,16 +278,20 @@ DEFINE_PROPERTY( feedbackVectorGetter ) {
 	J_S_ASSERT( feedback != NULL, "Feedback is disabled." );
 	switch(JSVAL_TO_INT(id)) {
 		case body1Force:
-			FloatVectorToArray(cx, 3, feedback->f1, vp);
+			//FloatVectorToArray(cx, 3, feedback->f1, vp);
+			J_CHK( FloatVectorToJsval(cx, feedback->f1, 3, vp) );
 			break;
 		case body1Torque:
-			FloatVectorToArray(cx, 3, feedback->t1, vp);
+			//FloatVectorToArray(cx, 3, feedback->t1, vp);
+			J_CHK( FloatVectorToJsval(cx, feedback->t1, 3, vp) );
 			break;
 		case body2Force:
-			FloatVectorToArray(cx, 3, feedback->f2, vp);
+			//FloatVectorToArray(cx, 3, feedback->f2, vp);
+			J_CHK( FloatVectorToJsval(cx, feedback->f2, 3, vp) );
 			break;
 		case body2Torque:
-			FloatVectorToArray(cx, 3, feedback->t2, vp);
+			//FloatVectorToArray(cx, 3, feedback->t2, vp);
+			J_CHK( FloatVectorToJsval(cx, feedback->t2, 3, vp) );
 			break;
 	}
 	return JS_TRUE;

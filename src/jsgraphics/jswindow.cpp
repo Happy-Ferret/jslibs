@@ -458,10 +458,13 @@ DEFINE_FUNCTION( Mode ) {
 		int32 bits;
 		JSBool fullscreen;
 
-		int size[2];
-		IntArrayToVector(cx, 2, argv, size);
-		JS_ValueToInt32(cx, argv[1], &bits);
-		JS_ValueToBoolean(cx, argv[2], &fullscreen);
+		unsigned int size[2];
+//		IntArrayToVector(cx, 2, argv, size);
+		size_t length;
+		J_CHK( JsvalToUIntVector(cx, argv[0], size, 2, &length) );
+		J_S_ASSERT( length == 2, "Invalid array size." );
+		J_CHK( JS_ValueToInt32(cx, argv[1], &bits) );
+		J_CHK( JS_ValueToBoolean(cx, argv[2], &fullscreen) );
 
 		DEVMODE dmScreenSettings;
 		memset(&dmScreenSettings, 0, sizeof(dmScreenSettings));
@@ -502,7 +505,10 @@ DEFINE_PROPERTY( absoluteClipCursor ) {
 	if ( *vp != JSVAL_VOID ) {
 
 		int v[4];
-		IntArrayToVector(cx, 4, vp, v);
+//		IntArrayToVector(cx, 4, vp, v);
+		size_t length;
+		J_CHK( JsvalToIntVector(cx, *vp, v, 4, &length) );
+		J_S_ASSERT( length == 4, "Invalid array size." );
 
 		JSBool clip;
 		JS_ValueToBoolean(cx, *vp, &clip);
@@ -599,8 +605,7 @@ DEFINE_PROPERTY( rectSetter ) {
 
 //	J_JSVAL_TO_INT_VECTOR(*vp, v, length);
 	J_CHK( JsvalToIntVector(cx, *vp, v, 4, &length) );
-
-	J_S_ASSERT( length == 4, "Invalid element count." );
+	J_S_ASSERT( length == 4, "Invalid array size." );
 
 	SetWindowPos(hWnd, 0, v[0], v[1], v[2] - v[0], v[3] - v[1], SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_NOACTIVATE);
 	return JS_TRUE;
@@ -612,7 +617,12 @@ DEFINE_PROPERTY( cursorAbsolutePositionSetter ) {
 	HWND hWnd = (HWND)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE(hWnd);
 	int vec[2];
-	IntArrayToVector(cx, 2, vp, vec);
+
+//	IntArrayToVector(cx, 2, vp, vec);
+	size_t length;
+	J_CHK( JsvalToIntVector(cx, *vp, vec, 2, &length) );
+	J_S_ASSERT( length == 2, "Invalid array size." );
+
 	BOOL sysStatus = SetCursorPos(vec[0], vec[1]); // http://windowssdk.msdn.microsoft.com/en-us/library/ms648394.aspx
 	J_S_ASSERT( sysStatus != 0, "Unable to SetCursorPos." );
 	return JS_TRUE;
@@ -626,7 +636,8 @@ DEFINE_PROPERTY( cursorAbsolutePositionGetter ) {
 	POINT pt;
 	GetCursorPos( &pt );
 	int vector[] = { pt.x, pt.y };
-	IntVectorToArray(cx, COUNTOF(vector), vector, vp);
+	//IntVectorToArray(cx, COUNTOF(vector), vector, vp);
+	J_CHK( IntVectorToJsval(cx, vector, COUNTOF(vector), vp) );
 	return JS_TRUE;
 }
 
@@ -635,7 +646,11 @@ DEFINE_PROPERTY( cursorPositionSetter ) {
 	HWND hWnd = (HWND)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE(hWnd);
 	int vec[2];
-	IntArrayToVector(cx, 2, vp, vec);
+//	IntArrayToVector(cx, 2, vp, vec);
+	size_t length;
+	J_CHK( JsvalToIntVector(cx, *vp, vec, 2, &length) );
+	J_S_ASSERT( length == 2, "Invalid array size." );
+
 	POINT pt = { vec[0], vec[1] };
 	ClientToScreen(hWnd, &pt);
 	BOOL sysStatus = SetCursorPos(pt.x, pt.y); // http://windowssdk.msdn.microsoft.com/en-us/library/ms648394.aspx
@@ -651,7 +666,8 @@ DEFINE_PROPERTY( cursorPositionGetter ) {
 	GetCursorPos( &pt );
 	ScreenToClient(hWnd, &pt);
 	int vector[] = { pt.x, pt.y };
-	IntVectorToArray(cx, COUNTOF(vector), vector, vp);
+//	IntVectorToArray(cx, COUNTOF(vector), vector, vp);
+	J_CHK( IntVectorToJsval(cx, vector, COUNTOF(vector), vp) );
 	return JS_TRUE;
 }
 
@@ -695,7 +711,8 @@ DEFINE_PROPERTY( desktopRect ) {
 	RECT r;
 	GetWindowRect(GetDesktopWindow(), &r);
 	int vector[] = { r.left, r.top, r.right, r.bottom };
-	IntVectorToArray(cx, COUNTOF(vector), vector, vp);
+//	IntVectorToArray(cx, COUNTOF(vector), vector, vp);
+	J_CHK( IntVectorToJsval(cx, vector, COUNTOF(vector), vp) );
 	return JS_TRUE;
 }
 

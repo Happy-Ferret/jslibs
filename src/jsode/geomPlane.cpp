@@ -54,7 +54,10 @@ DEFINE_PROPERTY( lengthsSetter ) {
 	J_S_ASSERT_RESOURCE( geom );
 	//J_S_ASSERT_NUMBER( *vp );
 	ode::dVector3 vector;
-	FloatArrayToVector(cx, 3, vp, vector);
+//	FloatArrayToVector(cx, 3, vp, vector);
+	size_t length;
+	J_CHK( JsvalToFloatVector(cx, *vp, vector, 3, &length) );
+	J_S_ASSERT( length == 3, "Invalid array size." );
 	ode::dGeomPlaneSetLengths(geom, vector[0], vector[1], vector[2]);
 	return JS_TRUE;
 }
@@ -65,7 +68,8 @@ DEFINE_PROPERTY( lengthsGetter ) {
 	J_S_ASSERT_RESOURCE( geom );
 	ode::dVector3 result;
 	ode::dGeomPlaneGetLengths(geom, result);
-	FloatVectorToArray(cx, 3, result, vp);
+	//FloatVectorToArray(cx, 3, result, vp);
+	J_CHK( FloatVectorToJsval(cx, result, 3, vp) );
 	return JS_TRUE;
 }
 */

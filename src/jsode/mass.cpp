@@ -53,7 +53,10 @@ DEFINE_FUNCTION( Translate ) {
 	ode::dMass mass;
 	J_CHK( GetBodyAndMass(cx, obj, &bodyID, &mass) );
 	real translation[3];
-	J_CHK( FloatArrayToVector(cx, 3, &argv[0], translation) );
+//	J_CHK( FloatArrayToVector(cx, 3, &argv[0], translation) );
+	size_t length;
+	J_CHK( JsvalToFloatVector(cx, argv[0], translation, 3, &length) );
+	J_S_ASSERT( length == 3, "Invalid array size." );
 	ode::dMassTranslate(&mass, translation[0], translation[1], translation[2]);
 	ode::dBodySetMass(bodyID, &mass);
 	return JS_TRUE;
@@ -108,7 +111,11 @@ DEFINE_FUNCTION( SetBoxTotal ) {
 	JS_ValueToNumber(cx, argv[0], &totalMass);
 // arg 1
 	real dimensions[3];
-	J_CHK( FloatArrayToVector(cx, 3, &argv[1], dimensions) );
+	//	J_CHK( FloatArrayToVector(cx, 3, &argv[1], dimensions) );
+	size_t length;
+	J_CHK( JsvalToFloatVector(cx, argv[1], dimensions, 3, &length) );
+	J_S_ASSERT( length == 3, "Invalid array size." );
+
 // apply the formulae
 	ode::dMassSetBoxTotal(&mass, totalMass, dimensions[0], dimensions[0], dimensions[0]);
 // set mass object
@@ -160,7 +167,10 @@ DEFINE_PROPERTY( centerSetter ) {
 	J_CHK( GetBodyAndMass(cx, obj, &bodyID, &mass) );
 //	jsdouble massValue;
 //	jsdouble translation[3];
-	J_CHK( FloatArrayToVector(cx, 3, vp, mass.c) );
+	//J_CHK( FloatArrayToVector(cx, 3, vp, mass.c) );
+	size_t length;
+	J_CHK( JsvalToFloatVector(cx, *vp, mass.c, 3, &length) );
+	J_S_ASSERT( length == 3, "Invalid array size." );
 	ode::dBodySetMass(bodyID, &mass);
 	return JS_TRUE;
 }
@@ -171,7 +181,8 @@ DEFINE_PROPERTY( centerGetter ) {
 	ode::dBodyID bodyID;
 	ode::dMass mass;
 	J_CHK( GetBodyAndMass(cx, obj, &bodyID, &mass) );
-	J_CHK( FloatVectorToArray(cx, 3, mass.c, vp) );
+	//J_CHK( FloatVectorToArray(cx, 3, mass.c, vp) );
+	J_CHK( FloatVectorToJsval(cx, mass.c, 3, vp) );
 	return JS_TRUE;
 }
 

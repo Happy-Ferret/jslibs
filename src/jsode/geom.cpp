@@ -220,7 +220,8 @@ DEFINE_PROPERTY( positionGetter ) {
 	ode::dGeomID geom = (ode::dGeomID)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE(geom);
 	const ode::dReal *vector = ode::dGeomGetPosition(geom);
-	FloatVectorToArray(cx, 3, vector, vp);
+	//FloatVectorToArray(cx, 3, vector, vp);
+	J_CHK( FloatVectorToJsval(cx, vector, 3, vp) );
 	return JS_TRUE;
 }
 
@@ -230,7 +231,10 @@ DEFINE_PROPERTY( positionSetter ) {
 	ode::dGeomID geom = (ode::dGeomID)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE(geom);
 	ode::dVector3 vector;
-	FloatArrayToVector(cx, 3, vp, vector);
+//	FloatArrayToVector(cx, 3, vp, vector);
+	size_t length;
+	J_CHK( JsvalToFloatVector(cx, *vp, vector, 3, &length) );
+	J_S_ASSERT( length == 3, "Invalid array size." );
 	ode::dGeomSetPosition( geom, vector[0], vector[1], vector[2] );
 	return JS_TRUE;
 }
@@ -243,7 +247,9 @@ DEFINE_PROPERTY( offsetPositionGetter ) {
 	ode::dGeomID geom = (ode::dGeomID)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE(geom);
 	const ode::dReal *vector = ode::dGeomGetOffsetPosition(geom); // (TBD) dGeomGetOffsetRotation
-	FloatVectorToArray(cx, 3, vector, vp);
+	//FloatVectorToArray(cx, 3, vector, vp);
+	J_CHK( FloatVectorToJsval(cx, vector, 3, vp) );
+
 	return JS_TRUE;
 }
 
@@ -253,7 +259,10 @@ DEFINE_PROPERTY( offsetPositionSetter ) {
 	ode::dGeomID geom = (ode::dGeomID)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE(geom);
 	ode::dVector3 vector;
-	FloatArrayToVector(cx, 3, vp, vector);
+//	FloatArrayToVector(cx, 3, vp, vector);
+	size_t length;
+	J_CHK( JsvalToFloatVector(cx, *vp, vector, 3, &length) );
+	J_S_ASSERT( length == 3, "Invalid array size." );
 	ode::dGeomSetOffsetPosition( geom, vector[0], vector[1], vector[2] ); // (TBD) dGeomSetOffsetWorldRotation
 	return JS_TRUE;
 }

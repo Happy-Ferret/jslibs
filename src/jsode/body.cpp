@@ -189,7 +189,8 @@ DEFINE_PROPERTY( vectorGetter ) {
 			dim = 3;
 			break;
 	}
-	FloatVectorToArray(cx, dim, vector, vp);
+	//FloatVectorToArray(cx, dim, vector, vp);
+	J_CHK( FloatVectorToJsval(cx, vector, dim, vp) );
 	return JS_TRUE;
 }
 
@@ -199,29 +200,43 @@ DEFINE_PROPERTY( vectorSetter ) {
 	ode::dBodyID bodyID = (ode::dBodyID)JS_GetPrivate( cx, obj );
 	J_S_ASSERT_RESOURCE( bodyID );
 	ode::dVector3 vector;
+	ode::dVector4 quatern;
+	size_t length;
 	switch(JSVAL_TO_INT(id)) {
 		case position:
-			FloatArrayToVector(cx, 3, vp, vector);
+			//FloatArrayToVector(cx, 3, vp, vector);
+			J_CHK( JsvalToFloatVector(cx, *vp, vector, 3, &length) );
+			J_S_ASSERT( length == 3, "Invalid array size." );
 			ode::dBodySetPosition( bodyID, vector[0], vector[1], vector[2] );
 			break;
 		case quaternion:
-			FloatArrayToVector(cx, 4, vp, vector);
-			ode::dBodySetQuaternion( bodyID, vector );
+			//FloatArrayToVector(cx, 4, vp, vector);
+			J_CHK( JsvalToFloatVector(cx, *vp, quatern, 4, &length) );
+			J_S_ASSERT( length == 4, "Invalid array size." );
+			ode::dBodySetQuaternion( bodyID, quatern );
 			break;
 		case linearVel:
-			FloatArrayToVector(cx, 3, vp, vector);
+			//FloatArrayToVector(cx, 3, vp, vector);
+			J_CHK( JsvalToFloatVector(cx, *vp, vector, 3, &length) );
+			J_S_ASSERT( length == 3, "Invalid array size." );
 			ode::dBodySetLinearVel( bodyID, vector[0], vector[1], vector[2] );
 			break;
 		case angularVel:
-			FloatArrayToVector(cx, 3, vp, vector);
+			//FloatArrayToVector(cx, 3, vp, vector);
+			J_CHK( JsvalToFloatVector(cx, *vp, vector, 3, &length) );
+			J_S_ASSERT( length == 3, "Invalid array size." );
 			ode::dBodySetAngularVel( bodyID, vector[0], vector[1], vector[2] );
 			break;
 		case force:
-			FloatArrayToVector(cx, 3, vp, vector);
+			//FloatArrayToVector(cx, 3, vp, vector);
+			J_CHK( JsvalToFloatVector(cx, *vp, vector, 3, &length) );
+			J_S_ASSERT( length == 3, "Invalid array size." );
 			ode::dBodySetForce( bodyID, vector[0], vector[1], vector[2] );
 			break;
 		case torque:
-			FloatArrayToVector(cx, 3, vp, vector);
+			//FloatArrayToVector(cx, 3, vp, vector);
+			J_CHK( JsvalToFloatVector(cx, *vp, vector, 3, &length) );
+			J_S_ASSERT( length == 3, "Invalid array size." );
 			ode::dBodySetTorque( bodyID, vector[0], vector[1], vector[2] );
 			break;
 	}

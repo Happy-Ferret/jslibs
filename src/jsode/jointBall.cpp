@@ -50,7 +50,10 @@ DEFINE_PROPERTY( anchorSetter ) {
 	ode::dJointID jointId = (ode::dJointID)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE(jointId); // (TBD) check if NULL is meaningful for joints !
 	ode::dVector3 vector;
-	FloatArrayToVector(cx, 3, vp, vector);
+	//FloatArrayToVector(cx, 3, vp, vector);
+	size_t length;
+	J_CHK( JsvalToFloatVector(cx, *vp, vector, 3, &length) );
+	J_S_ASSERT( length == 3, "Invalid array size." );
 	ode::dJointSetBallAnchor( jointId, vector[0], vector[1], vector[2] );
 	return JS_TRUE;
 }
@@ -61,7 +64,8 @@ DEFINE_PROPERTY( anchorGetter ) {
 	J_S_ASSERT_RESOURCE(jointId);
 	ode::dVector3 vector;
 	ode::dJointGetBallAnchor(jointId,vector);
-	FloatVectorToArray(cx, 3, vector, vp);
+	//FloatVectorToArray(cx, 3, vector, vp);
+	J_CHK( FloatVectorToJsval(cx, vector, 3, vp) );
 	return JS_TRUE;
 }
 
@@ -74,7 +78,8 @@ DEFINE_PROPERTY( anchor2 ) { // read only
 	J_S_ASSERT_RESOURCE(jointId);
 	ode::dVector3 vector;
 	ode::dJointGetBallAnchor2(jointId,vector);
-	FloatVectorToArray(cx, 3, vector, vp);
+	//FloatVectorToArray(cx, 3, vector, vp);
+	J_CHK( FloatVectorToJsval(cx, vector, 3, vp) );
 	return JS_TRUE;
 }
 

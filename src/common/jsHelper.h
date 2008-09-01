@@ -631,7 +631,7 @@ inline JSBool JsvalToInt( JSContext *cx, jsval val, int *i ) {
 	} else {
 		
 		int32 tmp;
-		J_CHKM( JS_ValueToInt32(cx, val, &tmp), "Unable to convert to a 32bit integer." );
+		J_CHKM( JS_ValueToInt32(cx, val, &tmp), "Unable to convert to an integer." );
 		*i = tmp;
 		return JS_TRUE;
 	}
@@ -648,7 +648,7 @@ inline JSBool JsvalToUInt( JSContext *cx, jsval val, unsigned int *ui ) {
 	} else {
 
 		jsdouble d;
-		J_CHKM( JS_ValueToNumber(cx, val, &d), "Unable to convert to a 32bit integer." );
+		J_CHKM( JS_ValueToNumber(cx, val, &d), "Unable to convert to an unsigned integer." );
 		*ui = (unsigned int)d;
 		return JS_TRUE;
 	}
@@ -663,7 +663,7 @@ inline JSBool IntToJsval( JSContext *cx, int i, jsval *val ) {
 		return JS_TRUE;
 	} else {
 
-		J_CHKM( JS_NewNumberValue(cx, i, val), "Unable to convert to a 32bit integer." );
+		J_CHKM( JS_NewNumberValue(cx, i, val), "Unable to convert to an integer." );
 		return JS_TRUE;
 	}
 }
@@ -677,7 +677,7 @@ inline JSBool UIntToJsval( JSContext *cx, unsigned int ui, jsval *val ) {
 		return JS_TRUE;
 	} else {
 
-		J_CHKM( JS_NewNumberValue(cx, ui, val), "Unable to convert to a 32bit integer." );
+		J_CHKM( JS_NewNumberValue(cx, ui, val), "Unable to convert to an unsigned integer." );
 		return JS_TRUE;
 	}
 }
@@ -982,7 +982,7 @@ inline JSBool JsvalToUIntVector( JSContext *cx, jsval val, unsigned int *vector,
 	} \
 } while(0)
 */
-inline JSBool DoubleVectorToJsval( JSContext *cx, double *vector, size_t length, jsval *val ) {
+inline JSBool DoubleVectorToJsval( JSContext *cx, const double *vector, size_t length, jsval *val ) {
 
 	JSObject *arrayObj = JS_NewArrayObject(cx, length, NULL);
 	J_CHKM( arrayObj, "Unable to create the Array." );
@@ -996,7 +996,7 @@ inline JSBool DoubleVectorToJsval( JSContext *cx, double *vector, size_t length,
 	return JS_TRUE;
 }
 
-inline JSBool FloatVectorToJsval( JSContext *cx, float *vector, size_t length, jsval *val ) {
+inline JSBool FloatVectorToJsval( JSContext *cx, const float *vector, size_t length, jsval *val ) {
 
 	JSObject *arrayObj = JS_NewArrayObject(cx, length, NULL);
 	J_CHKM( arrayObj, "Unable to create the Array." );
@@ -1011,7 +1011,7 @@ inline JSBool FloatVectorToJsval( JSContext *cx, float *vector, size_t length, j
 }
 
 
-
+/*
 #define J_JSVAL_TO_REAL_VECTOR( jsvalArray, vectorVariable, lengthVariable ) do { \
 	J_S_ASSERT_ARRAY(jsvalArray); \
 	JSObject *__arrayObj = JSVAL_TO_OBJECT(jsvalArray); \
@@ -1027,7 +1027,7 @@ inline JSBool FloatVectorToJsval( JSContext *cx, float *vector, size_t length, j
 		(vectorVariable)[__i] = __eltValue; \
 	} \
 } while(0)
-
+*/
 
 inline JSBool JsvalToFloatVector( JSContext *cx, jsval val, float *vector, size_t maxLength, size_t *currentLength ) {
 

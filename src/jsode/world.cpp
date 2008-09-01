@@ -96,7 +96,8 @@ static void nearCallback(void *data, ode::dGeomID o1, ode::dGeomID o2) {
 */
 
 				jsval pos;
-				FloatVectorToArray(cx, 3, contact[i].geom.pos, &pos);
+				//FloatVectorToArray(cx, 3, contact[i].geom.pos, &pos);
+				FloatVectorToJsval(cx, contact[i].geom.pos, 3, &pos);
 
 				if ( func1 != JSVAL_VOID ) {
 
@@ -266,7 +267,8 @@ DEFINE_PROPERTY( gravityGetter ) {
 	J_S_ASSERT_RESOURCE( worldID );
 	ode::dVector3 gravity;
 	ode::dWorldGetGravity(worldID, gravity);
-	FloatVectorToArray(cx, 3, gravity, vp);
+	//FloatVectorToArray(cx, 3, gravity, vp);
+	J_CHK( FloatVectorToJsval(cx, gravity, 3, vp) );
 	return JS_TRUE;
 }
 
@@ -275,7 +277,10 @@ DEFINE_PROPERTY( gravitySetter ) {
 	ode::dWorldID worldID = (ode::dWorldID)JS_GetPrivate( cx, obj );
 	J_S_ASSERT_RESOURCE( worldID );
 	ode::dVector3 gravity;
-	FloatArrayToVector(cx, 3, vp, gravity);
+	//FloatArrayToVector(cx, 3, vp, gravity);
+	size_t length;
+	J_CHK( JsvalToFloatVector(cx, *vp, gravity, 3, &length) );
+	J_S_ASSERT( length == 3, "Invalid array size." );
 	ode::dWorldSetGravity( worldID, gravity[0], gravity[1], gravity[2] );
 	return JS_TRUE;
 }

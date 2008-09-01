@@ -274,8 +274,8 @@ DEFINE_FUNCTION_FAST( Fog ) {
 	if ( JsvalIsArray(cx, J_FARG(2)) ) {
 
 		GLfloat params[16];
-		jsuint length;
-		J_JSVAL_TO_REAL_VECTOR( J_FARG(2), params, length );
+		size_t length;
+		J_CHK( JsvalToFloatVector(cx, J_FARG(2), params, COUNTOF(params), &length ) );
 		glFogfv( JSVAL_TO_INT(J_FARG(1)), params );
 		return JS_TRUE;
 	}
@@ -463,8 +463,8 @@ DEFINE_FUNCTION_FAST( TexParameter ) {
 	if ( JsvalIsArray(cx, J_FARG(3)) ) {
 
 		GLfloat params[16];
-		jsuint length;
-		J_JSVAL_TO_REAL_VECTOR( J_FARG(3), params, length );
+		size_t length;
+		J_CHK( JsvalToFloatVector(cx, J_FARG(3), params, COUNTOF(params), &length ) );
 		glTexParameterfv( JSVAL_TO_INT(J_FARG(1)), JSVAL_TO_INT(J_FARG(2)), params );
 		return JS_TRUE;
 	}
@@ -505,8 +505,8 @@ DEFINE_FUNCTION_FAST( TexEnv ) {
 	if ( JsvalIsArray(cx, J_FARG(3)) ) {
 
 		GLfloat params[16];
-		jsuint length;
-		J_JSVAL_TO_REAL_VECTOR( J_FARG(3), params, length );
+		size_t length;
+		J_CHK( JsvalToFloatVector(cx, J_FARG(3), params, COUNTOF(params), &length ) );
 		glTexEnvfv( JSVAL_TO_INT(J_FARG(1)), JSVAL_TO_INT(J_FARG(2)), params );
 		return JS_TRUE;
 	}
@@ -544,8 +544,8 @@ DEFINE_FUNCTION_FAST( LightModel ) {
 	if ( JsvalIsArray(cx, J_FARG(2)) ) {
 
 		GLfloat params[16];
-		jsuint length;
-		J_JSVAL_TO_REAL_VECTOR( J_FARG(2), params, length );
+		size_t length;
+		J_CHK( JsvalToFloatVector(cx, J_FARG(2), params, COUNTOF(params), &length ) );
 		glLightModelfv( JSVAL_TO_INT(J_FARG(1)), params );
 		return JS_TRUE;
 	}
@@ -585,8 +585,8 @@ DEFINE_FUNCTION_FAST( Light ) {
 	if ( JsvalIsArray(cx, J_FARG(3)) ) {
 
 		GLfloat params[16];
-		jsuint length;
-		J_JSVAL_TO_REAL_VECTOR( J_FARG(3), params, length );
+		size_t length;
+		J_CHK( JsvalToFloatVector(cx, J_FARG(3), params, COUNTOF(params), &length ) );
 		glLightfv( JSVAL_TO_INT(J_FARG(1)), JSVAL_TO_INT(J_FARG(2)), params );
 		return JS_TRUE;
 	}
@@ -626,8 +626,8 @@ DEFINE_FUNCTION_FAST( Material ) {
 	if ( JsvalIsArray(cx, J_FARG(3)) ) {
 
 		GLfloat params[16];
-		jsuint length;
-		J_JSVAL_TO_REAL_VECTOR( J_FARG(3), params, length );
+		size_t length;
+		J_CHK( JsvalToFloatVector(cx, J_FARG(3), params, COUNTOF(params), &length ) );
 		glMaterialfv( JSVAL_TO_INT(J_FARG(1)), JSVAL_TO_INT(J_FARG(2)), params );
 		return JS_TRUE;
 	}
@@ -923,8 +923,8 @@ DEFINE_FUNCTION_FAST( ClipPlane ) {
 	J_S_ASSERT_INT(J_FARG(1));
 	J_S_ASSERT_ARRAY(J_FARG(2));
 	GLdouble equation[16];
-	jsuint length;
-	J_JSVAL_TO_REAL_VECTOR( J_FARG(2), equation, length );
+	size_t length;
+	J_CHK( JsvalToDoubleVector(cx, J_FARG(2), equation, COUNTOF(equation), &length ) );
 	glClipPlane(JSVAL_TO_INT(J_FARG(1)), equation);
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
@@ -1565,8 +1565,8 @@ DEFINE_FUNCTION_FAST( PointParameter ) {
 	if ( JsvalIsArray(cx, J_FARG(2)) ) {
 
 		GLfloat params[16];
-		jsuint length;
-		J_JSVAL_TO_REAL_VECTOR( J_FARG(2), params, length );
+		size_t length;
+		J_CHK( JsvalToFloatVector(cx, J_FARG(2), params, COUNTOF(params), &length ) );
 		glPointParameterfv( JSVAL_TO_INT(J_FARG(1)), params );
 		return JS_TRUE;
 	}

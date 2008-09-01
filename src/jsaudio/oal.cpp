@@ -413,8 +413,8 @@ DEFINE_FUNCTION_FAST( Source ) {
 	if ( JsvalIsArray(cx, J_FARG(3)) ) {
 
 		ALfloat params[16];
-		jsuint length;
-		J_JSVAL_TO_REAL_VECTOR( J_FARG(3), params, length );
+		size_t length;
+		J_CHK( JsvalToFloatVector(cx, J_FARG(3), params, COUNTOF(params), &length ) );
 		alSourcefv( sid, JSVAL_TO_INT(J_FARG(2)), params );
 		return JS_TRUE;
 	}

@@ -120,8 +120,8 @@ DEFINE_FUNCTION_FAST( Load ) {
 	/* GetMatrixHelper already to the following
 	if ( JsvalIsArray(cx, J_FARG(1)) ) {
 
-		jsuint length = 16;
-		J_JSVAL_TO_REAL_VECTOR( J_FARG(1), &(*tm->raw), length );
+		jsuint length;
+		J_CHK( JsvalToFloatVector(cx, J_FARG(1), &(*tm->raw), 16, &length ) );
 		J_S_ASSERT( length == 16, "Too few elements in the array." );
 
 		return JS_TRUE;
@@ -477,8 +477,8 @@ DEFINE_FUNCTION_FAST( TransformVector ) {
 	if ( length == 3 ) {
 
 		Vector3 src, dst;
-		jsuint length = 3;
-		J_JSVAL_TO_REAL_VECTOR( J_FARG(1), src.raw, length );
+		size_t length;
+		J_CHK( JsvalToFloatVector(cx, J_FARG(1), src.raw, 3, &length ) );
 
 		Matrix44MultVector3( tm, &src, &dst );
 
@@ -495,8 +495,8 @@ DEFINE_FUNCTION_FAST( TransformVector ) {
 	if ( length == 4 ) {
 
 		Vector4 src, dst;
-		jsuint length = 4;
-		J_JSVAL_TO_REAL_VECTOR( J_FARG(1), src.raw, length );
+		size_t length;
+		J_CHK( JsvalToFloatVector(cx, J_FARG(1), src.raw, 4, &length ) );
 
 		Matrix44MultVector4( tm, &src, &dst );
 

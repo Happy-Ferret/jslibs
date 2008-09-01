@@ -18,9 +18,9 @@
 #include "limits.h"
 
 inline JSBool JsvalToSInt8( JSContext *cx, jsval val, int8_t *result, bool *outOfRange ) {
-	
+
 	if ( JSVAL_IS_INT( val ) ) {
-		
+
 		int v = JSVAL_TO_INT( val );
 		*outOfRange = v < (-128) || v > (127);
 		*result = (int8_t)v;
@@ -30,7 +30,7 @@ inline JSBool JsvalToSInt8( JSContext *cx, jsval val, int8_t *result, bool *outO
 		*outOfRange = d < (-128) || d > (127);
 		*result = (int8_t)(u_int8_t)d;
 	} else if ( JSVAL_IS_STRING( val ) ) { // using system byte order
-		
+
 		if ( JS_GetStringLength(JSVAL_TO_STRING( val )) < sizeof(int8_t) )
 			return JS_FALSE;
 		*outOfRange = false;
@@ -41,19 +41,19 @@ inline JSBool JsvalToSInt8( JSContext *cx, jsval val, int8_t *result, bool *outO
 }
 
 inline JSBool JsvalToUInt8( JSContext *cx, jsval val, u_int8_t *result, bool *outOfRange ) {
-	
+
 	if ( JSVAL_IS_INT( val ) ) {
-		
+
 		int v = JSVAL_TO_INT( val );
 		*outOfRange = v < (0) || v > (0xff);
 		*result = (u_int8_t)v;
 	} else if ( JSVAL_IS_DOUBLE( val ) ) {
-		
+
 		double d = *JSVAL_TO_DOUBLE(val);
 		*outOfRange = d < (0) || d > (0xff);
 		*result = (u_int8_t)d;
 	} else if ( JSVAL_IS_STRING( val ) ) { // using system byte order
-		
+
 		if ( JS_GetStringLength(JSVAL_TO_STRING( val )) < sizeof(u_int8_t) )
 			return JS_FALSE;
 		int8_t c = *(u_int8_t*)JS_GetStringBytes(JSVAL_TO_STRING( val ));
@@ -67,9 +67,9 @@ inline JSBool JsvalToUInt8( JSContext *cx, jsval val, u_int8_t *result, bool *ou
 
 
 inline JSBool JsvalToSInt16( JSContext *cx, jsval val, int16_t *result, bool *outOfRange ) {
-	
+
 	if ( JSVAL_IS_INT( val ) ) {
-		
+
 		int v = JSVAL_TO_INT( val );
 		*outOfRange = v < (-32768) || v > (32767);
 		*result = (int16_t)v;
@@ -79,7 +79,7 @@ inline JSBool JsvalToSInt16( JSContext *cx, jsval val, int16_t *result, bool *ou
 		*outOfRange = d < (-32768) || d > (32767);
 		*result = (int16_t)(u_int16_t)d;
 	} else if ( JSVAL_IS_STRING( val ) ) { // using system byte order
-		
+
 		if ( JS_GetStringLength(JSVAL_TO_STRING( val )) < sizeof(int16_t) )
 			return JS_FALSE;
 		*outOfRange = false;
@@ -90,19 +90,19 @@ inline JSBool JsvalToSInt16( JSContext *cx, jsval val, int16_t *result, bool *ou
 }
 
 inline JSBool JsvalToUInt16( JSContext *cx, jsval val, u_int16_t *result, bool *outOfRange ) {
-	
+
 	if ( JSVAL_IS_INT( val ) ) {
-		
+
 		int v = JSVAL_TO_INT( val );
 		*outOfRange = v < (0) || v > 0xffff;
 		*result = (u_int16_t)v;
 	} else if ( JSVAL_IS_DOUBLE( val ) ) {
-		
+
 		double d = *JSVAL_TO_DOUBLE(val);
 		*outOfRange = d < (0) || d > 0xffff;
 		*result = (u_int16_t)d;
 	} else if ( JSVAL_IS_STRING( val ) ) { // using system byte order
-		
+
 		if ( JS_GetStringLength(JSVAL_TO_STRING( val )) < sizeof(u_int16_t) )
 			return JS_FALSE;
 		int16_t s = *(int16_t*)JS_GetStringBytes(JSVAL_TO_STRING( val ));
@@ -115,9 +115,9 @@ inline JSBool JsvalToUInt16( JSContext *cx, jsval val, u_int16_t *result, bool *
 
 
 inline JSBool JsvalToSInt32( JSContext *cx, jsval val, int32_t *result, bool *outOfRange ) {
-	
+
 	if ( JSVAL_IS_INT( val ) ) {
-		
+
 		int v = JSVAL_TO_INT( val );
 		*outOfRange = v < (-2147483647L - 1) || v > (2147483647L);
 		*result = (int32_t)v;
@@ -127,7 +127,7 @@ inline JSBool JsvalToSInt32( JSContext *cx, jsval val, int32_t *result, bool *ou
 		*outOfRange = d < (-2147483647L - 1) || d > (2147483647L);
 		*result = (int32_t)(u_int32_t)d;
 	} else if ( JSVAL_IS_STRING( val ) ) { // using system byte order
-		
+
 		if ( JS_GetStringLength(JSVAL_TO_STRING( val )) < sizeof(int32_t) )
 			return JS_FALSE;
 		*outOfRange = false;
@@ -138,19 +138,19 @@ inline JSBool JsvalToSInt32( JSContext *cx, jsval val, int32_t *result, bool *ou
 }
 
 inline JSBool JsvalToUInt32( JSContext *cx, jsval val, u_int32_t *result, bool *outOfRange ) {
-	
+
 	if ( JSVAL_IS_INT( val ) ) {
-		
+
 		long v = JSVAL_TO_INT( val ); // beware: int31 ! not int32
 		*outOfRange = v < (0);// || v > ULONG_MAX; <- this case is impossible
 		*result = (u_int32_t)v;
 	} else if ( JSVAL_IS_DOUBLE( val ) ) {
-		
+
 		double d = *JSVAL_TO_DOUBLE(val);
 		*outOfRange = d < (0) || d > (0xffffffffUL);
 		*result = (u_int32_t)d;
 	} else if ( JSVAL_IS_STRING( val ) ) { // using system byte order
-		
+
 		if ( JS_GetStringLength(JSVAL_TO_STRING( val )) < sizeof(u_int32_t) )
 			return JS_FALSE;
 		long s = *(int32_t*)JS_GetStringBytes(JSVAL_TO_STRING( val ));
@@ -163,7 +163,7 @@ inline JSBool JsvalToUInt32( JSContext *cx, jsval val, u_int32_t *result, bool *
 
 
 
-
+/*
 inline JSBool IntArgvToVector( JSContext *cx, int count, const jsval *argv, int *vector ) {
 
 	for (int i=0; i<count; ++i) {
@@ -174,7 +174,9 @@ inline JSBool IntArgvToVector( JSContext *cx, int count, const jsval *argv, int 
 	}
 	return JS_TRUE;
 }
+*/
 
+/*
 inline JSBool ArrayLength( JSContext *cx, int *count, const jsval jsvalArray ) {
 
 	JSObject *jsArray;
@@ -185,7 +187,9 @@ inline JSBool ArrayLength( JSContext *cx, int *count, const jsval jsvalArray ) {
 	*count = arraySize;
 	return JS_TRUE;
 }
+*/
 
+/*
 inline JSBool ArrayArrayToVector( JSContext *cx, int count, const jsval *vp, jsval *vector ) {
 
 	JSObject *jsArray;
@@ -201,7 +205,9 @@ inline JSBool ArrayArrayToVector( JSContext *cx, int count, const jsval *vp, jsv
 	}
 	return JS_TRUE;
 }
+*/
 
+/*
 inline JSBool IntArrayToVector( JSContext *cx, int count, const jsval *vp, int *vector ) {
 
 	JSObject *jsArray;
@@ -218,8 +224,9 @@ inline JSBool IntArrayToVector( JSContext *cx, int count, const jsval *vp, int *
 	}
 	return JS_TRUE;
 }
+*/
 
-
+/*
 inline JSBool IntVectorToArray( JSContext *cx, int count, const int *vector, jsval *vp ) {
 
 	JSObject *jsArray = JS_NewArrayObject(cx, 0, NULL);
@@ -233,8 +240,9 @@ inline JSBool IntVectorToArray( JSContext *cx, int count, const int *vector, jsv
 	}
 	return JS_TRUE;
 }
+*/
 
-
+/*
 inline JSBool FloatArrayToVector( JSContext *cx, int count, const jsval *vp, float *vector ) {
 
 	JSObject *jsArray;
@@ -252,8 +260,9 @@ inline JSBool FloatArrayToVector( JSContext *cx, int count, const jsval *vp, flo
 	}
 	return JS_TRUE;
 }
+*/
 
-
+/*
 inline JSBool FloatVectorToArray( JSContext *cx, int count, const float *vector, jsval *vp ) {
 
 	JSObject *jsArray = JS_NewArrayObject(cx, 0, NULL);
@@ -266,8 +275,9 @@ inline JSBool FloatVectorToArray( JSContext *cx, int count, const float *vector,
 	}
 	return JS_TRUE;
 }
+*/
 
-
+/*
 inline int GetInt( JSContext *cx, jsval objVal, const char *propertyName, int defaultValue ) {
 
 	int32 value;
@@ -280,8 +290,9 @@ inline int GetInt( JSContext *cx, jsval objVal, const char *propertyName, int de
 		return defaultValue;
 	return value;
 }
+*/
 
-
+/*
 inline float GetFloat( JSContext *cx, jsval objVal, const char *propertyName, float defaultValue ) {
 
 	jsdouble value;
@@ -294,8 +305,9 @@ inline float GetFloat( JSContext *cx, jsval objVal, const char *propertyName, fl
 		return defaultValue;
 	return value;
 }
+*/
 
-
+/*
 inline float GetBool( JSContext *cx, jsval objVal, const char *propertyName, bool defaultValue ) {
 
 	JSBool value;
@@ -308,5 +320,7 @@ inline float GetBool( JSContext *cx, jsval objVal, const char *propertyName, boo
 		return defaultValue;
 	return value == JS_TRUE;
 }
+*/
+
 
 #endif // _JSCONVERSIONHELPER_H_

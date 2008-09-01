@@ -181,7 +181,11 @@ inline JSBool InitLevelData( JSContext* cx, jsval value, int count, PTYPE *level
 			level[i] = val;
 	} else if ( JSVAL_IS_OBJECT(value) && JS_IsArrayObject(cx, JSVAL_TO_OBJECT(value)) ) {
 
-		FloatArrayToVector(cx, count, &value, level);
+		//FloatArrayToVector(cx, count, &value, level);
+		size_t length;
+		J_CHK( JsvalToFloatVector(cx, value, level, count, &length) );
+//		J_S_ASSERT( length == 3, "Invalid array size." );
+
 	} else if ( JSVAL_IS_STRING(value) ) {
 
 		const char *color;
@@ -238,10 +242,14 @@ inline JSBool InitCurveData( JSContext* cx, jsval value, int length, float *curv
 	} else 
 	if ( JsvalIsArray(cx, value) ) {
 
-		int curveArrayLength;
-		J_CHK( ArrayLength(cx, &curveArrayLength, value) );
+		jsuint curveArrayLength;
+		//J_CHK( ArrayLength(cx, &curveArrayLength, value) );
+		J_CHK( JS_GetArrayLength( cx, JSVAL_TO_OBJECT(value), &curveArrayLength ) );
 		float *curveArray = (float*)malloc( curveArrayLength * sizeof(float) ); // (TBD) free the curveArray ???
-		J_CHK( FloatArrayToVector(cx, curveArrayLength, &value, curveArray) );
+		//J_CHK( FloatArrayToVector(cx, curveArrayLength, &value, curveArray) );
+		size_t tmp;
+		J_CHK( JsvalToFloatVector(cx, value, curveArray, curveArrayLength, &tmp) );
+		J_S_ASSERT( length == 3, "Invalid array size." );
 
 		for ( int i = 0; i < length; i++ )
 			curve[i] = curveArray[ i * curveArrayLength / length ];
@@ -1945,11 +1953,16 @@ DEFINE_FUNCTION_FAST( Convolution ) {
 	int width = tex->width;
 	int height = tex->height;
 
-	int count;
-	J_CHK( ArrayLength(cx, &count, J_FARG(1)) );
+	jsuint count;
+	// J_CHK( ArrayLength(cx, &count, J_FARG(1)) );
+	J_CHK( JS_GetArrayLength( cx, JSVAL_TO_OBJECT(J_FARG(1)), &count ) );
 	float *kernel = (float*)malloc(sizeof(float) * count);
 	J_S_ASSERT_ALLOC( kernel );
-	J_CHK( FloatArrayToVector(cx, count, &J_FARG(1), kernel) );
+	//J_CHK( FloatArrayToVector(cx, count, &J_FARG(1), kernel) );
+	size_t length;
+	J_CHK( JsvalToFloatVector(cx, J_FARG(1), kernel, count, &length) );
+	J_S_ASSERT( length == 3, "Invalid array size." );
+
 
 	int size = (int)sqrtf(count);
 
@@ -2401,7 +2414,10 @@ DEFINE_FUNCTION_FAST( Light ) {
 	J_S_ASSERT( normals->width == tex->width && normals->height == tex->height, "Invalid normals texture size." );
 
 	Vector3 lightPos;
-	J_CHK( FloatArrayToVector(cx, 3, &J_FARG(2), lightPos.raw ) );
+//	J_CHK( FloatArrayToVector(cx, 3, &J_FARG(2), lightPos.raw ) );
+	size_t length;
+	J_CHK( JsvalToFloatVector(cx, J_FARG(2), lightPos.raw, 3, &length) );
+	J_S_ASSERT( length == 3, "Invalid array size." );
 
 	PTYPE ambient[3];
 	J_CHK( InitLevelData(cx, J_FARG(3), 3, ambient) );

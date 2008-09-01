@@ -74,7 +74,11 @@ DEFINE_FUNCTION( Trim ) {
 
 	J_S_ASSERT_ARG_MIN(1);
 	int vect[4];
-	IntArrayToVector(cx, 4, &argv[0], vect);
+	//IntArrayToVector(cx, 4, &argv[0], vect);
+	size_t length;
+	J_CHK( JsvalToIntVector(cx, argv[0], vect, 4, &length) );
+	J_S_ASSERT( length == 4, "Invalid array size." );
+
 	int x = vect[0];
 	int y = vect[1];
 	int x1 = vect[2];
