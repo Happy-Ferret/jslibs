@@ -377,7 +377,8 @@ DEFINE_FUNCTION_FAST( Color ) {
    $ARG real nz
   $H OpenGL API
    glNormal3d
-**/DEFINE_FUNCTION_FAST( Normal ) {
+**/
+DEFINE_FUNCTION_FAST( Normal ) {
 
 	J_S_ASSERT_ARG_MIN(3);
 //	float vec[3];
@@ -385,7 +386,7 @@ DEFINE_FUNCTION_FAST( Color ) {
 	jsdouble nx, ny, nz;
 	JS_ValueToNumber(cx, J_FARG(1), &nx);
 	JS_ValueToNumber(cx, J_FARG(2), &ny);
-	JS_ValueToNumber(cx, J_FARG(2), &nz);
+	JS_ValueToNumber(cx, J_FARG(3), &nz);
 	glNormal3d(nx, ny, nz);
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
@@ -1407,7 +1408,7 @@ DEFINE_FUNCTION_FAST( DeleteTexture ) {
 
 
 /**doc
- * $VOID $INAME( level, internalFormat, x, y, width, height, border )
+ * $VOID $INAME( level, internalFormat, x, y, width, height, [ border ] )
   $H arguments
    $ARG integer level
    $ARG integer internalFormat
@@ -1423,7 +1424,7 @@ DEFINE_FUNCTION_FAST( DeleteTexture ) {
 **/
 DEFINE_FUNCTION_FAST( CopyTexImage2D ) {
 
-	J_S_ASSERT_ARG_MIN(7);
+	J_S_ASSERT_ARG_MIN(6);
 	J_S_ASSERT_INT(J_FARG(1));
 	J_S_ASSERT_INT(J_FARG(2));
 	J_S_ASSERT_INT(J_FARG(3));
@@ -1705,7 +1706,7 @@ DEFINE_FUNCTION_FAST( DefineTextureImage ) {
 		channels = tex->channels;
 		type = GL_FLOAT;
 	} else {
-		
+
 		J_PROPERTY_TO_INT32( tObj, "width", width );
 		J_PROPERTY_TO_INT32( tObj, "height", height );
 		J_PROPERTY_TO_INT32( tObj, "channels", channels );
