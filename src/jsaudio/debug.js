@@ -8,8 +8,8 @@ function Hex(int) '0x'+int.toString(16).toUpperCase();
 function CheckError() Oal.error && Print( '*** error: '+Hex(Oal.error), '\n' );
 
 //var dec = new SoundFileDecoder( new File('41_30secOgg-q0.wav').Open('r') );
-//var dec = new OggVorbisDecoder( new File('41_30secOgg-q0.ogg').Open('r') );
-var dec = new SoundFileDecoder( new File('break3.wav').Open('r') );
+var dec = new OggVorbisDecoder( new File('41_30secOgg-q0.ogg').Open('r') );
+//var dec = new SoundFileDecoder( new File('break3.wav').Open('r') );
 
 Print( dec.bits, '\n' );
 Print( dec.channels, '\n' );
@@ -18,14 +18,19 @@ Print( dec.frames, '\n' );
 
 Print( '------------------------\n' );
 
-var block = dec.Read(40000);
-//var [left, right] = SplitChannels(block);
+var block = dec.Read(500000);
+var [left, right] = SplitChannels(block);
+block = right;
 
 Print( 'Decoded sound blob:', '\n' );
 Print( ' bits: '+block.bits, '\n' );
 Print( ' channels: '+block.channels, '\n' );
 Print( ' rate: '+block.rate, '\n' );
 Print( ' frames: '+block.frames, '\n' );
+
+Oal.Open("Generic Software");
+
+Oal.GenEffect();
 
 Print( '\n' );
 Print( 'OpenAL buffer:', '\n' );
@@ -49,7 +54,7 @@ Print( 'OpenAL source:', '\n' );
 var src = new OalSource();
 CheckError();
 
-src.position = [-3,0,0];
+src.position = [0,0,0];
 CheckError();
 
 Print( ' position: '+src.position, '\n' );
@@ -64,16 +69,21 @@ CheckError();
 src.Play();
 CheckError();
 
-for ( var i=0; i < 10; i++) {
+for ( var i=0; i < 500; i++) {
 
-	Print( ' state: '+Hex(src.state), '\n' );
-	CheckError();
-	Print( ' offset: '+src.secOffset.toFixed(3), '\n' );
-	CheckError();
-	Print( '\n' );
-	Sleep(200);
+	src.position = [Math.sin(i/10)*5,Math.cos(i/10)*5, 0];
+
+//	Print( ' state: '+Hex(src.state), '\n' );
+//	CheckError();
+//	Print( ' offset: '+src.secOffset.toFixed(3), '\n' );
+//	CheckError();
+//	Print( '\n' );
+	Sleep(10);
 }
 
+
+
+Oal.Close();
 
 Halt();
 

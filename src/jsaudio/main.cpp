@@ -44,6 +44,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	if ( unsafeModePtrVal != JSVAL_VOID )
 		_pUnsafeMode = (bool*)JSVAL_TO_PRIVATE(unsafeModePtrVal);
 
+/*
 	//J_S_ASSERT( context == NULL, "Invalid initialization context." );
 
 	ALCcontext *context;
@@ -51,14 +52,14 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
 	// Initialize the OpenAL library (cf. alutInit)
 
-// Doc: alcOpenDevice() open the Device specified. Current options are:
-//   "Generic Hardware"
-//   "Generic Software"
-//   "DirectSound3D" (for legacy)
-//   "DirectSound"
-//   "MMSYSTEM"
-// If no device name is specified, we will attempt to use DS3D.
-	device = alcOpenDevice (NULL);
+	// Doc: alcOpenDevice() open the Device specified. Current options are:
+	//   "Generic Hardware"
+	//   "Generic Software"
+	//   "DirectSound3D" (for legacy)
+	//   "DirectSound"
+	//   "MMSYSTEM"
+	// If no device name is specified, we will attempt to use DS3D.
+	device = alcOpenDevice ("Generic Software");
 	if (device == NULL)
 		J_REPORT_ERROR("ALUT_ERROR_OPEN_DEVICE");
 	context = alcCreateContext (device, NULL);
@@ -72,6 +73,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 		alcCloseDevice (device);
 		J_REPORT_ERROR("ALUT_ERROR_MAKE_CONTEXT_CURRENT");
 	}
+*/
 
 	J_CHK( INIT_CLASS( Oal ) );
 	J_CHK( INIT_CLASS( OalBuffer ) );
@@ -86,7 +88,8 @@ EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
 
 	ALCcontext *context = alcGetCurrentContext();
 	if ( context == NULL )
-		J_REPORT_ERROR("Unable to get the current context.");
+		return JS_TRUE; // already closed
+//		J_REPORT_ERROR("Unable to get the current context.");
 
 	// cf. alutExit
 	ALCdevice *device;

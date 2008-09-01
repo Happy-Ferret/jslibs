@@ -115,6 +115,7 @@ DEFINE_FUNCTION_FAST( QueueBuffers ) {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, J_FOBJ);
 	J_S_ASSERT_RESOURCE( pv );
+	*J_FRVAL = JSVAL_VOID;
 
 	if ( JSVAL_IS_INT(J_FARG(1)) ) {
 		
@@ -148,6 +149,7 @@ DEFINE_FUNCTION_FAST( UnqueueBuffers ) {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, J_FOBJ);
 	J_S_ASSERT_RESOURCE( pv );
+	*J_FRVAL = JSVAL_VOID;
 
 	if ( JSVAL_IS_INT(J_FARG(1)) ) {
 		
@@ -174,6 +176,7 @@ DEFINE_FUNCTION_FAST( Play ) {
 	Private *pv = (Private*)JS_GetPrivate(cx, J_FOBJ);
 	J_S_ASSERT_RESOURCE( pv );
 	alSourcePlay(pv->sid);
+	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
 
@@ -182,6 +185,7 @@ DEFINE_FUNCTION_FAST( Pause ) {
 	Private *pv = (Private*)JS_GetPrivate(cx, J_FOBJ);
 	J_S_ASSERT_RESOURCE( pv );
 	alSourcePause(pv->sid);
+	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
 
@@ -190,6 +194,7 @@ DEFINE_FUNCTION_FAST( Stop ) {
 	Private *pv = (Private*)JS_GetPrivate(cx, J_FOBJ);
 	J_S_ASSERT_RESOURCE( pv );
 	alSourceStop(pv->sid);
+	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
 
@@ -198,6 +203,7 @@ DEFINE_FUNCTION_FAST( Rewind ) {
 	Private *pv = (Private*)JS_GetPrivate(cx, J_FOBJ);
 	J_S_ASSERT_RESOURCE( pv );
 	alSourceRewind(pv->sid);
+	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
 
@@ -249,7 +255,7 @@ DEFINE_PROPERTY_GETTER( buffer ) {
 	return JS_TRUE;
 }
 
-
+/*
 DEFINE_PROPERTY_SETTER( position ) {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
@@ -260,8 +266,25 @@ DEFINE_PROPERTY_SETTER( position ) {
 	alSource3f(pv->sid, AL_POSITION, pos[0], pos[1], pos[2]);
 	return JS_TRUE;
 }
+*/
 
-DEFINE_PROPERTY_GETTER( position ) {
+
+DEFINE_FUNCTION_FAST( Position ) {
+
+	J_S_ASSERT_ARG_MIN(3);
+	Private *pv = (Private*)JS_GetPrivate(cx, J_FOBJ);
+	J_S_ASSERT_RESOURCE( pv );
+	float pos[3];
+	J_CHK( JsvalToFloat(cx, J_FARG(1), &pos[0]) );
+	J_CHK( JsvalToFloat(cx, J_FARG(2), &pos[1]) );
+	J_CHK( JsvalToFloat(cx, J_FARG(3), &pos[2]) );
+	alSource3f(pv->sid, AL_POSITION, pos[0], pos[1], pos[2]);
+	*J_FRVAL = JSVAL_VOID;
+	return JS_TRUE;
+}
+
+
+DEFINE_PROPERTY( position ) {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( pv );
@@ -272,7 +295,7 @@ DEFINE_PROPERTY_GETTER( position ) {
 }
 
 
-
+/*
 DEFINE_PROPERTY_SETTER( velocity ) {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
@@ -283,8 +306,22 @@ DEFINE_PROPERTY_SETTER( velocity ) {
 	alSource3f(pv->sid, AL_VELOCITY, pos[0], pos[1], pos[2]);
 	return JS_TRUE;
 }
+*/
+DEFINE_FUNCTION_FAST( Velocity ) {
 
-DEFINE_PROPERTY_GETTER( velocity ) {
+	J_S_ASSERT_ARG_MIN(3);
+	Private *pv = (Private*)JS_GetPrivate(cx, J_FOBJ);
+	J_S_ASSERT_RESOURCE( pv );
+	float pos[3];
+	J_CHK( JsvalToFloat(cx, J_FARG(1), &pos[0]) );
+	J_CHK( JsvalToFloat(cx, J_FARG(2), &pos[1]) );
+	J_CHK( JsvalToFloat(cx, J_FARG(3), &pos[2]) );
+	alSource3f(pv->sid, AL_VELOCITY, pos[0], pos[1], pos[2]);
+	*J_FRVAL = JSVAL_VOID;
+	return JS_TRUE;
+}
+
+DEFINE_PROPERTY( velocity ) {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( pv );
@@ -387,6 +424,8 @@ CONFIGURE_CLASS
 	HAS_TRACER
 
 	BEGIN_FUNCTION_SPEC
+		FUNCTION_FAST_ARGC( Position, 3 )
+		FUNCTION_FAST_ARGC( Velocity, 3 )
 		FUNCTION_FAST( Play )
 		FUNCTION_FAST( Pause )
 		FUNCTION_FAST( Stop )
@@ -396,8 +435,8 @@ CONFIGURE_CLASS
 
 	BEGIN_PROPERTY_SPEC
 		PROPERTY( buffer )
-		PROPERTY( position )
-		PROPERTY( velocity )
+		PROPERTY_READ( position )
+		PROPERTY_READ( velocity )
 		PROPERTY( gain )
 		PROPERTY( secOffset )
 		PROPERTY( looping )

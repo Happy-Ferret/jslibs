@@ -16,6 +16,9 @@
 
 #include <AL/al.h>
 #include <AL/alc.h>
+#include <../../efx.h>
+#include <../../EFX-Util.h>
+
 
 #define LOAD_OPENAL_EXTENSION( name, proto ) \
 	static proto name = (proto) alGetProcAddress( #name ); \
@@ -30,6 +33,85 @@ BEGIN_CLASS( Oal )
 /**doc
 === Static functions ===
 **/
+
+
+
+/**doc
+ * $VOID $INAME( [ deviceName ] )
+  $H arguments
+   $ARG string deviceName
+  $H OpenAL API
+   alcOpenDevice, alcCreateContext, alcMakeContextCurrent
+**/
+DEFINE_FUNCTION_FAST( Open ) {
+
+	// Initialize the OpenAL library (cf. alutInit)
+
+	const char *deviceName;
+	if ( J_FARG_ISDEF(1) )
+		J_CHK( JsvalToString(cx, &J_FARG(1), &deviceName) );
+	else
+		deviceName = NULL;
+
+	// Doc: alcOpenDevice() open the Device specified. Current options are:
+	//   "Generic Hardware"
+	//   "Generic Software"
+	//   "DirectSound3D" (for legacy)
+	//   "DirectSound"
+	//   "MMSYSTEM"
+	// If no device name is specified, we will attempt to use DS3D.
+	ALCdevice *device = alcOpenDevice (deviceName);
+	if (device == NULL)
+		J_REPORT_ERROR("ALUT_ERROR_OPEN_DEVICE");
+	ALCcontext *context = alcCreateContext (device, NULL);
+	if (context == NULL) {
+		alcCloseDevice (device);
+		J_REPORT_ERROR("ALUT_ERROR_CREATE_CONTEXT");
+	}
+	if (!alcMakeContextCurrent(context)) {
+
+		alcDestroyContext (context);
+		alcCloseDevice (device);
+		J_REPORT_ERROR("ALUT_ERROR_MAKE_CONTEXT_CURRENT");
+	}
+
+	*J_FRVAL = JSVAL_VOID;
+	return JS_TRUE;
+}
+
+
+/**doc
+ * $VOID $INAME()
+  $H OpenAL API
+   alcGetCurrentContext, alcMakeContextCurrent, alcGetContextsDevice, alcDestroyContext, alcCloseDevice
+**/
+DEFINE_FUNCTION_FAST( Close ) {
+
+	// cf. alutExit
+	ALCcontext *context = alcGetCurrentContext();
+	if ( context == NULL )
+		J_REPORT_ERROR("Unable to get the current context.");
+	ALCdevice *device;
+	if (!alcMakeContextCurrent (NULL))
+		J_REPORT_ERROR("ALUT_ERROR_MAKE_CONTEXT_CURRENT");
+	device = alcGetContextsDevice (context);
+	if (alcGetError (device) != ALC_NO_ERROR )
+		J_REPORT_ERROR("ALUT_ERROR_ALC_ERROR_ON_ENTRY");
+	alcDestroyContext (context);
+	if (alcGetError (device) != ALC_NO_ERROR)
+		J_REPORT_ERROR("ALUT_ERROR_DESTROY_CONTEXT");
+	if (!alcCloseDevice (device))
+		J_REPORT_ERROR("ALUT_ERROR_CLOSE_DEVICE");
+
+	if (!alcMakeContextCurrent(NULL)) { // (TBD) check this
+
+		J_REPORT_ERROR("ALUT_ERROR_MAKE_CONTEXT_CURRENT");
+	}
+
+	*J_FRVAL = JSVAL_VOID;
+	return JS_TRUE;
+}
+
 
 
 /**doc
@@ -832,6 +914,23 @@ DEFINE_FUNCTION_FAST( RewindSource ) {
 }
 
 
+/**doc
+ * $VOID $INAME()
+  $H OpenaL API
+   alGenEffects
+**/
+DEFINE_FUNCTION_FAST( GenEffect ) {
+
+	LOAD_OPENAL_EXTENSION( alGenEffects, LPALGENEFFECTS );
+
+	ALuint effect;
+	alGenEffects(1, &effect);
+
+	return JS_TRUE;
+}
+
+
+
 
 
 /**doc
@@ -1020,6 +1119,9 @@ CONFIGURE_CLASS
 
 	BEGIN_STATIC_FUNCTION_SPEC
 
+		FUNCTION_FAST_ARGC( Open, 1 )
+		FUNCTION_FAST_ARGC( Close, 0 )
+
 		FUNCTION_FAST_ARGC( DopplerFactor, 1 )
 		FUNCTION_FAST_ARGC( DopplerVelocity, 1 )
 		FUNCTION_FAST_ARGC( SpeedOfSound, 1 )
@@ -1052,6 +1154,10 @@ CONFIGURE_CLASS
 		FUNCTION_FAST_ARGC( RewindSource, 1 )
 
 		FUNCTION_FAST_ARGC( PlaySound, 1 ) // non-openal API
+
+		// OpenAL extensions
+		FUNCTION_FAST_ARGC( GenEffect, 0 )
+		
 
 	END_STATIC_FUNCTION_SPEC
 
@@ -1090,8 +1196,49 @@ $H example 1
 **/
  
  
- /*
-ogg test files:
+/* ogg test files:
 	http://xiph.org/vorbis/listen.html
+*/
+
+/* Introduction to EFX
+	http://connect.creativelabs.com/developer/Wiki/Introduction%20to%20EFX.aspx
+*/
+
+
+/* full List of EFX functions
+
+	alGenEffects = (LPALGENEFFECTS)alGetProcAddress("alGenEffects");
+	alDeleteEffects = (LPALDELETEEFFECTS )alGetProcAddress("alDeleteEffects");
+	alIsEffect = (LPALISEFFECT )alGetProcAddress("alIsEffect");
+	alEffecti = (LPALEFFECTI)alGetProcAddress("alEffecti");
+	alEffectiv = (LPALEFFECTIV)alGetProcAddress("alEffectiv");
+	alEffectf = (LPALEFFECTF)alGetProcAddress("alEffectf");
+	alEffectfv = (LPALEFFECTFV)alGetProcAddress("alEffectfv");
+	alGetEffecti = (LPALGETEFFECTI)alGetProcAddress("alGetEffecti");
+	alGetEffectiv = (LPALGETEFFECTIV)alGetProcAddress("alGetEffectiv");
+	alGetEffectf = (LPALGETEFFECTF)alGetProcAddress("alGetEffectf");
+	alGetEffectfv = (LPALGETEFFECTFV)alGetProcAddress("alGetEffectfv");
+	alGenFilters = (LPALGENFILTERS)alGetProcAddress("alGenFilters");
+	alDeleteFilters = (LPALDELETEFILTERS)alGetProcAddress("alDeleteFilters");
+	alIsFilter = (LPALISFILTER)alGetProcAddress("alIsFilter");
+	alFilteri = (LPALFILTERI)alGetProcAddress("alFilteri");
+	alFilteriv = (LPALFILTERIV)alGetProcAddress("alFilteriv");
+	alFilterf = (LPALFILTERF)alGetProcAddress("alFilterf");
+	alFilterfv = (LPALFILTERFV)alGetProcAddress("alFilterfv");
+	alGetFilteri = (LPALGETFILTERI )alGetProcAddress("alGetFilteri");
+	alGetFilteriv = (LPALGETFILTERIV )alGetProcAddress("alGetFilteriv");
+	alGetFilterf = (LPALGETFILTERF )alGetProcAddress("alGetFilterf");
+	alGetFilterfv = (LPALGETFILTERFV )alGetProcAddress("alGetFilterfv");
+	alGenAuxiliaryEffectSlots = (LPALGENAUXILIARYEFFECTSLOTS)alGetProcAddress("alGenAuxiliaryEffectSlots");
+	alDeleteAuxiliaryEffectSlots = (LPALDELETEAUXILIARYEFFECTSLOTS)alGetProcAddress("alDeleteAuxiliaryEffectSlots");
+	alIsAuxiliaryEffectSlot = (LPALISAUXILIARYEFFECTSLOT)alGetProcAddress("alIsAuxiliaryEffectSlot");
+	alAuxiliaryEffectSloti = (LPALAUXILIARYEFFECTSLOTI)alGetProcAddress("alAuxiliaryEffectSloti");
+	alAuxiliaryEffectSlotiv = (LPALAUXILIARYEFFECTSLOTIV)alGetProcAddress("alAuxiliaryEffectSlotiv");
+	alAuxiliaryEffectSlotf = (LPALAUXILIARYEFFECTSLOTF)alGetProcAddress("alAuxiliaryEffectSlotf");
+	alAuxiliaryEffectSlotfv = (LPALAUXILIARYEFFECTSLOTFV)alGetProcAddress("alAuxiliaryEffectSlotfv");
+	alGetAuxiliaryEffectSloti = (LPALGETAUXILIARYEFFECTSLOTI)alGetProcAddress("alGetAuxiliaryEffectSloti");
+	alGetAuxiliaryEffectSlotiv = (LPALGETAUXILIARYEFFECTSLOTIV)alGetProcAddress("alGetAuxiliaryEffectSlotiv");
+	alGetAuxiliaryEffectSlotf = (LPALGETAUXILIARYEFFECTSLOTF)alGetProcAddress("alGetAuxiliaryEffectSlotf");
+	alGetAuxiliaryEffectSlotfv = (LPALGETAUXILIARYEFFECTSLOTFV)alGetProcAddress("alGetAuxiliaryEffectSlotfv");
 
 */

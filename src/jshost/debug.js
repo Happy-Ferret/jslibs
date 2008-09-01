@@ -2,9 +2,12 @@ LoadModule('jsstd');
 LoadModule('jsio');
 
 
-var b = new Blob();
 
-Print( b instanceof String );
+Print( eval( new String('({add:123})') ) );
+
+
+
+
 
 
 Halt();
