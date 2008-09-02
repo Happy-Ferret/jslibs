@@ -14,13 +14,12 @@
 
 #include "stdafx.h"
 
-#include <AL/al.h>
-#include <AL/alc.h>
-
 DECLARE_CLASS(Oal)
 DECLARE_CLASS(OalBuffer)
 DECLARE_CLASS(OalSource)
 DECLARE_CLASS(OalListener)
+DECLARE_CLASS(OalEffect);
+DECLARE_CLASS(OalFilter);
 
 
 //static ALCcontext *context = NULL;
@@ -79,6 +78,8 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	J_CHK( INIT_CLASS( OalBuffer ) );
 	J_CHK( INIT_CLASS( OalSource ) );
 	J_CHK( INIT_CLASS( OalListener ) );
+	J_CHK( INIT_CLASS( OalEffect ) );
+	J_CHK( INIT_CLASS( OalFilter ) );
 
 	return JS_TRUE;
 }

@@ -2,10 +2,11 @@ LoadModule('jsio');
 LoadModule('jsstd');
 LoadModule('jssound');
 LoadModule('jsaudio');
+LoadModule('..\\jsdebug\\debug\\jsdebug');
 
 function Hex(int) '0x'+int.toString(16).toUpperCase();
 
-function CheckError() Oal.error && Print( '*** error: '+Hex(Oal.error), '\n' );
+function CheckError() let ( err = Oal.error ) err && Print( '*** error: '+Hex(err)+' '+Locate(-1), '\n' );
 
 //var dec = new SoundFileDecoder( new File('41_30secOgg-q0.wav').Open('r') );
 var dec = new OggVorbisDecoder( new File('41_30secOgg-q0.ogg').Open('r') );
@@ -18,7 +19,7 @@ Print( dec.frames, '\n' );
 
 Print( '------------------------\n' );
 
-var block = dec.Read(500000);
+var block = dec.Read(50000);
 var [left, right] = SplitChannels(block);
 block = right;
 
@@ -30,7 +31,6 @@ Print( ' frames: '+block.frames, '\n' );
 
 Oal.Open("Generic Software");
 
-Oal.GenEffect();
 
 Print( '\n' );
 Print( 'OpenAL buffer:', '\n' );
@@ -54,7 +54,26 @@ Print( 'OpenAL source:', '\n' );
 var src = new OalSource();
 CheckError();
 
-src.position = [0,0,0];
+
+src.effect = new OalEffect( Oal.EFFECT_REVERB );
+
+var filter = new OalFilter();
+CheckError();
+
+filter.type = Oal.FILTER_LOWPASS;
+CheckError();
+
+filter.lowpassGain = 2;
+CheckError();
+
+filter.lowpassGainHF = 0.1;
+CheckError();
+
+src.directFilter = filter;
+CheckError();
+
+
+src.position = [0,0,-10];
 CheckError();
 
 Print( ' position: '+src.position, '\n' );
@@ -69,7 +88,7 @@ CheckError();
 src.Play();
 CheckError();
 
-for ( var i=0; i < 500; i++) {
+for ( var i=0; i < 100; i++) {
 
 	src.position = [Math.sin(i/10)*5,Math.cos(i/10)*5, 0];
 
@@ -80,7 +99,9 @@ for ( var i=0; i < 500; i++) {
 //	Print( '\n' );
 	Sleep(10);
 }
+src.Stop();
 
+	Sleep(1000);
 
 
 Oal.Close();

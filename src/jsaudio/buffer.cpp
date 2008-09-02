@@ -14,8 +14,6 @@
 
 #include "stdafx.h"
 
-#include <AL/al.h>
-#include <AL/alc.h>
 
 BEGIN_CLASS( OalBuffer )
 

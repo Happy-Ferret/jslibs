@@ -16,8 +16,6 @@
 
 #include "../common/queue.h"
 
-#include <AL/al.h>
-#include <AL/alc.h>
 
 #define SLOT_BUFFER 0
 
@@ -208,6 +206,35 @@ DEFINE_FUNCTION_FAST( Rewind ) {
 }
 
 
+/*
+DEFINE_FUNCTION_FAST( Effect ) {
+
+	J_S_ASSERT_ARG_MIN(1);
+	J_S_ASSERT_INT(J_FARG(1));
+
+	Private *pv = (Private*)JS_GetPrivate(cx, J_FOBJ);
+	J_S_ASSERT_RESOURCE( pv );
+	ALuint send;
+	J_CHK( JsvalToUInt(cx, J_FARG(1), &send) );
+
+	ALuint effectSlot = AL_EFFECTSLOT_NULL;
+	ALuint filter = AL_FILTER_NULL;
+	if ( J_FARG_ISDEF(2) )
+		J_CHK( JsvalToUInt(cx, J_FARG(2), &effectSlot) );
+//	if ( J_FARG_ISDEF(3) )
+//		J_CHK( JsvalToUInt(cx, J_FARG(3), &filter) );
+
+//	ALCdevice *device = alcGetContextsDevice(alcGetCurrentContext());
+//	ALCint numSends;
+//	alcGetIntegerv(device, ALC_MAX_AUXILIARY_SENDS, 1, &numSends);
+
+	J_CHK( JS_DefineProperty(cx, J_FOBJ, "effect", J_FARG(2), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
+
+	alSource3i(pv->sid, AL_AUXILIARY_SEND_FILTER, effectSlot, send, filter);
+	return JS_TRUE;
+}
+*/
+
 
 DEFINE_FUNCTION_FAST( valueOf ) {
 
@@ -222,6 +249,37 @@ DEFINE_FUNCTION_FAST( valueOf ) {
 /**doc
 === Properties ===
 **/
+
+DEFINE_PROPERTY( effect ) {
+
+	Private *pv = (Private*)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE( pv );
+
+	alGetError(); // reset
+	ALuint effectSlot;
+	if ( !JSVAL_IS_VOID(*vp) )
+		J_CHK( JsvalToUInt(cx, *vp, &effectSlot) );	
+	else
+		effectSlot = AL_EFFECTSLOT_NULL;
+	alSource3i(pv->sid, AL_AUXILIARY_SEND_FILTER, effectSlot, 0, AL_FILTER_NULL);
+	ALenum err = alGetError();
+	return JS_TRUE;
+}
+
+
+DEFINE_PROPERTY( directFilter ) {
+
+	Private *pv = (Private*)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE( pv );
+
+	ALuint filter;
+	if ( !JSVAL_IS_VOID(*vp) )
+		J_CHK( JsvalToUInt(cx, *vp, &filter) );	
+	else
+		filter = AL_FILTER_NULL;
+	alSourcei(pv->sid, AL_DIRECT_FILTER, filter);
+	return JS_TRUE;
+}
 
 
 DEFINE_PROPERTY_SETTER( buffer ) {
@@ -430,10 +488,16 @@ CONFIGURE_CLASS
 		FUNCTION_FAST( Pause )
 		FUNCTION_FAST( Stop )
 		FUNCTION_FAST( Rewind )
+
+//		FUNCTION_FAST_ARGC( Effect, 3 )
+
 		FUNCTION_FAST( valueOf )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
+		PROPERTY_WRITE_STORE( effect )
+		PROPERTY_WRITE_STORE( directFilter )
+
 		PROPERTY( buffer )
 		PROPERTY_READ( position )
 		PROPERTY_READ( velocity )

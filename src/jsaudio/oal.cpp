@@ -14,15 +14,6 @@
 
 #include "stdafx.h"
 
-#include <AL/al.h>
-#include <AL/alc.h>
-#include <../../efx.h>
-#include <../../EFX-Util.h>
-
-
-#define LOAD_OPENAL_EXTENSION( name, proto ) \
-	static proto name = (proto) alGetProcAddress( #name ); \
-	J_S_ASSERT_1( name != NULL, "OpenAL extension %s unavailable.", #name );
 
 
 /**doc
@@ -922,13 +913,25 @@ DEFINE_FUNCTION_FAST( RewindSource ) {
 DEFINE_FUNCTION_FAST( GenEffect ) {
 
 	LOAD_OPENAL_EXTENSION( alGenEffects, LPALGENEFFECTS );
-
-	ALuint effect;
-	alGenEffects(1, &effect);
-
+	ALuint eid;
+	alGenEffects(1, &eid);
+	J_CHK( UIntToJsval(cx, eid, J_FRVAL) );
 	return JS_TRUE;
 }
 
+/**doc
+ * $VOID $INAME()
+  $H OpenaL API
+   alGenEffects
+**/
+DEFINE_FUNCTION_FAST( DeleteEffect ) {
+
+	LOAD_OPENAL_EXTENSION( alDeleteEffects, LPALDELETEEFFECTS );
+	ALuint eid;
+	alDeleteEffects(1, &eid);
+	J_CHK( UIntToJsval(cx, eid, J_FRVAL) );
+	return JS_TRUE;
+}
 
 
 
@@ -1115,6 +1118,117 @@ CONFIGURE_CLASS
 		CONST_INTEGER(	LINEAR_DISTANCE_CLAMPED	  ,AL_LINEAR_DISTANCE_CLAMPED		)
 		CONST_INTEGER(	EXPONENT_DISTANCE			  ,AL_EXPONENT_DISTANCE				)
 		CONST_INTEGER(	EXPONENT_DISTANCE_CLAMPED ,AL_EXPONENT_DISTANCE_CLAMPED	)
+
+
+		CONST_INTEGER(METERS_PER_UNIT                                , AL_METERS_PER_UNIT                                )
+		CONST_INTEGER(DIRECT_FILTER                                  , AL_DIRECT_FILTER                                  )
+		CONST_INTEGER(AUXILIARY_SEND_FILTER                          , AL_AUXILIARY_SEND_FILTER                          )
+		CONST_INTEGER(AIR_ABSORPTION_FACTOR                          , AL_AIR_ABSORPTION_FACTOR                          )
+		CONST_INTEGER(ROOM_ROLLOFF_FACTOR                            , AL_ROOM_ROLLOFF_FACTOR                            )
+		CONST_INTEGER(CONE_OUTER_GAINHF                              , AL_CONE_OUTER_GAINHF                              )
+		CONST_INTEGER(DIRECT_FILTER_GAINHF_AUTO                      , AL_DIRECT_FILTER_GAINHF_AUTO                      )
+		CONST_INTEGER(AUXILIARY_SEND_FILTER_GAIN_AUTO                , AL_AUXILIARY_SEND_FILTER_GAIN_AUTO                )
+		CONST_INTEGER(AUXILIARY_SEND_FILTER_GAINHF_AUTO              , AL_AUXILIARY_SEND_FILTER_GAINHF_AUTO              )
+		CONST_INTEGER(REVERB_DENSITY                                 , AL_REVERB_DENSITY                                 )
+		CONST_INTEGER(REVERB_DIFFUSION                               , AL_REVERB_DIFFUSION                               )
+		CONST_INTEGER(REVERB_GAIN                                    , AL_REVERB_GAIN                                    )
+		CONST_INTEGER(REVERB_GAINHF                                  , AL_REVERB_GAINHF                                  )
+		CONST_INTEGER(REVERB_DECAY_TIME                              , AL_REVERB_DECAY_TIME                              )
+		CONST_INTEGER(REVERB_DECAY_HFRATIO                           , AL_REVERB_DECAY_HFRATIO                           )
+		CONST_INTEGER(REVERB_REFLECTIONS_GAIN                        , AL_REVERB_REFLECTIONS_GAIN                        )
+		CONST_INTEGER(REVERB_REFLECTIONS_DELAY                       , AL_REVERB_REFLECTIONS_DELAY                       )
+		CONST_INTEGER(REVERB_LATE_REVERB_GAIN                        , AL_REVERB_LATE_REVERB_GAIN                        )
+		CONST_INTEGER(REVERB_LATE_REVERB_DELAY                       , AL_REVERB_LATE_REVERB_DELAY                       )
+		CONST_INTEGER(REVERB_AIR_ABSORPTION_GAINHF                   , AL_REVERB_AIR_ABSORPTION_GAINHF                   )
+		CONST_INTEGER(REVERB_ROOM_ROLLOFF_FACTOR                     , AL_REVERB_ROOM_ROLLOFF_FACTOR                     )
+		CONST_INTEGER(REVERB_DECAY_HFLIMIT                           , AL_REVERB_DECAY_HFLIMIT                           )
+		CONST_INTEGER(CHORUS_WAVEFORM                                , AL_CHORUS_WAVEFORM                                )
+		CONST_INTEGER(CHORUS_PHASE                                   , AL_CHORUS_PHASE                                   )
+		CONST_INTEGER(CHORUS_RATE                                    , AL_CHORUS_RATE                                    )
+		CONST_INTEGER(CHORUS_DEPTH                                   , AL_CHORUS_DEPTH                                   )
+		CONST_INTEGER(CHORUS_FEEDBACK                                , AL_CHORUS_FEEDBACK                                )
+		CONST_INTEGER(CHORUS_DELAY                                   , AL_CHORUS_DELAY                                   )
+		CONST_INTEGER(DISTORTION_EDGE                                , AL_DISTORTION_EDGE                                )
+		CONST_INTEGER(DISTORTION_GAIN                                , AL_DISTORTION_GAIN                                )
+		CONST_INTEGER(DISTORTION_LOWPASS_CUTOFF                      , AL_DISTORTION_LOWPASS_CUTOFF                      )
+		CONST_INTEGER(DISTORTION_EQCENTER                            , AL_DISTORTION_EQCENTER                            )
+		CONST_INTEGER(DISTORTION_EQBANDWIDTH                         , AL_DISTORTION_EQBANDWIDTH                         )
+		CONST_INTEGER(ECHO_DELAY                                     , AL_ECHO_DELAY                                     )
+		CONST_INTEGER(ECHO_LRDELAY                                   , AL_ECHO_LRDELAY                                   )
+		CONST_INTEGER(ECHO_DAMPING                                   , AL_ECHO_DAMPING                                   )
+		CONST_INTEGER(ECHO_FEEDBACK                                  , AL_ECHO_FEEDBACK                                  )
+		CONST_INTEGER(ECHO_SPREAD                                    , AL_ECHO_SPREAD                                    )
+		CONST_INTEGER(FLANGER_WAVEFORM                               , AL_FLANGER_WAVEFORM                               )
+		CONST_INTEGER(FLANGER_PHASE                                  , AL_FLANGER_PHASE                                  )
+		CONST_INTEGER(FLANGER_RATE                                   , AL_FLANGER_RATE                                   )
+		CONST_INTEGER(FLANGER_DEPTH                                  , AL_FLANGER_DEPTH                                  )
+		CONST_INTEGER(FLANGER_FEEDBACK                               , AL_FLANGER_FEEDBACK                               )
+		CONST_INTEGER(FLANGER_DELAY                                  , AL_FLANGER_DELAY                                  )
+		CONST_INTEGER(FREQUENCY_SHIFTER_FREQUENCY                    , AL_FREQUENCY_SHIFTER_FREQUENCY                    )
+		CONST_INTEGER(FREQUENCY_SHIFTER_LEFT_DIRECTION               , AL_FREQUENCY_SHIFTER_LEFT_DIRECTION               )
+		CONST_INTEGER(FREQUENCY_SHIFTER_RIGHT_DIRECTION              , AL_FREQUENCY_SHIFTER_RIGHT_DIRECTION              )
+		CONST_INTEGER(VOCAL_MORPHER_PHONEMEA                         , AL_VOCAL_MORPHER_PHONEMEA                         )
+		CONST_INTEGER(VOCAL_MORPHER_PHONEMEA_COARSE_TUNING           , AL_VOCAL_MORPHER_PHONEMEA_COARSE_TUNING           )
+		CONST_INTEGER(VOCAL_MORPHER_PHONEMEB                         , AL_VOCAL_MORPHER_PHONEMEB                         )
+		CONST_INTEGER(VOCAL_MORPHER_PHONEMEB_COARSE_TUNING           , AL_VOCAL_MORPHER_PHONEMEB_COARSE_TUNING           )
+		CONST_INTEGER(VOCAL_MORPHER_WAVEFORM                         , AL_VOCAL_MORPHER_WAVEFORM                         )
+		CONST_INTEGER(VOCAL_MORPHER_RATE                             , AL_VOCAL_MORPHER_RATE                             )
+		CONST_INTEGER(PITCH_SHIFTER_COARSE_TUNE                      , AL_PITCH_SHIFTER_COARSE_TUNE                      )
+		CONST_INTEGER(PITCH_SHIFTER_FINE_TUNE                        , AL_PITCH_SHIFTER_FINE_TUNE                        )
+		CONST_INTEGER(RING_MODULATOR_FREQUENCY                       , AL_RING_MODULATOR_FREQUENCY                       )
+		CONST_INTEGER(RING_MODULATOR_HIGHPASS_CUTOFF                 , AL_RING_MODULATOR_HIGHPASS_CUTOFF                 )
+		CONST_INTEGER(RING_MODULATOR_WAVEFORM                        , AL_RING_MODULATOR_WAVEFORM                        )
+		CONST_INTEGER(AUTOWAH_ATTACK_TIME                            , AL_AUTOWAH_ATTACK_TIME                            )
+		CONST_INTEGER(AUTOWAH_RELEASE_TIME                           , AL_AUTOWAH_RELEASE_TIME                           )
+		CONST_INTEGER(AUTOWAH_RESONANCE                              , AL_AUTOWAH_RESONANCE                              )
+		CONST_INTEGER(AUTOWAH_PEAK_GAIN                              , AL_AUTOWAH_PEAK_GAIN                              )
+		CONST_INTEGER(COMPRESSOR_ONOFF                               , AL_COMPRESSOR_ONOFF                               )
+		CONST_INTEGER(EQUALIZER_LOW_GAIN                             , AL_EQUALIZER_LOW_GAIN                             )
+		CONST_INTEGER(EQUALIZER_LOW_CUTOFF                           , AL_EQUALIZER_LOW_CUTOFF                           )
+		CONST_INTEGER(EQUALIZER_MID1_GAIN                            , AL_EQUALIZER_MID1_GAIN                            )
+		CONST_INTEGER(EQUALIZER_MID1_CENTER                          , AL_EQUALIZER_MID1_CENTER                          )
+		CONST_INTEGER(EQUALIZER_MID1_WIDTH                           , AL_EQUALIZER_MID1_WIDTH                           )
+		CONST_INTEGER(EQUALIZER_MID2_GAIN                            , AL_EQUALIZER_MID2_GAIN                            )
+		CONST_INTEGER(EQUALIZER_MID2_CENTER                          , AL_EQUALIZER_MID2_CENTER                          )
+		CONST_INTEGER(EQUALIZER_MID2_WIDTH                           , AL_EQUALIZER_MID2_WIDTH                           )
+		CONST_INTEGER(EQUALIZER_HIGH_GAIN                            , AL_EQUALIZER_HIGH_GAIN                            )
+		CONST_INTEGER(EQUALIZER_HIGH_CUTOFF                          , AL_EQUALIZER_HIGH_CUTOFF                          )
+		CONST_INTEGER(EFFECT_FIRST_PARAMETER                         , AL_EFFECT_FIRST_PARAMETER                         )
+		CONST_INTEGER(EFFECT_LAST_PARAMETER                          , AL_EFFECT_LAST_PARAMETER                          )
+		CONST_INTEGER(EFFECT_TYPE                                    , AL_EFFECT_TYPE                                    )
+		CONST_INTEGER(EFFECT_NULL                                    , AL_EFFECT_NULL                                    )
+		CONST_INTEGER(EFFECT_REVERB                                  , AL_EFFECT_REVERB                                  )
+		CONST_INTEGER(EFFECT_CHORUS                                  , AL_EFFECT_CHORUS                                  )
+		CONST_INTEGER(EFFECT_DISTORTION                              , AL_EFFECT_DISTORTION                              )
+		CONST_INTEGER(EFFECT_ECHO                                    , AL_EFFECT_ECHO                                    )
+		CONST_INTEGER(EFFECT_FLANGER                                 , AL_EFFECT_FLANGER                                 )
+		CONST_INTEGER(EFFECT_FREQUENCY_SHIFTER                       , AL_EFFECT_FREQUENCY_SHIFTER                       )
+		CONST_INTEGER(EFFECT_VOCAL_MORPHER                           , AL_EFFECT_VOCAL_MORPHER                           )
+		CONST_INTEGER(EFFECT_PITCH_SHIFTER                           , AL_EFFECT_PITCH_SHIFTER                           )
+		CONST_INTEGER(EFFECT_RING_MODULATOR                          , AL_EFFECT_RING_MODULATOR                          )
+		CONST_INTEGER(EFFECT_AUTOWAH                                 , AL_EFFECT_AUTOWAH                                 )
+		CONST_INTEGER(EFFECT_COMPRESSOR                              , AL_EFFECT_COMPRESSOR                              )
+		CONST_INTEGER(EFFECT_EQUALIZER                               , AL_EFFECT_EQUALIZER                               )
+		CONST_INTEGER(EFFECTSLOT_EFFECT                              , AL_EFFECTSLOT_EFFECT                              )
+		CONST_INTEGER(EFFECTSLOT_GAIN                                , AL_EFFECTSLOT_GAIN                                )
+		CONST_INTEGER(EFFECTSLOT_AUXILIARY_SEND_AUTO                 , AL_EFFECTSLOT_AUXILIARY_SEND_AUTO                 )
+		CONST_INTEGER(EFFECTSLOT_NULL                                , AL_EFFECTSLOT_NULL                                )
+		CONST_INTEGER(LOWPASS_GAIN                                   , AL_LOWPASS_GAIN                                   )
+		CONST_INTEGER(LOWPASS_GAINHF                                 , AL_LOWPASS_GAINHF                                 )
+		CONST_INTEGER(HIGHPASS_GAIN                                  , AL_HIGHPASS_GAIN                                  )
+		CONST_INTEGER(HIGHPASS_GAINLF                                , AL_HIGHPASS_GAINLF                                )
+		CONST_INTEGER(BANDPASS_GAIN                                  , AL_BANDPASS_GAIN                                  )
+		CONST_INTEGER(BANDPASS_GAINLF                                , AL_BANDPASS_GAINLF                                )
+		CONST_INTEGER(BANDPASS_GAINHF                                , AL_BANDPASS_GAINHF                                )
+		CONST_INTEGER(FILTER_FIRST_PARAMETER                         , AL_FILTER_FIRST_PARAMETER                         )
+		CONST_INTEGER(FILTER_LAST_PARAMETER                          , AL_FILTER_LAST_PARAMETER                          )
+		CONST_INTEGER(FILTER_TYPE                                    , AL_FILTER_TYPE                                    )
+		CONST_INTEGER(FILTER_NULL                                    , AL_FILTER_NULL                                    )
+		CONST_INTEGER(FILTER_LOWPASS                                 , AL_FILTER_LOWPASS                                 )
+		CONST_INTEGER(FILTER_HIGHPASS                                , AL_FILTER_HIGHPASS                                )
+		CONST_INTEGER(FILTER_BANDPASS                                , AL_FILTER_BANDPASS                                )
+
+
 	END_CONST_INTEGER_SPEC
 
 	BEGIN_STATIC_FUNCTION_SPEC

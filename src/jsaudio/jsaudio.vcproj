@@ -41,7 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\libs\openal\src\include"
+				AdditionalIncludeDirectories="..\..\libs\openal\sdk\include;..\..\libs\openal\src\include"
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -118,7 +118,7 @@
 				Name="VCCLCompilerTool"
 				InlineFunctionExpansion="2"
 				FavorSizeOrSpeed="1"
-				AdditionalIncludeDirectories="..\..\libs\openal\src\include"
+				AdditionalIncludeDirectories="..\..\libs\openal\sdk\include;..\..\libs\openal\src\include"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB"
 				BasicRuntimeChecks="0"
 				BufferSecurityCheck="false"
@@ -181,6 +181,14 @@
 			>
 			<File
 				RelativePath=".\buffer.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\effect.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\filter.cpp"
 				>
 			</File>
 			<File
