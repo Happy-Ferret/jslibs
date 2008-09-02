@@ -126,7 +126,7 @@ extern bool *_pUnsafeMode;
 // is the current obj (this)
 #define J_OBJ (obj)
 // same for fast native
-#define J_FOBJ JS_THIS_OBJECT(cx, vp)
+#define J_FOBJ (argc, JS_THIS_OBJECT(cx, vp))
 
 // the return value
 #define J_RVAL (rval)
