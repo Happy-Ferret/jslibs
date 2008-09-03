@@ -188,6 +188,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\error.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\filter.cpp"
 				>
 			</File>
@@ -201,6 +205,10 @@
 			</File>
 			<File
 				RelativePath=".\oal.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\oalefxapi.cpp"
 				>
 			</File>
 			<File
@@ -233,6 +241,14 @@
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
+			<File
+				RelativePath=".\error.h"
+				>
+			</File>
+			<File
+				RelativePath=".\oalefxapi.h"
+				>
+			</File>
 			<File
 				RelativePath=".\stdafx.h"
 				>

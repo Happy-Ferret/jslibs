@@ -6,8 +6,6 @@ LoadModule('..\\jsdebug\\debug\\jsdebug');
 
 function Hex(int) '0x'+int.toString(16).toUpperCase();
 
-function CheckError() let ( err = Oal.error ) err && Print( '*** error: '+Hex(err)+' '+Locate(-1), '\n' );
-
 //var dec = new SoundFileDecoder( new File('41_30secOgg-q0.wav').Open('r') );
 var dec = new OggVorbisDecoder( new File('41_30secOgg-q0.ogg').Open('r') );
 //var dec = new SoundFileDecoder( new File('break3.wav').Open('r') );
@@ -21,7 +19,7 @@ Print( '------------------------\n' );
 
 var block = dec.Read(50000);
 var [left, right] = SplitChannels(block);
-block = right;
+block = left;
 
 Print( 'Decoded sound blob:', '\n' );
 Print( ' bits: '+block.bits, '\n' );
@@ -29,8 +27,14 @@ Print( ' channels: '+block.channels, '\n' );
 Print( ' rate: '+block.rate, '\n' );
 Print( ' frames: '+block.frames, '\n' );
 
-Oal.Open("Generic Software");
+Print( '\n' );
 
+
+
+
+Oal.Open('Generic Software');
+Print( 'has EFX: '+Oal.hasEfx, '\n' );
+Print( 'maxAuxiliarySends: '+Oal.maxAuxiliarySends, '\n' );
 
 Print( '\n' );
 Print( 'OpenAL buffer:', '\n' );
@@ -45,63 +49,52 @@ Print( ' channels: '+b.channels, '\n' );
 Print( '\n' );
 Print( 'OpenAL listener:', '\n' );
 Print( ' position: '+OalListener.position, '\n' );
-CheckError();
-
 
 Print( '\n' );
 Print( 'OpenAL source:', '\n' );
 
 var src = new OalSource();
-CheckError();
+src.buffer = b;
+src.looping = false;
+src.Position(15,0,0);
 
 
-src.effect = new OalEffect( Oal.EFFECT_REVERB );
+var effect = new OalEffect();
+//effect.Test();
+effect.type = Oal.EFFECT_REVERB;
+effect.gain = 1;
+src.effect = effect;
 
+// Changing a parameter value in the Filter Object after it has been attached to a Source will not affect the Source.
+// To update the filter(s) used on a Source, an application must update the parameters of a Filter object and then re-attach it to the Source.
+src.directFilter = undefined;
+
+
+Print( ' effect: '+effect, '\n' );
+
+/*
 var filter = new OalFilter();
-CheckError();
-
 filter.type = Oal.FILTER_LOWPASS;
-CheckError();
-
-filter.lowpassGain = 2;
-CheckError();
-
+filter.lowpassGain = 0.5;
 filter.lowpassGainHF = 0.1;
-CheckError();
-
 src.directFilter = filter;
-CheckError();
-
-
-src.position = [0,0,-10];
-CheckError();
+*/
 
 Print( ' position: '+src.position, '\n' );
-CheckError();
 
-src.buffer = b;
-CheckError();
-
-src.looping = true;
-CheckError();
 
 src.Play();
-CheckError();
 
 for ( var i=0; i < 100; i++) {
 
 	src.position = [Math.sin(i/10)*5,Math.cos(i/10)*5, 0];
 
 //	Print( ' state: '+Hex(src.state), '\n' );
-//	CheckError();
 //	Print( ' offset: '+src.secOffset.toFixed(3), '\n' );
-//	CheckError();
 //	Print( '\n' );
-	Sleep(10);
+	Sleep(20);
 }
 src.Stop();
-
-	Sleep(1000);
 
 
 Oal.Close();

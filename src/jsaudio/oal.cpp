@@ -13,7 +13,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-
+#include "oalefxapi.h"
 
 
 /**doc
@@ -38,6 +38,8 @@ DEFINE_FUNCTION_FAST( Open ) {
 
 	// Initialize the OpenAL library (cf. alutInit)
 
+	J_S_ASSERT( alcGetCurrentContext() == NULL, "OpenAL already open." );
+
 	const char *deviceName;
 	if ( J_FARG_ISDEF(1) )
 		J_CHK( JsvalToString(cx, &J_FARG(1), &deviceName) );
@@ -54,6 +56,11 @@ DEFINE_FUNCTION_FAST( Open ) {
 	ALCdevice *device = alcOpenDevice (deviceName);
 	if (device == NULL)
 		J_REPORT_ERROR("ALUT_ERROR_OPEN_DEVICE");
+
+//	ALint attribs[4] = { 0 };
+//	attribs[0] = ALC_MAX_AUXILIARY_SENDS;
+//	attribs[1] = 4;
+
 	ALCcontext *context = alcCreateContext (device, NULL);
 	if (context == NULL) {
 		alcCloseDevice (device);
@@ -65,6 +72,8 @@ DEFINE_FUNCTION_FAST( Open ) {
 		alcCloseDevice (device);
 		J_REPORT_ERROR("ALUT_ERROR_MAKE_CONTEXT_CURRENT");
 	}
+
+	InitEfxApi();
 
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
@@ -78,10 +87,10 @@ DEFINE_FUNCTION_FAST( Open ) {
 **/
 DEFINE_FUNCTION_FAST( Close ) {
 
+	ResetEfxApi();
 	// cf. alutExit
 	ALCcontext *context = alcGetCurrentContext();
-	if ( context == NULL )
-		J_REPORT_ERROR("Unable to get the current context.");
+	J_S_ASSERT( context != NULL, "OpenAL already closed." );
 	ALCdevice *device;
 	if (!alcMakeContextCurrent (NULL))
 		J_REPORT_ERROR("ALUT_ERROR_MAKE_CONTEXT_CURRENT");
@@ -102,6 +111,27 @@ DEFINE_FUNCTION_FAST( Close ) {
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
+
+
+DEFINE_PROPERTY( hasEfx ) {
+
+	ALCcontext *pContext = alcGetCurrentContext();
+	ALCdevice *pDevice = alcGetContextsDevice(pContext);
+	*vp = alcIsExtensionPresent(pDevice, (ALCchar*)ALC_EXT_EFX_NAME) ? JSVAL_TRUE : JSVAL_FALSE;
+	return JS_TRUE;
+}
+
+
+DEFINE_PROPERTY( maxAuxiliarySends ) {
+
+	ALCcontext *pContext = alcGetCurrentContext();
+	ALCdevice *pDevice = alcGetContextsDevice(pContext);
+	ALCint numSends;
+	alcGetIntegerv(pDevice, ALC_MAX_AUXILIARY_SENDS, 1, &numSends);
+	J_CHK( IntToJsval(cx, numSends, vp) );
+	return JS_TRUE;
+}
+
 
 
 
@@ -912,7 +942,6 @@ DEFINE_FUNCTION_FAST( RewindSource ) {
 **/
 DEFINE_FUNCTION_FAST( GenEffect ) {
 
-	LOAD_OPENAL_EXTENSION( alGenEffects, LPALGENEFFECTS );
 	ALuint eid;
 	alGenEffects(1, &eid);
 	J_CHK( UIntToJsval(cx, eid, J_FRVAL) );
@@ -926,7 +955,6 @@ DEFINE_FUNCTION_FAST( GenEffect ) {
 **/
 DEFINE_FUNCTION_FAST( DeleteEffect ) {
 
-	LOAD_OPENAL_EXTENSION( alDeleteEffects, LPALDELETEEFFECTS );
 	ALuint eid;
 	alDeleteEffects(1, &eid);
 	J_CHK( UIntToJsval(cx, eid, J_FRVAL) );
@@ -1276,6 +1304,8 @@ CONFIGURE_CLASS
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC
+		PROPERTY_READ(hasEfx)
+		PROPERTY_READ(maxAuxiliarySends)
 		PROPERTY_READ(error)
 	END_STATIC_PROPERTY_SPEC
 

@@ -13,6 +13,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
+#include "error.h"
 
 
 BEGIN_CLASS( OalBuffer )
@@ -49,12 +50,13 @@ DEFINE_CONSTRUCTOR() {
 		format = bits == 16 ? AL_FORMAT_STEREO16 : AL_FORMAT_STEREO8;
 	
 	// (TBD) report an error for other unsuported formats.
-
 	ALuint bid; // The OpenAL sound buffer ID
+
 	alGenBuffers(1, &bid);
+	J_CHK( CheckThrowCurrentOalError(cx) );
+
 	alBufferData(bid, format, buffer, bufferLength, rate); // Upload sound data to buffer
-	ALenum err = alGetError(); // 0xA004 (= AL_INVALID_OPERATION
-	// (TBD) throw exception ?
+	J_CHK( CheckThrowCurrentOalError(cx) );
 
 	J_CHK( JS_SetPrivate(cx, obj, (void*)bid) );
 	return JS_TRUE;
@@ -85,7 +87,10 @@ DEFINE_PROPERTY( frequency ) {
 	ALuint bid = (ALuint) JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( bid );
 	ALint frequency;
+
 	alGetBufferi(bid, AL_FREQUENCY, &frequency);
+	J_CHK( CheckThrowCurrentOalError(cx) );
+
 	J_CHK( IntToJsval(cx, frequency, vp) );
 	return JS_TRUE;
 }
@@ -95,7 +100,10 @@ DEFINE_PROPERTY( size ) {
 	ALuint bid = (ALuint) JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( bid );
 	ALint size;
+	
 	alGetBufferi(bid, AL_SIZE, &size);
+	J_CHK( CheckThrowCurrentOalError(cx) );
+
 	J_CHK( IntToJsval(cx, size, vp) );
 	return JS_TRUE;
 }
@@ -105,7 +113,10 @@ DEFINE_PROPERTY( bits ) {
 	ALuint bid = (ALuint) JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( bid );
 	ALint bits;
+	
 	alGetBufferi(bid, AL_BITS, &bits);
+	J_CHK( CheckThrowCurrentOalError(cx) );
+
 	J_CHK( IntToJsval(cx, bits, vp) );
 	return JS_TRUE;
 }
@@ -115,7 +126,10 @@ DEFINE_PROPERTY( channels ) {
 	ALuint bid = (ALuint) JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( bid );
 	ALint channels;
+
 	alGetBufferi(bid, AL_CHANNELS, &channels);
+	J_CHK( CheckThrowCurrentOalError(cx) );
+
 	J_CHK( IntToJsval(cx, channels, vp) );
 	return JS_TRUE;
 }

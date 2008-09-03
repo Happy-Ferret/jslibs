@@ -13,9 +13,10 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
+#include "oalefxapi.h"
+#include "error.h"
 
 struct Private {
-
 	ALuint filter;
 };
 
@@ -25,14 +26,13 @@ BEGIN_CLASS( OalFilter )
 
 DEFINE_FINALIZE() {
 
-	LOAD_OPENAL_EXTENSION( alDeleteFilters, LPALDELETEFILTERS );
-
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
 	if ( pv ) {
 
-		if ( alDeleteFilters )
-			alDeleteFilters(1, &pv->filter);
+		if ( alcGetCurrentContext() ) {
 
+			alDeleteFilters(1, &pv->filter);
+		}
 		JS_free(cx, pv);
 	}
 }
@@ -40,10 +40,10 @@ DEFINE_FINALIZE() {
 
 DEFINE_CONSTRUCTOR() {
 
-	LOAD_OPENAL_EXTENSION( alGenFilters, LPALGENFILTERS );
-
 	Private *pv = (Private*)JS_malloc(cx, sizeof(Private));
+
 	alGenFilters(1, &pv->filter);
+	J_CHK( CheckThrowCurrentOalError(cx) );
 
 	J_CHK( JS_SetPrivate(cx, obj, pv) );
 	return JS_TRUE;
@@ -66,28 +66,27 @@ DEFINE_FUNCTION_FAST( valueOf ) {
 
 DEFINE_PROPERTY( type ) {
 
-	LOAD_OPENAL_EXTENSION( alFilteri, LPALFILTERI );
-
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE(pv);
 	int filterType;
 	J_CHK( JsvalToInt(cx, *vp, &filterType) );
+
 	alFilteri(pv->filter, AL_FILTER_TYPE, filterType);
+	J_CHK( CheckThrowCurrentOalError(cx) );
+
 	return JS_TRUE;
 }
 
 
 DEFINE_PROPERTY( lowpassGain ) {
 
-	LOAD_OPENAL_EXTENSION( alFilterf, LPALFILTERF );
-
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( pv );
 	float gain;
 	J_CHK( JsvalToFloat(cx, *vp, &gain) );
-	ALenum err = alGetError();
+
 	alFilterf(pv->filter, AL_LOWPASS_GAIN, gain);
-	err = alGetError();
+	J_CHK( CheckThrowCurrentOalError(cx) );
 
 	return JS_TRUE;
 }
@@ -95,13 +94,14 @@ DEFINE_PROPERTY( lowpassGain ) {
 
 DEFINE_PROPERTY( lowpassGainHF ) {
 
-	LOAD_OPENAL_EXTENSION( alFilterf, LPALFILTERF );
-
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( pv );
 	float gain;
 	J_CHK( JsvalToFloat(cx, *vp, &gain) );
+
 	alFilterf(pv->filter, AL_LOWPASS_GAINHF, gain);
+	J_CHK( CheckThrowCurrentOalError(cx) );
+
 	return JS_TRUE;
 }
 

@@ -13,6 +13,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
+#include "error.h"
 
 DECLARE_CLASS(Oal)
 DECLARE_CLASS(OalBuffer)
@@ -74,6 +75,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	}
 */
 
+	J_CHK( INIT_CLASS( OalError ) );
 	J_CHK( INIT_CLASS( Oal ) );
 	J_CHK( INIT_CLASS( OalBuffer ) );
 	J_CHK( INIT_CLASS( OalSource ) );

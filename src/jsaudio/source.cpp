@@ -16,12 +16,9 @@
 
 #include "../common/queue.h"
 
-
-#define SLOT_BUFFER 0
-
+#include "error.h"
 
 struct Private {
-
 	ALuint sid;
 	Queue *queue;
 };
@@ -44,6 +41,7 @@ inline JSBool UnshiftJsval( JSContext *cx, Queue *queue, jsval value ) {
 	return JS_TRUE;
 }
 */
+
 
 JSBool ProtectJsval( JSContext *cx, Queue *queue, jsval value ) {
 
@@ -94,7 +92,10 @@ DEFINE_CONSTRUCTOR() {
 
 	Private *pv = (Private*)JS_malloc(cx, sizeof(Private));
 	pv->queue = QueueConstruct();
+
 	alGenSources(1, &pv->sid);
+	J_CHK( CheckThrowCurrentOalError(cx) );
+
 	J_CHK( JS_SetPrivate(cx, obj, pv) );
 	return JS_TRUE;
 }
@@ -121,9 +122,9 @@ DEFINE_FUNCTION_FAST( QueueBuffers ) {
 		J_CHK( JsvalToUInt(cx, J_FARG(1), &bid) );
 
 		J_S_ASSERT( alIsBuffer(bid), "Invalid buffer." );
+		
 		alSourceQueueBuffers( pv->sid, 1, &bid );
-		ALenum err = alGetError();
-		J_S_ASSERT_1( err == AL_NO_ERROR, "Unable to alSourceQueueBuffers (%x).", err );
+		J_CHK( CheckThrowCurrentOalError(cx) );
 
 		if ( JSVAL_IS_OBJECT(J_FARG(1)) )
 			J_CHK( ProtectJsval(cx, pv->queue, J_FARG(1)) );
@@ -155,9 +156,9 @@ DEFINE_FUNCTION_FAST( UnqueueBuffers ) {
 		J_CHK( JsvalToUInt(cx, J_FARG(1), &bid) );
 
 		J_S_ASSERT( alIsBuffer(bid), "Invalid buffer." );
+
 		alSourceUnqueueBuffers( pv->sid, 1, &bid );
-		ALenum err = alGetError();
-		J_S_ASSERT_1( err == AL_NO_ERROR, "Unable to alSourceQueueBuffers (%x).", err );
+		J_CHK( CheckThrowCurrentOalError(cx) );
 
 		if ( JSVAL_IS_OBJECT(J_FARG(1)) )
 			J_CHK( UnprotectJsval(cx, pv->queue, J_FARG(1)) );
@@ -173,7 +174,10 @@ DEFINE_FUNCTION_FAST( Play ) {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, J_FOBJ);
 	J_S_ASSERT_RESOURCE( pv );
+
 	alSourcePlay(pv->sid);
+	J_CHK( CheckThrowCurrentOalError(cx) );
+
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
@@ -182,7 +186,10 @@ DEFINE_FUNCTION_FAST( Pause ) {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, J_FOBJ);
 	J_S_ASSERT_RESOURCE( pv );
+
 	alSourcePause(pv->sid);
+	J_CHK( CheckThrowCurrentOalError(cx) );
+
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
@@ -191,7 +198,10 @@ DEFINE_FUNCTION_FAST( Stop ) {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, J_FOBJ);
 	J_S_ASSERT_RESOURCE( pv );
+
 	alSourceStop(pv->sid);
+	J_CHK( CheckThrowCurrentOalError(cx) );
+
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
@@ -200,7 +210,10 @@ DEFINE_FUNCTION_FAST( Rewind ) {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, J_FOBJ);
 	J_S_ASSERT_RESOURCE( pv );
+
 	alSourceRewind(pv->sid);
+	J_CHK( CheckThrowCurrentOalError(cx) );
+
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
@@ -255,14 +268,16 @@ DEFINE_PROPERTY( effect ) {
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( pv );
 
-	alGetError(); // reset
+//	alGetError(); // reset
 	ALuint effectSlot;
 	if ( !JSVAL_IS_VOID(*vp) )
 		J_CHK( JsvalToUInt(cx, *vp, &effectSlot) );	
 	else
 		effectSlot = AL_EFFECTSLOT_NULL;
+
 	alSource3i(pv->sid, AL_AUXILIARY_SEND_FILTER, effectSlot, 0, AL_FILTER_NULL);
-	ALenum err = alGetError();
+	J_CHK( CheckThrowCurrentOalError(cx) );
+
 	return JS_TRUE;
 }
 
@@ -277,32 +292,60 @@ DEFINE_PROPERTY( directFilter ) {
 		J_CHK( JsvalToUInt(cx, *vp, &filter) );	
 	else
 		filter = AL_FILTER_NULL;
+
 	alSourcei(pv->sid, AL_DIRECT_FILTER, filter);
+	J_CHK( CheckThrowCurrentOalError(cx) );
+
 	return JS_TRUE;
 }
 
 
-DEFINE_PROPERTY_SETTER( buffer ) {
+DEFINE_PROPERTY_SETTER( airAbsorptionFactor ) {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( pv );
+	float airAbsorptionFactor;
+	J_CHK( JsvalToFloat(cx, *vp, &airAbsorptionFactor) );
 
-//	J_CHK( UnprotectJsval(cx, pv->queue, *vp) );
-//	J_CHK( ProtectJsval(cx, pv->queue, *vp) );
-	JS_SetReservedSlot(cx, obj, SLOT_BUFFER, *vp); // just a GC protection
-	
+	alSourcef(pv->sid, AL_AIR_ABSORPTION_FACTOR, airAbsorptionFactor);
+	J_CHK( CheckThrowCurrentOalError(cx) );
+
+	return JS_TRUE;
+}
+
+DEFINE_PROPERTY_GETTER( airAbsorptionFactor ) {
+
+	Private *pv = (Private*)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE( pv );
+	float airAbsorptionFactor;
+
+	alGetSourcef(pv->sid, AL_AIR_ABSORPTION_FACTOR, &airAbsorptionFactor);
+	J_CHK( CheckThrowCurrentOalError(cx) );
+
+	J_CHK( FloatToJsval(cx, airAbsorptionFactor, vp) );
+	return JS_TRUE;
+}
+
+
+
+DEFINE_PROPERTY( buffer ) {
+
+	Private *pv = (Private*)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE( pv );
 	ALint bid;
 	if ( *vp == JSVAL_VOID || *vp == JSVAL_ZERO )
 		bid = AL_NONE;
 	else
 		J_CHK( JsvalToInt(cx, *vp, &bid) ); // calls OalBuffer valueOf function
-
 	J_S_ASSERT( alIsBuffer(bid), "Invalid buffer." );
+
 	alSourcei(pv->sid, AL_BUFFER, bid);
+	J_CHK( CheckThrowCurrentOalError(cx) );
+
 	return JS_TRUE;
 }
 
-
+/*
 DEFINE_PROPERTY_GETTER( buffer ) {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
@@ -312,6 +355,7 @@ DEFINE_PROPERTY_GETTER( buffer ) {
 	J_CHK( IntToJsval(cx, bid, vp) );
 	return JS_TRUE;
 }
+*/
 
 /*
 DEFINE_PROPERTY_SETTER( position ) {
@@ -336,7 +380,10 @@ DEFINE_FUNCTION_FAST( Position ) {
 	J_CHK( JsvalToFloat(cx, J_FARG(1), &pos[0]) );
 	J_CHK( JsvalToFloat(cx, J_FARG(2), &pos[1]) );
 	J_CHK( JsvalToFloat(cx, J_FARG(3), &pos[2]) );
+
 	alSource3f(pv->sid, AL_POSITION, pos[0], pos[1], pos[2]);
+	J_CHK( CheckThrowCurrentOalError(cx) );
+
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
@@ -347,7 +394,10 @@ DEFINE_PROPERTY( position ) {
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( pv );
 	float pos[3];
+
 	alGetSource3f(pv->sid, AL_POSITION, &pos[0], &pos[1], &pos[2]);
+	J_CHK( CheckThrowCurrentOalError(cx) );
+
 	J_CHK( FloatVectorToJsval(cx, pos, 3, vp) );
 	return JS_TRUE;
 }
@@ -374,7 +424,10 @@ DEFINE_FUNCTION_FAST( Velocity ) {
 	J_CHK( JsvalToFloat(cx, J_FARG(1), &pos[0]) );
 	J_CHK( JsvalToFloat(cx, J_FARG(2), &pos[1]) );
 	J_CHK( JsvalToFloat(cx, J_FARG(3), &pos[2]) );
+
 	alSource3f(pv->sid, AL_VELOCITY, pos[0], pos[1], pos[2]);
+	J_CHK( CheckThrowCurrentOalError(cx) );
+
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
@@ -384,7 +437,10 @@ DEFINE_PROPERTY( velocity ) {
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( pv );
 	float pos[3];
+
 	alGetSource3f(pv->sid, AL_VELOCITY, &pos[0], &pos[1], &pos[2]);
+	J_CHK( CheckThrowCurrentOalError(cx) );
+
 	J_CHK( FloatVectorToJsval(cx, pos, 3, vp) );
 	return JS_TRUE;
 }
@@ -396,7 +452,10 @@ DEFINE_PROPERTY_SETTER( gain ) {
 	J_S_ASSERT_RESOURCE( pv );
 	float gain;
 	J_CHK( JsvalToFloat(cx, *vp, &gain) );
+
 	alSourcef(pv->sid, AL_GAIN, gain);
+	J_CHK( CheckThrowCurrentOalError(cx) );
+
 	return JS_TRUE;
 }
 
@@ -405,7 +464,10 @@ DEFINE_PROPERTY_GETTER( gain ) {
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( pv );
 	float gain;
+
 	alGetSourcef(pv->sid, AL_GAIN, &gain);
+	J_CHK( CheckThrowCurrentOalError(cx) );
+
 	J_CHK( FloatToJsval(cx, gain, vp) );
 	return JS_TRUE;
 }
@@ -417,7 +479,10 @@ DEFINE_PROPERTY_SETTER( secOffset ) {
 	J_S_ASSERT_RESOURCE( pv );
 	float offset;
 	J_CHK( JsvalToFloat(cx, *vp, &offset) );
+
 	alSourcef(pv->sid, AL_SEC_OFFSET, offset);
+	J_CHK( CheckThrowCurrentOalError(cx) );
+
 	return JS_TRUE;
 }
 
@@ -426,7 +491,10 @@ DEFINE_PROPERTY_GETTER( secOffset ) {
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( pv );
 	float offset;
+
 	alGetSourcef(pv->sid, AL_SEC_OFFSET, &offset);
+	J_CHK( CheckThrowCurrentOalError(cx) );
+
 	J_CHK( FloatToJsval(cx, offset, vp) );
 	return JS_TRUE;
 }
@@ -438,7 +506,10 @@ DEFINE_PROPERTY_SETTER( looping ) {
 	J_S_ASSERT_RESOURCE( pv );
 	bool looping;
 	J_CHK( JsvalToBool(cx, *vp, &looping) );
+
 	alSourcei(pv->sid, AL_LOOPING, looping ? AL_TRUE : AL_FALSE);
+	J_CHK( CheckThrowCurrentOalError(cx) );
+
 	return JS_TRUE;
 }
 
@@ -447,7 +518,10 @@ DEFINE_PROPERTY_GETTER( looping ) {
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( pv );
 	ALint looping;
+
 	alGetSourcei(pv->sid, AL_LOOPING, &looping);
+	J_CHK( CheckThrowCurrentOalError(cx) );
+
 	J_CHK( BoolToJsval(cx, looping == AL_TRUE, vp) );
 	return JS_TRUE;
 }
@@ -458,7 +532,10 @@ DEFINE_PROPERTY( state ) {
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( pv );
 	ALint state;
+
 	alGetSourcei(pv->sid, AL_SOURCE_STATE, &state);
+	J_CHK( CheckThrowCurrentOalError(cx) );
+
 	J_CHK( IntToJsval(cx, state, vp) );
 	return JS_TRUE;
 }
@@ -497,8 +574,10 @@ CONFIGURE_CLASS
 	BEGIN_PROPERTY_SPEC
 		PROPERTY_WRITE_STORE( effect )
 		PROPERTY_WRITE_STORE( directFilter )
+		PROPERTY_WRITE_STORE( buffer )
 
-		PROPERTY( buffer )
+		PROPERTY( airAbsorptionFactor )
+
 		PROPERTY_READ( position )
 		PROPERTY_READ( velocity )
 		PROPERTY( gain )
