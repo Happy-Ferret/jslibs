@@ -15,6 +15,10 @@
 #include "stdafx.h"
 #include "jabber.h"
 
+#include <client.h>
+#include <messagehandler.h> 
+
+
 /**doc
 $CLASS_HEADER
 **/
