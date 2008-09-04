@@ -67,6 +67,95 @@ DEFINE_FUNCTION_FAST( valueOf ) {
 }
 
 
+
+/**doc
+=== Properties ===
+**/
+
+DEFINE_PROPERTY_SETTER( type ) {
+
+	Private *pv = (Private*)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE(pv);
+	int effectType;
+	J_CHK( JsvalToInt(cx, *vp, &effectType) );
+
+	alEffecti(pv->effect, AL_EFFECT_TYPE, effectType);
+	J_CHK( CheckThrowCurrentOalError(cx) );
+
+	return JS_TRUE;
+}
+
+DEFINE_PROPERTY_GETTER( type ) {
+
+	Private *pv = (Private*)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE(pv);
+	int effectType;
+
+	alGetEffecti(pv->effect, AL_EFFECT_TYPE, &effectType);
+	J_CHK( CheckThrowCurrentOalError(cx) );
+
+	J_CHK( IntToJsval(cx, effectType, vp) );
+	return JS_TRUE;
+}
+
+
+
+DEFINE_PROPERTY_SETTER( gain ) {
+
+	Private *pv = (Private*)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE( pv );
+	float gain;
+	J_CHK( JsvalToFloat(cx, *vp, &gain) );
+
+	alAuxiliaryEffectSlotf( pv->slot, AL_EFFECTSLOT_GAIN, gain );
+	J_CHK( CheckThrowCurrentOalError(cx) );
+
+	return JS_TRUE;
+}
+
+DEFINE_PROPERTY_GETTER( gain ) {
+
+	Private *pv = (Private*)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE( pv );
+	float gain;
+
+	alGetAuxiliaryEffectSlotf( pv->slot, AL_EFFECTSLOT_GAIN, &gain );
+	J_CHK( CheckThrowCurrentOalError(cx) );
+
+	J_CHK( FloatToJsval(cx, gain, vp) );
+	return JS_TRUE;
+}
+
+
+
+DEFINE_PROPERTY_SETTER( auto ) {
+
+	Private *pv = (Private*)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE( pv );
+	bool sendAuto;
+	J_CHK( JsvalToBool(cx, *vp, &sendAuto) );
+
+	alAuxiliaryEffectSloti( pv->slot, AL_EFFECTSLOT_AUXILIARY_SEND_AUTO, sendAuto ? AL_TRUE : AL_FALSE );
+	J_CHK( CheckThrowCurrentOalError(cx) );
+
+	return JS_TRUE;
+}
+
+DEFINE_PROPERTY_GETTER( auto ) {
+
+	Private *pv = (Private*)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE( pv );
+	int sendAuto;
+
+	alGetAuxiliaryEffectSloti( pv->slot, AL_EFFECTSLOT_AUXILIARY_SEND_AUTO, &sendAuto );
+	J_CHK( CheckThrowCurrentOalError(cx) );
+
+	J_CHK( BoolToJsval(cx, sendAuto == AL_TRUE ? true : false, vp) );
+	return JS_TRUE;
+}
+
+
+
 /**doc
  * $VOID $INAME( buffer )
   $H arguments
@@ -170,93 +259,18 @@ DEFINE_FUNCTION_FAST( Test ) {
 	return JS_TRUE;
 }
 
-
-/**doc
-=== Properties ===
-**/
-
-DEFINE_PROPERTY_SETTER( type ) {
-
-	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(pv);
-	int effectType;
-	J_CHK( JsvalToInt(cx, *vp, &effectType) );
-
-	alEffecti(pv->effect, AL_EFFECT_TYPE, effectType);
-	J_CHK( CheckThrowCurrentOalError(cx) );
+DEFINE_PROPERTY_GETTER( effectfloat ) {
 
 	return JS_TRUE;
 }
 
-DEFINE_PROPERTY_GETTER( type ) {
-
-	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(pv);
-	int effectType;
-
-	alGetEffecti(pv->effect, AL_EFFECT_TYPE, &effectType);
-	J_CHK( CheckThrowCurrentOalError(cx) );
-
-	J_CHK( IntToJsval(cx, effectType, vp) );
-	return JS_TRUE;
-}
-
-
-
-DEFINE_PROPERTY_SETTER( gain ) {
-
-	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE( pv );
-	float gain;
-	J_CHK( JsvalToFloat(cx, *vp, &gain) );
-
-	alAuxiliaryEffectSlotf( pv->slot, AL_EFFECTSLOT_GAIN, gain );
-	J_CHK( CheckThrowCurrentOalError(cx) );
+DEFINE_PROPERTY_SETTER( effectfloat ) {
 
 	return JS_TRUE;
 }
 
-DEFINE_PROPERTY_GETTER( gain ) {
 
-	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE( pv );
-	float gain;
-
-	alGetAuxiliaryEffectSlotf( pv->slot, AL_EFFECTSLOT_GAIN, &gain );
-	J_CHK( CheckThrowCurrentOalError(cx) );
-
-	J_CHK( FloatToJsval(cx, gain, vp) );
-	return JS_TRUE;
-}
-
-
-
-DEFINE_PROPERTY_SETTER( auto ) {
-
-	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE( pv );
-	bool sendAuto;
-	J_CHK( JsvalToBool(cx, *vp, &sendAuto) );
-
-	alAuxiliaryEffectSloti( pv->slot, AL_EFFECTSLOT_AUXILIARY_SEND_AUTO, sendAuto ? AL_TRUE : AL_FALSE );
-	J_CHK( CheckThrowCurrentOalError(cx) );
-
-	return JS_TRUE;
-}
-
-DEFINE_PROPERTY_GETTER( auto ) {
-
-	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE( pv );
-	int sendAuto;
-
-	alGetAuxiliaryEffectSloti( pv->slot, AL_EFFECTSLOT_AUXILIARY_SEND_AUTO, &sendAuto );
-	J_CHK( CheckThrowCurrentOalError(cx) );
-
-	J_CHK( BoolToJsval(cx, sendAuto == AL_TRUE ? true : false, vp) );
-	return JS_TRUE;
-}
-
+enum { reverbDensity };
 
 
 CONFIGURE_CLASS
@@ -275,6 +289,9 @@ CONFIGURE_CLASS
 		PROPERTY( type )
 		PROPERTY( gain )
 		PROPERTY( auto )
+
+//		PROPERTY_SWITCH( reverbDensity, effectfloat )
+		PROPERTY_CREATE( reverbDensity, AL_REVERB_DENSITY, JSPROP_PERMANENT|JSPROP_SHARED, effectfloatGetter, effectfloatSetter)
 	END_PROPERTY_SPEC
 
 END_CLASS
