@@ -622,6 +622,28 @@ inline JSBool StringAndLengthToJsval( JSContext *cx, jsval *val, const char* cst
 }
 
 
+
+inline JSBool SetPropertyString( JSContext *cx, JSObject *obj, const char *propertyName, const char *str ) {
+
+	jsval val;
+	J_CHK( StringToJsval(cx, &val, str) );
+	J_CHKM( JS_DefineProperty(cx, obj, propertyName, val, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ), "Unable to set the property." ); // Doc. http://developer.mozilla.org/en/docs/JS_DefineUCProperty
+	return JS_TRUE;
+}
+
+inline JSBool GetPropertyString( JSContext *cx, JSObject *obj, const char *propertyName, const char **str ) {
+
+	jsval val;
+	J_CHKM1( JS_GetProperty(cx, obj, propertyName, &val), "Unable to read the property %s.", propertyName );
+	J_CHK( JsvalToString(cx, &val, str) );
+	return JS_TRUE;
+}
+
+
+
+
+
+
 inline JSBool JsvalToInt( JSContext *cx, jsval val, int *i ) {
 
 	if ( JSVAL_IS_INT(val) ) {
@@ -704,6 +726,24 @@ inline JSBool JsvalToBool( JSContext *cx, const jsval val, bool *b ) {
 		return JS_TRUE;
 	}
 }
+
+
+inline JSBool SetPropertyBool( JSContext *cx, JSObject *obj, const char *propertyName, bool b ) {
+
+	jsval val;
+	J_CHK( BoolToJsval(cx, b, &val) );
+	J_CHKM( JS_DefineProperty(cx, obj, propertyName, val, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ), "Unable to set the property." ); // Doc. http://developer.mozilla.org/en/docs/JS_DefineUCProperty
+	return JS_TRUE;
+}
+
+inline JSBool GetPropertyString( JSContext *cx, JSObject *obj, const char *propertyName, bool *b ) {
+
+	jsval val;
+	J_CHKM1( JS_GetProperty(cx, obj, propertyName, &val), "Unable to read the property %s.", propertyName );
+	J_CHK( JsvalToBool(cx, val, b) );
+	return JS_TRUE;
+}
+
 
 
 inline JSBool JsvalToFloat( JSContext *cx, jsval val, float *f ) {
