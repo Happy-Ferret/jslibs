@@ -59,11 +59,12 @@ private:
 
 		jsval fval, rval;
 		if ( !JS_GetProperty(_cx, _obj, "onTLSConnect", &fval) || fval == JSVAL_VOID )
-			return;
+			return true; // by default, accepts the certificate
+
 		if ( !JsvalIsFunction(_cx, fval) ) {
 			
 			JS_ReportError(_cx, "onTLSConnect is not a function.");
-			return;
+			return false;
 		}
 
 		JSObject *infoObj = JS_NewObject(_cx, NULL, NULL, NULL);
@@ -80,9 +81,9 @@ private:
 		jsval argv[] = { INT_TO_JSVAL(infoObj) };
 		JS_CallFunctionValue(_cx, _obj, fval, COUNTOF(argv), argv, &rval); // errors will be managed later by JS_IsExceptionPending(cx)
 
-
-
-		return true;
+		bool res;
+		JsvalToBool(_cx, rval, &res);
+		return res;
 	}
 
 	void onConnect() {
@@ -220,6 +221,7 @@ DEFINE_FUNCTION( Disconnect ) {
 	return JS_TRUE;
 }
 
+
 DEFINE_FUNCTION( Process ) {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
@@ -269,6 +271,7 @@ DEFINE_PROPERTY( socket ) {
 	J_CHK( IntToJsval(cx, sock, vp) );
 	return JS_TRUE;
 }
+
 
 CONFIGURE_CLASS
 
