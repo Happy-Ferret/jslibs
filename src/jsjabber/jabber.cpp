@@ -20,16 +20,41 @@
 #include <connectiontcpclient.h>
 //#include <messagehandler.h> 
 //#include <connectionhandler.h>
+
 #include <presencehandler.h>
+
+#include <rostermanager.h>
+#include <rosterlistener.h>
+
 #include <connectionlistener.h>
-#include <messagesessionhandler.h>
+//#include <messagesessionhandler.h>
+
 #include <client.h>
 #pragma warning( pop )
 
-
 using namespace gloox;
 
-class Handlers : public ConnectionListener, public PresenceHandler, public MessageSessionHandler, public LogHandler {
+
+JSBool JidToJsval( JSContext *cx, JID *jid, jsval *rval ) {
+
+	JSObject *jidObj = JS_NewObject(cx, NULL, NULL, NULL);
+	*rval = OBJECT_TO_JSVAL(jidObj);
+	J_CHK( SetPropertyString(cx, jidObj, "bare", jid->bare().c_str()) );
+	J_CHK( SetPropertyString(cx, jidObj, "full", jid->full().c_str()) );
+	J_CHK( SetPropertyString(cx, jidObj, "server", jid->server().c_str()) );
+	J_CHK( SetPropertyString(cx, jidObj, "username", jid->username().c_str()) );
+	J_CHK( SetPropertyString(cx, jidObj, "resource", jid->resource().c_str()) );
+	return JS_TRUE;
+}
+
+
+
+class Handlers : 
+	public ConnectionListener, 
+	public PresenceHandler, 
+	public RosterListener,
+	public LogHandler { // , public MessageSessionHandler
+
 public:
 	Handlers( JSObject *obj ) : _obj(obj) {
 	}
@@ -115,11 +140,15 @@ private:
 
 
 	void handlePresence( Stanza *stanza ) {
+
+		// ???
+
 	}
 
-	void handleMessageSession( MessageSession *session ) {
-	
-	}
+
+
+//	void handleMessageSession( MessageSession *session ) {
+//	}
 
 	void handleMessage( Stanza *stanza, MessageSession *session ) {
 
@@ -132,22 +161,69 @@ private:
 			return;
 		}
 
+//		JS_EnterLocalRootScope(_cx);
+
 		JID from = stanza->from();
 		JSObject *fromObj = JS_NewObject(_cx, NULL, NULL, NULL);
-		J_ADD_ROOT(_cx, &fromObj);
-		SetPropertyString(_cx, _obj, "bare", from.bare().c_str());
-		SetPropertyString(_cx, _obj, "full", from.full().c_str());
-		SetPropertyString(_cx, _obj, "server", from.server().c_str());
-		SetPropertyString(_cx, _obj, "username", from.username().c_str());
+		
+		jsval fromVal;
+		J_ADD_ROOT(_cx, &fromVal);
+		JidToJsval(_cx, &from, &fromVal) ;
 
 		jsval body;
 		StringToJsval(_cx, &body, stanza->body().c_str());
 
-		jsval argv[] = { OBJECT_TO_JSVAL(fromObj), body };
+		jsval argv[] = { fromVal, body };
 		JS_CallFunctionValue(_cx, _obj, fval, COUNTOF(argv), argv, &rval); // errors will be managed later by JS_IsExceptionPending(cx)
 
-		J_REMOVE_ROOT(_cx, &fromObj);
+//		js_LeaveLocalRootScope(_cx);
 	}
+
+
+	void handleItemAdded( const JID& jid ) {
+	}
+
+	void handleItemSubscribed( const JID& jid ) {
+	}
+
+	void handleItemRemoved( const JID& jid ) {
+	}
+
+	void handleItemUpdated( const JID& jid ) {
+	}
+
+	void handleItemUnsubscribed( const JID& jid ) {
+	}
+
+	void handleRoster( const Roster& roster ) {
+	}
+
+	void handleRosterPresence( const RosterItem& item, const std::string& resource, Presence presence, const std::string& msg ) {
+	}
+
+	void handleSelfPresence( const RosterItem& item, const std::string& resource, Presence presence, const std::string& msg ) {
+	}
+   
+	bool handleSubscriptionRequest( const JID& jid, const std::string& msg ) {
+
+		return true;
+	}
+
+	bool handleUnsubscriptionRequest( const JID& jid, const std::string& msg ) {
+
+		return true;
+	}
+
+	void handleNonrosterPresence( Stanza* stanza ) {
+	}
+
+	void handleRosterError( Stanza* stanza ) {
+	}
+
+
+
+
+
 
 };
 
@@ -189,11 +265,17 @@ DEFINE_CONSTRUCTOR() {
 	J_CHK( JsvalToString(cx, &J_ARG(1), &jid) );
 	J_CHK( JsvalToString(cx, &J_ARG(2), &password) );
 
-	pv->client = new Client(JID(jid), password);
-	pv->client->logInstance().registerLogHandler(LogLevelWarning, LogAreaAll, pv->handlers); // LogLevelDebug
 	pv->handlers = new Handlers(obj);
+
+	pv->client = new Client(JID(jid), password);
+	
+	pv->client->logInstance().registerLogHandler(LogLevelWarning, LogAreaAll, pv->handlers); // LogLevelDebug
+	
 	pv->client->registerConnectionListener( pv->handlers );
-	pv->client->registerMessageSessionHandler( pv->handlers, 0 );
+
+	pv->client->rosterManager()->registerRosterListener( pv->handlers, true );
+
+//	pv->client->registerMessageSessionHandler( pv->handlers, 0 );
 	//pv->client->disco()->setIdentity(
 
 	return JS_TRUE;
@@ -220,7 +302,7 @@ DEFINE_FUNCTION( Connect ) {
 	}
 
 	pv->handlers->_cx = cx;
-	pv->client->connect(false);
+	pv->client->connect(false); // the function returnes immediately after the connection has been established.
 	pv->handlers->_cx = NULL;
 
 	if ( JS_IsExceptionPending(cx) )
@@ -252,11 +334,12 @@ DEFINE_FUNCTION( Process ) {
 	J_S_ASSERT_RESOURCE( pv );
 
 	pv->handlers->_cx = cx;
-	ConnectionError cErr = pv->client->recv(0);
+	ConnectionError cErr = pv->client->recv();
 	pv->handlers->_cx = NULL;
 
 	if ( JS_IsExceptionPending(cx) )
 		return JS_FALSE;
+
 	J_CHK( IntToJsval(cx, (int)cErr, rval) );
 	return JS_TRUE;
 }
@@ -291,7 +374,22 @@ DEFINE_PROPERTY( socket ) {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( pv );
-	int sock = dynamic_cast<ConnectionTCPClient*>( pv->client->connectionImpl() )->socket();
+
+	ConnectionTCPClient *connection = dynamic_cast<ConnectionTCPClient*>( pv->client->connectionImpl() );
+	if ( !connection ) {
+
+		*vp = JSVAL_VOID;
+		return JS_TRUE;
+	}
+
+	int sock = connection->socket(); // return The socket of the active connection, or -1 if no connection is established.
+
+	if ( sock == -1 ) {
+
+		*vp = JSVAL_VOID;
+		return JS_TRUE;
+	}
+
 	J_CHK( IntToJsval(cx, sock, vp) );
 	return JS_TRUE;
 }
