@@ -373,7 +373,7 @@ DEFINE_FUNCTION_FAST( DrawString ) {
 **/
 DEFINE_PROPERTY( ascender ) {
 
-	FT_Face face = (FT_Face)JS_GetPrivate(cx, J_FOBJ);
+	FT_Face face = (FT_Face)JS_GetPrivate(cx, J_OBJ);
 	J_S_ASSERT_RESOURCE(face);
 	*vp = INT_TO_JSVAL(face->size->metrics.ascender >> 6);
 	return JS_TRUE;
@@ -387,7 +387,7 @@ DEFINE_PROPERTY( ascender ) {
 **/
 DEFINE_PROPERTY( descender ) {
 
-	FT_Face face = (FT_Face)JS_GetPrivate(cx, J_FOBJ);
+	FT_Face face = (FT_Face)JS_GetPrivate(cx, J_OBJ);
 	J_S_ASSERT_RESOURCE(face);
 	*vp = INT_TO_JSVAL(face->size->metrics.descender >> 6);
 	return JS_TRUE;
@@ -399,7 +399,7 @@ DEFINE_PROPERTY( descender ) {
 **/
 DEFINE_PROPERTY( width ) {
 
-	FT_Face face = (FT_Face)JS_GetPrivate(cx, J_FOBJ);
+	FT_Face face = (FT_Face)JS_GetPrivate(cx, J_OBJ);
 	J_S_ASSERT_RESOURCE(face);
 	*vp = INT_TO_JSVAL(face->size->metrics.max_advance >> 6);
 	return JS_TRUE;
@@ -468,7 +468,7 @@ DEFINE_PROPERTY( poscriptName ) {
 
 	FT_Face face = (FT_Face)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE(face);
-	J_CHK( StringToJsval(cx, vp, FT_Get_Postscript_Name(face)) );
+	J_CHK( StringToJsval(cx, FT_Get_Postscript_Name(face), vp) );
 	return JS_TRUE;
 }
 
