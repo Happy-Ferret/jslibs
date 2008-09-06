@@ -35,7 +35,7 @@
 using namespace gloox;
 
 
-JSBool JidToJsval( JSContext *cx, JID *jid, jsval *rval ) {
+JSBool JidToJsval( JSContext *cx, const JID *jid, jsval *rval ) {
 
 	JSObject *jidObj = JS_NewObject(cx, NULL, NULL, NULL);
 	*rval = OBJECT_TO_JSVAL(jidObj);
@@ -76,7 +76,7 @@ private:
 		}
 
 		jsval argv[] = { INT_TO_JSVAL(level), INT_TO_JSVAL(area), NULL };
-		StringToJsval(_cx, &argv[2], message.c_str());
+		StringToJsval(_cx, message.c_str(), &argv[2]);
 		JS_CallFunctionValue(_cx, _obj, fval, COUNTOF(argv), argv, &rval); // errors will be managed later by JS_IsExceptionPending(cx)
 	}
 
@@ -142,10 +142,7 @@ private:
 	void handlePresence( Stanza *stanza ) {
 
 		// ???
-
 	}
-
-
 
 //	void handleMessageSession( MessageSession *session ) {
 //	}
@@ -162,68 +159,47 @@ private:
 		}
 
 //		JS_EnterLocalRootScope(_cx);
-
-		JID from = stanza->from();
-		JSObject *fromObj = JS_NewObject(_cx, NULL, NULL, NULL);
-		
-		jsval fromVal;
-		J_ADD_ROOT(_cx, &fromVal);
-		JidToJsval(_cx, &from, &fromVal) ;
-
-		jsval body;
-		StringToJsval(_cx, &body, stanza->body().c_str());
-
+		jsval fromVal, body;
+		JidToJsval(_cx, &stanza->from(), &fromVal);
+		StringToJsval(_cx, stanza->body().c_str(), &body);
 		jsval argv[] = { fromVal, body };
 		JS_CallFunctionValue(_cx, _obj, fval, COUNTOF(argv), argv, &rval); // errors will be managed later by JS_IsExceptionPending(cx)
-
 //		js_LeaveLocalRootScope(_cx);
 	}
 
 
-	void handleItemAdded( const JID& jid ) {
-	}
-
-	void handleItemSubscribed( const JID& jid ) {
-	}
-
-	void handleItemRemoved( const JID& jid ) {
-	}
-
-	void handleItemUpdated( const JID& jid ) {
-	}
-
-	void handleItemUnsubscribed( const JID& jid ) {
-	}
-
-	void handleRoster( const Roster& roster ) {
-	}
-
+// RosterListener
+	void handleItemAdded( const JID& jid ) {}
+	void handleItemSubscribed( const JID& jid ) {}
+	void handleItemRemoved( const JID& jid ) {}
+	void handleItemUpdated( const JID& jid ) {}
+	void handleItemUnsubscribed( const JID& jid ) {}
+	void handleRoster( const Roster& roster ) {}
+	void handleSelfPresence( const RosterItem& item, const std::string& resource, Presence presence, const std::string& msg ) {}
+   bool handleSubscriptionRequest( const JID& jid, const std::string& msg ) { return true; }
+	bool handleUnsubscriptionRequest( const JID& jid, const std::string& msg ) { return true; }
+	void handleNonrosterPresence( Stanza* stanza ) {}
+	void handleRosterError( Stanza* stanza ) {}
 	void handleRosterPresence( const RosterItem& item, const std::string& resource, Presence presence, const std::string& msg ) {
+
+		jsval fval, rval;
+		if ( !JS_GetProperty(_cx, _obj, "onRosterPresence", &fval) || fval == JSVAL_VOID )
+			return;
+		if ( !JsvalIsFunction(_cx, fval) ) {
+			
+			JS_ReportError(_cx, "onRosterPresence is not a function.");
+			return;
+		}
+
+		jsval fromVal, presenceVal, msgVal;
+		JidToJsval(_cx, &JID(item.jid()), &fromVal);
+		IntToJsval(_cx, presence, &presenceVal);
+		StringToJsval(_cx, msg.c_str(), &msgVal);
+
+		jsval argv[] = { fromVal, presenceVal, msgVal };
+		JS_CallFunctionValue(_cx, _obj, fval, COUNTOF(argv), argv, &rval); // errors will be managed later by JS_IsExceptionPending(cx)
 	}
-
-	void handleSelfPresence( const RosterItem& item, const std::string& resource, Presence presence, const std::string& msg ) {
-	}
-   
-	bool handleSubscriptionRequest( const JID& jid, const std::string& msg ) {
-
-		return true;
-	}
-
-	bool handleUnsubscriptionRequest( const JID& jid, const std::string& msg ) {
-
-		return true;
-	}
-
-	void handleNonrosterPresence( Stanza* stanza ) {
-	}
-
-	void handleRosterError( Stanza* stanza ) {
-	}
-
-
-
-
-
+//
 
 };
 
@@ -240,15 +216,18 @@ $CLASS_HEADER
 **/
 BEGIN_CLASS( Jabber )
 
+
 DEFINE_FINALIZE() {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
 	if ( pv ) {
+
 		delete pv->client;
 		delete pv->handlers;
 		JS_free(cx, pv);
 	}
 }
+
 
 DEFINE_CONSTRUCTOR() {
 
@@ -268,15 +247,10 @@ DEFINE_CONSTRUCTOR() {
 	pv->handlers = new Handlers(obj);
 
 	pv->client = new Client(JID(jid), password);
-	
 	pv->client->logInstance().registerLogHandler(LogLevelWarning, LogAreaAll, pv->handlers); // LogLevelDebug
-	
 	pv->client->registerConnectionListener( pv->handlers );
-
 	pv->client->rosterManager()->registerRosterListener( pv->handlers, true );
-
 //	pv->client->registerMessageSessionHandler( pv->handlers, 0 );
-	//pv->client->disco()->setIdentity(
 
 	return JS_TRUE;
 }
@@ -369,27 +343,61 @@ DEFINE_FUNCTION( SendMessage ) {
 }
 
 
+DEFINE_PROPERTY_GETTER( status ) {
+
+	Private *pv = (Private*)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE( pv );
+	J_CHK( StringToJsval(cx, pv->client->status().c_str(), vp) );
+	return JS_TRUE;
+}
+
+DEFINE_PROPERTY_SETTER( status ) {
+
+	Private *pv = (Private*)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE( pv );
+	const char *status;
+	J_CHK( JsvalToString(cx, vp, &status) );
+	pv->client->setPresence(pv->client->presence(), pv->client->priority(), status);
+	return JS_TRUE;
+}
+
+
+DEFINE_PROPERTY_GETTER( presence ) {
+
+	Private *pv = (Private*)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE( pv );
+	Presence presence = pv->client->presence();
+	J_CHK( IntToJsval(cx, presence, vp) );
+	return JS_TRUE;
+}
+
+DEFINE_PROPERTY_SETTER( presence ) {
+
+	Private *pv = (Private*)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE( pv );
+	int presence;
+	J_CHK( JsvalToInt(cx, *vp, &presence) );
+	pv->client->setPresence((Presence)presence, pv->client->priority(), pv->client->status());
+	return JS_TRUE;
+}
+
 
 DEFINE_PROPERTY( socket ) {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( pv );
-
 	ConnectionTCPClient *connection = dynamic_cast<ConnectionTCPClient*>( pv->client->connectionImpl() );
 	if ( !connection ) {
 
 		*vp = JSVAL_VOID;
 		return JS_TRUE;
 	}
-
 	int sock = connection->socket(); // return The socket of the active connection, or -1 if no connection is established.
-
 	if ( sock == -1 ) {
 
 		*vp = JSVAL_VOID;
 		return JS_TRUE;
 	}
-
 	J_CHK( IntToJsval(cx, sock, vp) );
 	return JS_TRUE;
 }
@@ -404,13 +412,25 @@ CONFIGURE_CLASS
 	BEGIN_FUNCTION_SPEC
 		FUNCTION( Connect )
 		FUNCTION( Process )
+		FUNCTION( SendMessage )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
+		PROPERTY( presence )
+		PROPERTY( status )
+
 		PROPERTY_READ( socket )
 	END_PROPERTY_SPEC
 
 	BEGIN_CONST_INTEGER_SPEC
+		CONST_INTEGER_SINGLE(PresenceUnknown)
+		CONST_INTEGER_SINGLE(PresenceAvailable)
+		CONST_INTEGER_SINGLE(PresenceChat)
+		CONST_INTEGER_SINGLE(PresenceAway)
+		CONST_INTEGER_SINGLE(PresenceDnd)
+		CONST_INTEGER_SINGLE(PresenceXa)
+		CONST_INTEGER_SINGLE(PresenceUnavailable)
+
 		CONST_INTEGER_SINGLE(ConnNoError)
 		CONST_INTEGER_SINGLE(ConnStreamError)
 		CONST_INTEGER_SINGLE(ConnStreamVersionError)

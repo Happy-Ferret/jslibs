@@ -5,11 +5,9 @@ LoadModule('jsio');
 // create the file info.txt, and store ['username@gmail.com','********','talk.google.com']
 var [jid, password, server] = eval(new File('info.txt').content.toString());
 
-
 Print( 'jid: '+jid, '\n' );
 Print( 'password: '+password, '\n' );
 Print( 'server: '+server, '\n' );
-
 
 var j = new Jabber(jid, password);
 
@@ -21,6 +19,7 @@ j.onLog = function( level, area, message ) {
 j.onConnect = function() {
 	
 	Print('onConnect', '\n');
+	j.presence = Jabber.PresenceAvailable;
 }
 
 j.onDisconnect = function() {
@@ -28,8 +27,11 @@ j.onDisconnect = function() {
 	Print('onDisconnect', '\n');
 }
 
-j.Connect(server);
+j.onRosterPresence = function( fromVal, presenceVal, msgVal ) {
+	Print( 'onRosterPresence: '+fromVal.full+'='+presenceVal+' '+msgVal, '\n');
+}
 
+j.Connect(server);
 
 Print( j.socket, '\n' );
 
