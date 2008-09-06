@@ -9,11 +9,15 @@ Print( 'jid: '+jid, '\n' );
 Print( 'password: '+password, '\n' );
 Print( 'server: '+server, '\n' );
 
+//
+// Configuration
+
 var j = new Jabber(jid, password);
 
 j.onLog = function( level, area, message ) {
 
-	Print( 'LOG: '+message, '\n');
+	if ( level == Jabber.LogLevelWarning || level == Jabber.LogLevelError )
+		 Print( 'LOG: '+message, '\n');
 }
 
 j.onConnect = function() {
@@ -28,30 +32,32 @@ j.onDisconnect = function() {
 }
 
 j.onRosterPresence = function( fromVal, presenceVal, msgVal ) {
+
 	Print( 'onRosterPresence: '+fromVal.full+'='+presenceVal+' '+msgVal, '\n');
 }
 
-j.Connect(server);
+j.onMessage = function( from, body ) {
 
-Print( j.socket, '\n' );
+	Print( 'onMessage: '+from.full+'='+body, '\n');
+}
 
-var s = Descriptor.Import(j.socket, Descriptor.DESC_SOCKET_TCP);
-s.nonblocking = true;
+//
+// Connection
+
+var osSocket = j.Connect(server);
+var s = Descriptor.Import(osSocket, Descriptor.DESC_SOCKET_TCP);
 
 s.readable = function(s) {
 	
-	Print( 'readable', '\n');
 	var res = j.Process();
-	Print( 'precess result: '+res , '\n');
+	if ( res != Jabber.ConnNoError )
+		Print( 'Error '+res+' while processing data', '\n' );
 }
 
-while ( !endSignal )
-	Poll([s], 100);
+//
+// Idle
 
+while ( !endSignal ) {
 
-
-
-
-
-
-
+	Poll([s], 1000);
+}

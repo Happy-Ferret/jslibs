@@ -18,7 +18,7 @@
 #pragma warning( push )
 #pragma warning(disable : 4800) // warning C4800: '???' : forcing value to bool 'true' or 'false' (performance warning)
 #include <connectiontcpclient.h>
-//#include <messagehandler.h> 
+#include <messagehandler.h> 
 //#include <connectionhandler.h>
 
 #include <presencehandler.h>
@@ -53,6 +53,7 @@ class Handlers :
 	public ConnectionListener, 
 	public PresenceHandler, 
 	public RosterListener,
+	public MessageHandler,
 	public LogHandler { // , public MessageSessionHandler
 
 public:
@@ -211,6 +212,7 @@ struct Private {
 };
 
 
+
 /**doc
 $CLASS_HEADER
 **/
@@ -233,25 +235,20 @@ DEFINE_CONSTRUCTOR() {
 
 	J_S_ASSERT_CONSTRUCTING();
 	J_S_ASSERT_THIS_CLASS();
-
 	J_S_ASSERT_ARG_MIN(2);
-
 	Private *pv = (Private*)JS_malloc(cx, sizeof(Private));
 	J_S_ASSERT_ALLOC( pv );
 	J_CHK( JS_SetPrivate(cx, obj, pv) );
-
 	const char *jid, *password;
 	J_CHK( JsvalToString(cx, &J_ARG(1), &jid) );
 	J_CHK( JsvalToString(cx, &J_ARG(2), &password) );
-
 	pv->handlers = new Handlers(obj);
-
 	pv->client = new Client(JID(jid), password);
-	pv->client->logInstance().registerLogHandler(LogLevelWarning, LogAreaAll, pv->handlers); // LogLevelDebug
+	pv->client->logInstance().registerLogHandler(LogLevelDebug, LogAreaAll, pv->handlers); // LogLevelDebug
 	pv->client->registerConnectionListener( pv->handlers );
 	pv->client->rosterManager()->registerRosterListener( pv->handlers, true );
+	pv->client->registerMessageHandler( pv->handlers );
 //	pv->client->registerMessageSessionHandler( pv->handlers, 0 );
-
 	return JS_TRUE;
 }
 
@@ -260,28 +257,31 @@ DEFINE_FUNCTION( Connect ) {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( pv );
-
 	J_S_ASSERT_ARG_MIN(1);
-
 	const char *serverName;
 	J_CHK( JsvalToString(cx, &J_ARG(1), &serverName) );
-
 	pv->client->setServer( serverName );
-
 	if ( J_ARG_ISDEF(2) ) {
 
 		int port;
 		JsvalToInt(cx, J_ARG(2), &port);
 		pv->client->setPort( port);
 	}
-
 	pv->handlers->_cx = cx;
 	pv->client->connect(false); // the function returnes immediately after the connection has been established.
 	pv->handlers->_cx = NULL;
-
 	if ( JS_IsExceptionPending(cx) )
 		return JS_FALSE;
 
+	ConnectionTCPClient *connection = dynamic_cast<ConnectionTCPClient*>( pv->client->connectionImpl() );
+	if ( !connection )
+		return JS_TRUE;
+
+	int sock = connection->socket(); // return The socket of the active connection, or -1 if no connection is established.
+	if ( sock == -1 )
+		return JS_TRUE;
+
+	J_CHK( IntToJsval(cx, sock, J_RVAL) );
 	return JS_TRUE;
 }
 
@@ -418,11 +418,13 @@ CONFIGURE_CLASS
 	BEGIN_PROPERTY_SPEC
 		PROPERTY( presence )
 		PROPERTY( status )
-
-		PROPERTY_READ( socket )
 	END_PROPERTY_SPEC
 
 	BEGIN_CONST_INTEGER_SPEC
+		CONST_INTEGER_SINGLE(LogLevelDebug)
+		CONST_INTEGER_SINGLE(LogLevelWarning)
+		CONST_INTEGER_SINGLE(LogLevelError)
+
 		CONST_INTEGER_SINGLE(PresenceUnknown)
 		CONST_INTEGER_SINGLE(PresenceAvailable)
 		CONST_INTEGER_SINGLE(PresenceChat)
