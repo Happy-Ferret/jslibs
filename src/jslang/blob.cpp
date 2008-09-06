@@ -822,7 +822,7 @@ CONFIGURE_CLASS
 		FUNCTION_FAST(Free)
 		FUNCTION_FAST(concat)
 		FUNCTION_FAST(substr)
-		FUNCTION_FAST(substring)
+//		FUNCTION_FAST(substring) // (TBD) FIXME
 		FUNCTION_FAST(indexOf)
 		FUNCTION_FAST(lastIndexOf)
 		FUNCTION_FAST(charCodeAt)
