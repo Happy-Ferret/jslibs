@@ -122,8 +122,32 @@ private:
 	}
 
 	void handleMessage( Stanza *stanza, MessageSession *session ) {
-	}
 
+		jsval fval, rval;
+		if ( !JS_GetProperty(_cx, _obj, "onMessage", &fval) || fval == JSVAL_VOID )
+			return;
+		if ( !JsvalIsFunction(_cx, fval) ) {
+			
+			JS_ReportError(_cx, "onMessage is not a function.");
+			return;
+		}
+
+		JID from = stanza->from();
+		JSObject *fromObj = JS_NewObject(_cx, NULL, NULL, NULL);
+		J_ADD_ROOT(_cx, &fromObj);
+		SetPropertyString(_cx, _obj, "bare", from.bare().c_str());
+		SetPropertyString(_cx, _obj, "full", from.full().c_str());
+		SetPropertyString(_cx, _obj, "server", from.server().c_str());
+		SetPropertyString(_cx, _obj, "username", from.username().c_str());
+
+		jsval body;
+		StringToJsval(_cx, &body, stanza->body().c_str());
+
+		jsval argv[] = { OBJECT_TO_JSVAL(fromObj), body };
+		JS_CallFunctionValue(_cx, _obj, fval, COUNTOF(argv), argv, &rval); // errors will be managed later by JS_IsExceptionPending(cx)
+
+		J_REMOVE_ROOT(_cx, &fromObj);
+	}
 
 };
 
