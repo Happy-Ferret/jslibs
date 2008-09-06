@@ -1,17 +1,17 @@
 LoadModule('jsstd');
 LoadModule('jsio');
 
-	var f = new File('asdfasdfasdf.txt');
-	f.Read();
-
-Halt();
-
 try {
 
-	var f = new File('asdfasdfasdf.txt');
-	f.Read();
+
+	var fd = Descriptor.Import( 5000, Descriptor.DESC_FILE );
+
+
+
 
 } catch ( ex if ex instanceof IoError ) { 
+
+	Print( ex.toSource() );
 	
 }
 

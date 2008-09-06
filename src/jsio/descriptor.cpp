@@ -426,27 +426,30 @@ DEFINE_PROPERTY( closed ) {
 DEFINE_FUNCTION( Import ) {
 
 	J_S_ASSERT_ARG_MIN(2);
-	int stdfd;
-	J_JSVAL_TO_INT32( J_ARG(1), stdfd );
-	PRInt32 osfd;
-	switch (stdfd) {
-		case 0:
-			osfd = PR_FileDesc2NativeHandle(PR_STDIN);
-			break;
-		case 1:
-			osfd = PR_FileDesc2NativeHandle(PR_STDOUT);
-			break;
-		case 2:
-			osfd = PR_FileDesc2NativeHandle(PR_STDERR);
-			break;
-		default:
-			osfd = stdfd;
-			//J_REPORT_ERROR("Unsupported standard handle.");
-	}
+	//int stdfd;
+	//J_JSVAL_TO_INT32( J_ARG(1), stdfd );
 
-	int tmp;
-	J_JSVAL_TO_INT32( J_ARG(2), tmp );
-	PRDescType type = (PRDescType)tmp;
+	PRInt32 osfd;
+	J_JSVAL_TO_INT32( J_ARG(1), osfd );
+
+	//switch (stdfd) {
+	//	case 0:
+	//		osfd = PR_FileDesc2NativeHandle(PR_STDIN);
+	//		break;
+	//	case 1:
+	//		osfd = PR_FileDesc2NativeHandle(PR_STDOUT);
+	//		break;
+	//	case 2:
+	//		osfd = PR_FileDesc2NativeHandle(PR_STDERR);
+	//		break;
+	//	default:
+	//		osfd = stdfd;
+	//		//J_REPORT_ERROR("Unsupported standard handle.");
+	//}
+
+	int descType;
+	J_CHK( JsvalToInt(cx, J_ARG(2), &descType) );
+	PRDescType type = (PRDescType)descType;
 
 	PRFileDesc *fd;
 	JSObject *descriptorObject;
