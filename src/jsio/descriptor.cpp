@@ -421,7 +421,7 @@ DEFINE_PROPERTY( closed ) {
 **/
 
 /**doc
- * *Import*( nativeDescriptor )
+ * *Import*( nativeDescriptor, type )
 **/
 DEFINE_FUNCTION( Import ) {
 
@@ -440,7 +440,8 @@ DEFINE_FUNCTION( Import ) {
 			osfd = PR_FileDesc2NativeHandle(PR_STDERR);
 			break;
 		default:
-			J_REPORT_ERROR("Unsupported standard handle.");
+			osfd = stdfd;
+			//J_REPORT_ERROR("Unsupported standard handle.");
 	}
 
 	int tmp;
