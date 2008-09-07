@@ -25,6 +25,7 @@ j.onLog = function( level, area, message ) {
 j.onConnect = function() {
 	
 	Print('onConnect', '\n');
+	Print( 'roster: ' + [item for ( item in j.roster )].join(',') );
 	j.presence = Jabber.PresenceAvailable;
 }
 
@@ -46,7 +47,6 @@ j.onMessage = function( from, body ) {
 //
 // Connection
 
-/*
 var jabberOsSocket = j.Connect(server);
 var jabberSocket = Descriptor.Import(jabberOsSocket, Descriptor.DESC_SOCKET_TCP);
 dlist.push(jabberSocket);
@@ -57,9 +57,8 @@ jabberSocket.readable = function() {
 	if ( res != Jabber.ConnNoError )
 		Print( 'Error '+res+' while processing data', '\n' );
 }
-*/
 
-
+/*
 //
 // Telnet server
 
@@ -67,21 +66,50 @@ var serverSocket = new Socket();
 serverSocket.nonblocking = true;
 serverSocket.readable = function(s) {
 
-	var incomingClient = s.Accept(); 
+	var incomingClient = s.Accept();
 	dlist.push(incomingClient);
+	
+	incomingClient.console = { code:'' };
+	
 	incomingClient.readable = function(s) {
 
 		var data = s.Read();
-		if ( !data )
+		if ( !data ) {
+		
 			dlist.splice(dlist.indexOf(incomingClient), 1);
-		else
-			Print(data);
+			return;
+		}
+		
+		s.console.code += data;
+		
+		switch (data.charCodeAt(0)) {
+		case 3:
+			s.console.code = '';
+			break;
+		case 13:
+		Print('enter');
+			if ( IsStatementValid(s.console.code) ) {
+				
+				try {
+				
+					s.Write('\r\n'+eval(s.console.code)+'\r\n');
+				} catch(ex) {
+				
+					s.Write(ex+'\r\n');
+				}
+				s.console.code = '';
+			}
+			break;			
+		}
+		//s.Write(data); // echo
 	}
 }
 
 serverSocket.Bind( 21, '127.0.0.1' );
 serverSocket.Listen();
 dlist.push( serverSocket );
+*/
+
 
 //
 // Idle

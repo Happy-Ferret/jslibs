@@ -48,18 +48,14 @@ JSBool JidToJsval( JSContext *cx, const JID *jid, jsval *rval ) {
 }
 
 
-
 class Handlers : 
 	public ConnectionListener, 
-	public PresenceHandler, 
 	public RosterListener,
 	public MessageHandler,
 	public LogHandler { // , public MessageSessionHandler
 
 public:
-	Handlers( JSObject *obj ) : _obj(obj) {
-	}
-
+	Handlers( JSObject *obj ) : _obj(obj) {}
 	JSContext *_cx;
 
 private:
@@ -139,15 +135,6 @@ private:
 		JS_CallFunctionValue(_cx, _obj, fval, COUNTOF(argv), argv, &rval); // errors will be managed later by JS_IsExceptionPending(cx)
 	}
 
-
-	void handlePresence( Stanza *stanza ) {
-
-		// ???
-	}
-
-//	void handleMessageSession( MessageSession *session ) {
-//	}
-
 	void handleMessage( Stanza *stanza, MessageSession *session ) {
 
 		jsval fval, rval;
@@ -201,7 +188,6 @@ private:
 		JS_CallFunctionValue(_cx, _obj, fval, COUNTOF(argv), argv, &rval); // errors will be managed later by JS_IsExceptionPending(cx)
 	}
 //
-
 };
 
 
@@ -343,6 +329,17 @@ DEFINE_FUNCTION( SendMessage ) {
 }
 
 
+/*
+DEFINE_FUNCTION( RosterItem ) {
+
+	Private *pv = (Private*)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE( pv );
+	J_S_ASSERT_ARG_MIN(1);
+
+	return JS_TRUE;
+}
+*/
+
 DEFINE_PROPERTY_GETTER( status ) {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
@@ -381,6 +378,26 @@ DEFINE_PROPERTY_SETTER( presence ) {
 	return JS_TRUE;
 }
 
+/*
+DEFINE_PROPERTY( roster ) {
+
+	Private *pv = (Private*)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE( pv );
+
+//	JSObject *rosterObj = JS_NewObjectWithGivenProto(cx, NULL, NULL, NULL);
+	Roster *roster = pv->client->rosterManager()->roster();
+	JSObject *rosterList = JS_NewArrayObject(cx, roster->size(), NULL);
+	int i = 0;
+	for ( Roster::const_iterator it = roster->begin(); it != roster->end(); it++ ) {
+
+		jsval rosterItem;
+		J_CHK( StringToJsval(cx, (*it).first.c_str(), &rosterItem ) );
+		J_CHK( JS_SetElement(cx, rosterList, i, &rosterItem) );
+		i++;
+	}
+	return JS_TRUE;
+}
+*/
 
 DEFINE_PROPERTY( socket ) {
 
@@ -416,6 +433,7 @@ CONFIGURE_CLASS
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
+//		PROPERTY_READ( roster )
 		PROPERTY( presence )
 		PROPERTY( status )
 	END_PROPERTY_SPEC
