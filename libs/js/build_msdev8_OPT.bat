@@ -1,10 +1,13 @@
-set prevDir=%CD%
 set prevPath=%PATH%
 
-set path=C:\tools\cygwin\bin
+rem ---------- configuration -------------------------------------------------
 
-call "%ProgramFiles%\Microsoft Platform SDK\SetEnv.Cmd" /XP32 /RETAIL
-call "%ProgramFiles%\Microsoft Visual Studio 8\VC\vcvarsall.bat" x86
+call "C:\Program Files\Microsoft SDKs\Windows\v6.1\bin\SetEnv.Cmd" /Release /x86 /xp
+set path=C:\tools\cygwin\bin;%path%
+call "C:\Program Files\Microsoft Visual Studio 8\VC\vcvarsall.bat" x86
+
+
+rem --------------------------------------------------------------------------
 
 pushd .\src
 

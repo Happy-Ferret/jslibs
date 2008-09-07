@@ -7,7 +7,6 @@ rem --------------------------------------------------------------------------
 
 IF "%BUILD%"=="" set BUILD=release
 
-set prevDir=%CD%
 set prevPath=%PATH%
 
 set logFile="%CD%\buildlog.txt"
@@ -16,7 +15,7 @@ echo build logfile: %logFile%
 Set Lib=%DirectXPath%\Lib\x86;%Lib%
 Set Include=%DirectXPath%\Include;%Include%
 
-call "%platformSDKPath%\SetEnv.Cmd" /XP32 /RETAIL
+call "%platformSDKPath%\bin\SetEnv.Cmd" /Release /x86 /xp
 rem The following line is needed for OpenAL compilation (.\OpenAL32.rc(10) : fatal error RC1015: cannot open include file 'afxres.h'.)
 set Include=%Include%;%MSSdk%\Include\mfc;%MSSdk%\Include\atl
 
@@ -38,8 +37,6 @@ echo building NSPR ...
 pushd .\libs\nspr
 call build_msdev8.bat >> %logFile% 2>&1
 popd
-
-
 
 
 md .\%BUILD%
