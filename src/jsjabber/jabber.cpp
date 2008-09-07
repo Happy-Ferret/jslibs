@@ -17,7 +17,11 @@
 
 #pragma warning( push )
 #pragma warning(disable : 4800) // warning C4800: '???' : forcing value to bool 'true' or 'false' (performance warning)
+
 #include <connectiontcpclient.h>
+#include <connectionsocks5proxy.h>
+#include <connectionhttpproxy.h>
+
 #include <messagehandler.h> 
 //#include <connectionhandler.h>
 
@@ -27,7 +31,10 @@
 #include <rosterlistener.h>
 
 #include <connectionlistener.h>
-//#include <messagesessionhandler.h>
+
+#include <socks5bytestream.h>
+#include <socks5bytestreamdatahandler.h>
+#include <siprofilefthandler.h>
 
 #include <client.h>
 #pragma warning( pop )
@@ -52,7 +59,8 @@ class Handlers :
 	public ConnectionListener, 
 	public RosterListener,
 	public MessageHandler,
-	public LogHandler { // , public MessageSessionHandler
+//	public SIProfileFTHandler,
+	public LogHandler {
 
 public:
 	Handlers( JSObject *obj ) : _obj(obj) {}
@@ -187,7 +195,19 @@ private:
 		jsval argv[] = { fromVal, presenceVal, msgVal };
 		JS_CallFunctionValue(_cx, _obj, fval, COUNTOF(argv), argv, &rval); // errors will be managed later by JS_IsExceptionPending(cx)
 	}
-//
+
+// SIProfileFTHandler (file transfer)
+/*
+	void handleFTRequestError( Stanza* stanza, const std::string& sid ) {}
+
+	void handleFTRequest( const JID& from, const std::string& id, const std::string& sid,
+		const std::string& name, long size, const std::string& hash,
+		const std::string& date, const std::string& mimetype,
+		const std::string& desc, int stypes, long offset, long length ) {}
+
+	void handleFTSOCKS5Bytestream( SOCKS5Bytestream* s5b ) {}
+*/
+
 };
 
 
@@ -234,7 +254,6 @@ DEFINE_CONSTRUCTOR() {
 	pv->client->registerConnectionListener( pv->handlers );
 	pv->client->rosterManager()->registerRosterListener( pv->handlers, true );
 	pv->client->registerMessageHandler( pv->handlers );
-//	pv->client->registerMessageSessionHandler( pv->handlers, 0 );
 	return JS_TRUE;
 }
 
@@ -258,6 +277,8 @@ DEFINE_FUNCTION( Connect ) {
 	pv->handlers->_cx = NULL;
 	if ( JS_IsExceptionPending(cx) )
 		return JS_FALSE;
+
+	//bool usingCompression = pv->client->compression();
 
 	ConnectionTCPClient *connection = dynamic_cast<ConnectionTCPClient*>( pv->client->connectionImpl() );
 	if ( !connection )
@@ -340,6 +361,28 @@ DEFINE_FUNCTION( RosterItem ) {
 }
 */
 
+
+DEFINE_PROPERTY( socket ) {
+
+	Private *pv = (Private*)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE( pv );
+	ConnectionTCPClient *connection = dynamic_cast<ConnectionTCPClient*>( pv->client->connectionImpl() );
+	if ( !connection ) {
+
+		*vp = JSVAL_VOID;
+		return JS_TRUE;
+	}
+	int sock = connection->socket(); // return The socket of the active connection, or -1 if no connection is established.
+	if ( sock == -1 ) {
+
+		*vp = JSVAL_VOID;
+		return JS_TRUE;
+	}
+	J_CHK( IntToJsval(cx, sock, vp) );
+	return JS_TRUE;
+}
+
+
 DEFINE_PROPERTY_GETTER( status ) {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
@@ -347,6 +390,7 @@ DEFINE_PROPERTY_GETTER( status ) {
 	J_CHK( StringToJsval(cx, pv->client->status().c_str(), vp) );
 	return JS_TRUE;
 }
+
 
 DEFINE_PROPERTY_SETTER( status ) {
 
@@ -399,23 +443,23 @@ DEFINE_PROPERTY( roster ) {
 }
 */
 
-DEFINE_PROPERTY( socket ) {
+DEFINE_PROPERTY( connectionTotalIn ) {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( pv );
-	ConnectionTCPClient *connection = dynamic_cast<ConnectionTCPClient*>( pv->client->connectionImpl() );
-	if ( !connection ) {
+	int totalIn, totalOut;
+	pv->client->connectionImpl()->getStatistics( totalIn, totalOut);
+	J_CHK( IntToJsval(cx, totalIn, vp) );
+	return JS_TRUE;
+}
 
-		*vp = JSVAL_VOID;
-		return JS_TRUE;
-	}
-	int sock = connection->socket(); // return The socket of the active connection, or -1 if no connection is established.
-	if ( sock == -1 ) {
+DEFINE_PROPERTY( connectionTotalOut ) {
 
-		*vp = JSVAL_VOID;
-		return JS_TRUE;
-	}
-	J_CHK( IntToJsval(cx, sock, vp) );
+	Private *pv = (Private*)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE( pv );
+	int totalIn, totalOut;
+	pv->client->connectionImpl()->getStatistics( totalIn, totalOut);
+	J_CHK( IntToJsval(cx, totalOut, vp) );
 	return JS_TRUE;
 }
 
@@ -428,6 +472,7 @@ CONFIGURE_CLASS
 
 	BEGIN_FUNCTION_SPEC
 		FUNCTION( Connect )
+		FUNCTION( Disconnect )
 		FUNCTION( Process )
 		FUNCTION( SendMessage )
 	END_FUNCTION_SPEC
@@ -436,6 +481,8 @@ CONFIGURE_CLASS
 //		PROPERTY_READ( roster )
 		PROPERTY( presence )
 		PROPERTY( status )
+		PROPERTY_READ( connectionTotalIn )
+		PROPERTY_READ( connectionTotalOut )
 	END_PROPERTY_SPEC
 
 	BEGIN_CONST_INTEGER_SPEC
