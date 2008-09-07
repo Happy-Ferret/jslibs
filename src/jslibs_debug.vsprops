@@ -4,16 +4,16 @@
 	Version="8.00"
 	Name="jslibs common properties"
 	>
-	<!-- tmp VCCLCompilerTool
-							Debug Single-threaded (libcd.lib)           | N/A
-							Debug Multithreaded (libcmtd.lib)           | RuntimeLibrary="1"
-							Debug Multithreaded using DLL (msvcrtd.lib) | RuntimeLibrary="3"
 
-							PreprocessorDefinitions="JS_THREADSAFE JS_DUMP_PROPTREE_STATS"
-							AdditionalIncludeDirectories="..\js\src;..\nspr\include\nspr"
+	<!-- tmp VCCLCompilerTool
+		Debug Single-threaded (libcd.lib)           | N/A
+		Debug Multithreaded (libcmtd.lib)           | RuntimeLibrary="1"
+		Debug Multithreaded using DLL (msvcrtd.lib) | RuntimeLibrary="3"
+
+		PreprocessorDefinitions="JS_THREADSAFE JS_DUMP_PROPTREE_STATS"
+		AdditionalIncludeDirectories="..\js\src;..\nspr\include\nspr"
 	-->
-	
-	
+
 	<Tool
 		Name="VCCLCompilerTool"
 		PreprocessorDefinitions="JS_HASHMETER JS_GC_ZEAL"
@@ -28,6 +28,7 @@
 							Debug Multithreaded (libcmtd.lib)           | IgnoreDefaultLibraryNames="libc.lib, libcmt.lib, msvcrt.lib, libcd.lib, msvcrtd.lib"
 							Debug Multithreaded using DLL (msvcrtd.lib) | IgnoreDefaultLibraryNames="libc.lib, libcmt.lib, msvcrt.lib, libcd.lib, libcmtd.lib"
 	-->
+
 	<Tool
 		Name="VCLinkerTool"
 		GenerateDebugInformation="true"

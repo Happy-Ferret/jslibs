@@ -4,8 +4,8 @@
 	Version="8.00"
 	Name="jslibs common properties"
 	>
+
 	<!-- tmp VCCLCompilerTool
-	
 		Single-threaded (libc.lib)                  | N/A
 		Multithreaded (libcmt.lib)                  | RuntimeLibrary="0"
 		Multithreaded using DLL (msvcrt.lib)        | RuntimeLibrary="2"
@@ -13,6 +13,7 @@
 		PreprocessorDefinitions="JS_THREADSAFE"
 		AdditionalIncludeDirectories="..\js\src;..\nspr\include\nspr"
 	-->
+
 	<Tool
 		Name="VCCLCompilerTool"
 		AdditionalIncludeDirectories="..\..\libs\js\src"
@@ -26,6 +27,7 @@
 		Multithreaded (libcmt.lib)                  | IgnoreDefaultLibraryNames="libc.lib, msvcrt.lib, libcd.lib, libcmtd.lib, msvcrtd.lib"
 		Multithreaded using DLL (msvcrt.lib)        | IgnoreDefaultLibraryNames="libc.lib, libcmt.lib, libcd.lib, libcmtd.lib, msvcrtd.lib"
 	-->
+
 	<Tool
 		Name="VCLinkerTool"
 		GenerateDebugInformation="true"
