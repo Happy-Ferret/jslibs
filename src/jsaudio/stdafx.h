@@ -35,7 +35,7 @@
 #include <al.h>
 #include <alc.h>
 #include <efx.h>
-#include <EFX-Util.h>
+//#include <EFX-Util.h>
 
 // once ?
 #pragma comment(lib, "../../libs/openal/sdk/libs/Win32/OpenAL32.lib")

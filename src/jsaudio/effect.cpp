@@ -91,9 +91,6 @@ DEFINE_PROPERTY_GETTER( type ) {
 }
 
 
-
-
-
 /*
 DEFINE_FUNCTION_FAST( Test ) {
 
@@ -105,7 +102,6 @@ DEFINE_FUNCTION_FAST( Test ) {
 	return JS_TRUE;
 }
 */
-
 
 
 DEFINE_PROPERTY_SETTER( effectFloat ) {

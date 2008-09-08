@@ -497,7 +497,7 @@ DEFINE_PROPERTY( velocity ) {
 }
 
 
-static int enumToConst[] = {
+static const int enumToConst[] = {
 	AL_SOURCE_STATE,
 	AL_LOOPING,
 	AL_SEC_OFFSET,
@@ -511,7 +511,7 @@ static int enumToConst[] = {
 };
 
 enum {
-	state									= 0,
+	state								= 0,
 	looping								,
 	secOffset							,
 	gain									,
