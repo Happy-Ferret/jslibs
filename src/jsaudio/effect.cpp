@@ -18,7 +18,6 @@
 
 struct Private {
 	ALuint effect;
-	ALuint slot;
 };
 
 
@@ -32,8 +31,6 @@ DEFINE_FINALIZE() {
 
 		if ( alcGetCurrentContext() ) {
 
-			alAuxiliaryEffectSloti(pv->slot, AL_EFFECTSLOT_EFFECT, AL_EFFECT_NULL);
-			alDeleteAuxiliaryEffectSlots(1, &pv->slot);
 			alDeleteEffects(1, &pv->effect);
 		}
 		JS_free(cx, pv);
@@ -47,12 +44,6 @@ DEFINE_CONSTRUCTOR() {
 	alGenEffects(1, &pv->effect);
 	J_CHK( CheckThrowCurrentOalError(cx) );
 
-	alGenAuxiliaryEffectSlots(1, &pv->slot);
-	J_CHK( CheckThrowCurrentOalError(cx) );
-
-	alAuxiliaryEffectSloti( pv->slot, AL_EFFECTSLOT_EFFECT, pv->effect );
-	J_CHK( CheckThrowCurrentOalError(cx) );
-
 	J_CHK( JS_SetPrivate(cx, obj, pv) );
 	return JS_TRUE;
 }
@@ -62,7 +53,8 @@ DEFINE_FUNCTION_FAST( valueOf ) {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, J_FOBJ);
 	J_S_ASSERT_RESOURCE( pv );
-	J_CHK( UIntToJsval(cx, pv->slot, J_FRVAL) );
+
+	J_CHK( UIntToJsval(cx, pv->effect, J_FRVAL) );
 	return JS_TRUE;
 }
 
@@ -100,177 +92,172 @@ DEFINE_PROPERTY_GETTER( type ) {
 
 
 
-DEFINE_PROPERTY_SETTER( gain ) {
-
-	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE( pv );
-	float gain;
-	J_CHK( JsvalToFloat(cx, *vp, &gain) );
-
-	alAuxiliaryEffectSlotf( pv->slot, AL_EFFECTSLOT_GAIN, gain );
-	J_CHK( CheckThrowCurrentOalError(cx) );
-
-	return JS_TRUE;
-}
-
-DEFINE_PROPERTY_GETTER( gain ) {
-
-	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE( pv );
-	float gain;
-
-	alGetAuxiliaryEffectSlotf( pv->slot, AL_EFFECTSLOT_GAIN, &gain );
-	J_CHK( CheckThrowCurrentOalError(cx) );
-
-	J_CHK( FloatToJsval(cx, gain, vp) );
-	return JS_TRUE;
-}
 
 
-
-DEFINE_PROPERTY_SETTER( auto ) {
-
-	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE( pv );
-	bool sendAuto;
-	J_CHK( JsvalToBool(cx, *vp, &sendAuto) );
-
-	alAuxiliaryEffectSloti( pv->slot, AL_EFFECTSLOT_AUXILIARY_SEND_AUTO, sendAuto ? AL_TRUE : AL_FALSE );
-	J_CHK( CheckThrowCurrentOalError(cx) );
-
-	return JS_TRUE;
-}
-
-DEFINE_PROPERTY_GETTER( auto ) {
-
-	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE( pv );
-	int sendAuto;
-
-	alGetAuxiliaryEffectSloti( pv->slot, AL_EFFECTSLOT_AUXILIARY_SEND_AUTO, &sendAuto );
-	J_CHK( CheckThrowCurrentOalError(cx) );
-
-	J_CHK( BoolToJsval(cx, sendAuto == AL_TRUE ? true : false, vp) );
-	return JS_TRUE;
-}
-
-
-
-/**doc
- * $VOID $INAME( buffer )
-  $H arguments
-  $H OpenAL API
-**/
+/*
 DEFINE_FUNCTION_FAST( Test ) {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, J_FOBJ);
 	J_S_ASSERT_RESOURCE( pv );
-/*
-	ALenum err = alGetError();
-	alEffectf( pv->effect, AL_REVERB_DENSITY, 1 );
+
+
+	J_CHK( CheckThrowCurrentOalError(cx) );
+	return JS_TRUE;
+}
 */
 
 
-	#define AL_EAXREVERB_DENSITY                               0x0001
-	#define AL_EAXREVERB_DIFFUSION                             0x0002
-	#define AL_EAXREVERB_GAIN                                  0x0003
-	#define AL_EAXREVERB_GAINHF                                0x0004
-	#define AL_EAXREVERB_GAINLF                                0x0005
-	#define AL_EAXREVERB_DECAY_TIME                            0x0006
-	#define AL_EAXREVERB_DECAY_HFRATIO                         0x0007
-	#define AL_EAXREVERB_DECAY_LFRATIO                         0x0008
-	#define AL_EAXREVERB_REFLECTIONS_GAIN                      0x0009
-	#define AL_EAXREVERB_REFLECTIONS_DELAY                     0x000A
-	#define AL_EAXREVERB_REFLECTIONS_PAN                       0x000B
-	#define AL_EAXREVERB_LATE_REVERB_GAIN                      0x000C
-	#define AL_EAXREVERB_LATE_REVERB_DELAY                     0x000D
-	#define AL_EAXREVERB_LATE_REVERB_PAN                       0x000E
-	#define AL_EAXREVERB_ECHO_TIME                             0x000F
-	#define AL_EAXREVERB_ECHO_DEPTH                            0x0010
-	#define AL_EAXREVERB_MODULATION_TIME                       0x0011
-	#define AL_EAXREVERB_MODULATION_DEPTH                      0x0012
-	#define AL_EAXREVERB_AIR_ABSORPTION_GAINHF                 0x0013 
-	#define AL_EAXREVERB_HFREFERENCE                           0x0014 
-	#define AL_EAXREVERB_LFREFERENCE                           0x0015 
-	#define AL_EAXREVERB_ROOM_ROLLOFF_FACTOR                   0x0016
-	#define AL_EAXREVERB_DECAY_HFLIMIT                         0x0017
-	#define AL_EFFECT_EAXREVERB                                0x8000
 
-	alEffecti(pv->effect, AL_EFFECT_TYPE, AL_EFFECT_EAXREVERB);
-	J_CHK( CheckThrowCurrentOalError(cx) );
+DEFINE_PROPERTY_SETTER( effectFloat ) {
 
-	EAXREVERBPROPERTIES eaxReverb = REVERB_PRESET_AUDITORIUM;
-	EFXEAXREVERBPROPERTIES efxReverb;
-
-	ConvertReverbParameters(&eaxReverb, &efxReverb);
-
-	EFXEAXREVERBPROPERTIES *pEFXEAXReverb = &efxReverb;
-	ALuint uiEffect = pv->effect;
-
-	alEffectf(uiEffect, AL_EAXREVERB_DENSITY, pEFXEAXReverb->flDensity);
+	Private *pv = (Private*)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE( pv );
+	ALenum param = JSVAL_TO_INT(id);
+	float f;
+	J_CHK( JsvalToFloat(cx, *vp, &f) );
+	alEffectf(pv->effect, param, f);
 	J_CHK( CheckThrowCurrentOalError(cx) );
-
-
-	alEffectf(uiEffect, AL_EAXREVERB_DIFFUSION, pEFXEAXReverb->flDiffusion);
-	J_CHK( CheckThrowCurrentOalError(cx) );
-	alEffectf(uiEffect, AL_EAXREVERB_GAIN, pEFXEAXReverb->flGain);
-	J_CHK( CheckThrowCurrentOalError(cx) );
-	alEffectf(uiEffect, AL_EAXREVERB_GAINHF, pEFXEAXReverb->flGainHF);
-	J_CHK( CheckThrowCurrentOalError(cx) );
-	alEffectf(uiEffect, AL_EAXREVERB_GAINLF, pEFXEAXReverb->flGainLF);
-	J_CHK( CheckThrowCurrentOalError(cx) );
-	alEffectf(uiEffect, AL_EAXREVERB_DECAY_TIME, pEFXEAXReverb->flDecayTime);
-	J_CHK( CheckThrowCurrentOalError(cx) );
-	alEffectf(uiEffect, AL_EAXREVERB_DECAY_HFRATIO, pEFXEAXReverb->flDecayHFRatio);
-	J_CHK( CheckThrowCurrentOalError(cx) );
-	alEffectf(uiEffect, AL_EAXREVERB_DECAY_LFRATIO, pEFXEAXReverb->flDecayLFRatio);
-	J_CHK( CheckThrowCurrentOalError(cx) );
-	alEffectf(uiEffect, AL_EAXREVERB_REFLECTIONS_GAIN, pEFXEAXReverb->flReflectionsGain);
-	J_CHK( CheckThrowCurrentOalError(cx) );
-	alEffectf(uiEffect, AL_EAXREVERB_REFLECTIONS_DELAY, pEFXEAXReverb->flReflectionsDelay);
-	J_CHK( CheckThrowCurrentOalError(cx) );
-	alEffectfv(uiEffect, AL_EAXREVERB_REFLECTIONS_PAN, pEFXEAXReverb->flReflectionsPan);
-	J_CHK( CheckThrowCurrentOalError(cx) );
-	alEffectf(uiEffect, AL_EAXREVERB_LATE_REVERB_GAIN, pEFXEAXReverb->flLateReverbGain);
-	J_CHK( CheckThrowCurrentOalError(cx) );
-	alEffectf(uiEffect, AL_EAXREVERB_LATE_REVERB_DELAY, pEFXEAXReverb->flLateReverbDelay);
-	J_CHK( CheckThrowCurrentOalError(cx) );
-	alEffectfv(uiEffect, AL_EAXREVERB_LATE_REVERB_PAN, pEFXEAXReverb->flLateReverbPan);
-	J_CHK( CheckThrowCurrentOalError(cx) );
-	alEffectf(uiEffect, AL_EAXREVERB_ECHO_TIME, pEFXEAXReverb->flEchoTime);
-	J_CHK( CheckThrowCurrentOalError(cx) );
-	alEffectf(uiEffect, AL_EAXREVERB_ECHO_DEPTH, pEFXEAXReverb->flEchoDepth);
-	J_CHK( CheckThrowCurrentOalError(cx) );
-	alEffectf(uiEffect, AL_EAXREVERB_MODULATION_TIME, pEFXEAXReverb->flModulationTime);
-	J_CHK( CheckThrowCurrentOalError(cx) );
-	alEffectf(uiEffect, AL_EAXREVERB_MODULATION_DEPTH, pEFXEAXReverb->flModulationDepth);
-	J_CHK( CheckThrowCurrentOalError(cx) );
-	alEffectf(uiEffect, AL_EAXREVERB_AIR_ABSORPTION_GAINHF, pEFXEAXReverb->flAirAbsorptionGainHF);
-	J_CHK( CheckThrowCurrentOalError(cx) );
-	alEffectf(uiEffect, AL_EAXREVERB_HFREFERENCE, pEFXEAXReverb->flHFReference);
-	J_CHK( CheckThrowCurrentOalError(cx) );
-	alEffectf(uiEffect, AL_EAXREVERB_LFREFERENCE, pEFXEAXReverb->flLFReference);
-	J_CHK( CheckThrowCurrentOalError(cx) );
-	alEffectf(uiEffect, AL_EAXREVERB_ROOM_ROLLOFF_FACTOR, pEFXEAXReverb->flRoomRolloffFactor);
-	J_CHK( CheckThrowCurrentOalError(cx) );
-	alEffecti(uiEffect, AL_EAXREVERB_DECAY_HFLIMIT, pEFXEAXReverb->iDecayHFLimit);
-	J_CHK( CheckThrowCurrentOalError(cx) );
-
 	return JS_TRUE;
 }
 
-DEFINE_PROPERTY_GETTER( effectfloat ) {
+DEFINE_PROPERTY_GETTER( effectFloat ) {
 
+	Private *pv = (Private*)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE( pv );
+	ALenum param = JSVAL_TO_INT(id);
+	float f;
+	alGetEffectf(pv->effect, param, &f);
+	J_CHK( CheckThrowCurrentOalError(cx) );
+	J_CHK( FloatToJsval(cx, f, vp) );
 	return JS_TRUE;
 }
 
-DEFINE_PROPERTY_SETTER( effectfloat ) {
+DEFINE_PROPERTY_SETTER( effectInt ) {
 
+	Private *pv = (Private*)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE( pv );
+	ALenum param = JSVAL_TO_INT(id);
+	int i;
+	J_CHK( JsvalToInt(cx, *vp, &i) );
+	alEffecti(pv->effect, param, i);
+	J_CHK( CheckThrowCurrentOalError(cx) );
+	return JS_TRUE;
+}
+
+DEFINE_PROPERTY_GETTER( effectInt ) {
+
+	Private *pv = (Private*)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE( pv );
+	ALenum param = JSVAL_TO_INT(id);
+	int i;
+	alGetEffecti(pv->effect, param, &i);
+	J_CHK( CheckThrowCurrentOalError(cx) );
+	J_CHK( IntToJsval(cx, i, vp) );
+	return JS_TRUE;
+}
+
+DEFINE_PROPERTY_SETTER( effectBool ) {
+
+	Private *pv = (Private*)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE( pv );
+	ALenum param = JSVAL_TO_INT(id);
+	bool b;
+	J_CHK( JsvalToBool(cx, *vp, &b) );
+	alEffecti(pv->effect, param, b ? AL_TRUE : AL_FALSE);
+	J_CHK( CheckThrowCurrentOalError(cx) );
+	return JS_TRUE;
+}
+
+DEFINE_PROPERTY_GETTER( effectBool ) {
+
+	Private *pv = (Private*)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE( pv );
+	ALenum param = JSVAL_TO_INT(id);
+	int i;
+	alGetEffecti(pv->effect, param, &i);
+	J_CHK( CheckThrowCurrentOalError(cx) );
+	*vp = i == AL_TRUE ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;
 }
 
 
-enum { reverbDensity };
+enum {
+	reverbDensity             				= AL_REVERB_DENSITY					 ,
+	reverbDiffusion           				= AL_REVERB_DIFFUSION				 ,
+	reverbGain                				= AL_REVERB_GAIN						 ,
+	reverbGainHF              				= AL_REVERB_GAINHF					 ,
+	reverbDecayTime           				= AL_REVERB_DECAY_TIME				 ,
+	reverbDecayHFRatio        				= AL_REVERB_DECAY_HFRATIO			 ,
+	reverbReflectionsGain     				= AL_REVERB_REFLECTIONS_GAIN		 ,
+	reverbReflectionsDelay    				= AL_REVERB_REFLECTIONS_DELAY		 ,
+	reverbLateReverbGain      				= AL_REVERB_LATE_REVERB_GAIN		 ,
+	reverbLateReverbDelay     				= AL_REVERB_LATE_REVERB_DELAY		 ,
+	reverbAirAbsorptionGainHF 				= AL_REVERB_AIR_ABSORPTION_GAINHF ,
+	reverbRoomRolloffFactor   				= AL_REVERB_ROOM_ROLLOFF_FACTOR	 ,
+	reverbDecayHFLimit        				= AL_REVERB_DECAY_HFLIMIT			 ,
+
+	chorusWaveform 							= AL_CHORUS_WAVEFORM ,
+	chorusPhase    							= AL_CHORUS_PHASE    ,
+	chorusRate     							= AL_CHORUS_RATE     ,
+	chorusDepth    							= AL_CHORUS_DEPTH    ,
+	chorusFeedback 							= AL_CHORUS_FEEDBACK ,
+	chorusDelay    							= AL_CHORUS_DELAY    ,
+
+	distortionEdge           				= AL_DISTORTION_EDGE           ,
+	distortionGain           				= AL_DISTORTION_GAIN           ,
+	distortionLowpassCutoff  				= AL_DISTORTION_LOWPASS_CUTOFF ,
+	distortionEqcenter       				= AL_DISTORTION_EQCENTER       ,
+	distortionEqbandwidth    				= AL_DISTORTION_EQBANDWIDTH    ,
+
+	echoDelay    								= AL_ECHO_DELAY    ,
+	echoLrdelay  								= AL_ECHO_LRDELAY  ,
+	echoDamping  								= AL_ECHO_DAMPING  ,
+	echoFeedback 								= AL_ECHO_FEEDBACK ,
+	echoSpread   								= AL_ECHO_SPREAD   ,
+
+	flangerWaveform 							= AL_FLANGER_WAVEFORM ,
+	flangerPhase    							= AL_FLANGER_PHASE    ,
+	flangerRate     							= AL_FLANGER_RATE     ,
+	flangerDepth    							= AL_FLANGER_DEPTH    ,
+	flangerFeedback 							= AL_FLANGER_FEEDBACK ,
+	flangerDelay    							= AL_FLANGER_DELAY    ,
+
+	frequencyShifterFrequency      		= AL_FREQUENCY_SHIFTER_FREQUENCY       ,
+	frequencyShifterLeftDirection  		= AL_FREQUENCY_SHIFTER_LEFT_DIRECTION  ,
+	frequencyShifterRightDirection 		= AL_FREQUENCY_SHIFTER_RIGHT_DIRECTION ,
+
+	vocalMorpherPhonemea               	= AL_VOCAL_MORPHER_PHONEMEA               ,
+	vocalMorpherPhonemeaCoarseTuning   	= AL_VOCAL_MORPHER_PHONEMEA_COARSE_TUNING ,
+	vocalMorpherPhonemeb               	= AL_VOCAL_MORPHER_PHONEMEB               ,
+	vocalMorpherPhonemebCoarseTuning   	= AL_VOCAL_MORPHER_PHONEMEB_COARSE_TUNING ,
+	vocalMorpherWaveform               	= AL_VOCAL_MORPHER_WAVEFORM               ,
+	vocalMorpherRate                   	= AL_VOCAL_MORPHER_RATE                   ,
+
+	pitchShifterCoarseTune 					= AL_PITCH_SHIFTER_COARSE_TUNE ,
+	pitchShifterFineTune   					= AL_PITCH_SHIFTER_FINE_TUNE   ,
+
+	ringModulatorFrequency      			= AL_RING_MODULATOR_FREQUENCY       ,
+	ringModulatorHighpassCutoff 			= AL_RING_MODULATOR_HIGHPASS_CUTOFF ,
+	ringModulatorWaveform       			= AL_RING_MODULATOR_WAVEFORM        ,
+
+	autowahAttackTime  						= AL_AUTOWAH_ATTACK_TIME  ,
+	autowahReleaseTime 						= AL_AUTOWAH_RELEASE_TIME ,
+	autowahResonance   						= AL_AUTOWAH_RESONANCE    ,
+	autowahPeakGain    						= AL_AUTOWAH_PEAK_GAIN    ,
+
+	compressorOnoff     						= AL_COMPRESSOR_ONOFF ,
+
+	equalizerLowGain    						= AL_EQUALIZER_LOW_GAIN	   ,
+	equalizerLowCutoff  						= AL_EQUALIZER_LOW_CUTOFF  ,
+	equalizerMid1Gain   						= AL_EQUALIZER_MID1_GAIN   ,
+	equalizerMid1Center 						= AL_EQUALIZER_MID1_CENTER ,
+	equalizerMid1Width  						= AL_EQUALIZER_MID1_WIDTH  ,
+	equalizerMid2Gain   						= AL_EQUALIZER_MID2_GAIN   ,
+	equalizerMid2Center 						= AL_EQUALIZER_MID2_CENTER ,
+	equalizerMid2Width  						= AL_EQUALIZER_MID2_WIDTH  ,
+	equalizerHighGain   						= AL_EQUALIZER_HIGH_GAIN   ,
+	equalizerHighCutoff 						= AL_EQUALIZER_HIGH_CUTOFF ,
+};
 
 
 CONFIGURE_CLASS
@@ -281,17 +268,88 @@ CONFIGURE_CLASS
 
 	BEGIN_FUNCTION_SPEC
 		FUNCTION_FAST_ARGC( valueOf, 0 )
-
-		FUNCTION_FAST( Test )
+//		FUNCTION_FAST( Test )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
 		PROPERTY( type )
-		PROPERTY( gain )
-		PROPERTY( auto )
 
-//		PROPERTY_SWITCH( reverbDensity, effectfloat )
-		PROPERTY_CREATE( reverbDensity, AL_REVERB_DENSITY, JSPROP_PERMANENT|JSPROP_SHARED, effectfloatGetter, effectfloatSetter)
+		PROPERTY_SWITCH( reverbDensity							, effectFloat )
+		PROPERTY_SWITCH( reverbDiffusion							, effectFloat )
+		PROPERTY_SWITCH( reverbGain								, effectFloat )
+		PROPERTY_SWITCH( reverbGainHF								, effectFloat )
+		PROPERTY_SWITCH( reverbDecayTime							, effectFloat )
+		PROPERTY_SWITCH( reverbDecayHFRatio						, effectFloat )
+		PROPERTY_SWITCH( reverbReflectionsGain					, effectFloat )
+		PROPERTY_SWITCH( reverbReflectionsDelay				, effectFloat )
+		PROPERTY_SWITCH( reverbLateReverbGain					, effectFloat )
+		PROPERTY_SWITCH( reverbLateReverbDelay					, effectFloat )
+		PROPERTY_SWITCH( reverbAirAbsorptionGainHF			, effectFloat )
+		PROPERTY_SWITCH( reverbRoomRolloffFactor				, effectFloat )
+		PROPERTY_SWITCH( reverbDecayHFLimit						, effectBool  )
+
+		PROPERTY_SWITCH( chorusWaveform 							, effectInt ) // AL_CHORUS_WAVEFORM_SINUSOID, AL_CHORUS_WAVEFORM_TRIANGLE
+		PROPERTY_SWITCH( chorusPhase    							, effectInt ) // -180, +180
+		PROPERTY_SWITCH( chorusRate     							, effectFloat )
+		PROPERTY_SWITCH( chorusDepth    							, effectFloat )
+		PROPERTY_SWITCH( chorusFeedback 							, effectFloat )
+		PROPERTY_SWITCH( chorusDelay    							, effectFloat )
+
+		PROPERTY_SWITCH( distortionEdge          				, effectFloat )
+		PROPERTY_SWITCH( distortionGain          				, effectFloat )
+		PROPERTY_SWITCH( distortionLowpassCutoff 				, effectFloat )
+		PROPERTY_SWITCH( distortionEqcenter      				, effectFloat )
+		PROPERTY_SWITCH( distortionEqbandwidth   				, effectFloat )
+
+		PROPERTY_SWITCH( echoDelay    							, effectFloat )
+		PROPERTY_SWITCH( echoLrdelay  							, effectFloat )
+		PROPERTY_SWITCH( echoDamping  							, effectFloat )
+		PROPERTY_SWITCH( echoFeedback 							, effectFloat )
+		PROPERTY_SWITCH( echoSpread   							, effectFloat )
+
+		PROPERTY_SWITCH( flangerWaveform 						, effectInt ) // AL_CHORUS_WAVEFORM_SINUSOID, AL_CHORUS_WAVEFORM_TRIANGLE
+		PROPERTY_SWITCH( flangerPhase    						, effectFloat )
+		PROPERTY_SWITCH( flangerRate     						, effectFloat )
+		PROPERTY_SWITCH( flangerDepth    						, effectFloat )
+		PROPERTY_SWITCH( flangerFeedback 						, effectFloat )
+		PROPERTY_SWITCH( flangerDelay    						, effectFloat )
+
+		PROPERTY_SWITCH( frequencyShifterFrequency      	, effectFloat )
+		PROPERTY_SWITCH( frequencyShifterLeftDirection  	, effectInt ) // Down, Up, Off
+		PROPERTY_SWITCH( frequencyShifterRightDirection 	, effectInt ) // Down, Up, Off
+
+		PROPERTY_SWITCH( vocalMorpherPhonemea              , effectInt )
+		PROPERTY_SWITCH( vocalMorpherPhonemeaCoarseTuning  , effectInt )
+		PROPERTY_SWITCH( vocalMorpherPhonemeb              , effectInt )
+		PROPERTY_SWITCH( vocalMorpherPhonemebCoarseTuning  , effectInt )
+		PROPERTY_SWITCH( vocalMorpherWaveform              , effectInt ) // Sin, Triangle, Saw
+		PROPERTY_SWITCH( vocalMorpherRate                  , effectFloat )
+
+		PROPERTY_SWITCH( pitchShifterCoarseTune 				, effectInt )
+		PROPERTY_SWITCH( pitchShifterFineTune   				, effectInt )
+
+		PROPERTY_SWITCH( ringModulatorFrequency      		, effectFloat )
+		PROPERTY_SWITCH( ringModulatorHighpassCutoff 		, effectFloat )
+		PROPERTY_SWITCH( ringModulatorWaveform       		, effectInt ) // Sin, Saw, Square
+
+		PROPERTY_SWITCH( autowahAttackTime  					, effectFloat )
+		PROPERTY_SWITCH( autowahReleaseTime 					, effectFloat )
+		PROPERTY_SWITCH( autowahResonance   					, effectFloat )
+		PROPERTY_SWITCH( autowahPeakGain    					, effectFloat )
+
+		PROPERTY_SWITCH( compressorOnoff     					, effectBool )
+
+		PROPERTY_SWITCH( equalizerLowGain    					, effectFloat )
+		PROPERTY_SWITCH( equalizerLowCutoff  					, effectFloat )
+		PROPERTY_SWITCH( equalizerMid1Gain   					, effectFloat )
+		PROPERTY_SWITCH( equalizerMid1Center 					, effectFloat )
+		PROPERTY_SWITCH( equalizerMid1Width  					, effectFloat )
+		PROPERTY_SWITCH( equalizerMid2Gain   					, effectFloat )
+		PROPERTY_SWITCH( equalizerMid2Center 					, effectFloat )
+		PROPERTY_SWITCH( equalizerMid2Width  					, effectFloat )
+		PROPERTY_SWITCH( equalizerHighGain   					, effectFloat )
+		PROPERTY_SWITCH( equalizerHighCutoff 					, effectFloat )
+
 	END_PROPERTY_SPEC
 
 END_CLASS

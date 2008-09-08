@@ -47,9 +47,9 @@
 	#pragma warning(disable : 4267) // warning C4267: 'var' : conversion from 'size_t' to 'type', possible loss of data
 	#pragma warning(disable : 4996) // warning C4996: 'function': was declared deprecated
 	#pragma warning(disable : 4100) // warning C4100: 'xxx' : unreferenced formal parameter
-
-	#pragma warning(error : 4715) // force error for:  not all control paths return a value
-	#pragma warning(error : 4018)  // force error for:  warning C4018: '<' : signed/unsigned mismatch
+	#pragma warning(error : 4715) // force error for: not all control paths return a value
+	#pragma warning(error : 4018) // force error for: warning C4018: '<' : signed/unsigned mismatch
+	#pragma warning(error : 4309) // force error for: warning C4309: 'initializing' : truncation of constant value
 #endif // #ifdef WIN32
 
 #include <limits.h>

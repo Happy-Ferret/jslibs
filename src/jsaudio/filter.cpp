@@ -63,50 +63,73 @@ DEFINE_FUNCTION_FAST( valueOf ) {
 === Properties ===
 **/
 
-
-DEFINE_PROPERTY( type ) {
+DEFINE_PROPERTY_SETTER( type ) {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE(pv);
 	int filterType;
-	J_CHK( JsvalToInt(cx, *vp, &filterType) );
-
+	if ( JSVAL_IS_VOID(*vp) )
+		filterType = AL_FILTER_NULL;
+	else
+		J_CHK( JsvalToInt(cx, *vp, &filterType) );
 	alFilteri(pv->filter, AL_FILTER_TYPE, filterType);
 	J_CHK( CheckThrowCurrentOalError(cx) );
+	return JS_TRUE;
+}
+
+DEFINE_PROPERTY_GETTER( type ) {
+
+	Private *pv = (Private*)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE(pv);
+	int filterType;
+	alGetFilteri(pv->filter, AL_FILTER_TYPE, &filterType);
+	J_CHK( CheckThrowCurrentOalError(cx) );
+
+	if ( filterType == AL_FILTER_NULL )
+		*vp = JSVAL_VOID;
+	else
+		J_CHK( IntToJsval(cx, filterType, vp) );
 
 	return JS_TRUE;
 }
 
 
-DEFINE_PROPERTY( lowpassGain ) {
+DEFINE_PROPERTY_SETTER( filterFloat ) {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( pv );
-	float gain;
-	J_CHK( JsvalToFloat(cx, *vp, &gain) );
-
-	alFilterf(pv->filter, AL_LOWPASS_GAIN, gain);
+	ALenum param = JSVAL_TO_INT(id);
+	float f;
+	J_CHK( JsvalToFloat(cx, *vp, &f) );
+	alFilterf(pv->filter, param, f);
 	J_CHK( CheckThrowCurrentOalError(cx) );
-
 	return JS_TRUE;
 }
 
-
-DEFINE_PROPERTY( lowpassGainHF ) {
+DEFINE_PROPERTY_GETTER( filterFloat ) {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( pv );
-	float gain;
-	J_CHK( JsvalToFloat(cx, *vp, &gain) );
-
-	alFilterf(pv->filter, AL_LOWPASS_GAINHF, gain);
+	ALenum param = JSVAL_TO_INT(id);
+	float f;
+	alGetFilterf(pv->filter, param, &f);
 	J_CHK( CheckThrowCurrentOalError(cx) );
-
+	J_CHK( FloatToJsval(cx, f, vp) );
 	return JS_TRUE;
 }
 
 
+enum {
+	lowpassGain				= AL_LOWPASS_GAIN    ,
+	lowpassGainHF			= AL_LOWPASS_GAINHF	,
 
+	highpassGain			= AL_HIGHPASS_GAIN   ,
+	highpassGainLF			= AL_HIGHPASS_GAINLF ,
+
+	bandpassGain			= AL_BANDPASS_GAIN   ,
+	bandpassGainLF			= AL_BANDPASS_GAINLF ,
+	bandpassGainHF			= AL_BANDPASS_GAINHF ,
+};
 
 
 CONFIGURE_CLASS
@@ -120,8 +143,17 @@ CONFIGURE_CLASS
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
-		PROPERTY_WRITE( lowpassGain )
-		PROPERTY_WRITE( lowpassGainHF )
+		PROPERTY( type )
+
+		PROPERTY_SWITCH( lowpassGain			, filterFloat )
+		PROPERTY_SWITCH( lowpassGainHF		, filterFloat )
+
+		PROPERTY_SWITCH( highpassGain			, filterFloat )
+		PROPERTY_SWITCH( highpassGainLF		, filterFloat )
+
+		PROPERTY_SWITCH( bandpassGain			, filterFloat )
+		PROPERTY_SWITCH( bandpassGainLF		, filterFloat )
+		PROPERTY_SWITCH( bandpassGainHF		, filterFloat )
 	END_PROPERTY_SPEC
 
 END_CLASS

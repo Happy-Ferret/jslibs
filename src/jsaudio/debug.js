@@ -17,7 +17,7 @@ Print( dec.frames, '\n' );
 
 Print( '------------------------\n' );
 
-var block = dec.Read(50000);
+var block = dec.Read(100000);
 var [left, right] = SplitChannels(block);
 block = left;
 
@@ -60,10 +60,15 @@ src.Position(15,0,0);
 
 
 var effect = new OalEffect();
-//effect.Test();
 effect.type = Oal.EFFECT_REVERB;
-effect.gain = 1;
+effect.reverbDensity = 0;
+effect.reverbDiffusion = 1;
+effect.reverbGain = 1;
+effect.reverbDecayTime = 20;
+
 src.effect = effect;
+
+
 
 // Changing a parameter value in the Filter Object after it has been attached to a Source will not affect the Source.
 // To update the filter(s) used on a Source, an application must update the parameters of a Filter object and then re-attach it to the Source.
@@ -87,12 +92,12 @@ src.Play();
 
 for ( var i=0; i < 100; i++) {
 
-	src.position = [Math.sin(i/10)*5,Math.cos(i/10)*5, 0];
+//	src.position = [Math.sin(i/10)*5,Math.cos(i/10)*5, 0];
 
 //	Print( ' state: '+Hex(src.state), '\n' );
 //	Print( ' offset: '+src.secOffset.toFixed(3), '\n' );
 //	Print( '\n' );
-	Sleep(20);
+	Sleep(40);
 }
 src.Stop();
 

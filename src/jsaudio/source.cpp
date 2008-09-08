@@ -18,9 +18,14 @@
 
 #include "error.h"
 
+#include "oalefxapi.h"
+
+
 struct Private {
 	ALuint sid;
 	Queue *queue;
+	ALuint effectSlot;
+
 };
 
 
@@ -71,6 +76,14 @@ JSBool UnprotectJsval( JSContext *cx, Queue *queue, jsval value ) {
 
 BEGIN_CLASS( OalSource )
 
+DEFINE_TRACER() {
+
+	Private *pv = (Private*)JS_GetPrivate(trc->context, obj);
+	if ( pv )
+		for ( QueueCell *it = QueueBegin(pv->queue); it; it = QueueNext(it) )
+			JS_CALL_VALUE_TRACER(trc, *(jsval*)QueueGetData(it), "jsstd/Buffer:bufferQueueItem");
+}
+
 
 DEFINE_FINALIZE() {
 
@@ -83,7 +96,13 @@ DEFINE_FINALIZE() {
 			JS_free(cx, pItem);
 		}
 		QueueDestruct(pv->queue);
-		alDeleteSources(1, &pv->sid);
+
+		if ( alcGetCurrentContext() ) {
+
+	//		alAuxiliaryEffectSloti(pv->effectSlot, AL_EFFECTSLOT_EFFECT, AL_EFFECT_NULL); //(TBD) needed before deleting the slot ?
+			alDeleteAuxiliaryEffectSlots(1, &pv->effectSlot);
+			alDeleteSources(1, &pv->sid);
+		}
 	}
 }
 
@@ -94,6 +113,9 @@ DEFINE_CONSTRUCTOR() {
 	pv->queue = QueueConstruct();
 
 	alGenSources(1, &pv->sid);
+	J_CHK( CheckThrowCurrentOalError(cx) );
+
+	alGenAuxiliaryEffectSlots(1, &pv->effectSlot);
 	J_CHK( CheckThrowCurrentOalError(cx) );
 
 	J_CHK( JS_SetPrivate(cx, obj, pv) );
@@ -268,18 +290,75 @@ DEFINE_PROPERTY( effect ) {
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( pv );
 
-//	alGetError(); // reset
-	ALuint effectSlot;
+	ALuint effect;
 	if ( !JSVAL_IS_VOID(*vp) )
-		J_CHK( JsvalToUInt(cx, *vp, &effectSlot) );	
+		J_CHK( JsvalToUInt(cx, *vp, &effect) );	
 	else
-		effectSlot = AL_EFFECTSLOT_NULL;
+		effect = AL_EFFECT_NULL;
+	
+	alAuxiliaryEffectSloti( pv->effectSlot, AL_EFFECTSLOT_EFFECT, effect );
+	J_CHK( CheckThrowCurrentOalError(cx) );
+//		effectSlot = AL_EFFECTSLOT_NULL;
 
-	alSource3i(pv->sid, AL_AUXILIARY_SEND_FILTER, effectSlot, 0, AL_FILTER_NULL);
+//	int tmp[10];
+//	alGetSource3i(pv->sid, AL_AUXILIARY_SEND_FILTER, tmp);
+//	J_CHK( CheckThrowCurrentOalError(cx) );
+
+	alSource3i(pv->sid, AL_AUXILIARY_SEND_FILTER, pv->effectSlot, 0, AL_FILTER_NULL);
 	J_CHK( CheckThrowCurrentOalError(cx) );
 
 	return JS_TRUE;
 }
+
+
+
+DEFINE_PROPERTY_SETTER( effectGain ) {
+
+	Private *pv = (Private*)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE( pv );
+	float gain;
+	J_CHK( JsvalToFloat(cx, *vp, &gain) );
+	alAuxiliaryEffectSlotf( pv->effectSlot, AL_EFFECTSLOT_GAIN, gain );
+	J_CHK( CheckThrowCurrentOalError(cx) );
+	return JS_TRUE;
+}
+
+DEFINE_PROPERTY_GETTER( effectGain ) {
+
+	Private *pv = (Private*)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE( pv );
+	float gain;
+	alGetAuxiliaryEffectSlotf( pv->effectSlot, AL_EFFECTSLOT_GAIN, &gain );
+	J_CHK( CheckThrowCurrentOalError(cx) );
+	J_CHK( FloatToJsval(cx, gain, vp) );
+	return JS_TRUE;
+}
+
+
+
+DEFINE_PROPERTY_SETTER( effectSendAuto ) {
+
+	Private *pv = (Private*)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE( pv );
+	bool sendAuto;
+	J_CHK( JsvalToBool(cx, *vp, &sendAuto) );
+	alAuxiliaryEffectSloti( pv->effectSlot, AL_EFFECTSLOT_AUXILIARY_SEND_AUTO, sendAuto ? AL_TRUE : AL_FALSE );
+	J_CHK( CheckThrowCurrentOalError(cx) );
+	return JS_TRUE;
+}
+
+DEFINE_PROPERTY_GETTER( effectSendAuto ) {
+
+	Private *pv = (Private*)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE( pv );
+	int sendAuto;
+	alGetAuxiliaryEffectSloti( pv->effectSlot, AL_EFFECTSLOT_AUXILIARY_SEND_AUTO, &sendAuto );
+	J_CHK( CheckThrowCurrentOalError(cx) );
+	J_CHK( BoolToJsval(cx, sendAuto == AL_TRUE ? true : false, vp) );
+	return JS_TRUE;
+}
+
+
 
 
 DEFINE_PROPERTY( directFilter ) {
@@ -298,34 +377,6 @@ DEFINE_PROPERTY( directFilter ) {
 
 	return JS_TRUE;
 }
-
-
-DEFINE_PROPERTY_SETTER( airAbsorptionFactor ) {
-
-	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE( pv );
-	float airAbsorptionFactor;
-	J_CHK( JsvalToFloat(cx, *vp, &airAbsorptionFactor) );
-
-	alSourcef(pv->sid, AL_AIR_ABSORPTION_FACTOR, airAbsorptionFactor);
-	J_CHK( CheckThrowCurrentOalError(cx) );
-
-	return JS_TRUE;
-}
-
-DEFINE_PROPERTY_GETTER( airAbsorptionFactor ) {
-
-	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE( pv );
-	float airAbsorptionFactor;
-
-	alGetSourcef(pv->sid, AL_AIR_ABSORPTION_FACTOR, &airAbsorptionFactor);
-	J_CHK( CheckThrowCurrentOalError(cx) );
-
-	J_CHK( FloatToJsval(cx, airAbsorptionFactor, vp) );
-	return JS_TRUE;
-}
-
 
 
 DEFINE_PROPERTY( buffer ) {
@@ -446,108 +497,107 @@ DEFINE_PROPERTY( velocity ) {
 }
 
 
-DEFINE_PROPERTY_SETTER( gain ) {
+static int enumToConst[] = {
+	AL_SOURCE_STATE,
+	AL_LOOPING,
+	AL_SEC_OFFSET,
+	AL_GAIN,
+	AL_AIR_ABSORPTION_FACTOR,
+	AL_ROOM_ROLLOFF_FACTOR,
+	AL_CONE_OUTER_GAINHF,
+	AL_DIRECT_FILTER_GAINHF_AUTO,
+	AL_AUXILIARY_SEND_FILTER_GAIN_AUTO,
+	AL_AUXILIARY_SEND_FILTER_GAINHF_AUTO,
+};
+
+enum {
+	state									= 0,
+	looping								,
+	secOffset							,
+	gain									,
+	airAbsorptionFactor				,
+	roomRolloffFactor					,
+	coneOuterGainhf					,
+	directFilterGainhfAuto			,
+	auxiliarySendFilterGainAuto	,
+	auxiliarySendFilterGainhfAuto	,
+};
+
+
+
+// 'ind' suffix mean that an indirection is needed because tinyid (8bit) cannot store any OpenAL constant.
+DEFINE_PROPERTY_SETTER( sourceFloatInd ) {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( pv );
-	float gain;
-	J_CHK( JsvalToFloat(cx, *vp, &gain) );
-
-	alSourcef(pv->sid, AL_GAIN, gain);
+	ALenum param = enumToConst[JSVAL_TO_INT(id)];
+	float f;
+	J_CHK( JsvalToFloat(cx, *vp, &f) );
+	alSourcef(pv->sid, param, f);
 	J_CHK( CheckThrowCurrentOalError(cx) );
-
 	return JS_TRUE;
 }
 
-DEFINE_PROPERTY_GETTER( gain ) {
+DEFINE_PROPERTY_GETTER( sourceFloatInd ) {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( pv );
-	float gain;
-
-	alGetSourcef(pv->sid, AL_GAIN, &gain);
+	ALenum param = enumToConst[JSVAL_TO_INT(id)]; // see sourceFloatInd comment.
+	float f;
+	alGetSourcef(pv->sid, param, &f);
 	J_CHK( CheckThrowCurrentOalError(cx) );
-
-	J_CHK( FloatToJsval(cx, gain, vp) );
+	J_CHK( FloatToJsval(cx, f, vp) );
 	return JS_TRUE;
 }
 
-
-DEFINE_PROPERTY_SETTER( secOffset ) {
+DEFINE_PROPERTY_SETTER( sourceIntInd ) {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( pv );
-	float offset;
-	J_CHK( JsvalToFloat(cx, *vp, &offset) );
-
-	alSourcef(pv->sid, AL_SEC_OFFSET, offset);
+	ALenum param = JSVAL_TO_INT(id);
+	int i;
+	J_CHK( JsvalToInt(cx, *vp, &i) );
+	alSourcei(pv->sid, param, i);
 	J_CHK( CheckThrowCurrentOalError(cx) );
-
 	return JS_TRUE;
 }
 
-DEFINE_PROPERTY_GETTER( secOffset ) {
+DEFINE_PROPERTY_GETTER( sourceIntInd ) {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( pv );
-	float offset;
-
-	alGetSourcef(pv->sid, AL_SEC_OFFSET, &offset);
+	ALenum param = JSVAL_TO_INT(id);
+	int i;
+	alGetSourcei(pv->sid, param, &i);
 	J_CHK( CheckThrowCurrentOalError(cx) );
-
-	J_CHK( FloatToJsval(cx, offset, vp) );
+	J_CHK( IntToJsval(cx, i, vp) );
 	return JS_TRUE;
 }
 
-
-DEFINE_PROPERTY_SETTER( looping ) {
+DEFINE_PROPERTY_SETTER( sourceBoolInd ) {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( pv );
-	bool looping;
-	J_CHK( JsvalToBool(cx, *vp, &looping) );
-
-	alSourcei(pv->sid, AL_LOOPING, looping ? AL_TRUE : AL_FALSE);
+	ALenum param = enumToConst[JSVAL_TO_INT(id)]; // see sourceFloatInd comment.
+	bool b;
+	J_CHK( JsvalToBool(cx, *vp, &b) );
+	alSourcei(pv->sid, param, b ? AL_TRUE : AL_FALSE);
 	J_CHK( CheckThrowCurrentOalError(cx) );
-
 	return JS_TRUE;
 }
 
-DEFINE_PROPERTY_GETTER( looping ) {
+DEFINE_PROPERTY_GETTER( sourceBoolInd ) {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( pv );
-	ALint looping;
-
-	alGetSourcei(pv->sid, AL_LOOPING, &looping);
+	ALenum param = enumToConst[JSVAL_TO_INT(id)]; // see sourceFloatInd comment.
+	int i;
+	alGetSourcei(pv->sid, param, &i);
 	J_CHK( CheckThrowCurrentOalError(cx) );
-
-	J_CHK( BoolToJsval(cx, looping == AL_TRUE, vp) );
+	*vp = i == AL_TRUE ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;
 }
 
-
-DEFINE_PROPERTY( state ) {
-
-	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE( pv );
-	ALint state;
-
-	alGetSourcei(pv->sid, AL_SOURCE_STATE, &state);
-	J_CHK( CheckThrowCurrentOalError(cx) );
-
-	J_CHK( IntToJsval(cx, state, vp) );
-	return JS_TRUE;
-}
-
-
-DEFINE_TRACER() {
-
-	Private *pv = (Private*)JS_GetPrivate(trc->context, obj);
-	if ( pv )
-		for ( QueueCell *it = QueueBegin(pv->queue); it; it = QueueNext(it) )
-			JS_CALL_VALUE_TRACER(trc, *(jsval*)QueueGetData(it), "jsstd/Buffer:bufferQueueItem");
-}
 
 
 CONFIGURE_CLASS
@@ -573,17 +623,27 @@ CONFIGURE_CLASS
 
 	BEGIN_PROPERTY_SPEC
 		PROPERTY_WRITE_STORE( effect )
+		PROPERTY( effectGain )
+		PROPERTY( effectSendAuto )
+
 		PROPERTY_WRITE_STORE( directFilter )
 		PROPERTY_WRITE_STORE( buffer )
 
-		PROPERTY( airAbsorptionFactor )
-
 		PROPERTY_READ( position )
 		PROPERTY_READ( velocity )
-		PROPERTY( gain )
-		PROPERTY( secOffset )
-		PROPERTY( looping )
-		PROPERTY_READ( state )
+
+
+		PROPERTY_SWITCH_READ( state, sourceIntIndGetter )
+		PROPERTY_SWITCH( looping, sourceBoolInd )
+		PROPERTY_SWITCH( gain, sourceFloatInd )
+		PROPERTY_SWITCH( secOffset, sourceFloatInd )
+		PROPERTY_SWITCH( airAbsorptionFactor, sourceFloatInd )
+		PROPERTY_SWITCH( roomRolloffFactor, sourceFloatInd )
+		PROPERTY_SWITCH( coneOuterGainhf, sourceFloatInd )
+		PROPERTY_SWITCH( directFilterGainhfAuto, sourceBoolInd )
+		PROPERTY_SWITCH( auxiliarySendFilterGainAuto, sourceBoolInd )
+		PROPERTY_SWITCH( auxiliarySendFilterGainhfAuto, sourceBoolInd )
+
 	END_PROPERTY_SPEC
 
 END_CLASS

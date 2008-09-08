@@ -63,7 +63,11 @@ struct JSLIBS_ConstIntegerSpec {
 #define PROPERTY_WRITE_STORE(name) { #name, 0, JSPROP_PERMANENT              , NULL, _##name },
 #define PROPERTY_SWITCH(name, function)       { #name, name, JSPROP_PERMANENT|JSPROP_SHARED, _##function##Getter, _##function##Setter }, // Used to define multiple properties with only one pari of getter/setter functions ( an enum has to be defiend ... less than 256 items ! )
 #define PROPERTY_SWITCH_STORE(name, function) { #name, name, JSPROP_PERMANENT, _##function##Getter, _##function##Setter },
+#define PROPERTY_SWITCH_READ(name, function) { #name, name, JSPROP_PERMANENT|JSPROP_READONLY|JSPROP_SHARED, _##function, NULL },
 #define PROPERTY_SWITCH_READ_STORE(name, function) { #name, name, JSPROP_PERMANENT|JSPROP_READONLY, _##function##Getter, NULL },
+//#define PROPERTY_SWITCH_ID(name, id, function)       { #name, id, JSPROP_PERMANENT|JSPROP_SHARED, _##function##Getter, _##function##Setter },
+//#define PROPERTY_SWITCH_ID_STORE(name, id, function) { #name, id, JSPROP_PERMANENT, _##function##Getter, _##function##Setter },
+//#define PROPERTY_SWITCH_ID_READ_STORE(name, id, function) { #name, id, JSPROP_PERMANENT|JSPROP_READONLY, _##function##Getter, NULL },
 #define PROPERTY_CREATE(name,id,flags,getter,setter) { #name, id, flags, _##getter, _##setter },
 #define PROPERTY_DEFINE(name) { #name, 0, JSPROP_PERMANENT, NULL, NULL },
 

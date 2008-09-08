@@ -1256,6 +1256,9 @@ CONFIGURE_CLASS
 		CONST_INTEGER(FILTER_HIGHPASS                                , AL_FILTER_HIGHPASS                                )
 		CONST_INTEGER(FILTER_BANDPASS                                , AL_FILTER_BANDPASS                                )
 
+// EFX
+		CONST_INTEGER(CHORUS_WAVEFORM_SINUSOID                       , AL_CHORUS_WAVEFORM_SINUSOID                   )
+		CONST_INTEGER(CHORUS_WAVEFORM_TRIANGLE                       , AL_CHORUS_WAVEFORM_TRIANGLE                   )
 
 	END_CONST_INTEGER_SPEC
 
