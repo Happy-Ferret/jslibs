@@ -3,7 +3,7 @@ IF "%BUILD%"=="" set BUILD=release
 echo building %BUILD% version.
 IF NOT "%jslibsEnvSet%"=="true" call .\envbuild.cmd
 
-set logFile="%CD%\buildlog.txt"
+set logFile="%CD%\%BUILD%\buildlog.txt"
 set buildDir="%CD%\%BUILD%"
 
 ( date /T && time /T && set ) > %logFile%
