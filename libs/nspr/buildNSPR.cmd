@@ -1,8 +1,16 @@
 @echo off
 IF "%BUILD%"=="" set BUILD=release
 echo building NSPR ...
-
 IF NOT "%jslibsEnvSet%"=="true" call ..\..\envbuild.cmd
+
+set destinationPath=..\..\%BUILD%\
+set destinationFiles=nspr4.dll nspr4.lib
+
+
+
+pushd %destinationPath%
+del %destinationFiles%
+popd
 
 set tmpDrive=x:
 
@@ -25,15 +33,18 @@ set XCFLAGS=/MT
 make clean all
 popd
 
+set PATH=%prevPath%
+
 popd
 subst %tmpDrive% /D
 
-copy win32\dist\lib\nspr4.dll ..\..\%BUILD%
-copy win32\dist\lib\nspr4.lib ..\..\%BUILD%
+pushd win32\dist\lib\
+cp %destinationFiles% ..\..\..\%destinationPath%
+popd
 
-set PATH=%prevPath%
 
-	rem Note: /MT : Multithreaded static, /MTd : Multithreaded static debug, /MD : Multithreaded DLL, /MDd : Multithreaded DLL debug.
-	rem  --enable-debug-rtl      Use the MSVC debug runtime library
-	rem --enable-optimize --disable-debug
-	rem --enable-win32-target=WIN95 --enable-debug-rtl  --with-dist-prefix=..
+rem ==========================================================================
+rem Note: /MT : Multithreaded static, /MTd : Multithreaded static debug, /MD : Multithreaded DLL, /MDd : Multithreaded DLL debug.
+rem  --enable-debug-rtl      Use the MSVC debug runtime library
+rem --enable-optimize --disable-debug
+rem --enable-win32-target=WIN95 --enable-debug-rtl  --with-dist-prefix=..

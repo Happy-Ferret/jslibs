@@ -9,17 +9,17 @@ set buildDir="%CD%\%BUILD%"
 ( date /T && time /T && set ) > %logFile%
 mkdir %buildDir%
 
+echo building SpiderMonkey ...
 pushd .\libs\js
 call buildJS.cmd >> %logFile% 2>&1
 popd
 
+echo building NSPR ...
 pushd .\libs\nspr
 call buildNSPR.cmd >> %logFile% 2>&1
 popd
 
-
 echo building jslibs %BUILD% version.
-
 for /D %%f in (src\js*) do (
 
 	for %%g in ("%%f\*.sln") do (
@@ -36,10 +36,4 @@ for /D %%f in (src\js*) do (
 )
 
 echo Build done.
-goto end
-
-:error
-echo Build failed!
-
-:end
 pause
