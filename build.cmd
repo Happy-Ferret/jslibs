@@ -7,21 +7,14 @@ set logFile="%CD%\buildlog.txt"
 set buildDir="%CD%\%BUILD%"
 
 ( date /T && time /T && set ) > %logFile%
-md %buildDir%
+mkdir %buildDir%
 
 pushd .\libs\js
-IF "%BUILD%"=="release" (
-	call buildJS.cmd >> %logFile% 2>&1
-	copy src\WINNT5.1_OPT.OBJ\*.dll %buildDir%
-) ELSE (
-	call buildJS.cmd >> %logFile% 2>&1
-	copy src\WINNT5.1_OPT.OBJ\*.dll %buildDir%
-)
+call buildJS.cmd >> %logFile% 2>&1
 popd
 
 pushd .\libs\nspr
-call build_msdev8.bat >> %logFile% 2>&1
-copy win32\dist\lib\nspr4.dll %buildDir%
+call buildNSPR.cmd >> %logFile% 2>&1
 popd
 
 
@@ -38,12 +31,6 @@ for /D %%f in (src\js*) do (
 		if ERRORLEVEL 1 (
 		
 			echo ... failed !
-		) ELSE (
-
-			pushd %%~dg%%~pg%BUILD%
-			copy %%~nf.dll %buildDir% 1>nul
-			copy %%~nf.exe %buildDir% 1>nul
-			popd
 		)
 	)
 )

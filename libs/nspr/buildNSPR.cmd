@@ -1,4 +1,7 @@
+@echo off
+IF "%BUILD%"=="" set BUILD=release
 echo building NSPR ...
+
 IF NOT "%jslibsEnvSet%"=="true" call ..\..\envbuild.cmd
 
 set tmpDrive=x:
@@ -24,6 +27,8 @@ popd
 
 popd
 subst %tmpDrive% /D
+
+copy win32\dist\lib\nspr4.dll ..\..\%BUILD%
 
 set PATH=%prevPath%
 

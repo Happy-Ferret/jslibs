@@ -16,7 +16,12 @@ copy jsconfig.h src
 
 pushd .\src
 make -f Makefile.ref clean all %makeOptions%
+
+IF "%BUILD%"=="release" ( cd *OPT.OBJ ) ELSE ( cd *DBG.OBJ )
+mkdir ..\..\..\..\%BUILD%
+copy /Y *.dll ..\..\..\..\%BUILD%
 popd
+
 
 	rem Note: /MT : Multithreaded static, /MTd : Multithreaded static debug, /MD : Multithreaded DLL, /MDd : Multithreaded DLL debug.
 
