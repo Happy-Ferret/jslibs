@@ -29,6 +29,7 @@ popd
 subst %tmpDrive% /D
 
 copy win32\dist\lib\nspr4.dll ..\..\%BUILD%
+copy win32\dist\lib\nspr4.lib ..\..\%BUILD%
 
 set PATH=%prevPath%
 

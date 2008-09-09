@@ -7,8 +7,7 @@ IF "%BUILD%"=="release" (
 	set XCFLAGS=/DWINVER=0x500 /D_WIN32_WINNT=0x500 /O2 /Ox /Oi /Ot /Oy /GL /GS- /arch:SSE /D_CRT_SECURE_NO_DEPRECATE=1 /MD
 	set makeOptions=BUILD_OPT=1
 ) else (
-	set XCFLAGS=/DWINVER=0x500 /D_WIN32_WINNT=0x500 /D_CRT_SECURE_NO_DEPRECATE=1 /MDd
-	set XCFLAGS=%XCFLAGS% /DJS_HASHMETER /DJS_GC_ZEAL
+	set XCFLAGS=/DWINVER=0x500 /D_WIN32_WINNT=0x500 /D_CRT_SECURE_NO_DEPRECATE=1 /MDd   /DJS_HASHMETER /DJS_GC_ZEAL
 	set makeOptions=
 )
 
@@ -20,6 +19,7 @@ make -f Makefile.ref clean all %makeOptions%
 IF "%BUILD%"=="release" ( cd *OPT.OBJ ) ELSE ( cd *DBG.OBJ )
 mkdir ..\..\..\..\%BUILD%
 copy /Y *.dll ..\..\..\..\%BUILD%
+copy /Y *.lib ..\..\..\..\%BUILD%
 popd
 
 
