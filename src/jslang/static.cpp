@@ -121,6 +121,8 @@ DEFINE_FUNCTION( Stringify ) {
 
 DEFINE_FUNCTION( Test ) {
 
+	J_CHK( JL_CallFunctionName(cx, JSVAL_TO_OBJECT( J_ARG(1) ), JS_GetStringBytes( JSVAL_TO_STRING(J_ARG(2)) ), rval, 0) );
+
 	return JS_TRUE;
 }
 

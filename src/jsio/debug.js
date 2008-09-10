@@ -6,7 +6,7 @@ try {
 
 	var fd = Descriptor.Import( 5000, Descriptor.DESC_FILE );
 
-
+	Print( fd)
 
 
 } catch ( ex if ex instanceof IoError ) { 
