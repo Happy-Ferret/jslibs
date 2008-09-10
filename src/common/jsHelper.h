@@ -335,7 +335,8 @@ inline bool IsNInfinity( JSContext *cx, jsval val ) {
 
 
 inline bool JsvalIsFunction( JSContext *cx, jsval val ) {
-	return ( JS_TypeOfValue(cx, (val)) == JSTYPE_FUNCTION );
+	//return ( JS_TypeOfValue(cx, (val)) == JSTYPE_FUNCTION ); // (TBD) slower ??
+	return !JSVAL_IS_PRIMITIVE(val) && JS_ObjectIsFunction(cx, JSVAL_TO_OBJECT(val)) == JS_TRUE; // (TBD) faster ??
 }
 
 
