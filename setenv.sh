@@ -7,3 +7,5 @@ PATH=$PATH:$PWD/$BUILD
 
 export LD_LIBRARY_PATH
 export PATH
+
+echo jslibs $BUILD environment set.

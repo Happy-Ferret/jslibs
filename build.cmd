@@ -19,12 +19,12 @@ pushd .\libs\nspr
 call buildNSPR.cmd >> %logFile% 2>&1
 popd
 
-echo building jslibs %BUILD% version.
+echo building jslibs ...
 for /D %%f in (src\js*) do (
 
 	for %%g in ("%%f\*.sln") do (
 		
-		echo building %%g ...
+		echo building   %%g ...
 		echo ******************************************************************************* >> %logFile%
 		echo ******************************************************************************* >> %logFile%
 		vcbuild /useenv /rebuild %%g "%BUILD%|WIN32" >> %logFile% 2>&1
