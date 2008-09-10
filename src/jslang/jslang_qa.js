@@ -284,8 +284,9 @@ LoadModule('jsstd');
 
 /// Blob substr [ftr]
 
-		var b = new Blob();
-		b = b.concat( 'ABCDEF' );
+		var b = new Blob('ABCDEF');
+		var s = 'ABCDEF'
+
 		QA.ASSERT( ''+b.substr(0), 'ABCDEF', 'substr' );
 		QA.ASSERT( ''+b.substr(1), 'BCDEF', 'substr' );
 		QA.ASSERT( ''+b.substr(2,3), 'CDE', 'substr' );
@@ -296,7 +297,47 @@ LoadModule('jsstd');
 		QA.ASSERT( ''+b.substr(0,-2), '', 'substr' );
 		QA.ASSERT( ''+b.substr(6), '', 'substr' );
 		QA.ASSERT( ''+b.substr(-6), 'ABCDEF', 'substr' );
-		QA.ASSERT( ''+b.substr(-7,2), '', 'substr' );
+		QA.ASSERT( ''+b.substr(-7,2), 'AB', 'substr' );
+
+		for ( var i = -10; i <= 10; i++ ) {
+
+			QA.ASSERT( ''+b.substr(i)   ,s.substr(i)   , 'substr('+i+')' );
+			for ( var j = -10; j <= 10; j++ )
+				QA.ASSERT( ''+b.substr(i,j)   ,s.substr(i,j)   , 'substr('+i+','+j+')' );
+		}
+
+		QA.ASSERT( (b instanceof Blob) && !(b instanceof String), true, 'b is a Blob, not a String' );
+
+
+/// Blob substring [ftr]
+
+		var b = new Blob('ABCDEF');
+		var s = 'ABCDEF'
+
+		QA.ASSERT( ''+b.substring(-6)   ,s.substring(-6)   , 'substring' );
+		QA.ASSERT( ''+b.substring(-1)   ,s.substring(-1)   , 'substring' );
+		QA.ASSERT( ''+b.substring(0)    ,s.substring(0)    , 'substring' );
+		QA.ASSERT( ''+b.substring(1)    ,s.substring(1)    , 'substring' );
+		QA.ASSERT( ''+b.substring(2)    ,s.substring(2)    , 'substring' );
+		QA.ASSERT( ''+b.substring(5)    ,s.substring(5)    , 'substring' );
+		QA.ASSERT( ''+b.substring(6)    ,s.substring(6)    , 'substring' );
+		QA.ASSERT( ''+b.substring(7)    ,s.substring(7)    , 'substring' );
+		QA.ASSERT( ''+b.substring(2,3)  ,s.substring(2,3)  , 'substring' );
+		QA.ASSERT( ''+b.substring(-2,2) ,s.substring(-2,2) , 'substring' );
+		QA.ASSERT( ''+b.substring(-2,3) ,s.substring(-2,3) , 'substring' );
+		QA.ASSERT( ''+b.substring(0,6)  ,s.substring(0,6)  , 'substring' );
+		QA.ASSERT( ''+b.substring(0,7)  ,s.substring(0,7)  , 'substring' );
+		QA.ASSERT( ''+b.substring(0,-2) ,s.substring(0,-2) , 'substring' );
+		QA.ASSERT( ''+b.substring(-7,2) ,s.substring(-7,2) , 'substring' );
+
+		for ( var i = -10; i <= 10; i++ ) {
+
+			QA.ASSERT( ''+b.substring(i)   ,s.substring(i)   , 'substring('+i+')' );
+			for ( var j = -10; j <= 10; j++ )
+				QA.ASSERT( ''+b.substring(i,j)   ,s.substring(i,j)   , 'substring('+i+','+j+')' );
+		}
+
+		QA.ASSERT( (b instanceof Blob) && !(b instanceof String), true, 'b is a Blob, not a String' );
 
 
 /// Blob setter [ftrd]

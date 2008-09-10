@@ -285,7 +285,7 @@ DEFINE_FUNCTION_FAST( substr ) {
 	int start;
 	J_JSVAL_TO_INT32( J_FARG(1), start );
 
-	if ( start >= (int)dataLength || start < -(int)dataLength ) {
+	if ( start >= (signed)dataLength ) {
 
 		*J_FRVAL = JS_GetEmptyStringValue(cx);
 		return JS_TRUE;
@@ -373,15 +373,19 @@ DEFINE_FUNCTION_FAST( substring ) {
 		indexA = 0;
 	else
 		J_JSVAL_TO_INT32( J_FARG(1), indexA );
-	
-	if ( J_FARG_ISDEF(2) )
+
+
+	if ( J_FARG_ISDEF(2) ) {
+
 		if ( J_FARG(2) == JS_GetNaNValue(cx) || JSVAL_IS_INT(J_FARG(2)) && JSVAL_TO_INT(J_FARG(2)) < 0 || J_FARG(2) == JS_GetNegativeInfinityValue(cx) )
 			indexB = 0;
 		else
-			J_JSVAL_TO_INT32( J_FARG(1), indexA );
-	else
-		indexB = dataLength - 1;
+			J_JSVAL_TO_INT32( J_FARG(2), indexB );
+	
+	} else {
 
+		indexB = dataLength;
+	}
 
 	if ( indexA > indexB ) {
 
@@ -390,7 +394,7 @@ DEFINE_FUNCTION_FAST( substring ) {
 		indexA = tmp;
 	}
 
-	if ( indexA == indexB ) {
+	if ( indexA == indexB || indexA >= (signed)dataLength ) {
 
 		*J_FRVAL = JS_GetEmptyStringValue(cx);
 		return JS_TRUE;
@@ -822,7 +826,7 @@ CONFIGURE_CLASS
 		FUNCTION_FAST(Free)
 		FUNCTION_FAST(concat)
 		FUNCTION_FAST(substr)
-//		FUNCTION_FAST(substring) // (TBD) FIXME
+		FUNCTION_FAST(substring)
 		FUNCTION_FAST(indexOf)
 		FUNCTION_FAST(lastIndexOf)
 		FUNCTION_FAST(charCodeAt)
