@@ -230,6 +230,9 @@ DEFINE_FUNCTION( Step ) {
 	sqlite3_stmt *pStmt = (sqlite3_stmt *)JS_GetPrivate( cx, obj );
 	J_S_ASSERT_RESOURCE( pStmt );
 
+	sqlite3 *db = sqlite3_db_handle(pStmt);
+	GetDbContext(db)->cx = cx; // update the JS context used to call functions (see sqlite_function_call)
+
 	// check if bindings are up to date
 	jsval bindingUpToDate;
 	JS_GetReservedSlot(cx, obj, SLOT_RESULT_BINDING_UP_TO_DATE, &bindingUpToDate);
@@ -249,6 +252,7 @@ DEFINE_FUNCTION( Step ) {
 
 	int status = sqlite3_step( pStmt ); // The return value will be either SQLITE_BUSY, SQLITE_DONE, SQLITE_ROW, SQLITE_ERROR, or SQLITE_MISUSE.
 
+	J_SAFE( GetDbContext(db)->cx = NULL );
 	if ( JS_IsExceptionPending(cx) )
 		return JS_FALSE;
 

@@ -18,8 +18,13 @@
 #include "database.h"
 #include "result.h"
 
+#include "../common/queue.h"
+
 static bool _defaultUnsafeMode = false;
 extern bool *_pUnsafeMode = &_defaultUnsafeMode;
+
+extern Queue *dbContextList = NULL;
+
 
 /**doc t:header
 $MODULE_HEADER
@@ -41,6 +46,9 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 		J_REPORT_ERROR( "Unable to enable shared cache." );
 	}
 
+	
+	dbContextList = QueueConstruct();
+
 	J_CHK( INIT_CLASS( SqliteError ) );
 	J_CHK( INIT_CLASS( Result ) );
 	J_CHK( INIT_CLASS( Database ) );
@@ -54,6 +62,13 @@ EXTERN_C DLLEXPORT void ModuleRelease (JSContext *cx) {
 	REMOVE_CLASS( SqliteError );
 	REMOVE_CLASS( Result );
 	REMOVE_CLASS( Database );
+}
+
+EXTERN_C DLLEXPORT void ModuleFree () {
+
+	while ( !QueueIsEmpty(dbContextList) )
+		free(QueuePop(dbContextList));
+	QueueDestruct(dbContextList);
 }
 
 

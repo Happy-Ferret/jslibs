@@ -27,6 +27,37 @@
 
 // (TBD) add User-defined Collation Sequences ( http://www.sqlite.org/datatype3.html )
 
+
+
+
+inline DbContext* AddDbContext(sqlite3 *db) {
+
+	DbContext *pv = (DbContext*)malloc(sizeof(DbContext));
+	pv->db = db;
+	QueueUnshift(dbContextList, pv);
+	return pv;
+}
+
+inline DbContext* GetDbContext(sqlite3 *db) {
+
+	for ( QueueCell *it = QueueBegin(dbContextList); it; it = QueueNext(it) )
+		if ( ((DbContext*)QueueGetData(it))->db == db )
+			return (DbContext*)QueueGetData(it);
+	return NULL;
+}
+
+inline void RemoveDbContext(sqlite3 *db) {
+
+	for ( QueueCell *it = QueueBegin(dbContextList); it; it = QueueNext(it) )
+		if ( ((DbContext*)QueueGetData(it))->db == db ) {
+
+			free(QueueGetData(it));
+			QueueRemoveCell(dbContextList, it);
+			return;		
+		}
+}
+
+
 /**doc fileIndex:top
 $CLASS_HEADER
 **/
@@ -81,13 +112,13 @@ DEFINE_CONSTRUCTOR() {
 //	int status = sqlite3_open( fileName, &db ); // see. sqlite3_open_v2()
 	int status = sqlite3_open_v2( fileName, &db, flags, NULL );
 
+	AddDbContext(db)->obj = obj;
 
 	if ( status != SQLITE_OK || db == NULL  )
 		return SqliteThrowError( cx, status, sqlite3_errcode(db), sqlite3_errmsg(db) );
 
 	sqlite3_extended_result_codes(db, true); // SQLite 3.3.8
 
-	JS_SetReservedSlot(cx, obj, SLOT_SQLITE_DATABASE_FUNCTION_CALL_STACK, PRIVATE_TO_JSVAL(NULL));
 	JS_SetReservedSlot(cx, obj, SLOT_SQLITE_DATABASE_STATEMENT_STACK, PRIVATE_TO_JSVAL(NULL));
 	JS_SetPrivate( cx, obj, db );
 	return JS_TRUE;
@@ -114,11 +145,6 @@ DEFINE_FINALIZE() {
 		//	status = sqlite3_finalize( pStmt );
 		//}
 
-		// free the data allocated for function context
-		JS_GetReservedSlot(cx, obj, SLOT_SQLITE_DATABASE_FUNCTION_CALL_STACK, &v);
-		stack = JSVAL_TO_PRIVATE(v);
-		StackFreeContent(&stack); // StackLength( &stack );
-
 
 		// finalize open database statements
 		JS_GetReservedSlot(cx, obj, SLOT_SQLITE_DATABASE_STATEMENT_STACK, &v);
@@ -133,7 +159,8 @@ DEFINE_FINALIZE() {
 				// (TBD) report the error ?
 			}
 		}
-
+		
+		RemoveDbContext(db);
 		// close the database
 		status = sqlite3_close( db ); // All prepared statements must finalized before sqlite3_close() is called or else the close will fail with a return code of SQLITE_BUSY.
 		if ( status != SQLITE_OK )
@@ -161,15 +188,11 @@ DEFINE_FUNCTION( Close ) {
 	JS_SetPrivate( cx, obj, NULL );
 	int status;
 	sqlite3_interrupt(db);
-	// free the data allocated for function context
-	void *stack;
-	jsval v;
-	JS_GetReservedSlot(cx, obj, SLOT_SQLITE_DATABASE_FUNCTION_CALL_STACK, &v);
-	stack = JSVAL_TO_PRIVATE(v);
-	StackFreeContent( &stack );
+
 	// finalize open database statements
+	jsval v;
 	J_CHK( JS_GetReservedSlot(cx, obj, SLOT_SQLITE_DATABASE_STATEMENT_STACK, &v) );
-	stack = JSVAL_TO_PRIVATE(v);
+	void *stack = JSVAL_TO_PRIVATE(v);
 	while ( !StackIsEnd(&stack) ) {
 
 		sqlite3_stmt *pStmt = (sqlite3_stmt*)StackPop(&stack);
@@ -301,6 +324,8 @@ DEFINE_FUNCTION( Exec ) {
 	sqlite3 *db = (sqlite3*)JS_GetPrivate( cx, obj );
 	J_S_ASSERT_RESOURCE( db );
 
+	GetDbContext(db)->cx = cx; // update the JS context used to call functions (see sqlite_function_call)
+
 	const char *sqlQuery;
 //	J_JSVAL_TO_STRING( argv[0], sqlQuery );
 	size_t sqlQueryLength;
@@ -322,6 +347,7 @@ DEFINE_FUNCTION( Exec ) {
 		J_CHK( SqliteSetupBindings(cx, pStmt, JSVAL_TO_OBJECT(argv[1]) , NULL ) ); // "@" : the the argument passed to Exec(), ":" nothing
 	status = sqlite3_step( pStmt ); // Evaluates the statement. The return value will be either SQLITE_BUSY, SQLITE_DONE, SQLITE_ROW, SQLITE_ERROR, or 	SQLITE_MISUSE.
 
+	J_SAFE( GetDbContext(db)->cx = NULL );
 	if ( JS_IsExceptionPending(cx) )
 		return JS_FALSE;
 
@@ -408,58 +434,34 @@ DEFINE_PROPERTY( memoryUsed ) {
 	return JS_TRUE;
 }
 
-
-typedef struct {
-
-	JSRuntime *rt;
-	JSObject *object;
-	JSFunction *function;
-} SqliteFunctionCallUserData;
-
-
 void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArgv ) {
 
-	SqliteFunctionCallUserData *data = (SqliteFunctionCallUserData*)sqlite3_user_data(sCx);
-
-	// need: sqlite3 *sqlite3_context_db_handle(sqlite3_context*); ??
-
-
-	JSContext *iterp = NULL;
-	JSContext *cx = JS_ContextIterator(data->rt, &iterp); // (TBD) change this for multithread
-	JSFunction *fun = data->function;
-	JSObject *obj = data->object;
+	jsval fVal = (jsval)sqlite3_user_data(sCx);
+	DbContext *pv = GetDbContext(sqlite3_context_db_handle(sCx));
 
 	jsval argv[128];
 	jsval rval;
 
-//	J_S_ASSERT( sizeof(argv)/sizeof(*argv) <= sArgc, "Too many arguments.");
+	if ( sArgc > COUNTOF(argv) ) {
+
+		sqlite3_result_error(sCx, "Too many arguments", -1 );
+		return;
+	}
+
+	JSContext *cx = pv->cx;
 
 	int r = 0;
 	for ( ; r < sArgc; r++ ) {
 
 		JS_AddRoot(cx, &argv[r]);
-		if ( SqliteToJsval( cx, sArgv[r], &argv[r] ) == JS_FALSE ) {
+		if ( SqliteToJsval(cx, sArgv[r], &argv[r]) == JS_FALSE ) {
 
 			sqlite3_result_error(sCx, "Invalid type", -1 ); // (TBD) enhance error report & remove roots on error
 			goto bad;
 		}
 	}
 
-
-	if ( JS_CallFunction(cx, obj, fun, sArgc, argv, &rval) == JS_FALSE ) {
-/*
-		if ( JS_IsExceptionPending(cx) ) {
-
-			jsval ex;
-			JS_GetPendingException(cx, &ex);
-			JSErrorReport *err = JS_ErrorFromException(cx, ex);
-
-			if ( err == NULL ) {
-				return;
-			}
-
-		}
-*/
+	if ( JS_CallFunctionValue(cx, pv->obj, fVal, sArgc, argv, &rval) != JS_TRUE ) {
 
 		sqlite3_result_error(sCx, "Function call error", -1 ); // (TBD) better error message
 		goto bad;
@@ -533,27 +535,13 @@ bad:
 **/
 DEFINE_SET_PROPERTY() {
 
-	if ( JSVAL_IS_OBJECT(*vp) && *vp != JSVAL_NULL && JS_ObjectIsFunction(cx, JSVAL_TO_OBJECT(*vp) ) ) {
+	if ( JsvalIsFunction(cx, *vp) ) {
 
 		sqlite3 *db = (sqlite3 *)JS_GetPrivate( cx, obj );
 		J_S_ASSERT_RESOURCE( db );
-
-		SqliteFunctionCallUserData *data = (SqliteFunctionCallUserData*)malloc(sizeof(SqliteFunctionCallUserData)); // (TBD) store this allocated pointer in a stack to be freed later
-		data->rt = JS_GetRuntime(cx);
-		data->object = obj;
-		data->function = JS_ValueToFunction(cx, *vp);
-
-		// remember the data allocation
-		jsval v;
-		JS_GetReservedSlot(cx, obj, SLOT_SQLITE_DATABASE_FUNCTION_CALL_STACK, &v);
-		void *stack = JSVAL_TO_PRIVATE(v);
-		StackPush( &stack, data );
-		JS_SetReservedSlot(cx, obj, SLOT_SQLITE_DATABASE_FUNCTION_CALL_STACK, PRIVATE_TO_JSVAL(stack));
-
 		const char *fName;
 		J_CHK( JsvalToString(cx, &id, &fName) );
-
-		int status = sqlite3_create_function(db, fName, -1, SQLITE_ANY /*SQLITE_UTF8*/, data, sqlite_function_call, NULL, NULL);
+		int status = sqlite3_create_function(db, fName, -1, SQLITE_ANY /*SQLITE_UTF8*/, (void*)*vp, sqlite_function_call, NULL, NULL);
 		if ( status != SQLITE_OK )
 			return SqliteThrowError( cx, status, sqlite3_errcode(db), sqlite3_errmsg(db) );
 	}
@@ -569,7 +557,7 @@ CONFIGURE_CLASS
 
 	HAS_SET_PROPERTY
 	HAS_PRIVATE
-	HAS_RESERVED_SLOTS(2)
+	HAS_RESERVED_SLOTS(1)
 
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE

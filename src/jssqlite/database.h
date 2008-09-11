@@ -12,7 +12,22 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
+#include "../common/queue.h"
+
 DECLARE_CLASS( Database )
 
-#define SLOT_SQLITE_DATABASE_FUNCTION_CALL_STACK 0
-#define SLOT_SQLITE_DATABASE_STATEMENT_STACK 1
+#define SLOT_SQLITE_DATABASE_STATEMENT_STACK 0
+
+
+extern Queue *dbContextList;
+
+struct DbContext {
+	sqlite3 *db;
+	JSContext *cx;
+	JSObject *obj;
+};
+
+inline DbContext* AddDbContext(sqlite3 *db);
+inline DbContext* GetDbContext(sqlite3 *db);
+inline void RemoveDbContext(sqlite3 *db);
+
