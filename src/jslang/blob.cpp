@@ -514,8 +514,9 @@ DEFINE_FUNCTION_FAST( lastIndexOf ) {
 
 		if ( start < 0 ) {
 
-			*J_FRVAL = INT_TO_JSVAL(-1);
-			return JS_TRUE;
+//			*J_FRVAL = INT_TO_JSVAL(-1);
+//			return JS_TRUE;
+			start = 0;
 		}
 
 		if ( start + sLength > length ) {

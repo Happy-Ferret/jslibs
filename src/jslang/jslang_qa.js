@@ -202,6 +202,7 @@ LoadModule('jsstd');
 		QA.ASSERT( Blob('12341234').lastIndexOf('1234'), 4, 'Blob lastIndexOf' )
 		QA.ASSERT( Blob('12341234').lastIndexOf('1234', 4), 4, 'Blob lastIndexOf' )
 		QA.ASSERT( Blob('12341234').lastIndexOf('1234', 3), 0, 'Blob lastIndexOf' )
+		QA.ASSERT( Blob('12341234').lastIndexOf(''), 0, 'Blob lastIndexOf' )
 		
 		QA.ASSERT( isNaN( Blob('').charCodeAt(0) ), true, 'Blob charCodeAt' )
 		QA.ASSERT( Blob('1').charCodeAt(0), 49, 'Blob charCodeAt' )
@@ -214,6 +215,31 @@ LoadModule('jsstd');
 		QA.ASSERT( Blob('1').charAt(), '1', 'Blob charAt' )
 		QA.ASSERT( Blob('1').charAt(-1), '', 'Blob charAt' )
 		QA.ASSERT( Blob('1').charAt(1), '', 'Blob charAt' )
+		
+		
+		var s = 'Ab \0c';
+		var b = Blob(s);
+		
+		for ( var j = -2; j < s.length+2; j++ ) {
+		
+			QA.ASSERT( b.indexOf(s[j]), s.indexOf(s[j]), 'Blob/String indexOf('+s[j]+')' )
+			for ( var i = -10; i <= 10; i++ )		
+				QA.ASSERT( b.indexOf(s[j],i), s.indexOf(s[j],i), 'Blob/String indexOf('+s[j]+','+i+')' )
+		}
+		
+		for ( var j = -2; j < s.length+2; j++ ) {
+		
+			QA.ASSERT( b.lastIndexOf(s[j]), s.lastIndexOf(s[j]), 'Blob/String lastIndexOf('+s[j]+')' )
+			for ( var i = -10; i <= 10; i++ )
+				QA.ASSERT( b.lastIndexOf(s[j],i), s.lastIndexOf(s[j],i), 'Blob/String lastIndexOf('+s[j]+','+i+')' )
+		}
+
+		for ( var j = -2; j < s.length+2; j++ )
+			QA.ASSERT( b.charAt(j), s.charAt(j), 'Blob/String charAt('+j+')' )
+
+		for ( var j = -2; j < s.length+2; j++ )
+			QA.ASSERT( b.charCodeAt(j), s.charCodeAt(j), 'Blob/String charCodeAt('+j+')' )
+
 
 
 /// Blob construct with data [ftr]
