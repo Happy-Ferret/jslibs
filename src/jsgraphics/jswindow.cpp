@@ -82,7 +82,7 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 			JS_GetProperty(cx, obj, "onchar", &functionVal);
 			if ( functionVal != JSVAL_VOID ) {
 
-				J_S_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." ); // (TBD) return value of assert is not compatible with this function (WndProc)
+				J_S_ASSERT_FUNCTION(functionVal); // (TBD) return value of assert is not compatible with this function (WndProc)
 				char c = wParam;
 				jsval argv[] = { STRING_TO_JSVAL(JS_NewStringCopyN(cx, &c, 1)), INT_TO_JSVAL(lParam) };
 				J_CHK( JS_CallFunctionValue(cx, obj, functionVal, COUNTOF(argv), argv, &rval) );
@@ -93,7 +93,7 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 			JS_GetProperty(cx, obj, "onkeyup", &functionVal);
 			if ( functionVal != JSVAL_VOID ) {
 
-				J_S_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." );
+				J_S_ASSERT_FUNCTION(functionVal); // (TBD) return value of assert is not compatible with this function (WndProc)
 				jsval argv[] = { INT_TO_JSVAL(wParam), INT_TO_JSVAL(lParam) };
 				J_CHK( JS_CallFunctionValue(cx, obj, functionVal, COUNTOF(argv), argv, &rval) );
 				return 0;
@@ -103,7 +103,7 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 			JS_GetProperty(cx, obj, "onkeydown", &functionVal);
 			if ( functionVal != JSVAL_VOID ) {
 
-				J_S_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." );
+				J_S_ASSERT_FUNCTION(functionVal); // (TBD) return value of assert is not compatible with this function (WndProc)
 				jsval argv[] = { INT_TO_JSVAL(wParam), INT_TO_JSVAL(lParam) };
 				J_CHK( JS_CallFunctionValue(cx, obj, functionVal, COUNTOF(argv), argv, &rval) );
 				return 0;
@@ -113,7 +113,7 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 			JS_GetProperty(cx, obj, "onactivate", &functionVal);
 			if ( functionVal != JSVAL_VOID ) {
 
-				J_S_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." );
+				J_S_ASSERT_FUNCTION(functionVal); // (TBD) return value of assert is not compatible with this function (WndProc)
 				jsval argv[] = { BOOLEAN_TO_JSVAL(wParam != WA_INACTIVE) };
 				J_CHK( JS_CallFunctionValue(cx, obj, functionVal, COUNTOF(argv), argv, &rval) );
 				return 0;
@@ -124,7 +124,7 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 			JS_GetProperty(cx, obj, "onsize", &functionVal);
 			if ( functionVal != JSVAL_VOID ) {
 
-				J_S_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." );
+				J_S_ASSERT_FUNCTION(functionVal); // (TBD) return value of assert is not compatible with this function (WndProc)
 				jsval argv[] = { INT_TO_JSVAL((short)LOWORD(lParam)), INT_TO_JSVAL((short)HIWORD(lParam)) };
 				J_CHK( JS_CallFunctionValue(cx, obj, functionVal, COUNTOF(argv), argv, &rval) );
 				return 0;
@@ -134,7 +134,7 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 			JS_GetProperty(cx, obj, "onmousemove", &functionVal);
 			if ( functionVal != JSVAL_VOID ) {
 
-				J_S_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." );
+				J_S_ASSERT_FUNCTION(functionVal); // (TBD) return value of assert is not compatible with this function (WndProc)
 				jsval argv[] = { INT_TO_JSVAL(MAKEPOINTS(lParam).x), INT_TO_JSVAL(MAKEPOINTS(lParam).y), BOOLEAN_TO_JSVAL(wParam & MK_LBUTTON), BOOLEAN_TO_JSVAL(wParam & MK_RBUTTON), BOOLEAN_TO_JSVAL(wParam & MK_MBUTTON) };
 				J_CHK( JS_CallFunctionValue(cx, obj, functionVal, COUNTOF(argv), argv, &rval) );
 				return 0;
@@ -144,7 +144,7 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 			JS_GetProperty(cx, obj, "onmousewheel", &functionVal);
 			if ( functionVal != JSVAL_VOID ) {
 
-				J_S_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." );
+				J_S_ASSERT_FUNCTION(functionVal); // (TBD) return value of assert is not compatible with this function (WndProc)
 				jsval argv[] = { INT_TO_JSVAL( GET_WHEEL_DELTA_WPARAM(wParam)/WHEEL_DELTA ), BOOLEAN_TO_JSVAL(wParam & MK_LBUTTON), BOOLEAN_TO_JSVAL(wParam & MK_RBUTTON), BOOLEAN_TO_JSVAL(wParam & MK_MBUTTON) };
 				J_CHK( JS_CallFunctionValue(cx, obj, functionVal, COUNTOF(argv), argv, &rval) );
 				return 0;
@@ -159,7 +159,7 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 				// xPos = GET_X_LPARAM(lParam);
 				// yPos = GET_Y_LPARAM(lParam);
 
-				J_S_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." );
+				J_S_ASSERT_FUNCTION(functionVal); // (TBD) return value of assert is not compatible with this function (WndProc)
 				jsval argv[] = {
 					INT_TO_JSVAL( message==WM_LBUTTONDOWN ? 1 : message==WM_RBUTTONDOWN ? 2 : message==WM_MBUTTONDOWN ? 3 : 0 ), JSVAL_TRUE };
 //					BOOLEAN_TO_JSVAL(wParam & MK_LBUTTON),

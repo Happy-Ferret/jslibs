@@ -599,8 +599,6 @@ static JSScript* LoadScript(JSContext *cx, JSObject *obj, const char *fileName, 
 	if ( useCompFile && compFileUpToDate ) {
 
 		int file = open(compiledFileName, O_RDONLY | O_BINARY);
-//		FILE *file = fopen(compiledFileName, "rb"); // b for binary ( win32 )
-		// (TBD) use open/close/read/... instead of fopen/fclose/fread/...
 		if ( file == -1 ) {
 
 			JS_ReportError( cx, "Unable to open file \"%s\" for reading.", compiledFileName );
@@ -611,17 +609,15 @@ static JSScript* LoadScript(JSContext *cx, JSObject *obj, const char *fileName, 
 //		size_t compFileSize = filelength(file);
 		void *data = JS_malloc( cx, compFileSize );
 
-		size_t readCount = read( file, data, compFileSize ); // here we can use "Memory-Mapped I/O Functions" ( http://developer.mozilla.org/en/docs/NSPR_API_Reference:I/O_Functions#Memory-Mapped_I.2FO_Functions )
+		int readCount = read( file, data, compFileSize ); // here we can use "Memory-Mapped I/O Functions" ( http://developer.mozilla.org/en/docs/NSPR_API_Reference:I/O_Functions#Memory-Mapped_I.2FO_Functions )
 
-		// (TBD) if ( readCount == -1 && errno == EBADF ) ...
-
-		if ( readCount == (size_t)(-1) || readCount != compFileSize ) {
+		if ( readCount == -1 || readCount != compFileSize ) {
 
 			JS_ReportError( cx, "Unable to read the file \"%s\" ", compiledFileName );
 			return NULL;
 		}
 
-		close( file ); // (TBD) use open/close/read/... instead of fopen/fclose/fread/...
+		close( file );
 
 		JSXDRState *xdr = JS_XDRNewMem(cx,JSXDR_DECODE);
 		if ( xdr == NULL )
@@ -636,7 +632,7 @@ static JSScript* LoadScript(JSContext *cx, JSObject *obj, const char *fileName, 
 		JS_free( cx, data );
 	} else {
 
-		JS_GC(cx); // ...and also just before doing anything that requires compilation (since compilation disables GC until complete).
+//		JS_GC(cx); // ...and also just before doing anything that requires compilation (since compilation disables GC until complete).
 		script = JS_CompileFile(cx, obj, fileName);
 
 		if ( useCompFile && script != NULL ) {
@@ -655,8 +651,8 @@ static JSScript* LoadScript(JSContext *cx, JSObject *obj, const char *fileName, 
 				if ( buf == NULL )
 					return NULL;
 				// manage BIG_ENDIAN here ?
-				write( file, buf, length ); // (TBD) use open/close/read/... instead of fopen/fclose/fread/...
-				close(file); // (TBD) use open/close/read/... instead of fopen/fclose/fread/...
+				write( file, buf, length );
+				close(file);
 			}
 			JS_XDRDestroy( xdr );
 		}
@@ -665,7 +661,7 @@ static JSScript* LoadScript(JSContext *cx, JSObject *obj, const char *fileName, 
 
 #else // JS_HAS_XDR
 
-	JS_GC(cx);  // ...and also just before doing anything that requires compilation (since compilation disables GC until complete).
+//	JS_GC(cx);  // ...and also just before doing anything that requires compilation (since compilation disables GC until complete).
 	return JS_CompileFile(cx, obj, fileName);
 
 #endif // JS_HAS_XDR

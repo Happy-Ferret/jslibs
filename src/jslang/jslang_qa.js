@@ -60,7 +60,7 @@ LoadModule('jsstd');
 		b.replace('bcde', '123'); // force Blob mutation
 		QA.ASSERT( b instanceof String, true, 'Blob has mutated to String' );
 		QA.ASSERT( '_NI_BufferGet' in b, true, 'mutated Blob has _NI_BufferGet' );
-		QA.ASSERT( b._NI_BufferGet, false, 'mutated Blob _NI_BufferGet is disactivated' );
+		QA.ASSERT( b._NI_BufferGet, true, 'mutated Blob has _NI_BufferGet' );
 
 
 /// Blob mutation keep properties [ftr]

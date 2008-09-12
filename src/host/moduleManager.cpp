@@ -61,7 +61,7 @@
 #endif
 
 
-static LibraryHandler _moduleList[32] = {NULL}; // do not manage the module list dynamicaly, we allow a maximum of 32 modules
+static LibraryHandler _moduleList[128] = {NULL}; // do not manage the module list dynamicaly, we allow a maximum of 32 modules
 
 /* Note:
 	Current the only way I found to detect if a module is already loaded is to load it and to compare its handler to already-opened modules.
@@ -105,10 +105,12 @@ ModuleId ModuleLoad( const char *fileName, JSContext *cx, JSObject *obj ) {
 	LibraryHandler module = DynamicLibraryOpen(fileName);
 	if ( module == NULL )
 		return 0;
-// ASSERT( sizeof(LibraryHandler) <= sizeof(ModuleId) ) // (TBD)
+
+	if ( sizeof(ModuleId) > sizeof(LibraryHandler) )
+		return 0;
 
 	int i;
-	int MaxModuleSlot = sizeof(_moduleList)/sizeof(*_moduleList);
+	int MaxModuleSlot = COUNTOF(_moduleList);
 
 	for ( i = 0; i < MaxModuleSlot; ++i )
 		if ( _moduleList[i] == module ) {
@@ -138,6 +140,7 @@ ModuleId ModuleLoad( const char *fileName, JSContext *cx, JSObject *obj ) {
 	}
 	return (ModuleId)module;
 }
+
 
 bool ModuleIsUnloadable( ModuleId id ) {
 

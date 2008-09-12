@@ -131,9 +131,11 @@ inline bool StackReplaceData( void * const *stack, const void *data, void *newDa
 }
 
 
-inline bool StackIterate( void * const * stack, void **iterator ) { // usage: for ( void *it = NULL; StackIterate( &stack, &it ); ) // alternate method: for ( void *it = stack; !StackIsEnd(&it); it = StackPrev(&it) )
+// usage: for ( void *it = NULL; StackIterate( &stack, &it ); ) 
+// alternate method: for ( void *it = stack; !StackIsEnd(&it); it = StackPrev(&it) )
+inline bool StackIterate( void * const * stack, void **iterator ) {
 
-	return (*iterator = *iterator == NULL ? *stack : StackPrev(iterator)) != NULL; // (TBD) check it becuse ... = ... == ... is not clear
+	return (*iterator = (*iterator == NULL) ? *stack : StackPrev(iterator)) != NULL;
 }
 
 

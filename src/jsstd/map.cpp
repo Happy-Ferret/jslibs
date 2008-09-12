@@ -32,18 +32,17 @@ BEGIN_CLASS( Map )
 
 DEFINE_CONSTRUCTOR() {
 		
-//	J_S_ASSERT_CONSTRUCTING();
 	if ( JS_IsConstructing(cx) == JS_TRUE ) {
 
 		J_S_ASSERT_THIS_CLASS();
+		J_CHK( JS_SetPrototype(cx, obj, NULL) );
 	} else {
 
-		obj = JS_NewObject(cx, _class, NULL, NULL); // see. JS_NewObjectWithGivenProto()
+		//Doc: JS_NewObject, JS_NewObjectWithGivenProto behaves exactly the same, except that if proto is NULL, it creates an object with no prototype.
+		obj = JS_NewObjectWithGivenProto(cx, _class, NULL, NULL);
 		J_S_ASSERT_ALLOC( obj );
 		*rval = OBJECT_TO_JSVAL(obj);
 	}
-	// this creates an empty object ( without __proto__, __parent__, toString, ... )
-	J_CHK( JS_SetPrototype(cx, obj, NULL) );
 	return JS_TRUE;
 }
 

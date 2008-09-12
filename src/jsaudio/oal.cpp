@@ -13,6 +13,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
+#include "error.h"
 #include "oalefxapi.h"
 
 
@@ -24,7 +25,6 @@ BEGIN_CLASS( Oal )
 /**doc
 === Static functions ===
 **/
-
 
 
 /**doc
@@ -550,8 +550,7 @@ DEFINE_FUNCTION_FAST( GetSourceReal ) {
 
 	ALenum pname = JSVAL_TO_INT(J_FARG(2));
 	alGetSourcef(sid, pname, params);
-
-	int err = alGetError();
+	J_CHK( CheckThrowCurrentOalError(cx) );
 
 	if ( J_FARG_ISDEF(3) ) {
 
@@ -591,7 +590,7 @@ DEFINE_FUNCTION_FAST( GetSourceInteger ) {
 	ALenum pname = JSVAL_TO_INT(J_FARG(2));
 	alGetSourcei(sid, pname, params);
 
-	int err = alGetError();
+	J_CHK( CheckThrowCurrentOalError(cx) );
 
 	if ( J_FARG_ISDEF(3) ) {
 
@@ -654,7 +653,7 @@ DEFINE_FUNCTION_FAST( SourceQueueBuffers ) {
 		ALuint buffer;
 		J_CHK( JsvalToUInt(cx, J_FARG(2), &buffer) );
 		alSourceQueueBuffers( sid, 1, &buffer );
-		ALenum err = alGetError();
+		J_CHK( CheckThrowCurrentOalError(cx) );
 		return JS_TRUE;
 	}
 
@@ -665,7 +664,7 @@ DEFINE_FUNCTION_FAST( SourceQueueBuffers ) {
 //		J_JSVAL_TO_INT_VECTOR( J_FARG(2), params, length );
 		J_CHK( JsvalToUIntVector(cx, J_FARG(2), params, sizeof(params)/sizeof(*params), &length) );
 		alSourceQueueBuffers( sid, length, params );
-		ALenum err = alGetError();
+		J_CHK( CheckThrowCurrentOalError(cx) );
 		return JS_TRUE;
 	}
 
@@ -720,7 +719,7 @@ DEFINE_FUNCTION_FAST( SourceUnqueueBuffers ) {
  * $INT $INAME( soundObject )
   Creates a new buffer and attach a sound data to it. The data comming from the soundObject is copied into the OpenAL system.
   $note
-   Buffers containing audio data with more than one channel will be played without 3D spatialization features – these formats are normally used for background music.
+   Buffers containing audio data with more than one channel will be played without 3D spatialization features  these formats are normally used for background music.
   $H arguments
    $ARG soundObject sound: a sound object that contains PCM audio data and the following properties: rate, channels and bits.
 **/
@@ -754,8 +753,7 @@ DEFINE_FUNCTION_FAST( Buffer ) {
 
 	// Upload sound data to buffer
 	alBufferData(bufferID, format, buffer, bufferLength, rate);
-	ALenum err = alGetError(); // 0xA004 (= AL_INVALID_OPERATION
-	// (TBD) throw exception ?
+	J_CHK( CheckThrowCurrentOalError(cx) );
 
 	J_CHK( UIntToJsval(cx, bufferID, J_FRVAL) );
 	return JS_TRUE;
@@ -1002,7 +1000,7 @@ DEFINE_FUNCTION_FAST( PlaySound ) {
 
   alGenSources(1, &sourceID);
 
-  ALenum err = alGetError(); // 0xA004 = AL_INVALID_OPERATION
+	J_CHK( CheckThrowCurrentOalError(cx) );
 
   // Set the source and listener to the same location
   alListener3i(AL_POSITION, 0,0,0 );
@@ -1051,32 +1049,6 @@ DEFINE_FUNCTION_FAST( PlaySound ) {
 }
 
 
-
-
-
-
-/**doc
-=== Static properties ===
-**/
-
-/**doc
- * $INAME
-  Obtain the most recent error generated in the AL state machine.
-**/
-DEFINE_PROPERTY(error) {
-
-	*vp = INT_TO_JSVAL(alGetError());
-	return JS_TRUE;
-}
-
-/*
-DEFINE_PROPERTY_SETTER(error) {
-
-	J_S_ASSERT( *vp == JSVAL_VOID, "Invalid error value." );
-	alSetError(AL_NONE);
-	return JS_TRUE;
-}
-*/
 
 CONFIGURE_CLASS
 
@@ -1309,7 +1281,6 @@ CONFIGURE_CLASS
 	BEGIN_STATIC_PROPERTY_SPEC
 		PROPERTY_READ(hasEfx)
 		PROPERTY_READ(maxAuxiliarySends)
-		PROPERTY_READ(error)
 	END_STATIC_PROPERTY_SPEC
 
 END_CLASS

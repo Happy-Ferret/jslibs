@@ -225,7 +225,7 @@ static JSBool LoadModule(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, 
 	J_S_ASSERT_2( id != 0, "Unable to load the module \"%s\": %d", libFileName, GetLastError() );
 #endif // XP_UNIX
 
-	J_CHK( JS_NewNumberValue(cx, id, rval) ); // (TBD) really needed ? yes, UnloadModule need this ID
+	J_CHK( JS_NewNumberValue(cx, id, rval) ); // really needed ? yes, UnloadModule need this ID
 	return JS_TRUE;
 }
 
@@ -285,7 +285,7 @@ JSContext* CreateHost(size_t maxMem, size_t maxAlloc) {
 
 //	JS_SetCStringsAreUTF8(); // don't use !
 	JSRuntime *rt = JS_NewRuntime(0); // maxMem specifies the number of allocated bytes after which garbage collection is run.
-//	J_CHKM( rt != NULL, "unable to create the runtime." ); // (TBD) fix Warning: uninitialized local variable 'cx'
+//	J_CHKM( rt != NULL, "unable to create the runtime." );
 	if ( rt == NULL )
 		return NULL;
 
@@ -306,8 +306,6 @@ JSContext* CreateHost(size_t maxMem, size_t maxAlloc) {
 	//	btw, JS_SetScriptStackQuota ( see also JS_SetThreadStackLimit )
 
 	JS_SetVersion(cx, (JSVersion)JS_VERSION);
-	// (TBD) set into configuration file
-
 
 // error management
 	JS_SetErrorReporter(cx, ErrorReporter);
@@ -403,15 +401,19 @@ void DestroyHost( JSContext *cx ) {
 
 	ModuleReleaseAll(cx);
 
-//	JS_GC(cx); // try to break linked objects
-// (TBD) don't
+	//	don't try to break linked objects with JS_GC(cx)
 
 	RemoveConfiguration(cx);
 
 	JS_SetGlobalObject(cx, JSVAL_TO_OBJECT(JSVAL_NULL)); // remove the global object
 
 // cleanup
-	JS_DestroyContext(cx); // (TBD) is JS_DestroyContextNoGC faster ?
+
+// doc:
+//  - Is the only side effect of JS_DestroyContextNoGC that any finalizers I may have specified in custom objects will not get called ? 
+//  - Not if you destroy all contexts (whether by NoGC or not), destroy all runtimes, and call JS_ShutDown before exiting or hibernating.
+//    The last JS_DestroyContext* API call will run a GC, no matter which API of that form you call on the last context in the runtime. /be
+	JS_DestroyContext(cx);
 	JS_DestroyRuntime(rt);
 	JS_ShutDown();
 

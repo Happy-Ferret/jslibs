@@ -64,7 +64,7 @@ DEFINE_FUNCTION_FAST( Eval ) {
 		sobj = JS_NewObject(scx, classSandbox, NULL, NULL);
 		if ( !sobj ) {
 
-			JS_DestroyContext(scx);
+			JS_DestroyContextNoGC(scx);
 			return JS_FALSE;
 		}
 	} else {
@@ -75,7 +75,7 @@ DEFINE_FUNCTION_FAST( Eval ) {
 	if ( !J_FARG_ISDEF(1) ) {
 
 		*J_FRVAL = OBJECT_TO_JSVAL(sobj);
-		JS_DestroyContext(scx);
+		JS_DestroyContextNoGC(scx);
 		return JS_TRUE;
 	}
 
@@ -96,7 +96,7 @@ DEFINE_FUNCTION_FAST( Eval ) {
 		else
 			JS_ReportOutOfMemory(cx);
 	}
-	JS_DestroyContext(scx);
+	JS_DestroyContextNoGC(scx);
 	return ok;
 }
 

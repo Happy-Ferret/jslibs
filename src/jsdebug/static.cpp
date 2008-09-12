@@ -42,8 +42,7 @@
 int _puts(JSContext *cx, const char *str) {
 
 	jsval stdoutFunction;
-	GetConfigurationValue(cx, NAME_CONFIGURATION_STDOUT, &stdoutFunction); // (TBD) manage errors
-	if ( JS_TypeOfValue(cx, stdoutFunction) == JSTYPE_FUNCTION ) {
+	if ( GetConfigurationValue(cx, NAME_CONFIGURATION_STDOUT, &stdoutFunction) && JsvalIsFunction(cx, stdoutFunction) ) {
 
 		size_t len = strlen(str);
 		JSString *jsstr = JS_NewStringCopyN(cx, str, len);

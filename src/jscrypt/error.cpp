@@ -21,14 +21,6 @@ $CLASS_HEADER
 **/
 BEGIN_CLASS( CryptError )
 
-/* see issue#52
-DEFINE_CONSTRUCTOR() {
-
-	J_REPORT_ERROR( "This object cannot be construct." ); // (TBD) remove constructor and define HAS_HAS_INSTANCE
-	return JS_TRUE;
-}
-*/
-
 DEFINE_PROPERTY( code ) {
 
 	JS_GetReservedSlot( cx, obj, 0, vp );
@@ -58,7 +50,6 @@ DEFINE_HAS_INSTANCE() { // see issue#52
 
 CONFIGURE_CLASS
 
-//	HAS_CONSTRUCTOR // see issue#52
 	HAS_HAS_INSTANCE // see issue#52
 
 	BEGIN_PROPERTY_SPEC

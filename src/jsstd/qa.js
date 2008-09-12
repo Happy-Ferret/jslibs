@@ -1,5 +1,80 @@
 LoadModule('jsstd');
 
+
+/// Map object with new [ftr]
+
+		var m = new Map();
+
+		QA.ASSERT( '__proto__' in m, false, 'has no __proto__' );
+		QA.ASSERT( '__parent__' in m, false, 'has no __parent__' );
+		QA.ASSERT( 'toString' in m, false, 'has no toString' );
+		QA.ASSERT( 'toSource' in m, false, 'has no toSource' );
+		QA.ASSERT( '__count__' in m, false, 'has no __count__' );
+
+		m.__proto__ = 'AAA', 
+		m.__parent__ = 'BBB';
+		m.toString = 'CCC';
+		m.toSource = 'DDD';
+		m.__count__ = 'EEE';
+
+		QA.ASSERT( m.__proto__, 'AAA', ' __proto__ custom fvalue' );
+		QA.ASSERT( m.__parent__, 'BBB', ' __parent__ custom fvalue' );
+		QA.ASSERT( m.toString, 'CCC', 'toString custom fvalue' );
+		QA.ASSERT( m.toSource, 'DDD', 'toSource custom fvalue' );
+		QA.ASSERT( m.__count__, 'EEE', '__count__ custom fvalue' );
+		
+		delete m.__proto__;
+		delete m.__parent__;
+		delete m.toString;
+		delete m.toSource;
+		delete m.__count__;
+		
+		QA.ASSERT( '__proto__' in m, false, 'has no __proto__' );
+		QA.ASSERT( '__parent__' in m, false, 'has no __parent__' );
+		QA.ASSERT( 'toString' in m, false, 'has no toString' );
+		QA.ASSERT( 'toSource' in m, false, 'has no toSource' );
+		QA.ASSERT( '__count__' in m, false, 'has no __count__' );
+
+		m.__proto__ = { a:1 };
+		QA.ASSERT( m.a, undefined, 'no __proto__ behavior' );
+
+/// Map object without new [ftr]
+
+		var m = Map();
+
+		QA.ASSERT( '__proto__' in m, false, 'has no __proto__' );
+		QA.ASSERT( '__parent__' in m, false, 'has no __parent__' );
+		QA.ASSERT( 'toString' in m, false, 'has no toString' );
+		QA.ASSERT( 'toSource' in m, false, 'has no toSource' );
+		QA.ASSERT( '__count__' in m, false, 'has no __count__' );
+
+		m.__proto__ = 'AAA', 
+		m.__parent__ = 'BBB';
+		m.toString = 'CCC';
+		m.toSource = 'DDD';
+		m.__count__ = 'EEE';
+
+		QA.ASSERT( m.__proto__, 'AAA', ' __proto__ custom fvalue' );
+		QA.ASSERT( m.__parent__, 'BBB', ' __parent__ custom fvalue' );
+		QA.ASSERT( m.toString, 'CCC', 'toString custom fvalue' );
+		QA.ASSERT( m.toSource, 'DDD', 'toSource custom fvalue' );
+		QA.ASSERT( m.__count__, 'EEE', '__count__ custom fvalue' );
+		
+		delete m.__proto__;
+		delete m.__parent__;
+		delete m.toString;
+		delete m.toSource;
+		delete m.__count__;
+		
+		QA.ASSERT( '__proto__' in m, false, 'has no __proto__' );
+		QA.ASSERT( '__parent__' in m, false, 'has no __parent__' );
+		QA.ASSERT( 'toString' in m, false, 'has no toString' );
+		QA.ASSERT( 'toSource' in m, false, 'has no toSource' );
+		QA.ASSERT( '__count__' in m, false, 'has no __count__' );
+
+		m.__proto__ = { a:1 };
+		QA.ASSERT( m.a, undefined, 'no __proto__ behavior' );
+		
 /// StringRepeat function [ftr]
 
 		QA.ASSERT( StringRepeat( '', 0 ), '', '0 x empty' );

@@ -99,7 +99,7 @@ DEFINE_FINALIZE() {
 
 		if ( alcGetCurrentContext() ) {
 
-	//		alAuxiliaryEffectSloti(pv->effectSlot, AL_EFFECTSLOT_EFFECT, AL_EFFECT_NULL); //(TBD) needed before deleting the slot ?
+			alAuxiliaryEffectSloti(pv->effectSlot, AL_EFFECTSLOT_EFFECT, AL_EFFECT_NULL); //(TBD) check if it is needed before deleting the auxiliary effect slot ?
 			alDeleteAuxiliaryEffectSlots(1, &pv->effectSlot);
 			alDeleteSources(1, &pv->sid);
 		}

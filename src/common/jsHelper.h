@@ -261,7 +261,7 @@ extern bool *_pUnsafeMode;
 	J_S_ASSERT( JsvalIsArray(cx, value), J__ERRMSG_UNEXPECTED_TYPE " Array expected." )
 
 #define J_S_ASSERT_FUNCTION(value) \
-	J_S_ASSERT( JS_TypeOfValue(cx, (value)) == JSTYPE_FUNCTION, " Function is expected." )
+	J_S_ASSERT( JsvalIsFunction(cx, (value)), " Function is expected." )
 
 #define J_S_ASSERT_CLASS(jsObject, jsClass) \
 	J_S_ASSERT_1( (jsObject) != NULL && JS_GET_CLASS(cx, jsObject) == (jsClass), J__ERRMSG_INVALID_CLASS "%s expected.", (jsClass)->name )
@@ -335,8 +335,8 @@ inline bool IsNInfinity( JSContext *cx, jsval val ) {
 
 
 inline bool JsvalIsFunction( JSContext *cx, jsval val ) {
-	//return ( JS_TypeOfValue(cx, (val)) == JSTYPE_FUNCTION ); // (TBD) slower ??
-	return !JSVAL_IS_PRIMITIVE(val) && JS_ObjectIsFunction(cx, JSVAL_TO_OBJECT(val)) == JS_TRUE; // (TBD) faster ??
+
+	return !JSVAL_IS_PRIMITIVE(val) && JS_ObjectIsFunction(cx, JSVAL_TO_OBJECT(val)) == JS_TRUE; // faster than (JS_TypeOfValue(cx, (val)) == JSTYPE_FUNCTION)
 }
 
 
@@ -445,7 +445,8 @@ inline JSClass *GetGlobalClassByName(JSContext *cx, const char *className) {
 	jsval classConstructor;
 	if ( JS_LookupProperty(cx, globalObj, className, &classConstructor) != JS_TRUE )
 		return NULL;
-	if ( JS_TypeOfValue(cx, classConstructor) != JSTYPE_FUNCTION )
+//	if ( JS_TypeOfValue(cx, classConstructor) != JSTYPE_FUNCTION )
+	if ( !JsvalIsFunction(cx, classConstructor) )
 		return NULL;
 	JSFunction *fun = JS_ValueToFunction(cx, classConstructor);
 	if ( fun == NULL )
@@ -587,8 +588,6 @@ inline JSBool JsvalToStringLength( JSContext *cx, jsval val, size_t *length ) {
 
 	// unfortunately, we have to convert to a string to know its length
 	JSString *str = JS_ValueToString(cx, val); // no GC protection needed.
-
-	// *val = STRING_TO_JSVAL(str); <-- (TBD) to solve the GC issue.
 
 	J_S_ASSERT( str != NULL, J__ERRMSG_STRING_CONVERSION_FAILED );
 	*length = J_STRING_LENGTH(str);
@@ -1217,7 +1216,7 @@ inline JSBool JSBufferGet( JSContext *cx, JSObject *obj, const char **buffer, si
 
 	jsval rval;
 	J_CHKM( JS_CallFunctionName(cx, obj, "Get", 0, NULL, &rval), "Get() function not found."); // do not use toString() !? no !
-	J_CHK( JsvalToStringAndLength(cx, &rval, buffer, size) ); // (TBD) GC protect rval
+	J_CHK( JsvalToStringAndLength(cx, &rval, buffer, size) ); // (TBD) GC protect rval !!!
 	return JS_TRUE;
 }
 

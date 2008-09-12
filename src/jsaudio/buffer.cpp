@@ -44,12 +44,17 @@ DEFINE_CONSTRUCTOR() {
 	JsvalToStringAndLength(cx, &tmp, &buffer, &bufferLength); // warning: GC on the returned buffer !
 
 	ALenum format; // The sound data format
-	if ( channels == 1 )
-		format = bits == 16 ? AL_FORMAT_MONO16 : AL_FORMAT_MONO8;
-	else
-		format = bits == 16 ? AL_FORMAT_STEREO16 : AL_FORMAT_STEREO8;
-	
-	// (TBD) report an error for other unsuported formats.
+	switch (channels) {
+		case 1:
+			format = bits == 16 ? AL_FORMAT_MONO16 : AL_FORMAT_MONO8;
+			break;
+		case 2:
+			format = bits == 16 ? AL_FORMAT_STEREO16 : AL_FORMAT_STEREO8;
+			break;
+		default:
+			J_REPORT_ERROR("Too may channels");
+	}
+
 	ALuint bid; // The OpenAL sound buffer ID
 
 	alGenBuffers(1, &bid);
