@@ -12,6 +12,7 @@ pushd %destinationPath%
 del %destinationFiles%
 popd
 
+REM the tmpDrive is used to avoid spaces in filenames
 set tmpDrive=x:
 
 cd /D %tmpDrive% && echo the drive %tmpDrive% must be available to build nspr, else modify build_msdev8.bat && exit
@@ -28,7 +29,12 @@ md win32
 
 pushd win32
 sh ../src/configure --enable-win32-target=WIN95
-set XCFLAGS=/MT
+
+IF "%BUILD%"=="release" (
+	set XCFLAGS=/MD
+) else (
+	set XCFLAGS=/MDd
+)
 
 make clean all
 popd
