@@ -1,18 +1,20 @@
-rem --- Visual Studio path ---
+REM --- Visual Studio path ---
+REM set VSINSTALLDIR=C:\Program Files\Microsoft Visual Studio 9.0
 set VSINSTALLDIR=C:\Program Files\Microsoft Visual Studio 8
 
-rem --- Windows Platform SDK path ---
-set MSSdk=C:\Program Files\Microsoft Platform SDK
-rem -or- set MSSdk=C:\Program Files\Microsoft SDKs\Windows\v6.0A
 
-rem --- DirectX path ---
+REM --- Windows Platform SDK path ---
+set MSSdk=C:\Program Files\Microsoft Platform SDK
+REM set MSSdk=C:\Program Files\Microsoft SDKs\Windows\v6.0A
+
+REM --- DirectX path ---
 set DirectXPath=C:\Program Files\Microsoft DirectX SDK (March 2008)
 
-rem --- cygwin path ---
+REM --- cygwin path ---
 set cygwinInstallDir=C:\tools\cygwin
 
 
-rem ==========================================================================
+REM ==========================================================================
 
 IF "%BUILD%"=="release" set NODEBUG=1
 IF "%BUILD%"=="release" set DEBUGMSG=RETAIL
@@ -21,7 +23,7 @@ set CPU=i386
 set TARGETOS=WINNT
 set APPVER=5.01
 
-rem The following line is needed for OpenAL compilation (.\OpenAL32.rc(10) : fatal error RC1015: cannot open include file 'afxres.h'.)
+REM The following line is needed for OpenAL compilation (.\OpenAL32.rc(10) : fatal error RC1015: cannot open include file 'afxres.h'.)
 set INCLUDE=%MSSdk%\Include\mfc;%MSSdk%\Include\atl;%INCLUDE%
 
 set INCLUDE=%DirectXPath%\Include;%INCLUDE%
