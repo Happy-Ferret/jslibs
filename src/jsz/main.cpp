@@ -15,7 +15,8 @@
 #include "stdafx.h"
 
 #include "zError.h"
-#include "z.h"
+
+DECLARE_CLASS( Z )
 
 static bool _defaultUnsafeMode = false;
 extern bool *_pUnsafeMode = &_defaultUnsafeMode;
@@ -36,7 +37,7 @@ extern "C" DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 		_pUnsafeMode = (bool*)JSVAL_TO_PRIVATE(unsafeModePtrVal);
 
 	INIT_CLASS( ZError );
-	zInitClass( cx, obj );
+	INIT_CLASS( Z );
 	return JS_TRUE;
 }
 

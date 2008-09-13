@@ -27,7 +27,6 @@
 
 // used slots
 #define SLOT_METHOD 0
-//#define SLOT_EOF 1
 
 
 /**doc
@@ -35,8 +34,9 @@
 == jsz::Z class ==
 **/
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void z_Finalize(JSContext *cx, JSObject *obj) {
+BEGIN_CLASS( Z )
+
+DEFINE_FINALIZE() {
 
 	z_streamp stream = (z_streamp)JS_GetPrivate( cx, obj );
 	if ( stream == NULL ) {
@@ -45,6 +45,69 @@ void z_Finalize(JSContext *cx, JSObject *obj) {
 		JS_SetPrivate(cx,obj,NULL);
 	}
 }
+
+
+/**doc
+ * *_Constructor_*( method [, compressionLevel ] )
+  Constructs a new inflater or deflater object.
+  = =
+  The _method_ can be Z.DEFLATE to compress data or Z.INFLATE to decompress data.
+  The compression level is like this: 0 <= _compressionLevel_ <= 9.
+  ===== note: =
+   For Z.INFLATE method, _compressionLevel_ argument is useless ( no sense )
+  ===== example: =
+  {{{
+  var compress = new Z( Z.DEFLATE, 9 );
+  }}}
+**/
+DEFINE_CONSTRUCTOR() {
+
+	if ( !JS_IsConstructing(cx) ) {
+
+		JS_ReportError( cx, "construction is needed" );
+		return JS_FALSE;
+	}
+
+	if ( argc < 1 ) {
+
+		JS_ReportError( cx, "missing argument" );
+		return JS_FALSE;
+	}
+
+	z_streamp stream = (z_streamp)malloc( sizeof(z_stream) );
+	stream->zalloc = Z_NULL;
+	stream->zfree = Z_NULL;
+	stream->opaque = (voidpf) false; // use this private member to store the "stream_end" status (eof)
+
+	int32 method;
+	JS_ValueToInt32( cx, argv[0], &method );
+
+	int32 level = Z_DEFAULT_COMPRESSION; // default value
+	if ( argc >= 2 ) {
+
+		JS_ValueToInt32( cx, argv[1], &level );
+		if ( level < Z_NO_COMPRESSION || level > Z_BEST_COMPRESSION ) {
+
+			JS_ReportError( cx, "level too low or too high" );
+			return JS_FALSE;
+		}
+	}
+
+	int status;
+	if ( method == DEFLATE )
+		status = deflateInit2( stream, level, Z_DEFLATED, MAX_WBITS, MAX_MEM_LEVEL, Z_DEFAULT_STRATEGY ); //  int level, int method, int windowBits, int memLevel, int strategy
+	else
+		status = inflateInit2( stream, MAX_WBITS );
+
+	if ( status < 0 )
+		return ThrowZError( cx, status, stream->msg );
+
+	JS_SetPrivate( cx, obj, stream );
+	JS_SetReservedSlot( cx, obj, SLOT_METHOD, INT_TO_JSVAL( method ) );
+//	JS_SetReservedSlot( cx, obj, SLOT_EOF, BOOLEAN_TO_JSVAL( JS_FALSE ) ); // eof
+	return JS_TRUE;
+}
+
 
 /**doc
 === Methods ===
@@ -74,19 +137,14 @@ void z_Finalize(JSContext *cx, JSObject *obj) {
   var compressedData = new Z( Z.DEFLATE )( 'Hello world', true ); // flush
   }}}
 **/
-
-
-JSBool z_call(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+DEFINE_CALL() {
 
 	JSObject *thisObj = JSVAL_TO_OBJECT(argv[-2]); // get 'this' object of the current object ...
 	// (TBD) check JS_InstanceOf( cx, thisObj, &NativeProc, NULL )
+//	J_S_ASSERT_CLASS(thisObj, z_class );
 
 	z_streamp stream = (z_streamp)JS_GetPrivate( cx, thisObj );
-	if ( stream == NULL ) {
-
-		JS_ReportError( cx, "descriptor is NULL" );
-		return JS_FALSE;
-	}
+	J_S_ASSERT_RESOURCE( stream );
 
 // manage this call if eof is already reach : return an empty string
 	if ( stream->opaque != 0 ) { // ( (bool)stream->opaque == true )
@@ -164,85 +222,6 @@ JSBool z_call(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval
 	return JS_TRUE;
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSClass z_class = { "Z", JSCLASS_HAS_PRIVATE | JSCLASS_HAS_RESERVED_SLOTS(1), // SLOT_METHOD
-  JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub,
-  JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, z_Finalize,
-  0,0, z_call
-};
-
-
-/**doc
- * *_Constructor_*( method [, compressionLevel ] )
-  Constructs a new inflater or deflater object.
-  = =
-  The _method_ can be Z.DEFLATE to compress data or Z.INFLATE to decompress data.
-  The compression level is like this: 0 <= _compressionLevel_ <= 9.
-  ===== note: =
-   For Z.INFLATE method, _compressionLevel_ argument is useless ( no sense )
-  ===== example: =
-  {{{
-  var compress = new Z( Z.DEFLATE, 9 );
-  }}}
-**/
-JSBool z_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
-
-	if ( !JS_IsConstructing(cx) ) {
-
-		JS_ReportError( cx, "construction is needed" );
-		return JS_FALSE;
-	}
-
-	if ( argc < 1 ) {
-
-		JS_ReportError( cx, "missing argument" );
-		return JS_FALSE;
-	}
-
-	z_streamp stream = (z_streamp)malloc( sizeof(z_stream) );
-	stream->zalloc = Z_NULL;
-	stream->zfree = Z_NULL;
-	stream->opaque = (voidpf) false; // use this private member to store the "stream_end" status (eof)
-
-	int32 method;
-	JS_ValueToInt32( cx, argv[0], &method );
-
-	int32 level = Z_DEFAULT_COMPRESSION; // default value
-	if ( argc >= 2 ) {
-
-		JS_ValueToInt32( cx, argv[1], &level );
-		if ( level < Z_NO_COMPRESSION || level > Z_BEST_COMPRESSION ) {
-
-			JS_ReportError( cx, "level too low or too high" );
-			return JS_FALSE;
-		}
-	}
-
-	int status;
-	if ( method == DEFLATE )
-		status = deflateInit2( stream, level, Z_DEFLATED, MAX_WBITS, MAX_MEM_LEVEL, Z_DEFAULT_STRATEGY ); //  int level, int method, int windowBits, int memLevel, int strategy
-	else
-		status = inflateInit2( stream, MAX_WBITS );
-
-	if ( status < 0 )
-		return ThrowZError( cx, status, stream->msg );
-
-	JS_SetPrivate( cx, obj, stream );
-	JS_SetReservedSlot( cx, obj, SLOT_METHOD, INT_TO_JSVAL( method ) );
-//	JS_SetReservedSlot( cx, obj, SLOT_EOF, BOOLEAN_TO_JSVAL( JS_FALSE ) ); // eof
-	return JS_TRUE;
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//JSBool z_transform(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
-//
-//}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSFunctionSpec z_FunctionSpec[] = { // *name, call, nargs, flags, extra
-// { "Transform"   , z_transform  , 0, 0, 0 },
- { 0 }
-};
 
 /**doc
 === Properties ===
@@ -252,77 +231,52 @@ JSFunctionSpec z_FunctionSpec[] = { // *name, call, nargs, flags, extra
  * *eof* $READONLY
   Is `true` if the end of the stream has been reach.
 **/
-
-JSBool z_getter_eof(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
+DEFINE_PROPERTY( eof ) {
 
 	z_streamp stream = (z_streamp)JS_GetPrivate( cx, obj );
-	if ( stream == NULL ) {
-
-		JS_ReportError( cx, "descriptor is NULL" );
-		return JS_FALSE;
-	}
-
+	J_S_ASSERT_RESOURCE( stream );
 	*vp = BOOLEAN_TO_JSVAL( stream->opaque != 0 ); // (bool)stream->opaque
-
-//	JS_GetReservedSlot( cx, obj, SLOT_EOF, vp ); // eof
-
 	return JS_TRUE;
 }
+
 
 /**doc
  * *adler32* $READONLY
   Contains the adler32 checksum of the data.
   [http://en.wikipedia.org/wiki/Adler_checksum more].
 **/
-JSBool z_getter_adler32(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
+DEFINE_PROPERTY( adler32 ) {
 
 	z_streamp stream = (z_streamp)JS_GetPrivate( cx, obj );
-	if ( stream == NULL ) {
-
-		JS_ReportError( cx, "descriptor is NULL" );
-		return JS_FALSE;
-	}
-
-	jsdouble adler32 = stream->adler;
-	JS_NewNumberValue( cx, adler32, vp );
-
+	J_S_ASSERT_RESOURCE( stream );
+	J_CHK( JS_NewNumberValue(cx, stream->adler, vp) );
 	return JS_TRUE;
 }
+
 
 /**doc
  * *lengthIn* $READONLY
   Contains the current total amount of input data.
-
- * *lengthOut* $READONLY
-  Contains the current total amount of output data.
 **/
-
-#define LENGTH_IN 1
-#define LENGTH_OUT 2
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSBool z_getter_length(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
+DEFINE_PROPERTY( lengthIn ) {
 
 	z_streamp stream = (z_streamp)JS_GetPrivate( cx, obj );
-	if ( stream == NULL ) {
-
-		JS_ReportError( cx, "descriptor is NULL" );
-		return JS_FALSE;
-	}
-
-	jsdouble length = JSVAL_TO_INT(id) == LENGTH_IN ? stream->total_in : stream->total_out;
-	JS_NewNumberValue( cx, length, vp );
-
+	J_S_ASSERT_RESOURCE( stream );
+	J_CHK( JS_NewNumberValue(cx, stream->total_in, vp) );
 	return JS_TRUE;
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSPropertySpec z_PropertySpec[] = { // *name, tinyid, flags, getter, setter
-	{ "eof"              , 0         , JSPROP_SHARED | JSPROP_PERMANENT | JSPROP_READONLY, z_getter_eof              , NULL },
-	{ "adler32"          , 0         , JSPROP_SHARED | JSPROP_PERMANENT | JSPROP_READONLY, z_getter_adler32          , NULL },
-	{ "lengthIn"         , LENGTH_IN , JSPROP_SHARED | JSPROP_PERMANENT | JSPROP_READONLY, z_getter_length           , NULL },
-	{ "lengthOut"        , LENGTH_OUT, JSPROP_SHARED | JSPROP_PERMANENT | JSPROP_READONLY, z_getter_length           , NULL },
-  { 0 }
-};
+
+/**doc
+ * *lengthOut* $READONLY
+  Contains the current total amount of output data.
+**/
+DEFINE_PROPERTY( lengthOut ) {
+	z_streamp stream = (z_streamp)JS_GetPrivate( cx, obj );
+	J_S_ASSERT_RESOURCE( stream );
+	J_CHK( JS_NewNumberValue(cx, stream->total_out, vp) );
+	return JS_TRUE;
+}
 
 
 /**doc
@@ -333,13 +287,12 @@ JSPropertySpec z_PropertySpec[] = { // *name, tinyid, flags, getter, setter
  * *idealInputLength* $READONLY
   This is the ideal size of input data to avoid buffer management overload.
 **/
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSBool z_static_getter_idealInputLength(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
+DEFINE_PROPERTY( idealInputLength ) {
 
 	JS_NewNumberValue( cx, Buffer::staticBufferLength, vp );
 	return JS_TRUE;
 }
+
 
 /**doc
 === Constants ===
@@ -349,29 +302,33 @@ JSBool z_static_getter_idealInputLength(JSContext *cx, JSObject *obj, jsval id, 
  * Z.`INFLATE`
   Decompression method.
 **/
+CONFIGURE_CLASS
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSBool z_static_getter_constant(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
+	HAS_RESERVED_SLOTS(1)
+	HAS_PRIVATE
 
-	int32 i;
-	JS_ValueToInt32( cx, id, &i );
-	*vp = INT_TO_JSVAL(i);
-	return JS_TRUE;
-}
+	HAS_CONSTRUCTOR
+	HAS_CALL
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSPropertySpec z_static_PropertySpec[] = { // *name, tinyid, flags, getter, setter
-	{ "idealInputLength" , 0      , JSPROP_SHARED | JSPROP_PERMANENT | JSPROP_READONLY, z_static_getter_idealInputLength  , NULL },
-	{ "INFLATE"          , INFLATE, JSPROP_SHARED | JSPROP_PERMANENT | JSPROP_READONLY, z_static_getter_constant          , NULL },
-	{ "DEFLATE"          , DEFLATE, JSPROP_SHARED | JSPROP_PERMANENT | JSPROP_READONLY, z_static_getter_constant          , NULL },
-  { 0 }
-};
+	BEGIN_PROPERTY_SPEC
+		PROPERTY_READ(eof)
+		PROPERTY_READ(adler32)
+		PROPERTY_READ(lengthIn)
+		PROPERTY_READ(lengthOut)
+	END_PROPERTY_SPEC
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-JSObject *zInitClass( JSContext *cx, JSObject *obj ) {
+	BEGIN_STATIC_PROPERTY_SPEC
+		PROPERTY_READ(idealInputLength)
+	END_STATIC_PROPERTY_SPEC
 
-	return JS_InitClass( cx, obj, NULL, &z_class, z_construct, 1, z_PropertySpec, z_FunctionSpec, z_static_PropertySpec, NULL );
-}
+	BEGIN_CONST_INTEGER_SPEC
+		CONST_INTEGER_SINGLE(INFLATE)
+		CONST_INTEGER_SINGLE(DEFLATE)
+	END_CONST_INTEGER_SPEC
+
+END_CLASS
+
+
 
 /**doc
 === example ===

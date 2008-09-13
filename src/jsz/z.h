@@ -11,5 +11,3 @@
  * for the specific language governing rights and limitations under the
  * License.
  * ***** END LICENSE BLOCK ***** */
-
-JSObject *zInitClass( JSContext *cx, JSObject *obj );
