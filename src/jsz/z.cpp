@@ -36,12 +36,18 @@
 
 BEGIN_CLASS( Z )
 
+//static JSBool NativeInterfaceStreamRead( JSContext *cx, JSObject *obj, char *buf, size_t *amount ) {
+//
+//	return ReadRawAmount(cx, obj, amount, buf);
+//}
+
+
 DEFINE_FINALIZE() {
 
 	z_streamp stream = (z_streamp)JS_GetPrivate( cx, obj );
 	if ( stream == NULL ) {
 
-		free(stream);
+		JS_free(cx, stream);
 		JS_SetPrivate(cx,obj,NULL);
 	}
 }
@@ -74,7 +80,7 @@ DEFINE_CONSTRUCTOR() {
 		return JS_FALSE;
 	}
 
-	z_streamp stream = (z_streamp)malloc( sizeof(z_stream) );
+	z_streamp stream = (z_streamp)JS_malloc(cx, sizeof(z_stream));
 	stream->zalloc = Z_NULL;
 	stream->zfree = Z_NULL;
 	stream->opaque = (voidpf) false; // use this private member to store the "stream_end" status (eof)
@@ -105,6 +111,9 @@ DEFINE_CONSTRUCTOR() {
 	JS_SetPrivate( cx, obj, stream );
 	JS_SetReservedSlot( cx, obj, SLOT_METHOD, INT_TO_JSVAL( method ) );
 //	JS_SetReservedSlot( cx, obj, SLOT_EOF, BOOLEAN_TO_JSVAL( JS_FALSE ) ); // eof
+
+//	J_CHK( SetStreamReadInterface(cx, obj, NativeInterfaceStreamRead) );
+
 	return JS_TRUE;
 }
 
@@ -327,7 +336,6 @@ CONFIGURE_CLASS
 	END_CONST_INTEGER_SPEC
 
 END_CLASS
-
 
 
 /**doc
