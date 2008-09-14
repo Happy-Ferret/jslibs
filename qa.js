@@ -81,7 +81,7 @@ function CreateQaItemList(startDir, filter) {
 		}
 	}
 
-	itemList = [ item for each ( item in itemList ) if ( !filter || item.init || ( filter(item.name) && !item.flags.d ) ) ];
+	itemList = [ item for each ( item in itemList ) if ( !filter || item.init || ( (filter(item.file) || filter(item.name)) && !item.flags.d ) ) ];
 	itemList = itemList.sort( function(a,b) a.init ? -1 : 1 );
 	return itemList;
 }
