@@ -553,7 +553,7 @@ DEFINE_PROPERTY( remainingTime ) {
 
 	ALint state;
 	alGetSourcei(pv->sid, AL_SOURCE_STATE, &state);
-	if ( state != AL_PLAYING ) {
+	if ( state != AL_PLAYING && state != AL_PAUSED ) {
 		
 		*vp = JSVAL_VOID;
 		return JS_TRUE;
