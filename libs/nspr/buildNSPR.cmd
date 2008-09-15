@@ -7,6 +7,8 @@ set destinationPath=..\..\%BUILD%\
 set destinationFiles=nspr4.dll nspr4.lib
 
 
+set buildDir=win32_%BUILD%
+
 
 pushd %destinationPath%
 del %destinationFiles%
@@ -24,10 +26,10 @@ set PATH=%CD%;%PATH%
 subst %tmpDrive% "%CD%"
 pushd %tmpDrive%
 
-del /S /Q .\win32
-md win32
+del /S /Q .\%buildDir%
+md %buildDir%
 
-pushd win32
+pushd %buildDir%
 sh ../src/configure --enable-win32-target=WIN95
 
 IF "%BUILD%"=="release" (
@@ -44,7 +46,7 @@ set PATH=%prevPath%
 popd
 subst %tmpDrive% /D
 
-pushd win32\dist\lib\
+pushd %buildDir%\dist\lib\
 cp %destinationFiles% ..\..\..\%destinationPath%
 popd
 

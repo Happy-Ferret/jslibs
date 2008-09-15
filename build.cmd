@@ -19,6 +19,12 @@ pushd .\libs\nspr
 call buildNSPR.cmd >> %logFile% 2>&1
 popd
 
+echo copying OpenalAL redist files ...
+pushd .\libs\openal
+copy .\sdk\redist\*.dll %buildDir% >> %logFile% 2>&1
+popd
+
+
 echo building jslibs ...
 for /D %%f in (src\js*) do (
 
