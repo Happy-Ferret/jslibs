@@ -100,14 +100,10 @@ DEFINE_FUNCTION_FAST( Close ) {
 	alcDestroyContext (context);
 	if (alcGetError (device) != ALC_NO_ERROR)
 		J_REPORT_ERROR("ALUT_ERROR_DESTROY_CONTEXT");
+	if (!alcMakeContextCurrent(NULL))
+		J_REPORT_ERROR("ALUT_ERROR_MAKE_CONTEXT_CURRENT");
 	if (!alcCloseDevice (device))
 		J_REPORT_ERROR("ALUT_ERROR_CLOSE_DEVICE");
-
-	if (!alcMakeContextCurrent(NULL)) { // (TBD) check this
-
-		J_REPORT_ERROR("ALUT_ERROR_MAKE_CONTEXT_CURRENT");
-	}
-
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
@@ -323,7 +319,7 @@ DEFINE_FUNCTION_FAST( GetInteger ) {
 	J_S_ASSERT_ARG_MIN(1);
 	J_S_ASSERT_INT(J_FARG(1));
 
-	ALint params[16]; // (TBD) check if it is the max amount of data that alGetIntegerv may returns.
+	ALint params[16];
 	alGetIntegerv(JSVAL_TO_INT( J_FARG(1) ), params);
 
 	if ( J_FARG_ISDEF(2) ) {
@@ -362,7 +358,7 @@ DEFINE_FUNCTION_FAST( GetDouble ) {
 	J_S_ASSERT_ARG_MIN(1);
 	J_S_ASSERT_INT(J_FARG(1));
 
-	ALdouble params[16]; // (TBD) check if it is the max amount of data that alGetDoublev may returns.
+	ALdouble params[16];
 	alGetDoublev(JSVAL_TO_INT(J_FARG(1)), params);
 
 	if ( J_FARG_ISDEF(2) ) {
@@ -443,7 +439,7 @@ DEFINE_FUNCTION_FAST( GetListenerReal ) {
 	J_S_ASSERT_ARG_MIN(1);
 	J_S_ASSERT_INT(J_FARG(1));
 
-	ALfloat params[16]; // (TBD) check if it is the max amount of data that alGetSourcef may returns.
+	ALfloat params[16];
 	alGetListenerfv(JSVAL_TO_INT(J_FARG(1)), params);
 
 	if ( J_FARG_ISDEF(2) ) {
@@ -546,7 +542,7 @@ DEFINE_FUNCTION_FAST( GetSourceReal ) {
 	ALuint sid;
 	J_CHK( JsvalToUInt(cx, J_FARG(1), &sid ) );
 
-	ALfloat params[16]; // (TBD) check if it is the max amount of data that alGetSourcef may returns.
+	ALfloat params[16];
 
 	ALenum pname = JSVAL_TO_INT(J_FARG(2));
 	alGetSourcef(sid, pname, params);
@@ -585,7 +581,7 @@ DEFINE_FUNCTION_FAST( GetSourceInteger ) {
 	ALuint sid;
 	J_CHK( JsvalToUInt(cx, J_FARG(1), &sid ) );
 
-	ALint params[16]; // (TBD) check if it is the max amount of data that alGetSourcef may returns.
+	ALint params[16];
 
 	ALenum pname = JSVAL_TO_INT(J_FARG(2));
 	alGetSourcei(sid, pname, params);
@@ -744,12 +740,17 @@ DEFINE_FUNCTION_FAST( Buffer ) {
 	alGenBuffers(1, &bufferID);
 
 	ALenum format; // The sound data format
-	if (channels == 1)
-		format = bits == 16 ? AL_FORMAT_MONO16 : AL_FORMAT_MONO8;
-	else
-		format = bits == 16 ? AL_FORMAT_STEREO16 : AL_FORMAT_STEREO8;
-	
-	// (TBD) report an error for other unsuported formats.
+
+	switch (channels) {
+		case 1:
+			format = bits == 16 ? AL_FORMAT_MONO16 : AL_FORMAT_MONO8;
+			break;
+		case 2:
+			format = bits == 16 ? AL_FORMAT_STEREO16 : AL_FORMAT_STEREO8;
+			break;
+		default:
+			J_REPORT_ERROR("Too may channels");
+	}
 
 	// Upload sound data to buffer
 	alBufferData(bufferID, format, buffer, bufferLength, rate);
@@ -777,7 +778,7 @@ DEFINE_FUNCTION_FAST( GetBufferReal ) {
 	J_S_ASSERT_ARG_MIN(1);
 	J_S_ASSERT_INT(J_FARG(1));
 
-	ALfloat params[16]; // (TBD) check if it is the max amount of data that alGetSourcef may returns.
+	ALfloat params[16];
 	alGetBufferfv(JSVAL_TO_INT(J_FARG(1)), JSVAL_TO_INT(J_FARG(2)), params);
 
 	if ( J_FARG_ISDEF(2) ) {
@@ -817,7 +818,7 @@ DEFINE_FUNCTION_FAST( GetBufferInteger ) {
 	J_S_ASSERT_ARG_MIN(1);
 	J_S_ASSERT_INT(J_FARG(1));
 
-	ALint params[16]; // (TBD) check if it is the max amount of data that alGetSourcef may returns.
+	ALint params[16];
 	alGetBufferiv(JSVAL_TO_INT(J_FARG(1)), JSVAL_TO_INT(J_FARG(2)), params);
 
 	if ( J_FARG_ISDEF(2) ) {
@@ -859,7 +860,7 @@ DEFINE_FUNCTION_FAST( DeleteBuffer ) {
 	J_S_ASSERT_NUMBER(J_FARG(1));
 	ALuint bufferId;
 	J_CHK( JsvalToUInt(cx, J_FARG(1), &bufferId ) );
-	alBufferData(bufferId, 0, NULL, 0, 0); // (TBD) needed ?
+//	alBufferData(bufferId, 0, NULL, 0, 0);
 	alDeleteBuffers(1, &bufferId);
 	return JS_TRUE;
 }

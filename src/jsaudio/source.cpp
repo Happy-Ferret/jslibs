@@ -25,8 +25,21 @@ struct Private {
 	ALuint sid;
 	Queue *queue;
 	ALuint effectSlot;
-
+	float totalTime;
 };
+
+
+inline float BufferSecTime( ALint bid ) {
+
+	ALint freq, size, bits, channels;
+	alGetBufferi(bid, AL_FREQUENCY, &freq);
+	alGetBufferi(bid, AL_SIZE, &size);
+	alGetBufferi(bid, AL_BITS, &bits);
+	alGetBufferi(bid, AL_CHANNELS, &channels);
+	return (float)size / (float)( (bits/8) * channels * freq );
+}
+
+
 
 
 /*
@@ -48,17 +61,17 @@ inline JSBool UnshiftJsval( JSContext *cx, Queue *queue, jsval value ) {
 */
 
 
-JSBool ProtectJsval( JSContext *cx, Queue *queue, jsval value ) {
+JSBool QueueBuffersJsval( JSContext *cx, Queue *queue, jsval value ) {
 
 	jsval *pItem = (jsval*)JS_malloc(cx, sizeof(jsval));
 	J_S_ASSERT_ALLOC( pItem );
 	*pItem = value;
-	QueuePush( queue, pItem ); // no need to JS_AddRoot *pItem, see Tracer callback !
+	QueuePush(queue, pItem); // no need to JS_AddRoot *pItem, see Tracer callback !
 	return JS_TRUE;
 }
 
-
-JSBool UnprotectJsval( JSContext *cx, Queue *queue, jsval value ) {
+/*
+JSBool UnqueueBuffersJsval( JSContext *cx, Queue *queue, jsval value ) {
 
 	for ( QueueCell *it = QueueBegin(queue); it; it = QueueNext(it) ) {
 
@@ -66,12 +79,20 @@ JSBool UnprotectJsval( JSContext *cx, Queue *queue, jsval value ) {
 
 			jsval *pItem = (jsval*)QueueRemoveCell(queue, it);
 			JS_free(cx, pItem);
-			break;
+			return JS_TRUE;
 		}
 	}
+	return JS_FALSE; // not found
+}
+*/
+
+jsval UnqueueBuffersJsval( JSContext *cx, Queue *queue, jsval *rval ) {
+
+	jsval *pval = (jsval*)QueueShift(queue);
+	*rval = *pval;
+	JS_free(cx, pval);
 	return JS_TRUE;
 }
-
 
 
 BEGIN_CLASS( OalSource )
@@ -80,8 +101,12 @@ DEFINE_TRACER() {
 
 	Private *pv = (Private*)JS_GetPrivate(trc->context, obj);
 	if ( pv )
-		for ( QueueCell *it = QueueBegin(pv->queue); it; it = QueueNext(it) )
-			JS_CALL_VALUE_TRACER(trc, *(jsval*)QueueGetData(it), "jsstd/Buffer:bufferQueueItem");
+		for ( QueueCell *it = QueueBegin(pv->queue); it; it = QueueNext(it) ) {
+			
+			jsval *val = (jsval*)QueueGetData(it);
+			if ( !JSVAL_IS_PRIMITIVE(*val) )
+				JS_CALL_VALUE_TRACER(trc, *val, "jsstd/Buffer:bufferQueueItem");
+		}
 }
 
 
@@ -99,7 +124,7 @@ DEFINE_FINALIZE() {
 
 		if ( alcGetCurrentContext() ) {
 
-			alAuxiliaryEffectSloti(pv->effectSlot, AL_EFFECTSLOT_EFFECT, AL_EFFECT_NULL); //(TBD) check if it is needed before deleting the auxiliary effect slot ?
+//			alAuxiliaryEffectSloti(pv->effectSlot, AL_EFFECTSLOT_EFFECT, AL_EFFECT_NULL);
 			alDeleteAuxiliaryEffectSlots(1, &pv->effectSlot);
 			alDeleteSources(1, &pv->sid);
 		}
@@ -126,67 +151,52 @@ DEFINE_CONSTRUCTOR() {
 /**doc
  * $VOID $INAME( buffer )
   $H arguments
-   $ARG integer buffer: a Buffer Object or a buffer Id.
+   $ARG OalBuffer | BufferId: a Buffer Object or a buffer Id.
   $H OpenAL API
 	alDeleteBuffers
 **/
 DEFINE_FUNCTION_FAST( QueueBuffers ) {
 
 	J_S_ASSERT_ARG_MIN(1);
-
 	Private *pv = (Private*)JS_GetPrivate(cx, J_FOBJ);
 	J_S_ASSERT_RESOURCE( pv );
 	*J_FRVAL = JSVAL_VOID;
+	ALuint bid;
+	J_CHK( JsvalToUInt(cx, J_FARG(1), &bid) );
+	J_S_ASSERT( alIsBuffer(bid), "Invalid buffer." );
+	
+	alSourceQueueBuffers(pv->sid, 1, &bid);
+	J_CHK( CheckThrowCurrentOalError(cx) );
+	J_CHK( QueueBuffersJsval(cx, pv->queue, J_FARG(1)) );
 
-	if ( JSVAL_IS_INT(J_FARG(1)) ) {
-		
-		ALuint bid;
-		J_CHK( JsvalToUInt(cx, J_FARG(1), &bid) );
-
-		J_S_ASSERT( alIsBuffer(bid), "Invalid buffer." );
-		
-		alSourceQueueBuffers( pv->sid, 1, &bid );
-		J_CHK( CheckThrowCurrentOalError(cx) );
-
-		if ( JSVAL_IS_OBJECT(J_FARG(1)) )
-			J_CHK( ProtectJsval(cx, pv->queue, J_FARG(1)) );
-		return JS_TRUE;
-	}
-	J_REPORT_ERROR("Invalid argument.");
+	ALint queueSize;
+	alGetSourcei(pv->sid, AL_BUFFERS_QUEUED, &queueSize);
+	if ( queueSize == 1 )
+		pv->totalTime = 0;
+	pv->totalTime += BufferSecTime(bid);
 	return JS_TRUE;
 }
 
 
 /**doc
- * $VOID $INAME( buffer )
-  $H arguments
-   $ARG integer buffer: a Buffer Object or a buffer Id.
+ * $Buffer $INAME()
   $H OpenAL API
 	alDeleteBuffers
 **/
 DEFINE_FUNCTION_FAST( UnqueueBuffers ) {
 
-	J_S_ASSERT_ARG_MIN(1);
-
 	Private *pv = (Private*)JS_GetPrivate(cx, J_FOBJ);
 	J_S_ASSERT_RESOURCE( pv );
-	*J_FRVAL = JSVAL_VOID;
-
-	if ( JSVAL_IS_INT(J_FARG(1)) ) {
-		
-		ALuint bid;
-		J_CHK( JsvalToUInt(cx, J_FARG(1), &bid) );
-
-		J_S_ASSERT( alIsBuffer(bid), "Invalid buffer." );
-
-		alSourceUnqueueBuffers( pv->sid, 1, &bid );
-		J_CHK( CheckThrowCurrentOalError(cx) );
-
-		if ( JSVAL_IS_OBJECT(J_FARG(1)) )
-			J_CHK( UnprotectJsval(cx, pv->queue, J_FARG(1)) );
-		return JS_TRUE;
-	}
-	J_REPORT_ERROR("Invalid argument.");
+	ALuint bid;
+	alSourceUnqueueBuffers(pv->sid, 1, &bid);
+	J_CHK( CheckThrowCurrentOalError(cx) );
+	J_CHK( UnqueueBuffersJsval(cx, pv->queue, J_FRVAL ) );
+	J_SAFE(
+		ALuint tmp;
+		J_CHK( JsvalToUInt(cx, *J_FRVAL, &tmp) );
+		J_S_ASSERT( bid == tmp, "Internal error in UnqueueBuffers()." );
+	);
+	pv->totalTime -= BufferSecTime(bid);
 	return JS_TRUE;
 }
 
@@ -379,7 +389,7 @@ DEFINE_PROPERTY( directFilter ) {
 }
 
 
-DEFINE_PROPERTY( buffer ) {
+DEFINE_PROPERTY_SETTER( buffer ) {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( pv );
@@ -393,20 +403,49 @@ DEFINE_PROPERTY( buffer ) {
 	alSourcei(pv->sid, AL_BUFFER, bid);
 	J_CHK( CheckThrowCurrentOalError(cx) );
 
+	pv->totalTime = BufferSecTime(bid);
+
 	return JS_TRUE;
 }
 
-/*
 DEFINE_PROPERTY_GETTER( buffer ) {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( pv );
 	ALint bid;
 	alGetSourcei(pv->sid, AL_BUFFER, &bid);
+	J_CHK( CheckThrowCurrentOalError(cx) );
+
+	// look if the current value hold tby the property (_STORE) is the current buffer)
+	if ( *vp != JSVAL_VOID ) {
+
+		ALint tmp;
+		J_CHK( JsvalToInt(cx, *vp, &tmp) ); // calls OalBuffer valueOf function
+		J_S_ASSERT( alIsBuffer(tmp), "Invalid buffer." );
+		if ( tmp == bid )
+			return JS_TRUE;
+	}
+
+	// find the buffer object in the list of jsval
+	for ( QueueCell *it = QueueBegin(pv->queue); it; it = QueueNext(it) ) {
+		
+		jsval *val = (jsval*)QueueGetData(it);
+		ALint tmp;
+		J_CHK( JsvalToInt(cx, *val, &tmp) ); // calls OalBuffer valueOf function
+		J_S_ASSERT( alIsBuffer(tmp), "Invalid buffer." );
+		if ( tmp == bid ) {
+			
+			*vp = *val;
+			return JS_TRUE;
+		}
+	}
+	
+	J_S_ASSERT( alIsBuffer(bid), "Invalid buffer." );
 	J_CHK( IntToJsval(cx, bid, vp) );
 	return JS_TRUE;
 }
-*/
+
+
 
 /*
 DEFINE_PROPERTY_SETTER( position ) {
@@ -497,30 +536,76 @@ DEFINE_PROPERTY( velocity ) {
 }
 
 
+
+
+DEFINE_PROPERTY( remainingTime ) {
+
+	Private *pv = (Private*)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE( pv );
+
+	ALint loop;
+	alGetSourcei(pv->sid, AL_LOOPING, &loop);
+	if ( loop == AL_TRUE ) {
+		
+		*vp = JS_GetPositiveInfinityValue(cx);
+		return JS_TRUE;
+	}
+
+	ALint state;
+	alGetSourcei(pv->sid, AL_SOURCE_STATE, &state);
+	if ( state != AL_PLAYING ) {
+		
+		*vp = JSVAL_VOID;
+		return JS_TRUE;
+	}
+
+	ALfloat secOffset;
+	alGetSourcef(pv->sid, AL_SEC_OFFSET, &secOffset);
+	J_CHK( FloatToJsval(cx, pv->totalTime - secOffset, vp) );
+	return JS_TRUE;
+}
+
+
+
 static const int enumToConst[] = {
 	AL_SOURCE_STATE,
+	AL_SOURCE_RELATIVE,
 	AL_LOOPING,
 	AL_SEC_OFFSET,
 	AL_GAIN,
+	AL_MIN_GAIN,
+	AL_MAX_GAIN,
 	AL_AIR_ABSORPTION_FACTOR,
 	AL_ROOM_ROLLOFF_FACTOR,
 	AL_CONE_OUTER_GAINHF,
 	AL_DIRECT_FILTER_GAINHF_AUTO,
 	AL_AUXILIARY_SEND_FILTER_GAIN_AUTO,
 	AL_AUXILIARY_SEND_FILTER_GAINHF_AUTO,
+	AL_REFERENCE_DISTANCE,
+	AL_MAX_DISTANCE,
+	AL_BUFFERS_QUEUED,
+	AL_BUFFERS_PROCESSED
 };
 
+
 enum {
-	state								= 0,
-	looping								,
-	secOffset							,
-	gain									,
-	airAbsorptionFactor				,
-	roomRolloffFactor					,
-	coneOuterGainhf					,
-	directFilterGainhfAuto			,
-	auxiliarySendFilterGainAuto	,
-	auxiliarySendFilterGainhfAuto	,
+	state = 0,
+	sourceRelative,
+	looping,
+	secOffset,
+	gain,
+	minGain,
+	maxGain,
+	airAbsorptionFactor,
+	roomRolloffFactor,
+	coneOuterGainhf,
+	directFilterGainhfAuto,
+	auxiliarySendFilterGainAuto,
+	auxiliarySendFilterGainhfAuto,
+	referenceDistance,
+	maxDistance,
+	buffersQueued,
+	buffersProcessed
 };
 
 
@@ -611,31 +696,42 @@ CONFIGURE_CLASS
 	BEGIN_FUNCTION_SPEC
 		FUNCTION_FAST_ARGC( Position, 3 )
 		FUNCTION_FAST_ARGC( Velocity, 3 )
+
 		FUNCTION_FAST( Play )
 		FUNCTION_FAST( Pause )
 		FUNCTION_FAST( Stop )
 		FUNCTION_FAST( Rewind )
 
-//		FUNCTION_FAST_ARGC( Effect, 3 )
+		FUNCTION_FAST( QueueBuffers )
+		FUNCTION_FAST( UnqueueBuffers )
 
 		FUNCTION_FAST( valueOf )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
-		PROPERTY_WRITE_STORE( effect )
-		PROPERTY( effectGain )
-		PROPERTY( effectSendAuto )
-
-		PROPERTY_WRITE_STORE( directFilter )
-		PROPERTY_WRITE_STORE( buffer )
 
 		PROPERTY_READ( position )
 		PROPERTY_READ( velocity )
 
+//		PROPERTY_WRITE_STORE( buffer )
+		PROPERTY_STORE( buffer )
 
+		PROPERTY_WRITE_STORE( effect )
+		PROPERTY_WRITE_STORE( directFilter )
+
+		PROPERTY( effectGain )
+		PROPERTY( effectSendAuto )
+
+		PROPERTY_READ( remainingTime )
+
+		PROPERTY_SWITCH_READ( buffersQueued, sourceIntIndGetter )
+		PROPERTY_SWITCH_READ( buffersProcessed, sourceIntIndGetter )
 		PROPERTY_SWITCH_READ( state, sourceIntIndGetter )
 		PROPERTY_SWITCH( looping, sourceBoolInd )
+		PROPERTY_SWITCH( sourceRelative, sourceBoolInd )
 		PROPERTY_SWITCH( gain, sourceFloatInd )
+		PROPERTY_SWITCH( minGain, sourceFloatInd )
+		PROPERTY_SWITCH( maxGain, sourceFloatInd )
 		PROPERTY_SWITCH( secOffset, sourceFloatInd )
 		PROPERTY_SWITCH( airAbsorptionFactor, sourceFloatInd )
 		PROPERTY_SWITCH( roomRolloffFactor, sourceFloatInd )
@@ -643,6 +739,8 @@ CONFIGURE_CLASS
 		PROPERTY_SWITCH( directFilterGainhfAuto, sourceBoolInd )
 		PROPERTY_SWITCH( auxiliarySendFilterGainAuto, sourceBoolInd )
 		PROPERTY_SWITCH( auxiliarySendFilterGainhfAuto, sourceBoolInd )
+		PROPERTY_SWITCH( referenceDistance, sourceFloatInd )
+		PROPERTY_SWITCH( maxDistance, sourceFloatInd )
 
 	END_PROPERTY_SPEC
 

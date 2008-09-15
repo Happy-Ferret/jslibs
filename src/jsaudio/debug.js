@@ -2,7 +2,42 @@ LoadModule('jsio');
 LoadModule('jsstd');
 LoadModule('jssound');
 LoadModule('jsaudio');
-LoadModule('..\\jsdebug\\debug\\jsdebug');
+LoadModule('jsdebug');
+
+try {
+
+	Oal.Open('Generic Software');
+
+	var dec = new OggVorbisDecoder( new File('41_30secOgg-q0.ogg').Open('r') );
+
+	var buf1 = new OalBuffer(dec.Read(50000));
+	var buf2 = new OalBuffer(dec.Read(50000));
+
+	var src = new OalSource();
+
+	//src.buffer = buf1;
+	//src.buffer = buf2;
+
+	src.QueueBuffers(buf1);
+	src.QueueBuffers(buf1);
+	src.QueueBuffers(buf2);
+	src.QueueBuffers(buf2);
+
+	//src.looping = true;
+	src.Position(1,0,0);
+
+	src.Play();
+
+	Sleep( src.remainingTime * 1000 );
+
+	src.Stop();
+
+} catch(ex) {
+
+	Print('ex: '+ex);
+}
+
+Halt(); ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 function Hex(int) '0x'+int.toString(16).toUpperCase();
 
@@ -56,7 +91,7 @@ Print( 'OpenAL source:', '\n' );
 var src = new OalSource();
 src.buffer = b;
 src.looping = false;
-src.Position(15,0,0);
+src.Position(1,0,0);
 
 
 var effect = new OalEffect();
@@ -104,7 +139,7 @@ src.Stop();
 
 Oal.Close();
 
-Halt();
+Halt(); ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //Oal.Listener(Oal.POSITION, [0,0,0]);
 //Oal.Listener(Oal.VELOCITY, [0,0,0]);
@@ -124,7 +159,7 @@ Oal.PlaySource(src);
 Print( 'error: '+Oal.error.toString(16).toUpperCase(), '\n' );
 
 Sleep( 2000 );
-Halt();
+Halt(); ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /*
 var decoder = new OggVorbisDecoder(new File('41_30secOgg-q0.ogg').Open( File.RDONLY ));
@@ -135,7 +170,7 @@ var src = Oal.GenSource();
 Oal.SourceQueueBuffers(src, Oal.Buffer(left));
 Oal.PlaySource(src);
 Sleep( 1000 );
-Halt();
+Halt(); ////////////////////////////////////////////////////////////////////////////////////////////////////
 */
 
 var src = Oal.GenSource();
