@@ -194,7 +194,6 @@ DEFINE_FUNCTION( Done ) {
 DEFINE_CALL() {
 
 	JSObject *thisObj = JSVAL_TO_OBJECT(argv[-2]); // get 'this' object of the current object ...
-	// (TBD) check JS_InstanceOf( cx, thisObj, &NativeProc, NULL )
 	J_S_ASSERT_CLASS( thisObj, _class );
 	
 	J_S_ASSERT_ARG_MIN( 1 );

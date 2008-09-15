@@ -1185,12 +1185,12 @@ inline JSBool SetStreamReadInterface( JSContext *cx, JSObject *obj, NIStreamRead
 inline NIStreamRead StreamReadNativeInterface( JSContext *cx, JSObject *obj ) {
 
 	static jsid propId = 0; // (TBD) try to make this higher than module-static
-	if ( !propId )
+	if ( propId == 0 )
 		if ( JS_ValueToId(cx, STRING_TO_JSVAL(JS_InternString(cx, "_NI_StreamRead")), &propId) != JS_TRUE )
 			return NULL;
 	void *streamRead;
 	JSObject *obj2;
-	if ( GetNativeInterface( cx, obj, &obj2, propId, &streamRead ) != JS_TRUE )
+	if ( propId == 0 || GetNativeInterface( cx, obj, &obj2, propId, &streamRead ) != JS_TRUE )
 		return NULL;
 	return (NIStreamRead)streamRead;
 }
@@ -1233,12 +1233,12 @@ inline JSBool SetBufferGetInterface( JSContext *cx, JSObject *obj, NIBufferGet p
 inline NIBufferGet BufferGetNativeInterface( JSContext *cx, JSObject *obj ) {
 
 	static jsid propId = 0; // (TBD) try to make this higher than module-static
-	if ( !propId )
+	if ( propId == 0 )
 		if ( JS_ValueToId(cx, STRING_TO_JSVAL(JS_InternString(cx, "_NI_BufferGet")), &propId) != JS_TRUE )
 			return NULL;
 	void *fct;
 	JSObject *obj2;
-	if ( GetNativeInterface( cx, obj, &obj2, propId, &fct ) != JS_TRUE )
+	if ( propId == 0 || GetNativeInterface( cx, obj, &obj2, propId, &fct ) != JS_TRUE )
 		return NULL;
 	return (NIBufferGet)fct;
 }
@@ -1283,12 +1283,12 @@ inline JSBool SetMatrix44GetInterface( JSContext *cx, JSObject *obj, NIMatrix44G
 inline NIMatrix44Get Matrix44GetNativeInterface( JSContext *cx, JSObject *obj ) {
 
 	static jsid propId = 0; // (TBD) try to make this higher than module-static
-	if ( !propId )
+	if ( propId == 0 )
 		if ( JS_ValueToId(cx, STRING_TO_JSVAL(JS_InternString(cx, "_NI_Matrix44Get")), &propId) != JS_TRUE )
 			return NULL;
 	void *fct;
 	JSObject *obj2;
-	if ( GetNativeInterface( cx, obj, &obj2, propId, &fct ) != JS_TRUE )
+	if ( propId == 0 || GetNativeInterface( cx, obj, &obj2, propId, &fct ) != JS_TRUE )
 		return NULL;
 	return (NIMatrix44Get)fct;
 }
