@@ -3,12 +3,27 @@ LoadModule('jsio');
 
 
 
+
+Halt();
+
+
+var code = "var db = {}; db.testFun = function() { return 123 }; Print( Test(db, 'testFun') )"
+var func = new Function(code);
+func();
+//eval(code)
+
+
+
+Halt();
+
+var b = new Blob('ABCDEF');
+var s = 'ABCDEF'
+
+Print( b.substr(-7,2) );
+
+Halt();
+
 Print( eval( new String('({add:123})') ) );
-
-
-
-
-
 
 Halt();
 
