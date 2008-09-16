@@ -280,7 +280,7 @@ DEFINE_FUNCTION_FAST( Read ) {
 	} else {
 
 		void *stack;
-		StackInit(&stack);
+		jl::StackInit(&stack);
 
 		int bufferSize = 16384 - 16; // try to alloc less than one page
 
@@ -290,7 +290,7 @@ DEFINE_FUNCTION_FAST( Read ) {
 
 			char *buffer = (char*)JS_malloc(cx, bufferSize);
 			J_S_ASSERT_ALLOC(buffer);
-			StackPush(&stack, buffer);
+			jl::StackPush(&stack, buffer);
 
 			char *data = buffer+sizeof(int);
 			int *len = (int*)buffer;
@@ -328,9 +328,9 @@ DEFINE_FUNCTION_FAST( Read ) {
 
 		// because the stack is LIFO, we have to start from the end.
 		buf += totalSize;
-		while( !StackIsEnd(&stack) ) {
+		while( !jl::StackIsEnd(&stack) ) {
 
-			char *buffer = (char *)StackPop(&stack);
+			char *buffer = (char *)jl::StackPop(&stack);
 			int size = *(int*)buffer;
 			buf = buf - size;
 			memcpy( buf, buffer+sizeof(int), size );

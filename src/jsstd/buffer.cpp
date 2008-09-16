@@ -33,7 +33,7 @@
 struct BufferPrivate {
 
 	size_t length;
-	Queue *queue;
+	jl::Queue *queue;
 };
 
 
@@ -43,27 +43,27 @@ static JSBool NativeInterfaceStreamRead( JSContext *cx, JSObject *obj, char *buf
 }
 
 
-inline JSBool PushJsval( JSContext *cx, Queue *queue, jsval value ) {
+inline JSBool PushJsval( JSContext *cx, jl::Queue *queue, jsval value ) {
 
 	jsval *pItem = (jsval*)malloc(sizeof(jsval));
 	J_S_ASSERT_ALLOC( pItem );
 	*pItem = value;
-	QueuePush( queue, pItem ); // no need to JS_AddRoot *pItem, see Tracer callback
+	jl::QueuePush( queue, pItem ); // no need to JS_AddRoot *pItem, see Tracer callback
 	return JS_TRUE;
 }
 
 
-inline JSBool UnshiftJsval( JSContext *cx, Queue *queue, jsval value ) {
+inline JSBool UnshiftJsval( JSContext *cx, jl::Queue *queue, jsval value ) {
 
 	jsval *pItem = (jsval*)malloc(sizeof(jsval));
 	J_S_ASSERT_ALLOC( pItem );
 	*pItem = value;
-	QueueUnshift( queue, pItem ); // no need to JS_AddRoot *pItem, see Tracer callback
+	jl::QueueUnshift( queue, pItem ); // no need to JS_AddRoot *pItem, see Tracer callback
 	return JS_TRUE;
 }
 
 
-inline JSBool ShiftJsval( JSContext *cx, Queue *queue, jsval *value ) {
+inline JSBool ShiftJsval( JSContext *cx, jl::Queue *queue, jsval *value ) {
 
 	jsval *pItem = (jsval*)QueueShift(queue);  // no need to JS_RemoveRoot *pItem, see Tracer callback
 	if ( value != NULL )
@@ -72,7 +72,7 @@ inline JSBool ShiftJsval( JSContext *cx, Queue *queue, jsval *value ) {
 	return JS_TRUE;
 }
 
-inline JSBool PeekJsval( JSContext *cx, QueueCell *cell, jsval *value ) {
+inline JSBool PeekJsval( JSContext *cx, jl::QueueCell *cell, jsval *value ) {
 
 	*value = *(jsval*)QueueGetData(cell);  // no need to JS_RemoveRoot *pItem, see Tracer callback
 	return JS_TRUE;
@@ -394,7 +394,7 @@ JSBool FindInBuffer( JSContext *cx, JSObject *obj, const char *needle, size_t ne
 	const char *chunk;
 	size_t i, j;
 
-	for ( QueueCell *it = QueueBegin(pv->queue); it; it = QueueNext(it) ) {
+	for ( jl::QueueCell *it = jl::QueueBegin(pv->queue); it; it = jl::QueueNext(it) ) {
 
 		jsval *pNewStr = (jsval*)QueueGetData(it);
 		J_CHK( JsvalToStringAndLength(cx, pNewStr, &chunk, &chunkLength) );
@@ -431,7 +431,7 @@ JSBool AddBuffer( JSContext *cx, JSObject *destBuffer, JSObject *srcBuffer ) {
 	BufferPrivate *spv = (BufferPrivate*)JS_GetPrivate(cx, srcBuffer);
 	J_S_ASSERT_RESOURCE( spv );
 
-	for ( QueueCell *it = QueueBegin(spv->queue); it; it = QueueNext(it) )
+	for ( jl::QueueCell *it = jl::QueueBegin(spv->queue); it; it = jl::QueueNext(it) )
 		J_CHK( PushJsval(cx, dpv->queue, *(jsval*)QueueGetData(it)) );
 	dpv->length += spv->length;
 
@@ -515,7 +515,7 @@ DEFINE_CONSTRUCTOR() {
 	BufferPrivate *pv = (BufferPrivate *)JS_malloc(cx, sizeof(BufferPrivate));
 	J_S_ASSERT_ALLOC(pv);
 	J_CHK( JS_SetPrivate(cx, obj, pv) );
-	pv->queue = QueueConstruct();
+	pv->queue = jl::QueueConstruct();
 	J_S_ASSERT_ALLOC(pv->queue);
 	pv->length = 0;
 
@@ -817,7 +817,7 @@ DEFINE_FUNCTION( toString ) {
 
 	size_t pos = 0;
 //	while ( !QueueIsEmpty(pv->queue) ) {
-	for ( QueueCell *it = QueueBegin(pv->queue); it; it = QueueNext(it) ) {
+	for ( jl::QueueCell *it = jl::QueueBegin(pv->queue); it; it = jl::QueueNext(it) ) {
 
 //		J_CHK( ShiftJsval(cx, pv->queue, rval) );
 		J_CHK( PeekJsval(cx, it, rval) );
@@ -870,7 +870,7 @@ DEFINE_GET_PROPERTY() {
 		size_t chunkLength;
 		const char *chunk;
 
-		for ( QueueCell *it = QueueBegin(pv->queue); it; it = QueueNext(it) ) {
+		for ( jl::QueueCell *it = jl::QueueBegin(pv->queue); it; it = jl::QueueNext(it) ) {
 
 			jsval *pNewStr = (jsval*)QueueGetData(it);
 			J_CHK( JsvalToStringLength(cx, *pNewStr, &chunkLength) );
@@ -930,7 +930,7 @@ DEFINE_TRACER() {
 
 	BufferPrivate *pv = (BufferPrivate*)JS_GetPrivate(trc->context, obj);
 	if ( pv )
-		for ( QueueCell *it = QueueBegin(pv->queue); it; it = QueueNext(it) )
+		for ( jl::QueueCell *it = jl::QueueBegin(pv->queue); it; it = jl::QueueNext(it) )
 			JS_CALL_VALUE_TRACER(trc, *(jsval*)QueueGetData(it), "jsstd/Buffer:bufferQueueItem");
 }
 

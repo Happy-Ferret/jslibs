@@ -43,11 +43,21 @@ struct JSLIBS_ConstIntegerSpec {
 #define END_STATIC_FUNCTION_SPEC {0}}; _staticFunctionSpec = _tmp_sfs;
 
 #define FUNCTION(name) JS_FS( #name, _##name, 0, 0, 0 ),
-#define FUNCTION_FAST(name) JS_FN( #name, _##name, 0, 0, 0 ),
 #define FUNCTION_ARGC(name,nargs) JS_FS( #name, _##name, nargs, 0, 0 ),
-#define FUNCTION_FAST_ARGC(name,nargs) JS_FN( #name, _##name, 0, nargs, 0 ),
 #define FUNCTION_ALIAS(alias, name) JS_FS( #alias, _##name, 0, 0, 0 ),
-#define FUNCTION_FAST_ALIAS(alias, name) JS_FN( #alias, _##name, 0, 0, 0 ),
+
+// JS_FN(name,fastcall,minargs,nargs,flags) vs JS_FN(name,fastcall,nargs,flags)
+#ifdef JSSLOT_CLASS
+	#define FUNCTION_FAST(name) JS_FN( #name, _##name, 0, 0, 0 ),
+	#define FUNCTION_FAST_ARGC(name,nargs) JS_FN( #name, _##name, 0, nargs, 0 ),
+	#define FUNCTION_FAST_ALIAS(alias, name) JS_FN( #alias, _##name, 0, 0, 0 ),
+#else // JSSLOT_CLASS
+	#define FUNCTION_FAST(name) JS_FN( #name, _##name, 0, 0 ),
+	#define FUNCTION_FAST_ARGC(name,nargs) JS_FN( #name, _##name, nargs, 0 ),
+	#define FUNCTION_FAST_ALIAS(alias, name) JS_FN( #alias, _##name, 0, 0 ),
+#endif // JSSLOT_CLASS
+
+
 
 // properties
 #define BEGIN_PROPERTY_SPEC JSPropertySpec _tmp_ps[] = { // *name, tinyid, flags, getter, setter

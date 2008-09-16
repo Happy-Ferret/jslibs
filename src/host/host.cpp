@@ -317,6 +317,11 @@ JSContext* CreateHost(size_t maxMem, size_t maxAlloc) {
 	//		options |= JSOPTION_STRICT;
 	//	JS_SetOptions(cx, options );
 
+	#ifdef JSOPTION_JIT
+	JS_SetOptions(cx, JSOPTION_JIT);
+	// JSOPTION_JIT: "I think it's possible we'll remove even this little bit of API, and just have the JIT always-on. -j"
+	#endif // JSOPTION_JIT
+
 	JS_SetOptions(cx, JSOPTION_VAROBJFIX | JSOPTION_XML | JSOPTION_COMPILE_N_GO | JSOPTION_RELIMIT | JSOPTION_NATIVE_BRANCH_CALLBACK);
   // JSOPTION_COMPILE_N_GO:
 	//  caller of JS_Compile*Script promises to execute compiled script once only; enables compile-time scope chain resolution of consts.

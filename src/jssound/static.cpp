@@ -100,7 +100,7 @@ DEFINE_FUNCTION_FAST( DecodeOggVorbis ) {
 
 	int bitStream;
 	void *stack;
-	StackInit(&stack);
+	jl::StackInit(&stack);
 
 	int bufferSize = 4096 - 16; // try to alloc less than one page
 
@@ -111,7 +111,7 @@ DEFINE_FUNCTION_FAST( DecodeOggVorbis ) {
 		char *buffer = (char*)malloc(bufferSize);
 		J_S_ASSERT_ALLOC(buffer);
 
-		StackPush(&stack, buffer);
+		jl::StackPush(&stack, buffer);
 
 		bytes = ov_read(&descriptor, buffer+sizeof(int), bufferSize-sizeof(int), 0, bits / 8, 1, &bitStream);
 
@@ -154,9 +154,9 @@ DEFINE_FUNCTION_FAST( DecodeOggVorbis ) {
 
 	// because the stack is LIFO, we have to start from the end.
 	buf += totalSize;
-	while( !StackIsEnd(&stack) ) {
+	while( !jl::StackIsEnd(&stack) ) {
 
-		char *buffer = (char *)StackPop(&stack);
+		char *buffer = (char *)jl::StackPop(&stack);
 		int size = *(int*)buffer;
 		buf = buf - size;
 		memcpy( buf, buffer+sizeof(int), size );
@@ -301,7 +301,7 @@ DEFINE_FUNCTION_FAST( DecodeSound ) {
 	sf_command(descriptor, SFC_SET_SCALE_FLOAT_INT_READ, NULL, SF_TRUE); // Doc. Set/clear the scale factor when integer (short/int) data is read from a file containing floating point data.
 
 	void *stack;
-	StackInit(&stack);
+	jl::StackInit(&stack);
 
 	int bufferSize = 16384 - 16; // try to alloc less than one page
 
@@ -311,7 +311,7 @@ DEFINE_FUNCTION_FAST( DecodeSound ) {
 
 		char *buffer = (char*)malloc(bufferSize);
 		J_S_ASSERT_ALLOC(buffer);
-		StackPush(&stack, buffer);
+		jl::StackPush(&stack, buffer);
 
 		char *data = buffer+sizeof(int);
 		int *len = (int*)buffer;
@@ -357,9 +357,9 @@ DEFINE_FUNCTION_FAST( DecodeSound ) {
 
 	// because the stack is LIFO, we have to start from the end.
 	buf += totalSize;
-	while( !StackIsEnd(&stack) ) {
+	while( !jl::StackIsEnd(&stack) ) {
 
-		char *buffer = (char *)StackPop(&stack);
+		char *buffer = (char *)jl::StackPop(&stack);
 		int size = *(int*)buffer;
 		buf = buf - size;
 		memcpy( buf, buffer+sizeof(int), size );

@@ -44,7 +44,7 @@ DEFINE_FUNCTION( Stringify ) {
 			
 			size_t total = 0;
 			void *stack;
-			StackInit(&stack);
+			jl::StackInit(&stack);
 			
 			size_t defaultChunkSize = 64; // 4096 - sizeof(size_t); // try to reach a multiple of the system page size
 //			size_t waste = 0;
@@ -58,7 +58,7 @@ DEFINE_FUNCTION( Stringify ) {
 
 				void *chunk = malloc(length + sizeof(size_t));
 				J_S_ASSERT_ALLOC( chunk );
-				StackPush(&stack, chunk);
+				jl::StackPush(&stack, chunk);
 
 				size_t *chunkDataLength = (size_t*)chunk;
 				char *chunkData = (char*)chunk + sizeof(size_t);
@@ -85,9 +85,9 @@ DEFINE_FUNCTION( Stringify ) {
 
 			newBuffer += total;
 
-			while ( !StackIsEnd(&stack) ) {
+			while ( !jl::StackIsEnd(&stack) ) {
 				
-				void *chunk = StackPop(&stack);
+				void *chunk = jl::StackPop(&stack);
 				size_t *chunkDataLength = (size_t*)chunk;
 				char *chunkData = (char*)chunk + sizeof(size_t);
 				newBuffer -= *chunkDataLength;

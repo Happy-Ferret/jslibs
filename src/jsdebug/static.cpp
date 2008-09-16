@@ -187,7 +187,7 @@ DumpScope(JSContext *cx, JSObject *obj, FILE *fp)
         DUMP_ATTR(ENUMERATE);
         DUMP_ATTR(READONLY);
         DUMP_ATTR(PERMANENT);
-        DUMP_ATTR(EXPORTED);
+//        DUMP_ATTR(EXPORTED);
         DUMP_ATTR(GETTER);
         DUMP_ATTR(SETTER);
 #undef  DUMP_ATTR

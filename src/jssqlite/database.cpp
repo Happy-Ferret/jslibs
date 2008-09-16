@@ -40,7 +40,7 @@ inline DbContext* AddDbContext(sqlite3 *db) {
 
 inline DbContext* GetDbContext(sqlite3 *db) {
 
-	for ( QueueCell *it = QueueBegin(dbContextList); it; it = QueueNext(it) )
+	for ( jl::QueueCell *it = jl::QueueBegin(dbContextList); it; it = jl::QueueNext(it) )
 		if ( ((DbContext*)QueueGetData(it))->db == db )
 			return (DbContext*)QueueGetData(it);
 	return NULL;
@@ -48,7 +48,7 @@ inline DbContext* GetDbContext(sqlite3 *db) {
 
 inline void RemoveDbContext(sqlite3 *db) {
 
-	for ( QueueCell *it = QueueBegin(dbContextList); it; it = QueueNext(it) )
+	for ( jl::QueueCell *it = jl::QueueBegin(dbContextList); it; it = jl::QueueNext(it) )
 		if ( ((DbContext*)QueueGetData(it))->db == db ) {
 
 			free(QueueGetData(it));
@@ -138,8 +138,8 @@ DEFINE_FINALIZE() {
 		//
 		//JS_GetReservedSlot(cx, obj, SLOT_SQLITE_DATABASE_STATEMENT_STACK, &v);
 		//stack = JSVAL_TO_PRIVATE(v);
-		//while ( !StackIsEnd(&stack) ) {
-		//	sqlite3_stmt *pStmt = (sqlite3_stmt*)StackPop(&stack);
+		//while ( !jl::StackIsEnd(&stack) ) {
+		//	sqlite3_stmt *pStmt = (sqlite3_stmt*)jl::StackPop(&stack);
 		//	status = sqlite3_clear_bindings( pStmt );
 		// (TBD) usefull ?
 		//	status = sqlite3_finalize( pStmt );
@@ -149,9 +149,9 @@ DEFINE_FINALIZE() {
 		// finalize open database statements
 		JS_GetReservedSlot(cx, obj, SLOT_SQLITE_DATABASE_STATEMENT_STACK, &v);
 		stack = JSVAL_TO_PRIVATE(v);
-		while ( !StackIsEnd(&stack) ) {
+		while ( !jl::StackIsEnd(&stack) ) {
 
-			sqlite3_stmt *pStmt = (sqlite3_stmt*)StackPop(&stack);
+			sqlite3_stmt *pStmt = (sqlite3_stmt*)jl::StackPop(&stack);
 			if ( pStmt == NULL ) // already finalized ( see Result:Close and Result:Finalize )
 				continue;
 			status = sqlite3_finalize( pStmt );
@@ -193,9 +193,9 @@ DEFINE_FUNCTION( Close ) {
 	jsval v;
 	J_CHK( JS_GetReservedSlot(cx, obj, SLOT_SQLITE_DATABASE_STATEMENT_STACK, &v) );
 	void *stack = JSVAL_TO_PRIVATE(v);
-	while ( !StackIsEnd(&stack) ) {
+	while ( !jl::StackIsEnd(&stack) ) {
 
-		sqlite3_stmt *pStmt = (sqlite3_stmt*)StackPop(&stack);
+		sqlite3_stmt *pStmt = (sqlite3_stmt*)jl::StackPop(&stack);
 		if ( pStmt == NULL ) // already finalized ( see Result:Close )
 			continue;
 		status = sqlite3_finalize( pStmt );
@@ -278,7 +278,7 @@ DEFINE_FUNCTION( Query ) {
 	jsval v;
 	JS_GetReservedSlot(cx, obj, SLOT_SQLITE_DATABASE_STATEMENT_STACK, &v);
 	void *stack = JSVAL_TO_PRIVATE(v);
-	StackPush( &stack, pStmt );
+	jl::StackPush( &stack, pStmt );
 	JS_SetReservedSlot(cx, obj, SLOT_SQLITE_DATABASE_STATEMENT_STACK, PRIVATE_TO_JSVAL(stack));
 
 	// create the Result (statement) object

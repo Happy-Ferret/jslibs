@@ -23,7 +23,7 @@
 
 struct Private {
 	ALuint sid;
-	Queue *queue;
+	jl::Queue *queue;
 	ALuint effectSlot;
 	float totalTime;
 };
@@ -50,7 +50,7 @@ inline float BufferSecTime( ALint bid ) {
 	return JS_TRUE;
 }
 
-inline JSBool UnshiftJsval( JSContext *cx, Queue *queue, jsval value ) {
+inline JSBool UnshiftJsval( JSContext *cx, jl::Queue *queue, jsval value ) {
 
 	jsval *pItem = (jsval*)malloc(sizeof(jsval));
 	J_S_ASSERT_ALLOC( pItem );
@@ -61,7 +61,7 @@ inline JSBool UnshiftJsval( JSContext *cx, Queue *queue, jsval value ) {
 */
 
 
-JSBool QueueBuffersJsval( JSContext *cx, Queue *queue, jsval value ) {
+JSBool QueueBuffersJsval( JSContext *cx, jl::Queue *queue, jsval value ) {
 
 	jsval *pItem = (jsval*)JS_malloc(cx, sizeof(jsval));
 	J_S_ASSERT_ALLOC( pItem );
@@ -71,9 +71,9 @@ JSBool QueueBuffersJsval( JSContext *cx, Queue *queue, jsval value ) {
 }
 
 /*
-JSBool UnqueueBuffersJsval( JSContext *cx, Queue *queue, jsval value ) {
+JSBool UnqueueBuffersJsval( JSContext *cx, jl::Queue *queue, jsval value ) {
 
-	for ( QueueCell *it = QueueBegin(queue); it; it = QueueNext(it) ) {
+	for ( jl::QueueCell *it = jl::QueueBegin(queue); it; it = jl::QueueNext(it) ) {
 
 		if ( *(jsval*)QueueGetData(it) == value ) {
 
@@ -86,7 +86,7 @@ JSBool UnqueueBuffersJsval( JSContext *cx, Queue *queue, jsval value ) {
 }
 */
 
-jsval UnqueueBuffersJsval( JSContext *cx, Queue *queue, jsval *rval ) {
+jsval UnqueueBuffersJsval( JSContext *cx, jl::Queue *queue, jsval *rval ) {
 
 	jsval *pval = (jsval*)QueueShift(queue);
 	*rval = *pval;
@@ -101,7 +101,7 @@ DEFINE_TRACER() {
 
 	Private *pv = (Private*)JS_GetPrivate(trc->context, obj);
 	if ( pv )
-		for ( QueueCell *it = QueueBegin(pv->queue); it; it = QueueNext(it) ) {
+		for ( jl::QueueCell *it = jl::QueueBegin(pv->queue); it; it = jl::QueueNext(it) ) {
 			
 			jsval *val = (jsval*)QueueGetData(it);
 			if ( !JSVAL_IS_PRIMITIVE(*val) )
@@ -135,7 +135,7 @@ DEFINE_FINALIZE() {
 DEFINE_CONSTRUCTOR() {
 
 	Private *pv = (Private*)JS_malloc(cx, sizeof(Private));
-	pv->queue = QueueConstruct();
+	pv->queue = jl::QueueConstruct();
 
 	alGenSources(1, &pv->sid);
 	J_CHK( CheckThrowCurrentOalError(cx) );
@@ -427,7 +427,7 @@ DEFINE_PROPERTY_GETTER( buffer ) {
 	}
 
 	// find the buffer object in the list of jsval
-	for ( QueueCell *it = QueueBegin(pv->queue); it; it = QueueNext(it) ) {
+	for ( jl::QueueCell *it = jl::QueueBegin(pv->queue); it; it = jl::QueueNext(it) ) {
 		
 		jsval *val = (jsval*)QueueGetData(it);
 		ALint tmp;

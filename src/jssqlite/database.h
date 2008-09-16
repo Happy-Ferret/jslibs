@@ -19,7 +19,7 @@ DECLARE_CLASS( Database )
 #define SLOT_SQLITE_DATABASE_STATEMENT_STACK 0
 
 
-extern Queue *dbContextList;
+extern jl::Queue *dbContextList;
 
 struct DbContext {
 	sqlite3 *db;

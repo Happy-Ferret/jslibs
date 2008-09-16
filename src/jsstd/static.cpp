@@ -89,7 +89,7 @@ DEFINE_FUNCTION( Expand ) {
 	} Chunk;
 
 	void *stack;
-	StackInit( &stack );
+	jl::StackInit( &stack );
 	Chunk *chunk;
 	const char *tok;
 	jsval val;
@@ -104,7 +104,7 @@ DEFINE_FUNCTION( Expand ) {
 			chunk->data = srcBegin;
 			chunk->length = srcEnd - srcBegin;
 			totalLength += chunk->length;
-			StackPush( &stack, chunk );
+			jl::StackPush( &stack, chunk );
 			break;
 		}
 
@@ -112,7 +112,7 @@ DEFINE_FUNCTION( Expand ) {
 		chunk->data = srcBegin;
 		chunk->length = tok - srcBegin;
 		totalLength += chunk->length;
-		StackPush( &stack, chunk );
+		jl::StackPush( &stack, chunk );
 
 		srcBegin = tok + 2; // length of "$("
 		tok = strchr(srcBegin, ')'); // tok = strstr(srcBegin, ")"); // slower for only one char
@@ -130,7 +130,7 @@ DEFINE_FUNCTION( Expand ) {
 			chunk = (Chunk*)malloc(sizeof(Chunk));
 			J_CHK( JsvalToStringAndLength(cx, &val, &chunk->data, &chunk->length) ); // warning: GC on the returned buffer !
 			totalLength += chunk->length;
-			StackPush( &stack, chunk );
+			jl::StackPush( &stack, chunk );
 		}
 
 		srcBegin = tok + 1; // length of ")"
@@ -141,9 +141,9 @@ DEFINE_FUNCTION( Expand ) {
 	expandedString[totalLength] = '\0';
 
 	expandedString += totalLength;
-	while ( !StackIsEnd(&stack) ) {
+	while ( !jl::StackIsEnd(&stack) ) {
 
-		Chunk *chunk = (Chunk*)StackPop(&stack);
+		Chunk *chunk = (Chunk*)jl::StackPop(&stack);
 		expandedString -= chunk->length;
 		memcpy(expandedString, chunk->data, chunk->length);
 		free(chunk);

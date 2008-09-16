@@ -23,7 +23,7 @@
 static bool _defaultUnsafeMode = false;
 extern bool *_pUnsafeMode = &_defaultUnsafeMode;
 
-extern Queue *dbContextList = NULL;
+extern jl::Queue *dbContextList = NULL;
 
 
 /**doc t:header
@@ -47,7 +47,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	}
 
 	
-	dbContextList = QueueConstruct();
+	dbContextList = jl::QueueConstruct();
 
 	J_CHK( INIT_CLASS( SqliteError ) );
 	J_CHK( INIT_CLASS( Result ) );

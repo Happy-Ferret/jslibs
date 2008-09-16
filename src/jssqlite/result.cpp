@@ -209,7 +209,7 @@ DEFINE_FUNCTION( Close ) {
 	J_CHK( JS_GetReservedSlot(cx, obj, SLOT_RESULT_DATABASE, &v) );
 	J_CHK( JS_GetReservedSlot(cx, JSVAL_TO_OBJECT(v), SLOT_SQLITE_DATABASE_STATEMENT_STACK, &v) );
 	void *stack = JSVAL_TO_PRIVATE(v);
-	StackReplaceData( &stack, pStmt, NULL );
+	jl::StackReplaceData( &stack, pStmt, NULL );
 
 	int status = sqlite3_finalize( pStmt );
 	if ( status != SQLITE_OK )

@@ -17,6 +17,8 @@
 
 #include <stdlib.h>
 
+namespace jl {
+
 typedef struct QueueCell {
 	struct QueueCell *prev, *next;
 	void *data;
@@ -197,5 +199,7 @@ inline QueueCell *SearchFirstData( Queue *queue, void *data ) {
 	return NULL;
 }
 */
+
+}
 
 #endif // _QUEUE_H_

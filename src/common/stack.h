@@ -45,6 +45,7 @@
 	p = StackFind( &stack, (void*)4 );
 */
 
+namespace jl {
 
 inline void StackInit( void **stack ) {
 
@@ -176,6 +177,8 @@ inline void StackFree( void **stack ) {
 
 	while ( *stack )
       StackPop( stack );
+}
+
 }
 
 #endif // _STACK_H_
