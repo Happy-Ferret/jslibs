@@ -162,6 +162,8 @@ LoadModule('jssqlite');
 		db.jseval = function(s){ return eval(s) };
 		
 		var blob = new Blob('qqwe\00\00fv1234');
+		
+		//var res = db.Exec('SELECT testFun(123), length(:toto), jseval("null") is null', {toto:blob, aaa:null});
 		var res = db.Exec('SELECT testFun(123), length(:toto), jseval("null") is null', {toto:blob, aaa:null});
 
 		QA.ASSERT( res, 1230, 'row result' );

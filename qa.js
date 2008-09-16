@@ -79,6 +79,11 @@ function CreateQaItemList(startDir, filter) {
 			
 			Print( ex + ' at ' + item.file + ':' + (item.line + ex.lineNumber - item.relativeLineNumber) + ' ('+item.name+')', '\n' );
 		}
+		
+//		if ( !item.func )
+//			Print( 'Unable to create the function', '\n' );
+
+		
 	}
 
 	itemList = [ item for each ( item in itemList ) if ( !filter || item.init || ( (filter(item.file) || filter(item.name)) && !item.flags.d ) ) ];

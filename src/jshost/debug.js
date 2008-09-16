@@ -1,7 +1,12 @@
 LoadModule('jsstd');
 LoadModule('jsio');
 
+var s = ('hello');
 
+Print( s.substr(Infinity, ' ') );
+
+
+Print('Done');
 
 
 Halt();

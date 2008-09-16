@@ -260,21 +260,16 @@ LoadModule('jsstd');
 		 }
 	}
 
-
-	function Test(fct, val1, val2, args) {
-
-		 return val1[fct].apply(val1, args) === val2[fct].apply(val2, args);
-	}
-
 	var s = "abcdefgh";
 	var b = Blob(s);
 	
-	var argGen = argGenerator(2, [undefined, NaN, - Infinity, -1000, -100, -10, -3, -2.5, -2, -1, -0.6, -0.5, -0.4, 0, 0, 0.4, 0.5, 0.6, 1, 2, 2.5, 3, 10, 100, 1000, + Infinity, "", " "]);
+	var argGen = argGenerator(2, [undefined, NaN, - Infinity, -1000, -100, -10, -3, -2.5, -2, -1, -0.6, -0.5, -0.4, 0, 0.4, 0.5, 0.6, 1, 2, 2.5, 3, 10, 100, 1000, + Infinity, "", " "]);
 	try {
 		 for (;;) {
 		 
 				var args = argGen.next();
-				QA.ASSERT( s.substr.apply(this, args), b.substr.apply(this, args), "autogen test" );
+				Print( 'substr('+args+')\n' );
+				QA.ASSERT( s.substr.apply(s, args), b.substr.apply(b, args), 'substr('+args+')' );
 		 }
 	} catch (ex if ex instanceof StopIteration) {}
 

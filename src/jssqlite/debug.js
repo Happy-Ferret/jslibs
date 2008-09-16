@@ -1,6 +1,24 @@
 LoadModule('jsstd');
 LoadModule('jssqlite');
 
+/*
+try {
+
+var db = new Database('');
+db.testFun = function() { return 123 };
+var res = db.Exec('SELECT testFun()');
+Print(res);
+
+
+} catch ( ex if ex instanceof SqliteError ) { // if ex instanceof SqliteError 
+	
+	Print( 'error ',ex.text,' ',ex.code,'\n' )
+}
+
+
+Halt();
+*/
+
 try {
 
 	var code = "var db = new Database('');	db.testFun = function() { return 123 };	var res = db.Exec('SELECT testFun()'); Print(res)"

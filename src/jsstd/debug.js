@@ -1,16 +1,11 @@
 LoadModule('jsstd');
 
-var res = Sandbox.Eval();
 
-Print( res.eval, '\n' )
+
 
 Halt();
 
-
 var obj1 = { name:"Object 1", a:1,  b:2, c:3, d:4, e:5, f:6, g:7 };
-
-
-
 
 function test() {
 
