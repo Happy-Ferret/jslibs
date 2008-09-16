@@ -60,7 +60,7 @@ BEGIN_CLASS( Blob )
 JSBool NativeInterfaceBufferGet( JSContext *cx, JSObject *obj, const char **buf, size_t *size ) {
 
 	if ( JS_GET_CLASS(cx, obj) == classBlob ) {
-
+		
 		if ( !IsBlobValid(cx, obj) ) {
 
 			J_REPORT_ERROR("Invalid Blob object.");
@@ -221,13 +221,13 @@ DEFINE_FUNCTION_FAST( concat ) {
 
 	unsigned int arg;
 	for ( arg = 1; arg <= J_ARGC; arg++ ) {
-
+	
 		if ( JsvalIsBlob(cx, J_FARG(arg)) ) {
 
 			size_t tmp;
 			J_CHK( BlobLength(cx, JSVAL_TO_OBJECT( J_FARG(arg) ), &tmp) );
 			dstLen += tmp;
-
+		
 		} else {
 
 			JSString *jsstr = JS_ValueToString(cx, J_FARG(arg));
@@ -249,7 +249,7 @@ DEFINE_FUNCTION_FAST( concat ) {
 	}
 
 	for ( arg = 1; arg <= J_ARGC; arg++ ) {
-
+		
 		const char *buffer;
 		size_t length;
 		J_CHK( JsvalToStringAndLength(cx, &J_FARG(arg), &buffer, &length) );
@@ -331,12 +331,12 @@ DEFINE_FUNCTION_FAST( substr ) {
 
 /**doc
  * $TYPE Blob $INAME( indexA, [ indexB ] )
-  Extracts characters from indexA up to but not including indexB. In particular:
+  Extracts characters from indexA up to but not including indexB. In particular: 
    * If indexA equals indexB, substring returns an empty string.
    * If indexB is omitted, substring extracts characters to the end of the blob.
    * If either argument is less than 0 or is NaN, it is treated as if it were 0.
-   * If either argument is greater than stringName.length, it is treated as if it were stringName.length.
-   If indexA is larger than indexB, then the effect of substring is as if the two arguments were swapped; for example, str.substring(1, 0) == str.substring(0, 1).
+   * If either argument is greater than stringName.length, it is treated as if it were stringName.length. 
+   If indexA is larger than indexB, then the effect of substring is as if the two arguments were swapped; for example, str.substring(1, 0) == str.substring(0, 1). 
   $H arguments
    $ARG integer indexA: An integer between 0 and one less than the length of the blob.
    $ARG integer indexB: (optional) An integer between 0 and the length of the blob.
@@ -346,7 +346,7 @@ DEFINE_FUNCTION_FAST( substr ) {
 DEFINE_FUNCTION_FAST( substring ) {
 
 	if ( J_ARGC == 0 ) {
-
+		
 		*J_FRVAL = J_FARG(1);
 		return JS_TRUE;
 	}
@@ -364,28 +364,30 @@ DEFINE_FUNCTION_FAST( substring ) {
 	if ( JSVAL_IS_INT(arg1) )
 		indexA = JSVAL_TO_INT(arg1)
 	else {
-
+		
 		if ( arg1 == JS_GetPositiveInfinityValue(cx) )
 	}
 */
 
-	if ( J_FARG(1) == JS_GetNaNValue(cx) || JSVAL_IS_INT(J_FARG(1)) && JSVAL_TO_INT(J_FARG(1)) < 0 || J_FARG(1) == JS_GetNegativeInfinityValue(cx) )
+	jsval arg1 = J_FARG(1);
+	if ( !J_FARG_ISDEF(1) || JSVAL_IS_INT(arg1) && JSVAL_TO_INT(arg1) < 0 || IsNInfinity(cx, arg1) || IsNaN(cx, arg1) )
 		indexA = 0;
 	else
-		J_JSVAL_TO_INT32( J_FARG(1), indexA );
+		if ( IsPInfinity(cx, arg1) )
+			indexA = dataLength;
+		else
+			J_JSVAL_TO_INT32( arg1, indexA );
 
 
-	if ( J_FARG_ISDEF(2) ) {
-
-		if ( J_FARG(2) == JS_GetNaNValue(cx) || JSVAL_IS_INT(J_FARG(2)) && JSVAL_TO_INT(J_FARG(2)) < 0 || J_FARG(2) == JS_GetNegativeInfinityValue(cx) )
+	jsval arg2 = J_FARG(2);
+	if ( argc < 2 || IsPInfinity(cx, arg2) )
+		indexB = dataLength;
+	else
+		if ( JSVAL_IS_VOID(arg2) || JSVAL_IS_INT(arg2) && JSVAL_TO_INT(arg2) < 0 || IsNInfinity(cx, arg2) || IsNaN(cx, arg2) )
 			indexB = 0;
 		else
-			J_JSVAL_TO_INT32( J_FARG(2), indexB );
+			J_JSVAL_TO_INT32( arg2, indexB );
 
-	} else {
-
-		indexB = dataLength;
-	}
 
 	if ( indexA > indexB ) {
 
@@ -495,33 +497,39 @@ DEFINE_FUNCTION_FAST( lastIndexOf ) {
 	size_t sLength;
 	J_CHK( JsvalToStringAndLength(cx, &J_FARG(1), &sBuffer, &sLength) ); // warning: GC on the returned buffer !
 
-	if ( sLength == 0 ) {
-
-		*J_FRVAL = INT_TO_JSVAL(0);
-		return JS_TRUE;
-	}
 
 	const char *buffer;
 	size_t length;
 	J_CHK( BlobBuffer(cx, J_FOBJ, &buffer) );
 	J_CHK( BlobLength(cx, J_FOBJ, &length) );
 
-	long start;
+	if ( sLength == 0 && argc < 2 ) {
+
+		*J_FRVAL = INT_TO_JSVAL(length);
+		return JS_TRUE;
+	}
+
+	int start;
 	if ( J_FARG_ISDEF(2) ) {
+		
+		jsval arg2 = J_FARG(2);
 
-		J_S_ASSERT_INT( J_FARG(2) );
-		start = JSVAL_TO_INT( J_FARG(2) );
-
-		if ( start < 0 ) {
-
-//			*J_FRVAL = INT_TO_JSVAL(-1);
-//			return JS_TRUE;
+		if ( JSVAL_IS_INT(arg2) && JSVAL_TO_INT(arg2) < 0 || IsNInfinity(cx, arg2) ) {
+			
 			start = 0;
-		}
+		} else {
 
-		if ( start + sLength > length ) {
+			if ( IsPInfinity(cx, arg2) || IsNaN(cx, arg2) ) {
+				
+				start = length - sLength;
+			} else {
+				
+				J_CHK( JsvalToInt(cx, J_FARG(2), &start) );
+				if ( start + sLength > length ) {
 
-			start = length - sLength;
+					start = length - sLength;
+				}
+			}
 		}
 
 	} else {
@@ -553,15 +561,28 @@ DEFINE_FUNCTION_FAST( lastIndexOf ) {
 **/
 DEFINE_FUNCTION_FAST( charAt ) {
 
-	long index;
+	int index;
 	if ( J_FARG_ISDEF(1) ) {
 
-		J_S_ASSERT_INT( J_FARG(1) );
-		index = JSVAL_TO_INT( J_FARG(1) );
+		jsval arg1 = J_FARG(1);
+		if ( !JSVAL_IS_INT(arg1) ) {
+
+			if ( IsPInfinity(cx, arg1) || IsNInfinity(cx, arg1) || IsNaN(cx, arg1) ) {
+				
+				*J_FRVAL = JS_GetEmptyStringValue(cx);
+				return JS_TRUE;
+			}
+
+			J_CHK( JsvalToInt(cx, arg1, &index) );
+		} else {
+
+			index = JSVAL_TO_INT(arg1);
+		}
 	} else {
 
 		index = 0;
 	}
+
 
 	size_t length;
 	J_CHK( BlobLength(cx, J_FOBJ, &length) );
@@ -592,18 +613,21 @@ DEFINE_FUNCTION_FAST( charAt ) {
 **/
 DEFINE_FUNCTION_FAST( charCodeAt ) {
 
-	long index;
+	int index;
 	if ( J_FARG_ISDEF(1) ) {
 
 		jsval arg1 = J_FARG(1);
 		if ( !JSVAL_IS_INT(arg1) ) {
 
-			if ( arg1 == JS_GetNegativeInfinityValue(cx) || arg1 == JS_GetPositiveInfinityValue(cx) ) {
-
+			if ( IsPInfinity(cx, arg1) || IsNInfinity(cx, arg1) ) {
+				
 				*J_FRVAL = JS_GetNaNValue(cx);
 				return JS_TRUE;
 			}
-			J_REPORT_ERROR( J__ERRMSG_UNEXPECTED_TYPE " Integer expected." );
+
+			J_CHK( JsvalToInt(cx, arg1, &index) );
+
+//			J_REPORT_ERROR( J__ERRMSG_UNEXPECTED_TYPE " Integer expected." );
 			return JS_FALSE;
 		}
 		index = JSVAL_TO_INT(arg1);
@@ -718,17 +742,17 @@ DEFINE_EQUALITY() {
 	if ( J_JSVAL_IS_CLASS(v, _class) ) {
 
 		if ( !IsBlobValid(cx,obj) || !IsBlobValid(cx,JSVAL_TO_OBJECT(v)) ) {
-
+			
 			J_REPORT_ERROR("Invalid Blob object.");
 		}
-
+		
 		const char *buf1, *buf2;
 		size_t len1, len2;
 		J_CHK( BlobBuffer(cx, obj, &buf1) );
 		J_CHK( BlobLength(cx, obj, &len1) );
 		J_CHK( BlobBuffer(cx, JSVAL_TO_OBJECT(v), &buf2) );
 		J_CHK( BlobLength(cx, JSVAL_TO_OBJECT(v), &len2) );
-
+		
 		if ( len1 == len2 && memcmp(buf1, buf2, len1) == 0 ) {
 
 			*bp = JS_TRUE;

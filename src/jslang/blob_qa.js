@@ -95,15 +95,19 @@ QA.ASSERT( (noo instanceof Blob) && !(noo instanceof String), true, 'no mutation
 
 /// Blob::lastIndexOf tests using Mozilla String tests
 
+var TEST_STRING = new String( " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~" );
+
 function TestCase( section, name, expected, result ) QA.ASSERT( result, expected, name );
 var SECTION = '';
 
 function LastIndexOf( string, search, position ) arguments.length == 3 ? string.lastIndexOf(search, position) : string.lastIndexOf(search);
 
 
-TestCase( SECTION, "Blob.prototype.lastIndexOf.length",           1,          Blob.prototype.lastIndexOf.length );
-TestCase( SECTION, "delete Blob.prototype.lastIndexOf.length",    false,      delete Blob.prototype.lastIndexOf.length );
-TestCase( SECTION, "delete Blob.prototype.lastIndexOf.length; Blob.prototype.lastIndexOf.length",   1,  eval("delete Blob.prototype.lastIndexOf.length; Blob.prototype.lastIndexOf.length" ) );
+
+//QA.ASSERT( Blob.prototype.lastIndexOf.length, 1, "Blob.prototype.lastIndexOf.length (argc)" );
+QA.ASSERT( delete Blob.prototype.lastIndexOf.length, false, "delete Blob.prototype.lastIndexOf.length" );
+//QA.ASSERT( eval("delete Blob.prototype.lastIndexOf.length; Blob.prototype.lastIndexOf.length" ), 1, 'eval("delete Blob.prototype.lastIndexOf.length; Blob.prototype.lastIndexOf.length" )' );
+
 
 TestCase( SECTION, "var s = new Blob(''); s.lastIndexOf('', 0)",          LastIndexOf("","",0),  eval("var s = new Blob(''); s.lastIndexOf('', 0)") );
 TestCase( SECTION, "var s = new Blob(''); s.lastIndexOf('')",             LastIndexOf("",""),  eval("var s = new Blob(''); s.lastIndexOf('')") );
@@ -129,7 +133,6 @@ TestCase( SECTION, "var s = new Blob('hello'); s.lastIndexOf('ll', Infinity)",  
 TestCase( SECTION, "var s = new Blob('hello'); s.lastIndexOf('ll', NaN)",    LastIndexOf("hello","ll",NaN), eval("var s = new Blob('hello'); s.lastIndexOf('ll', NaN)") );
 TestCase( SECTION, "var s = new Blob('hello'); s.lastIndexOf('ll', -0)",    LastIndexOf("hello","ll",-0), eval("var s = new Blob('hello'); s.lastIndexOf('ll', -0)") );
 
-var TEST_STRING = new String( " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~" );
 
 var j = 0;
 
@@ -179,6 +182,7 @@ for ( k = 0, i = 0x0020; i < 0x007d; i++, j++, k++ ) {
 					  String.fromCharCode(i+2)),
 					 k ) );
 }
+
 for ( k = 0, i = 0x0020; i < 0x007d; i++, j++, k++ ) {
   new TestCase( SECTION,
 		"String.lastIndexOf("+(String.fromCharCode(i) +
@@ -190,6 +194,7 @@ for ( k = 0, i = 0x0020; i < 0x007d; i++, j++, k++ ) {
 					  String.fromCharCode(i+2)),
 					 k+1 ) );
 }
+
 for ( k = 0, i = 0x0020; i < 0x007d; i++, j++, k++ ) {
   new TestCase( SECTION,
 		"String.lastIndexOf("+
@@ -204,14 +209,14 @@ for ( k = 0, i = 0x0020; i < 0x007d; i++, j++, k++ ) {
 					 k-1 ) );
 }
 
-new TestCase( SECTION,  "String.lastIndexOf(" +TEST_STRING + ", 0 )", 0, TEST_STRING.lastIndexOf( TEST_STRING, 0 ) );
 
-// new TestCase( SECTION,  "String.lastIndexOf(" +TEST_STRING + ", 1 )", 0, TEST_STRING.lastIndexOf( TEST_STRING, 1 ));
- 
+new TestCase( SECTION,  "String.lastIndexOf(" +TEST_STRING + ", 0 )", 0, TEST_STRING.lastIndexOf( TEST_STRING, 0 ) );
+new TestCase( SECTION,  "String.lastIndexOf(" +TEST_STRING + ", 1 )", 0, TEST_STRING.lastIndexOf( TEST_STRING, 1 ));
 new TestCase( SECTION,  "String.lastIndexOf(" +TEST_STRING + ")", 0, TEST_STRING.lastIndexOf( TEST_STRING ));
 
-print( "TEST_STRING = new String(\" !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~\")" );
 
+
+// print( "TEST_STRING = new String(\" !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~\")" );
 
 
 

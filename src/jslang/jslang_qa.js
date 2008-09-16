@@ -202,7 +202,7 @@ LoadModule('jsstd');
 		QA.ASSERT( Blob('12341234').lastIndexOf('1234'), 4, 'Blob lastIndexOf' )
 		QA.ASSERT( Blob('12341234').lastIndexOf('1234', 4), 4, 'Blob lastIndexOf' )
 		QA.ASSERT( Blob('12341234').lastIndexOf('1234', 3), 0, 'Blob lastIndexOf' )
-		QA.ASSERT( Blob('12341234').lastIndexOf(''), 0, 'Blob lastIndexOf' )
+		QA.ASSERT( Blob('12341234').lastIndexOf(''), 8, 'Blob lastIndexOf' )
 		
 		QA.ASSERT( isNaN( Blob('').charCodeAt(0) ), true, 'Blob charCodeAt' )
 		QA.ASSERT( Blob('1').charCodeAt(0), 49, 'Blob charCodeAt' )
@@ -239,6 +239,44 @@ LoadModule('jsstd');
 
 		for ( var j = -2; j < s.length+2; j++ )
 			QA.ASSERT( b.charCodeAt(j), s.charCodeAt(j), 'Blob/String charCodeAt('+j+')' )
+
+/// Blob and String comparaison [ftr]
+
+	function argGenerator(count, argList) {
+
+		 var len = argList.length;
+		 var pos = Math.pow(len, count);
+		 var arg = new Array(count);
+		 while (pos--) {
+
+			  var tmp = pos;
+			  for (var i = 0; i < count; i++) {
+
+					var r = tmp % len;
+					tmp = (tmp - r) / len;
+					arg[i] = argList[r];
+			  }
+			  yield arg;
+		 }
+	}
+
+
+	function Test(fct, val1, val2, args) {
+
+		 return val1[fct].apply(val1, args) === val2[fct].apply(val2, args);
+	}
+
+	var s = "abcdefgh";
+	var b = Blob(s);
+	
+	var argGen = argGenerator(2, [undefined, NaN, - Infinity, -1000, -100, -10, -3, -2.5, -2, -1, -0.6, -0.5, -0.4, 0, 0, 0.4, 0.5, 0.6, 1, 2, 2.5, 3, 10, 100, 1000, + Infinity, "", " "]);
+	try {
+		 for (;;) {
+		 
+				var args = argGen.next();
+				QA.ASSERT( s.substr.apply(this, args), b.substr.apply(this, args), "autogen test" );
+		 }
+	} catch (ex if ex instanceof StopIteration) {}
 
 
 
