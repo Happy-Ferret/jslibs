@@ -19,6 +19,7 @@
 #include "../common/jsClass.h"
 #include "../common/jsConfiguration.h"
 
+// Check if NSPR is build in release/debug 
 #include <nspr.h>
 
 #include "error.h"
