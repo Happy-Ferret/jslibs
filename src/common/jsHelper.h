@@ -26,6 +26,8 @@ inline NIBufferGet BufferGetInterface( JSContext *cx, JSObject *obj );
 #include "platform.h"
 
 #include <cstring>
+//#include <float.h>
+#include <jsnum.h>
 
 #include <stdarg.h>
 
@@ -321,16 +323,43 @@ inline bool SwapObjects( JSContext *cx, JSObject *obj1, JSObject *obj2 ) {
 }
 */
 
+inline jsdouble IsInfinity( JSContext *cx, jsval val ) {
 
-inline bool IsPInfinity( JSContext *cx, jsval val ) {
-
-	return JS_GetPositiveInfinityValue(cx) == val;
+	return JSVAL_IS_DOUBLE( val ) && JSDOUBLE_IS_INFINITE( *JSVAL_TO_DOUBLE( val ) );
 }
 
 
+inline bool IsNaN( JSContext *cx, jsval val ) {
+	
+	return JSVAL_IS_DOUBLE( val ) && JSDOUBLE_IS_NaN( *JSVAL_TO_DOUBLE( val ) );
+}
+
+inline jsdouble PInfinity( JSContext *cx ) {
+
+	static jsdouble pinf = 0;
+	if ( pinf == 0 )
+		pinf = *JSVAL_TO_DOUBLE(JS_GetPositiveInfinityValue(cx));
+	return pinf;
+}
+
+inline bool IsPInfinity( JSContext *cx, jsval val ) {
+
+	//	return JS_GetPositiveInfinityValue(cx) == val;
+	return JSVAL_IS_DOUBLE(val) && *JSVAL_TO_DOUBLE(val) == PInfinity(cx);
+}
+
+inline jsdouble NInfinity( JSContext *cx ) {
+
+	static jsdouble ninf = 0;
+	if ( ninf == 0 )
+		ninf = *JSVAL_TO_DOUBLE(JS_GetNegativeInfinityValue(cx));
+	return ninf;
+}
+
 inline bool IsNInfinity( JSContext *cx, jsval val ) {
 
-	return JS_GetNegativeInfinityValue(cx) == val;
+//	return JS_GetNegativeInfinityValue(cx) == val;
+	return JSVAL_IS_DOUBLE(val) && *JSVAL_TO_DOUBLE(val) == NInfinity(cx);
 }
 
 
@@ -569,7 +598,6 @@ inline JSBool JsvalToStringAndLength( JSContext *cx, jsval *val, const char** bu
 	return JS_TRUE;
 }
 
-
 inline JSBool JsvalToStringLength( JSContext *cx, jsval val, size_t *length ) {
 
 	if ( JSVAL_IS_STRING(val) ) {
@@ -640,40 +668,63 @@ inline JSBool GetPropertyString( JSContext *cx, JSObject *obj, const char *prope
 }
 
 
-
-
-
-
 inline JSBool JsvalToInt( JSContext *cx, jsval val, int *i ) {
 
 	if ( JSVAL_IS_INT(val) ) {
 
 		*i = JSVAL_TO_INT(val);
 		return JS_TRUE;
-	} else {
-		
-		int32 tmp;
-		J_CHKM( JS_ValueToInt32(cx, val, &tmp), "Unable to convert to an integer." );
-		*i = tmp;
+	}
+
+	if ( JSVAL_IS_NULL(val) ) {
+
+		*i = 0;
 		return JS_TRUE;
 	}
+
+	jsdouble d;
+	J_CHKM( JS_ValueToNumber(cx, val, &d), "Unable to convert to an integer." );
+
+	if ( d > -2147483649.0 && 2147483648.0 > d ) {
+
+		*i = (int)d;
+		return JS_TRUE;
+	}
+
+	J_REPORT_ERROR( "Unable to convert to an integer." );
 }
+
 
 inline JSBool JsvalToUInt( JSContext *cx, jsval val, unsigned int *ui ) {
 
 	if ( JSVAL_IS_INT(val) ) {
+		
+		int i = JSVAL_TO_INT(val);
 
-		if (unlikely( JSVAL_TO_INT(val) < 0 ))
-			J_REPORT_ERROR( "Unable to convert to an unsigned integer." );
-		*ui = JSVAL_TO_INT(val);
+		if ( i >= 0 ) {
+
+			*ui = (unsigned int)i;
+			return JS_TRUE;
+		}
+		J_REPORT_ERROR( "Unable to convert to an unsigned integer." );
+	}
+
+	if ( JSVAL_IS_NULL(val) ) {
+
+		*ui = 0;
 		return JS_TRUE;
-	} else {
+	}
 
-		jsdouble d;
-		J_CHKM( JS_ValueToNumber(cx, val, &d), "Unable to convert to an unsigned integer." );
+	jsdouble d;
+	J_CHKM( JS_ValueToNumber(cx, val, &d), "Unable to convert to an unsigned integer." );
+
+	if ( d >= 0 && 4294967296.0 > d  ) {
+
 		*ui = (unsigned int)d;
 		return JS_TRUE;
 	}
+
+	J_REPORT_ERROR( "Unable to convert to an unsigned integer." );
 }
 
 
