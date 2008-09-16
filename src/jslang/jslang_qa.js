@@ -268,7 +268,7 @@ LoadModule('jsstd');
 		 for (;;) {
 		 
 				var args = argGen.next();
-				Print( 'substr('+args+')\n' );
+//				Print( 'substr('+args+')\n' );
 				QA.ASSERT( s.substr.apply(s, args), b.substr.apply(b, args), 'substr('+args+')' );
 		 }
 	} catch (ex if ex instanceof StopIteration) {}
