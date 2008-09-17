@@ -1,29 +1,36 @@
 IF "%BUILD%"=="" set BUILD=release
-echo building SpiderMonkey "%BUILD%" version ...
-IF NOT "%jslibsEnvSet%"=="true" call ..\..\envbuild.cmd
+IF "%BUILD_METHOD%"=="" set BUILD_METHOD=rebuild
 
-set destinationPath=..\..\%BUILD%\
-set destinationFiles=js32.dll js32.lib
+echo %BUILD_METHOD% SpiderMonkey "%BUILD%" version ...
+call ..\..\envbuild.cmd
 
+set _DESTINATION_DIR=..\..\%BUILD%\
+set _DESTINATION_FILES=js32.dll js32.lib
 
-pushd %destinationPath%
-del %destinationFiles%
+pushd %_DESTINATION_DIR%
+del %_DESTINATION_FILES%
 popd
-md %destinationPath%
-IF "%BUILD%"=="release" (
-	set XCFLAGS=/DWINVER=0x500 /D_WIN32_WINNT=0x500 /O2 /Ox /Oi /Ot /Oy /GL /GS- /arch:SSE /D_CRT_SECURE_NO_DEPRECATE=1 /MD
-	set makeOptions=BUILD_OPT=1
+md %_DESTINATION_DIR%
+
+IF "%BUILD_METHOD%"=="rebuild" (
+	set _MAKE_OPTIONS=clean all
 ) else (
-	set XCFLAGS=/DWINVER=0x500 /D_WIN32_WINNT=0x500 /D_CRT_SECURE_NO_DEPRECATE=1 /MDd   /DJS_HASHMETER /DJS_GC_ZEAL
-	set makeOptions=
+	set _MAKE_OPTIONS=all
 )
+
+IF "%BUILD%"=="release" (
+	set XCFLAGS=/D_CRT_SECURE_NO_DEPRECATE=1 /MD /O2 /Ox /Oi /Ot /Oy /GL /GS- /arch:SSE 
+	set _MAKE_OPTIONS=%_MAKE_OPTIONS% BUILD_OPT=1
+) else (
+	set XCFLAGS=/D_CRT_SECURE_NO_DEPRECATE=1 /MDd   /DJS_HASHMETER /DJS_GC_ZEAL
+)
+
 copy jsconfig.h src
 
-
 pushd .\src
-make -f Makefile.ref clean all %makeOptions%
+make -f Makefile.ref %_MAKE_OPTIONS%
 IF "%BUILD%"=="release" ( cd *OPT.OBJ ) ELSE ( cd *DBG.OBJ )
-cp %destinationFiles% ..\..\%destinationPath%
+cp %_DESTINATION_FILES% ..\..\%_DESTINATION_DIR%
 popd
 
 

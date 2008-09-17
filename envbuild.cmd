@@ -1,3 +1,6 @@
+IF "JSLIBS_BUILD_ENV_IS_SET"=="true" GOTO END
+
+
 REM --- Visual Studio path ---
 REM set VSINSTALLDIR=C:\Program Files\Microsoft Visual Studio 9.0
 set VSINSTALLDIR=C:\Program Files\Microsoft Visual Studio 8
@@ -39,4 +42,6 @@ set PATH=%MSSdk%\Bin;%PATH%
 set INCLUDE=%MSSdk%\Include;%INCLUDE%
 set LIB=%MSSdk%\Lib;%LIB%
 
-set jslibsEnvSet=true
+
+set JSLIBS_BUILD_ENV_IS_SET=true
+:END

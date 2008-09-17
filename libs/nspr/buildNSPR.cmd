@@ -1,17 +1,17 @@
 @echo off
 IF "%BUILD%"=="" set BUILD=release
+IF "%BUILD_METHOD%"=="" set BUILD_METHOD=rebuild
+
 echo building NSPR ...
-IF NOT "%jslibsEnvSet%"=="true" call ..\..\envbuild.cmd
+call ..\..\envbuild.cmd
 
-set destinationPath=..\..\%BUILD%\
-set destinationFiles=nspr4.dll nspr4.lib
+set _DEST_PATH=..\..\%BUILD%\
+set _DEST_FILES=nspr4.dll nspr4.lib
 
+set _BUILD_DIR=win32_%BUILD%
 
-set buildDir=win32_%BUILD%
-
-
-pushd %destinationPath%
-del %destinationFiles%
+pushd %_DEST_PATH%
+del %_DEST_FILES%
 popd
 
 REM the tmpDrive is used to avoid spaces in filenames
@@ -20,17 +20,25 @@ set tmpDrive=x:
 cd /D %tmpDrive% && echo the drive %tmpDrive% must be available to build nspr, else modify build_msdev8.bat && exit
 if NOT EXIST nsinstall.exe echo FATAL ERROR - nsinstall.exe MUST be in this directory (jslibs/nspr) && exit
 
-set prevPath=%PATH%
+set _PREV_PATH=%PATH%
 set PATH=%CD%;%PATH%
 
 subst %tmpDrive% "%CD%"
 pushd %tmpDrive%
 
-del /S /Q .\%buildDir%
-md %buildDir%
+md %_BUILD_DIR%
+pushd %_BUILD_DIR%
 
-pushd %buildDir%
-sh ../src/configure --enable-win32-target=WIN95
+IF "%BUILD_METHOD%"=="rebuild" (
+	rmdir /S /Q .
+	set _MAKE_OPTIONS=clean all
+) else (
+	set _MAKE_OPTIONS=all
+)
+
+IF NOT EXIST Makefile (
+  sh ../src/configure --enable-win32-target=WIN95
+)
 
 IF "%BUILD%"=="release" (
 	set XCFLAGS=/MD
@@ -38,16 +46,16 @@ IF "%BUILD%"=="release" (
 	set XCFLAGS=/MDd
 )
 
-make clean all
+make %_MAKE_OPTIONS%
 popd
 
-set PATH=%prevPath%
+set PATH=%_PREV_PATH%
 
 popd
 subst %tmpDrive% /D
 
-pushd %buildDir%\dist\lib\
-cp %destinationFiles% ..\..\..\%destinationPath%
+pushd %_BUILD_DIR%\dist\lib\
+cp %_DEST_FILES% ..\..\..\%_DEST_PATH%
 popd
 
 
