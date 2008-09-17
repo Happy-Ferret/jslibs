@@ -37,7 +37,10 @@ DEFINE_FINALIZE() {
 	}
 }
 
-
+/**doc
+ * $INAME()
+  Creates a new filter object.
+**/
 DEFINE_CONSTRUCTOR() {
 
 	Private *pv = (Private*)JS_malloc(cx, sizeof(Private));
@@ -50,6 +53,13 @@ DEFINE_CONSTRUCTOR() {
 }
 
 
+/**doc
+=== Methods ===
+**/
+
+/**doc
+ * $INT $INAME()
+**/
 DEFINE_FUNCTION_FAST( valueOf ) {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, J_FOBJ);
@@ -63,6 +73,17 @@ DEFINE_FUNCTION_FAST( valueOf ) {
 === Properties ===
 **/
 
+
+
+/**doc
+ * $INT $INAME
+  set the type of filter represented by the Filter object.
+  * undefined
+  * Oal.FILTER_NULL      
+  * Oal.FILTER_LOWPASS   
+  * Oal.FILTER_HIGHPASS  
+  * Oal.FILTER_BANDPASS  
+**/
 DEFINE_PROPERTY_SETTER( type ) {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
@@ -92,6 +113,7 @@ DEFINE_PROPERTY_GETTER( type ) {
 
 	return JS_TRUE;
 }
+
 
 
 DEFINE_PROPERTY_SETTER( filterFloat ) {
@@ -132,6 +154,18 @@ enum {
 };
 
 
+/**doc
+ * $REAL lowpassGain
+ * $REAL lowpassGainHF
+
+ * $REAL highpassGain
+ * $REAL highpassGainLF
+
+ * $REAL bandpassGain
+ * $REAL bandpassGainLF
+ * $REAL bandpassGainHF
+**/
+
 CONFIGURE_CLASS
 
 	HAS_PRIVATE
@@ -145,15 +179,15 @@ CONFIGURE_CLASS
 	BEGIN_PROPERTY_SPEC
 		PROPERTY( type )
 
-		PROPERTY_SWITCH( lowpassGain			, filterFloat )
-		PROPERTY_SWITCH( lowpassGainHF		, filterFloat )
+		PROPERTY_SWITCH( lowpassGain		, filterFloat )
+		PROPERTY_SWITCH( lowpassGainHF	, filterFloat )
 
-		PROPERTY_SWITCH( highpassGain			, filterFloat )
-		PROPERTY_SWITCH( highpassGainLF		, filterFloat )
+		PROPERTY_SWITCH( highpassGain		, filterFloat )
+		PROPERTY_SWITCH( highpassGainLF	, filterFloat )
 
-		PROPERTY_SWITCH( bandpassGain			, filterFloat )
-		PROPERTY_SWITCH( bandpassGainLF		, filterFloat )
-		PROPERTY_SWITCH( bandpassGainHF		, filterFloat )
+		PROPERTY_SWITCH( bandpassGain		, filterFloat )
+		PROPERTY_SWITCH( bandpassGainLF	, filterFloat )
+		PROPERTY_SWITCH( bandpassGainHF	, filterFloat )
 	END_PROPERTY_SPEC
 
 END_CLASS

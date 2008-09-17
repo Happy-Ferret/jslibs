@@ -26,6 +26,11 @@ DEFINE_FINALIZE() {
 		alDeleteBuffers(1, &bid);
 }
 
+/**doc
+ * $INAME( soundBlob )
+  $H arguments
+   $ARG Blob soundBlob:
+**/
 DEFINE_CONSTRUCTOR() {
 
 	J_S_ASSERT_ARG_MIN( 1 );
@@ -67,6 +72,11 @@ DEFINE_CONSTRUCTOR() {
 	return JS_TRUE;
 }
 
+
+/**doc
+=== Methods ===
+**/
+
 /*
 DEFINE_FUNCTION_FAST( Free ) {
 
@@ -77,6 +87,9 @@ DEFINE_FUNCTION_FAST( Free ) {
 }
 */
 
+/**doc
+ * $INT $INAME()
+**/
 DEFINE_FUNCTION_FAST( valueOf ) {
 
 	ALuint bid = (ALuint) JS_GetPrivate(cx, J_FOBJ);
@@ -86,7 +99,14 @@ DEFINE_FUNCTION_FAST( valueOf ) {
 }
 
 
+/**doc
+=== Properties ===
+**/
 
+/**doc
+ * $INT $INAME $READONLY
+  is the frquency (in Hz) of the sound hold by the buffer.
+**/
 DEFINE_PROPERTY( frequency ) {
 
 	ALuint bid = (ALuint) JS_GetPrivate(cx, obj);
@@ -100,6 +120,10 @@ DEFINE_PROPERTY( frequency ) {
 	return JS_TRUE;
 }
 
+/**doc
+ * $INT $INAME $READONLY
+  is the size (in bytes) of the sound hold by the buffer.
+**/
 DEFINE_PROPERTY( size ) {
 
 	ALuint bid = (ALuint) JS_GetPrivate(cx, obj);
@@ -113,6 +137,11 @@ DEFINE_PROPERTY( size ) {
 	return JS_TRUE;
 }
 
+
+/**doc
+ * $INT $INAME $READONLY
+  is the rezolution (in bits) of the sound hold by the buffer.
+**/
 DEFINE_PROPERTY( bits ) {
 
 	ALuint bid = (ALuint) JS_GetPrivate(cx, obj);
@@ -126,6 +155,10 @@ DEFINE_PROPERTY( bits ) {
 	return JS_TRUE;
 }
 
+/**doc
+ * $INT $INAME $READONLY
+  is the number of channels of the sound hold by the buffer.
+**/
 DEFINE_PROPERTY( channels ) {
 
 	ALuint bid = (ALuint) JS_GetPrivate(cx, obj);

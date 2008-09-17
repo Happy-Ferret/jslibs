@@ -38,6 +38,11 @@ DEFINE_FINALIZE() {
 }
 
 
+
+/**doc
+ * $INAME()
+  Creates a new effect object.
+**/
 DEFINE_CONSTRUCTOR() {
 
 	Private *pv = (Private*)JS_malloc(cx, sizeof(Private));
@@ -49,6 +54,13 @@ DEFINE_CONSTRUCTOR() {
 }
 
 
+/**doc
+=== Methods ===
+**/
+
+/**doc
+ * $INT $INAME()
+**/
 DEFINE_FUNCTION_FAST( valueOf ) {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, J_FOBJ);
@@ -59,11 +71,28 @@ DEFINE_FUNCTION_FAST( valueOf ) {
 }
 
 
-
 /**doc
 === Properties ===
 **/
 
+/**doc
+ * $INT $INAME
+  set the type of effect represented by the Effect object.
+  * undefined
+  * Oal.EFFECT_EAXREVERB
+  * Oal.EFFECT_REVERB
+  * Oal.EFFECT_CHORUS
+  * Oal.EFFECT_DISTORTION
+  * Oal.EFFECT_ECHO
+  * Oal.EFFECT_FLANGER
+  * Oal.EFFECT_FREQUENCY_SHIFTER
+  * Oal.EFFECT_VOCAL_MORPHER
+  * Oal.EFFECT_PITCH_SHIFTER
+  * Oal.EFFECT_RING_MODULATOR
+  * Oal.EFFECT_AUTOWAH
+  * Oal.EFFECT_COMPRESSOR
+  * Oal.EFFECT_EQUALIZER
+**/
 DEFINE_PROPERTY_SETTER( type ) {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
@@ -102,7 +131,6 @@ DEFINE_FUNCTION_FAST( Test ) {
 	return JS_TRUE;
 }
 */
-
 
 DEFINE_PROPERTY_SETTER( effectFloat ) {
 
@@ -256,6 +284,84 @@ enum {
 };
 
 
+/**doc
+ * $REAL reverbDensity				
+ * $REAL reverbDiffusion				
+ * $REAL reverbGain					
+ * $REAL reverbGainHF					
+ * $REAL reverbDecayTime				
+ * $REAL reverbDecayHFRatio			
+ * $REAL reverbReflectionsGain		
+ * $REAL reverbReflectionsDelay	
+ * $REAL reverbLateReverbGain		
+ * $REAL reverbLateReverbDelay		
+ * $REAL reverbAirAbsorptionGainHF
+ * $REAL reverbRoomRolloffFactor	
+ * $BOOL reverbDecayHFLimit			
+
+ * $INT chorusWaveform
+ * $INT chorusPhase   
+ * $REAL chorusRate    
+ * $REAL chorusDepth   
+ * $REAL chorusFeedback
+ * $REAL chorusDelay   
+
+ * $REAL distortionEdge         
+ * $REAL distortionGain         
+ * $REAL distortionLowpassCutoff
+ * $REAL distortionEqcenter     
+ * $REAL distortionEqbandwidth  
+
+ * $REAL echoDelay   
+ * $REAL echoLrdelay 
+ * $REAL echoDamping 
+ * $REAL echoFeedback
+ * $REAL echoSpread
+
+ * $INT flangerWaveform 
+ * $REAL flangerPhase    
+ * $REAL flangerRate     
+ * $REAL flangerDepth    
+ * $REAL flangerFeedback 
+ * $REAL flangerDelay
+
+ * $REAL frequencyShifterFrequency     
+ * $INT frequencyShifterLeftDirection 
+ * $INT frequencyShifterRightDirection
+
+ * $INT vocalMorpherPhonemea            
+ * $INT vocalMorpherPhonemeaCoarseTuning
+ * $INT vocalMorpherPhonemeb            
+ * $INT vocalMorpherPhonemebCoarseTuning
+ * $INT vocalMorpherWaveform            
+ * $REAL vocalMorpherRate       
+
+ * $INT pitchShifterCoarseTune
+ * $INT pitchShifterFineTune  
+
+ * $REAL ringModulatorFrequency     
+ * $REAL ringModulatorHighpassCutoff
+ * $INT ringModulatorWaveform      
+
+ * $REAL autowahAttackTime 
+ * $REAL autowahReleaseTime
+ * $REAL autowahResonance  
+ * $REAL autowahPeakGain   
+
+ * $BOOL compressorOnoff
+
+ * $REAL equalizerLowGain    
+ * $REAL equalizerLowCutoff  
+ * $REAL equalizerMid1Gain   
+ * $REAL equalizerMid1Center 
+ * $REAL equalizerMid1Width  
+ * $REAL equalizerMid2Gain   
+ * $REAL equalizerMid2Center 
+ * $REAL equalizerMid2Width  
+ * $REAL equalizerHighGain   
+ * $REAL equalizerHighCutoff 
+**/
+
 CONFIGURE_CLASS
 
 	HAS_PRIVATE
@@ -284,8 +390,8 @@ CONFIGURE_CLASS
 		PROPERTY_SWITCH( reverbRoomRolloffFactor				, effectFloat )
 		PROPERTY_SWITCH( reverbDecayHFLimit						, effectBool  )
 
-		PROPERTY_SWITCH( chorusWaveform 							, effectInt ) // AL_CHORUS_WAVEFORM_SINUSOID, AL_CHORUS_WAVEFORM_TRIANGLE
-		PROPERTY_SWITCH( chorusPhase    							, effectInt ) // -180, +180
+		PROPERTY_SWITCH( chorusWaveform 							, effectInt   ) // AL_CHORUS_WAVEFORM_SINUSOID, AL_CHORUS_WAVEFORM_TRIANGLE
+		PROPERTY_SWITCH( chorusPhase    							, effectInt   ) // -180, +180
 		PROPERTY_SWITCH( chorusRate     							, effectFloat )
 		PROPERTY_SWITCH( chorusDepth    							, effectFloat )
 		PROPERTY_SWITCH( chorusFeedback 							, effectFloat )

@@ -131,6 +131,10 @@ DEFINE_FINALIZE() {
 	}
 }
 
+/**doc
+ * $INAME()
+  Creates a new source object.
+**/
 DEFINE_CONSTRUCTOR() {
 
 	Private *pv = (Private*)JS_malloc(cx, sizeof(Private));
