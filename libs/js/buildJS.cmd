@@ -28,7 +28,7 @@ copy jsconfig.h src
 
 pushd .\src
 make -f Makefile.ref %_MAKE_OPTIONS%
-IF "%BUILD%"=="release" ( cd *OPT.OBJ ) ELSE ( cd *DBG.OBJ )
+IF "%BUILD%"=="release" ( cd *OPT.OBJ ) ELSE ( cd *DBG.OBJD )
 cp %_DESTINATION_FILES% ..\..\%_DESTINATION_DIR%
 popd
 
