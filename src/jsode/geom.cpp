@@ -149,7 +149,7 @@ DEFINE_PROPERTY( offset ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE(geom);
-	if ( *vp == JSVAL_VOID ) {
+	if ( JSVAL_IS_VOID( *vp ) ) {
 
 		ode::dGeomClearOffset(geom);
 		return JS_TRUE;

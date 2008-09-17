@@ -288,7 +288,7 @@ DEFINE_FUNCTION( Query ) {
 	// (TBD) enhance
 	*rval = OBJECT_TO_JSVAL( dbStatement );
 
-	if ( argc >= 2 && argv[1] != JSVAL_VOID && JSVAL_IS_OBJECT(argv[1]) )
+	if ( argc >= 2 && !JSVAL_IS_VOID( argv[1] ) && JSVAL_IS_OBJECT(argv[1]) )
 		JS_SetReservedSlot(cx, dbStatement, SLOT_RESULT_QUERY_ARGUMENT_OBJECT, argv[1]);
 
 	return JS_TRUE;
@@ -343,7 +343,7 @@ DEFINE_FUNCTION( Exec ) {
 
 	// (TBD) support multiple statements
 
-	if ( argc >= 2 && argv[1] != JSVAL_VOID && JSVAL_IS_OBJECT(argv[1]) )
+	if ( argc >= 2 && !JSVAL_IS_VOID( argv[1] ) && JSVAL_IS_OBJECT(argv[1]) )
 		J_CHK( SqliteSetupBindings(cx, pStmt, JSVAL_TO_OBJECT(argv[1]) , NULL ) ); // "@" : the the argument passed to Exec(), ":" nothing
 	status = sqlite3_step( pStmt ); // Evaluates the statement. The return value will be either SQLITE_BUSY, SQLITE_DONE, SQLITE_ROW, SQLITE_ERROR, or 	SQLITE_MISUSE.
 

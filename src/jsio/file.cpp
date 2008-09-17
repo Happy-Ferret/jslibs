@@ -350,7 +350,7 @@ DEFINE_PROPERTY( contentSetter ) {
 	J_S_ASSERT_DEFINED( jsvalFileName );
 	const char *fileName;
 	J_CHK( JsvalToString(cx, &jsvalFileName, &fileName) );
-	if ( *vp == JSVAL_VOID ) {
+	if ( JSVAL_IS_VOID( *vp ) ) {
 
 		if ( PR_Delete(fileName) != PR_SUCCESS ) {
 
@@ -507,7 +507,7 @@ DEFINE_PROPERTY( info ) {
 **/
 DEFINE_PROPERTY( standard ) {
 
-	if ( *vp == JSVAL_VOID ) {
+	if ( JSVAL_IS_VOID( *vp ) ) {
 
 		int32 i;
 		JS_ValueToInt32( cx, id, &i );

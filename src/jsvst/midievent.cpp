@@ -37,7 +37,7 @@ DEFINE_FINALIZE() {
 
 		jsval constructed;
 		JS_GetReservedSlot(cx, obj, 0, &constructed);
-		if ( constructed != JSVAL_VOID )
+		if ( !JSVAL_IS_VOID( constructed ) )
 			JS_free(cx, pv);
 	}
 }

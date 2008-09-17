@@ -57,19 +57,19 @@ static void nearCallback(void *data, ode::dGeomID o1, ode::dGeomID o2) {
 		if ( obj1 != NULL ) { // assert that the javascript object (over the Geom) is not finalized
 
 			JS_GetProperty(cx, obj1, COLLIDE_FEEDBACK_FUNCTION_NAME, &func1);
-			J_SAFE( if ( func1 != JSVAL_VOID && JS_TypeOfValue(cx, func1) != JSTYPE_FUNCTION ) { JS_ReportError(cx, J__ERRMSG_UNEXPECTED_TYPE " Function expected."); return; } ); // we need a function, nothing else
+			J_SAFE( if ( !JSVAL_IS_VOID( func1 ) && JS_TypeOfValue(cx, func1) != JSTYPE_FUNCTION ) { JS_ReportError(cx, J__ERRMSG_UNEXPECTED_TYPE " Function expected."); return; } ); // we need a function, nothing else
 		}
 
 		if ( obj2 != NULL ) { // assert that the javascript object (over the Geom) is not finalized
 
 			JS_GetProperty(cx, obj2, COLLIDE_FEEDBACK_FUNCTION_NAME, &func2);
-			J_SAFE( if ( func2 != JSVAL_VOID && JS_TypeOfValue(cx, func2) != JSTYPE_FUNCTION ) { JS_ReportError(cx, J__ERRMSG_UNEXPECTED_TYPE " Function expected."); return; } ); // we need a function, nothing else
+			J_SAFE( if ( !JSVAL_IS_VOID( func2 ) && JS_TypeOfValue(cx, func2) != JSTYPE_FUNCTION ) { JS_ReportError(cx, J__ERRMSG_UNEXPECTED_TYPE " Function expected."); return; } ); // we need a function, nothing else
 		}
 
 		for ( int i=0; i<n; i++ ) {
 
 //			ode::dVector3 vel;
-			if ( func1 != JSVAL_VOID || func2 != JSVAL_VOID ) { // compute impact velocity only if needed
+			if ( !JSVAL_IS_VOID( func1 ) || !JSVAL_IS_VOID( func2 ) ) { // compute impact velocity only if needed
 /*
 
 				ode::dVector3 *pos = &contact[i].geom.pos;
@@ -99,13 +99,13 @@ static void nearCallback(void *data, ode::dGeomID o1, ode::dGeomID o2) {
 				//FloatVectorToArray(cx, 3, contact[i].geom.pos, &pos);
 				FloatVectorToJsval(cx, contact[i].geom.pos, 3, &pos);
 
-				if ( func1 != JSVAL_VOID ) {
+				if ( !JSVAL_IS_VOID( func1 ) ) {
 
 					jsval rval, argv[] = { INT_TO_JSVAL(i), OBJECT_TO_JSVAL(obj1), obj2 ? OBJECT_TO_JSVAL(obj2) : JSVAL_VOID, pos }; // INT_TO_JSVAL(vel[0]), INT_TO_JSVAL(vel[1]), INT_TO_JSVAL(vel[2])
 					JS_CallFunctionValue( cx, obj1, func1, sizeof(argv)/sizeof(*argv), argv, &rval); // JS_CallFunction() DO NOT WORK !!!
 				}
 
-				if ( func2 != JSVAL_VOID ) {
+				if ( !JSVAL_IS_VOID( func2 ) ) {
 
 					jsval rval, argv[] = { INT_TO_JSVAL(i), OBJECT_TO_JSVAL(obj2), obj1 ? OBJECT_TO_JSVAL(obj1) : JSVAL_VOID, pos }; // INT_TO_JSVAL(vel[0]), INT_TO_JSVAL(vel[1]), INT_TO_JSVAL(vel[2])
 					JS_CallFunctionValue( cx, obj2, func2, sizeof(argv)/sizeof(*argv), argv, &rval); // JS_CallFunction() DO NOT WORK !!!
@@ -351,7 +351,7 @@ DEFINE_PROPERTY( realGetter ) {
 **/
 DEFINE_PROPERTY( env ) {
 
-	if ( *vp == JSVAL_VOID ) { //  create it if it does not exist and store it (cf. PROPERTY_READ_STORE)
+	if ( JSVAL_IS_VOID( *vp ) ) { //  create it if it does not exist and store it (cf. PROPERTY_READ_STORE)
 
 		JSObject *staticBody = JS_NewObject(cx, classBody, NULL, NULL);
 		J_S_ASSERT_ALLOC(staticBody);

@@ -102,7 +102,7 @@ DEFINE_TRACER() {
 	Private *pv = (Private*)JS_GetPrivate(trc->context, obj);
 	if ( pv )
 		for ( jl::QueueCell *it = jl::QueueBegin(pv->queue); it; it = jl::QueueNext(it) ) {
-			
+
 			jsval *val = (jsval*)QueueGetData(it);
 			if ( !JSVAL_IS_PRIMITIVE(*val) )
 				JS_CALL_VALUE_TRACER(trc, *val, "jsstd/Buffer:bufferQueueItem");
@@ -130,7 +130,6 @@ DEFINE_FINALIZE() {
 		}
 	}
 }
-
 
 DEFINE_CONSTRUCTOR() {
 
@@ -164,7 +163,7 @@ DEFINE_FUNCTION_FAST( QueueBuffers ) {
 	ALuint bid;
 	J_CHK( JsvalToUInt(cx, J_FARG(1), &bid) );
 	J_S_ASSERT( alIsBuffer(bid), "Invalid buffer." );
-	
+
 	alSourceQueueBuffers(pv->sid, 1, &bid);
 	J_CHK( CheckThrowCurrentOalError(cx) );
 	J_CHK( QueueBuffersJsval(cx, pv->queue, J_FARG(1)) );
@@ -302,10 +301,10 @@ DEFINE_PROPERTY( effect ) {
 
 	ALuint effect;
 	if ( !JSVAL_IS_VOID(*vp) )
-		J_CHK( JsvalToUInt(cx, *vp, &effect) );	
+		J_CHK( JsvalToUInt(cx, *vp, &effect) );
 	else
 		effect = AL_EFFECT_NULL;
-	
+
 	alAuxiliaryEffectSloti( pv->effectSlot, AL_EFFECTSLOT_EFFECT, effect );
 	J_CHK( CheckThrowCurrentOalError(cx) );
 //		effectSlot = AL_EFFECTSLOT_NULL;
@@ -378,7 +377,7 @@ DEFINE_PROPERTY( directFilter ) {
 
 	ALuint filter;
 	if ( !JSVAL_IS_VOID(*vp) )
-		J_CHK( JsvalToUInt(cx, *vp, &filter) );	
+		J_CHK( JsvalToUInt(cx, *vp, &filter) );
 	else
 		filter = AL_FILTER_NULL;
 
@@ -394,7 +393,7 @@ DEFINE_PROPERTY_SETTER( buffer ) {
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( pv );
 	ALint bid;
-	if ( *vp == JSVAL_VOID || *vp == JSVAL_ZERO )
+	if ( JSVAL_IS_VOID( *vp ) || *vp == JSVAL_ZERO )
 		bid = AL_NONE;
 	else
 		J_CHK( JsvalToInt(cx, *vp, &bid) ); // calls OalBuffer valueOf function
@@ -417,7 +416,7 @@ DEFINE_PROPERTY_GETTER( buffer ) {
 	J_CHK( CheckThrowCurrentOalError(cx) );
 
 	// look if the current value hold tby the property (_STORE) is the current buffer)
-	if ( *vp != JSVAL_VOID ) {
+	if ( !JSVAL_IS_VOID( *vp ) ) {
 
 		ALint tmp;
 		J_CHK( JsvalToInt(cx, *vp, &tmp) ); // calls OalBuffer valueOf function
@@ -428,18 +427,18 @@ DEFINE_PROPERTY_GETTER( buffer ) {
 
 	// find the buffer object in the list of jsval
 	for ( jl::QueueCell *it = jl::QueueBegin(pv->queue); it; it = jl::QueueNext(it) ) {
-		
+
 		jsval *val = (jsval*)QueueGetData(it);
 		ALint tmp;
 		J_CHK( JsvalToInt(cx, *val, &tmp) ); // calls OalBuffer valueOf function
 		J_S_ASSERT( alIsBuffer(tmp), "Invalid buffer." );
 		if ( tmp == bid ) {
-			
+
 			*vp = *val;
 			return JS_TRUE;
 		}
 	}
-	
+
 	J_S_ASSERT( alIsBuffer(bid), "Invalid buffer." );
 	J_CHK( IntToJsval(cx, bid, vp) );
 	return JS_TRUE;
@@ -546,7 +545,7 @@ DEFINE_PROPERTY( remainingTime ) {
 	ALint loop;
 	alGetSourcei(pv->sid, AL_LOOPING, &loop);
 	if ( loop == AL_TRUE ) {
-		
+
 		*vp = JS_GetPositiveInfinityValue(cx);
 		return JS_TRUE;
 	}
@@ -554,7 +553,7 @@ DEFINE_PROPERTY( remainingTime ) {
 	ALint state;
 	alGetSourcei(pv->sid, AL_SOURCE_STATE, &state);
 	if ( state != AL_PLAYING && state != AL_PAUSED ) {
-		
+
 		*vp = JSVAL_VOID;
 		return JS_TRUE;
 	}

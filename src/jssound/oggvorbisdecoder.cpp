@@ -72,7 +72,7 @@ static int seek_func(void *datasource, ogg_int64_t offset, int whence) {
 
 		case SEEK_CUR:
 			JS_GetProperty(pv->cx, pv->streamObject, "position", &tmpVal); // (TBD) manage error
-			if ( tmpVal == JSVAL_VOID ) //
+			if ( JSVAL_IS_VOID( tmpVal ) ) //
 				return -1;
 			if ( offset == 0 ) // no move, just tested, but let -1 to be return if no position property available.
 				return 0;
@@ -84,12 +84,12 @@ static int seek_func(void *datasource, ogg_int64_t offset, int whence) {
 
 		case SEEK_END:
 			JS_GetProperty(pv->cx, pv->streamObject, "available", &tmpVal);
-			if ( tmpVal == JSVAL_VOID )
+			if ( JSVAL_IS_VOID( tmpVal ) )
 				return -1;
 			JsvalToInt(pv->cx, tmpVal, &available);
 
 			JS_GetProperty(pv->cx, pv->streamObject, "position", &tmpVal);
-			if ( tmpVal == JSVAL_VOID )
+			if ( JSVAL_IS_VOID( tmpVal ) )
 				return -1;
 			JsvalToInt(pv->cx, tmpVal, &position);
 
@@ -113,7 +113,7 @@ static long tell_func(void *datasource) {
 
 	int position;
 	JS_GetProperty(pv->cx, pv->streamObject, "position", &tmpVal);
-	if ( tmpVal == JSVAL_VOID )
+	if ( JSVAL_IS_VOID( tmpVal ) )
 		return -1;
 	JsvalToInt(pv->cx, tmpVal, &position);
 	return position;

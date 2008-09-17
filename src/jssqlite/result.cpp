@@ -241,7 +241,7 @@ DEFINE_FUNCTION( Step ) {
 		jsval queryArgument;
 		JS_GetReservedSlot(cx, obj, SLOT_RESULT_QUERY_ARGUMENT_OBJECT, &queryArgument);
 		JSObject *argObj = NULL;
-		if ( queryArgument != JSVAL_VOID )
+		if ( !JSVAL_IS_VOID( queryArgument ) )
 			argObj = JSVAL_TO_OBJECT(queryArgument);
 
 		JS_SetReservedSlot(cx, obj, SLOT_RESULT_BINDING_UP_TO_DATE, BOOLEAN_TO_JSVAL(JS_TRUE));

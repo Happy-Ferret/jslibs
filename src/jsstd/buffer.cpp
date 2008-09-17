@@ -172,7 +172,7 @@ inline JSBool BufferRefill( JSContext *cx, JSObject *obj, size_t amount ) { // a
 //	J_CHK( JS_GetProperty(cx, obj, "source", &srcVal) );
 	J_CHK( JS_GetReservedSlot(cx, obj, SLOT_SOURCE, &srcVal) );
 
-	if ( srcVal == JSVAL_VOID ) // no source for refill
+	if ( JSVAL_IS_VOID( srcVal ) ) // no source for refill
 		return JS_TRUE;
 
 	J_S_ASSERT_OBJECT(srcVal);
@@ -687,7 +687,7 @@ DEFINE_FUNCTION( Read ) { // Read( [ amount | <undefined> ] )
 	BufferPrivate *pv = (BufferPrivate*)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( pv );
 
-	if ( J_ARGC == 1 && J_ARG(1) == JSVAL_VOID ) // read the next chunk (of an unknown length) (read something as fast as possible)
+	if ( J_ARGC == 1 && JSVAL_IS_VOID( J_ARG(1) ) ) // read the next chunk (of an unknown length) (read something as fast as possible)
 		return ReadChunk(cx, obj, rval);
 
 	size_t amount;

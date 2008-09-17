@@ -145,7 +145,7 @@ DEFINE_CONSTRUCTOR() { // ( cipherName, hashName [, prngObject] [, PKCSVersion] 
 
 	pv->padding = LTC_LTC_PKCS_1_OAEP;
 
-	if ( argc >= 4 && argv[3] != JSVAL_VOID ) {
+	if ( argc >= 4 && !JSVAL_IS_VOID( argv[3] ) ) {
 
 		const char *paddingName;
 		J_CHK( JsvalToString(cx, &argv[3], &paddingName) );
@@ -268,7 +268,7 @@ DEFINE_FUNCTION( Encrypt ) { // ( data [, lparam] )
 			// This is useful to identify which system encoded the message. If no variance is desired then lparam can be set to NULL.
 			unsigned char *lparam = NULL; // default: lparam not used
 			unsigned long lparamlen = 0;
-			if (argc >= 2 && argv[1] != JSVAL_VOID)
+			if (argc >= 2 && !JSVAL_IS_VOID( argv[1] ))
 				J_CHK( JsvalToStringAndLength(cx, &argv[1], &in, &inLength) );
 			err = rsa_encrypt_key_ex( (unsigned char *)in, inLength, (unsigned char *)out, &outLength, lparam, lparamlen, prngState, prngIndex, hashIndex, pv->padding, &pv->key.rsaKey ); // ltc_mp.rsa_me()
 			break;
@@ -332,7 +332,7 @@ DEFINE_FUNCTION( Decrypt ) { // ( encryptedData [, lparam] )
 
 			const char *lparam = NULL; // default: lparam not used
 			size_t lparamlen = 0;
-			if (argc >= 2 && argv[1] != JSVAL_VOID)
+			if (argc >= 2 && !JSVAL_IS_VOID( argv[1] ))
 				J_CHK( JsvalToStringAndLength(cx, &argv[1], &lparam, &lparamlen) );
 
 			int stat = 0; // default: failed
@@ -402,7 +402,7 @@ DEFINE_FUNCTION( Sign ) { // ( data [, saltLength] )
 			// A good saltLength default value is between 8 and 16 octets. Strictly, it must be small than modulus len - hLen - 2 where modulus len is the size of the RSA modulus (in octets), and hLen is the length of the message digest produced by the chosen hash.
 			// int saltLength = 16; // OR saltLength = mp_unsigned_bin_size((mp_int*)(pv->key.rsaKey.N)) - hash_descriptor[hashIndex].hashsize - 2  -1;
 			int saltLength = RSA_SIGN_DEFAULT_SALT_LENGTH;
-			if ( argc >= 2 && argv[1] != JSVAL_VOID )
+			if ( argc >= 2 && !JSVAL_IS_VOID( argv[1] ) )
 				J_JSVAL_TO_INT32(argv[1], saltLength);
 
 			err = rsa_sign_hash_ex( (unsigned char *)in, inLength, (unsigned char *)out, &outLength, LTC_LTC_PKCS_1_PSS, prngState, prngIndex, hashIndex, saltLength, &pv->key.rsaKey );
@@ -456,7 +456,7 @@ DEFINE_FUNCTION( VerifySignature ) { // ( data, signature [, saltLength] )
 	switch ( pv->cipher ) {
 		case rsa: {
 			int saltLength = RSA_SIGN_DEFAULT_SALT_LENGTH; // default
-			if ( argc >= 3 && argv[2] != JSVAL_VOID )
+			if ( argc >= 3 && !JSVAL_IS_VOID( argv[2] ) )
 				J_JSVAL_TO_INT32(argv[2], saltLength);
 
 			int hashIndex = find_hash(pv->hashDescriptor->name);

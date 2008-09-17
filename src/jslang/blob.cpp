@@ -27,7 +27,7 @@ inline bool IsBlobValid( JSContext *cx, JSObject *blobObject ) {
 
 	jsval lengthVal;
 	J_CHK( JS_GetReservedSlot(cx, blobObject, SLOT_BLOB_LENGTH, &lengthVal) );
-	return lengthVal == JSVAL_VOID ? false : true;
+	return JSVAL_IS_VOID( lengthVal ) ? false : true;
 }
 
 
@@ -36,7 +36,7 @@ inline JSBool BlobLength( JSContext *cx, JSObject *blobObject, size_t *length ) 
 	J_S_ASSERT_CLASS(blobObject, BlobJSClass( cx ));
 	jsval lengthVal;
 	J_CHK( JS_GetReservedSlot(cx, blobObject, SLOT_BLOB_LENGTH, &lengthVal) );
-//	if ( lengthVal == JSVAL_VOID )  // invalidated
+//	if ( JSVAL_IS_VOID( lengthVal ) )  // invalidated
 //		J_REPORT_ERROR("Invalidated blob.");
 	J_S_ASSERT_INT( lengthVal );
 	*length = JSVAL_TO_INT( lengthVal );

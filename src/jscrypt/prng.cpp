@@ -222,7 +222,7 @@ DEFINE_PROPERTY( name ) {
 **/
 DEFINE_PROPERTY( list ) {
 
-	if ( *vp == JSVAL_VOID ) {
+	if ( JSVAL_IS_VOID( *vp ) ) {
 
 		JSObject *list = JS_NewObject( cx, NULL, NULL, NULL );
 		J_S_ASSERT_ALLOC( list );

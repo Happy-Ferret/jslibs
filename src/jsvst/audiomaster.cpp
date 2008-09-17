@@ -37,7 +37,7 @@ DEFINE_HAS_INSTANCE() {
 
 DEFINE_PROPERTY( version ) {
 
-	if ( *vp == JSVAL_VOID ) {
+	if ( JSVAL_IS_VOID( *vp ) ) {
 
 		audioMasterCallback audioMaster = (audioMasterCallback)JS_GetPrivate(cx, obj);
 		VstIntPtr version = audioMaster(0, audioMasterVersion, 0, 0, 0, 0);

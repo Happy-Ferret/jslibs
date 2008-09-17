@@ -172,7 +172,7 @@ DEFINE_PROPERTY( available ) {
 	int length, position;
 	J_CHK( PositionGet(cx, obj, &position) );
 	J_CHK( JS_GetProperty(cx, srcObj, "length", vp) ); // use vp as a tmp variable
-	if ( *vp == JSVAL_VOID )
+	if ( JSVAL_IS_VOID( *vp ) )
 		return JS_TRUE; // if length is not defined, the returned value is undefined
 	J_CHK( JsvalToInt(cx, *vp, &length) );
 	J_CHK( IntToJsval(cx, length - position, vp ) );

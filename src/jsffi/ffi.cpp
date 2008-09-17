@@ -1103,7 +1103,7 @@ JSBool NativeModule_Close(JSContext *cx, JSObject *obj, uintN argc, jsval *argv,
     jsval onRelease;
     JS_GetProperty( cx, obj, "onRelease", &onRelease );
 
-    if ( onRelease != JSVAL_VOID ) {
+    if ( !JSVAL_IS_VOID( onRelease ) ) {
 
       jsval ret;
       JS_CallFunctionValue( cx, obj, onRelease, 0, NULL, &ret );
@@ -1207,7 +1207,7 @@ void Release_JSNI( JSContext *cx ) {
 
     jsval onRelease;
     JS_GetProperty( cx, obj, "onRelease", &onRelease );
-    if ( onRelease != JSVAL_VOID ) {
+    if ( !JSVAL_IS_VOID( onRelease ) ) {
 
       jsval ret;
       JS_CallFunctionValue( cx, obj, onRelease, 0, NULL, &ret );

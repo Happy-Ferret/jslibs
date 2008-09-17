@@ -110,27 +110,27 @@ DEFINE_FUNCTION( Poll ) {
 
 		if ( JS_GetProperty( cx, fdObj, "writable", &prop ) == JS_FALSE )
 			goto failed;
-		if ( prop != JSVAL_VOID )
+		if ( !JSVAL_IS_VOID( prop ) )
 			pollDesc[i].in_flags |= PR_POLL_WRITE;
 
 		if ( JS_GetProperty( cx, fdObj, "readable", &prop ) == JS_FALSE )
 			goto failed;
-		if ( prop != JSVAL_VOID )
+		if ( !JSVAL_IS_VOID( prop ) )
 			pollDesc[i].in_flags |= PR_POLL_READ;
 
 		if ( JS_GetProperty( cx, fdObj, "hangup", &prop ) == JS_FALSE )
 			goto failed;
-		if ( prop != JSVAL_VOID )
+		if ( !JSVAL_IS_VOID( prop ) )
 			pollDesc[i].in_flags |= PR_POLL_HUP;
 
 		if ( JS_GetProperty( cx, fdObj, "exception", &prop ) == JS_FALSE )
 			goto failed;
-		if ( prop != JSVAL_VOID )
+		if ( !JSVAL_IS_VOID( prop ) )
 			pollDesc[i].in_flags |= PR_POLL_EXCEPT;
 
 		if ( JS_GetProperty( cx, fdObj, "error", &prop ) == JS_FALSE )
 			goto failed;
-		if ( prop != JSVAL_VOID )
+		if ( !JSVAL_IS_VOID( prop ) )
 			pollDesc[i].in_flags |= PR_POLL_ERR;
 	}
 
@@ -148,7 +148,7 @@ DEFINE_FUNCTION( Poll ) {
 			jsval arrayItem;
 			J_CHK( JS_IdToValue(cx, idArray->vector[i], &arrayItem) );
 			J_CHK( JS_GetElement(cx, JSVAL_TO_OBJECT(J_ARG(1)), JSVAL_TO_INT(arrayItem), &arrayItem) );
-			if ( arrayItem == JSVAL_VOID ) // socket has been removed from the list while js func "poll()" is runing
+			if ( JSVAL_IS_VOID( arrayItem ) ) // socket has been removed from the list while js func "poll()" is runing
 				continue;
 			JSObject *fdObj = JSVAL_TO_OBJECT( arrayItem ); //JS_ValueToObject
 			jsval prop, ret;
@@ -631,7 +631,7 @@ DEFINE_PROPERTY( physicalMemorySize ) {
 **/
 DEFINE_PROPERTY( systemInfo ) {
 
-	if ( *vp == JSVAL_VOID ) {
+	if ( JSVAL_IS_VOID( *vp ) ) {
 
 		char tmp[SYS_INFO_BUFFER_LENGTH];
 

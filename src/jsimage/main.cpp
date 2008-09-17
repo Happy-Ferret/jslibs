@@ -40,7 +40,7 @@ extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj)
 
 	jsval unsafeModePtrVal;
 	J_CHK( GetConfigurationValue(cx, NAME_CONFIGURATION_UNSAFE_MODE_PTR, &unsafeModePtrVal) );
-	if ( unsafeModePtrVal != JSVAL_VOID )
+	if ( !JSVAL_IS_VOID( unsafeModePtrVal ) )
 		_pUnsafeMode = (bool*)JSVAL_TO_PRIVATE(unsafeModePtrVal);
 
 	INIT_STATIC();

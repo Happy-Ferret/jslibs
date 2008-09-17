@@ -72,7 +72,7 @@ private:
 	void handleLog( LogLevel level, LogArea area, const std::string& message ) {
 		
 		jsval fval, rval;
-		if ( !JS_GetProperty(_cx, _obj, "onLog", &fval) || fval == JSVAL_VOID )
+		if ( !JS_GetProperty(_cx, _obj, "onLog", &fval) || JSVAL_IS_VOID( fval ) )
 			return;
 		if ( !JsvalIsFunction(_cx, fval) ) {
 			
@@ -88,7 +88,7 @@ private:
 	bool onTLSConnect( const CertInfo& info ) {
 
 		jsval fval, rval;
-		if ( !JS_GetProperty(_cx, _obj, "onTLSConnect", &fval) || fval == JSVAL_VOID )
+		if ( !JS_GetProperty(_cx, _obj, "onTLSConnect", &fval) || JSVAL_IS_VOID( fval ) )
 			return true; // by default, accepts the certificate
 
 		if ( !JsvalIsFunction(_cx, fval) ) {
@@ -119,7 +119,7 @@ private:
 	void onConnect() {
 
 		jsval fval, rval;
-		if ( !JS_GetProperty(_cx, _obj, "onConnect", &fval) || fval == JSVAL_VOID )
+		if ( !JS_GetProperty(_cx, _obj, "onConnect", &fval) || JSVAL_IS_VOID( fval ) )
 			return;
 		if ( !JsvalIsFunction(_cx, fval) ) {
 			
@@ -132,7 +132,7 @@ private:
 	void onDisconnect(ConnectionError cErr) {
 
 		jsval fval, rval;
-		if ( !JS_GetProperty(_cx, _obj, "onDisconnect", &fval) || fval == JSVAL_VOID )
+		if ( !JS_GetProperty(_cx, _obj, "onDisconnect", &fval) || JSVAL_IS_VOID( fval ) )
 			return;
 		if ( !JsvalIsFunction(_cx, fval) ) {
 			
@@ -146,7 +146,7 @@ private:
 	void handleMessage( Stanza *stanza, MessageSession *session ) {
 
 		jsval fval, rval;
-		if ( !JS_GetProperty(_cx, _obj, "onMessage", &fval) || fval == JSVAL_VOID )
+		if ( !JS_GetProperty(_cx, _obj, "onMessage", &fval) || JSVAL_IS_VOID( fval ) )
 			return;
 		if ( !JsvalIsFunction(_cx, fval) ) {
 			
@@ -179,7 +179,7 @@ private:
 	void handleRosterPresence( const RosterItem& item, const std::string& resource, Presence presence, const std::string& msg ) {
 
 		jsval fval, rval;
-		if ( !JS_GetProperty(_cx, _obj, "onRosterPresence", &fval) || fval == JSVAL_VOID )
+		if ( !JS_GetProperty(_cx, _obj, "onRosterPresence", &fval) || JSVAL_IS_VOID( fval ) )
 			return;
 		if ( !JsvalIsFunction(_cx, fval) ) {
 			

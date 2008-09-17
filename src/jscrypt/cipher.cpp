@@ -156,16 +156,16 @@ DEFINE_CONSTRUCTOR() {
 
 	const char *IV = NULL;
 	size_t IVLength = 0;
-	if ( argc >= 4 && argv[3] != JSVAL_VOID )
+	if ( argc >= 4 && !JSVAL_IS_VOID( argv[3] ) )
 		J_CHK( JsvalToStringAndLength(cx, &argv[3], &IV, &IVLength ) ); // warning: GC on the returned buffer !
 
 	const char *optarg = NULL;
 	size_t optargLength = 0;
-	if ( argc >= 5 && argv[4] != JSVAL_VOID )
+	if ( argc >= 5 && !JSVAL_IS_VOID( argv[4] ) )
 		J_CHK( JsvalToStringAndLength(cx, &argv[4], &optarg, &optargLength ) ); // warning: GC on the returned buffer !
 
    int numRounds = 0; // default value, us a default number of rounds.
-	if ( argc >= 6 && argv[5] != JSVAL_VOID )
+	if ( argc >= 6 && !JSVAL_IS_VOID( argv[5] ) )
 		J_JSVAL_TO_INT32( argv[5], numRounds );
 
 	CipherPrivate *privateData = (CipherPrivate*)malloc( sizeof(CipherPrivate) );
@@ -565,7 +565,7 @@ DEFINE_PROPERTY( IVGetter ) {
 **/
 DEFINE_PROPERTY( list ) {
 
-	if ( *vp == JSVAL_VOID ) {
+	if ( JSVAL_IS_VOID( *vp ) ) {
 
 		JSObject *list = JS_NewObject( cx, NULL, NULL, NULL );
 		J_S_ASSERT_ALLOC( list );

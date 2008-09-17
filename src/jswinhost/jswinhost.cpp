@@ -8,7 +8,7 @@ int consoleStdOut( JSContext *cx, const char *data, int length ) {
 	J_S_ASSERT( obj != NULL, "Unable to get GetConfigurationObject" );
 	jsval functionVal;
 	JS_GetProperty(cx, obj, "stdout", &functionVal);
-	if ( functionVal != JSVAL_VOID ) {
+	if ( !JSVAL_IS_VOID( functionVal ) ) {
 
 		J_S_ASSERT_FUNCTION( functionVal );
 		JSString *str = JS_NewStringCopyN(cx, data, length);
@@ -25,7 +25,7 @@ int consoleStdErr( JSContext *cx, const char *data, int length ) {
 	J_S_ASSERT( obj != NULL, "Unable to get GetConfigurationObject" );
 	jsval functionVal;
 	JS_GetProperty(cx, obj, "stderr", &functionVal);
-	if ( functionVal != JSVAL_VOID ) {
+	if ( !JSVAL_IS_VOID( functionVal ) ) {
 
 		J_S_ASSERT_FUNCTION( functionVal );
 		JSString *str = JS_NewStringCopyN(cx, data, length);

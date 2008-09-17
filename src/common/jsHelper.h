@@ -401,7 +401,7 @@ inline JSBool GetNamedPrivate( JSContext *cx, JSObject *obj, const char *name, v
 	jsval tmp;
 	if ( JS_GetProperty(cx, obj, name, &tmp) == JS_FALSE )
 		return JS_FALSE;
-	*pv = tmp == JSVAL_VOID ? NULL : JSVAL_TO_PRIVATE(tmp);
+	*pv = JSVAL_IS_VOID( tmp ) ? NULL : JSVAL_TO_PRIVATE(tmp);
 	return JS_TRUE;
 }
 */
@@ -1209,7 +1209,7 @@ inline JSBool JSStreamRead( JSContext *cx, JSObject *obj, char *buffer, size_t *
 	IntToJsval(cx, *amount, &tmpVal);
 	J_CHKM( JS_CallFunctionName(cx, obj, "Read", 1, &tmpVal, &rval), "Read() function not found.");
 
-	if ( rval == JSVAL_VOID ) {
+	if ( JSVAL_IS_VOID( rval ) ) {
 
 		*amount = 0;
 		return JS_TRUE;

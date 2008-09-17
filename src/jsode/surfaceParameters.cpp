@@ -91,7 +91,7 @@ DEFINE_PROPERTY( surfaceSetter ) {
 	
 	ode::dReal value;
 	bool set;
-	if ( *vp == JSVAL_VOID ) {
+	if ( JSVAL_IS_VOID( *vp ) ) {
 
 		set = true;
 	} else {

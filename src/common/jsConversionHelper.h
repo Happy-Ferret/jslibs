@@ -200,7 +200,7 @@ inline JSBool ArrayArrayToVector( JSContext *cx, int count, const jsval *vp, jsv
 	for (int i=0; i<count; ++i) {
 
 		status = JS_GetElement(cx, jsArray, i, &value);
-		J_S_ASSERT( status && value != JSVAL_VOID, "Invalid array value." );
+		J_S_ASSERT( status && !JSVAL_IS_VOID( value ), "Invalid array value." );
 		vector[i] = value;
 	}
 	return JS_TRUE;
@@ -218,7 +218,7 @@ inline JSBool IntArrayToVector( JSContext *cx, int count, const jsval *vp, int *
 	for (int i=0; i<count; ++i) {
 
 		status = JS_GetElement(cx, jsArray, i, &value);
-		J_S_ASSERT( status && value != JSVAL_VOID, "Invalid array value." );
+		J_S_ASSERT( status && !JSVAL_IS_VOID( value ), "Invalid array value." );
 		J_SAFE( jsdouble d; JS_ValueToNumber(cx, value, &d); vector[i] = (int)d; );
 		J_UNSAFE( vector[i] = JSVAL_TO_INT(value) );
 	}
@@ -254,7 +254,7 @@ inline JSBool FloatArrayToVector( JSContext *cx, int count, const jsval *vp, flo
 	for (jsint i=0; i<count; ++i) {
 
 		status = JS_GetElement(cx, jsArray, i, &value );
-		J_S_ASSERT( status && value != JSVAL_VOID, "Invalid array value." );
+		J_S_ASSERT( status && !JSVAL_IS_VOID( value ), "Invalid array value." );
 		JS_ValueToNumber(cx, value, &d);
 		vector[i] = d;
 	}

@@ -64,7 +64,7 @@ DEFINE_CONSTRUCTOR() {
 				break;
 		}
 	} else
-	if ( JSVAL_IS_OBJECT(iconVal) && iconVal != JSVAL_NULL ) {
+	if ( JSVAL_IS_OBJECT(iconVal) && !JSVAL_IS_NULL( iconVal ) ) {
 
 		HINSTANCE hInst = (HINSTANCE)GetModuleHandle(NULL);
 		JSObject *imgObj = JSVAL_TO_OBJECT(iconVal);

@@ -116,7 +116,7 @@ DEFINE_FUNCTION_FAST( SetSize ) {
 
 	FT_UInt width, height;
 
-	J_JSVAL_TO_INT32( J_FARG(1), width ); // a value of 0 for one of the dimensions means ‘same as the other’.
+	J_JSVAL_TO_INT32( J_FARG(1), width ); // a value of 0 for one of the dimensions means same as the other.
 	J_JSVAL_TO_INT32( J_FARG(2), height );
 
 	FT_Error status;
@@ -213,32 +213,32 @@ DEFINE_FUNCTION_FAST( DrawString ) {
 
 	int letterSpacing = 0;
 	J_CHK( JS_GetReservedSlot(cx, J_FOBJ, FONT_SLOT_LETTERSPACING, &tmp) );
-	if ( tmp != JSVAL_VOID )
+	if ( !JSVAL_IS_VOID( tmp ) )
 		J_JSVAL_TO_INT32(tmp, letterSpacing);
 
 	int horizontalPadding = 0;
 	J_CHK( JS_GetReservedSlot(cx, J_FOBJ, FONT_SLOT_HORIZONTALPADDING, &tmp) );
-	if ( tmp != JSVAL_VOID )
+	if ( !JSVAL_IS_VOID( tmp ) )
 		J_JSVAL_TO_INT32(tmp, horizontalPadding);
 
 	int verticalPadding = 0;
 	J_CHK( JS_GetReservedSlot(cx, J_FOBJ, FONT_SLOT_VERTICALPADDING, &tmp) );
-	if ( tmp != JSVAL_VOID )
+	if ( !JSVAL_IS_VOID( tmp ) )
 		J_JSVAL_TO_INT32(tmp, verticalPadding);
 
 	bool useKerning = true;
 	J_CHK( JS_GetReservedSlot(cx, J_FOBJ, FONT_SLOT_USEKERNING, &tmp) );
-	if ( tmp != JSVAL_VOID )
+	if ( !JSVAL_IS_VOID( tmp ) )
 		J_JSVAL_TO_BOOL(tmp, useKerning);
 
 	bool isItalic = false;
 	J_CHK( JS_GetReservedSlot(cx, J_FOBJ, FONT_SLOT_ITALIC, &tmp) );
-	if ( tmp != JSVAL_VOID )
+	if ( !JSVAL_IS_VOID( tmp ) )
 		J_JSVAL_TO_BOOL(tmp, isItalic);
 
 	bool isBold = false;
 	J_CHK( JS_GetReservedSlot(cx, J_FOBJ, FONT_SLOT_BOLD, &tmp) );
-	if ( tmp != JSVAL_VOID )
+	if ( !JSVAL_IS_VOID( tmp ) )
 		J_JSVAL_TO_BOOL(tmp, isBold);
 
 
@@ -294,7 +294,7 @@ DEFINE_FUNCTION_FAST( DrawString ) {
 		posX += -advance + face->glyph->metrics.horiBearingX + face->glyph->metrics.width; // we do not need the letterSpacing at the end of the text, but we need to advance by the glyph width.
 	}
 
-	// Doc.	The ascender is the vertical distance from the horizontal baseline to the highest ‘character’ coordinate in a font face.
+	// Doc.	The ascender is the vertical distance from the horizontal baseline to the highest character coordinate in a font face.
 	//			Unfortunately, font formats define the ascender differently. For some, it represents the ascent of all capital latin characters (without accents),
 	//			for others it is the ascent of the highest accented character, and finally, other formats define it as being equal to global_bbox.yMax.
 	posY += face->size->metrics.ascender + -face->size->metrics.descender;
@@ -416,7 +416,7 @@ DEFINE_PROPERTY( size ) {
 	J_S_ASSERT_RESOURCE(face);
 
 	int size = 0;
-	if ( *vp != JSVAL_VOID )
+	if ( !JSVAL_IS_VOID( *vp ) )
 		J_JSVAL_TO_INT32( *vp, size );
 
 	J_S_ASSERT( size >= 0, "Invalid font size." );

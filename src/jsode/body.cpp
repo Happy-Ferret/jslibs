@@ -249,7 +249,7 @@ DEFINE_PROPERTY( vectorSetter ) {
 **/
 DEFINE_PROPERTY( mass ) {
 
-	if ( *vp == JSVAL_VOID ) { // if mass do not exist, we have to create it and store it
+	if ( JSVAL_IS_VOID( *vp ) ) { // if mass do not exist, we have to create it and store it
 
 		JSObject *massObject = JS_NewObject(cx, classMass, NULL, NULL);
 		J_S_ASSERT(massObject != NULL, "unable to construct Mass object.");

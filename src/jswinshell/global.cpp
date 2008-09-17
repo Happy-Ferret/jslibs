@@ -115,7 +115,7 @@ DEFINE_FUNCTION( MessageBox ) {
 		J_JSVAL_TO_UINT32( argv[2], type );
 
 	const char *caption = NULL;
-	if ( argc >= 2 && argv[1] != JSVAL_VOID )
+	if ( argc >= 2 && !JSVAL_IS_VOID( argv[1] ) )
 		J_CHK( JsvalToString(cx, &argv[1], &caption) );
 
 	const char *text;
@@ -149,13 +149,13 @@ DEFINE_FUNCTION( CreateProcess ) {
 
 	J_CHK( JsvalToString(cx, &argv[0], &applicationName) ); // warning: GC on the returned buffer !
 
-	if ( argc >= 2 && argv[1] != JSVAL_VOID )
+	if ( argc >= 2 && !JSVAL_IS_VOID( argv[1] ) )
 		J_CHK( JsvalToString(cx, &argv[1], &commandLine) ); // warning: GC on the returned buffer !
 
-	if ( argc >= 3 && argv[2] != JSVAL_VOID  )
+	if ( argc >= 3 && !JSVAL_IS_VOID( argv[2] ) )
 		J_CHK( JsvalToString(cx, &argv[2], &environment) ); // warning: GC on the returned buffer !
 
-	if ( argc >= 4 && argv[3] != JSVAL_VOID  )
+	if ( argc >= 4 && !JSVAL_IS_VOID( argv[3] ) )
 		J_CHK( JsvalToString(cx, &argv[3], &currentDirectory) ); // warning: GC on the returned buffer !
 
 	STARTUPINFO si = { sizeof(STARTUPINFO) };
@@ -181,7 +181,7 @@ DEFINE_FUNCTION( FileOpenDialog ) {
 	char fileName[MAX_PATH];
 	char filter[255];
 
-	if ( argc >= 1 && argv[0] != JSVAL_VOID ) {
+	if ( argc >= 1 && !JSVAL_IS_VOID( argv[0] ) ) {
 
 		const char *str;
 		size_t len;
@@ -193,7 +193,7 @@ DEFINE_FUNCTION( FileOpenDialog ) {
 		ofn.lpstrFilter = filter;
 	}
 
-	if ( argc >= 2 && argv[1] != JSVAL_VOID ) {
+	if ( argc >= 2 && !JSVAL_IS_VOID( argv[1] ) ) {
 
 		const char *tmp;
 		J_CHK( JsvalToString(cx, &argv[1], &tmp) );
@@ -324,7 +324,7 @@ DEFINE_PROPERTY( clipboardSetter ) {
 	EmptyClipboard(); // doc: If the application specifies a NULL window handle when opening the clipboard, EmptyClipboard succeeds but sets the clipboard owner to NULL. Note that this causes SetClipboardData to fail.
 	CloseClipboard();
 
-	if ( *vp != JSVAL_VOID ) {
+	if ( !JSVAL_IS_VOID( *vp ) ) {
 
 		res = OpenClipboard(NULL);
 		J_S_ASSERT( res != 0, "Unable to open the clipboard." );

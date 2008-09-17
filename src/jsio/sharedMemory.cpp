@@ -313,7 +313,7 @@ DEFINE_PROPERTY( contentSetter ) {
 	ClassPrivate *pv = (ClassPrivate*)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( pv );
 
-	if ( *vp == JSVAL_VOID ) {
+	if ( JSVAL_IS_VOID( *vp ) ) {
 
 		J_CHK( Lock(cx, pv) );
 		MemHeader *mh = (MemHeader*)pv->mem;

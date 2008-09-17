@@ -125,7 +125,7 @@ DEFINE_FUNCTION( Expand ) {
 		J_CHK( JS_GetProperty(cx, table, srcBegin, &val) );
 		*((char*)tok) = tmp;
 
-		if ( val != JSVAL_VOID ) {
+		if ( !JSVAL_IS_VOID( val ) ) {
 
 			chunk = (Chunk*)malloc(sizeof(Chunk));
 			J_CHK( JsvalToStringAndLength(cx, &val, &chunk->data, &chunk->length) ); // warning: GC on the returned buffer !

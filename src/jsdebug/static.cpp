@@ -308,7 +308,7 @@ _DumpHeap(JSContext *cx, uintN argc, jsval *vp)
     fileName = NULL;
     if (argc > 0) {
         v = JS_ARGV(cx, vp)[0];
-        if (v != JSVAL_NULL) {
+        if ( !JSVAL_IS_NULL( v ) ) {
             JSString *str;
 
             str = JS_ValueToString(cx, v);
@@ -326,7 +326,7 @@ _DumpHeap(JSContext *cx, uintN argc, jsval *vp)
         if (JSVAL_IS_TRACEABLE(v)) {
             startThing = JSVAL_TO_TRACEABLE(v);
             startTraceKind = JSVAL_TRACE_KIND(v);
-        } else if (v != JSVAL_NULL) {
+        } else if ( !JSVAL_IS_NULL( v ) ) {
             badTraceArg = "start";
             goto not_traceable_arg;
         }
@@ -346,7 +346,7 @@ _DumpHeap(JSContext *cx, uintN argc, jsval *vp)
     maxDepth = (size_t)-1;
     if (argc > 3) {
         v = JS_ARGV(cx, vp)[3];
-        if (v != JSVAL_NULL) {
+        if ( !JSVAL_IS_NULL( v ) ) {
             uint32 depth;
 
             if (!JS_ValueToECMAUint32(cx, v, &depth))
@@ -360,7 +360,7 @@ _DumpHeap(JSContext *cx, uintN argc, jsval *vp)
         v = JS_ARGV(cx, vp)[4];
         if (JSVAL_IS_TRACEABLE(v)) {
             thingToIgnore = JSVAL_TO_TRACEABLE(v);
-        } else if (v != JSVAL_NULL) {
+        } else if ( !JSVAL_IS_NULL( v ) ) {
             badTraceArg = "toIgnore";
             goto not_traceable_arg;
         }
@@ -459,7 +459,7 @@ TrapHandler(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval,
                            rval)) {
         return JSTRAP_ERROR;
     }
-    if (*rval != JSVAL_VOID)
+    if ( !JSVAL_IS_VOID( *rval ) )
         return JSTRAP_RETURN;
     return JSTRAP_CONTINUE;
 }
@@ -661,7 +661,7 @@ _TraceGC(JSContext *cx, uintN argc, jsval *vp)
 
 		char *fileName = NULL;
 
-		if (argv[0] != JSVAL_NULL) {
+		if ( !JSVAL_IS_NULL( argv[0] ) ) {
 
 			JSString *str;
 			str = JS_ValueToString(cx, argv[0]);

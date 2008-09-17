@@ -80,7 +80,7 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 			return 0;
 		case WM_CHAR:
 			JS_GetProperty(cx, obj, "onchar", &functionVal);
-			if ( functionVal != JSVAL_VOID ) {
+			if ( !JSVAL_IS_VOID( functionVal ) ) {
 
 				J_S_ASSERT_FUNCTION(functionVal); // (TBD) return value of assert is not compatible with this function (WndProc)
 				char c = wParam;
@@ -91,7 +91,7 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 			break;
 		case WM_KEYUP:
 			JS_GetProperty(cx, obj, "onkeyup", &functionVal);
-			if ( functionVal != JSVAL_VOID ) {
+			if ( !JSVAL_IS_VOID( functionVal ) ) {
 
 				J_S_ASSERT_FUNCTION(functionVal); // (TBD) return value of assert is not compatible with this function (WndProc)
 				jsval argv[] = { INT_TO_JSVAL(wParam), INT_TO_JSVAL(lParam) };
@@ -101,7 +101,7 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 			break;
 		case WM_KEYDOWN:
 			JS_GetProperty(cx, obj, "onkeydown", &functionVal);
-			if ( functionVal != JSVAL_VOID ) {
+			if ( !JSVAL_IS_VOID( functionVal ) ) {
 
 				J_S_ASSERT_FUNCTION(functionVal); // (TBD) return value of assert is not compatible with this function (WndProc)
 				jsval argv[] = { INT_TO_JSVAL(wParam), INT_TO_JSVAL(lParam) };
@@ -111,7 +111,7 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 			break;
 		case WM_ACTIVATE:
 			JS_GetProperty(cx, obj, "onactivate", &functionVal);
-			if ( functionVal != JSVAL_VOID ) {
+			if ( !JSVAL_IS_VOID( functionVal ) ) {
 
 				J_S_ASSERT_FUNCTION(functionVal); // (TBD) return value of assert is not compatible with this function (WndProc)
 				jsval argv[] = { BOOLEAN_TO_JSVAL(wParam != WA_INACTIVE) };
@@ -122,7 +122,7 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 //		case WM_SIZING:
 		case WM_SIZE:
 			JS_GetProperty(cx, obj, "onsize", &functionVal);
-			if ( functionVal != JSVAL_VOID ) {
+			if ( !JSVAL_IS_VOID( functionVal ) ) {
 
 				J_S_ASSERT_FUNCTION(functionVal); // (TBD) return value of assert is not compatible with this function (WndProc)
 				jsval argv[] = { INT_TO_JSVAL((short)LOWORD(lParam)), INT_TO_JSVAL((short)HIWORD(lParam)) };
@@ -132,7 +132,7 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 			break;
 		case WM_MOUSEMOVE:
 			JS_GetProperty(cx, obj, "onmousemove", &functionVal);
-			if ( functionVal != JSVAL_VOID ) {
+			if ( !JSVAL_IS_VOID( functionVal ) ) {
 
 				J_S_ASSERT_FUNCTION(functionVal); // (TBD) return value of assert is not compatible with this function (WndProc)
 				jsval argv[] = { INT_TO_JSVAL(MAKEPOINTS(lParam).x), INT_TO_JSVAL(MAKEPOINTS(lParam).y), BOOLEAN_TO_JSVAL(wParam & MK_LBUTTON), BOOLEAN_TO_JSVAL(wParam & MK_RBUTTON), BOOLEAN_TO_JSVAL(wParam & MK_MBUTTON) };
@@ -142,7 +142,7 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 			break;
 		case WM_MOUSEWHEEL:
 			JS_GetProperty(cx, obj, "onmousewheel", &functionVal);
-			if ( functionVal != JSVAL_VOID ) {
+			if ( !JSVAL_IS_VOID( functionVal ) ) {
 
 				J_S_ASSERT_FUNCTION(functionVal); // (TBD) return value of assert is not compatible with this function (WndProc)
 				jsval argv[] = { INT_TO_JSVAL( GET_WHEEL_DELTA_WPARAM(wParam)/WHEEL_DELTA ), BOOLEAN_TO_JSVAL(wParam & MK_LBUTTON), BOOLEAN_TO_JSVAL(wParam & MK_RBUTTON), BOOLEAN_TO_JSVAL(wParam & MK_MBUTTON) };
@@ -154,7 +154,7 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 		case WM_MBUTTONDOWN:
 		case WM_RBUTTONDOWN:
 			JS_GetProperty(cx, obj, "onmousedown", &functionVal);
-			if ( functionVal != JSVAL_VOID ) {
+			if ( !JSVAL_IS_VOID( functionVal ) ) {
 
 				// xPos = GET_X_LPARAM(lParam);
 				// yPos = GET_Y_LPARAM(lParam);
@@ -173,7 +173,7 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 		case WM_MBUTTONUP:
 		case WM_RBUTTONUP:
 			JS_GetProperty(cx, obj, "onmouseup", &functionVal);
-			if ( functionVal != JSVAL_VOID ) {
+			if ( !JSVAL_IS_VOID( functionVal ) ) {
 
 				// xPos = GET_X_LPARAM(lParam);
 				// yPos = GET_Y_LPARAM(lParam);
@@ -187,7 +187,7 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 
 		//case WM_MOUSELEAVE: // need TrackMouseEvent() ...
 		//	JS_GetProperty(cx, obj, "onmouseleave", &functionVal);
-		//	if ( functionVal != JSVAL_VOID ) {
+		//	if ( !JSVAL_IS_VOID( functionVal ) ) {
 
 		//		JS_CallFunctionValue(cx, obj, functionVal, 0, NULL, &rval);
 		//	}
@@ -263,7 +263,7 @@ DEFINE_FUNCTION( ProcessEvents ) {
 
 /*
 		JS_GetProperty(cx, obj, "onidle", &functionVal);
-		if ( functionVal != JSVAL_VOID ) {
+		if ( !JSVAL_IS_VOID( functionVal ) ) {
 			J_S_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." );
 			J_CHK( JS_CallFunctionValue(cx, obj, functionVal, 0, NULL, rval) );
 		}
@@ -502,7 +502,7 @@ DEFINE_PROPERTY( clipCursor ) {
 DEFINE_PROPERTY( absoluteClipCursor ) {
 
 	BOOL sysStatus;
-	if ( *vp != JSVAL_VOID ) {
+	if ( !JSVAL_IS_VOID( *vp ) ) {
 
 		int v[4];
 //		IntArrayToVector(cx, 4, vp, v);
