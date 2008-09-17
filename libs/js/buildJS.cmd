@@ -19,10 +19,9 @@ IF "%BUILD_METHOD%"=="rebuild" (
 )
 
 IF "%BUILD%"=="release" (
-	set XCFLAGS=/D_CRT_SECURE_NO_DEPRECATE=1 /MD /O2 /Ox /Oi /Ot /Oy /GL /GS- /arch:SSE 
 	set _MAKE_OPTIONS=%_MAKE_OPTIONS% BUILD_OPT=1
 ) else (
-	set XCFLAGS=/D_CRT_SECURE_NO_DEPRECATE=1 /MDd   /DJS_HASHMETER /DJS_GC_ZEAL
+	set _MAKE_OPTIONS=%_MAKE_OPTIONS% BUILD_IDG=1
 )
 
 copy jsconfig.h src
@@ -48,3 +47,6 @@ rem /D_NSPR_BUILD_
 rem set OTHER_LIBS=wsock32.lib ../../nspr/lib/libnspr4_s.lib /NODEFAULTLIB:libnspr4
 rem set OTHER_LIBS=/NODEFAULTLIB:../../nspr/win32/dist/lib/libnspr4.lib
 rem  JS_THREADSAFE=1 JS_DIST=../../nspr
+
+rem flags for release version: /O2 /Ox /Oi /Ot /Oy /GL /GS- /arch:SSE
+rem SM flags: /DJS_HASHMETER /DJS_GC_ZEAL
