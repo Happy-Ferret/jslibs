@@ -30,7 +30,7 @@
 
 
 
-inline DbContext* AddDbContext(sqlite3 *db) {
+DbContext* AddDbContext(sqlite3 *db) {
 
 	DbContext *pv = (DbContext*)malloc(sizeof(DbContext));
 	pv->db = db;
@@ -38,7 +38,7 @@ inline DbContext* AddDbContext(sqlite3 *db) {
 	return pv;
 }
 
-inline DbContext* GetDbContext(sqlite3 *db) {
+DbContext* GetDbContext(sqlite3 *db) {
 
 	for ( jl::QueueCell *it = jl::QueueBegin(dbContextList); it; it = jl::QueueNext(it) )
 		if ( ((DbContext*)QueueGetData(it))->db == db )
@@ -46,7 +46,7 @@ inline DbContext* GetDbContext(sqlite3 *db) {
 	return NULL;
 }
 
-inline void RemoveDbContext(sqlite3 *db) {
+void RemoveDbContext(sqlite3 *db) {
 
 	for ( jl::QueueCell *it = jl::QueueBegin(dbContextList); it; it = jl::QueueNext(it) )
 		if ( ((DbContext*)QueueGetData(it))->db == db ) {

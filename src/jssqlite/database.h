@@ -27,7 +27,7 @@ struct DbContext {
 	JSObject *obj;
 };
 
-inline DbContext* AddDbContext(sqlite3 *db);
-inline DbContext* GetDbContext(sqlite3 *db);
-inline void RemoveDbContext(sqlite3 *db);
+DbContext* AddDbContext(sqlite3 *db);
+DbContext* GetDbContext(sqlite3 *db);
+void RemoveDbContext(sqlite3 *db);
 
