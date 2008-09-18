@@ -7,7 +7,6 @@
 #define JS_HAS_PERL_SUBSTR      1       /* has str.substr */
 #define JS_HAS_OBJ_PROTO_PROP   1       /* has o.__proto__ etc. */
 #define JS_HAS_OBJ_WATCHPOINT   1       /* has o.watch and o.unwatch */
-#define JS_HAS_EXPORT_IMPORT    1       /* has export fun; import obj.fun */
 #define JS_HAS_EVAL_THIS_SCOPE  1       /* Math.eval is same as with (Math) */
 #define JS_HAS_SHARP_VARS       1       /* has #n=, #n# for object literals */
 #define JS_HAS_SCRIPT_OBJECT    1       /* has (new Script("x++")).exec() */
@@ -31,6 +30,7 @@
 #define JS_HAS_GENERATOR_EXPRS  1       /* has (expr for (lhs in iterable)) */
 #define JS_HAS_EXPR_CLOSURES    1       /* has function (formals) listexpr */
 
+/* Feature-test macro for evolving destructuring support. */
 #define JS_HAS_DESTRUCTURING_SHORTHAND 1
 
 /*
@@ -40,7 +40,7 @@ make[1]: *** [WINNT5.1_OPT.OBJ/jsscript.obj] Error 2
 make[1]: Leaving directory `/cygdrive/d/Franck/Mes documents/DEV/my_projects/jslibs/js/src'
 make: *** [all] Error 2
 
-workaround:
-*/
-#undef JS_HAS_SCRIPT_OBJECT
+workaround: #undef JS_HAS_SCRIPT_OBJECT
 
+wait fix for JS_HAS_XDR_FREEZE_THAW 1
+*/

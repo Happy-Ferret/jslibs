@@ -24,7 +24,7 @@ IF "%BUILD%"=="release" (
 	set _MAKE_OPTIONS=%_MAKE_OPTIONS% BUILD_IDG=1
 )
 
-copy jsconfig.h src
+copy jsversion.h src
 
 pushd .\src
 make -f Makefile.ref %_MAKE_OPTIONS%
