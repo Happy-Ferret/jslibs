@@ -23,7 +23,7 @@ endif
 TARGET_FILES = ./src/$(LIBJS_DIR)/libjs.so
 
 all::
-	diff -q ./jsconfig.h ./src/jsconfig.h || cp ./jsconfig.h ./src/
+	diff -q ./jsconfig.h ./src/jsconfig.h || cp ./jsversion.h ./src/
 
 all clean::
 	$(MAKE) -C src -f Makefile.ref $@ $(LIBJS_MAKE_OPTIONS) XCFLAGS="$(CFLAGS)"
