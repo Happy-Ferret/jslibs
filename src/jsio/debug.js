@@ -1,6 +1,15 @@
 LoadModule('jsstd');
 LoadModule('jsio');
 
+
+var mem = new SharedMemory( 'fileName', 100 );
+var mem1 = new SharedMemory( 'fileName', 100 );
+
+mem1.Close();
+//mem.Close();
+
+
+
 try {
 
 

@@ -74,8 +74,8 @@ JSBool CloseSharedMemory( JSContext *cx, JSObject *obj ) {
 	
 	MemHeader *mh = (MemHeader*)pv->mem;
 
-	mh->accessCount--;
 	bool isLast = (mh->accessCount == 0);
+	mh->accessCount--;
 
 	status = PR_DetachSharedMemory(pv->shm, pv->mem);
 	status = PR_PostSemaphore(pv->accessSem);
