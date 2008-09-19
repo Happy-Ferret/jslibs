@@ -31,3 +31,5 @@ all::
 	cp $(_INTERMEDIATE_DIR)*.h $(DEST_DIR)
 	cp $(_INTERMEDIATE_DIR)*.so $(DEST_DIR)
 	$(POSBUILD)
+
+copy: ;
