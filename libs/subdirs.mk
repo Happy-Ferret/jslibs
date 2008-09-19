@@ -14,7 +14,7 @@ DEST_DIR = ./$(BUILD)/
 
 .PHONY: copy
 copy:
-	-mkdir $(DEST_DIR)
+	mkdir -p $(DEST_DIR)
 	cp $(TARGET_FILES) $(DEST_DIR)
 
 clean::

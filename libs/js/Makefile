@@ -1,31 +1,35 @@
 include ../subdirs.mk
 
+_DEST_DIR=./$(BUILD)/
+
 ifeq ($(BUILD),dbg)
-	LIBJS_MAKE_OPTIONS=BUILD_IDG=1
-	LIBJS_DIR=`uname`_All_DBG.OBJD
-#	CFLAGS=-DJS_GCMETER -DJS_HASHMETER
-# -DGC_MARK_DEBUG -DJS_ARENAMETER
+	_MAKE_OPTIONS=BUILD_IDG=1
+	_INTERMEDIATE_DIR=./src/`uname`_All_DBG.OBJD/
 	POSBUILD=
 else
-	LIBJS_MAKE_OPTIONS=BUILD_OPT=1
-	LIBJS_DIR=`uname`_All_OPT.OBJ
-#	CFLAGS = -O3
-	POSBUILD=strip $(TARGET_FILES)
+	_MAKE_OPTIONS=BUILD_OPT=1
+	_INTERMEDIATE_DIR=./src/`uname`_All_OPT.OBJ/
+	POSBUILD=strip $(_DEST_DIR)*.so
 endif
 
 ifeq ($(BITS),32)
-	CFLAGS += -m32
+	_CFLAGS += -m32
 endif
 
 ifeq ($(BITS),64)
-	CFLAGS += -m64
+	_CFLAGS += -m64
 endif
 
-TARGET_FILES=./src/$(LIBJS_DIR)/libjs.so
+TARGET_FILES=./src/$(BUILD)/libjs.so
 
 all::
 	diff -q ./jsversion.h ./src/jsversion.h || cp ./jsversion.h ./src/
 
 all clean::
-	$(MAKE) -C src -f Makefile.ref $@ $(LIBJS_MAKE_OPTIONS) XCFLAGS="$(CFLAGS)"
+	$(MAKE) -C src -f Makefile.ref $@ $(_MAKE_OPTIONS) XCFLAGS="$(_CFLAGS)"
+
+all::
+	mkdir -p $(_DEST_DIR)
+	cp $(_INTERMEDIATE_DIR)*.h $(_DEST_DIR)
+	cp $(_INTERMEDIATE_DIR)*.so $(_DEST_DIR)
 	$(POSBUILD)

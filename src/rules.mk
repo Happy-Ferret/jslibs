@@ -7,14 +7,15 @@ BITS ?= 32
 
 ifeq ($(BUILD),dbg)
 	CFLAGS += -Wall -g3 -O0 -DDEBUG
-	SMINC = -I../../libs/js/src/Linux_All_DBG.OBJ -I../../libs/js/src
-	SMLIB = -Wl,-Bdynamic -L../../libs/js/src/Linux_All_DBG.OBJ -ljs
-	SMDEF = -DJS_GCMETER -DJS_HASHMETER -DJS_GC_ZEAL -DJS_DUMP_PROPTREE_STATS
+	SMINC = -I../../libs/js/$(BUILD) -I../../libs/js/src
+	SMLIB = -Wl,-Bdynamic -L../../libs/js/$(BUILD) -ljs
+#	SMDEF = -DJS_GCMETER -DJS_HASHMETER -DJS_GC_ZEAL -DJS_DUMP_PROPTREE_STATS
 #  -DJS_ARENAMETER
+	SMDEF =
 else
 	CFLAGS += -Wall -O3 -s -funroll-loops
-	SMINC = -I../../libs/js/src/Linux_All_OPT.OBJ -I../../libs/js/src
-	SMLIB = -Wl,-Bdynamic -L../../libs/js/src/Linux_All_OPT.OBJ -ljs
+	SMINC = -I../../libs/js/$(BUILD) -I../../libs/js/src
+	SMLIB = -Wl,-Bdynamic -L../../libs/js/$(BUILD) -ljs
 	SMDEF =
 endif
 
@@ -76,7 +77,7 @@ all: $(DEPENDS) $(TARGET)
 
 .PHONY: copy 
 copy:
-	-mkdir ./$(BUILD)/
+	mkdir -p ./$(BUILD)/
 	cp $(TARGET) ./$(BUILD)/
 
 ################################# END
