@@ -64,17 +64,20 @@ LoadModule('jsio');
 		}
 
 
-/// GetHostByName function [u]
+/// GetHostByName function [r]
 
 		var res = Socket.GetHostsByName('localhost');
 		QA.ASSERT( res.indexOf('127.0.0.1') != -1, true, 'localhost is 127.0.0.1' );
 
-		var res = Socket.GetHostsByName(hostName);
-		QA.ASSERT( res.length >= 1, true, 'find hostName' );
-
 		var res = Socket.GetHostsByName(QA.RandomString(25));
 		QA.ASSERT_TYPE( res, Array );
 		QA.ASSERT( res.length, 0, 'find nonexistent hostName' );
+
+
+/// GetHostByName function with hostName argument
+
+		var res = Socket.GetHostsByName(hostName);
+		QA.ASSERT( res.length >= 1, true, 'find hostName (may fail)' );
 
 
 /// empty poll [tr]
@@ -83,7 +86,7 @@ LoadModule('jsio');
 		var count = Poll([], 100);
 		var t = IntervalNow() - t0;
 		QA.ASSERT( count, 0, 'descriptor event count' );
-		QA.ASSERT( t >= 99 && t < 110, true, 'poll timeout (may fail if high CPU load) t='+t );
+		QA.ASSERT( t >= 99 && t < 150, true, 'poll timeout (may fail if high CPU load) t='+t );
 
 
 /// Non-blocking TCP Socket [tr]
@@ -138,14 +141,30 @@ LoadModule('jsio');
 				clientSocket.Write('1234');
 			}
 		}
+		
+		while (dlist.length)
+			dlist.pop().Close();
 
-/// Creating a lot of sockets [ftr]
+/// Creating a lot of sockets + GC [r]
+
+	for ( var j = 0; j < 100; j++ ) {
+
+		let ( s = [] ) {
+			for ( var i=0 ; i < 1000 ; i++ ) {
+
+				s.push(new Socket( Socket.TCP ));
+			}
+		}
+		CollectGarbage();
+	}
+
+/// Create/remove a lot of sockets [r]
 
 	var s = [];
-	for ( var i=0 ; i < 1000 ; i++ ) {
-	
+	for ( var i=0 ; i < 500 ; i++ )
 		s.push(new Socket( Socket.TCP ));
-	}
+	while (s.length)
+		s.pop().Close();
 
 
 /// Non-blocking UDP Socket [tr]
@@ -253,6 +272,7 @@ LoadModule('jsio');
 		mem.content = ' abcdef ';
 		QA.ASSERT_STR( mem.content, ' abcdef ', 'content' );
 		mem.Close();
+		QA.ASSERT( new File(fileName).exist, false, 'SharedMemory file has been removed (linux only ?)' );
 		
 
 /// shared memory simple test 2 [ftr]
@@ -267,6 +287,7 @@ LoadModule('jsio');
 		QA.ASSERT_STR( mem.Read(), '123456789ABC', 'content' );
 		QA.ASSERT_STR( mem.content, '123456789ABC', 'content' );
 		mem.Close();
+		QA.ASSERT( new File(fileName).exist, false, 'SharedMemory file has been removed (linux only ?)' );
 
 
 /// shared memory [ftr]
@@ -286,6 +307,7 @@ LoadModule('jsio');
 		QA.ASSERT_STR( mem.Read(1, 99), 'Z', 'writing at the end' );
 		mem.Close();
 		mem2.Close();
+		QA.ASSERT( new File(fileName).exist, false, 'SharedMemory file has been removed (linux only ?)' );
 
 
 /// standard file descriptors [ftr]
