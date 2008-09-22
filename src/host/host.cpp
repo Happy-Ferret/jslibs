@@ -305,7 +305,7 @@ JSContext* CreateHost(size_t maxMem, size_t maxAlloc) {
 	JS_SetScriptStackQuota(cx, JS_DEFAULT_SCRIPT_STACK_QUOTA); // good place to manage stack limit ( that is 32MB by default )
 	//	btw, JS_SetScriptStackQuota ( see also JS_SetThreadStackLimit )
 
-	JS_SetVersion(cx, (JSVersion)JS_VERSION);
+	JS_SetVersion(cx, (JSVersion)JSVERSION_LATEST);
 
 // error management
 	JS_SetErrorReporter(cx, ErrorReporter);
@@ -315,14 +315,14 @@ JSContext* CreateHost(size_t maxMem, size_t maxAlloc) {
 	//	uint32 options = JSOPTION_VAROBJFIX | JSOPTION_XML | JSOPTION_COMPILE_N_GO;
 	//	if ( !unsafeMode )
 	//		options |= JSOPTION_STRICT;
-	//	JS_SetOptions(cx, options );
+	//	JS_ToggleOptions(cx, options );
 
 	#ifdef JSOPTION_JIT
-	JS_SetOptions(cx, JSOPTION_JIT);
+	JS_ToggleOptions(cx, JSOPTION_JIT);
 	// JSOPTION_JIT: "I think it's possible we'll remove even this little bit of API, and just have the JIT always-on. -j"
 	#endif // JSOPTION_JIT
 
-	JS_SetOptions(cx, JSOPTION_VAROBJFIX | JSOPTION_XML | JSOPTION_COMPILE_N_GO | JSOPTION_RELIMIT | JSOPTION_NATIVE_BRANCH_CALLBACK);
+	JS_ToggleOptions(cx, JSOPTION_VAROBJFIX | JSOPTION_XML | JSOPTION_COMPILE_N_GO | JSOPTION_RELIMIT | JSOPTION_NATIVE_BRANCH_CALLBACK);
   // JSOPTION_COMPILE_N_GO:
 	//  caller of JS_Compile*Script promises to execute compiled script once only; enables compile-time scope chain resolution of consts.
   // JSOPTION_DONT_REPORT_UNCAUGHT:
@@ -367,7 +367,7 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostOutput stdOut, HostOutput s
 	_unsafeMode = unsafeMode;
 
 	if ( _unsafeMode )
-		JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_STRICT);
+		JS_ToggleOptions(cx, JS_GetOptions(cx) | JSOPTION_STRICT);
 
 	JSObject *globalObject = JS_GetGlobalObject(cx);
 	J_CHKM( globalObject != NULL, "Global object not found." );
