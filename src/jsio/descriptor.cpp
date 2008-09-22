@@ -263,7 +263,7 @@ DEFINE_FUNCTION( Read ) {
 	if ( J_ARG_ISDEF(1) ) {
 
 		PRInt32 amount;
-		J_JSVAL_TO_INT32( J_ARG(1), amount );
+		J_CHK( JsvalToInt(cx, J_ARG(1), &amount) );
 
 //		if ( amount == 0 ) // (TBD) check if it is good to use this ( even if amount is 0, we must call Read
 //			*rval = JS_GetEmptyStringValue(cx);
@@ -427,10 +427,10 @@ DEFINE_FUNCTION( Import ) {
 
 	J_S_ASSERT_ARG_MIN(2);
 	//int stdfd;
-	//J_JSVAL_TO_INT32( J_ARG(1), stdfd );
+	//J_CHK( JsvalToInt(cx, J_ARG(1), &stdfd) );
 
 	PRInt32 osfd;
-	J_JSVAL_TO_INT32( J_ARG(1), osfd );
+	J_CHK( JsvalToInt(cx, J_ARG(1), &osfd) );
 
 	//switch (stdfd) {
 	//	case 0:

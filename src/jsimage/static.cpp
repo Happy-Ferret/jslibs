@@ -352,9 +352,9 @@ DEFINE_FUNCTION_FAST( EncodePngImage ) {
 	J_S_ASSERT_OBJECT( J_FARG(1) );
 	JSObject *image = JSVAL_TO_OBJECT( J_FARG(1) );
 	int sWidth, sHeight, sChannels;
-	J_PROPERTY_TO_INT32( image, "width", sWidth );
-	J_PROPERTY_TO_INT32( image, "height", sHeight );
-	J_PROPERTY_TO_INT32( image, "channels", sChannels );
+	J_CHK( GetPropertyInt(cx, image, "width", &sWidth) );
+	J_CHK( GetPropertyInt(cx, image, "height", &sHeight) );
+	J_CHK( GetPropertyInt(cx, image, "channels", &sChannels) );
 
 	PngWriteUserStruct desc;
 

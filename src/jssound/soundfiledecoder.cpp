@@ -253,7 +253,7 @@ DEFINE_CONSTRUCTOR() {
 	if ( J_FARG_ISDEF(1) ) {
 
 		size_t frames;
-		J_JSVAL_TO_UINT32(J_FARG(1), frames);
+		J_CHK( JsvalToUInt(cx, J_FARG(1), &frames) );
 
 		if ( frames > 0 ) {
 

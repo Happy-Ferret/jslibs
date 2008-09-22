@@ -82,7 +82,7 @@ DEFINE_CONSTRUCTOR() {
 	// Doc. The offset must be aligned to whole pages. !!!
 	PROffset64 offset;
 	if ( J_ARG_ISDEF(2) )
-		J_JSVAL_TO_INT32( J_ARG(2), offset );
+		J_CHK( JsvalToInt(cx, J_ARG(2), &offset) );
 	else
 		offset = 0;
 

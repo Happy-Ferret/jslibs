@@ -362,9 +362,9 @@ DEFINE_CONSTRUCTOR() {
 	if ( J_ARGC >= 3 ) {
 	
 		int width, height, channels;
-		J_JSVAL_TO_INT32( J_ARG(1), width );
-		J_JSVAL_TO_INT32( J_ARG(2), height );
-		J_JSVAL_TO_INT32( J_ARG(3), channels );
+		J_CHK( JsvalToInt(cx, J_ARG(1), &width) );
+		J_CHK( JsvalToInt(cx, J_ARG(2), &height) );
+		J_CHK( JsvalToInt(cx, J_ARG(3), &channels) );
 
 		J_S_ASSERT( width > 0, "Invalid width." );
 		J_S_ASSERT( height > 0, "Invalid height." );
@@ -503,7 +503,7 @@ DEFINE_FUNCTION_FAST( ClearChannel ) {
 	if ( argc >= 1 ) {
 
 		int channel;
-		J_JSVAL_TO_INT32( J_FARG(1), channel );
+		J_CHK( JsvalToInt(cx, J_FARG(1), &channel) );
 		J_S_ASSERT( channel < tex->channels, "Invalid channel." );
 
 		PTYPE *ptr = tex->cbuffer;
@@ -547,13 +547,13 @@ DEFINE_FUNCTION_FAST( SetChannel ) {
 	J_S_ASSERT_RESOURCE(tex);
 
 	int dstChannel;
-	J_JSVAL_TO_INT32( J_FARG(1), dstChannel );
+	J_CHK( JsvalToInt(cx, J_FARG(1), &dstChannel) );
 
 	Texture *tex1;
 	J_CHK( ValueToTexture(cx, J_FARG(2), &tex1) );
 
 	int srcChannel;
-	J_JSVAL_TO_INT32( J_FARG(3), srcChannel );
+	J_CHK( JsvalToInt(cx, J_FARG(3), &srcChannel) );
 
 	int texChannel = tex->channels;
 	int tex1Channel = tex1->channels;
@@ -723,7 +723,7 @@ DEFINE_FUNCTION_FAST( Aliasing ) {
 	J_S_ASSERT_RESOURCE(tex);
 
 	size_t count;
-	J_JSVAL_TO_UINT32( J_FARG(1), count );
+	J_CHK( JsvalToUInt(cx, J_FARG(1), &count) );
 	J_S_ASSERT( count >= 1, "Invalid aliasing levels count." );
 
 	bool useCurve;
@@ -788,7 +788,7 @@ DEFINE_FUNCTION_FAST( Colorize ) {
 
 	double power;
 	if ( argc >= 3 )
-		J_JSVAL_TO_REAL(J_FARG(3), power);
+		J_CHK( JsvalToDouble(cx, J_FARG(3), &power) );
 	else
 		power = 1;
 	
@@ -854,7 +854,7 @@ DEFINE_FUNCTION_FAST( ExtractColor ) {
 
 	double power;
 	if ( argc >= 3 )
-		J_JSVAL_TO_REAL(J_FARG(3), power);
+		J_CHK( JsvalToDouble(cx, J_FARG(3), &power) );
 	else
 		power = 1;
 
@@ -924,8 +924,8 @@ DEFINE_FUNCTION_FAST( ClampLevels ) { // (TBD) check if this algo is right
 	J_S_ASSERT_RESOURCE(tex);
 
 	double min, max;
-	J_JSVAL_TO_REAL( J_FARG(1), min );
-	J_JSVAL_TO_REAL( J_FARG(2), max );
+	J_CHK( JsvalToDouble(cx, J_FARG(1), &min) );
+	J_CHK( JsvalToDouble(cx, J_FARG(2), &max) );
 
 	PTYPE tmp;
 	int tsize = tex->width * tex->height * tex->channels;
@@ -958,8 +958,8 @@ DEFINE_FUNCTION_FAST( CutLevels ) { // (TBD) check if this algo is right
 	J_S_ASSERT_RESOURCE(tex);
 
 	double min, max;
-	J_JSVAL_TO_REAL( J_FARG(1), min );
-	J_JSVAL_TO_REAL( J_FARG(2), max );
+	J_CHK( JsvalToDouble(cx, J_FARG(1), &min) );
+	J_CHK( JsvalToDouble(cx, J_FARG(2), &max) );
 
 	PTYPE tmp;
 	int tsize = tex->width * tex->height * tex->channels;
@@ -992,13 +992,13 @@ DEFINE_FUNCTION_FAST( CutLevels ) {
 	
 	if ( argc >= 1 ) {
 
-		J_JSVAL_TO_REAL( J_FARG(1), min );
+		J_CHK( JsvalToDouble(cx, J_FARG(1), &min) );
 		max = min;
 	}
 	
 	if ( argc >= 2 ) {
 
-		J_JSVAL_TO_REAL( J_FARG(2), max );
+		J_CHK( JsvalToDouble(cx, J_FARG(2), &max) );
 	}
 
 	PTYPE level, lmin, lmax; // local min & max
@@ -1076,7 +1076,7 @@ DEFINE_FUNCTION_FAST( PowLevels ) { //
 	J_S_ASSERT_ARG_MIN( 1 );
 
 	double power;
-	J_JSVAL_TO_REAL( J_FARG(1), power );
+	J_CHK( JsvalToDouble(cx, J_FARG(1), &power) );
 
 	int tsize = tex->width * tex->height * tex->channels;
 	for ( int i = 0; i < tsize; i++ )
@@ -1101,11 +1101,11 @@ DEFINE_FUNCTION_FAST( MirrorLevels ) {
 	Texture *tex = (Texture *)JS_GetPrivate(cx, J_FOBJ);
 	J_S_ASSERT_RESOURCE(tex);
 	double threshold;
-	J_JSVAL_TO_REAL( J_FARG(1), threshold );
+	J_CHK( JsvalToDouble(cx, J_FARG(1), &threshold) );
 	
 	bool mirrorTop;
 	if ( argc >= 2 && !JSVAL_IS_VOID(J_FARG(2)) )
-		J_JSVAL_TO_BOOL( J_FARG(2), mirrorTop );
+		J_CHK( JsvalToBool(cx, J_FARG(2), &mirrorTop) );
 	else
 		mirrorTop = true;
 
@@ -1145,7 +1145,7 @@ DEFINE_FUNCTION_FAST( WrapLevels ) { // real modulo
 	J_S_ASSERT_RESOURCE(tex);
 
 	double wrap;
-	J_JSVAL_TO_REAL(J_FARG(1), wrap);
+	J_CHK( JsvalToDouble(cx, J_FARG(1), &wrap) );
 
 	PTYPE div;
 	int tsize = tex->width * tex->height * tex->channels;
@@ -1217,7 +1217,7 @@ DEFINE_FUNCTION_FAST( Desaturate ) {
 	J_S_ASSERT( tex->width == texSrc->width && tex->height == texSrc->height, "Images must have the same width and height." );
 
 	int modeVal;
-	J_JSVAL_TO_INT32( J_FARG(2), modeVal );
+	J_CHK( JsvalToInt(cx, J_FARG(2), &modeVal) );
 	DesaturateMode mode = (DesaturateMode)modeVal;
 	
 	int pos, i, c;
@@ -1365,7 +1365,7 @@ DEFINE_FUNCTION_FAST( Mult ) {
 		
 		J_S_ASSERT_ARG_MIN( 2 );
 		int aliasing;
-		J_JSVAL_TO_INT32( J_FARG(2), aliasing );
+		J_CHK( JsvalToInt(cx, J_FARG(2), &aliasing) );
 
 		PTYPE *curve = (PTYPE*)malloc( sizeof(PTYPE) * aliasing );
 		J_CHK( InitCurveData(cx, J_FARG(1), aliasing, curve) );
@@ -1483,8 +1483,8 @@ DEFINE_FUNCTION_FAST( SetPixel ) { // x, y, levels
 	J_S_ASSERT_RESOURCE(tex);
 
 	int x, y;
-	J_JSVAL_TO_INT32( J_FARG(1), x );
-	J_JSVAL_TO_INT32( J_FARG(2), y );
+	J_CHK( JsvalToInt(cx, J_FARG(1), &x) );
+	J_CHK( JsvalToInt(cx, J_FARG(2), &y) );
 	
 	x = Wrap(x, tex->width);
 	y = Wrap(y, tex->height);
@@ -1520,17 +1520,17 @@ DEFINE_FUNCTION_FAST( SetRectangle ) {
 	J_S_ASSERT_RESOURCE(tex);
 
 	int x0, y0, x1, y1;
-	J_JSVAL_TO_INT32( J_FARG(1), x0 );
-	J_JSVAL_TO_INT32( J_FARG(2), y0 );
-	J_JSVAL_TO_INT32( J_FARG(3), x1 );
-	J_JSVAL_TO_INT32( J_FARG(4), y1 );
+	J_CHK( JsvalToInt(cx, J_FARG(1), &x0) );
+	J_CHK( JsvalToInt(cx, J_FARG(2), &y0) );
+	J_CHK( JsvalToInt(cx, J_FARG(3), &x1) );
+	J_CHK( JsvalToInt(cx, J_FARG(4), &y1) );
 
 	PTYPE pixel[PMAXCHANNELS];
 	J_CHK( InitLevelData(cx, J_FARG(5), tex->channels, pixel) );
 	
 //	PTYPE alpha;
 //	if ( argc >= 6 )
-//		J_JSVAL_TO_REAL( J_FARG(6), alpha )
+//		J_CHK( JsvalToDouble(cx, J_FARG(6), &alpha) )
 //	else
 //		alpha = 1;
 
@@ -1569,7 +1569,7 @@ DEFINE_FUNCTION_FAST( Rotate90 ) { // (TBD) test it
 	J_S_ASSERT_RESOURCE(tex);
 
 	int turn;
-	J_JSVAL_TO_INT32(J_FARG(1), turn);
+	J_CHK( JsvalToInt(cx, J_FARG(1), &turn) );
 
 	turn = Wrap(turn, turn);
 
@@ -1638,8 +1638,8 @@ DEFINE_FUNCTION_FAST( Flip ) {
 	J_S_ASSERT_RESOURCE(tex);
 
 	bool flipX, flipY;
-	J_JSVAL_TO_BOOL( J_FARG(1), flipX );
-	J_JSVAL_TO_BOOL( J_FARG(2), flipY );
+	J_CHK( JsvalToBool(cx, J_FARG(1), &flipX) );
+	J_CHK( JsvalToBool(cx, J_FARG(2), &flipY) );
 
 	TextureSetupBackBuffer(cx, tex);
 
@@ -1687,12 +1687,12 @@ DEFINE_FUNCTION_FAST( RotoZoom ) { // source: FxGen
 	int newHeight = height;
 
 	double centerX, centerY;
-	J_JSVAL_TO_REAL( J_FARG(1), centerX );
-	J_JSVAL_TO_REAL( J_FARG(2), centerY );
+	J_CHK( JsvalToDouble(cx, J_FARG(1), &centerX) );
+	J_CHK( JsvalToDouble(cx, J_FARG(2), &centerY) );
 
 	double zoomX, zoomY;
-	J_JSVAL_TO_REAL( J_FARG(3), zoomX );
-	J_JSVAL_TO_REAL( J_FARG(4), zoomY );
+	J_CHK( JsvalToDouble(cx, J_FARG(3), &zoomX) );
+	J_CHK( JsvalToDouble(cx, J_FARG(4), &zoomY) );
 
 //	zoomX = 0.5 - ( zoomX / 2 );
 //	zoomX = exp( zoomX * 6 );
@@ -1701,7 +1701,7 @@ DEFINE_FUNCTION_FAST( RotoZoom ) { // source: FxGen
 //	zoomY = exp( zoomY * 6 );
 
 	double rotate;
-	J_JSVAL_TO_REAL( J_FARG(5), rotate ); // 1 for 1 turn
+	J_CHK( JsvalToDouble(cx, J_FARG(5), &rotate) ); // 1 for 1 turn
 
 	rotate = M_PI * 2 * rotate;
 
@@ -1804,12 +1804,12 @@ DEFINE_FUNCTION_FAST( Resize ) {
 	unsigned int channels = tex->channels;
 
 	size_t newWidth, newHeight;
-	J_JSVAL_TO_UINT32( J_FARG(1), newWidth );
-	J_JSVAL_TO_UINT32( J_FARG(2), newHeight );
+	J_CHK( JsvalToUInt(cx, J_FARG(1), &newWidth) );
+	J_CHK( JsvalToUInt(cx, J_FARG(2), &newHeight) );
 
 	bool interpolate;
 	if ( J_FARG_ISDEF(3) )
-		J_JSVAL_TO_BOOL( J_FARG(3), interpolate );
+		J_CHK( JsvalToBool(cx, J_FARG(3), &interpolate) );
 	else
 		interpolate = false;
 
@@ -1817,7 +1817,7 @@ DEFINE_FUNCTION_FAST( Resize ) {
 	if ( J_FARG_ISDEF(4) ) {
 		
 		int tmp;
-		J_JSVAL_TO_INT32( J_FARG(4), tmp );
+		J_CHK( JsvalToInt(cx, J_FARG(4), &tmp) );
 		borderMode = (BorderMode)tmp;
 	} else
 		borderMode = borderWrap;
@@ -1972,7 +1972,7 @@ DEFINE_FUNCTION_FAST( Convolution ) {
 	if ( J_FARG_ISDEF(2) ) {
 
 		int tmp;
-		J_JSVAL_TO_INT32( J_FARG(2), tmp );
+		J_CHK( JsvalToInt(cx, J_FARG(2), &tmp) );
 		borderMode = (BorderMode)tmp;
 	} else
 		borderMode = borderWrap;
@@ -2182,8 +2182,8 @@ DEFINE_FUNCTION_FAST( BoxBlur ) {
 	int height = tex->height;
 
 	int bw, bh; // blur width & height
-	J_JSVAL_TO_INT32( J_FARG(1), bw );
-	J_JSVAL_TO_INT32( J_FARG(2), bh );
+	J_CHK( JsvalToInt(cx, J_FARG(1), &bw) );
+	J_CHK( JsvalToInt(cx, J_FARG(2), &bh) );
 
 	if ( bw > width )
 		bw = width;
@@ -2296,7 +2296,7 @@ DEFINE_FUNCTION_FAST( Normals ) {
 
 	double amp;
 	if ( argc >= 1 )
-		J_JSVAL_TO_REAL( J_FARG(1), amp );
+		J_CHK( JsvalToDouble(cx, J_FARG(1), &amp) );
 	else
 		amp = 1;
 
@@ -2432,13 +2432,13 @@ DEFINE_FUNCTION_FAST( Light ) {
 	
 	double bumpPower; // (TBD) default value
 	if ( argc >= 6 )
-		J_JSVAL_TO_REAL( J_FARG(6), bumpPower );
+		J_CHK( JsvalToDouble(cx, J_FARG(6), &bumpPower) );
 	else
 		bumpPower = 1;
 
 	double specularPower; // (TBD) default value
 	if ( argc >= 7 )
-		J_JSVAL_TO_REAL( J_FARG(7), specularPower );
+		J_CHK( JsvalToDouble(cx, J_FARG(7), &specularPower) );
 	else
 		specularPower = 1;
 
@@ -2502,10 +2502,10 @@ DEFINE_FUNCTION_FAST( Trim ) { // (TBD) test this new version that use memcpy
 	J_S_ASSERT_RESOURCE(tex);
 
 	int x0, y0, x1, y1;
-	J_JSVAL_TO_INT32( J_FARG(1), x0 );
-	J_JSVAL_TO_INT32( J_FARG(2), y0 );
-	J_JSVAL_TO_INT32( J_FARG(3), x1 );
-	J_JSVAL_TO_INT32( J_FARG(4), y1 );
+	J_CHK( JsvalToInt(cx, J_FARG(1), &x0) );
+	J_CHK( JsvalToInt(cx, J_FARG(2), &y0) );
+	J_CHK( JsvalToInt(cx, J_FARG(3), &x1) );
+	J_CHK( JsvalToInt(cx, J_FARG(4), &y1) );
 
 	int width = tex->width;
 	int height = tex->height;
@@ -2582,14 +2582,14 @@ DEFINE_FUNCTION_FAST( Copy ) {
 	J_S_ASSERT( tex->channels == srcTex->channels, "Invalid channel count." );
 
 	int px, py; // position
-	J_JSVAL_TO_INT32( J_FARG(2), px );
-	J_JSVAL_TO_INT32( J_FARG(3), py );
+	J_CHK( JsvalToInt(cx, J_FARG(2), &px) );
+	J_CHK( JsvalToInt(cx, J_FARG(3), &py) );
 
 	BorderMode borderMode; // (TBD) from function arg
 	if ( J_FARG_ISDEF(4) ) {
 		
 		int tmp;
-		J_JSVAL_TO_INT32( J_FARG(4), tmp );
+		J_CHK( JsvalToInt(cx, J_FARG(4), &tmp) );
 		borderMode = (BorderMode)tmp;
 	} else
 		borderMode = borderClamp;
@@ -2656,14 +2656,14 @@ DEFINE_FUNCTION_FAST( Paste ) { // (Texture)texture, (int)x, (int)y, (bool)borde
 	J_S_ASSERT( tex->channels == tex1->channels, "Invalid channel count." );
 
 	int px, py; // position
-	J_JSVAL_TO_INT32( J_FARG(2), px );
-	J_JSVAL_TO_INT32( J_FARG(3), py );
+	J_CHK( JsvalToInt(cx, J_FARG(2), &px) );
+	J_CHK( JsvalToInt(cx, J_FARG(3), &py) );
 
 	BorderMode borderMode;
 	if ( J_FARG_ISDEF(4) ) {
 		
 		int tmp;
-		J_JSVAL_TO_INT32( J_FARG(4), tmp );
+		J_CHK( JsvalToInt(cx, J_FARG(4), &tmp) );
 		borderMode = (BorderMode)tmp;
 	} else
 		borderMode = borderClamp;
@@ -2766,10 +2766,10 @@ DEFINE_FUNCTION_FAST( Export ) { // (int)x, (int)y, (int)width, (int)height. Ret
 		
 		J_S_ASSERT_ARG_MIN( 4 );
 		int px, py;
-		J_JSVAL_TO_INT32( J_FARG(1), px );
-		J_JSVAL_TO_INT32( J_FARG(2), py );
-		J_JSVAL_TO_INT32( J_FARG(3), dWidth );
-		J_JSVAL_TO_INT32( J_FARG(4), dHeight );
+		J_CHK( JsvalToInt(cx, J_FARG(1), &px) );
+		J_CHK( JsvalToInt(cx, J_FARG(2), &py) );
+		J_CHK( JsvalToInt(cx, J_FARG(3), &dWidth) );
+		J_CHK( JsvalToInt(cx, J_FARG(4), &dHeight) );
 	}
 
 	bufferLength = dWidth * dHeight * sChannels;
@@ -2844,14 +2844,14 @@ DEFINE_FUNCTION_FAST( Import ) { // (Blob)image, (int)x, (int)y
 	J_S_ASSERT_CLASS( bstr, BlobJSClass(cx) );
 
 	int px, py;
-	J_JSVAL_TO_INT32( J_FARG(2), px );
-	J_JSVAL_TO_INT32( J_FARG(3), py );
+	J_CHK( JsvalToInt(cx, J_FARG(2), &px) );
+	J_CHK( JsvalToInt(cx, J_FARG(3), &py) );
 
 	BorderMode borderMode;
 	if ( J_FARG_ISDEF(4) ) {
 		
 		int tmp;
-		J_JSVAL_TO_INT32( J_FARG(4), tmp );
+		J_CHK( JsvalToInt(cx, J_FARG(4), &tmp) );
 		borderMode = (BorderMode)tmp;
 	} else
 		borderMode = borderClamp;
@@ -2926,14 +2926,14 @@ DEFINE_FUNCTION_FAST( Shift ) {
 	J_S_ASSERT_RESOURCE(tex);
 
 	int offsetX, offsetY;
-	J_JSVAL_TO_INT32( J_FARG(1), offsetX );
-	J_JSVAL_TO_INT32( J_FARG(2), offsetY );
+	J_CHK( JsvalToInt(cx, J_FARG(1), &offsetX) );
+	J_CHK( JsvalToInt(cx, J_FARG(2), &offsetY) );
 
 	BorderMode borderMode;
 	if ( J_FARG_ISDEF(3) ) {
 		
 		int tmp;
-		J_JSVAL_TO_INT32( J_FARG(3), tmp );
+		J_CHK( JsvalToInt(cx, J_FARG(3), &tmp) );
 		borderMode = (BorderMode)tmp;
 	} else
 		borderMode = borderClamp;
@@ -3017,7 +3017,7 @@ DEFINE_FUNCTION_FAST( Displace ) {
 
 	double factor;
 	if ( argc >= 2 )
-		J_JSVAL_TO_REAL( J_FARG(2), factor );
+		J_CHK( JsvalToDouble(cx, J_FARG(2), &factor) );
 	else
 		factor = 1;
 
@@ -3094,8 +3094,8 @@ DEFINE_FUNCTION_FAST( Cells ) { // source: FxGen
 
 	int density;
 	double regularity;
-	J_JSVAL_TO_INT32( J_FARG(1), density );
-	J_JSVAL_TO_REAL( J_FARG(2), regularity );
+	J_CHK( JsvalToInt(cx, J_FARG(1), &density) );
+	J_CHK( JsvalToDouble(cx, J_FARG(2), &regularity) );
 
 	Texture *tex = (Texture *)JS_GetPrivate(cx, J_FOBJ);
 	J_S_ASSERT_RESOURCE(tex);
@@ -3321,7 +3321,7 @@ DEFINE_FUNCTION_FAST( AddGradiantRadial ) {
 
 	bool drawToCorner;
 	if ( J_FARG_ISDEF(2) )
-		J_JSVAL_TO_BOOL( J_FARG(2), drawToCorner );
+		J_CHK( JsvalToBool(cx, J_FARG(2), &drawToCorner) );
 	else
 		drawToCorner = false;
 
@@ -3383,11 +3383,11 @@ DEFINE_FUNCTION( AddGradiantRadial ) {
 	int channels = tex->channels;
 
 	int ox, oy;
-	J_JSVAL_TO_INT32( J_FARG(1), ox );
-	J_JSVAL_TO_INT32( J_FARG(2), oy );
+	J_CHK( JsvalToInt(cx, J_FARG(1), &ox) );
+	J_CHK( JsvalToInt(cx, J_FARG(2), &oy) );
 
 	int radius;
-	J_JSVAL_TO_INT32( J_FARG(3), radius );
+	J_CHK( JsvalToInt(cx, J_FARG(3), &radius) );
 
 	BorderMode borderMode = borderWrap;
 
@@ -3469,14 +3469,14 @@ DEFINE_FUNCTION_FAST( AddCracks ) { // source: FxGen
 	int channels = tex->channels;
 
 	int count;
-	J_JSVAL_TO_INT32( J_FARG(1), count );
+	J_CHK( JsvalToInt(cx, J_FARG(1), &count) );
 
 	int crackMaxLength;
-	J_JSVAL_TO_INT32( J_FARG(2), crackMaxLength );
+	J_CHK( JsvalToInt(cx, J_FARG(2), &crackMaxLength) );
 	
 	double variation;
 	if ( J_FARG_ISDEF(3) )
-		J_JSVAL_TO_REAL( J_FARG(3), variation );
+		J_CHK( JsvalToDouble(cx, J_FARG(3), &variation) );
 	else
 		variation = 0;
 
@@ -3700,7 +3700,7 @@ DEFINE_FUNCTION_FAST( RandSeed ) {
 
 	J_S_ASSERT_ARG_MIN(1);
 	unsigned int seed;
-	J_JSVAL_TO_UINT32(J_FARG(1), seed);
+	J_CHK( JsvalToUInt(cx, J_FARG(1), &seed) );
 	init_genrand(seed);
 	return JS_TRUE;
 }
@@ -3734,7 +3734,7 @@ DEFINE_FUNCTION_FAST( RandReal ) {
 //
 //	J_S_ASSERT_ARG_MIN(1);
 //	unsigned long seed;
-//	J_JSVAL_TO_UINT32(J_FARG(1), seed);
+//	J_CHK( JsvalToUInt(cx, J_FARG(1), &seed) );
 //	jsdouble d = NoiseInt(seed);
 //	J_CHK( JS_NewNumberValue(cx, d, rval) );
 //	return JS_TRUE;
@@ -3793,7 +3793,7 @@ static JSBool _Test(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval
  * *curveInfo*
   _curveInfo_ describes a curve and can be one of the following type:
    * _real_: this describes a constant curve.
-   * _function($REAL posX, £INT indexX)_: the function is called and must returns values for each curve point.
+   * _function($REAL posX, INT indexX)_: the function is called and must returns values for each curve point.
    * _Array_: an Array that describes the curve (no interpolation is done between values).
    * _buffer_: a Blob or a string that contains the curve data.
   $H examples

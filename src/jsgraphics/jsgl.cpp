@@ -1707,9 +1707,9 @@ DEFINE_FUNCTION_FAST( DefineTextureImage ) {
 		type = GL_FLOAT;
 	} else {
 
-		J_PROPERTY_TO_INT32( tObj, "width", width );
-		J_PROPERTY_TO_INT32( tObj, "height", height );
-		J_PROPERTY_TO_INT32( tObj, "channels", channels );
+		J_CHK( GetPropertyInt(cx, tObj, "width", &width) );
+		J_CHK( GetPropertyInt(cx, tObj, "height", &height) );
+		J_CHK( GetPropertyInt(cx, tObj, "channels", &channels) );
 		size_t bufferLength;
 		jsval tVal = OBJECT_TO_JSVAL(tObj);
 		J_CHK( JsvalToStringAndLength(cx, &tVal, (const char**)&data, &bufferLength ) );

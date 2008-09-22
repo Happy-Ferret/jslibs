@@ -193,7 +193,7 @@ DEFINE_FUNCTION( CreateKeys ) { // ( bitsSize )
 	J_CHK( SlotGetPrng(cx, obj, &prngIndex, &prngState) );
 
 	unsigned int keySize;
-	J_JSVAL_TO_UINT32( argv[0], keySize );
+	J_CHK( JsvalToUInt(cx, argv[0], &keySize) );
 
 	int err = -1; // default
 	switch ( pv->cipher ) {
@@ -403,7 +403,7 @@ DEFINE_FUNCTION( Sign ) { // ( data [, saltLength] )
 			// int saltLength = 16; // OR saltLength = mp_unsigned_bin_size((mp_int*)(pv->key.rsaKey.N)) - hash_descriptor[hashIndex].hashsize - 2  -1;
 			int saltLength = RSA_SIGN_DEFAULT_SALT_LENGTH;
 			if ( argc >= 2 && !JSVAL_IS_VOID( argv[1] ) )
-				J_JSVAL_TO_INT32(argv[1], saltLength);
+				J_CHK( JsvalToInt(cx, argv[1], &saltLength) );
 
 			err = rsa_sign_hash_ex( (unsigned char *)in, inLength, (unsigned char *)out, &outLength, LTC_LTC_PKCS_1_PSS, prngState, prngIndex, hashIndex, saltLength, &pv->key.rsaKey );
 			break;
@@ -457,7 +457,7 @@ DEFINE_FUNCTION( VerifySignature ) { // ( data, signature [, saltLength] )
 		case rsa: {
 			int saltLength = RSA_SIGN_DEFAULT_SALT_LENGTH; // default
 			if ( argc >= 3 && !JSVAL_IS_VOID( argv[2] ) )
-				J_JSVAL_TO_INT32(argv[2], saltLength);
+				J_CHK( JsvalToInt(cx, argv[2], &saltLength) );
 
 			int hashIndex = find_hash(pv->hashDescriptor->name);
 
@@ -559,7 +559,7 @@ DEFINE_PROPERTY( keySetter ) {
 	J_S_ASSERT_RESOURCE( pv );
 
 	int type;
-	J_JSVAL_TO_INT32( id, type );
+	J_CHK( JsvalToInt(cx, id, &type) );
 
 	const char *key;
 	size_t keyLength;

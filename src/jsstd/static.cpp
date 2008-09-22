@@ -391,7 +391,7 @@ DEFINE_FUNCTION( ASSERT ) {
 	J_S_ASSERT_ARG_MIN( 1 );
 
 	bool assert;
-	J_JSVAL_TO_BOOL( J_ARG(1), assert );
+	J_CHK( JsvalToBool(cx, J_ARG(1), &assert) );
 
 	if ( !assert ) {
 
@@ -481,7 +481,7 @@ DEFINE_FUNCTION_FAST( StringRepeat ) {
 	J_S_ASSERT_ARG_MIN(2);
 
 	size_t count;
-	J_JSVAL_TO_UINT32( J_FARG(2), count );
+	J_CHK( JsvalToUInt(cx, J_FARG(2), &count) );
 	if ( count == 0 ) {
 		
 		*J_FRVAL = JS_GetEmptyStringValue(cx);
@@ -763,7 +763,7 @@ DEFINE_FUNCTION( StrSet ) {
 	J_JSVAL_TO_STRING_AND_LENGTH( J_ARG(1), chr, charLen );
 
 	unsigned int count;
-	J_JSVAL_TO_UINT32( J_ARG(2), count );
+	J_CHK( JsvalToUInt(cx, J_ARG(2), &count) );
 
 	char *buf = (char*)JS_malloc(cx, count +1);
 	J_S_ASSERT_ALLOC( buf );
@@ -811,7 +811,7 @@ DEFINE_PROPERTY( disableGarbageCollection ) {
 //	JS_SetGCCallback(cx, ..
 
 	bool disableGC;
-	J_JSVAL_TO_BOOL( *vp, disableGC );
+	J_CHK( JsvalToBool(cx, *vp, &disableGC) );
 
 
 	if ( disableGC ) {

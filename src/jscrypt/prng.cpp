@@ -103,7 +103,7 @@ DEFINE_CALL() {
 	J_S_ASSERT_RESOURCE( privateData );
 
 	size_t readCount;
-	J_JSVAL_TO_UINT32( argv[0], readCount );
+	J_CHK( JsvalToUInt(cx, argv[0], &readCount) );
 
 	char *pr = (char*)JS_malloc( cx, readCount );
 	J_S_ASSERT_ALLOC( pr );
@@ -151,7 +151,7 @@ DEFINE_FUNCTION( AutoEntropy ) {
 	PrngPrivate *privateData = (PrngPrivate *)JS_GetPrivate( cx, obj );
 	J_S_ASSERT_RESOURCE( privateData );
 	size_t bits;
-	J_JSVAL_TO_UINT32( argv[0], bits );
+	J_CHK( JsvalToUInt(cx, argv[0], &bits) );
 	int err = rng_make_prng( bits, find_prng(privateData->prng.name), &privateData->state, NULL );
 	if ( err != CRYPT_OK )
 		return ThrowCryptError(cx, err);

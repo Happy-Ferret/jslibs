@@ -283,7 +283,7 @@ DEFINE_FUNCTION_FAST( substr ) {
 	J_CHK( BlobLength(cx, J_FOBJ, &dataLength) );
 
 	int start;
-	J_JSVAL_TO_INT32( J_FARG(1), start );
+	J_CHK( JsvalToInt(cx, J_FARG(1), &start) );
 
 	if ( start >= (signed)dataLength ) {
 
@@ -302,7 +302,7 @@ DEFINE_FUNCTION_FAST( substr ) {
 	int length;
 	if ( J_FARG_ISDEF(2) ) {
 
-		J_JSVAL_TO_INT32( J_FARG(2), length );
+		J_CHK( JsvalToInt(cx, J_FARG(2), &length) );
 		if ( length <= 0 ) {
 
 			*J_FRVAL = JS_GetEmptyStringValue(cx);
@@ -376,7 +376,7 @@ DEFINE_FUNCTION_FAST( substring ) {
 		if ( IsPInfinity(cx, arg1) )
 			indexA = dataLength;
 		else
-			J_JSVAL_TO_INT32( arg1, indexA );
+			J_CHK( JsvalToInt(cx, arg1, &indexA) );
 
 
 	jsval arg2 = J_FARG(2);
@@ -386,7 +386,7 @@ DEFINE_FUNCTION_FAST( substring ) {
 		if ( JSVAL_IS_VOID(arg2) || JSVAL_IS_INT(arg2) && JSVAL_TO_INT(arg2) < 0 || IsNInfinity(cx, arg2) || IsNaN(cx, arg2) )
 			indexB = 0;
 		else
-			J_JSVAL_TO_INT32( arg2, indexB );
+			J_CHK( JsvalToInt(cx, arg2, &indexB) );
 
 
 	if ( indexA > indexB ) {

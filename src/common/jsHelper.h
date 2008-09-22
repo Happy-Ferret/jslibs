@@ -892,9 +892,9 @@ inline JSBool GetPropertyUInt( JSContext *cx, JSObject *obj, const char *propert
 	} \
 } while(0)
 */
-#define J_JSVAL_TO_INT32( jsvalInt, intVariable ) do { \
-	J_CHK( JsvalToInt(cx, (jsvalInt), &(intVariable)) ); \
-} while(0)
+//#define J_JSVAL_TO_INT32( jsvalInt, intVariable ) do { \
+//	J_CHK( JsvalToInt(cx, (jsvalInt), &(intVariable)) ); \
+//} while(0)
 
 
 
@@ -914,9 +914,10 @@ inline JSBool GetPropertyUInt( JSContext *cx, JSObject *obj, const char *propert
 	J_S_ASSERT( uintVariable >= 0, "Unable to convert to a 32bit unsigned integer." ); \
 } while(0)
 */
-#define J_JSVAL_TO_UINT32( jsvalInt, intVariable ) do { \
-	J_CHK( JsvalToUInt(cx, (jsvalInt), &(intVariable)) ); \
-} while(0)
+
+//#define J_JSVAL_TO_UINT32( jsvalInt, intVariable ) do { \
+//	J_CHK( JsvalToUInt(cx, (jsvalInt), &(intVariable)) ); \
+//} while(0)
 
 
 
@@ -933,9 +934,9 @@ inline JSBool GetPropertyUInt( JSContext *cx, JSObject *obj, const char *propert
 	} \
 } while(0)
 */
-#define J_JSVAL_TO_BOOL( val, boolVariable ) do { \
-	J_CHK( JsvalToBool(cx, (val), &(boolVariable)) ); \
-} while(0)
+//#define J_JSVAL_TO_BOOL( val, boolVariable ) do { \
+//	J_CHK( JsvalToBool(cx, (val), &(boolVariable)) ); \
+//} while(0)
 
 
 
@@ -952,9 +953,9 @@ inline JSBool GetPropertyUInt( JSContext *cx, JSObject *obj, const char *propert
 	} \
 } while(0)
 */
-#define J_JSVAL_TO_REAL( val, d ) do { \
-	J_CHK( JsvalToDouble(cx, (val), &(d) ) ); \
-} while(0)
+//#define J_JSVAL_TO_REAL( val, d ) do { \
+//	J_CHK( JsvalToDouble(cx, (val), &(d) ) ); \
+//} while(0)
 
 
 
@@ -964,16 +965,16 @@ inline JSBool GetPropertyUInt( JSContext *cx, JSObject *obj, const char *propert
 #define J_PROPERTY_TO_INT32( jsobject, propertyName, intVariable ) do { \
 	jsval __tmpVal; \
 	J_CHK( JS_GetProperty(cx, jsobject, propertyName, &__tmpVal) ); \
-	J_JSVAL_TO_INT32( __tmpVal, intVariable ); \
+	J_CHK( JsvalToInt(cx, __tmpVal, &intVariable) ); \
 } while(0)
 */
-#define J_PROPERTY_TO_INT32( jsobject, propertyName, intVariable ) do { \
-	GetPropertyInt(cx, jsobject, propertyName, &intVariable); \
-} while(0)
+//#define J_PROPERTY_TO_INT32( jsobject, propertyName, intVariable ) do { \
+//	GetPropertyInt(cx, jsobject, propertyName, &intVariable); \
+//} while(0)
 
-#define J_PROPERTY_TO_UINT32( jsobject, propertyName, intVariable ) do { \
-	GetPropertyUInt(cx, jsobject, propertyName, &intVariable); \
-} while(0)
+//#define J_PROPERTY_TO_UINT32( jsobject, propertyName, intVariable ) do { \
+//	GetPropertyUInt(cx, jsobject, propertyName, &intVariable); \
+//} while(0)
 
 
 // deprecated. see IntVectorToJsval
@@ -1002,9 +1003,9 @@ inline JSBool IntVectorToJsval( JSContext *cx, int *vector, size_t length, jsval
 	}
 	return JS_TRUE;
 }
-#define J_INT_VECTOR_TO_JSVAL( vector, length, jsvalVariable ) do { \
-	J_CHK( IntVectorToJsval(cx, (vector), (length), &(jsvalVariable)) ); \
-} while(0)
+//#define J_INT_VECTOR_TO_JSVAL( vector, length, jsvalVariable ) do { \
+//	J_CHK( IntVectorToJsval(cx, (vector), (length), &(jsvalVariable)) ); \
+//} while(0)
 
 
 

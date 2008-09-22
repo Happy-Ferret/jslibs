@@ -42,7 +42,7 @@ DEFINE_CONSTRUCTOR() {
 
 	int descType;
 	if ( J_ARG_ISDEF(1) )
-		J_JSVAL_TO_INT32( J_ARG(1), descType );
+		J_CHK( JsvalToInt(cx, J_ARG(1), &descType) );
 	else
 		descType = PR_DESC_SOCKET_TCP; // default
 
@@ -117,7 +117,7 @@ DEFINE_FUNCTION( Bind ) {
 
 	PRNetAddr addr;
 	unsigned int port;
-	J_JSVAL_TO_UINT32( J_ARG(1), port );
+	J_CHK( JsvalToUInt(cx, J_ARG(1), &port) );
 	J_S_ASSERT( port < 65536, "Invalid port number." );
 
 	if ( J_ARG_ISDEF(2) ) { // if we have a second argument and this argument is not undefined
@@ -175,7 +175,7 @@ DEFINE_FUNCTION( Listen ) {
 	J_S_ASSERT_RESOURCE( fd );
 	PRIntn backlog;
 	if ( J_ARG_ISDEF(1) )
-		J_JSVAL_TO_INT32( J_ARG(1), backlog );
+		J_CHK( JsvalToInt(cx, J_ARG(1), &backlog) );
 	else
 		backlog = 8; // too low ??
 	if ( PR_Listen(fd, backlog) != PR_SUCCESS )
@@ -198,7 +198,7 @@ DEFINE_FUNCTION( Accept ) {
 	if ( J_ARG_ISDEF(1) ) {
 
 		PRUint32 timeoutInMilliseconds;
-		J_JSVAL_TO_UINT32( J_ARG(1), timeoutInMilliseconds );
+		J_CHK( JsvalToUInt(cx, J_ARG(1), &timeoutInMilliseconds) );
 		connectTimeout = PR_MillisecondsToInterval(timeoutInMilliseconds);
 	} else
 		connectTimeout = PR_INTERVAL_NO_TIMEOUT;
@@ -249,14 +249,14 @@ DEFINE_FUNCTION( Connect ) {
 	J_S_ASSERT_RESOURCE( fd );
 
 	unsigned int port;
-	J_JSVAL_TO_UINT32( J_ARG(2), port );
+	J_CHK( JsvalToUInt(cx, J_ARG(2), &port) );
 	J_S_ASSERT( port < 65536, "Invalid port number." );
 
 	PRIntervalTime connectTimeout;
 	if ( J_ARG_ISDEF(3) ) {
 
 		PRUint32 timeoutInMilliseconds;
-		J_JSVAL_TO_UINT32( J_ARG(3), timeoutInMilliseconds );
+		J_CHK( JsvalToUInt(cx, J_ARG(3), &timeoutInMilliseconds) );
 		connectTimeout = PR_MillisecondsToInterval(timeoutInMilliseconds);
 	} else
 		connectTimeout = PR_INTERVAL_NO_TIMEOUT;
@@ -325,7 +325,7 @@ DEFINE_FUNCTION( SendTo ) {
 	J_S_ASSERT_RESOURCE( fd );
 
 	unsigned int port;
-	J_JSVAL_TO_UINT32( J_ARG(2), port );
+	J_CHK( JsvalToUInt(cx, J_ARG(2), &port) );
 	J_S_ASSERT( port < 65536, "Invalid port number." );
 
 	const char *host;
@@ -478,7 +478,7 @@ DEFINE_FUNCTION( TransmitFile ) { // WORKS ONLY ON BLOCKING SOCKET !!!
 	if ( J_ARG_ISDEF(2) ) {
 
 		bool closeAfterTransmit;
-		J_JSVAL_TO_BOOL( J_ARG(2), closeAfterTransmit );
+		J_CHK( JsvalToBool(cx, J_ARG(2), &closeAfterTransmit) );
 		if ( closeAfterTransmit )
 			flag = PR_TRANSMITFILE_CLOSE_SOCKET;
 	}
@@ -487,7 +487,7 @@ DEFINE_FUNCTION( TransmitFile ) { // WORKS ONLY ON BLOCKING SOCKET !!!
 	if ( J_ARG_ISDEF(4) ) {
 
 		PRUint32 timeoutInMilliseconds;
-		J_JSVAL_TO_UINT32( J_ARG(4), timeoutInMilliseconds );
+		J_CHK( JsvalToUInt(cx, J_ARG(4), &timeoutInMilliseconds) );
 		connectTimeout = PR_MillisecondsToInterval(timeoutInMilliseconds);
 	} else
 		connectTimeout = PR_INTERVAL_NO_TIMEOUT;
@@ -855,7 +855,7 @@ DEFINE_FUNCTION( GetHostsByName ) {
 	J_S_ASSERT_ARG_MIN( 1 );
 
 //	PRUint16 port;
-//	J_JSVAL_TO_INT32( J_ARG(1), port );
+//	J_CHK( JsvalToInt(cx, J_ARG(1), &port) );
 
 	char netdbBuf[PR_NETDB_BUF_SIZE];
 	PRHostEnt hostEntry;

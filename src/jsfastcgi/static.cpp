@@ -101,7 +101,7 @@ DEFINE_FUNCTION( Read ) {
 
 	J_S_ASSERT_ARG_MIN( 1 );
 	size_t len;
-	J_JSVAL_TO_UINT32( argv[0], len );
+	J_CHK( JsvalToUInt(cx, argv[0], &len) );
 	char* str = (char*)JS_malloc(cx, len + 1);
 	int result = FCGX_GetStr( str, len, _request.in );
 	if ( result = 0 ) {
@@ -455,7 +455,7 @@ DEFINE_FUNCTION( MakeEndRequestBody ) {
 	J_S_ASSERT_ALLOC( body );
 
 	unsigned long appStatus;
-	J_JSVAL_TO_UINT32( argv[0], appStatus );
+	J_CHK( JsvalToUInt(cx, argv[0], &appStatus) );
 	body->appStatusB0 = appStatus & 0xFF;
 	body->appStatusB1 = (appStatus >> 8) & 0xFF;
 	body->appStatusB2 = (appStatus >> 16) & 0xFF;

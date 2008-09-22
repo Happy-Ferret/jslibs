@@ -68,7 +68,7 @@ DEFINE_FUNCTION( Poll ) {
 	if ( J_ARG_ISDEF(2) ) {
 
 		PRUint32 tmp;
-		J_JSVAL_TO_UINT32( J_ARG(2), tmp );
+		J_CHK( JsvalToUInt(cx, J_ARG(2), &tmp) );
 		pr_timeout = PR_MillisecondsToInterval(tmp);
 	} else {
 
@@ -237,7 +237,7 @@ DEFINE_FUNCTION( IsReadable ) {
 	if ( J_ARG_ISDEF(2) ) {
 
 		PRUint32 timeout;
-		J_JSVAL_TO_UINT32( J_ARG(2), timeout );
+		J_CHK( JsvalToUInt(cx, J_ARG(2), &timeout) );
 		prTimeout = PR_MillisecondsToInterval(timeout);
 	} else
 		prTimeout = PR_INTERVAL_NO_WAIT; //PR_INTERVAL_NO_TIMEOUT;
@@ -267,7 +267,7 @@ DEFINE_FUNCTION( IsWritable ) {
 	if ( J_ARG_ISDEF(2) ) {
 
 		PRUint32 timeout;
-		J_JSVAL_TO_UINT32( J_ARG(2), timeout );
+		J_CHK( JsvalToUInt(cx, J_ARG(2), &timeout) );
 		prTimeout = PR_MillisecondsToInterval(timeout);
 	} else
 		prTimeout = PR_INTERVAL_NO_WAIT; //PR_INTERVAL_NO_TIMEOUT;
@@ -411,7 +411,7 @@ DEFINE_FUNCTION_FAST( WaitSemaphore ) {
 
 	PRUintn mode = PR_IRUSR | PR_IWUSR; // read write permission for owner.
 	if ( J_FARG_ISDEF(2) )
-		J_JSVAL_TO_UINT32( J_FARG(2), mode );
+		J_CHK( JsvalToUInt(cx, J_FARG(2), &mode) );
 
 	const char *name;
 	size_t nameLength;
@@ -524,7 +524,7 @@ DEFINE_FUNCTION_FAST( CreateProcess ) {
 
 	bool waitEnd = false;
 	if ( J_FARG_ISDEF(3) )
-		J_JSVAL_TO_BOOL( J_FARG(3), waitEnd );
+		J_CHK( JsvalToBool(cx, J_FARG(3), &waitEnd) );
 
 	PRFileDesc* stdout_child;
 	PRFileDesc* stdout_parent;
@@ -714,7 +714,7 @@ DEFINE_PROPERTY( processPriorityGetter ) {
 DEFINE_PROPERTY( processPrioritySetter ) {
 
 	int priorityValue;
-	J_JSVAL_TO_INT32( *vp, priorityValue );
+	J_CHK( JsvalToInt(cx, *vp, &priorityValue) );
 	PRThreadPriority priority;
 	switch (priorityValue) {
 		case -1:

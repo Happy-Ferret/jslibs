@@ -588,7 +588,7 @@ DEFINE_PROPERTY( rectGetter ) {
 	} else {
 */
 	int vector[] = { r.left, r.top, r.right, r.bottom };
-	J_INT_VECTOR_TO_JSVAL( vector, COUNTOF(vector), *vp );
+	J_CHK( IntVectorToJsval(cx, vector, COUNTOF(vector), vp) );
 //	}
 	return JS_TRUE;
 }

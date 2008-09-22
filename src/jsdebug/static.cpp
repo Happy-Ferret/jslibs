@@ -557,7 +557,7 @@ DEFINE_FUNCTION(Locate) {
 
 	J_S_ASSERT_ARG_MIN( 1 );
 	int frame;
-	J_JSVAL_TO_INT32( argv[0], frame );
+	J_CHK( JsvalToInt(cx, argv[0], &frame) );
 	J_S_ASSERT(frame <= 0, "Frame number must be <= 0");
 
 	JSStackFrame *fp = NULL;
@@ -586,7 +586,7 @@ DEFINE_FUNCTION(LocateLine) {
 
 	J_S_ASSERT_ARG_MIN( 1 );
 	int frame;
-	J_JSVAL_TO_INT32( argv[0], frame );
+	J_CHK( JsvalToInt(cx, argv[0], &frame) );
 	J_S_ASSERT(frame <= 0, "Frame number must be <= 0");
 
 	JSStackFrame *fp = NULL;
@@ -940,7 +940,7 @@ DEFINE_PROPERTY( gcZeal ) {
 
 #ifdef JS_GC_ZEAL
 	int zeal;
-	J_JSVAL_TO_INT32( *vp, zeal );
+	J_CHK( JsvalToInt(cx, *vp, &zeal) );
 	JS_SetGCZeal(cx, zeal);
 	return JS_TRUE;
 #else

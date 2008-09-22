@@ -86,7 +86,7 @@ DEFINE_CONSTRUCTOR() {
 //	FT_Long faceIndex = 0;
 	int faceIndex = 0;
 	if ( J_ARG_ISDEF(2) )
-		J_JSVAL_TO_INT32(J_ARG(2), faceIndex);
+		J_CHK( JsvalToInt(cx, J_ARG(2), &faceIndex) );
 
 	const char *filePathName;
 	J_CHK( JsvalToString(cx, &J_ARG(1), &filePathName) );
@@ -116,8 +116,8 @@ DEFINE_FUNCTION_FAST( SetSize ) {
 
 	FT_UInt width, height;
 
-	J_JSVAL_TO_INT32( J_FARG(1), width ); // a value of 0 for one of the dimensions means same as the other.
-	J_JSVAL_TO_INT32( J_FARG(2), height );
+	J_CHK( JsvalToInt(cx, J_FARG(1), &width) ); // a value of 0 for one of the dimensions means same as the other.
+	J_CHK( JsvalToInt(cx, J_FARG(2), &height) );
 
 	FT_Error status;
 	status = FT_Set_Pixel_Sizes(face, width, height);
@@ -202,11 +202,11 @@ DEFINE_FUNCTION_FAST( DrawString ) {
 
 	bool keepTrailingSpace = false;
 	if ( J_FARG_ISDEF(2) )
-		J_JSVAL_TO_BOOL(J_FARG(2), keepTrailingSpace);
+		J_CHK( JsvalToBool(cx, J_FARG(2), &keepTrailingSpace) );
 
 	bool getWidthOnly = false;
 	if ( J_FARG_ISDEF(3) )
-		J_JSVAL_TO_BOOL(J_FARG(3), getWidthOnly);
+		J_CHK( JsvalToBool(cx, J_FARG(3), &getWidthOnly) );
 
 
 	jsval tmp;
@@ -214,32 +214,32 @@ DEFINE_FUNCTION_FAST( DrawString ) {
 	int letterSpacing = 0;
 	J_CHK( JS_GetReservedSlot(cx, J_FOBJ, FONT_SLOT_LETTERSPACING, &tmp) );
 	if ( !JSVAL_IS_VOID( tmp ) )
-		J_JSVAL_TO_INT32(tmp, letterSpacing);
+		J_CHK( JsvalToInt(cx, tmp, &letterSpacing) );
 
 	int horizontalPadding = 0;
 	J_CHK( JS_GetReservedSlot(cx, J_FOBJ, FONT_SLOT_HORIZONTALPADDING, &tmp) );
 	if ( !JSVAL_IS_VOID( tmp ) )
-		J_JSVAL_TO_INT32(tmp, horizontalPadding);
+		J_CHK( JsvalToInt(cx, tmp, &horizontalPadding) );
 
 	int verticalPadding = 0;
 	J_CHK( JS_GetReservedSlot(cx, J_FOBJ, FONT_SLOT_VERTICALPADDING, &tmp) );
 	if ( !JSVAL_IS_VOID( tmp ) )
-		J_JSVAL_TO_INT32(tmp, verticalPadding);
+		J_CHK( JsvalToInt(cx, tmp, &verticalPadding) );
 
 	bool useKerning = true;
 	J_CHK( JS_GetReservedSlot(cx, J_FOBJ, FONT_SLOT_USEKERNING, &tmp) );
 	if ( !JSVAL_IS_VOID( tmp ) )
-		J_JSVAL_TO_BOOL(tmp, useKerning);
+		J_CHK( JsvalToBool(cx, tmp, &useKerning) );
 
 	bool isItalic = false;
 	J_CHK( JS_GetReservedSlot(cx, J_FOBJ, FONT_SLOT_ITALIC, &tmp) );
 	if ( !JSVAL_IS_VOID( tmp ) )
-		J_JSVAL_TO_BOOL(tmp, isItalic);
+		J_CHK( JsvalToBool(cx, tmp, &isItalic) );
 
 	bool isBold = false;
 	J_CHK( JS_GetReservedSlot(cx, J_FOBJ, FONT_SLOT_BOLD, &tmp) );
 	if ( !JSVAL_IS_VOID( tmp ) )
-		J_JSVAL_TO_BOOL(tmp, isBold);
+		J_CHK( JsvalToBool(cx, tmp, &isBold) );
 
 
 	typedef struct {
@@ -417,7 +417,7 @@ DEFINE_PROPERTY( size ) {
 
 	int size = 0;
 	if ( !JSVAL_IS_VOID( *vp ) )
-		J_JSVAL_TO_INT32( *vp, size );
+		J_CHK( JsvalToInt(cx, *vp, &size) );
 
 	J_S_ASSERT( size >= 0, "Invalid font size." );
 	FTCHK( FT_Set_Pixel_Sizes(face, size, size) );
@@ -454,7 +454,7 @@ DEFINE_PROPERTY( encoding ) {
 	FT_Face face = (FT_Face)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE(face);
 	int encoding;
-	J_JSVAL_TO_INT32( *vp, encoding );
+	J_CHK( JsvalToInt(cx, *vp, &encoding) );
 	FTCHK( FT_Select_Charmap(face, (FT_Encoding)encoding) );
 	return JS_TRUE;
 }
