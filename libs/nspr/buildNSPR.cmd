@@ -16,6 +16,7 @@ popd
 
 REM the tmpDrive is used to avoid spaces in filenames
 set tmpDrive=x:
+subst %tmpDrive% /D
 
 cd /D %tmpDrive% && echo the drive %tmpDrive% must be available to build nspr, else modify build_msdev8.bat && exit
 if NOT EXIST nsinstall.exe echo FATAL ERROR - nsinstall.exe MUST be in this directory (jslibs/nspr) && exit
