@@ -255,19 +255,22 @@ DEFINE_CONSTRUCTOR() {
 		size_t frames;
 		J_JSVAL_TO_UINT32(J_FARG(1), frames);
 
-		size_t amount = frames * pv->sfInfo.channels * pv->bits/8; // amount in bytes
-		buf = (char*)malloc(amount);
-		J_S_ASSERT_ALLOC(buf);
+		if ( frames > 0 ) {
 
-		sf_count_t items = sf_read_short(pv->sfDescriptor, (short*)buf, amount/sizeof(short));
+			size_t amount = frames * pv->sfInfo.channels * pv->bits/8; // amount in bytes
+			buf = (char*)malloc(amount);
+			J_S_ASSERT_ALLOC(buf);
 
-		if ( JS_IsExceptionPending(cx) )
-			return JS_FALSE; // (TBD) free memory
+			sf_count_t items = sf_read_short(pv->sfDescriptor, (short*)buf, amount/sizeof(short));
 
-		totalSize = items * sizeof(short);
+			if ( JS_IsExceptionPending(cx) )
+				return JS_FALSE; // (TBD) free memory
 
-		if ( MaybeRealloc(amount, totalSize) )
-			buf = (char*)realloc(buf, totalSize);
+			totalSize = items * sizeof(short);
+
+			if ( MaybeRealloc(amount, totalSize) )
+				buf = (char*)realloc(buf, totalSize);
+		}
 
 	} else {
 

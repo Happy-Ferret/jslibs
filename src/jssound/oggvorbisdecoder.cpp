@@ -235,47 +235,50 @@ DEFINE_FUNCTION_FAST( Read ) {
 		size_t frames;
 		J_JSVAL_TO_UINT32(J_FARG(1), frames);
 
-		size_t amount = frames * pv->ofInfo->channels * pv->bits/8; // amount in bytes
-		buf = (char*)malloc(amount);
-		J_S_ASSERT_ALLOC(buf);
+		if ( frames > 0 ) {
+			
+			size_t amount = frames * pv->ofInfo->channels * pv->bits/8; // amount in bytes
+			buf = (char*)malloc(amount);
+			J_S_ASSERT_ALLOC(buf);
 
-//		sf_count_t items = sf_read_short(pv->sfDescriptor, (short*)buf, amount/sizeof(short));
-		
-		int bitStream = 0;
-		long bytes;
-		do {
+	//		sf_count_t items = sf_read_short(pv->sfDescriptor, (short*)buf, amount/sizeof(short));
+			
+			int bitStream = 0;
+			long bytes;
+			do {
 
-			int prevBitstream = bitStream;
-			bytes = ov_read(&pv->ofDescriptor, buf + totalSize, amount - totalSize, 0, pv->bits / 8, 1, &bitStream);
-			J_S_ASSERT( bitStream == prevBitstream, "Invalid ogg bitstream."); // bitstream has changed
+				int prevBitstream = bitStream;
+				bytes = ov_read(&pv->ofDescriptor, buf + totalSize, amount - totalSize, 0, pv->bits / 8, 1, &bitStream);
+				J_S_ASSERT( bitStream == prevBitstream, "Invalid ogg bitstream."); // bitstream has changed
 
-			// (TBD) update the channels, rate, ... according to: ov_info(&pv->ofDescriptor, bitStream);
-			if ( JS_IsExceptionPending(cx) )
-				return JS_FALSE; // (TBD) free memory
+				// (TBD) update the channels, rate, ... according to: ov_info(&pv->ofDescriptor, bitStream);
+				if ( JS_IsExceptionPending(cx) )
+					return JS_FALSE; // (TBD) free memory
 
-			if ( bytes == OV_HOLE)
-				continue; // ignore corrupted/dropped/lost parts
+				if ( bytes == OV_HOLE )
+					continue; // ignore corrupted/dropped/lost parts
 
-			totalSize += bytes;
+				totalSize += bytes;
 
-		} while ( bytes > 0 && totalSize < amount );
-		// manage ov_read errors here
+			} while ( bytes > 0 && totalSize < amount );
+			// manage ov_read errors here
 
 
-/*
-		if ( bytes < 0 ) { // 0 indicates EOF
+	/*
+			if ( bytes < 0 ) { // 0 indicates EOF
 
-			// (TBD) manage errors
-			if ( bytes == OV_HOLE ) { // indicates there was an interruption in the data. (one of: garbage between pages, loss of sync followed by recapture, or a corrupt page)
+				// (TBD) manage errors
+				if ( bytes == OV_HOLE ) { // indicates there was an interruption in the data. (one of: garbage between pages, loss of sync followed by recapture, or a corrupt page)
 
-			} else if ( bytes == OV_EINVAL ) { // doc. indicates that an invalid stream section was supplied to libvorbisfile, or the requested link is corrupt.
-				break;
+				} else if ( bytes == OV_EINVAL ) { // doc. indicates that an invalid stream section was supplied to libvorbisfile, or the requested link is corrupt.
+					break;
+				}
 			}
-		}
-*/
+	*/
 
-		if ( MaybeRealloc(amount, totalSize) )
-			buf = (char*)realloc(buf, totalSize);
+			if ( MaybeRealloc(amount, totalSize) )
+				buf = (char*)realloc(buf, totalSize);
+		}
 	
 	} else {
 
