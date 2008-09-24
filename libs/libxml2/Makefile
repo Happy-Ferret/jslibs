@@ -1,14 +1,14 @@
 include ../subdirs.mk
 
-TARGET_FILES = ./src/.libs/libxml2.a
-CFLAGS += -fPIC
-
 _INSTALL_DIR=`pwd`/`uname`
+
+TARGET_FILES = $(_INSTALL_DIR)libxml2.a
+CFLAGS += -fPIC
 
 configure: ./src/Makefile
 
 ./src/Makefile:
-	cd src && ./configure --enable-shared=no --enable-static=yes --with-debug=no --with-docbook=no --with-threads=no --with-ftp=no --with-http=no --with-zlib=../../zlib/src --prefix=$(_INSTALL_DIR)
+	cd src && ./configure --enable-shared=no --enable-static=yes --without-debug --without-docbook --without-threads --without-ftp --without-http --with-zlib=../../zlib/src --prefix=$(_INSTALL_DIR)
 
 all clean distclean:: configure
 	$(MAKE) -C src $@
