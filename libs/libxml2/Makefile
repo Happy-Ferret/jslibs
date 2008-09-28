@@ -1,8 +1,8 @@
 include ../subdirs.mk
 
-_INSTALL_DIR=`pwd`/`uname`
+_INSTALL_DIR := $(shell pwd)/$(shell uname)
 
-TARGET_FILES = $(_INSTALL_DIR)libxml2.a
+TARGET_FILES = $(_INSTALL_DIR)/libs/libxml2.a
 CFLAGS += -fPIC
 
 configure: ./src/Makefile

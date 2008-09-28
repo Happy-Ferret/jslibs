@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<VisualStudioProject
+	ProjectType="Visual C++"
+	Version="8,00"
+	Name="libxml2"
+	ProjectGUID="{3B962275-ED9F-4274-8F6D-166FDBEA2BF1}"
+	RootNamespace="libxml2"
+	Keyword="Win32Proj"
+	>
+	<Platforms>
+		<Platform
+			Name="Win32"
+		/>
+	</Platforms>
+	<ToolFiles>
+	</ToolFiles>
+	<Configurations>
+		<Configuration
+			Name="Debug|Win32"
+			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="0"
+			CharacterSet="1"
+			>
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="nmake -nologo -f makefile.mak OUTPUT=&quot;$(OutDir)\$(TargetFileName)&quot; all"
+				ReBuildCommandLine="nmake -nologo -f makefile.mak OUTPUT=&quot;$(OutDir)\$(TargetFileName)&quot; clean all"
+				CleanCommandLine="nmake -nologo -f makefile.mak OUTPUT=&quot;$(OutDir)\$(TargetFileName)&quot; clean"
+				Output="$(ConfigurationName)\libxml2.lib"
+				PreprocessorDefinitions=""
+				IncludeSearchPath=""
+				ForcedIncludes=""
+				AssemblySearchPath=""
+				ForcedUsingAssemblies=""
+				CompileAsManaged=""
+			/>
+		</Configuration>
+		<Configuration
+			Name="Release|Win32"
+			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="0"
+			CharacterSet="1"
+			WholeProgramOptimization="1"
+			>
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="nmake -nologo -f makefile.mak OUTPUT=&quot;$(OutDir)\$(TargetFileName)&quot; all"
+				ReBuildCommandLine="nmake -nologo -f makefile.mak OUTPUT=&quot;$(OutDir)\$(TargetFileName)&quot; clean all"
+				CleanCommandLine="nmake -nologo -f makefile.mak OUTPUT=&quot;$(OutDir)\$(TargetFileName)&quot; clean"
+				Output="$(ConfigurationName)\libxml2.lib"
+				PreprocessorDefinitions=""
+				IncludeSearchPath=""
+				ForcedIncludes=""
+				AssemblySearchPath=""
+				ForcedUsingAssemblies=""
+				CompileAsManaged=""
+			/>
+		</Configuration>
+	</Configurations>
+	<References>
+	</References>
+	<Files>
+	</Files>
+	<Globals>
+	</Globals>
+</VisualStudioProject>

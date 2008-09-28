@@ -1,8 +1,8 @@
 include ../subdirs.mk
 
-_INSTALL_DIR=`pwd`/`uname`/
+_INSTALL_DIR := $(shell pwd)/$(shell uname)
 
-TARGET_FILES = $(_INSTALL_DIR)glib.a
+TARGET_FILES = $(_INSTALL_DIR)/libs/glib.a
 CFLAGS += -fPIC
 
 configure: ./src/Makefile
