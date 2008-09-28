@@ -13,8 +13,10 @@ REM set MSSdk=C:\Program Files\Microsoft SDKs\Windows\v6.0A
 REM --- DirectX path ---
 set DirectXPath=C:\Program Files\Microsoft DirectX SDK (March 2008)
 
-REM --- cygwin path ---
-set cygwinInstallDir=C:\tools\cygwin
+REM --- GNU tools path ---
+rem TRY: set gnuTools=C:\tools\msys\bin
+set gnuTools=C:\tools\cygwin\bin
+
 
 
 REM ==========================================================================
@@ -32,7 +34,7 @@ set INCLUDE=%MSSdk%\Include\mfc;%MSSdk%\Include\atl;%INCLUDE%
 set INCLUDE=%DirectXPath%\Include;%INCLUDE%
 set LIB=%DirectXPath%\Lib\x86;%LIB%
 
-set PATH=%cygwinInstallDir%\bin;%PATH%
+set PATH=%gnuTools%;%PATH%
 
 set PATH=%VSINSTALLDIR%\VC\BIN;%VSINSTALLDIR%\VC\VCPackages;%VSINSTALLDIR%\Common7\IDE;%PATH%
 set INCLUDE=%VSINSTALLDIR%\VC\INCLUDE;%INCLUDE%
