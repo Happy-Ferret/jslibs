@@ -1,0 +1,59 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 9.00
+# Visual C++ Express 2005
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jssvg", "jssvg.vcproj", "{0CCF430F-3FE7-40DC-9D67-A1302E20621E}"
+	ProjectSection(ProjectDependencies) = postProject
+		{96E9258A-8812-4C08-96C7-7D8C0D00940B} = {96E9258A-8812-4C08-96C7-7D8C0D00940B}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "librsvg", "..\..\libs\librsvg\librsvg.vcproj", "{96E9258A-8812-4C08-96C7-7D8C0D00940B}"
+	ProjectSection(ProjectDependencies) = postProject
+		{12BCA020-EABF-429E-876A-A476BC9C10C0} = {12BCA020-EABF-429E-876A-A476BC9C10C0}
+		{36BA3E56-75C7-44E9-8F38-6141B1D01BF8} = {36BA3E56-75C7-44E9-8F38-6141B1D01BF8}
+		{F172EFFC-E30F-4593-809E-DB2024B1E753} = {F172EFFC-E30F-4593-809E-DB2024B1E753}
+		{3B962275-ED9F-4274-8F6D-166FDBEA2BF1} = {3B962275-ED9F-4274-8F6D-166FDBEA2BF1}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "glib", "..\..\libs\glib\glib.vcproj", "{12BCA020-EABF-429E-876A-A476BC9C10C0}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gobject", "..\..\libs\glib\gobject.vcproj", "{F172EFFC-E30F-4593-809E-DB2024B1E753}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libxml2", "..\..\libs\libxml2\libxml2.vcproj", "{3B962275-ED9F-4274-8F6D-166FDBEA2BF1}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pango", "..\..\libs\pango\pango.vcproj", "{36BA3E56-75C7-44E9-8F38-6141B1D01BF8}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{0CCF430F-3FE7-40DC-9D67-A1302E20621E}.Debug|Win32.ActiveCfg = Debug|Win32
+		{0CCF430F-3FE7-40DC-9D67-A1302E20621E}.Debug|Win32.Build.0 = Debug|Win32
+		{0CCF430F-3FE7-40DC-9D67-A1302E20621E}.Release|Win32.ActiveCfg = Release|Win32
+		{0CCF430F-3FE7-40DC-9D67-A1302E20621E}.Release|Win32.Build.0 = Release|Win32
+		{96E9258A-8812-4C08-96C7-7D8C0D00940B}.Debug|Win32.ActiveCfg = Debug|Win32
+		{96E9258A-8812-4C08-96C7-7D8C0D00940B}.Debug|Win32.Build.0 = Debug|Win32
+		{96E9258A-8812-4C08-96C7-7D8C0D00940B}.Release|Win32.ActiveCfg = Release|Win32
+		{96E9258A-8812-4C08-96C7-7D8C0D00940B}.Release|Win32.Build.0 = Release|Win32
+		{12BCA020-EABF-429E-876A-A476BC9C10C0}.Debug|Win32.ActiveCfg = Debug|Win32
+		{12BCA020-EABF-429E-876A-A476BC9C10C0}.Debug|Win32.Build.0 = Debug|Win32
+		{12BCA020-EABF-429E-876A-A476BC9C10C0}.Release|Win32.ActiveCfg = Release|Win32
+		{12BCA020-EABF-429E-876A-A476BC9C10C0}.Release|Win32.Build.0 = Release|Win32
+		{F172EFFC-E30F-4593-809E-DB2024B1E753}.Debug|Win32.ActiveCfg = Debug|Win32
+		{F172EFFC-E30F-4593-809E-DB2024B1E753}.Debug|Win32.Build.0 = Debug|Win32
+		{F172EFFC-E30F-4593-809E-DB2024B1E753}.Release|Win32.ActiveCfg = Release|Win32
+		{F172EFFC-E30F-4593-809E-DB2024B1E753}.Release|Win32.Build.0 = Release|Win32
+		{3B962275-ED9F-4274-8F6D-166FDBEA2BF1}.Debug|Win32.ActiveCfg = Debug|Win32
+		{3B962275-ED9F-4274-8F6D-166FDBEA2BF1}.Debug|Win32.Build.0 = Debug|Win32
+		{3B962275-ED9F-4274-8F6D-166FDBEA2BF1}.Release|Win32.ActiveCfg = Release|Win32
+		{3B962275-ED9F-4274-8F6D-166FDBEA2BF1}.Release|Win32.Build.0 = Release|Win32
+		{36BA3E56-75C7-44E9-8F38-6141B1D01BF8}.Debug|Win32.ActiveCfg = Debug|Win32
+		{36BA3E56-75C7-44E9-8F38-6141B1D01BF8}.Debug|Win32.Build.0 = Debug|Win32
+		{36BA3E56-75C7-44E9-8F38-6141B1D01BF8}.Release|Win32.ActiveCfg = Release|Win32
+		{36BA3E56-75C7-44E9-8F38-6141B1D01BF8}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
