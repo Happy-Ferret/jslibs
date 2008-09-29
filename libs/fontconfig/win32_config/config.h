@@ -69,7 +69,7 @@
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 //#undef HAVE_INTTYPES_H
-#define HAVE_INTTYPES_H
+//#define HAVE_INTTYPES_H
 
 /* Define to 1 if you have the `link' function. */
 #undef HAVE_LINK
@@ -103,7 +103,7 @@
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
-//#define HAVE_STDINT_H
+#define HAVE_STDINT_H
 
 /* Define to 1 if you have the <stdlib.h> header file. */
 #undef HAVE_STDLIB_H

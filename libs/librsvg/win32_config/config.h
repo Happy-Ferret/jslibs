@@ -5,19 +5,19 @@
 /* #undef ENABLE_XEMBED */
 
 /* Define to 1 if you have the `basename' function. */
-#define HAVE_BASENAME 1
+/* #undef HAVE_BASENAME */
 
 /* Define to 1 if you have the <dlfcn.h> header file. */
-#define HAVE_DLFCN_H 1
+/* #undef HAVE_DLFCN_H */
 
 /* Defined if gio is avaiable */
 /* #undef HAVE_GIO */
 
 /* Define to 1 if you have the <inttypes.h> header file. */
-#define HAVE_INTTYPES_H 1
+/* #undef HAVE_INTTYPES_H */
 
 /* Define if your <locale.h> file defines LC_MESSAGES. */
-//#define HAVE_LC_MESSAGES 1
+/* #undef HAVE_LC_MESSAGES */
 
 /* Define to 1 if you have the <locale.h> header file. */
 #define HAVE_LOCALE_H 1
@@ -26,19 +26,19 @@
 #define HAVE_MEMORY_H 1
 
 /* Define to 1 if you have the <stdint.h> header file. */
-#define HAVE_STDINT_H 1
+/* #undef HAVE_STDINT_H */
 
 /* Define to 1 if you have the <stdlib.h> header file. */
 #define HAVE_STDLIB_H 1
 
 /* Define to 1 if you have the <strings.h> header file. */
-//#define HAVE_STRINGS_H 1
+/* #undef HAVE_STRINGS_H */
 
 /* Define to 1 if you have the <string.h> header file. */
 #define HAVE_STRING_H 1
 
 /* Define to 1 if you have the `strtok_r' function. */
-#define HAVE_STRTOK_R 1
+/* #undef HAVE_STRTOK_R */
 
 /* Define to 1 if you have the <sys/stat.h> header file. */
 #define HAVE_SYS_STAT_H 1
@@ -47,10 +47,10 @@
 #define HAVE_SYS_TYPES_H 1
 
 /* Define to 1 if you have the <unistd.h> header file. */
-#define HAVE_UNISTD_H 0
+/* #undef HAVE_UNISTD_H */
 
 /* Define to 1 if your C compiler doesn't accept -c and -o together. */
-/* #undef NO_MINUS_C_MINUS_O */
+#define NO_MINUS_C_MINUS_O 1
 
 /* Name of package */
 #define PACKAGE "librsvg"
@@ -81,7 +81,7 @@
 #if defined __BIG_ENDIAN__
 # define WORDS_BIGENDIAN 1
 #elif ! defined __LITTLE_ENDIAN__
-/* # undef WORDS_BIGENDIAN */
+# define WORDS_BIGENDIAN 1
 #endif
 
 /* Define to 1 if the X Window System is missing or not being used. */

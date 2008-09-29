@@ -24,6 +24,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
+				CommandLine="if exist .\src\src\cairo-features.h del .\src\src\cairo-features.h"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -88,6 +89,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
+				CommandLine="if exist .\src\src\cairo-features.h del .\src\src\cairo-features.h"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -358,10 +360,6 @@
 			</File>
 			<File
 				RelativePath=".\src\src\cairo-win32-surface.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\src\cairo-win32.c"
 				>
 			</File>
 			<File

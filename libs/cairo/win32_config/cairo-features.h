@@ -9,7 +9,7 @@
 # define CAIRO_END_DECLS
 #endif
 
-#define cairo_public 
+#define cairo_public
 
 
 #define HAVE_WINDOWS_H 1
@@ -21,7 +21,7 @@
 #define CAIRO_HAS_WIN32_SURFACE 1
 #define CAIRO_HAS_WIN32_FONT 1
 //#define CAIRO_HAS_FT_FONT 1
-
+#define CAIRO_HAS_FONT_SUBSET 1
 
 #define CAIRO_VERSION_MAJOR 1
 #define CAIRO_VERSION_MINOR 6
