@@ -30,7 +30,9 @@ pushd .\src
 make -f Makefile.ref %_MAKE_OPTIONS%
 rem cp Assembler.obj avmplus.obj Fragmento.obj LIR.obj Nativei386.obj RegAlloc.obj
 IF "%BUILD%"=="release" ( cd *OPT.OBJ ) ELSE ( cd *DBG.OBJD )
-cp %_DESTINATION_FILES% ..\..\%_DESTINATION_DIR%
+
+for %%a in (%_DESTINATION_FILES%) do copy %%a ..\..\%_DESTINATION_DIR%
+
 popd
 
 
