@@ -24,7 +24,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="if not exist .\win32_config\glibconfig.h copy .\src\glibconfig.h.win32 .\win32_config\glibconfig.h"
+				CommandLine="copy /Y .\win32_config\config.h .\src&#x0D;&#x0A;copy /Y .\src\glibconfig.h.win32 .\src\glibconfig.h"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -41,7 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories=".\win32_config;src,src/glib"
+				AdditionalIncludeDirectories="src,src/glib"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_LIB;GLIB_STATIC_COMPILATION;GOBJECT_COMPILATION;HAVE_CONFIG_H;G_LOG_DOMAIN=\&quot;Glib-GObject\&quot;;G_DISABLE_DEPRECATED"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -89,7 +89,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="if not exist .\win32_config\glibconfig.h copy .\src\glibconfig.h.win32 .\win32_config\glibconfig.h"
+				CommandLine="copy /Y .\win32_config\config.h .\src&#x0D;&#x0A;copy /Y .\src\glibconfig.h.win32 .\src\glibconfig.h"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -106,7 +106,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				WholeProgramOptimization="false"
-				AdditionalIncludeDirectories=".\win32_config;src,src/glib"
+				AdditionalIncludeDirectories="src,src/glib"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_LIB;GLIB_STATIC_COMPILATION;GOBJECT_COMPILATION;HAVE_CONFIG_H;G_LOG_DOMAIN=\&quot;Glib-GObject\&quot;;G_DISABLE_DEPRECATED"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"

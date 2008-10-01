@@ -24,6 +24,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
+				CommandLine="copy /Y .\win32_config\config.h .\src&#x0D;&#x0A;copy /Y .\win32_config\libintl.h .\src&#x0D;&#x0A;copy /Y .\win32_config\gdk-pixbuf-aliasdef.c .\src&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -40,8 +41,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories=".\win32_config;.\src;..\glib\win32_config;..\glib\src\glib;..\glib\src;..\glib\src\gmodule"
-				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;GDK_PIXBUF_ENABLE_BACKEND;GTK_PREFIX=\&quot;zzz\&quot;;GLIB_STATIC_COMPILATION"
+				AdditionalIncludeDirectories=".\src;..\glib\src;..\glib\src\glib;..\glib\src\gmodule"
+				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;GLIB_STATIC_COMPILATION;GDK_PIXBUF_ENABLE_BACKEND"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -88,6 +89,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
+				CommandLine="copy /Y .\win32_config\config.h .\src&#x0D;&#x0A;copy /Y .\win32_config\libintl.h .\src&#x0D;&#x0A;copy /Y .\win32_config\gdk-pixbuf-aliasdef.c .\src&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -103,8 +105,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories=".\win32_config;.\src;..\glib\win32_config;..\glib\src\glib;..\glib\src;..\glib\src\gmodule"
-				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;GDK_PIXBUF_ENABLE_BACKEND;GTK_PREFIX=\&quot;zzz\&quot;;GLIB_STATIC_COMPILATION"
+				AdditionalIncludeDirectories=".\src;..\glib\src;..\glib\src\glib;..\glib\src\gmodule"
+				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;GLIB_STATIC_COMPILATION;GDK_PIXBUF_ENABLE_BACKEND"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
 				WarningLevel="0"
@@ -197,22 +199,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\src\gdk-pixbuf\io-pnm.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\gdk-pixbuf\io-ras.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\gdk-pixbuf\io-wbmp.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\gdk-pixbuf\io-xpm.c"
-				>
-			</File>
-			<File
 				RelativePath=".\src\gdk-pixbuf\pixops\pixops.c"
 				>
 			</File>
@@ -222,24 +208,8 @@
 			>
 		</File>
 		<File
-			RelativePath=".\win32_config\gdk-pixbuf-aliasdef.c"
+			RelativePath=".\win32_config\fix.c"
 			>
-			<FileConfiguration
-				Name="Debug|Win32"
-				ExcludedFromBuild="true"
-				>
-				<Tool
-					Name="VCCLCompilerTool"
-				/>
-			</FileConfiguration>
-			<FileConfiguration
-				Name="Release|Win32"
-				ExcludedFromBuild="true"
-				>
-				<Tool
-					Name="VCCLCompilerTool"
-				/>
-			</FileConfiguration>
 		</File>
 	</Files>
 	<Globals>

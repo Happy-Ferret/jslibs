@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="Windows-1252"?>
+<?xml version="1.0" encoding="windows-1251"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8,00"
@@ -24,7 +24,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="if not exist .\win32_config\glibconfig.h copy .\src\glibconfig.h.win32 .\win32_config\glibconfig.h"
+				CommandLine="copy /Y .\win32_config\config.h .\src&#x0D;&#x0A;copy /Y .\src\glibconfig.h.win32 .\src\glibconfig.h&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -41,7 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="win32_config;src;src/glib;&quot;src/../dependencies/proxy-libintl-20080418/include&quot;"
+				AdditionalIncludeDirectories="src;src/glib;&quot;src/../dependencies/proxy-libintl-20080418/include&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_LIB;GLIB_STATIC_COMPILATION;HAVE_CONFIG_H;G_LOG_DOMAIN=\&quot;Glib\&quot;;G_ENABLE_DEBUG;G_DISABLE_DEPRECATED;PCRE_STATIC;LINK_SIZE=2;MAX_NAME_SIZE=32;MAX_NAME_COUNT=10000;NEWLINE=-1;POSIX_MALLOC_THRESHOLD=10;MATCH_LIMIT=10000000;MATCH_LIMIT_RECURSION=10000000"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -63,7 +63,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				AdditionalDependencies="ole32.lib Ws2_32.lib User32.lib Advapi32.lib shell32.lib"
+				AdditionalDependencies="Ws2_32.lib User32.lib Advapi32.lib shell32.lib ole32.lib "
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -91,7 +91,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="if not exist .\win32_config\glibconfig.h copy .\src\glibconfig.h.win32 .\win32_config\glibconfig.h"
+				CommandLine="copy /Y .\win32_config\config.h .\src&#x0D;&#x0A;copy /Y .\src\glibconfig.h.win32 .\src\glibconfig.h&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -107,7 +107,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="win32_config;src;src/glib;&quot;src/../dependencies/proxy-libintl-20080418/include&quot;"
+				AdditionalIncludeDirectories="src;src/glib;&quot;src/../dependencies/proxy-libintl-20080418/include&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_LIB;GLIB_STATIC_COMPILATION;HAVE_CONFIG_H;G_LOG_DOMAIN=\&quot;Glib\&quot;;G_DISABLE_DEPRECATED;PCRE_STATIC;LINK_SIZE=2;MAX_NAME_SIZE=32;MAX_NAME_COUNT=10000;NEWLINE=-1;POSIX_MALLOC_THRESHOLD=10;MATCH_LIMIT=10000000;MATCH_LIMIT_RECURSION=10000000"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
@@ -127,7 +127,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				AdditionalDependencies="ole32.lib Ws2_32.lib User32.lib Advapi32.lib shell32.lib"
+				AdditionalDependencies="Ws2_32.lib User32.lib Advapi32.lib shell32.lib ole32.lib "
 			/>
 			<Tool
 				Name="VCALinkTool"

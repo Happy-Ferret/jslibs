@@ -1,7 +1,13 @@
+
+#define PANGO_VER 1.0
+
+//#define PANGO_ENABLE_ENGINE 1
+//#define PANGO_ENABLE_BACKEND 1
+//#define DHAVE_USP10_H 1
+
 /* config.h.in.  Generated from configure.in by autoheader.  */
 
 /* Have usable Cairo library and font backend */
-//#undef HAVE_CAIRO
 #define HAVE_CAIRO 1
 
 /* Whether Cairo uses ATSUI for fonts */
@@ -20,14 +26,12 @@
 #undef HAVE_CAIRO_PS
 
 /* Whether Cairo uses the Win32 GDI for fonts */
-//#undef HAVE_CAIRO_WIN32
 #define HAVE_CAIRO_WIN32 1
 
 /* Whether Cairo has Xlib support */
 #undef HAVE_CAIRO_XLIB
 
-/* Define to 1 if you have the <dirent.h> header file, and it defines `DIR'.
-   */
+/* Define to 1 if you have the <dirent.h> header file, and it defines `DIR'. */
 #undef HAVE_DIRENT_H
 
 /* Define to 1 if you have the <dlfcn.h> header file. */
@@ -43,7 +47,7 @@
 #undef HAVE_INTTYPES_H
 
 /* Define to 1 if you have the <memory.h> header file. */
-#undef HAVE_MEMORY_H
+#define HAVE_MEMORY_H 1
 
 /* Define to 1 if you have the <ndir.h> header file, and it defines `DIR'. */
 #undef HAVE_NDIR_H
@@ -52,30 +56,28 @@
 #undef HAVE_STDINT_H
 
 /* Define to 1 if you have the <stdlib.h> header file. */
-#undef HAVE_STDLIB_H
+#define HAVE_STDLIB_H 1
 
 /* Define to 1 if you have the <strings.h> header file. */
 #undef HAVE_STRINGS_H
 
 /* Define to 1 if you have the <string.h> header file. */
-#undef HAVE_STRING_H
+#define HAVE_STRING_H 1
 
 /* Define to 1 if you have the `strtok_r' function. */
 #undef HAVE_STRTOK_R
 
-/* Define to 1 if you have the <sys/dir.h> header file, and it defines `DIR'.
-   */
+/* Define to 1 if you have the <sys/dir.h> header file, and it defines `DIR'.  */
 #undef HAVE_SYS_DIR_H
 
-/* Define to 1 if you have the <sys/ndir.h> header file, and it defines `DIR'.
-   */
+/* Define to 1 if you have the <sys/ndir.h> header file, and it defines `DIR'.  */
 #undef HAVE_SYS_NDIR_H
 
 /* Define to 1 if you have the <sys/stat.h> header file. */
-#undef HAVE_SYS_STAT_H
+#define HAVE_SYS_STAT_H 1
 
 /* Define to 1 if you have the <sys/types.h> header file. */
-#undef HAVE_SYS_TYPES_H
+#define HAVE_SYS_TYPES_H 1
 
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
@@ -87,16 +89,16 @@
 #undef HAVE_XFT
 
 /* Module interface version */
-#undef MODULE_VERSION
+#define MODULE_VERSION 1.6.0
 
 /* Name of package */
-#undef PACKAGE
+#define PACKAGE "Pango"
 
 /* Define to the address where bug reports for this package should be sent. */
 #undef PACKAGE_BUGREPORT
 
 /* Define to the full name of this package. */
-#undef PACKAGE_NAME
+#define PACKAGE_NAME PACKAGE
 
 /* Define to the full name and version of this package. */
 #undef PACKAGE_STRING
@@ -105,10 +107,10 @@
 #undef PACKAGE_TARNAME
 
 /* Define to the version of this package. */
-#undef PACKAGE_VERSION
+#define PACKAGE_VERSION PANGO_VER
 
 /* PANGO binary age */
-#undef PANGO_BINARY_AGE
+#define PANGO_BINARY_AGE 0
 
 /* PANGO interface age */
 #undef PANGO_INTERFACE_AGE
@@ -129,21 +131,7 @@
 #undef USE_LA_MODULES
 
 /* Version number of package */
-#undef VERSION
+#define VERSION "1.0"
 
 /* Define to 1 if the X Window System is missing or not being used. */
 #undef X_DISPLAY_MISSING
-
-
-//#define PANGO_ENABLE_ENGINE 1
-//#define PANGO_ENABLE_BACKEND 1
-#define PANGO_BINARY_AGE 0
-//#define DHAVE_USP10_H 1
-
-#define PACKAGE "Pango"
-#define VERSION "1.0"
-#define MODULE_VERSION 1.6.0
-#define PANGO_VER 1.0
-
-#define PACKAGE_NAME PACKAGE
-#define PACKAGE_VERSION PANGO_VER

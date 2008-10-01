@@ -45,7 +45,7 @@ var s = <svg
        y="50"
        fill="blue"
        id="rect1310" />
-		<text x = "10" y = "25" fill = "navy" font-size = "15">It was the best of times</text>       
+		<text x = "10" y = "25" fill = "navy" font-size = "15" font-family = "arial">foo</text>       
   </g>
 </svg>
 var image = svg.Write('<?xml version="1.0" encoding="utf-8"?>'+s);

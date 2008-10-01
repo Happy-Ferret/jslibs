@@ -23,6 +23,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
+				CommandLine="copy /Y .\win32_config\config.h .\src&#x0D;&#x0A;copy /Y .\src\glibconfig.h.win32 .\src\glibconfig.h"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -39,7 +40,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories=".\win32_config;src/gio,src,src/glib,src/gmodule,src/../dependencies/proxy-libintl-20080418/include"
+				AdditionalIncludeDirectories="src,src/glib,src/gio,src/gmodule,src/../dependencies/proxy-libintl-20080418/include"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_LIB;GLIB_STATIC_COMPILATION;G_LOG_DOMAIN=\&quot;GLib-GIO\&quot;;G_DISABLE_DEPRECATED;GIO_COMPILATION;GIO_MODULE_DIR=\&quot;gio/modules\&quot;"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -88,6 +89,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
+				CommandLine="copy /Y .\win32_config\config.h .\src&#x0D;&#x0A;copy /Y .\src\glibconfig.h.win32 .\src\glibconfig.h"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -103,8 +105,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories=".\win32_config;src/gio,src,src/glib,src/gmodule,src/../dependencies/proxy-libintl-20080418/include"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_LIB;GLIB_STATIC_COMPILATION;G_LOG_DOMAIN=\&quot;GLib-GIO\&quot;;G_DISABLE_DEPRECATED;GIO_COMPILATION;GIO_MODULE_DIR=\&quot;gio/modules\&quot;"
+				AdditionalIncludeDirectories="src,src/glib,src/gio,src/gmodule,src/../dependencies/proxy-libintl-20080418/include"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_LIB;GLIB_STATIC_COMPILATION;G_LOG_DOMAIN=\&quot;GLib-GIO\&quot;;G_DISABLE_DEPRECATED;GIO_COMPILATION;GIO_MODULE_DIR=\&quot;gio/modules\&quot;"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
 				WarningLevel="0"
