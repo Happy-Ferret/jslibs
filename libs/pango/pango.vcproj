@@ -41,7 +41,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories=".\win32_config;src;src\pango;..\glib\win32_config;..\glib\src;..\glib\src\glib;..\glib\src\gmodule;..\freetype\src\include;..\cairo\win32_config;..\cairo\src\src;..\fontconfig\win32_config;..\fontconfig\src"
-				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;PANGO_ENABLE_ENGINE;PANGO_ENABLE_BACKEND;CAIRO_HAS_WIN32_SURFACE"
+				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;PANGO_ENABLE_ENGINE;PANGO_ENABLE_BACKEND;CAIRO_HAS_WIN32_SURFACE;GLIB_STATIC_COMPILATION"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -104,7 +104,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories=".\win32_config;src;src\pango;..\glib\win32_config;..\glib\src;..\glib\src\glib;..\glib\src\gmodule;..\freetype\src\include;..\cairo\win32_config;..\cairo\src\src;..\fontconfig\win32_config;..\fontconfig\src"
-				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;PANGO_ENABLE_ENGINE;PANGO_ENABLE_BACKEND;CAIRO_HAS_WIN32_SURFACE"
+				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;PANGO_ENABLE_ENGINE;PANGO_ENABLE_BACKEND;CAIRO_HAS_WIN32_SURFACE;GLIB_STATIC_COMPILATION"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
 				WarningLevel="0"
@@ -161,6 +161,18 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\pango\mini-fribidi\fribidi.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\pango\mini-fribidi\fribidi_char_type.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\pango\mini-fribidi\fribidi_types.c"
+				>
+			</File>
+			<File
 				RelativePath=".\src\pango\glyphstring.c"
 				>
 			</File>
@@ -185,6 +197,10 @@
 						Name="VCCLCompilerTool"
 					/>
 				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\src\pango\module-defs-lang.c"
+				>
 			</File>
 			<File
 				RelativePath=".\src\pango\module-defs-win32.c.win32"
@@ -214,6 +230,10 @@
 			</File>
 			<File
 				RelativePath=".\src\pango\pango-attributes.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\pango\pango-bidi-type.c"
 				>
 			</File>
 			<File

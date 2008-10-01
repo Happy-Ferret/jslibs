@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8,00"
-	Name="librsvg"
-	ProjectGUID="{96E9258A-8812-4C08-96C7-7D8C0D00940B}"
-	RootNamespace="librsvg"
+	Name="gdk-pixbuf"
+	ProjectGUID="{CEFA1472-D84C-4774-9DC0-58725FF8C86B}"
+	RootNamespace="gdkpixbuf"
 	Keyword="Win32Proj"
 	>
 	<Platforms>
@@ -40,8 +40,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories=".\win32_config;..\glib\win32_config;..\glib\src;..\glib\src\glib;..\glib\src\gmodule;&quot;..\gdk-pixbuf\src&quot;;..\libxml2\src\include;..\cairo\win32_config;..\cairo\src\src;..\pango\src"
-				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;LIBXML_STATIC;GLIB_STATIC_COMPILATION"
+				AdditionalIncludeDirectories=".\win32_config;.\src;..\glib\win32_config;..\glib\src\glib;..\glib\src;..\glib\src\gmodule"
+				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;GDK_PIXBUF_ENABLE_BACKEND;GTK_PREFIX=\&quot;zzz\&quot;;GLIB_STATIC_COMPILATION"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -103,8 +103,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories=".\win32_config;..\glib\win32_config;..\glib\src;..\glib\src\glib;..\glib\src\gmodule;&quot;..\gdk-pixbuf\src&quot;;..\libxml2\src\include;..\cairo\win32_config;..\cairo\src\src;..\pango\src"
-				PreprocessorDefinitions="WIN32;NDEBUG;LIBXML_STATIC;GLIB_STATIC_COMPILATION"
+				AdditionalIncludeDirectories=".\win32_config;.\src;..\glib\win32_config;..\glib\src\glib;..\glib\src;..\glib\src\gmodule"
+				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;GDK_PIXBUF_ENABLE_BACKEND;GTK_PREFIX=\&quot;zzz\&quot;;GLIB_STATIC_COMPILATION"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
 				WarningLevel="0"
@@ -149,113 +149,97 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath=".\src\librsvg-enum-types.c"
+				RelativePath=".\src\gdk-pixbuf\gdk-pixbuf-animation.c"
 				>
 			</File>
 			<File
-				RelativePath=".\src\librsvg-features.c"
+				RelativePath=".\src\gdk-pixbuf\gdk-pixbuf-data.c"
 				>
 			</File>
 			<File
-				RelativePath=".\src\rsvg-affine.c"
+				RelativePath=".\src\gdk-pixbuf\gdk-pixbuf-enum-types.c"
 				>
 			</File>
 			<File
-				RelativePath=".\src\rsvg-base-file-util.c"
+				RelativePath=".\src\gdk-pixbuf\gdk-pixbuf-io.c"
 				>
 			</File>
 			<File
-				RelativePath=".\src\rsvg-base.c"
+				RelativePath=".\src\gdk-pixbuf\gdk-pixbuf-loader.c"
 				>
 			</File>
 			<File
-				RelativePath=".\src\rsvg-bpath-util.c"
+				RelativePath=".\src\gdk-pixbuf\gdk-pixbuf-scale.c"
 				>
 			</File>
 			<File
-				RelativePath=".\src\rsvg-cairo-clip.c"
+				RelativePath=".\src\gdk-pixbuf\gdk-pixbuf-scaled-anim.c"
 				>
 			</File>
 			<File
-				RelativePath=".\src\rsvg-cairo-draw.c"
+				RelativePath=".\src\gdk-pixbuf\gdk-pixbuf-simple-anim.c"
 				>
 			</File>
 			<File
-				RelativePath=".\src\rsvg-cairo-render.c"
+				RelativePath=".\src\gdk-pixbuf\gdk-pixbuf-util.c"
 				>
 			</File>
 			<File
-				RelativePath=".\src\rsvg-cond.c"
+				RelativePath=".\src\gdk-pixbuf\gdk-pixbuf.c"
 				>
 			</File>
 			<File
-				RelativePath=".\src\rsvg-convert.c"
+				RelativePath=".\src\gdk-pixbuf\gdk-pixdata.c"
 				>
 			</File>
 			<File
-				RelativePath=".\src\rsvg-css.c"
+				RelativePath=".\src\gdk-pixbuf\io-gif-animation.c"
 				>
 			</File>
 			<File
-				RelativePath=".\src\rsvg-defs.c"
+				RelativePath=".\src\gdk-pixbuf\io-pnm.c"
 				>
 			</File>
 			<File
-				RelativePath=".\src\rsvg-file-util.c"
+				RelativePath=".\src\gdk-pixbuf\io-ras.c"
 				>
 			</File>
 			<File
-				RelativePath=".\src\rsvg-filter.c"
+				RelativePath=".\src\gdk-pixbuf\io-wbmp.c"
 				>
 			</File>
 			<File
-				RelativePath=".\src\rsvg-gobject.c"
+				RelativePath=".\src\gdk-pixbuf\io-xpm.c"
 				>
 			</File>
 			<File
-				RelativePath=".\src\rsvg-image.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\rsvg-marker.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\rsvg-mask.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\rsvg-paint-server.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\rsvg-path.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\rsvg-shapes.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\rsvg-structure.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\rsvg-styles.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\rsvg-text.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\rsvg.c"
+				RelativePath=".\src\gdk-pixbuf\pixops\pixops.c"
 				>
 			</File>
 		</Filter>
 		<File
 			RelativePath=".\win32_config\config.h"
 			>
+		</File>
+		<File
+			RelativePath=".\win32_config\gdk-pixbuf-aliasdef.c"
+			>
+			<FileConfiguration
+				Name="Debug|Win32"
+				ExcludedFromBuild="true"
+				>
+				<Tool
+					Name="VCCLCompilerTool"
+				/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Release|Win32"
+				ExcludedFromBuild="true"
+				>
+				<Tool
+					Name="VCCLCompilerTool"
+				/>
+			</FileConfiguration>
 		</File>
 	</Files>
 	<Globals>

@@ -1,7 +1,8 @@
 /* config.h.in.  Generated from configure.in by autoheader.  */
 
 /* Have usable Cairo library and font backend */
-#undef HAVE_CAIRO
+//#undef HAVE_CAIRO
+#define HAVE_CAIRO 1
 
 /* Whether Cairo uses ATSUI for fonts */
 #undef HAVE_CAIRO_ATSUI
@@ -19,7 +20,8 @@
 #undef HAVE_CAIRO_PS
 
 /* Whether Cairo uses the Win32 GDI for fonts */
-#undef HAVE_CAIRO_WIN32
+//#undef HAVE_CAIRO_WIN32
+#define HAVE_CAIRO_WIN32 1
 
 /* Whether Cairo has Xlib support */
 #undef HAVE_CAIRO_XLIB

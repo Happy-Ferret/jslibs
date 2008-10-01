@@ -23,7 +23,7 @@
     writer=no \
     walker=no \
     pattern=yes \
-    push=no \
+    push=yes \
     valid=yes \
     sax1=yes \
     legacy=no \

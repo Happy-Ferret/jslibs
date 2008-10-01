@@ -1,13 +1,10 @@
 LoadModule('jsstd');
-LoadModule('jsio');
 
-var s = ('hello');
 
-Print( s.substr(Infinity, ' ') );
+
 
 
 Print('Done');
-
 
 Halt();
 
@@ -46,7 +43,6 @@ Print( b.concat, '\n' );
 Print( b.replace, '\n' );
 
 Print( b.replace('ab','cd'), '\n' );
-
 
 
 Print( b.prop5, '\n' );

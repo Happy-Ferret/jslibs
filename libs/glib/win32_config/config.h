@@ -24,6 +24,7 @@
 
 /* always defined to indicate that i18n is enabled */
 //#define ENABLE_NLS 1
+//#undef ENABLE_NLS
 
 /* Define the gettext package to be used */
 #define GETTEXT_PACKAGE "glib20"
@@ -740,3 +741,9 @@
 
 /* Define to `unsigned int' if <sys/types.h> does not define. */
 /* #undef size_t */
+
+
+// include wchar.h to fix d:\franck\mes documents\dev\my_projects\jslibs\libs\glib\src\gio\win32\gwinhttpfile.c(542) :
+//   error C4013: 'swscanf' undefined; assuming extern returning int
+#include <wchar.h>
+

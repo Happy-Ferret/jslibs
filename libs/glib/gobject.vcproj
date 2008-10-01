@@ -24,6 +24,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
+				CommandLine="if not exist .\win32_config\glibconfig.h copy .\src\glibconfig.h.win32 .\win32_config\glibconfig.h"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -88,6 +89,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
+				CommandLine="if not exist .\win32_config\glibconfig.h copy .\src\glibconfig.h.win32 .\win32_config\glibconfig.h"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"

@@ -38,7 +38,7 @@ EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
 
 EXTERN_C DLLEXPORT void ModuleFree() {
 }
-
+/*
 #ifdef XP_WIN
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
 
@@ -47,3 +47,4 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
 	return TRUE;
 }
 #endif // XP_WIN
+*/

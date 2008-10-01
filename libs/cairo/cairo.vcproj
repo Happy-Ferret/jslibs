@@ -62,6 +62,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
+				AdditionalDependencies="Gdi32.lib Msimg32.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -124,6 +125,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
+				AdditionalDependencies="Gdi32.lib Msimg32.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -344,6 +346,14 @@
 			</File>
 			<File
 				RelativePath=".\src\src\cairo-unicode.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\src\cairo-user-font.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\src\cairo-version.c"
 				>
 			</File>
 			<File
