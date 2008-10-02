@@ -339,18 +339,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\src\pango\pangoft2-fontmap.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\pango\pangoft2-render.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\pango\pangoft2.c"
-				>
-			</File>
-			<File
 				RelativePath=".\src\pango\pangowin32-fontcache.c"
 				>
 			</File>

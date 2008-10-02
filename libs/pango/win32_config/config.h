@@ -1,4 +1,3 @@
-
 #define PANGO_VER 1.0
 
 //#define PANGO_ENABLE_ENGINE 1
