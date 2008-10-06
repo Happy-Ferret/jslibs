@@ -16,6 +16,7 @@
 #include "svg.h"
 
 #include <rsvg.h>
+#include <libxml/xmlerror.h>
 
 
 
@@ -71,24 +72,36 @@ DEFINE_FUNCTION_FAST( Write ) {
 
 	GError *error = NULL;
 	gboolean status;
+
+//		rsvg_handle_new_from_file
+
+	xmlResetLastError();
+
 	status = rsvg_handle_write(handle, (const guchar *)data, length, &error);
 	if ( !status ) {
+
+		xmlErrorPtr xmlErr = xmlGetLastError();
+		if ( xmlErr != NULL ) { // XML error
+			J_REPORT_ERROR_2("SVG error: %s. %s", error->message, xmlErr->message);
+		} else
+			J_REPORT_ERROR_1("SVG error: %s", error->message);
 	}
 
 	status = rsvg_handle_close(handle, &error);
+	if (!status)
+		J_REPORT_ERROR_1("SVG error: %s", error->message);
+	
 
 	RsvgDimensionData dim;
 	rsvg_handle_get_dimensions(handle, &dim);
 
 	GdkPixbuf *pb = rsvg_handle_get_pixbuf(handle);
-
 	J_S_ASSERT( gdk_pixbuf_get_bits_per_sample(pb) == 8, "Unsupported bits_per_sample." );
 
 	int channels = gdk_pixbuf_get_n_channels(pb);
 
 	int width = gdk_pixbuf_get_width(pb);
 	int height = gdk_pixbuf_get_height(pb);
-
 
 	void *buffer = gdk_pixbuf_get_pixels(pb);
 
@@ -103,10 +116,6 @@ DEFINE_FUNCTION_FAST( Write ) {
 	JS_DefineProperty(cx, blobObj, "channels", INT_TO_JSVAL(channels), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
 	JS_DefineProperty(cx, blobObj, "width", INT_TO_JSVAL(width), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
 	JS_DefineProperty(cx, blobObj, "height", INT_TO_JSVAL(height), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
-	
-
-
-	//	rsvg_handle_new_from_file
 
 	return JS_TRUE;
 }

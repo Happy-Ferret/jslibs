@@ -20,7 +20,7 @@
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="4"
-			CharacterSet="1"
+			CharacterSet="0"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -42,7 +42,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="src;src\pango;..\glib\src;..\glib\src\glib;..\glib\src\gmodule;..\freetype\src\include;..\cairo\src\src;..\fontconfig\src"
-				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;PANGO_MODULE_PREFIX=_pango_basic_win32;PANGO_ENABLE_ENGINE;PANGO_ENABLE_BACKEND;CAIRO_HAS_WIN32_SURFACE;GLIB_STATIC_COMPILATION"
+				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;PANGO_MODULE_PREFIX=_pango_basic_ft2;PANGO_ENABLE_ENGINE;PANGO_ENABLE_BACKEND;CAIRO_HAS_WIN32_SURFACE;GLIB_STATIC_COMPILATION"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -84,7 +84,7 @@
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="4"
-			CharacterSet="1"
+			CharacterSet="0"
 			WholeProgramOptimization="1"
 			>
 			<Tool
@@ -106,7 +106,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="src;src\pango;..\glib\src;..\glib\src\glib;..\glib\src\gmodule;..\freetype\src\include;..\cairo\src\src;..\fontconfig\src"
-				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;PANGO_MODULE_PREFIX=_pango_basic_win32;PANGO_ENABLE_ENGINE;PANGO_ENABLE_BACKEND;CAIRO_HAS_WIN32_SURFACE;GLIB_STATIC_COMPILATION"
+				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;PANGO_MODULE_PREFIX=_pango_basic_ft2;PANGO_ENABLE_ENGINE;PANGO_ENABLE_BACKEND;CAIRO_HAS_WIN32_SURFACE;GLIB_STATIC_COMPILATION"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
 				WarningLevel="0"
@@ -151,7 +151,7 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath=".\src\modules\basic\basic-win32.c"
+				RelativePath=".\src\modules\basic\basic-fc.c"
 				>
 			</File>
 			<File
@@ -180,6 +180,46 @@
 			</File>
 			<File
 				RelativePath=".\src\pango\glyphstring.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\pango\opentype\harfbuzz-buffer.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\pango\opentype\harfbuzz-dump-main.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\pango\opentype\harfbuzz-dump.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\pango\opentype\harfbuzz-gdef.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\pango\opentype\harfbuzz-gpos.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\pango\opentype\harfbuzz-gsub.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\pango\opentype\harfbuzz-impl.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\pango\opentype\harfbuzz-open.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\pango\opentype\harfbuzz-stream.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\pango\opentype\harfbuzz.c"
 				>
 			</File>
 			<File
@@ -307,6 +347,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\pango\pangocairo-fcfont.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\pango\pangocairo-fcfontmap.c"
+				>
+			</File>
+			<File
 				RelativePath=".\src\pango\pangocairo-font.c"
 				>
 			</File>
@@ -316,14 +364,6 @@
 			</File>
 			<File
 				RelativePath=".\src\pango\pangocairo-render.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\pango\pangocairo-win32font.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\pango\pangocairo-win32fontmap.c"
 				>
 			</File>
 			<File
@@ -339,11 +379,15 @@
 				>
 			</File>
 			<File
-				RelativePath=".\src\pango\pangowin32-fontcache.c"
+				RelativePath=".\src\pango\pangoft2-fontmap.c"
 				>
 			</File>
 			<File
-				RelativePath=".\src\pango\pangowin32-fontmap.c"
+				RelativePath=".\src\pango\pangoft2-render.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\pango\pangoft2.c"
 				>
 			</File>
 			<File

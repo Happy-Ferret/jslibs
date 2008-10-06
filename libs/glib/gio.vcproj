@@ -19,11 +19,11 @@
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)\bin"
 			IntermediateDirectory="$(SolutionDir)$(ConfigurationName)\obj"
 			ConfigurationType="4"
-			CharacterSet="2"
+			CharacterSet="0"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="copy /Y .\win32_config\config.h .\src&#x0D;&#x0A;copy /Y .\src\glibconfig.h.win32 .\src\glibconfig.h"
+				CommandLine="copy /Y .\win32_config\config.h .\src&#x0D;&#x0A;copy /Y .\src\glibconfig.h.win32 .\src\glibconfig.h&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -41,7 +41,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="src,src/glib,src/gio,src/gmodule,src/../dependencies/proxy-libintl-20080418/include"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_LIB;GLIB_STATIC_COMPILATION;G_LOG_DOMAIN=\&quot;GLib-GIO\&quot;;G_DISABLE_DEPRECATED;GIO_COMPILATION;GIO_MODULE_DIR=\&quot;gio/modules\&quot;"
+				PreprocessorDefinitions="_WIN32;WIN32;_DEBUG;_WINDOWS;_LIB;GLIB_STATIC_COMPILATION;G_LOG_DOMAIN=\&quot;GLib-GIO\&quot;;G_DISABLE_DEPRECATED;GIO_COMPILATION;GIO_MODULE_DIR=\&quot;gio/modules\&quot;"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -84,12 +84,12 @@
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)\bin"
 			IntermediateDirectory="$(SolutionDir)$(ConfigurationName)\obj"
 			ConfigurationType="4"
-			CharacterSet="2"
+			CharacterSet="0"
 			WholeProgramOptimization="1"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="copy /Y .\win32_config\config.h .\src&#x0D;&#x0A;copy /Y .\src\glibconfig.h.win32 .\src\glibconfig.h"
+				CommandLine="copy /Y .\win32_config\config.h .\src&#x0D;&#x0A;copy /Y .\src\glibconfig.h.win32 .\src\glibconfig.h&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -106,7 +106,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="src,src/glib,src/gio,src/gmodule,src/../dependencies/proxy-libintl-20080418/include"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_LIB;GLIB_STATIC_COMPILATION;G_LOG_DOMAIN=\&quot;GLib-GIO\&quot;;G_DISABLE_DEPRECATED;GIO_COMPILATION;GIO_MODULE_DIR=\&quot;gio/modules\&quot;"
+				PreprocessorDefinitions="_WIN32;WIN32;NDEBUG;_WINDOWS;_LIB;GLIB_STATIC_COMPILATION;G_LOG_DOMAIN=\&quot;GLib-GIO\&quot;;G_DISABLE_DEPRECATED;GIO_COMPILATION;GIO_MODULE_DIR=\&quot;gio/modules\&quot;"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
 				WarningLevel="0"

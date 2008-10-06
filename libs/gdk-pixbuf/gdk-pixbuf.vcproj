@@ -20,11 +20,11 @@
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="4"
-			CharacterSet="1"
+			CharacterSet="0"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="copy /Y .\win32_config\config.h .\src&#x0D;&#x0A;copy /Y .\win32_config\libintl.h .\src&#x0D;&#x0A;copy /Y .\win32_config\gdk-pixbuf-aliasdef.c .\src&#x0D;&#x0A;"
+				CommandLine="copy /Y .\win32_config\config.h .\src&#x0D;&#x0A;copy /Y .\win32_config\gdk-pixbuf-aliasdef.c .\src"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -42,7 +42,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories=".\src;..\glib\src;..\glib\src\glib;..\glib\src\gmodule"
-				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;GLIB_STATIC_COMPILATION;GDK_PIXBUF_ENABLE_BACKEND"
+				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;DISABLE_VISIBILITY;GLIB_STATIC_COMPILATION;GDK_PIXBUF_ENABLE_BACKEND"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -84,12 +84,12 @@
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="4"
-			CharacterSet="1"
+			CharacterSet="0"
 			WholeProgramOptimization="1"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="copy /Y .\win32_config\config.h .\src&#x0D;&#x0A;copy /Y .\win32_config\libintl.h .\src&#x0D;&#x0A;copy /Y .\win32_config\gdk-pixbuf-aliasdef.c .\src&#x0D;&#x0A;"
+				CommandLine="copy /Y .\win32_config\config.h .\src&#x0D;&#x0A;copy /Y .\win32_config\gdk-pixbuf-aliasdef.c .\src"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -106,7 +106,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories=".\src;..\glib\src;..\glib\src\glib;..\glib\src\gmodule"
-				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;GLIB_STATIC_COMPILATION;GDK_PIXBUF_ENABLE_BACKEND"
+				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;DISABLE_VISIBILITY;GLIB_STATIC_COMPILATION;GDK_PIXBUF_ENABLE_BACKEND"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
 				WarningLevel="0"

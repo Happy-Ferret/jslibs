@@ -13,7 +13,8 @@
 #undef HAVE_CAIRO_ATSUI
 
 /* Whether Cairo uses FreeType for fonts */
-#undef HAVE_CAIRO_FREETYPE
+//#undef HAVE_CAIRO_FREETYPE
+#define HAVE_CAIRO_FREETYPE 1
 
 /* Whether Cairo has PDF support */
 #undef HAVE_CAIRO_PDF
@@ -25,7 +26,7 @@
 #undef HAVE_CAIRO_PS
 
 /* Whether Cairo uses the Win32 GDI for fonts */
-#define HAVE_CAIRO_WIN32 1
+//#define HAVE_CAIRO_WIN32 1
 
 /* Whether Cairo has Xlib support */
 #undef HAVE_CAIRO_XLIB

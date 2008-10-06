@@ -20,11 +20,11 @@
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)\bin"
 			IntermediateDirectory="$(SolutionDir)$(ConfigurationName)\obj"
 			ConfigurationType="4"
-			CharacterSet="2"
+			CharacterSet="0"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="copy /Y .\win32_config\config.h .\src&#x0D;&#x0A;copy /Y .\src\glibconfig.h.win32 .\src\glibconfig.h&#x0D;&#x0A;copy /Y .\src\gmodule\gmoduleconf.h.win32 .\src\gmodule\gmoduleconf.h"
+				CommandLine="copy /Y .\win32_config\config.h .\src&#x0D;&#x0A;copy /Y .\src\glibconfig.h.win32 .\src\glibconfig.h&#x0D;&#x0A;copy /Y .\src\gmodule\gmoduleconf.h.win32 .\src\gmodule\gmoduleconf.h&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -85,12 +85,12 @@
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)\bin"
 			IntermediateDirectory="$(SolutionDir)$(ConfigurationName)\obj"
 			ConfigurationType="4"
-			CharacterSet="2"
+			CharacterSet="0"
 			WholeProgramOptimization="1"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="copy /Y .\win32_config\config.h .\src&#x0D;&#x0A;copy /Y .\src\glibconfig.h.win32 .\src\glibconfig.h&#x0D;&#x0A;copy /Y .\src\gmodule\gmoduleconf.h.win32 .\src\gmodule\gmoduleconf.h"
+				CommandLine="copy /Y .\win32_config\config.h .\src&#x0D;&#x0A;copy /Y .\src\glibconfig.h.win32 .\src\glibconfig.h&#x0D;&#x0A;copy /Y .\src\gmodule\gmoduleconf.h.win32 .\src\gmodule\gmoduleconf.h&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"

@@ -45,13 +45,15 @@ var s = <svg
        y="50"
        fill="blue"
        id="rect1310" />
-		<text x = "10" y = "25" fill = "navy" font-size = "15" font-family = "arial">foo</text>       
+		<text x = "10" y = "50" fill = "navy" font-size = "50" font-family = "arial">foo</text>       
   </g>
 </svg>
-var image = svg.Write('<?xml version="1.0" encoding="utf-8"?>'+s);
 
-//var s = new File('../../logo.svg').content;
+//var svgimage = svg.Write('<?xml version="1.0" encoding="utf-8"?>'+s);
 
-var svgimage = svg.Write(s);
+var svgText = new File('Image_Tectonic_plates.svg').content
+Print( svgText.length );
+
+var svgimage = svg.Write(svgText);
 
 new File('test.png').content = EncodePngImage( svgimage );
