@@ -41,7 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\glib\src;..\glib\src\glib;..\glib\src\gmodule;&quot;..\gdk-pixbuf\src&quot;;..\libxml2\src\include;..\fontconfig\src;..\freetype\src\include;..\cairo\src\src;..\pango\src"
+				AdditionalIncludeDirectories="..\glib\src;..\glib\src\glib;..\glib\src\gmodule;&quot;..\gdk-pixbuf\src&quot;;..\libxml2\src\include;&quot;..\fontconfig-msvc\src&quot;;..\freetype\src\include;..\cairo\src\src;..\pango\src"
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;LIBXML_STATIC;GLIB_STATIC_COMPILATION"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -105,7 +105,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\glib\src;..\glib\src\glib;..\glib\src\gmodule;&quot;..\gdk-pixbuf\src&quot;;..\libxml2\src\include;..\fontconfig\src;..\freetype\src\include;..\cairo\src\src;..\pango\src"
+				AdditionalIncludeDirectories="..\glib\src;..\glib\src\glib;..\glib\src\gmodule;&quot;..\gdk-pixbuf\src&quot;;..\libxml2\src\include;&quot;..\fontconfig-msvc\src&quot;;..\freetype\src\include;..\cairo\src\src;..\pango\src"
 				PreprocessorDefinitions="WIN32;NDEBUG;LIBXML_STATIC;GLIB_STATIC_COMPILATION"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"

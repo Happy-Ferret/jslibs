@@ -41,7 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="src\src;..\zlib\src;..\pixman\src\pixman;..\freetype\src\include;..\fontconfig\src"
+				AdditionalIncludeDirectories="src\src;..\zlib\src;..\pixman\src\pixman;..\freetype\src\include;&quot;..\fontconfig-msvc\src&quot;"
 				PreprocessorDefinitions="_WIN32;WIN32;_DEBUG;_LIB;_CRT_SECURE_NO_WARNINGS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -106,7 +106,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="src\src;..\zlib\src;..\pixman\src\pixman;..\freetype\src\include;..\fontconfig\src"
+				AdditionalIncludeDirectories="src\src;..\zlib\src;..\pixman\src\pixman;..\freetype\src\include;&quot;..\fontconfig-msvc\src&quot;"
 				PreprocessorDefinitions="_WIN32;WIN32;NDEBUG;_LIB;_CRT_SECURE_NO_WARNINGS"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"

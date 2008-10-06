@@ -24,7 +24,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="copy /Y .\win32_config\config.h .\src&#x0D;&#x0A;copy /Y .\win32_config\libintl.h .\src&#x0D;&#x0A;copy /Y .\src\glibconfig.h.win32 .\src\glibconfig.h&#x0D;&#x0A;"
+				CommandLine="copy /Y .\win32_config\config.h .\src&#x0D;&#x0A;copy /Y .\src\glibconfig.h.win32 .\src\glibconfig.h&#x0D;&#x0A;copy /Y .\win32_config\libintl.h .\src"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -91,7 +91,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="copy /Y .\win32_config\config.h .\src&#x0D;&#x0A;copy /Y .\win32_config\libintl.h .\src&#x0D;&#x0A;copy /Y .\src\glibconfig.h.win32 .\src\glibconfig.h&#x0D;&#x0A;"
+				CommandLine="copy /Y .\win32_config\config.h .\src&#x0D;&#x0A;copy /Y .\src\glibconfig.h.win32 .\src\glibconfig.h&#x0D;&#x0A;copy /Y .\win32_config\libintl.h .\src"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
