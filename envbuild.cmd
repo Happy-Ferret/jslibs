@@ -14,7 +14,9 @@ REM --- DirectX path ---
 set DirectXPath=C:\Program Files\Microsoft DirectX SDK (March 2008)
 
 REM --- GNU tools path ---
-rem TRY: set gnuTools=C:\tools\msys\bin
+
+rem set gnuTools=C:\TOOLS\mozilla-build\msys\bin
+rem set gnuTools=C:\tools\msys\bin
 set gnuTools=C:\tools\cygwin\bin
 
 
@@ -43,6 +45,16 @@ set LIB=%VSINSTALLDIR%\VC\LIB;%LIB%
 set PATH=%MSSdk%\Bin;%PATH%
 set INCLUDE=%MSSdk%\Include;%INCLUDE%
 set LIB=%MSSdk%\Lib;%LIB%
+
+
+set CC=cl
+set CXX=cl
+set LD=link
+rem set AR=lib -NOLOGO -OUT:"$@"
+set OBJ_SUFFIX=obj
+set LIB_SUFFIX=lib
+set DLL_SUFFIX=dll
+
 
 
 set JSLIBS_BUILD_ENV_IS_SET=true
