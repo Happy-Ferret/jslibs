@@ -54,7 +54,7 @@
 				AssemblerListingLocation=".\Win32_DLL_ASM_Debug/"
 				ObjectFile=".\Win32_DLL_ASM_Debug/"
 				ProgramDataBaseFileName=".\Win32_DLL_ASM_Debug/"
-				WarningLevel="3"
+				WarningLevel="0"
 				SuppressStartupBanner="true"
 				DebugInformationFormat="4"
 			/>
@@ -149,7 +149,7 @@
 				AssemblerListingLocation=".\Win32_DLL_Release/"
 				ObjectFile=".\Win32_DLL_Release/"
 				ProgramDataBaseFileName=".\Win32_DLL_Release/"
-				WarningLevel="3"
+				WarningLevel="0"
 				SuppressStartupBanner="true"
 			/>
 			<Tool
@@ -235,7 +235,7 @@
 				AssemblerListingLocation=".\Win32_LIB_ASM_Debug/"
 				ObjectFile=".\Win32_LIB_ASM_Debug/"
 				ProgramDataBaseFileName=".\Win32_LIB_ASM_Debug/"
-				WarningLevel="3"
+				WarningLevel="0"
 				SuppressStartupBanner="true"
 				DebugInformationFormat="4"
 			/>
@@ -315,7 +315,7 @@
 				AssemblerListingLocation=".\Win32_DLL_ASM_Release/"
 				ObjectFile=".\Win32_DLL_ASM_Release/"
 				ProgramDataBaseFileName=".\Win32_DLL_ASM_Release/"
-				WarningLevel="3"
+				WarningLevel="0"
 				SuppressStartupBanner="true"
 			/>
 			<Tool
@@ -401,7 +401,7 @@
 				AssemblerListingLocation=".\Win32_LIB_Debug/"
 				ObjectFile=".\Win32_LIB_Debug/"
 				ProgramDataBaseFileName=".\Win32_LIB_Debug/"
-				WarningLevel="3"
+				WarningLevel="0"
 				SuppressStartupBanner="true"
 				DebugInformationFormat="4"
 			/>
@@ -480,7 +480,7 @@
 				AssemblerListingLocation=".\Win32_DLL_Debug/"
 				ObjectFile=".\Win32_DLL_Debug/"
 				ProgramDataBaseFileName=".\Win32_DLL_Debug/"
-				WarningLevel="3"
+				WarningLevel="0"
 				SuppressStartupBanner="true"
 				DebugInformationFormat="4"
 			/>
@@ -569,7 +569,7 @@
 				AssemblerListingLocation=".\Win32_LIB_Release/"
 				ObjectFile=".\Win32_LIB_Release/"
 				ProgramDataBaseFileName=".\Win32_LIB_Release/"
-				WarningLevel="3"
+				WarningLevel="0"
 				SuppressStartupBanner="true"
 			/>
 			<Tool
@@ -642,7 +642,7 @@
 				AssemblerListingLocation=".\Win32_LIB_ASM_Release/"
 				ObjectFile=".\Win32_LIB_ASM_Release/"
 				ProgramDataBaseFileName=".\Win32_LIB_ASM_Release/"
-				WarningLevel="3"
+				WarningLevel="0"
 				SuppressStartupBanner="true"
 			/>
 			<Tool
