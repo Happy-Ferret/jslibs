@@ -239,10 +239,6 @@
 				>
 			</File>
 		</Filter>
-		<File
-			RelativePath=".\win32_config\config.h"
-			>
-		</File>
 	</Files>
 	<Globals>
 	</Globals>

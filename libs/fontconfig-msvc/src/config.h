@@ -12,10 +12,10 @@
 
 /* System font directory */
 //#undef FC_DEFAULT_FONTS
-//#define FC_DEFAULT_FONTS "WINDOWSFONTDIR"
-#define FC_DEFAULT_FONTS "C:\\WINDOWS\\Fonts"
+#define FC_DEFAULT_FONTS "WINDOWSFONTDIR"
 
-#define FC_CACHEDIR "."
+
+#define FC_CACHEDIR ""
 #define FONTCONFIG_PATH "."
 
 

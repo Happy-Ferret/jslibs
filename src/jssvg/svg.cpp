@@ -33,8 +33,8 @@ DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are
 
 		g_object_unref(handle);
 	}
-
 }
+
 
 DEFINE_CONSTRUCTOR() {
 
@@ -47,7 +47,6 @@ DEFINE_CONSTRUCTOR() {
 	J_S_ASSERT_RESOURCE(handle);
 
 	J_CHK( JS_SetPrivate(cx, obj, handle) );
-
 
 
 	return JS_TRUE;
@@ -88,21 +87,29 @@ DEFINE_FUNCTION_FAST( Write ) {
 	}
 
 	status = rsvg_handle_close(handle, &error);
-	if (!status)
-		J_REPORT_ERROR_1("SVG error: %s", error->message);
-	
+	if (!status) {
 
-	RsvgDimensionData dim;
-	rsvg_handle_get_dimensions(handle, &dim);
+		J_REPORT_ERROR_1("SVG error: %s", error->message);
+	}
+	
+	return JS_TRUE;
+}
+
+
+
+DEFINE_FUNCTION_FAST( GetImage ) {
+
+	RsvgHandle *handle = (RsvgHandle*)JS_GetPrivate(cx, J_FOBJ);
+	J_S_ASSERT_RESOURCE(handle);
 
 	GdkPixbuf *pb = rsvg_handle_get_pixbuf(handle);
-	J_S_ASSERT( gdk_pixbuf_get_bits_per_sample(pb) == 8, "Unsupported bits_per_sample." );
 
-	int channels = gdk_pixbuf_get_n_channels(pb);
+	J_S_ASSERT( pb != NULL, "Insufficient data has been read to create the pixbuf." );
+	J_S_ASSERT( gdk_pixbuf_get_bits_per_sample(pb) == 8, "Unsupported bits_per_sample." );
 
 	int width = gdk_pixbuf_get_width(pb);
 	int height = gdk_pixbuf_get_height(pb);
-
+	int channels = gdk_pixbuf_get_n_channels(pb);
 	void *buffer = gdk_pixbuf_get_pixels(pb);
 
 	jsval blobVal;
@@ -120,6 +127,47 @@ DEFINE_FUNCTION_FAST( Write ) {
 	return JS_TRUE;
 }
 
+
+DEFINE_PROPERTY(dpi) {
+
+	RsvgHandle *handle = (RsvgHandle*)JS_GetPrivate(cx, J_OBJ);
+	J_S_ASSERT_RESOURCE(handle);
+
+	if ( !JSVAL_IS_VOID(*vp) ) {
+		
+		size_t dpi;
+		J_CHK( JsvalToUInt(cx, *vp, &dpi) );
+		rsvg_handle_set_dpi(handle, dpi);
+	} else {
+
+		rsvg_handle_set_dpi(handle, -1);
+	}
+	return JS_TRUE;
+}
+
+
+DEFINE_PROPERTY(width) {
+
+	RsvgHandle *handle = (RsvgHandle*)JS_GetPrivate(cx, J_OBJ);
+	J_S_ASSERT_RESOURCE(handle);
+	RsvgDimensionData dim;
+	rsvg_handle_get_dimensions(handle, &dim);
+	J_CHK( UIntToJsval(cx, dim.width, vp) );
+	return JS_TRUE;
+}
+
+
+DEFINE_PROPERTY(height) {
+
+	RsvgHandle *handle = (RsvgHandle*)JS_GetPrivate(cx, J_OBJ);
+	J_S_ASSERT_RESOURCE(handle);
+	RsvgDimensionData dim;
+	rsvg_handle_get_dimensions(handle, &dim);
+	J_CHK( UIntToJsval(cx, dim.height, vp) );
+	return JS_TRUE;
+}
+
+
 DEFINE_INIT() {
 
 	rsvg_init(); // see rsvg_term()
@@ -128,20 +176,21 @@ DEFINE_INIT() {
 
 CONFIGURE_CLASS // This section containt the declaration and the configuration of the class
 
-	HAS_INIT
-
 	HAS_PRIVATE
-//	HAS_RESERVED_SLOTS(1)
-
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE
 
+	HAS_INIT
+
 	BEGIN_FUNCTION_SPEC
 		FUNCTION_FAST(Write)
+		FUNCTION_FAST(GetImage)
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
-//		PROPERTY(prop)
+		PROPERTY_WRITE(dpi)
+		PROPERTY_READ(width)
+		PROPERTY_READ(height)
 	END_PROPERTY_SPEC
 
 END_CLASS
