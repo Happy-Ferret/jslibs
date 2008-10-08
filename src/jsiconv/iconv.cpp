@@ -14,7 +14,16 @@
 
 #include "stdafx.h"
 
+#include <stddef.h>
 #include <iconv.h>
+
+
+struct Private {
+	iconv_t cd;
+	size_t tmpLen;
+	char tmp[MB_LEN_MAX];
+};
+
 
 /**doc
 $CLASS_HEADER
@@ -23,10 +32,11 @@ BEGIN_CLASS( Iconv ) // Start the definition of the class. It defines some symbo
 
 DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are no remaing references to this object.
 
-	iconv_t cd = JS_GetPrivate(cx, obj);
-	if ( cd != NULL ) {
+	Private *pv = (Private*)JS_GetPrivate(cx, obj);
+	if ( pv != NULL ) {
 		
-		iconv_close(cd);
+		iconv_close(pv->cd);
+		JS_free(cx, pv);
 	}
 }
 
@@ -43,11 +53,14 @@ DEFINE_CONSTRUCTOR() {
 	J_CHK( JsvalToString(cx, &J_ARG(1), &tocode) );
 	J_CHK( JsvalToString(cx, &J_ARG(2), &fromcode) );
 
-	iconv_t cd = iconv_open(tocode, fromcode);
+	Private *pv = (Private*)JS_malloc(cx, sizeof(Private));
+	J_S_ASSERT_ALLOC(pv);
 
-	J_S_ASSERT_2( cd != NULL, "Unable to open %s to %s conversion.", fromcode, tocode );
+	pv->cd = iconv_open(tocode, fromcode);
 
-	J_CHK( JS_SetPrivate(cx, obj, cd) );
+	J_S_ASSERT_2( pv->cd != NULL, "Unable to open %s to %s conversion.", fromcode, tocode );
+
+	J_CHK( JS_SetPrivate(cx, obj, pv) );
 
 	return JS_TRUE;
 }
@@ -60,8 +73,8 @@ DEFINE_CALL() {
 	JSObject *thisObj = JSVAL_TO_OBJECT(argv[-2]); // get 'this' object of the current object ...
 	J_S_ASSERT_CLASS(thisObj, classIconv);
 
-	iconv_t cd = JS_GetPrivate(cx, thisObj);
-	J_S_ASSERT_RESOURCE( cd );
+	Private *pv = (Private*)JS_GetPrivate(cx, thisObj);
+	J_S_ASSERT_RESOURCE( pv );
 
 	const char *inBuf;
 	size_t inLen;
@@ -70,10 +83,56 @@ DEFINE_CALL() {
 	char *outBuf;
 	size_t outLen;
 
-	outBuf = (char*)JS_malloc(cx, inLen*4);
+	outLen = inLen*2;
+	outBuf = (char*)JS_malloc(cx, outLen);
 	J_S_ASSERT_ALLOC( outBuf );
 
-	size_t status = iconv(cd, &inBuf, &inLen, &outBuf, &outLen);
+	char *tmpBuf;
+	size_t tmpLen;
+
+
+	if ( pv->tmpLen ) {
+		
+		size_t more = J_MIN(inBuf, MB_LEN_MAX - pv->tmpLen);
+
+		memcpy(pv->tmp + pv->tmpLen, inBuf, more);
+
+		pv->tmpLen += more;
+	
+		tmpBuf = pv->tmp;
+		tmpLen = pv->tmpLen;
+
+		size_t status = iconv(pv->cd, &tmpBuf, &tmpLen, &tmpBuf, &tmpLen);
+	
+	}
+
+	tmpBuf = outBuf;
+	tmpLen = outLen;
+
+	
+	do {
+		
+		size_t status = iconv(pv->cd, &inBuf, &inLen, &tmpBuf, &tmpLen);
+
+		if ( status == (size_t)(-1) )
+			switch ( errno ) { // doc: http://www.manpagez.com/man/3/iconv/
+				case E2BIG: // There is not sufficient room at *outbuf.
+					J_REPORT_ERROR("Internal error: buffer too small.");
+					break;
+				case EILSEQ: // An invalid multibyte sequence has been encountered in the input.
+					if ( inLen-- )
+						inBuf++;
+					break;
+				case EINVAL: { // An incomplete multibyte sequence has been encountered in the input.
+					J_S_ASSERT(inLen < MB_LEN_MAX);
+					pv->tmpLen = inLen;
+					memcpy(pv->tmp, inBuf, inLen);
+					break;
+				}
+			}
+	} while(inLen);
+	
+	//MaybeRealloc
 
 	return JS_TRUE;
 }
