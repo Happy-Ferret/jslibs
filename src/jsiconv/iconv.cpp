@@ -151,6 +151,9 @@ DEFINE_CALL() {
 				}
 				case EILSEQ: // An invalid multibyte sequence has been encountered in the input.
 
+//					// attempt to set cd's conversion state to the initial state and store a corresponding shift sequence at *outPtr.
+//					status = iconv(pv->cd, NULL, NULL, &outPtr, &outLeft);
+
 					if ( inLeft-- )
 						inPtr++;
 					break;
