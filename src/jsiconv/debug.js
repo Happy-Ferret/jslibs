@@ -1,13 +1,19 @@
 LoadModule('jsstd');
 LoadModule('jsiconv');
 
-Print( Iconv.list.indexOf('ISO-8859-15') );
+var conv = new Iconv('UTF-8', 'ISO-8859-1');
+var invConv = new Iconv('ISO-8859-1', 'UTF-8');
+
+var converted = conv('été');
 
 
-var conv = new Iconv('UTF-8', 'ISO-8859-15');
+var result = '';
 
-Print( conv('testé et approuvé') ,'\n' );
+for each ( var c in converted ) {
 
+	result += invConv(c);
+}
 
+Print( result ,'\n' );
 
 

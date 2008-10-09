@@ -94,7 +94,7 @@ DEFINE_CALL() {
 	char *outBuf;
 	size_t outLen;
 
-	outLen = inLen + 1024; // * 3/2; // * 1.5
+	outLen = inLen + MB_LEN_MAX + 1024; // * 3/2; // * 1.5 (we use + MB_LEN_MAX to avoid remainderLen... section to failed with E2BIG)
 	outBuf = (char*)JS_malloc(cx, outLen);
 	J_S_ASSERT_ALLOC( outBuf );
 
@@ -103,14 +103,30 @@ DEFINE_CALL() {
 
 	if ( pv->remainderLen ) {
 
+		const char *tmpPtr;
+		size_t tmpLeft;
 		do {
 			pv->remainderBuf[pv->remainderLen++] = *inPtr;
 			inPtr++;
 			inLeft--;
-			status = iconv(pv->cd, &inPtr, &inLeft, &outPtr, &outLeft);
 
-		} while ( status == (size_t)(-1) && errno == EINVAL );
+			tmpPtr = pv->remainderBuf;
+			tmpLeft = pv->remainderLen;
 
+			status = iconv(pv->cd, &tmpPtr, &tmpLeft, &outPtr, &outLeft);
+
+			if ( status != (size_t)(-1) )
+				break;
+
+			// (TBD) manage EILSEQ like this ??? :
+			if ( errno == EILSEQ ) {
+
+				inPtr--;
+				inLeft++;
+				break;
+			}
+
+		} while ( errno == EINVAL );
 		pv->remainderLen = 0;
 	}
 
@@ -141,12 +157,16 @@ DEFINE_CALL() {
 				case EINVAL: { // An incomplete multibyte sequence has been encountered in the input.
 
 //					J_S_ASSERT(inLen < MB_LEN_MAX);
+					memcpy(pv->remainderBuf + pv->remainderLen, inPtr, inLeft); // save
+
 					pv->remainderLen = inLeft;
-					memcpy(pv->remainderBuf, inPtr, inLeft); // save
+					inPtr += inLeft;
+					inLeft = 0;
 					break;
 				}
 			}
-	} while(inLeft);
+	} while( inLeft );
+
 
 //	if ( MaybeRealloc(outLen, outPtr - outBuf) ) {
 //		...
