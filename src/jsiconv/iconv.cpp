@@ -20,8 +20,8 @@
 
 struct Private {
 	iconv_t cd;
-	size_t tmpLen;
-	char tmp[MB_LEN_MAX];
+	size_t remainderLen;
+	char remainderBuf[MB_LEN_MAX];
 };
 
 
@@ -58,7 +58,9 @@ DEFINE_CONSTRUCTOR() {
 
 	pv->cd = iconv_open(tocode, fromcode);
 
-	J_S_ASSERT_2( pv->cd != NULL, "Unable to open %s to %s conversion.", fromcode, tocode );
+	pv->remainderLen = 0;
+
+	J_S_ASSERT_2( (size_t)pv->cd != -1, "Unable to open a %s to %s conversion.", fromcode, tocode );
 
 	J_CHK( JS_SetPrivate(cx, obj, pv) );
 
@@ -67,8 +69,6 @@ DEFINE_CONSTRUCTOR() {
 
 
 DEFINE_CALL() {
-
-	J_S_ASSERT_ARG_MIN(1);
 		
 	JSObject *thisObj = JSVAL_TO_OBJECT(argv[-2]); // get 'this' object of the current object ...
 	J_S_ASSERT_CLASS(thisObj, classIconv);
@@ -76,73 +76,136 @@ DEFINE_CALL() {
 	Private *pv = (Private*)JS_GetPrivate(cx, thisObj);
 	J_S_ASSERT_RESOURCE( pv );
 
+	size_t status;
+
+	if ( !J_ARG_ISDEF(1) ) {
+		
+		iconv(pv->cd, NULL, NULL, NULL, NULL); // sets cd's conversion state to the initial state.
+		return JS_TRUE;
+	}
+
 	const char *inBuf;
 	size_t inLen;
 	J_CHK( JsvalToStringAndLength(cx, &J_ARG(1), &inBuf, &inLen) );
 
+	const char *inPtr = inBuf;
+	size_t inLeft = inLen;
+
 	char *outBuf;
 	size_t outLen;
 
-	outLen = inLen*2;
+	outLen = inLen + 1024; // * 3/2; // * 1.5
 	outBuf = (char*)JS_malloc(cx, outLen);
 	J_S_ASSERT_ALLOC( outBuf );
 
-	char *tmpBuf;
-	size_t tmpLen;
+	char *outPtr = outBuf;
+	size_t outLeft = outLen;
 
+	if ( pv->remainderLen ) {
 
-	if ( pv->tmpLen ) {
-		
-		size_t more = J_MIN(inBuf, MB_LEN_MAX - pv->tmpLen);
+		do {
+			pv->remainderBuf[pv->remainderLen++] = *inPtr;
+			inPtr++;
+			inLeft--;
+			status = iconv(pv->cd, &inPtr, &inLeft, &outPtr, &outLeft);
 
-		memcpy(pv->tmp + pv->tmpLen, inBuf, more);
+		} while ( status == (size_t)(-1) && errno == EINVAL );
 
-		pv->tmpLen += more;
-	
-		tmpBuf = pv->tmp;
-		tmpLen = pv->tmpLen;
-
-		size_t status = iconv(pv->cd, &tmpBuf, &tmpLen, &tmpBuf, &tmpLen);
-	
+		pv->remainderLen = 0;
 	}
 
-	tmpBuf = outBuf;
-	tmpLen = outLen;
-
-	
 	do {
 		
-		size_t status = iconv(pv->cd, &inBuf, &inLen, &tmpBuf, &tmpLen);
+		status = iconv(pv->cd, &inPtr, &inLeft, &outPtr, &outLeft); // doc: http://www.manpagez.com/man/3/iconv/
 
 		if ( status == (size_t)(-1) )
-			switch ( errno ) { // doc: http://www.manpagez.com/man/3/iconv/
-				case E2BIG: // There is not sufficient room at *outbuf.
-					J_REPORT_ERROR("Internal error: buffer too small.");
+			switch ( errno ) {
+				case E2BIG: { // There is not sufficient room at *outbuf.
+
+					int processedOut = outPtr-outBuf;
+					
+					outLen = inLen * processedOut / (inPtr-inBuf) + 512; // try to guess a better outLen based on the current in/out ratio.
+					//outLen = outLen * 2;
+
+					outBuf = (char*)JS_realloc(cx, outBuf, outLen);
+					J_S_ASSERT_ALLOC(outBuf);
+					outPtr = outBuf + processedOut;
+					outLeft = outLen - processedOut;
 					break;
+				}
 				case EILSEQ: // An invalid multibyte sequence has been encountered in the input.
-					if ( inLen-- )
-						inBuf++;
+
+					if ( inLeft-- )
+						inPtr++;
 					break;
 				case EINVAL: { // An incomplete multibyte sequence has been encountered in the input.
-					J_S_ASSERT(inLen < MB_LEN_MAX);
-					pv->tmpLen = inLen;
-					memcpy(pv->tmp, inBuf, inLen);
+
+//					J_S_ASSERT(inLen < MB_LEN_MAX);
+					pv->remainderLen = inLeft;
+					memcpy(pv->remainderBuf, inPtr, inLeft); // save
 					break;
 				}
 			}
-	} while(inLen);
-	
-	//MaybeRealloc
+	} while(inLeft);
+
+//	if ( MaybeRealloc(outLen, outPtr - outBuf) ) {
+//		...
+//	}
+
+	J_CHK( StringAndLengthToJsval(cx, J_RVAL, outBuf, outPtr - outBuf) );
 
 	return JS_TRUE;
 }
 
+struct IteratorPrivate {
+	JSContext *cx;
+	JSObject *list;
+	size_t listLen;
+};
+
+
+int do_one( unsigned int namescount, const char * const * names, void* data ) {
+
+	IteratorPrivate *ipv = (IteratorPrivate*)data;
+	jsval value;
+	while (namescount--) {
+
+		StringToJsval(ipv->cx, names[namescount], &value); // iconv_canonicalize
+		JS_SetElement(ipv->cx, ipv->list, ipv->listLen, &value);
+		ipv->listLen++;
+	}
+	return 0;
+}
+
+
+/**doc
+ * $OBJ $INAME $READONLY
+**/
+DEFINE_PROPERTY( list ) {
+
+	if ( JSVAL_IS_VOID( *vp ) ) {
+
+		JSObject *list = JS_NewArrayObject(cx, 0, NULL);
+		J_S_ASSERT_ALLOC( list );
+		*vp = OBJECT_TO_JSVAL( list );
+		IteratorPrivate ipv = { cx, list, 0 };
+		iconvlist(do_one, &ipv);
+	}
+	return JS_TRUE;
+}
+
+
 CONFIGURE_CLASS // This section containt the declaration and the configuration of the class
 
 	HAS_PRIVATE
-	HAS_CALL
 
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE
+
+	HAS_CALL
+
+	BEGIN_STATIC_PROPERTY_SPEC
+		PROPERTY_READ_STORE( list )
+	END_STATIC_PROPERTY_SPEC
 
 END_CLASS
