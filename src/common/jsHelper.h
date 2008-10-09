@@ -632,23 +632,36 @@ inline JSBool JsvalToString( JSContext *cx, jsval *val, const char** buffer ) {
 
 inline JSBool StringToJsval( JSContext *cx, const char* cstr, jsval *val ) {
 
-	JSString *jsstr = JS_NewStringCopyZ(cx, cstr);
-	if ( jsstr == NULL )
-		J_REPORT_ERROR( "Unable to create the string." );
-	*val = STRING_TO_JSVAL(jsstr);
-	return JS_TRUE;
+	if ( *cstr != '\0' ) {
+
+		JSString *jsstr = JS_NewStringCopyZ(cx, cstr);
+		if ( jsstr == NULL )
+			J_REPORT_ERROR( "Unable to create the string." );
+		*val = STRING_TO_JSVAL(jsstr);
+		return JS_TRUE;
+	} else {
+
+		*val = JS_GetEmptyStringValue(cx);
+		return JS_TRUE;
+	}
 }
 
 
 inline JSBool StringAndLengthToJsval( JSContext *cx, jsval *val, const char* cstr, size_t length ) {
 
-	JSString *jsstr = JS_NewStringCopyN(cx, cstr, length);
-	if ( jsstr == NULL )
-		J_REPORT_ERROR( "Unable to create the string." );
-	*val = STRING_TO_JSVAL(jsstr);
-	return JS_TRUE;
-}
+	if ( length > 0 ) {
 
+		JSString *jsstr = JS_NewStringCopyN(cx, cstr, length);
+		if ( jsstr == NULL )
+			J_REPORT_ERROR( "Unable to create the string." );
+		*val = STRING_TO_JSVAL(jsstr);
+		return JS_TRUE;
+	} else {
+
+		*val = JS_GetEmptyStringValue(cx);
+		return JS_TRUE;
+	}
+}
 
 
 inline JSBool SetPropertyString( JSContext *cx, JSObject *obj, const char *propertyName, const char *str ) {
