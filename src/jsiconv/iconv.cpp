@@ -35,7 +35,7 @@ DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
 	if ( pv != NULL ) {
 		
-		iconv_close(pv->cd);
+		int status = iconv_close(pv->cd); // if ( status == -1 ) error is in errno.
 		JS_free(cx, pv);
 	}
 }
@@ -56,16 +56,20 @@ DEFINE_CONSTRUCTOR() {
 	Private *pv = (Private*)JS_malloc(cx, sizeof(Private));
 	J_S_ASSERT_ALLOC(pv);
 
+	pv->remainderLen = 0;
 	pv->cd = iconv_open(tocode, fromcode);
 
-	pv->remainderLen = 0;
-
-	J_S_ASSERT_2( (size_t)pv->cd != -1, "Unable to open a %s to %s conversion.", fromcode, tocode );
-
+	if ( (size_t)pv->cd == (size_t)-1 ) {
+		
+		if ( errno == EINVAL )
+			J_REPORT_ERROR_2( "The conversion from %s to %s is not supported.", fromcode, tocode );
+		else
+			J_REPORT_ERROR( "Unknown iconv error." );
+	}
 	J_CHK( JS_SetPrivate(cx, obj, pv) );
-
 	return JS_TRUE;
 }
+
 
 
 DEFINE_CALL() {
@@ -80,7 +84,7 @@ DEFINE_CALL() {
 
 	if ( !J_ARG_ISDEF(1) ) {
 		
-		iconv(pv->cd, NULL, NULL, NULL, NULL); // sets cd's conversion state to the initial state.
+		status = iconv(pv->cd, NULL, NULL, NULL, NULL); // sets cd's conversion state to the initial state.
 		return JS_TRUE;
 	}
 
@@ -94,14 +98,14 @@ DEFINE_CALL() {
 	char *outBuf;
 	size_t outLen;
 
-	outLen = inLen + MB_LEN_MAX + 1024; // * 3/2; // * 1.5 (we use + MB_LEN_MAX to avoid remainderLen... section to failed with E2BIG)
-	outBuf = (char*)JS_malloc(cx, outLen);
+	outLen = inLen + MB_LEN_MAX + 512; // * 3/2; // * 1.5 (we use + MB_LEN_MAX to avoid remainderLen... section to failed with E2BIG)
+	outBuf = (char*)JS_malloc(cx, outLen +1);
 	J_S_ASSERT_ALLOC( outBuf );
 
 	char *outPtr = outBuf;
 	size_t outLeft = outLen;
 
-	if ( pv->remainderLen ) {
+	if ( pv->remainderLen ) { // have to process previous the incomplete multibyte sequence ?
 
 		const char *tmpPtr;
 		size_t tmpLeft;
@@ -119,66 +123,81 @@ DEFINE_CALL() {
 				break;
 
 			// (TBD) manage EILSEQ like this ??? :
-			if ( errno == EILSEQ ) {
+			if ( errno == EILSEQ ) { // An invalid multibyte sequence has been encountered in the input.
 
-				inPtr--;
+				inPtr--; // rewind by 1
 				inLeft++;
 				break;
 			}
 
-		} while ( errno == EINVAL );
+		} while ( errno == EINVAL && pv->remainderLen < sizeof(pv->remainderBuf) );
 		pv->remainderLen = 0;
 	}
 
 	do {
-		
 		status = iconv(pv->cd, &inPtr, &inLeft, &outPtr, &outLeft); // doc: http://www.manpagez.com/man/3/iconv/
 
 		if ( status == (size_t)(-1) )
 			switch ( errno ) {
 				case E2BIG: { // There is not sufficient room at *outbuf.
 
-					int processedOut = outPtr-outBuf;
-					
-					outLen = inLen * processedOut / (inPtr-inBuf) + 512; // try to guess a better outLen based on the current in/out ratio.
-					//outLen = outLen * 2;
-
-					outBuf = (char*)JS_realloc(cx, outBuf, outLen);
-					J_S_ASSERT_ALLOC(outBuf);
-					outPtr = outBuf + processedOut;
-					outLeft = outLen - processedOut;
+						int processedOut = outPtr - outBuf;
+						outLen = inLen * processedOut / (inPtr - inBuf) + 512; // try to guess a better outLen based on the current in/out ratio.
+						outBuf = (char*)JS_realloc(cx, outBuf, outLen +1);
+						J_S_ASSERT_ALLOC(outBuf);
+						outPtr = outBuf + processedOut;
+						outLeft = outLen - processedOut;
+					}
 					break;
-				}
-				case EILSEQ: // An invalid multibyte sequence has been encountered in the input.
 
-//					// attempt to set cd's conversion state to the initial state and store a corresponding shift sequence at *outPtr.
-//					status = iconv(pv->cd, NULL, NULL, &outPtr, &outLeft);
+				case EILSEQ: // An invalid multibyte sequence has been encountered in the input. *inPtr is left pointing to the beginning of the invalid multibyte sequence.
 
-					if ( inLeft-- )
-						inPtr++;
+					if ( outLeft < MB_LEN_MAX + 1 ) {
+						
+						int processedOut = outPtr - outBuf;
+						outLen = inLen * processedOut / (inPtr - inBuf) + 512; // try to guess a better outLen based on the current in/out ratio.
+						outBuf = (char*)JS_realloc(cx, outBuf, outLen +1);
+						J_S_ASSERT_ALLOC(outBuf);
+						outPtr = outBuf + processedOut;
+						outLeft = outLen - processedOut;
+					}
+
+					status = iconv(pv->cd, NULL, NULL, &outPtr, &outLeft); // to set cd's conversion state to the initial state and store a corresponding shift sequence at *outbuf.
+					*outPtr = '?';
+					outPtr++;
+					outLeft--;
+					inPtr++;
+					inLeft--;
 					break;
+
 				case EINVAL: { // An incomplete multibyte sequence has been encountered in the input.
 
-//					J_S_ASSERT(inLen < MB_LEN_MAX);
+					J_S_ASSERT(inLeft < MB_LEN_MAX, "Unable to manage incomplete multibyte sequence.");
 					memcpy(pv->remainderBuf + pv->remainderLen, inPtr, inLeft); // save
-
 					pv->remainderLen = inLeft;
 					inPtr += inLeft;
 					inLeft = 0;
 					break;
 				}
 			}
+
 	} while( inLeft );
 
+	size_t length = outPtr - outBuf;
 
-//	if ( MaybeRealloc(outLen, outPtr - outBuf) ) {
-//		...
-//	}
+	if ( MaybeRealloc(outLen, length) ) {
 
-	J_CHK( StringAndLengthToJsval(cx, J_RVAL, outBuf, outPtr - outBuf) );
+		outBuf = (char*)JS_realloc(cx, outBuf, length +1);
+		J_S_ASSERT_ALLOC(outBuf);
+	}
+	outBuf[length] = '\0';
+	J_CHK( StringAndLengthToJsval(cx, J_RVAL, outBuf, length) );
+
+//	JS_NewUCString(cx, (jschar*)outBuf,   // (TBD)
 
 	return JS_TRUE;
 }
+
 
 struct IteratorPrivate {
 	JSContext *cx;
