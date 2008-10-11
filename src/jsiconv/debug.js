@@ -19,13 +19,12 @@ var result = invConv(converted);
 Print( result == 'été','\n' );
 */
 
-
+/*
 var utf8 = (new Iconv('UTF-8', 'ISO-8859-1'))('été').split('');
-
 utf8.splice(1,0,'x'); // insert an invalid multybyte sequense
-
 utf8 = utf8.join('');
-
-
-
 Print( (new Iconv('ISO-8859-1', 'UTF-8'))(utf8), '\n' )
+*/
+
+var conv = new Iconv('UCS-2-INTERNAL', 'ISO-8859-1', true, true);
+Print( conv('été') );

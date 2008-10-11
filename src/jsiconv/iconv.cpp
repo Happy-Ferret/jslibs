@@ -20,6 +20,8 @@
 
 struct Private {
 	iconv_t cd;
+	bool wFrom;
+	bool wTo;
 	size_t remainderLen;
 	char remainderBuf[MB_LEN_MAX];
 };
@@ -59,6 +61,16 @@ DEFINE_CONSTRUCTOR() {
 	pv->remainderLen = 0;
 	pv->cd = iconv_open(tocode, fromcode);
 
+	if ( J_ARG_ISDEF(3) )
+		J_CHK( JsvalToBool(cx, J_ARG(3), &pv->wTo) );
+	else
+		pv->wTo = false;
+
+	if ( J_ARG_ISDEF(4) )
+		J_CHK( JsvalToBool(cx, J_ARG(4), &pv->wFrom) );
+	else
+		pv->wFrom = false;
+
 	if ( (size_t)pv->cd == (size_t)-1 ) {
 		
 		if ( errno == EINVAL )
@@ -90,7 +102,17 @@ DEFINE_CALL() {
 
 	const char *inBuf;
 	size_t inLen;
-	J_CHK( JsvalToStringAndLength(cx, &J_ARG(1), &inBuf, &inLen) );
+
+	if ( pv->wFrom ) {
+
+		J_CHK( JsvalToStringAndLength(cx, &J_ARG(1), &inBuf, &inLen) );
+	} else {
+
+		JSString *jsstr = JS_ValueToString(cx, J_ARG(1));
+		J_ARG(1) = STRING_TO_JSVAL( jsstr );
+		inLen = JS_GetStringLength(jsstr) * 2;
+		inBuf = (char*)JS_GetStringChars(jsstr);
+	}
 
 	const char *inPtr = inBuf;
 	size_t inLeft = inLen;
@@ -191,9 +213,15 @@ DEFINE_CALL() {
 		J_S_ASSERT_ALLOC(outBuf);
 	}
 	outBuf[length] = '\0';
-	J_CHK( StringAndLengthToJsval(cx, J_RVAL, outBuf, length) );
 
-//	JS_NewUCString(cx, (jschar*)outBuf,   // (TBD)
+	if ( pv->wTo ) { // destination is wide.
+		
+		JSString *wstr = JS_NewUCString(cx, (jschar*)outBuf, length / 2);
+		*J_RVAL = STRING_TO_JSVAL(wstr);
+	} else {
+
+		J_CHK( StringAndLengthToJsval(cx, J_RVAL, outBuf, length) );
+	}
 
 	return JS_TRUE;
 }
