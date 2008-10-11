@@ -16,3 +16,6 @@
 #include "../common/jsClass.h"
 #include "../common/jsConfiguration.h"
 
+
+#include <rsvg.h>
+#include <rsvg-cairo.h>

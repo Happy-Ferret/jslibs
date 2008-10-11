@@ -41,7 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\libs\librsvg\src;&quot;..\..\libs\gdk-pixbuf\src&quot;;..\..\libs\glib\win32_config;..\..\libs\glib\src\glib;..\..\libs\glib\src;..\..\libs\glib\src\gmodule;..\..\libs\libxml2\src\include"
+				AdditionalIncludeDirectories="..\..\libs\librsvg\src;..\..\libs\cairo\src\src;..\..\libs\pango\src;&quot;..\..\libs\gdk-pixbuf\src&quot;;..\..\libs\glib\win32_config;..\..\libs\glib\src\glib;..\..\libs\glib\src;..\..\libs\glib\src\gmodule;..\..\libs\libxml2\src\include"
 				PreprocessorDefinitions="WIN32;_DEBUG"
 				MinimalRebuild="true"
 				ExceptionHandling="0"
@@ -123,7 +123,7 @@
 				InlineFunctionExpansion="2"
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
-				AdditionalIncludeDirectories="..\..\libs\librsvg\src;&quot;..\..\libs\gdk-pixbuf\src&quot;;..\..\libs\glib\win32_config;..\..\libs\glib\src\glib;..\..\libs\glib\src;..\..\libs\glib\src\gmodule;..\..\libs\libxml2\src\include"
+				AdditionalIncludeDirectories="..\..\libs\librsvg\src;..\..\libs\cairo\src\src;..\..\libs\pango\src;&quot;..\..\libs\gdk-pixbuf\src&quot;;..\..\libs\glib\win32_config;..\..\libs\glib\src\glib;..\..\libs\glib\src;..\..\libs\glib\src\gmodule;..\..\libs\libxml2\src\include"
 				PreprocessorDefinitions="WIN32;NDEBUG"
 				ExceptionHandling="0"
 				BasicRuntimeChecks="0"
