@@ -365,14 +365,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\src\src\cairo-win32-printing-surface.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\src\cairo-win32-surface.c"
-				>
-			</File>
-			<File
 				RelativePath=".\src\src\cairo.c"
 				>
 			</File>
