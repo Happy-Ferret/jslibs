@@ -239,6 +239,10 @@
 				>
 			</File>
 		</Filter>
+		<File
+			RelativePath=".\src\config.h"
+			>
+		</File>
 	</Files>
 	<Globals>
 	</Globals>
