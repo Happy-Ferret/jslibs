@@ -62,7 +62,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				AdditionalDependencies="Msimg32.lib Gdi32.lib"
+				AdditionalDependencies="Msimg32.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -125,7 +125,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				AdditionalDependencies="Msimg32.lib Gdi32.lib"
+				AdditionalDependencies="Msimg32.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"

@@ -183,42 +183,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\src\pango\opentype\harfbuzz-buffer.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\pango\opentype\harfbuzz-dump-main.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\pango\opentype\harfbuzz-dump.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\pango\opentype\harfbuzz-gdef.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\pango\opentype\harfbuzz-gpos.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\pango\opentype\harfbuzz-gsub.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\pango\opentype\harfbuzz-impl.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\pango\opentype\harfbuzz-open.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\pango\opentype\harfbuzz-stream.c"
-				>
-			</File>
-			<File
 				RelativePath=".\src\pango\opentype\harfbuzz.c"
 				>
 			</File>
