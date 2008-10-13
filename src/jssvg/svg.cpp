@@ -13,8 +13,15 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
+#include <rsvg-private.h>
+
+//#include <libxml/xpath.h>
+//#include <libxml/parser.h>
+
 #include "svg.h"
 #include <libxml/xmlerror.h>
+
+
 
 
 /**doc
@@ -96,12 +103,13 @@ DEFINE_FUNCTION_FAST( Write ) {
 
 
 /**doc
- * $THIS $INAME( [ imageWidth , imageHeight [ [ , surfaceWidth, surfaceHeight ] , id] ] )
+ * $ImageObject $INAME( [ imageWidth , imageHeight [ , surfaceWidth, surfaceHeight [ , channels [ , id] ] ] ] )
   $H arguments
    $ARG integer imageWidth
    $ARG integer imageHeight
    $ARG integer surfaceWidth
    $ARG integer surfaceHeight
+   $ARG integer channels
    $ARG string id: Draws a subset of a SVG starting from an element's id. For example, if you have a layer called "layer1" that you wish to render, pass "#layer1" as the id.
 **/
 DEFINE_FUNCTION_FAST( RenderImage ) { // using cairo
@@ -147,40 +155,49 @@ DEFINE_FUNCTION_FAST( RenderImage ) { // using cairo
 	if ( J_FARG_ISDEF(5) ) {
 
 		J_CHK( JsvalToString(cx, &J_FARG(5), &id) );
-		J_S_ASSERT( id != NULL && *id == '#', "Invalid id." );
+		J_S_ASSERT( id != NULL && id[0] == '#', "Invalid id." );
 	} else {
 
 		id = NULL;
 	}
 
-	// CAIRO_FORMAT_ARGB32: Pre-multiplied alpha is used. (That is, 50% transparent red is 0x80800000, not 0x80ff0000.)
-	cairo_surface_t *surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, surfaceWidth, surfaceHeight);
+	size_t channels;
+	if ( J_FARG_ISDEF(6) ) {
+
+		J_CHK( JsvalToUInt(cx, J_FARG(6), &channels) );
+		J_S_ASSERT( channels == 1 || channels == 3 || channels == 4, "Invalid format." );
+	} else {
+
+		channels = 4;
+	}
+
+	cairo_format_t surfaceFormat;
+	switch ( channels ) {
+		case 1:
+			surfaceFormat = CAIRO_FORMAT_A8;
+			break;
+		case 3:
+			surfaceFormat = CAIRO_FORMAT_RGB24;
+			break;
+		case 4:
+			surfaceFormat = CAIRO_FORMAT_ARGB32; // Pre-multiplied alpha is used. (That is, 50% transparent red is 0x80800000, not 0x80ff0000.)
+			break;
+	}
+
+	cairo_surface_t *surface = cairo_image_surface_create(surfaceFormat, surfaceWidth, surfaceHeight);
 	J_S_ASSERT( cairo_surface_status(surface) == CAIRO_STATUS_SUCCESS, "Unable to create cairo surface." );
 
 	cairo_t *cr = cairo_create(surface);
 	J_S_ASSERT( cairo_status(cr) == CAIRO_STATUS_SUCCESS, "Unable to create cairo state." );
 
-//	cairo_set_antialias(cr, CAIRO_ANTIALIAS_SUBPIXEL);
-//	cairo_set_antialias(cr, CAIRO_ANTIALIAS_GRAY);
+	//cairo_set_antialias(cr, CAIRO_ANTIALIAS_DEFAULT);
+	//cairo_set_tolerance(cr, 0.1);
 	
 	cairo_set_matrix(cr, &tr);
 	gboolean status = rsvg_handle_render_cairo_sub(handle, cr, id);
 	J_S_ASSERT( status == TRUE, "Unable to rsvg_handle_render_cairo." );
 
-	cairo_format_t surfaceFormat = cairo_image_surface_get_format(surface);
-	
-	int channels;
-	switch ( surfaceFormat ) {
-		case CAIRO_FORMAT_ARGB32:
-		case CAIRO_FORMAT_RGB24:
-			channels = 4;
-			break;
-		case CAIRO_FORMAT_A8:
-			channels = 1;
-			break;
-		default:
-			J_REPORT_ERROR( "Invalid format." ); // see. cairo_format_t
-	}
+//	cairo_format_t surfaceFormat = cairo_image_surface_get_format(surface);
 
 	int width = cairo_image_surface_get_width(surface);
 	int height = cairo_image_surface_get_height(surface);
@@ -193,9 +210,12 @@ DEFINE_FUNCTION_FAST( RenderImage ) { // using cairo
 	J_S_ASSERT_ALLOC(image);
 
 	switch ( surfaceFormat ) {
-		case CAIRO_FORMAT_ARGB32:
-			// cancel Pre-multiplied Alpha ?
 		case CAIRO_FORMAT_RGB24:
+
+			 // 3 2 1 X  ->  1 2 3
+			J_REPORT_ERROR("NOT IMPLEMENTED YET"); // (TBD)
+			break;
+		case CAIRO_FORMAT_ARGB32:
 			for ( size_t i = 0; i < pixelCount; i++ ) { // 3 2 1 4  ->  1 2 3 4
 
 				u_int32_t p = ((u_int32_t*)buffer)[i];
@@ -210,19 +230,15 @@ DEFINE_FUNCTION_FAST( RenderImage ) { // using cairo
 	cairo_destroy(cr);
 	cairo_surface_destroy(surface);
 
-
 	jsval blobVal;
 	J_CHK( J_NewBlob(cx, image, length, &blobVal) );
-
 	JSObject *blobObj;
 	J_CHK( JS_ValueToObject(cx, blobVal, &blobObj) );
 	J_S_ASSERT( blobObj, "Unable to create Blob object." );
 	*J_FRVAL = OBJECT_TO_JSVAL(blobObj);
-
 	J_CHK( JS_DefineProperty(cx, blobObj, "channels", INT_TO_JSVAL(channels), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ) );
 	J_CHK( JS_DefineProperty(cx, blobObj, "width", INT_TO_JSVAL(width), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ) );
 	J_CHK( JS_DefineProperty(cx, blobObj, "height", INT_TO_JSVAL(height), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ) );
-
 	return JS_TRUE;
 }
 
@@ -258,6 +274,31 @@ DEFINE_FUNCTION_FAST( GetImage ) { // using pixbuf
 	return JS_TRUE;
 }
 */
+
+
+/**doc
+ * $THIS $INAME()
+**/
+DEFINE_FUNCTION_FAST( SetAttribute ) {
+	
+	RsvgHandle *handle = (RsvgHandle*)JS_GetPrivate(cx, J_FOBJ);
+	J_S_ASSERT_RESOURCE(handle);
+
+
+	//handle->priv->treebase->children
+
+
+/*
+//	rsvg_start_metadata
+
+	RsvgPropertyBag * bag;
+	bag = rsvg_property_bag_new((const char **)atts);
+	rsvg_start_xinclude (handle, bag);
+*/
+
+
+	return JS_TRUE;
+}
 
 
 
@@ -386,6 +427,7 @@ CONFIGURE_CLASS // This section containt the declaration and the configuration o
 	BEGIN_FUNCTION_SPEC
 		FUNCTION_FAST(Write)
 		FUNCTION_FAST(RenderImage)
+//		FUNCTION_FAST(SetAttribute)
 //		FUNCTION_FAST(GetImage)
 	END_FUNCTION_SPEC
 
