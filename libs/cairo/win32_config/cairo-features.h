@@ -11,7 +11,6 @@
 
 #define cairo_public
 
-
 #define HAVE_WINDOWS_H 1
 
 //#define CAIRO_HAS_PNG_FUNCTIONS 1
@@ -22,16 +21,5 @@
 //#define CAIRO_HAS_WIN32_FONT 1
 #define CAIRO_HAS_FT_FONT 1
 #define CAIRO_HAS_FONT_SUBSET 1
-
-#define CAIRO_VERSION_MAJOR 1
-#define CAIRO_VERSION_MINOR 6
-#define CAIRO_VERSION_MICRO 4
-#define CAIRO_VERSION_STRING "1.6.4"
-
-#define PACKAGE_NAME "cairo"
-#define PACKAGE_TARNAME "cairo"
-#define PACKAGE_STRING "cairo 1.6.4"
-#define PACKAGE_VERSION "1.6.4"
-#define PACKAGE_BUGREPORT "http://bugs.freedesktop.org/enter_bug.cgi?product=cairo"
 
 #endif
