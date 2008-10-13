@@ -11,11 +11,10 @@
 #undef FC_ADD_FONTS
 
 /* System font directory */
-//#undef FC_DEFAULT_FONTS
 #define FC_DEFAULT_FONTS "WINDOWSFONTDIR"
 
+#define FC_CACHEDIR "."
 
-#define FC_CACHEDIR ""
 #define FONTCONFIG_PATH "."
 
 
