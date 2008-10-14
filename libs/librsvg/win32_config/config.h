@@ -13,7 +13,9 @@
 /* #undef HAVE_DLFCN_H */
 
 /* Defined if gio is avaiable */
-#define  HAVE_GIO 1
+//#define  HAVE_GIO 1
+#undef HAVE_GIO
+
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 /* #undef HAVE_INTTYPES_H */

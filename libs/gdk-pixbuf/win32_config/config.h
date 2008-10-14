@@ -11,7 +11,8 @@
 #define GETTEXT_PACKAGE "gtk20"
 
 /* Define if debugging is enabled */
-#define GTK_COMPILED_WITH_DEBUGGING "yes"
+//#define GTK_COMPILED_WITH_DEBUGGING "yes"
+#undef GTK_COMPILED_WITH_DEBUGGING
 
 /* Define the location where the catalogs will be installed */
 #define GTK_LOCALEDIR "c:/devel/target/HEAD/share/locale"

@@ -24,7 +24,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="copy /Y .\win32_config\config.h .\src"
+				CommandLine="copy /Y .\win32_config\config.h .\src&#x0D;&#x0A;copy /Y .\win32_config\rsvg-image.c .\src\rsvg-image.c"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -89,7 +89,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="copy /Y .\win32_config\config.h .\src"
+				CommandLine="copy /Y .\win32_config\config.h .\src&#x0D;&#x0A;copy /Y .\win32_config\rsvg-image.c .\src\rsvg-image.c"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -188,10 +188,6 @@
 			</File>
 			<File
 				RelativePath=".\src\rsvg-cond.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\rsvg-convert.c"
 				>
 			</File>
 			<File

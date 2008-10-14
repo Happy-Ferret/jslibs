@@ -52,6 +52,21 @@ var s =
 
 
 
+
+var s = <svg width="100%" height="100%" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<rect id="a" x="0" y="0" width="100" height="120" fill="#FF0000" />
+<rect id="b" x="100" y="0" width="100" height="120" fill="#00FF00" />
+<rect id="c" x="200" y="0" width="100" height="120" fill="#0000FF" />
+<circle cx="150" cy="60" r="40" stroke="black" stroke-width="1" fill="none" shape-rendering="crispEdges"/>
+ <defs>
+      <path id="MyPath" d="M 100 200 C 200 100 300 0 400 100 C 500 200 600 300 700 200 C 800 100 900 100 900 100"/>
+ </defs>
+  <use xlink:href="#MyPath" fill="none" stroke="red"/>
+  <text>123</text>
+</svg>
+
+
+
 var s = <svg width="100%" height="100%" version="1.1"
 xmlns="http://www.w3.org/2000/svg">
 <defs>
@@ -78,26 +93,28 @@ xmlns="http://www.w3.org/2000/svg">
 </svg>
 
 
-
-var s = <svg width="100%" height="100%" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
-<rect id="a" x="0" y="0" width="100" height="120" fill="#FF0000" />
-<rect id="b" x="100" y="0" width="100" height="120" fill="#00FF00" />
-<rect id="c" x="200" y="0" width="100" height="120" fill="#0000FF" />
-<circle cx="150" cy="60" r="40" stroke="black" stroke-width="1" fill="none" shape-rendering="crispEdges"/>
- <defs>
-      <path id="MyPath" d="M 100 200 C 200 100 300 0 400 100 C 500 200 600 300 700 200 C 800 100 900 100 900 100"/>
- </defs>
-  <use xlink:href="#MyPath" fill="none" stroke="red"/>
-  <text>123</text>
+var s = <svg width="100%" height="100%" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+	<rect x="0" y="0" width="100" height="100" fill="#FF4422" />
+	<circle id="a" cx="50" cy="50" r="25" stroke="black" stroke-width="16" fill="none"/>
+	<use xlink:href="#a" stroke="#FF4422" stroke-width="10" x="8" />
+	<use xlink:href="#a" stroke="#black" stroke-width="6" x="8" />
+	<image x="0" y="0" width="100" height="64" path="img.png"/>
 </svg>
 
 
+svg.onImage = function(href) {
+
+	return DecodePngImage( new File('img.png').Open('r') );
+}
 
 Time( function readXmlData()
 svg.Write('<?xml version="1.0" encoding="utf-8"?>'+s)
 )
 
 Print( 'width: '+svg.width + ' height: '+svg.height, '\n' );
+
+//svg.SetAttribute('#a');
+
 
 //svg.dpi = [30, 600];
 
