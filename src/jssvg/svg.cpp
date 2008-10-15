@@ -29,67 +29,47 @@ struct CxObj {
 	JSObject *obj;
 };
 
+
+JSBool RequestPixbufImage(JSContext *cx, JSObject *obj, const char *name, GdkPixbuf **pixbuf) {
+
+	*pixbuf = NULL;
+	jsval onImageFct, image;
+	J_CHK( JS_GetProperty(cx, obj, "onImage", &onImageFct) );
+	if ( JsvalIsFunction(cx, onImageFct) ) {
+
+		jsval nameVal;
+		J_CHK( StringToJsval(cx, name, &nameVal) );
+		J_CHK( JL_CallFunction(cx, obj, onImageFct, &image, 1, nameVal) );
+		if ( JSVAL_IS_OBJECT( image ) ) {
+
+			JSObject *imageObj = JSVAL_TO_OBJECT( image );
+			int sWidth, sHeight, sChannels;
+			J_CHK( GetPropertyInt(cx, imageObj, "width", &sWidth) );
+			J_CHK( GetPropertyInt(cx, imageObj, "height", &sHeight) );
+			J_CHK( GetPropertyInt(cx, imageObj, "channels", &sChannels) );
+
+			J_S_ASSERT_1( sChannels == 3 || sChannels == 4, "Unsupported image format for %s.", name );
+			const char *sBuffer;
+			size_t bufferLength;
+			J_CHK( JsvalToStringAndLength(cx, &image, &sBuffer, &bufferLength ) ); // warning: GC on the returned buffer !
+			J_S_ASSERT( bufferLength == sWidth * sHeight * sChannels * 1, "Invalid image format." );
+			*pixbuf = gdk_pixbuf_new_from_data((const guchar *)sBuffer, GDK_COLORSPACE_RGB, sChannels == 4, 8, sWidth, sHeight, sWidth*sChannels, NULL, NULL);
+			J_S_ASSERT( *pixbuf == NULL, "Unable to create the pixbuf." );
+		}
+	}
+	return JS_TRUE;
+}
+
+
+
 // see jslibs/libs/librsvg/win32_config/rsvg-image.c at rsvg_pixbuf_new_from_href function.
 extern "C" GdkPixbuf *rsvg_pixbuf_new_from_href(const char *href, const char *base_uri, GError ** error) {
 
 	JSContext *cx = ((CxObj*)base_uri)->cx;
 	JSObject *obj = ((CxObj*)base_uri)->obj;
-
-	jsval onImageFct, image;
-	J_CHK( JS_GetProperty(cx, obj, "onImage", &onImageFct) );
-	if ( JsvalIsFunction(cx, onImageFct) ) {
-
-		jsval hrefVal;
-		J_CHK( StringToJsval(cx, href, &hrefVal) );
-		J_CHK( JL_CallFunction(cx, obj, onImageFct, &image, 1, hrefVal) );
-		if (JSVAL_IS_OBJECT( image )) {
-
-			JSObject *imageObj = JSVAL_TO_OBJECT( image );
-			int sWidth, sHeight, sChannels;
-			J_CHK( GetPropertyInt(cx, imageObj, "width", &sWidth) );
-			J_CHK( GetPropertyInt(cx, imageObj, "height", &sHeight) );
-			J_CHK( GetPropertyInt(cx, imageObj, "channels", &sChannels) );
-
-			J_S_ASSERT_1( sChannels == 3 || sChannels == 4, "Unsupported image format for %s.", href );
-
-			const char *sBuffer;
-			size_t bufferLength;
-			J_CHK( JsvalToStringAndLength(cx, &image, &sBuffer, &bufferLength ) ); // warning: GC on the returned buffer !
-
-			J_S_ASSERT( bufferLength == sWidth * sHeight * sChannels * 1, "Invalid image format." );
-
-			GdkPixbuf *pixbuf = gdk_pixbuf_new_from_data((const guchar *)sBuffer, GDK_COLORSPACE_RGB, sChannels == 4, 8, sWidth, sHeight, sWidth*sChannels, NULL, NULL);
-			return pixbuf;
-		}
-	}
-
-/*
-	J_CHK( JS_GetReservedSlot(cx, obj, SLOT_IMAGES_OBJECT, &images) );
-	if ( !JSVAL_IS_VOID( images ) ) {
-
-		JS_GetProperty(cx, JSVAL_TO_OBJECT(images), href, &image);
-		if ( !JSVAL_IS_VOID( image ) ) {
-
-			JSObject *imageObj = JSVAL_TO_OBJECT( image );
-			int sWidth, sHeight, sChannels;
-			J_CHK( GetPropertyInt(cx, imageObj, "width", &sWidth) );
-			J_CHK( GetPropertyInt(cx, imageObj, "height", &sHeight) );
-			J_CHK( GetPropertyInt(cx, imageObj, "channels", &sChannels) );
-
-			J_S_ASSERT_1( sChannels == 3 || sChannels == 4, "Unsupported image format for %s.", href );
-
-			const char *sBuffer;
-			size_t bufferLength;
-			J_CHK( JsvalToStringAndLength(cx, &image, &sBuffer, &bufferLength ) ); // warning: GC on the returned buffer !
-
-			GdkPixbuf *pixbuf = gdk_pixbuf_new_from_data((const guchar *)sBuffer, GDK_COLORSPACE_RGB, sChannels == 4, 8, sWidth, sHeight, sWidth*sChannels, NULL, NULL);
-
-			return pixbuf;
-		}
-	}
-	return NULL;
-*/
-	return NULL;
+	GdkPixbuf *pixbuf;
+	RequestPixbufImage(cx, obj, href, &pixbuf); // error is managed in Write(), after rsvg_handle_write() call.
+	return pixbuf;
 }
 
 
@@ -102,10 +82,8 @@ DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are
 
 	RsvgHandle *handle = (RsvgHandle*)JS_GetPrivate(cx, obj);
 
-	if ( handle ) {
-
+	if ( handle )
 		g_object_unref(handle);
-	}
 }
 
 
@@ -154,9 +132,12 @@ DEFINE_FUNCTION_FAST( Write ) {
 
 	gchar *tmp = handle->priv->base_uri;
 	CxObj cxobj = { cx, J_FOBJ };
-	handle->priv->base_uri = (gchar*)&cxobj;
+	handle->priv->base_uri = (gchar*)&cxobj; // hack base_uri to store cx and obj for rsvg_pixbuf_new_from_href()
 	status = rsvg_handle_write(handle, (const guchar *)data, length, &error);
 	handle->priv->base_uri = tmp;
+
+	if ( JS_IsExceptionPending(cx) )
+		return JS_FALSE;
 
 	if ( !status ) {
 
@@ -354,36 +335,22 @@ DEFINE_FUNCTION_FAST( GetImage ) { // using pixbuf
 /**doc
  * $THIS $INAME()
 **/
-DEFINE_FUNCTION_FAST( SetAttribute ) {
+DEFINE_FUNCTION_FAST( SetVisible ) {
 	
+	J_S_ASSERT_ARG_MIN(2);
+
 	RsvgHandle *handle = (RsvgHandle*)JS_GetPrivate(cx, J_FOBJ);
 	J_S_ASSERT_RESOURCE(handle);
 
 	const char *id;
-	if ( J_FARG_ISDEF(1) ) {
+	J_CHK( JsvalToString(cx, &J_FARG(1), &id) );
+	J_S_ASSERT( id != NULL && id[0] == '#', "Invalid id." );
 
-		J_CHK( JsvalToString(cx, &J_FARG(1), &id) );
-		J_S_ASSERT( id != NULL && id[0] == '#', "Invalid id." );
-	} else {
-
-		id = NULL;
-	}
+	bool visible;
+	JsvalToBool(cx, J_FARG(2), &visible);
 
 	RsvgNode *drawsub = rsvg_defs_lookup (handle->priv->defs, id);
-
-
-
-
-//	drawsub->set_atts(node, handle, 
-//handle->priv->treebase->children
-
-/*
-//	rsvg_start_metadata
-
-	RsvgPropertyBag * bag;
-	bag = rsvg_property_bag_new((const char **)atts);
-	rsvg_start_xinclude (handle, bag);
-*/
+	drawsub->state->visible = visible ? TRUE : FALSE;
 
 	return JS_TRUE;
 }
@@ -536,7 +503,7 @@ CONFIGURE_CLASS // This section containt the declaration and the configuration o
 	BEGIN_FUNCTION_SPEC
 		FUNCTION_FAST(Write)
 		FUNCTION_FAST(RenderImage)
-		FUNCTION_FAST(SetAttribute)
+		FUNCTION_FAST(SetVisible)
 //		FUNCTION_FAST(GetImage)
 	END_FUNCTION_SPEC
 

@@ -99,12 +99,13 @@ var s = <svg width="100%" height="100%" version="1.1" xmlns="http://www.w3.org/2
 	<use xlink:href="#a" stroke="#FF4422" stroke-width="10" x="8" />
 	<use xlink:href="#a" stroke="#black" stroke-width="6" x="8" />
 	<image x="0" y="0" width="100" height="64" path="img.png"/>
+	<rect id="test" x="0" y="0" width="100" height="100" fill="#000000" />
 </svg>
 
 
 svg.onImage = function(href) {
 
-	return DecodePngImage( new File('img.png').Open('r') );
+//	return DecodePngImage( new File('img.png').Open('r') );
 }
 
 Time( function readXmlData()
@@ -113,7 +114,7 @@ svg.Write('<?xml version="1.0" encoding="utf-8"?>'+s)
 
 Print( 'width: '+svg.width + ' height: '+svg.height, '\n' );
 
-//svg.SetAttribute('#a');
+svg.SetVisible('#test', true);
 
 
 //svg.dpi = [30, 600];
@@ -121,7 +122,7 @@ Print( 'width: '+svg.width + ' height: '+svg.height, '\n' );
 var svgimage;
 
 Time( function renderImage_1()
-svgimage = svg.RenderImage(undefined, undefined, undefined, undefined )
+svgimage = svg.RenderImage()
 )
 
 Time( function renderImage_2()
