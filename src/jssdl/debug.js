@@ -19,15 +19,46 @@ svg.Write('<?xml version="1.0" encoding="utf-8"?>'+svgIcon);
 var image = svg.RenderImage(32,32);
 //new File('test.png').content = EncodePngImage( image );
 
-Sdl.SetIcon(image);
+Print( GetVideoModeList(8, FULLSCREEN).join('\n') );
+//Halt();
 
-var surface = new Sdl( 100, 100, undefined, Sdl.HWSURFACE | Sdl.OPENGL );
+SetIcon(image);
+
+//GlSetAttribute( GL_SWAP_CONTROL, 1 ); // vsync
+
+GlSetAttribute( GL_DOUBLEBUFFER, 1 );
+
+SetVideoMode( 800, 600, 32, HWSURFACE | OPENGL | FULLSCREEN ); // | ASYNCBLIT
+//ToggleFullScreen();
+
+var done = false;
+
+var listeners = {
+	onQuit: function() done = true,
+	onKeyDown: function(key, mod) done = (key == K_ESCAPE),
+}
+
+while ( !done ) {
+
+	WaitEvent();
+	PollEvent(listeners);
+	
+//	Sleep(10);
+	Print('.');
+	
+	with (Ogl) {
+		
+		Begin( TRIANGLES );
+		Vertex(0,0);
+		Vertex(0,1);
+		Vertex(1,0);
+		End();
+	};
+	
+	GlSwapBuffers();
+}
+
+Print('Done.');
 
 
-surface.glBoubleBuffer = true;
 
-Sdl.SwapGlBuffers();
-
-Sleep(1000);
-
-Print( Ogl );

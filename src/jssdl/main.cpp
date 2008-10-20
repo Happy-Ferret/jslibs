@@ -28,8 +28,13 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	if ( !JSVAL_IS_VOID( unsafeModePtrVal ) )
 		_pUnsafeMode = (bool*)JSVAL_TO_PRIVATE(unsafeModePtrVal);
 
-	INIT_STATIC();
 	INIT_CLASS( SdlError );
+
+	int status = SDL_Init(SDL_INIT_VIDEO | SDL_INIT_NOPARACHUTE);
+	if ( status != 0 )
+		return ThrowSdlError(cx);
+
+	INIT_STATIC();
 	INIT_CLASS( Sdl );
 
 	return JS_TRUE;
@@ -41,6 +46,8 @@ EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
 }
 
 EXTERN_C DLLEXPORT void ModuleFree() {
+
+	SDL_Quit();
 }
 
 #ifdef XP_WIN
