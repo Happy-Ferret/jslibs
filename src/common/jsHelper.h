@@ -482,7 +482,8 @@ inline JSClass *GetGlobalClassByName(JSContext *cx, const char *className) {
 		return NULL;
 	if ( !FUN_SLOW_NATIVE(fun) )
 		return NULL;
-	return fun->u.n.clasp; // (TBD) replace this by a jsapi.h call and remove dependency to jsarena.h and jsfun.h
+	//	return fun->u.n.clasp; // (TBD) replace this by a jsapi.h call and remove dependency to jsarena.h and jsfun.h
+	return fun->u.n.u.clasp;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -632,7 +633,12 @@ inline JSBool JsvalToString( JSContext *cx, jsval *val, const char** buffer ) {
 
 inline JSBool StringToJsval( JSContext *cx, const char* cstr, jsval *val ) {
 
-	if ( *cstr != '\0' ) {
+	if ( cstr == NULL ) {
+		
+		*val = JSVAL_VOID;
+		return JS_TRUE;
+	}
+	if (likely( *cstr != '\0' )) {
 
 		JSString *jsstr = JS_NewStringCopyZ(cx, cstr);
 		if ( jsstr == NULL )

@@ -155,7 +155,8 @@ struct JSLIBS_ConstIntegerSpec {
 	JSFunctionSpec *_staticFunctionSpec = NULL; \
 	JSPropertySpec *_staticPropertySpec = NULL; \
 	JSConstDoubleSpec *_constDoubleSpec = NULL; \
-	JSLIBS_ConstIntegerSpec *_constIntegerSpec = NULL;
+	JSLIBS_ConstIntegerSpec *_constIntegerSpec = NULL; \
+	JSBool (* _init)(JSContext *cx, JSObject *obj) = NULL;
 
 #define END_STATIC \
 	if ( _staticFunctionSpec != NULL ) JS_DefineFunctions(cx, obj, _staticFunctionSpec); \
@@ -168,6 +169,9 @@ struct JSLIBS_ConstIntegerSpec {
 	} \
 	if ( _constDoubleSpec != NULL ) \
 		if ( JS_DefineConstDoubles(cx, obj, _constDoubleSpec) != JS_TRUE ) \
+			return JS_FALSE; \
+	if ( _init ) \
+		if ( _init(cx, obj) != JS_TRUE ) \
 			return JS_FALSE; \
 	return JS_TRUE; }
 
