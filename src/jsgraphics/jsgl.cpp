@@ -1074,7 +1074,7 @@ DEFINE_FUNCTION_FAST( MatrixMode ) {
 
 
 /**doc
- * $VOID $INAME( mode )
+ * $VOID $INAME()
   $H OpenGL API
    glLoadIdentity
 **/
@@ -1087,7 +1087,7 @@ DEFINE_FUNCTION_FAST( LoadIdentity ) {
 
 
 /**doc
- * $VOID $INAME( mode )
+ * $VOID $INAME()
   $H OpenGL API
    glPushMatrix
 **/
@@ -1100,7 +1100,7 @@ DEFINE_FUNCTION_FAST( PushMatrix ) {
 
 
 /**doc
- * $VOID $INAME( mode )
+ * $VOID $INAME()
   $H OpenGL API
    glPopMatrix
 **/
