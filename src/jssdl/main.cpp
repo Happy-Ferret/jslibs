@@ -18,6 +18,8 @@
 #include "error.h"
 #include "sdl.h"
 
+DECLARE_CLASS( Cursor )
+
 static bool _defaultUnsafeMode = false;
 extern bool *_pUnsafeMode = &_defaultUnsafeMode;
 
@@ -35,7 +37,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 		return ThrowSdlError(cx);
 
 	INIT_STATIC();
-	INIT_CLASS( Sdl );
+	INIT_CLASS( Cursor );
 
 	return JS_TRUE;
 }

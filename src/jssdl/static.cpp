@@ -17,6 +17,7 @@
 #include "static.h"
 #include "error.h"
 
+DECLARE_CLASS( Cursor )
 
 /**doc fileIndex:topmost **/
 
@@ -25,10 +26,10 @@ BEGIN_STATIC
 
 DEFINE_FUNCTION_FAST( GetVideoModeList ) {
 
-	const SDL_VideoInfo *videoInfo = SDL_GetVideoInfo();
-	SDL_PixelFormat format = *videoInfo->vfmt;
-
 	J_S_ASSERT_ARG_MIN(2);
+
+	const SDL_VideoInfo *videoInfo = SDL_GetVideoInfo(); // If called before SDL_SetVideoMode(), 'vfmt' is the pixel format of the "best" video mode.
+	SDL_PixelFormat format = *videoInfo->vfmt;
 
 	double flags;
 
@@ -73,10 +74,8 @@ DEFINE_FUNCTION_FAST( GetVideoModeList ) {
 		tmp = INT_TO_JSVAL(modes[i]->h);
 		J_CHK( JS_SetElement(cx, rectArray, 1, &tmp) );
 	}
-
 	return JS_TRUE;
 }
-
 
 
 DEFINE_FUNCTION_FAST( HasVideoMode ) {
@@ -142,6 +141,21 @@ DEFINE_FUNCTION_FAST( SetVideoMode ) {
 }
 
 
+DEFINE_PROPERTY( videoWidth ) {
+
+	const SDL_VideoInfo *videoInfo = SDL_GetVideoInfo();
+	*vp = videoInfo != NULL ? INT_TO_JSVAL( videoInfo->current_w ) : 0;
+	return JS_TRUE;
+}
+
+DEFINE_PROPERTY( videoHeight ) {
+
+	const SDL_VideoInfo *videoInfo = SDL_GetVideoInfo();
+	*vp = videoInfo != NULL ? INT_TO_JSVAL( videoInfo->current_h ) : 0;
+	return JS_TRUE;
+}
+
+
 DEFINE_FUNCTION_FAST( SetIcon ) {
 
 	J_S_ASSERT_ARG_MIN(1);
@@ -191,20 +205,11 @@ DEFINE_FUNCTION_FAST( SetIcon ) {
 
 DEFINE_FUNCTION_FAST( ToggleFullScreen ) {
 
-/*
-	J_S_ASSERT_ARG_MIN(1);
-	bool fullScreen;
-	J_CHK( JsvalToBool(cx, J_FARG(1), &fullScreen) );
-	if ( fullScreen == ( (SDL_GetVideoSurface()->flags & SDL_FULLSCREEN) != 0 ) )
-		return JS_TRUE;
-*/
-	
 	SDL_Surface *surface = SDL_GetVideoSurface();
 	int status = SDL_WM_ToggleFullScreen( surface );
 	*J_FRVAL = status == 1 ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;	
 }
-
 
 DEFINE_PROPERTY( fullScreen ) {
 
@@ -228,7 +233,8 @@ DEFINE_FUNCTION_FAST( SetGamma ) {
 	J_CHK( JsvalToFloat(cx, J_FARG(1), &r) );
 	J_CHK( JsvalToFloat(cx, J_FARG(2), &g) );
 	J_CHK( JsvalToFloat(cx, J_FARG(3), &b) );
-	SDL_SetGamma(r,g,b);
+	if ( SDL_SetGamma(r,g,b) != 0 )
+		ThrowSdlError(cx);
 	return JS_TRUE;
 }
 
@@ -301,6 +307,37 @@ DEFINE_PROPERTY_GETTER( grabInput ) {
 	return JS_TRUE;	
 }
 
+DEFINE_PROPERTY_SETTER( showCursor ) {
+
+	bool show;
+	J_CHK( JsvalToBool(cx, *vp, &show) );
+	SDL_ShowCursor( show ? 1 : 0 );
+	return JS_TRUE;	
+}
+
+DEFINE_PROPERTY_GETTER( showCursor ) {
+
+	int show = SDL_ShowCursor( -1 ); // query
+	J_CHK( BoolToJsval(cx, show == 0 ? false : true, vp) );
+	return JS_TRUE;	
+}
+
+
+DEFINE_FUNCTION_FAST( SetCursor ) {
+
+	J_S_ASSERT_ARG_MIN(1);
+
+	J_S_ASSERT_OBJECT( J_FARG(1) );
+	JSObject *cursorObj = JSVAL_TO_OBJECT( J_FARG(1) );
+	J_S_ASSERT_CLASS( cursorObj, classCursor );
+	SDL_Cursor *cursor = (SDL_Cursor *)JS_GetPrivate(cx, cursorObj);
+	J_S_ASSERT_RESOURCE( cursor );
+
+
+	SDL_SetCursor(cursor);
+
+	return JS_TRUE;	
+}
 
 
 DEFINE_PROPERTY( videoDriverName ) {
@@ -336,9 +373,10 @@ JSBool FireListener( JSContext *cx, JSObject *listenerObj, SDL_Event *ev, jsval 
 
 				JSString *ucChar = JS_NewUCStringCopyN(cx, &ev->key.keysym.unicode, 1);
 				jsval argv[] = { 
-					INT_TO_JSVAL(ev->key.keysym.sym), 
-					INT_TO_JSVAL(ev->key.keysym.mod), 
-					STRING_TO_JSVAL(ucChar) 
+					INT_TO_JSVAL(ev->key.keysym.sym),
+					INT_TO_JSVAL(ev->key.keysym.mod),
+					STRING_TO_JSVAL(ucChar),
+					INT_TO_JSVAL(ev->key.keysym.scancode),
 				};
 				J_CHK( JS_CallFunctionValue(cx, listenerObj, fVal, COUNTOF(argv), argv, rval) );
 			}
@@ -351,9 +389,9 @@ JSBool FireListener( JSContext *cx, JSObject *listenerObj, SDL_Event *ev, jsval 
 				jsval argv[] = { 
 					INT_TO_JSVAL(ev->motion.x), 
 					INT_TO_JSVAL(ev->motion.y), 
-					INT_TO_JSVAL(ev->motion.xrel), 
-					INT_TO_JSVAL(ev->motion.yrel), 
-					INT_TO_JSVAL(ev->motion.state) 
+					INT_TO_JSVAL(ev->motion.xrel),
+					INT_TO_JSVAL(ev->motion.yrel),
+					INT_TO_JSVAL(ev->motion.state),
 				};
 				J_CHK( JS_CallFunctionValue(cx, listenerObj, fVal, COUNTOF(argv), argv, rval) );
 			}
@@ -364,10 +402,12 @@ JSBool FireListener( JSContext *cx, JSObject *listenerObj, SDL_Event *ev, jsval 
 			J_CHK( JS_GetProperty(cx, listenerObj, ev->type == SDL_KEYDOWN ? "onMouseButtonDown" : "onMouseButtonUp", &fVal) );
 			if ( JsvalIsFunction(cx, fVal) ) {
 
+				Uint8 buttonState = SDL_GetMouseState(NULL, NULL); // query only button state
 				jsval argv[] = {
 					INT_TO_JSVAL(ev->button.button),
 					INT_TO_JSVAL(ev->button.x),
-					INT_TO_JSVAL(ev->button.y)
+					INT_TO_JSVAL(ev->button.y),
+					INT_TO_JSVAL(buttonState),
 				};
 				J_CHK( JS_CallFunctionValue(cx, listenerObj, fVal, COUNTOF(argv), argv, rval) );
 			}
@@ -405,24 +445,13 @@ JSBool FireListener( JSContext *cx, JSObject *listenerObj, SDL_Event *ev, jsval 
 }
 
 
-DEFINE_FUNCTION_FAST( WaitEvent ) {
-
-	SDL_Event ev;
-	SDL_PumpEvents();
-	int status = SDL_PeepEvents(&ev, 1, SDL_PEEKEVENT, SDL_ALLEVENTS);
-	if ( status == -1 )
-		return ThrowSdlError(cx);
-	return JS_TRUE;
-}
-
-
 DEFINE_FUNCTION_FAST( PollEvent ) {
 
 	J_S_ASSERT_OBJECT( J_FARG(1) );
 
 	SDL_Event ev;
 	SDL_PumpEvents();
-	int status = SDL_PeepEvents(&ev, 1, SDL_GETEVENT, SDL_ALLEVENTS);
+	int status = SDL_PeepEvents(&ev, 1, SDL_GETEVENT, SDL_ACTIVEEVENTMASK | SDL_KEYEVENTMASK | SDL_MOUSEEVENTMASK | SDL_VIDEORESIZEMASK | SDL_VIDEOEXPOSEMASK | SDL_QUITMASK );
 	if ( status == -1 )
 		return ThrowSdlError(cx);
 
@@ -437,28 +466,71 @@ DEFINE_FUNCTION_FAST( PollEvent ) {
 }
 
 
+DEFINE_FUNCTION_FAST( WarpMouse ) {
+
+	J_S_ASSERT_ARG_MIN(2);
+	unsigned int x, y;
+	J_CHK( JsvalToUInt(cx, J_FARG(1), &x) );
+	J_CHK( JsvalToUInt(cx, J_FARG(1), &y) );
+	SDL_WarpMouse(x, y);
+	return JS_TRUE;
+}
+
+
+DEFINE_PROPERTY( mouseX ) {
+
+	int x;
+	Uint8 buttonState = SDL_GetMouseState(&x, NULL); // query only button state
+	*vp = INT_TO_JSID( x ); // query only button state
+	return JS_TRUE;
+}
+
+DEFINE_PROPERTY( mouseY ) {
+
+	int y;
+	Uint8 buttonState = SDL_GetMouseState(NULL, &y); // query only button state
+	*vp = INT_TO_JSID( y ); // query only button state
+	return JS_TRUE;
+}
+
+DEFINE_PROPERTY( buttonState ) {
+
+	*vp = INT_TO_JSID( SDL_GetMouseState(NULL, NULL) ); // query only button state
+	return JS_TRUE;
+}
+
+
+
+
 CONFIGURE_STATIC
 
 	BEGIN_STATIC_FUNCTION_SPEC
-		FUNCTION_FAST(SetIcon)
-		FUNCTION_FAST(GetVideoModeList)
-		FUNCTION_FAST(HasVideoMode)
-		FUNCTION_FAST(SetVideoMode)
-		FUNCTION_FAST(ToggleFullScreen)
-		FUNCTION_FAST(Iconify)
-		FUNCTION_FAST(SetGamma)
-		FUNCTION_FAST(GlSwapBuffers)
-		FUNCTION_FAST(GlSetAttribute)
-		FUNCTION_FAST(GlGetAttribute)
-		FUNCTION_FAST(WaitEvent)
-		FUNCTION_FAST(PollEvent)
+		FUNCTION_FAST( SetIcon )
+		FUNCTION_FAST( GetVideoModeList )
+		FUNCTION_FAST( HasVideoMode )
+		FUNCTION_FAST( SetVideoMode )
+		FUNCTION_FAST( ToggleFullScreen )
+		FUNCTION_FAST( Iconify )
+		FUNCTION_FAST_ARGC( SetGamma, 3 )
+		FUNCTION_FAST( GlSwapBuffers )
+		FUNCTION_FAST_ARGC( GlSetAttribute, 2 )
+		FUNCTION_FAST_ARGC( GlGetAttribute, 1 )
+		FUNCTION_FAST_ARGC( PollEvent, 1 )
+		FUNCTION_FAST_ARGC( WarpMouse, 2 )
+		FUNCTION_FAST_ARGC( SetCursor, 1 )
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC
 		PROPERTY( caption )
 		PROPERTY( grabInput )
+		PROPERTY( showCursor )
+		PROPERTY_READ( videoWidth )
+		PROPERTY_READ( videoHeight )
 		PROPERTY_READ( videoDriverName )
 		PROPERTY_READ( fullScreen )
+		PROPERTY_READ( mouseX )
+		PROPERTY_READ( mouseY )
+		PROPERTY_READ( buttonState )
 	END_STATIC_PROPERTY_SPEC
 
 	BEGIN_CONST_DOUBLE_SPEC

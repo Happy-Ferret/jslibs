@@ -28,37 +28,55 @@ SetIcon(image);
 
 GlSetAttribute( GL_DOUBLEBUFFER, 1 );
 
-SetVideoMode( 800, 600, 32, HWSURFACE | OPENGL | FULLSCREEN ); // | ASYNCBLIT
+SetVideoMode( 320, 200, 32, HWSURFACE | OPENGL ); // | ASYNCBLIT
 //ToggleFullScreen();
 
+var cursor1 = new Cursor(image, 16,16);
+SetCursor( cursor1 );
+
+
+showCursor = true;
+
 var done = false;
+var pos = 0;
 
 var listeners = {
 	onQuit: function() done = true,
-	onKeyDown: function(key, mod) done = (key == K_ESCAPE),
-}
+	onKeyDown: function(key, mod) {
+		
+		switch (key) {
+			case K_ESCAPE: 
+				done = true;
+				break;
+			case K_g:
+				grabInput = !grabInput;
+				showCursor = !showCursor;
+				break;
+		}
+	},
+	onMouseMotion: function(x,y,dx,dy,button) pos += dx
+};
+
+Print( videoWidth+'x'+videoHeight, '\n' );
 
 while ( !done ) {
 
-	WaitEvent();
 	PollEvent(listeners);
-	
-//	Sleep(10);
-	Print('.');
 	
 	with (Ogl) {
 		
+		LoadIdentity();
+		Rotate( pos / Math.PI*2, 0,0,1 );
+		Clear(COLOR_BUFFER_BIT);
+
 		Begin( TRIANGLES );
 		Vertex(0,0);
 		Vertex(0,1);
 		Vertex(1,0);
 		End();
+
 	};
 	
 	GlSwapBuffers();
 }
-
-Print('Done.');
-
-
 
