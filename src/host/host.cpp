@@ -218,26 +218,31 @@ static JSBool LoadModule(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, 
 	strcat( libFileName, DLL_EXT );
 // MAC OSX: 	'@executable_path' ??
 
+/* namespace management
 	if ( J_ARG_ISDEF(2) ) {
-
-		const char *ns;
-		J_CHK( JsvalToString(cx, &J_ARG(2), &ns) );
-
-		jsval existingNsVal;
-		J_CHK( JS_GetProperty(cx, obj, ns, &existingNsVal) );
-		JSObject *nsObj;
-		if ( existingNsVal == JSVAL_VOID ) {
-
-			nsObj = JS_NewObject(cx, NULL, NULL, NULL);
-			J_CHK( JS_DefineProperty(cx, obj, ns, OBJECT_TO_JSVAL(nsObj), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) ); // doc. On success, JS_DefineProperty returns JS_TRUE. If the property already exists or cannot be created, JS_DefineProperty returns JS_FALSE.
+		
+		if ( JSVAL_IS_OBJECT(J_ARG(2)) ) {
+			obj = JSVAL_TO_OBJECT(J_ARG(2));
 		} else {
-			
-			J_S_ASSERT_OBJECT( existingNsVal );
-			nsObj = JSVAL_TO_OBJECT( existingNsVal );
-		}
-		obj = nsObj;
-	}
+			const char *ns;
+			J_CHK( JsvalToString(cx, &J_ARG(2), &ns) );
 
+			jsval existingNsVal;
+			J_CHK( JS_GetProperty(cx, obj, ns, &existingNsVal) );
+			JSObject *nsObj;
+			if ( existingNsVal == JSVAL_VOID ) {
+
+				nsObj = JS_NewObject(cx, NULL, NULL, NULL);
+				J_CHK( JS_DefineProperty(cx, obj, ns, OBJECT_TO_JSVAL(nsObj), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) ); // doc. On success, JS_DefineProperty returns JS_TRUE. If the property already exists or cannot be created, JS_DefineProperty returns JS_FALSE.
+			} else {
+				
+				J_S_ASSERT_OBJECT( existingNsVal );
+				nsObj = JSVAL_TO_OBJECT( existingNsVal );
+			}
+			obj = nsObj;
+		}
+	}
+*/
 	ModuleId id = ModuleLoad(libFileName, cx, obj);
 
 #ifdef XP_UNIX
