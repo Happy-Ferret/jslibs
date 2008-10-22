@@ -81,7 +81,7 @@ DEFINE_FUNCTION_FAST( GetVideoModeList ) {
 DEFINE_FUNCTION_FAST( HasVideoMode ) {
 
 	int width, height, bpp;
-	double flags;
+	Uint32 flags;
 
 	if ( J_FARG_ISDEF(1) )
 		J_CHK( JsvalToInt(cx, J_FARG(1), &width) );
@@ -98,9 +98,12 @@ DEFINE_FUNCTION_FAST( HasVideoMode ) {
 	else
 		bpp = 0; // by default, use current bpp
 
-	if ( J_FARG_ISDEF(4) )
-		J_CHK( JsvalToDouble(cx, J_FARG(4), &flags) );
-	else
+	if ( J_FARG_ISDEF(4) ) {
+
+		double tmp;
+		J_CHK( JsvalToDouble(cx, J_FARG(4), &tmp) ); // we need to use doubles because some values are greater than 2^31
+		flags = (Uint32)tmp;
+	} else
 		flags = 0;
 
 	int status = SDL_VideoModeOK(width, height, bpp, (Uint32)flags);
@@ -112,7 +115,12 @@ DEFINE_FUNCTION_FAST( HasVideoMode ) {
 DEFINE_FUNCTION_FAST( SetVideoMode ) {
 
 	int width, height, bpp;
-	double flags;
+	Uint32 flags;
+
+	const SDL_VideoInfo *videoInfo = SDL_GetVideoInfo(); // If called before SDL_SetVideoMode(), 'vfmt' is the pixel format of the "best" video mode.
+//	SDL_PixelFormat format = *videoInfo->vfmt;
+
+	const SDL_Surface* currentSurface = SDL_GetVideoSurface();
 
 	if ( J_FARG_ISDEF(1) )
 		J_CHK( JsvalToInt(cx, J_FARG(1), &width) );
@@ -127,14 +135,17 @@ DEFINE_FUNCTION_FAST( SetVideoMode ) {
 	if ( J_FARG_ISDEF(3) )
 		J_CHK( JsvalToInt(cx, J_FARG(3), &bpp) );
 	else
-		bpp = 0; // by default, use current bpp
+		bpp = currentSurface != NULL ? currentSurface->format->BitsPerPixel : 0; // by default, use current or the default bpp
 
-	if ( J_FARG_ISDEF(4) )
-		J_CHK( JsvalToDouble(cx, J_FARG(4), &flags) );
-	else
-		flags = 0;
+	if ( J_FARG_ISDEF(4) ) {
 
-	SDL_Surface *surface = SDL_SetVideoMode(width, height, bpp, (Uint32)flags);
+		double tmp;
+		J_CHK( JsvalToDouble(cx, J_FARG(4), &tmp) ); // we need to use doubles because some values are greater than 2^31
+		flags = (Uint32)tmp;
+	} else
+		flags = currentSurface != NULL ? currentSurface->flags : 0; // if not given, use the previous setting or a default value.
+
+	SDL_Surface *surface = SDL_SetVideoMode(width, height, bpp, flags);
 	if ( surface == NULL )
 		return ThrowSdlError(cx);
 	return JS_TRUE;
@@ -233,9 +244,9 @@ DEFINE_FUNCTION_FAST( SetGamma ) {
 	J_CHK( JsvalToFloat(cx, J_FARG(1), &r) );
 	J_CHK( JsvalToFloat(cx, J_FARG(2), &g) );
 	J_CHK( JsvalToFloat(cx, J_FARG(3), &b) );
-	if ( SDL_SetGamma(r,g,b) != 0 )
-		ThrowSdlError(cx);
-	return JS_TRUE;
+	if ( SDL_SetGamma(r, g, b) != 0 )
+		return ThrowSdlError(cx);
+	return JS_FALSE;
 }
 
 
@@ -326,16 +337,12 @@ DEFINE_PROPERTY_GETTER( showCursor ) {
 DEFINE_FUNCTION_FAST( SetCursor ) {
 
 	J_S_ASSERT_ARG_MIN(1);
-
 	J_S_ASSERT_OBJECT( J_FARG(1) );
 	JSObject *cursorObj = JSVAL_TO_OBJECT( J_FARG(1) );
 	J_S_ASSERT_CLASS( cursorObj, classCursor );
 	SDL_Cursor *cursor = (SDL_Cursor *)JS_GetPrivate(cx, cursorObj);
 	J_S_ASSERT_RESOURCE( cursor );
-
-
 	SDL_SetCursor(cursor);
-
 	return JS_TRUE;	
 }
 
@@ -354,6 +361,7 @@ DEFINE_PROPERTY( videoDriverName ) {
 JSBool FireListener( JSContext *cx, JSObject *listenerObj, SDL_Event *ev, jsval *rval ) {
 
 	jsval fVal;
+
 	switch (ev->type) {
 		case SDL_ACTIVEEVENT:
 			J_CHK( JS_GetProperty(cx, listenerObj, "onActive", &fVal) );
@@ -386,12 +394,14 @@ JSBool FireListener( JSContext *cx, JSObject *listenerObj, SDL_Event *ev, jsval 
 			J_CHK( JS_GetProperty(cx, listenerObj, "onMouseMotion", &fVal) );
 			if ( JsvalIsFunction(cx, fVal) ) {
 
+				SDLMod modState = SDL_GetModState();
 				jsval argv[] = { 
 					INT_TO_JSVAL(ev->motion.x), 
 					INT_TO_JSVAL(ev->motion.y), 
 					INT_TO_JSVAL(ev->motion.xrel),
 					INT_TO_JSVAL(ev->motion.yrel),
 					INT_TO_JSVAL(ev->motion.state),
+					INT_TO_JSVAL(modState),
 				};
 				J_CHK( JS_CallFunctionValue(cx, listenerObj, fVal, COUNTOF(argv), argv, rval) );
 			}
@@ -402,12 +412,14 @@ JSBool FireListener( JSContext *cx, JSObject *listenerObj, SDL_Event *ev, jsval 
 			J_CHK( JS_GetProperty(cx, listenerObj, ev->type == SDL_KEYDOWN ? "onMouseButtonDown" : "onMouseButtonUp", &fVal) );
 			if ( JsvalIsFunction(cx, fVal) ) {
 
+				SDLMod modState = SDL_GetModState();
 				Uint8 buttonState = SDL_GetMouseState(NULL, NULL); // query only button state
 				jsval argv[] = {
 					INT_TO_JSVAL(ev->button.button),
 					INT_TO_JSVAL(ev->button.x),
 					INT_TO_JSVAL(ev->button.y),
 					INT_TO_JSVAL(buttonState),
+					INT_TO_JSVAL(modState),
 				};
 				J_CHK( JS_CallFunctionValue(cx, listenerObj, fVal, COUNTOF(argv), argv, rval) );
 			}
@@ -422,6 +434,7 @@ JSBool FireListener( JSContext *cx, JSObject *listenerObj, SDL_Event *ev, jsval 
 			break;
 		
 		case SDL_VIDEORESIZE:
+			// ... and you must respond to the event by re-calling SDL_SetVideoMode() with the requested size (or another size that suits the application).
 			J_CHK( JS_GetProperty(cx, listenerObj, "onVideoResize", &fVal) );
 			if ( JsvalIsFunction(cx, fVal) ) {
 
@@ -451,7 +464,10 @@ DEFINE_FUNCTION_FAST( PollEvent ) {
 
 	SDL_Event ev;
 	SDL_PumpEvents();
-	int status = SDL_PeepEvents(&ev, 1, SDL_GETEVENT, SDL_ACTIVEEVENTMASK | SDL_KEYEVENTMASK | SDL_MOUSEEVENTMASK | SDL_VIDEORESIZEMASK | SDL_VIDEOEXPOSEMASK | SDL_QUITMASK );
+
+	//	SDL_EventState(SDL_USEREVENT, SDL_IGNORE);
+
+	int status = SDL_PeepEvents(&ev, 1, SDL_GETEVENT, SDL_ALLEVENTS); // see SDL_EventState
 	if ( status == -1 )
 		return ThrowSdlError(cx);
 
@@ -481,7 +497,7 @@ DEFINE_PROPERTY( mouseX ) {
 
 	int x;
 	Uint8 buttonState = SDL_GetMouseState(&x, NULL); // query only button state
-	*vp = INT_TO_JSID( x ); // query only button state
+	*vp = INT_TO_JSVAL( x ); // query only button state
 	return JS_TRUE;
 }
 
@@ -489,16 +505,88 @@ DEFINE_PROPERTY( mouseY ) {
 
 	int y;
 	Uint8 buttonState = SDL_GetMouseState(NULL, &y); // query only button state
-	*vp = INT_TO_JSID( y ); // query only button state
+	*vp = INT_TO_JSVAL( y ); // query only button state
 	return JS_TRUE;
 }
 
 DEFINE_PROPERTY( buttonState ) {
 
-	*vp = INT_TO_JSID( SDL_GetMouseState(NULL, NULL) ); // query only button state
+	*vp = INT_TO_JSVAL( SDL_GetMouseState(NULL, NULL) ); // query only button state
 	return JS_TRUE;
 }
 
+DEFINE_PROPERTY( modifierState ) {
+
+	*vp = INT_TO_JSVAL( SDL_GetModState() );
+	return JS_TRUE;
+}
+
+DEFINE_FUNCTION_FAST( GetKeyState ) {
+	
+	J_S_ASSERT_ARG_MIN(1);
+	unsigned int key;
+	J_CHK( JsvalToUInt(cx, J_FARG(1), &key) );
+	Uint8 *keystate = SDL_GetKeyState(NULL);
+	J_CHK( BoolToJsval(cx, keystate[key] != 0, J_FRVAL) );
+	return JS_TRUE;
+}
+
+DEFINE_FUNCTION_FAST( GetKeyName ) {
+	
+	J_S_ASSERT_ARG_MIN(1);
+	unsigned int key;
+	J_CHK( JsvalToUInt(cx, J_FARG(1), &key) );
+	char *keyName = SDL_GetKeyName((SDLKey)key);
+	JSString *jsStr = JS_NewStringCopyZ(cx, keyName);
+	*J_FRVAL = STRING_TO_JSVAL(jsStr);
+	return JS_TRUE;
+}
+
+DEFINE_PROPERTY_SETTER( keyRepeatDelay ) {
+	
+	int delay, interval;
+	SDL_GetKeyRepeat(&delay, &interval);
+	J_CHK( JsvalToInt(cx, *vp, &delay) );
+	int status = SDL_EnableKeyRepeat(delay, interval);
+	if ( status == -1 )
+		return ThrowSdlError(cx);
+	return JS_TRUE;
+}
+
+DEFINE_PROPERTY_GETTER( keyRepeatDelay ) {
+
+	int delay, interval;
+	SDL_GetKeyRepeat(&delay, &interval);
+	J_CHK( IntToJsval(cx, delay, vp) );
+	return JS_TRUE;
+}
+
+
+DEFINE_PROPERTY_SETTER( keyRepeatInterval ) {
+	
+	int delay, interval;
+	SDL_GetKeyRepeat(&delay, &interval);
+	J_CHK( JsvalToInt(cx, *vp, &interval) );
+	int status = SDL_EnableKeyRepeat(delay, interval);
+	if ( status == -1 )
+		return ThrowSdlError(cx);
+	return JS_TRUE;
+}
+
+DEFINE_PROPERTY_GETTER( keyRepeatInterval ) {
+
+	int delay, interval;
+	SDL_GetKeyRepeat(&delay, &interval);
+	J_CHK( IntToJsval(cx, interval, vp) );
+	return JS_TRUE;
+}
+
+
+DEFINE_PROPERTY( appStateActive ) {
+
+	J_CHK( BoolToJsval(cx, SDL_GetAppState() & SDL_APPACTIVE != 0, vp) ); 
+	return JS_TRUE;
+}
 
 
 
@@ -518,12 +606,16 @@ CONFIGURE_STATIC
 		FUNCTION_FAST_ARGC( PollEvent, 1 )
 		FUNCTION_FAST_ARGC( WarpMouse, 2 )
 		FUNCTION_FAST_ARGC( SetCursor, 1 )
+		FUNCTION_FAST_ARGC( GetKeyState, 1 )
+		FUNCTION_FAST_ARGC( GetKeyName, 1 )
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC
 		PROPERTY( caption )
 		PROPERTY( grabInput )
 		PROPERTY( showCursor )
+		PROPERTY( keyRepeatInterval )
+		PROPERTY( keyRepeatDelay )
 		PROPERTY_READ( videoWidth )
 		PROPERTY_READ( videoHeight )
 		PROPERTY_READ( videoDriverName )
@@ -531,6 +623,7 @@ CONFIGURE_STATIC
 		PROPERTY_READ( mouseX )
 		PROPERTY_READ( mouseY )
 		PROPERTY_READ( buttonState )
+		PROPERTY_READ( modifierState )
 	END_STATIC_PROPERTY_SPEC
 
 	BEGIN_CONST_DOUBLE_SPEC
@@ -713,3 +806,11 @@ CONFIGURE_STATIC
 	END_CONST_INTEGER_SPEC
 
 END_STATIC
+
+/*
+
+manage mouse acceleration for win32:
+	http://www.google.fr/codesearch?hl=fr&q=disable+%22mouse+acceleration%22+-x11+show:yYwX0Cc1jnM:XGt_kaGeQc8:yYwX0Cc1jnM&sa=N&cd=1&ct=rc&cs_p=http://hg.openjdk.java.net/jdk7/jaxp/jdk&cs_f=src/windows/native/sun/windows/awt_Robot.cpp#l62
+
+
+*/

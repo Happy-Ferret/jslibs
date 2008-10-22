@@ -26,14 +26,24 @@ SetIcon(image);
 
 //GlSetAttribute( GL_SWAP_CONTROL, 1 ); // vsync
 
-GlSetAttribute( GL_DOUBLEBUFFER, 1 );
 
-SetVideoMode( 320, 200, 32, HWSURFACE | OPENGL ); // | ASYNCBLIT
+GlSetAttribute( GL_DOUBLEBUFFER, 1 );
+GlSetAttribute( GL_DEPTH_SIZE, 16 );
+
+SetVideoMode( 320, 200, 32, HWSURFACE | OPENGL | RESIZABLE ); // | ASYNCBLIT
 //ToggleFullScreen();
 
 var cursor1 = new Cursor(image, 16,16);
 SetCursor( cursor1 );
 
+try {
+
+//	SetGamma(1,1,1);
+	
+} catch(ex) {
+
+	Print('error:'+ex.text);
+}
 
 showCursor = true;
 
@@ -54,7 +64,15 @@ var listeners = {
 				break;
 		}
 	},
-	onMouseMotion: function(x,y,dx,dy,button) pos += dx
+	onVideoResize: function(w,h) {
+
+		SetVideoMode(w, h);
+		Ogl.Viewport(0, 0, w, h);
+	},
+	onMouseMotion: function(x,y,dx,dy,button) {
+		
+		pos += dx;
+	}
 };
 
 Print( videoWidth+'x'+videoHeight, '\n' );

@@ -67,9 +67,12 @@ END_CLASS
 
 JSBool ThrowSdlError( JSContext *cx ) {
 
-	JSObject *error = JS_NewObject( cx, _class, NULL, NULL );
+	JSObject *errorObj = JS_NewObject( cx, _class, NULL, NULL );
+	JS_SetPendingException( cx, OBJECT_TO_JSVAL( errorObj ) );
 	const char *errorMessage = SDL_GetError();
 	SDL_ClearError();
-	JS_SetReservedSlot( cx, error, 0, errorMessage != NULL ? STRING_TO_JSVAL(JS_NewStringCopyZ( cx, errorMessage )) : JSVAL_VOID );
+//	if ( errorMessage == NULL || *errorMessage == '\0' )
+//		errorMessage = "Undefined error";
+	JS_SetReservedSlot( cx, errorObj, 0, errorMessage != NULL && *errorMessage != '\0' ? STRING_TO_JSVAL(JS_NewStringCopyZ( cx, errorMessage )) : JSVAL_VOID );
   return JS_FALSE;
 }

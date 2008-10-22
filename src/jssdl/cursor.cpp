@@ -89,13 +89,15 @@ DEFINE_CONSTRUCTOR() {
 		
 
 	SDL_Cursor *cursor = SDL_CreateCursor(cursorImage, cursorMask, sWidth, sHeight, hotX, hotY);
-	if ( cursor == NULL )
-		ThrowSdlError(cx);
+	if ( cursor == NULL ) {
+
+		free(cursorImage);
+		return ThrowSdlError(cx);
+	}
 
 	J_CHK( JS_SetPrivate(cx, obj, cursor) );
 
 	free(cursorImage);
-
 	return JS_TRUE;
 }
 
