@@ -12,8 +12,6 @@ function Time( fct ) {
 }
 
 
-var svg = new SVG();
-
 
 var s = 
 <svg width="8cm" height="3cm" viewBox="0 0 800 300" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink">
@@ -103,31 +101,30 @@ var s = <svg width="100%" height="100%" version="1.1" xmlns="http://www.w3.org/2
 </svg>
 
 
-svg.onImage = function(href) {
+var s = <svg><circle cx="50" cy="50" r="25" fill="red" opacity="50%"/></svg>;
 
+
+var svg = new SVG();
+svg.onImage = function(href) {
 //	return DecodePngImage( new File('img.png').Open('r') );
 }
 
 Time( function readXmlData()
-svg.Write('<?xml version="1.0" encoding="utf-8"?>'+s)
+svg.Write(s)
 )
 
 Print( 'width: '+svg.width + ' height: '+svg.height, '\n' );
 
-svg.SetVisible('#test', true);
-
+svg.SetVisible('#test', false);
 
 //svg.dpi = [30, 600];
 
 var svgimage;
 
 Time( function renderImage_1()
-svgimage = svg.RenderImage()
+svgimage = svg.RenderImage(100, 100, 3) // , [2,0,0,1,0,0]
 )
 
-Time( function renderImage_2()
-svgimage = svg.RenderImage(undefined, undefined, undefined, undefined )
-)
 
 //var svgText = new File('Image_Tectonic_plates.svg').content
 //Print( svgText.length );

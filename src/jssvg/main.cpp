@@ -26,6 +26,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	if ( !JSVAL_IS_VOID( unsafeModePtrVal ) )
 		_pUnsafeMode = (bool*)JSVAL_TO_PRIVATE(unsafeModePtrVal);
 
+	rsvg_init();
 	INIT_CLASS( SVG );
 
 	return JS_TRUE;
@@ -37,6 +38,8 @@ EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
 }
 
 EXTERN_C DLLEXPORT void ModuleFree() {
+
+	rsvg_term();
 }
 /*
 #ifdef XP_WIN

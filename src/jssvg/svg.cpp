@@ -81,7 +81,6 @@ BEGIN_CLASS( SVG ) // Start the definition of the class. It defines some symbols
 DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are no remaing references to this object.
 
 	RsvgHandle *handle = (RsvgHandle*)JS_GetPrivate(cx, obj);
-
 	if ( handle )
 		g_object_unref(handle);
 }
@@ -89,19 +88,16 @@ DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are
 
 /**doc
  * $INAME()
+  Constructs a new SVG object.
 **/
 DEFINE_CONSTRUCTOR() {
 
 	J_S_ASSERT_CONSTRUCTING();
 	J_S_ASSERT_THIS_CLASS();
 
-	RsvgHandle *handle;
-	handle = rsvg_handle_new();
-
-	J_S_ASSERT_RESOURCE(handle);
-
+	RsvgHandle *handle = rsvg_handle_new();
+	J_S_ASSERT( handle != NULL, "Unable to create rsvg handler." );
 	J_CHK( JS_SetPrivate(cx, obj, handle) );
-
 	return JS_TRUE;
 }
 
@@ -111,7 +107,10 @@ DEFINE_CONSTRUCTOR() {
 **/
 
 /**doc
- * $THIS $INAME()
+ * $THIS $INAME( xmlString )
+  Adds XML data to the current SVG context.
+  $H note
+   calls to callback function 'onImage' may occur during this call.
 **/
 DEFINE_FUNCTION_FAST( Write ) {
 
@@ -125,7 +124,7 @@ DEFINE_FUNCTION_FAST( Write ) {
 	GError *error = NULL;
 	gboolean status;
 
-//		rsvg_handle_new_from_file
+//	rsvg_handle_new_from_file
 //	xmlResetLastError();
 
 //	rsvg_handle_set_base_uri(handle, "123"); // This can only be called before rsvg_handle_write()
@@ -148,63 +147,120 @@ DEFINE_FUNCTION_FAST( Write ) {
 			J_REPORT_ERROR_1("SVG error: %s", error->message);
 	}
 
-	status = rsvg_handle_close(handle, &error);
-	if (!status) {
-
-		J_REPORT_ERROR_1("SVG error: %s", error->message);
-	}
-	
+	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
 
 
+/*
+DEFINE_PROPERTY( xmlData ) {
+
+	RsvgHandle *handle = (RsvgHandle*)JS_GetPrivate(cx, obj);
+	if ( handle )
+		g_object_unref(handle);
+	handle = rsvg_handle_new();
+	J_S_ASSERT( handle != NULL, "Unable to create rsvg handler." );
+	J_CHK( JS_SetPrivate(cx, obj, handle) );
+
+	const char *data;
+	size_t length;
+	J_CHK( JsvalToStringAndLength(cx, &J_FARG(1), &data, &length) );
+
+	GError *error = NULL;
+	gboolean status;
+
+//	xmlResetLastError();
+//	rsvg_handle_set_base_uri(handle, "123"); // This can only be called before rsvg_handle_write()
+
+	gchar *tmp = handle->priv->base_uri;
+	CxObj cxobj = { cx, obj };
+	handle->priv->base_uri = (gchar*)&cxobj; // hack base_uri to store cx and obj for rsvg_pixbuf_new_from_href()
+	status = rsvg_handle_write(handle, (const guchar *)data, length, &error);
+	handle->priv->base_uri = tmp;
+
+	if ( JS_IsExceptionPending(cx) )
+		return JS_FALSE;
+
+	if ( !status ) {
+
+		xmlErrorPtr xmlErr = xmlGetLastError();
+		if ( xmlErr != NULL ) { // XML error
+			J_REPORT_ERROR_2("SVG error: %s. %s", error->message, xmlErr->message);
+		} else
+			J_REPORT_ERROR_1("SVG error: %s", error->message);
+	}
+	return JS_TRUE;
+}
+*/
+
 /**doc
- * $ImageObject $INAME( [ imageWidth , imageHeight [ , surfaceWidth, surfaceHeight [ , channels [ , id] ] ] ] )
+ * $ImageObject $INAME( [ imageWidth , imageHeight ] [ , channels ] [ , transformationMatrix ] [ , elementId ] )
   $H arguments
-   $ARG integer imageWidth
-   $ARG integer imageHeight
-   $ARG integer surfaceWidth
-   $ARG integer surfaceHeight
-   $ARG integer channels
-   $ARG string id: Draws a subset of a SVG starting from an element's id. For example, if you have a layer called "layer1" that you wish to render, pass "#layer1" as the id.
+   $ARG integer imageWidth: override default SVG's  width.
+   $ARG integer imageHeight: override default SVG's  width.
+   $ARG integer channels: 1 (Alpha only), 3 (RGB) or 4 (RGBA).
+   $ARG Array transformationMatrix: array of reals.
+   $ARG string elementId: Draws a subset of a SVG starting from an element's id. For example, if you have a layer called "layer1" that you wish to render, pass "#layer1" as the id.
+  $H example
+  {{{
+  var svg = new SVG();
+  svg.Write('<svg><circle cx="50" cy="50" r="25" fill="red"/></svg>');
+  svgimage = svg.RenderImage(100, 100, [2,0,0,1,0,0]);
+  new File('test.png').content = EncodePngImage( svgimage )
+  }}}
 **/
 DEFINE_FUNCTION_FAST( RenderImage ) { // using cairo
 
 	RsvgHandle *handle = (RsvgHandle*)JS_GetPrivate(cx, J_FOBJ);
 	J_S_ASSERT_RESOURCE(handle);
 
+	gboolean status;
+
+	GError *error = NULL;
+	status = rsvg_handle_close(handle, &error);
+	if ( !status )
+		J_REPORT_ERROR_1( "SVG error: %s", error->message );
+
 	RsvgDimensionData dim;
 	rsvg_handle_get_dimensions(handle, &dim);
 
-	cairo_matrix_t tr = { // identity matrix
-		1, 0, // x
-		0, 1, // y
-		0, 0 // translation
-	};
+	cairo_matrix_t tr;
+	cairo_matrix_init_identity(&tr);
 
 	size_t imageWidth, imageHeight;
-	if ( J_FARG_ISDEF(1) && J_FARG_ISDEF(2) ) {
+	if ( J_FARG_ISDEF(1) ) {
 
 		J_CHK( JsvalToUInt(cx, J_FARG(1), &imageWidth) );
-		J_CHK( JsvalToUInt(cx, J_FARG(2), &imageHeight) );
-
 		tr.xx = (double)imageWidth / (double)dim.width;
-		tr.yy = (double)imageHeight / (double)dim.height;
-	} else {
-
+	} else
 		imageWidth = dim.width;
+
+	if ( J_FARG_ISDEF(2) ) {
+
+		J_CHK( JsvalToUInt(cx, J_FARG(2), &imageHeight) );
+		tr.yy = (double)imageHeight / (double)dim.height;
+	} else
 		imageHeight = dim.height;
-	}
 
-	size_t surfaceWidth, surfaceHeight;	
-	if ( J_FARG_ISDEF(3) && J_FARG_ISDEF(4) ) {
 
-		J_CHK( JsvalToUInt(cx, J_FARG(3), &surfaceWidth) );
-		J_CHK( JsvalToUInt(cx, J_FARG(4), &surfaceHeight) );
-	} else {
+	size_t channels;
+	if ( J_FARG_ISDEF(3) ) {
 
-		surfaceWidth = imageWidth;
-		surfaceHeight = imageHeight;
+		J_CHK( JsvalToUInt(cx, J_FARG(3), &channels) );
+		J_S_ASSERT( channels == 1 || channels == 3 || channels == 4, "Invalid format." );
+	} else
+		channels = 4;
+
+
+	if ( J_FARG_ISDEF(4) ) {
+		
+		J_S_ASSERT_ARRAY( J_FARG(4) );
+		double trVector[6];
+		size_t currentLength;
+		J_CHK( JsvalToDoubleVector(cx, J_FARG(4), trVector, COUNTOF(trVector), &currentLength ) );
+		J_S_ASSERT( currentLength == 6, "Invalid transformation matrix size." );
+		cairo_matrix_t tmp = *(cairo_matrix_t*)&trVector;
+		cairo_matrix_multiply(&tr, &tmp, &tr);
 	}
 
 	const char *id;
@@ -212,20 +268,9 @@ DEFINE_FUNCTION_FAST( RenderImage ) { // using cairo
 
 		J_CHK( JsvalToString(cx, &J_FARG(5), &id) );
 		J_S_ASSERT( id != NULL && id[0] == '#', "Invalid id." );
-	} else {
-
+	} else
 		id = NULL;
-	}
 
-	size_t channels;
-	if ( J_FARG_ISDEF(6) ) {
-
-		J_CHK( JsvalToUInt(cx, J_FARG(6), &channels) );
-		J_S_ASSERT( channels == 1 || channels == 3 || channels == 4, "Invalid format." );
-	} else {
-
-		channels = 4;
-	}
 
 	cairo_format_t surfaceFormat;
 	switch ( channels ) {
@@ -238,20 +283,22 @@ DEFINE_FUNCTION_FAST( RenderImage ) { // using cairo
 		case 4:
 			surfaceFormat = CAIRO_FORMAT_ARGB32; // Pre-multiplied alpha is used. (That is, 50% transparent red is 0x80800000, not 0x80ff0000.)
 			break;
+		default:
+			J_REPORT_ERROR("Unsupported output image format.");
 	}
 
-	cairo_surface_t *surface = cairo_image_surface_create(surfaceFormat, surfaceWidth, surfaceHeight);
-	J_S_ASSERT( cairo_surface_status(surface) == CAIRO_STATUS_SUCCESS, "Unable to create cairo surface." );
-
+	cairo_surface_t *surface = cairo_image_surface_create(surfaceFormat, imageWidth, imageHeight);
+	J_S_ASSERT( cairo_surface_status(surface) == CAIRO_STATUS_SUCCESS, "Unable to create a drawing surface." );
 	cairo_t *cr = cairo_create(surface);
-	J_S_ASSERT( cairo_status(cr) == CAIRO_STATUS_SUCCESS, "Unable to create cairo state." );
+	J_S_ASSERT( cairo_status(cr) == CAIRO_STATUS_SUCCESS, "Unable to create drawing state." );
 
 	//cairo_set_antialias(cr, CAIRO_ANTIALIAS_DEFAULT);
 	//cairo_set_tolerance(cr, 0.1);
 	
 	cairo_set_matrix(cr, &tr);
-	gboolean status = rsvg_handle_render_cairo_sub(handle, cr, id);
-	J_S_ASSERT( status == TRUE, "Unable to rsvg_handle_render_cairo." );
+	status = rsvg_handle_render_cairo_sub(handle, cr, id);
+	
+	J_S_ASSERT_1( status == TRUE, "Unable to render the SVG. %s", cairo_status_to_string(cairo_status(cr)) );
 
 //	cairo_format_t surfaceFormat = cairo_image_surface_get_format(surface);
 
@@ -265,11 +312,17 @@ DEFINE_FUNCTION_FAST( RenderImage ) { // using cairo
 	void *image = JS_malloc(cx, length);
 	J_S_ASSERT_ALLOC(image);
 
+
 	switch ( surfaceFormat ) {
 		case CAIRO_FORMAT_RGB24:
+			for ( size_t i = 0; i < pixelCount; i++ ) { // 3 2 1 X  ->  1 2 3
 
-			 // 3 2 1 X  ->  1 2 3
-			J_REPORT_ERROR("NOT IMPLEMENTED YET"); // (TBD)
+				u_int32_t src = ((u_int32_t*)buffer)[i];
+				u_int8_t* dest = (u_int8_t*)image + i*3;
+				*(dest++) = src >> 16 & 0xff;
+				*(dest++) = src >> 8 & 0xff;
+				*(dest++) = src & 0xff;
+			}
 			break;
 		case CAIRO_FORMAT_ARGB32:
 			for ( size_t i = 0; i < pixelCount; i++ ) { // 3 2 1 4  ->  1 2 3 4
@@ -333,7 +386,12 @@ DEFINE_FUNCTION_FAST( GetImage ) { // using pixbuf
 
 
 /**doc
- * $THIS $INAME()
+ * $BOOL $INAME( elementId, polarity )
+  $H arguments
+   $ARG string elementId: the id of the element with '#' prefix (eg. '#circle1').
+	$ARG boolean polarity: false to hide, true to show.
+  $H return value
+   true if the element visibility has been set, otherwise false.
 **/
 DEFINE_FUNCTION_FAST( SetVisible ) {
 	
@@ -350,8 +408,16 @@ DEFINE_FUNCTION_FAST( SetVisible ) {
 	JsvalToBool(cx, J_FARG(2), &visible);
 
 	RsvgNode *drawsub = rsvg_defs_lookup (handle->priv->defs, id);
+
+	if ( drawsub == NULL ) {
+
+		*J_FRVAL = JSVAL_FALSE;
+		return JS_TRUE;
+	}
+
 	drawsub->state->visible = visible ? TRUE : FALSE;
 
+	*J_FRVAL = JSVAL_TRUE;
 	return JS_TRUE;
 }
 
@@ -362,7 +428,8 @@ DEFINE_FUNCTION_FAST( SetVisible ) {
 **/
 
 /**doc
- * $INAME $READONLY
+ * $INT|$ARRAY $INAME $WRITEONLY
+  Sets the dpi of the resulting image. If the argument is an Array (like [ dpiX, dpiY ]) X and Y dpi can be set aside.
 **/
 DEFINE_PROPERTY(dpi) {
 
@@ -394,6 +461,7 @@ DEFINE_PROPERTY(dpi) {
 
 /**doc
  * $INAME $READONLY
+  Is the default width of the SVG.
 **/
 DEFINE_PROPERTY(width) {
 
@@ -407,6 +475,7 @@ DEFINE_PROPERTY(width) {
 
 /**doc
  * $INAME $READONLY
+  Is the default height of the SVG.
 **/
 DEFINE_PROPERTY(height) {
 
@@ -420,6 +489,7 @@ DEFINE_PROPERTY(height) {
 
 /**doc
  * $INAME $READONLY
+  Is the title of the SVG.
 **/
 DEFINE_PROPERTY(title) {
 
@@ -435,6 +505,7 @@ DEFINE_PROPERTY(title) {
 
 /**doc
  * $INAME $READONLY
+  Is the metadata string of the SVG.
 **/
 DEFINE_PROPERTY(metadata) {
 
@@ -450,6 +521,7 @@ DEFINE_PROPERTY(metadata) {
 
 /**doc
  * $INAME $READONLY
+  Is the description string of the SVG.
 **/
 DEFINE_PROPERTY(description) {
 
@@ -484,21 +556,26 @@ DEFINE_PROPERTY(images) {
 */
 
 
-DEFINE_INIT() {
+/**doc
+=== callback functions ===
+ * $TYPE ImageObject *onImage*( uri )
+  Called when the SVG renderer need to draw an image element. _uri_ is the name of the requested image.
+  $H example
+   {{{
+   var svg = new SVG();
+	svg.Write('<svg><image x="0" y="0" path="img.png"/></svg>');
+   svg.onImage = function(href) {
+    return DecodePngImage( new File('myImage.png').Open('r') );
+   }
+	}}}
+**/
 
-	rsvg_init(); // see rsvg_term()
-	return JS_TRUE;
-}
-
-
-CONFIGURE_CLASS // This section containt the declaration and the configuration of the class
+CONFIGURE_CLASS
 
 	HAS_PRIVATE
-	HAS_RESERVED_SLOTS(1)
+
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE
-
-	HAS_INIT
 
 	BEGIN_FUNCTION_SPEC
 		FUNCTION_FAST(Write)
@@ -508,6 +585,7 @@ CONFIGURE_CLASS // This section containt the declaration and the configuration o
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
+//		PROPERTY_WRITE_STORE(xmlData)
 //		PROPERTY_READ(images)
 		PROPERTY_WRITE(dpi)
 		PROPERTY_READ(width)
