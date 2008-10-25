@@ -72,6 +72,12 @@ extern "C" GdkPixbuf *rsvg_pixbuf_new_from_href(const char *href, const char *ba
 	return pixbuf;
 }
 
+struct Private {
+	RsvgHandle *handle;
+	cairo_matrix_t transformation;
+};
+
+
 
 /**doc
 $CLASS_HEADER
@@ -80,9 +86,12 @@ BEGIN_CLASS( SVG ) // Start the definition of the class. It defines some symbols
 
 DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are no remaing references to this object.
 
-	RsvgHandle *handle = (RsvgHandle*)JS_GetPrivate(cx, obj);
-	if ( handle )
-		g_object_unref(handle);
+	Private *pv = (Private*)JS_GetPrivate(cx, obj);
+	if ( pv ) {
+
+		g_object_unref(pv->handle);
+		JS_free(cx, pv);
+	}
 }
 
 
@@ -95,9 +104,12 @@ DEFINE_CONSTRUCTOR() {
 	J_S_ASSERT_CONSTRUCTING();
 	J_S_ASSERT_THIS_CLASS();
 
-	RsvgHandle *handle = rsvg_handle_new();
-	J_S_ASSERT( handle != NULL, "Unable to create rsvg handler." );
-	J_CHK( JS_SetPrivate(cx, obj, handle) );
+	Private *pv = (Private*)JS_malloc(cx, sizeof(Private));
+	J_S_ASSERT_ALLOC(pv);
+	pv->handle = rsvg_handle_new();
+	J_S_ASSERT( pv->handle != NULL, "Unable to create rsvg handler." );
+	cairo_matrix_init_identity(&pv->transformation);
+	J_CHK( JS_SetPrivate(cx, obj, pv) );
 	return JS_TRUE;
 }
 
@@ -114,8 +126,9 @@ DEFINE_CONSTRUCTOR() {
 **/
 DEFINE_FUNCTION_FAST( Write ) {
 
-	RsvgHandle *handle = (RsvgHandle*)JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_RESOURCE(handle);
+	Private *pv = (Private*)JS_GetPrivate(cx, J_FOBJ);
+	J_S_ASSERT_RESOURCE(pv);
+	RsvgHandle *handle = pv->handle;
 
 	const char *data;
 	size_t length;
@@ -194,13 +207,13 @@ DEFINE_PROPERTY( xmlData ) {
 */
 
 /**doc
- * $ImageObject $INAME( [ imageWidth , imageHeight ] [ , channels ] [ , transformationMatrix ] [ , elementId ] )
+ * $ImageObject $INAME( [ imageWidth , imageHeight ] [ , channels ] [ , fit ] [ , elementId ] )
   $H arguments
    $ARG integer imageWidth: override default SVG's  width.
    $ARG integer imageHeight: override default SVG's  width.
    $ARG integer channels: 1 (Alpha only), 3 (RGB) or 4 (RGBA).
-   $ARG Array transformationMatrix: array of reals.
-   $ARG string elementId: Draws a subset of a SVG starting from an element's id. For example, if you have a layer called "layer1" that you wish to render, pass "#layer1" as the id.
+   $ARG boolean fit: fit the SVG dimensions to imageWidth an imageHeight.
+   $ARG string elementId: draws a subset of a SVG starting from an element's id. For example, if you have a layer called "layer1" that you wish to render, pass "#layer1" as the id.
   $H example
   {{{
   var svg = new SVG();
@@ -211,8 +224,9 @@ DEFINE_PROPERTY( xmlData ) {
 **/
 DEFINE_FUNCTION_FAST( RenderImage ) { // using cairo
 
-	RsvgHandle *handle = (RsvgHandle*)JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_RESOURCE(handle);
+	Private *pv = (Private*)JS_GetPrivate(cx, J_FOBJ);
+	J_S_ASSERT_RESOURCE(pv);
+	RsvgHandle *handle = pv->handle;
 
 	gboolean status;
 
@@ -224,24 +238,17 @@ DEFINE_FUNCTION_FAST( RenderImage ) { // using cairo
 	RsvgDimensionData dim;
 	rsvg_handle_get_dimensions(handle, &dim);
 
-	cairo_matrix_t tr;
-	cairo_matrix_init_identity(&tr);
-
 	size_t imageWidth, imageHeight;
 	if ( J_FARG_ISDEF(1) ) {
 
+		J_S_ASSERT_ARG_MIN(2);
 		J_CHK( JsvalToUInt(cx, J_FARG(1), &imageWidth) );
-		tr.xx = (double)imageWidth / (double)dim.width;
-	} else
-		imageWidth = dim.width;
-
-	if ( J_FARG_ISDEF(2) ) {
-
 		J_CHK( JsvalToUInt(cx, J_FARG(2), &imageHeight) );
-		tr.yy = (double)imageHeight / (double)dim.height;
-	} else
-		imageHeight = dim.height;
+	} else {
 
+		imageWidth = dim.width;
+		imageHeight = dim.height;
+	}
 
 	size_t channels;
 	if ( J_FARG_ISDEF(3) ) {
@@ -251,7 +258,21 @@ DEFINE_FUNCTION_FAST( RenderImage ) { // using cairo
 	} else
 		channels = 4;
 
+	if ( J_FARG_ISDEF(4) ) { // fit
 
+		bool fit;
+		J_CHK( JsvalToBool(cx, J_FARG(4), &fit) );
+		if ( fit ) {
+
+			cairo_matrix_t tmp;
+			cairo_matrix_init_identity(&tmp);
+			cairo_matrix_scale(&tmp, (double)imageWidth / (double)dim.width, (double)imageHeight / (double)dim.height);
+			cairo_matrix_multiply(&pv->transformation, &pv->transformation, &tmp);
+//			cairo_matrix_scale(&pv->transformation, (double)imageWidth / (double)dim.width, (double)imageHeight / (double)dim.height);
+		}
+	}
+
+/*
 	if ( J_FARG_ISDEF(4) ) {
 		
 		J_S_ASSERT_ARRAY( J_FARG(4) );
@@ -262,6 +283,7 @@ DEFINE_FUNCTION_FAST( RenderImage ) { // using cairo
 		cairo_matrix_t tmp = *(cairo_matrix_t*)&trVector;
 		cairo_matrix_multiply(&tr, &tmp, &tr);
 	}
+*/
 
 	const char *id;
 	if ( J_FARG_ISDEF(5) ) {
@@ -295,7 +317,7 @@ DEFINE_FUNCTION_FAST( RenderImage ) { // using cairo
 	//cairo_set_antialias(cr, CAIRO_ANTIALIAS_DEFAULT);
 	//cairo_set_tolerance(cr, 0.1);
 	
-	cairo_set_matrix(cr, &tr);
+	cairo_set_matrix(cr, &pv->transformation);
 	status = rsvg_handle_render_cairo_sub(handle, cr, id);
 	
 	J_S_ASSERT_1( status == TRUE, "Unable to render the SVG. %s", cairo_status_to_string(cairo_status(cr)) );
@@ -397,8 +419,9 @@ DEFINE_FUNCTION_FAST( SetVisible ) {
 	
 	J_S_ASSERT_ARG_MIN(2);
 
-	RsvgHandle *handle = (RsvgHandle*)JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_RESOURCE(handle);
+	Private *pv = (Private*)JS_GetPrivate(cx, J_FOBJ);
+	J_S_ASSERT_RESOURCE(pv);
+	RsvgHandle *handle = pv->handle;
 
 	const char *id;
 	J_CHK( JsvalToString(cx, &J_FARG(1), &id) );
@@ -422,6 +445,59 @@ DEFINE_FUNCTION_FAST( SetVisible ) {
 }
 
 
+/**doc
+ * $THIS $INAME( sx, sy )
+  Applies scaling by _sx_, _sy_ to the current transformation.
+  The effect of the new transformation is to first scale the coordinates by _sx_ and _sy_,
+  then apply the original transformation to the coordinates.
+**/
+DEFINE_FUNCTION_FAST( Scale ) {
+	
+	J_S_ASSERT_ARG_MIN(2);
+	Private *pv = (Private*)JS_GetPrivate(cx, J_FOBJ);
+	J_S_ASSERT_RESOURCE(pv);
+	double sx, sy;
+	J_CHK( JsvalToDouble(cx, J_FARG(1), &sx) );
+	J_CHK( JsvalToDouble(cx, J_FARG(2), &sy) );
+	cairo_matrix_scale(&pv->transformation, sx, sy);
+	return JS_TRUE;
+}
+
+/**doc
+ * $THIS $INAME( radians )
+  Applies rotation by _radians_ to the current transformation.
+  The effect of the new transformation is to first rotate the coordinates by _radians_,
+  then apply the original transformation to the coordinates.
+**/
+DEFINE_FUNCTION_FAST( Rotate ) {
+	
+	J_S_ASSERT_ARG_MIN(1);
+	Private *pv = (Private*)JS_GetPrivate(cx, J_FOBJ);
+	J_S_ASSERT_RESOURCE(pv);
+	double angle;
+	J_CHK( JsvalToDouble(cx, J_FARG(1), &angle) );
+	cairo_matrix_rotate(&pv->transformation, angle);
+	return JS_TRUE;
+}
+
+/**doc
+ * $THIS $INAME( tx, ty )
+  Applies a translation by _tx_, _ty_ to the current transformation.
+  The effect of the new transformation is to first translate the coordinates by _tx_ and _ty_,
+  then apply the original transformation to the coordinates.
+**/
+DEFINE_FUNCTION_FAST( Translate ) {
+	
+	J_S_ASSERT_ARG_MIN(2);
+	Private *pv = (Private*)JS_GetPrivate(cx, J_FOBJ);
+	J_S_ASSERT_RESOURCE(pv);
+	double tx, ty;
+	J_CHK( JsvalToDouble(cx, J_FARG(1), &tx) );
+	J_CHK( JsvalToDouble(cx, J_FARG(2), &ty) );
+	cairo_matrix_translate(&pv->transformation, tx, ty);
+	return JS_TRUE;
+}
+
 
 /**doc
 === Properties ===
@@ -433,8 +509,10 @@ DEFINE_FUNCTION_FAST( SetVisible ) {
 **/
 DEFINE_PROPERTY(dpi) {
 
-	RsvgHandle *handle = (RsvgHandle*)JS_GetPrivate(cx, J_OBJ);
-	J_S_ASSERT_RESOURCE(handle);
+	Private *pv = (Private*)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE(pv);
+	RsvgHandle *handle = pv->handle;
+
 	if ( JSVAL_IS_VOID(*vp) ) {
 
 		rsvg_handle_set_dpi(handle, -1);
@@ -465,8 +543,10 @@ DEFINE_PROPERTY(dpi) {
 **/
 DEFINE_PROPERTY(width) {
 
-	RsvgHandle *handle = (RsvgHandle*)JS_GetPrivate(cx, J_OBJ);
-	J_S_ASSERT_RESOURCE(handle);
+	Private *pv = (Private*)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE(pv);
+	RsvgHandle *handle = pv->handle;
+
 	RsvgDimensionData dim;
 	rsvg_handle_get_dimensions(handle, &dim);
 	J_CHK( UIntToJsval(cx, dim.width, vp) );
@@ -479,8 +559,10 @@ DEFINE_PROPERTY(width) {
 **/
 DEFINE_PROPERTY(height) {
 
-	RsvgHandle *handle = (RsvgHandle*)JS_GetPrivate(cx, J_OBJ);
-	J_S_ASSERT_RESOURCE(handle);
+	Private *pv = (Private*)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE(pv);
+	RsvgHandle *handle = pv->handle;
+
 	RsvgDimensionData dim;
 	rsvg_handle_get_dimensions(handle, &dim);
 	J_CHK( UIntToJsval(cx, dim.height, vp) );
@@ -493,8 +575,10 @@ DEFINE_PROPERTY(height) {
 **/
 DEFINE_PROPERTY(title) {
 
-	RsvgHandle *handle = (RsvgHandle*)JS_GetPrivate(cx, J_OBJ);
-	J_S_ASSERT_RESOURCE(handle);
+	Private *pv = (Private*)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE(pv);
+	RsvgHandle *handle = pv->handle;
+
 	const char *title = rsvg_handle_get_title(handle);
 	if ( title != NULL )
 		J_CHK( StringToJsval(cx, title, vp) );
@@ -509,8 +593,10 @@ DEFINE_PROPERTY(title) {
 **/
 DEFINE_PROPERTY(metadata) {
 
-	RsvgHandle *handle = (RsvgHandle*)JS_GetPrivate(cx, J_OBJ);
-	J_S_ASSERT_RESOURCE(handle);
+	Private *pv = (Private*)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE(pv);
+	RsvgHandle *handle = pv->handle;
+
 	const char *metadata = rsvg_handle_get_metadata(handle);
 	if ( metadata != NULL )
 		J_CHK( StringToJsval(cx, metadata, vp) );
@@ -525,8 +611,10 @@ DEFINE_PROPERTY(metadata) {
 **/
 DEFINE_PROPERTY(description) {
 
-	RsvgHandle *handle = (RsvgHandle*)JS_GetPrivate(cx, J_OBJ);
-	J_S_ASSERT_RESOURCE(handle);
+	Private *pv = (Private*)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE(pv);
+	RsvgHandle *handle = pv->handle;
+
 	const char *description = rsvg_handle_get_desc(handle);
 	if ( description != NULL )
 		J_CHK( StringToJsval(cx, description, vp) );
@@ -582,6 +670,9 @@ CONFIGURE_CLASS
 		FUNCTION_FAST(RenderImage)
 		FUNCTION_FAST(SetVisible)
 //		FUNCTION_FAST(GetImage)
+		FUNCTION_FAST(Scale)
+		FUNCTION_FAST(Rotate)
+		FUNCTION_FAST(Translate)
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC

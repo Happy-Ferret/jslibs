@@ -50,7 +50,6 @@ var s =
 
 
 
-
 var s = <svg width="100%" height="100%" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
 <rect id="a" x="0" y="0" width="100" height="120" fill="#FF0000" />
 <rect id="b" x="100" y="0" width="100" height="120" fill="#00FF00" />
@@ -62,7 +61,6 @@ var s = <svg width="100%" height="100%" version="1.1" xmlns="http://www.w3.org/2
   <use xlink:href="#MyPath" fill="none" stroke="red"/>
   <text>123</text>
 </svg>
-
 
 
 var s = <svg width="100%" height="100%" version="1.1"
@@ -101,7 +99,11 @@ var s = <svg width="100%" height="100%" version="1.1" xmlns="http://www.w3.org/2
 </svg>
 
 
-var s = <svg><circle cx="50" cy="50" r="25" fill="red" opacity="50%"/></svg>;
+var s = <svg width="128" height="128">
+	<rect x="0" y="0" width="128" height="128" fill="red" />
+	<rect x="0" y="0" width="64" height="64" fill="green" />
+	<rect x="0" y="0" width="32" height="32" fill="blue" />
+</svg>;
 
 
 var svg = new SVG();
@@ -121,8 +123,12 @@ svg.SetVisible('#test', false);
 
 var svgimage;
 
+
+svg.Translate(64,0);
+svg.Rotate(Math.PI / 6);
+
 Time( function renderImage_1()
-svgimage = svg.RenderImage(100, 100, 3) // , [2,0,0,1,0,0]
+svgimage = svg.RenderImage(64, 64, 3, true)
 )
 
 
