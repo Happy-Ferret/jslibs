@@ -198,10 +198,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\sdl.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\static.cpp"
 				>
 			</File>
@@ -237,10 +233,6 @@
 			</File>
 			<File
 				RelativePath=".\error.h"
-				>
-			</File>
-			<File
-				RelativePath=".\sdl.h"
 				>
 			</File>
 			<File
