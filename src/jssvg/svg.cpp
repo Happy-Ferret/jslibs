@@ -214,6 +214,7 @@ DEFINE_PROPERTY( xmlData ) {
 
 /**doc
  * $ImageObject $INAME( [ imageWidth , imageHeight ] [ , channels ] [ , fit ] [ , elementId ] )
+  Draws the SVG to an image object.
   $H arguments
    $ARG integer imageWidth: override default SVG's  width.
    $ARG integer imageHeight: override default SVG's  width.

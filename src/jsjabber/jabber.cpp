@@ -219,6 +219,9 @@ struct Private {
 
 
 
+
+
+
 /**doc
 $CLASS_HEADER
 **/
@@ -237,6 +240,13 @@ DEFINE_FINALIZE() {
 }
 
 
+/**doc
+ * $INAME( jid, password )
+  Constructs a new unconnected jabber client.
+  $H arguments
+   $ARG string jid
+	$ARG string password
+**/
 DEFINE_CONSTRUCTOR() {
 
 	J_S_ASSERT_CONSTRUCTING();
@@ -258,6 +268,15 @@ DEFINE_CONSTRUCTOR() {
 }
 
 
+/**doc
+ * $VAL $INAME( serverName [ , port ] )
+  Constructs a new unconnected jabber client.
+  $H arguments
+   $ARG string serverName: the XMPP server to connect to.
+	$ARG string port: the port to connect to.
+  $H return value
+   A connected socket ID that can be used in a Poll() call. Or $UNDEF if no connection is established.
+**/
 DEFINE_FUNCTION( Connect ) {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
@@ -293,6 +312,10 @@ DEFINE_FUNCTION( Connect ) {
 }
 
 
+/**doc
+ * $VOID $INAME()
+  Disconnects from the server.
+**/
 DEFINE_FUNCTION( Disconnect ) {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
@@ -309,6 +332,10 @@ DEFINE_FUNCTION( Disconnect ) {
 }
 
 
+/**doc
+ * $VAL $INAME()
+  Receive data from the socket and to feed the parser and call the event functions.
+**/
 DEFINE_FUNCTION( Process ) {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
@@ -326,6 +353,14 @@ DEFINE_FUNCTION( Process ) {
 }
 
 
+
+/**doc
+ * $VOID $INAME( to, body )
+  Send a given message.
+  $H arguments
+   $ARG string to: the destination of the message.
+   $ARG string body: the body of the message.
+**/
 DEFINE_FUNCTION( SendMessage ) {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
@@ -361,7 +396,10 @@ DEFINE_FUNCTION( RosterItem ) {
 }
 */
 
-
+/**doc
+ * $VAL $INAME
+  The socket ID of the connection or $UNDEF if no connection is established. 
+**/
 DEFINE_PROPERTY( socket ) {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
@@ -383,6 +421,10 @@ DEFINE_PROPERTY( socket ) {
 }
 
 
+/**doc
+ * $STR $INAME
+  Sets/Gets the current status message.
+**/
 DEFINE_PROPERTY_GETTER( status ) {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
@@ -403,6 +445,10 @@ DEFINE_PROPERTY_SETTER( status ) {
 }
 
 
+/**doc
+ * $ENUM $INAME
+  Sets/Gets the current presence. either Jabber.PresenceUnknown, Jabber.PresenceAvailable, Jabber.PresenceChat, Jabber.PresenceAway, Jabber.PresenceDnd, Jabber.PresenceXa, Jabber.PresenceUnavailable,
+**/
 DEFINE_PROPERTY_GETTER( presence ) {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
@@ -443,6 +489,11 @@ DEFINE_PROPERTY( roster ) {
 }
 */
 
+
+/**doc
+ * $ENUM $INAME $READONLY
+  is the total number of bytes received.
+**/
 DEFINE_PROPERTY( connectionTotalIn ) {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
@@ -453,6 +504,11 @@ DEFINE_PROPERTY( connectionTotalIn ) {
 	return JS_TRUE;
 }
 
+
+/**doc
+ * $ENUM $INAME $READONLY
+  is the total number of bytes sent.
+**/
 DEFINE_PROPERTY( connectionTotalOut ) {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
@@ -463,6 +519,22 @@ DEFINE_PROPERTY( connectionTotalOut ) {
 	return JS_TRUE;
 }
 
+/**doc
+=== callback functions ===
+  These functions are called on the current Jabber object.
+  * $VOID onLog( logLevel, logArea, logMessage )
+   Called for log messages. _logLevel_ is either: Jabber.LogLevelDebug, Jabber.LogLevelWarning, Jabber.LogLevelError
+  * $BOOL onTLSConnect( infoObject )
+   This function is called when the connection was TLS/SSL secured. Return true if cert credentials are accepted, false otherwise. If false is returned the connection is terminated.
+   _infoObject_ has the following properties: chain, issuer, server, dateFrom, dateTo, protocol, cipher, mac, compression
+   by default, if the function is not defined, this accepts the certificate.
+  * $VOID onConnect()
+   Called on a successful connections. It will be called either after all authentication is finished if username/password were supplied, or after a connection has been established if no credentials were supplied.
+  * $VOID onMessage( from, body )
+   Called when an event has been raised by the remote contact.
+  * $VOID onRosterPresence( from, presence, message )
+   Called on every status change of an item in the roster.
+**/
 
 CONFIGURE_CLASS
 

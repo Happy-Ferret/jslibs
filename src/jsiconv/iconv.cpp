@@ -42,7 +42,15 @@ DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are
 	}
 }
 
-
+/**doc
+ * $INAME( toCode, fromCode [ , toUseWide, fromUseWide ] )
+  Constructs a new conversion object that transforms from _fromCode_ into _toCode_.
+  $H arguments
+   $ARG string toCode: destination encoding (see Iconv.list property)
+   $ARG string fromCode: source encoding (see Iconv.list property)
+   $ARG boolean toUseWide:
+   $ARG boolean fromUseWide:
+**/
 DEFINE_CONSTRUCTOR() {
 
 	J_S_ASSERT_CONSTRUCTING();
@@ -83,7 +91,10 @@ DEFINE_CONSTRUCTOR() {
 }
 
 
-
+/**doc
+ * $STR $INAME( [ textData ] )
+  Converts textData. If called without argument, this resets the conversion state to the initial state and returns $UNDEF.
+**/
 DEFINE_CALL() {
 		
 	JSObject *thisObj = JSVAL_TO_OBJECT(argv[-2]); // get 'this' object of the current object ...
@@ -250,6 +261,7 @@ int do_one( unsigned int namescount, const char * const * names, void* data ) {
 
 /**doc
  * $OBJ $INAME $READONLY
+  Lists locale independent encodings.
 **/
 DEFINE_PROPERTY( list ) {
 
@@ -265,7 +277,7 @@ DEFINE_PROPERTY( list ) {
 }
 
 
-CONFIGURE_CLASS // This section containt the declaration and the configuration of the class
+CONFIGURE_CLASS
 
 	HAS_PRIVATE
 

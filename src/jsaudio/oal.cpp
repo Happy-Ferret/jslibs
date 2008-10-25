@@ -29,8 +29,10 @@ BEGIN_CLASS( Oal )
 
 /**doc
  * $VOID $INAME( [ deviceName ] )
+  Open an audio device.
   $H arguments
-   $ARG string deviceName
+   $ARG string deviceName:  "Generic Hardware", "Generic Software", "DirectSound3D" (for legacy), "DirectSound", "MMSYSTEM"
+    If no device name is specified, we will attempt to use DS3D.
   $H OpenAL API
    alcOpenDevice, alcCreateContext, alcMakeContextCurrent
 **/
@@ -82,6 +84,7 @@ DEFINE_FUNCTION_FAST( Open ) {
 
 /**doc
  * $VOID $INAME()
+  Close the current audio device.
   $H OpenAL API
    alcGetCurrentContext, alcMakeContextCurrent, alcGetContextsDevice, alcDestroyContext, alcCloseDevice
 **/
@@ -108,7 +111,10 @@ DEFINE_FUNCTION_FAST( Close ) {
 	return JS_TRUE;
 }
 
-
+/**doc
+ * $BOOL $INAME $READONLY
+  is true if EFX extension is available.
+**/
 DEFINE_PROPERTY( hasEfx ) {
 
 	ALCcontext *pContext = alcGetCurrentContext();
@@ -118,6 +124,10 @@ DEFINE_PROPERTY( hasEfx ) {
 }
 
 
+/**doc
+ * $BOOL $INAME $READONLY
+  is the number of aux sends per source.
+**/
 DEFINE_PROPERTY( maxAuxiliarySends ) {
 
 	ALCcontext *pContext = alcGetCurrentContext();
@@ -129,10 +139,9 @@ DEFINE_PROPERTY( maxAuxiliarySends ) {
 }
 
 
-
-
 /**doc
  * $VOID $INAME( value )
+  Selects the OpenAL Doppler factor value. The default Doppler factor value is 1.0 .
   $H arguments
    $ARG Number value
   $H OpenAL API
@@ -152,6 +161,7 @@ DEFINE_FUNCTION_FAST( DopplerFactor ) {
 
 /**doc
  * $VOID $INAME( value )
+  Selects the OpenAL Doppler velocity value. The default Doppler velocity value is 343.3 .
   $H arguments
    $ARG Number value
   $H OpenAL API
@@ -171,6 +181,7 @@ DEFINE_FUNCTION_FAST( DopplerVelocity ) {
 
 /**doc
  * $VOID $INAME( value )
+  Selects the OpenAL Speed of Sound value.
   $H arguments
    $ARG Number value
   $H OpenAL API
@@ -386,7 +397,7 @@ DEFINE_FUNCTION_FAST( GetDouble ) {
  * $VOID $INAME( pname, params )
   $H arguments
    $ARG ALenum pname:
-   $ARG Array params: 
+   $ARG Array params:
   $H OpenAL API
    alListeneri, alListenerf, alListenerfv
 **/
@@ -483,7 +494,7 @@ DEFINE_FUNCTION_FAST( GenSource ) {
   $H arguments
    $ARG integer source:
    $ARG ALenum pname:
-   $ARG Array params: 
+   $ARG Array params:
   $H OpenAL API
    alSourcei, alSourcef, alSourcefv
 **/
@@ -645,7 +656,7 @@ DEFINE_FUNCTION_FAST( SourceQueueBuffers ) {
 	J_CHK( JsvalToUInt(cx, J_FARG(1), &sid ) );
 
 	if ( JSVAL_IS_INT(J_FARG(2)) ) {
-		
+
 		ALuint buffer;
 		J_CHK( JsvalToUInt(cx, J_FARG(2), &buffer) );
 		alSourceQueueBuffers( sid, 1, &buffer );
@@ -686,7 +697,7 @@ DEFINE_FUNCTION_FAST( SourceUnqueueBuffers ) {
 	J_CHK( JsvalToUInt(cx, J_FARG(1), &sid ) );
 
 	if ( JSVAL_IS_INT(J_FARG(2)) ) {
-		
+
 		ALuint buffer;
 		J_CHK( JsvalToUInt(cx, J_FARG(2), &buffer) );
 		alSourceUnqueueBuffers( sid, 1, &buffer );
@@ -985,7 +996,7 @@ DEFINE_FUNCTION_FAST( PlaySound ) {
 	size_t bufferLength;
 	jsval tmp = OBJECT_TO_JSVAL(blobObj);
 	JsvalToStringAndLength(cx, &tmp, &buffer, &bufferLength); // warning: GC on the returned buffer !
-	
+
 	ALint state;                // The state of the sound source
 	ALuint bufferID;            // The OpenAL sound buffer ID
 	ALuint sourceID;            // The OpenAL sound source
@@ -1005,19 +1016,19 @@ DEFINE_FUNCTION_FAST( PlaySound ) {
 
   // Set the source and listener to the same location
   alListener3i(AL_POSITION, 0,0,0 );
-    
+
   alSource3i(sourceID, AL_POSITION, 0,0,0 );
 
   // Upload sound data to buffer
   alBufferData(bufferID, format, buffer, bufferLength, rate);
 
-  
+
   // Attach sound buffer to source
   alSourcei(sourceID, AL_BUFFER, bufferID);
 
 
   // This is a busy wait loop but should be good enough for example purpose
-  
+
   {
   // get the remaining time to play
   ALint offset;
@@ -1039,7 +1050,7 @@ DEFINE_FUNCTION_FAST( PlaySound ) {
 	// Query the state of the souce
 	alGetSourcei(sourceID, AL_SOURCE_STATE, &state); // do { } while (state != AL_STOPPED);
   }
-		
+
   // Clean up sound buffer and source
   alDeleteBuffers(1, &bufferID);
   alDeleteSources(1, &sourceID);
@@ -1275,7 +1286,7 @@ CONFIGURE_CLASS
 
 		// OpenAL extensions
 		FUNCTION_FAST_ARGC( GenEffect, 0 )
-		
+
 
 	END_STATIC_FUNCTION_SPEC
 
@@ -1295,26 +1306,26 @@ $H example 1
  LoadModule('jsstd');
  LoadModule('jssound');
  LoadModule('jsaudio');
- 
+
  var decoder = new OggVorbisDecoder(new File('41_30secOgg-q0.ogg').Open(File.RDONLY));
  var sourceId = Oal.GenSource();
 
  var pcm;
  while ( pcm = decoder.Read(10000) ) {
- 	
+
  	var bufferId = Oal.Buffer(pcm);
  	Oal.SourceQueueBuffers(sourceId, bufferId);
  	if ( Oal.GetSourceInteger(sourceId, Oal.SOURCE_STATE) == Oal.INITIAL )
  		Oal.PlaySource(sourceId);
  };
- 
+
  var totalTime = decoder.frames/decoder.rate;
  var currentTimeOffset = Oal.GetSourceReal(sourceId, Oal.SEC_OFFSET);
  Sleep( 1000 * (totalTime - currentTimeOffset) );
  }}}
 **/
- 
- 
+
+
 /* ogg test files:
 	http://xiph.org/vorbis/listen.html
 */
