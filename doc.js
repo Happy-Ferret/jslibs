@@ -140,6 +140,8 @@ var api = {
 	$OBJ:',,Object,,',
 	$ARRAY:',,Array,,',
 	$BOOL:',,boolean,,',
+	$UNDEF:',,`undefined`,,',
+	$ENUM:',,`enum`,,',
 	$VOID:'',
 	$THIS:',,this,,',
 
