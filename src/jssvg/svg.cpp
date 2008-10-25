@@ -123,6 +123,12 @@ DEFINE_CONSTRUCTOR() {
   Adds XML data to the current SVG context.
   $H note
    calls to callback function 'onImage' may occur during this call.
+  $H example
+  {{{
+  svg.Write(<svg><circle cx="50" cy="50" r="25" fill="red"/></svg>);
+  // or
+  svg.Write('<svg><circle cx="50" cy="50" r="25" fill="red"/></svg>');
+  }}}
 **/
 DEFINE_FUNCTION_FAST( Write ) {
 
@@ -212,13 +218,14 @@ DEFINE_PROPERTY( xmlData ) {
    $ARG integer imageWidth: override default SVG's  width.
    $ARG integer imageHeight: override default SVG's  width.
    $ARG integer channels: 1 (Alpha only), 3 (RGB) or 4 (RGBA).
-   $ARG boolean fit: fit the SVG dimensions to imageWidth an imageHeight.
+   $ARG boolean fit: fit the SVG dimensions to [imageWidth, imageHeight].
    $ARG string elementId: draws a subset of a SVG starting from an element's id. For example, if you have a layer called "layer1" that you wish to render, pass "#layer1" as the id.
   $H example
   {{{
   var svg = new SVG();
-  svg.Write('<svg><circle cx="50" cy="50" r="25" fill="red"/></svg>');
-  svgimage = svg.RenderImage(100, 100, [2,0,0,1,0,0]);
+  svg.Write(<svg><circle cx="50" cy="50" r="25" fill="red"/></svg>);
+  svg.Rotate(Math.PI/4); // +45°
+  svgimage = svg.RenderImage(100, 100, true);
   new File('test.png').content = EncodePngImage( svgimage )
   }}}
 **/
@@ -651,7 +658,7 @@ DEFINE_PROPERTY(images) {
   $H example
    {{{
    var svg = new SVG();
-	svg.Write('<svg><image x="0" y="0" path="img.png"/></svg>');
+	svg.Write(<svg><image x="0" y="0" path="img.png"/></svg>);
    svg.onImage = function(href) {
     return DecodePngImage( new File('myImage.png').Open('r') );
    }
