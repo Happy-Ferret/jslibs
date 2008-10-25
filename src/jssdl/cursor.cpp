@@ -30,6 +30,15 @@ DEFINE_FINALIZE() {
 	}
 }
 
+
+/**doc
+ * $INAME( image )
+  Constructs a new B/W Cursor object. using a RGB or RGBA image.
+  Only the red component is used for B/W (<128: black, >= 128: white)
+  The Alpha component is used to set transparents pixels (alpha == 0) an inverted pixels (alpha == 255).
+  $H arguments
+   $ARG ImageObject image
+**/
 DEFINE_CONSTRUCTOR() {
 
 	J_S_ASSERT_CONSTRUCTING();
@@ -102,18 +111,11 @@ DEFINE_CONSTRUCTOR() {
 }
 
 
-CONFIGURE_CLASS // This section containt the declaration and the configuration of the class
+CONFIGURE_CLASS
 
 	HAS_PRIVATE
-//	HAS_RESERVED_SLOTS(1)
 
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE
-
-	BEGIN_STATIC_FUNCTION_SPEC
-	END_STATIC_FUNCTION_SPEC
-
-	BEGIN_PROPERTY_SPEC
-	END_PROPERTY_SPEC
 
 END_CLASS

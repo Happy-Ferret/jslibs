@@ -23,12 +23,16 @@
 ----
 == jssdl::SdlError class ==
  You cannot construct this class.
- Its aim is to throw as an exception on any SDL runtime error.
+ Its aim is to catch jssdl runtime error exception.
 **/
 
 BEGIN_CLASS( SdlError )
 
 
+/**doc
+ * $INAME $READONLY
+  Is the text of the error.
+**/
 DEFINE_PROPERTY( text ) {
 
 	JS_GetReservedSlot( cx, obj, 0, vp );

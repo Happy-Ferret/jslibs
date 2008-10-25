@@ -23,7 +23,22 @@ DECLARE_CLASS( Cursor )
 
 BEGIN_STATIC
 
+/**doc
+=== Static functions ===
+**/
 
+
+/**doc
+ * $ARRAY|$UNDEF $INAME( bitsPerPixel, flags )
+  Returns the available screen dimensions for the given format, sorted largest to smallest.
+  $H arguments
+   $ARG integer bitsPerPixel: bit depth, the number of bits per pixel (8, 16, 32)
+   $ARG bitmsak flags: a bitwise-ored combination of flags. see SetVideoMode() function.
+  $H return value
+   * an Array that contains the list of available screen dimensions for the given format and video flags, sorted largest to smallest.
+   * an empty Array if there are no dimensions available for a particular format.
+   * $UNDEF if any dimension is okay for the given format.
+**/
 DEFINE_FUNCTION_FAST( GetVideoModeList ) {
 
 	J_S_ASSERT_ARG_MIN(2);
@@ -78,7 +93,16 @@ DEFINE_FUNCTION_FAST( GetVideoModeList ) {
 }
 
 
-DEFINE_FUNCTION_FAST( HasVideoMode ) {
+/**doc
+ * $INT $INAME( width, height, bitsPerPixel, flags )
+  Check to see if a particular video mode is supported.
+  $H arguments
+   See SetVideoMode() function.
+  $H return value
+   If the requested mode is not supported under any bit depth or returns the bits-per-pixel of the closest available mode with the iven width and height.
+   If this bits-per-pixel is different from the one used when setting the video mode, SDL_SetVideoMode() will succeed, but will emulate the requested bits-per-pixel with a shadow surface.
+**/
+DEFINE_FUNCTION_FAST( VideoModeOK ) {
 
 	int width, height, bpp;
 	Uint32 flags;
@@ -107,11 +131,22 @@ DEFINE_FUNCTION_FAST( HasVideoMode ) {
 		flags = 0;
 
 	int status = SDL_VideoModeOK(width, height, bpp, (Uint32)flags);
-	J_CHK( BoolToJsval(cx, status != 0, J_FRVAL) );
+//	J_CHK( BoolToJsval(cx, status != 0, J_FRVAL) );
+	J_CHK( IntToJsval(cx, status, J_FRVAL) );
 	return JS_TRUE;
 }
 
 
+/**doc
+ * $VOID $INAME( width, height [ , bitsPerPixel [ , flags ] ] )
+  Set the requested video mode (allocating a shadow buffer if necessary).
+  $H arguments
+   $ARG integer width: with
+   $ARG integer height: height
+   $ARG integer bitsPerPixel: bit depth, the number of bits per pixel (8, 16, 32). If omited, use the current bpp value.
+   $ARG bitmsak flags: a bitwise-ored combination of the following flags. If omited, use the previous flags.
+    SWSURFACE, HWSURFACE, ASYNCBLIT, ANYFORMAT, HWPALETTE, DOUBLEBUF, FULLSCREEN, OPENGL, OPENGLBLIT, RESIZABLE, NOFRAME HWACCEL, SRCCOLORKEY, RLEACCELOK, RLEACCEL, SRCALPHA, PREALLOC
+**/
 DEFINE_FUNCTION_FAST( SetVideoMode ) {
 
 	int width, height, bpp;
@@ -148,10 +183,14 @@ DEFINE_FUNCTION_FAST( SetVideoMode ) {
 	SDL_Surface *surface = SDL_SetVideoMode(width, height, bpp, flags);
 	if ( surface == NULL )
 		return ThrowSdlError(cx);
+	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
 
-
+/**doc
+ * $INAME $READONLY
+  Is the current video surface width.
+**/
 DEFINE_PROPERTY( videoWidth ) {
 
 	const SDL_VideoInfo *videoInfo = SDL_GetVideoInfo();
@@ -159,6 +198,10 @@ DEFINE_PROPERTY( videoWidth ) {
 	return JS_TRUE;
 }
 
+/**doc
+ * $INAME $READONLY
+  Is the current video surface height.
+**/
 DEFINE_PROPERTY( videoHeight ) {
 
 	const SDL_VideoInfo *videoInfo = SDL_GetVideoInfo();
@@ -166,13 +209,21 @@ DEFINE_PROPERTY( videoHeight ) {
 	return JS_TRUE;
 }
 
+/**doc
+ * $TYPE ImageObject $INAME $WRITEONLY
+  Sets the window manager icon for the display window.
+**/
+DEFINE_PROPERTY( icon ) {
 
-DEFINE_FUNCTION_FAST( SetIcon ) {
+	jsval image = *vp;
 
-	J_S_ASSERT_ARG_MIN(1);
-	J_S_ASSERT_OBJECT( J_FARG(1) );
-	
-	jsval image = J_FARG(1);
+	if ( JSVAL_IS_VOID(image) ) {
+
+		SDL_WM_SetIcon(NULL, NULL);
+		return JS_TRUE;
+	}
+
+	J_S_ASSERT_OBJECT(image);
 
 	JSObject *imageObj = JSVAL_TO_OBJECT( image );
 	int sWidth, sHeight, sChannels;
@@ -207,13 +258,18 @@ DEFINE_FUNCTION_FAST( SetIcon ) {
 	if ( surface == NULL )
 		return ThrowSdlError(cx);
 
-	SDL_WM_SetIcon(surface, NULL);
+	SDL_WM_SetIcon(surface, NULL); // (TBD) manage mask with image alpha ?
 	SDL_FreeSurface(surface);
 	return JS_TRUE;
 }
 
 
-
+/**doc
+ * $BOOL $INAME()
+  Toggle fullscreen mode without changing the contents of the screen. 
+  $H return value
+   true if this function was able to toggle fullscreen mode (change from running in a window to fullscreen, or vice-versa). false if it is not implemented, or fails.
+**/
 DEFINE_FUNCTION_FAST( ToggleFullScreen ) {
 
 	SDL_Surface *surface = SDL_GetVideoSurface();
@@ -222,6 +278,11 @@ DEFINE_FUNCTION_FAST( ToggleFullScreen ) {
 	return JS_TRUE;	
 }
 
+
+/**doc
+ * $BOOL $INAME $READONLY
+  Is true if the current video surface is a full screen display
+**/
 DEFINE_PROPERTY( fullScreen ) {
 
 	bool fullScreen = ( (SDL_GetVideoSurface()->flags & SDL_FULLSCREEN) != 0 );
@@ -229,14 +290,25 @@ DEFINE_PROPERTY( fullScreen ) {
 	return JS_TRUE;	
 }
 
-
+/**doc
+ * $BOOL $INAME()
+  Iconify the window in window managed environments. A successful iconification will result in an SDL_APPACTIVE loss event.
+**/
 DEFINE_FUNCTION_FAST( Iconify ) {
 
 	SDL_WM_IconifyWindow();
-	return JS_TRUE;	
+	*J_FRVAL = JSVAL_VOID;
+	return JS_TRUE;
 }
 
-
+/**doc
+ * $VOID $INAME( red, green, blue )
+  Set the gamma correction for each of the color channels. The gamma values range (approximately) between 0.1 and 10.0 .
+  $H arguments
+   ARG integer red
+   ARG integer green
+   ARG integer blue
+**/
 DEFINE_FUNCTION_FAST( SetGamma ) {
 	
 	J_S_ASSERT_ARG_MIN(3);
@@ -246,17 +318,30 @@ DEFINE_FUNCTION_FAST( SetGamma ) {
 	J_CHK( JsvalToFloat(cx, J_FARG(3), &b) );
 	if ( SDL_SetGamma(r, g, b) != 0 )
 		return ThrowSdlError(cx);
+	*J_FRVAL = JSVAL_VOID;
 	return JS_FALSE;
 }
 
 
+/**doc
+ * $VOID $INAME()
+  Perform a GL buffer swap on the current GL context.
+**/
 DEFINE_FUNCTION_FAST( GlSwapBuffers ) {
 
 	SDL_GL_SwapBuffers();
+	// (TBD) check error	*SDL_GetError() != '\0' ???
+	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
 
-
+/**doc
+ * $VOID $INAME( attribute, value )
+  Set an attribute of the OpenGL subsystem before intialization.
+  $H arguments
+   $ARG enum attribute:
+   $ARG integer value:
+**/
 DEFINE_FUNCTION_FAST( GlSetAttribute ) {
 
 	int attr;
@@ -266,9 +351,19 @@ DEFINE_FUNCTION_FAST( GlSetAttribute ) {
 	J_CHK( JsvalToInt(cx, J_FARG(2), &value) );
 	if ( SDL_GL_SetAttribute((SDL_GLattr)attr, value) == -1 )
 		return ThrowSdlError(cx);
+	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
 
+/**doc
+ * $INT $INAME( attribute )
+  Get an attribute of the OpenGL subsystem from the windowing interface. This is of course different from getting the values from SDL's internal OpenGL subsystem, which only stores the values you request before initialization.
+  $H arguments
+   $ARG enum attribute:
+   $ARG integer value:
+  $H return value
+   the value of the requested attribute.
+**/
 DEFINE_FUNCTION_FAST( GlGetAttribute ) {
 
 	int attr;
@@ -284,8 +379,10 @@ DEFINE_FUNCTION_FAST( GlGetAttribute ) {
 
 
 
-
-
+/**doc
+ * $STR $INAME
+  Sets/Gets the title of the display window, if any.
+**/
 DEFINE_PROPERTY_SETTER( caption ) {
 
 	const char *title;
@@ -298,11 +395,20 @@ DEFINE_PROPERTY_GETTER( caption ) {
 
 	char *title;
 	SDL_WM_GetCaption(&title, NULL);
-	J_CHK( StringToJsval(cx, title, vp) );
+	if ( title == NULL ) // (TBD) check if possible
+		*vp = JSVAL_VOID;
+	else
+		J_CHK( StringToJsval(cx, title, vp) );
 	return JS_TRUE;
 }
 
 
+
+/**doc
+ * $BOOL $INAME
+  Sets/Gets the input grab state.
+  Grabbing means that the mouse is confined to the application window, and nearly all keyboard input is passed directly to the application, and not interpreted by a window manager, if any.
+**/
 DEFINE_PROPERTY_SETTER( grabInput ) {
 
 	bool grab;
@@ -318,6 +424,11 @@ DEFINE_PROPERTY_GETTER( grabInput ) {
 	return JS_TRUE;	
 }
 
+
+/**doc
+ * $BOOL $INAME
+  Sets/Gets whether or not the cursor is shown on the screen. The cursor start off displayed, but can be turned off.
+**/
 DEFINE_PROPERTY_SETTER( showCursor ) {
 
 	bool show;
@@ -334,6 +445,12 @@ DEFINE_PROPERTY_GETTER( showCursor ) {
 }
 
 
+/**doc
+ * $VOID $INAME( image )
+ Set the currently active cursor to the specified one. If the cursor is currently visible, the change will be immediately represented on the display.
+  $H arguments
+   $ARG ImageObject image:
+**/
 DEFINE_FUNCTION_FAST( SetCursor ) {
 
 	J_S_ASSERT_ARG_MIN(1);
@@ -343,21 +460,28 @@ DEFINE_FUNCTION_FAST( SetCursor ) {
 	SDL_Cursor *cursor = (SDL_Cursor *)JS_GetPrivate(cx, cursorObj);
 	J_S_ASSERT_RESOURCE( cursor );
 	SDL_SetCursor(cursor);
+	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;	
 }
 
 
+/**doc
+ * $STR $INAME $READONLY
+  Is the name of the video driver or undefined  if it has not been initialized.
+**/
 DEFINE_PROPERTY( videoDriverName ) {
 	
 	char name[1024];
-	SDL_VideoDriverName(name, sizeof(name));
-	J_CHK( StringToJsval(cx, name, vp) );
+	char *status = SDL_VideoDriverName(name, sizeof(name));
+	if ( status != NULL )
+		J_CHK( StringToJsval(cx, name, vp) );
+	else
+		*vp = JSVAL_VOID;
 	return JS_TRUE;
 }
 
 
-
-
+// see PollEvent
 JSBool FireListener( JSContext *cx, JSObject *listenerObj, SDL_Event *ev, jsval *rval ) {
 
 	jsval fVal;
@@ -458,6 +582,26 @@ JSBool FireListener( JSContext *cx, JSObject *listenerObj, SDL_Event *ev, jsval 
 }
 
 
+/**doc
+ * $VAL $INAME( listeners )
+  $H arguments
+   $ARG Object listeners: is an object that contains callback functions.
+  $H example
+   {{{
+   var done = false;
+   var listeners = {
+    onQuit: function() {
+     done = true;
+    },
+    onKeyDown: function( key, modifiers ) {
+     ...
+    }
+   }
+   while ( !done ) {
+    PollEvent(listeners);
+   }
+   }}}
+**/
 DEFINE_FUNCTION_FAST( PollEvent ) {
 
 	J_S_ASSERT_OBJECT( J_FARG(1) );
@@ -482,6 +626,14 @@ DEFINE_FUNCTION_FAST( PollEvent ) {
 }
 
 
+
+/**doc
+ * $VOID $INAME( x, y )
+  Set the position of the mouse cursor (generates a mouse motion event).
+  $H arguments
+   $ARG integer x
+   $ARG integer y
+**/
 DEFINE_FUNCTION_FAST( WarpMouse ) {
 
 	J_S_ASSERT_ARG_MIN(2);
@@ -489,10 +641,16 @@ DEFINE_FUNCTION_FAST( WarpMouse ) {
 	J_CHK( JsvalToUInt(cx, J_FARG(1), &x) );
 	J_CHK( JsvalToUInt(cx, J_FARG(1), &y) );
 	SDL_WarpMouse(x, y);
+	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
 
 
+
+/**doc
+ * $INT $INAME $READONLY
+  is the current mouse cursor X position.
+**/
 DEFINE_PROPERTY( mouseX ) {
 
 	int x;
@@ -501,6 +659,10 @@ DEFINE_PROPERTY( mouseX ) {
 	return JS_TRUE;
 }
 
+/**doc
+ * $INT $INAME $READONLY
+  is the current mouse cursor Y position.
+**/
 DEFINE_PROPERTY( mouseY ) {
 
 	int y;
@@ -509,18 +671,62 @@ DEFINE_PROPERTY( mouseY ) {
 	return JS_TRUE;
 }
 
+
+/**doc
+ * $INT $INAME $READONLY
+  Is the current state of the mouse. The current button state is returned as a button bitmask.
+   $CONST BUTTON_LMASK
+   $CONST BUTTON_MMASK
+   $CONST BUTTON_RMASK
+   $CONST BUTTON_UPMASK
+   $CONST BUTTON_DOWNMASK
+   $CONST BUTTON_X1MASK
+   $CONST BUTTON_X2MASK
+  $H example 1
+   {{{
+   var leftButtonState = ( ( $INAME & BUTTON_LMASK ) != 0 );
+   }}}
+  $H example 2
+   {{{
+   var hasButtonDown = ( ( $INAME & ( BUTTON_LMASK | BUTTON_MMASK | BUTTON_RMASK ) ) != 0 );
+   }}}
+**/
 DEFINE_PROPERTY( buttonState ) {
 
 	*vp = INT_TO_JSVAL( SDL_GetMouseState(NULL, NULL) ); // query only button state
 	return JS_TRUE;
 }
 
+
+/**doc
+ * $INT $INAME $READONLY
+  Is the current key modifier state bitmask.
+   $CONST KMOD_NONE	
+   $CONST KMOD_LSHIFT	
+   $CONST KMOD_RSHIFT	
+   $CONST KMOD_LCTRL	
+   $CONST KMOD_RCTRL	
+   $CONST KMOD_LALT	
+   $CONST KMOD_RALT	
+   $CONST KMOD_LMETA	
+   $CONST KMOD_RMETA	
+   $CONST KMOD_NUM		
+   $CONST KMOD_CAPS	
+   $CONST KMOD_MODE	
+**/
 DEFINE_PROPERTY( modifierState ) {
 
 	*vp = INT_TO_JSVAL( SDL_GetModState() );
 	return JS_TRUE;
 }
 
+
+/**doc
+ * $BOOL $INAME( keysym )
+  Get a snapshot of the current state of the keyboard.
+  $H arguments
+   $ARG enum keysym: the key to be tested. see key constants below.
+**/
 DEFINE_FUNCTION_FAST( GetKeyState ) {
 	
 	J_S_ASSERT_ARG_MIN(1);
@@ -531,6 +737,12 @@ DEFINE_FUNCTION_FAST( GetKeyState ) {
 	return JS_TRUE;
 }
 
+/**doc
+ * $STR $INAME( keysym )
+  Get the name of an keysym.
+  $H arguments
+   $ARG enum keysym
+**/
 DEFINE_FUNCTION_FAST( GetKeyName ) {
 	
 	J_S_ASSERT_ARG_MIN(1);
@@ -542,6 +754,12 @@ DEFINE_FUNCTION_FAST( GetKeyName ) {
 	return JS_TRUE;
 }
 
+
+
+/**doc
+ * $INT $INAME
+  Sets/Gets keyboard repeat delay. This is the initial delay in ms between the time when a key is pressed, and keyboard repeat begins. If set to 0, keyboard repeat is disabled.
+**/
 DEFINE_PROPERTY_SETTER( keyRepeatDelay ) {
 	
 	int delay, interval;
@@ -553,6 +771,7 @@ DEFINE_PROPERTY_SETTER( keyRepeatDelay ) {
 	return JS_TRUE;
 }
 
+
 DEFINE_PROPERTY_GETTER( keyRepeatDelay ) {
 
 	int delay, interval;
@@ -562,6 +781,10 @@ DEFINE_PROPERTY_GETTER( keyRepeatDelay ) {
 }
 
 
+/**doc
+ * $INT $INAME
+  Sets/Gets keyboard repeat interval. This is the time in ms between keyboard repeat events.
+**/
 DEFINE_PROPERTY_SETTER( keyRepeatInterval ) {
 	
 	int delay, interval;
@@ -582,20 +805,27 @@ DEFINE_PROPERTY_GETTER( keyRepeatInterval ) {
 }
 
 
+
+/**doc
+ * $INT $INAME $READONLY
+  Is the current state of the application. If true, the user is able to see your application, otherwise it has been iconified or disabled.
+**/
 DEFINE_PROPERTY( appStateActive ) {
 
-	J_CHK( BoolToJsval(cx, SDL_GetAppState() & SDL_APPACTIVE != 0, vp) ); 
+	J_CHK( BoolToJsval(cx, (SDL_GetAppState() & SDL_APPACTIVE) != 0, vp) ); 
 	return JS_TRUE;
 }
 
-
+/**doc
+ $H keysym enum
+  K_UNKNOWN, K_FIRST, K_BACKSPACE, K_TAB, K_CLEAR, K_RETURN, K_PAUSE, K_ESCAPE, K_SPACE, K_EXCLAIM, K_QUOTEDBL, K_HASH, K_DOLLAR, K_AMPERSAND, K_QUOTE, K_LEFTPAREN, K_RIGHTPAREN, K_ASTERISK, K_PLUS, K_COMMA, K_MINUS, K_PERIOD, K_SLASH, K_0, K_1, K_2, K_3, K_4, K_5, K_6, K_7, K_8, K_9, K_COLON, K_SEMICOLON, K_LESS, K_EQUALS, K_GREATER, K_QUESTION, K_AT, K_LEFTBRACKET, K_BACKSLASH, K_RIGHTBRACKET, K_CARET, K_UNDERSCORE, K_BACKQUOTE, K_a, K_b, K_c, K_d, K_e, K_f, K_g, K_h, K_i, K_j, K_k, K_l, K_m, K_n, K_o, K_p, K_q, K_r, K_s, K_t, K_u, K_v, K_w, K_x, K_y, K_z, K_DELETE, K_KP0, K_KP1, K_KP2, K_KP3, K_KP4, K_KP5, K_KP6, K_KP7, K_KP8, K_KP9, K_KP_PERIOD, K_KP_DIVIDE, K_KP_MULTIPLY, K_KP_MINUS, K_KP_PLUS, K_KP_ENTER, K_KP_EQUALS, K_UP, K_DOWN, K_RIGHT, K_LEFT, K_INSERT, K_HOME, K_END, K_PAGEUP, K_PAGEDOWN, K_F1, K_F2, K_F3, K_F4, K_F5, K_F6, K_F7, K_F8, K_F9, K_F10, K_F11, K_F12, K_F13, K_F14, K_F15, K_NUMLOCK, K_CAPSLOCK, K_SCROLLOCK, K_RSHIFT, K_LSHIFT, K_RCTRL, K_LCTRL, K_RALT, K_LALT, K_RMETA, K_LMETA, K_LSUPER, K_RSUPER, K_MODE, K_COMPOSE, K_HELP, K_PRINT, K_SYSREQ, K_BREAK, K_MENU, K_POWER, K_EURO, K_UNDO
+**/
 
 CONFIGURE_STATIC
 
 	BEGIN_STATIC_FUNCTION_SPEC
-		FUNCTION_FAST( SetIcon )
 		FUNCTION_FAST( GetVideoModeList )
-		FUNCTION_FAST( HasVideoMode )
+		FUNCTION_FAST( VideoModeOK )
 		FUNCTION_FAST( SetVideoMode )
 		FUNCTION_FAST( ToggleFullScreen )
 		FUNCTION_FAST( Iconify )
@@ -611,6 +841,7 @@ CONFIGURE_STATIC
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC
+		PROPERTY_WRITE( icon )
 		PROPERTY( caption )
 		PROPERTY( grabInput )
 		PROPERTY( showCursor )
@@ -666,151 +897,171 @@ CONFIGURE_STATIC
 	END_CONST_DOUBLE_SPEC
 
 	BEGIN_CONST_INTEGER_SPEC
-		CONST_INTEGER( K_UNKNOWN, SDLK_UNKNOWN)
-		CONST_INTEGER( K_FIRST, SDLK_FIRST)
-		CONST_INTEGER( K_BACKSPACE, SDLK_BACKSPACE)
-		CONST_INTEGER( K_TAB, SDLK_TAB)
-		CONST_INTEGER( K_CLEAR, SDLK_CLEAR)
-		CONST_INTEGER( K_RETURN, SDLK_RETURN)
-		CONST_INTEGER( K_PAUSE, SDLK_PAUSE)
-		CONST_INTEGER( K_ESCAPE, SDLK_ESCAPE)
-		CONST_INTEGER( K_SPACE, SDLK_SPACE)
-		CONST_INTEGER( K_EXCLAIM, SDLK_EXCLAIM)
-		CONST_INTEGER( K_QUOTEDBL, SDLK_QUOTEDBL)
-		CONST_INTEGER( K_HASH, SDLK_HASH)
-		CONST_INTEGER( K_DOLLAR, SDLK_DOLLAR)
-		CONST_INTEGER( K_AMPERSAND, SDLK_AMPERSAND)
-		CONST_INTEGER( K_QUOTE, SDLK_QUOTE)
-		CONST_INTEGER( K_LEFTPAREN, SDLK_LEFTPAREN)
-		CONST_INTEGER( K_RIGHTPAREN, SDLK_RIGHTPAREN)
-		CONST_INTEGER( K_ASTERISK, SDLK_ASTERISK)
-		CONST_INTEGER( K_PLUS, SDLK_PLUS)
-		CONST_INTEGER( K_COMMA, SDLK_COMMA)
-		CONST_INTEGER( K_MINUS, SDLK_MINUS)
-		CONST_INTEGER( K_PERIOD, SDLK_PERIOD)
-		CONST_INTEGER( K_SLASH, SDLK_SLASH)
-		CONST_INTEGER( K_0, SDLK_0)
-		CONST_INTEGER( K_1, SDLK_1)
-		CONST_INTEGER( K_2, SDLK_2)
-		CONST_INTEGER( K_3, SDLK_3)
-		CONST_INTEGER( K_4, SDLK_4)
-		CONST_INTEGER( K_5, SDLK_5)
-		CONST_INTEGER( K_6, SDLK_6)
-		CONST_INTEGER( K_7, SDLK_7)
-		CONST_INTEGER( K_8, SDLK_8)
-		CONST_INTEGER( K_9, SDLK_9)
-		CONST_INTEGER( K_COLON, SDLK_COLON)
-		CONST_INTEGER( K_SEMICOLON, SDLK_SEMICOLON)
-		CONST_INTEGER( K_LESS, SDLK_LESS)
-		CONST_INTEGER( K_EQUALS, SDLK_EQUALS)
-		CONST_INTEGER( K_GREATER, SDLK_GREATER)
-		CONST_INTEGER( K_QUESTION, SDLK_QUESTION)
-		CONST_INTEGER( K_AT, SDLK_AT)
-		CONST_INTEGER( K_LEFTBRACKET, SDLK_LEFTBRACKET)
-		CONST_INTEGER( K_BACKSLASH, SDLK_BACKSLASH)
-		CONST_INTEGER( K_RIGHTBRACKET, SDLK_RIGHTBRACKET)
-		CONST_INTEGER( K_CARET, SDLK_CARET)
-		CONST_INTEGER( K_UNDERSCORE, SDLK_UNDERSCORE)
-		CONST_INTEGER( K_BACKQUOTE, SDLK_BACKQUOTE)
-		CONST_INTEGER( K_a, SDLK_a)
-		CONST_INTEGER( K_b, SDLK_b)
-		CONST_INTEGER( K_c, SDLK_c)
-		CONST_INTEGER( K_d, SDLK_d)
-		CONST_INTEGER( K_e, SDLK_e)
-		CONST_INTEGER( K_f, SDLK_f)
-		CONST_INTEGER( K_g, SDLK_g)
-		CONST_INTEGER( K_h, SDLK_h)
-		CONST_INTEGER( K_i, SDLK_i)
-		CONST_INTEGER( K_j, SDLK_j)
-		CONST_INTEGER( K_k, SDLK_k)
-		CONST_INTEGER( K_l, SDLK_l)
-		CONST_INTEGER( K_m, SDLK_m)
-		CONST_INTEGER( K_n, SDLK_n)
-		CONST_INTEGER( K_o, SDLK_o)
-		CONST_INTEGER( K_p, SDLK_p)
-		CONST_INTEGER( K_q, SDLK_q)
-		CONST_INTEGER( K_r, SDLK_r)
-		CONST_INTEGER( K_s, SDLK_s)
-		CONST_INTEGER( K_t, SDLK_t)
-		CONST_INTEGER( K_u, SDLK_u)
-		CONST_INTEGER( K_v, SDLK_v)
-		CONST_INTEGER( K_w, SDLK_w)
-		CONST_INTEGER( K_x, SDLK_x)
-		CONST_INTEGER( K_y, SDLK_y)
-		CONST_INTEGER( K_z, SDLK_z)
-		CONST_INTEGER( K_DELETE, SDLK_DELETE)
-		CONST_INTEGER( K_KP0, SDLK_KP0)
-		CONST_INTEGER( K_KP1, SDLK_KP1)
-		CONST_INTEGER( K_KP2, SDLK_KP2)
-		CONST_INTEGER( K_KP3, SDLK_KP3)
-		CONST_INTEGER( K_KP4, SDLK_KP4)
-		CONST_INTEGER( K_KP5, SDLK_KP5)
-		CONST_INTEGER( K_KP6, SDLK_KP6)
-		CONST_INTEGER( K_KP7, SDLK_KP7)
-		CONST_INTEGER( K_KP8, SDLK_KP8)
-		CONST_INTEGER( K_KP9, SDLK_KP9)
-		CONST_INTEGER( K_KP_PERIOD, SDLK_KP_PERIOD)
-		CONST_INTEGER( K_KP_DIVIDE, SDLK_KP_DIVIDE)
-		CONST_INTEGER( K_KP_MULTIPLY, SDLK_KP_MULTIPLY)
-		CONST_INTEGER( K_KP_MINUS, SDLK_KP_MINUS)
-		CONST_INTEGER( K_KP_PLUS, SDLK_KP_PLUS)
-		CONST_INTEGER( K_KP_ENTER, SDLK_KP_ENTER)
-		CONST_INTEGER( K_KP_EQUALS, SDLK_KP_EQUALS)
-		CONST_INTEGER( K_UP, SDLK_UP)
-		CONST_INTEGER( K_DOWN, SDLK_DOWN)
-		CONST_INTEGER( K_RIGHT, SDLK_RIGHT)
-		CONST_INTEGER( K_LEFT, SDLK_LEFT)
-		CONST_INTEGER( K_INSERT, SDLK_INSERT)
-		CONST_INTEGER( K_HOME, SDLK_HOME)
-		CONST_INTEGER( K_END, SDLK_END)
-		CONST_INTEGER( K_PAGEUP, SDLK_PAGEUP)
-		CONST_INTEGER( K_PAGEDOWN, SDLK_PAGEDOWN)
-		CONST_INTEGER( K_F1, SDLK_F1)
-		CONST_INTEGER( K_F2, SDLK_F2)
-		CONST_INTEGER( K_F3, SDLK_F3)
-		CONST_INTEGER( K_F4, SDLK_F4)
-		CONST_INTEGER( K_F5, SDLK_F5)
-		CONST_INTEGER( K_F6, SDLK_F6)
-		CONST_INTEGER( K_F7, SDLK_F7)
-		CONST_INTEGER( K_F8, SDLK_F8)
-		CONST_INTEGER( K_F9, SDLK_F9)
-		CONST_INTEGER( K_F10, SDLK_F10)
-		CONST_INTEGER( K_F11, SDLK_F11)
-		CONST_INTEGER( K_F12, SDLK_F12)
-		CONST_INTEGER( K_F13, SDLK_F13)
-		CONST_INTEGER( K_F14, SDLK_F14)
-		CONST_INTEGER( K_F15, SDLK_F15)
-		CONST_INTEGER( K_NUMLOCK, SDLK_NUMLOCK)
-		CONST_INTEGER( K_CAPSLOCK, SDLK_CAPSLOCK)
-		CONST_INTEGER( K_SCROLLOCK, SDLK_SCROLLOCK)
-		CONST_INTEGER( K_RSHIFT, SDLK_RSHIFT)
-		CONST_INTEGER( K_LSHIFT, SDLK_LSHIFT)
-		CONST_INTEGER( K_RCTRL, SDLK_RCTRL)
-		CONST_INTEGER( K_LCTRL, SDLK_LCTRL)
-		CONST_INTEGER( K_RALT, SDLK_RALT)
-		CONST_INTEGER( K_LALT, SDLK_LALT)
-		CONST_INTEGER( K_RMETA, SDLK_RMETA)
-		CONST_INTEGER( K_LMETA, SDLK_LMETA)
-		CONST_INTEGER( K_LSUPER, SDLK_LSUPER)
-		CONST_INTEGER( K_RSUPER, SDLK_RSUPER)
-		CONST_INTEGER( K_MODE, SDLK_MODE)
-		CONST_INTEGER( K_COMPOSE, SDLK_COMPOSE)
-		CONST_INTEGER( K_HELP, SDLK_HELP)
-		CONST_INTEGER( K_PRINT, SDLK_PRINT)
-		CONST_INTEGER( K_SYSREQ, SDLK_SYSREQ)
-		CONST_INTEGER( K_BREAK, SDLK_BREAK)
-		CONST_INTEGER( K_MENU, SDLK_MENU)
-		CONST_INTEGER( K_POWER, SDLK_POWER)
-		CONST_INTEGER( K_EURO, SDLK_EURO)
-		CONST_INTEGER( K_UNDO, SDLK_UNDO)
+		CONST_INTEGER( K_UNKNOWN			, SDLK_UNKNOWN)
+		CONST_INTEGER( K_FIRST				, SDLK_FIRST)
+		CONST_INTEGER( K_BACKSPACE			, SDLK_BACKSPACE)
+		CONST_INTEGER( K_TAB					, SDLK_TAB)
+		CONST_INTEGER( K_CLEAR				, SDLK_CLEAR)
+		CONST_INTEGER( K_RETURN				, SDLK_RETURN)
+		CONST_INTEGER( K_PAUSE				, SDLK_PAUSE)
+		CONST_INTEGER( K_ESCAPE				, SDLK_ESCAPE)
+		CONST_INTEGER( K_SPACE				, SDLK_SPACE)
+		CONST_INTEGER( K_EXCLAIM			, SDLK_EXCLAIM)
+		CONST_INTEGER( K_QUOTEDBL			, SDLK_QUOTEDBL)
+		CONST_INTEGER( K_HASH				, SDLK_HASH)
+		CONST_INTEGER( K_DOLLAR				, SDLK_DOLLAR)
+		CONST_INTEGER( K_AMPERSAND			, SDLK_AMPERSAND)
+		CONST_INTEGER( K_QUOTE				, SDLK_QUOTE)
+		CONST_INTEGER( K_LEFTPAREN			, SDLK_LEFTPAREN)
+		CONST_INTEGER( K_RIGHTPAREN		, SDLK_RIGHTPAREN)
+		CONST_INTEGER( K_ASTERISK			, SDLK_ASTERISK)
+		CONST_INTEGER( K_PLUS				, SDLK_PLUS)
+		CONST_INTEGER( K_COMMA				, SDLK_COMMA)
+		CONST_INTEGER( K_MINUS				, SDLK_MINUS)
+		CONST_INTEGER( K_PERIOD				, SDLK_PERIOD)
+		CONST_INTEGER( K_SLASH				, SDLK_SLASH)
+		CONST_INTEGER( K_0					, SDLK_0)
+		CONST_INTEGER( K_1					, SDLK_1)
+		CONST_INTEGER( K_2					, SDLK_2)
+		CONST_INTEGER( K_3					, SDLK_3)
+		CONST_INTEGER( K_4					, SDLK_4)
+		CONST_INTEGER( K_5					, SDLK_5)
+		CONST_INTEGER( K_6					, SDLK_6)
+		CONST_INTEGER( K_7					, SDLK_7)
+		CONST_INTEGER( K_8					, SDLK_8)
+		CONST_INTEGER( K_9					, SDLK_9)
+		CONST_INTEGER( K_COLON				, SDLK_COLON)
+		CONST_INTEGER( K_SEMICOLON			, SDLK_SEMICOLON)
+		CONST_INTEGER( K_LESS				, SDLK_LESS)
+		CONST_INTEGER( K_EQUALS				, SDLK_EQUALS)
+		CONST_INTEGER( K_GREATER			, SDLK_GREATER)
+		CONST_INTEGER( K_QUESTION			, SDLK_QUESTION)
+		CONST_INTEGER( K_AT					, SDLK_AT)
+		CONST_INTEGER( K_LEFTBRACKET		, SDLK_LEFTBRACKET)
+		CONST_INTEGER( K_BACKSLASH			, SDLK_BACKSLASH)
+		CONST_INTEGER( K_RIGHTBRACKET		, SDLK_RIGHTBRACKET)
+		CONST_INTEGER( K_CARET				, SDLK_CARET)
+		CONST_INTEGER( K_UNDERSCORE		, SDLK_UNDERSCORE)
+		CONST_INTEGER( K_BACKQUOTE			, SDLK_BACKQUOTE)
+		CONST_INTEGER( K_a					, SDLK_a)
+		CONST_INTEGER( K_b					, SDLK_b)
+		CONST_INTEGER( K_c					, SDLK_c)
+		CONST_INTEGER( K_d					, SDLK_d)
+		CONST_INTEGER( K_e					, SDLK_e)
+		CONST_INTEGER( K_f					, SDLK_f)
+		CONST_INTEGER( K_g					, SDLK_g)
+		CONST_INTEGER( K_h					, SDLK_h)
+		CONST_INTEGER( K_i					, SDLK_i)
+		CONST_INTEGER( K_j					, SDLK_j)
+		CONST_INTEGER( K_k					, SDLK_k)
+		CONST_INTEGER( K_l					, SDLK_l)
+		CONST_INTEGER( K_m					, SDLK_m)
+		CONST_INTEGER( K_n					, SDLK_n)
+		CONST_INTEGER( K_o					, SDLK_o)
+		CONST_INTEGER( K_p					, SDLK_p)
+		CONST_INTEGER( K_q					, SDLK_q)
+		CONST_INTEGER( K_r					, SDLK_r)
+		CONST_INTEGER( K_s					, SDLK_s)
+		CONST_INTEGER( K_t					, SDLK_t)
+		CONST_INTEGER( K_u					, SDLK_u)
+		CONST_INTEGER( K_v					, SDLK_v)
+		CONST_INTEGER( K_w					, SDLK_w)
+		CONST_INTEGER( K_x					, SDLK_x)
+		CONST_INTEGER( K_y					, SDLK_y)
+		CONST_INTEGER( K_z					, SDLK_z)
+		CONST_INTEGER( K_DELETE				, SDLK_DELETE)
+		CONST_INTEGER( K_KP0					, SDLK_KP0)
+		CONST_INTEGER( K_KP1					, SDLK_KP1)
+		CONST_INTEGER( K_KP2					, SDLK_KP2)
+		CONST_INTEGER( K_KP3					, SDLK_KP3)
+		CONST_INTEGER( K_KP4					, SDLK_KP4)
+		CONST_INTEGER( K_KP5					, SDLK_KP5)
+		CONST_INTEGER( K_KP6					, SDLK_KP6)
+		CONST_INTEGER( K_KP7					, SDLK_KP7)
+		CONST_INTEGER( K_KP8					, SDLK_KP8)
+		CONST_INTEGER( K_KP9					, SDLK_KP9)
+		CONST_INTEGER( K_KP_PERIOD			, SDLK_KP_PERIOD)
+		CONST_INTEGER( K_KP_DIVIDE			, SDLK_KP_DIVIDE)
+		CONST_INTEGER( K_KP_MULTIPLY		, SDLK_KP_MULTIPLY)
+		CONST_INTEGER( K_KP_MINUS			, SDLK_KP_MINUS)
+		CONST_INTEGER( K_KP_PLUS			, SDLK_KP_PLUS)
+		CONST_INTEGER( K_KP_ENTER			, SDLK_KP_ENTER)
+		CONST_INTEGER( K_KP_EQUALS			, SDLK_KP_EQUALS)
+		CONST_INTEGER( K_UP					, SDLK_UP)
+		CONST_INTEGER( K_DOWN				, SDLK_DOWN)
+		CONST_INTEGER( K_RIGHT				, SDLK_RIGHT)
+		CONST_INTEGER( K_LEFT				, SDLK_LEFT)
+		CONST_INTEGER( K_INSERT				, SDLK_INSERT)
+		CONST_INTEGER( K_HOME				, SDLK_HOME)
+		CONST_INTEGER( K_END					, SDLK_END)
+		CONST_INTEGER( K_PAGEUP				, SDLK_PAGEUP)
+		CONST_INTEGER( K_PAGEDOWN			, SDLK_PAGEDOWN)
+		CONST_INTEGER( K_F1					, SDLK_F1)
+		CONST_INTEGER( K_F2					, SDLK_F2)
+		CONST_INTEGER( K_F3					, SDLK_F3)
+		CONST_INTEGER( K_F4					, SDLK_F4)
+		CONST_INTEGER( K_F5					, SDLK_F5)
+		CONST_INTEGER( K_F6					, SDLK_F6)
+		CONST_INTEGER( K_F7					, SDLK_F7)
+		CONST_INTEGER( K_F8					, SDLK_F8)
+		CONST_INTEGER( K_F9					, SDLK_F9)
+		CONST_INTEGER( K_F10					, SDLK_F10)
+		CONST_INTEGER( K_F11					, SDLK_F11)
+		CONST_INTEGER( K_F12					, SDLK_F12)
+		CONST_INTEGER( K_F13					, SDLK_F13)
+		CONST_INTEGER( K_F14					, SDLK_F14)
+		CONST_INTEGER( K_F15					, SDLK_F15)
+		CONST_INTEGER( K_NUMLOCK			, SDLK_NUMLOCK)
+		CONST_INTEGER( K_CAPSLOCK			, SDLK_CAPSLOCK)
+		CONST_INTEGER( K_SCROLLOCK			, SDLK_SCROLLOCK)
+		CONST_INTEGER( K_RSHIFT				, SDLK_RSHIFT)
+		CONST_INTEGER( K_LSHIFT				, SDLK_LSHIFT)
+		CONST_INTEGER( K_RCTRL				, SDLK_RCTRL)
+		CONST_INTEGER( K_LCTRL				, SDLK_LCTRL)
+		CONST_INTEGER( K_RALT				, SDLK_RALT)
+		CONST_INTEGER( K_LALT				, SDLK_LALT)
+		CONST_INTEGER( K_RMETA				, SDLK_RMETA)
+		CONST_INTEGER( K_LMETA				, SDLK_LMETA)
+		CONST_INTEGER( K_LSUPER				, SDLK_LSUPER)
+		CONST_INTEGER( K_RSUPER				, SDLK_RSUPER)
+		CONST_INTEGER( K_MODE				, SDLK_MODE)
+		CONST_INTEGER( K_COMPOSE			, SDLK_COMPOSE)
+		CONST_INTEGER( K_HELP				, SDLK_HELP)
+		CONST_INTEGER( K_PRINT				, SDLK_PRINT)
+		CONST_INTEGER( K_SYSREQ				, SDLK_SYSREQ)
+		CONST_INTEGER( K_BREAK				, SDLK_BREAK)
+		CONST_INTEGER( K_MENU				, SDLK_MENU)
+		CONST_INTEGER( K_POWER				, SDLK_POWER)
+		CONST_INTEGER( K_EURO				, SDLK_EURO)
+		CONST_INTEGER( K_UNDO				, SDLK_UNDO)
+
+		CONST_INTEGER( BUTTON_LMASK		,SDL_BUTTON_LMASK )
+		CONST_INTEGER( BUTTON_MMASK		,SDL_BUTTON_MMASK )
+		CONST_INTEGER( BUTTON_RMASK		,SDL_BUTTON_RMASK )
+		CONST_INTEGER( BUTTON_UPMASK		,SDL_BUTTON(SDL_BUTTON_WHEELUP) )
+		CONST_INTEGER( BUTTON_DOWNMASK	,SDL_BUTTON(SDL_BUTTON_WHEELDOWN) )
+		CONST_INTEGER( BUTTON_X1MASK		,SDL_BUTTON_X1MASK )
+		CONST_INTEGER( BUTTON_X2MASK		,SDL_BUTTON_X2MASK )
+
+		CONST_INTEGER( KMOD_NONE		,KMOD_NONE		)
+		CONST_INTEGER( KMOD_LSHIFT		,KMOD_LSHIFT	)
+		CONST_INTEGER( KMOD_RSHIFT		,KMOD_RSHIFT	)
+		CONST_INTEGER( KMOD_LCTRL		,KMOD_LCTRL		)
+		CONST_INTEGER( KMOD_RCTRL		,KMOD_RCTRL		)
+		CONST_INTEGER( KMOD_LALT		,KMOD_LALT		)
+		CONST_INTEGER( KMOD_RALT		,KMOD_RALT		)
+		CONST_INTEGER( KMOD_LMETA		,KMOD_LMETA		)
+		CONST_INTEGER( KMOD_RMETA		,KMOD_RMETA		)
+		CONST_INTEGER( KMOD_NUM			,KMOD_NUM		)
+		CONST_INTEGER( KMOD_CAPS		,KMOD_CAPS		)
+		CONST_INTEGER( KMOD_MODE		,KMOD_MODE		)
+
 	END_CONST_INTEGER_SPEC
 
 END_STATIC
 
 /*
-
 manage mouse acceleration for win32:
 	http://www.google.fr/codesearch?hl=fr&q=disable+%22mouse+acceleration%22+-x11+show:yYwX0Cc1jnM:XGt_kaGeQc8:yYwX0Cc1jnM&sa=N&cd=1&ct=rc&cs_p=http://hg.openjdk.java.net/jdk7/jaxp/jdk&cs_f=src/windows/native/sun/windows/awt_Robot.cpp#l62
-
 
 */
