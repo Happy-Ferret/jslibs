@@ -33,7 +33,14 @@ int WINAPI MessageBoxA(__in_opt HWND hWnd, __in_opt LPCSTR lpText, __in_opt LPCS
 	return IDCANCEL;
 }
 
+
 void messageHandler(int errnum, const char *msg, va_list ap) {
+
+	char text[1024];
+	int len = vsprintf(text, msg, ap);
+
+	// ThrowOdeException(cx, ...
+
 
 //	abort(); // http://msdn2.microsoft.com/en-us/library/k089yyh0(VS.80).aspx
 }
@@ -57,16 +64,19 @@ $MODULE_FOOTER
 
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
+	int status = ode::dInitODE2(0);
+	J_S_ASSERT( status != 0, "Unable to initialize ODE." );
+
 	ode::dSetErrorHandler(messageHandler);
 	ode::dSetDebugHandler(messageHandler);
 	ode::dSetMessageHandler(messageHandler);
-
 	
 	jsval unsafeModePtrVal;
 	J_CHK( GetConfigurationValue(cx, NAME_CONFIGURATION_UNSAFE_MODE_PTR, &unsafeModePtrVal) );
 	if ( !JSVAL_IS_VOID( unsafeModePtrVal ) )
 		_pUnsafeMode = (bool*)JSVAL_TO_PRIVATE(unsafeModePtrVal);
 
+	
 
 	INIT_CLASS( Space );
 	INIT_CLASS( Joint );
@@ -96,6 +106,10 @@ EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx, JSObject *obj) {
 	ode::dCloseODE();
 	return JS_TRUE;
 }
+
+EXTERN_C DLLEXPORT void ModuleFree() {
+}
+
 
 #ifdef XP_WIN
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {

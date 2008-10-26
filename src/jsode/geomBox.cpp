@@ -41,7 +41,7 @@ DEFINE_CONSTRUCTOR() {
 	if ( argc >= 1 ) // place it in a space ?
 		if ( ValToSpaceID(cx, argv[0], &space) == JS_FALSE )
 			return JS_FALSE;
-	ode::dGeomID geomId = ode::dCreateBox(space, 1,1,1); // default lengths are 1
+	ode::dGeomID geomId = ode::dCreateBox(space, 1.0f,1.0f,1.0f); // default lengths are 1
 	JS_SetPrivate(cx, obj, geomId);
 	SetupReadMatrix(cx, obj); // (TBD) check return status
 	ode::dGeomSetData(geomId, obj); // 'obj' do not need to be rooted because Goem's data is reset to NULL when 'obj' is finalized.
