@@ -15,12 +15,6 @@
 #include "stdafx.h"
 
 DECLARE_STATIC()
-//DECLARE_CLASS(Jpeg)
-//DECLARE_CLASS(Png)
-//DECLARE_CLASS(Image)
-
-#include "jspng.h"
-#include "jsjpeg.h"
 
 static bool _defaultUnsafeMode = false;
 extern bool *_pUnsafeMode = &_defaultUnsafeMode;
@@ -36,7 +30,7 @@ $MODULE_HEADER
 $MODULE_FOOTER
 **/
 
-extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj) {
+EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
 	jsval unsafeModePtrVal;
 	J_CHK( GetConfigurationValue(cx, NAME_CONFIGURATION_UNSAFE_MODE_PTR, &unsafeModePtrVal) );
@@ -58,7 +52,7 @@ extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj)
 	return JS_TRUE;
 }
 
-extern "C" __declspec(dllexport) JSBool ModuleRelease(JSContext *cx, JSObject *obj) {
+EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx, JSObject *obj) {
 
 	return JS_TRUE;
 }
