@@ -5,17 +5,14 @@
 
 #pragma once
 
-#define WIN32_LEAN_AND_MEAN		// Exclude rarely-used stuff from Windows headers
-#include <windows.h>
-
 #include <math.h>
 
 #include "../common/platform.h"
 
 #include <jsapi.h>
 
-#include "../common/jshelper.h"
-#include "../common/jsclass.h"
+#include "../common/jsHelper.h"
+#include "../common/jsClass.h"
 #include "../common/jsConversionHelper.h"
 #include "../common/jsConfiguration.h"
 
