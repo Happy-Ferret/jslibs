@@ -41,4 +41,4 @@ typedef union {
 
 
 
-#endif _VECTOR4_H_
+#endif // _VECTOR4_H_

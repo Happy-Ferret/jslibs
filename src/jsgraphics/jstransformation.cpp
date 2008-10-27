@@ -117,36 +117,11 @@ DEFINE_FUNCTION_FAST( Load ) {
 	J_S_ASSERT_RESOURCE(tm);
 	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 
-	/* GetMatrixHelper already to the following
-	if ( JsvalIsArray(cx, J_FARG(1)) ) {
-
-		jsuint length;
-		J_CHK( JsvalToFloatVector(cx, J_FARG(1), &(*tm->raw), 16, &length ) );
-		J_S_ASSERT( length == 16, "Too few elements in the array." );
-
-		return JS_TRUE;
-	}
-	*/
-	/* GetMatrixHelper already to the following
-	else if (J_JSVAL_IS_CLASS( J_FARG(1), &classTransformation )) {
-
-		Matrix44 *m = (Matrix44*)JS_GetPrivate(cx, JSVAL_TO_OBJECT(J_FARG(1)));
-		J_S_ASSERT_RESOURCE(m);
-		memcpy(tm, m, sizeof(Matrix44));
-		return JS_TRUE;
-	}
-	*/
-//	else {
-
-		Matrix44 *m = tm;
-		J_CHK( GetMatrixHelper(cx, J_FARG(1), &m) ); // GetMatrixHelper will copy data into tmp OR replace tmp by its own float pointer
-		if ( m != tm ) // check if the pointer has been modified
-			memcpy(tm, m, sizeof(Matrix44)); // if it is, copy the data
-		return JS_TRUE;
-//	}
-
-	J_REPORT_ERROR("Invalid matrix.");
-	return JS_FALSE;
+	Matrix44 *m = tm;
+	J_CHK( GetMatrixHelper(cx, J_FARG(1), &m) ); // GetMatrixHelper will copy data into tmp OR replace tmp by its own float pointer
+	if ( m != tm ) // check if the pointer has been modified
+		memcpy(tm, m, sizeof(Matrix44)); // if it is, copy the data
+	return JS_TRUE;
 }
 
 
@@ -166,9 +141,11 @@ DEFINE_FUNCTION_FAST( LoadRotation ) {
 	tm->raw[0]  = m->raw[0] ; //L1
 	tm->raw[1]  = m->raw[1] ;
 	tm->raw[2]  = m->raw[2] ;
+
 	tm->raw[4]  = m->raw[4] ; //L2
 	tm->raw[5]  = m->raw[5] ;
 	tm->raw[6]  = m->raw[6] ;
+
 	tm->raw[8]  = m->raw[8] ; //L3
 	tm->raw[9]  = m->raw[9] ;
 	tm->raw[10] = m->raw[10];
@@ -210,17 +187,12 @@ DEFINE_FUNCTION_FAST( LoadTranslation ) {
 DEFINE_FUNCTION_FAST( Translation ) {
 
 	J_S_ASSERT_ARG_MIN(3); // x, y, z
-	J_S_ASSERT_NUMBER(J_FARG(1));
-	J_S_ASSERT_NUMBER(J_FARG(2));
-	J_S_ASSERT_NUMBER(J_FARG(3));
-
 	Matrix44 *m = (Matrix44*)JS_GetPrivate(cx, J_FOBJ);
 	J_S_ASSERT_RESOURCE(m);
-
-	jsdouble x, y, z;
-	JS_ValueToNumber(cx, J_FARG(1), &x);
-	JS_ValueToNumber(cx, J_FARG(2), &y);
-	JS_ValueToNumber(cx, J_FARG(3), &z);
+	float x, y, z;
+	J_CHK( JsvalToFloat(cx, J_FARG(1), &x) ); 
+	J_CHK( JsvalToFloat(cx, J_FARG(2), &y) ); 
+	J_CHK( JsvalToFloat(cx, J_FARG(3), &z) ); 
 	Matrix44SetTranslation(m, x,y,z);
 	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 	return JS_TRUE;
@@ -240,10 +212,10 @@ DEFINE_FUNCTION_FAST( Translate ) {
 	J_S_ASSERT_ARG_MIN(3); // x, y, z
 	Matrix44 *m = (Matrix44*)JS_GetPrivate(cx, J_FOBJ);
 	J_S_ASSERT_RESOURCE(m);
-	jsdouble x, y, z;
-	JS_ValueToNumber(cx, J_FARG(1), &x);
-	JS_ValueToNumber(cx, J_FARG(2), &y);
-	JS_ValueToNumber(cx, J_FARG(3), &z);
+	float x, y, z;
+	J_CHK( JsvalToFloat(cx, J_FARG(1), &x) ); 
+	J_CHK( JsvalToFloat(cx, J_FARG(2), &y) ); 
+	J_CHK( JsvalToFloat(cx, J_FARG(3), &z) ); 
 	Matrix44 t;
 	Matrix44Identity(&t);
 	Matrix44SetTranslation(&t, x, y, z);
@@ -264,19 +236,18 @@ DEFINE_FUNCTION_FAST( Translate ) {
 **/
 DEFINE_FUNCTION_FAST( Rotation ) {
 
-	J_S_ASSERT_ARG_MIN(1);
+	J_S_ASSERT_ARG_MIN(4); // angle, x, y, z
 	Matrix44 *tm = (Matrix44*)JS_GetPrivate(cx, J_FOBJ); // tm for thisMatrix
 	J_S_ASSERT_RESOURCE(tm);
 
-	J_S_ASSERT_ARG_MIN(4); // angle, x, y, z
-	jsdouble angle, x, y, z;
-	JS_ValueToNumber(cx, J_FARG(1), &angle);
-	JS_ValueToNumber(cx, J_FARG(2), &x);
-	JS_ValueToNumber(cx, J_FARG(3), &y);
-	JS_ValueToNumber(cx, J_FARG(4), &z);
+	float angle, x, y, z;
+	J_CHK( JsvalToFloat(cx, J_FARG(1), &angle) ); 
+	J_CHK( JsvalToFloat(cx, J_FARG(2), &x) ); 
+	J_CHK( JsvalToFloat(cx, J_FARG(3), &y) ); 
+	J_CHK( JsvalToFloat(cx, J_FARG(4), &z) ); 
 	Vector3 axis;
 	Vector3Set(&axis, x,y,z);
-	Matrix44SetRotation(tm, &axis, -angle*M_PI/360.0f);
+	Matrix44SetRotation(tm, &axis, -angle * M_PI / 360.0f);
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
@@ -296,16 +267,16 @@ DEFINE_FUNCTION_FAST( Rotate ) {
 	J_S_ASSERT_ARG_MIN(4); // angle, x, y, z
 	Matrix44 *m = (Matrix44*)JS_GetPrivate(cx, J_FOBJ);
 	J_S_ASSERT_RESOURCE(m);
-	jsdouble angle, x, y, z;
-	JS_ValueToNumber(cx, J_FARG(1), &angle);
-	JS_ValueToNumber(cx, J_FARG(2), &x);
-	JS_ValueToNumber(cx, J_FARG(3), &y);
-	JS_ValueToNumber(cx, J_FARG(4), &z);
+	float angle, x, y, z;
+	J_CHK( JsvalToFloat(cx, J_FARG(1), &angle) ); 
+	J_CHK( JsvalToFloat(cx, J_FARG(2), &x) ); 
+	J_CHK( JsvalToFloat(cx, J_FARG(3), &y) ); 
+	J_CHK( JsvalToFloat(cx, J_FARG(4), &z) ); 
 	Vector3 axis;
 	Vector3Set(&axis, x,y,z);
 	Matrix44 r;
 	Matrix44Identity(&r);
-	Matrix44SetRotation(&r, &axis, -angle*M_PI/360.0f);
+	Matrix44SetRotation(&r, &axis, -angle * M_PI / 360.0f);
 	Matrix44Product(m, &r);
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
@@ -323,10 +294,10 @@ DEFINE_FUNCTION_FAST( RotationX ) {
 	J_S_ASSERT_ARG_MIN(1); // angle
 	Matrix44 *m = (Matrix44*)JS_GetPrivate(cx, J_FOBJ);
 	J_S_ASSERT_RESOURCE(m);
-	jsdouble angle;
-	JS_ValueToNumber(cx, J_FARG(1), &angle);
+	float angle;
+	J_CHK( JsvalToFloat(cx, J_FARG(1), &angle) ); 
 //	Matrix44 r;
-	Matrix44SetXRotation(m, -angle*M_PI/360.0f);
+	Matrix44SetXRotation(m, -angle * M_PI / 360.0f);
 //	Matrix44Product(m, &r);
 	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 	return JS_TRUE;
@@ -344,10 +315,10 @@ DEFINE_FUNCTION_FAST( RotationY ) {
 	J_S_ASSERT_ARG_MIN(1); // angle
 	Matrix44 *m = (Matrix44*)JS_GetPrivate(cx, J_FOBJ);
 	J_S_ASSERT_RESOURCE(m);
-	jsdouble angle;
-	JS_ValueToNumber(cx, J_FARG(1), &angle);
+	float angle;
+	J_CHK( JsvalToFloat(cx, J_FARG(1), &angle) ); 
 //	Matrix44 r;
-	Matrix44SetYRotation(m, -angle*M_PI/360.0f);
+	Matrix44SetYRotation(m, -angle * M_PI / 360.0f);
 //	Matrix44Product(m, &r);
 	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 	return JS_TRUE;
@@ -365,10 +336,10 @@ DEFINE_FUNCTION_FAST( RotationZ ) {
 	J_S_ASSERT_ARG_MIN(1); // angle
 	Matrix44 *m = (Matrix44*)JS_GetPrivate(cx, J_FOBJ);
 	J_S_ASSERT_RESOURCE(m);
-	jsdouble angle;
-	JS_ValueToNumber(cx, J_FARG(1), &angle);
+	float angle;
+	J_CHK( JsvalToFloat(cx, J_FARG(1), &angle) ); 
 //	Matrix44 r;
-	Matrix44SetZRotation(m, -angle*M_PI/360.0f);
+	Matrix44SetZRotation(m, -angle * M_PI / 360.0f);
 //	Matrix44Product(m, &r);
 	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 	return JS_TRUE;
@@ -390,16 +361,16 @@ DEFINE_FUNCTION_FAST( LookAt ) {
 	J_S_ASSERT_ARG_MIN(3); // x, y, z
 	Matrix44 *m = (Matrix44*)JS_GetPrivate(cx, J_FOBJ);
 	J_S_ASSERT_RESOURCE(m);
-	jsdouble x, y, z;
-	JS_ValueToNumber(cx, J_FARG(1), &x);
-	JS_ValueToNumber(cx, J_FARG(2), &y);
-	JS_ValueToNumber(cx, J_FARG(3), &z);
+	float x, y, z;
+	J_CHK( JsvalToFloat(cx, J_FARG(1), &x) ); 
+	J_CHK( JsvalToFloat(cx, J_FARG(2), &y) ); 
+	J_CHK( JsvalToFloat(cx, J_FARG(3), &z) ); 
 	Vector3 up;
 	Vector3Set(&up, 0,0,1);
 	Vector3 to;
 	Vector3Set(&to, x,y,z);
 	Matrix44LookAt(m, &to, &up);
-	*J_FRVAL = JSVAL_VOID;
+	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 	return JS_TRUE;
 }
 
@@ -420,7 +391,8 @@ DEFINE_FUNCTION_FAST( Invert ) {
 
 /**doc
  * $THIS $INAME( newTransformation )
-  apply a _newTransformation_ to the current transformation.
+  Apply a _newTransformation_ to the current transformation.
+  this = this . new
   $H arguments
    $ARG value newTransformation: an Array or an object that supports NIMatrix44Read native interface.
 **/
@@ -431,7 +403,7 @@ DEFINE_FUNCTION_FAST( Product ) {
 	J_S_ASSERT_RESOURCE(tm);
 	Matrix44 tmp, *m = &tmp;
 	J_CHK( GetMatrixHelper(cx, J_FARG(1), &m) );
-	Matrix44Product(tm,m); // <- mult
+	Matrix44Product(tm, m); // <- mult
 	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 	return JS_TRUE;
 }
@@ -439,7 +411,8 @@ DEFINE_FUNCTION_FAST( Product ) {
 
 /**doc
  * $THIS $INAME( otherTransformation )
-  apply the current transformation to the _otherTransformation_ and stores the result to the current transformation.
+  Apply the current transformation to the _otherTransformation_ and stores the result to the current transformation.
+  this = new . this
   $H arguments
    $ARG value otherTransformation: an Array or an object that supports NIMatrix44Read native interface.
 **/
@@ -450,7 +423,7 @@ DEFINE_FUNCTION_FAST( ReverseProduct ) {
 	J_S_ASSERT_RESOURCE(tm);
 	Matrix44 tmp, *m = &tmp;
 	J_CHK( GetMatrixHelper(cx, J_FARG(1), &m) );
-	Matrix44ReverseProduct(tm,m); // <- mult
+	Matrix44ReverseProduct(tm, m); // <- mult
 	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 	return JS_TRUE;
 }
@@ -472,17 +445,15 @@ DEFINE_FUNCTION_FAST( TransformVector ) {
 
 	jsuint length;
 //	J_JSVAL_TO_ARRAY_LENGTH( J_FARG(1), length );
-	J_CHK( JS_GetArrayLength(cx, JSVAL_TO_OBJECT(J_FARG(1)), &length) ); \
+	J_CHK( JS_GetArrayLength(cx, JSVAL_TO_OBJECT(J_FARG(1)), &length) );
 
+	jsval tmpValue;
 	if ( length == 3 ) {
 
 		Vector3 src, dst;
-		size_t length;
 		J_CHK( JsvalToFloatVector(cx, J_FARG(1), src.raw, 3, &length ) );
-
 		Matrix44MultVector3( tm, &src, &dst );
 
-		jsval tmpValue;
 		J_CHK( JS_NewNumberValue(cx, dst.x, &tmpValue) );
 		J_CHK( JS_SetElement(cx, JSVAL_TO_OBJECT( J_FARG(1) ), 0, &tmpValue) );
 
@@ -495,12 +466,9 @@ DEFINE_FUNCTION_FAST( TransformVector ) {
 	if ( length == 4 ) {
 
 		Vector4 src, dst;
-		size_t length;
 		J_CHK( JsvalToFloatVector(cx, J_FARG(1), src.raw, 4, &length ) );
-
 		Matrix44MultVector4( tm, &src, &dst );
 
-		jsval tmpValue;
 		J_CHK( JS_NewNumberValue(cx, dst.x, &tmpValue) );
 		J_CHK( JS_SetElement(cx, JSVAL_TO_OBJECT( J_FARG(1) ), 0, &tmpValue) );
 
@@ -512,6 +480,9 @@ DEFINE_FUNCTION_FAST( TransformVector ) {
 
 		J_CHK( JS_NewNumberValue(cx, dst.w, &tmpValue) );
 		J_CHK( JS_SetElement(cx, JSVAL_TO_OBJECT( J_FARG(1) ), 3, &tmpValue) );
+	} else {
+
+		J_REPORT_ERROR( "Unsupported vector length (%d).", length );
 	}
 
 	*J_FRVAL = JSVAL_VOID;

@@ -230,7 +230,7 @@ inline void Vector3Cross(Vector3 *v, const Vector3 *v0, const Vector3 *v1) { // 
 }
 
 
-#endif _VECTOR3_H_
+#endif // _VECTOR3_H_
 
 /*
 
