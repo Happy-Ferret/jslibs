@@ -206,6 +206,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\geomTrimesh.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\joint.cpp"
 				>
 			</File>

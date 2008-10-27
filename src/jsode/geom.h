@@ -18,6 +18,7 @@ DECLARE_CLASS( GeomBox )
 DECLARE_CLASS( GeomPlane )
 DECLARE_CLASS( GeomCapsule )
 DECLARE_CLASS( GeomRay )
+DECLARE_CLASS( GeomTrimesh )
 
 DECLARE_CLASS( SurfaceParameters )
 
