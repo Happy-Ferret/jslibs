@@ -626,7 +626,7 @@ DEFINE_FUNCTION_FAST( GetSourceInteger ) {
   $H arguments
    $ARG integer source: the source id.
   $H OpenAL API
-	alDeleteBuffers
+   alDeleteBuffers
 **/
 DEFINE_FUNCTION_FAST( DeleteSource ) {
 
@@ -646,7 +646,7 @@ DEFINE_FUNCTION_FAST( DeleteSource ) {
    $ARG integer buffer: the buffer id.
    $ARG Array bufferArray: an Array of buffer id.
   $H OpenAL API
-	alDeleteBuffers
+   alDeleteBuffers
 **/
 DEFINE_FUNCTION_FAST( SourceQueueBuffers ) {
 
@@ -687,7 +687,7 @@ DEFINE_FUNCTION_FAST( SourceQueueBuffers ) {
    $ARG integer buffer: the buffer id.
    $ARG Array bufferArray: an Array of buffer id.
   $H OpenAL API
-	alDeleteBuffers
+   alDeleteBuffers
 **/
 DEFINE_FUNCTION_FAST( SourceUnqueueBuffers ) {
 
@@ -863,7 +863,7 @@ DEFINE_FUNCTION_FAST( GetBufferInteger ) {
   $H note
    Buffers that have been unqueued from all sources are UNUSED. Buffers that are UNUSED can be deleted, or changed by alBufferData commands.
   $H OpenAL API
-	alDeleteBuffers
+   alDeleteBuffers
 **/
 DEFINE_FUNCTION_FAST( DeleteBuffer ) {
 
@@ -1313,10 +1313,10 @@ $H example 1
  var pcm;
  while ( pcm = decoder.Read(10000) ) {
 
- 	var bufferId = Oal.Buffer(pcm);
- 	Oal.SourceQueueBuffers(sourceId, bufferId);
- 	if ( Oal.GetSourceInteger(sourceId, Oal.SOURCE_STATE) == Oal.INITIAL )
- 		Oal.PlaySource(sourceId);
+  var bufferId = Oal.Buffer(pcm);
+  Oal.SourceQueueBuffers(sourceId, bufferId);
+  if ( Oal.GetSourceInteger(sourceId, Oal.SOURCE_STATE) == Oal.INITIAL )
+   Oal.PlaySource(sourceId);
  };
 
  var totalTime = decoder.frames/decoder.rate;

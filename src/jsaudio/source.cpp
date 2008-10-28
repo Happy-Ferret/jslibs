@@ -156,7 +156,7 @@ DEFINE_CONSTRUCTOR() {
   $H arguments
    $ARG OalBuffer | BufferId: a Buffer Object or a buffer Id.
   $H OpenAL API
-	alDeleteBuffers
+   alDeleteBuffers
 **/
 DEFINE_FUNCTION_FAST( QueueBuffers ) {
 
@@ -184,7 +184,7 @@ DEFINE_FUNCTION_FAST( QueueBuffers ) {
 /**doc
  * $Buffer $INAME()
   $H OpenAL API
-	alDeleteBuffers
+   alDeleteBuffers
 **/
 DEFINE_FUNCTION_FAST( UnqueueBuffers ) {
 

@@ -282,7 +282,7 @@ DEFINE_FUNCTION_FAST( RenderImage ) { // using cairo
 
 /*
 	if ( J_FARG_ISDEF(4) ) {
-		
+
 		J_S_ASSERT_ARRAY( J_FARG(4) );
 		double trVector[6];
 		size_t currentLength;
@@ -324,10 +324,10 @@ DEFINE_FUNCTION_FAST( RenderImage ) { // using cairo
 
 	//cairo_set_antialias(cr, CAIRO_ANTIALIAS_DEFAULT);
 	//cairo_set_tolerance(cr, 0.1);
-	
+
 	cairo_set_matrix(cr, &pv->transformation);
 	status = rsvg_handle_render_cairo_sub(handle, cr, id);
-	
+
 	J_S_ASSERT_1( status == TRUE, "Unable to render the SVG. %s", cairo_status_to_string(cairo_status(cr)) );
 
 //	cairo_format_t surfaceFormat = cairo_image_surface_get_format(surface);
@@ -419,12 +419,12 @@ DEFINE_FUNCTION_FAST( GetImage ) { // using pixbuf
  * $BOOL $INAME( elementId, polarity )
   $H arguments
    $ARG string elementId: the id of the element with '#' prefix (eg. '#circle1').
-	$ARG boolean polarity: false to hide, true to show.
+   $ARG boolean polarity: false to hide, true to show.
   $H return value
    true if the element visibility has been set, otherwise false.
 **/
 DEFINE_FUNCTION_FAST( SetVisible ) {
-	
+
 	J_S_ASSERT_ARG_MIN(2);
 
 	Private *pv = (Private*)JS_GetPrivate(cx, J_FOBJ);
@@ -460,7 +460,7 @@ DEFINE_FUNCTION_FAST( SetVisible ) {
   then apply the original transformation to the coordinates.
 **/
 DEFINE_FUNCTION_FAST( Scale ) {
-	
+
 	J_S_ASSERT_ARG_MIN(2);
 	Private *pv = (Private*)JS_GetPrivate(cx, J_FOBJ);
 	J_S_ASSERT_RESOURCE(pv);
@@ -478,7 +478,7 @@ DEFINE_FUNCTION_FAST( Scale ) {
   then apply the original transformation to the coordinates.
 **/
 DEFINE_FUNCTION_FAST( Rotate ) {
-	
+
 	J_S_ASSERT_ARG_MIN(1);
 	Private *pv = (Private*)JS_GetPrivate(cx, J_FOBJ);
 	J_S_ASSERT_RESOURCE(pv);
@@ -495,7 +495,7 @@ DEFINE_FUNCTION_FAST( Rotate ) {
   then apply the original transformation to the coordinates.
 **/
 DEFINE_FUNCTION_FAST( Translate ) {
-	
+
 	J_S_ASSERT_ARG_MIN(2);
 	Private *pv = (Private*)JS_GetPrivate(cx, J_FOBJ);
 	J_S_ASSERT_RESOURCE(pv);
@@ -659,11 +659,11 @@ DEFINE_PROPERTY(images) {
   $H example
    {{{
    var svg = new SVG();
-	svg.Write(<svg><image x="0" y="0" path="img.png"/></svg>);
+   svg.Write(<svg><image x="0" y="0" path="img.png"/></svg>);
    svg.onImage = function(href) {
     return DecodePngImage( new File('myImage.png').Open('r') );
    }
-	}}}
+   }}}
 **/
 
 CONFIGURE_CLASS

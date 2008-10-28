@@ -285,81 +285,81 @@ enum {
 
 
 /**doc
- * $REAL reverbDensity				
- * $REAL reverbDiffusion				
- * $REAL reverbGain					
- * $REAL reverbGainHF					
- * $REAL reverbDecayTime				
- * $REAL reverbDecayHFRatio			
- * $REAL reverbReflectionsGain		
- * $REAL reverbReflectionsDelay	
- * $REAL reverbLateReverbGain		
- * $REAL reverbLateReverbDelay		
+ * $REAL reverbDensity
+ * $REAL reverbDiffusion
+ * $REAL reverbGain
+ * $REAL reverbGainHF
+ * $REAL reverbDecayTime
+ * $REAL reverbDecayHFRatio
+ * $REAL reverbReflectionsGain
+ * $REAL reverbReflectionsDelay
+ * $REAL reverbLateReverbGain
+ * $REAL reverbLateReverbDelay
  * $REAL reverbAirAbsorptionGainHF
- * $REAL reverbRoomRolloffFactor	
- * $BOOL reverbDecayHFLimit			
+ * $REAL reverbRoomRolloffFactor
+ * $BOOL reverbDecayHFLimit
 
  * $INT chorusWaveform
- * $INT chorusPhase   
- * $REAL chorusRate    
- * $REAL chorusDepth   
+ * $INT chorusPhase
+ * $REAL chorusRate
+ * $REAL chorusDepth
  * $REAL chorusFeedback
- * $REAL chorusDelay   
+ * $REAL chorusDelay
 
- * $REAL distortionEdge         
- * $REAL distortionGain         
+ * $REAL distortionEdge
+ * $REAL distortionGain
  * $REAL distortionLowpassCutoff
- * $REAL distortionEqcenter     
- * $REAL distortionEqbandwidth  
+ * $REAL distortionEqcenter
+ * $REAL distortionEqbandwidth
 
- * $REAL echoDelay   
- * $REAL echoLrdelay 
- * $REAL echoDamping 
+ * $REAL echoDelay
+ * $REAL echoLrdelay
+ * $REAL echoDamping
  * $REAL echoFeedback
  * $REAL echoSpread
 
- * $INT flangerWaveform 
- * $REAL flangerPhase    
- * $REAL flangerRate     
- * $REAL flangerDepth    
- * $REAL flangerFeedback 
+ * $INT flangerWaveform
+ * $REAL flangerPhase
+ * $REAL flangerRate
+ * $REAL flangerDepth
+ * $REAL flangerFeedback
  * $REAL flangerDelay
 
- * $REAL frequencyShifterFrequency     
- * $INT frequencyShifterLeftDirection 
+ * $REAL frequencyShifterFrequency
+ * $INT frequencyShifterLeftDirection
  * $INT frequencyShifterRightDirection
 
- * $INT vocalMorpherPhonemea            
+ * $INT vocalMorpherPhonemea
  * $INT vocalMorpherPhonemeaCoarseTuning
- * $INT vocalMorpherPhonemeb            
+ * $INT vocalMorpherPhonemeb
  * $INT vocalMorpherPhonemebCoarseTuning
- * $INT vocalMorpherWaveform            
- * $REAL vocalMorpherRate       
+ * $INT vocalMorpherWaveform
+ * $REAL vocalMorpherRate
 
  * $INT pitchShifterCoarseTune
- * $INT pitchShifterFineTune  
+ * $INT pitchShifterFineTune
 
- * $REAL ringModulatorFrequency     
+ * $REAL ringModulatorFrequency
  * $REAL ringModulatorHighpassCutoff
- * $INT ringModulatorWaveform      
+ * $INT ringModulatorWaveform
 
- * $REAL autowahAttackTime 
+ * $REAL autowahAttackTime
  * $REAL autowahReleaseTime
- * $REAL autowahResonance  
- * $REAL autowahPeakGain   
+ * $REAL autowahResonance
+ * $REAL autowahPeakGain
 
  * $BOOL compressorOnoff
 
- * $REAL equalizerLowGain    
- * $REAL equalizerLowCutoff  
- * $REAL equalizerMid1Gain   
- * $REAL equalizerMid1Center 
- * $REAL equalizerMid1Width  
- * $REAL equalizerMid2Gain   
- * $REAL equalizerMid2Center 
- * $REAL equalizerMid2Width  
- * $REAL equalizerHighGain   
- * $REAL equalizerHighCutoff 
+ * $REAL equalizerLowGain
+ * $REAL equalizerLowCutoff
+ * $REAL equalizerMid1Gain
+ * $REAL equalizerMid1Center
+ * $REAL equalizerMid1Width
+ * $REAL equalizerMid2Gain
+ * $REAL equalizerMid2Center
+ * $REAL equalizerMid2Width
+ * $REAL equalizerHighGain
+ * $REAL equalizerHighCutoff
 **/
 
 CONFIGURE_CLASS

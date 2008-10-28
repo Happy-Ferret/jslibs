@@ -22,7 +22,7 @@
 #include <connectionsocks5proxy.h>
 #include <connectionhttpproxy.h>
 
-#include <messagehandler.h> 
+#include <messagehandler.h>
 //#include <connectionhandler.h>
 
 #include <presencehandler.h>
@@ -55,8 +55,8 @@ JSBool JidToJsval( JSContext *cx, const JID *jid, jsval *rval ) {
 }
 
 
-class Handlers : 
-	public ConnectionListener, 
+class Handlers :
+	public ConnectionListener,
 	public RosterListener,
 	public MessageHandler,
 //	public SIProfileFTHandler,
@@ -70,12 +70,12 @@ private:
 	JSObject *_obj;
 
 	void handleLog( LogLevel level, LogArea area, const std::string& message ) {
-		
+
 		jsval fval, rval;
 		if ( !JS_GetProperty(_cx, _obj, "onLog", &fval) || JSVAL_IS_VOID( fval ) )
 			return;
 		if ( !JsvalIsFunction(_cx, fval) ) {
-			
+
 			JS_ReportError(_cx, "onLog is not a function.");
 			return;
 		}
@@ -92,7 +92,7 @@ private:
 			return true; // by default, accepts the certificate
 
 		if ( !JsvalIsFunction(_cx, fval) ) {
-			
+
 			JS_ReportError(_cx, "onTLSConnect is not a function.");
 			return false;
 		}
@@ -122,7 +122,7 @@ private:
 		if ( !JS_GetProperty(_cx, _obj, "onConnect", &fval) || JSVAL_IS_VOID( fval ) )
 			return;
 		if ( !JsvalIsFunction(_cx, fval) ) {
-			
+
 			JS_ReportError(_cx, "onConnect is not a function.");
 			return;
 		}
@@ -135,7 +135,7 @@ private:
 		if ( !JS_GetProperty(_cx, _obj, "onDisconnect", &fval) || JSVAL_IS_VOID( fval ) )
 			return;
 		if ( !JsvalIsFunction(_cx, fval) ) {
-			
+
 			JS_ReportError(_cx, "onDisconnect is not a function.");
 			return;
 		}
@@ -149,7 +149,7 @@ private:
 		if ( !JS_GetProperty(_cx, _obj, "onMessage", &fval) || JSVAL_IS_VOID( fval ) )
 			return;
 		if ( !JsvalIsFunction(_cx, fval) ) {
-			
+
 			JS_ReportError(_cx, "onMessage is not a function.");
 			return;
 		}
@@ -182,7 +182,7 @@ private:
 		if ( !JS_GetProperty(_cx, _obj, "onRosterPresence", &fval) || JSVAL_IS_VOID( fval ) )
 			return;
 		if ( !JsvalIsFunction(_cx, fval) ) {
-			
+
 			JS_ReportError(_cx, "onRosterPresence is not a function.");
 			return;
 		}
@@ -245,7 +245,7 @@ DEFINE_FINALIZE() {
   Constructs a new unconnected jabber client.
   $H arguments
    $ARG string jid
-	$ARG string password
+   $ARG string password
 **/
 DEFINE_CONSTRUCTOR() {
 
@@ -273,7 +273,7 @@ DEFINE_CONSTRUCTOR() {
   Constructs a new unconnected jabber client.
   $H arguments
    $ARG string serverName: the XMPP server to connect to.
-	$ARG string port: the port to connect to.
+   $ARG string port: the port to connect to.
   $H return value
    A connected socket ID that can be used in a Poll() call. Or $UNDEF if no connection is established.
 **/
@@ -398,7 +398,7 @@ DEFINE_FUNCTION( RosterItem ) {
 
 /**doc
  * $VAL $INAME
-  The socket ID of the connection or $UNDEF if no connection is established. 
+  The socket ID of the connection or $UNDEF if no connection is established.
 **/
 DEFINE_PROPERTY( socket ) {
 

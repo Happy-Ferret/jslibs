@@ -26,7 +26,7 @@
 /**doc
 $CLASS_HEADER
 
-	midi spec: http://www.gweep.net/~prefect/eng/reference/protocol/midispec.html
+  midi spec: http://www.gweep.net/~prefect/eng/reference/protocol/midispec.html
 **/
 BEGIN_CLASS( MidiEvent )
 

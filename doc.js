@@ -23,10 +23,19 @@ var api = {
 		Print('TBD: ' + item.filePath + ':' + (CountStr('\n', item.source.substring(0, item.followingSourceTextStart - item.text.length + offset))+1), '\n');
 	},
 
+	$H6: function(cx, item) { cx.center = '====== '+ReadEol(cx)+': ======' },
+	$H5: function(cx, item) { cx.center = '===== '+ReadEol(cx)+': =====' },
+	$H4: function(cx, item) { cx.center = '==== '+ReadEol(cx)+': ====' },
+	$H3: function(cx, item) { cx.center = '=== '+ReadEol(cx)+': ===' }, // properties & methods
+	$H2: function(cx, item) { cx.center = '== '+ReadEol(cx)+': ==' }, // class & static
+	$H1: function(cx, item) { cx.center = '= '+ReadEol(cx)+': =' }, // module
+
+
 	$H: function(cx, item) {
 
 		cx.center = '===== '+ReadEol(cx)+': =====';
 	},
+
 
 	$INAME: function(cx, item) {
 
@@ -88,6 +97,11 @@ var api = {
 	$MODULE_HEADER: function(cx, item) {
 
 		cx.center = '#summary '+item.lastDir+' module\n' + '#labels doc\n' + '- [http://jslibs.googlecode.com/svn/trunk/'+item.path+'/ source] - [JSLibs main] -\n'+'= '+item.lastDir+' module =';
+	},
+	
+	$FILE_TOC: function(cx, item) {
+	
+		cx.center = '{{{\n<wiki:toc max_depth="2"/>\n}}}'; // '+(ReadArg(cx)||'1')+'
 	},
 
 	$MODULE_FOOTER: function(cx, item) {

@@ -161,10 +161,10 @@ DEFINE_FINALIZE() {
    Print( dec.bits, '\n' );
    Print( dec.channels, '\n' );
    Print( dec.rate, '\n' );
-	do {
-		var block = dec.Read(10000);
-		Print( 'frames: '+block.frames, '\n' );
-	} while(block);
+   do {
+    var block = dec.Read(10000);
+    Print( 'frames: '+block.frames, '\n' );
+   } while(block);
    }}}
 **/
 DEFINE_CONSTRUCTOR() {
@@ -183,7 +183,7 @@ DEFINE_CONSTRUCTOR() {
 
 	SF_INFO tmp = {0};
 	pv->sfInfo = tmp; // ok, memset does the same thing
-	
+
 	pv->cx = cx;
 	pv->sfDescriptor = sf_open_virtual(&sfCallbacks, SFM_READ, &pv->sfInfo, pv);
 	pv->bits = 16;
@@ -212,7 +212,7 @@ DEFINE_CONSTRUCTOR() {
 
 
 // doc:
-//   Unless the end of the file was reached during the read, the return value should equal the number of items requested. 
+//   Unless the end of the file was reached during the read, the return value should equal the number of items requested.
 
 
 /**doc
@@ -224,7 +224,7 @@ DEFINE_CONSTRUCTOR() {
    returns a Blob object that has the following properties set: bits, rate, channels, frames
   $H beware
    If all data has been decoded and the Read function is called again, the return expression is evaluated to false.
-	This is because an empty Blob must be evaluated as false, like string literals ( !empty_blob == !"" )
+   This is because an empty Blob must be evaluated as false, like string literals ( !empty_blob == !"" )
   $H example
   {{{
   LoadModule('jsstd');

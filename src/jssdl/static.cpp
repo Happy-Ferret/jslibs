@@ -49,7 +49,7 @@ DEFINE_FUNCTION_FAST( GetVideoModeList ) {
 	double flags;
 
 	if ( J_FARG_ISDEF(1) ) {
-		
+
 		unsigned int bpp;
 		J_CHK( JsvalToUInt(cx, J_FARG(1), &bpp) );
 		format.BitsPerPixel = bpp;
@@ -64,7 +64,7 @@ DEFINE_FUNCTION_FAST( GetVideoModeList ) {
 	SDL_Rect **modes = SDL_ListModes(&format, (Uint32)flags);
 
 	if ( modes == (SDL_Rect **)-1 ) {
-		
+
 		// any dimension is okay for this format.
 		*J_FRVAL = JSVAL_VOID;
 		return JS_TRUE;
@@ -76,7 +76,7 @@ DEFINE_FUNCTION_FAST( GetVideoModeList ) {
 
 	jsval tmp;
 	for ( int i = 0; modes[i] != NULL; i++ ) {
-	
+
 		JSObject *rectArray = JS_NewArrayObject(cx, 2, NULL);
 		J_S_ASSERT_ALLOC(rectArray);
 
@@ -230,7 +230,7 @@ DEFINE_PROPERTY( icon ) {
 	J_CHK( GetPropertyInt(cx, imageObj, "width", &sWidth) );
 	J_CHK( GetPropertyInt(cx, imageObj, "height", &sHeight) );
 	J_CHK( GetPropertyInt(cx, imageObj, "channels", &sChannels) );
-	
+
 	J_S_ASSERT( sChannels == 3 || sChannels == 4, "Unsupported image format." );
 
 	const char *sBuffer;
@@ -266,7 +266,7 @@ DEFINE_PROPERTY( icon ) {
 
 /**doc
  * $BOOL $INAME()
-  Toggle fullscreen mode without changing the contents of the screen. 
+  Toggle fullscreen mode without changing the contents of the screen.
   $H return value
    true if this function was able to toggle fullscreen mode (change from running in a window to fullscreen, or vice-versa). false if it is not implemented, or fails.
 **/
@@ -275,7 +275,7 @@ DEFINE_FUNCTION_FAST( ToggleFullScreen ) {
 	SDL_Surface *surface = SDL_GetVideoSurface();
 	int status = SDL_WM_ToggleFullScreen( surface );
 	*J_FRVAL = status == 1 ? JSVAL_TRUE : JSVAL_FALSE;
-	return JS_TRUE;	
+	return JS_TRUE;
 }
 
 
@@ -287,7 +287,7 @@ DEFINE_PROPERTY( fullScreen ) {
 
 	bool fullScreen = ( (SDL_GetVideoSurface()->flags & SDL_FULLSCREEN) != 0 );
 	J_CHK( BoolToJsval(cx, fullScreen, vp) );
-	return JS_TRUE;	
+	return JS_TRUE;
 }
 
 /**doc
@@ -310,7 +310,7 @@ DEFINE_FUNCTION_FAST( Iconify ) {
    ARG integer blue
 **/
 DEFINE_FUNCTION_FAST( SetGamma ) {
-	
+
 	J_S_ASSERT_ARG_MIN(3);
 	float r,g,b;
 	J_CHK( JsvalToFloat(cx, J_FARG(1), &r) );
@@ -414,14 +414,14 @@ DEFINE_PROPERTY_SETTER( grabInput ) {
 	bool grab;
 	J_CHK( JsvalToBool(cx, *vp, &grab) );
 	SDL_WM_GrabInput( grab ? SDL_GRAB_ON : SDL_GRAB_OFF );
-	return JS_TRUE;	
+	return JS_TRUE;
 }
 
 DEFINE_PROPERTY_GETTER( grabInput ) {
 
 	SDL_GrabMode mode = SDL_WM_GrabInput( SDL_GRAB_QUERY );
 	J_CHK( BoolToJsval(cx, mode == SDL_GRAB_ON ? true : false, vp) );
-	return JS_TRUE;	
+	return JS_TRUE;
 }
 
 
@@ -434,14 +434,14 @@ DEFINE_PROPERTY_SETTER( showCursor ) {
 	bool show;
 	J_CHK( JsvalToBool(cx, *vp, &show) );
 	SDL_ShowCursor( show ? 1 : 0 );
-	return JS_TRUE;	
+	return JS_TRUE;
 }
 
 DEFINE_PROPERTY_GETTER( showCursor ) {
 
 	int show = SDL_ShowCursor( -1 ); // query
 	J_CHK( BoolToJsval(cx, show == 0 ? false : true, vp) );
-	return JS_TRUE;	
+	return JS_TRUE;
 }
 
 
@@ -461,7 +461,7 @@ DEFINE_FUNCTION_FAST( SetCursor ) {
 	J_S_ASSERT_RESOURCE( cursor );
 	SDL_SetCursor(cursor);
 	*J_FRVAL = JSVAL_VOID;
-	return JS_TRUE;	
+	return JS_TRUE;
 }
 
 
@@ -470,7 +470,7 @@ DEFINE_FUNCTION_FAST( SetCursor ) {
   Is the name of the video driver or undefined  if it has not been initialized.
 **/
 DEFINE_PROPERTY( videoDriverName ) {
-	
+
 	char name[1024];
 	char *status = SDL_VideoDriverName(name, sizeof(name));
 	if ( status != NULL )
@@ -491,8 +491,8 @@ JSBool FireListener( JSContext *cx, JSObject *listenerObj, SDL_Event *ev, jsval 
 			J_CHK( JS_GetProperty(cx, listenerObj, "onActive", &fVal) );
 			if ( JsvalIsFunction(cx, fVal) ) {
 
-				jsval argv[] = { 
-					ev->active.gain == 1 ? JSVAL_TRUE : JSVAL_FALSE 
+				jsval argv[] = {
+					ev->active.gain == 1 ? JSVAL_TRUE : JSVAL_FALSE
 				};
 				J_CHK( JS_CallFunctionValue(cx, listenerObj, fVal, COUNTOF(argv), argv, rval) );
 			}
@@ -504,7 +504,7 @@ JSBool FireListener( JSContext *cx, JSObject *listenerObj, SDL_Event *ev, jsval 
 			if ( JsvalIsFunction(cx, fVal) ) {
 
 				JSString *ucChar = JS_NewUCStringCopyN(cx, &ev->key.keysym.unicode, 1);
-				jsval argv[] = { 
+				jsval argv[] = {
 					INT_TO_JSVAL(ev->key.keysym.sym),
 					INT_TO_JSVAL(ev->key.keysym.mod),
 					STRING_TO_JSVAL(ucChar),
@@ -519,9 +519,9 @@ JSBool FireListener( JSContext *cx, JSObject *listenerObj, SDL_Event *ev, jsval 
 			if ( JsvalIsFunction(cx, fVal) ) {
 
 				SDLMod modState = SDL_GetModState();
-				jsval argv[] = { 
-					INT_TO_JSVAL(ev->motion.x), 
-					INT_TO_JSVAL(ev->motion.y), 
+				jsval argv[] = {
+					INT_TO_JSVAL(ev->motion.x),
+					INT_TO_JSVAL(ev->motion.y),
 					INT_TO_JSVAL(ev->motion.xrel),
 					INT_TO_JSVAL(ev->motion.yrel),
 					INT_TO_JSVAL(ev->motion.state),
@@ -556,14 +556,14 @@ JSBool FireListener( JSContext *cx, JSObject *listenerObj, SDL_Event *ev, jsval 
 				J_CHK( JS_CallFunctionValue(cx, listenerObj, fVal, 0, NULL, rval) );
 			}
 			break;
-		
+
 		case SDL_VIDEORESIZE:
 			// ... and you must respond to the event by re-calling SDL_SetVideoMode() with the requested size (or another size that suits the application).
 			J_CHK( JS_GetProperty(cx, listenerObj, "onVideoResize", &fVal) );
 			if ( JsvalIsFunction(cx, fVal) ) {
 
-				jsval argv[] = { 
-					INT_TO_JSVAL(ev->resize.w), 
+				jsval argv[] = {
+					INT_TO_JSVAL(ev->resize.w),
 					INT_TO_JSVAL(ev->resize.h)
 				};
 				J_CHK( JS_CallFunctionValue(cx, listenerObj, fVal, COUNTOF(argv), argv, rval) );
@@ -701,18 +701,18 @@ DEFINE_PROPERTY( buttonState ) {
 /**doc
  * $INT $INAME $READONLY
   Is the current key modifier state bitmask.
-   $CONST KMOD_NONE	
-   $CONST KMOD_LSHIFT	
-   $CONST KMOD_RSHIFT	
-   $CONST KMOD_LCTRL	
-   $CONST KMOD_RCTRL	
-   $CONST KMOD_LALT	
-   $CONST KMOD_RALT	
-   $CONST KMOD_LMETA	
-   $CONST KMOD_RMETA	
-   $CONST KMOD_NUM		
-   $CONST KMOD_CAPS	
-   $CONST KMOD_MODE	
+   $CONST KMOD_NONE
+   $CONST KMOD_LSHIFT
+   $CONST KMOD_RSHIFT
+   $CONST KMOD_LCTRL
+   $CONST KMOD_RCTRL
+   $CONST KMOD_LALT
+   $CONST KMOD_RALT
+   $CONST KMOD_LMETA
+   $CONST KMOD_RMETA
+   $CONST KMOD_NUM
+   $CONST KMOD_CAPS
+   $CONST KMOD_MODE
 **/
 DEFINE_PROPERTY( modifierState ) {
 
@@ -728,7 +728,7 @@ DEFINE_PROPERTY( modifierState ) {
    $ARG enum keysym: the key to be tested. see key constants below.
 **/
 DEFINE_FUNCTION_FAST( GetKeyState ) {
-	
+
 	J_S_ASSERT_ARG_MIN(1);
 	unsigned int key;
 	J_CHK( JsvalToUInt(cx, J_FARG(1), &key) );
@@ -744,7 +744,7 @@ DEFINE_FUNCTION_FAST( GetKeyState ) {
    $ARG enum keysym
 **/
 DEFINE_FUNCTION_FAST( GetKeyName ) {
-	
+
 	J_S_ASSERT_ARG_MIN(1);
 	unsigned int key;
 	J_CHK( JsvalToUInt(cx, J_FARG(1), &key) );
@@ -761,7 +761,7 @@ DEFINE_FUNCTION_FAST( GetKeyName ) {
   Sets/Gets keyboard repeat delay. This is the initial delay in ms between the time when a key is pressed, and keyboard repeat begins. If set to 0, keyboard repeat is disabled.
 **/
 DEFINE_PROPERTY_SETTER( keyRepeatDelay ) {
-	
+
 	int delay, interval;
 	SDL_GetKeyRepeat(&delay, &interval);
 	J_CHK( JsvalToInt(cx, *vp, &delay) );
@@ -786,7 +786,7 @@ DEFINE_PROPERTY_GETTER( keyRepeatDelay ) {
   Sets/Gets keyboard repeat interval. This is the time in ms between keyboard repeat events.
 **/
 DEFINE_PROPERTY_SETTER( keyRepeatInterval ) {
-	
+
 	int delay, interval;
 	SDL_GetKeyRepeat(&delay, &interval);
 	J_CHK( JsvalToInt(cx, *vp, &interval) );
@@ -812,7 +812,7 @@ DEFINE_PROPERTY_GETTER( keyRepeatInterval ) {
 **/
 DEFINE_PROPERTY( appStateActive ) {
 
-	J_CHK( BoolToJsval(cx, (SDL_GetAppState() & SDL_APPACTIVE) != 0, vp) ); 
+	J_CHK( BoolToJsval(cx, (SDL_GetAppState() & SDL_APPACTIVE) != 0, vp) );
 	return JS_TRUE;
 }
 
@@ -822,7 +822,7 @@ DEFINE_PROPERTY( appStateActive ) {
 **/
 DEFINE_PROPERTY( hasRDTSC ) {
 
-	J_CHK( BoolToJsval(cx, SDL_HasRDTSC() == SDL_TRUE, vp) ); 
+	J_CHK( BoolToJsval(cx, SDL_HasRDTSC() == SDL_TRUE, vp) );
 	return JS_TRUE;
 }
 
@@ -831,7 +831,7 @@ DEFINE_PROPERTY( hasRDTSC ) {
 **/
 DEFINE_PROPERTY( hasMMX ) {
 
-	J_CHK( BoolToJsval(cx, SDL_HasMMX() == SDL_TRUE, vp) ); 
+	J_CHK( BoolToJsval(cx, SDL_HasMMX() == SDL_TRUE, vp) );
 	return JS_TRUE;
 }
 
@@ -840,7 +840,7 @@ DEFINE_PROPERTY( hasMMX ) {
 **/
 DEFINE_PROPERTY( hasMMXExt ) {
 
-	J_CHK( BoolToJsval(cx, SDL_HasMMXExt() == SDL_TRUE, vp) ); 
+	J_CHK( BoolToJsval(cx, SDL_HasMMXExt() == SDL_TRUE, vp) );
 	return JS_TRUE;
 }
 
@@ -849,7 +849,7 @@ DEFINE_PROPERTY( hasMMXExt ) {
 **/
 DEFINE_PROPERTY( has3DNow ) {
 
-	J_CHK( BoolToJsval(cx, SDL_Has3DNow() == SDL_TRUE, vp) ); 
+	J_CHK( BoolToJsval(cx, SDL_Has3DNow() == SDL_TRUE, vp) );
 	return JS_TRUE;
 }
 
@@ -858,7 +858,7 @@ DEFINE_PROPERTY( has3DNow ) {
 **/
 DEFINE_PROPERTY( has3DNowExt ) {
 
-	J_CHK( BoolToJsval(cx, SDL_Has3DNowExt() == SDL_TRUE, vp) ); 
+	J_CHK( BoolToJsval(cx, SDL_Has3DNowExt() == SDL_TRUE, vp) );
 	return JS_TRUE;
 }
 
@@ -867,7 +867,7 @@ DEFINE_PROPERTY( has3DNowExt ) {
 **/
 DEFINE_PROPERTY( hasSSE ) {
 
-	J_CHK( BoolToJsval(cx, SDL_HasSSE() == SDL_TRUE, vp) ); 
+	J_CHK( BoolToJsval(cx, SDL_HasSSE() == SDL_TRUE, vp) );
 	return JS_TRUE;
 }
 
@@ -876,7 +876,7 @@ DEFINE_PROPERTY( hasSSE ) {
 **/
 DEFINE_PROPERTY( hasSSE2 ) {
 
-	J_CHK( BoolToJsval(cx, SDL_HasSSE2() == SDL_TRUE, vp) ); 
+	J_CHK( BoolToJsval(cx, SDL_HasSSE2() == SDL_TRUE, vp) );
 	return JS_TRUE;
 }
 
@@ -885,7 +885,7 @@ DEFINE_PROPERTY( hasSSE2 ) {
 **/
 DEFINE_PROPERTY( hasAltiVec ) {
 
-	J_CHK( BoolToJsval(cx, SDL_HasAltiVec() == SDL_TRUE, vp) ); 
+	J_CHK( BoolToJsval(cx, SDL_HasAltiVec() == SDL_TRUE, vp) );
 	return JS_TRUE;
 }
 
