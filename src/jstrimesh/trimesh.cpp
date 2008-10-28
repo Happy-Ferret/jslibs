@@ -16,13 +16,16 @@
 #include "trimesh.h"
 
 #define REAL float
+#define INDEX u_int32_t
 
 struct Private {
 
-	REAL* vertices; // 1 vertex = 3 coords
+	size_t verticesDataSize;
+	REAL *vertices; // 1 vertex = 3 coords
 	size_t vertexCount;
 
-	u_int32_t *indices;
+	size_t indicesDataSize;
+	INDEX *indices;
 	size_t indexCount;
 };
 
@@ -47,8 +50,10 @@ DEFINE_CONSTRUCTOR() {
 	J_S_ASSERT_THIS_CLASS();
 	Private *pv = (Private*)JS_malloc(cx, sizeof(Private));
 	pv->vertexCount = 0;
+	pv->verticesDataSize = 0;
 	pv->vertices = NULL;
 	pv->indexCount = 0;
+	pv->indicesDataSize = 0;
 	pv->indices = NULL;
 	J_CHK( JS_SetPrivate(cx, obj, pv) );
 	return JS_TRUE;
@@ -69,7 +74,12 @@ DEFINE_FUNCTION_FAST( AddVertex ) {
 	J_CHK( JsvalToDouble(cx, J_FARG(1), &y) );
 	J_CHK( JsvalToDouble(cx, J_FARG(1), &z) );
 
-	pv->vertices = (REAL*)JS_realloc(cx, pv->vertices, (pv->vertexCount + 1) * 3 * sizeof(REAL));
+	if ( pv->verticesDataSize < (pv->vertexCount + 1) * 3 * sizeof(REAL) ) {
+		
+		pv->verticesDataSize *= 2;
+		pv->vertices = (REAL*)JS_realloc(cx, pv->vertices, pv->verticesDataSize);
+	}
+
 	J_S_ASSERT_ALLOC(pv->vertices);
 
 	REAL *pos = pv->vertices + pv->vertexCount * 3;
@@ -84,6 +94,38 @@ DEFINE_FUNCTION_FAST( AddVertex ) {
 }
 
 
+DEFINE_FUNCTION_FAST( AddTriangle ) {
+
+	Private *pv = (Private*)JS_GetPrivate(cx, J_FOBJ);
+	J_S_ASSERT_ALLOC(pv);
+
+	INDEX i1, i2, i3;
+	J_CHK( JsvalToUInt(cx, J_FARG(1), &i1) );
+	J_CHK( JsvalToUInt(cx, J_FARG(1), &i2) );
+	J_CHK( JsvalToUInt(cx, J_FARG(1), &i3) );
+
+//	pv->indices = (INDEX*)JS_realloc(cx, pv->indices, (pv->indexCount + 1) * 3 * sizeof(REAL));
+
+	if ( pv->indicesDataSize < (pv->indexCount + 1) * sizeof(INDEX) ) {
+		
+		pv->verticesDataSize *= 2;
+		pv->vertices = (REAL*)JS_realloc(cx, pv->vertices, pv->verticesDataSize);
+	}
+
+	J_S_ASSERT_ALLOC(pv->indices);
+
+	INDEX *pos = pv->indices + pv->indexCount * 3;
+	*(pos++) = i1;
+	*(pos++) = i2;
+	*(pos++) = i3;
+
+	J_CHK( IntToJsval(cx, pv->indexCount, J_FRVAL) );
+	pv->indexCount += 1;
+	return JS_TRUE;
+}
+
+
+/*
 DEFINE_FUNCTION_FAST( AddIndices ) {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, J_FOBJ);
@@ -92,12 +134,12 @@ DEFINE_FUNCTION_FAST( AddIndices ) {
 	for ( size_t i = 0; i < argc; i++ )
 		J_S_ASSERT_INT(J_FARG(i+1));
 
-	pv->indices = (u_int32_t*)JS_realloc(cx, pv->indices, (pv->indexCount + argc) * sizeof(REAL));
+	pv->indices = (INDEX*)JS_realloc(cx, pv->indices, (pv->indexCount + argc) * sizeof(REAL));
 	J_S_ASSERT_ALLOC(pv->vertices);
 
-	u_int32_t *pos = pv->indices;
+	INDEX *pos = pv->indices;
 
-	u_int32_t index;
+	INDEX index;
 	for ( size_t i = 0; i < argc; i++ ) {
 
 		J_CHK( JsvalToUInt(cx, J_FARG(i+1), &index) );
@@ -107,8 +149,7 @@ DEFINE_FUNCTION_FAST( AddIndices ) {
 	pv->indexCount += 1;
 	return JS_TRUE;
 }
-
-
+*/
 
 CONFIGURE_CLASS // This section containt the declaration and the configuration of the class
 
@@ -120,7 +161,8 @@ CONFIGURE_CLASS // This section containt the declaration and the configuration o
 
 	BEGIN_FUNCTION_SPEC
 		FUNCTION_FAST_ARGC(AddVertex, 3)
-		FUNCTION_FAST(AddIndices)
+		FUNCTION_FAST_ARGC(AddTriangle, 3)
+//		FUNCTION_FAST(AddIndices)
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
