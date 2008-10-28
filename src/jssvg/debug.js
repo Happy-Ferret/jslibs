@@ -112,8 +112,7 @@ svg.onImage = function(href) {
 }
 
 Time( function readXmlData()
-//svg.Write(s)
-svg.Write( <svg><circle cx="50" cy="50" r="25" fill="red"/></svg> )
+svg.Write(s)
 )
 
 Print( 'width: '+svg.width + ' height: '+svg.height, '\n' );
@@ -127,7 +126,7 @@ var svgimage;
 //svg.Translate(64,0);
 svg.Rotate(Math.PI/4);
 
-Time( function renderImage_1()
+Time( function renderImage()
 svgimage = svg.RenderImage(64, 64, 3, true)
 )
 
