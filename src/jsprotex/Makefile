@@ -1,5 +1,5 @@
 TARGET     = jsprotex.so
-SRC        = $(wildcard *.cpp)
+SRC        = $(wildcard *.cpp) mt19937ar-cok.c
 INCLUDES   =
 STATICLIBS =
 SHAREDLIBS =
