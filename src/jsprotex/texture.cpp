@@ -173,7 +173,7 @@ inline PTYPE* PosByMode( const Texture *tex, int x, int y, BorderMode mode ) {
 inline JSBool InitLevelData( JSContext* cx, jsval value, int count, PTYPE *level ) {
 
 	if ( JSVAL_IS_NUMBER(value) ) {
-		
+
 		jsdouble dval;
 		J_CHK( JS_ValueToNumber(cx, value, &dval) );
 		PTYPE val = (PTYPE)dval;
@@ -192,10 +192,10 @@ inline JSBool InitLevelData( JSContext* cx, jsval value, int count, PTYPE *level
 		size_t length;
 		J_CHK( JsvalToStringAndLength(cx, &value, &color, &length) );
 		if ( *color++ == '#' && ((int)length-1) / 2 >= count ) {
-				
+
 			unsigned char val;
 			for ( int i = 0; i < count; i++ ) {
-			
+
 				if ( *color >= '0' && *color <= '9' ) val = *color - '0';
 				else if ( *color >= 'A' && *color <= 'F' ) val = *color - 'A' + 10;
 				else if ( *color >= 'a' && *color <= 'f' ) val = *color - 'a' + 10;
@@ -206,7 +206,7 @@ inline JSBool InitLevelData( JSContext* cx, jsval value, int count, PTYPE *level
 				else if ( *color >= 'a' && *color <= 'f' ) val |= *color - 'a' + 10;
 				color++;
 				level[i] = PMAX * val / 255;
-			}			
+			}
 		}
 	}
 
@@ -217,21 +217,21 @@ inline JSBool InitLevelData( JSContext* cx, jsval value, int count, PTYPE *level
 
 // curve: number | function | array
 inline JSBool InitCurveData( JSContext* cx, jsval value, int length, float *curve ) { // length is the curve resolution
- 
+
 	if ( JSVAL_IS_NUMBER(value) ) {
-		
+
 		jsdouble dval;
 		J_CHK( JS_ValueToNumber(cx, value, &dval) );
 		PTYPE val = (PTYPE)dval;
 		for ( int i = 0; i < length; i++ )
 			curve[i] = val;
-	} else 
+	} else
 	if ( JsvalIsFunction(cx, value) ) {
 
 		jsval val[2], resultValue;
 		jsdouble fval;
 		for ( int i = 0; i < length; i++ ) {
-			
+
 			fval = i / (float)(length-1);
 			J_CHK( JS_NewDoubleValue(cx, fval, val) );
 			val[1] = INT_TO_JSVAL(i);
@@ -239,7 +239,7 @@ inline JSBool InitCurveData( JSContext* cx, jsval value, int length, float *curv
 			J_CHK( JS_ValueToNumber(cx, resultValue, &fval) );
 			curve[i] = fval;
 		}
-	} else 
+	} else
 	if ( JsvalIsArray(cx, value) ) {
 
 		jsuint curveArrayLength;
@@ -265,7 +265,7 @@ inline JSBool InitCurveData( JSContext* cx, jsval value, int length, float *curv
 
 		for ( int i = 0; i < length; i++ )
 			curve[i] = (PTYPE)bstrData[ i * bstrLen / length ] / 255.f; // (TBD) check
-	}	
+	}
 	else {
       // (TBD) throws an error ?
 		for ( int i = 0; i < length; i++ )
@@ -295,13 +295,13 @@ JSBool NativeInterfaceBufferGet( JSContext *cx, JSObject *obj, const char **buf,
 
 
 inline bool IsTexture( JSContext *cx, jsval value ) {
-	
+
 	return ( JSVAL_IS_OBJECT( value ) && JS_GET_CLASS(cx, JSVAL_TO_OBJECT( value )) == classTexture );
 }
 
 
 JSBool ValueToTexture( JSContext* cx, jsval value, Texture **tex ) {
-	
+
 	J_S_ASSERT_OBJECT( value );
 	JSObject *texObj = JSVAL_TO_OBJECT( value );
 	J_S_ASSERT_CLASS( texObj, classTexture );
@@ -310,16 +310,21 @@ JSBool ValueToTexture( JSContext* cx, jsval value, Texture **tex ) {
 	return JS_TRUE;
 }
 
+inline void FreeTextureBuffers( JSContext* cx, Texture *tex ) {
+
+	if ( tex->cbackBuffer != NULL )
+		JS_free(cx, tex->cbackBuffer);
+	if ( tex->cbuffer != NULL )
+		JS_free(cx, tex->cbuffer);
+}
+
 
 DEFINE_FINALIZE() {
 
 	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
 	if ( tex != NULL ) {
 
-		if ( tex->cbackBuffer != NULL )
-			JS_free(cx, tex->cbackBuffer);
-		if ( tex->cbuffer != NULL )
-			JS_free(cx, tex->cbuffer);
+		FreeTextureBuffers(cx, tex);
 		JS_free(cx, tex);
 		JS_SetPrivate(cx, obj, NULL);
 	}
@@ -343,7 +348,7 @@ DEFINE_FINALIZE() {
   {{{
   LoadModule('jsstd');
   LoadModule('jsimage');
-  
+
   var image = DecodePngImage( new File('picture.png').Open("r") );
   var tex = new Texture(image);
   tex.NormalizeLevels();
@@ -360,7 +365,7 @@ DEFINE_CONSTRUCTOR() {
 	J_CHK( SetBufferGetInterface(cx, obj, NativeInterfaceBufferGet) );
 
 	if ( J_ARGC >= 3 ) {
-	
+
 		int width, height, channels;
 		J_CHK( JsvalToInt(cx, J_ARG(1), &width) );
 		J_CHK( JsvalToInt(cx, J_ARG(2), &height) );
@@ -407,7 +412,7 @@ DEFINE_CONSTRUCTOR() {
 		int dWidth = tex->width;
 		int dHeight = tex->height;
 		int dChannels = tex->channels;
-		
+
 		int sWidth, sHeight, sChannels;
 		J_CHK( GetPropertyInt(cx, bstrObj, "width", &sWidth) );
 		J_CHK( GetPropertyInt(cx, bstrObj, "height", &sHeight) );
@@ -451,7 +456,10 @@ DEFINE_CONSTRUCTOR() {
 DEFINE_FUNCTION( Free ) {
 
 	J_S_ASSERT_CLASS(obj, _class);
-	Finalize(cx, obj);
+
+	Texture *tex = (Texture*)JS_GetPrivate(cx, obj);
+	if ( tex != NULL )
+		FreeTextureBuffers(cx, tex);
 	return JS_TRUE;
 }
 
@@ -463,7 +471,7 @@ DEFINE_FUNCTION( Free ) {
   $H example
   {{{
   function AddAlphaChannel( tex ) {
-    
+
     if ( tex.channels == 1 )
       new Texture(tex.width, tex.height, 2).SetChannel(0, tex, 0).Swap(tex);
     else if ( tex.channels == 3 )
@@ -590,7 +598,7 @@ DEFINE_FUNCTION_FAST( ToHLS ) { // (TBD) test it
 	float R, G, B, H, L, S, min, max;
 
 	for ( int i = 0; i < size; i++ ) {
-		
+
 		pos = i * channels;
 		R = tex->cbuffer[pos+0];
 		G = tex->cbuffer[pos+1];
@@ -653,7 +661,7 @@ DEFINE_FUNCTION_FAST( ToRGB ) { // (TBD) test it
 	Texture *tex = (Texture *)JS_GetPrivate(cx, J_FOBJ);
 	J_S_ASSERT_RESOURCE(tex);
 	int channels = tex->channels;
-	
+
 	J_S_ASSERT( channels >= 3, "Invalid pixel format (need HLS).");
 
 	int size = tex->width * tex->height;
@@ -661,7 +669,7 @@ DEFINE_FUNCTION_FAST( ToRGB ) { // (TBD) test it
 	float R, G, B, H, L, S;
 	float m1, m2;
 	for ( int i = 0; i < size; i++ ) {
-		
+
 		pos = i * channels;
 		H = tex->cbuffer[pos+0];
 		L = tex->cbuffer[pos+1];
@@ -669,7 +677,7 @@ DEFINE_FUNCTION_FAST( ToRGB ) { // (TBD) test it
 
 		if (L <= 0.5)
 				m2 = L * ( 1.0 + S );
-		else 
+		else
 				m2 = L + S - L * S;
 		m1 = 2.0 * L - m2;
 		if (S == 0.0) { // achromatic cast
@@ -696,12 +704,12 @@ DEFINE_FUNCTION_FAST( ToRGB ) { // (TBD) test it
   Reduce the number of values used for each channel.
   $H arguments
    $ARG integer count: the number of different $pval in the resulting texture.
-   $ARG curveInfo curve: the transformation curve used for each value. For further information about ,,curveInfo,, , see lower.
+   $ARG curveInfo curve: the transformation curve used for each value. For further information about ,,curveInfo,, , see below.
   $H note
    If _curveInfo_ is not provided, each channel is processed in a linear manner using the following formula:
     floor( count `*` colorValue ) / count
   $H note
-   Each channel are processed independently.
+   Each channel is processed independently.
   $H example 1
   {{{
   var t = Cloud(size, 0.5);
@@ -738,10 +746,10 @@ DEFINE_FUNCTION_FAST( Aliasing ) {
 		useCurve = false;
 
 	int tsize = tex->width * tex->height * tex->channels;
-	
+
 	if ( useCurve )
 		for ( int i = 0; i < tsize; i++ ) {
-			
+
 			long curveIndex = (long)(count * tex->cbuffer[i] / PMAX);
 			tex->cbuffer[i] = curve[MINMAX(curveIndex, 0, (signed)count-1)];
 		}
@@ -754,15 +762,16 @@ DEFINE_FUNCTION_FAST( Aliasing ) {
 }
 
 /**doc
- * $THIS $INAME( fromColorInfo, toColorInfo )
+ * $THIS $INAME( fromColorInfo, toColorInfo [ , power = 1 ] )
   $H arguments
    $ARG colorInfo fromColorInfo: The color to be changed.
    $ARG colorInfo toColorInfo: The substitute color. For further information about ,,colorInfo,, see below.
+   $ARG real power: strength of color replacement.
   $H example
   {{{
   const BLUE = [ 0,0,1,1 ];
   const WHITE = [ 1,1,1,1 ];
-  
+
   var texture = new Texture( 100, 100, 3 );
   ...
   texture.Colorize( WHITE, BLUE, 0 );
@@ -791,7 +800,7 @@ DEFINE_FUNCTION_FAST( Colorize ) {
 		J_CHK( JsvalToDouble(cx, J_FARG(3), &power) );
 	else
 		power = 1;
-	
+
 	float ratio;
 	int pos, size = tex->width * tex->height;
 	int c;
@@ -894,7 +903,7 @@ DEFINE_FUNCTION_FAST( NormalizeLevels ) {
 	int tsize = tex->width * tex->height * tex->channels;
 	for ( int i = 0; i < tsize; i++ ) {
 
-		tmp = tex->cbuffer[i]; 
+		tmp = tex->cbuffer[i];
 		if ( tmp > max )
 			max = tmp;
 		else if ( tmp < min )
@@ -930,7 +939,7 @@ DEFINE_FUNCTION_FAST( ClampLevels ) { // (TBD) check if this algo is right
 	PTYPE tmp;
 	int tsize = tex->width * tex->height * tex->channels;
 	for ( int i = 0; i < tsize; i++ ) {
-		
+
 		tmp = tex->cbuffer[i];
 		if ( tmp > max )
 			tex->cbuffer[i] = max;
@@ -964,7 +973,7 @@ DEFINE_FUNCTION_FAST( CutLevels ) { // (TBD) check if this algo is right
 	PTYPE tmp;
 	int tsize = tex->width * tex->height * tex->channels;
 	for ( int i = 0; i < tsize; i++ ) {
-		
+
 		tmp = tex->cbuffer[i];
 		if ( tmp > max )
 			tex->cbuffer[i] = PMAX;
@@ -988,14 +997,14 @@ DEFINE_FUNCTION_FAST( CutLevels ) {
 
 		min = 0;
 		max = PMAX;
-	} 
-	
+	}
+
 	if ( argc >= 1 ) {
 
 		J_CHK( JsvalToDouble(cx, J_FARG(1), &min) );
 		max = min;
 	}
-	
+
 	if ( argc >= 2 ) {
 
 		J_CHK( JsvalToDouble(cx, J_FARG(2), &max) );
@@ -1011,7 +1020,7 @@ DEFINE_FUNCTION_FAST( CutLevels ) {
 		lmin = min;
 		pos = i * channels;
 		for ( c = 0; c < channels; c++ ) {
-			
+
 			level = tex->cbuffer[pos+c];
 			if ( level > lmax )
 				lmax = level;
@@ -1068,7 +1077,7 @@ DEFINE_FUNCTION_FAST( OppositeLevels ) { // level = -level
   Each $pval is powered by _power_ ( v = v ^ _power_ ).
 **/
 // PTYPE ok
-DEFINE_FUNCTION_FAST( PowLevels ) { // 
+DEFINE_FUNCTION_FAST( PowLevels ) { //
 
 	Texture *tex = (Texture *)JS_GetPrivate(cx, J_FOBJ);
 	J_S_ASSERT_RESOURCE(tex);
@@ -1102,7 +1111,7 @@ DEFINE_FUNCTION_FAST( MirrorLevels ) {
 	J_S_ASSERT_RESOURCE(tex);
 	double threshold;
 	J_CHK( JsvalToDouble(cx, J_FARG(1), &threshold) );
-	
+
 	bool mirrorTop;
 	if ( argc >= 2 && !JSVAL_IS_VOID(J_FARG(2)) )
 		J_CHK( JsvalToBool(cx, J_FARG(2), &mirrorTop) );
@@ -1114,14 +1123,14 @@ DEFINE_FUNCTION_FAST( MirrorLevels ) {
 
 	if ( mirrorTop )
 		for ( i = 0; i < tsize; i++ ) {
-			
+
 			value = tex->cbuffer[i];
 			if ( value > threshold )
 				tex->cbuffer[i] = 2 * threshold - value;
 		}
 	else
 		for ( i = 0; i < tsize; i++ ) {
-			
+
 			value = tex->cbuffer[i];
 			if ( value < threshold )
 				tex->cbuffer[i] = 2 * threshold - value;
@@ -1219,7 +1228,7 @@ DEFINE_FUNCTION_FAST( Desaturate ) {
 	int modeVal;
 	J_CHK( JsvalToInt(cx, J_FARG(2), &modeVal) );
 	DesaturateMode mode = (DesaturateMode)modeVal;
-	
+
 	int pos, i, c;
 	int srcChannels = tex->channels;
 	int size = tex->width * tex->height;
@@ -1231,7 +1240,7 @@ DEFINE_FUNCTION_FAST( Desaturate ) {
 			case desaturateLightness:
 				min = max = texSrc->cbuffer[pos+0];
 				for ( c = 1; c < srcChannels; c++ ) {
-					
+
 					tmp = texSrc->cbuffer[pos+c];
 					if ( tmp > max )
 						max = tmp;
@@ -1265,8 +1274,8 @@ DEFINE_FUNCTION_FAST( Desaturate ) {
  * $THIS $INAME( otherTexture )
  * $THIS $INAME( color )
   $H arguments
-   $ARG Texture otherTexture: 
-   $ARG colorInfo color: 
+   $ARG Texture otherTexture:
+   $ARG colorInfo color:
   Set a texture with another texture or a given _color_.
 **/
 // PTYPE ok
@@ -1278,7 +1287,7 @@ DEFINE_FUNCTION_FAST( Set ) {
 	int channels = tex->channels;
 	int tsize = tex->width * tex->height * channels;
 	if ( IsTexture(cx, J_FARG(1)) ) {
-		
+
 		Texture *tex1;
 		J_CHK( ValueToTexture(cx, J_FARG(1), &tex1) );
 		J_S_ASSERT( tex->width == tex1->width && tex->height == tex1->height && channels == tex1->channels, "Images must have the same size." );
@@ -1318,7 +1327,7 @@ DEFINE_FUNCTION_FAST( Add ) {
 	int channels = tex->channels;
 	int tsize = tex->width * tex->height * channels;
 	if ( IsTexture(cx, J_FARG(1)) ) {
-		
+
 		Texture *tex1;
 		J_CHK( ValueToTexture(cx, J_FARG(1), &tex1) );
 		J_S_ASSERT( tex->width == tex1->width && tex->height == tex1->height && channels == tex1->channels, "Images must have the same size." );
@@ -1353,7 +1362,7 @@ DEFINE_FUNCTION_FAST( Mult ) {
 	int tsize = tex->width * tex->height * channels;
 
 	if ( IsTexture(cx, J_FARG(1)) ) {
-		
+
 		Texture *tex1;
 		J_CHK( ValueToTexture(cx, J_FARG(1), &tex1) );
 		J_S_ASSERT( tex->width == tex1->width && tex->height == tex1->height && channels == tex1->channels, "Images must have the same size." );
@@ -1362,7 +1371,7 @@ DEFINE_FUNCTION_FAST( Mult ) {
 /* using Aliasing() seems more useful than Mult()
 	} else
 	if ( JsvalIsFunction(cx, J_FARG(1)) ) {
-		
+
 		J_S_ASSERT_ARG_MIN( 2 );
 		int aliasing;
 		J_CHK( JsvalToInt(cx, J_FARG(2), &aliasing) );
@@ -1430,12 +1439,12 @@ DEFINE_FUNCTION_FAST( Blend ) { // texture1, blenderTexture|blenderColor
 	float blend;
 
 	if ( IsTexture(cx, J_FARG(2)) ) {
-		
+
 		Texture *blenderTex;
 		J_CHK( ValueToTexture(cx, J_FARG(1), &blenderTex) );
 		J_S_ASSERT( tex->width == blenderTex->width && tex->height == blenderTex->height && channels == blenderTex->channels, "Images must have the same size." );
 		for ( int i = 0; i < tsize; i++ ) {
-			
+
 			blend = blenderTex->cbuffer[i];
 			tex->cbuffer[i] = (blend * tex->cbuffer[i] + (PMAX - blend) * tex1->cbuffer[i] ) / PMAX;
 		}
@@ -1461,7 +1470,7 @@ DEFINE_FUNCTION_FAST( Blend ) { // texture1, blenderTexture|blenderColor
 			blend = pixel[i%channels];
 			tex->cbuffer[i] = blend * tex->cbuffer[i] + (PMAX - blend) * tex1->cbuffer[i];
 		}
-*/		
+*/
 	}
 	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 	return JS_TRUE;
@@ -1485,7 +1494,7 @@ DEFINE_FUNCTION_FAST( SetPixel ) { // x, y, levels
 	int x, y;
 	J_CHK( JsvalToInt(cx, J_FARG(1), &x) );
 	J_CHK( JsvalToInt(cx, J_FARG(2), &y) );
-	
+
 	x = Wrap(x, tex->width);
 	y = Wrap(y, tex->height);
 
@@ -1527,7 +1536,7 @@ DEFINE_FUNCTION_FAST( SetRectangle ) {
 
 	PTYPE pixel[PMAXCHANNELS];
 	J_CHK( InitLevelData(cx, J_FARG(5), tex->channels, pixel) );
-	
+
 //	PTYPE alpha;
 //	if ( argc >= 6 )
 //		J_CHK( JsvalToDouble(cx, J_FARG(6), &alpha) )
@@ -1668,9 +1677,9 @@ DEFINE_FUNCTION_FAST( Flip ) {
   Make a zoom and/or a rotation of the current texture.
   $H arguments
    $ARG real centerX: coordinate of the center of the zoom or rotation.
-   $ARG real centerY: 
+   $ARG real centerY:
    $ARG real zoomX: the zoom factor (use 1 for none).
-   $ARG real zoomY: 
+   $ARG real zoomY:
    $ARG real rotations: the number of totations to perform. 0.25 is 90 degres (use 0 for none).
 **/
 DEFINE_FUNCTION_FAST( RotoZoom ) { // source: FxGen
@@ -1815,7 +1824,7 @@ DEFINE_FUNCTION_FAST( Resize ) {
 
 	BorderMode borderMode; // (TBD) from function arg
 	if ( J_FARG_ISDEF(4) ) {
-		
+
 		int tmp;
 		J_CHK( JsvalToInt(cx, J_FARG(4), &tmp) );
 		borderMode = (BorderMode)tmp;
@@ -1824,7 +1833,7 @@ DEFINE_FUNCTION_FAST( Resize ) {
 
 
 	if ( newWidth != width || newHeight != height ) { // nothing to do
-		
+
 
 		PTYPE *newBuffer = (PTYPE*)JS_malloc(cx, newWidth * newHeight * channels * sizeof(PTYPE) );
 		J_S_ASSERT_ALLOC( newBuffer );
@@ -1839,7 +1848,7 @@ DEFINE_FUNCTION_FAST( Resize ) {
 		float ratio1, ratio2, ratio3, ratio4; // pixel value ratio
 
 		for ( y = 0; y < newHeight; y++ )
-			for ( x = 0; x < newWidth; x++ ) {	
+			for ( x = 0; x < newWidth; x++ ) {
 
 				if ( interpolate ) {
 /* slower
@@ -1905,7 +1914,7 @@ DEFINE_FUNCTION_FAST( Resize ) {
 			JS_free(cx, tex->cbackBuffer );
 			tex->cbackBuffer = NULL;
 		}
-		
+
 		tex->cbuffer = newBuffer;
 		tex->width = newWidth;
 		tex->height = newHeight;
@@ -1999,7 +2008,7 @@ DEFINE_FUNCTION_FAST( Convolution ) {
 				case borderWrap:
 					for ( vy = 0; vy < size; vy++ )
 						for ( vx = 0; vx < size; vx++ ) {
-				
+
 							pos = (Wrap(x + vx-offset, width) + Wrap(y + vy-offset, height) * width) * channels;
 							ratio =  kernel[vx + vy * size];
 							for ( c = 0; c < channels; c++ )
@@ -2047,7 +2056,7 @@ DEFINE_FUNCTION_FAST( Convolution ) {
 								sy = 0;
 							if ( sy >= height )
 								sy = height-1;
-							
+
 							pos = (sx + sy * width)*channels;
 							ratio =  kernel[vx + vy * size];
 							for ( c = 0; c < channels; c++ )
@@ -2122,14 +2131,14 @@ DEFINE_FUNCTION_FAST( ForEachPixels ) {
 
 				jsval level;
 				JS_NewNumberValue(cx, tex->cbuffer[pos+c], &level);
-				JS_SetElement(cx, cArrayObj, c, &level); 
+				JS_SetElement(cx, cArrayObj, c, &level);
 			}
 
 			if ( !JS_CallFunctionValue(cx, J_FOBJ, functionValue, 3, callArgv, &callRval) )
 				return JS_FALSE;
-			
+
 			if ( JsvalIsArray(cx, callRval) ) {
-				
+
 				JSObject *returnedArray = JSVAL_TO_OBJECT(callRval);
 
 				for ( int c = 0; c < channels; c++ ) {
@@ -2164,7 +2173,7 @@ DEFINE_FUNCTION_FAST( ForEachPixels ) {
    while ( count-- > 0 )
     t.SetPixel(Texture.RandInt(), Texture.RandInt(), 1);
   }
-  
+
   var texture = new Texture(128, 128, 3);
   texture.Set(0);
   AddPixels(texture, 100);
@@ -2198,17 +2207,17 @@ DEFINE_FUNCTION_FAST( BoxBlur ) {
 	int x, y, c;
 	for ( y = 0; y < height; y++ )
 		for ( c = 0; c < channels; c++ ) {
-			
+
 			for ( x = 0; x < width; x++ )
 				line[x * channels + c] = tex->cbuffer[(x + y * width) * channels + c];
 
 			sum[c] = 0;
-		
+
 			for ( x = 0; x < bw; x++ )
 				sum[c] += line[x * channels + c];
 
 			for ( x = 0; x < width; x++ ) {
-	
+
 				tex->cbuffer[ ( (x + bw/2) % width + y * width ) * channels + c ] = sum[c] / bw;
 				sum[c] = sum[c] - line[x * channels + c] + line[( (x + bw) % width ) * channels + c];
 			}
@@ -2216,17 +2225,17 @@ DEFINE_FUNCTION_FAST( BoxBlur ) {
 
 	for ( x = 0; x < width; x++ )
 		for ( c = 0; c < channels; c++ ) {
-			
+
 			for ( y = 0; y < height; y++ )
 				line[y * channels + c] = tex->cbuffer[(x + y * width) * channels + c];
 
 			sum[c] = 0;
-		
+
 			for ( y = 0; y < bh; y++ )
 				sum[c] += line[y * channels + c];
 
 			for ( y = 0; y < height; y++ ) {
-	
+
 				tex->cbuffer[ ( x + ((y + bh/2) % height) * width ) * channels + c ] = sum[c] / bh;
 				sum[c] = sum[c] - line[y * channels + c] + line[( (y + bh) % height ) * channels + c];
 			}
@@ -2256,11 +2265,11 @@ DEFINE_FUNCTION_FAST( NormalizeVectors ) {
 	float length;
 	int i, pos, c;
 	for ( i = 0; i < size; i++ ) {
-		
+
 		pos = i * channels;
 		sum = 0;
 		for ( c = 0; c < channels; c++ ) {
-			
+
 			val = PZNORM( tex->cbuffer[pos+c] );
 			sum += val * val;
 		}
@@ -2348,7 +2357,7 @@ DEFINE_FUNCTION_FAST( Normals ) {
 
 			fPix = (float)tex->cbuffer[(  (x+1) % width + (((y+1) % height)*width)  ) * channels];
 			dX+= PNORM(fPix) * 1.f;
-			
+
 			Vector3Set(&normal, dX*amp, dY*amp, 1.f);
 			Vector3Normalize(&normal);
 
@@ -2379,7 +2388,7 @@ DEFINE_FUNCTION_FAST( Normals ) {
   $H arguments
    $ARG Texture normalsTexture: the bump map where each pixel is a 3D vector.
    $ARG Array lightPosition: is the position of the light in a 3D space ( [ x, y, z ] )
-   $ARG colorInfo ambiantColor: 
+   $ARG colorInfo ambiantColor:
    $ARG colorInfo diffuseColor:
    $ARG colorInfo specularColor:
    $ARG real bumpPower:
@@ -2410,7 +2419,7 @@ DEFINE_FUNCTION_FAST( Light ) {
 	J_S_ASSERT( normals->channels == 3, "Invalid normals texture channel count." );
 
 	J_S_ASSERT( tex->channels >= 3, "normals applys on a RGB or RGBA texture." );
-	
+
 	J_S_ASSERT( normals->width == tex->width && normals->height == tex->height, "Invalid normals texture size." );
 
 	Vector3 lightPos;
@@ -2429,7 +2438,7 @@ DEFINE_FUNCTION_FAST( Light ) {
 	PTYPE specular[3];
 	J_CHK( InitLevelData(cx, J_FARG(5), 3, specular) );
 	bool specularTexture = false;
-	
+
 	double bumpPower; // (TBD) default value
 	if ( argc >= 6 )
 		J_CHK( JsvalToDouble(cx, J_FARG(6), &bumpPower) );
@@ -2452,7 +2461,7 @@ DEFINE_FUNCTION_FAST( Light ) {
 	int pos;
 	for ( y = 0; y < height; y++ )
 		for ( x = 0; x < width; x++ ) {
-			
+
 			pos = (x + y * width) * 3; // normal texture is only 3 channels
 			Vector3Set(&n, PZNORM(normals->cbuffer[pos+0]), PZNORM(normals->cbuffer[pos+1]), PZNORM(normals->cbuffer[pos+2]) / bumpPower );
 			Vector3Normalize(&n);
@@ -2460,7 +2469,7 @@ DEFINE_FUNCTION_FAST( Light ) {
 			float fDiffDot = Vector3Dot(&n, &lightPos);
 			if ( fDiffDot < 0 )
 				fDiffDot = 0;
-			
+
 			float fSpecDot = Vector3Dot(&n, &halfV);
 			if ( fSpecDot < 0 )
 				fSpecDot = 0;
@@ -2542,7 +2551,7 @@ DEFINE_FUNCTION_FAST( Trim ) { // (TBD) test this new version that use memcpy
 	int posDst, posSrc;
 	for ( y = 0; y < newHeight; y++ )
 		for ( x = 0; x < newWidth; x++ ) {
-			
+
 			posDst = (x + y * newWidth) * channels;
 			posSrc = ((x0+x) + (y0+y) * width) * channels;
 			for ( c = 0; c < channels; c++ )
@@ -2587,7 +2596,7 @@ DEFINE_FUNCTION_FAST( Copy ) {
 
 	BorderMode borderMode; // (TBD) from function arg
 	if ( J_FARG_ISDEF(4) ) {
-		
+
 		int tmp;
 		J_CHK( JsvalToInt(cx, J_FARG(4), &tmp) );
 		borderMode = (BorderMode)tmp;
@@ -2661,7 +2670,7 @@ DEFINE_FUNCTION_FAST( Paste ) { // (Texture)texture, (int)x, (int)y, (bool)borde
 
 	BorderMode borderMode;
 	if ( J_FARG_ISDEF(4) ) {
-		
+
 		int tmp;
 		J_CHK( JsvalToInt(cx, J_FARG(4), &tmp) );
 		borderMode = (BorderMode)tmp;
@@ -2727,7 +2736,7 @@ DEFINE_FUNCTION_FAST( Paste ) { // (Texture)texture, (int)x, (int)y, (bool)borde
   f.size = 100;
   f.verticalPadding = -16;
   var img = f.DrawString('Hello world', true);
-  
+
   var t = new Texture(img);
   var t1 = new Texture(t);
 
@@ -2736,8 +2745,8 @@ DEFINE_FUNCTION_FAST( Paste ) { // (Texture)texture, (int)x, (int)y, (bool)borde
   t.Add(t1);
   t.OppositeLevels();
   t.Add(1);
-  
-  new File('text.png').content = EncodePngImage(t.Export());  
+
+  new File('text.png').content = EncodePngImage(t.Export());
   }}}
 **/
 DEFINE_FUNCTION_FAST( Export ) { // (int)x, (int)y, (int)width, (int)height. Returns a Blob
@@ -2763,7 +2772,7 @@ DEFINE_FUNCTION_FAST( Export ) { // (int)x, (int)y, (int)width, (int)height. Ret
 		dWidth = sWidth;
 		dHeight = sHeight;
 	} else {
-		
+
 		J_S_ASSERT_ARG_MIN( 4 );
 		int px, py;
 		J_CHK( JsvalToInt(cx, J_FARG(1), &px) );
@@ -2783,14 +2792,14 @@ DEFINE_FUNCTION_FAST( Export ) { // (int)x, (int)y, (int)width, (int)height. Ret
 		for ( x = 0; x < dWidth; x++ ) {
 
 			int sx, sy; // position in source
-			
+
 			sx = x + px;
 			sy = y + py;
 
 			posDst = ( x + y * dWidth ) * sChannels;
 			posSrc = ( sx + sy * sWidth ) * sChannels;
 			for ( c = 0; c < sChannels; c++ ) {
-				
+
 				//buffer[posDst+c] = (u_int8_t)(PNORM(tex->cbuffer[posSrc+c]) * 256);
 				buffer[posDst+c] = (u_int8_t)(MINMAX(tex->cbuffer[posSrc+c] * 255.f, 0, 255)); // map [0.0 -> 1.0] to [0 -> 255]
 			}
@@ -2801,7 +2810,7 @@ DEFINE_FUNCTION_FAST( Export ) { // (int)x, (int)y, (int)width, (int)height. Ret
 	JSObject *bstrObj;
 	J_CHK( JS_ValueToObject(cx, bstr, &bstrObj) );
 	*J_FRVAL = OBJECT_TO_JSVAL( bstrObj );
-	
+
 	SetPropertyInt(cx, bstrObj, "width", dWidth);
 	SetPropertyInt(cx, bstrObj, "height", dHeight);
 	SetPropertyInt(cx, bstrObj, "channels", sChannels);
@@ -2825,7 +2834,7 @@ DEFINE_FUNCTION_FAST( Export ) { // (int)x, (int)y, (int)width, (int)height. Ret
   var image = DecodePngImage( file );
   file.Close();
   texture.Import( image, 0, 0 );
-  
+
   Ogl.MatrixMode(MODELVIEW);
   Ogl.DefineTextureImage(TEXTURE_2D, undefined, texture);
   Ogl.LoadIdentity();
@@ -2838,7 +2847,7 @@ DEFINE_FUNCTION_FAST( Import ) { // (Blob)image, (int)x, (int)y
 
 	Texture *tex = (Texture *)JS_GetPrivate(cx, J_FOBJ);
 	J_S_ASSERT_RESOURCE(tex);
-	
+
 	J_S_ASSERT_OBJECT( J_FARG(1) );
 	JSObject *bstr = JSVAL_TO_OBJECT( J_FARG(1) );
 	J_S_ASSERT_CLASS( bstr, BlobJSClass(cx) );
@@ -2849,7 +2858,7 @@ DEFINE_FUNCTION_FAST( Import ) { // (Blob)image, (int)x, (int)y
 
 	BorderMode borderMode;
 	if ( J_FARG_ISDEF(4) ) {
-		
+
 		int tmp;
 		J_CHK( JsvalToInt(cx, J_FARG(4), &tmp) );
 		borderMode = (BorderMode)tmp;
@@ -2860,7 +2869,7 @@ DEFINE_FUNCTION_FAST( Import ) { // (Blob)image, (int)x, (int)y
 	int dWidth = tex->width;
 	int dHeight = tex->height;
 	int dChannels = tex->channels;
-	
+
 	int sWidth, sHeight, sChannels;
 	GetPropertyInt(cx, bstr, "width", &sWidth);
 	GetPropertyInt(cx, bstr, "height", &sHeight);
@@ -2913,7 +2922,7 @@ DEFINE_FUNCTION_FAST( Import ) { // (Blob)image, (int)x, (int)y
  * $THIS $INAME( offsetX, offsetY [ , borderMode] )
   Shift the current image.
   $H arguments
-   $ARG integer offsetX: 
+   $ARG integer offsetX:
    $ARG integer offsetY:
    $ARG enum borderMode: one of Texture.borderWrap, Texture.borderClamp, Texture.borderMirror or Texture.borderValue.
 **/
@@ -2931,7 +2940,7 @@ DEFINE_FUNCTION_FAST( Shift ) {
 
 	BorderMode borderMode;
 	if ( J_FARG_ISDEF(3) ) {
-		
+
 		int tmp;
 		J_CHK( JsvalToInt(cx, J_FARG(3), &tmp) );
 		borderMode = (BorderMode)tmp;
@@ -2981,7 +2990,7 @@ DEFINE_FUNCTION_FAST( Shift ) {
 				default:
 					J_REPORT_ERROR( "Invalid border mode." );
 			}
-			for ( c = 0; c < channels; c++ ) 
+			for ( c = 0; c < channels; c++ )
 				tex->cbackBuffer[(x + y * width) * channels + c] = tex->cbuffer[(sx + sy * width) * channels + c];
 		}
 	TextureSwapBuffers(tex);
@@ -2991,7 +3000,7 @@ DEFINE_FUNCTION_FAST( Shift ) {
 
 /**doc
  * $THIS $INAME( displaceTexture, factor [ , borderMode] )
-  Move each pixel of the texture according to the 
+  Move each pixel of the texture according to the
   $H arguments
    $ARG Texture displaceTexture: is a texture that contains displacement vectors.
    $ARG real factor: displacement factor of each pixel.
@@ -3041,7 +3050,7 @@ DEFINE_FUNCTION_FAST( Displace ) {
 //			sy = (int)( y + o.y * factor );
 
 			// (TBD) test !
-			
+
 			sx = x + PZNORM( tex1->cbuffer[pos+0] ) * factor;
 			sy = y + PZNORM( tex1->cbuffer[pos+1] ) * factor;
 
@@ -3069,7 +3078,7 @@ DEFINE_FUNCTION_FAST( Displace ) {
 				default:
 					J_REPORT_ERROR( "Invalid border mode." );
 			}
-			
+
 			pos = (x + y * width) * channels;
 			pos1 = (sx + sy * width) * channels;
 			for ( c = 0; c < channels; c++ )
@@ -3085,8 +3094,8 @@ DEFINE_FUNCTION_FAST( Displace ) {
  * $THIS $INAME( density, regularity )
   Draws cells in the current texture.
   $H arguments
-   $ARG integer density: 
-   $ARG real regularity: 
+   $ARG integer density:
+   $ARG real regularity:
 **/
 DEFINE_FUNCTION_FAST( Cells ) { // source: FxGen
 
@@ -3192,7 +3201,7 @@ DEFINE_FUNCTION_FAST( Cells ) { // source: FxGen
   const RED = [1,0,0,1];
   const BLUE = [0,0,1,1];
   const BLACK = [0,0,0,1];
-  
+
   texture.Set(0); // clears the texture
   texture.AddGradiantQuad(BLACK, RED, BLUE, BLACK);
   }}}
@@ -3200,7 +3209,7 @@ DEFINE_FUNCTION_FAST( Cells ) { // source: FxGen
 DEFINE_FUNCTION_FAST( AddGradiantQuad ) {
 
 	J_S_ASSERT_ARG_MIN( 4 );
-	
+
 	Texture *tex = (Texture *)JS_GetPrivate(cx, J_FOBJ);
 	J_S_ASSERT_RESOURCE(tex);
 	int width = tex->width;
@@ -3232,7 +3241,7 @@ DEFINE_FUNCTION_FAST( AddGradiantQuad ) {
 			r2 = (float)((x)       * (height-y)) / aspectRatio;
 			r3 = (float)((width-x) * (y))        / aspectRatio;
 			r4 = (float)((x)       * (y))        / aspectRatio;
-			
+
 			pos = ( x + y * width ) * channels;
 			for ( c = 0; c < channels; c++ )
 				tex->cbuffer[pos+c] += pixel1[c]*r1 + pixel2[c]*r2 + pixel3[c]*r3 + pixel4[c]*r4;
@@ -3251,7 +3260,7 @@ DEFINE_FUNCTION_FAST( AddGradiantQuad ) {
   {{{
   const curveHalfSine = function(v) Math.cos(v*Math.PI/2);
   const curveOne = function() 1;
-  
+
   texture.Set(0); // clears the texture
   texture.AddGradiantLinear(curveHalfSine, curveOne);
   }}}
@@ -3263,7 +3272,7 @@ DEFINE_FUNCTION_FAST( AddGradiantQuad ) {
 DEFINE_FUNCTION_FAST( AddGradiantLinear ) {
 
 	J_S_ASSERT_ARG_MIN( 2 );
-	
+
 	Texture *tex = (Texture *)JS_GetPrivate(cx, J_FOBJ);
 	J_S_ASSERT_RESOURCE(tex);
 
@@ -3281,7 +3290,7 @@ DEFINE_FUNCTION_FAST( AddGradiantLinear ) {
 	int pos;
 	for ( y = 0; y < height; y++ )
 		for ( x = 0; x < width; x++ ) {
-	
+
 			pos = ( x + y * width ) * channels;
 			for ( c = 0; c < channels; c++ )
 				tex->cbuffer[pos+c] += curvex[x] * curvey[y];
@@ -3301,7 +3310,7 @@ DEFINE_FUNCTION_FAST( AddGradiantLinear ) {
   $H example 1
   {{{
   const curveHalfSine = function(v) Math.cos(v*Math.PI/2);
-  
+
   texture.AddGradiantRadial(curveHalfSine);
   }}}
   $H example 2
@@ -3343,7 +3352,7 @@ DEFINE_FUNCTION_FAST( AddGradiantRadial ) {
 	float curveValue;
 	for ( y = 0; y < height; y++ )
 		for ( x = 0; x < width; x++ ) {
-		
+
 			dist = Length2D( (float)x / width - 0.5, (float)y / height - 0.5 ); // distance to the center ( 0..M_SQRT1_2 )
 
 			if ( drawToCorner ) {
@@ -3412,7 +3421,7 @@ DEFINE_FUNCTION( AddGradiantRadial ) {
 
 			// (TBD) manage border
 			if ( x >= ox-radius && x <= ox+radius && y >= oy-radius && y <= oy+radius ) { // are we inside the box-radius ?
-				
+
 				Vector3Set(&p, ox - x , oy - y, 0);
 				dist = (int)Vector3Len(&p);
 				if ( dist < radius ) {
@@ -3424,7 +3433,7 @@ DEFINE_FUNCTION( AddGradiantRadial ) {
 					for ( c = 0; c < channels; c++ )
 						tex->cbuffer[pos+c] += curveValue;
 				}
-			}		
+			}
 		}
 
 	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
@@ -3449,7 +3458,7 @@ DEFINE_FUNCTION( AddGradiantRadial ) {
   $H examples
   {{{
   texture.AddCracks( 1000, 10, 0, RED, 1 );
-  
+
   texture.AddCracks( 100, 100, 0, 1, [1,0,1,0,1,0,1,0,1] );
 
   texture.AddCracks( 10, 10000, 0.1, 1, curveLinear );
@@ -3473,7 +3482,7 @@ DEFINE_FUNCTION_FAST( AddCracks ) { // source: FxGen
 
 	int crackMaxLength;
 	J_CHK( JsvalToInt(cx, J_FARG(2), &crackMaxLength) );
-	
+
 	double variation;
 	if ( J_FARG_ISDEF(3) )
 		J_CHK( JsvalToDouble(cx, J_FARG(3), &variation) );
@@ -3482,7 +3491,7 @@ DEFINE_FUNCTION_FAST( AddCracks ) { // source: FxGen
 
 	PTYPE pixel[PMAXCHANNELS];
 	if ( J_FARG_ISDEF(4) ) {
-		
+
 		J_CHK( InitLevelData(cx, J_FARG(4), channels, pixel) );
 	} else {
 		for ( int i=0; i<PMAXCHANNELS; i++ )
@@ -3516,7 +3525,7 @@ DEFINE_FUNCTION_FAST( AddCracks ) { // source: FxGen
 
 			int ix = int(x)%width;
 			int iy = int(y)%height;
-			
+
 			pos = (ix + iy * width) * channels;
 			for ( c = 0; c < channels; c++ )
 
@@ -3599,7 +3608,7 @@ DEFINE_FUNCTION_FAST( LevelRange ) {
 	int tsize = tex->width * tex->height * tex->channels;
 	for ( int i = 0; i < tsize; i++ ) {
 
-		tmp = tex->cbuffer[i]; 
+		tmp = tex->cbuffer[i];
 		if ( tmp > max )
 			max = tmp;
 		else if ( tmp < min )
@@ -3807,7 +3816,7 @@ static JSBool _Test(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval
   const curveZero = function(v,i) { return 0 }
   const curveOne = function(v,i) { return 1 }
   function GaussianCurveGenerator(c) { return function(x) { return Math.exp( -(x*x)/(2*c*c) ) } }
-  
+
   texture.AddGradiantRadial( GaussianCurveGenerator( 0.5 ) );
   }}}
 
@@ -3899,7 +3908,7 @@ CONFIGURE_CLASS
 		CONST_INTEGER( desaturateLightness, desaturateLightness )
 		CONST_INTEGER( desaturateSum, desaturateSum )
 		CONST_INTEGER( desaturateAverage, desaturateAverage )
-		
+
 	END_CONST_INTEGER_SPEC
 
 	HAS_PRIVATE
@@ -3919,7 +3928,7 @@ function Cloud( size, amp ) {
    var cloud = new Texture(s, s, 1);
    cloud.ClearChannel();
    while ( octaves-- > 0 ) {
-      
+
       cloud.AddNoise(a);
       a *= amp;
       s *= 2;
@@ -3931,7 +3940,7 @@ function Cloud( size, amp ) {
 }
 
 function DesaturateLuminosity( tex ) {
-   
+
    tex.Mult([0.2126, 0.7152, 0.0722]);
    var tmp = new Texture(tex.width, tex.height, 1).Desaturate(tex, Texture.desaturateSum);
    tex.Swap(tmp);
@@ -3975,7 +3984,7 @@ LoadModule('jsprotex');
 LoadModule('jsimage');
 
 with (Ogl) {
-   
+
    var texture = new Texture(128, 128, 3);
    texture.Set(0);
    // play here for static textures
