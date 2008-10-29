@@ -227,6 +227,10 @@
 				RelativePath=".\trimesh.h"
 				>
 			</File>
+			<File
+				RelativePath=".\trimeshPub.h"
+				>
+			</File>
 		</Filter>
 		<File
 			RelativePath=".\debug.js"

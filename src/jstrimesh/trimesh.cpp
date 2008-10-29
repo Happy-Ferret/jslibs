@@ -15,19 +15,19 @@
 #include "stdafx.h"
 #include "trimesh.h"
 
-#define REAL float
-#define INDEX u_int32_t
+#include "trimeshPub.h"
 
-struct Private {
+/*
+    * glVertexPointer():  specify pointer to vertex coords array
+    * glNormalPointer():  specify pointer to normal array
+    * glColorPointer():  specify pointer to RGB color array
+    * glTexCoordPointer():  specify pointer to texture cords array
+    * glEdgeFlagPointer():  specify pointer to edge flag array
 
-	size_t verticesDataSize;
-	REAL *vertices; // 1 vertex = 3 coords
-	size_t vertexCount;
-
-	size_t indicesDataSize;
-	INDEX *indices;
-	size_t indexCount;
-};
+glGenBuffersARB()
+glBufferDataARB()
+	 
+*/
 
 
 /**doc
@@ -37,7 +37,7 @@ BEGIN_CLASS( Trimesh ) // Start the definition of the class. It defines some sym
 
 DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are no remaing references to this object.
 
-	Private *pv = (Private*)JS_malloc(cx, sizeof(Private));
+	Surface *pv = (Surface*)JS_malloc(cx, sizeof(Surface));
 	if ( pv ) {
 
 		JS_free(cx, pv);
@@ -48,13 +48,11 @@ DEFINE_CONSTRUCTOR() {
 
 	J_S_ASSERT_CONSTRUCTING();
 	J_S_ASSERT_THIS_CLASS();
-	Private *pv = (Private*)JS_malloc(cx, sizeof(Private));
+	Surface *pv = (Surface*)JS_malloc(cx, sizeof(Surface));
+
 	pv->vertexCount = 0;
-	pv->verticesDataSize = 0;
-	pv->vertices = NULL;
 	pv->indexCount = 0;
-	pv->indicesDataSize = 0;
-	pv->indices = NULL;
+
 	J_CHK( JS_SetPrivate(cx, obj, pv) );
 	return JS_TRUE;
 }
@@ -63,7 +61,7 @@ DEFINE_CONSTRUCTOR() {
 //DEFINE_PROPERTY( prop ) {
 //	return JS_TRUE;
 //}
-
+/*
 DEFINE_FUNCTION_FAST( AddVertex ) {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, J_FOBJ);
@@ -123,7 +121,7 @@ DEFINE_FUNCTION_FAST( AddTriangle ) {
 	pv->indexCount += 1;
 	return JS_TRUE;
 }
-
+*/
 
 /*
 DEFINE_FUNCTION_FAST( AddIndices ) {
@@ -151,6 +149,158 @@ DEFINE_FUNCTION_FAST( AddIndices ) {
 }
 */
 
+
+DEFINE_FUNCTION_FAST( DefineVertexBuffer ) {
+
+	J_S_ASSERT_ARG_MIN( 1 );
+	J_S_ASSERT_ARRAY( J_FARG(1) );
+	Surface *pv = (Surface*)JS_GetPrivate(cx, J_FOBJ);
+	J_S_ASSERT_ALLOC(pv);
+
+	JSObject *arrayObj = JSVAL_TO_OBJECT(J_FARG(1));
+	jsuint count;
+	J_CHK( JS_GetArrayLength(cx, arrayObj, &count) );
+
+	J_S_ASSERT( count % 3 == 0, "Invalid count, need [X,Y,Z,...]" );
+
+	pv->vertex = (REAL*)JS_malloc(cx, sizeof(REAL) * count);
+
+	jsval item;
+	for ( jsuint i = 0; i < count; i++ ) {
+
+		J_CHK( JS_GetElement(cx, arrayObj, i, &item) );
+//		if ( sizeof(REAL) == sizeof(float) )
+			J_CHK( JsvalToFloat(cx, item, &pv->vertex[i]) );
+//		else
+//			J_CHK( JsvalToDouble(cx, item, &pv->vertex[i]) );
+	}
+	pv->vertexCount = count / 3;
+	return JS_TRUE;
+}
+
+
+DEFINE_FUNCTION_FAST( DefineNormalBuffer ) {
+
+	J_S_ASSERT_ARG_MIN( 1 );
+	J_S_ASSERT_ARRAY( J_FARG(1) );
+	Surface *pv = (Surface*)JS_GetPrivate(cx, J_FOBJ);
+	J_S_ASSERT_ALLOC(pv);
+
+	JSObject *arrayObj = JSVAL_TO_OBJECT(J_FARG(1));
+	jsuint count;
+	J_CHK( JS_GetArrayLength(cx, arrayObj, &count) );
+
+	J_S_ASSERT( count % 3 == 0, "Invalid count, need [X,Y,Z,...]" );
+	J_S_ASSERT_2( count == pv->vertexCount * 3, "Wrong array size %d, need %d.", count, pv->vertexCount * 3 );
+
+	pv->color = (REAL*)JS_malloc(cx, sizeof(REAL) * count);
+
+	jsval item;
+	for ( jsuint i = 0; i < count; i++ ) {
+
+		J_CHK( JS_GetElement(cx, arrayObj, i, &item) );
+		J_CHK( JsvalToFloat(cx, item, &pv->normal[i]) );
+	}
+	return JS_TRUE;
+}
+
+
+DEFINE_FUNCTION_FAST( DefineTextureCoordinateBuffer ) {
+
+	J_S_ASSERT_ARG_MIN( 1 );
+	J_S_ASSERT_ARRAY( J_FARG(1) );
+	Surface *pv = (Surface*)JS_GetPrivate(cx, J_FOBJ);
+	J_S_ASSERT_ALLOC(pv);
+
+	JSObject *arrayObj = JSVAL_TO_OBJECT(J_FARG(1));
+	jsuint count;
+	J_CHK( JS_GetArrayLength(cx, arrayObj, &count) );
+
+	J_S_ASSERT( count % 3 == 0, "Invalid count, need [S,T,R,...]" );
+	J_S_ASSERT_2( count == pv->vertexCount * 3, "Wrong array size %d, need %d.", count, pv->vertexCount * 3 );
+
+	pv->color = (REAL*)JS_malloc(cx, sizeof(REAL) * count);
+
+	jsval item;
+	for ( jsuint i = 0; i < count; i++ ) {
+
+		J_CHK( JS_GetElement(cx, arrayObj, i, &item) );
+		J_CHK( JsvalToFloat(cx, item, &pv->textureCoordinate[i]) );
+	}
+	return JS_TRUE;
+}
+
+
+DEFINE_FUNCTION_FAST( DefineColorBuffer ) {
+
+	J_S_ASSERT_ARG_MIN( 1 );
+	J_S_ASSERT_ARRAY( J_FARG(1) );
+	Surface *pv = (Surface*)JS_GetPrivate(cx, J_FOBJ);
+	J_S_ASSERT_ALLOC(pv);
+
+	JSObject *arrayObj = JSVAL_TO_OBJECT(J_FARG(1));
+	jsuint count;
+	J_CHK( JS_GetArrayLength(cx, arrayObj, &count) );
+
+	J_S_ASSERT( count % 4 == 0, "Invalid count, need [R,G,B,A,...]" );
+	J_S_ASSERT_2( count == pv->vertexCount * 4, "Wrong array size %d, need %d.", count, pv->vertexCount * 4 );
+
+	pv->color = (REAL*)JS_malloc(cx, sizeof(REAL) * count);
+
+	jsval item;
+	for ( jsuint i = 0; i < count; i++ ) {
+
+		J_CHK( JS_GetElement(cx, arrayObj, i, &item) );
+		J_CHK( JsvalToFloat(cx, item, &pv->color[i]) );
+	}
+	return JS_TRUE;
+}
+
+
+DEFINE_FUNCTION_FAST( DefineIndexBuffer ) {
+
+	J_S_ASSERT_ARG_MIN( 1 );
+	J_S_ASSERT_ARRAY( J_FARG(1) );
+	Surface *pv = (Surface*)JS_GetPrivate(cx, J_FOBJ);
+	J_S_ASSERT_ALLOC(pv);
+
+	JSObject *arrayObj = JSVAL_TO_OBJECT(J_FARG(1));
+	jsuint count;
+	J_CHK( JS_GetArrayLength(cx, arrayObj, &count) );
+
+	J_S_ASSERT( count % 3 == 0, "Invalid count, need [V1,V2,V3,...]" );
+
+	pv->vertex = (REAL*)JS_malloc(cx, sizeof(REAL) * count);
+
+	jsval item;
+	for ( jsuint i = 0; i < count; i++ ) {
+
+		J_CHK( JS_GetElement(cx, arrayObj, i, &item) );
+		J_CHK( JsvalToUInt(cx, item, &pv->index[i]) );
+	}
+	pv->indexCount = count / 3;
+	return JS_TRUE;
+}
+
+
+DEFINE_PROPERTY( vertexCount ) {
+
+	Surface *pv = (Surface*)JS_GetPrivate(cx, J_OBJ);
+	J_S_ASSERT_ALLOC(pv);
+	J_CHK( IntToJsval(cx, pv->vertexCount, vp) );
+	return JS_TRUE;
+}
+
+DEFINE_PROPERTY( indexCount ) {
+
+	Surface *pv = (Surface*)JS_GetPrivate(cx, J_OBJ);
+	J_S_ASSERT_ALLOC(pv);
+	J_CHK( IntToJsval(cx, pv->indexCount, vp) );
+	return JS_TRUE;
+}
+
+
+
 CONFIGURE_CLASS // This section containt the declaration and the configuration of the class
 
 	HAS_PRIVATE
@@ -160,13 +310,16 @@ CONFIGURE_CLASS // This section containt the declaration and the configuration o
 	HAS_FINALIZE
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION_FAST_ARGC(AddVertex, 3)
-		FUNCTION_FAST_ARGC(AddTriangle, 3)
-//		FUNCTION_FAST(AddIndices)
+		FUNCTION_FAST_ARGC(DefineVertexBuffer, 1)
+		FUNCTION_FAST_ARGC(DefineNormalBuffer, 1)
+		FUNCTION_FAST_ARGC(DefineTextureCoordinateBuffer, 1)
+		FUNCTION_FAST_ARGC(DefineColorBuffer, 1)
+		FUNCTION_FAST_ARGC(DefineIndexBuffer, 1)
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
-//		PROPERTY(prop)
+		PROPERTY_READ(vertexCount)
+		PROPERTY_READ(indexCount)
 	END_PROPERTY_SPEC
 
 END_CLASS

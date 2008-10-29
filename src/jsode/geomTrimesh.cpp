@@ -16,6 +16,7 @@
 #include "space.h"
 #include "geom.h"
 
+#include "../jstrimesh/trimeshPub.h"
 
 
 /**doc
@@ -42,26 +43,28 @@ DEFINE_CONSTRUCTOR() {
 
 	J_S_ASSERT_CONSTRUCTING();
 	J_S_ASSERT_THIS_CLASS();
-	ode::dSpaceID space = 0;
-	if ( argc >= 1 ) // place it in a space ?
-		J_CHK( ValToSpaceID(cx, argv[0], &space) );
 
+	J_S_ASSERT_OBJECT(J_ARG(2));
+
+	ode::dSpaceID space = 0;
+	if ( J_ARG_ISDEF(1) ) // place it in a space ?
+		J_CHK( ValToSpaceID(cx, J_ARG(1), &space) );
+
+	JSObject *trimesh = JSVAL_TO_OBJECT(J_ARG(2));
+	J_S_ASSERT( IsTrimeshObject(cx, trimesh), "Invalid Trimesh object." );
+
+	Surface *srf = GetTrimeshSurface(cx, trimesh);
+	J_S_ASSERT_RESOURCE( srf );
+	J_S_ASSERT( srf->vertex && srf->vertexCount && srf->index && srf->indexCount, "No data" );
 
 	ode::dTriMeshDataID triMeshDataID = ode::dGeomTriMeshDataCreate();
-
-//	ode::dGeomTriMeshDataBuildSimple(triMeshDataID, 
-
+	ode::dGeomTriMeshDataBuildSimple(triMeshDataID, srf->vertex, srf->vertexCount, srf->index, srf->indexCount);
 	ode::dGeomTriMeshDataPreprocess( triMeshDataID );
 
-	ode::dGeomID geomId = ode::dCreateTriMesh(space, triMeshDataID, NULL, NULL, NULL); // default radius is 1
+	ode::dGeomID geomId = ode::dCreateTriMesh(space, triMeshDataID, NULL, NULL, NULL);
 
-
-/*
-	ode::dGeomID geomId = ode::dCreateSphere(space, 1); // default radius is 1
 	JS_SetPrivate(cx, obj, geomId);
-	SetupReadMatrix(cx, obj); // (TBD) check return status
-*/
-
+	J_CHK( SetupReadMatrix(cx, obj) ); // (TBD) check return status
 	ode::dGeomSetData(geomId, obj); // 'obj' do not need to be rooted because Goem's data is reset to NULL when 'obj' is finalized.
 
 	return JS_TRUE;
