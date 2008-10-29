@@ -269,7 +269,7 @@ extern bool *_pUnsafeMode;
 	J_S_ASSERT_1( (jsObject) != NULL && JS_GET_CLASS(cx, jsObject) == (jsClass), J__ERRMSG_INVALID_CLASS "%s expected.", (jsClass)->name )
 
 #define J_S_ASSERT_CLASS_NAME(jsObject, className) \
-	J_S_ASSERT_1( strcmp(JS_GET_CLASS(cx, (jsObject))->name, (className)) == 0, J__ERRMSG_INVALID_CLASS "%s expected.", className )
+	J_S_ASSERT_1( IsClassName(cx, jsObject, className), J__ERRMSG_INVALID_CLASS "%s expected.", className )
 
 #define J_S_ASSERT_THIS_CLASS() \
 	J_S_ASSERT_CLASS(obj, _class)
@@ -385,6 +385,11 @@ inline bool InheritFrom( JSContext *cx, JSObject *obj, JSClass *clasp ) {
 	return false;
 }
 
+
+inline bool IsClassName( JSContext *cx, JSObject *obj, const char *name ) {
+
+	return strcmp(JS_GET_CLASS(cx, (obj))->name, (name)) == 0;
+}
 
 inline bool HasProperty( JSContext *cx, JSObject *obj, const char *propertyName ) {
 
@@ -895,120 +900,6 @@ inline JSBool GetPropertyUInt( JSContext *cx, JSObject *obj, const char *propert
 }
 
 
-
-
-
-// deprecated. see JsvalToInt
-/*
-#define J_JSVAL_TO_INT32( jsvalInt, intVariable ) do { \
-	if ( JSVAL_IS_INT(jsvalInt) ) { \
-		intVariable = JSVAL_TO_INT(jsvalInt); \
-	} else { \
-		int32 __intVal; \
-		if (unlikely( JS_ValueToInt32( cx, jsvalInt, &__intVal ) != JS_TRUE )) \
-			J_REPORT_ERROR( "Unable to convert to a 32bit integer." ); \
-		intVariable = __intVal; \
-	} \
-} while(0)
-*/
-//#define J_JSVAL_TO_INT32( jsvalInt, intVariable ) do { \
-//	J_CHK( JsvalToInt(cx, (jsvalInt), &(intVariable)) ); \
-//} while(0)
-
-
-
-
-// deprecated. see JsvalToUInt
-/*
-#define J_JSVAL_TO_UINT32( jsvalUInt, uintVariable ) do { \
-	if ( JSVAL_IS_INT(jsvalUInt) ) { \
-		uintVariable = JSVAL_TO_INT(jsvalUInt); \
-	} else { \
-		jsdouble __doubleValue; \
-		if (unlikely( JS_ValueToNumber(cx, jsvalUInt, &__doubleValue ) != JS_TRUE )) \
-			J_REPORT_ERROR( "Unable to convert to a 32bit unsigned integer." ); \
-		uintVariable = (unsigned long)__doubleValue; \
-		J_S_ASSERT( __doubleValue == (double)((unsigned long)__doubleValue), J__ERRMSG_INT_CONVERSION_FAILED ); \
-	} \
-	J_S_ASSERT( uintVariable >= 0, "Unable to convert to a 32bit unsigned integer." ); \
-} while(0)
-*/
-
-//#define J_JSVAL_TO_UINT32( jsvalInt, intVariable ) do { \
-//	J_CHK( JsvalToUInt(cx, (jsvalInt), &(intVariable)) ); \
-//} while(0)
-
-
-
-// deprecated. see JsvalToBool
-/*
-#define J_JSVAL_TO_BOOL( jsval, boolVariable ) do { \
-	if ( JSVAL_IS_BOOLEAN(jsval) ) { \
-		boolVariable = (JSVAL_TO_BOOLEAN(jsval) == JS_TRUE); \
-	} else { \
-		JSBool __b; \
-		if (unlikely( JS_ValueToBoolean( cx, jsval, &__b ) != JS_TRUE )) \
-			J_REPORT_ERROR( "Unable to convert to boolean." ); \
-		boolVariable = (__b == JS_TRUE); \
-	} \
-} while(0)
-*/
-//#define J_JSVAL_TO_BOOL( val, boolVariable ) do { \
-//	J_CHK( JsvalToBool(cx, (val), &(boolVariable)) ); \
-//} while(0)
-
-
-
-// deprecated. see JsvalToDouble
-/*
-#define J_JSVAL_TO_REAL( jsval, realVal ) do { \
-	if ( JSVAL_IS_DOUBLE(jsval) ) { \
-		realVal = *JSVAL_TO_DOUBLE(jsval); \
-	} else { \
-		jsdouble __d; \
-		if (unlikely( JS_ValueToNumber( cx, jsval, &__d ) != JS_TRUE )) \
-			J_REPORT_ERROR( "Unable to convert to real." ); \
-		realVal = __d; \
-	} \
-} while(0)
-*/
-//#define J_JSVAL_TO_REAL( val, d ) do { \
-//	J_CHK( JsvalToDouble(cx, (val), &(d) ) ); \
-//} while(0)
-
-
-
-
-// deprecated. see GetPropertyInt
-/*
-#define J_PROPERTY_TO_INT32( jsobject, propertyName, intVariable ) do { \
-	jsval __tmpVal; \
-	J_CHK( JS_GetProperty(cx, jsobject, propertyName, &__tmpVal) ); \
-	J_CHK( JsvalToInt(cx, __tmpVal, &intVariable) ); \
-} while(0)
-*/
-//#define J_PROPERTY_TO_INT32( jsobject, propertyName, intVariable ) do { \
-//	GetPropertyInt(cx, jsobject, propertyName, &intVariable); \
-//} while(0)
-
-//#define J_PROPERTY_TO_UINT32( jsobject, propertyName, intVariable ) do { \
-//	GetPropertyUInt(cx, jsobject, propertyName, &intVariable); \
-//} while(0)
-
-
-// deprecated. see IntVectorToJsval
-/*
-#define J_INT_VECTOR_TO_JSVAL( vector, length, jsvalVariable ) do { \
-	JSObject *__arrayObj = JS_NewArrayObject(cx, 0, NULL); \
-	J_S_ASSERT_ALLOC(__arrayObj); \
-	(jsvalVariable) = OBJECT_TO_JSVAL(__arrayObj); \
-	jsval __tmpValue; \
-	for ( jsint __i=0; __i<(length); ++__i ) { \
-		__tmpValue = INT_TO_JSVAL((vector)[__i]); \
-		J_CHK( JS_SetElement(cx, __arrayObj, __i, &__tmpValue) ); \
-	} \
-} while(0)
-*/
 inline JSBool IntVectorToJsval( JSContext *cx, int *vector, size_t length, jsval *val ) {
 
 	JSObject *arrayObj = JS_NewArrayObject(cx, length, NULL);
@@ -1022,29 +913,8 @@ inline JSBool IntVectorToJsval( JSContext *cx, int *vector, size_t length, jsval
 	}
 	return JS_TRUE;
 }
-//#define J_INT_VECTOR_TO_JSVAL( vector, length, jsvalVariable ) do { \
-//	J_CHK( IntVectorToJsval(cx, (vector), (length), &(jsvalVariable)) ); \
-//} while(0)
 
 
-
-// deprecated. see JsvalToIntVector
-/*
-#define J_JSVAL_TO_INT_VECTOR( jsvalArray, vectorVariable, lengthVariable ) do { \
-	J_S_ASSERT_ARRAY(jsvalArray); \
-	JSObject *__arrayObj = JSVAL_TO_OBJECT(jsvalArray); \
-	jsuint __length; \
-	J_CHK( JS_GetArrayLength(cx, __arrayObj, &__length) ); \
-	(lengthVariable) = __length; \
-	J_S_ASSERT( __length <= sizeof(vectorVariable), "Too many elements in the array." ); \
-	jsval __arrayElt; \
-	for ( jsuint __i=0; __i<__length; __i++ ) { \
-		J_CHK( JS_GetElement(cx, __arrayObj, __i, &__arrayElt) ); \
-		J_S_ASSERT_INT(__arrayElt); \
-		(vectorVariable)[__i] = JSVAL_TO_INT(__arrayElt); \
-	} \
-} while(0)
-*/
 inline JSBool JsvalToIntVector( JSContext *cx, jsval val, int *vector, size_t maxLength, size_t *currentLength ) {
 
 	J_S_ASSERT_ARRAY(val);
@@ -1080,19 +950,6 @@ inline JSBool JsvalToUIntVector( JSContext *cx, jsval val, unsigned int *vector,
 }
 
 
-// deprecated. see DoubleVectorToJsval
-/*
-#define J_REAL_VECTOR_TO_JSVAL( vector, length, jsvalVariable ) do { \
-	JSObject *__arrayObj = JS_NewArrayObject(cx, 0, NULL); \
-	J_S_ASSERT_ALLOC(__arrayObj); \
-	(jsvalVariable) = OBJECT_TO_JSVAL(__arrayObj); \
-	jsval __tmpValue; \
-	for ( jsint __i=0; __i<(length); ++__i ) { \
-		J_CHK( JS_NewNumberValue(cx, (vector)[__i], &__tmpValue) ); \
-		J_CHK( JS_SetElement(cx, __arrayObj, __i, &__tmpValue) ); \
-	} \
-} while(0)
-*/
 inline JSBool DoubleVectorToJsval( JSContext *cx, const double *vector, size_t length, jsval *val ) {
 
 	JSObject *arrayObj = JS_NewArrayObject(cx, length, NULL);
@@ -1121,24 +978,6 @@ inline JSBool FloatVectorToJsval( JSContext *cx, const float *vector, size_t len
 	return JS_TRUE;
 }
 
-
-/*
-#define J_JSVAL_TO_REAL_VECTOR( jsvalArray, vectorVariable, lengthVariable ) do { \
-	J_S_ASSERT_ARRAY(jsvalArray); \
-	JSObject *__arrayObj = JSVAL_TO_OBJECT(jsvalArray); \
-	jsuint __length; \
-	J_CHK( JS_GetArrayLength(cx, __arrayObj, &__length) ); \
-	lengthVariable = __length; \
-	J_S_ASSERT( __length <= (lengthVariable), "Too many elements in the array." ); \
-	jsval __arrayElt; \
-	double __eltValue; \
-	for ( jsuint __i=0; __i<__length; __i++ ) { \
-		J_CHK( JS_GetElement(cx, __arrayObj, __i, &__arrayElt) ); \
-		J_CHK( JS_ValueToNumber(cx, __arrayElt, &__eltValue) ); \
-		(vectorVariable)[__i] = __eltValue; \
-	} \
-} while(0)
-*/
 
 inline JSBool JsvalToFloatVector( JSContext *cx, jsval val, float *vector, size_t maxLength, size_t *currentLength ) {
 
