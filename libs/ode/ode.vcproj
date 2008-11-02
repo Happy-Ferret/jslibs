@@ -24,6 +24,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
+				CommandLine="copy /Y .\win32_config\config.h .\src\ode\src"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -91,6 +92,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
+				CommandLine="copy /Y .\win32_config\config.h .\src\ode\src"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -158,6 +160,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
+				CommandLine="copy /Y .\win32_config\config.h .\src\ode\src"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -225,6 +228,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
+				CommandLine="copy /Y .\win32_config\config.h .\src\ode\src"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
