@@ -105,6 +105,7 @@ DEFINE_FUNCTION_FAST( Eval ) {
 	} else {
 
 		sobj = JSVAL_TO_OBJECT(J_FARG(2));
+//		J_CHK( JS_SetParent(cx, sobj, JSVAL_NULL) );
 	}
 
 	if ( !J_FARG_ISDEF(1) ) {
@@ -140,7 +141,7 @@ DEFINE_FUNCTION_FAST( Eval ) {
 		if (JS_GetPendingException(scx, &v))
 			JS_SetPendingException(cx, v);
 		else
-			JS_ReportOutOfMemory(cx);
+			JS_ReportOutOfMemory(cx); // (TBD) change this. calling Halt() in the script throw this error.
 	}
 	JS_DestroyContextNoGC(scx);
 	return ok;
