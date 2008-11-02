@@ -19,6 +19,7 @@
 #include "buffer.h"
 #include "pack.h"
 
+DECLARE_CLASS( BranchLimit )
 DECLARE_CLASS( Sandbox )
 
 //extern JSFunction *stdoutFunction;
@@ -50,6 +51,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
 	INIT_STATIC();
 	INIT_CLASS( Map );
+	INIT_CLASS( BranchLimit ); // exception
 	INIT_CLASS( Sandbox );
 	INIT_CLASS( Buffer );
 	INIT_CLASS( Pack );
