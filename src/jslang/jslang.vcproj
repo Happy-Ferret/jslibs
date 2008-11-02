@@ -162,6 +162,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\id.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\main.cpp"
 				>
 			</File>
@@ -205,6 +209,14 @@
 			</File>
 			<File
 				RelativePath=".\blobapi.h"
+				>
+			</File>
+			<File
+				RelativePath=".\id.h"
+				>
+			</File>
+			<File
+				RelativePath=".\idPub.h"
 				>
 			</File>
 			<File

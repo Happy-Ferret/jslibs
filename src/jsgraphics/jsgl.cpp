@@ -32,6 +32,9 @@ Manage GL extensions:
 #include "../jsprotex/texture.h"
 //TextureJSClass
 
+#include "../jslang/idPub.h"
+
+#include "../jstrimesh/trimeshPub.h"
 
 #define _USE_MATH_DEFINES
 #include "math.h"
@@ -47,6 +50,8 @@ Manage GL extensions:
 
 #include <gl/gl.h>
 #include "glext.h"
+
+#include "oglError.h"
 
 // http://www.opengl.org/registry/api/glext.h
 
@@ -1533,6 +1538,7 @@ DEFINE_FUNCTION_FAST( BindBuffer ) {
 }
 
 
+
 /**doc
  * $VOID $INAME( pname, params )
   $H arguments
@@ -1668,6 +1674,185 @@ DEFINE_FUNCTION_FAST( MultiTexCoord ) {
 // non-OpenGL API
 
 
+	// doc: http://www.songho.ca/opengl/gl_vbo.html#create
+/*
+	LOAD_OPENGL_EXTENSION( glBindBufferARB, PFNGLBINDBUFFERARBPROC );
+	LOAD_OPENGL_EXTENSION( glDeleteBuffersARB, PFNGLDELETEBUFFERSARBPROC );
+	LOAD_OPENGL_EXTENSION( glGenBuffersARB, PFNGLGENBUFFERSARBPROC );
+	LOAD_OPENGL_EXTENSION( glIsBufferARB, PFNGLISBUFFERARBPROC );
+	LOAD_OPENGL_EXTENSION( glBufferDataARB, PFNGLBUFFERDATAARBPROC );
+	LOAD_OPENGL_EXTENSION( glBufferSubDataARB, PFNGLBUFFERSUBDATAARBPROC );
+	LOAD_OPENGL_EXTENSION( glGetBufferSubDataARB, PFNGLGETBUFFERSUBDATAARBPROC );
+	LOAD_OPENGL_EXTENSION( glMapBufferARB, PFNGLMAPBUFFERARBPROC );
+	LOAD_OPENGL_EXTENSION( glUnmapBufferARB, PFNGLUNMAPBUFFERARBPROC );
+	LOAD_OPENGL_EXTENSION( glGetBufferParameterivARB, PFNGLGETBUFFERPARAMETERIVARBPROC );
+	LOAD_OPENGL_EXTENSION( glGetBufferPointervARB, PFNGLGETBUFFERPOINTERVARBPROC );
+*/
+
+
+#define TRIMESH_ID_NAME 'GlTr'
+
+struct TrimeshInfo {
+
+	GLuint indexBuffer, vertexBuffer, normalBuffer, texCoordBuffer, colorBuffer;
+	int vertexCount, indexCount;
+};
+
+void FinalizeTrimesh(void *pv) {
+/*
+	static PFNGLDELETEBUFFERSARBPROC glDeleteBuffersARB = (glDeleteBuffersARB) GL_GET_PROC_ADDRESS( "PFNGLDELETEBUFFERSARBPROC" );
+
+	glDeleteBuffersARB( 1, data[0] );
+	glDeleteBuffersARB( 1, data[1] );
+
+	if ( data[2] )
+		glDeleteBuffersARB( 1, data[2] );
+
+	if ( data[3] )
+		glDeleteBuffersARB( 1, data[3] );
+	
+	if ( data[4] )
+		glDeleteBuffersARB( 1, data[4] );
+*/
+}
+
+/**doc
+ * $VOID $INAME( trimesh )
+**/
+DEFINE_FUNCTION_FAST( LoadTrimesh ) {
+
+	LOAD_OPENGL_EXTENSION( glGenBuffersARB, PFNGLGENBUFFERSARBPROC );
+	LOAD_OPENGL_EXTENSION( glBindBufferARB, PFNGLBINDBUFFERARBPROC );
+	LOAD_OPENGL_EXTENSION( glBufferDataARB, PFNGLBUFFERDATAARBPROC );
+
+	J_S_ASSERT_ARG_MIN(1);
+	J_S_ASSERT_OBJECT(J_FARG(1));
+	JSObject *trimeshObj = JSVAL_TO_OBJECT(J_FARG(1));
+	J_S_ASSERT( IsTrimeshObject(cx, trimeshObj), "Invalid Trimesh object" );
+	Surface *srf = GetTrimeshSurface(cx, trimeshObj);
+	J_S_ASSERT_RESOURCE(srf);
+
+	J_S_ASSERT( srf->vertex && srf->vertexCount && srf->index && srf->indexCount, "No enough data" );
+
+	JSObject *idObj;
+	TrimeshInfo *info;
+	J_CHK( CreateId(cx, TRIMESH_ID_NAME, sizeof(TrimeshInfo), FinalizeTrimesh, &idObj, (void**)&info) );
+	*J_FRVAL = OBJECT_TO_JSVAL(idObj);
+
+	info->vertexCount = srf->vertexCount;
+	info->indexCount = srf->indexCount;
+
+	glGenBuffersARB(1, &info->indexBuffer);
+	glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, info->indexBuffer);
+	glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB, srf->indexCount * sizeof(SURFACE_INDEX_TYPE), srf->index, GL_STATIC_DRAW_ARB);
+
+	glGenBuffersARB(1, &info->vertexBuffer);
+	glBindBufferARB(GL_ARRAY_BUFFER_ARB, info->vertexBuffer);
+	glBufferDataARB(GL_ARRAY_BUFFER_ARB, srf->vertexCount * 3 * sizeof(SURFACE_REAL_TYPE), srf->vertex, GL_STATIC_DRAW_ARB);
+
+	if ( srf->normal ) {
+
+		glGenBuffersARB(1, &info->normalBuffer);
+		glBindBufferARB(GL_ARRAY_BUFFER_ARB, info->normalBuffer);
+		glBufferDataARB(GL_ARRAY_BUFFER_ARB, srf->vertexCount * 3 * sizeof(SURFACE_REAL_TYPE), srf->normal, GL_STATIC_DRAW_ARB);
+	} else
+		info->normalBuffer = 0;
+
+	if ( srf->textureCoordinate ) {
+
+		glGenBuffersARB(1, &info->texCoordBuffer);
+		glBindBufferARB(GL_ARRAY_BUFFER_ARB, info->texCoordBuffer);
+		glBufferDataARB(GL_ARRAY_BUFFER_ARB, srf->vertexCount * 3 * sizeof(SURFACE_REAL_TYPE), srf->textureCoordinate, GL_STATIC_DRAW_ARB);
+	} else
+		info->texCoordBuffer = 0;
+
+	if ( srf->color ) {
+
+		glGenBuffersARB(1, &info->colorBuffer);
+		glBindBufferARB(GL_ARRAY_BUFFER_ARB, info->colorBuffer);
+		glBufferDataARB(GL_ARRAY_BUFFER_ARB, srf->vertexCount * 4 * sizeof(SURFACE_REAL_TYPE), srf->color, GL_STATIC_DRAW_ARB);
+	} else
+		info->colorBuffer = 0;
+
+	J_CHK( CheckThrowCurrentOglError(cx) );
+
+	return JS_TRUE;
+}
+
+
+
+
+/**doc
+ * $VOID $INAME()
+  $H OpenGL API
+   glVertexPointer
+**/
+DEFINE_FUNCTION_FAST( DrawTrimesh ) {
+
+	LOAD_OPENGL_EXTENSION( glBindBufferARB, PFNGLBINDBUFFERARBPROC );
+
+	J_S_ASSERT_ARG_MIN(1);
+	J_S_ASSERT_OBJECT(J_FARG(1));
+
+	JSObject *idObj = JSVAL_TO_OBJECT(J_FARG(1));
+	J_S_ASSERT( IsIdType(cx, idObj, TRIMESH_ID_NAME), "Invalid Id." );
+
+	TrimeshInfo *info = (TrimeshInfo*)GetIdPrivate(cx, idObj);
+
+	GLenum dataType = sizeof(SURFACE_REAL_TYPE) == sizeof(float) ? GL_FLOAT : GL_DOUBLE;
+
+
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glBindBufferARB(GL_ARRAY_BUFFER_ARB, info->vertexBuffer);
+	glVertexPointer(3, dataType, 0, 0);
+
+	if ( info->normalBuffer ) {
+
+		glEnableClientState(GL_NORMAL_ARRAY);
+		glBindBufferARB(GL_ARRAY_BUFFER_ARB, info->normalBuffer);
+		glNormalPointer(dataType, 0, 0);
+	}
+
+	if ( info->texCoordBuffer ) {
+
+		glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+		glBindBufferARB(GL_ARRAY_BUFFER_ARB, info->texCoordBuffer);
+		glTexCoordPointer(3, dataType, 0, 0);
+	}
+
+	if ( info->colorBuffer ) {
+
+		glEnableClientState(GL_COLOR_ARRAY);
+		glBindBufferARB(GL_ARRAY_BUFFER_ARB, info->colorBuffer);
+		glColorPointer(4, dataType, 0, 0);
+	}
+
+//	glEnableClientState(GL_INDEX_ARRAY);
+	glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, info->indexBuffer);
+	glDrawElements(GL_TRIANGLES, info->indexCount, GL_UNSIGNED_INT, 0); // 1 triangle = 3 vertex
+
+//	glDisableClientState(GL_INDEX_ARRAY);
+	if ( info->colorBuffer )
+		glDisableClientState(GL_COLOR_ARRAY);
+	if ( info->texCoordBuffer )
+		glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+	if ( info->normalBuffer )
+		glDisableClientState(GL_NORMAL_ARRAY);
+	glDisableClientState(GL_VERTEX_ARRAY); // deactivate vertex array
+
+	// bind with 0, so, switch back to normal pointer operation
+//	glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+//	glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
+
+	J_CHK( CheckThrowCurrentOglError(cx) );
+
+	*J_FRVAL = JSVAL_VOID;
+	return JS_TRUE;
+}
+
+
+
+
 /**doc
  * $VOID $INAME( target, [internalformat], texture )
   $H arguments
@@ -1679,7 +1864,6 @@ DEFINE_FUNCTION_FAST( MultiTexCoord ) {
   $H OpenGL API
    glPixelStorei, glTexImage2D
 **/
-
 // (TBD) manage compression: http://www.opengl.org/registry/specs/ARB/texture_compression.txt
 DEFINE_FUNCTION_FAST( DefineTextureImage ) {
 
@@ -1808,6 +1992,8 @@ DEFINE_FUNCTION_FAST( RenderToImage ) {
 **/
 DEFINE_PROPERTY(error) {
 
+	// When an error occurs, the error flag is set to the appropriate error code value. No other errors are recorded
+	// until glGetError is called, the error code is returned, and the flag is reset to GL_NO_ERROR. 
 	*vp = INT_TO_JSVAL(glGetError());
 	return JS_TRUE;
 }
@@ -1828,7 +2014,7 @@ static int MatrixGet(JSContext *cx, JSObject *obj, float **m) {
 			glGetFloatv(GL_TEXTURE_MATRIX, *m);
 			return true;
 	}
-	return false;
+	return false; // J_REPORT_ERROR( "Unsupported matrix mode." );
 }
 
 
@@ -2546,6 +2732,40 @@ CONFIGURE_CLASS
 		CONST_INTEGER( MAX_TEXTURE_UNITS_ARB    ,GL_MAX_TEXTURE_UNITS_ARB      )
 		#endif
 
+		#ifdef GL_ARB_vertex_buffer_object
+		CONST_INTEGER( BUFFER_SIZE_ARB                             ,GL_BUFFER_SIZE_ARB                           )
+		CONST_INTEGER( BUFFER_USAGE_ARB									  ,GL_BUFFER_USAGE_ARB								  )
+		CONST_INTEGER( ARRAY_BUFFER_ARB									  ,GL_ARRAY_BUFFER_ARB								  )
+		CONST_INTEGER( ELEMENT_ARRAY_BUFFER_ARB						  ,GL_ELEMENT_ARRAY_BUFFER_ARB						  )
+		CONST_INTEGER( ARRAY_BUFFER_BINDING_ARB						  ,GL_ARRAY_BUFFER_BINDING_ARB						  )
+		CONST_INTEGER( ELEMENT_ARRAY_BUFFER_BINDING_ARB				  ,GL_ELEMENT_ARRAY_BUFFER_BINDING_ARB			  )
+		CONST_INTEGER( VERTEX_ARRAY_BUFFER_BINDING_ARB				  ,GL_VERTEX_ARRAY_BUFFER_BINDING_ARB			  )
+		CONST_INTEGER( NORMAL_ARRAY_BUFFER_BINDING_ARB				  ,GL_NORMAL_ARRAY_BUFFER_BINDING_ARB			  )
+		CONST_INTEGER( COLOR_ARRAY_BUFFER_BINDING_ARB				  ,GL_COLOR_ARRAY_BUFFER_BINDING_ARB				  )
+		CONST_INTEGER( INDEX_ARRAY_BUFFER_BINDING_ARB				  ,GL_INDEX_ARRAY_BUFFER_BINDING_ARB				  )
+		CONST_INTEGER( TEXTURE_COORD_ARRAY_BUFFER_BINDING_ARB		  ,GL_TEXTURE_COORD_ARRAY_BUFFER_BINDING_ARB	  )
+		CONST_INTEGER( EDGE_FLAG_ARRAY_BUFFER_BINDING_ARB			  ,GL_EDGE_FLAG_ARRAY_BUFFER_BINDING_ARB		  )
+		CONST_INTEGER( SECONDARY_COLOR_ARRAY_BUFFER_BINDING_ARB	  ,GL_SECONDARY_COLOR_ARRAY_BUFFER_BINDING_ARB  )
+		CONST_INTEGER( FOG_COORDINATE_ARRAY_BUFFER_BINDING_ARB	  ,GL_FOG_COORDINATE_ARRAY_BUFFER_BINDING_ARB	  )
+		CONST_INTEGER( WEIGHT_ARRAY_BUFFER_BINDING_ARB				  ,GL_WEIGHT_ARRAY_BUFFER_BINDING_ARB			  )
+		CONST_INTEGER( VERTEX_ATTRIB_ARRAY_BUFFER_BINDING_ARB		  ,GL_VERTEX_ATTRIB_ARRAY_BUFFER_BINDING_ARB	  )
+		CONST_INTEGER( READ_ONLY_ARB										  ,GL_READ_ONLY_ARB									  )
+		CONST_INTEGER( WRITE_ONLY_ARB										  ,GL_WRITE_ONLY_ARB									  )
+		CONST_INTEGER( READ_WRITE_ARB										  ,GL_READ_WRITE_ARB									  )
+		CONST_INTEGER( BUFFER_ACCESS_ARB									  ,GL_BUFFER_ACCESS_ARB								  )
+		CONST_INTEGER( BUFFER_MAPPED_ARB									  ,GL_BUFFER_MAPPED_ARB								  )
+		CONST_INTEGER( BUFFER_MAP_POINTER_ARB							  ,GL_BUFFER_MAP_POINTER_ARB						  )
+		CONST_INTEGER( STREAM_DRAW_ARB									  ,GL_STREAM_DRAW_ARB									  )
+		CONST_INTEGER( STREAM_READ_ARB									  ,GL_STREAM_READ_ARB									  )
+		CONST_INTEGER( STREAM_COPY_ARB									  ,GL_STREAM_COPY_ARB									  )
+		CONST_INTEGER( STATIC_DRAW_ARB									  ,GL_STATIC_DRAW_ARB									  )
+		CONST_INTEGER( STATIC_READ_ARB									  ,GL_STATIC_READ_ARB									  )
+		CONST_INTEGER( STATIC_COPY_ARB									  ,GL_STATIC_COPY_ARB									  )
+		CONST_INTEGER( DYNAMIC_DRAW_ARB									  ,GL_DYNAMIC_DRAW_ARB								  )
+		CONST_INTEGER( DYNAMIC_READ_ARB									  ,GL_DYNAMIC_READ_ARB								  )
+		CONST_INTEGER( DYNAMIC_COPY_ARB									  ,GL_DYNAMIC_COPY_ARB								  )
+		#endif
+
 
 	END_CONST_INTEGER_SPEC
 
@@ -2622,6 +2842,9 @@ CONFIGURE_CLASS
 		FUNCTION_FAST_ARGC(ClientActiveTexture, 1) // texture
 
 		FUNCTION_FAST_ARGC(MultiTexCoord, 4) // target, s, t, r
+
+		FUNCTION_FAST_ARGC(LoadTrimesh, 1) // Trimesh object
+		FUNCTION_FAST_ARGC(DrawTrimesh, 1) // Trimesh id
 
 	END_STATIC_FUNCTION_SPEC
 

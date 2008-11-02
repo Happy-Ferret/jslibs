@@ -480,6 +480,8 @@ inline JSClass *GetGlobalClassByName(JSContext *cx, const char *className) {
 	if ( JS_LookupProperty(cx, globalObj, className, &classConstructor) != JS_TRUE )
 		return NULL;
 //	if ( JS_TypeOfValue(cx, classConstructor) != JSTYPE_FUNCTION )
+	if ( JSVAL_IS_OBJECT(classConstructor) )
+		return OBJ_GET_CLASS(cx, JSVAL_TO_OBJECT(classConstructor));
 	if ( !JsvalIsFunction(cx, classConstructor) )
 		return NULL;
 	JSFunction *fun = JS_ValueToFunction(cx, classConstructor);

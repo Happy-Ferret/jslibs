@@ -248,7 +248,7 @@ static JSBool LoadModule(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, 
 #ifdef XP_UNIX
 	J_S_ASSERT_2( id != 0, "Unable to load the module \"%s\": %s", libFileName, dlerror() );
 #else // XP_UNIX
-	J_S_ASSERT_2( id != 0, "Unable to load the module \"%s\": %d", libFileName, GetLastError() );
+	J_S_ASSERT_2( id != 0, "Unable to load the module \"%s\": %x", libFileName, GetLastError() );
 #endif // XP_UNIX
 
 	J_CHK( JS_NewNumberValue(cx, id, rval) ); // really needed ? yes, UnloadModule need this ID
@@ -367,7 +367,7 @@ JSContext* CreateHost(size_t maxMem, size_t maxAlloc) {
 	//  Throw exception on any regular expression which backtracks more than n^3 times, where n is length of the input string
 
 	// JSBranchCallback oldBranchCallback =
-	JS_SetBranchCallback(cx, BranchCallback);
+	JS_SetBranchCallback(cx, BranchCallback); // (TBD) deprecated
 
 	JSObject *globalObject = JS_NewObject(cx, &global_class, NULL, NULL);
 	if ( globalObject == NULL )

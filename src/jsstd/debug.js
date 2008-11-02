@@ -1,8 +1,37 @@
 LoadModule('jsstd');
+LoadModule('jsio');
+
+function mySecurityCheck() true;
+
+function MySecureFile(name) {
+
+	if ( !mySecurityCheck(name) )
+		throw 'Invalid access'; 
+
+	var f = new File(name);
+	
+	this.Open = function() {
+		
+		return f.Open.apply(f, arguments);
+	}
+	
+	this.Read = function() {
+	
+		return f.Read.apply(f, arguments);
+	}
+}
 
 
-  var g = Sandbox.Eval();
-  Print( g.Math == Math ); // prints: false
+var globalCx = { File:MySecureFile };
+SetScope(globalCx, null); // very important because globalCx object is created in this global scope, and inherit from it !
+var res = Sandbox.Eval('var f = new File("debug.js"); f.Open("r"); f.Read(50);', globalCx );
+
+Print( res+'...\n' );
+
+
+
+
+
 
 
 Halt();

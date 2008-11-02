@@ -1,5 +1,33 @@
 LoadModule('jsstd');
 LoadModule('jsode');
+LoadModule('jstrimesh');
+
+
+var world = new World;
+
+
+var t = new Trimesh();
+
+t.DefineVertexBuffer([
+	0,0,0,
+	1,0,0,
+	0,1,0,
+	0,0,1,
+]);
+
+t.DefineIndexBuffer([
+	0,3,1,
+	0,1,2,
+	0,2,3,
+	1,3,2,
+]);
+
+
+var g = new GeomTrimesh( world.space, t );
+
+
+
+Halt();
 
 function main() {
 

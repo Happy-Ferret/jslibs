@@ -50,8 +50,8 @@ DEFINE_CONSTRUCTOR() {
 	J_S_ASSERT_THIS_CLASS();
 	Surface *pv = (Surface*)JS_malloc(cx, sizeof(Surface));
 
-	pv->vertexCount = 0;
-	pv->indexCount = 0;
+	Surface empty = {0};
+	*pv = empty;
 
 	J_CHK( JS_SetPrivate(cx, obj, pv) );
 	return JS_TRUE;
@@ -72,15 +72,15 @@ DEFINE_FUNCTION_FAST( AddVertex ) {
 	J_CHK( JsvalToDouble(cx, J_FARG(1), &y) );
 	J_CHK( JsvalToDouble(cx, J_FARG(1), &z) );
 
-	if ( pv->verticesDataSize < (pv->vertexCount + 1) * 3 * sizeof(REAL) ) {
+	if ( pv->verticesDataSize < (pv->vertexCount + 1) * 3 * sizeof(SURFACE_REAL_TYPE) ) {
 		
 		pv->verticesDataSize *= 2;
-		pv->vertices = (REAL*)JS_realloc(cx, pv->vertices, pv->verticesDataSize);
+		pv->vertices = (SURFACE_REAL_TYPE*)JS_realloc(cx, pv->vertices, pv->verticesDataSize);
 	}
 
 	J_S_ASSERT_ALLOC(pv->vertices);
 
-	REAL *pos = pv->vertices + pv->vertexCount * 3;
+	SURFACE_REAL_TYPE *pos = pv->vertices + pv->vertexCount * 3;
 	*(pos++) = x;
 	*(pos++) = y;
 	*(pos++) = z;
@@ -102,17 +102,17 @@ DEFINE_FUNCTION_FAST( AddTriangle ) {
 	J_CHK( JsvalToUInt(cx, J_FARG(1), &i2) );
 	J_CHK( JsvalToUInt(cx, J_FARG(1), &i3) );
 
-//	pv->indices = (INDEX*)JS_realloc(cx, pv->indices, (pv->indexCount + 1) * 3 * sizeof(REAL));
+//	pv->indices = (INDEX*)JS_realloc(cx, pv->indices, (pv->indexCount + 1) * 3 * sizeof(SURFACE_REAL_TYPE));
 
-	if ( pv->indicesDataSize < (pv->indexCount + 1) * sizeof(INDEX) ) {
+	if ( pv->indicesDataSize < (pv->indexCount + 1) * sizeof(SURFACE_INDEX_TYPE) ) {
 		
 		pv->verticesDataSize *= 2;
-		pv->vertices = (REAL*)JS_realloc(cx, pv->vertices, pv->verticesDataSize);
+		pv->vertices = (SURFACE_REAL_TYPE*)JS_realloc(cx, pv->vertices, pv->verticesDataSize);
 	}
 
 	J_S_ASSERT_ALLOC(pv->indices);
 
-	INDEX *pos = pv->indices + pv->indexCount * 3;
+	SURFACE_INDEX_TYPE *pos = pv->indices + pv->indexCount * 3;
 	*(pos++) = i1;
 	*(pos++) = i2;
 	*(pos++) = i3;
@@ -132,12 +132,12 @@ DEFINE_FUNCTION_FAST( AddIndices ) {
 	for ( size_t i = 0; i < argc; i++ )
 		J_S_ASSERT_INT(J_FARG(i+1));
 
-	pv->indices = (INDEX*)JS_realloc(cx, pv->indices, (pv->indexCount + argc) * sizeof(REAL));
+	pv->indices = (SURFACE_INDEX_TYPE*)JS_realloc(cx, pv->indices, (pv->indexCount + argc) * sizeof(SURFACE_REAL_TYPE));
 	J_S_ASSERT_ALLOC(pv->vertices);
 
-	INDEX *pos = pv->indices;
+	SURFACE_INDEX_TYPE *pos = pv->indices;
 
-	INDEX index;
+	SURFACE_INDEX_TYPE index;
 	for ( size_t i = 0; i < argc; i++ ) {
 
 		J_CHK( JsvalToUInt(cx, J_FARG(i+1), &index) );
@@ -161,16 +161,16 @@ DEFINE_FUNCTION_FAST( DefineVertexBuffer ) {
 	jsuint count;
 	J_CHK( JS_GetArrayLength(cx, arrayObj, &count) );
 
-	J_S_ASSERT( count % 3 == 0, "Invalid count, need [X,Y,Z,...]" );
+	J_S_ASSERT( (count > 0) && (count % 3 == 0), "Invalid count, need [X,Y,Z,...]" );
 
-	pv->vertex = (REAL*)JS_malloc(cx, sizeof(REAL) * count);
+	pv->vertex = (SURFACE_REAL_TYPE*)JS_malloc(cx, sizeof(SURFACE_REAL_TYPE) * count);
 
 	jsval item;
 	for ( jsuint i = 0; i < count; i++ ) {
 
 		J_CHK( JS_GetElement(cx, arrayObj, i, &item) );
-//		if ( sizeof(REAL) == sizeof(float) )
-			J_CHK( JsvalToFloat(cx, item, &pv->vertex[i]) );
+//		if ( sizeof(SURFACE_REAL_TYPE) == sizeof(float) )
+		J_CHK( JsvalToFloat(cx, item, &pv->vertex[i]) );
 //		else
 //			J_CHK( JsvalToDouble(cx, item, &pv->vertex[i]) );
 	}
@@ -190,10 +190,10 @@ DEFINE_FUNCTION_FAST( DefineNormalBuffer ) {
 	jsuint count;
 	J_CHK( JS_GetArrayLength(cx, arrayObj, &count) );
 
-	J_S_ASSERT( count % 3 == 0, "Invalid count, need [X,Y,Z,...]" );
+	J_S_ASSERT( (count > 0) && (count % 3 == 0), "Invalid count, need [X,Y,Z,...]" );
 	J_S_ASSERT_2( count == pv->vertexCount * 3, "Wrong array size %d, need %d.", count, pv->vertexCount * 3 );
 
-	pv->color = (REAL*)JS_malloc(cx, sizeof(REAL) * count);
+	pv->normal = (SURFACE_REAL_TYPE*)JS_malloc(cx, sizeof(SURFACE_REAL_TYPE) * count);
 
 	jsval item;
 	for ( jsuint i = 0; i < count; i++ ) {
@@ -216,10 +216,10 @@ DEFINE_FUNCTION_FAST( DefineTextureCoordinateBuffer ) {
 	jsuint count;
 	J_CHK( JS_GetArrayLength(cx, arrayObj, &count) );
 
-	J_S_ASSERT( count % 3 == 0, "Invalid count, need [S,T,R,...]" );
+	J_S_ASSERT( (count > 0) && (count % 3 == 0), "Invalid count, need [S,T,R,...]" );
 	J_S_ASSERT_2( count == pv->vertexCount * 3, "Wrong array size %d, need %d.", count, pv->vertexCount * 3 );
 
-	pv->color = (REAL*)JS_malloc(cx, sizeof(REAL) * count);
+	pv->textureCoordinate = (SURFACE_REAL_TYPE*)JS_malloc(cx, sizeof(SURFACE_REAL_TYPE) * count);
 
 	jsval item;
 	for ( jsuint i = 0; i < count; i++ ) {
@@ -242,10 +242,10 @@ DEFINE_FUNCTION_FAST( DefineColorBuffer ) {
 	jsuint count;
 	J_CHK( JS_GetArrayLength(cx, arrayObj, &count) );
 
-	J_S_ASSERT( count % 4 == 0, "Invalid count, need [R,G,B,A,...]" );
+	J_S_ASSERT( (count > 0) && (count % 4 == 0), "Invalid count, need [R,G,B,A,...]" );
 	J_S_ASSERT_2( count == pv->vertexCount * 4, "Wrong array size %d, need %d.", count, pv->vertexCount * 4 );
 
-	pv->color = (REAL*)JS_malloc(cx, sizeof(REAL) * count);
+	pv->color = (SURFACE_REAL_TYPE*)JS_malloc(cx, sizeof(SURFACE_REAL_TYPE) * count);
 
 	jsval item;
 	for ( jsuint i = 0; i < count; i++ ) {
@@ -268,17 +268,17 @@ DEFINE_FUNCTION_FAST( DefineIndexBuffer ) {
 	jsuint count;
 	J_CHK( JS_GetArrayLength(cx, arrayObj, &count) );
 
-	J_S_ASSERT( count % 3 == 0, "Invalid count, need [V1,V2,V3,...]" );
+	J_S_ASSERT( (count > 0) && (count % 3 == 0), "Invalid count, need [V1,V2,V3,...]" );
 
-	pv->vertex = (REAL*)JS_malloc(cx, sizeof(REAL) * count);
+	pv->index = (SURFACE_INDEX_TYPE*)JS_malloc(cx, sizeof(SURFACE_INDEX_TYPE) * count);
 
 	jsval item;
 	for ( jsuint i = 0; i < count; i++ ) {
 
 		J_CHK( JS_GetElement(cx, arrayObj, i, &item) );
-		J_CHK( JsvalToUInt(cx, item, &pv->index[i]) );
+		J_CHK( JsvalToInt(cx, item, &pv->index[i]) );
 	}
-	pv->indexCount = count / 3;
+	pv->indexCount = count;
 	return JS_TRUE;
 }
 
@@ -300,11 +300,34 @@ DEFINE_PROPERTY( indexCount ) {
 }
 
 
+DEFINE_PROPERTY( hasNormal ) {
+
+	Surface *pv = (Surface*)JS_GetPrivate(cx, J_OBJ);
+	J_S_ASSERT_ALLOC(pv);
+	*vp = pv->normal != NULL ? JSVAL_TRUE : JSVAL_FALSE;
+	return JS_TRUE;
+}
+
+DEFINE_PROPERTY( hasTextureCoordinateBuffer ) {
+
+	Surface *pv = (Surface*)JS_GetPrivate(cx, J_OBJ);
+	J_S_ASSERT_ALLOC(pv);
+	*vp = pv->normal != NULL ? JSVAL_TRUE : JSVAL_FALSE;
+	return JS_TRUE;
+}
+
+DEFINE_PROPERTY( hasColor ) {
+
+	Surface *pv = (Surface*)JS_GetPrivate(cx, J_OBJ);
+	J_S_ASSERT_ALLOC(pv);
+	*vp = pv->normal != NULL ? JSVAL_TRUE : JSVAL_FALSE;
+	return JS_TRUE;
+}
+
 
 CONFIGURE_CLASS // This section containt the declaration and the configuration of the class
 
 	HAS_PRIVATE
-//	HAS_RESERVED_SLOTS(1)
 
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE
@@ -320,6 +343,9 @@ CONFIGURE_CLASS // This section containt the declaration and the configuration o
 	BEGIN_PROPERTY_SPEC
 		PROPERTY_READ(vertexCount)
 		PROPERTY_READ(indexCount)
+		PROPERTY_READ(hasNormal)
+		PROPERTY_READ(hasTextureCoordinateBuffer)
+		PROPERTY_READ(hasColor)
 	END_PROPERTY_SPEC
 
 END_CLASS

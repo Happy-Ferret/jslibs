@@ -220,6 +220,10 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath=".\oglError.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\stdafx.cpp"
 				>
 				<FileConfiguration
@@ -247,6 +251,10 @@
 			</File>
 			<File
 				RelativePath=".\jswindow.h"
+				>
+			</File>
+			<File
+				RelativePath=".\oglError.h"
 				>
 			</File>
 			<File

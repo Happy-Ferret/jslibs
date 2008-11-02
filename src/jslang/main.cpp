@@ -16,6 +16,8 @@
 
 #include "jslang.h"
 
+#include "id.h"
+
 //static bool _defaultUnsafeMode = false;
 //extern bool *_pUnsafeMode = &_defaultUnsafeMode;
 
@@ -43,6 +45,7 @@ JSBool jslangInit(JSContext *cx, JSObject *obj) {
 	J_S_ASSERT( obj == globalObject, "This module must be load into the global namespace" );
 //	obj = JS_GetGlobalObject(cx); // avoid LoadModule.call( foo, 'jslang' );
 
+	INIT_CLASS( Id );
 	INIT_CLASS( Blob );
 	INIT_CLASS( Stream );
 	INIT_STATIC();

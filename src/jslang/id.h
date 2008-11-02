@@ -14,17 +14,19 @@
 
 #include "stdafx.h"
 
-#ifndef _JSLANG_H_
-#define _JSLANG_H_
+JSObject* CreateId( JSContext *cx, u_int32_t name, size_t length );
+bool IsIdType( JSContext *cx, JSObject *idObj, u_int32_t idType );
+void** IdPtr( JSContext *cx, JSObject *idObj );
 
-DECLARE_CLASS( Id )
-DECLARE_CLASS( Blob )
-DECLARE_CLASS( Stream )
-DECLARE_STATIC()
+/*
 
-JSBool jslangInit(JSContext *cx, JSObject *obj);
+	JSObject *o = CreateId(cx, 'VBO', 2);
 
+	IsIdType(cx, o, 'VBO');
 
-#endif // _JSLANG_H_
+	IdPtr(cx, o)[0] = "test0";
+	IdPtr(cx, o)[1] = "test1";
 
+	char *s = (char*)IdPtr(cx, o)[1];
 
+*/

@@ -443,9 +443,11 @@ DEFINE_FUNCTION_FAST( TransformVector ) {
 	Matrix44 *tm = (Matrix44*)JS_GetPrivate(cx, J_FOBJ); // tm for thisMatrix
 	J_S_ASSERT_RESOURCE(tm);
 
-	jsuint length;
+	size_t length;
 //	J_JSVAL_TO_ARRAY_LENGTH( J_FARG(1), length );
-	J_CHK( JS_GetArrayLength(cx, JSVAL_TO_OBJECT(J_FARG(1)), &length) );
+	jsuint tmp;
+	J_CHK( JS_GetArrayLength(cx, JSVAL_TO_OBJECT(J_FARG(1)), &tmp) );
+	length = tmp;
 
 	jsval tmpValue;
 	if ( length == 3 ) {
@@ -482,7 +484,7 @@ DEFINE_FUNCTION_FAST( TransformVector ) {
 		J_CHK( JS_SetElement(cx, JSVAL_TO_OBJECT( J_FARG(1) ), 3, &tmpValue) );
 	} else {
 
-		J_REPORT_ERROR( "Unsupported vector length (%d).", length );
+		J_REPORT_ERROR_1( "Unsupported vector length (%d).", length );
 	}
 
 	*J_FRVAL = JSVAL_VOID;

@@ -18,7 +18,7 @@
 #define TRIMESH_CLASS_NAME "Trimesh"
 
 #define SURFACE_REAL_TYPE float
-#define SURFACE_INDEX_TYPE u_int32_t
+#define SURFACE_INDEX_TYPE int
 
 struct Surface {
 
@@ -26,7 +26,7 @@ struct Surface {
 	SURFACE_REAL_TYPE *vertex; // x,y,z,...
 	SURFACE_REAL_TYPE *normal; // x,y,z,... 
 	SURFACE_REAL_TYPE *textureCoordinate; // s,t,r,...
-	SURFACE_REAL_TYPE *color; // r,g,b,...
+	SURFACE_REAL_TYPE *color; // r,g,b,a,...
 
 	size_t indexCount;
 	SURFACE_INDEX_TYPE *index;

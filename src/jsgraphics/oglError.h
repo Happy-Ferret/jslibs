@@ -12,19 +12,15 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-#include "stdafx.h"
+DECLARE_CLASS( OglError )
 
-#ifndef _JSLANG_H_
-#define _JSLANG_H_
+JSBool ThrowOglError( JSContext *cx, GLenum err );
 
-DECLARE_CLASS( Id )
-DECLARE_CLASS( Blob )
-DECLARE_CLASS( Stream )
-DECLARE_STATIC()
+inline JSBool CheckThrowCurrentOglError( JSContext *cx ) {
 
-JSBool jslangInit(JSContext *cx, JSObject *obj);
-
-
-#endif // _JSLANG_H_
-
+	GLenum err = glGetError();
+	if (unlikely( err != GL_NO_ERROR ))
+		return ThrowOglError(cx, err);
+	return JS_TRUE;
+}
 

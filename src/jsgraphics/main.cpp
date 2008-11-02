@@ -14,9 +14,11 @@
 
 #include "stdafx.h"
 
-#include "jswindow.h"
+//#include "jswindow.h"
 #include "jsgl.h"
 #include "jstransformation.h"
+
+DECLARE_CLASS( OglError )
 
 static bool _defaultUnsafeMode = false;
 extern bool *_pUnsafeMode = &_defaultUnsafeMode;
@@ -37,11 +39,12 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 		_pUnsafeMode = (bool*)JSVAL_TO_PRIVATE(unsafeModePtrVal);
 
 #ifdef XP_WIN
-	J_CHK( INIT_CLASS( Window ) );
+//	J_CHK( INIT_CLASS( Window ) );
 #endif
 
 	J_CHK( INIT_CLASS( Transformation ) );
 	J_CHK( INIT_CLASS( Ogl ) );
+	J_CHK( INIT_CLASS( OglError ) );
 	return JS_TRUE;
 }
 
