@@ -53,8 +53,6 @@ static const void *_pGetErrorMessage = (const void*)&GetErrorMessage; //global v
 static bool _unsafeMode = false; // global variable !
 extern bool *_pUnsafeMode = &_unsafeMode; // global variable !
 
-static u_int32_t gBranchCount = 1; // global variable !
-
 static HostOutput hostStdOut = NULL; // global variable !
 static HostOutput hostStdErr = NULL; // global variable !
 
@@ -199,10 +197,8 @@ static void ErrorReporter(JSContext *cx, const char *message, JSErrorReport *rep
 }
 
 
-static JSBool BranchCallback(JSContext *cx, JSScript *script) {
+static JSBool OperationCallback(JSContext *cx) {
 
-	if ((++gBranchCount & (0x1000-1)) != 1) // every 4096
-		return JS_TRUE;
 	JS_MaybeGC(cx);
 	return JS_TRUE;
 }
@@ -367,7 +363,7 @@ JSContext* CreateHost(size_t maxMem, size_t maxAlloc) {
 	//  Throw exception on any regular expression which backtracks more than n^3 times, where n is length of the input string
 
 	// JSBranchCallback oldBranchCallback =
-	JS_SetBranchCallback(cx, BranchCallback); // (TBD) deprecated
+	JS_SetOperationCallback(cx, OperationCallback, JS_OPERATION_WEIGHT_BASE * 8192); // (TBD) check the best value.
 
 	JSObject *globalObject = JS_NewObject(cx, &global_class, NULL, NULL);
 	if ( globalObject == NULL )
