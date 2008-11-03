@@ -111,7 +111,7 @@ struct JSLIBS_ConstIntegerSpec {
 #define DEFINE_EQUALITY() static JSBool Equality(JSContext *cx, JSObject *obj, jsval v, JSBool *bp)
 #define DEFINE_WRAPPED_OBJECT() static JSObject* WrappedObject(JSContext *cx, JSObject *obj)
 #define DEFINE_GET_OBJECT_OPS() static JSObjectOps* GetObjectOps(JSContext *cx, JSClass *clasp)
-
+#define DEFINE_CHECK_ACCESS() static JSBool CheckAccess(JSContext *cx, JSObject *obj, jsval id, JSAccessMode mode, jsval *vp)
 
 // class configuration
 #define HAS_PRIVATE   _class->flags |= JSCLASS_HAS_PRIVATE;
@@ -138,7 +138,8 @@ struct JSLIBS_ConstIntegerSpec {
 #define HAS_DEL_PROPERTY   _class->delProperty = DelProperty;
 #define HAS_GET_PROPERTY   _class->getProperty = GetProperty;
 #define HAS_SET_PROPERTY   _class->setProperty = SetProperty;
-#define HAS_GET_OBJECT_OPS   _class->getObjectOps = GetObjectOps;
+#define HAS_GET_OBJECT_OPS _class->getObjectOps = GetObjectOps;
+#define HAS_CHECK_ACCESS   _class->checkAccess = CheckAccess;
 
 
 // static definition

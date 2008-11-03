@@ -164,7 +164,7 @@ var api = {
 		cx.center = '`'+ReadArg(cx)+'`';
 	},
 
-	$LF:'= =',
+	$LF:'{{{\n}}}',
 
    $SET: function(cx, item) {
 
