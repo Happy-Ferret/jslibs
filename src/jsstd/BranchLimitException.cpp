@@ -14,9 +14,9 @@
 
 #include "stdafx.h"
 
-BEGIN_CLASS( BranchLimit )
+BEGIN_CLASS( OperationLimit )
 
-DEFINE_HAS_INSTANCE() { // see issue#52
+DEFINE_HAS_INSTANCE() {
 
 	*bp = !JSVAL_IS_PRIMITIVE(v) && OBJ_GET_CLASS(cx, JSVAL_TO_OBJECT(v)) == _class;
 	return JS_TRUE;

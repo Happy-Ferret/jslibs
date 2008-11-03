@@ -20,6 +20,8 @@
 
 #include "jsxdrapi.h"
 #include "jscntxt.h"
+#include <jsdbgapi.h>
+
 
 //#ifndef PATH_MAX
 //	#define PATH_MAX FILENAME_MAX
@@ -32,13 +34,15 @@
 
 /**doc fileIndex:topmost **/
 
-BEGIN_STATIC
+DECLARE_CLASS( OperationLimit )
+DECLARE_CLASS( Sandbox )
 
+
+BEGIN_STATIC
 
 /**doc
 === Static functions ===
 **/
-
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
@@ -177,18 +181,18 @@ DEFINE_FUNCTION_FAST( InternString ) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
- * $VOID $INAME( obj )
-  Prevents all write access to the object, either to add a new property, delete an existing property,
-  or set the value or attributes of an existing property.
+ * $VOID $INAME( obj [ , recursively  ] )
+  Prevents all write access to the object, either to add a new property, delete an existing property, or set the value or attributes of an existing property.
+  If _recursively_ is true, the function seal any non-null objects in the graph connected to obj's slots.
 **/
 DEFINE_FUNCTION( Seal ) {
 
 	J_S_ASSERT_ARG_MIN(1);
-	JSBool deep;
 	J_S_ASSERT_OBJECT( J_ARG(1) );
 	//J_CHK( JS_ValueToObject(cx, J_ARG(1), &obj) );
+	JSBool deep;
 	if ( J_ARG_ISDEF(2) )
-		J_CHK( JS_ValueToBoolean( cx, J_ARG(2), &deep ) );
+		J_CHK( JS_ValueToBoolean(cx, J_ARG(2), &deep) );
 	else
 		deep = JS_FALSE;
 	return JS_SealObject(cx, JSVAL_TO_OBJECT(J_ARG(1)), deep);
@@ -722,6 +726,125 @@ DEFINE_FUNCTION_FAST( Exec ) {
 }
 
 
+
+static JSBool SandboxMaxOperationCallback(JSContext *cx) {
+	
+	JSObject *branchLimitExceptionObj = JS_NewObject( cx, classOperationLimit, NULL, NULL );
+	JS_SetPendingException( cx, OBJECT_TO_JSVAL( branchLimitExceptionObj ) );
+	return JS_FALSE;
+}
+
+static JSBool SandboxQueryFunction(JSContext *cx, uintN argc, jsval *vp) {
+
+	JSFunction *fun = (JSFunction*)JS_GetContextPrivate(cx);
+	if ( fun ) {
+
+		J_CHK( JS_CallFunction(cx, J_FOBJ, fun, argc, J_FARGV, J_FRVAL) );
+		if ( !JSVAL_IS_PRIMITIVE(*J_FRVAL) ) { // for security reasons, you must return primitive values.
+			
+			JS_ReportError(cx, "Only primitive value can be used.");
+			return JS_FALSE;
+		}
+	} else
+		*J_FRVAL = JSVAL_VOID;
+	return JS_TRUE;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/**doc
+ * $VAL $INAME( scriptCode [ , queryCallback ] [ , operationLimitCount = 4096 ] )
+  Evaluates the JavaScript code in a sandbox with a new set of standard classes (Object, Math, ...).
+  $H arguments
+   $ARG string scriptCode: the unsecured script code to be executed.
+   $ARG function queryCallback: this function may be called by the unsecured script to query miscellaneous information to the host script. For security reasons, the function can only return primitive values (no objects).
+   $ARG integer operationLimitCount: if defined, an OperationLimit exception is thrown when _operationLimitCount_ internal operation has been done.
+  $H return value
+   the value of the last-executed expression statement processed in the script.
+  $H example 1
+  {{{
+  function QueryCallback(val) {
+   return val;
+  }
+  var res = SandboxEval('1 + 2 + Query(3)', QueryCallback);
+  Print( res ); // prints: 6
+  }}}
+  $H example 2
+  {{{
+  var res = SandboxEval('Math');
+  Print( res == Math ); // prints: false
+  }}}
+  $H example 3
+   abort very-long-running scripts.
+  {{{
+  try {
+   var res = SandboxEval('while (true);', undefined, 1000);
+  } catch (ex if ex instanceof OperationLimit) {
+   Print( 'script execution too long !' );
+  }
+  }}}
+**/
+DEFINE_FUNCTION_FAST( SandboxEval ) {
+
+	J_S_ASSERT_ARG_MIN(1);
+
+	size_t maxOperation;
+	if ( J_FARG_ISDEF(3) ) {
+
+		J_CHK( JsvalToUInt(cx, J_FARG(2), &maxOperation) );
+		J_S_ASSERT( maxOperation < JS_MAX_OPERATION_LIMIT / JS_OPERATION_WEIGHT_BASE, "Invalid limit value." );
+	} else 
+		maxOperation = 4096; // default value
+
+	JSContext *scx = JS_NewContext(JS_GetRuntime(cx), 8192L); // see host/host.cpp
+	if (!scx) {
+
+		JS_ReportOutOfMemory(cx); // the only error that is not catchable
+		return JS_FALSE;
+	}
+	JS_ToggleOptions(scx, JSOPTION_DONT_REPORT_UNCAUGHT | JSOPTION_VAROBJFIX | JSOPTION_COMPILE_N_GO | JSOPTION_RELIMIT | JSOPTION_JIT);
+
+	JSObject *globalObject = JS_NewObject(scx, classSandbox, NULL, NULL);
+	if ( !globalObject ) {
+
+		JS_DestroyContextNoGC(scx);
+		JS_ReportOutOfMemory(cx); // the only error that is not catchable
+		return JS_FALSE;
+	}
+
+	if ( J_FARG_ISDEF(2) ) {
+
+		J_S_ASSERT_FUNCTION( J_FARG(2) );
+		JS_SetContextPrivate(scx, JS_ValueToFunction(cx, J_FARG(2)));
+		J_CHK( JS_DefineFunction(scx, globalObject, "Query", (JSNative)SandboxQueryFunction, 1, JSFUN_FAST_NATIVE | JSPROP_PERMANENT | JSPROP_READONLY) );
+	}
+
+	JSString *jsstr = JS_ValueToString(cx, J_FARG(1));
+	uintN srclen = JS_GetStringLength(jsstr); 	
+	jschar *src = JS_GetStringChars(jsstr);
+
+	JS_SetOperationCallback(scx, SandboxMaxOperationCallback, maxOperation * JS_OPERATION_WEIGHT_BASE);
+
+	JS_SetGlobalObject(scx, globalObject);
+	JSStackFrame *fp = JS_GetScriptedCaller(cx, NULL);
+	JSBool ok = JS_EvaluateUCScript(scx, globalObject, src, srclen, fp->script->filename, JS_PCToLineNumber(cx, fp->script, fp->regs->pc), J_FRVAL);
+
+//	JSPrincipals principals = { "sandbox context", NULL, NULL, 1, NULL, NULL };
+//	JSBool ok = JS_EvaluateUCScriptForPrincipals(scx, sobj, &principals, src, srclen, fp->script->filename, JS_PCToLineNumber(cx, fp->script, fp->regs->pc), J_FRVAL);
+
+	if (!ok) {
+
+		jsval ex;
+		if (JS_GetPendingException(scx, &ex))
+			JS_SetPendingException(cx, ex);
+		else
+			JS_ReportError(cx, "Unexpected error.");
+	}
+
+	JS_DestroyContextMaybeGC(scx);
+	return ok;
+}
+
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
  * $BOOL $INAME( statementString )
@@ -729,7 +852,6 @@ DEFINE_FUNCTION_FAST( Exec ) {
   The intent is to support interactive compilation, accumulate lines in a buffer until IsStatementValid returns true, then pass it to an eval.
   This function is useful to write an interactive console.
 **/
-
 DEFINE_FUNCTION( IsStatementValid ) {
 
 	J_S_ASSERT_ARG_MIN( 1 );
@@ -848,6 +970,18 @@ DEFINE_PROPERTY( processPrioritySetter ) {
 */
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+#ifdef _DEBUG
+DEFINE_FUNCTION( Test ) {
+	
+//	JSObject *o = JS_NewObject(cx, NULL, NULL, NULL); // bz#449657 ?
+//	JS_SealObject(cx, o, JS_TRUE);
+
+	return JS_TRUE;
+}
+#endif // _DEBUG
+
+
+
 
 CONFIGURE_STATIC
 
@@ -859,6 +993,7 @@ CONFIGURE_STATIC
 		FUNCTION( SetScope )
 		FUNCTION( HideProperties )
 		FUNCTION_FAST( Exec )
+		FUNCTION_FAST(SandboxEval)
 		FUNCTION( IsStatementValid )
 		FUNCTION_FAST( StringRepeat )
 		FUNCTION_FAST( Print )
@@ -871,6 +1006,9 @@ CONFIGURE_STATIC
 		FUNCTION( ASSERT )
 		FUNCTION_FAST( Halt )
 //		FUNCTION( StrSet )
+#ifdef _DEBUG
+		FUNCTION( Test )
+#endif // _DEBUG
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC
