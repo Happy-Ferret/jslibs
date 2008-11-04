@@ -727,29 +727,6 @@ DEFINE_FUNCTION_FAST( Exec ) {
 
 
 
-static JSBool SandboxMaxOperationCallback(JSContext *cx) {
-	
-	JSObject *branchLimitExceptionObj = JS_NewObject( cx, classOperationLimit, NULL, NULL );
-	JS_SetPendingException( cx, OBJECT_TO_JSVAL( branchLimitExceptionObj ) );
-	return JS_FALSE;
-}
-
-static JSBool SandboxQueryFunction(JSContext *cx, uintN argc, jsval *vp) {
-
-	JSFunction *fun = (JSFunction*)JS_GetContextPrivate(cx);
-	if ( fun ) {
-
-		J_CHK( JS_CallFunction(cx, J_FOBJ, fun, argc, J_FARGV, J_FRVAL) );
-		if ( !JSVAL_IS_PRIMITIVE(*J_FRVAL) ) { // for security reasons, you must return primitive values.
-			
-			JS_ReportError(cx, "Only primitive value can be used.");
-			return JS_FALSE;
-		}
-	} else
-		*J_FRVAL = JSVAL_VOID;
-	return JS_TRUE;
-}
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
  * $VAL $INAME( scriptCode [ , queryCallback ] [ , operationLimitCount = 4096 ] )
@@ -783,6 +760,30 @@ static JSBool SandboxQueryFunction(JSContext *cx, uintN argc, jsval *vp) {
   }
   }}}
 **/
+
+static JSBool SandboxMaxOperationCallback(JSContext *cx) {
+	
+	JSObject *branchLimitExceptionObj = JS_NewObject( cx, classOperationLimit, NULL, NULL );
+	JS_SetPendingException( cx, OBJECT_TO_JSVAL( branchLimitExceptionObj ) );
+	return JS_FALSE;
+}
+
+static JSBool SandboxQueryFunction(JSContext *cx, uintN argc, jsval *vp) {
+
+	JSFunction *fun = (JSFunction*)JS_GetContextPrivate(cx);
+	if ( fun ) {
+
+		J_CHK( JS_CallFunction(cx, J_FOBJ, fun, argc, J_FARGV, J_FRVAL) );
+		if ( !JSVAL_IS_PRIMITIVE(*J_FRVAL) ) { // for security reasons, you must return primitive values.
+			
+			JS_ReportError(cx, "Only primitive value can be used.");
+			return JS_FALSE;
+		}
+	} else
+		*J_FRVAL = JSVAL_VOID;
+	return JS_TRUE;
+}
+
 DEFINE_FUNCTION_FAST( SandboxEval ) {
 
 	J_S_ASSERT_ARG_MIN(1);
@@ -796,7 +797,7 @@ DEFINE_FUNCTION_FAST( SandboxEval ) {
 		maxOperation = 4096; // default value
 
 	JSContext *scx = JS_NewContext(JS_GetRuntime(cx), 8192L); // see host/host.cpp
-	if (!scx) {
+	if ( !scx ) {
 
 		JS_ReportOutOfMemory(cx); // the only error that is not catchable
 		return JS_FALSE;
@@ -818,6 +819,15 @@ DEFINE_FUNCTION_FAST( SandboxEval ) {
 		J_CHK( JS_DefineFunction(scx, globalObject, "Query", (JSNative)SandboxQueryFunction, 1, JSFUN_FAST_NATIVE | JSPROP_PERMANENT | JSPROP_READONLY) );
 	}
 
+/*
+	if ( J_FARG_ISDEF(2) ) {
+		
+		JSObject *aobj = JSVAL_TO_OBJECT( J_FARG(2) );
+		JS_SetParent(scx, aobj, globalObject);
+		globalObject = aobj;
+	}
+*/		
+
 	JSString *jsstr = JS_ValueToString(cx, J_FARG(1));
 	uintN srclen = JS_GetStringLength(jsstr); 	
 	jschar *src = JS_GetStringChars(jsstr);
@@ -829,7 +839,7 @@ DEFINE_FUNCTION_FAST( SandboxEval ) {
 	JSBool ok = JS_EvaluateUCScript(scx, globalObject, src, srclen, fp->script->filename, JS_PCToLineNumber(cx, fp->script, fp->regs->pc), J_FRVAL);
 
 //	JSPrincipals principals = { "sandbox context", NULL, NULL, 1, NULL, NULL };
-//	JSBool ok = JS_EvaluateUCScriptForPrincipals(scx, sobj, &principals, src, srclen, fp->script->filename, JS_PCToLineNumber(cx, fp->script, fp->regs->pc), J_FRVAL);
+//	JSBool ok = JS_EvaluateUCScriptForPrincipals(scx, globalObject, &principals, src, srclen, fp->script->filename, JS_PCToLineNumber(cx, fp->script, fp->regs->pc), J_FRVAL);
 
 	if (!ok) {
 
@@ -971,10 +981,8 @@ DEFINE_PROPERTY( processPrioritySetter ) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #ifdef _DEBUG
-DEFINE_FUNCTION( Test ) {
+DEFINE_FUNCTION_FAST( Test ) {
 	
-//	JSObject *o = JS_NewObject(cx, NULL, NULL, NULL); // bz#449657 ?
-//	JS_SealObject(cx, o, JS_TRUE);
 
 	return JS_TRUE;
 }
@@ -1007,7 +1015,7 @@ CONFIGURE_STATIC
 		FUNCTION_FAST( Halt )
 //		FUNCTION( StrSet )
 #ifdef _DEBUG
-		FUNCTION( Test )
+		FUNCTION_FAST( Test )
 #endif // _DEBUG
 	END_STATIC_FUNCTION_SPEC
 

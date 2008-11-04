@@ -141,13 +141,16 @@ var rotateX = 0;
 var rotateY = 0;
 
 var tremeshId;
+var tremeshTransformation = new Transformation();
+tremeshTransformation.Clear();
+
 
 function Init() {
 
 	var t = new Trimesh();
 
-	var vertexCount = 1000;
-	var triangleCount = 1000;
+	var vertexCount = 300;
+	var triangleCount = 200;
 	
 	var vertex = [];
 	for ( var i = 0; i < vertexCount*3; i++ )
@@ -185,25 +188,11 @@ function Draw() {
 	
 		var t = new Date().valueOf() - time0;
 
-		LoadIdentity();
-/*		
-		Rotate( rotateX, 0,1,0 );
-		Rotate( rotateY, 1,0,0 );
-*/
-
-		PopMatrix();
-		Rotate( -speedX / 100, 0,1,0 );
-		Rotate( -speedY / 100, 1,0,0 );
-		PushMatrix();
+		LoadMatrix(tremeshTransformation);
 
 		Translate(-0.5, -0.5, -0.5);
 		Clear(COLOR_BUFFER_BIT | DEPTH_BUFFER_BIT);
 		DrawTrimesh(tremeshId);
-
-//	rotateX -= speedX / 100;
-//	rotateY -= speedY / 100;
-
-
 	};
 	
 }
@@ -243,6 +232,15 @@ var listeners = {
 	onMouseMotion: function(x,y,dx,dy,button) {
 		
 		if ( button & BUTTON_LMASK ) {
+	
+			var rotation = new Transformation();
+			rotation.Clear();
+			rotation.Rotate( dx, 0,1,0 );
+			rotation.Rotate( dy, 1,0,0 );
+			
+			//tremeshTransformation.Product(rotation);
+			
+			tremeshTransformation.LookAt( x,y,0 );
 	
 			speedX += dx;
 			speedY += dy;

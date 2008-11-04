@@ -140,6 +140,7 @@ struct JSLIBS_ConstIntegerSpec {
 #define HAS_SET_PROPERTY   _class->setProperty = SetProperty;
 #define HAS_GET_OBJECT_OPS _class->getObjectOps = GetObjectOps;
 #define HAS_CHECK_ACCESS   _class->checkAccess = CheckAccess;
+#define IS_GLOBAL  _class->flags |= JSCLASS_IS_GLOBAL;
 
 
 // static definition

@@ -22,7 +22,7 @@ DEFINE_FINALIZE() {
 	void **pv = (void **)JS_GetPrivate(cx, obj);
 	if (pv != NULL) {
 	
-		if ( pv[1] )
+		if ( pv[1] ) // callback function is present
 			((IdFinalizeCallback_t)pv[1])(pv + 2);
 
 		JS_free(cx, pv);
@@ -35,24 +35,10 @@ DEFINE_HAS_INSTANCE() { // see issue#52
 	return JS_TRUE;
 }
 
-DEFINE_FUNCTION(toString) {
-
-	ID_TYPE type = GetIdType(cx, obj);
-	*J_RVAL = STRING_TO_JSVAL(JS_NewStringCopyN(cx, (const char*)&type, sizeof(ID_TYPE)));
-	return JS_TRUE;
-}
-
 CONFIGURE_CLASS
 
 	HAS_PRIVATE
 	HAS_FINALIZE
 	HAS_HAS_INSTANCE
-
-	BEGIN_PROPERTY_SPEC
-	END_PROPERTY_SPEC
-
-	BEGIN_FUNCTION_SPEC
-//		FUNCTION( toString )
-	END_FUNCTION_SPEC
 
 END_CLASS

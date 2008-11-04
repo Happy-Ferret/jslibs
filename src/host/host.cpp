@@ -216,7 +216,7 @@ static JSBool LoadModule(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, 
 
 /* namespace management
 	if ( J_ARG_ISDEF(2) ) {
-		
+
 		if ( JSVAL_IS_OBJECT(J_ARG(2)) ) {
 			obj = JSVAL_TO_OBJECT(J_ARG(2));
 		} else {
@@ -231,7 +231,7 @@ static JSBool LoadModule(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, 
 				nsObj = JS_NewObject(cx, NULL, NULL, NULL);
 				J_CHK( JS_DefineProperty(cx, obj, ns, OBJECT_TO_JSVAL(nsObj), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) ); // doc. On success, JS_DefineProperty returns JS_TRUE. If the property already exists or cannot be created, JS_DefineProperty returns JS_FALSE.
 			} else {
-				
+
 				J_S_ASSERT_OBJECT( existingNsVal );
 				nsObj = JSVAL_TO_OBJECT( existingNsVal );
 			}
@@ -381,9 +381,6 @@ JSContext* CreateHost(size_t maxMem, size_t maxAlloc) {
 }
 
 
-
-
-
 JSBool InitHost( JSContext *cx, bool unsafeMode, HostOutput stdOut, HostOutput stdErr ) {
 
 	_unsafeMode = unsafeMode;
@@ -437,7 +434,7 @@ void DestroyHost( JSContext *cx ) {
 // cleanup
 
 // doc:
-//  - Is the only side effect of JS_DestroyContextNoGC that any finalizers I may have specified in custom objects will not get called ? 
+//  - Is the only side effect of JS_DestroyContextNoGC that any finalizers I may have specified in custom objects will not get called ?
 //  - Not if you destroy all contexts (whether by NoGC or not), destroy all runtimes, and call JS_ShutDown before exiting or hibernating.
 //    The last JS_DestroyContext* API call will run a GC, no matter which API of that form you call on the last context in the runtime. /be
 	JS_DestroyContext(cx);
@@ -448,6 +445,14 @@ void DestroyHost( JSContext *cx ) {
 	ModuleFreeAll();
 }
 
+
+/*
+void HostPrincipalsDestroy(JSContext *cx, JSPrincipals *principals) {
+
+	free(principals->codebase);
+	free(principals);
+}
+*/
 
 JSBool ExecuteScript( JSContext *cx, const char *scriptFileName, bool compileOnly, int argc, const char * const * argv, jsval *rval ) {
 
@@ -488,9 +493,22 @@ JSBool ExecuteScript( JSContext *cx, const char *scriptFileName, bool compileOnl
 
 //	JS_GC(cx); // ...and also just before doing anything that requires compilation (since compilation disables GC until complete).
 
+/*
+	JSPrincipals *principals = (JSPrincipals*)malloc(sizeof(JSPrincipals));
+	JSPrincipals tmp = {0};
+	*principals = tmp;
+	principals->codebase = (char*)malloc(PATH_MAX);
+	strncpy(principals->codebase, scriptFileName, PATH_MAX-1);
+	principals->refcount = 1;
+	principals->destroy = HostPrincipalsDestroy;
+*/
 	JSScript *script = JS_CompileFileHandle(cx, globalObject, scriptFileName, file);
+//	JSScript *script = JS_CompileFileHandleForPrincipals(cx, globalObject, scriptFileName, file, principals);
 	J_CHKM1( script != NULL, "Unable to compile the script %s.", scriptFileName );
 	fclose(file);
+
+//	JSObject *scrobj = JS_NewScriptObject(cx, script);
+//	J_CHK( J_ADD_ROOT(cx, &scrobj) );
 
 	// You need to protect a JSScript (via a rooted script object) if and only if a garbage collection can occur between compilation and the start of execution.
 
@@ -501,6 +519,10 @@ JSBool ExecuteScript( JSContext *cx, const char *scriptFileName, bool compileOnl
 
 		*rval = JSVAL_VOID;
 	}
+
+//	J_CHK( J_REMOVE_ROOT(cx, &scrobj) );
+//	JS_DestroyScript(cx, script);
+
 
 	J_CHKM( JS_DeleteProperty(cx, globalObject, NAME_GLOBAL_ARGUMENTS ), "Unable to remove argument property" );
 	return JS_TRUE;

@@ -1734,10 +1734,8 @@ DEFINE_FUNCTION_FAST( LoadTrimesh ) {
 
 	J_S_ASSERT( srf->vertex && srf->vertexCount && srf->index && srf->indexCount, "No enough data" );
 
-	JSObject *idObj;
 	TrimeshInfo *info;
-	J_CHK( CreateId(cx, TRIMESH_ID_NAME, sizeof(TrimeshInfo), FinalizeTrimesh, &idObj, (void**)&info) );
-	*J_FRVAL = OBJECT_TO_JSVAL(idObj);
+	J_CHK( CreateId(cx, TRIMESH_ID_NAME, sizeof(TrimeshInfo), (void**)&info, FinalizeTrimesh, J_FRVAL) );
 
 	info->vertexCount = srf->vertexCount;
 	info->indexCount = srf->indexCount;
@@ -1794,10 +1792,9 @@ DEFINE_FUNCTION_FAST( DrawTrimesh ) {
 	J_S_ASSERT_ARG_MIN(1);
 	J_S_ASSERT_OBJECT(J_FARG(1));
 
-	JSObject *idObj = JSVAL_TO_OBJECT(J_FARG(1));
-	J_S_ASSERT( IsIdType(cx, idObj, TRIMESH_ID_NAME), "Invalid Id." );
+	J_S_ASSERT( IsIdType(cx, J_FARG(1), TRIMESH_ID_NAME), "Invalid Id." );
 
-	TrimeshInfo *info = (TrimeshInfo*)GetIdPrivate(cx, idObj);
+	TrimeshInfo *info = (TrimeshInfo*)GetIdPrivate(cx, J_FARG(1));
 
 	GLenum dataType = sizeof(SURFACE_REAL_TYPE) == sizeof(float) ? GL_FLOAT : GL_DOUBLE;
 

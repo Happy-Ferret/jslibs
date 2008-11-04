@@ -1,14 +1,12 @@
 LoadModule('jsstd');
 
-LoadModule('jstrimesh');
+Print( Id, '\n' );
+this.Id = 123;
+Print( Id, '\n' );
 
 
 
-
-
-Print('Done');
-
-Halt();
+Halt(); ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 var code = "var db = {}; db.testFun = function() { return 123 }; Print( Test(db, 'testFun') )"
@@ -18,7 +16,7 @@ func();
 
 
 
-Halt();
+Halt(); ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 var b = new Blob('ABCDEF');
 var s = 'ABCDEF'

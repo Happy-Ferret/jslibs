@@ -1,11 +1,7 @@
 LoadModule('jsstd');
 LoadModule('jsio');
 
-  function QueryCallback(val) {
-    return Number(val);
-  }
-  var res = SandboxEval('1 + 2 + Query(3)', QueryCallback);
-  Print( res ); // prints: 6
+
 
 
 Halt(); //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -225,6 +225,82 @@ DEFINE_FUNCTION_FAST( Translate ) {
 }
 
 
+
+/**doc
+ * $THIS $INAME( w, x, y, z )
+  Sets the rotation part from a quaternion.
+  $H arguments
+   $ARG real w
+   $ARG real x
+   $ARG real y
+   $ARG real z
+**/
+DEFINE_FUNCTION_FAST( RotationFromQuaternion ) {
+
+	J_S_ASSERT_ARG_MIN(4); // w, x, y, z
+	Matrix44 *tm = (Matrix44*)JS_GetPrivate(cx, J_FOBJ); // tm for thisMatrix
+	J_S_ASSERT_RESOURCE(tm);
+
+	float w, x, y, z;
+	J_CHK( JsvalToFloat(cx, J_FARG(1), &w) ); 
+	J_CHK( JsvalToFloat(cx, J_FARG(2), &x) ); 
+	J_CHK( JsvalToFloat(cx, J_FARG(3), &y) ); 
+	J_CHK( JsvalToFloat(cx, J_FARG(4), &z) ); 
+
+
+	float fTx  = 2.0 * x;
+	float fTy  = 2.0 * y;
+	float fTz  = 2.0 * z;
+	float fTwx = fTx * w;
+	float fTwy = fTy * w;
+	float fTwz = fTz * w;
+	float fTxx = fTx * x;
+	float fTxy = fTy * x;
+	float fTxz = fTz * x;
+	float fTyy = fTy * y;
+	float fTyz = fTz * y;
+	float fTzz = fTz * z;
+
+	tm->m[0][0] = 1.0-(fTyy+fTzz);
+	tm->m[0][1] = fTxy-fTwz;
+	tm->m[0][2] = fTxz+fTwy;
+	tm->m[1][0] = fTxy+fTwz;
+	tm->m[1][1] = 1.0-(fTxx+fTzz);
+	tm->m[1][2] = fTyz-fTwx;
+	tm->m[2][0] = fTxz-fTwy;
+	tm->m[2][1] = fTyz+fTwx;
+	tm->m[2][2] = 1.0-(fTxx+fTyy);
+
+	return JS_TRUE;
+}
+
+
+/**doc
+ * $THIS $INAME( roll, pitch, yaw )
+  Sets the Tait-Bryan rotation.
+  $H arguments
+   $ARG real roll
+   $ARG real pitch
+   $ARG real yaw
+**/
+DEFINE_FUNCTION_FAST( TaitBryanRotation ) {
+
+	J_S_ASSERT_ARG_MIN(3); // roll, pitch, yaw
+	Matrix44 *tm = (Matrix44*)JS_GetPrivate(cx, J_FOBJ); // tm for thisMatrix
+	J_S_ASSERT_RESOURCE(tm);
+
+	float roll, pitch, yaw;
+	J_CHK( JsvalToFloat(cx, J_FARG(1), &roll) );
+	J_CHK( JsvalToFloat(cx, J_FARG(2), &pitch) );
+	J_CHK( JsvalToFloat(cx, J_FARG(3), &yaw) );
+
+	// (TBD)
+
+	return JS_TRUE;
+}
+
+
+
 /**doc
  * $THIS $INAME( angle, x, y, z )
   Sets the rotation part of the current transformation.
@@ -356,7 +432,7 @@ DEFINE_FUNCTION_FAST( RotationZ ) {
 **/
 DEFINE_FUNCTION_FAST( LookAt ) {
 
-	J_REPORT_ERROR("LookAt is buggy !! dont' use it");
+//	J_REPORT_ERROR("LookAt is buggy !! dont' use it");
 
 	J_S_ASSERT_ARG_MIN(3); // x, y, z
 	Matrix44 *m = (Matrix44*)JS_GetPrivate(cx, J_FOBJ);
@@ -575,6 +651,7 @@ CONFIGURE_CLASS
 		FUNCTION_FAST_ARGC( Translation, 3 ) // x, y, z
 		FUNCTION_FAST_ARGC( ClearRotation, 0 )
 		FUNCTION_FAST_ARGC( ClearTranslation, 0 )
+		FUNCTION_FAST_ARGC( RotationFromQuaternion, 4 ) // w,x,y,z
 		FUNCTION_FAST_ARGC( Rotate, 4 ) // angle, x, y, z
 		FUNCTION_FAST_ARGC( RotationX, 1 ) // angle
 		FUNCTION_FAST_ARGC( RotationY, 1 ) // angle
@@ -585,3 +662,10 @@ CONFIGURE_CLASS
 	END_FUNCTION_SPEC
 
 END_CLASS
+
+
+/* links:
+- Convert Euler angles to/from matrix or quat - http://tog.acm.org/GraphicsGems/gemsiv/euler_angle/
+- Some math tools - http://www.google.fr/codesearch?hl=fr&q=show:aE3NaT1Jblw:D0uDO1Bfdv4&ct=rdl&cs_p=http://davehillier.googlecode.com/svn&cs_f=trunk/day1/maths
+
+*/

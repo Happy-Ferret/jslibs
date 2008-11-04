@@ -169,14 +169,16 @@ extern bool *_pUnsafeMode;
 				JS_ReportError(cx, (errorMessage IFDEBUG(" (@" J__CODE_LOCATION ")")), (arg)); \
 			return JS_FALSE; \
 		} \
-	} while(0) \
+	} while(0)
 
 
+inline bool JsvalIsClass(JSContext *cx, jsval val, JSClass *jsClass) {
 
-#define J_JSVAL_IS_CLASS(value, jsClass) \
-	( JSVAL_IS_OBJECT(value) && !JSVAL_IS_NULL(value) && JS_GET_CLASS(cx, JSVAL_TO_OBJECT(value)) == (jsClass) )
+	return JSVAL_IS_OBJECT(val) && !JSVAL_IS_NULL(val) && JS_GET_CLASS(cx, JSVAL_TO_OBJECT(val)) == (jsClass);
+}
 
-
+#define J_JSVAL_IS_CLASS(val, jsClass) \
+	JsvalIsClass(cx, val, jsClass)
 
 
 #define J_SAFE_BEGIN if (unlikely( !*_pUnsafeMode )) {
@@ -323,6 +325,25 @@ inline bool SwapObjects( JSContext *cx, JSObject *obj1, JSObject *obj2 ) {
 }
 */
 
+inline void *JL_GetPrivate(JSContext *cx, JSObject *obj) {
+
+	jsval v;
+	JS_ASSERT(OBJ_GET_CLASS(cx, obj)->flags & JSCLASS_HAS_PRIVATE);
+	v = obj->fslots[JSSLOT_PRIVATE];
+	if (!JSVAL_IS_INT(v))
+		return NULL;
+	return JSVAL_TO_PRIVATE(v);
+}
+
+
+inline JSBool JL_SetPrivate(JSContext *cx, JSObject *obj, void *data) {
+
+	JS_ASSERT(OBJ_GET_CLASS(cx, obj)->flags & JSCLASS_HAS_PRIVATE);
+	obj->fslots[JSSLOT_PRIVATE] = PRIVATE_TO_JSVAL(data);
+	return JS_TRUE;
+}
+
+
 inline jsdouble IsInfinity( JSContext *cx, jsval val ) {
 
 	return JSVAL_IS_DOUBLE( val ) && JSDOUBLE_IS_INFINITE( *JSVAL_TO_DOUBLE( val ) );
@@ -370,6 +391,7 @@ inline bool JsvalIsFunction( JSContext *cx, jsval val ) {
 
 
 inline bool JsvalIsArray( JSContext *cx, jsval val ) {
+
 	return ( JSVAL_IS_OBJECT(val) && JS_IsArrayObject( cx, JSVAL_TO_OBJECT(val) ) == JS_TRUE );
 }
 

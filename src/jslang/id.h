@@ -13,20 +13,3 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-
-JSObject* CreateId( JSContext *cx, u_int32_t name, size_t length );
-bool IsIdType( JSContext *cx, JSObject *idObj, u_int32_t idType );
-void** IdPtr( JSContext *cx, JSObject *idObj );
-
-/*
-
-	JSObject *o = CreateId(cx, 'VBO', 2);
-
-	IsIdType(cx, o, 'VBO');
-
-	IdPtr(cx, o)[0] = "test0";
-	IdPtr(cx, o)[1] = "test1";
-
-	char *s = (char*)IdPtr(cx, o)[1];
-
-*/
