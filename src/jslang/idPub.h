@@ -33,7 +33,7 @@ inline JSBool CreateId( JSContext *cx, ID_TYPE idType, size_t size, IdFinalizeCa
 	J_CHK( JS_SetPrivate(cx, *idObj, pv) );
 
 	pv[0] = (void*)idType;
-	pv[1] = cb;
+	pv[1] = (void*)cb;
 	*data = pv+2;
 
 	return JS_TRUE;
