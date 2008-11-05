@@ -194,7 +194,13 @@ function Draw() {
 		Clear(COLOR_BUFFER_BIT | DEPTH_BUFFER_BIT);
 		DrawTrimesh(tremeshId);
 	};
-	
+
+	var rotation = new Transformation();
+	rotation.Clear();
+	rotation.RotateToVector( -speedX, speedY, 1 );
+	tremeshTransformation.Product(rotation);
+
+
 }
 
 GlSetAttribute( GL_SWAP_CONTROL, 1 ); // vsync
@@ -232,16 +238,7 @@ var listeners = {
 	onMouseMotion: function(x,y,dx,dy,button) {
 		
 		if ( button & BUTTON_LMASK ) {
-	
-			var rotation = new Transformation();
-			rotation.Clear();
-			rotation.Rotate( dx, 0,1,0 );
-			rotation.Rotate( dy, 1,0,0 );
-			
-			//tremeshTransformation.Product(rotation);
-			
-			tremeshTransformation.LookAt( x,y,0 );
-	
+
 			speedX += dx;
 			speedY += dy;
 		}

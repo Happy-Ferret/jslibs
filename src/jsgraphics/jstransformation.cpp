@@ -432,7 +432,21 @@ DEFINE_FUNCTION_FAST( RotationZ ) {
 **/
 DEFINE_FUNCTION_FAST( LookAt ) {
 
-//	J_REPORT_ERROR("LookAt is buggy !! dont' use it");
+/*
+    _vector3_sse z(from - to);
+    z.norm();
+    _vector3_sse y(up);
+    _vector3_sse x(y * z);   // x = y cross z
+    y = z * x;          // y = z cross x
+    x.norm();
+    y.norm();
+
+    m1 = x.m128;
+    m2 = y.m128;
+    m3 = z.m128;
+*/
+
+	J_REPORT_ERROR("LookAt is buggy !! dont' use it");
 
 	J_S_ASSERT_ARG_MIN(3); // x, y, z
 	Matrix44 *m = (Matrix44*)JS_GetPrivate(cx, J_FOBJ);
@@ -450,6 +464,35 @@ DEFINE_FUNCTION_FAST( LookAt ) {
 	return JS_TRUE;
 }
 
+
+DEFINE_FUNCTION_FAST( RotateToVector ) {
+
+	J_S_ASSERT_ARG_MIN(3); // x, y, z
+	Matrix44 *m = (Matrix44*)JS_GetPrivate(cx, J_FOBJ);
+	J_S_ASSERT_RESOURCE(m);
+	float x, y, z;
+	J_CHK( JsvalToFloat(cx, J_FARG(1), &x) ); 
+	J_CHK( JsvalToFloat(cx, J_FARG(2), &y) ); 
+	J_CHK( JsvalToFloat(cx, J_FARG(3), &z) ); 
+
+
+	Vector3 to, up;
+	Vector3Set(&to, x,y,z);
+	Vector3Normalize(&to);
+	Vector3Set(&up, 0,0,1);
+
+	float angle = acos(Vector3Dot(&up, &to));
+	
+	Vector3Cross(&up, &up, &to);
+
+	Matrix44 r;
+	Matrix44Identity(&r);
+	Matrix44SetRotation(&r, &up, -angle * M_PI / 360.0f);
+	Matrix44Product(m, &r);
+	*J_FRVAL = JSVAL_VOID;
+
+	return JS_TRUE;
+}
 
 /**doc
  * $THIS $INAME()
@@ -652,6 +695,7 @@ CONFIGURE_CLASS
 		FUNCTION_FAST_ARGC( ClearRotation, 0 )
 		FUNCTION_FAST_ARGC( ClearTranslation, 0 )
 		FUNCTION_FAST_ARGC( RotationFromQuaternion, 4 ) // w,x,y,z
+		FUNCTION_FAST_ARGC( RotateToVector, 3 ) // x,y,z
 		FUNCTION_FAST_ARGC( Rotate, 4 ) // angle, x, y, z
 		FUNCTION_FAST_ARGC( RotationX, 1 ) // angle
 		FUNCTION_FAST_ARGC( RotationY, 1 ) // angle
