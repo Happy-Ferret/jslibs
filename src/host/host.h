@@ -21,9 +21,9 @@
 typedef int (*HostOutput)( const char *buffer, size_t length );
 
 
-JSContext* CreateHost(size_t maxMem, size_t maxAlloc);
+JSContext* CreateHost(size_t maxMem, size_t maxAlloc, size_t operationLimitGC);
 JSBool InitHost( JSContext *cx, bool unsafeMode, HostOutput stdOut, HostOutput stdErr );
 void DestroyHost( JSContext *cx );
-JSBool ExecuteScript( JSContext *cx, const char *scriptFileName, bool compileOnly, int argc, const char * const * argv, jsval *rval );
+JSBool ExecuteScriptFileName( JSContext *cx, const char *scriptFileName, bool compileOnly, int argc, const char * const * argv, jsval *rval );
 
 #endif // _HOST_H_

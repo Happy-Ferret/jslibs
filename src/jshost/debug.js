@@ -1,8 +1,9 @@
 LoadModule('jsstd');
+LoadModule('jsio');
 
-Print( Id, '\n' );
-this.Id = 123;
-Print( Id, '\n' );
+
+var f = new File('debug.js');
+Print ( f.content );
 
 
 

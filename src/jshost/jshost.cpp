@@ -147,6 +147,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 
 	bool unsafeMode = false;
 	bool compileOnly = false;
+	size_t operationLimitGC = 8192;
 
 	char** argumentVector = argv;
 	for ( argumentVector++; argumentVector[0] && argumentVector[0][0] == '-'; argumentVector++ )
@@ -163,12 +164,16 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 				argumentVector++;
 				unsafeMode = ( atoi( *argumentVector ) != 0 );
 				break;
+			case 'g': // operationLimitGC
+				argumentVector++;
+				operationLimitGC = atol( *argumentVector );
+				break;
 			case 'c':
 				compileOnly = true;
 				break;
 	}
 
-	JSContext *cx = CreateHost(maxMem, maxAlloc);
+	JSContext *cx = CreateHost(maxMem, maxAlloc, operationLimitGC);
 	HOST_MAIN_ASSERT( cx != NULL, "unable to create a javascript execution context" );
 
 	HOST_MAIN_ASSERT( InitHost(cx, unsafeMode, HostStdout, HostStderr), "unable to initialize the host." );
@@ -214,7 +219,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 
 	int exitValue;
 	jsval rval;
-	if ( ExecuteScript(cx, scriptName, compileOnly, argc-1, argv+1, &rval) == JS_TRUE ) {
+	if ( ExecuteScriptFileName(cx, scriptName, compileOnly, argc-1, argv+1, &rval) == JS_TRUE ) {
 
 		if ( JSVAL_IS_INT(rval) && JSVAL_TO_INT(rval) >= 0 )
 			exitValue = JSVAL_TO_INT(rval);
@@ -226,6 +231,8 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	}
 
 	DestroyHost(cx);
+	JS_ShutDown();
+
 
 #ifdef XP_WIN
 	SetConsoleCtrlHandler((PHANDLER_ROUTINE)&Interrupt, FALSE);
@@ -255,13 +262,16 @@ The main features are:
   LoadModule is enough, everything else can be added using dynamic loadable modules.
 
 === Command line options ===
- * `-m` <size>
-  Specifies the maximum memory usage of the script.
- * `-n`  <size>
+ * `-c` <0 or 1> (default = 0)
+  Compile-only. The script is compiled but not executed. This is useful to detect syntax errors.
+ * `-u` <0 or 1> (default = 0)
+  Unsafe-mode is a kind of 'release mode'. If 1, any runtime checks is avoid and warnings display is disabled. This mode allow to increase performances.
+ * `-m` <size> (default: no limit)
+  Specifies the maximum memory usage of the script in megabytes.
+ * `-n`  <size> (default: no limit)
   Specifies the number of allocated megabytes after which garbage collection is run.
- * `-u` <0 or 1>
-  Avoid any runtime checks (this is a kind of "release mode") and disable the display of warnings.
-
+ * `-g` <loops> (default = 8192)
+  This is the frequency at witch the GarbageCollector is launched.
 
 === Global functions ===
 

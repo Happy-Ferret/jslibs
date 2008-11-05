@@ -303,7 +303,7 @@ static JSClass global_class = { // global variable !
 };
 
 
-JSContext* CreateHost(size_t maxMem, size_t maxAlloc) {
+JSContext* CreateHost(size_t maxMem, size_t maxAlloc, size_t operationLimitGC) {
 
 //	JS_SetCStringsAreUTF8(); // don't use !
 	JSRuntime *rt = JS_NewRuntime(0); // maxMem specifies the number of allocated bytes after which garbage collection is run.
@@ -344,7 +344,7 @@ JSContext* CreateHost(size_t maxMem, size_t maxAlloc) {
 	// JSOPTION_JIT: "I think it's possible we'll remove even this little bit of API, and just have the JIT always-on. -j"
 	#endif // JSOPTION_JIT
 
-	JS_ToggleOptions(cx, JSOPTION_VAROBJFIX | JSOPTION_XML | JSOPTION_COMPILE_N_GO | JSOPTION_RELIMIT | JSOPTION_NATIVE_BRANCH_CALLBACK);
+	JS_ToggleOptions(cx, JSOPTION_VAROBJFIX | JSOPTION_XML | JSOPTION_COMPILE_N_GO | JSOPTION_RELIMIT);
   // JSOPTION_COMPILE_N_GO:
 	//  caller of JS_Compile*Script promises to execute compiled script once only; enables compile-time scope chain resolution of consts.
   // JSOPTION_DONT_REPORT_UNCAUGHT:
@@ -363,7 +363,8 @@ JSContext* CreateHost(size_t maxMem, size_t maxAlloc) {
 	//  Throw exception on any regular expression which backtracks more than n^3 times, where n is length of the input string
 
 	// JSBranchCallback oldBranchCallback =
-	JS_SetOperationCallback(cx, OperationCallback, JS_OPERATION_WEIGHT_BASE * 8192); // (TBD) check the best value.
+	if ( operationLimitGC )
+		JS_SetOperationCallback(cx, OperationCallback, JS_OPERATION_WEIGHT_BASE * operationLimitGC); // (TBD) check the best value.
 
 	JSObject *globalObject = JS_NewObject(cx, &global_class, NULL, NULL);
 	if ( globalObject == NULL )
@@ -439,7 +440,6 @@ void DestroyHost( JSContext *cx ) {
 //    The last JS_DestroyContext* API call will run a GC, no matter which API of that form you call on the last context in the runtime. /be
 	JS_DestroyContext(cx);
 	JS_DestroyRuntime(rt);
-	JS_ShutDown();
 
 // Beware: because JS engine allocate memory from the DLL, all memory must be disallocated before releasing the DLL
 	ModuleFreeAll();
@@ -454,7 +454,7 @@ void HostPrincipalsDestroy(JSContext *cx, JSPrincipals *principals) {
 }
 */
 
-JSBool ExecuteScript( JSContext *cx, const char *scriptFileName, bool compileOnly, int argc, const char * const * argv, jsval *rval ) {
+JSBool ExecuteScriptFileName( JSContext *cx, const char *scriptFileName, bool compileOnly, int argc, const char * const * argv, jsval *rval ) {
 
 	JSObject *globalObject = JS_GetGlobalObject(cx);
 	J_CHKM( globalObject != NULL, "Global object not found." );
@@ -527,3 +527,4 @@ JSBool ExecuteScript( JSContext *cx, const char *scriptFileName, bool compileOnl
 	J_CHKM( JS_DeleteProperty(cx, globalObject, NAME_GLOBAL_ARGUMENTS ), "Unable to remove argument property" );
 	return JS_TRUE;
 }
+

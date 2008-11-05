@@ -61,7 +61,7 @@ static JSBool stdoutFunction(JSContext *cx, JSObject *obj, uintN argc, jsval *ar
 
 int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow ) {
 
-	JSContext *cx = CreateHost(-1, -1);
+	JSContext *cx = CreateHost(-1, -1, 0);
 	if ( cx == NULL )
 		return -1;
 
@@ -120,7 +120,10 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 
 	const char * argv[] = { scriptName, lpCmdLine };
 	jsval rval;
-	ExecuteScript(cx, scriptName, false, 2, argv, &rval);
+	ExecuteScriptFileName(cx, scriptName, false, 2, argv, &rval);
+
+	DestroyHost(cx);
+	JS_ShutDown();
 
 	//ReleaseMutex
 	CloseHandle( instanceCheckMutex );
