@@ -25,7 +25,9 @@ $CLASS_HEADER
  $H note
   Note that no two elements have the same key.
  $H note
-  Map can store any string value as a key (event reserved special strings like __proto__, __parent__, toString, ...).
+  Map can store any string value as a key (even reserved special strings like __proto__, __parent__, toString, ...).
+ $H note
+  Constructing the object is not mendatory. Calling Map() will return a new Map object;
 **/
 
 BEGIN_CLASS( Map )
