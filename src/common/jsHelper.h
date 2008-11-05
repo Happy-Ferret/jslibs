@@ -501,18 +501,20 @@ inline JSClass *GetGlobalClassByName(JSContext *cx, const char *className) {
 	jsval classConstructor;
 	if ( JS_LookupProperty(cx, globalObj, className, &classConstructor) != JS_TRUE )
 		return NULL;
-//	if ( JS_TypeOfValue(cx, classConstructor) != JSTYPE_FUNCTION )
-	if ( JSVAL_IS_OBJECT(classConstructor) )
+	if ( JsvalIsFunction(cx, classConstructor) ) {
+
+		JSFunction *fun = JS_ValueToFunction(cx, classConstructor);
+		if ( fun == NULL )
+			return NULL;
+		if ( !FUN_SLOW_NATIVE(fun) )
+			return NULL;
+		return fun->u.n.u.clasp; // return fun->u.n.clasp; // (TBD) replace this by a jsapi.h call and remove dependency to jsarena.h and jsfun.h
+	} else
+	if ( JSVAL_IS_OBJECT(classConstructor) ) {
+
 		return OBJ_GET_CLASS(cx, JSVAL_TO_OBJECT(classConstructor));
-	if ( !JsvalIsFunction(cx, classConstructor) )
-		return NULL;
-	JSFunction *fun = JS_ValueToFunction(cx, classConstructor);
-	if ( fun == NULL )
-		return NULL;
-	if ( !FUN_SLOW_NATIVE(fun) )
-		return NULL;
-	//	return fun->u.n.clasp; // (TBD) replace this by a jsapi.h call and remove dependency to jsarena.h and jsfun.h
-	return fun->u.n.u.clasp;
+	}
+	return NULL;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
