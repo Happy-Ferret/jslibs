@@ -27,6 +27,8 @@
 static bool _defaultUnsafeMode = false;
 extern bool *_pUnsafeMode = &_defaultUnsafeMode;
 
+static bool hasBeenInitHere = false;
+
 /**doc t:header
 $MODULE_HEADER
  This module is based on Netscape Portable Runtime (NSPR) that provides a platform-neutral API for system level and libc like functions.
@@ -38,6 +40,12 @@ $MODULE_FOOTER
 **/
 
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
+
+	if ( PR_Initialized() != PR_TRUE ) {
+
+		PR_Init(PR_USER_THREAD, PR_PRIORITY_NORMAL, 0);
+		hasBeenInitHere = true;
+	}
 
 	jsval unsafeModePtrVal;
 	J_CHK( GetConfigurationValue(cx, NAME_CONFIGURATION_UNSAFE_MODE_PTR, &unsafeModePtrVal) );
@@ -65,7 +73,7 @@ EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
 
 EXTERN_C DLLEXPORT void ModuleFree() {
 
-	if ( PR_Initialized() == PR_TRUE )
+	if ( hasBeenInitHere && PR_Initialized() == PR_TRUE )
 		PR_Cleanup();
 }
 

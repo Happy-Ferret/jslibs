@@ -21,10 +21,11 @@ IF "%BUILD_METHOD%"=="rebuild" (
 IF "%BUILD%"=="release" (
 	set _MAKE_OPTIONS=%_MAKE_OPTIONS% BUILD_OPT=1
 ) else (
-	set _MAKE_OPTIONS=%_MAKE_OPTIONS% BUILD_IDG=1
+	set _MAKE_OPTIONS=%_MAKE_OPTIONS% BUILD_IDG=1 XCFLAGS=-Z7
 )
 
-copy js-config.h src
+copy jsversion.h src
+echo // > src/js-config.h
 
 pushd .\src
 make -f Makefile.ref %_MAKE_OPTIONS%
