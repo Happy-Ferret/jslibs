@@ -285,19 +285,21 @@
 	typedef void *JLLibraryHandler;
 
 	inline JLLibraryHandler JLDynamicLibraryOpen( const char *filename ) {
+
 		dlerror();
 		return dlopen( filename, RTLD_NOW );
 	}
 
 	inline void JLDynamicLibraryClose( JLLibraryHandler *libraryHandler ) {
+
 		dlerror();
-		return dlclose( lh );
+		dlclose( libraryHandler );
 	}
 
 	inline void *JLDynamicLibrarySymbol( JLLibraryHandler libraryHandler, const char *symbolName ) {
 
 		dlerror();
-		return dlsym( lh, filename );
+		return dlsym( libraryHandler, symbolName );
 	}
 
 #endif // Windows/MacosX/Linux platform
