@@ -15,6 +15,6 @@ clean::
 all::
 	copy /Y .\src\config.h.msvc .\src\config.h
 	cd .\src && $(MAKE) -f Makefile.msvc NO_NLS=1 MFLAGS=$(MFLAGS)
-	mkdir "$(OUTDIR)"
-	copy .\src\lib\iconv.lib "$(OUTDIR)"
-	copy .\src\libcharset\lib\charset.lib "$(OUTDIR)"
+	-mkdir "$(OUTDIR)"
+	copy /Y .\src\lib\iconv.lib "$(OUTDIR)"
+	copy /Y .\src\libcharset\lib\charset.lib "$(OUTDIR)"
