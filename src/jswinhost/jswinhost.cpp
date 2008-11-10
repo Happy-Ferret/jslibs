@@ -120,6 +120,10 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 
 	const char * argv[] = { scriptName, lpCmdLine };
 	jsval rval;
+
+	//#pragma comment (lib, "User32.lib")
+	//MessageBox(NULL, scriptName, "script name", 0);
+
 	ExecuteScriptFileName(cx, scriptName, false, 2, argv, &rval);
 
 	DestroyHost(cx);

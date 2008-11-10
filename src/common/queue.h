@@ -28,11 +28,16 @@ typedef struct Queue {
 	QueueCell *begin, *end;
 } Queue;
 
+inline void QueueInitialize( Queue *queue ) {
+
+	queue->begin = NULL;
+	queue->end = NULL;
+}
+
 inline Queue *QueueConstruct() {
 
 	Queue *queue = (Queue*)malloc(sizeof(Queue));
-	queue->begin = NULL;
-	queue->end = NULL;
+	QueueInitialize(queue);
 	return queue;
 }
 

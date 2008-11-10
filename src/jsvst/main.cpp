@@ -70,7 +70,7 @@ public:
 
 	JsVst( audioMasterCallback audioMaster ) : AudioEffectX(audioMaster, 0, 0), JSApiHelper(_cx) {
 
-		_cx = CreateHost(-1, -1);
+		_cx = CreateHost(-1, -1, 0);
 		InitHost(_cx, true, NULL, NULL);
 		JS_SetOptions(_cx, JSOPTION_DONT_REPORT_UNCAUGHT);
 
@@ -88,7 +88,7 @@ public:
 		vstPlugin = JS_DefineObject(_cx, JS_GetGlobalObject(_cx), "vstPlugin", classVSTPlugin, NULL, NULL);
 		JS_SetPrivate(_cx, vstPlugin, this);
 
-		JSBool status = ExecuteScript(_cx, "vstPlugin.js", false, 0, NULL, &_rval);
+		JSBool status = ExecuteScriptFileName(_cx, "vstPlugin.js", false, 0, NULL, &_rval);
 //		if ( !status )
 //			MessageBox(NULL, "script compilation error", "Error", 0);
 

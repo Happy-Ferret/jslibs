@@ -1,4 +1,5 @@
 LoadModule('jsstd');
+LoadModule('jsstd');
 LoadModule('jsio');
 
 
