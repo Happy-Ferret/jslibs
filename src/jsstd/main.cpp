@@ -19,14 +19,10 @@
 #include "buffer.h"
 #include "pack.h"
 
+extern bool _unsafeMode = false;
+
 DECLARE_CLASS( OperationLimit )
 DECLARE_CLASS( Sandbox )
-
-//extern JSFunction *stdoutFunction;
-//JSFunction *stdoutFunction = NULL;
-
-static bool _defaultUnsafeMode = false;
-extern bool *_pUnsafeMode = &_defaultUnsafeMode;
 
 /**doc t:header
 $MODULE_HEADER
@@ -38,16 +34,7 @@ $MODULE_FOOTER
 
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
-// read configuration
-//	jsval stdoutFunctionValue = GetConfigurationValue(cx, NAME_CONFIGURATION_STDOUT);
-//	J_S_ASSERT( !JSVAL_IS_VOID( stdoutFunctionValue ), "Unable to read stdout function from configuration object." );
-//	stdoutFunction = JS_ValueToFunction(cx, stdoutFunctionValue); // returns NULL if the function is not defined
-
-//	SET_UNSAFE_MODE( GetConfigurationValue(cx, NAME_CONFIGURATION_UNSAFE_MODE ) == JSVAL_TRUE );
-	jsval unsafeModePtrVal;
-	J_CHK( GetConfigurationValue(cx, NAME_CONFIGURATION_UNSAFE_MODE_PTR, &unsafeModePtrVal) );
-	if ( !JSVAL_IS_VOID( unsafeModePtrVal ) )
-		_pUnsafeMode = (bool*)JSVAL_TO_PRIVATE(unsafeModePtrVal);
+	_unsafeMode = GetHostPrivate(cx)->unsafeMode;
 
 	INIT_STATIC();
 	INIT_CLASS( Map );

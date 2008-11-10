@@ -15,14 +15,10 @@
 #include "stdafx.h"
 #include <string.h>
 
-#ifdef XP_UNIX
-#include <dlfcn.h> // cf. dlerror() in LoadModule()
-#endif
+#include <jscntxt.h>
 
 #include <jsprf.h>
 #include <jsstddef.h>
-
-#include "moduleManager.h"
 
 #include "../common/jsHelper.h"
 #include "../common/jsNames.h"
@@ -33,12 +29,15 @@
 
 #include "host.h"
 
+extern bool _unsafeMode = false;
+
 JSErrorFormatString errorFormatString[J_ErrLimit] = {
 #define MSG_DEF(name, number, count, exception, format) \
     { format, count, exception } ,
 #include "../common/errors.msg"
 #undef MSG_DEF
 };
+
 
 static const JSErrorFormatString *GetErrorMessage(void *userRef, const char *locale, const uintN errorNumber) {
 
@@ -48,29 +47,21 @@ static const JSErrorFormatString *GetErrorMessage(void *userRef, const char *loc
 }
 
 
-static const void *_pGetErrorMessage = (const void*)&GetErrorMessage; //global variable !
-
-static bool _unsafeMode = false; // global variable !
-extern bool *_pUnsafeMode = &_unsafeMode; // global variable !
-
-static HostOutput hostStdOut = NULL; // global variable !
-static HostOutput hostStdErr = NULL; // global variable !
-
-
 //#define RT_HOST_MAIN_ASSERT( condition, errorMessage )
 //	if ( !(condition) ) { consoleStdErr( cx, errorMessage, sizeof(errorMessage)-1 ); return -1; }
 
 
 static JSBool JSDefaultStdoutFunction(JSContext *cx, uintN argc, jsval *vp) {
 
-	if ( hostStdOut == NULL )
+	HostPrivate *pv = GetHostPrivate(cx);
+	if ( pv == NULL || pv->hostStdOut == NULL )
 		return JS_TRUE;
 	const char *buffer;
 	size_t length;
 	for ( uintN i = 0; i < argc; i++ ) {
 
 		J_CHK( JsvalToStringAndLength(cx, &J_FARG(i+1), &buffer, &length) );
-		hostStdOut(buffer, length);
+		pv->hostStdOut(buffer, length);
 	}
 	return JS_TRUE;
 }
@@ -78,14 +69,15 @@ static JSBool JSDefaultStdoutFunction(JSContext *cx, uintN argc, jsval *vp) {
 
 static JSBool JSDefaultStderrFunction(JSContext *cx, uintN argc, jsval *vp) {
 
-	if ( hostStdErr == NULL )
+	HostPrivate *pv = GetHostPrivate(cx);
+	if ( pv == NULL || pv->hostStdErr == NULL )
 		return JS_TRUE;
 	const char *buffer;
 	size_t length;
 	for ( uintN i = 0; i < argc; i++ ) {
 
 		J_CHK( JsvalToStringAndLength(cx, &J_FARG(i+1), &buffer, &length) );
-		hostStdErr(buffer, length);
+		pv->hostStdErr(buffer, length);
 	}
 	return JS_TRUE;
 }
@@ -106,8 +98,9 @@ void stdErrRouter( JSContext *cx, const char *message, size_t length ) {
 		}
 	}
 
-	if ( hostStdErr != NULL )
-		hostStdErr(message, length); // else, use the default.
+	HostPrivate *pv = GetHostPrivate(cx);
+	if ( pv != NULL && pv->hostStdErr != NULL )
+		pv->hostStdErr(message, length); // else, use the default.
 }
 
 
@@ -126,11 +119,11 @@ static void ErrorReporter(JSContext *cx, const char *message, JSErrorReport *rep
 		return;
     }
 
-	// check if we should report warnings
-	if ( JSREPORT_IS_WARNING(report->flags) )
-//		if ( GetConfigurationValue(cx, NAME_CONFIGURATION_UNSAFE_MODE ) == JSVAL_TRUE )
-		if ( _unsafeMode )
-			return;
+	HostPrivate *pv = GetHostPrivate(cx);
+	if ( pv == NULL )
+		return;
+	if ( JSREPORT_IS_WARNING(report->flags) && pv->unsafeMode ) // no warnings in unsafe mode.
+		return;
 
 //	if (JSREPORT_IS_EXCEPTION(report->flags))
 //		return;
@@ -213,45 +206,79 @@ static JSBool LoadModule(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, 
 	strcpy( libFileName, fileName );
 	strcat( libFileName, DLL_EXT );
 // MAC OSX: 	'@executable_path' ??
+/*
+	while (0) { // namespace management. Avoid using val ns = {}, LoadModule.call(ns, '...');
 
-/* namespace management
-	if ( J_ARG_ISDEF(2) ) {
+		if ( J_ARG_ISDEF(2) ) {
 
-		if ( JSVAL_IS_OBJECT(J_ARG(2)) ) {
-			obj = JSVAL_TO_OBJECT(J_ARG(2));
-		} else {
-			const char *ns;
-			J_CHK( JsvalToString(cx, &J_ARG(2), &ns) );
-
-			jsval existingNsVal;
-			J_CHK( JS_GetProperty(cx, obj, ns, &existingNsVal) );
-			JSObject *nsObj;
-			if ( existingNsVal == JSVAL_VOID ) {
-
-				nsObj = JS_NewObject(cx, NULL, NULL, NULL);
-				J_CHK( JS_DefineProperty(cx, obj, ns, OBJECT_TO_JSVAL(nsObj), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) ); // doc. On success, JS_DefineProperty returns JS_TRUE. If the property already exists or cannot be created, JS_DefineProperty returns JS_FALSE.
+			if ( JSVAL_IS_OBJECT(J_ARG(2)) ) {
+				obj = JSVAL_TO_OBJECT(J_ARG(2));
 			} else {
+				const char *ns;
+				J_CHK( JsvalToString(cx, &J_ARG(2), &ns) );
 
-				J_S_ASSERT_OBJECT( existingNsVal );
-				nsObj = JSVAL_TO_OBJECT( existingNsVal );
+				jsval existingNsVal;
+				J_CHK( JS_GetProperty(cx, obj, ns, &existingNsVal) );
+				JSObject *nsObj;
+				if ( existingNsVal == JSVAL_VOID ) {
+
+					nsObj = JS_NewObject(cx, NULL, NULL, NULL);
+					J_CHK( JS_DefineProperty(cx, obj, ns, OBJECT_TO_JSVAL(nsObj), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) ); // doc. On success, JS_DefineProperty returns JS_TRUE. If the property already exists or cannot be created, JS_DefineProperty returns JS_FALSE.
+				} else {
+
+					J_S_ASSERT_OBJECT( existingNsVal );
+					nsObj = JSVAL_TO_OBJECT( existingNsVal );
+				}
+				obj = nsObj;
 			}
-			obj = nsObj;
 		}
 	}
 */
-	ModuleId id = ModuleLoad(libFileName, cx, obj);
 
-#ifdef XP_UNIX
-	J_S_ASSERT_2( id != 0, "Unable to load the module \"%s\": %s", libFileName, dlerror() );
-#else // XP_UNIX
-	J_S_ASSERT_2( id != 0, "Unable to load the module \"%s\": %x", libFileName, GetLastError() );
-#endif // XP_UNIX
+	HostPrivate *pv = GetHostPrivate(cx);
+	J_S_ASSERT( pv != NULL, "Invalid context." );
 
-	J_CHK( JS_NewNumberValue(cx, id, rval) ); // really needed ? yes, UnloadModule need this ID
+	J_S_ASSERT( libFileName != NULL && *libFileName != '\0', "Invalid module filename.");
+	JLLibraryHandler module = JLDynamicLibraryOpen(libFileName);
+	J_S_ASSERT( module != NULL, "Unable to load the module.");
+
+	ModuleInitFunction moduleInit = (ModuleInitFunction)JLDynamicLibrarySymbol(module, NAME_MODULE_INIT);
+	if ( moduleInit == NULL ) { // not a jslibs module
+
+		JLDynamicLibraryClose(&module);
+		J_CHKM( false, "Invalid module." ); // give this message if no error is set
+	}
+
+	bool alreadyLoaded = false;
+	for ( jl::QueueCell *it = jl::QueueBegin(&pv->moduleList); it; it = jl::QueueNext(it) ) {
+
+		JLLibraryHandler m = (JLLibraryHandler)jl::QueueGetData(it);
+		if ( m == module ) {
+
+			alreadyLoaded = true;
+			break;
+		}
+	}
+
+	if ( alreadyLoaded ) { // and already init
+
+		JLDynamicLibraryClose(&module);
+		*rval = JSVAL_VOID;
+		return JS_TRUE;
+	}
+
+	if ( moduleInit(cx, obj) == JS_FALSE ) {
+
+		JLDynamicLibraryClose(&module);
+		J_CHKM( false, "Unable to initialize the module." ); // give this message if no error is set
+	}
+
+	jl::QueueUnshift( &pv->moduleList, module ); // LIFO
+	J_CHK( JS_NewNumberValue(cx, (unsigned int)module, rval) ); // really needed ? yes, UnloadModule need this ID
 	return JS_TRUE;
 }
 
-
+/* (TBD) 
 static JSBool UnloadModule(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
 	J_S_ASSERT_ARG_MIN(1);
@@ -270,7 +297,7 @@ static JSBool UnloadModule(JSContext *cx, JSObject *obj, uintN argc, jsval *argv
 	}
 	return JS_TRUE;
 }
-
+*/
 
 static JSBool global_enumerate(JSContext *cx, JSObject *obj) { // see LAZY_STANDARD_CLASSES
 
@@ -296,14 +323,14 @@ static JSBool global_resolve(JSContext *cx, JSObject *obj, jsval id, uintN flags
 // doc: For full ECMAScript standard compliance, obj should be of a JSClass that has the JSCLASS_GLOBAL_FLAGS flag.
 static JSClass global_class = { // global variable !
 
-	NAME_GLOBAL_CLASS, JSCLASS_GLOBAL_FLAGS | JSCLASS_NEW_RESOLVE,
+	NAME_GLOBAL_CLASS, JSCLASS_GLOBAL_FLAGS | JSCLASS_NEW_RESOLVE,  // | JSCLASS_HAS_PRIVATE
 	JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub,
 	global_enumerate, (JSResolveOp)global_resolve, JS_ConvertStub, JS_FinalizeStub, // see LAZY_STANDARD_CLASSES
 	JSCLASS_NO_OPTIONAL_MEMBERS
 };
 
 
-JSContext* CreateHost(size_t maxMem, size_t maxAlloc, size_t operationLimitGC) {
+JSContext* CreateHost(size_t maxMem, size_t maxAlloc, size_t operationLimitGC) { // default: CreateHost(-1, -1, 0);
 
 //	JS_SetCStringsAreUTF8(); // don't use !
 	JSRuntime *rt = JS_NewRuntime(0); // maxMem specifies the number of allocated bytes after which garbage collection is run.
@@ -384,35 +411,40 @@ JSContext* CreateHost(size_t maxMem, size_t maxAlloc, size_t operationLimitGC) {
 
 JSBool InitHost( JSContext *cx, bool unsafeMode, HostOutput stdOut, HostOutput stdErr ) {
 
-	_unsafeMode = unsafeMode;
+	HostPrivate *pv = (HostPrivate*)malloc(sizeof(HostPrivate));
+	SetHostPrivate(cx, pv);
 
-	if ( _unsafeMode )
+	jl::QueueInitialize(&pv->moduleList);
+	pv->unsafeMode = unsafeMode;
+
+	if ( unsafeMode )
 		JS_ToggleOptions(cx, JS_GetOptions(cx) | JSOPTION_STRICT);
 
 	JSObject *globalObject = JS_GetGlobalObject(cx);
 	J_CHKM( globalObject != NULL, "Global object not found." );
 
 // make GetErrorMessage available from any module
+
+	void **_pGetErrorMessage = (void**)JS_malloc(cx, sizeof(void*)); // (TBD) free it
+	*_pGetErrorMessage = (void*)&GetErrorMessage; // this indirection is needed for alignement purpose. see PRIVATE_TO_JSVAL.
 	J_CHK( SetConfigurationPrivateValue(cx, NAME_CONFIGURATION_GETERRORMESSAGE, PRIVATE_TO_JSVAL(&_pGetErrorMessage)) );
+
+	pv->hostStdErr = stdErr;
+	pv->hostStdOut = stdOut;
 
 // global functions & properties
 	J_CHKM( JS_DefineProperty( cx, globalObject, NAME_GLOBAL_GLOBAL_OBJECT, OBJECT_TO_JSVAL(JS_GetGlobalObject(cx)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ), "unable to define a property." );
 	J_CHKM( JS_DefineFunction( cx, globalObject, NAME_GLOBAL_FUNCTION_LOAD_MODULE, LoadModule, 0, 0 ), "unable to define a property." );
-	J_CHKM( JS_DefineFunction( cx, globalObject, NAME_GLOBAL_FUNCTION_UNLOAD_MODULE, UnloadModule, 0, 0 ), "unable to define a property." );
+//	J_CHKM( JS_DefineFunction( cx, globalObject, NAME_GLOBAL_FUNCTION_UNLOAD_MODULE, UnloadModule, 0, 0 ), "unable to define a property." );
 
 //	J_CHK( SetConfigurationValue(cx, NAME_CONFIGURATION_UNSAFE_MODE, BOOLEAN_TO_JSVAL(_unsafeMode)) );
-	J_CHK( SetConfigurationValue(cx, NAME_CONFIGURATION_UNSAFE_MODE_PTR, PRIVATE_TO_JSVAL(&_unsafeMode)) );
-
-	hostStdOut = stdOut;
-	hostStdErr = stdErr;
+	J_CHK( SetConfigurationValue(cx, NAME_CONFIGURATION_UNSAFE_MODE_PTR, PRIVATE_TO_JSVAL(&unsafeMode)) );
 
 	jsval value;
 	value = OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunction(cx, (JSNative)JSDefaultStdoutFunction, 1, JSFUN_FAST_NATIVE, NULL, NULL))); // If you do not assign a name to the function, it is assigned the name "anonymous".
 	J_CHK( SetConfigurationValue(cx, NAME_CONFIGURATION_STDOUT, value) );
-
 	value = OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunction(cx, (JSNative)JSDefaultStderrFunction, 1, JSFUN_FAST_NATIVE, NULL, NULL))); // If you do not assign a name to the function, it is assigned the name "anonymous".
 	J_CHK( SetConfigurationValue(cx, NAME_CONFIGURATION_STDERR, value) );
-
 
 // init static modules
 	J_CHKM( jslangInit(cx, globalObject), "Unable to initialize jslang." );
@@ -424,9 +456,19 @@ void DestroyHost( JSContext *cx ) {
 
 	JSRuntime *rt = JS_GetRuntime(cx);
 
-	ModuleReleaseAll(cx);
+//	ModuleReleaseAll(cx);
 
-	//	don't try to break linked objects with JS_GC(cx)
+	HostPrivate *pv = GetHostPrivate(cx);
+
+	for ( jl::QueueCell *it = jl::QueueBegin(&pv->moduleList); it; it = jl::QueueNext(it) ) {
+
+		JLLibraryHandler module = (JLLibraryHandler)jl::QueueGetData(it);
+		ModuleReleaseFunction moduleRelease = (ModuleReleaseFunction)JLDynamicLibrarySymbol(module, NAME_MODULE_RELEASE);
+		if ( moduleRelease != NULL )
+			moduleRelease(cx);
+	}
+
+	//	don't try to break linked objects with JS_GC(cx) !
 
 	RemoveConfiguration(cx);
 
@@ -442,7 +484,18 @@ void DestroyHost( JSContext *cx ) {
 	JS_DestroyRuntime(rt);
 
 // Beware: because JS engine allocate memory from the DLL, all memory must be disallocated before releasing the DLL
-	ModuleFreeAll();
+//	ModuleFreeAll();
+
+	while ( !jl::QueueIsEmpty(&pv->moduleList) ) {
+
+		JLLibraryHandler module = (JLLibraryHandler)jl::QueueShift(&pv->moduleList);
+		ModuleFreeFunction moduleFree = (ModuleFreeFunction)JLDynamicLibrarySymbol(module, NAME_MODULE_FREE);
+		if ( moduleFree != NULL )
+			moduleFree();
+		JLDynamicLibraryClose(&module);
+	}
+
+	free(pv);
 }
 
 

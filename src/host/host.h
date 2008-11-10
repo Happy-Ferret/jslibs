@@ -18,7 +18,10 @@
 
 #include <jsapi.h>
 
-typedef int (*HostOutput)( const char *buffer, size_t length );
+
+typedef JSBool (*ModuleInitFunction)(JSContext *, JSObject *);
+typedef JSBool (*ModuleReleaseFunction)(JSContext *cx);
+typedef void (*ModuleFreeFunction)(void);
 
 
 JSContext* CreateHost(size_t maxMem, size_t maxAlloc, size_t operationLimitGC);

@@ -24,6 +24,7 @@ inline NIBufferGet BufferGetNativeInterface( JSContext *cx, JSObject *obj );
 inline NIBufferGet BufferGetInterface( JSContext *cx, JSObject *obj );
 
 #include "platform.h"
+#include "../common/queue.h"
 
 #include <cstring>
 //#include <float.h>
@@ -40,6 +41,7 @@ inline NIBufferGet BufferGetInterface( JSContext *cx, JSObject *obj );
 #include <jscntxt.h>
 #include <jsinterp.h>
 
+extern bool _unsafeMode;
 
 #ifdef DEBUG
 	#define IFDEBUG(expr) expr
@@ -61,7 +63,25 @@ inline NIBufferGet BufferGetInterface( JSContext *cx, JSObject *obj );
 #define SET_UNSAFE_MODE(polarity) _unsafeMode = (polarity);
 */
 
-extern bool *_pUnsafeMode;
+typedef int (*HostOutput)( const char *buffer, size_t length );
+
+struct HostPrivate {
+
+	bool unsafeMode;
+	HostOutput hostStdOut;
+	HostOutput hostStdErr;
+	jl::Queue moduleList;
+};
+
+inline HostPrivate* GetHostPrivate( JSContext *cx ) {
+
+	return (HostPrivate*)cx->data2; // see JS_GetContextPrivate(cx) but with data2
+}
+
+inline void SetHostPrivate( JSContext *cx, HostPrivate *hostPrivate ) {
+
+	cx->data2 = (void*)hostPrivate;
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 // common error messages
@@ -181,18 +201,18 @@ inline bool JsvalIsClass(JSContext *cx, jsval val, JSClass *jsClass) {
 	JsvalIsClass(cx, val, jsClass)
 
 
-#define J_SAFE_BEGIN if (unlikely( !*_pUnsafeMode )) {
+#define J_SAFE_BEGIN if (unlikely( !_unsafeMode )) {
 #define J_SAFE_END }
 
-#define J_UNSAFE_BEGIN if (likely( *_pUnsafeMode ))
+#define J_UNSAFE_BEGIN if (likely( _unsafeMode ))
 #define J_UNSAFE_END }
 
 
 #define J_SAFE(code) \
-	do { if (unlikely( !*_pUnsafeMode )) {code;} } while(0)
+	do { if (unlikely( !_unsafeMode )) {code;} } while(0)
 
 #define J_UNSAFE(code) \
-	do { if (likely( *_pUnsafeMode )) {code;} } while(0)
+	do { if (likely( _unsafeMode )) {code;} } while(0)
 
 
 // Reports warnings. May be disabled in unsafemode
@@ -221,13 +241,13 @@ inline bool JsvalIsClass(JSContext *cx, jsval val, JSClass *jsClass) {
 // J_S_ stands for (J)slibs _ (S)afemode _ and mean that these macros will only be meaningful when unsafemode is false (see jslibs unsafemode).
 
 #define J_S_ASSERT( condition, errorMessage ) \
-	do { if (unlikely( !*_pUnsafeMode && !(condition) )) { JS_ReportError( cx, errorMessage IFDEBUG(" (" #condition " @" J__CODE_LOCATION ")") ); return JS_FALSE; } } while(0)
+	do { if (unlikely( !_unsafeMode && !(condition) )) { JS_ReportError( cx, errorMessage IFDEBUG(" (" #condition " @" J__CODE_LOCATION ")") ); return JS_FALSE; } } while(0)
 
 #define J_S_ASSERT_1( condition, errorMessage, arg ) \
-	do { if (unlikely( !*_pUnsafeMode && !(condition) )) { JS_ReportError( cx, errorMessage IFDEBUG(" (" #condition " @" J__CODE_LOCATION ")"), (arg) ); return JS_FALSE; } } while(0)
+	do { if (unlikely( !_unsafeMode && !(condition) )) { JS_ReportError( cx, errorMessage IFDEBUG(" (" #condition " @" J__CODE_LOCATION ")"), (arg) ); return JS_FALSE; } } while(0)
 
 #define J_S_ASSERT_2( condition, errorMessage, arg1, arg2 ) \
-	do { if (unlikely( !*_pUnsafeMode && !(condition) )) { JS_ReportError( cx, errorMessage IFDEBUG(" (" #condition " @" J__CODE_LOCATION ")"), (arg1), (arg2) ); return JS_FALSE; } } while(0)
+	do { if (unlikely( !_unsafeMode && !(condition) )) { JS_ReportError( cx, errorMessage IFDEBUG(" (" #condition " @" J__CODE_LOCATION ")"), (arg1), (arg2) ); return JS_FALSE; } } while(0)
 
 
 #define J_S_ASSERT_ARG_MIN(minCount) \

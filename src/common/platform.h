@@ -77,6 +77,7 @@
 
 	#include <windows.h>
 	#include <direct.h> // function declarations for directory handling/creation
+	#include <process.h> // threads, ...
 
 	#define int8_t   INT8
 	#define int16_t  INT16
@@ -100,6 +101,144 @@
 	#define DLLLOCAL
 
 	#define strcasecmp stricmp
+
+
+// semaphores
+	typedef HANDLE JLSemaphoreHandler;
+
+	inline JLSemaphoreHandler JLCreateSemaphore( int initCount, int maxCount ) {
+		
+		return CreateSemaphore(NULL, initCount, maxCount, NULL);
+	}
+
+	inline bool JLSemaphoreOk( JLSemaphoreHandler semaphore ) {
+		
+		return semaphore != NULL;
+	}
+
+	inline void JLAcquireSemaphore( JLSemaphoreHandler semaphore ) {
+
+		if ( JLSemaphoreOk(semaphore) )
+			WaitForSingleObject(semaphore, INFINITE);
+	}
+
+	inline void JLReleaseSemaphore( JLSemaphoreHandler semaphore ) {
+
+		if ( JLSemaphoreOk(semaphore) )
+			ReleaseSemaphore(semaphore, 1, NULL);
+	}
+	
+	inline void JLFreeSemaphore( JLSemaphoreHandler *pSemaphore ) {
+		
+		if ( JLSemaphoreOk(pSemaphore) ) {
+			
+			CloseHandle(*pSemaphore);
+			*pSemaphore = NULL;
+		}
+	}
+
+
+// mutex
+	typedef HANDLE JLMutexHandler;
+
+	inline JLMutexHandler JLCreateMutex() {
+		
+		return CreateMutex(NULL, FALSE, NULL);
+	}
+
+	inline bool JLMutexOk( JLMutexHandler mutex ) {
+		
+		return mutex != NULL;
+	}
+
+	inline void JLAcquireMutex( JLMutexHandler mutex ) {
+
+		if ( JLMutexOk(mutex) )
+			WaitForSingleObject(mutex, INFINITE);
+	}
+
+	inline void JLReleaseMutex( JLMutexHandler mutex ) {
+	
+		if ( JLMutexOk(mutex) )
+			ReleaseMutex(mutex);
+	}
+
+	inline void JLFreeMutex( JLMutexHandler *pMutex ) {
+		
+		if ( pMutex && JLMutexOk(*pMutex) ) {
+
+			CloseHandle(*pMutex);
+			*pMutex = (JLMutexHandler)0;
+		}
+	}
+
+// thread
+	#define JL_THREAD_PRIORITY_LOWEST THREAD_PRIORITY_LOWEST
+	#define JL_THREAD_PRIORITY_LOW THREAD_PRIORITY_BELOW_NORMAL
+	#define JL_THREAD_PRIORITY_NORMAL THREAD_PRIORITY_ABOVE_NORMAL
+	#define JL_THREAD_PRIORITY_HIGH THREAD_PRIORITY_NORMAL
+
+	typedef HANDLE JLThreadHandler;
+	typedef int JLThreadPriorityType;
+
+	inline bool JLThreadPriority( JLThreadHandler thread, JLThreadPriorityType priority ) {
+
+		SetThreadPriority(thread, priority);
+	}
+
+	inline JLThreadHandler JLStartThread( LPTHREAD_START_ROUTINE threatFunction, void *pv ) {
+
+		return (JLThreadHandler)CreateThread(NULL, 0, threatFunction, pv, 0, NULL);
+	}
+
+	inline bool JLThreadOk( JLThreadHandler thread ) {
+
+		return thread != (JLThreadHandler)0;
+	}
+
+	inline void JLWaitThread( JLThreadHandler thread ) {
+		
+		if ( JLThreadOk(thread) )
+			WaitForSingleObject( thread, INFINITE ); // WAIT_OBJECT_0
+	}
+
+	inline void JLFreeThread( JLThreadHandler *pThread ) {
+
+		if ( JLThreadOk(*pThread) ) {
+
+			CloseHandle(*pThread);
+			*pThread = (JLThreadHandler)0;
+		}
+	}
+
+// dynamic libraries
+	typedef HMODULE JLLibraryHandler;
+
+	inline JLLibraryHandler JLDynamicLibraryOpen( const char *filename ) {
+
+		return LoadLibrary(filename);
+	}
+
+	inline void *JLDynamicLibrarySymbol( JLLibraryHandler libraryHandler, const char *symbolName ) {
+
+		return (void*)GetProcAddress(libraryHandler, symbolName);
+	}
+
+	inline void JLDynamicLibraryClose( JLLibraryHandler *libraryHandler ) {
+
+		FreeLibrary(*libraryHandler);
+		*libraryHandler = NULL;
+	}
+
+
+/* (TBD) manage error
+#ifdef XP_UNIX
+	J_S_ASSERT_2( id != 0, "Unable to load the module \"%s\": %s", libFileName, dlerror() );
+#else // XP_UNIX
+	J_S_ASSERT_2( id != 0, "Unable to load the module \"%s\": %x", libFileName, GetLastError() );
+#endif // XP_UNIX
+*/
+
 
 #elif defined(_MACOSX) // MacosX platform
 	
@@ -125,6 +264,7 @@
 	
 	#include <unistd.h>
 	#include <sys/time.h>
+	#include <dlfcn.h>
 
 	#define XP_UNIX
 
@@ -140,6 +280,25 @@
 		#define DLLEXPORT
 		#define DLLLOCAL
 	#endif
+
+
+	typedef void *JLLibraryHandler;
+
+	inline JLLibraryHandler JLDynamicLibraryOpen( const char *filename ) {
+		dlerror();
+		return dlopen( filename, RTLD_NOW );
+	}
+
+	inline void JLDynamicLibraryClose( JLLibraryHandler *libraryHandler ) {
+		dlerror();
+		return dlclose( lh );
+	}
+
+	inline void *JLDynamicLibrarySymbol( JLLibraryHandler libraryHandler, const char *symbolName ) {
+
+		dlerror();
+		return dlsym( lh, filename );
+	}
 
 #endif // Windows/MacosX/Linux platform
 
@@ -199,10 +358,7 @@ inline double AccurateTimeCounter() {
 	return -1; // (TBD)
 }
 
-
 #endif // _PLATFORM_H_
-
-
 
 /*
 Inline Functions In C

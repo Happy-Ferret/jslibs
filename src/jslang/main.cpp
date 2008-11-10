@@ -15,11 +15,7 @@
 #include "stdafx.h"
 
 #include "jslang.h"
-
 #include "id.h"
-
-//static bool _defaultUnsafeMode = false;
-//extern bool *_pUnsafeMode = &_defaultUnsafeMode;
 
 
 /**doc t:header

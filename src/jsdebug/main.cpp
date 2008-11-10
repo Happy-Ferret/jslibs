@@ -15,8 +15,8 @@
 #include "stdafx.h"
 #include "static.h"
 
-static bool _defaultUnsafeMode = false;
-extern bool *_pUnsafeMode = &_defaultUnsafeMode;
+extern bool _unsafeMode = false;
+
 
 /**doc t:header
 $MODULE_HEADER
@@ -30,10 +30,7 @@ $MODULE_FOOTER
 
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
-	jsval unsafeModePtrVal;
-	J_CHK( GetConfigurationValue(cx, NAME_CONFIGURATION_UNSAFE_MODE_PTR, &unsafeModePtrVal) );
-	if ( !JSVAL_IS_VOID( unsafeModePtrVal ) )
-		_pUnsafeMode = (bool*)JSVAL_TO_PRIVATE(unsafeModePtrVal);
+	_unsafeMode = GetHostPrivate(cx)->unsafeMode;
 
 	INIT_STATIC();
 

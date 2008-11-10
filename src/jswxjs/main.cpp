@@ -16,6 +16,9 @@
 
 #define MAX_WXJS_MODULES 32
 
+extern bool _unsafeMode = false;
+
+
 #define wxString char*
 #define wxT(S) (S)
 
@@ -73,16 +76,7 @@ END_STATIC
 
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
-// read configuration
-//	jsval stdoutFunctionValue = GetConfigurationValue(cx, "stdout");
-//	J_S_ASSERT( !JSVAL_IS_VOID( stdoutFunctionValue ), "Unable to read stdout function from configuration object." );
-//	stdoutFunction = JS_ValueToFunction(cx, stdoutFunctionValue); // returns NULL if the function is not defined
-
-	jsval unsafeModePtrVal;
-	J_CHK( GetConfigurationValue(cx, NAME_CONFIGURATION_UNSAFE_MODE_PTR, &unsafeModePtrVal) );
-	if ( !JSVAL_IS_VOID( unsafeModePtrVal ) )
-		_pUnsafeMode = (bool*)JSVAL_TO_PRIVATE(unsafeModePtrVal);
-
+	_unsafeMode = GetHostPrivate(cx)->unsafeMode;
 
 	INIT_STATIC();
 	return JS_TRUE;

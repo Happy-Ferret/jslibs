@@ -24,10 +24,9 @@
 #include "semaphore.h"
 #include "static.h"
 
-static bool _defaultUnsafeMode = false;
-extern bool *_pUnsafeMode = &_defaultUnsafeMode;
+extern bool _unsafeMode = false;
 
-static bool hasBeenInitHere = false;
+static PRInt32 instanceCount = 0;
 
 /**doc t:header
 $MODULE_HEADER
@@ -41,17 +40,11 @@ $MODULE_FOOTER
 
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
-	if ( PR_Initialized() != PR_TRUE ) {
+	if ( instanceCount == 0 && !PR_Initialized() )
+		PR_Init(PR_SYSTEM_THREAD, PR_PRIORITY_NORMAL, 0); // NSPR ignores threads of type PR_SYSTEM_THREAD when determining when a call to PR_Cleanup should return. 
+	PR_AtomicIncrement(&instanceCount);
 
-		PR_Init(PR_USER_THREAD, PR_PRIORITY_NORMAL, 0);
-		hasBeenInitHere = true;
-	}
-
-	jsval unsafeModePtrVal;
-	J_CHK( GetConfigurationValue(cx, NAME_CONFIGURATION_UNSAFE_MODE_PTR, &unsafeModePtrVal) );
-	if ( !JSVAL_IS_VOID( unsafeModePtrVal ) )
-		_pUnsafeMode = (bool*)JSVAL_TO_PRIVATE(unsafeModePtrVal);
-
+	_unsafeMode = GetHostPrivate(cx)->unsafeMode;
 
 	INIT_CLASS( IoError );
 	INIT_CLASS( Descriptor );
@@ -73,7 +66,8 @@ EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
 
 EXTERN_C DLLEXPORT void ModuleFree() {
 
-	if ( hasBeenInitHere && PR_Initialized() == PR_TRUE )
+	PR_AtomicDecrement(&instanceCount);
+	if ( instanceCount == 0 && PR_Initialized() )
 		PR_Cleanup();
 }
 
