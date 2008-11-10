@@ -25,7 +25,7 @@
 #include "buffer.h"
 
 #include "../common/queue.h"
-#include "../jslang/blobapi.h"
+#include "../jslang/blobPub.h"
 
 #define SLOT_SOURCE 0
 

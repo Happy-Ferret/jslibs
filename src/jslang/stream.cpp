@@ -15,7 +15,7 @@
 #include "stdafx.h"
 #include <cstring>
 
-#include "blobapi.h"
+#include "blobPub.h"
 
 #define SLOT_STREAM_SOURCE 0
 #define SLOT_STREAM_POSITION 1

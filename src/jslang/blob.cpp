@@ -17,7 +17,7 @@
 
 #include "../common/errors.h"
 #include "../common/jsHelper.h"
-#include "blobapi.h"
+#include "blobPub.h"
 
 // SLOT_BLOB_LENGTH is the size of the content of the blob OR JSVAL_VOID if the blob has been invalidated (see Blob::Free() method)
 #define SLOT_BLOB_LENGTH 0

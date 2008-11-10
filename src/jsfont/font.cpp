@@ -17,7 +17,7 @@
 
 #include <math.h>
 
-#include "../jslang/blobapi.h"
+#include "../jslang/blobPub.h"
 
 #include <ft2build.h>
 #include FT_FREETYPE_H

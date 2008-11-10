@@ -15,7 +15,7 @@
 #include "stdafx.h"
 #include <cstring>
 
-#include "../jslang/blobapi.h"
+#include "../jslang/blobPub.h"
 
 #include "error.h"
 #include "result.h"

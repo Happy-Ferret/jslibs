@@ -14,7 +14,7 @@
 
 #include "stdafx.h"
 
-#include "../jslang/blobapi.h"
+#include "../jslang/blobPub.h"
 
 //#include "../common/jsNativeInterface.h"
 #include "static.h"
