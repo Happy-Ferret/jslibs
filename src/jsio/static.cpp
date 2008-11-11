@@ -481,7 +481,7 @@ DEFINE_FUNCTION_FAST( PostSemaphore ) {
 
 /**doc
  * $VAL $INAME( path [, argv [, waitExit ]] )
-  This function starts a new process optionaly using the array _argv_ for arguments or <undefined>.
+  This function starts a new process optionaly using the JavaScript Array _argv_ for arguments or <undefined> for no arguments.
   If _waitExit_ is true, the function waits the end of the process and returns its exit code.
   If _waitExit_ is not true, the function immediately returns an array that contains an input pipe and an output pipe to the current process stdin and stdout.
 **/

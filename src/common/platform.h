@@ -198,6 +198,13 @@
 		return thread != (JLThreadHandler)0;
 	}
 
+	inline bool JLThreadIsActive( JLThreadHandler thread ) {
+
+		DWORD result = WaitForSingleObject( thread, 0 );
+		return result != WAIT_OBJECT_0; // else WAIT_TIMEOUT ?
+	}
+
+
 	inline void JLWaitThread( JLThreadHandler thread ) {
 		
 		if ( JLThreadOk(thread) )
