@@ -181,6 +181,8 @@
 	typedef HANDLE JLThreadHandler;
 	typedef int JLThreadPriorityType;
 
+	#define JLThreadFuncDecl DWORD WINAPI
+
 	inline bool JLThreadPriority( JLThreadHandler thread, JLThreadPriorityType priority ) {
 
 		SetThreadPriority(thread, priority);

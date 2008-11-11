@@ -876,7 +876,7 @@ DEFINE_FUNCTION( IsStatementValid ) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
  * $VOID $INAME()
-  Stop the execution of the program. This is a ungraceful way to finish a program.
+  Stop the execution of the program. This is a ungraceful way to finish a program and should only be used in critical cases.
 **/
 DEFINE_FUNCTION( Halt ) {
 

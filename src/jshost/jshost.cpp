@@ -273,8 +273,11 @@ The main features are:
  * `-g` <loops> (default = 8192)
   This is the frequency at witch the GarbageCollector is launched.
 
-=== Global functions ===
+=== Exit code ===
+ The exit code of jshost is 1 on error, or the last evaluated expression of you script on success.
+ If this last expression is a positive integer, its value is returned, in any other case, 0 is returned.
 
+=== Global functions ===
  * status *LoadModule*( moduleFileName )
   Loads and initialize the specified module.
   Do not provide the file extension in _moduleFileName_.
@@ -344,3 +347,5 @@ extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj)
 }
 }}}
 **/
+
+
