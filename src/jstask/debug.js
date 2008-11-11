@@ -13,13 +13,18 @@ function MyTask( request, index ) {
 		this.count = 0;
 	}
 	
-	Sleep(10);
+	Sleep(5);
 
 	if ( index == 5 ) // generate an error at the 5th request
 		xxxx();
 	
 	if ( index == 9 ) // throw a custom exception at the 9th request
-		throw 'myException';	
+		throw 'myException';
+
+
+//	if ( index == 15 )
+//		return {}; // unserialisable jsval
+
 	
 //	var f = new File('debug.js');
 //	f.Open('r');
@@ -33,7 +38,8 @@ var t1 = new Task(MyTask, -1);
 for ( var i = 0; i < 50; i++ )
 	t1.Request('request '+i);
 
-var res;
+
+
 
 while ( t1.pendingRequestCount ) {
 

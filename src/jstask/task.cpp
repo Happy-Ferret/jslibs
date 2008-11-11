@@ -18,14 +18,14 @@
 
 #include "../host/host.h"
 
+typedef JSXDRState* Serialized;
 
-void XdrInit( JSXDRState **xdr ) {
+void SerializerInit( Serialized *xdr ) {
 	
 	*xdr = NULL;
 }
 
-
-void XdrFree( JSXDRState **xdr ) {
+void SerializerFree( Serialized *xdr ) {
 
 	if ( *xdr != NULL ) {
 
@@ -35,22 +35,25 @@ void XdrFree( JSXDRState **xdr ) {
 	}
 }
 
+bool SerializerEmpty( const Serialized *xdr ) {
 
-JSBool XdrEncodeJsval( JSContext *cx, JSXDRState **xdr, jsval *val ) {
+	return *xdr == NULL;
+}
+
+JSBool SerializeJsval( JSContext *cx, Serialized *xdr, jsval *val ) {
 
 	if ( *xdr != NULL )
-		XdrFree(xdr);
+		SerializerFree(xdr);
 	*xdr = JS_XDRNewMem(cx, JSXDR_ENCODE);
 	J_CHK( JS_XDRValue(*xdr, val) );
 	return JS_TRUE;
 }
 
-
-JSBool XdrDecodeJsval( JSContext *cx, JSXDRState *xdr, jsval *rval ) {
+JSBool UnserializeJsval( JSContext *cx, const Serialized *xdr, jsval *rval ) {
 
 	JSXDRState *xdrDecoder = JS_XDRNewMem(cx, JSXDR_DECODE);
 	uint32 length;
-	void *data = JS_XDRMemGetData(xdr, &length);
+	void *data = JS_XDRMemGetData(*xdr, &length);
 	JS_XDRMemSetData(xdrDecoder, data, length);
 	J_CHK( JS_XDRValue(xdrDecoder, rval) );
 	JS_XDRMemSetData(xdrDecoder, NULL, 0);
@@ -59,21 +62,22 @@ JSBool XdrDecodeJsval( JSContext *cx, JSXDRState *xdr, jsval *rval ) {
 }
 
 
+
 struct Private {
 
 	JLMutexHandler mutex;
-
-	JSXDRState *xdrCode;
 	JLThreadHandler threadHandle;
 	bool end;
 
-	size_t requestCount;
+	Serialized serializedCode;
+
 	JLSemaphoreHandler requestSem;
 	jl::Queue requestList;
+	size_t requestCount;
 
-	size_t responseCount;
 	JLSemaphoreHandler responseSem;
 	jl::Queue responseList;
+	size_t responseCount;
 
 	jl::Queue exceptionList;
 };
@@ -103,25 +107,22 @@ DEFINE_FINALIZE() {
 
 		JLFreeMutex(&pv->mutex);
 
-		XdrFree(&pv->xdrCode);
-
-
 		while ( !jl::QueueIsEmpty(&pv->responseList) ) {
 
-			JSXDRState *xdr = (JSXDRState*)jl::QueueShift(&pv->responseList);
-			XdrFree(&xdr);
+			Serialized xdr = (Serialized)jl::QueueShift(&pv->responseList);
+			SerializerFree(&xdr);
 		}
 
 		while ( !jl::QueueIsEmpty(&pv->requestList) ) {
 
-			JSXDRState *xdr = (JSXDRState*)jl::QueueShift(&pv->requestList);
-			XdrFree(&xdr);
+			Serialized xdr = (Serialized)jl::QueueShift(&pv->requestList);
+			SerializerFree(&xdr);
 		}
 
 		while ( !jl::QueueIsEmpty(&pv->exceptionList) ) {
 
-			JSXDRState *xdr = (JSXDRState*)jl::QueueShift(&pv->exceptionList);
-			XdrFree(&xdr);
+			Serialized xdr = (Serialized)jl::QueueShift(&pv->exceptionList);
+			SerializerFree(&xdr);
 		}
 
 		JS_free(cx, pv);
@@ -133,8 +134,8 @@ JSBool Task(JSContext *cx, Private *pv) {
 
 	jsval code, rval;
 
-	J_CHK( XdrDecodeJsval(cx, pv->xdrCode, &code) );
-	XdrFree(&pv->xdrCode);
+	J_CHK( UnserializeJsval(cx, &pv->serializedCode, &code) ); // no need to mutex this because this is the only place that access pv->serializedCode
+	SerializerFree(&pv->serializedCode);
 
 	JSFunction *fun = JS_ValueToFunction(cx, code);
 	JSObject *funObj = JS_GetFunctionObject(fun);
@@ -147,27 +148,17 @@ JSBool Task(JSContext *cx, Private *pv) {
 
 		JLAcquireSemaphore(pv->requestSem); // wait for a request
 
-		JLAcquireMutex(pv->mutex);
-		if ( pv->end ) {
-
-			JLReleaseMutex(pv->mutex);
-			break;
-		}
-		JLReleaseMutex(pv->mutex);
-
 		for (;;) {
 
 			JLAcquireMutex(pv->mutex);
-			if ( jl::QueueIsEmpty(&pv->requestList) || pv->end ) {
+			if ( jl::QueueIsEmpty(&pv->requestList) || pv->end )
+				goto end;
 
-				JLReleaseMutex(pv->mutex);
-				break;
-			}
-			JSXDRState *xdrRequest = (JSXDRState*)jl::QueueShift(&pv->requestList);
+			Serialized serializedRequest = (Serialized)jl::QueueShift(&pv->requestList);
 			pv->requestCount--;
 			jsval request;
-			XdrDecodeJsval(cx, xdrRequest, &request);
-			XdrFree(&xdrRequest);
+			J_CHK( UnserializeJsval(cx, &serializedRequest, &request) );
+			SerializerFree(&serializedRequest);
 			JLReleaseMutex(pv->mutex);
 
 			jsval argv[] = { request, INT_TO_JSVAL(index++) };
@@ -189,30 +180,27 @@ JSBool Task(JSContext *cx, Private *pv) {
 					ex = JSVAL_VOID; // unknown exception
 				}
 
-				JSXDRState *xdrException;
-				XdrInit(&xdrException);
-				XdrEncodeJsval(cx, &xdrException, &ex);
-				jl::QueuePush(&pv->exceptionList, xdrException);
+				Serialized serializedException;
+				SerializerInit(&serializedException);
+				J_CHK( SerializeJsval(cx, &serializedException, &ex) );
+				jl::QueuePush(&pv->exceptionList, serializedException);
 
 				jl::QueuePush(&pv->responseList, NULL); // signals an exception
 				pv->responseCount++;
 				JS_ClearPendingException(cx);
-
 			} else {
 
-				JSXDRState *xdrResponse;
-				XdrInit(&xdrResponse);
-				XdrEncodeJsval(cx, &xdrResponse, &rval);
-				jl::QueuePush(&pv->responseList, xdrResponse);
+				Serialized serializedResponse;
+				SerializerInit(&serializedResponse);
+				J_CHK( SerializeJsval(cx, &serializedResponse, &rval) );
+				jl::QueuePush(&pv->responseList, serializedResponse);
 				pv->responseCount++;
 			}
-			
 			JLReleaseMutex(pv->mutex);
-
 			JLReleaseSemaphore(pv->responseSem); // signals a response
 		}
-
 	}
+end:
 	return JS_TRUE;
 }
 
@@ -228,9 +216,29 @@ JLThreadFuncDecl Thread( void *arglist ) {
 		JS_ToggleOptions(cx, JS_GetOptions(cx) | JSOPTION_DONT_REPORT_UNCAUGHT);
 
 		Private *pv = (Private*)arglist;
-		Task(cx, pv); // (TBD) manage fatal errors
-		
+		JSBool status = Task(cx, pv); // (TBD) manage fatal errors
 		JLReleaseMutex(pv->mutex);
+/*
+		JLAcquireMutex(pv->mutex);
+
+		pv->end = true;
+
+		if ( status == JS_FALSE ) {
+
+			jsval ex;
+			if ( JS_IsExceptionPending(cx) ) { // manageable error
+
+				J_CHK( JS_GetPendingException(cx, &ex) );
+				JSString *jsstr = JS_ValueToString(cx, ex); // transform the exception into a string
+				ex = STRING_TO_JSVAL(jsstr);
+
+
+		Serialized serializedException;
+		SerializerInit(&serializedException);
+		J_CHK( SerializeJsval(cx, &serializedException, &ex) );
+		jl::QueuePush(&pv->exceptionList, serializedException);
+		JLReleaseMutex(pv->mutex);
+*/
 		JLReleaseSemaphore(pv->responseSem);
 	}
 	DestroyHost(cx);
@@ -289,8 +297,8 @@ DEFINE_CONSTRUCTOR() {
 
 	jl::QueueInitialize(&pv->exceptionList);
 
-	XdrInit(&pv->xdrCode);
-	J_CHK( XdrEncodeJsval(cx, &pv->xdrCode, &J_ARG(1)) );
+	SerializerInit(&pv->serializedCode);
+	J_CHK( SerializeJsval(cx, &pv->serializedCode, &J_ARG(1)) );
 
 	pv->threadHandle = JLStartThread(Thread, pv);
 
@@ -307,19 +315,17 @@ DEFINE_FUNCTION_FAST( Request ) {
 	Private *pv = (Private*)JS_GetPrivate(cx, J_FOBJ);
 	J_S_ASSERT_RESOURCE(pv);
 
+	Serialized serializedRequest;
+	SerializerInit(&serializedRequest);
+	J_CHK( SerializeJsval(cx, &serializedRequest, &J_FARG(1)) );
 	JLAcquireMutex(pv->mutex);
-	JSXDRState *xdrRequest;
-	XdrInit(&xdrRequest);
-	J_CHK( XdrEncodeJsval(cx, &xdrRequest, &J_FARG(1)) );
-	jl::QueuePush(&pv->requestList, xdrRequest);
+	jl::QueuePush(&pv->requestList, serializedRequest);
 	pv->requestCount++;
 	JLReleaseMutex(pv->mutex);
-
 	JLReleaseSemaphore(pv->requestSem); // signals a request
 
 	return JS_TRUE;
 }
-
 
 
 DEFINE_FUNCTION_FAST( Response ) {
@@ -330,28 +336,47 @@ DEFINE_FUNCTION_FAST( Response ) {
 	bool hasNoResponse;
 	JLAcquireMutex(pv->mutex);
 	hasNoResponse = jl::QueueIsEmpty(&pv->responseList);
+
+	if ( pv->end && jl::QueueIsEmpty(&pv->responseList) && !jl::QueueIsEmpty(&pv->exceptionList) ) {
+
+		Serialized serializedException = (Serialized)jl::QueueShift(&pv->exceptionList);
+		JLReleaseMutex(pv->mutex);
+
+		jsval exception;
+		J_CHK( UnserializeJsval(cx, &serializedException, &exception) );
+		JS_SetPendingException(cx, exception);
+		return JS_FALSE;
+	}
+
 	JLReleaseMutex(pv->mutex);
 
 	if ( hasNoResponse )
-		JLAcquireSemaphore(pv->responseSem);
+		JLAcquireSemaphore(pv->responseSem); // wait for a response
 
 	JLAcquireMutex(pv->mutex);
-	JSXDRState *xdrResponse = (JSXDRState*)jl::QueueShift(&pv->responseList);
+
+	if ( jl::QueueIsEmpty(&pv->responseList) ) { // || !JLThreadIsActive( pv->threadHandle )
+
+		JLReleaseMutex(pv->mutex);
+		*J_FRVAL = JSVAL_VOID;
+		return JS_TRUE;
+	}
+
+	Serialized serializedResponse = (Serialized)jl::QueueShift(&pv->responseList);
 	pv->responseCount--;
 
-	if ( xdrResponse == NULL ) { // an exception is signaled
+	if ( SerializerEmpty( &serializedResponse ) ) { // an exception is signaled
 
-		JSXDRState *xdrException = (JSXDRState*)jl::QueueShift(&pv->exceptionList);
+		Serialized serializedException = (Serialized)jl::QueueShift(&pv->exceptionList);
 		jsval exception;
-		J_CHK( XdrDecodeJsval(cx, xdrException, &exception) );
+		J_CHK( UnserializeJsval(cx, &serializedException, &exception) );
 		JS_SetPendingException(cx, exception);
 		JLReleaseMutex(pv->mutex);
 		return JS_FALSE;
-
 	} else {
 
-		XdrDecodeJsval(cx, xdrResponse, J_FRVAL);
-		XdrFree(&xdrResponse);
+		J_CHK( UnserializeJsval(cx, &serializedResponse, J_FRVAL) );
+		SerializerFree(&serializedResponse);
 	}
 	JLReleaseMutex(pv->mutex);
 
@@ -363,7 +388,7 @@ DEFINE_PROPERTY( pendingRequestCount ) {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE(pv);
-	JLAcquireMutex(pv->mutex);
+	JLAcquireMutex(pv->mutex); // (TBD) needed ?
 	J_CHK( UIntToJsval(cx, pv->requestCount, vp) );
 	JLReleaseMutex(pv->mutex);
 	return JS_TRUE;
@@ -374,61 +399,12 @@ DEFINE_PROPERTY( pendingResponseCount ) {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE(pv);
-	JLAcquireMutex(pv->mutex);
+	JLAcquireMutex(pv->mutex); // (TBD) needed ?
 	J_CHK( UIntToJsval(cx, pv->responseCount, vp) );
 	JLReleaseMutex(pv->mutex);
 	return JS_TRUE;
 }
 
-
-
-/*
-DEFINE_PROPERTY( result ) {
-
-	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(pv);
-	JLAcquireMutex(pv->mutex);
-	if ( pv->hasError ) {
-		
-		jsval ex;
-		J_CHK( XdrDecodeJsval(cx, pv->xdrError, &ex) );
-		JS_SetPendingException(cx, ex);
-		JLReleaseMutex(pv->mutex);
-		return JS_FALSE;
-	}
-	if ( pv->hasResult )
-		J_CHK( XdrDecodeJsval(cx, pv->xdrValue, vp) );
-	else
-		*vp = JSVAL_VOID;
-	JLReleaseMutex(pv->mutex);
-	return JS_TRUE;
-}
-
-
-DEFINE_PROPERTY( resultWait ) {
-
-	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(pv);
-
-	JLAcquireSemaphore(pv->resultSem);
-
-	JLAcquireMutex(pv->mutex);
-	if ( pv->hasError ) {
-		
-		jsval ex;
-		J_CHK( XdrDecodeJsval(cx, pv->xdrError, &ex) );
-		JS_SetPendingException(cx, ex);
-		JLReleaseMutex(pv->mutex);
-		return JS_FALSE;
-	}
-	if ( pv->hasResult )
-		J_CHK( XdrDecodeJsval(cx, pv->xdrValue, vp) );
-	else
-		*vp = JSVAL_VOID;
-	JLReleaseMutex(pv->mutex);
-	return JS_TRUE;
-}
-*/
 
 CONFIGURE_CLASS
 
