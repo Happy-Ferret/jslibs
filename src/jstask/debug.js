@@ -3,38 +3,43 @@ LoadModule('jsio');
 LoadModule('jstask');
 
 
-function MyTask(arg, round) {
-/*
-	LoadModule('jsstd');
-	LoadModule('jsio');
-	
-	var query = WaitQuery();
-	
-	Reply(query+' reply');
-		
-	var f = new File('debug.js');
-	f.Open('r');
-	return 'arg-'+f.Read(30)+'...';
-*/	
-	throw 'myException';
+function MyTask( request, index ) {
 
-	return arg+'-'+round;
+	
+	if ( !index ) { // first request, it's time to initialise things
+	
+		LoadModule('jsstd');
+		LoadModule('jsio');
+		this.count = 0;
+	}
+	
+	Sleep(10);
+
+	if ( index == 5 ) // generate an error at the 5th request
+		xxxx();
+	
+	if ( index == 9 ) // throw a custom exception at the 9th request
+		throw 'myException';	
+	
+//	var f = new File('debug.js');
+//	f.Open('r');
+//	return 'arg-'+f.Read(30)+'...';
+
+	return request + 'idx:'+index + (new Date());
 }
 
 var t1 = new Task(MyTask, -1);
-//var t2 = new Task(MyTask);
 
-t1.Run(1234);
-Print( 't1 result: '+t1.resultWait, '\n' );
+for ( var i = 0; i < 50; i++ )
+	t1.Request('request '+i);
 
-for ( var i=0; i<1000; i++ )
-	t1.Run(i);
+var res;
 
+while ( t1.pendingRequestCount ) {
 
-Print( 't1 has result: '+t1.hasResult+' / result: '+t1.resultWait, '\n' );
-
-//t2.Run(MyTask);
-
-
-//Print( t2.resultWait, '\n' );
-
+	try {
+		Print(t1.Response(), '\n');
+	} catch(ex) {
+		Print(ex, '\n');
+	}
+}
