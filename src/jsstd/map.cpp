@@ -15,6 +15,8 @@
 #include "stdafx.h"
 #include "map.h"
 
+#include <jsxdrapi.h>
+
 //#include "../common/jsNativeInterface.h"
 #include "../common/queue.h"
 
@@ -23,7 +25,7 @@
 $CLASS_HEADER
  Map is an unsorted associative container that associates strings with values.
  $H note
-  Note that no two elements have the same key.
+  No two elements have the same key.
  $H note
   Map can store any string value as a key (even reserved special strings like __proto__, __parent__, toString, ...).
  $H note
@@ -32,6 +34,12 @@ $CLASS_HEADER
 
 BEGIN_CLASS( Map )
 
+/**doc
+ * $INAME( [ obj ] )
+  Creates a new Map object.
+  $H arguments
+   $ARG object obj: if given, _obj_ is converted into a Map object (Array is also an object). No recursion is made.
+**/
 DEFINE_CONSTRUCTOR() {
 		
 	if ( JS_IsConstructing(cx) == JS_TRUE ) {
@@ -45,11 +53,94 @@ DEFINE_CONSTRUCTOR() {
 		J_S_ASSERT_ALLOC( obj );
 		*rval = OBJECT_TO_JSVAL(obj);
 	}
+
+	if ( J_ARG_ISDEF(1) ) {
+
+		jsid id;
+		jsval key, value;
+		JSObject *srcObj; // (TBD) root ?
+		J_CHK( JS_ValueToObject(cx, J_ARG(1), &srcObj) );
+		JSObject *it = JS_NewPropertyIterator(cx, srcObj);
+		J_S_ASSERT( it != NULL, "Unable to iterate the object." );
+		for (;;) {
+
+			J_CHK( JS_NextProperty(cx, it, &id) );
+			if ( id != JSVAL_VOID ) {
+
+				J_CHK( JS_IdToValue(cx, id, &key) );
+				J_CHK( OBJ_GET_PROPERTY(cx, srcObj, id, &value) );
+				J_CHK( OBJ_SET_PROPERTY(cx, obj, id, &value) ); 
+			} else {
+
+				break;
+			}
+		}	
+	}
 	return JS_TRUE;
 }
 
+
+DEFINE_XDR() {
+	
+	jsid id;
+	jsval key, value;
+
+	if ( xdr->mode == JSXDR_ENCODE ) {
+		
+		JSObject *it = JS_NewPropertyIterator(xdr->cx, *objp);
+
+		for (;;) {
+
+			J_CHK( JS_NextProperty(xdr->cx, it, &id) );
+			if ( id != JSVAL_VOID ) { // ... or JSVAL_VOID if there is no such property left to visit.
+
+				J_CHK( JS_IdToValue(xdr->cx, id, &key) );
+				J_CHK( OBJ_GET_PROPERTY(xdr->cx, *objp, id, &value) ); // returning false on error or exception, true on success.
+				J_CHK( JS_XDRValue(xdr, &key) );
+				J_CHK( JS_XDRValue(xdr, &value) );
+			} else {
+
+				jsval tmp = JSVAL_VOID;
+				J_CHK( JS_XDRValue(xdr, &tmp) );
+				break;
+			}
+		}
+		return JS_TRUE;
+	}
+	
+	if ( xdr->mode == JSXDR_DECODE ) {
+
+		*objp = JS_NewObject(xdr->cx, _class, NULL, NULL);
+		
+		for (;;) {
+
+			J_CHK( JS_XDRValue(xdr, &key) );
+			if ( key != JSVAL_VOID ) {
+
+				JS_ValueToId(xdr->cx, key, &id);
+				J_CHK( JS_XDRValue(xdr, &value) );
+				J_CHK( OBJ_SET_PROPERTY(xdr->cx, *objp, id, &value) ); 
+			} else {
+
+				break;
+			}
+		}
+		return JS_TRUE;
+	}
+
+	if ( xdr->mode == JSXDR_FREE ) {
+
+		// (TBD) nothing to free ?
+		return JS_TRUE;
+	}
+
+	return JS_FALSE;
+}
+
+
 CONFIGURE_CLASS
 	HAS_CONSTRUCTOR
+	HAS_XDR
 END_CLASS
 
 
@@ -62,5 +153,11 @@ END_CLASS
  m.c = 3;
 
  Print( m.c ); // prints: 3
+ }}}
+
+=== example 2 ===
+ {{{
+ var m = new Map([1,2,3,4]);
+ Print( [k+'='+v for ([k,v] in Iterator(m))] ); // prints: 3=4,2=3,1=2,0=1
  }}}
 **/

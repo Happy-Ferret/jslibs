@@ -41,6 +41,9 @@ inline NIBufferGet BufferGetInterface( JSContext *cx, JSObject *obj );
 #include <jscntxt.h>
 #include <jsinterp.h>
 
+#include <jsxdrapi.h>
+
+
 extern bool _unsafeMode;
 
 #ifdef DEBUG
@@ -1061,7 +1064,53 @@ inline JSBool JsvalToDoubleVector( JSContext *cx, jsval val, double *vector, siz
 }
 
 
+///////////////////////////////////////////////////////////////////////////////
+// Serialization
 
+typedef JSXDRState* Serialized;
+
+inline void SerializerCreate( Serialized *xdr ) {
+	
+	*xdr = NULL;
+}
+
+inline void SerializerFree( Serialized *xdr ) {
+
+	if ( *xdr != NULL ) {
+
+		JS_XDRMemSetData(*xdr, NULL, 0);
+		JS_XDRDestroy(*xdr);
+		*xdr = NULL;
+	}
+}
+
+inline bool SerializerIsEmpty( const Serialized *xdr ) {
+
+	return *xdr == NULL;
+}
+
+inline JSBool SerializeJsval( JSContext *cx, Serialized *xdr, jsval *val ) {
+
+	if ( *xdr != NULL )
+		SerializerFree(xdr);
+	*xdr = JS_XDRNewMem(cx, JSXDR_ENCODE);
+	J_S_ASSERT( *xdr != NULL, "Unable to create the serializer." );
+	J_CHK( JS_XDRValue(*xdr, val) );
+	return JS_TRUE;
+}
+
+inline JSBool UnserializeJsval( JSContext *cx, const Serialized *xdr, jsval *rval ) {
+
+	JSXDRState *xdrDecoder = JS_XDRNewMem(cx, JSXDR_DECODE);
+	J_S_ASSERT( xdrDecoder != NULL, "Unable to create the unserializer." );
+	uint32 length;
+	void *data = JS_XDRMemGetData(*xdr, &length);
+	JS_XDRMemSetData(xdrDecoder, data, length);
+	J_CHK( JS_XDRValue(xdrDecoder, rval) );
+	JS_XDRMemSetData(xdrDecoder, NULL, 0);
+	JS_XDRDestroy(xdrDecoder);
+	return JS_TRUE;
+}
 
 
 ///////////////////////////////////////////////////////////////////////////////

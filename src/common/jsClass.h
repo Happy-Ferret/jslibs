@@ -112,6 +112,7 @@ struct JSLIBS_ConstIntegerSpec {
 #define DEFINE_WRAPPED_OBJECT() static JSObject* WrappedObject(JSContext *cx, JSObject *obj)
 #define DEFINE_GET_OBJECT_OPS() static JSObjectOps* GetObjectOps(JSContext *cx, JSClass *clasp)
 #define DEFINE_CHECK_ACCESS() static JSBool CheckAccess(JSContext *cx, JSObject *obj, jsval id, JSAccessMode mode, jsval *vp)
+#define DEFINE_XDR() static JSBool XDRObject(JSXDRState *xdr, JSObject **objp)
 
 // class configuration
 #define HAS_PRIVATE   _class->flags |= JSCLASS_HAS_PRIVATE;
@@ -141,7 +142,7 @@ struct JSLIBS_ConstIntegerSpec {
 #define HAS_GET_OBJECT_OPS _class->getObjectOps = GetObjectOps;
 #define HAS_CHECK_ACCESS   _class->checkAccess = CheckAccess;
 #define IS_GLOBAL  _class->flags |= JSCLASS_IS_GLOBAL;
-
+#define HAS_XDR _class->xdrObject = XDRObject;
 
 // static definition
 #define DECLARE_STATIC() \

@@ -2,7 +2,8 @@ LoadModule('jsstd');
 LoadModule('jsio');
 
 
-
+var m = new Map([1,2,3,4]);
+Print( [k+'='+v for ([k,v] in Iterator(m))] );
 
 Halt(); //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -33,10 +34,6 @@ SetScope(globalCx, null); // very important because globalCx object is created i
 var res = Sandbox.Eval('var f = new File("debug.js"); f.Open("r"); f.Read(50);', globalCx );
 
 Print( res+'...\n' );
-
-
-
-
 
 
 
