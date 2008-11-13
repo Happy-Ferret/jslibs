@@ -536,3 +536,26 @@ LoadModule('jsstd');
 
 		QA.ASSERT( s.length, len, 'string length' );
 
+
+/// blob serialization [ftr]
+
+		var b = Blob("my blob");
+		b.aPropertyOfMyBlob = 12345;
+		var xdrData = XdrEncode(b);
+		var val = XdrDecode(xdrData);
+		QA.ASSERT( val.length, 7, 'blob length' );
+		QA.ASSERT( val.aPropertyOfMyBlob, 12345, 'blob property' );
+		QA.ASSERT_STR( val, "my blob", 'blob content' );
+
+
+/// map serialization [ftrd]
+
+//		var m = Map({a:1, b:2, c:3});
+		
+//		var m2 = new Map([1,2,3,4]);
+
+//		QA.ASSERT_STR( [k+'='+v for ([k,v] in Iterator(m))], "my blob", 'blob content' );
+
+
+		
+		

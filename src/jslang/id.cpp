@@ -15,6 +15,8 @@
 #include "stdafx.h"
 #include "idPub.h"
 
+static int globalKey = 0;
+
 BEGIN_CLASS( Id )
 
 DEFINE_FINALIZE() {
@@ -35,10 +37,47 @@ DEFINE_HAS_INSTANCE() { // see issue#52
 	return JS_TRUE;
 }
 
+DEFINE_INIT() {
+
+	while ( globalKey == 0 ) {
+		
+		globalKey = rand(); // (TBD) more random !!!
+	}
+	return JS_TRUE;	
+}
+
+DEFINE_XDR() {
+	
+	jsid id;
+	jsval key, value;
+
+	if ( xdr->mode == JSXDR_ENCODE ) {
+
+		return JS_TRUE;
+	}
+	
+	if ( xdr->mode == JSXDR_DECODE ) {
+
+		return JS_TRUE;
+	}
+
+	if ( xdr->mode == JSXDR_FREE ) {
+
+		// (TBD) nothing to free ?
+		return JS_TRUE;
+	}
+
+	return JS_FALSE;
+}
+
+
+
 CONFIGURE_CLASS
 
+	HAS_INIT
 	HAS_PRIVATE
 	HAS_FINALIZE
 	HAS_HAS_INSTANCE
+	HAS_XDR
 
 END_CLASS

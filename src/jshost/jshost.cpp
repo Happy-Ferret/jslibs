@@ -119,12 +119,12 @@ void Interrupt(int CtrlType) {
 #endif // XP_WIN
 
 
-int HostStdout( const char *buffer, size_t length ) {
+int HostStdout( void *privateData, const char *buffer, size_t length ) {
 
 	return write(fileno(stdout), buffer, length);
 }
 
-int HostStderr( const char *buffer, size_t length ) {
+int HostStderr( void *privateData, const char *buffer, size_t length ) {
 
 	return write(fileno(stderr), buffer, length);
 }
@@ -176,7 +176,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	JSContext *cx = CreateHost(maxMem, maxAlloc, operationLimitGC);
 	HOST_MAIN_ASSERT( cx != NULL, "unable to create a javascript execution context" );
 
-	HOST_MAIN_ASSERT( InitHost(cx, unsafeMode, HostStdout, HostStderr), "unable to initialize the host." );
+	HOST_MAIN_ASSERT( InitHost(cx, unsafeMode, HostStdout, HostStderr, NULL), "unable to initialize the host." );
 
 	JSObject *globalObject = JS_GetGlobalObject(cx);
 	JS_DefineProperty(cx, globalObject, "endSignal", JSVAL_VOID, EndSignalGetter, EndSignalSetter, JSPROP_SHARED | JSPROP_PERMANENT );

@@ -61,7 +61,7 @@ static JSBool JSDefaultStdoutFunction(JSContext *cx, uintN argc, jsval *vp) {
 	for ( uintN i = 0; i < argc; i++ ) {
 
 		J_CHK( JsvalToStringAndLength(cx, &J_FARG(i+1), &buffer, &length) );
-		pv->hostStdOut(buffer, length);
+		pv->hostStdOut(pv->privateData, buffer, length);
 	}
 	return JS_TRUE;
 }
@@ -77,7 +77,7 @@ static JSBool JSDefaultStderrFunction(JSContext *cx, uintN argc, jsval *vp) {
 	for ( uintN i = 0; i < argc; i++ ) {
 
 		J_CHK( JsvalToStringAndLength(cx, &J_FARG(i+1), &buffer, &length) );
-		pv->hostStdErr(buffer, length);
+		pv->hostStdErr(pv->privateData, buffer, length);
 	}
 	return JS_TRUE;
 }
@@ -100,7 +100,7 @@ void stdErrRouter( JSContext *cx, const char *message, size_t length ) {
 
 	HostPrivate *pv = GetHostPrivate(cx);
 	if ( pv != NULL && pv->hostStdErr != NULL )
-		pv->hostStdErr(message, length); // else, use the default.
+		pv->hostStdErr(pv->privateData, message, length); // else, use the default.
 }
 
 
@@ -329,8 +329,8 @@ static JSClass global_class = { // global variable !
 	JSCLASS_NO_OPTIONAL_MEMBERS
 };
 
-
-JSContext* CreateHost(size_t maxMem, size_t maxAlloc, size_t operationLimitGC) { // default: CreateHost(-1, -1, 0);
+// default: CreateHost(-1, -1, 0);
+JSContext* CreateHost(size_t maxMem, size_t maxAlloc, size_t operationLimitGC) {
 
 //	JS_SetCStringsAreUTF8(); // don't use !
 	JSRuntime *rt = JS_NewRuntime(0); // maxMem specifies the number of allocated bytes after which garbage collection is run.
@@ -409,10 +409,12 @@ JSContext* CreateHost(size_t maxMem, size_t maxAlloc, size_t operationLimitGC) {
 }
 
 
-JSBool InitHost( JSContext *cx, bool unsafeMode, HostOutput stdOut, HostOutput stdErr ) {
+JSBool InitHost( JSContext *cx, bool unsafeMode, HostOutput stdOut, HostOutput stdErr, void* privateData ) { // init the host for jslibs usage (modules, errors, ...)
 
 	HostPrivate *pv = (HostPrivate*)malloc(sizeof(HostPrivate));
 	SetHostPrivate(cx, pv);
+
+	pv->privateData = privateData;
 
 	jl::QueueInitialize(&pv->moduleList);
 	pv->unsafeMode = unsafeMode;
@@ -425,8 +427,8 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostOutput stdOut, HostOutput s
 
 // make GetErrorMessage available from any module
 
-	void **_pGetErrorMessage = (void**)JS_malloc(cx, sizeof(void*)); // (TBD) free it
-	*_pGetErrorMessage = (void*)&GetErrorMessage; // this indirection is needed for alignement purpose. see PRIVATE_TO_JSVAL.
+	void **_pGetErrorMessage = (void**)JS_malloc(cx, sizeof(void*)); // (TBD) free it !
+	*_pGetErrorMessage = (void*)&GetErrorMessage; // this indirection is needed for alignement purpose. see PRIVATE_TO_JSVAL and C function alignement.
 	J_CHK( SetConfigurationPrivateValue(cx, NAME_CONFIGURATION_GETERRORMESSAGE, PRIVATE_TO_JSVAL(&_pGetErrorMessage)) );
 
 	pv->hostStdErr = stdErr;

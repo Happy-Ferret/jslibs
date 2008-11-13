@@ -65,7 +65,7 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 	if ( cx == NULL )
 		return -1;
 
-	if ( !InitHost(cx, true, NULL, NULL) )
+	if ( !InitHost(cx, true, NULL, NULL, NULL) )
 		return -1;
 
 	errno_t err;

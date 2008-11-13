@@ -362,6 +362,53 @@ DEFINE_FUNCTION_FAST( FromId ) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
+ * $TYPE Blob $INAME( value )
+  Encode (serialize) a JavaScript value into an XDR (eXternal Data Representation) blob.
+  $H note
+   All JavaScript values cannot be encoded into XDR. If the function failed to encode a value, an error is raised. The Map object can help you to encode Object and Array.
+**/
+DEFINE_FUNCTION_FAST( XdrEncode ) {
+
+	J_S_ASSERT_ARG_MIN( 1 );
+
+	JSXDRState *xdr = JS_XDRNewMem(cx, JSXDR_ENCODE);
+	J_S_ASSERT_ALLOC(xdr);
+	J_CHK( JS_XDRValue(xdr, &J_FARG(1)) );
+	uint32 length;
+	void *buffer = JS_XDRMemGetData(xdr, &length);
+	J_S_ASSERT( buffer != NULL, "Invalid xdr data." );
+	J_CHK( J_NewBlobCopyN(cx, buffer, length, J_FRVAL) );
+	JS_XDRDestroy(xdr);
+	return JS_TRUE;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/**doc
+ * $VAL $INAME( xdrBlob )
+  Decode (deserialize) XDR (eXternal Data Representation) blob to a JavaScript value.
+  $H note
+   Decoding malformed XDR data can lead the program to crash. This may be a security issue.
+**/
+DEFINE_FUNCTION_FAST( XdrDecode ) {
+
+	J_S_ASSERT_ARG_MIN( 1 );
+
+	JSXDRState *xdr = JS_XDRNewMem(cx, JSXDR_DECODE);
+	J_S_ASSERT_ALLOC(xdr);
+	const char *buffer;
+	size_t length;
+	J_CHK( JsvalToStringAndLength(cx, &J_FARG(1), &buffer, &length) );
+	JS_XDRMemSetData(xdr, (void*)buffer, length); // safe de-const cast: we are JSXDR_DECODE from the buffer.
+	J_CHK( JS_XDRValue(xdr, J_FRVAL) );
+	JS_XDRMemSetData(xdr, NULL, 0);
+	JS_XDRDestroy(xdr);
+	return JS_TRUE;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/**doc
  * $VOID $INAME( string )
   Report a warning.
 **/
@@ -1010,6 +1057,8 @@ CONFIGURE_STATIC
 		FUNCTION_FAST( MaybeCollectGarbage )
 		FUNCTION_FAST( IdOf )
 		FUNCTION_FAST( FromId )
+		FUNCTION_FAST( XdrEncode )
+		FUNCTION_FAST( XdrDecode )
 		FUNCTION_FAST( Warning )
 		FUNCTION( ASSERT )
 		FUNCTION_FAST( Halt )

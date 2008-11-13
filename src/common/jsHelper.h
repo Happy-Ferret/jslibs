@@ -66,7 +66,7 @@ extern bool _unsafeMode;
 #define SET_UNSAFE_MODE(polarity) _unsafeMode = (polarity);
 */
 
-typedef int (*HostOutput)( const char *buffer, size_t length );
+typedef int (*HostOutput)( void *privateData, const char *buffer, size_t length );
 
 struct HostPrivate {
 
@@ -74,6 +74,7 @@ struct HostPrivate {
 	HostOutput hostStdOut;
 	HostOutput hostStdErr;
 	jl::Queue moduleList;
+	void *privateData;
 };
 
 inline HostPrivate* GetHostPrivate( JSContext *cx ) {

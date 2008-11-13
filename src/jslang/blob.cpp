@@ -833,6 +833,84 @@ DEFINE_NEW_RESOLVE() {
 }
 
 
+DEFINE_XDR() {
+	
+	jsid id;
+	jsval key, value;
+
+	if ( xdr->mode == JSXDR_ENCODE ) {
+
+		const char *buffer;
+		size_t length;
+		J_CHK( BlobLength(xdr->cx, *objp, &length) );
+		J_CHK( BlobBuffer(xdr->cx, *objp, &buffer) );
+		uint32 tmp = length;
+		J_CHK( JS_XDRUint32(xdr, &tmp) );
+		J_CHK( JS_XDRBytes(xdr, (char*)buffer, length) ); // ugly but safe de-const because we are JSXDR_ENCODE.
+
+		JSObject *it = JS_NewPropertyIterator(xdr->cx, *objp); // see JS_Enumerate that calls obj's JSClass.enumerate hook. JS_DestroyIdArray.
+		J_CHK( it );
+
+		for (;;) {
+
+			J_CHK( JS_NextProperty(xdr->cx, it, &id) );
+			if ( id != JSVAL_VOID ) { // ... or JSVAL_VOID if there is no such property left to visit.
+
+				J_CHK( JS_IdToValue(xdr->cx, id, &key) );
+				J_CHK( OBJ_GET_PROPERTY(xdr->cx, *objp, id, &value) ); // returning false on error or exception, true on success.
+				J_CHK( JS_XDRValue(xdr, &key) );
+				J_CHK( JS_XDRValue(xdr, &value) );
+			} else {
+
+				jsval tmp = JSVAL_VOID;
+				J_CHK( JS_XDRValue(xdr, &tmp) );
+				break;
+			}
+		}
+		return JS_TRUE;
+	}
+	
+	if ( xdr->mode == JSXDR_DECODE ) {
+
+		uint32 length;
+		J_CHK( JS_XDRUint32(xdr, &length) );
+		char *buffer = (char*)JS_malloc(xdr->cx, length +1);
+		buffer[length] = '\0'; // (TBD) needed ?
+		J_CHK( JS_XDRBytes(xdr, buffer, length) );
+
+		jsval tmp;
+		J_CHK( J_NewBlob(xdr->cx, buffer, length, &tmp) );
+		J_CHK( JS_ValueToObject(xdr->cx, tmp, objp) );
+
+		for (;;) {
+
+			J_CHK( JS_XDRValue(xdr, &key) );
+			if ( key != JSVAL_VOID ) {
+
+				JS_ValueToId(xdr->cx, key, &id);
+				J_CHK( JS_XDRValue(xdr, &value) );
+				J_CHK( OBJ_SET_PROPERTY(xdr->cx, *objp, id, &value) ); 
+			} else {
+
+				break;
+			}
+		}
+
+		return JS_TRUE;
+	}
+
+	if ( xdr->mode == JSXDR_FREE ) {
+
+		// (TBD) nothing to free ?
+		return JS_TRUE;
+	}
+
+	return JS_FALSE;
+}
+
+
+
+
 /**doc
 === Note ===
  Blobs are immutable. This mean that its content cannot be modified after it is created.
@@ -853,6 +931,7 @@ CONFIGURE_CLASS
 	HAS_SET_PROPERTY
 	HAS_EQUALITY
 	HAS_NEW_RESOLVE
+	HAS_XDR
 
 	BEGIN_FUNCTION_SPEC
 		FUNCTION_FAST(Free)

@@ -2,7 +2,6 @@ LoadModule('jsstd');
 LoadModule('jsio');
 LoadModule('jstask');
 
-
 function MyTask( request, index ) {
 
 	if ( !index ) { // first request, it's time to initialise things
@@ -11,10 +10,7 @@ function MyTask( request, index ) {
 		LoadModule('jsio');
 	}
 	
-//	return {};
-	
-//	Sleep(10);
-	return Map({1:'aaa', 2:'bbb'});
+	return Map({1:'aaa', 2:Blob('123')});
 
 /*	
 	Sleep(5);
@@ -41,6 +37,8 @@ var t1 = new Task(MyTask, -1);
 
 for ( var i = 0; i < 50; i++ )
 	t1.Request('request '+i);
+
+Sleep(100);
 
 while ( t1.pendingRequestCount || t1.pendingResponseCount ) {
 

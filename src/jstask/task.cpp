@@ -157,6 +157,7 @@ JSBool Task(JSContext *cx, Private *pv) {
 				Serialized serializedResponse;
 				SerializerCreate(&serializedResponse);
 				J_CHK( SerializeJsval(cx, &serializedResponse, &rval) ); // (TBD) need a better exception management
+
 				JLAcquireMutex(pv->mutex);
 				QueuePush(&pv->responseList, serializedResponse);
 				pv->pendingResponseCount++;
@@ -171,8 +172,23 @@ end:
 }
 
 
-int TaskStdErrHostOutput( const char *buffer, size_t length ) {
+struct ErrorBuffer {
+	char *buffer;
+	size_t length;
+	size_t maxLength;
+};
 
+
+int TaskStdErrHostOutput( void *privateData, const char *buffer, size_t length ) {
+
+	ErrorBuffer *eb = (ErrorBuffer*)privateData;
+	if ( eb->length + length > eb->maxLength ) {
+	
+		eb->maxLength = eb->length + length + 1024;
+		eb->buffer = eb->buffer == NULL ? (char*)malloc(eb->maxLength) : (char*)realloc(eb->buffer, eb->maxLength);
+	}
+	memcpy(eb->buffer + eb->length, buffer, length);
+	eb->length += length;
 	return 0;
 }
 
@@ -182,7 +198,10 @@ JLThreadFuncDecl ThreadProc( void *threadArg ) {
 	JSContext *cx = CreateHost(-1, -1, 0);
 	if ( cx == NULL )
 		return -1;
-	JSBool status = InitHost(cx, _unsafeMode, NULL, TaskStdErrHostOutput);
+
+	ErrorBuffer errorBuffer = { NULL, 0, 0 };
+
+	JSBool status = InitHost(cx, _unsafeMode, NULL, TaskStdErrHostOutput, &errorBuffer);
 	// (TBD) need a better error management when we cannot create the context
 	if ( status == JS_TRUE ) {
 
@@ -202,7 +221,8 @@ JLThreadFuncDecl ThreadProc( void *threadArg ) {
 				ex = STRING_TO_JSVAL(jsstr);
 			} else {
 				
-				ex = JSVAL_VOID; // unknown exception
+				StringAndLengthToJsval(cx, &ex, errorBuffer.buffer, errorBuffer.length);
+				//ex = JSVAL_VOID; // unknown exception
 			}
 
 			Serialized serializedException;
@@ -217,6 +237,10 @@ JLThreadFuncDecl ThreadProc( void *threadArg ) {
 			JLReleaseSemaphore(pv->responseSem);
 		}
 	}
+
+	if ( errorBuffer.buffer != NULL )
+		free(errorBuffer.buffer);
+
 	DestroyHost(cx);
 	return 0;
 }
@@ -384,7 +408,7 @@ DEFINE_PROPERTY( pendingResponseCount ) {
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE(pv);
 	JLAcquireMutex(pv->mutex); // (TBD) needed ?
-	J_CHK( UIntToJsval(cx, pv->pendingResponseCount, vp) );
+	J_CHK( UIntToJsval(cx, pv->pendingResponseCount ? pv->pendingResponseCount : QueueIsEmpty(&pv->exceptionList) ? 0 : 1 , vp) );
 	JLReleaseMutex(pv->mutex);
 	return JS_TRUE;
 }

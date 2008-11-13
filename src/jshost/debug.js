@@ -3,10 +3,13 @@ LoadModule('jsstd');
 LoadModule('jsio');
 
 
-var f = new File('debug.js');
-Print ( f.content );
-
-
+var b = Blob("testxxx");
+b.foo = 12345;
+var xdrData = XdrEncode(b);
+var val = XdrDecode(xdrData);
+Print( val.length, '\n' );
+Print( val.foo, '\n' );
+Print( val, '\n' );
 
 Halt(); ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
