@@ -208,7 +208,7 @@ inline bool JsvalIsClass(JSContext *cx, jsval val, JSClass *jsClass) {
 #define J_SAFE_BEGIN if (unlikely( !_unsafeMode )) {
 #define J_SAFE_END }
 
-#define J_UNSAFE_BEGIN if (likely( _unsafeMode ))
+#define J_UNSAFE_BEGIN if (likely( _unsafeMode )) {
 #define J_UNSAFE_END }
 
 

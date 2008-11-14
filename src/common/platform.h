@@ -25,6 +25,7 @@
 	#define DEBUG
 #endif // _DEBUG
 
+#define COUNTOF(vector) (sizeof(vector)/sizeof(*vector))
 
 ///////////////////////////////////////////////////////////////////////////////
 // Compiler specific configuration
@@ -36,8 +37,6 @@
 	#define likely(expr)	!!(expr)
 	#define unlikely(expr)	!!(expr)
 #endif
-
-#define COUNTOF(vector) (sizeof(vector)/sizeof(*vector))
 
 #ifdef _MSC_VER
 	#pragma warning(disable : 4244 4305)  // for VC++, no precision loss complaints
@@ -61,21 +60,23 @@
 
 #if defined(_WINDOWS) || defined(WIN32) // Windows platform
 
-	#ifndef WINVER                // Allow use of features specific to Windows 95 and Windows NT 4 or later.
-	#define WINVER 0x0501        // Change this to the appropriate value to target Windows 98 and Windows 2000 or later.
+	#define XP_WIN // used by SpiderMonkey and jslibs
+
+	#ifndef WINVER         // Allow use of features specific to Windows 95 and Windows NT 4 or later.
+	#define WINVER 0x0501  // Change this to the appropriate value to target Windows 98 and Windows 2000 or later.
 	#endif
 
-	#ifndef _WIN32_WINNT        // Allow use of features specific to Windows NT 4 or later.
-	#define _WIN32_WINNT 0x0501        // Change this to the appropriate value to target Windows 98 and Windows 2000 or later.
+	#ifndef _WIN32_WINNT         // Allow use of features specific to Windows NT 4 or later.
+	#define _WIN32_WINNT 0x0501  // Change this to the appropriate value to target Windows 98 and Windows 2000 or later.
 	#endif                       
 
 	#ifndef _WIN32_WINDOWS        // Allow use of features specific to Windows 98 or later.
 	#define _WIN32_WINDOWS 0x0501 // Change this to the appropriate value to target Windows Me or later.
 	#endif
 
-	#define WIN32_LEAN_AND_MEAN		// Exclude rarely-used stuff from Windows headers
-
+	#define WIN32_LEAN_AND_MEAN   // Exclude rarely-used stuff from Windows headers
 	#include <windows.h>
+
 	#include <direct.h> // function declarations for directory handling/creation
 	#include <process.h> // threads, ...
 
@@ -89,8 +90,6 @@
 	#define u_int32_t UINT32
 	#define u_int64_t UINT64
 
-	#define XP_WIN
-
 	#define PATH_MAX MAX_PATH
 	#define DLL_EXT ".dll"
 	#define PATH_SEPARATOR_STRING "\\"
@@ -102,159 +101,12 @@
 
 	#define strcasecmp stricmp
 
-
-// semaphores
-	typedef HANDLE JLSemaphoreHandler;
-
-	inline JLSemaphoreHandler JLCreateSemaphore( int initCount, int maxCount ) {
-		
-		return CreateSemaphore(NULL, initCount, maxCount, NULL);
-	}
-
-	inline bool JLSemaphoreOk( JLSemaphoreHandler semaphore ) {
-		
-		return semaphore != NULL;
-	}
-
-	inline void JLAcquireSemaphore( JLSemaphoreHandler semaphore ) {
-
-		if ( JLSemaphoreOk(semaphore) )
-			WaitForSingleObject(semaphore, INFINITE);
-	}
-
-	inline void JLReleaseSemaphore( JLSemaphoreHandler semaphore ) {
-
-		if ( JLSemaphoreOk(semaphore) )
-			ReleaseSemaphore(semaphore, 1, NULL);
-	}
-	
-	inline void JLFreeSemaphore( JLSemaphoreHandler *pSemaphore ) {
-		
-		if ( JLSemaphoreOk(pSemaphore) ) {
-			
-			CloseHandle(*pSemaphore);
-			*pSemaphore = NULL;
-		}
-	}
-
-
-// mutex
-	typedef HANDLE JLMutexHandler;
-
-	inline JLMutexHandler JLCreateMutex() {
-		
-		return CreateMutex(NULL, FALSE, NULL);
-	}
-
-	inline bool JLMutexOk( JLMutexHandler mutex ) {
-		
-		return mutex != NULL;
-	}
-
-	inline void JLAcquireMutex( JLMutexHandler mutex ) {
-
-		if ( JLMutexOk(mutex) )
-			WaitForSingleObject(mutex, INFINITE);
-	}
-
-	inline void JLReleaseMutex( JLMutexHandler mutex ) {
-	
-		if ( JLMutexOk(mutex) )
-			ReleaseMutex(mutex);
-	}
-
-	inline void JLFreeMutex( JLMutexHandler *pMutex ) {
-		
-		if ( pMutex && JLMutexOk(*pMutex) ) {
-
-			CloseHandle(*pMutex);
-			*pMutex = (JLMutexHandler)0;
-		}
-	}
-
-// thread
-	#define JL_THREAD_PRIORITY_LOWEST THREAD_PRIORITY_LOWEST
-	#define JL_THREAD_PRIORITY_LOW THREAD_PRIORITY_BELOW_NORMAL
-	#define JL_THREAD_PRIORITY_NORMAL THREAD_PRIORITY_ABOVE_NORMAL
-	#define JL_THREAD_PRIORITY_HIGH THREAD_PRIORITY_NORMAL
-
-	typedef HANDLE JLThreadHandler;
-	typedef int JLThreadPriorityType;
-
-	#define JLThreadFuncDecl DWORD WINAPI
-
-	inline bool JLThreadPriority( JLThreadHandler thread, JLThreadPriorityType priority ) {
-
-		SetThreadPriority(thread, priority);
-	}
-
-	inline JLThreadHandler JLStartThread( LPTHREAD_START_ROUTINE threatFunction, void *pv ) {
-
-		return (JLThreadHandler)CreateThread(NULL, 0, threatFunction, pv, 0, NULL);
-	}
-
-	inline bool JLThreadOk( JLThreadHandler thread ) {
-
-		return thread != (JLThreadHandler)0;
-	}
-
-	inline bool JLThreadIsActive( JLThreadHandler thread ) {
-
-		DWORD result = WaitForSingleObject( thread, 0 );
-		return result != WAIT_OBJECT_0; // else WAIT_TIMEOUT ?
-	}
-
-
-	inline void JLWaitThread( JLThreadHandler thread ) {
-		
-		if ( JLThreadOk(thread) )
-			WaitForSingleObject( thread, INFINITE ); // WAIT_OBJECT_0
-	}
-
-	inline void JLFreeThread( JLThreadHandler *pThread ) {
-
-		if ( JLThreadOk(*pThread) ) {
-
-			CloseHandle(*pThread);
-			*pThread = (JLThreadHandler)0;
-		}
-	}
-
-// dynamic libraries
-	typedef HMODULE JLLibraryHandler;
-
-	inline JLLibraryHandler JLDynamicLibraryOpen( const char *filename ) {
-
-		return LoadLibrary(filename);
-	}
-
-	inline void *JLDynamicLibrarySymbol( JLLibraryHandler libraryHandler, const char *symbolName ) {
-
-		return (void*)GetProcAddress(libraryHandler, symbolName);
-	}
-
-	inline void JLDynamicLibraryClose( JLLibraryHandler *libraryHandler ) {
-
-		FreeLibrary(*libraryHandler);
-		*libraryHandler = NULL;
-	}
-
-
-/* (TBD) manage error
-#ifdef XP_UNIX
-	J_S_ASSERT_2( id != 0, "Unable to load the module \"%s\": %s", libFileName, dlerror() );
-#else // XP_UNIX
-	J_S_ASSERT_2( id != 0, "Unable to load the module \"%s\": %x", libFileName, GetLastError() );
-#endif // XP_UNIX
-*/
-
-
 #elif defined(_MACOSX) // MacosX platform
 	
+	#define XP_UNIX // used by SpiderMonkey and jslibs
+
 	#include <unistd.h>
 	
-	#define XP_UNIX
-
 	#define DLL_EXT ".dylib"
 	#define PATH_SEPARATOR_STRING "/"
 	#define PATH_SEPARATOR '/'
@@ -271,11 +123,11 @@
 
 #else // Linux platform
 	
+	#define XP_UNIX // used by SpiderMonkey and jslibs
+
 	#include <unistd.h>
 	#include <sys/time.h>
 	#include <dlfcn.h>
-
-	#define XP_UNIX
 
 	#define DLL_EXT ".so"
 	#define PATH_SEPARATOR_STRING "/"
@@ -289,27 +141,6 @@
 		#define DLLEXPORT
 		#define DLLLOCAL
 	#endif
-
-
-	typedef void *JLLibraryHandler;
-
-	inline JLLibraryHandler JLDynamicLibraryOpen( const char *filename ) {
-
-		dlerror();
-		return dlopen( filename, RTLD_NOW );
-	}
-
-	inline void JLDynamicLibraryClose( JLLibraryHandler *libraryHandler ) {
-
-		dlerror();
-		dlclose( libraryHandler );
-	}
-
-	inline void *JLDynamicLibrarySymbol( JLLibraryHandler libraryHandler, const char *symbolName ) {
-
-		dlerror();
-		return dlsym( libraryHandler, symbolName );
-	}
 
 #endif // Windows/MacosX/Linux platform
 
@@ -339,14 +170,16 @@ inline Endian DetectSystemEndianType() {
 	return UnknownEndian;
 }
 
+
 inline char* IntegerToString(int val, int base) {
 
-	static char buf[32] = {0};
+	static char buf[32] = {0}; // (TBD) multithread warning !
 	int i = 30;
 	for(; val && i ; --i, val /= base)
 		buf[i] = "0123456789abcdef"[val % base];
 	return &buf[i+1];
 }
+
 
 inline double AccurateTimeCounter() {
 
@@ -355,19 +188,304 @@ inline double AccurateTimeCounter() {
 	BOOL result = ::QueryPerformanceFrequency(&frequency);
 	result = ::QueryPerformanceCounter(&performanceCount);
 	return 1000 * performanceCount.QuadPart / (double)frequency.QuadPart;
-#endif // XP_WIN
-
-#ifdef XP_UNIX
-
+#elif XP_UNIX
 	struct timeval time;
 	struct timezone tz;
 	gettimeofday(&time, &tz);
-	return (double)time.tv_sec / 1000*1000;
-#endif // XP_UNIX
+	return (double)time.tv_sec / 1000L*1000L;
+#endif
+	return -1; // (TBD) see. JS_Now() ?
+}
 
-	// see. JS_Now()
+
+inline int JLProcessId() {
+
+#ifdef XP_WIN
+	return getpid();
+#elif XP_UNIX
+	return getpid();
+#endif // XP_UNIX
 	return -1; // (TBD)
 }
+
+
+inline u_int32_t JLSessionId() {
+	u_int32_t r = 0x12345678;
+	r ^= (u_int32_t)AccurateTimeCounter();
+	r ^= (u_int32_t)JLProcessId();
+#ifdef XP_WIN
+//	r ^= (u_int32_t)GetModuleHandle(NULL);
+	MEMORYSTATUS status;
+	GlobalMemoryStatus( &status );
+	r ^= (u_int32_t)status.dwAvailPhys;
+#endif // XP_WIN
+	return r;
+}
+
+
+// Atomic operations
+	// MS doc: http://msdn.microsoft.com/en-us/library/ms686360.aspx
+
+	typedef LONG volatile * JLAtomicPtr;
+
+	inline bool JLAtomicInc( JLAtomicPtr ptr ) {
+
+		//InterlockedIncrement( atomic );
+		// int atomic_inc_and_test(atomic_t * v);
+		// __sync_fetch_and_add
+		return ++*ptr != 0;
+	}
+
+	inline bool JLAtomicDec( JLAtomicPtr ptr ) {
+
+		// int atomic_dec_and_test(atomic_t * v);
+		return --*ptr != 0;
+	}
+
+
+#ifdef XP_WIN
+#elif XP_UNIX
+#include <synch.h>
+#include <semaphore.h>
+#endif
+
+
+// semaphores
+	#ifdef XP_WIN
+	typedef HANDLE JLSemaphoreHandler;
+	#elif XP_UNIX
+	typedef sem_t* JLSemaphoreHandler;
+	#endif
+
+
+	inline JLSemaphoreHandler JLCreateSemaphore( int initCount ) {
+
+		#ifdef XP_WIN
+		return CreateSemaphore(NULL, initCount, LONG_MAX, NULL);
+		#elif XP_UNIX
+		sem_t *sem = (sem_t*)malloc(sizeof(sem_t)); // (TBD) max ???
+		sem_init(sem, 0, initCount);
+		return sem;
+		#endif
+	}
+
+	inline bool JLSemaphoreOk( JLSemaphoreHandler semaphore ) {
+		
+		return semaphore != (JLSemaphoreHandler)0;
+	}
+
+	inline void JLAcquireSemaphore( JLSemaphoreHandler semaphore ) {
+
+		if ( !JLSemaphoreOk(semaphore) )
+			return;
+		#ifdef XP_WIN
+		WaitForSingleObject(semaphore, INFINITE);
+		#elif XP_UNIX
+		sem_wait(semaphore);
+		#endif
+	}
+
+	inline void JLReleaseSemaphore( JLSemaphoreHandler semaphore ) {
+
+		if ( !JLSemaphoreOk(semaphore) )
+			return;
+		#ifdef XP_WIN
+		ReleaseSemaphore(semaphore, 1, NULL);
+		#elif XP_UNIX
+		sem_post(semaphore);
+		#endif
+	}
+	
+	inline void JLFreeSemaphore( JLSemaphoreHandler *pSemaphore ) {
+		
+		if ( !pSemaphore || !JLSemaphoreOk(*pSemaphore) )
+			return;
+		#ifdef XP_WIN
+		CloseHandle(*pSemaphore);
+		#elif XP_UNIX
+		sem_destroy(*pSemaphore);
+		#endif
+		*pSemaphore = (JLSemaphoreHandler)0;
+	}
+
+
+// mutex
+	#ifdef XP_WIN
+	typedef HANDLE JLMutexHandler;
+	#elif XP_UNIX	
+	typedef mutex_t* JLMutexHandler;
+	#endif
+
+	inline JLMutexHandler JLCreateMutex() {
+		
+		#ifdef XP_WIN
+		return CreateMutex(NULL, FALSE, NULL);
+		#elif XP_UNIX
+		mutex_t *mutex = (mutex_t*)malloc(sizeof(mutex_t));
+		mutex_init(USYNC_THREAD, mutex, NULL);
+		return mutex;
+		#endif
+	}
+
+	inline bool JLMutexOk( JLMutexHandler mutex ) {
+		
+		return mutex != (JLMutexHandler)0;
+	}
+
+	inline void JLAcquireMutex( JLMutexHandler mutex ) {
+
+		if ( !JLMutexOk(mutex) )
+			return;
+		#ifdef XP_WIN
+		WaitForSingleObject(mutex, INFINITE);
+		#elif XP_UNIX
+		mutex_lock(mutex);
+		#endif
+	}
+
+	inline void JLReleaseMutex( JLMutexHandler mutex ) {
+	
+		if ( !JLMutexOk(mutex) )
+			return;
+		#ifdef XP_WIN
+		ReleaseMutex(mutex);
+		#elif XP_UNIX
+		mutex_unlock(mutex);
+		#endif
+	}
+
+	inline void JLFreeMutex( JLMutexHandler *pMutex ) {
+		
+		if ( !pMutex || !JLMutexOk(*pMutex) )
+			return;
+		#ifdef XP_WIN
+		CloseHandle(*pMutex);
+		#elif XP_UNIX
+		mutex_destroy(*pMutex);
+		#endif
+		*pMutex = (JLMutexHandler)0;
+	}
+
+// thread
+	#ifdef XP_WIN
+		#define JL_THREAD_PRIORITY_LOWEST THREAD_PRIORITY_LOWEST
+		#define JL_THREAD_PRIORITY_LOW THREAD_PRIORITY_BELOW_NORMAL
+		#define JL_THREAD_PRIORITY_NORMAL THREAD_PRIORITY_ABOVE_NORMAL
+		#define JL_THREAD_PRIORITY_HIGH THREAD_PRIORITY_NORMAL
+		typedef HANDLE JLThreadHandler;
+		typedef int JLThreadPriorityType;
+		#define JLThreadFuncDecl DWORD WINAPI
+		typedef PTHREAD_START_ROUTINE JLThreadRoutine;
+	#elif XP_UNIX
+	#endif
+
+	inline bool JLThreadPriority( JLThreadHandler thread, JLThreadPriorityType priority ) {
+
+		#ifdef XP_WIN
+		SetThreadPriority(thread, priority);
+		#elif XP_UNIX
+		#endif
+	}
+
+	inline JLThreadHandler JLStartThread( JLThreadRoutine threadRoutine, void *pv ) {
+
+		#ifdef XP_WIN
+		return (JLThreadHandler)CreateThread(NULL, 0, threadRoutine, pv, 0, NULL);
+		#elif XP_UNIX
+		#endif
+	}
+
+	inline bool JLThreadOk( JLThreadHandler thread ) {
+
+		return thread != (JLThreadHandler)0;
+	}
+
+	inline bool JLThreadIsActive( JLThreadHandler thread ) {
+
+		if ( !JLThreadOk(thread) )
+			return false;
+		#ifdef XP_WIN
+		DWORD result = WaitForSingleObject( thread, 0 );
+		return result != WAIT_OBJECT_0; // else WAIT_TIMEOUT ?
+		#elif XP_UNIX
+		#endif
+	}
+
+	inline void JLWaitThread( JLThreadHandler thread ) {
+		
+		if ( !JLThreadOk(thread) )
+			return;
+		#ifdef XP_WIN
+		WaitForSingleObject( thread, INFINITE ); // WAIT_OBJECT_0
+		#elif XP_UNIX
+		#endif
+	}
+
+	inline void JLFreeThread( JLThreadHandler *pThread ) {
+
+		if ( !pThread || !JLThreadOk(*pThread) )
+			return;
+		#ifdef XP_WIN
+		CloseHandle(*pThread);
+		#elif XP_UNIX
+		#endif
+		*pThread = (JLThreadHandler)0;
+	}
+
+
+// dynamic libraries
+	#ifdef XP_WIN
+	typedef HMODULE JLLibraryHandler;
+	#elif XP_UNIX
+	typedef void* JLLibraryHandler;
+	#endif
+
+	inline JLLibraryHandler JLDynamicLibraryOpen( const char *filename ) {
+
+		#ifdef XP_WIN
+		return LoadLibrary(filename);
+		#elif XP_UNIX
+		dlerror();
+		return dlopen( filename, RTLD_NOW );
+		#endif
+	}
+
+	inline bool JLDynamicLibraryOk( JLLibraryHandler libraryHandler ) {
+		
+		return libraryHandler != (JLLibraryHandler)0;
+	}
+
+	inline void *JLDynamicLibrarySymbol( JLLibraryHandler libraryHandler, const char *symbolName ) {
+
+		#ifdef XP_WIN
+		return (void*)GetProcAddress(libraryHandler, symbolName);
+		#elif XP_UNIX
+		dlerror();
+		return dlsym( libraryHandler, symbolName );
+		#endif
+	}
+
+	inline void JLDynamicLibraryClose( JLLibraryHandler *libraryHandler ) {
+
+		#ifdef XP_WIN
+		FreeLibrary(*libraryHandler);
+		#elif XP_UNIX
+		dlerror();
+		dlclose( libraryHandler );
+		#endif
+		*libraryHandler = (JLLibraryHandler)0;
+	}
+
+
+/* (TBD) manage error
+#ifdef XP_UNIX
+	J_S_ASSERT_2( id != 0, "Unable to load the module \"%s\": %s", libFileName, dlerror() );
+#else // XP_UNIX
+	J_S_ASSERT_2( id != 0, "Unable to load the module \"%s\": %x", libFileName, GetLastError() );
+#endif // XP_UNIX
+*/
+
+
 
 #endif // _PLATFORM_H_
 

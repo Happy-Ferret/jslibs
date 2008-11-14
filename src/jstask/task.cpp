@@ -288,11 +288,11 @@ DEFINE_CONSTRUCTOR() {
 	pv->end = false;
 
 	QueueInitialize(&pv->requestList);
-	pv->requestSem = JLCreateSemaphore(0, 1);
+	pv->requestSem = JLCreateSemaphore(0);
 	pv->pendingRequestCount = 0;
 
 	QueueInitialize(&pv->responseList);
-	pv->responseSem = JLCreateSemaphore(0, 1);
+	pv->responseSem = JLCreateSemaphore(0);
 	pv->pendingResponseCount = 0;
 
 	QueueInitialize(&pv->exceptionList);
