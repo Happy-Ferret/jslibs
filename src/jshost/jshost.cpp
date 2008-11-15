@@ -85,19 +85,19 @@ void GetAbsoluteModulePath( char* moduleFileName, size_t size, char *modulePath 
 #endif //XP_UNIX
 
 
-bool gEndSignal = false;
+volatile bool gEndSignal = false;
 
 JSBool EndSignalGetter(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 
-	*vp = BOOLEAN_TO_JSVAL( gEndSignal ? JS_TRUE : JS_FALSE );
+	J_CHK( BoolToJsval(cx, gEndSignal, vp) );
 	return JS_TRUE;
 }
 
 JSBool EndSignalSetter(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 
-	JSBool tmp;
-	J_CHK( JS_ValueToBoolean(cx, *vp, &tmp) );
-	gEndSignal = (tmp == JS_TRUE);
+	bool tmp;
+	J_CHK( JsvalToBool(cx, *vp, &tmp) );
+	gEndSignal = tmp;
 	return JS_TRUE;
 }
 
