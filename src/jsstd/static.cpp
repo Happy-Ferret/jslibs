@@ -596,6 +596,7 @@ DEFINE_FUNCTION_FAST( Print ) {
 	J_CHK( GetConfigurationValue(cx, NAME_CONFIGURATION_STDOUT, &fct) );
 	if ( JS_TypeOfValue(cx, fct) == JSTYPE_FUNCTION )
 		J_CHK( JS_CallFunctionValue(cx, globalObject, fct, J_ARGC, &J_FARG(1), J_FRVAL) );
+	*J_FRVAL = JSVAL_VOID;
 
 /*
 	if ( stdoutFunction == NULL )
