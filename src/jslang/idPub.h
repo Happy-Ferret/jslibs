@@ -18,6 +18,12 @@ typedef void (*IdFinalizeCallback_t)(void* data);
 
 #define ID_TYPE u_int32_t
 
+struct IdPrivate {
+	ID_TYPE idType;
+	IdFinalizeCallback_t finalizeCallback;
+//	u_int32_t refCount;
+};
+
 inline JSClass *GetIdJSClass( JSContext *cx ) {
 
 	static JSClass *idJSClass = NULL;
@@ -34,24 +40,25 @@ inline JSBool CreateId( JSContext *cx, ID_TYPE idType, size_t size, void** data,
 	JSObject *idObj = JS_NewObject( cx, GetIdJSClass(cx), NULL, NULL );
 	J_S_ASSERT_ALLOC( idObj );
 	*idVal = OBJECT_TO_JSVAL(idObj);
-	void **pv = (void **)JS_malloc(cx, 2 * sizeof(void*) + size);
+	IdPrivate *pv = (IdPrivate*)JS_malloc(cx, sizeof(IdPrivate) + size);
 	J_S_ASSERT_ALLOC(pv);
 	J_CHK( JS_SetPrivate(cx, idObj, pv) );
 
-	pv[0] = (void*)idType;
-	pv[1] = (void*)finalizeCallback;
+	pv->idType = idType;
+	pv->finalizeCallback = finalizeCallback;
 	if (data)
-		*data = pv+2;
-
+		*data = pv + sizeof(IdPrivate);
 	return JS_TRUE;
 }
+
 
 inline ID_TYPE GetIdType( JSContext *cx, jsval idVal ) {
 
 	JSObject *idObj = JSVAL_TO_OBJECT(idVal);
-	void **pv = (void**)JS_GetPrivate(cx, idObj);
-	return (ID_TYPE)pv[0];
+	IdPrivate *pv = (IdPrivate*)JS_GetPrivate(cx, idObj);
+	return pv->idType;
 }
+
 
 inline bool IsIdType( JSContext *cx, jsval idVal, ID_TYPE idType ) {
 
@@ -59,13 +66,15 @@ inline bool IsIdType( JSContext *cx, jsval idVal, ID_TYPE idType ) {
 	if ( idJSClass == NULL || !JsvalIsClass(cx, idVal, idJSClass) )
 		return false;
 	JSObject *idObj = JSVAL_TO_OBJECT(idVal);
-	void **pv = (void**)JL_GetPrivate(cx, idObj);
-	return pv != NULL && pv[0] == (void*)idType;
+	IdPrivate *pv = (IdPrivate*)JS_GetPrivate(cx, idObj);
+	return pv != NULL && pv->idType == idType;
 }
+
 
 inline void* GetIdPrivate( JSContext *cx, jsval idVal ) {
 
-	return (void**)JL_GetPrivate(cx, JSVAL_TO_OBJECT(idVal)) + 2;
+	IdPrivate *pv = (IdPrivate*)JS_GetPrivate(cx, JSVAL_TO_OBJECT(idVal));
+	return pv + sizeof(IdPrivate);
 }
 
 

@@ -15,18 +15,18 @@
 #include "stdafx.h"
 #include "idPub.h"
 
-static int globalKey = 0;
+// the aim of  globalKey  is to ensure that a pointer in the process's virtual memory space can be serialized and unserializes safely.
+static uint32 globalKey = 0;
 
 BEGIN_CLASS( Id )
 
 DEFINE_FINALIZE() {
 
-	void **pv = (void **)JS_GetPrivate(cx, obj);
+	IdPrivate *pv = (IdPrivate*)JS_GetPrivate(cx, obj);
 	if (pv != NULL) {
-	
-		if ( pv[1] ) // callback function is present
-			((IdFinalizeCallback_t)pv[1])(pv + 2);
-
+		
+		if ( pv->finalizeCallback ) // callback function is present
+			pv->finalizeCallback(pv + 2);
 		JS_free(cx, pv);
 	}
 }
@@ -39,24 +39,33 @@ DEFINE_HAS_INSTANCE() { // see issue#52
 
 DEFINE_INIT() {
 
-	while ( globalKey == 0 ) {
-		
-		globalKey = rand(); // (TBD) more random !!!
-	}
-	return JS_TRUE;	
+	J_SAFE_BEGIN
+		while ( globalKey == 0 )
+			globalKey = JLSessionId();
+	J_SAFE_END
+	return JS_TRUE;
 }
 
+/*
 DEFINE_XDR() {
 	
+	JSContext *cx = xdr->cx;
+
 	jsid id;
 	jsval key, value;
 
 	if ( xdr->mode == JSXDR_ENCODE ) {
 
+		JS_XDRUint32(xdr, &globalKey);
+
 		return JS_TRUE;
 	}
 	
 	if ( xdr->mode == JSXDR_DECODE ) {
+
+		uint32 gKey;
+		JS_XDRUint32(xdr, &gKey);
+		J_S_ASSERT( gKey == globalKey, "Incompatible Id." );
 
 		return JS_TRUE;
 	}
@@ -69,7 +78,7 @@ DEFINE_XDR() {
 
 	return JS_FALSE;
 }
-
+*/
 
 
 CONFIGURE_CLASS
@@ -78,6 +87,6 @@ CONFIGURE_CLASS
 	HAS_PRIVATE
 	HAS_FINALIZE
 	HAS_HAS_INSTANCE
-	HAS_XDR
+//	HAS_XDR
 
 END_CLASS
