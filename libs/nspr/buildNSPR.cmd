@@ -30,8 +30,9 @@ IF "%BUILD_METHOD%"=="rebuild" (
 	set _MAKE_OPTIONS=all
 )
 
+REM using --disable-debug option break the compilation !
 IF "%BUILD%"=="release" (
-	set _CONFIG_OPTIONS=--enable-win32-target=WIN95 --disable-debug
+	set _CONFIG_OPTIONS=--enable-win32-target=WIN95
 ) ELSE (
 	set _CONFIG_OPTIONS=--enable-win32-target=WIN95
 )
