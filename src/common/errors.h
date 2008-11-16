@@ -32,17 +32,13 @@ typedef enum J_ErrNum {
 // usage: JS_ReportErrorNumber(cx, my_GetErrorMessage, NULL, JSSMSG_OUT_OF_RANGE);
 static JSBool J_ReportError( JSContext *cx, J_ErrNum name ) {
 
-	static JSErrorCallback errorCallback = NULL;
-	if ( errorCallback == NULL ) {
-
-		jsval tmp;
-		J_CHK( GetConfigurationValue(cx, NAME_CONFIGURATION_GETERRORMESSAGE, &tmp) );
-		if ( !JSVAL_IS_VOID( tmp ) ) {
-			errorCallback = *(JSErrorCallback*)JSVAL_TO_PRIVATE(tmp);
-		} else {
-			JS_ReportError(cx, "Failed to get the ErrorCallback.");
-		}
-	}
+	jsval tmp;
+	J_CHK( GetConfigurationValue(cx, NAME_CONFIGURATION_GETERRORMESSAGE, &tmp) );
+	JSErrorCallback errorCallback = NULL;
+	if ( !JSVAL_IS_VOID( tmp ) )
+		errorCallback = *(JSErrorCallback*)JSVAL_TO_PRIVATE(tmp);
+	else
+		JS_ReportError(cx, "Failed to get the ErrorCallback.");
 	JS_ReportErrorNumber(cx, errorCallback, NULL, name);
 	return JS_FALSE;
 }

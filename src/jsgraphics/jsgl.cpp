@@ -68,6 +68,7 @@ Manage GL extensions:
 	}
 */
 
+ // (TBD) check static keyword issue
 #define LOAD_OPENGL_EXTENSION( name, proto ) \
 	static proto name = (proto) GL_GET_PROC_ADDRESS( #name ); \
 	J_S_ASSERT_1( name != NULL, "OpenGL extension %s unavailable.", #name );

@@ -371,11 +371,12 @@ JSContext* CreateHost(size_t maxMem, size_t maxAlloc, size_t operationLimitGC) {
 	// JSOPTION_JIT: "I think it's possible we'll remove even this little bit of API, and just have the JIT always-on. -j"
 	#endif // JSOPTION_JIT
 
-	JS_ToggleOptions(cx, JSOPTION_VAROBJFIX | JSOPTION_XML | JSOPTION_COMPILE_N_GO | JSOPTION_RELIMIT);
+	JS_ToggleOptions(cx, JSOPTION_VAROBJFIX | JSOPTION_XML | JSOPTION_COMPILE_N_GO | JSOPTION_RELIMIT | JSOPTION_DONT_REPORT_UNCAUGHT);
   // JSOPTION_COMPILE_N_GO:
 	//  caller of JS_Compile*Script promises to execute compiled script once only; enables compile-time scope chain resolution of consts.
   // JSOPTION_DONT_REPORT_UNCAUGHT:
 	//  When returning from the outermost API call, prevent uncaught exceptions from being converted to error reports
+	//  we can use JS_ReportPendingException to report it manually
 	// JSOPTION_VAROBJFIX:
 	//  Not quite: with JSOPTION_VAROBJFIX, both explicitly declared global
 	//  variables (var x) and implicit ones (x = 42 where no x exists yet in the

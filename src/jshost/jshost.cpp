@@ -227,12 +227,23 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 			exitValue = EXIT_SUCCESS;
 	} else {
 
-		exitValue = EXIT_FAILURE;
+		if ( JS_IsExceptionPending(cx) ) { // see JSOPTION_DONT_REPORT_UNCAUGHT option.
+
+			jsval ex;
+			JS_GetPendingException(cx, &ex);
+			JL_ValueOf(cx, &ex, &ex);
+			if ( JSVAL_IS_INT(ex) )
+				exitValue = JSVAL_TO_INT(ex);
+			else
+				JS_ReportPendingException(cx);
+		} else {
+
+			exitValue = EXIT_FAILURE;
+		}
 	}
 
 	DestroyHost(cx);
 	JS_ShutDown();
-
 
 #ifdef XP_WIN
 	SetConsoleCtrlHandler((PHANDLER_ROUTINE)&Interrupt, FALSE);
@@ -274,8 +285,16 @@ The main features are:
   This is the frequency at witch the GarbageCollector is launched.
 
 === Exit code ===
- The exit code of jshost is 1 on error, or the last evaluated expression of you script on success.
- If this last expression is a positive integer, its value is returned, in any other case, 0 is returned.
+ * The exit code of jshost is 1 on error. On success, exit code is the last evaluated expression of the script.
+   If this last expression is a positive integer, its value is returned, in any other case, 0 is returned.
+ * If there is a pending uncatched exception and if this exception can be converted into a number (see valueOf), this numeric value is used as exit code.
+ $H example
+  {{{
+  function Exit(code) {
+   throw code;
+  }
+  Exit(2);
+  }}}
 
 === Global functions ===
  * status *LoadModule*( moduleFileName )

@@ -24,11 +24,11 @@
 
 //static FCGX_Stream *_in, *_out, *_err;
 //static FCGX_ParamArray _request.envp;
-static FCGX_Request _request;
+static FCGX_Request _request; // (TBD) fix static keyword issue
 
 //static jmp_buf env;
 
-static bool _initDone = false;
+static bool _initDone = false; // (TBD) fix static keyword issue
 
 void onExit() {
 	

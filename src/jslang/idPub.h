@@ -26,7 +26,7 @@ struct IdPrivate {
 
 inline JSClass *GetIdJSClass( JSContext *cx ) {
 
-	static JSClass *idJSClass = NULL;
+	static JSClass *idJSClass = NULL; // it's safe to use static keyword because JSClass do not depend on the rt or cx.
 	if ( idJSClass == NULL )
 		idJSClass = GetGlobalClassByName(cx, "Id");
 	return idJSClass;

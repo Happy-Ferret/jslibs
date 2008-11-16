@@ -120,7 +120,7 @@ static long tell_func(void *datasource) {
 }
 
 
-static ov_callbacks ovCallbacks = { read_func, seek_func, 0, tell_func };
+static const ov_callbacks ovCallbacks = { read_func, seek_func, 0, tell_func };
 
 
 DEFINE_FINALIZE() {

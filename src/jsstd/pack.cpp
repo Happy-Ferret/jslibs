@@ -24,7 +24,7 @@
 
 // #include <limits.h> // included by ../common/platform.h
 
-static Endian systemEndian;
+static Endian systemEndian; // it's safe to use static keyword.
 
 JSBool DetectSystemEndian(JSContext *cx) {
 

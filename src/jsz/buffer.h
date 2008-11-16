@@ -47,7 +47,7 @@ class Buffer {
 
 public:
 
-	static const size_t staticBufferLength = STATIC_BUFFER_LENGTH;
+	static const size_t staticBufferLength = STATIC_BUFFER_LENGTH; // (TBD) needed ??
 
 	~Buffer() {
 

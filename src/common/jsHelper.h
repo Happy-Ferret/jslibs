@@ -52,20 +52,6 @@ extern bool _unsafeMode;
 	#define IFDEBUG(expr)
 #endif // DEBUG
 
-// unsafe mode management
-
-/*
-#ifdef USE_UNSAFE_MODE
-	extern bool _unsafeMode;
-#else
-	static bool _unsafeMode = false; // by default, we are in SAFE mode
-#endif // USE_UNSAFE_MODE
-
-#define DEFINE_UNSAFE_MODE	bool _unsafeMode = false;
-
-#define SET_UNSAFE_MODE(polarity) _unsafeMode = (polarity);
-*/
-
 typedef int (*HostOutput)( void *privateData, const char *buffer, size_t length );
 
 struct HostPrivate {
@@ -381,7 +367,7 @@ inline bool IsNaN( JSContext *cx, jsval val ) {
 
 inline jsdouble PInfinity( JSContext *cx ) {
 
-	static jsdouble pinf = 0;
+	static jsdouble pinf = 0; // it's safe to use static keyword
 	if ( pinf == 0 )
 		pinf = *JSVAL_TO_DOUBLE(JS_GetPositiveInfinityValue(cx));
 	return pinf;
@@ -395,7 +381,7 @@ inline bool IsPInfinity( JSContext *cx, jsval val ) {
 
 inline jsdouble NInfinity( JSContext *cx ) {
 
-	static jsdouble ninf = 0;
+	static jsdouble ninf = 0; // it's safe to use static keyword
 	if ( ninf == 0 )
 		ninf = *JSVAL_TO_DOUBLE(JS_GetNegativeInfinityValue(cx));
 	return ninf;
@@ -502,6 +488,18 @@ inline JSBool JL_CallFunctionName( JSContext *cx, JSObject *obj, const char* fun
 	return JS_TRUE;
 }
 
+inline JSBool JL_ValueOf( JSContext *cx, jsval *val, jsval *rval ) {
+
+	if ( JSVAL_IS_OBJECT(*val) ) {
+
+		J_CHK( OBJ_DEFAULT_VALUE(cx, JSVAL_TO_OBJECT(*val), JSTYPE_VOID, rval) );
+		//J_CHK( JS_CallFunctionName(cx, JSVAL_TO_OBJECT(*val), "valueOf", 0, NULL, rval) );
+	} else {
+
+		*rval = *val;
+	}
+	return JS_TRUE;
+}
 
 inline bool MaybeRealloc( int requested, int received ) {
 
@@ -559,7 +557,7 @@ inline JSBool J_NewBlob( JSContext *cx, void* buffer, size_t length, jsval *vp )
 		return JS_TRUE;
 	}
 
-	static JSClass *blobClass = NULL;
+	static JSClass *blobClass = NULL; // it's safe to use static keyword because JSClass do not depend on the rt or cx.
 	if ( blobClass == NULL )
 		blobClass = GetGlobalClassByName(cx, "Blob");
 

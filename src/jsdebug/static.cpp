@@ -603,9 +603,9 @@ DEFINE_FUNCTION(LocateLine) {
 }
 
 
-static bool hasGCTrace = false;
-static JSGCCallback prevGCCallback = NULL;
-static char GCTraceFileName[PATH_MAX];
+static bool hasGCTrace = false; // (TBD) fix static keyword issue
+static JSGCCallback prevGCCallback = NULL; // (TBD) fix static keyword issue
+static char GCTraceFileName[PATH_MAX]; // (TBD) fix static keyword issue
 
 JSBool GCCallTrace(JSContext *cx, JSGCStatus status) {
 

@@ -3,6 +3,9 @@ LoadModule('jsstd');
 LoadModule('jsio');
 
 
+throw { valueOf: function() 123 };
+
+
 var b = Blob("testxxx");
 b.foo = 12345;
 var xdrData = XdrEncode(b);

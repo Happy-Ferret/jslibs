@@ -36,7 +36,7 @@ DEFINE_FINALIZE() {
 **/
 DEFINE_CONSTRUCTOR() {
 
-	static ode::dSurfaceParameters initSurfaceParameters = {0};
+	static const ode::dSurfaceParameters initSurfaceParameters = {0};
 	J_S_ASSERT_CONSTRUCTING();
 	J_S_ASSERT_THIS_CLASS();
 	ode::dSurfaceParameters *data = (ode::dSurfaceParameters*)malloc(sizeof(ode::dSurfaceParameters));

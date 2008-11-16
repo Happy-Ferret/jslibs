@@ -20,7 +20,7 @@
 
 inline JSClass* BlobJSClass( JSContext *cx ) {
 
-	static JSClass *jsClass = NULL;
+	static JSClass *jsClass = NULL; // it's safe to use static keyword because JSClass do not depend on the rt or cx.
 	if ( jsClass == NULL )
 		jsClass = GetGlobalClassByName(cx, "Blob");
 	return jsClass;

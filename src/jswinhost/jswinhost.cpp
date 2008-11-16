@@ -124,7 +124,11 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 	//#pragma comment (lib, "User32.lib")
 	//MessageBox(NULL, scriptName, "script name", 0);
 
-	ExecuteScriptFileName(cx, scriptName, false, 2, argv, &rval);
+	if ( !ExecuteScriptFileName(cx, scriptName, false, 2, argv, &rval) ) {
+
+		if ( JS_IsExceptionPending(cx) )
+				JS_ReportPendingException(cx); // see JSOPTION_DONT_REPORT_UNCAUGHT option.
+	}
 
 	DestroyHost(cx);
 	JS_ShutDown();
