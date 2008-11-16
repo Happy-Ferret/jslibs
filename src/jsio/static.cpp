@@ -29,7 +29,7 @@ BEGIN_STATIC
 **/
 
 /**doc
- * $INT *Pool*( _descriptorArray_ [, _timeout_ = undefined ] )
+ * $INT $INAME( _descriptorArray_ [, _timeout_ = undefined ] )
   This function listen for a readable, writable or exception event on each descriptor in _descriptorArray_.
   When an event occurs, the function tries to call the corresponding property (function) on the descriptor.
   $LF
