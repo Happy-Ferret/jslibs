@@ -15,13 +15,13 @@
 #ifndef _PLATFORM_H_
 #define _PLATFORM_H_
 
-#ifdef __cplusplus
+#if defined __cplusplus
 	#define EXTERN_C extern "C"
 #else
 	#define EXTERN_C
 #endif // __cplusplus
 
-#ifdef _DEBUG
+#if defined _DEBUG
 	#define DEBUG
 #endif // _DEBUG
 
@@ -38,7 +38,7 @@
 	#define unlikely(expr)	!!(expr)
 #endif
 
-#ifdef _MSC_VER
+#if defined _MSC_VER
 	#pragma warning(disable : 4244 4305)  // for VC++, no precision loss complaints
 	#pragma warning(disable : 4127)  // no "conditional expression is constant" complaints
 	#pragma warning(disable : 4311) // warning C4311: 'variable' : pointer truncation from 'type' to 'type'
@@ -49,7 +49,7 @@
 	#pragma warning(error : 4715) // force error for: not all control paths return a value
 	#pragma warning(error : 4018) // force error for: warning C4018: '<' : signed/unsigned mismatch
 	#pragma warning(error : 4309) // force error for: warning C4309: 'initializing' : truncation of constant value
-#endif // #ifdef WIN32
+#endif // #if defined WIN32
 
 #include <limits.h>
 #include <sys/types.h>
@@ -112,7 +112,7 @@
 	#define PATH_SEPARATOR '/'
 	#define LLONG long long
 
-	#ifdef HAVE_GCCVISIBILITYPATCH
+	#if defined HAVE_GCCVISIBILITYPATCH
 		#define DLLEXPORT __attribute__ ((visibility("default")))
 		#define DLLLOCAL __attribute__ ((visibility("hidden")))
 	#else
@@ -134,7 +134,7 @@
 	#define PATH_SEPARATOR '/'
 	#define LLONG long long
 
-	#ifdef HAVE_GCCVISIBILITYPATCH
+	#if defined HAVE_GCCVISIBILITYPATCH
 		#define DLLEXPORT __attribute__ ((visibility("default")))
 		#define DLLLOCAL __attribute__ ((visibility("hidden")))
 	#else
@@ -183,12 +183,12 @@ inline char* IntegerToString(int val, int base) {
 
 inline double AccurateTimeCounter() {
 
-#ifdef XP_WIN
+#if defined XP_WIN
 	LARGE_INTEGER frequency, performanceCount;
 	BOOL result = ::QueryPerformanceFrequency(&frequency);
 	result = ::QueryPerformanceCounter(&performanceCount);
 	return 1000 * performanceCount.QuadPart / (double)frequency.QuadPart;
-#elif XP_UNIX
+#elif defined XP_UNIX
 	struct timeval time;
 	struct timezone tz;
 	gettimeofday(&time, &tz);
@@ -200,9 +200,9 @@ inline double AccurateTimeCounter() {
 
 inline int JLProcessId() {
 
-#ifdef XP_WIN
+#if defined XP_WIN
 	return getpid();
-#elif XP_UNIX
+#elif defined XP_UNIX
 	return getpid();
 #endif // XP_UNIX
 	return -1; // (TBD)
@@ -213,7 +213,7 @@ inline u_int32_t JLSessionId() {
 	u_int32_t r = 0x12345678;
 	r ^= (u_int32_t)AccurateTimeCounter();
 	r ^= (u_int32_t)JLProcessId();
-#ifdef XP_WIN
+#if defined XP_WIN
 //	r ^= (u_int32_t)GetModuleHandle(NULL);
 	MEMORYSTATUS status;
 	GlobalMemoryStatus( &status );
@@ -226,7 +226,12 @@ inline u_int32_t JLSessionId() {
 // Atomic operations
 	// MS doc: http://msdn.microsoft.com/en-us/library/ms686360.aspx
 
-	typedef LONG volatile * JLAtomicPtr;
+
+	#if defined XP_WIN
+	typedef volatile LONG * JLAtomicPtr;
+	#elif defined XP_UNIX
+	typedef volatile long * JLAtomicPtr;
+	#endif // XP_UNIX
 
 	inline bool JLAtomicInc( JLAtomicPtr ptr ) {
 
@@ -243,26 +248,28 @@ inline u_int32_t JLSessionId() {
 	}
 
 
-#ifdef XP_WIN
-#elif XP_UNIX
-#include <synch.h>
+#if defined XP_WIN
+#elif defined XP_UNIX
+#include <stdlib.h> // malloc()
+#include <pthread.h>
+#include <sched.h>
 #include <semaphore.h>
 #endif
 
 
 // semaphores
-	#ifdef XP_WIN
+	#if defined XP_WIN
 	typedef HANDLE JLSemaphoreHandler;
-	#elif XP_UNIX
+	#elif defined XP_UNIX
 	typedef sem_t* JLSemaphoreHandler;
 	#endif
 
 
 	inline JLSemaphoreHandler JLCreateSemaphore( int initCount ) {
 
-		#ifdef XP_WIN
+		#if defined XP_WIN
 		return CreateSemaphore(NULL, initCount, LONG_MAX, NULL);
-		#elif XP_UNIX
+		#elif defined XP_UNIX
 		sem_t *sem = (sem_t*)malloc(sizeof(sem_t)); // (TBD) max ???
 		sem_init(sem, 0, initCount);
 		return sem;
@@ -278,9 +285,9 @@ inline u_int32_t JLSessionId() {
 
 		if ( !JLSemaphoreOk(semaphore) )
 			return;
-		#ifdef XP_WIN
+		#if defined XP_WIN
 		WaitForSingleObject(semaphore, INFINITE);
-		#elif XP_UNIX
+		#elif defined XP_UNIX
 		sem_wait(semaphore);
 		#endif
 	}
@@ -289,9 +296,9 @@ inline u_int32_t JLSessionId() {
 
 		if ( !JLSemaphoreOk(semaphore) )
 			return;
-		#ifdef XP_WIN
+		#if defined XP_WIN
 		ReleaseSemaphore(semaphore, 1, NULL);
-		#elif XP_UNIX
+		#elif defined XP_UNIX
 		sem_post(semaphore);
 		#endif
 	}
@@ -300,9 +307,9 @@ inline u_int32_t JLSessionId() {
 		
 		if ( !pSemaphore || !JLSemaphoreOk(*pSemaphore) )
 			return;
-		#ifdef XP_WIN
+		#if defined XP_WIN
 		CloseHandle(*pSemaphore);
-		#elif XP_UNIX
+		#elif defined XP_UNIX
 		sem_destroy(*pSemaphore);
 		#endif
 		*pSemaphore = (JLSemaphoreHandler)0;
@@ -310,19 +317,19 @@ inline u_int32_t JLSessionId() {
 
 
 // mutex
-	#ifdef XP_WIN
+	#if defined XP_WIN
 	typedef HANDLE JLMutexHandler;
-	#elif XP_UNIX	
-	typedef mutex_t* JLMutexHandler;
+	#elif defined XP_UNIX	
+	typedef pthread_mutex_t* JLMutexHandler;
 	#endif
 
 	inline JLMutexHandler JLCreateMutex() {
 		
-		#ifdef XP_WIN
+		#if defined XP_WIN
 		return CreateMutex(NULL, FALSE, NULL);
-		#elif XP_UNIX
-		mutex_t *mutex = (mutex_t*)malloc(sizeof(mutex_t));
-		mutex_init(USYNC_THREAD, mutex, NULL);
+		#elif defined XP_UNIX
+		pthread_mutex_t *mutex = (pthread_mutex_t*)malloc(sizeof(pthread_mutex_t));
+		pthread_mutex_init(mutex, NULL);
 		return mutex;
 		#endif
 	}
@@ -336,10 +343,10 @@ inline u_int32_t JLSessionId() {
 
 		if ( !JLMutexOk(mutex) )
 			return;
-		#ifdef XP_WIN
+		#if defined XP_WIN
 		WaitForSingleObject(mutex, INFINITE);
-		#elif XP_UNIX
-		mutex_lock(mutex);
+		#elif defined XP_UNIX
+		pthread_mutex_lock(mutex);
 		#endif
 	}
 
@@ -347,10 +354,10 @@ inline u_int32_t JLSessionId() {
 	
 		if ( !JLMutexOk(mutex) )
 			return;
-		#ifdef XP_WIN
+		#if defined XP_WIN
 		ReleaseMutex(mutex);
-		#elif XP_UNIX
-		mutex_unlock(mutex);
+		#elif defined XP_UNIX
+		pthread_mutex_unlock(mutex);
 		#endif
 	}
 
@@ -358,16 +365,18 @@ inline u_int32_t JLSessionId() {
 		
 		if ( !pMutex || !JLMutexOk(*pMutex) )
 			return;
-		#ifdef XP_WIN
+		#if defined XP_WIN
 		CloseHandle(*pMutex);
-		#elif XP_UNIX
-		mutex_destroy(*pMutex);
+		#elif defined XP_UNIX
+		pthread_mutex_destroy(*pMutex);
 		#endif
 		*pMutex = (JLMutexHandler)0;
 	}
 
 // thread
-	#ifdef XP_WIN
+//   Linux: https://computing.llnl.gov/tutorials/pthreads/#PthreadsAPI
+
+	#if defined XP_WIN
 		#define JL_THREAD_PRIORITY_LOWEST THREAD_PRIORITY_LOWEST
 		#define JL_THREAD_PRIORITY_LOW THREAD_PRIORITY_BELOW_NORMAL
 		#define JL_THREAD_PRIORITY_NORMAL THREAD_PRIORITY_ABOVE_NORMAL
@@ -376,22 +385,34 @@ inline u_int32_t JLSessionId() {
 		typedef int JLThreadPriorityType;
 		#define JLThreadFuncDecl DWORD WINAPI
 		typedef PTHREAD_START_ROUTINE JLThreadRoutine;
-	#elif XP_UNIX
+	#elif defined XP_UNIX
+		#define JL_THREAD_PRIORITY_LOWEST 0
+		#define JL_THREAD_PRIORITY_LOW 0
+		#define JL_THREAD_PRIORITY_NORMAL 0
+		#define JL_THREAD_PRIORITY_HIGH 0
+		typedef int JLThreadHandler;
+		typedef int JLThreadPriorityType;
+		#define JLThreadFuncDecl void*
+		typedef void*(*JLThreadRoutine)(void *);
 	#endif
 
-	inline bool JLThreadPriority( JLThreadHandler thread, JLThreadPriorityType priority ) {
+	inline void JLThreadPriority( JLThreadHandler thread, JLThreadPriorityType priority ) {
 
-		#ifdef XP_WIN
+		#if defined XP_WIN
 		SetThreadPriority(thread, priority);
-		#elif XP_UNIX
+		#elif defined XP_UNIX
+		// (TBD) see pthread_attr_getschedparam/pthread_attr_setschedparam
 		#endif
 	}
 
 	inline JLThreadHandler JLStartThread( JLThreadRoutine threadRoutine, void *pv ) {
 
-		#ifdef XP_WIN
+		#if defined XP_WIN
 		return (JLThreadHandler)CreateThread(NULL, 0, threadRoutine, pv, 0, NULL);
-		#elif XP_UNIX
+		#elif defined XP_UNIX
+		int rc, thread;
+		rc = pthread_create(&thread, NULL, threadRoutine, pv);
+		return rc ? 0 : thread;
 		#endif
 	}
 
@@ -404,10 +425,11 @@ inline u_int32_t JLSessionId() {
 
 		if ( !JLThreadOk(thread) )
 			return false;
-		#ifdef XP_WIN
+		#if defined XP_WIN
 		DWORD result = WaitForSingleObject( thread, 0 );
 		return result != WAIT_OBJECT_0; // else WAIT_TIMEOUT ?
-		#elif XP_UNIX
+		#elif defined XP_UNIX
+		return false; // FIXME
 		#endif
 	}
 
@@ -415,9 +437,9 @@ inline u_int32_t JLSessionId() {
 		
 		if ( !JLThreadOk(thread) )
 			return;
-		#ifdef XP_WIN
+		#if defined XP_WIN
 		WaitForSingleObject( thread, INFINITE ); // WAIT_OBJECT_0
-		#elif XP_UNIX
+		#elif defined XP_UNIX
 		#endif
 	}
 
@@ -425,26 +447,27 @@ inline u_int32_t JLSessionId() {
 
 		if ( !pThread || !JLThreadOk(*pThread) )
 			return;
-		#ifdef XP_WIN
+		#if defined XP_WIN
 		CloseHandle(*pThread);
-		#elif XP_UNIX
+		#elif defined XP_UNIX
+
 		#endif
 		*pThread = (JLThreadHandler)0;
 	}
 
 
 // dynamic libraries
-	#ifdef XP_WIN
+	#if defined XP_WIN
 	typedef HMODULE JLLibraryHandler;
-	#elif XP_UNIX
+	#elif defined XP_UNIX
 	typedef void* JLLibraryHandler;
 	#endif
 
 	inline JLLibraryHandler JLDynamicLibraryOpen( const char *filename ) {
 
-		#ifdef XP_WIN
+		#if defined XP_WIN
 		return LoadLibrary(filename);
-		#elif XP_UNIX
+		#elif defined XP_UNIX
 		dlerror();
 		return dlopen( filename, RTLD_NOW );
 		#endif
@@ -457,9 +480,9 @@ inline u_int32_t JLSessionId() {
 
 	inline void *JLDynamicLibrarySymbol( JLLibraryHandler libraryHandler, const char *symbolName ) {
 
-		#ifdef XP_WIN
+		#if defined XP_WIN
 		return (void*)GetProcAddress(libraryHandler, symbolName);
-		#elif XP_UNIX
+		#elif defined XP_UNIX
 		dlerror();
 		return dlsym( libraryHandler, symbolName );
 		#endif
@@ -467,9 +490,9 @@ inline u_int32_t JLSessionId() {
 
 	inline void JLDynamicLibraryClose( JLLibraryHandler *libraryHandler ) {
 
-		#ifdef XP_WIN
+		#if defined XP_WIN
 		FreeLibrary(*libraryHandler);
-		#elif XP_UNIX
+		#elif defined XP_UNIX
 		dlerror();
 		dlclose( libraryHandler );
 		#endif
@@ -478,7 +501,7 @@ inline u_int32_t JLSessionId() {
 
 
 /* (TBD) manage error
-#ifdef XP_UNIX
+#if defined XP_UNIX
 	J_S_ASSERT_2( id != 0, "Unable to load the module \"%s\": %s", libFileName, dlerror() );
 #else // XP_UNIX
 	J_S_ASSERT_2( id != 0, "Unable to load the module \"%s\": %x", libFileName, GetLastError() );
