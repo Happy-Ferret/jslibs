@@ -108,13 +108,19 @@ JSBool Task(JSContext *cx, Private *pv) {
 
 		JLAcquireSemaphore(pv->requestSem); // wait for a request
 
+
 		for (;;) {
 
 			JLAcquireMutex(pv->mutex);
-			if ( QueueIsEmpty(&pv->requestList) || pv->end ) {
-				
+			if ( pv->end ) {
+
 				JLReleaseMutex(pv->mutex);
 				goto end;
+			}
+			if ( QueueIsEmpty(&pv->requestList) ) {
+
+				JLReleaseMutex(pv->mutex);
+				break;
 			}
 
 			Serialized serializedRequest = (Serialized)QueueShift(&pv->requestList);
@@ -205,8 +211,6 @@ JLThreadFuncDecl ThreadProc( void *threadArg ) {
 	// (TBD) need a better error management when we cannot create the context
 	if ( status == JS_TRUE ) {
 
-		JS_ToggleOptions(cx, JS_GetOptions(cx) | JSOPTION_DONT_REPORT_UNCAUGHT);
-
 		Private *pv = (Private*)threadArg;
 
 		status = Task(cx, pv);
@@ -262,7 +266,6 @@ DEFINE_CONSTRUCTOR() {
 
 	Private *pv = (Private*)JS_malloc(cx, sizeof(Private));
 	J_S_ASSERT_ALLOC(pv);
-	J_CHKB( JS_SetPrivate(cx, obj, pv), bad1 );
 
 	JLThreadPriorityType priority;
 	if ( J_ARG_ISDEF(2) ) {
@@ -283,6 +286,8 @@ DEFINE_CONSTRUCTOR() {
 				J_REPORT_ERROR("Invalid thread priority.");
 		}
 	}
+
+	J_CHKB( JS_SetPrivate(cx, obj, pv), bad1 );
 
 	pv->mutex = JLCreateMutex();
 	pv->end = false;
@@ -323,10 +328,9 @@ DEFINE_FUNCTION_FAST( Request ) {
 	J_CHK( SerializeJsval(cx, &serializedRequest, &J_FARG(1)) );
 	JLAcquireMutex(pv->mutex);
 	QueuePush(&pv->requestList, serializedRequest);
-	pv->pendingRequestCount++;
+	if ( pv->pendingRequestCount++ == 0 )
+		JLReleaseSemaphore(pv->requestSem); // signals a request
 	JLReleaseMutex(pv->mutex);
-	JLReleaseSemaphore(pv->requestSem); // signals a request
-
 	return JS_TRUE;
 }
 

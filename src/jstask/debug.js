@@ -10,6 +10,8 @@ function MyTask( request, index ) {
 		LoadModule('jsio');
 	}
 	
+	for ( var i = 0; i<100000; i++);
+	
 	return Map({1:'aaa', 2:Blob('123')});
 
 /*	
@@ -38,7 +40,7 @@ var t1 = new Task(MyTask, -1);
 for ( var i = 0; i < 50; i++ )
 	t1.Request('request '+i);
 
-Sleep(100);
+
 
 while ( t1.pendingRequestCount || t1.pendingResponseCount ) {
 

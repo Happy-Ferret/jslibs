@@ -321,6 +321,16 @@ inline u_int32_t JLSessionId() {
 
 
 // mutex
+/* notes:
+	A normal mutex cannot be locked repeatedly by the owner. 
+	Attempts by a thread to relock an already held mutex, 
+	or to lock a mutex that was held by another thread when that thread terminated result in a deadlock condition.
+	PTHREAD_MUTEX_NORMAL
+	A recursive mutex can be locked repeatedly by the owner. 
+	The mutex doesn't become unlocked until the owner has called pthread_mutex_unlock() for
+	each successful lock request that it has outstanding on the mutex.
+	PTHREAD_MUTEX_RECURSIVE
+*/
 	#if defined XP_WIN
 	typedef HANDLE JLMutexHandler;
 	#elif defined XP_UNIX	
