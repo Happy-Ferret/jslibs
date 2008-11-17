@@ -156,30 +156,51 @@ inline void SetHostPrivate( JSContext *cx, HostPrivate *hostPrivate ) {
 
 
 // check: used to forward an error.
-#define J_CHK( status ) \
-	do { \
-		if (unlikely(!(status))) { return JS_FALSE; } \
-	} while(0) \
+#define J_CHK( status ) do { \
+	if (unlikely(!(status))) { return JS_FALSE; } \
+} while(0)
 
 // check with message: if status is false, a js exception is rised if it is not already pending.
-#define J_CHKM( status, errorMessage ) \
-	do { \
-		if (unlikely( !(status) )) { \
-			if ( !JS_IsExceptionPending(cx) ) \
-				JS_ReportError(cx, (errorMessage IFDEBUG(" (@" J__CODE_LOCATION ")"))); \
-			return JS_FALSE; \
-		} \
-	} while(0) \
+#define J_CHKM( status, errorMessage ) do { \
+	if (unlikely( !(status) )) { \
+		if ( !JS_IsExceptionPending(cx) ) \
+			JS_ReportError(cx, (errorMessage IFDEBUG(" (@" J__CODE_LOCATION ")"))); \
+		return JS_FALSE; \
+	} \
+} while(0)
 
 // check with message and argument (printf like)
-#define J_CHKM1( status, errorMessage, arg ) \
-	do { \
-		if (unlikely( !(status) )) { \
-			if ( !JS_IsExceptionPending(cx) ) \
-				JS_ReportError(cx, (errorMessage IFDEBUG(" (@" J__CODE_LOCATION ")")), (arg)); \
-			return JS_FALSE; \
-		} \
-	} while(0)
+#define J_CHKM1( status, errorMessage, arg ) do { \
+	if (unlikely( !(status) )) { \
+		if ( !JS_IsExceptionPending(cx) ) \
+			JS_ReportError(cx, (errorMessage IFDEBUG(" (@" J__CODE_LOCATION ")")), (arg)); \
+		return JS_FALSE; \
+	} \
+} while(0)
+
+// check and branch to a errorLabel label on error.
+#define J_CHKB( status, errorLabel ) do { \
+	if (unlikely(!(status))) { goto errorLabel; } \
+} while(0)
+
+// check and branch to a errorLabel label on error.
+#define J_CHKBM( status, errorLabel, errorMessage ) do { \
+	if (unlikely( !(status) )) { \
+		if ( !JS_IsExceptionPending(cx) ) \
+			JS_ReportError(cx, (errorMessage IFDEBUG(" (@" J__CODE_LOCATION ")")), (arg)); \
+		goto errorLabel; \
+	} \
+} while(0)
+
+// check and branch to a errorLabel label on error.
+#define J_CHKBM1( status, errorLabel, errorMessage ) do { \
+	if (unlikely( !(status) )) { \
+		if ( !JS_IsExceptionPending(cx) ) \
+			JS_ReportError(cx, (errorMessage IFDEBUG(" (@" J__CODE_LOCATION ")")), (arg)); \
+		goto errorLabel; \
+	} \
+} while(0)
+
 
 
 inline bool JsvalIsClass(JSContext *cx, jsval val, JSClass *jsClass) {

@@ -262,7 +262,7 @@ DEFINE_CONSTRUCTOR() {
 
 	Private *pv = (Private*)JS_malloc(cx, sizeof(Private));
 	J_S_ASSERT_ALLOC(pv);
-	J_CHK( JS_SetPrivate(cx, obj, pv) );
+	J_CHKB( JS_SetPrivate(cx, obj, pv), bad1 );
 
 	JLThreadPriorityType priority;
 	if ( J_ARG_ISDEF(2) ) {
@@ -298,13 +298,16 @@ DEFINE_CONSTRUCTOR() {
 	QueueInitialize(&pv->exceptionList);
 
 	SerializerCreate(&pv->serializedCode);
-	J_CHK( SerializeJsval(cx, &pv->serializedCode, &J_ARG(1)) );
+	J_CHKB( SerializeJsval(cx, &pv->serializedCode, &J_ARG(1)), bad1 );
 
 	pv->threadHandle = JLStartThread(ThreadProc, pv);
 
 	J_S_ASSERT( JLThreadOk(pv->threadHandle), "Unable to create the thread." );
 
 	return JS_TRUE;
+bad1:
+	JS_free(cx, pv);
+	return JS_FALSE;
 }
 
 

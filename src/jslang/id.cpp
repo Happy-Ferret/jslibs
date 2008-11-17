@@ -15,7 +15,7 @@
 #include "stdafx.h"
 #include "idPub.h"
 
-// the aim of  globalKey  is to ensure that a pointer in the process's virtual memory space can be serialized and unserializes safely.
+// the aim of *globalKey* is to ensure that a pointer in the process's virtual memory space can be serialized and unserializes safely.
 static uint32 globalKey = 0;
 
 BEGIN_CLASS( Id )
@@ -40,8 +40,7 @@ DEFINE_HAS_INSTANCE() { // see issue#52
 DEFINE_INIT() {
 
 	J_SAFE_BEGIN
-		while ( globalKey == 0 )
-			globalKey = JLSessionId();
+		globalKey = JLSessionId();
 	J_SAFE_END
 	return JS_TRUE;
 }
@@ -82,11 +81,9 @@ DEFINE_XDR() {
 
 
 CONFIGURE_CLASS
-
 	HAS_INIT
 	HAS_PRIVATE
 	HAS_FINALIZE
 	HAS_HAS_INSTANCE
 //	HAS_XDR
-
 END_CLASS
