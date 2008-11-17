@@ -39,6 +39,7 @@
 #endif
 
 #if defined _MSC_VER
+	// disable warnings:
 	#pragma warning(disable : 4244 4305)  // for VC++, no precision loss complaints
 	#pragma warning(disable : 4127)  // no "conditional expression is constant" complaints
 	#pragma warning(disable : 4311) // warning C4311: 'variable' : pointer truncation from 'type' to 'type'
@@ -46,9 +47,12 @@
 	#pragma warning(disable : 4267) // warning C4267: 'var' : conversion from 'size_t' to 'type', possible loss of data
 	#pragma warning(disable : 4996) // warning C4996: 'function': was declared deprecated
 	#pragma warning(disable : 4100) // warning C4100: 'xxx' : unreferenced formal parameter
-	#pragma warning(error : 4715) // force error for: not all control paths return a value
-	#pragma warning(error : 4018) // force error for: warning C4018: '<' : signed/unsigned mismatch
-	#pragma warning(error : 4309) // force error for: warning C4309: 'initializing' : truncation of constant value
+	// force warning to error:
+	#pragma warning(error : 4715) // not all control paths return a value
+	#pragma warning(error : 4018) // warning C4018: '<' : signed/unsigned mismatch
+	#pragma warning(error : 4309) // warning C4309: 'initializing' : truncation of constant value
+	#pragma warning(error : 4700) // warning C4700: uninitialized local variable 'xxx' used
+
 #endif // #if defined WIN32
 
 #include <limits.h>
@@ -219,7 +223,7 @@ inline u_int32_t JLSessionId() {
 	GlobalMemoryStatus( &status );
 	r ^= (u_int32_t)status.dwAvailPhys;
 #endif // XP_WIN
-	return r;
+	return r ? r : 1; // avoid returning 0
 }
 
 
@@ -390,7 +394,7 @@ inline u_int32_t JLSessionId() {
 		#define JL_THREAD_PRIORITY_LOW 0
 		#define JL_THREAD_PRIORITY_NORMAL 0
 		#define JL_THREAD_PRIORITY_HIGH 0
-		typedef int JLThreadHandler;
+		typedef pthread_t* JLThreadHandler;
 		typedef int JLThreadPriorityType;
 		#define JLThreadFuncDecl void*
 		typedef void*(*JLThreadRoutine)(void *);
@@ -401,7 +405,7 @@ inline u_int32_t JLSessionId() {
 		#if defined XP_WIN
 		SetThreadPriority(thread, priority);
 		#elif defined XP_UNIX
-		// (TBD) see pthread_attr_getschedparam/pthread_attr_setschedparam
+		// (TBD) FIXME, see pthread_attr_getschedparam/pthread_attr_setschedparam
 		#endif
 	}
 
@@ -410,8 +414,9 @@ inline u_int32_t JLSessionId() {
 		#if defined XP_WIN
 		return (JLThreadHandler)CreateThread(NULL, 0, threadRoutine, pv, 0, NULL);
 		#elif defined XP_UNIX
-		int rc, thread;
-		rc = pthread_create(&thread, NULL, threadRoutine, pv);
+		pthread_t *thread = (pthread_t*)malloc(sizeof(pthread_t));
+		int rc;
+		rc = pthread_create(thread, NULL, threadRoutine, pv);
 		return rc ? 0 : thread;
 		#endif
 	}
@@ -429,7 +434,7 @@ inline u_int32_t JLSessionId() {
 		DWORD result = WaitForSingleObject( thread, 0 );
 		return result != WAIT_OBJECT_0; // else WAIT_TIMEOUT ?
 		#elif defined XP_UNIX
-		return false; // FIXME
+		return false; // (TBD) FIXME
 		#endif
 	}
 
@@ -440,6 +445,7 @@ inline u_int32_t JLSessionId() {
 		#if defined XP_WIN
 		WaitForSingleObject( thread, INFINITE ); // WAIT_OBJECT_0
 		#elif defined XP_UNIX
+		// (TBD) FIXME
 		#endif
 	}
 
@@ -450,7 +456,7 @@ inline u_int32_t JLSessionId() {
 		#if defined XP_WIN
 		CloseHandle(*pThread);
 		#elif defined XP_UNIX
-
+		// (TBD) FIXME
 		#endif
 		*pThread = (JLThreadHandler)0;
 	}
