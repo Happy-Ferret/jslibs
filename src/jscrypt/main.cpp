@@ -117,6 +117,7 @@ extern "C" DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	INIT_CLASS( Prng );
 	INIT_CLASS( Hash );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 

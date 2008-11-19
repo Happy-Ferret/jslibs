@@ -52,6 +52,7 @@ DEFINE_FUNCTION( Base64Encode ) {
 	*rval = STRING_TO_JSVAL(jssOutData);
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -79,6 +80,7 @@ DEFINE_FUNCTION( Base64Decode ) {
 	J_CHK( J_NewBlob( cx, out, outLength, rval ) );
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -91,6 +93,7 @@ DEFINE_FUNCTION( HexEncode ) {
 	static const char hex[] = "0123456789ABCDEF";
 
 	J_S_ASSERT_ARG_MIN( 1 );
+
 	J_S_ASSERT_STRING(argv[0]);
 
 	const char *in;
@@ -115,6 +118,7 @@ DEFINE_FUNCTION( HexEncode ) {
 	*rval = STRING_TO_JSVAL(jssOutData);
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 #define XX 0
@@ -153,6 +157,7 @@ DEFINE_FUNCTION( HexDecode ) {
 	J_CHK( J_NewBlob( cx, out, outLength, rval ) );
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 

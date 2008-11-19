@@ -40,7 +40,7 @@ static JSBool J_ReportError( JSContext *cx, J_ErrNum name ) {
 	else
 		JS_ReportError(cx, "Failed to get the ErrorCallback.");
 	JS_ReportErrorNumber(cx, errorCallback, NULL, name);
-	return JS_FALSE;
+	JL_BAD;
 }
 
 #endif // _JSERRORS_H_

@@ -88,6 +88,7 @@ DEFINE_CONSTRUCTOR() {
 	}
 	J_CHK( JS_SetPrivate(cx, obj, pv) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -235,6 +236,7 @@ DEFINE_CALL() {
 	}
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -274,6 +276,7 @@ DEFINE_PROPERTY( list ) {
 		iconvlist(do_one, &ipv);
 	}
 	return JS_TRUE;
+	JL_BAD;
 }
 
 

@@ -51,6 +51,7 @@ DEFINE_CONSTRUCTOR() {
 
 	J_CHK( JS_SetPrivate(cx, obj, pv) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -68,6 +69,7 @@ DEFINE_FUNCTION_FAST( valueOf ) {
 
 	J_CHK( UIntToJsval(cx, pv->effect, J_FRVAL) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -104,6 +106,7 @@ DEFINE_PROPERTY_SETTER( type ) {
 	J_CHK( CheckThrowCurrentOalError(cx) );
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY_GETTER( type ) {
@@ -117,6 +120,7 @@ DEFINE_PROPERTY_GETTER( type ) {
 
 	J_CHK( IntToJsval(cx, effectType, vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -129,6 +133,7 @@ DEFINE_FUNCTION_FAST( Test ) {
 
 	J_CHK( CheckThrowCurrentOalError(cx) );
 	return JS_TRUE;
+	JL_BAD;
 }
 */
 
@@ -142,6 +147,7 @@ DEFINE_PROPERTY_SETTER( effectFloat ) {
 	alEffectf(pv->effect, param, f);
 	J_CHK( CheckThrowCurrentOalError(cx) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY_GETTER( effectFloat ) {
@@ -154,6 +160,7 @@ DEFINE_PROPERTY_GETTER( effectFloat ) {
 	J_CHK( CheckThrowCurrentOalError(cx) );
 	J_CHK( FloatToJsval(cx, f, vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY_SETTER( effectInt ) {
@@ -166,6 +173,7 @@ DEFINE_PROPERTY_SETTER( effectInt ) {
 	alEffecti(pv->effect, param, i);
 	J_CHK( CheckThrowCurrentOalError(cx) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY_GETTER( effectInt ) {
@@ -178,6 +186,7 @@ DEFINE_PROPERTY_GETTER( effectInt ) {
 	J_CHK( CheckThrowCurrentOalError(cx) );
 	J_CHK( IntToJsval(cx, i, vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY_SETTER( effectBool ) {
@@ -190,6 +199,7 @@ DEFINE_PROPERTY_SETTER( effectBool ) {
 	alEffecti(pv->effect, param, b ? AL_TRUE : AL_FALSE);
 	J_CHK( CheckThrowCurrentOalError(cx) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY_GETTER( effectBool ) {
@@ -202,6 +212,7 @@ DEFINE_PROPERTY_GETTER( effectBool ) {
 	J_CHK( CheckThrowCurrentOalError(cx) );
 	*vp = i == AL_TRUE ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 

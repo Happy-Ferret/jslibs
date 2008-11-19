@@ -91,6 +91,7 @@ JSBool EndSignalGetter(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 
 	J_CHK( BoolToJsval(cx, gEndSignal, vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 JSBool EndSignalSetter(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
@@ -99,6 +100,7 @@ JSBool EndSignalSetter(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 	J_CHK( JsvalToBool(cx, *vp, &tmp) );
 	gEndSignal = tmp;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 

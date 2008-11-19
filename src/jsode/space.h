@@ -21,4 +21,5 @@ inline JSBool ValToSpaceID( JSContext *cx, jsval val, ode::dSpaceID *spaceId ) {
 	J_S_ASSERT_CLASS(obj, classSpace);
 	*spaceId = (ode::dSpaceID)JS_GetPrivate(cx,obj);
 	return JS_TRUE;
+	JL_BAD;
 }

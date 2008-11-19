@@ -40,6 +40,7 @@ DEFINE_CONSTRUCTOR() {
 	ode::dJointID jointId = ode::dJointCreateHinge(worldId, 0); // The joint group ID is 0 to allocate the joint normally.
 	JS_SetPrivate(cx, obj, jointId);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -56,6 +57,7 @@ DEFINE_FUNCTION( AddTorque ) {
 	JS_ValueToNumber(cx, argv[0], &torque);
 	ode::dJointAddHingeTorque(jointId, torque);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -78,6 +80,7 @@ DEFINE_PROPERTY( anchorSetter ) {
 	J_S_ASSERT( length == 3, "Invalid array size." );
 	ode::dJointSetHingeAnchor( jointId, vector[0], vector[1], vector[2] );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY( anchorGetter ) {
@@ -89,6 +92,7 @@ DEFINE_PROPERTY( anchorGetter ) {
 	//FloatVectorToArray(cx, 3, vector, vp);
 	J_CHK( FloatVectorToJsval(cx, vector, 3, vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -104,6 +108,7 @@ DEFINE_PROPERTY( anchor2 ) { // read only
 	//FloatVectorToArray(cx, 3, vector, vp);
 	J_CHK( FloatVectorToJsval(cx, vector, 3, vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -121,6 +126,7 @@ DEFINE_PROPERTY( axisSetter ) {
 	J_S_ASSERT( length == 3, "Invalid array size." );
 	ode::dJointSetHingeAxis( jointId, vector[0], vector[1], vector[2] );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY( axisGetter ) {
@@ -132,6 +138,7 @@ DEFINE_PROPERTY( axisGetter ) {
 	//FloatVectorToArray(cx, 3, vector, vp);
 	J_CHK( FloatVectorToJsval(cx, vector, 3, vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -144,6 +151,7 @@ DEFINE_PROPERTY( angle ) {
 	J_S_ASSERT_RESOURCE(jointId);
 	JS_NewDoubleValue(cx, ode::dJointGetHingeAngle(jointId), vp);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -156,6 +164,7 @@ DEFINE_PROPERTY( angleRate ) {
 	J_S_ASSERT_RESOURCE(jointId);
 	JS_NewDoubleValue(cx, ode::dJointGetHingeAngleRate(jointId), vp);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 CONFIGURE_CLASS

@@ -212,6 +212,7 @@ inline JSBool InitLevelData( JSContext* cx, jsval value, int count, PTYPE *level
 
 //	J_REPORT_ERROR("Invalid level data.");
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -272,6 +273,7 @@ inline JSBool InitCurveData( JSContext* cx, jsval value, int length, float *curv
 			curve[i] = PMAX;
 	}
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -291,6 +293,7 @@ JSBool NativeInterfaceBufferGet( JSContext *cx, JSObject *obj, const char **buf,
 	*buf = (char*)tex->cbuffer;
 	*size = tex->width * tex->height * tex->channels * sizeof(PTYPE);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -308,6 +311,7 @@ JSBool ValueToTexture( JSContext* cx, jsval value, Texture **tex ) {
 	*tex = (Texture *)JS_GetPrivate(cx, texObj);
 	J_S_ASSERT_RESOURCE(tex);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 inline void FreeTextureBuffers( JSContext* cx, Texture *tex ) {
@@ -442,6 +446,7 @@ DEFINE_CONSTRUCTOR() {
 	}
 
 	J_REPORT_ERROR( "Invalid arguments" );
+	JL_BAD;
 }
 
 /**doc
@@ -461,6 +466,7 @@ DEFINE_FUNCTION( Free ) {
 	if ( tex != NULL )
 		FreeTextureBuffers(cx, tex);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -492,6 +498,7 @@ DEFINE_FUNCTION_FAST( Swap ) {
 	J_CHK( JS_SetPrivate(cx, texObj, tmp) );
 	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -527,6 +534,7 @@ DEFINE_FUNCTION_FAST( ClearChannel ) {
 	}
 	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -576,6 +584,7 @@ DEFINE_FUNCTION_FAST( SetChannel ) {
 
 	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -637,6 +646,7 @@ DEFINE_FUNCTION_FAST( ToHLS ) { // (TBD) test it
 
 	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 // (TBD) PTYPE
@@ -697,6 +707,7 @@ DEFINE_FUNCTION_FAST( ToRGB ) { // (TBD) test it
 
 	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -759,6 +770,7 @@ DEFINE_FUNCTION_FAST( Aliasing ) {
 
 	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -827,6 +839,7 @@ DEFINE_FUNCTION_FAST( Colorize ) {
 	}
 	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -882,6 +895,7 @@ DEFINE_FUNCTION_FAST( ExtractColor ) {
 	}
 	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -914,6 +928,7 @@ DEFINE_FUNCTION_FAST( NormalizeLevels ) {
 		tex->cbuffer[i] = PMAX * ( tex->cbuffer[i] - min ) / amp; // value is normalized to 0...PMAX
 	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -948,6 +963,7 @@ DEFINE_FUNCTION_FAST( ClampLevels ) { // (TBD) check if this algo is right
 	}
 	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -982,6 +998,7 @@ DEFINE_FUNCTION_FAST( CutLevels ) { // (TBD) check if this algo is right
 	}
 	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /*
@@ -1037,6 +1054,7 @@ DEFINE_FUNCTION_FAST( CutLevels ) {
 	}
 	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 	return JS_TRUE;
+	JL_BAD;
 }
 */
 
@@ -1054,6 +1072,7 @@ DEFINE_FUNCTION_FAST( InvertLevels ) { // level = 1 / level
 		tex->cbuffer[i] = 1 / tex->cbuffer[i];
 	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -1070,6 +1089,7 @@ DEFINE_FUNCTION_FAST( OppositeLevels ) { // level = -level
 		tex->cbuffer[i] =  - tex->cbuffer[i];
 	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -1092,6 +1112,7 @@ DEFINE_FUNCTION_FAST( PowLevels ) { //
 		tex->cbuffer[i] =  powf(tex->cbuffer[i], power);
 	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -1137,6 +1158,7 @@ DEFINE_FUNCTION_FAST( MirrorLevels ) {
 		}
 	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -1166,6 +1188,7 @@ DEFINE_FUNCTION_FAST( WrapLevels ) { // real modulo
 
 	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -1202,6 +1225,7 @@ DEFINE_FUNCTION_FAST( AddNoise ) {
 			tex->cbuffer[i] += PRAND * pixel[i % channels] / PMAX; //(TBD) test if i%channels works fine, else use double for loop
 	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -1267,6 +1291,7 @@ DEFINE_FUNCTION_FAST( Desaturate ) {
 	}
 	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -1310,6 +1335,7 @@ DEFINE_FUNCTION_FAST( Set ) {
 	}
 	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -1344,6 +1370,7 @@ DEFINE_FUNCTION_FAST( Add ) {
 	}
 	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -1402,6 +1429,7 @@ DEFINE_FUNCTION_FAST( Mult ) {
 
 	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -1474,6 +1502,7 @@ DEFINE_FUNCTION_FAST( Blend ) { // texture1, blenderTexture|blenderColor
 	}
 	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -1508,6 +1537,7 @@ DEFINE_FUNCTION_FAST( SetPixel ) { // x, y, levels
 
 	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -1559,6 +1589,7 @@ DEFINE_FUNCTION_FAST( SetRectangle ) {
 
 	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -1629,6 +1660,7 @@ DEFINE_FUNCTION_FAST( Rotate90 ) { // (TBD) test it
 
 	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -1669,6 +1701,7 @@ DEFINE_FUNCTION_FAST( Flip ) {
 	TextureSwapBuffers(tex);
 	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -1790,6 +1823,7 @@ DEFINE_FUNCTION_FAST( RotoZoom ) { // source: FxGen
 
 	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -1922,6 +1956,7 @@ DEFINE_FUNCTION_FAST( Resize ) {
 	}
 	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -2076,6 +2111,7 @@ DEFINE_FUNCTION_FAST( Convolution ) {
 	TextureSwapBuffers(tex);
 	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -2159,6 +2195,7 @@ DEFINE_FUNCTION_FAST( ForEachPixels ) {
 	TextureSwapBuffers(tex);
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -2244,6 +2281,7 @@ DEFINE_FUNCTION_FAST( BoxBlur ) {
 	free( line );
 	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -2279,6 +2317,7 @@ DEFINE_FUNCTION_FAST( NormalizeVectors ) {
 	}
 	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -2379,6 +2418,7 @@ DEFINE_FUNCTION_FAST( Normals ) {
 
 	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -2452,7 +2492,11 @@ DEFINE_FUNCTION_FAST( Light ) {
 		specularPower = 1;
 
 	Vector3Normalize(&lightPos);
-	Vector3 halfV = lightPos;
+	Vector3 halfV;
+	halfV.x = lightPos.x;
+	halfV.y = lightPos.y;
+	halfV.z = lightPos.z;
+
 	halfV.z += 1;
 	Vector3Normalize(&halfV);
 	Vector3 n;
@@ -2497,6 +2541,7 @@ DEFINE_FUNCTION_FAST( Light ) {
 		}
 	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -2568,6 +2613,7 @@ DEFINE_FUNCTION_FAST( Trim ) { // (TBD) test this new version that use memcpy
 
 	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -2642,6 +2688,7 @@ DEFINE_FUNCTION_FAST( Copy ) {
 
 	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -2717,6 +2764,7 @@ DEFINE_FUNCTION_FAST( Paste ) { // (Texture)texture, (int)x, (int)y, (bool)borde
 
 	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -2816,6 +2864,7 @@ DEFINE_FUNCTION_FAST( Export ) { // (int)x, (int)y, (int)width, (int)height. Ret
 	SetPropertyInt(cx, bstrObj, "channels", sChannels);
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -2915,6 +2964,7 @@ DEFINE_FUNCTION_FAST( Import ) { // (Blob)image, (int)x, (int)y
 
 	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -2996,6 +3046,7 @@ DEFINE_FUNCTION_FAST( Shift ) {
 	TextureSwapBuffers(tex);
 	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -3087,6 +3138,7 @@ DEFINE_FUNCTION_FAST( Displace ) {
 	TextureSwapBuffers(tex);
 	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -3185,6 +3237,7 @@ DEFINE_FUNCTION_FAST( Cells ) { // source: FxGen
 
 	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -3248,6 +3301,7 @@ DEFINE_FUNCTION_FAST( AddGradiantQuad ) {
 		}
 	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -3298,6 +3352,7 @@ DEFINE_FUNCTION_FAST( AddGradiantLinear ) {
 
 	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -3375,6 +3430,7 @@ DEFINE_FUNCTION_FAST( AddGradiantRadial ) {
 
 	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -3438,6 +3494,7 @@ DEFINE_FUNCTION( AddGradiantRadial ) {
 
 	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 	return JS_TRUE;
+	JL_BAD;
 }
 */
 
@@ -3545,6 +3602,7 @@ DEFINE_FUNCTION_FAST( AddCracks ) { // source: FxGen
 	free(curve);
 	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -3588,6 +3646,7 @@ DEFINE_FUNCTION_FAST( PixelAt ) {
 		JS_SetElement(cx, jsArray, i, &value);
 	}
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -3620,6 +3679,7 @@ DEFINE_FUNCTION_FAST( LevelRange ) {
 	J_CHK( DoubleVectorToJsval(cx, vector, 2, J_FRVAL) );
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -3639,6 +3699,7 @@ DEFINE_PROPERTY( vmax ) {
 
 	J_CHK( JS_NewNumberValue(cx, PMAX, vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -3653,6 +3714,7 @@ DEFINE_PROPERTY( width ) {
 	jsdouble d = tex->width;
 	J_CHK( JS_NewNumberValue(cx, d, vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -3667,6 +3729,7 @@ DEFINE_PROPERTY( height ) {
 	jsdouble d = tex->height;
 	J_CHK( JS_NewNumberValue(cx, d, vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -3681,6 +3744,7 @@ DEFINE_PROPERTY( channels ) {
 	jsdouble d = tex->channels;
 	J_CHK( JS_NewNumberValue(cx, d, vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -3712,6 +3776,7 @@ DEFINE_FUNCTION_FAST( RandSeed ) {
 	J_CHK( JsvalToUInt(cx, J_FARG(1), &seed) );
 	init_genrand(seed);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -3736,6 +3801,7 @@ DEFINE_FUNCTION_FAST( RandReal ) {
 	jsdouble d = genrand_real1();
 	J_CHK( JS_NewNumberValue(cx, d, J_FRVAL) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 

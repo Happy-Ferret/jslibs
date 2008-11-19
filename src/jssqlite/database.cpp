@@ -122,6 +122,7 @@ DEFINE_CONSTRUCTOR() {
 	JS_SetReservedSlot(cx, obj, SLOT_SQLITE_DATABASE_STATEMENT_STACK, PRIVATE_TO_JSVAL(NULL));
 	JS_SetPrivate( cx, obj, db );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -207,6 +208,7 @@ DEFINE_FUNCTION( Close ) {
 	if ( status != SQLITE_OK )
 		return SqliteThrowError( cx, status, sqlite3_errcode(db), sqlite3_errmsg(db) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -292,6 +294,7 @@ DEFINE_FUNCTION( Query ) {
 		JS_SetReservedSlot(cx, dbStatement, SLOT_RESULT_QUERY_ARGUMENT_OBJECT, argv[1]);
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -371,6 +374,7 @@ DEFINE_FUNCTION( Exec ) {
 		return SqliteThrowError( cx, status, sqlite3_errcode(sqlite3_db_handle(pStmt)), sqlite3_errmsg(sqlite3_db_handle(pStmt)) );
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -388,7 +392,8 @@ DEFINE_PROPERTY( lastInsertRowid ) {
 	sqlite3 *db = (sqlite3 *)JS_GetPrivate( cx, obj );
 	J_S_ASSERT_RESOURCE( db );
 	JS_NewNumberValue( cx, sqlite3_last_insert_rowid(db), vp ); // use JS_NewNumberValue because sqlite3_last_insert_rowid returns int64
-  return JS_TRUE;
+	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -407,7 +412,8 @@ DEFINE_PROPERTY( changes ) {
 	// Only changes that are directly specified by the INSERT, UPDATE, or DELETE statement are counted. Auxiliary changes caused by triggers are not counted. Use the sqlite3_total_changes() function to find the total number of changes including changes caused by triggers.
 	//JS_NewNumberValue( cx, sqlite3_changes(db), vp );
 	*vp = INT_TO_JSVAL( sqlite3_changes(db) );
-  return JS_TRUE;
+	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -546,6 +552,7 @@ DEFINE_SET_PROPERTY() {
 			return SqliteThrowError( cx, status, sqlite3_errcode(db), sqlite3_errmsg(db) );
 	}
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc

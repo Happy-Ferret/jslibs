@@ -107,6 +107,7 @@ DEFINE_CONSTRUCTOR() {
 	J_CHK( SetBufferGetInterface(cx, obj, BufferGet) );
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -121,6 +122,7 @@ DEFINE_PROPERTY( file ) {
 
 	J_CHK( JS_GetReservedSlot(cx, obj, MEMORYMAPPED_SLOT_FILE, vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc

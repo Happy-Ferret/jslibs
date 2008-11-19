@@ -53,6 +53,7 @@ DEFINE_CONSTRUCTOR() {
 	// ode::dHashSpaceSetLevels(spaceId,
 	// (TBD) use this
 	return JS_TRUE;
+	JL_BAD;
 }
 
 

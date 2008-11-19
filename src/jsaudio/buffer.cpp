@@ -70,6 +70,7 @@ DEFINE_CONSTRUCTOR() {
 
 	J_CHK( JS_SetPrivate(cx, obj, (void*)bid) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -84,6 +85,7 @@ DEFINE_FUNCTION_FAST( Free ) {
 	J_S_ASSERT_RESOURCE( bid );
 	alBufferData(bid, AL_FORMAT_MONO8, NULL, 0, 0);
 	return JS_TRUE;
+	JL_BAD;
 }
 */
 
@@ -96,6 +98,7 @@ DEFINE_FUNCTION_FAST( valueOf ) {
 	J_S_ASSERT_RESOURCE( bid );
 	J_CHK( UIntToJsval(cx, bid, J_FRVAL) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -118,6 +121,7 @@ DEFINE_PROPERTY( frequency ) {
 
 	J_CHK( IntToJsval(cx, frequency, vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -135,6 +139,7 @@ DEFINE_PROPERTY( size ) {
 
 	J_CHK( IntToJsval(cx, size, vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -153,6 +158,7 @@ DEFINE_PROPERTY( bits ) {
 
 	J_CHK( IntToJsval(cx, bits, vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -170,6 +176,7 @@ DEFINE_PROPERTY( channels ) {
 
 	J_CHK( IntToJsval(cx, channels, vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 

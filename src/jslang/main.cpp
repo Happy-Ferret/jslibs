@@ -47,4 +47,5 @@ JSBool jslangInit(JSContext *cx, JSObject *obj) {
 	INIT_STATIC();
 
 	return JS_TRUE;
+	JL_BAD;
 }

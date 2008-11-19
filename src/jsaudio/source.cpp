@@ -48,6 +48,7 @@ inline float BufferSecTime( ALint bid ) {
 	*pItem = value;
 	QueuePush( queue, pItem ); // no need to JS_AddRoot *pItem, see Tracer callback
 	return JS_TRUE;
+	JL_BAD;
 }
 
 inline JSBool UnshiftJsval( JSContext *cx, jl::Queue *queue, jsval value ) {
@@ -57,6 +58,7 @@ inline JSBool UnshiftJsval( JSContext *cx, jl::Queue *queue, jsval value ) {
 	*pItem = value;
 	QueueUnshift( queue, pItem ); // no need to JS_AddRoot *pItem, see Tracer callback
 	return JS_TRUE;
+	JL_BAD;
 }
 */
 
@@ -68,6 +70,7 @@ JSBool QueueBuffersJsval( JSContext *cx, jl::Queue *queue, jsval value ) {
 	*pItem = value;
 	QueuePush(queue, pItem); // no need to JS_AddRoot *pItem, see Tracer callback !
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /*
@@ -148,6 +151,7 @@ DEFINE_CONSTRUCTOR() {
 
 	J_CHK( JS_SetPrivate(cx, obj, pv) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -178,6 +182,7 @@ DEFINE_FUNCTION_FAST( QueueBuffers ) {
 		pv->totalTime = 0;
 	pv->totalTime += BufferSecTime(bid);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -201,6 +206,7 @@ DEFINE_FUNCTION_FAST( UnqueueBuffers ) {
 	);
 	pv->totalTime -= BufferSecTime(bid);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -215,6 +221,7 @@ DEFINE_FUNCTION_FAST( Play ) {
 
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_FUNCTION_FAST( Pause ) {
@@ -227,6 +234,7 @@ DEFINE_FUNCTION_FAST( Pause ) {
 
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_FUNCTION_FAST( Stop ) {
@@ -239,6 +247,7 @@ DEFINE_FUNCTION_FAST( Stop ) {
 
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_FUNCTION_FAST( Rewind ) {
@@ -251,6 +260,7 @@ DEFINE_FUNCTION_FAST( Rewind ) {
 
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -280,6 +290,7 @@ DEFINE_FUNCTION_FAST( Effect ) {
 
 	alSource3i(pv->sid, AL_AUXILIARY_SEND_FILTER, effectSlot, send, filter);
 	return JS_TRUE;
+	JL_BAD;
 }
 */
 
@@ -290,6 +301,7 @@ DEFINE_FUNCTION_FAST( valueOf ) {
 	J_S_ASSERT_RESOURCE( pv );
 	J_CHK( UIntToJsval(cx, pv->sid, J_FRVAL) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -321,6 +333,7 @@ DEFINE_PROPERTY( effect ) {
 	J_CHK( CheckThrowCurrentOalError(cx) );
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -334,6 +347,7 @@ DEFINE_PROPERTY_SETTER( effectGain ) {
 	alAuxiliaryEffectSlotf( pv->effectSlot, AL_EFFECTSLOT_GAIN, gain );
 	J_CHK( CheckThrowCurrentOalError(cx) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY_GETTER( effectGain ) {
@@ -345,6 +359,7 @@ DEFINE_PROPERTY_GETTER( effectGain ) {
 	J_CHK( CheckThrowCurrentOalError(cx) );
 	J_CHK( FloatToJsval(cx, gain, vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -358,6 +373,7 @@ DEFINE_PROPERTY_SETTER( effectSendAuto ) {
 	alAuxiliaryEffectSloti( pv->effectSlot, AL_EFFECTSLOT_AUXILIARY_SEND_AUTO, sendAuto ? AL_TRUE : AL_FALSE );
 	J_CHK( CheckThrowCurrentOalError(cx) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY_GETTER( effectSendAuto ) {
@@ -369,6 +385,7 @@ DEFINE_PROPERTY_GETTER( effectSendAuto ) {
 	J_CHK( CheckThrowCurrentOalError(cx) );
 	J_CHK( BoolToJsval(cx, sendAuto == AL_TRUE ? true : false, vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -389,6 +406,7 @@ DEFINE_PROPERTY( directFilter ) {
 	J_CHK( CheckThrowCurrentOalError(cx) );
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -409,6 +427,7 @@ DEFINE_PROPERTY_SETTER( buffer ) {
 	pv->totalTime = BufferSecTime(bid);
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY_GETTER( buffer ) {
@@ -446,6 +465,7 @@ DEFINE_PROPERTY_GETTER( buffer ) {
 	J_S_ASSERT( alIsBuffer(bid), "Invalid buffer." );
 	J_CHK( IntToJsval(cx, bid, vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -460,6 +480,7 @@ DEFINE_PROPERTY_SETTER( position ) {
 	J_CHK( JsvalToFloatVector(cx, *vp, pos, 3, &len) );
 	alSource3f(pv->sid, AL_POSITION, pos[0], pos[1], pos[2]);
 	return JS_TRUE;
+	JL_BAD;
 }
 */
 
@@ -479,6 +500,7 @@ DEFINE_FUNCTION_FAST( Position ) {
 
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -493,6 +515,7 @@ DEFINE_PROPERTY( position ) {
 
 	J_CHK( FloatVectorToJsval(cx, pos, 3, vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -506,6 +529,7 @@ DEFINE_PROPERTY_SETTER( velocity ) {
 	J_CHK( JsvalToFloatVector(cx, *vp, pos, 3, &len) );
 	alSource3f(pv->sid, AL_VELOCITY, pos[0], pos[1], pos[2]);
 	return JS_TRUE;
+	JL_BAD;
 }
 */
 DEFINE_FUNCTION_FAST( Velocity ) {
@@ -523,6 +547,7 @@ DEFINE_FUNCTION_FAST( Velocity ) {
 
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY( velocity ) {
@@ -536,6 +561,7 @@ DEFINE_PROPERTY( velocity ) {
 
 	J_CHK( FloatVectorToJsval(cx, pos, 3, vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -566,6 +592,7 @@ DEFINE_PROPERTY( remainingTime ) {
 	alGetSourcef(pv->sid, AL_SEC_OFFSET, &secOffset);
 	J_CHK( FloatToJsval(cx, pv->totalTime - secOffset, vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -624,6 +651,7 @@ DEFINE_PROPERTY_SETTER( sourceFloatInd ) {
 	alSourcef(pv->sid, param, f);
 	J_CHK( CheckThrowCurrentOalError(cx) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY_GETTER( sourceFloatInd ) {
@@ -636,6 +664,7 @@ DEFINE_PROPERTY_GETTER( sourceFloatInd ) {
 	J_CHK( CheckThrowCurrentOalError(cx) );
 	J_CHK( FloatToJsval(cx, f, vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY_SETTER( sourceIntInd ) {
@@ -648,6 +677,7 @@ DEFINE_PROPERTY_SETTER( sourceIntInd ) {
 	alSourcei(pv->sid, param, i);
 	J_CHK( CheckThrowCurrentOalError(cx) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY_GETTER( sourceIntInd ) {
@@ -660,6 +690,7 @@ DEFINE_PROPERTY_GETTER( sourceIntInd ) {
 	J_CHK( CheckThrowCurrentOalError(cx) );
 	J_CHK( IntToJsval(cx, i, vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY_SETTER( sourceBoolInd ) {
@@ -672,6 +703,7 @@ DEFINE_PROPERTY_SETTER( sourceBoolInd ) {
 	alSourcei(pv->sid, param, b ? AL_TRUE : AL_FALSE);
 	J_CHK( CheckThrowCurrentOalError(cx) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY_GETTER( sourceBoolInd ) {
@@ -684,6 +716,7 @@ DEFINE_PROPERTY_GETTER( sourceBoolInd ) {
 	J_CHK( CheckThrowCurrentOalError(cx) );
 	*vp = i == AL_TRUE ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 

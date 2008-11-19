@@ -92,6 +92,7 @@ DEFINE_CONSTRUCTOR() {
 	J_CHK( JS_SetPrivate(cx, J_OBJ, pv) );
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -106,6 +107,7 @@ DEFINE_FUNCTION_FAST( Wait ) {
 		return ThrowIoError(cx);
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_FUNCTION_FAST( Post ) {
@@ -119,6 +121,7 @@ DEFINE_FUNCTION_FAST( Post ) {
 		return ThrowIoError(cx);
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 CONFIGURE_CLASS

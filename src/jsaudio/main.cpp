@@ -81,6 +81,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	J_CHK( INIT_CLASS( OalFilter ) );
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -105,6 +106,7 @@ EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
 		J_REPORT_ERROR("ALUT_ERROR_CLOSE_DEVICE");
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 

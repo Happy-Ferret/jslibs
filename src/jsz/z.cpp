@@ -152,6 +152,8 @@ DEFINE_CALL() {
 	// (TBD) check JS_InstanceOf( cx, thisObj, &NativeProc, NULL )
 //	J_S_ASSERT_CLASS(thisObj, z_class );
 
+	Buffer buffer;
+
 	z_streamp stream = (z_streamp)JS_GetPrivate( cx, thisObj );
 	J_S_ASSERT_RESOURCE( stream );
 
@@ -191,7 +193,7 @@ DEFINE_CALL() {
 
 	int flushType = inputLength == 0 || forceFinish == JS_TRUE ? Z_FINISH : Z_SYNC_FLUSH;
 
-	Buffer buffer( method == DEFLATE ? (size_t)(12 + 1.001f * stream->avail_in) : (size_t)(1.5f * stream->avail_in) ); // if DEFLATE, dest. buffer must be at least 0.1% larger than sourceLen plus 12 bytes
+	buffer.SetOptimalDefaultLength( method == DEFLATE ? (size_t)(12 + 1.001f * stream->avail_in) : (size_t)(1.5f * stream->avail_in) ); // if DEFLATE, dest. buffer must be at least 0.1% larger than sourceLen plus 12 bytes
 
 // deflate / inflate loop
 	size_t outputLength;
@@ -229,6 +231,7 @@ DEFINE_CALL() {
 			return ThrowZError( cx, status, stream->msg );
 	}
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -246,6 +249,7 @@ DEFINE_PROPERTY( eof ) {
 	J_S_ASSERT_RESOURCE( stream );
 	*vp = BOOLEAN_TO_JSVAL( stream->opaque != 0 ); // (bool)stream->opaque
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -260,6 +264,7 @@ DEFINE_PROPERTY( adler32 ) {
 	J_S_ASSERT_RESOURCE( stream );
 	J_CHK( JS_NewNumberValue(cx, stream->adler, vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -273,6 +278,7 @@ DEFINE_PROPERTY( lengthIn ) {
 	J_S_ASSERT_RESOURCE( stream );
 	J_CHK( JS_NewNumberValue(cx, stream->total_in, vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -285,6 +291,7 @@ DEFINE_PROPERTY( lengthOut ) {
 	J_S_ASSERT_RESOURCE( stream );
 	J_CHK( JS_NewNumberValue(cx, stream->total_out, vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 

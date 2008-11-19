@@ -66,6 +66,7 @@ DEFINE_CONSTRUCTOR() {
 	JS_SetPrivate(cx, obj, NULL); // (TBD) optional ?
 	ReserveStreamReadInterface(cx, obj);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -124,6 +125,7 @@ DEFINE_FUNCTION( Open ) {
 
 	*rval = OBJECT_TO_JSVAL(obj); // allows to write f.Open(...).Read()
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -161,6 +163,7 @@ DEFINE_FUNCTION( Seek ) {
 	jsdouble newLocation = ret;
 	JS_NewDoubleValue( cx, newLocation, rval );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -181,6 +184,7 @@ DEFINE_FUNCTION( Delete ) {
 	if ( PR_Delete(fileName) != PR_SUCCESS )
 		return ThrowIoError(cx);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -200,6 +204,7 @@ DEFINE_FUNCTION( Lock ) {
 	if ( st != PR_SUCCESS )
 		return ThrowIoError(cx);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -242,6 +247,7 @@ DEFINE_FUNCTION( Move ) {
 	J_CHK( JS_SetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, STRING_TO_JSVAL(jsstr) ) );
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -264,6 +270,7 @@ DEFINE_PROPERTY( positionSetter ) {
 	if ( ret == -1 )
 		return ThrowIoError(cx);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY( positionGetter ) {
@@ -275,6 +282,7 @@ DEFINE_PROPERTY( positionGetter ) {
 		return ThrowIoError(cx);
 	J_CHK( JS_NewNumberValue(cx, ret, vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -338,6 +346,7 @@ DEFINE_PROPERTY( contentGetter ) {
 	J_CHK( J_NewBlob( cx, buf, res, vp ) );
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -374,6 +383,7 @@ DEFINE_PROPERTY( contentSetter ) {
 	if ( PR_Close(fd) != PR_SUCCESS )
 		return ThrowIoError(cx);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -403,6 +413,7 @@ DEFINE_PROPERTY( nameSetter ) {
 		return ThrowIoError(cx);
 	JS_SetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, *vp );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -421,6 +432,7 @@ DEFINE_PROPERTY( exist ) {
 	PRStatus status = PR_Access( fileName, PR_ACCESS_EXISTS );
 	*vp = BOOLEAN_TO_JSVAL( status == PR_SUCCESS );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -489,6 +501,7 @@ DEFINE_PROPERTY( info ) {
 	J_CHK( JS_DefineProperty(cx, fileInfoObj, "modifyTime", dateValue, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT | JSPROP_ENUMERATE) );
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc

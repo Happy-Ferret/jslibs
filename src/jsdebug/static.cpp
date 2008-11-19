@@ -80,6 +80,7 @@ DEFINE_FUNCTION( Print ) {
 	for (uintN i = 0; i<argc; i++)
 		J_CHK( JS_CallFunction(cx, obj, stdoutFunction, 1, &argv[i], rval) );
 	return JS_TRUE;
+	JL_BAD;
 }
 */
 
@@ -277,7 +278,8 @@ _DumpStats(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
                 DumpScope(cx, obj, gOutFile);
         }
     }
-    return JS_TRUE;
+	return JS_TRUE;
+	JL_BAD;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -485,6 +487,7 @@ _Trap(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
     if (!GetTrapArgs(cx, argc, argv, &script, &i))
         return JS_FALSE;
     return JS_SetTrap(cx, script, script->code + i, TrapHandler, str);
+	JL_BAD;
 }
 
 /**doc
@@ -525,7 +528,8 @@ _LineToPC(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
     if (!pc)
         return JS_FALSE;
     *rval = INT_TO_JSVAL(PTRDIFF(pc, script->code, jsbytecode));
-    return JS_TRUE;
+	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -576,6 +580,7 @@ DEFINE_FUNCTION(Locate) {
 		}
 	}
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -600,6 +605,7 @@ DEFINE_FUNCTION(LocateLine) {
 		}
 	}
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -822,6 +828,7 @@ DEFINE_PROPERTY( currentMemoryUsage ) {
 
 	J_CHK( JS_NewNumberValue(cx, bytes, vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -857,6 +864,7 @@ DEFINE_PROPERTY( peakMemoryUsage ) {
 
 	J_CHK( JS_NewNumberValue(cx, bytes, vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -883,6 +891,7 @@ DEFINE_PROPERTY( privateMemoryUsage ) {
 
 	J_CHK( JS_NewNumberValue(cx, bytes, vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -908,6 +917,7 @@ DEFINE_PROPERTY( gcMallocBytes ) {
     bytes = *pbytes;
 	 J_CHK( JS_NewNumberValue(cx, bytes, vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -926,6 +936,7 @@ DEFINE_PROPERTY( gcBytes ) {
     bytes = *pbytes;
 	 J_CHK( JS_NewNumberValue(cx, bytes, vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /*
@@ -942,10 +953,11 @@ DEFINE_PROPERTY( gcZeal ) {
 	int zeal;
 	J_CHK( JsvalToInt(cx, *vp, &zeal) );
 	JS_SetGCZeal(cx, zeal);
-	return JS_TRUE;
 #else
 	J_REPORT_ERROR("Available in Debug mode only.");
 #endif // JS_GC_ZEAL
+	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_FUNCTION( DumpObjectPrivate ) {
@@ -955,6 +967,7 @@ DEFINE_FUNCTION( DumpObjectPrivate ) {
 	unsigned int n = (unsigned int)JS_GetPrivate(cx, JSVAL_TO_OBJECT( J_ARG( 1 ) ));
 	J_CHK( JS_NewNumberValue(cx, (double)n, J_RVAL) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 

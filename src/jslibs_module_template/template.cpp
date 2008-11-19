@@ -28,6 +28,7 @@ DEFINE_CONSTRUCTOR() { // Called when the object is constructed ( a = new Templa
 	J_S_ASSERT_CONSTRUCTING();
 	J_S_ASSERT_THIS_CLASS();
 	return JS_TRUE;
+	JL_BAD;
 }
 
 //DEFINE_FUNCTION( Call ) {

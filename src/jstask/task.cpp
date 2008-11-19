@@ -173,6 +173,7 @@ JSBool Task(JSContext *cx, Private *pv) {
 	}
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -187,7 +188,7 @@ int TaskStdErrHostOutput( void *privateData, const char *buffer, size_t length )
 
 	ErrorBuffer *eb = (ErrorBuffer*)privateData;
 	if ( eb->length + length > eb->maxLength ) {
-	
+
 		eb->maxLength = eb->length + length + 1024;
 		eb->buffer = eb->buffer == NULL ? (char*)malloc(eb->maxLength) : (char*)realloc(eb->buffer, eb->maxLength);
 	}
@@ -220,7 +221,7 @@ JLThreadFuncDecl ThreadProc( void *threadArg ) {
 			JSString *jsstr = JS_ValueToString(cx, ex); // transform the exception into a string
 			ex = STRING_TO_JSVAL(jsstr);
 		} else {
-			
+
 			J_CHKB( StringAndLengthToJsval(cx, &ex, errorBuffer.buffer, errorBuffer.length), bad1 );
 			//ex = JSVAL_VOID; // unknown exception
 		}
@@ -256,12 +257,13 @@ bad1:
 **/
 DEFINE_CONSTRUCTOR() {
 
+	Private *pv = NULL;
 	J_S_ASSERT_CONSTRUCTING();
 	J_S_ASSERT_THIS_CLASS();
 	J_S_ASSERT_ARG_MIN(1);
 	J_S_ASSERT_FUNCTION( J_ARG(1) );
 
-	Private *pv = (Private*)JS_malloc(cx, sizeof(Private));
+	pv = (Private*)JS_malloc(cx, sizeof(Private));
 	J_S_ASSERT_ALLOC(pv);
 
 	JLThreadPriorityType priority;
@@ -284,7 +286,7 @@ DEFINE_CONSTRUCTOR() {
 		}
 	}
 
-	J_CHKB( JS_SetPrivate(cx, obj, pv), bad1 );
+	J_CHK( JS_SetPrivate(cx, obj, pv) );
 
 	pv->mutex = JLCreateMutex();
 	pv->end = false;
@@ -302,16 +304,16 @@ DEFINE_CONSTRUCTOR() {
 	QueueInitialize(&pv->exceptionList);
 
 	SerializerCreate(&pv->serializedCode);
-	J_CHKB( SerializeJsval(cx, &pv->serializedCode, &J_ARG(1)), bad1 );
+	J_CHK( SerializeJsval(cx, &pv->serializedCode, &J_ARG(1)));
 
 	pv->threadHandle = JLStartThread(ThreadProc, pv);
 
 	J_S_ASSERT( JLThreadOk(pv->threadHandle), "Unable to create the thread." );
 
 	return JS_TRUE;
-bad1:
-	JS_free(cx, pv);
 bad:
+	if ( pv )
+		JS_free(cx, pv);
 	return JS_FALSE;
 }
 
@@ -332,6 +334,7 @@ DEFINE_FUNCTION_FAST( Request ) {
 	JLReleaseMutex(pv->mutex); // ++
 	JLReleaseSemaphore(pv->requestSem); // +1 // signals a request
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -395,6 +398,7 @@ DEFINE_FUNCTION_FAST( Response ) {
 	JLReleaseMutex(pv->mutex); // ++
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -407,6 +411,7 @@ DEFINE_PROPERTY( pendingRequestCount ) {
 	J_CHK( UIntToJsval(cx, pv->end ? 0 : pv->pendingRequestCount, vp) );
 	JLReleaseMutex(pv->mutex); // ++
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -419,6 +424,7 @@ DEFINE_PROPERTY( pendingResponseCount ) {
 	J_CHK( UIntToJsval(cx, pv->pendingResponseCount ? pv->pendingResponseCount : QueueIsEmpty(&pv->exceptionList) ? 0 : 1 , vp) );
 	JLReleaseMutex(pv->mutex); // ++
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -430,6 +436,7 @@ DEFINE_PROPERTY( idle ) {
 	J_CHK( BoolToJsval(cx, pv->pendingRequestCount + pv->processingRequestCount + pv->pendingResponseCount == 0 || pv->end, vp) );
 	JLReleaseMutex(pv->mutex); // ++
 	return JS_TRUE;
+	JL_BAD;
 }
 
 

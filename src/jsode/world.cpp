@@ -178,6 +178,7 @@ DEFINE_CONSTRUCTOR() {
 	JS_DefineProperty(cx, obj, DEFAULT_SURFACE_PARAMETERS_PROPERTY_NAME, OBJECT_TO_JSVAL(surfaceParameters), NULL, NULL, JSPROP_PERMANENT | JSPROP_READONLY );
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -232,7 +233,12 @@ DEFINE_FUNCTION( Step ) {
 //	ode::dJointGroupID contactgroup = (ode::dJointGroupID)JSVAL_TO_PRIVATE(val);
 	ode::dJointGroupID contactgroup = ode::dJointGroupCreate(0);
 
-	ColideContextPrivate ccp = { cx, defaultSurfaceParameters, contactgroup, worldID };  // the context will only be used while the worls step.
+	ColideContextPrivate ccp;
+	ccp.cx = cx; // the context will only be used while the worls step.
+	ccp.defaultSurfaceParameters = defaultSurfaceParameters;
+	ccp.contactGroupId = contactgroup;
+	ccp.worldId = worldID;
+	
 	ode::dSpaceCollide(spaceId, (void*)&ccp, &nearCallback);
 
 	// (TBD) see dWorldSetQuickStepW and dWorldSetAutoEnableDepthSF1
@@ -251,6 +257,7 @@ DEFINE_FUNCTION( Step ) {
 		return JS_FALSE;
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -270,6 +277,7 @@ DEFINE_PROPERTY( gravityGetter ) {
 	//FloatVectorToArray(cx, 3, gravity, vp);
 	J_CHK( FloatVectorToJsval(cx, gravity, 3, vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY( gravitySetter ) {
@@ -283,6 +291,7 @@ DEFINE_PROPERTY( gravitySetter ) {
 	J_S_ASSERT( length == 3, "Invalid array size." );
 	ode::dWorldSetGravity( worldID, gravity[0], gravity[1], gravity[2] );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -319,6 +328,7 @@ DEFINE_PROPERTY( realSetter ) {
 			break;
 	}
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -343,6 +353,7 @@ DEFINE_PROPERTY( realGetter ) {
 	}
 	JS_NewDoubleValue(cx, value, vp);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -359,6 +370,7 @@ DEFINE_PROPERTY( env ) {
 		*vp = OBJECT_TO_JSVAL(staticBody);
 	}
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc

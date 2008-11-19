@@ -56,6 +56,7 @@ DEFINE_FUNCTION( ExtractIcon ) {
 	JS_SetPrivate(cx, icon, phIcon);
 	*rval = OBJECT_TO_JSVAL(icon);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -125,6 +126,7 @@ DEFINE_FUNCTION( MessageBox ) {
 	J_S_ASSERT( res != 0, "MessageBox call Failed." );
 	*rval = INT_TO_JSVAL( res );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -158,12 +160,15 @@ DEFINE_FUNCTION( CreateProcess ) {
 	if ( argc >= 4 && !JSVAL_IS_VOID( argv[3] ) )
 		J_CHK( JsvalToString(cx, &argv[3], &currentDirectory) ); // warning: GC on the returned buffer !
 
-	STARTUPINFO si = { sizeof(STARTUPINFO) };
+	STARTUPINFO si;// = { sizeof(STARTUPINFO) };
+	si.cb = sizeof(STARTUPINFO);
+
 	PROCESS_INFORMATION pi;
 	BOOL st = CreateProcess( applicationName, (LPSTR)commandLine, NULL, NULL, FALSE, 0, (LPVOID)environment, currentDirectory, &si, &pi ); // doc: http://msdn2.microsoft.com/en-us/library/ms682425.aspx
 	if ( st = FALSE )
 		return WinThrowError(cx, GetLastError());
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -215,6 +220,7 @@ DEFINE_FUNCTION( FileOpenDialog ) {
 	else
 		*rval = STRING_TO_JSVAL( JS_NewStringCopyZ(cx, fileName) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -232,6 +238,7 @@ DEFINE_FUNCTION( ExpandEnvironmentStrings ) {
 	J_S_ASSERT( res != 0, "Unable to ExpandEnvironmentStrings." );
 	*rval = STRING_TO_JSVAL( JS_NewStringCopyN(cx, dst, res) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -246,6 +253,7 @@ DEFINE_FUNCTION( Sleep ) {
 	J_CHK( JsvalToUInt(cx, argv[0], &timeout) );
 	Sleep(timeout);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -268,6 +276,7 @@ DEFINE_FUNCTION( MessageBeep ) {
 		J_CHK( JsvalToUInt(cx, argv[0], &type) );
 	MessageBeep(type);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -285,6 +294,7 @@ DEFINE_FUNCTION( Beep ) {
 	J_CHK( JsvalToUInt(cx, argv[1], &duration) );
 	Beep(freq, duration);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -315,6 +325,7 @@ DEFINE_PROPERTY( clipboardGetter ) {
 		CloseClipboard();
 	}
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY( clipboardSetter ) {
@@ -343,6 +354,7 @@ DEFINE_PROPERTY( clipboardSetter ) {
 		CloseClipboard();
 	}
 	return JS_TRUE;
+	JL_BAD;
 }
 
 CONFIGURE_STATIC

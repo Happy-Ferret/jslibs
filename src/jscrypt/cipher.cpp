@@ -251,6 +251,7 @@ DEFINE_CONSTRUCTOR() {
 		return ThrowCryptError(cx, err); // (TBD) free privateData and psctr
 	JS_SetPrivate( cx, obj, privateData );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -310,6 +311,7 @@ DEFINE_FUNCTION( Encrypt ) {
 	J_CHK( J_NewBlob( cx, ct, ptLength, rval ) );
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -362,6 +364,7 @@ DEFINE_FUNCTION( Decrypt ) {
 	J_CHK( J_NewBlob( cx, pt, ctLength, rval ) );
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -379,6 +382,7 @@ DEFINE_PROPERTY( blockLength ) {
 	J_S_ASSERT_RESOURCE( privateData );
 	*vp = INT_TO_JSVAL( privateData->descriptor->block_length );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -393,6 +397,7 @@ DEFINE_PROPERTY( keySize ) {
 	J_S_ASSERT_RESOURCE( privateData );
 	*vp = INT_TO_JSVAL( privateData->descriptor->keysize );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -409,6 +414,7 @@ DEFINE_PROPERTY( name ) {
 	J_S_ASSERT_ALLOC( jsstr );
 	*vp = STRING_TO_JSVAL( jsstr );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -481,6 +487,7 @@ DEFINE_PROPERTY( IVSetter ) {
 	}
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY( IVGetter ) {
@@ -552,6 +559,7 @@ DEFINE_PROPERTY( IVGetter ) {
 	J_CHK( J_NewBlob( cx, IV, IVLength, vp ) );
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -592,6 +600,7 @@ DEFINE_PROPERTY( list ) {
 		LTC_MUTEX_UNLOCK(&ltc_cipher_mutex);
 	}
 	return JS_TRUE;
+	JL_BAD;
 }
 
 

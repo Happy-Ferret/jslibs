@@ -207,6 +207,7 @@ DEFINE_FUNCTION( DecodeJpegImage ) {
 	// jpeg_destroy(); ??
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -214,6 +215,7 @@ DEFINE_FUNCTION( EncodeJpegImage ) {
 
 	J_REPORT_ERROR("TBD!"); // (TBD)
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -312,6 +314,7 @@ DEFINE_FUNCTION( DecodePngImage ) {
 	png_destroy_read_struct(&desc.png, &desc.info, NULL);
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -406,6 +409,7 @@ DEFINE_FUNCTION_FAST( EncodePngImage ) {
 	J_CHK( J_NewBlob(cx, desc.buffer, desc.pos, J_FRVAL) );
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 // (TBD) use these compilation options: PNG_SETJMP_NOT_SUPPORTED, PNG_NO_CONSOLE_IO, PNG_NO_STDIO, ...

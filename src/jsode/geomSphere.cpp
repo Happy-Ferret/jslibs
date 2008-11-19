@@ -45,6 +45,7 @@ DEFINE_CONSTRUCTOR() {
 	SetupReadMatrix(cx, obj); // (TBD) check return status
 	ode::dGeomSetData(geomId, obj); // 'obj' do not need to be rooted because Goem's data is reset to NULL when 'obj' is finalized.
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -63,6 +64,7 @@ DEFINE_PROPERTY( radiusSetter ) {
 	JS_ValueToNumber(cx, *vp, &radius);
 	ode::dGeomSphereSetRadius(geom, radius);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY( radiusGetter ) {
@@ -71,6 +73,7 @@ DEFINE_PROPERTY( radiusGetter ) {
 	J_S_ASSERT_RESOURCE( geom );
 	JS_NewDoubleValue(cx, ode::dGeomSphereGetRadius(geom), vp); // see JS_NewNumberValue and JS_NewDouble
 	return JS_TRUE;
+	JL_BAD;
 }
 
 

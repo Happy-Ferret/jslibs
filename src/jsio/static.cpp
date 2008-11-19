@@ -218,6 +218,7 @@ failed: // goto is the cheaper solution
 		free(pollDesc);
 	JS_DestroyIdArray( cx, idArray );
 	return JS_FALSE;
+	JL_BAD;
 }
 
 /**doc
@@ -242,12 +243,17 @@ DEFINE_FUNCTION( IsReadable ) {
 	} else
 		prTimeout = PR_INTERVAL_NO_WAIT; //PR_INTERVAL_NO_TIMEOUT;
 
-	PRPollDesc desc = { fd, PR_POLL_READ, 0 };
+	PRPollDesc desc; // = { fd, PR_POLL_READ, 0 };
+	desc.fd = fd;
+	desc.in_flags = PR_POLL_READ;
+	desc.out_flags = 0;
+
 	PRInt32 result = PR_Poll( &desc, 1, prTimeout );
 	if ( result == -1 ) // error
 		return ThrowIoError(cx);
 	*rval = ( result == 1 && (desc.out_flags & PR_POLL_READ) != 0 ) ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -272,12 +278,17 @@ DEFINE_FUNCTION( IsWritable ) {
 	} else
 		prTimeout = PR_INTERVAL_NO_WAIT; //PR_INTERVAL_NO_TIMEOUT;
 
-	PRPollDesc desc = { fd, PR_POLL_WRITE, 0 };
+	PRPollDesc desc; // = { fd, PR_POLL_WRITE, 0 };
+	desc.fd = fd;
+	desc.in_flags = PR_POLL_WRITE;
+	desc.out_flags = 0;
+
 	PRInt32 result = PR_Poll( &desc, 1, prTimeout );
 	if ( result == -1 ) // error
 		return ThrowIoError(cx);
 	*rval = ( result == 1 && (desc.out_flags & PR_POLL_WRITE) != 0 ) ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -315,6 +326,7 @@ DEFINE_FUNCTION( Sleep ) {
 	J_CHK( JS_ValueToECMAUint32( cx, J_ARG(1), &timeout ) );
 	PR_Sleep( PR_MillisecondsToInterval(timeout) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -336,6 +348,7 @@ DEFINE_FUNCTION( GetEnv ) {
 		*rval = STRING_TO_JSVAL(jsstr);
 	}
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -367,6 +380,7 @@ DEFINE_FUNCTION( GetRandomNoise ) {
 	J_CHK( J_NewBlob( cx, buf, size, rval ) );
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /*
@@ -445,6 +459,7 @@ DEFINE_FUNCTION_FAST( WaitSemaphore ) {
 	}
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -475,6 +490,7 @@ DEFINE_FUNCTION_FAST( PostSemaphore ) {
 	}
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -583,6 +599,7 @@ DEFINE_FUNCTION_FAST( CreateProcess ) {
 	}
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -610,6 +627,7 @@ DEFINE_PROPERTY( hostName ) {
 	J_S_ASSERT_ALLOC( jsstr );
 	*vp = STRING_TO_JSVAL(jsstr);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -622,6 +640,7 @@ DEFINE_PROPERTY( physicalMemorySize ) {
 	PRUint64 mem = PR_GetPhysicalMemorySize();
 	J_CHK( JS_NewNumberValue(cx, (jsdouble)mem, vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -674,6 +693,7 @@ DEFINE_PROPERTY( systemInfo ) {
 	}
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -709,6 +729,7 @@ DEFINE_PROPERTY( processPriorityGetter ) {
 	}
 	*vp = INT_TO_JSVAL( priorityValue );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY( processPrioritySetter ) {
@@ -735,6 +756,7 @@ DEFINE_PROPERTY( processPrioritySetter ) {
 	PRThread *thread = PR_GetCurrentThread();
 	PR_SetThreadPriority( thread, priority );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -757,6 +779,7 @@ DEFINE_PROPERTY( currentWorkingDirectory ) {
 	J_S_ASSERT_ALLOC( str );
 	*vp = STRING_TO_JSVAL( str );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 

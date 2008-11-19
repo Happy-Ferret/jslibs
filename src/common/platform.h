@@ -51,7 +51,8 @@
 	#pragma warning(error : 4715) // not all control paths return a value
 	#pragma warning(error : 4018) // warning C4018: '<' : signed/unsigned mismatch
 	#pragma warning(error : 4309) // warning C4309: 'initializing' : truncation of constant value
-	#pragma warning(error : 4700) // warning C4700: uninitialized local variable 'xxx' used
+	#pragma warning(error : 4700) // warning C4700: uninitialized local variable 'XXX' used
+	#pragma warning(error : 4533) // warning C4533: initialization of 'xxx' is skipped by 'goto YYY'
 
 #endif // #if defined WIN32
 

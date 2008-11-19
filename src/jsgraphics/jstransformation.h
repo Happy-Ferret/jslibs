@@ -45,4 +45,5 @@ inline JSBool GetMatrixHelper( JSContext *cx, jsval val, Matrix44 **m ) {
 	}
 
 	J_REPORT_ERROR("Unable to read a 4x4 matrix.");
+	JL_BAD;
 }

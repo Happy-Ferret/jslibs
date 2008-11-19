@@ -88,6 +88,7 @@ DEFINE_CONSTRUCTOR() {
 	JS_SetPrivate( cx, obj, privateData );
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -113,6 +114,7 @@ DEFINE_FUNCTION( Init ) {
 	privateData->inputLength = 0;
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -141,6 +143,7 @@ DEFINE_FUNCTION( Process ) {
 	privateData->inputLength += inLength;
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -173,6 +176,7 @@ DEFINE_FUNCTION( Done ) {
 	J_CHK( J_NewBlob( cx, out, outLength, rval ) );
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -232,6 +236,7 @@ DEFINE_CALL() {
 	J_CHK( J_NewBlob( cx, out, outLength, rval ) );
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -251,6 +256,7 @@ DEFINE_PROPERTY( name ) {
 	J_S_ASSERT_ALLOC( jsstr );
 	*vp = STRING_TO_JSVAL( jsstr );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -264,6 +270,7 @@ DEFINE_PROPERTY( blockSize ) {
 	J_S_ASSERT_RESOURCE( privateData );
 	*vp = INT_TO_JSVAL( privateData->descriptor->blocksize );
 	return JS_TRUE;
+	JL_BAD;
 }	
 
 /**doc
@@ -277,6 +284,7 @@ DEFINE_PROPERTY( length ) {
 	J_S_ASSERT_RESOURCE( privateData );
 	*vp = INT_TO_JSVAL( privateData->descriptor->hashsize );
 	return JS_TRUE;
+	JL_BAD;
 }	
 
 /**doc
@@ -290,6 +298,7 @@ DEFINE_PROPERTY( inputLength ) {
 	J_S_ASSERT_RESOURCE( privateData );
 	*vp = INT_TO_JSVAL( 	privateData->inputLength );
 	return JS_TRUE;
+	JL_BAD;
 }	
 
 /**doc
@@ -315,6 +324,7 @@ DEFINE_FUNCTION( CipherHash ) {
 	if ((err = chc_register(cipherIndex)) != CRYPT_OK)
 		return ThrowCryptError(cx, err);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -356,6 +366,7 @@ DEFINE_PROPERTY( list ) {
 		LTC_MUTEX_UNLOCK(&ltc_hash_mutex);
 	}
 	return JS_TRUE;
+	JL_BAD;
 }
 
 

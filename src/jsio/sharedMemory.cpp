@@ -62,6 +62,7 @@ static JSBool BufferGet( JSContext *cx, JSObject *obj, const char **buf, size_t 
 	*buf = (char *)pv->mem + sizeof(MemHeader);
 	*size = mh->currentDataLength;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -192,6 +193,7 @@ DEFINE_CONSTRUCTOR() {
 	J_CHK( SetBufferGetInterface(cx, obj, BufferGet) );
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -229,6 +231,7 @@ DEFINE_FUNCTION_FAST( Write ) {
 	J_CHK( Unlock(cx, pv) );
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -264,6 +267,7 @@ DEFINE_FUNCTION_FAST( Read ) {
 	J_CHK( J_NewBlob( cx, data, dataLength, J_FRVAL ) );
 	
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -284,6 +288,7 @@ DEFINE_FUNCTION_FAST( Clear ) {
 	J_CHK( Unlock(cx, pv) );
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -297,6 +302,7 @@ DEFINE_FUNCTION_FAST( Close ) {
 	J_S_ASSERT_RESOURCE( pv );
 	J_CHK( CloseSharedMemory(cx, J_FOBJ) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -338,6 +344,7 @@ DEFINE_PROPERTY( contentSetter ) {
 		J_CHK( Unlock(cx, pv) );
 	}
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -361,6 +368,7 @@ DEFINE_PROPERTY( contentGetter ) {
 	J_CHK( J_NewBlob( cx, data, dataLength, vp ) );
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /*

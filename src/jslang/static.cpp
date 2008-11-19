@@ -117,8 +117,7 @@ DEFINE_FUNCTION( Stringify ) {
 	JSString *jsstr = JS_NewString(cx, newBuffer, length);
 	*J_RVAL = STRING_TO_JSVAL( jsstr );
 	return JS_TRUE;
-bad:
-	return JS_FALSE;
+	JL_BAD;
 }
 
 #ifdef DEBUG

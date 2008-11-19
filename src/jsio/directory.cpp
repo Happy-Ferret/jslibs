@@ -53,6 +53,7 @@ DEFINE_CONSTRUCTOR() {
 	J_S_ASSERT_ARG_MIN( 1 );
 	JS_SetReservedSlot( cx, obj, SLOT_JSIO_DIR_NAME, J_ARG(1) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -78,6 +79,7 @@ DEFINE_FUNCTION( Open ) {
 	JS_SetPrivate( cx, obj, dd );
 	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -93,6 +95,7 @@ DEFINE_FUNCTION( Close ) {
 		return ThrowIoError(cx);
 	JS_SetPrivate( cx, obj, NULL );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -131,6 +134,7 @@ DEFINE_FUNCTION( Read ) {
 
 	*rval = STRING_TO_JSVAL(JS_NewStringCopyZ( cx, dirEntry->name ));
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -149,6 +153,7 @@ DEFINE_FUNCTION( Make ) {
 	if ( PR_MkDir(directoryName, mode) != PR_SUCCESS )
 		return ThrowIoError(cx);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -176,6 +181,7 @@ DEFINE_FUNCTION( Remove ) {
 			*rval = JSVAL_TRUE;
 	}
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -206,6 +212,7 @@ DEFINE_PROPERTY( exist ) {
 		*vp = JSVAL_TRUE;
 	}
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -304,6 +311,7 @@ DEFINE_FUNCTION( List ) {
 	}
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc

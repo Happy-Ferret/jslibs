@@ -80,13 +80,16 @@ DEFINE_FUNCTION_FAST( DecodeOggVorbis ) {
 
 	J_S_ASSERT_ARG_MIN( 1 );
 	J_S_ASSERT_OBJECT( J_FARG(1) );
-	JSObject *StreamObj = JSVAL_TO_OBJECT( J_FARG(1) );
+	JSObject *streamObj = JSVAL_TO_OBJECT( J_FARG(1) );
 
 //	NIStreamRead streamReader;
 //	J_CHK( GetStreamReadInterface(cx, StreamObj, &streamReader) );
 //	J_S_ASSERT( streamReader != NULL, "Invalid stream." );
 
-	StreamReadInfo pv = { cx, StreamObj };
+	StreamReadInfo pv; // = { cx, StreamObj };
+	pv.cx = cx;
+	pv.obj = streamObj;
+
 	OggVorbis_File descriptor;
 	ov_open_callbacks(&pv, &descriptor, NULL, 0, ovCallbacks);
 
@@ -164,6 +167,7 @@ DEFINE_FUNCTION_FAST( DecodeOggVorbis ) {
 	}
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -280,14 +284,18 @@ DEFINE_FUNCTION_FAST( DecodeSound ) {
 	J_S_ASSERT_ARG_MIN( 1 );
 
 	J_S_ASSERT_OBJECT( J_FARG(1) );
-	JSObject *StreamObj = JSVAL_TO_OBJECT( J_FARG(1) );
+	JSObject *streamObj = JSVAL_TO_OBJECT( J_FARG(1) );
 
 //	NIStreamRead streamReader;
 //	J_CHK( GetStreamReadInterface(cx, StreamObj, &streamReader) );
 //	J_S_ASSERT( streamReader != NULL, "Invalid stream." );
 
-	StreamReadInfo pv = { cx, StreamObj };
-	SF_INFO info = {0};
+	StreamReadInfo pv;// = { cx, streamObj };
+	pv.cx = cx;
+	pv.obj = streamObj;
+	SF_INFO info;// = {0};
+	memset(&info, 0, sizeof(SF_INFO));
+
 	SNDFILE *descriptor = sf_open_virtual(&sfCallbacks, SFM_READ, &info, &pv);
 
 	J_S_ASSERT_1( sf_error(descriptor) == SF_ERR_NO_ERROR, "sndfile error: %d", sf_error(descriptor) );
@@ -367,6 +375,7 @@ DEFINE_FUNCTION_FAST( DecodeSound ) {
 	}
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -430,6 +439,7 @@ DEFINE_FUNCTION_FAST( SplitChannels ) {
 	}
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 

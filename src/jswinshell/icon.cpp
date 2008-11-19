@@ -120,6 +120,7 @@ DEFINE_CONSTRUCTOR() {
 	*phIcon = hIcon;
 	JS_SetPrivate(cx, obj, phIcon);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_FINALIZE() {

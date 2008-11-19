@@ -29,6 +29,7 @@ DEFINE_PROPERTY_SETTER( position ) {
 	J_CHK( CheckThrowCurrentOalError(cx) );
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY_GETTER( position ) {
@@ -40,6 +41,7 @@ DEFINE_PROPERTY_GETTER( position ) {
 
 	J_CHK( FloatVectorToJsval(cx, pos, 3, vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -53,6 +55,7 @@ DEFINE_PROPERTY_SETTER( metersPerUnit ) {
 	J_CHK( CheckThrowCurrentOalError(cx) );
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY_GETTER( metersPerUnit ) {
@@ -64,6 +67,7 @@ DEFINE_PROPERTY_GETTER( metersPerUnit ) {
 
 	J_CHK( FloatToJsval(cx, metersPerUnit, vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 

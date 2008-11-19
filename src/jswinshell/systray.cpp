@@ -281,7 +281,18 @@ DEFINE_CONSTRUCTOR() {
 	HINSTANCE hInst = (HINSTANCE)GetModuleHandle(NULL);
 	J_S_ASSERT( hInst != NULL, "Unable to GetModuleHandle." );
 
-	WNDCLASS wc = { 0, (WNDPROC)WndProc, 0, 0, hInst, NULL, NULL, NULL, NULL, WINDOW_CLASS_NAME };
+	WNDCLASS wc; // = { 0, (WNDPROC)WndProc, 0, 0, hInst, NULL, NULL, NULL, NULL, WINDOW_CLASS_NAME };
+	wc.style = 0;
+	wc.lpfnWndProc = (WNDPROC)WndProc;
+	wc.cbClsExtra = 0;
+	wc.cbWndExtra = 0;
+	wc.hInstance = hInst;
+	wc.hIcon = NULL;
+	wc.hCursor = NULL;
+	wc.hbrBackground = NULL;
+	wc.lpszMenuName = NULL;
+	wc.lpszClassName = WINDOW_CLASS_NAME;
+
 	ATOM rc = RegisterClass(&wc);
 	J_S_ASSERT( rc != 0 || GetLastError() == ERROR_CLASS_ALREADY_EXISTS, "Unable to RegisterClass." );
 
@@ -317,6 +328,7 @@ DEFINE_CONSTRUCTOR() {
 //	_tcscpy(nid.szTip, "tooltip");
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_FINALIZE() {
@@ -347,6 +359,7 @@ DEFINE_FUNCTION( Close ) {
 	J_S_ASSERT( status == TRUE, "Unable to delete notification icon.");
 	JS_SetPrivate(cx, obj, NULL);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -445,6 +458,7 @@ DEFINE_FUNCTION( ProcessEvents ) {
 	} // while PeekMessage
 	*rval = exitBool ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -458,6 +472,7 @@ DEFINE_FUNCTION( Focus ) {
 	J_S_ASSERT_RESOURCE(nid);
 	SetForegroundWindow(nid->hWnd);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -574,6 +589,7 @@ DEFINE_FUNCTION( PopupMenu ) {
 	JS_DestroyIdArray(cx, list);
 	PostMessage(nid->hWnd, MSG_POPUP_MENU, 0, 0);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /*
@@ -596,6 +612,7 @@ DEFINE_FUNCTION( CallDefault ) {
 		J_CHK( CallFunction( cx, obj, functionVal, rval, 1, key ) );
 	}
 	return JS_TRUE;
+	JL_BAD;
 }
 */
 
@@ -635,6 +652,7 @@ DEFINE_FUNCTION( Position ) {
 	}
 	*rval = OBJECT_TO_JSVAL(point);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -668,6 +686,7 @@ DEFINE_FUNCTION( Rect ) {
 	}
 	*rval = OBJECT_TO_JSVAL(point);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -704,6 +723,7 @@ DEFINE_PROPERTY( icon ) {
 	BOOL status = Shell_NotifyIcon(NIM_MODIFY, nid);
 	J_S_ASSERT( status == TRUE, "Unable to setup systray icon." );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -721,6 +741,7 @@ DEFINE_PROPERTY( visible ) {
 	BOOL status = Shell_NotifyIcon( state == JS_TRUE ? NIM_ADD : NIM_DELETE, nid);
 	J_S_ASSERT( status == TRUE || GetLastError() == NO_ERROR, "Unable to setup systray icon." );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -739,6 +760,7 @@ DEFINE_PROPERTY( textSetter ) {
 	BOOL status = Shell_NotifyIcon(NIM_MODIFY, nid);
 	J_S_ASSERT( status == TRUE, "Unable to setup systray icon." );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY( textGetter ) {
@@ -748,6 +770,7 @@ DEFINE_PROPERTY( textGetter ) {
 	if ( nid->uFlags & NIF_TIP )
 		*vp = STRING_TO_JSVAL( JS_NewStringCopyZ(cx, nid->szTip) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc

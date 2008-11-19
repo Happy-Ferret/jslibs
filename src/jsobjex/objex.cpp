@@ -54,6 +54,7 @@ inline JSBool NotifyObject( int slotIndex, JSContext *cx, JSObject *obj, jsval i
 	J_CHK( JS_GetReservedSlot( cx, obj, AUX_SLOT, &aux ) );
 	jsval args[] = { id, *vp, aux, INT_TO_JSVAL(slotIndex) }; // ( propertyName, propertyValue, auxObject, callbackIndex )
 	return JS_CallFunctionValue( cx, obj, slot, sizeof(args)/sizeof(*args), args, vp );
+	JL_BAD;
 }
 
 JSBool AddProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
@@ -112,6 +113,7 @@ DEFINE_CONSTRUCTOR() {
 		J_CHK( JS_SetReservedSlot( cx, obj, AUX_SLOT, J_ARG(5) ) );
 	J_CHK( JS_SetPrototype(cx, obj, NULL) ); // this creates an empty object ( without __proto__, __parent__, toString, ... )
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -134,6 +136,7 @@ DEFINE_FUNCTION_FAST( Aux ) {
 	if ( J_FARG_ISDEF(2) )
 	  J_CHK( JS_SetReservedSlot( cx, object, AUX_SLOT, J_FARG(2) ) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 CONFIGURE_CLASS

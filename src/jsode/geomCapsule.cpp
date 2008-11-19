@@ -45,6 +45,7 @@ DEFINE_CONSTRUCTOR() {
 	SetupReadMatrix(cx, obj); // (TBD) check return status
 	ode::dGeomSetData(geomId, obj); // 'obj' do not need to be rooted because Goem's data is reset to NULL when 'obj' is finalized.
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -66,6 +67,7 @@ DEFINE_PROPERTY( radiusSetter ) {
 	JS_ValueToNumber(cx, *vp, &value);
 	ode::dGeomCapsuleSetParams(geom, value, length);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY( radiusGetter ) {
@@ -76,6 +78,7 @@ DEFINE_PROPERTY( radiusGetter ) {
 	ode::dGeomCapsuleGetParams(geom, &radius, &length);
 	JS_NewDoubleValue(cx, radius, vp); // see JS_NewNumberValue and JS_NewDouble
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -93,6 +96,7 @@ DEFINE_PROPERTY( lengthSetter ) {
 	JS_ValueToNumber(cx, *vp, &value);
 	ode::dGeomCapsuleSetParams(geom, radius, value);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY( lengthGetter ) {
@@ -103,6 +107,7 @@ DEFINE_PROPERTY( lengthGetter ) {
 	ode::dGeomCapsuleGetParams(geom, &radius, &length);
 	JS_NewDoubleValue(cx, length, vp); // see JS_NewNumberValue and JS_NewDouble
 	return JS_TRUE;
+	JL_BAD;
 }
 
 

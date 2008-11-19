@@ -181,7 +181,9 @@ DEFINE_CONSTRUCTOR() {
 	J_CHK( JS_SetReservedSlot(cx, obj, SLOT_INPUT_STREAM, J_ARG(1) ) );
 	pv->streamObject = JSVAL_TO_OBJECT(J_ARG(1));
 
-	SF_INFO tmp = {0};
+	SF_INFO tmp; // = {0};
+	memset(&tmp, 0, sizeof(SF_INFO));
+	
 	pv->sfInfo = tmp; // ok, memset does the same thing
 
 	pv->cx = cx;
@@ -204,6 +206,7 @@ DEFINE_CONSTRUCTOR() {
 
 	pv->cx = NULL; // see definition
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -339,6 +342,7 @@ DEFINE_CONSTRUCTOR() {
 	J_CHK( SetPropertyInt(cx, blobObj, "frames", totalSize / (pv->sfInfo.channels * pv->bits / 8) ) );
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -357,6 +361,7 @@ DEFINE_PROPERTY( inputStream ) {
 	J_S_ASSERT_RESOURCE(pv);
 	J_CHK( JS_GetReservedSlot(cx, obj, SLOT_INPUT_STREAM, vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -370,6 +375,7 @@ DEFINE_PROPERTY( bits ) {
 	J_S_ASSERT_RESOURCE(pv);
 	*vp = INT_TO_JSVAL( pv->bits );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -382,6 +388,7 @@ DEFINE_PROPERTY( rate ) {
 	J_S_ASSERT_RESOURCE(pv);
 	*vp = INT_TO_JSVAL( pv->sfInfo.samplerate );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -394,6 +401,7 @@ DEFINE_PROPERTY( channels ) {
 	J_S_ASSERT_RESOURCE(pv);
 	*vp = INT_TO_JSVAL( pv->sfInfo.channels );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -407,6 +415,7 @@ DEFINE_PROPERTY( frames ) {
 	J_S_ASSERT_RESOURCE(pv);
 	*vp = INT_TO_JSVAL( pv->sfInfo.frames );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 

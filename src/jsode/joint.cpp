@@ -35,11 +35,13 @@ DEFINE_PROPERTY( body1 ) {
 
 	JS_GetReservedSlot(cx, obj, JOINT_SLOT_BODY1, vp);
 	return JS_TRUE;
+	JL_BAD;
 }
 DEFINE_PROPERTY( body2 ) {
 
 	JS_GetReservedSlot(cx, obj, JOINT_SLOT_BODY2, vp);
 	return JS_TRUE;
+	JL_BAD;
 }
 */
 
@@ -62,6 +64,7 @@ inline JSBool SetJoint( JSContext *cx, JSObject *obj, jsval *b1, jsval *b2 ) {
 
 	ode::dJointAttach(jointID, bId1, bId2);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -89,6 +92,7 @@ DEFINE_FUNCTION( Destroy ) {
 	JS_SetPrivate(cx, obj, NULL);
 	ode::dJointDestroy(jointId);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /*
@@ -116,6 +120,7 @@ DEFINE_FUNCTION( Attach ) {
 
 	ode::dJointAttach(jointID, bodyID1, bodyID2);
 	return JS_TRUE;
+	JL_BAD;
 }
 */
 
@@ -177,6 +182,7 @@ DEFINE_PROPERTY( body1 ) {
 	JS_GetProperty(cx, obj, "body2", &b2);
 	J_CHK( SetJoint(cx, obj, vp, &b2) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -190,6 +196,7 @@ DEFINE_PROPERTY( body2 ) {
 	JS_GetProperty(cx, obj, "body1", &b1);
 	J_CHK( SetJoint(cx, obj, &b1, vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -220,6 +227,7 @@ DEFINE_PROPERTY( useFeedback ) {
 	}
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -267,6 +275,7 @@ DEFINE_PROPERTY( feedbackVectorSetter ) {
 			break;
 	}
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -295,6 +304,7 @@ DEFINE_PROPERTY( feedbackVectorGetter ) {
 			break;
 	}
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -351,6 +361,7 @@ DEFINE_PROPERTY( jointParamSetter ) {
 	}
 	JointSetParam(jointId, parameter, JSValToODEReal(cx, *vp));
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -387,6 +398,7 @@ DEFINE_PROPERTY( jointParamGetter ) {
 	}
 	JS_NewDoubleValue(cx, JointGetParam(jointId, parameter), vp);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 

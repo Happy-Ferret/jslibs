@@ -36,6 +36,7 @@ DEFINE_CONSTRUCTOR() {
 	ode::dJointID jointId = ode::dJointCreatePlane2D(worldId, 0); // The joint group ID is 0 to allocate the joint normally.
 	JS_SetPrivate(cx, obj, jointId);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 // dJointSetPlane2DXParam
@@ -52,6 +53,7 @@ DEFINE_PROPERTY( x ) {
 	ode::dJointSetPlane2DXParam( jointId, 
 
 	return JS_TRUE;
+	JL_BAD;
 }
 */
 

@@ -27,6 +27,7 @@ inline JSBool PositionSet( JSContext *cx, JSObject *obj, int position ) {
 	jsval tmp;
 	J_CHK( IntToJsval(cx, position, &tmp) );
 	return JS_SetReservedSlot(cx, obj, SLOT_STREAM_POSITION, tmp);
+	JL_BAD;
 }
 
 
@@ -36,6 +37,7 @@ inline JSBool PositionGet( JSContext *cx, JSObject *obj, int *position ) {
 	J_CHK( JS_GetReservedSlot(cx, obj, SLOT_STREAM_POSITION, &tmp) );
 	J_CHK( JsvalToInt(cx, tmp, position) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -65,6 +67,7 @@ JSBool StreamRead( JSContext *cx, JSObject *obj, char *buf, unsigned int *amount
 	position += *amount;
 	PositionSet(cx, obj, position);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -105,8 +108,7 @@ DEFINE_CONSTRUCTOR() {
 	J_CHK( SetStreamReadInterface(cx, obj, StreamRead) );
 
 	return JS_TRUE;
-bad:
-	return JS_FALSE;
+	JL_BAD;
 }
 
 
@@ -135,8 +137,7 @@ DEFINE_FUNCTION_FAST( Read ) {
 	J_CHK( J_NewBlob(cx, buffer, readAmount, J_FRVAL) );
 
 	return JS_TRUE;
-bad:
-	return JS_FALSE;
+	JL_BAD;
 }
 
 
@@ -150,6 +151,7 @@ DEFINE_PROPERTY( positionGetter ) {
 	J_CHK( PositionGet(cx, obj, &position) );
 	*vp = INT_TO_JSVAL( position );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY( positionSetter ) {
@@ -159,6 +161,7 @@ DEFINE_PROPERTY( positionSetter ) {
 	J_S_ASSERT( position >= 0, "Invalid stream position." );
 	J_CHK( PositionSet(cx, obj, position) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -181,6 +184,7 @@ DEFINE_PROPERTY( available ) {
 	J_CHK( JsvalToInt(cx, *vp, &length) );
 	J_CHK( IntToJsval(cx, length - position, vp ) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -190,7 +194,7 @@ DEFINE_PROPERTY( available ) {
 DEFINE_PROPERTY( source ) {
 
 	J_CHK( JS_GetReservedSlot(cx, obj, SLOT_STREAM_SOURCE, vp) );
-	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc

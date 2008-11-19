@@ -46,6 +46,7 @@ static JSBool ReadMatrix( JSContext *cx, JSObject *obj, float **pm) { // Doc: __
 	m[14] = pos[2];// - comz;
 	m[15] = 1;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -95,6 +96,7 @@ DEFINE_CONSTRUCTOR() {
 //	ode::dBodySetData(bodyID,worldObject);
 	J_CHK( SetMatrix44GetInterface(cx, obj, ReadMatrix) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -114,6 +116,7 @@ DEFINE_FUNCTION( Destroy ) {
 	JS_SetPrivate(cx, obj, NULL);
 	JS_SetReservedSlot(cx, obj, BODY_SLOT_WORLD, JSVAL_VOID);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -130,6 +133,7 @@ DEFINE_FUNCTION( IsConnectedTo ) {
 	ValToBodyID(cx, argv[0], &bodyId);
 	ode::dAreConnected(thisBodyID, bodyId);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -192,6 +196,7 @@ DEFINE_PROPERTY( vectorGetter ) {
 	//FloatVectorToArray(cx, dim, vector, vp);
 	J_CHK( FloatVectorToJsval(cx, vector, dim, vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -241,6 +246,7 @@ DEFINE_PROPERTY( vectorSetter ) {
 			break;
 	}
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -257,6 +263,7 @@ DEFINE_PROPERTY( mass ) {
 		*vp = OBJECT_TO_JSVAL(massObject);
 	}
 	return JS_TRUE;
+	JL_BAD;
 }
 
 

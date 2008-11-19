@@ -77,6 +77,7 @@ DEFINE_CONSTRUCTOR() {
 		}	
 	}
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -134,7 +135,8 @@ DEFINE_XDR() {
 		return JS_TRUE;
 	}
 
-	return JS_FALSE;
+	return JS_TRUE;
+	JL_BAD;
 }
 
 

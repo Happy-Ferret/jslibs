@@ -73,6 +73,7 @@ DEFINE_CONSTRUCTOR() {
 		return ThrowCryptError(cx,err);
 	JS_SetPrivate( cx, obj, privateData );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -113,6 +114,7 @@ DEFINE_CALL() {
 	J_CHK( J_NewBlob( cx, pr, hasRead, rval ) );
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -138,6 +140,7 @@ DEFINE_FUNCTION( AddEntropy ) {
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -156,6 +159,7 @@ DEFINE_FUNCTION( AutoEntropy ) {
 	if ( err != CRYPT_OK )
 		return ThrowCryptError(cx, err);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -183,6 +187,7 @@ DEFINE_PROPERTY( stateGetter ) {
 
 	J_CHK( J_NewBlob(cx, stateData, size, vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY( stateSetter ) {
@@ -199,6 +204,7 @@ DEFINE_PROPERTY( stateSetter ) {
 	if ( err != CRYPT_OK )
 		return ThrowCryptError(cx, err);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -214,6 +220,7 @@ DEFINE_PROPERTY( name ) {
 
 	*vp = STRING_TO_JSVAL( JS_NewStringCopyZ(cx,privateData->prng.name) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -239,6 +246,7 @@ DEFINE_PROPERTY( list ) {
 		LTC_MUTEX_UNLOCK(&ltc_prng_mutex);
 	}
 	return JS_TRUE;
+	JL_BAD;
 }
 
 

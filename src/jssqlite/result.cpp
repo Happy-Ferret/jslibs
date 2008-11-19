@@ -59,6 +59,7 @@ JSBool SqliteToJsval( JSContext *cx, sqlite3_value *value, jsval *rval ) {
 			J_REPORT_ERROR( "Unable to convert data.");
 	}
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -151,6 +152,7 @@ JSBool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *objAt,
 		}
 	}
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -158,6 +160,7 @@ JSBool SqliteColumnToJsval( JSContext *cx, sqlite3_stmt *pStmt, int iCol, jsval 
 
 	J_CHK( SqliteToJsval(cx, sqlite3_column_value(pStmt, iCol), rval) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -216,6 +219,7 @@ DEFINE_FUNCTION( Close ) {
 		return SqliteThrowError( cx, status, sqlite3_errcode(sqlite3_db_handle(pStmt)), sqlite3_errmsg(sqlite3_db_handle(pStmt)) );
 	JS_SetReservedSlot(cx, obj, SLOT_RESULT_DATABASE, JSVAL_VOID);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -270,6 +274,7 @@ DEFINE_FUNCTION( Step ) {
 			return JS_TRUE;
 	}
 	J_REPORT_ERROR_1("invalid case (status:%d)", status );
+	JL_BAD;
 }
 
 
@@ -288,6 +293,7 @@ DEFINE_FUNCTION( Col ) {
 	JS_ValueToInt32( cx, argv[0], &col );
 	SqliteColumnToJsval( cx, pStmt, col, rval );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -331,6 +337,7 @@ DEFINE_FUNCTION( Row ) {
 			JS_DefineElement( cx, row, col, colJsValue, NULL, NULL, JSPROP_ENUMERATE );
 	}
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -346,6 +353,7 @@ DEFINE_FUNCTION( Reset ) {
 	if ( status != SQLITE_OK )
 		return SqliteThrowError( cx, status, sqlite3_errcode(sqlite3_db_handle(pStmt)), sqlite3_errmsg(sqlite3_db_handle(pStmt)) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -363,6 +371,7 @@ DEFINE_PROPERTY( columnCount ) {
 	J_S_ASSERT_RESOURCE( pStmt );
 	*vp = INT_TO_JSVAL(sqlite3_column_count(pStmt));
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -391,6 +400,7 @@ DEFINE_PROPERTY( columnNames ) {
 		JS_DefineElement(cx, columnNames, col, colJsValue, NULL, NULL, JSPROP_ENUMERATE | JSPROP_PERMANENT);
 	}
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -418,7 +428,8 @@ DEFINE_PROPERTY( columnIndexes ) {
 		colJsValue = INT_TO_JSVAL(col);
 		JS_SetProperty( cx, columnIndexes, sqlite3_column_name( pStmt, col ), &colJsValue );
 	}
-  return JS_TRUE;
+	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -431,7 +442,8 @@ DEFINE_PROPERTY( expired ) {
 	sqlite3_stmt *pStmt = (sqlite3_stmt *)JS_GetPrivate( cx, obj );
 	J_S_ASSERT_RESOURCE( pStmt );
 	*vp = sqlite3_expired(pStmt) ? JSVAL_TRUE : JSVAL_FALSE;
-  return JS_TRUE;
+	return JS_TRUE;
+	JL_BAD;
 }
 
 

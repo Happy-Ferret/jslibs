@@ -50,6 +50,7 @@ DEFINE_CONSTRUCTOR() {
 
 	J_CHK( JS_SetPrivate(cx, obj, pv) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -66,6 +67,7 @@ DEFINE_FUNCTION_FAST( valueOf ) {
 	J_S_ASSERT_RESOURCE( pv );
 	J_CHK( UIntToJsval(cx, pv->filter, J_FRVAL) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -96,6 +98,7 @@ DEFINE_PROPERTY_SETTER( type ) {
 	alFilteri(pv->filter, AL_FILTER_TYPE, filterType);
 	J_CHK( CheckThrowCurrentOalError(cx) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY_GETTER( type ) {
@@ -112,6 +115,7 @@ DEFINE_PROPERTY_GETTER( type ) {
 		J_CHK( IntToJsval(cx, filterType, vp) );
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -126,6 +130,7 @@ DEFINE_PROPERTY_SETTER( filterFloat ) {
 	alFilterf(pv->filter, param, f);
 	J_CHK( CheckThrowCurrentOalError(cx) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY_GETTER( filterFloat ) {
@@ -138,6 +143,7 @@ DEFINE_PROPERTY_GETTER( filterFloat ) {
 	J_CHK( CheckThrowCurrentOalError(cx) );
 	J_CHK( FloatToJsval(cx, f, vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 

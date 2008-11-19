@@ -791,6 +791,7 @@ DEFINE_PROPERTY( hostLanguage ) {
 	VstInt32 lang = vstPlugin->getHostLanguage();
 	*vp = INT_TO_JSVAL(lang);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY( directory ) {
@@ -806,6 +807,7 @@ DEFINE_PROPERTY( directory ) {
 		*vp = JSVAL_VOID;
 	}
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -819,6 +821,7 @@ DEFINE_PROPERTY( canProcessReplacing ) {
 		vstPlugin->canProcessReplacing( JSVAL_TO_BOOLEAN(*vp) == JS_TRUE ? true : false );
 	}
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /* perhaps later
@@ -832,6 +835,7 @@ DEFINE_PROPERTY( numPrograms ) {
 	J_S_ASSERT_INT( *vp );
 	vstPlugin->SetNumPrograms( JSVAL_TO_INT(*vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY( numParams ) {
@@ -841,6 +845,7 @@ DEFINE_PROPERTY( numParams ) {
 	J_S_ASSERT_INT( *vp );
 	vstPlugin->SetNumParams( JSVAL_TO_INT(*vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY( numInputs ) {
@@ -850,6 +855,7 @@ DEFINE_PROPERTY( numInputs ) {
 	J_S_ASSERT_INT( *vp );
 	vstPlugin->setNumInputs( JSVAL_TO_INT(*vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY( numOutputs ) {
@@ -862,6 +868,7 @@ DEFINE_PROPERTY( numOutputs ) {
 		vstPlugin->setNumOutputs( JSVAL_TO_INT(*vp) );
 	}
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY( samplePos ) {
@@ -874,6 +881,7 @@ DEFINE_PROPERTY( samplePos ) {
 	else
 		*vp = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY( sampleRate ) {
@@ -886,6 +894,7 @@ DEFINE_PROPERTY( sampleRate ) {
 	else
 		*vp = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY( nanoSeconds ) {
@@ -898,6 +907,7 @@ DEFINE_PROPERTY( nanoSeconds ) {
 	else
 		*vp = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY( ppqPos ) {
@@ -910,6 +920,7 @@ DEFINE_PROPERTY( ppqPos ) {
 	else
 		*vp = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY( tempo ) {
@@ -922,6 +933,7 @@ DEFINE_PROPERTY( tempo ) {
 	else
 		*vp = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY( barStartPos ) {
@@ -934,6 +946,7 @@ DEFINE_PROPERTY( barStartPos ) {
 	else
 		*vp = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY( cycleStartPos ) {
@@ -946,6 +959,7 @@ DEFINE_PROPERTY( cycleStartPos ) {
 	else
 		*vp = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY( cycleEndPos ) {
@@ -958,6 +972,7 @@ DEFINE_PROPERTY( cycleEndPos ) {
 	else
 		*vp = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY( timeSigNumerator ) {
@@ -970,6 +985,7 @@ DEFINE_PROPERTY( timeSigNumerator ) {
 	else
 		*vp = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY( timeSigDenominator ) {
@@ -982,6 +998,7 @@ DEFINE_PROPERTY( timeSigDenominator ) {
 	else
 		*vp = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY( smpteOffset ) {
@@ -994,6 +1011,7 @@ DEFINE_PROPERTY( smpteOffset ) {
 	else
 		*vp = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY( smpteFrameRate ) {
@@ -1006,6 +1024,7 @@ DEFINE_PROPERTY( smpteFrameRate ) {
 	else
 		*vp = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY( samplesToNextClock ) {
@@ -1018,6 +1037,7 @@ DEFINE_PROPERTY( samplesToNextClock ) {
 	else
 		*vp = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -1028,6 +1048,7 @@ DEFINE_PROPERTY( inputLatency ) {
 	J_S_ASSERT_RESOURCE( vstPlugin );
 	*vp = JSVAL_TO_INT( vstPlugin->getInputLatency() );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY( outputLatency ) {
@@ -1036,6 +1057,7 @@ DEFINE_PROPERTY( outputLatency ) {
 	J_S_ASSERT_RESOURCE( vstPlugin );
 	*vp = JSVAL_TO_INT( vstPlugin->getOutputLatency() );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -1046,6 +1068,7 @@ DEFINE_PROPERTY( initialDelay ) {
 	J_S_ASSERT_RESOURCE( vstPlugin );
 	vstPlugin->setInitialDelay( JSVAL_TO_INT( *vp ) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -1060,6 +1083,7 @@ DEFINE_PROPERTY( uniqueID ) {
 	VstInt32 vstid = CCONST( str[0], str[1], str[2], str[3] );
 	vstPlugin->setUniqueID( vstid );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -1090,6 +1114,7 @@ DEFINE_FUNCTION_FAST( sendVstEventToHost ) {
 
 	*J_FRVAL = res ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 

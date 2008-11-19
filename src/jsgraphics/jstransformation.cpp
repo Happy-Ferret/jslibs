@@ -59,6 +59,7 @@ DEFINE_CONSTRUCTOR() {
 	JS_SetPrivate(cx, J_OBJ, m);
 	J_CHK( SetMatrix44ReadInterface(cx, obj, ReadMatrix) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -73,6 +74,7 @@ DEFINE_FUNCTION_FAST( Clear ) {
 	Matrix44Identity(tm);
 	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -87,6 +89,7 @@ DEFINE_FUNCTION_FAST( ClearRotation ) {
 	Matrix44ClearRotation(tm);
 	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -101,6 +104,7 @@ DEFINE_FUNCTION_FAST( ClearTranslation ) {
 	Matrix44ClearTranslation(tm);
 	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -122,6 +126,7 @@ DEFINE_FUNCTION_FAST( Load ) {
 	if ( m != tm ) // check if the pointer has been modified
 		memcpy(tm, m, sizeof(Matrix44)); // if it is, copy the data
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -151,6 +156,7 @@ DEFINE_FUNCTION_FAST( LoadRotation ) {
 	tm->raw[10] = m->raw[10];
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -173,6 +179,7 @@ DEFINE_FUNCTION_FAST( LoadTranslation ) {
 	tm->raw[11] = m->raw[11];
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -196,6 +203,7 @@ DEFINE_FUNCTION_FAST( Translation ) {
 	Matrix44SetTranslation(m, x,y,z);
 	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -222,6 +230,7 @@ DEFINE_FUNCTION_FAST( Translate ) {
 	Matrix44Product(m, &t);
 	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -272,6 +281,7 @@ DEFINE_FUNCTION_FAST( RotationFromQuaternion ) {
 	tm->m[2][2] = 1.0-(fTxx+fTyy);
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -297,6 +307,7 @@ DEFINE_FUNCTION_FAST( TaitBryanRotation ) {
 	// (TBD)
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -326,6 +337,7 @@ DEFINE_FUNCTION_FAST( Rotation ) {
 	Matrix44SetRotation(tm, &axis, -angle * M_PI / 360.0f);
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -356,6 +368,7 @@ DEFINE_FUNCTION_FAST( Rotate ) {
 	Matrix44Product(m, &r);
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -377,6 +390,7 @@ DEFINE_FUNCTION_FAST( RotationX ) {
 //	Matrix44Product(m, &r);
 	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -398,6 +412,7 @@ DEFINE_FUNCTION_FAST( RotationY ) {
 //	Matrix44Product(m, &r);
 	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -419,6 +434,7 @@ DEFINE_FUNCTION_FAST( RotationZ ) {
 //	Matrix44Product(m, &r);
 	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -462,6 +478,7 @@ DEFINE_FUNCTION_FAST( LookAt ) {
 	Matrix44LookAt(m, &to, &up);
 	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -492,6 +509,7 @@ DEFINE_FUNCTION_FAST( RotateToVector ) {
 	*J_FRVAL = JSVAL_VOID;
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -505,6 +523,7 @@ DEFINE_FUNCTION_FAST( Invert ) {
 	Matrix44Invert(m);
 	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -525,6 +544,7 @@ DEFINE_FUNCTION_FAST( Product ) {
 	Matrix44Product(tm, m); // <- mult
 	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -545,6 +565,7 @@ DEFINE_FUNCTION_FAST( ReverseProduct ) {
 	Matrix44ReverseProduct(tm, m); // <- mult
 	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -608,6 +629,7 @@ DEFINE_FUNCTION_FAST( TransformVector ) {
 
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -624,6 +646,7 @@ DEFINE_NEW_RESOLVE() {
 	JS_DefineProperty(cx, obj, (char*)slot, JSVAL_VOID, NULL, NULL, JSPROP_INDEX | JSPROP_SHARED );
 	*objp = obj;
 	return JS_TRUE;
+	JL_BAD;
 }
 */
 
@@ -650,6 +673,7 @@ DEFINE_GET_PROPERTY() {
 		J_CHK( JS_NewNumberValue(cx, tm->raw[slot], vp) );
 	}
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -665,6 +689,7 @@ DEFINE_SET_PROPERTY() {
 		tm->raw[slot] = JSVAL_IS_DOUBLE(*vp) ? *JSVAL_TO_DOUBLE(*vp) : JSVAL_TO_INT(*vp);
 	}
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc

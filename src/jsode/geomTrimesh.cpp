@@ -72,6 +72,7 @@ DEFINE_CONSTRUCTOR() {
 	ode::dGeomSetData(geomId, obj); // 'obj' do not need to be rooted because Goem's data is reset to NULL when 'obj' is finalized.
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 CONFIGURE_CLASS

@@ -45,6 +45,7 @@ DEFINE_CONSTRUCTOR() {
 	J_S_ASSERT_ALLOC(data);
 	JS_SetPrivate(cx, obj, data);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 #define SETBIT(value, mask, polarity) ((value) = (polarity) ? (value) | (mask) : (value) & ~(mask) )
@@ -160,6 +161,7 @@ DEFINE_PROPERTY( surfaceSetter ) {
 //	dContactApprox1_2	= 0x2000,
 //	dContactApprox1	= 0x3000
 	return JS_TRUE;
+	JL_BAD;
 }
 
 

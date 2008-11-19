@@ -36,6 +36,7 @@ DEFINE_CONSTRUCTOR() {
 	ode::dJointID jointId = ode::dJointCreateSlider(worldId, 0); // The joint group ID is 0 to allocate the joint normally.
 	JS_SetPrivate(cx, obj, jointId);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -57,6 +58,7 @@ DEFINE_PROPERTY( axisSetter ) {
 	J_S_ASSERT( length == 3, "Invalid array size." );
 	ode::dJointSetSliderAxis( jointId, vector[0], vector[1], vector[2] );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY( axisGetter ) {
@@ -68,6 +70,7 @@ DEFINE_PROPERTY( axisGetter ) {
 	//FloatVectorToArray(cx, 3, vector, vp);
 	J_CHK( FloatVectorToJsval(cx, vector, 3, vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -80,6 +83,7 @@ DEFINE_PROPERTY( position ) {
 	J_S_ASSERT_RESOURCE(jointId);
 	JS_NewDoubleValue(cx, ode::dJointGetSliderPosition(jointId), vp);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -93,6 +97,7 @@ DEFINE_PROPERTY( positionRate ) {
 	J_S_ASSERT_RESOURCE(jointId);
 	JS_NewDoubleValue(cx, ode::dJointGetSliderPositionRate(jointId), vp);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 

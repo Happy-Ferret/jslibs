@@ -237,6 +237,7 @@ static JSBool RemoveClass( JSContext *cx, JSClass *cl ) {
 			if ( _init(cx, _constructor ? JS_GetConstructor(cx, *_prototype) : *_prototype) != JS_TRUE ) \
 				return JS_FALSE; \
 		return JS_TRUE; \
+		JL_BAD; \
 	}
 
 #endif // _JSCLASS_H_

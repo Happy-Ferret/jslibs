@@ -64,6 +64,7 @@ static JSBool JSDefaultStdoutFunction(JSContext *cx, uintN argc, jsval *vp) {
 		pv->hostStdOut(pv->privateData, buffer, length);
 	}
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -80,6 +81,7 @@ static JSBool JSDefaultStderrFunction(JSContext *cx, uintN argc, jsval *vp) {
 		pv->hostStdErr(pv->privateData, buffer, length);
 	}
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -92,15 +94,16 @@ void stdErrRouter( JSContext *cx, const char *message, size_t length ) {
 		if ( GetConfigurationValue(cx, NAME_CONFIGURATION_STDERR, &fct) == JS_TRUE && JsvalIsFunction(cx, fct) ) {
 
 			jsval rval, strVal;
-			StringAndLengthToJsval(cx, &strVal, message, length);
-			JS_CallFunctionValue(cx, globalObject, fct, 1, &strVal, &rval);
+			J_CHK( StringAndLengthToJsval(cx, &strVal, message, length) );
+			J_CHK( JS_CallFunctionValue(cx, globalObject, fct, 1, &strVal, &rval) );
 			return;
 		}
 	}
-
 	HostPrivate *pv = GetHostPrivate(cx);
 	if ( pv != NULL && pv->hostStdErr != NULL )
 		pv->hostStdErr(pv->privateData, message, length); // else, use the default.
+bad:
+	return;
 }
 
 
@@ -276,9 +279,10 @@ static JSBool LoadModule(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, 
 	jl::QueueUnshift( &pv->moduleList, module ); // LIFO
 	J_CHK( JS_NewNumberValue(cx, (unsigned int)module, rval) ); // really needed ? yes, UnloadModule need this ID
 	return JS_TRUE;
+	JL_BAD;
 }
 
-/* (TBD) 
+/* (TBD)
 static JSBool UnloadModule(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
 	J_S_ASSERT_ARG_MIN(1);
@@ -296,6 +300,7 @@ static JSBool UnloadModule(JSContext *cx, JSObject *obj, uintN argc, jsval *argv
 		*rval = JSVAL_FALSE;
 	}
 	return JS_TRUE;
+	JL_BAD;
 }
 */
 
@@ -322,7 +327,6 @@ static JSBool global_resolve(JSContext *cx, JSObject *obj, jsval id, uintN flags
 // global object
 // doc: For full ECMAScript standard compliance, obj should be of a JSClass that has the JSCLASS_GLOBAL_FLAGS flag.
 static JSClass global_class = { // global variable !
-
 	NAME_GLOBAL_CLASS, JSCLASS_GLOBAL_FLAGS | JSCLASS_NEW_RESOLVE,  // | JSCLASS_HAS_PRIVATE
 	JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub,
 	global_enumerate, (JSResolveOp)global_resolve, JS_ConvertStub, JS_FinalizeStub, // see LAZY_STANDARD_CLASSES
@@ -408,6 +412,9 @@ JSContext* CreateHost(size_t maxMem, size_t maxAlloc, size_t operationLimitGC) {
 JSBool InitHost( JSContext *cx, bool unsafeMode, HostOutput stdOut, HostOutput stdErr, void* privateData ) { // init the host for jslibs usage (modules, errors, ...)
 
 	HostPrivate *pv = (HostPrivate*)malloc(sizeof(HostPrivate));
+	J_S_ASSERT_ALLOC(pv);
+	memset(pv, 0, sizeof(HostPrivate));
+
 	SetHostPrivate(cx, pv);
 
 	pv->privateData = privateData;
@@ -447,6 +454,7 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostOutput stdOut, HostOutput s
 // init static modules
 	J_CHKM( jslangInit(cx, globalObject), "Unable to initialize jslang." );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -584,5 +592,6 @@ JSBool ExecuteScriptFileName( JSContext *cx, const char *scriptFileName, bool co
 
 	J_CHKM( JS_DeleteProperty(cx, globalObject, NAME_GLOBAL_ARGUMENTS ), "Unable to remove argument property" );
 	return JS_TRUE;
+	JL_BAD;
 }
 

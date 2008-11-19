@@ -102,6 +102,7 @@ DEFINE_FUNCTION_FAST( GetBoolean ) {
 	glGetBooleanv(JSVAL_TO_INT(J_FARG(1)), &params);
 	*J_FRVAL = BOOLEAN_TO_JSVAL(params);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -141,6 +142,7 @@ DEFINE_FUNCTION_FAST( GetInteger ) {
 		*J_FRVAL = INT_TO_JSVAL( params[0] );
 	}
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -180,6 +182,7 @@ DEFINE_FUNCTION_FAST( GetDouble ) {
 		J_CHK( JS_NewDoubleValue(cx, params[0], J_FRVAL) );
 	}
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -201,6 +204,7 @@ DEFINE_FUNCTION_FAST( Accum ) {
 	glAccum(op, value);
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -222,6 +226,7 @@ DEFINE_FUNCTION_FAST( AlphaFunc ) {
 	glAlphaFunc( JSVAL_TO_INT(J_FARG(1)), ref );
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -287,6 +292,7 @@ DEFINE_FUNCTION_FAST( Fog ) {
 	}
 	J_REPORT_ERROR("Invalid argument.");
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -306,6 +312,7 @@ DEFINE_FUNCTION_FAST( Hint ) {
 	glHint( JSVAL_TO_INT(J_FARG(1)), JSVAL_TO_INT(J_FARG(2)) );
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -340,6 +347,7 @@ DEFINE_FUNCTION_FAST( Vertex ) {
 	}
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -372,6 +380,7 @@ DEFINE_FUNCTION_FAST( Color ) {
 	}
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -396,6 +405,7 @@ DEFINE_FUNCTION_FAST( Normal ) {
 	glNormal3d(nx, ny, nz);
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -435,6 +445,7 @@ DEFINE_FUNCTION_FAST( TexCoord ) {
 	}
 	J_REPORT_ERROR("Invalid argument.");
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -477,6 +488,7 @@ DEFINE_FUNCTION_FAST( TexParameter ) {
 
 	J_REPORT_ERROR("Invalid argument.");
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -518,6 +530,7 @@ DEFINE_FUNCTION_FAST( TexEnv ) {
 	}
 	J_REPORT_ERROR("Invalid argument.");
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -557,6 +570,7 @@ DEFINE_FUNCTION_FAST( LightModel ) {
 	}
 	J_REPORT_ERROR("Invalid argument.");
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -598,6 +612,7 @@ DEFINE_FUNCTION_FAST( Light ) {
 	}
 	J_REPORT_ERROR("Invalid argument.");
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -639,6 +654,7 @@ DEFINE_FUNCTION_FAST( Material ) {
 	}
 	J_REPORT_ERROR("Invalid argument.");
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -656,6 +672,7 @@ DEFINE_FUNCTION_FAST( Enable ) {
 	glEnable( JSVAL_TO_INT(J_FARG(1)) );
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -673,6 +690,7 @@ DEFINE_FUNCTION_FAST( Disable ) {
 	glDisable( JSVAL_TO_INT(J_FARG(1)) );
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -690,6 +708,7 @@ DEFINE_FUNCTION_FAST( PointSize ) {
 	JS_ValueToNumber(cx, J_FARG(1), &size);
 	glPointSize(size);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -707,6 +726,7 @@ DEFINE_FUNCTION_FAST( LineWidth ) {
 	JS_ValueToNumber(cx, J_FARG(1), &width);
 	glLineWidth(width);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -723,6 +743,7 @@ DEFINE_FUNCTION_FAST( ShadeModel ) {
 	glShadeModel( JSVAL_TO_INT( J_FARG(1) ) );
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -742,6 +763,7 @@ DEFINE_FUNCTION_FAST( BlendFunc ) {
 	glBlendFunc( JSVAL_TO_INT( J_FARG(1) ), JSVAL_TO_INT( J_FARG(2) ) );
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -759,6 +781,7 @@ DEFINE_FUNCTION_FAST( DepthFunc ) {
 	glDepthFunc( JSVAL_TO_INT( J_FARG(1) ) );
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -778,6 +801,7 @@ DEFINE_FUNCTION_FAST( DepthRange ) {
 	JS_ValueToNumber(cx, J_FARG(2), &zFar);
 	glDepthRange(zNear, zFar);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -795,6 +819,7 @@ DEFINE_FUNCTION_FAST( CullFace ) {
 	glCullFace(JSVAL_TO_INT( J_FARG(1) ));
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -812,6 +837,7 @@ DEFINE_FUNCTION_FAST( FrontFace ) {
 	glFrontFace( JSVAL_TO_INT( J_FARG(1) ) );
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -829,6 +855,7 @@ DEFINE_FUNCTION_FAST( ClearStencil ) {
 	glClearStencil(JSVAL_TO_INT( J_FARG(1) ));
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -847,6 +874,7 @@ DEFINE_FUNCTION_FAST( ClearDepth ) {
 	glClearDepth(depth);
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -871,6 +899,7 @@ DEFINE_FUNCTION_FAST( ClearColor ) {
 	glClearColor(r, g, b, a);
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -895,6 +924,7 @@ DEFINE_FUNCTION_FAST( ClearAccum ) {
 	glClearAccum(r, g, b, a);
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -912,6 +942,7 @@ DEFINE_FUNCTION_FAST( Clear ) {
 	glClear(JSVAL_TO_INT(J_FARG(1)));
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -934,6 +965,7 @@ DEFINE_FUNCTION_FAST( ClipPlane ) {
 	glClipPlane(JSVAL_TO_INT(J_FARG(1)), equation);
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -957,6 +989,7 @@ DEFINE_FUNCTION_FAST( Viewport ) {
 	glViewport(JSVAL_TO_INT(J_FARG(1)), JSVAL_TO_INT(J_FARG(2)), JSVAL_TO_INT(J_FARG(3)), JSVAL_TO_INT(J_FARG(4)));
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -985,6 +1018,7 @@ DEFINE_FUNCTION_FAST( Frustum ) {
 	glFrustum(left, right, bottom, top, zNear, zFar);
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -1016,6 +1050,7 @@ DEFINE_FUNCTION_FAST( Ortho ) {
 	glOrtho(left, right, bottom, top, zNear, zFar);
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -1059,6 +1094,7 @@ DEFINE_FUNCTION_FAST( Perspective ) {
 
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -1076,6 +1112,7 @@ DEFINE_FUNCTION_FAST( MatrixMode ) {
 	glMatrixMode(JSVAL_TO_INT( J_FARG(1) ));
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -1134,6 +1171,7 @@ DEFINE_FUNCTION_FAST( LoadMatrix ) {
 	glLoadMatrixf(m->raw);
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -1158,6 +1196,7 @@ DEFINE_FUNCTION_FAST( Rotate ) {
 	glRotated(angle, x, y, z);
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -1183,6 +1222,7 @@ DEFINE_FUNCTION_FAST( Translate ) {
 	glTranslated(x, y, z);
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -1208,6 +1248,7 @@ DEFINE_FUNCTION_FAST( Scale ) {
 	glScaled(x, y, z);
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -1242,6 +1283,7 @@ DEFINE_FUNCTION_FAST( DeleteList ) {
 	glDeleteLists(list, 1);
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -1296,7 +1338,7 @@ DEFINE_FUNCTION_FAST( CallList ) {
 	}
 
 	J_REPORT_ERROR("Invalid argument");
-	return JS_FALSE;
+	JL_BAD;
 }
 
 
@@ -1314,6 +1356,7 @@ DEFINE_FUNCTION_FAST( Begin ) {
 	glBegin(JSVAL_TO_INT( J_FARG(1) ));
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -1344,6 +1387,7 @@ DEFINE_FUNCTION_FAST( PushAttrib ) {
 	glPushAttrib(JSVAL_TO_INT( J_FARG(1) ));
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -1391,6 +1435,7 @@ DEFINE_FUNCTION_FAST( BindTexture ) {
 	glBindTexture( JSVAL_TO_INT( J_FARG(1) ), JSVAL_TO_INT( J_FARG(2) ));
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -1410,6 +1455,7 @@ DEFINE_FUNCTION_FAST( DeleteTexture ) {
 	glDeleteTextures(1, &texture);
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -1456,6 +1502,7 @@ DEFINE_FUNCTION_FAST( CopyTexImage2D ) {
 
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -1490,6 +1537,7 @@ DEFINE_FUNCTION_FAST( TexSubImage2D ) {
 
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 */
 
@@ -1513,6 +1561,7 @@ DEFINE_FUNCTION_FAST( GenBuffer ) {
 	glGenBuffersARB(1, &buffer);
 	*J_FRVAL = INT_TO_JSVAL(buffer);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -1536,6 +1585,7 @@ DEFINE_FUNCTION_FAST( BindBuffer ) {
 	glBindBufferARB(target, buffer);
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -1578,7 +1628,7 @@ DEFINE_FUNCTION_FAST( PointParameter ) {
 		return JS_TRUE;
 	}
 	J_REPORT_ERROR("Invalid argument.");
-	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -1599,6 +1649,7 @@ DEFINE_FUNCTION_FAST( ActiveTexture ) {
 	glActiveTextureARB(texture);
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -1619,6 +1670,7 @@ DEFINE_FUNCTION_FAST( ClientActiveTexture ) {
 	glClientActiveTextureARB(texture);
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -1666,7 +1718,7 @@ DEFINE_FUNCTION_FAST( MultiTexCoord ) {
 		return JS_TRUE;
 	}
 	J_REPORT_ERROR("Invalid argument.");
-	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -1776,6 +1828,7 @@ DEFINE_FUNCTION_FAST( LoadTrimesh ) {
 	J_CHK( CheckThrowCurrentOglError(cx) );
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -1846,6 +1899,7 @@ DEFINE_FUNCTION_FAST( DrawTrimesh ) {
 
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -1928,6 +1982,7 @@ DEFINE_FUNCTION_FAST( DefineTextureImage ) {
 	glTexImage2D( JSVAL_TO_INT(J_FARG(1)), 0, format, width, height, 0, format, type, data );
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -1975,6 +2030,7 @@ DEFINE_FUNCTION_FAST( RenderToImage ) {
 
 	glDeleteTextures(1, &texture);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -2020,6 +2076,7 @@ JSBool Init( JSContext *cx, JSObject *obj ) {
 
 	J_CHK( SetMatrix44ReadInterface(cx, obj, MatrixGet) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc

@@ -58,6 +58,7 @@ JSBool RequestPixbufImage(JSContext *cx, JSObject *obj, const char *name, GdkPix
 		}
 	}
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -111,6 +112,7 @@ DEFINE_CONSTRUCTOR() {
 	cairo_matrix_init_identity(&pv->transformation);
 	J_CHK( JS_SetPrivate(cx, obj, pv) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -149,7 +151,9 @@ DEFINE_FUNCTION_FAST( Write ) {
 //	rsvg_handle_set_base_uri(handle, "123"); // This can only be called before rsvg_handle_write()
 
 	gchar *tmp = handle->priv->base_uri;
-	CxObj cxobj = { cx, J_FOBJ };
+	CxObj cxobj;
+	cxobj.cx = cx;
+	cxobj.obj = J_FOBJ;
 	handle->priv->base_uri = (gchar*)&cxobj; // hack base_uri to store cx and obj for rsvg_pixbuf_new_from_href()
 	status = rsvg_handle_write(handle, (const guchar *)data, length, &error);
 	handle->priv->base_uri = tmp;
@@ -168,6 +172,7 @@ DEFINE_FUNCTION_FAST( Write ) {
 
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -379,6 +384,7 @@ DEFINE_FUNCTION_FAST( RenderImage ) { // using cairo
 	J_CHK( JS_DefineProperty(cx, blobObj, "width", INT_TO_JSVAL(width), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ) );
 	J_CHK( JS_DefineProperty(cx, blobObj, "height", INT_TO_JSVAL(height), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -450,6 +456,7 @@ DEFINE_FUNCTION_FAST( SetVisible ) {
 
 	*J_FRVAL = JSVAL_TRUE;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -469,6 +476,7 @@ DEFINE_FUNCTION_FAST( Scale ) {
 	J_CHK( JsvalToDouble(cx, J_FARG(2), &sy) );
 	cairo_matrix_scale(&pv->transformation, sx, sy);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -486,6 +494,7 @@ DEFINE_FUNCTION_FAST( Rotate ) {
 	J_CHK( JsvalToDouble(cx, J_FARG(1), &angle) );
 	cairo_matrix_rotate(&pv->transformation, angle);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -504,6 +513,7 @@ DEFINE_FUNCTION_FAST( Translate ) {
 	J_CHK( JsvalToDouble(cx, J_FARG(2), &ty) );
 	cairo_matrix_translate(&pv->transformation, tx, ty);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -543,6 +553,7 @@ DEFINE_PROPERTY(dpi) {
 	} else
 		J_REPORT_ERROR("Invalid case.");
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -559,6 +570,7 @@ DEFINE_PROPERTY(width) {
 	rsvg_handle_get_dimensions(handle, &dim);
 	J_CHK( UIntToJsval(cx, dim.width, vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -575,6 +587,7 @@ DEFINE_PROPERTY(height) {
 	rsvg_handle_get_dimensions(handle, &dim);
 	J_CHK( UIntToJsval(cx, dim.height, vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -593,6 +606,7 @@ DEFINE_PROPERTY(title) {
 	else
 		*vp = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -611,6 +625,7 @@ DEFINE_PROPERTY(metadata) {
 	else
 		*vp = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -629,6 +644,7 @@ DEFINE_PROPERTY(description) {
 	else
 		*vp = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 

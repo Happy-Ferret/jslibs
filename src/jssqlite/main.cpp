@@ -50,6 +50,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	J_CHK( INIT_CLASS( Database ) );
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 

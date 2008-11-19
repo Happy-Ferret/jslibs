@@ -53,6 +53,7 @@ JSBool ReadMatrix(JSContext *cx, JSObject *obj, float **pm) { // Doc: __declspec
 	m[14] = pos[2];
 	m[15] = 1;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -83,6 +84,7 @@ DEFINE_FUNCTION( Destroy ) {
 	ode::dGeomDestroy(geomId);
 	JS_SetPrivate(cx, obj, NULL);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -105,6 +107,7 @@ DEFINE_PROPERTY( enableSetter ) {
 	else
 		ode::dGeomDisable(geom);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -114,6 +117,7 @@ DEFINE_PROPERTY( enableGetter ) {
 	J_S_ASSERT_RESOURCE( geom );
 	*vp = ode::dGeomIsEnabled(geom) == 1 ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -134,6 +138,7 @@ DEFINE_PROPERTY( body ) {
 		return JS_FALSE;
 	ode::dGeomSetBody(geom, bodyId);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -176,6 +181,7 @@ DEFINE_PROPERTY( offset ) {
 		return JS_TRUE;
 	}
 	J_REPORT_ERROR("Invalid source.");
+	JL_BAD;
 }
 
 /**doc
@@ -209,6 +215,7 @@ DEFINE_PROPERTY( tansformation ) {
 		return JS_TRUE;
 	}
 	J_REPORT_ERROR("Invalid source.");
+	JL_BAD;
 }
 
 /**doc
@@ -223,6 +230,7 @@ DEFINE_PROPERTY( positionGetter ) {
 	//FloatVectorToArray(cx, 3, vector, vp);
 	J_CHK( FloatVectorToJsval(cx, vector, 3, vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -237,6 +245,7 @@ DEFINE_PROPERTY( positionSetter ) {
 	J_S_ASSERT( length == 3, "Invalid array size." );
 	ode::dGeomSetPosition( geom, vector[0], vector[1], vector[2] );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -251,6 +260,7 @@ DEFINE_PROPERTY( offsetPositionGetter ) {
 	J_CHK( FloatVectorToJsval(cx, vector, 3, vp) );
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -265,6 +275,7 @@ DEFINE_PROPERTY( offsetPositionSetter ) {
 	J_S_ASSERT( length == 3, "Invalid array size." );
 	ode::dGeomSetOffsetPosition( geom, vector[0], vector[1], vector[2] ); // (TBD) dGeomSetOffsetWorldRotation
 	return JS_TRUE;
+	JL_BAD;
 }
 */
 

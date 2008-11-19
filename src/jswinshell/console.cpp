@@ -39,6 +39,7 @@ DEFINE_CONSTRUCTOR() {
 		return WinThrowError(cx, GetLastError());
 	SetConsoleTitle("");
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_FINALIZE() {
@@ -66,6 +67,7 @@ DEFINE_FUNCTION( Close ) {
 		return WinThrowError(cx, GetLastError());
 //	J_S_ASSERT( res != 0, "Unable to free the console." );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -89,6 +91,7 @@ DEFINE_FUNCTION( Write ) {
 	if ( status == FALSE )
 		return WinThrowError(cx, GetLastError());
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -111,6 +114,7 @@ DEFINE_FUNCTION( Read ) {
 		return WinThrowError(cx, GetLastError());
 	*rval = STRING_TO_JSVAL(JS_NewStringCopyN(cx, buffer, read));
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -127,6 +131,7 @@ DEFINE_PROPERTY( titleSetter ) {
 	J_CHK( JsvalToString(cx, vp, &str) );
 	SetConsoleTitle(str);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY( titleGetter ) {
@@ -139,6 +144,7 @@ DEFINE_PROPERTY( titleGetter ) {
 	else
 		*vp = STRING_TO_JSVAL(JS_NewStringCopyN(cx, buffer, res));
 	return JS_TRUE;
+	JL_BAD;
 }
 
 

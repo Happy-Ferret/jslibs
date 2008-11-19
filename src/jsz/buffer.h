@@ -56,9 +56,9 @@ public:
 				free(_queue[i].mem);
 	}
 
-	Buffer( size_t defaultLength ) {
+	Buffer() {
 
-		_defaultLength = defaultLength;
+		_defaultLength = 0;
 
 		_hasStaticMem = true;
 
@@ -74,6 +74,11 @@ public:
 		_prevRequest = 0;
 		_useCount = 0;
 		_length = 0;
+	}
+
+	void SetOptimalDefaultLength(size_t defaultLength) {
+		
+		_defaultLength = defaultLength;
 	}
 
 	size_t OptimalLength() {

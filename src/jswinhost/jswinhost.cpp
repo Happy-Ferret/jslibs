@@ -136,6 +136,7 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 	//ReleaseMutex
 	CloseHandle( instanceCheckMutex );
 
+bad:
 	return 0;
 }
 

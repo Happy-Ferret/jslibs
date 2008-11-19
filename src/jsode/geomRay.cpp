@@ -45,6 +45,7 @@ DEFINE_CONSTRUCTOR() {
 	SetupReadMatrix(cx, obj); // (TBD) check return status
 	ode::dGeomSetData(geomId, obj); // 'obj' do not need to be rooted because Goem's data is reset to NULL when 'obj' is finalized.
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -60,6 +61,7 @@ DEFINE_PROPERTY( lengthSetter ) {
 	JS_ValueToNumber(cx, *vp, &radius);
 	ode::dGeomRaySetLength(geom, radius);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY( lengthGetter ) {
@@ -68,6 +70,7 @@ DEFINE_PROPERTY( lengthGetter ) {
 	J_S_ASSERT_RESOURCE( geom );
 	JS_NewDoubleValue(cx, ode::dGeomRayGetLength(geom), vp); // see JS_NewNumberValue and JS_NewDouble
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -87,6 +90,7 @@ DEFINE_PROPERTY( startSetter ) {
 	J_S_ASSERT( length == 3, "Invalid array size." );
 	ode::dGeomRaySet(geom, start[0], start[1], start[2], dir[0], dir[1], dir[2]);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY( startGetter ) {
@@ -98,6 +102,7 @@ DEFINE_PROPERTY( startGetter ) {
 	//FloatVectorToArray(cx, 3, start, vp);
 	J_CHK( FloatVectorToJsval(cx, start, 3, vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -117,6 +122,7 @@ DEFINE_PROPERTY( directionSetter ) {
 	J_S_ASSERT( length == 3, "Invalid array size." );
 	ode::dGeomRaySet(geom, start[0], start[1], start[2], dir[0], dir[1], dir[2]);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY( directionGetter ) {
@@ -128,6 +134,7 @@ DEFINE_PROPERTY( directionGetter ) {
 	//FloatVectorToArray(cx, 3, dir, vp);
 	J_CHK( FloatVectorToJsval(cx, dir, 3, vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 

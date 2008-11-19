@@ -99,6 +99,7 @@ DEFINE_CONSTRUCTOR() {
 	J_S_ASSERT_RESOURCE(face);
 	J_CHK( JS_SetPrivate(cx, obj, face) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -124,6 +125,7 @@ DEFINE_FUNCTION_FAST( SetSize ) {
 	J_S_ASSERT( status == 0, "Unable to FT_Set_Pixel_Sizes." );
 
 	return JS_TRUE;
+	JL_BAD;
 }
 */
 
@@ -171,6 +173,7 @@ DEFINE_FUNCTION_FAST( DrawChar ) {
 	memcpy( buf, face->glyph->bitmap.buffer, bufLength );
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -359,6 +362,7 @@ DEFINE_FUNCTION_FAST( DrawString ) {
 	if ( glyphs != glyphs_static ) // memory optimization only
 		free(glyphs);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -377,6 +381,7 @@ DEFINE_PROPERTY( ascender ) {
 	J_S_ASSERT_RESOURCE(face);
 	*vp = INT_TO_JSVAL(face->size->metrics.ascender >> 6);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -391,6 +396,7 @@ DEFINE_PROPERTY( descender ) {
 	J_S_ASSERT_RESOURCE(face);
 	*vp = INT_TO_JSVAL(face->size->metrics.descender >> 6);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -403,6 +409,7 @@ DEFINE_PROPERTY( width ) {
 	J_S_ASSERT_RESOURCE(face);
 	*vp = INT_TO_JSVAL(face->size->metrics.max_advance >> 6);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -422,6 +429,7 @@ DEFINE_PROPERTY( size ) {
 	J_S_ASSERT( size >= 0, "Invalid font size." );
 	FTCHK( FT_Set_Pixel_Sizes(face, size, size) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -457,6 +465,7 @@ DEFINE_PROPERTY( encoding ) {
 	J_CHK( JsvalToInt(cx, *vp, &encoding) );
 	FTCHK( FT_Select_Charmap(face, (FT_Encoding)encoding) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -470,6 +479,7 @@ DEFINE_PROPERTY( poscriptName ) {
 	J_S_ASSERT_RESOURCE(face);
 	J_CHK( StringToJsval(cx, FT_Get_Postscript_Name(face), vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 

@@ -49,8 +49,7 @@ inline JSBool CreateId( JSContext *cx, ID_TYPE idType, size_t size, void** data,
 	if (data)
 		*data = pv + sizeof(IdPrivate);
 	return JS_TRUE;
-bad:
-	return JS_FALSE;
+	JL_BAD;
 }
 
 

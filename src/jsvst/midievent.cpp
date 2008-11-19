@@ -53,6 +53,7 @@ DEFINE_CONSTRUCTOR() {
 	J_S_ASSERT_ALLOC(pv);
 	JS_SetPrivate(cx, obj, pv);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -62,6 +63,7 @@ DEFINE_PROPERTY_GETTER( deltaFrames ) {
 	J_S_ASSERT_RESOURCE(pv);
 	*vp = INT_TO_JSVAL(pv->deltaFrames);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY_SETTER( deltaFrames ) {
@@ -71,6 +73,7 @@ DEFINE_PROPERTY_SETTER( deltaFrames ) {
 	J_S_ASSERT_INT( *vp );
 	pv->deltaFrames = JSVAL_TO_INT( *vp );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -80,6 +83,7 @@ DEFINE_PROPERTY_GETTER( realtime ) {
 	J_S_ASSERT_RESOURCE(pv);
 	*vp = pv->flags & kVstMidiEventIsRealtime ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY_SETTER( realtime ) {
@@ -89,6 +93,7 @@ DEFINE_PROPERTY_SETTER( realtime ) {
 	J_S_ASSERT_BOOLEAN( *vp );
 	pv->flags = JSVAL_TO_BOOLEAN( *vp ) == JS_TRUE ? pv->flags & kVstMidiEventIsRealtime : pv->flags | ~kVstMidiEventIsRealtime;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -98,6 +103,7 @@ DEFINE_PROPERTY_GETTER( noteLength ) {
 	J_S_ASSERT_RESOURCE(pv);
 	*vp = INT_TO_JSVAL(pv->noteLength);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY_SETTER( noteLength ) {
@@ -107,6 +113,7 @@ DEFINE_PROPERTY_SETTER( noteLength ) {
 	J_S_ASSERT_INT( *vp );
 	pv->noteLength = JSVAL_TO_INT( *vp );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -116,6 +123,7 @@ DEFINE_PROPERTY_GETTER( noteOffset ) {
 	J_S_ASSERT_RESOURCE(pv);
 	*vp = INT_TO_JSVAL(pv->noteOffset);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY_SETTER( noteOffset ) {
@@ -125,6 +133,7 @@ DEFINE_PROPERTY_SETTER( noteOffset ) {
 	J_S_ASSERT_INT( *vp );
 	pv->noteOffset = JSVAL_TO_INT( *vp );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -134,6 +143,7 @@ DEFINE_PROPERTY_GETTER( detune ) {
 	J_S_ASSERT_RESOURCE(pv);
 	*vp = INT_TO_JSVAL(pv->detune);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY_SETTER( detune ) {
@@ -149,6 +159,7 @@ DEFINE_PROPERTY_SETTER( detune ) {
 		value = -64;
 	pv->detune = JSVAL_TO_INT( *vp );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -158,6 +169,7 @@ DEFINE_PROPERTY_GETTER( noteOffVelocity ) {
 	J_S_ASSERT_RESOURCE(pv);
 	*vp = INT_TO_JSVAL(pv->noteOffVelocity);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY_SETTER( noteOffVelocity ) {
@@ -173,6 +185,7 @@ DEFINE_PROPERTY_SETTER( noteOffVelocity ) {
 		value = 0;
 	pv->noteOffVelocity = JSVAL_TO_INT( *vp );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -192,6 +205,7 @@ DEFINE_PROPERTY_GETTER( status ) {
 	J_S_ASSERT_RESOURCE(pv);
 	*vp = INT_TO_JSVAL(((unsigned char) pv->midiData[0]) >> 4);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY_SETTER( status ) {
@@ -203,6 +217,7 @@ DEFINE_PROPERTY_SETTER( status ) {
 	J_S_ASSERT( value >= 0x8 && value <= 0xF, "Invalid status value.");
 	pv->midiData[0] = (pv->midiData[0] & 0x0F) | ((value & 0x0F) << 4);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -212,6 +227,7 @@ DEFINE_PROPERTY_GETTER( channel ) {
 	J_S_ASSERT_RESOURCE(pv);
 	*vp = INT_TO_JSVAL(pv->midiData[0] & 0x0F); // 0..15
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY_SETTER( channel ) {
@@ -223,6 +239,7 @@ DEFINE_PROPERTY_SETTER( channel ) {
 	J_S_ASSERT( value >= 0 && value <= 15, "Invalid channel value.");
 	pv->midiData[0] = (pv->midiData[0] & 0xF0) | (value & 0x0F);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -235,6 +252,7 @@ DEFINE_PROPERTY_GETTER( noteOn ) {
 
 	*vp = INT_TO_JSVAL(pv->midiData[0] & 0x0F); // 0..15
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY_SETTER( noteOn ) {
@@ -246,6 +264,7 @@ DEFINE_PROPERTY_SETTER( noteOn ) {
 	J_S_ASSERT( value >= 0 && value <= 15, "Invalid channel value.");
 	pv->midiData[0] = (pv->midiData[0] & 0xF0) | (value & 0x0F);
 	return JS_TRUE;
+	JL_BAD;
 }
 */
 
@@ -258,6 +277,7 @@ DEFINE_PROPERTY_GETTER( value1 ) {
 	J_S_ASSERT_RESOURCE(pv);
 	*vp = INT_TO_JSVAL(pv->midiData[1]);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY_SETTER( value1 ) {
@@ -268,6 +288,7 @@ DEFINE_PROPERTY_SETTER( value1 ) {
 	int value = JSVAL_TO_INT( *vp );
 	pv->midiData[1] = value;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -277,6 +298,7 @@ DEFINE_PROPERTY_GETTER( value2 ) {
 	J_S_ASSERT_RESOURCE(pv);
 	*vp = INT_TO_JSVAL(pv->midiData[2]);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY_SETTER( value2 ) {
@@ -287,6 +309,7 @@ DEFINE_PROPERTY_SETTER( value2 ) {
 	int value = JSVAL_TO_INT( *vp );
 	pv->midiData[2] = value;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 

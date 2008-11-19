@@ -61,6 +61,7 @@ DEFINE_CONSTRUCTOR() {
 	J_CHK( JS_SetPrivate( cx, obj, fd ) );
 	J_CHK( ReserveStreamReadInterface(cx, obj) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -100,6 +101,7 @@ DEFINE_FUNCTION( Shutdown ) { // arg[0] =  false: SHUTDOWN_RCV | true: SHUTDOWN_
 		return ThrowIoError(cx);
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -151,6 +153,7 @@ DEFINE_FUNCTION( Bind ) {
 		*rval = JSVAL_TRUE; // no error, return true
 	}
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -181,6 +184,7 @@ DEFINE_FUNCTION( Listen ) {
 	if ( PR_Listen(fd, backlog) != PR_SUCCESS )
 		return ThrowIoError(cx);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -220,6 +224,7 @@ DEFINE_FUNCTION( Accept ) {
 	*rval = OBJECT_TO_JSVAL( object );
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -304,6 +309,7 @@ DEFINE_FUNCTION( Connect ) {
 	J_CHK( SetStreamReadInterface(cx, obj, NativeInterfaceStreamRead) );
 	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -379,6 +385,7 @@ DEFINE_FUNCTION( SendTo ) {
 		PR_Close(fd);
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -446,6 +453,7 @@ DEFINE_FUNCTION( RecvFrom ) {
 	*rval = OBJECT_TO_JSVAL( arrayObject );
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -503,6 +511,7 @@ DEFINE_FUNCTION( TransmitFile ) { // WORKS ONLY ON BLOCKING SOCKET !!!
 
 	J_CHK( JS_NewNumberValue(cx, bytes, rval) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -530,8 +539,11 @@ DEFINE_PROPERTY( connectContinue ) {
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
 	J_S_ASSERT_RESOURCE( fd );
 
-	PRPollDesc desc = { fd, PR_POLL_WRITE | PR_POLL_EXCEPT, 0 };
-
+	PRPollDesc desc;
+	desc.fd = fd;
+	desc.in_flags = PR_POLL_WRITE | PR_POLL_EXCEPT;
+	desc.out_flags = 0;
+	
 	PRInt32 result = PR_Poll( &desc, 1, PR_INTERVAL_NO_WAIT ); // this avoid to store out_flags from the previous poll
 	if ( result == -1 )
 		return ThrowIoError(cx);
@@ -561,6 +573,7 @@ DEFINE_PROPERTY( connectContinue ) {
 	}
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -601,6 +614,7 @@ DEFINE_PROPERTY( connectionClosed ) {
 
 	*vp = JSVAL_FALSE;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -719,6 +733,7 @@ DEFINE_PROPERTY( OptionSetter ) {
 	if ( PR_SetSocketOption(fd, &sod) != PR_SUCCESS )
 		return ThrowIoError(cx);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -768,6 +783,7 @@ DEFINE_PROPERTY( OptionGetter ) {
 		default:;
 	}
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -788,6 +804,7 @@ DEFINE_PROPERTY( peerName ) {
 		return ThrowIoError(cx);
 	*vp = STRING_TO_JSVAL( JS_NewStringCopyZ( cx, buf ) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -804,6 +821,7 @@ DEFINE_PROPERTY( peerPort ) {
 		return ThrowIoError(cx);
 	*vp = INT_TO_JSVAL( PR_ntohs(PR_NetAddrInetPort(&peerAddr)) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -823,6 +841,7 @@ DEFINE_PROPERTY( sockName ) {
 		return ThrowIoError(cx);
 	*vp = STRING_TO_JSVAL( JS_NewStringCopyZ( cx, buf ) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -839,6 +858,7 @@ DEFINE_PROPERTY( sockPort ) {
 		return ThrowIoError(cx);
 	*vp = INT_TO_JSVAL( PR_ntohs(PR_NetAddrInetPort(&sockAddr)) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -901,6 +921,7 @@ DEFINE_FUNCTION( GetHostsByName ) {
 	}
 	*rval = OBJECT_TO_JSVAL(addrJsObj);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc

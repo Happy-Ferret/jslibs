@@ -157,6 +157,7 @@ DEFINE_FUNCTION( Expand ) {
 	J_S_ASSERT_ALLOC( jsstr );
 	*rval = STRING_TO_JSVAL( jsstr );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -196,6 +197,7 @@ DEFINE_FUNCTION( Seal ) {
 	else
 		deep = JS_FALSE;
 	return JS_SealObject(cx, JSVAL_TO_OBJECT(J_ARG(1)), deep);
+	JL_BAD;
 }
 
 
@@ -215,6 +217,7 @@ DEFINE_FUNCTION( Clear ) {
 	} else
 		*rval = JSVAL_FALSE;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -251,6 +254,7 @@ DEFINE_FUNCTION( SetScope ) {
 	*rval = OBJECT_TO_JSVAL(JS_GetParent(cx, o));
 	J_CHK( JS_SetParent(cx, o, p) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -298,6 +302,7 @@ DEFINE_FUNCTION( HideProperties ) {
 */
 	}
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -327,6 +332,7 @@ DEFINE_FUNCTION_FAST( IdOf ) {
 	else
 		J_CHK( JS_NewNumberValue(cx, (JSUword)id, J_FRVAL) ); // src: ... JSDOUBLE_IS_INT(d, i) && INT_FITS_IN_JSVAL(i) ...
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -357,6 +363,7 @@ DEFINE_FUNCTION_FAST( FromId ) {
 	}
 	J_CHK( JS_IdToValue(cx, id, J_FRVAL) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -380,6 +387,7 @@ DEFINE_FUNCTION_FAST( XdrEncode ) {
 	J_CHK( J_NewBlobCopyN(cx, buffer, length, J_FRVAL) );
 	JS_XDRDestroy(xdr);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -404,6 +412,7 @@ DEFINE_FUNCTION_FAST( XdrDecode ) {
 	JS_XDRMemSetData(xdr, NULL, 0);
 	JS_XDRDestroy(xdr);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -423,6 +432,7 @@ DEFINE_FUNCTION_FAST( Warning ) {
 	JS_ReportWarning( cx, "%s", JS_GetStringBytes(jssMesage) );
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -455,6 +465,7 @@ DEFINE_FUNCTION( ASSERT ) {
 		return JS_FALSE;
 	}
 	return JS_TRUE;
+	JL_BAD;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -577,6 +588,7 @@ DEFINE_FUNCTION_FAST( StringRepeat ) {
 	J_S_ASSERT_ALLOC(jsstr);
 	*J_FRVAL = STRING_TO_JSVAL( jsstr );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -608,6 +620,7 @@ DEFINE_FUNCTION_FAST( Print ) {
 		J_CHK( JS_CallFunction(cx, J_FOBJ, stdoutFunction, 1, &J_FARG(1+i), J_FRVAL) );
 */
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -771,6 +784,7 @@ DEFINE_FUNCTION_FAST( Exec ) {
 	if (!ok)
 		return JS_FALSE;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -830,6 +844,7 @@ static JSBool SandboxQueryFunction(JSContext *cx, uintN argc, jsval *vp) {
 	} else
 		*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_FUNCTION_FAST( SandboxEval ) {
@@ -900,6 +915,7 @@ DEFINE_FUNCTION_FAST( SandboxEval ) {
 
 	JS_DestroyContextMaybeGC(scx);
 	return ok;
+	JL_BAD;
 }
 
 
@@ -918,6 +934,7 @@ DEFINE_FUNCTION( IsStatementValid ) {
 	J_CHK( JsvalToStringAndLength(cx, &J_ARG(1), &buffer, &length) );
 	*rval = JS_BufferIsCompilableUnit(cx, obj, buffer, length) == JS_TRUE ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -1003,6 +1020,7 @@ DEFINE_PROPERTY( disableGarbageCollection ) {
 	}
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 

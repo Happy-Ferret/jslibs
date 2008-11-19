@@ -35,7 +35,10 @@ JSBool NativeInterfaceStreamRead( JSContext *cx, JSObject *obj, char *buf, size_
 	J_S_ASSERT_RESOURCE(fd);
 
 	PRInt32 ret;
-	PRPollDesc desc = { fd, PR_POLL_READ, 0 };
+	PRPollDesc desc;
+	desc.fd = fd;
+	desc.in_flags = PR_POLL_READ;
+	desc.out_flags = 0;
 	ret = PR_Poll( &desc, 1, PR_SecondsToInterval(10) ); // wait 10 seconds for data
 	if ( ret == -1 ) // if PR_Poll is not compatible with the file descriptor, just ignore the error ?
 		return ThrowIoError(cx);
@@ -63,6 +66,7 @@ JSBool NativeInterfaceStreamRead( JSContext *cx, JSObject *obj, char *buf, size_
 
 	*amount = ret;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -96,6 +100,7 @@ BEGIN_CLASS( Descriptor )
 DEFINE_CONSTRUCTOR() {
 
 	J_REPORT_ERROR( J__ERRMSG_NO_CONSTRUCT ); // BUT constructor must be defined
+	JL_BAD;
 }
 
 /**doc
@@ -122,6 +127,7 @@ DEFINE_FUNCTION( Close ) {
 //	J_CHK( SetStreamReadInterface(cx, obj, NULL) );
 	J_CHK( SetStreamReadInterface(cx, obj, NULL) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -160,6 +166,7 @@ JSBool ReadToJsval(JSContext *cx, PRFileDesc *fd, int amount, jsval *rval ) {
 	J_CHK( J_NewBlob( cx, buf, res, rval ) );
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -245,6 +252,7 @@ JSBool ReadAllToJsval(JSContext *cx, PRFileDesc *fd, jsval *rval ) {
 	J_CHK( J_NewBlob( cx, jsData, totalLength, rval ) );
 	
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -280,6 +288,7 @@ DEFINE_FUNCTION( Read ) {
 			J_CHK( ReadAllToJsval(cx, fd, rval) );
 	}
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -344,6 +353,7 @@ DEFINE_FUNCTION( Write ) {
 	else
 		*rval = JS_GetEmptyStringValue(cx); // nothing remains
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -361,6 +371,7 @@ DEFINE_FUNCTION( Sync ) {
 		return ThrowIoError(cx);
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -387,6 +398,7 @@ DEFINE_PROPERTY( available ) {
 		JS_NewNumberValue(cx, (jsdouble)available, vp);
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -400,6 +412,7 @@ DEFINE_PROPERTY( type ) {
 	J_S_ASSERT_RESOURCE( fd );
 	*vp = INT_TO_JSVAL( (int)PR_GetDescType(fd) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -483,6 +496,7 @@ DEFINE_FUNCTION( Import ) {
 
 	*rval = OBJECT_TO_JSVAL(descriptorObject);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc

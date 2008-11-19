@@ -55,6 +55,7 @@ JSBool SlotGetPrng(JSContext *cx, JSObject *obj, int *prngIndex, prng_state **pr
 	*prngIndex = find_prng(prngPrivate->prng.name);
 	J_S_ASSERT_1( *prngIndex != -1, "prng %s is not available.", prngPrivate->prng.name );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -163,6 +164,7 @@ DEFINE_CONSTRUCTOR() { // ( cipherName, hashName [, prngObject] [, PKCSVersion] 
 	pv->hasKey = false;
 	JS_SetPrivate( cx, obj, pv );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -233,6 +235,7 @@ DEFINE_FUNCTION( CreateKeys ) { // ( bitsSize )
 
 	pv->hasKey = true;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -292,6 +295,7 @@ DEFINE_FUNCTION( Encrypt ) { // ( data [, lparam] )
 	zeromem(out, sizeof(out)); // safe clear
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -366,6 +370,7 @@ DEFINE_FUNCTION( Decrypt ) { // ( encryptedData [, lparam] )
 	zeromem(out, sizeof(out));
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -427,6 +432,7 @@ DEFINE_FUNCTION( Sign ) { // ( data [, saltLength] )
 	zeromem(out, sizeof(out));
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -481,6 +487,7 @@ DEFINE_FUNCTION( VerifySignature ) { // ( data, signature [, saltLength] )
 
 	*rval = STRING_TO_JSVAL( stat == 1 ? JSVAL_TRUE : JSVAL_FALSE );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -513,6 +520,7 @@ DEFINE_PROPERTY( blockLength ) {
 	}
 	*vp = INT_TO_JSVAL( blockLength );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -541,6 +549,7 @@ DEFINE_PROPERTY( keySize ) {
 	}
 	*vp = INT_TO_JSVAL( keySize );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -588,6 +597,7 @@ DEFINE_PROPERTY( keySetter ) {
 
 	pv->hasKey = true;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -627,6 +637,7 @@ DEFINE_PROPERTY( keyGetter ) {
 	zeromem(key, sizeof(key)); // safe clean
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 

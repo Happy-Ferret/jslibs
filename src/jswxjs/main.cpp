@@ -57,6 +57,7 @@ DEFINE_FUNCTION( LoadWXJSModule ) {
 	J_S_ASSERT_1( moduleInit != NULL, "Module initialization function not found in %s.", libFileName );
 	*rval = moduleInit( cx, obj ) ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 

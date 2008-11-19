@@ -50,6 +50,7 @@ inline JSBool PushJsval( JSContext *cx, jl::Queue *queue, jsval value ) {
 	*pItem = value;
 	jl::QueuePush( queue, pItem ); // no need to JS_AddRoot *pItem, see Tracer callback
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -60,6 +61,7 @@ inline JSBool UnshiftJsval( JSContext *cx, jl::Queue *queue, jsval value ) {
 	*pItem = value;
 	jl::QueueUnshift( queue, pItem ); // no need to JS_AddRoot *pItem, see Tracer callback
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -102,6 +104,7 @@ JSBool WriteChunk( JSContext *cx, JSObject *obj, jsval chunk ) {
 	J_CHK( PushJsval(cx, pv->queue, chunk) );
 	pv->length += strLen;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -114,6 +117,7 @@ JSBool WriteRawChunk( JSContext *cx, JSObject *obj, size_t amount, const char *s
 	J_CHK( PushJsval(cx, pv->queue, bstr) );
 	pv->length += amount;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -138,6 +142,7 @@ JSBool UnReadChunk( JSContext *cx, JSObject *obj, jsval chunk ) {
 	J_CHK( UnshiftJsval(cx, pv->queue, chunk) );
 	pv->length += strLen;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -207,6 +212,7 @@ inline JSBool BufferRefill( JSContext *cx, JSObject *obj, size_t amount ) { // a
 	} while( pv->length < amount && pv->length > prevBufferLength ); // see RULES ( at the top of this file )
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -219,6 +225,7 @@ JSBool UnReadRawChunk( JSContext *cx, JSObject *obj, char *data, size_t length )
 	J_CHK( J_NewBlobCopyN(cx, data, length, &bstr) );
 	J_CHK( UnReadChunk(cx, obj, bstr) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -242,6 +249,7 @@ JSBool ReadChunk( JSContext *cx, JSObject *obj, jsval *rval ) {
 	J_CHK( JsvalToStringLength(cx, *rval, &len) );
 	pv->length -= len;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -292,6 +300,7 @@ JSBool ReadRawAmount( JSContext *cx, JSObject *obj, size_t *amount, char *str ) 
 	}
 	pv->length -= *amount;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -341,6 +350,7 @@ JSBool BufferSkipAmount( JSContext *cx, JSObject *obj, size_t amount ) {
 	}
 	pv->length -= amount;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -376,6 +386,7 @@ JSBool ReadAmount( JSContext *cx, JSObject *obj, size_t amount, jsval *rval ) {
 
 	J_CHK( J_NewBlob(cx, str, amount, rval) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -418,6 +429,7 @@ end:
 	if ( buf != staticBuffer )
 		free(buf); // free the "ring buffer"
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -436,6 +448,7 @@ JSBool AddBuffer( JSContext *cx, JSObject *destBuffer, JSObject *srcBuffer ) {
 	dpv->length += spv->length;
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -542,6 +555,7 @@ DEFINE_CONSTRUCTOR() {
 
 	}
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -566,6 +580,7 @@ DEFINE_FUNCTION( Clone ) {
 		}
 
 	return JS_TRUE;
+	JL_BAD;
 }
 */
 
@@ -586,6 +601,7 @@ DEFINE_FUNCTION( Clear ) {
 		J_CHK( ShiftJsval(cx, pv->queue, NULL) );
 	pv->length = 0;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -622,6 +638,7 @@ DEFINE_FUNCTION( Write ) {
 
 		return WriteChunk(cx, obj, J_ARG(1));
 	}
+	JL_BAD;
 }
 
 
@@ -665,6 +682,7 @@ DEFINE_FUNCTION( Match ) {
 err:
 	free(src);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -699,6 +717,7 @@ DEFINE_FUNCTION( Read ) { // Read( [ amount | <undefined> ] )
 	J_S_ASSERT( amount >= 0, "Invalid amount" );
 	J_CHK( ReadAmount(cx, obj, amount, rval) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -718,6 +737,7 @@ DEFINE_FUNCTION( Skip ) { // Skip( amount )
 	J_CHK( BufferSkipAmount(cx, obj, amount) ); // (TBD) optimization: skip without reading the data.
 	*rval = BOOLEAN_TO_JSVAL( pv->length == prevBufferLength - amount ); // function returns true on sucessful skip operation
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -751,6 +771,7 @@ DEFINE_FUNCTION( ReadUntil ) {
 		}
 	}
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -768,6 +789,7 @@ DEFINE_FUNCTION( IndexOf ) {
 	J_CHK( FindInBuffer(cx, obj, boundary, boundaryLength, &found) );
 	*rval = INT_TO_JSVAL(found);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -789,6 +811,7 @@ DEFINE_FUNCTION( Unread ) {
 	J_CHK( UnReadChunk(cx, obj, J_ARG(1)) );
 	*rval = J_ARG(1);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -845,6 +868,7 @@ DEFINE_FUNCTION( toString ) {
 	//*J_RVAL = OBJECT_TO_JSVAL(bstrObj);
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -891,6 +915,7 @@ DEFINE_GET_PROPERTY() {
 
 	*vp = JS_GetEmptyStringValue(cx);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -898,6 +923,7 @@ DEFINE_SET_PROPERTY() {
 
 	J_S_ASSERT( !JSVAL_IS_NUMBER(id), "Operation not allowed." );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 

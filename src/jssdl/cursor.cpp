@@ -108,6 +108,7 @@ DEFINE_CONSTRUCTOR() {
 
 	free(cursorImage);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 

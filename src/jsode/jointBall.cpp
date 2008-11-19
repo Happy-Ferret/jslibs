@@ -35,6 +35,7 @@ DEFINE_CONSTRUCTOR() {
 	ode::dJointID jointId = ode::dJointCreateBall(worldId, 0); // The joint group ID is 0 to allocate the joint normally.
 	JS_SetPrivate(cx, obj, jointId);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -56,6 +57,7 @@ DEFINE_PROPERTY( anchorSetter ) {
 	J_S_ASSERT( length == 3, "Invalid array size." );
 	ode::dJointSetBallAnchor( jointId, vector[0], vector[1], vector[2] );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY( anchorGetter ) {
@@ -67,6 +69,7 @@ DEFINE_PROPERTY( anchorGetter ) {
 	//FloatVectorToArray(cx, 3, vector, vp);
 	J_CHK( FloatVectorToJsval(cx, vector, 3, vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -81,6 +84,7 @@ DEFINE_PROPERTY( anchor2 ) { // read only
 	//FloatVectorToArray(cx, 3, vector, vp);
 	J_CHK( FloatVectorToJsval(cx, vector, 3, vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 CONFIGURE_CLASS

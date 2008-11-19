@@ -50,11 +50,14 @@ DEFINE_CONSTRUCTOR() {
 	J_S_ASSERT_THIS_CLASS();
 	Surface *pv = (Surface*)JS_malloc(cx, sizeof(Surface));
 
-	Surface empty = {0};
+	Surface empty;
+	memset(&empty, 0, sizeof(Surface));
+
 	*pv = empty;
 
 	J_CHK( JS_SetPrivate(cx, obj, pv) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -89,6 +92,7 @@ DEFINE_FUNCTION_FAST( AddVertex ) {
 	pv->vertexCount += 1;
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -120,6 +124,7 @@ DEFINE_FUNCTION_FAST( AddTriangle ) {
 	J_CHK( IntToJsval(cx, pv->indexCount, J_FRVAL) );
 	pv->indexCount += 1;
 	return JS_TRUE;
+	JL_BAD;
 }
 */
 
@@ -146,6 +151,7 @@ DEFINE_FUNCTION_FAST( AddIndices ) {
 
 	pv->indexCount += 1;
 	return JS_TRUE;
+	JL_BAD;
 }
 */
 
@@ -176,6 +182,7 @@ DEFINE_FUNCTION_FAST( DefineVertexBuffer ) {
 	}
 	pv->vertexCount = count / 3;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -202,6 +209,7 @@ DEFINE_FUNCTION_FAST( DefineNormalBuffer ) {
 		J_CHK( JsvalToFloat(cx, item, &pv->normal[i]) );
 	}
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -228,6 +236,7 @@ DEFINE_FUNCTION_FAST( DefineTextureCoordinateBuffer ) {
 		J_CHK( JsvalToFloat(cx, item, &pv->textureCoordinate[i]) );
 	}
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -254,6 +263,7 @@ DEFINE_FUNCTION_FAST( DefineColorBuffer ) {
 		J_CHK( JsvalToFloat(cx, item, &pv->color[i]) );
 	}
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -280,6 +290,7 @@ DEFINE_FUNCTION_FAST( DefineIndexBuffer ) {
 	}
 	pv->indexCount = count;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -289,6 +300,7 @@ DEFINE_PROPERTY( vertexCount ) {
 	J_S_ASSERT_ALLOC(pv);
 	J_CHK( IntToJsval(cx, pv->vertexCount, vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY( indexCount ) {
@@ -297,6 +309,7 @@ DEFINE_PROPERTY( indexCount ) {
 	J_S_ASSERT_ALLOC(pv);
 	J_CHK( IntToJsval(cx, pv->indexCount, vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -306,6 +319,7 @@ DEFINE_PROPERTY( hasNormal ) {
 	J_S_ASSERT_ALLOC(pv);
 	*vp = pv->normal != NULL ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY( hasTextureCoordinateBuffer ) {
@@ -314,6 +328,7 @@ DEFINE_PROPERTY( hasTextureCoordinateBuffer ) {
 	J_S_ASSERT_ALLOC(pv);
 	*vp = pv->normal != NULL ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY( hasColor ) {
@@ -322,6 +337,7 @@ DEFINE_PROPERTY( hasColor ) {
 	J_S_ASSERT_ALLOC(pv);
 	*vp = pv->normal != NULL ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 

@@ -52,6 +52,7 @@ JSBool JidToJsval( JSContext *cx, const JID *jid, jsval *rval ) {
 	J_CHK( SetPropertyString(cx, jidObj, "username", jid->username().c_str()) );
 	J_CHK( SetPropertyString(cx, jidObj, "resource", jid->resource().c_str()) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -265,6 +266,7 @@ DEFINE_CONSTRUCTOR() {
 	pv->client->rosterManager()->registerRosterListener( pv->handlers, true );
 	pv->client->registerMessageHandler( pv->handlers );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -309,6 +311,7 @@ DEFINE_FUNCTION( Connect ) {
 
 	J_CHK( IntToJsval(cx, sock, J_RVAL) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -329,6 +332,7 @@ DEFINE_FUNCTION( Disconnect ) {
 		return JS_FALSE;
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -350,6 +354,7 @@ DEFINE_FUNCTION( Process ) {
 
 	J_CHK( IntToJsval(cx, (int)cErr, rval) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -382,6 +387,7 @@ DEFINE_FUNCTION( SendMessage ) {
 
 	pv->client->send( message );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -393,6 +399,7 @@ DEFINE_FUNCTION( RosterItem ) {
 	J_S_ASSERT_ARG_MIN(1);
 
 	return JS_TRUE;
+	JL_BAD;
 }
 */
 
@@ -418,6 +425,7 @@ DEFINE_PROPERTY( socket ) {
 	}
 	J_CHK( IntToJsval(cx, sock, vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -431,6 +439,7 @@ DEFINE_PROPERTY_GETTER( status ) {
 	J_S_ASSERT_RESOURCE( pv );
 	J_CHK( StringToJsval(cx, pv->client->status().c_str(), vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -442,6 +451,7 @@ DEFINE_PROPERTY_SETTER( status ) {
 	J_CHK( JsvalToString(cx, vp, &status) );
 	pv->client->setPresence(pv->client->presence(), pv->client->priority(), status);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -456,6 +466,7 @@ DEFINE_PROPERTY_GETTER( presence ) {
 	Presence presence = pv->client->presence();
 	J_CHK( IntToJsval(cx, presence, vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY_SETTER( presence ) {
@@ -466,6 +477,7 @@ DEFINE_PROPERTY_SETTER( presence ) {
 	J_CHK( JsvalToInt(cx, *vp, &presence) );
 	pv->client->setPresence((Presence)presence, pv->client->priority(), pv->client->status());
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /*
@@ -486,6 +498,7 @@ DEFINE_PROPERTY( roster ) {
 		i++;
 	}
 	return JS_TRUE;
+	JL_BAD;
 }
 */
 
@@ -502,6 +515,7 @@ DEFINE_PROPERTY( connectionTotalIn ) {
 	pv->client->connectionImpl()->getStatistics( totalIn, totalOut);
 	J_CHK( IntToJsval(cx, totalIn, vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -517,6 +531,7 @@ DEFINE_PROPERTY( connectionTotalOut ) {
 	pv->client->connectionImpl()->getStatistics( totalIn, totalOut);
 	J_CHK( IntToJsval(cx, totalOut, vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc

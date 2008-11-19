@@ -44,7 +44,8 @@ DEFINE_FUNCTION_FAST( GetVideoModeList ) {
 	J_S_ASSERT_ARG_MIN(2);
 
 	const SDL_VideoInfo *videoInfo = SDL_GetVideoInfo(); // If called before SDL_SetVideoMode(), 'vfmt' is the pixel format of the "best" video mode.
-	SDL_PixelFormat format = *videoInfo->vfmt;
+	SDL_PixelFormat format;
+	format = *videoInfo->vfmt;
 
 	double flags;
 
@@ -90,6 +91,7 @@ DEFINE_FUNCTION_FAST( GetVideoModeList ) {
 		J_CHK( JS_SetElement(cx, rectArray, 1, &tmp) );
 	}
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -134,6 +136,7 @@ DEFINE_FUNCTION_FAST( VideoModeOK ) {
 //	J_CHK( BoolToJsval(cx, status != 0, J_FRVAL) );
 	J_CHK( IntToJsval(cx, status, J_FRVAL) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -185,6 +188,7 @@ DEFINE_FUNCTION_FAST( SetVideoMode ) {
 		return ThrowSdlError(cx);
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -261,6 +265,7 @@ DEFINE_PROPERTY( icon ) {
 	SDL_WM_SetIcon(surface, NULL); // (TBD) manage mask with image alpha ?
 	SDL_FreeSurface(surface);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -288,6 +293,7 @@ DEFINE_PROPERTY( fullScreen ) {
 	bool fullScreen = ( (SDL_GetVideoSurface()->flags & SDL_FULLSCREEN) != 0 );
 	J_CHK( BoolToJsval(cx, fullScreen, vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -319,7 +325,7 @@ DEFINE_FUNCTION_FAST( SetGamma ) {
 	if ( SDL_SetGamma(r, g, b) != 0 )
 		return ThrowSdlError(cx);
 	*J_FRVAL = JSVAL_VOID;
-	return JS_FALSE;
+	JL_BAD;
 }
 
 
@@ -353,6 +359,7 @@ DEFINE_FUNCTION_FAST( GlSetAttribute ) {
 		return ThrowSdlError(cx);
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -374,6 +381,7 @@ DEFINE_FUNCTION_FAST( GlGetAttribute ) {
 		return ThrowSdlError(cx);
 	J_CHK( IntToJsval(cx, value, J_FRVAL) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -389,6 +397,7 @@ DEFINE_PROPERTY_SETTER( caption ) {
 	J_CHK( JsvalToString(cx, vp, &title) );
 	SDL_WM_SetCaption(title, NULL);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY_GETTER( caption ) {
@@ -400,6 +409,7 @@ DEFINE_PROPERTY_GETTER( caption ) {
 	else
 		J_CHK( StringToJsval(cx, title, vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -415,6 +425,7 @@ DEFINE_PROPERTY_SETTER( grabInput ) {
 	J_CHK( JsvalToBool(cx, *vp, &grab) );
 	SDL_WM_GrabInput( grab ? SDL_GRAB_ON : SDL_GRAB_OFF );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY_GETTER( grabInput ) {
@@ -422,6 +433,7 @@ DEFINE_PROPERTY_GETTER( grabInput ) {
 	SDL_GrabMode mode = SDL_WM_GrabInput( SDL_GRAB_QUERY );
 	J_CHK( BoolToJsval(cx, mode == SDL_GRAB_ON ? true : false, vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -435,6 +447,7 @@ DEFINE_PROPERTY_SETTER( showCursor ) {
 	J_CHK( JsvalToBool(cx, *vp, &show) );
 	SDL_ShowCursor( show ? 1 : 0 );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY_GETTER( showCursor ) {
@@ -442,6 +455,7 @@ DEFINE_PROPERTY_GETTER( showCursor ) {
 	int show = SDL_ShowCursor( -1 ); // query
 	J_CHK( BoolToJsval(cx, show == 0 ? false : true, vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -462,6 +476,7 @@ DEFINE_FUNCTION_FAST( SetCursor ) {
 	SDL_SetCursor(cursor);
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -478,6 +493,7 @@ DEFINE_PROPERTY( videoDriverName ) {
 	else
 		*vp = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -579,6 +595,7 @@ JSBool FireListener( JSContext *cx, JSObject *listenerObj, SDL_Event *ev, jsval 
 			break;
 	}
 	return JS_IsExceptionPending(cx) ? JS_FALSE : JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -623,6 +640,7 @@ DEFINE_FUNCTION_FAST( PollEvent ) {
 		*J_FRVAL = JSVAL_VOID;
 	}
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -643,6 +661,7 @@ DEFINE_FUNCTION_FAST( WarpMouse ) {
 	SDL_WarpMouse(x, y);
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -735,6 +754,7 @@ DEFINE_FUNCTION_FAST( GetKeyState ) {
 	Uint8 *keystate = SDL_GetKeyState(NULL);
 	J_CHK( BoolToJsval(cx, keystate[key] != 0, J_FRVAL) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -752,6 +772,7 @@ DEFINE_FUNCTION_FAST( GetKeyName ) {
 	JSString *jsStr = JS_NewStringCopyZ(cx, keyName);
 	*J_FRVAL = STRING_TO_JSVAL(jsStr);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -769,6 +790,7 @@ DEFINE_PROPERTY_SETTER( keyRepeatDelay ) {
 	if ( status == -1 )
 		return ThrowSdlError(cx);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -778,6 +800,7 @@ DEFINE_PROPERTY_GETTER( keyRepeatDelay ) {
 	SDL_GetKeyRepeat(&delay, &interval);
 	J_CHK( IntToJsval(cx, delay, vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -794,6 +817,7 @@ DEFINE_PROPERTY_SETTER( keyRepeatInterval ) {
 	if ( status == -1 )
 		return ThrowSdlError(cx);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY_GETTER( keyRepeatInterval ) {
@@ -802,6 +826,7 @@ DEFINE_PROPERTY_GETTER( keyRepeatInterval ) {
 	SDL_GetKeyRepeat(&delay, &interval);
 	J_CHK( IntToJsval(cx, interval, vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -814,6 +839,7 @@ DEFINE_PROPERTY( appStateActive ) {
 
 	J_CHK( BoolToJsval(cx, (SDL_GetAppState() & SDL_APPACTIVE) != 0, vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -824,6 +850,7 @@ DEFINE_PROPERTY( hasRDTSC ) {
 
 	J_CHK( BoolToJsval(cx, SDL_HasRDTSC() == SDL_TRUE, vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -833,6 +860,7 @@ DEFINE_PROPERTY( hasMMX ) {
 
 	J_CHK( BoolToJsval(cx, SDL_HasMMX() == SDL_TRUE, vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -842,6 +870,7 @@ DEFINE_PROPERTY( hasMMXExt ) {
 
 	J_CHK( BoolToJsval(cx, SDL_HasMMXExt() == SDL_TRUE, vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -851,6 +880,7 @@ DEFINE_PROPERTY( has3DNow ) {
 
 	J_CHK( BoolToJsval(cx, SDL_Has3DNow() == SDL_TRUE, vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -860,6 +890,7 @@ DEFINE_PROPERTY( has3DNowExt ) {
 
 	J_CHK( BoolToJsval(cx, SDL_Has3DNowExt() == SDL_TRUE, vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -869,6 +900,7 @@ DEFINE_PROPERTY( hasSSE ) {
 
 	J_CHK( BoolToJsval(cx, SDL_HasSSE() == SDL_TRUE, vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -878,6 +910,7 @@ DEFINE_PROPERTY( hasSSE2 ) {
 
 	J_CHK( BoolToJsval(cx, SDL_HasSSE2() == SDL_TRUE, vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -887,6 +920,7 @@ DEFINE_PROPERTY( hasAltiVec ) {
 
 	J_CHK( BoolToJsval(cx, SDL_HasAltiVec() == SDL_TRUE, vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 

@@ -45,6 +45,7 @@ DEFINE_CONSTRUCTOR() {
 	SetupReadMatrix(cx, obj); // (TBD) check return status
 	ode::dGeomSetData(geomId, obj); // 'obj' do not need to be rooted because Goem's data is reset to NULL when 'obj' is finalized.
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /*
@@ -60,6 +61,7 @@ DEFINE_PROPERTY( lengthsSetter ) {
 	J_S_ASSERT( length == 3, "Invalid array size." );
 	ode::dGeomPlaneSetLengths(geom, vector[0], vector[1], vector[2]);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY( lengthsGetter ) {
@@ -71,6 +73,7 @@ DEFINE_PROPERTY( lengthsGetter ) {
 	//FloatVectorToArray(cx, 3, result, vp);
 	J_CHK( FloatVectorToJsval(cx, result, 3, vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 */
 

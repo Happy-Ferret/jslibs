@@ -77,6 +77,7 @@ DEFINE_PROPERTY( text ) {
 	JSString *str = JS_NewStringCopyZ( cx, errStr );
 	*vp = STRING_TO_JSVAL( str );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -115,6 +116,7 @@ DEFINE_PROPERTY( const ) {
 	JSString *str = JS_NewStringCopyZ( cx, errStr );
 	*vp = STRING_TO_JSVAL( str );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -122,6 +124,7 @@ DEFINE_FUNCTION( toString ) {
 
 	J_CHK( _text(cx, obj, 0, rval) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -157,5 +160,5 @@ JSBool ThrowOglError( JSContext *cx, GLenum err ) {
 	jsval errVal;
 	J_CHK( IntToJsval(cx, err, &errVal) );
 	J_CHK( JS_SetReservedSlot( cx, error, 0, errVal ) );
-	return JS_FALSE;
+	JL_BAD;
 }

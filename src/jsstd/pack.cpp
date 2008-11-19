@@ -36,6 +36,7 @@ JSBool CheckSystemTypesSize(JSContext *cx) {
 
 	J_S_ASSERT( sizeof(int8_t) == 1 && sizeof(int16_t) == 2 && sizeof(int32_t) == 4, "The system has no suitable type for using Pack class." );
 	return JS_TRUE;
+JL_BAD;
 }
 
 // cf. _swab()
@@ -125,6 +126,7 @@ DEFINE_CONSTRUCTOR() {
 	J_S_ASSERT_CLASS( JSVAL_TO_OBJECT( J_ARG(1) ), classBuffer );
 	J_CHK( JS_SetReservedSlot(cx, obj, SLOT_PACK_BUFFEROBJECT, J_ARG(1)) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -221,6 +223,7 @@ DEFINE_FUNCTION( ReadInt ) {
 			J_REPORT_ERROR("Unable to manage this size.");
 	}
 	return JS_TRUE;
+	JL_BAD;
 }
 
 #ifdef DEBUG
@@ -303,6 +306,7 @@ DEFINE_FUNCTION( WriteInt ) { // incompatible with NIStreamRead
 	J_CHK( WriteRawChunk(cx, bufferObject, size, (char*)data) );
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -341,6 +345,7 @@ DEFINE_FUNCTION( ReadReal ) {
 			*rval = JSVAL_VOID;
 	}
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -372,6 +377,7 @@ DEFINE_FUNCTION( ReadString ) {
 	}
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -386,6 +392,7 @@ DEFINE_PROPERTY( buffer ) {
 
 	J_CHK( JS_GetReservedSlot(cx, obj, SLOT_PACK_BUFFEROBJECT, vp ) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -418,6 +425,7 @@ JSBool Init(JSContext *cx, JSObject *obj) {
 	J_CHK( DetectSystemEndian(cx) );
 	J_CHK( CheckSystemTypesSize(cx) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 CONFIGURE_CLASS

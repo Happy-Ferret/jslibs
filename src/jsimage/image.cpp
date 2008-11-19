@@ -44,6 +44,7 @@ DEFINE_FUNCTION( Alloc ) {
 	JS_SetPrivate(cx, obj, data);
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -56,6 +57,7 @@ DEFINE_CONSTRUCTOR() {
 	JSObject *functionObject = JS_GetFunctionObject(allocFunction);
 	JS_SetReservedSlot(cx, obj, SLOT_FUNCTION_ALLOC, OBJECT_TO_JSVAL(functionObject));
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -136,6 +138,7 @@ DEFINE_FUNCTION( Trim ) {
 		free(tmpDataPtr);
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_FUNCTION( Gamma ) {
@@ -143,6 +146,7 @@ DEFINE_FUNCTION( Gamma ) {
 	J_S_ASSERT_ARG_MIN(1);
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 

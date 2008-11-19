@@ -45,6 +45,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	J_CHK( INIT_CLASS( OggVorbisDecoder ) );
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {

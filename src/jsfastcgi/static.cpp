@@ -61,6 +61,7 @@ DEFINE_FUNCTION( Accept ) {
 	int rc = FCGX_Accept_r(&_request);
 	*rval = INT_TO_JSVAL( rc );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_FUNCTION( GetParam ) {
@@ -95,6 +96,7 @@ DEFINE_FUNCTION( GetParam ) {
 		*rval = OBJECT_TO_JSVAL(argsObj);
 	}
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_FUNCTION( Read ) {
@@ -115,6 +117,7 @@ DEFINE_FUNCTION( Read ) {
 	J_S_ASSERT_ALLOC( jsstr );
 	*rval = STRING_TO_JSVAL( jsstr );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_FUNCTION( Write ) {
@@ -131,6 +134,7 @@ DEFINE_FUNCTION( Write ) {
 	} else
 		*rval = JS_GetEmptyStringValue(cx);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_FUNCTION( Flush ) {
@@ -138,6 +142,7 @@ DEFINE_FUNCTION( Flush ) {
 	int result = FCGX_FFlush(_request.out);
 	J_S_ASSERT( result != -1, "Unable to flush the output stream." );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_FUNCTION( Log ) {
@@ -149,6 +154,7 @@ DEFINE_FUNCTION( Log ) {
 	J_S_ASSERT( result != -1, "Unable to write to the log." );
 	FCGX_FFlush(_request.err);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_FUNCTION( ShutdownPending ) {
@@ -184,6 +190,7 @@ DEFINE_FUNCTION( URLEncode ) {
 	*it1 = '\0';
 	*rval = STRING_TO_JSVAL( JS_NewString(cx, dest, it1-dest ) ); // do not include the '\0' in the string length
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -246,6 +253,7 @@ decoding_error:
 	JS_free(cx, dest);
 	*rval = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -306,6 +314,7 @@ DEFINE_FUNCTION( ParseHeader ) {
 	JS_DefineProperty(cx, record, "requestId", INT_TO_JSVAL( (header->requestIdB1 << 8) + header->requestIdB0 ), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT);
 	JS_DefineProperty(cx, record, "contentLength", INT_TO_JSVAL( (header->contentLengthB1 << 8) + header->contentLengthB0 ), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_FUNCTION( ParseBeginRequestBody ) {
@@ -327,6 +336,7 @@ DEFINE_FUNCTION( ParseBeginRequestBody ) {
 	JS_DefineProperty(cx, record, "rule", INT_TO_JSVAL( (beginRequestBody->roleB1 << 8) + beginRequestBody->roleB0 ), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT);
 	JS_DefineProperty(cx, record, "keepConn", BOOLEAN_TO_JSVAL( beginRequestBody->flags & FCGI_KEEP_CONN == 0 ? JSVAL_TRUE : JSVAL_FALSE ), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -409,6 +419,7 @@ DEFINE_FUNCTION( ParsePairs ) { // arguments: data [, paramObject ]
 		data += valueLength;
 	}
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -444,6 +455,7 @@ DEFINE_FUNCTION( MakeHeader ) { // type, requestId, contentLength
 	J_S_ASSERT_ALLOC( jsstr );
 	*rval = STRING_TO_JSVAL(jsstr);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -468,6 +480,7 @@ DEFINE_FUNCTION( MakeEndRequestBody ) {
 	J_S_ASSERT_ALLOC( jsstr );
 	*rval = STRING_TO_JSVAL(jsstr);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -534,6 +547,7 @@ DEFINE_FUNCTION( MakePairs ) {
 	JS_DestroyIdArray(cx, pairsArray);
 	*rval = STRING_TO_JSVAL( JS_NewString(cx, (char*)buffer, bufferPos) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -652,6 +666,7 @@ DEFINE_FUNCTION( ParseRecord ) {
 
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 */

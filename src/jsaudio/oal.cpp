@@ -79,6 +79,7 @@ DEFINE_FUNCTION_FAST( Open ) {
 
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -109,6 +110,7 @@ DEFINE_FUNCTION_FAST( Close ) {
 		J_REPORT_ERROR("ALUT_ERROR_CLOSE_DEVICE");
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -136,6 +138,7 @@ DEFINE_PROPERTY( maxAuxiliarySends ) {
 	alcGetIntegerv(pDevice, ALC_MAX_AUXILIARY_SENDS, 1, &numSends);
 	J_CHK( IntToJsval(cx, numSends, vp) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -156,6 +159,7 @@ DEFINE_FUNCTION_FAST( DopplerFactor ) {
 	alDopplerFactor( value );
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -176,6 +180,7 @@ DEFINE_FUNCTION_FAST( DopplerVelocity ) {
 	alDopplerVelocity( value );
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -196,6 +201,7 @@ DEFINE_FUNCTION_FAST( SpeedOfSound ) {
 	alSpeedOfSound( value );
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -215,6 +221,7 @@ DEFINE_FUNCTION_FAST( DistanceModel ) {
 	alDistanceModel( distanceModel );
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -232,6 +239,7 @@ DEFINE_FUNCTION_FAST( Enable ) {
 	alEnable( JSVAL_TO_INT(J_FARG(1)) );
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -249,6 +257,7 @@ DEFINE_FUNCTION_FAST( Disable ) {
 	alDisable( JSVAL_TO_INT(J_FARG(1)) );
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -265,6 +274,7 @@ DEFINE_FUNCTION_FAST( IsEnabled ) {
 	J_S_ASSERT_INT(J_FARG(1));
 	*J_FRVAL = BOOLEAN_TO_JSVAL( alIsEnabled( JSVAL_TO_INT(J_FARG(1)) ) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -291,6 +301,7 @@ DEFINE_FUNCTION_FAST( GetString ) {
 	J_S_ASSERT_ALLOC( jsstr );
 	*J_FRVAL = STRING_TO_JSVAL( jsstr );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -311,6 +322,7 @@ DEFINE_FUNCTION_FAST( GetBoolean ) {
 	alGetBooleanv(JSVAL_TO_INT(J_FARG(1)), &params);
 	*J_FRVAL = BOOLEAN_TO_JSVAL(params);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -351,6 +363,7 @@ DEFINE_FUNCTION_FAST( GetInteger ) {
 		*J_FRVAL = INT_TO_JSVAL( params[0] );
 	}
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -390,6 +403,7 @@ DEFINE_FUNCTION_FAST( GetDouble ) {
 		J_CHK( JS_NewDoubleValue(cx, params[0], J_FRVAL) );
 	}
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -431,6 +445,7 @@ DEFINE_FUNCTION_FAST( Listener ) {
 
 	J_REPORT_ERROR("Invalid argument.");
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -471,6 +486,7 @@ DEFINE_FUNCTION_FAST( GetListenerReal ) {
 		J_CHK( JS_NewDoubleValue(cx, params[0], J_FRVAL) );
 	}
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -486,6 +502,7 @@ DEFINE_FUNCTION_FAST( GenSource ) {
 	alGenSources(1, &sourceID);
 	J_CHK( UIntToJsval(cx, sourceID, J_FRVAL) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -530,6 +547,7 @@ DEFINE_FUNCTION_FAST( Source ) {
 	}
 	J_REPORT_ERROR("Invalid argument.");
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -577,6 +595,7 @@ DEFINE_FUNCTION_FAST( GetSourceReal ) {
 		J_CHK( JS_NewDoubleValue(cx, params[0], J_FRVAL) );
 	}
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -617,6 +636,7 @@ DEFINE_FUNCTION_FAST( GetSourceInteger ) {
 		J_CHK( JS_NewDoubleValue(cx, params[0], J_FRVAL) );
 	}
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -636,6 +656,7 @@ DEFINE_FUNCTION_FAST( DeleteSource ) {
 	J_CHK( JsvalToUInt(cx, J_FARG(1), &sid ) );
 	alDeleteSources(1, &sid);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -677,6 +698,7 @@ DEFINE_FUNCTION_FAST( SourceQueueBuffers ) {
 
 	J_REPORT_ERROR("Invalid argument.");
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -718,6 +740,7 @@ DEFINE_FUNCTION_FAST( SourceUnqueueBuffers ) {
 
 	J_REPORT_ERROR("Invalid argument.");
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -769,6 +792,7 @@ DEFINE_FUNCTION_FAST( Buffer ) {
 
 	J_CHK( UIntToJsval(cx, bufferID, J_FRVAL) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -810,6 +834,7 @@ DEFINE_FUNCTION_FAST( GetBufferReal ) {
 		J_CHK( JS_NewDoubleValue(cx, params[0], J_FRVAL) );
 	}
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -850,6 +875,7 @@ DEFINE_FUNCTION_FAST( GetBufferInteger ) {
 		J_CHK( JS_NewDoubleValue(cx, params[0], J_FRVAL) );
 	}
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -874,6 +900,7 @@ DEFINE_FUNCTION_FAST( DeleteBuffer ) {
 //	alBufferData(bufferId, 0, NULL, 0, 0);
 	alDeleteBuffers(1, &bufferId);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -891,6 +918,7 @@ DEFINE_FUNCTION_FAST( PlaySource ) {
 	J_CHK( JsvalToUInt(cx, J_FARG(1), &sid ) );
 	alSourcePlay(sid);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -908,6 +936,7 @@ DEFINE_FUNCTION_FAST( StopSource ) {
 	J_CHK( JsvalToUInt(cx, J_FARG(1), &sid ) );
 	alSourceStop(sid);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -925,6 +954,7 @@ DEFINE_FUNCTION_FAST( PauseSource ) {
 	J_CHK( JsvalToUInt(cx, J_FARG(1), &sid ) );
 	alSourcePause(sid);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -942,6 +972,7 @@ DEFINE_FUNCTION_FAST( RewindSource ) {
 	J_CHK( JsvalToUInt(cx, J_FARG(1), &sid ) );
 	alSourceRewind(sid);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -956,6 +987,7 @@ DEFINE_FUNCTION_FAST( GenEffect ) {
 	alGenEffects(1, &eid);
 	J_CHK( UIntToJsval(cx, eid, J_FRVAL) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -969,6 +1001,7 @@ DEFINE_FUNCTION_FAST( DeleteEffect ) {
 	alDeleteEffects(1, &eid);
 	J_CHK( UIntToJsval(cx, eid, J_FRVAL) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -1057,7 +1090,8 @@ DEFINE_FUNCTION_FAST( PlaySound ) {
 
 //  *J_FRVAL = JSVAL_VOID;
 
-  return JS_TRUE;
+	return JS_TRUE;
+	JL_BAD;
 }
 
 

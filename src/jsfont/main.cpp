@@ -46,6 +46,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	INIT_CLASS(Font);
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 

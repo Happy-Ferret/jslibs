@@ -90,6 +90,7 @@ DEFINE_FUNCTION( toString ) {
 
 	J_CHK( _text(cx, obj, 0, rval) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_HAS_INSTANCE() { // see issue#52

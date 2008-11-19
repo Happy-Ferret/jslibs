@@ -35,6 +35,7 @@ DEFINE_CONSTRUCTOR() {
 	ode::dJointID jointId = ode::dJointCreateFixed(worldId, 0); // The joint group ID is 0 to allocate the joint normally.
 	JS_SetPrivate(cx, obj, jointId);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -51,6 +52,7 @@ DEFINE_FUNCTION( Set ) {
 	J_S_ASSERT_RESOURCE(jointId);
 	ode::dJointSetFixed(jointId);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 

@@ -23,6 +23,7 @@ inline JSBool RemoveConfiguration(JSContext *cx) {
 	JSObject *globalObject = JS_GetGlobalObject(cx);
 	J_S_ASSERT( globalObject != NULL, "Unable to find the global object." );
 	return JS_DeleteProperty(cx, globalObject, NAME_CONFIGURATION_OBJECT);
+	JL_BAD;
 }
 
 
@@ -63,6 +64,7 @@ inline JSBool GetConfigurationValue(JSContext *cx, const char *name, jsval *valu
 	}
 	J_CHK( JS_GetProperty(cx, configurationObject, name, value) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 inline JSBool SetConfigurationPrivateValue(JSContext *cx, const char *name, jsval value) {
@@ -71,6 +73,7 @@ inline JSBool SetConfigurationPrivateValue(JSContext *cx, const char *name, jsva
 	J_S_ASSERT( configObject != NULL, "Unable to get configuration object" );
 	J_CHKM1( JS_DefineProperty(cx, configObject, name, value, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ), "Unable to store %1 configuration item.", name );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 inline JSBool SetConfigurationValue(JSContext *cx, const char *name, jsval value) {
@@ -79,6 +82,7 @@ inline JSBool SetConfigurationValue(JSContext *cx, const char *name, jsval value
 	J_S_ASSERT( configObject != NULL, "Unable to get configuration object" );
 	J_CHKM1( JS_DefineProperty(cx, configObject, name, value, NULL, NULL, JSPROP_ENUMERATE), "Unable to store %1 configuration item.", name );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 #endif // _JSCONFIGURATION_H_

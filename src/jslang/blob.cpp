@@ -28,6 +28,8 @@ inline bool IsBlobValid( JSContext *cx, JSObject *blobObject ) {
 	jsval lengthVal;
 	J_CHK( JS_GetReservedSlot(cx, blobObject, SLOT_BLOB_LENGTH, &lengthVal) );
 	return JSVAL_IS_VOID( lengthVal ) ? false : true;
+bad:
+	return false;
 }
 
 
@@ -41,6 +43,7 @@ inline JSBool BlobLength( JSContext *cx, JSObject *blobObject, size_t *length ) 
 	J_S_ASSERT_INT( lengthVal );
 	*length = JSVAL_TO_INT( lengthVal );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -49,6 +52,7 @@ inline JSBool BlobBuffer( JSContext *cx, JSObject *blobObject, const char **buff
 	J_S_ASSERT_CLASS(blobObject, BlobJSClass( cx ));
 	*buffer = (char*)JS_GetPrivate(cx, blobObject);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -75,6 +79,7 @@ JSBool NativeInterfaceBufferGet( JSContext *cx, JSObject *obj, const char **buf,
 	*buf = JS_GetStringBytes(jsstr);
 	*size = JS_GetStringLength(jsstr);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -114,6 +119,7 @@ inline JSBool JsvalToBlob( JSContext *cx, jsval val, JSObject **obj ) {
 
 	*obj = NewBlob(cx, dst, srcLen);
 	return JS_TRUE;
+	JL_BAD;
 }
 */
 
@@ -162,8 +168,7 @@ DEFINE_CONSTRUCTOR() {
 	J_CHK( ReserveBufferGetInterface(cx, obj) );
 	J_CHK( SetBufferGetInterface(cx, obj, NativeInterfaceBufferGet) );
 	return JS_TRUE;
-bad:
-	return JS_FALSE;
+	JL_BAD;
 }
 
 
@@ -201,6 +206,7 @@ DEFINE_FUNCTION_FAST( Free ) {
 	// Properties belonging to objects on obj's prototype chain are not affected.
 	JS_ClearScope(cx, J_FOBJ);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -262,8 +268,7 @@ DEFINE_FUNCTION_FAST( concat ) {
 
 	J_CHK( J_NewBlob(cx, dst, dstLen, J_FRVAL) );
 	return JS_TRUE;
-bad:
-	return JS_FALSE;
+	JL_BAD;
 }
 
 
@@ -329,8 +334,7 @@ DEFINE_FUNCTION_FAST( substr ) {
 	J_CHK( J_NewBlob(cx, buffer, length, J_FRVAL) );
 
 	return JS_TRUE;
-bad:
-	return JS_FALSE;
+	JL_BAD;
 }
 
 
@@ -419,8 +423,7 @@ DEFINE_FUNCTION_FAST( substring ) {
 	J_CHK( J_NewBlob(cx, buffer, length, J_FRVAL) );
 
 	return JS_TRUE;
-bad:
-	return JS_FALSE;
+	JL_BAD;
 }
 
 
@@ -485,6 +488,7 @@ DEFINE_FUNCTION_FAST( indexOf ) {
 
 	*J_FRVAL = INT_TO_JSVAL(-1);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -558,6 +562,7 @@ DEFINE_FUNCTION_FAST( lastIndexOf ) {
 
 	*J_FRVAL = INT_TO_JSVAL(-1);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -610,8 +615,7 @@ DEFINE_FUNCTION_FAST( charAt ) {
 	*J_FRVAL = STRING_TO_JSVAL(str1);
 
 	return JS_TRUE;
-bad:
-	return JS_FALSE;
+	JL_BAD;
 }
 
 
@@ -659,6 +663,7 @@ DEFINE_FUNCTION_FAST( charCodeAt ) {
 	J_CHK( BlobBuffer(cx, J_FOBJ, &buffer) );
 	*J_FRVAL = INT_TO_JSVAL( buffer[index] );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -689,6 +694,7 @@ DEFINE_FUNCTION_FAST( toString ) { // and valueOf ?
 	J_S_ASSERT( jsstr != NULL, "Unable to convert Blob to String." );
 	*J_FRVAL = STRING_TO_JSVAL(jsstr);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -706,6 +712,7 @@ DEFINE_PROPERTY( length ) {
 	J_CHK( BlobLength(cx, obj, &length) );
 	*vp = INT_TO_JSVAL( length );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -737,8 +744,7 @@ DEFINE_GET_PROPERTY() {
 	*vp = STRING_TO_JSVAL(str1);
 
 	return JS_TRUE;
-bad:
-	return JS_FALSE;
+	JL_BAD;
 }
 
 
@@ -746,6 +752,7 @@ DEFINE_SET_PROPERTY() {
 
 	J_S_ASSERT( !JSVAL_IS_NUMBER(id), "Cannot modify immutable objects" );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -773,6 +780,7 @@ DEFINE_EQUALITY() {
 	}
 	*bp = JS_FALSE;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -842,6 +850,7 @@ DEFINE_NEW_RESOLVE() {
 //	J_CHKM( MutateToJSString(cx, obj), "Unable to transform the Blob into a String." );
 //	const char *debug_name = JS_GetStringBytes(JS_ValueToString(cx, id));
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -917,7 +926,7 @@ DEFINE_XDR() {
 		return JS_TRUE;
 	}
 
-	return JS_FALSE;
+	JL_BAD;
 }
 
 

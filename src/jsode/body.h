@@ -25,4 +25,5 @@ inline JSBool ValToBodyID( JSContext *cx, jsval val, ode::dBodyID *bodyId ) {
 	// *bodyId == NULL is not an error !
 	// (TBD) use another way to detect if body is correct
 	return JS_TRUE;
+	JL_BAD;
 }
