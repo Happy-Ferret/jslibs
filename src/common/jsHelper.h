@@ -317,7 +317,7 @@ inline bool JsvalIsClass(JSContext *cx, jsval val, JSClass *jsClass) {
 	J_S_ASSERT( (resourcePointer) != NULL, J__ERRMSG_INVALID_RESOURCE )
 
 #define J_S_ASSERT_ALLOC(pointer) \
-	if (unlikely( (pointer) == NULL )) { J_REPORT_WARNING( J__ERRMSG_OUT_OF_MEMORY ); JS_ReportOutOfMemory(cx); /*return JS_FALSE;*/ goto bad; }
+	if (unlikely( (pointer) == NULL )) { J_REPORT_WARNING( J__ERRMSG_OUT_OF_MEMORY ); JS_ReportOutOfMemory(cx); return JS_FALSE; }
 
 
 
@@ -624,8 +624,6 @@ inline JSBool J_NewBlobCopyN( JSContext *cx, const void *data, size_t amount, js
 	memcpy( blobBuf, data, amount );
 	J_CHK( J_NewBlob(cx, blobBuf, amount, vp) );
 	return JS_TRUE;
-bad:
-	return false;
 }
 
 /*
