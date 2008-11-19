@@ -56,11 +56,18 @@ typedef int (*HostOutput)( void *privateData, const char *buffer, size_t length 
 
 struct HostPrivate {
 
+	void *privateData;
+
 	bool unsafeMode;
 	HostOutput hostStdOut;
 	HostOutput hostStdErr;
 	jl::Queue moduleList;
-	void *privateData;
+
+	JSClass *blob;
+	JSClass *id;
+	jsid Matrix44GetId;
+	jsid BufferGetId;
+	jsid StreamReadId;
 };
 
 inline HostPrivate* GetHostPrivate( JSContext *cx ) {
@@ -153,7 +160,6 @@ inline void SetHostPrivate( JSContext *cx, HostPrivate *hostPrivate ) {
 #endif // DEBUG
 
 #define J_REMOVE_ROOT(cx, rp) (JS_RemoveRoot((cx),(void*)(rp)))
-
 
 #define JL_BAD bad:return(JS_FALSE)
 
@@ -289,7 +295,7 @@ inline bool JsvalIsClass(JSContext *cx, jsval val, JSClass *jsClass) {
 	J_S_ASSERT( JSVAL_IS_NUMBER(value), J__ERRMSG_UNEXPECTED_TYPE " Number expected." )
 
 #define J_S_ASSERT_STRING(value) \
-	J_S_ASSERT( JSVAL_IS_STRING(value), J__ERRMSG_UNEXPECTED_TYPE " String expected." )
+	J_S_ASSERT( J_JSVAL_IS_STRING(value), J__ERRMSG_UNEXPECTED_TYPE " String expected." )
 
 #define J_S_ASSERT_OBJECT(value) \
 	J_S_ASSERT( JSVAL_IS_OBJECT(value) && !JSVAL_IS_NULL(value), J__ERRMSG_UNEXPECTED_TYPE " Object expected." )
@@ -319,10 +325,7 @@ inline bool JsvalIsClass(JSContext *cx, jsval val, JSClass *jsClass) {
 	J_S_ASSERT( (resourcePointer) != NULL, J__ERRMSG_INVALID_RESOURCE )
 
 #define J_S_ASSERT_ALLOC(pointer) \
-	if (unlikely( (pointer) == NULL )) { J_REPORT_WARNING( J__ERRMSG_OUT_OF_MEMORY ); JS_ReportOutOfMemory(cx); goto bad; }
-
-
-
+	if (unlikely( (pointer) == NULL )) { J_REPORT_WARNING( J__ERRMSG_OUT_OF_MEMORY ); JS_ReportOutOfMemory(cx); goto bad; } // This does not cause an exception to be thrown.
 
 ///////////////////////////////////////////////////////////////////////////////
 // Helper functions
@@ -385,7 +388,7 @@ inline jsdouble IsInfinity( JSContext *cx, jsval val ) {
 
 
 inline bool IsNaN( JSContext *cx, jsval val ) {
-	
+
 	return JSVAL_IS_DOUBLE( val ) && JSDOUBLE_IS_NaN( *JSVAL_TO_DOUBLE( val ) );
 }
 
@@ -420,13 +423,13 @@ inline bool IsNInfinity( JSContext *cx, jsval val ) {
 
 inline bool JsvalIsFunction( JSContext *cx, jsval val ) {
 
-	return !JSVAL_IS_PRIMITIVE(val) && JS_ObjectIsFunction(cx, JSVAL_TO_OBJECT(val)) == JS_TRUE; // faster than (JS_TypeOfValue(cx, (val)) == JSTYPE_FUNCTION)
+	return !JSVAL_IS_PRIMITIVE(val) && JS_ObjectIsFunction(cx, JSVAL_TO_OBJECT(val)); // faster than (JS_TypeOfValue(cx, (val)) == JSTYPE_FUNCTION)
 }
 
 
 inline bool JsvalIsArray( JSContext *cx, jsval val ) {
 
-	return ( JSVAL_IS_OBJECT(val) && JS_IsArrayObject( cx, JSVAL_TO_OBJECT(val) ) == JS_TRUE );
+	return !JSVAL_IS_PRIMITIVE(val) && JS_IsArrayObject(cx, JSVAL_TO_OBJECT(val));
 }
 
 
@@ -719,7 +722,7 @@ inline JSBool JsvalToString( JSContext *cx, jsval *val, const char** buffer ) {
 inline JSBool StringToJsval( JSContext *cx, const char* cstr, jsval *val ) {
 
 	if ( cstr == NULL ) {
-		
+
 		*val = JSVAL_VOID;
 		return JS_TRUE;
 	}
@@ -807,7 +810,7 @@ inline JSBool JsvalToInt( JSContext *cx, jsval val, int *i ) {
 inline JSBool JsvalToUInt( JSContext *cx, jsval val, unsigned int *ui ) {
 
 	if ( JSVAL_IS_INT(val) ) {
-		
+
 		int i = JSVAL_TO_INT(val);
 
 		if ( i >= 0 ) {
@@ -841,7 +844,7 @@ inline JSBool JsvalToUInt( JSContext *cx, jsval val, unsigned int *ui ) {
 inline JSBool IntToJsval( JSContext *cx, int i, jsval *val ) {
 
 	if ( INT_FITS_IN_JSVAL(i) ) {
-		
+
 		*val = INT_TO_JSVAL(i);
 		return JS_TRUE;
 	} else {
@@ -878,7 +881,7 @@ inline JSBool BoolToJsval( JSContext *cx, bool b, jsval *val ) {
 inline JSBool JsvalToBool( JSContext *cx, const jsval val, bool *b ) {
 
 	if ( JSVAL_IS_BOOLEAN(val) ) {
-		
+
 		*b = (JSVAL_TO_BOOLEAN(val) == JS_TRUE);
 		return JS_TRUE;
 	} else {
@@ -915,7 +918,7 @@ inline JSBool GetPropertyBool( JSContext *cx, JSObject *obj, const char *propert
 inline JSBool JsvalToFloat( JSContext *cx, jsval val, float *f ) {
 
 	if ( JSVAL_IS_DOUBLE(val) ) {
-		
+
 		*f = *JSVAL_TO_DOUBLE(val);
 		return JS_TRUE;
 	} else {
@@ -931,7 +934,7 @@ inline JSBool JsvalToFloat( JSContext *cx, jsval val, float *f ) {
 inline JSBool JsvalToDouble( JSContext *cx, jsval val, double *d ) {
 
 	if ( JSVAL_IS_DOUBLE(val) ) {
-		
+
 		*d = *JSVAL_TO_DOUBLE(val);
 		return JS_TRUE;
 	} else {
@@ -1127,7 +1130,7 @@ inline JSBool JsvalToDoubleVector( JSContext *cx, jsval val, double *vector, siz
 typedef JSXDRState* Serialized;
 
 inline void SerializerCreate( Serialized *xdr ) {
-	
+
 	*xdr = NULL;
 }
 
@@ -1169,6 +1172,16 @@ inline JSBool UnserializeJsval( JSContext *cx, const Serialized *xdr, jsval *rva
 	JS_XDRDestroy(xdrDecoder);
 	return JS_TRUE;
 	JL_BAD;
+}
+
+
+inline jsid StringToJsid( JSContext *cx, const char *cstr ) {
+
+	jsid tmp;
+	J_CHK( JS_ValueToId(cx, STRING_TO_JSVAL(JS_InternString(cx, "_NI_Matrix44Get")), &tmp) );
+	return tmp;
+bad:
+	return 0;
 }
 
 
@@ -1252,10 +1265,16 @@ inline JSBool SetStreamReadInterface( JSContext *cx, JSObject *obj, NIStreamRead
 
 inline NIStreamRead StreamReadNativeInterface( JSContext *cx, JSObject *obj ) {
 
-	static jsid propId = 0; // (TBD) try to make this higher than module-static
-	if ( propId == 0 )
-		if ( JS_ValueToId(cx, STRING_TO_JSVAL(JS_InternString(cx, "_NI_StreamRead")), &propId) != JS_TRUE )
+	jsid propId = GetHostPrivate(cx)->StreamReadId;
+
+	if ( !propId ) {
+
+		propId = StringToJsid(cx, "_NI_StreamRead");
+		if ( !propId )
 			return NULL;
+		GetHostPrivate(cx)->StreamReadId = propId;
+	}
+
 	void *streamRead;
 	JSObject *obj2;
 	if ( propId == 0 || GetNativeInterface( cx, obj, &obj2, propId, &streamRead ) != JS_TRUE )
@@ -1301,10 +1320,14 @@ inline JSBool SetBufferGetInterface( JSContext *cx, JSObject *obj, NIBufferGet p
 
 inline NIBufferGet BufferGetNativeInterface( JSContext *cx, JSObject *obj ) {
 
-	static jsid propId = 0; // (TBD) try to make this higher than module-static
-	if ( propId == 0 )
-		if ( JS_ValueToId(cx, STRING_TO_JSVAL(JS_InternString(cx, "_NI_BufferGet")), &propId) != JS_TRUE )
+	jsid propId = GetHostPrivate(cx)->BufferGetId;
+	if ( !propId ) {
+
+		propId = StringToJsid(cx, "_NI_BufferGet");
+		if ( !propId )
 			return NULL;
+		GetHostPrivate(cx)->BufferGetId = propId;
+	}
 	void *fct;
 	JSObject *obj2;
 	if ( propId == 0 || GetNativeInterface( cx, obj, &obj2, propId, &fct ) != JS_TRUE )
@@ -1352,10 +1375,14 @@ inline JSBool SetMatrix44GetInterface( JSContext *cx, JSObject *obj, NIMatrix44G
 
 inline NIMatrix44Get Matrix44GetNativeInterface( JSContext *cx, JSObject *obj ) {
 
-	static jsid propId = 0; // (TBD) try to make this higher than module-static
-	if ( propId == 0 )
-		if ( JS_ValueToId(cx, STRING_TO_JSVAL(JS_InternString(cx, "_NI_Matrix44Get")), &propId) != JS_TRUE )
+	jsid propId = GetHostPrivate(cx)->Matrix44GetId;
+	if ( !propId ) {
+
+		propId = StringToJsid(cx, "_NI_Matrix44Get");
+		if ( !propId )
 			return NULL;
+		GetHostPrivate(cx)->Matrix44GetId = propId;
+	}
 	void *fct;
 	JSObject *obj2;
 	if ( propId == 0 || GetNativeInterface( cx, obj, &obj2, propId, &fct ) != JS_TRUE )
