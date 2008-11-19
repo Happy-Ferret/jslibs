@@ -162,6 +162,8 @@ DEFINE_CONSTRUCTOR() {
 	J_CHK( ReserveBufferGetInterface(cx, obj) );
 	J_CHK( SetBufferGetInterface(cx, obj, NativeInterfaceBufferGet) );
 	return JS_TRUE;
+bad:
+	return JS_FALSE;
 }
 
 
@@ -260,6 +262,8 @@ DEFINE_FUNCTION_FAST( concat ) {
 
 	J_CHK( J_NewBlob(cx, dst, dstLen, J_FRVAL) );
 	return JS_TRUE;
+bad:
+	return JS_FALSE;
 }
 
 
@@ -325,6 +329,8 @@ DEFINE_FUNCTION_FAST( substr ) {
 	J_CHK( J_NewBlob(cx, buffer, length, J_FRVAL) );
 
 	return JS_TRUE;
+bad:
+	return JS_FALSE;
 }
 
 
@@ -413,6 +419,8 @@ DEFINE_FUNCTION_FAST( substring ) {
 	J_CHK( J_NewBlob(cx, buffer, length, J_FRVAL) );
 
 	return JS_TRUE;
+bad:
+	return JS_FALSE;
 }
 
 
@@ -602,6 +610,8 @@ DEFINE_FUNCTION_FAST( charAt ) {
 	*J_FRVAL = STRING_TO_JSVAL(str1);
 
 	return JS_TRUE;
+bad:
+	return JS_FALSE;
 }
 
 
@@ -727,6 +737,8 @@ DEFINE_GET_PROPERTY() {
 	*vp = STRING_TO_JSVAL(str1);
 
 	return JS_TRUE;
+bad:
+	return JS_FALSE;
 }
 
 

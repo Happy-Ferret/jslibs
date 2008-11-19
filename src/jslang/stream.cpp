@@ -105,6 +105,8 @@ DEFINE_CONSTRUCTOR() {
 	J_CHK( SetStreamReadInterface(cx, obj, StreamRead) );
 
 	return JS_TRUE;
+bad:
+	return JS_FALSE;
 }
 
 
@@ -133,6 +135,8 @@ DEFINE_FUNCTION_FAST( Read ) {
 	J_CHK( J_NewBlob(cx, buffer, readAmount, J_FRVAL) );
 
 	return JS_TRUE;
+bad:
+	return JS_FALSE;
 }
 
 

@@ -2,7 +2,28 @@ LoadModule('jsstd');
 LoadModule('jsio');
 LoadModule('jstask');
 
-function MyTask( request, index ) {
+LoadModule('jsstd');
+LoadModule('jstask');
+
+function MyTask( request ) {
+
+	for ( var i = 0; i < 200000; i++);
+	return 'r#' + request;
+}
+
+var myTask = new Task(MyTask);
+
+for ( var i = 0; i < 10; i++ )
+	myTask.Request(i);
+
+while ( !myTask.idle )
+	Print( myTask.Response(), ', ' );
+
+
+
+Halt(); ////////////////////////////////////////////////
+
+function MyTask1( request, index ) {
 
 	if ( !index ) { // first request, it's time to initialise things
 	
@@ -35,14 +56,14 @@ function MyTask( request, index ) {
 
 }
 
-var t1 = new Task(MyTask, -1);
+var t1 = new Task(MyTask1, 1);
 
 for ( var i = 0; i < 50; i++ )
 	t1.Request('request '+i);
 
 
-
-while ( t1.pendingRequestCount || t1.pendingResponseCount ) {
+while ( !t1.idle ) {
+//while ( t1.pendingRequestCount || t1.pendingResponseCount ) {
 
 	try {
 		Print(t1.Response(), '\n');
