@@ -72,7 +72,7 @@ JSBool CloseSharedMemory( JSContext *cx, JSObject *obj ) {
 
 	PRStatus status;
 	status = PR_WaitSemaphore( pv->accessSem );
-	
+
 	MemHeader *mh = (MemHeader*)pv->mem;
 
 	bool isLast = (mh->accessCount == 0);
@@ -83,7 +83,7 @@ JSBool CloseSharedMemory( JSContext *cx, JSObject *obj ) {
 	status = PR_CloseSemaphore(pv->accessSem);
 
 	if ( isLast ) {
-	
+
 		status = PR_DeleteSharedMemory(pv->name);
 		char semName[PATH_MAX];
 		strcpy(semName, pv->name);
@@ -107,7 +107,7 @@ BEGIN_CLASS( SharedMemory )
 DEFINE_FINALIZE() {
 
 	if ( JS_GetPrivate(cx, J_OBJ) != NULL ) {
-		
+
 		CloseSharedMemory(cx, obj);
 	}
 }
@@ -132,7 +132,8 @@ DEFINE_CONSTRUCTOR() {
 	PRSize size;
 	J_CHK( JsvalToUInt(cx, J_ARG(2), &size) );
 
-	PRUintn mode = PR_IRUSR | PR_IWUSR; // read write permission for owner.
+	PRUintn mode;
+	mode = PR_IRUSR | PR_IWUSR; // read write permission for owner.
 	if ( J_ARG_ISDEF(3) )
 		J_CHK( JsvalToUInt(cx, J_ARG(3), &mode) );
 
@@ -143,7 +144,8 @@ DEFINE_CONSTRUCTOR() {
 	strcpy(semName, name);
 	strcat(semName, SEMAPHORE_EXTENSION);
 
-	bool isCreation = true;
+	bool isCreation;
+	isCreation = true;
 	PRSem *accessSem = PR_OpenSemaphore(semName, PR_SEM_EXCL | PR_SEM_CREATE, mode, 1); // fail if already exists
 
 	if ( accessSem == NULL ) {
@@ -211,7 +213,8 @@ DEFINE_FUNCTION_FAST( Write ) {
 	ClassPrivate *pv = (ClassPrivate*)JS_GetPrivate(cx, J_FOBJ);
 	J_S_ASSERT_RESOURCE( pv );
 
-	PRSize offset = 0;
+	PRSize offset;
+	offset = 0;
 	if ( J_FARG_ISDEF(2) )
 		J_CHK( JsvalToUInt(cx, J_FARG(2), &offset) );
 
@@ -244,13 +247,14 @@ DEFINE_FUNCTION_FAST( Read ) {
 	ClassPrivate *pv = (ClassPrivate*)JS_GetPrivate(cx, J_FOBJ);
 	J_S_ASSERT_RESOURCE( pv );
 
-	unsigned int offset = 0;
+	unsigned int offset;
+	offset = 0;
 	if ( J_FARG_ISDEF(2) )
 		J_CHK( JsvalToUInt(cx, J_FARG(2), &offset) );
 
 	J_CHK( Lock(cx, pv) );
 	MemHeader *mh = (MemHeader*)pv->mem;
-	
+
 	unsigned int dataLength;
 	if ( J_FARG_ISDEF(1) )
 		J_CHK( JsvalToUInt(cx, J_FARG(1), &dataLength) );
@@ -265,7 +269,7 @@ DEFINE_FUNCTION_FAST( Read ) {
 	J_CHK( Unlock(cx, pv) );
 
 	J_CHK( J_NewBlob( cx, data, dataLength, J_FRVAL ) );
-	
+
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -416,7 +420,7 @@ DEFINE_PROPERTY( xdrGetter ) {
 
 	J_CHK( Lock(cx, pv) );
 	MemHeader *mh = (MemHeader*)pv->mem;
-	
+
 	JSXDRState *xdr = JS_XDRNewMem(cx, JSXDR_DECODE);
 	J_S_ASSERT( xdr, "Unable to create XDR decoder." );
 

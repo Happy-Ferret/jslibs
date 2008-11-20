@@ -910,8 +910,10 @@ DEFINE_FUNCTION_FAST( NormalizeLevels ) {
 	Texture *tex = (Texture *)JS_GetPrivate(cx, J_FOBJ);
 	J_S_ASSERT_RESOURCE(tex);
 
-	PTYPE min = PMAXLIMIT;
-	PTYPE max = PMINLIMIT;
+	PTYPE min;
+	min = PMAXLIMIT;
+	PTYPE max;
+	max = PMINLIMIT;
 	PTYPE tmp;
 
 	int tsize = tex->width * tex->height * tex->channels;
@@ -2470,14 +2472,16 @@ DEFINE_FUNCTION_FAST( Light ) {
 
 	PTYPE ambient[3];
 	J_CHK( InitLevelData(cx, J_FARG(3), 3, ambient) );
-	bool ambiantTexture = false;
+	bool ambiantTexture;
+	ambiantTexture = false;
 
 	PTYPE diffuse[3];
 	J_CHK( InitLevelData(cx, J_FARG(4), 3, diffuse) );
 
 	PTYPE specular[3];
 	J_CHK( InitLevelData(cx, J_FARG(5), 3, specular) );
-	bool specularTexture = false;
+	bool specularTexture;
+	specularTexture = false;
 
 	double bumpPower; // (TBD) default value
 	if ( argc >= 6 )
@@ -2566,8 +2570,10 @@ DEFINE_FUNCTION_FAST( Trim ) { // (TBD) test this new version that use memcpy
 
 	int channels = tex->channels;
 
-	int newWidth = x1 - x0;
-	int newHeight = y1 - y0;
+	int newWidth;
+	newWidth = x1 - x0;
+	int newHeight;
+	newHeight = y1 - y0;
 
 	if ( tex->cbackBuffer != NULL ) {
 
@@ -3083,7 +3089,8 @@ DEFINE_FUNCTION_FAST( Displace ) {
 
 	TextureSetupBackBuffer(cx, tex);
 
-	BorderMode mode = borderWrap;
+	BorderMode mode;
+	mode = borderWrap;
 
 	int x, y;
 	int sx, sy; // source position
@@ -3569,7 +3576,8 @@ DEFINE_FUNCTION_FAST( AddCracks ) { // source: FxGen
 	int pos, c;
 	float curveValue;
 	//Process operator
-	int n = 0;
+	int n;
+	n = 0;
 	while( n++ < count ) {
 
 		float x = genrand_real1() * width;
@@ -3660,8 +3668,10 @@ DEFINE_FUNCTION_FAST( LevelRange ) {
 	Texture *tex = (Texture *)JS_GetPrivate(cx, J_FOBJ);
 	J_S_ASSERT_RESOURCE(tex);
 
-	PTYPE min = PMAXLIMIT;
-	PTYPE max = PMINLIMIT;
+	PTYPE min;
+	min = PMAXLIMIT;
+	PTYPE max;
+	max = PMINLIMIT;
 	PTYPE tmp;
 
 	int tsize = tex->width * tex->height * tex->channels;
@@ -3673,7 +3683,9 @@ DEFINE_FUNCTION_FAST( LevelRange ) {
 		else if ( tmp < min )
 			min = tmp;
 	}
-	double vector[] = { min, max };
+	double vector[2]; // = { min, max };
+	vector[0] = min;
+	vector[1] = max;
 
 //	J_REAL_VECTOR_TO_JSVAL(vector, 2, *J_FRVAL);
 	J_CHK( DoubleVectorToJsval(cx, vector, 2, J_FRVAL) );

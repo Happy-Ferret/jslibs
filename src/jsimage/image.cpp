@@ -102,7 +102,8 @@ DEFINE_FUNCTION( Trim ) {
 
 	J_S_ASSERT( !(x<0 || x1<0 || x>width || x1>width || y<0 || y1<0 || y>height || y1>height), "Invalid size." );
 
-	JSBool reuseBuffer = false; // default
+	JSBool reuseBuffer;
+	reuseBuffer = false; // default
 	if ( argc >= 2 )
 		JS_ValueToBoolean(cx, argv[1], &reuseBuffer);
 

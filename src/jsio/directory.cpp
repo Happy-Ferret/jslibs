@@ -112,7 +112,8 @@ DEFINE_FUNCTION( Read ) {
 	PRDir *dd = (PRDir *)JS_GetPrivate( cx, obj );
 	J_S_ASSERT( dd != NULL, "directory is closed" );
 
-	PRDirFlags flags = PR_SKIP_NONE;
+	PRDirFlags flags;
+	flags = PR_SKIP_NONE;
 	if ( J_ARG_ISDEF(1) ) {
 
 		int32 tmp;
@@ -149,7 +150,8 @@ DEFINE_FUNCTION( Make ) {
 	J_S_ASSERT_DEFINED( jsvalDirectoryName );
 	const char *directoryName;
 	J_CHK( JsvalToString(cx, &jsvalDirectoryName, &directoryName) );
-	PRIntn mode = 0766; // the permissions need to be set to 766 (linux uses the eXecute bit on directory as permission to allow access to a directory).
+	PRIntn mode;
+	mode = 0766; // the permissions need to be set to 766 (linux uses the eXecute bit on directory as permission to allow access to a directory).
 	if ( PR_MkDir(directoryName, mode) != PR_SUCCESS )
 		return ThrowIoError(cx);
 	return JS_TRUE;
@@ -259,7 +261,8 @@ DEFINE_FUNCTION( List ) {
 	if ( dd == NULL )
 		return ThrowIoError(cx);
 
-	PRDirFlags flags = PR_SKIP_DOT;
+	PRDirFlags flags;
+	flags = PR_SKIP_DOT;
 	if ( J_ARG_ISDEF( 2 ) ) {
 
 		int32 tmp;
@@ -271,7 +274,8 @@ DEFINE_FUNCTION( List ) {
 	J_S_ASSERT_ALLOC( addrJsObj );
 	*rval = OBJECT_TO_JSVAL( addrJsObj );
 
-	int index = 0;
+	int index;
+	index = 0;
 	for (;;) {
 
 		PRDirEntry *dirEntry = PR_ReadDir( dd, flags ); // & 0x0F
@@ -319,7 +323,7 @@ DEFINE_FUNCTION( List ) {
  * Directory.`SKIP_NONE`
   Do not skip any files.
  * Directory.`SKIP_DOT`
-  Skip the directory entry "." representing the current directory.    
+  Skip the directory entry "." representing the current directory.
  * Directory.`SKIP_DOT_DOT`
   Skip the directory entry ".." representing the parent directory.
  * Directory.`SKIP_BOTH`
@@ -387,7 +391,7 @@ function RecursiveDir(path) {
       var dir = new Directory(path);
       dir.Open();
       for ( var entry; ( entry = dir.Read(Directory.SKIP_BOTH) ); ) {
-         
+
          var file = new File(dir.name+'/'+entry);
          switch ( file.info.type ) {
             case File.FILE_DIRECTORY:

@@ -234,10 +234,14 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 			jsval ex;
 			JS_GetPendingException(cx, &ex);
 			JL_ValueOf(cx, &ex, &ex);
-			if ( JSVAL_IS_INT(ex) )
+			if ( JSVAL_IS_INT(ex) ) {
+
 				exitValue = JSVAL_TO_INT(ex);
-			else
+		} else {
+
 				JS_ReportPendingException(cx);
+				exitValue = EXIT_FAILURE;
+			}
 		} else {
 
 			exitValue = EXIT_FAILURE;
@@ -254,7 +258,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	signal(SIGINT, SIG_DFL);
 	signal(SIGTERM, SIG_DFL);
 #endif // XP_WIN
-	
+
 	return exitValue;
 }
 
@@ -325,7 +329,7 @@ The main features are:
   Exemple:
   {{{
   for ( var i in arguments ) {
-    
+
     Print( 'argument['+i+'] = '+arguments[i] ,'\n' );
   }
   ...
@@ -339,7 +343,7 @@ The main features are:
 
 === Configuration object ===
 
-jshost create a global _configuration_ global to provide other modules 
+jshost create a global _configuration_ global to provide other modules
 some useful informations like `stdout` access and `unsafeMode` flag.
 
 == Remarks ==

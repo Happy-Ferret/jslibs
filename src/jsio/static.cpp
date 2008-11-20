@@ -423,7 +423,8 @@ DEFINE_FUNCTION_FAST( WaitSemaphore ) {
 
 	J_S_ASSERT_ARG_MIN( 1 );
 
-	PRUintn mode = PR_IRUSR | PR_IWUSR; // read write permission for owner.
+	PRUintn mode;
+	mode = PR_IRUSR | PR_IWUSR; // read write permission for owner.
 	if ( J_FARG_ISDEF(2) )
 		J_CHK( JsvalToUInt(cx, J_FARG(2), &mode) );
 
@@ -431,7 +432,8 @@ DEFINE_FUNCTION_FAST( WaitSemaphore ) {
 	size_t nameLength;
 	J_CHK( JsvalToStringAndLength(cx, &J_FARG(1), &name, &nameLength) );
 
-	bool isCreation = true;
+	bool isCreation;
+	isCreation = true;
 	PRSem *semaphore = PR_OpenSemaphore(name, PR_SEM_EXCL | PR_SEM_CREATE, mode, 1); // fail if already exists
 
 	if ( semaphore == NULL ) {
@@ -538,7 +540,8 @@ DEFINE_FUNCTION_FAST( CreateProcess ) {
 	processArgv[0] = path;
 	processArgv[processArgc] = NULL;
 
-	bool waitEnd = false;
+	bool waitEnd;
+	waitEnd = false;
 	if ( J_FARG_ISDEF(3) )
 		J_CHK( JsvalToBool(cx, J_FARG(3), &waitEnd) );
 

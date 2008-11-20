@@ -396,7 +396,8 @@ JSBool FindInBuffer( JSContext *cx, JSObject *obj, const char *needle, size_t ne
 	BufferPrivate *pv = (BufferPrivate*)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( pv );
 
-	size_t pos = 0;
+	size_t pos;
+	pos = 0;
 
 	char staticBuffer[128];
 	char *buf = needleLength <= sizeof(staticBuffer) ? staticBuffer : (char*)malloc(needleLength); // the "ring buffer"
@@ -838,7 +839,8 @@ DEFINE_FUNCTION( toString ) {
 	J_S_ASSERT_ALLOC( buffer );
 	buffer[pv->length] = '\0';
 
-	size_t pos = 0;
+	size_t pos;
+	pos = 0;
 //	while ( !QueueIsEmpty(pv->queue) ) {
 	for ( jl::QueueCell *it = jl::QueueBegin(pv->queue); it; it = jl::QueueNext(it) ) {
 

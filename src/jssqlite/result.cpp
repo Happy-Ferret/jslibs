@@ -66,7 +66,7 @@ JSBool SqliteToJsval( JSContext *cx, sqlite3_value *value, jsval *rval ) {
 
 // doc: The sqlite3_bind_*() routines must be called after sqlite3_prepare() or sqlite3_reset() and before sqlite3_step(). Bindings are not cleared by the sqlite3_reset() routine. Unbound parameters are interpreted as NULL.
 JSBool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *objAt, JSObject *objColon ) {
-	
+
 	int count = sqlite3_bind_parameter_count(pStmt);
 	for ( int param = 1; param <= count; param++ ) {
 
@@ -76,7 +76,7 @@ JSBool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *objAt,
 //		J_S_ASSERT( name != NULL, "Binding is out of range." ); // (TBD) better error message
 
 		jsval val;
-		
+
 		if ( name != NULL ) {
 
 			JSObject *obj = NULL;
@@ -318,7 +318,8 @@ DEFINE_FUNCTION( Row ) {
 	}
 
 	// returns an array [ row1Data, row2Data, ... ] else return an object { row1Name:row1Data, row2Name:row2Data,  ... }
-	JSBool namedRows = JS_FALSE; // default value
+	JSBool namedRows;
+	namedRows = JS_FALSE; // default value
 	if ( argc >= 1 )
 		JS_ValueToBoolean( cx, argv[0], &namedRows );
 	JSObject *row = namedRows ? JS_NewObject(cx, NULL, NULL, NULL) : JS_NewArrayObject(cx, 0, NULL); // If length is 0, JS_NewArrayObject creates an array object of length 0 and ignores vector.

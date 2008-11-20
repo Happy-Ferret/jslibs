@@ -161,7 +161,8 @@ DEFINE_FUNCTION( ReadInt ) {
 	else
 		netConv = false;
 
-	u_int8_t data[8] = { 0 };
+	u_int8_t data[8]; // = { 0 };
+	memset(data, 0, sizeof(data));
 
 	size_t amount = size;
 	J_CHK( ReadRawAmount(cx, bufferObject, &amount, (char*)data) );
@@ -267,9 +268,11 @@ DEFINE_FUNCTION( WriteInt ) { // incompatible with NIStreamRead
 	else
 		netConv = false;
 
-	u_int8_t data[8] = { 0 };
+	u_int8_t data[8]; // = { 0 };
+	memset(data, 0, sizeof(data));
 
-	bool outOfRange = false;
+	bool outOfRange;
+	outOfRange = false;
 
 	switch (size) {
 		case sizeof(int8_t):

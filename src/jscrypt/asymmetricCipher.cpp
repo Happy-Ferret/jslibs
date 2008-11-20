@@ -197,7 +197,8 @@ DEFINE_FUNCTION( CreateKeys ) { // ( bitsSize )
 	unsigned int keySize;
 	J_CHK( JsvalToUInt(cx, argv[0], &keySize) );
 
-	int err = -1; // default
+	int err;
+	err = -1; // default
 	switch ( pv->cipher ) {
 		case rsa: {
 			int e = 65537; // typical values are 3, 17, 257 and 65537
@@ -263,8 +264,10 @@ DEFINE_FUNCTION( Encrypt ) { // ( data [, lparam] )
 	J_CHK( JsvalToStringAndLength( cx, &argv[0], &in, &inLength ) );
 
 	char out[4096];
-	unsigned long outLength = sizeof(out);
-	int err = -1; // default
+	unsigned long outLength;
+	outLength = sizeof(out);
+	int err;
+	err = -1; // default
 	switch ( pv->cipher ) {
 		case rsa: {
 			// lparam doc: The lparam variable is an additional system specific tag that can be applied to the encoding.
@@ -326,9 +329,11 @@ DEFINE_FUNCTION( Decrypt ) { // ( encryptedData [, lparam] )
 	J_CHK( JsvalToStringAndLength(cx, &argv[0], &in, &inLength) );
 
 	char out[4096];
-	unsigned long outLength = sizeof(out);
+	unsigned long outLength;
+	outLength = sizeof(out);
 
-	int err = -1; // default
+	int err;
+	err = -1; // default
 	switch ( pv->cipher ) {
 		case rsa: {
 
@@ -398,9 +403,11 @@ DEFINE_FUNCTION( Sign ) { // ( data [, saltLength] )
 	J_CHK( JsvalToStringAndLength(cx, &argv[0], &in, &inLength) );
 
 	char out[4096];
-	unsigned long outLength = sizeof(out);
+	unsigned long outLength;
+	outLength = sizeof(out);
 
-	int err = -1; // default
+	int err;
+	err = -1; // default
 	switch ( pv->cipher ) {
 		case rsa: {
 			int hashIndex = find_hash(pv->hashDescriptor->name);
@@ -457,8 +464,10 @@ DEFINE_FUNCTION( VerifySignature ) { // ( data, signature [, saltLength] )
 	size_t signLength;
 	J_CHK( JsvalToStringAndLength(cx, &argv[1], &sign, &signLength) ); // warning: GC on the returned buffer !
 
-	int stat = 0; // default: failed
-	int err = -1; // default: Invalid error code
+	int stat;
+	stat = 0; // default: failed
+	int err;
+	err = -1; // default: Invalid error code
 	switch ( pv->cipher ) {
 		case rsa: {
 			int saltLength = RSA_SIGN_DEFAULT_SALT_LENGTH; // default
@@ -574,7 +583,8 @@ DEFINE_PROPERTY( keySetter ) {
 	size_t keyLength;
 	J_CHK( JsvalToStringAndLength(cx, vp, &key, &keyLength) );
 
-	int err = -1; // default
+	int err;
+	err = -1; // default
 	switch ( pv->cipher ) {
 		case rsa:
 			err = rsa_import( (unsigned char *)key, keyLength, &pv->key.rsaKey );
@@ -614,9 +624,11 @@ DEFINE_PROPERTY( keyGetter ) {
 	J_S_ASSERT( jsErr == JS_TRUE, "Invalid operation." );
 
 	char key[4096];
-	unsigned long keyLength = sizeof(key);
+	unsigned long keyLength;
+	keyLength = sizeof(key);
 
-	int err = -1; // default
+	int err;
+	err = -1; // default
 	switch ( pv->cipher ) {
 		case rsa:
 			err = rsa_export( (unsigned char *)key, &keyLength, type, &pv->key.rsaKey );

@@ -97,7 +97,8 @@ DEFINE_FUNCTION( Expand ) {
 	Chunk *chunk;
 	const char *tok;
 	jsval val;
-	int totalLength = 0;
+	int totalLength;
+	totalLength = 0;
 
 	while ( *srcBegin != '\0' ) {
 
@@ -545,7 +546,7 @@ DEFINE_FUNCTION_FAST( StringRepeat ) {
 	size_t count;
 	J_CHK( JsvalToUInt(cx, J_FARG(2), &count) );
 	if ( count == 0 ) {
-		
+
 		*J_FRVAL = JS_GetEmptyStringValue(cx);
 		return JS_TRUE;
 	}
@@ -555,13 +556,13 @@ DEFINE_FUNCTION_FAST( StringRepeat ) {
 	J_CHK( JsvalToStringAndLength(cx, &J_FARG(1), &buf, &len) ); // warning: GC on the returned buffer !
 
 	if ( len == 0 ) {
-		
+
 		*J_FRVAL = JS_GetEmptyStringValue(cx);
 		return JS_TRUE;
 	}
 
 	if ( count == 1 ) {
-		
+
 		*J_FRVAL = STRING_TO_JSVAL( JS_ValueToString(cx, J_FARG(1)) ); // force string conversion because we must return a string.
 		return JS_TRUE;
 	}
@@ -573,10 +574,10 @@ DEFINE_FUNCTION_FAST( StringRepeat ) {
 	newBuf[newLen] = '\0';
 
 	if ( len == 1 ) {
-		
+
 		memset(newBuf, *buf, newLen);
 	} else {
-		
+
 		char *tmp = newBuf;
 		size_t i, j;
 		for ( i=0; i<count; i++ )
@@ -824,7 +825,7 @@ DEFINE_FUNCTION_FAST( Exec ) {
 **/
 
 static JSBool SandboxMaxOperationCallback(JSContext *cx) {
-	
+
 	JSObject *branchLimitExceptionObj = JS_NewObject( cx, classOperationLimit, NULL, NULL );
 	JS_SetPendingException( cx, OBJECT_TO_JSVAL( branchLimitExceptionObj ) );
 	return JS_FALSE;
@@ -837,7 +838,7 @@ static JSBool SandboxQueryFunction(JSContext *cx, uintN argc, jsval *vp) {
 
 		J_CHK( JS_CallFunction(cx, J_FOBJ, fun, argc, J_FARGV, J_FRVAL) );
 		if ( !JSVAL_IS_PRIMITIVE(*J_FRVAL) ) { // for security reasons, you must return primitive values.
-			
+
 			JS_ReportError(cx, "Only primitive value can be used.");
 			return JS_FALSE;
 		}
@@ -856,7 +857,7 @@ DEFINE_FUNCTION_FAST( SandboxEval ) {
 
 		J_CHK( JsvalToUInt(cx, J_FARG(2), &maxOperation) );
 		J_S_ASSERT( maxOperation < JS_MAX_OPERATION_LIMIT / JS_OPERATION_WEIGHT_BASE, "Invalid limit value." );
-	} else 
+	} else
 		maxOperation = 4096; // default value
 
 	JSContext *scx = JS_NewContext(JS_GetRuntime(cx), 8192L); // see host/host.cpp
@@ -884,15 +885,15 @@ DEFINE_FUNCTION_FAST( SandboxEval ) {
 
 /*
 	if ( J_FARG_ISDEF(2) ) {
-		
+
 		JSObject *aobj = JSVAL_TO_OBJECT( J_FARG(2) );
 		JS_SetParent(scx, aobj, globalObject);
 		globalObject = aobj;
 	}
-*/		
+*/
 
 	JSString *jsstr = JS_ValueToString(cx, J_FARG(1));
-	uintN srclen = JS_GetStringLength(jsstr); 	
+	uintN srclen = JS_GetStringLength(jsstr);
 	jschar *src = JS_GetStringChars(jsstr);
 
 	JS_SetOperationCallback(scx, SandboxMaxOperationCallback, maxOperation * JS_OPERATION_WEIGHT_BASE);
@@ -1048,7 +1049,7 @@ DEFINE_PROPERTY( processPrioritySetter ) {
 
 #ifdef _DEBUG
 DEFINE_FUNCTION_FAST( Test ) {
-	
+
 
 	return JS_TRUE;
 }

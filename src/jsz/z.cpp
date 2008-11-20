@@ -171,8 +171,10 @@ DEFINE_CALL() {
 	method = JSVAL_TO_INT(jsvalMethod);
 
 // prepare input data
-	const char *inputData = NULL;
-	size_t inputLength = 0;
+	const char *inputData;
+	inputData = NULL;
+	size_t inputLength;
+	inputLength = 0;
 	if ( argc >= 1 ) {
 
 		J_CHK( JsvalToStringAndLength(cx, &argv[0], &inputData, &inputLength) ); // warning: GC on the returned buffer !
@@ -187,7 +189,8 @@ DEFINE_CALL() {
 	stream->next_in = (Bytef*)inputData;
 
 // force finish
-	JSBool forceFinish = JS_FALSE;
+	JSBool forceFinish;
+	forceFinish = JS_FALSE;
 	if ( argc >= 2 )
 		JS_ValueToBoolean( cx, argv[1], &forceFinish );
 

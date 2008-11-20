@@ -222,7 +222,7 @@ _DumpStats(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 		const char *fileName;
 		J_CHK( JsvalToString(cx, &J_ARG( 1 ), &fileName) );
 		if ( fileName[0] != '\0' ) {
-		
+
 			gOutFile = fopen(fileName, "w");
 			J_S_ASSERT_2( gOutFile, "can't open %s: %s", fileName, strerror(errno));
 		}
@@ -564,9 +564,10 @@ DEFINE_FUNCTION(Locate) {
 	J_CHK( JsvalToInt(cx, argv[0], &frame) );
 	J_S_ASSERT(frame <= 0, "Frame number must be <= 0");
 
-	JSStackFrame *fp = NULL;
+	JSStackFrame *fp;
+	fp = NULL;
 	for ( JS_FrameIterator(cx, &fp); fp; JS_FrameIterator(cx, &fp) ) {
-		
+
 		jsbytecode *pc = JS_GetFramePC(cx,fp);
 		if ( fp->script && pc && !frame++ ) {
 
@@ -594,9 +595,10 @@ DEFINE_FUNCTION(LocateLine) {
 	J_CHK( JsvalToInt(cx, argv[0], &frame) );
 	J_S_ASSERT(frame <= 0, "Frame number must be <= 0");
 
-	JSStackFrame *fp = NULL;
+	JSStackFrame *fp;
+	fp = NULL;
 	for ( JS_FrameIterator(cx, &fp); fp; JS_FrameIterator(cx, &fp) ) {
-		
+
 		jsbytecode *pc = JS_GetFramePC(cx,fp);
 		if ( fp->script && pc && !frame++ ) {
 
@@ -943,9 +945,9 @@ DEFINE_PROPERTY( gcBytes ) {
 makes the garbage collector extremely aggressive, which will
 help you find any GC hazards much more quickly. This is the same as
 -DWAY_TOO_MUCH_GC and friends, except that it can be manipulated at runtime
-(gdb: set rt->gcZeal = 2). 
+(gdb: set rt->gcZeal = 2).
 ...
-in about:config javascript.options.gczeal = 2 (or 1, or 0, to disable). 
+in about:config javascript.options.gczeal = 2 (or 1, or 0, to disable).
 */
 DEFINE_PROPERTY( gcZeal ) {
 

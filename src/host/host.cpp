@@ -252,7 +252,9 @@ static JSBool LoadModule(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, 
 		J_CHKM( false, "Invalid module." ); // give this message if no error is set
 	}
 
-	bool alreadyLoaded = false;
+	bool alreadyLoaded;
+	alreadyLoaded = false;
+
 	for ( jl::QueueCell *it = jl::QueueBegin(&pv->moduleList); it; it = jl::QueueNext(it) ) {
 
 		JLLibraryHandler m = (JLLibraryHandler)jl::QueueGetData(it);
@@ -326,7 +328,7 @@ static JSBool global_resolve(JSContext *cx, JSObject *obj, jsval id, uintN flags
 
 // global object
 // doc: For full ECMAScript standard compliance, obj should be of a JSClass that has the JSCLASS_GLOBAL_FLAGS flag.
-static JSClass global_class = { // global variable !
+static JSClass global_class = { // global variable, but this is not an issue even is several runtimes share the same JSClass.
 	NAME_GLOBAL_CLASS, JSCLASS_GLOBAL_FLAGS | JSCLASS_NEW_RESOLVE,  // | JSCLASS_HAS_PRIVATE
 	JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub,
 	global_enumerate, (JSResolveOp)global_resolve, JS_ConvertStub, JS_FinalizeStub, // see LAZY_STANDARD_CLASSES

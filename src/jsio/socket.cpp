@@ -76,10 +76,10 @@ DEFINE_CONSTRUCTOR() {
   = =
   if _what_ is <false>, further sends will be disallowed.
   = =
-  if _what_ is ommited or <undefined>,  further sends and receives will be disallowed 
+  if _what_ is ommited or <undefined>,  further sends and receives will be disallowed
 **/
 DEFINE_FUNCTION( Shutdown ) { // arg[0] =  false: SHUTDOWN_RCV | true: SHUTDOWN_SEND | else it will SHUTDOWN_BOTH
-	
+
 	PRFileDesc *fd = (PRFileDesc*)JS_GetPrivate( cx, obj );
 	J_S_ASSERT_RESOURCE( fd );
 
@@ -435,7 +435,7 @@ DEFINE_FUNCTION( RecvFrom ) {
 		J_CHK( J_NewBlob( cx, buffer, res, &data ) );
 		*rval = data; // protect from GC
 	} else if (res == 0) {
-		
+
 		JS_free(cx, buffer);
 		data = JSVAL_VOID;
 	} else if (res == -1) {
@@ -447,7 +447,11 @@ DEFINE_FUNCTION( RecvFrom ) {
 		data = JS_GetEmptyStringValue(cx);
 	}
 
-	jsval arrayItems[] = { data, STRING_TO_JSVAL(strPeerName), INT_TO_JSVAL(port) };
+	jsval arrayItems[3]; // = { data, STRING_TO_JSVAL(strPeerName), INT_TO_JSVAL(port) };
+	arrayItems[0] = data;
+	arrayItems[1] = STRING_TO_JSVAL(strPeerName);
+	arrayItems[2] = INT_TO_JSVAL(port);
+
 	JSObject *arrayObject = JS_NewArrayObject(cx, sizeof(arrayItems), arrayItems );
 	J_S_ASSERT_ALLOC( arrayObject ); // (TBD) else free buffer
 	*rval = OBJECT_TO_JSVAL( arrayObject );
@@ -482,7 +486,8 @@ DEFINE_FUNCTION( TransmitFile ) { // WORKS ONLY ON BLOCKING SOCKET !!!
 	PRFileDesc *fileFd = (PRFileDesc*)JS_GetPrivate( cx, fileObj );
 	J_S_ASSERT_RESOURCE( fileFd );
 
-	PRTransmitFileFlags flag = PR_TRANSMITFILE_KEEP_OPEN;
+	PRTransmitFileFlags flag;
+	flag = PR_TRANSMITFILE_KEEP_OPEN;
 	if ( J_ARG_ISDEF(2) ) {
 
 		bool closeAfterTransmit;
@@ -500,8 +505,10 @@ DEFINE_FUNCTION( TransmitFile ) { // WORKS ONLY ON BLOCKING SOCKET !!!
 	} else
 		connectTimeout = PR_INTERVAL_NO_TIMEOUT;
 
-	const char *headers = NULL;
-	size_t headerLength = 0;
+	const char *headers;
+	headers = NULL;
+	size_t headerLength;
+	headerLength = 0;
 	if ( J_ARG_ISDEF(3) )
 		J_CHK( JsvalToStringAndLength(cx, &J_ARG(3), &headers, &headerLength) );
 
@@ -543,7 +550,7 @@ DEFINE_PROPERTY( connectContinue ) {
 	desc.fd = fd;
 	desc.in_flags = PR_POLL_WRITE | PR_POLL_EXCEPT;
 	desc.out_flags = 0;
-	
+
 	PRInt32 result = PR_Poll( &desc, 1, PR_INTERVAL_NO_WAIT ); // this avoid to store out_flags from the previous poll
 	if ( result == -1 )
 		return ThrowIoError(cx);
@@ -622,31 +629,31 @@ DEFINE_PROPERTY( connectionClosed ) {
  * $INT *linger*
   The time to linger on close if data present.
   A value of zero means no linger.
-  
+
  * $BOOL *noDelay*
   Don't delay send to coalesce packets.
-  
+
  * $BOOL *reuseAddr*
   Allow local address reuse.
 
  * $BOOL *keepAlive*
   Keep connections alive.
-  
+
  * $INT *recvBufferSize*
   Receive buffer size.
-  
+
  * $INT *sendBufferSize*
   Send buffer size.
-  
+
  * $INT *maxSegment*
   Maximum segment size.
-  
+
  * $BOOL *nonblocking*
   Non-blocking (network) I/O.
-  
+
  * $BOOL *broadcast*
   Enable broadcast.
-  
+
  * $BOOL *multicastLoopback*
   IP multicast loopback.
 **/
@@ -902,8 +909,10 @@ DEFINE_FUNCTION( GetHostsByName ) {
 		}
 	}
 
-	int index = 0;
-	PRIntn hostIndex = 0;
+	int index;
+	index = 0;
+	PRIntn hostIndex;
+	hostIndex = 0;
 	char addrStr[MAX_IP_STRING + 1];
 
 	for (;;) {
@@ -927,7 +936,7 @@ DEFINE_FUNCTION( GetHostsByName ) {
 /**doc
  * *SendTo* ...
   see Socket::SendTo
- 
+
  * *RecvFrom* ...
   see Socket::RecvFrom
 **/

@@ -84,7 +84,8 @@ DEFINE_CONSTRUCTOR() {
 	J_S_ASSERT_ARG_MIN(1);
 
 //	FT_Long faceIndex = 0;
-	int faceIndex = 0;
+	int faceIndex;
+	faceIndex = 0;
 	if ( J_ARG_ISDEF(2) )
 		J_CHK( JsvalToInt(cx, J_ARG(2), &faceIndex) );
 
@@ -203,43 +204,51 @@ DEFINE_FUNCTION_FAST( DrawString ) {
 	J_S_ASSERT( str != NULL, "Invalid string." );
 	size_t strlen = J_STRING_LENGTH(jsstr);
 
-	bool keepTrailingSpace = false;
+	bool keepTrailingSpace;
+	keepTrailingSpace = false;
 	if ( J_FARG_ISDEF(2) )
 		J_CHK( JsvalToBool(cx, J_FARG(2), &keepTrailingSpace) );
 
-	bool getWidthOnly = false;
+	bool getWidthOnly;
+	getWidthOnly = false;
 	if ( J_FARG_ISDEF(3) )
 		J_CHK( JsvalToBool(cx, J_FARG(3), &getWidthOnly) );
 
 
 	jsval tmp;
 
-	int letterSpacing = 0;
+	int letterSpacing;
+	letterSpacing = 0;
 	J_CHK( JS_GetReservedSlot(cx, J_FOBJ, FONT_SLOT_LETTERSPACING, &tmp) );
 	if ( !JSVAL_IS_VOID( tmp ) )
 		J_CHK( JsvalToInt(cx, tmp, &letterSpacing) );
 
-	int horizontalPadding = 0;
+	int horizontalPadding;
+	horizontalPadding = 0;
 	J_CHK( JS_GetReservedSlot(cx, J_FOBJ, FONT_SLOT_HORIZONTALPADDING, &tmp) );
 	if ( !JSVAL_IS_VOID( tmp ) )
 		J_CHK( JsvalToInt(cx, tmp, &horizontalPadding) );
 
-	int verticalPadding = 0;
+	int verticalPadding;
+	verticalPadding = 0;
 	J_CHK( JS_GetReservedSlot(cx, J_FOBJ, FONT_SLOT_VERTICALPADDING, &tmp) );
 	if ( !JSVAL_IS_VOID( tmp ) )
 		J_CHK( JsvalToInt(cx, tmp, &verticalPadding) );
 
-	bool useKerning = true;
+	bool useKerning;
+	useKerning = true;
 	J_CHK( JS_GetReservedSlot(cx, J_FOBJ, FONT_SLOT_USEKERNING, &tmp) );
 	if ( !JSVAL_IS_VOID( tmp ) )
 		J_CHK( JsvalToBool(cx, tmp, &useKerning) );
 
-	bool isItalic = false;
+	bool isItalic;
+	isItalic = false;
 	J_CHK( JS_GetReservedSlot(cx, J_FOBJ, FONT_SLOT_ITALIC, &tmp) );
 	if ( !JSVAL_IS_VOID( tmp ) )
 		J_CHK( JsvalToBool(cx, tmp, &isItalic) );
 
-	bool isBold = false;
+	bool isBold;
+	isBold = false;
 	J_CHK( JS_GetReservedSlot(cx, J_FOBJ, FONT_SLOT_BOLD, &tmp) );
 	if ( !JSVAL_IS_VOID( tmp ) )
 		J_CHK( JsvalToBool(cx, tmp, &isBold) );
@@ -259,10 +268,14 @@ DEFINE_FUNCTION_FAST( DrawString ) {
 
 	size_t i;
 
-	FT_Pos posX = 0;
-	FT_Pos posY = 0;
-	FT_UInt prevGlyphIndex = 0;
-	FT_Pos advance = 0;
+	FT_Pos posX;
+	posX = 0;
+	FT_Pos posY;
+	posY = 0;
+	FT_UInt prevGlyphIndex;
+	prevGlyphIndex = 0;
+	FT_Pos advance;
+	advance = 0;
 
 	for ( i=0; i<strlen; i++ ) {
 
@@ -422,7 +435,8 @@ DEFINE_PROPERTY( size ) {
 	FT_Face face = (FT_Face)JS_GetPrivate(cx, J_OBJ);
 	J_S_ASSERT_RESOURCE(face);
 
-	int size = 0;
+	int size;
+	size = 0;
 	if ( !JSVAL_IS_VOID( *vp ) )
 		J_CHK( JsvalToInt(cx, *vp, &size) );
 

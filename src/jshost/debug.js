@@ -3,7 +3,7 @@ LoadModule('jsstd');
 LoadModule('jsio');
 
 
-throw { valueOf: function() 123 };
+throw 2
 
 
 var b = Blob("testxxx");

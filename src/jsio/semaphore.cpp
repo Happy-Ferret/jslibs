@@ -55,11 +55,13 @@ DEFINE_CONSTRUCTOR() {
 	J_S_ASSERT_THIS_CLASS();
 	J_S_ASSERT_ARG_MIN( 2 );
 
-	PRUintn count = 0;
+	PRUintn count;
+	count = 0;
 	if ( J_ARG_ISDEF(2) )
 		J_CHK( JsvalToUInt(cx, J_ARG(2), &count) );
 
-	PRUintn mode = PR_IRUSR | PR_IWUSR; // read write permission for owner.
+	PRUintn mode;
+	mode = PR_IRUSR | PR_IWUSR; // read write permission for owner.
 	if ( J_ARG_ISDEF(3) )
 		J_CHK( JsvalToUInt(cx, J_ARG(3), &mode) );
 
@@ -68,7 +70,8 @@ DEFINE_CONSTRUCTOR() {
 	J_CHK( JsvalToStringAndLength(cx, &J_ARG(1), &name, &nameLength) );
 	J_S_ASSERT( nameLength < PATH_MAX, "Semaphore name too long." );
 
-	bool isCreation = true;
+	bool isCreation;
+	isCreation = true;
 	PRSem *semaphore = PR_OpenSemaphore(name, PR_SEM_EXCL | PR_SEM_CREATE, mode, count); // fail if already exists
 
 	if ( semaphore == NULL ) {
@@ -114,7 +117,7 @@ DEFINE_FUNCTION_FAST( Post ) {
 
 	ClassPrivate *pv = (ClassPrivate*)JS_GetPrivate(cx, J_FOBJ);
 	J_S_ASSERT_RESOURCE( pv );
-	
+
 	PRStatus status;
 	status = PR_PostSemaphore( pv->semaphore );
 	if ( status != PR_SUCCESS )

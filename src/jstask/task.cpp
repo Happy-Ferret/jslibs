@@ -407,8 +407,8 @@ DEFINE_PROPERTY( pendingRequestCount ) {
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE(pv);
 	JLAcquireMutex(pv->mutex); // --
-//	J_CHK( UIntToJsval(cx, pv->pendingRequestCount, vp) );
-	J_CHK( UIntToJsval(cx, pv->end ? 0 : pv->pendingRequestCount, vp) );
+	J_CHK( UIntToJsval(cx, pv->pendingRequestCount, vp) );
+//	J_CHK( UIntToJsval(cx, pv->end ? 0 : pv->pendingRequestCount, vp) );
 	JLReleaseMutex(pv->mutex); // ++
 	return JS_TRUE;
 	JL_BAD;
@@ -420,8 +420,8 @@ DEFINE_PROPERTY( pendingResponseCount ) {
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE(pv);
 	JLAcquireMutex(pv->mutex); // --
-//	J_CHK( UIntToJsval(cx, pv->pendingResponseCount) );
-	J_CHK( UIntToJsval(cx, pv->pendingResponseCount ? pv->pendingResponseCount : QueueIsEmpty(&pv->exceptionList) ? 0 : 1 , vp) );
+	J_CHK( UIntToJsval(cx, pv->pendingResponseCount, vp) );
+//	J_CHK( UIntToJsval(cx, pv->pendingResponseCount ? pv->pendingResponseCount : QueueIsEmpty(&pv->exceptionList) ? 0 : 1 , vp) );
 	JLReleaseMutex(pv->mutex); // ++
 	return JS_TRUE;
 	JL_BAD;

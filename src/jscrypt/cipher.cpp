@@ -154,17 +154,22 @@ DEFINE_CONSTRUCTOR() {
 	size_t keyLength;
 	J_CHK( JsvalToStringAndLength(cx, &argv[2], &key, &keyLength) ); // warning: GC on the returned buffer !
 
-	const char *IV = NULL;
-	size_t IVLength = 0;
+	const char *IV;
+	IV = NULL;
+	size_t IVLength;
+	IVLength = 0;
 	if ( argc >= 4 && !JSVAL_IS_VOID( argv[3] ) )
 		J_CHK( JsvalToStringAndLength(cx, &argv[3], &IV, &IVLength ) ); // warning: GC on the returned buffer !
 
-	const char *optarg = NULL;
-	size_t optargLength = 0;
+	const char *optarg;
+	optarg = NULL;
+	size_t optargLength;
+	optargLength = 0;
 	if ( argc >= 5 && !JSVAL_IS_VOID( argv[4] ) )
 		J_CHK( JsvalToStringAndLength(cx, &argv[4], &optarg, &optargLength ) ); // warning: GC on the returned buffer !
 
-   int numRounds = 0; // default value, us a default number of rounds.
+   int numRounds;
+   numRounds= 0; // default value, us a default number of rounds.
 	if ( argc >= 6 && !JSVAL_IS_VOID( argv[5] ) )
 		J_CHK( JsvalToInt(cx, argv[5], &numRounds) );
 
@@ -496,7 +501,8 @@ DEFINE_PROPERTY( IVGetter ) {
 	CipherPrivate *privateData = (CipherPrivate *)JS_GetPrivate( cx, obj );
 	J_S_ASSERT_RESOURCE( privateData );
 
-	char *IV = NULL;
+	char *IV;
+	IV = NULL;
 	unsigned long IVLength;
 
 	int err;

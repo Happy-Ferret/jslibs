@@ -52,7 +52,12 @@ inline JSBool NotifyObject( int slotIndex, JSContext *cx, JSObject *obj, jsval i
 		return JS_TRUE;
 	jsval aux;
 	J_CHK( JS_GetReservedSlot( cx, obj, AUX_SLOT, &aux ) );
-	jsval args[] = { id, *vp, aux, INT_TO_JSVAL(slotIndex) }; // ( propertyName, propertyValue, auxObject, callbackIndex )
+	jsval args[4]; // = { id, *vp, aux, INT_TO_JSVAL(slotIndex) }; // ( propertyName, propertyValue, auxObject, callbackIndex )
+	args[0] = id;
+	args[1] = *vp;
+	args[2] = aux;
+	args[3] = INT_TO_JSVAL(slotIndex);
+
 	return JS_CallFunctionValue( cx, obj, slot, sizeof(args)/sizeof(*args), args, vp );
 	JL_BAD;
 }
