@@ -123,10 +123,12 @@ DEFINE_FUNCTION_FAST( Read ) {
 	int amount;
 	J_CHK( JsvalToInt(cx, J_FARG(1), &amount) );
 
-	char *buffer = (char*)JS_malloc(cx, amount +1);
+	char *buffer;
+	buffer = (char*)JS_malloc(cx, amount +1);
 	J_S_ASSERT_ALLOC(buffer);
 
-	size_t readAmount = amount;
+	size_t readAmount;
+	readAmount = amount;
 	J_CHK( StreamRead(cx, J_FOBJ, buffer, &readAmount ) );
 
 	if ( MaybeRealloc(amount, readAmount) )

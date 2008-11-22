@@ -211,10 +211,12 @@ DEFINE_FUNCTION( Close ) {
 	jsval v;
 	J_CHK( JS_GetReservedSlot(cx, obj, SLOT_RESULT_DATABASE, &v) );
 	J_CHK( JS_GetReservedSlot(cx, JSVAL_TO_OBJECT(v), SLOT_SQLITE_DATABASE_STATEMENT_STACK, &v) );
-	void *stack = JSVAL_TO_PRIVATE(v);
+	void *stack;
+	stack = JSVAL_TO_PRIVATE(v);
 	jl::StackReplaceData( &stack, pStmt, NULL );
 
-	int status = sqlite3_finalize( pStmt );
+	int status;
+	status = sqlite3_finalize( pStmt );
 	if ( status != SQLITE_OK )
 		return SqliteThrowError( cx, status, sqlite3_errcode(sqlite3_db_handle(pStmt)), sqlite3_errmsg(sqlite3_db_handle(pStmt)) );
 	JS_SetReservedSlot(cx, obj, SLOT_RESULT_DATABASE, JSVAL_VOID);
@@ -234,7 +236,8 @@ DEFINE_FUNCTION( Step ) {
 	sqlite3_stmt *pStmt = (sqlite3_stmt *)JS_GetPrivate( cx, obj );
 	J_S_ASSERT_RESOURCE( pStmt );
 
-	sqlite3 *db = sqlite3_db_handle(pStmt);
+	sqlite3 *db;
+	db = sqlite3_db_handle(pStmt);
 	GetDbContext(db)->cx = cx; // update the JS context used to call functions (see sqlite_function_call)
 
 	// check if bindings are up to date
@@ -254,7 +257,8 @@ DEFINE_FUNCTION( Step ) {
 		//      Bindings are not cleared by the sqlite3_reset() routine. Unbound parameters are interpreted as NULL.
 	}
 
-	int status = sqlite3_step( pStmt ); // The return value will be either SQLITE_BUSY, SQLITE_DONE, SQLITE_ROW, SQLITE_ERROR, or SQLITE_MISUSE.
+	int status;
+	status = sqlite3_step( pStmt ); // The return value will be either SQLITE_BUSY, SQLITE_DONE, SQLITE_ROW, SQLITE_ERROR, or SQLITE_MISUSE.
 
 	J_SAFE( GetDbContext(db)->cx = NULL );
 	if ( JS_IsExceptionPending(cx) )
@@ -287,7 +291,8 @@ DEFINE_FUNCTION( Step ) {
 DEFINE_FUNCTION( Col ) {
 
 	J_S_ASSERT_ARG_MIN( 1 );
-	sqlite3_stmt *pStmt = (sqlite3_stmt *)JS_GetPrivate( cx, obj );
+	sqlite3_stmt *pStmt;
+	pStmt = (sqlite3_stmt *)JS_GetPrivate( cx, obj );
 	J_S_ASSERT_RESOURCE( pStmt );
 	int32 col;
 	JS_ValueToInt32( cx, argv[0], &col );
@@ -322,11 +327,13 @@ DEFINE_FUNCTION( Row ) {
 	namedRows = JS_FALSE; // default value
 	if ( argc >= 1 )
 		JS_ValueToBoolean( cx, argv[0], &namedRows );
-	JSObject *row = namedRows ? JS_NewObject(cx, NULL, NULL, NULL) : JS_NewArrayObject(cx, 0, NULL); // If length is 0, JS_NewArrayObject creates an array object of length 0 and ignores vector.
+	JSObject *row;
+	row = namedRows ? JS_NewObject(cx, NULL, NULL, NULL) : JS_NewArrayObject(cx, 0, NULL); // If length is 0, JS_NewArrayObject creates an array object of length 0 and ignores vector.
 	*rval = OBJECT_TO_JSVAL(row); // now, row is protectef fom GC ??
 	// If the previous call to sqlite3_step() returned SQLITE_DONE or an error code,
 	// then sqlite3_data_count() will return 0 whereas sqlite3_column_count() will continue to return the number of columns in the result set.
-	int columnCount = sqlite3_data_count( pStmt ); // This routine returns 0 if pStmt is an SQL statement that does not return data (for example an UPDATE).
+	int columnCount;
+	columnCount = sqlite3_data_count( pStmt ); // This routine returns 0 if pStmt is an SQL statement that does not return data (for example an UPDATE).
 	jsval colJsValue;
 	for ( int col = 0; col < columnCount; ++col ) {
 
@@ -350,7 +357,8 @@ DEFINE_FUNCTION( Reset ) {
 
 	sqlite3_stmt *pStmt = (sqlite3_stmt *)JS_GetPrivate( cx, obj );
 	J_S_ASSERT_RESOURCE( pStmt );
-	int status = sqlite3_reset(pStmt);
+	int status;
+	status = sqlite3_reset(pStmt);
 	if ( status != SQLITE_OK )
 		return SqliteThrowError( cx, status, sqlite3_errcode(sqlite3_db_handle(pStmt)), sqlite3_errmsg(sqlite3_db_handle(pStmt)) );
 	return JS_TRUE;
@@ -391,9 +399,11 @@ DEFINE_PROPERTY( columnNames ) {
 
 	sqlite3_stmt *pStmt = (sqlite3_stmt *)JS_GetPrivate( cx, obj );
 	J_S_ASSERT_RESOURCE( pStmt );
-	JSObject *columnNames = JS_NewArrayObject(cx, 0, NULL);
+	JSObject *columnNames;
+	columnNames = JS_NewArrayObject(cx, 0, NULL);
 	*vp = OBJECT_TO_JSVAL( columnNames );
-	int columnCount = sqlite3_column_count( pStmt ); // sqlite3_column_count AND NOT sqlite3_data_count because this function can be called before sqlite3_step
+	int columnCount;
+	columnCount = sqlite3_column_count( pStmt ); // sqlite3_column_count AND NOT sqlite3_data_count because this function can be called before sqlite3_step
 	jsval colJsValue;
 	for ( int col = 0; col < columnCount; ++col ) {
 
@@ -420,9 +430,11 @@ DEFINE_PROPERTY( columnIndexes ) {
 
 	sqlite3_stmt *pStmt = (sqlite3_stmt *)JS_GetPrivate( cx, obj );
 	J_S_ASSERT_RESOURCE( pStmt );
-	JSObject *columnIndexes = JS_NewObject( cx, NULL, NULL, NULL );
+	JSObject *columnIndexes;
+	columnIndexes = JS_NewObject( cx, NULL, NULL, NULL );
 	*vp = OBJECT_TO_JSVAL( columnIndexes );
-	int columnCount = sqlite3_column_count( pStmt );
+	int columnCount;
+	columnCount = sqlite3_column_count( pStmt );
 	jsval colJsValue;
 	for ( int col = 0; col < columnCount; ++col ) {
 

@@ -75,7 +75,8 @@ JSBool NativeInterfaceBufferGet( JSContext *cx, JSObject *obj, const char **buf,
 		return JS_TRUE;
 	}
 
-	JSString *jsstr = JS_ValueToString(cx, OBJECT_TO_JSVAL(obj));
+	JSString *jsstr;
+	jsstr = JS_ValueToString(cx, OBJECT_TO_JSVAL(obj));
 	*buf = JS_GetStringBytes(jsstr);
 	*size = JS_GetStringLength(jsstr);
 	return JS_TRUE;
@@ -225,7 +226,8 @@ DEFINE_FUNCTION_FAST( concat ) {
 	J_CHK( BlobBuffer(cx, J_FOBJ, &thisBuffer) );
 	J_CHK( BlobLength(cx, J_FOBJ, &thisLength) );
 
-	size_t dstLen = thisLength;
+	size_t dstLen;
+	dstLen = thisLength;
 
 	unsigned int arg;
 	for ( arg = 1; arg <= J_ARGC; arg++ ) {
@@ -244,11 +246,13 @@ DEFINE_FUNCTION_FAST( concat ) {
 		}
 	}
 
-	char *dst = (char*)JS_malloc(cx, dstLen +1);
+	char *dst;
+	dst = (char*)JS_malloc(cx, dstLen +1);
 	J_S_ASSERT_ALLOC( dst );
 	dst[dstLen] = '\0';
 
-	char *tmp = dst;
+	char *tmp;
+	tmp = dst;
 
 	if ( thisLength > 0 ) {
 
@@ -326,7 +330,8 @@ DEFINE_FUNCTION_FAST( substr ) {
 
 	// now 0 <= length < dataLength - start
 
-	void *buffer = JS_malloc(cx, length +1);
+	void *buffer;
+	buffer = JS_malloc(cx, length +1);
 	J_S_ASSERT_ALLOC( buffer );
 	((char*)buffer)[length] = '\0';
 
@@ -379,7 +384,8 @@ DEFINE_FUNCTION_FAST( substring ) {
 	}
 */
 
-	jsval arg1 = J_FARG(1);
+	jsval arg1;
+	arg1 = J_FARG(1);
 	if ( !J_FARG_ISDEF(1) || JSVAL_IS_INT(arg1) && JSVAL_TO_INT(arg1) < 0 || IsNInfinity(cx, arg1) || IsNaN(cx, arg1) )
 		indexA = 0;
 	else
@@ -389,7 +395,8 @@ DEFINE_FUNCTION_FAST( substring ) {
 			J_CHK( JsvalToInt(cx, arg1, &indexA) );
 
 
-	jsval arg2 = J_FARG(2);
+	jsval arg2;
+	arg2 = J_FARG(2);
 	if ( argc < 2 || IsPInfinity(cx, arg2) )
 		indexB = dataLength;
 	else
@@ -413,9 +420,11 @@ DEFINE_FUNCTION_FAST( substring ) {
 	}
 
 
-	int length = indexB - indexA;
+	int length;
+	length = indexB - indexA;
 
-	void *buffer = JS_malloc(cx, length +1);
+	void *buffer;
+	buffer = JS_malloc(cx, length +1);
 	J_S_ASSERT_ALLOC( buffer );
 	((char*)buffer)[length] = '\0';
 
@@ -609,8 +618,10 @@ DEFINE_FUNCTION_FAST( charAt ) {
 	const char *buffer;
 	J_CHK( BlobBuffer(cx, J_FOBJ, &buffer) );
 
-	jschar chr = ((char*)buffer)[index];
-	JSString *str1 = JS_NewUCStringCopyN(cx, &chr, 1);
+	jschar chr;
+	chr = ((char*)buffer)[index];
+	JSString *str1;
+	str1 = JS_NewUCStringCopyN(cx, &chr, 1);
 	J_S_ASSERT_ALLOC( str1 );
 	*J_FRVAL = STRING_TO_JSVAL(str1);
 
@@ -737,8 +748,10 @@ DEFINE_GET_PROPERTY() {
 	if ( slot < 0 || slot >= (int)length )
 		return JS_TRUE;
 
-	jschar chr = ((char*)pv)[slot];
-	JSString *str1 = JS_NewUCStringCopyN(cx, &chr, 1);
+	jschar chr;
+	chr = ((char*)pv)[slot];
+	JSString *str1;
+	str1 = JS_NewUCStringCopyN(cx, &chr, 1);
 	J_S_ASSERT_ALLOC( str1 );
 
 	*vp = STRING_TO_JSVAL(str1);
@@ -829,7 +842,8 @@ DEFINE_NEW_RESOLVE() {
 	J_CHK( BlobBuffer(cx, obj, &buffer) );
 	J_CHK( BlobLength(cx, obj, &length) );
 	// ownership of buffer is given to the JSString
-	JSString *jsstr = JS_NewString(cx, (char*)buffer, length); // JS_NewString don't accepts (const char *)
+	JSString *jsstr;
+	jsstr = JS_NewString(cx, (char*)buffer, length); // JS_NewString don't accepts (const char *)
 	JSObject *strObj;
 	J_CHK( JS_ValueToObject(cx, STRING_TO_JSVAL(jsstr), &strObj) );
 

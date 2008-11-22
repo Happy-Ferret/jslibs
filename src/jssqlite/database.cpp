@@ -110,7 +110,8 @@ DEFINE_CONSTRUCTOR() {
 
 	sqlite3 *db;
 //	int status = sqlite3_open( fileName, &db ); // see. sqlite3_open_v2()
-	int status = sqlite3_open_v2( fileName, &db, flags, NULL );
+	int status;
+	status = sqlite3_open_v2( fileName, &db, flags, NULL );
 
 	AddDbContext(db)->obj = obj;
 
@@ -193,7 +194,8 @@ DEFINE_FUNCTION( Close ) {
 	// finalize open database statements
 	jsval v;
 	J_CHK( JS_GetReservedSlot(cx, obj, SLOT_SQLITE_DATABASE_STATEMENT_STACK, &v) );
-	void *stack = JSVAL_TO_PRIVATE(v);
+	void *stack;
+	stack = JSVAL_TO_PRIVATE(v);
 	while ( !jl::StackIsEnd(&stack) ) {
 
 		sqlite3_stmt *pStmt = (sqlite3_stmt*)jl::StackPop(&stack);
@@ -260,7 +262,8 @@ DEFINE_FUNCTION( Query ) {
 
 	J_S_ASSERT_ARG_MIN( 1 );
 
-	sqlite3 *db = (sqlite3*)JS_GetPrivate( cx, obj );
+	sqlite3 *db;
+	db = (sqlite3*)JS_GetPrivate( cx, obj );
 	J_S_ASSERT_RESOURCE( db );
 
 	const char *sqlQuery;
@@ -269,7 +272,8 @@ DEFINE_FUNCTION( Query ) {
 
 	const char *szTail;
 	sqlite3_stmt *pStmt;
-	int status = sqlite3_prepare_v2( db, sqlQuery, sqlQueryLength, &pStmt, &szTail ); // If the next argument, "nBytes", is less than zero, then zSql is read up to the first nul terminator.
+	int status;
+	status = sqlite3_prepare_v2( db, sqlQuery, sqlQueryLength, &pStmt, &szTail ); // If the next argument, "nBytes", is less than zero, then zSql is read up to the first nul terminator.
 	if ( status != SQLITE_OK )
 		return SqliteThrowError( cx, status, sqlite3_errcode(db), sqlite3_errmsg(db) );
 	J_S_ASSERT( *szTail == '\0', "too many SQL statements." ); // for the moment, do not support multiple statements
@@ -279,12 +283,14 @@ DEFINE_FUNCTION( Query ) {
 	// remember the statement for later finalization
 	jsval v;
 	JS_GetReservedSlot(cx, obj, SLOT_SQLITE_DATABASE_STATEMENT_STACK, &v);
-	void *stack = JSVAL_TO_PRIVATE(v);
+	void *stack;
+	stack = JSVAL_TO_PRIVATE(v);
 	jl::StackPush( &stack, pStmt );
 	JS_SetReservedSlot(cx, obj, SLOT_SQLITE_DATABASE_STATEMENT_STACK, PRIVATE_TO_JSVAL(stack));
 
 	// create the Result (statement) object
-	JSObject *dbStatement = JS_NewObject( cx, classResult, NULL, NULL );
+	JSObject *dbStatement;
+	dbStatement = JS_NewObject( cx, classResult, NULL, NULL );
 	JS_SetPrivate( cx, dbStatement, pStmt );
 	JS_SetReservedSlot(cx, dbStatement, SLOT_RESULT_DATABASE, OBJECT_TO_JSVAL( obj )); // link to avoid GC
 	// (TBD) enhance
@@ -324,7 +330,8 @@ DEFINE_FUNCTION( Exec ) {
 	// see sqlite3_exec()
 
 	J_S_ASSERT_ARG_MIN( 1 );
-	sqlite3 *db = (sqlite3*)JS_GetPrivate( cx, obj );
+	sqlite3 *db;
+	db = (sqlite3*)JS_GetPrivate( cx, obj );
 	J_S_ASSERT_RESOURCE( db );
 
 	GetDbContext(db)->cx = cx; // update the JS context used to call functions (see sqlite_function_call)

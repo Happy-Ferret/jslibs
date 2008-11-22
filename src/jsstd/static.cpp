@@ -74,7 +74,8 @@ DEFINE_FUNCTION( Expand ) {
 
 	J_CHK( JsvalToStringAndLength(cx, &J_ARG(1), &srcBegin, &srcLen) );
 	J_S_ASSERT( srcBegin[srcLen] == '\0', "Invalid input string." ); // else strstr may failed.
-	const char *srcEnd = srcBegin + srcLen;
+	const char *srcEnd;
+	srcEnd = srcBegin + srcLen;
 
 	JSObject *table;
 	if ( J_ARG_ISDEF(2) ) {
@@ -141,7 +142,8 @@ DEFINE_FUNCTION( Expand ) {
 		srcBegin = tok + 1; // length of ")"
 	}
 
-	char *expandedString = (char*)JS_malloc(cx, totalLength +1);
+	char *expandedString;
+	expandedString = (char*)JS_malloc(cx, totalLength +1);
 	J_S_ASSERT_ALLOC( expandedString );
 	expandedString[totalLength] = '\0';
 
@@ -154,7 +156,8 @@ DEFINE_FUNCTION( Expand ) {
 		free(chunk);
 	}
 
-	JSString *jsstr = JS_NewString(cx, expandedString, totalLength);
+	JSString *jsstr;
+	jsstr = JS_NewString(cx, expandedString, totalLength);
 	J_S_ASSERT_ALLOC( jsstr );
 	*rval = STRING_TO_JSVAL( jsstr );
 	return JS_TRUE;
@@ -379,11 +382,13 @@ DEFINE_FUNCTION_FAST( XdrEncode ) {
 
 	J_S_ASSERT_ARG_MIN( 1 );
 
-	JSXDRState *xdr = JS_XDRNewMem(cx, JSXDR_ENCODE);
+	JSXDRState *xdr;
+	xdr = JS_XDRNewMem(cx, JSXDR_ENCODE);
 	J_S_ASSERT_ALLOC(xdr);
 	J_CHK( JS_XDRValue(xdr, &J_FARG(1)) );
 	uint32 length;
-	void *buffer = JS_XDRMemGetData(xdr, &length);
+	void *buffer;
+	buffer = JS_XDRMemGetData(xdr, &length);
 	J_S_ASSERT( buffer != NULL, "Invalid xdr data." );
 	J_CHK( J_NewBlobCopyN(cx, buffer, length, J_FRVAL) );
 	JS_XDRDestroy(xdr);
@@ -403,7 +408,8 @@ DEFINE_FUNCTION_FAST( XdrDecode ) {
 
 	J_S_ASSERT_ARG_MIN( 1 );
 
-	JSXDRState *xdr = JS_XDRNewMem(cx, JSXDR_DECODE);
+	JSXDRState *xdr;
+	xdr = JS_XDRNewMem(cx, JSXDR_DECODE);
 	J_S_ASSERT_ALLOC(xdr);
 	const char *buffer;
 	size_t length;
@@ -567,9 +573,11 @@ DEFINE_FUNCTION_FAST( StringRepeat ) {
 		return JS_TRUE;
 	}
 
-	size_t newLen = len * count;
+	size_t newLen;
+	newLen = len * count;
 
-	char *newBuf = (char *)JS_malloc(cx, newLen +1);
+	char *newBuf;
+	newBuf = (char *)JS_malloc(cx, newLen +1);
 	J_S_ASSERT_ALLOC(newBuf);
 	newBuf[newLen] = '\0';
 
@@ -585,7 +593,8 @@ DEFINE_FUNCTION_FAST( StringRepeat ) {
 				*(tmp++) = buf[j];
 	}
 
-	JSString *jsstr = JS_NewString(cx, newBuf, newLen);
+	JSString *jsstr;
+	jsstr = JS_NewString(cx, newBuf, newLen);
 	J_S_ASSERT_ALLOC(jsstr);
 	*J_FRVAL = STRING_TO_JSVAL( jsstr );
 	return JS_TRUE;
@@ -758,7 +767,8 @@ DEFINE_FUNCTION_FAST( Exec ) {
 	uint32 oldopts;
 
 	J_S_ASSERT_ARG_MIN( 1 );
-	bool saveCompiledScripts = !( J_FARG_ISDEF(2) && J_FARG(2) == JSVAL_FALSE );
+	bool saveCompiledScripts;
+	saveCompiledScripts = !( J_FARG_ISDEF(2) && J_FARG(2) == JSVAL_FALSE );
 
 	errno = 0;
 	//        older = JS_SetErrorReporter(cx, LoadErrorReporter);
@@ -860,7 +870,8 @@ DEFINE_FUNCTION_FAST( SandboxEval ) {
 	} else
 		maxOperation = 4096; // default value
 
-	JSContext *scx = JS_NewContext(JS_GetRuntime(cx), 8192L); // see host/host.cpp
+	JSContext *scx;
+	scx = JS_NewContext(JS_GetRuntime(cx), 8192L); // see host/host.cpp
 	if ( !scx ) {
 
 		JS_ReportOutOfMemory(cx); // the only error that is not catchable
@@ -868,7 +879,8 @@ DEFINE_FUNCTION_FAST( SandboxEval ) {
 	}
 	JS_ToggleOptions(scx, JSOPTION_DONT_REPORT_UNCAUGHT | JSOPTION_VAROBJFIX | JSOPTION_COMPILE_N_GO | JSOPTION_RELIMIT | JSOPTION_JIT);
 
-	JSObject *globalObject = JS_NewObject(scx, classSandbox, NULL, NULL);
+	JSObject *globalObject;
+	globalObject = JS_NewObject(scx, classSandbox, NULL, NULL);
 	if ( !globalObject ) {
 
 		JS_DestroyContextNoGC(scx);
@@ -892,15 +904,20 @@ DEFINE_FUNCTION_FAST( SandboxEval ) {
 	}
 */
 
-	JSString *jsstr = JS_ValueToString(cx, J_FARG(1));
-	uintN srclen = JS_GetStringLength(jsstr);
-	jschar *src = JS_GetStringChars(jsstr);
+	JSString *jsstr;
+	jsstr = JS_ValueToString(cx, J_FARG(1));
+	uintN srclen;
+	srclen = JS_GetStringLength(jsstr);
+	jschar *src;
+	src = JS_GetStringChars(jsstr);
 
 	JS_SetOperationCallback(scx, SandboxMaxOperationCallback, maxOperation * JS_OPERATION_WEIGHT_BASE);
 
 	JS_SetGlobalObject(scx, globalObject);
-	JSStackFrame *fp = JS_GetScriptedCaller(cx, NULL);
-	JSBool ok = JS_EvaluateUCScript(scx, globalObject, src, srclen, fp->script->filename, JS_PCToLineNumber(cx, fp->script, fp->regs->pc), J_FRVAL);
+	JSStackFrame *fp;
+	fp = JS_GetScriptedCaller(cx, NULL);
+	JSBool ok;
+	ok = JS_EvaluateUCScript(scx, globalObject, src, srclen, fp->script->filename, JS_PCToLineNumber(cx, fp->script, fp->regs->pc), J_FRVAL);
 
 //	JSPrincipals principals = { "sandbox context", NULL, NULL, 1, NULL, NULL };
 //	JSBool ok = JS_EvaluateUCScriptForPrincipals(scx, globalObject, &principals, src, srclen, fp->script->filename, JS_PCToLineNumber(cx, fp->script, fp->regs->pc), J_FRVAL);

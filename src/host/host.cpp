@@ -99,7 +99,8 @@ void stdErrRouter( JSContext *cx, const char *message, size_t length ) {
 			return;
 		}
 	}
-	HostPrivate *pv = GetHostPrivate(cx);
+	HostPrivate *pv;
+	pv = GetHostPrivate(cx);
 	if ( pv != NULL && pv->hostStdErr != NULL )
 		pv->hostStdErr(pv->privateData, message, length); // else, use the default.
 bad:

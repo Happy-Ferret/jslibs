@@ -109,12 +109,14 @@ DEFINE_FUNCTION( Stringify ) {
 	 // this include NIBufferGet compatible objects
 	J_CHK( JsvalToStringAndLength(cx, &J_ARG(1), &buffer, &length) ); // warning: GC on the returned buffer !
 
-	char *newBuffer = (char*)JS_malloc(cx, length +1);
+	char *newBuffer;
+	newBuffer = (char*)JS_malloc(cx, length +1);
 	J_S_ASSERT_ALLOC( newBuffer );
 	newBuffer[length] = '\0';
 	memcpy(newBuffer, buffer, length);
 
-	JSString *jsstr = JS_NewString(cx, newBuffer, length);
+	JSString *jsstr;
+	jsstr = JS_NewString(cx, newBuffer, length);
 	*J_RVAL = STRING_TO_JSVAL( jsstr );
 	return JS_TRUE;
 	JL_BAD;

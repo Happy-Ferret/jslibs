@@ -37,10 +37,12 @@ inline JSBool CreateId( JSContext *cx, ID_TYPE idType, size_t size, void** data,
 
 	J_S_ASSERT( GetIdJSClass(cx) != NULL, "Id class not initialized.");
 
-	JSObject *idObj = JS_NewObject( cx, GetIdJSClass(cx), NULL, NULL );
+	JSObject *idObj;
+	idObj = JS_NewObject( cx, GetIdJSClass(cx), NULL, NULL );
 	J_S_ASSERT_ALLOC( idObj );
 	*idVal = OBJECT_TO_JSVAL(idObj);
-	IdPrivate *pv = (IdPrivate*)JS_malloc(cx, sizeof(IdPrivate) + size);
+	IdPrivate *pv;
+	pv = (IdPrivate*)JS_malloc(cx, sizeof(IdPrivate) + size);
 	J_S_ASSERT_ALLOC(pv);
 	J_CHK( JS_SetPrivate(cx, idObj, pv) );
 

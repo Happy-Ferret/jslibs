@@ -182,9 +182,11 @@ inline JSBool BufferRefill( JSContext *cx, JSObject *obj, size_t amount ) { // a
 
 	J_S_ASSERT_OBJECT(srcVal);
 
-	JSObject *srcObj = JSVAL_TO_OBJECT( srcVal );
+	JSObject *srcObj;
+	srcObj = JSVAL_TO_OBJECT( srcVal );
 
-	NIStreamRead nisr = StreamReadInterface(cx, srcObj); // get native or non-native StreamRead function
+	NIStreamRead nisr;
+	nisr = StreamReadInterface(cx, srcObj); // get native or non-native StreamRead function
 	J_S_ASSERT( nisr != NULL, "Invalid source object" );
 
 	size_t len, prevBufferLength;
@@ -194,7 +196,8 @@ inline JSBool BufferRefill( JSContext *cx, JSObject *obj, size_t amount ) { // a
 		prevBufferLength = pv->length;
 		len = amount - pv->length;
 
-		char *buf = (char*)JS_malloc(cx, len);
+		char *buf;
+		buf = (char*)JS_malloc(cx, len);
 		J_S_ASSERT_ALLOC( buf );
 
 		J_CHK( nisr(cx, srcObj, buf, &len) );
@@ -260,7 +263,8 @@ JSBool ReadRawAmount( JSContext *cx, JSObject *obj, size_t *amount, char *str ) 
 
 	J_S_ASSERT( *amount > 0, "Invalid amount requested." );
 
-	BufferPrivate *pv = (BufferPrivate*)JS_GetPrivate(cx, obj);
+	BufferPrivate *pv;
+	pv = (BufferPrivate*)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( pv );
 
 	if ( pv->length < *amount )
@@ -269,11 +273,13 @@ JSBool ReadRawAmount( JSContext *cx, JSObject *obj, size_t *amount, char *str ) 
 	if ( *amount == 0 ) // another optimization
 		return JS_TRUE;
 
-	char *ptr = str;
+	char *ptr;
+	ptr = str;
 
 	*amount = J_MIN( *amount, pv->length );
 
-	size_t remainToRead = *amount;
+	size_t remainToRead;
+	remainToRead = *amount;
 
 	while ( remainToRead > 0 ) { // while there is something to read,
 
@@ -324,7 +330,8 @@ JSBool BufferSkipAmount( JSContext *cx, JSObject *obj, size_t amount ) {
 		return JS_TRUE;
 	}
 
-	size_t remainToRead = amount;
+	size_t remainToRead;
+	remainToRead = amount;
 	while ( remainToRead > 0 ) { // while there is something to read,
 
 		jsval item;
@@ -362,11 +369,13 @@ JSBool ReadAmount( JSContext *cx, JSObject *obj, size_t amount, jsval *rval ) {
 		return JS_TRUE;
 	}
 
-	char *str = (char*)JS_malloc(cx, amount +1); // (TBD) memory leak if ReadRawAmount failed
+	char *str;
+	str = (char*)JS_malloc(cx, amount +1); // (TBD) memory leak if ReadRawAmount failed
 	J_S_ASSERT_ALLOC(str);
 
 	// (TBD) IMPORTANT: here, amount should be MIN( amount, buffer_size ). This can avoid an useless memory allocation.
-	int requestedAmount = amount;
+	int requestedAmount;
+	requestedAmount = amount;
 	J_CHK( ReadRawAmount(cx, obj, &amount, str) );
 
 	if ( amount == 0 ) { // optimization
@@ -400,7 +409,8 @@ JSBool FindInBuffer( JSContext *cx, JSObject *obj, const char *needle, size_t ne
 	pos = 0;
 
 	char staticBuffer[128];
-	char *buf = needleLength <= sizeof(staticBuffer) ? staticBuffer : (char*)malloc(needleLength); // the "ring buffer"
+	char *buf;
+	buf = needleLength <= sizeof(staticBuffer) ? staticBuffer : (char*)malloc(needleLength); // the "ring buffer"
 
 	size_t chunkLength;
 	const char *chunk;
@@ -437,11 +447,13 @@ end:
 JSBool AddBuffer( JSContext *cx, JSObject *destBuffer, JSObject *srcBuffer ) {
 
 	J_S_ASSERT_CLASS( destBuffer, classBuffer );
-	BufferPrivate *dpv = (BufferPrivate*)JS_GetPrivate(cx, destBuffer);
+	BufferPrivate *dpv;
+	dpv = (BufferPrivate*)JS_GetPrivate(cx, destBuffer);
 	J_S_ASSERT_RESOURCE( dpv );
 
 	J_S_ASSERT_CLASS( srcBuffer, classBuffer );
-	BufferPrivate *spv = (BufferPrivate*)JS_GetPrivate(cx, srcBuffer);
+	BufferPrivate *spv;
+	spv = (BufferPrivate*)JS_GetPrivate(cx, srcBuffer);
 	J_S_ASSERT_RESOURCE( spv );
 
 	for ( jl::QueueCell *it = jl::QueueBegin(spv->queue); it; it = jl::QueueNext(it) )
@@ -526,7 +538,8 @@ DEFINE_CONSTRUCTOR() {
 	J_S_ASSERT_THIS_CLASS();
 	J_CHK( SetStreamReadInterface(cx, obj, NativeInterfaceStreamRead) );
 
-	BufferPrivate *pv = (BufferPrivate *)JS_malloc(cx, sizeof(BufferPrivate));
+	BufferPrivate *pv;
+	pv = (BufferPrivate *)JS_malloc(cx, sizeof(BufferPrivate));
 	J_S_ASSERT_ALLOC(pv);
 	J_CHK( JS_SetPrivate(cx, obj, pv) );
 	pv->queue = jl::QueueConstruct();
@@ -660,9 +673,12 @@ DEFINE_FUNCTION( Match ) {
 	size_t len;
 	J_CHK( JsvalToStringAndLength(cx, &J_ARG(1), &str, &len) ); // warning: GC on the returned buffer !
 
-	char *src = (char *)malloc(len);
-	size_t amount = len;
-	JSBool st = ReadRawAmount(cx, obj, &amount, src);
+	char *src;
+	src = (char *)malloc(len);
+	size_t amount;
+	amount = len;
+	JSBool st;
+	st = ReadRawAmount(cx, obj, &amount, src);
 	if ( st != JS_TRUE )
 		goto err;
 
@@ -734,7 +750,8 @@ DEFINE_FUNCTION( Skip ) { // Skip( amount )
 	size_t amount;
 	J_CHK( JsvalToUInt(cx, J_ARG(1), &amount) );
 	J_S_ASSERT( amount >= 0, "Invalid amount" );
-	size_t prevBufferLength = pv->length;
+	size_t prevBufferLength;
+	prevBufferLength = pv->length;
 	J_CHK( BufferSkipAmount(cx, obj, amount) ); // (TBD) optimization: skip without reading the data.
 	*rval = BOOLEAN_TO_JSVAL( pv->length == prevBufferLength - amount ); // function returns true on sucessful skip operation
 	return JS_TRUE;
@@ -835,7 +852,8 @@ DEFINE_FUNCTION( toString ) {
 		return JS_TRUE;
 	}
 
-	char *buffer = (char*)JS_malloc(cx, pv->length +1);
+	char *buffer;
+	buffer = (char*)JS_malloc(cx, pv->length +1);
 	J_S_ASSERT_ALLOC( buffer );
 	buffer[pv->length] = '\0';
 
@@ -854,7 +872,8 @@ DEFINE_FUNCTION( toString ) {
 		pos += chunkLen;
 	}
 
-	JSString *str = JS_NewString(cx, buffer, pv->length);
+	JSString *str;
+	str = JS_NewString(cx, buffer, pv->length);
 	J_S_ASSERT_ALLOC( str );
 	*rval = STRING_TO_JSVAL(str);
 //	pv->length = 0;

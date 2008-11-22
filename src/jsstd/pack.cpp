@@ -144,7 +144,8 @@ DEFINE_FUNCTION( ReadInt ) {
 	jsval bufferVal;
 	J_CHK( JS_GetReservedSlot(cx, obj, SLOT_PACK_BUFFEROBJECT, &bufferVal) );
 	J_S_ASSERT_DEFINED( bufferVal );
-	JSObject *bufferObject = JSVAL_TO_OBJECT( bufferVal );
+	JSObject *bufferObject;
+	bufferObject = JSVAL_TO_OBJECT( bufferVal );
 
 	size_t size;
 	J_CHK( JsvalToUInt(cx, J_ARG(1), &size) );
@@ -164,7 +165,8 @@ DEFINE_FUNCTION( ReadInt ) {
 	u_int8_t data[8]; // = { 0 };
 	memset(data, 0, sizeof(data));
 
-	size_t amount = size;
+	size_t amount;
+	amount = size;
 	J_CHK( ReadRawAmount(cx, bufferObject, &amount, (char*)data) );
 	if ( amount < size ) { // not enough data to complete the requested operation, then unread the few data we have read.
 
@@ -249,9 +251,11 @@ DEFINE_FUNCTION( WriteInt ) { // incompatible with NIStreamRead
 	jsval bufferVal;
 	J_CHK( JS_GetReservedSlot(cx, obj, SLOT_PACK_BUFFEROBJECT, &bufferVal) );
 	J_S_ASSERT_DEFINED( bufferVal );
-	JSObject *bufferObject = JSVAL_TO_OBJECT( bufferVal );
+	JSObject *bufferObject;
+	bufferObject = JSVAL_TO_OBJECT( bufferVal );
 
-	jsval jsvalue = J_ARG(1);
+	jsval jsvalue;
+	jsvalue = J_ARG(1);
 
 	size_t size;
 	J_CHK( JsvalToUInt(cx, J_ARG(2), &size) );
@@ -323,12 +327,15 @@ DEFINE_FUNCTION( ReadReal ) {
 	jsval bufferVal;
 	J_CHK( JS_GetReservedSlot(cx, obj, SLOT_PACK_BUFFEROBJECT, &bufferVal) );
 	J_S_ASSERT_DEFINED( bufferVal );
-	JSObject *bufferObject = JSVAL_TO_OBJECT( bufferVal );
+	JSObject *bufferObject;
+	bufferObject = JSVAL_TO_OBJECT( bufferVal );
 
-	size_t size = JSVAL_TO_INT( J_ARG(1) );
+	size_t size;
+	size = JSVAL_TO_INT( J_ARG(1) );
 
 	u_int8_t data[16];
-	size_t amount = size;
+	size_t amount;
+	amount = size;
 	J_CHK( ReadRawAmount(cx, bufferObject, &amount, (char*)data) );
 	if ( amount < size ) { // not enough data to complete the requested operation, then unread the few data we read
 
@@ -360,7 +367,8 @@ DEFINE_FUNCTION( ReadString ) {
 	jsval bufferVal;
 	J_CHK( JS_GetReservedSlot(cx, obj, SLOT_PACK_BUFFEROBJECT, &bufferVal) );
 	J_S_ASSERT_DEFINED( bufferVal );
-	JSObject *bufferObject = JSVAL_TO_OBJECT( bufferVal );
+	JSObject *bufferObject;
+	bufferObject = JSVAL_TO_OBJECT( bufferVal );
 
 	if ( J_ARG_ISDEF(1) ) {
 
