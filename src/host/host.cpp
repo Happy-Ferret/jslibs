@@ -238,14 +238,17 @@ static JSBool LoadModule(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, 
 	}
 */
 
-	HostPrivate *pv = GetHostPrivate(cx);
+	HostPrivate *pv;
+	pv = GetHostPrivate(cx);
 	J_S_ASSERT( pv != NULL, "Invalid context." );
 
 	J_S_ASSERT( libFileName != NULL && *libFileName != '\0', "Invalid module filename.");
-	JLLibraryHandler module = JLDynamicLibraryOpen(libFileName);
+	JLLibraryHandler module;
+	module = JLDynamicLibraryOpen(libFileName);
 	J_S_ASSERT( module != NULL, "Unable to load the module.");
 
-	ModuleInitFunction moduleInit = (ModuleInitFunction)JLDynamicLibrarySymbol(module, NAME_MODULE_INIT);
+	ModuleInitFunction moduleInit;
+	moduleInit = (ModuleInitFunction)JLDynamicLibrarySymbol(module, NAME_MODULE_INIT);
 	if ( moduleInit == NULL ) { // not a jslibs module
 
 		JLDynamicLibraryClose(&module);
@@ -395,7 +398,8 @@ JSContext* CreateHost(size_t maxMem, size_t maxAlloc, size_t operationLimitGC) {
 	if ( operationLimitGC )
 		JS_SetOperationCallback(cx, OperationCallback, JS_OPERATION_WEIGHT_BASE * operationLimitGC); // (TBD) check the best value.
 
-	JSObject *globalObject = JS_NewObject(cx, &global_class, NULL, NULL);
+	JSObject *globalObject;
+	globalObject = JS_NewObject(cx, &global_class, NULL, NULL);
 	if ( globalObject == NULL )
 		return NULL; //, "unable to create the global object." );
 
@@ -427,12 +431,14 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostOutput stdOut, HostOutput s
 	if ( unsafeMode )
 		JS_ToggleOptions(cx, JS_GetOptions(cx) | JSOPTION_STRICT);
 
-	JSObject *globalObject = JS_GetGlobalObject(cx);
+	JSObject *globalObject;
+	globalObject = JS_GetGlobalObject(cx);
 	J_CHKM( globalObject != NULL, "Global object not found." );
 
 // make GetErrorMessage available from any module
 
-	void **_pGetErrorMessage = (void**)JS_malloc(cx, sizeof(void*)); // (TBD) free it !
+	void **_pGetErrorMessage;
+	_pGetErrorMessage = (void**)JS_malloc(cx, sizeof(void*)); // (TBD) free it !
 	*_pGetErrorMessage = (void*)&GetErrorMessage; // this indirection is needed for alignement purpose. see PRIVATE_TO_JSVAL and C function alignement.
 	J_CHK( SetConfigurationPrivateValue(cx, NAME_CONFIGURATION_GETERRORMESSAGE, PRIVATE_TO_JSVAL(&_pGetErrorMessage)) );
 
@@ -528,7 +534,8 @@ JSBool ExecuteScriptFileName( JSContext *cx, const char *scriptFileName, bool co
 	J_CHKM( globalObject != NULL, "Global object not found." );
 
 // arguments
-	JSObject *argsObj = JS_NewArrayObject(cx, 0, NULL);
+	JSObject *argsObj;
+	argsObj = JS_NewArrayObject(cx, 0, NULL);
 	J_CHKM( argsObj != NULL, "unable to create argument array on the global object." );
 
 	J_CHKM( JS_DefineProperty(cx, globalObject, NAME_GLOBAL_ARGUMENTS, OBJECT_TO_JSVAL(argsObj), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT), "unable to store the argument array." );
@@ -544,11 +551,14 @@ JSBool ExecuteScriptFileName( JSContext *cx, const char *scriptFileName, bool co
 //	script = JS_CompileFile( cx, globalObject, scriptName );
 
 // shebang support
-	FILE *file = fopen(scriptFileName, "r");
+	FILE *file;
+	file = fopen(scriptFileName, "r");
 	J_CHKM1( file != NULL, "Script %s file cannot be opened.", scriptFileName );
 
-	char s = getc(file);
-	char b = getc(file);
+	char s;
+	s = getc(file);
+	char b;
+	b = getc(file);
 	if ( s == '#' && b == '!' ) {
 
 		ungetc('/', file);
@@ -570,7 +580,8 @@ JSBool ExecuteScriptFileName( JSContext *cx, const char *scriptFileName, bool co
 	principals->refcount = 1;
 	principals->destroy = HostPrincipalsDestroy;
 */
-	JSScript *script = JS_CompileFileHandle(cx, globalObject, scriptFileName, file);
+	JSScript *script;
+	script = JS_CompileFileHandle(cx, globalObject, scriptFileName, file);
 //	JSScript *script = JS_CompileFileHandleForPrincipals(cx, globalObject, scriptFileName, file, principals);
 	J_CHKM1( script != NULL, "Unable to compile the script %s.", scriptFileName );
 	fclose(file);
