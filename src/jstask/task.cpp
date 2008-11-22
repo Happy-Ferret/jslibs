@@ -200,35 +200,40 @@ int TaskStdErrHostOutput( void *privateData, const char *buffer, size_t length )
 
 JLThreadFuncDecl ThreadProc( void *threadArg ) {
 
+	ErrorBuffer errorBuffer;
+	errorBuffer.buffer = NULL;
+	errorBuffer.length = 0;
+	errorBuffer.maxLength = 0;
+
 	JSContext *cx = CreateHost(-1, -1, 0);
 	if ( cx == NULL )
 		return -1;
 
-	ErrorBuffer errorBuffer = { NULL, 0, 0 };
+	J_CHK( InitHost(cx, _unsafeMode, NULL, TaskStdErrHostOutput, &errorBuffer) );
 
-	J_CHKB( InitHost(cx, _unsafeMode, NULL, TaskStdErrHostOutput, &errorBuffer), bad1 );
+	Private *pv;
+	pv = (Private*)threadArg;
 
-	Private *pv = (Private*)threadArg;
-
-	JSBool status = Task(cx, pv);
+	JSBool status;
+	status = Task(cx, pv);
 
 	if ( status != JS_TRUE ) { // fatal errors
 
 		jsval ex;
 		if ( JS_IsExceptionPending(cx) ) {
 
-			J_CHKB( JS_GetPendingException(cx, &ex), bad1 );
+			J_CHK( JS_GetPendingException(cx, &ex) );
 			JSString *jsstr = JS_ValueToString(cx, ex); // transform the exception into a string
 			ex = STRING_TO_JSVAL(jsstr);
 		} else {
 
-			J_CHKB( StringAndLengthToJsval(cx, &ex, errorBuffer.buffer, errorBuffer.length), bad1 );
+			J_CHK( StringAndLengthToJsval(cx, &ex, errorBuffer.buffer, errorBuffer.length) );
 			//ex = JSVAL_VOID; // unknown exception
 		}
 
 		Serialized serializedException;
 		SerializerCreate(&serializedException);
-		J_CHKB( SerializeJsval(cx, &serializedException, &ex), bad1 );
+		J_CHK( SerializeJsval(cx, &serializedException, &ex) );
 
 		JLAcquireMutex(pv->mutex); // --
 		pv->end = true;
@@ -238,12 +243,11 @@ JLThreadFuncDecl ThreadProc( void *threadArg ) {
 		JLReleaseSemaphore(pv->responseSem); // +1
 	}
 
-bad1:
+bad:
 	if ( errorBuffer.buffer != NULL )
 		free(errorBuffer.buffer);
-
-	DestroyHost(cx);
-
+	if ( cx )
+		DestroyHost(cx);
 	return 0;
 }
 

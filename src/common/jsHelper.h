@@ -63,8 +63,8 @@ struct HostPrivate {
 	HostOutput hostStdErr;
 	jl::Queue moduleList;
 
-	JSClass *blob;
-	JSClass *id;
+//	JSClass *blob;
+//	JSClass *id;
 	jsid Matrix44GetId;
 	jsid BufferGetId;
 	jsid StreamReadId;
@@ -165,7 +165,9 @@ inline void SetHostPrivate( JSContext *cx, HostPrivate *hostPrivate ) {
 
 // check: used to forward an error.
 #define J_CHK( status ) do { \
-	if (unlikely(!(status))) { goto bad; } \
+	if (unlikely(!(status))) { \
+		goto bad; \
+	} \
 } while(0)
 
 // check with message: if status is false, a js exception is rised if it is not already pending.
@@ -186,6 +188,8 @@ inline void SetHostPrivate( JSContext *cx, HostPrivate *hostPrivate ) {
 	} \
 } while(0)
 
+
+/*
 // check and branch to a errorLabel label on error.
 #define J_CHKB( status, errorLabel ) do { \
 	if (unlikely(!(status))) { goto errorLabel; } \
@@ -208,7 +212,7 @@ inline void SetHostPrivate( JSContext *cx, HostPrivate *hostPrivate ) {
 		goto errorLabel; \
 	} \
 } while(0)
-
+*/
 
 
 inline bool JsvalIsClass(JSContext *cx, jsval val, JSClass *jsClass) {
@@ -1021,7 +1025,8 @@ inline JSBool IntVectorToJsval( JSContext *cx, int *vector, size_t length, jsval
 inline JSBool JsvalToIntVector( JSContext *cx, jsval val, int *vector, size_t maxLength, size_t *currentLength ) {
 
 	J_S_ASSERT_ARRAY(val);
-	JSObject *arrayObj = JSVAL_TO_OBJECT(val);
+	JSObject *arrayObj;
+	arrayObj = JSVAL_TO_OBJECT(val);
 	jsuint tmp;
 	J_CHK( JS_GetArrayLength(cx, arrayObj, &tmp) );
 	*currentLength = tmp;
@@ -1039,7 +1044,8 @@ inline JSBool JsvalToIntVector( JSContext *cx, jsval val, int *vector, size_t ma
 inline JSBool JsvalToUIntVector( JSContext *cx, jsval val, unsigned int *vector, size_t maxLength, size_t *currentLength ) {
 
 	J_S_ASSERT_ARRAY(val);
-	JSObject *arrayObj = JSVAL_TO_OBJECT(val);
+	JSObject *arrayObj;
+	arrayObj = JSVAL_TO_OBJECT(val);
 	jsuint tmp;
 	J_CHK( JS_GetArrayLength(cx, arrayObj, &tmp) );
 	*currentLength = tmp;
@@ -1089,7 +1095,8 @@ inline JSBool FloatVectorToJsval( JSContext *cx, const float *vector, size_t len
 inline JSBool JsvalToFloatVector( JSContext *cx, jsval val, float *vector, size_t maxLength, size_t *currentLength ) {
 
 	J_S_ASSERT_ARRAY(val);
-	JSObject *arrayObj = JSVAL_TO_OBJECT(val);
+	JSObject *arrayObj;
+	arrayObj = JSVAL_TO_OBJECT(val);
 	jsuint tmp;
 	J_CHK( JS_GetArrayLength(cx, arrayObj, &tmp) );
 	*currentLength = tmp;
@@ -1108,7 +1115,8 @@ inline JSBool JsvalToFloatVector( JSContext *cx, jsval val, float *vector, size_
 inline JSBool JsvalToDoubleVector( JSContext *cx, jsval val, double *vector, size_t maxLength, size_t *currentLength ) {
 
 	J_S_ASSERT_ARRAY(val);
-	JSObject *arrayObj = JSVAL_TO_OBJECT(val);
+	JSObject *arrayObj;
+	arrayObj = JSVAL_TO_OBJECT(val);
 	jsuint tmp;
 	J_CHK( JS_GetArrayLength(cx, arrayObj, &tmp) );
 	*currentLength = tmp;
@@ -1165,7 +1173,8 @@ inline JSBool UnserializeJsval( JSContext *cx, const Serialized *xdr, jsval *rva
 	JSXDRState *xdrDecoder = JS_XDRNewMem(cx, JSXDR_DECODE);
 	J_S_ASSERT( xdrDecoder != NULL, "Unable to create the unserializer." );
 	uint32 length;
-	void *data = JS_XDRMemGetData(*xdr, &length);
+	void *data;
+	data = JS_XDRMemGetData(*xdr, &length);
 	JS_XDRMemSetData(xdrDecoder, data, length);
 	J_CHK( JS_XDRValue(xdrDecoder, rval) );
 	JS_XDRMemSetData(xdrDecoder, NULL, 0);
@@ -1266,7 +1275,6 @@ inline JSBool SetStreamReadInterface( JSContext *cx, JSObject *obj, NIStreamRead
 inline NIStreamRead StreamReadNativeInterface( JSContext *cx, JSObject *obj ) {
 
 	jsid propId = GetHostPrivate(cx)->StreamReadId;
-
 	if ( !propId ) {
 
 		propId = StringToJsid(cx, "_NI_StreamRead");
