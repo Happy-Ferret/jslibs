@@ -62,7 +62,8 @@ DEFINE_FUNCTION( Poll ) {
 	J_S_ASSERT_ARG_MIN( 1 );
 
 	J_S_ASSERT_ARRAY( J_ARG(1) );
-	JSIdArray *idArray = JS_Enumerate( cx, JSVAL_TO_OBJECT(J_ARG(1)) ); // make a kind of auto-ptr for this
+	JSIdArray *idArray;
+	idArray = JS_Enumerate( cx, JSVAL_TO_OBJECT(J_ARG(1)) ); // make a kind of auto-ptr for this
 
 	PRIntervalTime pr_timeout;
 	if ( J_ARG_ISDEF(2) ) {
@@ -86,7 +87,8 @@ DEFINE_FUNCTION( Poll ) {
 	}
 
 	PRPollDesc staticPollDesc[32];
-	PRPollDesc *pollDesc = staticPollDesc; // Optimization to avoid dynamic allocation when it is possible
+	PRPollDesc *pollDesc;
+	pollDesc = staticPollDesc; // Optimization to avoid dynamic allocation when it is possible
 
 	if ( idArray->length > (signed)(sizeof(staticPollDesc) / sizeof(staticPollDesc[0])) )
 		pollDesc = (PRPollDesc*) malloc(idArray->length * sizeof(PRPollDesc));
@@ -229,9 +231,11 @@ DEFINE_FUNCTION( IsReadable ) {
 
 	J_S_ASSERT_ARG_MIN( 1 );
 
-	JSObject *descriptorObj = JSVAL_TO_OBJECT( J_ARG(1) );
+	JSObject *descriptorObj;
+	descriptorObj = JSVAL_TO_OBJECT( J_ARG(1) );
 	J_S_ASSERT( InheritFrom(cx, descriptorObj, classDescriptor), J__ERRMSG_INVALID_CLASS );
-	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, descriptorObj );
+	PRFileDesc *fd;
+	fd = (PRFileDesc *)JS_GetPrivate( cx, descriptorObj );
 //	J_S_ASSERT_RESOURCE( fd ); // fd == NULL is supported !
 
 	PRIntervalTime prTimeout;
@@ -248,7 +252,8 @@ DEFINE_FUNCTION( IsReadable ) {
 	desc.in_flags = PR_POLL_READ;
 	desc.out_flags = 0;
 
-	PRInt32 result = PR_Poll( &desc, 1, prTimeout );
+	PRInt32 result;
+	result = PR_Poll( &desc, 1, prTimeout );
 	if ( result == -1 ) // error
 		return ThrowIoError(cx);
 	*rval = ( result == 1 && (desc.out_flags & PR_POLL_READ) != 0 ) ? JSVAL_TRUE : JSVAL_FALSE;
@@ -264,9 +269,11 @@ DEFINE_FUNCTION( IsWritable ) {
 
 	J_S_ASSERT_ARG_MIN( 1 );
 
-	JSObject *descriptorObj = JSVAL_TO_OBJECT( J_ARG(1) );
+	JSObject *descriptorObj;
+	descriptorObj = JSVAL_TO_OBJECT( J_ARG(1) );
 	J_S_ASSERT( InheritFrom(cx, descriptorObj, classDescriptor), J__ERRMSG_INVALID_CLASS );
-	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, descriptorObj );
+	PRFileDesc *fd;
+	fd = (PRFileDesc *)JS_GetPrivate( cx, descriptorObj );
 //	J_S_ASSERT_RESOURCE( fd ); // fd == NULL is supported !
 
 	PRIntervalTime prTimeout;
@@ -283,7 +290,8 @@ DEFINE_FUNCTION( IsWritable ) {
 	desc.in_flags = PR_POLL_WRITE;
 	desc.out_flags = 0;
 
-	PRInt32 result = PR_Poll( &desc, 1, prTimeout );
+	PRInt32 result;
+	result = PR_Poll( &desc, 1, prTimeout );
 	if ( result == -1 ) // error
 		return ThrowIoError(cx);
 	*rval = ( result == 1 && (desc.out_flags & PR_POLL_WRITE) != 0 ) ? JSVAL_TRUE : JSVAL_FALSE;
@@ -339,7 +347,8 @@ DEFINE_FUNCTION( GetEnv ) {
 	J_S_ASSERT_ARG_MIN(1);
 	const char *name;
 	J_CHK( JsvalToString(cx, &J_ARG(1), &name) );
-	char* value = PR_GetEnv(name); // If the environment variable is not defined, the function returns NULL.
+	char* value;
+	value = PR_GetEnv(name); // If the environment variable is not defined, the function returns NULL.
 	if ( value != NULL ) { // this will cause an 'undefined' return value
 
 //		JSString *jsstr = JS_NewExternalString(cx, (jschar*)value, strlen(value), JS_AddExternalStringFinalizer(NULL)); only works with unicode strings
@@ -367,10 +376,13 @@ DEFINE_FUNCTION( GetRandomNoise ) {
 
 	J_S_ASSERT_ARG_MIN( 1 );
 	J_S_ASSERT_INT( J_ARG(1) );
-	PRSize rndSize = JSVAL_TO_INT( J_ARG(1) );
-	void *buf = (void*)JS_malloc(cx, rndSize);
+	PRSize rndSize;
+	rndSize = JSVAL_TO_INT( J_ARG(1) );
+	void *buf;
+	buf = (void*)JS_malloc(cx, rndSize);
 	J_S_ASSERT_ALLOC( buf );
-	PRSize size = PR_GetRandomNoise(buf, rndSize);
+	PRSize size;
+	size = PR_GetRandomNoise(buf, rndSize);
 	if ( size <= 0 ) {
 
 		JS_free(cx, buf);
@@ -434,7 +446,8 @@ DEFINE_FUNCTION_FAST( WaitSemaphore ) {
 
 	bool isCreation;
 	isCreation = true;
-	PRSem *semaphore = PR_OpenSemaphore(name, PR_SEM_EXCL | PR_SEM_CREATE, mode, 1); // fail if already exists
+	PRSem *semaphore;
+	semaphore = PR_OpenSemaphore(name, PR_SEM_EXCL | PR_SEM_CREATE, mode, 1); // fail if already exists
 
 	if ( semaphore == NULL ) {
 
@@ -477,7 +490,8 @@ DEFINE_FUNCTION_FAST( PostSemaphore ) {
 	size_t nameLength;
 	J_CHK( JsvalToStringAndLength(cx, &J_FARG(1), &name, &nameLength) );
 
-	PRSem *semaphore = PR_OpenSemaphore(name, 0, 0, 0);
+	PRSem *semaphore;
+	semaphore = PR_OpenSemaphore(name, 0, 0, 0);
 
 	if ( semaphore != NULL ) {
 
@@ -558,7 +572,8 @@ DEFINE_FUNCTION_FAST( CreateProcess ) {
 	if ( status != PR_SUCCESS )
 		return ThrowIoError(cx);
 
-	PRProcessAttr *psattr = PR_NewProcessAttr();
+	PRProcessAttr *psattr;
+	psattr = PR_NewProcessAttr();
 
 	PR_ProcessAttrSetStdioRedirect(psattr, PR_StandardInput, stdin_child);
 	PR_ProcessAttrSetStdioRedirect(psattr, PR_StandardOutput, stdout_child);
@@ -756,7 +771,8 @@ DEFINE_PROPERTY( processPrioritySetter ) {
 		default:
 			J_REPORT_ERROR( "Invalid thread priority." );
 	}
-	PRThread *thread = PR_GetCurrentThread();
+	PRThread *thread;
+	thread = PR_GetCurrentThread();
 	PR_SetThreadPriority( thread, priority );
 	return JS_TRUE;
 	JL_BAD;

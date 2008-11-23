@@ -31,7 +31,8 @@ JSBool NativeInterfaceStreamRead( JSContext *cx, JSObject *obj, char *buf, size_
 	J_S_ASSERT( InheritFrom(cx, obj, classDescriptor), "Invalid descriptor object." );
 //	J_S_ASSERT_CLASS(obj, classDescriptor);
 
-	PRFileDesc *fd = (PRFileDesc*)JS_GetPrivate(cx, obj); // (PRFileDesc *)pv;
+	PRFileDesc *fd;
+	fd = (PRFileDesc*)JS_GetPrivate(cx, obj); // (PRFileDesc *)pv;
 	J_S_ASSERT_RESOURCE(fd);
 
 	PRInt32 ret;
@@ -115,7 +116,8 @@ DEFINE_FUNCTION( Close ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
 	J_S_ASSERT( fd != NULL, "file is closed." );
-	PRStatus status = PR_Close( fd );
+	PRStatus status;
+	status = PR_Close( fd );
 	if (status != PR_SUCCESS) {
 
 		PRErrorCode errorCode = PR_GetError();
@@ -137,7 +139,8 @@ JSBool ReadToJsval(JSContext *cx, PRFileDesc *fd, int amount, jsval *rval ) {
 	J_S_ASSERT_ALLOC(buf);
 	buf[amount] = '\0';
 
-	PRInt32 res = PR_Read( fd, buf, amount );
+	PRInt32 res;
+	res = PR_Read( fd, buf, amount );
 
 	if (res == -1) { // failure. The reason for the failure can be obtained by calling PR_GetError.
 
@@ -299,7 +302,8 @@ DEFINE_FUNCTION( Read ) {
 DEFINE_FUNCTION( Write ) {
 
 	J_S_ASSERT_ARG_MIN( 1 );
-	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
+	PRFileDesc *fd;
+	fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
 	J_S_ASSERT_RESOURCE( fd );
 	const char *str;
 	size_t len;
@@ -307,7 +311,8 @@ DEFINE_FUNCTION( Write ) {
 
 	size_t sentAmount;
 
-	PRInt32 res = PR_Write( fd, str, len );
+	PRInt32 res;
+	res = PR_Write( fd, str, len );
 	if ( res == -1 ) {
 
 		PRErrorCode errCode = PR_GetError();
@@ -366,7 +371,8 @@ DEFINE_FUNCTION( Sync ) {
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
 	J_S_ASSERT_RESOURCE( fd );
 
-	PRStatus status = PR_Sync(fd);
+	PRStatus status;
+	status = PR_Sync(fd);
 	if ( status == PR_FAILURE )
 		return ThrowIoError(cx);
 
@@ -388,7 +394,8 @@ DEFINE_PROPERTY( available ) {
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
 	J_S_ASSERT_RESOURCE( fd );
 
-	PRInt64 available = PR_Available64( fd ); // For a normal file, these are the bytes beyond the current file pointer.
+	PRInt64 available;
+	available = PR_Available64( fd ); // For a normal file, these are the bytes beyond the current file pointer.
 	if ( available == -1 )
 		return ThrowIoError(cx);
 
@@ -462,7 +469,8 @@ DEFINE_FUNCTION( Import ) {
 
 	int descType;
 	J_CHK( JsvalToInt(cx, J_ARG(2), &descType) );
-	PRDescType type = (PRDescType)descType;
+	PRDescType type;
+	type = (PRDescType)descType;
 
 	PRFileDesc *fd;
 	JSObject *descriptorObject;

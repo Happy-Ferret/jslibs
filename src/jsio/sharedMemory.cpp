@@ -58,7 +58,8 @@ static JSBool BufferGet( JSContext *cx, JSObject *obj, const char **buf, size_t 
 
 	ClassPrivate *pv = (ClassPrivate*)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( pv );
-	MemHeader *mh = (MemHeader*)pv->mem;
+	MemHeader *mh;
+	mh = (MemHeader*)pv->mem;
 	*buf = (char *)pv->mem + sizeof(MemHeader);
 	*size = mh->currentDataLength;
 	return JS_TRUE;
@@ -146,7 +147,8 @@ DEFINE_CONSTRUCTOR() {
 
 	bool isCreation;
 	isCreation = true;
-	PRSem *accessSem = PR_OpenSemaphore(semName, PR_SEM_EXCL | PR_SEM_CREATE, mode, 1); // fail if already exists
+	PRSem *accessSem;
+	accessSem = PR_OpenSemaphore(semName, PR_SEM_EXCL | PR_SEM_CREATE, mode, 1); // fail if already exists
 
 	if ( accessSem == NULL ) {
 
@@ -161,15 +163,18 @@ DEFINE_CONSTRUCTOR() {
 	if ( status != PR_SUCCESS )
 		return ThrowIoError(cx);
 
-	PRSharedMemory *shm = PR_OpenSharedMemory( name, size + sizeof(MemHeader), PR_SHM_CREATE, mode );
+	PRSharedMemory *shm;
+	shm = PR_OpenSharedMemory( name, size + sizeof(MemHeader), PR_SHM_CREATE, mode );
 	if ( shm == NULL )
 		return ThrowIoError(cx);
 
-	void *mem = PR_AttachSharedMemory(shm, 0); // PR_SHM_READONLY
+	void *mem;
+	mem = PR_AttachSharedMemory(shm, 0); // PR_SHM_READONLY
 	if ( mem == NULL )
 		return ThrowIoError(cx);
 
-	ClassPrivate *pv = (ClassPrivate*)malloc( sizeof(ClassPrivate) );
+	ClassPrivate *pv;
+	pv = (ClassPrivate*)malloc( sizeof(ClassPrivate) );
 	J_S_ASSERT_ALLOC( pv );
 
 	strcpy(pv->name, name);
@@ -178,7 +183,8 @@ DEFINE_CONSTRUCTOR() {
 	pv->size = size + sizeof(MemHeader);
 	pv->accessSem = accessSem;
 
-	MemHeader *mh = (MemHeader*)pv->mem;
+	MemHeader *mh;
+	mh = (MemHeader*)pv->mem;
 
 	if ( isCreation ) {
 		mh->accessCount = 0;
@@ -210,7 +216,8 @@ DEFINE_CONSTRUCTOR() {
 DEFINE_FUNCTION_FAST( Write ) {
 
 	J_S_ASSERT_ARG_MIN( 1 );
-	ClassPrivate *pv = (ClassPrivate*)JS_GetPrivate(cx, J_FOBJ);
+	ClassPrivate *pv;
+	pv = (ClassPrivate*)JS_GetPrivate(cx, J_FOBJ);
 	J_S_ASSERT_RESOURCE( pv );
 
 	PRSize offset;
@@ -226,7 +233,8 @@ DEFINE_FUNCTION_FAST( Write ) {
 
 	J_CHK( Lock(cx, pv) );
 
-	MemHeader *mh = (MemHeader*)pv->mem;
+	MemHeader *mh;
+	mh = (MemHeader*)pv->mem;
 	if ( offset + dataLength > mh->currentDataLength )
 		mh->currentDataLength = offset + dataLength;
 	memmove(	(char *)pv->mem + sizeof(MemHeader) + offset, data, dataLength );
@@ -253,7 +261,8 @@ DEFINE_FUNCTION_FAST( Read ) {
 		J_CHK( JsvalToUInt(cx, J_FARG(2), &offset) );
 
 	J_CHK( Lock(cx, pv) );
-	MemHeader *mh = (MemHeader*)pv->mem;
+	MemHeader *mh;
+	mh = (MemHeader*)pv->mem;
 
 	unsigned int dataLength;
 	if ( J_FARG_ISDEF(1) )
@@ -261,7 +270,8 @@ DEFINE_FUNCTION_FAST( Read ) {
 	else
 		dataLength = mh->currentDataLength;
 
-	char *data = (char*)JS_malloc(cx, dataLength +1);
+	char *data;
+	data = (char*)JS_malloc(cx, dataLength +1);
 	data[dataLength] = '\0';
 
 	memmove(	data, (char *)pv->mem + sizeof(MemHeader) + offset, dataLength );
@@ -282,11 +292,13 @@ DEFINE_FUNCTION_FAST( Read ) {
 DEFINE_FUNCTION_FAST( Clear ) {
 
 	J_S_ASSERT_ARG_MIN( 1 );
-	ClassPrivate *pv = (ClassPrivate*)JS_GetPrivate(cx, J_FOBJ);
+	ClassPrivate *pv;
+	pv = (ClassPrivate*)JS_GetPrivate(cx, J_FOBJ);
 	J_S_ASSERT_RESOURCE( pv );
 
 	J_CHK( Lock(cx, pv) );
-	MemHeader *mh = (MemHeader*)pv->mem;
+	MemHeader *mh;
+	mh = (MemHeader*)pv->mem;
 	mh->currentDataLength = 0;
 	memset( (char *)pv->mem + sizeof(MemHeader), 0, pv->size - sizeof(MemHeader) );
 	J_CHK( Unlock(cx, pv) );
@@ -359,10 +371,13 @@ DEFINE_PROPERTY( contentGetter ) {
 
 	J_CHK( Lock(cx, pv) );
 
-	MemHeader *mh = (MemHeader*)pv->mem;
+	MemHeader *mh;
+	mh = (MemHeader*)pv->mem;
 
-	unsigned int dataLength = mh->currentDataLength;
-	char *data = (char*)JS_malloc(cx, dataLength +1);
+	unsigned int dataLength;
+	dataLength = mh->currentDataLength;
+	char *data;
+	data = (char*)JS_malloc(cx, dataLength +1);
 	data[dataLength] = '\0';
 
 	memmove(	data, (char *)pv->mem + sizeof(MemHeader), dataLength );

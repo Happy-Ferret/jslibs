@@ -72,7 +72,8 @@ DEFINE_FUNCTION( Open ) {
 	const char *directoryName;
 	J_CHK( JsvalToString(cx, &jsvalDirectoryName, &directoryName) );
 
-	PRDir *dd = PR_OpenDir( directoryName );
+	PRDir *dd;
+	dd = PR_OpenDir( directoryName );
 	if ( dd == NULL )
 		return ThrowIoError(cx);
 
@@ -121,7 +122,8 @@ DEFINE_FUNCTION( Read ) {
 		flags = (PRDirFlags)tmp;
 	}
 
-	PRDirEntry *dirEntry = PR_ReadDir( dd, flags );
+	PRDirEntry *dirEntry;
+	dirEntry = PR_ReadDir( dd, flags );
 	if ( dirEntry == NULL ) {
 
 		PRErrorCode errorCode = PR_GetError();
@@ -202,7 +204,8 @@ DEFINE_PROPERTY( exist ) {
 	const char *directoryName;
 	J_CHK( JsvalToString(cx, &jsvalDirectoryName, &directoryName) );
 
-	PRDir *dd = PR_OpenDir( directoryName );
+	PRDir *dd;
+	dd = PR_OpenDir( directoryName );
 
 	if ( dd == NULL ) {
 
@@ -257,7 +260,8 @@ DEFINE_FUNCTION( List ) {
 	size_t directoryNameLength;
 	J_CHK( JsvalToStringAndLength(cx, &J_ARG(1), &directoryName, &directoryNameLength) );
 	J_S_ASSERT( directoryNameLength < PATH_MAX, "Path too long" );
-	PRDir *dd = PR_OpenDir( directoryName );
+	PRDir *dd;
+	dd = PR_OpenDir( directoryName );
 	if ( dd == NULL )
 		return ThrowIoError(cx);
 
@@ -270,7 +274,8 @@ DEFINE_FUNCTION( List ) {
 		flags = (PRDirFlags)tmp;
 	}
 
-	JSObject *addrJsObj = JS_NewArrayObject(cx, 0, NULL);
+	JSObject *addrJsObj;
+	addrJsObj = JS_NewArrayObject(cx, 0, NULL);
 	J_S_ASSERT_ALLOC( addrJsObj );
 	*rval = OBJECT_TO_JSVAL( addrJsObj );
 

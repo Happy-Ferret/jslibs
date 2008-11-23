@@ -113,7 +113,8 @@ DEFINE_FUNCTION( Open ) {
 	const char *fileName;
 	J_CHK( JsvalToString(cx, &jsvalFileName, &fileName) );
 
-	PRFileDesc *fd = PR_Open( fileName, flags, mode ); // The mode parameter is currently applicable only on Unix platforms.
+	PRFileDesc *fd;
+	fd = PR_Open( fileName, flags, mode ); // The mode parameter is currently applicable only on Unix platforms.
 	if ( fd == NULL )
 		return ThrowIoError(cx);
 	JS_SetPrivate( cx, obj, fd );
@@ -156,11 +157,13 @@ DEFINE_FUNCTION( Seek ) {
 	} else
 		whence = PR_SEEK_CUR; // default is arg is missing
 
-	PRInt64 ret = PR_Seek64( fd, offset, whence );
+	PRInt64 ret;
+	ret = PR_Seek64( fd, offset, whence );
 	if ( ret == -1 )
 		return ThrowIoError(cx);
 
-	jsdouble newLocation = ret;
+	jsdouble newLocation;
+	newLocation = ret;
 	JS_NewDoubleValue( cx, newLocation, rval );
 	return JS_TRUE;
 	JL_BAD;
@@ -196,11 +199,13 @@ DEFINE_FUNCTION( Delete ) {
 DEFINE_FUNCTION( Lock ) {
 
 	J_S_ASSERT_ARG_MIN( 1 );
-	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
+	PRFileDesc *fd;
+	fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
 	J_S_ASSERT_RESOURCE( fd );
 	bool doLock;
 	J_CHK( JsvalToBool(cx, J_ARG(1), &doLock) );
-	PRStatus st = doLock ? PR_LockFile(fd) : PR_UnlockFile(fd);
+	PRStatus st;
+	st = doLock ? PR_LockFile(fd) : PR_UnlockFile(fd);
 	if ( st != PR_SUCCESS )
 		return ThrowIoError(cx);
 	return JS_TRUE;
@@ -214,7 +219,8 @@ DEFINE_FUNCTION( Lock ) {
 DEFINE_FUNCTION( Move ) {
 
 	J_S_ASSERT_ARG_MIN( 1 );
-	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
+	PRFileDesc *fd;
+	fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
 	J_S_ASSERT( fd == NULL, "Cannot move an open file." );
 
 	jsval jsvalFileName;
@@ -227,7 +233,8 @@ DEFINE_FUNCTION( Move ) {
 	size_t destDirNameLength;
 	J_CHK( JsvalToStringAndLength(cx, &J_ARG(1), &destDirName, &destDirNameLength) ); // warning: GC on the returned buffer !
 
-	const char *fileNameOnly = strrchr(fileName, '/');
+	const char *fileNameOnly;
+	fileNameOnly = strrchr(fileName, '/');
 	if ( fileNameOnly == NULL )
 		fileNameOnly = fileName;
 
@@ -241,7 +248,8 @@ DEFINE_FUNCTION( Move ) {
 	if ( PR_Rename(fileName, destFileName) != PR_SUCCESS )
 		return ThrowIoError(cx);
 
-	JSString *jsstr = JS_NewStringCopyZ(cx, destFileName);
+	JSString *jsstr;
+	jsstr = JS_NewStringCopyZ(cx, destFileName);
 	J_S_ASSERT_ALLOC( jsstr );
 
 	J_CHK( JS_SetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, STRING_TO_JSVAL(jsstr) ) );
@@ -266,7 +274,8 @@ DEFINE_PROPERTY( positionSetter ) {
 	jsdouble doubleOffset;
 	J_CHK( JS_ValueToNumber( cx, *vp, &doubleOffset ) );
 	offset = (PRInt64)doubleOffset;
-	PRInt64 ret = PR_Seek64( fd, offset, PR_SEEK_SET );
+	PRInt64 ret;
+	ret = PR_Seek64( fd, offset, PR_SEEK_SET );
 	if ( ret == -1 )
 		return ThrowIoError(cx);
 	return JS_TRUE;
@@ -277,7 +286,8 @@ DEFINE_PROPERTY( positionGetter ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
 	J_S_ASSERT( fd != NULL, "File is closed." );
-	PRInt64 ret = PR_Seek64( fd, 0, PR_SEEK_CUR );
+	PRInt64 ret;
+	ret  = PR_Seek64( fd, 0, PR_SEEK_CUR );
 	if ( ret == -1 )
 		return ThrowIoError(cx);
 	J_CHK( JS_NewNumberValue(cx, ret, vp) );
@@ -300,14 +310,16 @@ DEFINE_PROPERTY( contentGetter ) {
 	const char *fileName;
 	J_CHK( JsvalToString(cx, &jsvalFileName, &fileName) );
 
-	PRStatus status = PR_Access( fileName, PR_ACCESS_READ_OK ); // We want to read the whole file, then first check if the file is readable
+	PRStatus status;
+	status = PR_Access( fileName, PR_ACCESS_READ_OK ); // We want to read the whole file, then first check if the file is readable
 	if ( status != PR_SUCCESS ) {
 
 		*vp = JSVAL_VOID;
 		return JS_TRUE;
 	}
 
-	PRFileDesc *fd = PR_OpenFile( fileName, PR_RDONLY, 0 ); // The mode parameter is currently applicable only on Unix platforms.
+	PRFileDesc *fd;
+	fd = PR_OpenFile( fileName, PR_RDONLY, 0 ); // The mode parameter is currently applicable only on Unix platforms.
 	if ( fd == NULL ) {
 
 		PRErrorCode err = PR_GetError();
@@ -316,14 +328,17 @@ DEFINE_PROPERTY( contentGetter ) {
 		return ThrowIoErrorArg( cx, err, PR_GetOSError() );
 	}
 
-	PRInt32 available = PR_Available( fd ); // For a normal file, these are the bytes beyond the current file pointer.
+	PRInt32 available;
+	available = PR_Available( fd ); // For a normal file, these are the bytes beyond the current file pointer.
 	if ( available == -1 )
 		return ThrowIoError(cx);
-	char *buf = (char*)JS_malloc( cx, available +1 );
+	char *buf;
+	buf = (char*)JS_malloc( cx, available +1 );
 	J_S_ASSERT_ALLOC(buf);
 	buf[available] = '\0';
 
-	PRInt32 res = PR_Read( fd, buf, available );
+	PRInt32 res;
+	res = PR_Read( fd, buf, available );
 	if ( res == -1 ) {
 
 		JS_free( cx, buf );
@@ -370,13 +385,15 @@ DEFINE_PROPERTY( contentSetter ) {
 		}
 		return JS_TRUE;
 	}
-	PRFileDesc *fd = PR_OpenFile( fileName, PR_CREATE_FILE | PR_TRUNCATE | PR_WRONLY, PR_IRUSR + PR_IWUSR ); // The mode parameter is currently applicable only on Unix platforms.
+	PRFileDesc *fd;
+	fd = PR_OpenFile( fileName, PR_CREATE_FILE | PR_TRUNCATE | PR_WRONLY, PR_IRUSR + PR_IWUSR ); // The mode parameter is currently applicable only on Unix platforms.
 	if ( fd == NULL )
 		return ThrowIoError(cx);
 	const char *buf;
 	size_t len;
 	J_CHK( JsvalToStringAndLength(cx, vp, &buf, &len) );
-	PRInt32 bytesSent = PR_Write( fd, buf, len );
+	PRInt32 bytesSent;
+	bytesSent = PR_Write( fd, buf, len );
 	if ( bytesSent == -1 )
 		return ThrowIoError(cx);
 	J_S_ASSERT( bytesSent == len, "unable to set content" );
@@ -401,7 +418,8 @@ DEFINE_PROPERTY( nameSetter ) {
 
 	J_S_ASSERT_DEFINED( *vp );
 
-	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
+	PRFileDesc *fd;
+	fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
 	J_S_ASSERT( fd == NULL, "Cannot rename an open file.");
 	jsval jsvalFileName;
 	JS_GetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName );
@@ -429,7 +447,8 @@ DEFINE_PROPERTY( exist ) {
 	J_S_ASSERT_DEFINED( jsvalFileName );
 	const char *fileName;
 	J_CHK( JsvalToString(cx, &jsvalFileName, &fileName) );
-	PRStatus status = PR_Access( fileName, PR_ACCESS_EXISTS );
+	PRStatus status;
+	status = PR_Access( fileName, PR_ACCESS_EXISTS );
 	*vp = BOOLEAN_TO_JSVAL( status == PR_SUCCESS );
 	return JS_TRUE;
 	JL_BAD;

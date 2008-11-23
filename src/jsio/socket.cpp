@@ -114,7 +114,8 @@ DEFINE_FUNCTION( Shutdown ) { // arg[0] =  false: SHUTDOWN_RCV | true: SHUTDOWN_
 DEFINE_FUNCTION( Bind ) {
 
 	J_S_ASSERT_ARG_MIN( 1 ); // need port number (at least)
-	PRFileDesc *fd = (PRFileDesc*)JS_GetPrivate( cx, obj );
+	PRFileDesc *fd;
+	fd = (PRFileDesc*)JS_GetPrivate( cx, obj );
 	J_S_ASSERT_RESOURCE( fd );
 
 	PRNetAddr addr;
@@ -207,7 +208,8 @@ DEFINE_FUNCTION( Accept ) {
 	} else
 		connectTimeout = PR_INTERVAL_NO_TIMEOUT;
 
-	PRFileDesc *newFd = PR_Accept( fd, NULL, connectTimeout );
+	PRFileDesc *newFd;
+	newFd = PR_Accept( fd, NULL, connectTimeout );
 	if ( newFd == NULL )
 		return ThrowIoError(cx);
 
@@ -215,7 +217,8 @@ DEFINE_FUNCTION( Accept ) {
 
 //	J_CHK( SetStreamReadInterface(cx, obj, NativeInterfaceStreamRead) );
 
-	JSObject *object = JS_NewObject( cx, classSocket, NULL, NULL );
+	JSObject *object;
+	object = JS_NewObject( cx, classSocket, NULL, NULL );
 	JS_SetPrivate( cx, object, newFd );
 
 	J_CHK( ReserveStreamReadInterface(cx, object) );
@@ -250,7 +253,8 @@ DEFINE_FUNCTION( Accept ) {
 DEFINE_FUNCTION( Connect ) {
 
 	J_S_ASSERT_ARG_MIN( 2 );
-	PRFileDesc *fd = (PRFileDesc*)JS_GetPrivate( cx, obj );
+	PRFileDesc *fd;
+	fd = (PRFileDesc*)JS_GetPrivate( cx, obj );
 	J_S_ASSERT_RESOURCE( fd );
 
 	unsigned int port;
@@ -362,7 +366,8 @@ DEFINE_FUNCTION( SendTo ) {
 	size_t len;
 	J_CHK( JsvalToStringAndLength(cx, &J_ARG(3), &str, &len) );
 
-	PRInt32 res = PR_SendTo(fd, str, len, 0, &addr, PR_INTERVAL_NO_TIMEOUT );
+	PRInt32 res;
+	res = PR_SendTo(fd, str, len, 0, &addr, PR_INTERVAL_NO_TIMEOUT );
 
 	size_t sentAmount;
 	if ( res == -1 ) {
@@ -406,28 +411,34 @@ DEFINE_FUNCTION( RecvFrom ) {
 		fd = PR_NewUDPSocket(); // allow to use SendTo as static function
 	J_S_ASSERT_RESOURCE( fd );
 
-	PRInt64 available = PR_Available64( fd );
+	PRInt64 available;
+	available = PR_Available64( fd );
 	if ( available == -1 )
 		return ThrowIoError(cx);
 
-	char *buffer = (char *)JS_malloc(cx, available+1); // (TBD) optimize this if  available == 0 !!
+	char *buffer;
+	buffer = (char *)JS_malloc(cx, available+1); // (TBD) optimize this if  available == 0 !!
 	J_S_ASSERT_ALLOC( buffer );
 	buffer[available] = '\0';
 
 	PRNetAddr addr;
-	PRInt32 res = PR_RecvFrom(fd, buffer, available, 0, &addr, PR_INTERVAL_NO_TIMEOUT );
+	PRInt32 res;
+	res = PR_RecvFrom(fd, buffer, available, 0, &addr, PR_INTERVAL_NO_TIMEOUT );
 
 	char peerName[46]; // If addr is an IPv4 address, size needs to be at least 16. If addr is an IPv6 address, size needs to be at least 46.
-	PRStatus status = PR_NetAddrToString(&addr, peerName, sizeof(peerName)); // Converts a character string to a network address.
+	PRStatus status;
+	status = PR_NetAddrToString(&addr, peerName, sizeof(peerName)); // Converts a character string to a network address.
 	if ( status != PR_SUCCESS ) {
 
 		JS_free(cx, buffer);
 		return ThrowIoError(cx);
 	}
-	JSString *strPeerName = JS_NewStringCopyZ(cx, peerName);
+	JSString *strPeerName;
+	strPeerName = JS_NewStringCopyZ(cx, peerName);
 	J_S_ASSERT_ALLOC(strPeerName); // (TBD) else free buffer ? ( or, this is a fatal error, program should stop )
 
-	PRUint16 port = PR_NetAddrInetPort(&addr);
+	PRUint16 port;
+	port = PR_NetAddrInetPort(&addr);
 
 	jsval data;
 	if (res > 0) {
@@ -452,7 +463,8 @@ DEFINE_FUNCTION( RecvFrom ) {
 	arrayItems[1] = STRING_TO_JSVAL(strPeerName);
 	arrayItems[2] = INT_TO_JSVAL(port);
 
-	JSObject *arrayObject = JS_NewArrayObject(cx, sizeof(arrayItems), arrayItems );
+	JSObject *arrayObject;
+	arrayObject = JS_NewArrayObject(cx, sizeof(arrayItems), arrayItems );
 	J_S_ASSERT_ALLOC( arrayObject ); // (TBD) else free buffer
 	*rval = OBJECT_TO_JSVAL( arrayObject );
 
@@ -477,13 +489,16 @@ DEFINE_FUNCTION( RecvFrom ) {
 DEFINE_FUNCTION( TransmitFile ) { // WORKS ONLY ON BLOCKING SOCKET !!!
 
 	J_S_ASSERT_ARG_MIN( 1 );
-	PRFileDesc *socketFd = (PRFileDesc *)JS_GetPrivate( cx, obj );
+	PRFileDesc *socketFd;
+	socketFd = (PRFileDesc *)JS_GetPrivate( cx, obj );
 	J_S_ASSERT_RESOURCE( socketFd );
 
 	J_S_ASSERT_OBJECT( J_ARG(1) );
-	JSObject *fileObj = JSVAL_TO_OBJECT( J_ARG(1) );
+	JSObject *fileObj;
+	fileObj = JSVAL_TO_OBJECT( J_ARG(1) );
 	J_S_ASSERT_CLASS( fileObj, classFile );
-	PRFileDesc *fileFd = (PRFileDesc*)JS_GetPrivate( cx, fileObj );
+	PRFileDesc *fileFd;
+	fileFd = (PRFileDesc*)JS_GetPrivate( cx, fileObj );
 	J_S_ASSERT_RESOURCE( fileFd );
 
 	PRTransmitFileFlags flag;
@@ -512,7 +527,8 @@ DEFINE_FUNCTION( TransmitFile ) { // WORKS ONLY ON BLOCKING SOCKET !!!
 	if ( J_ARG_ISDEF(3) )
 		J_CHK( JsvalToStringAndLength(cx, &J_ARG(3), &headers, &headerLength) );
 
-	PRInt32 bytes = PR_TransmitFile( socketFd, fileFd, headers, headerLength, flag, connectTimeout );
+	PRInt32 bytes;
+	bytes = PR_TransmitFile( socketFd, fileFd, headers, headerLength, flag, connectTimeout );
 	if ( bytes == -1 )
 		return ThrowIoError(cx);
 
@@ -551,7 +567,8 @@ DEFINE_PROPERTY( connectContinue ) {
 	desc.in_flags = PR_POLL_WRITE | PR_POLL_EXCEPT;
 	desc.out_flags = 0;
 
-	PRInt32 result = PR_Poll( &desc, 1, PR_INTERVAL_NO_WAIT ); // this avoid to store out_flags from the previous poll
+	PRInt32 result;
+	result = PR_Poll( &desc, 1, PR_INTERVAL_NO_WAIT ); // this avoid to store out_flags from the previous poll
 	if ( result == -1 )
 		return ThrowIoError(cx);
 
@@ -597,7 +614,8 @@ DEFINE_PROPERTY( connectionClosed ) {
 	//and PR_Available() returns 0, this means that the socket connection is closed.
 	//see http://www.mozilla.org/projects/nspr/tech-notes/nonblockingio.html
 
-	PRInt32 available = PR_Available( fd );
+	PRInt32 available;
+	available = PR_Available( fd );
 	if ( available == -1 )
 		return ThrowIoError(cx);
 
@@ -891,7 +909,8 @@ DEFINE_FUNCTION( GetHostsByName ) {
 //	if ( PR_GetHostByName( host, netdbBuf, sizeof(netdbBuf), &hostEntry ) != PR_SUCCESS )
 //		return ThrowIoError(cx);
 
-	JSObject *addrJsObj = JS_NewArrayObject(cx, 0, NULL);
+	JSObject *addrJsObj;
+	addrJsObj = JS_NewArrayObject(cx, 0, NULL);
 	J_S_ASSERT_ALLOC( addrJsObj );
 
 	const char *host;

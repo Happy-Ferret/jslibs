@@ -72,7 +72,8 @@ DEFINE_CONSTRUCTOR() {
 
 	bool isCreation;
 	isCreation = true;
-	PRSem *semaphore = PR_OpenSemaphore(name, PR_SEM_EXCL | PR_SEM_CREATE, mode, count); // fail if already exists
+	PRSem *semaphore;
+	semaphore = PR_OpenSemaphore(name, PR_SEM_EXCL | PR_SEM_CREATE, mode, count); // fail if already exists
 
 	if ( semaphore == NULL ) {
 
@@ -82,7 +83,8 @@ DEFINE_CONSTRUCTOR() {
 		isCreation = false;
 	}
 
-	ClassPrivate *pv = (ClassPrivate*)malloc( sizeof(ClassPrivate) );
+	ClassPrivate *pv;
+	pv = (ClassPrivate*)malloc( sizeof(ClassPrivate) );
 	J_S_ASSERT_ALLOC( pv );
 
 //	strcpy( pv->name, name ); // (TBD) use memcpy instead ?
