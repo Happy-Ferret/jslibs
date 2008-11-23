@@ -142,25 +142,32 @@ DEFINE_FUNCTION_FAST( DrawChar ) {
 
 	J_S_ASSERT_ARG_MIN(1);
 
-	FT_Face face = (FT_Face)JS_GetPrivate(cx, J_FOBJ);
+	FT_Face face;
+	face = (FT_Face)JS_GetPrivate(cx, J_FOBJ);
 	J_S_ASSERT_RESOURCE(face);
 
 	J_S_ASSERT( face->size->metrics.height > 0, "Invalid font size." );
 
-	JSString *jsstr = JS_ValueToString(cx, J_FARG(1));
+	JSString *jsstr;
+	jsstr = JS_ValueToString(cx, J_FARG(1));
 	J_S_ASSERT( jsstr != NULL, "Invalid string." );
 	J_S_ASSERT( J_STRING_LENGTH(jsstr) == 1, "Invalid char" );
-	jschar *str = JS_GetStringChars(jsstr);
+	jschar *str;
+	str = JS_GetStringChars(jsstr);
 	J_S_ASSERT( str != NULL, "Invalid string." );
 
 	FTCHK( FT_Load_Char(face, str[0], FT_LOAD_RENDER) );
 
-	int width = face->glyph->bitmap.width;
-	int height = face->glyph->bitmap.rows;
+	int width;
+	width = face->glyph->bitmap.width;
+	int height;
+	height = face->glyph->bitmap.rows;
 
-	size_t bufLength = width * height * 1; // 1 channel
+	size_t bufLength;
+	bufLength = width * height * 1; // 1 channel
 
-	void *buf = JS_malloc(cx, bufLength);
+	void *buf;
+	buf = JS_malloc(cx, bufLength);
 
 	jsval blobVal;
 	J_CHK( J_NewBlob(cx, buf, bufLength, &blobVal) );
@@ -193,16 +200,20 @@ DEFINE_FUNCTION_FAST( DrawString ) {
 
 	J_S_ASSERT_ARG_MIN(1);
 
-	FT_Face face = (FT_Face)JS_GetPrivate(cx, J_FOBJ);
+	FT_Face face;
+	face = (FT_Face)JS_GetPrivate(cx, J_FOBJ);
 	J_S_ASSERT_RESOURCE(face);
 
 	J_S_ASSERT( face->size->metrics.height > 0, "Invalid font size." );
 
-	JSString *jsstr = JS_ValueToString(cx, J_FARG(1));
+	JSString *jsstr;
+	jsstr = JS_ValueToString(cx, J_FARG(1));
 	J_S_ASSERT( jsstr != NULL, "Invalid string." );
-	jschar *str = JS_GetStringChars(jsstr);
+	jschar *str;
+	str = JS_GetStringChars(jsstr);
 	J_S_ASSERT( str != NULL, "Invalid string." );
-	size_t strlen = J_STRING_LENGTH(jsstr);
+	size_t strlen;
+	strlen = J_STRING_LENGTH(jsstr);
 
 	bool keepTrailingSpace;
 	keepTrailingSpace = false;
@@ -317,8 +328,10 @@ DEFINE_FUNCTION_FAST( DrawString ) {
 
    // here, text extents from (0,0) to (posX,posY)
 
-	int width = (posX >> 6) + horizontalPadding * 2; // * 2 because left and right border
-	int height = (posY >> 6) + verticalPadding * 2; // ...
+	int width;
+	width = (posX >> 6) + horizontalPadding * 2; // * 2 because left and right border
+	int height;
+	height = (posY >> 6) + verticalPadding * 2; // ...
 
 	if ( getWidthOnly ) {
 

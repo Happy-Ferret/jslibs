@@ -54,10 +54,12 @@ DEFINE_CONSTRUCTOR() {
 	const char *prngName;
 	J_CHK( JsvalToString(cx, &argv[0], &prngName) );
 
-	int prngIndex = find_prng(prngName);
+	int prngIndex;
+	prngIndex = find_prng(prngName);
 	J_S_ASSERT_1( prngIndex != -1, "prng %s is not available", prngName );
 
-	PrngPrivate *privateData = (PrngPrivate*)malloc( sizeof(PrngPrivate) );
+	PrngPrivate *privateData;
+	privateData = (PrngPrivate*)malloc( sizeof(PrngPrivate) );
 	J_S_ASSERT_ALLOC( privateData );
 
 	privateData->prng = prng_descriptor[prngIndex];
@@ -100,15 +102,18 @@ DEFINE_CALL() {
 
 	J_S_ASSERT_ARG_MIN( 1 );
 	J_S_ASSERT_CLASS( thisObj, _class );
-	PrngPrivate *privateData = (PrngPrivate *)JS_GetPrivate( cx, thisObj );
+	PrngPrivate *privateData;
+	privateData = (PrngPrivate *)JS_GetPrivate( cx, thisObj );
 	J_S_ASSERT_RESOURCE( privateData );
 
 	size_t readCount;
 	J_CHK( JsvalToUInt(cx, argv[0], &readCount) );
 
-	char *pr = (char*)JS_malloc( cx, readCount );
+	char *pr;
+	pr = (char*)JS_malloc( cx, readCount );
 	J_S_ASSERT_ALLOC( pr );
-	unsigned long hasRead = privateData->prng.read( (unsigned char*)pr, readCount, &privateData->state );
+	unsigned long hasRead;
+	hasRead = privateData->prng.read( (unsigned char*)pr, readCount, &privateData->state );
 	J_S_ASSERT( hasRead == readCount, "unable to read prng." );
 
 	J_CHK( J_NewBlob( cx, pr, hasRead, rval ) );
@@ -125,7 +130,8 @@ DEFINE_FUNCTION( AddEntropy ) {
 
 	J_S_ASSERT_ARG_MIN( 1 );
 	J_S_ASSERT_THIS_CLASS();
-	PrngPrivate *privateData = (PrngPrivate *)JS_GetPrivate( cx, obj );
+	PrngPrivate *privateData;
+	privateData = (PrngPrivate *)JS_GetPrivate( cx, obj );
 	J_S_ASSERT_RESOURCE( privateData );
 
 	const char *entropy;
@@ -151,11 +157,13 @@ DEFINE_FUNCTION( AutoEntropy ) {
 
 	J_S_ASSERT_ARG_MIN( 1 );
 	J_S_ASSERT_CLASS( obj, _class );
-	PrngPrivate *privateData = (PrngPrivate *)JS_GetPrivate( cx, obj );
+	PrngPrivate *privateData;
+	privateData = (PrngPrivate *)JS_GetPrivate( cx, obj );
 	J_S_ASSERT_RESOURCE( privateData );
 	size_t bits;
 	J_CHK( JsvalToUInt(cx, argv[0], &bits) );
-	int err = rng_make_prng( bits, find_prng(privateData->prng.name), &privateData->state, NULL );
+	int err;
+	err = rng_make_prng( bits, find_prng(privateData->prng.name), &privateData->state, NULL );
 	if ( err != CRYPT_OK )
 		return ThrowCryptError(cx, err);
 	return JS_TRUE;
@@ -174,13 +182,18 @@ DEFINE_FUNCTION( AutoEntropy ) {
 DEFINE_PROPERTY( stateGetter ) {
 
 	J_S_ASSERT_CLASS( obj, _class );
-	PrngPrivate *privateData = (PrngPrivate *)JS_GetPrivate( cx, obj );
+	PrngPrivate *privateData;
+	privateData = (PrngPrivate *)JS_GetPrivate( cx, obj );
 	J_S_ASSERT_RESOURCE( privateData );
 
-	unsigned long size = privateData->prng.export_size;
-	char *stateData = (char*)JS_malloc(cx, size);
-	unsigned long stateLength = size;
-	int err = privateData->prng.pexport((unsigned char *)stateData, &stateLength, &privateData->state);
+	unsigned long size;
+	size = privateData->prng.export_size;
+	char *stateData;
+	stateData = (char*)JS_malloc(cx, size);
+	unsigned long stateLength;
+	stateLength = size;
+	int err;
+	err = privateData->prng.pexport((unsigned char *)stateData, &stateLength, &privateData->state);
 	if ( err != CRYPT_OK )
 		return ThrowCryptError(cx, err);
 	J_S_ASSERT( stateLength == size, "Invalid export size." );
@@ -193,14 +206,16 @@ DEFINE_PROPERTY( stateGetter ) {
 DEFINE_PROPERTY( stateSetter ) {
 
 	J_S_ASSERT_CLASS( obj, _class );
-	PrngPrivate *privateData = (PrngPrivate *)JS_GetPrivate( cx, obj );
+	PrngPrivate *privateData;
+	privateData = (PrngPrivate *)JS_GetPrivate( cx, obj );
 	J_S_ASSERT_RESOURCE( privateData );
 
 	const char *stateData;
 	size_t stateLength;
 	J_CHK( JsvalToStringAndLength(cx, vp, &stateData, &stateLength) );
 	J_S_ASSERT( stateLength == privateData->prng.export_size, "Invalid import size." );
-	int err = privateData->prng.pimport((unsigned char *)stateData, stateLength, &privateData->state);
+	int err;
+	err = privateData->prng.pimport((unsigned char *)stateData, stateLength, &privateData->state);
 	if ( err != CRYPT_OK )
 		return ThrowCryptError(cx, err);
 	return JS_TRUE;
@@ -215,7 +230,8 @@ DEFINE_PROPERTY( stateSetter ) {
 DEFINE_PROPERTY( name ) {
 
 	J_S_ASSERT_CLASS( obj, _class );
-	PrngPrivate *privateData = (PrngPrivate *)JS_GetPrivate( cx, obj );
+	PrngPrivate *privateData;
+	privateData = (PrngPrivate *)JS_GetPrivate( cx, obj );
 	J_S_ASSERT_RESOURCE( privateData );
 
 	*vp = STRING_TO_JSVAL( JS_NewStringCopyZ(cx,privateData->prng.name) );

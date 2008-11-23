@@ -70,10 +70,12 @@ DEFINE_CONSTRUCTOR() {
 	const char *hashName;
 	J_CHK( JsvalToString(cx, &argv[0], &hashName) );
 
-	int hashIndex = find_hash(hashName);
+	int hashIndex;
+	hashIndex = find_hash(hashName);
 	J_S_ASSERT_1( hashIndex != -1, "hash %s is not available", hashName );
 
-	HashPrivate *privateData = (HashPrivate*)malloc( sizeof(HashPrivate) );
+	HashPrivate *privateData;
+	privateData = (HashPrivate*)malloc( sizeof(HashPrivate) );
 	J_S_ASSERT_ALLOC( privateData );
 
 	privateData->descriptor = &hash_descriptor[hashIndex];
@@ -104,7 +106,8 @@ DEFINE_FUNCTION( Init ) {
 	J_S_ASSERT_THIS_CLASS();
 	J_S_ASSERT_ARG_MAX( 0 );
 
-	HashPrivate *privateData = (HashPrivate *)JS_GetPrivate(cx, obj);
+	HashPrivate *privateData;
+	privateData = (HashPrivate *)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( privateData );
 
 	int err;
@@ -128,7 +131,8 @@ DEFINE_FUNCTION( Process ) {
 	J_S_ASSERT_ARG_MIN( 1 );
 	J_S_ASSERT_STRING( argv[0] );
 
-	HashPrivate *privateData = (HashPrivate *)JS_GetPrivate(cx, obj);
+	HashPrivate *privateData;
+	privateData = (HashPrivate *)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( privateData );
 
 	int err;
@@ -165,8 +169,10 @@ DEFINE_FUNCTION( Done ) {
 	HashPrivate *privateData = (HashPrivate *)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( privateData );
 
-	unsigned long outLength = privateData->descriptor->hashsize;
-	char *out = (char *)JS_malloc( cx, outLength );
+	unsigned long outLength;
+	outLength = privateData->descriptor->hashsize;
+	char *out;
+	out = (char *)JS_malloc( cx, outLength );
 	J_S_ASSERT_ALLOC( out );
 	int err;
 	err = privateData->descriptor->done(&privateData->state, (unsigned char*)out); // Terminate the hash to get the digest
@@ -203,13 +209,16 @@ DEFINE_CALL() {
 	J_S_ASSERT_ARG_MIN( 1 );
 	J_S_ASSERT_STRING( argv[0] );
 
-	HashPrivate *privateData = (HashPrivate *)JS_GetPrivate( cx, thisObj );
+	HashPrivate *privateData;
+	privateData = (HashPrivate *)JS_GetPrivate( cx, thisObj );
 	J_S_ASSERT_RESOURCE( privateData );
 
 	int err;
 
-	unsigned long outLength = privateData->descriptor->hashsize;
-	char *out = (char *)JS_malloc( cx, outLength );
+	unsigned long outLength;
+	outLength = privateData->descriptor->hashsize;
+	char *out;
+	out = (char *)JS_malloc( cx, outLength );
 	J_S_ASSERT_ALLOC( out );
 
 	const char *in;
@@ -250,9 +259,11 @@ DEFINE_CALL() {
 DEFINE_PROPERTY( name ) {
 
 	J_S_ASSERT_CLASS( obj, _class );
-	HashPrivate *privateData = (HashPrivate *)JS_GetPrivate(cx, obj);
+	HashPrivate *privateData;
+	privateData = (HashPrivate *)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( privateData );
-	JSString *jsstr = JS_NewStringCopyZ(cx, privateData->descriptor->name );
+	JSString *jsstr;
+	jsstr = JS_NewStringCopyZ(cx, privateData->descriptor->name );
 	J_S_ASSERT_ALLOC( jsstr );
 	*vp = STRING_TO_JSVAL( jsstr );
 	return JS_TRUE;
@@ -266,7 +277,8 @@ DEFINE_PROPERTY( name ) {
 DEFINE_PROPERTY( blockSize ) {
 
 	J_S_ASSERT_CLASS( obj, _class );
-	HashPrivate *privateData = (HashPrivate *)JS_GetPrivate(cx, obj);
+	HashPrivate *privateData;
+	privateData = (HashPrivate *)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( privateData );
 	*vp = INT_TO_JSVAL( privateData->descriptor->blocksize );
 	return JS_TRUE;
@@ -280,7 +292,8 @@ DEFINE_PROPERTY( blockSize ) {
 DEFINE_PROPERTY( length ) {
 
 	J_S_ASSERT_CLASS( obj, _class );
-	HashPrivate *privateData = (HashPrivate *)JS_GetPrivate(cx, obj);
+	HashPrivate *privateData;
+	privateData = (HashPrivate *)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( privateData );
 	*vp = INT_TO_JSVAL( privateData->descriptor->hashsize );
 	return JS_TRUE;
@@ -294,7 +307,8 @@ DEFINE_PROPERTY( length ) {
 DEFINE_PROPERTY( inputLength ) {
 
 	J_S_ASSERT_CLASS( obj, _class );
-	HashPrivate *privateData = (HashPrivate *)JS_GetPrivate(cx, obj);
+	HashPrivate *privateData;
+	privateData = (HashPrivate *)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( privateData );
 	*vp = INT_TO_JSVAL( 	privateData->inputLength );
 	return JS_TRUE;
@@ -318,7 +332,8 @@ DEFINE_FUNCTION( CipherHash ) {
 	J_S_ASSERT_ARG_MIN(1);
 	const char *cipherName;
 	J_CHK( JsvalToString(cx, &argv[0], &cipherName) );
-	int cipherIndex = find_cipher(cipherName);
+	int cipherIndex;
+	cipherIndex = find_cipher(cipherName);
 	J_S_ASSERT_1( cipherIndex >= 0, "Cipher not found: %s", cipherName );
 	int err;
 	if ((err = chc_register(cipherIndex)) != CRYPT_OK)

@@ -58,7 +58,8 @@ DEFINE_FUNCTION( Accept ) {
 //	if ( setjmp(env) == 0 ) {
 //	}
 
-	int rc = FCGX_Accept_r(&_request);
+	int rc;
+	rc = FCGX_Accept_r(&_request);
 	*rval = INT_TO_JSVAL( rc );
 	return JS_TRUE;
 	JL_BAD;
@@ -104,8 +105,10 @@ DEFINE_FUNCTION( Read ) {
 	J_S_ASSERT_ARG_MIN( 1 );
 	size_t len;
 	J_CHK( JsvalToUInt(cx, argv[0], &len) );
-	char* str = (char*)JS_malloc(cx, len + 1);
-	int result = FCGX_GetStr( str, len, _request.in );
+	char* str;
+	str = (char*)JS_malloc(cx, len + 1);
+	int result;
+	result = FCGX_GetStr( str, len, _request.in );
 	if ( result = 0 ) {
 		
 		JS_free(cx, str);
@@ -113,7 +116,8 @@ DEFINE_FUNCTION( Read ) {
 		return JS_TRUE;
 	}
 	str[result] = '\0';
-	JSString *jsstr = JS_NewString(cx, str, result);
+	JSString *jsstr;
+	jsstr = JS_NewString(cx, str, result);
 	J_S_ASSERT_ALLOC( jsstr );
 	*rval = STRING_TO_JSVAL( jsstr );
 	return JS_TRUE;
@@ -125,7 +129,8 @@ DEFINE_FUNCTION( Write ) {
 	const char *str;
 	size_t len;
 	J_CHK( JsvalToStringAndLength(cx, &argv[0], &str, &len) );
-	int result = FCGX_PutStr(str, len, _request.out);
+	int result;
+	result = FCGX_PutStr(str, len, _request.out);
 	if ( result >= 0 && (size_t)result < len ) { // returns unwritten data
 
 		JSString *jsstr = JS_NewDependentString(cx, JSVAL_TO_STRING(argv[0]), result, len - result);
@@ -150,7 +155,8 @@ DEFINE_FUNCTION( Log ) {
 	const char *str;
 	size_t len;
 	J_CHK( JsvalToStringAndLength(cx, &argv[0], &str, &len) );
-	int result = FCGX_PutStr(str, len, _request.err);
+	int result;
+	result = FCGX_PutStr(str, len, _request.err);
 	J_S_ASSERT( result != -1, "Unable to write to the log." );
 	FCGX_FFlush(_request.err);
 	return JS_TRUE;
@@ -170,7 +176,8 @@ DEFINE_FUNCTION( URLEncode ) {
 	const char *src;
 	size_t srcLen;
 	J_CHK( JsvalToStringAndLength(cx, &argv[0], &src, &srcLen) );
-	char *dest = (char *)JS_malloc(cx, 3 * srcLen + 1);
+	char *dest;
+	dest = (char *)JS_malloc(cx, 3 * srcLen + 1);
 	J_S_ASSERT_ALLOC( dest );
 
 	const char *it;
@@ -201,7 +208,8 @@ DEFINE_FUNCTION( URLDecode ) {
 	const char *src;
 	size_t srcLen;
 	J_CHK( JsvalToStringAndLength(cx, &argv[0], &src, &srcLen) );
-	char *dest = (char *)JS_malloc(cx, srcLen + 1);
+	char *dest;
+	dest = (char *)JS_malloc(cx, srcLen + 1);
 	J_S_ASSERT_ALLOC( dest );
 
 	const char *it;

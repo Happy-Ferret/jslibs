@@ -49,7 +49,8 @@ JSBool SlotGetPrng(JSContext *cx, JSObject *obj, int *prngIndex, prng_state **pr
 	J_CHK( JS_GetReservedSlot(cx, obj, ASYMMETRIC_CIPHER_PRNG_SLOT, &prngVal) );
 	J_S_ASSERT_OBJECT(	prngVal );
 	J_S_ASSERT_CLASS( JSVAL_TO_OBJECT(prngVal), classPrng );
-	PrngPrivate *prngPrivate = (PrngPrivate *)JS_GetPrivate(cx, JSVAL_TO_OBJECT(prngVal));
+	PrngPrivate *prngPrivate;
+	prngPrivate = (PrngPrivate *)JS_GetPrivate(cx, JSVAL_TO_OBJECT(prngVal));
 	J_S_ASSERT_RESOURCE( prngPrivate );
 	*prngState = &prngPrivate->state;
 	*prngIndex = find_prng(prngPrivate->prng.name);
@@ -123,14 +124,16 @@ DEFINE_CONSTRUCTOR() { // ( cipherName, hashName [, prngObject] [, PKCSVersion] 
 	else
 		J_REPORT_ERROR_1("Invalid asymmetric cipher %s.", asymmetricCipherName);
 
-	AsymmetricCipherPrivate *pv = (AsymmetricCipherPrivate *)malloc( sizeof(AsymmetricCipherPrivate) );
+	AsymmetricCipherPrivate *pv;
+	pv = (AsymmetricCipherPrivate *)malloc( sizeof(AsymmetricCipherPrivate) );
 	J_S_ASSERT_ALLOC( pv );
 
 	pv->cipher = asymmetricCipher;
 
 	const char *hashName;
 	J_CHK( JsvalToString(cx, &argv[1], &hashName) );
-	int hashIndex = find_hash(hashName);
+	int hashIndex;
+	hashIndex = find_hash(hashName);
 	J_S_ASSERT_1( hashIndex != -1, "hash %s is not available.", hashName );
 	pv->hashDescriptor = &hash_descriptor[hashIndex];
 
@@ -187,7 +190,8 @@ DEFINE_FUNCTION( CreateKeys ) { // ( bitsSize )
 
 	J_S_ASSERT_ARG_MIN( 1 );
 	J_S_ASSERT_CLASS( obj, _class );
-	AsymmetricCipherPrivate *pv = (AsymmetricCipherPrivate *)JS_GetPrivate(cx, obj);
+	AsymmetricCipherPrivate *pv;
+	pv = (AsymmetricCipherPrivate *)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( pv );
 
 	prng_state *prngState;
@@ -249,7 +253,8 @@ DEFINE_FUNCTION( Encrypt ) { // ( data [, lparam] )
 
 	J_S_ASSERT_ARG_MIN( 1 );
 	J_S_ASSERT_CLASS( obj, _class );
-	AsymmetricCipherPrivate *pv = (AsymmetricCipherPrivate *)JS_GetPrivate( cx, obj );
+	AsymmetricCipherPrivate *pv;
+	pv = (AsymmetricCipherPrivate *)JS_GetPrivate( cx, obj );
 	J_S_ASSERT_RESOURCE( pv );
 	J_S_ASSERT( pv->hasKey, "No key found." );
 
@@ -257,7 +262,8 @@ DEFINE_FUNCTION( Encrypt ) { // ( data [, lparam] )
 	int prngIndex;
 	J_CHK( SlotGetPrng(cx, obj, &prngIndex, &prngState) );
 
-	int hashIndex = find_hash(pv->hashDescriptor->name);
+	int hashIndex;
+	hashIndex = find_hash(pv->hashDescriptor->name);
 
 	const char *in;
 	size_t inLength;
@@ -320,7 +326,8 @@ DEFINE_FUNCTION( Decrypt ) { // ( encryptedData [, lparam] )
 
 	J_S_ASSERT_ARG_MIN( 1 );
 	J_S_ASSERT_CLASS( obj, _class );
-	AsymmetricCipherPrivate *pv = (AsymmetricCipherPrivate *)JS_GetPrivate( cx, obj );
+	AsymmetricCipherPrivate *pv;
+	pv = (AsymmetricCipherPrivate *)JS_GetPrivate( cx, obj );
 	J_S_ASSERT_RESOURCE( pv );
 	J_S_ASSERT( pv->hasKey, "No key found." );
 
@@ -389,7 +396,8 @@ DEFINE_FUNCTION( Sign ) { // ( data [, saltLength] )
 
 	J_S_ASSERT_ARG_MIN( 1 );
 	J_S_ASSERT_CLASS( obj, _class );
-	AsymmetricCipherPrivate *pv = (AsymmetricCipherPrivate *)JS_GetPrivate( cx, obj );
+	AsymmetricCipherPrivate *pv;
+	pv = (AsymmetricCipherPrivate *)JS_GetPrivate( cx, obj );
 	J_S_ASSERT_RESOURCE( pv );
 
 	J_S_ASSERT( pv->hasKey, "No key found." );
@@ -452,7 +460,8 @@ DEFINE_FUNCTION( VerifySignature ) { // ( data, signature [, saltLength] )
 
 	J_S_ASSERT_ARG_MIN( 2 );
 	J_S_ASSERT_CLASS( obj, _class );
-	AsymmetricCipherPrivate *pv = (AsymmetricCipherPrivate *)JS_GetPrivate( cx, obj );
+	AsymmetricCipherPrivate *pv;
+	pv = (AsymmetricCipherPrivate *)JS_GetPrivate( cx, obj );
 	J_S_ASSERT_RESOURCE( pv );
 	J_S_ASSERT( pv->hasKey, "No key found." );
 
@@ -510,7 +519,8 @@ DEFINE_FUNCTION( VerifySignature ) { // ( data, signature [, saltLength] )
 DEFINE_PROPERTY( blockLength ) {
 
 	J_S_ASSERT_CLASS( obj, _class );
-	AsymmetricCipherPrivate *pv = (AsymmetricCipherPrivate *)JS_GetPrivate( cx, obj );
+	AsymmetricCipherPrivate *pv;
+	pv = (AsymmetricCipherPrivate *)JS_GetPrivate( cx, obj );
 	J_S_ASSERT_RESOURCE( pv );
 	J_S_ASSERT( pv->hasKey, "No key found." );
 	int blockLength;
@@ -539,7 +549,8 @@ DEFINE_PROPERTY( blockLength ) {
 DEFINE_PROPERTY( keySize ) {
 
 	J_S_ASSERT_CLASS( obj, _class );
-	AsymmetricCipherPrivate *pv = (AsymmetricCipherPrivate *)JS_GetPrivate( cx, obj );
+	AsymmetricCipherPrivate *pv;
+	pv = (AsymmetricCipherPrivate *)JS_GetPrivate( cx, obj );
 	J_S_ASSERT_RESOURCE( pv );
 	J_S_ASSERT( pv->hasKey, "No key found." );
 	int keySize;
@@ -573,7 +584,8 @@ DEFINE_PROPERTY( keySize ) {
 DEFINE_PROPERTY( keySetter ) {
 
 	J_S_ASSERT_CLASS( obj, _class );
-	AsymmetricCipherPrivate *pv = (AsymmetricCipherPrivate *)JS_GetPrivate( cx, obj );
+	AsymmetricCipherPrivate *pv;
+	pv = (AsymmetricCipherPrivate *)JS_GetPrivate( cx, obj );
 	J_S_ASSERT_RESOURCE( pv );
 
 	int type;
@@ -614,7 +626,8 @@ DEFINE_PROPERTY( keySetter ) {
 DEFINE_PROPERTY( keyGetter ) {
 
 	J_S_ASSERT_CLASS( obj, _class );
-	AsymmetricCipherPrivate *pv = (AsymmetricCipherPrivate *)JS_GetPrivate( cx, obj );
+	AsymmetricCipherPrivate *pv;
+	pv = (AsymmetricCipherPrivate *)JS_GetPrivate( cx, obj );
 	J_S_ASSERT_RESOURCE( pv );
 	J_S_ASSERT( pv->hasKey, "No key found." );
 

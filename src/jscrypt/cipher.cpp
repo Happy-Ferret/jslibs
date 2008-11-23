@@ -173,14 +173,17 @@ DEFINE_CONSTRUCTOR() {
 	if ( argc >= 6 && !JSVAL_IS_VOID( argv[5] ) )
 		J_CHK( JsvalToInt(cx, argv[5], &numRounds) );
 
-	CipherPrivate *privateData = (CipherPrivate*)malloc( sizeof(CipherPrivate) );
+	CipherPrivate *privateData;
+	privateData = (CipherPrivate*)malloc( sizeof(CipherPrivate) );
 	J_S_ASSERT_ALLOC( privateData );
 
 	privateData->mode = mode;
 
-	int cipherIndex = find_cipher(cipherName);
+	int cipherIndex;
+	cipherIndex = find_cipher(cipherName);
 	J_S_ASSERT_1( cipherIndex != -1, "cipher %s is not available", cipherName );
-	ltc_cipher_descriptor *cipher = &cipher_descriptor[cipherIndex];
+	ltc_cipher_descriptor *cipher;
+	cipher = &cipher_descriptor[cipherIndex];
 
 	privateData->descriptor = cipher;
 	J_S_ASSERT_1( cipher->test() == CRYPT_OK, "%s cipher test failed.", cipherName );
@@ -271,14 +274,16 @@ DEFINE_FUNCTION( Encrypt ) {
 
 	J_S_ASSERT_THIS_CLASS();
 	J_S_ASSERT_ARG_MIN( 1 );
-	CipherPrivate *privateData = (CipherPrivate *)JS_GetPrivate( cx, obj );
+	CipherPrivate *privateData;
+	privateData = (CipherPrivate *)JS_GetPrivate( cx, obj );
 	J_S_ASSERT_RESOURCE( privateData );
 
 	const char *pt;
 	size_t ptLength;
 	J_CHK( JsvalToStringAndLength(cx, &argv[0], &pt, &ptLength) ); // warning: GC on the returned buffer !
 
-	char *ct = (char *)JS_malloc( cx, ptLength +1 );
+	char *ct;
+	ct = (char *)JS_malloc( cx, ptLength +1 );
 	J_S_ASSERT_ALLOC( ct );
 	ct[ptLength] = '\0';
 
@@ -327,14 +332,16 @@ DEFINE_FUNCTION( Decrypt ) {
 
 	J_S_ASSERT_ARG_MIN( 1 );
 	J_S_ASSERT_CLASS( obj, _class );
-	CipherPrivate *privateData = (CipherPrivate *)JS_GetPrivate( cx, obj );
+	CipherPrivate *privateData;
+	privateData = (CipherPrivate *)JS_GetPrivate( cx, obj );
 	J_S_ASSERT_RESOURCE( privateData );
 
 	const char *ct;
 	size_t ctLength;
 	J_CHK( JsvalToStringAndLength(cx, &argv[0], &ct, &ctLength) ); // warning: GC on the returned buffer !
 
-	char *pt = (char *)JS_malloc( cx, ctLength +1 );
+	char *pt;
+	pt = (char *)JS_malloc( cx, ctLength +1 );
 	J_S_ASSERT_ALLOC( pt );
 	pt[ctLength] = '\0';
 
@@ -383,7 +390,8 @@ DEFINE_FUNCTION( Decrypt ) {
 DEFINE_PROPERTY( blockLength ) {
 
 	J_S_ASSERT_CLASS( obj, _class );
-	CipherPrivate *privateData = (CipherPrivate *)JS_GetPrivate( cx, obj );
+	CipherPrivate *privateData;
+	privateData = (CipherPrivate *)JS_GetPrivate( cx, obj );
 	J_S_ASSERT_RESOURCE( privateData );
 	*vp = INT_TO_JSVAL( privateData->descriptor->block_length );
 	return JS_TRUE;
@@ -398,7 +406,8 @@ DEFINE_PROPERTY( blockLength ) {
 DEFINE_PROPERTY( keySize ) {
 
 	J_S_ASSERT_CLASS( obj, _class );
-	CipherPrivate *privateData = (CipherPrivate *)JS_GetPrivate( cx, obj );
+	CipherPrivate *privateData;
+	privateData = (CipherPrivate *)JS_GetPrivate( cx, obj );
 	J_S_ASSERT_RESOURCE( privateData );
 	*vp = INT_TO_JSVAL( privateData->descriptor->keysize );
 	return JS_TRUE;
@@ -413,9 +422,11 @@ DEFINE_PROPERTY( keySize ) {
 DEFINE_PROPERTY( name ) {
 
 	J_S_ASSERT_CLASS( obj, _class );
-	CipherPrivate *privateData = (CipherPrivate *)JS_GetPrivate( cx, obj );
+	CipherPrivate *privateData;
+	privateData = (CipherPrivate *)JS_GetPrivate( cx, obj );
 	J_S_ASSERT_RESOURCE( privateData );
-	JSString *jsstr = JS_NewStringCopyZ(cx, privateData->descriptor->name);
+	JSString *jsstr;
+	jsstr = JS_NewStringCopyZ(cx, privateData->descriptor->name);
 	J_S_ASSERT_ALLOC( jsstr );
 	*vp = STRING_TO_JSVAL( jsstr );
 	return JS_TRUE;
@@ -430,7 +441,8 @@ DEFINE_PROPERTY( name ) {
 DEFINE_PROPERTY( IVSetter ) {
 
 	J_S_ASSERT_CLASS( obj, _class );
-	CipherPrivate *privateData = (CipherPrivate *)JS_GetPrivate( cx, obj );
+	CipherPrivate *privateData;
+	privateData = (CipherPrivate *)JS_GetPrivate( cx, obj );
 	J_S_ASSERT_RESOURCE( privateData );
 
 	const char *IV;
@@ -498,7 +510,8 @@ DEFINE_PROPERTY( IVSetter ) {
 DEFINE_PROPERTY( IVGetter ) {
 
 	J_S_ASSERT_CLASS( obj, _class );
-	CipherPrivate *privateData = (CipherPrivate *)JS_GetPrivate( cx, obj );
+	CipherPrivate *privateData;
+	privateData = (CipherPrivate *)JS_GetPrivate( cx, obj );
 	J_S_ASSERT_RESOURCE( privateData );
 
 	char *IV;

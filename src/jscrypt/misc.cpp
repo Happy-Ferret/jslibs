@@ -37,8 +37,10 @@ DEFINE_FUNCTION( Base64Encode ) {
 	size_t inLength;
 	J_CHK( JsvalToStringAndLength(cx, &argv[0], &in, &inLength) ); // warning: GC on the returned buffer !
 
-	unsigned long outLength = 4 * ((inLength + 2) / 3) +1;
-	char *out = (char *)JS_malloc( cx, outLength +1 );
+	unsigned long outLength;
+	outLength = 4 * ((inLength + 2) / 3) +1;
+	char *out;
+	out = (char *)JS_malloc( cx, outLength +1 );
 	out[outLength] = '\0';
 	J_S_ASSERT_ALLOC( out );
 
@@ -47,7 +49,8 @@ DEFINE_FUNCTION( Base64Encode ) {
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err);
 
-	JSString *jssOutData = JS_NewString( cx, out, outLength );
+	JSString *jssOutData;
+	jssOutData = JS_NewString( cx, out, outLength );
 	J_S_ASSERT( jssOutData != NULL, "unable to create the base64 string." );
 	*rval = STRING_TO_JSVAL(jssOutData);
 
@@ -67,8 +70,10 @@ DEFINE_FUNCTION( Base64Decode ) {
 	size_t inLength;
 	J_CHK( JsvalToStringAndLength(cx, &argv[0], &in, &inLength) ); // warning: GC on the returned buffer !
 
-	unsigned long outLength = 3 * (inLength-2) / 4 +1;
-	char *out = (char *)JS_malloc(cx, outLength +1);
+	unsigned long outLength;
+	outLength = 3 * (inLength-2) / 4 +1;
+	char *out;
+	out = (char *)JS_malloc(cx, outLength +1);
 	J_S_ASSERT_ALLOC( out );
 	out[outLength] = '\0';
 
@@ -100,8 +105,10 @@ DEFINE_FUNCTION( HexEncode ) {
 	size_t inLength;
 	J_CHK( JsvalToStringAndLength(cx, &argv[0], &in, &inLength) ); // warning: GC on the returned buffer !
 
-	unsigned long outLength = inLength * 2;
-	char *out = (char *)JS_malloc(cx, outLength +1);
+	unsigned long outLength;
+	outLength = inLength * 2;
+	char *out;
+	out = (char *)JS_malloc(cx, outLength +1);
 	J_S_ASSERT_ALLOC( out );
 	out[outLength] = '\0';
 
@@ -113,7 +120,8 @@ DEFINE_FUNCTION( HexEncode ) {
 		out[i*2+1] = hex[ c & 0xF ];
 	}
 
-	JSString *jssOutData = JS_NewString( cx, out, outLength );
+	JSString *jssOutData;
+	jssOutData = JS_NewString( cx, out, outLength );
 	J_S_ASSERT( jssOutData != NULL, "unable to create the hex string." );
 	*rval = STRING_TO_JSVAL(jssOutData);
 
@@ -146,8 +154,10 @@ DEFINE_FUNCTION( HexDecode ) {
 	size_t inLength;
 	J_CHK( JsvalToStringAndLength(cx, &argv[0], &in, &inLength) ); // warning: GC on the returned buffer !
 
-	unsigned long outLength = inLength / 2;
-	char *out = (char *)JS_malloc(cx, outLength +1);
+	unsigned long outLength;
+	outLength = inLength / 2;
+	char *out;
+	out = (char *)JS_malloc(cx, outLength +1);
 	J_S_ASSERT_ALLOC( out );
 	out[outLength] = '\0';
 
