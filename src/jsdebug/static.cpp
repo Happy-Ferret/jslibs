@@ -227,7 +227,8 @@ _DumpStats(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 			J_S_ASSERT_2( gOutFile, "can't open %s: %s", fileName, strerror(errno));
 		}
 	}
-	FILE *gErrFile = gOutFile;
+	FILE *gErrFile;
+	gErrFile = gOutFile;
 
 
     for (i = 0 +1; i < argc; i++) {
@@ -966,7 +967,8 @@ DEFINE_FUNCTION( DumpObjectPrivate ) {
 
 	J_S_ASSERT_ARG_MIN( 1 );
 	J_S_ASSERT_OBJECT( J_ARG( 1 ) );
-	unsigned int n = (unsigned int)JS_GetPrivate(cx, JSVAL_TO_OBJECT( J_ARG( 1 ) ));
+	unsigned int n;
+	n = (unsigned int)JS_GetPrivate(cx, JSVAL_TO_OBJECT( J_ARG( 1 ) ));
 	J_CHK( JS_NewNumberValue(cx, (double)n, J_RVAL) );
 	return JS_TRUE;
 	JL_BAD;
