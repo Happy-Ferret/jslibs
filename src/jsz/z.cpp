@@ -194,7 +194,8 @@ DEFINE_CALL() {
 	if ( argc >= 2 )
 		JS_ValueToBoolean( cx, argv[1], &forceFinish );
 
-	int flushType = inputLength == 0 || forceFinish == JS_TRUE ? Z_FINISH : Z_SYNC_FLUSH;
+	int flushType;
+	flushType = inputLength == 0 || forceFinish == JS_TRUE ? Z_FINISH : Z_SYNC_FLUSH;
 
 	buffer.SetOptimalDefaultLength( method == DEFLATE ? (size_t)(12 + 1.001f * stream->avail_in) : (size_t)(1.5f * stream->avail_in) ); // if DEFLATE, dest. buffer must be at least 0.1% larger than sourceLen plus 12 bytes
 
@@ -220,7 +221,8 @@ DEFINE_CALL() {
 	        );
 
 // assamble chunks
-	unsigned char *outputData = (unsigned char*)JS_malloc( cx, outputLength +1 ); // +1 for '\0' char
+	unsigned char *outputData;
+	outputData = (unsigned char*)JS_malloc( cx, outputLength +1 ); // +1 for '\0' char
 	outputData[outputLength] = 0; // (TBD) understand WHY !? outputLength info is not enough ??
 	buffer.Read(outputData);
 	J_CHK( J_NewBlob( cx, (char*)outputData, outputLength, rval ) );

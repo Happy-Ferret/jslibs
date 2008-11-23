@@ -101,12 +101,16 @@ JSBool Task(JSContext *cx, Private *pv) {
 	J_CHK( UnserializeJsval(cx, &pv->serializedCode, &code) ); // no need to mutex this because this is the only place that access pv->serializedCode
 	SerializerFree(&pv->serializedCode);
 
-	JSFunction *fun = JS_ValueToFunction(cx, code);
-	JSObject *funObj = JS_GetFunctionObject(fun);
-	JSObject *globalObj = JS_GetGlobalObject(cx);
+	JSFunction *fun;
+	fun = JS_ValueToFunction(cx, code);
+	JSObject *funObj;
+	funObj = JS_GetFunctionObject(fun);
+	JSObject *globalObj;
+	globalObj = JS_GetGlobalObject(cx);
 	J_CHK( JS_SetParent(cx, funObj, globalObj) ); // re-scope the function
 
-	size_t index = 0;
+	size_t index;
+	index = 0;
 
 	for (;;) {
 
@@ -207,7 +211,7 @@ JLThreadFuncDecl ThreadProc( void *threadArg ) {
 
 	JSContext *cx = CreateHost(-1, -1, 0);
 	if ( cx == NULL )
-		return -1;
+		return 0;
 
 	J_CHK( InitHost(cx, _unsafeMode, NULL, TaskStdErrHostOutput, &errorBuffer) );
 
@@ -326,7 +330,8 @@ bad:
 DEFINE_FUNCTION_FAST( Request ) {
 
 	J_S_ASSERT_ARG_MIN(1);
-	Private *pv = (Private*)JS_GetPrivate(cx, J_FOBJ);
+	Private *pv;
+	pv = (Private*)JS_GetPrivate(cx, J_FOBJ);
 	J_S_ASSERT_RESOURCE(pv);
 
 	Serialized serializedRequest;
@@ -383,7 +388,8 @@ DEFINE_FUNCTION_FAST( Response ) {
 		return JS_TRUE;
 	}
 
-	Serialized serializedResponse = (Serialized)QueueShift(&pv->responseList);
+	Serialized serializedResponse;
+	serializedResponse = (Serialized)QueueShift(&pv->responseList);
 	pv->pendingResponseCount--;
 
 	if ( SerializerIsEmpty( &serializedResponse ) ) { // an exception is signaled

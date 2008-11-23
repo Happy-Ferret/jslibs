@@ -135,7 +135,8 @@ DEFINE_FUNCTION_FAST( Aux ) {
 
 	J_S_ASSERT_ARG_MIN(1);
 	J_S_ASSERT_OBJECT( J_FARG(1) );
-	JSObject *object = JSVAL_TO_OBJECT(J_FARG(1));
+	JSObject *object;
+	object = JSVAL_TO_OBJECT(J_FARG(1));
 	J_S_ASSERT_CLASS( object, _class );
 	J_CHK( JS_GetReservedSlot( cx, object, AUX_SLOT, J_FRVAL ) );
 	if ( J_FARG_ISDEF(2) )
