@@ -173,14 +173,21 @@ DEFINE_FUNCTION( DecodeJpegImage ) {
 // read the image
 	jpeg_start_decompress(&cinfo);
 
-	int width = cinfo.output_width;
-	int height = cinfo.output_height;
-	int bytePerRow = cinfo.output_width * cinfo.output_components;
-	int size = height * bytePerRow;
-	int channels = cinfo.output_components;
+	int width;
+	width = cinfo.output_width;
+	int height;
+	height = cinfo.output_height;
+	int bytePerRow;
+	bytePerRow = cinfo.output_width * cinfo.output_components;
+	int size;
+	size = height * bytePerRow;
+	int channels;
+	channels = cinfo.output_components;
 
-	int length = height * bytePerRow;
-	JOCTET * data = (JOCTET *)JS_malloc(cx, length);
+	int length;
+	length = height * bytePerRow;
+	JOCTET * data;
+	data = (JOCTET *)JS_malloc(cx, length);
 	J_S_ASSERT_ALLOC(data);
 
 	jsval blobVal;
@@ -280,15 +287,21 @@ DEFINE_FUNCTION( DecodePngImage ) {
 		png_set_expand(desc.png);
    png_read_update_info(desc.png, desc.info); // optional call to update the users info_ptr structure
 
-	png_uint_32 width = png_get_image_width(desc.png, desc.info);
-	png_uint_32 height = png_get_image_height(desc.png, desc.info);
-	png_uint_32 bytePerRow = png_get_rowbytes(desc.png, desc.info);
-	png_byte channels = png_get_channels(desc.png, desc.info);
+	png_uint_32 width;
+	width = png_get_image_width(desc.png, desc.info);
+	png_uint_32 height;
+	height = png_get_image_height(desc.png, desc.info);
+	png_uint_32 bytePerRow;
+	bytePerRow = png_get_rowbytes(desc.png, desc.info);
+	png_byte channels;
+	channels = png_get_channels(desc.png, desc.info);
 
 // read & store
 
-	int length = height * bytePerRow;
-	png_bytep data = (png_bytep)JS_malloc(cx, length);
+	int length;
+	length = height * bytePerRow;
+	png_bytep data;
+	data = (png_bytep)JS_malloc(cx, length);
 	J_S_ASSERT_ALLOC(data);
 
 	jsval blobVal;
@@ -353,7 +366,8 @@ DEFINE_FUNCTION_FAST( EncodePngImage ) {
 	}
 
 	J_S_ASSERT_OBJECT( J_FARG(1) );
-	JSObject *image = JSVAL_TO_OBJECT( J_FARG(1) );
+	JSObject *image;
+	image = JSVAL_TO_OBJECT( J_FARG(1) );
 	int sWidth, sHeight, sChannels;
 	J_CHK( GetPropertyInt(cx, image, "width", &sWidth) );
 	J_CHK( GetPropertyInt(cx, image, "height", &sHeight) );

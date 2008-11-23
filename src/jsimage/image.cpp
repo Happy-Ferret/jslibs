@@ -35,11 +35,13 @@ DEFINE_FUNCTION( Alloc ) {
 	J_S_ASSERT_CLASS(obj, _class);
 	J_S_ASSERT_ARG_MIN(1);
 
-	void *data = JS_GetPrivate(cx, obj);
+	void *data;
+	data = JS_GetPrivate(cx, obj);
 	if ( data != NULL )
 		free(data);
 
-	unsigned int size = JSVAL_TO_INT(argv[0]);
+	unsigned int size;
+	size = JSVAL_TO_INT(argv[0]);
 	data = malloc(size);
 	JS_SetPrivate(cx, obj, data);
 
@@ -52,9 +54,11 @@ DEFINE_CONSTRUCTOR() {
 
 	J_S_ASSERT_CONSTRUCTING();
 	J_S_ASSERT_THIS_CLASS();
-	JSFunction *allocFunction = JS_NewFunction(cx, _Alloc, 0, 0, NULL, "Alloc");
+	JSFunction *allocFunction;
+	allocFunction = JS_NewFunction(cx, _Alloc, 0, 0, NULL, "Alloc");
 	J_S_ASSERT( allocFunction != NULL, "Unable to create allocation function." );
-	JSObject *functionObject = JS_GetFunctionObject(allocFunction);
+	JSObject *functionObject;
+	functionObject = JS_GetFunctionObject(allocFunction);
 	JS_SetReservedSlot(cx, obj, SLOT_FUNCTION_ALLOC, OBJECT_TO_JSVAL(functionObject));
 	return JS_TRUE;
 	JL_BAD;
@@ -81,23 +85,30 @@ DEFINE_FUNCTION( Trim ) {
 	J_CHK( JsvalToIntVector(cx, argv[0], vect, 4, &length) );
 	J_S_ASSERT( length == 4, "Invalid array size." );
 
-	int x = vect[0];
-	int y = vect[1];
-	int x1 = vect[2];
-	int y1 = vect[3];
+	int x;
+	x = vect[0];
+	int y;
+	y = vect[1];
+	int x1;
+	x1 = vect[2];
+	int y1;
+	y1= vect[3];
 
 	jsval tmp;
 	JS_GetProperty(cx, obj, "width", &tmp);
 	J_S_ASSERT_INT( tmp );
-	int width = JSVAL_TO_INT(tmp);
+	int width;
+	width = JSVAL_TO_INT(tmp);
 
 	JS_GetProperty(cx, obj, "height", &tmp);
 	J_S_ASSERT_INT( tmp );
-	int height = JSVAL_TO_INT(tmp);
+	int height;
+	height = JSVAL_TO_INT(tmp);
 
 	JS_GetProperty(cx, obj, "channels", &tmp);
 	J_S_ASSERT_INT( tmp );
-	int channels = JSVAL_TO_INT(tmp);
+	int channels;
+	channels = JSVAL_TO_INT(tmp);
 	// assume that we have 1 Byte/channel
 
 	J_S_ASSERT( !(x<0 || x1<0 || x>width || x1>width || y<0 || y1<0 || y>height || y1>height), "Invalid size." );
@@ -107,10 +118,12 @@ DEFINE_FUNCTION( Trim ) {
 	if ( argc >= 2 )
 		JS_ValueToBoolean(cx, argv[1], &reuseBuffer);
 
-	char *data = (char*)JS_GetPrivate(cx, obj);
+	char *data;
+	data = (char*)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( data );
 
-	char *tmpDataPtr = data;
+	char *tmpDataPtr;
+	tmpDataPtr = data;
 
 	char *newData;
 	if (reuseBuffer)
@@ -120,8 +133,10 @@ DEFINE_FUNCTION( Trim ) {
 		JS_SetPrivate(cx, obj, newData);
 	}
 
-	int newWidth = x1-x;
-	int newHeight = y1-y;
+	int newWidth;
+	newWidth = x1-x;
+	int newHeight;
+	newHeight = y1-y;
 
 	data += channels * (width * y + x); // now, data points to the first byte to displace
 	for ( int i=0; i<newHeight; i++) {
