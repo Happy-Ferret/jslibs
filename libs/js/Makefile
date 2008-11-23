@@ -22,7 +22,7 @@ TARGET_FILES=$(DEST_DIR)libjs.so
 
 all::
 	diff -q ./jsversion.h ./src/jsversion.h || cp ./jsversion.h ./src/
-	echo // > ./src/js-config.h
+	[ -e ./src/js-config.h ] || echo // > ./src/js-config.h
 
 all clean::
 	$(MAKE) -C src -f Makefile.ref $@ $(_MAKE_OPTIONS) XCFLAGS="$(_CFLAGS)"
