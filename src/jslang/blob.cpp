@@ -295,8 +295,29 @@ DEFINE_FUNCTION_FAST( substr ) {
 	size_t dataLength;
 	J_CHK( BlobLength(cx, J_FOBJ, &dataLength) );
 
+
+	jsval arg1;
+	arg1 = J_FARG(1);
 	int start;
-	J_CHK( JsvalToInt(cx, J_FARG(1), &start) );
+	if ( !J_FARG_ISDEF(1) || JSVAL_IS_INT(arg1) && JSVAL_TO_INT(arg1) < 0 || IsNInfinity(cx, arg1) || IsNaN(cx, arg1) )
+		start = 0;
+	else if ( IsPInfinity(cx, arg1) )
+		start = (signed)dataLength;
+	else
+		J_CHK( JsvalToInt(cx, J_FARG(1), &start) );
+
+
+/*
+	jsval arg1;
+	arg1 = J_FARG(1);
+
+	int start;
+	if ( IsPInfinity(cx, arg1) )
+		start = (signed)dataLength;
+	else if ( !JsvalToInt(cx, J_FARG(1), &start) )
+		start = 0;
+*/
+
 
 	if ( start >= (signed)dataLength ) {
 
@@ -313,7 +334,7 @@ DEFINE_FUNCTION_FAST( substr ) {
 	// now 0 <= start < dataLength
 
 	int length;
-	if ( J_FARG_ISDEF(2) ) {
+	if ( J_FARG_ISDEF(2) ) { // (TBD) see arg1 above
 
 		J_CHK( JsvalToInt(cx, J_FARG(2), &length) );
 		if ( length <= 0 ) {

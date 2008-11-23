@@ -196,6 +196,7 @@ DEFINE_PROPERTY( available ) {
 DEFINE_PROPERTY( source ) {
 
 	J_CHK( JS_GetReservedSlot(cx, obj, SLOT_STREAM_SOURCE, vp) );
+	return JS_TRUE;
 	JL_BAD;
 }
 
