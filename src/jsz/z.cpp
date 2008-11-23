@@ -300,7 +300,7 @@ DEFINE_PROPERTY( lengthOut ) {
 
 /**doc
 === Static Properties ===
-**
+**/
 
 /**doc
  * *idealInputLength* $READONLY
@@ -327,6 +327,7 @@ CONFIGURE_CLASS
 	HAS_PRIVATE
 
 	HAS_CONSTRUCTOR
+	HAS_FINALIZE
 	HAS_CALL
 
 	BEGIN_PROPERTY_SPEC
