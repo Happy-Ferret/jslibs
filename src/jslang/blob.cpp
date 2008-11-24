@@ -295,19 +295,6 @@ DEFINE_FUNCTION_FAST( substr ) {
 	size_t dataLength;
 	J_CHK( BlobLength(cx, J_FOBJ, &dataLength) );
 
-
-	jsval arg1;
-	arg1 = J_FARG(1);
-	int start;
-	if ( !J_FARG_ISDEF(1) || JSVAL_IS_INT(arg1) && JSVAL_TO_INT(arg1) < 0 || IsNInfinity(cx, arg1) || IsNaN(cx, arg1) )
-		start = 0;
-	else if ( IsPInfinity(cx, arg1) )
-		start = (signed)dataLength;
-	else
-		J_CHK( JsvalToInt(cx, J_FARG(1), &start) );
-
-
-/*
 	jsval arg1;
 	arg1 = J_FARG(1);
 
@@ -316,8 +303,6 @@ DEFINE_FUNCTION_FAST( substr ) {
 		start = (signed)dataLength;
 	else if ( !JsvalToInt(cx, J_FARG(1), &start) )
 		start = 0;
-*/
-
 
 	if ( start >= (signed)dataLength ) {
 
@@ -334,9 +319,16 @@ DEFINE_FUNCTION_FAST( substr ) {
 	// now 0 <= start < dataLength
 
 	int length;
-	if ( J_FARG_ISDEF(2) ) { // (TBD) see arg1 above
+	if ( argc >= 2 ) {
 
-		J_CHK( JsvalToInt(cx, J_FARG(2), &length) );
+		jsval arg2;
+		arg2 = J_FARG(2);
+
+		if ( IsPInfinity(cx, arg2) )
+			length = dataLength;
+		else if ( !JsvalToInt(cx, J_FARG(2), &length) )
+			length = 0;
+
 		if ( length <= 0 ) {
 
 			*J_FRVAL = JS_GetEmptyStringValue(cx);
@@ -357,10 +349,13 @@ DEFINE_FUNCTION_FAST( substr ) {
 	((char*)buffer)[length] = '\0';
 
 	memcpy(buffer, ((int8_t*)bstrBuffer) + start, length);
-	J_CHK( J_NewBlob(cx, buffer, length, J_FRVAL) );
+	J_CHK( J_NewBlob(cx, buffer, length, J_FRVAL), bad_free );
 
 	return JS_TRUE;
-	JL_BAD;
+bad_free:
+	JS_free(cx, buffer);
+bad:
+	return JS_FALSE;
 }
 
 
