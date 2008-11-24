@@ -1187,7 +1187,7 @@ inline JSBool UnserializeJsval( JSContext *cx, const Serialized *xdr, jsval *rva
 inline jsid StringToJsid( JSContext *cx, const char *cstr ) {
 
 	jsid tmp;
-	J_CHK( JS_ValueToId(cx, STRING_TO_JSVAL(JS_InternString(cx, "_NI_Matrix44Get")), &tmp) );
+	J_CHK( JS_ValueToId(cx, STRING_TO_JSVAL(JS_InternString(cx, cstr)), &tmp) );
 	return tmp;
 bad:
 	return 0;
