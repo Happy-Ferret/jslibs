@@ -24,8 +24,11 @@ DEFINE_NEW_RESOLVE() {
 	JSBool resolved;
    if ( (flags & JSRESOLVE_ASSIGNING) == 0) {
 		
-		if (!JS_ResolveStandardClass(cx, obj, id, &resolved))
-			return JS_FALSE;
+//		jsval tmp;
+//		JS_IdToValue(cx, id, &tmp);
+//		char *str = JS_GetStringBytes(JS_ValueToString(cx, tmp));
+
+		J_CHK( JS_ResolveStandardClass(cx, obj, id, &resolved) );
 		if (resolved) {
 			
 			*objp = obj;
@@ -34,11 +37,12 @@ DEFINE_NEW_RESOLVE() {
     }
     *objp = NULL;
     return JS_TRUE;
+	 JL_BAD;
 }
 
 CONFIGURE_CLASS
 
-	IS_GLOBAL
+	//	IS_GLOBAL // make JS_ResolveStandardClass failed
 	HAS_NEW_RESOLVE
 
 END_CLASS
