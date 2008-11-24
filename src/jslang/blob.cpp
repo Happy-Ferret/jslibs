@@ -141,6 +141,7 @@ DEFINE_FINALIZE() {
 **/
 DEFINE_CONSTRUCTOR() {
 
+	void *dBuffer = NULL;
 	if ( JS_IsConstructing(cx) != JS_TRUE ) { // supports this form (w/o new operator) : result.param1 = Blob('Hello World');
 
 		obj = JS_NewObject(cx, _class, NULL, NULL);
@@ -154,7 +155,7 @@ DEFINE_CONSTRUCTOR() {
 		const char *sBuffer;
 		J_CHK( JsvalToStringAndLength(cx, &J_ARG(1), &sBuffer, &length) ); // warning: GC on the returned buffer !
 
-		void *dBuffer = JS_malloc(cx, length +1);
+		dBuffer = JS_malloc(cx, length +1);
 		J_S_ASSERT_ALLOC( dBuffer );
 		((char*)dBuffer)[length] = '\0';
 		memcpy(dBuffer, sBuffer, length);
@@ -169,7 +170,10 @@ DEFINE_CONSTRUCTOR() {
 	J_CHK( ReserveBufferGetInterface(cx, obj) );
 	J_CHK( SetBufferGetInterface(cx, obj, NativeInterfaceBufferGet) );
 	return JS_TRUE;
-	JL_BAD;
+bad:
+	if ( dBuffer )
+		JS_free(cx, dBuffer);
+	return JS_FALSE;
 }
 
 
@@ -219,6 +223,7 @@ DEFINE_FUNCTION_FAST( Free ) {
 **/
 DEFINE_FUNCTION_FAST( concat ) {
 
+	char *dst = NULL;
 	J_S_ASSERT_ARG_MIN( 1 );
 
 	size_t thisLength;
@@ -246,7 +251,6 @@ DEFINE_FUNCTION_FAST( concat ) {
 		}
 	}
 
-	char *dst;
 	dst = (char*)JS_malloc(cx, dstLen +1);
 	J_S_ASSERT_ALLOC( dst );
 	dst[dstLen] = '\0';
@@ -272,7 +276,10 @@ DEFINE_FUNCTION_FAST( concat ) {
 
 	J_CHK( J_NewBlob(cx, dst, dstLen, J_FRVAL) );
 	return JS_TRUE;
-	JL_BAD;
+bad:
+	if ( dst )
+		JS_free(cx, dst);
+	return JS_FALSE;
 }
 
 
@@ -349,7 +356,7 @@ DEFINE_FUNCTION_FAST( substr ) {
 	((char*)buffer)[length] = '\0';
 
 	memcpy(buffer, ((int8_t*)bstrBuffer) + start, length);
-	J_CHK( J_NewBlob(cx, buffer, length, J_FRVAL), bad_free );
+	J_CHKB( J_NewBlob(cx, buffer, length, J_FRVAL), bad_free );
 
 	return JS_TRUE;
 bad_free:
@@ -445,9 +452,11 @@ DEFINE_FUNCTION_FAST( substring ) {
 	((char*)buffer)[length] = '\0';
 
 	memcpy(buffer, ((int8_t*)bstrBuffer) + indexA, length);
-	J_CHK( J_NewBlob(cx, buffer, length, J_FRVAL) );
+	J_CHKB( J_NewBlob(cx, buffer, length, J_FRVAL), bad_free );
 
 	return JS_TRUE;
+bad_free:
+	JS_free(cx, buffer);
 	JL_BAD;
 }
 
@@ -895,11 +904,13 @@ DEFINE_XDR() {
 		size_t length;
 		J_CHK( BlobLength(xdr->cx, *objp, &length) );
 		J_CHK( BlobBuffer(xdr->cx, *objp, &buffer) );
-		uint32 tmp = length;
+		uint32 tmp;
+		tmp = length;
 		J_CHK( JS_XDRUint32(xdr, &tmp) );
 		J_CHK( JS_XDRBytes(xdr, (char*)buffer, length) ); // ugly but safe de-const because we are JSXDR_ENCODE.
 
-		JSObject *it = JS_NewPropertyIterator(xdr->cx, *objp); // see JS_Enumerate that calls obj's JSClass.enumerate hook. JS_DestroyIdArray.
+		JSObject *it;
+		it = JS_NewPropertyIterator(xdr->cx, *objp); // see JS_Enumerate that calls obj's JSClass.enumerate hook. JS_DestroyIdArray.
 		J_CHK( it );
 
 		for (;;) {
@@ -920,34 +931,38 @@ DEFINE_XDR() {
 		}
 		return JS_TRUE;
 	}
-	
+
+
 	if ( xdr->mode == JSXDR_DECODE ) {
 
 		uint32 length;
+		char *buffer;
 		J_CHK( JS_XDRUint32(xdr, &length) );
-		char *buffer = (char*)JS_malloc(xdr->cx, length +1);
+		buffer = (char*)JS_malloc(xdr->cx, length +1);
 		buffer[length] = '\0'; // (TBD) needed ?
-		J_CHK( JS_XDRBytes(xdr, buffer, length) );
+		J_CHKB( JS_XDRBytes(xdr, buffer, length), bad_free_buffer );
 
 		jsval tmp;
-		J_CHK( J_NewBlob(xdr->cx, buffer, length, &tmp) );
-		J_CHK( JS_ValueToObject(xdr->cx, tmp, objp) );
+		J_CHKB( J_NewBlob(xdr->cx, buffer, length, &tmp), bad_free_buffer );
+		J_CHKB( JS_ValueToObject(xdr->cx, tmp, objp), bad_free_buffer );
 
 		for (;;) {
 
-			J_CHK( JS_XDRValue(xdr, &key) );
+			J_CHKB( JS_XDRValue(xdr, &key), bad_free_buffer );
 			if ( key != JSVAL_VOID ) {
 
 				JS_ValueToId(xdr->cx, key, &id);
-				J_CHK( JS_XDRValue(xdr, &value) );
-				J_CHK( OBJ_SET_PROPERTY(xdr->cx, *objp, id, &value) ); 
+				J_CHKB( JS_XDRValue(xdr, &value), bad_free_buffer );
+				J_CHKB( OBJ_SET_PROPERTY(xdr->cx, *objp, id, &value), bad_free_buffer );
 			} else {
 
 				break;
 			}
 		}
-
 		return JS_TRUE;
+	bad_free_buffer:
+		JS_free(xdr->cx, buffer);
+		return JS_FALSE;
 	}
 
 	if ( xdr->mode == JSXDR_FREE ) {
