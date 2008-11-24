@@ -325,6 +325,7 @@ DEFINE_FUNCTION_FAST( SetGamma ) {
 	if ( SDL_SetGamma(r, g, b) != 0 )
 		return ThrowSdlError(cx);
 	*J_FRVAL = JSVAL_VOID;
+	return JS_TRUE;
 	JL_BAD;
 }
 

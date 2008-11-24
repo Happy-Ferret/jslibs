@@ -246,7 +246,7 @@ static JSBool LoadModule(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, 
 	J_S_ASSERT( libFileName != NULL && *libFileName != '\0', "Invalid module filename.");
 	JLLibraryHandler module;
 	module = JLDynamicLibraryOpen(libFileName);
-	J_S_ASSERT( module != NULL, "Unable to load the module.");
+	J_S_ASSERT_1( module != NULL, "Unable to load the module %s.", libFileName);
 
 	ModuleInitFunction moduleInit;
 	moduleInit = (ModuleInitFunction)JLDynamicLibrarySymbol(module, NAME_MODULE_INIT);
