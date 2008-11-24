@@ -189,12 +189,13 @@ inline void SetHostPrivate( JSContext *cx, HostPrivate *hostPrivate ) {
 } while(0)
 
 
-/*
+
 // check and branch to a errorLabel label on error.
 #define J_CHKB( status, errorLabel ) do { \
 	if (unlikely(!(status))) { goto errorLabel; } \
 } while(0)
 
+/*
 // check and branch to a errorLabel label on error.
 #define J_CHKBM( status, errorLabel, errorMessage ) do { \
 	if (unlikely( !(status) )) { \
@@ -240,13 +241,13 @@ inline bool JsvalIsClass(JSContext *cx, jsval val, JSClass *jsClass) {
 
 // Reports warnings. May be disabled in unsafemode
 #define J_REPORT_WARNING(errorMessage) \
-	do { JS_ReportWarning( cx, (errorMessage IFDEBUG(" (@" J__CODE_LOCATION ")")) ); } while(0)
+	do { if (unlikely(!_unsafeMode)) JS_ReportWarning( cx, (errorMessage IFDEBUG(" (@" J__CODE_LOCATION ")")) ); } while(0)
 
 #define J_REPORT_WARNING_1(errorMessage, arg) \
-	do { JS_ReportWarning( cx, (errorMessage IFDEBUG(" (@" J__CODE_LOCATION ")")), (arg) ); } while(0)
+	do { if (unlikely(!_unsafeMode)) JS_ReportWarning( cx, (errorMessage IFDEBUG(" (@" J__CODE_LOCATION ")")), (arg) ); } while(0)
 
 #define J_REPORT_WARNING_2(errorMessage, arg1, arg2) \
-	do { JS_ReportWarning( cx, (errorMessage IFDEBUG(" (@" J__CODE_LOCATION ")")), (arg1), (arg2) ); } while(0)
+	do { if (unlikely(!_unsafeMode)) JS_ReportWarning( cx, (errorMessage IFDEBUG(" (@" J__CODE_LOCATION ")")), (arg1), (arg2) ); } while(0)
 
 
 // Reports a fatal errors, script must stop as soon as possible.
@@ -798,16 +799,16 @@ inline JSBool JsvalToInt( JSContext *cx, jsval val, int *i ) {
 	}
 
 	jsdouble d;
-	J_CHKM( JS_ValueToNumber(cx, val, &d), "Unable to convert to an integer." );
+	J_CHK( JS_ValueToNumber(cx, val, &d) );
 
 	if ( d > -2147483649.0 && 2147483648.0 > d ) {
 
 		*i = (int)d;
 		return JS_TRUE;
 	}
-
-	J_REPORT_ERROR( "Unable to convert to an integer." );
-	JL_BAD;
+bad:
+	J_REPORT_WARNING( "Unable to convert to an integer." );
+	return JS_FALSE;
 }
 
 
@@ -822,7 +823,7 @@ inline JSBool JsvalToUInt( JSContext *cx, jsval val, unsigned int *ui ) {
 			*ui = (unsigned int)i;
 			return JS_TRUE;
 		}
-		J_REPORT_ERROR( "Unable to convert to an unsigned integer." );
+		goto bad;
 	}
 
 	if ( JSVAL_IS_NULL(val) ) {
@@ -832,7 +833,7 @@ inline JSBool JsvalToUInt( JSContext *cx, jsval val, unsigned int *ui ) {
 	}
 
 	jsdouble d;
-	J_CHKM( JS_ValueToNumber(cx, val, &d), "Unable to convert to an unsigned integer." );
+	J_CHK( JS_ValueToNumber(cx, val, &d) );
 
 	if ( d >= 0 && 4294967296.0 > d  ) {
 
@@ -840,8 +841,9 @@ inline JSBool JsvalToUInt( JSContext *cx, jsval val, unsigned int *ui ) {
 		return JS_TRUE;
 	}
 
-	J_REPORT_ERROR( "Unable to convert to an unsigned integer." );
-	JL_BAD;
+bad:
+	J_REPORT_WARNING( "Unable to convert to an unsigned integer." );
+	return JS_FALSE;
 }
 
 
@@ -853,10 +855,13 @@ inline JSBool IntToJsval( JSContext *cx, int i, jsval *val ) {
 		return JS_TRUE;
 	} else {
 
-		J_CHKM( JS_NewNumberValue(cx, i, val), "Unable to convert to an integer." );
+		J_CHK( JS_NewNumberValue(cx, i, val) );
 		return JS_TRUE;
 	}
-	JL_BAD;
+
+bad:
+	J_REPORT_WARNING( "Unable to convert to an integer." );
+	return JS_FALSE;
 }
 
 
@@ -868,10 +873,12 @@ inline JSBool UIntToJsval( JSContext *cx, unsigned int ui, jsval *val ) {
 		return JS_TRUE;
 	} else {
 
-		J_CHKM( JS_NewNumberValue(cx, ui, val), "Unable to convert to an unsigned integer." );
+		J_CHK( JS_NewNumberValue(cx, ui, val) );
 		return JS_TRUE;
 	}
-	JL_BAD;
+bad:
+	J_REPORT_WARNING( "Unable to convert to an unsigned integer." );
+	return JS_FALSE;
 }
 
 
@@ -891,11 +898,13 @@ inline JSBool JsvalToBool( JSContext *cx, const jsval val, bool *b ) {
 	} else {
 
 		JSBool tmp;
-		J_CHKM( JS_ValueToBoolean( cx, val, &tmp ), "Unable to convert to boolean." );
+		J_CHK( JS_ValueToBoolean( cx, val, &tmp ) );
 		*b = (tmp == JS_TRUE);
 		return JS_TRUE;
 	}
-	JL_BAD;
+bad:
+	J_REPORT_WARNING( "Unable to convert to a boolean." );
+	return JS_FALSE;
 }
 
 
@@ -928,11 +937,14 @@ inline JSBool JsvalToFloat( JSContext *cx, jsval val, float *f ) {
 	} else {
 
 		jsdouble tmp;
-		J_CHKM( JS_ValueToNumber( cx, val, &tmp ), "Unable to convert to real." );
+		J_CHK( JS_ValueToNumber( cx, val, &tmp ) );
 		*f = tmp;
 		return JS_TRUE;
 	}
-	JL_BAD;
+
+bad:
+	J_REPORT_WARNING( "Unable to convert to a real." );
+	return JS_FALSE;
 }
 
 inline JSBool JsvalToDouble( JSContext *cx, jsval val, double *d ) {
@@ -944,11 +956,14 @@ inline JSBool JsvalToDouble( JSContext *cx, jsval val, double *d ) {
 	} else {
 
 		jsdouble tmp;
-		J_CHKM( JS_ValueToNumber( cx, val, &tmp ), "Unable to convert to real." );
+		J_CHK( JS_ValueToNumber( cx, val, &tmp ) );
 		*d = tmp;
 		return JS_TRUE;
 	}
-	JL_BAD;
+
+bad:
+	J_REPORT_WARNING( "Unable to convert to a real." );
+	return JS_FALSE;
 }
 
 
