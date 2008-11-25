@@ -62,6 +62,7 @@ static JSBool BufferGet( JSContext *cx, JSObject *obj, const char **buf, size_t 
 	mh = (MemHeader*)pv->mem;
 	*buf = (char *)pv->mem + sizeof(MemHeader);
 	*size = mh->currentDataLength;
+
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -70,32 +71,35 @@ static JSBool BufferGet( JSContext *cx, JSObject *obj, const char **buf, size_t 
 JSBool CloseSharedMemory( JSContext *cx, JSObject *obj ) {
 
 	ClassPrivate *pv = (ClassPrivate*)JS_GetPrivate(cx, J_OBJ);
+	J_S_ASSERT_RESOURCE(pv);
 
-	PRStatus status;
-	status = PR_WaitSemaphore( pv->accessSem );
+	J_CHKB( PR_WaitSemaphore( pv->accessSem ) == PR_SUCCESS, bad_ioerror );
 
 	MemHeader *mh = (MemHeader*)pv->mem;
 
 	bool isLast = (mh->accessCount == 0);
 	mh->accessCount--;
 
-	status = PR_DetachSharedMemory(pv->shm, pv->mem);
-	status = PR_PostSemaphore(pv->accessSem);
-	status = PR_CloseSemaphore(pv->accessSem);
+	J_CHKB( PR_DetachSharedMemory(pv->shm, pv->mem) == PR_SUCCESS, bad_ioerror );
+	J_CHKB( PR_PostSemaphore(pv->accessSem) == PR_SUCCESS, bad_ioerror );
+	J_CHKB( PR_CloseSemaphore(pv->accessSem) == PR_SUCCESS, bad_ioerror );
 
 	if ( isLast ) {
 
-		status = PR_DeleteSharedMemory(pv->name);
+		J_CHKB( PR_DeleteSharedMemory(pv->name) == PR_SUCCESS, bad_ioerror );
 		char semName[PATH_MAX];
 		strcpy(semName, pv->name);
 		strcat(semName, SEMAPHORE_EXTENSION);
-		status = PR_DeleteSemaphore(semName);
+		J_CHKB( PR_DeleteSemaphore(semName) == PR_SUCCESS, bad_ioerror );
 	}
 
 	free(pv->name);
-	JS_SetPrivate(cx, J_OBJ, NULL);
+	J_CHK( JS_SetPrivate(cx, J_OBJ, NULL) );
 
 	return JS_TRUE;
+bad_ioerror:
+	ThrowIoError(cx);
+	JL_BAD;
 }
 
 
@@ -153,25 +157,20 @@ DEFINE_CONSTRUCTOR() {
 	if ( accessSem == NULL ) {
 
 		accessSem = PR_OpenSemaphore(semName, 0, 0, 0); // If PR_SEM_CREATE is not specified, the third and fourth arguments are ignored.
-		if ( accessSem == NULL )
-			return ThrowIoError(cx);
+		J_CHKB( accessSem != NULL, bad_ioerror );
 		isCreation = false;
 	}
 
 	PRStatus status;
-	status = PR_WaitSemaphore( accessSem );
-	if ( status != PR_SUCCESS )
-		return ThrowIoError(cx);
+	J_CHKB( PR_WaitSemaphore( accessSem ) == PR_SUCCESS, bad_ioerror );
 
 	PRSharedMemory *shm;
 	shm = PR_OpenSharedMemory( name, size + sizeof(MemHeader), PR_SHM_CREATE, mode );
-	if ( shm == NULL )
-		return ThrowIoError(cx);
+	J_CHKB( shm != NULL, bad_ioerror ); // PR_SHM_READONLY
 
 	void *mem;
-	mem = PR_AttachSharedMemory(shm, 0); // PR_SHM_READONLY
-	if ( mem == NULL )
-		return ThrowIoError(cx);
+	mem = PR_AttachSharedMemory(shm, 0);
+	J_CHKB( mem != NULL, bad_ioerror ); // PR_SHM_READONLY
 
 	ClassPrivate *pv;
 	pv = (ClassPrivate*)malloc( sizeof(ClassPrivate) );
@@ -187,20 +186,21 @@ DEFINE_CONSTRUCTOR() {
 	mh = (MemHeader*)pv->mem;
 
 	if ( isCreation ) {
+
 		mh->accessCount = 0;
 		mh->currentDataLength = 0;
-	} else
+	} else {
+
 		mh->accessCount++;
+	}
 
-	status = PR_PostSemaphore( accessSem );
-	if ( status != PR_SUCCESS )
-		return ThrowIoError(cx);
-
+	J_CHKB( PR_PostSemaphore( accessSem ) == PR_SUCCESS, bad_ioerror );
 	J_CHK( JS_SetPrivate(cx, obj, pv) );
-
 	J_CHK( SetBufferGetInterface(cx, obj, BufferGet) );
 
 	return JS_TRUE;
+bad_ioerror:
+	ThrowIoError(cx);
 	JL_BAD;
 }
 
