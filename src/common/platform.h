@@ -25,8 +25,6 @@
 	#define DEBUG
 #endif // _DEBUG
 
-#define COUNTOF(vector) (sizeof(vector)/sizeof(*vector))
-
 ///////////////////////////////////////////////////////////////////////////////
 // Compiler specific configuration
 
@@ -154,6 +152,10 @@
 //	#define O_BINARY 0
 //#endif
 
+///////////////////////////////////////////////////////////////////////////////
+// Miscellaneous
+
+#define COUNTOF(vector) (sizeof(vector)/sizeof(*vector))
 
 ///////////////////////////////////////////////////////////////////////////////
 // Platform tools
@@ -230,7 +232,6 @@ inline u_int32_t JLSessionId() {
 
 // Atomic operations
 	// MS doc: http://msdn.microsoft.com/en-us/library/ms686360.aspx
-
 
 	#if defined XP_WIN
 	typedef volatile LONG * JLAtomicPtr;
@@ -486,7 +487,7 @@ inline u_int32_t JLSessionId() {
 		return LoadLibrary(filename);
 		#elif defined XP_UNIX
 		dlerror();
-		return dlopen( filename, RTLD_NOW );
+		return dlopen( filename, RTLD_LAZY ); // RTLD_NOW
 		#endif
 	}
 
@@ -501,7 +502,7 @@ inline u_int32_t JLSessionId() {
 		return (void*)GetProcAddress(libraryHandler, symbolName);
 		#elif defined XP_UNIX
 		dlerror();
-		return dlsym( libraryHandler, symbolName );
+		return dlsym(libraryHandler, symbolName);
 		#endif
 	}
 
@@ -511,7 +512,7 @@ inline u_int32_t JLSessionId() {
 		FreeLibrary(*libraryHandler);
 		#elif defined XP_UNIX
 		dlerror();
-		dlclose( libraryHandler );
+		dlclose(*libraryHandler);
 		#endif
 		*libraryHandler = (JLLibraryHandler)0;
 	}
