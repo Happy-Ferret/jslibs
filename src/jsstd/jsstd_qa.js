@@ -619,13 +619,15 @@ LoadModule('jsstd');
 
 /// Sandbox global objects
 	
-	var res = Sandbox.Eval();
-	QA.ASSERT( res.Math != Math, true, 'Global objects' );
+	var res = SandboxEval('Math');
+	QA.ASSERT( res.Math == Math, false, 'Global objects' );
 
 
-/// Sandbox outside access
-	
+/// Sandbox external access
+
 	LoadModule('jsio');
-	var res = Sandbox.Eval('typeof File');
-	QA.ASSERT( res != typeof File, true, 'File access' );
+	var res = SandboxEval('typeof File');
+	QA.ASSERT( res == typeof File, false, 'forbidden File class access' );
+	var res = SandboxEval('typeof LoadModule');
+	QA.ASSERT( res == typeof LoadModule, false, 'forbidden LoadModule function access' );
 
