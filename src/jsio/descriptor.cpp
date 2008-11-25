@@ -77,7 +77,7 @@ void FinalizeDescriptor(JSContext *cx, JSObject *obj) {
 	if ( fd != NULL ) { // check if not already closed
 
 		jsval imported;
-		JS_GetReservedSlot(cx, obj, SLOT_JSIO_DESCRIPTOR_IMPORTED, &imported);
+		J_CHK( JS_GetReservedSlot(cx, obj, SLOT_JSIO_DESCRIPTOR_IMPORTED, &imported) );
 		if ( imported != JSVAL_TRUE ) { // Descriptor was inported, then do not close it
 
 			PRStatus status = PR_Close( fd ); // what to do on error ??
@@ -87,9 +87,11 @@ void FinalizeDescriptor(JSContext *cx, JSObject *obj) {
 				if ( errorCode != PR_WOULD_BLOCK_ERROR ) // if non-blocking descriptor, this is a non-fatal error
 					JS_ReportError( cx, "A descriptor cannot be closed while Finalize." );
 			}
-			JS_SetPrivate( cx, obj, NULL );
+			J_CHK( JS_SetPrivate( cx, obj, NULL ) );
 		}
 	}
+bad:
+	return;
 }
 
 /**doc fileIndex:top
@@ -124,7 +126,7 @@ DEFINE_FUNCTION( Close ) {
 		if ( errorCode != PR_WOULD_BLOCK_ERROR ) // if non-blocking descriptor, this is a non-fatal error
 			return ThrowIoError(cx);
 	}
-	JS_SetPrivate( cx, obj, NULL );
+	J_CHK( JS_SetPrivate( cx, obj, NULL ) );
 //	JS_ClearScope( cx, obj ); // help to clear readable, writable, exception
 //	J_CHK( SetStreamReadInterface(cx, obj, NULL) );
 	J_CHK( SetStreamReadInterface(cx, obj, NULL) );
@@ -166,9 +168,11 @@ JSBool ReadToJsval(JSContext *cx, PRFileDesc *fd, int amount, jsval *rval ) {
 		J_S_ASSERT_ALLOC(buf);
 	}
 
-	J_CHK( J_NewBlob( cx, buf, res, rval ) );
+	J_CHKB( J_NewBlob(cx, buf, res, rval), bad_free );
 
 	return JS_TRUE;
+bad_free:
+	JS_free(cx, buf);
 	JL_BAD;
 }
 
@@ -255,7 +259,9 @@ JSBool ReadAllToJsval(JSContext *cx, PRFileDesc *fd, jsval *rval ) {
 	J_CHK( J_NewBlob( cx, jsData, totalLength, rval ) );
 	
 	return JS_TRUE;
-	JL_BAD;
+bad:
+	free(chunkList);
+	return JS_FALSE;
 }
 
 
@@ -345,19 +351,27 @@ DEFINE_FUNCTION( Write ) {
 	} else
 		sentAmount = res;
 
+	char *buffer;
 	if ( sentAmount < len ) {
 		//*rval = STRING_TO_JSVAL( JS_NewDependentString(cx, JSVAL_TO_STRING( J_ARG(1) ), sentAmount, len - sentAmount) ); // return unsent data // (TBD) use Blob ?
 		
-		char *buffer = (char*)JS_malloc(cx, len - sentAmount +1);
+		buffer = (char*)JS_malloc(cx, len - sentAmount +1);
 		J_S_ASSERT_ALLOC(buffer);
 		buffer[len - sentAmount] = '\0';
 		memcpy(buffer, str, len - sentAmount);
-		J_CHK( J_NewBlob(cx, buffer, len - sentAmount, rval) );
-	} else if ( sentAmount == 0 )
+		J_CHKB( J_NewBlob(cx, buffer, len - sentAmount, rval), bad_free );
+	} else
+	if ( sentAmount == 0 ) {
+
 		*rval = J_ARG(1); // nothing has been sent
-	else
+	} else {
+
 		*rval = JS_GetEmptyStringValue(cx); // nothing remains
+	}
+
 	return JS_TRUE;
+bad_free:
+	JS_free(cx, buffer);
 	JL_BAD;
 }
 
@@ -370,13 +384,10 @@ DEFINE_FUNCTION( Sync ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
 	J_S_ASSERT_RESOURCE( fd );
-
-	PRStatus status;
-	status = PR_Sync(fd);
-	if ( status == PR_FAILURE )
-		return ThrowIoError(cx);
-
+	J_CHKB( PR_Sync(fd) == PR_SUCCESS, bad_ioerror );
 	return JS_TRUE;
+bad_ioerror:
+	ThrowIoError(cx);
 	JL_BAD;
 }
 
@@ -396,15 +407,16 @@ DEFINE_PROPERTY( available ) {
 
 	PRInt64 available;
 	available = PR_Available64( fd ); // For a normal file, these are the bytes beyond the current file pointer.
-	if ( available == -1 )
-		return ThrowIoError(cx);
+	J_CHKB( available != -1, bad_ioerror );
 
 	if ( available <= JSVAL_INT_MAX )
 		*vp = INT_TO_JSVAL(available);
 	else
-		JS_NewNumberValue(cx, (jsdouble)available, vp);
+		J_CHK( JS_NewNumberValue(cx, (jsdouble)available, vp) );
 
 	return JS_TRUE;
+bad_ioerror:
+	ThrowIoError(cx);
 	JL_BAD;
 }
 
