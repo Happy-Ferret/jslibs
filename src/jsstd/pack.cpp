@@ -241,7 +241,7 @@ DEFINE_FUNCTION( Test ) {
 #endif
 
 /**doc
- * $VOID $INAME( size, [isSigned = false [, isNetworkEndian = false]] )
+ * $VOID $INAME( intValue, [isSigned = false [, isNetworkEndian = false]] )
   Write an integer to the current stream. cf. systemIntSize property.
 **/
 DEFINE_FUNCTION( WriteInt ) { // incompatible with NIStreamRead
