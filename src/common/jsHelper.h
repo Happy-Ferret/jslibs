@@ -195,25 +195,24 @@ inline void SetHostPrivate( JSContext *cx, HostPrivate *hostPrivate ) {
 	if (unlikely(!(status))) { goto errorLabel; } \
 } while(0)
 
-/*
-// check and branch to a errorLabel label on error.
+
+// check and branch to a errorLabel label on error AND report an error if no exception is pending.
 #define J_CHKBM( status, errorLabel, errorMessage ) do { \
 	if (unlikely( !(status) )) { \
 		if ( !JS_IsExceptionPending(cx) ) \
-			JS_ReportError(cx, (errorMessage IFDEBUG(" (@" J__CODE_LOCATION ")")), (arg)); \
+			JS_ReportError(cx, (errorMessage IFDEBUG(" (@" J__CODE_LOCATION ")"))); \
 		goto errorLabel; \
 	} \
 } while(0)
 
-// check and branch to a errorLabel label on error.
-#define J_CHKBM1( status, errorLabel, errorMessage ) do { \
+// same that J_CHKBM with a additional argument (printf like)
+#define J_CHKBM1( status, errorLabel, errorMessage, arg ) do { \
 	if (unlikely( !(status) )) { \
 		if ( !JS_IsExceptionPending(cx) ) \
 			JS_ReportError(cx, (errorMessage IFDEBUG(" (@" J__CODE_LOCATION ")")), (arg)); \
 		goto errorLabel; \
 	} \
 } while(0)
-*/
 
 
 inline bool JsvalIsClass(JSContext *cx, jsval val, JSClass *jsClass) {
@@ -840,7 +839,6 @@ inline JSBool JsvalToUInt( JSContext *cx, jsval val, unsigned int *ui ) {
 		*ui = (unsigned int)d;
 		return JS_TRUE;
 	}
-
 bad:
 	J_REPORT_WARNING( "Unable to convert to an unsigned integer." );
 	return JS_FALSE;
@@ -858,7 +856,6 @@ inline JSBool IntToJsval( JSContext *cx, int i, jsval *val ) {
 		J_CHK( JS_NewNumberValue(cx, i, val) );
 		return JS_TRUE;
 	}
-
 bad:
 	J_REPORT_WARNING( "Unable to convert to an integer." );
 	return JS_FALSE;

@@ -246,15 +246,11 @@ static JSBool LoadModule(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, 
 	J_S_ASSERT( libFileName != NULL && *libFileName != '\0', "Invalid module filename.");
 	JLLibraryHandler module;
 	module = JLDynamicLibraryOpen(libFileName);
-	J_S_ASSERT_1( module != NULL, "Unable to load the module %s.", libFileName);
+	J_S_ASSERT_1( JLDynamicLibraryOk(module), "Unable to load the 'module %s'.", libFileName);
 
 	ModuleInitFunction moduleInit;
 	moduleInit = (ModuleInitFunction)JLDynamicLibrarySymbol(module, NAME_MODULE_INIT);
-	if ( moduleInit == NULL ) { // not a jslibs module
-
-		JLDynamicLibraryClose(&module);
-		J_CHKM( false, "Invalid module." ); // give this message if no error is set
-	}
+	J_CHKBM( moduleInit, bad_dl_close, "Invalid module." );
 
 	bool alreadyLoaded;
 	alreadyLoaded = false;
@@ -276,16 +272,16 @@ static JSBool LoadModule(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, 
 		return JS_TRUE;
 	}
 
-	if ( moduleInit(cx, obj) == JS_FALSE ) {
-
-		JLDynamicLibraryClose(&module);
-		J_CHKM( false, "Unable to initialize the module." ); // give this message if no error is set
-	}
+	J_CHKBM( moduleInit(cx, obj), bad_dl_close, "Unable to initialize the module." );
 
 	jl::QueueUnshift( &pv->moduleList, module ); // LIFO
 	J_CHK( JS_NewNumberValue(cx, (unsigned int)module, rval) ); // really needed ? yes, UnloadModule need this ID
 	return JS_TRUE;
-	JL_BAD;
+
+bad_dl_close:
+	JLDynamicLibraryClose(&module);
+bad:
+	return JS_FALSE;
 }
 
 /* (TBD)
