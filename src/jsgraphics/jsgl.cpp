@@ -1794,7 +1794,9 @@ DEFINE_FUNCTION_FAST( LoadTrimesh ) {
 	info->indexCount = srf->indexCount;
 
 	glGenBuffersARB(1, &info->indexBuffer);
+
 	glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, info->indexBuffer);
+
 	glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB, srf->indexCount * sizeof(SURFACE_INDEX_TYPE), srf->index, GL_STATIC_DRAW_ARB);
 
 	glGenBuffersARB(1, &info->vertexBuffer);
@@ -1851,7 +1853,6 @@ DEFINE_FUNCTION_FAST( DrawTrimesh ) {
 	TrimeshInfo *info = (TrimeshInfo*)GetIdPrivate(cx, J_FARG(1));
 
 	GLenum dataType = sizeof(SURFACE_REAL_TYPE) == sizeof(float) ? GL_FLOAT : GL_DOUBLE;
-
 
 	glEnableClientState(GL_VERTEX_ARRAY);
 	glBindBufferARB(GL_ARRAY_BUFFER_ARB, info->vertexBuffer);
@@ -2024,6 +2025,7 @@ DEFINE_FUNCTION_FAST( RenderToImage ) {
 	void *pixels = malloc(size);
 	glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
 
+	// (TBD) render to a blob !
 	JSObject *blobObj = NewImage(cx, tWidth, tHeight, 4, pixels);
 	J_S_ASSERT_ALLOC(blobObj);
 	*J_FRVAL = OBJECT_TO_JSVAL(blobObj);
