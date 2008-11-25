@@ -1,11 +1,6 @@
-#!/bin/bash
-
 [ -z "$BUILD" ] && BUILD=opt
 
-LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PWD/$BUILD
-PATH=$PATH:$PWD/$BUILD
-
-export LD_LIBRARY_PATH
-export PATH
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PWD/$BUILD
+export PATH=$PATH:$PWD/$BUILD
 
 echo jslibs $BUILD environment set.
