@@ -187,6 +187,8 @@ bad:
   Frees the memory allocated by the blob and invalidates the blob.
   $H arguments
    $ARG boolean wipe: clears the buffer before freeing it. This is useful when the blob contains sensitive data.
+  $H note
+   Any access to a freed Blob will rise an error.
 **/
 DEFINE_FUNCTION_FAST( Free ) {
 
@@ -798,7 +800,7 @@ DEFINE_EQUALITY() {
 
 	if ( J_JSVAL_IS_CLASS(v, _class) ) {
 
-		if ( !IsBlobValid(cx,obj) || !IsBlobValid(cx,JSVAL_TO_OBJECT(v)) ) {
+		if ( !IsBlobValid(cx, obj) || !IsBlobValid(cx, JSVAL_TO_OBJECT(v)) ) {
 			
 			J_REPORT_ERROR("Invalid Blob object.");
 		}
