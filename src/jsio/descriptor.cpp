@@ -116,11 +116,11 @@ DEFINE_CONSTRUCTOR() {
 **/
 DEFINE_FUNCTION( Close ) {
 
-	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
+	PRFileDesc *fd = (PRFileDesc*)JS_GetPrivate( cx, obj );
 	J_S_ASSERT( fd != NULL, "file is closed." );
 	PRStatus status;
 	status = PR_Close( fd );
-	if (status != PR_SUCCESS) {
+	if ( status != PR_SUCCESS ) {
 
 		PRErrorCode errorCode = PR_GetError();
 		if ( errorCode != PR_WOULD_BLOCK_ERROR ) // if non-blocking descriptor, this is a non-fatal error
@@ -137,12 +137,12 @@ DEFINE_FUNCTION( Close ) {
 
 JSBool ReadToJsval(JSContext *cx, PRFileDesc *fd, int amount, jsval *rval ) {
 
-	char *buf = (char*)JS_malloc( cx, amount + 1 );
+	char *buf = (char*)JS_malloc(cx, amount +1);
 	J_S_ASSERT_ALLOC(buf);
 	buf[amount] = '\0';
 
 	PRInt32 res;
-	res = PR_Read( fd, buf, amount );
+	res = PR_Read(fd, buf, amount);
 
 	if (res == -1) { // failure. The reason for the failure can be obtained by calling PR_GetError.
 

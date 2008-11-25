@@ -329,7 +329,7 @@ inline bool JsvalIsClass(JSContext *cx, jsval val, JSClass *jsClass) {
 	J_S_ASSERT( (resourcePointer) != NULL, J__ERRMSG_INVALID_RESOURCE )
 
 #define J_S_ASSERT_ALLOC(pointer) \
-	if (unlikely( (pointer) == NULL )) { J_REPORT_WARNING( J__ERRMSG_OUT_OF_MEMORY ); JS_ReportOutOfMemory(cx); goto bad; } // This does not cause an exception to be thrown.
+	if (unlikely( (pointer) == NULL )) { J_REPORT_WARNING( J__ERRMSG_OUT_OF_MEMORY ); JS_ReportOutOfMemory(cx); return JS_FALSE; } // This does not cause an exception to be thrown.
 
 ///////////////////////////////////////////////////////////////////////////////
 // Helper functions

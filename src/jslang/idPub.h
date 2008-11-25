@@ -18,6 +18,7 @@ typedef void (*IdFinalizeCallback_t)(void* data);
 
 #define ID_TYPE u_int32_t
 
+// (TBD) better alignment: __attribute__ ((__vector_size__ (16), __may_alias__)); OR  __declspec(align(64)) 
 struct IdPrivate {
 	ID_TYPE idType;
 	IdFinalizeCallback_t finalizeCallback;
@@ -44,13 +45,16 @@ inline JSBool CreateId( JSContext *cx, ID_TYPE idType, size_t size, void** data,
 	IdPrivate *pv;
 	pv = (IdPrivate*)JS_malloc(cx, sizeof(IdPrivate) + size);
 	J_S_ASSERT_ALLOC(pv);
-	J_CHK( JS_SetPrivate(cx, idObj, pv) );
+	J_CHKB( JS_SetPrivate(cx, idObj, pv), bad_free );
 
 	pv->idType = idType;
 	pv->finalizeCallback = finalizeCallback;
 	if (data)
-		*data = pv + sizeof(IdPrivate);
+		*data = (char*)pv + sizeof(IdPrivate);
+
 	return JS_TRUE;
+bad_free:
+	JS_free(cx, pv);
 	JL_BAD;
 }
 
@@ -77,7 +81,7 @@ inline bool IsIdType( JSContext *cx, jsval idVal, ID_TYPE idType ) {
 inline void* GetIdPrivate( JSContext *cx, jsval idVal ) {
 
 	IdPrivate *pv = (IdPrivate*)JS_GetPrivate(cx, JSVAL_TO_OBJECT(idVal));
-	return pv + sizeof(IdPrivate);
+	return (char*)pv + sizeof(IdPrivate);
 }
 
 
