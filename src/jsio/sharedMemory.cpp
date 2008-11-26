@@ -75,9 +75,11 @@ JSBool CloseSharedMemory( JSContext *cx, JSObject *obj ) {
 
 	J_CHKB( PR_WaitSemaphore( pv->accessSem ) == PR_SUCCESS, bad_ioerror );
 
-	MemHeader *mh = (MemHeader*)pv->mem;
+	MemHeader *mh;
+	mh = (MemHeader*)pv->mem;
 
-	bool isLast = (mh->accessCount == 0);
+	bool isLast;
+	isLast = (mh->accessCount == 0);
 	mh->accessCount--;
 
 	J_CHKB( PR_DetachSharedMemory(pv->shm, pv->mem) == PR_SUCCESS, bad_ioerror );
