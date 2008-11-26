@@ -257,11 +257,12 @@ bad:
 
 
 /**doc
- * $INAME( func [ , priority = 0 ] )
-  $H arguments
-   $ARG function func:
-   $ARG integer priority:
+ * $INAME( taskFunc [ , priority = 0 ] )
   Creates a new Task object from the given function.
+  $H arguments
+   $ARG function taskFunc:
+   $ARG integer priority:
+   The _taskFunc_ prototype is: `function( request, index )`.
 **/
 DEFINE_CONSTRUCTOR() {
 
@@ -327,6 +328,10 @@ bad:
 
 
 
+/**doc
+ * $VOID $INAME( data )
+  Send data to the task. This function do not block. If the task is already processing a request, next requests are automatically queued.
+**/
 DEFINE_FUNCTION_FAST( Request ) {
 
 	J_S_ASSERT_ARG_MIN(1);
@@ -342,11 +347,16 @@ DEFINE_FUNCTION_FAST( Request ) {
 	pv->pendingRequestCount++;
 	JLReleaseMutex(pv->mutex); // ++
 	JLReleaseSemaphore(pv->requestSem); // +1 // signals a request
+	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
 
 
+/**doc
+ * data $INAME()
+  Read a response from the task. If no response is pending, the function wait until a response is available.
+**/
 DEFINE_FUNCTION_FAST( Response ) {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, J_FOBJ);
@@ -412,6 +422,10 @@ DEFINE_FUNCTION_FAST( Response ) {
 }
 
 
+/**doc
+ * $INT $INAME
+  Is the number of requests that haven't be processed by the task yet. The request being processed is not included in this count.
+**/
 DEFINE_PROPERTY( pendingRequestCount ) {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
@@ -425,6 +439,10 @@ DEFINE_PROPERTY( pendingRequestCount ) {
 }
 
 
+/**doc
+ * $INT $INAME
+  Is the number of available responses that has already been processed by the task.
+**/
 DEFINE_PROPERTY( pendingResponseCount ) {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
@@ -438,6 +456,10 @@ DEFINE_PROPERTY( pendingResponseCount ) {
 }
 
 
+/**doc
+ * $INT $INAME
+  Is the current state of the task. true if there is no request being processed, if request and response queues are empty and if there is no pending error.
+**/
 DEFINE_PROPERTY( idle ) {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
