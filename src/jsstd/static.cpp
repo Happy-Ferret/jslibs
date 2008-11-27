@@ -229,24 +229,26 @@ DEFINE_FUNCTION( Clear ) {
 /**doc
  * $OBJ $INAME( obj, scopeObject )
   Set the scope object of _obj_.
-  ===== example: =====
-  {{{
-  function foo() {
+  $H example
+   {{{
+   function foo() {
 
-    var data = 55;
-    function bar() { Print( data, '\n' ); }
-    var old = SetScope( bar, {data:7} );
-    bar();
-    var old = SetScope( bar, old );
-    bar();
-  }
-  foo();
-  }}}
-  prints:
-  {{{
-  7
-  55
-  }}}
+     var data = 55;
+     function bar() { Print( data, '\n' ); }
+     bar();
+     var old = SetScope( bar, {data:7} );
+     bar();
+     var old = SetScope( bar, old );
+     bar();
+   }
+   foo();
+   }}}
+   prints:
+   {{{
+   55
+   7
+   55
+   }}}
 **/
 DEFINE_FUNCTION( SetScope ) {
 
@@ -265,6 +267,13 @@ DEFINE_FUNCTION( SetScope ) {
 /**doc
  * $VOID $INAME( obj, propertyName1 [, propertyName2 [, ... ] ] )
   Hide properties from for-in loop.
+  $H example
+   {{{
+   var obj = { a:11, b:22, c:33 };
+   for ( var p in obj ) Print(p, ', '); // prints: a, b, c
+   HideProperties(obj, 'b');
+   for ( var p in obj ) Print(p, ', '); // prints: a, c
+   }}}
 **/
 DEFINE_FUNCTION( HideProperties ) {
 
@@ -314,11 +323,11 @@ DEFINE_FUNCTION( HideProperties ) {
 /**doc
  * $INT $INAME( value )
   Returns an integer value that is a unique identifier of _value_ .
-  ===== example: =====
-  {{{
-  var myObj = {};
-  Print( IdOf(myObj), '\n' );
-  }}}
+  $H example
+   {{{
+   var myObj = {};
+   Print( IdOf(myObj), '\n' );
+   }}}
 **/
 DEFINE_FUNCTION_FAST( IdOf ) {
 
@@ -341,16 +350,15 @@ DEFINE_FUNCTION_FAST( IdOf ) {
 
 
 
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
  * $VAL $INAME( id )
   Returns the value that corresponts to the given id. This is the reciprocal of IdOf() function.
-  ===== example: =====
-  {{{
-  var myObj = {};
-  Print( FromId(IdOf(myObj)) == myObj, '\n' ); // returns true
-  }}}
+  $H example
+   {{{
+   var myObj = {};
+   Print( FromId(IdOf(myObj)) == myObj, '\n' ); // returns true
+   }}}
 **/
 DEFINE_FUNCTION_FAST( FromId ) {
 
@@ -378,10 +386,10 @@ DEFINE_FUNCTION_FAST( FromId ) {
   $H note
    All JavaScript values cannot be encoded into XDR. If the function failed to encode a value, an error is raised. The Map object can help you to encode Object and Array.
 **/
+#ifdef JS_HAS_XDR
 DEFINE_FUNCTION_FAST( XdrEncode ) {
 
 	J_S_ASSERT_ARG_MIN( 1 );
-
 	JSXDRState *xdr;
 	xdr = JS_XDRNewMem(cx, JSXDR_ENCODE);
 	J_S_ASSERT_ALLOC(xdr);
@@ -395,6 +403,7 @@ DEFINE_FUNCTION_FAST( XdrEncode ) {
 	return JS_TRUE;
 	JL_BAD;
 }
+#endif // JS_HAS_XDR
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -404,6 +413,7 @@ DEFINE_FUNCTION_FAST( XdrEncode ) {
   $H note
    Decoding malformed XDR data can lead the program to crash. This may be a security issue.
 **/
+#ifdef JS_HAS_XDR
 DEFINE_FUNCTION_FAST( XdrDecode ) {
 
 	J_S_ASSERT_ARG_MIN( 1 );
@@ -421,21 +431,20 @@ DEFINE_FUNCTION_FAST( XdrDecode ) {
 	return JS_TRUE;
 	JL_BAD;
 }
+#endif // JS_HAS_XDR
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
- * $VOID $INAME( string )
-  Report a warning.
+ * $VOID $INAME( text )
+  Report the given _text_ as warning. The warning is reported on the stderr. Warnings ignored in unsafeMode.
 **/
-// note:
-//  warning is reported on stderr ( jshost.exe test.js 2>NUL )
-// (TBD) update this note ?
 DEFINE_FUNCTION_FAST( Warning ) {
 
+	J_S_ASSERT_ARG_MIN( 1 );
 	JSString *jssMesage = JS_ValueToString(cx, J_FARG(1));
 	J_S_ASSERT_ALLOC( jssMesage );
-//	J_ARG(1) = STRING_TO_JSVAL(jssMesage);
+	J_FARG(1) = STRING_TO_JSVAL(jssMesage);
 	JS_ReportWarning( cx, "%s", JS_GetStringBytes(jssMesage) );
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
@@ -447,20 +456,19 @@ DEFINE_FUNCTION_FAST( Warning ) {
 /**doc
  * $VOID $INAME( expression [, failureMessage ] )
   If the argument expression compares equal to zero, the failureMessage is written to the standard error device and the program stops its execution.
-  ===== example: =
-  {{{
-  var foo = ['a', 'b', 'c'];
-  ASSERT( i >= 0 || i < 3, 'Invalid value.' );
-  Print( foo[i] );
-  }}}
+  $H example
+   {{{
+   var foo = ['a', 'b', 'c'];
+   ASSERT( i >= 0 || i < 3, 'Invalid value.' );
+   Print( foo[i] );
+   }}}
+  $H note
+   The error output can be redirected by redefining the _configuration.stderr function. see the Print() function.
 **/
 DEFINE_FUNCTION( ASSERT ) {
 
-	J_S_ASSERT_ARG_MIN( 1 );
-
 	bool assert;
 	J_CHK( JsvalToBool(cx, J_ARG(1), &assert) );
-
 	if ( !assert ) {
 
 		const char *message;
@@ -544,6 +552,10 @@ DEFINE_FUNCTION_FAST( TimeCounter ) {
 /**doc
  * $STR $INAME( $STR str, $INT count )
   Returns the string that is _count_ times _str_.
+  $H example
+   {{{
+	Print( StringRepeat('foo', 3) ); // prints: foofoofoo
+   }}}
 **/
 DEFINE_FUNCTION_FAST( StringRepeat ) {
 
@@ -606,10 +618,19 @@ DEFINE_FUNCTION_FAST( StringRepeat ) {
 /**doc
  * $VOID $INAME( value1 [, value2 [, ...]] )
   Display _val_ to the output (the screen by default).
-  ===== example: =====
-  {{{
-  Print( 'Hello World', '\n' );
-  }}}
+  $H example
+   {{{
+   Print( 'Hello', ' ', 'World', '\n' ); // prints: Hello World
+   }}}
+  $H note
+   The output can be redirected by redefining the _configuration.stdout function.
+   $H example
+    {{{
+    LoadModule('jsstd');
+    Print('foo\n'); // prints: foo
+    _configuration.stdout = function() {}
+    Print('bar\n'); // prints nothing
+    }}}
 **/
 DEFINE_FUNCTION_FAST( Print ) {
 
@@ -617,7 +638,7 @@ DEFINE_FUNCTION_FAST( Print ) {
 	jsval fct;
 	J_CHK( GetConfigurationValue(cx, NAME_CONFIGURATION_STDOUT, &fct) );
 	if ( JS_TypeOfValue(cx, fct) == JSTYPE_FUNCTION )
-		J_CHK( JS_CallFunctionValue(cx, globalObject, fct, J_ARGC, &J_FARG(1), J_FRVAL) );
+		J_CHK( JS_CallFunctionValue(cx, globalObject, fct, J_ARGC, J_FARGV, J_FRVAL) );
 	*J_FRVAL = JSVAL_VOID;
 
 /*
@@ -634,7 +655,7 @@ DEFINE_FUNCTION_FAST( Print ) {
 }
 
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 // XDR and bytecode compatibility:
 //   Backward compatibility is when you run old bytecode on a new engine, and that should work.
 //   What you seem to want is forward compatibility, which is new bytecode on an old engine, which is nothing we've ever promised.
@@ -756,7 +777,6 @@ static JSScript* LoadScript(JSContext *cx, JSObject *obj, const char *fileName, 
   var foo = Exec('constants.js'); // loads constants.js or constants.jsxrd if available.
   }}}
 **/
-
 // function copied from mozilla/js/src/js.c
 DEFINE_FUNCTION_FAST( Exec ) {
 
@@ -950,7 +970,7 @@ DEFINE_FUNCTION( IsStatementValid ) {
 	const char *buffer;
 	size_t length;
 	J_CHK( JsvalToStringAndLength(cx, &J_ARG(1), &buffer, &length) );
-	*rval = JS_BufferIsCompilableUnit(cx, obj, buffer, length) == JS_TRUE ? JSVAL_TRUE : JSVAL_FALSE;
+	J_CHK( BoolToJsval(cx, JS_BufferIsCompilableUnit(cx, obj, buffer, length) == JS_TRUE, rval) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1028,7 +1048,6 @@ DEFINE_PROPERTY( disableGarbageCollection ) {
 	bool disableGC;
 	J_CHK( JsvalToBool(cx, *vp, &disableGC) );
 
-
 	if ( disableGC ) {
 
 		JS_LOCK_GC(JS_GetRuntime(cx));
@@ -1094,8 +1113,10 @@ CONFIGURE_STATIC
 		FUNCTION_FAST( MaybeCollectGarbage )
 		FUNCTION_FAST( IdOf )
 		FUNCTION_FAST( FromId )
+#ifdef JS_HAS_XDR
 		FUNCTION_FAST( XdrEncode )
 		FUNCTION_FAST( XdrDecode )
+#endif // JS_HAS_XDR
 		FUNCTION_FAST( Warning )
 		FUNCTION( ASSERT )
 		FUNCTION_FAST( Halt )

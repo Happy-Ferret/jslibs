@@ -619,25 +619,27 @@ END_CLASS
  Print( 'testFunc = ' + db.Exec('SELECT length(:foo)', obj  ) ,'\n' );
  }}}
  $H example 2
-LoadModule('jsstd');
-LoadModule('jssqlite');
+ {{{
+ LoadModule('jsstd');
+ LoadModule('jssqlite');
 
-try {
+ try {
 
- var db = new Database();
- db.Exec('create table t1 (a,b,c);');
- db.Exec('insert into t1 (a,b,c) values (5,6,7)');
- db.Exec('insert into t1 (a,b,c) values (2,3,4)');
- db.Exec('insert into t1 (a,b,c) values ("a","b","c")');
+  var db = new Database();
+  db.Exec('create table t1 (a,b,c);');
+  db.Exec('insert into t1 (a,b,c) values (5,6,7)');
+  db.Exec('insert into t1 (a,b,c) values (2,3,4)');
+  db.Exec('insert into t1 (a,b,c) values ("a","b","c")');
 
- var res = db.Query('SELECT a,c from t1');
+  var res = db.Query('SELECT a,c from t1');
 
- Print( res.Row().toSource(), '\n' );
- Print( res.Row().toSource(), '\n' );
- Print( res.Row().toSource(), '\n' );
+  Print( res.Row().toSource(), '\n' );
+  Print( res.Row().toSource(), '\n' );
+  Print( res.Row().toSource(), '\n' );
 
- } catch ( ex if ex instanceof SqliteError ) {
+  } catch ( ex if ex instanceof SqliteError ) {
 
-  Print( 'SQLite error '+ex.code+': '+ex.text+'\n' );
- }
- **/
+   Print( 'SQLite error '+ex.code+': '+ex.text+'\n' );
+  }
+ }}}
+**/

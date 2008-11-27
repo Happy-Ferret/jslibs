@@ -40,6 +40,16 @@ struct Private {
 
 /**doc
 $CLASS_HEADER
+ With multicore CPUs becoming prevalent, splitting computationally expensive tasks is a good way to obtain better over-all performance.
+ Task like:
+ * Decoding a SVG image.
+ * Generate a public/private key pair.
+ * Decoding compressed Audio data.
+ * Complex query on large database.
+
+$H note
+ Creating new tasks are expensive operating system calls. Tasks may have to be reused over the time.
+
 **/
 BEGIN_CLASS( Task )
 
@@ -494,3 +504,33 @@ CONFIGURE_CLASS
 	END_STATIC_FUNCTION_SPEC
 
 END_CLASS
+
+
+/**doc
+=== Examples ===
+ $H example 1
+ {{{
+ LoadModule('jsstd');
+ LoadModule('jstask');
+
+ function MyTask( request ) {
+
+  var sum = 0;
+  for ( var i = 0; i < request; i++) {
+   
+   sum = sum + i;
+  }
+  return sum;
+ }
+
+ var myTask = new Task(MyTask);
+
+ for ( var i = 0; i < 100; i++ ) {
+  
+  myTask.Request(i);
+ }
+
+ while ( !myTask.idle )
+ Print( myTask.Response(), '\n' );
+ }}}
+ **/
