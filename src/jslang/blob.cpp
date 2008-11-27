@@ -310,7 +310,7 @@ DEFINE_FUNCTION_FAST( substr ) {
 	int start;
 	if ( IsPInfinity(cx, arg1) )
 		start = (signed)dataLength;
-	else if ( !JsvalToInt(cx, J_FARG(1), &start) )
+	else if ( !JsvalToInt(cx, arg1, &start) )
 		start = 0;
 
 	if ( start >= (signed)dataLength ) {
@@ -335,7 +335,7 @@ DEFINE_FUNCTION_FAST( substr ) {
 
 		if ( IsPInfinity(cx, arg2) )
 			length = dataLength;
-		else if ( !JsvalToInt(cx, J_FARG(2), &length) )
+		else if ( !JsvalToInt(cx, arg2, &length) )
 			length = 0;
 
 		if ( length <= 0 ) {
@@ -409,27 +409,27 @@ DEFINE_FUNCTION_FAST( substring ) {
 	}
 */
 
-	jsval arg1;
-	arg1 = J_FARG(1);
-	if ( !J_FARG_ISDEF(1) || JSVAL_IS_INT(arg1) && JSVAL_TO_INT(arg1) < 0 || IsNInfinity(cx, arg1) || IsNaN(cx, arg1) )
+	jsval arg1 = J_FARG(1);
+	if ( IsPInfinity(cx, arg1) )
+		indexA = (signed)dataLength;
+	else if ( !JsvalToInt(cx, J_FARG(1), &indexA) )
 		indexA = 0;
-	else
-		if ( IsPInfinity(cx, arg1) )
-			indexA = dataLength;
-		else
-			J_CHK( JsvalToInt(cx, arg1, &indexA) );
 
+	jsval arg2 = J_FARG(2);
+	if ( IsPInfinity(cx, arg2) )
+		indexB = (signed)dataLength;
+	else if ( !JsvalToInt(cx, arg2, &indexB) )
+		indexB = 0;
 
-	jsval arg2;
-	arg2 = J_FARG(2);
-	if ( argc < 2 || IsPInfinity(cx, arg2) )
-		indexB = dataLength;
-	else
-		if ( JSVAL_IS_VOID(arg2) || JSVAL_IS_INT(arg2) && JSVAL_TO_INT(arg2) < 0 || IsNInfinity(cx, arg2) || IsNaN(cx, arg2) )
-			indexB = 0;
-		else
-			J_CHK( JsvalToInt(cx, arg2, &indexB) );
+	if ( indexA < 0 )
+		indexA = 0;
+	else if ( indexA > (signed)dataLength )
+		indexA = (signed)dataLength;
 
+	if ( indexB < 0 )
+		indexB = 0;
+	else if ( indexB > (signed)dataLength )
+		indexB = (signed)dataLength;
 
 	if ( indexA > indexB ) {
 
