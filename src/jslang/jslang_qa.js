@@ -240,7 +240,7 @@ LoadModule('jsstd');
 		for ( var j = -2; j < s.length+2; j++ )
 			QA.ASSERT( b.charCodeAt(j), s.charCodeAt(j), 'Blob/String charCodeAt('+j+')' )
 
-/// Blob and String comparaison [ftr]
+/// Blob and String comparaison (substr, substring) [ftr]
 
 	function argGenerator(count, argList) {
 
@@ -269,7 +269,8 @@ LoadModule('jsstd');
 		 
 				var args = argGen.next();
 //				Print( 'substr('+args+')\n' );
-				QA.ASSERT( s.substr.apply(s, args), b.substr.apply(b, args), 'substr('+args+')' );
+				QA.ASSERT( s.substr.apply(s, args), b.substr.apply(b, args), 'substr('+args.toSource()+')' );
+				QA.ASSERT( s.substring.apply(s, args), b.substring.apply(b, args), 'substring('+args.toSource()+')' );
 		 }
 	} catch (ex if ex instanceof StopIteration) {}
 
