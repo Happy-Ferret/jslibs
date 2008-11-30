@@ -1,6 +1,13 @@
 LoadModule('jsstd');
 LoadModule('jsobjex');
 
+var o = new ObjEx();
+o.foo = 123;
+Print( o.constructor );
+Print( o.foo );
+
+Halt(); //////////////////////////////
+
 
 function setCallback() {
 	

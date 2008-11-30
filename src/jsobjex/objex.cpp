@@ -108,6 +108,8 @@ JSBool SetProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 DEFINE_CONSTRUCTOR() {
 
 	J_S_ASSERT_CONSTRUCTING();
+	J_S_ASSERT_THIS_CLASS();
+
 	for ( uintN i = 0; i < J_ARGC && i < 4; i++ )
 		if ( J_ARG_ISDEF(i+1) ) {
 
@@ -147,10 +149,18 @@ DEFINE_FUNCTION_FAST( Aux ) {
 	JL_BAD;
 }
 
+//DEFINE_HAS_INSTANCE() { // see issue#52
+//
+//	*bp = !JSVAL_IS_PRIMITIVE(v) && OBJ_GET_CLASS(cx, JSVAL_TO_OBJECT(v)) == _class;
+//	return JS_TRUE;
+//}
+
+
 CONFIGURE_CLASS
 
 	HAS_RESERVED_SLOTS(5)
 	HAS_CONSTRUCTOR
+//	HAS_HAS_INSTANCE
 
 	HAS_ADD_PROPERTY
 	HAS_DEL_PROPERTY
