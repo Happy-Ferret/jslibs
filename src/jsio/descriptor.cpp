@@ -240,7 +240,7 @@ bad:
 /**doc
  * $VAL *Read*( [amount] )
   Read _amount_ bytes of data from the current descriptor. If _amount_ is ommited, the whole available data is read.
-  If the descriptor is exhausted (eof or disconnected), this function returns <undefined>.
+  If the descriptor is exhausted (eof or disconnected), this function returns _undefined_.
   $H beware	
    This function returns a Blob or a string literal as empty string.
 **/

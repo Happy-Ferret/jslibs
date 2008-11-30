@@ -164,7 +164,7 @@ DEFINE_FUNCTION( Make ) {
  * $BOOL $INAME()
   Removes the directory given in the constructor.
   $H return value
-   returns <false> If the directory is not empty else it returns <true>.
+   returns _false_ If the directory is not empty else it returns _true_.
 **/
 DEFINE_FUNCTION( Remove ) {
 

@@ -194,7 +194,7 @@ DEFINE_FUNCTION( Delete ) {
 /**doc
  * $VOID $INAME( state )
   Lock or unlock a file for exclusive access.
-  _state_ can be <true> or <false>.
+  _state_ can be _true_ or _false_.
 **/
 DEFINE_FUNCTION( Lock ) {
 
@@ -298,8 +298,8 @@ DEFINE_PROPERTY( positionGetter ) {
 
 /**doc
  * $STR $INAME
-  Get or set the content of the file. If the file does not exist, content is <undefined>.
-  Setting content with <undefined> deletes the file.
+  Get or set the content of the file. If the file does not exist, content is _undefined_.
+  Setting content with _undefined_ deletes the file.
 **/
 DEFINE_PROPERTY( contentGetter ) {
 

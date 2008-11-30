@@ -72,11 +72,11 @@ DEFINE_CONSTRUCTOR() {
  * $INAME( [ _what_ ] )
   Shut down part of a full-duplex connection on a socket.
   = =
-  if _what_ is <true>, further receives will be disallowed.
+  if _what_ is _true_, further receives will be disallowed.
   = =
-  if _what_ is <false>, further sends will be disallowed.
+  if _what_ is _false_, further sends will be disallowed.
   = =
-  if _what_ is ommited or <undefined>,  further sends and receives will be disallowed
+  if _what_ is ommited or _undefined_,  further sends and receives will be disallowed
 **/
 DEFINE_FUNCTION( Shutdown ) { // arg[0] =  false: SHUTDOWN_RCV | true: SHUTDOWN_SEND | else it will SHUTDOWN_BOTH
 
@@ -548,9 +548,9 @@ DEFINE_FUNCTION( TransmitFile ) { // WORKS ONLY ON BLOCKING SOCKET !!!
   Test if a nonblocking connect has completed.
   Is <true> if the socket is connected.
   = =
-  Is <undefined> if the operation is still in progress.
+  Is _undefined_ if the operation is still in progress.
   = =
-  Is <false> if the connection is refused.
+  Is _false_ if the connection is refused.
 **/
 
 // http://developer.mozilla.org/en/docs/PR_GetConnectStatus

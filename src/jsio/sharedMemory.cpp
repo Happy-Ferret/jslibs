@@ -330,7 +330,7 @@ DEFINE_FUNCTION_FAST( Close ) {
 
 /**doc
  * $STR $INAME
-  Read or write the whole content of the shared memory. Setting <undefined> as value clears the memory area.
+  Read or write the whole content of the shared memory. Setting _undefined_ as value clears the memory area.
 **/
 DEFINE_PROPERTY( contentSetter ) {
 
