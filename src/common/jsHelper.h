@@ -57,27 +57,24 @@ typedef int (*HostOutput)( void *privateData, const char *buffer, size_t length 
 struct HostPrivate {
 
 	void *privateData;
-
 	bool unsafeMode;
 	HostOutput hostStdOut;
 	HostOutput hostStdErr;
 	jl::Queue moduleList;
-
-//	JSClass *blob;
-//	JSClass *id;
+	jl::Queue registredNativeClasses;
 	jsid Matrix44GetId;
 	jsid BufferGetId;
 	jsid StreamReadId;
 };
 
-inline HostPrivate* GetHostPrivate( JSContext *cx ) {
+inline HostPrivate* GetHostPrivate( JSContext *cx ) { // (TDB) use the runtime to store private data !
 
-	return (HostPrivate*)cx->data2; // see JS_GetContextPrivate(cx) but with data2
+	return (HostPrivate*)cx->runtime->data; // see JS_GetRuntimePrivate
 }
 
 inline void SetHostPrivate( JSContext *cx, HostPrivate *hostPrivate ) {
 
-	cx->data2 = (void*)hostPrivate;
+	cx->runtime->data = (void*)hostPrivate;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -546,10 +543,43 @@ inline bool MaybeRealloc( int requested, int received ) {
 ///////////////////////////////////////////////////////////////////////////////
 //
 
+inline void JL_RegisterNativeClass( JSContext *cx, JSClass *jsClass ) {
 
+	QueuePush(&GetHostPrivate(cx)->registredNativeClasses, (void*)jsClass);
+}
 
+inline JSClass *JL_GetRegistredNativeClass( JSContext *cx, const char *className ) {
+
+	JSClass *jsClass;
+	for ( jl::QueueCell *it = jl::QueueBegin(&GetHostPrivate(cx)->registredNativeClasses); it; it = jl::QueueNext(it) ) {
+		
+		jsClass = (JSClass*)QueueGetData(it);
+		if ( strcmp(className, jsClass->name) == 0 )
+			return jsClass;
+	}
+	return NULL;
+}
+
+inline bool JL_UnregisterNativeClass( JSContext *cx, JSClass *jsClass ) {
+
+	for ( jl::QueueCell *it = jl::QueueBegin(&GetHostPrivate(cx)->registredNativeClasses); it; it = jl::QueueNext(it) ) {
+
+		if ( QueueGetData(it) == (void*)jsClass ) {
+			QueueRemoveCell(&GetHostPrivate(cx)->registredNativeClasses, it);
+			return true;
+		}
+	}
+	return false;
+}
+
+inline JSClass *GetGlobalClassByName( JSContext *cx, const char *className ) {
+	
+	return JL_GetRegistredNativeClass(cx, className);
+}
+
+/*
 // The following function wil only works if the class is defined in the global namespace (say global object)
-inline JSClass *GetGlobalClassByName(JSContext *cx, const char *className) {
+inline JSClass *GetGlobalClassByName( JSContext *cx, const char *className ) {
 
 	// see.  js_FindClassObject(cx, NULL, INT_TO_JSID(JSProto_StopIteration), &v)) / JS_GetClassObject
 
@@ -574,6 +604,7 @@ inline JSClass *GetGlobalClassByName(JSContext *cx, const char *className) {
 	}
 	return NULL;
 }
+*/
 
 ///////////////////////////////////////////////////////////////////////////////
 // test and conversion functions
@@ -1199,7 +1230,9 @@ inline JSBool UnserializeJsval( JSContext *cx, const Serialized *xdr, jsval *rva
 inline jsid StringToJsid( JSContext *cx, const char *cstr ) {
 
 	jsid tmp;
-	J_CHK( JS_ValueToId(cx, STRING_TO_JSVAL(JS_InternString(cx, cstr)), &tmp) );
+	JSString *jsstr = JS_InternString(cx, cstr);
+	J_CHK( jsstr != NULL );
+	J_CHK( JS_ValueToId(cx, STRING_TO_JSVAL(jsstr), &tmp) );
 	return tmp;
 bad:
 	return 0;

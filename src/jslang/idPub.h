@@ -34,23 +34,24 @@ inline JSClass *GetIdJSClass( JSContext *cx ) {
 }
 
 
-inline JSBool CreateId( JSContext *cx, ID_TYPE idType, size_t size, void** data, IdFinalizeCallback_t finalizeCallback, jsval *idVal ) {
+inline JSBool CreateId( JSContext *cx, ID_TYPE idType, size_t userSize, void** userData, IdFinalizeCallback_t finalizeCallback, jsval *idVal ) {
 
-	J_S_ASSERT( GetIdJSClass(cx) != NULL, "Id class not initialized.");
+	JSClass *idJSClass = GetIdJSClass(cx);
+	J_S_ASSERT( idJSClass != NULL, "Id class not initialized.");
 
 	JSObject *idObj;
-	idObj = JS_NewObject( cx, GetIdJSClass(cx), NULL, NULL );
+	idObj = JS_NewObject( cx, idJSClass, NULL, NULL );
 	J_S_ASSERT_ALLOC( idObj );
 	*idVal = OBJECT_TO_JSVAL(idObj);
 	IdPrivate *pv;
-	pv = (IdPrivate*)JS_malloc(cx, sizeof(IdPrivate) + size);
+	pv = (IdPrivate*)JS_malloc(cx, sizeof(IdPrivate) + userSize);
 	J_S_ASSERT_ALLOC(pv);
 	J_CHKB( JS_SetPrivate(cx, idObj, pv), bad_free );
 
 	pv->idType = idType;
 	pv->finalizeCallback = finalizeCallback;
-	if (data)
-		*data = (char*)pv + sizeof(IdPrivate);
+	if (userData)
+		*userData = (char*)pv + sizeof(IdPrivate);
 
 	return JS_TRUE;
 bad_free:
@@ -81,7 +82,7 @@ inline bool IsIdType( JSContext *cx, jsval idVal, ID_TYPE idType ) {
 inline void* GetIdPrivate( JSContext *cx, jsval idVal ) {
 
 	IdPrivate *pv = (IdPrivate*)JS_GetPrivate(cx, JSVAL_TO_OBJECT(idVal));
-	return (char*)pv + sizeof(IdPrivate);
+	return (char*)pv + sizeof(IdPrivate); // user data is just behind our private structure.
 }
 
 

@@ -157,6 +157,12 @@ LoadModule('jsstd');
 		QA.ASSERT( e instanceof Blob, true )
 		QA.ASSERT( e instanceof String, false )
 
+/// Blob misc mutation tests [ftr]
+
+	var b = Blob('123')
+	b.toUpperCase();
+	QA.ASSERT( b instanceof String, true );
+	QA.ASSERT( b.constructor, String );
 
 /// Blob mutation reliability [ftr]
 

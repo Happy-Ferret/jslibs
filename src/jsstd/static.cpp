@@ -22,6 +22,8 @@
 #include "jscntxt.h"
 #include <jsdbgapi.h>
 
+#include "../common/buffer.h"
+
 
 //#ifndef PATH_MAX
 //	#define PATH_MAX FILENAME_MAX
@@ -442,7 +444,8 @@ DEFINE_FUNCTION_FAST( XdrDecode ) {
 DEFINE_FUNCTION_FAST( Warning ) {
 
 	J_S_ASSERT_ARG_MIN( 1 );
-	JSString *jssMesage = JS_ValueToString(cx, J_FARG(1));
+	JSString *jssMesage;
+	jssMesage = JS_ValueToString(cx, J_FARG(1));
 	J_S_ASSERT_ALLOC( jssMesage );
 	J_FARG(1) = STRING_TO_JSVAL(jssMesage);
 	JS_ReportWarning( cx, "%s", JS_GetStringBytes(jssMesage) );
@@ -1084,8 +1087,33 @@ DEFINE_PROPERTY( processPrioritySetter ) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #ifdef _DEBUG
+
 DEFINE_FUNCTION_FAST( Test ) {
 
+	char *ref = (char*)malloc(2000000);
+	for ( int i = 0; i < 2000000; i++ )
+		ref[i] = rand() & 0xff; // 0->255
+	int refPos = 0;
+
+	using namespace jl;
+	Buffer b;
+	BufferInitialize(&b, BUFFER_TYPE_CHUNK);
+
+	for ( int i = 0; i < 100; i++ ) {
+
+		int rnd = rand() & 0xff; // 0->127
+		char *tmp = BufferNewChunk(&b, rnd);
+		memcpy(tmp, ref + refPos, rnd);
+		refPos += rnd;
+	}
+
+	int l = BufferGetLength(&b);
+
+	char *tmp = (char*)malloc(l);
+	BufferCopyData(&b, tmp, l);
+
+	const char *d = BufferGetData(&b);
+	bool success = memcmp(ref, d, l) == 0 && memcmp(ref, tmp, l) == 0;
 
 	return JS_TRUE;
 }

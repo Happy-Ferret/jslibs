@@ -22,6 +22,9 @@
 #include "file.h"
 #include "socket.h"
 
+#include "../common/buffer.h"
+using namespace jl;
+
 // open: 	SetNativeInterface(cx, obj, ...
 // close: 	RemoveNativeInterface(cx, obj, NI_READ_RESOURCE );
 
@@ -135,7 +138,7 @@ DEFINE_FUNCTION( Close ) {
 }
 
 
-JSBool ReadToJsval(JSContext *cx, PRFileDesc *fd, int amount, jsval *rval ) {
+JSBool ReadToJsval( JSContext *cx, PRFileDesc *fd, int amount, jsval *rval ) {
 
 	char *buf = (char*)JS_malloc(cx, amount +1);
 	J_S_ASSERT_ALLOC(buf);
@@ -143,14 +146,13 @@ JSBool ReadToJsval(JSContext *cx, PRFileDesc *fd, int amount, jsval *rval ) {
 
 	PRInt32 res;
 	res = PR_Read(fd, buf, amount);
-
 	if (res == -1) { // failure. The reason for the failure can be obtained by calling PR_GetError.
 
 		JS_free( cx, buf );
 
 		PRErrorCode errCode = PR_GetError();
 		if ( errCode != PR_WOULD_BLOCK_ERROR )
-			return ThrowIoError(cx);
+			J_CHK( ThrowIoError(cx) );
 		*rval = JS_GetEmptyStringValue(cx);
 		return JS_TRUE;
 	}
@@ -179,88 +181,58 @@ bad_free:
 
 JSBool ReadAllToJsval(JSContext *cx, PRFileDesc *fd, jsval *rval ) {
 
-	int totalLength = 0;
-	int chunkListTotalLength = 32; // initial value (chunks), will evolve at runtime
-	int chunkListContentLength = 0;
-	char **chunkList = (char **)malloc(chunkListTotalLength * sizeof(char*));
-	int currentReadLength = 1024;
+	Buffer buf;
+	BufferInitialize(&buf, bufferTypeChunk, bufferGrowTypeNoGuess);
+	PRInt32 currentReadLength = 512;
+	for (;;) {
 
-	PRInt32 receivedAmount;
-	do {
-		if ( chunkListContentLength >= chunkListTotalLength ) {
+		if ( currentReadLength < 16384 )
+			currentReadLength *= 2;
 
-			chunkListTotalLength *= 2;
-			chunkList = (char**)realloc(chunkList, chunkListTotalLength * sizeof(char*));
-		}
-		//	currentReadLength = currentReadLength < 16384 ? 2048 + 1024 * chunkListContentLength : 16384; // 2048, 3072, 4096, 5120, ..., 16384
-		char *chunk = (char *)malloc(sizeof(int) + currentReadLength);  // chunk format: int + data ...
-		chunkList[chunkListContentLength++] = chunk;
-
-		PRInt32 res = PR_Read( fd, chunk + sizeof(int), currentReadLength ); // chunk + sizeof(int) gives the position where the data can be written. Size to read is currentReadLength
-
+		PRInt32 res = PR_Read(fd, BufferNewChunk(&buf, currentReadLength), currentReadLength);
 		if ( res > 0 ) {
 
-			receivedAmount = res;
+			if ( res < currentReadLength ) {
+
+				BufferUnused(&buf, currentReadLength - res);
+				break;
+			}
 		} else if ( res == -1 ) { // failure. The reason for the failure can be obtained by calling PR_GetError.
 
-			PRErrorCode errCode = PR_GetError();
-			if ( errCode != PR_WOULD_BLOCK_ERROR ) {
-
-				while ( chunkListContentLength )
-					free(chunkList[--chunkListContentLength]);
-				free(chunkList);
-				return ThrowIoError(cx);
-			}
-			free(chunkList[--chunkListContentLength]); // cancel the last chunk
-			receivedAmount = 0;
+			if ( PR_GetError() != PR_WOULD_BLOCK_ERROR )
+				J_CHK( ThrowIoError(cx) );
 			break; // no error, no data received, we cannot reach currentReadLength
 		} else if ( res == 0 ) { // end of file/socket
 
-			if ( totalLength > 0 ) { // we reach eof BUT we have read some data.
+			if ( BufferGetLength(&buf) > 0 ) { // we reach eof BUT we have read some data.
 
-				free(chunkList[--chunkListContentLength]); // cancel the last chunk
-				receivedAmount = 0;
 				break; // no error, no data received, we cannot reach currentReadLength
 			} else {
 
-				free(chunkList[--chunkListContentLength]); // cancel the last chunk
-				free(chunkList);
+				BufferFinalize(&buf);
 				*rval = JSVAL_VOID;
 				return JS_TRUE;
 			}
 		}
-		*(int*)chunk = receivedAmount;
-		totalLength += receivedAmount;
-	} while ( receivedAmount == currentReadLength );
+	}
 
+	if ( BufferGetLength(&buf) == 0 ) { // PR_WOULD_BLOCK_ERROR and NOT end of file/socket
 
-	if ( totalLength == 0 ) { // PR_WOULD_BLOCK_ERROR and NOT end of file/socket
-
-		while ( chunkListContentLength )
-			free(chunkList[--chunkListContentLength]);
-		free(chunkList);
+		BufferFinalize(&buf);
 		*rval = JS_GetEmptyStringValue(cx);
 		return JS_TRUE;
 	}
 
-	char *jsData = (char*)JS_malloc(cx, totalLength + 1);
-	jsData[totalLength] = '\0';
-	char *ptr = jsData + totalLength; // starts from the end
-	while ( chunkListContentLength ) {
+	size_t length = BufferGetLength(&buf);
+	char *jsData = (char*)JS_malloc(cx, length +1);
+	BufferCopyData(&buf, jsData, length);
+	jsData[length] = '\0';
+	J_CHK( J_NewBlob( cx, jsData, length, rval ) );
 
-		char *chunk = chunkList[--chunkListContentLength];
-		int chunkLength = *(int*)chunk;
-		ptr -= chunkLength;
-		memcpy(ptr, chunk + sizeof(int), chunkLength);
-		free(chunk);
-	}
-	free(chunkList);
-	
-	J_CHK( J_NewBlob( cx, jsData, totalLength, rval ) );
-	
+	BufferFinalize(&buf);
 	return JS_TRUE;
 bad:
-	free(chunkList);
+	BufferFinalize(&buf);
 	return JS_FALSE;
 }
 

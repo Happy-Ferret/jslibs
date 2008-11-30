@@ -118,6 +118,7 @@ DEFINE_CONSTRUCTOR() {
 **/
 DEFINE_FUNCTION_FAST( Read ) {
 
+	J_S_ASSERT_CLASS(J_FOBJ, _class);
 	J_S_ASSERT_ARG_MIN( 1 );
 
 	int amount;
@@ -149,6 +150,7 @@ DEFINE_FUNCTION_FAST( Read ) {
 **/
 DEFINE_PROPERTY( positionGetter ) {
 
+	J_S_ASSERT_CLASS(obj, _class);
 	int position;
 	J_CHK( PositionGet(cx, obj, &position) );
 	*vp = INT_TO_JSVAL( position );
@@ -158,6 +160,7 @@ DEFINE_PROPERTY( positionGetter ) {
 
 DEFINE_PROPERTY( positionSetter ) {
 
+	J_S_ASSERT_CLASS(obj, _class);
 	int position;
 	J_CHK( JsvalToInt(cx, *vp, &position) );
 	J_S_ASSERT( position >= 0, "Invalid stream position." );
@@ -172,6 +175,7 @@ DEFINE_PROPERTY( positionSetter ) {
 **/
 DEFINE_PROPERTY( available ) {
 
+	J_S_ASSERT_CLASS(obj, _class);
 	J_CHK( JS_GetReservedSlot(cx, obj, SLOT_STREAM_SOURCE, vp) ); // use vp as a tmp variable
 	JSObject *srcObj;
 	if ( JSVAL_IS_OBJECT( *vp ) )
@@ -195,6 +199,7 @@ DEFINE_PROPERTY( available ) {
 **/
 DEFINE_PROPERTY( source ) {
 
+	J_S_ASSERT_CLASS(obj, _class);
 	J_CHK( JS_GetReservedSlot(cx, obj, SLOT_STREAM_SOURCE, vp) );
 	return JS_TRUE;
 	JL_BAD;

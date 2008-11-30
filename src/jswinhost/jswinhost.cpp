@@ -62,34 +62,24 @@ static JSBool stdoutFunction(JSContext *cx, JSObject *obj, uintN argc, jsval *ar
 int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow ) {
 
 	JSContext *cx = CreateHost(-1, -1, 0);
-	if ( cx == NULL )
-		return -1;
-
-	if ( !InitHost(cx, true, NULL, NULL, NULL) )
-		return -1;
-
+	J_CHK( cx != NULL );
+	J_CHK( InitHost(cx, true, NULL, NULL, NULL) );
 	errno_t err;
 	CHAR moduleFileName[PATH_MAX];
 	DWORD len = GetModuleFileName(hInstance, moduleFileName, sizeof(moduleFileName));
-	if ( len == 0 )
-		return -1;
+	J_CHK( len );
 	char *name = strrchr( moduleFileName, '\\' );
-	if ( name == NULL )
-		return -1;
+	J_CHK( name );
 	*name = '\0';
 	name++;
 
-
-	CHAR moduleName[PATH_MAX];
+	CHAR moduleName[PATH_MAX], scriptName[PATH_MAX];
 	DWORD moduleNameLen = GetModuleFileName(hInstance, moduleName, sizeof(moduleName));
-
-	CHAR scriptName[PATH_MAX];
 	err = strncpy_s(scriptName, sizeof(scriptName), moduleName, moduleNameLen );
 	J_S_ASSERT( err == 0, "Buffer overflow." );
 //	DWORD scriptNameLen = GetModuleFileName(hInstance, scriptName, sizeof(scriptName));
 	char *dotPos = strrchr(scriptName, '.');
-	if ( dotPos == NULL )
-		return -1;
+	J_CHK( dotPos );
 	*dotPos = '\0';
 	err = strcat_s( scriptName, sizeof(scriptName), ".js" );
 	J_S_ASSERT( err == 0, "Buffer overflow." );
@@ -101,43 +91,39 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 
 	// (TBD) use file index as mutexName. note: If the file is on an NTFS volume, you can get a unique 64 bit identifier for it with GetFileInformationByHandle.  The 64 bit identifier is the "file index". 
 	char mutexName[PATH_MAX];// = "jswinhost_";
-	err = strncpy_s(mutexName, sizeof(mutexName), moduleName, moduleNameLen );
+	err = strncpy_s(mutexName, sizeof(mutexName), moduleName, moduleNameLen);
 	J_S_ASSERT( err == 0, "Buffer overflow." );
 	err = strcat_s(mutexName, sizeof(mutexName), name);
 	J_S_ASSERT( err == 0, "Buffer overflow." );
 	SetLastError(0);
-	HANDLE instanceCheckMutex = CreateMutex( NULL, TRUE, mutexName );
+	HANDLE instanceCheckMutex = CreateMutex(NULL, TRUE, mutexName);
 	bool hasPrevInstance = GetLastError() == ERROR_ALREADY_EXISTS;
-
 
 	JSObject *globalObject = JS_GetGlobalObject(cx);
 
 	// arguments
-//	JS_DefineProperty(cx, globalObject, NAME_GLOBAL_ARGUMENT, STRING_TO_JSVAL(JS_NewStringCopyZ(cx, lpCmdLine)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT);
-	JS_DefineProperty(cx, globalObject, NAME_GLOBAL_SCRIPT_HOST_NAME, STRING_TO_JSVAL(JS_NewStringCopyZ(cx, name)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT);
-	JS_DefineProperty(cx, globalObject, NAME_GLOBAL_SCRIPT_HOST_PATH, STRING_TO_JSVAL(JS_NewStringCopyZ(cx, moduleFileName)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT);
-	JS_DefineProperty(cx, globalObject, NAME_GLOBAL_FIRST_INSTANCE, BOOLEAN_TO_JSVAL(hasPrevInstance?JS_FALSE:JS_TRUE), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT);
-
-	const char * argv[] = { scriptName, lpCmdLine };
-	jsval rval;
+//	J_CHK( JS_DefineProperty(cx, globalObject, NAME_GLOBAL_ARGUMENT, STRING_TO_JSVAL(JS_NewStringCopyZ(cx, lpCmdLine)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) ); // see ExecuteScriptFileName()
+	J_CHK( JS_DefineProperty(cx, globalObject, NAME_GLOBAL_SCRIPT_HOST_NAME, STRING_TO_JSVAL(JS_NewStringCopyZ(cx, name)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
+	J_CHK( JS_DefineProperty(cx, globalObject, NAME_GLOBAL_SCRIPT_HOST_PATH, STRING_TO_JSVAL(JS_NewStringCopyZ(cx, moduleFileName)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
+	J_CHK( JS_DefineProperty(cx, globalObject, NAME_GLOBAL_FIRST_INSTANCE, BOOLEAN_TO_JSVAL(hasPrevInstance?JS_FALSE:JS_TRUE), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
 
 	//#pragma comment (lib, "User32.lib")
 	//MessageBox(NULL, scriptName, "script name", 0);
 
-	if ( !ExecuteScriptFileName(cx, scriptName, false, 2, argv, &rval) ) {
-
+	jsval rval;
+	const char *argv[] = { scriptName, lpCmdLine };
+	if ( ExecuteScriptFileName(cx, scriptName, false, COUNTOF(argv), argv, &rval) != JS_TRUE )
 		if ( JS_IsExceptionPending(cx) )
-				JS_ReportPendingException(cx); // see JSOPTION_DONT_REPORT_UNCAUGHT option.
-	}
+			JS_ReportPendingException(cx); // see JSOPTION_DONT_REPORT_UNCAUGHT option.
 
 	DestroyHost(cx);
 	JS_ShutDown();
 
-	//ReleaseMutex
-	CloseHandle( instanceCheckMutex );
+	CloseHandle( instanceCheckMutex ); //ReleaseMutex
 
-bad:
 	return 0;
+bad:
+	return -1;
 }
 
 /**doc
@@ -149,19 +135,24 @@ bad:
 
 === Description ===
 
-jswinhost ( javascript windows host ) is a small executable file that run javascript programs under a windows environment.
-The main difference with jshost is the jswinhost do not popup any windows
+jswinhost (javascript windows host) is a small executable file that run javascript programs under a windows environment.
+The main difference with jshost is the jswinhost does not create any console windows.
 
 === Methods ===
 
  * status *LoadModule*( moduleFileName )
-  same as [jshost]
+  see [jshost]
 
 === Properties ===
 
- * object *global* $READONLY
- * string *argument*
-  the whole command line
+ * $OBJ *global* $READONLY
+  is the global object.
+
+ * $ARRAY *arguments* $READONLY
+  is the host path [0] and whole command line [1].
+
+ * $BOOL *isfirstinstance* $READONLY
+  is true ic the current instance is the first one. This can help to avoid jswinhost to be run twice at the same time.
 
 === Configuration object ===
  see [jshost]

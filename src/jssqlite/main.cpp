@@ -45,9 +45,9 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	
 	dbContextList = jl::QueueConstruct();
 
-	J_CHK( INIT_CLASS( SqliteError ) );
-	J_CHK( INIT_CLASS( Result ) );
-	J_CHK( INIT_CLASS( Database ) );
+	INIT_CLASS( SqliteError );
+	INIT_CLASS( Result );
+	INIT_CLASS( Database );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -59,6 +59,9 @@ EXTERN_C DLLEXPORT void ModuleRelease (JSContext *cx) {
 	REMOVE_CLASS( SqliteError );
 	REMOVE_CLASS( Result );
 	REMOVE_CLASS( Database );
+
+bad:
+	return;
 }
 
 EXTERN_C DLLEXPORT void ModuleFree () {

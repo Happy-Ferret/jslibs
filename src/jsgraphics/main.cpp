@@ -38,9 +38,9 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 //	J_CHK( INIT_CLASS( Window ) );
 #endif
 
-	J_CHK( INIT_CLASS( Transformation ) );
-	J_CHK( INIT_CLASS( Ogl ) );
-	J_CHK( INIT_CLASS( OglError ) );
+	INIT_CLASS( Transformation );
+	INIT_CLASS( Ogl );
+	INIT_CLASS( OglError );
 	return JS_TRUE;
 	JL_BAD;
 }

@@ -272,7 +272,7 @@ DEFINE_CONSTRUCTOR() {
 **/
 DEFINE_FUNCTION( Encrypt ) {
 
-	J_S_ASSERT_THIS_CLASS();
+	J_S_ASSERT_CLASS( obj, _class );
 	J_S_ASSERT_ARG_MIN( 1 );
 	CipherPrivate *privateData;
 	privateData = (CipherPrivate *)JS_GetPrivate( cx, obj );
@@ -330,8 +330,8 @@ DEFINE_FUNCTION( Encrypt ) {
 **/
 DEFINE_FUNCTION( Decrypt ) {
 
-	J_S_ASSERT_ARG_MIN( 1 );
 	J_S_ASSERT_CLASS( obj, _class );
+	J_S_ASSERT_ARG_MIN( 1 );
 	CipherPrivate *privateData;
 	privateData = (CipherPrivate *)JS_GetPrivate( cx, obj );
 	J_S_ASSERT_RESOURCE( privateData );

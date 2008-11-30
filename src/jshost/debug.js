@@ -2,7 +2,55 @@ LoadModule('jsstd');
 LoadModule('jsstd');
 LoadModule('jsio');
 
+Print( _configuration.unsafeMode );
 
+
+Halt();
+
+	_configuration.stderr = function(){}
+
+	var s = "abcdefgh";
+	var b = Blob(s);
+	
+/*
+	Print('expected: '+b.substring( 100, " " ), '\n');
+	b.substring( 1000, " " );
+  throw 0;
+*/
+
+
+	function argGenerator(count, argList) {
+
+		 var len = argList.length;
+		 var pos = Math.pow(len, count);
+		 var arg = new Array(count);
+		 while (pos--) {
+
+			  var tmp = pos;
+			  for (var i = 0; i < count; i++) {
+
+					var r = tmp % len;
+					tmp = (tmp - r) / len;
+					arg[i] = argList[r];
+			  }
+			  yield arg;
+		 }
+	}
+
+	var argGen = argGenerator(2, [undefined, NaN, - Infinity, -1000, -100, -10, -3, -2.5, -2, -1, -0.6, -0.5, -0.4, 0, 0.4, 0.5, 0.6, 1, 2, 2.5, 3, 10, 100, 1000, + Infinity, "", " "]);
+	try {
+		 for (;;) {
+		 
+				var args = argGen.next();
+				if ( s.substring.apply(s, args) != b.substring.apply(b, args) ) {
+				
+					Print( 'substring('+args.toSource()+')\n' );
+					throw 0;
+				}
+		 }
+	} catch (ex if ex instanceof StopIteration) {}
+
+Print( 'done');
 throw 2
 
 

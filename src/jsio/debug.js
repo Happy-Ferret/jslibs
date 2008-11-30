@@ -2,6 +2,12 @@ LoadModule('jsstd');
 LoadModule('jsio');
 
 
+var f = new File('Eta_Carinae_Nebula_(NGC_3372).jpg').Open('r');
+Print( f.Read().length );
+
+
+Halt(); //////////////////////////////////////////////////////////
+
 var mem = new SharedMemory( 'fileName', 100 );
 var mem1 = new SharedMemory( 'fileName', 100 );
 
@@ -25,7 +31,7 @@ try {
 }
 
 
-Halt();
+Halt(); //////////////////////////////////////////////////////////
 
 var f = new File('test.txt');
 f.info.toto = 123;
@@ -36,7 +42,7 @@ Print( f.info.toto, '\n' );
 
 
 
-Halt();
+Halt(); //////////////////////////////////////////////////////////
 
 //var tmp = new File('test.txt');
 //tmp.Open('w');
@@ -56,7 +62,7 @@ try {
 }
 
 
-Halt();
+Halt(); //////////////////////////////////////////////////////////
 
 var f = new File('directory.cpp');
 f.Open("r");
@@ -64,7 +70,7 @@ var m = new MemoryMapped(f);
 Print(m);
 
 
-Halt();
+Halt(); //////////////////////////////////////////////////////////
 
 
 processPriority = 2;
@@ -78,7 +84,7 @@ Print( processPriority );
 Sleep(500);
 		
 		
-Halt();
+Halt(); //////////////////////////////////////////////////////////
 
 var mem = new SharedMemory( 'test.txt', 4 );
 
@@ -88,7 +94,9 @@ while (!endSignal) {
 	mem.content = i++;
 	Sleep(1000);
 }
-Halt();
+
+
+Halt(); //////////////////////////////////////////////////////////
 
 
 
@@ -98,7 +106,8 @@ mem.Write('test', 10);
 //Print( Directory.List('.').join('\n'), '\n' );
 var mem2 = new SharedMemory( 'test.txt', 4 );
 Print( mem2.content.length, '\n' );
-Halt();
+
+Halt(); //////////////////////////////////////////////////////////
 
 try {
 
@@ -164,7 +173,7 @@ Print('\n * testing UDP socket \n');
 
 
 
-Halt();
+Halt(); //////////////////////////////////////////////////////////
 
 
 	var server = new Socket( Socket.TCP );
@@ -181,7 +190,7 @@ Halt();
 
 	server1.Listen();
 
-Halt();
+Halt(); //////////////////////////////////////////////////////////
 
 //Print( Socket.GetHostsByName('www.google.com') );
 
@@ -193,7 +202,7 @@ File.stdin.Read();
 
 f.Close();
 
-Halt();	
+Halt(); //////////////////////////////////////////////////////////	
 	
 
 Print('\n * testing stdout \n');

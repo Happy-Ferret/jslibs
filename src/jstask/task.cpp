@@ -16,6 +16,9 @@
 
 #include "../host/host.h"
 
+#include "../common/buffer.h"
+using namespace jl;
+
 struct Private {
 
 	JLMutexHandler mutex;
@@ -191,39 +194,24 @@ JSBool Task(JSContext *cx, Private *pv) {
 }
 
 
-struct ErrorBuffer {
-	char *buffer;
-	size_t length;
-	size_t maxLength;
-};
-
-
 int TaskStdErrHostOutput( void *privateData, const char *buffer, size_t length ) {
 
-	ErrorBuffer *eb = (ErrorBuffer*)privateData;
-	if ( eb->length + length > eb->maxLength ) {
-
-		eb->maxLength = eb->length + length + 1024;
-		eb->buffer = eb->buffer == NULL ? (char*)malloc(eb->maxLength) : (char*)realloc(eb->buffer, eb->maxLength);
-	}
-	memcpy(eb->buffer + eb->length, buffer, length);
-	eb->length += length;
+	Buffer *eb = (Buffer*)privateData;
+	memcpy(BufferNewChunk(eb, length), buffer, length);
 	return 0;
 }
 
 
 JLThreadFuncDecl ThreadProc( void *threadArg ) {
 
-	ErrorBuffer errorBuffer;
-	errorBuffer.buffer = NULL;
-	errorBuffer.length = 0;
-	errorBuffer.maxLength = 0;
+	Buffer errBuffer;
+	BufferInitialize(&errBuffer, bufferTypeRealloc, bufferGrowTypeGuess);
 
 	JSContext *cx = CreateHost(-1, -1, 0);
 	if ( cx == NULL )
 		return 0;
 
-	J_CHK( InitHost(cx, _unsafeMode, NULL, TaskStdErrHostOutput, &errorBuffer) );
+	J_CHK( InitHost(cx, _unsafeMode, NULL, TaskStdErrHostOutput, &errBuffer) );
 
 	Private *pv;
 	pv = (Private*)threadArg;
@@ -241,7 +229,7 @@ JLThreadFuncDecl ThreadProc( void *threadArg ) {
 			ex = STRING_TO_JSVAL(jsstr);
 		} else {
 
-			J_CHK( StringAndLengthToJsval(cx, &ex, errorBuffer.buffer, errorBuffer.length) );
+			J_CHK( StringAndLengthToJsval(cx, &ex, BufferGetData(&errBuffer), BufferGetLength(&errBuffer)) );
 			//ex = JSVAL_VOID; // unknown exception
 		}
 
@@ -258,8 +246,7 @@ JLThreadFuncDecl ThreadProc( void *threadArg ) {
 	}
 
 bad:
-	if ( errorBuffer.buffer != NULL )
-		free(errorBuffer.buffer);
+	BufferFinalize(&errBuffer);
 	if ( cx )
 		DestroyHost(cx);
 	return 0;
@@ -276,9 +263,9 @@ bad:
 **/
 DEFINE_CONSTRUCTOR() {
 
-	Private *pv = NULL;
+	Private *pv = NULL; // keep on top
 	J_S_ASSERT_CONSTRUCTING();
-	J_S_ASSERT_THIS_CLASS();
+	J_S_ASSERT_CLASS( obj, _class );
 	J_S_ASSERT_ARG_MIN(1);
 	J_S_ASSERT_FUNCTION( J_ARG(1) );
 
@@ -344,6 +331,7 @@ bad:
 **/
 DEFINE_FUNCTION_FAST( Request ) {
 
+	J_S_ASSERT_CLASS( J_FOBJ, _class );
 	J_S_ASSERT_ARG_MIN(1);
 	Private *pv;
 	pv = (Private*)JS_GetPrivate(cx, J_FOBJ);
@@ -369,7 +357,9 @@ DEFINE_FUNCTION_FAST( Request ) {
 **/
 DEFINE_FUNCTION_FAST( Response ) {
 
-	Private *pv = (Private*)JS_GetPrivate(cx, J_FOBJ);
+	J_S_ASSERT_CLASS( J_FOBJ, _class );
+	Private *pv;
+	pv = (Private*)JS_GetPrivate(cx, J_FOBJ);
 	J_S_ASSERT_RESOURCE(pv);
 
 	bool hasNoResponse;
@@ -438,7 +428,9 @@ DEFINE_FUNCTION_FAST( Response ) {
 **/
 DEFINE_PROPERTY( pendingRequestCount ) {
 
-	Private *pv = (Private*)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_CLASS( obj, _class );
+	Private *pv;
+	pv = (Private*)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE(pv);
 	JLAcquireMutex(pv->mutex); // --
 	J_CHK( UIntToJsval(cx, pv->pendingRequestCount, vp) );
@@ -455,7 +447,9 @@ DEFINE_PROPERTY( pendingRequestCount ) {
 **/
 DEFINE_PROPERTY( pendingResponseCount ) {
 
-	Private *pv = (Private*)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_CLASS( obj, _class );
+	Private *pv;
+	pv = (Private*)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE(pv);
 	JLAcquireMutex(pv->mutex); // --
 	J_CHK( UIntToJsval(cx, pv->pendingResponseCount, vp) );
@@ -472,7 +466,9 @@ DEFINE_PROPERTY( pendingResponseCount ) {
 **/
 DEFINE_PROPERTY( idle ) {
 
-	Private *pv = (Private*)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_CLASS( obj, _class );
+	Private *pv;
+	pv = (Private*)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE(pv);
 	JLAcquireMutex(pv->mutex); // --
 	J_CHK( BoolToJsval(cx, pv->pendingRequestCount + pv->processingRequestCount + pv->pendingResponseCount == 0 || pv->end, vp) );

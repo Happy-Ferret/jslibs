@@ -42,6 +42,7 @@ extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj)
 	INIT_CLASS( Console );
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /*

@@ -37,6 +37,7 @@ extern "C" DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	INIT_CLASS( ZError );
 	INIT_CLASS( Z );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 #ifdef XP_WIN

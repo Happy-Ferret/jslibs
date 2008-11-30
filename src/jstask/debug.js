@@ -7,7 +7,8 @@ LoadModule('jstask');
 
 function MyTask( request ) {
 
-	for ( var i = 0; i < 200000; i++);
+	for ( var i = 0; i < 100000; i++);
+	throw 123;
 	return 'r#' + request;
 }
 

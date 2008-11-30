@@ -135,6 +135,8 @@ DEFINE_FUNCTION_FAST( Aux ) {
 
 	J_S_ASSERT_ARG_MIN(1);
 	J_S_ASSERT_OBJECT( J_FARG(1) );
+	J_S_ASSERT_CLASS( JSVAL_TO_OBJECT(J_FARG(1)), _class);
+
 	JSObject *object;
 	object = JSVAL_TO_OBJECT(J_FARG(1));
 	J_S_ASSERT_CLASS( object, _class );

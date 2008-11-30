@@ -72,13 +72,13 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	}
 */
 
-	J_CHK( INIT_CLASS( OalError ) );
-	J_CHK( INIT_CLASS( Oal ) );
-	J_CHK( INIT_CLASS( OalBuffer ) );
-	J_CHK( INIT_CLASS( OalSource ) );
-	J_CHK( INIT_CLASS( OalListener ) );
-	J_CHK( INIT_CLASS( OalEffect ) );
-	J_CHK( INIT_CLASS( OalFilter ) );
+	INIT_CLASS( OalError );
+	INIT_CLASS( Oal );
+	INIT_CLASS( OalBuffer );
+	INIT_CLASS( OalSource );
+	INIT_CLASS( OalListener );
+	INIT_CLASS( OalEffect );
+	INIT_CLASS( OalFilter );
 
 	return JS_TRUE;
 	JL_BAD;

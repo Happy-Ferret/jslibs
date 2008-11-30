@@ -83,7 +83,8 @@ inline JSBool PeekJsval( JSContext *cx, jl::QueueCell *cell, jsval *value ) {
 
 JSBool WriteChunk( JSContext *cx, JSObject *obj, jsval chunk ) {
 
-	BufferPrivate *pv = (BufferPrivate*)JS_GetPrivate(cx, obj);
+	BufferPrivate *pv;
+	pv = (BufferPrivate*)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( pv );
 
 	if ( !JSVAL_IS_STRING(chunk) && !JsvalIsBlob(cx, chunk) ) {
@@ -609,7 +610,9 @@ DEFINE_FUNCTION( Clone ) {
 **/
 DEFINE_FUNCTION( Clear ) {
 
-	BufferPrivate *pv = (BufferPrivate*)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_THIS_CLASS();
+	BufferPrivate *pv;
+	pv = (BufferPrivate*)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( pv );
 	while ( !QueueIsEmpty(pv->queue) )
 		J_CHK( ShiftJsval(cx, pv->queue, NULL) );
@@ -627,7 +630,9 @@ DEFINE_FUNCTION( Clear ) {
 **/
 DEFINE_FUNCTION( Write ) {
 
-	BufferPrivate *pv = (BufferPrivate*)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_THIS_CLASS();
+	BufferPrivate *pv;
+	pv = (BufferPrivate*)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( pv );
 	J_S_ASSERT_ARG_MIN( 1 );
 
@@ -667,6 +672,7 @@ DEFINE_FUNCTION( Write ) {
 **/
 DEFINE_FUNCTION( Match ) {
 
+	J_S_ASSERT_THIS_CLASS();
 	J_S_ASSERT_ARG_MIN( 1 );
 
 	const char *str;
@@ -719,7 +725,9 @@ err:
 **/
 DEFINE_FUNCTION( Read ) { // Read( [ amount | <undefined> ] )
 
-	BufferPrivate *pv = (BufferPrivate*)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_THIS_CLASS();
+	BufferPrivate *pv;
+	pv = (BufferPrivate*)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( pv );
 
 	if ( J_ARGC == 1 && JSVAL_IS_VOID( J_ARG(1) ) ) // read the next chunk (of an unknown length) (read something as fast as possible)
@@ -744,7 +752,9 @@ DEFINE_FUNCTION( Read ) { // Read( [ amount | <undefined> ] )
 **/
 DEFINE_FUNCTION( Skip ) { // Skip( amount )
 
-	BufferPrivate *pv = (BufferPrivate*)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_THIS_CLASS();
+	BufferPrivate *pv;
+	pv = (BufferPrivate*)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( pv );
 	J_S_ASSERT_ARG_MIN( 1 );
 	size_t amount;
@@ -766,6 +776,7 @@ DEFINE_FUNCTION( Skip ) { // Skip( amount )
 **/
 DEFINE_FUNCTION( ReadUntil ) {
 
+	J_S_ASSERT_THIS_CLASS();
 	J_S_ASSERT_ARG_MIN( 1 );
 	const char *boundary;
 	size_t boundaryLength;
@@ -799,6 +810,7 @@ DEFINE_FUNCTION( ReadUntil ) {
 **/
 DEFINE_FUNCTION( IndexOf ) {
 
+	J_S_ASSERT_THIS_CLASS();
 	J_S_ASSERT_ARG_MIN( 1 );
 	const char *boundary;
 	size_t boundaryLength;
@@ -824,6 +836,7 @@ DEFINE_FUNCTION( IndexOf ) {
 **/
 DEFINE_FUNCTION( Unread ) {
 
+	J_S_ASSERT_THIS_CLASS();
 	J_S_ASSERT_ARG_MIN( 1 );
 	J_S_ASSERT_ARG_MAX( 1 ); // discourages one to use Unread like Write
 	J_CHK( UnReadChunk(cx, obj, J_ARG(1)) );
@@ -843,7 +856,9 @@ DEFINE_FUNCTION( Unread ) {
 // Note:  String( { toString:function() { return [1,2,3]} } );  throws the following error: "can't convert Object to string"
 DEFINE_FUNCTION( toString ) {
 
-	BufferPrivate *pv = (BufferPrivate*)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_THIS_CLASS();
+	BufferPrivate *pv;
+	pv = (BufferPrivate*)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( pv );
 
 	if ( pv->length == 0 ) {
@@ -900,6 +915,7 @@ DEFINE_FUNCTION( toString ) {
 **/
 DEFINE_GET_PROPERTY() {
 
+	J_S_ASSERT_THIS_CLASS();
 	if ( !JSVAL_IS_INT(id) )
 		return JS_TRUE;
 
@@ -960,9 +976,12 @@ DEFINE_SET_PROPERTY() {
 **/
 DEFINE_PROPERTY( length ) {
 
-	BufferPrivate *pv = (BufferPrivate*)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_THIS_CLASS();
+	BufferPrivate *pv;
+	pv = (BufferPrivate*)JS_GetPrivate(cx, obj);
 	*vp = INT_TO_JSVAL(pv->length);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 

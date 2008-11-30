@@ -188,8 +188,8 @@ DEFINE_CONSTRUCTOR() { // ( cipherName, hashName [, prngObject] [, PKCSVersion] 
 **/
 DEFINE_FUNCTION( CreateKeys ) { // ( bitsSize )
 
-	J_S_ASSERT_ARG_MIN( 1 );
 	J_S_ASSERT_CLASS( obj, _class );
+	J_S_ASSERT_ARG_MIN( 1 );
 	AsymmetricCipherPrivate *pv;
 	pv = (AsymmetricCipherPrivate *)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( pv );
@@ -251,8 +251,8 @@ DEFINE_FUNCTION( CreateKeys ) { // ( bitsSize )
 **/
 DEFINE_FUNCTION( Encrypt ) { // ( data [, lparam] )
 
-	J_S_ASSERT_ARG_MIN( 1 );
 	J_S_ASSERT_CLASS( obj, _class );
+	J_S_ASSERT_ARG_MIN( 1 );
 	AsymmetricCipherPrivate *pv;
 	pv = (AsymmetricCipherPrivate *)JS_GetPrivate( cx, obj );
 	J_S_ASSERT_RESOURCE( pv );
@@ -324,8 +324,8 @@ DEFINE_FUNCTION( Encrypt ) { // ( data [, lparam] )
 **/
 DEFINE_FUNCTION( Decrypt ) { // ( encryptedData [, lparam] )
 
-	J_S_ASSERT_ARG_MIN( 1 );
 	J_S_ASSERT_CLASS( obj, _class );
+	J_S_ASSERT_ARG_MIN( 1 );
 	AsymmetricCipherPrivate *pv;
 	pv = (AsymmetricCipherPrivate *)JS_GetPrivate( cx, obj );
 	J_S_ASSERT_RESOURCE( pv );
@@ -394,8 +394,8 @@ DEFINE_FUNCTION( Decrypt ) { // ( encryptedData [, lparam] )
 **/
 DEFINE_FUNCTION( Sign ) { // ( data [, saltLength] )
 
-	J_S_ASSERT_ARG_MIN( 1 );
 	J_S_ASSERT_CLASS( obj, _class );
+	J_S_ASSERT_ARG_MIN( 1 );
 	AsymmetricCipherPrivate *pv;
 	pv = (AsymmetricCipherPrivate *)JS_GetPrivate( cx, obj );
 	J_S_ASSERT_RESOURCE( pv );
@@ -458,8 +458,8 @@ DEFINE_FUNCTION( Sign ) { // ( data [, saltLength] )
 **/
 DEFINE_FUNCTION( VerifySignature ) { // ( data, signature [, saltLength] )
 
-	J_S_ASSERT_ARG_MIN( 2 );
 	J_S_ASSERT_CLASS( obj, _class );
+	J_S_ASSERT_ARG_MIN( 2 );
 	AsymmetricCipherPrivate *pv;
 	pv = (AsymmetricCipherPrivate *)JS_GetPrivate( cx, obj );
 	J_S_ASSERT_RESOURCE( pv );

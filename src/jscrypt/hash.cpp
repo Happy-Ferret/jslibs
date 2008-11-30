@@ -103,7 +103,7 @@ DEFINE_CONSTRUCTOR() {
 **/
 DEFINE_FUNCTION( Init ) {
 
-	J_S_ASSERT_THIS_CLASS();
+	J_S_ASSERT_CLASS( obj, _class );
 	J_S_ASSERT_ARG_MAX( 0 );
 
 	HashPrivate *privateData;
@@ -127,7 +127,7 @@ DEFINE_FUNCTION( Init ) {
 **/
 DEFINE_FUNCTION( Process ) {
 
-	J_S_ASSERT_THIS_CLASS();
+	J_S_ASSERT_CLASS( obj, _class );
 	J_S_ASSERT_ARG_MIN( 1 );
 	J_S_ASSERT_STRING( argv[0] );
 
@@ -166,6 +166,7 @@ DEFINE_FUNCTION( Process ) {
 **/
 DEFINE_FUNCTION( Done ) {
 
+	J_S_ASSERT_CLASS( obj, _class );
 	HashPrivate *privateData = (HashPrivate *)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( privateData );
 
@@ -329,6 +330,7 @@ DEFINE_PROPERTY( inputLength ) {
 **/
 DEFINE_FUNCTION( CipherHash ) {
 
+	J_S_ASSERT_CLASS( obj, _class );
 	J_S_ASSERT_ARG_MIN(1);
 	const char *cipherName;
 	J_CHK( JsvalToString(cx, &argv[0], &cipherName) );

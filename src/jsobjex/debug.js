@@ -13,6 +13,7 @@ obj.foo = 123;
 obj.foo = 456;
 obj.foo = 789;
 
+ObjEx.Aux(obj, {});
 
 
 Halt();

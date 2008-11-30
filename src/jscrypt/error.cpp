@@ -73,7 +73,7 @@ JSBool ThrowCryptError( JSContext *cx, int errorCode ) {
 //	JS_ReportWarning( cx, "CryptError exception" );
 	JSObject *error = JS_NewObject( cx, _class, NULL, NULL );
 	JS_SetPendingException( cx, OBJECT_TO_JSVAL( error ) );
-	JS_SetReservedSlot( cx, error, 0, INT_TO_JSVAL(errorCode) );
+	J_CHK( JS_SetReservedSlot( cx, error, 0, INT_TO_JSVAL(errorCode) ) );
 //	JS_SetReservedSlot( cx, error, 1, errorMessage != NULL ? STRING_TO_JSVAL(JS_NewStringCopyZ( cx, errorMessage )) : JSVAL_VOID );
-  return JS_FALSE;
+	JL_BAD;
 }

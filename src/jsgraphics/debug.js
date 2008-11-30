@@ -149,8 +149,8 @@ function Init() {
 
 	var t = new Trimesh();
 
-	var vertexCount = 300;
-	var triangleCount = 200;
+	var vertexCount = 3000;
+	var triangleCount = 2000;
 	
 	var vertex = [];
 	for ( var i = 0; i < vertexCount*3; i++ )

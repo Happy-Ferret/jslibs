@@ -245,7 +245,7 @@ LoadModule('jsio');
 			}
 		}
 		
-		QA.ASSERT( response.length > 0, true, 'has response contant from '+host );
+		QA.ASSERT( response.length > 0, true, 'has response content from '+host );
 
 
 /// closing Socket [ftr]

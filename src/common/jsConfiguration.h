@@ -18,71 +18,71 @@
 #include "../common/jsNames.h"
 #include "../common/jsHelper.h"
 
+
 inline JSBool RemoveConfiguration(JSContext *cx) {
 
+//	return JS_TRUE;
 	JSObject *globalObject = JS_GetGlobalObject(cx);
 	J_S_ASSERT( globalObject != NULL, "Unable to find the global object." );
 	return JS_DeleteProperty(cx, globalObject, NAME_CONFIGURATION_OBJECT);
 	JL_BAD;
 }
-
+ 
 
 inline JSObject *GetConfigurationObject(JSContext *cx) {
 
-	JSObject *globalObject = JS_GetGlobalObject(cx);
-	JSObject *configurationObject;
-	if ( globalObject == NULL )
-		return NULL;
+//	return JS_GetGlobalObject(cx);
+	JSObject *cobj, *globalObject = JS_GetGlobalObject(cx);
+	J_CHK( globalObject );
 	jsval configurationValue;
-	JSBool status;
-	status = JS_GetProperty(cx, globalObject, NAME_CONFIGURATION_OBJECT, &configurationValue);
-	if ( status != JS_TRUE )
-		return NULL;
+	J_CHK( JS_GetProperty(cx, globalObject, NAME_CONFIGURATION_OBJECT, &configurationValue) );
 	if ( JSVAL_IS_VOID( configurationValue ) ) { // if configuration object do not exist, we build one
 
-		configurationObject = JS_DefineObject(cx, globalObject, NAME_CONFIGURATION_OBJECT, NULL, NULL, 0 );
-		if ( configurationObject == NULL ) // Doc: If the property already exists, or cannot be created, JS_DefineObject returns NULL.
-			return NULL; // cannot be created
+		cobj = JS_DefineObject(cx, globalObject, NAME_CONFIGURATION_OBJECT, NULL, NULL, 0 );
+		J_CHK( cobj ); // Doc: If the property already exists, or cannot be created, JS_DefineObject returns NULL.
 	} else {
-
-		if ( !JSVAL_IS_OBJECT(configurationValue) )
-			return NULL;
-		configurationObject = JSVAL_TO_OBJECT( configurationValue );
+		J_CHK( JSVAL_IS_OBJECT(configurationValue) );
+		cobj = JSVAL_TO_OBJECT( configurationValue );
 	}
-	return configurationObject;
+	return cobj;
+bad:
+	return NULL;
 }
 
 
-// returns JSVAL_VOID on errors
 inline JSBool GetConfigurationValue(JSContext *cx, const char *name, jsval *value) {
 
-	JSObject *configurationObject = GetConfigurationObject(cx);
-	if (configurationObject == NULL) {
-		
+	JSObject *cobj = GetConfigurationObject(cx);
+	if ( cobj )
+		J_CHK( JS_GetProperty(cx, cobj, name, value) );
+	else
 		*value = JSVAL_VOID;
-		return JS_TRUE;
-	}
-	J_CHK( JS_GetProperty(cx, configurationObject, name, value) );
 	return JS_TRUE;
 	JL_BAD;
 }
 
 inline JSBool SetConfigurationPrivateValue(JSContext *cx, const char *name, jsval value) {
 
-	JSObject *configObject = GetConfigurationObject(cx);
-	J_S_ASSERT( configObject != NULL, "Unable to get configuration object" );
-	J_CHKM1( JS_DefineProperty(cx, configObject, name, value, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ), "Unable to store %1 configuration item.", name );
+	JSObject *cobj = GetConfigurationObject(cx);
+	if ( cobj )
+		JS_DefineProperty(cx, cobj, name, value, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT);
 	return JS_TRUE;
-	JL_BAD;
 }
 
 inline JSBool SetConfigurationValue(JSContext *cx, const char *name, jsval value) {
 
-	JSObject *configObject = GetConfigurationObject(cx);
-	J_S_ASSERT( configObject != NULL, "Unable to get configuration object" );
-	J_CHKM1( JS_DefineProperty(cx, configObject, name, value, NULL, NULL, JSPROP_ENUMERATE), "Unable to store %1 configuration item.", name );
+	JSObject *cobj = GetConfigurationObject(cx);
+	if ( cobj )
+		JS_DefineProperty(cx, cobj, name, value, NULL, NULL, JSPROP_ENUMERATE);
 	return JS_TRUE;
-	JL_BAD;
+}
+
+inline JSBool SetConfigurationReadonlyValue(JSContext *cx, const char *name, jsval value) {
+
+	JSObject *cobj = GetConfigurationObject(cx);
+	if ( cobj )
+		JS_DefineProperty(cx, cobj, name, value, NULL, NULL, JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT);
+	return JS_TRUE;
 }
 
 #endif // _JSCONFIGURATION_H_

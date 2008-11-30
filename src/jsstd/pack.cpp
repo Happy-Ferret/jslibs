@@ -139,6 +139,7 @@ DEFINE_CONSTRUCTOR() {
 **/
 DEFINE_FUNCTION( ReadInt ) {
 
+	J_S_ASSERT_THIS_CLASS();
 	J_S_ASSERT_ARG_MIN(1);
 
 	jsval bufferVal;
@@ -246,6 +247,7 @@ DEFINE_FUNCTION( Test ) {
 **/
 DEFINE_FUNCTION( WriteInt ) { // incompatible with NIStreamRead
 
+	J_S_ASSERT_THIS_CLASS();
 	J_S_ASSERT_ARG_MIN(2);
 
 	jsval bufferVal;
@@ -322,6 +324,7 @@ DEFINE_FUNCTION( WriteInt ) { // incompatible with NIStreamRead
 **/
 DEFINE_FUNCTION( ReadReal ) {
 
+	J_S_ASSERT_THIS_CLASS();
 	J_S_ASSERT_ARG_MIN(1);
 
 	jsval bufferVal;
@@ -364,6 +367,7 @@ DEFINE_FUNCTION( ReadReal ) {
 **/
 DEFINE_FUNCTION( ReadString ) {
 
+	J_S_ASSERT_THIS_CLASS();
 	jsval bufferVal;
 	J_CHK( JS_GetReservedSlot(cx, obj, SLOT_PACK_BUFFEROBJECT, &bufferVal) );
 	J_S_ASSERT_DEFINED( bufferVal );
@@ -401,6 +405,7 @@ DEFINE_FUNCTION( ReadString ) {
 **/
 DEFINE_PROPERTY( buffer ) {
 
+	J_S_ASSERT_THIS_CLASS();
 	J_CHK( JS_GetReservedSlot(cx, obj, SLOT_PACK_BUFFEROBJECT, vp ) );
 	return JS_TRUE;
 	JL_BAD;
@@ -417,8 +422,10 @@ DEFINE_PROPERTY( buffer ) {
 **/
 DEFINE_PROPERTY( systemIntSize ) {
 
+	J_S_ASSERT_THIS_CLASS();
 	*vp = INT_TO_JSVAL( sizeof(int) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -429,6 +436,7 @@ DEFINE_PROPERTY( systemBigEndian ) {
 
 	*vp = BOOLEAN_TO_JSVAL( systemEndian == BigEndian );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 JSBool Init(JSContext *cx, JSObject *obj) {

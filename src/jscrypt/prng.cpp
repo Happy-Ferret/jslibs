@@ -128,8 +128,8 @@ DEFINE_CALL() {
 **/
 DEFINE_FUNCTION( AddEntropy ) {
 
+	J_S_ASSERT_CLASS( obj, _class );
 	J_S_ASSERT_ARG_MIN( 1 );
-	J_S_ASSERT_THIS_CLASS();
 	PrngPrivate *privateData;
 	privateData = (PrngPrivate *)JS_GetPrivate( cx, obj );
 	J_S_ASSERT_RESOURCE( privateData );
@@ -155,8 +155,8 @@ DEFINE_FUNCTION( AddEntropy ) {
 **/
 DEFINE_FUNCTION( AutoEntropy ) {
 
-	J_S_ASSERT_ARG_MIN( 1 );
 	J_S_ASSERT_CLASS( obj, _class );
+	J_S_ASSERT_ARG_MIN( 1 );
 	PrngPrivate *privateData;
 	privateData = (PrngPrivate *)JS_GetPrivate( cx, obj );
 	J_S_ASSERT_RESOURCE( privateData );

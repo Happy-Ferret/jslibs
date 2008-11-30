@@ -243,10 +243,10 @@ static JSBool LoadModule(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, 
 	pv = GetHostPrivate(cx);
 	J_S_ASSERT( pv != NULL, "Invalid context." );
 
-	J_S_ASSERT( libFileName != NULL && *libFileName != '\0', "Invalid module filename.");
+	J_S_ASSERT( libFileName != NULL && *libFileName != '\0', "Invalid module filename." );
 	JLLibraryHandler module;
 	module = JLDynamicLibraryOpen(libFileName);
-	J_S_ASSERT_1( JLDynamicLibraryOk(module), "Unable to load the 'module %s'.", libFileName);
+	J_S_ASSERT_1( JLDynamicLibraryOk(module), "Unable to load the 'module %s'.", libFileName );
 
 	ModuleInitFunction moduleInit;
 	moduleInit = (ModuleInitFunction)JLDynamicLibrarySymbol(module, NAME_MODULE_INIT);
@@ -416,7 +416,7 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostOutput stdOut, HostOutput s
 
 	HostPrivate *pv = (HostPrivate*)malloc(sizeof(HostPrivate));
 	J_S_ASSERT_ALLOC(pv);
-	memset(pv, 0, sizeof(HostPrivate));
+	memset(pv, 0, sizeof(HostPrivate)); // mandatory !
 
 	SetHostPrivate(cx, pv);
 
@@ -448,13 +448,14 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostOutput stdOut, HostOutput s
 //	J_CHKM( JS_DefineFunction( cx, globalObject, NAME_GLOBAL_FUNCTION_UNLOAD_MODULE, UnloadModule, 0, 0 ), "unable to define a property." );
 
 //	J_CHK( SetConfigurationValue(cx, NAME_CONFIGURATION_UNSAFE_MODE, BOOLEAN_TO_JSVAL(_unsafeMode)) );
-	J_CHK( SetConfigurationValue(cx, NAME_CONFIGURATION_UNSAFE_MODE_PTR, PRIVATE_TO_JSVAL(&unsafeMode)) );
+	J_CHK( SetConfigurationReadonlyValue(cx, NAME_CONFIGURATION_UNSAFE_MODE, unsafeMode ? JSVAL_TRUE : JSVAL_FALSE) );
 
 	jsval value;
 	value = OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunction(cx, (JSNative)JSDefaultStdoutFunction, 1, JSFUN_FAST_NATIVE, NULL, NULL))); // If you do not assign a name to the function, it is assigned the name "anonymous".
 	J_CHK( SetConfigurationValue(cx, NAME_CONFIGURATION_STDOUT, value) );
 	value = OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunction(cx, (JSNative)JSDefaultStderrFunction, 1, JSFUN_FAST_NATIVE, NULL, NULL))); // If you do not assign a name to the function, it is assigned the name "anonymous".
 	J_CHK( SetConfigurationValue(cx, NAME_CONFIGURATION_STDERR, value) );
+
 
 // init static modules
 	J_CHKM( jslangInit(cx, globalObject), "Unable to initialize jslang." );
@@ -505,6 +506,9 @@ void DestroyHost( JSContext *cx ) {
 			moduleFree();
 		JLDynamicLibraryClose(&module);
 	}
+
+	while ( !jl::QueueIsEmpty(&pv->registredNativeClasses) )
+		jl::QueueShift(&pv->registredNativeClasses);
 
 	free(pv);
 }

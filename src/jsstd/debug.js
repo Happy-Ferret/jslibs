@@ -1,6 +1,9 @@
 LoadModule('jsstd');
 LoadModule('jsio');
 
+Test();
+
+Halt(); /////////////////////////////////////////////////////////////////////
 
 var xdrData = XdrEncode(Blob("testxxx"));
 

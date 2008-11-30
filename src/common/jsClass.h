@@ -192,12 +192,11 @@ static JSBool RemoveClass( JSContext *cx, JSClass *cl ) {
 	return JS_TRUE;
 }
 
-
 #define REMOVE_CLASS( CLASSNAME ) \
-	RemoveClass( cx, class##CLASSNAME )
+	J_CHK( RemoveClass( cx, class##CLASSNAME ) )
 
 #define INIT_CLASS( CLASSNAME ) \
-	InitializeClass##CLASSNAME(cx, obj)
+	J_CHK( InitializeClass##CLASSNAME(cx, obj) )
 
 #define BEGIN_CLASS(CLASSNAME) \
 	static JSExtendedClass _xclass = { { #CLASSNAME, 0, JS_PropertyStub , JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_EnumerateStub, JS_ResolveStub , JS_ConvertStub, JS_FinalizeStub, JSCLASS_NO_OPTIONAL_MEMBERS }, 0}; \

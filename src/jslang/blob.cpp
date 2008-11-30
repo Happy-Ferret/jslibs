@@ -23,6 +23,13 @@
 #define SLOT_BLOB_LENGTH 0
 
 
+inline JSBool InvalidateBlob( JSContext *cx, JSObject *blobObject ) {
+
+	J_CHK( JS_SetReservedSlot(cx, blobObject, SLOT_BLOB_LENGTH, JSVAL_VOID) );
+	return JS_TRUE;
+	JL_BAD;
+}
+
 inline bool IsBlobValid( JSContext *cx, JSObject *blobObject ) {
 
 	jsval lengthVal;
@@ -141,12 +148,16 @@ DEFINE_FINALIZE() {
 **/
 DEFINE_CONSTRUCTOR() {
 
-	void *dBuffer = NULL;
+	void *dBuffer = NULL; // keep on top
+
 	if ( JS_IsConstructing(cx) != JS_TRUE ) { // supports this form (w/o new operator) : result.param1 = Blob('Hello World');
 
 		obj = JS_NewObject(cx, _class, NULL, NULL);
 		J_S_ASSERT( obj != NULL, "Blob construction failed." );
 		*rval = OBJECT_TO_JSVAL(obj);
+	} else {
+
+		J_S_ASSERT_THIS_CLASS();
 	}
 
 	if ( J_ARGC >= 1 ) {
@@ -192,7 +203,9 @@ bad:
 **/
 DEFINE_FUNCTION_FAST( Free ) {
 
-	void *pv = JS_GetPrivate(cx, J_FOBJ);
+	J_S_ASSERT_CLASS(J_FOBJ, _class);
+	void *pv;
+	pv = JS_GetPrivate(cx, J_FOBJ);
 
 	if ( J_FARG_ISDEF(1) ) {
 
@@ -208,7 +221,7 @@ DEFINE_FUNCTION_FAST( Free ) {
 
 	JS_free(cx, pv);
 	J_CHK( JS_SetPrivate(cx, J_FOBJ, NULL) );
-	J_CHK( JS_SetReservedSlot(cx, J_FOBJ, SLOT_BLOB_LENGTH, JSVAL_VOID) ); // invalidate the blob.
+	J_CHK( InvalidateBlob(cx, J_FOBJ) );
 	// removes all of obj's own properties, except the special __proto__ and __parent__ properties, in a single operation.
 	// Properties belonging to objects on obj's prototype chain are not affected.
 	JS_ClearScope(cx, J_FOBJ);
@@ -225,8 +238,10 @@ DEFINE_FUNCTION_FAST( Free ) {
 **/
 DEFINE_FUNCTION_FAST( concat ) {
 
-	char *dst = NULL;
+	J_S_ASSERT_CLASS(J_FOBJ, _class);
 	J_S_ASSERT_ARG_MIN( 1 );
+	char *dst;
+	dst = NULL;
 
 	size_t thisLength;
 	const char *thisBuffer;
@@ -296,6 +311,7 @@ bad:
 **/
 DEFINE_FUNCTION_FAST( substr ) {
 
+	J_S_ASSERT_CLASS(J_FOBJ, _class);
 	J_S_ASSERT_ARG_MIN(1);
 
 	const char *bstrBuffer;
@@ -385,6 +401,7 @@ bad:
 **/
 DEFINE_FUNCTION_FAST( substring ) {
 
+	J_S_ASSERT_CLASS(J_FOBJ, _class);
 	if ( J_ARGC == 0 ) {
 		
 		*J_FRVAL = J_FARG(1);
@@ -409,16 +426,16 @@ DEFINE_FUNCTION_FAST( substring ) {
 	}
 */
 
-	jsval arg1 = J_FARG(1);
+	jsval arg1;
+	arg1 = J_FARG(1);
 	if ( IsPInfinity(cx, arg1) )
 		indexA = (signed)dataLength;
 	else if ( !JsvalToInt(cx, J_FARG(1), &indexA) )
 		indexA = 0;
 
-	jsval arg2 = J_FARG(2);
-	if ( IsPInfinity(cx, arg2) )
+	if ( J_ARGC < 2 || IsPInfinity(cx, J_FARG(2)) )
 		indexB = (signed)dataLength;
-	else if ( !JsvalToInt(cx, arg2, &indexB) )
+	else if ( !JsvalToInt(cx, J_FARG(2), &indexB) )
 		indexB = 0;
 
 	if ( indexA < 0 )
@@ -474,6 +491,7 @@ bad_free:
 **/
 DEFINE_FUNCTION_FAST( indexOf ) {
 
+	J_S_ASSERT_CLASS(J_FOBJ, _class);
 	J_S_ASSERT_ARG_MIN(1);
 
 	const char *sBuffer;
@@ -539,6 +557,7 @@ DEFINE_FUNCTION_FAST( indexOf ) {
 **/
 DEFINE_FUNCTION_FAST( lastIndexOf ) {
 
+	J_S_ASSERT_CLASS(J_FOBJ, _class);
 	J_S_ASSERT_ARG_MIN(1);
 
 	const char *sBuffer;
@@ -610,6 +629,7 @@ DEFINE_FUNCTION_FAST( lastIndexOf ) {
 **/
 DEFINE_FUNCTION_FAST( charAt ) {
 
+	J_S_ASSERT_CLASS(J_FOBJ, _class);
 	int index;
 	if ( J_FARG_ISDEF(1) ) {
 
@@ -665,6 +685,7 @@ DEFINE_FUNCTION_FAST( charAt ) {
 **/
 DEFINE_FUNCTION_FAST( charCodeAt ) {
 
+	J_S_ASSERT_CLASS(J_FOBJ, _class);
 	int index;
 	if ( J_FARG_ISDEF(1) ) {
 
@@ -713,6 +734,7 @@ DEFINE_FUNCTION_FAST( charCodeAt ) {
 **/
 DEFINE_FUNCTION_FAST( toString ) { // and valueOf ?
 
+	J_S_ASSERT_CLASS(J_FOBJ, _class);
 	void *pv = JS_GetPrivate(cx, J_FOBJ);
 	size_t length;
 	J_CHK( BlobLength(cx, J_FOBJ, &length) );
@@ -746,6 +768,7 @@ DEFINE_FUNCTION_FAST( toString ) { // and valueOf ?
 **/
 DEFINE_PROPERTY( length ) {
 
+	J_S_ASSERT_THIS_CLASS();
 	size_t length;
 	J_CHK( BlobLength(cx, obj, &length) );
 	*vp = INT_TO_JSVAL( length );
@@ -760,6 +783,7 @@ DEFINE_PROPERTY( length ) {
 **/
 DEFINE_GET_PROPERTY() {
 
+//	J_S_ASSERT_THIS_CLASS(); // when mutated, this is a String
 	if ( !JSVAL_IS_INT(id) )
 		return JS_TRUE;
 
