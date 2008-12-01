@@ -60,6 +60,7 @@ void RemoveDbContext(sqlite3 *db) {
 
 /**doc fileIndex:top
 $CLASS_HEADER
+ $SVN_REVISION $Revision$
 **/
 BEGIN_CLASS( Database )
 

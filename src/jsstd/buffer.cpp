@@ -468,6 +468,7 @@ JSBool AddBuffer( JSContext *cx, JSObject *destBuffer, JSObject *srcBuffer ) {
 
 /**doc
 $CLASS_HEADER
+ $SVN_REVISION $Revision$
  Buffer class is a simple buffer that allows arbitrary length input and output.
 **/
 BEGIN_CLASS( Buffer )

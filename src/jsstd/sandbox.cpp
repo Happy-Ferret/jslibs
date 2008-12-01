@@ -23,14 +23,14 @@ DEFINE_NEW_RESOLVE() {
 
 	JSBool resolved;
    if ( (flags & JSRESOLVE_ASSIGNING) == 0) {
-		
+
 //		jsval tmp;
 //		JS_IdToValue(cx, id, &tmp);
 //		char *str = JS_GetStringBytes(JS_ValueToString(cx, tmp));
 
 		J_CHK( JS_ResolveStandardClass(cx, obj, id, &resolved) );
 		if (resolved) {
-			
+
 			*objp = obj;
 			return JS_TRUE;
 		}
@@ -41,8 +41,7 @@ DEFINE_NEW_RESOLVE() {
 }
 
 CONFIGURE_CLASS
-	
-	REVISION(SvnRevToInt("$Revision$"))
+
 	//	IS_GLOBAL // make JS_ResolveStandardClass failed
 	HAS_NEW_RESOLVE
 

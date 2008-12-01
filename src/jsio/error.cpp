@@ -18,6 +18,7 @@
 
 /**doc
 $CLASS_HEADER
+ $SVN_REVISION $Revision$
  You cannot construct this class.
  Its aim is to throw as an exception on any NSPR runtime error.
 **/

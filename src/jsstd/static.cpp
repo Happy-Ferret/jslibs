@@ -44,6 +44,7 @@ BEGIN_STATIC
 
 /**doc
 === Static functions ===
+ $SVN_REVISION $Revision$
 **/
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -231,7 +232,7 @@ DEFINE_FUNCTION( Clear ) {
 /**doc
  * $OBJ $INAME( obj, scopeObject )
   Set the scope object of _obj_.
-  $H example
+  $H example 1
    {{{
    function foo() {
 
@@ -250,6 +251,37 @@ DEFINE_FUNCTION( Clear ) {
    55
    7
    55
+   }}}
+
+  $H example 2
+   {{{
+   LoadModule('jsstd');
+
+   function Bind(fun, obj) {
+
+    SetScope(obj, SetScope(fun, obj));
+   }
+
+
+   function MyClass() {
+
+    this.Test = function() {
+
+     foo();
+    }
+
+    this.foo = function() {
+
+     Print('foo\n');
+    }
+
+    Bind(this.Test, this);
+   }
+
+   var myObj = new MyClass();
+   myObj.Test(); // prints: foo
+   var fct = myObj.Test;
+   fct(); // prints: foo
    }}}
 **/
 DEFINE_FUNCTION( SetScope ) {

@@ -17,6 +17,7 @@
 
 /**doc
 $CLASS_HEADER fileIndex:bottom
+ $SVN_REVISION $Revision$
  Its aim is to be throw as an exception on any SQLite runtime error.
  $H note
  You cannot construct this class.

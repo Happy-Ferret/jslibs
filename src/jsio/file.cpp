@@ -46,6 +46,7 @@ PRIntn FileOpenFlagsFromString( const char *strFlags, int length ) {
 
 /**doc
 $CLASS_HEADER Descriptor
+ $SVN_REVISION $Revision$
 **/
 BEGIN_CLASS( File )
 

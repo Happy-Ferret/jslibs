@@ -62,6 +62,7 @@ JSBool SlotGetPrng(JSContext *cx, JSObject *obj, int *prngIndex, prng_state **pr
 
 /**doc
 $CLASS_HEADER
+ $SVN_REVISION $Revision$
 **/
 BEGIN_CLASS( AsymmetricCipher )
 

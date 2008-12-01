@@ -132,6 +132,7 @@ static void nearCallback(void *data, ode::dGeomID o1, ode::dGeomID o2) {
 
 /**doc fileIndex:top
 $CLASS_HEADER
+ $SVN_REVISION $Revision$
 **/
 BEGIN_CLASS( World )
 

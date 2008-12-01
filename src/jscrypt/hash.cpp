@@ -25,6 +25,7 @@ struct HashPrivate {
 
 /**doc
 $CLASS_HEADER
+ $SVN_REVISION $Revision$
  This class is used to create block Hash objects.
 **/
 BEGIN_CLASS( Hash )

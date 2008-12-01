@@ -36,6 +36,7 @@ static JSBool BufferGet( JSContext *cx, JSObject *obj, const char **buf, size_t 
 
 /**doc
 $CLASS_HEADER
+ $SVN_REVISION $Revision$
 **/
 BEGIN_CLASS( MemoryMapped )
 

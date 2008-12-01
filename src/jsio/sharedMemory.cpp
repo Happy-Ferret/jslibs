@@ -107,6 +107,7 @@ bad_ioerror:
 
 /**doc
 $CLASS_HEADER
+ $SVN_REVISION $Revision$
  This class manages shared memory between two or more process.
 **/
 BEGIN_CLASS( SharedMemory )

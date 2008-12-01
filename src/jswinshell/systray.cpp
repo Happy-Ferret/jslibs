@@ -266,6 +266,7 @@ DWORD WINAPI WinThread( LPVOID lpParam ) {
 
 /**doc
 $CLASS_HEADER
+ $SVN_REVISION $Revision$
 **/
 BEGIN_CLASS( Systray )
 

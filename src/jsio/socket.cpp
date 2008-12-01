@@ -21,6 +21,7 @@
 
 /**doc
 $CLASS_HEADER Descriptor
+ $SVN_REVISION $Revision$
  Socket class is used to create a non-blocking TCP socket.
 **/
 BEGIN_CLASS( Socket )

@@ -65,6 +65,7 @@ JSBool SetupReadMatrix(JSContext *cx, JSObject *obj) {
 
 /**doc
 $CLASS_HEADER
+ $SVN_REVISION $Revision$
 **/
 BEGIN_CLASS( Geom )
 

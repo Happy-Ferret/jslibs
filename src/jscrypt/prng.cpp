@@ -18,6 +18,7 @@
 
 /**doc
 $CLASS_HEADER
+ $SVN_REVISION $Revision$
  This class is used to create pseudo random number generators objects.
 **/
 BEGIN_CLASS( Prng )

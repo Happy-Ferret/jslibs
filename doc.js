@@ -22,6 +22,12 @@ var api = {
 		var offset = cx.left.length;
 		Print('TBD: ' + item.filePath + ':' + (CountStr('\n', item.source.substring(0, item.followingSourceTextStart - item.text.length + offset))+1), '\n');
 	},
+	
+	$SVN_REVISION: function(cx, item) {
+
+		var str = ReadEol(cx);
+		cx.center = 'r'+parseInt(str.substr(str.indexOf(' ')));
+	},
 
 	$H6: function(cx, item) { cx.center = '====== '+ReadEol(cx)+': ======' },
 	$H5: function(cx, item) { cx.center = '===== '+ReadEol(cx)+': =====' },

@@ -65,6 +65,7 @@ inline JSBool BlobBuffer( JSContext *cx, JSObject *blobObject, const char **buff
 
 /**doc
 $CLASS_HEADER
+ $SVN_REVISION $Revision$
 **/
 BEGIN_CLASS( Blob )
 

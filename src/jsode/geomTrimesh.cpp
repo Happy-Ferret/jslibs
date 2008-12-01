@@ -22,6 +22,7 @@
 
 /**doc
 $CLASS_HEADER Geom
+ $SVN_REVISION $Revision$
 **/
 BEGIN_CLASS( GeomTrimesh )
 

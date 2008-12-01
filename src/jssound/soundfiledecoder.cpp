@@ -23,6 +23,7 @@
 
 /**doc fileIndex:top
 $CLASS_HEADER
+ $SVN_REVISION $Revision$
  The SoundFileDecoder support various data format decoding.
  Main supported formats are: wav, aiff, au, voc, sd2, flac, ...
  For more information about supported formats, see http://www.mega-nerd.com/libsndfile/

@@ -23,6 +23,7 @@
 
 /**doc
 $CLASS_HEADER
+ $SVN_REVISION $Revision$
  Map is an unsorted associative container that associates strings with values.
  $H note
   No two elements have the same key.
@@ -41,7 +42,7 @@ BEGIN_CLASS( Map )
    $ARG object obj: if given, _obj_ is converted into a Map object (Array is also an object). No recursion is made.
 **/
 DEFINE_CONSTRUCTOR() {
-		
+
 	if ( JS_IsConstructing(cx) == JS_TRUE ) {
 
 		J_S_ASSERT_THIS_CLASS();
@@ -69,12 +70,12 @@ DEFINE_CONSTRUCTOR() {
 
 				J_CHK( JS_IdToValue(cx, id, &key) );
 				J_CHK( OBJ_GET_PROPERTY(cx, srcObj, id, &value) );
-				J_CHK( OBJ_SET_PROPERTY(cx, obj, id, &value) ); 
+				J_CHK( OBJ_SET_PROPERTY(cx, obj, id, &value) );
 			} else {
 
 				break;
 			}
-		}	
+		}
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -82,12 +83,12 @@ DEFINE_CONSTRUCTOR() {
 
 
 DEFINE_XDR() {
-	
+
 	jsid id;
 	jsval key, value;
 
 	if ( xdr->mode == JSXDR_ENCODE ) {
-		
+
 		JSObject *it = JS_NewPropertyIterator(xdr->cx, *objp);
 
 		for (;;) {
@@ -108,11 +109,11 @@ DEFINE_XDR() {
 		}
 		return JS_TRUE;
 	}
-	
+
 	if ( xdr->mode == JSXDR_DECODE ) {
 
 		*objp = JS_NewObject(xdr->cx, _class, NULL, NULL);
-		
+
 		for (;;) {
 
 			J_CHK( JS_XDRValue(xdr, &key) );
@@ -120,7 +121,7 @@ DEFINE_XDR() {
 
 				JS_ValueToId(xdr->cx, key, &id);
 				J_CHK( JS_XDRValue(xdr, &value) );
-				J_CHK( OBJ_SET_PROPERTY(xdr->cx, *objp, id, &value) ); 
+				J_CHK( OBJ_SET_PROPERTY(xdr->cx, *objp, id, &value) );
 			} else {
 
 				break;

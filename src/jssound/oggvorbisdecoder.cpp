@@ -25,8 +25,8 @@
 
 /**doc fileIndex:top
 $CLASS_HEADER
+ $SVN_REVISION $Revision$
  The OggVorbisDecoder support ogg vorbis data format decoding.
-
 **/
 BEGIN_CLASS( OggVorbisDecoder )
 
