@@ -144,6 +144,8 @@ struct JSLIBS_ConstIntegerSpec {
 #define IS_GLOBAL  _class->flags |= JSCLASS_IS_GLOBAL;
 #define HAS_XDR _class->xdrObject = XDRObject;
 
+#define REVISION(REV) (_revision = INT_TO_JSVAL(REV));
+
 // static definition
 #define DECLARE_STATIC() \
 	JSBool InitializeStatic(JSContext *cx, JSObject *obj);
@@ -159,7 +161,8 @@ struct JSLIBS_ConstIntegerSpec {
 	JSPropertySpec *_staticPropertySpec = NULL; \
 	JSConstDoubleSpec *_constDoubleSpec = NULL; \
 	JSLIBS_ConstIntegerSpec *_constIntegerSpec = NULL; \
-	JSBool (* _init)(JSContext *cx, JSObject *obj) = NULL;
+	JSBool (* _init)(JSContext *cx, JSObject *obj) = NULL; \
+	jsval _revision = JSVAL_VOID;
 
 #define END_STATIC \
 	if ( _staticFunctionSpec != NULL ) JS_DefineFunctions(cx, obj, _staticFunctionSpec); \
@@ -176,7 +179,10 @@ struct JSLIBS_ConstIntegerSpec {
 	if ( _init ) \
 		if ( _init(cx, obj) != JS_TRUE ) \
 			return JS_FALSE; \
-	return JS_TRUE; }
+	J_CHK( JS_DefineProperty(cx, obj, "_revision", _revision, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) ); \
+	return JS_TRUE; \
+	JL_BAD; \
+ }
 
 // class definition
 #define DECLARE_CLASS( CLASSNAME ) \
@@ -216,12 +222,13 @@ static JSBool RemoveClass( JSContext *cx, JSClass *cl ) {
 		JSLIBS_ConstIntegerSpec *_constIntegerSpec = NULL; \
 		JSObject *_tmp_prototype = NULL; \
 		JSObject **_parentPrototype = &_tmp_prototype; \
-		JSBool (* _init)(JSContext *cx, JSObject *obj) = NULL;
+		JSBool (* _init)(JSContext *cx, JSObject *obj) = NULL; \
+		jsval _revision = JSVAL_VOID;
 
 #define END_CLASS \
 		*_prototype = JS_InitClass(cx, obj, *_parentPrototype, _class, _constructor, 0, _propertySpec, _functionSpec, _staticPropertySpec, _staticFunctionSpec); \
+		JSObject *dstObj = _constructor ? JS_GetConstructor(cx, *_prototype) : *_prototype; \
 		if ( _constIntegerSpec != NULL ) { \
-		  JSObject *dstObj = _constructor ? JS_GetConstructor(cx, *_prototype) : *_prototype; \
 			for (; _constIntegerSpec->name; _constIntegerSpec++) \
 			if ( JS_DefineProperty(cx, dstObj, _constIntegerSpec->name, INT_TO_JSVAL(_constIntegerSpec->ival), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) != JS_TRUE ) \
 				return JS_FALSE; \
@@ -230,11 +237,12 @@ static JSBool RemoveClass( JSContext *cx, JSClass *cl ) {
 		J_CHK( JS_SetPropertyAttributes(cx, obj, _class->name, JSPROP_READONLY | JSPROP_PERMANENT, &found) ); \
 		J_CHKM( found, "Unable to set class flags" ); \
 		if ( _constDoubleSpec != NULL ) \
-			if ( JS_DefineConstDoubles(cx, _constructor ? JS_GetConstructor(cx, *_prototype) : *_prototype, _constDoubleSpec) != JS_TRUE ) \
+			if ( JS_DefineConstDoubles(cx, dstObj, _constDoubleSpec) != JS_TRUE ) \
 				return JS_FALSE; \
 		if ( _init ) \
-			if ( _init(cx, _constructor ? JS_GetConstructor(cx, *_prototype) : *_prototype) != JS_TRUE ) \
+			if ( _init(cx, dstObj) != JS_TRUE ) \
 				return JS_FALSE; \
+		J_CHK( JS_DefineProperty(cx, dstObj, "_revision", _revision, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) ); \
 		return JS_TRUE; \
 		JL_BAD; \
 	}

@@ -450,6 +450,7 @@ DEFINE_FUNCTION_FAST( SplitChannels ) {
 
 CONFIGURE_STATIC
 
+	REVISION(SvnRevToInt("$Revision$"))
 	BEGIN_STATIC_FUNCTION_SPEC
 //		FUNCTION_FAST( DecodeOggVorbis )
 //		FUNCTION_FAST( DecodeSound )

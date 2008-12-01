@@ -359,6 +359,7 @@ DEFINE_PROPERTY( clipboardSetter ) {
 
 CONFIGURE_STATIC
 
+	REVISION(SvnRevToInt("$Revision$"))
 	BEGIN_STATIC_FUNCTION_SPEC
 		FUNCTION( MessageBox )
 		FUNCTION( CreateProcess )

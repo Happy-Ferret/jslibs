@@ -977,6 +977,7 @@ DEFINE_FUNCTION( DumpObjectPrivate ) {
 
 CONFIGURE_STATIC
 
+	REVISION(SvnRevToInt("$Revision$"))
 	BEGIN_STATIC_FUNCTION_SPEC
 #ifdef DEBUG
 		FUNCTION_FAST( DumpHeap )

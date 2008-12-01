@@ -325,6 +325,7 @@ DEFINE_PROPERTY( idealInputLength ) {
 **/
 CONFIGURE_CLASS
 
+	REVISION(SvnRevToInt("$Revision$"))
 	HAS_RESERVED_SLOTS(1)
 	HAS_PRIVATE
 

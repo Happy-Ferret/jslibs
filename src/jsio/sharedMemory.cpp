@@ -163,7 +163,6 @@ DEFINE_CONSTRUCTOR() {
 		isCreation = false;
 	}
 
-	PRStatus status;
 	J_CHKB( PR_WaitSemaphore( accessSem ) == PR_SUCCESS, bad_ioerror );
 
 	PRSharedMemory *shm;
@@ -460,6 +459,7 @@ DEFINE_PROPERTY( xdrGetter ) {
 
 CONFIGURE_CLASS
 
+	REVISION(SvnRevToInt("$Revision$"))
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE
 

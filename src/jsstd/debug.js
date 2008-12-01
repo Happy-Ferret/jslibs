@@ -1,7 +1,8 @@
 LoadModule('jsstd');
 LoadModule('jsio');
 
-Test();
+Print( Map._revision );
+
 
 Halt(); /////////////////////////////////////////////////////////////////////
 

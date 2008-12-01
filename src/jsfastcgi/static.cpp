@@ -267,6 +267,7 @@ decoding_error:
 
 CONFIGURE_STATIC
 
+	REVISION(SvnRevToInt("$Revision$"))
 	BEGIN_STATIC_FUNCTION_SPEC
 		FUNCTION( Accept )
 		FUNCTION( GetParam )

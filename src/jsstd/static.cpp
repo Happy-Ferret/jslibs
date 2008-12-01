@@ -1097,7 +1097,7 @@ DEFINE_FUNCTION_FAST( Test ) {
 
 	using namespace jl;
 	Buffer b;
-	BufferInitialize(&b, BUFFER_TYPE_CHUNK);
+	BufferInitialize(&b, bufferTypeChunk, bufferGrowTypeGuess);
 
 	for ( int i = 0; i < 100; i++ ) {
 
@@ -1123,6 +1123,8 @@ DEFINE_FUNCTION_FAST( Test ) {
 
 
 CONFIGURE_STATIC
+
+	REVISION(SvnRevToInt("$Revision$"))
 
 	BEGIN_STATIC_FUNCTION_SPEC
 		FUNCTION( Expand )

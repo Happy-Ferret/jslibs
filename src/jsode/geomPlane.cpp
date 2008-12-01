@@ -80,6 +80,7 @@ DEFINE_PROPERTY( lengthsGetter ) {
 
 CONFIGURE_CLASS
 
+	REVISION(SvnRevToInt("$Revision$"))
 	HAS_FINALIZE
 
 	HAS_PROTOTYPE( prototypeGeom )

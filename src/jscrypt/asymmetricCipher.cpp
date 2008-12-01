@@ -674,6 +674,7 @@ enum {
 
 CONFIGURE_CLASS
 
+	REVISION(SvnRevToInt("$Revision$"))
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE
 

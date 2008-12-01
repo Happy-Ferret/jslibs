@@ -449,6 +449,8 @@ JSBool Init(JSContext *cx, JSObject *obj) {
 
 CONFIGURE_CLASS
 
+	REVISION(SvnRevToInt("$Revision$"))
+
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE
 	HAS_INIT

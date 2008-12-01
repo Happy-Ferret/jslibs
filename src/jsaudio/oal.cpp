@@ -1098,6 +1098,7 @@ DEFINE_FUNCTION_FAST( PlaySound ) {
 
 CONFIGURE_CLASS
 
+	REVISION(SvnRevToInt("$Revision$"))
 	BEGIN_CONST_INTEGER_SPEC
 		CONST_INTEGER( NONE                      ,AL_NONE                       )
 		CONST_INTEGER( FALSE                     ,AL_FALSE                      )

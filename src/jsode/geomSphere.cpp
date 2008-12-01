@@ -79,6 +79,7 @@ DEFINE_PROPERTY( radiusGetter ) {
 
 CONFIGURE_CLASS
 
+	REVISION(SvnRevToInt("$Revision$"))
 	HAS_FINALIZE
 
 	HAS_PROTOTYPE( prototypeGeom )

@@ -41,7 +41,8 @@ DEFINE_NEW_RESOLVE() {
 }
 
 CONFIGURE_CLASS
-
+	
+	REVISION(SvnRevToInt("$Revision$"))
 	//	IS_GLOBAL // make JS_ResolveStandardClass failed
 	HAS_NEW_RESOLVE
 

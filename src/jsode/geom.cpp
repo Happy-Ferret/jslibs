@@ -300,6 +300,7 @@ DEFINE_PROPERTY( offsetPositionSetter ) {
 
 CONFIGURE_CLASS
 
+	REVISION(SvnRevToInt("$Revision$"))
 	BEGIN_FUNCTION_SPEC
 		FUNCTION( Destroy )
 	END_FUNCTION_SPEC

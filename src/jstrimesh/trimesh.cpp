@@ -343,6 +343,7 @@ DEFINE_PROPERTY( hasColor ) {
 
 CONFIGURE_CLASS // This section containt the declaration and the configuration of the class
 
+	REVISION(SvnRevToInt("$Revision$"))
 	HAS_PRIVATE
 
 	HAS_CONSTRUCTOR

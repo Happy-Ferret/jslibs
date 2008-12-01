@@ -804,6 +804,7 @@ DEFINE_PROPERTY( currentWorkingDirectory ) {
 
 CONFIGURE_STATIC
 
+	REVISION(SvnRevToInt("$Revision$"))
 	BEGIN_STATIC_FUNCTION_SPEC
 		FUNCTION( Poll ) // Do not turn it in FAST NATIVE because we need a stack frame for debuging
 		FUNCTION( IsReadable )

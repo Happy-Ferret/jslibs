@@ -363,6 +363,13 @@ inline bool SwapObjects( JSContext *cx, JSObject *obj1, JSObject *obj2 ) {
 }
 */
 
+inline unsigned int SvnRevToInt(const char *svnRev) {
+
+	const char *p = strchr(svnRev, ' ');
+	return p ? atol(p+1) : 0;
+}
+
+
 inline void *JL_GetPrivate(JSContext *cx, JSObject *obj) {
 
 	jsval v;

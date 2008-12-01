@@ -977,6 +977,7 @@ DEFINE_FUNCTION( GetHostsByName ) {
 
 CONFIGURE_CLASS
 
+	REVISION(SvnRevToInt("$Revision$"))
 	HAS_PROTOTYPE( prototypeDescriptor )
 
 	HAS_CONSTRUCTOR

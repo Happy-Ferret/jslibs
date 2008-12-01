@@ -32,6 +32,7 @@ DEFINE_CONSTRUCTOR() { // Called when the object is constructed ( a = new Templa
 
 CONFIGURE_CLASS // This section containt the declaration and the configuration of the class
 
+	REVISION(SvnRevToInt("$Revision$"))
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE
 
