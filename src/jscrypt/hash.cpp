@@ -167,7 +167,8 @@ DEFINE_FUNCTION( Process ) {
 DEFINE_FUNCTION( Done ) {
 
 	J_S_ASSERT_CLASS( obj, _class );
-	HashPrivate *privateData = (HashPrivate *)JS_GetPrivate(cx, obj);
+	HashPrivate *privateData;
+	privateData = (HashPrivate *)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( privateData );
 
 	unsigned long outLength;

@@ -919,9 +919,11 @@ DEFINE_GET_PROPERTY() {
 	if ( !JSVAL_IS_INT(id) )
 		return JS_TRUE;
 
-	long slot = JSVAL_TO_INT( id );
+	long slot;
+	slot = JSVAL_TO_INT( id );
 
-	BufferPrivate *pv = (BufferPrivate*)JS_GetPrivate(cx, obj);
+	BufferPrivate *pv;
+	pv = (BufferPrivate*)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( pv );
 
 	if ( slot >= 0 && (unsigned)slot < pv->length ) {

@@ -223,8 +223,10 @@ JSBool ReadAllToJsval(JSContext *cx, PRFileDesc *fd, jsval *rval ) {
 		return JS_TRUE;
 	}
 
-	size_t length = BufferGetLength(&buf);
-	char *jsData = (char*)JS_malloc(cx, length +1);
+	size_t length;
+	length = BufferGetLength(&buf);
+	char *jsData;
+	jsData = (char*)JS_malloc(cx, length +1);
 	BufferCopyData(&buf, jsData, length);
 	jsData[length] = '\0';
 	J_CHK( J_NewBlob( cx, jsData, length, rval ) );

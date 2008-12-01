@@ -735,7 +735,8 @@ DEFINE_FUNCTION_FAST( charCodeAt ) {
 DEFINE_FUNCTION_FAST( toString ) { // and valueOf ?
 
 	J_S_ASSERT_CLASS(J_FOBJ, _class);
-	void *pv = JS_GetPrivate(cx, J_FOBJ);
+	void *pv;
+	pv = JS_GetPrivate(cx, J_FOBJ);
 	size_t length;
 	J_CHK( BlobLength(cx, J_FOBJ, &length) );
 	JSString *jsstr;
