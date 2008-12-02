@@ -1136,6 +1136,7 @@ DEFINE_FUNCTION_FAST( Test ) {
 		int rnd = rand() & 0xff; // 0->127
 		char *tmp = BufferNewChunk(&b, rnd);
 		memcpy(tmp, ref + refPos, rnd);
+		BufferConfirm(&b, rnd);
 		refPos += rnd;
 	}
 

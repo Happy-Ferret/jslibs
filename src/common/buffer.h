@@ -101,22 +101,24 @@ inline void BufferInitialize( Buffer *buffer, BufferType type, BufferGrowType gr
 
 inline char *BufferNewChunk( Buffer *buffer, size_t maxLength ) {
 
-	buffer->length += maxLength;
+//	buffer->length += maxLength; // see Confirm()
 	BufferChunk *chunk = &buffer->chunkList[buffer->chunkPos];
 	if ( chunk->pos + maxLength <= chunk->size ) { //enough room in the current buffer
 		
-		char *tmp = chunk->begin + chunk->pos;
-		chunk->pos += maxLength;
-		return tmp;
+//		char *tmp = chunk->begin + chunk->pos;
+//		chunk->pos += maxLength;
+//		return tmp;
+		return chunk->begin + chunk->pos;
 	}
 
 	if ( buffer->type == bufferTypeRealloc ) {
 
 		chunk->size += GuessNextChunkSize(buffer, buffer->chunkPos, maxLength);
 		chunk->begin = (char*)realloc(chunk->begin, chunk->size);
-		char *tmp = chunk->begin + chunk->pos;
-		chunk->pos += maxLength;
-		return tmp;
+//		char *tmp = chunk->begin + chunk->pos;
+//		chunk->pos += maxLength;
+//		return tmp;
+		return chunk->begin + chunk->pos;
 	} else
 	if ( buffer->type == bufferTypeChunk ) {
 
@@ -137,18 +139,26 @@ inline char *BufferNewChunk( Buffer *buffer, size_t maxLength ) {
 		BufferChunk *chunk = &buffer->chunkList[buffer->chunkPos];
 		chunk->size = GuessNextChunkSize(buffer, buffer->chunkPos-1, maxLength);
 		chunk->begin = (char*)malloc(chunk->size);
-		chunk->pos = maxLength;
+//		chunk->pos = maxLength;
+		chunk->pos = 0;
 		return chunk->begin;
 	}
 	return NULL;
 }
 
-
+/*
 // adjust the lastest chunk length
 inline void BufferUnused( Buffer *buffer, size_t unused ) {
 
 	buffer->chunkList[buffer->chunkPos].pos -= unused;
 	buffer->length -= unused;
+}
+*/
+
+inline void BufferConfirm( Buffer *buffer, size_t amount ) {
+
+	buffer->chunkList[buffer->chunkPos].pos += amount;
+	buffer->length += amount;
 }
 
 

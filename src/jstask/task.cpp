@@ -199,6 +199,7 @@ int TaskStdErrHostOutput( void *privateData, const char *buffer, size_t length )
 
 	Buffer *eb = (Buffer*)privateData;
 	memcpy(BufferNewChunk(eb, length), buffer, length);
+	BufferConfirm(eb, length);
 	return 0;
 }
 

@@ -193,11 +193,10 @@ JSBool ReadAllToJsval(JSContext *cx, PRFileDesc *fd, jsval *rval ) {
 		PRInt32 res = PR_Read(fd, BufferNewChunk(&buf, currentReadLength), currentReadLength);
 		if ( res > 0 ) {
 
-			if ( res < currentReadLength ) {
-
-				BufferUnused(&buf, currentReadLength - res);
+			BufferConfirm(&buf, res);
+			if ( res < currentReadLength )
 				break;
-			}
+
 		} else if ( res == -1 ) { // failure. The reason for the failure can be obtained by calling PR_GetError.
 
 			if ( PR_GetError() != PR_WOULD_BLOCK_ERROR )
