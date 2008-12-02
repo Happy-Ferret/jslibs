@@ -25,6 +25,7 @@
 	#define DEBUG
 #endif // _DEBUG
 
+
 ///////////////////////////////////////////////////////////////////////////////
 // Compiler specific configuration
 
@@ -35,6 +36,41 @@
 	#define likely(expr)	!!(expr)
 	#define unlikely(expr)	!!(expr)
 #endif
+
+#if defined(_MSC_VER)
+
+	#define DLLEXPORT __declspec(dllexport)
+	#define DLLLOCAL
+	#define FASTCALL __fastcall
+	#define ALWAYS_INLINE __forceinline
+
+#elif defined(__GNUC__)
+
+	#if defined HAVE_GCCVISIBILITYPATCH
+		#define DLLEXPORT __attribute__ ((visibility("default")))
+		#define DLLLOCAL __attribute__ ((visibility("hidden")))
+	#else
+		#define DLLEXPORT
+		#define DLLLOCAL
+	#endif
+
+	#if defined(__i386__) && ((__GNUC__ >= 4) || (__GNUC__ == 3 && __GNUC_MINOR__ >= 4))
+		#define FASTCALL __attribute__((fastcall))
+	#else
+		#define FASTCALL
+	#endif
+
+	#define ALWAYS_INLINE __attribute__((always_inline))
+
+#else
+
+	#define DLLEXPORT
+	#define FASTCALL
+	#define DLLLOCAL
+	#define ALWAYS_INLINE
+
+#endif
+
 
 #if defined _MSC_VER
 	// disable warnings:
@@ -93,14 +129,14 @@
 	#define u_int32_t UINT32
 	#define u_int64_t UINT64
 
+	#define LLONG __int64
+
 	#define PATH_MAX MAX_PATH
 	#define DLL_EXT ".dll"
 	#define PATH_SEPARATOR_STRING "\\"
 	#define PATH_SEPARATOR '\\'
-	#define LLONG __int64
-
-	#define DLLEXPORT __declspec(dllexport)
-	#define DLLLOCAL
+	#define LIST_SEPARATOR_STRING ";"
+	#define LIST_SEPARATOR ';'
 
 	#define strcasecmp stricmp
 
@@ -110,19 +146,13 @@
 
 	#include <unistd.h>
 	
+	#define LLONG long long
+
 	#define DLL_EXT ".dylib"
 	#define PATH_SEPARATOR_STRING "/"
 	#define PATH_SEPARATOR '/'
-	#define LLONG long long
-
-	#if defined HAVE_GCCVISIBILITYPATCH
-		#define DLLEXPORT __attribute__ ((visibility("default")))
-		#define DLLLOCAL __attribute__ ((visibility("hidden")))
-	#else
-		#define DLLEXPORT
-		#define DLLLOCAL
-	#endif
-
+	#define LIST_SEPARATOR_STRING ":"
+	#define LIST_SEPARATOR ':'
 
 #else // Linux platform
 	
@@ -132,18 +162,13 @@
 	#include <sys/time.h>
 	#include <dlfcn.h>
 
+	#define LLONG long long
+
 	#define DLL_EXT ".so"
 	#define PATH_SEPARATOR_STRING "/"
 	#define PATH_SEPARATOR '/'
-	#define LLONG long long
-
-	#if defined HAVE_GCCVISIBILITYPATCH
-		#define DLLEXPORT __attribute__ ((visibility("default")))
-		#define DLLLOCAL __attribute__ ((visibility("hidden")))
-	#else
-		#define DLLEXPORT
-		#define DLLLOCAL
-	#endif
+	#define LIST_SEPARATOR_STRING ":"
+	#define LIST_SEPARATOR ':'
 
 #endif // Windows/MacosX/Linux platform
 

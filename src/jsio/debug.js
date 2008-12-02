@@ -1,9 +1,7 @@
 LoadModule('jsstd');
 LoadModule('jsio');
 
-
-var f = new File('Eta_Carinae_Nebula_(NGC_3372).jpg').Open('r');
-Print( f.Read().length );
+Print( GetEnv('path').split(listSeparator).join('\n') )
 
 
 Halt(); //////////////////////////////////////////////////////////

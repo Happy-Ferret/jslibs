@@ -802,6 +802,43 @@ DEFINE_PROPERTY( currentWorkingDirectory ) {
 }
 
 
+/**doc
+ * $STR $INAME $READONLY
+  is the os's path separator.
+**/
+DEFINE_PROPERTY( pathSeparator ) {
+
+	if ( *vp == JSVAL_VOID ) {
+		
+		JSString *str = JS_InternString(cx, PATH_SEPARATOR_STRING);
+		J_S_ASSERT_ALLOC( str );
+		*vp = STRING_TO_JSVAL( str );
+	}
+	return JS_TRUE;
+	JL_BAD;
+}
+
+/**doc
+ * $STR $INAME $READONLY
+  is the os's list separator.
+  $H example
+   {{{
+   Print( GetEnv('PATH').split(listSeparator) )
+   }}}
+**/
+DEFINE_PROPERTY( listSeparator ) {
+
+	if ( *vp == JSVAL_VOID ) {
+		
+		JSString *str = JS_InternString(cx, LIST_SEPARATOR_STRING);
+		J_S_ASSERT_ALLOC( str );
+		*vp = STRING_TO_JSVAL( str );
+	}
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
 CONFIGURE_STATIC
 
 	REVISION(SvnRevToInt("$Revision$"))
@@ -825,6 +862,8 @@ CONFIGURE_STATIC
 		PROPERTY_READ_STORE( systemInfo )
 		PROPERTY( processPriority )
 		PROPERTY_READ( currentWorkingDirectory )
+		PROPERTY_READ_STORE( pathSeparator )
+		PROPERTY_READ_STORE( listSeparator )
 	END_STATIC_PROPERTY_SPEC
 
 END_STATIC

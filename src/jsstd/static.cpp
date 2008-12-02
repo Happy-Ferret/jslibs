@@ -287,15 +287,15 @@ DEFINE_FUNCTION( Clear ) {
 DEFINE_FUNCTION( SetScope ) {
 
 	J_S_ASSERT_ARG_MIN( 2 );
-	JSObject *o;
-	JS_ValueToObject(cx, J_ARG(1), &o);
-	JSObject *p;
-	JS_ValueToObject(cx, J_ARG(2), &p);
+	JSObject *o, *p;
+	J_CHK( JS_ValueToObject(cx, J_ARG(1), &o) );
+	J_CHK( JS_ValueToObject(cx, J_ARG(2), &p) );
 	*rval = OBJECT_TO_JSVAL(JS_GetParent(cx, o));
 	J_CHK( JS_SetParent(cx, o, p) );
 	return JS_TRUE;
 	JL_BAD;
 }
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
