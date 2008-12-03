@@ -7,8 +7,11 @@ LoadModule('jstask');
 
 function MyTask( request ) {
 
-	for ( var i = 0; i < 100000; i++);
-	throw 123;
+	LoadModule('jsio');
+	
+	var f = new File('x').Open('w');
+	f.Read();
+	
 	return 'r#' + request;
 }
 
@@ -17,9 +20,15 @@ var myTask = new Task(MyTask);
 for ( var i = 0; i < 10; i++ )
 	myTask.Request(i);
 
-while ( !myTask.idle )
-	Print( myTask.Response(), ', ' );
+try {
+	
+	while ( !myTask.idle )
+		Print( myTask.Response(), ', ' );
 
+} catch (ex if ex instanceof IoError ) {
+
+Print( ex.code );
+}
 
 
 Halt(); ////////////////////////////////////////////////

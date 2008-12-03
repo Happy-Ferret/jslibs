@@ -1,7 +1,9 @@
 LoadModule('jsstd');
 LoadModule('jsio');
 
-Print( Map._revision );
+var f = new Function("	Print( SandboxEval('Math') == Math )")
+
+f()
 
 
 Halt(); /////////////////////////////////////////////////////////////////////

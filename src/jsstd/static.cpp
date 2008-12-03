@@ -1129,9 +1129,9 @@ DEFINE_FUNCTION_FAST( Test ) {
 
 	using namespace jl;
 	Buffer b;
-	BufferInitialize(&b, bufferTypeChunk, bufferGrowTypeGuess);
+	BufferInitialize(&b, bufferTypeAuto, bufferGrowTypePage);
 
-	for ( int i = 0; i < 100; i++ ) {
+	for ( int i = 0; i < 1000; i++ ) {
 
 		int rnd = rand() & 0xff; // 0->127
 		char *tmp = BufferNewChunk(&b, rnd);
@@ -1147,6 +1147,9 @@ DEFINE_FUNCTION_FAST( Test ) {
 
 	const char *d = BufferGetData(&b);
 	bool success = memcmp(ref, d, l) == 0 && memcmp(ref, tmp, l) == 0;
+
+	BoolToJsval(cx, success, J_FRVAL);
+
 
 	return JS_TRUE;
 }

@@ -1187,6 +1187,14 @@ inline JSBool JsvalToDoubleVector( JSContext *cx, jsval val, double *vector, siz
 
 typedef JSXDRState* Serialized;
 
+inline bool IsSerializable( jsval val ) {
+	
+	if ( JSVAL_IS_PRIMITIVE(val) )
+		return true;
+	JSClass *cl = JS_GetClass(JSVAL_TO_OBJECT(val));
+	return cl->xdrObject != NULL;
+}
+
 inline void SerializerCreate( Serialized *xdr ) {
 
 	*xdr = NULL;

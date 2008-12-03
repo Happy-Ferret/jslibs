@@ -44,7 +44,41 @@ DEFINE_CONSTRUCTOR() { // Called when the object is constructed ( a = new Templa
 //	return JS_TRUE;
 //}
 
+
+
+//DEFINE_XDR() {
+//	
+//	if ( xdr->mode == JSXDR_ENCODE ) {
+//
+//		jsval tmp;
+//		J_CHK( JS_GetReservedSlot(xdr->cx, *objp, 0, &tmp) );
+//		JS_XDRValue(xdr, &tmp);
+//		return JS_TRUE;
+//	}
+//
+//	if ( xdr->mode == JSXDR_DECODE ) {
+//
+//		*objp = JS_NewObject(xdr->cx, _class, NULL, NULL);
+//		jsval tmp;
+//		JS_XDRValue(xdr, &tmp);
+//		J_CHK( JS_SetReservedSlot(xdr->cx, *objp, 0, tmp) );
+//		return JS_TRUE;
+//	}
+//
+//	if ( xdr->mode == JSXDR_FREE ) {
+//
+//		return JS_TRUE;
+//	}
+//
+//	JL_BAD;
+//}
+
+
+
 CONFIGURE_CLASS // This section containt the declaration and the configuration of the class
+
+//	HAS_XDR
+
 
 	REVISION(SvnRevToInt("$Revision$"))
 	HAS_PRIVATE

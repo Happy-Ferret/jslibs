@@ -54,8 +54,38 @@ DEFINE_HAS_INSTANCE() { // see issue#52
 	return JS_TRUE;
 }
 
+DEFINE_XDR() {
+	
+	if ( xdr->mode == JSXDR_ENCODE ) {
+
+		jsval tmp;
+		J_CHK( JS_GetReservedSlot(xdr->cx, *objp, SLOT_WIN_ERROR_CODE, &tmp) );
+		JS_XDRValue(xdr, &tmp);
+		return JS_TRUE;
+	}
+
+	if ( xdr->mode == JSXDR_DECODE ) {
+
+		*objp = JS_NewObject(xdr->cx, _class, NULL, NULL);
+		jsval tmp;
+		JS_XDRValue(xdr, &tmp);
+		J_CHK( JS_SetReservedSlot(xdr->cx, *objp, SLOT_WIN_ERROR_CODE, tmp) );
+		return JS_TRUE;
+	}
+
+	if ( xdr->mode == JSXDR_FREE ) {
+
+		// (TBD) nothing to free ?
+		return JS_TRUE;
+	}
+
+	JL_BAD;
+}
+
+
 CONFIGURE_CLASS
 
+	HAS_XDR
 //	HAS_CONSTRUCTOR // see issue#52
 	HAS_HAS_INSTANCE // see issue#52
 

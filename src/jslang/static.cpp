@@ -21,6 +21,8 @@
 #include "static.h"
 
 #include "../common/stack.h"
+#include "../common/buffer.h"
+using namespace jl;
 
 /**doc fileIndex:topmost **/
 
@@ -39,68 +41,38 @@ DEFINE_FUNCTION( Stringify ) {
 	J_S_ASSERT_ARG_MIN(1);
 	J_S_ASSERT_ARG_MAX(1);
 
-	if ( JSVAL_IS_OBJECT( J_ARG(1) ) && !JSVAL_IS_NULL( J_ARG(1) ) ) {
+	if ( !JSVAL_IS_PRIMITIVE(J_ARG(1)) ) {
 
-		NIStreamRead read = StreamReadInterface(cx, JSVAL_TO_OBJECT( J_ARG(1) ));
+		JSObject *sobj;
+		sobj = JSVAL_TO_OBJECT( J_ARG(1) );
+		NIStreamRead read = StreamReadInterface(cx, sobj);
 		if ( read ) {
-			
-			size_t total = 0;
-			void *stack;
-			jl::StackInit(&stack);
-			
-			size_t defaultChunkSize = 64; // 4096 - sizeof(size_t); // try to reach a multiple of the system page size
-//			size_t waste = 0;
-//			size_t round = 0;
 
+			Buffer buf;
+			BufferInitialize(&buf, bufferTypeAuto, bufferGrowTypeAuto);
 
 			size_t length;
 			do {
-				
-				length = defaultChunkSize;
-
-				void *chunk = malloc(length + sizeof(size_t));
-				J_S_ASSERT_ALLOC( chunk );
-				jl::StackPush(&stack, chunk);
-
-				size_t *chunkDataLength = (size_t*)chunk;
-				char *chunkData = (char*)chunk + sizeof(size_t);
-
-				J_CHK( read(cx, JSVAL_TO_OBJECT( J_ARG(1) ), chunkData, &length) );
-
-				*chunkDataLength = length;
-				total += length;
-
-//				round++;
-//				waste += defaultChunkSize - length;
-
-				if ( length < defaultChunkSize )
-					defaultChunkSize = defaultChunkSize / 2 + 8;
-				else
-					defaultChunkSize = defaultChunkSize * 2 / 3 + 8;
-
+				length = 4096;
+				J_CHKB( read(cx, sobj, BufferNewChunk(&buf, length), &length), bad_freeBuffer );
+				BufferConfirm(&buf, length);
 			} while ( length != 0 );
 
-
+			size_t total = BufferGetLength(&buf);
 			char *newBuffer = (char*)JS_malloc(cx, total +1);
 			J_S_ASSERT_ALLOC( newBuffer );
 			newBuffer[total] = '\0';
-
-			newBuffer += total;
-
-			while ( !jl::StackIsEnd(&stack) ) {
-				
-				void *chunk = jl::StackPop(&stack);
-				size_t *chunkDataLength = (size_t*)chunk;
-				char *chunkData = (char*)chunk + sizeof(size_t);
-				newBuffer -= *chunkDataLength;
-				memcpy(newBuffer, chunkData, *chunkDataLength);
-				free(chunk);
-			}
-		
+			BufferCopyData(&buf, newBuffer, total);
+			
 			JSString *jsstr = JS_NewString(cx, newBuffer, total);
 			J_S_ASSERT_ALLOC( jsstr );
 			*J_RVAL = STRING_TO_JSVAL( jsstr );
+
+			BufferFinalize(&buf);
 			return JS_TRUE;
+		bad_freeBuffer:
+			BufferFinalize(&buf);
+			return JS_FALSE;
 		}
 	}
 
@@ -122,26 +94,12 @@ DEFINE_FUNCTION( Stringify ) {
 	JL_BAD;
 }
 
-#ifdef DEBUG
-
-DEFINE_FUNCTION( Test ) {
-
-	return JS_TRUE;
-}
-
-#endif // DEBUG
-
 
 CONFIGURE_STATIC
 
-//	REVISION(SvnRevToInt("$Revision$"))
+//	REVISION(SvnRevToInt("$Revision$")) // avoid to set a revision to the global context
 	BEGIN_STATIC_FUNCTION_SPEC
-		FUNCTION( Stringify )
-
-#ifdef DEBUG
-		FUNCTION( Test )
-#endif // DEBUG
-
+		FUNCTION_ARGC( Stringify, 1 )
 	END_STATIC_FUNCTION_SPEC
 
 END_STATIC

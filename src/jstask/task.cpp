@@ -146,7 +146,9 @@ JSBool Task(JSContext *cx, Private *pv) {
 		J_CHK( UnserializeJsval(cx, &serializedRequest, &request) );
 		SerializerFree(&serializedRequest);
 
-		jsval argv[] = { request, INT_TO_JSVAL(index++) }; // (TBD) root something ?
+		jsval argv[2]; // (TBD) root something ?
+		argv[0] = request;
+		argv[1] = INT_TO_JSVAL(index++);
 		JSBool status = JS_CallFunction(cx, globalObj, fun, COUNTOF(argv), argv, &rval);
 
 		if ( !status ) {
@@ -155,8 +157,11 @@ JSBool Task(JSContext *cx, Private *pv) {
 			if ( JS_IsExceptionPending(cx) ) { // manageable error
 
 				J_CHK( JS_GetPendingException(cx, &ex) );
-				JSString *jsstr = JS_ValueToString(cx, ex); // transform the exception into a string
-				ex = STRING_TO_JSVAL(jsstr);
+				if ( !IsSerializable(ex) ) {
+
+					JSString *jsstr = JS_ValueToString(cx, ex); // transform the exception into a string
+					ex = STRING_TO_JSVAL(jsstr);
+				}
 			} else {
 
 				ex = JSVAL_VOID; // unknown exception
@@ -207,13 +212,15 @@ int TaskStdErrHostOutput( void *privateData, const char *buffer, size_t length )
 JLThreadFuncDecl ThreadProc( void *threadArg ) {
 
 	Buffer errBuffer;
-	BufferInitialize(&errBuffer, bufferTypeRealloc, bufferGrowTypeGuess);
+	BufferInitialize(&errBuffer, bufferTypeRealloc, bufferGrowTypeDouble);
 
 	JSContext *cx = CreateHost(-1, -1, 0);
 	if ( cx == NULL )
 		return 0;
 
 	J_CHK( InitHost(cx, _unsafeMode, NULL, TaskStdErrHostOutput, &errBuffer) );
+	
+	JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_DONT_REPORT_UNCAUGHT);
 
 	Private *pv;
 	pv = (Private*)threadArg;
@@ -227,8 +234,12 @@ JLThreadFuncDecl ThreadProc( void *threadArg ) {
 		if ( JS_IsExceptionPending(cx) ) {
 
 			J_CHK( JS_GetPendingException(cx, &ex) );
-			JSString *jsstr = JS_ValueToString(cx, ex); // transform the exception into a string
-			ex = STRING_TO_JSVAL(jsstr);
+
+			if ( !IsSerializable(ex) ) {
+
+				JSString *jsstr = JS_ValueToString(cx, ex); // transform the exception into a string
+				ex = STRING_TO_JSVAL(jsstr);
+			}
 		} else {
 
 			J_CHK( StringAndLengthToJsval(cx, &ex, BufferGetData(&errBuffer), BufferGetLength(&errBuffer)) );
