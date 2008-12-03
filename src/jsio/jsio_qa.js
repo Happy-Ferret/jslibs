@@ -416,7 +416,7 @@ LoadModule('jsio');
 	
 		switch (systemInfo.name) {
 			case 'Windows_NT':
-				
+/* previous implementation
 				var cmdPath = GetEnv('ComSpec');
 				QA.ASSERT( cmdPath.indexOf('cmd') != -1, true, 'cmd.exe path' );
 
@@ -426,41 +426,78 @@ LoadModule('jsio');
 				QA.ASSERT_TYPE( res[0], Descriptor, 'process stdin type' );
 				QA.ASSERT_TYPE( res[1], Descriptor, 'process stdout type' );
 				QA.ASSERT( res[1].Read(10).length, 10, 'reading Process stdout' );
+*/
+				var cmdPath = GetEnv('ComSpec');
+				QA.ASSERT( cmdPath.indexOf('cmd') != -1, true, 'cmd.exe path' );
+				var process = new Process(cmdPath, ['/c', 'dir']);
+				QA.ASSERT_TYPE( process.stdin, Descriptor, 'process stdin type' );
+				QA.ASSERT_TYPE( process.stdout, Descriptor, 'process stdout type' );
+				QA.ASSERT_TYPE( process.stderr, Descriptor, 'process stderr type' );
+				QA.ASSERT( process.stdout.Read(10).length, 10, 'reading Process stdout' );
 				break;
 			default:
 				QA.FAILED('(TBD) no test available for this system.');
 		}
 
 
-/// create process wait for exit
+/// create process wait for exitcode
 
-		switch (systemInfo.name) {
+		switch ( systemInfo.name ) {
 			case 'Windows_NT':
-				
-				var res = CreateProcess('cmd.exe', ['/c', 'dir'], true); // PATH is used
-				QA.ASSERT_TYPE( res, 'number', 'CreateProcess returns an array' );
+				var cmd = GetEnv('ComSpec');
+				var args1 = ['/c', 'cd', 'fvasdfvasdfvasdfv'];
+				var args2 = ['/c', 'dir'];
+				break;
+			case 'Linux':
+				var cmd = GetEnv('SHELL');
+				var args1 = ['-c', 'cd', 'fvasdfvasdfvasdfv'];
+				var args2 = ['-c', 'ls'];
 				break;
 			default:
 				QA.FAILED('(TBD) no test available for this system.');
+				return;
 		}
+				
+		var process = new Process(cmd, args1);
+		var exitCode = process.Wait();
+		QA.ASSERT( exitCode, 1, 'process exit code 1' );
+
+		var process = new Process(cmd, args2);
+		var exitCode = process.Wait();
+		QA.ASSERT( exitCode, 0, 'process exit code 0' );
 
 
 /// create process error detection [ftr]
+
+		try {
+
+			var res = new Process('uryqoiwueyrqoweu');
+		} catch( ex if ex instanceof IoError ) {
+
+			QA.ASSERT( ex.code, -5994, 'CreateProcess error detection' );
+			return;
+		}
+		QA.FAILED( "no exception" );
+	
+
+/// create process detach
 		
-		switch (systemInfo.name) {
+		switch ( systemInfo.name ) {
 			case 'Windows_NT':
-				
-				try {
-				
-					var res = CreateProcess('uryqoiwueyrqoweu', [], true);
-				} catch( ex if ex instanceof IoError ) {
-				
-					QA.ASSERT( ex.code, -5994, 'CreateProcess error detection' );
-				}
+				var cmd = GetEnv('ComSpec');
+				var args = ['/c', 'dir'];
+				break;
+			case 'Linux':
+				var cmd = GetEnv('SHELL');
+				var args = ['-c', 'ls'];
 				break;
 			default:
 				QA.FAILED('(TBD) no test available for this system.');
+				return;
 		}
+		
+		var process = new Process(cmd, args);
+		process.Detach();
 
 
 /// current working directory [ftr]

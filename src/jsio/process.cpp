@@ -55,14 +55,15 @@ DEFINE_CONSTRUCTOR() {
 	J_S_ASSERT_CONSTRUCTING();
 	J_S_ASSERT_THIS_CLASS();
 	J_S_ASSERT_ARG_MIN(1);
+	J_S_ASSERT( !J_ARG_ISDEF(2) || J_ARG_ISDEF(2) && JsvalIsArray(cx, J_ARG(2)), "Invalid 2nd argument" );
 
 	int processArgc;
-	if ( J_ARG_ISDEF(2) && JSVAL_IS_OBJECT(J_ARG(2)) && JS_IsArrayObject( cx, JSVAL_TO_OBJECT(J_ARG(2)) ) == JS_TRUE ) {
+	if ( J_ARG_ISDEF(2) ) {
 
 		JSIdArray *idArray;
 		idArray = JS_Enumerate( cx, JSVAL_TO_OBJECT(J_ARG(2)) ); // make a kind of auto-ptr for this
 		processArgc = idArray->length +1; // +1 is argv[0]
-		processArgv = (const char**)malloc(sizeof(const char**) * (processArgc +1)); // +1 is NULL
+		processArgv = (const char**)malloc(sizeof(const char**) * (processArgc +1)); // +1 because the NULL list terminator.
 		J_S_ASSERT_ALLOC( processArgv );
 
 		for ( int i=0; i<processArgc -1; i++ ) { // -1 because argv[0]
@@ -102,6 +103,7 @@ DEFINE_CONSTRUCTOR() {
 	PR_ProcessAttrSetStdioRedirect(psattr, PR_StandardInput, stdin_child);
 	PR_ProcessAttrSetStdioRedirect(psattr, PR_StandardOutput, stdout_child);
 	PR_ProcessAttrSetStdioRedirect(psattr, PR_StandardError, stderr_child);
+	// PR_ProcessAttrSetCurrentDirectory ?
 
 	PRProcess *process;
 	process = PR_CreateProcess(path, (char * const *)processArgv, NULL, psattr); // (TBD) avoid cast to (char * const *)
@@ -114,21 +116,21 @@ DEFINE_CONSTRUCTOR() {
 	J_CHKB( process != NULL, bad_throw );
 	J_CHK( JS_SetPrivate(cx, obj, (void*)process) );
 
-	JSObject *fdin;
-	fdin = JS_NewObject( cx, classPipe, NULL, NULL );
-	J_CHK( JS_SetPrivate( cx, fdin, stdin_parent ) );
+	JSObject *fdIn;
+	fdIn = JS_NewObject( cx, classPipe, NULL, NULL );
+	J_CHK( JS_SetPrivate( cx, fdIn, stdin_parent ) );
 
-	JSObject *fdout;
-	fdout = JS_NewObject( cx, classPipe, NULL, NULL );
-	J_CHK( JS_SetPrivate( cx, fdout, stdout_parent ) );
+	JSObject *fdOut;
+	fdOut = JS_NewObject( cx, classPipe, NULL, NULL );
+	J_CHK( JS_SetPrivate( cx, fdOut, stdout_parent ) );
 
-	JSObject *fderr;
-	fderr = JS_NewObject( cx, classPipe, NULL, NULL );
-	J_CHK( JS_SetPrivate( cx, fderr, stderr_parent ) );
+	JSObject *fdErr;
+	fdErr = JS_NewObject( cx, classPipe, NULL, NULL );
+	J_CHK( JS_SetPrivate( cx, fdErr, stderr_parent ) );
 
-	J_CHK( JS_SetReservedSlot(cx, obj, SLOT_PROCESS_STDIN, OBJECT_TO_JSVAL(fdin)) );
-	J_CHK( JS_SetReservedSlot(cx, obj, SLOT_PROCESS_STDOUT, OBJECT_TO_JSVAL(fdout)) );
-	J_CHK( JS_SetReservedSlot(cx, obj, SLOT_PROCESS_STDERR, OBJECT_TO_JSVAL(fderr)) );
+	J_CHK( JS_SetReservedSlot(cx, obj, SLOT_PROCESS_STDIN, OBJECT_TO_JSVAL(fdIn)) );
+	J_CHK( JS_SetReservedSlot(cx, obj, SLOT_PROCESS_STDOUT, OBJECT_TO_JSVAL(fdOut)) );
+	J_CHK( JS_SetReservedSlot(cx, obj, SLOT_PROCESS_STDERR, OBJECT_TO_JSVAL(fdErr)) );
 
 
 	if ( processArgv )
@@ -183,7 +185,7 @@ DEFINE_FUNCTION_FAST( Detach ) {
 
 /**doc
  * $INT $INAME()
-   Terminates the process.
+  Terminates the process.
 **/
 DEFINE_FUNCTION_FAST( Kill ) {
 
@@ -192,41 +194,44 @@ DEFINE_FUNCTION_FAST( Kill ) {
 	process = (PRProcess*)JS_GetPrivate(cx, J_FOBJ);	
 	J_S_ASSERT_RESOURCE(process);
 	J_CHK( PR_KillProcess(process) == PR_SUCCESS );
+	J_CHK( JS_SetPrivate(cx, J_FOBJ, NULL) ); // Invalidates the current process pointer.
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
 
 
-
+/**doc
+ * $TYPE Pipe $INAME()
+  Is the stdin pipe to the running process.
+**/
 DEFINE_PROPERTY( stdin ) {
 
 	J_S_ASSERT_CLASS( obj, _class );
-//	PRProcess *process;
-//	process = (PRProcess*)JS_GetPrivate(cx, obj);	
-//	J_S_ASSERT_RESOURCE(process);
 	J_CHK( JS_GetReservedSlot(cx, obj, SLOT_PROCESS_STDIN, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
 
+/**doc
+ * $TYPE Pipe $INAME()
+  Is the stdout pipe to the running process.
+**/
 DEFINE_PROPERTY( stdout ) {
 
 	J_S_ASSERT_CLASS( obj, _class );
-//	PRProcess *process;
-//	process = (PRProcess*)JS_GetPrivate(cx, obj);	
-//	J_S_ASSERT_RESOURCE(process);
 	J_CHK( JS_GetReservedSlot(cx, obj, SLOT_PROCESS_STDOUT, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
 
+/**doc
+ * $TYPE Pipe $INAME()
+  Is the stderr pipe to the running process.
+**/
 DEFINE_PROPERTY( stderr ) {
 
 	J_S_ASSERT_CLASS( obj, _class );
-//	PRProcess *process;
-//	process = (PRProcess*)JS_GetPrivate(cx, obj);	
-//	J_S_ASSERT_RESOURCE(process);
 	J_CHK( JS_GetReservedSlot(cx, obj, SLOT_PROCESS_STDERR, vp) );
 	return JS_TRUE;
 	JL_BAD;
