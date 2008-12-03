@@ -221,7 +221,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 
 	int exitValue;
 	jsval rval;
-	if ( ExecuteScriptFileName(cx, scriptName, compileOnly, argc-1, argv+1, &rval) == JS_TRUE ) {
+	if ( ExecuteScriptFileName(cx, scriptName, compileOnly, argc - (argumentVector-argv), argumentVector, &rval) == JS_TRUE ) {
 
 		if ( JSVAL_IS_INT(rval) && JSVAL_TO_INT(rval) >= 0 )
 			exitValue = JSVAL_TO_INT(rval);
@@ -333,8 +333,8 @@ The main features are:
     Print( 'argument['+i+'] = '+arguments[i] ,'\n' );
   }
   ...
-  c:\>jshost -w 0 -u 0 foo bar
-  argument[0] = foo
+  c:\>jshost -g 8192 -u 0 foo.js bar
+  argument[0] = foo.js
   argument[1] = bar
   }}}
 
