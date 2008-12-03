@@ -373,11 +373,11 @@ JSContext* CreateHost(size_t maxMem, size_t maxAlloc, size_t operationLimitGC) {
 	//	JS_ToggleOptions(cx, options );
 
 	#ifdef JSOPTION_JIT
-	JS_ToggleOptions(cx, JSOPTION_JIT);
+	JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_JIT);
 	// JSOPTION_JIT: "I think it's possible we'll remove even this little bit of API, and just have the JIT always-on. -j"
 	#endif // JSOPTION_JIT
 
-	JS_ToggleOptions(cx, JSOPTION_VAROBJFIX | JSOPTION_XML | JSOPTION_RELIMIT);
+	JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_VAROBJFIX | JSOPTION_XML | JSOPTION_RELIMIT);
 	// JSOPTION_VAROBJFIX:
 	//  Not quite: with JSOPTION_VAROBJFIX, both explicitly declared global
 	//  variables (var x) and implicit ones (x = 42 where no x exists yet in the
@@ -426,7 +426,7 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostOutput stdOut, HostOutput s
 	pv->unsafeMode = unsafeMode;
 
 	if ( unsafeMode )
-		JS_ToggleOptions(cx, JS_GetOptions(cx) | JSOPTION_STRICT);
+		JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_STRICT);
 
 	JSObject *globalObject;
 	globalObject = JS_GetGlobalObject(cx);
@@ -524,7 +524,7 @@ void HostPrincipalsDestroy(JSContext *cx, JSPrincipals *principals) {
 
 JSBool ExecuteScriptFileName( JSContext *cx, const char *scriptFileName, bool compileOnly, int argc, const char * const * argv, jsval *rval ) {
 
-	JS_ToggleOptions(cx, JSOPTION_COMPILE_N_GO | JSOPTION_DONT_REPORT_UNCAUGHT);
+	JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_COMPILE_N_GO | JSOPTION_DONT_REPORT_UNCAUGHT);
 	// JSOPTION_COMPILE_N_GO:
 	//  caller of JS_Compile*Script promises to execute compiled script once only; enables compile-time scope chain resolution of consts.
 	// JSOPTION_DONT_REPORT_UNCAUGHT:
