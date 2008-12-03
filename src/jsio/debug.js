@@ -1,8 +1,22 @@
 LoadModule('jsstd');
 LoadModule('jsio');
 
-Print( GetEnv('path').split(listSeparator).join('\n') )
 
+var p = new Process( 'c:\\windows\\System32\\cmd.exe', ['/c', 'dir', 'c:'] );
+p.Detach();
+Sleep(100);
+Print( p.stdout.Read().length, '\n' );
+Print( p.stdout.Read().length, '\n' );
+
+
+
+/*
+var [i, out] = CreateProcess( 'c:\\windows\\System32\\cmd.exe', ['/c', 'dir', 'c:\\'], false );
+Sleep(100);
+Print( out.Read(), '\n' );
+i.Close();
+out.Close();
+*/
 
 Halt(); //////////////////////////////////////////////////////////
 

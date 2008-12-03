@@ -22,6 +22,7 @@
 #include "directory.h"
 #include "sharedMemory.h"
 #include "semaphore.h"
+#include "process.h"
 #include "static.h"
 
 extern bool _unsafeMode = false;
@@ -55,6 +56,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	INIT_CLASS( Directory );
 	INIT_CLASS( SharedMemory );
 	INIT_CLASS( Semaphore );
+	INIT_CLASS( Process );
 	INIT_STATIC();
 	return JS_TRUE;
 	JL_BAD;

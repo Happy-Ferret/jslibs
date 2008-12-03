@@ -511,23 +511,34 @@ DEFINE_FUNCTION_FAST( PostSemaphore ) {
 
 
 
-/**doc
+/*doc
  * $VAL $INAME( path [, argv [, waitExit ]] )
   This function starts a new process optionaly using the JavaScript Array _argv_ for arguments or _undefined_ for no arguments.
   If _waitExit_ is true, the function waits the end of the process and returns its exit code.
   If _waitExit_ is not true, the function immediately returns an array that contains an input pipe and an output pipe to the current process stdin and stdout.
+  $H example
+   {{{
+   var [stdin, stdout] = CreateProcess( 'c:\\windows\\System32\\cmd.exe', ['/c', 'dir', 'c:\\'], false );
+   Sleep(100);
+   Print( stdout.Read(), '\n' );
+   stdin.Close();
+   stdout.Close();
+   }}}  
 **/
+/*
+// Doc. http://www.mozilla.org/projects/nspr/reference/html/prprocess.html#24535
 DEFINE_FUNCTION_FAST( CreateProcess ) {
+
+	const char **processArgv = NULL; // keep on top
 
 	J_S_ASSERT_ARG_MIN( 1 );
 
-	const char * *processArgv;
 	int processArgc;
 	if ( J_FARG_ISDEF(2) && JSVAL_IS_OBJECT(J_FARG(2)) && JS_IsArrayObject( cx, JSVAL_TO_OBJECT(J_FARG(2)) ) == JS_TRUE ) {
 
-		JSIdArray *idArray = JS_Enumerate( cx, JSVAL_TO_OBJECT(J_FARG(2)) ); // make a kind of auto-ptr for this
+		JSIdArray *idArray;
+		idArray = JS_Enumerate( cx, JSVAL_TO_OBJECT(J_FARG(2)) ); // make a kind of auto-ptr for this
 		processArgc = idArray->length +1; // +1 is argv[0]
-
 		processArgv = (const char**)malloc(sizeof(const char**) * (processArgc +1)); // +1 is NULL
 		J_S_ASSERT_ALLOC( processArgv );
 
@@ -559,18 +570,9 @@ DEFINE_FUNCTION_FAST( CreateProcess ) {
 	if ( J_FARG_ISDEF(3) )
 		J_CHK( JsvalToBool(cx, J_FARG(3), &waitEnd) );
 
-	PRFileDesc* stdout_child;
-	PRFileDesc* stdout_parent;
-	PRStatus status;
-	status = PR_CreatePipe(&stdout_parent, &stdout_child);
-	if ( status != PR_SUCCESS )
-		return ThrowIoError(cx);
-
-   PRFileDesc* stdin_child;
-	PRFileDesc* stdin_parent;
-	status = PR_CreatePipe(&stdin_parent, &stdin_child);
-	if ( status != PR_SUCCESS )
-		return ThrowIoError(cx);
+	PRFileDesc *stdout_child, *stdout_parent, *stdin_child, *stdin_parent;
+	J_CHKB( PR_CreatePipe(&stdout_parent, &stdout_child) == PR_SUCCESS, bad_throw );
+	J_CHKB( PR_CreatePipe(&stdin_parent, &stdin_child) == PR_SUCCESS, bad_throw );
 
 	PRProcessAttr *psattr;
 	psattr = PR_NewProcessAttr();
@@ -580,22 +582,16 @@ DEFINE_FUNCTION_FAST( CreateProcess ) {
 
 	PRProcess *process;
 	process = PR_CreateProcess(path, (char * const *)processArgv, NULL, psattr); // (TBD) avoid cast to (char * const *)
-
 	PR_DestroyProcessAttr(psattr);
-	free(processArgv);
 
-	if ( process == NULL )
-		return ThrowIoError(cx);
-
-	PR_Close(stdin_child);
-	PR_Close(stdout_child);
+	J_CHKB( PR_Close(stdin_child) == PR_SUCCESS, bad_throw );
+	J_CHKB( PR_Close(stdout_child) == PR_SUCCESS, bad_throw );
+	J_CHKB( process != NULL, bad_throw );
 
 	if ( waitEnd ) {
 
 		PRInt32 exitValue;
-		status = PR_WaitProcess( process, &exitValue );
-		if ( status != PR_SUCCESS )
-			return ThrowIoError(cx);
+		J_CHKB( PR_WaitProcess( process, &exitValue ) == PR_SUCCESS, bad_throw );
 		*J_FRVAL = INT_TO_JSVAL( exitValue );
 	} else {
 
@@ -608,17 +604,30 @@ DEFINE_FUNCTION_FAST( CreateProcess ) {
 
 		JSObject *fdout = JS_NewObject( cx, classPipe, NULL, NULL );
 		J_CHK( JS_SetPrivate( cx, fdout, stdout_parent ) );
+
 		J_CHK( ReserveStreamReadInterface(cx, fdout) );
 		J_CHK( SetStreamReadInterface(cx, fdout, NativeInterfaceStreamRead) );
 
-		jsval vector[] = { OBJECT_TO_JSVAL( fdin ), OBJECT_TO_JSVAL( fdout ) };
+		jsval vector[2];
+		vector[0] = OBJECT_TO_JSVAL( fdin );
+		vector[1] = OBJECT_TO_JSVAL( fdout );
 		JSObject *arrObj = JS_NewArrayObject(cx, 2, vector);
 		*J_FRVAL = OBJECT_TO_JSVAL( arrObj );
 	}
 
+
+	if ( processArgv )
+		free(processArgv);
 	return JS_TRUE;
-	JL_BAD;
+bad_throw:
+	ThrowIoError(cx);
+bad:
+	if ( processArgv )
+		free(processArgv);
+	return JS_FALSE;
 }
+*/
+
 
 /**doc
 === Static properties ===
@@ -664,7 +673,19 @@ DEFINE_PROPERTY( physicalMemorySize ) {
 
 /**doc
  * $OBJ $INAME $READONLY
-  Returns an object that contains an _architecture_, a _name_ and a _release_ property.
+  Returns an object that contains the following properties:
+  * $STR *architecture*: x86, ...
+  * $STR *name*: Linux, Windows_NT, ...
+  * $STR *release*: 2.6.22.18, 5.1, ...
+  $H example
+  {{{
+  LoadModule('jsstd');
+  LoadModule('jsio');
+  Print( systemInfo.toSource() );
+  }}}
+  prints:
+  * on coLinux: {{{ ({architecture:"x86", name:"Linux", release:"2.6.22.18-co-0.7.3"}) }}}
+  * on WinXP: {{{ ({architecture:"x86", name:"Windows_NT", release:"5.1"}) }}}
 **/
 DEFINE_PROPERTY( systemInfo ) {
 
@@ -782,7 +803,7 @@ DEFINE_PROPERTY( processPrioritySetter ) {
 
 /**doc
  * $STR $INAME $READONLY
-  is the current working directory.
+  Is the current working directory.
 **/
 DEFINE_PROPERTY( currentWorkingDirectory ) {
 
@@ -804,7 +825,7 @@ DEFINE_PROPERTY( currentWorkingDirectory ) {
 
 /**doc
  * $STR $INAME $READONLY
-  is the os's path separator.
+  Is the os's path separator.
 **/
 DEFINE_PROPERTY( pathSeparator ) {
 
@@ -820,7 +841,7 @@ DEFINE_PROPERTY( pathSeparator ) {
 
 /**doc
  * $STR $INAME $READONLY
-  is the os's list separator.
+  Is the os's list separator.
   $H example
    {{{
    Print( GetEnv('PATH').split(listSeparator) )
@@ -853,7 +874,7 @@ CONFIGURE_STATIC
 		FUNCTION( GetRandomNoise )
 		FUNCTION_FAST( WaitSemaphore )
 		FUNCTION_FAST( PostSemaphore )
-		FUNCTION_FAST( CreateProcess )
+//		FUNCTION_FAST( CreateProcess )
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC

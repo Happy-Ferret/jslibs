@@ -214,6 +214,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\process.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\semaphore.cpp"
 				>
 			</File>
@@ -277,6 +281,10 @@
 			</File>
 			<File
 				RelativePath=".\pipe.h"
+				>
+			</File>
+			<File
+				RelativePath=".\process.h"
 				>
 			</File>
 			<File
