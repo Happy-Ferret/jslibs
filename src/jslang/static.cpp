@@ -58,13 +58,16 @@ DEFINE_FUNCTION( Stringify ) {
 				BufferConfirm(&buf, length);
 			} while ( length != 0 );
 
-			size_t total = BufferGetLength(&buf);
-			char *newBuffer = (char*)JS_malloc(cx, total +1);
+			size_t total;
+			total = BufferGetLength(&buf);
+			char *newBuffer;
+			newBuffer = (char*)JS_malloc(cx, total +1);
 			J_S_ASSERT_ALLOC( newBuffer );
 			newBuffer[total] = '\0';
 			BufferCopyData(&buf, newBuffer, total);
 			
-			JSString *jsstr = JS_NewString(cx, newBuffer, total);
+			JSString *jsstr;
+			jsstr = JS_NewString(cx, newBuffer, total);
 			J_S_ASSERT_ALLOC( jsstr );
 			*J_RVAL = STRING_TO_JSVAL( jsstr );
 
