@@ -16,7 +16,8 @@
 #ifndef _BUFFER_H_
 #define _BUFFER_H_
 
-#define BUFFER_INIT_CHUNK_SIZE 1024
+
+#define BUFFER_INIT_CHUNK_SIZE 8192
 #define BUFFER_INIT_CHUNK_LIST_SIZE 16
 #define BUFFER_TYPE_AUTO_THRESHOLD 64
 #define BUFFER_PAGE_SIZE 4096
@@ -27,6 +28,20 @@
 
 namespace jl {
 
+
+/* (TBD) replace BufferType and BufferGrowType by some flags:
+
+final size:
+
+	tinny (<4 KB)
+	small (~64 KB)
+	big (~1 MB)
+	huge (>10 MB)
+
+chunk size:
+	fixed
+	variable
+*/
 
 enum BufferType {
 	bufferTypeAuto, // try to guess what is the best between chunk or realloc
@@ -56,8 +71,11 @@ struct Buffer {
 	BufferChunk *chunkList;
 	size_t chunkPos;
 	size_t chunkListSize;
+// static memory
 	BufferChunk staticChunkList[BUFFER_INIT_CHUNK_LIST_SIZE];
 	char staticBuffer[BUFFER_INIT_CHUNK_SIZE];
+// buffer stats
+
 };
 
 
@@ -204,6 +222,18 @@ inline const char *BufferGetData( Buffer *buffer ) {
 	return buf;
 }
 
+// it is up to the client to free the buffer.
+inline const char *BufferGetDataOwnership( Buffer *buffer ) {
+	
+	char *buf = (char*)BufferGetData(buffer);
+	BufferChunk *chunk0 = &buffer->chunkList[0];
+	if ( chunk0->begin == buffer->staticBuffer ) // unable to give ownership of the static buffer
+		return NULL;
+	chunk0->begin = NULL;
+	chunk0->pos = 0;
+	chunk0->size = 0;
+	return buf;
+}
 
 // length MUST be <= buffer->length !
 inline void BufferCopyData( const Buffer *buffer, char *dest, size_t length ) {
@@ -222,7 +252,7 @@ inline void BufferCopyData( const Buffer *buffer, char *dest, size_t length ) {
 
 inline void BufferFinalize( Buffer *buffer ) {
 
-	for ( size_t i = buffer->chunkList[0].begin == buffer->staticBuffer ? 1 : 0 ; i <= buffer->chunkPos; i++ )
+	for ( size_t i = buffer->chunkList[0].begin == buffer->staticBuffer ? 1 : 0; i <= buffer->chunkPos; i++ )
 		free(buffer->chunkList[i].begin);
 	if ( buffer->chunkList != buffer->staticChunkList )
 		free(buffer->chunkList);

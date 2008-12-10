@@ -2,12 +2,6 @@ LoadModule('jsstd');
 LoadModule('jsstd');
 LoadModule('jsio');
 
-Print( arguments );
-
-
-Halt();
-
-
 var f = new Function("	var b = new Blob('ABCDEF'); var s = 'ABCDEF'; 	Print( b.substring(-6) == s.substring(-6)) ");
 f();
 
