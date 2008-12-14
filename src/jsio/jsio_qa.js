@@ -445,7 +445,7 @@ LoadModule('jsio');
 		switch ( systemInfo.name ) {
 			case 'Windows_NT':
 				var cmd = GetEnv('ComSpec');
-				var args1 = ['/c', 'cd vasdfvasdfvasdfv'];
+				var args1 = ['/c', 'cd fvasdfvasdfvasdfv'];
 				var args2 = ['/c', 'dir'];
 				break;
 			case 'Linux':

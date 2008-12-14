@@ -1,22 +1,20 @@
 LoadModule('jsstd');
 LoadModule('jsio');
 
-
-var p = new Process( 'c:\\windows\\System32\\cmd.exe', ['/c', 'dir', 'c:'] );
-p.Detach();
-Sleep(100);
-Print( p.stdout.Read().length, '\n' );
-Print( p.stdout.Read().length, '\n' );
-
-
-
 /*
-var [i, out] = CreateProcess( 'c:\\windows\\System32\\cmd.exe', ['/c', 'dir', 'c:\\'], false );
-Sleep(100);
-Print( out.Read(), '\n' );
-i.Close();
-out.Close();
+try {
+
+	var res = new Process('uryqoiwueyrqoweu');
+} catch( ex if ex instanceof IoError ) {
+
+	Print( ex.code, -5994, 'CreateProcess error detection' );
+}
 */
+
+var p = new Process( 'c:\\windows\\System32\\cmd.exe', ['/c', 'dir', 'c:']);
+Sleep(1000);
+Print( p.stdout.Read(), '\n' );
+
 
 Halt(); //////////////////////////////////////////////////////////
 

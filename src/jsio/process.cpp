@@ -29,18 +29,19 @@ $CLASS_HEADER
 BEGIN_CLASS( Process )
 
 DEFINE_FINALIZE() {
-/*
+
 	PRProcess *process;
-	process = (PRProcess*)JS_GetPrivate(cx, obj);	
+	process = (PRProcess*)JS_GetPrivate(cx, obj);
 	if ( process )
-		PR_DetachProcess(process); // crash
-*/
+		PR_DetachProcess(process); // may crash ?
 }
 
 
 /**doc
  * $VAL $INAME( path [ , argv ] )
   This function starts a new process optionaly using the JavaScript Array _argv_ for arguments or _undefined_ for no arguments.
+  $H note
+   The new process inherits the environment of the parent process.
   $H exemple
    {{{
    var p = new Process( 'c:\\windows\\System32\\cmd.exe', ['/c', 'dir', 'c:'] );
@@ -149,17 +150,19 @@ bad:
 /**doc
  * $INT $INAME()
   The function waits the end of the nondetached process and returns its exit code. This function will fail if the process has beed detached.
+  $H note
+   `true;echo $?` prints 0 and `false;echo $?` prints 1
 **/
 DEFINE_FUNCTION_FAST( Wait ) {
 
 	J_S_ASSERT_CLASS( J_FOBJ, _class );
 	PRProcess *process;
-	process = (PRProcess*)JS_GetPrivate(cx, J_FOBJ);	
+	process = (PRProcess*)JS_GetPrivate(cx, J_FOBJ);
 	J_S_ASSERT_RESOURCE(process);
 	PRInt32 exitValue;
 	J_CHK( PR_WaitProcess(process, &exitValue) == PR_SUCCESS );
 	J_CHK( JS_SetPrivate(cx, J_FOBJ, NULL) );
-	*J_FRVAL = INT_TO_JSVAL( exitValue );
+	J_CHK( IntToJsval(cx, exitValue, J_FRVAL) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -173,10 +176,10 @@ DEFINE_FUNCTION_FAST( Detach ) {
 
 	J_S_ASSERT_CLASS( J_FOBJ, _class );
 	PRProcess *process;
-	process = (PRProcess*)JS_GetPrivate(cx, J_FOBJ);	
+	process = (PRProcess*)JS_GetPrivate(cx, J_FOBJ);
 	J_S_ASSERT_RESOURCE(process);
 	J_CHK( PR_DetachProcess(process) == PR_SUCCESS );
-	J_CHK( JS_SetPrivate(cx, J_FOBJ, NULL) ); // On return, the value of process becomes an invalid pointer and should not be passed to other functions. 
+	J_CHK( JS_SetPrivate(cx, J_FOBJ, NULL) ); // On return, the value of process becomes an invalid pointer and should not be passed to other functions.
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
@@ -191,7 +194,7 @@ DEFINE_FUNCTION_FAST( Kill ) {
 
 	J_S_ASSERT_CLASS( J_FOBJ, _class );
 	PRProcess *process;
-	process = (PRProcess*)JS_GetPrivate(cx, J_FOBJ);	
+	process = (PRProcess*)JS_GetPrivate(cx, J_FOBJ);
 	J_S_ASSERT_RESOURCE(process);
 	J_CHK( PR_KillProcess(process) == PR_SUCCESS );
 	J_CHK( JS_SetPrivate(cx, J_FOBJ, NULL) ); // Invalidates the current process pointer.
