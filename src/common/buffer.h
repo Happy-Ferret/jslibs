@@ -101,7 +101,7 @@ inline size_t NextChunkSize( const Buffer *buffer, size_t lastChunk, size_t requ
 }
 
 
-BufferType GuessType( const Buffer *buffer, size_t lastChunk, size_t requiredLength ) {
+inline BufferType GuessType( const Buffer *buffer, size_t lastChunk, size_t requiredLength ) {
 
 	BufferChunk *chunk = &buffer->chunkList[buffer->chunkPos];
 	if ( chunk->pos + requiredLength - chunk->size < BUFFER_TYPE_AUTO_THRESHOLD )
