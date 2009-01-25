@@ -802,10 +802,10 @@ DEFINE_PROPERTY( processPrioritySetter ) {
 
 
 /**doc
- * $STR $INAME $READONLY
-  Is the current working directory.
+ * $STR $INAME
+  Gets/sets the current working directory.
 **/
-DEFINE_PROPERTY( currentWorkingDirectory ) {
+DEFINE_PROPERTY_GETTER( currentWorkingDirectory ) {
 
 	char buf[PATH_MAX];
 
@@ -818,6 +818,21 @@ DEFINE_PROPERTY( currentWorkingDirectory ) {
 	JSString *str = JS_NewStringCopyZ(cx, buf);
 	J_S_ASSERT_ALLOC( str );
 	*vp = STRING_TO_JSVAL( str );
+	return JS_TRUE;
+	JL_BAD;
+}
+
+DEFINE_PROPERTY_SETTER( currentWorkingDirectory ) {
+
+	const char *buf;
+	J_CHK( JsvalToString(cx, vp, &buf ) );
+
+#ifdef XP_WIN
+	_chdir(buf);
+#else // XP_WIN
+	chdir(buf);
+#endif // XP_WIN
+
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -882,7 +897,7 @@ CONFIGURE_STATIC
 		PROPERTY_READ( physicalMemorySize )
 		PROPERTY_READ_STORE( systemInfo )
 		PROPERTY( processPriority )
-		PROPERTY_READ( currentWorkingDirectory )
+		PROPERTY( currentWorkingDirectory )
 		PROPERTY_READ_STORE( pathSeparator )
 		PROPERTY_READ_STORE( listSeparator )
 	END_STATIC_PROPERTY_SPEC
