@@ -16,7 +16,7 @@
 
 #include <stddef.h>
 #include <iconv.h>
-
+#include <errno.h>
 
 struct Private {
 	iconv_t cd;
@@ -64,7 +64,8 @@ DEFINE_CONSTRUCTOR() {
 	J_CHK( JsvalToString(cx, &J_ARG(1), &tocode) );
 	J_CHK( JsvalToString(cx, &J_ARG(2), &fromcode) );
 
-	Private *pv = (Private*)JS_malloc(cx, sizeof(Private));
+	Private *pv;
+	pv = (Private*)JS_malloc(cx, sizeof(Private));
 	J_S_ASSERT_ALLOC(pv);
 
 	pv->remainderLen = 0;
@@ -102,7 +103,8 @@ DEFINE_CALL() {
 	JSObject *thisObj = JSVAL_TO_OBJECT(argv[-2]); // get 'this' object of the current object ...
 	J_S_ASSERT_CLASS(thisObj, classIconv);
 
-	Private *pv = (Private*)JS_GetPrivate(cx, thisObj);
+	Private *pv;
+	pv = (Private*)JS_GetPrivate(cx, thisObj);
 	J_S_ASSERT_RESOURCE( pv );
 
 	size_t status;
@@ -127,8 +129,10 @@ DEFINE_CALL() {
 		inBuf = (char*)JS_GetStringChars(jsstr);
 	}
 
-	const char *inPtr = inBuf;
-	size_t inLeft = inLen;
+	const char *inPtr;
+	inPtr = inBuf;
+	size_t inLeft;
+	inLeft = inLen;
 
 	char *outBuf;
 	size_t outLen;
@@ -137,8 +141,10 @@ DEFINE_CALL() {
 	outBuf = (char*)JS_malloc(cx, outLen +1);
 	J_S_ASSERT_ALLOC( outBuf );
 
-	char *outPtr = outBuf;
-	size_t outLeft = outLen;
+	char *outPtr;
+	outPtr = outBuf;
+	size_t outLeft;
+	outLeft = outLen;
 
 	if ( pv->remainderLen ) { // have to process previous the incomplete multibyte sequence ?
 
@@ -170,7 +176,7 @@ DEFINE_CALL() {
 	}
 
 	do {
-		status = iconv(pv->cd, &inPtr, &inLeft, &outPtr, &outLeft); // doc: http://www.manpagez.com/man/3/iconv/
+		status = iconv(pv->cd, &inPtr, &inLeft, &outPtr, &outLeft); // doc: http://www.manpagez.com/man/4/iconv/
 
 		if ( status == (size_t)(-1) )
 			switch ( errno ) {
@@ -218,7 +224,8 @@ DEFINE_CALL() {
 
 	} while( inLeft );
 
-	size_t length = outPtr - outBuf;
+	size_t length;
+	length = outPtr - outBuf;
 
 	if ( MaybeRealloc(outLen, length) ) {
 
