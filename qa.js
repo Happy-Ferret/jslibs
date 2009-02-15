@@ -244,8 +244,6 @@ function LaunchRandomTests(itemList) {
 
 
 
-_configuration.unsafeMode = true;
-
 var savePrio = processPriority;
 processPriority = 2;
 
