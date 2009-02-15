@@ -1,6 +1,16 @@
 LoadModule('jsstd');
 LoadModule('jscrypt');
 
+var h1 = new Hash("md5")("some data");
+
+var h2 = new Hash("md5");
+h2.Process("some data");
+h2 = h2.Done();
+
+Print( h1 == h2 );
+
+
+Halt();
 
 var md5 = new Hash('md5');
 md5.Process('foobarxxx');
