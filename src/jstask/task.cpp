@@ -17,6 +17,9 @@
 #include "../host/host.h"
 
 #include "../common/buffer.h"
+
+#include <errno.h>
+
 using namespace jl;
 
 struct Private {
