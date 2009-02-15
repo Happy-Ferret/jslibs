@@ -21,10 +21,11 @@
 	#define EXTERN_C
 #endif // __cplusplus
 
+/*
 #if defined _DEBUG
 	#define DEBUG
 #endif // _DEBUG
-
+*/
 
 ///////////////////////////////////////////////////////////////////////////////
 // Compiler specific configuration
@@ -119,6 +120,7 @@
 	#include <direct.h> // function declarations for directory handling/creation
 	#include <process.h> // threads, ...
 
+/*
 	#define int8_t   INT8
 	#define int16_t  INT16
 	#define int32_t  INT32
@@ -128,6 +130,7 @@
 	#define u_int16_t UINT16
 	#define u_int32_t UINT32
 	#define u_int64_t UINT64
+*/
 
 	#define LLONG __int64
 
@@ -241,15 +244,15 @@ inline int JLProcessId() {
 }
 
 
-inline u_int32_t JLSessionId() {
-	u_int32_t r = 0x12345678;
-	r ^= (u_int32_t)AccurateTimeCounter();
-	r ^= (u_int32_t)JLProcessId();
+inline unsigned int JLSessionId() {
+	unsigned int r = 0x12345678;
+	r ^= (unsigned int)AccurateTimeCounter();
+	r ^= (unsigned int)JLProcessId();
 #if defined XP_WIN
 //	r ^= (u_int32_t)GetModuleHandle(NULL);
 	MEMORYSTATUS status;
 	GlobalMemoryStatus( &status );
-	r ^= (u_int32_t)status.dwAvailPhys;
+	r ^= (unsigned int)status.dwAvailPhys;
 #endif // XP_WIN
 	return r ? r : 1; // avoid returning 0
 }

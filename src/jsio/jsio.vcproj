@@ -63,7 +63,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="../../libs/nspr/win32_$(ConfigurationName)/dist/lib/nspr4.lib"
+				AdditionalDependencies="../../libs/nspr/MINGW32_NT-5.1_DBG/dist/lib/nspr4.lib"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				TargetMachine="1"
@@ -144,7 +144,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="../../libs/nspr/win32_$(ConfigurationName)/dist/lib/nspr4.lib"
+				AdditionalDependencies="../../libs/nspr/MINGW32_NT-5.1_OPT/dist/lib/nspr4.lib"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				OptimizeReferences="2"

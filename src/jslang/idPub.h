@@ -16,7 +16,7 @@
 
 typedef void (*IdFinalizeCallback_t)(void* data);
 
-#define ID_TYPE u_int32_t
+#define ID_TYPE uint32_t
 
 // (TBD) better alignment: __attribute__ ((__vector_size__ (16), __may_alias__)); OR  __declspec(align(64)) 
 struct IdPrivate {

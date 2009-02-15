@@ -164,7 +164,7 @@ DEFINE_FUNCTION( ReadInt ) {
 	else
 		netConv = false;
 
-	u_int8_t data[8]; // = { 0 };
+	uint8_t data[8]; // = { 0 };
 	memset(data, 0, sizeof(data));
 
 	size_t amount;
@@ -179,7 +179,7 @@ DEFINE_FUNCTION( ReadInt ) {
 
 	switch (size) {
 		case sizeof(int8_t):
-			*rval = INT_TO_JSVAL( isSigned ? *(int8_t*)data : *(u_int8_t*)data );
+			*rval = INT_TO_JSVAL( isSigned ? *(int8_t*)data : *(uint8_t*)data );
 			break;
 		case sizeof(int16_t):
 			if (netConv)
@@ -188,7 +188,7 @@ DEFINE_FUNCTION( ReadInt ) {
 				int16_t val = *(int16_t*)data;
 				*rval = INT_TO_JSVAL( val );
 			} else {
-				u_int16_t val = *(u_int16_t*)data;
+				uint16_t val = *(uint16_t*)data;
 				*rval = INT_TO_JSVAL( val );
 			}
 			break;
@@ -204,7 +204,7 @@ DEFINE_FUNCTION( ReadInt ) {
 					J_CHK( JS_NewNumberValue(cx, val, rval) );
 			} else {
 
-				u_int32_t val = *(u_int32_t*)data;
+				uint32_t val = *(uint32_t*)data;
 				if ( val >> (JSVAL_INT_BITS-1) == 0 ) // check if we can store the value in a simple JSVAL_INT ( -1 because the sign )
 					*rval = INT_TO_JSVAL( val );
 				else // if not, we have to create a new number
@@ -220,7 +220,7 @@ DEFINE_FUNCTION( ReadInt ) {
 				J_CHK( JS_NewNumberValue(cx, val, rval) );
 			} else {
 
-				u_int64_t val = *(u_int64_t*)data;
+				uint64_t val = *(uint64_t*)data;
 				J_CHK( JS_NewNumberValue(cx, val, rval) );
 			}
 			break;
@@ -275,7 +275,7 @@ DEFINE_FUNCTION( WriteInt ) { // incompatible with NIStreamRead
 	else
 		netConv = false;
 
-	u_int8_t data[8]; // = { 0 };
+	uint8_t data[8]; // = { 0 };
 	memset(data, 0, sizeof(data));
 
 	bool outOfRange;
@@ -286,13 +286,13 @@ DEFINE_FUNCTION( WriteInt ) { // incompatible with NIStreamRead
 			if ( isSigned )
 				J_CHK( JsvalToSInt8(cx, jsvalue, (int8_t*)data, &outOfRange) );
 			else
-				J_CHK( JsvalToUInt8(cx, jsvalue, (u_int8_t*)data, &outOfRange) );
+				J_CHK( JsvalToUInt8(cx, jsvalue, (uint8_t*)data, &outOfRange) );
 			break;
 		case sizeof(int16_t):
 			if ( isSigned )
 				J_CHK( JsvalToSInt16(cx, jsvalue, (int16_t*)data, &outOfRange) );
 			else
-				J_CHK( JsvalToUInt16(cx, jsvalue, (u_int16_t*)data, &outOfRange) );
+				J_CHK( JsvalToUInt16(cx, jsvalue, (uint16_t*)data, &outOfRange) );
 			if ( netConv )
 				Host16ToNetwork16(data);
 			break;
@@ -300,7 +300,7 @@ DEFINE_FUNCTION( WriteInt ) { // incompatible with NIStreamRead
 			if ( isSigned )
 				J_CHK( JsvalToSInt32(cx, jsvalue, (int32_t*)data, &outOfRange) );
 			else
-				J_CHK( JsvalToUInt32(cx, jsvalue, (u_int32_t*)data, &outOfRange) );
+				J_CHK( JsvalToUInt32(cx, jsvalue, (uint32_t*)data, &outOfRange) );
 			if ( netConv )
 				Host32ToNetwork32(data);
 			break;
@@ -337,7 +337,7 @@ DEFINE_FUNCTION( ReadReal ) {
 	size_t size;
 	size = JSVAL_TO_INT( J_ARG(1) );
 
-	u_int8_t data[16];
+	uint8_t data[16];
 	size_t amount;
 	amount = size;
 	J_CHK( ReadRawAmount(cx, bufferObject, &amount, (char*)data) );
