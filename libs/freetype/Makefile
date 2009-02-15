@@ -1,9 +1,9 @@
 include ../subdirs.mk
 
-TARGET_FILES = src/objs/.libs/libfreetype.a
+TARGET_FILES=$(INT_DIR).libs/libfreetype.a
 
-./src/Makefile:
-	LDFLAGS="-L../../zlib/$(BUILD)" INCLUDES="-I../../zlib/src" cd src && ./configure --disable-shared --enable-static
+$(INT_DIR)Makefile:
+	mkdir -p $(INT_DIR) && cd $(INT_DIR) && LDFLAGS="-L../../zlib/$(INT_DIR)" INCLUDES="-I../../zlib/$(INT_DIR)" ../src/configure --disable-shared --enable-static
 
-all clean distclean:: ./src/Makefile
-	LDFLAGS="-L../../zlib/$(BUILD)" INCLUDES="-I../../zlib/src" $(MAKE) -C src $@
+all clean distclean:: $(INT_DIR)Makefile
+	$(MAKE) -C $(INT_DIR) $@

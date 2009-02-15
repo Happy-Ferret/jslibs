@@ -1,10 +1,11 @@
 include ../subdirs.mk
 
-TARGET_FILES = ./src/libfcgi/.libs/libfcgi.a
+TARGET_FILES = $(INT_DIR)libfcgi/.libs/libfcgi.a
 CFLAGS += -fPIC
 
-./src/Makefile:
-	cd src && sh ./configure
+$(INT_DIR)Makefile:
+	mkdir -p $(INT_DIR)
+	cd $(INT_DIR) && sh ../src/configure --enable-shared=no --disable-dependency-tracking
 
-all clean distclean:: ./src/Makefile
-	$(MAKE) -C src $@
+all clean distclean:: $(INT_DIR)Makefile
+	$(MAKE) -C $(INT_DIR) $@

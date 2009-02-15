@@ -1,9 +1,11 @@
 include ../subdirs.mk
 
-TARGET_FILES = ./src/.libs/libpng.a
+TARGET_FILES = $(INT_DIR).libs/libpng.a
 
-./src/Makefile:
-	cd ./src && LDFLAGS="-L../../zlib/$(BUILD)" INCLUDES="-I../../zlib/src" ./configure --disable-shared --enable-static
+$(INT_DIR)Makefile:
+	mkdir -p $(INT_DIR)
+	cd $(INT_DIR) && LDFLAGS="-L../../zlib/$(INT_DIR)" INCLUDES="-I../../zlib/$(INT_DIR)" ../src/configure --disable-shared --enable-static
 
-all clean distclean:: ./src/Makefile
-	INCLUDES="-I../../zlib/src" $(MAKE) -C src $@
+all clean distclean:: $(INT_DIR)Makefile
+	#INCLUDES="-I../../zlib/src" $(MAKE) -C src $@
+	$(MAKE) -C $(INT_DIR) $@

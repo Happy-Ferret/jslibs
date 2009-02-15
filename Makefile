@@ -1,19 +1,18 @@
 BUILD ?= opt
+BITS ?= 32
 
-SUBDIRS := libs/js src/jshost src/jsstd src/jsdebug libs/nspr src/jsio src/jsobjex src/jssqlite src/jsz src/jscrypt src/jsimage src/jsfont src/jsprotex src/jsfastcgi
+SUBDIRS := libs/js libs/nspr \
+           src/jshost \
+           src/jsstd src/jsdebug src/jsio src/jsobjex src/jssqlite src/jsz src/jscrypt src/jstask src/jsimage src/jsfont src/jsprotex src/jsfastcgi src/jsiconv 
+
+DEST_DIR=$(PWD)/$(shell uname)_$(BITS)_$(BUILD)/
 
 .PHONY: $(SUBDIRS)
 $(SUBDIRS):
-	$(MAKE) -C $@ $(MAKECMDGOALS) BUILD=$(BUILD)
+	$(MAKE) -C $@ $(MAKECMDGOALS) BUILD=$(BUILD) BITS=$(BITS) DEST_DIR=$(DEST_DIR)
 
 .PHONY: $(MAKECMDGOALS)
 $(MAKECMDGOALS):: $(SUBDIRS) ;
-
-copy::
-	-mkdir ./$(BUILD)/
-	for d in $(SUBDIRS) ; do \
-		cp ./$$d/$(BUILD)/* ./$(BUILD)/ ;\
-	done
 
 clean::
 	-rm ./$(BUILD)/*

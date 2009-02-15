@@ -1,9 +1,10 @@
 include ../subdirs.mk
 
-TARGET_FILES = ./src/.libs/libjpeg.a
+TARGET_FILES = $(INT_DIR).libs/libjpeg.a
 
-./src/Makefile:
-	cd src && ./configure --enable-static --disable-shared
+$(INT_DIR)Makefile:
+	mkdir -p $(INT_DIR)
+	cd $(INT_DIR) && ../src/configure --enable-static --disable-shared
 
-all clean distclean:: ./src/Makefile
-	$(MAKE) -C src $@
+all clean distclean:: $(INT_DIR)Makefile
+	$(MAKE) -C $(INT_DIR) $@

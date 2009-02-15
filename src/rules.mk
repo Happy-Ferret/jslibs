@@ -2,65 +2,63 @@ ifeq ($(MAKECMDGOALS),)
 $(error NO GOAL SPECIFIED)
 endif
 
+CC := gcc
+CXX := gcc
+
+.SUFFIXES: .a .o .c .cpp .h
+
 BUILD ?= opt
 BITS ?= 32
 
+INT_DIR = $(shell uname)_$(BUILD)_$(BITS)/
+
 ifeq ($(BUILD),dbg)
-	CFLAGS += -Wall -g3 -O0 -DDEBUG
-	SMINC = -I../../libs/js/$(BUILD) -I../../libs/js/src
-	SMLIB = -Wl,-Bdynamic -L../../libs/js/$(BUILD) -ljs
-#	SMDEF = -DJS_GCMETER -DJS_HASHMETER -DJS_GC_ZEAL -DJS_DUMP_PROPTREE_STATS
-#  -DJS_ARENAMETER
-	SMDEF =
+	CFLAGS += -Wall -g3 -O0 -DDEBUG -I../../libs/js/$(INT_DIR) -I../../libs/js/src
+	#CFLAGS += -DJS_GCMETER -DJS_HASHMETER -DJS_GC_ZEAL -DJS_DUMP_PROPTREE_STATS -DJS_ARENAMETER
 else
-	CFLAGS += -Wall -O3 -s -funroll-loops
-	SMINC = -I../../libs/js/$(BUILD) -I../../libs/js/src
-	SMLIB = -Wl,-Bdynamic -L../../libs/js/$(BUILD) -ljs
-	SMDEF =
+	CFLAGS += -Wall -O3 -s -funroll-loops -I../../libs/js/$(INT_DIR) -I../../libs/js/src
 endif
 
-
-ifneq ($(findstring .so,$(TARGET)),)
-	CFLAGS += -fpic
-endif
-
-ifeq ($(BITS),32)
-	CFLAGS += -m32
-endif
+LDFLAGS += -Wl,-Bdynamic -L../../libs/js/$(INT_DIR) -lmozjs
 
 ifeq ($(BITS),64)
 	CFLAGS += -m64
+else
+        CFLAGS += -m32
 endif
 
-CFLAGS += -fno-exceptions -fno-rtti -felide-constructors # -static-libgcc 
+CFLAGS += $(INCLUDES) $(DEFINES) -fno-exceptions -fno-rtti -felide-constructors
+# -static-libgcc 
 
-OBJECTS = $(patsubst %.cpp,%.o,$(filter %.cpp, $(SRC))) $(patsubst %.c,%.o,$(filter %.c, $(SRC)))
+OBJECTS = $(patsubst %.cpp,$(INT_DIR)%.o,$(filter %.cpp, $(SRC))) $(patsubst %.c,$(INT_DIR)%.o,$(filter %.c, $(SRC)))
 
-CC := gcc
-CCX := gcc
+$(INT_DIR):
+	mkdir -p $(INT_DIR)
 
-%.o: %.cpp
-	$(CCX) -c $(CFLAGS) $(DEFINES) $(SMDEF) $(SMINC) $(INCLUDES) -o $@ $<
+$(INT_DIR)%.o: %.cpp 
+	$(CXX) -c $(CFLAGS) -o $@ $<
 
-%.o: %.c
-	$(CC) -c $(CFLAGS) $(DEFINES) $(SMDEF) $(SMINC) $(INCLUDES) -o $@ $<
+$(INT_DIR)%.o: %.c
+	$(CC) -c $(CFLAGS) -o $@ $<
 
-.PHONY: $(TARGET)
+
 
 ifneq ($(findstring .so,$(TARGET)),)
-$(TARGET): $(OBJECTS)
-	$(CC) $(CFLAGS) $(DEFINES) $(SMDEF) $(SMINC) $(INCLUDES) -o $@ -shared -Wl,-soname,$@ $? -Wl,-Bstatic $(STATICLIBS) -Wl,-Bdynamic $(SHAREDLIBS) $(SMLIB)
+$(INT_DIR)$(TARGET): $(OBJECTS)
+	$(CC) $(CFLAGS) -fpic -o $@ -shared -Wl,-soname,$@ $? -Wl,-Bstatic $(STATICLIBS) -Wl,-Bdynamic $(SHAREDLIBS) $(LDFLAGS)
 endif
 
 ifneq ($(findstring .a,$(TARGET)),)
-$(TARGET): $(OBJECTS)
+$(INT_DIR)$(TARGET): $(OBJECTS)
 	$(AR) rcs $@ $^
 endif
 
 ifeq ($(findstring .,$(TARGET)),)
-$(TARGET): $(OBJECTS)
-	$(CC) $(CFLAGS) $(DEFINES) $(SMDEF) $(SMINC) $(INCLUDES) -o $@ $^ -static-libgcc -Wl,-Bstatic $(STATICLIBS) -Wl,-Bdynamic $(SHAREDLIBS) $(SMLIB)
+$(INT_DIR)$(TARGET): $(OBJECTS)
+	$(CC) $(CFLAGS) -o $@ $^ -static-libgcc -Wl,-Bstatic $(STATICLIBS) -Wl,-Bdynamic $(SHAREDLIBS) $(LDFLAGS)
 endif
+
+
 
 .PHONY: $(DEPENDS)
 $(DEPENDS):
@@ -68,17 +66,18 @@ $(DEPENDS):
 
 .PHONY: clean distclean
 clean distclean: $(DEPENDS)
-	-rm *.o $(TARGET)
-	-rm ./$(BUILD)/*
-	-rmdir ./$(BUILD)/
+	-rm $(OBJECTS)
+	-rm $(INT_DIR)$(TARGET)
+	-rmdir ./$(INT_DIR)
 
 .PHONY: all
-all: $(DEPENDS) $(TARGET)
+all: $(DEPENDS) $(INT_DIR) $(INT_DIR)$(TARGET)
 
 .PHONY: copy 
 copy:
-	mkdir -p ./$(BUILD)/
-	cp $(TARGET) ./$(BUILD)/
+	mkdir -p $(DEST_DIR)
+	cp ./$(INT_DIR)$(TARGET) $(DEST_DIR)
+
 
 ################################# END
 

@@ -1,36 +1,32 @@
 include ../subdirs.mk
 
 ifeq ($(BUILD),dbg)
-	_MAKE_OPTIONS=BUILD_IDG=1
-	_INTERMEDIATE_DIR=./src/`uname`_All_DBG.OBJD/
-	POSBUILD=
+	_CONFIGURE_OPTIONS=--enable-debug --disable-optimize
 else
-	_MAKE_OPTIONS=BUILD_OPT=1
-	_INTERMEDIATE_DIR=./src/`uname`_All_OPT.OBJ/
-	POSBUILD=strip $(DEST_DIR)*.so
-endif
-
-ifeq ($(BITS),32)
-	_CFLAGS += -m32
+	_CONFIGURE_OPTIONS=--enable-strip
 endif
 
 ifeq ($(BITS),64)
 	_CFLAGS += -m64
+else
+	_CFLAGS += -m32
 endif
 
-TARGET_FILES=$(DEST_DIR)libjs.so
+TARGET_FILES=$(INT_DIR)libmozjs.so
+# $(INT_DIR)jsautocfg.h
 
-all::
+./src/configure:
+	cd ./src/ && ( autoconf2.13 || autoconf-2.13 )
+
+$(INT_DIR)Makefile: ./src/configure
+	mkdir -p $(INT_DIR)
+	cd $(INT_DIR) && CXXFLAGS=$(_CFLAGS) ../src/configure $(_CONFIGURE_OPTIONS) --with-windows-version=501 --disable-static --disable-profile-guided-optimization --disable-vista-sdk-requirements
+
+all:: $(INT_DIR)Makefile
 	diff -q ./jsversion.h ./src/jsversion.h || cp ./jsversion.h ./src/
-	[ -e ./src/js-config.h ] || echo // > ./src/js-config.h
 
 all clean::
-	$(MAKE) -C src -f Makefile.ref $@ $(_MAKE_OPTIONS) XCFLAGS="$(_CFLAGS)"
+	$(MAKE) -C $(INT_DIR) $@
 
-all::
-	mkdir -p $(DEST_DIR)
-	cp $(_INTERMEDIATE_DIR)*.h $(DEST_DIR)
-	cp $(_INTERMEDIATE_DIR)*.so $(DEST_DIR)
-	$(POSBUILD)
-
-copy: ;
+clean::
+	-[ -d "$(INT_DIR)" ] && rm -r ./$(INT_DIR)
