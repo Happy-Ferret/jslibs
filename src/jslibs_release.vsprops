@@ -17,7 +17,7 @@
 	<Tool
 		Name="VCCLCompilerTool"
 		
-		AdditionalIncludeDirectories="..\..\libs\js\src"
+		AdditionalIncludeDirectories="..\..\libs\js\MINGW32_NT-5.1_OPT;..\..\libs\js\src"
 		ExceptionHandling="0"
 		RuntimeLibrary="2"
 	/>
