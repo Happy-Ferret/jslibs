@@ -477,7 +477,7 @@ LoadModule('jsio');
 			QA.ASSERT( ex.code, -5994, 'CreateProcess error detection' );
 			return;
 		}
-		QA.FAILED( "no exception" );
+		QA.FAILED( "no exception (cf mozilla bug #113095)" );
 	
 
 /// create process detach
