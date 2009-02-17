@@ -149,7 +149,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 
 	bool unsafeMode = false;
 	bool compileOnly = false;
-	size_t operationLimitGC = 8192;
+	size_t maybeGCInterval = 30; // 30 seconds
 
 	char** argumentVector = argv;
 	for ( argumentVector++; argumentVector[0] && argumentVector[0][0] == '-'; argumentVector++ )
@@ -168,14 +168,14 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 				break;
 			case 'g': // operationLimitGC
 				argumentVector++;
-				operationLimitGC = atol( *argumentVector );
+				maybeGCInterval = atol( *argumentVector );
 				break;
 			case 'c':
 				compileOnly = true;
 				break;
 	}
 
-	JSContext *cx = CreateHost(maxMem, maxAlloc, operationLimitGC);
+	JSContext *cx = CreateHost(maxMem, maxAlloc, maybeGCInterval);
 	HOST_MAIN_ASSERT( cx != NULL, "unable to create a javascript execution context" );
 
 	HOST_MAIN_ASSERT( InitHost(cx, unsafeMode, HostStdout, HostStderr, NULL), "unable to initialize the host." );

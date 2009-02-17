@@ -1,6 +1,3 @@
-#define JS_HAS_RESERVED_JAVA_KEYWORDS   1
-#define JS_HAS_RESERVED_ECMA_KEYWORDS   1
-
 #define JS_VERSION 180
 
 #define JS_HAS_STR_HTML_HELPERS 0       /* has str.anchor, str.bold, etc. */
@@ -11,7 +8,7 @@
 #define JS_HAS_SHARP_VARS       1       /* has #n=, #n# for object literals */
 #define JS_HAS_SCRIPT_OBJECT    1       /* has (new Script("x++")).exec() */
 #define JS_HAS_XDR              1       /* has XDR API and internal support */
-#define JS_HAS_XDR_FREEZE_THAW  0       /* has XDR freeze/thaw script methods */
+#define JS_HAS_XDR_FREEZE_THAW  0       /* has XDR freeze/thaw script methods */ /* "0" because jsscript.c(897) : error C2198: 'js_NewObject' : too few arguments for call */
 #define JS_HAS_TOSOURCE         1       /* has Object/Array toSource method */
 #define JS_HAS_DEBUGGER_KEYWORD 1       /* has hook for debugger keyword */
 #define JS_HAS_CATCH_GUARD      1       /* has exception handling catch guard */
@@ -26,21 +23,14 @@
 #define JS_HAS_ARRAY_EXTRAS     1       /* has indexOf and Lispy extras */
 #define JS_HAS_GENERATORS       1       /* has yield in generator function */
 #define JS_HAS_BLOCK_SCOPE      1       /* has block scope via let/arraycomp */
-#define JS_HAS_DESTRUCTURING    1       /* has [a,b] = ... or {p:a,q:b} = ... */
+#define JS_HAS_DESTRUCTURING    2       /* has [a,b] = ... or {p:a,q:b} = ... */
 #define JS_HAS_GENERATOR_EXPRS  1       /* has (expr for (lhs in iterable)) */
 #define JS_HAS_EXPR_CLOSURES    1       /* has function (formals) listexpr */
 
+
+/* Features that are present in all versions. */
+#define JS_HAS_RESERVED_JAVA_KEYWORDS   1
+#define JS_HAS_RESERVED_ECMA_KEYWORDS   1
+
 /* Feature-test macro for evolving destructuring support. */
-#define JS_HAS_DESTRUCTURING_SHORTHAND 1
-
-/*
-jsscript.c
-jsscript.c(897) : error C2198: 'js_NewObject' : too few arguments for call
-make[1]: *** [WINNT5.1_OPT.OBJ/jsscript.obj] Error 2
-make[1]: Leaving directory `/cygdrive/d/Franck/Mes documents/DEV/my_projects/jslibs/js/src'
-make: *** [all] Error 2
-
-workaround: #undef JS_HAS_SCRIPT_OBJECT
-
-wait fix for JS_HAS_XDR_FREEZE_THAW 1
-*/
+#define JS_HAS_DESTRUCTURING_SHORTHAND  (JS_HAS_DESTRUCTURING == 2)

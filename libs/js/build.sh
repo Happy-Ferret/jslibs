@@ -12,6 +12,8 @@ cd src
 autoconf-2.13 || autoconf2.13
 cd ..
 
+diff -q ./jsversion.h ./src/jsversion.h || cp ./jsversion.h ./src/
+
 BUILD_DIR_NAME=$(uname -s)_$BUILD
 
 mkdir $BUILD_DIR_NAME
@@ -27,9 +29,7 @@ fi
 
 ../src/configure $CONFIGURE_OPTIONS --with-windows-version=501 --disable-static --disable-profile-guided-optimization --disable-vista-sdk-requirements
 
-diff -q ./jsversion.h ./src/jsversion.h || cp ./jsversion.h ./src/
-
 make
 
-# ls $BUILD_DIR_NAME/dist/lib
-
+mkdir -p ../../../$BUILD_DIR_NAME
+cp js3250.dll ../../../$BUILD_DIR_NAME

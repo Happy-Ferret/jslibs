@@ -26,21 +26,20 @@ inline NIBufferGet BufferGetInterface( JSContext *cx, JSObject *obj );
 #include "platform.h"
 #include "../common/queue.h"
 
-#include <cstring>
 //#include <float.h>
-#include <jsnum.h>
-
+#include <cstring>
 #include <stdarg.h>
 
+// JavaScript engine includes
+#include <jsnum.h>
+#include <jscntxt.h>
+#include <jsinterp.h>
 #include <jsarena.h>
 #include <jsfun.h>
 #include <jsscope.h>
 #include <jsobj.h>
 #include <jsstr.h>
 #include <jsscript.h>
-#include <jscntxt.h>
-#include <jsinterp.h>
-
 #include <jsxdrapi.h>
 
 

@@ -229,7 +229,7 @@ inline double AccurateTimeCounter() {
 	gettimeofday(&time, &tz);
 	return (double)time.tv_sec / 1000L*1000L;
 #endif
-	return -1; // (TBD) see. JS_Now() ?
+	return -1; // (TBD) see. JS_Now() ? no, it could be expensive and is not suitable for calls when a GC lock is held.
 }
 
 
@@ -440,13 +440,10 @@ inline unsigned int JLSessionId() {
 		typedef void*(*JLThreadRoutine)(void *);
 	#endif
 
-	inline void JLThreadPriority( JLThreadHandler thread, JLThreadPriorityType priority ) {
 
-		#if defined XP_WIN
-		SetThreadPriority(thread, priority);
-		#elif defined XP_UNIX
-		// (TBD) FIXME, see pthread_attr_getschedparam/pthread_attr_setschedparam
-		#endif
+	inline bool JLThreadOk( JLThreadHandler thread ) {
+
+		return thread != (JLThreadHandler)0;
 	}
 
 	inline JLThreadHandler JLStartThread( JLThreadRoutine threadRoutine, void *pv ) {
@@ -455,15 +452,34 @@ inline unsigned int JLSessionId() {
 		return (JLThreadHandler)CreateThread(NULL, 0, threadRoutine, pv, 0, NULL);
 		#elif defined XP_UNIX
 		pthread_t *thread = (pthread_t*)malloc(sizeof(pthread_t));
+
+		pthread_attr_t attr;
+		pthread_attr_init(&attr);
+		pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
 		int rc;
-		rc = pthread_create(thread, NULL, threadRoutine, pv);
+		rc = pthread_create(thread, &attr, threadRoutine, pv);
+		pthread_attr_destroy(&attr);
 		return rc ? 0 : thread;
 		#endif
 	}
 
-	inline bool JLThreadOk( JLThreadHandler thread ) {
+	inline void JLThreadExit() {
 
-		return thread != (JLThreadHandler)0;
+		#if defined XP_WIN
+		
+		#elif defined XP_UNIX
+		pthread_exit(NULL);
+		#endif
+	}
+
+
+	inline void JLThreadPriority( JLThreadHandler thread, JLThreadPriorityType priority ) {
+
+		#if defined XP_WIN
+		SetThreadPriority(thread, priority);
+		#elif defined XP_UNIX
+		// (TBD) FIXME, see pthread_attr_getschedparam/pthread_attr_setschedparam
+		#endif
 	}
 
 	inline bool JLThreadIsActive( JLThreadHandler thread ) {
@@ -486,6 +502,9 @@ inline unsigned int JLSessionId() {
 		WaitForSingleObject( thread, INFINITE ); // WAIT_OBJECT_0
 		#elif defined XP_UNIX
 		// (TBD) FIXME
+		void *status;
+		int rc;
+		rc = pthread_join( thread, &status );
 		#endif
 	}
 

@@ -335,8 +335,11 @@ static JSClass global_class = { // global variable, but this is not an issue eve
 	JSCLASS_NO_OPTIONAL_MEMBERS
 };
 
+
+
+
 // default: CreateHost(-1, -1, 0);
-JSContext* CreateHost(size_t maxMem, size_t maxAlloc, size_t operationLimitGC) {
+JSContext* CreateHost(size_t maxMem, size_t maxAlloc, size_t maybeGCInterval) {
 
 //	JS_SetCStringsAreUTF8(); // don't use !
 	JSRuntime *rt = JS_NewRuntime(0); // maxMem specifies the number of allocated bytes after which garbage collection is run.
@@ -392,8 +395,8 @@ JSContext* CreateHost(size_t maxMem, size_t maxAlloc, size_t operationLimitGC) {
 	//  Throw exception on any regular expression which backtracks more than n^3 times, where n is length of the input string
 
 	// JSBranchCallback oldBranchCallback =
-	if ( operationLimitGC )
-		JS_SetOperationCallback(cx, OperationCallback, JS_OPERATION_WEIGHT_BASE * operationLimitGC); // (TBD) check the best value.
+	if ( maybeGCInterval )
+		JS_SetOperationCallback(cx, OperationCallback); // (TBD) check the best value.
 
 	JSObject *globalObject;
 	globalObject = JS_NewObject(cx, &global_class, NULL, NULL);
