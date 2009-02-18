@@ -857,12 +857,12 @@ DEFINE_FUNCTION_FAST( Exec ) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
- * $VAL $INAME( scriptCode [ , queryCallback ] [ , operationLimitCount = 4096 ] )
+ * $VAL $INAME( scriptCode [ , queryCallback ] [ , maxExecutionTime = 1000 ] )
   Evaluates the JavaScript code in a sandbox with a new set of standard classes (Object, Math, ...).
   $H arguments
    $ARG string scriptCode: the unsecured script code to be executed.
    $ARG function queryCallback: this function may be called by the unsecured script to query miscellaneous information to the host script. For security reasons, the function can only return primitive values (no objects).
-   $ARG integer operationLimitCount: if defined, an OperationLimit exception is thrown when _operationLimitCount_ internal operation has been done.
+   $ARG integer maxExecutionTime: if defined, an OperationLimit exception is thrown when _maxExecutionTime_ milliseconds are elapsed.
   $H return value
    the value of the last-executed expression statement processed in the script.
   $H example 1
@@ -889,6 +889,12 @@ DEFINE_FUNCTION_FAST( Exec ) {
   }}}
 **/
 
+struct SandboxContextPrivate {
+	
+	size_t maxExecutionTime;
+	JSFunction *queryFunction;
+};
+
 static JSBool SandboxMaxOperationCallback(JSContext *cx) {
 
 	JSObject *branchLimitExceptionObj = JS_NewObject( cx, classOperationLimit, NULL, NULL );
@@ -896,9 +902,21 @@ static JSBool SandboxMaxOperationCallback(JSContext *cx) {
 	return JS_FALSE;
 }
 
+JLThreadFuncDecl WatchDogThreadProc(void *threadArg) {
+
+	JSContext *scx = (JSContext*)threadArg;
+	SandboxContextPrivate *pv = (SandboxContextPrivate*)JS_GetContextPrivate(scx);
+	size_t maxExecutionTime = pv->maxExecutionTime;
+	SleepMilliseconds(maxExecutionTime);
+	JS_TriggerOperationCallback(scx);
+	return 0;
+}
+
+
 static JSBool SandboxQueryFunction(JSContext *cx, uintN argc, jsval *vp) {
 
-	JSFunction *fun = (JSFunction*)JS_GetContextPrivate(cx);
+	SandboxContextPrivate *pv = (SandboxContextPrivate*)JS_GetContextPrivate(cx);
+	JSFunction *fun = pv->queryFunction;
 	if ( fun ) {
 
 		J_CHK( JS_CallFunction(cx, J_FOBJ, fun, argc, J_FARGV, J_FRVAL) );
@@ -916,14 +934,6 @@ static JSBool SandboxQueryFunction(JSContext *cx, uintN argc, jsval *vp) {
 DEFINE_FUNCTION_FAST( SandboxEval ) {
 
 	J_S_ASSERT_ARG_MIN(1);
-
-	size_t maxOperation;
-	if ( J_FARG_ISDEF(3) ) {
-
-		J_CHK( JsvalToUInt(cx, J_FARG(2), &maxOperation) );
-		J_S_ASSERT( maxOperation < JS_MAX_OPERATION_LIMIT / JS_OPERATION_WEIGHT_BASE, "Invalid limit value." );
-	} else
-		maxOperation = 4096; // default value
 
 	JSContext *scx;
 	scx = JS_NewContext(JS_GetRuntime(cx), 8192L); // see host/host.cpp
@@ -943,12 +953,23 @@ DEFINE_FUNCTION_FAST( SandboxEval ) {
 		return JS_FALSE;
 	}
 
+	SandboxContextPrivate pv;
+	JS_SetContextPrivate(scx, &pv);
+
 	if ( J_FARG_ISDEF(2) ) {
 
 		J_S_ASSERT_FUNCTION( J_FARG(2) );
-		JS_SetContextPrivate(scx, JS_ValueToFunction(cx, J_FARG(2)));
+		pv.queryFunction = JS_ValueToFunction(cx, J_FARG(2));
 		J_CHK( JS_DefineFunction(scx, globalObject, "Query", (JSNative)SandboxQueryFunction, 1, JSFUN_FAST_NATIVE | JSPROP_PERMANENT | JSPROP_READONLY) );
+	} else {
+
+		pv.queryFunction = NULL;
 	}
+
+	if ( J_FARG_ISDEF(3) )
+		J_CHK( JsvalToUInt(cx, J_FARG(3), &pv.maxExecutionTime) );
+	else
+		pv.maxExecutionTime = 1000; // default value
 
 /*
 	if ( J_FARG_ISDEF(2) ) {
@@ -966,13 +987,17 @@ DEFINE_FUNCTION_FAST( SandboxEval ) {
 	jschar *src;
 	src = JS_GetStringChars(jsstr);
 
-	JS_SetOperationCallback(scx, SandboxMaxOperationCallback, maxOperation * JS_OPERATION_WEIGHT_BASE);
+	JS_SetOperationCallback(scx, SandboxMaxOperationCallback);
+	JLThreadHandler watchDogThread = JLThreadStart(WatchDogThreadProc, scx); // (TBD) check the restult
 
 	JS_SetGlobalObject(scx, globalObject);
 	JSStackFrame *fp;
 	fp = JS_GetScriptedCaller(cx, NULL);
 	JSBool ok;
 	ok = JS_EvaluateUCScript(scx, globalObject, src, srclen, fp->script->filename, JS_PCToLineNumber(cx, fp->script, fp->regs->pc), J_FRVAL);
+
+	JLThreadCancel(watchDogThread);
+	JLFreeThread(&watchDogThread);
 
 //	JSPrincipals principals = { "sandbox context", NULL, NULL, 1, NULL, NULL };
 //	JSBool ok = JS_EvaluateUCScriptForPrincipals(scx, globalObject, &principals, src, srclen, fp->script->filename, JS_PCToLineNumber(cx, fp->script, fp->regs->pc), J_FRVAL);

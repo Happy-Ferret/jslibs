@@ -328,7 +328,7 @@ DEFINE_CONSTRUCTOR() {
 	SerializerCreate(&pv->serializedCode);
 	J_CHK( SerializeJsval(cx, &pv->serializedCode, &J_ARG(1)));
 
-	pv->threadHandle = JLStartThread(ThreadProc, pv);
+	pv->threadHandle = JLThreadStart(ThreadProc, pv);
 
 	J_S_ASSERT( JLThreadOk(pv->threadHandle), "Unable to create the thread." );
 

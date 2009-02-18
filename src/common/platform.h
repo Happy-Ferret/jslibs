@@ -82,6 +82,7 @@
 	#pragma warning(disable : 4267) // warning C4267: 'var' : conversion from 'size_t' to 'type', possible loss of data
 	#pragma warning(disable : 4996) // warning C4996: 'function': was declared deprecated
 	#pragma warning(disable : 4100) // warning C4100: 'xxx' : unreferenced formal parameter
+	#pragma warning(disable : 4102) // warning C4102: 'xxx' : unreferenced label
 	// force warning to error:
 	#pragma warning(error : 4715) // not all control paths return a value
 	#pragma warning(error : 4018) // warning C4018: '<' : signed/unsigned mismatch
@@ -180,10 +181,12 @@
 //	#define O_BINARY 0
 //#endif
 
+
 ///////////////////////////////////////////////////////////////////////////////
 // Miscellaneous
 
 #define COUNTOF(vector) (sizeof(vector)/sizeof(*vector))
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // Platform tools
@@ -208,13 +211,22 @@ inline Endian DetectSystemEndianType() {
 
 inline char* IntegerToString(int val, int base) {
 
-	static char buf[32] = {0}; // (TBD) multithread warning !
-	int i = 30;
+	static char buf[64]; // (TBD) multithread warning !
+	buf[63] = '\0';
+	int i = 62;
 	for(; val && i ; --i, val /= base)
-		buf[i] = "0123456789abcdef"[val % base];
+		buf[i] = "0123456789abcdefghijklmnopqrstuvwxyz"[val % base];
 	return &buf[i+1];
 }
 
+
+inline void SleepMilliseconds(unsigned int ms) {
+#if defined XP_WIN
+	Sleep(ms); // winbase.h
+#elif defined XP_UNIX
+	usleep(ms * 1000); // unistd.h
+#endif // XP_UNIX
+}
 
 inline double AccurateTimeCounter() {
 
@@ -245,6 +257,7 @@ inline int JLProcessId() {
 
 
 inline unsigned int JLSessionId() {
+
 	unsigned int r = 0x12345678;
 	r ^= (unsigned int)AccurateTimeCounter();
 	r ^= (unsigned int)JLProcessId();
@@ -423,17 +436,17 @@ inline unsigned int JLSessionId() {
 	#if defined XP_WIN
 		#define JL_THREAD_PRIORITY_LOWEST THREAD_PRIORITY_LOWEST
 		#define JL_THREAD_PRIORITY_LOW THREAD_PRIORITY_BELOW_NORMAL
-		#define JL_THREAD_PRIORITY_NORMAL THREAD_PRIORITY_ABOVE_NORMAL
-		#define JL_THREAD_PRIORITY_HIGH THREAD_PRIORITY_NORMAL
+		#define JL_THREAD_PRIORITY_NORMAL THREAD_PRIORITY_NORMAL
+		#define JL_THREAD_PRIORITY_HIGH THREAD_PRIORITY_ABOVE_NORMAL
 		typedef HANDLE JLThreadHandler;
 		typedef int JLThreadPriorityType;
 		#define JLThreadFuncDecl DWORD WINAPI
 		typedef PTHREAD_START_ROUTINE JLThreadRoutine;
 	#elif defined XP_UNIX
 		#define JL_THREAD_PRIORITY_LOWEST 0
-		#define JL_THREAD_PRIORITY_LOW 0
-		#define JL_THREAD_PRIORITY_NORMAL 0
-		#define JL_THREAD_PRIORITY_HIGH 0
+		#define JL_THREAD_PRIORITY_LOW 15
+		#define JL_THREAD_PRIORITY_NORMAL 31
+		#define JL_THREAD_PRIORITY_HIGH 47
 		typedef pthread_t* JLThreadHandler;
 		typedef int JLThreadPriorityType;
 		#define JLThreadFuncDecl void*
@@ -446,16 +459,15 @@ inline unsigned int JLSessionId() {
 		return thread != (JLThreadHandler)0;
 	}
 
-	inline JLThreadHandler JLStartThread( JLThreadRoutine threadRoutine, void *pv ) {
+	inline JLThreadHandler JLThreadStart( JLThreadRoutine threadRoutine, void *pv ) {
 
 		#if defined XP_WIN
 		return (JLThreadHandler)CreateThread(NULL, 0, threadRoutine, pv, 0, NULL);
 		#elif defined XP_UNIX
 		pthread_t *thread = (pthread_t*)malloc(sizeof(pthread_t));
-
 		pthread_attr_t attr;
 		pthread_attr_init(&attr);
-		pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+		pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE); // optional ?
 		int rc;
 		rc = pthread_create(thread, &attr, threadRoutine, pv);
 		pthread_attr_destroy(&attr);
@@ -466,9 +478,18 @@ inline unsigned int JLSessionId() {
 	inline void JLThreadExit() {
 
 		#if defined XP_WIN
-		
+		ExitThread(0);
 		#elif defined XP_UNIX
 		pthread_exit(NULL);
+		#endif
+	}
+
+	inline void JLThreadCancel( JLThreadHandler thread ) {
+
+		#if defined XP_WIN
+		TerminateThread(thread, 0); // The handle must have the THREAD_TERMINATE access right.
+		#elif defined XP_UNIX
+		pthread_cancel(thread);
 		#endif
 	}
 
@@ -478,7 +499,14 @@ inline unsigned int JLSessionId() {
 		#if defined XP_WIN
 		SetThreadPriority(thread, priority);
 		#elif defined XP_UNIX
-		// (TBD) FIXME, see pthread_attr_getschedparam/pthread_attr_setschedparam
+		int policy;
+		struct sched_param param;
+		int rv;
+		rv = pthread_getschedparam(thread, &policy, &param);
+		int max = sched_get_priority_max(policy);
+		int min = sched_get_priority_min(policy);
+		param.sched_priority = min + priority * (max - min) / 128;
+		rv = pthread_setschedparam(thread, policy, &param);
 		#endif
 	}
 
@@ -490,7 +518,10 @@ inline unsigned int JLSessionId() {
 		DWORD result = WaitForSingleObject( thread, 0 );
 		return result != WAIT_OBJECT_0; // else WAIT_TIMEOUT ?
 		#elif defined XP_UNIX
-		return false; // (TBD) FIXME
+		int policy;
+		struct sched_param param;
+		int rv = pthread_getschedparam(thread, &policy, &param);
+		return rv != ESRCH; // errno.h
 		#endif
 	}
 
@@ -501,10 +532,9 @@ inline unsigned int JLSessionId() {
 		#if defined XP_WIN
 		WaitForSingleObject( thread, INFINITE ); // WAIT_OBJECT_0
 		#elif defined XP_UNIX
-		// (TBD) FIXME
-		void *status;
+		void status;
 		int rc;
-		rc = pthread_join( thread, &status );
+		rc = pthread_join(thread, &status);
 		#endif
 	}
 
@@ -515,7 +545,8 @@ inline unsigned int JLSessionId() {
 		#if defined XP_WIN
 		CloseHandle(*pThread);
 		#elif defined XP_UNIX
-		// (TBD) FIXME
+		pthread_detach(*pThread);
+		free(*pThread);
 		#endif
 		*pThread = (JLThreadHandler)0;
 	}

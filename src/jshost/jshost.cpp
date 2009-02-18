@@ -168,7 +168,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 				break;
 			case 'g': // operationLimitGC
 				argumentVector++;
-				maybeGCInterval = atol( *argumentVector );
+				maybeGCInterval = atol( *argumentVector ) * 1000; // s to ms
 				break;
 			case 'c':
 				compileOnly = true;

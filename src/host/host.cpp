@@ -201,6 +201,18 @@ static JSBool OperationCallback(JSContext *cx) {
 }
 
 
+JLThreadFuncDecl WatchDogThreadProc(void *threadArg) {
+
+	JSContext *cx = (JSContext*)threadArg;
+	size_t interval = GetHostPrivate(cx)->maybeGCInterval;
+	for (;;) {
+	
+		SleepMilliseconds(interval);
+		JS_TriggerOperationCallback(cx);
+	}
+}
+
+
 static JSBool LoadModule(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
 	J_S_ASSERT_ARG_MIN(1);
@@ -336,10 +348,8 @@ static JSClass global_class = { // global variable, but this is not an issue eve
 };
 
 
-
-
 // default: CreateHost(-1, -1, 0);
-JSContext* CreateHost(size_t maxMem, size_t maxAlloc, size_t maybeGCInterval) {
+JSContext* CreateHost(size_t maxMem, size_t maxAlloc, size_t maybeGCInterval ) {
 
 //	JS_SetCStringsAreUTF8(); // don't use !
 	JSRuntime *rt = JS_NewRuntime(0); // maxMem specifies the number of allocated bytes after which garbage collection is run.
@@ -394,10 +404,6 @@ JSContext* CreateHost(size_t maxMem, size_t maxAlloc, size_t maybeGCInterval) {
 	// JSOPTION_RELIMIT:
 	//  Throw exception on any regular expression which backtracks more than n^3 times, where n is length of the input string
 
-	// JSBranchCallback oldBranchCallback =
-	if ( maybeGCInterval )
-		JS_SetOperationCallback(cx, OperationCallback); // (TBD) check the best value.
-
 	JSObject *globalObject;
 	globalObject = JS_NewObject(cx, &global_class, NULL, NULL);
 	if ( globalObject == NULL )
@@ -411,17 +417,34 @@ JSContext* CreateHost(size_t maxMem, size_t maxAlloc, size_t maybeGCInterval) {
 
 	JS_SetGlobalObject(cx, globalObject); // see LAZY_STANDARD_CLASSES
 
+	HostPrivate *pv = (HostPrivate*)malloc(sizeof(HostPrivate));
+	if ( pv == NULL )
+		return NULL; // out of memory ?
+	memset(pv, 0, sizeof(HostPrivate)); // mandatory !
+	SetHostPrivate(cx, pv);
+
+	// setup WatchDog
+	if ( maybeGCInterval ) {
+
+		pv->maybeGCInterval = maybeGCInterval;
+		JS_SetOperationCallback(cx, OperationCallback);
+		pv->watchDogThread = JLThreadStart(WatchDogThreadProc, cx); // (TBD) check the restult
+	}
+
 	return cx;
 }
 
 
 JSBool InitHost( JSContext *cx, bool unsafeMode, HostOutput stdOut, HostOutput stdErr, void* privateData ) { // init the host for jslibs usage (modules, errors, ...)
 
-	HostPrivate *pv = (HostPrivate*)malloc(sizeof(HostPrivate));
-	J_S_ASSERT_ALLOC(pv);
-	memset(pv, 0, sizeof(HostPrivate)); // mandatory !
+	HostPrivate *pv = GetHostPrivate(cx);
+	if ( pv == NULL ) { // in the case of CreateHost has not been called (because the caller wants to create and manage its own JS runtime)
 
-	SetHostPrivate(cx, pv);
+		pv = (HostPrivate*)malloc(sizeof(HostPrivate));
+		J_S_ASSERT_ALLOC(pv);
+		memset(pv, 0, sizeof(HostPrivate)); // mandatory !
+		SetHostPrivate(cx, pv);
+	}
 
 	pv->privateData = privateData;
 
@@ -474,6 +497,12 @@ void DestroyHost( JSContext *cx ) {
 //	ModuleReleaseAll(cx);
 
 	HostPrivate *pv = GetHostPrivate(cx);
+
+	if ( JLThreadOk(pv->watchDogThread) ) {
+
+		JLThreadCancel(pv->watchDogThread);
+		JLFreeThread(&pv->watchDogThread);
+	}
 
 	for ( jl::QueueCell *it = jl::QueueBegin(&pv->moduleList); it; it = jl::QueueNext(it) ) {
 

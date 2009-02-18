@@ -56,6 +56,8 @@ typedef int (*HostOutput)( void *privateData, const char *buffer, size_t length 
 struct HostPrivate {
 
 	void *privateData;
+	size_t maybeGCInterval;
+	JLThreadHandler watchDogThread;
 	bool unsafeMode;
 	HostOutput hostStdOut;
 	HostOutput hostStdErr;
