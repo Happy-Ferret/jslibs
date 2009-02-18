@@ -301,6 +301,7 @@ inline unsigned int JLSessionId() {
 #include <pthread.h>
 #include <sched.h>
 #include <semaphore.h>
+#include <errno.h>
 #endif
 
 
@@ -489,7 +490,7 @@ inline unsigned int JLSessionId() {
 		#if defined XP_WIN
 		TerminateThread(thread, 0); // The handle must have the THREAD_TERMINATE access right.
 		#elif defined XP_UNIX
-		pthread_cancel(thread);
+		pthread_cancel(*thread);
 		#endif
 	}
 
@@ -502,11 +503,11 @@ inline unsigned int JLSessionId() {
 		int policy;
 		struct sched_param param;
 		int rv;
-		rv = pthread_getschedparam(thread, &policy, &param);
+		rv = pthread_getschedparam(*thread, &policy, &param);
 		int max = sched_get_priority_max(policy);
 		int min = sched_get_priority_min(policy);
 		param.sched_priority = min + priority * (max - min) / 128;
-		rv = pthread_setschedparam(thread, policy, &param);
+		rv = pthread_setschedparam(*thread, policy, &param);
 		#endif
 	}
 
@@ -520,7 +521,7 @@ inline unsigned int JLSessionId() {
 		#elif defined XP_UNIX
 		int policy;
 		struct sched_param param;
-		int rv = pthread_getschedparam(thread, &policy, &param);
+		int rv = pthread_getschedparam(*thread, &policy, &param);
 		return rv != ESRCH; // errno.h
 		#endif
 	}
@@ -532,9 +533,9 @@ inline unsigned int JLSessionId() {
 		#if defined XP_WIN
 		WaitForSingleObject( thread, INFINITE ); // WAIT_OBJECT_0
 		#elif defined XP_UNIX
-		void status;
+		void *status;
 		int rc;
-		rc = pthread_join(thread, &status);
+		rc = pthread_join(*thread, &status);
 		#endif
 	}
 
@@ -545,7 +546,7 @@ inline unsigned int JLSessionId() {
 		#if defined XP_WIN
 		CloseHandle(*pThread);
 		#elif defined XP_UNIX
-		pthread_detach(*pThread);
+		pthread_detach(**pThread);
 		free(*pThread);
 		#endif
 		*pThread = (JLThreadHandler)0;

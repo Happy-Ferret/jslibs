@@ -988,7 +988,8 @@ DEFINE_FUNCTION_FAST( SandboxEval ) {
 	src = JS_GetStringChars(jsstr);
 
 	JS_SetOperationCallback(scx, SandboxMaxOperationCallback);
-	JLThreadHandler watchDogThread = JLThreadStart(WatchDogThreadProc, scx); // (TBD) check the restult
+	JLThreadHandler watchDogThread;
+	watchDogThread = JLThreadStart(WatchDogThreadProc, scx); // (TBD) check the restult
 
 	JS_SetGlobalObject(scx, globalObject);
 	JSStackFrame *fp;
