@@ -452,7 +452,7 @@ DEFINE_FUNCTION( Sign ) { // ( data [, saltLength] )
 }
 
 /**doc
- * $STR $INAME( data, signature [, saltLength] )
+ * $BOOL $INAME( data, signature [, saltLength] )
   This function returns <true> if the _data_ match the data used to create the _signature_.
   = =
   _saltLength_ is only used with RSA signatures. (default value is 16)
@@ -504,7 +504,7 @@ DEFINE_FUNCTION( VerifySignature ) { // ( data, signature [, saltLength] )
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err); // (TBD) free something ?
 
-	*rval = STRING_TO_JSVAL( stat == 1 ? JSVAL_TRUE : JSVAL_FALSE );
+	*rval = BOOLEAN_TO_JSVAL( stat == 1 ? JSVAL_TRUE : JSVAL_FALSE );
 	return JS_TRUE;
 	JL_BAD;
 }
