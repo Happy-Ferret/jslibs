@@ -263,7 +263,7 @@ inline JSBool InitCurveData( JSContext* cx, jsval value, int length, float *curv
 		JSObject *bstrObj;
 		bstrObj = JSVAL_TO_OBJECT(value);
 		size_t bstrLen;
-		const u_int8_t *bstrData;
+		const uint8_t *bstrData;
 
 //		BlobGetBufferAndLength( cx, bstrObj, (void**)&bstrData, &bstrLen );
 		J_CHK( JsvalToStringAndLength( cx, &value, (const char **)&bstrData, &bstrLen ) );
@@ -433,8 +433,8 @@ DEFINE_CONSTRUCTOR() {
 		J_CHK( GetPropertyInt(cx, bstrObj, "height", &sHeight) );
 		J_CHK( GetPropertyInt(cx, bstrObj, "channels", &sChannels) );
 
-		const u_int8_t *buffer;
-//		u_int8_t *buffer = (u_int8_t*)
+		const uint8_t *buffer;
+//		uint8_t *buffer = (uint8_t*)
 //		J_CHK( BlobBuffer(cx, bstr, (const void **)&buffer) );
 		J_CHK( JsvalToString(cx, &J_ARG(1), (const char **)&buffer) ); // warning: GC on the returned buffer !
 
@@ -2969,7 +2969,7 @@ DEFINE_FUNCTION_FAST( Export ) { // (int)x, (int)y, (int)width, (int)height. Ret
 
 	int dWidth, dHeight;
 
-	u_int8_t *buffer;
+	uint8_t *buffer;
 	int bufferLength;
 
 	int px, py;
@@ -2991,7 +2991,7 @@ DEFINE_FUNCTION_FAST( Export ) { // (int)x, (int)y, (int)width, (int)height. Ret
 	}
 
 	bufferLength = dWidth * dHeight * sChannels;
-	buffer = (u_int8_t*)JS_malloc(cx, bufferLength);
+	buffer = (uint8_t*)JS_malloc(cx, bufferLength);
 
 	int posDst, posSrc;
 	int c;
@@ -3009,8 +3009,8 @@ DEFINE_FUNCTION_FAST( Export ) { // (int)x, (int)y, (int)width, (int)height. Ret
 			posSrc = ( sx + sy * sWidth ) * sChannels;
 			for ( c = 0; c < sChannels; c++ ) {
 
-				//buffer[posDst+c] = (u_int8_t)(PNORM(tex->cbuffer[posSrc+c]) * 256);
-				buffer[posDst+c] = (u_int8_t)(MINMAX(tex->cbuffer[posSrc+c] * 255.f, 0, 255)); // map [0.0 -> 1.0] to [0 -> 255]
+				//buffer[posDst+c] = (uint8_t)(PNORM(tex->cbuffer[posSrc+c]) * 256);
+				buffer[posDst+c] = (uint8_t)(MINMAX(tex->cbuffer[posSrc+c] * 255.f, 0, 255)); // map [0.0 -> 1.0] to [0 -> 255]
 			}
 		}
 
@@ -3090,9 +3090,9 @@ DEFINE_FUNCTION_FAST( Import ) { // (Blob)image, (int)x, (int)y
 	GetPropertyInt(cx, bstr, "height", &sHeight);
 	GetPropertyInt(cx, bstr, "channels", &sChannels);
 
-	//u_int8_t *buffer = (u_int8_t*)BlobData(cx, bstr);
+	//uint8_t *buffer = (uint8_t*)BlobData(cx, bstr);
 
-	const u_int8_t *buffer;
+	const uint8_t *buffer;
 //	J_CHK( BlobBuffer(cx, bstr, (const void **)&buffer) );
 
 	J_CHK( JsvalToString(cx, &J_FARG(1), (const char **)&buffer) );

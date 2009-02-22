@@ -353,8 +353,8 @@ DEFINE_FUNCTION_FAST( RenderImage ) { // using cairo
 		case CAIRO_FORMAT_RGB24:
 			for ( size_t i = 0; i < pixelCount; i++ ) { // 3 2 1 X  ->  1 2 3
 
-				u_int32_t src = ((u_int32_t*)buffer)[i];
-				u_int8_t* dest = (u_int8_t*)image + i*3;
+				uint32_t src = ((uint32_t*)buffer)[i];
+				uint8_t* dest = (uint8_t*)image + i*3;
 				*(dest++) = src >> 16 & 0xff;
 				*(dest++) = src >> 8 & 0xff;
 				*(dest++) = src & 0xff;
@@ -363,8 +363,8 @@ DEFINE_FUNCTION_FAST( RenderImage ) { // using cairo
 		case CAIRO_FORMAT_ARGB32:
 			for ( size_t i = 0; i < pixelCount; i++ ) { // 3 2 1 4  ->  1 2 3 4
 
-				u_int32_t p = ((u_int32_t*)buffer)[i];
-				((u_int32_t*)image)[i] = p & 0xff00ff00 | _rotl(p, 16) & 0x00ff00ff; // use SSE2 instructions ?
+				uint32_t p = ((uint32_t*)buffer)[i];
+				((uint32_t*)image)[i] = p & 0xff00ff00 | _rotl(p, 16) & 0x00ff00ff; // use SSE2 instructions ?
 			}
 			break;
 		case CAIRO_FORMAT_A8:

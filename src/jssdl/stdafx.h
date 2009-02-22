@@ -16,6 +16,11 @@
 #include "../common/jsClass.h"
 #include "../common/jsConfiguration.h"
 
+namespace sdl {
 
-#include <SDL.h>
+	#include <SDL.h>
+}
+
+using namespace sdl;
+
 //#include <SDL_error.h>
