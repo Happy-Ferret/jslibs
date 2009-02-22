@@ -575,6 +575,31 @@ inline unsigned int JLSessionId() {
 		return libraryHandler != (JLLibraryHandler)0;
 	}
 
+	inline void JLDynamicLibraryLastErrorMessage( char *message, size_t maxLength ) {
+		
+		#if defined XP_WIN
+		DWORD errorCode = ::GetLastError();
+		LPVOID lpMsgBuf;
+		DWORD result = ::FormatMessage(
+			FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS | FORMAT_MESSAGE_MAX_WIDTH_MASK,
+			NULL, errorCode, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&lpMsgBuf, 0, NULL );
+		if ( result != 0 ) {
+
+			strncpy(message, (char*)lpMsgBuf, maxLength-1);
+			message[maxLength-1] = '\0';
+		} else
+			*message = '\0';
+		#elif defined XP_UNIX
+		const char *msgBuf = dlerror();
+		if ( msgBuf != NULL ) {
+
+			strncpy(message, msgBuf, maxLength-1);
+			message[maxLength-1] = '\0';
+		} else 
+			*message = '\0';
+		#endif
+	}
+
 	inline void *JLDynamicLibrarySymbol( JLLibraryHandler libraryHandler, const char *symbolName ) {
 
 		#if defined XP_WIN

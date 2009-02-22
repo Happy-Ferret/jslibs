@@ -18,6 +18,15 @@
 
 #include <jsapi.h>
 
+#define NAME_GLOBAL_CLASS "global"
+#define NAME_GLOBAL_GLOBAL_OBJECT "global"
+#define NAME_GLOBAL_FUNCTION_LOAD_MODULE "LoadModule"
+#define NAME_GLOBAL_FUNCTION_UNLOAD_MODULE "UnloadModule"
+#define NAME_CONFIGURATION_STDERR "stderr"
+#define NAME_CONFIGURATION_STDOUT "stdout"
+#define NAME_CONFIGURATION_UNSAFE_MODE "unsafeMode"
+#define NAME_GLOBAL_ARGUMENTS "arguments"
+
 typedef JSBool (*ModuleInitFunction)(JSContext *, JSObject *);
 typedef JSBool (*ModuleReleaseFunction)(JSContext *cx);
 typedef void (*ModuleFreeFunction)(void);

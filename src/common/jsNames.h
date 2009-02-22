@@ -15,24 +15,12 @@
 #ifndef _JSNAMES_H_
 #define _JSNAMES_H_
 
-
-#define NAME_GLOBAL_CLASS "global"
-
 #define NAME_CONFIGURATION_OBJECT "_configuration"
 
-#define NAME_GLOBAL_ARGUMENTS "arguments"
 #define NAME_GLOBAL_SCRIPT_HOST_PATH "scripthostpath"
 #define NAME_GLOBAL_SCRIPT_HOST_NAME "scripthostname"
 #define NAME_GLOBAL_FIRST_INSTANCE "isfirstinstance"
-#define NAME_GLOBAL_GLOBAL_OBJECT "global"
 
-#define NAME_GLOBAL_FUNCTION_LOAD_MODULE "LoadModule"
-#define NAME_GLOBAL_FUNCTION_UNLOAD_MODULE "UnloadModule"
-
-#define NAME_CONFIGURATION_STDERR "stderr"
-#define NAME_CONFIGURATION_STDOUT "stdout"
-#define NAME_CONFIGURATION_UNSAFE_MODE "unsafeMode"
-//#define NAME_CONFIGURATION_UNSAFE_MODE_PTR "unsafeModePtr"
 #define NAME_CONFIGURATION_GETERRORMESSAGE "_getErrorMessage"
 
 #define NAME_MODULE_INIT "ModuleInit"
@@ -40,4 +28,3 @@
 #define NAME_MODULE_FREE "ModuleFree"
 
 #endif // _JSNAMES_H_
-
