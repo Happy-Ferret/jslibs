@@ -584,7 +584,9 @@ JS_GetReservedSlot(cx, obj, 1, &val); // ..., JSVAL_TO_OBJECT(val)
 
       jsval rootObj;
       JS_GetReservedSlot( cx, nativeDataObj, 0, &rootObj );
-      JS_SetReservedSlot( cx, dataObj, 0, OBJECT_TO_JSVAL( rootObj ) ); // a reference of the root object is stored in the slot[0]
+
+		// (TBD) check the following line. I transformed it from: JS_SetReservedSlot( cx, dataObj, 0, OBJECT_TO_JSVAL( rootObj ) );
+		JS_SetReservedSlot( cx, dataObj, 0, rootObj ); // a reference of the root object is stored in the slot[0]
 
       JS_SetPrivate( cx, dataObj, pptr[index] ); // do not free because JS_NewObject do not call the constructor !!
       *vp = OBJECT_TO_JSVAL( dataObj );
@@ -737,7 +739,9 @@ JS_GetReservedSlot(cx, obj, 1, &val); // ..., JSVAL_TO_OBJECT(val)
         if ( JSVAL_IS_OBJECT( *vp ) && JS_InstanceOf( cx, JSVAL_TO_OBJECT( *vp ), &NativeData, NULL ) ) {
 
           ((void**)*pptr)[index] = *(void**)JS_GetPrivate( cx, JSVAL_TO_OBJECT( *vp ) );
-          JS_SetReservedSlot( cx, obj, 0, OBJECT_TO_JSVAL( *vp ) ); // it is important to keep a reference to the NativeData *vp to avoid it to be finalised before this one
+
+			 // (TBD) check the following line. I transformed it from: JS_SetReservedSlot( cx, obj, 0, OBJECT_TO_JSVAL( *vp ) );
+          JS_SetReservedSlot( cx, obj, 0, *vp ); // it is important to keep a reference to the NativeData *vp to avoid it to be finalised before this one
         } else {
 
           unsigned long *pVal = &((unsigned long*)*pptr)[index];

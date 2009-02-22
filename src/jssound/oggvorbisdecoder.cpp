@@ -348,7 +348,7 @@ DEFINE_FUNCTION_FAST( Read ) {
 	JSObject *blobObj;
 	J_CHK( JS_ValueToObject(cx, blobVal, &blobObj) );
 	J_S_ASSERT( blobObj != NULL, "Unable to create the Blob object.");
-	*J_FRVAL = OBJECT_TO_JSVAL(blobVal);
+	*J_FRVAL = OBJECT_TO_JSVAL(blobObj);
 
 	J_CHK( SetPropertyInt(cx, blobObj, "bits", pv->bits) ); // bits per sample
 	J_CHK( SetPropertyInt(cx, blobObj, "rate", pv->ofInfo->rate) ); // samples per second
