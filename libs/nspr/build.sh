@@ -8,12 +8,16 @@ if [ -z $BUILD ]; then
 	BUILD=OPT
 fi
 
-BUILD_DIR_NAME=$(uname -s)_$BUILD
+if [ $(uname -o) == "Msys" ]; then
+	BUILD_DIR_NAME=Win32_$BUILD	
+else
+	BUILD_DIR_NAME=$(uname -s)_$BUILD
+fi
 
 mkdir $BUILD_DIR_NAME
 cd $BUILD_DIR_NAME
 
-if [ $BUILD == OPT ]; then
+if [ $BUILD == "OPT" ]; then
 	CONFIGURE_OPTIONS="--disable-debug --enable-strip --enable-optimize"
 else
 	CONFIGURE_OPTIONS="--enable-debug --disable-optimize --enable-debug-rtl"

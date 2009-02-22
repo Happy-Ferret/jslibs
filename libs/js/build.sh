@@ -14,7 +14,11 @@ cd ..
 
 diff -q ./jsversion.h ./src/jsversion.h || cp ./jsversion.h ./src/
 
-BUILD_DIR_NAME=$(uname -s)_$BUILD
+if [ $(uname -o) == "Msys" ]; then
+	BUILD_DIR_NAME=Win32_$BUILD	
+else
+	BUILD_DIR_NAME=$(uname -s)_$BUILD
+fi
 
 mkdir $BUILD_DIR_NAME
 cd $BUILD_DIR_NAME
