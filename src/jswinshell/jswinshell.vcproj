@@ -16,11 +16,9 @@
 	</ToolFiles>
 	<Configurations>
 		<Configuration
-			Name="Debug|Win32"
-			OutputDirectory="$(SolutionDir)..\..\$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
+			Name="DBG|Win32"
 			ConfigurationType="2"
-			InheritedPropertySheets="..\jslibs_debug.vsprops"
+			InheritedPropertySheets="..\jslibs_DBG.vsprops"
 			CharacterSet="2"
 			>
 			<Tool
@@ -92,11 +90,9 @@
 			/>
 		</Configuration>
 		<Configuration
-			Name="Release|Win32"
-			OutputDirectory="$(SolutionDir)..\..\$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
+			Name="OPT|Win32"
 			ConfigurationType="2"
-			InheritedPropertySheets="..\jslibs_release.vsprops"
+			InheritedPropertySheets="..\jslibs_OPT.vsprops"
 			CharacterSet="2"
 			WholeProgramOptimization="1"
 			>
@@ -205,7 +201,7 @@
 				RelativePath=".\stdafx.cpp"
 				>
 				<FileConfiguration
-					Name="Debug|Win32"
+					Name="DBG|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -213,7 +209,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|Win32"
+					Name="OPT|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"

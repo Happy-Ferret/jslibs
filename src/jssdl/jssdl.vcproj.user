@@ -6,22 +6,22 @@
 	>
 	<Configurations>
 		<Configuration
-			Name="Debug|Win32"
+			Name="DBG|Win32"
 			>
 			<DebugSettings
-				Command="..\..\$(ConfigurationName)\jshost.exe"
+				Command="..\..\$(PlatformName)_$(ConfigurationName)\jshost.exe"
 				CommandArguments="debug.js"
-				Environment="PATH=..\..\$(ConfigurationName);%PATH%"
+				Environment="PATH=..\..\$(PlatformName)_$(ConfigurationName);%PATH%"
 				EnvironmentMerge="true"
 			/>
 		</Configuration>
 		<Configuration
-			Name="Release|Win32"
+			Name="OPT|Win32"
 			>
 			<DebugSettings
-				Command="..\..\$(ConfigurationName)\jshost.exe"
+				Command="..\..\$(PlatformName)_$(ConfigurationName)\jshost.exe"
 				CommandArguments="debug.js"
-				Environment="PATH=..\..\$(ConfigurationName);%PATH%"
+				Environment="PATH=..\..\$(PlatformName)_$(ConfigurationName);%PATH%"
 				EnvironmentMerge="true"
 			/>
 		</Configuration>

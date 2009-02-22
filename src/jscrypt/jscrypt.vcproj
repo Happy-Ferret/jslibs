@@ -16,11 +16,9 @@
 	</ToolFiles>
 	<Configurations>
 		<Configuration
-			Name="Debug|Win32"
-			OutputDirectory="$(SolutionDir)..\..\$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
+			Name="DBG|Win32"
 			ConfigurationType="2"
-			InheritedPropertySheets="..\jslibs_debug.vsprops"
+			InheritedPropertySheets="..\jslibs_DBG.vsprops"
 			CharacterSet="0"
 			>
 			<Tool
@@ -61,7 +59,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="..\..\libs\libtomcrypt\$(ConfigurationName)\tomcrypt.lib ..\..\libs\libtommath\$(ConfigurationName)\tommath.lib advapi32.lib"
+				AdditionalDependencies="..\..\libs\libtomcrypt\Debug\tomcrypt.lib ..\..\libs\libtommath\Debug\tommath.lib advapi32.lib"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				TargetMachine="1"
@@ -92,11 +90,9 @@
 			/>
 		</Configuration>
 		<Configuration
-			Name="Release|Win32"
-			OutputDirectory="$(SolutionDir)..\..\$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
+			Name="OPT|Win32"
 			ConfigurationType="2"
-			InheritedPropertySheets="..\jslibs_release.vsprops"
+			InheritedPropertySheets="..\jslibs_OPT.vsprops"
 			CharacterSet="0"
 			WholeProgramOptimization="1"
 			>
@@ -138,7 +134,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="..\..\libs\libtomcrypt\$(ConfigurationName)\tomcrypt.lib ..\..\libs\libtommath\$(ConfigurationName)\tommath.lib advapi32.lib"
+				AdditionalDependencies="..\..\libs\libtomcrypt\Release\tomcrypt.lib ..\..\libs\libtommath\Release\tommath.lib advapi32.lib"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				OptimizeReferences="2"
@@ -211,7 +207,7 @@
 				RelativePath=".\stdafx.cpp"
 				>
 				<FileConfiguration
-					Name="Debug|Win32"
+					Name="DBG|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -219,7 +215,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|Win32"
+					Name="OPT|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"

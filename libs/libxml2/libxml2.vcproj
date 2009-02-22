@@ -16,9 +16,9 @@
 	</ToolFiles>
 	<Configurations>
 		<Configuration
-			Name="Debug|Win32"
-			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
+			Name="DBG|Win32"
+			OutputDirectory="$(SolutionDir)$(PlatformName)_$(ConfigurationName)"
+			IntermediateDirectory="$(PlatformName)_$(ConfigurationName)"
 			ConfigurationType="0"
 			CharacterSet="1"
 			>
@@ -37,9 +37,9 @@
 			/>
 		</Configuration>
 		<Configuration
-			Name="Release|Win32"
-			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
+			Name="OPT|Win32"
+			OutputDirectory="$(SolutionDir)$(PlatformName)_$(ConfigurationName)"
+			IntermediateDirectory="$(PlatformName)_$(ConfigurationName)"
 			ConfigurationType="0"
 			CharacterSet="1"
 			WholeProgramOptimization="1"

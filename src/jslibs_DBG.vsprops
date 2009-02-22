@@ -3,6 +3,8 @@
 	ProjectType="Visual C++"
 	Version="8.00"
 	Name="jslibs common properties"
+	OutputDirectory="$(SolutionDir)..\..\$(PlatformName)_$(ConfigurationName)"
+	IntermediateDirectory="$(PlatformName)_$(ConfigurationName)"
 	>
 
 	<!-- tmp VCCLCompilerTool
@@ -17,16 +19,16 @@
 	<Tool
 		Name="VCCLCompilerTool"
 		PreprocessorDefinitions="DEBUG JS_HASHMETER JS_GC_ZEAL"
-		AdditionalIncludeDirectories="..\..\libs\js\MINGW32_NT-5.1_DBG\dist\include\js"
+		AdditionalIncludeDirectories="..\..\libs\js\$(PlatformName)_$(ConfigurationName)\dist\include\js"
 		ExceptionHandling="0"
 		RuntimeLibrary="3"
 	/>
 	
 	<!-- tmp VCLinkerTool
 	
-							Debug Single-threaded (libcd.lib)           | IgnoreDefaultLibraryNames="libc.lib, libcmt.lib, msvcrt.lib, libcmtd.lib, msvcrtd.lib"
-							Debug Multithreaded (libcmtd.lib)           | IgnoreDefaultLibraryNames="libc.lib, libcmt.lib, msvcrt.lib, libcd.lib, msvcrtd.lib"
-							Debug Multithreaded using DLL (msvcrtd.lib) | IgnoreDefaultLibraryNames="libc.lib, libcmt.lib, msvcrt.lib, libcd.lib, libcmtd.lib"
+		Debug Single-threaded (libcd.lib)           | IgnoreDefaultLibraryNames="libc.lib, libcmt.lib, msvcrt.lib, libcmtd.lib, msvcrtd.lib"
+		Debug Multithreaded (libcmtd.lib)           | IgnoreDefaultLibraryNames="libc.lib, libcmt.lib, msvcrt.lib, libcd.lib, msvcrtd.lib"
+		Debug Multithreaded using DLL (msvcrtd.lib) | IgnoreDefaultLibraryNames="libc.lib, libcmt.lib, msvcrt.lib, libcd.lib, libcmtd.lib"
 	-->
 
 	<Tool
@@ -34,7 +36,7 @@
 		GenerateDebugInformation="true"
 		IgnoreAllDefaultLibraries="false"
 		IgnoreDefaultLibraryNames="libc.lib, libcmt.lib, msvcrt.lib, libcd.lib, libcmtd.lib"
-		AdditionalDependencies="..\..\libs\js\MINGW32_NT-5.1_DBG\js3250.lib kernel32.lib $(NoInherit) $(StopEvaluating)"
+		AdditionalDependencies="..\..\libs\js\$(PlatformName)_$(ConfigurationName)\js3250.lib kernel32.lib $(NoInherit) $(StopEvaluating)"
 		ImportLibrary="$(IntDir)\$(TargetName).lib"
 	/>
 

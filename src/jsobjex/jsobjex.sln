@@ -5,14 +5,14 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jsobjex", "jsobjex.vcproj",
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
-		Debug|Win32 = Debug|Win32
-		Release|Win32 = Release|Win32
+		DBG|Win32 = DBG|Win32
+		OPT|Win32 = OPT|Win32
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{C8A097BB-3C48-4933-A04D-2BF751087CBD}.Debug|Win32.ActiveCfg = Debug|Win32
-		{C8A097BB-3C48-4933-A04D-2BF751087CBD}.Debug|Win32.Build.0 = Debug|Win32
-		{C8A097BB-3C48-4933-A04D-2BF751087CBD}.Release|Win32.ActiveCfg = Release|Win32
-		{C8A097BB-3C48-4933-A04D-2BF751087CBD}.Release|Win32.Build.0 = Release|Win32
+		{C8A097BB-3C48-4933-A04D-2BF751087CBD}.DBG|Win32.ActiveCfg = DBG|Win32
+		{C8A097BB-3C48-4933-A04D-2BF751087CBD}.DBG|Win32.Build.0 = DBG|Win32
+		{C8A097BB-3C48-4933-A04D-2BF751087CBD}.OPT|Win32.ActiveCfg = OPT|Win32
+		{C8A097BB-3C48-4933-A04D-2BF751087CBD}.OPT|Win32.Build.0 = OPT|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
