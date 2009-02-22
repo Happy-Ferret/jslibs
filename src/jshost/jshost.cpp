@@ -150,6 +150,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	bool unsafeMode = false;
 	bool compileOnly = false;
 	size_t maybeGCInterval = 30; // 30 seconds
+	int camelCase = 0; // 0:default, 1:lower, 2:upper
 
 	char** argumentVector = argv;
 	for ( argumentVector++; argumentVector[0] && argumentVector[0][0] == '-'; argumentVector++ )
@@ -173,10 +174,16 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 			case 'c':
 				compileOnly = true;
 				break;
+			case 'l':
+				argumentVector++;
+				camelCase = atoi( *argumentVector );
+				break;
 	}
 
 	JSContext *cx = CreateHost(maxMem, maxAlloc, maybeGCInterval);
 	HOST_MAIN_ASSERT( cx != NULL, "unable to create a javascript execution context" );
+
+	GetHostPrivate(cx)->camelCase = camelCase;
 
 	HOST_MAIN_ASSERT( InitHost(cx, unsafeMode, HostStdout, HostStderr, NULL), "unable to initialize the host." );
 

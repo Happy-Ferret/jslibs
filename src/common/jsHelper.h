@@ -66,6 +66,7 @@ struct HostPrivate {
 	jsid Matrix44GetId;
 	jsid BufferGetId;
 	jsid StreamReadId;
+	int camelCase;
 };
 
 inline HostPrivate* GetHostPrivate( JSContext *cx ) { // (TDB) use the runtime to store private data !

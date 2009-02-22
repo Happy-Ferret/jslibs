@@ -146,6 +146,21 @@ struct JSLIBS_ConstIntegerSpec {
 
 #define REVISION(REV) (_revision = INT_TO_JSVAL(REV));
 
+
+inline char *_NormalizeFunctionName( const char *name ) {
+
+	char *buf = strdup(name);
+	buf[0] = tolower(buf[0]);
+	return buf;
+}
+
+inline void _NormalizeFunctionNames( JSFunctionSpec *functionSpec ) {
+
+	for ( JSFunctionSpec *it = functionSpec; it && it->name; it++ )
+		it->name = _NormalizeFunctionName(it->name);
+}
+
+
 // static definition
 #define DECLARE_STATIC() \
 	JSBool InitializeStatic(JSContext *cx, JSObject *obj);
@@ -165,6 +180,9 @@ struct JSLIBS_ConstIntegerSpec {
 	jsval _revision = JSVAL_VOID;
 
 #define END_STATIC \
+	if ( GetHostPrivate(cx)->camelCase == 1 ) { \
+		_NormalizeFunctionNames(_staticFunctionSpec); \
+	} \
 	if ( _staticFunctionSpec != NULL ) JS_DefineFunctions(cx, obj, _staticFunctionSpec); \
 	if ( _staticPropertySpec != NULL ) JS_DefineProperties(cx, obj, _staticPropertySpec); \
 	if ( _constIntegerSpec != NULL ) { \
@@ -226,6 +244,10 @@ static JSBool RemoveClass( JSContext *cx, JSClass *cl ) {
 		jsval _revision = JSVAL_VOID;
 
 #define END_CLASS \
+		if ( GetHostPrivate(cx)->camelCase == 1 ) { \
+			_NormalizeFunctionNames(_functionSpec); \
+			_NormalizeFunctionNames(_staticFunctionSpec); \
+		} \
 		*_prototype = JS_InitClass(cx, obj, *_parentPrototype, _class, _constructor, 0, _propertySpec, _functionSpec, _staticPropertySpec, _staticFunctionSpec); \
 		JSObject *dstObj = _constructor ? JS_GetConstructor(cx, *_prototype) : *_prototype; \
 		if ( _constIntegerSpec != NULL ) { \
