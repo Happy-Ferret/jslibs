@@ -1,7 +1,5 @@
 .\src\win32\config.msvc:
-	cd .\src\win32 && \
-	cscript configure.js \
-    cruntime="$(MFLAGS) $(CFLAGS)" \
+	cd .\src\win32 && cscript configure.js cruntime="$(MFLAGS) $(CFLAGS)" \
     trio=no \
     threads=no \
     ftp=no \
@@ -33,9 +31,9 @@
     python=no \
     compiler=msvc \
     static=yes \
-!IF "$(BUILD)" == "debug"
-	debug=yes \
-!ENDIF
+#!IF "$(BUILD)" == "DBG"
+#	debug=yes \
+#!ENDIF
     lib=..\..\..\zlib\src\lib \
     include=..\..\..\zlib\src
 

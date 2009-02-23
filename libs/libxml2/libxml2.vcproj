@@ -24,9 +24,9 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake -nologo -f makefile.mak OUTPUT=&quot;$(OutDir)\$(TargetFileName)&quot; all"
-				ReBuildCommandLine="nmake -nologo -f makefile.mak OUTPUT=&quot;$(OutDir)\$(TargetFileName)&quot; clean all"
-				CleanCommandLine="nmake -nologo -f makefile.mak OUTPUT=&quot;$(OutDir)\$(TargetFileName)&quot; clean"
+				BuildCommandLine="nmake -nologo -f makefile.mak OUTPUT=&quot;$(OutDir)\$(TargetFileName)&quot; BUILD=&quot;$(ConfigurationName)&quot; all"
+				ReBuildCommandLine="nmake -nologo -f makefile.mak OUTPUT=&quot;$(OutDir)\$(TargetFileName)&quot; BUILD=&quot;$(ConfigurationName)&quot; clean all"
+				CleanCommandLine="nmake -nologo -f makefile.mak OUTPUT=&quot;$(OutDir)\$(TargetFileName)&quot; BUILD=&quot;$(ConfigurationName)&quot; clean"
 				Output="$(ConfigurationName)\libxml2.lib"
 				PreprocessorDefinitions=""
 				IncludeSearchPath=""
@@ -46,9 +46,9 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake -nologo -f makefile.mak OUTPUT=&quot;$(OutDir)\$(TargetFileName)&quot; all"
-				ReBuildCommandLine="nmake -nologo -f makefile.mak OUTPUT=&quot;$(OutDir)\$(TargetFileName)&quot; clean all"
-				CleanCommandLine="nmake -nologo -f makefile.mak OUTPUT=&quot;$(OutDir)\$(TargetFileName)&quot; clean"
+				BuildCommandLine="nmake -nologo -f makefile.mak OUTPUT=&quot;$(OutDir)\$(TargetFileName)&quot; BUILD=&quot;$(ConfigurationName)&quot; all"
+				ReBuildCommandLine="nmake -nologo -f makefile.mak OUTPUT=&quot;$(OutDir)\$(TargetFileName)&quot; BUILD=&quot;$(ConfigurationName)&quot; clean all"
+				CleanCommandLine="nmake -nologo -f makefile.mak OUTPUT=&quot;$(OutDir)\$(TargetFileName)&quot; BUILD=&quot;$(ConfigurationName)&quot; clean"
 				Output="$(ConfigurationName)\libxml2.lib"
 				PreprocessorDefinitions=""
 				IncludeSearchPath=""
