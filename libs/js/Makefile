@@ -1,9 +1,9 @@
 include ../subdirs.mk
 
 ifeq ($(BUILD),dbg)
-	_CONFIGURE_OPTIONS=--enable-debug --disable-optimize
+	_CONFIGURE_OPTIONS = --enable-debug --disable-optimize
 else
-	_CONFIGURE_OPTIONS=--enable-strip
+	_CONFIGURE_OPTIONS = --enable-optimize --enable-strip
 endif
 
 ifeq ($(BITS),64)
@@ -12,8 +12,7 @@ else
 	_CFLAGS += -m32
 endif
 
-TARGET_FILES=$(INT_DIR)libmozjs.so
-# $(INT_DIR)jsautocfg.h
+TARGET_FILES=$(INT_DIR)dist/bin/*.{so,dll}
 
 ./src/configure:
 	cd ./src/ && ( autoconf2.13 || autoconf-2.13 )

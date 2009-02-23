@@ -5,8 +5,11 @@ endif
 BUILD?=opt
 BITS?=32
 
-# INT_DIR (intermediate directory) may not be used by the Makefile, it's just a helper. It's up to the Makefile to set the TARGET_FILES variable
-INT_DIR=$(shell uname)_$(BUILD)_$(BITS)/
+ifeq ($(shell uname -o),Msys)
+	INT_DIR=Win32_$(BUILD)/
+else
+	INT_DIR=$(shell uname)_$(BUILD)_$(BITS)/
+endif
 
 .PHONY: $(MAKECMDGOALS)
 
@@ -17,7 +20,7 @@ $(DEST_DIR):
 	mkdir -p $(DEST_DIR)
 
 copy: $(DEST_DIR)
-	cp $(TARGET_FILES) $(DEST_DIR)
+	[ -n "$(DEST_DIR)" ] && cp $(TARGET_FILES) $(DEST_DIR)
 
 clean::
 	echo clearing $(DEST_DIR)
