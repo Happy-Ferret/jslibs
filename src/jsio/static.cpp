@@ -262,7 +262,7 @@ DEFINE_FUNCTION( IsReadable ) {
 }
 
 /**doc
- * $BOOL $INAME()
+ * $BOOL $INAME( _descriptor_ )
   Returns true if the _descriptor_ can be write without blocking.
 **/
 DEFINE_FUNCTION( IsWritable ) {

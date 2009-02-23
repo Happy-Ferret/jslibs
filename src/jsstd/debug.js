@@ -1,12 +1,29 @@
 LoadModule('jsstd');
 LoadModule('jsio');
 
+print('test');
+
+var m = {__proto__:null};
+m.__parent__ = 123;
+m.foo = 456;
+
+delete m.__parent__;
+delete m.foo;
+
+Print(m.__parent__); //123
+Print(m.foo); // undefiend
+
+
+Print('\n\n');
+
+//Halt(); /////////////////////////////////////////////////////////////////////
+
 var f = new Function("	Print( SandboxEval('Math') == Math )")
 
 f()
 
 
-Halt(); /////////////////////////////////////////////////////////////////////
+//Halt(); /////////////////////////////////////////////////////////////////////
 
 var xdrData = XdrEncode(Blob("testxxx"));
 
@@ -15,7 +32,7 @@ var val = XdrDecode(xdrData);
 Print( val.length );
 
 
-Halt(); /////////////////////////////////////////////////////////////////////
+//Halt(); /////////////////////////////////////////////////////////////////////
 
 var m = new Map([1,2,3,4]);
 

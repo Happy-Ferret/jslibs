@@ -2,8 +2,9 @@ LoadModule('jsstd');
 LoadModule('jsstd');
 LoadModule('jsio');
 
-var f = new Function("	var b = new Blob('ABCDEF'); var s = 'ABCDEF'; 	Print( b.substring(-6) == s.substring(-6)) ");
-f();
+var s = new Stream('');
+
+print( s.read );
 
 
 

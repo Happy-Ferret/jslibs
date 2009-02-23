@@ -16,6 +16,8 @@
 #define _JSNAMES_H_
 
 #define NAME_CONFIGURATION_OBJECT "_configuration"
+#define NAME_CONFIGURATION_STDERR "stderr"
+#define NAME_CONFIGURATION_STDOUT "stdout"
 
 #define NAME_GLOBAL_SCRIPT_HOST_PATH "scripthostpath"
 #define NAME_GLOBAL_SCRIPT_HOST_NAME "scripthostname"
