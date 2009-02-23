@@ -24,10 +24,10 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake -nologo -f makefile.mak OUTPUT=&quot;$(OutDir)\$(TargetFileName)&quot; BUILD=&quot;$(ConfigurationName)&quot; all"
-				ReBuildCommandLine="nmake -nologo -f makefile.mak OUTPUT=&quot;$(OutDir)\$(TargetFileName)&quot; BUILD=&quot;$(ConfigurationName)&quot; clean all"
-				CleanCommandLine="nmake -nologo -f makefile.mak OUTPUT=&quot;$(OutDir)\$(TargetFileName)&quot; BUILD=&quot;$(ConfigurationName)&quot; clean"
-				Output="$(ConfigurationName)\libxml2.lib"
+				BuildCommandLine="nmake -nologo -f makefile.mak all BUILD=&quot;$(ConfigurationName)&quot; DIR=&quot;$(TargetDir)&quot; FILE=&quot;$(TargetFileName)&quot;"
+				ReBuildCommandLine="nmake -nologo -f makefile.mak BUILD=&quot;$(ConfigurationName)&quot; TARGET_DIR=&quot;$(TargetDir)&quot; TARGET_FILE=&quot;$(TargetFileName)&quot; clean all"
+				CleanCommandLine="nmake -nologo -f makefile.mak BUILD=&quot;$(ConfigurationName)&quot; TARGET_DIR=&quot;$(TargetDir)&quot; TARGET_FILE=&quot;$(TargetFileName)&quot; clean"
+				Output="$(OutDir)\libxml2.lib"
 				PreprocessorDefinitions=""
 				IncludeSearchPath=""
 				ForcedIncludes=""
@@ -46,10 +46,10 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake -nologo -f makefile.mak OUTPUT=&quot;$(OutDir)\$(TargetFileName)&quot; BUILD=&quot;$(ConfigurationName)&quot; all"
-				ReBuildCommandLine="nmake -nologo -f makefile.mak OUTPUT=&quot;$(OutDir)\$(TargetFileName)&quot; BUILD=&quot;$(ConfigurationName)&quot; clean all"
-				CleanCommandLine="nmake -nologo -f makefile.mak OUTPUT=&quot;$(OutDir)\$(TargetFileName)&quot; BUILD=&quot;$(ConfigurationName)&quot; clean"
-				Output="$(ConfigurationName)\libxml2.lib"
+				BuildCommandLine="nmake -nologo -f makefile.mak BUILD=&quot;$(ConfigurationName)&quot; TARGET=&quot;$(TargetPath)&quot; all"
+				ReBuildCommandLine="nmake -nologo -f makefile.mak BUILD=&quot;$(ConfigurationName)&quot; TARGET_DIR=&quot;$(TargetDir)&quot; TARGET_FILE=&quot;$(TargetFileName)&quot; clean all"
+				CleanCommandLine="nmake -nologo -f makefile.mak BUILD=&quot;$(ConfigurationName)&quot; TARGET_DIR=&quot;$(TargetDir)&quot; TARGET_FILE=&quot;$(TargetFileName)&quot; clean"
+				Output="$(OutDir)\libxml2.lib"
 				PreprocessorDefinitions=""
 				IncludeSearchPath=""
 				ForcedIncludes=""

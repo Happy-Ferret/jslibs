@@ -42,8 +42,9 @@ configure: .\src\win32\config.msvc
 clean::
 	-cd .\src\win32 && $(MAKE) -f Makefile.msvc distclean
 	-del .\src\win32\config.msvc
-	-del "$(OUTPUT)"
-	
+	-del "$(DIR)$(FILE)"
+
 all:: configure
 	cd .\src\win32 && $(MAKE) -f Makefile.msvc libxmla
-	copy .\src\win32\bin.msvc\libxml2_a.lib "$(OUTPUT)"
+	mkdir $(DIR)
+	copy .\src\win32\bin.msvc\libxml2_a.lib $(DIR)$(FILE)
