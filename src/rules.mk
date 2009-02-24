@@ -20,6 +20,8 @@ else
 endif
 
 LDFLAGS += -Wl,-Bdynamic -L../../libs/js/$(INT_DIR) -lmozjs
+# -static-libgcc -Wl,-Bstatic,-lstdc++
+#,-lgcc_s
 
 ifeq ($(BITS),64)
 	CFLAGS += -m64
