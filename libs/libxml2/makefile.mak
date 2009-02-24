@@ -39,12 +39,12 @@
 
 configure: .\src\win32\config.msvc
 
-clean::
+clean:
 	-cd .\src\win32 && $(MAKE) -f Makefile.msvc distclean
 	-del .\src\win32\config.msvc
-	-del "$(DIR)$(FILE)"
+	-del "$(TARGET_DIR)\$(TARGET_FILE)"
 
-all:: configure
+all: configure
 	cd .\src\win32 && $(MAKE) -f Makefile.msvc libxmla
-	mkdir $(DIR)
-	copy .\src\win32\bin.msvc\libxml2_a.lib $(DIR)$(FILE)
+	-mkdir "$(TARGET_DIR)"
+	copy .\src\win32\bin.msvc\libxml2_a.lib "$(TARGET_DIR)\$(TARGET_FILE)"
