@@ -19,6 +19,9 @@ var api = {
 
 	TBD: function(cx, item) {
 
+		cx.center = '<b><font color="red">'+cx.center+'</font></b>';
+
+		// log the issue
 		var offset = cx.left.length;
 		Print('TBD: ' + item.filePath + ':' + (CountStr('\n', item.source.substring(0, item.followingSourceTextStart - item.text.length + offset))+1), '\n');
 	},
@@ -30,16 +33,22 @@ var api = {
 	},
 
 	$H6: function(cx, item) { cx.center = '====== '+ReadEol(cx)+': ======' },
-	$H5: function(cx, item) { cx.center = '===== '+ReadEol(cx)+': =====' },
-	$H4: function(cx, item) { cx.center = '==== '+ReadEol(cx)+': ====' },
-	$H3: function(cx, item) { cx.center = '=== '+ReadEol(cx)+': ===' }, // properties & methods
+	$H5: function(cx, item) { cx.center = '===== '+ReadEol(cx)+': =====' }, // notes, warnings
+	$H4: function(cx, item) { cx.center = '==== '+ReadEol(cx)+': ====' },  // properties & methods items
+	$H3: function(cx, item) { cx.center = '=== '+ReadEol(cx)+': ===' }, // properties & methods groups
 	$H2: function(cx, item) { cx.center = '== '+ReadEol(cx)+': ==' }, // class & static
 	$H1: function(cx, item) { cx.center = '= '+ReadEol(cx)+': =' }, // module
 
 
 	$H: function(cx, item) {
 
-		cx.center = '===== '+ReadEol(cx)+': =====';
+		var eol = ReadEol(cx)
+		switch (eol) {
+			case 'beware':
+				eol = '<b><font color="red">'+eol+'</font></b>';
+				break;
+		}
+		cx.center = '===== '+eol+': =====';
 	},
 
 
@@ -63,16 +72,15 @@ var api = {
 				
 				 var identifierName = res[2];
 				 
-				 if ( res[1].indexOf('PROPERTY') != -1 && ( identifierName.indexOf('Setter') != -1 || identifierName.indexOf('Getter') != -1 ) ) {
-				 	
+				 if ( res[1].indexOf('PROPERTY') != -1 && ( identifierName.indexOf('Setter') != -1 || identifierName.indexOf('Getter') != -1 ) )
 				 	identifierName = identifierName.substring(0, identifierName.length - 6);
-				 }
-
 				 if ( identifierName[identifierName.length-1] == '_' )
 					  identifierName = identifierName.substring(0, identifierName.length - 1);
 				
 				cx.center = '*'+identifierName+'*';
 			}
+			if ( item.followingSourceTextStart[0] = '(' ) // it is a function definition doc. eg. $INAME( flags [, mode] )
+				cx.center += StringReplacer({ '[':'`[`', ']':'`]`' })(ReadEol(cx)); // avoid wiki to transform optional arguments (eg. [, mode]) into a link.
 		} else
 			cx.center = '???';
 	},
@@ -107,7 +115,7 @@ var api = {
 	
 	$FILE_TOC: function(cx, item) {
 	
-		cx.center = '{{{\n<wiki:toc max_depth="2"/>\n}}}'; // '+(ReadArg(cx)||'1')+'
+		cx.center = '<wiki:toc max_depth="4"/>'; // '+(ReadArg(cx)||'1')+'
 	},
 
 	$MODULE_FOOTER: function(cx, item) {
@@ -123,11 +131,10 @@ var api = {
 
 	$ARG:function(cx, item) {
 	
-		var type = ReadArg(cx);
+		var type = ReadArg(cx); // (TBD) process api here too to support $INT, ...
 		var name = ReadArg(cx);
 		cx.center = '# ,,'+type+',, _'+name+'_';
 	},
-
 
 	$RET:function(cx, item) {
 	
@@ -160,8 +167,8 @@ var api = {
 	$OBJ:',,Object,,',
 	$ARRAY:',,Array,,',
 	$BOOL:',,boolean,,',
-	$UNDEF:',,`undefined`,,',
-	$ENUM:',,`enum`,,',
+	$UNDEF:',,undefined,,',
+	$ENUM:',,enum,,',
 	$VOID:'',
 	$THIS:',,this,,',
 
@@ -170,7 +177,7 @@ var api = {
 		cx.center = '`'+ReadArg(cx)+'`';
 	},
 
-	$LF:'{{{\n}}}',
+	$LF:'<br/>',
 
    $SET: function(cx, item) {
 
@@ -188,10 +195,9 @@ var api = {
 
 };
 
-var apiRe = new RegExp([RegQuote(p) for ( p in api ) ].join('|'), 'g');
 
-
-
+// eg. StringReplacer({aa:11})('xxaaxx'); returns 'xx11xx'
+function StringReplacer(conversionObject) function(s) s.replace(new RegExp([k.replace(/(\/|\.|\*|\+|\?|\||\(|\)|\[|\]|\{|\}|\\)/g, "\\$1") for (k in conversionObject)].join('|'), 'g'), function(str) conversionObject[str]);
 
 function ParseArguments(str) {
 
@@ -225,7 +231,12 @@ function RegQuote(str) {
 }
 
 
-function ExpandText(str, api, apiRe, item) {
+function ExpandText(str, api, item) {
+	
+	if ( arguments.callee.apiRe )
+		var apiRe = arguments.callee.apiRe;
+	else
+		var apiRe = arguments.callee.apiRe = new RegExp([RegQuote(p) for ( p in api ) ].join('|'), 'g');
 
     var cx = {left: '', center: '', right: str};
     for(;;) {
@@ -336,10 +347,8 @@ function CreateDocItemList(startDir, api) {
 				delete attr[''];
 				
 				// cleanup item.text
-				
-			
-				
-				item.text = ExpandText(item.text, api, apiRe, item);
+
+				item.text = ExpandText(item.text, api, item);
 			}
 		}
 	});
