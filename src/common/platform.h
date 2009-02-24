@@ -302,6 +302,7 @@ inline unsigned int JLSessionId() {
 #include <sched.h>
 #include <semaphore.h>
 #include <errno.h>
+#include <string.h>
 #endif
 
 
