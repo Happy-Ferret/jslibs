@@ -16,7 +16,7 @@ export DEST_DIR=$TOP/Win32_$BUILD/
 
 LOGFILE=$TOP/build_$BUILD.log
 
-echo $BUILD_METHOD $BUILD
+echo action:$BUILD_METHOD config:$BUILD
 
 date > $LOGFILE
 echo "$BUILD_METHOD $BUILD" >> $LOGFILE
