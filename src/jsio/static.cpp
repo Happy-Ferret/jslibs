@@ -369,7 +369,7 @@ DEFINE_FUNCTION( GetEnv ) {
    Calls to $INAME() may use a lot of CPU on some platforms.
    Some platforms may block for up to a few seconds while they accumulate some noise.
    Busy machines generate lots of noise, but care is advised when using $INAME() frequently in your application.
-  $H note
+  $H underlying API
    [http://developer.mozilla.org/en/docs/PR_GetRandomNoise NSPR API]
 **/
 DEFINE_FUNCTION( GetRandomNoise ) {
@@ -428,7 +428,7 @@ DEFINE_FUNCTION( hton ) {
   Tests the value of the semaphore.
   If the value of the semaphore is > 0, the value of the semaphore is decremented and the function returns.
   If the value of the semaphore is 0, the function blocks until the value becomes > 0, then the semaphore is decremented and the function returns.
-  ===== note: =====
+  $H note
   The "test and decrement" operation is performed atomically.
 **/
 DEFINE_FUNCTION_FAST( WaitSemaphore ) {
@@ -523,7 +523,7 @@ DEFINE_FUNCTION_FAST( PostSemaphore ) {
    Print( stdout.Read(), '\n' );
    stdin.Close();
    stdout.Close();
-   }}}  
+   }}}
 **/
 /*
 // Doc. http://www.mozilla.org/projects/nspr/reference/html/prprocess.html#24535
@@ -845,7 +845,7 @@ DEFINE_PROPERTY_SETTER( currentWorkingDirectory ) {
 DEFINE_PROPERTY( pathSeparator ) {
 
 	if ( *vp == JSVAL_VOID ) {
-		
+
 		JSString *str = JS_InternString(cx, PATH_SEPARATOR_STRING);
 		J_S_ASSERT_ALLOC( str );
 		*vp = STRING_TO_JSVAL( str );
@@ -865,7 +865,7 @@ DEFINE_PROPERTY( pathSeparator ) {
 DEFINE_PROPERTY( listSeparator ) {
 
 	if ( *vp == JSVAL_VOID ) {
-		
+
 		JSString *str = JS_InternString(cx, LIST_SEPARATOR_STRING);
 		J_S_ASSERT_ALLOC( str );
 		*vp = STRING_TO_JSVAL( str );

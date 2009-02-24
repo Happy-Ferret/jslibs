@@ -317,7 +317,7 @@ DEFINE_FUNCTION( Encrypt ) { // ( data [, lparam] )
   ===== note: =====
    The lparam variable is an additional system specific tag that can be applied to the encoding.
    This is useful to identify which system encoded the message.
-   If no variance is desired then lparam can be ignored or set to <undefined>.
+   If no variance is desired then lparam can be ignored or set to $UNDEF.
    = =
    If it does not match what was used during encoding this function will not decode the packet.
    = =

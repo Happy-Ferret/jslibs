@@ -20,6 +20,14 @@
 /**doc
 $CLASS_HEADER
  $SVN_REVISION $Revision$
+ You cannot construct this class.
+ The aim of this class is to provide a way to access Descriptor properties and methods from an existing pipe.
+  $H exemple
+   {{{
+   var p = new Process( 'c:\\windows\\System32\\cmd.exe', ['/c', 'dir', 'c:'] );
+   p.Wait();
+   Print( p.stdout.Read() );
+   }}}
 **/
 BEGIN_CLASS( Pipe )
 
@@ -28,39 +36,14 @@ DEFINE_FINALIZE() {
 	FinalizeDescriptor(cx, obj); // defined in descriptor.cpp
 }
 
-/*
-DEFINE_CONSTRUCTOR() {
-
-	J_S_ASSERT_CONSTRUCTING( _class );
-	J_S_ASSERT_ARG_MIN(1);
-	JS_SetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, J_ARG(1) );
-	JS_SetPrivate(cx, obj, NULL); // (TBD) optional ?
-	return JS_TRUE;
-}
-*/
-
-
 CONFIGURE_CLASS
 
 	REVISION(SvnRevToInt("$Revision$"))
 	HAS_PROTOTYPE( prototypeDescriptor )
 
-//	HAS_CONSTRUCTOR
 	HAS_FINALIZE
 
 	HAS_PRIVATE
 	HAS_RESERVED_SLOTS( 1 ) // SLOT_JSIO_DESCRIPTOR_IMPORTED
-
-	BEGIN_FUNCTION_SPEC
-	END_FUNCTION_SPEC
-
-	BEGIN_PROPERTY_SPEC
-	END_PROPERTY_SPEC
-
-	BEGIN_STATIC_PROPERTY_SPEC
-	END_STATIC_PROPERTY_SPEC
-
-	BEGIN_CONST_DOUBLE_SPEC
-	END_CONST_DOUBLE_SPEC
 
 END_CLASS

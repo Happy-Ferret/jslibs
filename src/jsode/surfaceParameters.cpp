@@ -57,27 +57,27 @@ DEFINE_CONSTRUCTOR() {
 
 /**doc
  * $REAL *mu*
- 
+
  * $REAL *mu2*
- 
+
  * $REAL *bounce*
- 
+
  * $REAL *bounceVel*
- 
+
  * $REAL *softERP*
- 
+
  * $REAL *softCFM*
- 
+
  * $REAL *motion1*
- 
+
  * $REAL *motion2*
- 
+
  * $REAL *slip1*
- 
+
  * $REAL *slip2*
- 
+
  $H note
-  Use <undefined> as value to reset the property.
+  Use $UNDEF as value to reset the property.
 
 **/
 
@@ -90,7 +90,7 @@ DEFINE_PROPERTY( surfaceSetter ) {
 	ode::dSurfaceParameters *surface = (ode::dSurfaceParameters*)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE(surface); // (TBD) check if NULL is meaningful for joints !
 	J_S_ASSERT_NUMBER( *vp );
-	
+
 	ode::dReal value;
 	bool set;
 	if ( JSVAL_IS_VOID( *vp ) ) {
@@ -101,7 +101,7 @@ DEFINE_PROPERTY( surfaceSetter ) {
 		set = false;
 		value = JSValToODEReal(cx, *vp);
 	}
-	
+
 	switch(JSVAL_TO_INT(id)) {
 		case mu:
 			if ( set )

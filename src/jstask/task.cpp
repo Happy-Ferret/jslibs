@@ -54,9 +54,8 @@ $CLASS_HEADER
  * Decoding compressed Audio data.
  * Complex query on large database.
 
-$H note
- Creating new tasks are expensive operating system calls. Tasks may have to be reused over the time.
-
+ $H note
+  Creating new tasks are expensive operating system calls. Tasks may have to be reused over the time.
 **/
 BEGIN_CLASS( Task )
 

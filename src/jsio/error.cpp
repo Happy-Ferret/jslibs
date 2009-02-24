@@ -18,7 +18,7 @@
 
 /**doc
 $CLASS_HEADER
- $SVN_REVISION $Revision$
+ $SVN_REVISION $Revision:$
  You cannot construct this class.
  Its aim is to throw as an exception on any NSPR runtime error.
 **/
@@ -77,7 +77,7 @@ DEFINE_HAS_INSTANCE() { // see issue#52
 
 
 DEFINE_XDR() {
-	
+
 	if ( xdr->mode == JSXDR_ENCODE ) {
 
 		jsval tmp;

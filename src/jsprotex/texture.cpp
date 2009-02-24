@@ -2073,7 +2073,7 @@ DEFINE_FUNCTION_FAST( Resize ) {
    The convolution is a complex transformation that could be very slow with big kernels.
   $H note
    Because convolution apples a factor to each point of the texture,
-	it is recomanded to normalize the levels of the texture using Mult() or NormalizeLevels()
+   it is recomanded to normalize the levels of the texture using Mult() or NormalizeLevels()
   $H example
   {{{
   const kernelGaussian = [0,3,10,3,0, 3,16,26,16,3, 10,26,26,26,10, 3,16,26,16,3, 0,3,10,3,0 ];

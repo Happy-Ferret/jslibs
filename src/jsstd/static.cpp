@@ -589,7 +589,7 @@ DEFINE_FUNCTION_FAST( TimeCounter ) {
   Returns the string that is _count_ times _str_.
   $H example
    {{{
-	Print( StringRepeat('foo', 3) ); // prints: foofoofoo
+   Print( StringRepeat('foo', 3) ); // prints: foofoofoo
    }}}
 **/
 DEFINE_FUNCTION_FAST( StringRepeat ) {

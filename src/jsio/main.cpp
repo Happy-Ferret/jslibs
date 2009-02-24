@@ -33,6 +33,7 @@ static PRInt32 instanceCount = 0;
 $MODULE_HEADER
  This module is based on Netscape Portable Runtime (NSPR) that provides a platform-neutral API for system level and libc like functions.
  NSPR API is used in the Mozilla client, many of Netscape/AOL/iPlanet's and other software offerings.
+ $FILE_TOC
 **/
 
 /**doc t:footer
@@ -42,7 +43,7 @@ $MODULE_FOOTER
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
 	if ( instanceCount == 0 && !PR_Initialized() )
-		PR_Init(PR_SYSTEM_THREAD, PR_PRIORITY_NORMAL, 0); // NSPR ignores threads of type PR_SYSTEM_THREAD when determining when a call to PR_Cleanup should return. 
+		PR_Init(PR_SYSTEM_THREAD, PR_PRIORITY_NORMAL, 0); // NSPR ignores threads of type PR_SYSTEM_THREAD when determining when a call to PR_Cleanup should return.
 	PR_AtomicIncrement(&instanceCount);
 
 	_unsafeMode = GetHostPrivate(cx)->unsafeMode;

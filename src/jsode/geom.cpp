@@ -147,7 +147,7 @@ DEFINE_PROPERTY( body ) {
  * *offset*
   Sets the position and rotation of the geometry to its center of mass.
   = =
-  Use <undefined> value to reset the geometry offset.
+  Use $UNDEF value to reset the geometry offset.
 **/
 
 // setting undefined means clear the offset
@@ -209,7 +209,7 @@ DEFINE_PROPERTY( tansformation ) {
 		J_S_ASSERT( ReadMatrix != NULL, "Invalid matrix interface." );
 		ReadMatrix( cx, srcObj, (float**)&m);
 		J_S_ASSERT( *m != NULL, "Invalid matrix." );
-*/		
+*/
 		ode::dMatrix3 m3 = { m[0], m[4], m[8], 0, m[1], m[5], m[9], 0, m[2], m[6], m[10], 0 }; // (TBD) check
 		ode::dGeomSetOffsetRotation(geom, m3);
 		ode::dGeomSetOffsetPosition(geom, m[3], m[7], m[11]);

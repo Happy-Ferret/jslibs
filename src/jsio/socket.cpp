@@ -547,11 +547,11 @@ DEFINE_FUNCTION( TransmitFile ) { // WORKS ONLY ON BLOCKING SOCKET !!!
 /**doc
  * $INAME $READONLY
   Test if a nonblocking connect has completed.
-  Is <true> if the socket is connected.
+  Is $TRUE if the socket is connected.
   = =
-  Is _undefined_ if the operation is still in progress.
+  Is $UNDEF if the operation is still in progress.
   = =
-  Is _false_ if the connection is refused.
+  Is $FALSE if the connection is refused.
 **/
 
 // http://developer.mozilla.org/en/docs/PR_GetConnectStatus

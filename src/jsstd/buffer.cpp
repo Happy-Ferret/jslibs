@@ -772,7 +772,7 @@ DEFINE_FUNCTION( Skip ) { // Skip( amount )
 
 /**doc
  * $STR $INAME( boundaryString [, skip] )
-  Reads the buffer until it match the _boundaryString_, else it returns <undefined>.
+  Reads the buffer until it match the _boundaryString_, else it returns $UNDEF.
   If _skip_ argument is <true>, the _boundaryString_ is skiped from the buffer.
 **/
 DEFINE_FUNCTION( ReadUntil ) {

@@ -94,7 +94,7 @@ JSBool SetProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
    $ARG Function setCallback: called when the property is changed. This include when the property is added.
    $ARG Value auxObject:
   $H note
-   addCallback, delCallback, getCallback, setCallback: can be set to <undefined> value.
+   addCallback, delCallback, getCallback, setCallback: can be set to $UNDEF value.
   $H behavior
    addCallback, delCallback, getCallback, setCallback functions are called according to the operation done on the object.
    These callback functions are called with the following arguments:

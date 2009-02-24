@@ -64,7 +64,7 @@ JSBool NativeInterfaceStreamRead( JSContext *cx, JSObject *obj, char *buf, size_
 	}
 
 	if ( ret == 0 ) { // end of file is reached or the network connection is closed.
-		
+
 		// (TBD) something to do ?
 	}
 
@@ -115,7 +115,7 @@ DEFINE_CONSTRUCTOR() {
 **/
 
 /**doc
- * *Close*()
+ * $INAME()
   Close the descriptor.
 **/
 DEFINE_FUNCTION( Close ) {
@@ -240,10 +240,10 @@ bad:
 
 
 /**doc
- * $VAL *Read*( [amount] )
+ * $VAL $INAME( [amount] )
   Read _amount_ bytes of data from the current descriptor. If _amount_ is ommited, the whole available data is read.
   If the descriptor is exhausted (eof or disconnected), this function returns _undefined_.
-  $H beware	
+  $H beware
    This function returns a Blob or a string literal as empty string.
 **/
 DEFINE_FUNCTION( Read ) {
@@ -276,7 +276,7 @@ DEFINE_FUNCTION( Read ) {
 
 
 /**doc
- * $STR *Write*( data )
+ * $STR $INAME( data )
   If the whole data cannot be written, Write returns that have not be written.
 **/
 DEFINE_FUNCTION( Write ) {
@@ -328,7 +328,7 @@ DEFINE_FUNCTION( Write ) {
 	char *buffer;
 	if ( sentAmount < len ) {
 		//*rval = STRING_TO_JSVAL( JS_NewDependentString(cx, JSVAL_TO_STRING( J_ARG(1) ), sentAmount, len - sentAmount) ); // return unsent data // (TBD) use Blob ?
-		
+
 		buffer = (char*)JS_malloc(cx, len - sentAmount +1);
 		J_S_ASSERT_ALLOC(buffer);
 		buffer[len - sentAmount] = '\0';
@@ -351,7 +351,7 @@ bad_free:
 
 
 /**doc
- * *Sync*()
+ * $INAME()
   Sync any buffered data for a fd to its backing device.
 **/
 DEFINE_FUNCTION( Sync ) {
@@ -371,7 +371,7 @@ bad_ioerror:
 **/
 
 /**doc
- * *available* $READONLY
+ * $INAME $READONLY
   Determine the amount of data in bytes available for reading on the descriptor.
  **/
 DEFINE_PROPERTY( available ) {
@@ -396,7 +396,7 @@ bad_ioerror:
 
 
 /**doc
- * *type* $READONLY
+ * $INAME $READONLY
   see constants.
 **/
 DEFINE_PROPERTY( type ) {
@@ -410,9 +410,9 @@ DEFINE_PROPERTY( type ) {
 
 
 /**doc
- * *closed* $READONLY
+ * $INAME $READONLY
   Is true if the file descriptor has been closed.
-  ===== beware: =====
+  $H beware
    Do not confuse with disconnected.
 **/
 DEFINE_PROPERTY( closed ) {
@@ -427,7 +427,7 @@ DEFINE_PROPERTY( closed ) {
 **/
 
 /**doc
- * *Import*( nativeDescriptor, type )
+ * $INAME( nativeDescriptor, type )
 **/
 DEFINE_FUNCTION( Import ) {
 

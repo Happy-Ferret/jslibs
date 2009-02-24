@@ -53,7 +53,7 @@ void RemoveDbContext(sqlite3 *db) {
 
 			free(QueueGetData(it));
 			QueueRemoveCell(dbContextList, it);
-			return;		
+			return;
 		}
 }
 
@@ -70,7 +70,7 @@ BEGIN_CLASS( Database )
   Creates a new Database object.
   $H arguments
    $ARG string fileName: is the file name of the database, or an empty string for a temporary database.
-    If omitted or <undefined>, an in-memory database is created.
+    If omitted or $UNDEF, an in-memory database is created.
    $ARG enum flags: can be one of the following constant:
     * $CONST READONLY
     * $CONST READWRITE
@@ -162,7 +162,7 @@ DEFINE_FINALIZE() {
 				// (TBD) report the error ?
 			}
 		}
-		
+
 		RemoveDbContext(db);
 		// close the database
 		status = sqlite3_close( db ); // All prepared statements must finalized before sqlite3_close() is called or else the close will fail with a return code of SQLITE_BUSY.
