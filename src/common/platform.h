@@ -552,7 +552,6 @@ inline unsigned int JLSessionId() {
 		*pThread = (JLThreadHandler)0;
 	}
 
-
 // dynamic libraries
 	#if defined XP_WIN
 	typedef HMODULE JLLibraryHandler;
@@ -566,7 +565,8 @@ inline unsigned int JLSessionId() {
 		return LoadLibrary(filename);
 		#elif defined XP_UNIX
 		dlerror();
-		return dlopen( filename, RTLD_LAZY ); // RTLD_NOW
+		void* handler = dlopen( filename, RTLD_LAZY ); // RTLD_NOW
+		return handler;
 		#endif
 	}
 
