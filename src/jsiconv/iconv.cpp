@@ -118,15 +118,15 @@ DEFINE_CALL() {
 	const char *inBuf;
 	size_t inLen;
 
-	if ( pv->wFrom ) {
-
-		J_CHK( JsvalToStringAndLength(cx, &J_ARG(1), &inBuf, &inLen) );
-	} else {
+	if ( pv->wFrom ) { // source is wide.
 
 		JSString *jsstr = JS_ValueToString(cx, J_ARG(1));
 		J_ARG(1) = STRING_TO_JSVAL( jsstr );
 		inLen = JS_GetStringLength(jsstr) * 2;
 		inBuf = (char*)JS_GetStringChars(jsstr);
+	} else {
+
+		J_CHK( JsvalToStringAndLength(cx, &J_ARG(1), &inBuf, &inLen) );
 	}
 
 	const char *inPtr;
@@ -303,3 +303,31 @@ CONFIGURE_CLASS
 	END_STATIC_PROPERTY_SPEC
 
 END_CLASS
+
+
+/**doc
+=== Example 1 ===
+ Convert and convert back a string.
+{{{
+LoadModule('jsstd');
+LoadModule('jsiconv');
+
+var conv = new Iconv('UTF-8', 'ISO-8859-1');
+var invConv = new Iconv('ISO-8859-1', 'UTF-8');
+var converted = conv('été');
+var result = invConv(converted);
+Print( result == 'été','\n' ); // should be true
+}}}
+
+=== Example 2 ===
+ Convert and convert back a string char by char.
+{{{
+var conv = new Iconv('UTF-8', 'ISO-8859-1');
+var invConv = new Iconv('ISO-8859-1', 'UTF-8');
+var converted = conv('été');
+var result = '';
+for each ( var c in converted )
+ result += invConv(c);
+Print( result == 'été','\n' ); // should be true
+}}}
+**/

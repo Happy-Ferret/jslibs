@@ -1,7 +1,14 @@
 LoadModule('jsstd');
 LoadModule('jsiconv');
 
-/*
+
+var conv = new Iconv('UTF-8', 'ISO-8859-1');
+var invConv = new Iconv('ISO-8859-1', 'UTF-8');
+var converted = conv('été');
+var result = invConv(converted);
+Print( result == 'été','\n' );
+
+
 var conv = new Iconv('UTF-8', 'ISO-8859-1');
 var invConv = new Iconv('ISO-8859-1', 'UTF-8');
 var converted = conv('été');
@@ -9,15 +16,8 @@ var result = '';
 for each ( var c in converted )
 	result += invConv(c);
 Print( result == 'été','\n' );
-*/
 
-/*
-var conv = new Iconv('UTF-8', 'ISO-8859-1');
-var invConv = new Iconv('ISO-8859-1', 'UTF-8');
-var converted = conv('été');
-var result = invConv(converted);
-Print( result == 'été','\n' );
-*/
+
 
 /*
 var utf8 = (new Iconv('UTF-8', 'ISO-8859-1'))('été').split('');
@@ -26,5 +26,5 @@ utf8 = utf8.join('');
 Print( (new Iconv('ISO-8859-1', 'UTF-8'))(utf8), '\n' )
 */
 
-var conv = new Iconv('UCS-2-INTERNAL', 'ISO-8859-1', true, true);
-Print( conv('été') );
+//var conv = new Iconv('UCS-2-INTERNAL', 'ISO-8859-1', true, true);
+//Print( conv('été') );
