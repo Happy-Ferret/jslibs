@@ -165,9 +165,9 @@ JSBool SqliteColumnToJsval( JSContext *cx, sqlite3_stmt *pStmt, int iCol, jsval 
 
 /**doc
 $CLASS_HEADER
- $SVN_REVISION $Revision$
+$SVN_REVISION $Revision$
  A Result object is used to store a compiled SQL statement ready to be executed.
- = =
+ $LF
  When a statement has been prepared with Database.*Query* function, you need to execute it ( with *Step* function ) before any data can be read.
  However, some properties (like *columnCount*, ... ) can be read before the first *Step* has been done.
  $H note
@@ -386,7 +386,7 @@ DEFINE_PROPERTY( columnCount ) {
 
 
 /**doc
- * $TYPE Array $INAME $READONLY
+ * $ARRAY $INAME $READONLY
   Hold an [http://developer.mozilla.org/en/docs/Core_JavaScript_1.5_Reference:Objects:Array Array] that contain the index:name of the columns.
   $H example
   {{{
@@ -417,7 +417,7 @@ DEFINE_PROPERTY( columnNames ) {
 
 
 /**doc
- * $TYPE Object $INAME $READONLY
+ * $OBJ $INAME $READONLY
   Hold an [http://developer.mozilla.org/en/docs/Core_JavaScript_1.5_Reference:Objects:Object Object] that contain the name:index of the columns.
   $H example
   {{{
@@ -448,7 +448,7 @@ DEFINE_PROPERTY( columnIndexes ) {
 
 
 /**doc
- * *expired* $READONLY $DEPRECATED
+ * $BOOL $INAME $READONLY $DEPRECATED
   Indicates if the SQL statement must be re-evaluated.
 **/
 DEFINE_PROPERTY( expired ) {

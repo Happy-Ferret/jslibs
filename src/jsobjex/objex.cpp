@@ -13,7 +13,7 @@
 
 /**doc
 $CLASS_HEADER
- $SVN_REVISION $Revision$
+$SVN_REVISION $Revision$
  This class give the ability to spy properties changes. One can listen for add, del, set and set events on the object.
  It is also possible to store an hidden auxiliary value that can be access using ObjEx.Aux( _ObjEx object_ ) static function.
 **/
@@ -189,9 +189,9 @@ obj.foo = 123;
 obj.foo = 456;
 }}}
 prints:
-{{{
+<pre>
 adding foo = 123
-}}}
+</pre>
 
 === Example ===
 

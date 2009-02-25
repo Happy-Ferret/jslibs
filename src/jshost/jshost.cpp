@@ -149,7 +149,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 
 	bool unsafeMode = false;
 	bool compileOnly = false;
-	size_t maybeGCInterval = 30; // 30 seconds
+	size_t maybeGCInterval = 60; // 60 seconds
 	int camelCase = 0; // 0:default, 1:lower, 2:upper
 
 	char** argumentVector = argv;
@@ -286,16 +286,18 @@ The main features are:
   LoadModule is enough, everything else can be added using dynamic loadable modules.
 
 === Command line options ===
- * `-c` <0 or 1> (default = 0)
+ * `-c <0 or 1>` (default = 0)
   Compile-only. The script is compiled but not executed. This is useful to detect syntax errors.
- * `-u` <0 or 1> (default = 0)
+ * `-u <0 or 1>` (default = 0)
   Unsafe-mode is a kind of 'release mode'. If 1, any runtime checks is avoid and warnings display is disabled. This mode allow to increase performances.
- * `-m` <size> (default: no limit)
+ * `-m <size>` (default: no limit)
   Specifies the maximum memory usage of the script in megabytes.
- * `-n`  <size> (default: no limit)
+ * `-n  <size>` (default: no limit)
   Specifies the number of allocated megabytes after which garbage collection is run.
- * `-g` <loops> (default = 8192)
-  This is the frequency at witch the GarbageCollector is launched.
+ * `-g <time>` (default = 60)
+  This is the frequency (in seconds) at witch the GarbageCollector may be launched.
+ * `-l <case>` (default = 0)
+  This is a temporary option that allow to select function name naming. 0:default, 1:lowerCamelCase, 2:UpperCamelCase
 
 === Exit code ===
  * The exit code of jshost is 1 on error. On success, exit code is the last evaluated expression of the script.
@@ -306,6 +308,7 @@ The main features are:
   function Exit(code) {
    throw code;
   }
+  
   Exit(2);
   }}}
 
@@ -313,12 +316,12 @@ The main features are:
  * status *LoadModule*( moduleFileName )
   Loads and initialize the specified module.
   Do not provide the file extension in _moduleFileName_.
-  ===== exemple: =
+  $H exemple
   {{{
   LoadModule('jsstd');
   Print( 'Unsafe mode: '+configuration.unsafeMode, '\n' );
   }}}
-  ===== note: =
+  $H note
   You can avoid LoadModule to use the global object like this:
   {{{
   var std = {};
@@ -331,9 +334,7 @@ The main features are:
 
  * *arguments*
   The command-line arguments ( given after command line options ).
-  {{{
-  }}}
-  Exemple:
+  $H example
   {{{
   for ( var i in arguments ) {
 

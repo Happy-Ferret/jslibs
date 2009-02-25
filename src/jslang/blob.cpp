@@ -65,7 +65,7 @@ inline JSBool BlobBuffer( JSContext *cx, JSObject *blobObject, const char **buff
 
 /**doc
 $CLASS_HEADER
- $SVN_REVISION $Revision$
+$SVN_REVISION $Revision$
 **/
 BEGIN_CLASS( Blob )
 
@@ -235,7 +235,7 @@ DEFINE_FUNCTION_FAST( Free ) {
  * $TYPE Blob $INAME( data [,data1 [,...]] )
   Combines the text of two or more strings and returns a new string.
   $H details
-   [http://developer.mozilla.org/index.php?title=En/Core_JavaScript_1.5_Reference/Global_Objects/String/concat]
+   [http://developer.mozilla.org/index.php?title=En/Core_JavaScript_1.5_Reference/Global_Objects/String/concat Mozilla]
 **/
 DEFINE_FUNCTION_FAST( concat ) {
 
@@ -308,7 +308,7 @@ bad:
    $ARG integer start: location at which to begin extracting characters (an integer between 0 and one less than the length of the string).
    $ARG integer length: the number of characters to extract.
   $H details
-   fc. [http://developer.mozilla.org/index.php?title=En/Core_JavaScript_1.5_Reference/Global_Objects/String/substr]
+   fc. [http://developer.mozilla.org/index.php?title=En/Core_JavaScript_1.5_Reference/Global_Objects/String/substr Mozilla]
 **/
 DEFINE_FUNCTION_FAST( substr ) {
 
@@ -398,7 +398,7 @@ bad:
    $ARG integer indexA: An integer between 0 and one less than the length of the blob.
    $ARG integer indexB: (optional) An integer between 0 and the length of the blob.
   $H details
-   fc. [http://developer.mozilla.org/index.php?title=En/Core_JavaScript_1.5_Reference/Global_Objects/String/substring]
+   fc. [http://developer.mozilla.org/index.php?title=En/Core_JavaScript_1.5_Reference/Global_Objects/String/substring Mozilla]
 **/
 DEFINE_FUNCTION_FAST( substring ) {
 
@@ -488,7 +488,7 @@ bad_free:
    $ARG string searchValue: A string representing the value to search for.
    $ARG integer fromIndex: The location within the calling string to start the search from. It can be any integer between 0 and the length of the string. The default value is 0.
   $H details
-   fc. [http://developer.mozilla.org/index.php?title=En/Core_JavaScript_1.5_Reference/Global_Objects/String/indexOf]
+   fc. [http://developer.mozilla.org/index.php?title=En/Core_JavaScript_1.5_Reference/Global_Objects/String/indexOf Mozilla]
 **/
 DEFINE_FUNCTION_FAST( indexOf ) {
 
@@ -554,7 +554,7 @@ DEFINE_FUNCTION_FAST( indexOf ) {
    $ARG string searchValue: A string representing the value to search for.
    $ARG integer fromIndex: The location within the calling string to start the search from, indexed from left to right. It can be any integer between 0 and the length of the string. The default value is the length of the string.
   $H details
-   fc. [http://developer.mozilla.org/index.php?title=En/Core_JavaScript_1.5_Reference/Global_Objects/String/lastIndexOf]
+   fc. [http://developer.mozilla.org/index.php?title=En/Core_JavaScript_1.5_Reference/Global_Objects/String/lastIndexOf Mozilla]
 **/
 DEFINE_FUNCTION_FAST( lastIndexOf ) {
 
@@ -626,7 +626,7 @@ DEFINE_FUNCTION_FAST( lastIndexOf ) {
  * $STR $INAME( index )
   Returns the specified character from a string.
   $H details
-   fc. [http://developer.mozilla.org/index.php?title=En/Core_JavaScript_1.5_Reference/Global_Objects/String/charAt]
+   fc. [http://developer.mozilla.org/index.php?title=En/Core_JavaScript_1.5_Reference/Global_Objects/String/charAt Mozilla]
 **/
 DEFINE_FUNCTION_FAST( charAt ) {
 
@@ -682,7 +682,7 @@ DEFINE_FUNCTION_FAST( charAt ) {
  * $INT $INAME( index )
   Returns a number indicating the ASCII value of the character at the given index.
   $H details
-   fc. [http://developer.mozilla.org/index.php?title=En/Core_JavaScript_1.5_Reference/Global_Objects/String/charCodeAt]
+   fc. [http://developer.mozilla.org/index.php?title=En/Core_JavaScript_1.5_Reference/Global_Objects/String/charCodeAt Mozilla]
 **/
 DEFINE_FUNCTION_FAST( charCodeAt ) {
 

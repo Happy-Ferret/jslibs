@@ -21,7 +21,7 @@
 
 /**doc
 $CLASS_HEADER Descriptor
- $SVN_REVISION $Revision$
+$SVN_REVISION $Revision$
  Socket class is used to create a non-blocking TCP socket.
 **/
 BEGIN_CLASS( Socket )
@@ -72,11 +72,11 @@ DEFINE_CONSTRUCTOR() {
 /**doc
  * $INAME( [ _what_ ] )
   Shut down part of a full-duplex connection on a socket.
-  = =
+  $LF
   if _what_ is _true_, further receives will be disallowed.
-  = =
+  $LF
   if _what_ is _false_, further sends will be disallowed.
-  = =
+  $LF
   if _what_ is ommited or _undefined_,  further sends and receives will be disallowed
 **/
 DEFINE_FUNCTION( Shutdown ) { // arg[0] =  false: SHUTDOWN_RCV | true: SHUTDOWN_SEND | else it will SHUTDOWN_BOTH
@@ -478,13 +478,13 @@ DEFINE_FUNCTION( RecvFrom ) {
 /**doc
  * $INAME( fileDescriptor [, close [, headers [, timeout]]] )
   Sends a complete file pointed by _fileDescriptor_ across a socket.
-  = =
+  $LF
   _headers_ is a string that contains the headers to send across the socket prior to sending the file.
-  = =
+  $LF
   Optionally, _close_ flag specifies that transmitfile should close the socket after sending the data.
-  = =
+  $LF
   _timeout_ is the time limit for completion of the transmit operation.
-  ===== note: =====
+  $H note
    This function only works with blocking sockets.
 **/
 DEFINE_FUNCTION( TransmitFile ) { // WORKS ONLY ON BLOCKING SOCKET !!!
@@ -548,9 +548,9 @@ DEFINE_FUNCTION( TransmitFile ) { // WORKS ONLY ON BLOCKING SOCKET !!!
  * $INAME $READONLY
   Test if a nonblocking connect has completed.
   Is $TRUE if the socket is connected.
-  = =
+  $LF
   Is $UNDEF if the operation is still in progress.
-  = =
+  $LF
   Is $FALSE if the connection is refused.
 **/
 

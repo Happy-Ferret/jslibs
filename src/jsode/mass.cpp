@@ -21,7 +21,7 @@
 // (TBD) Mass object seems to be useless. Try to merge Body with Mass
 /**doc
 $CLASS_HEADER
- $SVN_REVISION $Revision$
+$SVN_REVISION $Revision$
 **/
 BEGIN_CLASS( Mass )
 

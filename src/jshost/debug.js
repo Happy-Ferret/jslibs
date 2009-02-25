@@ -2,9 +2,9 @@ LoadModule('jsstd');
 LoadModule('jsstd');
 LoadModule('jsio');
 
-var s = new Stream('');
 
-print( s.read );
+
+Print( File._revision );
 
 
 

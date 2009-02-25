@@ -65,7 +65,7 @@ JSBool SetupReadMatrix(JSContext *cx, JSObject *obj) {
 
 /**doc
 $CLASS_HEADER
- $SVN_REVISION $Revision$
+$SVN_REVISION $Revision$
 **/
 BEGIN_CLASS( Geom )
 
@@ -146,7 +146,7 @@ DEFINE_PROPERTY( body ) {
 /**doc
  * *offset*
   Sets the position and rotation of the geometry to its center of mass.
-  = =
+  $LF
   Use $UNDEF value to reset the geometry offset.
 **/
 
@@ -286,11 +286,11 @@ DEFINE_PROPERTY( offsetPositionSetter ) {
  * *impact*(index, thisGeom, againstGeom, position);
   This function is called each time two geometries collide together.
   _index_ is the index of the collision between step and step+1.
-  = =
+  $LF
   _thisGeom_ is the geometry that is colliding (usualy, `this` object).
-  = =
+  $LF
   _againstGeom_ is the geometry against with this geometry is colliding (the other Geom).
-  = =
+  $LF
   $TYPE vec3 _position_ is the position of the impact point in world position.
 **/
 

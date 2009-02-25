@@ -20,7 +20,7 @@
 
 /**doc
 $CLASS_HEADER
- $SVN_REVISION $Revision$
+$SVN_REVISION $Revision$
  This class manages interprocess communication semaphores using a counting semaphore model similar to that which is provided in Unix and Windows platforms.
 **/
 BEGIN_CLASS( Semaphore )
@@ -54,9 +54,9 @@ DEFINE_FINALIZE() {
  * $INAME( name, [ count = 0 ] [, mode = Semaphore.IRUSR | Semaphore.IWUSR ] )
   Create or open a named semaphore with the specified name. If the named semaphore doesn't exist, the named semaphore is created.
   $H exemple
-   {{{
-   TBD
-   }}}
+  {{{
+  TBD
+  }}}
 **/
 DEFINE_CONSTRUCTOR() {
 

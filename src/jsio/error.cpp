@@ -18,7 +18,7 @@
 
 /**doc
 $CLASS_HEADER
- $SVN_REVISION $Revision:$
+$SVN_REVISION $Revision:$
  You cannot construct this class.
  Its aim is to throw as an exception on any NSPR runtime error.
 **/
@@ -27,11 +27,8 @@ BEGIN_CLASS( IoError )
 
 /**doc
 === Properties ===
-
- * int *os* $READONLY
- * int *code* $READONLY
- * string *text* $READONLY
 **/
+
 
 /* see issue#52
 DEFINE_CONSTRUCTOR() {
@@ -41,18 +38,27 @@ DEFINE_CONSTRUCTOR() {
 }
 */
 
+/**doc
+ * $INT $INAME $READONLY
+*/
 DEFINE_PROPERTY( code ) {
 
 	JS_GetReservedSlot( cx, obj, 0, vp );  // (TBD) use the obj.name proprety directly instead of slot 0 ?
 	return JS_TRUE;
 }
 
+/**doc
+ * $INT $INAME $READONLY
+*/
 DEFINE_PROPERTY( os ) {
 
 	JS_GetReservedSlot( cx, obj, 1, vp );  // (TBD) use the obj.name proprety directly instead of slot 1 ?
 	return JS_TRUE;
 }
 
+/**doc
+ * $STR $INAME $READONLY
+*/
 DEFINE_PROPERTY( text ) {
 
 	JS_GetReservedSlot( cx, obj, 0, vp );  // (TBD) use the obj.name proprety directly instead of slot 0 ?

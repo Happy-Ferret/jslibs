@@ -46,7 +46,7 @@ PRIntn FileOpenFlagsFromString( const char *strFlags, int length ) {
 
 /**doc
 $CLASS_HEADER Descriptor
- $SVN_REVISION $Revision$
+$SVN_REVISION $Revision$
 **/
 BEGIN_CLASS( File )
 
@@ -77,9 +77,9 @@ DEFINE_CONSTRUCTOR() {
 /**doc
  * $THIS $INAME( flags [, mode] )
   Open a file for reading, writing, or both.
-  = =
+  $LF
   _flags_ is either a combinaison of open mode constants or a string that contains fopen like flags (+, r, w, a).
-  = =
+  $LF
   The functions returns the file object itself (this), this allows to write things like: `new File('foo.txt').Open('r').Read();`
 **/
 DEFINE_FUNCTION( Open ) {

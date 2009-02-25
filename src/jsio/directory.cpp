@@ -25,7 +25,7 @@
 
 /**doc
 $CLASS_HEADER
- $SVN_REVISION $Revision$
+$SVN_REVISION $Revision$
  This class manages directory I/O Functions.
 **/
 BEGIN_CLASS( Directory )

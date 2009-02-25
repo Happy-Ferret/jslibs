@@ -200,12 +200,10 @@ DumpScope(JSContext *cx, JSObject *obj, FILE *fp)
 
 
 /**doc
- * *DumpStats( [ filename [, type [, ...] ] ] )
+ * $INAME( [ filename [, type [, ...] ] ] )
   type: 'gc' | 'arena' | 'atom' | 'global' | variable
 **/
-
-static JSBool
-_DumpStats(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+DEFINE_FUNCTION( DumpStats )
 {
     uintN i;
     JSString *str;
@@ -290,11 +288,10 @@ _DumpStats(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 
 
 /**doc
- * *DumpHeap( [ filename [, startThing [, thingToFind [, maxDepth [, thingToIgnore] ] ] ] ] )
+ * $INAME( [ filename [, startThing [, thingToFind [, maxDepth [, thingToIgnore] ] ] ] ] )
   This function in only available in DEBUG mode.
 **/
-static JSBool
-_DumpHeap(JSContext *cx, uintN argc, jsval *vp)
+DEFINE_FUNCTION( DumpHeap )
 {
 
     char *fileName;
@@ -468,11 +465,10 @@ TrapHandler(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval,
 }
 
 /**doc
- * $VOID *Trap( ??? )
+ * $VOID $INAME( ??? )
   TBD
 **/
-static JSBool
-_Trap(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+DEFINE_FUNCTION( Trap )
 {
     JSString *str;
     JSScript *script;
@@ -492,11 +488,10 @@ _Trap(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 }
 
 /**doc
- * *Untrap( ??? )
+ * $INAME( ??? )
   TBD
 **/
-static JSBool
-_Untrap(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+DEFINE_FUNCTION( Untrap )
 {
     JSScript *script;
     int32 i;
@@ -508,11 +503,10 @@ _Untrap(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 }
 
 /**doc
- * *LineToPC*( ??? )
+ * $INAME( ??? )
   TBD
 **/
-static JSBool
-_LineToPC(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+DEFINE_FUNCTION( LineToPC )
 {
     JSScript *script;
     int32 i;
@@ -534,12 +528,10 @@ _LineToPC(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 }
 
 /**doc
- * *PCToLine*( ??? )
+ * $INAME( ??? )
   TBD
 **/
-
-static JSBool
-_PCToLine(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+DEFINE_FUNCTION( PCToLine )
 {
     JSScript *script;
     int32 i;
@@ -555,7 +547,7 @@ _PCToLine(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 }
 
 /**doc
- * $OBJ *Locate( nFrame );
+ * $OBJ $INAME( nFrame );
   Returns the current script name and line number. nFrame is the number of stack frames to go back (0 is the current stack frame).
 **/
 DEFINE_FUNCTION(Locate) {
@@ -586,7 +578,7 @@ DEFINE_FUNCTION(Locate) {
 }
 
 /**doc
- * $OBJ *LocateLine( nFrame );
+ * $OBJ $INAME( nFrame );
   Returns the current script line number. nFrame is the number of stack frames to go back (0 is the current stack frame).
 **/
 DEFINE_FUNCTION(LocateLine) {
@@ -656,11 +648,10 @@ JSBool GCCallTrace(JSContext *cx, JSGCStatus status) {
 }
 
 /**doc
- * *TraceGC( [ filename ] )
+ * $INAME( [ filename ] )
   TBD
 **/
-static JSBool
-_TraceGC(JSContext *cx, uintN argc, jsval *vp)
+DEFINE_FUNCTION_FAST( TraceGC )
 {
 
 	if ( argc > 0 ) { // start GC dump
@@ -807,7 +798,7 @@ bool GetProcInfo( pid_t pid, LinuxProcInfo *pinfo ) {
 
 
 /**doc
- * *currentMemoryUsage*
+ * $INAME
   TBD
 **/
 DEFINE_PROPERTY( currentMemoryUsage ) {
@@ -835,7 +826,7 @@ DEFINE_PROPERTY( currentMemoryUsage ) {
 }
 
 /**doc
- * *peakMemoryUsage*
+ * $INAME
   TBD
 **/
 DEFINE_PROPERTY( peakMemoryUsage ) {
@@ -872,7 +863,7 @@ DEFINE_PROPERTY( peakMemoryUsage ) {
 
 
 /**doc
- * *privateMemoryUsage*
+ * $INAME
   TBD
 **/
 DEFINE_PROPERTY( privateMemoryUsage ) {
@@ -905,7 +896,7 @@ DEFINE_PROPERTY( privateMemoryUsage ) {
 **/
 
 /**doc
- * *gcMallocBytes*
+ * $INAME
   TBD
 **/
 
@@ -924,7 +915,7 @@ DEFINE_PROPERTY( gcMallocBytes ) {
 }
 
 /**doc
- * *gcBytes*
+ * $INAME
   TBD
 **/
 

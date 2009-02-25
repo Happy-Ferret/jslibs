@@ -24,7 +24,7 @@
 
 /**doc
 $CLASS_HEADER
- $SVN_REVISION $Revision: 2212 $
+$SVN_REVISION $Revision: 2212 $
 **/
 BEGIN_CLASS( Process )
 
@@ -43,11 +43,11 @@ DEFINE_FINALIZE() {
   $H note
    The new process inherits the environment of the parent process.
   $H exemple
-   {{{
-   var p = new Process( 'c:\\windows\\System32\\cmd.exe', ['/c', 'dir', 'c:'] );
-   p.Wait();
-   Print( p.stdout.Read() );
-   }}}
+  {{{
+  var p = new Process( 'c:\\windows\\System32\\cmd.exe', ['/c', 'dir', 'c:'] );
+  p.Wait();
+  Print( p.stdout.Read() );
+  }}}
 **/
 DEFINE_CONSTRUCTOR() {
 

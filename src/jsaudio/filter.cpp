@@ -21,6 +21,10 @@ struct Private {
 };
 
 
+/**doc
+$CLASS_HEADER
+$SVN_REVISION $Revision$
+**/
 BEGIN_CLASS( OalFilter )
 
 

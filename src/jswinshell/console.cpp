@@ -21,14 +21,15 @@
 
 /**doc
 $CLASS_HEADER
- $SVN_REVISION $Revision$
+$SVN_REVISION $Revision$
 **/
 BEGIN_CLASS( Console )
 
 /**doc
  * $INAME()
   Creates a new Console object.
-  $H only one console per p.rocess is allowed. the construction fails if the calling process already has a console.
+  $H beware
+   Only one console per process is allowed. The construction fails if the calling process already has a console.
 **/
 DEFINE_CONSTRUCTOR() {
 
@@ -79,7 +80,7 @@ DEFINE_FUNCTION( Close ) {
    $ARG string text
 **/
 DEFINE_FUNCTION( Write ) {
-	
+
 	J_S_ASSERT_ARG_MIN( 1 );
 	HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
 	if ( hStdout == NULL )
@@ -103,7 +104,7 @@ DEFINE_FUNCTION( Write ) {
    $ARG integer amount
 **/
 DEFINE_FUNCTION( Read ) {
-	
+
 	J_S_ASSERT_ARG_MIN( 1 );
 	HANDLE hStdin = GetStdHandle(STD_INPUT_HANDLE);
 	if ( hStdin == NULL )

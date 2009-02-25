@@ -17,7 +17,7 @@
 
 /**doc
 $CLASS_HEADER
- $SVN_REVISION $Revision$
+$SVN_REVISION $Revision$
 **/
 BEGIN_CLASS( Template ) // Start the definition of the class. It defines some symbols: _name, _class, _prototype
 

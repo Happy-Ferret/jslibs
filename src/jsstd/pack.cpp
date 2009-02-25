@@ -101,7 +101,7 @@ void Network64ToHost64( void *pval ) {
 
 /**doc
 $CLASS_HEADER
- $SVN_REVISION $Revision$
+$SVN_REVISION $Revision$
  Pack is a class that helps to convert binary data into Integer, Real or String and to write an integer in a binary data string.
  The Pack class manages the system endian or network endian.
 **/
@@ -431,7 +431,7 @@ DEFINE_PROPERTY( systemIntSize ) {
 
 /**doc
  * $INAME $READONLY
-  Is <true> if the system endian is BigEndian else is <false>.
+  Is $TRUE if the system endian is BigEndian else is $FALSE.
 **/
 DEFINE_PROPERTY( systemBigEndian ) {
 

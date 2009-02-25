@@ -73,16 +73,16 @@ JSBool StreamRead( JSContext *cx, JSObject *obj, char *buf, unsigned int *amount
 
 /**doc
 $CLASS_HEADER
- $SVN_REVISION $Revision$
+$SVN_REVISION $Revision$
 **/
 BEGIN_CLASS( Stream )
 
 /**doc
  * $INAME( bufferObject )
   Creates an object that transforms any buffer-like objects into a stream.
-  = =
+  $LF
   buffer-like objects are: string, Blob, and any objects that implements NIBufferGet native interface.
-  = =
+  $LF
   $H note
   When called in a non-constructor context, Object behaves identically.
 **/

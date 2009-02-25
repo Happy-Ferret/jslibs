@@ -21,7 +21,7 @@
 
 /**doc
 $CLASS_HEADER
- $SVN_REVISION $Revision$
+$SVN_REVISION $Revision$
 **/
 BEGIN_CLASS( Joint )
 
@@ -202,8 +202,8 @@ DEFINE_PROPERTY( body2 ) {
 
 /**doc
  * $BOOL $INAME
-  Set to <true> activates the feedback, and <false> to desactivates it.
-  = =
+  Set to $TRUE activates the feedback, and $FALSE to desactivates it.
+  $LF
   Using feedback will allows body1Force, body1Torque, body2Force and body2Torque to be used.
 **/
 DEFINE_PROPERTY( useFeedback ) {

@@ -62,7 +62,7 @@ JSBool SlotGetPrng(JSContext *cx, JSObject *obj, int *prngIndex, prng_state **pr
 
 /**doc
 $CLASS_HEADER
- $SVN_REVISION $Revision$
+$SVN_REVISION $Revision$
 **/
 BEGIN_CLASS( AsymmetricCipher )
 
@@ -178,13 +178,13 @@ DEFINE_CONSTRUCTOR() { // ( cipherName, hashName [, prngObject] [, PKCSVersion] 
 /**doc
  * $INAME( keySize )
   Create RSA public and private keys.
-  = =
+  $LF
   _keySize_ is the size of the key in bits (the value of _keySize_ is the modulus size).
-  ==== note: =====
+  $H note
    supported RSA keySize: from 1024 to 4096 bits
-   = =
+   $LF
    supported ECC keySize: 112, 128, 160, 192, 224, 256, 384, 521, 528 bits
-   = =
+   $LF
    supported DSA keySize (Bits of Security): ???, 80, 120, 140, 160, ??? bits
 **/
 DEFINE_FUNCTION( CreateKeys ) { // ( bitsSize )
@@ -247,7 +247,7 @@ DEFINE_FUNCTION( CreateKeys ) { // ( bitsSize )
 /**doc
  * $DATA $INAME( data [, lparam] )
   This function returns the encrypted _data_ using a previously created or imported public key.
-  = =
+  $LF
   _data_ is the string to encrypt (usualy cipher keys).
 **/
 DEFINE_FUNCTION( Encrypt ) { // ( data [, lparam] )
@@ -312,15 +312,15 @@ DEFINE_FUNCTION( Encrypt ) { // ( data [, lparam] )
 /**doc
  * $DATA $INAME( encryptedData [, lparam] )
   This function decrypts the given _encryptedData_ using a previously created or imported private key.
-  = =
+  $LF
   _encryptedData_ is the string that has to be decrypted (usualy cipher keys).
-  ===== note: =====
+  $H note
    The lparam variable is an additional system specific tag that can be applied to the encoding.
    This is useful to identify which system encoded the message.
    If no variance is desired then lparam can be ignored or set to $UNDEF.
-   = =
+   $LF
    If it does not match what was used during encoding this function will not decode the packet.
-   = =
+   $LF
    When performing v1.5 RSA decryption, the hash and lparam parameters are totally ignored.
 **/
 DEFINE_FUNCTION( Decrypt ) { // ( encryptedData [, lparam] )
@@ -390,7 +390,7 @@ DEFINE_FUNCTION( Decrypt ) { // ( encryptedData [, lparam] )
  * $STR $INAME( data [, saltLength] )
   This function returns the signature of the given _data_.
   Because this process is slow, this function usualy used to sign a small amount of data, like hash digest.
-  = =
+  $LF
   _saltLength_ is only used with RSA signatures. (default value is 16)
 **/
 DEFINE_FUNCTION( Sign ) { // ( data [, saltLength] )
@@ -453,8 +453,8 @@ DEFINE_FUNCTION( Sign ) { // ( data [, saltLength] )
 
 /**doc
  * $BOOL $INAME( data, signature [, saltLength] )
-  This function returns <true> if the _data_ match the data used to create the _signature_.
-  = =
+  This function returns $TRUE if the _data_ match the data used to create the _signature_.
+  $LF
   _saltLength_ is only used with RSA signatures. (default value is 16)
 **/
 DEFINE_FUNCTION( VerifySignature ) { // ( data, signature [, saltLength] )

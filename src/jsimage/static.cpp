@@ -110,9 +110,9 @@ METHODDEF(void) term_source(j_decompress_ptr cinfo) {
 /**doc
  * $TYPE imageObject $INAME( streamObject )
   This function returns an image object that represents the decompressed jpeg image given as argument.
-  = =
+  $LF
   The streamObject argument is any object that supports the NIStreamRead Native Interface ( file, socket, new Stream(buffer), ... )
-  = =
+  $LF
   For further details about stream objects, see jslang::Stream object and NativeInterface mechanism.
 **/
 DEFINE_FUNCTION( DecodeJpegImage ) {
@@ -253,9 +253,9 @@ static void _png_read( png_structp png_ptr, png_bytep data, png_size_t length ) 
 /**doc
  * $TYPE imageObject $INAME( streamObject )
   This function returns an image object that represents the decompressed png image given as argument.
-  = =
+  $LF
   The streamObject argument is any object that supports the NIStreamRead Native Interface ( file, socket, new Stream(buffer), ... )
-  = =
+  $LF
   For further details about stream objects, see jslang::Stream object and NativeInterface mechanism.
 **/
 DEFINE_FUNCTION( DecodePngImage ) {

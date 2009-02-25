@@ -57,7 +57,7 @@ typedef struct {
 
 /**doc
 $CLASS_HEADER
- $SVN_REVISION $Revision$
+$SVN_REVISION $Revision$
 **/
 BEGIN_CLASS( Font ) // Start the definition of the class. It defines some symbols: _name, _class, _prototype
 
@@ -684,7 +684,7 @@ t.Add(t1);
 t.OppositeLevels();
 t.Add(1);
 
-new File('text.png').content = EncodePngImage(t.Export());}}}
+new File('text.png').content = EncodePngImage(t.Export());
 }}}
 **/
 

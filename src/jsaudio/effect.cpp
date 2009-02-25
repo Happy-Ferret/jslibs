@@ -20,7 +20,10 @@ struct Private {
 	ALuint effect;
 };
 
-
+/**doc
+$CLASS_HEADER
+$SVN_REVISION $Revision$
+**/
 BEGIN_CLASS( OalEffect )
 
 

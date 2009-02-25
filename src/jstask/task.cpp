@@ -46,7 +46,7 @@ struct Private {
 
 /**doc
 $CLASS_HEADER
- $SVN_REVISION $Revision$
+$SVN_REVISION $Revision$
  With multicore CPUs becoming prevalent, splitting computationally expensive tasks is a good way to obtain better over-all performance.
  Task like:
  * Decoding a SVG image.

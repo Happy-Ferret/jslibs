@@ -56,12 +56,12 @@ DEFINE_FINALIZE() {
 /**doc
  * *_Constructor_*( method [, compressionLevel ] )
   Constructs a new inflater or deflater object.
-  = =
+  $LF
   The _method_ can be Z.DEFLATE to compress data or Z.INFLATE to decompress data.
   The compression level is like this: 0 <= _compressionLevel_ <= 9.
-  ===== note: =
+  $H note
    For Z.INFLATE method, _compressionLevel_ argument is useless ( no sense )
-  ===== example: =
+  $H example
   {{{
   var compress = new Z( Z.DEFLATE, 9 );
   }}}
@@ -123,25 +123,25 @@ DEFINE_CONSTRUCTOR() {
 **/
 
 /**doc
- * $STR *Call operator*( [ inputData [, forceFinish = false ] ] )
+ * $STR $INAME( [ inputData [, forceFinish = false ] ] )
   This function process _inputData_ as a stream.
   If _forceFinish_ is true, the _inputData_ and any buffered data are flushed to the _outputData_.
   If this function is call without any argument, All remaining data are flushed.
   If eof has already reach, the function returns an empty _outputData_ string.
-  ===== example: =
+  $H example
   {{{
   var compress = new Z( Z.DEFLATE );
   var compressedData = compress( 'Hello ');
   compressedData += compress( 'world' );
   compressedData += compress(); // flush
   }}}
-  ===== example: =
+  $H example
   {{{
   var compress = new Z( Z.DEFLATE );
   var compressedData = compress( 'Hello ');
   compressedData += compress( 'world', true ); // flush
   }}}
-  ===== example: =
+  $H example
   {{{
   var compressedData = new Z( Z.DEFLATE )( 'Hello world', true ); // flush
   }}}

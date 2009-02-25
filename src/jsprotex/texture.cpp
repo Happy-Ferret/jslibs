@@ -286,7 +286,7 @@ $SET pval pixel component intensity value
 
 /**doc
 $CLASS_HEADER
- $SVN_REVISION $Revision$
+$SVN_REVISION $Revision$
 **/
 
 BEGIN_CLASS( Texture )
@@ -3909,7 +3909,7 @@ DEFINE_FUNCTION_FAST( LevelRange ) {
 /**doc
  * $REAL $INAME
   Is the higher $pval. Higher values are not brighter.
-  = =
+  $LF
   See Normalize() function.
 **/
 DEFINE_PROPERTY( vmax ) {
@@ -3983,11 +3983,11 @@ DEFINE_PROPERTY( channels ) {
   Print( Texture.RandReal(), '\n' );
   }}}
   will always prints:
-  {{{
+  <pre>
   0.19151945020806033
   0.4976636663772314
   0.6221087664882906
-  }}}
+  </pre>
 **/
 DEFINE_FUNCTION_FAST( RandSeed ) {
 

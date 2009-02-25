@@ -44,23 +44,23 @@ BEGIN_STATIC
 
 /**doc
 === Static functions ===
- $SVN_REVISION $Revision$
+$SVN_REVISION $Revision$
 **/
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
  * $STR $INAME( str [, obj] )
   Return an expanded string using key/value stored in _obj_.
-  = =
+  $LF
   If _obj_ is omitted, the current object is used to look for key/value.
   $H example
-   {{{
-   function Test() {
-     this.Expand = Expand;
-     this.a = 123;
-   }
-   Print( new Test().Expand('$(a)') );
-   }}}
+  {{{
+  function Test() {
+   this.Expand = Expand;
+   this.a = 123;
+  }
+  Print( new Test().Expand('$(a)') );
+  }}}
   $H note
    undefined values are ignored in the resulting string.
   $H example
@@ -233,56 +233,56 @@ DEFINE_FUNCTION( Clear ) {
  * $OBJ $INAME( obj, scopeObject )
   Set the scope object of _obj_.
   $H example 1
-   {{{
-   function foo() {
+  {{{
+  function foo() {
 
-     var data = 55;
-     function bar() { Print( data, '\n' ); }
-     bar();
-     var old = SetScope( bar, {data:7} );
-     bar();
-     var old = SetScope( bar, old );
-     bar();
-   }
-   foo();
-   }}}
-   prints:
-   {{{
+   var data = 55;
+   function bar() { Print( data, '\n' ); }
+   bar();
+   var old = SetScope( bar, {data:7} );
+   bar();
+   var old = SetScope( bar, old );
+   bar();
+  }
+  foo();
+  }}}
+  prints:
+   <pre>
    55
    7
    55
-   }}}
+   </pre>
 
   $H example 2
-   {{{
-   LoadModule('jsstd');
+  {{{
+  LoadModule('jsstd');
 
-   function Bind(fun, obj) {
+  function Bind(fun, obj) {
 
-    SetScope(obj, SetScope(fun, obj));
+   SetScope(obj, SetScope(fun, obj));
+  }
+
+
+  function MyClass() {
+
+   this.Test = function() {
+
+    foo();
    }
 
+   this.foo = function() {
 
-   function MyClass() {
-
-    this.Test = function() {
-
-     foo();
-    }
-
-    this.foo = function() {
-
-     Print('foo\n');
-    }
-
-    Bind(this.Test, this);
+    Print('foo\n');
    }
 
-   var myObj = new MyClass();
-   myObj.Test(); // prints: foo
-   var fct = myObj.Test;
-   fct(); // prints: foo
-   }}}
+   Bind(this.Test, this);
+  }
+
+  var myObj = new MyClass();
+  myObj.Test(); // prints: foo
+  var fct = myObj.Test;
+  fct(); // prints: foo
+  }}}
 **/
 DEFINE_FUNCTION( SetScope ) {
 
@@ -302,12 +302,12 @@ DEFINE_FUNCTION( SetScope ) {
  * $VOID $INAME( obj, propertyName1 [, propertyName2 [, ... ] ] )
   Hide properties from for-in loop.
   $H example
-   {{{
-   var obj = { a:11, b:22, c:33 };
-   for ( var p in obj ) Print(p, ', '); // prints: a, b, c
-   HideProperties(obj, 'b');
-   for ( var p in obj ) Print(p, ', '); // prints: a, c
-   }}}
+  {{{
+  var obj = { a:11, b:22, c:33 };
+  for ( var p in obj ) Print(p, ', '); // prints: a, b, c
+  HideProperties(obj, 'b');
+  for ( var p in obj ) Print(p, ', '); // prints: a, c
+  }}}
 **/
 DEFINE_FUNCTION( HideProperties ) {
 
@@ -358,10 +358,10 @@ DEFINE_FUNCTION( HideProperties ) {
  * $INT $INAME( value )
   Returns an integer value that is a unique identifier of _value_ .
   $H example
-   {{{
-   var myObj = {};
-   Print( IdOf(myObj), '\n' );
-   }}}
+  {{{
+  var myObj = {};
+  Print( IdOf(myObj), '\n' );
+  }}}
 **/
 DEFINE_FUNCTION_FAST( IdOf ) {
 
@@ -389,10 +389,10 @@ DEFINE_FUNCTION_FAST( IdOf ) {
  * $VAL $INAME( id )
   Returns the value that corresponts to the given id. This is the reciprocal of IdOf() function.
   $H example
-   {{{
-   var myObj = {};
-   Print( FromId(IdOf(myObj)) == myObj, '\n' ); // returns true
-   }}}
+  {{{
+  var myObj = {};
+  Print( FromId(IdOf(myObj)) == myObj, '\n' ); // returns true
+  }}}
 **/
 DEFINE_FUNCTION_FAST( FromId ) {
 
@@ -492,11 +492,11 @@ DEFINE_FUNCTION_FAST( Warning ) {
  * $VOID $INAME( expression [, failureMessage ] )
   If the argument expression compares equal to zero, the failureMessage is written to the standard error device and the program stops its execution.
   $H example
-   {{{
-   var foo = ['a', 'b', 'c'];
-   ASSERT( i >= 0 || i < 3, 'Invalid value.' );
-   Print( foo[i] );
-   }}}
+  {{{
+  var foo = ['a', 'b', 'c'];
+  ASSERT( i >= 0 || i < 3, 'Invalid value.' );
+  Print( foo[i] );
+  }}}
   $H note
    The error output can be redirected by redefining the _configuration.stderr function. see the Print() function.
 **/
@@ -588,9 +588,9 @@ DEFINE_FUNCTION_FAST( TimeCounter ) {
  * $STR $INAME( $STR str, $INT count )
   Returns the string that is _count_ times _str_.
   $H example
-   {{{
-   Print( StringRepeat('foo', 3) ); // prints: foofoofoo
-   }}}
+  {{{
+  Print( StringRepeat('foo', 3) ); // prints: foofoofoo
+  }}}
 **/
 DEFINE_FUNCTION_FAST( StringRepeat ) {
 
@@ -654,18 +654,18 @@ DEFINE_FUNCTION_FAST( StringRepeat ) {
  * $VOID $INAME( value1 [, value2 [, ...]] )
   Display _val_ to the output (the screen by default).
   $H example
-   {{{
-   Print( 'Hello', ' ', 'World', '\n' ); // prints: Hello World
-   }}}
+  {{{
+  Print( 'Hello', ' ', 'World', '\n' ); // prints: Hello World
+  }}}
   $H note
    The output can be redirected by redefining the _configuration.stdout function.
    $H example
-    {{{
-    LoadModule('jsstd');
-    Print('foo\n'); // prints: foo
-    _configuration.stdout = function() {}
-    Print('bar\n'); // prints nothing
-    }}}
+   {{{
+   LoadModule('jsstd');
+   Print('foo\n'); // prints: foo
+   _configuration.stdout = function() {}
+   Print('bar\n'); // prints nothing
+   }}}
 **/
 DEFINE_FUNCTION_FAST( Print ) {
 

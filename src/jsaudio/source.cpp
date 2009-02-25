@@ -98,6 +98,10 @@ jsval UnqueueBuffersJsval( JSContext *cx, jl::Queue *queue, jsval *rval ) {
 }
 
 
+/**doc
+$CLASS_HEADER
+$SVN_REVISION $Revision$
+**/
 BEGIN_CLASS( OalSource )
 
 DEFINE_TRACER() {

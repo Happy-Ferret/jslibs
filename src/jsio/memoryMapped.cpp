@@ -36,7 +36,7 @@ static JSBool BufferGet( JSContext *cx, JSObject *obj, const char **buf, size_t 
 
 /**doc
 $CLASS_HEADER
- $SVN_REVISION $Revision$
+$SVN_REVISION $Revision$
 **/
 BEGIN_CLASS( MemoryMapped )
 
@@ -119,7 +119,7 @@ DEFINE_CONSTRUCTOR() {
 **/
 
 /**doc
- * *file* $READONLY
+ * $INAME $READONLY
   is the file descriptor used to construct this object.
 **/
 DEFINE_PROPERTY( file ) {

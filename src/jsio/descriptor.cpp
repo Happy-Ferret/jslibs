@@ -99,7 +99,7 @@ bad:
 
 /**doc fileIndex:top
 $CLASS_HEADER
- $SVN_REVISION $Revision$
+$SVN_REVISION $Revision$
 **/
 BEGIN_CLASS( Descriptor )
 

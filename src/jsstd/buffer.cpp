@@ -468,7 +468,7 @@ JSBool AddBuffer( JSContext *cx, JSObject *destBuffer, JSObject *srcBuffer ) {
 
 /**doc
 $CLASS_HEADER
- $SVN_REVISION $Revision$
+$SVN_REVISION $Revision$
  Buffer class is a simple buffer that allows arbitrary length input and output.
 **/
 BEGIN_CLASS( Buffer )
@@ -602,10 +602,6 @@ DEFINE_FUNCTION( Clone ) {
 
 
 /**doc
-=== Methods ===
-**/
-
-/**doc
  * $VOID $INAME()
   Empty the whole buffer.
 **/
@@ -715,7 +711,7 @@ err:
   Read _amount_ data in the buffer. If _amount_ is omited, The whole buffer is returned.
   $H beware
    This function returns a Blob or a string literal as empty string.
-  = =
+  $LF
   If _amount_ == undefined, an arbitrary (ideal) amount of data is returned. Use this when you don't know how many data you have to read.
   $H example
   {{{
@@ -773,7 +769,7 @@ DEFINE_FUNCTION( Skip ) { // Skip( amount )
 /**doc
  * $STR $INAME( boundaryString [, skip] )
   Reads the buffer until it match the _boundaryString_, else it returns $UNDEF.
-  If _skip_ argument is <true>, the _boundaryString_ is skiped from the buffer.
+  If _skip_ argument is $TRUE, the _boundaryString_ is skiped from the buffer.
 **/
 DEFINE_FUNCTION( ReadUntil ) {
 
@@ -827,7 +823,7 @@ DEFINE_FUNCTION( IndexOf ) {
 /**doc
  * $STR $INAME( _data_ )
   Insert _data_ at the begining of the buffer. This function can undo a read operation. The returned value is _data_.
-  ===== example: =====
+  $H example
   {{{
   function Peek(len) {
 
@@ -1133,5 +1129,5 @@ END_CLASS
 
  for ( var i=0; i<15; i++ )
   Print( buf.Read(1), '\n' )
-}}}
+ }}}
 **/

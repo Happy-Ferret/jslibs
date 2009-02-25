@@ -18,7 +18,7 @@
 
 /**doc
 $CLASS_HEADER
- $SVN_REVISION $Revision$
+$SVN_REVISION $Revision$
  This class is used to create pseudo random number generators objects.
 **/
 BEGIN_CLASS( Prng )
@@ -87,7 +87,7 @@ DEFINE_CONSTRUCTOR() {
 /**doc
  * $STR $INAME( size )
   Returns _size_ bytes of pseudo-random data.
-  ===== example: =====
+  $H example
   {{{
   LoadModule('jsstd');
   LoadModule('jscrypt');

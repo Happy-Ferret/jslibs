@@ -60,7 +60,7 @@ void RemoveDbContext(sqlite3 *db) {
 
 /**doc fileIndex:top
 $CLASS_HEADER
- $SVN_REVISION $Revision$
+$SVN_REVISION $Revision$
 **/
 BEGIN_CLASS( Database )
 
@@ -319,7 +319,7 @@ DEFINE_FUNCTION( Query ) {
   $H return value
    returns the first line and first column of the result.
   $H details
-   [http://www.sqlite.org/capi3ref.html#sqlite3_bind_blob documentation]
+   [http://www.sqlite.org/capi3ref.html#sqlite3_bind_blob sqlite documentation]
   $H example
   {{{
   var version = db.Exec('PRAGMA user_version');
@@ -393,7 +393,7 @@ DEFINE_FUNCTION( Exec ) {
  * $INAME $READONLY
   is the rowid of the most recent successful INSERT into the database from the database connection shown in the first argument. If no successful inserts have ever occurred on this database connection, zero is returned.
   $H details
-   [http://www.sqlite.org/capi3ref.html#sqlite3_last_insert_rowid documentation]
+   [http://www.sqlite.org/capi3ref.html#sqlite3_last_insert_rowid sqlite documentation]
 **/
 DEFINE_PROPERTY( lastInsertRowid ) {
 
@@ -409,7 +409,7 @@ DEFINE_PROPERTY( lastInsertRowid ) {
  * $INAME $READONLY
   is the number of database rows that were changed or inserted or deleted by the most recently completed SQL statement on the connection specified by the first parameter. Only changes that are directly specified by the INSERT, UPDATE, or DELETE statement are counted.
   $H details
-   [http://www.sqlite.org/capi3ref.html#sqlite3_changes documentation]
+   [http://www.sqlite.org/capi3ref.html#sqlite3_changes sqlite documentation]
 **/
 DEFINE_PROPERTY( changes ) {
 
@@ -430,7 +430,7 @@ DEFINE_PROPERTY( changes ) {
 **/
 
 /**doc
- * *version* $READONLY
+ * $INAME $READONLY
   Hold the current version of the database engine.
 **/
 DEFINE_PROPERTY( version ) {
@@ -440,7 +440,8 @@ DEFINE_PROPERTY( version ) {
 }
 
 /**doc
- * *memoryUsed* $READONLY
+ * $INAME $READONLY
+  Is the amount of memory currently checked out.
 **/
 DEFINE_PROPERTY( memoryUsed ) {
 
@@ -540,7 +541,7 @@ bad:
 === Remarks ===
  * Add SQL functions implemented in JavaScript.
   Any function properties stored to a [Database] object can be used in the SQL string.
-  ===== example: =
+  $H example
   {{{
   var db = new Database('myDatabase');
   db.multBy10 = function(a) { return a * 10 }

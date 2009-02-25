@@ -33,7 +33,7 @@ static int ReadMatrix(JSContext *cx, JSObject *obj, float **m) { // Doc: __decls
 
 /**doc
 $CLASS_HEADER
- $SVN_REVISION $Revision$
+$SVN_REVISION $Revision$
 **/
 BEGIN_CLASS( Transformation )
 

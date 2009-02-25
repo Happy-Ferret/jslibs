@@ -18,7 +18,7 @@
 
 /**doc fileIndex:bottom
 $CLASS_HEADER
- $SVN_REVISION $Revision$
+$SVN_REVISION $Revision$
 **/
 BEGIN_CLASS( CryptError )
 

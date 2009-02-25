@@ -25,7 +25,7 @@
 
 /**doc fileIndex:top
 $CLASS_HEADER
- $SVN_REVISION $Revision$
+$SVN_REVISION $Revision$
  The OggVorbisDecoder support ogg vorbis data format decoding.
 **/
 BEGIN_CLASS( OggVorbisDecoder )
@@ -140,21 +140,21 @@ DEFINE_FINALIZE() {
   $H arguments
    $ARG streamObject stream: is the data stream from where encoded data are read from.
   $H example
-   {{{
-   LoadModule('jsstd');
-   LoadModule('jsio');
-   LoadModule('jssound');
-   var file = new File('41_30secOgg-q0.ogg'); // file: http://xiph.org/vorbis/listen.html
-   file.Open('r');
-   var dec = new OggVorbisDecoder( file );
-   Print( dec.bits, '\n' );
-   Print( dec.channels, '\n' );
-   Print( dec.rate, '\n' );
-   do {
-    var block = dec.Read(10000);
-    Print( 'frames: '+block.frames, '\n' );
-   } while(block);
-   }}}
+  {{{
+  LoadModule('jsstd');
+  LoadModule('jsio');
+  LoadModule('jssound');
+  var file = new File('41_30secOgg-q0.ogg'); // file: http://xiph.org/vorbis/listen.html
+  file.Open('r');
+  var dec = new OggVorbisDecoder( file );
+  Print( dec.bits, '\n' );
+  Print( dec.channels, '\n' );
+  Print( dec.rate, '\n' );
+  do {
+   var block = dec.Read(10000);
+   Print( 'frames: '+block.frames, '\n' );
+  } while(block);
+  }}}
 **/
 DEFINE_CONSTRUCTOR() {
 

@@ -23,14 +23,12 @@
 
 /**doc
 $CLASS_HEADER
- $SVN_REVISION $Revision$
+$SVN_REVISION $Revision$
  Map is an unsorted associative container that associates strings with values.
  $H note
-  No two elements have the same key.
- $H note
-  Map can store any string value as a key (even reserved special strings like __proto__, __parent__, toString, ...).
- $H note
-  Constructing the object is not mendatory. Calling Map() will return a new Map object;
+  * No two elements have the same key.
+  * Map can store any string value as a key (even reserved special strings like __proto__, __parent__, toString, ...).
+  * Constructing the object is not mendatory. Calling Map() will return a new Map object;
 **/
 
 BEGIN_CLASS( Map )

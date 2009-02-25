@@ -18,7 +18,7 @@
 
 /**doc
 $CLASS_HEADER Joint
- $SVN_REVISION $Revision$
+$SVN_REVISION $Revision$
 **/
 BEGIN_CLASS( JointPlane )
 

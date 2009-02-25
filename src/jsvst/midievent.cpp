@@ -25,7 +25,7 @@
 
 /**doc
 $CLASS_HEADER
- $SVN_REVISION $Revision$
+$SVN_REVISION $Revision$
 
   midi spec: http://www.gweep.net/~prefect/eng/reference/protocol/midispec.html
 **/

@@ -17,7 +17,7 @@
 
 /**doc
 $CLASS_HEADER fileIndex:bottom
- $SVN_REVISION $Revision$
+$SVN_REVISION $Revision$
  Its aim is to be throw as an exception on any SQLite runtime error.
  $H note
  You cannot construct this class.
@@ -26,25 +26,8 @@ BEGIN_CLASS( SqliteError )
 
 /**doc
 === Properties ===
-
- * int *code* $READONLY
- * string *text* $READONLY
-
-=== Exemple ===
-{{{
-try {
-
-  db.Exec('yfiqwygqiwye'); // generate an error
-
-} catch ( ex if ex instanceof SqliteError ) {
-
-   Print( 'SqliteError: ' + ex.text + '('+ex.code+')', '\n' );
-} catch( ex ) {
-
-   throw ex;
-}
-}}}
 **/
+
 
 /* see issue#52
 DEFINE_CONSTRUCTOR() {
@@ -54,12 +37,18 @@ DEFINE_CONSTRUCTOR() {
 }
 */
 
+/**doc
+ * $INT $INAME $READONLY
+**/
 DEFINE_PROPERTY( code ) {
 
 	JS_GetReservedSlot( cx, obj, SLOT_SQLITE_ERROR_CODE, vp );
 	return JS_TRUE;
 }
 
+/**doc
+ * $STR $INAME $READONLY
+**/
 DEFINE_PROPERTY( text ) {
 
 	JS_GetReservedSlot( cx, obj, SLOT_SQLITE_ERROR_TEXT, vp );
@@ -133,6 +122,25 @@ JSBool SqliteThrowError( JSContext *cx, int status, int errorCode, const char *e
 	JS_SetReservedSlot( cx, error, SLOT_SQLITE_ERROR_TEXT, STRING_TO_JSVAL(JS_NewStringCopyZ( cx, errorMsg )) );
 	return JS_FALSE;
 }
+
+/**doc
+=== Exemple ===
+{{{
+try {
+
+  db.Exec('yfiqwygqiwye'); // generate an error
+
+} catch ( ex if ex instanceof SqliteError ) {
+
+   Print( 'SqliteError: ' + ex.text + '('+ex.code+')', '\n' );
+} catch( ex ) {
+
+   throw ex;
+}
+}}}
+**/
+
+
 
 
 /*

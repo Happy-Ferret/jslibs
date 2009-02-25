@@ -82,7 +82,7 @@ struct Private {
 
 /**doc
 $CLASS_HEADER
- $SVN_REVISION $Revision$
+$SVN_REVISION $Revision$
 **/
 BEGIN_CLASS( SVG ) // Start the definition of the class. It defines some symbols: _name, _class, _prototype
 
@@ -523,7 +523,7 @@ DEFINE_FUNCTION_FAST( Translate ) {
 **/
 
 /**doc
- * $INT|$ARRAY $INAME $WRITEONLY
+ * $INT | $ARRAY $INAME $WRITEONLY
   Sets the dpi of the resulting image. If the argument is an Array (like [ dpiX, dpiY ]) X and Y dpi can be set aside.
 **/
 DEFINE_PROPERTY(dpi) {
@@ -674,13 +674,13 @@ DEFINE_PROPERTY(images) {
  * $TYPE ImageObject *onImage*( uri )
   Called when the SVG renderer need to draw an image element. _uri_ is the name of the requested image.
   $H example
-   {{{
-   var svg = new SVG();
-   svg.Write(<svg><image x="0" y="0" path="img.png"/></svg>);
-   svg.onImage = function(href) {
-    return DecodePngImage( new File('myImage.png').Open('r') );
-   }
-   }}}
+  {{{
+  var svg = new SVG();
+  svg.Write(<svg><image x="0" y="0" path="img.png"/></svg>);
+  svg.onImage = function(href) {
+   return DecodePngImage( new File('myImage.png').Open('r') );
+  }
+  }}}
 **/
 
 CONFIGURE_CLASS

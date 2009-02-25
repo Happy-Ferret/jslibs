@@ -266,7 +266,7 @@ DWORD WINAPI WinThread( LPVOID lpParam ) {
 
 /**doc
 $CLASS_HEADER
- $SVN_REVISION $Revision$
+$SVN_REVISION $Revision$
 **/
 BEGIN_CLASS( Systray )
 
@@ -625,9 +625,9 @@ DEFINE_FUNCTION( CallDefault ) {
   $H example
   {{{
   systray.onmousemove = function( x, y ) {
-
-    var pos = systray.Position();
-    Print( x-pos[0], ', ', y-pos[1], '\n' );
+   
+   var pos = systray.Position();
+   Print( x-pos[0], ', ', y-pos[1], '\n' );
   }
   }}}
 **/
@@ -776,17 +776,17 @@ DEFINE_PROPERTY( textGetter ) {
 
 /**doc
  * $OBJ $INAME
-  * string | function *menu.commandName.text*
-  * bool | function *menu.commandName.checked*
-  * bool | function *menu.commandName.grayed*
-  * bool *menu.commandName.separator*
-  * bool *menu.commandName.default*
-  * [Icon] | function *menu.commandName.icon*
+  * ,,string | function,, *menu.commandName.text*
+  * ,,boolean | function,, *menu.commandName.checked*
+  * ,,boolean | function,, *menu.commandName.grayed*
+  * ,,boolean,, *menu.commandName.separator*
+  * ,,boolean,, *menu.commandName.default*
+  * ,,[Icon] | function,, *menu.commandName.icon*
   $H example
   {{{
   tray.menu = { { text:"enable", checked:true }, { text:"delete", grayed:true }, { separator:true }, exit:"Exit" }
   }}} 
-  = =
+  $LF
   If the value of _text_, _checked_, _grayed_ or _icon_ is a function, it is called and the return value is used.
   $H example
   {{{
@@ -817,15 +817,15 @@ DEFINE_PROPERTY( menuGetter ) {
   * onmouseup
   * onmousedblclick
  $H example
-  {{{
-  var s = new Systray();
-  s.icon = new Icon( 0 );
-  s.onmousedown = function( button ) { 
+ {{{
+ var s = new Systray();
+ s.icon = new Icon( 0 );
+ s.onmousedown = function( button ) { 
 
-    MessageBeep();
-    s.PopupMenu();
-  }
-  }}}
+  MessageBeep();
+  s.PopupMenu();
+ }
+ }}}
 **/
 
 CONFIGURE_CLASS

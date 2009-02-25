@@ -517,13 +517,13 @@ DEFINE_FUNCTION_FAST( PostSemaphore ) {
   If _waitExit_ is true, the function waits the end of the process and returns its exit code.
   If _waitExit_ is not true, the function immediately returns an array that contains an input pipe and an output pipe to the current process stdin and stdout.
   $H example
-   {{{
-   var [stdin, stdout] = CreateProcess( 'c:\\windows\\System32\\cmd.exe', ['/c', 'dir', 'c:\\'], false );
-   Sleep(100);
-   Print( stdout.Read(), '\n' );
-   stdin.Close();
-   stdout.Close();
-   }}}
+  {{{
+  var [stdin, stdout] = CreateProcess( 'c:\\windows\\System32\\cmd.exe', ['/c', 'dir', 'c:\\'], false );
+  Sleep(100);
+  Print( stdout.Read(), '\n' );
+  stdin.Close();
+  stdout.Close();
+  }}}
 **/
 /*
 // Doc. http://www.mozilla.org/projects/nspr/reference/html/prprocess.html#24535
@@ -858,9 +858,9 @@ DEFINE_PROPERTY( pathSeparator ) {
  * $STR $INAME $READONLY
   Is the os's list separator.
   $H example
-   {{{
-   Print( GetEnv('PATH').split(listSeparator) )
-   }}}
+  {{{
+  Print( GetEnv('PATH').split(listSeparator) )
+  }}}
 **/
 DEFINE_PROPERTY( listSeparator ) {
 

@@ -19,20 +19,20 @@
 
 /**doc
 $CLASS_HEADER
- $SVN_REVISION $Revision$
+$SVN_REVISION $Revision$
 **/
 BEGIN_CLASS( Icon )
 
 /**doc
  * $INAME( <image | integer> )
   Icon constructor accepts an [Image] object or a integer. 
-  = =
+  $LF
   The integer value can be one of:
-  * `0`: IDI_APPLICATION
-  * `1`: IDI_QUESTION
-  * `2`: IDI_INFORMATION
-  * `3`: IDI_WARNING
-  * `4`: IDI_ERROR
+   * `0`: IDI_APPLICATION
+   * `1`: IDI_QUESTION
+   * `2`: IDI_INFORMATION
+   * `3`: IDI_WARNING
+   * `4`: IDI_ERROR
 **/
 
 DEFINE_CONSTRUCTOR() {

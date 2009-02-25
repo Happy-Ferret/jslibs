@@ -29,7 +29,7 @@ var api = {
 	$SVN_REVISION: function(cx, item) {
 
 		var str = ReadEol(cx);
-		cx.center = 'r'+parseInt(str.substr(str.indexOf(' ')));
+		cx.center = 'r'+parseInt(str.substr(str.indexOf(' ')))+'<br/>';
 	},
 
 	$H6: function(cx, item) { cx.center = '====== '+ReadEol(cx)+': ======' },
@@ -45,7 +45,7 @@ var api = {
 		var eol = ReadEol(cx)
 		switch (eol) {
 			case 'beware':
-				eol = '<b><font color="red">'+eol+'</font></b>';
+				eol = '<font color="red">'+eol+'</font>';
 				break;
 		}
 		cx.center = '===== '+eol+': =====';
@@ -57,7 +57,7 @@ var api = {
 		var res = /DEFINE_(\w*)\( *(\w*) *\)/(item.source.substring(item.followingSourceTextStart, item.followingSourceTextEnd));
 		if ( res ) {
 		
-			if ( res[2] == 'Call' ) {
+			if ( res[1] == 'CALL' ) {
 			
 				cx.center = '*_call operator_*';
 			} else
@@ -79,8 +79,11 @@ var api = {
 				
 				cx.center = '*'+identifierName+'*';
 			}
-			if ( item.followingSourceTextStart[0] = '(' ) // it is a function definition doc. eg. $INAME( flags [, mode] )
-				cx.center += StringReplacer({ '[':'`[`', ']':'`]`' })(ReadEol(cx)); // avoid wiki to transform optional arguments (eg. [, mode]) into a link.
+			
+			var fctArgs = ReadCx(cx, /^\(.*?\)/);
+			if ( fctArgs[0] ) // this is a function definition doc. like $INAME( flags [, mode] )
+				cx.center += StringReplacer({ '[':'_[_', ']':'_]_' })(fctArgs[0]); // avoid wiki to transform optional arguments (eg. [, mode]) into a link.
+				
 		} else
 			cx.center = '???';
 	},
@@ -168,6 +171,8 @@ var api = {
 	$ARRAY:',,Array,,',
 	$BOOL:',,boolean,,',
 	$UNDEF:',,undefined,,',
+	$TRUE:'_true_',
+	$FALSE:'_false_',
 	$ENUM:',,enum,,',
 	$VOID:'',
 	$THIS:',,this,,',
@@ -178,6 +183,10 @@ var api = {
 	},
 
 	$LF:'<br/>',
+	$BR:'<br/>',
+	
+//	'{{{':'<code language="js"> ',
+//	'}}}':'</code> ',
 
    $SET: function(cx, item) {
 
@@ -427,18 +436,18 @@ for each ( var module in moduleList )
 		}
 
 // write the doc
+	var f = new File( 'jslibs-0.95-doc.wiki' );
+	f.Open('w');
 for each ( var module in moduleList ) {
 
 	var moduleName = module[0][0].lastDir;
-	var f = new File( moduleName+'.wiki' );
-	f.Open('w');
 	for each ( var file in module )
 		for each ( var item in file ) {
 		
 			if ( !('hidden' in item.attr) )
 				f.Write( item.text + '\n' ); 
 		}
-	f.Close();
 }
+	f.Close();
 
 Print('Done.');

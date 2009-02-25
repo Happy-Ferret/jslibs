@@ -25,7 +25,7 @@ struct HashPrivate {
 
 /**doc
 $CLASS_HEADER
- $SVN_REVISION $Revision$
+$SVN_REVISION $Revision$
  This class is used to create block Hash objects.
 **/
 BEGIN_CLASS( Hash )
@@ -41,7 +41,7 @@ DEFINE_FINALIZE() {
 
 /**doc
  * $INAME( hashName )
-  Creates a new hash 
+  Creates a new hash.
   _hashName_ is a string that contains the name of the hash:
    * whirlpool
    * sha512
@@ -58,9 +58,9 @@ DEFINE_FINALIZE() {
    * rmd256
    * rmd320  
    * chc_hash
-  ===== note: =====
-  chc_hash is a special hash that allows to create a hash from a cipher (Cipher Hash Construction).
-  See CipherHash() static function.
+  $H note
+   chc_hash is a special hash that allows to create a hash from a cipher (Cipher Hash Construction).
+   See CipherHash() static function.
 **/
 DEFINE_CONSTRUCTOR() {
 
@@ -155,7 +155,7 @@ DEFINE_FUNCTION( Process ) {
 /**doc
  * $DATA $INAME()
   Terminate the hash and get the digest in a binary format.
-  ===== example: =====
+  $H example
   {{{
   LoadModule('jsstd');
   LoadModule('jscrypt');
@@ -193,10 +193,10 @@ DEFINE_FUNCTION( Done ) {
  * $DATA $INAME( data )
   This is the call operator of the object. It simplifies the usage of hashes and allows a digest calculation in one call only.
   When called with a string as argument, it Process a block of memory though the hash
-  Compute the hash until the function is called without arguments or end is <true>. In this case, the function returns the hash of the whole given data.
-  ===== beware: =====
-  Using this methode to compute a digest automaticaly resets previous state let by Init(), Process() or Done().
-  ===== example: =====
+  Compute the hash until the function is called without arguments or end is $TRUE. In this case, the function returns the hash of the whole given data.
+  $H beware
+   Using this methode to compute a digest automaticaly resets previous state let by Init(), Process() or Done().
+  $H example
   {{{
   LoadModule('jsstd');
   LoadModule('jscrypt');
@@ -325,7 +325,7 @@ DEFINE_PROPERTY( inputLength ) {
 /**doc
  * $INAME( cipherName )
    Initialize the CHC (chc_hash) state with _cipherName_ cipher.
-    = =
+   $LF
    An addition to the suite of hash functions is the Cipher Hash Construction or CHC mode.
    In this mode applicable block ciphers (such as AES) can be turned into hash functions that other functions can use.
    In particular this allows a cryptosystem to be designed using very few moving parts.   
@@ -353,7 +353,7 @@ DEFINE_FUNCTION( CipherHash ) {
 /**doc
  * $OBJ $INAME $READONLY
   Contains the list of all available hash and their feature. The list is a javascript object that map hash names (key) with another object (value) that contain information.
-  ===== example: =====
+  $H example
   {{{
   LoadModule('jsstd');
   LoadModule('jscrypt');
