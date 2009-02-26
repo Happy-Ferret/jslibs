@@ -25,11 +25,16 @@ var api = {
 		var offset = cx.left.length;
 		Print('TBD: ' + item.filePath + ':' + (CountStr('\n', item.source.substring(0, item.followingSourceTextStart - item.text.length + offset))+1), '\n');
 	},
+
+	'???': function() {
+
+		this.TBD.apply(this, arguments);
+	},
 	
 	$SVN_REVISION: function(cx, item) {
 
-		var str = ReadEol(cx);
-		cx.center = 'r'+parseInt(str.substr(str.indexOf(' ')))+'<br/>';
+		var res = /Revision.*?(\w+)/(ReadEol(cx));
+		cx.center = res ? 'r'+res[1]+'<br/>' : '';
 	},
 
 	$H6: function(cx, item) { cx.center = '====== '+ReadEol(cx)+': ======' },
@@ -71,18 +76,22 @@ var api = {
 			} else {
 				
 				 var identifierName = res[2];
-				 
+
 				 if ( res[1].indexOf('PROPERTY') != -1 && ( identifierName.indexOf('Setter') != -1 || identifierName.indexOf('Getter') != -1 ) )
 				 	identifierName = identifierName.substring(0, identifierName.length - 6);
+
 				 if ( identifierName[identifierName.length-1] == '_' )
 					  identifierName = identifierName.substring(0, identifierName.length - 1);
 				
+				 if ( identifierName == 'valueOf' || identifierName == 'toString' )
+				 	identifierName = '_'+identifierName+'_';
+
 				cx.center = '*'+identifierName+'*';
 			}
 			
 			var fctArgs = ReadCx(cx, /^\(.*?\)/);
 			if ( fctArgs[0] ) // this is a function definition doc. like $INAME( flags [, mode] )
-				cx.center += StringReplacer({ '[':'_[_', ']':'_]_' })(fctArgs[0]); // avoid wiki to transform optional arguments (eg. [, mode]) into a link.
+				cx.center += StringReplacer({ '[':'[[]', ']':']' })(fctArgs[0]); // avoid wiki to transform optional arguments (eg. [, mode]) into a link.
 				
 		} else
 			cx.center = '???';
@@ -113,7 +122,9 @@ var api = {
 	
 	$MODULE_HEADER: function(cx, item) {
 
-		cx.center = '#summary '+item.lastDir+' module\n' + '#labels doc\n' + '- [http://jslibs.googlecode.com/svn/trunk/'+item.path+'/ source] - [JSLibs main] -\n'+'= '+item.lastDir+' module =';
+		cx.center = '#summary '+item.lastDir+' module\n' + '#labels doc\n';
+		cx.center += '<b>If something seems wrong or incomplete, please enter a [#commentform comment at the bottom of this page].</b><br><br>';
+		cx.center += '- [http://jslibs.googlecode.com/svn/trunk/'+item.path+'/ source] - [JSLibs main] -\n'+'= '+item.lastDir+' module =';
 	},
 	
 	$FILE_TOC: function(cx, item) {
@@ -128,15 +139,26 @@ var api = {
 
 	$READONLY:' http://jslibs.googlecode.com/svn/wiki/readonly.png ',
 
-	$WRITEONLY:',,write-only !,,',
+	$WRITEONLY:'<font color="red">,,write-only,,</font>',
 	
 	$DEPRECATED: ' http://jslibs.googlecode.com/svn/wiki/deprecated.png ',
 
 	$ARG:function(cx, item) {
 	
-		var type = ReadArg(cx); // (TBD) process api here too to support $INT, ...
+		var type = ExpandText( ReadArg(cx), api, item ); // to support $INT, ...
 		var name = ReadArg(cx);
-		cx.center = '# ,,'+type+',, _'+name+'_';
+		
+		cx.center = '# ';
+		if ( type[0] == ',' )
+			cx.center += type;
+		else
+			cx.center += ',,'+type+',,';
+		cx.center += ' _'+name+'_';
+	},
+
+	$F:function(cx, item) {
+	
+		cx.center = '`'+ReadArg(cx)+'`';
 	},
 
 	$RET:function(cx, item) {
@@ -162,19 +184,21 @@ var api = {
 
 
 
+	$VOID:'',
 	$VAL:',,value,,',
 	$INT:',,integer,,',
 	$REAL:',,real,,',
+	$NUM:',,number,,', 
 	$STR:',,string,,',
 	$DATA:',,bstring,,',
 	$OBJ:',,Object,,',
+	$FUN:',,Function,,',
 	$ARRAY:',,Array,,',
 	$BOOL:',,boolean,,',
-	$UNDEF:',,undefined,,',
+	$UNDEF:'_undefined_',
 	$TRUE:'_true_',
 	$FALSE:'_false_',
 	$ENUM:',,enum,,',
-	$VOID:'',
 	$THIS:',,this,,',
 
 	$CONST:function(cx, item) {
@@ -226,7 +250,7 @@ function ReadCx(cx, re) {
     }
 }
 
-function ReadArg(cx) ReadCx(cx, / *([\w_]*)/)[1]||'';
+function ReadArg(cx) ReadCx(cx, / *([^\s:]*)/)[1]||'';
 function ReadEol(cx, eatEol) ReadCx(cx, eatEol ? / *([^\n]*)\n?/ : / *([^\n]*)/ )[1]||'';
 
 
@@ -246,7 +270,7 @@ function ExpandText(str, api, item) {
 		var apiRe = arguments.callee.apiRe;
 	else
 		var apiRe = arguments.callee.apiRe = new RegExp([RegQuote(p) for ( p in api ) ].join('|'), 'g');
-
+	
     var cx = {left: '', center: '', right: str};
     for(;;) {
 
@@ -264,7 +288,7 @@ function ExpandText(str, api, item) {
         
 				var apiItem = api[cx.center];
 				if ( apiItem instanceof Function )
-					apiItem(cx, item);
+					apiItem.call(api, cx, item);
 				else
 					cx.center = apiItem;
 			}
@@ -436,18 +460,17 @@ for each ( var module in moduleList )
 		}
 
 // write the doc
-	var f = new File( 'jslibs-0.95-doc.wiki' );
+	var f = new File( 'jslibs095doc.wiki' );
 	f.Open('w');
 for each ( var module in moduleList ) {
 
 	var moduleName = module[0][0].lastDir;
 	for each ( var file in module )
 		for each ( var item in file ) {
-		
 			if ( !('hidden' in item.attr) )
 				f.Write( item.text + '\n' ); 
 		}
 }
 	f.Close();
 
-Print('Done.');
+Print('Done.\n');
