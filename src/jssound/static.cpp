@@ -38,6 +38,10 @@ typedef struct {
 
 /**doc fileIndex:topmost **/
 
+/**doc
+$CLASS_HEADER
+$SVN_REVISION $Revision$
+**/
 BEGIN_STATIC
 
 size_t readStream( void *ptr, size_t size, size_t nmemb, void *pv ) {

@@ -87,6 +87,10 @@ DEFINE_FUNCTION( Print ) {
 
 /**doc fileIndex:topmost **/
 
+/**doc
+$CLASS_HEADER
+$SVN_REVISION $Revision$
+**/
 BEGIN_STATIC
 
 /**doc

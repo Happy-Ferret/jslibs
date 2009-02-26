@@ -40,12 +40,12 @@ DECLARE_CLASS( OperationLimit )
 DECLARE_CLASS( Sandbox )
 
 
-BEGIN_STATIC
-
 /**doc
-=== Static functions ===
+$CLASS_HEADER
 $SVN_REVISION $Revision$
 **/
+BEGIN_STATIC
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
@@ -888,7 +888,7 @@ DEFINE_FUNCTION_FAST( Exec ) {
 **/
 
 struct SandboxContextPrivate {
-	
+
 	size_t maxExecutionTime;
 	JSFunction *queryFunction;
 };

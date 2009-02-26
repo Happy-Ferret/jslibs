@@ -21,6 +21,10 @@ DECLARE_CLASS( Cursor )
 
 /**doc fileIndex:topmost **/
 
+/**doc
+$CLASS_HEADER
+$SVN_REVISION $Revision$
+**/
 BEGIN_STATIC
 
 /**doc

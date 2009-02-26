@@ -136,7 +136,7 @@ DEFINE_PROPERTY( size ) {
 	ALuint bid = (ALuint) JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( bid );
 	ALint size;
-	
+
 	alGetBufferi(bid, AL_SIZE, &size);
 	J_CHK( CheckThrowCurrentOalError(cx) );
 
@@ -148,14 +148,14 @@ DEFINE_PROPERTY( size ) {
 
 /**doc
  * $INT $INAME $READONLY
-  is the rezolution (in bits) of the sound hold by the buffer.
+  is the resolution (in bits) of the sound hold by the buffer.
 **/
 DEFINE_PROPERTY( bits ) {
 
 	ALuint bid = (ALuint) JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( bid );
 	ALint bits;
-	
+
 	alGetBufferi(bid, AL_BITS, &bits);
 	J_CHK( CheckThrowCurrentOalError(cx) );
 
