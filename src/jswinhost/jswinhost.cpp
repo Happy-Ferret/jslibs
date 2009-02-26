@@ -134,9 +134,8 @@ bad:
  [http://code.google.com/p/jslibs/ home] *>* [JSLibs] *>* [jswinhost] - [http://jslibs.googlecode.com/svn/trunk/jswinhost/jswinhost.cpp http://jslibs.googlecode.com/svn/wiki/source.png]
 
 === Description ===
-
-jswinhost (javascript windows host) is a small executable file that run javascript programs under a windows environment.
-The main difference with jshost is the jswinhost does not create any console windows.
+ jswinhost (javascript windows host) is a small executable file that run javascript programs under a windows environment.
+ The main difference with jshost is the jswinhost does not create any console windows.
 
 === Methods ===
 
@@ -158,9 +157,8 @@ The main difference with jshost is the jswinhost does not create any console win
  see [jshost]
 
 === Remarks ===
-
-There is no way to specify the script to execute using the command line. You have to create a .js file using the name of the host.
-By default, jswinhost.exe is the name of the host and jswinhost.js is the script the host execute.
+ There is no way to specify the script to execute using the command line. You have to create a .js file using the name of the host.
+ By default, jswinhost.exe is the name of the host and jswinhost.js is the script the host execute.
  
 Because jwinshost do not use a console window, errors and printed messages will not be displayed.
 

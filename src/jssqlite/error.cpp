@@ -15,12 +15,12 @@
 #include "stdafx.h"
 #include "error.h"
 
-/**doc
-$CLASS_HEADER fileIndex:bottom
+/**doc fileIndex:bottom
+$CLASS_HEADER
 $SVN_REVISION $Revision$
  Its aim is to be throw as an exception on any SQLite runtime error.
  $H note
- You cannot construct this class.
+  You cannot construct this class.$LF
 **/
 BEGIN_CLASS( SqliteError )
 

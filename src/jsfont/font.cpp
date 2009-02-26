@@ -73,10 +73,10 @@ DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are
 
 /**doc
  * $INAME( filePathName [, faceIndex = 0] )
-  $H arguments
-   $ARG string filePathName: the path of the font file.
-   $ARG integer faceIndex: the index of the face to use.
   Creates a new Font object and seletc the face to use.
+  $H arguments
+   $ARG $STR filePathName: the path of the font file.
+   $ARG $INT faceIndex: the index of the face to use.
 **/
 DEFINE_CONSTRUCTOR() {
 
@@ -135,9 +135,9 @@ DEFINE_FUNCTION_FAST( SetSize ) {
  * $TYPE imageObject $INAME( oneChar )
   Draws one char with the current face.
   $H arguments
-   $ARG string oneChar: string of one char.
+   $ARG $STR oneChar: string of one char.
   $H return value
-   returns an image object that contains the char.
+   An image object that contains the char.
 **/
 DEFINE_FUNCTION_FAST( DrawChar ) {
 
@@ -191,11 +191,11 @@ DEFINE_FUNCTION_FAST( DrawChar ) {
  * $TYPE imageObject | $TYPE integer $INAME( text [, keepTrailingSpace = false] [, getWidthOnly = false ] )
   Draws a string with the current face.
   $H arguments
-   $ARG string text: the single-line text to draw.
-   $ARG boolean keepTrailingSpace: if true, the last letter separator space is keept.
-   $ARG boolean getWidthOnly: if true, the function will return the length (in pixel) of the _text_.
+   $ARG $STR text: the single-line text to draw.
+   $ARG $BOOL keepTrailingSpace: if true, the last letter separator space is keept.
+   $ARG $BOOL getWidthOnly: if true, the function will return the length (in pixel) of the _text_.
   $H return value
-   returns an image object that contains the text or the length of the text in pixel.
+   An image object that contains the text or the length of the text in pixel.
 **/
 DEFINE_FUNCTION_FAST( DrawString ) {
 

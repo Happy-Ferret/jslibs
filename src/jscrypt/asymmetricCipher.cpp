@@ -94,13 +94,13 @@ DEFINE_FINALIZE() {
  * $INAME( cipherName, hashName [, prngObject] [, PKCSVersion = 1_OAEP] )
   Creates a new Asymmetric Cipher object.
   $H arguments
-   $ARG string cipherName: is a string that contains the name of the Asymmetric Cipher algorithm:
+   $ARG $STR cipherName: is a string that contains the name of the Asymmetric Cipher algorithm:
     * rsa
     * ecc
     * dsa
-   $ARG string hashName: is the hash that will be used to create the PSS (Probabilistic Signature Scheme) encoding. It should be the same as the hash used to hash the message being signed. See Hash class for available names.
-   $ARG Object prngObject: is an instantiated Prng object. Its current state will be used for key creation, data encryption/decryption, data signature/signature check. This argument can be ommited if you aim to decrypt data only.
-   $ARG string PKCSVersion: is a string that contains the padding version used by RSA to encrypt/decrypd data:
+   $ARG $STR hashName: is the hash that will be used to create the PSS (Probabilistic Signature Scheme) encoding. It should be the same as the hash used to hash the message being signed. See Hash class for available names.
+   $ARG $OBJ prngObject: is an instantiated Prng object. Its current state will be used for key creation, data encryption/decryption, data signature/signature check. This argument can be ommited if you aim to decrypt data only.
+   $ARG $STR PKCSVersion: is a string that contains the padding version used by RSA to encrypt/decrypd data:
     * 1_OAEP (for PKCS #1 v2.1 encryption)
     * 1_V1_5 (for PKCS #1 v1.5 encryption)
     If omitted, the default value is 1_OAEP.

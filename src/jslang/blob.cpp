@@ -198,7 +198,7 @@ bad:
  * $VOID $INAME( [ wipe = false ] )
   Frees the memory allocated by the blob and invalidates the blob.
   $H arguments
-   $ARG boolean wipe: clears the buffer before freeing it. This is useful when the blob contains sensitive data.
+   $ARG $BOOL wipe: clears the buffer before freeing it. This is useful when the blob contains sensitive data.
   $H note
    Any access to a freed Blob will rise an error.
 **/
@@ -305,8 +305,8 @@ bad:
  * $TYPE Blob $INAME( start [, length ] )
   Returns the bytes in a string beginning at the specified location through the specified number of characters.
   $H arguments
-   $ARG integer start: location at which to begin extracting characters (an integer between 0 and one less than the length of the string).
-   $ARG integer length: the number of characters to extract.
+   $ARG $INT start: location at which to begin extracting characters (an integer between 0 and one less than the length of the string).
+   $ARG $INT length: the number of characters to extract.
   $H details
    fc. [http://developer.mozilla.org/index.php?title=En/Core_JavaScript_1.5_Reference/Global_Objects/String/substr Mozilla]
 **/
@@ -395,8 +395,8 @@ bad:
    * If either argument is greater than stringName.length, it is treated as if it were stringName.length. 
    If indexA is larger than indexB, then the effect of substring is as if the two arguments were swapped; for example, str.substring(1, 0) == str.substring(0, 1). 
   $H arguments
-   $ARG integer indexA: An integer between 0 and one less than the length of the blob.
-   $ARG integer indexB: (optional) An integer between 0 and the length of the blob.
+   $ARG $INT indexA: An integer between 0 and one less than the length of the blob.
+   $ARG $INT indexB: (optional) An integer between 0 and the length of the blob.
   $H details
    fc. [http://developer.mozilla.org/index.php?title=En/Core_JavaScript_1.5_Reference/Global_Objects/String/substring Mozilla]
 **/
@@ -485,8 +485,8 @@ bad_free:
  * $INT $INAME( searchValue [, fromIndex] )
   Returns the index within the calling Blob object of the first occurrence of the specified value, starting the search at fromIndex, or -1 if the value is not found.
   $H arguments
-   $ARG string searchValue: A string representing the value to search for.
-   $ARG integer fromIndex: The location within the calling string to start the search from. It can be any integer between 0 and the length of the string. The default value is 0.
+   $ARG $STR searchValue: A string representing the value to search for.
+   $ARG $INT fromIndex: The location within the calling string to start the search from. It can be any integer between 0 and the length of the string. The default value is 0.
   $H details
    fc. [http://developer.mozilla.org/index.php?title=En/Core_JavaScript_1.5_Reference/Global_Objects/String/indexOf Mozilla]
 **/
@@ -551,8 +551,8 @@ DEFINE_FUNCTION_FAST( indexOf ) {
  * $INT $INAME( searchValue [, fromIndex] )
   Returns the index within the calling Blob object of the last occurrence of the specified value, or -1 if not found. The calling string is searched backward, starting at fromIndex.
   $H arguments
-   $ARG string searchValue: A string representing the value to search for.
-   $ARG integer fromIndex: The location within the calling string to start the search from, indexed from left to right. It can be any integer between 0 and the length of the string. The default value is the length of the string.
+   $ARG $STR searchValue: A string representing the value to search for.
+   $ARG $INT fromIndex: The location within the calling string to start the search from, indexed from left to right. It can be any integer between 0 and the length of the string. The default value is the length of the string.
   $H details
    fc. [http://developer.mozilla.org/index.php?title=En/Core_JavaScript_1.5_Reference/Global_Objects/String/lastIndexOf Mozilla]
 **/
@@ -1012,7 +1012,7 @@ DEFINE_XDR() {
 
 /**doc
 === Native Interface ===
- *NIBufferGet*
+ * *NIBufferGet*
 **/
 
 CONFIGURE_CLASS

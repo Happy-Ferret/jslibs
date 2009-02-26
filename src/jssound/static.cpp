@@ -61,7 +61,7 @@ static const ov_callbacks ovCallbacks = { readStream,0,0,0 };
   $H arguments
    $ARG streamObject stream: any object that has a Read function or that supports the NIStreamRead Native Interface ( file, socket, new Stream(buffer), ... ). For further details about stream objects, see jslang::Stream object and NativeInterface mechanism.
   $H return value
-   returns a sound object in a 16-bit per sample format.
+   A sound object in a 16-bit per sample format.
   $H example
   {{{
   LoadModule('jsstd');
@@ -277,7 +277,7 @@ static SF_VIRTUAL_IO sfCallbacks = { SfGetFilelen, SfSeek, SfRead, 0, SfTell };
   $H arguments
    $ARG streamObject stream: any object that has a Read function or that supports the NIStreamRead Native Interface ( file, socket, new Stream(buffer), ... ). For further details about stream objects, see jslang::Stream object and native interface mechanism.
   $H return value
-   returns a sound object in a 16-bit per sample format.
+   A sound object in a 16-bit per sample format.
 **/
 DEFINE_FUNCTION_FAST( DecodeSound ) {
 
@@ -385,7 +385,7 @@ DEFINE_FUNCTION_FAST( DecodeSound ) {
   $H arguments
    $ARG soundObject sound
   $H return value
-   returns an array that contains each individual channel of the sound.
+   An array that contains each individual channel of the sound.
 **/
 DEFINE_FUNCTION_FAST( SplitChannels ) {
 

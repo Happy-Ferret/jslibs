@@ -77,7 +77,7 @@ DEFINE_FUNCTION( Close ) {
  * $VOID $INAME( text )
   Write text to the console.
   $H arguments
-   $ARG string text
+   $ARG $STR text
 **/
 DEFINE_FUNCTION( Write ) {
 
@@ -101,7 +101,7 @@ DEFINE_FUNCTION( Write ) {
  * $STR $INAME( amount )
   Read _amount_ bytes of text from the console.
   $H arguments
-   $ARG integer amount
+   $ARG $INT amount
 **/
 DEFINE_FUNCTION( Read ) {
 

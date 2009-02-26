@@ -171,7 +171,7 @@ $SVN_REVISION $Revision$
  When a statement has been prepared with Database.*Query* function, you need to execute it ( with *Step* function ) before any data can be read.
  However, some properties (like *columnCount*, ... ) can be read before the first *Step* has been done.
  $H note
-  You cannot construct this class yourself.
+  You cannot construct this class.
 **/
 BEGIN_CLASS( Result )
 
@@ -287,7 +287,7 @@ DEFINE_FUNCTION( Step ) {
  * $VAL $INAME( colIndex )
   Returns the current value of the _colIndex_ ^th^ column.
   $H arguments
-   $ARG integer colIndex
+   $ARG $INT colIndex
 **/
 DEFINE_FUNCTION( Col ) {
 
@@ -306,7 +306,7 @@ DEFINE_FUNCTION( Col ) {
  * $VAL $INAME( [namedRows = false] )
   Executes one step of the the current SQL statement and returns the resulting row of data.
   $H arguments
-   $ARG boolean namedRows: if true, the function returns an objet containing {columnName:value} pair. else it returns an array of value.
+   $ARG $BOOL namedRows: if true, the function returns an objet containing {columnName:value} pair. else it returns an array of value.
   $H note
    The *Step* function is internally called before each *Row* call.
 **/
@@ -387,7 +387,7 @@ DEFINE_PROPERTY( columnCount ) {
 
 /**doc
  * $ARRAY $INAME $READONLY
-  Hold an [http://developer.mozilla.org/en/docs/Core_JavaScript_1.5_Reference:Objects:Array Array] that contain the index:name of the columns.
+  Hold an $ARRAY that contain the index:name of the columns.
   $H example
   {{{
   var db = new Database();
@@ -418,7 +418,7 @@ DEFINE_PROPERTY( columnNames ) {
 
 /**doc
  * $OBJ $INAME $READONLY
-  Hold an [http://developer.mozilla.org/en/docs/Core_JavaScript_1.5_Reference:Objects:Object Object] that contain the name:index of the columns.
+  Hold an $OBJ that contain the name:index of the columns.
   $H example
   {{{
   var db = new Database();

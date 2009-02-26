@@ -247,11 +247,9 @@ DEFINE_FUNCTION( Clear ) {
   foo();
   }}}
   prints:
-   <pre>
-   55
-   7
-   55
-   </pre>
+   $F 55
+   $F 7
+   $F 55
 
   $H example 2
   {{{
@@ -860,9 +858,9 @@ DEFINE_FUNCTION_FAST( Exec ) {
  * $VAL $INAME( scriptCode [ , queryCallback ] [ , maxExecutionTime = 1000 ] )
   Evaluates the JavaScript code in a sandbox with a new set of standard classes (Object, Math, ...).
   $H arguments
-   $ARG string scriptCode: the unsecured script code to be executed.
-   $ARG function queryCallback: this function may be called by the unsecured script to query miscellaneous information to the host script. For security reasons, the function can only return primitive values (no objects).
-   $ARG integer maxExecutionTime: if defined, an OperationLimit exception is thrown when _maxExecutionTime_ milliseconds are elapsed.
+   $ARG $STR scriptCode: the unsecured script code to be executed.
+   $ARG $FUN queryCallback: this function may be called by the unsecured script to query miscellaneous information to the host script. For security reasons, the function can only return primitive values (no objects).
+   $ARG $INT maxExecutionTime: if defined, an OperationLimit exception is thrown when _maxExecutionTime_ milliseconds are elapsed.
   $H return value
    the value of the last-executed expression statement processed in the script.
   $H example 1
@@ -1098,7 +1096,7 @@ DEFINE_PROPERTY( isConstructing ) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
  * $BOOL $INAME
-  Set to true, this property desactivates the garbage collector.
+  Set to $TRUE, this property desactivates the garbage collector.
 **/
 DEFINE_PROPERTY( disableGarbageCollection ) {
 // <shaver>	you could install a vetoing callback!

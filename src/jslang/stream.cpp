@@ -214,7 +214,7 @@ DEFINE_PROPERTY( source ) {
 
 /**doc
 === Native Interface ===
- *NIStreamRead*
+ * *NIStreamRead*
 **/
 
 CONFIGURE_CLASS

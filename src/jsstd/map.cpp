@@ -37,7 +37,7 @@ BEGIN_CLASS( Map )
  * $INAME( [ obj ] )
   Creates a new Map object.
   $H arguments
-   $ARG object obj: if given, _obj_ is converted into a Map object (Array is also an object). No recursion is made.
+   $ARG $OBJ obj: if given, _obj_ is converted into a Map object (Array is also an object). No recursion is made.
 **/
 DEFINE_CONSTRUCTOR() {
 

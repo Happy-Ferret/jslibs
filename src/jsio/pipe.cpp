@@ -20,14 +20,14 @@
 /**doc
 $CLASS_HEADER
 $SVN_REVISION $Revision$
- You cannot construct this class.
+ You cannot construct this class.$LF
  The aim of this class is to provide a way to access Descriptor properties and methods from an existing pipe.
-  $H exemple
-  {{{
-  var p = new Process( 'c:\\windows\\System32\\cmd.exe', ['/c', 'dir', 'c:'] );
-  p.Wait();
-  Print( p.stdout.Read() );
-  }}}
+ $H exemple
+ {{{
+ var p = new Process( 'c:\\windows\\System32\\cmd.exe', ['/c', 'dir', 'c:'] );
+ p.Wait();
+ Print( p.stdout.Read() );
+ }}}
 **/
 BEGIN_CLASS( Pipe )
 

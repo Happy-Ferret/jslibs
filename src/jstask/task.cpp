@@ -272,8 +272,8 @@ bad:
  * $INAME( taskFunc [ , priority = 0 ] )
   Creates a new Task object from the given function.
   $H arguments
-   $ARG function taskFunc:
-   $ARG integer priority:
+   $ARG $FUN taskFunc:
+   $ARG $INT priority:
    The _taskFunc_ prototype is: `function( request, index )`.
 **/
 DEFINE_CONSTRUCTOR() {

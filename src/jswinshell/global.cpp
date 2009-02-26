@@ -64,9 +64,9 @@ DEFINE_FUNCTION( ExtractIcon ) {
   Displays a modal dialog box that contains a system icon, a set of buttons, and a brief application-specific message, such as status or error information.
   The message box returns an integer value that indicates which button the user clicked.
   $H arguments
-   $ARG string content: the message to be displayed.
-   $ARG string caption: the dialog box title.
-   $ARG integer style: specifies the contents and behavior of the dialog box. This parameter can be a combination of flags from the following groups of flags:
+   $ARG $STR content: the message to be displayed.
+   $ARG $STR caption: the dialog box title.
+   $ARG $INT style: specifies the contents and behavior of the dialog box. This parameter can be a combination of flags from the following groups of flags:
     * MB_ABORTRETRYIGNORE
     * MB_CANCELTRYCONTINUE
     * MB_HELP
@@ -134,10 +134,10 @@ DEFINE_FUNCTION( MessageBox ) {
  * $VOID $INAME( applicationPath , [ commandLine ], [ environment ], [ currentDirectory ] )
   Creates a new process.
  $H arguments
-  $ARG string applicationPath
-  $ARG string commandLine
-  $ARG string environment
-  $ARG string currentDirectory
+  $ARG $STR applicationPath
+  $ARG $STR commandLine
+  $ARG $STR environment
+  $ARG $STR currentDirectory
  $H example
  {{{
  CreateProcess( 'C:\\WINDOWS\\system32\\calc.exe', undefined, undefined, 'c:\\' );
@@ -173,8 +173,8 @@ DEFINE_FUNCTION( CreateProcess ) {
 
 
 /**doc
- * $STR | $TYPE undefined $INAME( [ filters ] [, defaultFileName ] )
-  Creates an Open dialog box that lets the user specify the drive, directory, and the name of a file.
+ * $STR | $UNDEF $INAME( [ filters ] [, defaultFileName ] )
+  Creates an Open dialog box that lets the user specify the drive, directory, and the name of a file. The function returns $UNDEF if the dialog is canceled.
  $H example
  {{{
  FileOpenDialog( 'executable files|*.exe;*.com;*.cmd;*.bat|all files|*.*' );
@@ -261,7 +261,7 @@ DEFINE_FUNCTION( Sleep ) {
  * $VOID $INAME( type )
   Plays a waveform sound. The waveform sound for each sound type is identified by an entry in the registry.
   $H arguments
-   $ARG integer type:
+   $ARG $INT type:
     * -1 : Simple beep. If the sound card is not available, the sound is generated using the speaker.
     * 0 : MB_OK SystemDefault
     * ICONASTERISK: SystemAsterisk

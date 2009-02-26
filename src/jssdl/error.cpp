@@ -22,7 +22,7 @@
 /**doc
 ----
 == jssdl::SdlError class ==
- You cannot construct this class.
+ You cannot construct this class.$LF
  Its aim is to catch jssdl runtime error exception.
 **/
 

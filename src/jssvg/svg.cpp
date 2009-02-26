@@ -219,19 +219,19 @@ DEFINE_PROPERTY( xmlData ) {
 */
 
 /**doc
- * $ImageObject $INAME( [ imageWidth , imageHeight ] [ , channels ] [ , fit ] [ , elementId ] )
+ * $TYPE ImageObject $INAME( [ imageWidth , imageHeight ] [ , channels ] [ , fit ] [ , elementId ] )
   Draws the SVG to an image object.
   $H arguments
-   $ARG integer imageWidth: override default SVG's  width.
-   $ARG integer imageHeight: override default SVG's  width.
-   $ARG integer channels: 1 (Alpha only), 3 (RGB) or 4 (RGBA).
-   $ARG boolean fit: fit the SVG dimensions to [imageWidth, imageHeight].
-   $ARG string elementId: draws a subset of a SVG starting from an element's id. For example, if you have a layer called "layer1" that you wish to render, pass "#layer1" as the id.
+   $ARG $INT imageWidth: override default SVG's  width.
+   $ARG $INT imageHeight: override default SVG's  width.
+   $ARG $INT channels: 1 (Alpha only), 3 (RGB) or 4 (RGBA).
+   $ARG $BOOL fit: fit the SVG dimensions to [imageWidth, imageHeight].
+   $ARG $STR elementId: draws a subset of a SVG starting from an element's id. For example, if you have a layer called "layer1" that you wish to render, pass "#layer1" as the id.
   $H example
   {{{
   var svg = new SVG();
   svg.Write(<svg><circle cx="50" cy="50" r="25" fill="red"/></svg>);
-  svg.Rotate(Math.PI/4); // +45°
+  svg.Rotate(Math.PI/4); // +45 deg
   svgimage = svg.RenderImage(100, 100, true);
   new File('test.png').content = EncodePngImage( svgimage )
   }}}
@@ -425,8 +425,8 @@ DEFINE_FUNCTION_FAST( GetImage ) { // using pixbuf
 /**doc
  * $BOOL $INAME( elementId, polarity )
   $H arguments
-   $ARG string elementId: the id of the element with '#' prefix (eg. '#circle1').
-   $ARG boolean polarity: false to hide, true to show.
+   $ARG $STR elementId: the id of the element with '#' prefix (eg. '#circle1').
+   $ARG $BOOL polarity: false to hide, true to show.
   $H return value
    true if the element visibility has been set, otherwise false.
 **/

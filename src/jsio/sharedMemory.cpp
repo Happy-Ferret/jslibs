@@ -455,7 +455,8 @@ DEFINE_PROPERTY( xdrGetter ) {
 
 /**doc
 === Native Interface ===
- *NIBufferGet*
+ * *NIBufferGet*
+  This object provide a BufferGet native interface an can be used in any function that support this interface. For example a Stream object.
 **/
 
 CONFIGURE_CLASS

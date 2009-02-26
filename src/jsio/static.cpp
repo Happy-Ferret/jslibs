@@ -429,7 +429,7 @@ DEFINE_FUNCTION( hton ) {
   If the value of the semaphore is > 0, the value of the semaphore is decremented and the function returns.
   If the value of the semaphore is 0, the function blocks until the value becomes > 0, then the semaphore is decremented and the function returns.
   $H note
-  The "test and decrement" operation is performed atomically.
+   The "test and decrement" operation is performed atomically.
 **/
 DEFINE_FUNCTION_FAST( WaitSemaphore ) {
 
@@ -674,9 +674,9 @@ DEFINE_PROPERTY( physicalMemorySize ) {
 /**doc
  * $OBJ $INAME $READONLY
   Returns an object that contains the following properties:
-  * $STR *architecture*: x86, ...
-  * $STR *name*: Linux, Windows_NT, ...
-  * $STR *release*: 2.6.22.18, 5.1, ...
+   * $STR *architecture*: x86, ...
+   * $STR *name*: Linux, Windows_NT, ...
+   * $STR *release*: 2.6.22.18, 5.1, ...
   $H example
   {{{
   LoadModule('jsstd');
@@ -684,8 +684,8 @@ DEFINE_PROPERTY( physicalMemorySize ) {
   Print( systemInfo.toSource() );
   }}}
   prints:
-  * on coLinux: {{{ ({architecture:"x86", name:"Linux", release:"2.6.22.18-co-0.7.3"}) }}}
-  * on WinXP: {{{ ({architecture:"x86", name:"Windows_NT", release:"5.1"}) }}}
+   * on coLinux: {{{ ({architecture:"x86", name:"Linux", release:"2.6.22.18-co-0.7.3"}) }}}
+   * on WinXP: {{{ ({architecture:"x86", name:"Windows_NT", release:"5.1"}) }}}
 **/
 DEFINE_PROPERTY( systemInfo ) {
 

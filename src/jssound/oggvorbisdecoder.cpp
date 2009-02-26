@@ -198,9 +198,9 @@ DEFINE_CONSTRUCTOR() {
  * $TYPE soundObject $INAME( [frames] )
   Decodes a piece of audio data. If _frames_ argument is omited, the whole stream is decoded.
   $H arguments
-   $ARG integer frames: the number of frames to decode. A frame is a sample of sound.
+   $ARG $INT frames: the number of frames to decode. A frame is a sample of sound.
   $H return value
-   returns a Blob object that has the following properties set: bits, rate, channels, frames
+   A Blob object that has the following properties set: bits, rate, channels, frames
   $H beware
    If all data has been decoded and the Read function is called again, the return expression is evaluated to false.
    This is because an empty Blob must be evaluated as false, like string literals ( !empty_blob == !"" )

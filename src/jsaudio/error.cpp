@@ -23,7 +23,10 @@ $SVN_REVISION $Revision:$
 **/
 BEGIN_CLASS( OalError )
 
-
+/**doc
+ * $INT $INAME
+  OpenAL error number.
+**/
 DEFINE_PROPERTY( code ) {
 
 	JS_GetReservedSlot( cx, obj, 0, vp );
@@ -31,6 +34,10 @@ DEFINE_PROPERTY( code ) {
 }
 
 
+/**doc
+ * $STR $INAME
+  OpenAL error literal.
+**/
 DEFINE_PROPERTY( text ) {
 
 	JS_GetReservedSlot( cx, obj, 0, vp );
@@ -66,7 +73,10 @@ DEFINE_PROPERTY( text ) {
 	JL_BAD;
 }
 
-
+/**doc
+ * $STR $INAME
+  Const name of the OpenAL error.
+**/
 DEFINE_PROPERTY( const ) {
 
 	JS_GetReservedSlot( cx, obj, 0, vp );
@@ -102,7 +112,10 @@ DEFINE_PROPERTY( const ) {
 	JL_BAD;
 }
 
-
+/**doc
+ * $STR $INAME
+  see Text().
+**/
 DEFINE_FUNCTION( toString ) {
 
 	J_CHK( _text(cx, obj, 0, rval) );

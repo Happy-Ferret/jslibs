@@ -64,6 +64,7 @@ DEFINE_CONSTRUCTOR() {
 
 /**doc
  * $INT $INAME()
+  Returns the internal OpenAL filter id.
 **/
 DEFINE_FUNCTION_FAST( valueOf ) {
 
@@ -80,15 +81,14 @@ DEFINE_FUNCTION_FAST( valueOf ) {
 **/
 
 
-
 /**doc
  * $INT $INAME
   set the type of filter represented by the Filter object.
   * undefined
-  * Oal.FILTER_NULL      
-  * Oal.FILTER_LOWPASS   
-  * Oal.FILTER_HIGHPASS  
-  * Oal.FILTER_BANDPASS  
+  * Oal.FILTER_NULL
+  * Oal.FILTER_LOWPASS
+  * Oal.FILTER_HIGHPASS
+  * Oal.FILTER_BANDPASS
 **/
 DEFINE_PROPERTY_SETTER( type ) {
 
@@ -165,15 +165,15 @@ enum {
 
 
 /**doc
- * $REAL lowpassGain
- * $REAL lowpassGainHF
+ * $REAL *lowpassGain*
+ * $REAL *lowpassGainHF*
 
- * $REAL highpassGain
- * $REAL highpassGainLF
+ * $REAL *highpassGain*
+ * $REAL *highpassGainLF*
 
- * $REAL bandpassGain
- * $REAL bandpassGainLF
- * $REAL bandpassGainHF
+ * $REAL *bandpassGain*
+ * $REAL *bandpassGainLF*
+ * $REAL *bandpassGainHF*
 **/
 
 CONFIGURE_CLASS

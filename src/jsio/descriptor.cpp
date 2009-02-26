@@ -397,7 +397,7 @@ bad_ioerror:
 
 /**doc
  * $INAME $READONLY
-  see constants.
+  see constants below.
 **/
 DEFINE_PROPERTY( type ) {
 
@@ -411,9 +411,9 @@ DEFINE_PROPERTY( type ) {
 
 /**doc
  * $INAME $READONLY
-  Is true if the file descriptor has been closed.
+  Is $TRUE if the file descriptor has been closed.
   $H beware
-   Do not confuse with disconnected.
+   Do not confuse with disconnected. eg. A socket descriptor can be open but disconnected.
 **/
 DEFINE_PROPERTY( closed ) {
 
@@ -508,7 +508,8 @@ DEFINE_FUNCTION( Import ) {
 
 /**doc
 === Native Interface ===
- *NIStreamRead*: Read the file as a stream.
+ * *NIStreamRead*
+  Read the file as a stream.
 **/
 
 

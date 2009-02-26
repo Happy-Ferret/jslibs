@@ -69,9 +69,9 @@ BEGIN_CLASS( Database )
  * $INAME( [fileName] [, flags] )
   Creates a new Database object.
   $H arguments
-   $ARG string fileName: is the file name of the database, or an empty string for a temporary database.
+   $ARG $STR fileName: is the file name of the database, or an empty string for a temporary database.
     If omitted or $UNDEF, an in-memory database is created.
-   $ARG enum flags: can be one of the following constant:
+   $ARG $ENUM flags: can be one of the following constant:
     * $CONST READONLY
     * $CONST READWRITE
     * $CONST CREATE
@@ -219,8 +219,8 @@ DEFINE_FUNCTION( Close ) {
  * $TYPE Result $INAME( sqlStr [, map ] )
   Evaluates a SQL string and returns a Result object ready to be executed.
   $H arguments
-   $ARG string sqlStr:
-   $ARG Object map: _map_ is bind to the SQL statement and can be access using '@' char ( see. *Exec* ). If you create new properties on the [Result] object, you can access then in the _sqlStr_ using ':' char. '?' allows you access the _map_ as an array ( see examples ).
+   $ARG $STR sqlStr:
+   $ARG $OBJ map: _map_ is bind to the SQL statement and can be access using '@' char ( see. *Exec* ). If you create new properties on the [Result] object, you can access then in the _sqlStr_ using ':' char. '?' allows you access the _map_ as an array ( see examples ).
     $H example 1
     {{{
     var res = db.Query('SELECT :test1 + 5');
@@ -238,7 +238,7 @@ DEFINE_FUNCTION( Close ) {
     Print( res.Row().toSource() ); // Prints: [9]
     }}}
   $H return value
-   returns a new Result object.
+   A new Result object.
   $H beware
    There are some limitation in variable bindings. For example, they cannot be used to specify a table name.
    `db.Query('SELECT * FROM ?', ['myTable']);` will failed with this exception: `SQLite error 1: near "?": syntax error`
@@ -310,8 +310,8 @@ DEFINE_FUNCTION( Query ) {
  * $VAL $INAME( sqlStr [, map ] )
   Evaluates a SQL string and return the result in one operation.
   $H arguments
-   $ARG string sqlStr: is the SQL statement.
-   $ARG Object map: if given, this argument is bind (as a key:value variable map) to the SQL statement.
+   $ARG $STR sqlStr: is the SQL statement.
+   $ARG $OBJ map: if given, this argument is bind (as a key:value variable map) to the SQL statement.
     $H example
     {{{
     db.Exec('PRAGMA user_version = @ver', { ver:5 } );

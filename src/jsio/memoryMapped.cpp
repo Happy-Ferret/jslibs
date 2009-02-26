@@ -131,7 +131,15 @@ DEFINE_PROPERTY( file ) {
 
 /**doc
 === Native Interface ===
- *NIBufferGet*
+ * *NIBufferGet*
+  This object can be used as a buffer source.
+  $H example
+  {{{
+  var stream = new Stream( new MemoryMapped(new File('directory.cpp').Open("r")) );
+  Print(stream.read(10));
+  Print(stream.read(10));
+  Print(stream.read(10));
+  }}}
 **/
 
 CONFIGURE_CLASS

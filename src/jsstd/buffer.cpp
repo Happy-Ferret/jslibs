@@ -662,8 +662,8 @@ DEFINE_FUNCTION( Write ) {
  * $BOOL $INAME( str [, consume = false ] )
   Check if the given string _str_ matchs to the next data in the buffer.
   $H arguments
-   $ARG string str
-   $ARG boolean consume: if false, just check if it match without consuming data, else, read and check.
+   $ARG $STR str
+   $ARG $BOOL consume: if false, just check if it match without consuming data, else, read and check.
   $H return value
    true if it matchs, else false.
 **/
@@ -1005,7 +1005,7 @@ DEFINE_TRACER() {
   This function is called by the Buffer when its length is less than the requested amount of data.
   $H arguments
    $ARG Buffer bufferObject: is the buffer object that caused the call.
-   $ARG integer missingAmount: is the  missing amount of data to complete the request at once.
+   $ARG $INT missingAmount: is the  missing amount of data to complete the request at once.
   This function is called until the buffer size do not grow any more.
 */
 
@@ -1057,7 +1057,7 @@ DEFINE_TRACER() {
 
 /**doc
 === Native Interface ===
- *NIStreamRead*
+ * *NIStreamRead*
 **/
 
 CONFIGURE_CLASS

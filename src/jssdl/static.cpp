@@ -32,7 +32,7 @@ BEGIN_STATIC
  * $ARRAY | $UNDEF $INAME( bitsPerPixel, flags )
   Returns the available screen dimensions for the given format, sorted largest to smallest.
   $H arguments
-   $ARG integer bitsPerPixel: bit depth, the number of bits per pixel (8, 16, 32)
+   $ARG $INT bitsPerPixel: bit depth, the number of bits per pixel (8, 16, 32)
    $ARG bitmsak flags: a bitwise-ored combination of flags. see SetVideoMode() function.
   $H return value
    * an Array that contains the list of available screen dimensions for the given format and video flags, sorted largest to smallest.
@@ -144,9 +144,9 @@ DEFINE_FUNCTION_FAST( VideoModeOK ) {
  * $VOID $INAME( width, height [ , bitsPerPixel [ , flags ] ] )
   Set the requested video mode (allocating a shadow buffer if necessary).
   $H arguments
-   $ARG integer width: with
-   $ARG integer height: height
-   $ARG integer bitsPerPixel: bit depth, the number of bits per pixel (8, 16, 32). If omited, use the current bpp value.
+   $ARG $INT width: with
+   $ARG $INT height: height
+   $ARG $INT bitsPerPixel: bit depth, the number of bits per pixel (8, 16, 32). If omited, use the current bpp value.
    $ARG bitmsak flags: a bitwise-ored combination of the following flags. If omited, use the previous flags.
     SWSURFACE, HWSURFACE, ASYNCBLIT, ANYFORMAT, HWPALETTE, DOUBLEBUF, FULLSCREEN, OPENGL, OPENGLBLIT, RESIZABLE, NOFRAME HWACCEL, SRCCOLORKEY, RLEACCELOK, RLEACCEL, SRCALPHA, PREALLOC
 **/
@@ -346,8 +346,8 @@ DEFINE_FUNCTION_FAST( GlSwapBuffers ) {
  * $VOID $INAME( attribute, value )
   Set an attribute of the OpenGL subsystem before intialization.
   $H arguments
-   $ARG enum attribute:
-   $ARG integer value:
+   $ARG $ENUM attribute:
+   $ARG $INT value:
 **/
 DEFINE_FUNCTION_FAST( GlSetAttribute ) {
 
@@ -367,8 +367,8 @@ DEFINE_FUNCTION_FAST( GlSetAttribute ) {
  * $INT $INAME( attribute )
   Get an attribute of the OpenGL subsystem from the windowing interface. This is of course different from getting the values from SDL's internal OpenGL subsystem, which only stores the values you request before initialization.
   $H arguments
-   $ARG enum attribute:
-   $ARG integer value:
+   $ARG $ENUM attribute:
+   $ARG $INT value:
   $H return value
    the value of the requested attribute.
 **/
@@ -603,7 +603,7 @@ JSBool FireListener( JSContext *cx, JSObject *listenerObj, SDL_Event *ev, jsval 
 /**doc
  * $VAL $INAME( listeners )
   $H arguments
-   $ARG Object listeners: is an object that contains callback functions.
+   $ARG $OBJ listeners: is an object that contains callback functions.
   $H example
    {{{
    var done = false;
@@ -650,8 +650,8 @@ DEFINE_FUNCTION_FAST( PollEvent ) {
  * $VOID $INAME( x, y )
   Set the position of the mouse cursor (generates a mouse motion event).
   $H arguments
-   $ARG integer x
-   $ARG integer y
+   $ARG $INT x
+   $ARG $INT y
 **/
 DEFINE_FUNCTION_FAST( WarpMouse ) {
 
@@ -745,7 +745,7 @@ DEFINE_PROPERTY( modifierState ) {
  * $BOOL $INAME( keysym )
   Get a snapshot of the current state of the keyboard.
   $H arguments
-   $ARG enum keysym: the key to be tested. see key constants below.
+   $ARG $ENUM keysym: the key to be tested. see key constants below.
 **/
 DEFINE_FUNCTION_FAST( GetKeyState ) {
 
@@ -762,7 +762,7 @@ DEFINE_FUNCTION_FAST( GetKeyState ) {
  * $STR $INAME( keysym )
   Get the name of an keysym.
   $H arguments
-   $ARG enum keysym
+   $ARG $ENUM keysym
 **/
 DEFINE_FUNCTION_FAST( GetKeyName ) {
 
@@ -927,16 +927,14 @@ DEFINE_PROPERTY( hasAltiVec ) {
 
 /**doc
  $H keysym enum
-  <pre>
-  K_UNKNOWN, K_FIRST, K_BACKSPACE, K_TAB, K_CLEAR, K_RETURN, K_PAUSE, K_ESCAPE, K_SPACE, K_EXCLAIM, K_QUOTEDBL, K_HASH, K_DOLLAR, K_AMPERSAND, K_QUOTE, K_LEFTPAREN, K_RIGHTPAREN, K_ASTERISK, K_PLUS, K_COMMA, K_MINUS, K_PERIOD, K_SLASH, 
-  K_COLON, K_SEMICOLON, K_LESS, K_EQUALS, K_GREATER, K_QUESTION, K_AT, K_LEFTBRACKET, K_BACKSLASH, K_RIGHTBRACKET, K_CARET, K_UNDERSCORE, K_BACKQUOTE, K_DELETE, 
-  K_UP, K_DOWN, K_RIGHT, K_LEFT, K_INSERT, K_HOME, K_END, K_PAGEUP, K_PAGEDOWN,
-  K_NUMLOCK, K_CAPSLOCK, K_SCROLLOCK, K_RSHIFT, K_LSHIFT, K_RCTRL, K_LCTRL, K_RALT, K_LALT, K_RMETA, K_LMETA, K_LSUPER, K_RSUPER, K_MODE, K_COMPOSE, K_HELP, K_PRINT, K_SYSREQ, K_BREAK, K_MENU, K_POWER, K_EURO, K_UNDO
-  K_F1, K_F2, K_F3, K_F4, K_F5, K_F6, K_F7, K_F8, K_F9, K_F10, K_F11, K_F12, K_F13, K_F14, K_F15, 
-  K_0, K_1, K_2, K_3, K_4, K_5, K_6, K_7, K_8, K_9, 
-  K_a, K_b, K_c, K_d, K_e, K_f, K_g, K_h, K_i, K_j, K_k, K_l, K_m, K_n, K_o, K_p, K_q, K_r, K_s, K_t, K_u, K_v, K_w, K_x, K_y, K_z, 
-  K_KP0, K_KP1, K_KP2, K_KP3, K_KP4, K_KP5, K_KP6, K_KP7, K_KP8, K_KP9, K_KP_PERIOD, K_KP_DIVIDE, K_KP_MULTIPLY, K_KP_MINUS, K_KP_PLUS, K_KP_ENTER, K_KP_EQUALS, 
-  </pre>
+  `K_UNKNOWN, K_FIRST, K_BACKSPACE, K_TAB, K_CLEAR, K_RETURN, K_PAUSE, K_ESCAPE, K_SPACE, K_EXCLAIM, K_QUOTEDBL, K_HASH, K_DOLLAR, K_AMPERSAND, K_QUOTE, K_LEFTPAREN, K_RIGHTPAREN, K_ASTERISK, K_PLUS, K_COMMA, K_MINUS, K_PERIOD, K_SLASH, `
+  `K_COLON, K_SEMICOLON, K_LESS, K_EQUALS, K_GREATER, K_QUESTION, K_AT, K_LEFTBRACKET, K_BACKSLASH, K_RIGHTBRACKET, K_CARET, K_UNDERSCORE, K_BACKQUOTE, K_DELETE, `
+  `K_UP, K_DOWN, K_RIGHT, K_LEFT, K_INSERT, K_HOME, K_END, K_PAGEUP, K_PAGEDOWN, `
+  `K_NUMLOCK, K_CAPSLOCK, K_SCROLLOCK, K_RSHIFT, K_LSHIFT, K_RCTRL, K_LCTRL, K_RALT, K_LALT, K_RMETA, K_LMETA, K_LSUPER, K_RSUPER, K_MODE, K_COMPOSE, K_HELP, K_PRINT, K_SYSREQ, K_BREAK, K_MENU, K_POWER, K_EURO, K_UNDO, `
+  `K_F1, K_F2, K_F3, K_F4, K_F5, K_F6, K_F7, K_F8, K_F9, K_F10, K_F11, K_F12, K_F13, K_F14, K_F15, `
+  `K_0, K_1, K_2, K_3, K_4, K_5, K_6, K_7, K_8, K_9, `
+  `K_a, K_b, K_c, K_d, K_e, K_f, K_g, K_h, K_i, K_j, K_k, K_l, K_m, K_n, K_o, K_p, K_q, K_r, K_s, K_t, K_u, K_v, K_w, K_x, K_y, K_z, `
+  `K_KP0, K_KP1, K_KP2, K_KP3, K_KP4, K_KP5, K_KP6, K_KP7, K_KP8, K_KP9, K_KP_PERIOD, K_KP_DIVIDE, K_KP_MULTIPLY, K_KP_MINUS, K_KP_PLUS, K_KP_ENTER, K_KP_EQUALS, `
 **/
 
 

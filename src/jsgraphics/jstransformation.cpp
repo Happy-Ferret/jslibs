@@ -113,7 +113,7 @@ DEFINE_FUNCTION_FAST( ClearTranslation ) {
  * $THIS $INAME( matrix )
   Load a 4x4 matrix as the current transformation.
   $H arguments
-   $ARG value matrix: an Array or an object that supports NIMatrix44Read native interface.
+   $ARG $VAL matrix: an Array or an object that supports NIMatrix44Read native interface.
 **/
 DEFINE_FUNCTION_FAST( Load ) {
 
@@ -135,7 +135,7 @@ DEFINE_FUNCTION_FAST( Load ) {
  * $THIS $INAME( matrix )
   Load the rotation part of another matrix to the current matrix.
   $H arguments
-   $ARG value matrix: an Array or an object that supports NIMatrix44Read native interface.
+   $ARG $VAL matrix: an Array or an object that supports NIMatrix44Read native interface.
 **/
 DEFINE_FUNCTION_FAST( LoadRotation ) {
 
@@ -166,7 +166,7 @@ DEFINE_FUNCTION_FAST( LoadRotation ) {
  * $THIS $INAME( matrix )
   Load the translation part of another matrix to the current matrix.
   $H arguments
-   $ARG value matrix: an Array or an object that supports NIMatrix44Read native interface.
+   $ARG $VAL matrix: an Array or an object that supports NIMatrix44Read native interface.
 **/
 DEFINE_FUNCTION_FAST( LoadTranslation ) {
 
@@ -188,9 +188,9 @@ DEFINE_FUNCTION_FAST( LoadTranslation ) {
  * $THIS $INAME( x, y, z )
   Sets the translation part of the current transformation.
   $H arguments
-   $ARG real x
-   $ARG real y
-   $ARG real z
+   $ARG $REAL x
+   $ARG $REAL y
+   $ARG $REAL z
 **/
 DEFINE_FUNCTION_FAST( Translation ) {
 
@@ -212,9 +212,9 @@ DEFINE_FUNCTION_FAST( Translation ) {
  * $THIS $INAME( x, y, z )
   Apply a translation to the current ransformation.
   $H arguments
-   $ARG real x
-   $ARG real y
-   $ARG real z
+   $ARG $REAL x
+   $ARG $REAL y
+   $ARG $REAL z
 **/
 DEFINE_FUNCTION_FAST( Translate ) {
 
@@ -240,10 +240,10 @@ DEFINE_FUNCTION_FAST( Translate ) {
  * $THIS $INAME( w, x, y, z )
   Sets the rotation part from a quaternion.
   $H arguments
-   $ARG real w
-   $ARG real x
-   $ARG real y
-   $ARG real z
+   $ARG $REAL w
+   $ARG $REAL x
+   $ARG $REAL y
+   $ARG $REAL z
 **/
 DEFINE_FUNCTION_FAST( RotationFromQuaternion ) {
 
@@ -290,9 +290,9 @@ DEFINE_FUNCTION_FAST( RotationFromQuaternion ) {
  * $THIS $INAME( roll, pitch, yaw )
   Sets the Tait-Bryan rotation.
   $H arguments
-   $ARG real roll
-   $ARG real pitch
-   $ARG real yaw
+   $ARG $REAL roll
+   $ARG $REAL pitch
+   $ARG $REAL yaw
 **/
 DEFINE_FUNCTION_FAST( TaitBryanRotation ) {
 
@@ -317,10 +317,10 @@ DEFINE_FUNCTION_FAST( TaitBryanRotation ) {
  * $THIS $INAME( angle, x, y, z )
   Sets the rotation part of the current transformation.
   $H arguments
-   $ARG real angle in degres
-   $ARG real x
-   $ARG real y
-   $ARG real z
+   $ARG $REAL angle in degres
+   $ARG $REAL x
+   $ARG $REAL y
+   $ARG $REAL z
 **/
 DEFINE_FUNCTION_FAST( Rotation ) {
 
@@ -346,10 +346,10 @@ DEFINE_FUNCTION_FAST( Rotation ) {
  * $THIS $INAME( angle, x, y, z )
   Apply a rotation to the current ransformation.
   $H arguments
-   $ARG real angle in degres
-   $ARG real x
-   $ARG real y
-   $ARG real z
+   $ARG $REAL angle in degres
+   $ARG $REAL x
+   $ARG $REAL y
+   $ARG $REAL z
 **/
 DEFINE_FUNCTION_FAST( Rotate ) {
 
@@ -377,7 +377,7 @@ DEFINE_FUNCTION_FAST( Rotate ) {
  * $THIS $INAME( angle )
   Set the rotation around the X axis.
   $H arguments
-   $ARG real angle in degres
+   $ARG $REAL angle in degres
 **/
 DEFINE_FUNCTION_FAST( RotationX ) {
 
@@ -399,7 +399,7 @@ DEFINE_FUNCTION_FAST( RotationX ) {
  * $THIS $INAME( angle )
   Set the rotation around the Y axis.
   $H arguments
-   $ARG real angle in degres
+   $ARG $REAL angle in degres
 **/
 DEFINE_FUNCTION_FAST( RotationY ) {
 
@@ -421,7 +421,7 @@ DEFINE_FUNCTION_FAST( RotationY ) {
  * $THIS $INAME( angle )
   Set the rotation around the Z axis.
   $H arguments
-   $ARG real angle in degres
+   $ARG $REAL angle in degres
 **/
 DEFINE_FUNCTION_FAST( RotationZ ) {
 
@@ -443,9 +443,9 @@ DEFINE_FUNCTION_FAST( RotationZ ) {
  * $THIS $INAME( x, y, z )
   unavailable: need to be fixed.
   $H arguments
-   $ARG real x
-   $ARG real y
-   $ARG real z
+   $ARG $REAL x
+   $ARG $REAL y
+   $ARG $REAL z
 **/
 DEFINE_FUNCTION_FAST( LookAt ) {
 
@@ -533,7 +533,7 @@ DEFINE_FUNCTION_FAST( Invert ) {
   Apply a _newTransformation_ to the current transformation.
   this = this . new
   $H arguments
-   $ARG value newTransformation: an Array or an object that supports NIMatrix44Read native interface.
+   $ARG $VAL newTransformation: an Array or an object that supports NIMatrix44Read native interface.
 **/
 DEFINE_FUNCTION_FAST( Product ) {
 
@@ -554,7 +554,7 @@ DEFINE_FUNCTION_FAST( Product ) {
   Apply the current transformation to the _otherTransformation_ and stores the result to the current transformation.
   this = new . this
   $H arguments
-   $ARG value otherTransformation: an Array or an object that supports NIMatrix44Read native interface.
+   $ARG $VAL otherTransformation: an Array or an object that supports NIMatrix44Read native interface.
 **/
 DEFINE_FUNCTION_FAST( ReverseProduct ) {
 
@@ -574,7 +574,7 @@ DEFINE_FUNCTION_FAST( ReverseProduct ) {
  * $VOID $INAME( vector )
   transforms the 3D or 4D _vector_ by the current transformation.
   $H arguments
-   $ARG Array vector
+   $ARG $ARRAY vector
 **/
 DEFINE_FUNCTION_FAST( TransformVector ) {
 
@@ -695,7 +695,8 @@ DEFINE_SET_PROPERTY() {
 
 /**doc
 === Native Interface ===
- *NIMatrix44Read*: the current transformation matrix.
+ * *NIMatrix44Read*
+  The current transformation matrix.
 **/
 
 CONFIGURE_CLASS

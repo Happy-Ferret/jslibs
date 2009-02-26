@@ -34,6 +34,11 @@ $MODULE_HEADER
 **/
 
 /**doc t:footer
+
+== more information ==
+[http://connect.creativelabs.com/openal/Documentation/oalspecs-specs.pdf OpenAL Specification and Reference]
+[http://connect.creativelabs.com/openal/Documentation/OpenAL%201.1%20Specification.pdf OpenAL 1.1 Specification and Reference]
+
 $MODULE_FOOTER
 **/
 

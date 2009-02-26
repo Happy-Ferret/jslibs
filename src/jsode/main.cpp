@@ -55,7 +55,7 @@ $MODULE_HEADER
  ODE is useful for simulating vehicles, objects in virtual reality environments and virtual creatures.
  It is currently used in many computer games, 3D authoring tools and simulation tools.
  $H note
-  In the following API description, ,,vec3,, type is a js 3 dimentions array like `[1, 3,5, 0]`
+  In the following API description, ,,vec3,, type is a js 3 dimentions $ARRAY like `[1,3,5]`
 **/
 
 /**doc t:footer

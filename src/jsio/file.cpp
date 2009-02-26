@@ -572,10 +572,12 @@ DEFINE_PROPERTY( standard ) {
   * File.`TRUNCATE`
   * File.`SYNC`
   * File.`EXCL`
+
  * *Seek* mode
   * File.`SEEK_SET`
   * File.`SEEK_CUR`
   * File.`SEEK_END`
+
  * *info.type*
   * File.`FILE_FILE`
   * File.`FILE_DIRECTORY`
@@ -585,7 +587,8 @@ DEFINE_PROPERTY( standard ) {
 
 /**doc
 === Native Interface ===
- *NIStreamRead*: Read the file as a stream.
+ * *NIStreamRead*
+  Read the file as a stream.
 **/
 
 

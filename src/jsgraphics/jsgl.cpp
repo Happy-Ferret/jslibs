@@ -111,9 +111,9 @@ DEFINE_FUNCTION_FAST( GetBoolean ) {
  * $INT | $ARRAY $INAME( pname [, count] )
   $H arguments
    $ARG GLenum pname
-   $ARG integer count: is the number of expected values. If _count_ is defined, the function will returns an array of values, else it returns a single value.
+   $ARG $INT count: is the number of expected values. If _count_ is defined, the function will returns an array of values, else it returns a single value.
   $H return value
-   value or values of a selected parameter.
+   A value or an array of values of a selected parameter.
   $H OpenGL API
    glGetIntegerv
 **/
@@ -151,9 +151,9 @@ DEFINE_FUNCTION_FAST( GetInteger ) {
  * $REAL | $ARRAY $INAME( pname [, count] )
   $H arguments
    $ARG GLenum pname
-   $ARG integer count: is the number of expected values. If _count_ is defined, the function will returns an array of values, else a single value.
+   $ARG $INT count: is the number of expected values. If _count_ is defined, the function will returns an array of values, else a single value.
   $H return value
-   single value or Array of values of the selected parameter.
+   A single value or an Array of values of the selected parameter.
   $H OpenGL API
    glGetDoublev
 **/
@@ -191,7 +191,7 @@ DEFINE_FUNCTION_FAST( GetDouble ) {
  * $VOID $INAME( op, value )
   $H arguments
    $ARG GLenum op
-   $ARG real value
+   $ARG $REAL value
   $H OpenGL API
    glAccum
 **/
@@ -213,7 +213,7 @@ DEFINE_FUNCTION_FAST( Accum ) {
  * $VOID $INAME( func, ref )
   $H arguments
    $ARG GLenum op
-   $ARG real ref
+   $ARG $REAL ref
   $H OpenGL API
    glAlphaFunc
 **/
@@ -261,7 +261,7 @@ DEFINE_FUNCTION_FAST( Finish ) {
  * $VOID $INAME( pname, params )
   $H arguments
    $ARG GLenum pname
-   $ARG value params: is either a number or an array of numbers.
+   $ARG $VAL params: is either a number or an array of numbers.
   $H OpenGL API
    glFogi, glFogf, glFogfv
 **/
@@ -320,9 +320,9 @@ DEFINE_FUNCTION_FAST( Hint ) {
 /**doc
  * $VOID $INAME( x, y [, z] )
   $H arguments
-   $ARG real x
-   $ARG real y
-   $ARG real z
+   $ARG $REAL x
+   $ARG $REAL y
+   $ARG $REAL z
   $H OpenGL API
    glVertex3d, glVertex2d
 **/
@@ -355,10 +355,10 @@ DEFINE_FUNCTION_FAST( Vertex ) {
 /**doc
  * $VOID $INAME( red, green, blue [, alpha] )
   $H arguments
-   $ARG real red
-   $ARG real green
-   $ARG real blue
-   $ARG real alpha
+   $ARG $REAL red
+   $ARG $REAL green
+   $ARG $REAL blue
+   $ARG $REAL alpha
   $H OpenGL API
    glColor4d, glColor3d
 **/
@@ -388,9 +388,9 @@ DEFINE_FUNCTION_FAST( Color ) {
 /**doc
  * $VOID $INAME( nx, ny, nz )
   $H arguments
-   $ARG real nx
-   $ARG real ny
-   $ARG real nz
+   $ARG $REAL nx
+   $ARG $REAL ny
+   $ARG $REAL nz
   $H OpenGL API
    glNormal3d
 **/
@@ -413,9 +413,9 @@ DEFINE_FUNCTION_FAST( Normal ) {
 /**doc
  * $VOID $INAME( s [, t [, r]] )
   $H arguments
-   $ARG real s
-   $ARG real t
-   $ARG real r
+   $ARG $REAL s
+   $ARG $REAL t
+   $ARG $REAL r
   $H OpenGL API
    glTexCoord1d, glTexCoord2d, glTexCoord3d
 **/
@@ -455,7 +455,7 @@ DEFINE_FUNCTION_FAST( TexCoord ) {
   $H arguments
    $ARG GLenum target
    $ARG GLenum pname
-   $ARG value params: is either a number or an array of numbers.
+   $ARG $VAL params: is either a number or an array of numbers.
   $H OpenGL API
    glTexParameteri, glTexParameterf, glTexParameterfv
 **/
@@ -498,7 +498,7 @@ DEFINE_FUNCTION_FAST( TexParameter ) {
   $H arguments
    $ARG GLenum target
    $ARG GLenum pname
-   $ARG value params: is either a number or an array of numbers.
+   $ARG $VAL params: is either a number or an array of numbers.
   $H OpenGL API
    glTexEnvi, glTexEnvf, glTexEnvfv
 **/
@@ -539,7 +539,7 @@ DEFINE_FUNCTION_FAST( TexEnv ) {
  * $VOID $INAME( pname, params )
   $H arguments
    $ARG GLenum pname
-   $ARG value params: is either a number or an array of numbers.
+   $ARG $VAL params: is either a number or an array of numbers.
   $H OpenGL API
    glLightModeli, glLightModelf, glLightModelfv
 **/
@@ -580,7 +580,7 @@ DEFINE_FUNCTION_FAST( LightModel ) {
   $H arguments
    $ARG GLenum light
    $ARG GLenum pname
-   $ARG value params: is either a number or an array of numbers.
+   $ARG $VAL params: is either a number or an array of numbers.
   $H OpenGL API
    glLighti, glLightf, glLightfv
 **/
@@ -622,7 +622,7 @@ DEFINE_FUNCTION_FAST( Light ) {
   $H arguments
    $ARG GLenum face
    $ARG GLenum pname
-   $ARG value params: is either a number or an array of numbers.
+   $ARG $VAL params: is either a number or an array of numbers.
   $H OpenGL API
    glMateriali, glMaterialf, glMaterialfv
 **/
@@ -698,7 +698,7 @@ DEFINE_FUNCTION_FAST( Disable ) {
 /**doc
  * $VOID $INAME( size )
   $H arguments
-   $ARG real size
+   $ARG $REAL size
   $H OpenGL API
    glPointSize
 **/
@@ -716,7 +716,7 @@ DEFINE_FUNCTION_FAST( PointSize ) {
 /**doc
  * $VOID $INAME( width )
   $H arguments
-   $ARG real width
+   $ARG $REAL width
   $H OpenGL API
    glLineWidth
 **/
@@ -789,8 +789,8 @@ DEFINE_FUNCTION_FAST( DepthFunc ) {
 /**doc
  * $VOID $INAME( zNear, zFar )
   $H arguments
-   $ARG real zNear
-   $ARG real zFar
+   $ARG $REAL zNear
+   $ARG $REAL zFar
   $H OpenGL API
    glDepthRange
 **/
@@ -845,7 +845,7 @@ DEFINE_FUNCTION_FAST( FrontFace ) {
 /**doc
  * $VOID $INAME( s )
   $H arguments
-   $ARG integer s
+   $ARG $INT s
   $H OpenGL API
    glClearStencil
 **/
@@ -863,7 +863,7 @@ DEFINE_FUNCTION_FAST( ClearStencil ) {
 /**doc
  * $VOID $INAME( depth )
   $H arguments
-   $ARG real depth
+   $ARG $REAL depth
   $H OpenGL API
    glClearDepth
 **/
@@ -882,10 +882,10 @@ DEFINE_FUNCTION_FAST( ClearDepth ) {
 /**doc
  * $VOID $INAME( red, green, blue, alpha )
   $H arguments
-   $ARG real red
-   $ARG real green
-   $ARG real blue
-   $ARG real alpha
+   $ARG $REAL red
+   $ARG $REAL green
+   $ARG $REAL blue
+   $ARG $REAL alpha
   $H OpenGL API
    glClearColor
 **/
@@ -907,10 +907,10 @@ DEFINE_FUNCTION_FAST( ClearColor ) {
 /**doc
  * $VOID $INAME( red, green, blue, alpha )
   $H arguments
-   $ARG real red
-   $ARG real green
-   $ARG real blue
-   $ARG real alpha
+   $ARG $REAL red
+   $ARG $REAL green
+   $ARG $REAL blue
+   $ARG $REAL alpha
   $H OpenGL API
    glClearAccum
 **/
@@ -951,7 +951,7 @@ DEFINE_FUNCTION_FAST( Clear ) {
  * $VOID $INAME( plane, equation )
   $H arguments
    $ARG GLenum plane
-   $ARG Array equation: array of real
+   $ARG $ARRAY equation: array of real
   $H OpenGL API
    glClipPlane
 **/
@@ -973,10 +973,10 @@ DEFINE_FUNCTION_FAST( ClipPlane ) {
 /**doc
  * $VOID $INAME( x, y, width, height )
   $H arguments
-   $ARG integer x
-   $ARG integer y
-   $ARG integer width
-   $ARG integer height
+   $ARG $INT x
+   $ARG $INT y
+   $ARG $INT width
+   $ARG $INT height
   $H OpenGL API
    glViewport
 **/
@@ -997,12 +997,12 @@ DEFINE_FUNCTION_FAST( Viewport ) {
 /**doc
  * $VOID $INAME( left, right, bottom, top, zNear, zFar )
   $H arguments
-   $ARG real left
-   $ARG real right
-   $ARG real bottom
-   $ARG real top
-   $ARG real zNear
-   $ARG real zFar
+   $ARG $REAL left
+   $ARG $REAL right
+   $ARG $REAL bottom
+   $ARG $REAL top
+   $ARG $REAL zNear
+   $ARG $REAL zFar
   $H OpenGL API
    glFrustum
 **/
@@ -1026,12 +1026,12 @@ DEFINE_FUNCTION_FAST( Frustum ) {
 /**doc
  * $VOID $INAME( left, right, bottom, top, zNear, zFar )
   $H arguments
-   $ARG real left
-   $ARG real right
-   $ARG real bottom
-   $ARG real top
-   $ARG real zNear
-   $ARG real zFar
+   $ARG $REAL left
+   $ARG $REAL right
+   $ARG $REAL bottom
+   $ARG $REAL top
+   $ARG $REAL zNear
+   $ARG $REAL zFar
   $H OpenGL API
    glOrtho
 **/
@@ -1060,9 +1060,9 @@ DEFINE_FUNCTION_FAST( Ortho ) {
  * $VOID $INAME( fovy, zNear, zFar )
   Set up a perspective projection matrix.
   $H arguments
-   $ARG real fovy
-   $ARG real zNear
-   $ARG real zFar
+   $ARG $REAL fovy
+   $ARG $REAL zNear
+   $ARG $REAL zFar
   $H note
    This is not an OpenGL API function.
   $H OpenGL API
@@ -1159,7 +1159,7 @@ DEFINE_FUNCTION_FAST( PopMatrix ) {
 /**doc
  * $VOID $INAME( matrix )
   $H arguments
-   $ARG value matrix: either a matrix object or an Array
+   $ARG $VAL matrix: either a matrix object or an Array
   $H OpenGL API
    glLoadMatrixf
 **/
@@ -1179,10 +1179,10 @@ DEFINE_FUNCTION_FAST( LoadMatrix ) {
 /**doc
  * $VOID $INAME( angle, x, y, z )
   $H arguments
-   $ARG real angle
-   $ARG real x
-   $ARG real y
-   $ARG real z
+   $ARG $REAL angle
+   $ARG $REAL x
+   $ARG $REAL y
+   $ARG $REAL z
   $H OpenGL API
    glRotated
 **/
@@ -1204,9 +1204,9 @@ DEFINE_FUNCTION_FAST( Rotate ) {
 /**doc
  * $VOID $INAME( x, y [, z = 0] )
   $H arguments
-   $ARG real x
-   $ARG real y
-   $ARG real z
+   $ARG $REAL x
+   $ARG $REAL y
+   $ARG $REAL z
   $H OpenGL API
    glTranslated
 **/
@@ -1230,9 +1230,9 @@ DEFINE_FUNCTION_FAST( Translate ) {
 /**doc
  * $VOID $INAME( x, y [, z = 1] )
   $H arguments
-   $ARG real x
-   $ARG real y
-   $ARG real z
+   $ARG $REAL x
+   $ARG $REAL y
+   $ARG $REAL z
   $H OpenGL API
    glScaled
 **/
@@ -1272,7 +1272,7 @@ DEFINE_FUNCTION_FAST( NewList ) {
  * $VOID $INAME( list )
   Deletes a display-list.
   $H arguments
-   $ARG integer list
+   $ARG $INT list
   $H OpenGL API
    glDeleteLists
 **/
@@ -1305,7 +1305,7 @@ DEFINE_FUNCTION_FAST( EndList ) {
  * $VOID $INAME( lists )
   Calls one or more display-list.
   $H arguments
-   $ARG value lists: is a single list name or an Array of list name.
+   $ARG $VAL lists: is a single list name or an Array of list name.
   $H OpenGL API
    glCallList, glCallLists
 **/
@@ -1424,7 +1424,7 @@ DEFINE_FUNCTION_FAST( GenTexture ) {
  * $VOID $INAME( target, texture )
   $H arguments
    $ARG GLenum target
-   $ARG integer texture
+   $ARG $INT texture
   $H OpenGL API
    glBindTexture
 **/
@@ -1444,7 +1444,7 @@ DEFINE_FUNCTION_FAST( BindTexture ) {
  * $VOID $INAME( texture )
   Deletes the given texture.
   $H arguments
-   $ARG integer texture
+   $ARG $INT texture
   $H OpenGL API
    glDeleteTextures
 **/
@@ -1463,13 +1463,13 @@ DEFINE_FUNCTION_FAST( DeleteTexture ) {
 /**doc
  * $VOID $INAME( level, internalFormat, x, y, width, height, [ border ] )
   $H arguments
-   $ARG integer level
-   $ARG integer internalFormat
-   $ARG integer x
-   $ARG integer y
-   $ARG integer width
-   $ARG integer height
-   $ARG integer border
+   $ARG $INT level
+   $ARG $INT internalFormat
+   $ARG $INT x
+   $ARG $INT y
+   $ARG $INT width
+   $ARG $INT height
+   $ARG $INT border
   $H note
    The target is always a GL_TEXTURE_2D
   $H OpenGL API
@@ -1570,7 +1570,7 @@ DEFINE_FUNCTION_FAST( GenBuffer ) {
  * $VOID $INAME( target, buffer )
   $H arguments
    $ARG GLenum target
-   $ARG integer buffer
+   $ARG $INT buffer
   $H OpenGL API
    glBindBufferARB
 **/
@@ -1595,7 +1595,7 @@ DEFINE_FUNCTION_FAST( BindBuffer ) {
  * $VOID $INAME( pname, params )
   $H arguments
    $ARG GLenum pname
-   $ARG value params: is a real or an Array of real.
+   $ARG $VAL params: is a real or an Array of real.
   $H OpenGL API
    glPointParameterf, glPointParameterfv
 **/
@@ -1679,9 +1679,9 @@ DEFINE_FUNCTION_FAST( ClientActiveTexture ) {
  * $VOID $INAME( target, s [, t [, r]] )
   $H arguments
    $ARG GLenum target
-   $ARG real s
-   $ARG real t
-   $ARG real r
+   $ARG $REAL s
+   $ARG $REAL t
+   $ARG $REAL r
   $H OpenGL API
    glMultiTexCoord1d, glMultiTexCoord2d, glMultiTexCoord3d
 **/
@@ -1911,8 +1911,8 @@ DEFINE_FUNCTION_FAST( DrawTrimesh ) {
  * $VOID $INAME( target, [internalformat], texture )
   $H arguments
    $ARG GLenum target
-   $ARG integer internalformat: is the internal PixelFormat. If undefined, the function will use the format of _texture_.
-   $ARG value texture: either a Texture object or an image object.
+   $ARG $INT internalformat: is the internal PixelFormat. If undefined, the function will use the format of _texture_.
+   $ARG $VAL texture: either a Texture object or an image object.
   $H note
    This is not an OpenGL API function.
   $H OpenGL API
@@ -1994,10 +1994,10 @@ DEFINE_FUNCTION_FAST( DefineTextureImage ) {
   Returns the current contain of the viewport.
   $H arguments
    $ARG GLenum target
-   $ARG integer internalformat: is the internal PixelFormat. If undefined, the function will use the format of _texture_.
-   $ARG value texture: either a Texture object or an image object.
+   $ARG $INT internalformat: is the internal PixelFormat. If undefined, the function will use the format of _texture_.
+   $ARG $VAL texture: either a Texture object or an image object.
   $H return value
-   returns an image object.
+   An image object.
   $H note
    This is not an OpenGL API function.
   $H OpenGL API
@@ -2082,17 +2082,18 @@ JSBool Init( JSContext *cx, JSObject *obj ) {
 	JL_BAD;
 }
 
-/**doc
-=== details ===
- [http://www.glprogramming.com/blue/ OpenGL API Documentation]
-**/
-
 
 /**doc
 === Native Interface ===
- *NIMatrix44Read*: the current matrix. See MatrixMode() to specifiy which matrix stack is the target forsubsequent matrix operations.
+ * *NIMatrix44Read*
+  the current OpenGL matrix. See MatrixMode() to specifiy which matrix stack is the target forsubsequent matrix operations.
 **/
 
+
+/**doc
+== more information ==
+ [http://www.glprogramming.com/blue/ OpenGL API Documentation]
+**/
 
 CONFIGURE_CLASS
 

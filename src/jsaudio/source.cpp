@@ -191,7 +191,7 @@ DEFINE_FUNCTION_FAST( QueueBuffers ) {
 
 
 /**doc
- * $Buffer $INAME()
+ * $TYPE OalBuffer $INAME()
   $H OpenAL API
    alDeleteBuffers
 **/

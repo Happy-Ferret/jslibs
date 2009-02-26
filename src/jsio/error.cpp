@@ -19,7 +19,7 @@
 /**doc
 $CLASS_HEADER
 $SVN_REVISION $Revision:$
- You cannot construct this class.
+ You cannot construct this class.$LF
  Its aim is to throw as an exception on any NSPR runtime error.
 **/
 BEGIN_CLASS( IoError )

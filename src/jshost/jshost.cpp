@@ -304,13 +304,13 @@ The main features are:
    If this last expression is a positive integer, its value is returned, in any other case, 0 is returned.
  * If there is a pending uncatched exception and if this exception can be converted into a number (see valueOf), this numeric value is used as exit code.
  $H example
-  {{{
-  function Exit(code) {
-   throw code;
-  }
+ {{{
+ function Exit(code) {
+  throw code;
+ }
   
-  Exit(2);
-  }}}
+ Exit(2);
+ }}}
 
 === Global functions ===
  * status *LoadModule*( moduleFileName )
@@ -322,7 +322,7 @@ The main features are:
   Print( 'Unsafe mode: '+configuration.unsafeMode, '\n' );
   }}}
   $H note
-  You can avoid LoadModule to use the global object like this:
+  You can avoid LoadModule to use the global object and load the module in your own namespace:
   {{{
   var std = {};
   LoadModule.call( std, 'jsstd' );
@@ -333,26 +333,26 @@ The main features are:
 === Global properties ===
 
  * *arguments*
-  The command-line arguments ( given after command line options ).
+  The command-line arguments (given after command line options).
   $H example
   {{{
   for ( var i in arguments ) {
-
-    Print( 'argument['+i+'] = '+arguments[i] ,'\n' );
+   
+   Print( 'argument['+i+'] = '+arguments[i] ,'\n' );
   }
+  }}}
+  <pre>
   ...
-  c:\>jshost -g 8192 -u 0 foo.js bar
+  c:\>jshost -g 600 -u 0 foo.js bar
   argument[0] = foo.js
   argument[1] = bar
-  }}}
+  </pre>
 
- * *endSignal* $READONLY
-  Is true if a break signal ( ctrl-c, .. ) has been sent. This event can be reset.
+ * *endSignal*
+  Is $TRUE if a break signal (ctrl-c, ...) has been sent to jshost. This event can be reset.
 
 === Configuration object ===
-
-jshost create a global _configuration_ global to provide other modules
-some useful informations like `stdout` access and `unsafeMode` flag.
+ jshost create a global `_configuration` object to provide other modules some useful informations like `stdout` access and `unsafeMode` flag.
 
 == Remarks ==
 
@@ -361,9 +361,9 @@ some useful informations like `stdout` access and `unsafeMode` flag.
  * ".so" : for linux
 
 === Modules entry points signature are ===
-|| `"ModuleInit"` || `JSBool (*ModuleInitFunction)(JSContext *, JSObject *)` ||
-|| `"ModuleRelease"` || `void (*ModuleReleaseFunction)(JSContext *cx)` ||
-|| `"ModuleFree"` || `void (*ModuleFreeFunction)(void)` ||
+|| `"ModuleInit"` || `JSBool (*ModuleInitFunction)(JSContext *, JSObject *)` || Called when the module is being load ||
+|| `"ModuleRelease"` || `void (*ModuleReleaseFunction)(JSContext *cx)` || Called when the module is not more needed ||
+|| `"ModuleFree"` || `void (*ModuleFreeFunction)(void)` || Called to let the module moke some cleanup tasks ||
 
 
 === Exemple (win32) ===
@@ -380,5 +380,4 @@ extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj)
 }
 }}}
 **/
-
 

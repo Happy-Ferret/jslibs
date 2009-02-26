@@ -285,7 +285,8 @@ DEFINE_PROPERTY( mass ) {
 
 /**doc
 === Native Interface ===
- *NIMatrix44Read*: is the current body's position.
+ * *NIMatrix44Read*
+  Is the current body's position.
 **/
 
 CONFIGURE_CLASS

@@ -23,7 +23,7 @@
 /**doc
 ----
 == jsz::ZError class ==
- You cannot construct this class.
+ You cannot construct this class.$LF
  Its aim is to throw as an exception on any zlib runtime error.
 **/
 

@@ -47,10 +47,10 @@ DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are
  * $INAME( toCode, fromCode [ , toUseWide, fromUseWide ] )
   Constructs a new conversion object that transforms from _fromCode_ into _toCode_.
   $H arguments
-   $ARG string toCode: destination encoding (see Iconv.list property)
-   $ARG string fromCode: source encoding (see Iconv.list property)
-   $ARG boolean toUseWide:
-   $ARG boolean fromUseWide:
+   $ARG $STR toCode: destination encoding (see Iconv.list property)
+   $ARG $STR fromCode: source encoding (see Iconv.list property)
+   $ARG $BOOL toUseWide:
+   $ARG $BOOL fromUseWide:
 **/
 DEFINE_CONSTRUCTOR() {
 

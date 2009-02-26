@@ -40,7 +40,7 @@ typedef struct {
 //}
 
 
-/**doc
+/**XXXdoc
 $CLASS_HEADER
 $SVN_REVISION $Revision$
 **/

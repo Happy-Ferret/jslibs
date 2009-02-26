@@ -80,7 +80,7 @@ DEFINE_FINALIZE() {
  * $INAME( modeName, cipherName, key, [IV], [arg], [rounds] )
   Constructs a Cipher object that use _cipherName_ algorithm for performing encryption and decryption.
   $H arguments
-   $ARG string modeName: is the block cipher modes of operation:
+   $ARG $STR modeName: is the block cipher modes of operation:
     * ECB (Electronic codebook)
     * CFB (Cipher feedback)
     * OFB (Output Feedback)
@@ -88,7 +88,7 @@ DEFINE_FINALIZE() {
     * CTR (CounTeR)
     * LRW
     * F8
-   $ARG string cipherName: is the name of the cipher algorithm used for data encryption and decryption:
+   $ARG $STR cipherName: is the name of the cipher algorithm used for data encryption and decryption:
     * blowfish
     * rc5
     * rc6
@@ -107,18 +107,18 @@ DEFINE_FINALIZE() {
     * anubis
     * kseed
     * kasumi
-   $ARG string key: is the encryption/decryption key.
-   $ARG string IV:
+   $ARG $STR key: is the encryption/decryption key.
+   $ARG $STR IV:
     _IV_ is the first initialization vector:
     The IV value is the initialization vector to be used with the cipher.
     You must fill the IV yourself and it is assumed they are the same length as the block size of the cipher you choose.
     It is important that the IV be random for each unique message you want to encrypt.
     $H beware
      This argument is invalid in ECB block mode.
-   $ARG string arg: is either the tweak key for the LRW mode or the salt value for the F8 mode. In other modes _arg_ must be undefined.
+   $ARG $STR arg: is either the tweak key for the LRW mode or the salt value for the F8 mode. In other modes _arg_ must be undefined.
     $H beware
      In LRW mode, the tweak value must have the same length as the _key_.
-   $ARG integer rounds: is the number of rounds to do with the current sipher. If the argument is omitted, a default value is used.
+   $ARG $INT rounds: is the number of rounds to do with the current sipher. If the argument is omitted, a default value is used.
 **/
 // mode, cipher, key, IV
 DEFINE_CONSTRUCTOR() {

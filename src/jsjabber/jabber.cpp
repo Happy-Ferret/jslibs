@@ -246,8 +246,8 @@ DEFINE_FINALIZE() {
  * $INAME( jid, password )
   Constructs a new unconnected jabber client.
   $H arguments
-   $ARG string jid
-   $ARG string password
+   $ARG $STR jid
+   $ARG $STR password
 **/
 DEFINE_CONSTRUCTOR() {
 
@@ -275,8 +275,8 @@ DEFINE_CONSTRUCTOR() {
  * $VAL $INAME( serverName [ , port ] )
   Constructs a new unconnected jabber client.
   $H arguments
-   $ARG string serverName: the XMPP server to connect to.
-   $ARG string port: the port to connect to.
+   $ARG $STR serverName: the XMPP server to connect to.
+   $ARG $STR port: the port to connect to.
   $H return value
    A connected socket ID that can be used in a Poll() call. Or $UNDEF if no connection is established.
 **/
@@ -364,8 +364,8 @@ DEFINE_FUNCTION( Process ) {
  * $VOID $INAME( to, body )
   Send a given message.
   $H arguments
-   $ARG string to: the destination of the message.
-   $ARG string body: the body of the message.
+   $ARG $STR to: the destination of the message.
+   $ARG $STR body: the body of the message.
 **/
 DEFINE_FUNCTION( SendMessage ) {
 
@@ -538,17 +538,17 @@ DEFINE_PROPERTY( connectionTotalOut ) {
 /**doc
 === callback functions ===
   These functions are called on the current Jabber object.
-  * $VOID onLog( logLevel, logArea, logMessage )
+  * $VOID *onLog*( logLevel, logArea, logMessage )
    Called for log messages. _logLevel_ is either: Jabber.LogLevelDebug, Jabber.LogLevelWarning, Jabber.LogLevelError
-  * $BOOL onTLSConnect( infoObject )
+  * $BOOL *onTLSConnect*( infoObject )
    This function is called when the connection was TLS/SSL secured. Return true if cert credentials are accepted, false otherwise. If false is returned the connection is terminated.
    _infoObject_ has the following properties: chain, issuer, server, dateFrom, dateTo, protocol, cipher, mac, compression
    by default, if the function is not defined, this accepts the certificate.
-  * $VOID onConnect()
+  * $VOID *onConnect*()
    Called on a successful connections. It will be called either after all authentication is finished if username/password were supplied, or after a connection has been established if no credentials were supplied.
-  * $VOID onMessage( from, body )
+  * $VOID *onMessage*( from, body )
    Called when an event has been raised by the remote contact.
-  * $VOID onRosterPresence( from, presence, message )
+  * $VOID *onRosterPresence*( from, presence, message )
    Called on every status change of an item in the roster.
 **/
 

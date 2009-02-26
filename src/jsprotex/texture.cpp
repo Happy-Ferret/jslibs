@@ -346,9 +346,9 @@ DEFINE_FINALIZE() {
  * $INAME( image )
   Creates a new Texture object.
   $H arguments
-   $ARG integer height: height of texture.
-   $ARG integer width: width of texture.
-   $ARG integer channels: number of channels of the texture (current limit is 4). Channel has a meaning only in a few part of the API like ToHLS(), ToRGB(), ...
+   $ARG $INT height: height of texture.
+   $ARG $INT width: width of texture.
+   $ARG $INT channels: number of channels of the texture (current limit is 4). Channel has a meaning only in a few part of the API like ToHLS(), ToRGB(), ...
    $ARG Texture sourceTexture: an existing Texture object (acs like a copy constructor).
    $ARG ImageObject image: an existing Image object (From a jpeg image for example)
   $H note
@@ -559,9 +559,9 @@ DEFINE_FUNCTION_FAST( ClearChannel ) {
  * $THIS $INAME( destinationChannel, otherTexture, sourceChannel )
   Replace the _destinationChannel_ channel of the current texture with the _sourceChannel_ channel of the _otherTexture_.
   $H arguments
-   $ARG integer destinationChannel: a channel of the current texture.
+   $ARG $INT destinationChannel: a channel of the current texture.
    $ARG Texture otherTexture: the texture from witch a channel will be imported.
-   $ARG integer destinationChannel: the channel of the _otherTexture_ to be imported.
+   $ARG $INT destinationChannel: the channel of the _otherTexture_ to be imported.
   $H example
   {{{
   function NoiseChannel( tex, channel ) {
@@ -740,7 +740,7 @@ DEFINE_FUNCTION_FAST( ToRGB ) { // (TBD) test it
  * $THIS $INAME( count [ , curve] )
   Reduce the number of values used for each channel.
   $H arguments
-   $ARG integer count: the number of different $pval in the resulting texture.
+   $ARG $INT count: the number of different $pval in the resulting texture.
    $ARG curveInfo curve: the transformation curve used for each value. For further information about ,,curveInfo,, , see below.
   $H note
    If _curveInfo_ is not provided, each channel is processed in a linear manner using the following formula:
@@ -806,7 +806,7 @@ DEFINE_FUNCTION_FAST( Aliasing ) {
   $H arguments
    $ARG colorInfo fromColorInfo: The color to be changed.
    $ARG colorInfo toColorInfo: The substitute color. For further information about ,,colorInfo,, see below.
-   $ARG real power: strength of color replacement.
+   $ARG $REAL power: strength of color replacement.
   $H example
   {{{
   const BLUE = [ 0,0,1,1 ];
@@ -880,7 +880,7 @@ DEFINE_FUNCTION_FAST( Colorize ) {
   $H arguments
    $ARG Texture sourceTexture: the texture from witch the color will be extracted.
    $ARG colorInfo sourceColorInfo: The color to extract.
-   $ARG real strength: The strength of the exraction.
+   $ARG $REAL strength: The strength of the exraction.
   $H note
    The current texture must have only one channel because the method only extracts one color.
   $H example
@@ -973,8 +973,8 @@ DEFINE_FUNCTION_FAST( NormalizeLevels ) {
  * $THIS $INAME( min, max )
   All $pval that are out of the [ min,max ] range are forced to [ min,max ] range.
   $H arguments
-   $ARG real min: low value
-   $ARG real max: high value
+   $ARG $REAL min: low value
+   $ARG $REAL max: high value
 **/
 // PTYPE ok
 DEFINE_FUNCTION_FAST( ClampLevels ) { // (TBD) check if this algo is right
@@ -1010,8 +1010,8 @@ DEFINE_FUNCTION_FAST( ClampLevels ) { // (TBD) check if this algo is right
  * $THIS $INAME( min, max )
   All $pval that are out of the [ min,max ] range are forced to [ 0,1 ] range.
   $H arguments
-   $ARG real min: low value
-   $ARG real max: high value
+   $ARG $REAL min: low value
+   $ARG $REAL max: high value
 **/
 // PTYPE ok
 DEFINE_FUNCTION_FAST( CutLevels ) { // (TBD) check if this algo is right
@@ -1164,8 +1164,8 @@ DEFINE_FUNCTION_FAST( PowLevels ) { //
  * $THIS $INAME( threshold, mirrorFromTop )
   Each $pval is mirrored toward the top or the bottom.
   $H arguments
-   $ARG real threshold: the point from the values are reflected.
-   $ARG boolean mirrorFromTop: if true, the values over _threshold_ are reflected toward the bottom, else values under _threshold_ are reflected toward the top.
+   $ARG $REAL threshold: the point from the values are reflected.
+   $ARG $BOOL mirrorFromTop: if true, the values over _threshold_ are reflected toward the bottom, else values under _threshold_ are reflected toward the top.
 **/
 // PTYPE ok
 DEFINE_FUNCTION_FAST( MirrorLevels ) {
@@ -1284,7 +1284,7 @@ DEFINE_FUNCTION_FAST( AddNoise ) {
   Desaturates _sourceTexture_ texture an put the result in the current texture.
   $H arguments
    $ARG Texture sourceTexture: texture from witch the desaturation will be done.
-   $ARG integer mode: is the type of desaturation, either Texture.desaturateLightness, Texture.desaturateSum or Texture.desaturateAverage
+   $ARG $INT mode: is the type of desaturation, either Texture.desaturateLightness, Texture.desaturateSum or Texture.desaturateAverage
 **/
 // PTYPE ok
 DEFINE_FUNCTION_FAST( Desaturate ) {
@@ -1615,10 +1615,10 @@ DEFINE_FUNCTION_FAST( SetPixel ) { // x, y, levels
  * $THIS $INAME( x0, y0, x1, y1, color )
   Draws a rectangle of the _colorInfo_ color over the current texture.
   $H arguments
-   $ARG integer x0:
-   $ARG integer y0:
-   $ARG integer x1:
-   $ARG integer y1:
+   $ARG $INT x0:
+   $ARG $INT y0:
+   $ARG $INT x1:
+   $ARG $INT y1:
    $ARG colorInfo color:
 **/
 // PTYPE ok
@@ -1672,7 +1672,7 @@ DEFINE_FUNCTION_FAST( SetRectangle ) {
  * $THIS $INAME( count )
   Make _count_ 90 degres rotations.
   $H arguments
-   $ARG integer count: the number of integer rotation to perform with the current texture. _count_ may be negative.
+   $ARG $INT count: the number of integer rotation to perform with the current texture. _count_ may be negative.
   $H note
    For non-integer rotations, see RotoZoom() function.
 **/
@@ -1747,8 +1747,8 @@ DEFINE_FUNCTION_FAST( Rotate90 ) { // (TBD) test it
  * $THIS $INAME( horizontally, vertically )
   Flips the current texture horizontally, vertically or both.
   $H arguments
-   $ARG boolean horizontally: flips the texture horizontally (against x axis).
-   $ARG boolean vertically: flips the texture vertically (against y axis).
+   $ARG $BOOL horizontally: flips the texture horizontally (against x axis).
+   $ARG $BOOL vertically: flips the texture vertically (against y axis).
 **/
 DEFINE_FUNCTION_FAST( Flip ) {
 
@@ -1792,11 +1792,11 @@ DEFINE_FUNCTION_FAST( Flip ) {
  * $THIS $INAME( centerX, centerY, zoomX, zoomY, rotations )
   Make a zoom and/or a rotation of the current texture.
   $H arguments
-   $ARG real centerX: coordinate of the center of the zoom or rotation.
-   $ARG real centerY:
-   $ARG real zoomX: the zoom factor (use 1 for none).
-   $ARG real zoomY:
-   $ARG real rotations: the number of totations to perform. 0.25 is 90 degres (use 0 for none).
+   $ARG $REAL centerX: coordinate of the center of the zoom or rotation.
+   $ARG $REAL centerY:
+   $ARG $REAL zoomX: the zoom factor (use 1 for none).
+   $ARG $REAL zoomY:
+   $ARG $REAL rotations: the number of totations to perform. 0.25 is 90 degres (use 0 for none).
 **/
 DEFINE_FUNCTION_FAST( RotoZoom ) { // source: FxGen
 
@@ -1928,10 +1928,10 @@ DEFINE_FUNCTION_FAST( RotoZoom ) { // source: FxGen
  * $THIS $INAME( newWidth, newHeight, [ interpolate = false [, borderMode = Texture.borderWrap ]] )
   Resize the current texture.
   $H arguments
-   $ARG integer newWidth:
-   $ARG integer newHeight:
-   $ARG boolean interpolate: uses a linear interpolation.
-   $ARG enum borderMode: how to manage the border. either Texture.borderClamp, Texture.borderWrap, Texture.borderMirror or Texture.borderValue.
+   $ARG $INT newWidth:
+   $ARG $INT newHeight:
+   $ARG $BOOL interpolate: uses a linear interpolation.
+   $ARG $ENUM borderMode: how to manage the border. either Texture.borderClamp, Texture.borderWrap, Texture.borderMirror or Texture.borderValue.
 **/
 // PTYPE ok
 DEFINE_FUNCTION_FAST( Resize ) {
@@ -2067,8 +2067,8 @@ DEFINE_FUNCTION_FAST( Resize ) {
  * $THIS $INAME( kernel, [ borderMode = Texture.borderWrap ] )
   Apply a convolution to the current texture using _kernel_ factors.
   $H arguments
-   $ARG Array kernel: kernel is a square matrix
-   $ARG enum borderMode: how to manage the border. either Texture.borderClamp, Texture.borderWrap, Texture.borderMirror or Texture.borderValue.
+   $ARG $ARRAY kernel: kernel is a square matrix
+   $ARG $ENUM borderMode: how to manage the border. either Texture.borderClamp, Texture.borderWrap, Texture.borderMirror or Texture.borderValue.
   $H note
    The convolution is a complex transformation that could be very slow with big kernels.
   $H note
@@ -2556,12 +2556,12 @@ DEFINE_FUNCTION_FAST( Normals ) {
   Floodlight the current texture using the _normalsTexture_ as bump map.
   $H arguments
    $ARG Texture normalsTexture: the bump map where each pixel is a 3D vector.
-   $ARG Array lightPosition: is the position of the light in a 3D space ( [ x, y, z ] )
+   $ARG $ARRAY lightPosition: is the position of the light in a 3D space ( [ x, y, z ] )
    $ARG colorInfo ambiantColor:
    $ARG colorInfo diffuseColor:
    $ARG colorInfo specularColor:
-   $ARG real bumpPower:
-   $ARG real specularPower:
+   $ARG $REAL bumpPower:
+   $ARG $REAL specularPower:
   $H example
   {{{
   var bump = new Texture(size, size, 3).Cells(8, 0).Add( new Texture(size, size, 3).Cells(8, 1).OppositeLevels() ); // broken floor
@@ -2767,9 +2767,9 @@ DEFINE_FUNCTION_FAST( Trim ) { // (TBD) test this new version that use memcpy
   Copy _sourceTexture_ in the current texture at the position (_x_, _y_).
   $H arguments
    $ARG Texture sourceTexture:
-   $ARG integer x:
-   $ARG integer y:
-   $ARG enum borderMode: one of Texture.borderWrap or Texture.borderClamp.
+   $ARG $INT x:
+   $ARG $INT y:
+   $ARG $ENUM borderMode: one of Texture.borderWrap or Texture.borderClamp.
 **/
 DEFINE_FUNCTION_FAST( Copy ) {
 
@@ -2848,9 +2848,9 @@ DEFINE_FUNCTION_FAST( Copy ) {
   Paste _sourceTexture_ in the current texture at the position (_x_, _y_).
   $H arguments
    $ARG Texture sourceTexture:
-   $ARG integer x:
-   $ARG integer y:
-   $ARG enum borderMode: one of Texture.borderWrap or Texture.borderClamp.
+   $ARG $INT x:
+   $ARG $INT y:
+   $ARG $ENUM borderMode: one of Texture.borderWrap or Texture.borderClamp.
 **/
 DEFINE_FUNCTION_FAST( Paste ) { // (Texture)texture, (int)x, (int)y, (bool)borderMode
 
@@ -2929,12 +2929,12 @@ DEFINE_FUNCTION_FAST( Paste ) { // (Texture)texture, (int)x, (int)y, (bool)borde
  * $TYPE ImageObject $INAME( [ x, y, width, height] )
   Creates an image object from the whole or a part of current texture.
   $H arguments
-   $ARG integer x:
-   $ARG integer y:
-   $ARG integer width:
-   $ARG integer height:
+   $ARG $INT x:
+   $ARG $INT y:
+   $ARG $INT width:
+   $ARG $INT height:
   $H return value
-   returns an image object.
+   An image object.
   $H example
   {{{
   var f = new Font('arial.ttf');
@@ -3035,9 +3035,9 @@ DEFINE_FUNCTION_FAST( Export ) { // (int)x, (int)y, (int)width, (int)height. Ret
   Draws the _image_ over the current texture at position (_x_, _y_).
   $H arguments
    $ARG ImageObject sourceImage:
-   $ARG integer x: X position of the image in the current texture.
-   $ARG integer y: Y position of the image in the current texture.
-   $ARG enum borderMode: one of Texture.borderWrap, Texture.borderClamp.
+   $ARG $INT x: X position of the image in the current texture.
+   $ARG $INT y: Y position of the image in the current texture.
+   $ARG $ENUM borderMode: one of Texture.borderWrap, Texture.borderClamp.
   $H example
   {{{
   var file = new File('myImage.png').Open('r'); // note: Open() returns the file object.
@@ -3138,9 +3138,9 @@ DEFINE_FUNCTION_FAST( Import ) { // (Blob)image, (int)x, (int)y
  * $THIS $INAME( offsetX, offsetY [ , borderMode] )
   Shift the current image.
   $H arguments
-   $ARG integer offsetX:
-   $ARG integer offsetY:
-   $ARG enum borderMode: one of Texture.borderWrap, Texture.borderClamp, Texture.borderMirror or Texture.borderValue.
+   $ARG $INT offsetX:
+   $ARG $INT offsetY:
+   $ARG $ENUM borderMode: one of Texture.borderWrap, Texture.borderClamp, Texture.borderMirror or Texture.borderValue.
 **/
 DEFINE_FUNCTION_FAST( Shift ) {
 	// (TBD) I think it is possible to do the Shift operation without using a second buffer.
@@ -3224,8 +3224,8 @@ DEFINE_FUNCTION_FAST( Shift ) {
   Move each pixel of the texture according to the
   $H arguments
    $ARG Texture displaceTexture: is a texture that contains displacement vectors.
-   $ARG real factor: displacement factor of each pixel.
-   $ARG enum borderMode: one of Texture.borderWrap, Texture.borderClamp, Texture.borderMirror or Texture.borderValue.
+   $ARG $REAL factor: displacement factor of each pixel.
+   $ARG $ENUM borderMode: one of Texture.borderWrap, Texture.borderClamp, Texture.borderMirror or Texture.borderValue.
 **/
 // (TBD) PTYPE
 DEFINE_FUNCTION_FAST( Displace ) {
@@ -3322,8 +3322,8 @@ DEFINE_FUNCTION_FAST( Displace ) {
  * $THIS $INAME( density, regularity )
   Draws cells in the current texture.
   $H arguments
-   $ARG integer density:
-   $ARG real regularity:
+   $ARG $INT density:
+   $ARG $REAL regularity:
 **/
 DEFINE_FUNCTION_FAST( Cells ) { // source: FxGen
 
@@ -3556,7 +3556,7 @@ DEFINE_FUNCTION_FAST( AddGradiantLinear ) {
   Add a radial radiant using a curve from the center to the outside. Each point of the curve is the light intensity of a pixel.
   $H arguments
    $ARG curveInfo curveInfo:
-   $ARG boolean drawToCorner: If true, the curve goes from the center to the corner, else from the center to the edge.
+   $ARG $BOOL drawToCorner: If true, the curve goes from the center to the corner, else from the center to the edge.
   $H example 1
   {{{
   const curveHalfSine = function(v) Math.cos(v*Math.PI/2);
@@ -3704,9 +3704,9 @@ DEFINE_FUNCTION( AddGradiantRadial ) {
  * $THIS $INAME( count, crackLength, wayVariation [ , color = 1] [ , curve = 1] )
   Adds cracks to the current texture.
   $H arguments
-   $ARG integer count: number of cracks to draw.
-   $ARG integer crackLength: length of each crack.
-   $ARG real wayVariation: the variation of each crack (eg. 0 is straight and 1 is randomly curved).
+   $ARG $INT count: number of cracks to draw.
+   $ARG $INT crackLength: length of each crack.
+   $ARG $REAL wayVariation: the variation of each crack (eg. 0 is straight and 1 is randomly curved).
    $ARG colorInfo color: the color of the crack.
    $ARG curveInfo curve: the curve that defines the intensity of each point of the crack.
   $H note
@@ -3818,8 +3818,8 @@ DEFINE_FUNCTION_FAST( AddCracks ) { // source: FxGen
  * $TYPE Array $INAME( x, y )
   Read the value of a pixel in the current texture.
   $H arguments
-   $ARG integer x
-   $ARG integer y
+   $ARG $INT x
+   $ARG $INT y
   $H return value
    returns the pixel value at position (x, y) in the current texture. If the texture is RGB, an array of 3 values is returned.
   $H example
@@ -3983,11 +3983,11 @@ DEFINE_PROPERTY( channels ) {
   Print( Texture.RandReal(), '\n' );
   }}}
   will always prints:
-  <pre>
+  {{{
   0.19151945020806033
   0.4976636663772314
   0.6221087664882906
-  </pre>
+  }}}
 **/
 DEFINE_FUNCTION_FAST( RandSeed ) {
 
@@ -4002,7 +4002,7 @@ DEFINE_FUNCTION_FAST( RandSeed ) {
 
 /**doc
  * $INT $INAME
-  Generates a random number on [ 0,0x7fffffff ]-interval
+  Generates a random number on `[ 0 , 0x7fffffff ]` interval.
 **/
 DEFINE_FUNCTION_FAST( RandInt ) {
 
@@ -4014,7 +4014,7 @@ DEFINE_FUNCTION_FAST( RandInt ) {
 
 /**doc
  * $REAL $INAME
-  Generates a random number on [ 0,1 ]-real-interval
+  Generates a random number on `[ 0 , 1 ]` real interval.
 **/
 DEFINE_FUNCTION_FAST( RandReal ) {
 
@@ -4070,8 +4070,8 @@ static JSBool _Test(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval
  * *colorInfo*
   a _colorInfo_ can be one of the following type:
   * _real_: in this case, the same value is used for each channel (eg. 0.5 gor gray).
-  * _Array_: that contains the $pval of each channel (eg. [ 1,1,1 ] is white in RGB mode).
-  * _string_: the string represents an HTML color like #1100AA or #8800AAFF (depending the number of channels)
+  * _Array_: that contains the $pval of each channel (eg. `[ 1, 1, 1 ]` is white in RGB mode).
+  * _string_: the string represents an HTML color like $F #1100AA or $F #8800AAFF (depending the number of channels)
   $H examples
   {{{
   const RED = [1,0,0,1];
@@ -4088,7 +4088,7 @@ static JSBool _Test(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval
  * *curveInfo*
   _curveInfo_ describes a curve and can be one of the following type:
    * _real_: this describes a constant curve.
-   * _function($REAL posX, INT indexX)_: the function is called and must returns values for each curve point.
+   * _function( $REAL posX, INT indexX )_: the function is called and must returns values for each curve point.
    * _Array_: an Array that describes the curve (no interpolation is done between values).
    * _buffer_: a Blob or a string that contains the curve data.
   $H examples

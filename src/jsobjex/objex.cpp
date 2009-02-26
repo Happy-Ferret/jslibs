@@ -88,21 +88,20 @@ JSBool SetProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
  * $INAME( [addCallback], [delCallback], [getCallback], [setCallback] [, auxObject] )
   Constructs a ObjEx object.
   $H arguments
-   $ARG Function addCallback: called when the property is added to the object.
-   $ARG Function delCallback: called when the property is deleted form the object.
-   $ARG Function getCallback: called when the property is read form the object.
-   $ARG Function setCallback: called when the property is changed. This include when the property is added.
-   $ARG Value auxObject:
+   $ARG $FUN addCallback: called when the property is added to the object.
+   $ARG $FUN delCallback: called when the property is deleted form the object.
+   $ARG $FUN getCallback: called when the property is read form the object.
+   $ARG $FUN setCallback: called when the property is changed. This include when the property is added.
+   $ARG $VAL auxObject:
   $H note
-   addCallback, delCallback, getCallback, setCallback: can be set to $UNDEF value.
+   addCallback, delCallback, getCallback, setCallback: can be set to the $UNDEF value.
   $H behavior
    addCallback, delCallback, getCallback, setCallback functions are called according to the operation done on the object.
    These callback functions are called with the following arguments:
-    propertyName, propertyValue, auxObject, callbackIndex
-   * propertyName : the name of the property being handled.
-   * propertyValue : the value of the property being handled.
-   * auxObject : the _auxObject_ provided to the constructor.
-   * callbackIndex : an integer that has the folowing value: 0 for addCallback, 1 for delCallback, 2 for getCallback, 3 for setCallback.
+    # $ARG $STR propertyName : the name of the property being handled.
+    # $ARG $VAL propertyValue : the value of the property being handled.
+    # $ARG $VAL auxObject : the _auxObject_ provided to the constructor.
+    # $ARG $INT callbackIndex : an integer that has the folowing value: 0 for addCallback, 1 for delCallback, 2 for getCallback, 3 for setCallback.
   $H note
    addCallback callback function is called only when the property is being added, in opposition to _setCallback_ that is called each time the value is changed.
 **/

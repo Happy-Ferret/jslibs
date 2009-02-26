@@ -64,6 +64,7 @@ DEFINE_CONSTRUCTOR() {
 
 /**doc
  * $INT $INAME()
+  Returns the internal OpenAL buffer id.
 **/
 DEFINE_FUNCTION_FAST( valueOf ) {
 
@@ -299,81 +300,81 @@ enum {
 
 
 /**doc
- * $REAL reverbDensity
- * $REAL reverbDiffusion
- * $REAL reverbGain
- * $REAL reverbGainHF
- * $REAL reverbDecayTime
- * $REAL reverbDecayHFRatio
- * $REAL reverbReflectionsGain
- * $REAL reverbReflectionsDelay
- * $REAL reverbLateReverbGain
- * $REAL reverbLateReverbDelay
- * $REAL reverbAirAbsorptionGainHF
- * $REAL reverbRoomRolloffFactor
- * $BOOL reverbDecayHFLimit
+ * $REAL *reverbDensity*
+ * $REAL *reverbDiffusion*
+ * $REAL *reverbGain*
+ * $REAL *reverbGainHF*
+ * $REAL *reverbDecayTime*
+ * $REAL *reverbDecayHFRatio*
+ * $REAL *reverbReflectionsGain*
+ * $REAL *reverbReflectionsDelay*
+ * $REAL *reverbLateReverbGain*
+ * $REAL *reverbLateReverbDelay*
+ * $REAL *reverbAirAbsorptionGainHF*
+ * $REAL *reverbRoomRolloffFactor*
+ * $BOOL *reverbDecayHFLimit*
 
- * $INT chorusWaveform
- * $INT chorusPhase
- * $REAL chorusRate
- * $REAL chorusDepth
- * $REAL chorusFeedback
- * $REAL chorusDelay
+ * $INT *chorusWaveform*
+ * $INT *chorusPhase*
+ * $REAL *chorusRate*
+ * $REAL *chorusDepth*
+ * $REAL *chorusFeedback*
+ * $REAL *chorusDelay*
 
- * $REAL distortionEdge
- * $REAL distortionGain
- * $REAL distortionLowpassCutoff
- * $REAL distortionEqcenter
- * $REAL distortionEqbandwidth
+ * $REAL *distortionEdge*
+ * $REAL *distortionGain*
+ * $REAL *distortionLowpassCutoff*
+ * $REAL *distortionEqcenter*
+ * $REAL *distortionEqbandwidth*
 
- * $REAL echoDelay
- * $REAL echoLrdelay
- * $REAL echoDamping
- * $REAL echoFeedback
- * $REAL echoSpread
+ * $REAL *echoDelay*
+ * $REAL *echoLrdelay*
+ * $REAL *echoDamping*
+ * $REAL *echoFeedback*
+ * $REAL *echoSpread*
 
- * $INT flangerWaveform
- * $REAL flangerPhase
- * $REAL flangerRate
- * $REAL flangerDepth
- * $REAL flangerFeedback
- * $REAL flangerDelay
+ * $INT *flangerWaveform*
+ * $REAL *flangerPhase*
+ * $REAL *flangerRate*
+ * $REAL *flangerDepth*
+ * $REAL *flangerFeedback*
+ * $REAL *flangerDelay*
 
- * $REAL frequencyShifterFrequency
- * $INT frequencyShifterLeftDirection
- * $INT frequencyShifterRightDirection
+ * $REAL *frequencyShifterFrequency*
+ * $INT *frequencyShifterLeftDirection*
+ * $INT *frequencyShifterRightDirection*
 
- * $INT vocalMorpherPhonemea
- * $INT vocalMorpherPhonemeaCoarseTuning
- * $INT vocalMorpherPhonemeb
- * $INT vocalMorpherPhonemebCoarseTuning
- * $INT vocalMorpherWaveform
- * $REAL vocalMorpherRate
+ * $INT *vocalMorpherPhonemea*
+ * $INT *vocalMorpherPhonemeaCoarseTuning*
+ * $INT *vocalMorpherPhonemeb*
+ * $INT *vocalMorpherPhonemebCoarseTuning*
+ * $INT *vocalMorpherWaveform*
+ * $REAL *vocalMorpherRate*
 
- * $INT pitchShifterCoarseTune
- * $INT pitchShifterFineTune
+ * $INT *pitchShifterCoarseTune*
+ * $INT *pitchShifterFineTune*
 
- * $REAL ringModulatorFrequency
- * $REAL ringModulatorHighpassCutoff
- * $INT ringModulatorWaveform
+ * $REAL *ringModulatorFrequency*
+ * $REAL *ringModulatorHighpassCutoff*
+ * $INT *ringModulatorWaveform*
 
- * $REAL autowahAttackTime
- * $REAL autowahReleaseTime
- * $REAL autowahResonance
- * $REAL autowahPeakGain
+ * $REAL *autowahAttackTime*
+ * $REAL *autowahReleaseTime*
+ * $REAL *autowahResonance*
+ * $REAL *autowahPeakGain*
 
- * $BOOL compressorOnoff
+ * $BOOL *compressorOnoff*
 
- * $REAL equalizerLowGain
- * $REAL equalizerLowCutoff
- * $REAL equalizerMid1Gain
- * $REAL equalizerMid1Center
- * $REAL equalizerMid1Width
- * $REAL equalizerMid2Gain
- * $REAL equalizerMid2Center
- * $REAL equalizerMid2Width
- * $REAL equalizerHighGain
- * $REAL equalizerHighCutoff
+ * $REAL *equalizerLowGain*
+ * $REAL *equalizerLowCutoff*
+ * $REAL *equalizerMid1Gain*
+ * $REAL *equalizerMid1Center*
+ * $REAL *equalizerMid1Width*
+ * $REAL *equalizerMid2Gain*
+ * $REAL *equalizerMid2Center*
+ * $REAL *equalizerMid2Width*
+ * $REAL *equalizerHighGain*
+ * $REAL *equalizerHighCutoff*
 **/
 
 CONFIGURE_CLASS

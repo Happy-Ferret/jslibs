@@ -153,7 +153,7 @@ bad:
  * $INT $INAME()
   The function waits the end of the nondetached process and returns its exit code. This function will fail if the process has beed detached.
   $H note
-   `true;echo $?` prints 0 and `false;echo $?` prints 1
+   In bash, `true;echo $?` prints `0` and `false;echo $?` prints `1`
 **/
 DEFINE_FUNCTION_FAST( Wait ) {
 

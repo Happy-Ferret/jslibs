@@ -38,7 +38,7 @@ DEFINE_FINALIZE() {
  * $INAME( prngName )
   Constructs a pseudo random number generator object using the given algorithm.
   $H arguments
-   $ARG string prngName: is a string that contains the name of the Asymmetric Cipher algorithm:
+   $ARG $STR prngName: is a string that contains the name of the Asymmetric Cipher algorithm:
     * yarrow
     * fortuna
     * rc4

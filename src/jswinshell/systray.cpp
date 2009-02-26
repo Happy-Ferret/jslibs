@@ -33,28 +33,28 @@
 #define MSG_POPUP_MENU (WM_USER + 2)
 
 // source: http://www.codeproject.com/shell/ctrayiconposition.asp
-BOOL CALLBACK FindTrayWnd(HWND hwnd, LPARAM lParam) {    
+BOOL CALLBACK FindTrayWnd(HWND hwnd, LPARAM lParam) {
 
 	TCHAR szClassName[256];
 	GetClassName(hwnd, szClassName, 255);
 	if (strcmp(szClassName, "TrayNotifyWnd") == 0) {
 
 		*(HWND*)lParam = hwnd;
-      return FALSE;    
-	}    
+      return FALSE;
+	}
 	return TRUE;
 }
 
 // source: http://www.codeproject.com/shell/ctrayiconposition.asp
-BOOL CALLBACK FindToolBarInTrayWnd(HWND hwnd, LPARAM lParam) {    
+BOOL CALLBACK FindToolBarInTrayWnd(HWND hwnd, LPARAM lParam) {
 
 	TCHAR szClassName[256];
 	GetClassName(hwnd, szClassName, 255);    // Did we find the Main System Tray? If so, then get its size and quit
-	if (strcmp(szClassName, "ToolbarWindow32") == 0) {        
+	if (strcmp(szClassName, "ToolbarWindow32") == 0) {
 
 		*(HWND*)lParam = hwnd;
 		return FALSE;
-	}    
+	}
 	return TRUE;
 }
 
@@ -63,13 +63,13 @@ HWND GetTrayNotifyWnd() {
 
 	HWND hWndTrayNotifyWnd = NULL;
 	HWND hWndShellTrayWnd = FindWindow("Shell_TrayWnd", NULL);
-	if (hWndShellTrayWnd) {        
+	if (hWndShellTrayWnd) {
 
-		EnumChildWindows(hWndShellTrayWnd, FindTrayWnd, (LPARAM)&hWndTrayNotifyWnd);   
+		EnumChildWindows(hWndShellTrayWnd, FindTrayWnd, (LPARAM)&hWndTrayNotifyWnd);
 		if (hWndTrayNotifyWnd && IsWindow(hWndTrayNotifyWnd)) {
 
 			HWND hWndToolBarWnd = NULL;
-			EnumChildWindows(hWndTrayNotifyWnd, FindToolBarInTrayWnd, (LPARAM)&hWndToolBarWnd);   
+			EnumChildWindows(hWndTrayNotifyWnd, FindToolBarInTrayWnd, (LPARAM)&hWndToolBarWnd);
 			if(hWndToolBarWnd)
 				return hWndToolBarWnd;
 		}
@@ -141,9 +141,9 @@ static HBITMAP MenuItemBitmapFromIcon(HICON hIcon) {
 	int cx = GetSystemMetrics(SM_CXMENUCHECK);
 	int cy = GetSystemMetrics(SM_CYMENUCHECK);
 	HBITMAP hBMP = CreateCompatibleBitmap(aHDC, cx, cy);
-	hBMP = (HBITMAP)SelectObject(aCHDC, hBMP);    
+	hBMP = (HBITMAP)SelectObject(aCHDC, hBMP);
 	RECT rect;
-	SetRect(&rect, 0, 0, cx, cy); 
+	SetRect(&rect, 0, 0, cx, cy);
 	FillRect(aCHDC,&rect,(HBRUSH)GetSysColorBrush(COLOR_WINDOW)); // COLOR_MENU // doc: http://msdn2.microsoft.com/en-us/library/ms724371.aspx
 	if( DrawIconEx(aCHDC, 0, 0, hIcon, cx, cy, 0, NULL, DI_NORMAL ) == FALSE ) {
 
@@ -191,19 +191,19 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 			msg->lButton = GetAsyncKeyState(VK_LBUTTON) > 0; // (TBD) check !!
 			msg->rButton = GetAsyncKeyState(VK_RBUTTON) > 0; // (TBD) check !!
 			msg->mButton = GetAsyncKeyState(VK_MBUTTON) > 0; // (TBD) check !!
-		
+
 			msg->shiftKey   = GetAsyncKeyState(VK_SHIFT)   > 0; // (TBD) check !!
 			msg->controlKey = GetAsyncKeyState(VK_CONTROL) > 0; // (TBD) check !!
 			msg->altKey     = GetAsyncKeyState(VK_MENU)    > 0; // (TBD) check !!
 
 			if ( message == MSG_TRAY_CALLBACK ) {
-				
+
 				POINT pt;
 				GetCursorPos(&pt);
 				msg->mouseX = pt.x;
 				msg->mouseY = pt.y;
 			} else {
-				
+
 				msg->mouseX = -1;
 				msg->mouseY = -1;
 			}
@@ -236,7 +236,7 @@ DWORD WINAPI WinThread( LPVOID lpParam ) {
 	for ( MSG msg; GetMessage( &msg, NULL, 0, 0 ) != 0; ) {
 
 		switch ( msg.message ) {
-			case MSG_POPUP_MENU: {	
+			case MSG_POPUP_MENU: {
 				POINT pos;
 				GetCursorPos(&pos);
 				SetForegroundWindow(hWnd);
@@ -304,14 +304,14 @@ DEFINE_CONSTRUCTOR() {
 	ThreadPrivateData tpd;
 	tpd.hWnd = NULL;
 	tpd.syncEvent = CreateEvent( NULL, FALSE, FALSE, NULL );
-	
+
 	MSG msg;
 	PeekMessage(&msg, NULL, WM_USER, WM_USER, PM_NOREMOVE); // force the system to create the message queue for the current thread
 	CreateThread( NULL, 0, WinThread, &tpd, 0, NULL );
 	WaitForSingleObject( tpd.syncEvent, INFINITE );
 	J_S_ASSERT( tpd.hWnd != NULL, "Unable to create the window." );
 	SetWindowLong(tpd.hWnd, GWL_USERDATA, GetCurrentThreadId() ); // thread where the messages will be routed
-	
+
 	NOTIFYICONDATA *nid = (NOTIFYICONDATA*)malloc( sizeof(NOTIFYICONDATA) );
 	memset(nid, 0, sizeof(NOTIFYICONDATA));
 	nid->cbSize = sizeof(NOTIFYICONDATA);
@@ -366,7 +366,7 @@ DEFINE_FUNCTION( Close ) {
 
 /**doc
  * $BOOL $INAME()
-  Precess all pending events of the systray. 
+  Precess all pending events of the systray.
   The function returns true if at least one of the event function ( see Remarks below ) returns true.
 **/
 DEFINE_FUNCTION( ProcessEvents ) {
@@ -407,7 +407,7 @@ DEFINE_FUNCTION( ProcessEvents ) {
 				case WM_CHAR:
 					JS_GetProperty(cx, obj, "onchar", &functionVal);
 					if ( !JSVAL_IS_VOID( functionVal ) ) {
-						
+
 						char c = wParam;
 						J_CHK( JL_CallFunction( cx, obj, functionVal, rval, 1, STRING_TO_JSVAL( JS_NewStringCopyN(cx, &c, 1) ) ) );
 					}
@@ -508,7 +508,7 @@ DEFINE_FUNCTION( PopupMenu ) {
 			J_CHK( JsvalToString(cx, &item, &newItem) );
 			AppendMenu(hMenu, uFlags, list->vector[i], newItem);
 		} else if ( JSVAL_IS_OBJECT(item) && !JSVAL_IS_NULL(item) ) {
-			
+
 			JSObject *itemObject = JSVAL_TO_OBJECT(item);
 			jsval key, itemVal;
 
@@ -625,7 +625,7 @@ DEFINE_FUNCTION( CallDefault ) {
   $H example
   {{{
   systray.onmousemove = function( x, y ) {
-   
+
    var pos = systray.Position();
    Print( x-pos[0], ', ', y-pos[1], '\n' );
   }
@@ -644,7 +644,7 @@ DEFINE_FUNCTION( Position ) {
 	if ( argc >= 1 && JSVAL_IS_OBJECT(argv[0]) && !JSVAL_IS_NULL(argv[0]) ) { // reuse
 
 		point = JSVAL_TO_OBJECT(argv[0]); // (TBD) check this
-		
+
 		JS_SetElement(cx, point, 0, &v[0]);
 		JS_SetElement(cx, point, 1, &v[1]);
 	} else {
@@ -676,7 +676,7 @@ DEFINE_FUNCTION( Rect ) {
 	if ( argc >= 1 && JSVAL_IS_OBJECT(argv[0]) && !JSVAL_IS_NULL(argv[0]) ) { // reuse
 
 		point = JSVAL_TO_OBJECT(argv[0]); // (TBD) check this
-		
+
 		JS_SetElement(cx, point, 0, &v[0]);
 		JS_SetElement(cx, point, 1, &v[1]);
 		JS_SetElement(cx, point, 2, &v[2]);
@@ -776,22 +776,29 @@ DEFINE_PROPERTY( textGetter ) {
 
 /**doc
  * $OBJ $INAME
-  * ,,string | function,, *menu.commandName.text*
-  * ,,boolean | function,, *menu.commandName.checked*
-  * ,,boolean | function,, *menu.commandName.grayed*
-  * ,,boolean,, *menu.commandName.separator*
-  * ,,boolean,, *menu.commandName.default*
-  * ,,[Icon] | function,, *menu.commandName.icon*
-  $H example
-  {{{
-  tray.menu = { { text:"enable", checked:true }, { text:"delete", grayed:true }, { separator:true }, exit:"Exit" }
-  }}} 
-  $LF
-  If the value of _text_, _checked_, _grayed_ or _icon_ is a function, it is called and the return value is used.
-  $H example
-  {{{
-  tray.menu = { { text:"enable", checked:function() { return isChecked } }, ...
-  }}}
+  The object is a key:value map of all available commands in the menu.
+  each command has an single keyName and a description object that hole the following properties:
+   * ,,string | function,, *text*
+   * ,,boolean | function,, *checked*
+   * ,,boolean | function,, *grayed*
+   * ,,boolean,, *separator*
+   * ,,boolean,, *default*
+   * ,,[Icon] | function,, *icon*
+   $H example
+   {{{
+   tray.menu = {
+    my_ena:{ text:"enable", checked:true },
+    my_add:{ text:"delete", grayed:true },
+    sep1:{ separator:true },
+    my_exit:"Exit"
+   };
+   }}}
+   $LF
+   If the value of _text_, _checked_, _grayed_ or _icon_ is a function, it is called and the return value is used.
+   $H example
+   {{{
+   tray.menu = { ena:{ text:"enable", checked:function() { return isChecked } }, ...
+   }}}
 **/
 DEFINE_PROPERTY( menuSetter ) {
 
@@ -808,19 +815,19 @@ DEFINE_PROPERTY( menuGetter ) {
 /**doc
 === Callback functions ===
  The following functions are called when you call ProcessEvents() according the events received by the tray icon.
-  * onfocus
-  * onblur
-  * onchar
-  * oncommand
-  * onmousemove
-  * onmousedown
-  * onmouseup
-  * onmousedblclick
+  * *onfocus*( $TRUE )
+  * *onblur*( $FALSE )
+  * *onchar*( $STR char )
+  * *oncommand*( $STR id, $INT mouseButton )
+  * *onmousemove*( $INT mouseX, $INT mouseY )
+  * *onmousedown*( $INT mouseButton, $TRUE )
+  * *onmouseup*( $INT mouseButton, $FALSE )
+  * *onmousedblclick*( $INT mouseButton )
  $H example
  {{{
  var s = new Systray();
  s.icon = new Icon( 0 );
- s.onmousedown = function( button ) { 
+ s.onmousedown = function( button ) {
 
   MessageBeep();
   s.PopupMenu();
@@ -864,11 +871,11 @@ END_CLASS
  $H example 1
  {{{
  var s = new Systray();
- 
+
  s.icon = new Icon(new Png(new File('calendar.png').Open(File.RDONLY)).Load());
  s.text = "calendar";
  s.menu = { exit_cmd:"exit" }
- 
+
  s.onmousedown = function(button) {
    if ( button == 2 )
      s.PopupMenu();
@@ -889,74 +896,17 @@ END_CLASS
  {{{
  LoadModule('jsstd');
  LoadModule('jswinshell');
- 
- // MessageBox() Flags
- const MB = {
-	OK                  :0x000000,
-	OKCANCEL            :0x000001,
-	ABORTRETRYIGNORE    :0x000002,
-	YESNOCANCEL         :0x000003,
-	YESNO               :0x000004,
-	RETRYCANCEL         :0x000005,
-	CANCELTRYCONTINUE   :0x000006,
 
-	ICONHAND            :0x000010,
-	ICONQUESTION        :0x000020,
-	ICONEXCLAMATION     :0x000030,
-	ICONASTERISK        :0x000040,
-	USERICON            :0x000080,
-	ICONWARNING         :0x000030,
-	ICONERROR           :0x000010,
-	ICONINFORMATION     :0x000040,
-	ICONSTOP            :0x000010,
-
-	DEFBUTTON1          :0x000000,
-	DEFBUTTON2          :0x000100,
-	DEFBUTTON3          :0x000200,
-	DEFBUTTON4          :0x000300,
-
-	APPLMODAL           :0x000000,
-	SYSTEMMODAL         :0x001000,
-	TASKMODAL           :0x002000,
-	HELP                :0x004000,
-	NOFOCUS             :0x008000,
-
-	SETFOREGROUND       :0x010000,
-	DEFAULT_DESKTOP_ONLY:0x020000,
-	TOPMOST             :0x040000,
-	RIGHT               :0x080000,
-
-	RTLREADING          :0x100000
- };
- 
- 
- // Dialog Box Command IDs
- const ID = {
- 	OK      :1,
- 	CANCEL  :2,
- 	ABORT   :3,
- 	RETRY   :4,
- 	IGNORE  :5,
- 	YES     :6,
- 	NO      :7,
- 	CLOSE   :8,
- 	HELP    :9,
- 	TRYAGAIN:10,
- 	CONTINUE:11,
- 
- 	TIMEOUT :32000
- };
- 
  var s = new Systray();
  s.icon = new Icon( 0 );
  s.menu = { add:'Add', exit:'Exit', s1:{ separator:true } };
- s.onmousedown = function( button ) { 
- 
+ s.onmousedown = function( button ) {
+
  	s.PopupMenu();
  }
- 
+
  s.oncommand = function( id, button ) {
- 
+
  	switch ( id ) {
  		case 'exit':
  			return true;
@@ -972,11 +922,11 @@ END_CLASS
  			if ( button == 1 )
  				CreateProcess( id );
  			else
- 				if ( MessageBox( 'Remove item: ' + id + '? ', 'Question', MB.YESNO) == ID.YES )
+ 				if ( MessageBox( 'Remove item: ' + id + '? ', 'Question', MB_YESNO) == IDYES )
  					delete s.menu[id];
  		}
  }
- 
+
  do { Sleep(100) } while ( !s.ProcessEvents() );
  }}}
 **/

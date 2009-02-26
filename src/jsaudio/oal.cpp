@@ -32,7 +32,7 @@ BEGIN_CLASS( Oal )
  * $VOID $INAME( [ deviceName ] )
   Open an audio device.
   $H arguments
-   $ARG string deviceName:  "Generic Hardware", "Generic Software", "DirectSound3D" (for legacy), "DirectSound", "MMSYSTEM"
+   $ARG $STR deviceName: "Generic Hardware", "Generic Software", "DirectSound3D" (for legacy), "DirectSound", "MMSYSTEM"
     If no device name is specified, we will attempt to use DS3D.
   $H OpenAL API
    alcOpenDevice, alcCreateContext, alcMakeContextCurrent
@@ -147,7 +147,7 @@ DEFINE_PROPERTY( maxAuxiliarySends ) {
  * $VOID $INAME( value )
   Selects the OpenAL Doppler factor value. The default Doppler factor value is 1.0 .
   $H arguments
-   $ARG Number value
+   $ARG $NUM value
   $H OpenAL API
    alDopplerFactor
 **/
@@ -168,7 +168,7 @@ DEFINE_FUNCTION_FAST( DopplerFactor ) {
  * $VOID $INAME( value )
   Selects the OpenAL Doppler velocity value. The default Doppler velocity value is 343.3 .
   $H arguments
-   $ARG Number value
+   $ARG $NUM value
   $H OpenAL API
    alDopplerVelocity
 **/
@@ -189,7 +189,7 @@ DEFINE_FUNCTION_FAST( DopplerVelocity ) {
  * $VOID $INAME( value )
   Selects the OpenAL Speed of Sound value.
   $H arguments
-   $ARG Number value
+   $ARG $NUM value
   $H OpenAL API
    alSpeedOfSound
 **/
@@ -209,7 +209,7 @@ DEFINE_FUNCTION_FAST( SpeedOfSound ) {
 /**doc
  * $VOID $INAME( distanceModel )
   $H arguments
-   $ARG Integer value
+   $ARG $INT value
   $H OpenAL API
    alDistanceModel
 **/
@@ -332,9 +332,9 @@ DEFINE_FUNCTION_FAST( GetBoolean ) {
  * $INT | $ARRAY $INAME( pname [, count] )
   $H arguments
    $ARG ALenum pname
-   $ARG integer count: is the number of expected values. If _count_ is defined, the function will returns an array of values, else it returns a single value.
+   $ARG $INT count: is the number of expected values. If _count_ is defined, the function will returns an array of values, else it returns a single value.
   $H return value
-   value or values of a selected parameter.
+   A single value or an array of values of a selected parameter.
   $H OpenAL API
    alGetIntegerv
 **/
@@ -372,7 +372,7 @@ DEFINE_FUNCTION_FAST( GetInteger ) {
  * $REAL | $ARRAY $INAME( pname [, count] )
   $H arguments
    $ARG ALenum pname
-   $ARG integer count: is the number of expected values. If _count_ is defined, the function will returns an array of values, else a single value.
+   $ARG $INT count: is the number of expected values. If _count_ is defined, the function will returns an array of values, else a single value.
   $H return value
    single value or Array of values of the selected parameter.
   $H OpenAL API
@@ -412,7 +412,7 @@ DEFINE_FUNCTION_FAST( GetDouble ) {
  * $VOID $INAME( pname, params )
   $H arguments
    $ARG ALenum pname:
-   $ARG Array params:
+   $ARG $ARRAY params:
   $H OpenAL API
    alListeneri, alListenerf, alListenerfv
 **/
@@ -453,9 +453,9 @@ DEFINE_FUNCTION_FAST( Listener ) {
 /**doc
  * $REAL | $ARRAY $INAME( source, pname [, count] )
   $H arguments
-   $ARG integer source:
+   $ARG $INT source:
    $ARG ALenum pname:
-   $ARG integer count: is the number of expected values. If _count_ is defined, the function will returns an array of values, else a single value.
+   $ARG $INT count: is the number of expected values. If _count_ is defined, the function will returns an array of values, else a single value.
   $H return value
    single value or Array of values of the selected parameter.
   $H OpenAL API
@@ -510,9 +510,9 @@ DEFINE_FUNCTION_FAST( GenSource ) {
 /**doc
  * $VOID $INAME( source, pname, params )
   $H arguments
-   $ARG integer source:
+   $ARG $INT source:
    $ARG ALenum pname:
-   $ARG Array params:
+   $ARG $ARRAY params:
   $H OpenAL API
    alSourcei, alSourcef, alSourcefv
 **/
@@ -555,9 +555,9 @@ DEFINE_FUNCTION_FAST( Source ) {
 /**doc
  * $REAL | $ARRAY $INAME( source, pname [, count] )
   $H arguments
-   $ARG integer source:
+   $ARG $INT source:
    $ARG ALenum pname:
-   $ARG integer count: is the number of expected values. If _count_ is defined, the function will returns an array of values, else a single value.
+   $ARG $INT count: is the number of expected values. If _count_ is defined, the function will returns an array of values, else a single value.
   $H return value
    single value or Array of values of the selected parameter.
   $H OpenAL API
@@ -645,7 +645,7 @@ DEFINE_FUNCTION_FAST( GetSourceInteger ) {
 /**doc
  * $VOID $INAME( source )
   $H arguments
-   $ARG integer source: the source id.
+   $ARG $INT source: the source id.
   $H OpenAL API
    alDeleteBuffers
 **/
@@ -664,9 +664,9 @@ DEFINE_FUNCTION_FAST( DeleteSource ) {
 /**doc
  * $VOID $INAME( source, buffer | bufferArray )
   $H arguments
-   $ARG integer source: the source id.
-   $ARG integer buffer: the buffer id.
-   $ARG Array bufferArray: an Array of buffer id.
+   $ARG $INT source: the source id.
+   $ARG $INT buffer: the buffer id.
+   $ARG $ARRAY bufferArray: an Array of buffer id.
   $H OpenAL API
    alDeleteBuffers
 **/
@@ -707,8 +707,8 @@ DEFINE_FUNCTION_FAST( SourceQueueBuffers ) {
 /**doc
  * $VOID $INAME( source, buffer | bufferArray )
   $H arguments
-   $ARG integer buffer: the buffer id.
-   $ARG Array bufferArray: an Array of buffer id.
+   $ARG $INT buffer: the buffer id.
+   $ARG $ARRAY bufferArray: an Array of buffer id.
   $H OpenAL API
    alDeleteBuffers
 **/
@@ -801,9 +801,9 @@ DEFINE_FUNCTION_FAST( Buffer ) {
 /**doc
  * $REAL | $ARRAY $INAME( source, pname [, count] )
   $H arguments
-   $ARG integer source:
+   $ARG $INT source:
    $ARG ALenum pname:
-   $ARG integer count: is the number of expected values. If _count_ is defined, the function will returns an array of values, else a single value.
+   $ARG $INT count: is the number of expected values. If _count_ is defined, the function will returns an array of values, else a single value.
   $H return value
    single value or Array of values of the selected parameter.
   $H OpenAL API
@@ -842,9 +842,9 @@ DEFINE_FUNCTION_FAST( GetBufferReal ) {
 /**doc
  * $INT | $ARRAY $INAME( source, pname [, count] )
   $H arguments
-   $ARG integer source:
+   $ARG $INT source:
    $ARG ALenum pname:
-   $ARG integer count: is the number of expected values. If _count_ is defined, the function will returns an array of values, else a single value.
+   $ARG $INT count: is the number of expected values. If _count_ is defined, the function will returns an array of values, else a single value.
   $H return value
    single value or Array of values of the selected parameter.
   $H OpenAL API
@@ -886,7 +886,7 @@ DEFINE_FUNCTION_FAST( GetBufferInteger ) {
 /**doc
  * $VOID $INAME( buffer )
   $H arguments
-   $ARG integer buffer: the buffer id.
+   $ARG $INT buffer: the buffer id.
   $H note
    Buffers that have been unqueued from all sources are UNUSED. Buffers that are UNUSED can be deleted, or changed by alBufferData commands.
   $H OpenAL API
@@ -909,7 +909,7 @@ DEFINE_FUNCTION_FAST( DeleteBuffer ) {
  * $VOID $INAME( source )
   Plays the given source.
   $H arguments
-   $ARG integer source: the ID of the source to play.
+   $ARG $INT source: the ID of the source to play.
 **/
 DEFINE_FUNCTION_FAST( PlaySource ) {
 
@@ -927,7 +927,7 @@ DEFINE_FUNCTION_FAST( PlaySource ) {
  * $VOID $INAME( source )
   Stop the given source.
   $H arguments
-   $ARG integer source: the ID of the source to play.
+   $ARG $INT source: the ID of the source to play.
 **/
 DEFINE_FUNCTION_FAST( StopSource ) {
 
@@ -945,7 +945,7 @@ DEFINE_FUNCTION_FAST( StopSource ) {
  * $VOID $INAME( source )
   Pause the given source.
   $H arguments
-   $ARG integer source: the ID of the source to play.
+   $ARG $INT source: the ID of the source to play.
 **/
 DEFINE_FUNCTION_FAST( PauseSource ) {
 
@@ -963,7 +963,7 @@ DEFINE_FUNCTION_FAST( PauseSource ) {
  * $VOID $INAME( source )
   Rewind the given source. set playback postiton to beginning.
   $H arguments
-   $ARG integer source: the ID of the source to play.
+   $ARG $INT source: the ID of the source to play.
 **/
 DEFINE_FUNCTION_FAST( RewindSource ) {
 

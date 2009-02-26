@@ -70,14 +70,14 @@ DEFINE_CONSTRUCTOR() {
 **/
 
 /**doc
- * $INAME( [ _what_ ] )
+ * $INAME( [ what ] )
   Shut down part of a full-duplex connection on a socket.
   $LF
-  if _what_ is _true_, further receives will be disallowed.
+  if _what_ is $TRUE, further receives will be disallowed.
   $LF
-  if _what_ is _false_, further sends will be disallowed.
+  if _what_ is $TRUE, further sends will be disallowed.
   $LF
-  if _what_ is ommited or _undefined_,  further sends and receives will be disallowed
+  if _what_ is ommited or $UNDEF,  further sends and receives will be disallowed
 **/
 DEFINE_FUNCTION( Shutdown ) { // arg[0] =  false: SHUTDOWN_RCV | true: SHUTDOWN_SEND | else it will SHUTDOWN_BOTH
 
@@ -973,7 +973,7 @@ DEFINE_FUNCTION( GetHostsByName ) {
 
 /**doc
 === Native Interface ===
- *NIStreamRead*
+ * *NIStreamRead*
 **/
 
 CONFIGURE_CLASS

@@ -45,7 +45,7 @@ DEFINE_FINALIZE() {
  * $INAME( directoryName )
   Creates a new Directory object.
   $H arguments
-   $ARG string directoryName
+   $ARG $STR directoryName
 **/
 DEFINE_CONSTRUCTOR() {
 
@@ -105,9 +105,9 @@ DEFINE_FUNCTION( Close ) {
  * $STR $INAME( [, flags = Directory.SKIP_NONE ] )
    Reads an item of the current directory and go to the next.
   $H arguments
-   $ARG enum flags: specifies how special files are processed.
+   $ARG $ENUM flags: specifies how special files are processed.
   $H return value
-   returns a single directory item.
+   A single directory item.
 **/
 DEFINE_FUNCTION( Read ) {
 
@@ -241,10 +241,10 @@ DEFINE_PROPERTY( name ) {
  * $TYPE Array $INAME( dirName [, flags = Directory.SKIP_DOT] )
   Read all entries of a directory at once.
   $H arguments
-   $ARG string dirName: is the path of the directory.
-   $ARG enum flags: specifies how special files are processed.
+   $ARG $STR dirName: is the path of the directory.
+   $ARG $ENUM flags: specifies how special files are processed.
   $H return value
-   returns all entries in the directory _name_.
+   All entries in the directory _name_.
   $H note
    This function supports additional flags: Directory.`SKIP_FILE`, Directory.`SKIP_DIRECTORY`, Directory.`SKIP_OTHER`
   $H example

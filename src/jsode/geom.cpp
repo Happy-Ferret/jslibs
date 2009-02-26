@@ -296,7 +296,8 @@ DEFINE_PROPERTY( offsetPositionSetter ) {
 
 /**doc
 === Native Interface ===
- *NIMatrix44Read*: is the current geometry's position.
+ * *NIMatrix44Read*
+  Is the current geometry's position.
 **/
 
 CONFIGURE_CLASS
