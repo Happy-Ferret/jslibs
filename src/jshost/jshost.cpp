@@ -298,6 +298,8 @@ The main features are:
   This is the frequency (in seconds) at witch the GarbageCollector may be launched.
  * `-l <case>` (default = 0)
   This is a temporary option that allow to select function name naming. 0:default, 1:lowerCamelCase, 2:UpperCamelCase
+  $H node
+   Default is UpperCamelCase for jslibs version < 1.0 and lowerCamelCase for jslibs version >= 1.0
   $H example
   {{{
   loadModule('jsio');

@@ -14,8 +14,7 @@
 
 #include "stdafx.h"
 
-#ifdef XP_WIN
-#else
+#ifndef XP_WIN
 #include <sys/statvfs.h>
 #endif
 
@@ -676,9 +675,9 @@ DEFINE_FUNCTION_FAST( AvailableSpace ) {
 	available = freeBytesAvailable.QuadPart;
 #else // now for XP_UNIX an MacOS ?
 	struct statvfs fsd;
-	if (statvfs(path, &fsd) < 0)
+	if ( statvfs(path, &fsd) < 0 )
 		J_REPORT_ERROR_1("Unable to get the available space of %s.", path);
-	available = (jsdouble)fsd.f_bsize * (jsdouble)(fsd.f_bavail-1);
+	available = (jsdouble)fsd.f_bsize * (jsdouble)fsd.f_bavail;
 #endif // XP_WIN
 
 	J_CHK( JS_NewDoubleValue(cx, available, J_FRVAL) );
