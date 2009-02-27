@@ -298,6 +298,14 @@ The main features are:
   This is the frequency (in seconds) at witch the GarbageCollector may be launched.
  * `-l <case>` (default = 0)
   This is a temporary option that allow to select function name naming. 0:default, 1:lowerCamelCase, 2:UpperCamelCase
+  $H example
+  {{{
+  loadModule('jsio');
+  loadModule('jsstd');
+  var f = new File( arguments[0] );
+  f.open('r');
+  print( f.read(100) );
+  }}}
 
 === Exit code ===
  * The exit code of jshost is 1 on error. On success, exit code is the last evaluated expression of the script.
