@@ -20,7 +20,7 @@ $(DEST_DIR):
 	mkdir -p $(DEST_DIR)
 
 copy: $(DEST_DIR)
-	[ -n "$(DEST_DIR)" ] && cp $(TARGET_FILES) $(DEST_DIR)
+	-[ -n "$(DEST_DIR)" ] && cp $(TARGET_FILES) $(DEST_DIR)
 
 clean::
 	echo clearing $(DEST_DIR)
