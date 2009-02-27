@@ -117,12 +117,12 @@ var api = {
 
 	$TOC_CLASS: function(cx, item) {
 	
-		cx.center = '==<font size="1" color="white">'+ReadArg(cx)+'</font>==';
+		cx.center = '==<font size="1" color="white">'+ExpandText( ReadArg(cx), api, item )+'</font>==';
 	},
 
 	$TOC_MEMBER: function(cx, item) {
 	
-		cx.center = '====<font size="1" color="white">'+ReadArg(cx)+'</font>====';
+		cx.center = '====<font size="1" color="white">'+ExpandText( ReadArg(cx), api, item )+'</font>====';
 	},
 
 	$CLASS_HEADER: function(cx, item) {
@@ -247,7 +247,6 @@ var api = {
    $: function(cx, item) { // beware: it MUST be the last in the list !!!
    
 		var key = ReadArg(cx);
-   	Print( key, '\n' );
 		if ( key )
 	   	cx.center = api_DEF[key];
    },
@@ -277,7 +276,7 @@ function ReadCx(cx, re) {
 }
 
 //function ReadArg(cx) ReadCx(cx, / *([^\s:]*)/)[1]||'';
-function ReadArg(cx) ReadCx(cx, / *([\w-]*)/)[1]||'';
+function ReadArg(cx) ReadCx(cx, / *([\w-$]*)/)[1]||'';
 function ReadEol(cx, eatEol) ReadCx(cx, eatEol ? / *([^\n]*)\n?/ : / *([^\n]*)/ )[1]||'';
 
 
