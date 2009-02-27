@@ -31,12 +31,6 @@ var api = {
 		this.TBD.apply(this, arguments);
 	},
 	
-	$SVN_REVISION: function(cx, item) {
-
-		var res = /Revision.*?(\w+)/(ReadEol(cx));
-		cx.center = res ? 'r'+res[1]+'<br/>' : '';
-	},
-
 	$H6: function(cx, item) { cx.center = '====== '+ReadEol(cx)+': ======' },
 	$H5: function(cx, item) { cx.center = '===== '+ReadEol(cx)+': =====' }, // notes, warnings
 	$H4: function(cx, item) { cx.center = '==== '+ReadEol(cx)+': ====' },  // properties & methods items
@@ -56,6 +50,10 @@ var api = {
 		cx.center = '===== '+eol+': =====';
 	},
 
+	$INCLUDE: function(cx, item) {
+	
+		cx.center = new File(item.path+'/'+ReadArg(cx)).content;
+	},
 
 	$INAME: function(cx, item) {
 
@@ -97,44 +95,70 @@ var api = {
 			cx.center = '???';
 	},
 	
-	$INCLUDE: function(cx, item) {
-	
-		cx.center = new File(item.path+'/'+ReadArg(cx)).content;
-	},
-
-	$CLASS_HEADER: function(cx, item) {
-		
-		var className;
-
-		var res = /BEGIN_CLASS\( *(\w*) *\)/(item.source.substring(item.followingSourceTextStart, item.followingSourceTextEnd));
-		if ( res ) {
-			className = res[1];
-		} else
-			className = '???';
-		
-		var inheritFrom = ReadArg(cx);
-		
-		cx.center = '----\n== '+item.lastDir+'::'+className+' class ';
-		cx.center += inheritFrom ? '^'+item.lastDir+'::'+inheritFrom+'^' : '';
-		cx.center += ' ==';
-		cx.center += '\n- [http://jslibs.googlecode.com/svn/trunk/'+item.path+'/'+item.fileName+' src] - [#'+item.lastDir+'_module top] -';
-	},
-	
 	$MODULE_HEADER: function(cx, item) {
 
 		cx.center = '#summary '+item.lastDir+' module\n' + '#labels doc\n';
-		cx.center += '<b>If something seems wrong or incomplete, please enter a [#commentform comment at the bottom of this page].</b><br><br>';
-		cx.center += '- [http://jslibs.googlecode.com/svn/trunk/'+item.path+'/ source] - [JSLibs main] -\n'+'= '+item.lastDir+' module =';
+		cx.center += '<b>If something seems wrong or incomplete, please enter [#commentform a comment at the bottom of this page].</b><br/><br/>';
+		cx.center += '- [http://jslibs.googlecode.com/svn/trunk/'+item.path+'/ source] - [JSLibs main] - [http://jslibs.googlecode.com/svn/trunk/'+item.path+'/qa.js QA] -\n';
+		cx.center += '= '+item.lastDir+' module =\n';
+		cx.center += '<wiki:toc max_depth="4"/>';
+		
 	},
-	
+
+	$MODULE_FOOTER: function(cx, item) {
+
+		cx.center = '----\n- [#'+item.lastDir+'_module top] - [JSLibs main] -';
+	},
+
 	$FILE_TOC: function(cx, item) {
 	
 		cx.center = '<wiki:toc max_depth="4"/>'; // '+(ReadArg(cx)||'1')+'
 	},
 
-	$MODULE_FOOTER: function(cx, item) {
+	$TOC_CLASS: function(cx, item) {
+	
+		cx.center = '==<font size="1" color="white">'+ReadArg(cx)+'</font>==';
+	},
 
-		cx.center = '----\n- [#'+item.lastDir+'_module top] - [JSLibs main] - [http://jslibs.googlecode.com/svn/trunk/'+item.path+'/ source] - [http://jslibs.googlecode.com/svn/trunk/'+item.path+'/qa.js QA] -';
+	$TOC_MEMBER: function(cx, item) {
+	
+		cx.center = '====<font size="1" color="white">'+ReadArg(cx)+'</font>====';
+	},
+
+	$CLASS_HEADER: function(cx, item) {
+		
+		var name;
+		var body = item.source.substring(item.followingSourceTextStart, item.followingSourceTextEnd);
+
+		var res = /BEGIN_CLASS\( *(\w*) *\)/(body);
+		if ( res ) {
+			
+			var inheritFrom = ReadArg(cx);
+			name = 'class ' + item.lastDir + '::' + res[1];
+			if ( inheritFrom )
+				name += '^' + item.lastDir + '::' + inheritFrom + '^';
+		} else
+		if ( /BEGIN_STATIC/(body) ) {
+		
+			name = item.lastDir + ' static members';
+		} else {
+		
+			name = '???';
+		}
+		
+		cx.center = '----\n== '+name+' ==\n- ';
+//		cx.center += '[http://jslibs.googlecode.com/svn/trunk/'+item.path+'/'+item.fileName+' src] - ';
+		cx.center += '[#'+item.lastDir+'_module top] - ';
+	},
+	
+	$SVN_REVISION: function(cx, item) {
+
+		var res = /Revision.*?(\w+)/(ReadEol(cx));
+		if ( res )
+		cx.center = '[http://code.google.com/p/jslibs/source/browse/trunk/'+item.path+'/'+item.fileName+'?r='+res[1]+' revision] - ';
+		else
+			cx.center = '';
+//		cx.center += '<br/>';
 	},
 
 	$READONLY:' http://jslibs.googlecode.com/svn/wiki/readonly.png ',
@@ -223,7 +247,9 @@ var api = {
    $: function(cx, item) { // beware: it MUST be the last in the list !!!
    
 		var key = ReadArg(cx);
-   	cx.center = api_DEF[key];
+   	Print( key, '\n' );
+		if ( key )
+	   	cx.center = api_DEF[key];
    },
 
 };
@@ -250,7 +276,8 @@ function ReadCx(cx, re) {
     }
 }
 
-function ReadArg(cx) ReadCx(cx, / *([^\s:]*)/)[1]||'';
+//function ReadArg(cx) ReadCx(cx, / *([^\s:]*)/)[1]||'';
+function ReadArg(cx) ReadCx(cx, / *([\w-]*)/)[1]||'';
 function ReadEol(cx, eatEol) ReadCx(cx, eatEol ? / *([^\n]*)\n?/ : / *([^\n]*)/ )[1]||'';
 
 
