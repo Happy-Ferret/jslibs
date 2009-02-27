@@ -492,7 +492,8 @@ DEFINE_FINALIZE() {
 */
 
 /**doc
- * $INAME( [source] )
+$TOC_MEMBER $INAME
+ $INAME( [source] )
   Constructs a Buffer object.
   $H arguments
    $ARG streamObject source: any object that supports NIStreamRead interface. The Buffer uses this object when its length is less than the requested amount of data.
@@ -602,7 +603,8 @@ DEFINE_FUNCTION( Clone ) {
 
 
 /**doc
- * $VOID $INAME()
+$TOC_MEMBER $INAME
+ $VOID $INAME()
   Empty the whole buffer.
 **/
 DEFINE_FUNCTION( Clear ) {
@@ -620,7 +622,8 @@ DEFINE_FUNCTION( Clear ) {
 
 
 /**doc
- * $INAME( data [, length] )
+$TOC_MEMBER $INAME
+ $INAME( data [, length] )
  * $INAME( buffer )
   Add _data_ in the buffer. If _length_ is used, only the first _length_ bytes of _data_ are added.
   The second form allow to add another whole buffer in the current buffer.
@@ -659,7 +662,8 @@ DEFINE_FUNCTION( Write ) {
 
 
 /**doc
- * $BOOL $INAME( str [, consume = false ] )
+$TOC_MEMBER $INAME
+ $BOOL $INAME( str [, consume = false ] )
   Check if the given string _str_ matchs to the next data in the buffer.
   $H arguments
    $ARG $STR str
@@ -707,7 +711,8 @@ err:
 
 
 /**doc
- * $STR $INAME( [ amount ] )
+$TOC_MEMBER $INAME
+ $STR $INAME( [ amount ] )
   Read _amount_ data in the buffer. If _amount_ is omited, The whole buffer is returned.
   $H beware
    This function returns a Blob or a string literal as empty string.
@@ -744,7 +749,8 @@ DEFINE_FUNCTION( Read ) { // Read( [ amount | <undefined> ] )
 
 
 /**doc
- * $INAME( length )
+$TOC_MEMBER $INAME
+ $INAME( length )
   Skip _length_ bytes of data from the buffer.
 **/
 DEFINE_FUNCTION( Skip ) { // Skip( amount )
@@ -767,7 +773,8 @@ DEFINE_FUNCTION( Skip ) { // Skip( amount )
 
 
 /**doc
- * $STR $INAME( boundaryString [, skip] )
+$TOC_MEMBER $INAME
+ $STR $INAME( boundaryString [, skip] )
   Reads the buffer until it match the _boundaryString_, else it returns $UNDEF.
   If _skip_ argument is $TRUE, the _boundaryString_ is skiped from the buffer.
 **/
@@ -802,7 +809,8 @@ DEFINE_FUNCTION( ReadUntil ) {
 
 
 /**doc
- * $INT $INAME( string )
+$TOC_MEMBER $INAME
+ $INT $INAME( string )
   Find _string_ in the buffer and returns the offset of the first letter. If not found, this function returns -1.
 **/
 DEFINE_FUNCTION( IndexOf ) {
@@ -821,7 +829,8 @@ DEFINE_FUNCTION( IndexOf ) {
 
 
 /**doc
- * $STR $INAME( _data_ )
+$TOC_MEMBER $INAME
+ $STR $INAME( _data_ )
   Insert _data_ at the begining of the buffer. This function can undo a read operation. The returned value is _data_.
   $H example
   {{{
@@ -844,7 +853,8 @@ DEFINE_FUNCTION( Unread ) {
 
 
 /**doc
- * $STR $INAME()
+$TOC_MEMBER $INAME
+ $STR $INAME()
   Converts the whole content of the buffer to a string.
   $H note
    The buffer is not modified.
@@ -907,7 +917,8 @@ DEFINE_FUNCTION( toString ) {
 
 
 /**doc
- * $TYPE char $INAME $READONLY
+$TOC_MEMBER $INAME
+ $TYPE char $INAME $READONLY
   Used to access the character in the _N_th position where _N_ is a positive integer between 0 and one less than the value of length.
 **/
 DEFINE_GET_PROPERTY() {
@@ -970,7 +981,8 @@ DEFINE_SET_PROPERTY() {
 **/
 
 /**doc
- * $INT $INAME $READONLY
+$TOC_MEMBER $INAME
+ $INT $INAME $READONLY
   Is the current length of the buffer.
 **/
 DEFINE_PROPERTY( length ) {
@@ -1010,7 +1022,8 @@ DEFINE_TRACER() {
 */
 
 /** prev doc
- * $OBJ *source*
+$TOC_MEMBER $INAME
+ $OBJ *source*
   The source property can contains any NIStreamRead compatible object. The Buffer uses this object when its length is less than the requested amount of data. Any extra data returned by the NIStreamRead object is keept in the buffer and will be used at the next read operation.
   $H beware
    The .source function called by the Buffer MUST return the exact or less than the  required size else the remaining is lost (not stored in the buffer).

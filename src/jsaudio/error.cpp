@@ -24,7 +24,8 @@ $SVN_REVISION $Revision:$
 BEGIN_CLASS( OalError )
 
 /**doc
- * $INT $INAME
+$TOC_MEMBER $INAME
+ $INT $INAME
   OpenAL error number.
 **/
 DEFINE_PROPERTY( code ) {
@@ -35,7 +36,8 @@ DEFINE_PROPERTY( code ) {
 
 
 /**doc
- * $STR $INAME
+$TOC_MEMBER $INAME
+ $STR $INAME
   OpenAL error literal.
 **/
 DEFINE_PROPERTY( text ) {
@@ -74,7 +76,8 @@ DEFINE_PROPERTY( text ) {
 }
 
 /**doc
- * $STR $INAME
+$TOC_MEMBER $INAME
+ $STR $INAME
   Const name of the OpenAL error.
 **/
 DEFINE_PROPERTY( const ) {
@@ -113,7 +116,8 @@ DEFINE_PROPERTY( const ) {
 }
 
 /**doc
- * $STR $INAME
+$TOC_MEMBER $INAME
+ $STR $INAME
   see Text().
 **/
 DEFINE_FUNCTION( toString ) {

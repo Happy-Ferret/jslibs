@@ -204,7 +204,8 @@ DumpScope(JSContext *cx, JSObject *obj, FILE *fp)
 
 
 /**doc
- * $INAME( [ filename [, type [, ...] ] ] )
+$TOC_MEMBER $INAME
+ $INAME( [ filename [, type [, ...] ] ] )
   type: 'gc' | 'arena' | 'atom' | 'global' | variable
 **/
 DEFINE_FUNCTION( DumpStats )
@@ -292,7 +293,8 @@ DEFINE_FUNCTION( DumpStats )
 
 
 /**doc
- * $INAME( [ filename [, startThing [, thingToFind [, maxDepth [, thingToIgnore] ] ] ] ] )
+$TOC_MEMBER $INAME
+ $INAME( [ filename [, startThing [, thingToFind [, maxDepth [, thingToIgnore] ] ] ] ] )
   This function in only available in DEBUG mode.
 **/
 DEFINE_FUNCTION( DumpHeap )
@@ -469,7 +471,8 @@ TrapHandler(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval,
 }
 
 /**doc
- * $VOID $INAME( ??? )
+$TOC_MEMBER $INAME
+ $VOID $INAME( ??? )
   TBD
 **/
 DEFINE_FUNCTION( Trap )
@@ -492,7 +495,8 @@ DEFINE_FUNCTION( Trap )
 }
 
 /**doc
- * $INAME( ??? )
+$TOC_MEMBER $INAME
+ $INAME( ??? )
   TBD
 **/
 DEFINE_FUNCTION( Untrap )
@@ -507,7 +511,8 @@ DEFINE_FUNCTION( Untrap )
 }
 
 /**doc
- * $INAME( ??? )
+$TOC_MEMBER $INAME
+ $INAME( ??? )
   TBD
 **/
 DEFINE_FUNCTION( LineToPC )
@@ -532,7 +537,8 @@ DEFINE_FUNCTION( LineToPC )
 }
 
 /**doc
- * $INAME( ??? )
+$TOC_MEMBER $INAME
+ $INAME( ??? )
   TBD
 **/
 DEFINE_FUNCTION( PCToLine )
@@ -551,7 +557,8 @@ DEFINE_FUNCTION( PCToLine )
 }
 
 /**doc
- * $OBJ $INAME( nFrame );
+$TOC_MEMBER $INAME
+ $OBJ $INAME( nFrame );
   Returns the current script name and line number. nFrame is the number of stack frames to go back (0 is the current stack frame).
 **/
 DEFINE_FUNCTION(Locate) {
@@ -582,7 +589,8 @@ DEFINE_FUNCTION(Locate) {
 }
 
 /**doc
- * $OBJ $INAME( nFrame );
+$TOC_MEMBER $INAME
+ $OBJ $INAME( nFrame );
   Returns the current script line number. nFrame is the number of stack frames to go back (0 is the current stack frame).
 **/
 DEFINE_FUNCTION(LocateLine) {
@@ -652,7 +660,8 @@ JSBool GCCallTrace(JSContext *cx, JSGCStatus status) {
 }
 
 /**doc
- * $INAME( [ filename ] )
+$TOC_MEMBER $INAME
+ $INAME( [ filename ] )
   TBD
 **/
 DEFINE_FUNCTION_FAST( TraceGC )
@@ -802,7 +811,8 @@ bool GetProcInfo( pid_t pid, LinuxProcInfo *pinfo ) {
 
 
 /**doc
- * $INAME
+$TOC_MEMBER $INAME
+ $INAME
   TBD
 **/
 DEFINE_PROPERTY( currentMemoryUsage ) {
@@ -830,7 +840,8 @@ DEFINE_PROPERTY( currentMemoryUsage ) {
 }
 
 /**doc
- * $INAME
+$TOC_MEMBER $INAME
+ $INAME
   TBD
 **/
 DEFINE_PROPERTY( peakMemoryUsage ) {
@@ -867,7 +878,8 @@ DEFINE_PROPERTY( peakMemoryUsage ) {
 
 
 /**doc
- * $INAME
+$TOC_MEMBER $INAME
+ $INAME
   TBD
 **/
 DEFINE_PROPERTY( privateMemoryUsage ) {
@@ -900,7 +912,8 @@ DEFINE_PROPERTY( privateMemoryUsage ) {
 **/
 
 /**doc
- * $INAME
+$TOC_MEMBER $INAME
+ $INAME
   TBD
 **/
 
@@ -919,7 +932,8 @@ DEFINE_PROPERTY( gcMallocBytes ) {
 }
 
 /**doc
- * $INAME
+$TOC_MEMBER $INAME
+ $INAME
   TBD
 **/
 

@@ -31,7 +31,8 @@ DEFINE_FINALIZE() {
 }
 
 /**doc
- * $INAME()
+$TOC_MEMBER $INAME
+ $INAME()
   $H note
    by default, mu is set to Infinity.
 **/
@@ -56,7 +57,8 @@ DEFINE_CONSTRUCTOR() {
 **/
 
 /**doc
- * $REAL *mu*
+$TOC_MEMBER $INAME
+ $REAL *mu*
 
  * $REAL *mu2*
 

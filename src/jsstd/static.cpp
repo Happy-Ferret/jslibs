@@ -49,7 +49,8 @@ BEGIN_STATIC
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
- * $STR $INAME( str [, obj] )
+$TOC_MEMBER $INAME
+ $STR $INAME( str [, obj] )
   Return an expanded string using key/value stored in _obj_.
   $LF
   If _obj_ is omitted, the current object is used to look for key/value.
@@ -169,7 +170,8 @@ DEFINE_FUNCTION( Expand ) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
- * $VOID $INAME( string )
+$TOC_MEMBER $INAME
+ $VOID $INAME( string )
   Make an interned string, a string that is automatically shared with other code that needs a string with the same value.
 **/
 // source: http://mxr.mozilla.org/mozilla/source/js/src/js.c
@@ -189,7 +191,8 @@ DEFINE_FUNCTION_FAST( InternString ) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
- * $VOID $INAME( obj [ , recursively  ] )
+$TOC_MEMBER $INAME
+ $VOID $INAME( obj [ , recursively  ] )
   Prevents all write access to the object, either to add a new property, delete an existing property, or set the value or attributes of an existing property.
   If _recursively_ is true, the function seal any non-null objects in the graph connected to obj's slots.
 **/
@@ -210,7 +213,8 @@ DEFINE_FUNCTION( Seal ) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
- * $VOID $INAME( obj )
+$TOC_MEMBER $INAME
+ $VOID $INAME( obj )
   Removes all properties and elements from _obj_ in a single operation.
 **/
 DEFINE_FUNCTION( Clear ) {
@@ -230,7 +234,8 @@ DEFINE_FUNCTION( Clear ) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
- * $OBJ $INAME( obj, scopeObject )
+$TOC_MEMBER $INAME
+ $OBJ $INAME( obj, scopeObject )
   Set the scope object of _obj_.
   $H example 1
   {{{
@@ -297,7 +302,8 @@ DEFINE_FUNCTION( SetScope ) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
- * $VOID $INAME( obj, propertyName1 [, propertyName2 [, ... ] ] )
+$TOC_MEMBER $INAME
+ $VOID $INAME( obj, propertyName1 [, propertyName2 [, ... ] ] )
   Hide properties from for-in loop.
   $H example
   {{{
@@ -353,7 +359,8 @@ DEFINE_FUNCTION( HideProperties ) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
- * $INT $INAME( value )
+$TOC_MEMBER $INAME
+ $INT $INAME( value )
   Returns an integer value that is a unique identifier of _value_ .
   $H example
   {{{
@@ -384,7 +391,8 @@ DEFINE_FUNCTION_FAST( IdOf ) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
- * $VAL $INAME( id )
+$TOC_MEMBER $INAME
+ $VAL $INAME( id )
   Returns the value that corresponts to the given id. This is the reciprocal of IdOf() function.
   $H example
   {{{
@@ -413,7 +421,8 @@ DEFINE_FUNCTION_FAST( FromId ) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
- * $TYPE Blob $INAME( value )
+$TOC_MEMBER $INAME
+ $TYPE Blob $INAME( value )
   Encode (serialize) a JavaScript value into an XDR (eXternal Data Representation) blob.
   $H note
    All JavaScript values cannot be encoded into XDR. If the function failed to encode a value, an error is raised. The Map object can help you to encode Object and Array.
@@ -440,7 +449,8 @@ DEFINE_FUNCTION_FAST( XdrEncode ) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
- * $VAL $INAME( xdrBlob )
+$TOC_MEMBER $INAME
+ $VAL $INAME( xdrBlob )
   Decode (deserialize) XDR (eXternal Data Representation) blob to a JavaScript value.
   $H note
    Decoding malformed XDR data can lead the program to crash. This may be a security issue.
@@ -468,7 +478,8 @@ DEFINE_FUNCTION_FAST( XdrDecode ) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
- * $VOID $INAME( text )
+$TOC_MEMBER $INAME
+ $VOID $INAME( text )
   Report the given _text_ as warning. The warning is reported on the stderr. Warnings ignored in unsafeMode.
 **/
 DEFINE_FUNCTION_FAST( Warning ) {
@@ -487,7 +498,8 @@ DEFINE_FUNCTION_FAST( Warning ) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
- * $VOID $INAME( expression [, failureMessage ] )
+$TOC_MEMBER $INAME
+ $VOID $INAME( expression [, failureMessage ] )
   If the argument expression compares equal to zero, the failureMessage is written to the standard error device and the program stops its execution.
   $H example
   {{{
@@ -518,7 +530,8 @@ DEFINE_FUNCTION( ASSERT ) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
- * $VOID $INAME()
+$TOC_MEMBER $INAME
+ $VOID $INAME()
   Performs garbage collection in the JS memory pool.
 **/
 DEFINE_FUNCTION_FAST( CollectGarbage ) {
@@ -539,7 +552,8 @@ DEFINE_FUNCTION_FAST( CollectGarbage ) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
- * $VOID $INAME()
+$TOC_MEMBER $INAME
+ $VOID $INAME()
   Performs a conditional garbage collection of JS objects, doubles, and strings that are no longer needed by a script executing.
   This offers the JavaScript engine an opportunity to perform garbage collection if needed.
 **/
@@ -569,7 +583,8 @@ DEFINE_FUNCTION_FAST( MaybeCollectGarbage ) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
- * $REAL $INAME()
+$TOC_MEMBER $INAME
+ $REAL $INAME()
   Returns the current value of a high-resolution time counter in millisecond.
   The returned value is a relative time value.
 **/
@@ -583,7 +598,8 @@ DEFINE_FUNCTION_FAST( TimeCounter ) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
- * $STR $INAME( $STR str, $INT count )
+$TOC_MEMBER $INAME
+ $STR $INAME( $STR str, $INT count )
   Returns the string that is _count_ times _str_.
   $H example
   {{{
@@ -649,7 +665,8 @@ DEFINE_FUNCTION_FAST( StringRepeat ) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
- * $VOID $INAME( value1 [, value2 [, ...]] )
+$TOC_MEMBER $INAME
+ $VOID $INAME( value1 [, value2 [, ...]] )
   Display _val_ to the output (the screen by default).
   $H example
   {{{
@@ -799,7 +816,8 @@ static JSScript* LoadScript(JSContext *cx, JSObject *obj, const char *fileName, 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
- * $VAL $INAME( fileName [, useAndSaveCompiledScript = true] )
+$TOC_MEMBER $INAME
+ $VAL $INAME( fileName [, useAndSaveCompiledScript = true] )
   Executes the script specified by _fileName_.
   If _useAndSaveCompiledScript_ is true, the function load and save a compiled version (using XDR format) of the script on the disk ( adding 'xrd' to _fileName_ ).
   If the compiled file is not found, the uncompiled version is used instead.
@@ -855,7 +873,8 @@ DEFINE_FUNCTION_FAST( Exec ) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
- * $VAL $INAME( scriptCode [ , queryCallback ] [ , maxExecutionTime = 1000 ] )
+$TOC_MEMBER $INAME
+ $VAL $INAME( scriptCode [ , queryCallback ] [ , maxExecutionTime = 1000 ] )
   Evaluates the JavaScript code in a sandbox with a new set of standard classes (Object, Math, ...).
   $H arguments
    $ARG $STR scriptCode: the unsecured script code to be executed.
@@ -1018,7 +1037,8 @@ DEFINE_FUNCTION_FAST( SandboxEval ) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
- * $BOOL $INAME( statementString )
+$TOC_MEMBER $INAME
+ $BOOL $INAME( statementString )
   Returns true if _statementString_ is a valid Javascript statement.
   The intent is to support interactive compilation, accumulate lines in a buffer until IsStatementValid returns true, then pass it to an eval.
   This function is useful to write an interactive console.
@@ -1037,7 +1057,8 @@ DEFINE_FUNCTION( IsStatementValid ) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
- * $VOID $INAME()
+$TOC_MEMBER $INAME
+ $VOID $INAME()
   Stop the execution of the program. This is a ungraceful way to finish a program and should only be used in critical cases.
 **/
 DEFINE_FUNCTION( Halt ) {
@@ -1083,7 +1104,8 @@ DEFINE_FUNCTION( StrSet ) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
- * $BOOL $INAME
+$TOC_MEMBER $INAME
+ $BOOL $INAME
   Determines whether or not the function currently executing was called as a constructor.
 **/
 DEFINE_PROPERTY( isConstructing ) {
@@ -1095,7 +1117,8 @@ DEFINE_PROPERTY( isConstructing ) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
- * $BOOL $INAME
+$TOC_MEMBER $INAME
+ $BOOL $INAME
   Set to $TRUE, this property desactivates the garbage collector.
 **/
 DEFINE_PROPERTY( disableGarbageCollection ) {

@@ -33,7 +33,8 @@ DEFINE_FINALIZE() {
 
 
 /**doc
- * $INAME( image )
+$TOC_MEMBER $INAME
+ $INAME( image )
   Constructs a new B/W Cursor object. using a RGB or RGBA image.
   Only the red component is used for B/W (<128: black, >= 128: white)
   The Alpha component is used to set transparents pixels (alpha == 0) an inverted pixels (alpha == 255).

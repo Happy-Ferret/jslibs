@@ -30,7 +30,8 @@ BEGIN_STATIC
 **/
 
 /**doc
- * $STR *Base64Encode*( string )
+$TOC_MEMBER $INAME
+ $STR *Base64Encode*( string )
   Encode the given _string_ using base64 encoding.
 **/
 DEFINE_FUNCTION( Base64Encode ) {
@@ -63,7 +64,8 @@ DEFINE_FUNCTION( Base64Encode ) {
 }
 
 /**doc
- * $STR *Base64Decode*( string )
+$TOC_MEMBER $INAME
+ $STR *Base64Decode*( string )
   Encode the given _string_ using base64 encoding.
 **/
 DEFINE_FUNCTION( Base64Decode ) {
@@ -94,7 +96,8 @@ DEFINE_FUNCTION( Base64Decode ) {
 
 
 /**doc
- * $STR *HexEncode*( string )
+$TOC_MEMBER $INAME
+ $STR *HexEncode*( string )
   Encode the given _string_ using hexadecimal encoding.
 **/
 DEFINE_FUNCTION( HexEncode ) {
@@ -136,7 +139,8 @@ DEFINE_FUNCTION( HexEncode ) {
 #define XX 0
 
 /**doc
- * $STR *HexDecode*( string )
+$TOC_MEMBER $INAME
+ $STR *HexDecode*( string )
   Decode the given _string_ using hexadecimal encoding.
 **/
 DEFINE_FUNCTION( HexDecode ) {

@@ -91,7 +91,8 @@ DEFINE_FINALIZE() {
 }
 
 /**doc
- * $INAME( cipherName, hashName [, prngObject] [, PKCSVersion = 1_OAEP] )
+$TOC_MEMBER $INAME
+ $INAME( cipherName, hashName [, prngObject] [, PKCSVersion = 1_OAEP] )
   Creates a new Asymmetric Cipher object.
   $H arguments
    $ARG $STR cipherName: is a string that contains the name of the Asymmetric Cipher algorithm:
@@ -176,7 +177,8 @@ DEFINE_CONSTRUCTOR() { // ( cipherName, hashName [, prngObject] [, PKCSVersion] 
 **/
 
 /**doc
- * $INAME( keySize )
+$TOC_MEMBER $INAME
+ $INAME( keySize )
   Create RSA public and private keys.
   $LF
   _keySize_ is the size of the key in bits (the value of _keySize_ is the modulus size).
@@ -245,7 +247,8 @@ DEFINE_FUNCTION( CreateKeys ) { // ( bitsSize )
 }
 
 /**doc
- * $DATA $INAME( data [, lparam] )
+$TOC_MEMBER $INAME
+ $DATA $INAME( data [, lparam] )
   This function returns the encrypted _data_ using a previously created or imported public key.
   $LF
   _data_ is the string to encrypt (usualy cipher keys).
@@ -310,7 +313,8 @@ DEFINE_FUNCTION( Encrypt ) { // ( data [, lparam] )
 
 
 /**doc
- * $DATA $INAME( encryptedData [, lparam] )
+$TOC_MEMBER $INAME
+ $DATA $INAME( encryptedData [, lparam] )
   This function decrypts the given _encryptedData_ using a previously created or imported private key.
   $LF
   _encryptedData_ is the string that has to be decrypted (usualy cipher keys).
@@ -387,7 +391,8 @@ DEFINE_FUNCTION( Decrypt ) { // ( encryptedData [, lparam] )
 }
 
 /**doc
- * $STR $INAME( data [, saltLength] )
+$TOC_MEMBER $INAME
+ $STR $INAME( data [, saltLength] )
   This function returns the signature of the given _data_.
   Because this process is slow, this function usualy used to sign a small amount of data, like hash digest.
   $LF
@@ -452,7 +457,8 @@ DEFINE_FUNCTION( Sign ) { // ( data [, saltLength] )
 }
 
 /**doc
- * $BOOL $INAME( data, signature [, saltLength] )
+$TOC_MEMBER $INAME
+ $BOOL $INAME( data, signature [, saltLength] )
   This function returns $TRUE if the _data_ match the data used to create the _signature_.
   $LF
   _saltLength_ is only used with RSA signatures. (default value is 16)
@@ -514,7 +520,8 @@ DEFINE_FUNCTION( VerifySignature ) { // ( data, signature [, saltLength] )
 **/
 
 /**doc
- * $INT $INAME $READONLY
+$TOC_MEMBER $INAME
+ $INT $INAME $READONLY
   is the maximum length of data that can be processed at once.
 **/
 DEFINE_PROPERTY( blockLength ) {
@@ -544,7 +551,8 @@ DEFINE_PROPERTY( blockLength ) {
 }
 
 /**doc
- * $INT $INAME $READONLY
+$TOC_MEMBER $INAME
+ $INT $INAME $READONLY
   is the size of the current key.
 **/
 DEFINE_PROPERTY( keySize ) {
@@ -575,7 +583,8 @@ DEFINE_PROPERTY( keySize ) {
 
 
 /**doc
- * $STR *privateKey*
+$TOC_MEMBER $INAME
+ $STR *privateKey*
   The private key encoded using PKCS #1. (Public Key Cryptographic Standard #1 v2.0 padding)
 
  * $STR *publicKey*

@@ -85,7 +85,8 @@ JSBool SetProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 
 
 /**doc
- * $INAME( [addCallback], [delCallback], [getCallback], [setCallback] [, auxObject] )
+$TOC_MEMBER $INAME
+ $INAME( [addCallback], [delCallback], [getCallback], [setCallback] [, auxObject] )
   Constructs a ObjEx object.
   $H arguments
    $ARG $FUN addCallback: called when the property is added to the object.
@@ -129,7 +130,8 @@ DEFINE_CONSTRUCTOR() {
 
 
 /**doc
- * $INAME( objex [, newAux] )
+$TOC_MEMBER $INAME
+ $INAME( objex [, newAux] )
   Returns the _auxObject_ stored in the _objex_.
   If newAux is given, it replaces the current auxiliary value of _objex_.
 **/

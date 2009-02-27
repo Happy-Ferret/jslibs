@@ -98,7 +98,8 @@ DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are
 
 
 /**doc
- * $INAME()
+$TOC_MEMBER $INAME
+ $INAME()
   Constructs a new SVG object.
 **/
 DEFINE_CONSTRUCTOR() {
@@ -122,7 +123,8 @@ DEFINE_CONSTRUCTOR() {
 **/
 
 /**doc
- * $THIS $INAME( xmlString )
+$TOC_MEMBER $INAME
+ $THIS $INAME( xmlString )
   Adds XML data to the current SVG context.
   $H note
    calls to callback function 'onImage' may occur during this call.
@@ -219,7 +221,8 @@ DEFINE_PROPERTY( xmlData ) {
 */
 
 /**doc
- * $TYPE ImageObject $INAME( [ imageWidth , imageHeight ] [ , channels ] [ , fit ] [ , elementId ] )
+$TOC_MEMBER $INAME
+ $TYPE ImageObject $INAME( [ imageWidth , imageHeight ] [ , channels ] [ , fit ] [ , elementId ] )
   Draws the SVG to an image object.
   $H arguments
    $ARG $INT imageWidth: override default SVG's  width.
@@ -423,7 +426,8 @@ DEFINE_FUNCTION_FAST( GetImage ) { // using pixbuf
 
 
 /**doc
- * $BOOL $INAME( elementId, polarity )
+$TOC_MEMBER $INAME
+ $BOOL $INAME( elementId, polarity )
   $H arguments
    $ARG $STR elementId: the id of the element with '#' prefix (eg. '#circle1').
    $ARG $BOOL polarity: false to hide, true to show.
@@ -462,7 +466,8 @@ DEFINE_FUNCTION_FAST( SetVisible ) {
 
 
 /**doc
- * $THIS $INAME( sx, sy )
+$TOC_MEMBER $INAME
+ $THIS $INAME( sx, sy )
   Applies scaling by _sx_, _sy_ to the current transformation.
   The effect of the new transformation is to first scale the coordinates by _sx_ and _sy_,
   then apply the original transformation to the coordinates.
@@ -481,7 +486,8 @@ DEFINE_FUNCTION_FAST( Scale ) {
 }
 
 /**doc
- * $THIS $INAME( radians )
+$TOC_MEMBER $INAME
+ $THIS $INAME( radians )
   Applies rotation by _radians_ to the current transformation.
   The effect of the new transformation is to first rotate the coordinates by _radians_,
   then apply the original transformation to the coordinates.
@@ -499,7 +505,8 @@ DEFINE_FUNCTION_FAST( Rotate ) {
 }
 
 /**doc
- * $THIS $INAME( tx, ty )
+$TOC_MEMBER $INAME
+ $THIS $INAME( tx, ty )
   Applies a translation by _tx_, _ty_ to the current transformation.
   The effect of the new transformation is to first translate the coordinates by _tx_ and _ty_,
   then apply the original transformation to the coordinates.
@@ -523,7 +530,8 @@ DEFINE_FUNCTION_FAST( Translate ) {
 **/
 
 /**doc
- * $INT | $ARRAY $INAME $WRITEONLY
+$TOC_MEMBER $INAME
+ $INT | $ARRAY $INAME $WRITEONLY
   Sets the dpi of the resulting image. If the argument is an Array (like [ dpiX, dpiY ]) X and Y dpi can be set aside.
 **/
 DEFINE_PROPERTY(dpi) {
@@ -558,7 +566,8 @@ DEFINE_PROPERTY(dpi) {
 }
 
 /**doc
- * $INAME $READONLY
+$TOC_MEMBER $INAME
+ $INAME $READONLY
   Is the default width of the SVG.
 **/
 DEFINE_PROPERTY(width) {
@@ -575,7 +584,8 @@ DEFINE_PROPERTY(width) {
 }
 
 /**doc
- * $INAME $READONLY
+$TOC_MEMBER $INAME
+ $INAME $READONLY
   Is the default height of the SVG.
 **/
 DEFINE_PROPERTY(height) {
@@ -592,7 +602,8 @@ DEFINE_PROPERTY(height) {
 }
 
 /**doc
- * $INAME $READONLY
+$TOC_MEMBER $INAME
+ $INAME $READONLY
   Is the title of the SVG.
 **/
 DEFINE_PROPERTY(title) {
@@ -611,7 +622,8 @@ DEFINE_PROPERTY(title) {
 }
 
 /**doc
- * $INAME $READONLY
+$TOC_MEMBER $INAME
+ $INAME $READONLY
   Is the metadata string of the SVG.
 **/
 DEFINE_PROPERTY(metadata) {
@@ -630,7 +642,8 @@ DEFINE_PROPERTY(metadata) {
 }
 
 /**doc
- * $INAME $READONLY
+$TOC_MEMBER $INAME
+ $INAME $READONLY
   Is the description string of the SVG.
 **/
 DEFINE_PROPERTY(description) {
@@ -650,7 +663,8 @@ DEFINE_PROPERTY(description) {
 
 
 /**doc
- * $INAME $READONLY
+$TOC_MEMBER $INAME
+ $INAME $READONLY
 **/
 /*
 DEFINE_PROPERTY(images) {

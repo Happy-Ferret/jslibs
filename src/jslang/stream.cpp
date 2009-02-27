@@ -78,7 +78,8 @@ $SVN_REVISION $Revision$
 BEGIN_CLASS( Stream )
 
 /**doc
- * $INAME( bufferObject )
+$TOC_MEMBER $INAME
+ $INAME( bufferObject )
   Creates an object that transforms any buffer-like objects into a stream.
   $LF
   buffer-like objects are: string, Blob, and any objects that implements NIBufferGet native interface.
@@ -114,7 +115,8 @@ DEFINE_CONSTRUCTOR() {
 
 
 /**doc
- * $TYPE Blob $INAME( amount )
+$TOC_MEMBER $INAME
+ $TYPE Blob $INAME( amount )
   Read _amount_ of data into the stream.
 **/
 DEFINE_FUNCTION_FAST( Read ) {
@@ -146,7 +148,8 @@ DEFINE_FUNCTION_FAST( Read ) {
 
 
 /**doc
- * $INT $INAME
+$TOC_MEMBER $INAME
+ $INT $INAME
   Get or set the stream pointer position.
 **/
 DEFINE_PROPERTY( positionGetter ) {
@@ -171,7 +174,8 @@ DEFINE_PROPERTY( positionSetter ) {
 }
 
 /**doc
- * $INT $INAME $READONLY
+$TOC_MEMBER $INAME
+ $INT $INAME $READONLY
   The remaining data from the stream pointer position to the end of the stream.
 **/
 DEFINE_PROPERTY( available ) {
@@ -195,7 +199,8 @@ DEFINE_PROPERTY( available ) {
 }
 
 /**doc
- * $OBJ $INAME
+$TOC_MEMBER $INAME
+ $OBJ $INAME
   The object used to create the steam.
 **/
 DEFINE_PROPERTY( source ) {

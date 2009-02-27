@@ -113,7 +113,8 @@ DEFINE_FINALIZE() {
 }
 
 /**doc
- * $INAME( buffer )
+$TOC_MEMBER $INAME
+ $INAME( buffer )
   Constructs a Pack object from a Buffer object. This is the only way to read or write binary data.
   $H arguments
    $ARG Buffer buffer
@@ -135,7 +136,8 @@ DEFINE_CONSTRUCTOR() {
 **/
 
 /**doc
- * $INT $INAME( size, [isSigned = false], [isNetworkEndian = false] )
+$TOC_MEMBER $INAME
+ $INT $INAME( size, [isSigned = false], [isNetworkEndian = false] )
   Read an integer on the current stream. cf. systemIntSize property.
 **/
 DEFINE_FUNCTION( ReadInt ) {
@@ -243,7 +245,8 @@ DEFINE_FUNCTION( Test ) {
 #endif
 
 /**doc
- * $VOID $INAME( intValue, [isSigned = false [, isNetworkEndian = false]] )
+$TOC_MEMBER $INAME
+ $VOID $INAME( intValue, [isSigned = false [, isNetworkEndian = false]] )
   Write an integer to the current stream. cf. systemIntSize property.
 **/
 DEFINE_FUNCTION( WriteInt ) { // incompatible with NIStreamRead
@@ -320,7 +323,8 @@ DEFINE_FUNCTION( WriteInt ) { // incompatible with NIStreamRead
 }
 
 /**doc
- * $REAL $INAME( size )
+$TOC_MEMBER $INAME
+ $REAL $INAME( size )
   Read a 4-byte single precision real (float) or a 8-byte double precision real (double) on the current stream.
 **/
 DEFINE_FUNCTION( ReadReal ) {
@@ -363,7 +367,8 @@ DEFINE_FUNCTION( ReadReal ) {
 }
 
 /**doc
- * $STR $INAME( length )
+$TOC_MEMBER $INAME
+ $STR $INAME( length )
   Read a string of the specifiex _length_ on the current stream.
 **/
 DEFINE_FUNCTION( ReadString ) {
@@ -401,7 +406,8 @@ DEFINE_FUNCTION( ReadString ) {
 **/
 
 /**doc
- * $TYPE Buffer *buffer*
+$TOC_MEMBER $INAME
+ $TYPE Buffer *buffer*
   Is the current Buffer object.
 **/
 DEFINE_PROPERTY( buffer ) {
@@ -418,7 +424,8 @@ DEFINE_PROPERTY( buffer ) {
 **/
 
 /**doc
- * $INAME $READONLY
+$TOC_MEMBER $INAME
+ $INAME $READONLY
   Is the size (in Byte) of a system int.
 **/
 DEFINE_PROPERTY( systemIntSize ) {
@@ -430,7 +437,8 @@ DEFINE_PROPERTY( systemIntSize ) {
 }
 
 /**doc
- * $INAME $READONLY
+$TOC_MEMBER $INAME
+ $INAME $READONLY
   Is $TRUE if the system endian is BigEndian else is $FALSE.
 **/
 DEFINE_PROPERTY( systemBigEndian ) {

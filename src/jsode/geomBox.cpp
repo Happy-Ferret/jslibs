@@ -31,7 +31,8 @@ DEFINE_FINALIZE() {
 }
 
 /**doc
- * $INAME( space )
+$TOC_MEMBER $INAME
+ $INAME( space )
   TBD
 **/
 DEFINE_CONSTRUCTOR() {
@@ -55,7 +56,8 @@ DEFINE_CONSTRUCTOR() {
 **/
 
 /**doc
- * $TYPE vec3 $INAME
+$TOC_MEMBER $INAME
+ $TYPE vec3 $INAME
   Is the x, y, z size of the box.
 **/
 DEFINE_PROPERTY( lengthsSetter ) {

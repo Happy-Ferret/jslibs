@@ -72,7 +72,8 @@ DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are
 }
 
 /**doc
- * $INAME( filePathName [, faceIndex = 0] )
+$TOC_MEMBER $INAME
+ $INAME( filePathName [, faceIndex = 0] )
   Creates a new Font object and seletc the face to use.
   $H arguments
    $ARG $STR filePathName: the path of the font file.
@@ -132,7 +133,8 @@ DEFINE_FUNCTION_FAST( SetSize ) {
 */
 
 /**doc
- * $TYPE imageObject $INAME( oneChar )
+$TOC_MEMBER $INAME
+ $TYPE imageObject $INAME( oneChar )
   Draws one char with the current face.
   $H arguments
    $ARG $STR oneChar: string of one char.
@@ -188,7 +190,8 @@ DEFINE_FUNCTION_FAST( DrawChar ) {
 
 
 /**doc
- * $TYPE imageObject | $TYPE integer $INAME( text [, keepTrailingSpace = false] [, getWidthOnly = false ] )
+$TOC_MEMBER $INAME
+ $TYPE imageObject | $TYPE integer $INAME( text [, keepTrailingSpace = false] [, getWidthOnly = false ] )
   Draws a string with the current face.
   $H arguments
    $ARG $STR text: the single-line text to draw.
@@ -397,7 +400,8 @@ DEFINE_FUNCTION_FAST( DrawString ) {
 **/
 
 /**doc
- * $INT $INAME $READONLY
+$TOC_MEMBER $INAME
+ $INT $INAME $READONLY
   is the ascender length (in pixel) of the current face.
   $H note
    The ascender is the portion of a letter in a Latin-derived alphabet that extends above the mean line of a font. That is, the part of the letter that is taller than the font's x-height.
@@ -412,7 +416,8 @@ DEFINE_PROPERTY( ascender ) {
 }
 
 /**doc
- * $INT $INAME $READONLY
+$TOC_MEMBER $INAME
+ $INT $INAME $READONLY
   is the descender length (in pixel) of the current face.
   $H note
    The descender is the portion of a letter in a Latin alphabet that extends below the baseline of a font. For example, in the letter y, the descender would be the "tail," or that portion of the diagonal line which lies below the v created by the two lines converging.
@@ -427,7 +432,8 @@ DEFINE_PROPERTY( descender ) {
 }
 
 /**doc
- * $INT $INAME $READONLY
+$TOC_MEMBER $INAME
+ $INT $INAME $READONLY
   is the maximum width (in pixel) of the current face.
 **/
 DEFINE_PROPERTY( width ) {
@@ -441,7 +447,8 @@ DEFINE_PROPERTY( width ) {
 
 
 /**doc
- * $INT $INAME
+$TOC_MEMBER $INAME
+ $INT $INAME
   is the size (in pixel) of the current face.
 **/
 DEFINE_PROPERTY( size ) {
@@ -462,7 +469,8 @@ DEFINE_PROPERTY( size ) {
 
 
 /**doc
- * $TYPE enum $INAME
+$TOC_MEMBER $INAME
+ $TYPE enum $INAME
   is the current encoding.
   $H supported encodings
    * Font.NONE
@@ -498,7 +506,8 @@ DEFINE_PROPERTY( encoding ) {
 
 
 /**doc
- * $INT $INAME $READONLY
+$TOC_MEMBER $INAME
+ $INT $INAME $READONLY
   is the postscript name of the face.
 **/
 DEFINE_PROPERTY( poscriptName ) {
@@ -513,7 +522,8 @@ DEFINE_PROPERTY( poscriptName ) {
 
 
 /**doc
- * $BOOL $INAME
+$TOC_MEMBER $INAME
+ $BOOL $INAME
   enable or disable kerning usage for the current face.
   $H note
    Kerning is the process of adjusting letter spacing in a proportional font. In a well-kerned font, the two-dimensional blank spaces between each pair of letters all have similar area.
@@ -530,7 +540,8 @@ DEFINE_PROPERTY_SETTER( useKerning ) {
 
 
 /**doc
- * $INT $INAME
+$TOC_MEMBER $INAME
+ $INT $INAME
   is the size (in pixel) of the horizontal padding of any drawn text i.e. the space before and after the text.
 **/
 DEFINE_PROPERTY_GETTER( horizontalPadding ) {
@@ -545,7 +556,8 @@ DEFINE_PROPERTY_SETTER( horizontalPadding ) {
 
 
 /**doc
- * $INT $INAME
+$TOC_MEMBER $INAME
+ $INT $INAME
   is the size (in pixel) of the vertical padding of any drawn text i.e. the space above and below the text.
 **/
 DEFINE_PROPERTY_GETTER( verticalPadding ) {
@@ -560,7 +572,8 @@ DEFINE_PROPERTY_SETTER( verticalPadding ) {
 
 
 /**doc
- * $INT $INAME
+$TOC_MEMBER $INAME
+ $INT $INAME
   is the length (in pixel) of the additional space added between each letter in a text.
 **/
 DEFINE_PROPERTY_GETTER( letterSpacing ) {
@@ -575,7 +588,8 @@ DEFINE_PROPERTY_SETTER( letterSpacing ) {
 
 
 /**doc
- * $BOOL $INAME
+$TOC_MEMBER $INAME
+ $BOOL $INAME
   enable or disable italic.
 **/
 DEFINE_PROPERTY_GETTER( italic ) {
@@ -590,7 +604,8 @@ DEFINE_PROPERTY_SETTER( italic ) {
 
 
 /**doc
- * $BOOL $INAME
+$TOC_MEMBER $INAME
+ $BOOL $INAME
   enable or disable bold.
 **/
 DEFINE_PROPERTY_GETTER( bold ) {

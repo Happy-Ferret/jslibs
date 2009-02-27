@@ -139,7 +139,8 @@ DEFINE_FINALIZE() {
 }
 
 /**doc
- * $INAME()
+$TOC_MEMBER $INAME
+ $INAME()
   Creates a new source object.
 **/
 DEFINE_CONSTRUCTOR() {
@@ -160,7 +161,8 @@ DEFINE_CONSTRUCTOR() {
 
 
 /**doc
- * $VOID $INAME( buffer )
+$TOC_MEMBER $INAME
+ $VOID $INAME( buffer )
   $H arguments
    $ARG OalBuffer | BufferId: a Buffer Object or a buffer Id.
   $H OpenAL API
@@ -191,7 +193,8 @@ DEFINE_FUNCTION_FAST( QueueBuffers ) {
 
 
 /**doc
- * $TYPE OalBuffer $INAME()
+$TOC_MEMBER $INAME
+ $TYPE OalBuffer $INAME()
   $H OpenAL API
    alDeleteBuffers
 **/

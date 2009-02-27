@@ -24,7 +24,8 @@ $SVN_REVISION $Revision$
 BEGIN_CLASS( Icon )
 
 /**doc
- * $INAME( image | integer )
+$TOC_MEMBER $INAME
+ $INAME( image | integer )
   Icon constructor accepts an [Image] object or a integer. 
   $LF
   The integer value can be one of:

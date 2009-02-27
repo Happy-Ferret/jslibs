@@ -40,7 +40,8 @@ DEFINE_FINALIZE() {
 }
 
 /**doc
- * $INAME( hashName )
+$TOC_MEMBER $INAME
+ $INAME( hashName )
   Creates a new hash.
   _hashName_ is a string that contains the name of the hash:
    * whirlpool
@@ -99,7 +100,8 @@ DEFINE_CONSTRUCTOR() {
 **/
 
 /**doc
- * $INAME()
+$TOC_MEMBER $INAME
+ $INAME()
   Initialize the hash state.
 **/
 DEFINE_FUNCTION( Init ) {
@@ -123,7 +125,8 @@ DEFINE_FUNCTION( Init ) {
 
 
 /**doc
- * $VOID $INAME( data )
+$TOC_MEMBER $INAME
+ $VOID $INAME( data )
   Process a block of data though the hash.
 **/
 DEFINE_FUNCTION( Process ) {
@@ -153,7 +156,8 @@ DEFINE_FUNCTION( Process ) {
 
 
 /**doc
- * $DATA $INAME()
+$TOC_MEMBER $INAME
+ $DATA $INAME()
   Terminate the hash and get the digest in a binary format.
   $H example
   {{{
@@ -190,7 +194,8 @@ DEFINE_FUNCTION( Done ) {
 
 
 /**doc
- * $DATA $INAME( data )
+$TOC_MEMBER $INAME
+ $DATA $INAME( data )
   This is the call operator of the object. It simplifies the usage of hashes and allows a digest calculation in one call only.
   When called with a string as argument, it Process a block of memory though the hash
   Compute the hash until the function is called without arguments or end is $TRUE. In this case, the function returns the hash of the whole given data.
@@ -256,7 +261,8 @@ DEFINE_CALL() {
 **/
 
 /**doc
- * $STR $INAME $READONLY
+$TOC_MEMBER $INAME
+ $STR $INAME $READONLY
   Name of the current hash.
 **/
 DEFINE_PROPERTY( name ) {
@@ -274,7 +280,8 @@ DEFINE_PROPERTY( name ) {
 }
 
 /**doc
- * $INT $INAME $READONLY
+$TOC_MEMBER $INAME
+ $INT $INAME $READONLY
   Input block size in octets.
 **/
 DEFINE_PROPERTY( blockSize ) {
@@ -289,7 +296,8 @@ DEFINE_PROPERTY( blockSize ) {
 }	
 
 /**doc
- * $INT $INAME $READONLY
+$TOC_MEMBER $INAME
+ $INT $INAME $READONLY
   Size of the digest in octets.
 **/
 DEFINE_PROPERTY( length ) {
@@ -304,7 +312,8 @@ DEFINE_PROPERTY( length ) {
 }	
 
 /**doc
- * $INT $INAME $READONLY
+$TOC_MEMBER $INAME
+ $INT $INAME $READONLY
   Length of the processed data.
 **/
 DEFINE_PROPERTY( inputLength ) {
@@ -323,7 +332,8 @@ DEFINE_PROPERTY( inputLength ) {
 **/
 
 /**doc
- * $INAME( cipherName )
+$TOC_MEMBER $INAME
+ $INAME( cipherName )
    Initialize the CHC (chc_hash) state with _cipherName_ cipher.
    $LF
    An addition to the suite of hash functions is the Cipher Hash Construction or CHC mode.
@@ -351,7 +361,8 @@ DEFINE_FUNCTION( CipherHash ) {
 **/
 
 /**doc
- * $OBJ $INAME $READONLY
+$TOC_MEMBER $INAME
+ $OBJ $INAME $READONLY
   Contains the list of all available hash and their feature. The list is a javascript object that map hash names (key) with another object (value) that contain information.
   $H example
   {{{

@@ -37,7 +37,8 @@ BEGIN_STATIC
 **/
 
 /**doc
- * $STR $INAME( value )
+$TOC_MEMBER $INAME
+ $STR $INAME( value )
   This function converts any value of stream into a string.
 **/
 DEFINE_FUNCTION( Stringify ) {

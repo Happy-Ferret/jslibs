@@ -34,7 +34,8 @@ $SVN_REVISION $Revision$
 BEGIN_CLASS( Map )
 
 /**doc
- * $INAME( [ obj ] )
+$TOC_MEMBER $INAME
+ $INAME( [ obj ] )
   Creates a new Map object.
   $H arguments
    $ARG $OBJ obj: if given, _obj_ is converted into a Map object (Array is also an object). No recursion is made.

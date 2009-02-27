@@ -31,7 +31,8 @@ DEFINE_FINALIZE() {
 }
 
 /**doc
- * $INAME( space )
+$TOC_MEMBER $INAME
+ $INAME( space )
   TBD
 **/
 DEFINE_CONSTRUCTOR() {
@@ -50,7 +51,8 @@ DEFINE_CONSTRUCTOR() {
 }
 
 /**doc
- * $REAL $INAME
+$TOC_MEMBER $INAME
+ $REAL $INAME
   TBD
 **/
 DEFINE_PROPERTY( lengthSetter ) {
@@ -76,7 +78,8 @@ DEFINE_PROPERTY( lengthGetter ) {
 
 
 /**doc
- * $TYPE vec3 $INAME
+$TOC_MEMBER $INAME
+ $TYPE vec3 $INAME
   TBD
 **/
 DEFINE_PROPERTY( startSetter ) {
@@ -108,7 +111,8 @@ DEFINE_PROPERTY( startGetter ) {
 
 
 /**doc
- * $TYPE vec3 $INAME
+$TOC_MEMBER $INAME
+ $TYPE vec3 $INAME
   TBD
 **/
 DEFINE_PROPERTY( directionSetter ) {

@@ -39,7 +39,8 @@ DEFINE_FINALIZE() {
 */
 
 /**doc
- * $INAME( parentSpace )
+$TOC_MEMBER $INAME
+ $INAME( parentSpace )
 **/
 DEFINE_CONSTRUCTOR() {
 

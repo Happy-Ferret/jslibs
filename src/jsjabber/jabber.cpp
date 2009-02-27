@@ -243,7 +243,8 @@ DEFINE_FINALIZE() {
 
 
 /**doc
- * $INAME( jid, password )
+$TOC_MEMBER $INAME
+ $INAME( jid, password )
   Constructs a new unconnected jabber client.
   $H arguments
    $ARG $STR jid
@@ -272,7 +273,8 @@ DEFINE_CONSTRUCTOR() {
 
 
 /**doc
- * $VAL $INAME( serverName [ , port ] )
+$TOC_MEMBER $INAME
+ $VAL $INAME( serverName [ , port ] )
   Constructs a new unconnected jabber client.
   $H arguments
    $ARG $STR serverName: the XMPP server to connect to.
@@ -317,7 +319,8 @@ DEFINE_FUNCTION( Connect ) {
 
 
 /**doc
- * $VOID $INAME()
+$TOC_MEMBER $INAME
+ $VOID $INAME()
   Disconnects from the server.
 **/
 DEFINE_FUNCTION( Disconnect ) {
@@ -338,7 +341,8 @@ DEFINE_FUNCTION( Disconnect ) {
 
 
 /**doc
- * $VAL $INAME()
+$TOC_MEMBER $INAME
+ $VAL $INAME()
   Receive data from the socket and to feed the parser and call the event functions.
 **/
 DEFINE_FUNCTION( Process ) {
@@ -361,7 +365,8 @@ DEFINE_FUNCTION( Process ) {
 
 
 /**doc
- * $VOID $INAME( to, body )
+$TOC_MEMBER $INAME
+ $VOID $INAME( to, body )
   Send a given message.
   $H arguments
    $ARG $STR to: the destination of the message.
@@ -405,7 +410,8 @@ DEFINE_FUNCTION( RosterItem ) {
 */
 
 /**doc
- * $VAL $INAME
+$TOC_MEMBER $INAME
+ $VAL $INAME
   The socket ID of the connection or $UNDEF if no connection is established.
 **/
 DEFINE_PROPERTY( socket ) {
@@ -431,7 +437,8 @@ DEFINE_PROPERTY( socket ) {
 
 
 /**doc
- * $STR $INAME
+$TOC_MEMBER $INAME
+ $STR $INAME
   Sets/Gets the current status message.
 **/
 DEFINE_PROPERTY_GETTER( status ) {
@@ -457,7 +464,8 @@ DEFINE_PROPERTY_SETTER( status ) {
 
 
 /**doc
- * $ENUM $INAME
+$TOC_MEMBER $INAME
+ $ENUM $INAME
   Sets/Gets the current presence. either Jabber.PresenceUnknown, Jabber.PresenceAvailable, Jabber.PresenceChat, Jabber.PresenceAway, Jabber.PresenceDnd, Jabber.PresenceXa, Jabber.PresenceUnavailable,
 **/
 DEFINE_PROPERTY_GETTER( presence ) {
@@ -505,7 +513,8 @@ DEFINE_PROPERTY( roster ) {
 
 
 /**doc
- * $ENUM $INAME $READONLY
+$TOC_MEMBER $INAME
+ $ENUM $INAME $READONLY
   is the total number of bytes received.
 **/
 DEFINE_PROPERTY( connectionTotalIn ) {
@@ -521,7 +530,8 @@ DEFINE_PROPERTY( connectionTotalIn ) {
 
 
 /**doc
- * $ENUM $INAME $READONLY
+$TOC_MEMBER $INAME
+ $ENUM $INAME $READONLY
   is the total number of bytes sent.
 **/
 DEFINE_PROPERTY( connectionTotalOut ) {

@@ -31,7 +31,8 @@ DEFINE_FINALIZE() {
 }
 
 /**doc
- * $INAME( space )
+$TOC_MEMBER $INAME
+ $INAME( space )
   TBD
 **/
 DEFINE_CONSTRUCTOR() {
@@ -54,7 +55,8 @@ DEFINE_CONSTRUCTOR() {
 **/
 
 /**doc
- * $REAL $INAME
+$TOC_MEMBER $INAME
+ $REAL $INAME
 **/
 DEFINE_PROPERTY( radiusSetter ) {
 

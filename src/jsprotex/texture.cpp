@@ -341,7 +341,8 @@ DEFINE_FINALIZE() {
 }
 
 /**doc
- * $INAME( width, height, channels )
+$TOC_MEMBER $INAME
+ $INAME( width, height, channels )
  * $INAME( sourceTexture )
  * $INAME( image )
   Creates a new Texture object.
@@ -466,7 +467,8 @@ DEFINE_CONSTRUCTOR() {
 **/
 
 /**doc
- * $VOID $INAME()
+$TOC_MEMBER $INAME
+ $VOID $INAME()
   Free the memory allocated by the current texture.
   This operation is not mendatory but can be usefull to free memory.
 **/
@@ -483,7 +485,8 @@ DEFINE_FUNCTION( Free ) {
 }
 
 /**doc
- * $THIS $INAME( otherTexture )
+$TOC_MEMBER $INAME
+ $THIS $INAME( otherTexture )
   Swaps the content of two textures the current one and _otherTexture_.
   $H arguments
    $ARG Texture otherTexture: texture object against witch the exchange is done.
@@ -517,7 +520,8 @@ DEFINE_FUNCTION_FAST( Swap ) {
 }
 
 /**doc
- * $THIS $INAME( [ channel ] )
+$TOC_MEMBER $INAME
+ $THIS $INAME( [ channel ] )
   Clears (set to 0) the given _channel_ or all channels if the method is called without argument.
 **/
 // PTYPE ok
@@ -556,7 +560,8 @@ DEFINE_FUNCTION_FAST( ClearChannel ) {
 }
 
 /**doc
- * $THIS $INAME( destinationChannel, otherTexture, sourceChannel )
+$TOC_MEMBER $INAME
+ $THIS $INAME( destinationChannel, otherTexture, sourceChannel )
   Replace the _destinationChannel_ channel of the current texture with the _sourceChannel_ channel of the _otherTexture_.
   $H arguments
    $ARG $INT destinationChannel: a channel of the current texture.
@@ -611,7 +616,8 @@ DEFINE_FUNCTION_FAST( SetChannel ) {
 
 
 /**doc
- * $THIS $INAME()
+$TOC_MEMBER $INAME
+ $THIS $INAME()
   Does a conversion from RGB (Red, Green, Blue) to HSV (Hue, Saturation, Value) colorspace.
 **/
 // (TBD) PTYPE
@@ -685,7 +691,8 @@ inline float HLSToRGB_hue( float n1, float n2, float hue) { // helper function f
 }
 
 /**doc
- * $THIS $INAME()
+$TOC_MEMBER $INAME
+ $THIS $INAME()
   Does a conversion from HSV (Hue, Saturation, Value) to RGB (Red, Green, Blue) colorspace.
 **/
 // (TBD) PTYPE
@@ -737,7 +744,8 @@ DEFINE_FUNCTION_FAST( ToRGB ) { // (TBD) test it
 }
 
 /**doc
- * $THIS $INAME( count [ , curve] )
+$TOC_MEMBER $INAME
+ $THIS $INAME( count [ , curve] )
   Reduce the number of values used for each channel.
   $H arguments
    $ARG $INT count: the number of different $pval in the resulting texture.
@@ -802,7 +810,8 @@ DEFINE_FUNCTION_FAST( Aliasing ) {
 }
 
 /**doc
- * $THIS $INAME( fromColorInfo, toColorInfo [ , power = 1 ] )
+$TOC_MEMBER $INAME
+ $THIS $INAME( fromColorInfo, toColorInfo [ , power = 1 ] )
   $H arguments
    $ARG colorInfo fromColorInfo: The color to be changed.
    $ARG colorInfo toColorInfo: The substitute color. For further information about ,,colorInfo,, see below.
@@ -875,7 +884,8 @@ DEFINE_FUNCTION_FAST( Colorize ) {
 
 
 /**doc
- * $THIS $INAME( sourceTexture, sourceColorInfo [ , strength = 1] )
+$TOC_MEMBER $INAME
+ $THIS $INAME( sourceTexture, sourceColorInfo [ , strength = 1] )
   Fill the current texture with a given color from _sourceTexture_.
   $H arguments
    $ARG Texture sourceTexture: the texture from witch the color will be extracted.
@@ -932,7 +942,8 @@ DEFINE_FUNCTION_FAST( ExtractColor ) {
 }
 
 /**doc
- * $THIS $INAME()
+$TOC_MEMBER $INAME
+ $THIS $INAME()
   Changes the range of each $pval of the texture. The resulting range of each $pval will be [ 0,1 ]
   $H note
    Normalization is sometimes called contrast stretching.
@@ -970,7 +981,8 @@ DEFINE_FUNCTION_FAST( NormalizeLevels ) {
 
 
 /**doc
- * $THIS $INAME( min, max )
+$TOC_MEMBER $INAME
+ $THIS $INAME( min, max )
   All $pval that are out of the [ min,max ] range are forced to [ min,max ] range.
   $H arguments
    $ARG $REAL min: low value
@@ -1007,7 +1019,8 @@ DEFINE_FUNCTION_FAST( ClampLevels ) { // (TBD) check if this algo is right
 
 
 /**doc
- * $THIS $INAME( min, max )
+$TOC_MEMBER $INAME
+ $THIS $INAME( min, max )
   All $pval that are out of the [ min,max ] range are forced to [ 0,1 ] range.
   $H arguments
    $ARG $REAL min: low value
@@ -1100,7 +1113,8 @@ DEFINE_FUNCTION_FAST( CutLevels ) {
 */
 
 /**doc
- * $THIS $INAME()
+$TOC_MEMBER $INAME
+ $THIS $INAME()
   Each $pval is mathematically inverted ( v = 1 / v ).
 **/
 // PTYPE ok
@@ -1118,7 +1132,8 @@ DEFINE_FUNCTION_FAST( InvertLevels ) { // level = 1 / level
 }
 
 /**doc
- * $THIS $INAME()
+$TOC_MEMBER $INAME
+ $THIS $INAME()
   Each $pval is set to its mathematical opposite ( v = -v ).
 **/
 // PTYPE ok
@@ -1136,7 +1151,8 @@ DEFINE_FUNCTION_FAST( OppositeLevels ) { // level = -level
 }
 
 /**doc
- * $THIS $INAME( power )
+$TOC_MEMBER $INAME
+ $THIS $INAME( power )
   Each $pval is powered by _power_ ( v = v ^ _power_ ).
 **/
 // PTYPE ok
@@ -1161,7 +1177,8 @@ DEFINE_FUNCTION_FAST( PowLevels ) { //
 
 
 /**doc
- * $THIS $INAME( threshold, mirrorFromTop )
+$TOC_MEMBER $INAME
+ $THIS $INAME( threshold, mirrorFromTop )
   Each $pval is mirrored toward the top or the bottom.
   $H arguments
    $ARG $REAL threshold: the point from the values are reflected.
@@ -1208,7 +1225,8 @@ DEFINE_FUNCTION_FAST( MirrorLevels ) {
 }
 
 /**doc
- * $THIS $INAME( modulo )
+$TOC_MEMBER $INAME
+ $THIS $INAME( modulo )
   Each $pval is moduloed by _modulo_ ( v = v % _modulo_ ).
   $H arguments
    $REAL modulo: the non-integer modulo
@@ -1240,7 +1258,8 @@ DEFINE_FUNCTION_FAST( WrapLevels ) { // real modulo
 }
 
 /**doc
- * $THIS $INAME( [ color ] )
+$TOC_MEMBER $INAME
+ $THIS $INAME( [ color ] )
   Adds a random noise to the current texture.
   $H arguments
    $ARG colorInfo color: noise color.
@@ -1280,7 +1299,8 @@ DEFINE_FUNCTION_FAST( AddNoise ) {
 
 
 /**doc
- * $THIS $INAME( sourceTexture [ , mode] )
+$TOC_MEMBER $INAME
+ $THIS $INAME( sourceTexture [ , mode] )
   Desaturates _sourceTexture_ texture an put the result in the current texture.
   $H arguments
    $ARG Texture sourceTexture: texture from witch the desaturation will be done.
@@ -1350,7 +1370,8 @@ DEFINE_FUNCTION_FAST( Desaturate ) {
 
 
 /**doc
- * $THIS $INAME( otherTexture )
+$TOC_MEMBER $INAME
+ $THIS $INAME( otherTexture )
  * $THIS $INAME( color )
   $H arguments
    $ARG Texture otherTexture:
@@ -1397,7 +1418,8 @@ DEFINE_FUNCTION_FAST( Set ) {
 
 
 /**doc
- * $THIS $INAME( textureObject )
+$TOC_MEMBER $INAME
+ $THIS $INAME( textureObject )
  * $THIS $INAME( colorInfo )
   Mathematically adds a texture (_textureObject_) or a given color (_colorInfo_) to the current texture.
 **/
@@ -1435,7 +1457,8 @@ DEFINE_FUNCTION_FAST( Add ) {
 
 
 /**doc
- * $THIS $INAME( textureObject )
+$TOC_MEMBER $INAME
+ $THIS $INAME( textureObject )
  * $THIS $INAME( colorInfo )
   Mathematically multiply a texture (_textureObject_) or a given color (_colorInfo_) to the current texture.
 **/
@@ -1498,7 +1521,8 @@ DEFINE_FUNCTION_FAST( Mult ) {
 
 
 /**doc
- * $THIS $INAME( otherTexture, blendTexture )
+$TOC_MEMBER $INAME
+ $THIS $INAME( otherTexture, blendTexture )
  * $THIS $INAME( otherTexture, color )
   Mathematically blends a texture (_textureObject_) or a given color (_colorInfo_) to the current texture.
   $H arguments
@@ -1575,7 +1599,8 @@ DEFINE_FUNCTION_FAST( Blend ) { // texture1, blenderTexture|blenderColor
 
 
 /**doc
- * $THIS *SetPixel*( x, y, colorInfo )
+$TOC_MEMBER $INAME
+ $THIS *SetPixel*( x, y, colorInfo )
   Sets the color of the given pixel.
   $H note
    If x and y are wrapped to the image width and height.
@@ -1612,7 +1637,8 @@ DEFINE_FUNCTION_FAST( SetPixel ) { // x, y, levels
 }
 
 /**doc
- * $THIS $INAME( x0, y0, x1, y1, color )
+$TOC_MEMBER $INAME
+ $THIS $INAME( x0, y0, x1, y1, color )
   Draws a rectangle of the _colorInfo_ color over the current texture.
   $H arguments
    $ARG $INT x0:
@@ -1669,7 +1695,8 @@ DEFINE_FUNCTION_FAST( SetRectangle ) {
 
 
 /**doc
- * $THIS $INAME( count )
+$TOC_MEMBER $INAME
+ $THIS $INAME( count )
   Make _count_ 90 degres rotations.
   $H arguments
    $ARG $INT count: the number of integer rotation to perform with the current texture. _count_ may be negative.
@@ -1744,7 +1771,8 @@ DEFINE_FUNCTION_FAST( Rotate90 ) { // (TBD) test it
 
 
 /**doc
- * $THIS $INAME( horizontally, vertically )
+$TOC_MEMBER $INAME
+ $THIS $INAME( horizontally, vertically )
   Flips the current texture horizontally, vertically or both.
   $H arguments
    $ARG $BOOL horizontally: flips the texture horizontally (against x axis).
@@ -1789,7 +1817,8 @@ DEFINE_FUNCTION_FAST( Flip ) {
 
 
 /**doc
- * $THIS $INAME( centerX, centerY, zoomX, zoomY, rotations )
+$TOC_MEMBER $INAME
+ $THIS $INAME( centerX, centerY, zoomX, zoomY, rotations )
   Make a zoom and/or a rotation of the current texture.
   $H arguments
    $ARG $REAL centerX: coordinate of the center of the zoom or rotation.
@@ -1925,7 +1954,8 @@ DEFINE_FUNCTION_FAST( RotoZoom ) { // source: FxGen
 
 
 /**doc
- * $THIS $INAME( newWidth, newHeight, [ interpolate = false [, borderMode = Texture.borderWrap ]] )
+$TOC_MEMBER $INAME
+ $THIS $INAME( newWidth, newHeight, [ interpolate = false [, borderMode = Texture.borderWrap ]] )
   Resize the current texture.
   $H arguments
    $ARG $INT newWidth:
@@ -2064,7 +2094,8 @@ DEFINE_FUNCTION_FAST( Resize ) {
 
 
 /**doc
- * $THIS $INAME( kernel, [ borderMode = Texture.borderWrap ] )
+$TOC_MEMBER $INAME
+ $THIS $INAME( kernel, [ borderMode = Texture.borderWrap ] )
   Apply a convolution to the current texture using _kernel_ factors.
   $H arguments
    $ARG $ARRAY kernel: kernel is a square matrix
@@ -2226,7 +2257,8 @@ DEFINE_FUNCTION_FAST( Convolution ) {
 }
 
 /**doc
- * $THIS $INAME( function )
+$TOC_MEMBER $INAME
+ $THIS $INAME( function )
   Call _function_ for each pixel of the texture. the function is called with the arguments (x, y, pixel) where pixel is an array of levels.
   $H note
    Because a JS function is called for each pixel, the processing could be very slow.
@@ -2317,7 +2349,8 @@ DEFINE_FUNCTION_FAST( ForEachPixels ) {
 
 
 /**doc
- * $THIS $INAME( blurWidth, blurHeight )
+$TOC_MEMBER $INAME
+ $THIS $INAME( blurWidth, blurHeight )
   Apply a box blur of the given width and height.
   $H note
    BoxBlur is very fast but the result is not very smooth.
@@ -2408,7 +2441,8 @@ DEFINE_FUNCTION_FAST( BoxBlur ) {
 
 
 /**doc
- * $THIS $INAME()
+$TOC_MEMBER $INAME
+ $THIS $INAME()
   Converts each pixel into a vector, normalize this vector, then store the vector as a pixel.
 **/
 DEFINE_FUNCTION_FAST( NormalizeVectors ) {
@@ -2448,7 +2482,8 @@ DEFINE_FUNCTION_FAST( NormalizeVectors ) {
 
 
 /**doc
- * $THIS $INAME( [ amplify = 1 ] )
+$TOC_MEMBER $INAME
+ $THIS $INAME( [ amplify = 1 ] )
   Converts the texture to a normals map using the Sobel filter.
 **/
 // (TBD) PTYPE
@@ -2552,7 +2587,8 @@ DEFINE_FUNCTION_FAST( Normals ) {
 
 
 /**doc
- * $THIS $INAME( normalsTexture, lightPosition, ambiantColor, diffuseColor, specularColor, bumpPower, specularPower )
+$TOC_MEMBER $INAME
+ $THIS $INAME( normalsTexture, lightPosition, ambiantColor, diffuseColor, specularColor, bumpPower, specularPower )
   Floodlight the current texture using the _normalsTexture_ as bump map.
   $H arguments
    $ARG Texture normalsTexture: the bump map where each pixel is a 3D vector.
@@ -2681,7 +2717,8 @@ DEFINE_FUNCTION_FAST( Light ) {
 
 
 /**doc
- * $THIS $INAME( x0, y0, x1, y1 )
+$TOC_MEMBER $INAME
+ $THIS $INAME( x0, y0, x1, y1 )
   Remove the part of the texture that is outside the rectangle (x1,y1)-(x2,y2).
 **/
 DEFINE_FUNCTION_FAST( Trim ) { // (TBD) test this new version that use memcpy
@@ -2763,7 +2800,8 @@ DEFINE_FUNCTION_FAST( Trim ) { // (TBD) test this new version that use memcpy
 
 
 /**doc
- * $THIS $INAME( sourceTexture, x, y [ , borderMode = Texture.borderClamp] )
+$TOC_MEMBER $INAME
+ $THIS $INAME( sourceTexture, x, y [ , borderMode = Texture.borderClamp] )
   Copy _sourceTexture_ in the current texture at the position (_x_, _y_).
   $H arguments
    $ARG Texture sourceTexture:
@@ -2844,7 +2882,8 @@ DEFINE_FUNCTION_FAST( Copy ) {
 
 
 /**doc
- * $THIS $INAME( texture, x, y, borderMode )
+$TOC_MEMBER $INAME
+ $THIS $INAME( texture, x, y, borderMode )
   Paste _sourceTexture_ in the current texture at the position (_x_, _y_).
   $H arguments
    $ARG Texture sourceTexture:
@@ -2926,7 +2965,8 @@ DEFINE_FUNCTION_FAST( Paste ) { // (Texture)texture, (int)x, (int)y, (bool)borde
 
 
 /**doc
- * $TYPE ImageObject $INAME( [ x, y, width, height] )
+$TOC_MEMBER $INAME
+ $TYPE ImageObject $INAME( [ x, y, width, height] )
   Creates an image object from the whole or a part of current texture.
   $H arguments
    $ARG $INT x:
@@ -3031,7 +3071,8 @@ DEFINE_FUNCTION_FAST( Export ) { // (int)x, (int)y, (int)width, (int)height. Ret
 
 
 /**doc
- * $THIS $INAME( sourceImage, x, y [ , borderMode] )
+$TOC_MEMBER $INAME
+ $THIS $INAME( sourceImage, x, y [ , borderMode] )
   Draws the _image_ over the current texture at position (_x_, _y_).
   $H arguments
    $ARG ImageObject sourceImage:
@@ -3135,7 +3176,8 @@ DEFINE_FUNCTION_FAST( Import ) { // (Blob)image, (int)x, (int)y
 
 
 /**doc
- * $THIS $INAME( offsetX, offsetY [ , borderMode] )
+$TOC_MEMBER $INAME
+ $THIS $INAME( offsetX, offsetY [ , borderMode] )
   Shift the current image.
   $H arguments
    $ARG $INT offsetX:
@@ -3220,7 +3262,8 @@ DEFINE_FUNCTION_FAST( Shift ) {
 }
 
 /**doc
- * $THIS $INAME( displaceTexture, factor [ , borderMode] )
+$TOC_MEMBER $INAME
+ $THIS $INAME( displaceTexture, factor [ , borderMode] )
   Move each pixel of the texture according to the
   $H arguments
    $ARG Texture displaceTexture: is a texture that contains displacement vectors.
@@ -3319,7 +3362,8 @@ DEFINE_FUNCTION_FAST( Displace ) {
 
 
 /**doc
- * $THIS $INAME( density, regularity )
+$TOC_MEMBER $INAME
+ $THIS $INAME( density, regularity )
   Draws cells in the current texture.
   $H arguments
    $ARG $INT density:
@@ -3426,7 +3470,8 @@ DEFINE_FUNCTION_FAST( Cells ) { // source: FxGen
 
 
 /**doc
- * $THIS $INAME( topLeft, topRight, bottomLeft, bottomRight )
+$TOC_MEMBER $INAME
+ $THIS $INAME( topLeft, topRight, bottomLeft, bottomRight )
   Add a quad radiant to the current texture
   $H arguments
    $ARG colorInfo topLeft: color of the top-left corner.
@@ -3494,7 +3539,8 @@ DEFINE_FUNCTION_FAST( AddGradiantQuad ) {
 }
 
 /**doc
- * $THIS $INAME( curveInfoX, curveInfoY )
+$TOC_MEMBER $INAME
+ $THIS $INAME( curveInfoX, curveInfoY )
   Add a linear radiant using a curve for X and Y. Each point of the curve is the light intensity of a pixel.
   $H arguments
    $ARG curveInfo curveInfoX:
@@ -3552,7 +3598,8 @@ DEFINE_FUNCTION_FAST( AddGradiantLinear ) {
 
 
 /**doc
- * $THIS $INAME( curveInfo [ , drawToCorner = false] )
+$TOC_MEMBER $INAME
+ $THIS $INAME( curveInfo [ , drawToCorner = false] )
   Add a radial radiant using a curve from the center to the outside. Each point of the curve is the light intensity of a pixel.
   $H arguments
    $ARG curveInfo curveInfo:
@@ -3701,7 +3748,8 @@ DEFINE_FUNCTION( AddGradiantRadial ) {
 
 
 /**doc
- * $THIS $INAME( count, crackLength, wayVariation [ , color = 1] [ , curve = 1] )
+$TOC_MEMBER $INAME
+ $THIS $INAME( count, crackLength, wayVariation [ , color = 1] [ , curve = 1] )
   Adds cracks to the current texture.
   $H arguments
    $ARG $INT count: number of cracks to draw.
@@ -3815,7 +3863,8 @@ DEFINE_FUNCTION_FAST( AddCracks ) { // source: FxGen
 
 
 /**doc
- * $TYPE Array $INAME( x, y )
+$TOC_MEMBER $INAME
+ $TYPE Array $INAME( x, y )
   Read the value of a pixel in the current texture.
   $H arguments
    $ARG $INT x
@@ -3863,7 +3912,8 @@ DEFINE_FUNCTION_FAST( PixelAt ) {
 
 
 /**doc
- * $THIS $INAME()
+$TOC_MEMBER $INAME
+ $THIS $INAME()
   Returns the [ lowest,highest ] level value of the texture.
 **/
 // PTYPE ok
@@ -3907,7 +3957,8 @@ DEFINE_FUNCTION_FAST( LevelRange ) {
 
 
 /**doc
- * $REAL $INAME
+$TOC_MEMBER $INAME
+ $REAL $INAME
   Is the higher $pval. Higher values are not brighter.
   $LF
   See Normalize() function.
@@ -3921,7 +3972,8 @@ DEFINE_PROPERTY( vmax ) {
 
 
 /**doc
- * $INT $INAME
+$TOC_MEMBER $INAME
+ $INT $INAME
   Width of the texture in pixel.
 **/
 DEFINE_PROPERTY( width ) {
@@ -3937,7 +3989,8 @@ DEFINE_PROPERTY( width ) {
 
 
 /**doc
- * $INT $INAME
+$TOC_MEMBER $INAME
+ $INT $INAME
   Height of the texture in pixel.
 **/
 DEFINE_PROPERTY( height ) {
@@ -3953,7 +4006,8 @@ DEFINE_PROPERTY( height ) {
 
 
 /**doc
- * $INT $INAME
+$TOC_MEMBER $INAME
+ $INT $INAME
   Number of channels of the texture.
 **/
 DEFINE_PROPERTY( channels ) {
@@ -3973,7 +4027,8 @@ DEFINE_PROPERTY( channels ) {
 **/
 
 /**doc
- * $VOID $INAME( seed )
+$TOC_MEMBER $INAME
+ $VOID $INAME( seed )
   Resets a random sequence of the Mersenne Twister random number generator.
   $H example
   {{{
@@ -4001,7 +4056,8 @@ DEFINE_FUNCTION_FAST( RandSeed ) {
 
 
 /**doc
- * $INT $INAME
+$TOC_MEMBER $INAME
+ $INT $INAME
   Generates a random number on `[ 0 , 0x7fffffff ]` interval.
 **/
 DEFINE_FUNCTION_FAST( RandInt ) {
@@ -4013,7 +4069,8 @@ DEFINE_FUNCTION_FAST( RandInt ) {
 
 
 /**doc
- * $REAL $INAME
+$TOC_MEMBER $INAME
+ $REAL $INAME
   Generates a random number on `[ 0 , 1 ]` real interval.
 **/
 DEFINE_FUNCTION_FAST( RandReal ) {

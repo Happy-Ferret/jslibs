@@ -33,7 +33,8 @@ BEGIN_STATIC
 **/
 
 /**doc
- * $INT $INAME( _descriptorArray_ [, _timeout_ = undefined ] )
+$TOC_MEMBER $INAME
+ $INT $INAME( _descriptorArray_ [, _timeout_ = undefined ] )
   This function listen for a readable, writable or exception event on each descriptor in _descriptorArray_.
   When an event occurs, the function tries to call the corresponding property (function) on the descriptor.
   $LF
@@ -228,7 +229,8 @@ failed: // goto is the cheaper solution
 }
 
 /**doc
- * $BOOL $INAME( _descriptor_ )
+$TOC_MEMBER $INAME
+ $BOOL $INAME( _descriptor_ )
   Returns true if the _descriptor_ can be read without blocking.
 **/
 DEFINE_FUNCTION( IsReadable ) {
@@ -266,7 +268,8 @@ DEFINE_FUNCTION( IsReadable ) {
 }
 
 /**doc
- * $BOOL $INAME( _descriptor_ )
+$TOC_MEMBER $INAME
+ $BOOL $INAME( _descriptor_ )
   Returns true if the _descriptor_ can be write without blocking.
 **/
 DEFINE_FUNCTION( IsWritable ) {
@@ -305,7 +308,8 @@ DEFINE_FUNCTION( IsWritable ) {
 
 
 /**doc
- * $INT $INAME()
+$TOC_MEMBER $INAME
+ $INT $INAME()
   Returns the milliseconds value of NSPR's free-running interval timer.
 **/
 DEFINE_FUNCTION( IntervalNow ) {
@@ -317,7 +321,8 @@ DEFINE_FUNCTION( IntervalNow ) {
 
 
 /**doc
- * $INT $INAME()
+$TOC_MEMBER $INAME
+ $INT $INAME()
   Returns the microseconds value of NSPR's free-running interval timer.
 **/
 DEFINE_FUNCTION_FAST( UIntervalNow ) {
@@ -329,7 +334,8 @@ DEFINE_FUNCTION_FAST( UIntervalNow ) {
 
 
 /**doc
- * $VOID $INAME( _milliseconds_ )
+$TOC_MEMBER $INAME
+ $VOID $INAME( _milliseconds_ )
   Sleeps _milliseconds_ milliseconds.
 **/
 DEFINE_FUNCTION( Sleep ) {
@@ -343,7 +349,8 @@ DEFINE_FUNCTION( Sleep ) {
 
 
 /**doc
- * $STR $INAME( name )
+$TOC_MEMBER $INAME
+ $STR $INAME( name )
   Retrieve the value of the given environment variable.
 **/
 DEFINE_FUNCTION( GetEnv ) {
@@ -366,7 +373,8 @@ DEFINE_FUNCTION( GetEnv ) {
 
 
 /**doc
- * $STR $INAME( size )
+$TOC_MEMBER $INAME
+ $STR $INAME( size )
   Provides, depending on platform, a random value.
   The length of the random value is dependent on platform and the platform's ability to provide a random value at that moment.
   $H beware
@@ -428,7 +436,8 @@ DEFINE_FUNCTION( hton ) {
 
 
 /**doc
- * $VOID $INAME( semaphoreName )
+$TOC_MEMBER $INAME
+ $VOID $INAME( semaphoreName )
   Tests the value of the semaphore.
   If the value of the semaphore is > 0, the value of the semaphore is decremented and the function returns.
   If the value of the semaphore is 0, the function blocks until the value becomes > 0, then the semaphore is decremented and the function returns.
@@ -483,7 +492,8 @@ DEFINE_FUNCTION_FAST( WaitSemaphore ) {
 
 
 /**doc
- * $VOID $INAME( semaphoreName )
+$TOC_MEMBER $INAME
+ $VOID $INAME( semaphoreName )
   Increments the value of a specified semaphore.
 **/
 DEFINE_FUNCTION_FAST( PostSemaphore ) {
@@ -516,7 +526,8 @@ DEFINE_FUNCTION_FAST( PostSemaphore ) {
 
 
 /*doc
- * $VAL $INAME( path [, argv [, waitExit ]] )
+$TOC_MEMBER $INAME
+ $VAL $INAME( path [, argv [, waitExit ]] )
   This function starts a new process optionaly using the JavaScript Array _argv_ for arguments or _undefined_ for no arguments.
   If _waitExit_ is true, the function waits the end of the process and returns its exit code.
   If _waitExit_ is not true, the function immediately returns an array that contains an input pipe and an output pipe to the current process stdin and stdout.
@@ -638,7 +649,8 @@ bad:
 **/
 
 /**doc
- * $STR $INAME $READONLY
+$TOC_MEMBER $INAME
+ $STR $INAME $READONLY
   Is the host name with the domain name (if any).
 **/
 DEFINE_PROPERTY( hostName ) {
@@ -663,7 +675,8 @@ DEFINE_PROPERTY( hostName ) {
 
 
 /**doc
- * $INT $INAME $READONLY
+$TOC_MEMBER $INAME
+ $INT $INAME $READONLY
   Is the amount of physical RAM in the system in bytes.
 **/
 DEFINE_PROPERTY( physicalMemorySize ) {
@@ -676,7 +689,8 @@ DEFINE_PROPERTY( physicalMemorySize ) {
 
 
 /**doc
- * $OBJ $INAME $READONLY
+$TOC_MEMBER $INAME
+ $OBJ $INAME $READONLY
   Returns an object that contains the following properties:
    * $STR *architecture*: x86, ...
    * $STR *name*: Linux, Windows_NT, ...
@@ -743,7 +757,8 @@ DEFINE_PROPERTY( systemInfo ) {
 
 
 /**doc
- * $INT $INAME
+$TOC_MEMBER $INAME
+ $INT $INAME
   Is the current process priority among the following values:
    * `-1`: low
    * ` 0`: normal
@@ -806,7 +821,8 @@ DEFINE_PROPERTY( processPrioritySetter ) {
 
 
 /**doc
- * $STR $INAME
+$TOC_MEMBER $INAME
+ $STR $INAME
   Gets/sets the current working directory.
 **/
 DEFINE_PROPERTY_GETTER( currentWorkingDirectory ) {
@@ -843,7 +859,8 @@ DEFINE_PROPERTY_SETTER( currentWorkingDirectory ) {
 
 
 /**doc
- * $STR $INAME $READONLY
+$TOC_MEMBER $INAME
+ $STR $INAME $READONLY
   Is the os's path separator.
 **/
 DEFINE_PROPERTY( pathSeparator ) {
@@ -859,7 +876,8 @@ DEFINE_PROPERTY( pathSeparator ) {
 }
 
 /**doc
- * $STR $INAME $READONLY
+$TOC_MEMBER $INAME
+ $STR $INAME $READONLY
   Is the os's list separator.
   $H example
   {{{

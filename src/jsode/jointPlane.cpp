@@ -23,7 +23,8 @@ $SVN_REVISION $Revision$
 BEGIN_CLASS( JointPlane )
 
 /**doc
- * $INAME( world )
+$TOC_MEMBER $INAME
+ $INAME( world )
   TBD
 **/
 DEFINE_CONSTRUCTOR() {

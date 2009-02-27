@@ -26,7 +26,8 @@ $SVN_REVISION $Revision$
 BEGIN_CLASS( Console )
 
 /**doc
- * $INAME()
+$TOC_MEMBER $INAME
+ $INAME()
   Creates a new Console object.
   $H beware
    Only one console per process is allowed. The construction fails if the calling process already has a console.
@@ -55,7 +56,8 @@ DEFINE_FINALIZE() {
 **/
 
 /**doc
- * $VOID $INAME()
+$TOC_MEMBER $INAME
+ $VOID $INAME()
   Detach the current process from its console.
 **/
 DEFINE_FUNCTION( Close ) {
@@ -74,7 +76,8 @@ DEFINE_FUNCTION( Close ) {
 
 
 /**doc
- * $VOID $INAME( text )
+$TOC_MEMBER $INAME
+ $VOID $INAME( text )
   Write text to the console.
   $H arguments
    $ARG $STR text
@@ -98,7 +101,8 @@ DEFINE_FUNCTION( Write ) {
 
 
 /**doc
- * $STR $INAME( amount )
+$TOC_MEMBER $INAME
+ $STR $INAME( amount )
   Read _amount_ bytes of text from the console.
   $H arguments
    $ARG $INT amount
@@ -124,7 +128,8 @@ DEFINE_FUNCTION( Read ) {
 **/
 
 /**doc
- * $STR $INAME
+$TOC_MEMBER $INAME
+ $STR $INAME
   Get or set the title of the console window.
 **/
 DEFINE_PROPERTY( titleSetter ) {

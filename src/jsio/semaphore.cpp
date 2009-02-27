@@ -51,7 +51,8 @@ DEFINE_FINALIZE() {
 
 
 /**doc
- * $INAME( name, [ count = 0 ] [, mode = Semaphore.IRUSR | Semaphore.IWUSR ] )
+$TOC_MEMBER $INAME
+ $INAME( name, [ count = 0 ] [, mode = Semaphore.IRUSR | Semaphore.IWUSR ] )
   Create or open a named semaphore with the specified name. If the named semaphore doesn't exist, the named semaphore is created.
   $H exemple
   {{{
@@ -115,7 +116,8 @@ DEFINE_CONSTRUCTOR() {
 
 
 /**doc
- * $VOID $INAME()
+$TOC_MEMBER $INAME
+ $VOID $INAME()
   If the value of the semaphore is > 0, decrement the value and return. If the value is 0, sleep until the value becomes > 0, then decrement the value and return. The "test and decrement" operation is performed atomically.
 **/
 DEFINE_FUNCTION_FAST( Wait ) {
@@ -133,7 +135,8 @@ DEFINE_FUNCTION_FAST( Wait ) {
 }
 
 /**doc
- * $VOID $INAME()
+$TOC_MEMBER $INAME
+ $VOID $INAME()
   Increment the value of the named semaphore by 1.
 **/
 DEFINE_FUNCTION_FAST( Post ) {

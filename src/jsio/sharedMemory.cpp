@@ -128,7 +128,8 @@ DEFINE_FINALIZE() {
 
 
 /**doc
- * $INAME( name, size [, mode] )
+$TOC_MEMBER $INAME
+ $INAME( name, size [, mode] )
   Creates a named shared memory area of _size_ bytes using _mode_ linux-like rights.
 **/
 DEFINE_CONSTRUCTOR() {
@@ -212,7 +213,8 @@ bad_ioerror:
 **/
 
 /**doc
- * $INAME( data [, offset] )
+$TOC_MEMBER $INAME
+ $INAME( data [, offset] )
   Write _data_ at _offset_ in the shared memory.
 **/
 DEFINE_FUNCTION_FAST( Write ) {
@@ -249,7 +251,8 @@ DEFINE_FUNCTION_FAST( Write ) {
 
 
 /**doc
- * $STR $INAME( length [, offset] )
+$TOC_MEMBER $INAME
+ $STR $INAME( length [, offset] )
   Read _length_ bytes from _offset_ in the shared memory.
 **/
 DEFINE_FUNCTION_FAST( Read ) {
@@ -288,7 +291,8 @@ DEFINE_FUNCTION_FAST( Read ) {
 
 
 /**doc
- * $INAME()
+$TOC_MEMBER $INAME
+ $INAME()
   Clears the content of the shared memory.
 **/
 DEFINE_FUNCTION_FAST( Clear ) {
@@ -311,7 +315,8 @@ DEFINE_FUNCTION_FAST( Clear ) {
 
 
 /**doc
- * $INAME()
+$TOC_MEMBER $INAME
+ $INAME()
   Close the shared memory.
 **/
 DEFINE_FUNCTION_FAST( Close ) {
@@ -329,7 +334,8 @@ DEFINE_FUNCTION_FAST( Close ) {
 **/
 
 /**doc
- * $STR $INAME
+$TOC_MEMBER $INAME
+ $STR $INAME
   Read or write the whole content of the shared memory. Setting _undefined_ as value clears the memory area.
 **/
 DEFINE_PROPERTY( contentSetter ) {

@@ -30,7 +30,8 @@ BEGIN_CLASS( SdlError )
 
 
 /**doc
- * $INAME $READONLY
+$TOC_MEMBER $INAME
+ $INAME $READONLY
   Is the text of the error.
 **/
 DEFINE_PROPERTY( text ) {

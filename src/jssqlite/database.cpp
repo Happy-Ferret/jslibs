@@ -66,7 +66,8 @@ BEGIN_CLASS( Database )
 
 
 /**doc
- * $INAME( [fileName] [, flags] )
+$TOC_MEMBER $INAME
+ $INAME( [fileName] [, flags] )
   Creates a new Database object.
   $H arguments
    $ARG $STR fileName: is the file name of the database, or an empty string for a temporary database.
@@ -179,7 +180,8 @@ DEFINE_FINALIZE() {
 
 
 /**doc
- * $VOID $INAME()
+$TOC_MEMBER $INAME
+ $VOID $INAME()
   Close the database and all its opened [Result] objects.
   $H note
    It is recommended to close all [Result] objects before closing the database.
@@ -216,7 +218,8 @@ DEFINE_FUNCTION( Close ) {
 
 
 /**doc
- * $TYPE Result $INAME( sqlStr [, map ] )
+$TOC_MEMBER $INAME
+ $TYPE Result $INAME( sqlStr [, map ] )
   Evaluates a SQL string and returns a Result object ready to be executed.
   $H arguments
    $ARG $STR sqlStr:
@@ -307,7 +310,8 @@ DEFINE_FUNCTION( Query ) {
 
 
 /**doc
- * $VAL $INAME( sqlStr [, map ] )
+$TOC_MEMBER $INAME
+ $VAL $INAME( sqlStr [, map ] )
   Evaluates a SQL string and return the result in one operation.
   $H arguments
    $ARG $STR sqlStr: is the SQL statement.
@@ -390,7 +394,8 @@ DEFINE_FUNCTION( Exec ) {
 **/
 
 /**doc
- * $INAME $READONLY
+$TOC_MEMBER $INAME
+ $INAME $READONLY
   is the rowid of the most recent successful INSERT into the database from the database connection shown in the first argument. If no successful inserts have ever occurred on this database connection, zero is returned.
   $H details
    [http://www.sqlite.org/capi3ref.html#sqlite3_last_insert_rowid sqlite documentation]
@@ -406,7 +411,8 @@ DEFINE_PROPERTY( lastInsertRowid ) {
 
 
 /**doc
- * $INAME $READONLY
+$TOC_MEMBER $INAME
+ $INAME $READONLY
   is the number of database rows that were changed or inserted or deleted by the most recently completed SQL statement on the connection specified by the first parameter. Only changes that are directly specified by the INSERT, UPDATE, or DELETE statement are counted.
   $H details
    [http://www.sqlite.org/capi3ref.html#sqlite3_changes sqlite documentation]
@@ -430,7 +436,8 @@ DEFINE_PROPERTY( changes ) {
 **/
 
 /**doc
- * $INAME $READONLY
+$TOC_MEMBER $INAME
+ $INAME $READONLY
   Hold the current version of the database engine.
 **/
 DEFINE_PROPERTY( version ) {
@@ -440,7 +447,8 @@ DEFINE_PROPERTY( version ) {
 }
 
 /**doc
- * $INAME $READONLY
+$TOC_MEMBER $INAME
+ $INAME $READONLY
   Is the amount of memory currently checked out.
 **/
 DEFINE_PROPERTY( memoryUsed ) {

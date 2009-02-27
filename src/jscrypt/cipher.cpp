@@ -77,7 +77,8 @@ DEFINE_FINALIZE() {
 }
 
 /**doc
- * $INAME( modeName, cipherName, key, [IV], [arg], [rounds] )
+$TOC_MEMBER $INAME
+ $INAME( modeName, cipherName, key, [IV], [arg], [rounds] )
   Constructs a Cipher object that use _cipherName_ algorithm for performing encryption and decryption.
   $H arguments
    $ARG $STR modeName: is the block cipher modes of operation:
@@ -268,7 +269,8 @@ DEFINE_CONSTRUCTOR() {
 **/
 
 /**doc
- * $DATA $INAME( data )
+$TOC_MEMBER $INAME
+ $DATA $INAME( data )
   Encrypts the given _data_ using the current cipher.
 **/
 DEFINE_FUNCTION( Encrypt ) {
@@ -326,7 +328,8 @@ DEFINE_FUNCTION( Encrypt ) {
 }
 
 /**doc
- * $DATA $INAME( data )
+$TOC_MEMBER $INAME
+ $DATA $INAME( data )
   Decrypts the given _data_ using the current cipher.
 **/
 DEFINE_FUNCTION( Decrypt ) {
@@ -385,7 +388,8 @@ DEFINE_FUNCTION( Decrypt ) {
 **/
 
 /**doc
- * $INT $INAME $READONLY
+$TOC_MEMBER $INAME
+ $INT $INAME $READONLY
   Is the block length of the current cipher.
 **/
 DEFINE_PROPERTY( blockLength ) {
@@ -401,7 +405,8 @@ DEFINE_PROPERTY( blockLength ) {
 
 
 /**doc
- * $INT $INAME $READONLY
+$TOC_MEMBER $INAME
+ $INT $INAME $READONLY
   Is the key size of the current cipher.
 **/
 DEFINE_PROPERTY( keySize ) {
@@ -417,7 +422,8 @@ DEFINE_PROPERTY( keySize ) {
 
 
 /**doc
- * $STR $INAME $READONLY
+$TOC_MEMBER $INAME
+ $STR $INAME $READONLY
   Is the name of the current cipher.
 **/
 DEFINE_PROPERTY( name ) {
@@ -436,7 +442,8 @@ DEFINE_PROPERTY( name ) {
 
 
 /**doc
- * $STR $INAME
+$TOC_MEMBER $INAME
+ $STR $INAME
   Set or get the current initialization vector of the cipher.
 **/
 DEFINE_PROPERTY( IVSetter ) {
@@ -588,7 +595,8 @@ DEFINE_PROPERTY( IVGetter ) {
 **/
 
 /**doc
- * $OBJ $INAME $READONLY
+$TOC_MEMBER $INAME
+ $OBJ $INAME $READONLY
   Contains the list of all available ciphers and their feature. The list is a javascript object that map cipher names (key) with another object (value) that contain information.
 **/
 DEFINE_PROPERTY( list ) {

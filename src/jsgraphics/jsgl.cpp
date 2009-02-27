@@ -87,7 +87,8 @@ BEGIN_CLASS( Ogl )
 
 
 /**doc
- * $BOOL $INAME( pname )
+$TOC_MEMBER $INAME
+ $BOOL $INAME( pname )
   $H arguments
    $ARG GLenum pname
   $H return value
@@ -108,7 +109,8 @@ DEFINE_FUNCTION_FAST( GetBoolean ) {
 
 
 /**doc
- * $INT | $ARRAY $INAME( pname [, count] )
+$TOC_MEMBER $INAME
+ $INT | $ARRAY $INAME( pname [, count] )
   $H arguments
    $ARG GLenum pname
    $ARG $INT count: is the number of expected values. If _count_ is defined, the function will returns an array of values, else it returns a single value.
@@ -148,7 +150,8 @@ DEFINE_FUNCTION_FAST( GetInteger ) {
 
 
 /**doc
- * $REAL | $ARRAY $INAME( pname [, count] )
+$TOC_MEMBER $INAME
+ $REAL | $ARRAY $INAME( pname [, count] )
   $H arguments
    $ARG GLenum pname
    $ARG $INT count: is the number of expected values. If _count_ is defined, the function will returns an array of values, else a single value.
@@ -188,7 +191,8 @@ DEFINE_FUNCTION_FAST( GetDouble ) {
 
 
 /**doc
- * $VOID $INAME( op, value )
+$TOC_MEMBER $INAME
+ $VOID $INAME( op, value )
   $H arguments
    $ARG GLenum op
    $ARG $REAL value
@@ -210,7 +214,8 @@ DEFINE_FUNCTION_FAST( Accum ) {
 
 
 /**doc
- * $VOID $INAME( func, ref )
+$TOC_MEMBER $INAME
+ $VOID $INAME( func, ref )
   $H arguments
    $ARG GLenum op
    $ARG $REAL ref
@@ -232,7 +237,8 @@ DEFINE_FUNCTION_FAST( AlphaFunc ) {
 
 
 /**doc
- * $VOID $INAME()
+$TOC_MEMBER $INAME
+ $VOID $INAME()
   $H OpenGL API
    glFlush
 **/
@@ -245,7 +251,8 @@ DEFINE_FUNCTION_FAST( Flush ) {
 
 
 /**doc
- * $VOID $INAME()
+$TOC_MEMBER $INAME
+ $VOID $INAME()
   $H OpenGL API
    glFinish
 **/
@@ -258,7 +265,8 @@ DEFINE_FUNCTION_FAST( Finish ) {
 
 
 /**doc
- * $VOID $INAME( pname, params )
+$TOC_MEMBER $INAME
+ $VOID $INAME( pname, params )
   $H arguments
    $ARG GLenum pname
    $ARG $VAL params: is either a number or an array of numbers.
@@ -298,7 +306,8 @@ DEFINE_FUNCTION_FAST( Fog ) {
 
 
 /**doc
- * $VOID $INAME( target, mode )
+$TOC_MEMBER $INAME
+ $VOID $INAME( target, mode )
   $H arguments
    $ARG GLenum target
    $ARG GLenum mode
@@ -318,7 +327,8 @@ DEFINE_FUNCTION_FAST( Hint ) {
 
 
 /**doc
- * $VOID $INAME( x, y [, z] )
+$TOC_MEMBER $INAME
+ $VOID $INAME( x, y [, z] )
   $H arguments
    $ARG $REAL x
    $ARG $REAL y
@@ -353,7 +363,8 @@ DEFINE_FUNCTION_FAST( Vertex ) {
 
 
 /**doc
- * $VOID $INAME( red, green, blue [, alpha] )
+$TOC_MEMBER $INAME
+ $VOID $INAME( red, green, blue [, alpha] )
   $H arguments
    $ARG $REAL red
    $ARG $REAL green
@@ -386,7 +397,8 @@ DEFINE_FUNCTION_FAST( Color ) {
 
 
 /**doc
- * $VOID $INAME( nx, ny, nz )
+$TOC_MEMBER $INAME
+ $VOID $INAME( nx, ny, nz )
   $H arguments
    $ARG $REAL nx
    $ARG $REAL ny
@@ -411,7 +423,8 @@ DEFINE_FUNCTION_FAST( Normal ) {
 
 
 /**doc
- * $VOID $INAME( s [, t [, r]] )
+$TOC_MEMBER $INAME
+ $VOID $INAME( s [, t [, r]] )
   $H arguments
    $ARG $REAL s
    $ARG $REAL t
@@ -451,7 +464,8 @@ DEFINE_FUNCTION_FAST( TexCoord ) {
 
 
 /**doc
- * $VOID $INAME( target, pname, params )
+$TOC_MEMBER $INAME
+ $VOID $INAME( target, pname, params )
   $H arguments
    $ARG GLenum target
    $ARG GLenum pname
@@ -494,7 +508,8 @@ DEFINE_FUNCTION_FAST( TexParameter ) {
 
 
 /**doc
- * $VOID $INAME( target, pname, params )
+$TOC_MEMBER $INAME
+ $VOID $INAME( target, pname, params )
   $H arguments
    $ARG GLenum target
    $ARG GLenum pname
@@ -536,7 +551,8 @@ DEFINE_FUNCTION_FAST( TexEnv ) {
 
 
 /**doc
- * $VOID $INAME( pname, params )
+$TOC_MEMBER $INAME
+ $VOID $INAME( pname, params )
   $H arguments
    $ARG GLenum pname
    $ARG $VAL params: is either a number or an array of numbers.
@@ -576,7 +592,8 @@ DEFINE_FUNCTION_FAST( LightModel ) {
 
 
 /**doc
- * $VOID $INAME( light, pname, params )
+$TOC_MEMBER $INAME
+ $VOID $INAME( light, pname, params )
   $H arguments
    $ARG GLenum light
    $ARG GLenum pname
@@ -618,7 +635,8 @@ DEFINE_FUNCTION_FAST( Light ) {
 
 
 /**doc
- * $VOID $INAME( face, pname, params )
+$TOC_MEMBER $INAME
+ $VOID $INAME( face, pname, params )
   $H arguments
    $ARG GLenum face
    $ARG GLenum pname
@@ -660,7 +678,8 @@ DEFINE_FUNCTION_FAST( Material ) {
 
 
 /**doc
- * $VOID $INAME( cap )
+$TOC_MEMBER $INAME
+ $VOID $INAME( cap )
   $H arguments
    $ARG GLenum cap
   $H OpenGL API
@@ -678,7 +697,8 @@ DEFINE_FUNCTION_FAST( Enable ) {
 
 
 /**doc
- * $VOID $INAME( cap )
+$TOC_MEMBER $INAME
+ $VOID $INAME( cap )
   $H arguments
    $ARG GLenum cap
   $H OpenGL API
@@ -696,7 +716,8 @@ DEFINE_FUNCTION_FAST( Disable ) {
 
 
 /**doc
- * $VOID $INAME( size )
+$TOC_MEMBER $INAME
+ $VOID $INAME( size )
   $H arguments
    $ARG $REAL size
   $H OpenGL API
@@ -714,7 +735,8 @@ DEFINE_FUNCTION_FAST( PointSize ) {
 
 
 /**doc
- * $VOID $INAME( width )
+$TOC_MEMBER $INAME
+ $VOID $INAME( width )
   $H arguments
    $ARG $REAL width
   $H OpenGL API
@@ -732,7 +754,8 @@ DEFINE_FUNCTION_FAST( LineWidth ) {
 
 
 /**doc
- * $VOID $INAME( mode )
+$TOC_MEMBER $INAME
+ $VOID $INAME( mode )
   $H arguments
    $ARG GLenum mode
   $H OpenGL API
@@ -749,7 +772,8 @@ DEFINE_FUNCTION_FAST( ShadeModel ) {
 
 
 /**doc
- * $VOID $INAME( fFactor, dFactor )
+$TOC_MEMBER $INAME
+ $VOID $INAME( fFactor, dFactor )
   $H arguments
    $ARG GLenum fFactor
    $ARG GLenum dFactor
@@ -769,7 +793,8 @@ DEFINE_FUNCTION_FAST( BlendFunc ) {
 
 
 /**doc
- * $VOID $INAME( func )
+$TOC_MEMBER $INAME
+ $VOID $INAME( func )
   $H arguments
    $ARG GLenum func
   $H OpenGL API
@@ -787,7 +812,8 @@ DEFINE_FUNCTION_FAST( DepthFunc ) {
 
 
 /**doc
- * $VOID $INAME( zNear, zFar )
+$TOC_MEMBER $INAME
+ $VOID $INAME( zNear, zFar )
   $H arguments
    $ARG $REAL zNear
    $ARG $REAL zFar
@@ -807,7 +833,8 @@ DEFINE_FUNCTION_FAST( DepthRange ) {
 
 
 /**doc
- * $VOID $INAME( mode )
+$TOC_MEMBER $INAME
+ $VOID $INAME( mode )
   $H arguments
    $ARG GLenum mode
   $H OpenGL API
@@ -825,7 +852,8 @@ DEFINE_FUNCTION_FAST( CullFace ) {
 
 
 /**doc
- * $VOID $INAME( mode )
+$TOC_MEMBER $INAME
+ $VOID $INAME( mode )
   $H arguments
    $ARG GLenum mode
   $H OpenGL API
@@ -843,7 +871,8 @@ DEFINE_FUNCTION_FAST( FrontFace ) {
 
 
 /**doc
- * $VOID $INAME( s )
+$TOC_MEMBER $INAME
+ $VOID $INAME( s )
   $H arguments
    $ARG $INT s
   $H OpenGL API
@@ -861,7 +890,8 @@ DEFINE_FUNCTION_FAST( ClearStencil ) {
 
 
 /**doc
- * $VOID $INAME( depth )
+$TOC_MEMBER $INAME
+ $VOID $INAME( depth )
   $H arguments
    $ARG $REAL depth
   $H OpenGL API
@@ -880,7 +910,8 @@ DEFINE_FUNCTION_FAST( ClearDepth ) {
 
 
 /**doc
- * $VOID $INAME( red, green, blue, alpha )
+$TOC_MEMBER $INAME
+ $VOID $INAME( red, green, blue, alpha )
   $H arguments
    $ARG $REAL red
    $ARG $REAL green
@@ -905,7 +936,8 @@ DEFINE_FUNCTION_FAST( ClearColor ) {
 
 
 /**doc
- * $VOID $INAME( red, green, blue, alpha )
+$TOC_MEMBER $INAME
+ $VOID $INAME( red, green, blue, alpha )
   $H arguments
    $ARG $REAL red
    $ARG $REAL green
@@ -930,7 +962,8 @@ DEFINE_FUNCTION_FAST( ClearAccum ) {
 
 
 /**doc
- * $VOID $INAME( mask )
+$TOC_MEMBER $INAME
+ $VOID $INAME( mask )
   $H arguments
    $ARG GLbitfield mask
   $H OpenGL API
@@ -948,7 +981,8 @@ DEFINE_FUNCTION_FAST( Clear ) {
 
 
 /**doc
- * $VOID $INAME( plane, equation )
+$TOC_MEMBER $INAME
+ $VOID $INAME( plane, equation )
   $H arguments
    $ARG GLenum plane
    $ARG $ARRAY equation: array of real
@@ -971,7 +1005,8 @@ DEFINE_FUNCTION_FAST( ClipPlane ) {
 
 
 /**doc
- * $VOID $INAME( x, y, width, height )
+$TOC_MEMBER $INAME
+ $VOID $INAME( x, y, width, height )
   $H arguments
    $ARG $INT x
    $ARG $INT y
@@ -995,7 +1030,8 @@ DEFINE_FUNCTION_FAST( Viewport ) {
 
 
 /**doc
- * $VOID $INAME( left, right, bottom, top, zNear, zFar )
+$TOC_MEMBER $INAME
+ $VOID $INAME( left, right, bottom, top, zNear, zFar )
   $H arguments
    $ARG $REAL left
    $ARG $REAL right
@@ -1024,7 +1060,8 @@ DEFINE_FUNCTION_FAST( Frustum ) {
 
 
 /**doc
- * $VOID $INAME( left, right, bottom, top, zNear, zFar )
+$TOC_MEMBER $INAME
+ $VOID $INAME( left, right, bottom, top, zNear, zFar )
   $H arguments
    $ARG $REAL left
    $ARG $REAL right
@@ -1057,7 +1094,8 @@ DEFINE_FUNCTION_FAST( Ortho ) {
 
 
 /**doc
- * $VOID $INAME( fovy, zNear, zFar )
+$TOC_MEMBER $INAME
+ $VOID $INAME( fovy, zNear, zFar )
   Set up a perspective projection matrix.
   $H arguments
    $ARG $REAL fovy
@@ -1100,7 +1138,8 @@ DEFINE_FUNCTION_FAST( Perspective ) {
 
 
 /**doc
- * $VOID $INAME( mode )
+$TOC_MEMBER $INAME
+ $VOID $INAME( mode )
   $H arguments
    $ARG GLenum mode
   $H OpenGL API
@@ -1118,7 +1157,8 @@ DEFINE_FUNCTION_FAST( MatrixMode ) {
 
 
 /**doc
- * $VOID $INAME()
+$TOC_MEMBER $INAME
+ $VOID $INAME()
   $H OpenGL API
    glLoadIdentity
 **/
@@ -1131,7 +1171,8 @@ DEFINE_FUNCTION_FAST( LoadIdentity ) {
 
 
 /**doc
- * $VOID $INAME()
+$TOC_MEMBER $INAME
+ $VOID $INAME()
   $H OpenGL API
    glPushMatrix
 **/
@@ -1144,7 +1185,8 @@ DEFINE_FUNCTION_FAST( PushMatrix ) {
 
 
 /**doc
- * $VOID $INAME()
+$TOC_MEMBER $INAME
+ $VOID $INAME()
   $H OpenGL API
    glPopMatrix
 **/
@@ -1157,7 +1199,8 @@ DEFINE_FUNCTION_FAST( PopMatrix ) {
 
 
 /**doc
- * $VOID $INAME( matrix )
+$TOC_MEMBER $INAME
+ $VOID $INAME( matrix )
   $H arguments
    $ARG $VAL matrix: either a matrix object or an Array
   $H OpenGL API
@@ -1177,7 +1220,8 @@ DEFINE_FUNCTION_FAST( LoadMatrix ) {
 
 
 /**doc
- * $VOID $INAME( angle, x, y, z )
+$TOC_MEMBER $INAME
+ $VOID $INAME( angle, x, y, z )
   $H arguments
    $ARG $REAL angle
    $ARG $REAL x
@@ -1202,7 +1246,8 @@ DEFINE_FUNCTION_FAST( Rotate ) {
 
 
 /**doc
- * $VOID $INAME( x, y [, z = 0] )
+$TOC_MEMBER $INAME
+ $VOID $INAME( x, y [, z = 0] )
   $H arguments
    $ARG $REAL x
    $ARG $REAL y
@@ -1228,7 +1273,8 @@ DEFINE_FUNCTION_FAST( Translate ) {
 
 
 /**doc
- * $VOID $INAME( x, y [, z = 1] )
+$TOC_MEMBER $INAME
+ $VOID $INAME( x, y [, z = 1] )
   $H arguments
    $ARG $REAL x
    $ARG $REAL y
@@ -1254,7 +1300,8 @@ DEFINE_FUNCTION_FAST( Scale ) {
 
 
 /**doc
- * $INT $INAME()
+$TOC_MEMBER $INAME
+ $INT $INAME()
   Returns a new display-list.
   $H OpenGL API
    glNewList
@@ -1269,7 +1316,8 @@ DEFINE_FUNCTION_FAST( NewList ) {
 
 
 /**doc
- * $VOID $INAME( list )
+$TOC_MEMBER $INAME
+ $VOID $INAME( list )
   Deletes a display-list.
   $H arguments
    $ARG $INT list
@@ -1289,7 +1337,8 @@ DEFINE_FUNCTION_FAST( DeleteList ) {
 
 
 /**doc
- * $VOID $INAME()
+$TOC_MEMBER $INAME
+ $VOID $INAME()
   $H OpenGL API
    glEndList
 **/
@@ -1302,7 +1351,8 @@ DEFINE_FUNCTION_FAST( EndList ) {
 
 
 /**doc
- * $VOID $INAME( lists )
+$TOC_MEMBER $INAME
+ $VOID $INAME( lists )
   Calls one or more display-list.
   $H arguments
    $ARG $VAL lists: is a single list name or an Array of list name.
@@ -1344,7 +1394,8 @@ DEFINE_FUNCTION_FAST( CallList ) {
 
 
 /**doc
- * $VOID $INAME( mode )
+$TOC_MEMBER $INAME
+ $VOID $INAME( mode )
   $H arguments
    $ARG GLenum mode
   $H OpenGL API
@@ -1362,7 +1413,8 @@ DEFINE_FUNCTION_FAST( Begin ) {
 
 
 /**doc
- * $VOID $INAME()
+$TOC_MEMBER $INAME
+ $VOID $INAME()
   $H OpenGL API
    glEnd
 **/
@@ -1375,7 +1427,8 @@ DEFINE_FUNCTION_FAST( End ) {
 
 
 /**doc
- * $VOID $INAME( mask )
+$TOC_MEMBER $INAME
+ $VOID $INAME( mask )
   $H arguments
    $ARG GLbitfield mask
   $H OpenGL API
@@ -1393,7 +1446,8 @@ DEFINE_FUNCTION_FAST( PushAttrib ) {
 
 
 /**doc
- * $VOID $INAME()
+$TOC_MEMBER $INAME
+ $VOID $INAME()
   $H OpenGL API
    glPopAttrib
 **/
@@ -1406,7 +1460,8 @@ DEFINE_FUNCTION_FAST( PopAttrib ) {
 
 
 /**doc
- * $INT $INAME()
+$TOC_MEMBER $INAME
+ $INT $INAME()
   Returns a new texture name.
   $H OpenGL API
    glGenTextures
@@ -1421,7 +1476,8 @@ DEFINE_FUNCTION_FAST( GenTexture ) {
 
 
 /**doc
- * $VOID $INAME( target, texture )
+$TOC_MEMBER $INAME
+ $VOID $INAME( target, texture )
   $H arguments
    $ARG GLenum target
    $ARG $INT texture
@@ -1441,7 +1497,8 @@ DEFINE_FUNCTION_FAST( BindTexture ) {
 
 
 /**doc
- * $VOID $INAME( texture )
+$TOC_MEMBER $INAME
+ $VOID $INAME( texture )
   Deletes the given texture.
   $H arguments
    $ARG $INT texture
@@ -1461,7 +1518,8 @@ DEFINE_FUNCTION_FAST( DeleteTexture ) {
 
 
 /**doc
- * $VOID $INAME( level, internalFormat, x, y, width, height, [ border ] )
+$TOC_MEMBER $INAME
+ $VOID $INAME( level, internalFormat, x, y, width, height, [ border ] )
   $H arguments
    $ARG $INT level
    $ARG $INT internalFormat
@@ -1549,7 +1607,8 @@ DEFINE_FUNCTION_FAST( TexSubImage2D ) {
 
 
 /**doc
- * $INT $INAME()
+$TOC_MEMBER $INAME
+ $INT $INAME()
   Returns a new buffer.
   $H OpenGL API
    glGenBuffersARB
@@ -1567,7 +1626,8 @@ DEFINE_FUNCTION_FAST( GenBuffer ) {
 
 
 /**doc
- * $VOID $INAME( target, buffer )
+$TOC_MEMBER $INAME
+ $VOID $INAME( target, buffer )
   $H arguments
    $ARG GLenum target
    $ARG $INT buffer
@@ -1592,7 +1652,8 @@ DEFINE_FUNCTION_FAST( BindBuffer ) {
 
 
 /**doc
- * $VOID $INAME( pname, params )
+$TOC_MEMBER $INAME
+ $VOID $INAME( pname, params )
   $H arguments
    $ARG GLenum pname
    $ARG $VAL params: is a real or an Array of real.
@@ -1634,7 +1695,8 @@ DEFINE_FUNCTION_FAST( PointParameter ) {
 
 
 /**doc
- * $VOID $INAME( texture )
+$TOC_MEMBER $INAME
+ $VOID $INAME( texture )
   $H arguments
    $ARG GLenum texture
   $H OpenGL API
@@ -1655,7 +1717,8 @@ DEFINE_FUNCTION_FAST( ActiveTexture ) {
 
 
 /**doc
- * $VOID $INAME( texture )
+$TOC_MEMBER $INAME
+ $VOID $INAME( texture )
   $H arguments
    $ARG GLenum texture
   $H OpenGL API
@@ -1676,7 +1739,8 @@ DEFINE_FUNCTION_FAST( ClientActiveTexture ) {
 
 
 /**doc
- * $VOID $INAME( target, s [, t [, r]] )
+$TOC_MEMBER $INAME
+ $VOID $INAME( target, s [, t [, r]] )
   $H arguments
    $ARG GLenum target
    $ARG $REAL s
@@ -1771,7 +1835,8 @@ void FinalizeTrimesh(void *pv) {
 }
 
 /**doc
- * $VOID $INAME( trimesh )
+$TOC_MEMBER $INAME
+ $VOID $INAME( trimesh )
 **/
 DEFINE_FUNCTION_FAST( LoadTrimesh ) {
 
@@ -1838,7 +1903,8 @@ DEFINE_FUNCTION_FAST( LoadTrimesh ) {
 
 
 /**doc
- * $VOID $INAME()
+$TOC_MEMBER $INAME
+ $VOID $INAME()
   $H OpenGL API
    glVertexPointer
 **/
@@ -1908,7 +1974,8 @@ DEFINE_FUNCTION_FAST( DrawTrimesh ) {
 
 
 /**doc
- * $VOID $INAME( target, [internalformat], texture )
+$TOC_MEMBER $INAME
+ $VOID $INAME( target, [internalformat], texture )
   $H arguments
    $ARG GLenum target
    $ARG $INT internalformat: is the internal PixelFormat. If undefined, the function will use the format of _texture_.
@@ -1990,7 +2057,8 @@ DEFINE_FUNCTION_FAST( DefineTextureImage ) {
 
 
 /**doc
- * $TYPE image $INAME()
+$TOC_MEMBER $INAME
+ $TYPE image $INAME()
   Returns the current contain of the viewport.
   $H arguments
    $ARG GLenum target
@@ -2043,7 +2111,8 @@ DEFINE_FUNCTION_FAST( RenderToImage ) {
 
 
 /**doc
- * $INT $INAME $READONLY
+$TOC_MEMBER $INAME
+ $INT $INAME $READONLY
   $H OpenGL API
    glGetError
 **/

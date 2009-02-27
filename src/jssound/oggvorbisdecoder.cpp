@@ -135,7 +135,8 @@ DEFINE_FINALIZE() {
 
 
 /**doc
- * $INAME( stream )
+$TOC_MEMBER $INAME
+ $INAME( stream )
   Creates a new OggVorbisDecoder object. Seekable and non-seekable streams are supported.
   $H arguments
    $ARG streamObject stream: is the data stream from where encoded data are read from.
@@ -195,7 +196,8 @@ DEFINE_CONSTRUCTOR() {
 //   can safely ignore the error and retry if it doesn't care.
 
 /**doc
- * $TYPE soundObject $INAME( [frames] )
+$TOC_MEMBER $INAME
+ $TYPE soundObject $INAME( [frames] )
   Decodes a piece of audio data. If _frames_ argument is omited, the whole stream is decoded.
   $H arguments
    $ARG $INT frames: the number of frames to decode. A frame is a sample of sound.
@@ -364,7 +366,8 @@ DEFINE_FUNCTION_FAST( Read ) {
 **/
 
 /**doc
- * object $INAME $READONLY
+$TOC_MEMBER $INAME
+ object $INAME $READONLY
   Is the stream object where encoded audio data are read from.
 **/
 DEFINE_PROPERTY( inputStream ) {
@@ -377,7 +380,8 @@ DEFINE_PROPERTY( inputStream ) {
 }
 
 /**doc
- * $INT $INAME $READONLY
+$TOC_MEMBER $INAME
+ $INT $INAME $READONLY
   Is the number of bits per frame and per channel.
 **/
 DEFINE_PROPERTY( bits ) {
@@ -390,7 +394,8 @@ DEFINE_PROPERTY( bits ) {
 }
 
 /**doc
- * $INT $INAME $READONLY
+$TOC_MEMBER $INAME
+ $INT $INAME $READONLY
   Is the number of frames per seconds of the sound.
 **/
 DEFINE_PROPERTY( rate ) {
@@ -403,7 +408,8 @@ DEFINE_PROPERTY( rate ) {
 }
 
 /**doc
- * $INT $INAME $READONLY
+$TOC_MEMBER $INAME
+ $INT $INAME $READONLY
   Is the number of channels of the sound. 1 is mono, 2 is stereo.
 **/
 DEFINE_PROPERTY( channels ) {
@@ -416,7 +422,8 @@ DEFINE_PROPERTY( channels ) {
 }
 
 /**doc
- * $INT $INAME $READONLY
+$TOC_MEMBER $INAME
+ $INT $INAME $READONLY
   Is the length (in frames) of the sound.
   To compute the duration of the sound, use (frames/rate)
 **/

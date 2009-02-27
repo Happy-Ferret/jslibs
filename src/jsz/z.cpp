@@ -54,7 +54,8 @@ DEFINE_FINALIZE() {
 
 
 /**doc
- * *_Constructor_*( method [, compressionLevel ] )
+$TOC_MEMBER $INAME
+ *_Constructor_*( method [, compressionLevel ] )
   Constructs a new inflater or deflater object.
   $LF
   The _method_ can be Z.DEFLATE to compress data or Z.INFLATE to decompress data.
@@ -123,7 +124,8 @@ DEFINE_CONSTRUCTOR() {
 **/
 
 /**doc
- * $STR $INAME( [ inputData [, forceFinish = false ] ] )
+$TOC_MEMBER $INAME
+ $STR $INAME( [ inputData [, forceFinish = false ] ] )
   This function process _inputData_ as a stream.
   If _forceFinish_ is true, the _inputData_ and any buffered data are flushed to the _outputData_.
   If this function is call without any argument, All remaining data are flushed.
@@ -245,7 +247,8 @@ DEFINE_CALL() {
 **/
 
 /**doc
- * *eof* $READONLY
+$TOC_MEMBER $INAME
+ *eof* $READONLY
   Is `true` if the end of the stream has been reach.
 **/
 DEFINE_PROPERTY( eof ) {
@@ -259,7 +262,8 @@ DEFINE_PROPERTY( eof ) {
 
 
 /**doc
- * *adler32* $READONLY
+$TOC_MEMBER $INAME
+ *adler32* $READONLY
   Contains the adler32 checksum of the data.
   [http://en.wikipedia.org/wiki/Adler_checksum more].
 **/
@@ -274,7 +278,8 @@ DEFINE_PROPERTY( adler32 ) {
 
 
 /**doc
- * *lengthIn* $READONLY
+$TOC_MEMBER $INAME
+ *lengthIn* $READONLY
   Contains the current total amount of input data.
 **/
 DEFINE_PROPERTY( lengthIn ) {
@@ -288,7 +293,8 @@ DEFINE_PROPERTY( lengthIn ) {
 
 
 /**doc
- * *lengthOut* $READONLY
+$TOC_MEMBER $INAME
+ *lengthOut* $READONLY
   Contains the current total amount of output data.
 **/
 DEFINE_PROPERTY( lengthOut ) {
@@ -305,7 +311,8 @@ DEFINE_PROPERTY( lengthOut ) {
 **/
 
 /**doc
- * *idealInputLength* $READONLY
+$TOC_MEMBER $INAME
+ *idealInputLength* $READONLY
   This is the ideal size of input data to avoid buffer management overload.
 **/
 DEFINE_PROPERTY( idealInputLength ) {

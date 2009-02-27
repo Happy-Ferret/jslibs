@@ -271,7 +271,8 @@ $SVN_REVISION $Revision$
 BEGIN_CLASS( Systray )
 
 /**doc
- * $INAME()
+$TOC_MEMBER $INAME
+ $INAME()
   Creates a Systray object.
 **/
 DEFINE_CONSTRUCTOR() {
@@ -348,7 +349,8 @@ DEFINE_FINALIZE() {
 **/
 
 /**doc
- * $VOID $INAME()
+$TOC_MEMBER $INAME
+ $VOID $INAME()
   Close the Systray.
 **/
 DEFINE_FUNCTION( Close ) {
@@ -365,7 +367,8 @@ DEFINE_FUNCTION( Close ) {
 
 
 /**doc
- * $BOOL $INAME()
+$TOC_MEMBER $INAME
+ $BOOL $INAME()
   Precess all pending events of the systray.
   The function returns true if at least one of the event function ( see Remarks below ) returns true.
 **/
@@ -464,7 +467,8 @@ DEFINE_FUNCTION( ProcessEvents ) {
 
 
 /**doc
- * $VOID $INAME()
+$TOC_MEMBER $INAME
+ $VOID $INAME()
   Puts the systray into the foreground. Keyboard input is directed to the systray.
 **/
 DEFINE_FUNCTION( Focus ) {
@@ -478,7 +482,8 @@ DEFINE_FUNCTION( Focus ) {
 
 
 /**doc
- * $VOID $INAME()
+$TOC_MEMBER $INAME
+ $VOID $INAME()
   Opens the systray menu.
 **/
 DEFINE_FUNCTION( PopupMenu ) {
@@ -618,7 +623,8 @@ DEFINE_FUNCTION( CallDefault ) {
 */
 
 /**doc
- * $ARRAY $INAME( [reusableArray] )
+$TOC_MEMBER $INAME
+ $ARRAY $INAME( [reusableArray] )
   Returns the [x,y] position pointed by the mouse pointer in the systray icon.
   $H note
    If you provide a _reusableArray_, the function will use it to store the values.
@@ -658,7 +664,8 @@ DEFINE_FUNCTION( Position ) {
 
 
 /**doc
- * $ARRAY $INAME( [reusableArray] )
+$TOC_MEMBER $INAME
+ $ARRAY $INAME( [reusableArray] )
   Returns the dimensions [left, top, width, height] of the systray rectangle.
   $H note
    If you provide a _reusableArray_, the function will use it to store the values.
@@ -696,7 +703,8 @@ DEFINE_FUNCTION( Rect ) {
 **/
 
 /**doc
- * $TYPE Icon | $TYPE null $INAME $WRITEONLY
+$TOC_MEMBER $INAME
+ $TYPE Icon | $TYPE null $INAME $WRITEONLY
   This is the Icon to be used as systray icon.
 **/
 DEFINE_PROPERTY( icon ) {
@@ -728,7 +736,8 @@ DEFINE_PROPERTY( icon ) {
 }
 
 /**doc
- * $BOOL $INAME $WRITEONLY
+$TOC_MEMBER $INAME
+ $BOOL $INAME $WRITEONLY
   Show or hide the systray icon.
   $H beware
    you cannot use this property to get the current visibility of the icon.
@@ -746,7 +755,8 @@ DEFINE_PROPERTY( visible ) {
 }
 
 /**doc
- * $STR $INAME
+$TOC_MEMBER $INAME
+ $STR $INAME
   Get of set the tooltip text of the systray icon.
 **/
 DEFINE_PROPERTY( textSetter ) {
@@ -775,7 +785,8 @@ DEFINE_PROPERTY( textGetter ) {
 }
 
 /**doc
- * $OBJ $INAME
+$TOC_MEMBER $INAME
+ $OBJ $INAME
   The object is a key:value map of all available commands in the menu.
   each command has an single keyName and a description object that hole the following properties:
    * ,,string | function,, *text*

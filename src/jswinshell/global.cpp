@@ -35,7 +35,8 @@ BEGIN_STATIC
 **/
 
 /**doc
- * $TYPE Icon $INAME( fileName [, iconIndex ] )
+$TOC_MEMBER $INAME
+ $TYPE Icon $INAME( fileName [, iconIndex ] )
   Retrieves an icon from the specified executable file, DLL, or icon file.
   $H beware
    This function is not supported for icons in 16-bit executables and DLLs.
@@ -64,7 +65,8 @@ DEFINE_FUNCTION( ExtractIcon ) {
 }
 
 /**doc
- * $INT $INAME( content [, caption [, style ] ] )
+$TOC_MEMBER $INAME
+ $INT $INAME( content [, caption [, style ] ] )
   Displays a modal dialog box that contains a system icon, a set of buttons, and a brief application-specific message, such as status or error information.
   The message box returns an integer value that indicates which button the user clicked.
   $H arguments
@@ -135,7 +137,8 @@ DEFINE_FUNCTION( MessageBox ) {
 
 
 /**doc
- * $VOID $INAME( applicationPath , [ commandLine ], [ environment ], [ currentDirectory ] )
+$TOC_MEMBER $INAME
+ $VOID $INAME( applicationPath , [ commandLine ], [ environment ], [ currentDirectory ] )
   Creates a new process.
  $H arguments
   $ARG $STR applicationPath
@@ -177,7 +180,8 @@ DEFINE_FUNCTION( CreateProcess ) {
 
 
 /**doc
- * $STR | $UNDEF $INAME( [ filters ] [, defaultFileName ] )
+$TOC_MEMBER $INAME
+ $STR | $UNDEF $INAME( [ filters ] [, defaultFileName ] )
   Creates an Open dialog box that lets the user specify the drive, directory, and the name of a file. The function returns $UNDEF if the dialog is canceled.
  $H example
  {{{
@@ -229,7 +233,8 @@ DEFINE_FUNCTION( FileOpenDialog ) {
 
 
 /**doc
- * $STR $INAME( sourceString )
+$TOC_MEMBER $INAME
+ $STR $INAME( sourceString )
   Expands environment-variable strings and replaces them with the values defined for the current user.
 **/
 DEFINE_FUNCTION( ExpandEnvironmentStrings ) {
@@ -247,7 +252,8 @@ DEFINE_FUNCTION( ExpandEnvironmentStrings ) {
 
 
 /**doc
- * $VOID $INAME( milliseconds )
+$TOC_MEMBER $INAME
+ $VOID $INAME( milliseconds )
   Suspends the execution of the current process until the time-out interval elapses.
 **/
 DEFINE_FUNCTION( Sleep ) {
@@ -262,7 +268,8 @@ DEFINE_FUNCTION( Sleep ) {
 
 
 /**doc
- * $VOID $INAME( type )
+$TOC_MEMBER $INAME
+ $VOID $INAME( type )
   Plays a waveform sound. The waveform sound for each sound type is identified by an entry in the registry.
   $H arguments
    $ARG $INT type:
@@ -285,7 +292,8 @@ DEFINE_FUNCTION( MessageBeep ) {
 
 
 /**doc
- * $VOID $INAME( hertzFrequency, millisecondsDuration )
+$TOC_MEMBER $INAME
+ $VOID $INAME( hertzFrequency, millisecondsDuration )
   Generates simple tones on the speaker.
   $H note
    The function is synchronous, it does not return control to its caller until the sound finishes.
@@ -306,7 +314,8 @@ DEFINE_FUNCTION( Beep ) {
 **/
 
 /**doc
- * $STR $INAME
+$TOC_MEMBER $INAME
+ $STR $INAME
   Places or retrieves text data from the clipboard.
 **/
 DEFINE_PROPERTY( clipboardGetter ) {

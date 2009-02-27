@@ -27,7 +27,8 @@ BEGIN_CLASS( OalListener )
 **/
 
 /**doc
- * $ARRAY $INAME
+$TOC_MEMBER $INAME
+ $ARRAY $INAME
   Gets or sets the position of the listener in the 3D environment.
 **/
 DEFINE_PROPERTY_SETTER( position ) {
@@ -57,7 +58,8 @@ DEFINE_PROPERTY_GETTER( position ) {
 
 
 /**doc
- * $ARRAY $INAME
+$TOC_MEMBER $INAME
+ $ARRAY $INAME
   Gets or sets the unit size of the 3D environment.
 **/
 DEFINE_PROPERTY_SETTER( metersPerUnit ) {

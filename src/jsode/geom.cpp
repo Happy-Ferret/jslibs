@@ -74,7 +74,8 @@ BEGIN_CLASS( Geom )
 **/
 
 /**doc
- * *Destroy*()
+$TOC_MEMBER $INAME
+ *Destroy*()
   dGeomSetData NULL, dGeomDestroy
 **/
 DEFINE_FUNCTION( Destroy ) {
@@ -93,7 +94,8 @@ DEFINE_FUNCTION( Destroy ) {
 **/
 
 /**doc
- * $BOOL *enable*
+$TOC_MEMBER $INAME
+ $BOOL *enable*
   Is the status of the geometry.
 **/
 
@@ -122,7 +124,8 @@ DEFINE_PROPERTY( enableGetter ) {
 }
 
 /**doc
- * $TYPE body *body*
+$TOC_MEMBER $INAME
+ $TYPE body *body*
   Bind the current geometry to the given body object.
 **/
 DEFINE_PROPERTY( body ) {
@@ -144,7 +147,8 @@ DEFINE_PROPERTY( body ) {
 
 
 /**doc
- * *offset*
+$TOC_MEMBER $INAME
+ *offset*
   Sets the position and rotation of the geometry to its center of mass.
   $LF
   Use $UNDEF value to reset the geometry offset.
@@ -186,7 +190,8 @@ DEFINE_PROPERTY( offset ) {
 }
 
 /**doc
- * *tansformation*
+$TOC_MEMBER $INAME
+ *tansformation*
   Sets the position and rotation of the geometry to its center of mass.
 **/
 DEFINE_PROPERTY( tansformation ) {
@@ -220,7 +225,8 @@ DEFINE_PROPERTY( tansformation ) {
 }
 
 /**doc
- * $TYPE vec3 *position*
+$TOC_MEMBER $INAME
+ $TYPE vec3 *position*
   Is the current position of the geometry.
 **/
 DEFINE_PROPERTY( positionGetter ) {

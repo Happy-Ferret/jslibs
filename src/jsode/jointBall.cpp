@@ -23,7 +23,8 @@ $SVN_REVISION $Revision$
 BEGIN_CLASS( JointBall )
 
 /**doc
- * $INAME( world )
+$TOC_MEMBER $INAME
+ $INAME( world )
 **/
 DEFINE_CONSTRUCTOR() {
 
@@ -45,7 +46,8 @@ DEFINE_CONSTRUCTOR() {
 **/
 
 /**doc
- * $TYPE vec3 $INAME
+$TOC_MEMBER $INAME
+ $TYPE vec3 $INAME
 **/
 DEFINE_PROPERTY( anchorSetter ) {
 
@@ -74,7 +76,8 @@ DEFINE_PROPERTY( anchorGetter ) {
 }
 
 /**doc
- * $TYPE vec3 $INAME $READONLY
+$TOC_MEMBER $INAME
+ $TYPE vec3 $INAME $READONLY
 **/
 DEFINE_PROPERTY( anchor2 ) { // read only
 

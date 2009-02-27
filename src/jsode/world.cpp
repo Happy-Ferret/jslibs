@@ -151,7 +151,8 @@ DEFINE_FINALIZE() {
 }
 
 /**doc
- * $INAME()
+$TOC_MEMBER $INAME
+ $INAME()
   dWorldCreate
   $H note
    This function creates also a Space (space) object and a SurfaceParameters object (defaultSurfaceParameters).
@@ -187,7 +188,8 @@ DEFINE_CONSTRUCTOR() {
 **/
 
 /**doc
- * $INAME()
+$TOC_MEMBER $INAME
+ $INAME()
   TBD
 **/
 DEFINE_FUNCTION( Destroy ) {
@@ -197,7 +199,8 @@ DEFINE_FUNCTION( Destroy ) {
 }
 
 /**doc
- * $INAME( time [, iterations] )
+$TOC_MEMBER $INAME
+ $INAME( time [, iterations] )
   $H note
    If the _iterations_ argument is given, this uses an iterative method that takes time on the order of m*N and memory on the order of m, where m is the total number of constraint rows and N is the number of iterations.
 **/
@@ -266,7 +269,8 @@ DEFINE_FUNCTION( Step ) {
 **/
 
 /**doc
- * $TYPE vec3 $INAME
+$TOC_MEMBER $INAME
+ $TYPE vec3 $INAME
   Gets or sets the gravity vector for a given world.
 **/
 DEFINE_PROPERTY( gravityGetter ) {
@@ -296,7 +300,8 @@ DEFINE_PROPERTY( gravitySetter ) {
 }
 
 /**doc
- * $REAL *ERP*
+$TOC_MEMBER $INAME
+ $REAL *ERP*
   dWorldGetERP
 
  * $REAL *CFM*
@@ -358,7 +363,8 @@ DEFINE_PROPERTY( realGetter ) {
 }
 
 /**doc
- * $TYPE Body $INAME $READONLY
+$TOC_MEMBER $INAME
+ $TYPE Body $INAME $READONLY
   Returns the environment object that is the fixed body of this world (like the ground).
 **/
 DEFINE_PROPERTY( env ) {
@@ -375,7 +381,8 @@ DEFINE_PROPERTY( env ) {
 }
 
 /**doc
- * *defaultSurfaceParameters* $READONLY
+$TOC_MEMBER $INAME
+ *defaultSurfaceParameters* $READONLY
   This defines the default properties of the colliding grometries surfaces.
   $LF
   The property is read-only but not i'ts content.

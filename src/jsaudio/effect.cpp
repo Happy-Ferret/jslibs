@@ -43,7 +43,8 @@ DEFINE_FINALIZE() {
 
 
 /**doc
- * $INAME()
+$TOC_MEMBER $INAME
+ $INAME()
   Creates a new effect object.
 **/
 DEFINE_CONSTRUCTOR() {
@@ -63,7 +64,8 @@ DEFINE_CONSTRUCTOR() {
 **/
 
 /**doc
- * $INT $INAME()
+$TOC_MEMBER $INAME
+ $INT $INAME()
   Returns the internal OpenAL buffer id.
 **/
 DEFINE_FUNCTION_FAST( valueOf ) {
@@ -82,7 +84,8 @@ DEFINE_FUNCTION_FAST( valueOf ) {
 **/
 
 /**doc
- * $INT $INAME
+$TOC_MEMBER $INAME
+ $INT $INAME
   set the type of effect represented by the Effect object.
   * undefined
   * Oal.EFFECT_EAXREVERB
@@ -300,6 +303,7 @@ enum {
 
 
 /**doc
+$TOC_MEMBER (many)
  * $REAL *reverbDensity*
  * $REAL *reverbDiffusion*
  * $REAL *reverbGain*

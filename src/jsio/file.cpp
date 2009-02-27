@@ -56,7 +56,8 @@ DEFINE_FINALIZE() {
 }
 
 /**doc
- * $INAME( fileName )
+$TOC_MEMBER $INAME
+ $INAME( fileName )
 **/
 DEFINE_CONSTRUCTOR() {
 
@@ -75,7 +76,8 @@ DEFINE_CONSTRUCTOR() {
 **/
 
 /**doc
- * $THIS $INAME( flags [, mode] )
+$TOC_MEMBER $INAME
+ $THIS $INAME( flags [, mode] )
   Open a file for reading, writing, or both.
   $LF
   _flags_ is either a combinaison of open mode constants or a string that contains fopen like flags (+, r, w, a).
@@ -132,7 +134,8 @@ DEFINE_FUNCTION( Open ) {
 
 
 /**doc
- * $INT $INAME( [ offset = 0 [, whence = File.`SEEK_SET` ] ] )
+$TOC_MEMBER $INAME
+ $INT $INAME( [ offset = 0 [, whence = File.`SEEK_SET` ] ] )
   Moves read-write file offset.
 **/
 DEFINE_FUNCTION( Seek ) {
@@ -172,7 +175,8 @@ DEFINE_FUNCTION( Seek ) {
 
 
 /**doc
- * $INT $INAME()
+$TOC_MEMBER $INAME
+ $INT $INAME()
   Delete a file from the filesystem.
   The operation may fail if the file is open.
 **/
@@ -193,7 +197,8 @@ DEFINE_FUNCTION( Delete ) {
 
 
 /**doc
- * $VOID $INAME( state )
+$TOC_MEMBER $INAME
+ $VOID $INAME( state )
   Lock or unlock a file for exclusive access.
   _state_ can be _true_ or _false_.
 **/
@@ -214,7 +219,8 @@ DEFINE_FUNCTION( Lock ) {
 }
 
 /**doc
- * $VOID $INAME( directory )
+$TOC_MEMBER $INAME
+ $VOID $INAME( directory )
   Move the file to another directory.
 **/
 DEFINE_FUNCTION( Move ) {
@@ -264,7 +270,8 @@ DEFINE_FUNCTION( Move ) {
 **/
 
 /**doc
- * $INT $INAME
+$TOC_MEMBER $INAME
+ $INT $INAME
   Get or set the current position of the file pointer. Same as Seek() function used with SEEK_SET.
 **/
 DEFINE_PROPERTY( positionSetter ) {
@@ -298,7 +305,8 @@ DEFINE_PROPERTY( positionGetter ) {
 
 
 /**doc
- * $STR $INAME
+$TOC_MEMBER $INAME
+ $STR $INAME
   Get or set the content of the file. If the file does not exist, content is _undefined_.
   Setting content with _undefined_ deletes the file.
 **/
@@ -406,7 +414,8 @@ DEFINE_PROPERTY( contentSetter ) {
 
 
 /**doc
- * $STR $INAME
+$TOC_MEMBER $INAME
+ $STR $INAME
   Contains the name of the file. Changing this value will rename or move the file.
 **/
 DEFINE_PROPERTY( nameGetter ) {
@@ -437,7 +446,8 @@ DEFINE_PROPERTY( nameSetter ) {
 
 
 /**doc
- * $BOOL $INAME $READONLY
+$TOC_MEMBER $INAME
+ $BOOL $INAME $READONLY
   Contains true if the file exists.
 **/
 DEFINE_PROPERTY( exist ) {
@@ -457,7 +467,8 @@ DEFINE_PROPERTY( exist ) {
 
 
 /**doc
- * $OBJ $INAME $READONLY
+$TOC_MEMBER $INAME
+ $OBJ $INAME $READONLY
   This property works with opened and closed files.
   Contains an object that has the following properties:
    * type : Type of file.
@@ -529,7 +540,8 @@ DEFINE_PROPERTY( info ) {
 **/
 
 /**doc
- * $TYPE File *stdin* $READONLY
+$TOC_MEMBER $INAME
+ $TYPE File *stdin* $READONLY
   Is a jsio::File that represents the standard input.
 
  * $TYPE File *stdout* $READONLY
@@ -563,7 +575,8 @@ DEFINE_PROPERTY( standard ) {
 **/
 
 /**doc
- * *Open* mode
+$TOC_MEMBER $INAME
+ *Open* mode
   * File.`RDONLY`
   * File.`WRONLY`
   * File.`RDWR`

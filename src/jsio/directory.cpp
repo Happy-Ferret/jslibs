@@ -42,7 +42,8 @@ DEFINE_FINALIZE() {
 }
 
 /**doc
- * $INAME( directoryName )
+$TOC_MEMBER $INAME
+ $INAME( directoryName )
   Creates a new Directory object.
   $H arguments
    $ARG $STR directoryName
@@ -62,7 +63,8 @@ DEFINE_CONSTRUCTOR() {
 **/
 
 /**doc
- * $THIS $INAME()
+$TOC_MEMBER $INAME
+ $THIS $INAME()
   Open the directory.
 **/
 DEFINE_FUNCTION( Open ) {
@@ -86,7 +88,8 @@ DEFINE_FUNCTION( Open ) {
 
 
 /**doc
- * $VOID $INAME()
+$TOC_MEMBER $INAME
+ $VOID $INAME()
   Close the specified directory.
 **/
 DEFINE_FUNCTION( Close ) {
@@ -102,7 +105,8 @@ DEFINE_FUNCTION( Close ) {
 
 
 /**doc
- * $STR $INAME( [, flags = Directory.SKIP_NONE ] )
+$TOC_MEMBER $INAME
+ $STR $INAME( [, flags = Directory.SKIP_NONE ] )
    Reads an item of the current directory and go to the next.
   $H arguments
    $ARG $ENUM flags: specifies how special files are processed.
@@ -143,7 +147,8 @@ DEFINE_FUNCTION( Read ) {
 
 
 /**doc
- * $VOID $INAME()
+$TOC_MEMBER $INAME
+ $VOID $INAME()
   Create the directory given in the constructor.
 **/
 DEFINE_FUNCTION( Make ) {
@@ -162,7 +167,8 @@ DEFINE_FUNCTION( Make ) {
 }
 
 /**doc
- * $BOOL $INAME()
+$TOC_MEMBER $INAME
+ $BOOL $INAME()
   Removes the directory given in the constructor.
   $H return value
    returns _false_ If the directory is not empty else it returns _true_.
@@ -194,7 +200,8 @@ DEFINE_FUNCTION( Remove ) {
 **/
 
 /**doc
- * $INAME $READONLY
+$TOC_MEMBER $INAME
+ $INAME $READONLY
   Check if the directory exists.
 **/
 DEFINE_PROPERTY( exist ) {
@@ -223,7 +230,8 @@ DEFINE_PROPERTY( exist ) {
 
 
 /**doc
- * $INAME $READONLY
+$TOC_MEMBER $INAME
+ $INAME $READONLY
   Returns the name of the directory.
 **/
 DEFINE_PROPERTY( name ) {
@@ -238,7 +246,8 @@ DEFINE_PROPERTY( name ) {
 **/
 
 /**doc
- * $TYPE Array $INAME( dirName [, flags = Directory.SKIP_DOT] )
+$TOC_MEMBER $INAME
+ $TYPE Array $INAME( dirName [, flags = Directory.SKIP_DOT] )
   Read all entries of a directory at once.
   $H arguments
    $ARG $STR dirName: is the path of the directory.

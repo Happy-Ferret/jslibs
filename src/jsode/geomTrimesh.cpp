@@ -38,7 +38,8 @@ DEFINE_FINALIZE() {
 
 
 /**doc
- * $INAME( space )
+$TOC_MEMBER $INAME
+ $INAME( space )
   TBD
 **/
 DEFINE_CONSTRUCTOR() {

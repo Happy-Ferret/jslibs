@@ -48,7 +48,8 @@ DEFINE_FINALIZE() {
 }
 
 /**doc
- * $INAME()
+$TOC_MEMBER $INAME
+ $INAME()
   Creates a new uninitialized Transformation object.
 **/
 DEFINE_CONSTRUCTOR() {
@@ -65,7 +66,8 @@ DEFINE_CONSTRUCTOR() {
 
 
 /**doc
- * $THIS $INAME()
+$TOC_MEMBER $INAME
+ $THIS $INAME()
   Reset the current transformation (set to identity).
 **/
 DEFINE_FUNCTION_FAST( Clear ) {
@@ -80,7 +82,8 @@ DEFINE_FUNCTION_FAST( Clear ) {
 
 
 /**doc
- * $THIS $INAME()
+$TOC_MEMBER $INAME
+ $THIS $INAME()
   Clear the rotation part of the current transformation.
 **/
 DEFINE_FUNCTION_FAST( ClearRotation ) {
@@ -95,7 +98,8 @@ DEFINE_FUNCTION_FAST( ClearRotation ) {
 
 
 /**doc
- * $THIS $INAME()
+$TOC_MEMBER $INAME
+ $THIS $INAME()
   Clear the translation part of the current transformation.
 **/
 DEFINE_FUNCTION_FAST( ClearTranslation ) {
@@ -110,7 +114,8 @@ DEFINE_FUNCTION_FAST( ClearTranslation ) {
 
 
 /**doc
- * $THIS $INAME( matrix )
+$TOC_MEMBER $INAME
+ $THIS $INAME( matrix )
   Load a 4x4 matrix as the current transformation.
   $H arguments
    $ARG $VAL matrix: an Array or an object that supports NIMatrix44Read native interface.
@@ -132,7 +137,8 @@ DEFINE_FUNCTION_FAST( Load ) {
 
 
 /**doc
- * $THIS $INAME( matrix )
+$TOC_MEMBER $INAME
+ $THIS $INAME( matrix )
   Load the rotation part of another matrix to the current matrix.
   $H arguments
    $ARG $VAL matrix: an Array or an object that supports NIMatrix44Read native interface.
@@ -163,7 +169,8 @@ DEFINE_FUNCTION_FAST( LoadRotation ) {
 
 
 /**doc
- * $THIS $INAME( matrix )
+$TOC_MEMBER $INAME
+ $THIS $INAME( matrix )
   Load the translation part of another matrix to the current matrix.
   $H arguments
    $ARG $VAL matrix: an Array or an object that supports NIMatrix44Read native interface.
@@ -185,7 +192,8 @@ DEFINE_FUNCTION_FAST( LoadTranslation ) {
 
 
 /**doc
- * $THIS $INAME( x, y, z )
+$TOC_MEMBER $INAME
+ $THIS $INAME( x, y, z )
   Sets the translation part of the current transformation.
   $H arguments
    $ARG $REAL x
@@ -209,7 +217,8 @@ DEFINE_FUNCTION_FAST( Translation ) {
 
 
 /**doc
- * $THIS $INAME( x, y, z )
+$TOC_MEMBER $INAME
+ $THIS $INAME( x, y, z )
   Apply a translation to the current ransformation.
   $H arguments
    $ARG $REAL x
@@ -237,7 +246,8 @@ DEFINE_FUNCTION_FAST( Translate ) {
 
 
 /**doc
- * $THIS $INAME( w, x, y, z )
+$TOC_MEMBER $INAME
+ $THIS $INAME( w, x, y, z )
   Sets the rotation part from a quaternion.
   $H arguments
    $ARG $REAL w
@@ -287,7 +297,8 @@ DEFINE_FUNCTION_FAST( RotationFromQuaternion ) {
 
 
 /**doc
- * $THIS $INAME( roll, pitch, yaw )
+$TOC_MEMBER $INAME
+ $THIS $INAME( roll, pitch, yaw )
   Sets the Tait-Bryan rotation.
   $H arguments
    $ARG $REAL roll
@@ -314,7 +325,8 @@ DEFINE_FUNCTION_FAST( TaitBryanRotation ) {
 
 
 /**doc
- * $THIS $INAME( angle, x, y, z )
+$TOC_MEMBER $INAME
+ $THIS $INAME( angle, x, y, z )
   Sets the rotation part of the current transformation.
   $H arguments
    $ARG $REAL angle in degres
@@ -343,7 +355,8 @@ DEFINE_FUNCTION_FAST( Rotation ) {
 
 
 /**doc
- * $THIS $INAME( angle, x, y, z )
+$TOC_MEMBER $INAME
+ $THIS $INAME( angle, x, y, z )
   Apply a rotation to the current ransformation.
   $H arguments
    $ARG $REAL angle in degres
@@ -374,7 +387,8 @@ DEFINE_FUNCTION_FAST( Rotate ) {
 
 
 /**doc
- * $THIS $INAME( angle )
+$TOC_MEMBER $INAME
+ $THIS $INAME( angle )
   Set the rotation around the X axis.
   $H arguments
    $ARG $REAL angle in degres
@@ -396,7 +410,8 @@ DEFINE_FUNCTION_FAST( RotationX ) {
 
 
 /**doc
- * $THIS $INAME( angle )
+$TOC_MEMBER $INAME
+ $THIS $INAME( angle )
   Set the rotation around the Y axis.
   $H arguments
    $ARG $REAL angle in degres
@@ -418,7 +433,8 @@ DEFINE_FUNCTION_FAST( RotationY ) {
 
 
 /**doc
- * $THIS $INAME( angle )
+$TOC_MEMBER $INAME
+ $THIS $INAME( angle )
   Set the rotation around the Z axis.
   $H arguments
    $ARG $REAL angle in degres
@@ -440,7 +456,8 @@ DEFINE_FUNCTION_FAST( RotationZ ) {
 
 
 /**doc
- * $THIS $INAME( x, y, z )
+$TOC_MEMBER $INAME
+ $THIS $INAME( x, y, z )
   unavailable: need to be fixed.
   $H arguments
    $ARG $REAL x
@@ -514,7 +531,8 @@ DEFINE_FUNCTION_FAST( RotateToVector ) {
 }
 
 /**doc
- * $THIS $INAME()
+$TOC_MEMBER $INAME
+ $THIS $INAME()
   invert the current transformation.
 **/
 DEFINE_FUNCTION_FAST( Invert ) {
@@ -529,7 +547,8 @@ DEFINE_FUNCTION_FAST( Invert ) {
 
 
 /**doc
- * $THIS $INAME( newTransformation )
+$TOC_MEMBER $INAME
+ $THIS $INAME( newTransformation )
   Apply a _newTransformation_ to the current transformation.
   this = this . new
   $H arguments
@@ -550,7 +569,8 @@ DEFINE_FUNCTION_FAST( Product ) {
 
 
 /**doc
- * $THIS $INAME( otherTransformation )
+$TOC_MEMBER $INAME
+ $THIS $INAME( otherTransformation )
   Apply the current transformation to the _otherTransformation_ and stores the result to the current transformation.
   this = new . this
   $H arguments
@@ -571,7 +591,8 @@ DEFINE_FUNCTION_FAST( ReverseProduct ) {
 
 
 /**doc
- * $VOID $INAME( vector )
+$TOC_MEMBER $INAME
+ $VOID $INAME( vector )
   transforms the 3D or 4D _vector_ by the current transformation.
   $H arguments
    $ARG $ARRAY vector
@@ -652,7 +673,8 @@ DEFINE_NEW_RESOLVE() {
 */
 
 /**doc
- * $REAL $INAME
+$TOC_MEMBER $INAME
+ $REAL $INAME
   Get or set a element of the current transformation matrix.
   $H example
   {{{

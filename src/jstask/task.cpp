@@ -269,7 +269,8 @@ bad:
 
 
 /**doc
- * $INAME( taskFunc [ , priority = 0 ] )
+$TOC_MEMBER $INAME
+ $INAME( taskFunc [ , priority = 0 ] )
   Creates a new Task object from the given function.
   $H arguments
    $ARG $FUN taskFunc:
@@ -341,7 +342,8 @@ bad:
 
 
 /**doc
- * $VOID $INAME( data )
+$TOC_MEMBER $INAME
+ $VOID $INAME( data )
   Send data to the task. This function do not block. If the task is already processing a request, next requests are automatically queued.
 **/
 DEFINE_FUNCTION_FAST( Request ) {
@@ -367,7 +369,8 @@ DEFINE_FUNCTION_FAST( Request ) {
 
 
 /**doc
- * data $INAME()
+$TOC_MEMBER $INAME
+ data $INAME()
   Read a response from the task. If no response is pending, the function wait until a response is available.
 **/
 DEFINE_FUNCTION_FAST( Response ) {
@@ -438,7 +441,8 @@ DEFINE_FUNCTION_FAST( Response ) {
 
 
 /**doc
- * $INT $INAME
+$TOC_MEMBER $INAME
+ $INT $INAME
   Is the number of requests that haven't be processed by the task yet. The request being processed is not included in this count.
 **/
 DEFINE_PROPERTY( pendingRequestCount ) {
@@ -457,7 +461,8 @@ DEFINE_PROPERTY( pendingRequestCount ) {
 
 
 /**doc
- * $INT $INAME
+$TOC_MEMBER $INAME
+ $INT $INAME
   Is the number of available responses that has already been processed by the task.
 **/
 DEFINE_PROPERTY( pendingResponseCount ) {
@@ -476,7 +481,8 @@ DEFINE_PROPERTY( pendingResponseCount ) {
 
 
 /**doc
- * $INT $INAME
+$TOC_MEMBER $INAME
+ $INT $INAME
   Is the current state of the task. true if there is no request being processed, if request and response queues are empty and if there is no pending error.
 **/
 DEFINE_PROPERTY( idle ) {

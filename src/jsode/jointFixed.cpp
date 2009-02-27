@@ -23,7 +23,8 @@ $SVN_REVISION $Revision$
 BEGIN_CLASS( JointFixed )
 
 /**doc
- * $INAME( world )
+$TOC_MEMBER $INAME
+ $INAME( world )
 **/
 DEFINE_CONSTRUCTOR() {
 
@@ -44,7 +45,8 @@ DEFINE_CONSTRUCTOR() {
 **/
 
 /**doc
- * $INAME()
+$TOC_MEMBER $INAME
+ $INAME()
   Set the current position of body1 and body2 as fixed.
 **/
 DEFINE_FUNCTION( Set ) {

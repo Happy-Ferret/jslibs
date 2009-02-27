@@ -35,7 +35,8 @@ DEFINE_FINALIZE() {
 }
 
 /**doc
- * $INAME( prngName )
+$TOC_MEMBER $INAME
+ $INAME( prngName )
   Constructs a pseudo random number generator object using the given algorithm.
   $H arguments
    $ARG $STR prngName: is a string that contains the name of the Asymmetric Cipher algorithm:
@@ -85,7 +86,8 @@ DEFINE_CONSTRUCTOR() {
 
 
 /**doc
- * $STR $INAME( size )
+$TOC_MEMBER $INAME
+ $STR $INAME( size )
   Returns _size_ bytes of pseudo-random data.
   $H example
   {{{
@@ -124,7 +126,8 @@ DEFINE_CALL() {
 }
 
 /**doc
- * $VOID $INAME( data )
+$TOC_MEMBER $INAME
+ $VOID $INAME( data )
   Add _data_ as entropy (randomness) to the current prng.
 **/
 DEFINE_FUNCTION( AddEntropy ) {
@@ -151,7 +154,8 @@ DEFINE_FUNCTION( AddEntropy ) {
 }
 
 /**doc
- * $VOID $INAME( size )
+$TOC_MEMBER $INAME
+ $VOID $INAME( size )
   Automaticaly add _size_ bits of entropy to the current prng.
 **/
 DEFINE_FUNCTION( AutoEntropy ) {
@@ -177,7 +181,8 @@ DEFINE_FUNCTION( AutoEntropy ) {
 **/
 
 /**doc
- * $DATA $INAME
+$TOC_MEMBER $INAME
+ $DATA $INAME
   is the current state of the prng.
 **/
 DEFINE_PROPERTY( stateGetter ) {
@@ -225,7 +230,8 @@ DEFINE_PROPERTY( stateSetter ) {
 
 
 /**doc
- * $STR $INAME $READONLY
+$TOC_MEMBER $INAME
+ $STR $INAME $READONLY
   is the name of the current prng.
 **/
 DEFINE_PROPERTY( name ) {
@@ -241,7 +247,8 @@ DEFINE_PROPERTY( name ) {
 }
 
 /**doc
- * $OBJ $INAME $READONLY
+$TOC_MEMBER $INAME
+ $OBJ $INAME $READONLY
   Contains the list of all available prng and their feature. The list is a javascript object that map cipher names (key) with another object (value) that contain information.
 **/
 DEFINE_PROPERTY( list ) {

@@ -115,7 +115,8 @@ DEFINE_CONSTRUCTOR() {
 **/
 
 /**doc
- * $INAME()
+$TOC_MEMBER $INAME
+ $INAME()
   Close the descriptor.
 **/
 DEFINE_FUNCTION( Close ) {
@@ -240,7 +241,8 @@ bad:
 
 
 /**doc
- * $VAL $INAME( [amount] )
+$TOC_MEMBER $INAME
+ $VAL $INAME( [amount] )
   Read _amount_ bytes of data from the current descriptor. If _amount_ is ommited, the whole available data is read.
   If the descriptor is exhausted (eof or disconnected), this function returns _undefined_.
   $H beware
@@ -276,7 +278,8 @@ DEFINE_FUNCTION( Read ) {
 
 
 /**doc
- * $STR $INAME( data )
+$TOC_MEMBER $INAME
+ $STR $INAME( data )
   If the whole data cannot be written, Write returns that have not be written.
 **/
 DEFINE_FUNCTION( Write ) {
@@ -351,7 +354,8 @@ bad_free:
 
 
 /**doc
- * $INAME()
+$TOC_MEMBER $INAME
+ $INAME()
   Sync any buffered data for a fd to its backing device.
 **/
 DEFINE_FUNCTION( Sync ) {
@@ -371,7 +375,8 @@ bad_ioerror:
 **/
 
 /**doc
- * $INAME $READONLY
+$TOC_MEMBER $INAME
+ $INAME $READONLY
   Determine the amount of data in bytes available for reading on the descriptor.
  **/
 DEFINE_PROPERTY( available ) {
@@ -396,7 +401,8 @@ bad_ioerror:
 
 
 /**doc
- * $INAME $READONLY
+$TOC_MEMBER $INAME
+ $INAME $READONLY
   see constants below.
 **/
 DEFINE_PROPERTY( type ) {
@@ -410,7 +416,8 @@ DEFINE_PROPERTY( type ) {
 
 
 /**doc
- * $INAME $READONLY
+$TOC_MEMBER $INAME
+ $INAME $READONLY
   Is $TRUE if the file descriptor has been closed.
   $H beware
    Do not confuse with disconnected. eg. A socket descriptor can be open but disconnected.
@@ -427,7 +434,8 @@ DEFINE_PROPERTY( closed ) {
 **/
 
 /**doc
- * $INAME( nativeDescriptor, type )
+$TOC_MEMBER $INAME
+ $INAME( nativeDescriptor, type )
 **/
 DEFINE_FUNCTION( Import ) {
 

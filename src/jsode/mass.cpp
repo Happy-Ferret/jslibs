@@ -44,7 +44,8 @@ JSBool GetBodyAndMass(JSContext *cx, JSObject *massObject, ode::dBodyID *pBodyID
 **/
 
 /**doc
- * $VOID $INAME( vec3 )
+$TOC_MEMBER $INAME
+ $VOID $INAME( vec3 )
   TBD dMassTranslate + dBodySetMass
 **/
 
@@ -66,7 +67,8 @@ DEFINE_FUNCTION( Translate ) {
 }
 
 /**doc
- * $VOID $INAME( mass )
+$TOC_MEMBER $INAME
+ $VOID $INAME( mass )
   TBD dBodyGetMass, dMassAdjust, dBodySetMass
 **/
 DEFINE_FUNCTION( Adjust ) {
@@ -85,7 +87,8 @@ DEFINE_FUNCTION( Adjust ) {
 
 
 /**doc
- * $VOID $INAME()
+$TOC_MEMBER $INAME
+ $VOID $INAME()
   TBD dBodyGetMass, dMassSetZero, dBodySetMass
 **/
 DEFINE_FUNCTION( SetZero ) {
@@ -101,7 +104,8 @@ DEFINE_FUNCTION( SetZero ) {
 
 
 /**doc
- * $INAME( mass, vec3 )
+$TOC_MEMBER $INAME
+ $INAME( mass, vec3 )
   TBD dBodyGetMass, dMassSetBoxTotal, dBodySetMass
 **/
 DEFINE_FUNCTION( SetBoxTotal ) {
@@ -135,7 +139,8 @@ DEFINE_FUNCTION( SetBoxTotal ) {
 **/
 
 /**doc
- * $REAL $INAME
+$TOC_MEMBER $INAME
+ $REAL $INAME
   TBD dBodyGetMass, dBodySetMass
 **/
 DEFINE_PROPERTY( valueSetter ) {
@@ -164,7 +169,8 @@ DEFINE_PROPERTY( valueGetter ) {
 
 
 /**doc
- * $TYPE vec3 $INAME
+$TOC_MEMBER $INAME
+ $TYPE vec3 $INAME
   TBD dBodyGetMass, dBodySetMass
   get/set a _vec3_
 **/

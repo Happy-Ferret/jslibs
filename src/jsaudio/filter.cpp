@@ -42,7 +42,8 @@ DEFINE_FINALIZE() {
 }
 
 /**doc
- * $INAME()
+$TOC_MEMBER $INAME
+ $INAME()
   Creates a new filter object.
 **/
 DEFINE_CONSTRUCTOR() {
@@ -63,7 +64,8 @@ DEFINE_CONSTRUCTOR() {
 **/
 
 /**doc
- * $INT $INAME()
+$TOC_MEMBER $INAME
+ $INT $INAME()
   Returns the internal OpenAL filter id.
 **/
 DEFINE_FUNCTION_FAST( valueOf ) {
@@ -82,7 +84,8 @@ DEFINE_FUNCTION_FAST( valueOf ) {
 
 
 /**doc
- * $INT $INAME
+$TOC_MEMBER $INAME
+ $INT $INAME
   set the type of filter represented by the Filter object.
   * undefined
   * Oal.FILTER_NULL
@@ -165,6 +168,7 @@ enum {
 
 
 /**doc
+$TOC_MEMBER (many)
  * $REAL *lowpassGain*
  * $REAL *lowpassGainHF*
 

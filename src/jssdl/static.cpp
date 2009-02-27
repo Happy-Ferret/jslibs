@@ -33,7 +33,8 @@ BEGIN_STATIC
 
 
 /**doc
- * $ARRAY | $UNDEF $INAME( bitsPerPixel, flags )
+$TOC_MEMBER $INAME
+ $ARRAY | $UNDEF $INAME( bitsPerPixel, flags )
   Returns the available screen dimensions for the given format, sorted largest to smallest.
   $H arguments
    $ARG $INT bitsPerPixel: bit depth, the number of bits per pixel (8, 16, 32)
@@ -100,7 +101,8 @@ DEFINE_FUNCTION_FAST( GetVideoModeList ) {
 
 
 /**doc
- * $INT $INAME( width, height, bitsPerPixel, flags )
+$TOC_MEMBER $INAME
+ $INT $INAME( width, height, bitsPerPixel, flags )
   Check to see if a particular video mode is supported.
   $H arguments
    See SetVideoMode() function.
@@ -145,7 +147,8 @@ DEFINE_FUNCTION_FAST( VideoModeOK ) {
 
 
 /**doc
- * $VOID $INAME( width, height [ , bitsPerPixel [ , flags ] ] )
+$TOC_MEMBER $INAME
+ $VOID $INAME( width, height [ , bitsPerPixel [ , flags ] ] )
   Set the requested video mode (allocating a shadow buffer if necessary).
   $H arguments
    $ARG $INT width: with
@@ -196,7 +199,8 @@ DEFINE_FUNCTION_FAST( SetVideoMode ) {
 }
 
 /**doc
- * $INAME $READONLY
+$TOC_MEMBER $INAME
+ $INAME $READONLY
   Is the current video surface width.
 **/
 DEFINE_PROPERTY( videoWidth ) {
@@ -207,7 +211,8 @@ DEFINE_PROPERTY( videoWidth ) {
 }
 
 /**doc
- * $INAME $READONLY
+$TOC_MEMBER $INAME
+ $INAME $READONLY
   Is the current video surface height.
 **/
 DEFINE_PROPERTY( videoHeight ) {
@@ -218,7 +223,8 @@ DEFINE_PROPERTY( videoHeight ) {
 }
 
 /**doc
- * $TYPE ImageObject $INAME $WRITEONLY
+$TOC_MEMBER $INAME
+ $TYPE ImageObject $INAME $WRITEONLY
   Sets the window manager icon for the display window.
 **/
 DEFINE_PROPERTY( icon ) {
@@ -274,7 +280,8 @@ DEFINE_PROPERTY( icon ) {
 
 
 /**doc
- * $BOOL $INAME()
+$TOC_MEMBER $INAME
+ $BOOL $INAME()
   Toggle fullscreen mode without changing the contents of the screen.
   $H return value
    true if this function was able to toggle fullscreen mode (change from running in a window to fullscreen, or vice-versa). false if it is not implemented, or fails.
@@ -289,7 +296,8 @@ DEFINE_FUNCTION_FAST( ToggleFullScreen ) {
 
 
 /**doc
- * $BOOL $INAME $READONLY
+$TOC_MEMBER $INAME
+ $BOOL $INAME $READONLY
   Is true if the current video surface is a full screen display
 **/
 DEFINE_PROPERTY( fullScreen ) {
@@ -301,7 +309,8 @@ DEFINE_PROPERTY( fullScreen ) {
 }
 
 /**doc
- * $BOOL $INAME()
+$TOC_MEMBER $INAME
+ $BOOL $INAME()
   Iconify the window in window managed environments. A successful iconification will result in an SDL_APPACTIVE loss event.
 **/
 DEFINE_FUNCTION_FAST( Iconify ) {
@@ -312,7 +321,8 @@ DEFINE_FUNCTION_FAST( Iconify ) {
 }
 
 /**doc
- * $VOID $INAME( red, green, blue )
+$TOC_MEMBER $INAME
+ $VOID $INAME( red, green, blue )
   Set the gamma correction for each of the color channels. The gamma values range (approximately) between 0.1 and 10.0 .
   $H arguments
    ARG integer red
@@ -335,7 +345,8 @@ DEFINE_FUNCTION_FAST( SetGamma ) {
 
 
 /**doc
- * $VOID $INAME()
+$TOC_MEMBER $INAME
+ $VOID $INAME()
   Perform a GL buffer swap on the current GL context.
 **/
 DEFINE_FUNCTION_FAST( GlSwapBuffers ) {
@@ -347,7 +358,8 @@ DEFINE_FUNCTION_FAST( GlSwapBuffers ) {
 }
 
 /**doc
- * $VOID $INAME( attribute, value )
+$TOC_MEMBER $INAME
+ $VOID $INAME( attribute, value )
   Set an attribute of the OpenGL subsystem before intialization.
   $H arguments
    $ARG $ENUM attribute:
@@ -368,7 +380,8 @@ DEFINE_FUNCTION_FAST( GlSetAttribute ) {
 }
 
 /**doc
- * $INT $INAME( attribute )
+$TOC_MEMBER $INAME
+ $INT $INAME( attribute )
   Get an attribute of the OpenGL subsystem from the windowing interface. This is of course different from getting the values from SDL's internal OpenGL subsystem, which only stores the values you request before initialization.
   $H arguments
    $ARG $ENUM attribute:
@@ -393,7 +406,8 @@ DEFINE_FUNCTION_FAST( GlGetAttribute ) {
 
 
 /**doc
- * $STR $INAME
+$TOC_MEMBER $INAME
+ $STR $INAME
   Sets/Gets the title of the display window, if any.
 **/
 DEFINE_PROPERTY_SETTER( caption ) {
@@ -420,7 +434,8 @@ DEFINE_PROPERTY_GETTER( caption ) {
 
 
 /**doc
- * $BOOL $INAME
+$TOC_MEMBER $INAME
+ $BOOL $INAME
   Sets/Gets the input grab state.
   Grabbing means that the mouse is confined to the application window, and nearly all keyboard input is passed directly to the application, and not interpreted by a window manager, if any.
 **/
@@ -443,7 +458,8 @@ DEFINE_PROPERTY_GETTER( grabInput ) {
 
 
 /**doc
- * $BOOL $INAME
+$TOC_MEMBER $INAME
+ $BOOL $INAME
   Sets/Gets whether or not the cursor is shown on the screen. The cursor start off displayed, but can be turned off.
 **/
 DEFINE_PROPERTY_SETTER( showCursor ) {
@@ -465,7 +481,8 @@ DEFINE_PROPERTY_GETTER( showCursor ) {
 
 
 /**doc
- * $VOID $INAME( image )
+$TOC_MEMBER $INAME
+ $VOID $INAME( image )
  Set the currently active cursor to the specified one. If the cursor is currently visible, the change will be immediately represented on the display.
   $H arguments
    $ARG ImageObject image:
@@ -486,7 +503,8 @@ DEFINE_FUNCTION_FAST( SetCursor ) {
 
 
 /**doc
- * $STR $INAME $READONLY
+$TOC_MEMBER $INAME
+ $STR $INAME $READONLY
   Is the name of the video driver or undefined  if it has not been initialized.
 **/
 DEFINE_PROPERTY( videoDriverName ) {
@@ -605,7 +623,8 @@ JSBool FireListener( JSContext *cx, JSObject *listenerObj, SDL_Event *ev, jsval 
 
 
 /**doc
- * $VAL $INAME( listeners )
+$TOC_MEMBER $INAME
+ $VAL $INAME( listeners )
   $H arguments
    $ARG $OBJ listeners: is an object that contains callback functions.
   $H example
@@ -651,7 +670,8 @@ DEFINE_FUNCTION_FAST( PollEvent ) {
 
 
 /**doc
- * $VOID $INAME( x, y )
+$TOC_MEMBER $INAME
+ $VOID $INAME( x, y )
   Set the position of the mouse cursor (generates a mouse motion event).
   $H arguments
    $ARG $INT x
@@ -672,7 +692,8 @@ DEFINE_FUNCTION_FAST( WarpMouse ) {
 
 
 /**doc
- * $INT $INAME $READONLY
+$TOC_MEMBER $INAME
+ $INT $INAME $READONLY
   is the current mouse cursor X position.
 **/
 DEFINE_PROPERTY( mouseX ) {
@@ -684,7 +705,8 @@ DEFINE_PROPERTY( mouseX ) {
 }
 
 /**doc
- * $INT $INAME $READONLY
+$TOC_MEMBER $INAME
+ $INT $INAME $READONLY
   is the current mouse cursor Y position.
 **/
 DEFINE_PROPERTY( mouseY ) {
@@ -697,7 +719,8 @@ DEFINE_PROPERTY( mouseY ) {
 
 
 /**doc
- * $INT $INAME $READONLY
+$TOC_MEMBER $INAME
+ $INT $INAME $READONLY
   Is the current state of the mouse. The current button state is returned as a button bitmask.
    $CONST BUTTON_LMASK
    $CONST BUTTON_MMASK
@@ -723,7 +746,8 @@ DEFINE_PROPERTY( buttonState ) {
 
 
 /**doc
- * $INT $INAME $READONLY
+$TOC_MEMBER $INAME
+ $INT $INAME $READONLY
   Is the current key modifier state bitmask.
    $CONST KMOD_NONE
    $CONST KMOD_LSHIFT
@@ -746,7 +770,8 @@ DEFINE_PROPERTY( modifierState ) {
 
 
 /**doc
- * $BOOL $INAME( keysym )
+$TOC_MEMBER $INAME
+ $BOOL $INAME( keysym )
   Get a snapshot of the current state of the keyboard.
   $H arguments
    $ARG $ENUM keysym: the key to be tested. see key constants below.
@@ -763,7 +788,8 @@ DEFINE_FUNCTION_FAST( GetKeyState ) {
 }
 
 /**doc
- * $STR $INAME( keysym )
+$TOC_MEMBER $INAME
+ $STR $INAME( keysym )
   Get the name of an keysym.
   $H arguments
    $ARG $ENUM keysym
@@ -783,7 +809,8 @@ DEFINE_FUNCTION_FAST( GetKeyName ) {
 
 
 /**doc
- * $INT $INAME
+$TOC_MEMBER $INAME
+ $INT $INAME
   Sets/Gets keyboard repeat delay. This is the initial delay in ms between the time when a key is pressed, and keyboard repeat begins. If set to 0, keyboard repeat is disabled.
 **/
 DEFINE_PROPERTY_SETTER( keyRepeatDelay ) {
@@ -810,7 +837,8 @@ DEFINE_PROPERTY_GETTER( keyRepeatDelay ) {
 
 
 /**doc
- * $INT $INAME
+$TOC_MEMBER $INAME
+ $INT $INAME
   Sets/Gets keyboard repeat interval. This is the time in ms between keyboard repeat events.
 **/
 DEFINE_PROPERTY_SETTER( keyRepeatInterval ) {
@@ -837,7 +865,8 @@ DEFINE_PROPERTY_GETTER( keyRepeatInterval ) {
 
 
 /**doc
- * $INT $INAME $READONLY
+$TOC_MEMBER $INAME
+ $INT $INAME $READONLY
   Is the current state of the application. If true, the user is able to see your application, otherwise it has been iconified or disabled.
 **/
 DEFINE_PROPERTY( appStateActive ) {
@@ -849,7 +878,8 @@ DEFINE_PROPERTY( appStateActive ) {
 
 
 /**doc
- * $BOOL $INAME $READONLY
+$TOC_MEMBER $INAME
+ $BOOL $INAME $READONLY
 **/
 DEFINE_PROPERTY( hasRDTSC ) {
 
@@ -859,7 +889,8 @@ DEFINE_PROPERTY( hasRDTSC ) {
 }
 
 /**doc
- * $BOOL $INAME $READONLY
+$TOC_MEMBER $INAME
+ $BOOL $INAME $READONLY
 **/
 DEFINE_PROPERTY( hasMMX ) {
 
@@ -869,7 +900,8 @@ DEFINE_PROPERTY( hasMMX ) {
 }
 
 /**doc
- * $BOOL $INAME $READONLY
+$TOC_MEMBER $INAME
+ $BOOL $INAME $READONLY
 **/
 DEFINE_PROPERTY( hasMMXExt ) {
 
@@ -879,7 +911,8 @@ DEFINE_PROPERTY( hasMMXExt ) {
 }
 
 /**doc
- * $BOOL $INAME $READONLY
+$TOC_MEMBER $INAME
+ $BOOL $INAME $READONLY
 **/
 DEFINE_PROPERTY( has3DNow ) {
 
@@ -889,7 +922,8 @@ DEFINE_PROPERTY( has3DNow ) {
 }
 
 /**doc
- * $BOOL $INAME $READONLY
+$TOC_MEMBER $INAME
+ $BOOL $INAME $READONLY
 **/
 DEFINE_PROPERTY( has3DNowExt ) {
 
@@ -899,7 +933,8 @@ DEFINE_PROPERTY( has3DNowExt ) {
 }
 
 /**doc
- * $BOOL $INAME $READONLY
+$TOC_MEMBER $INAME
+ $BOOL $INAME $READONLY
 **/
 DEFINE_PROPERTY( hasSSE ) {
 
@@ -909,7 +944,8 @@ DEFINE_PROPERTY( hasSSE ) {
 }
 
 /**doc
- * $BOOL $INAME $READONLY
+$TOC_MEMBER $INAME
+ $BOOL $INAME $READONLY
 **/
 DEFINE_PROPERTY( hasSSE2 ) {
 
@@ -919,7 +955,8 @@ DEFINE_PROPERTY( hasSSE2 ) {
 }
 
 /**doc
- * $BOOL $INAME $READONLY
+$TOC_MEMBER $INAME
+ $BOOL $INAME $READONLY
 **/
 DEFINE_PROPERTY( hasAltiVec ) {
 

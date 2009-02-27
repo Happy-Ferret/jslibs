@@ -44,7 +44,8 @@ DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are
 }
 
 /**doc
- * $INAME( toCode, fromCode [ , toUseWide, fromUseWide ] )
+$TOC_MEMBER $INAME
+ $INAME( toCode, fromCode [ , toUseWide, fromUseWide ] )
   Constructs a new conversion object that transforms from _fromCode_ into _toCode_.
   $H arguments
    $ARG $STR toCode: destination encoding (see Iconv.list property)
@@ -95,7 +96,8 @@ DEFINE_CONSTRUCTOR() {
 
 
 /**doc
- * $STR $INAME( [ textData ] )
+$TOC_MEMBER $INAME
+ $STR $INAME( [ textData ] )
   Converts textData. If called without argument, this resets the conversion state to the initial state and returns $UNDEF.
 **/
 DEFINE_CALL() {
@@ -270,7 +272,8 @@ int do_one( unsigned int namescount, const char * const * names, void* data ) {
 
 
 /**doc
- * $OBJ $INAME $READONLY
+$TOC_MEMBER $INAME
+ $OBJ $INAME $READONLY
   Lists locale independent encodings.
 **/
 DEFINE_PROPERTY( list ) {

@@ -33,7 +33,8 @@ DEFINE_FINALIZE() {
 }
 
 /**doc
- * $INAME( [type = Socket.TCP] )
+$TOC_MEMBER $INAME
+ $INAME( [type = Socket.TCP] )
   Type can be Socket.TCP or Socket.UDP.
 **/
 DEFINE_CONSTRUCTOR() {
@@ -70,7 +71,8 @@ DEFINE_CONSTRUCTOR() {
 **/
 
 /**doc
- * $INAME( [ what ] )
+$TOC_MEMBER $INAME
+ $INAME( [ what ] )
   Shut down part of a full-duplex connection on a socket.
   $LF
   if _what_ is $TRUE, further receives will be disallowed.
@@ -107,7 +109,8 @@ DEFINE_FUNCTION( Shutdown ) { // arg[0] =  false: SHUTDOWN_RCV | true: SHUTDOWN_
 
 
 /**doc
- * $INAME( port [, ip] )
+$TOC_MEMBER $INAME
+ $INAME( port [, ip] )
   Bind an ip address to a socket.
   _ip_ is the address to which the socket will be bound.
   If _address_ is ommited, any address is will match.
@@ -160,7 +163,8 @@ DEFINE_FUNCTION( Bind ) {
 
 
 /**doc
- * $INAME( [ backlogSize = 8 ] )
+$TOC_MEMBER $INAME
+ $INAME( [ backlogSize = 8 ] )
    Listen for connections on a socket.
    _backlogSize_ specifies the maximum length of the queue of pending connections.
 **/
@@ -191,7 +195,8 @@ DEFINE_FUNCTION( Listen ) {
 
 
 /**doc
- * $TYPE Socket $INAME()
+$TOC_MEMBER $INAME
+ $TYPE Socket $INAME()
   Accept a connection on a socket.
   This function returns a connected jsio::Socket.
 **/
@@ -233,7 +238,8 @@ DEFINE_FUNCTION( Accept ) {
 
 
 /**doc
- * $TYPE this $INAME( host, port [, timeout] )
+$TOC_MEMBER $INAME
+ $TYPE this $INAME( host, port [, timeout] )
   Initiate a connection on a socket.
 **/
 
@@ -320,7 +326,8 @@ DEFINE_FUNCTION( Connect ) {
 
 
 /**doc
- * $STR $INAME( host, port, string )
+$TOC_MEMBER $INAME
+ $STR $INAME( host, port, string )
   Send a specified number of bytes from an unconnected socket.
   See. Static functions.
 **/
@@ -397,7 +404,8 @@ DEFINE_FUNCTION( SendTo ) {
 
 
 /**doc
- * $STR $INAME()
+$TOC_MEMBER $INAME
+ $STR $INAME()
   Receive all data from socket which may or may not be connected.
   See. Static functions.
 **/
@@ -476,7 +484,8 @@ DEFINE_FUNCTION( RecvFrom ) {
 
 
 /**doc
- * $INAME( fileDescriptor [, close [, headers [, timeout]]] )
+$TOC_MEMBER $INAME
+ $INAME( fileDescriptor [, close [, headers [, timeout]]] )
   Sends a complete file pointed by _fileDescriptor_ across a socket.
   $LF
   _headers_ is a string that contains the headers to send across the socket prior to sending the file.
@@ -545,7 +554,8 @@ DEFINE_FUNCTION( TransmitFile ) { // WORKS ONLY ON BLOCKING SOCKET !!!
 
 
 /**doc
- * $INAME $READONLY
+$TOC_MEMBER $INAME
+ $INAME $READONLY
   Test if a nonblocking connect has completed.
   Is $TRUE if the socket is connected.
   $LF
@@ -603,7 +613,8 @@ DEFINE_PROPERTY( connectContinue ) {
 
 
 /**doc
- * $INAME $READONLY
+$TOC_MEMBER $INAME
+ $INAME $READONLY
   Check if the socket connection is closed.
 **/
 DEFINE_PROPERTY( connectionClosed ) {
@@ -645,7 +656,8 @@ DEFINE_PROPERTY( connectionClosed ) {
 
 
 /**doc
- * $INT *linger*
+$TOC_MEMBER $INAME
+ $INT *linger*
   The time to linger on close if data present.
   A value of zero means no linger.
 
@@ -814,7 +826,8 @@ DEFINE_PROPERTY( OptionGetter ) {
 
 
 /**doc
- * $STR $INAME $READONLY
+$TOC_MEMBER $INAME
+ $STR $INAME $READONLY
   Get name of the connected peer.
   Return the network address for the connected peer socket.
 **/
@@ -834,7 +847,8 @@ DEFINE_PROPERTY( peerName ) {
 }
 
 /**doc
- * $INT $INAME $READONLY
+$TOC_MEMBER $INAME
+ $INT $INAME $READONLY
   Get port of the connected peer.
   Return the port for the connected peer socket.
 **/
@@ -851,7 +865,8 @@ DEFINE_PROPERTY( peerPort ) {
 }
 
 /**doc
- * $STR $INAME $READONLY
+$TOC_MEMBER $INAME
+ $STR $INAME $READONLY
   Get socket name.
   Return the network address for this socket.
 **/
@@ -871,7 +886,8 @@ DEFINE_PROPERTY( sockName ) {
 }
 
 /**doc
- * $INT $INAME $READONLY
+$TOC_MEMBER $INAME
+ $INT $INAME $READONLY
   Get socket port.
   Return the port for this socket.
 **/
@@ -893,7 +909,8 @@ DEFINE_PROPERTY( sockPort ) {
 **/
 
 /**doc
- * $ARRAY $INAME( hostName )
+$TOC_MEMBER $INAME
+ $ARRAY $INAME( hostName )
   Lookup a host by name and returns the results in a javascript array.
 **/
 DEFINE_FUNCTION( GetHostsByName ) {
@@ -954,7 +971,8 @@ DEFINE_FUNCTION( GetHostsByName ) {
 }
 
 /**doc
- * *SendTo* ...
+$TOC_MEMBER $INAME
+ *SendTo* ...
   see Socket::SendTo
 
  * *RecvFrom* ...
@@ -967,7 +985,8 @@ DEFINE_FUNCTION( GetHostsByName ) {
 **/
 
 /**doc
- * Socket.TCP
+$TOC_MEMBER $INAME
+ Socket.TCP
  * Socket.UDP
 **/
 

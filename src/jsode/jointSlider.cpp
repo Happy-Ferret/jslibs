@@ -23,7 +23,8 @@ $SVN_REVISION $Revision$
 BEGIN_CLASS( JointSlider )
 
 /**doc
- * $INAME( world )
+$TOC_MEMBER $INAME
+ $INAME( world )
   TBD
 **/
 DEFINE_CONSTRUCTOR() {
@@ -45,7 +46,8 @@ DEFINE_CONSTRUCTOR() {
 **/
 
 /**doc
- * $TYPE vec3 $INAME
+$TOC_MEMBER $INAME
+ $TYPE vec3 $INAME
   TBD
 **/
 DEFINE_PROPERTY( axisSetter ) {
@@ -75,7 +77,8 @@ DEFINE_PROPERTY( axisGetter ) {
 }
 
 /**doc
- * $REAL $INAME $READONLY
+$TOC_MEMBER $INAME
+ $REAL $INAME $READONLY
   TBD
 **/
 DEFINE_PROPERTY( position ) {
@@ -88,7 +91,8 @@ DEFINE_PROPERTY( position ) {
 }
 
 /**doc
- * $REAL $INAME $READONLY
+$TOC_MEMBER $INAME
+ $REAL $INAME $READONLY
   TBD
 **/
 

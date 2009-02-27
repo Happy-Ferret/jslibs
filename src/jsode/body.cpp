@@ -70,7 +70,8 @@ DEFINE_FINALIZE() {
 }
 
 /**doc
- * $INAME( _world_ )
+$TOC_MEMBER $INAME
+ $INAME( _world_ )
   TBD
 **/
 
@@ -105,7 +106,8 @@ DEFINE_CONSTRUCTOR() {
 **/
 
 /**doc
- * $VOID $INAME()
+$TOC_MEMBER $INAME
+ $VOID $INAME()
   TBD dBodyDestroy
 **/
 DEFINE_FUNCTION( Destroy ) {
@@ -121,7 +123,8 @@ DEFINE_FUNCTION( Destroy ) {
 }
 
 /**doc
- * $BOOL $INAME( _body_ )
+$TOC_MEMBER $INAME
+ $BOOL $INAME( _body_ )
   TBD dAreConnected
 **/
 DEFINE_FUNCTION( IsConnectedTo ) {
@@ -142,7 +145,8 @@ DEFINE_FUNCTION( IsConnectedTo ) {
 **/
 
 /**doc
- * $TYPE vec3 *position*
+$TOC_MEMBER $INAME
+ $TYPE vec3 *position*
   dBodySetPosition
 
  * $TYPE vec4 *quaternion*
@@ -251,7 +255,8 @@ DEFINE_PROPERTY( vectorSetter ) {
 }
 
 /**doc
- * $INAME $READONLY
+$TOC_MEMBER $INAME
+ $INAME $READONLY
   Is the mass object (jsode::Mass) of the body.
 **/
 DEFINE_PROPERTY( mass ) {

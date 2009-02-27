@@ -200,7 +200,8 @@ DEFINE_FINALIZE() {
 **/
 
 /**doc
- * $VOID $INAME()
+$TOC_MEMBER $INAME
+ $VOID $INAME()
   Close the current Result object.
 **/
 DEFINE_FUNCTION( Close ) {
@@ -227,7 +228,8 @@ DEFINE_FUNCTION( Close ) {
 
 
 /**doc
- * $BOOL $INAME()
+$TOC_MEMBER $INAME
+ $BOOL $INAME()
   Executes one step in the previously evaluated SQL statement.
   $H return value
    returns true if another row is ready. false if the last line has been reached.
@@ -284,7 +286,8 @@ DEFINE_FUNCTION( Step ) {
 
 
 /**doc
- * $VAL $INAME( colIndex )
+$TOC_MEMBER $INAME
+ $VAL $INAME( colIndex )
   Returns the current value of the _colIndex_ ^th^ column.
   $H arguments
    $ARG $INT colIndex
@@ -303,7 +306,8 @@ DEFINE_FUNCTION( Col ) {
 }
 
 /**doc
- * $VAL $INAME( [namedRows = false] )
+$TOC_MEMBER $INAME
+ $VAL $INAME( [namedRows = false] )
   Executes one step of the the current SQL statement and returns the resulting row of data.
   $H arguments
    $ARG $BOOL namedRows: if true, the function returns an objet containing {columnName:value} pair. else it returns an array of value.
@@ -351,7 +355,8 @@ DEFINE_FUNCTION( Row ) {
 
 
 /**doc
- * $VOID $INAME()
+$TOC_MEMBER $INAME
+ $VOID $INAME()
   Resets the current Result object to its initial state.
 **/
 DEFINE_FUNCTION( Reset ) {
@@ -372,7 +377,8 @@ DEFINE_FUNCTION( Reset ) {
 **/
 
 /**doc
- * $INT $INAME $READONLY
+$TOC_MEMBER $INAME
+ $INT $INAME $READONLY
   Hold the number of columns of the current [Result]
 **/
 DEFINE_PROPERTY( columnCount ) {
@@ -386,7 +392,8 @@ DEFINE_PROPERTY( columnCount ) {
 
 
 /**doc
- * $ARRAY $INAME $READONLY
+$TOC_MEMBER $INAME
+ $ARRAY $INAME $READONLY
   Hold an $ARRAY that contain the index:name of the columns.
   $H example
   {{{
@@ -417,7 +424,8 @@ DEFINE_PROPERTY( columnNames ) {
 
 
 /**doc
- * $OBJ $INAME $READONLY
+$TOC_MEMBER $INAME
+ $OBJ $INAME $READONLY
   Hold an $OBJ that contain the name:index of the columns.
   $H example
   {{{
@@ -448,7 +456,8 @@ DEFINE_PROPERTY( columnIndexes ) {
 
 
 /**doc
- * $BOOL $INAME $READONLY $DEPRECATED
+$TOC_MEMBER $INAME
+ $BOOL $INAME $READONLY $DEPRECATED
   Indicates if the SQL statement must be re-evaluated.
 **/
 DEFINE_PROPERTY( expired ) {

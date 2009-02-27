@@ -29,7 +29,8 @@ BEGIN_CLASS( Oal )
 
 
 /**doc
- * $VOID $INAME( [ deviceName ] )
+$TOC_MEMBER $INAME
+ $VOID $INAME( [ deviceName ] )
   Open an audio device.
   $H arguments
    $ARG $STR deviceName: "Generic Hardware", "Generic Software", "DirectSound3D" (for legacy), "DirectSound", "MMSYSTEM"
@@ -85,7 +86,8 @@ DEFINE_FUNCTION_FAST( Open ) {
 
 
 /**doc
- * $VOID $INAME()
+$TOC_MEMBER $INAME
+ $VOID $INAME()
   Close the current audio device.
   $H OpenAL API
    alcGetCurrentContext, alcMakeContextCurrent, alcGetContextsDevice, alcDestroyContext, alcCloseDevice
@@ -115,7 +117,8 @@ DEFINE_FUNCTION_FAST( Close ) {
 }
 
 /**doc
- * $BOOL $INAME $READONLY
+$TOC_MEMBER $INAME
+ $BOOL $INAME $READONLY
   is true if EFX extension is available.
 **/
 DEFINE_PROPERTY( hasEfx ) {
@@ -128,7 +131,8 @@ DEFINE_PROPERTY( hasEfx ) {
 
 
 /**doc
- * $BOOL $INAME $READONLY
+$TOC_MEMBER $INAME
+ $BOOL $INAME $READONLY
   is the number of aux sends per source.
 **/
 DEFINE_PROPERTY( maxAuxiliarySends ) {
@@ -144,7 +148,8 @@ DEFINE_PROPERTY( maxAuxiliarySends ) {
 
 
 /**doc
- * $VOID $INAME( value )
+$TOC_MEMBER $INAME
+ $VOID $INAME( value )
   Selects the OpenAL Doppler factor value. The default Doppler factor value is 1.0 .
   $H arguments
    $ARG $NUM value
@@ -165,7 +170,8 @@ DEFINE_FUNCTION_FAST( DopplerFactor ) {
 
 
 /**doc
- * $VOID $INAME( value )
+$TOC_MEMBER $INAME
+ $VOID $INAME( value )
   Selects the OpenAL Doppler velocity value. The default Doppler velocity value is 343.3 .
   $H arguments
    $ARG $NUM value
@@ -186,7 +192,8 @@ DEFINE_FUNCTION_FAST( DopplerVelocity ) {
 
 
 /**doc
- * $VOID $INAME( value )
+$TOC_MEMBER $INAME
+ $VOID $INAME( value )
   Selects the OpenAL Speed of Sound value.
   $H arguments
    $ARG $NUM value
@@ -207,7 +214,8 @@ DEFINE_FUNCTION_FAST( SpeedOfSound ) {
 
 
 /**doc
- * $VOID $INAME( distanceModel )
+$TOC_MEMBER $INAME
+ $VOID $INAME( distanceModel )
   $H arguments
    $ARG $INT value
   $H OpenAL API
@@ -227,7 +235,8 @@ DEFINE_FUNCTION_FAST( DistanceModel ) {
 
 
 /**doc
- * $VOID $INAME( cap )
+$TOC_MEMBER $INAME
+ $VOID $INAME( cap )
   $H arguments
    $ARG GLenum cap
   $H OpenAL API
@@ -245,7 +254,8 @@ DEFINE_FUNCTION_FAST( Enable ) {
 
 
 /**doc
- * $VOID $INAME( cap )
+$TOC_MEMBER $INAME
+ $VOID $INAME( cap )
   $H arguments
    $ARG GLenum cap
   $H OpenAL API
@@ -263,7 +273,8 @@ DEFINE_FUNCTION_FAST( Disable ) {
 
 
 /**doc
- * $VOID $INAME( cap )
+$TOC_MEMBER $INAME
+ $VOID $INAME( cap )
   $H arguments
    $ARG GLenum cap
   $H OpenAL API
@@ -280,7 +291,8 @@ DEFINE_FUNCTION_FAST( IsEnabled ) {
 
 
 /**doc
- * $BOOL $INAME( pname )
+$TOC_MEMBER $INAME
+ $BOOL $INAME( pname )
   $H arguments
    $ARG GLenum pname
   $H return value
@@ -307,7 +319,8 @@ DEFINE_FUNCTION_FAST( GetString ) {
 
 
 /**doc
- * $BOOL $INAME( pname )
+$TOC_MEMBER $INAME
+ $BOOL $INAME( pname )
   $H arguments
    $ARG ALenum pname
   $H return value
@@ -329,7 +342,8 @@ DEFINE_FUNCTION_FAST( GetBoolean ) {
 
 
 /**doc
- * $INT | $ARRAY $INAME( pname [, count] )
+$TOC_MEMBER $INAME
+ $INT | $ARRAY $INAME( pname [, count] )
   $H arguments
    $ARG ALenum pname
    $ARG $INT count: is the number of expected values. If _count_ is defined, the function will returns an array of values, else it returns a single value.
@@ -369,7 +383,8 @@ DEFINE_FUNCTION_FAST( GetInteger ) {
 
 
 /**doc
- * $REAL | $ARRAY $INAME( pname [, count] )
+$TOC_MEMBER $INAME
+ $REAL | $ARRAY $INAME( pname [, count] )
   $H arguments
    $ARG ALenum pname
    $ARG $INT count: is the number of expected values. If _count_ is defined, the function will returns an array of values, else a single value.
@@ -409,7 +424,8 @@ DEFINE_FUNCTION_FAST( GetDouble ) {
 
 
 /**doc
- * $VOID $INAME( pname, params )
+$TOC_MEMBER $INAME
+ $VOID $INAME( pname, params )
   $H arguments
    $ARG ALenum pname:
    $ARG $ARRAY params:
@@ -451,7 +467,8 @@ DEFINE_FUNCTION_FAST( Listener ) {
 
 
 /**doc
- * $REAL | $ARRAY $INAME( source, pname [, count] )
+$TOC_MEMBER $INAME
+ $REAL | $ARRAY $INAME( source, pname [, count] )
   $H arguments
    $ARG $INT source:
    $ARG ALenum pname:
@@ -493,7 +510,8 @@ DEFINE_FUNCTION_FAST( GetListenerReal ) {
 
 
 /**doc
- * $INT $INAME()
+$TOC_MEMBER $INAME
+ $INT $INAME()
   $H OpenAL API
    alSourcei, alSourcef, alSourcefv
 **/
@@ -508,7 +526,8 @@ DEFINE_FUNCTION_FAST( GenSource ) {
 
 
 /**doc
- * $VOID $INAME( source, pname, params )
+$TOC_MEMBER $INAME
+ $VOID $INAME( source, pname, params )
   $H arguments
    $ARG $INT source:
    $ARG ALenum pname:
@@ -553,7 +572,8 @@ DEFINE_FUNCTION_FAST( Source ) {
 
 
 /**doc
- * $REAL | $ARRAY $INAME( source, pname [, count] )
+$TOC_MEMBER $INAME
+ $REAL | $ARRAY $INAME( source, pname [, count] )
   $H arguments
    $ARG $INT source:
    $ARG ALenum pname:
@@ -601,7 +621,8 @@ DEFINE_FUNCTION_FAST( GetSourceReal ) {
 
 
 /**doc
- * $REAL | $ARRAY $INAME( source, pname [, count] )
+$TOC_MEMBER $INAME
+ $REAL | $ARRAY $INAME( source, pname [, count] )
 **/
 DEFINE_FUNCTION_FAST( GetSourceInteger ) {
 
@@ -643,7 +664,8 @@ DEFINE_FUNCTION_FAST( GetSourceInteger ) {
 
 
 /**doc
- * $VOID $INAME( source )
+$TOC_MEMBER $INAME
+ $VOID $INAME( source )
   $H arguments
    $ARG $INT source: the source id.
   $H OpenAL API
@@ -662,7 +684,8 @@ DEFINE_FUNCTION_FAST( DeleteSource ) {
 
 
 /**doc
- * $VOID $INAME( source, buffer | bufferArray )
+$TOC_MEMBER $INAME
+ $VOID $INAME( source, buffer | bufferArray )
   $H arguments
    $ARG $INT source: the source id.
    $ARG $INT buffer: the buffer id.
@@ -705,7 +728,8 @@ DEFINE_FUNCTION_FAST( SourceQueueBuffers ) {
 
 
 /**doc
- * $VOID $INAME( source, buffer | bufferArray )
+$TOC_MEMBER $INAME
+ $VOID $INAME( source, buffer | bufferArray )
   $H arguments
    $ARG $INT buffer: the buffer id.
    $ARG $ARRAY bufferArray: an Array of buffer id.
@@ -747,7 +771,8 @@ DEFINE_FUNCTION_FAST( SourceUnqueueBuffers ) {
 
 
 /**doc
- * $INT $INAME( soundObject )
+$TOC_MEMBER $INAME
+ $INT $INAME( soundObject )
   Creates a new buffer and attach a sound data to it. The data comming from the soundObject is copied into the OpenAL system.
   $note
    Buffers containing audio data with more than one channel will be played without 3D spatialization features  these formats are normally used for background music.
@@ -799,7 +824,8 @@ DEFINE_FUNCTION_FAST( Buffer ) {
 
 
 /**doc
- * $REAL | $ARRAY $INAME( source, pname [, count] )
+$TOC_MEMBER $INAME
+ $REAL | $ARRAY $INAME( source, pname [, count] )
   $H arguments
    $ARG $INT source:
    $ARG ALenum pname:
@@ -840,7 +866,8 @@ DEFINE_FUNCTION_FAST( GetBufferReal ) {
 
 
 /**doc
- * $INT | $ARRAY $INAME( source, pname [, count] )
+$TOC_MEMBER $INAME
+ $INT | $ARRAY $INAME( source, pname [, count] )
   $H arguments
    $ARG $INT source:
    $ARG ALenum pname:
@@ -884,7 +911,8 @@ DEFINE_FUNCTION_FAST( GetBufferInteger ) {
 
 
 /**doc
- * $VOID $INAME( buffer )
+$TOC_MEMBER $INAME
+ $VOID $INAME( buffer )
   $H arguments
    $ARG $INT buffer: the buffer id.
   $H note
@@ -906,7 +934,8 @@ DEFINE_FUNCTION_FAST( DeleteBuffer ) {
 
 
 /**doc
- * $VOID $INAME( source )
+$TOC_MEMBER $INAME
+ $VOID $INAME( source )
   Plays the given source.
   $H arguments
    $ARG $INT source: the ID of the source to play.
@@ -924,7 +953,8 @@ DEFINE_FUNCTION_FAST( PlaySource ) {
 
 
 /**doc
- * $VOID $INAME( source )
+$TOC_MEMBER $INAME
+ $VOID $INAME( source )
   Stop the given source.
   $H arguments
    $ARG $INT source: the ID of the source to play.
@@ -942,7 +972,8 @@ DEFINE_FUNCTION_FAST( StopSource ) {
 
 
 /**doc
- * $VOID $INAME( source )
+$TOC_MEMBER $INAME
+ $VOID $INAME( source )
   Pause the given source.
   $H arguments
    $ARG $INT source: the ID of the source to play.
@@ -960,7 +991,8 @@ DEFINE_FUNCTION_FAST( PauseSource ) {
 
 
 /**doc
- * $VOID $INAME( source )
+$TOC_MEMBER $INAME
+ $VOID $INAME( source )
   Rewind the given source. set playback postiton to beginning.
   $H arguments
    $ARG $INT source: the ID of the source to play.
@@ -978,7 +1010,8 @@ DEFINE_FUNCTION_FAST( RewindSource ) {
 
 
 /**doc
- * $VOID $INAME()
+$TOC_MEMBER $INAME
+ $VOID $INAME()
   $H OpenaL API
    alGenEffects
 **/
@@ -992,7 +1025,8 @@ DEFINE_FUNCTION_FAST( GenEffect ) {
 }
 
 /**doc
- * $VOID $INAME()
+$TOC_MEMBER $INAME
+ $VOID $INAME()
   $H OpenaL API
    alGenEffects
 **/
@@ -1009,7 +1043,8 @@ DEFINE_FUNCTION_FAST( DeleteEffect ) {
 
 
 /**doc
- * $VOID $INAME( sound ) $DEPRECATED
+$TOC_MEMBER $INAME
+ $VOID $INAME( sound ) $DEPRECATED
   Plays a sound on the default playback device.
   $H arguments
    $ARG soundObject sound: sound object to play.

@@ -38,7 +38,8 @@ DEFINE_FINALIZE() {
 
 
 /**doc
- * $VAL $INAME( path [ , argv ] )
+$TOC_MEMBER $INAME
+ $VAL $INAME( path [ , argv ] )
   This function starts a new process optionaly using the JavaScript Array _argv_ for arguments or _undefined_ for no arguments.
   $H note
    The new process inherits the environment of the parent process.
@@ -150,7 +151,8 @@ bad:
 
 
 /**doc
- * $INT $INAME()
+$TOC_MEMBER $INAME
+ $INT $INAME()
   The function waits the end of the nondetached process and returns its exit code. This function will fail if the process has beed detached.
   $H note
    In bash, `true;echo $?` prints `0` and `false;echo $?` prints `1`
@@ -171,7 +173,8 @@ DEFINE_FUNCTION_FAST( Wait ) {
 
 
 /**doc
- * $INT $INAME()
+$TOC_MEMBER $INAME
+ $INT $INAME()
   This function detaches the process. A detached process does not need to be and cannot be reaped.
 **/
 DEFINE_FUNCTION_FAST( Detach ) {
@@ -189,7 +192,8 @@ DEFINE_FUNCTION_FAST( Detach ) {
 
 
 /**doc
- * $INT $INAME()
+$TOC_MEMBER $INAME
+ $INT $INAME()
   Terminates the process.
 **/
 DEFINE_FUNCTION_FAST( Kill ) {
@@ -207,7 +211,8 @@ DEFINE_FUNCTION_FAST( Kill ) {
 
 
 /**doc
- * $TYPE Pipe $INAME()
+$TOC_MEMBER $INAME
+ $TYPE Pipe $INAME()
   Is the stdin pipe to the running process.
 **/
 DEFINE_PROPERTY( stdin ) {
@@ -219,7 +224,8 @@ DEFINE_PROPERTY( stdin ) {
 }
 
 /**doc
- * $TYPE Pipe $INAME()
+$TOC_MEMBER $INAME
+ $TYPE Pipe $INAME()
   Is the stdout pipe to the running process.
 **/
 DEFINE_PROPERTY( stdout ) {
@@ -231,7 +237,8 @@ DEFINE_PROPERTY( stdout ) {
 }
 
 /**doc
- * $TYPE Pipe $INAME()
+$TOC_MEMBER $INAME
+ $TYPE Pipe $INAME()
   Is the stderr pipe to the running process.
 **/
 DEFINE_PROPERTY( stderr ) {

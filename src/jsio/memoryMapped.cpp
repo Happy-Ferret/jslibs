@@ -52,7 +52,8 @@ DEFINE_FINALIZE() {
 }
 
 /**doc
- * $INAME( file )
+$TOC_MEMBER $INAME
+ $INAME( file )
   Creates a new memory-mapped object using the given opened file descriptor.
   $H arguments
    $ARG File file: any opened file descriptor.
@@ -119,7 +120,8 @@ DEFINE_CONSTRUCTOR() {
 **/
 
 /**doc
- * $INAME $READONLY
+$TOC_MEMBER $INAME
+ $INAME $READONLY
   is the file descriptor used to construct this object.
 **/
 DEFINE_PROPERTY( file ) {

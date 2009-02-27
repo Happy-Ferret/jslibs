@@ -74,7 +74,8 @@ inline JSBool SetJoint( JSContext *cx, JSObject *obj, jsval *b1, jsval *b2 ) {
 **/
 
 /**doc
- * $INAME()
+$TOC_MEMBER $INAME
+ $INAME()
   TBD
 **/
 DEFINE_FUNCTION( Destroy ) {
@@ -174,7 +175,8 @@ ode::dReal JointGetParam( ode::dJointID jointId, int parameter ) {
 **/
 
 /**doc
- * $TYPE Body $INAME
+$TOC_MEMBER $INAME
+ $TYPE Body $INAME
   Set the first body of the joint.
 **/
 DEFINE_PROPERTY( body1 ) {
@@ -188,7 +190,8 @@ DEFINE_PROPERTY( body1 ) {
 
 
 /**doc
- * $TYPE Body $INAME
+$TOC_MEMBER $INAME
+ $TYPE Body $INAME
   Set the second body of the joint.
 **/
 DEFINE_PROPERTY( body2 ) {
@@ -201,7 +204,8 @@ DEFINE_PROPERTY( body2 ) {
 }
 
 /**doc
- * $BOOL $INAME
+$TOC_MEMBER $INAME
+ $BOOL $INAME
   Set to $TRUE activates the feedback, and $FALSE to desactivates it.
   $LF
   Using feedback will allows body1Force, body1Torque, body2Force and body2Torque to be used.
@@ -232,7 +236,8 @@ DEFINE_PROPERTY( useFeedback ) {
 }
 
 /**doc
- * $TYPE vec3 *body1Force*
+$TOC_MEMBER $INAME
+ $TYPE vec3 *body1Force*
   Is the current force vector that applies to the body1 if feedback is activated.
 
  * $TYPE vec3 *body1Torque*
@@ -309,7 +314,8 @@ DEFINE_PROPERTY( feedbackVectorGetter ) {
 }
 
 /**doc
- * $REAL *loStop*
+$TOC_MEMBER $INAME
+ $REAL *loStop*
 
  * $REAL *hiStop*
 

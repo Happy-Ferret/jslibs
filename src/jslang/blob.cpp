@@ -142,7 +142,8 @@ DEFINE_FINALIZE() {
 
 
 /**doc
- * $INAME( [data] )
+$TOC_MEMBER $INAME
+ $INAME( [data] )
   Creates an object that can contain binary data.
   $H note
   When called in a non-constructor context, Object behaves identically.
@@ -195,7 +196,8 @@ bad:
 
 
 /**doc
- * $VOID $INAME( [ wipe = false ] )
+$TOC_MEMBER $INAME
+ $VOID $INAME( [ wipe = false ] )
   Frees the memory allocated by the blob and invalidates the blob.
   $H arguments
    $ARG $BOOL wipe: clears the buffer before freeing it. This is useful when the blob contains sensitive data.
@@ -232,7 +234,8 @@ DEFINE_FUNCTION_FAST( Free ) {
 
 
 /**doc
- * $TYPE Blob $INAME( data [,data1 [,...]] )
+$TOC_MEMBER $INAME
+ $TYPE Blob $INAME( data [,data1 [,...]] )
   Combines the text of two or more strings and returns a new string.
   $H details
    [http://developer.mozilla.org/index.php?title=En/Core_JavaScript_1.5_Reference/Global_Objects/String/concat Mozilla]
@@ -302,7 +305,8 @@ bad:
 
 
 /**doc
- * $TYPE Blob $INAME( start [, length ] )
+$TOC_MEMBER $INAME
+ $TYPE Blob $INAME( start [, length ] )
   Returns the bytes in a string beginning at the specified location through the specified number of characters.
   $H arguments
    $ARG $INT start: location at which to begin extracting characters (an integer between 0 and one less than the length of the string).
@@ -387,7 +391,8 @@ bad:
 
 
 /**doc
- * $TYPE Blob $INAME( indexA, [ indexB ] )
+$TOC_MEMBER $INAME
+ $TYPE Blob $INAME( indexA, [ indexB ] )
   Extracts characters from indexA up to but not including indexB. In particular: 
    * If indexA equals indexB, substring returns an empty string.
    * If indexB is omitted, substring extracts characters to the end of the blob.
@@ -482,7 +487,8 @@ bad_free:
 
 
 /**doc
- * $INT $INAME( searchValue [, fromIndex] )
+$TOC_MEMBER $INAME
+ $INT $INAME( searchValue [, fromIndex] )
   Returns the index within the calling Blob object of the first occurrence of the specified value, starting the search at fromIndex, or -1 if the value is not found.
   $H arguments
    $ARG $STR searchValue: A string representing the value to search for.
@@ -548,7 +554,8 @@ DEFINE_FUNCTION_FAST( indexOf ) {
 
 
 /**doc
- * $INT $INAME( searchValue [, fromIndex] )
+$TOC_MEMBER $INAME
+ $INT $INAME( searchValue [, fromIndex] )
   Returns the index within the calling Blob object of the last occurrence of the specified value, or -1 if not found. The calling string is searched backward, starting at fromIndex.
   $H arguments
    $ARG $STR searchValue: A string representing the value to search for.
@@ -623,7 +630,8 @@ DEFINE_FUNCTION_FAST( lastIndexOf ) {
 
 
 /**doc
- * $STR $INAME( index )
+$TOC_MEMBER $INAME
+ $STR $INAME( index )
   Returns the specified character from a string.
   $H details
    fc. [http://developer.mozilla.org/index.php?title=En/Core_JavaScript_1.5_Reference/Global_Objects/String/charAt Mozilla]
@@ -679,7 +687,8 @@ DEFINE_FUNCTION_FAST( charAt ) {
 
 
 /**doc
- * $INT $INAME( index )
+$TOC_MEMBER $INAME
+ $INT $INAME( index )
   Returns a number indicating the ASCII value of the character at the given index.
   $H details
    fc. [http://developer.mozilla.org/index.php?title=En/Core_JavaScript_1.5_Reference/Global_Objects/String/charCodeAt Mozilla]
@@ -728,7 +737,8 @@ DEFINE_FUNCTION_FAST( charCodeAt ) {
 
 
 /**doc
- * $STR $INAME()
+$TOC_MEMBER $INAME
+ $STR $INAME()
   Returns a JavaScript string version of the current Blob object.
   $H beware
    This function may be called automatically by the JavaScript engine when it needs to convert the Blob object to a JS string.
@@ -765,7 +775,8 @@ DEFINE_FUNCTION_FAST( toString ) { // and valueOf ?
 **/
 
 /**doc
- * $INT $INAME
+$TOC_MEMBER $INAME
+ $INT $INAME
   is the length of the current Blob.
 **/
 DEFINE_PROPERTY( length ) {
@@ -780,7 +791,8 @@ DEFINE_PROPERTY( length ) {
 
 
 /**doc
- * $TYPE char $INAME $READONLY
+$TOC_MEMBER $INAME
+ $TYPE char $INAME $READONLY
   Used to access the character in the _N_th position where _N_ is a positive integer between 0 and one less than the value of length.
 **/
 DEFINE_GET_PROPERTY() {
