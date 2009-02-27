@@ -14,6 +14,12 @@
 
 #include "stdafx.h"
 
+#ifdef XP_WIN
+#else
+#include <sys/statvfs.h>
+#endif
+
+
 #include "static.h"
 
 #include "descriptor.h"
@@ -644,6 +650,43 @@ bad:
 */
 
 
+
+/**doc
+$TOC_MEMBER $INAME
+ $REAL $INAME( path )
+  Returns the available storage space (in bytes) at the given path.
+  $H example
+  {{{
+  Print( AvailableSpace('/home/foobar') );
+  }}}
+**/
+DEFINE_FUNCTION_FAST( AvailableSpace ) {
+
+	J_S_ASSERT_ARG_MIN( 1 );
+	const char *path;
+	J_CHK( JsvalToString(cx, &J_FARG(1), &path) );
+
+	jsdouble available;
+
+#ifdef XP_WIN
+	ULARGE_INTEGER freeBytesAvailable;
+	BOOL res = ::GetDiskFreeSpaceEx(path, &freeBytesAvailable, NULL, NULL);
+	if ( res == 0 )
+		J_REPORT_ERROR_1("Unable to get the available space of %s.", path);
+	available = freeBytesAvailable.QuadPart;
+#else // now for XP_UNIX an MacOS ?
+	struct statvfs fsd;
+	if (statvfs(path, &fsd) < 0)
+		J_REPORT_ERROR_1("Unable to get the available space of %s.", path);
+	available = (jsdouble)fsd.f_bsize * (jsdouble)(fsd.f_bavail-1);
+#endif // XP_WIN
+
+	J_CHK( JS_NewDoubleValue(cx, available, J_FRVAL) );
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
 /**doc
 === Static properties ===
 **/
@@ -819,7 +862,6 @@ DEFINE_PROPERTY( processPrioritySetter ) {
 }
 
 
-
 /**doc
 $TOC_MEMBER $INAME
  $STR $INAME
@@ -912,6 +954,7 @@ CONFIGURE_STATIC
 		FUNCTION_FAST( WaitSemaphore )
 		FUNCTION_FAST( PostSemaphore )
 //		FUNCTION_FAST( CreateProcess )
+		FUNCTION_FAST( AvailableSpace )
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC
