@@ -1,9 +1,11 @@
 LoadModule('jsstd');
 LoadModule('jsio');
 
+Print( pathSeparator );
+Print( directorySeparator );
 
 
-
+Halt();
 
 /*
 try {

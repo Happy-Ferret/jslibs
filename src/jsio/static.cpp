@@ -365,7 +365,11 @@ DEFINE_FUNCTION( GetEnv ) {
 	J_CHK( JsvalToString(cx, &J_ARG(1), &name) );
 	char* value;
 	value = PR_GetEnv(name); // If the environment variable is not defined, the function returns NULL.
-	if ( value != NULL ) { // this will cause an 'undefined' return value
+
+	if ( value == NULL || *value == '\0' ) { // this will cause an 'undefined' return value
+		
+		*J_RVAL = JSVAL_VOID;
+	} else {
 
 //		JSString *jsstr = JS_NewExternalString(cx, (jschar*)value, strlen(value), JS_AddExternalStringFinalizer(NULL)); only works with unicode strings
 		JSString *jsstr = JS_NewStringCopyZ(cx,value);
@@ -376,6 +380,31 @@ DEFINE_FUNCTION( GetEnv ) {
 	JL_BAD;
 }
 
+
+/**
+$TOC_MEMBER $INAME
+ $STR $INAME( name, value )
+  Set, unset or change an environment variable.
+**/
+/*
+DEFINE_FUNCTION( SetEnv ) {
+
+doc:
+	The caller must ensure that the string passed
+	to PR_SetEnv() is persistent. That is: The string should
+	not be on the stack, where it can be overwritten
+
+	J_S_ASSERT_ARG_MIN(1);
+	const char *name, *value;
+	J_CHK( JsvalToString(cx, &J_ARG(1), &name) );
+	J_CHK( JsvalToString(cx, &J_ARG(2), &value) );
+	
+	PRStatus status = PR_SetEnv...
+
+	return JS_TRUE;
+	JL_BAD;
+}
+*/
 
 /**doc
 $TOC_MEMBER $INAME
@@ -656,7 +685,7 @@ $TOC_MEMBER $INAME
   Returns the available storage space (in bytes) at the given path.
   $H example
   {{{
-  Print( AvailableSpace('/home/foobar') );
+  Print( AvailableSpace('/var') );
   }}}
 **/
 DEFINE_FUNCTION_FAST( AvailableSpace ) {
@@ -864,18 +893,37 @@ DEFINE_PROPERTY( processPrioritySetter ) {
 /**doc
 $TOC_MEMBER $INAME
  $STR $INAME
-  Gets/sets the current working directory.
+  Is the number of processors (CPUs available in an SMP system).
 **/
-DEFINE_PROPERTY_GETTER( currentWorkingDirectory ) {
+DEFINE_PROPERTY( numberOfProcessors ) {
+
+	PRInt32 count = PR_GetNumberOfProcessors();
+	if ( count < 0 )
+		J_REPORT_ERROR( "Unable to get the number of processors." );
+	J_CHK( IntToJsval(cx, count, vp) );
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $STR $INAME
+  Gets or sets the current working directory.
+  $H example
+  {{{
+  currentDirectory = '/home/foobar';
+  }}}
+**/
+DEFINE_PROPERTY_GETTER( currentDirectory ) {
 
 	char buf[PATH_MAX];
-
 #ifdef XP_WIN
-	_getcwd(buf, sizeof(buf));
+//	_getcwd(buf, sizeof(buf));
+	::GetCurrentDirectory(COUNTOF(buf), buf);
 #else // XP_WIN
 	getcwd(buf, sizeof(buf));
 #endif // XP_WIN
-
 	JSString *str = JS_NewStringCopyZ(cx, buf);
 	J_S_ASSERT_ALLOC( str );
 	*vp = STRING_TO_JSVAL( str );
@@ -883,17 +931,16 @@ DEFINE_PROPERTY_GETTER( currentWorkingDirectory ) {
 	JL_BAD;
 }
 
-DEFINE_PROPERTY_SETTER( currentWorkingDirectory ) {
+DEFINE_PROPERTY_SETTER( currentDirectory ) {
 
 	const char *buf;
 	J_CHK( JsvalToString(cx, vp, &buf ) );
-
 #ifdef XP_WIN
-	_chdir(buf);
+//	_chdir(buf);
+	::SetCurrentDirectory(buf);
 #else // XP_WIN
 	chdir(buf);
 #endif // XP_WIN
-
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -902,13 +949,18 @@ DEFINE_PROPERTY_SETTER( currentWorkingDirectory ) {
 /**doc
 $TOC_MEMBER $INAME
  $STR $INAME $READONLY
-  Is the os's path separator.
+  Get the host' directory separator.
+  $H example
+  {{{
+  var isRootDir = (currentDirectory == directorySeparator);
+  }}}
 **/
-DEFINE_PROPERTY( pathSeparator ) {
+DEFINE_PROPERTY( directorySeparator ) {
 
 	if ( *vp == JSVAL_VOID ) {
 
-		JSString *str = JS_InternString(cx, PATH_SEPARATOR_STRING);
+		jschar sep = PR_GetDirectorySeparator();
+		JSString *str = JS_InternUCStringN(cx, &sep, 1);
 		J_S_ASSERT_ALLOC( str );
 		*vp = STRING_TO_JSVAL( str );
 	}
@@ -919,17 +971,18 @@ DEFINE_PROPERTY( pathSeparator ) {
 /**doc
 $TOC_MEMBER $INAME
  $STR $INAME $READONLY
-  Is the os's list separator.
+  Get the host' path separator.
   $H example
   {{{
-  Print( GetEnv('PATH').split(listSeparator) )
+  Print( GetEnv('PATH').split($INAME) )
   }}}
 **/
-DEFINE_PROPERTY( listSeparator ) {
+DEFINE_PROPERTY( pathSeparator ) {
 
 	if ( *vp == JSVAL_VOID ) {
 
-		JSString *str = JS_InternString(cx, LIST_SEPARATOR_STRING);
+		jschar sep = PR_GetPathSeparator();
+		JSString *str = JS_InternUCStringN(cx, &sep, 1);
 		J_S_ASSERT_ALLOC( str );
 		*vp = STRING_TO_JSVAL( str );
 	}
@@ -961,9 +1014,10 @@ CONFIGURE_STATIC
 		PROPERTY_READ( physicalMemorySize )
 		PROPERTY_READ_STORE( systemInfo )
 		PROPERTY( processPriority )
-		PROPERTY( currentWorkingDirectory )
+		PROPERTY_READ( numberOfProcessors )
+		PROPERTY( currentDirectory )
+		PROPERTY_READ_STORE( directorySeparator )
 		PROPERTY_READ_STORE( pathSeparator )
-		PROPERTY_READ_STORE( listSeparator )
 	END_STATIC_PROPERTY_SPEC
 
 END_STATIC
