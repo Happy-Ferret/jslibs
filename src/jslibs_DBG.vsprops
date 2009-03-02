@@ -7,29 +7,29 @@
 	IntermediateDirectory="$(PlatformName)_$(ConfigurationName)"
 	>
 
-	<!-- tmp VCCLCompilerTool
-		Debug Single-threaded (libcd.lib)           | N/A
-		Debug Multithreaded (libcmtd.lib)           | RuntimeLibrary="1"
-		Debug Multithreaded using DLL (msvcrtd.lib) | RuntimeLibrary="3"
+				<!-- tmp VCCLCompilerTool
+					Debug Single-threaded (libcd.lib)           | N/A
+					Debug Multithreaded (libcmtd.lib)           | RuntimeLibrary="1"
+					Debug Multithreaded using DLL (msvcrtd.lib) | RuntimeLibrary="3"
 
-		PreprocessorDefinitions="DEBUG JS_THREADSAFE JS_DUMP_PROPTREE_STATS"
-		AdditionalIncludeDirectories="..\js\src;..\nspr\include\nspr"
-	-->
+					PreprocessorDefinitions="DEBUG JS_THREADSAFE JS_DUMP_PROPTREE_STATS"
+					AdditionalIncludeDirectories="..\js\src;..\nspr\include\nspr"
+				-->
 
 	<Tool
 		Name="VCCLCompilerTool"
-		PreprocessorDefinitions="DEBUG JS_HASHMETER JS_GC_ZEAL"
+		PreprocessorDefinitions="WIN32;_DEBUG;_LIB;DEBUG;JS_HASHMETER;JS_GC_ZEAL"
 		AdditionalIncludeDirectories="..\..\libs\js\$(PlatformName)_$(ConfigurationName)\dist\include\js"
 		ExceptionHandling="0"
 		RuntimeLibrary="3"
 	/>
 	
-	<!-- tmp VCLinkerTool
-	
-		Debug Single-threaded (libcd.lib)           | IgnoreDefaultLibraryNames="libc.lib, libcmt.lib, msvcrt.lib, libcmtd.lib, msvcrtd.lib"
-		Debug Multithreaded (libcmtd.lib)           | IgnoreDefaultLibraryNames="libc.lib, libcmt.lib, msvcrt.lib, libcd.lib, msvcrtd.lib"
-		Debug Multithreaded using DLL (msvcrtd.lib) | IgnoreDefaultLibraryNames="libc.lib, libcmt.lib, msvcrt.lib, libcd.lib, libcmtd.lib"
-	-->
+				<!-- tmp VCLinkerTool
+
+					Debug Single-threaded (libcd.lib)           | IgnoreDefaultLibraryNames="libc.lib, libcmt.lib, msvcrt.lib, libcmtd.lib, msvcrtd.lib"
+					Debug Multithreaded (libcmtd.lib)           | IgnoreDefaultLibraryNames="libc.lib, libcmt.lib, msvcrt.lib, libcd.lib, msvcrtd.lib"
+					Debug Multithreaded using DLL (msvcrtd.lib) | IgnoreDefaultLibraryNames="libc.lib, libcmt.lib, msvcrt.lib, libcd.lib, libcmtd.lib"
+				-->
 
 	<Tool
 		Name="VCLinkerTool"

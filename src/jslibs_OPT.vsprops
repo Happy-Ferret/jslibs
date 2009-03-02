@@ -7,29 +7,29 @@
 	IntermediateDirectory="$(PlatformName)_$(ConfigurationName)"
 	>
 
-	<!-- tmp VCCLCompilerTool
-		Single-threaded (libc.lib)                  | N/A
-		Multithreaded (libcmt.lib)                  | RuntimeLibrary="0"
-		Multithreaded using DLL (msvcrt.lib)        | RuntimeLibrary="2"
+				<!-- tmp VCCLCompilerTool
+					Single-threaded (libc.lib)                  | N/A
+					Multithreaded (libcmt.lib)                  | RuntimeLibrary="0"
+					Multithreaded using DLL (msvcrt.lib)        | RuntimeLibrary="2"
 
-		PreprocessorDefinitions="JS_THREADSAFE"
-		AdditionalIncludeDirectories="..\js\src;..\nspr\include\nspr"
-	-->
+					PreprocessorDefinitions="JS_THREADSAFE"
+					AdditionalIncludeDirectories="..\js\src;..\nspr\include\nspr"
+				-->
 
 	<Tool
 		Name="VCCLCompilerTool"
-		
+		PreprocessorDefinitions="WIN32;NDEBUG;_LIB"
 		AdditionalIncludeDirectories="..\..\libs\js\$(PlatformName)_$(ConfigurationName)\dist\include\js"
 		ExceptionHandling="0"
 		RuntimeLibrary="2"
 	/>
 
-	<!-- tmp VCLinkerTool
-	
-		Single-threaded (libc.lib)                  | IgnoreDefaultLibraryNames="libcmt.lib, msvcrt.lib, libcd.lib, libcmtd.lib, msvcrtd.lib"
-		Multithreaded (libcmt.lib)                  | IgnoreDefaultLibraryNames="libc.lib, msvcrt.lib, libcd.lib, libcmtd.lib, msvcrtd.lib"
-		Multithreaded using DLL (msvcrt.lib)        | IgnoreDefaultLibraryNames="libc.lib, libcmt.lib, libcd.lib, libcmtd.lib, msvcrtd.lib"
-	-->
+				<!-- tmp VCLinkerTool
+
+					Single-threaded (libc.lib)                  | IgnoreDefaultLibraryNames="libcmt.lib, msvcrt.lib, libcd.lib, libcmtd.lib, msvcrtd.lib"
+					Multithreaded (libcmt.lib)                  | IgnoreDefaultLibraryNames="libc.lib, msvcrt.lib, libcd.lib, libcmtd.lib, msvcrtd.lib"
+					Multithreaded using DLL (msvcrt.lib)        | IgnoreDefaultLibraryNames="libc.lib, libcmt.lib, libcd.lib, libcmtd.lib, msvcrtd.lib"
+				-->
 
 	<Tool
 		Name="VCLinkerTool"
