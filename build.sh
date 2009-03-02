@@ -22,9 +22,15 @@ date > $LOGFILE
 echo "$BUILD_METHOD $BUILD" >> $LOGFILE
 
 echo building JavaScript engine ...
+if [ "$BUILD_METHOD" == "rebuild" ]; then
+	cd $TOP/libs/js && make clean >> $LOGFILE 2>&1
+fi
 cd $TOP/libs/js && make all copy >> $LOGFILE 2>&1
 
 echo building NSPR ...
+if [ "$BUILD_METHOD" == "rebuild" ]; then
+	cd $TOP/libs/nspr && make clean >> $LOGFILE 2>&1
+fi
 cd $TOP/libs/nspr && make all copy >> $LOGFILE 2>&1
 
 for slnFile in $(ls $TOP/src/*/*.sln); do
