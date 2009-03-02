@@ -2,6 +2,18 @@ LoadModule('jsstd');
 LoadModule('jsiconv');
 
 
+Print( new Iconv('UTF-8', 'ISO-8859-1')('é').length );
+
+/*
+for ( var i = 0; i < 255; i++ ) {
+
+	Print( conv(String.fromCharCode(i)).length ,'   ' );
+}
+*/
+
+
+Halt();
+
 var conv = new Iconv('UTF-8', 'ISO-8859-1');
 var invConv = new Iconv('ISO-8859-1', 'UTF-8');
 var converted = conv('été');

@@ -297,7 +297,7 @@ $TOC_MEMBER $INAME
  $INAME( [ filename [, startThing [, thingToFind [, maxDepth [, thingToIgnore] ] ] ] ] )
   This function in only available in DEBUG mode.
 **/
-DEFINE_FUNCTION( DumpHeap )
+DEFINE_FUNCTION_FAST( DumpHeap )
 {
 
     char *fileName;
@@ -428,7 +428,7 @@ GetTrapArgs(JSContext *cx, uintN argc, jsval *argv, JSScript **scriptp,
     uintN intarg;
     JSScript *script;
 
-    *scriptp = cx->fp->down->script;
+    *scriptp = JS_GetScriptedCaller(cx, NULL)->script;
     *ip = 0;
     if (argc != 0) {
         v = argv[0];
@@ -465,7 +465,7 @@ TrapHandler(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval,
                            rval)) {
         return JSTRAP_ERROR;
     }
-    if ( !JSVAL_IS_VOID( *rval ) )
+    if (!JSVAL_IS_VOID(*rval))
         return JSTRAP_RETURN;
     return JSTRAP_CONTINUE;
 }
@@ -984,12 +984,61 @@ DEFINE_FUNCTION( DumpObjectPrivate ) {
 }
 
 
+static JSTrapStatus
+InterruptTrapHandler(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval,
+            void *closure)
+{
+    JSString *str;
+    JSStackFrame *caller;
+
+	 char *s = "Print(123)";
+    
+    caller = JS_GetScriptedCaller(cx, NULL);
+    if (!JS_EvaluateScript(cx, caller->scopeChain,
+                           s, strlen(s),
+                           caller->script->filename, caller->script->lineno,
+                           rval)) {
+        return JSTRAP_ERROR;
+    }
+    if (!JSVAL_IS_VOID(*rval))
+        return JSTRAP_RETURN;
+    return JSTRAP_CONTINUE;
+
+}
+
+
+void NewScriptHook(JSContext  *cx,
+                    const char *filename,  /* URL of script */
+                    uintN      lineno,     /* first line */
+                    JSScript   *script,
+                    JSFunction *fun,
+						  void       *callerdata) 
+{
+
+	printf("%s\n", filename);
+}
+
+DEFINE_FUNCTION( Test ) {
+
+//	J_CHK( JS_SetInterrupt(JS_GetRuntime(cx), InterruptTrapHandler, NULL) );
+
+	JS_SetNewScriptHookProc(JS_GetRuntime(cx), NewScriptHook, NULL);
+	int i = JS_GetScriptLineExtent(cx, JS_GetScriptedCaller(cx, NULL)->script);
+
+	IntToJsval(cx, i, J_RVAL );
+
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
 CONFIGURE_STATIC
 
 	REVISION(SvnRevToInt("$Revision$"))
 	BEGIN_STATIC_FUNCTION_SPEC
 #ifdef DEBUG
 		FUNCTION_FAST( DumpHeap )
+		FUNCTION( Test )
 #endif // DEBUG
 		FUNCTION( DumpStats )
 		FUNCTION_FAST( TraceGC )

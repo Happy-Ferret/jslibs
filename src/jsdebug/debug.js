@@ -1,15 +1,26 @@
-
 LoadModule('jsstd');
 LoadModule('jsdebug');
+var i = 0;
+Trap(LineToPC(17), 'Print(i,"\\n")');
+i++;
+i++;
+i++;
 
-function toto( o ) {
+function inner() {
 
-	o.i++;
-	
+	i = 100;
+	i++;
+	i++;
 }
 
+inner();
 
-Trap( 8, 'Print(Locate(0))');
+i++;
+i++;
+i++;
 
 
-toto({i:1});
+
+
+
+

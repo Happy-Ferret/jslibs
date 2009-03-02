@@ -20,8 +20,7 @@ extern bool _unsafeMode = false;
 
 /**doc t:header
 $MODULE_HEADER
- This module is based on Netscape Portable Runtime (NSPR) that provides a platform-neutral API for system level and libc like functions.
- NSPR API is used in the Mozilla client, many of Netscape/AOL/iPlanet's and other software offerings.
+ Various debug tools.
 **/
 
 /**doc t:footer

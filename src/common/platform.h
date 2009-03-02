@@ -21,11 +21,6 @@
 	#define EXTERN_C
 #endif // __cplusplus
 
-/*
-#if defined _DEBUG
-	#define DEBUG
-#endif // _DEBUG
-*/
 
 ///////////////////////////////////////////////////////////////////////////////
 // Compiler specific configuration
@@ -109,7 +104,7 @@
 
 	#ifndef _WIN32_WINNT         // Allow use of features specific to Windows NT 4 or later.
 	#define _WIN32_WINNT 0x0501  // Change this to the appropriate value to target Windows 98 and Windows 2000 or later.
-	#endif                       
+	#endif
 
 	#ifndef _WIN32_WINDOWS        // Allow use of features specific to Windows 98 or later.
 	#define _WIN32_WINDOWS 0x0501 // Change this to the appropriate value to target Windows Me or later.
@@ -145,11 +140,11 @@
 	#define strcasecmp stricmp
 
 #elif defined(_MACOSX) // MacosX platform
-	
+
 	#define XP_UNIX // used by SpiderMonkey and jslibs
 
 	#include <unistd.h>
-	
+
 	#define LLONG long long
 
 	#define DLL_EXT ".dylib"
@@ -159,7 +154,7 @@
 	#define LIST_SEPARATOR ':'
 
 #else // Linux platform
-	
+
 	#define XP_UNIX // used by SpiderMonkey and jslibs
 
 	#include <unistd.h>
@@ -211,7 +206,7 @@ inline Endian DetectSystemEndianType() {
 
 inline char* IntegerToString(int val, int base) {
 
-	static char buf[64]; // (TBD) multithread warning !
+	static char buf[64]; // (TBD) multithread and overflow warning !
 	buf[63] = '\0';
 	int i = 62;
 	for(; val && i ; --i, val /= base)
@@ -326,7 +321,7 @@ inline unsigned int JLSessionId() {
 	}
 
 	inline bool JLSemaphoreOk( JLSemaphoreHandler semaphore ) {
-		
+
 		return semaphore != (JLSemaphoreHandler)0;
 	}
 
@@ -351,9 +346,9 @@ inline unsigned int JLSessionId() {
 		sem_post(semaphore);
 		#endif
 	}
-	
+
 	inline void JLFreeSemaphore( JLSemaphoreHandler *pSemaphore ) {
-		
+
 		if ( !pSemaphore || !JLSemaphoreOk(*pSemaphore) )
 			return;
 		#if defined XP_WIN
@@ -367,23 +362,23 @@ inline unsigned int JLSessionId() {
 
 // mutex
 /* notes:
-	A normal mutex cannot be locked repeatedly by the owner. 
-	Attempts by a thread to relock an already held mutex, 
+	A normal mutex cannot be locked repeatedly by the owner.
+	Attempts by a thread to relock an already held mutex,
 	or to lock a mutex that was held by another thread when that thread terminated result in a deadlock condition.
 	PTHREAD_MUTEX_NORMAL
-	A recursive mutex can be locked repeatedly by the owner. 
+	A recursive mutex can be locked repeatedly by the owner.
 	The mutex doesn't become unlocked until the owner has called pthread_mutex_unlock() for
 	each successful lock request that it has outstanding on the mutex.
 	PTHREAD_MUTEX_RECURSIVE
 */
 	#if defined XP_WIN
 	typedef HANDLE JLMutexHandler;
-	#elif defined XP_UNIX	
+	#elif defined XP_UNIX
 	typedef pthread_mutex_t* JLMutexHandler;
 	#endif
 
 	inline JLMutexHandler JLCreateMutex() {
-		
+
 		#if defined XP_WIN
 		return CreateMutex(NULL, FALSE, NULL);
 		#elif defined XP_UNIX
@@ -394,7 +389,7 @@ inline unsigned int JLSessionId() {
 	}
 
 	inline bool JLMutexOk( JLMutexHandler mutex ) {
-		
+
 		return mutex != (JLMutexHandler)0;
 	}
 
@@ -410,7 +405,7 @@ inline unsigned int JLSessionId() {
 	}
 
 	inline void JLReleaseMutex( JLMutexHandler mutex ) {
-	
+
 		if ( !JLMutexOk(mutex) )
 			return;
 		#if defined XP_WIN
@@ -421,7 +416,7 @@ inline unsigned int JLSessionId() {
 	}
 
 	inline void JLFreeMutex( JLMutexHandler *pMutex ) {
-		
+
 		if ( !pMutex || !JLMutexOk(*pMutex) )
 			return;
 		#if defined XP_WIN
@@ -528,7 +523,7 @@ inline unsigned int JLSessionId() {
 	}
 
 	inline void JLWaitThread( JLThreadHandler thread ) {
-		
+
 		if ( !JLThreadOk(thread) )
 			return;
 		#if defined XP_WIN
@@ -572,12 +567,12 @@ inline unsigned int JLSessionId() {
 	}
 
 	inline bool JLDynamicLibraryOk( JLLibraryHandler libraryHandler ) {
-		
+
 		return libraryHandler != (JLLibraryHandler)0;
 	}
 
 	inline void JLDynamicLibraryLastErrorMessage( char *message, size_t maxLength ) {
-		
+
 		#if defined XP_WIN
 		DWORD errorCode = ::GetLastError();
 		LPVOID lpMsgBuf;
@@ -596,7 +591,7 @@ inline unsigned int JLSessionId() {
 
 			strncpy(message, msgBuf, maxLength-1);
 			message[maxLength-1] = '\0';
-		} else 
+		} else
 			*message = '\0';
 		#endif
 	}
@@ -653,3 +648,52 @@ Inline Functions In C
 	#define FALSE (0)
 #endif
 */
+
+
+/* the following flags are used to build libs/js/src/shell/js.cpp :
+
+-DEXPORT_JS_API
+-DOSTYPE=\"WINNT5.1\"
+-DOSARCH=WINNT
+-DDEBUG
+-D_DEBUG
+-DDEBUG_ff
+-DTRACING
+-D_CRT_SECURE_NO_DEPRECATE=1
+-D_CRT_NONSTDC_NO_DEPRECATE=1
+-DWINVER=0x501
+-D_WIN32_WINNT=0x501
+-D_WIN32_IE=0x0500
+-DJS_HAVE___INTN=1
+-DHAVE_SYSTEMTIMETOFILETIME=1
+-DHAVE_GETSYSTEMTIMEASFILETIME=1
+-DJS_STDDEF_H_HAS_INTPTR_T=1
+-DX_DISPLAY_MISSING=1
+-DHAVE_SNPRINTF=1
+-D_WINDOWS=1
+-D_WIN32=1
+-DWIN32=1
+-DXP_WIN=1
+-DXP_WIN32=1
+-DHW_THREADS=1
+-DSTDC_HEADERS=1
+-DNEW_H=\<new\>
+-DWIN32_LEAN_AND_MEAN=1
+-DNO_X11=1
+-DHAVE_MMINTRIN_H=1
+-DHAVE_OLEACC_IDL=1
+-DHAVE_ATLBASE_H=1
+-D_X86_=1
+-DD_INO=d_ino
+-DFEATURE_NANOJIT=1
+-DJS_TRACER=1
+-DAVMPLUS_IA32=1
+-DAVMPLUS_WIN32=1
+-DCPP_THROW_NEW=throw\(\)
+-DMOZ_DLL_SUFFIX=\".dll\"
+-DMOZ_REFLOW_PERF=1
+-DMOZ_REFLOW_PERF_DSP=1
+-D_MOZILLA_CONFIG_H_
+-DMOZILLA_CLIENT
+*/
+

@@ -71,11 +71,13 @@ struct HostPrivate {
 
 inline HostPrivate* GetHostPrivate( JSContext *cx ) { // (TDB) use the runtime to store private data !
 
-	return (HostPrivate*)cx->runtime->data; // see JS_GetRuntimePrivate
+	// return JS_GetRuntimePrivate(JS_GetRuntime(cx));
+	return (HostPrivate*)cx->runtime->data;
 }
 
 inline void SetHostPrivate( JSContext *cx, HostPrivate *hostPrivate ) {
 
+	// JS_SetRuntimePrivate(JS_GetRuntime(cx), hostPrivate);
 	cx->runtime->data = (void*)hostPrivate;
 }
 
