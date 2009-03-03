@@ -402,220 +402,6 @@ DEFINE_FUNCTION_FAST( DumpHeap )
 
 
 
-static JSScript *
-ValueToScript(JSContext *cx, jsval v)
-{
-    JSScript *script;
-    JSFunction *fun;
-
-    if (!JSVAL_IS_PRIMITIVE(v) &&
-        JS_GET_CLASS(cx, JSVAL_TO_OBJECT(v)) == &js_ScriptClass) {
-        script = (JSScript *) JS_GetPrivate(cx, JSVAL_TO_OBJECT(v));
-    } else {
-        fun = JS_ValueToFunction(cx, v);
-        if (!fun)
-            return NULL;
-        script = FUN_SCRIPT(fun);
-    }
-    return script;
-}
-
-static JSBool
-GetTrapArgs(JSContext *cx, uintN argc, jsval *argv, JSScript **scriptp,
-            int32 *ip)
-{
-    jsval v;
-    uintN intarg;
-    JSScript *script;
-
-    *scriptp = JS_GetScriptedCaller(cx, NULL)->script;
-    *ip = 0;
-    if (argc != 0) {
-        v = argv[0];
-        intarg = 0;
-        if (!JSVAL_IS_PRIMITIVE(v) &&
-            (JS_GET_CLASS(cx, JSVAL_TO_OBJECT(v)) == &js_FunctionClass ||
-             JS_GET_CLASS(cx, JSVAL_TO_OBJECT(v)) == &js_ScriptClass)) {
-            script = ValueToScript(cx, v);
-            if (!script)
-                return JS_FALSE;
-            *scriptp = script;
-            intarg++;
-        }
-        if (argc > intarg) {
-            if (!JS_ValueToInt32(cx, argv[intarg], ip))
-                return JS_FALSE;
-        }
-    }
-    return JS_TRUE;
-}
-
-static JSTrapStatus
-TrapHandler(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval,
-            void *closure)
-{
-    JSString *str;
-    JSStackFrame *caller;
-
-    str = (JSString *) closure;
-    caller = JS_GetScriptedCaller(cx, NULL);
-    if (!JS_EvaluateScript(cx, caller->scopeChain,
-                           JS_GetStringBytes(str), JS_GetStringLength(str),
-                           caller->script->filename, caller->script->lineno,
-                           rval)) {
-        return JSTRAP_ERROR;
-    }
-    if (!JSVAL_IS_VOID(*rval))
-        return JSTRAP_RETURN;
-    return JSTRAP_CONTINUE;
-}
-
-/**doc
-$TOC_MEMBER $INAME
- $VOID $INAME( ??? )
-  TBD
-**/
-DEFINE_FUNCTION( Trap )
-{
-    JSString *str;
-    JSScript *script;
-    int32 i;
-
-	 J_S_ASSERT_ARG_MIN( 1 );
-
-    argc--;
-    str = JS_ValueToString(cx, argv[argc]);
-    if (!str)
-        return JS_FALSE;
-    argv[argc] = STRING_TO_JSVAL(str);
-    if (!GetTrapArgs(cx, argc, argv, &script, &i))
-        return JS_FALSE;
-    return JS_SetTrap(cx, script, script->code + i, TrapHandler, str);
-	JL_BAD;
-}
-
-/**doc
-$TOC_MEMBER $INAME
- $INAME( ??? )
-  TBD
-**/
-DEFINE_FUNCTION( Untrap )
-{
-    JSScript *script;
-    int32 i;
-
-    if (!GetTrapArgs(cx, argc, argv, &script, &i))
-        return JS_FALSE;
-    JS_ClearTrap(cx, script, script->code + i, NULL, NULL);
-    return JS_TRUE;
-}
-
-/**doc
-$TOC_MEMBER $INAME
- $INAME( ??? )
-  TBD
-**/
-DEFINE_FUNCTION( LineToPC )
-{
-    JSScript *script;
-    int32 i;
-    uintN lineno;
-    jsbytecode *pc;
-
-	 J_S_ASSERT_ARG_MIN( 1 );
-
-	 script = cx->fp->down->script;
-    if (!GetTrapArgs(cx, argc, argv, &script, &i))
-        return JS_FALSE;
-    lineno = (i == 0) ? script->lineno : (uintN)i;
-    pc = JS_LineNumberToPC(cx, script, lineno);
-    if (!pc)
-        return JS_FALSE;
-    *rval = INT_TO_JSVAL(PTRDIFF(pc, script->code, jsbytecode));
-	return JS_TRUE;
-	JL_BAD;
-}
-
-/**doc
-$TOC_MEMBER $INAME
- $INAME( ??? )
-  TBD
-**/
-DEFINE_FUNCTION( PCToLine )
-{
-    JSScript *script;
-    int32 i;
-    uintN lineno;
-
-    if (!GetTrapArgs(cx, argc, argv, &script, &i))
-        return JS_FALSE;
-    lineno = JS_PCToLineNumber(cx, script, script->code + i);
-    if (!lineno)
-        return JS_FALSE;
-    *rval = INT_TO_JSVAL(lineno);
-    return JS_TRUE;
-}
-
-/**doc
-$TOC_MEMBER $INAME
- $OBJ $INAME( nFrame );
-  Returns the current script name and line number. nFrame is the number of stack frames to go back (0 is the current stack frame).
-**/
-DEFINE_FUNCTION(Locate) {
-
-	J_S_ASSERT_ARG_MIN( 1 );
-	int frame;
-	J_CHK( JsvalToInt(cx, argv[0], &frame) );
-	J_S_ASSERT(frame <= 0, "Frame number must be <= 0");
-
-	JSStackFrame *fp;
-	fp = NULL;
-	for ( JS_FrameIterator(cx, &fp); fp; JS_FrameIterator(cx, &fp) ) {
-
-		jsbytecode *pc = JS_GetFramePC(cx,fp);
-		if ( fp->script && pc && !frame++ ) {
-
-			char tmp[512];
-			JSScript *script = JS_GetFrameScript(cx, fp);
-			strcpy(tmp, JS_GetScriptFilename(cx, script));
-			strcat(tmp, ":");
-			strcat(tmp, IntegerToString(JS_PCToLineNumber(cx, script, pc), 10));
-			*rval = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, tmp));
-			break;
-		}
-	}
-	return JS_TRUE;
-	JL_BAD;
-}
-
-/**doc
-$TOC_MEMBER $INAME
- $OBJ $INAME( nFrame );
-  Returns the current script line number. nFrame is the number of stack frames to go back (0 is the current stack frame).
-**/
-DEFINE_FUNCTION(LocateLine) {
-
-	J_S_ASSERT_ARG_MIN( 1 );
-	int frame;
-	J_CHK( JsvalToInt(cx, argv[0], &frame) );
-	J_S_ASSERT(frame <= 0, "Frame number must be <= 0");
-
-	JSStackFrame *fp;
-	fp = NULL;
-	for ( JS_FrameIterator(cx, &fp); fp; JS_FrameIterator(cx, &fp) ) {
-
-		jsbytecode *pc = JS_GetFramePC(cx,fp);
-		if ( fp->script && pc && !frame++ ) {
-
-			*rval = INT_TO_JSVAL(JS_PCToLineNumber(cx, JS_GetFrameScript(cx, fp), pc));
-			break;
-		}
-	}
-	return JS_TRUE;
-	JL_BAD;
-}
-
-
 static bool hasGCTrace = false; // (TBD) fix static keyword issue
 static JSGCCallback prevGCCallback = NULL; // (TBD) fix static keyword issue
 static char GCTraceFileName[PATH_MAX]; // (TBD) fix static keyword issue
@@ -984,18 +770,69 @@ DEFINE_FUNCTION( DumpObjectPrivate ) {
 }
 
 
+
+
+
+
+static JSScript *
+ValueToScript(JSContext *cx, jsval v)
+{
+    JSScript *script;
+    JSFunction *fun;
+
+    if (!JSVAL_IS_PRIMITIVE(v) &&
+        JS_GET_CLASS(cx, JSVAL_TO_OBJECT(v)) == &js_ScriptClass) {
+        script = (JSScript *) JS_GetPrivate(cx, JSVAL_TO_OBJECT(v));
+    } else {
+        fun = JS_ValueToFunction(cx, v);
+        if (!fun)
+            return NULL;
+        script = FUN_SCRIPT(fun);
+    }
+    return script;
+}
+
+static JSBool
+GetTrapArgs(JSContext *cx, uintN argc, jsval *argv, JSScript **scriptp,
+            int32 *ip)
+{
+    jsval v;
+    uintN intarg;
+    JSScript *script;
+
+    *scriptp = JS_GetScriptedCaller(cx, NULL)->script;
+    *ip = 0;
+    if (argc != 0) {
+        v = argv[0];
+        intarg = 0;
+        if (!JSVAL_IS_PRIMITIVE(v) &&
+            (JS_GET_CLASS(cx, JSVAL_TO_OBJECT(v)) == &js_FunctionClass ||
+             JS_GET_CLASS(cx, JSVAL_TO_OBJECT(v)) == &js_ScriptClass)) {
+            script = ValueToScript(cx, v);
+            if (!script)
+                return JS_FALSE;
+            *scriptp = script;
+            intarg++;
+        }
+        if (argc > intarg) {
+            if (!JS_ValueToInt32(cx, argv[intarg], ip))
+                return JS_FALSE;
+        }
+    }
+    return JS_TRUE;
+}
+
 static JSTrapStatus
-InterruptTrapHandler(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval,
+TrapHandler(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval,
             void *closure)
 {
     JSString *str;
     JSStackFrame *caller;
 
-	 char *s = "Print(123)";
-    
+    str = (JSString *) closure;
     caller = JS_GetScriptedCaller(cx, NULL);
     if (!JS_EvaluateScript(cx, caller->scopeChain,
-                           s, strlen(s),
+                           JS_GetStringBytes(str), JS_GetStringLength(str),
                            caller->script->filename, caller->script->lineno,
                            rval)) {
         return JSTRAP_ERROR;
@@ -1003,33 +840,160 @@ InterruptTrapHandler(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rva
     if (!JSVAL_IS_VOID(*rval))
         return JSTRAP_RETURN;
     return JSTRAP_CONTINUE;
-
 }
 
-
-void NewScriptHook(JSContext  *cx,
-                    const char *filename,  /* URL of script */
-                    uintN      lineno,     /* first line */
-                    JSScript   *script,
-                    JSFunction *fun,
-						  void       *callerdata) 
+/**doc
+$TOC_MEMBER $INAME
+ $VOID $INAME( ??? )
+  TBD
+**/
+DEFINE_FUNCTION( Trap )
 {
+    JSString *str;
+    JSScript *script;
+    int32 i;
 
-	printf("%s\n", filename);
+	 J_S_ASSERT_ARG_MIN( 1 );
+
+    argc--;
+    str = JS_ValueToString(cx, argv[argc]);
+    if (!str)
+        return JS_FALSE;
+    argv[argc] = STRING_TO_JSVAL(str);
+    if (!GetTrapArgs(cx, argc, argv, &script, &i))
+        return JS_FALSE;
+    return JS_SetTrap(cx, script, script->code + i, TrapHandler, str);
+	JL_BAD;
 }
+
+/**doc
+$TOC_MEMBER $INAME
+ $INAME( ??? )
+  TBD
+**/
+DEFINE_FUNCTION( Untrap )
+{
+    JSScript *script;
+    int32 i;
+
+    if (!GetTrapArgs(cx, argc, argv, &script, &i))
+        return JS_FALSE;
+    JS_ClearTrap(cx, script, script->code + i, NULL, NULL);
+    return JS_TRUE;
+}
+
+/**doc
+$TOC_MEMBER $INAME
+ $INAME( ??? )
+  TBD
+**/
+DEFINE_FUNCTION( LineToPC )
+{
+    JSScript *script;
+    int32 i;
+    uintN lineno;
+    jsbytecode *pc;
+
+	 J_S_ASSERT_ARG_MIN( 1 );
+
+	 script = cx->fp->down->script;
+    if (!GetTrapArgs(cx, argc, argv, &script, &i))
+        return JS_FALSE;
+    lineno = (i == 0) ? script->lineno : (uintN)i;
+    pc = JS_LineNumberToPC(cx, script, lineno);
+    if (!pc)
+        return JS_FALSE;
+    *rval = INT_TO_JSVAL(PTRDIFF(pc, script->code, jsbytecode));
+	return JS_TRUE;
+	JL_BAD;
+}
+
+/**doc
+$TOC_MEMBER $INAME
+ $INAME( ??? )
+  TBD
+**/
+DEFINE_FUNCTION( PCToLine )
+{
+    JSScript *script;
+    int32 i;
+    uintN lineno;
+
+    if (!GetTrapArgs(cx, argc, argv, &script, &i))
+        return JS_FALSE;
+    lineno = JS_PCToLineNumber(cx, script, script->code + i);
+    if (!lineno)
+        return JS_FALSE;
+    *rval = INT_TO_JSVAL(lineno);
+    return JS_TRUE;
+}
+
+/**doc
+$TOC_MEMBER $INAME
+ $OBJ $INAME( nFrame );
+  Returns the current script name and line number. nFrame is the number of stack frames to go back (0 is the current stack frame).
+**/
+DEFINE_FUNCTION(Locate) {
+
+	J_S_ASSERT_ARG_MIN( 1 );
+	int frame;
+	J_CHK( JsvalToInt(cx, argv[0], &frame) );
+	J_S_ASSERT(frame <= 0, "Frame number must be <= 0");
+
+	JSStackFrame *fp;
+	fp = NULL;
+	for ( JS_FrameIterator(cx, &fp); fp; JS_FrameIterator(cx, &fp) ) {
+
+		jsbytecode *pc = JS_GetFramePC(cx,fp);
+		if ( fp->script && pc && !frame++ ) {
+
+			char tmp[512];
+			JSScript *script = JS_GetFrameScript(cx, fp);
+			strcpy(tmp, JS_GetScriptFilename(cx, script));
+			strcat(tmp, ":");
+			strcat(tmp, IntegerToString(JS_PCToLineNumber(cx, script, pc), 10));
+			*rval = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, tmp));
+			break;
+		}
+	}
+	return JS_TRUE;
+	JL_BAD;
+}
+
+/**doc
+$TOC_MEMBER $INAME
+ $OBJ $INAME( nFrame );
+  Returns the current script line number. nFrame is the number of stack frames to go back (0 is the current stack frame).
+**/
+DEFINE_FUNCTION(LocateLine) {
+
+	J_S_ASSERT_ARG_MIN( 1 );
+	int frame;
+	J_CHK( JsvalToInt(cx, argv[0], &frame) );
+	J_S_ASSERT(frame <= 0, "Frame number must be <= 0");
+
+	JSStackFrame *fp;
+	fp = NULL;
+	for ( JS_FrameIterator(cx, &fp); fp; JS_FrameIterator(cx, &fp) ) {
+
+		jsbytecode *pc = JS_GetFramePC(cx,fp);
+		if ( fp->script && pc && !frame++ ) {
+
+			*rval = INT_TO_JSVAL(JS_PCToLineNumber(cx, JS_GetFrameScript(cx, fp), pc));
+			break;
+		}
+	}
+	return JS_TRUE;
+	JL_BAD;
+}
+
 
 DEFINE_FUNCTION( Test ) {
-
-//	J_CHK( JS_SetInterrupt(JS_GetRuntime(cx), InterruptTrapHandler, NULL) );
-
-	JS_SetNewScriptHookProc(JS_GetRuntime(cx), NewScriptHook, NULL);
-	int i = JS_GetScriptLineExtent(cx, JS_GetScriptedCaller(cx, NULL)->script);
-
-	IntToJsval(cx, i, J_RVAL );
 
 	return JS_TRUE;
 	JL_BAD;
 }
+
 
 
 CONFIGURE_STATIC
@@ -1048,8 +1012,8 @@ CONFIGURE_STATIC
 		FUNCTION( PCToLine )
 		FUNCTION( Locate )
 		FUNCTION( LocateLine )
-
 		FUNCTION( DumpObjectPrivate )
+
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC
@@ -1060,6 +1024,7 @@ CONFIGURE_STATIC
 		PROPERTY_READ( currentMemoryUsage )
 		PROPERTY_READ( peakMemoryUsage )
 		PROPERTY_READ( privateMemoryUsage )
+
 	END_STATIC_PROPERTY_SPEC
 
 END_STATIC

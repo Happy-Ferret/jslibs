@@ -15,6 +15,8 @@
 #include "stdafx.h"
 #include "static.h"
 
+DECLARE_CLASS( Debugger );
+
 extern bool _unsafeMode = false;
 
 
@@ -32,6 +34,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	_unsafeMode = GetHostPrivate(cx)->unsafeMode;
 
 	INIT_STATIC();
+	INIT_CLASS( Debugger );
 
 	return JS_TRUE;
 	JL_BAD;
