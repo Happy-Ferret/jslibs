@@ -1,52 +1,29 @@
+LoadModule('jsio');
 LoadModule('jsstd');
 LoadModule('jsdebug');
 
 var dbg = new Debugger();
 
-/*
-dbg.onInterrupt = function( scriptname, line, scope ) {
+dbg.onBreak = function( scriptname, line, scope, orig, frame ) {
 
-	Print( 'onInterrupt - name: '+scriptname + ' line: '+line, ' i='+i, '\n' )
-	return 3;
-}
-*/
-
-dbg.onNewScript = function(fileName, line, length, depth, fname, script) {
-
-	Print( 'onNewScript - fileName: '+fileName + ' line: '+line + ' length: '+length + ' depth: '+depth + ' fname: '+fname )
-//	Print( ' script: '+script )
-	Print( '\n' );
+	//Print( 'onBreak(' + Array.slice(arguments)+') ' );
 		
+	Print( '@ '+scriptname+':'+line );
+	Print( ' orig='+orig );
+	Print( ' lineno='+dbg.Stack(frame).lineno );
+	Print( ' '+dbg.Stack(frame).this );
+	
+	Print( '\n' )
+	return Debugger.CONTINUE;
 }
 
-Exec('test.js');
+Exec('debug1.js');
+
+dbg.ToggleBreakpoint( true, 'debug1.js', 14 );
+
+toto();
+toto.call('myThis');
+
+xx();
 
 Print('\n');
-
-
-var i = 0;
-
-i++;
-i++;
-i++;
-
-function inner() {
-	
-	i += 100;
-
-	i++;
-}
-
-i++;
-
-debugger;
-
-	inner(); i++;
-
-for ( var j=0; j<10; j++ ) {
-	i++;
-}
-
-i++;
-i++;
-i++;

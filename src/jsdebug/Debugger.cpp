@@ -13,17 +13,16 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-
 #include "jsdbgapi.h"
 
-
+/*
 const JSCodeSpec jsCodeSpec[] = {
 #define OPDEF(op,val,name,token,length,nuses,ndefs,prec,format) \
     {length,nuses,ndefs,prec,format},
 #include "jsopcode.tbl"
 #undef OPDEF
 };
-
+*/
 
 /**doc
 $CLASS_HEADER
@@ -31,12 +30,103 @@ $SVN_REVISION $Revision: 2290 $
 **/
 BEGIN_CLASS( Debugger )
 
+#define CONTINUE 1
+#define STEP 2
+#define STEP_OVER 3
+#define STEP_OUT 4
+
+// Reason
+#define FROM_BREAKPOINT 1
+#define FROM_STEP 2
+#define FROM_THROW 3
+#define FROM_ERROR 4
+
+
 struct Private {
 
 	JSStackFrame *stopAtFrame;
-	jl::Queue *scriptList;
+	jl::Queue *scriptFileList;
 };
 
+int GetFrameDepth(const JSStackFrame *frame) {
+
+	int frameDepth;
+	for ( frameDepth = 0; frame; frame = frame->down, frameDepth++ );
+	return frameDepth;
+}
+
+void NewScriptHook(JSContext *cx, const char *filename, uintN lineno, JSScript *script, JSFunction *fun, void *callerdata) {
+
+	Private *pv = (Private*)callerdata;
+
+	jl::QueueCell *it;
+	jl::Queue *scriptList = NULL;
+
+	// find the right script filename
+	for ( it = jl::QueueBegin(pv->scriptFileList); it; it = jl::QueueNext(it) ) {
+
+		scriptList = (jl::Queue*)jl::QueueGetData(it);
+		JSScript *s = (JSScript*)jl::QueueGetData(jl::QueueBegin(scriptList));
+		if ( strcmp(filename, s->filename) == 0 )
+			break;
+	}
+
+	if ( it == NULL ) { // if not found, create one
+	
+		scriptList = jl::QueueConstruct();
+		jl::QueueUnshift(pv->scriptFileList, scriptList);
+		jl::QueuePush(scriptList, script);
+	} else { // add the script at the right place in the queue
+
+		for ( it = jl::QueueBegin(scriptList); it; it = jl::QueueNext(it) ) {
+
+			JSScript *s = (JSScript*)jl::QueueGetData(it);
+			if ( script->staticDepth > s->staticDepth )
+				jl::QueueInsertCell(scriptList, it, script);
+		}
+		if ( it == NULL )
+			jl::QueueUnshift(scriptList, script);
+	}
+bad:
+	return;
+}
+
+void DestroyScriptHook(JSContext *cx, JSScript *script, void *callerdata) {
+
+	Private *pv = (Private*)callerdata;
+
+	jl::QueueCell *it, *it1;
+	jl::Queue *scriptList = NULL;
+
+	// find the right script filename
+	for ( it = jl::QueueBegin(pv->scriptFileList); it; it = jl::QueueNext(it) ) {
+
+		scriptList = (jl::Queue*)jl::QueueGetData(it);
+		for ( it1 = jl::QueueBegin(scriptList); it1; it1 = jl::QueueNext(it1) ) {
+		
+			JSScript *s = (JSScript*)jl::QueueGetData(it1);
+			if ( s == script ) {
+
+				jl::QueueRemoveCell(scriptList, it1);
+				break;
+			}
+		}
+
+		if ( jl::QueueIsEmpty(scriptList) ) {
+			
+			jl::QueueRemoveCell(pv->scriptFileList, it);
+			break;
+		}
+	}
+
+bad:
+	return;
+}
+
+
+
+
+static JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSScript *script, jsbytecode *pc, int breakOrigin);
 
 static JSTrapStatus InterruptHandler(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval, void *closure) {
 
@@ -47,108 +137,119 @@ static JSTrapStatus InterruptHandler(JSContext *cx, JSScript *script, jsbytecode
 	if ( pv->stopAtFrame != NULL && pv->stopAtFrame != currentFrame )
 		return JSTRAP_CONTINUE;
 
-	JSTrapHandler tmpTrapHandler;
-	void *tmpTrapClosure;
-	JS_ClearInterrupt(JS_GetRuntime(cx), &tmpTrapHandler, &tmpTrapClosure); // avoid nested calls
-	// restore the interrupt if it is not ours.
-	if ( tmpTrapHandler != NULL && tmpTrapHandler != InterruptHandler )
-		JS_SetInterrupt(JS_GetRuntime(cx), tmpTrapHandler, tmpTrapClosure);
+	JS_ClearInterrupt(JS_GetRuntime(cx), NULL, NULL); // avoid nested calls
+	return BreakHandler(cx, debuggerObj, script, pc, FROM_STEP);
+}
 
-	JSTrapHandler tmpHandler;
-	void *tmpClosure;
-	JS_ClearTrap(cx, script, pc, &tmpHandler, &tmpClosure);
-	// restore the trap if it is not ours.
-	if ( tmpHandler != NULL && tmpHandler != InterruptHandler )
-		JS_SetTrap(cx, script, pc, tmpHandler, tmpClosure);
+
+static JSTrapStatus TrapHandler(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval, void *closure) {
+
+	JSObject *debuggerObj = (JSObject*)closure;
+	JS_ClearInterrupt(JS_GetRuntime(cx), NULL, NULL); // avoid nested calls
+	return BreakHandler(cx, debuggerObj, script, pc, FROM_BREAKPOINT);
+}
+
+
+JSBool DebugErrorHookHandler(JSContext *cx, const char *message, JSErrorReport *report, void *closure) {
+
+	JSObject *debuggerObj = (JSObject*)closure;
+	JS_ClearInterrupt(JS_GetRuntime(cx), NULL, NULL); // avoid nested calls
+	JSStackFrame *frame;
+	frame = JS_GetScriptedCaller(cx, NULL);
+	if ( frame )
+		BreakHandler(cx, debuggerObj, JS_GetFrameScript(cx, frame), JS_GetFramePC(cx, frame), FROM_ERROR);
+	return JS_TRUE;
+}
+
+
+static JSTrapStatus ThrowHookHandler(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval, void *closure) {
+
+	JSObject *debuggerObj = (JSObject*)closure;
+	JS_ClearInterrupt(JS_GetRuntime(cx), NULL, NULL); // avoid nested calls
+	return BreakHandler(cx, debuggerObj, script, pc, FROM_THROW);
+}
+
+
+
+static JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSScript *script, jsbytecode *pc, int breakOrigin) {
+
+	Private *pv = (Private*)JS_GetPrivate(cx, obj);
 
 	jsval fval;
-	J_CHK( JS_GetProperty(cx, debuggerObj, "onInterrupt", &fval) );
-	if ( !JsvalIsFunction(cx, fval) )
+	J_CHK( JS_GetProperty(cx, obj, "onBreak", &fval) );
+	if ( !JsvalIsFunction(cx, fval) ) // nothing to do
 		return JSTRAP_CONTINUE;
-
 
 	JSStackFrame *frame;
 	frame = JS_GetScriptedCaller(cx, NULL);
 
-	jsval argv[3];
-	J_CHK( StringToJsval(cx, frame->script->filename, &argv[0]) );
-	argv[1] = INT_TO_JSVAL(JS_PCToLineNumber(cx, frame->script, pc));
-	argv[2] = OBJECT_TO_JSVAL( frame->scopeChain );
+	jsval argv[5];
+	J_CHK( StringToJsval(cx, JS_GetScriptFilename(cx, JS_GetFrameScript(cx, frame)), &argv[0]) );
+	argv[1] = INT_TO_JSVAL(JS_PCToLineNumber(cx, JS_GetFrameScript(cx, frame), pc));
+	argv[2] = OBJECT_TO_JSVAL( JS_GetFrameScopeChain(cx, frame) );
+	argv[3] = INT_TO_JSVAL( breakOrigin );
+	argv[4] = INT_TO_JSVAL( GetFrameDepth(frame) );
 
 	jsval trapRval;
-	JSBool status = JS_CallFunctionValue(cx, debuggerObj, fval, COUNTOF(argv), argv, &trapRval);
+	J_CHK( JS_CallFunctionValue(cx, obj, fval, COUNTOF(argv), argv, &trapRval) );
 
-	if ( JSVAL_IS_VOID(trapRval) )
-		return JSTRAP_CONTINUE;
+	int t = JSVAL_TO_INT( trapRval );
 
-
-	if ( trapRval == INT_TO_JSVAL(1) ) { // step into
-
-		// do not stop
-		pv->stopAtFrame = NULL;
-		J_CHK( JS_SetInterrupt(JS_GetRuntime(cx), InterruptHandler, (void*)OBJECT_TO_JSVAL(debuggerObj)) );
-	}
-
-	if ( trapRval == INT_TO_JSVAL(2) ) { // step over
-	
-		// stop next time we are in this frame.
-		pv->stopAtFrame = JS_GetScriptedCaller(cx, NULL);
-		J_CHK( JS_SetInterrupt(JS_GetRuntime(cx), InterruptHandler, (void*)OBJECT_TO_JSVAL(debuggerObj)) );
-
-/*
-		//jsbytecode *nextPc = JS_LineNumberToPC(cx, script, JS_PCToLineNumber(cx, script, pc+1) + 1);
-
-
-//		jsbytecode *nextPc = JS_GetFramePC(cx, caller);
-//		JSOp op = JS_GetTrapOpcode(cx, caller->script, nextPc);
-//		nextPc += jsCodeSpec[op].length;
-//		JS_SetTrap(cx, caller->script, nextPc, InterruptHandler, NULL);
-
-		JSOp op = JS_GetTrapOpcode(cx, caller->script, nextPc);
-
-		JS_SetInterrupt(JS_GetRuntime(cx), InterruptHandler, NULL);
-
-		jsbytecode *nextPc = JS_GetFramePC(cx, caller);
-		JSOp op = JS_GetTrapOpcode(cx, caller->script, nextPc);
-		nextPc += jsCodeSpec[op].length;
-		JS_SetTrap(cx, caller->script, nextPc, InterruptHandler, NULL);
-*/
-	}
-
-	if ( trapRval == INT_TO_JSVAL(3) ) { // step out
+	switch (trapRval) {
 		
-		// stop when we reach the parent's frame.
-		pv->stopAtFrame = JS_GetScriptedCaller(cx, JS_GetScriptedCaller(cx, NULL)->down);
-		J_CHK( JS_SetInterrupt(JS_GetRuntime(cx), InterruptHandler, (void*)OBJECT_TO_JSVAL(debuggerObj)) );
+		case INT_TO_JSVAL(CONTINUE):
 
-/*
-		JSStackFrame *frame;
-		frame = JS_GetScriptedCaller(cx, NULL);
-		
-		// check if there is a frame to return to, else continue
-		if ( !frame->down )
+			pv->stopAtFrame = NULL;
 			return JSTRAP_CONTINUE;
-
-		frame = JS_GetScriptedCaller(cx, frame->down);
-
-		JSScript *nextScript = JS_GetFrameScript(cx, frame);
-		jsbytecode *nextPc = JS_GetFramePC(cx, frame);
-
-//		uintN lineno = JS_PCToLineNumber(cx, nextScript, nextPc);
-//		uintN lastlineno = JS_GetScriptBaseLineNumber(cx, nextScript) + JS_GetScriptLineExtent(cx, nextScript);
-//		if ( lineno + 1 >= lastlineno )
-//			return JSTRAP_CONTINUE;
-
-//		nextPc = JS_LineNumberToPC(cx, nextScript, lineno +1 );
-
-//		JS_ClearTrap(cx, nextScript, nextPc, NULL, NULL);
+			break;
+		case INT_TO_JSVAL(STEP):
+			
+			pv->stopAtFrame = NULL; // do not stop at a given frame
+			J_CHK( JS_SetInterrupt(JS_GetRuntime(cx), InterruptHandler, (void*)OBJECT_TO_JSVAL(obj)) );
+			break;
+		case INT_TO_JSVAL(STEP_OVER):
 		
-
-		// set the next trap on the next opcode
-		JSOp op = JS_GetTrapOpcode(cx, nextScript, nextPc);
-		nextPc += jsCodeSpec[op].length;
-		JSBool status = JS_SetTrap(cx, nextScript, nextPc, InterruptHandler, (void*)PRIVATE_TO_JSVAL(NULL));
-*/
+			pv->stopAtFrame = JS_GetScriptedCaller(cx, NULL); // stop next time we are in this frame.
+			J_CHK( JS_SetInterrupt(JS_GetRuntime(cx), InterruptHandler, (void*)OBJECT_TO_JSVAL(obj)) );
+	/*
+			//jsbytecode *nextPc = JS_LineNumberToPC(cx, script, JS_PCToLineNumber(cx, script, pc+1) + 1);
+	//		jsbytecode *nextPc = JS_GetFramePC(cx, caller);
+	//		JSOp op = JS_GetTrapOpcode(cx, caller->script, nextPc);
+	//		nextPc += jsCodeSpec[op].length;
+	//		JS_SetTrap(cx, caller->script, nextPc, InterruptHandler, NULL);
+			JSOp op = JS_GetTrapOpcode(cx, caller->script, nextPc);
+			JS_SetInterrupt(JS_GetRuntime(cx), InterruptHandler, NULL);
+			jsbytecode *nextPc = JS_GetFramePC(cx, caller);
+			JSOp op = JS_GetTrapOpcode(cx, caller->script, nextPc);
+			nextPc += jsCodeSpec[op].length;
+			JS_SetTrap(cx, caller->script, nextPc, InterruptHandler, NULL);
+	*/
+			break;
+		case INT_TO_JSVAL(STEP_OUT):
+			
+			pv->stopAtFrame = JS_GetScriptedCaller(cx, frame->down); // stop when we reach the parent's frame.
+			J_CHK( JS_SetInterrupt(JS_GetRuntime(cx), InterruptHandler, (void*)OBJECT_TO_JSVAL(obj)) );
+	/*
+			JSStackFrame *frame;
+			frame = JS_GetScriptedCaller(cx, NULL);
+			// check if there is a frame to return to, else continue
+			if ( !frame->down )
+				return JSTRAP_CONTINUE;
+			frame = JS_GetScriptedCaller(cx, frame->down);
+			JSScript *nextScript = JS_GetFrameScript(cx, frame);
+			jsbytecode *nextPc = JS_GetFramePC(cx, frame);
+	//		uintN lineno = JS_PCToLineNumber(cx, nextScript, nextPc);
+	//		uintN lastlineno = JS_GetScriptBaseLineNumber(cx, nextScript) + JS_GetScriptLineExtent(cx, nextScript);
+	//		if ( lineno + 1 >= lastlineno )
+	//			return JSTRAP_CONTINUE;
+	//		nextPc = JS_LineNumberToPC(cx, nextScript, lineno +1 );
+	//		JS_ClearTrap(cx, nextScript, nextPc, NULL, NULL);
+			// set the next trap on the next opcode
+			JSOp op = JS_GetTrapOpcode(cx, nextScript, nextPc);
+			nextPc += jsCodeSpec[op].length;
+			JSBool status = JS_SetTrap(cx, nextScript, nextPc, InterruptHandler, (void*)PRIVATE_TO_JSVAL(NULL));
+	*/
+			break;
 	}
 
 	return JSTRAP_CONTINUE; // http://www.google.com/codesearch/p?hl=en#SPZdyP79RtQ/trunk/third_party/spidermonkey/js/src/jsinterp.c&q=JSTRAP_RETURN&l=742
@@ -156,62 +257,6 @@ bad:
 	return JSTRAP_ERROR;
 }
 
-
-void NewScriptHook(JSContext *cx, const char *filename, uintN lineno, JSScript *script, JSFunction *fun, void *callerdata) {
-
-	JSObject *debuggerObj = (JSObject*)callerdata;
-	Private *pv = (Private*)JS_GetPrivate(cx, debuggerObj);
-
-	jsval fval;
-	J_CHK( JS_GetProperty(cx, debuggerObj, "onNewScript", &fval) );
-	if ( !JsvalIsFunction(cx, fval) )
-		return;
-
-	jsval argv[6];
-	J_CHK( StringToJsval(cx, filename, &argv[0]) );
-	argv[1] = INT_TO_JSVAL(lineno);
-	argv[2] = INT_TO_JSVAL(JS_GetScriptLineExtent(cx, script));
-	argv[3] = INT_TO_JSVAL(script->staticDepth);
-	argv[4] = fun ? STRING_TO_JSVAL(JS_GetFunctionId(fun)) : JSVAL_VOID;
-
-	J_S_ASSERT(INT_FITS_IN_JSVAL(script));
-	argv[5] = PRIVATE_TO_JSVAL(script);
-
-/*
-	JSObject *scriptObj = JS_GetScriptObject(script);
-	if ( scriptObj == NULL )
-		scriptObj = JS_NewScriptObject(cx, script);
-	argv[5] = OBJECT_TO_JSVAL(scriptObj);
-
-	J_S_ASSERT( script == JS_GetPrivate(cx, scriptObj) );
-*/	
-	
-
-
-
-	// (TBD) protect argv from GC
-
-	jsval trapRval;
-	JSBool status = JS_CallFunctionValue(cx, debuggerObj, fval, COUNTOF(argv), argv, &trapRval);
-
-bad:
-	return;
-}
-
-void DestroyScriptHook(JSContext *cx, JSScript *script, void *callerdata) {
-/*
-	JSObject *debuggerObj = (JSObject*)callerdata;
-	Private *pv = (Private*)JS_GetPrivate(cx, debuggerObj);
-
-	jsval fval;
-	J_CHK( JS_GetProperty(cx, debuggerObj, "onDestroyScript", &fval) );
-	if ( !JsvalIsFunction(cx, fval) )
-		return;
-	// (TBD)
-bad:
-	return;
-*/
-}
 
 
 DEFINE_FINALIZE() {
@@ -227,6 +272,21 @@ DEFINE_FINALIZE() {
 
 			JS_SetInterrupt(JS_GetRuntime(cx), tmpTrapHandler, tmpTrapClosure);
 		}
+
+		JS_SetNewScriptHookProc(JS_GetRuntime(cx), NULL, NULL);
+		JS_SetDestroyScriptHookProc(JS_GetRuntime(cx), NULL, NULL);
+
+		for ( jl::QueueCell *it = jl::QueueBegin(pv->scriptFileList); it; it = jl::QueueNext(it) ) {
+
+			jl::Queue *scriptList = (jl::Queue*)jl::QueueGetData(it);
+			jl::QueueDestruct(scriptList);
+		}
+		jl::QueueDestruct(pv->scriptFileList);
+
+		JS_SetDebuggerHandler(JS_GetRuntime(cx), NULL, NULL);
+		JS_SetThrowHook( JS_GetRuntime(cx), NULL, NULL);
+		JS_SetDebugErrorHook( JS_GetRuntime(cx), NULL, NULL);
+
 		free(pv);
 	}
 }
@@ -242,45 +302,150 @@ DEFINE_CONSTRUCTOR() {
 	memset(pv, 0, sizeof(Private));
 	J_CHK( JS_SetPrivate(cx, obj, pv) );
 	J_CHK( JS_SetDebuggerHandler(JS_GetRuntime(cx), InterruptHandler, (void*)OBJECT_TO_JSVAL(obj)) );
-	JS_SetNewScriptHookProc(JS_GetRuntime(cx), NewScriptHook, (void*)OBJECT_TO_JSVAL(obj));
-	JS_SetDestroyScriptHookProc(JS_GetRuntime(cx), DestroyScriptHook, (void*)OBJECT_TO_JSVAL(obj));
+	J_CHK( JS_SetThrowHook( JS_GetRuntime(cx), ThrowHookHandler, (void*)OBJECT_TO_JSVAL(obj)) );
+	J_CHK( JS_SetDebugErrorHook( JS_GetRuntime(cx), DebugErrorHookHandler, (void*)OBJECT_TO_JSVAL(obj)) );
+
+	pv->scriptFileList = jl::QueueConstruct();
+
+	JS_SetNewScriptHookProc(JS_GetRuntime(cx), NewScriptHook, pv);
+	JS_SetDestroyScriptHookProc(JS_GetRuntime(cx), DestroyScriptHook, pv);
+
 	return JS_TRUE;
 	JL_BAD;
 }
 
 
-/*	
-	JSString *str;
-    JSStackFrame *caller;
+DEFINE_FUNCTION( ToggleBreakpoint ) {
 
-	 char *s = "Print(123)";
-    
-    caller = JS_GetScriptedCaller(cx, NULL);
-    if (!JS_EvaluateScript(cx, caller->scopeChain,
-                           s, strlen(s),
-                           caller->script->filename, caller->script->lineno,
-                           rval)) {
-        return JSTRAP_ERROR;
-    }
-    if (!JSVAL_IS_VOID(*rval))
-        return JSTRAP_RETURN;
-  
-*/
+	J_S_ASSERT_ARG_MIN( 3 );
+
+	bool polarity;
+	J_CHK( JsvalToBool(cx, J_ARG(1), &polarity) );
+
+	const char *filename;
+	J_CHK( JsvalToString(cx, &J_ARG(2), &filename) );
+
+	uintN lineno;
+	J_CHK( JsvalToUInt(cx, J_ARG(3), &lineno) );
+
+	// find the right script object
+	Private *pv = (Private*)JS_GetPrivate(cx, obj);
+
+	jl::QueueCell *it;
+	jl::Queue *scriptList = NULL;
+
+	// find the right script filename
+	for ( it = jl::QueueBegin(pv->scriptFileList); it; it = jl::QueueNext(it) ) {
+
+		scriptList = (jl::Queue*)jl::QueueGetData(it);
+		JSScript *s = (JSScript*)jl::QueueGetData(jl::QueueBegin(scriptList));
+
+		if ( strcmp(filename, s->filename) == 0 )
+			break;
+	}
+
+	if ( it == NULL )
+		J_REPORT_ERROR("script not found");
+
+	JSScript *script = NULL;
+	for ( it = jl::QueueBegin(scriptList); it; it = jl::QueueNext(it) ) {
+
+		script = (JSScript*)jl::QueueGetData(it);
+		uintN extent = JS_GetScriptLineExtent(cx, script);
+
+		if ( lineno >= script->lineno && lineno <= script->lineno + extent )
+			break;
+		// else the last script in the list (depth 0) will be selected
+	}
+
+	J_S_ASSERT( script != NULL, "script not found");
+
+	jsbytecode *pc;
+	pc = JS_LineNumberToPC(cx, script, lineno);
+
+	if ( polarity ) {
+
+		J_CHK( JS_SetTrap(cx, script, pc, TrapHandler, (void*)OBJECT_TO_JSVAL(obj)) );
+	} else {
+
+		JSTrapHandler tmpHandler;
+		void *tmpClosure;
+		JS_ClearTrap(cx, script, pc, &tmpHandler, &tmpClosure);
+		// restore the trap if it is not ours.
+		if ( tmpHandler != NULL && ( tmpHandler != TrapHandler || tmpClosure != (void*)OBJECT_TO_JSVAL(obj)) )
+			J_CHK( JS_SetTrap(cx, script, pc, tmpHandler, tmpClosure) );
+	}
+
+	return JS_TRUE;
+	JL_BAD;
+}
 
 
+DEFINE_FUNCTION( Stack ) {
 
-DEFINE_FUNCTION( SetBreakpoint ) {
+	J_S_ASSERT_ARG_MIN( 1 );
 
-	J_S_ASSERT_ARG_MIN( 2 );
-
-
-
-	int line;
-	J_CHK( JsvalToInt(cx, argv[1], &line) );
+	int level;
+	J_CHK( JsvalToInt(cx, J_ARG(1), &level) );
 
 
+	JSStackFrame *frame;
+	frame = JS_GetScriptedCaller(cx, NULL); // the current frame
+	int currentDepth = GetFrameDepth(frame);
+
+	J_S_ASSERT( level >= 0 && level <= currentDepth, "Invalid frame level." );
+
+	// select the right frame
+	while ( currentDepth > level ) {
+		
+		frame = frame->down;
+		currentDepth--;
+	}
 
 
+	JSObject *stackItem = JS_NewObject(cx, NULL, NULL, NULL);
+	J_S_ASSERT_ALLOC( stackItem );
+
+	*J_RVAL = OBJECT_TO_JSVAL(stackItem);
+
+	JSScript *script = JS_GetFrameScript(cx, frame);
+	jsbytecode *pc = JS_GetFramePC(cx, frame);
+
+	jsval tmp;
+
+	JSObject *scope = JS_GetFrameScopeChain(cx, frame);
+
+	J_CHK( StringToJsval(cx, JS_GetScriptFilename(cx, script), &tmp) );
+	J_CHK( JS_DefineProperty(cx, stackItem, "filename", tmp, NULL, NULL, JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT) );
+	J_CHK( JS_DefineProperty(cx, stackItem, "lineno", INT_TO_JSVAL(JS_PCToLineNumber(cx, script, pc)), NULL, NULL, JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT) );
+	J_CHK( JS_DefineProperty(cx, stackItem, "callee", OBJECT_TO_JSVAL(JS_GetFrameCalleeObject(cx, frame)), NULL, NULL, JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT) );
+	J_CHK( JS_DefineProperty(cx, stackItem, "scope", OBJECT_TO_JSVAL(scope), NULL, NULL, JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT) );
+	J_CHK( JS_DefineProperty(cx, stackItem, "this", OBJECT_TO_JSVAL(JS_GetFrameThis(cx, frame)), NULL, NULL, JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT) );
+	J_CHK( JS_DefineProperty(cx, stackItem, "isNative", BOOLEAN_TO_JSVAL(JS_IsNativeFrame(cx, frame)), NULL, NULL, JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT) );
+
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+DEFINE_PROPERTY( scriptList ) {
+
+	JSObject *arr = JS_NewArrayObject(cx, 0, NULL);
+	J_S_ASSERT_ALLOC(arr);
+	*vp = OBJECT_TO_JSVAL(arr);
+
+	Private *pv = (Private*)JS_GetPrivate(cx, obj);
+	int index = 0;
+	for ( jl::QueueCell *it = jl::QueueBegin(pv->scriptFileList); it; it = jl::QueueNext(it) ) {
+
+		jl::Queue *scriptList = (jl::Queue*)jl::QueueGetData(it);
+		JSScript *s = (JSScript*)jl::QueueGetData(jl::QueueBegin(scriptList));
+		
+		jsval filename;
+		J_CHK( StringToJsval(cx, s->filename, &filename) );
+		J_CHK( JS_SetElement(cx, arr, index, &filename) );
+		index++;
+	}
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -295,10 +460,24 @@ CONFIGURE_CLASS
 	HAS_FINALIZE
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION( SetBreakpoint )
+		FUNCTION( ToggleBreakpoint )
+		FUNCTION( Stack )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
+		PROPERTY_READ( scriptList )
 	END_PROPERTY_SPEC
+
+	BEGIN_CONST_INTEGER_SPEC
+		CONST_INTEGER_SINGLE( CONTINUE )
+		CONST_INTEGER_SINGLE( STEP )
+		CONST_INTEGER_SINGLE( STEP_OVER )
+		CONST_INTEGER_SINGLE( STEP_OUT )
+
+		CONST_INTEGER_SINGLE( FROM_BREAKPOINT )
+		CONST_INTEGER_SINGLE( FROM_STEP )
+		CONST_INTEGER_SINGLE( FROM_THROW )
+		CONST_INTEGER_SINGLE( FROM_ERROR )
+	END_CONST_INTEGER_SPEC
 
 END_CLASS
