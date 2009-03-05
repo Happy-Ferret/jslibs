@@ -1,0 +1,118 @@
+<?xml version="1.0"?>
+<?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
+<window id="window"
+	xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+	xmlns:html="http://www.w3.org/1999/xhtml"
+	onload="init(event)"
+>
+	<style id="mainCss" style="display: none">
+		<![CDATA[
+		toolbarbutton {
+			font-weight: bold;
+		}
+		]]>
+	</style>
+
+	<style id="codeCss" style="display: none">
+		<![CDATA[
+		html, body {
+			margin: 0px;
+			padding: 0px;
+		}
+
+		ol {
+			margin: 0px;
+			background-color: #CCC;
+		}
+		li {
+			white-space: pre;
+			font-family: monospace;
+			background-color: #DDD;
+		}
+		]]>
+	</style>
+
+
+	<script type="text/javascript">
+		<![CDATA[
+		function $(id) document.getElementById(id);
+		
+		var sourceList = {};
+		
+		function init() {
+
+//			var piData = 'type="text/css" href="data:text/css, '+$('style').firstChild.data+'"';
+//			var pi = document.createProcessingInstruction('xml-stylesheet', piData);
+//			document.insertBefore(pi, document.firstChild);
+		}
+		
+		function QueryDebugger(req) {
+		
+			netscape.security.PrivilegeManager.enablePrivilege("UniversalBrowserRead"); // allow cross-domain xhr
+			var xhr = new XMLHttpRequest();
+			try {
+			
+				xhr.open('GET', 'http://127.0.0.1:8009/?'+req, false);
+				xhr.send(null);
+				return xhr.responseText;
+			} catch(ex) {}
+		}
+		
+		function UpdateState() {
+
+			var codeDoc = $('code').contentDocument;
+
+			$('statusInfo').label = 'querying state...';
+			var res = QueryDebugger('state');
+				 
+			if ( res == undefined ) {
+			
+				$('statusInfo').label = 'end';
+				codeDoc.body.innerHTML = '';
+				return;
+			}
+				
+			var state = eval(res);
+			
+			$('statusInfo').label = 'break: '+state.breakOrigin;
+
+			if ( !sourceList[state.filename] )
+				sourceList[state.filename] = { source:QueryDebugger('getSource='+state.filename).split('\n') };
+		
+			var si = sourceList[state.filename];
+			var doc = '';
+			doc += '<style type="text/css">'+$('codeCss').firstChild.data+'</style>';
+			doc += '<ol id="code"><li>'+si.source.join('</li><li>')+'</li></ol>';
+			codeDoc.body.innerHTML = doc;
+			codeDoc.getElementById('code').childNodes[state.line-1].style.backgroundColor = '#EEA';
+		}
+		]]>
+	</script>
+
+	<vbox flex="1">
+
+		<toolbox>
+			<toolbar id="nav-toolbar">
+				<toolbarbutton label="connect" oncommand="UpdateState()"/>
+				<toolbarseparator />
+				<toolbarbutton label="Step" oncommand="QueryDebugger('action=step'); UpdateState()"/>
+				<toolbarbutton label="Step over" oncommand="QueryDebugger('action=stepover'); UpdateState()"/>
+				<toolbarbutton label="Step out" oncommand="QueryDebugger('action=stepout'); UpdateState()"/>
+				<toolbarbutton label="Continue" oncommand="QueryDebugger('action=continue'); UpdateState()"/>
+			</toolbar>
+		</toolbox>
+
+		<hbox flex="1">
+			<html:iframe id="code" flex="1"/>
+			<splitter collapse="before" resizeafter="farthest">
+				<grippy/>
+			</splitter>
+			<html:iframe id="stack"/>
+		</hbox>
+
+		<statusbar>
+			<statusbarpanel id="statusInfo" flex="1"/>
+		</statusbar>
+
+	</vbox>
+</window>
