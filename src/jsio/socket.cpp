@@ -626,23 +626,21 @@ DEFINE_PROPERTY( connectionClosed ) {
 	//and PR_Available() returns 0, this means that the socket connection is closed.
 	//see http://www.mozilla.org/projects/nspr/tech-notes/nonblockingio.html
 
-	PRInt32 available;
-	available = PR_Available( fd );
-	if ( available == -1 )
+	// socket is readable ?
+	PRPollDesc desc;
+	desc.fd = fd;
+	desc.in_flags = PR_POLL_READ;
+	desc.out_flags = 0;
+	PRInt32 result = PR_Poll( &desc, 1, PR_INTERVAL_NO_WAIT );
+	if ( result == -1 ) // error
 		return ThrowIoError(cx);
+	if ( result == 1 && (desc.out_flags & PR_POLL_READ) ) {
 
-	if ( available == 0 ) {
-
-		// socket is readable ?
-		PRPollDesc desc = { fd, PR_POLL_READ, 0 };
-		PRInt32 result = PR_Poll( &desc, 1, PR_INTERVAL_NO_WAIT );
-		if ( result == -1 ) // error
+		PRInt32 available;
+		available = PR_Available( fd );
+		if ( available == -1 )
 			return ThrowIoError(cx);
-
-//		printf("out_flags: %x\n", desc.out_flags );
-//		printf("result: %x\n", result );
-
-		if ( result == 1 && (desc.out_flags & PR_POLL_READ) != 0 ) {
+		if ( available == 0 ) {
 
 			*vp = JSVAL_TRUE; // socket is closed
 			return JS_TRUE;
@@ -658,7 +656,7 @@ DEFINE_PROPERTY( connectionClosed ) {
 /**doc
 $TOC_MEMBER $INAME
  $INT *linger*
-  The time to linger on close if data present.
+  The time in milliseconds to linger on close if data present.
   A value of zero means no linger.
 
  * $BOOL *noDelay*
