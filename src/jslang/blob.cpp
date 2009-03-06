@@ -770,6 +770,14 @@ DEFINE_FUNCTION_FAST( toString ) { // and valueOf ?
 }
 
 
+DEFINE_FUNCTION_FAST( toSource ) {
+
+	// (TBD) try something faster !!
+	*J_FRVAL = STRING_TO_JSVAL(JS_ValueToSource(cx, STRING_TO_JSVAL(JS_ValueToString(cx, OBJECT_TO_JSVAL(J_FOBJ)))));
+	return JS_TRUE;
+}
+
+
 /**doc
 === Properties ===
 **/
@@ -1051,6 +1059,7 @@ CONFIGURE_CLASS
 		FUNCTION_FAST(charAt)
 		FUNCTION_FAST(toString)
 		FUNCTION_FAST_ALIAS(valueOf, toString)
+		FUNCTION_FAST(toSource)
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC

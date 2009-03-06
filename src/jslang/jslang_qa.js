@@ -31,6 +31,14 @@ LoadModule('jsstd');
 		QA.ASSERT( stream._NI_StreamRead, prev, 'NativeInterface security' )
 
 
+/// Blob toSource and Uneval
+
+		LoadModule('jsstd');
+		var b = new Blob(test);
+		QA.ASSERT( blob.toSource(), '"test"', 'blob.toSource()' )
+		QA.ASSERT( uneval(blob), '"test"', 'uneval(blobà' )
+
+
 /// Blob BufferGet NativeInterface
 
 		LoadModule('jsstd');
