@@ -196,6 +196,35 @@ inline void QueueInsertCellAfter( Queue *queue, QueueCell *prevCell, void *data 
 	prevCell->next = newCell;
 }
 
+#ifdef DEBUG
+inline bool QueueIntegrityCheck( Queue *queue ) {
+
+	if ( queue->begin == NULL && queue->end != NULL )
+		return false;
+	if ( queue->end != NULL && queue->begin == NULL )
+		return false;
+	if ( queue->begin && queue->begin->prev )
+		return false;
+	if ( queue->end && queue->end->next )
+		return false;
+	QueueCell *it;
+	it = queue->begin;
+	int c1 = 0, c2 = 0;
+	while ( it ) {
+		it = it->next;
+		c1++;
+	}
+	it = queue->end;
+	while ( it ) {
+		it = it->prev;
+		c2++;
+	}
+	if ( c1 != c2 )
+		return false;
+	return true;
+}
+#endif
+
 /*
 inline QueueCell *SearchFirstData( Queue *queue, void *data ) {
 
