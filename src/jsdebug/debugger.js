@@ -1,7 +1,18 @@
 LoadModule('jsio');
 LoadModule('jsdebug');
 
-function HTTPServer(port) {
+function Match(v) Array.indexOf(arguments,v,1)-1;
+function Switch(i) arguments[++i];
+
+function OriginToString( breakOrigin ) {
+
+	with (Debugger) {
+		var pos = Match(breakOrigin, FROM_BREAKPOINT, FROM_STEP, FROM_THROW, FROM_ERROR, FROM_DEBUGGER);
+		return Switch(pos, 'breakpoint', 'step', 'throw', 'error', 'debugger');
+	}
+}
+
+function SimpleHTTPServer(port, bind) {
 	
 	var self = this;
 	var pendingRequestList = [];
@@ -25,22 +36,21 @@ function HTTPServer(port) {
 			s.data += buf;
 			if ( s.data.indexOf('\r\n\r\n') == -1 )
 				return;
-			
-			var request = /^GET \/(?:\?(.*?)|()) HTTP/(s.data)[1];
-			
-			var responseFunction = function(response) {
+			pendingRequestList.push([decodeURIComponent(/^GET \/\?(?:(.*?)|()) HTTP/(s.data)[1]), function(response) {
 				
-				s.Write('HTTP/1.0 200 OK\r\nconnection: close\r\n\r\n'+response);
-				s.linger = 500;
+				if ( s.connectionClosed )
+					return false;
+				s.Write('HTTP/1.0 200 OK\r\ncontent-type: text/plain\r\nconnection: close\r\n\r\n'+response);
+				s.linger = 2000;
 				s.Shutdown();
 				s.Close();
 				socketList.splice( socketList.indexOf(s), 1 );
-			}
-			pendingRequestList.push([request, responseFunction]);
+				return true;
+			}]);
 		}
 	}
 
-	serverSocket.Bind(port);
+	serverSocket.Bind(port, bind);
 	serverSocket.Listen();
 
 	this.GetNextRequest = function() {
@@ -51,48 +61,69 @@ function HTTPServer(port) {
 	}	
 }
 
-var server = new HTTPServer(8009);
+var server = new SimpleHTTPServer(8009, '127.0.0.1');
+
+function Dump( data, tab ) {
+
+    tab = tab||'';
+    if ( data === null ) return 'null';
+    if ( data === undefined ) return 'undefined';
+    if ( typeof(data) == 'string' || data instanceof String || data instanceof Blob ) return '"' + data + '"';
+    if ( typeof(data) == 'number' || data instanceof Number ) return data;
+    if ( data instanceof Function ) return data.toSource().substr(1,50) + '...';
+    if ( data instanceof Date ) return data;
+    if ( data instanceof XML ) return data.toXMLString();
+    if ( data instanceof Object && data.__iterator__ ) return data;
+    if ( data instanceof Object ) {
+   
+       var name = data.constructor != Object && data.constructor != Array ? '|'+(data.constructor.name||'?')+'|' : '';
+       var newTab = tab+'  '
+       var propList = '';
+        for ( var p in data )
+            propList += newTab+p+':'+arguments.callee( data[p], newTab )+'\n';
+      
+       var isArray = data instanceof Array;
+       return name + (isArray? '[' : '{') + (propList? '\n'+propList+tab : '') + (isArray? ']' : '}') + '\n';
+    }
+    return data;
+}
+
 
 var dbg = new Debugger();
 
-function Match(v) Array.indexOf(arguments,v,1)-1;
-function Switch(i) arguments[++i];
-
-function OriginToString( breakOrigin ) {
-
-	with (Debugger) {
-		var pos = Match(breakOrigin, FROM_BREAKPOINT, FROM_STEP, FROM_THROW, FROM_ERROR, FROM_DEBUGGER);
-		return Switch(pos, 'breakpoint', 'step', 'throw', 'error', 'debugger');
-	}
-}
-
 dbg.onBreak = function( filename, line, scope, breakOrigin, frameLevel ) {
 	
-//	Print( 'break at '+filename+':'+line+' because '+breakOrigin , '\n');
-
 	var action;
-	while ( !action ) {
-	
-		var response;
-		Print( 'wait...\n');
-		var [request, responseFunction] = server.GetNextRequest();
-		Print( 'has request \n');
-		
-//		Print( 'request: '+request , '\n');
-		
-		var [, key, val] = /([^=]+)=?(.*)/(request);
-		switch (key) {
+	do {
+
+		var response = '';
+		var [req, responseFunction] = server.GetNextRequest();
+		req = eval(req);
+//		var [, key, val] = /([^=]+)=?(.*)|()/(request);
+		switch (req[0]) {
 			case 'state':
-				response = ({ filename:filename, line:line, breakOrigin:OriginToString(breakOrigin) }).toSource();
+				response = { filename:filename, line:line, breakOrigin:OriginToString(breakOrigin) };
+				break;
+			case 'eval':
+				try {
+
+					function tmp(code) eval(code);
+					var prevScope = SetScope(tmp, scope);
+					response = tmp(req[1]);
+					SetScope(tmp, prevScope);
+				} catch (ex) {
+				
+					response = ex;
+				}				
 				break;
 			case 'getSource':
-				response = new File(val).content;
+				response = new File(req[1]).content;
 				break;
 			case 'getScriptList':
-				response = dbg.scriptList.toSource();
+				response = dbg.scriptList;
 				break;
 			case 'action':
-				switch (val) {
+				switch (req[1]) {
 					case 'continue':
 						action = Debugger.CONTINUE;
 						break;
@@ -108,7 +139,7 @@ dbg.onBreak = function( filename, line, scope, breakOrigin, frameLevel ) {
 				}
 				break;
 		}
-		responseFunction(response);
-	}
+		responseFunction(uneval(response));
+	} while ( !action );
 	return action;
 }

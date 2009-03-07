@@ -5,19 +5,15 @@
 	xmlns:html="http://www.w3.org/1999/xhtml"
 	onload="init(event)"
 >
-	<style id="mainCss" style="display: none">
-		<![CDATA[
-		toolbarbutton {
-			font-weight: bold;
-		}
-		]]>
-	</style>
-
-	<style id="codeCss" style="display: none">
+	<html:style id="css">
 		<![CDATA[
 		html, body {
 			margin: 0px;
 			padding: 0px;
+		}
+		 
+		html {
+			border-width:0px; overflow: scroll;
 		}
 
 		ol {
@@ -29,63 +25,151 @@
 			font-family: monospace;
 			background-color: #DDD;
 		}
+		.filename {
+			white-space: pre;
+			font-family: monospace;
+			background-color: #EEE;
+		}
+		.currentLine {
+			background-color: #EEA;
+		}
+		.hide {
+			display: none;
+		}
+		
+		.scope {
+			white-space: pre;
+			font-family: monospace;
+		}
+		
 		]]>
-	</style>
+	</html:style>
 
 
 	<script type="text/javascript">
 		<![CDATA[
+		
+		function Trace() window.console.debug.apply(this, arguments);
+		
 		function $(id) document.getElementById(id);
 		
-		var sourceList = {};
+		var domParser = new DOMParser();
 		
-		function init() {
+		function TextToHTMLNode(doc, text) {
 
-//			var piData = 'type="text/css" href="data:text/css, '+$('style').firstChild.data+'"';
-//			var pi = document.createProcessingInstruction('xml-stylesheet', piData);
-//			document.insertBefore(pi, document.firstChild);
+			elt = domParser.parseFromString('<div xmlns="http://www.w3.org/1999/xhtml">'+text+'</div>', 'application/xhtml+xml').documentElement;
+			return doc.importNode(elt, true).firstChild;
 		}
 		
-		function QueryDebugger(req) {
+		function XPath(xpath) {
+
+			return document.evaluate(xpath, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+		}
+		 
+		function init() {
+		
+			var doc = $('code').contentDocument;
+			doc.getElementsByTagName('HEAD')[0].appendChild(doc.importNode($('css'), true));
+			var doc = $('eval').contentDocument;
+			doc.getElementsByTagName('HEAD')[0].appendChild(doc.importNode($('css'), true));
+			ConnectRetry();
+			InitMouseOverCode();
+		}
+		 
+
+		function QueryDebugger() {
 		
 			netscape.security.PrivilegeManager.enablePrivilege("UniversalBrowserRead"); // allow cross-domain xhr
 			var xhr = new XMLHttpRequest();
 			try {
 			
-				xhr.open('GET', 'http://127.0.0.1:8009/?'+req, false);
+				xhr.open('GET', 'http://127.0.0.1:8009/?'+encodeURIComponent(Array.slice(arguments).toSource()), false);
 				xhr.send(null);
-				return xhr.responseText;
+				return eval(xhr.responseText);
 			} catch(ex) {}
 		}
 		
+		function ConnectRetry() {
+
+			if ( QueryDebugger() == undefined )
+				setTimeout( arguments.callee, 100 );
+			else
+				UpdateState();	
+		}
+		
+		function DetectIdentifiers(code) {
+			
+			return code.replace(/([\w$][\w$\d]*)/g, '<i>$1</i>');
+		}
+		
+		
+		var resetUi = [];
+		
 		function UpdateState() {
+		
+			while (resetUi.length)
+				resetUi.shift()();
 
 			var codeDoc = $('code').contentDocument;
 
 			$('statusInfo').label = 'querying state...';
-			var res = QueryDebugger('state');
-				 
-			if ( res == undefined ) {
+			var state = QueryDebugger('state');
 			
-				$('statusInfo').label = 'end';
+			if ( !state ) {
+			
+				$('statusInfo').label = '...';
 				codeDoc.body.innerHTML = '';
+				ConnectRetry();
 				return;
 			}
-				
-			var state = eval(res);
 			
 			$('statusInfo').label = 'break: '+state.breakOrigin;
 
-			if ( !sourceList[state.filename] )
-				sourceList[state.filename] = { source:QueryDebugger('getSource='+state.filename).split('\n') };
-		
-			var si = sourceList[state.filename];
-			var doc = '';
-			doc += '<style type="text/css">'+$('codeCss').firstChild.data+'</style>';
-			doc += '<ol id="code"><li>'+si.source.join('</li><li>')+'</li></ol>';
-			codeDoc.body.innerHTML = doc;
-			codeDoc.getElementById('code').childNodes[state.line-1].style.backgroundColor = '#EEA';
+			var codeElt;
+			for each ( [i, elt] in Iterator(codeDoc.body.childNodes) ) {
+				if (elt && elt.firstChild.firstChild.data == state.filename) // why elt sometimes is undefined ???
+					codeElt = elt;
+			}
+			if ( !codeElt ) {
+
+				var code = DetectIdentifiers(QueryDebugger('getSource', state.filename)).split('\n');
+				var codeElt = codeDoc.body.appendChild(TextToHTMLNode(codeDoc,'<div><div class="filename">'+state.filename+'</div></div>'));
+				var htmlNode = TextToHTMLNode(codeDoc, '<ol id="code"><li>'+code.join('</li><li>')+'</li></ol>');
+				codeElt.appendChild(htmlNode);
+			}
+			
+			codeElt.className = '';
+			var e = codeElt.childNodes[1].childNodes[state.line-1];
+			e.className = 'currentLine';
+			resetUi.push(function() e.className = '');
+			resetUi.push(function() codeElt.className = 'hide');
+			
+//			var scopeDoc = $('scope').contentDocument;
+//			scopeDoc.body.innerHTML = '<pre class="scope">'+QueryDebugger('scope')+'</pre>';
 		}
+		
+		function DoEval(textBox) {
+			
+			var evalDoc = $('eval').contentDocument;
+			var res = QueryDebugger('eval', textBox.value);
+			evalDoc.body.appendChild(TextToHTMLNode(evalDoc,'<div>'+res+'</div>'));
+			
+			var htmlElt = evalDoc.documentElement;
+			htmlElt.scrollTop = htmlElt.scrollHeight;
+
+			textBox.value='';
+		}
+		 
+		function InitMouseOverCode() {
+			
+			var codeDoc = $('code').contentDocument;
+			codeDoc.addEventListener('mouseover', function(ev) {
+				
+				if ( ev.target.nodeName == 'i' )
+					ev.target.title = QueryDebugger('eval', ev.target.firstChild.data);
+			}, false);
+		}
+
 		]]>
 	</script>
 
@@ -93,21 +177,21 @@
 
 		<toolbox>
 			<toolbar id="nav-toolbar">
-				<toolbarbutton label="connect" oncommand="UpdateState()"/>
-				<toolbarseparator />
-				<toolbarbutton label="Step" oncommand="QueryDebugger('action=step'); UpdateState()"/>
-				<toolbarbutton label="Step over" oncommand="QueryDebugger('action=stepover'); UpdateState()"/>
-				<toolbarbutton label="Step out" oncommand="QueryDebugger('action=stepout'); UpdateState()"/>
-				<toolbarbutton label="Continue" oncommand="QueryDebugger('action=continue'); UpdateState()"/>
+				<toolbarbutton label="Step" oncommand="QueryDebugger('action','step'); UpdateState()"/>
+				<toolbarbutton label="Step over" oncommand="QueryDebugger('action','stepover'); UpdateState()"/>
+				<toolbarbutton label="Step out" oncommand="QueryDebugger('action','stepout'); UpdateState()"/>
+				<toolbarbutton label="Continue" oncommand="QueryDebugger('action','continue'); UpdateState()"/>
 			</toolbar>
 		</toolbox>
 
 		<hbox flex="1">
 			<html:iframe id="code" flex="1"/>
-			<splitter collapse="before" resizeafter="farthest">
-				<grippy/>
-			</splitter>
-			<html:iframe id="stack"/>
+			<splitter collapse="before" resizeafter="farthest"><grippy/></splitter>
+			<vbox>
+				<html:iframe id="eval" flex="1"/>
+				<splitter collapse="before" resizeafter="farthest"><grippy/></splitter>
+				<textbox multiline="true" onkeydown="if (event.keyCode==13) DoEval(this), event.preventDefault()"/>
+			</vbox>
 		</hbox>
 
 		<statusbar>

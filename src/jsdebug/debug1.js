@@ -8,7 +8,10 @@ function toto() {
 
 	var i = 5;
 	i++;
-	function c() {}
+	function c() {
+		i++;
+	}
+	const a = 123;
 	i++;
 	i++;
 }

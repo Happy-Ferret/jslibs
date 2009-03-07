@@ -15,14 +15,14 @@
 #include "stdafx.h"
 #include "jsdbgapi.h"
 
-/*
+
 const JSCodeSpec jsCodeSpec[] = {
 #define OPDEF(op,val,name,token,length,nuses,ndefs,prec,format) \
     {length,nuses,ndefs,prec,format},
 #include "jsopcode.tbl"
 #undef OPDEF
 };
-*/
+
 
 /**doc
 $CLASS_HEADER
@@ -30,6 +30,7 @@ $SVN_REVISION $Revision: 2290 $
 **/
 BEGIN_CLASS( Debugger )
 
+// Action
 #define CONTINUE 1
 #define STEP 2
 #define STEP_OVER 3
@@ -45,8 +46,13 @@ BEGIN_CLASS( Debugger )
 
 struct Private {
 
-	JSStackFrame *stopAtFrame;
 	jl::Queue *scriptFileList;
+
+	// previous break state
+	int frameDepth;
+	JSStackFrame *frame;
+	JSScript *script;
+	uintN lineno;
 };
 
 int FrameDepth(const JSStackFrame *frame) {
@@ -82,12 +88,16 @@ void NewScriptHook(JSContext *cx, const char *filename, uintN lineno, JSScript *
 		for ( it = jl::QueueBegin(scriptList); it; it = jl::QueueNext(it) ) {
 
 			JSScript *s = (JSScript*)jl::QueueGetData(it);
-			if ( script->staticDepth > s->staticDepth )
+			if ( script->staticDepth > s->staticDepth ) {
+
 				jl::QueueInsertCell(scriptList, it, script);
+				break;
+			}
 		}
 		if ( it == NULL )
 			jl::QueueUnshift(scriptList, script);
 	}
+
 bad:
 	return;
 }
@@ -104,24 +114,17 @@ void DestroyScriptHook(JSContext *cx, JSScript *script, void *callerdata) {
 
 		scriptList = (jl::Queue*)jl::QueueGetData(it);
 		for ( it1 = jl::QueueBegin(scriptList); it1; it1 = jl::QueueNext(it1) ) {
-		
+
 			JSScript *s = (JSScript*)jl::QueueGetData(it1);
 			if ( s == script ) {
 
 				jl::QueueRemoveCell(scriptList, it1);
-				break;
+				if ( jl::QueueIsEmpty(scriptList) )
+					jl::QueueRemoveCell(pv->scriptFileList, it);
+				return;
 			}
 		}
-
-		if ( jl::QueueIsEmpty(scriptList) ) {
-			
-			jl::QueueRemoveCell(pv->scriptFileList, it);
-			break;
-		}
 	}
-
-bad:
-	return;
 }
 
 
@@ -163,37 +166,51 @@ static JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSScript *script,
 
 static JSTrapStatus DebuggerKeywordHandler(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval, void *closure) {
 
-	JSObject *debuggerObj = (JSObject*)closure;
-	JS_ClearInterrupt(JS_GetRuntime(cx), NULL, NULL); // avoid nested calls
-	return BreakHandler(cx, debuggerObj, script, pc, FROM_DEBUGGER);
+	return BreakHandler(cx, (JSObject*)closure, script, pc, FROM_DEBUGGER);
 }
 
-static JSTrapStatus InterruptHandler(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval, void *closure) {
+static JSTrapStatus InterruptStepHandler(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval, void *closure) {
 
-	JSObject *debuggerObj = (JSObject*)closure;
-	Private *pv = (Private*)JS_GetPrivate(cx, debuggerObj);
-	JSStackFrame *currentFrame = JS_GetScriptedCaller(cx, NULL);
+	Private *pv = (Private*)JS_GetPrivate(cx, (JSObject*)closure);
 
-	if ( pv->stopAtFrame != NULL && pv->stopAtFrame != currentFrame )
+	if ( script == pv->script && JS_PCToLineNumber(cx, script, pc) == pv->lineno )
 		return JSTRAP_CONTINUE;
 
-	JS_ClearInterrupt(JS_GetRuntime(cx), NULL, NULL); // avoid nested calls
-	return BreakHandler(cx, debuggerObj, script, pc, FROM_STEP);
+	if ( *pc == JSOP_DEFLOCALFUN )
+		return JSTRAP_CONTINUE;
+
+	return BreakHandler(cx, (JSObject*)closure, script, pc, FROM_STEP); 
 }
+
+
+static JSTrapStatus InterruptStepInFrameHandler(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval, void *closure) {
+
+	Private *pv = (Private*)JS_GetPrivate(cx, (JSObject*)closure);
+	JSStackFrame *currentFrame = JS_GetScriptedCaller(cx, NULL);
+
+	if ( script == pv->script && JS_PCToLineNumber(cx, script, pc) == pv->lineno )
+		return JSTRAP_CONTINUE;
+
+	if ( pv->frame != currentFrame )
+		return JSTRAP_CONTINUE;
+
+	if ( *pc == JSOP_DEFLOCALFUN ) // or JOF_DECLARING //	type = JOF_TYPE(cs->format);
+		return JSTRAP_CONTINUE;
+
+	return BreakHandler(cx, (JSObject*)closure, script, pc, FROM_STEP);
+}
+
 
 
 static JSTrapStatus TrapHandler(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval, void *closure) {
 
-	JSObject *debuggerObj = (JSObject*)closure;
-	JS_ClearInterrupt(JS_GetRuntime(cx), NULL, NULL); // avoid nested calls
-	return BreakHandler(cx, debuggerObj, script, pc, FROM_BREAKPOINT);
+	return BreakHandler(cx, (JSObject*)closure, script, pc, FROM_BREAKPOINT);
 }
 
 
 JSBool DebugErrorHookHandler(JSContext *cx, const char *message, JSErrorReport *report, void *closure) {
 
 	JSObject *debuggerObj = (JSObject*)closure;
-	JS_ClearInterrupt(JS_GetRuntime(cx), NULL, NULL); // avoid nested calls
 	JSStackFrame *frame;
 	frame = JS_GetScriptedCaller(cx, NULL);
 	if ( frame )
@@ -204,14 +221,15 @@ JSBool DebugErrorHookHandler(JSContext *cx, const char *message, JSErrorReport *
 
 static JSTrapStatus ThrowHookHandler(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval, void *closure) {
 
-	JSObject *debuggerObj = (JSObject*)closure;
-	JS_ClearInterrupt(JS_GetRuntime(cx), NULL, NULL); // avoid nested calls
-	return BreakHandler(cx, debuggerObj, script, pc, FROM_THROW);
+	return BreakHandler(cx, (JSObject*)closure, script, pc, FROM_THROW);
 }
 
 
 
 static JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSScript *script, jsbytecode *pc, int breakOrigin) {
+
+	JSRuntime *rt = JS_GetRuntime(cx);
+	JS_ClearInterrupt(rt, NULL, NULL);
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
 
@@ -223,34 +241,41 @@ static JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSScript *script,
 	JSStackFrame *frame;
 	frame = JS_GetScriptedCaller(cx, NULL);
 
+    JSTempValueRooter tvr;
+
+	jsval trapRval = JSVAL_VOID;
 	jsval argv[5];
-	J_CHK( StringToJsval(cx, JS_GetScriptFilename(cx, JS_GetFrameScript(cx, frame)), &argv[0]) );
-	argv[1] = INT_TO_JSVAL(JS_PCToLineNumber(cx, JS_GetFrameScript(cx, frame), pc));
-	argv[2] = OBJECT_TO_JSVAL( JS_GetFrameScopeChain(cx, frame) );
+	J_CHK( StringToJsval(cx, JS_GetScriptFilename(cx, script), &argv[0]) );
+	argv[1] = INT_TO_JSVAL(JS_PCToLineNumber(cx, script, pc));
+
+//	argv[2] = OBJECT_TO_JSVAL( JS_GetFrameScopeChain(cx, frame) );
+	argv[2] = OBJECT_TO_JSVAL( JS_NewObject(cx, NULL, NULL, JS_GetFrameScopeChain(cx, frame)) );
+
 	argv[3] = INT_TO_JSVAL( breakOrigin );
 	argv[4] = INT_TO_JSVAL( FrameDepth(frame) );
 
-	jsval trapRval;
+//	JS_PUSH_TEMP_ROOT(cx, 1, &trapRval, &tvr);
+	JS_PUSH_TEMP_ROOT(cx, COUNTOF(argv), argv, &tvr);
 	J_CHK( JS_CallFunctionValue(cx, obj, fval, COUNTOF(argv), argv, &trapRval) );
-
-	int t = JSVAL_TO_INT( trapRval );
+	JS_POP_TEMP_ROOT(cx, &tvr);
 
 	switch (trapRval) {
 		
 		case INT_TO_JSVAL(CONTINUE):
 
-			pv->stopAtFrame = NULL;
-			return JSTRAP_CONTINUE;
 			break;
 		case INT_TO_JSVAL(STEP):
 			
-			pv->stopAtFrame = NULL; // do not stop at a given frame
-			J_CHK( JS_SetInterrupt(JS_GetRuntime(cx), InterruptHandler, (void*)OBJECT_TO_JSVAL(obj)) );
+			pv->script = script;
+			pv->lineno = JS_PCToLineNumber(cx, script, pc);
+			J_CHK( JS_SetInterrupt(rt, InterruptStepHandler, obj) );
 			break;
 		case INT_TO_JSVAL(STEP_OVER):
 		
-			pv->stopAtFrame = JS_GetScriptedCaller(cx, NULL); // stop next time we are in this frame.
-			J_CHK( JS_SetInterrupt(JS_GetRuntime(cx), InterruptHandler, (void*)OBJECT_TO_JSVAL(obj)) );
+			pv->script = script;
+			pv->lineno = JS_PCToLineNumber(cx, script, pc);
+			pv->frame = JS_GetScriptedCaller(cx, NULL); // stop next time we are in this frame.
+			J_CHK( JS_SetInterrupt(rt, InterruptStepInFrameHandler, obj) );
 	/*
 			//jsbytecode *nextPc = JS_LineNumberToPC(cx, script, JS_PCToLineNumber(cx, script, pc+1) + 1);
 	//		jsbytecode *nextPc = JS_GetFramePC(cx, caller);
@@ -267,8 +292,10 @@ static JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSScript *script,
 			break;
 		case INT_TO_JSVAL(STEP_OUT):
 			
-			pv->stopAtFrame = JS_GetScriptedCaller(cx, frame->down); // stop when we reach the parent's frame.
-			J_CHK( JS_SetInterrupt(JS_GetRuntime(cx), InterruptHandler, (void*)OBJECT_TO_JSVAL(obj)) );
+			pv->script = script;
+			pv->lineno = JS_PCToLineNumber(cx, script, pc);
+			pv->frame = JS_GetScriptedCaller(cx, frame->down); // stop when we reach the parent's frame.
+			J_CHK( JS_SetInterrupt(rt, InterruptStepInFrameHandler, obj) );
 	/*
 			JSStackFrame *frame;
 			frame = JS_GetScriptedCaller(cx, NULL);
@@ -303,15 +330,16 @@ DEFINE_FINALIZE() {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
 	if ( pv ) {
-
+/*
 		JSTrapHandler tmpTrapHandler;
 		void *tmpTrapClosure;
-		JS_ClearInterrupt(JS_GetRuntime(cx), &tmpTrapHandler, &tmpTrapClosure); // avoid nested calls
+		JS_ClearInterrupt(JS_GetRuntime(cx), &tmpTrapHandler, &tmpTrapClosure);
 		// restore the interrupt if it is not ours.
-		if ( tmpTrapHandler != NULL && tmpTrapHandler != InterruptHandler && tmpTrapClosure != obj ) {
-
+		if ( tmpTrapHandler != NULL && tmpTrapHandler != InterruptHandler && tmpTrapClosure != obj )
 			JS_SetInterrupt(JS_GetRuntime(cx), tmpTrapHandler, tmpTrapClosure);
-		}
+*/
+		JS_ClearInterrupt(JS_GetRuntime(cx), NULL, NULL);
+
 
 		JS_SetNewScriptHookProc(JS_GetRuntime(cx), NULL, NULL);
 		JS_SetDestroyScriptHookProc(JS_GetRuntime(cx), NULL, NULL);
@@ -482,6 +510,58 @@ DEFINE_PROPERTY( scriptList ) {
 	JL_BAD;
 }
 
+/*
+static JSBool
+Disassemble(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+{
+    JSBool lines;
+    uintN i;
+    JSScript *script;
+
+    if (argc > 0 &&
+        JSVAL_IS_STRING(argv[0]) &&
+        !strcmp(JS_GetStringBytes(JSVAL_TO_STRING(argv[0])), "-l")) {
+        lines = JS_TRUE;
+        argv++, argc--;
+    } else {
+        lines = JS_FALSE;
+    }
+    for (i = 0; i < argc; i++) {
+        script = ValueToScript(cx, argv[i]);
+        if (!script)
+            return JS_FALSE;
+        if (VALUE_IS_FUNCTION(cx, argv[i])) {
+            JSFunction *fun = JS_ValueToFunction(cx, argv[i]);
+            if (fun && (fun->flags & JSFUN_FLAGS_MASK)) {
+                uint16 flags = fun->flags;
+                fputs("flags:", stdout);
+
+#define SHOW_FLAG(flag) if (flags & JSFUN_##flag) fputs(" " #flag, stdout);
+
+                SHOW_FLAG(LAMBDA);
+                SHOW_FLAG(SETTER);
+                SHOW_FLAG(GETTER);
+                SHOW_FLAG(BOUND_METHOD);
+                SHOW_FLAG(HEAVYWEIGHT);
+                SHOW_FLAG(THISP_STRING);
+                SHOW_FLAG(THISP_NUMBER);
+                SHOW_FLAG(THISP_BOOLEAN);
+                SHOW_FLAG(EXPR_CLOSURE);
+                SHOW_FLAG(INTERPRETED);
+
+#undef SHOW_FLAG
+                putchar('\n');
+            }
+        }
+
+        if (!js_Disassemble(cx, script, lines, stdout))
+            return JS_FALSE;
+        SrcNotes(cx, script);
+        TryNotes(cx, script);
+    }
+    return JS_TRUE;
+}
+*/
 
 CONFIGURE_CLASS
 
