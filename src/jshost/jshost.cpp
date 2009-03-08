@@ -295,7 +295,7 @@ The main features are:
  * `-n  <size>` (default: no limit)
   Specifies the number of allocated megabytes after which garbage collection is run.
  * `-g <time>` (default = 60)
-  This is the frequency (in seconds) at witch the GarbageCollector may be launched.
+  This is the frequency (in seconds) at witch the GarbageCollector may be launched (0 for disabled).
  * `-l <case>` (default = 0)
   This is a temporary option that allow to select function name naming. 0:default, 1:lowerCamelCase, 2:UpperCamelCase
   $H node

@@ -2,9 +2,10 @@ LoadModule('jsstd');
 LoadModule('jsstd');
 LoadModule('jsio');
 
+var b = new Blob( 'test' );
 
 
-Print( File._revision );
+Print( b.toSource() , '\n' );
 
 
 

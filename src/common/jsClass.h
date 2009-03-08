@@ -104,6 +104,7 @@ struct JSLIBS_ConstIntegerSpec {
 #define DEFINE_ENUMERATE() static JSBool Enumerate(JSContext *cx, JSObject *obj)
 #define DEFINE_TRACER() static void Tracer(JSTracer *trc, JSObject *obj)
 #define DEFINE_INIT() static JSBool Init(JSContext *cx, JSObject *obj)
+#define DEFINE_FREE() static JSBool Free(JSContext *cx, JSObject *obj)
 #define DEFINE_ADD_PROPERTY() static JSBool AddProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
 #define DEFINE_DEL_PROPERTY() static JSBool DelProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
 #define DEFINE_GET_PROPERTY() static JSBool GetProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
@@ -137,6 +138,7 @@ struct JSLIBS_ConstIntegerSpec {
 #define HAS_EQUALITY _xclass.base.flags |= JSCLASS_IS_EXTENDED; _xclass.equality = Equality;
 #define HAS_WRAPPED_OBJECT _xclass.base.flags |= JSCLASS_IS_EXTENDED; _xclass.wrappedObject = WrappedObject;
 #define HAS_INIT  _init = Init;
+#define HAS_FREE  _free = Free;
 #define HAS_ADD_PROPERTY   _class->addProperty = AddProperty;
 #define HAS_DEL_PROPERTY   _class->delProperty = DelProperty;
 #define HAS_GET_PROPERTY   _class->getProperty = GetProperty;
@@ -179,6 +181,7 @@ inline void _NormalizeFunctionNames( JSFunctionSpec *functionSpec ) {
 	JSConstDoubleSpec *_constDoubleSpec = NULL; \
 	JSLIBS_ConstIntegerSpec *_constIntegerSpec = NULL; \
 	JSBool (* _init)(JSContext *cx, JSObject *obj) = NULL; \
+	JSBool (* _free)(JSContext *cx, JSObject *obj) = NULL; \
 	jsval _revision = JSVAL_VOID;
 
 #define END_STATIC \
@@ -243,6 +246,7 @@ static JSBool RemoveClass( JSContext *cx, JSClass *cl ) {
 		JSObject *_tmp_prototype = NULL; \
 		JSObject **_parentPrototype = &_tmp_prototype; \
 		JSBool (* _init)(JSContext *cx, JSObject *obj) = NULL; \
+		JSBool (* _free)(JSContext *cx, JSObject *obj) = NULL; \
 		jsval _revision = JSVAL_VOID;
 
 #define END_CLASS \
