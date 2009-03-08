@@ -15,6 +15,7 @@
 #include "stdafx.h"
 #include "jsdbgapi.h"
 
+extern jl::Queue *scriptFileList;
 
 const JSCodeSpec jsCodeSpec[] = {
 #define OPDEF(op,val,name,token,length,nuses,ndefs,prec,format) \
@@ -46,8 +47,6 @@ BEGIN_CLASS( Debugger )
 
 struct Private {
 
-	jl::Queue *scriptFileList;
-
 	// previous break state
 	int frameDepth;
 	JSStackFrame *frame;
@@ -60,71 +59,6 @@ int FrameDepth(const JSStackFrame *frame) {
 	int frameDepth;
 	for ( frameDepth = 0; frame; frame = frame->down, frameDepth++ );
 	return frameDepth; // 0 is the first frame
-}
-
-void NewScriptHook(JSContext *cx, const char *filename, uintN lineno, JSScript *script, JSFunction *fun, void *callerdata) {
-
-	Private *pv = (Private*)callerdata;
-
-	jl::QueueCell *it;
-	jl::Queue *scriptList = NULL;
-
-	// find the right script filename
-	for ( it = jl::QueueBegin(pv->scriptFileList); it; it = jl::QueueNext(it) ) {
-
-		scriptList = (jl::Queue*)jl::QueueGetData(it);
-		JSScript *s = (JSScript*)jl::QueueGetData(jl::QueueBegin(scriptList));
-		if ( strcmp(filename, s->filename) == 0 )
-			break;
-	}
-
-	if ( it == NULL ) { // if not found, create one
-	
-		scriptList = jl::QueueConstruct();
-		jl::QueueUnshift(pv->scriptFileList, scriptList);
-		jl::QueuePush(scriptList, script);
-	} else { // add the script at the right place in the queue
-
-		for ( it = jl::QueueBegin(scriptList); it; it = jl::QueueNext(it) ) {
-
-			JSScript *s = (JSScript*)jl::QueueGetData(it);
-			if ( script->staticDepth > s->staticDepth ) {
-
-				jl::QueueInsertCell(scriptList, it, script);
-				break;
-			}
-		}
-		if ( it == NULL )
-			jl::QueueUnshift(scriptList, script);
-	}
-
-bad:
-	return;
-}
-
-void DestroyScriptHook(JSContext *cx, JSScript *script, void *callerdata) {
-
-	Private *pv = (Private*)callerdata;
-
-	jl::QueueCell *it, *it1;
-	jl::Queue *scriptList = NULL;
-
-	// find the right script filename
-	for ( it = jl::QueueBegin(pv->scriptFileList); it; it = jl::QueueNext(it) ) {
-
-		scriptList = (jl::Queue*)jl::QueueGetData(it);
-		for ( it1 = jl::QueueBegin(scriptList); it1; it1 = jl::QueueNext(it1) ) {
-
-			JSScript *s = (JSScript*)jl::QueueGetData(it1);
-			if ( s == script ) {
-
-				jl::QueueRemoveCell(scriptList, it1);
-				if ( jl::QueueIsEmpty(scriptList) )
-					jl::QueueRemoveCell(pv->scriptFileList, it);
-				return;
-			}
-		}
-	}
 }
 
 
@@ -186,13 +120,17 @@ static JSTrapStatus InterruptStepHandler(JSContext *cx, JSScript *script, jsbyte
 static JSTrapStatus InterruptStepInFrameHandler(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval, void *closure) {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, (JSObject*)closure);
-	JSStackFrame *currentFrame = JS_GetScriptedCaller(cx, NULL);
+	JSStackFrame *frame = JS_GetScriptedCaller(cx, NULL);
 
 	if ( script == pv->script && JS_PCToLineNumber(cx, script, pc) == pv->lineno )
 		return JSTRAP_CONTINUE;
 
-	if ( pv->frame != currentFrame )
+
+
+	if ( pv->frame != frame )
 		return JSTRAP_CONTINUE;
+//	if ( FrameDepth(frame) > pv->frameDepth )
+//		return JSTRAP_CONTINUE;
 
 	if ( *pc == JSOP_DEFLOCALFUN ) // or JOF_DECLARING //	type = JOF_TYPE(cs->format);
 		return JSTRAP_CONTINUE;
@@ -201,18 +139,17 @@ static JSTrapStatus InterruptStepInFrameHandler(JSContext *cx, JSScript *script,
 }
 
 
-
 static JSTrapStatus TrapHandler(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval, void *closure) {
 
 	return BreakHandler(cx, (JSObject*)closure, script, pc, FROM_BREAKPOINT);
 }
-
 
 JSBool DebugErrorHookHandler(JSContext *cx, const char *message, JSErrorReport *report, void *closure) {
 
 	JSObject *debuggerObj = (JSObject*)closure;
 	JSStackFrame *frame;
 	frame = JS_GetScriptedCaller(cx, NULL);
+
 	if ( frame )
 		BreakHandler(cx, debuggerObj, JS_GetFrameScript(cx, frame), JS_GetFramePC(cx, frame), FROM_ERROR); // (TBD) use message and report
 	return JS_TRUE;
@@ -225,11 +162,7 @@ static JSTrapStatus ThrowHookHandler(JSContext *cx, JSScript *script, jsbytecode
 }
 
 
-
 static JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSScript *script, jsbytecode *pc, int breakOrigin) {
-
-	JSRuntime *rt = JS_GetRuntime(cx);
-	JS_ClearInterrupt(rt, NULL, NULL);
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
 
@@ -238,44 +171,72 @@ static JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSScript *script,
 	if ( !JsvalIsFunction(cx, fval) ) // nothing to do
 		return JSTRAP_CONTINUE;
 
+	JSRuntime *rt;
+	rt = JS_GetRuntime(cx);
 	JSStackFrame *frame;
 	frame = JS_GetScriptedCaller(cx, NULL);
 
-    JSTempValueRooter tvr;
+	jsval argv[8];
+	argv[0] = JSVAL_NULL;
+	J_CHK( StringToJsval(cx, JS_GetScriptFilename(cx, script), &argv[1]) );
+	argv[2] = INT_TO_JSVAL(JS_PCToLineNumber(cx, script, pc));
+	argv[3] = OBJECT_TO_JSVAL( JS_GetFrameScopeChain(cx, frame) );
+	argv[4] = INT_TO_JSVAL( breakOrigin );
+	argv[5] = INT_TO_JSVAL( FrameDepth(frame) );
 
-	jsval trapRval = JSVAL_VOID;
-	jsval argv[5];
-	J_CHK( StringToJsval(cx, JS_GetScriptFilename(cx, script), &argv[0]) );
-	argv[1] = INT_TO_JSVAL(JS_PCToLineNumber(cx, script, pc));
+	bool hasException;
+	hasException = JS_IsExceptionPending(cx);
 
-//	argv[2] = OBJECT_TO_JSVAL( JS_GetFrameScopeChain(cx, frame) );
-	argv[2] = OBJECT_TO_JSVAL( JS_NewObject(cx, NULL, NULL, JS_GetFrameScopeChain(cx, frame)) );
+	if ( hasException ) {
 
-	argv[3] = INT_TO_JSVAL( breakOrigin );
-	argv[4] = INT_TO_JSVAL( FrameDepth(frame) );
+		argv[6] = JSVAL_TRUE;
+		J_CHK( JS_GetPendingException(cx, &argv[7]) );
+		JS_ClearPendingException(cx);
+	} else {
 
-//	JS_PUSH_TEMP_ROOT(cx, 1, &trapRval, &tvr);
+		argv[6] = JSVAL_FALSE;
+		argv[7] = JSVAL_VOID;
+	}
+
+	JSDebugHooks voidHooks;
+	memset(&voidHooks, 0, sizeof(JSDebugHooks));
+	JSDebugHooks *prevHooks;
+	prevHooks = JS_SetContextDebugHooks(cx, &voidHooks); // avoid reentrant case.
+
+	JSTempValueRooter tvr;
 	JS_PUSH_TEMP_ROOT(cx, COUNTOF(argv), argv, &tvr);
-	J_CHK( JS_CallFunctionValue(cx, obj, fval, COUNTOF(argv), argv, &trapRval) );
+	JSBool status;
+	status = JS_CallFunctionValue(cx, obj, fval, COUNTOF(argv)-1, argv+1, &argv[0]);
 	JS_POP_TEMP_ROOT(cx, &tvr);
 
-	switch (trapRval) {
+	JS_SetContextDebugHooks(cx, prevHooks);
+	J_CHK( status );
+
+	if ( hasException ) { // restore the exception
+
+		JS_SetPendingException(cx, argv[7]);
+//		return JSTRAP_ERROR; // (TBD) ???
+	}
+
+	switch (argv[0]) {
 		
 		case INT_TO_JSVAL(CONTINUE):
 
+			JS_ClearInterrupt(rt, NULL, NULL);
 			break;
 		case INT_TO_JSVAL(STEP):
 			
 			pv->script = script;
 			pv->lineno = JS_PCToLineNumber(cx, script, pc);
-			J_CHK( JS_SetInterrupt(rt, InterruptStepHandler, obj) );
+			JS_SetInterrupt(rt, InterruptStepHandler, obj);
 			break;
 		case INT_TO_JSVAL(STEP_OVER):
 		
+			pv->frameDepth = FrameDepth(frame);
 			pv->script = script;
 			pv->lineno = JS_PCToLineNumber(cx, script, pc);
-			pv->frame = JS_GetScriptedCaller(cx, NULL); // stop next time we are in this frame.
-			J_CHK( JS_SetInterrupt(rt, InterruptStepInFrameHandler, obj) );
+			pv->frame = frame; // stop next time we are in this frame.
+			JS_SetInterrupt(rt, InterruptStepInFrameHandler, obj);
 	/*
 			//jsbytecode *nextPc = JS_LineNumberToPC(cx, script, JS_PCToLineNumber(cx, script, pc+1) + 1);
 	//		jsbytecode *nextPc = JS_GetFramePC(cx, caller);
@@ -292,10 +253,11 @@ static JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSScript *script,
 			break;
 		case INT_TO_JSVAL(STEP_OUT):
 			
+			pv->frameDepth = FrameDepth(frame);
 			pv->script = script;
 			pv->lineno = JS_PCToLineNumber(cx, script, pc);
 			pv->frame = JS_GetScriptedCaller(cx, frame->down); // stop when we reach the parent's frame.
-			J_CHK( JS_SetInterrupt(rt, InterruptStepInFrameHandler, obj) );
+			JS_SetInterrupt(rt, InterruptStepInFrameHandler, obj);
 	/*
 			JSStackFrame *frame;
 			frame = JS_GetScriptedCaller(cx, NULL);
@@ -340,17 +302,6 @@ DEFINE_FINALIZE() {
 */
 		JS_ClearInterrupt(JS_GetRuntime(cx), NULL, NULL);
 
-
-		JS_SetNewScriptHookProc(JS_GetRuntime(cx), NULL, NULL);
-		JS_SetDestroyScriptHookProc(JS_GetRuntime(cx), NULL, NULL);
-
-		for ( jl::QueueCell *it = jl::QueueBegin(pv->scriptFileList); it; it = jl::QueueNext(it) ) {
-
-			jl::Queue *scriptList = (jl::Queue*)jl::QueueGetData(it);
-			jl::QueueDestruct(scriptList);
-		}
-		jl::QueueDestruct(pv->scriptFileList);
-
 		JS_SetDebuggerHandler(JS_GetRuntime(cx), NULL, NULL);
 		JS_SetThrowHook( JS_GetRuntime(cx), NULL, NULL);
 		JS_SetDebugErrorHook( JS_GetRuntime(cx), NULL, NULL);
@@ -372,14 +323,9 @@ DEFINE_CONSTRUCTOR() {
 	J_S_ASSERT_ALLOC(pv);
 	memset(pv, 0, sizeof(Private));
 	J_CHK( JS_SetPrivate(cx, obj, pv) );
-	J_CHK( JS_SetDebuggerHandler(JS_GetRuntime(cx), DebuggerKeywordHandler, obj) );
-//	J_CHK( JS_SetThrowHook( JS_GetRuntime(cx), ThrowHookHandler, obj) );
-//	J_CHK( JS_SetDebugErrorHook( JS_GetRuntime(cx), DebugErrorHookHandler, obj) );
-
-	pv->scriptFileList = jl::QueueConstruct();
-
-	JS_SetNewScriptHookProc(JS_GetRuntime(cx), NewScriptHook, pv);
-	JS_SetDestroyScriptHookProc(JS_GetRuntime(cx), DestroyScriptHook, pv);
+	JS_SetDebuggerHandler(JS_GetRuntime(cx), DebuggerKeywordHandler, obj);
+//	JS_SetThrowHook( JS_GetRuntime(cx), ThrowHookHandler, obj);
+	JS_SetDebugErrorHook( JS_GetRuntime(cx), DebugErrorHookHandler, obj);
 
 	return JS_TRUE;
 	JL_BAD;
@@ -404,7 +350,7 @@ DEFINE_FUNCTION( ToggleBreakpoint ) {
 	J_CHK( JsvalToUInt(cx, J_ARG(3), &lineno) );
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	JSScript *script = ScriptByLocation(cx, pv->scriptFileList, filename, lineno);
+	JSScript *script = ScriptByLocation(cx, scriptFileList, filename, lineno);
 	//J_S_ASSERT( script != NULL, "Invalid breakpoint location.");
 	if ( script == NULL ) {
 		
@@ -478,6 +424,8 @@ DEFINE_FUNCTION( Stack ) {
 	J_CHK( JS_DefineProperty(cx, stackItem, "callee", OBJECT_TO_JSVAL(JS_GetFrameCalleeObject(cx, frame)), NULL, NULL, JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT) );
 	J_CHK( JS_DefineProperty(cx, stackItem, "scope", OBJECT_TO_JSVAL(scope), NULL, NULL, JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT) );
 	J_CHK( JS_DefineProperty(cx, stackItem, "this", OBJECT_TO_JSVAL(JS_GetFrameThis(cx, frame)), NULL, NULL, JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT) );
+	J_CHK( JS_DefineProperty(cx, stackItem, "argv", *frame->argv, NULL, NULL, JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT) );
+	J_CHK( JS_DefineProperty(cx, stackItem, "rval", JS_GetFrameReturnValue(cx, frame), NULL, NULL, JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT) );
 	J_CHK( JS_DefineProperty(cx, stackItem, "isNative", BOOLEAN_TO_JSVAL(JS_IsNativeFrame(cx, frame)), NULL, NULL, JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT) );
 
 	return JS_TRUE;
@@ -496,7 +444,7 @@ DEFINE_PROPERTY( scriptList ) {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
 	int index = 0;
-	for ( jl::QueueCell *it = jl::QueueBegin(pv->scriptFileList); it; it = jl::QueueNext(it) ) {
+	for ( jl::QueueCell *it = jl::QueueBegin(scriptFileList); it; it = jl::QueueNext(it) ) {
 
 		jl::Queue *scriptList = (jl::Queue*)jl::QueueGetData(it);
 		JSScript *s = (JSScript*)jl::QueueGetData(jl::QueueBegin(scriptList));
@@ -509,6 +457,18 @@ DEFINE_PROPERTY( scriptList ) {
 	return JS_TRUE;
 	JL_BAD;
 }
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $ARRAY $INAME
+**/
+DEFINE_PROPERTY( pendingException ) {
+
+	*vp = cx->exception;
+	return JS_TRUE;
+}
+
 
 /*
 static JSBool
@@ -563,6 +523,9 @@ Disassemble(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 }
 */
 
+
+
+
 CONFIGURE_CLASS
 
 	REVISION(SvnRevToInt("$Revision: 2290 $"))
@@ -578,6 +541,7 @@ CONFIGURE_CLASS
 
 	BEGIN_PROPERTY_SPEC
 		PROPERTY_READ( scriptList )
+		PROPERTY_READ( pendingException )
 	END_PROPERTY_SPEC
 
 	BEGIN_CONST_INTEGER_SPEC

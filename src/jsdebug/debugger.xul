@@ -56,9 +56,16 @@
 		var domParser = new DOMParser();
 		
 		function TextToHTMLNode(doc, text) {
-
+			
 			elt = domParser.parseFromString('<div xmlns="http://www.w3.org/1999/xhtml">'+text+'</div>', 'application/xhtml+xml').documentElement;
-			return doc.importNode(elt, true).firstChild;
+
+			if ( elt.nodeName != 'parsererror' )
+				return doc.importNode(elt, true).firstChild;
+			else {
+				
+				Trace(elt.firstChild.data);
+				Trace(text);
+			}
 		}
 		
 		function XPath(xpath) {
@@ -99,9 +106,33 @@
 		
 		function DetectIdentifiers(code) {
 			
-			return code.replace(/([\w$][\w$\d]*)/g, '<i>$1</i>');
+			return code.replace(/(&?)([\w]+)/g, function(s, p1, p2) {
+				return s[0] == '&' ? s : '<i>'+s+'</i>'; // we must avoid to convert entities
+			});
 		}
 		
+		function StringReplacer(conversionObject) function(s) s.replace(new RegExp([k.replace(/(\/|\.|\*|\+|\?|\||\(|\)|\[|\]|\{|\}|\\)/g, "\\$1") for (k in conversionObject)].join('|'), 'g'), function(str) conversionObject[str]);
+
+		EscapeEntities = StringReplacer({'&':'&amp;', '<':'&lt;', '>':'&gt;'});
+		
+		function InsertNode(node, pos) pos.parentNode.insertBefore(node, pos);
+		function InsertNodeAtBeginning(node, parent) parent.firstChild ? parent.insertBefore(node, parent.firstChild) : parent.appendChild(node);
+
+		function IsInView(elt) {
+		
+//			for ( var pos = 0, e = elt; e; pos += e.offsetTop, e = e.offsetParent );
+
+	var e = elt, pos = 0;
+	do {
+		pos += e.offsetTop;
+	} while (e = e.offsetParent);
+
+
+			var doc = elt.ownerDocument.documentElement;
+			
+			Trace( doc, pos, doc.scrollHeight, doc.scrollHeight + elt.ownerDocument.body.clientHeight );
+			return pos >= doc.scrollHeight && pos <= doc.scrollHeight + elt.ownerDocument.body.clientHeight;
+		}
 		
 		var resetUi = [];
 		
@@ -123,29 +154,41 @@
 				return;
 			}
 			
-			$('statusInfo').label = 'break: '+state.breakOrigin;
+			$('statusInfo').label = 'break: '+state.breakOrigin + ( state.hasException ? ' ('+state.exception+')' : '' );
 
 			var codeElt;
 			for each ( [i, elt] in Iterator(codeDoc.body.childNodes) ) {
 				if (elt && elt.firstChild.firstChild.data == state.filename) // why elt sometimes is undefined ???
 					codeElt = elt;
 			}
+			
 			if ( !codeElt ) {
-
-				var code = DetectIdentifiers(QueryDebugger('getSource', state.filename)).split('\n');
+				
+				var codeText = EscapeEntities(QueryDebugger('getSource', state.filename));
+				var codeLines = DetectIdentifiers(codeText).split('\n');
+				var codeList = TextToHTMLNode(codeDoc, '<ol id="code"><li>'+codeLines.join('</li><li>')+'</li></ol>');
 				var codeElt = codeDoc.body.appendChild(TextToHTMLNode(codeDoc,'<div><div class="filename">'+state.filename+'</div></div>'));
-				var htmlNode = TextToHTMLNode(codeDoc, '<ol id="code"><li>'+code.join('</li><li>')+'</li></ol>');
-				codeElt.appendChild(htmlNode);
+				codeElt.appendChild(codeList);
 			}
 			
 			codeElt.className = '';
-			var e = codeElt.childNodes[1].childNodes[state.line-1];
-			e.className = 'currentLine';
-			resetUi.push(function() e.className = '');
-			resetUi.push(function() codeElt.className = 'hide');
 			
-//			var scopeDoc = $('scope').contentDocument;
-//			scopeDoc.body.innerHTML = '<pre class="scope">'+QueryDebugger('scope')+'</pre>';
+			var currentLineElt = codeElt.childNodes[1].childNodes[state.line-1];
+			currentLineElt.className = 'currentLine';
+			resetUi.push(function() currentLineElt.className = '');
+			
+			if ( !IsInView(currentLineElt) ) {
+
+				var i = 4, pos = currentLineElt;
+				while ( pos && i ) {
+
+					pos = pos.previousSibling;
+					i--;
+				}
+				pos.scrollIntoView();
+			}
+			
+			resetUi.push(function() codeElt.className = 'hide');
 		}
 		
 		function DoEval(textBox) {

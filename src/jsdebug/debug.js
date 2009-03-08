@@ -1,15 +1,12 @@
 LoadModule('jsstd');
 Exec('debugger.js');
 
-
 Exec('debug1.js');
 
-debugger;
-//dbg.ToggleBreakpoint( true, 'debug1.js', 13 );
+//dbg.ToggleBreakpoint( true, 'debug1.js', 14 );
 
-toto();
-toto.call('myThis');
+xxx();
 
-
+Debug1();
 
 Print('\n');

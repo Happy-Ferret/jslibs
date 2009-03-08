@@ -63,6 +63,7 @@ function SimpleHTTPServer(port, bind) {
 
 var server = new SimpleHTTPServer(8009, '127.0.0.1');
 
+/*
 function Dump( data, tab ) {
 
     tab = tab||'';
@@ -87,22 +88,22 @@ function Dump( data, tab ) {
     }
     return data;
 }
-
+*/
 
 var dbg = new Debugger();
 
-dbg.onBreak = function( filename, line, scope, breakOrigin, frameLevel ) {
-	
+dbg.onBreak = function( filename, line, scope, breakOrigin, frameLevel, hasException, exception ) {
+
 	var action;
 	do {
 
 		var response = '';
 		var [req, responseFunction] = server.GetNextRequest();
 		req = eval(req);
-//		var [, key, val] = /([^=]+)=?(.*)|()/(request);
+
 		switch (req[0]) {
 			case 'state':
-				response = { filename:filename, line:line, breakOrigin:OriginToString(breakOrigin) };
+				response = { filename:filename, line:line, breakOrigin:OriginToString(breakOrigin), hasException:hasException, exception:exception };
 				break;
 			case 'eval':
 				try {

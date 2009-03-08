@@ -14,11 +14,12 @@
 
 #include "stdafx.h"
 #include "static.h"
+#include "jsdbgapi.h"
 
 DECLARE_CLASS( Debugger );
 
 extern bool _unsafeMode = false;
-
+extern jl::Queue *scriptFileList = NULL;
 
 /**doc t:header
 $MODULE_HEADER
@@ -29,10 +30,74 @@ $MODULE_HEADER
 $MODULE_FOOTER
 **/
 
+
+void NewScriptHook(JSContext *cx, const char *filename, uintN lineno, JSScript *script, JSFunction *fun, void *callerdata) {
+
+	jl::QueueCell *it;
+	jl::Queue *scriptList = NULL;
+
+	// find the right script filename
+	for ( it = jl::QueueBegin(scriptFileList); it; it = jl::QueueNext(it) ) {
+
+		scriptList = (jl::Queue*)jl::QueueGetData(it);
+		JSScript *s = (JSScript*)jl::QueueGetData(jl::QueueBegin(scriptList));
+		if ( strcmp(filename, s->filename) == 0 )
+			break;
+	}
+
+	if ( it == NULL ) { // if not found, create one
+	
+		scriptList = jl::QueueConstruct();
+		jl::QueueUnshift(scriptFileList, scriptList);
+		jl::QueuePush(scriptList, script);
+	} else { // add the script at the right place in the queue
+
+		for ( it = jl::QueueBegin(scriptList); it; it = jl::QueueNext(it) ) {
+
+			JSScript *s = (JSScript*)jl::QueueGetData(it);
+			if ( script->staticDepth > s->staticDepth ) {
+
+				jl::QueueInsertCell(scriptList, it, script);
+				break;
+			}
+		}
+		if ( it == NULL )
+			jl::QueueUnshift(scriptList, script);
+	}
+}
+
+void DestroyScriptHook(JSContext *cx, JSScript *script, void *callerdata) {
+
+	jl::QueueCell *it, *it1;
+	jl::Queue *scriptList = NULL;
+
+	// find the right script filename
+	for ( it = jl::QueueBegin(scriptFileList); it; it = jl::QueueNext(it) ) {
+
+		scriptList = (jl::Queue*)jl::QueueGetData(it);
+		for ( it1 = jl::QueueBegin(scriptList); it1; it1 = jl::QueueNext(it1) ) {
+
+			JSScript *s = (JSScript*)jl::QueueGetData(it1);
+			if ( s == script ) {
+
+				jl::QueueRemoveCell(scriptList, it1);
+				if ( jl::QueueIsEmpty(scriptList) )
+					jl::QueueRemoveCell(scriptFileList, it);
+				return;
+			}
+		}
+	}
+}
+
+
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
 	_unsafeMode = GetHostPrivate(cx)->unsafeMode;
-
+/*
+	scriptFileList = jl::QueueConstruct();
+	JS_SetNewScriptHookProc(JS_GetRuntime(cx), NewScriptHook, NULL);
+	JS_SetDestroyScriptHookProc(JS_GetRuntime(cx), DestroyScriptHook, NULL);
+*/
 	INIT_STATIC();
 	INIT_CLASS( Debugger );
 
@@ -41,7 +106,16 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 }
 
 EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
+/*
+	JS_SetNewScriptHookProc(JS_GetRuntime(cx), NULL, NULL);
+	JS_SetDestroyScriptHookProc(JS_GetRuntime(cx), NULL, NULL);
+	for ( jl::QueueCell *it = jl::QueueBegin(scriptFileList); it; it = jl::QueueNext(it) ) {
 
+		jl::Queue *scriptList = (jl::Queue*)jl::QueueGetData(it);
+		jl::QueueDestruct(scriptList);
+	}
+	jl::QueueDestruct(scriptFileList);
+*/
 	return JS_FALSE;
 }
 
