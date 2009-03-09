@@ -5,7 +5,7 @@ Exec('debug1.js');
 
 //dbg.ToggleBreakpoint( true, 'debug1.js', 14 );
 
-xxx();
+//xxx();
 
 Debug1();
 

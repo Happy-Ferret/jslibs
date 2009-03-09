@@ -1,4 +1,19 @@
 <?xml version="1.0"?>
+<!--
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: GNU GPL 2.0
+ *
+ * The contents of this file are subject to the
+ * GNU General Public License Version 2.0; you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://www.gnu.org/licenses/gpl.html
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ * ***** END LICENSE BLOCK ***** */
+-->
 <?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
 <window id="window"
 	xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
@@ -7,32 +22,15 @@
 >
 	<html:style id="css">
 		<![CDATA[
+		html {
+			border-width: 0px;
+			overflow: scroll;
+		}
 		html, body {
 			margin: 0px;
 			padding: 0px;
 		}
-		 
-		html {
-			border-width:0px; overflow: scroll;
-		}
 
-		ol {
-			margin: 0px;
-			background-color: #CCC;
-		}
-		li {
-			white-space: pre;
-			font-family: monospace;
-			background-color: #DDD;
-		}
-		.filename {
-			white-space: pre;
-			font-family: monospace;
-			background-color: #EEE;
-		}
-		.currentLine {
-			background-color: #EEA;
-		}
 		.hide {
 			display: none;
 		}
@@ -42,6 +40,64 @@
 			font-family: monospace;
 		}
 		
+		.codeInfo {
+			display: none;
+			position: absolute;
+			z-index: 1;
+			white-space: pre;
+			font-family: monospace;
+/*			font-size: smaller;*/
+			padding: 3px 10px;
+			border: 1px solid #AAA;
+			background-color: #EEE;
+			opacity: 0.95;
+		}
+		
+		
+		.codeItem {
+			width: 100%;
+			border-collapse: collapse; 
+			white-space: pre;
+			font-family: monospace;
+			background-color: #CCC;
+			cursor: default;
+			-moz-user-select: none;
+		}
+
+		.codeItem .filename {
+			white-space: pre;
+			font-family: monospace;
+			background-color: #CCC;
+			padding-bottom: 10px;
+		}
+
+		.codeItem td {
+			padding: 0px;		
+		}
+		
+		.codeItem tbody td+td {
+			cursor: text;
+			background-color: #DDD;
+			-moz-user-select: text;
+		}
+		
+		.codeItem tbody .currentLine td+td {
+			background-color: #EEA;
+		}
+		
+		.evalItem {
+			white-space: pre;
+			font-family: monospace;
+			border-bottom: 1px dotted #BBB;
+			padding-bottom: 2px;
+			margin-bottom: 2px;
+		}
+		
+		.breakpoint {
+			background-color: red !important;
+			border-corner: 4px;
+			color: white;
+		}
 		]]>
 	</html:style>
 
@@ -53,46 +109,73 @@
 		
 		function $(id) document.getElementById(id);
 		
-		var domParser = new DOMParser();
-		
 		function TextToHTMLNode(doc, text) {
 			
-			elt = domParser.parseFromString('<div xmlns="http://www.w3.org/1999/xhtml">'+text+'</div>', 'application/xhtml+xml').documentElement;
-
-			if ( elt.nodeName != 'parsererror' )
-				return doc.importNode(elt, true).firstChild;
-			else {
-				
-				Trace(elt.firstChild.data);
-				Trace(text);
-			}
+			var elt = doc.createElement('div');
+			elt.innerHTML = text;
+			return elt.firstChild;
 		}
 		
-		function XPath(xpath) {
+		function XPath(ref, xpath) {
+			
+			doc = ref.ownerDocument || ref;
+			try {
+				var result = doc.evaluate(xpath, ref, null, XPathResult.ANY_TYPE, null);
+			} catch(ex) {
+				return;
+			}
+			switch (result.resultType) {
 
-			return document.evaluate(xpath, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+				case XPathResult.NUMBER_TYPE:
+					return result.numberValue;
+				case XPathResult.BOOLEAN_TYPE:
+					return result.booleanValue;
+				case XPathResult.STRING_TYPE:
+					return result.stringValue;
+			} // else XPathResult.UNORDERED_NODE_ITERATOR_TYPE
+			var list = [];
+			for ( var node = result.iterateNext(); node; node = result.iterateNext() )
+				list.push( node.constructor == Attr ? node.value : node);
+			return list;
 		}
-		 
+
+		function StringReplacer(conversionObject) function(s) s.replace(new RegExp([k.replace(/(\/|\.|\*|\+|\?|\||\(|\)|\[|\]|\{|\}|\\)/g, "\\$1") for (k in conversionObject)].join('|'), 'g'), function(str) conversionObject[str]);
+
+		var EscapeEntities = StringReplacer({'&':'&amp;', '<':'&lt;', '>':'&gt;'});
+		
+		function InsertNode(node, pos) pos.parentNode.insertBefore(node, pos);
+		function InsertNodeAtBeginning(node, parent) parent.firstChild ? parent.insertBefore(node, parent.firstChild) : parent.appendChild(node);
+
+		function ElementAbsolutePosition(elt) [(function(o) o.offsetLeft + (o.offsetParent ? arguments.callee(o.offsetParent) : 0))(elt), (function(o) o.offsetTop + (o.offsetParent ? arguments.callee(o.offsetParent) : 0))(elt)];
+
+		////////////////////////////////////////////////////////////////
+
 		function init() {
 		
 			var doc = $('code').contentDocument;
 			doc.getElementsByTagName('HEAD')[0].appendChild(doc.importNode($('css'), true));
+			
 			var doc = $('eval').contentDocument;
 			doc.getElementsByTagName('HEAD')[0].appendChild(doc.importNode($('css'), true));
+			
 			ConnectRetry();
 			InitMouseOverCode();
+			InitBreakpointManager();
 		}
 		 
 
 		function QueryDebugger() {
 		
 			netscape.security.PrivilegeManager.enablePrivilege("UniversalBrowserRead"); // allow cross-domain xhr
-			var xhr = new XMLHttpRequest();
+			var res, xhr = new XMLHttpRequest();
 			try {
 			
 				xhr.open('GET', 'http://127.0.0.1:8009/?'+encodeURIComponent(Array.slice(arguments).toSource()), false);
 				xhr.send(null);
-				return eval(xhr.responseText);
+				res = xhr.responseText;
+			} catch(ex) {}
+			try {
+				return eval('('+res+')');
 			} catch(ex) {}
 		}
 		
@@ -106,33 +189,22 @@
 		
 		function DetectIdentifiers(code) {
 			
-			return code.replace(/(&?)([\w]+)/g, function(s, p1, p2) {
-				return s[0] == '&' ? s : '<i>'+s+'</i>'; // we must avoid to convert entities
+			return code.replace(/(&?)(\$?[\w]+)/g, function(s, p1, p2) {
+				return s[0] == '&' ? s : '<b>'+s+'</b>'; // we must avoid to convert entities
 			});
 		}
-		
-		function StringReplacer(conversionObject) function(s) s.replace(new RegExp([k.replace(/(\/|\.|\*|\+|\?|\||\(|\)|\[|\]|\{|\}|\\)/g, "\\$1") for (k in conversionObject)].join('|'), 'g'), function(str) conversionObject[str]);
 
-		EscapeEntities = StringReplacer({'&':'&amp;', '<':'&lt;', '>':'&gt;'});
-		
-		function InsertNode(node, pos) pos.parentNode.insertBefore(node, pos);
-		function InsertNodeAtBeginning(node, parent) parent.firstChild ? parent.insertBefore(node, parent.firstChild) : parent.appendChild(node);
+		function SetInView(elt, offset) {
 
-		function IsInView(elt) {
-		
-//			for ( var pos = 0, e = elt; e; pos += e.offsetTop, e = e.offsetParent );
-
-	var e = elt, pos = 0;
-	do {
-		pos += e.offsetTop;
-	} while (e = e.offsetParent);
-
-
-			var doc = elt.ownerDocument.documentElement;
+			var pos = ElementAbsolutePosition(elt)[1];
+			var body = elt.ownerDocument.body;
+			if ( pos < body.scrollTop || pos > body.scrollTop + body.clientHeight ) {
 			
-			Trace( doc, pos, doc.scrollHeight, doc.scrollHeight + elt.ownerDocument.body.clientHeight );
-			return pos >= doc.scrollHeight && pos <= doc.scrollHeight + elt.ownerDocument.body.clientHeight;
+				elt.scrollIntoView();
+				body.scrollTop += offset;
+			}
 		}
+
 		
 		var resetUi = [];
 		
@@ -148,7 +220,7 @@
 			
 			if ( !state ) {
 			
-				$('statusInfo').label = '...';
+				$('statusInfo').label = 'idle';
 				codeDoc.body.innerHTML = '';
 				ConnectRetry();
 				return;
@@ -156,61 +228,88 @@
 			
 			$('statusInfo').label = 'break: '+state.breakOrigin + ( state.hasException ? ' ('+state.exception+')' : '' );
 
-			var codeElt;
-			for each ( [i, elt] in Iterator(codeDoc.body.childNodes) ) {
-				if (elt && elt.firstChild.firstChild.data == state.filename) // why elt sometimes is undefined ???
-					codeElt = elt;
-			}
-			
-			if ( !codeElt ) {
+			var res = XPath(codeDoc, '//table[@class="codeItem"][thead/th[text()="'+state.filename+'"]]');
+		
+			if ( res.length ) {
 				
+				codeElt = res[0];
+			} else {
+			
 				var codeText = EscapeEntities(QueryDebugger('getSource', state.filename));
-				var codeLines = DetectIdentifiers(codeText).split('\n');
-				var codeList = TextToHTMLNode(codeDoc, '<ol id="code"><li>'+codeLines.join('</li><li>')+'</li></ol>');
-				var codeElt = codeDoc.body.appendChild(TextToHTMLNode(codeDoc,'<div><div class="filename">'+state.filename+'</div></div>'));
-				codeElt.appendChild(codeList);
+				var codeLines = DetectIdentifiers(codeText).split(/\r?\n/);
+				var htmlLines = [ '<tr><td>'+(line+1)+'</td><td>'+code+'</td></tr>' for each ( [line,code] in Iterator(codeLines) ) ];
+				var codeElt = TextToHTMLNode(codeDoc, '<table class="codeItem"><thead><th class="filename" colspan="3">'+state.filename+'</th></thead><tbody>'+htmlLines.join('')+'</tbody></table>')
+				codeDoc.body.appendChild(codeElt);
 			}
+
+
+//			codeElt.className = '';
+
+			var currentLineElt = XPath(codeElt, 'tbody/tr['+(state.line)+']')[0];
 			
-			codeElt.className = '';
-			
-			var currentLineElt = codeElt.childNodes[1].childNodes[state.line-1];
 			currentLineElt.className = 'currentLine';
 			resetUi.push(function() currentLineElt.className = '');
-			
-			if ( !IsInView(currentLineElt) ) {
-
-				var i = 4, pos = currentLineElt;
-				while ( pos && i ) {
-
-					pos = pos.previousSibling;
-					i--;
-				}
-				pos.scrollIntoView();
-			}
-			
-			resetUi.push(function() codeElt.className = 'hide');
+			SetInView(currentLineElt, -20);
+//			resetUi.push(function() codeElt.className = 'hide');
 		}
 		
 		function DoEval(textBox) {
 			
 			var evalDoc = $('eval').contentDocument;
 			var res = QueryDebugger('eval', textBox.value);
-			evalDoc.body.appendChild(TextToHTMLNode(evalDoc,'<div>'+res+'</div>'));
-			
-			var htmlElt = evalDoc.documentElement;
-			htmlElt.scrollTop = htmlElt.scrollHeight;
-
+			evalDoc.body.appendChild(TextToHTMLNode(evalDoc,'<div class="evalItem" '+(res instanceof Error ? 'style="color:red"' : '')+'>'+res+'</div>'));
+			evalDoc.body.scrollTop = evalDoc.body.scrollHeight;
 			textBox.value='';
 		}
+
+		function InitBreakpointManager() {
+		
+			var codeDoc = $('code').contentDocument;
+			
+			codeDoc.addEventListener('mousedown', function(ev) {
+				
+				var e = ev.target;
+				if ( e.nodeName == 'TD' && e.previousSibling == null ) {
+					
+					var table = e.parentNode.parentNode.parentNode;
+					var line = e.firstChild.data;
+					var filename = table.firstChild.firstChild.firstChild.data;
+					
+					var state = e.className == 'breakpoint';
+					var effectiveLine = QueryDebugger('breakpoint', !state, filename, line);
+					
+					var elt = XPath(table, 'tbody/tr['+effectiveLine+']/td[1]')[0];
+					
+					elt.className = state ? '' : 'breakpoint';
+				}
+			}, false);
+		}
+
 		 
 		function InitMouseOverCode() {
 			
 			var codeDoc = $('code').contentDocument;
+			var infoElt = codeDoc.body.appendChild(TextToHTMLNode(codeDoc, '<span class="codeInfo"/>'));
+			
 			codeDoc.addEventListener('mouseover', function(ev) {
 				
-				if ( ev.target.nodeName == 'i' )
-					ev.target.title = QueryDebugger('eval', ev.target.firstChild.data);
+				if ( ev.target.nodeName == 'B' ) {
+					
+					var info = QueryDebugger('eval', ev.target.firstChild.data);
+					if ( info instanceof Error )
+						return;
+					infoElt.innerHTML = info
+					infoElt.style.display = 'block';
+					var [x,y] = ElementAbsolutePosition(ev.target);
+					infoElt.style.left = x+'px';
+					infoElt.style.top = y+ev.target.offsetHeight+'px';
+				}
 			}, false);
+			
+			codeDoc.addEventListener('mouseout', function(ev) {
+				
+				infoElt.style.display = 'none';
+			}, false);		
 		}
 
 		]]>
@@ -218,14 +317,19 @@
 
 	<vbox flex="1">
 
-		<toolbox>
-			<toolbar id="nav-toolbar">
-				<toolbarbutton label="Step" oncommand="QueryDebugger('action','step'); UpdateState()"/>
-				<toolbarbutton label="Step over" oncommand="QueryDebugger('action','stepover'); UpdateState()"/>
-				<toolbarbutton label="Step out" oncommand="QueryDebugger('action','stepout'); UpdateState()"/>
-				<toolbarbutton label="Continue" oncommand="QueryDebugger('action','continue'); UpdateState()"/>
-			</toolbar>
-		</toolbox>
+		<commandset>
+			<command id="cmd_step" oncommand="QueryDebugger('action','step'); UpdateState()"/>
+			<command id="cmd_stepover" oncommand="QueryDebugger('action','stepover'); UpdateState()"/>
+			<command id="cmd_stepout" oncommand="QueryDebugger('action','stepout'); UpdateState()"/>
+			<command id="cmd_continue" oncommand="QueryDebugger('action','continue'); UpdateState()"/>
+		</commandset>
+		
+		<keyset>
+		  <key keycode="VK_F8" command="cmd_continue"/>
+		  <key keycode="VK_F10" command="cmd_stepover"/>
+		  <key modifiers="shift" keycode="VK_F10" command="cmd_stepout"/>
+		  <key keycode="VK_F11" command="cmd_step"/>
+		</keyset>
 
 		<hbox flex="1">
 			<html:iframe id="code" flex="1"/>
@@ -237,6 +341,15 @@
 			</vbox>
 		</hbox>
 
+		<toolbox>
+			<toolbar id="nav-toolbar">
+				<toolbarbutton label="Step" tooltiptext="F11" command="cmd_step"/>
+				<toolbarbutton label="over" tooltiptext="F10" command="cmd_stepover"/>
+				<toolbarbutton label="out" tooltiptext="Shift-F10" command="cmd_stepout"/>
+				<toolbarbutton label="Continue" tooltiptext="F8" command="cmd_continue"/>
+			</toolbar>
+		</toolbox>
+		
 		<statusbar>
 			<statusbarpanel id="statusInfo" flex="1"/>
 		</statusbar>

@@ -93,11 +93,11 @@ void DestroyScriptHook(JSContext *cx, JSScript *script, void *callerdata) {
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
 	_unsafeMode = GetHostPrivate(cx)->unsafeMode;
-/*
+
 	scriptFileList = jl::QueueConstruct();
 	JS_SetNewScriptHookProc(JS_GetRuntime(cx), NewScriptHook, NULL);
 	JS_SetDestroyScriptHookProc(JS_GetRuntime(cx), DestroyScriptHook, NULL);
-*/
+
 	INIT_STATIC();
 	INIT_CLASS( Debugger );
 
@@ -106,7 +106,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 }
 
 EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
-/*
+
 	JS_SetNewScriptHookProc(JS_GetRuntime(cx), NULL, NULL);
 	JS_SetDestroyScriptHookProc(JS_GetRuntime(cx), NULL, NULL);
 	for ( jl::QueueCell *it = jl::QueueBegin(scriptFileList); it; it = jl::QueueNext(it) ) {
@@ -115,7 +115,7 @@ EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
 		jl::QueueDestruct(scriptList);
 	}
 	jl::QueueDestruct(scriptFileList);
-*/
+
 	return JS_FALSE;
 }
 

@@ -184,7 +184,7 @@ static JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSScript *script,
 	argv[4] = INT_TO_JSVAL( breakOrigin );
 	argv[5] = INT_TO_JSVAL( FrameDepth(frame) );
 
-	bool hasException;
+	JSBool hasException;
 	hasException = JS_IsExceptionPending(cx);
 
 	if ( hasException ) {
@@ -377,6 +377,17 @@ DEFINE_FUNCTION( ToggleBreakpoint ) {
 
 /**doc
 $TOC_MEMBER $INAME
+ $INT | $BOOL $INAME( polarity, filename, lineno );
+**/
+DEFINE_FUNCTION( ClearBreakpoints ) {
+
+	JS_ClearAllTraps(cx);
+	return JS_TRUE;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
  $OBJ $INAME( frameLevel );
 **/
 DEFINE_FUNCTION( Stack ) {
@@ -458,17 +469,33 @@ DEFINE_PROPERTY( scriptList ) {
 	JL_BAD;
 }
 
+/*
+DEFINE_PROPERTY( breakpointList ) {
 
-/**doc
+	JSRuntime *rt = JS_GetRuntime(cx);
+	JSTrap *trap;
+
+    for (trap = (JSTrap *)rt->trapList.next; &trap->links != &rt->trapList; trap = (JSTrap *)trap->links.next) {
+
+		 if ( trap->handler == TrapHandler ) {
+		 }
+//		 if (trap->script == script && trap->pc == pc)
+//            return trap;
+    }
+}
+*/
+
+/** doc
 $TOC_MEMBER $INAME
  $ARRAY $INAME
 **/
+/*
 DEFINE_PROPERTY( pendingException ) {
 
 	*vp = cx->exception;
 	return JS_TRUE;
 }
-
+*/
 
 /*
 static JSBool
@@ -536,12 +563,14 @@ CONFIGURE_CLASS
 
 	BEGIN_FUNCTION_SPEC
 		FUNCTION( ToggleBreakpoint )
+		FUNCTION( ClearBreakpoints )
 		FUNCTION( Stack )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
 		PROPERTY_READ( scriptList )
-		PROPERTY_READ( pendingException )
+//		PROPERTY_READ( breakpointList )
+//		PROPERTY_READ( pendingException )
 	END_PROPERTY_SPEC
 
 	BEGIN_CONST_INTEGER_SPEC
