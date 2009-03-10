@@ -2,15 +2,12 @@ LoadModule('jsstd');
 LoadModule('jsio');
 LoadModule('jstask');
 
-LoadModule('jsstd');
-LoadModule('jstask');
-
 function MyTask( request ) {
 
 	LoadModule('jsio');
 	
-	var f = new File('x').Open('w');
-	f.Read();
+	var f = new File('x').Open('a');
+	f.Write('z');
 	
 	return 'r#' + request;
 }

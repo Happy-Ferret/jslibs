@@ -115,7 +115,7 @@ static JSTrapStatus Step(JSContext *cx, JSScript *script, jsbytecode *pc, jsval 
 	if ( *pc == JSOP_DEFLOCALFUN )
 		return JSTRAP_CONTINUE;
 
-	return BreakHandler(cx, (JSObject*)closure, script, pc, FROM_STEP); 
+	return BreakHandler(cx, (JSObject*)closure, script, pc, FROM_STEP);
 }
 
 
@@ -217,7 +217,7 @@ static JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSScript *script,
 	argv[3] = OBJECT_TO_JSVAL( JS_GetFrameScopeChain(cx, frame) );
 	argv[4] = INT_TO_JSVAL( breakOrigin );
 	argv[5] = INT_TO_JSVAL( frameDepth );
-	
+
 	JSBool hasException;
 	hasException = JS_IsExceptionPending(cx);
 
@@ -258,7 +258,7 @@ static JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSScript *script,
 	pv->pframe = frame->down ? JS_GetScriptedCaller(cx, frame->down) : NULL;
 
 	switch (action) {
-		
+
 		case CONTINUE:
 			JS_ClearInterrupt(rt, NULL, NULL);
 			break;
@@ -303,7 +303,8 @@ DEFINE_CONSTRUCTOR() {
 	J_S_ASSERT_CONSTRUCTING();
 	J_S_ASSERT_THIS_CLASS();
 
-	Private *pv = (Private*)malloc(sizeof(Private));
+	Private *pv;
+	pv = (Private*)malloc(sizeof(Private));
 	J_S_ASSERT_ALLOC(pv);
 	memset(pv, 0, sizeof(Private));
 	J_CHK( JS_SetPrivate(cx, obj, pv) );
@@ -330,7 +331,7 @@ DEFINE_FUNCTION_FAST( GetActualLineno ) {
 	JSScript *script;
 	script = ScriptByLocation(cx, scriptFileList, filename, lineno);
 	if ( script == NULL ) {
-		
+
 		*J_FRVAL = JSVAL_VOID;
 		return JS_TRUE;
 	}
@@ -358,8 +359,10 @@ DEFINE_FUNCTION_FAST( ToggleBreakpoint ) {
 	uintN lineno;
 	J_CHK( JsvalToUInt(cx, J_FARG(3), &lineno) );
 
-	Private *pv = (Private*)JS_GetPrivate(cx, J_FOBJ);
-	JSScript *script = ScriptByLocation(cx, scriptFileList, filename, lineno);
+	Private *pv;
+	pv = (Private*)JS_GetPrivate(cx, J_FOBJ);
+	JSScript *script;
+	script = ScriptByLocation(cx, scriptFileList, filename, lineno);
 	//J_S_ASSERT( script != NULL, "Invalid breakpoint location.");
 	if ( script == NULL )
 		J_REPORT_ERROR_2("Invalid location (%s:%d)", filename, lineno);
@@ -371,7 +374,7 @@ DEFINE_FUNCTION_FAST( ToggleBreakpoint ) {
 	JSTrapHandler prevHandler;
 	void *prevClosure;
 	JS_ClearTrap(cx, script, pc, &prevHandler, &prevClosure);
-	
+
 	if ( polarity ) {
 		J_CHK( JS_SetTrap(cx, script, pc, TrapHandler, J_FOBJ) );
 	} else {
@@ -409,34 +412,39 @@ DEFINE_FUNCTION( Stack ) {
 
 	JSStackFrame *frame;
 	frame = JS_GetScriptedCaller(cx, NULL); // the current frame
-	int currentDepth = FrameDepth(frame);
+	int currentDepth;
+	currentDepth = FrameDepth(frame);
 
 //	J_S_ASSERT( level >= 0 && level <= currentDepth, "Invalid frame level." );
 
 	if ( level < 0 || level > currentDepth ) {
-		
+
 		*J_RVAL = JSVAL_FALSE;
 		return JS_TRUE;
 	}
 
 	// select the right frame
 	while ( currentDepth > level ) {
-		
+
 		frame = frame->down;
 		currentDepth--;
 	}
 
-	JSObject *stackItem = JS_NewObject(cx, NULL, NULL, NULL);
+	JSObject *stackItem;
+	stackItem = JS_NewObject(cx, NULL, NULL, NULL);
 	J_S_ASSERT_ALLOC( stackItem );
 
 	*J_RVAL = OBJECT_TO_JSVAL(stackItem);
 
-	JSScript *script = JS_GetFrameScript(cx, frame);
-	jsbytecode *pc = JS_GetFramePC(cx, frame);
+	JSScript *script;
+	script = JS_GetFrameScript(cx, frame);
+	jsbytecode *pc;
+	pc = JS_GetFramePC(cx, frame);
 
 	jsval tmp;
 
-	JSObject *scope = JS_GetFrameScopeChain(cx, frame);
+	JSObject *scope;
+	scope = JS_GetFrameScopeChain(cx, frame);
 
 	J_CHK( StringToJsval(cx, JS_GetScriptFilename(cx, script), &tmp) );
 	J_CHK( JS_DefineProperty(cx, stackItem, "filename", tmp, NULL, NULL, JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT) );
@@ -468,7 +476,7 @@ DEFINE_PROPERTY( scriptList ) {
 
 		jl::Queue *scriptList = (jl::Queue*)jl::QueueGetData(it);
 		JSScript *s = (JSScript*)jl::QueueGetData(jl::QueueBegin(scriptList));
-		
+
 		jsval filename;
 		J_CHK( StringToJsval(cx, s->filename, &filename) );
 		J_CHK( JS_SetElement(cx, arr, index, &filename) );
