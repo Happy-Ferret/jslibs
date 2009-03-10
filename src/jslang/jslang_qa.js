@@ -34,9 +34,9 @@ LoadModule('jsstd');
 /// Blob toSource and Uneval
 
 		LoadModule('jsstd');
-		var b = new Blob(test);
-		QA.ASSERT( blob.toSource(), '"test"', 'blob.toSource()' )
-		QA.ASSERT( uneval(blob), '"test"', 'uneval(blobà' )
+		var b = new Blob('test');
+		QA.ASSERT( b.toSource(), '"test"', 'blob.toSource()' )
+		QA.ASSERT( uneval(b), '"test"', 'uneval(blobà' )
 
 
 /// Blob BufferGet NativeInterface
