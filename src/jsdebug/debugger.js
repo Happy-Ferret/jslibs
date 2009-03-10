@@ -77,95 +77,102 @@ function SimpleHTTPServer(port, bind) {
 
 var server = new SimpleHTTPServer(8009, '127.0.0.1');
 
-/*
-function Dump( data, tab ) {
-
-    tab = tab||'';
-    if ( data === null ) return 'null';
-    if ( data === undefined ) return 'undefined';
-    if ( typeof(data) == 'string' || data instanceof String || data instanceof Blob ) return '"' + data + '"';
-    if ( typeof(data) == 'number' || data instanceof Number ) return data;
-    if ( data instanceof Function ) return data.toSource().substr(1,50) + '...';
-    if ( data instanceof Date ) return data;
-    if ( data instanceof XML ) return data.toXMLString();
-    if ( data instanceof Object && data.__iterator__ ) return data;
-    if ( data instanceof Object ) {
-   
-       var name = data.constructor != Object && data.constructor != Array ? '|'+(data.constructor.name||'?')+'|' : '';
-       var newTab = tab+'  '
-       var propList = '';
-        for ( var p in data )
-            propList += newTab+p+':'+arguments.callee( data[p], newTab )+'\n';
-      
-       var isArray = data instanceof Array;
-       return name + (isArray? '[' : '{') + (propList? '\n'+propList+tab : '') + (isArray? ']' : '}') + '\n';
-    }
-    return data;
-}
-*/
-
 var dbg = new Debugger();
 var breakpointList = {};
 
-dbg.onBreak = function( filename, line, scope, breakOrigin, frameLevel, hasException, exception ) {
+function Action(id) {
 
-	var action;
-	do {
+	this.valueOf = function() id;
+}
 
-		var response = '';
-		var [req, responseFunction] = server.GetNextRequest();
-		req = eval(req);
+var debuggerApi = {
 
-		switch (req[0]) {
-			case 'state':
-				response = { filename:filename, line:line, breakOrigin:OriginToString(breakOrigin), hasException:hasException, exception:exception };
-				break;
-			case 'eval':
-				try {
+	Ping: function() {
+		
+		return true;
+	},
 
-					function tmp(code) eval(code);
-					var prevScope = SetScope(tmp, scope);
-					response = tmp(req[1]);
-					SetScope(tmp, prevScope);
-				} catch (ex) {
-				
-					response = ex;
-				}				
-				break;
-			case 'getSource':
-				response = new File(req[1]).content;
-				break;
-			case 'getScriptList':
-				response = dbg.scriptList;
-				break;
-			case 'breakpoint':
-				response = dbg.ToggleBreakpoint( req[1], req[2], req[3] );
-				if ( req[1] )
-					breakpointList[req[2]+':'+response] = true;
-				else
-					delete breakpointList[req[2]+':'+response];
-				break;
-			case 'breakpointList':
-				response = breakpointList;
-				break;
-			case 'action':
-				switch (req[1]) {
-					case 'continue':
-						action = Debugger.CONTINUE;
-						break;
-					case 'step':
-						action = Debugger.STEP;
-						break;
-					case 'stepover':
-						action = Debugger.STEP_OVER;
-						break;
-					case 'stepout':
-						action = Debugger.STEP_OUT;
-						break;
-				}
-				break;
+	State: function() {
+
+		return { filename:this.filename, line:this.line, breakOrigin:OriginToString(this.breakOrigin), hasException:this.hasException, exception:this.exception };
+	},
+
+	Eval: function(code) {
+
+		try {
+
+			function tmp(c) eval(c);
+			var prevScope = SetScope(tmp, this.scope);
+			var res = tmp(code);
+			SetScope(tmp, prevScope);
+			return res;
+		} catch (ex) {
+		
+			return ex;
 		}
-		responseFunction(uneval(response));
-	} while ( !action );
-	return action;
+	},
+	
+	GetSource: function(filename) {
+	
+		return new File(filename).content;
+	},
+	
+	GetScriptList: function() {
+	
+		return dbg.scriptList;
+	},
+	
+	GetActualLineno: function(filename, lineno) {
+	
+		return dbg.GetActualLineno(filename, lineno);
+	},
+	
+	Breakpoint: function(polarity, filename, lineno) {
+	
+		var actualLineno = dbg.ToggleBreakpoint(polarity, filename, lineno);
+		if (polarity)
+			breakpointList[filename+':'+actualLineno] = true;
+		else
+			delete breakpointList[filename+':'+actualLineno];
+		return actualLineno;
+	},
+	
+	BreakpointList: function() {
+		
+		return breakpointList;
+	},
+
+	Action: function(name) {
+		
+		switch (name) {
+			case 'step':
+				return new Action(Debugger.STEP);
+			case 'stepover':
+				return new Action(Debugger.STEP_OVER);
+			case 'stepthrough':
+				return new Action(Debugger.STEP_THROUGH);
+			case 'stepout':
+				return new Action(Debugger.STEP_OUT);
+			case 'continue':
+				return new Action(Debugger.CONTINUE);
+		}
+	}
+}
+
+dbg.onBreak = function( filename, line, scope, breakOrigin, frameLevel, hasException, exception ) {
+	
+	var breakContext = { filename:filename, line:line, scope:scope, breakOrigin:breakOrigin, frameLevel:frameLevel, hasException:hasException, exception:exception };
+	for(;;) {
+
+		var res, [req, responseFunction] = server.GetNextRequest();
+		try {
+			req = eval('('+req+')');
+			res = debuggerApi[req[0]].apply(breakContext, req[1]);
+		} catch(ex) {
+			res = ex;
+		}
+		responseFunction(uneval(res));
+		if ( res instanceof Action )
+			return res;
+	}
 }

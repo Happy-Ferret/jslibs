@@ -1,19 +1,18 @@
 <?xml version="1.0"?>
-<!--
-/* ***** BEGIN LICENSE BLOCK *****
- * Version: GNU GPL 2.0
- *
- * The contents of this file are subject to the
- * GNU General Public License Version 2.0; you may not use this file except
- * in compliance with the License. You may obtain a copy of the License at
- * http://www.gnu.org/licenses/gpl.html
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- * ***** END LICENSE BLOCK ***** */
--->
+<!-- ***** BEGIN LICENSE BLOCK *****
+   - Version: GNU GPL 2.0
+   - 
+   - The contents of this file are subject to the
+   - GNU General Public License Version 2.0; you may not use this file except
+   - in compliance with the License. You may obtain a copy of the License at
+   - http://www.gnu.org/licenses/gpl.html
+   - 
+   - Software distributed under the License is distributed on an "AS IS" basis,
+   - WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+   - for the specific language governing rights and limitations under the
+   - License.
+   - ***** END LICENSE BLOCK ***** -->
+
 <?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
 <window id="window"
 	xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
@@ -67,23 +66,35 @@
 		.codeItem .filename {
 			white-space: pre;
 			font-family: monospace;
+			font-weight: normal;
 			background-color: #CCC;
-			padding-bottom: 10px;
+			padding: 5px 0px;
 		}
 
 		.codeItem td {
-			padding: 0px;		
+			color: #888;
+			padding: 0px 4px;
 		}
 		
 		.codeItem tbody td+td {
 			cursor: text;
 			background-color: #DDD;
+			color: black;
 			-moz-user-select: text;
 		}
 		
 		.codeItem tbody .currentLine td+td {
 			background-color: #EEA;
 		}
+		
+		.codeItem tbody .currentLineError td+td {
+			background-color: #EAA;
+		}
+		
+		.codeItem tbody U {
+			text-decoration: none;
+		}
+		
 		
 		.evalItem {
 			white-space: pre;
@@ -92,7 +103,20 @@
 			padding-bottom: 2px;
 			margin-bottom: 2px;
 		}
+
+		.evalItem .result {
+			
+			margin-left: 20px;
+		}
+
+		.evalItem .code {
+			background-color: #DDD;
+		}
 		
+		.evalItem .error {
+			color: red;
+		}
+
 		.breakpoint {
 			background-color: red !important;
 			border-corner: 4px;
@@ -104,6 +128,8 @@
 
 	<script type="text/javascript">
 		<![CDATA[
+		const ip = '127.0.0.1';
+		const port = 8009;
 		
 		function Trace() window.console.debug.apply(this, arguments);
 		
@@ -135,7 +161,16 @@
 			} // else XPathResult.UNORDERED_NODE_ITERATOR_TYPE
 			var list = [];
 			for ( var node = result.iterateNext(); node; node = result.iterateNext() )
-				list.push( node.constructor == Attr ? node.value : node);
+				switch ( node.nodeType ) {
+				case node.ATTRIBUTE_NODE:
+					list.push( node.value );
+					break;
+				case node.TEXT_NODE:
+					list.push( node.data );
+					break;
+				default:
+					list.push( node );
+				}
 			return list;
 		}
 
@@ -147,7 +182,22 @@
 		function InsertNodeAtBeginning(node, parent) parent.firstChild ? parent.insertBefore(node, parent.firstChild) : parent.appendChild(node);
 
 		function ElementAbsolutePosition(elt) [(function(o) o.offsetLeft + (o.offsetParent ? arguments.callee(o.offsetParent) : 0))(elt), (function(o) o.offsetTop + (o.offsetParent ? arguments.callee(o.offsetParent) : 0))(elt)];
+		
+		function AddClass(elt, class) {
+			
+			if ( (' '+elt.className+' ').indexOf(' '+class+' ') == -1 )
+				elt.className += ' '+class;
+		}
 
+		function RemoveClass(elt, class) {
+
+			var cn = ' '+elt.className+' ';
+			class = ' '+class+' ';
+			pos = cn.lastIndexOf(class);
+			if ( pos != -1 )
+				elt.className = cn.substring(1, pos+1)+cn.substring(pos+class.length);
+		}
+        
 		////////////////////////////////////////////////////////////////
 
 		function init() {
@@ -162,27 +212,28 @@
 			InitMouseOverCode();
 			InitBreakpointManager();
 		}
-		 
 
-		function QueryDebugger() {
 		
+		var debuggerRpc = { __noSuchMethod__: function() {
+			
 			netscape.security.PrivilegeManager.enablePrivilege("UniversalBrowserRead"); // allow cross-domain xhr
 			var res, xhr = new XMLHttpRequest();
 			try {
 			
-				xhr.open('GET', 'http://127.0.0.1:8009/?'+encodeURIComponent(Array.slice(arguments).toSource()), false);
+				xhr.open('GET', 'http://'+ip+':'+port+'/?'+encodeURIComponent(uneval(Array.slice(arguments))), false);
 				xhr.send(null);
 				res = xhr.responseText;
 			} catch(ex) {}
 			try {
 				return eval('('+res+')');
 			} catch(ex) {}
-		}
+		}};
+		
 		
 		function ConnectRetry() {
 
-			if ( QueryDebugger() == undefined )
-				setTimeout( arguments.callee, 100 );
+			if ( debuggerRpc.Ping() != true )
+				setTimeout( arguments.callee, 1 );
 			else
 				UpdateState();	
 		}
@@ -190,7 +241,7 @@
 		function DetectIdentifiers(code) {
 			
 			return code.replace(/(&?)(\$?[\w]+)/g, function(s, p1, p2) {
-				return s[0] == '&' ? s : '<b>'+s+'</b>'; // we must avoid to convert entities
+				return s[0] == '&' ? s : '<u>'+s+'</u>'; // we must avoid to convert entities
 			});
 		}
 
@@ -205,63 +256,86 @@
 			}
 		}
 
-		
-		var resetUi = [];
-		
-		function UpdateState() {
-		
-			while (resetUi.length)
-				resetUi.shift()();
+		Goto.resetUi = [];
+		function Goto(filename, lineno, class) {
 
+			while (Goto.resetUi.length)
+				Goto.resetUi.shift()();
+		
 			var codeDoc = $('code').contentDocument;
 
-			$('statusInfo').label = 'querying state...';
-			var state = QueryDebugger('state');
-			
-			if ( !state ) {
-			
-				$('statusInfo').label = 'idle';
-				codeDoc.body.innerHTML = '';
-				ConnectRetry();
-				return;
-			}
-			
-			$('statusInfo').label = 'break: '+state.breakOrigin + ( state.hasException ? ' ('+state.exception+')' : '' );
-
-			var res = XPath(codeDoc, '//table[@class="codeItem"][thead/th[text()="'+state.filename+'"]]');
+			var res = XPath(codeDoc, '//table[@class="codeItem"][thead/th[text()="'+filename+'"]]');
 		
 			if ( res.length ) {
 				
 				codeElt = res[0];
 			} else {
 			
-				var codeText = EscapeEntities(QueryDebugger('getSource', state.filename));
+				var codeText = EscapeEntities(debuggerRpc.GetSource(filename));
 				var codeLines = DetectIdentifiers(codeText).split(/\r?\n/);
 				var htmlLines = [ '<tr><td>'+(line+1)+'</td><td>'+code+'</td></tr>' for each ( [line,code] in Iterator(codeLines) ) ];
-				var codeElt = TextToHTMLNode(codeDoc, '<table class="codeItem"><thead><th class="filename" colspan="3">'+state.filename+'</th></thead><tbody>'+htmlLines.join('')+'</tbody></table>')
+				var codeElt = TextToHTMLNode(codeDoc, '<table class="codeItem"><colgroup><col width="0"><col width="*"></colgroup><thead><th class="filename" colspan="3">'+filename+'</th></thead><tbody>'+htmlLines.join('')+'</tbody></table>')
 				codeDoc.body.appendChild(codeElt);
 			}
 
-
-//			codeElt.className = '';
-
-			var currentLineElt = XPath(codeElt, 'tbody/tr['+(state.line)+']')[0];
-			
-			currentLineElt.className = 'currentLine';
-			resetUi.push(function() currentLineElt.className = '');
+			var currentLineElt = XPath(codeElt, 'tbody/tr['+(lineno)+']')[0];
+			AddClass(currentLineElt, class);
+			Goto.resetUi.push(function() RemoveClass(currentLineElt, class));
 			SetInView(currentLineElt, -20);
-//			resetUi.push(function() codeElt.className = 'hide');
 		}
 		
-		function DoEval(textBox) {
+		function UpdateState() {
+		
+			var codeDoc = $('code').contentDocument;
+			var evalDoc = $('eval').contentDocument;
+			
+			$('statusInfo').label = 'querying state...';
+			var state = debuggerRpc.State();
+			
+			if ( !state ) {
+			
+				$('statusInfo').label = 'idle';
+				codeDoc.body.innerHTML = '';
+				evalDoc.body.innerHTML = '';
+				ConnectRetry();
+				return;
+			}
+			
+			$('statusInfo').label = 'break: '+state.breakOrigin + ( state.hasException ? ' ('+state.exception+')' : '' );
+			
+			Goto(state.filename, state.line, state.hasException ? 'currentLineError' : 'currentLine');
+
+			UpdateWatch();
+		}
+		
+		function UpdateWatch() {
 			
 			var evalDoc = $('eval').contentDocument;
-			var res = QueryDebugger('eval', textBox.value);
-			evalDoc.body.appendChild(TextToHTMLNode(evalDoc,'<div class="evalItem" '+(res instanceof Error ? 'style="color:red"' : '')+'>'+res+'</div>'));
-			evalDoc.body.scrollTop = evalDoc.body.scrollHeight;
-			textBox.value='';
+			for each ( var item in XPath(evalDoc, '/html/body/*[@class="evalItem"]/*[@class="code"]') ) {
+				
+				var res = debuggerRpc.Eval(item.firstChild.data);
+				item.nextSibling.innerHTML = res;
+				item.nextSibling.title = uneval(res);
+				if ( res instanceof Error )
+					AddClass(item.nextSibling, 'error');
+				else
+					RemoveClass(item.nextSibling, 'error');
+			}
 		}
-
+		
+		function AddWatch(code) {
+		
+			var evalDoc = $('eval').contentDocument;
+			var res = debuggerRpc.Eval(code);
+			var elt = evalDoc.body.appendChild(TextToHTMLNode(evalDoc,'<div class="evalItem"><div class="code"></div><div class="result"></div></div>'));
+			elt.firstChild.innerHTML = code;
+			elt.lastChild.innerHTML = res;
+			elt.lastChild.title = uneval(res);
+			if ( res instanceof Error )
+				AddClass(elt.lastChild, 'error');
+			evalDoc.body.scrollTop = evalDoc.body.scrollHeight;
+		}
+		
 		function InitBreakpointManager() {
 		
 			var codeDoc = $('code').contentDocument;
@@ -273,12 +347,13 @@
 					
 					var table = e.parentNode.parentNode.parentNode;
 					var line = e.firstChild.data;
-					var filename = table.firstChild.firstChild.firstChild.data;
+					var filename = XPath(table, 'thead/th[1]/text()')[0];
 					
-					var state = e.className == 'breakpoint';
-					var effectiveLine = QueryDebugger('breakpoint', !state, filename, line);
+					var actualLineno = debuggerRpc.GetActualLineno(filename, line);
+					var elt = XPath(table, 'tbody/tr['+actualLineno+']/td[1]')[0];
 					
-					var elt = XPath(table, 'tbody/tr['+effectiveLine+']/td[1]')[0];
+					var state = elt.className == 'breakpoint';
+					var effectiveLine = debuggerRpc.Breakpoint(!state, filename, actualLineno);
 					
 					elt.className = state ? '' : 'breakpoint';
 				}
@@ -293,12 +368,12 @@
 			
 			codeDoc.addEventListener('mouseover', function(ev) {
 				
-				if ( ev.target.nodeName == 'B' ) {
+				if ( ev.target.nodeName == 'U' ) {
 					
-					var info = QueryDebugger('eval', ev.target.firstChild.data);
+					var info = debuggerRpc.Eval(ev.target.firstChild.data);
 					if ( info instanceof Error )
 						return;
-					infoElt.innerHTML = info
+					infoElt.innerHTML = info;
 					infoElt.style.display = 'block';
 					var [x,y] = ElementAbsolutePosition(ev.target);
 					infoElt.style.left = x+'px';
@@ -318,10 +393,11 @@
 	<vbox flex="1">
 
 		<commandset>
-			<command id="cmd_step" oncommand="QueryDebugger('action','step'); UpdateState()"/>
-			<command id="cmd_stepover" oncommand="QueryDebugger('action','stepover'); UpdateState()"/>
-			<command id="cmd_stepout" oncommand="QueryDebugger('action','stepout'); UpdateState()"/>
-			<command id="cmd_continue" oncommand="QueryDebugger('action','continue'); UpdateState()"/>
+			<command id="cmd_step" oncommand="debuggerRpc.Action('step'); UpdateState()"/>
+			<command id="cmd_stepover" oncommand="debuggerRpc.Action('stepover'); UpdateState()"/>
+			<command id="cmd_stepthrough" oncommand="debuggerRpc.Action('stepthrough'); UpdateState()"/>
+			<command id="cmd_stepout" oncommand="debuggerRpc.Action('stepout'); UpdateState()"/>
+			<command id="cmd_continue" oncommand="debuggerRpc.Action('continue'); UpdateState()"/>
 		</commandset>
 		
 		<keyset>
@@ -329,15 +405,16 @@
 		  <key keycode="VK_F10" command="cmd_stepover"/>
 		  <key modifiers="shift" keycode="VK_F10" command="cmd_stepout"/>
 		  <key keycode="VK_F11" command="cmd_step"/>
+		  <key modifiers="shift" keycode="VK_F11" command="cmd_stepthrough"/>
 		</keyset>
 
 		<hbox flex="1">
-			<html:iframe id="code" flex="1"/>
+			<html:iframe id="code" flex="1" frameborder="0"/>
 			<splitter collapse="before" resizeafter="farthest"><grippy/></splitter>
 			<vbox>
-				<html:iframe id="eval" flex="1"/>
+				<html:iframe id="eval" flex="1" frameborder="0"/>
 				<splitter collapse="before" resizeafter="farthest"><grippy/></splitter>
-				<textbox multiline="true" onkeydown="if (event.keyCode==13) DoEval(this), event.preventDefault()"/>
+				<textbox multiline="true" onkeydown="if (event.keyCode==13) { AddWatch(this.value); this.value=''; event.preventDefault() }"/>
 			</vbox>
 		</hbox>
 
@@ -346,6 +423,7 @@
 				<toolbarbutton label="Step" tooltiptext="F11" command="cmd_step"/>
 				<toolbarbutton label="over" tooltiptext="F10" command="cmd_stepover"/>
 				<toolbarbutton label="out" tooltiptext="Shift-F10" command="cmd_stepout"/>
+				<toolbarbutton label="through" tooltiptext="Shift-F11" command="cmd_stepthrough"/>
 				<toolbarbutton label="Continue" tooltiptext="F8" command="cmd_continue"/>
 			</toolbar>
 		</toolbox>

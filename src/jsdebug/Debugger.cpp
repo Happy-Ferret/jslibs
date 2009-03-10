@@ -35,7 +35,8 @@ BEGIN_CLASS( Debugger )
 #define CONTINUE 1
 #define STEP 2
 #define STEP_OVER 3
-#define STEP_OUT 4
+#define STEP_THROUGH 4
+#define STEP_OUT 5
 
 // Reason
 #define FROM_BREAKPOINT 1
@@ -50,6 +51,7 @@ struct Private {
 	// previous break state
 	int frameDepth;
 	JSStackFrame *frame;
+	JSStackFrame *pframe;
 	JSScript *script;
 	uintN lineno;
 };
@@ -98,12 +100,12 @@ JSScript *ScriptByLocation(JSContext *cx, jl::Queue *scriptFileList, const char 
 
 static JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSScript *script, jsbytecode *pc, int breakOrigin);
 
-static JSTrapStatus DebuggerKeywordHandler(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval, void *closure) {
+static JSTrapStatus DebuggerKeyword(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval, void *closure) {
 
 	return BreakHandler(cx, (JSObject*)closure, script, pc, FROM_DEBUGGER);
 }
 
-static JSTrapStatus InterruptStepHandler(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval, void *closure) {
+static JSTrapStatus Step(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval, void *closure) {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, (JSObject*)closure);
 
@@ -117,7 +119,7 @@ static JSTrapStatus InterruptStepHandler(JSContext *cx, JSScript *script, jsbyte
 }
 
 
-static JSTrapStatus InterruptStepInFrameHandler(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval, void *closure) {
+static JSTrapStatus StepOver(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval, void *closure) {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, (JSObject*)closure);
 	JSStackFrame *frame = JS_GetScriptedCaller(cx, NULL);
@@ -125,12 +127,8 @@ static JSTrapStatus InterruptStepInFrameHandler(JSContext *cx, JSScript *script,
 	if ( script == pv->script && JS_PCToLineNumber(cx, script, pc) == pv->lineno )
 		return JSTRAP_CONTINUE;
 
-
-
-	if ( pv->frame != frame )
+	if ( frame != pv->frame && frame != pv->pframe )
 		return JSTRAP_CONTINUE;
-//	if ( FrameDepth(frame) > pv->frameDepth )
-//		return JSTRAP_CONTINUE;
 
 	if ( *pc == JSOP_DEFLOCALFUN ) // or JOF_DECLARING //	type = JOF_TYPE(cs->format);
 		return JSTRAP_CONTINUE;
@@ -139,6 +137,40 @@ static JSTrapStatus InterruptStepInFrameHandler(JSContext *cx, JSScript *script,
 }
 
 
+static JSTrapStatus StepOut(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval, void *closure) {
+
+	Private *pv = (Private*)JS_GetPrivate(cx, (JSObject*)closure);
+	JSStackFrame *frame = JS_GetScriptedCaller(cx, NULL);
+
+	if ( script == pv->script && JS_PCToLineNumber(cx, script, pc) == pv->lineno )
+		return JSTRAP_CONTINUE;
+
+	if ( frame != pv->pframe )
+		return JSTRAP_CONTINUE;
+
+	if ( *pc == JSOP_DEFLOCALFUN ) // or JOF_DECLARING //	type = JOF_TYPE(cs->format);
+		return JSTRAP_CONTINUE;
+
+	return BreakHandler(cx, (JSObject*)closure, script, pc, FROM_STEP);
+}
+
+static JSTrapStatus StepThrough(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval, void *closure) {
+
+	Private *pv = (Private*)JS_GetPrivate(cx, (JSObject*)closure);
+	JSStackFrame *frame = JS_GetScriptedCaller(cx, NULL);
+
+	if ( script == pv->script && JS_PCToLineNumber(cx, script, pc) <= pv->lineno )
+		return JSTRAP_CONTINUE;
+
+	if ( frame != pv->frame && frame != pv->pframe )
+		return JSTRAP_CONTINUE;
+
+	if ( *pc == JSOP_DEFLOCALFUN ) // or JOF_DECLARING //	type = JOF_TYPE(cs->format);
+		return JSTRAP_CONTINUE;
+
+	return BreakHandler(cx, (JSObject*)closure, script, pc, FROM_STEP);
+}
+
 static JSTrapStatus TrapHandler(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval, void *closure) {
 
 	return BreakHandler(cx, (JSObject*)closure, script, pc, FROM_BREAKPOINT);
@@ -146,12 +178,9 @@ static JSTrapStatus TrapHandler(JSContext *cx, JSScript *script, jsbytecode *pc,
 
 JSBool DebugErrorHookHandler(JSContext *cx, const char *message, JSErrorReport *report, void *closure) {
 
-	JSObject *debuggerObj = (JSObject*)closure;
-	JSStackFrame *frame;
-	frame = JS_GetScriptedCaller(cx, NULL);
-
+	JSStackFrame *frame = JS_GetScriptedCaller(cx, NULL);
 	if ( frame )
-		BreakHandler(cx, debuggerObj, JS_GetFrameScript(cx, frame), JS_GetFramePC(cx, frame), FROM_ERROR); // (TBD) use message and report
+		BreakHandler(cx, (JSObject*)closure, JS_GetFrameScript(cx, frame), JS_GetFramePC(cx, frame), FROM_ERROR);
 	return JS_TRUE;
 }
 
@@ -175,15 +204,20 @@ static JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSScript *script,
 	rt = JS_GetRuntime(cx);
 	JSStackFrame *frame;
 	frame = JS_GetScriptedCaller(cx, NULL);
+	int frameDepth;
+	frameDepth = FrameDepth(frame);
+	int lineno;
+	lineno = JS_PCToLineNumber(cx, script, pc);
+
 
 	jsval argv[8];
 	argv[0] = JSVAL_NULL;
 	J_CHK( StringToJsval(cx, JS_GetScriptFilename(cx, script), &argv[1]) );
-	argv[2] = INT_TO_JSVAL(JS_PCToLineNumber(cx, script, pc));
+	argv[2] = INT_TO_JSVAL( lineno );
 	argv[3] = OBJECT_TO_JSVAL( JS_GetFrameScopeChain(cx, frame) );
 	argv[4] = INT_TO_JSVAL( breakOrigin );
-	argv[5] = INT_TO_JSVAL( FrameDepth(frame) );
-
+	argv[5] = INT_TO_JSVAL( frameDepth );
+	
 	JSBool hasException;
 	hasException = JS_IsExceptionPending(cx);
 
@@ -198,86 +232,47 @@ static JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSScript *script,
 		argv[7] = JSVAL_VOID;
 	}
 
-	JSDebugHooks voidHooks;
-	memset(&voidHooks, 0, sizeof(JSDebugHooks));
-	JSDebugHooks *prevHooks;
-	prevHooks = JS_SetContextDebugHooks(cx, &voidHooks); // avoid reentrant case.
+	JSDebugHooks noHooks, *prevHooks;
+	memset(&noHooks, 0, sizeof(JSDebugHooks));
+	prevHooks = JS_SetContextDebugHooks(cx, &noHooks); // avoid reentrant case.
 
 	JSTempValueRooter tvr;
 	JS_PUSH_TEMP_ROOT(cx, COUNTOF(argv), argv, &tvr);
 	JSBool status;
 	status = JS_CallFunctionValue(cx, obj, fval, COUNTOF(argv)-1, argv+1, &argv[0]);
+	int action;
+	J_CHK( JsvalToInt(cx, argv[0], &action) );
 	JS_POP_TEMP_ROOT(cx, &tvr);
 
 	JS_SetContextDebugHooks(cx, prevHooks);
+
+	if ( hasException ) // restore the exception
+		JS_SetPendingException(cx, argv[7]); // (TBD) should return JSTRAP_ERROR ???
 	J_CHK( status );
 
-	if ( hasException ) { // restore the exception
+	// store the current state
+	pv->frameDepth = frameDepth;
+	pv->script = script;
+	pv->lineno = lineno;
+	pv->frame = frame;
+	pv->pframe = frame->down ? JS_GetScriptedCaller(cx, frame->down) : NULL;
 
-		JS_SetPendingException(cx, argv[7]);
-//		return JSTRAP_ERROR; // (TBD) ???
-	}
-
-	switch (argv[0]) {
+	switch (action) {
 		
-		case INT_TO_JSVAL(CONTINUE):
-
+		case CONTINUE:
 			JS_ClearInterrupt(rt, NULL, NULL);
 			break;
-		case INT_TO_JSVAL(STEP):
-			
-			pv->script = script;
-			pv->lineno = JS_PCToLineNumber(cx, script, pc);
-			JS_SetInterrupt(rt, InterruptStepHandler, obj);
+		case STEP:
+			JS_SetInterrupt(rt, Step, obj);
 			break;
-		case INT_TO_JSVAL(STEP_OVER):
-		
-			pv->frameDepth = FrameDepth(frame);
-			pv->script = script;
-			pv->lineno = JS_PCToLineNumber(cx, script, pc);
-			pv->frame = frame; // stop next time we are in this frame.
-			JS_SetInterrupt(rt, InterruptStepInFrameHandler, obj);
-	/*
-			//jsbytecode *nextPc = JS_LineNumberToPC(cx, script, JS_PCToLineNumber(cx, script, pc+1) + 1);
-	//		jsbytecode *nextPc = JS_GetFramePC(cx, caller);
-	//		JSOp op = JS_GetTrapOpcode(cx, caller->script, nextPc);
-	//		nextPc += jsCodeSpec[op].length;
-	//		JS_SetTrap(cx, caller->script, nextPc, InterruptHandler, NULL);
-			JSOp op = JS_GetTrapOpcode(cx, caller->script, nextPc);
-			JS_SetInterrupt(JS_GetRuntime(cx), InterruptHandler, NULL);
-			jsbytecode *nextPc = JS_GetFramePC(cx, caller);
-			JSOp op = JS_GetTrapOpcode(cx, caller->script, nextPc);
-			nextPc += jsCodeSpec[op].length;
-			JS_SetTrap(cx, caller->script, nextPc, InterruptHandler, NULL);
-	*/
+		case STEP_OVER:
+			JS_SetInterrupt(rt, StepOver, obj);
 			break;
-		case INT_TO_JSVAL(STEP_OUT):
-			
-			pv->frameDepth = FrameDepth(frame);
-			pv->script = script;
-			pv->lineno = JS_PCToLineNumber(cx, script, pc);
-			pv->frame = JS_GetScriptedCaller(cx, frame->down); // stop when we reach the parent's frame.
-			JS_SetInterrupt(rt, InterruptStepInFrameHandler, obj);
-	/*
-			JSStackFrame *frame;
-			frame = JS_GetScriptedCaller(cx, NULL);
-			// check if there is a frame to return to, else continue
-			if ( !frame->down )
-				return JSTRAP_CONTINUE;
-			frame = JS_GetScriptedCaller(cx, frame->down);
-			JSScript *nextScript = JS_GetFrameScript(cx, frame);
-			jsbytecode *nextPc = JS_GetFramePC(cx, frame);
-	//		uintN lineno = JS_PCToLineNumber(cx, nextScript, nextPc);
-	//		uintN lastlineno = JS_GetScriptBaseLineNumber(cx, nextScript) + JS_GetScriptLineExtent(cx, nextScript);
-	//		if ( lineno + 1 >= lastlineno )
-	//			return JSTRAP_CONTINUE;
-	//		nextPc = JS_LineNumberToPC(cx, nextScript, lineno +1 );
-	//		JS_ClearTrap(cx, nextScript, nextPc, NULL, NULL);
-			// set the next trap on the next opcode
-			JSOp op = JS_GetTrapOpcode(cx, nextScript, nextPc);
-			nextPc += jsCodeSpec[op].length;
-			JSBool status = JS_SetTrap(cx, nextScript, nextPc, InterruptHandler, (void*)PRIVATE_TO_JSVAL(NULL));
-	*/
+		case STEP_THROUGH:
+			JS_SetInterrupt(rt, StepThrough, obj);
+			break;
+		case STEP_OUT:
+			JS_SetInterrupt(rt, StepOut, obj);
 			break;
 	}
 
@@ -292,20 +287,9 @@ DEFINE_FINALIZE() {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
 	if ( pv ) {
-/*
-		JSTrapHandler tmpTrapHandler;
-		void *tmpTrapClosure;
-		JS_ClearInterrupt(JS_GetRuntime(cx), &tmpTrapHandler, &tmpTrapClosure);
-		// restore the interrupt if it is not ours.
-		if ( tmpTrapHandler != NULL && tmpTrapHandler != InterruptHandler && tmpTrapClosure != obj )
-			JS_SetInterrupt(JS_GetRuntime(cx), tmpTrapHandler, tmpTrapClosure);
-*/
-		JS_ClearInterrupt(JS_GetRuntime(cx), NULL, NULL);
 
-		JS_SetDebuggerHandler(JS_GetRuntime(cx), NULL, NULL);
-		JS_SetThrowHook( JS_GetRuntime(cx), NULL, NULL);
-		JS_SetDebugErrorHook( JS_GetRuntime(cx), NULL, NULL);
-
+		JSDebugHooks *hooks = JS_GetGlobalDebugHooks(JS_GetRuntime(cx));
+		memset(hooks, 0, sizeof(JSDebugHooks));
 		free(pv);
 	}
 }
@@ -323,10 +307,35 @@ DEFINE_CONSTRUCTOR() {
 	J_S_ASSERT_ALLOC(pv);
 	memset(pv, 0, sizeof(Private));
 	J_CHK( JS_SetPrivate(cx, obj, pv) );
-	JS_SetDebuggerHandler(JS_GetRuntime(cx), DebuggerKeywordHandler, obj);
-//	JS_SetThrowHook( JS_GetRuntime(cx), ThrowHookHandler, obj);
+	JS_SetDebuggerHandler(JS_GetRuntime(cx), DebuggerKeyword, obj);
 	JS_SetDebugErrorHook( JS_GetRuntime(cx), DebugErrorHookHandler, obj);
+//	JS_SetThrowHook( JS_GetRuntime(cx), ThrowHookHandler, obj);
+	return JS_TRUE;
+	JL_BAD;
+}
 
+
+/**doc
+$TOC_MEMBER $INAME
+ $INT | $BOOL $INAME( filename, lineno );
+**/
+DEFINE_FUNCTION_FAST( GetActualLineno ) {
+
+	const char *filename;
+	J_CHK( JsvalToString(cx, &J_FARG(1), &filename) );
+
+	uintN lineno;
+	J_CHK( JsvalToUInt(cx, J_FARG(2), &lineno) );
+
+	JSScript *script;
+	script = ScriptByLocation(cx, scriptFileList, filename, lineno);
+	if ( script == NULL ) {
+		
+		*J_FRVAL = JSVAL_VOID;
+		return JS_TRUE;
+	}
+
+	*J_FRVAL = INT_TO_JSVAL(JS_PCToLineNumber(cx, script, JS_LineNumberToPC(cx, script, lineno)));
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -336,48 +345,48 @@ DEFINE_CONSTRUCTOR() {
 $TOC_MEMBER $INAME
  $INT | $BOOL $INAME( polarity, filename, lineno );
 **/
-DEFINE_FUNCTION( ToggleBreakpoint ) {
+DEFINE_FUNCTION_FAST( ToggleBreakpoint ) {
 
 	J_S_ASSERT_ARG_MIN( 3 );
 
 	bool polarity;
-	J_CHK( JsvalToBool(cx, J_ARG(1), &polarity) );
+	J_CHK( JsvalToBool(cx, J_FARG(1), &polarity) );
 
 	const char *filename;
-	J_CHK( JsvalToString(cx, &J_ARG(2), &filename) );
+	J_CHK( JsvalToString(cx, &J_FARG(2), &filename) );
 
 	uintN lineno;
-	J_CHK( JsvalToUInt(cx, J_ARG(3), &lineno) );
+	J_CHK( JsvalToUInt(cx, J_FARG(3), &lineno) );
 
-	Private *pv = (Private*)JS_GetPrivate(cx, obj);
+	Private *pv = (Private*)JS_GetPrivate(cx, J_FOBJ);
 	JSScript *script = ScriptByLocation(cx, scriptFileList, filename, lineno);
 	//J_S_ASSERT( script != NULL, "Invalid breakpoint location.");
-	if ( script == NULL ) {
-		
-		*J_RVAL = JSVAL_FALSE;
-		return JS_TRUE;
-	}
+	if ( script == NULL )
+		J_REPORT_ERROR_2("Invalid location (%s:%d)", filename, lineno);
 
 	jsbytecode *pc;
 	pc = JS_LineNumberToPC(cx, script, lineno);
-	unsigned int effectiveLineno = JS_PCToLineNumber(cx, script, pc);
+	lineno = JS_PCToLineNumber(cx, script, pc);
 
 	JSTrapHandler prevHandler;
 	void *prevClosure;
 	JS_ClearTrap(cx, script, pc, &prevHandler, &prevClosure);
-	if ( prevHandler != NULL && ( prevHandler != TrapHandler || prevClosure != obj) )
-		J_CHK( JS_SetTrap(cx, script, pc, prevHandler, prevClosure) ); // restore the trap if it is not ours.
-	if ( polarity )
-		J_CHK( JS_SetTrap(cx, script, pc, TrapHandler, obj) );
+	
+	if ( polarity ) {
+		J_CHK( JS_SetTrap(cx, script, pc, TrapHandler, J_FOBJ) );
+	} else {
+		if ( prevHandler != TrapHandler || prevClosure != J_FOBJ )
+			J_CHK( JS_SetTrap(cx, script, pc, TrapHandler, J_FOBJ) );
+	}
 
-	*J_RVAL = INT_TO_JSVAL(effectiveLineno);
+	*J_FRVAL = INT_TO_JSVAL(lineno);
 	return JS_TRUE;
 	JL_BAD;
 }
 
 /**doc
 $TOC_MEMBER $INAME
- $INT | $BOOL $INAME( polarity, filename, lineno );
+ $INT | $BOOL $INAME();
 **/
 DEFINE_FUNCTION( ClearBreakpoints ) {
 
@@ -468,6 +477,7 @@ DEFINE_PROPERTY( scriptList ) {
 	return JS_TRUE;
 	JL_BAD;
 }
+
 
 /*
 DEFINE_PROPERTY( breakpointList ) {
@@ -562,7 +572,8 @@ CONFIGURE_CLASS
 	HAS_FINALIZE
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION( ToggleBreakpoint )
+		FUNCTION_FAST( GetActualLineno )
+		FUNCTION_FAST( ToggleBreakpoint )
 		FUNCTION( ClearBreakpoints )
 		FUNCTION( Stack )
 	END_FUNCTION_SPEC
@@ -577,6 +588,7 @@ CONFIGURE_CLASS
 		CONST_INTEGER_SINGLE( CONTINUE )
 		CONST_INTEGER_SINGLE( STEP )
 		CONST_INTEGER_SINGLE( STEP_OVER )
+		CONST_INTEGER_SINGLE( STEP_THROUGH )
 		CONST_INTEGER_SINGLE( STEP_OUT )
 
 		CONST_INTEGER_SINGLE( FROM_BREAKPOINT )
@@ -587,3 +599,43 @@ CONFIGURE_CLASS
 	END_CONST_INTEGER_SPEC
 
 END_CLASS
+
+
+	//	case STEP_OVER:
+	///*
+	//		//jsbytecode *nextPc = JS_LineNumberToPC(cx, script, JS_PCToLineNumber(cx, script, pc+1) + 1);
+	////		jsbytecode *nextPc = JS_GetFramePC(cx, caller);
+	////		JSOp op = JS_GetTrapOpcode(cx, caller->script, nextPc);
+	////		nextPc += jsCodeSpec[op].length;
+	////		JS_SetTrap(cx, caller->script, nextPc, InterruptHandler, NULL);
+	//		JSOp op = JS_GetTrapOpcode(cx, caller->script, nextPc);
+	//		JS_SetInterrupt(JS_GetRuntime(cx), InterruptHandler, NULL);
+	//		jsbytecode *nextPc = JS_GetFramePC(cx, caller);
+	//		JSOp op = JS_GetTrapOpcode(cx, caller->script, nextPc);
+	//		nextPc += jsCodeSpec[op].length;
+	//		JS_SetTrap(cx, caller->script, nextPc, InterruptHandler, NULL);
+	//*/
+
+	//	case STEP_OUT:
+
+	///*
+	//		JSStackFrame *frame;
+	//		frame = JS_GetScriptedCaller(cx, NULL);
+	//		// check if there is a frame to return to, else continue
+	//		if ( !frame->down )
+	//			return JSTRAP_CONTINUE;
+	//		frame = JS_GetScriptedCaller(cx, frame->down);
+	//		JSScript *nextScript = JS_GetFrameScript(cx, frame);
+	//		jsbytecode *nextPc = JS_GetFramePC(cx, frame);
+	////		uintN lineno = JS_PCToLineNumber(cx, nextScript, nextPc);
+	////		uintN lastlineno = JS_GetScriptBaseLineNumber(cx, nextScript) + JS_GetScriptLineExtent(cx, nextScript);
+	////		if ( lineno + 1 >= lastlineno )
+	////			return JSTRAP_CONTINUE;
+	////		nextPc = JS_LineNumberToPC(cx, nextScript, lineno +1 );
+	////		JS_ClearTrap(cx, nextScript, nextPc, NULL, NULL);
+	//		// set the next trap on the next opcode
+	//		JSOp op = JS_GetTrapOpcode(cx, nextScript, nextPc);
+	//		nextPc += jsCodeSpec[op].length;
+	//		JSBool status = JS_SetTrap(cx, nextScript, nextPc, InterruptHandler, (void*)PRIVATE_TO_JSVAL(NULL));
+	//*/
+	//		break;

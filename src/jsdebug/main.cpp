@@ -33,6 +33,8 @@ $MODULE_FOOTER
 
 void NewScriptHook(JSContext *cx, const char *filename, uintN lineno, JSScript *script, JSFunction *fun, void *callerdata) {
 
+//	printf( "%s:%d - %s - %d \n", filename, lineno, fun ? JS_GetFunctionName(fun):"", script->staticDepth );
+
 	jl::QueueCell *it;
 	jl::Queue *scriptList = NULL;
 
@@ -55,7 +57,7 @@ void NewScriptHook(JSContext *cx, const char *filename, uintN lineno, JSScript *
 		for ( it = jl::QueueBegin(scriptList); it; it = jl::QueueNext(it) ) {
 
 			JSScript *s = (JSScript*)jl::QueueGetData(it);
-			if ( script->staticDepth > s->staticDepth ) {
+			if ( script->staticDepth >= s->staticDepth ) {
 
 				jl::QueueInsertCell(scriptList, it, script);
 				break;
