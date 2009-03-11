@@ -31,6 +31,15 @@ function Debug1() {
 
 	debugger;
 	
+	var t = 0;
+	eval('123');
+	
+	function inner() {
+		function inner1() {}
+	}
+	
+	inner()
+	
 	a();
 	b();
 	toto();
@@ -40,7 +49,7 @@ function Debug1() {
 	for ( var i=0; i < 100; i++ )
 		loop();
 
-	xxx();
+//	xxx();
 
 }
 

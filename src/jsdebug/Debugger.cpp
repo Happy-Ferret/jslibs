@@ -15,6 +15,9 @@
 #include "stdafx.h"
 #include "jsdbgapi.h"
 
+#define OBJ_PROP_FLAGS (JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT)
+
+
 extern jl::Queue *scriptFileList;
 
 const JSCodeSpec jsCodeSpec[] = {
@@ -49,18 +52,18 @@ BEGIN_CLASS( Debugger )
 struct Private {
 
 	// previous break state
-	int frameDepth;
+	int stackFrameIndex;
 	JSStackFrame *frame;
 	JSStackFrame *pframe;
 	JSScript *script;
 	uintN lineno;
 };
 
-int FrameDepth(const JSStackFrame *frame) {
+unsigned int StackSize(const JSStackFrame *frame) {
 
-	int frameDepth;
-	for ( frameDepth = 0; frame; frame = frame->down, frameDepth++ );
-	return frameDepth; // 0 is the first frame
+	unsigned int length;
+	for ( length = 0; frame; frame = frame->down, length++ );
+	return length; // 0 is the first frame
 }
 
 
@@ -204,8 +207,8 @@ static JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSScript *script,
 	rt = JS_GetRuntime(cx);
 	JSStackFrame *frame;
 	frame = JS_GetScriptedCaller(cx, NULL);
-	int frameDepth;
-	frameDepth = FrameDepth(frame);
+	int stackFrameIndex;
+	stackFrameIndex = StackSize(frame)-1;
 	int lineno;
 	lineno = JS_PCToLineNumber(cx, script, pc);
 
@@ -216,7 +219,7 @@ static JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSScript *script,
 	argv[2] = INT_TO_JSVAL( lineno );
 	argv[3] = OBJECT_TO_JSVAL( JS_GetFrameScopeChain(cx, frame) );
 	argv[4] = INT_TO_JSVAL( breakOrigin );
-	argv[5] = INT_TO_JSVAL( frameDepth );
+	argv[5] = INT_TO_JSVAL( stackFrameIndex );
 
 	JSBool hasException;
 	hasException = JS_IsExceptionPending(cx);
@@ -239,6 +242,8 @@ static JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSScript *script,
 	JSTempValueRooter tvr;
 	JS_PUSH_TEMP_ROOT(cx, COUNTOF(argv), argv, &tvr);
 	JSBool status;
+
+	// (TBD) should I set the JSFRAME_DEBUGGER flag to the current frame ??? (see JS_EvaluateInStackFrame)
 	status = JS_CallFunctionValue(cx, obj, fval, COUNTOF(argv)-1, argv+1, &argv[0]);
 	int action;
 	J_CHK( JsvalToInt(cx, argv[0], &action) );
@@ -251,7 +256,7 @@ static JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSScript *script,
 	J_CHK( status );
 
 	// store the current state
-	pv->frameDepth = frameDepth;
+	pv->stackFrameIndex = stackFrameIndex;
 	pv->script = script;
 	pv->lineno = lineno;
 	pv->frame = frame;
@@ -387,6 +392,7 @@ DEFINE_FUNCTION_FAST( ToggleBreakpoint ) {
 	JL_BAD;
 }
 
+
 /**doc
 $TOC_MEMBER $INAME
  $INT | $BOOL $INAME();
@@ -398,43 +404,40 @@ DEFINE_FUNCTION( ClearBreakpoints ) {
 }
 
 
+
 /**doc
 $TOC_MEMBER $INAME
  $OBJ $INAME( frameLevel );
 **/
-DEFINE_FUNCTION( Stack ) {
+DEFINE_FUNCTION( StackFrame ) {
 
 	J_S_ASSERT_ARG_MIN( 1 );
 
-	int level;
-	J_CHK( JsvalToInt(cx, J_ARG(1), &level) );
-
+	unsigned int frameIndex;
+	J_CHK( JsvalToUInt(cx, J_ARG(1), &frameIndex) );
 
 	JSStackFrame *frame;
 	frame = JS_GetScriptedCaller(cx, NULL); // the current frame
-	int currentDepth;
-	currentDepth = FrameDepth(frame);
+	unsigned int currentFrameIndex;
+	currentFrameIndex = StackSize(frame)-1;
 
-//	J_S_ASSERT( level >= 0 && level <= currentDepth, "Invalid frame level." );
+	if ( frameIndex > currentFrameIndex ) {
 
-	if ( level < 0 || level > currentDepth ) {
-
-		*J_RVAL = JSVAL_FALSE;
+		*J_RVAL = JSVAL_VOID;
 		return JS_TRUE;
 	}
 
 	// select the right frame
-	while ( currentDepth > level ) {
+	while ( currentFrameIndex > frameIndex ) {
 
 		frame = frame->down;
-		currentDepth--;
+		currentFrameIndex--;
 	}
 
 	JSObject *stackItem;
 	stackItem = JS_NewObject(cx, NULL, NULL, NULL);
 	J_S_ASSERT_ALLOC( stackItem );
-
-	*J_RVAL = OBJECT_TO_JSVAL(stackItem);
+	*J_RVAL = OBJECT_TO_JSVAL( stackItem );
 
 	JSScript *script;
 	script = JS_GetFrameScript(cx, frame);
@@ -442,23 +445,31 @@ DEFINE_FUNCTION( Stack ) {
 	pc = JS_GetFramePC(cx, frame);
 
 	jsval tmp;
+	J_CHK( StringToJsval(cx, JS_GetScriptFilename(cx, script), &tmp) );
+	J_CHK( JS_DefineProperty(cx, stackItem, "filename", tmp, NULL, NULL, OBJ_PROP_FLAGS) );
+
+	J_CHK( JS_DefineProperty(cx, stackItem, "lineno", INT_TO_JSVAL(JS_PCToLineNumber(cx, script, pc)), NULL, NULL, OBJ_PROP_FLAGS) );
+
+	JSObject *callee = JS_GetFrameCalleeObject(cx, frame);
+	J_CHK( JS_DefineProperty(cx, stackItem, "callee", callee ? OBJECT_TO_JSVAL(callee) : JSVAL_VOID, NULL, NULL, OBJ_PROP_FLAGS) );
 
 	JSObject *scope;
 	scope = JS_GetFrameScopeChain(cx, frame);
+	J_CHK( JS_DefineProperty(cx, stackItem, "scope", OBJECT_TO_JSVAL(scope), NULL, NULL, OBJ_PROP_FLAGS) );
 
-	J_CHK( StringToJsval(cx, JS_GetScriptFilename(cx, script), &tmp) );
-	J_CHK( JS_DefineProperty(cx, stackItem, "filename", tmp, NULL, NULL, JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT) );
-	J_CHK( JS_DefineProperty(cx, stackItem, "lineno", INT_TO_JSVAL(JS_PCToLineNumber(cx, script, pc)), NULL, NULL, JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT) );
-	J_CHK( JS_DefineProperty(cx, stackItem, "callee", OBJECT_TO_JSVAL(JS_GetFrameCalleeObject(cx, frame)), NULL, NULL, JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT) );
-	J_CHK( JS_DefineProperty(cx, stackItem, "scope", OBJECT_TO_JSVAL(scope), NULL, NULL, JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT) );
-	J_CHK( JS_DefineProperty(cx, stackItem, "this", OBJECT_TO_JSVAL(JS_GetFrameThis(cx, frame)), NULL, NULL, JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT) );
-	J_CHK( JS_DefineProperty(cx, stackItem, "argv", *frame->argv, NULL, NULL, JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT) );
-	J_CHK( JS_DefineProperty(cx, stackItem, "rval", JS_GetFrameReturnValue(cx, frame), NULL, NULL, JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT) );
-	J_CHK( JS_DefineProperty(cx, stackItem, "isNative", BOOLEAN_TO_JSVAL(JS_IsNativeFrame(cx, frame)), NULL, NULL, JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT) );
+	J_CHK( JS_DefineProperty(cx, stackItem, "this", OBJECT_TO_JSVAL(JS_GetFrameThis(cx, frame)), NULL, NULL, OBJ_PROP_FLAGS) );
+	J_CHK( JS_DefineProperty(cx, stackItem, "argc", INT_TO_JSVAL(frame->argc), NULL, NULL, OBJ_PROP_FLAGS) );
+	J_CHK( JS_DefineProperty(cx, stackItem, "argv", frame->argv ? *frame->argv : JSVAL_VOID, NULL, NULL, OBJ_PROP_FLAGS) );
+	J_CHK( JS_DefineProperty(cx, stackItem, "rval", JS_GetFrameReturnValue(cx, frame), NULL, NULL, OBJ_PROP_FLAGS) );
+
+	J_CHK( JS_DefineProperty(cx, stackItem, "isNative", BOOLEAN_TO_JSVAL(JS_IsNativeFrame(cx, frame)), NULL, NULL, OBJ_PROP_FLAGS) );
+	J_CHK( JS_DefineProperty(cx, stackItem, "isEval", frame->flags & JSFRAME_EVAL ? JSVAL_TRUE : JSVAL_FALSE, NULL, NULL, OBJ_PROP_FLAGS) );
+	J_CHK( JS_DefineProperty(cx, stackItem, "isConstructing", frame->flags & JSFRAME_CONSTRUCTING ? JSVAL_TRUE : JSVAL_FALSE, NULL, NULL, OBJ_PROP_FLAGS) );
 
 	return JS_TRUE;
 	JL_BAD;
 }
+
 
 /**doc
 $TOC_MEMBER $INAME
@@ -482,6 +493,20 @@ DEFINE_PROPERTY( scriptList ) {
 		J_CHK( JS_SetElement(cx, arr, index, &filename) );
 		index++;
 	}
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $ARRAY $INAME
+**/
+DEFINE_PROPERTY( stackSize ) {
+
+	JSStackFrame *frame;
+	frame = JS_GetScriptedCaller(cx, NULL); // the current frame
+	J_CHK( IntToJsval(cx, StackSize(frame), vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -583,11 +608,14 @@ CONFIGURE_CLASS
 		FUNCTION_FAST( GetActualLineno )
 		FUNCTION_FAST( ToggleBreakpoint )
 		FUNCTION( ClearBreakpoints )
-		FUNCTION( Stack )
+		FUNCTION( StackFrame )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
 		PROPERTY_READ( scriptList )
+		PROPERTY_READ( stackSize )
+
+
 //		PROPERTY_READ( breakpointList )
 //		PROPERTY_READ( pendingException )
 	END_PROPERTY_SPEC

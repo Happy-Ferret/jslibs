@@ -25,6 +25,7 @@
 			border-width: 0px;
 			overflow: scroll;
 		}
+		
 		html, body {
 			margin: 0px;
 			padding: 0px;
@@ -38,20 +39,6 @@
 			white-space: pre;
 			font-family: monospace;
 		}
-		
-		.codeInfo {
-			display: none;
-			position: absolute;
-			z-index: 1;
-			white-space: pre;
-			font-family: monospace;
-/*			font-size: smaller;*/
-			padding: 3px 10px;
-			border: 1px solid #AAA;
-			background-color: #EEE;
-			opacity: 0.95;
-		}
-		
 		
 		.codeItem {
 			width: 100%;
@@ -77,7 +64,6 @@
 		}
 		
 		.codeItem tbody td+td {
-			cursor: text;
 			background-color: #DDD;
 			color: black;
 			-moz-user-select: text;
@@ -90,13 +76,29 @@
 		.codeItem tbody .currentLineError td+td {
 			background-color: #EAA;
 		}
-		
-		.codeItem tbody U {
-			text-decoration: none;
+
+		.codeItem tbody .oldLine td+td {
+			background-color: #AEA;
 		}
 		
+		.codeInfo {
+			display: none;
+			position: absolute;
+			z-index: 1;
+			white-space: pre;
+			font-family: monospace;
+			font-size: smaller;
+			padding: 3px 10px;
+			border: 1px solid #AAA;
+			background-color: #EEE;
+			opacity: 0.95;
+		}
+				
+		.codeItem tbody .selectedKwyword {
+			background-color: white;
+		}
 		
-		.evalItem {
+		.watchItem {
 			white-space: pre;
 			font-family: monospace;
 			border-bottom: 1px dotted #BBB;
@@ -104,23 +106,29 @@
 			margin-bottom: 2px;
 		}
 
-		.evalItem .result {
-			
+		.watchItem .result {
 			margin-left: 20px;
 		}
 
-		.evalItem .code {
+		.watchItem .code {
 			background-color: #DDD;
 		}
 		
-		.evalItem .error {
+		.watchItem .error {
 			color: red;
 		}
 
-		.breakpoint {
-			background-color: red !important;
+		.codeItem tbody .breakpoint > :first-child {
+			background-color: red;
 			border-corner: 4px;
 			color: white;
+		}
+		
+		.stack {
+			white-space: pre;
+			font-family: monospace;
+			cursor: default;
+			-moz-user-select: none;
 		}
 		]]>
 	</html:style>
@@ -145,11 +153,7 @@
 		function XPath(ref, xpath) {
 			
 			doc = ref.ownerDocument || ref;
-			try {
-				var result = doc.evaluate(xpath, ref, null, XPathResult.ANY_TYPE, null);
-			} catch(ex) {
-				return;
-			}
+			var result = doc.evaluate(xpath, ref, null, XPathResult.ANY_TYPE, null);
 			switch (result.resultType) {
 
 				case XPathResult.NUMBER_TYPE:
@@ -179,41 +183,54 @@
 		var EscapeEntities = StringReplacer({'&':'&amp;', '<':'&lt;', '>':'&gt;'});
 		
 		function InsertNode(node, pos) pos.parentNode.insertBefore(node, pos);
+		
 		function InsertNodeAtBeginning(node, parent) parent.firstChild ? parent.insertBefore(node, parent.firstChild) : parent.appendChild(node);
 
 		function ElementAbsolutePosition(elt) [(function(o) o.offsetLeft + (o.offsetParent ? arguments.callee(o.offsetParent) : 0))(elt), (function(o) o.offsetTop + (o.offsetParent ? arguments.callee(o.offsetParent) : 0))(elt)];
 		
-		function AddClass(elt, class) {
+		function HasClass(elt, class) {
 			
-			if ( (' '+elt.className+' ').indexOf(' '+class+' ') == -1 )
-				elt.className += ' '+class;
+			return (' '+elt.className+' ').indexOf(' '+class+' ') != -1;
 		}
 
-		function RemoveClass(elt, class) {
-
-			var cn = ' '+elt.className+' ';
+		function SetClass( polarity, elt, class ) {
+		
 			class = ' '+class+' ';
-			pos = cn.lastIndexOf(class);
-			if ( pos != -1 )
-				elt.className = cn.substring(1, pos+1)+cn.substring(pos+class.length);
+			var str = ' '+elt.className+' ';
+			var pos = str.lastIndexOf(class);
+			if (polarity != (pos != -1))
+				elt.className = polarity ? str+class : str.substr(0, pos+1)+str.substr(pos+class.length);
 		}
-        
+
+		function SetInView(elt, offset) {
+
+			var pos = ElementAbsolutePosition(elt)[1];
+			var body = elt.ownerDocument.body;
+			if ( pos < body.scrollTop || pos > body.scrollTop + body.clientHeight ) {
+			
+				elt.scrollIntoView();
+				body.scrollTop += offset;
+			}
+		}
+       
 		////////////////////////////////////////////////////////////////
 
+		var codeDoc, stackDoc, watchDoc;
 		function init() {
-		
-			var doc = $('code').contentDocument;
-			doc.getElementsByTagName('HEAD')[0].appendChild(doc.importNode($('css'), true));
 			
-			var doc = $('eval').contentDocument;
-			doc.getElementsByTagName('HEAD')[0].appendChild(doc.importNode($('css'), true));
+			codeDoc = $('code').contentDocument;
+			stackDoc = $('stack').contentDocument;
+			watchDoc = $('info').contentDocument;
+
+			codeDoc.getElementsByTagName('HEAD')[0].appendChild(codeDoc.importNode($('css'), true));
+			stackDoc.getElementsByTagName('HEAD')[0].appendChild(stackDoc.importNode($('css'), true));
+			watchDoc.getElementsByTagName('HEAD')[0].appendChild(watchDoc.importNode($('css'), true));
 			
 			ConnectRetry();
 			InitMouseOverCode();
 			InitBreakpointManager();
 		}
 
-		
 		var debuggerRpc = { __noSuchMethod__: function() {
 			
 			netscape.security.PrivilegeManager.enablePrivilege("UniversalBrowserRead"); // allow cross-domain xhr
@@ -229,7 +246,6 @@
 			} catch(ex) {}
 		}};
 		
-		
 		function ConnectRetry() {
 
 			if ( debuggerRpc.Ping() != true )
@@ -240,20 +256,7 @@
 		
 		function DetectIdentifiers(code) {
 			
-			return code.replace(/(&?)(\$?[\w]+)/g, function(s, p1, p2) {
-				return s[0] == '&' ? s : '<u>'+s+'</u>'; // we must avoid to convert entities
-			});
-		}
-
-		function SetInView(elt, offset) {
-
-			var pos = ElementAbsolutePosition(elt)[1];
-			var body = elt.ownerDocument.body;
-			if ( pos < body.scrollTop || pos > body.scrollTop + body.clientHeight ) {
-			
-				elt.scrollIntoView();
-				body.scrollTop += offset;
-			}
+			return code.replace(/(&?)(\$?[\w]+)/g, function(s, p1, p2) s[0] == '&' ? s : '<a>'+s+'</a>'); // we must avoid to convert entities
 		}
 
 		Goto.resetUi = [];
@@ -262,8 +265,6 @@
 			while (Goto.resetUi.length)
 				Goto.resetUi.shift()();
 		
-			var codeDoc = $('code').contentDocument;
-
 			var res = XPath(codeDoc, '//table[@class="codeItem"][thead/th[text()="'+filename+'"]]');
 		
 			if ( res.length ) {
@@ -276,70 +277,93 @@
 				var htmlLines = [ '<tr><td>'+(line+1)+'</td><td>'+code+'</td></tr>' for each ( [line,code] in Iterator(codeLines) ) ];
 				var codeElt = TextToHTMLNode(codeDoc, '<table class="codeItem"><colgroup><col width="0"><col width="*"></colgroup><thead><th class="filename" colspan="3">'+filename+'</th></thead><tbody>'+htmlLines.join('')+'</tbody></table>')
 				codeDoc.body.appendChild(codeElt);
+
+				// update breakpoints
+				for each ( var l in debuggerRpc.BreakpointList(filename) )
+					SetClass(true, XPath(codeElt, 'tbody/tr['+(l)+']')[0], 'breakpoint');
 			}
 
-			var currentLineElt = XPath(codeElt, 'tbody/tr['+(lineno)+']')[0];
-			AddClass(currentLineElt, class);
-			Goto.resetUi.push(function() RemoveClass(currentLineElt, class));
-			SetInView(currentLineElt, -20);
+			var line = XPath(codeElt, 'tbody/tr['+(lineno)+']')[0];
+			SetClass(true, line, class);
+			Goto.resetUi.push(function() SetClass(false, line, class));
+			SetInView(line, -20);
 		}
 		
 		function UpdateState() {
 		
-			var codeDoc = $('code').contentDocument;
-			var evalDoc = $('eval').contentDocument;
-			
 			$('statusInfo').label = 'querying state...';
 			var state = debuggerRpc.State();
 			
-			if ( !state ) {
-			
+			if ( state ) {
+
+				$('statusInfo').label = 'break: '+state.breakOrigin + ( state.hasException ? ' ('+state.exception+')' : '' );
+				Goto(state.filename, state.lineno, state.hasException ? 'currentLineError' : 'currentLine');
+				UpdateStack();
+				UpdateWatch(state.stackFrameIndex);
+			} else {
+
 				$('statusInfo').label = 'idle';
 				codeDoc.body.innerHTML = '';
-				evalDoc.body.innerHTML = '';
+				watchDoc.body.innerHTML = '';
+				stackDoc.body.innerHTML = '';
 				ConnectRetry();
-				return;
 			}
-			
-			$('statusInfo').label = 'break: '+state.breakOrigin + ( state.hasException ? ' ('+state.exception+')' : '' );
-			
-			Goto(state.filename, state.line, state.hasException ? 'currentLineError' : 'currentLine');
-
-			UpdateWatch();
 		}
 		
-		function UpdateWatch() {
+		function UpdateStack() {
 			
-			var evalDoc = $('eval').contentDocument;
-			for each ( var item in XPath(evalDoc, '/html/body/*[@class="evalItem"]/*[@class="code"]') ) {
+			function MakeGotoStackFrame(stackFrameIndex, filename, lineno) {
+			
+				return function() {
 				
-				var res = debuggerRpc.Eval(item.firstChild.data);
-				item.nextSibling.innerHTML = res;
-				item.nextSibling.title = uneval(res);
-				if ( res instanceof Error )
-					AddClass(item.nextSibling, 'error');
-				else
-					RemoveClass(item.nextSibling, 'error');
+					Goto(filename, lineno, 'oldLine');
+					UpdateWatch(stackFrameIndex);
+				}
+			}
+			
+			var stack = debuggerRpc.GetStack();
+			stackDoc.body.innerHTML = '';
+			var list = stackDoc.body.appendChild(TextToHTMLNode(stackDoc, '<div class="stack"/>'));
+			for ( var [i, l] in Iterator(stack) ) {
+				
+				var c = Math.floor(200 / stack.length * i);
+				var item = TextToHTMLNode(stackDoc, '<div style="color:rgb('+c+','+c+','+c+')"><a>'+l.filename+':'+l.lineno+'</a> - '+l.contextName+'</div>');
+				list.appendChild(item);
+				item.onclick = MakeGotoStackFrame(stack.length-1-i, l.filename, l.lineno);
 			}
 		}
 		
 		function AddWatch(code) {
 		
-			var evalDoc = $('eval').contentDocument;
+			var watch = debuggerRpc.GetCookie('watch');
+			if ( !watch )
+				watch = [];
+			watch.push(code);
+			debuggerRpc.SetCookie('watch',  watch);
+			
 			var res = debuggerRpc.Eval(code);
-			var elt = evalDoc.body.appendChild(TextToHTMLNode(evalDoc,'<div class="evalItem"><div class="code"></div><div class="result"></div></div>'));
+			var elt = watchDoc.body.appendChild(TextToHTMLNode(watchDoc,'<div class="watchItem"><div class="code"></div><div class="result"></div></div>'));
 			elt.firstChild.innerHTML = code;
 			elt.lastChild.innerHTML = res;
 			elt.lastChild.title = uneval(res);
 			if ( res instanceof Error )
-				AddClass(elt.lastChild, 'error');
-			evalDoc.body.scrollTop = evalDoc.body.scrollHeight;
+				SetClass(true, elt.lastChild, 'error');
+			watchDoc.body.scrollTop = watchDoc.body.scrollHeight;
+		}
+
+		function UpdateWatch(stackFrameDepth) {
+			
+			for each ( var item in XPath(watchDoc, '/html/body/*[@class="watchItem"]/*[@class="code"]') ) {
+				
+				var res = debuggerRpc.Eval(item.firstChild.data, stackFrameDepth);
+				item.nextSibling.innerHTML = res;
+				item.nextSibling.title = uneval(res);
+				SetClass(res instanceof Error, item.nextSibling, 'error');
+			}
 		}
 		
 		function InitBreakpointManager() {
 		
-			var codeDoc = $('code').contentDocument;
-			
 			codeDoc.addEventListener('mousedown', function(ev) {
 				
 				var e = ev.target;
@@ -350,40 +374,54 @@
 					var filename = XPath(table, 'thead/th[1]/text()')[0];
 					
 					var actualLineno = debuggerRpc.GetActualLineno(filename, line);
-					var elt = XPath(table, 'tbody/tr['+actualLineno+']/td[1]')[0];
 					
-					var state = elt.className == 'breakpoint';
-					var effectiveLine = debuggerRpc.Breakpoint(!state, filename, actualLineno);
+					if ( actualLineno == undefined ) {
+						return;
+					}
+					var elt = XPath(table, 'tbody/tr['+actualLineno+']')[0];
 					
-					elt.className = state ? '' : 'breakpoint';
+					var state = HasClass(elt, 'breakpoint');
+					debuggerRpc.Breakpoint(!state, filename, actualLineno);
+					SetClass(!state, elt, 'breakpoint');
 				}
 			}, false);
 		}
 
-		 
+
+		var keywordInfoResetUi = [];
+		
 		function InitMouseOverCode() {
 			
-			var codeDoc = $('code').contentDocument;
 			var infoElt = codeDoc.body.appendChild(TextToHTMLNode(codeDoc, '<span class="codeInfo"/>'));
 			
 			codeDoc.addEventListener('mouseover', function(ev) {
 				
-				if ( ev.target.nodeName == 'U' ) {
+				if ( ev.target.nodeName == 'A' ) {
 					
 					var info = debuggerRpc.Eval(ev.target.firstChild.data);
 					if ( info instanceof Error )
 						return;
 					infoElt.innerHTML = info;
+					
 					infoElt.style.display = 'block';
+					keywordInfoResetUi.push(function() infoElt.style.display = 'none');
+					
+					var kw = ev.target;
+					SetClass(true, kw, 'selectedKwyword');
+					keywordInfoResetUi.push(function() SetClass(false, kw, 'selectedKwyword'));
+
 					var [x,y] = ElementAbsolutePosition(ev.target);
 					infoElt.style.left = x+'px';
-					infoElt.style.top = y+ev.target.offsetHeight+'px';
+					var top = y - infoElt.offsetHeight < codeDoc.body.scrollTop ? y + ev.target.offsetHeight + 10 : y - infoElt.offsetHeight;
+
+					infoElt.style.top = top+'px';
 				}
 			}, false);
 			
 			codeDoc.addEventListener('mouseout', function(ev) {
-				
-				infoElt.style.display = 'none';
+
+				while (keywordInfoResetUi.length)
+					keywordInfoResetUi.shift()();
 			}, false);		
 		}
 
@@ -391,7 +429,6 @@
 	</script>
 
 	<vbox flex="1">
-
 		<commandset>
 			<command id="cmd_step" oncommand="debuggerRpc.Action('step'); UpdateState()"/>
 			<command id="cmd_stepover" oncommand="debuggerRpc.Action('stepover'); UpdateState()"/>
@@ -399,7 +436,6 @@
 			<command id="cmd_stepout" oncommand="debuggerRpc.Action('stepout'); UpdateState()"/>
 			<command id="cmd_continue" oncommand="debuggerRpc.Action('continue'); UpdateState()"/>
 		</commandset>
-		
 		<keyset>
 		  <key keycode="VK_F8" command="cmd_continue"/>
 		  <key keycode="VK_F10" command="cmd_stepover"/>
@@ -407,17 +443,17 @@
 		  <key keycode="VK_F11" command="cmd_step"/>
 		  <key modifiers="shift" keycode="VK_F11" command="cmd_stepthrough"/>
 		</keyset>
-
 		<hbox flex="1">
 			<html:iframe id="code" flex="1" frameborder="0"/>
-			<splitter collapse="before" resizeafter="farthest"><grippy/></splitter>
+			<splitter><grippy/></splitter>
 			<vbox>
-				<html:iframe id="eval" flex="1" frameborder="0"/>
-				<splitter collapse="before" resizeafter="farthest"><grippy/></splitter>
+				<html:iframe id="stack" flex="1" frameborder="0"/>
+				<splitter><grippy/></splitter>
+				<html:iframe id="info" flex="1" frameborder="0"/>
+				<splitter><grippy/></splitter>
 				<textbox multiline="true" onkeydown="if (event.keyCode==13) { AddWatch(this.value); this.value=''; event.preventDefault() }"/>
 			</vbox>
 		</hbox>
-
 		<toolbox>
 			<toolbar id="nav-toolbar">
 				<toolbarbutton label="Step" tooltiptext="F11" command="cmd_step"/>
@@ -427,10 +463,8 @@
 				<toolbarbutton label="Continue" tooltiptext="F8" command="cmd_continue"/>
 			</toolbar>
 		</toolbox>
-		
 		<statusbar>
 			<statusbarpanel id="statusInfo" flex="1"/>
 		</statusbar>
-
 	</vbox>
 </window>

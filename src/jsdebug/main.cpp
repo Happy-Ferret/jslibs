@@ -33,7 +33,7 @@ $MODULE_FOOTER
 
 void NewScriptHook(JSContext *cx, const char *filename, uintN lineno, JSScript *script, JSFunction *fun, void *callerdata) {
 
-//	printf( "%s:%d - %s - %d \n", filename, lineno, fun ? JS_GetFunctionName(fun):"", script->staticDepth );
+//	printf( "add - %s:%d - %s - %d - %p\n", filename, lineno, fun ? JS_GetFunctionName(fun):"", script->staticDepth, script );
 
 	jl::QueueCell *it;
 	jl::Queue *scriptList = NULL;
@@ -68,7 +68,10 @@ void NewScriptHook(JSContext *cx, const char *filename, uintN lineno, JSScript *
 	}
 }
 
+
 void DestroyScriptHook(JSContext *cx, JSScript *script, void *callerdata) {
+
+//	printf( "del - %s:%d - ? - %d - %p\n", script->filename, script->lineno, script->staticDepth, script );
 
 	jl::QueueCell *it, *it1;
 	jl::Queue *scriptList = NULL;
