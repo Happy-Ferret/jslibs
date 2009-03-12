@@ -16,7 +16,7 @@
 
 #ifdef XP_WIN
 #define _WIN32_WINNT 0x0501
-#pragma comment(lib,"Psapi.lib")
+#pragma comment(lib,"Psapi.lib") // need for currentMemoryUsage()
 #include <Psapi.h>
 #endif // XP_WIN
 
@@ -24,7 +24,6 @@
 
 #include <time.h>
 
-#include "jsstddef.h"
 #include "static.h"
 
 #include "jsdbgapi.h"
@@ -894,18 +893,18 @@ DEFINE_FUNCTION( LineToPC )
     uintN lineno;
     jsbytecode *pc;
 
-	 J_S_ASSERT_ARG_MIN( 1 );
+	 J_S_ASSERT_ARG_MIN(1);
 
-	 script = cx->fp->down->script;
+	 script = JS_GetScriptedCaller(cx, NULL)->script;
     if (!GetTrapArgs(cx, argc, argv, &script, &i))
         return JS_FALSE;
     lineno = (i == 0) ? script->lineno : (uintN)i;
     pc = JS_LineNumberToPC(cx, script, lineno);
     if (!pc)
         return JS_FALSE;
-    *rval = INT_TO_JSVAL(PTRDIFF(pc, script->code, jsbytecode));
-	return JS_TRUE;
-	JL_BAD;
+    *rval = INT_TO_JSVAL(pc - script->code);
+    return JS_TRUE;
+	 JL_BAD;
 }
 
 /**doc

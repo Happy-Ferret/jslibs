@@ -18,7 +18,6 @@
 #include <jscntxt.h>
 
 #include <jsprf.h>
-#include <jsstddef.h>
 
 #include "../common/jsHelper.h"
 #include "../common/jsNames.h"
@@ -111,26 +110,28 @@ bad:
 // function copied from ../js/src/js.c
 static void ErrorReporter(JSContext *cx, const char *message, JSErrorReport *report) {
 
-	int i, j, k, n;
-	char *prefix, *tmp;
-	const char *ctmp;
-	char *msg;
-
-    if (!report) {
-
-		stdErrRouter( cx, message, strlen(message) );
-		stdErrRouter( cx, "\n", 1 );
-		return;
-    }
-
 	HostPrivate *pv = GetHostPrivate(cx);
 	if ( pv == NULL )
 		return;
-	if ( JSREPORT_IS_WARNING(report->flags) && pv->unsafeMode ) // no warnings in unsafe mode.
-		return;
+	bool reportWarnings = !pv->unsafeMode; // no warnings in unsafe mode.
+	char *msg;
 
-//	if (JSREPORT_IS_EXCEPTION(report->flags))
-//		return;
+
+
+    int i, j, k, n;
+    char *prefix, *tmp;
+    const char *ctmp;
+
+    if (!report) {
+        //fprintf(gErrFile, "%s\n", message);
+		 stdErrRouter( cx, message, strlen(message) );
+		 stdErrRouter( cx, "\n", 1 );
+        return;
+    }
+
+    /* Conditionally ignore reported warnings. */
+    if (JSREPORT_IS_WARNING(report->flags) && !reportWarnings)
+        return;
 
     prefix = NULL;
     if (report->filename)
@@ -152,44 +153,62 @@ static void ErrorReporter(JSContext *cx, const char *message, JSErrorReport *rep
     while ((ctmp = strchr(message, '\n')) != 0) {
         ctmp++;
         if (prefix)
-            stdErrRouter( cx, prefix, strlen(prefix) );
-        stdErrRouter( cx, message, ctmp - message );
+            //fputs(prefix, gErrFile);
+				stdErrRouter( cx, prefix, strlen(prefix) );
+        //fwrite(message, 1, ctmp - message, gErrFile);
+		  stdErrRouter( cx, message, ctmp - message );
+
         message = ctmp;
     }
 
     /* If there were no filename or lineno, the prefix might be empty */
     if (prefix)
-	    stdErrRouter( cx, prefix, strlen(prefix) );
-    stdErrRouter( cx, message, strlen(message) );
+        //fputs(prefix, gErrFile);
+		  stdErrRouter( cx, prefix, strlen(prefix) );
+    //fputs(message, gErrFile);
+	 stdErrRouter( cx, message, strlen(message) );
 
     if (!report->linebuf) {
-        stdErrRouter(cx, "\n", 1);
+        //fputc('\n', gErrFile);
+		 stdErrRouter( cx, "\n", 1 );
         goto out;
     }
 
     /* report->linebuf usually ends with a newline. */
     n = strlen(report->linebuf);
-    msg = JS_smprintf(":\n%s%s%s%s",
+    //fprintf(gErrFile, ":\n%s%s%s%s",
+	 msg = JS_smprintf(":\n%s%s%s%s",
             prefix,
             report->linebuf,
             (n > 0 && report->linebuf[n-1] == '\n') ? "" : "\n",
             prefix);
 	 stdErrRouter( cx, msg, strlen(msg) );
-    n = PTRDIFF(report->tokenptr, report->linebuf, char);
+	JS_smprintf_free(msg);
+    n = report->tokenptr - report->linebuf;
     for (i = j = 0; i < n; i++) {
         if (report->linebuf[i] == '\t') {
             for (k = (j + 8) & ~7; j < k; j++) {
-                stdErrRouter( cx, ".", 1);
+                //fputc('.', gErrFile);
+					stdErrRouter( cx, ".", 1 );
             }
             continue;
         }
-        stdErrRouter( cx, ".", 1);
+        //fputc('.', gErrFile);
+		  stdErrRouter( cx, ".", 1 );
         j++;
     }
-    stdErrRouter( cx, "^\n", 2);
+    //fputs("^\n", gErrFile);
+	 stdErrRouter( cx, "^\n", 2 );
  out:
-//    if (!JSREPORT_IS_WARNING(report->flags))
-//        gExitCode = EXITCODE_RUNTIME_ERROR;
+/*
+	 if (!JSREPORT_IS_WARNING(report->flags)) {
+        if (report->errorNumber == JSMSG_OUT_OF_MEMORY) {
+            gExitCode = EXITCODE_OUT_OF_MEMORY;
+        } else {
+            gExitCode = EXITCODE_RUNTIME_ERROR;
+        }
+    }
+*/
     JS_free(cx, prefix);
 }
 

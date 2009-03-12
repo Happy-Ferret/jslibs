@@ -857,7 +857,6 @@ DEFINE_FUNCTION_FAST( Exec ) {
 //		if ( argc >= 3 )
 //			obj = JSVAL_TO_OBJECT( J_ARG(3) ); // try Exec.call( obj1, 'test.js' ); ...
 // see: http://groups.google.com/group/mozilla.dev.tech.js-engine/browse_thread/thread/97269b31d65d493d/be8a4f9c4e805bef
-
 		ok = JS_ExecuteScript(cx, J_FOBJ, script, J_FRVAL); // Doc: On successful completion, rval is a pointer to a variable that holds the value from the last executed expression statement processed in the script.
 		JS_DestroyScript(cx, script);
 	}

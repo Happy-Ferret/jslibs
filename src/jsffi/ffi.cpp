@@ -20,8 +20,6 @@
  #define DLL_EXT ".so"
 #endif
 
-#include "jsstddef.h"
-
 #include <stdlib.h>
 #include <ffi.h>
 
