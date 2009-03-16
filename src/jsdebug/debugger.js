@@ -14,8 +14,7 @@
 
 LoadModule('jsio');
 LoadModule('jsdebug');
-
-!function() {
+var _dbg = (function() {
 
 	function Match(v) Array.indexOf(arguments,v,1)-1;
 	function Switch(i) arguments[++i];
@@ -165,25 +164,21 @@ LoadModule('jsdebug');
 		},
 
 		Eval: function(code, stackFrameIndex) {
-			
-			var scope;
-			if ( stackFrameIndex == undefined ) {
-			
-				scope = this.scope;
-			} else {
-			
-				if ( stackFrameIndex < 0 || stackFrameIndex > this.stackFrameIndex )
-					throw new Error("Invalid stack index");
-				scope = dbg.StackFrame(stackFrameIndex).scope;
-			}
 
 			try {
 			
-				function tmp(c) eval(c);
-				var prevScope = SetScope(tmp, scope);
-				var res = tmp(code);
-				SetScope(tmp, prevScope);
-				return res;
+				return dbg.EvalInStackFrame(code, stackFrameIndex == undefined ? this.stackFrameIndex : stackFrameIndex );
+			} catch (ex) {
+			
+				return ex;
+			}
+		},
+		
+		DefinitionLocation: function(identifier, stackFrameIndex) {
+			
+			try {
+				var value = dbg.EvalInStackFrame(identifier, stackFrameIndex == undefined ? this.stackFrameIndex : stackFrameIndex );
+				return dbg.DefinitionLocation(value);
 			} catch (ex) {
 			
 				return ex;
@@ -226,5 +221,6 @@ LoadModule('jsdebug');
 				return res;
 		}
 	}
-
-}();
+	
+	return dbg;
+})();

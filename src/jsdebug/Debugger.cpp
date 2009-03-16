@@ -67,6 +67,26 @@ unsigned int StackSize(const JSStackFrame *frame) {
 }
 
 
+JSStackFrame *StackFrameByIndex( JSContext *cx, unsigned int frameIndex ) {
+
+	JSStackFrame *frame;
+	frame = JS_GetScriptedCaller(cx, NULL); // the current frame
+	unsigned int currentFrameIndex;
+	currentFrameIndex = StackSize(frame)-1;
+
+	if ( frameIndex > currentFrameIndex )
+		return NULL;
+
+	// select the right frame
+	while ( currentFrameIndex > frameIndex ) {
+
+		frame = frame->down;
+		currentFrameIndex--;
+	}
+	return frame;
+}
+
+
 JSScript *ScriptByLocation(JSContext *cx, jl::Queue *scriptFileList, const char *filename, unsigned int lineno) {
 
 	jl::QueueCell *it;
@@ -235,21 +255,24 @@ static JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSScript *script,
 		argv[7] = JSVAL_VOID;
 	}
 
-	JSDebugHooks noHooks, *prevHooks;
-	memset(&noHooks, 0, sizeof(JSDebugHooks));
-	prevHooks = JS_SetContextDebugHooks(cx, &noHooks); // avoid reentrant case.
+	JSDebugHooks prevHooks;
+	prevHooks = *JS_GetGlobalDebugHooks(rt);
+
+	JS_SetDebuggerHandler(rt, NULL, NULL);
+	JS_SetDebugErrorHook(rt, NULL, NULL);
+	JS_SetInterrupt(rt, NULL, NULL);
 
 	JSTempValueRooter tvr;
 	JS_PUSH_TEMP_ROOT(cx, COUNTOF(argv), argv, &tvr);
-	JSBool status;
 
 	// (TBD) should I set the JSFRAME_DEBUGGER flag to the current frame ??? (see JS_EvaluateInStackFrame)
+	JSBool status;
 	status = JS_CallFunctionValue(cx, obj, fval, COUNTOF(argv)-1, argv+1, &argv[0]);
 	int action;
 	J_CHK( JsvalToInt(cx, argv[0], &action) );
 	JS_POP_TEMP_ROOT(cx, &tvr);
 
-	JS_SetContextDebugHooks(cx, prevHooks);
+	*JS_GetGlobalDebugHooks(rt) = prevHooks;
 
 	if ( hasException ) // restore the exception
 		JS_SetPendingException(cx, argv[7]); // (TBD) should return JSTRAP_ERROR ???
@@ -293,8 +316,14 @@ DEFINE_FINALIZE() {
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
 	if ( pv ) {
 
-		JSDebugHooks *hooks = JS_GetGlobalDebugHooks(JS_GetRuntime(cx));
-		memset(hooks, 0, sizeof(JSDebugHooks));
+//		JSDebugHooks *hooks = JS_GetGlobalDebugHooks(JS_GetRuntime(cx));
+//		memset(hooks, 0, sizeof(JSDebugHooks));
+		
+		JSRuntime *rt = JS_GetRuntime(cx);
+		JS_SetDebuggerHandler(rt, NULL, NULL);
+		JS_SetDebugErrorHook(rt, NULL, NULL);
+		JS_SetInterrupt(rt, NULL, NULL);
+
 		free(pv);
 	}
 }
@@ -320,6 +349,9 @@ DEFINE_CONSTRUCTOR() {
 	JL_BAD;
 }
 
+/**doc
+=== Methods ===
+**/
 
 /**doc
 $TOC_MEMBER $INAME
@@ -397,7 +429,7 @@ DEFINE_FUNCTION_FAST( ToggleBreakpoint ) {
 $TOC_MEMBER $INAME
  $INT | $BOOL $INAME();
 **/
-DEFINE_FUNCTION( ClearBreakpoints ) {
+DEFINE_FUNCTION_FAST( ClearBreakpoints ) {
 
 	JS_ClearAllTraps(cx);
 	return JS_TRUE;
@@ -409,35 +441,26 @@ DEFINE_FUNCTION( ClearBreakpoints ) {
 $TOC_MEMBER $INAME
  $OBJ $INAME( frameLevel );
 **/
-DEFINE_FUNCTION( StackFrame ) {
+DEFINE_FUNCTION_FAST( StackFrame ) {
 
 	J_S_ASSERT_ARG_MIN( 1 );
 
 	unsigned int frameIndex;
-	J_CHK( JsvalToUInt(cx, J_ARG(1), &frameIndex) );
+	J_CHK( JsvalToUInt(cx, J_FARG(1), &frameIndex) );
 
 	JSStackFrame *frame;
-	frame = JS_GetScriptedCaller(cx, NULL); // the current frame
-	unsigned int currentFrameIndex;
-	currentFrameIndex = StackSize(frame)-1;
+	frame = StackFrameByIndex(cx, frameIndex);
+	
+	if ( frame == NULL ) {
 
-	if ( frameIndex > currentFrameIndex ) {
-
-		*J_RVAL = JSVAL_VOID;
+		*J_FRVAL = JSVAL_VOID;
 		return JS_TRUE;
-	}
-
-	// select the right frame
-	while ( currentFrameIndex > frameIndex ) {
-
-		frame = frame->down;
-		currentFrameIndex--;
 	}
 
 	JSObject *stackItem;
 	stackItem = JS_NewObject(cx, NULL, NULL, NULL);
 	J_S_ASSERT_ALLOC( stackItem );
-	*J_RVAL = OBJECT_TO_JSVAL( stackItem );
+	*J_FRVAL = OBJECT_TO_JSVAL( stackItem );
 
 	JSScript *script;
 	script = JS_GetFrameScript(cx, frame);
@@ -470,6 +493,108 @@ DEFINE_FUNCTION( StackFrame ) {
 	JL_BAD;
 }
 
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $OBJ $INAME( code, frameLevel );
+**/
+DEFINE_FUNCTION_FAST( EvalInStackFrame ) {
+
+	J_S_ASSERT_ARG_MIN( 2 );
+
+	J_S_ASSERT_STRING( J_FARG(1) );
+
+	unsigned int frameIndex;
+	J_CHK( JsvalToUInt(cx, J_FARG(2), &frameIndex) );
+
+	JSStackFrame *frame;
+	frame = StackFrameByIndex(cx, frameIndex);
+	
+	if ( frame == NULL ) {
+
+		*J_FRVAL = JSVAL_VOID;
+		return JS_TRUE;
+	}
+
+	JSScript *script;
+	script = JS_GetFrameScript(cx, frame);
+
+	jsbytecode *pc;
+	pc = JS_GetFramePC(cx, frame);
+
+	JSString *jsstr;
+	jsstr = JSVAL_TO_STRING( J_FARG(1) );
+	J_CHK( JS_EvaluateUCInStackFrame(cx, frame, JS_GetStringChars(jsstr), JS_GetStringLength(jsstr), JS_GetScriptFilename(cx, script), JS_PCToLineNumber(cx, script, pc), J_FRVAL) );
+
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $OBJ $INAME( function );
+**/
+DEFINE_FUNCTION_FAST( DefinitionLocation ) {
+
+	J_S_ASSERT_ARG_MIN( 1 );
+
+	JSScript *script = NULL;
+
+	if ( JsvalIsFunction(cx, J_FARG(1)) ) {
+
+		JSFunction *fun;
+		fun = JS_ValueToFunction(cx, J_FARG(1));
+		if ( FUN_SCRIPT(fun) )
+			script = JS_GetFunctionScript(cx, fun);
+		goto next;
+	}
+
+	if ( JSVAL_IS_OBJECT( J_FARG(1) ) ) {
+
+		JSObject* obj;
+		obj = JS_GetConstructor(cx, JSVAL_TO_OBJECT( J_FARG(1) ));
+		JSFunction *fun;
+		fun = JS_ValueToFunction(cx, OBJECT_TO_JSVAL( obj ) );
+		if ( fun ) {
+
+			script = JS_GetFunctionScript(cx, fun);
+			if ( script )
+				goto next;
+		}
+	}
+
+	if ( JsvalIsScript(cx, J_FARG(1)) ) {
+
+		JSObject* obj;
+		obj = JSVAL_TO_OBJECT(J_FARG(1));
+		script = (JSScript*)JS_GetPrivate(cx, obj);
+	}
+
+
+next:
+	if ( !script ) {
+
+		*J_FRVAL = JSVAL_VOID;
+		return JS_TRUE;
+	}
+
+	jsval values[2];
+	J_CHK( StringToJsval(cx, script->filename, &values[0]) );
+	IntToJsval(cx, script->lineno, &values[1] );
+	*J_FRVAL = OBJECT_TO_JSVAL( JS_NewArrayObject(cx, COUNTOF(values), values) );
+
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+
+/**doc
+=== Properties ===
+**/
 
 /**doc
 $TOC_MEMBER $INAME
@@ -600,24 +725,21 @@ CONFIGURE_CLASS
 
 	REVISION(SvnRevToInt("$Revision: 2290 $"))
 	HAS_PRIVATE
-
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE
 
 	BEGIN_FUNCTION_SPEC
 		FUNCTION_FAST( GetActualLineno )
 		FUNCTION_FAST( ToggleBreakpoint )
-		FUNCTION( ClearBreakpoints )
-		FUNCTION( StackFrame )
+		FUNCTION_FAST( ClearBreakpoints )
+		FUNCTION_FAST( StackFrame )
+		FUNCTION_FAST( EvalInStackFrame )
+		FUNCTION_FAST( DefinitionLocation )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
 		PROPERTY_READ( scriptList )
 		PROPERTY_READ( stackSize )
-
-
-//		PROPERTY_READ( breakpointList )
-//		PROPERTY_READ( pendingException )
 	END_PROPERTY_SPEC
 
 	BEGIN_CONST_INTEGER_SPEC
@@ -626,7 +748,6 @@ CONFIGURE_CLASS
 		CONST_INTEGER_SINGLE( STEP_OVER )
 		CONST_INTEGER_SINGLE( STEP_THROUGH )
 		CONST_INTEGER_SINGLE( STEP_OUT )
-
 		CONST_INTEGER_SINGLE( FROM_BREAKPOINT )
 		CONST_INTEGER_SINGLE( FROM_STEP )
 		CONST_INTEGER_SINGLE( FROM_THROW )

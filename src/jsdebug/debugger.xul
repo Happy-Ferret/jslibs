@@ -104,6 +104,7 @@
 			border-bottom: 1px dotted #BBB;
 			padding-bottom: 2px;
 			margin-bottom: 2px;
+			cursor: default;
 		}
 
 		.watchItem .result {
@@ -120,7 +121,6 @@
 
 		.codeItem tbody .breakpoint > :first-child {
 			background-color: red;
-			border-corner: 4px;
 			color: white;
 		}
 		
@@ -401,7 +401,8 @@
 					var info = debuggerRpc.Eval(ev.target.firstChild.data);
 					if ( info instanceof Error )
 						return;
-					infoElt.innerHTML = info;
+					var def = debuggerRpc.DefinitionLocation(ev.target.firstChild.data);
+					infoElt.innerHTML = info + (def ? '<br/>(<b>'+def[0]+':'+def[1]+'</b>)' : '');
 					
 					infoElt.style.display = 'block';
 					keywordInfoResetUi.push(function() infoElt.style.display = 'none');

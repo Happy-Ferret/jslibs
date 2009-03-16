@@ -114,6 +114,7 @@ EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
 
 	JS_SetNewScriptHookProc(JS_GetRuntime(cx), NULL, NULL);
 	JS_SetDestroyScriptHookProc(JS_GetRuntime(cx), NULL, NULL);
+
 	for ( jl::QueueCell *it = jl::QueueBegin(scriptFileList); it; it = jl::QueueNext(it) ) {
 
 		jl::Queue *scriptList = (jl::Queue*)jl::QueueGetData(it);

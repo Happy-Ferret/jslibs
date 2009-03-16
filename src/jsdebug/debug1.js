@@ -31,16 +31,21 @@ function Debug1() {
 
 	debugger;
 	
+	var s = new Script('j++');
+	
+	var a = new loop();
+	
 	var t = 0;
-	eval('123');
+	eval('toto()');
 	
 	function inner() {
-		function inner1() {}
+		function inner1() {
+			t++;
+		}
 	}
 	
 	inner()
 	
-	a();
 	b();
 	toto();
 	toto();
@@ -54,3 +59,5 @@ function Debug1() {
 }
 
 function d() {}
+
+
