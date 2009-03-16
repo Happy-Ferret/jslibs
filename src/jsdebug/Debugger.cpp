@@ -318,7 +318,7 @@ DEFINE_FINALIZE() {
 
 //		JSDebugHooks *hooks = JS_GetGlobalDebugHooks(JS_GetRuntime(cx));
 //		memset(hooks, 0, sizeof(JSDebugHooks));
-		
+
 		JSRuntime *rt = JS_GetRuntime(cx);
 		JS_SetDebuggerHandler(rt, NULL, NULL);
 		JS_SetDebugErrorHook(rt, NULL, NULL);
@@ -450,7 +450,7 @@ DEFINE_FUNCTION_FAST( StackFrame ) {
 
 	JSStackFrame *frame;
 	frame = StackFrameByIndex(cx, frameIndex);
-	
+
 	if ( frame == NULL ) {
 
 		*J_FRVAL = JSVAL_VOID;
@@ -473,7 +473,8 @@ DEFINE_FUNCTION_FAST( StackFrame ) {
 
 	J_CHK( JS_DefineProperty(cx, stackItem, "lineno", INT_TO_JSVAL(JS_PCToLineNumber(cx, script, pc)), NULL, NULL, OBJ_PROP_FLAGS) );
 
-	JSObject *callee = JS_GetFrameCalleeObject(cx, frame);
+	JSObject *callee;
+	callee = JS_GetFrameCalleeObject(cx, frame);
 	J_CHK( JS_DefineProperty(cx, stackItem, "callee", callee ? OBJECT_TO_JSVAL(callee) : JSVAL_VOID, NULL, NULL, OBJ_PROP_FLAGS) );
 
 	JSObject *scope;
@@ -510,7 +511,7 @@ DEFINE_FUNCTION_FAST( EvalInStackFrame ) {
 
 	JSStackFrame *frame;
 	frame = StackFrameByIndex(cx, frameIndex);
-	
+
 	if ( frame == NULL ) {
 
 		*J_FRVAL = JSVAL_VOID;
@@ -541,7 +542,8 @@ DEFINE_FUNCTION_FAST( DefinitionLocation ) {
 
 	J_S_ASSERT_ARG_MIN( 1 );
 
-	JSScript *script = NULL;
+	JSScript *script;
+	script = NULL;
 
 	if ( JsvalIsFunction(cx, J_FARG(1)) ) {
 
@@ -606,7 +608,6 @@ DEFINE_PROPERTY( scriptList ) {
 	J_S_ASSERT_ALLOC(arr);
 	*vp = OBJECT_TO_JSVAL(arr);
 
-	Private *pv = (Private*)JS_GetPrivate(cx, obj);
 	int index = 0;
 	for ( jl::QueueCell *it = jl::QueueBegin(scriptFileList); it; it = jl::QueueNext(it) ) {
 
