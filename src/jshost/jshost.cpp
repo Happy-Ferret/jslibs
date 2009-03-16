@@ -131,6 +131,18 @@ int HostStderr( void *privateData, const char *buffer, size_t length ) {
 	return write(fileno(stderr), buffer, length);
 }
 
+/*
+void NewScriptHook(JSContext *cx, const char *filename, uintN lineno, JSScript *script, JSFunction *fun, void *callerdata) {
+
+        printf( "add - %s:%d - %s - %d - %p\n", filename, lineno, fun ? JS_GetFunctionName(fun):"", script->staticDepth, script );
+}
+
+void DestroyScriptHook(JSContext *cx, JSScript *script, void *callerdata) {
+
+        printf( "del - %s:%d - ? - %d - %p\n", script->filename, script->lineno, script->staticDepth, script );
+}
+*/
+
 
 //////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -149,7 +161,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 
 	bool unsafeMode = false;
 	bool compileOnly = false;
-	size_t maybeGCInterval = 60; // 60 seconds
+	size_t maybeGCInterval = 60*1000; // 60 seconds
 	int camelCase = 0; // 0:default, 1:lower, 2:upper
 
 	char** argumentVector = argv;
@@ -225,6 +237,9 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 //	RT_HOST_MAIN_ASSERT( name != NULL, "unable to get module FileName." );
 	JS_DefineProperty(cx, globalObject, NAME_GLOBAL_SCRIPT_HOST_PATH, STRING_TO_JSVAL(JS_NewStringCopyZ(cx, hostPath)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT);
 	JS_DefineProperty(cx, globalObject, NAME_GLOBAL_SCRIPT_HOST_NAME, STRING_TO_JSVAL(JS_NewStringCopyZ(cx, hostName)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT);
+
+//        JS_SetNewScriptHookProc(JS_GetRuntime(cx), NewScriptHook, NULL);
+//        JS_SetDestroyScriptHookProc(JS_GetRuntime(cx), DestroyScriptHook, NULL);
 
 	int exitValue;
 	jsval rval;

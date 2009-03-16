@@ -432,10 +432,15 @@ inline bool IsNInfinity( JSContext *cx, jsval val ) {
 	return JSVAL_IS_DOUBLE(val) && *JSVAL_TO_DOUBLE(val) == NInfinity(cx);
 }
 
+inline bool JsvalIsScript( JSContext *cx, jsval val ) {
+
+	return !JSVAL_IS_PRIMITIVE(val) && STOBJ_GET_CLASS(JSVAL_TO_OBJECT(val)) == &js_ScriptClass;
+}
 
 inline bool JsvalIsFunction( JSContext *cx, jsval val ) {
 
-	return !JSVAL_IS_PRIMITIVE(val) && JS_ObjectIsFunction(cx, JSVAL_TO_OBJECT(val)); // faster than (JS_TypeOfValue(cx, (val)) == JSTYPE_FUNCTION)
+//	return !JSVAL_IS_PRIMITIVE(val) && JS_ObjectIsFunction(cx, JSVAL_TO_OBJECT(val)); // faster than (JS_TypeOfValue(cx, (val)) == JSTYPE_FUNCTION)
+	return VALUE_IS_FUNCTION(cx, val);
 }
 
 

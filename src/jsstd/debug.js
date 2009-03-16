@@ -1,7 +1,7 @@
 LoadModule('jsstd');
 LoadModule('jsio');
 
-print('test');
+Print('test');
 
 var m = {__proto__:null};
 m.__parent__ = 123;
