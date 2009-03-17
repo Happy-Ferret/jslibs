@@ -35,11 +35,11 @@ $SVN_REVISION $Revision: 2290 $
 BEGIN_CLASS( Debugger )
 
 // Action
-#define CONTINUE 1
-#define STEP 2
-#define STEP_OVER 3
-#define STEP_THROUGH 4
-#define STEP_OUT 5
+#define DO_CONTINUE 1
+#define DO_STEP 2
+#define DO_STEP_OVER 3
+#define DO_STEP_THROUGH 4
+#define DO_STEP_OUT 5
 
 // Reason
 #define FROM_BREAKPOINT 1
@@ -287,19 +287,19 @@ static JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSScript *script,
 
 	switch (action) {
 
-		case CONTINUE:
+		case DO_CONTINUE:
 			JS_ClearInterrupt(rt, NULL, NULL);
 			break;
-		case STEP:
+		case DO_STEP:
 			JS_SetInterrupt(rt, Step, obj);
 			break;
-		case STEP_OVER:
+		case DO_STEP_OVER:
 			JS_SetInterrupt(rt, StepOver, obj);
 			break;
-		case STEP_THROUGH:
+		case DO_STEP_THROUGH:
 			JS_SetInterrupt(rt, StepThrough, obj);
 			break;
-		case STEP_OUT:
+		case DO_STEP_OUT:
 			JS_SetInterrupt(rt, StepOut, obj);
 			break;
 	}
@@ -744,11 +744,11 @@ CONFIGURE_CLASS
 	END_PROPERTY_SPEC
 
 	BEGIN_CONST_INTEGER_SPEC
-		CONST_INTEGER_SINGLE( CONTINUE )
-		CONST_INTEGER_SINGLE( STEP )
-		CONST_INTEGER_SINGLE( STEP_OVER )
-		CONST_INTEGER_SINGLE( STEP_THROUGH )
-		CONST_INTEGER_SINGLE( STEP_OUT )
+		CONST_INTEGER_SINGLE( DO_CONTINUE )
+		CONST_INTEGER_SINGLE( DO_STEP )
+		CONST_INTEGER_SINGLE( DO_STEP_OVER )
+		CONST_INTEGER_SINGLE( DO_STEP_THROUGH )
+		CONST_INTEGER_SINGLE( DO_STEP_OUT )
 		CONST_INTEGER_SINGLE( FROM_BREAKPOINT )
 		CONST_INTEGER_SINGLE( FROM_STEP )
 		CONST_INTEGER_SINGLE( FROM_THROW )

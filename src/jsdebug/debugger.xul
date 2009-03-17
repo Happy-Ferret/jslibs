@@ -123,6 +123,11 @@
 			background-color: red;
 			color: white;
 		}
+
+		.codeItem tbody .condition > :first-child {
+			background-color: orange;
+			color: white;
+		}
 		
 		.stack {
 			white-space: pre;
@@ -130,14 +135,16 @@
 			cursor: default;
 			-moz-user-select: none;
 		}
+		
+		.currentStackFrame {
+			font-weight: bold;
+		}
 		]]>
 	</html:style>
 
 
 	<script type="text/javascript">
 		<![CDATA[
-		const ip = '127.0.0.1';
-		const port = 8009;
 		
 		function Trace() window.console.debug.apply(this, arguments);
 		
@@ -212,94 +219,79 @@
 				body.scrollTop += offset;
 			}
 		}
-       
+      
+      function SimpleRpc(ip, port) {
+      
+      	this.__noSuchMethod__ = function() {
+
+				netscape.security.PrivilegeManager.enablePrivilege("UniversalBrowserRead"); // allow cross-domain xhr
+				var xhr = new XMLHttpRequest();
+				try {
+
+					xhr.open('GET', 'http://'+ip+':'+port+'/?'+encodeURIComponent(uneval(Array.slice(arguments))), false);
+					xhr.send(null);
+					return eval('('+xhr.responseText+')');
+				} catch(ex) {
+					return ex;
+				}
+			}
+		}      
+      
+		function Variable() {
+			
+			var value, listeners = [];
+			this.Listen = function(fct) listeners.push(fct);
+			this.__defineGetter__('value', function() value);
+			this.__defineSetter__('value', function(val) { value = val; for each ( lis in listeners ) lis(value) });
+		}
+		
+      
 		////////////////////////////////////////////////////////////////
+		
+		var watchManager, stackManager, codeManager, breakpointManager;
+
+		var currentStackFrameIndex = new Variable();
+
+		var debuggerRpc = new SimpleRpc('127.0.0.1', 8009);
 
 		var codeDoc, stackDoc, watchDoc;
 		function init() {
 			
 			codeDoc = $('code').contentDocument;
 			stackDoc = $('stack').contentDocument;
-			watchDoc = $('info').contentDocument;
+			watchDoc = $('watch').contentDocument;
 
 			codeDoc.getElementsByTagName('HEAD')[0].appendChild(codeDoc.importNode($('css'), true));
 			stackDoc.getElementsByTagName('HEAD')[0].appendChild(stackDoc.importNode($('css'), true));
 			watchDoc.getElementsByTagName('HEAD')[0].appendChild(watchDoc.importNode($('css'), true));
 			
+			watchManager = new WatchManager();
+			stackManager = new StackManager();
+			codeManager = new CodeManager();
+			breakpointManager = new BreakpointManager();
+
 			ConnectRetry();
-			InitMouseOverCode();
-			InitBreakpointManager();
 		}
 
-		var debuggerRpc = { __noSuchMethod__: function() {
-			
-			netscape.security.PrivilegeManager.enablePrivilege("UniversalBrowserRead"); // allow cross-domain xhr
-			var res, xhr = new XMLHttpRequest();
-			try {
-			
-				xhr.open('GET', 'http://'+ip+':'+port+'/?'+encodeURIComponent(uneval(Array.slice(arguments))), false);
-				xhr.send(null);
-				res = xhr.responseText;
-			} catch(ex) {}
-			try {
-				return eval('('+res+')');
-			} catch(ex) {}
-		}};
-		
 		function ConnectRetry() {
 
 			if ( debuggerRpc.Ping() != true )
-				setTimeout( arguments.callee, 1 );
+				setTimeout( arguments.callee, 10 );
 			else
 				UpdateState();	
 		}
 		
-		function DetectIdentifiers(code) {
-			
-			return code.replace(/(&?)(\$?[\w]+)/g, function(s, p1, p2) s[0] == '&' ? s : '<a>'+s+'</a>'); // we must avoid to convert entities
-		}
-
-		Goto.resetUi = [];
-		function Goto(filename, lineno, class) {
-
-			while (Goto.resetUi.length)
-				Goto.resetUi.shift()();
-		
-			var res = XPath(codeDoc, '//table[@class="codeItem"][thead/th[text()="'+filename+'"]]');
-		
-			if ( res.length ) {
-				
-				codeElt = res[0];
-			} else {
-			
-				var codeText = EscapeEntities(debuggerRpc.GetSource(filename));
-				var codeLines = DetectIdentifiers(codeText).split(/\r?\n/);
-				var htmlLines = [ '<tr><td>'+(line+1)+'</td><td>'+code+'</td></tr>' for each ( [line,code] in Iterator(codeLines) ) ];
-				var codeElt = TextToHTMLNode(codeDoc, '<table class="codeItem"><colgroup><col width="0"><col width="*"></colgroup><thead><th class="filename" colspan="3">'+filename+'</th></thead><tbody>'+htmlLines.join('')+'</tbody></table>')
-				codeDoc.body.appendChild(codeElt);
-
-				// update breakpoints
-				for each ( var l in debuggerRpc.BreakpointList(filename) )
-					SetClass(true, XPath(codeElt, 'tbody/tr['+(l)+']')[0], 'breakpoint');
-			}
-
-			var line = XPath(codeElt, 'tbody/tr['+(lineno)+']')[0];
-			SetClass(true, line, class);
-			Goto.resetUi.push(function() SetClass(false, line, class));
-			SetInView(line, -20);
-		}
 		
 		function UpdateState() {
 		
 			$('statusInfo').label = 'querying state...';
-			var state = debuggerRpc.State();
+			var s = debuggerRpc.State();
 			
-			if ( state ) {
+			if ( s ) {
 
-				$('statusInfo').label = 'break: '+state.breakOrigin + ( state.hasException ? ' ('+state.exception+')' : '' );
-				Goto(state.filename, state.lineno, state.hasException ? 'currentLineError' : 'currentLine');
-				UpdateStack();
-				UpdateWatch(state.stackFrameIndex);
+				$('statusInfo').label = 'break: '+s.breakOrigin + ( s.hasException ? ' ('+s.exception+')' : '' );
+				codeManager.Goto(s.filename, s.lineno, s.hasException ? 'currentLineError' : 'currentLine');
+				currentStackFrameIndex.value = s.stackFrameIndex;
 			} else {
 
 				$('statusInfo').label = 'idle';
@@ -309,96 +301,81 @@
 				ConnectRetry();
 			}
 		}
-		
-		function UpdateStack() {
+
+
+		function StackManager() {
 			
+			var self = this;
+
 			function MakeGotoStackFrame(stackFrameIndex, filename, lineno) {
 			
 				return function() {
 				
-					Goto(filename, lineno, 'oldLine');
-					UpdateWatch(stackFrameIndex);
+					currentStackFrameIndex.value = stackFrameIndex;
+					codeManager.Goto(filename, lineno, 'oldLine');
 				}
 			}
 			
-			var stack = debuggerRpc.GetStack();
-			stackDoc.body.innerHTML = '';
-			var list = stackDoc.body.appendChild(TextToHTMLNode(stackDoc, '<div class="stack"/>'));
-			for ( var [i, l] in Iterator(stack) ) {
-				
-				var c = Math.floor(200 / stack.length * i);
-				var item = TextToHTMLNode(stackDoc, '<div style="color:rgb('+c+','+c+','+c+')"><a>'+l.filename+':'+l.lineno+'</a> - '+l.contextName+'</div>');
-				list.appendChild(item);
-				item.onclick = MakeGotoStackFrame(stack.length-1-i, l.filename, l.lineno);
-			}
-		}
-		
-		function AddWatch(code) {
-		
-			var watch = debuggerRpc.GetCookie('watch');
-			if ( !watch )
-				watch = [];
-			watch.push(code);
-			debuggerRpc.SetCookie('watch',  watch);
-			
-			var res = debuggerRpc.Eval(code);
-			var elt = watchDoc.body.appendChild(TextToHTMLNode(watchDoc,'<div class="watchItem"><div class="code"></div><div class="result"></div></div>'));
-			elt.firstChild.innerHTML = code;
-			elt.lastChild.innerHTML = res;
-			elt.lastChild.title = uneval(res);
-			if ( res instanceof Error )
-				SetClass(true, elt.lastChild, 'error');
-			watchDoc.body.scrollTop = watchDoc.body.scrollHeight;
-		}
+			this.Update = function(stackFrameIndex) {
 
-		function UpdateWatch(stackFrameDepth) {
-			
-			for each ( var item in XPath(watchDoc, '/html/body/*[@class="watchItem"]/*[@class="code"]') ) {
-				
-				var res = debuggerRpc.Eval(item.firstChild.data, stackFrameDepth);
-				item.nextSibling.innerHTML = res;
-				item.nextSibling.title = uneval(res);
-				SetClass(res instanceof Error, item.nextSibling, 'error');
-			}
-		}
-		
-		function InitBreakpointManager() {
-		
-			codeDoc.addEventListener('mousedown', function(ev) {
-				
-				var e = ev.target;
-				if ( e.nodeName == 'TD' && e.previousSibling == null ) {
-					
-					var table = e.parentNode.parentNode.parentNode;
-					var line = e.firstChild.data;
-					var filename = XPath(table, 'thead/th[1]/text()')[0];
-					
-					var actualLineno = debuggerRpc.GetActualLineno(filename, line);
-					
-					if ( actualLineno == undefined ) {
-						return;
-					}
-					var elt = XPath(table, 'tbody/tr['+actualLineno+']')[0];
-					
-					var state = HasClass(elt, 'breakpoint');
-					debuggerRpc.Breakpoint(!state, filename, actualLineno);
-					SetClass(!state, elt, 'breakpoint');
+				var stack = debuggerRpc.GetStack();
+				stackDoc.body.innerHTML = '';
+				var list = stackDoc.body.appendChild(TextToHTMLNode(stackDoc, '<div class="stack"/>'));
+				for ( var [i, l] in Iterator(stack) ) {
+
+					var c = Math.floor(200 / stack.length * i);
+					var item = TextToHTMLNode(stackDoc, '<div style="color:rgb('+c+','+c+','+c+')"><a>'+l.filename+':'+l.lineno+'</a> - '+l.contextName+'</div>');
+					list.appendChild(item);
+					if ( currentStackFrameIndex.value == stack.length-1-i )
+						SetClass(true, item, 'currentStackFrame');
+					item.onclick = MakeGotoStackFrame(stack.length-1-i, l.filename, l.lineno);
 				}
-			}, false);
+			}
+			
+			currentStackFrameIndex.Listen(function(newVal) self.Update(newVal));
 		}
 
 
-		var keywordInfoResetUi = [];
-		
-		function InitMouseOverCode() {
+		function WatchManager() {
 			
+			var self = this;
+			
+			this.Update = function( stackFrameIndex ) {
+
+				var watch = debuggerRpc.GetCookie('watch') || [];
+				watchDoc.body.innerHTML = '';
+				for each ( var code in watch ) {
+
+					var res = String(debuggerRpc.Eval(code, stackFrameIndex));
+					var elt = watchDoc.body.appendChild(TextToHTMLNode(watchDoc,'<div class="watchItem"><div class="code">'+EscapeEntities(code)+'</div><div class="result" title="'+EscapeEntities(uneval(res))+'">'+EscapeEntities(res)+'</div></div>'));
+					SetClass(res instanceof Error, elt.lastChild, 'error');
+					watchDoc.body.scrollTop = watchDoc.body.scrollHeight;			
+				}
+			}
+			
+			this.Add = function(code) {
+
+				var watch = debuggerRpc.GetCookie('watch') || [];
+				watch.push(code);
+				debuggerRpc.SetCookie('watch',  watch);
+				this.Update(currentStackFrameIndex.value);
+			}
+			
+			currentStackFrameIndex.Listen(function(newVal) self.Update(newVal));
+		}
+
+
+		function CodeManager() {
+		
 			var infoElt = codeDoc.body.appendChild(TextToHTMLNode(codeDoc, '<span class="codeInfo"/>'));
+
+			var keywordInfoResetUi = [];
 			
 			codeDoc.addEventListener('mouseover', function(ev) {
 				
 				if ( ev.target.nodeName == 'A' ) {
 					
-					var info = debuggerRpc.Eval(ev.target.firstChild.data);
+					var info = debuggerRpc.Eval(ev.target.firstChild.data, currentStackFrameIndex.value);
 					if ( info instanceof Error )
 						return;
 					var def = debuggerRpc.DefinitionLocation(ev.target.firstChild.data);
@@ -423,7 +400,97 @@
 
 				while (keywordInfoResetUi.length)
 					keywordInfoResetUi.shift()();
-			}, false);		
+			}, false);
+			
+
+			this.GetCodeElt = function(filename) {
+
+				var res = XPath(codeDoc, '//table[@class="codeItem"][thead/th[text()="'+filename+'"]]');
+				if ( res.length )
+					return res[0];
+				var codeText = debuggerRpc.GetSource(filename);
+				codeText = EscapeEntities(codeText);
+				codeText = codeText.replace(/(&?)(\$?[\w]+)/g, function(s, p1, p2) s[0] == '&' ? s : '<a>'+s+'</a>'); // we must avoid to convert entities
+				var codeLines = codeText.split(/\r?\n/);
+				var htmlLines = [ '<tr><td>'+(line+1)+'</td><td>'+code+'</td></tr>' for each ( [line, code] in Iterator(codeLines) ) ];
+				var codeElt = TextToHTMLNode(codeDoc, '<table class="codeItem"><colgroup><col width="0"><col width="*"></colgroup><thead><th class="filename" colspan="3">'+filename+'</th></thead><tbody>'+htmlLines.join('')+'</tbody></table>');
+				codeDoc.body.appendChild(codeElt);
+				breakpointManager.Update(filename);
+				return codeElt;
+			}
+
+
+			var gotoResetUi = [];
+
+			this.Goto = function(filename, lineno, class) {
+
+				while (gotoResetUi.length)
+					gotoResetUi.shift()();
+				var codeElt = this.GetCodeElt(filename);
+				var line = XPath(codeElt, 'tbody/tr['+(lineno)+']')[0];
+				SetClass(true, line, class);
+				gotoResetUi.push(function() SetClass(false, line, class));
+				SetInView(line, -20);
+			}
+		}
+
+
+		function BreakpointManager() {
+			
+			this.Update = function(filename) {
+				
+				var codeElt = codeManager.GetCodeElt(filename);
+				for each ( var [lineno, condition] in debuggerRpc.BreakpointList(filename) ) {
+
+					var elt = XPath(codeElt, 'tbody/tr['+(lineno)+']')[0];
+					SetClass(true, elt, 'breakpoint');
+					if ( condition ) {
+					
+						SetClass(true, elt, 'condition');
+						elt.title = 'break when "'+condition+'" is true';
+					}
+				}
+			}
+			
+			codeDoc.addEventListener('mousedown', function(ev) {
+				
+				var e = ev.target;
+				if ( e.nodeName == 'TD' && e.previousSibling == null ) {
+				
+					var table = e.parentNode.parentNode.parentNode;
+					var line = e.firstChild.data;
+					var filename = XPath(table, 'thead/th[1]/text()')[0];
+					
+					var actualLineno = debuggerRpc.GetActualLineno(filename, line);
+					
+					if ( actualLineno == undefined )
+						return;
+
+					var elt = XPath(table, 'tbody/tr['+actualLineno+']')[0];
+					
+					var state = HasClass(elt, 'breakpoint');
+
+					if ( state ) {
+					
+						debuggerRpc.RemoveBreakpoint(filename, actualLineno);
+						SetClass(false, elt, 'condition');
+						SetClass(false, elt, 'breakpoint');
+					} else {
+					
+						debuggerRpc.AddBreakpoint(filename, actualLineno);
+						SetClass(true, elt, 'breakpoint');
+					}
+					
+					if ( !state && ev.shiftKey ) {
+
+						var condition = debuggerRpc.GetBreakpointCondition(filename, line);
+						condition = prompt('Breakpoint condition', condition);
+						debuggerRpc.SetBreakpointCondition(filename, line, condition);
+						elt.title = 'break when "'+condition+'" is true';
+						SetClass(true, elt, 'condition');
+					}
+				}
+			}, false);
 		}
 
 		]]>
@@ -450,9 +517,9 @@
 			<vbox>
 				<html:iframe id="stack" flex="1" frameborder="0"/>
 				<splitter><grippy/></splitter>
-				<html:iframe id="info" flex="1" frameborder="0"/>
+				<html:iframe id="watch" flex="1" frameborder="0"/>
 				<splitter><grippy/></splitter>
-				<textbox multiline="true" onkeydown="if (event.keyCode==13) { AddWatch(this.value); this.value=''; event.preventDefault() }"/>
+				<textbox multiline="true" onkeydown="if (event.keyCode==13) { watchManager.Add(this.value); this.value=''; event.preventDefault() }"/>
 			</vbox>
 		</hbox>
 		<toolbox>

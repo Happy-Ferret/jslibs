@@ -31,6 +31,12 @@ function Debug1() {
 
 	debugger;
 	
+	
+	for ( k = 0; k < 100; k++ ) {
+		
+		j++;
+	}
+	
 	var s = new Script('j++');
 	
 	var a = new loop();
@@ -42,6 +48,7 @@ function Debug1() {
 		function inner1() {
 			t++;
 		}
+		inner1();
 	}
 	
 	inner()
