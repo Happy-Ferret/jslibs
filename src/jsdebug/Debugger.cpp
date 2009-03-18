@@ -47,6 +47,9 @@ BEGIN_CLASS( Debugger )
 #define FROM_THROW 3
 #define FROM_ERROR 4
 #define FROM_DEBUGGER 5
+#define FROM_EXECUTE 6
+#define FROM_CALL 7
+
 
 
 struct Private {
@@ -123,10 +126,37 @@ JSScript *ScriptByLocation(JSContext *cx, jl::Queue *scriptFileList, const char 
 
 static JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSScript *script, jsbytecode *pc, int breakOrigin);
 
+
+static void *ExecuteHookHandler(JSContext *cx, JSStackFrame *fp, JSBool before, JSBool *ok, void *closure) {
+
+	if ( JS_IsNativeFrame(cx, fp) )
+		return NULL;
+//	if ( before ) return closure;
+	jsbytecode *pc = JS_GetFramePC(cx, fp);
+	JSScript *script = JS_GetFrameScript(cx, fp);
+	JSBool status = BreakHandler(cx, (JSObject*)closure, script, pc, FROM_EXECUTE);
+	return NULL; // hookData for the "after" stage.
+}
+
+
 static JSTrapStatus DebuggerKeyword(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval, void *closure) {
 
 	return BreakHandler(cx, (JSObject*)closure, script, pc, FROM_DEBUGGER);
 }
+
+static void *CallHook(JSContext *cx, JSStackFrame *fp, JSBool before, JSBool *ok, void *closure) {
+
+	if ( JS_IsNativeFrame(cx, fp) )
+		return NULL;
+
+//	if ( before ) return closure;
+
+	jsbytecode *pc = JS_GetFramePC(cx, fp);
+	JSScript *script = JS_GetFrameScript(cx, fp);
+	JSBool status = BreakHandler(cx, (JSObject*)closure, script, pc, FROM_CALL);
+	return NULL; // hookData for the "after" stage.
+}
+
 
 static JSTrapStatus Step(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval, void *closure) {
 
@@ -216,12 +246,18 @@ static JSTrapStatus ThrowHookHandler(JSContext *cx, JSScript *script, jsbytecode
 
 static JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSScript *script, jsbytecode *pc, int breakOrigin) {
 
-	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-
 	jsval fval;
-	J_CHK( JS_GetProperty(cx, obj, "onBreak", &fval) );
+	if ( JS_GetProperty(cx, obj, "onBreak", &fval) == JS_FALSE )
+		return JSTRAP_ERROR;
+
 	if ( !JsvalIsFunction(cx, fval) ) // nothing to do
 		return JSTRAP_CONTINUE;
+
+	jsval argv[8] = { JSVAL_NULL };
+	JSTempValueRooter tvr;
+	JS_PUSH_TEMP_ROOT(cx, COUNTOF(argv), argv, &tvr);
+
+	Private *pv = (Private*)JS_GetPrivate(cx, obj);
 
 	JSRuntime *rt;
 	rt = JS_GetRuntime(cx);
@@ -232,9 +268,6 @@ static JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSScript *script,
 	int lineno;
 	lineno = JS_PCToLineNumber(cx, script, pc);
 
-
-	jsval argv[8];
-	argv[0] = JSVAL_NULL;
 	J_CHK( StringToJsval(cx, JS_GetScriptFilename(cx, script), &argv[1]) );
 	argv[2] = INT_TO_JSVAL( lineno );
 	argv[3] = OBJECT_TO_JSVAL( JS_GetFrameScopeChain(cx, frame) );
@@ -243,7 +276,6 @@ static JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSScript *script,
 
 	JSBool hasException;
 	hasException = JS_IsExceptionPending(cx);
-
 	if ( hasException ) {
 
 		argv[6] = JSVAL_TRUE;
@@ -257,26 +289,26 @@ static JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSScript *script,
 
 	JSDebugHooks prevHooks;
 	prevHooks = *JS_GetGlobalDebugHooks(rt);
-
 	JS_SetDebuggerHandler(rt, NULL, NULL);
 	JS_SetDebugErrorHook(rt, NULL, NULL);
 	JS_SetInterrupt(rt, NULL, NULL);
+	JS_SetExecuteHook(rt, NULL, NULL);
+	
+	JS_SetNewScriptHookProc(rt, NULL, NULL); // never remove JS_SetDestroyScriptHookProc hook !!!
 
-	JSTempValueRooter tvr;
-	JS_PUSH_TEMP_ROOT(cx, COUNTOF(argv), argv, &tvr);
-
-	// (TBD) should I set the JSFRAME_DEBUGGER flag to the current frame ??? (see JS_EvaluateInStackFrame)
 	JSBool status;
 	status = JS_CallFunctionValue(cx, obj, fval, COUNTOF(argv)-1, argv+1, &argv[0]);
-	int action;
-	J_CHK( JsvalToInt(cx, argv[0], &action) );
-	JS_POP_TEMP_ROOT(cx, &tvr);
 
-	*JS_GetGlobalDebugHooks(rt) = prevHooks;
+	int action;
+	J_CHK( JsvalToInt(cx, argv[0], &action) ); // JsvalToInt may call valueOf, then keep this line before restoring hooks
+
+	*JS_GetGlobalDebugHooks(rt) = prevHooks; // restore hooks
+
+	J_CHK( status );
 
 	if ( hasException ) // restore the exception
 		JS_SetPendingException(cx, argv[7]); // (TBD) should return JSTRAP_ERROR ???
-	J_CHK( status );
+
 
 	// store the current state
 	pv->stackFrameIndex = stackFrameIndex;
@@ -304,8 +336,10 @@ static JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSScript *script,
 			break;
 	}
 
+	JS_POP_TEMP_ROOT(cx, &tvr);
 	return JSTRAP_CONTINUE; // http://www.google.com/codesearch/p?hl=en#SPZdyP79RtQ/trunk/third_party/spidermonkey/js/src/jsinterp.c&q=JSTRAP_RETURN&l=742
 bad:
+	JS_POP_TEMP_ROOT(cx, &tvr);
 	return JSTRAP_ERROR;
 }
 
@@ -314,18 +348,16 @@ bad:
 DEFINE_FINALIZE() {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	if ( pv ) {
+	if ( !pv )
+		return;
 
-//		JSDebugHooks *hooks = JS_GetGlobalDebugHooks(JS_GetRuntime(cx));
-//		memset(hooks, 0, sizeof(JSDebugHooks));
-
-		JSRuntime *rt = JS_GetRuntime(cx);
-		JS_SetDebuggerHandler(rt, NULL, NULL);
-		JS_SetDebugErrorHook(rt, NULL, NULL);
-		JS_SetInterrupt(rt, NULL, NULL);
-
-		free(pv);
-	}
+	JSRuntime *rt = JS_GetRuntime(cx);
+	JS_SetDebuggerHandler(rt, NULL, NULL);
+	JS_SetDebugErrorHook(rt, NULL, NULL);
+	JS_SetInterrupt(rt, NULL, NULL);
+	JS_SetExecuteHook(rt, NULL, NULL);
+	JS_SetCallHook(rt, NULL, NULL);
+	free(pv);
 }
 
 /**doc
@@ -342,9 +374,14 @@ DEFINE_CONSTRUCTOR() {
 	J_S_ASSERT_ALLOC(pv);
 	memset(pv, 0, sizeof(Private));
 	J_CHK( JS_SetPrivate(cx, obj, pv) );
-	JS_SetDebuggerHandler(JS_GetRuntime(cx), DebuggerKeyword, obj);
-	JS_SetDebugErrorHook( JS_GetRuntime(cx), DebugErrorHookHandler, obj);
-//	JS_SetThrowHook( JS_GetRuntime(cx), ThrowHookHandler, obj);
+	JSRuntime *rt;
+	rt = JS_GetRuntime(cx);
+	JS_SetDebuggerHandler(rt, DebuggerKeyword, obj);
+	JS_SetDebugErrorHook(rt, DebugErrorHookHandler, obj);
+//	JS_SetExecuteHook(rt, ExecuteHookHandler, obj);
+//	JS_SetThrowHook(rt, ThrowHookHandler, obj);
+//	JS_SetCallHook(rt, CallHook, obj);
+
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -754,6 +791,8 @@ CONFIGURE_CLASS
 		CONST_INTEGER_SINGLE( FROM_THROW )
 		CONST_INTEGER_SINGLE( FROM_ERROR )
 		CONST_INTEGER_SINGLE( FROM_DEBUGGER )
+		CONST_INTEGER_SINGLE( FROM_EXECUTE )
+		CONST_INTEGER_SINGLE( FROM_CALL )
 	END_CONST_INTEGER_SPEC
 
 END_CLASS

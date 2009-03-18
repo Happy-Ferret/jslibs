@@ -43,6 +43,8 @@ void NewScriptHook(JSContext *cx, const char *filename, uintN lineno, JSScript *
 
 		scriptList = (jl::Queue*)jl::QueueGetData(it);
 		JSScript *s = (JSScript*)jl::QueueGetData(jl::QueueBegin(scriptList));
+		if ( s == script )
+			return; // (TBD) already added, check how it is possible.
 		if ( strcmp(filename, s->filename) == 0 )
 			break;
 	}
@@ -102,6 +104,18 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	scriptFileList = jl::QueueConstruct();
 	JS_SetNewScriptHookProc(JS_GetRuntime(cx), NewScriptHook, NULL);
 	JS_SetDestroyScriptHookProc(JS_GetRuntime(cx), DestroyScriptHook, NULL);
+
+/*
+	// add the current script to the list.
+	for ( JSStackFrame *fp = JS_GetScriptedCaller(cx, NULL); fp; fp = fp->down ) {
+
+		if ( !JS_IsNativeFrame(cx, fp) ) {
+
+			JSScript *script = JS_GetFrameScript(cx, fp);
+			NewScriptHook(cx, JS_GetScriptFilename(cx, script), script->lineno, script, JS_GetFrameFunction(cx, fp), NULL);
+		}
+	}
+*/
 
 	INIT_STATIC();
 	INIT_CLASS( Debugger );

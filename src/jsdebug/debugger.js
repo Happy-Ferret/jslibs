@@ -22,8 +22,8 @@ var _dbg = (function() {
 	function OriginToString( breakOrigin ) {
 
 		with (Debugger) {
-			var pos = Match(breakOrigin, FROM_BREAKPOINT, FROM_STEP, FROM_THROW, FROM_ERROR, FROM_DEBUGGER);
-			return Switch(pos, 'breakpoint', 'step', 'throw', 'error', 'debugger');
+			var pos = Match(breakOrigin, FROM_BREAKPOINT, FROM_STEP, FROM_THROW, FROM_ERROR, FROM_DEBUGGER, FROM_EXECUTE, FROM_CALL);
+			return Switch(pos, 'breakpoint', 'step', 'throw', 'error', 'debugger', 'execute', 'call');
 		}
 	}
 

@@ -69,14 +69,17 @@
 			-moz-user-select: text;
 		}
 		
+		.codeItem thead .currentLine,
 		.codeItem tbody .currentLine td+td {
 			background-color: #EEA;
 		}
 		
+		.codeItem thead .currentLineError,
 		.codeItem tbody .currentLineError td+td {
 			background-color: #EAA;
 		}
 
+		.codeItem thead .oldLine,
 		.codeItem tbody .oldLine td+td {
 			background-color: #AEA;
 		}
@@ -195,12 +198,9 @@
 
 		function ElementAbsolutePosition(elt) [(function(o) o.offsetLeft + (o.offsetParent ? arguments.callee(o.offsetParent) : 0))(elt), (function(o) o.offsetTop + (o.offsetParent ? arguments.callee(o.offsetParent) : 0))(elt)];
 		
-		function HasClass(elt, class) {
-			
-			return (' '+elt.className+' ').indexOf(' '+class+' ') != -1;
-		}
+		function HasClass(elt, class) (' '+elt.className+' ').indexOf(' '+class+' ') != -1;
 
-		function SetClass( polarity, elt, class ) {
+		function SetClass(polarity, elt, class) {
 		
 			class = ' '+class+' ';
 			var str = ' '+elt.className+' ';
@@ -216,7 +216,7 @@
 			if ( pos < body.scrollTop || pos > body.scrollTop + body.clientHeight ) {
 			
 				elt.scrollIntoView();
-				body.scrollTop += offset;
+				body.scrollTop += offset || 0;
 			}
 		}
       
@@ -232,7 +232,7 @@
 					xhr.send(null);
 					return eval('('+xhr.responseText+')');
 				} catch(ex) {
-					return ex;
+					return new Error(ex);
 				}
 			}
 		}      
@@ -287,7 +287,7 @@
 			$('statusInfo').label = 'querying state...';
 			var s = debuggerRpc.State();
 			
-			if ( s ) {
+			if ( !(s instanceof Error) ) {
 
 				$('statusInfo').label = 'break: '+s.breakOrigin + ( s.hasException ? ' ('+s.exception+')' : '' );
 				codeManager.Goto(s.filename, s.lineno, s.hasException ? 'currentLineError' : 'currentLine');
@@ -346,8 +346,8 @@
 				watchDoc.body.innerHTML = '';
 				for each ( var code in watch ) {
 
-					var res = String(debuggerRpc.Eval(code, stackFrameIndex));
-					var elt = watchDoc.body.appendChild(TextToHTMLNode(watchDoc,'<div class="watchItem"><div class="code">'+EscapeEntities(code)+'</div><div class="result" title="'+EscapeEntities(uneval(res))+'">'+EscapeEntities(res)+'</div></div>'));
+					var res = debuggerRpc.Eval(code, stackFrameIndex);
+					var elt = watchDoc.body.appendChild(TextToHTMLNode(watchDoc,'<div class="watchItem"><div class="code">'+EscapeEntities(code)+'</div><div class="result" title="'+typeof(res)+'">'+EscapeEntities(String(res))+'</div></div>'));
 					SetClass(res instanceof Error, elt.lastChild, 'error');
 					watchDoc.body.scrollTop = watchDoc.body.scrollHeight;			
 				}
@@ -422,12 +422,23 @@
 
 			var gotoResetUi = [];
 
+			this.GotoFile = function(filename, lineno) {
+			
+				var codeElt = this.GetCodeElt(filename);
+				SetInView(XPath(codeElt, 'thead/th')[0]);
+			}
+			
 			this.Goto = function(filename, lineno, class) {
 
 				while (gotoResetUi.length)
 					gotoResetUi.shift()();
+
 				var codeElt = this.GetCodeElt(filename);
-				var line = XPath(codeElt, 'tbody/tr['+(lineno)+']')[0];
+				if ( lineno > 0 )
+					var line = XPath(codeElt, 'tbody/tr['+(lineno)+']')[0];
+				else
+					var line = XPath(codeElt, 'thead/th')[0];
+
 				SetClass(true, line, class);
 				gotoResetUi.push(function() SetClass(false, line, class));
 				SetInView(line, -20);
@@ -529,6 +540,10 @@
 				<toolbarbutton label="out" tooltiptext="Shift-F10" command="cmd_stepout"/>
 				<toolbarbutton label="through" tooltiptext="Shift-F11" command="cmd_stepthrough"/>
 				<toolbarbutton label="Continue" tooltiptext="F8" command="cmd_continue"/>
+				<toolbarseparator/>
+				<menu label="scripts" onpopupshowing="for each ( var item in debuggerRpc.GetScriptList() ) this.appendItem(item)" onpopuphidden="while(this.removeItemAt(0));" oncommand="codeManager.GotoFile(event.target.label)">
+					<menupopup/>
+				</menu>
 			</toolbar>
 		</toolbox>
 		<statusbar>
