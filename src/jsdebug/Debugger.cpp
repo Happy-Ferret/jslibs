@@ -62,31 +62,36 @@ struct Private {
 	uintN lineno;
 };
 
-unsigned int StackSize(const JSStackFrame *frame) {
 
-	unsigned int length;
-	for ( length = 0; frame; frame = frame->down, length++ );
+unsigned int StackSize(JSContext *cx, const JSStackFrame *frame) {
+
+	unsigned int length = 0;
+	JSStackFrame *fp = NULL;
+	for ( JS_FrameIterator(cx, &fp); fp; JS_FrameIterator(cx, &fp), length++);
 	return length; // 0 is the first frame
 }
 
 
-JSStackFrame *StackFrameByIndex( JSContext *cx, unsigned int frameIndex ) {
+JSStackFrame *StackFrameByIndex(JSContext *cx, unsigned int frameIndex) {
 
-	JSStackFrame *frame;
-	frame = JS_GetScriptedCaller(cx, NULL); // the current frame
+//	JSStackFrame *fp;
+//	fp = JS_GetScriptedCaller(cx, NULL); // the current frame
+	JSStackFrame *fp = NULL;
+	JS_FrameIterator(cx, &fp);
 	unsigned int currentFrameIndex;
-	currentFrameIndex = StackSize(frame)-1;
+	currentFrameIndex = StackSize(cx, fp)-1;
 
 	if ( frameIndex > currentFrameIndex )
 		return NULL;
 
 	// select the right frame
-	while ( currentFrameIndex > frameIndex ) {
+	while ( fp && currentFrameIndex > frameIndex ) {
 
-		frame = frame->down;
+		//frame = frame->down;
+		JS_FrameIterator(cx, &fp);
 		currentFrameIndex--;
 	}
-	return frame;
+	return fp;
 }
 
 
@@ -175,10 +180,13 @@ static JSTrapStatus Step(JSContext *cx, JSScript *script, jsbytecode *pc, jsval 
 static JSTrapStatus StepOver(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval, void *closure) {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, (JSObject*)closure);
-	JSStackFrame *frame = JS_GetScriptedCaller(cx, NULL);
 
 	if ( script == pv->script && JS_PCToLineNumber(cx, script, pc) == pv->lineno )
 		return JSTRAP_CONTINUE;
+
+//	JSStackFrame *frame = JS_GetScriptedCaller(cx, NULL);
+	JSStackFrame *frame = NULL;
+	JS_FrameIterator(cx, &frame);
 
 	if ( frame != pv->frame && frame != pv->pframe )
 		return JSTRAP_CONTINUE;
@@ -193,10 +201,13 @@ static JSTrapStatus StepOver(JSContext *cx, JSScript *script, jsbytecode *pc, js
 static JSTrapStatus StepOut(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval, void *closure) {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, (JSObject*)closure);
-	JSStackFrame *frame = JS_GetScriptedCaller(cx, NULL);
 
 	if ( script == pv->script && JS_PCToLineNumber(cx, script, pc) == pv->lineno )
 		return JSTRAP_CONTINUE;
+
+//	JSStackFrame *frame = JS_GetScriptedCaller(cx, NULL);
+	JSStackFrame *frame = NULL;
+	JS_FrameIterator(cx, &frame);
 
 	if ( frame != pv->pframe )
 		return JSTRAP_CONTINUE;
@@ -210,10 +221,13 @@ static JSTrapStatus StepOut(JSContext *cx, JSScript *script, jsbytecode *pc, jsv
 static JSTrapStatus StepThrough(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval, void *closure) {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, (JSObject*)closure);
-	JSStackFrame *frame = JS_GetScriptedCaller(cx, NULL);
 
 	if ( script == pv->script && JS_PCToLineNumber(cx, script, pc) <= pv->lineno )
 		return JSTRAP_CONTINUE;
+
+//	JSStackFrame *frame = JS_GetScriptedCaller(cx, NULL);
+	JSStackFrame *frame = NULL;
+	JS_FrameIterator(cx, &frame);
 
 	if ( frame != pv->frame && frame != pv->pframe )
 		return JSTRAP_CONTINUE;
@@ -231,7 +245,9 @@ static JSTrapStatus TrapHandler(JSContext *cx, JSScript *script, jsbytecode *pc,
 
 JSBool DebugErrorHookHandler(JSContext *cx, const char *message, JSErrorReport *report, void *closure) {
 
-	JSStackFrame *frame = JS_GetScriptedCaller(cx, NULL);
+//	JSStackFrame *frame = JS_GetScriptedCaller(cx, NULL);
+	JSStackFrame *frame = NULL;
+	JS_FrameIterator(cx, &frame);
 	if ( frame )
 		BreakHandler(cx, (JSObject*)closure, JS_GetFrameScript(cx, frame), JS_GetFramePC(cx, frame), FROM_ERROR);
 	return JS_TRUE;
@@ -261,10 +277,14 @@ static JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSScript *script,
 
 	JSRuntime *rt;
 	rt = JS_GetRuntime(cx);
-	JSStackFrame *frame;
-	frame = JS_GetScriptedCaller(cx, NULL);
+
+//	JSStackFrame *frame;
+//	frame = JS_GetScriptedCaller(cx, NULL);
+	JSStackFrame *frame = NULL;
+	JS_FrameIterator(cx, &frame);
+
 	int stackFrameIndex;
-	stackFrameIndex = StackSize(frame)-1;
+	stackFrameIndex = StackSize(cx, frame)-1;
 	int lineno;
 	lineno = JS_PCToLineNumber(cx, script, pc);
 
@@ -315,7 +335,9 @@ static JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSScript *script,
 	pv->script = script;
 	pv->lineno = lineno;
 	pv->frame = frame;
-	pv->pframe = frame->down ? JS_GetScriptedCaller(cx, frame->down) : NULL;
+//	pv->pframe = frame->down ? JS_GetScriptedCaller(cx, frame->down) : NULL;
+	pv->pframe = frame;
+	JS_FrameIterator(cx, &pv->pframe);
 
 	switch (action) {
 
@@ -514,9 +536,8 @@ DEFINE_FUNCTION_FAST( StackFrame ) {
 	callee = JS_GetFrameCalleeObject(cx, frame);
 	J_CHK( JS_DefineProperty(cx, stackItem, "callee", callee ? OBJECT_TO_JSVAL(callee) : JSVAL_VOID, NULL, NULL, OBJ_PROP_FLAGS) );
 
-	JSObject *scope;
-	scope = JS_GetFrameScopeChain(cx, frame);
-	J_CHK( JS_DefineProperty(cx, stackItem, "scope", OBJECT_TO_JSVAL(scope), NULL, NULL, OBJ_PROP_FLAGS) );
+	J_CHK( JS_DefineProperty(cx, stackItem, "scope", OBJECT_TO_JSVAL(JS_GetFrameScopeChain(cx, frame)), NULL, NULL, OBJ_PROP_FLAGS) );
+	J_CHK( JS_DefineProperty(cx, stackItem, "var", frame->varobj ? OBJECT_TO_JSVAL(frame->varobj) : JSVAL_VOID, NULL, NULL, OBJ_PROP_FLAGS) );
 
 	J_CHK( JS_DefineProperty(cx, stackItem, "this", OBJECT_TO_JSVAL(JS_GetFrameThis(cx, frame)), NULL, NULL, OBJ_PROP_FLAGS) );
 	J_CHK( JS_DefineProperty(cx, stackItem, "argc", INT_TO_JSVAL(frame->argc), NULL, NULL, OBJ_PROP_FLAGS) );
@@ -667,9 +688,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( stackSize ) {
 
-	JSStackFrame *frame;
-	frame = JS_GetScriptedCaller(cx, NULL); // the current frame
-	J_CHK( IntToJsval(cx, StackSize(frame), vp) );
+//	JSStackFrame *frame;
+//	frame = JS_GetScriptedCaller(cx, NULL); // the current frame
+	JSStackFrame *frame = NULL;
+	JS_FrameIterator(cx, &frame);
+	J_CHK( IntToJsval(cx, StackSize(cx, frame), vp) );
 	return JS_TRUE;
 	JL_BAD;
 }

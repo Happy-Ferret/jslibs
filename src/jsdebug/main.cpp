@@ -105,6 +105,26 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	JS_SetNewScriptHookProc(JS_GetRuntime(cx), NewScriptHook, NULL);
 	JS_SetDestroyScriptHookProc(JS_GetRuntime(cx), DestroyScriptHook, NULL);
 
+
+//	JSObject *scope = JS_GetFrameScopeChain(cx, frame);
+
+/*
+	JSStackFrame * fi=0;
+	JSStackFrame * fp=0;
+	
+	for ( fp=JS_FrameIterator(cx, &fi); fp; fp=JS_FrameIterator(cx, &fi))  {
+		
+		printf("%p\n", fp->script);
+	
+	}
+*/
+	
+
+
+//	JS_GetFunctionScript
+
+	
+
 /*
 	// add the current script to the list.
 	for ( JSStackFrame *fp = JS_GetScriptedCaller(cx, NULL); fp; fp = fp->down ) {

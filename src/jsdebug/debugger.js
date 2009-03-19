@@ -171,7 +171,28 @@ var _dbg = (function() {
 			else
 				return [ [b.substring(filename.length+1), c] for ( [b, c] in Iterator(breakpointList) ) if (b.indexOf(filename+':') == 0) ];
 		},
+
+		GetCurrentStackFrame: function( frameIndex ) {
+			
+			return this.stackFrameIndex;
+		},
 		
+		GetStackFrame: function( frameIndex ) {
+
+			var frameInfo = dbg.StackFrame(frameIndex);
+			var contextName;
+			if ( frameInfo.isEval )
+				contextName = '(eval)';
+			else if ( frameInfo.callee && frameInfo.callee.constructor == Function )
+				contextName = frameInfo.callee.name + '()';
+			else
+				contextName = '';
+
+			 with (frameInfo)
+				return { filename:filename, lineno:lineno, isNative:isNative, contextName:contextName };
+		},
+		
+				
 		GetStack: function() {
 			
 			var stack = [];
