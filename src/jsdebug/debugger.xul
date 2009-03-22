@@ -151,6 +151,8 @@
 		
 		function Trace() window.console.debug.apply(this, arguments);
 		
+		function Stack() { try { throw Error() } catch (ex) { return 'stack:\n'+String(ex.stack).split('\n').slice(2).join('\n') }}        		
+		
 		function $(id) document.getElementById(id);
 		
 		function TextToHTMLNode(doc, text) {
@@ -233,6 +235,8 @@
 					return eval('('+xhr.responseText+')');
 				} catch(ex) {
 					return new Error(ex);
+				} finally {
+					netscape.security.PrivilegeManager.revertPrivilege("UniversalBrowserRead");
 				}
 			}
 		}      
@@ -242,7 +246,11 @@
 			var value, listeners = [];
 			this.Listen = function(fct) listeners.push(fct);
 			this.__defineGetter__('value', function() value);
-			this.__defineSetter__('value', function(val) { value = val; for each ( lis in listeners ) lis(value) });
+			this.__defineSetter__('value', function(val) {
+				value = val;
+				for each ( lis in listeners )
+					lis(value);
+			});
 		}
 		
       
@@ -250,24 +258,22 @@
 		
 		var watchManager, stackManager, codeManager, breakpointManager;
 
-		var currentStackFrameIndex = new Variable();
-		var programStackFrameIndex = new Variable();
+		var programState = new Variable();
+		var selectedStackFrameIndex = new Variable();
+				
 
 		var debuggerRpc = new SimpleRpc('127.0.0.1', 8009);
 
-		var codeDoc, stackDoc, watchDoc;
+		var codeDoc, watchDoc;
 		function init() {
 			
 			codeDoc = $('code').contentDocument;
-			stackDoc = $('stack').contentDocument;
 			watchDoc = $('watch').contentDocument;
 
 			codeDoc.getElementsByTagName('HEAD')[0].appendChild(codeDoc.importNode($('css'), true)); // add CSS ...
-			stackDoc.getElementsByTagName('HEAD')[0].appendChild(stackDoc.importNode($('css'), true));
 			watchDoc.getElementsByTagName('HEAD')[0].appendChild(watchDoc.importNode($('css'), true));
 			
 			codeDoc.onclick = function() { focus() }; // restore focus for key management ...
-			stackDoc.onclick = function() { focus() };
 			watchDoc.onclick = function() { focus() };
 			
 			watchManager = new WatchManager();
@@ -301,13 +307,13 @@
 			if ( !(s instanceof Error) ) {
 
 				$('statusInfo').label = 'break: '+s.breakOrigin + ( s.hasException ? ' ('+s.exception+')' : '' );
-				programStackFrameIndex.value = s.stackFrameIndex;
+				programState.value = s;
+				selectedStackFrameIndex.value = s.stackFrameIndex;
 			} else {
 
 				$('statusInfo').label = 'disconnected';
 				codeDoc.body.innerHTML = '';
 				watchDoc.body.innerHTML = '';
-				stackDoc.body.innerHTML = '';
 				ConnectRetry();
 			}
 		}
@@ -317,24 +323,24 @@
 			
 			var self = this;
 			
-			this.Update = function(stackFrameIndex) {
+			this.UpdateSelection = function(stackFrameIndex) {
+				
+				var stack2 = $('stack2');
+				stack2.selectedIndex = stack2.itemCount - 1 - stackFrameIndex;
+			}
+						
+			this.UpdateContent = function() {
 
-				stackDoc.body.innerHTML = '';
-				var stack = debuggerRpc.GetStack();
-				var list = stackDoc.body.appendChild(TextToHTMLNode(stackDoc, '<div class="stack"/>'));
-				for ( var [i, l] in Iterator(stack) ) {
-
-					var c = Math.floor(200 / stack.length * i);
-					var item = TextToHTMLNode(stackDoc, '<div style="color:rgb('+c+','+c+','+c+')"><a>'+l.filename+':'+l.lineno+'</a> - '+l.contextName+'</div>');
-					list.appendChild(item);
-					if ( currentStackFrameIndex.value == stack.length-1-i )
-						SetClass(true, item, 'currentStackFrame');
-					item.onclick = let ( index = stack.length-1-i ) function() currentStackFrameIndex.value = index;
-				}
+				var stack2 = $('stack2');
+				stack2.selectedIndex = -1;
+				while ( stack2.removeItemAt(0) );
+				var programStack = debuggerRpc.GetStack();
+				for ( var [i, l] in Iterator(programStack) )
+					var e = stack2.appendItem(l.filename+':'+l.lineno+' - '+l.contextName, programStack.length - 1 - i);
 			}
 			
-			currentStackFrameIndex.Listen(function(newVal) self.Update(newVal));
-			programStackFrameIndex.Listen(function(newVal) currentStackFrameIndex.value = newVal);
+			selectedStackFrameIndex.Listen(function(newVal) self.UpdateSelection(newVal));
+			programState.Listen(function(newVal) self.UpdateContent(newVal));
 		}
 
 
@@ -347,7 +353,7 @@
 				if ( watchDoc.body.firstChild )
 					watchDoc.body.removeChild(watchDoc.body.firstChild);
 				var watch = debuggerRpc.GetCookie('watch') || [];
-				var list = watchDoc.body.appendChild(TextToHTMLNode(stackDoc, '<div class="watch"/>'));
+				var list = watchDoc.body.appendChild(TextToHTMLNode(watchDoc, '<div class="watch"/>'));
 				
 				for each ( var code in watch ) {
 					
@@ -360,19 +366,22 @@
 					}
 					var elt = InsertNodeAtBeginning(TextToHTMLNode(watchDoc,'<div class="watchItem"><div class="code">'+EscapeEntities(code)+'</div><div class="result" title="'+typeof(res)+'">'+EscapeEntities(String(res))+'</div></div>'), list);
 					SetClass(res instanceof Error, elt.lastChild, 'error');
-//					watchDoc.body.scrollTop = watchDoc.body.scrollHeight;			
 				}
 			}
 			
 			this.Add = function(code) {
-
+/*		
+				var tree = $('watch2');
+				tree.body
+*/
 				var watch = debuggerRpc.GetCookie('watch') || [];
 				watch.unshift(code);
 				debuggerRpc.SetCookie('watch',  watch);
-				this.Update(currentStackFrameIndex.value);
+				this.Update(selectedStackFrameIndex.value);
 			}
 			
-			currentStackFrameIndex.Listen(function(newVal) self.Update(newVal));
+			selectedStackFrameIndex.Listen(function(newVal) self.Update(newVal));
+
 		}
 
 
@@ -388,7 +397,7 @@
 				
 				if ( ev.target.nodeName == 'A' ) {
 					
-					var info = debuggerRpc.Eval(ev.target.firstChild.data, currentStackFrameIndex.value);
+					var info = debuggerRpc.Eval(ev.target.firstChild.data, selectedStackFrameIndex.value);
 					if ( info instanceof Error )
 						return;
 					var def = debuggerRpc.DefinitionLocation(ev.target.firstChild.data);
@@ -433,14 +442,13 @@
 			}
 
 
-			var gotoResetUi = [];
-
 			this.GotoFile = function(filename, lineno) {
 			
 				var codeElt = this.GetCodeElt(filename);
 				SetInView(XPath(codeElt, 'thead/th')[0]);
 			}
 			
+			var gotoResetUi = [];
 			this.Goto = function(filename, lineno, class) {
 
 				while (gotoResetUi.length)
@@ -460,27 +468,27 @@
 			this.Update = function(stackFrameIndex) {
 
 				if ( stackFrameIndex == undefined )
-					stackFrameIndex = programStackFrameIndex.value;
-				var isLastFrame = (stackFrameIndex == programStackFrameIndex.value);
+					stackFrameIndex = programState.value.stackFrameIndex;
+				var isLastFrame = (stackFrameIndex == programState.value.stackFrameIndex);
 				var state, filename, lineno, hasException;
 				if (isLastFrame) {
-
+					
 					state = debuggerRpc.State();
 					filename = state.filename;
 					lineno = state.lineno;
 					hasException = state.hasException;
 				} else {
-	
+					
 					stackFrame = debuggerRpc.GetStackFrame(stackFrameIndex);
 					filename = stackFrame.filename;
 					lineno = stackFrame.lineno;
 					hasException = undefined;
 				}
-
 				self.Goto(filename, lineno, isLastFrame ? (hasException ? 'currentLineError' : 'currentLine' ) : 'oldLine');
 			}
 			
-			currentStackFrameIndex.Listen(function(newVal) self.Update(newVal));
+			selectedStackFrameIndex.Listen(function(newVal) self.Update(newVal));
+//			programState.Listen(function(newVal) self.Update(newVal.stackFrameIndex));
 		}
 
 
@@ -552,34 +560,43 @@
 			<command id="cmd_stepthrough" oncommand="debuggerRpc.Action('stepthrough'); UpdateState()"/>
 			<command id="cmd_stepout" oncommand="debuggerRpc.Action('stepout'); UpdateState()"/>
 			<command id="cmd_continue" oncommand="debuggerRpc.Action('continue'); UpdateState()"/>
-			
-			<command id="cmd_frameup" oncommand="if (currentStackFrameIndex.value > 0) currentStackFrameIndex.value--"/>
-			<command id="cmd_framedown" oncommand="if (programStackFrameIndex.value > currentStackFrameIndex.value) currentStackFrameIndex.value++"/>
+			<command id="cmd_frameup" oncommand="if (selectedStackFrameIndex.value > 0) selectedStackFrameIndex.value--"/>
+			<command id="cmd_framedown" oncommand="if (programState.value.stackFrameIndex > selectedStackFrameIndex.value) selectedStackFrameIndex.value++"/>
 		</commandset>
 		<keyset>
-		  <key keycode="VK_F8" command="cmd_continue" phase="capturing"/>
-		  <key keycode="VK_F10" command="cmd_stepover" phase="capturing"/>
-		  <key modifiers="shift" keycode="VK_F10" command="cmd_stepout" phase="capturing"/>
-		  <key keycode="VK_F11" command="cmd_step" phase="capturing"/>
-		  <key modifiers="shift" keycode="VK_F11" command="cmd_stepthrough" phase="capturing"/>
-
-		  <key keycode="VK_DOWN" command="cmd_stepover" phase="capturing"/>
-		  <key modifiers="control" keycode="VK_DOWN" command="cmd_stepthrough" phase="capturing"/>
-		  <key keycode="VK_LEFT" command="cmd_stepout" phase="capturing"/>
-		  <key modifiers="control" keycode="VK_LEFT" command="cmd_continue" phase="capturing"/>
-		  <key keycode="VK_RIGHT" command="cmd_step" phase="capturing"/>
-		  <key modifiers="shift" keycode="VK_UP" command="cmd_frameup" phase="capturing"/>
-		  <key modifiers="shift" keycode="VK_DOWN" command="cmd_framedown" phase="capturing"/>
+		  <key keycode="VK_F8" command="cmd_continue"/>
+		  <key keycode="VK_F10" command="cmd_stepover"/>
+		  <key modifiers="shift" keycode="VK_F10" command="cmd_stepout"/>
+		  <key keycode="VK_F11" command="cmd_step"/>
+		  <key modifiers="shift" keycode="VK_F11" command="cmd_stepthrough"/>
+		  <key keycode="VK_DOWN" command="cmd_stepover"/>
+		  <key modifiers="control" keycode="VK_DOWN" command="cmd_stepthrough"/>
+		  <key keycode="VK_LEFT" command="cmd_stepout"/>
+		  <key modifiers="control" keycode="VK_LEFT" command="cmd_continue"/>
+		  <key keycode="VK_RIGHT" command="cmd_step"/>
+		  <key modifiers="shift" keycode="VK_UP" command="cmd_frameup"/>
+		  <key modifiers="shift" keycode="VK_DOWN" command="cmd_framedown"/>
 		</keyset>
 		<hbox flex="1">
 			<html:iframe id="code" flex="1" frameborder="0"/>
 			<splitter><grippy/></splitter>
 			<vbox>
-				<html:iframe id="stack" flex="1" frameborder="0"/>
+				<listbox id="stack2" flex="1" onselect="if ( event.target.selectedItem ) selectedStackFrameIndex.value = Number(event.target.selectedItem.value)"/>
 				<splitter><grippy/></splitter>
 				<html:iframe id="watch" flex="1" frameborder="0"/>
+<!--				
+				<tree id="watch2" hidecolumnpicker="true" flex="1">
+					<treecols>
+						<treecol id="variable" label="variable" flex="2"/>
+						<treecol id="type" label="type" flex="1"/>
+					</treecols>
+  					<treechildren>
+  					</treechildren>
+				</tree>
+-->				
 				<splitter><grippy/></splitter>
-				<textbox multiline="true" onkeydown="if (event.keyCode==13) { watchManager.Add(this.value); this.value=''; event.preventDefault() }"/>
+<!--				<textbox multiline="false" onkeydown="if (event.keyCode==13) { watchManager.Add(this.value); this.value=''; event.preventDefault() }"/> -->
+				<textbox onchange="watchManager.Add(this.value); this.value=''"/>
 			</vbox>
 		</hbox>
 		<toolbox>
