@@ -155,6 +155,110 @@
 		
 		function $(id) document.getElementById(id);
 		
+		
+		
+		function TreeView( dataProvider ) {
+		
+			this.dataProvider = dataProvider;
+			this.view = [];
+		}
+		
+		TreeView.prototype = {
+		
+			QueryInterface: function QueryInterface(aIID) {
+				with (Components.interfaces)
+					if ( nsITreeView.equals(aIID) || nsIClassInfo.equals(aIID) || nsISupportsWeakReference.equals(aIID) || nsISupports.equals(aIID))
+						return this;
+				throw 0x80004002; // Components.results.NS_NOINTERFACE;
+			},
+			getInterfaces: function getInterfaces(count) {
+				count.value = 4;
+				with (Components.interfaces) 
+					return [ nsITreeView, nsIClassInfo, nsISupportsWeakReference, nsISupports];
+			},
+			getHelperForLanguage: function getHelperForLanguage(language) { return null; },
+			get contractID() { return null; },
+			get classDescription() { return "myDataTreeView"; },
+			get classID() { return null; },
+			get implementationLanguage() { return Components.interfaces.nsIProgrammimgLanguage.JAVASCRIPT; },
+			get flags() { return Components.interfaces.nsIClassInfo.MAIN_THREAD_ONLY | Components.interfaces.nsIClassInfo.DOM_OBJECT; },
+			setTree: function(treebox) { this.treebox = treebox; },
+		
+			cycleHeader: function(col) {},
+			isSeparator: function(row){ return false; },
+			isSorted: function(){ return false; },
+			getImageSrc: function(row,col){ return null; },
+			getRowProperties: function(row,props){},
+			getCellProperties: function(row,col,props){},
+			getColumnProperties: function(colid,col,props){},
+		
+			getParentIndex: function(row) { return -1; },
+			hasNextSibling: function(row) { return false; },
+		
+			RowHasChild: function(row) {
+			
+				if ( row < this.view.length-1 )
+					return this.view[row].every(function(elt, i) this.view[row+1][i] == elt, this);
+			},
+		
+			get rowCount() {
+			
+				return this.view.length;
+			},
+			
+			getCellText : function(row, column) {
+				
+				return this.dataProvider(this.view[row], column.id);
+			},
+		
+			isContainer: function(row) {
+				
+				return this.dataProvider(this.view[row], 'hasChild');
+			},
+		
+			isContainerEmpty: function(row) { 
+				
+				return false; 
+			},
+		
+			isContainerOpen: function(row) {
+			
+				return this.RowHasChild(row);
+			},
+			
+			toggleOpenState: function(row) {
+				
+				var count = 0;
+				if ( this.RowHasChild(row) ) {
+						
+					while ( this.RowHasChild(row) ) {
+						
+						count--;
+						this.view.splice(row+1, 1);
+					}
+				} else {
+					
+					for each ( var p in this.dataProvider(this.view[row], 'childList') ) {
+					
+						count++;
+						this.view.splice(row+count, 0, this.view[row].concat(p));
+					}
+				}
+				this.treebox.rowCountChanged(row+1, count);
+			},
+		
+			getLevel: function(row) {
+			
+				return this.view[row].length-1;
+			},
+			
+			Add: function(name, val) {
+				
+				this.view.push([name]);
+				this.treebox.rowCountChanged(this.view.length, 1); // http://www.xulplanet.com/references/xpcomref/ifaces/nsITreeBoxObject.html
+			}
+		}
+		
 		function TextToHTMLNode(doc, text) {
 			
 			var elt = doc.createElement('div');
@@ -226,7 +330,7 @@
       
       	this.__noSuchMethod__ = function() {
 
-				netscape.security.PrivilegeManager.enablePrivilege("UniversalBrowserRead"); // allow cross-domain xhr
+				netscape.security.PrivilegeManager.enablePrivilege('UniversalBrowserRead UniversalBrowserWrite'); // allow cross-domain xhr
 				var xhr = new XMLHttpRequest();
 				try {
 
@@ -236,7 +340,7 @@
 				} catch(ex) {
 					return new Error(ex);
 				} finally {
-					netscape.security.PrivilegeManager.revertPrivilege("UniversalBrowserRead");
+					netscape.security.PrivilegeManager.revertPrivilege('UniversalBrowserRead UniversalBrowserWrite');
 				}
 			}
 		}      
@@ -280,6 +384,33 @@
 			stackManager = new StackManager();
 			codeManager = new CodeManager();
 			breakpointManager = new BreakpointManager();
+
+
+//			var data = { d1:#1={ a:[4,5,6], b:null, b1:undefined, c:'test', d:{x:1, y:0, z:1}, e:123, e1:new Number(123), f:#1# } };
+
+			function DataProvider(path, type) {
+
+				var val = path.reduce(function(prev, cur) prev[cur], data);
+				switch (type) {
+					case 'hasChild':
+						return val instanceof Object;
+					case 'childList':
+						return [ prop for ( prop in val ) ];
+					case 'name':
+						return path.slice(-1);
+					case 'value':
+						return String(val);
+					case 'source':
+						return uneval(val);
+				}
+			}
+			
+			var watch2 = $('watch2');
+			var tv = new TreeView(DataProvider);
+			netscape.security.PrivilegeManager.enablePrivilege('UniversalBrowserRead UniversalBrowserWrite');
+			watch2.view = tv;
+			netscape.security.PrivilegeManager.revertPrivilege('UniversalBrowserRead UniversalBrowserWrite');
+//			tv.Add('d1');
 
 			ConnectRetry();
 		}
@@ -584,6 +715,18 @@
 				<listbox id="stack2" flex="1" onselect="if ( event.target.selectedItem ) selectedStackFrameIndex.value = Number(event.target.selectedItem.value)"/>
 				<splitter><grippy/></splitter>
 				<html:iframe id="watch" flex="1" frameborder="0"/>
+				
+<tree id="watch2" hidecolumnpicker="true" flags="dont-build-content" flex="1">
+  <treecols>
+    <treecol id="name" label="Name" primary="true" flex="1"/>
+    <splitter class="tree-splitter"/>
+    <treecol id="value" label="Value" flex="5"/>
+    <splitter class="tree-splitter"/>
+    <treecol id="source" label="Source" flex="1"/>
+  </treecols>
+  <treechildren/>
+</tree>
+
 <!--				
 				<tree id="watch2" hidecolumnpicker="true" flex="1">
 					<treecols>
