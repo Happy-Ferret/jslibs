@@ -35,11 +35,6 @@
 			display: none;
 		}
 		
-		.scope {
-			white-space: pre;
-			font-family: monospace;
-		}
-		
 		.codeItem {
 			width: 100%;
 			border-collapse: collapse; 
@@ -101,27 +96,6 @@
 			background-color: white;
 		}
 		
-		.watchItem {
-			white-space: pre;
-			font-family: monospace;
-			border-bottom: 1px dotted #BBB;
-			padding-bottom: 2px;
-			margin-bottom: 2px;
-			cursor: default;
-		}
-
-		.watchItem .result {
-			margin-left: 20px;
-		}
-
-		.watchItem .code {
-			background-color: #DDD;
-		}
-		
-		.watchItem .error {
-			color: red;
-		}
-
 		.codeItem tbody .breakpoint > :first-child {
 			background-color: red;
 			color: white;
@@ -132,16 +106,6 @@
 			color: white;
 		}
 		
-		.stack {
-			white-space: pre;
-			font-family: monospace;
-			cursor: default;
-			-moz-user-select: none;
-		}
-		
-		.currentStackFrame {
-			font-weight: bold;
-		}
 		]]>
 	</html:style>
 
@@ -154,7 +118,6 @@
 		function Stack() { try { throw Error() } catch (ex) { return 'stack:\n'+String(ex.stack).split('\n').slice(2).join('\n') }}        		
 		
 		function $(id) document.getElementById(id);
-		
 		
 		
 		function TreeView( dataProvider ) {
@@ -255,7 +218,14 @@
 			Add: function(name, val) {
 				
 				this.view.push([name]);
-				this.treebox.rowCountChanged(this.view.length, 1); // http://www.xulplanet.com/references/xpcomref/ifaces/nsITreeBoxObject.html
+				this.treebox.rowCountChanged(this.view.length-1, 1); // http://www.xulplanet.com/references/xpcomref/ifaces/nsITreeBoxObject.html
+				this.treebox.ensureRowIsVisible(this.view.length-1);
+			},
+			
+			Invalidate: function() {
+				
+				var tv = this.treebox;
+				setTimeout(function() tv.invalidate(), 50);
 			}
 		}
 		
@@ -334,12 +304,14 @@
 				var xhr = new XMLHttpRequest();
 				try {
 
-					xhr.open('GET', 'http://'+ip+':'+port+'/?'+encodeURIComponent(uneval(Array.slice(arguments))), false);
-					xhr.send(null);
+					xhr.open('POST', 'http://'+ip+':'+port+'/', false);
+					xhr.send(uneval(Array.slice(arguments)));
 					return eval('('+xhr.responseText+')');
 				} catch(ex) {
+				
 					return new Error(ex);
 				} finally {
+				
 					netscape.security.PrivilegeManager.revertPrivilege('UniversalBrowserRead UniversalBrowserWrite');
 				}
 			}
@@ -372,45 +344,19 @@
 		function init() {
 			
 			codeDoc = $('code').contentDocument;
-			watchDoc = $('watch').contentDocument;
+//			watchDoc = $('watch').contentDocument;
 
 			codeDoc.getElementsByTagName('HEAD')[0].appendChild(codeDoc.importNode($('css'), true)); // add CSS ...
-			watchDoc.getElementsByTagName('HEAD')[0].appendChild(watchDoc.importNode($('css'), true));
+//			watchDoc.getElementsByTagName('HEAD')[0].appendChild(watchDoc.importNode($('css'), true));
 			
 			codeDoc.onclick = function() { focus() }; // restore focus for key management ...
-			watchDoc.onclick = function() { focus() };
+//			watchDoc.onclick = function() { focus() };
 			
 			watchManager = new WatchManager();
 			stackManager = new StackManager();
 			codeManager = new CodeManager();
+			codeManager2 = new CodeManager2();
 			breakpointManager = new BreakpointManager();
-
-
-//			var data = { d1:#1={ a:[4,5,6], b:null, b1:undefined, c:'test', d:{x:1, y:0, z:1}, e:123, e1:new Number(123), f:#1# } };
-
-			function DataProvider(path, type) {
-
-				var val = path.reduce(function(prev, cur) prev[cur], data);
-				switch (type) {
-					case 'hasChild':
-						return val instanceof Object;
-					case 'childList':
-						return [ prop for ( prop in val ) ];
-					case 'name':
-						return path.slice(-1);
-					case 'value':
-						return String(val);
-					case 'source':
-						return uneval(val);
-				}
-			}
-			
-			var watch2 = $('watch2');
-			var tv = new TreeView(DataProvider);
-			netscape.security.PrivilegeManager.enablePrivilege('UniversalBrowserRead UniversalBrowserWrite');
-			watch2.view = tv;
-			netscape.security.PrivilegeManager.revertPrivilege('UniversalBrowserRead UniversalBrowserWrite');
-//			tv.Add('d1');
 
 			ConnectRetry();
 		}
@@ -457,7 +403,9 @@
 			this.UpdateSelection = function(stackFrameIndex) {
 				
 				var stack2 = $('stack2');
+				stack2.setAttribute('suppressonselect', true);
 				stack2.selectedIndex = stack2.itemCount - 1 - stackFrameIndex;
+				stack2.removeAttribute('suppressonselect');
 			}
 						
 			this.UpdateContent = function() {
@@ -478,42 +426,51 @@
 		function WatchManager() {
 			
 			var self = this;
-			
-			this.Update = function( stackFrameIndex ) {
+	
+			var cache = {};
 
-				if ( watchDoc.body.firstChild )
-					watchDoc.body.removeChild(watchDoc.body.firstChild);
-				var watch = debuggerRpc.GetCookie('watch') || [];
-				var list = watchDoc.body.appendChild(TextToHTMLNode(watchDoc, '<div class="watch"/>'));
+			function DataProvider(path, type) {
 				
-				for each ( var code in watch ) {
-					
-					try {
+				id = path.join('.');
+				var expInfo = id in cache ? cache[id] : (cache[id] = debuggerRpc.ExpressionInfo(path, selectedStackFrameIndex.value));
 
-						var res = debuggerRpc.Eval(code, stackFrameIndex);
-					} catch (ex) {
-
-						var res = String(ex);
-					}
-					var elt = InsertNodeAtBeginning(TextToHTMLNode(watchDoc,'<div class="watchItem"><div class="code">'+EscapeEntities(code)+'</div><div class="result" title="'+typeof(res)+'">'+EscapeEntities(String(res))+'</div></div>'), list);
-					SetClass(res instanceof Error, elt.lastChild, 'error');
+				switch (type) {
+					case 'hasChild':
+						return expInfo.isObject;
+					case 'childList':
+						return expInfo.childList;
+					case 'expression':
+						return path[path.length-1];
+					case 'value':
+						return expInfo.string;
+					case 'source':
+						return expInfo.source;
 				}
 			}
 			
-			this.Add = function(code) {
-/*		
-				var tree = $('watch2');
-				tree.body
-*/
-				var watch = debuggerRpc.GetCookie('watch') || [];
-				watch.unshift(code);
-				debuggerRpc.SetCookie('watch',  watch);
-				this.Update(selectedStackFrameIndex.value);
+			var watch2 = $('watch2');
+			var treeView = new TreeView(DataProvider);
+			netscape.security.PrivilegeManager.enablePrivilege('UniversalBrowserRead UniversalBrowserWrite');
+			watch2.view = treeView;
+			netscape.security.PrivilegeManager.revertPrivilege('UniversalBrowserRead UniversalBrowserWrite');
+
+			
+			this.Update = function( stackFrameIndex ) {
+				
+				cache = {};
+				treeView.Invalidate();
+			}
+			
+			this.Add = function(expression) {
+				
+				treeView.Add(expression);
 			}
 			
 			selectedStackFrameIndex.Listen(function(newVal) self.Update(newVal));
-
 		}
+
+
+
 
 
 		function CodeManager() {
@@ -604,10 +561,9 @@
 				var state, filename, lineno, hasException;
 				if (isLastFrame) {
 					
-					state = debuggerRpc.State();
-					filename = state.filename;
-					lineno = state.lineno;
-					hasException = state.hasException;
+					filename = programState.value.filename;
+					lineno = programState.value.lineno;
+					hasException = programState.value.hasException;
 				} else {
 					
 					stackFrame = debuggerRpc.GetStackFrame(stackFrameIndex);
@@ -619,8 +575,8 @@
 			}
 			
 			selectedStackFrameIndex.Listen(function(newVal) self.Update(newVal));
-//			programState.Listen(function(newVal) self.Update(newVal.stackFrameIndex));
 		}
+
 
 
 		function BreakpointManager() {
@@ -680,6 +636,29 @@
 				}
 			}, false);
 		}
+		
+		
+		function CodeManager2() {
+			
+			var self = this;
+			
+			this.ShowFile = function(filename) {
+			}
+			
+			this.Update = function(stackFrameIndex) {
+			
+				var stackFrame = debuggerRpc.GetStackFrame(stackFrameIndex);
+				var filename = stackFrame.filename;
+				var lineno = stackFrame.lineno;
+				var hasException = stackFrameIndex == programState.value.stackFrameIndex ? programState.value.hasException : undefined;
+				
+				this.ShowFile(filename);
+			}
+
+			selectedStackFrameIndex.Listen(function(newVal) self.Update(newVal));
+		}
+
+		
 
 		]]>
 	</script>
@@ -710,35 +689,34 @@
 		</keyset>
 		<hbox flex="1">
 			<html:iframe id="code" flex="1" frameborder="0"/>
+<!--
+			<listbox id="fileList" width="100">
+				<listitem label="123"/>
+			</listbox>
+			
+			<listbox id="code2">
+			  <listcols>
+				 <listcol flex="0" style="background-color: silver"/>
+				 <listcol flex="1"/>
+			  </listcols>
+			</listbox>
+-->			
+			
 			<splitter><grippy/></splitter>
 			<vbox>
 				<listbox id="stack2" flex="1" onselect="if ( event.target.selectedItem ) selectedStackFrameIndex.value = Number(event.target.selectedItem.value)"/>
 				<splitter><grippy/></splitter>
-				<html:iframe id="watch" flex="1" frameborder="0"/>
-				
-<tree id="watch2" hidecolumnpicker="true" flags="dont-build-content" flex="1">
-  <treecols>
-    <treecol id="name" label="Name" primary="true" flex="1"/>
-    <splitter class="tree-splitter"/>
-    <treecol id="value" label="Value" flex="5"/>
-    <splitter class="tree-splitter"/>
-    <treecol id="source" label="Source" flex="1"/>
-  </treecols>
-  <treechildren/>
-</tree>
-
-<!--				
-				<tree id="watch2" hidecolumnpicker="true" flex="1">
-					<treecols>
-						<treecol id="variable" label="variable" flex="2"/>
-						<treecol id="type" label="type" flex="1"/>
-					</treecols>
-  					<treechildren>
-  					</treechildren>
+				<tree id="watch2" hidecolumnpicker="true" flags="dont-build-content" flex="1">
+				  <treecols>
+					 <treecol id="expression" label="Expression" primary="true" flex="1"/>
+					 <splitter class="tree-splitter"/>
+					 <treecol id="value" label="Value" flex="5"/>
+					 <splitter class="tree-splitter"/>
+					 <treecol id="source" label="Source" flex="1"/>
+				  </treecols>
+				  <treechildren/>
 				</tree>
--->				
 				<splitter><grippy/></splitter>
-<!--				<textbox multiline="false" onkeydown="if (event.keyCode==13) { watchManager.Add(this.value); this.value=''; event.preventDefault() }"/> -->
 				<textbox onchange="watchManager.Add(this.value); this.value=''"/>
 			</vbox>
 		</hbox>

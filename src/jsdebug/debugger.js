@@ -29,39 +29,52 @@ var _dbg = (function() {
 
 	function SimpleHTTPServer(port, bind) {
 		
-		var self = this;
-		var pendingRequestList = [];
-		var socketList = [];
-		var serverSocket = new Socket();
-		socketList.push(serverSocket);
+		var pendingRequestList = [], serverSocket = new Socket(), socketList = [serverSocket];
+		function CloseSocket(s) {
+		
+			s.Close();
+			socketList.splice( socketList.indexOf(s), 1 );
+		}
 		serverSocket.readable = function() {
 
 			var clientSocket = serverSocket.Accept();
 			socketList.push(clientSocket);
 			clientSocket.data = '';
 			clientSocket.readable = function(s) {
-				
+
  				var buf = s.Read();
-				if ( !buf ) {
-				
-					s.Close();
-					socketList.splice( socketList.indexOf(s), 1 );
-					return;
-				}
+				if ( !buf )
+					return CloseSocket(s);
 				s.data += buf;
-				if ( s.data.indexOf('\r\n\r\n') == -1 )
+				var eoh = s.data.indexOf('\r\n\r\n');
+				if ( eoh == -1 )
 					return;
-				pendingRequestList.push([decodeURIComponent(/^GET \/\?(?:(.*?)|()) HTTP/(s.data)[1]), function(response) {
-					
-					if ( s.connectionClosed )
-						return false;
-					s.Write('HTTP/1.0 200 OK\r\ncontent-type: text/plain\r\nconnection: close\r\n\r\n'+response);
-					s.linger = 2000;
-					s.Shutdown();
-					s.Close();
-					socketList.splice(socketList.indexOf(s), 1);
-					return true;
-				}]);
+				var contentLength = /^content-length: ?(.*)$/im(s.data)||[][1];
+				s.data = s.data.substring(eoh+4);
+				(function(s) {
+
+					if ( s.data.length < contentLength ) {
+				
+						s.readable = arguments.callee;
+ 						var buf = s.Read();
+						if ( !buf )
+							return CloseSocket(s);						
+ 						s.data += buf;
+						return;
+					}
+					delete s.readable;
+					s.Shutdown(false);
+					pendingRequestList.push([s.data, function(response) {
+						
+						if ( s.connectionClosed )
+							return CloseSocket(s);
+						s.Write('HTTP/1.0 200 OK\r\nContent-Type: text/plain\r\nConnection: close\r\n\r\n'+response);
+						s.Shutdown(true);
+						serverSocket.linger = 1000;
+						CloseSocket(s)
+						return response;
+					}]);
+				})(s);
 			}
 		}
 
@@ -221,6 +234,21 @@ var _dbg = (function() {
 			} catch (ex) {
 			
 				return ex;
+			}
+		},
+		
+		ExpressionInfo: function(path, stackFrameIndex) {
+
+			try {
+			
+				var val = dbg.EvalInStackFrame(path.shift(), stackFrameIndex == undefined ? this.stackFrameIndex : stackFrameIndex );
+				val = path.reduce(function(prev, cur) prev[cur], val);
+				var isObject = val instanceof Object;
+				var childList = isObject ? [ name for ( name in val) ] : [];
+				return { isObject:isObject, childList:childList, string:String(val), source:uneval(val) };
+			} catch (ex) {
+			
+				return { isObject:false, childList:[], string:String(ex), source:'' };
 			}
 		},
 		
