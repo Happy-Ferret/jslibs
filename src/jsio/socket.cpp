@@ -75,7 +75,7 @@ $TOC_MEMBER $INAME
  $INAME( [ what ] )
   Shut down part of a full-duplex connection on a socket.
   $LF
-  if _what_ is $TRUE, further receives will be disallowed.
+  if _what_ is $FALSE, further receives will be disallowed.
   $LF
   if _what_ is $TRUE, further sends will be disallowed.
   $LF
