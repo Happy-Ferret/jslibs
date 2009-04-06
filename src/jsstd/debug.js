@@ -1,6 +1,59 @@
 LoadModule('jsstd');
 LoadModule('jsio');
 
+		for ( var i = 0; i<500; i++ )
+			ObjectToId({});
+			
+		CollectGarbage();
+			
+		for ( var i = 0; i<1000; i++ )
+			ObjectToId({});
+
+
+
+Halt(); /////////////////////////////////////////////////////////////////////
+
+function test2() {
+
+	var a = { a:'a'};
+	var b = { b:'b'};
+	var c = { c:'c'};
+
+	Print( ObjectToId(a), '\n' );
+	Print( ObjectToId(b), '\n' );
+	Print( ObjectToId(c), '\n' );
+	Print( ObjectToId(c), '\n' );
+	Print( ObjectToId(b), '\n' );
+	Print( ObjectToId(a), '\n' );
+
+}
+
+CollectGarbage();
+
+test2();
+
+Print( IdToObject(1), '\n' );
+Print( IdToObject(2), '\n' );
+Print( IdToObject(3), '\n' );
+Print( IdToObject(4), '\n' );
+
+CollectGarbage();
+Print( '\n' );
+
+Print( IdToObject(1), '\n' );
+Print( IdToObject(2), '\n' );
+Print( IdToObject(3), '\n' );
+Print( IdToObject(4), '\n' );
+
+test2();
+
+Print( IdToObject(4), '\n' );
+
+
+Halt(); /////////////////////////////////////////////////////////////////////
+
+
+
 Print('test');
 
 var m = {__proto__:null};

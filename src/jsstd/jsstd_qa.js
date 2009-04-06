@@ -1,6 +1,28 @@
 LoadModule('jsstd');
 
 
+/// ObjectToId and IdToObject [rt]
+
+		var obj = { xxx:123 };
+		var id = ObjectToId(obj);
+
+		QA.ASSERT_TYPE( id, 'number', 'id type is good' );
+		QA.ASSERT( id >= 1, true, 'id is valid' );
+		QA.ASSERT_TYPE( IdToObject(id), obj, 'obj->id->obj' );
+		
+		QA.ASSERT( IdToObject(id).xxx, 123, 'IdToObject validity before GC' );
+		obj = null;
+		CollectGarbage();
+		QA.ASSERT( IdToObject(id), undefined, 'IdToObject after GC' );
+		
+		
+		for ( var i = 0; i<500; i++ )
+			ObjectToId({});
+		CollectGarbage();
+		for ( var i = 0; i<1000; i++ )
+			ObjectToId({});
+
+
 /// Map object with new [ftr]
 
 		var m = new Map();
@@ -449,18 +471,6 @@ LoadModule('jsstd');
 //		QA.ASSERT( gcBytes, str.length, 'lot of allocated memory' );
 		
 		CollectGarbage();
-
-/// IdOf function [ftr]
-		
-		var t1 = IdOf('uroiquwyeroquiwyeroquwyeroquwyeroquwreyouqwhelqwfvqlwefvlqwhjvlqwefjvlqw12412h5oiu2f34hovcu312gofuiv3124gfovi23gfvo23y4gfov234yugfvo23ufgvwperiughweoigh23oi7o2h3vg7o2374o23g74hgo32i74gho23i7ghov237ihg');
-		var xx = '23y2378vg239784gf293v87gfv293874gfv932847gfv';
-		var t2 = IdOf('uroiquwyeroquiwyeroquwyeroquwyeroquwreyouqwhelqwfvqlwefvlqwhjvlqwefjvlqw12412h5oiu2f34hovcu312gofuiv3124gfovi23gfvo23y4gfov234yugfvo23ufgvwperiughweoigh23oi7o2h3vg7o2374o23g74hgo32i74gho23i7ghov237ihg');
-		QA.ASSERT( t1, t2, 'IdOf on string' );
-		QA.ASSERT( IdOf(32), 65, 'IdOf on integer' );
-		
-		var o = {};
-		var p = {};
-		QA.ASSERT( IdOf(o.constructor), IdOf(o.constructor), 'object constructor index' );
 
 
 /// hide properties [ftr]

@@ -361,63 +361,137 @@ DEFINE_FUNCTION( HideProperties ) {
 }
 
 
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
 $TOC_MEMBER $INAME
- $INT $INAME( value )
-  Returns an integer value that is a unique identifier of _value_ .
+ $INT $INAME( object )
+  Returns an integer value that is a unique identifier of _object_ .
   $H example
   {{{
   var myObj = {};
-  Print( IdOf(myObj), '\n' );
+  Print( ObjectToId(myObj), '\n' );
   }}}
 **/
-DEFINE_FUNCTION_FAST( IdOf ) {
 
-	J_S_ASSERT_ARG_MIN( 1 );
-	J_S_ASSERT_ARG_MAX( 1 );
+struct ObjId {
+	JSObject *obj;
+	unsigned int id;
+};
 
-	jsid id;
-	if ( JSVAL_IS_OBJECT( J_FARG(1) ) )
-		J_CHK( JS_GetObjectId(cx, JSVAL_TO_OBJECT( J_FARG(1) ), &id) );
-	else
-		J_CHK( JS_ValueToId(cx, J_FARG(1), &id) );
+ObjId *objIdList = NULL;
+unsigned int lastObjectId = 0;
+unsigned int objectIdAlloced = 0;
+unsigned int high = 0;
 
-	if ( INT_FITS_IN_JSVAL(id) )
-		*J_FRVAL = INT_TO_JSVAL(id);
-	else
-		J_CHK( JS_NewNumberValue(cx, (JSUword)id, J_FRVAL) ); // src: ... JSDOUBLE_IS_INT(d, i) && INT_FITS_IN_JSVAL(i) ...
-	return JS_TRUE;
-	JL_BAD;
+JSGCCallback prevObjectIdGCCallback = NULL;
+
+JSBool ObjectIdGCCallback(JSContext *cx, JSGCStatus status) {
+	
+	if ( status == JSGC_MARK_END ) {
+
+		for ( ObjId *it = objIdList, *end = objIdList + objectIdAlloced; it < end; ++it )
+			if ( it->obj && JS_IsAboutToBeFinalized(cx, it->obj) ) {
+
+				it->id = 0;
+				it->obj = NULL;
+/*
+				for (; high > 0 && objIdList[high].id == 0 ; high-- );
+
+				if ( high ) {
+					it->id = objIdList[high].id;
+					it->obj = objIdList[high].obj;
+					objIdList[high].id = 0;
+					objIdList[high].obj = 0;
+				} else {
+					it->id = 0;
+					it->obj = NULL;
+				}
+*/					
+			}
+	}
+
+	return prevObjectIdGCCallback ? prevObjectIdGCCallback(cx, status) : JS_TRUE;
 }
 
 
+DEFINE_FUNCTION_FAST( ObjectToId ) {
+
+	J_S_ASSERT_ARG_RANGE( 1, 1 );
+	J_S_ASSERT_OBJECT( J_FARG(1) );
+	JSObject *obj = JSVAL_TO_OBJECT( J_FARG(1) );
+	
+	ObjId *freeSlot = NULL;
+	for ( ObjId *it = objIdList, *end = objIdList + objectIdAlloced; it < end; ++it ) {
+
+		if ( it->obj == obj )
+			return UIntToJsval(cx, it->id, J_FRVAL);
+		if ( !freeSlot && it->id == 0 )
+			freeSlot = it;
+	}
+	
+	if ( !freeSlot ) {
+
+		unsigned int prevAlloced = objectIdAlloced;
+
+		if ( !objIdList ) {
+			
+			prevObjectIdGCCallback = JS_SetGCCallback(cx, ObjectIdGCCallback);
+			objectIdAlloced = 32;
+		} else {
+
+			objectIdAlloced *= 2;
+		}
+		objIdList = (ObjId*)JS_realloc(cx, objIdList, sizeof(ObjId) * objectIdAlloced); // (TBD) free objIdList at the end
+		freeSlot = objIdList + prevAlloced;
+		memset(freeSlot, 0,(objectIdAlloced - prevAlloced) * sizeof(ObjId)); // init only new slots
+	}
+
+	freeSlot->id = ++lastObjectId;
+	freeSlot->obj = obj;
+/*
+	if ( objIdList > freeSlot - high )
+		high = freeSlot - objIdList;
+*/
+	return UIntToJsval(cx, lastObjectId, J_FRVAL);
+	JL_BAD;
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
 $TOC_MEMBER $INAME
- $VAL $INAME( id )
-  Returns the value that corresponts to the given id. This is the reciprocal of IdOf() function.
-  $H example
+ $INT $INAME( id )
+  Returns the object with the identifier _id_ or undefined if the identifier do not exist or the object has been GCed. 
+  $H example 1
   {{{
   var myObj = {};
-  Print( FromId(IdOf(myObj)) == myObj, '\n' ); // returns true
+  Print( IdToObject(ObjectToId(myObj)) === myObj, '\n' ); // prints true
+  }}}
+  $H example 2
+  {{{
+  var id = ObjectToId({});
+  Print( IdToObject(id), '\n' ); // prints: [object Object]
+  CollectGarbage();
+  Print( IdToObject(id), '\n' ); // prints: undefined
   }}}
 **/
-DEFINE_FUNCTION_FAST( FromId ) {
+DEFINE_FUNCTION_FAST( IdToObject ) {
 
-	J_S_ASSERT_ARG_MIN( 1 );
-	J_S_ASSERT_ARG_MAX( 1 );
+	J_S_ASSERT_ARG_RANGE( 1, 1 );
+	J_S_ASSERT_NUMBER( J_FARG(1) );
 
-	jsid id;
-	if ( JSVAL_IS_INT( J_FARG(1) ) ) {
-		id = JSVAL_TO_INT( J_FARG(1) );
-	} else {
-		jsdouble d;
-		J_CHK( JS_ValueToNumber(cx, J_FARG(1), &d) );
-		id = d;
-	}
-	J_CHK( JS_IdToValue(cx, id, J_FRVAL) );
+	unsigned int id;
+	J_CHK( JsvalToUInt(cx, J_FARG(1), &id) );
+
+	if ( id > 0 )
+		for ( ObjId *it = objIdList, *end = objIdList + objectIdAlloced; it < end; ++it )
+			if ( it->id == id ) {
+
+				*J_FRVAL = OBJECT_TO_JSVAL( it->obj );
+				return JS_TRUE;
+			}
+
+	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1206,8 +1280,6 @@ DEFINE_FUNCTION_FAST( Test ) {
 #endif // _DEBUG
 
 
-
-
 CONFIGURE_STATIC
 
 	REVISION(SvnRevToInt("$Revision$"))
@@ -1227,8 +1299,9 @@ CONFIGURE_STATIC
 		FUNCTION_FAST( TimeCounter )
 		FUNCTION_FAST( CollectGarbage )
 		FUNCTION_FAST( MaybeCollectGarbage )
-		FUNCTION_FAST( IdOf )
-		FUNCTION_FAST( FromId )
+		FUNCTION_FAST( ObjectToId )
+		FUNCTION_FAST( IdToObject )
+
 #ifdef JS_HAS_XDR
 		FUNCTION_FAST( XdrEncode )
 		FUNCTION_FAST( XdrDecode )
