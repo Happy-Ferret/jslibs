@@ -382,7 +382,6 @@ struct ObjId {
 ObjId *objIdList = NULL;
 unsigned int lastObjectId = 0;
 unsigned int objectIdAlloced = 0;
-unsigned int high = 0;
 
 JSGCCallback prevObjectIdGCCallback = NULL;
 
@@ -395,19 +394,6 @@ JSBool ObjectIdGCCallback(JSContext *cx, JSGCStatus status) {
 
 				it->id = 0;
 				it->obj = NULL;
-/*
-				for (; high > 0 && objIdList[high].id == 0 ; high-- );
-
-				if ( high ) {
-					it->id = objIdList[high].id;
-					it->obj = objIdList[high].obj;
-					objIdList[high].id = 0;
-					objIdList[high].obj = 0;
-				} else {
-					it->id = 0;
-					it->obj = NULL;
-				}
-*/					
 			}
 	}
 
@@ -449,10 +435,7 @@ DEFINE_FUNCTION_FAST( ObjectToId ) {
 
 	freeSlot->id = ++lastObjectId;
 	freeSlot->obj = obj;
-/*
-	if ( objIdList > freeSlot - high )
-		high = freeSlot - objIdList;
-*/
+
 	return UIntToJsval(cx, lastObjectId, J_FRVAL);
 	JL_BAD;
 }
@@ -483,7 +466,7 @@ DEFINE_FUNCTION_FAST( IdToObject ) {
 	unsigned int id;
 	J_CHK( JsvalToUInt(cx, J_FARG(1), &id) );
 
-	if ( id > 0 )
+	if ( id > 0 && id <= lastObjectId )
 		for ( ObjId *it = objIdList, *end = objIdList + objectIdAlloced; it < end; ++it )
 			if ( it->id == id ) {
 

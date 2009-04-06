@@ -1,13 +1,35 @@
 LoadModule('jsstd');
 LoadModule('jsio');
 
-		for ( var i = 0; i<500; i++ )
-			ObjectToId({});
-			
-		CollectGarbage();
-			
-		for ( var i = 0; i<1000; i++ )
-			ObjectToId({});
+
+var root = [];
+
+for ( var i = 0; i<500; i++ ) {
+	
+	var obj = {};
+	ObjectToId(obj);
+	if ( Math.random() > 0.5 )
+		root.push(obj);
+}
+		
+CollectGarbage();
+
+var root = [];
+
+for ( var i = 0; i<500; i++ ) {
+	
+	var obj = {};
+	ObjectToId(obj);
+	if ( Math.random() > 0.5 )
+		root.push(obj);
+}
+
+CollectGarbage();
+
+for ( var i = 0; i < 5000; i++ )
+	Print( IdToObject(i) == undefined ? '.' : 'o' );
+
+
 
 
 
