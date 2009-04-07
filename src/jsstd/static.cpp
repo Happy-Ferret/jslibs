@@ -366,7 +366,7 @@ DEFINE_FUNCTION( HideProperties ) {
 /**doc
 $TOC_MEMBER $INAME
  $INT $INAME( object )
-  Returns an integer value that is a unique identifier of _object_ .
+  Returns an integer value that is a unique identifier of the object _object_ .
   $H example
   {{{
   var myObj = {};
@@ -389,12 +389,14 @@ JSBool ObjectIdGCCallback(JSContext *cx, JSGCStatus status) {
 	
 	if ( status == JSGC_MARK_END ) {
 
-		for ( ObjId *it = objIdList, *end = objIdList + objectIdAlloced; it < end; ++it )
+		for ( ObjId *it = objIdList, *end = objIdList + objectIdAlloced; it < end; ++it ) {
+
 			if ( it->obj && JS_IsAboutToBeFinalized(cx, it->obj) ) {
 
 				it->id = 0;
 				it->obj = NULL;
 			}
+		}
 	}
 
 	return prevObjectIdGCCallback ? prevObjectIdGCCallback(cx, status) : JS_TRUE;
@@ -466,13 +468,17 @@ DEFINE_FUNCTION_FAST( IdToObject ) {
 	unsigned int id;
 	J_CHK( JsvalToUInt(cx, J_FARG(1), &id) );
 
-	if ( id > 0 && id <= lastObjectId )
-		for ( ObjId *it = objIdList, *end = objIdList + objectIdAlloced; it < end; ++it )
+	if ( id > 0 && id <= lastObjectId ) {
+
+		for ( ObjId *it = objIdList, *end = objIdList + objectIdAlloced; it < end; ++it ) {
+
 			if ( it->id == id ) {
 
 				*J_FRVAL = OBJECT_TO_JSVAL( it->obj );
 				return JS_TRUE;
 			}
+		}
+	}
 
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
