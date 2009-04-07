@@ -612,7 +612,7 @@ DEFINE_FUNCTION_FAST( DefinitionLocation ) {
 		goto next;
 	}
 
-	if ( JSVAL_IS_OBJECT( J_FARG(1) ) ) {
+	if ( !JSVAL_IS_PRIMITIVE( J_FARG(1) ) ) {
 
 		JSObject* obj;
 		obj = JS_GetConstructor(cx, JSVAL_TO_OBJECT( J_FARG(1) ));

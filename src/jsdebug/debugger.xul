@@ -14,104 +14,26 @@
    - ***** END LICENSE BLOCK ***** -->
 
 <?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
+<?xml-stylesheet href="data:text/css,
+
+	#code2 treechildren::-moz-tree-row(selected) { background-color: transparent }
+	#code2 treechildren::-moz-tree-cell-text(selected) { color: inherit }
+	#code2 treechildren::-moz-tree-cell-text(line) { color: white; }
+	#code2 treechildren::-moz-tree-cell-text(code) { font-family: monospace; }
+
+	#code2 treechildren::-moz-tree-column(line) { background-color: silver }
+	#code2 treechildren::-moz-tree-cell(currentLine) { background-color: #EEA }
+	#code2 treechildren::-moz-tree-cell(breakpoint) { background-color: red }
+	#code2 treechildren::-moz-tree-cell(condBreakpoint) { background-color: orange }
+
+" type="text/css"?>
+
 <window id="window"
 	xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
 	xmlns:html="http://www.w3.org/1999/xhtml"
 	onload="init(event)"
 >
-	<html:style id="css">
-		<![CDATA[
-		html {
-			border-width: 0px;
-			overflow: scroll;
-		}
-		
-		html, body {
-			margin: 0px;
-			padding: 0px;
-		}
-
-		.hide {
-			display: none;
-		}
-		
-		.codeItem {
-			width: 100%;
-			border-collapse: collapse; 
-			white-space: pre;
-			font-family: monospace;
-			background-color: #CCC;
-			cursor: default;
-			-moz-user-select: none;
-		}
-
-		.codeItem .filename {
-			white-space: pre;
-			font-family: monospace;
-			font-weight: normal;
-			background-color: #CCC;
-			padding: 5px 0px;
-		}
-
-		.codeItem td {
-			color: #888;
-			padding: 0px 4px;
-		}
-		
-		.codeItem tbody td+td {
-			background-color: #DDD;
-			color: black;
-			-moz-user-select: text;
-		}
-		
-		.codeItem thead .currentLine,
-		.codeItem tbody .currentLine td+td {
-			background-color: #EEA;
-		}
-		
-		.codeItem thead .currentLineError,
-		.codeItem tbody .currentLineError td+td {
-			background-color: #EAA;
-		}
-
-		.codeItem thead .oldLine,
-		.codeItem tbody .oldLine td+td {
-			background-color: #AEA;
-		}
-		
-		.codeInfo {
-			display: none;
-			position: absolute;
-			z-index: 1;
-			white-space: pre;
-			font-family: monospace;
-			font-size: smaller;
-			padding: 3px 10px;
-			border: 1px solid #AAA;
-			background-color: #EEE;
-			opacity: 0.95;
-		}
-				
-		.codeItem tbody .selectedKwyword {
-			background-color: white;
-		}
-		
-		.codeItem tbody .breakpoint > :first-child {
-			background-color: red;
-			color: white;
-		}
-
-		.codeItem tbody .condition > :first-child {
-			background-color: orange;
-			color: white;
-		}
-		
-		]]>
-	</html:style>
-
-
-	<script type="text/javascript">
-		<![CDATA[
+	<script type="text/javascript"><![CDATA[
 		
 		function Trace() window.console.debug.apply(this, arguments);
 		
@@ -119,15 +41,21 @@
 		
 		function $(id) document.getElementById(id);
 		
-		
-		function TreeView( dataProvider ) {
-		
-			this.dataProvider = dataProvider;
-			this.view = [];
+		function QueryPrivilege() {
+
+			netscape.security.PrivilegeManager.enablePrivilege('UniversalXPConnect UniversalBrowserRead UniversalBrowserWrite');
+			netscape.security.PrivilegeManager.revertPrivilege('UniversalXPConnect UniversalBrowserRead UniversalBrowserWrite');
 		}
 		
-		TreeView.prototype = {
+		function AddProp(props, prop) {
+
+			netscape.security.PrivilegeManager.enablePrivilege('UniversalXPConnect');
+			var aserv = Components.classes["@mozilla.org/atom-service;1"].getService(Components.interfaces.nsIAtomService);
+			props.AppendElement(aserv.getAtom(prop));
+			netscape.security.PrivilegeManager.revertPrivilege('UniversalXPConnect');
+		}
 		
+		DefaultTreeView = {
 			QueryInterface: function QueryInterface(aIID) {
 				with (Components.interfaces)
 					if ( nsITreeView.equals(aIID) || nsIClassInfo.equals(aIID) || nsISupportsWeakReference.equals(aIID) || nsISupports.equals(aIID))
@@ -139,25 +67,42 @@
 				with (Components.interfaces) 
 					return [ nsITreeView, nsIClassInfo, nsISupportsWeakReference, nsISupports];
 			},
-			getHelperForLanguage: function getHelperForLanguage(language) { return null; },
-			get contractID() { return null; },
-			get classDescription() { return "myDataTreeView"; },
-			get classID() { return null; },
-			get implementationLanguage() { return Components.interfaces.nsIProgrammimgLanguage.JAVASCRIPT; },
-			get flags() { return Components.interfaces.nsIClassInfo.MAIN_THREAD_ONLY | Components.interfaces.nsIClassInfo.DOM_OBJECT; },
+			getHelperForLanguage: function getHelperForLanguage(language) null,
+			get contractID() null,
+			get classDescription() 'myDefaultTreeView',
+			get classID() null,
+			get implementationLanguage() Components.interfaces.nsIProgrammimgLanguage.JAVASCRIPT,
+			get flags() Components.interfaces.nsIClassInfo.MAIN_THREAD_ONLY | Components.interfaces.nsIClassInfo.DOM_OBJECT,
 			setTree: function(treebox) { this.treebox = treebox; },
-		
 			cycleHeader: function(col) {},
-			isSeparator: function(row){ return false; },
-			isSorted: function(){ return false; },
-			getImageSrc: function(row,col){ return null; },
-			getRowProperties: function(row,props){},
-			getCellProperties: function(row,col,props){},
-			getColumnProperties: function(colid,col,props){},
+			isSeparator: function(row) false,
+			isSorted: function() false,
+			getImageSrc: function(row,col) null,
+			getRowProperties: function(row,props) {},
+			getCellProperties: function(row,col,props) {},
+			getColumnProperties: function(colid,col,props) {},
 		
-			getParentIndex: function(row) { return -1; },
-			hasNextSibling: function(row) { return false; },
+			getParentIndex: function(row) -1,
+			hasNextSibling: function(row) false,
+			RowHasChild: function(row) false,
+			get rowCount() 0,
+			getCellText: function(row, column) '',
+			isContainer: function(row) false,
+			isContainerEmpty: function(row) true,
+			isContainerOpen: function(row) false,
+			toggleOpenState: function(row) {},
+			getLevel: function(row) 0,
+		};
 		
+		function TreeView( dataProvider ) {
+		
+			this.dataProvider = dataProvider;
+			this.view = [];
+		}
+
+		TreeView.prototype = {
+			__proto__: DefaultTreeView,
+
 			RowHasChild: function(row) {
 			
 				if ( row < this.view.length-1 )
@@ -188,6 +133,11 @@
 			
 				return this.RowHasChild(row);
 			},
+
+			getLevel: function(row) {
+			
+				return this.view[row].length-1;
+			},
 			
 			toggleOpenState: function(row) {
 				
@@ -210,11 +160,6 @@
 				this.treebox.rowCountChanged(row+1, count);
 			},
 		
-			getLevel: function(row) {
-			
-				return this.view[row].length-1;
-			},
-			
 			Add: function(name, val) {
 				
 				this.view.push([name]);
@@ -228,6 +173,7 @@
 				setTimeout(function() tv.invalidate(), 50);
 			}
 		}
+		
 		
 		function TextToHTMLNode(doc, text) {
 			
@@ -300,7 +246,7 @@
       
       	this.__noSuchMethod__ = function() {
 
-				netscape.security.PrivilegeManager.enablePrivilege('UniversalBrowserRead UniversalBrowserWrite'); // allow cross-domain xhr
+				netscape.security.PrivilegeManager.enablePrivilege('UniversalBrowserRead'); // allow cross-domain xhr
 				var xhr = new XMLHttpRequest();
 				try {
 
@@ -312,7 +258,7 @@
 					return new Error(ex);
 				} finally {
 				
-					netscape.security.PrivilegeManager.revertPrivilege('UniversalBrowserRead UniversalBrowserWrite');
+					netscape.security.PrivilegeManager.revertPrivilege('UniversalBrowserRead');
 				}
 			}
 		}      
@@ -323,9 +269,10 @@
 			this.Listen = function(fct) listeners.push(fct);
 			this.__defineGetter__('value', function() value);
 			this.__defineSetter__('value', function(val) {
+				var prev = value;
 				value = val;
 				for each ( lis in listeners )
-					lis(value);
+					lis(value, prev);
 			});
 		}
 		
@@ -342,21 +289,12 @@
 
 		var codeDoc, watchDoc;
 		function init() {
-			
-			codeDoc = $('code').contentDocument;
-//			watchDoc = $('watch').contentDocument;
 
-			codeDoc.getElementsByTagName('HEAD')[0].appendChild(codeDoc.importNode($('css'), true)); // add CSS ...
-//			watchDoc.getElementsByTagName('HEAD')[0].appendChild(watchDoc.importNode($('css'), true));
-			
-			codeDoc.onclick = function() { focus() }; // restore focus for key management ...
-//			watchDoc.onclick = function() { focus() };
+			QueryPrivilege();
 			
 			watchManager = new WatchManager();
 			stackManager = new StackManager();
-			codeManager = new CodeManager();
 			codeManager2 = new CodeManager2();
-			breakpointManager = new BreakpointManager();
 
 			ConnectRetry();
 		}
@@ -450,9 +388,9 @@
 			
 			var watch2 = $('watch2');
 			var treeView = new TreeView(DataProvider);
-			netscape.security.PrivilegeManager.enablePrivilege('UniversalBrowserRead UniversalBrowserWrite');
+			netscape.security.PrivilegeManager.enablePrivilege('UniversalBrowserWrite');
 			watch2.view = treeView;
-			netscape.security.PrivilegeManager.revertPrivilege('UniversalBrowserRead UniversalBrowserWrite');
+			netscape.security.PrivilegeManager.revertPrivilege('UniversalBrowserWrite');
 
 			
 			this.Update = function( stackFrameIndex ) {
@@ -471,179 +409,119 @@
 
 
 
-
-
-		function CodeManager() {
-		
-			var self = this;
-		
-			var infoElt = codeDoc.body.appendChild(TextToHTMLNode(codeDoc, '<span class="codeInfo"/>'));
-
-			var keywordInfoResetUi = [];
-			
-			codeDoc.addEventListener('mouseover', function(ev) {
-				
-				if ( ev.target.nodeName == 'A' ) {
-					
-					var info = debuggerRpc.Eval(ev.target.firstChild.data, selectedStackFrameIndex.value);
-					if ( info instanceof Error )
-						return;
-					var def = debuggerRpc.DefinitionLocation(ev.target.firstChild.data);
-					infoElt.innerHTML = info + (def ? '<br/>(<b>'+def[0]+':'+def[1]+'</b>)' : '');
-					
-					infoElt.style.display = 'block';
-					keywordInfoResetUi.push(function() infoElt.style.display = 'none');
-					
-					var kw = ev.target;
-					SetClass(true, kw, 'selectedKwyword');
-					keywordInfoResetUi.push(function() SetClass(false, kw, 'selectedKwyword'));
-
-					var [x,y] = ElementAbsolutePosition(ev.target);
-					infoElt.style.left = x+'px';
-					var top = y - infoElt.offsetHeight < codeDoc.body.scrollTop ? y + ev.target.offsetHeight + 10 : y - infoElt.offsetHeight;
-
-					infoElt.style.top = top+'px';
-				}
-			}, false);
-			
-			codeDoc.addEventListener('mouseout', function(ev) {
-
-				while (keywordInfoResetUi.length)
-					keywordInfoResetUi.shift()();
-			}, false);
-			
-
-			this.GetCodeElt = function(filename) {
-
-				var res = XPath(codeDoc, '//table[@class="codeItem"][thead/th[text()="'+filename+'"]]');
-				if ( res.length )
-					return res[0];
-				var codeText = debuggerRpc.GetSource(filename);
-				codeText = EscapeEntities(codeText);
-				codeText = codeText.replace(/(&?)(\$?[\w]+)/g, function(s, p1, p2) s[0] == '&' ? s : '<a>'+s+'</a>'); // we must avoid to convert entities
-				var codeLines = codeText.split(/\r?\n/);
-				var htmlLines = [ '<tr><td>'+(line+1)+'</td><td>'+code+'</td></tr>' for each ( [line, code] in Iterator(codeLines) ) ];
-				var codeElt = TextToHTMLNode(codeDoc, '<table class="codeItem"><colgroup><col width="0"><col width="*"></colgroup><thead><th class="filename" colspan="3">'+filename+'</th></thead><tbody>'+htmlLines.join('')+'</tbody></table>');
-				codeDoc.body.appendChild(codeElt);
-				breakpointManager.Update(filename);
-				return codeElt;
-			}
-
-
-			this.GotoFile = function(filename, lineno) {
-			
-				var codeElt = this.GetCodeElt(filename);
-				SetInView(XPath(codeElt, 'thead/th')[0]);
-			}
-			
-			var gotoResetUi = [];
-			this.Goto = function(filename, lineno, class) {
-
-				while (gotoResetUi.length)
-					gotoResetUi.shift()();
-
-				var codeElt = this.GetCodeElt(filename);
-				if ( lineno > 0 )
-					var line = XPath(codeElt, 'tbody/tr['+(lineno)+']')[0];
-				else
-					var line = XPath(codeElt, 'thead/th')[0];
-
-				SetClass(true, line, class);
-				gotoResetUi.push(function() SetClass(false, line, class));
-				SetInView(line, -20);
-			}
-			
-			this.Update = function(stackFrameIndex) {
-
-				if ( stackFrameIndex == undefined )
-					stackFrameIndex = programState.value.stackFrameIndex;
-				var isLastFrame = (stackFrameIndex == programState.value.stackFrameIndex);
-				var state, filename, lineno, hasException;
-				if (isLastFrame) {
-					
-					filename = programState.value.filename;
-					lineno = programState.value.lineno;
-					hasException = programState.value.hasException;
-				} else {
-					
-					stackFrame = debuggerRpc.GetStackFrame(stackFrameIndex);
-					filename = stackFrame.filename;
-					lineno = stackFrame.lineno;
-					hasException = undefined;
-				}
-				self.Goto(filename, lineno, isLastFrame ? (hasException ? 'currentLineError' : 'currentLine' ) : 'oldLine');
-			}
-			
-			selectedStackFrameIndex.Listen(function(newVal) self.Update(newVal));
-		}
-
-
-
-		function BreakpointManager() {
-			
-			this.Update = function(filename) {
-				
-				var codeElt = codeManager.GetCodeElt(filename);
-				for each ( var [lineno, condition] in debuggerRpc.BreakpointList(filename) ) {
-
-					var elt = XPath(codeElt, 'tbody/tr['+(lineno)+']')[0];
-					SetClass(true, elt, 'breakpoint');
-					if ( condition ) {
-					
-						SetClass(true, elt, 'condition');
-						elt.title = 'break when "'+condition+'" is true';
-					}
-				}
-			}
-			
-			codeDoc.addEventListener('mousedown', function(ev) {
-				
-				var e = ev.target;
-				if ( e.nodeName == 'TD' && e.previousSibling == null ) {
-				
-					var table = e.parentNode.parentNode.parentNode;
-					var line = e.firstChild.data;
-					var filename = XPath(table, 'thead/th[1]/text()')[0];
-					
-					var actualLineno = debuggerRpc.GetActualLineno(filename, line);
-					
-					if ( actualLineno == undefined )
-						return;
-
-					var elt = XPath(table, 'tbody/tr['+actualLineno+']')[0];
-					
-					var state = HasClass(elt, 'breakpoint');
-
-					if ( state ) {
-					
-						debuggerRpc.RemoveBreakpoint(filename, actualLineno);
-						SetClass(false, elt, 'condition');
-						SetClass(false, elt, 'breakpoint');
-					} else {
-					
-						debuggerRpc.AddBreakpoint(filename, actualLineno);
-						SetClass(true, elt, 'breakpoint');
-					}
-					
-					if ( !state && ev.shiftKey ) {
-
-						var condition = debuggerRpc.GetBreakpointCondition(filename, line);
-						condition = prompt('Breakpoint condition', condition);
-						debuggerRpc.SetBreakpointCondition(filename, line, condition);
-						elt.title = 'break when "'+condition+'" is true';
-						SetClass(true, elt, 'condition');
-					}
-				}
-			}, false);
-		}
-		
 		
 		function CodeManager2() {
 			
 			var self = this;
 			
-			this.ShowFile = function(filename) {
+			var sourceFiles = {};
+			var currentFile;
+			
+			var breakpointList = {}
+			
+			var listView = {
+				__proto__: DefaultTreeView,
+				get rowCount() {
+					if ( !currentFile )
+						return;
+					sourceFiles[currentFile].code.length;
+				},
+				getCellText: function(row, column) {
+					
+					if ( !currentFile )
+						return;
+					if ( column.id == 'line' )
+						return row+1;
+					else
+						return sourceFiles[currentFile].code[row];
+				},
+				getRowProperties: function(row, props) {
+
+					
+				},
+				getCellProperties: function(row,col,props) {
+					
+					if ( col.id == 'code' ) {
+					
+						
+						if ( programState.value.filename == currentFile && row+1 == programState.value.lineno )
+							AddProp(props, 'currentLine');
+					}
+					
+					if ( col.id == 'line' ) {
+						
+						var bp = breakpointList[row+1];
+						if (bp)
+							AddProp(props, bp == 'true' ? 'breakpoint' : 'condBreakpoint');
+					}
+				},
 			}
+			
+			var code2 = $('code2');
+			netscape.security.PrivilegeManager.enablePrivilege('UniversalBrowserWrite');
+			code2.view = listView;
+			netscape.security.PrivilegeManager.revertPrivilege('UniversalBrowserWrite');
+			
+			code2.addEventListener('mousemove', function(ev) {
+			
+				var row = {}, col = {}, childElt = {};
+				var res = code2.treeBoxObject.getCellAt(ev.clientX, ev.clientY, row, col, childElt);
+				if ( res == -1 )
+					return;
+			
+				var x={}, y={}, width={}, height={};
+				code2.treeBoxObject.getCoordsForCellItem( row, col.value, childElt, x, y, width, height );
+				
+//				Trace( x.value, y.value );
+				
+				// Trace( sourceFiles[currentFile].code[row.value] );
+				//Trace( col.value.element.boxObject )
+				
+			}, false);
+
+			
+			code2.addEventListener('click', function(ev) {
+				
+				var row = {}, col = {}, childElt = {};
+				var res = code2.treeBoxObject.getCellAt(ev.clientX, ev.clientY, row, col, childElt);
+				if ( res == -1 || col.value.id != 'line' )
+					return;
+				lineno = row.value+1; // lineno = debuggerRpc.GetActualLineno(currentFile, lineno);
+				if ( lineno in breakpointList ) {
+
+					if ( debuggerRpc.RemoveBreakpoint(currentFile, lineno) )
+						delete breakpointList[lineno];
+				} else {
+				
+					var condition = ev.shiftKey ? prompt('Breakpoint condition', breakpointList[lineno]) : 'true';
+					if ( debuggerRpc.AddBreakpoint(currentFile, lineno, condition) )
+						breakpointList[lineno] = condition;
+				}
+				code2.treeBoxObject.invalidateRow(lineno-1);
+			}, false);
+			
+			
+			this.ShowFile = function(filename) {
+				
+				if ( filename == currentFile )
+					return;
+
+				if ( currentFile )
+					listView.treebox.rowCountChanged(0, -sourceFiles[currentFile].code.length);
+
+				if ( !(filename in sourceFiles) ) {
+				
+					var codeText = debuggerRpc.GetSource(filename);
+					codeText = codeText.replace(/\t/g, '    ');
+					var codeLines = codeText.split(/\r?\n/);
+					sourceFiles[filename] = { code:codeLines };
+				}
+				currentFile = filename;
+				listView.treebox.rowCountChanged(0, sourceFiles[currentFile].code.length);
+				
+				breakpointList = debuggerRpc.BreakpointList(currentFile);
+			}
+			
 			
 			this.Update = function(stackFrameIndex) {
 			
@@ -651,17 +529,19 @@
 				var filename = stackFrame.filename;
 				var lineno = stackFrame.lineno;
 				var hasException = stackFrameIndex == programState.value.stackFrameIndex ? programState.value.hasException : undefined;
-				
+			
 				this.ShowFile(filename);
+				listView.treebox.ensureRowIsVisible(lineno-1);
+			 	listView.treebox.invalidateRow(lineno-1);
+			 	
+			 	// http://www.xulplanet.com/references/xpcomref/ifaces/nsITreeBoxObject.html#method_rowCountChanged
+			 	// https://developer.mozilla.org/en/nsITreeView#performActionOnRow.28.29
+			 	// https://developer.mozilla.org/En/XUL_Tutorial/Styling_a_Tree
 			}
 
 			selectedStackFrameIndex.Listen(function(newVal) self.Update(newVal));
 		}
-
-		
-
-		]]>
-	</script>
+	]]></script>
 
 	<vbox flex="1">
 		<commandset>
@@ -688,19 +568,14 @@
 		  <key modifiers="shift" keycode="VK_DOWN" command="cmd_framedown"/>
 		</keyset>
 		<hbox flex="1">
-			<html:iframe id="code" flex="1" frameborder="0"/>
-<!--
-			<listbox id="fileList" width="100">
-				<listitem label="123"/>
-			</listbox>
-			
-			<listbox id="code2">
-			  <listcols>
-				 <listcol flex="0" style="background-color: silver"/>
-				 <listcol flex="1"/>
-			  </listcols>
-			</listbox>
--->			
+			<tree id="code2" hidecolumnpicker="true" flags="dont-build-content" flex="1" seltype="single">
+			  <treecols>
+				 <treecol id="line" label="line" crop="none"/>
+				 <splitter class="tree-splitter"/>
+				 <treecol id="code" flex="1"/>
+			  </treecols>
+			  <treechildren/>
+			</tree>
 			
 			<splitter><grippy/></splitter>
 			<vbox>

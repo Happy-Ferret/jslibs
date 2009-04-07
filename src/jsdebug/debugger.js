@@ -138,51 +138,28 @@ var _dbg = (function() {
 			return dbg.GetActualLineno(filename, lineno);
 		},
 		
-		HasBreakpoint: function(filename, lineno) {
-		
-			var actualLineno = dbg.GetActualLineno(filename, lineno);
-			var loc = filename+':'+actualLineno;
-			return loc in breakpointList;
-		},
-		
-		AddBreakpoint: function(filename, lineno) {
-		
-			var actualLineno = dbg.ToggleBreakpoint(true, filename, lineno);
-			breakpointList[filename+':'+actualLineno] = undefined;
-			return actualLineno;
+		AddBreakpoint: function(filename, lineno, condition) {
+			
+			if ( dbg.GetActualLineno(filename, lineno) != lineno )
+				return false;
+			dbg.ToggleBreakpoint(true, filename, lineno);
+			var list = (filename in breakpointList) ? breakpointList[filename] : (breakpointList[filename] = {});
+			list[lineno] = condition;
+			return true;
 		},
 
 		RemoveBreakpoint: function(filename, lineno) {
-		
-			var actualLineno = dbg.ToggleBreakpoint(false, filename, lineno);
-			delete breakpointList[filename+':'+actualLineno];
-			return actualLineno;
-		},
 
-		SetBreakpointCondition: function(filename, lineno, condition) {
-		
-			var actualLineno = dbg.GetActualLineno(filename, lineno);
-			var loc = filename+':'+actualLineno;
-			if ( !(loc in breakpointList) )
-				throw Error('Invalid breakpoint ('+loc+')');
-			breakpointList[loc] = condition;
-		},
-		
-		GetBreakpointCondition: function(filename, lineno) {
-		
-			var actualLineno = dbg.GetActualLineno(filename, lineno);
-			var loc = filename+':'+actualLineno;
-			if ( !(loc in breakpointList) )
-				throw Error('Invalid breakpoint ('+loc+')');
-			return breakpointList[loc];
+			if ( dbg.GetActualLineno(filename, lineno) != lineno )
+				return false;
+			dbg.ToggleBreakpoint(false, filename, lineno);
+			delete breakpointList[filename][lineno];
+			return true;
 		},
 
 		BreakpointList: function(filename) {
 			
-			if ( filename == undefined )
-				return [ let (p = b.lastIndexOf(':') ) [b.substring(0, p), b.substring(p+1), c ] for each ( [b, c] in Iterator(breakpointList) ) ];
-			else
-				return [ [b.substring(filename.length+1), c] for ( [b, c] in Iterator(breakpointList) ) if (b.indexOf(filename+':') == 0) ];
+			return breakpointList[filename] || {};
 		},
 
 		GetCurrentStackFrame: function( frameIndex ) {
@@ -282,10 +259,11 @@ var _dbg = (function() {
 
 	dbg.onBreak = function( filename, lineno, scope, breakOrigin, stackFrameIndex, hasException, exception ) {
 		
-		if ( breakOrigin == Debugger.FROM_BREAKPOINT ) {
+		if ( breakOrigin == Debugger.FROM_BREAKPOINT && filename in breakpointList ) {
 
-			var condition = breakpointList[filename+':'+lineno];
-			if ( condition )  {
+			var condition = breakpointList[filename][lineno];
+			
+			if ( condition && condition != 'true' )  {
 				try {
 					var test = dbg.EvalInStackFrame(condition, stackFrameIndex);
 				} catch(ex) {}
