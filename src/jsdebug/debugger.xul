@@ -16,15 +16,18 @@
 <?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
 <?xml-stylesheet href="data:text/css,
 
-	#code2 treechildren::-moz-tree-row(selected) { background-color: transparent }
-	#code2 treechildren::-moz-tree-cell-text(selected) { color: inherit }
-	#code2 treechildren::-moz-tree-cell-text(line) { color: white; }
-	#code2 treechildren::-moz-tree-cell-text(code) { font-family: monospace; }
+	#code2 :-moz-tree-row(selected) { background-color: transparent }
+	#code2 :-moz-tree-cell-text(selected) { color: inherit }
+	#code2 :-moz-tree-cell-text(line) { color: white; }
+	#code2 :-moz-tree-cell-text(code) { font-family: monospace }
 
-	#code2 treechildren::-moz-tree-column(line) { background-color: silver }
-	#code2 treechildren::-moz-tree-cell(currentLine) { background-color: #EEA }
-	#code2 treechildren::-moz-tree-cell(breakpoint) { background-color: red }
-	#code2 treechildren::-moz-tree-cell(condBreakpoint) { background-color: orange }
+	#code2 :-moz-tree-column(line) { background-color: silver }
+	#code2 :-moz-tree-column(bp) { background-color: silver }
+	#code2 :-moz-tree-cell(currentLine) { background-color: #FFA }
+	#code2 :-moz-tree-cell(prevLine) { background-color: #AFA }
+	#code2 :-moz-tree-cell(exception) { background-color: #FAA }
+	#code2 :-moz-tree-cell(breakpoint) { background-color: red }
+	#code2 :-moz-tree-cell(condBreakpoint) { background-color: orange }
 
 " type="text/css"?>
 
@@ -45,6 +48,14 @@
 
 			netscape.security.PrivilegeManager.enablePrivilege('UniversalXPConnect UniversalBrowserRead UniversalBrowserWrite');
 			netscape.security.PrivilegeManager.revertPrivilege('UniversalXPConnect UniversalBrowserRead UniversalBrowserWrite');
+		}
+		
+		function CallWithPrivilege( privilege, fct ) {
+			
+			netscape.security.PrivilegeManager.enablePrivilege(privilege);
+			var ret = fct();
+			netscape.security.PrivilegeManager.revertPrivilege(privilege);
+			return ret;
 		}
 		
 		function AddProp(props, prop) {
@@ -277,17 +288,15 @@
 		}
 		
       
-		////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		
 		var watchManager, stackManager, codeManager, breakpointManager;
 
 		var programState = new Variable();
-		var selectedStackFrameIndex = new Variable();
+		var selectedStackFrame = new Variable();
 				
-
 		var debuggerRpc = new SimpleRpc('127.0.0.1', 8009);
 
-		var codeDoc, watchDoc;
 		function init() {
 
 			QueryPrivilege();
@@ -323,12 +332,10 @@
 
 				$('statusInfo').label = 'break: '+s.breakOrigin + ( s.hasException ? ' ('+s.exception+')' : '' );
 				programState.value = s;
-				selectedStackFrameIndex.value = s.stackFrameIndex;
+				selectedStackFrame.value = debuggerRpc.GetStackFrame(s.stackFrameIndex);
 			} else {
 
 				$('statusInfo').label = 'disconnected';
-				codeDoc.body.innerHTML = '';
-				watchDoc.body.innerHTML = '';
 				ConnectRetry();
 			}
 		}
@@ -337,18 +344,17 @@
 		function StackManager() {
 			
 			var self = this;
+			var stack2 = $('stack2');
 			
-			this.UpdateSelection = function(stackFrameIndex) {
+			this.UpdateSelection = function(stackFrame) {
 				
-				var stack2 = $('stack2');
 				stack2.setAttribute('suppressonselect', true);
-				stack2.selectedIndex = stack2.itemCount - 1 - stackFrameIndex;
+				stack2.selectedIndex = stack2.itemCount - 1 - stackFrame.index;
 				stack2.removeAttribute('suppressonselect');
 			}
 						
 			this.UpdateContent = function() {
 
-				var stack2 = $('stack2');
 				stack2.selectedIndex = -1;
 				while ( stack2.removeItemAt(0) );
 				var programStack = debuggerRpc.GetStack();
@@ -356,7 +362,12 @@
 					var e = stack2.appendItem(l.filename+':'+l.lineno+' - '+l.contextName, programStack.length - 1 - i);
 			}
 			
-			selectedStackFrameIndex.Listen(function(newVal) self.UpdateSelection(newVal));
+			this.Select = function( index ) {
+				
+				selectedStackFrame.value = debuggerRpc.GetStackFrame(index);
+			}
+			
+			selectedStackFrame.Listen(function(newVal) self.UpdateSelection(newVal));
 			programState.Listen(function(newVal) self.UpdateContent(newVal));
 		}
 
@@ -364,13 +375,14 @@
 		function WatchManager() {
 			
 			var self = this;
+			var watch2 = $('watch2');
 	
 			var cache = {};
 
 			function DataProvider(path, type) {
 				
 				id = path.join('.');
-				var expInfo = id in cache ? cache[id] : (cache[id] = debuggerRpc.ExpressionInfo(path, selectedStackFrameIndex.value));
+				var expInfo = id in cache ? cache[id] : (cache[id] = debuggerRpc.ExpressionInfo(path, selectedStackFrame.value.index));
 
 				switch (type) {
 					case 'hasChild':
@@ -386,12 +398,8 @@
 				}
 			}
 			
-			var watch2 = $('watch2');
 			var treeView = new TreeView(DataProvider);
-			netscape.security.PrivilegeManager.enablePrivilege('UniversalBrowserWrite');
-			watch2.view = treeView;
-			netscape.security.PrivilegeManager.revertPrivilege('UniversalBrowserWrite');
-
+			CallWithPrivilege('UniversalBrowserWrite', function() { watch2.view = treeView });
 			
 			this.Update = function( stackFrameIndex ) {
 				
@@ -404,98 +412,108 @@
 				treeView.Add(expression);
 			}
 			
-			selectedStackFrameIndex.Listen(function(newVal) self.Update(newVal));
+			selectedStackFrame.Listen(function(newVal) self.Update(newVal));
 		}
-
 
 
 		
 		function CodeManager2() {
 			
 			var self = this;
+			var code2 = $('code2');
+
+			var reset = [];
 			
-			var sourceFiles = {};
 			var currentFile;
-			
-			var breakpointList = {}
+			var sourceFiles = {};
+			var breakpointList = {};
 			
 			var listView = {
 				__proto__: DefaultTreeView,
-				get rowCount() {
-					if ( !currentFile )
-						return;
-					sourceFiles[currentFile].code.length;
-				},
-				getCellText: function(row, column) {
+				getCellText: function(row, col) {
 					
 					if ( !currentFile )
 						return;
-					if ( column.id == 'line' )
-						return row+1;
-					else
-						return sourceFiles[currentFile].code[row];
+					switch ( col.id ) {
+						case 'line':
+							return row+1;
+						case 'bp':
+							return breakpointList[row+1];
+						case 'code':
+							return sourceFiles[currentFile].code[row];
+					}
 				},
-				getRowProperties: function(row, props) {
+				getCellProperties: function(row, col, props) {
+					
+					if ( !currentFile )
+						return;
+					var lineno = row+1;
+					switch ( col.id ) {
+						case 'line':
+						case 'bp':
+							if ( lineno in breakpointList )
+								AddProp(props, breakpointList[lineno] == 'true' ? 'breakpoint' : 'condBreakpoint');
+							break;
+						case 'code':
+						
+							if ( lineno == programState.value.lineno && selectedStackFrame.value.index == programState.value.stackFrameIndex ) {
+								
+								AddProp(props, 'currentLine');
+								if ( programState.value.hasException )
+									AddProp(props, 'exception');
+								break;
+							}
 
-					
-				},
-				getCellProperties: function(row,col,props) {
-					
-					if ( col.id == 'code' ) {
-					
-						
-						if ( programState.value.filename == currentFile && row+1 == programState.value.lineno )
-							AddProp(props, 'currentLine');
+							if ( lineno == selectedStackFrame.value.lineno && programState.value.stackFrameIndex > selectedStackFrame.value.index )
+								AddProp(props, 'prevLine');
+							break;
 					}
-					
-					if ( col.id == 'line' ) {
-						
-						var bp = breakpointList[row+1];
-						if (bp)
-							AddProp(props, bp == 'true' ? 'breakpoint' : 'condBreakpoint');
-					}
-				},
+				}
 			}
 			
-			var code2 = $('code2');
-			netscape.security.PrivilegeManager.enablePrivilege('UniversalBrowserWrite');
-			code2.view = listView;
-			netscape.security.PrivilegeManager.revertPrivilege('UniversalBrowserWrite');
+			reset.push(function() {
+				CallWithPrivilege('UniversalBrowserWrite', function() { code2.view = listView });
+			});
 			
-			code2.addEventListener('mousemove', function(ev) {
-			
-				var row = {}, col = {}, childElt = {};
-				var res = code2.treeBoxObject.getCellAt(ev.clientX, ev.clientY, row, col, childElt);
-				if ( res == -1 )
-					return;
-			
-				var x={}, y={}, width={}, height={};
-				code2.treeBoxObject.getCoordsForCellItem( row, col.value, childElt, x, y, width, height );
-				
-//				Trace( x.value, y.value );
-				
-				// Trace( sourceFiles[currentFile].code[row.value] );
-				//Trace( col.value.element.boxObject )
-				
-			}, false);
+			var row={}, col={}, childElt={};
+			var x={}, y={}, width={}, height={};
 
+/*
+			code2.addEventListener('mousemove', function(ev) {
+				
+				code2.treeBoxObject.getCellAt(ev.clientX, ev.clientY, row, col, childElt);
+				if ( row.value == -1 || col.value == null || col.value.id != 'code' || childElt.value != 'text' )
+					return;
+				var text = sourceFiles[currentFile].code[row.value];
+				code2.treeBoxObject.getCoordsForCellItem( row, col.value, 'text', x, y, width, height );
+				var pos = ev.clientX - code2.boxObject.x - x.value;
+				Trace( text[Math.floor(pos/7)], width.value )
+			}, false);
+*/
 			
 			code2.addEventListener('click', function(ev) {
 				
-				var row = {}, col = {}, childElt = {};
 				var res = code2.treeBoxObject.getCellAt(ev.clientX, ev.clientY, row, col, childElt);
-				if ( res == -1 || col.value.id != 'line' )
+				if ( res == -1 || col.value == null || col.value.id != 'line' && col.value.id != 'bp' )
 					return;
 				lineno = row.value+1; // lineno = debuggerRpc.GetActualLineno(currentFile, lineno);
-				if ( lineno in breakpointList ) {
 
-					if ( debuggerRpc.RemoveBreakpoint(currentFile, lineno) )
-						delete breakpointList[lineno];
-				} else {
-				
-					var condition = ev.shiftKey ? prompt('Breakpoint condition', breakpointList[lineno]) : 'true';
-					if ( debuggerRpc.AddBreakpoint(currentFile, lineno, condition) )
+				if ( ev.shiftKey ) {
+					
+					var condition = prompt('Breakpoint condition', breakpointList[lineno]);
+					if ( condition != null && debuggerRpc.AddBreakpoint(currentFile, lineno, condition) )
 						breakpointList[lineno] = condition;
+				} else {
+
+					if ( lineno in breakpointList ) {
+
+						if ( debuggerRpc.RemoveBreakpoint(currentFile, lineno) )
+							delete breakpointList[lineno];
+					} else {
+
+						if ( debuggerRpc.AddBreakpoint(currentFile, lineno, 'true') )
+							breakpointList[lineno] = 'true';
+					}
 				}
 				code2.treeBoxObject.invalidateRow(lineno-1);
 			}, false);
@@ -507,7 +525,7 @@
 					return;
 
 				if ( currentFile )
-					listView.treebox.rowCountChanged(0, -sourceFiles[currentFile].code.length);
+					code2.treeBoxObject.rowCountChanged(0, -sourceFiles[currentFile].code.length);
 
 				if ( !(filename in sourceFiles) ) {
 				
@@ -517,21 +535,23 @@
 					sourceFiles[filename] = { code:codeLines };
 				}
 				currentFile = filename;
-				listView.treebox.rowCountChanged(0, sourceFiles[currentFile].code.length);
+				code2.treeBoxObject.rowCountChanged(0, sourceFiles[currentFile].code.length);
 				
 				breakpointList = debuggerRpc.BreakpointList(currentFile);
 			}
 			
+			this.Update = function(stackFrame) {
 			
-			this.Update = function(stackFrameIndex) {
+				while (reset.length) reset.shift()();
 			
-				var stackFrame = debuggerRpc.GetStackFrame(stackFrameIndex);
 				var filename = stackFrame.filename;
 				var lineno = stackFrame.lineno;
-				var hasException = stackFrameIndex == programState.value.stackFrameIndex ? programState.value.hasException : undefined;
+				var hasException = stackFrame.index == programState.value.stackFrameIndex ? programState.value.hasException : undefined;
 			
 				this.ShowFile(filename);
-				listView.treebox.ensureRowIsVisible(lineno-1);
+				code2.treeBoxObject.ensureRowIsVisible(lineno-1);
+
+				reset.push( function() listView.treebox.invalidateRow(lineno-1) );
 			 	listView.treebox.invalidateRow(lineno-1);
 			 	
 			 	// http://www.xulplanet.com/references/xpcomref/ifaces/nsITreeBoxObject.html#method_rowCountChanged
@@ -539,7 +559,7 @@
 			 	// https://developer.mozilla.org/En/XUL_Tutorial/Styling_a_Tree
 			}
 
-			selectedStackFrameIndex.Listen(function(newVal) self.Update(newVal));
+			selectedStackFrame.Listen(function(newVal) self.Update(newVal));
 		}
 	]]></script>
 
@@ -550,8 +570,8 @@
 			<command id="cmd_stepthrough" oncommand="debuggerRpc.Action('stepthrough'); UpdateState()"/>
 			<command id="cmd_stepout" oncommand="debuggerRpc.Action('stepout'); UpdateState()"/>
 			<command id="cmd_continue" oncommand="debuggerRpc.Action('continue'); UpdateState()"/>
-			<command id="cmd_frameup" oncommand="if (selectedStackFrameIndex.value > 0) selectedStackFrameIndex.value--"/>
-			<command id="cmd_framedown" oncommand="if (programState.value.stackFrameIndex > selectedStackFrameIndex.value) selectedStackFrameIndex.value++"/>
+			<command id="cmd_frameup" oncommand="if (selectedStackFrame.value.index > 0) stackManager.Select( selectedStackFrame.value.index - 1 )"/>
+			<command id="cmd_framedown" oncommand="if (programState.value.stackFrameIndex > selectedStackFrame.value.index) stackManager.Select( selectedStackFrame.value.index + 1 )"/>
 		</commandset>
 		<keyset>
 		  <key keycode="VK_F8" command="cmd_continue"/>
@@ -568,18 +588,19 @@
 		  <key modifiers="shift" keycode="VK_DOWN" command="cmd_framedown"/>
 		</keyset>
 		<hbox flex="1">
-			<tree id="code2" hidecolumnpicker="true" flags="dont-build-content" flex="1" seltype="single">
+			<tree id="code2" hidecolumnpicker="false" flags="dont-build-content" flex="1" seltype="single">
 			  <treecols>
-				 <treecol id="line" label="line" crop="none"/>
+				 <treecol id="line" label="line"/>
 				 <splitter class="tree-splitter"/>
-				 <treecol id="code" flex="1"/>
+				 <treecol id="bp" label="breakpoint" hidden="true"/>
+				 <splitter class="tree-splitter"/>
+				 <treecol id="code" label="code" flex="1"/>
 			  </treecols>
 			  <treechildren/>
 			</tree>
-			
 			<splitter><grippy/></splitter>
 			<vbox>
-				<listbox id="stack2" flex="1" onselect="if ( event.target.selectedItem ) selectedStackFrameIndex.value = Number(event.target.selectedItem.value)"/>
+				<listbox id="stack2" flex="1" onselect="if ( event.target.selectedItem ) stackManager.Select(Number(event.target.selectedItem.value))"/>
 				<splitter><grippy/></splitter>
 				<tree id="watch2" hidecolumnpicker="true" flags="dont-build-content" flex="1">
 				  <treecols>
@@ -603,7 +624,7 @@
 				<toolbarbutton label="through" tooltiptext="Shift-F11" command="cmd_stepthrough"/>
 				<toolbarbutton label="Continue" tooltiptext="F8" command="cmd_continue"/>
 				<toolbarseparator/>
-				<menu label="scripts" onpopupshowing="for each ( var item in debuggerRpc.GetScriptList() ) this.appendItem(item)" onpopuphidden="while(this.removeItemAt(0));" oncommand="codeManager.GotoFile(event.target.label)">
+				<menu label="scripts" onpopupshowing="for each ( var item in debuggerRpc.GetScriptList() ) this.appendItem(item)" onpopuphidden="while(this.removeItemAt(0));" oncommand="codeManager2.ShowFile(event.target.label)">
 					<menupopup/>
 				</menu>
 			</toolbar>

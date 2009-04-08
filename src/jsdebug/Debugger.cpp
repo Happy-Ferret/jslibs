@@ -440,7 +440,7 @@ DEFINE_FUNCTION_FAST( GetActualLineno ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $INT | $BOOL $INAME( polarity, filename, lineno );
+ $INT $INAME( polarity, filename, lineno );
 **/
 DEFINE_FUNCTION_FAST( ToggleBreakpoint ) {
 

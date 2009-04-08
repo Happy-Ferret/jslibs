@@ -64,7 +64,7 @@ function Debug1() {
 	for ( var i=0; i < 100; i++ )
 		loop();
 
-//	xxx();
+	xxx();
 
 }
 

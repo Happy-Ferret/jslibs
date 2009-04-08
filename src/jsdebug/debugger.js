@@ -177,9 +177,8 @@ var _dbg = (function() {
 				contextName = frameInfo.callee.name + '()';
 			else
 				contextName = '';
-
 			 with (frameInfo)
-				return { filename:filename, lineno:lineno, isNative:isNative, contextName:contextName };
+				return { index:frameIndex, filename:filename, lineno:lineno, isNative:isNative, contextName:contextName };
 		},
 		
 				
@@ -198,7 +197,7 @@ var _dbg = (function() {
 					contextName = '';
 
 				with (frameInfo)
-					stack.unshift({ filename:filename, lineno:lineno, isNative:isNative, contextName:contextName });
+					stack.unshift({ index:i, filename:filename, lineno:lineno, isNative:isNative, contextName:contextName });
 			}
 			return stack;
 		},
