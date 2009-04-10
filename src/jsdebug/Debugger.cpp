@@ -540,8 +540,12 @@ DEFINE_FUNCTION_FAST( StackFrame ) {
 	J_CHK( JS_DefineProperty(cx, stackItem, "var", frame->varobj ? OBJECT_TO_JSVAL(frame->varobj) : JSVAL_VOID, NULL, NULL, OBJ_PROP_FLAGS) );
 
 	J_CHK( JS_DefineProperty(cx, stackItem, "this", OBJECT_TO_JSVAL(JS_GetFrameThis(cx, frame)), NULL, NULL, OBJ_PROP_FLAGS) );
-	J_CHK( JS_DefineProperty(cx, stackItem, "argc", INT_TO_JSVAL(frame->argc), NULL, NULL, OBJ_PROP_FLAGS) );
-	J_CHK( JS_DefineProperty(cx, stackItem, "argv", frame->argv ? *frame->argv : JSVAL_VOID, NULL, NULL, OBJ_PROP_FLAGS) );
+
+	if ( frame->argv ) {
+
+		JSObject *arguments = JS_NewArrayObject(cx, frame->argc, frame->argv);
+		J_CHK( JS_DefineProperty(cx, stackItem, "argv", OBJECT_TO_JSVAL(arguments), NULL, NULL, OBJ_PROP_FLAGS) );
+	}
 	J_CHK( JS_DefineProperty(cx, stackItem, "rval", JS_GetFrameReturnValue(cx, frame), NULL, NULL, OBJ_PROP_FLAGS) );
 
 	J_CHK( JS_DefineProperty(cx, stackItem, "isNative", BOOLEAN_TO_JSVAL(JS_IsNativeFrame(cx, frame)), NULL, NULL, OBJ_PROP_FLAGS) );

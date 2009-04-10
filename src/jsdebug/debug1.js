@@ -27,12 +27,25 @@ function loop() {
 	
 }
 
+function test() {
+	
+	return 12345;
+}
+
 function Debug1() {
 
 	debugger;
 	
 	var data = { d1:#1={ a:[4,5,6], b:null, b1:undefined, c:'test', d:{x:1, y:0, z:1}, e:123, e1:new Number(123), f:#1# } };
 
+	test(123, 'abc', [4,5,6], new Date(), {}, {__proto__:null}, null, undefined );
+
+
+	!function(v) {
+		
+		if ( v > 0 )
+			arguments.callee(v-1)
+	}(100);
 	
 	
 	for ( k = 0; k < 100; k++ ) {

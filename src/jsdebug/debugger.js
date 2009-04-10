@@ -18,6 +18,29 @@ var _dbg = (function() {
 
 	function Match(v) Array.indexOf(arguments,v,1)-1;
 	function Switch(i) arguments[++i];
+	
+	function ValToString(val) {
+		
+		function Crop(str, len) str.length > len ? str.substr(0, len)+'...' : str;
+		
+		try {
+			switch ( typeof(val) ) {
+				
+				case 'string':
+					return '"'+Crop(val,16)+'"';
+				case 'number':
+					return val;
+				case 'object':
+					if ( val === null )
+						return 'null';
+					if ( val instanceof Array )
+						return '['+Crop(val.join(','),16)+']';
+					return val.constructor.name+'{'+Crop(val.toString(),16)+'}';
+			}
+			return String(val);
+		} catch (ex){}
+		return '???';
+	}
 
 	function OriginToString( breakOrigin ) {
 
@@ -162,42 +185,22 @@ var _dbg = (function() {
 			return breakpointList[filename] || {};
 		},
 
-		GetCurrentStackFrame: function( frameIndex ) {
-			
-			return this.stackFrameIndex;
-		},
-		
-		GetStackFrame: function( frameIndex ) {
-
-			var frameInfo = dbg.StackFrame(frameIndex);
-			var contextName;
-			if ( frameInfo.isEval )
-				contextName = '(eval)';
-			else if ( frameInfo.callee && frameInfo.callee.constructor == Function )
-				contextName = frameInfo.callee.name + '()';
-			else
-				contextName = '';
-			 with (frameInfo)
-				return { index:frameIndex, filename:filename, lineno:lineno, isNative:isNative, contextName:contextName };
-		},
-		
-				
 		GetStack: function() {
 			
 			var stack = [];
 			for ( var i = 0; i <= this.stackFrameIndex; i++ ) {
 			
 				var frameInfo = dbg.StackFrame(i);
-				var contextName;
+				var contextInfo;
 				if ( frameInfo.isEval )
-					contextName = '(eval)';
+					contextInfo = '(eval)';
 				else if ( frameInfo.callee && frameInfo.callee.constructor == Function )
-					contextName = frameInfo.callee.name + '()';
+					contextInfo = (frameInfo.callee.name || '?') + '('+[ ValToString(arg) for each ( arg in frameInfo.argv ) ].join(',')+')';
 				else
-					contextName = '';
+					contextInfo = '';
 
 				with (frameInfo)
-					stack.unshift({ index:i, filename:filename, lineno:lineno, isNative:isNative, contextName:contextName });
+					stack.push({ index:i, filename:filename, lineno:lineno, isNative:isNative, contextInfo:contextInfo });
 			}
 			return stack;
 		},
@@ -217,14 +220,12 @@ var _dbg = (function() {
 
 			try {
 			
-				var val = dbg.EvalInStackFrame(path.shift(), stackFrameIndex == undefined ? this.stackFrameIndex : stackFrameIndex );
+				var val = dbg.EvalInStackFrame('('+path.shift()+')', stackFrameIndex == undefined ? this.stackFrameIndex : stackFrameIndex );
 				val = path.reduce(function(prev, cur) prev[cur], val);
-				var isObject = val instanceof Object;
-				var childList = isObject ? [ name for ( name in val) ] : [];
-				return { isObject:isObject, childList:childList, string:String(val), source:uneval(val) };
+				return { childList:val instanceof Object ? [ name for ( name in val) ] : [], string:String(val), source:uneval(val) };
 			} catch (ex) {
 			
-				return { isObject:false, childList:[], string:String(ex), source:'' };
+				return { childList:[], string:String(ex), source:'' };
 			}
 		},
 		
