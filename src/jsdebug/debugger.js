@@ -45,8 +45,8 @@ var _dbg = (function() {
 	function OriginToString( breakOrigin ) {
 
 		with (Debugger) {
-			var pos = Match(breakOrigin, FROM_BREAKPOINT, FROM_STEP, FROM_THROW, FROM_ERROR, FROM_DEBUGGER, FROM_EXECUTE, FROM_CALL);
-			return Switch(pos, 'breakpoint', 'step', 'throw', 'error', 'debugger', 'execute', 'call');
+			var pos = Match(breakOrigin, FROM_BREAKPOINT, FROM_STEP, FROM_STEP_OVER, FROM_STEP_THROUGH, FROM_STEP_OUT, FROM_THROW, FROM_ERROR, FROM_DEBUGGER, FROM_EXECUTE, FROM_CALL);
+			return Switch(pos, 'breakpoint', 'step', 'stepover', 'stepthrough', 'stepout', 'throw', 'error', 'debugger', 'execute', 'call');
 		}
 	}
 
@@ -133,7 +133,7 @@ var _dbg = (function() {
 		State: function() {
 		
 			with (this)
-				return { filename:filename, lineno:lineno, breakOrigin:OriginToString(breakOrigin), stackFrameIndex:stackFrameIndex, hasException:hasException, exception:exception };
+				return { filename:filename, lineno:lineno, breakOrigin:OriginToString(breakOrigin), stackFrameIndex:stackFrameIndex, hasException:hasException, exception:exception, rval:ValToString(rval) };
 		},
 
 		SetCookie: function(name, data) {
@@ -257,7 +257,7 @@ var _dbg = (function() {
 		}
 	}
 
-	dbg.onBreak = function( filename, lineno, scope, breakOrigin, stackFrameIndex, hasException, exception ) {
+	dbg.onBreak = function( filename, lineno, scope, breakOrigin, stackFrameIndex, hasException, exception, rval ) {
 		
 		if ( breakOrigin == Debugger.FROM_BREAKPOINT && filename in breakpointList ) {
 
@@ -272,7 +272,7 @@ var _dbg = (function() {
 			}
 		}
 		
-		var breakContext = { filename:filename, lineno:lineno, scope:scope, breakOrigin:breakOrigin, stackFrameIndex:stackFrameIndex, hasException:hasException, exception:exception };
+		var breakContext = { filename:filename, lineno:lineno, scope:scope, breakOrigin:breakOrigin, stackFrameIndex:stackFrameIndex, hasException:hasException, exception:exception, rval:rval };
 		for(;;) {
 
 			var res, [req, responseFunction] = server.GetNextRequest();

@@ -35,21 +35,28 @@ $SVN_REVISION $Revision: 2290 $
 BEGIN_CLASS( Debugger )
 
 // Action
-#define DO_CONTINUE 1
-#define DO_STEP 2
-#define DO_STEP_OVER 3
-#define DO_STEP_THROUGH 4
-#define DO_STEP_OUT 5
+enum {
+	DO_CONTINUE,
+	DO_STEP,
+	DO_STEP_OVER,
+	DO_STEP_THROUGH,
+	DO_STEP_OUT,
+};
 
 // Reason
-#define FROM_BREAKPOINT 1
-#define FROM_STEP 2
-#define FROM_THROW 3
-#define FROM_ERROR 4
-#define FROM_DEBUGGER 5
-#define FROM_EXECUTE 6
-#define FROM_CALL 7
 
+enum {
+	FROM_BREAKPOINT,
+	FROM_STEP,
+	FROM_STEP_OVER,
+	FROM_STEP_THROUGH,
+	FROM_STEP_OUT,
+	FROM_THROW,
+	FROM_ERROR,
+	FROM_DEBUGGER,
+	FROM_EXECUTE,
+	FROM_CALL,
+};
 
 
 struct Private {
@@ -127,8 +134,6 @@ JSScript *ScriptByLocation(JSContext *cx, jl::Queue *scriptFileList, const char 
 	return script;
 }
 
-
-
 static JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSScript *script, jsbytecode *pc, int breakOrigin);
 
 
@@ -149,6 +154,7 @@ static JSTrapStatus DebuggerKeyword(JSContext *cx, JSScript *script, jsbytecode 
 	return BreakHandler(cx, (JSObject*)closure, script, pc, FROM_DEBUGGER);
 }
 
+/*
 static void *CallHook(JSContext *cx, JSStackFrame *fp, JSBool before, JSBool *ok, void *closure) {
 
 	if ( JS_IsNativeFrame(cx, fp) )
@@ -161,7 +167,7 @@ static void *CallHook(JSContext *cx, JSStackFrame *fp, JSBool before, JSBool *ok
 	JSBool status = BreakHandler(cx, (JSObject*)closure, script, pc, FROM_CALL);
 	return NULL; // hookData for the "after" stage.
 }
-
+*/
 
 static JSTrapStatus Step(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval, void *closure) {
 
@@ -173,6 +179,7 @@ static JSTrapStatus Step(JSContext *cx, JSScript *script, jsbytecode *pc, jsval 
 	if ( *pc == JSOP_DEFLOCALFUN )
 		return JSTRAP_CONTINUE;
 
+	JS_SetInterrupt(JS_GetRuntime(cx), NULL, NULL);
 	return BreakHandler(cx, (JSObject*)closure, script, pc, FROM_STEP);
 }
 
@@ -194,9 +201,9 @@ static JSTrapStatus StepOver(JSContext *cx, JSScript *script, jsbytecode *pc, js
 	if ( *pc == JSOP_DEFLOCALFUN ) // or JOF_DECLARING //	type = JOF_TYPE(cs->format);
 		return JSTRAP_CONTINUE;
 
-	return BreakHandler(cx, (JSObject*)closure, script, pc, FROM_STEP);
+	JS_SetInterrupt(JS_GetRuntime(cx), NULL, NULL);
+	return BreakHandler(cx, (JSObject*)closure, script, pc, FROM_STEP_OVER);
 }
-
 
 static JSTrapStatus StepOut(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval, void *closure) {
 
@@ -215,8 +222,33 @@ static JSTrapStatus StepOut(JSContext *cx, JSScript *script, jsbytecode *pc, jsv
 	if ( *pc == JSOP_DEFLOCALFUN ) // or JOF_DECLARING //	type = JOF_TYPE(cs->format);
 		return JSTRAP_CONTINUE;
 
-	return BreakHandler(cx, (JSObject*)closure, script, pc, FROM_STEP);
+	JS_SetInterrupt(JS_GetRuntime(cx), NULL, NULL);
+	return BreakHandler(cx, (JSObject*)closure, script, pc, FROM_STEP_OUT);
 }
+
+/*
+JSBool StepOut(JSContext *cx, JSStackFrame *fp, void *closure) {
+
+	Private *pv = (Private*)JS_GetPrivate(cx, (JSObject*)closure);
+
+	if ( fp != pv->pframe )
+		return JS_TRUE;
+
+//	JS_FrameIterator(cx, &fp);
+
+//	if ( fp != pv->pframe )
+//		return NULL;
+
+	jsbytecode *pc = JS_GetFramePC(cx, fp);
+	if ( !pc || *pc == JSOP_DEFLOCALFUN ) // or JOF_DECLARING //	type = JOF_TYPE(cs->format);
+		return NULL;
+
+//	JS_SetCallHook(JS_GetRuntime(cx), NULL, NULL);
+	afterCallHook = NULL;
+	BreakHandler(cx, (JSObject*)closure, JS_GetFrameScript(cx, fp), pc, FROM_STEP_OUT);
+	return JS_TRUE;
+}
+*/
 
 static JSTrapStatus StepThrough(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval, void *closure) {
 
@@ -235,7 +267,8 @@ static JSTrapStatus StepThrough(JSContext *cx, JSScript *script, jsbytecode *pc,
 	if ( *pc == JSOP_DEFLOCALFUN ) // or JOF_DECLARING //	type = JOF_TYPE(cs->format);
 		return JSTRAP_CONTINUE;
 
-	return BreakHandler(cx, (JSObject*)closure, script, pc, FROM_STEP);
+	JS_SetInterrupt(JS_GetRuntime(cx), NULL, NULL);
+	return BreakHandler(cx, (JSObject*)closure, script, pc, FROM_STEP_THROUGH);
 }
 
 static JSTrapStatus TrapHandler(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval, void *closure) {
@@ -245,14 +278,12 @@ static JSTrapStatus TrapHandler(JSContext *cx, JSScript *script, jsbytecode *pc,
 
 JSBool DebugErrorHookHandler(JSContext *cx, const char *message, JSErrorReport *report, void *closure) {
 
-//	JSStackFrame *frame = JS_GetScriptedCaller(cx, NULL);
 	JSStackFrame *frame = NULL;
 	JS_FrameIterator(cx, &frame);
 	if ( frame )
 		BreakHandler(cx, (JSObject*)closure, JS_GetFrameScript(cx, frame), JS_GetFramePC(cx, frame), FROM_ERROR);
 	return JS_TRUE;
 }
-
 
 static JSTrapStatus ThrowHookHandler(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval, void *closure) {
 
@@ -269,7 +300,7 @@ static JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSScript *script,
 	if ( !JsvalIsFunction(cx, fval) ) // nothing to do
 		return JSTRAP_CONTINUE;
 
-	jsval argv[8] = { JSVAL_NULL };
+	jsval argv[9] = { JSVAL_NULL };
 	JSTempValueRooter tvr;
 	JS_PUSH_TEMP_ROOT(cx, COUNTOF(argv), argv, &tvr);
 
@@ -278,8 +309,6 @@ static JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSScript *script,
 	JSRuntime *rt;
 	rt = JS_GetRuntime(cx);
 
-//	JSStackFrame *frame;
-//	frame = JS_GetScriptedCaller(cx, NULL);
 	JSStackFrame *frame = NULL;
 	JS_FrameIterator(cx, &frame);
 
@@ -307,11 +336,15 @@ static JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSScript *script,
 		argv[7] = JSVAL_VOID;
 	}
 
+	if ( breakOrigin == FROM_STEP_OUT )
+		argv[8] = frame->regs->sp[-1];
+	else
+		argv[8] = JSVAL_VOID;
+
 	JSDebugHooks prevHooks;
 	prevHooks = *JS_GetGlobalDebugHooks(rt);
 	JS_SetDebuggerHandler(rt, NULL, NULL);
 	JS_SetDebugErrorHook(rt, NULL, NULL);
-	JS_SetInterrupt(rt, NULL, NULL);
 	JS_SetExecuteHook(rt, NULL, NULL);
 	
 	JS_SetNewScriptHookProc(rt, NULL, NULL); // never remove JS_SetDestroyScriptHookProc hook !!!
@@ -342,7 +375,6 @@ static JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSScript *script,
 	switch (action) {
 
 		case DO_CONTINUE:
-			JS_ClearInterrupt(rt, NULL, NULL);
 			break;
 		case DO_STEP:
 			JS_SetInterrupt(rt, Step, obj);
@@ -366,7 +398,6 @@ bad:
 }
 
 
-
 DEFINE_FINALIZE() {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
@@ -376,9 +407,9 @@ DEFINE_FINALIZE() {
 	JSRuntime *rt = JS_GetRuntime(cx);
 	JS_SetDebuggerHandler(rt, NULL, NULL);
 	JS_SetDebugErrorHook(rt, NULL, NULL);
-	JS_SetInterrupt(rt, NULL, NULL);
-	JS_SetExecuteHook(rt, NULL, NULL);
-	JS_SetCallHook(rt, NULL, NULL);
+//	JS_SetInterrupt(rt, NULL, NULL);
+//	JS_SetExecuteHook(rt, NULL, NULL);
+//	JS_SetCallHook(rt, NULL, NULL);
 	free(pv);
 }
 
@@ -402,7 +433,7 @@ DEFINE_CONSTRUCTOR() {
 	JS_SetDebugErrorHook(rt, DebugErrorHookHandler, obj);
 //	JS_SetExecuteHook(rt, ExecuteHookHandler, obj);
 //	JS_SetThrowHook(rt, ThrowHookHandler, obj);
-//	JS_SetCallHook(rt, CallHook, obj);
+//	JS_SetCallHook(rt, DispatchCallHook, obj);
 
 	return JS_TRUE;
 	JL_BAD;
@@ -551,6 +582,9 @@ DEFINE_FUNCTION_FAST( StackFrame ) {
 	J_CHK( JS_DefineProperty(cx, stackItem, "isNative", BOOLEAN_TO_JSVAL(JS_IsNativeFrame(cx, frame)), NULL, NULL, OBJ_PROP_FLAGS) );
 	J_CHK( JS_DefineProperty(cx, stackItem, "isEval", frame->flags & JSFRAME_EVAL ? JSVAL_TRUE : JSVAL_FALSE, NULL, NULL, OBJ_PROP_FLAGS) );
 	J_CHK( JS_DefineProperty(cx, stackItem, "isConstructing", frame->flags & JSFRAME_CONSTRUCTING ? JSVAL_TRUE : JSVAL_FALSE, NULL, NULL, OBJ_PROP_FLAGS) );
+
+//	J_CHK( JS_DefineProperty(cx, stackItem, "opnd", frame->regs->sp[-1], NULL, NULL, OBJ_PROP_FLAGS) );
+//	char * s = JS_GetStringBytes(JS_ValueToString(cx, frame->regs->sp[-1]));
 
 	return JS_TRUE;
 	JL_BAD;
@@ -815,6 +849,9 @@ CONFIGURE_CLASS
 		CONST_INTEGER_SINGLE( DO_STEP_OUT )
 		CONST_INTEGER_SINGLE( FROM_BREAKPOINT )
 		CONST_INTEGER_SINGLE( FROM_STEP )
+		CONST_INTEGER_SINGLE( FROM_STEP_OVER )
+		CONST_INTEGER_SINGLE( FROM_STEP_THROUGH )
+		CONST_INTEGER_SINGLE( FROM_STEP_OUT )
 		CONST_INTEGER_SINGLE( FROM_THROW )
 		CONST_INTEGER_SINGLE( FROM_ERROR )
 		CONST_INTEGER_SINGLE( FROM_DEBUGGER )

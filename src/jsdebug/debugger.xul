@@ -269,8 +269,8 @@
 
 				$('statusInfo').label = 'break: '+s.breakOrigin + ( s.hasException ? ' ('+s.exception+')' : '' );
 				Variable.Atomic(
-					programStack.value = debuggerRpc.GetStack(),
 					programState.value = s,
+					programStack.value = debuggerRpc.GetStack(),
 					selectedStackFrame.value = programStack.value[s.stackFrameIndex]
 				);
 			}
@@ -298,7 +298,7 @@
 				for ( var [i, l] in Iterator(programStack.value) ) {
 
 					var e = stack.insertItemAt(0, l.filename+':'+l.lineno+' - '+l.contextInfo, i);
-					e.style.color = let ( c = Math.floor( (1 - i / programStack.value.length) * 128) ) 'rgb('+c+','+c+','+c+')';
+					e.style.color = let ( c = Math.floor( (1 - i / programStack.value.length) * 160) ) 'rgb('+c+','+c+','+c+')';
 					e.className = i == programStack.value.length-1 ? 'currentLine' : 'selectedPrevLine';
 				}
 			}
@@ -399,6 +399,7 @@
 					switch ( col.id ) {
 						case 'line':
 						case 'bp':
+						
 							if ( lineno in breakpointList )
 								AddProp(props, breakpointList[lineno] == 'true' ? 'breakpoint' : 'condBreakpoint');
 							break;
@@ -417,14 +418,15 @@
 
 							if ( lineno == selectedStackFrame.value.lineno && selectedStackFrame.value.filename == currentFile.value )
 								AddProp(props, 'selectedPrevLine');
-
 							break;
 					}
 				}
 			}
 			
+						
 			CallWithPrivilege('UniversalBrowserWrite', function() { code.view = listView });
 			
+		
 			var row={}, col={}, childElt={}, x={}, y={}, width={}, height={};
 
 /*
@@ -446,7 +448,6 @@
 				if ( row.value == -1 || col.value == null || col.value.id != 'line' && col.value.id != 'bp' )
 					return;
 				lineno = row.value+1; // lineno = debuggerRpc.GetActualLineno(currentFile.value, lineno);
-
 
 				if ( ev.button == 2 ) {
 					
@@ -505,8 +506,8 @@
 				currentFile.value = filename;
 				code.treeBoxObject.ensureRowIsVisible(lineno-1);
 
-				reset.push( function() listView.treebox.invalidateRow(lineno-1) );
-			 	listView.treebox.invalidateRow(lineno-1);
+				reset.push( function() code.treeBoxObject.invalidateRow(lineno-1) );
+			 	code.treeBoxObject.invalidateRow(lineno-1);
 
 				cache_prevStackLines = {};
 				for each ( var level in programStack.value )
