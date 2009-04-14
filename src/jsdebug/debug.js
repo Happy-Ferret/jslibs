@@ -5,4 +5,4 @@ Exec('debug1.js');
 
 Debug1();
 
-Print('\n');
+Print('Done.\n');

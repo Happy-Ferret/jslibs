@@ -273,6 +273,11 @@
 					programStack.value = debuggerRpc.GetStack(),
 					selectedStackFrame.value = programStack.value[s.stackFrameIndex]
 				);
+				
+				var cfg = debuggerRpc.GetConfiguration();
+				$('cmd_breakonerror').setAttribute('checked', cfg.breakOnError);
+				$('cmd_breakonexception').setAttribute('checked', cfg.breakOnException);
+				$('cmd_breakondebuggerkeyword').setAttribute('checked', cfg.breakOnDebuggerKeyword);
 			}
 		}
 
@@ -531,6 +536,9 @@
 		<command id="cmd_continue" oncommand="debuggerRpc.Action('continue'); UpdateState()"/>
 		<command id="cmd_frameup" oncommand="if (selectedStackFrame.value.index > 0) stackManager.Select( selectedStackFrame.value.index - 1 )"/>
 		<command id="cmd_framedown" oncommand="if (programState.value.stackFrameIndex > selectedStackFrame.value.index) stackManager.Select( selectedStackFrame.value.index + 1 )"/>
+		<command id="cmd_breakonerror" oncommand="debuggerRpc.SetConfiguration({ breakOnError:event.explicitOriginalTarget.checked })"/>
+		<command id="cmd_breakonexception" oncommand="debuggerRpc.SetConfiguration({ breakOnException:event.explicitOriginalTarget.checked })"/>
+		<command id="cmd_breakondebuggerkeyword" oncommand="debuggerRpc.SetConfiguration({ breakOnDebuggerKeyword:event.explicitOriginalTarget.checked })"/>
 	</commandset>
 	<keyset>
 	  <key keycode="VK_F8" command="cmd_continue"/>
@@ -588,6 +596,10 @@
 			<toolbarbutton label="out" tooltiptext="Shift-F10" command="cmd_stepout"/>
 			<toolbarbutton label="through" tooltiptext="Shift-F11" command="cmd_stepthrough"/>
 			<toolbarbutton label="Continue" tooltiptext="F8" command="cmd_continue"/>
+			<toolbarseparator/>
+			<checkbox label="break on 'debugger' keyword" command="cmd_breakondebuggerkeyword"/>
+			<checkbox label="break on error" command="cmd_breakonerror"/>
+			<checkbox label="break on exception" command="cmd_breakonexception"/>
 			<toolbarseparator/>
 			<menu label="scripts" onpopupshowing="for each (var item in debuggerRpc.GetScriptList()) this.appendItem(item)" onpopuphidden="while(this.removeItemAt(0));" oncommand="currentFile.value = event.target.label">
 				<menupopup/>

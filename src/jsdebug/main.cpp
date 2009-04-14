@@ -109,16 +109,10 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 //	JSObject *scope = JS_GetFrameScopeChain(cx, frame);
 
 /*
-	JSStackFrame * fi=0;
-	JSStackFrame * fp=0;
-	
-	for ( fp=JS_FrameIterator(cx, &fi); fp; fp=JS_FrameIterator(cx, &fi))  {
-		
+	JSStackFrame *fp = NULL;
+	for ( JS_FrameIterator(cx, &fp); fp; fp=JS_FrameIterator(cx, &fp))
 		printf("%p\n", fp->script);
-	
-	}
-*/
-	
+*/	
 
 
 //	JS_GetFunctionScript

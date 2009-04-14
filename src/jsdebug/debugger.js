@@ -14,7 +14,7 @@
 
 LoadModule('jsio');
 LoadModule('jsdebug');
-var _dbg = (function() {
+!function() {
 
 	function Match(v) Array.indexOf(arguments,v,1)-1;
 	function Switch(i) arguments[++i];
@@ -115,13 +115,16 @@ var _dbg = (function() {
 	var server = new SimpleHTTPServer(8009, '127.0.0.1');
 
 	var dbg = new Debugger();
+
+	dbg.breakOnDebuggerKeyword = true;
+	dbg.breakOnError = true;
+	dbg.breakOnException = false;
+	dbg.breakOnExecute = false;
+
 	var breakpointList = {};
 	var cookie = { __proto__:null };
 
-	function Action(id) {
-
-		this.valueOf = function() id;
-	}
+	function Action(id) { this.valueOf = function() id }
 
 	var debuggerApi = {
 
@@ -134,6 +137,23 @@ var _dbg = (function() {
 		
 			with (this)
 				return { filename:filename, lineno:lineno, breakOrigin:OriginToString(breakOrigin), stackFrameIndex:stackFrameIndex, hasException:hasException, exception:exception, rval:ValToString(rval) };
+		},
+
+		GetConfiguration: function() {
+		
+			return { breakOnError:dbg.breakOnError, breakOnException:dbg.breakOnException, breakOnDebuggerKeyword:dbg.breakOnDebuggerKeyword };
+		},
+
+		SetConfiguration: function( configuration ) {
+		
+			for ( var [item, value] in Iterator(configuration) )
+				switch ( item ) {
+					case 'breakOnError':
+					case 'breakOnException':
+					case 'breakOnDebuggerKeyword':
+						dbg[item] = value;
+						break;
+			}
 		},
 
 		SetCookie: function(name, data) {
@@ -207,13 +227,7 @@ var _dbg = (function() {
 
 		Eval: function(code, stackFrameIndex) {
 
-			try {
-			
-				return dbg.EvalInStackFrame(code, stackFrameIndex == undefined ? this.stackFrameIndex : stackFrameIndex );
-			} catch (ex) {
-			
-				return ex;
-			}
+			return dbg.EvalInStackFrame(code, stackFrameIndex == undefined ? this.stackFrameIndex : stackFrameIndex );
 		},
 		
 		ExpressionInfo: function(path, stackFrameIndex) {
@@ -231,13 +245,8 @@ var _dbg = (function() {
 		
 		DefinitionLocation: function(identifier, stackFrameIndex) {
 			
-			try {
-				var value = dbg.EvalInStackFrame(identifier, stackFrameIndex == undefined ? this.stackFrameIndex : stackFrameIndex );
-				return dbg.DefinitionLocation(value);
-			} catch (ex) {
-			
-				return ex;
-			}
+			var value = dbg.EvalInStackFrame(identifier, stackFrameIndex == undefined ? this.stackFrameIndex : stackFrameIndex );
+			return dbg.DefinitionLocation(value);
 		},
 
 		Action: function(name) {
@@ -253,6 +262,8 @@ var _dbg = (function() {
 					return new Action(Debugger.DO_STEP_OUT);
 				case 'continue':
 					return new Action(Debugger.DO_CONTINUE);
+				default:
+					throw Error('Invalid debugger action');
 			}
 		}
 	}
@@ -284,11 +295,15 @@ var _dbg = (function() {
 			
 				res = ex;
 			}
+			
+			if ( res instanceof Action ) {
+
+				responseFunction();
+				return Number(res);
+			}
 			responseFunction(uneval(res));
-			if ( res instanceof Action )
-				return res;
 		}
 	}
 	
-	return dbg;
-})();
+	global.__dbg = dbg; // avoid CG
+}();
