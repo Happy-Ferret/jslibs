@@ -1291,7 +1291,7 @@ inline JSBool GetNativeInterface( JSContext *cx, JSObject *obj, JSObject **obj2p
 
 //	JSObject *obj2;
 	JSProperty *prop;
-	J_CHKM( OBJ_LOOKUP_PROPERTY(cx, obj, iid, obj2p, &prop), "Unable to get the native interface.");
+	J_CHKM( OBJ_LOOKUP_PROPERTY(cx, obj, iid, obj2p, &prop), "Unable to get the native interface."); //(TBD) use JS_LookupPropertyById or JS_GetPropertyById
 
 //	const char *name = JS_GetStringBytes(JS_ValueToString(cx, iid));
 	if ( prop && obj == *obj2p && ((JSScopeProperty*)prop)->setter != (JSPropertyOp)-1 )
