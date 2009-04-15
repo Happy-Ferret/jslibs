@@ -13,6 +13,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 LoadModule('jsio');
+LoadModule('jsstd');
 LoadModule('jsdebug');
 !function() {
 
@@ -123,6 +124,8 @@ LoadModule('jsdebug');
 
 	var breakpointList = {};
 	var cookie = { __proto__:null };
+	var time = TimeCounter();
+	var reset = [];
 
 	function Action(id) { this.valueOf = function() id }
 
@@ -136,7 +139,7 @@ LoadModule('jsdebug');
 		State: function() {
 		
 			with (this)
-				return { filename:filename, lineno:lineno, breakOrigin:OriginToString(breakOrigin), stackFrameIndex:stackFrameIndex, hasException:hasException, exception:exception, rval:ValToString(rval) };
+				return { filename:filename, lineno:lineno, breakOrigin:OriginToString(breakOrigin), stackFrameIndex:stackFrameIndex, hasException:hasException, exception:exception, rval:ValToString(rval), time:time };
 		},
 
 		GetConfiguration: function() {
@@ -215,12 +218,12 @@ LoadModule('jsdebug');
 				if ( frameInfo.isEval )
 					contextInfo = '(eval)';
 				else if ( frameInfo.callee && frameInfo.callee.constructor == Function )
-					contextInfo = (frameInfo.callee.name || '?') + '('+[ ValToString(arg) for each ( arg in frameInfo.argv ) ].join(',')+')';
+					contextInfo = (frameInfo.callee.name || '?') + '('+[ ValToString(arg) for each ( arg in frameInfo.argv ) ].join(' , ')+')';
 				else
 					contextInfo = '';
 
 				with (frameInfo)
-					stack.push({ index:i, filename:filename, lineno:lineno, isNative:isNative, contextInfo:contextInfo });
+					stack.push({ index:i, filename:filename, lineno:lineno, isNative:isNative, contextInfo:contextInfo, variables:[n for ( n in variables )] });
 			}
 			return stack;
 		},
@@ -249,31 +252,29 @@ LoadModule('jsdebug');
 			return dbg.DefinitionLocation(value);
 		},
 
-		Action: function(name) {
-			
-			switch (name) {
-				case 'step':
-					return new Action(Debugger.DO_STEP);
-				case 'stepover':
-					return new Action(Debugger.DO_STEP_OVER);
-				case 'stepthrough':
-					return new Action(Debugger.DO_STEP_THROUGH);
-				case 'stepout':
-					return new Action(Debugger.DO_STEP_OUT);
-				case 'continue':
-					return new Action(Debugger.DO_CONTINUE);
-				default:
-					throw Error('Invalid debugger action');
-			}
+		Step: function() new Action(Debugger.DO_STEP),
+		StepOver: function() new Action(Debugger.DO_STEP_OVER),
+		StepThrough: function() new Action(Debugger.DO_STEP_THROUGH),
+		StepOut: function() new Action(Debugger.DO_STEP_OUT),
+		Continue: function() new Action(Debugger.DO_CONTINUE),
+		Goto: function(filename, lineno) {
+		
+			if ( this.filename == filename && this.lineno == lineno )
+				return;
+			var lineno = dbg.ToggleBreakpoint(true, filename, lineno);
+			reset.push(function() dbg.ToggleBreakpoint(false, filename, lineno));
+			return new Action(Debugger.DO_CONTINUE);
 		}
 	}
 
 	dbg.onBreak = function( filename, lineno, scope, breakOrigin, stackFrameIndex, hasException, exception, rval ) {
 		
+		time = TimeCounter() - time;
+		while (reset.length) reset.shift()();
+		
 		if ( breakOrigin == Debugger.FROM_BREAKPOINT && filename in breakpointList ) {
 
 			var condition = breakpointList[filename][lineno];
-			
 			if ( condition && condition != 'true' )  {
 				try {
 					var test = dbg.EvalInStackFrame(condition, stackFrameIndex);
@@ -283,7 +284,7 @@ LoadModule('jsdebug');
 			}
 		}
 		
-		var breakContext = { filename:filename, lineno:lineno, scope:scope, breakOrigin:breakOrigin, stackFrameIndex:stackFrameIndex, hasException:hasException, exception:exception, rval:rval };
+		var breakContext = { filename:filename, lineno:lineno, scope:scope, breakOrigin:breakOrigin, stackFrameIndex:stackFrameIndex, hasException:hasException, exception:exception, rval:rval, time:time };
 		for(;;) {
 
 			var res, [req, responseFunction] = server.GetNextRequest();
@@ -299,6 +300,7 @@ LoadModule('jsdebug');
 			if ( res instanceof Action ) {
 
 				responseFunction();
+				time = TimeCounter();
 				return Number(res);
 			}
 			responseFunction(uneval(res));

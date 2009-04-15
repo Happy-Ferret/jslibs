@@ -20,11 +20,10 @@
 
 extern jl::Queue *scriptFileList;
 
-const JSCodeSpec jsCodeSpec[] = {
-#define OPDEF(op,val,name,token,length,nuses,ndefs,prec,format) \
-    {length,nuses,ndefs,prec,format},
-#include "jsopcode.tbl"
-#undef OPDEF
+static const JSCodeSpec jsCodeSpec[] = {
+	#define OPDEF(op,val,name,token,length,nuses,ndefs,prec,format) {length,nuses,ndefs,prec,format},
+	#include "jsopcode.tbl"
+	#undef OPDEF
 };
 
 
@@ -61,9 +60,8 @@ enum {
 struct Private {
 	
 	JSDebugHooks *debugHooks; // current hooks cannot be changed while onBreak is being called.
-
 	// previous break state
-	int stackFrameIndex;
+	unsigned int stackFrameIndex;
 	JSStackFrame *frame;
 	JSStackFrame *pframe;
 	JSScript *script;
@@ -188,7 +186,7 @@ static JSTrapStatus Step(JSContext *cx, JSScript *script, jsbytecode *pc, jsval 
 	if ( script == pv->script && JS_PCToLineNumber(cx, script, pc) == pv->lineno )
 		return JSTRAP_CONTINUE;
 
-	if ( *pc == JSOP_DEFLOCALFUN )
+	if ( jsCodeSpec[*pc].format & JOF_DECLARING )
 		return JSTRAP_CONTINUE;
 
 	JS_SetInterrupt(JS_GetRuntime(cx), NULL, NULL);
@@ -207,11 +205,7 @@ static JSTrapStatus StepOver(JSContext *cx, JSScript *script, jsbytecode *pc, js
 
 	JSStackFrame *fp = NULL;
 	JS_FrameIterator(cx, &fp);
-
 	if ( fp != pv->frame && fp != pv->pframe )
-		return JSTRAP_CONTINUE;
-
-	if ( *pc == JSOP_DEFLOCALFUN ) // or JOF_DECLARING //	type = JOF_TYPE(cs->format);
 		return JSTRAP_CONTINUE;
 
 	JS_SetInterrupt(JS_GetRuntime(cx), NULL, NULL);
@@ -223,16 +217,9 @@ static JSTrapStatus StepOut(JSContext *cx, JSScript *script, jsbytecode *pc, jsv
 
 	Private *pv = (Private*)JS_GetPrivate(cx, (JSObject*)closure);
 
-	if ( script == pv->script && JS_PCToLineNumber(cx, script, pc) == pv->lineno )
-		return JSTRAP_CONTINUE;
-
 	JSStackFrame *fp = NULL;
 	JS_FrameIterator(cx, &fp);
-
 	if ( fp != pv->pframe )
-		return JSTRAP_CONTINUE;
-
-	if ( *pc == JSOP_DEFLOCALFUN ) // or JOF_DECLARING //	type = JOF_TYPE(cs->format);
 		return JSTRAP_CONTINUE;
 
 	JS_SetInterrupt(JS_GetRuntime(cx), NULL, NULL);
@@ -249,11 +236,7 @@ static JSTrapStatus StepThrough(JSContext *cx, JSScript *script, jsbytecode *pc,
 
 	JSStackFrame *fp = NULL;
 	JS_FrameIterator(cx, &fp);
-
-	if ( fp != pv->frame && fp != pv->pframe )
-		return JSTRAP_CONTINUE;
-
-	if ( *pc == JSOP_DEFLOCALFUN ) // or JOF_DECLARING //	type = JOF_TYPE(cs->format);
+	if ( StackSize(cx, fp)-1 > pv->stackFrameIndex )
 		return JSTRAP_CONTINUE;
 
 	JS_SetInterrupt(JS_GetRuntime(cx), NULL, NULL);
@@ -310,9 +293,10 @@ static JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSStackFrame *fp,
 	pv->debugHooks = &prevHooks; // beware: reference to a local variable, dont return with restoring the previous value !
 
 	// no hooks while onBreak is being called
+	JS_SetInterrupt(rt, NULL, NULL); // case: break on exception, continue, step
 	JS_SetDebuggerHandler(rt, NULL, NULL);
 	JS_SetDebugErrorHook(rt, NULL, NULL);
-	JS_SetThrowHook(rt, NULL,NULL);
+	JS_SetThrowHook(rt, NULL, NULL);
 	JS_SetExecuteHook(rt, NULL, NULL);
 	JS_SetNewScriptHookProc(rt, NULL, NULL); // beware: never remove JS_SetDestroyScriptHookProc hook !!!
 
@@ -529,7 +513,7 @@ DEFINE_FUNCTION_FAST( StackFrame ) {
 	J_CHK( JS_DefineProperty(cx, stackItem, "lineExtent", INT_TO_JSVAL( JS_GetScriptLineExtent(cx, script) ), NULL, NULL, OBJ_PROP_FLAGS) );
 	
 	J_CHK( JS_DefineProperty(cx, stackItem, "scope", OBJECT_TO_JSVAL(JS_GetFrameScopeChain(cx, frame)), NULL, NULL, OBJ_PROP_FLAGS) );
-	J_CHK( JS_DefineProperty(cx, stackItem, "var", frame->varobj ? OBJECT_TO_JSVAL(frame->varobj) : JSVAL_VOID, NULL, NULL, OBJ_PROP_FLAGS) );
+	J_CHK( JS_DefineProperty(cx, stackItem, "variables", frame->varobj ? OBJECT_TO_JSVAL(frame->varobj) : JSVAL_VOID, NULL, NULL, OBJ_PROP_FLAGS) );
 
 	J_CHK( JS_DefineProperty(cx, stackItem, "this", OBJECT_TO_JSVAL(JS_GetFrameThis(cx, frame)), NULL, NULL, OBJ_PROP_FLAGS) );
 

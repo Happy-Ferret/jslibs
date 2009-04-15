@@ -24,6 +24,9 @@
 	#code :-moz-tree-column(line),
 	#code :-moz-tree-column(sl),
 	#code :-moz-tree-column(bp) { background-color: silver }
+
+
+	#code :-moz-tree-cell(selected, code) { background-color: #FAFAFF }
 	
 	#code :-moz-tree-cell(prevLine) { background-color: #EFE }
 	
@@ -65,6 +68,18 @@
 			var ret = fct();
 			netscape.security.PrivilegeManager.revertPrivilege(privilege);
 			return ret;
+		}
+		
+		function CopyToClipboard(text) {
+
+			var str = Components.classes['@mozilla.org/supports-string;1'].createInstance(Components.interfaces.nsISupportsString);
+			str.data = text;
+			var trans = Components.classes['@mozilla.org/widget/transferable;1'].createInstance(Components.interfaces.nsITransferable);
+			trans.addDataFlavor('text/unicode');
+			trans.setTransferData('text/unicode', str, text.length*2);
+			var clip = Components.classes['@mozilla.org/widget/clipboard;1'].createInstance(Components.interfaces.nsIClipboard);
+			clip.emptyClipboard(clip.kGlobalClipboard);
+			clip.setData(trans, null, clip.kGlobalClipboard);
 		}
 		
 		function AddProp(props, prop) {
@@ -267,7 +282,7 @@
 				ConnectRetry();
 			} else {
 
-				$('statusInfo').label = 'break: '+s.breakOrigin + ( s.hasException ? ' ('+s.exception+')' : '' );
+				$('statusInfo').label = 'break: '+s.breakOrigin + ( s.hasException ? ' ('+s.exception+')' : '' ) +'  '+ s.time.toFixed(3) + 'ms';
 				Variable.Atomic(
 					programState.value = s,
 					programStack.value = debuggerRpc.GetStack(),
@@ -363,6 +378,12 @@
 			this.RemoveAll = function() {
 				
 				treeView.RemoveAll();
+			}
+			
+			this.GetValueByIndex = function(index) {
+				
+//				return watch.builderView.getCellText(index, $('value').QueryInterface(Components.interfaces.nsITreeColumn));
+				return '(TBD)';
 			}
 
 			selectedStackFrame.Listen(function(newVal) self.Update(newVal));
@@ -509,16 +530,20 @@
 				var lineno = stackFrame.lineno;
 			
 				currentFile.value = filename;
+				code.treeBoxObject.ensureRowIsVisible(lineno-5);
+				code.treeBoxObject.ensureRowIsVisible(lineno+5);
 				code.treeBoxObject.ensureRowIsVisible(lineno-1);
 
-				reset.push( function() code.treeBoxObject.invalidateRow(lineno-1) );
-			 	code.treeBoxObject.invalidateRow(lineno-1);
+//				reset.push( function() code.treeBoxObject.invalidateRow(lineno-1) );
+//			 	code.treeBoxObject.invalidateRow(lineno-1);
 
 				cache_prevStackLines = {};
 				for each ( var level in programStack.value )
 					if ( level.filename == currentFile.value )
 						cache_prevStackLines[level.lineno] = level.index;
 
+				code.treeBoxObject.invalidate();
+				
 			 	// http://www.xulplanet.com/references/xpcomref/ifaces/nsITreeBoxObject.html#method_rowCountChanged
 			 	// https://developer.mozilla.org/en/nsITreeView#performActionOnRow.28.29
 			}
@@ -529,11 +554,12 @@
 	]]></script>
 	
 	<commandset>
-		<command id="cmd_step" oncommand="debuggerRpc.Action('step'); UpdateState()"/>
-		<command id="cmd_stepover" oncommand="debuggerRpc.Action('stepover'); UpdateState()"/>
-		<command id="cmd_stepthrough" oncommand="debuggerRpc.Action('stepthrough'); UpdateState()"/>
-		<command id="cmd_stepout" oncommand="debuggerRpc.Action('stepout'); UpdateState()"/>
-		<command id="cmd_continue" oncommand="debuggerRpc.Action('continue'); UpdateState()"/>
+		<command id="cmd_step" oncommand="debuggerRpc.Step(); UpdateState()"/>
+		<command id="cmd_stepover" oncommand="debuggerRpc.StepOver(); UpdateState()"/>
+		<command id="cmd_stepthrough" oncommand="debuggerRpc.StepThrough(); UpdateState()"/>
+		<command id="cmd_stepout" oncommand="debuggerRpc.StepOut(); UpdateState()"/>
+		<command id="cmd_continue" oncommand="debuggerRpc.Continue(); UpdateState()"/>
+		<command id="cmd_goto" oncommand="debuggerRpc.Goto(currentFile.value, $('code').currentIndex+1); UpdateState()"/>
 		<command id="cmd_frameup" oncommand="if (selectedStackFrame.value.index > 0) stackManager.Select( selectedStackFrame.value.index - 1 )"/>
 		<command id="cmd_framedown" oncommand="if (programState.value.stackFrameIndex > selectedStackFrame.value.index) stackManager.Select( selectedStackFrame.value.index + 1 )"/>
 		<command id="cmd_breakonerror" oncommand="debuggerRpc.SetConfiguration({ breakOnError:event.explicitOriginalTarget.checked })"/>
@@ -555,17 +581,20 @@
 	  <key modifiers="shift" keycode="VK_DOWN" command="cmd_framedown"/>
 	</keyset>
 	<hbox flex="1">
-		<tree id="code" hidecolumnpicker="false" flags="dont-build-content" flex="1" seltype="single">
-		  <treecols>
-			 <treecol id="line" label="line"/>
-			 <splitter class="tree-splitter"/>
-			 <treecol id="bp" label="break condition" hidden="true"/>
-			 <splitter class="tree-splitter"/>
-			 <treecol id="sl" label="stack level" hidden="true"/>
-			 <splitter class="tree-splitter"/>
-			 <treecol id="code" label="code" flex="1"/>
-		  </treecols>
-		  <treechildren/>
+		<tree id="code" hidecolumnpicker="false" flags="dont-build-content" context="codeContextMenu" flex="1" seltype="single">
+			<menupopup id="codeContextMenu">
+				<menuitem label="goto" command="cmd_goto"/>
+			</menupopup>
+			<treecols>
+				<treecol id="line" label="line"/>
+				<splitter class="tree-splitter"/>
+				<treecol id="bp" label="break condition" hidden="true"/>
+				<splitter class="tree-splitter"/>
+				<treecol id="sl" label="stack level" hidden="true"/>
+				<splitter class="tree-splitter"/>
+				<treecol id="code" label="code" flex="1"/>
+			</treecols>
+			<treechildren/>
 		</tree>
 		<splitter><grippy/></splitter>
 		<vbox>
@@ -573,6 +602,7 @@
 			<splitter><grippy/></splitter>
 			<tree id="watch" hidecolumnpicker="false" flags="dont-build-content" context="watchContextMenu" flex="1">
 				<menupopup id="watchContextMenu">
+					<menuitem label="copy to clipboard" oncommand="var idx = $('watch').currentIndex; if ( idx != -1 ) CallWithPrivilege('UniversalXPConnect', function() CopyToClipboard(watchManager.GetValueByIndex(idx)) )"/>
 					<menuitem label="remove" oncommand="var idx = $('watch').currentIndex; if ( idx != -1 ) watchManager.RemoveIndex(idx);"/>
 					<menuitem label="remove all" oncommand="watchManager.RemoveAll();"/>
 				</menupopup>
@@ -596,6 +626,7 @@
 			<toolbarbutton label="out" tooltiptext="Shift-F10" command="cmd_stepout"/>
 			<toolbarbutton label="through" tooltiptext="Shift-F11" command="cmd_stepthrough"/>
 			<toolbarbutton label="Continue" tooltiptext="F8" command="cmd_continue"/>
+			<toolbarbutton label="Goto" command="cmd_goto"/>
 			<toolbarseparator/>
 			<checkbox label="break on 'debugger' keyword" command="cmd_breakondebuggerkeyword"/>
 			<checkbox label="break on error" command="cmd_breakonerror"/>
