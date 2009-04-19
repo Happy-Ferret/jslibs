@@ -16,11 +16,13 @@ LoadModule('jsio');
 LoadModule('jsstd');
 LoadModule('jsdebug');
 !function() {
+	
+	function Try(fct) { try { return fct() } catch(ex) { return ex } }
 
 	function Match(v) Array.indexOf(arguments,v,1)-1;
 	function Switch(i) arguments[++i];
 	
-	function ValToString(val) {
+	var ValToString = function(val) {
 		
 		function Crop(str, len) str.length > len ? str.substr(0, len)+'...' : str;
 		
@@ -126,8 +128,10 @@ LoadModule('jsdebug');
 	var cookie = { __proto__:null };
 	var time = TimeCounter();
 	var reset = [];
+	var breakContext;
 
 	function Action(id) { this.valueOf = function() id }
+	function Asynchronus(fct) { this.fct = fct }
 
 	var debuggerApi = {
 
@@ -138,7 +142,7 @@ LoadModule('jsdebug');
 
 		State: function() {
 		
-			with (this)
+			with (breakContext)
 				return { filename:filename, lineno:lineno, breakOrigin:OriginToString(breakOrigin), stackFrameIndex:stackFrameIndex, hasException:hasException, exception:exception, rval:ValToString(rval), time:time };
 		},
 
@@ -158,7 +162,12 @@ LoadModule('jsdebug');
 						break;
 			}
 		},
-
+		
+		SetValToStringFilter: function(functionSource) {
+			
+			ValToString = eval('('+functionSource+')');
+		},
+		
 		SetCookie: function(name, data) {
 			
 			cookie[name] = data;
@@ -211,7 +220,7 @@ LoadModule('jsdebug');
 		GetStack: function() {
 			
 			var stack = [];
-			for ( var i = 0; i <= this.stackFrameIndex; i++ ) {
+			for ( var i = 0; i <= breakContext.stackFrameIndex; i++ ) {
 			
 				var frameInfo = dbg.StackFrame(i);
 				var contextInfo;
@@ -230,26 +239,47 @@ LoadModule('jsdebug');
 
 		Eval: function(code, stackFrameIndex) {
 
-			return dbg.EvalInStackFrame(code, stackFrameIndex == undefined ? this.stackFrameIndex : stackFrameIndex );
+			return dbg.EvalInStackFrame(code, stackFrameIndex == undefined ? breakContext.stackFrameIndex : stackFrameIndex );
 		},
 		
-		ExpressionInfo: function(path, stackFrameIndex) {
-
+		ExpressionInfo: function(path, stackFrameIndex, ChildListOnly) {
+			
 			try {
-			
-				var val = dbg.EvalInStackFrame('('+path.shift()+')', stackFrameIndex == undefined ? this.stackFrameIndex : stackFrameIndex );
+				var val = dbg.EvalInStackFrame('('+path.shift()+')', stackFrameIndex == undefined ? breakContext.stackFrameIndex : stackFrameIndex );
 				val = path.reduce(function(prev, cur) prev[cur], val);
-				return { childList:val instanceof Object ? [ name for ( name in val) ] : [], string:String(val), source:uneval(val) };
-			} catch (ex) {
-			
-				return { childList:[], string:String(ex), source:'' };
+				var isObj = typeof(val) == 'object';
+				if ( ChildListOnly )
+					return isObj ? [ name for ( name in val) ] : undefined;
+				else
+					return { isObj:isObj, string:Try(function() ValToString(val)), source:Try(function() uneval(val)) };
+			} catch(ex) {
+				return { isObj:false, string:String(ex), source:'' };
 			}
 		},
-		
+/*		
+		ContextInfo: function(path, stackFrameIndex) {
+			
+			var context = { stack:dbg.StackFrame(stackFrameIndex == undefined ? context.stackFrameIndex : stackFrameIndex), rval:context.rval };
+			var val = context[path.shift()];
+			val = path.reduce(function(prev, cur) prev[cur], val);
+			return { childList:typeof(val) == 'object' ? [ name for ( name in val) ] : [], string:Try(function() ValToString(val)), source:Try(function() uneval(val)) };
+		},
+*/
 		DefinitionLocation: function(identifier, stackFrameIndex) {
 			
-			var value = dbg.EvalInStackFrame(identifier, stackFrameIndex == undefined ? this.stackFrameIndex : stackFrameIndex );
+			var value = dbg.EvalInStackFrame(identifier, stackFrameIndex == undefined ? breakContext.stackFrameIndex : stackFrameIndex );
 			return dbg.DefinitionLocation(value);
+		},
+		
+		Shutdown: function() {
+
+			dbg.breakOnDebuggerKeyword = false;
+			dbg.breakOnError = false;
+			dbg.breakOnException = false;
+			dbg.breakOnExecute = false;
+			delete dbg.onBreak;
+			delete global.__dbg;
+			return new Action(Debugger.DO_CONTINUE);
 		},
 
 		Step: function() new Action(Debugger.DO_STEP),
@@ -259,23 +289,44 @@ LoadModule('jsdebug');
 		Continue: function() new Action(Debugger.DO_CONTINUE),
 		Goto: function(filename, lineno) {
 		
-			if ( this.filename == filename && this.lineno == lineno )
+			if ( breakContext.filename == filename && breakContext.lineno == lineno )
 				return;
+			if ( dbg.HasBreakpoint(filename, lineno) )
+				return new Action(Debugger.DO_CONTINUE);
 			var lineno = dbg.ToggleBreakpoint(true, filename, lineno);
 			reset.push(function() dbg.ToggleBreakpoint(false, filename, lineno));
 			return new Action(Debugger.DO_CONTINUE);
-		}
-	}
-
-	dbg.onBreak = function( filename, lineno, scope, breakOrigin, stackFrameIndex, hasException, exception, rval ) {
+		},
 		
-		time = TimeCounter() - time;
+		TraceTo: function(aimFilename, aimLineno) new Asynchronus(function(responseFunction) {
+		
+			var trace = [];
+			var prevBreakFct = dbg.onBreak;
+			dbg.onBreak = function(filename, lineno, scope, breakOrigin, stackFrameIndex, hasException, exception, rval) {
+				
+				trace.push([filename, lineno, stackFrameIndex]);
+				if ( filename != aimFilename || lineno != aimLineno )
+					return Debugger.DO_STEP;
+			
+				dbg.onBreak = prevBreakFct;
+				responseFunction(uneval(trace));
+				return dbg.onBreak.apply(this, arguments);
+			}
+			return new Action(Debugger.DO_STEP);
+		}),
+
+	}
+	
+	dbg.onBreak = function(filename, lineno, scope, breakOrigin, stackFrameIndex, hasException, exception, rval) {
+		
+		var tmpTime = TimeCounter();
 		while (reset.length) reset.shift()();
 		
 		if ( breakOrigin == Debugger.FROM_BREAKPOINT && filename in breakpointList ) {
 
 			var condition = breakpointList[filename][lineno];
-			if ( condition && condition != 'true' )  {
+			if ( condition && condition != 'true' ) {
+			
 				try {
 					var test = dbg.EvalInStackFrame(condition, stackFrameIndex);
 				} catch(ex) {}
@@ -284,28 +335,38 @@ LoadModule('jsdebug');
 			}
 		}
 		
-		var breakContext = { filename:filename, lineno:lineno, scope:scope, breakOrigin:breakOrigin, stackFrameIndex:stackFrameIndex, hasException:hasException, exception:exception, rval:rval, time:time };
+		breakContext = { filename:filename, lineno:lineno, scope:scope, breakOrigin:breakOrigin, stackFrameIndex:stackFrameIndex, hasException:hasException, exception:exception, rval:rval, time:tmpTime - time };
 		for(;;) {
 
 			var res, [req, responseFunction] = server.GetNextRequest();
 			try {
 			
 				req = eval('('+req+')');
-				res = debuggerApi[req[0]].apply(breakContext, req[1]);
+				res = debuggerApi[req[0]].apply(debuggerApi, req[1]);
 			} catch(ex) {
 			
 				res = ex;
 			}
 			
 			if ( res instanceof Action ) {
-
+				
 				responseFunction();
+				res = Number(res);
 				time = TimeCounter();
-				return Number(res);
+				return res;
 			}
+			
+			if ( res instanceof Asynchronus ) {
+			
+				res = res.fct(responseFunction);
+				if ( res instanceof Action )
+					return Number(res);
+				continue;
+			}
+				
 			responseFunction(uneval(res));
 		}
 	}
-	
+
 	global.__dbg = dbg; // avoid CG
 }();

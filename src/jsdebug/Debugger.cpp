@@ -429,8 +429,6 @@ DEFINE_FUNCTION_FAST( ToggleBreakpoint ) {
 	uintN lineno;
 	J_CHK( JsvalToUInt(cx, J_FARG(3), &lineno) );
 
-	Private *pv;
-	pv = (Private*)JS_GetPrivate(cx, J_FOBJ);
 	JSScript *script;
 	script = ScriptByLocation(cx, scriptFileList, filename, lineno);
 	//J_S_ASSERT( script != NULL, "Invalid breakpoint location.");
@@ -460,6 +458,42 @@ DEFINE_FUNCTION_FAST( ToggleBreakpoint ) {
 
 /**doc
 $TOC_MEMBER $INAME
+ $INT $INAME( filename, lineno );
+**/
+DEFINE_FUNCTION_FAST( HasBreakpoint ) {
+
+	J_S_ASSERT_ARG_MIN( 2 );
+	const char *filename;
+	J_CHK( JsvalToString(cx, &J_FARG(1), &filename) );
+	uintN lineno;
+	J_CHK( JsvalToUInt(cx, J_FARG(2), &lineno) );
+	JSScript *script;
+	script = ScriptByLocation(cx, scriptFileList, filename, lineno);
+	if ( script == NULL )
+		J_REPORT_ERROR_2("Invalid location (%s:%d)", filename, lineno);
+
+	jsbytecode *pc;
+	pc = JS_LineNumberToPC(cx, script, lineno);
+	lineno = JS_PCToLineNumber(cx, script, pc);
+
+	JSTrapHandler prevHandler;
+	void *prevClosure;
+	JS_ClearTrap(cx, script, pc, &prevHandler, &prevClosure);
+	if ( prevHandler ) {
+
+		J_CHK( JS_SetTrap(cx, script, pc, prevHandler, prevClosure) );
+		*J_FRVAL = JSVAL_TRUE;
+	} else {
+
+		*J_FRVAL = JSVAL_FALSE;
+	}
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
  $INT | $BOOL $INAME();
 **/
 DEFINE_FUNCTION_FAST( ClearBreakpoints ) {
@@ -467,7 +501,6 @@ DEFINE_FUNCTION_FAST( ClearBreakpoints ) {
 	JS_ClearAllTraps(cx);
 	return JS_TRUE;
 }
-
 
 
 /**doc
@@ -822,6 +855,7 @@ CONFIGURE_CLASS
 	BEGIN_FUNCTION_SPEC
 		FUNCTION_FAST( GetActualLineno )
 		FUNCTION_FAST( ToggleBreakpoint )
+		FUNCTION_FAST( HasBreakpoint )
 		FUNCTION_FAST( ClearBreakpoints )
 		FUNCTION_FAST( StackFrame )
 		FUNCTION_FAST( EvalInStackFrame )
