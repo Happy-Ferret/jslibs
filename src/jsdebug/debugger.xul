@@ -64,6 +64,8 @@
 			return res;
 		}
 		
+		function LTrim(str) str.substr(str.search(/\S/));
+		
 		function QueryPrivilege() {
 
 			netscape.security.PrivilegeManager.enablePrivilege('UniversalXPConnect UniversalBrowserRead UniversalBrowserWrite');
@@ -527,6 +529,18 @@
 			}, false);
 			
 			
+			this.GetSourceFile = function(filename) {
+			
+				if ( filename in sourceFiles )
+					return sourceFiles[filename];
+
+				var codeText = debuggerRpc.GetSource(filename);
+				codeText = codeText.replace(/\t/g, '    ');
+				var codeLines = codeText.split(/\r?\n/);
+				sourceFiles[filename] = { code:codeLines };
+				return sourceFiles[filename];
+			}
+			
 			this.UpdateCurrentFile = function(filename, prevFilename) {
 
 				if ( filename == prevFilename )
@@ -535,14 +549,8 @@
 				if ( prevFilename )
 					code.treeBoxObject.rowCountChanged(0, -sourceFiles[prevFilename].code.length);
 
-				if ( !(currentFile.value in sourceFiles) ) {
+				this.GetSourceFile(currentFile.value);
 				
-					var codeText = debuggerRpc.GetSource(currentFile.value);
-					codeText = codeText.replace(/\t/g, '    ');
-					var codeLines = codeText.split(/\r?\n/);
-					sourceFiles[currentFile.value] = { code:codeLines };
-				}
-
 				breakpointList = debuggerRpc.BreakpointList(currentFile.value);
 
 				cache_prevStackLines = {};
@@ -581,7 +589,7 @@
 		function Traceto(filename, lineno) {
 		
 			var trace = debuggerRpc.TraceTo(filename, lineno);
-			Trace( [ Strdup(' ',d)+f+':'+l for each ( [i, [f,l,d]] in Iterator(trace)) ].join('\n') );
+			Trace( [ Strdup(' ',d)+LTrim(codeManager.GetSourceFile(f).code[l-1]) for each ( [i, [f,l,d]] in Iterator(trace)) ].join('\n') );
 			UpdateState();
 		}
 		
