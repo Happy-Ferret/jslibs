@@ -300,13 +300,16 @@ LoadModule('jsdebug');
 		
 		TraceTo: function(aimFilename, aimLineno) new Asynchronus(function(responseFunction) {
 		
-			var trace = [];
+			with (breakContext)
+				var trace = [[filename, lineno, stackFrameIndex]]; // the current line
 			var prevBreakFct = dbg.onBreak;
 			dbg.onBreak = function(filename, lineno, scope, breakOrigin, stackFrameIndex, hasException, exception, rval) {
+
+				if ( filename != aimFilename || lineno != aimLineno ) {
 				
-				trace.push([filename, lineno, stackFrameIndex]);
-				if ( filename != aimFilename || lineno != aimLineno )
+					trace.push([filename, lineno, stackFrameIndex]);
 					return Debugger.DO_STEP;
+				}
 			
 				dbg.onBreak = prevBreakFct;
 				responseFunction(uneval(trace));
