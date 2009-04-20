@@ -485,6 +485,13 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostOutput stdOut, HostOutput s
 	globalObject = JS_GetGlobalObject(cx);
 	J_CHKM( globalObject != NULL, "Global object not found." );
 
+
+	JSBool found;
+	uintN attrs;
+	J_CHKM( JS_GetPropertyAttributes(cx, globalObject, "undefined", &attrs, &found) );
+	J_CHKM( JS_SetPropertyAttributes(cx, globalObject, "undefined", attrs | JSPROP_READONLY, &found) );
+
+
 // make GetErrorMessage available from any module
 
 	void **_pGetErrorMessage;

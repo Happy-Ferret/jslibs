@@ -3,11 +3,10 @@ LoadModule('jsstd');
 LoadModule('jsio');
 
 var b = new Blob( 'test' );
-
-
 Print( b.toSource() , '\n' );
 
-
+undefined = 123;
+Print(undefined)
 
 Halt();
 
