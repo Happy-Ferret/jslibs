@@ -253,9 +253,17 @@ static JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSStackFrame *fp,
 	if ( !JsvalIsFunction(cx, fval) ) // nothing to do
 		return JSTRAP_CONTINUE;
 
-	jsval argv[9] = { JSVAL_NULL };
+	jsval argv[10] = { JSVAL_NULL };
 	JSTempValueRooter tvr;
 	JS_PUSH_TEMP_ROOT(cx, COUNTOF(argv), argv, &tvr);
+	
+	jsval exception;
+	JSBool hasException = JS_IsExceptionPending(cx);
+	if ( hasException ) {
+
+		J_CHK( JS_GetPendingException(cx, &exception) );
+		JS_ClearPendingException(cx);
+	}
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
 	JSRuntime *rt = JS_GetRuntime(cx);
@@ -268,25 +276,10 @@ static JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSStackFrame *fp,
 	argv[3] = OBJECT_TO_JSVAL( JS_GetFrameScopeChain(cx, fp) );
 	argv[4] = INT_TO_JSVAL( breakOrigin );
 	argv[5] = INT_TO_JSVAL( stackFrameIndex );
-
-	JSBool hasException;
-	hasException = JS_IsExceptionPending(cx);
-	if ( hasException ) {
-
-		argv[6] = JSVAL_TRUE;
-		J_CHK( JS_GetPendingException(cx, &argv[7]) );
-		JS_ClearPendingException(cx);
-	} else {
-
-		argv[6] = JSVAL_FALSE;
-		argv[7] = JSVAL_VOID;
-	}
-
-	if ( breakOrigin == FROM_STEP_OUT )
-		argv[8] = fp->regs->sp[-1]; // try to the the functions's rval
-	else
-		argv[8] = JSVAL_VOID;
-
+	argv[6] = hasException ? JSVAL_TRUE : JSVAL_FALSE;
+	argv[7] = hasException ? exception : JSVAL_VOID;
+	argv[8] = breakOrigin == FROM_STEP_OUT ? fp->regs->sp[-1] : JSVAL_VOID; // try to the the functions's rval
+	argv[9] = JS_GetFramePC(cx, fp) == script->code ? JSVAL_TRUE : JSVAL_FALSE; // is entering function
 
 	JSDebugHooks prevHooks;
 	prevHooks = *JS_GetGlobalDebugHooks(rt); // save hooks
@@ -303,17 +296,15 @@ static JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSStackFrame *fp,
 	JSBool status;
 	status = JS_CallFunctionValue(cx, obj, fval, COUNTOF(argv)-1, argv+1, &argv[0]);
 
-	J_S_ASSERT_INT( argv[0] );
-	int action;
-	action = JSVAL_TO_INT( argv[0] );
-
-	pv->debugHooks = JS_GetGlobalDebugHooks(rt);
-	*JS_GetGlobalDebugHooks(rt) = prevHooks; // restore hooks
+	pv->debugHooks = JS_GetGlobalDebugHooks(rt); // restore debug hooks
+	*JS_GetGlobalDebugHooks(rt) = prevHooks;
 
 	J_CHK( status );
 
+	J_S_ASSERT_INT( argv[0] );
+
 	if ( hasException ) // restore the exception
-		JS_SetPendingException(cx, argv[7]); // (TBD) should return JSTRAP_ERROR ???
+		JS_SetPendingException(cx, exception); // (TBD) should return JSTRAP_ERROR ???
 
 	// store the current state
 	pv->stackFrameIndex = stackFrameIndex;
@@ -323,7 +314,7 @@ static JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSStackFrame *fp,
 	pv->pframe = fp;
 	JS_FrameIterator(cx, &pv->pframe);
 
-	switch (action) {
+	switch (JSVAL_TO_INT( argv[0] )) {
 
 		case DO_CONTINUE:
 			break;

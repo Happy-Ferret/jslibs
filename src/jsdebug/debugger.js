@@ -45,65 +45,63 @@ LoadModule('jsdebug');
 		return '???';
 	}
 
-	function OriginToString( breakOrigin ) {
-
-		with (Debugger) {
-			var pos = Match(breakOrigin, FROM_BREAKPOINT, FROM_STEP, FROM_STEP_OVER, FROM_STEP_THROUGH, FROM_STEP_OUT, FROM_THROW, FROM_ERROR, FROM_DEBUGGER, FROM_EXECUTE, FROM_CALL);
-			return Switch(pos, 'breakpoint', 'step', 'stepover', 'stepthrough', 'stepout', 'throw', 'error', 'debugger', 'execute', 'call');
-		}
-	}
-
 	function SimpleHTTPServer(port, bind) {
 		
 		var pendingRequestList = [], serverSocket = new Socket(), socketList = [serverSocket];
 		function CloseSocket(s) {
-		
+
 			s.Close();
 			socketList.splice( socketList.indexOf(s), 1 );
 		}
+	
+		function ProcessRequest(s) {
+
+			var buf = s.Read();
+			if ( buf == undefined )
+				return CloseSocket(s);
+			s.data += buf;
+			var eoh = s.data.indexOf('\r\n\r\n');
+			if ( eoh == -1 )
+				return;
+			var contentLength = (/^content-length: ?(.*)$/im(s.data)||[])[1];
+			s.data = s.data.substring(eoh+4);
+			(function(s) {
+
+				if ( s.data.length < contentLength ) {
+			
+					s.readable = arguments.callee;
+					var buf = s.Read();
+					if ( buf == undefined )
+						return CloseSocket(s);						
+					s.data += buf;
+					return;
+				}
+			
+				delete s.readable;
+				pendingRequestList.push([s.data.substring(0, contentLength), function(response) {
+					
+					if ( s.connectionClosed )
+						return CloseSocket(s);
+					if ( response == undefined )
+						s.Write('HTTP/1.1 204 No Content\r\n\r\n');
+					else
+						s.Write('HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: '+response.length+'\r\n\r\n'+response);
+					s.readable = ProcessRequest;
+					return true;
+				}]);
+				s.data = s.data.substring(contentLength);
+			})(s);
+		}
+			
 		serverSocket.readable = function() {
 
 			var clientSocket = serverSocket.Accept();
 			socketList.push(clientSocket);
 			clientSocket.data = '';
-			clientSocket.readable = function(s) {
-
- 				var buf = s.Read();
-				if ( !buf )
-					return CloseSocket(s);
-				s.data += buf;
-				var eoh = s.data.indexOf('\r\n\r\n');
-				if ( eoh == -1 )
-					return;
-				var contentLength = /^content-length: ?(.*)$/im(s.data)||[][1];
-				s.data = s.data.substring(eoh+4);
-				(function(s) {
-
-					if ( s.data.length < contentLength ) {
-				
-						s.readable = arguments.callee;
- 						var buf = s.Read();
-						if ( !buf )
-							return CloseSocket(s);						
- 						s.data += buf;
-						return;
-					}
-					delete s.readable;
-					s.Shutdown(false);
-					pendingRequestList.push([s.data, function(response) {
-						
-						if ( s.connectionClosed )
-							return CloseSocket(s);
-						s.Write('HTTP/1.0 200 OK\r\nContent-Type: text/plain\r\nConnection: close\r\n\r\n'+response);
-						s.Shutdown(true);
-						serverSocket.linger = 1000;
-						CloseSocket(s)
-						return response;
-					}]);
-				})(s);
-			}
+			clientSocket.readable = ProcessRequest;
 		}
 
+		serverSocket.nonblocking = true;
 		serverSocket.Bind(port, bind);
 		serverSocket.Listen();
 
@@ -124,26 +122,30 @@ LoadModule('jsdebug');
 	dbg.breakOnException = false;
 	dbg.breakOnExecute = false;
 
-	var breakpointList = {};
-	var cookie = { __proto__:null };
-	var time = TimeCounter();
-	var reset = [];
-	var breakContext;
+	var _breakpointList = {};
+	var _cookie = { __proto__:null };
+	var _time = TimeCounter();
+	var _reset = [];
+	var _breakContext;
+
+	function OriginToString( breakOrigin ) {
+
+		with (Debugger)
+			var pos = Match(breakOrigin, FROM_BREAKPOINT, FROM_STEP, FROM_STEP_OVER, FROM_STEP_THROUGH, FROM_STEP_OUT, FROM_THROW, FROM_ERROR, FROM_DEBUGGER, FROM_EXECUTE, FROM_CALL);
+		return Switch(pos, 'breakpoint', 'step', 'stepover', 'stepthrough', 'stepout', 'throw', 'error', 'debugger', 'execute', 'call');
+	}
 
 	function Action(id) { this.valueOf = function() id }
 	function Asynchronus(fct) { this.fct = fct }
 
 	var debuggerApi = {
 
-		Ping: function() {
-			
-			return true;
-		},
+		Ping: function() true,
 
 		State: function() {
 		
-			with (breakContext)
-				return { filename:filename, lineno:lineno, breakOrigin:OriginToString(breakOrigin), stackFrameIndex:stackFrameIndex, hasException:hasException, exception:exception, rval:ValToString(rval), time:time };
+			with (_breakContext)
+				return { filename:filename, lineno:lineno, breakOrigin:OriginToString(breakOrigin), stackFrameIndex:stackFrameIndex, hasException:hasException, exception:exception, rval:ValToString(rval), enteringFunction:enteringFunction, time:time };
 		},
 
 		GetConfiguration: function() {
@@ -170,12 +172,12 @@ LoadModule('jsdebug');
 		
 		SetCookie: function(name, data) {
 			
-			cookie[name] = data;
+			_cookie[name] = data;
 		},
 		
 		GetCookie: function(name) {
 			
-			return cookie[name];
+			return _cookie[name];
 		},
 		
 		GetSource: function(filename) {
@@ -198,7 +200,7 @@ LoadModule('jsdebug');
 			if ( dbg.GetActualLineno(filename, lineno) != lineno )
 				return false;
 			dbg.ToggleBreakpoint(true, filename, lineno);
-			var list = (filename in breakpointList) ? breakpointList[filename] : (breakpointList[filename] = {});
+			var list = (filename in _breakpointList) ? _breakpointList[filename] : (_breakpointList[filename] = {});
 			list[lineno] = condition;
 			return true;
 		},
@@ -208,19 +210,19 @@ LoadModule('jsdebug');
 			if ( dbg.GetActualLineno(filename, lineno) != lineno )
 				return false;
 			dbg.ToggleBreakpoint(false, filename, lineno);
-			delete breakpointList[filename][lineno];
+			delete _breakpointList[filename][lineno];
 			return true;
 		},
 
 		BreakpointList: function(filename) {
 			
-			return breakpointList[filename] || {};
+			return _breakpointList[filename] || {};
 		},
-
+		
 		GetStack: function() {
 			
 			var stack = [];
-			for ( var i = 0; i <= breakContext.stackFrameIndex; i++ ) {
+			for ( var i = 0; i <= _breakContext.stackFrameIndex; i++ ) {
 			
 				var frameInfo = dbg.StackFrame(i);
 				var contextInfo;
@@ -239,13 +241,13 @@ LoadModule('jsdebug');
 
 		Eval: function(code, stackFrameIndex) {
 
-			return dbg.EvalInStackFrame(code, stackFrameIndex == undefined ? breakContext.stackFrameIndex : stackFrameIndex );
+			return dbg.EvalInStackFrame(code, stackFrameIndex == undefined ? _breakContext.stackFrameIndex : stackFrameIndex );
 		},
 		
 		ExpressionInfo: function(path, stackFrameIndex, ChildListOnly) {
 			
 			try {
-				var val = dbg.EvalInStackFrame('('+path.shift()+')', stackFrameIndex == undefined ? breakContext.stackFrameIndex : stackFrameIndex );
+				var val = dbg.EvalInStackFrame('('+path.shift()+')', stackFrameIndex == undefined ? _breakContext.stackFrameIndex : stackFrameIndex );
 				val = path.reduce(function(prev, cur) prev[cur], val);
 				var isObj = typeof(val) == 'object';
 				if ( ChildListOnly )
@@ -256,7 +258,8 @@ LoadModule('jsdebug');
 				return { isObj:false, string:String(ex), source:'' };
 			}
 		},
-/*		
+		
+/*
 		ContextInfo: function(path, stackFrameIndex) {
 			
 			var context = { stack:dbg.StackFrame(stackFrameIndex == undefined ? context.stackFrameIndex : stackFrameIndex), rval:context.rval };
@@ -265,9 +268,10 @@ LoadModule('jsdebug');
 			return { childList:typeof(val) == 'object' ? [ name for ( name in val) ] : [], string:Try(function() ValToString(val)), source:Try(function() uneval(val)) };
 		},
 */
+
 		DefinitionLocation: function(identifier, stackFrameIndex) {
 			
-			var value = dbg.EvalInStackFrame(identifier, stackFrameIndex == undefined ? breakContext.stackFrameIndex : stackFrameIndex );
+			var value = dbg.EvalInStackFrame(identifier, stackFrameIndex == undefined ? _breakContext.stackFrameIndex : stackFrameIndex );
 			return dbg.DefinitionLocation(value);
 		},
 		
@@ -289,18 +293,18 @@ LoadModule('jsdebug');
 		Continue: function() new Action(Debugger.DO_CONTINUE),
 		Goto: function(filename, lineno) {
 		
-			if ( breakContext.filename == filename && breakContext.lineno == lineno )
+			if ( _breakContext.filename == filename && _breakContext.lineno == lineno )
 				return;
 			if ( dbg.HasBreakpoint(filename, lineno) )
 				return new Action(Debugger.DO_CONTINUE);
 			var lineno = dbg.ToggleBreakpoint(true, filename, lineno);
-			reset.push(function() dbg.ToggleBreakpoint(false, filename, lineno));
+			_reset.push(function() dbg.ToggleBreakpoint(false, filename, lineno));
 			return new Action(Debugger.DO_CONTINUE);
 		},
 		
 		TraceTo: function(aimFilename, aimLineno) new Asynchronus(function(responseFunction) {
 		
-			with (breakContext)
+			with (_breakContext)
 				var trace = [[filename, lineno, stackFrameIndex]]; // the current line
 			var prevBreakFct = dbg.onBreak;
 			dbg.onBreak = function(filename, lineno, scope, breakOrigin, stackFrameIndex, hasException, exception, rval) {
@@ -317,17 +321,16 @@ LoadModule('jsdebug');
 			}
 			return new Action(Debugger.DO_STEP);
 		}),
-
 	}
 	
-	dbg.onBreak = function(filename, lineno, scope, breakOrigin, stackFrameIndex, hasException, exception, rval) {
+	dbg.onBreak = function(filename, lineno, scope, breakOrigin, stackFrameIndex, hasException, exception, rval, enteringFunction) {
 		
 		var tmpTime = TimeCounter();
-		while (reset.length) reset.shift()();
+		while (_reset.length) _reset.shift()();
 		
-		if ( breakOrigin == Debugger.FROM_BREAKPOINT && filename in breakpointList ) {
+		if ( breakOrigin == Debugger.FROM_BREAKPOINT && filename in _breakpointList ) {
 
-			var condition = breakpointList[filename][lineno];
+			var condition = _breakpointList[filename][lineno];
 			if ( condition && condition != 'true' ) {
 			
 				try {
@@ -338,35 +341,33 @@ LoadModule('jsdebug');
 			}
 		}
 		
-		breakContext = { filename:filename, lineno:lineno, scope:scope, breakOrigin:breakOrigin, stackFrameIndex:stackFrameIndex, hasException:hasException, exception:exception, rval:rval, time:tmpTime - time };
+		_breakContext = { filename:filename, lineno:lineno, scope:scope, breakOrigin:breakOrigin, stackFrameIndex:stackFrameIndex, hasException:hasException, exception:exception, rval:rval, enteringFunction:enteringFunction, time:tmpTime - _time };
 		for(;;) {
 
 			var res, [req, responseFunction] = server.GetNextRequest();
 			try {
-			
+
 				req = eval('('+req+')');
 				res = debuggerApi[req[0]].apply(debuggerApi, req[1]);
 			} catch(ex) {
-			
-				res = ex;
-			}
-			
-			if ( res instanceof Action ) {
 				
-				responseFunction();
-				res = Number(res);
-				time = TimeCounter();
-				return res;
+				res = ex;
 			}
 			
 			if ( res instanceof Asynchronus ) {
 			
-				res = res.fct(responseFunction);
-				if ( res instanceof Action )
-					return Number(res);
-				continue;
+				res = res.fct.call(cx, responseFunction);
+				responseFunction = function(){}
 			}
+
+			if ( res instanceof Action ) {
 				
+				responseFunction();
+				res = Number(res);
+				_time = TimeCounter();
+				return res;
+			}
+			
 			responseFunction(uneval(res));
 		}
 	}

@@ -210,24 +210,25 @@
 		}
 
    
-   
+		SimpleRpc.xhr = new XMLHttpRequest();
       function SimpleRpc(ip, port) {
       
       	this.__noSuchMethod__ = function() {
-
+				
+				delete this.__noSuchMethod__;
 				netscape.security.PrivilegeManager.enablePrivilege('UniversalBrowserRead'); // allow cross-domain xhr
-				var xhr = new XMLHttpRequest();
 				try {
-
-					xhr.open('POST', 'http://'+ip+':'+port+'/', false);
-					xhr.send(uneval(Array.slice(arguments)));
-					return eval('('+xhr.responseText+')');
+					
+					SimpleRpc.xhr.open('POST', 'http://'+ip+':'+port+'/', false);
+					SimpleRpc.xhr.send(uneval(Array.slice(arguments)));
+					return eval('('+SimpleRpc.xhr.responseText+')');
 				} catch(ex) {
 				
 					return new Error(ex);
 				} finally {
 				
 					netscape.security.PrivilegeManager.revertPrivilege('UniversalBrowserRead');
+					this.__noSuchMethod__ = arguments.callee;
 				}
 			}
 		}      
@@ -264,6 +265,7 @@
 		var programStack = new Variable();
 		var selectedStackFrame = new Variable();
 		var currentFile = new Variable();
+		var connected = new Variable();
 				
 		var debuggerRpc = new SimpleRpc('127.0.0.1', 8009);
 
@@ -280,31 +282,36 @@
 
 			if ( debuggerRpc.Ping() != true ) {
 
-				$('statusInfo').label = 'connecting...';
+				$('status').label = 'connecting...';
 				setTimeout(arguments.callee, 0);
 			} else {
 				
-				UpdateState();	
+				UpdateState();
 			}
 		}
 		
 		function UpdateState() {
 		
-			$('statusInfo').label = 'querying state...';
+			$('status').label = 'querying state...';
 			var s = debuggerRpc.State();
+			$('status').label = '';
 			
 			if ( s instanceof Error ) {
 
+				connected.value = false;
 				ConnectRetry();
 				return;
 			}
 
-			$('statusInfo').label = 'break: '+s.breakOrigin + ( s.hasException ? ' ('+s.exception+')' : '' ) +'  ('+ s.time.toFixed(3) + 'ms)';
+			$('statusBreakReason').label = s.breakOrigin;
+			$('statusException').label = s.hasException ? String(s.exception) : '';
+			$('statusTime').label = s.time.toFixed(3) + 'ms';
 			Variable.Atomic(
+				connected.value = true,
 				programState.value = s,
 				programStack.value = debuggerRpc.GetStack(),
-				selectedStackFrame.value = programStack.value[s.stackFrameIndex]
-			);
+				selectedStackFrame.value = programStack.value[s.stackFrameIndex],
+			0);
 
 			var cfg = debuggerRpc.GetConfiguration();
 			$('cmd_breakonerror').setAttribute('checked', cfg.breakOnError);
@@ -322,7 +329,7 @@
 			
 			function UpdateRow(index) {
 				
-				setTimeout(function() { // poor man's thread
+//				setTimeout(function() { // poor man's thread
 				
 					var row = treeView.content[index];
 					var res = debuggerRpc.ExpressionInfo(row.path, selectedStackFrame.value.index);
@@ -330,7 +337,7 @@
 					row.col.string = res.string;
 					row.col.source = res.source;
 					treeView.treebox.invalidateRow(index);
-				}, 0);
+//				}, 0);
 			}
 			
 			treeView.onOpen = function(row, path) {
@@ -343,9 +350,6 @@
 				}
 			}
 			
-			for each ( var expression in debuggerRpc.GetCookie('watch') )
-				treeView.Add(treeView.content.length-1, [expression]);
-
 			this.Add = function(expression) {
 				
 				var row = treeView.Add(treeView.content.length-1, [expression]);
@@ -366,10 +370,20 @@
 			}				
 
 			this.GetValueByIndex = function(index) treeView.content[index].col.string;
+			this.GetSourceByIndex = function(index) treeView.content[index].col.source;
 
 			this.Show = function(type) {
 				
 				alert('TBD')
+			}
+
+			this.Connected = function(polarity) {
+				
+				if ( polarity )
+					for each ( var expression in debuggerRpc.GetCookie('watch') )
+						treeView.Add(treeView.content.length-1, [expression]);
+				else
+					treeView.RemoveAll();
 			}
 
 			this.Update = function() {
@@ -379,6 +393,7 @@
 			}
 
 			selectedStackFrame.Listen(function(newVal) self.Update(newVal));
+			connected.Listen(function(newVal, oldVal) newVal != oldVal && self.Connected(newVal));
 		}
 
 
@@ -415,8 +430,15 @@
 				selectedStackFrame.value = programStack.value[index];
 			}
 			
+			this.Connected = function(polarity) {
+				
+				if ( !polarity )
+					while ( stack.removeItemAt(0) );
+			}
+			
 			selectedStackFrame.Listen(function(newVal) self.UpdateSelection(newVal));
 			programStack.Listen(function(newVal) self.UpdateContent(newVal));
+			connected.Listen(function(newVal, oldVal) newVal != oldVal && self.Connected(newVal));
 		}
 
 
@@ -427,39 +449,38 @@
 
 			var reset = [];
 			
-			var sourceFiles = {};
-			var breakpointList = {};
-			
+			var cache_breakpointList = {};
+			var cache_sourceFiles = {};
 			var cache_prevStackLines = {};
 			
 			var listView = {
 				__proto__: DefaultTreeView,
 				getCellText: function(row, col) {
-					
+						
 					try {
 						var lineno = row+1;
 						switch ( col.id ) {
 							case 'line':
 								return lineno;
 							case 'bp':
-								return breakpointList[lineno];
+								return cache_breakpointList[lineno];
 							case 'sl':
 								return cache_prevStackLines[lineno];
 							case 'code':
-								return sourceFiles[currentFile.value].code[row];
+								return cache_sourceFiles[currentFile.value].source[row];
 						}
 					} catch(ex){}
 				},
 				getCellProperties: function(row, col, props) {
-					
+
 					try {
 						var lineno = row+1;
 						switch ( col.id ) {
 							case 'line':
 							case 'bp':
 
-								if ( lineno in breakpointList )
-									AddProp(props, breakpointList[lineno] == 'true' ? 'breakpoint' : 'condBreakpoint');
+								if ( lineno in cache_breakpointList )
+									AddProp(props, cache_breakpointList[lineno] == 'true' ? 'breakpoint' : 'condBreakpoint');
 								break;
 							case 'code':
 
@@ -485,22 +506,19 @@
 						
 			CallWithPrivilege('UniversalBrowserWrite', function() { code.view = listView });
 			
-		
 			var row={}, col={}, childElt={}, x={}, y={}, width={}, height={};
-
 /*
 			code.addEventListener('mousemove', function(ev) {
 				
 				code.treeBoxObject.getCellAt(ev.clientX, ev.clientY, row, col, childElt);
 				if ( row.value == -1 || col.value == null || col.value.id != 'code' || childElt.value != 'text' )
 					return;
-				var text = sourceFiles[currentFile.value].code[row.value];
+				var text = cache_sourceFiles[currentFile.value].source[row.value];
 				code.treeBoxObject.getCoordsForCellItem( row, col.value, 'text', x, y, width, height );
 				var pos = ev.clientX - code.boxObject.x - x.value;
 				Trace( text[Math.floor(pos/7)], width.value )
 			}, false);
 */
-			
 			code.addEventListener('click', function(ev) {
 				
 				code.treeBoxObject.getCellAt(ev.clientX, ev.clientY, row, col, childElt);
@@ -510,35 +528,33 @@
 
 				if ( ev.button == 2 ) {
 					
-					var condition = prompt('Breakpoint condition', breakpointList[lineno] || 'true');
+					var condition = prompt('Breakpoint condition', cache_breakpointList[lineno] || 'true');
 					if ( condition && debuggerRpc.AddBreakpoint(currentFile.value, lineno, condition) )
-						breakpointList[lineno] = condition;
+						cache_breakpointList[lineno] = condition;
 				} else {
 
-					if ( lineno in breakpointList ) {
+					if ( lineno in cache_breakpointList ) {
 
 						if ( debuggerRpc.RemoveBreakpoint(currentFile.value, lineno) )
-							delete breakpointList[lineno];
+							delete cache_breakpointList[lineno];
 					} else {
 
 						if ( debuggerRpc.AddBreakpoint(currentFile.value, lineno, 'true') )
-							breakpointList[lineno] = 'true';
+							cache_breakpointList[lineno] = 'true';
 					}
 				}
 				code.treeBoxObject.invalidateRow(lineno-1);
 			}, false);
 			
-			
 			this.GetSourceFile = function(filename) {
 			
-				if ( filename in sourceFiles )
-					return sourceFiles[filename];
-
+				if ( filename in cache_sourceFiles )
+					return cache_sourceFiles[filename].source;
 				var codeText = debuggerRpc.GetSource(filename);
 				codeText = codeText.replace(/\t/g, '    ');
 				var codeLines = codeText.split(/\r?\n/);
-				sourceFiles[filename] = { code:codeLines };
-				return sourceFiles[filename];
+				cache_sourceFiles[filename] = { source:codeLines };
+				return codeLines;
 			}
 			
 			this.UpdateCurrentFile = function(filename, prevFilename) {
@@ -546,33 +562,41 @@
 				if ( filename == prevFilename )
 					return;
 
-				if ( prevFilename )
-					code.treeBoxObject.rowCountChanged(0, -sourceFiles[prevFilename].code.length);
-
-				this.GetSourceFile(currentFile.value);
-				
-				breakpointList = debuggerRpc.BreakpointList(currentFile.value);
+				if ( prevFilename ) {
+					
+					cache_sourceFiles[prevFilename].viewOffset = code.treeBoxObject.getFirstVisibleRow();
+					code.treeBoxObject.rowCountChanged(0, -cache_sourceFiles[prevFilename].source.length);
+				}
 
 				cache_prevStackLines = {};
-				for each ( var level in programStack.value )
-					if ( level.filename == currentFile.value )
-						cache_prevStackLines[level.lineno] = level.index;
 				
-				code.treeBoxObject.rowCountChanged(0, sourceFiles[currentFile.value].code.length);
+				if ( !filename ) {
+					
+					cache_breakpointList = {};
+					return;
+				}
+
+				this.GetSourceFile(filename);
+				cache_breakpointList = debuggerRpc.BreakpointList(filename);
+
+				for each ( var level in programStack.value )
+					if ( level.filename == filename )
+						cache_prevStackLines[level.lineno] = level.index;
+
+				code.treeBoxObject.rowCountChanged(0, cache_sourceFiles[filename].source.length);
+				
+				let (offset = cache_sourceFiles[filename].viewOffset) offset && code.treeBoxObject.scrollToRow(offset);
 			}
 			
 			this.Update = function(stackFrame) {
 			
 				while (reset.length) reset.shift()();
 			
-				var filename = stackFrame.filename;
-				var lineno = stackFrame.lineno;
-			
-				currentFile.value = filename;
-				var row = lineno-1;
-				code.treeBoxObject.ensureRowIsVisible(row-5);
-				code.treeBoxObject.ensureRowIsVisible(row+5);
-				code.treeBoxObject.ensureRowIsVisible(row);
+				currentFile.value = stackFrame.filename;
+				var row = stackFrame.lineno-1;
+				
+				for each ( var n in [-5,5,0] )
+					code.treeBoxObject.ensureRowIsVisible(row+n);
 
 				cache_prevStackLines = {};
 				for each ( var level in programStack.value )
@@ -581,15 +605,25 @@
 
 				code.treeBoxObject.invalidate();
 			}
+
+			this.Connected = function(polarity) {
+				
+				if ( !polarity ) {
+
+					currentFile.value = undefined;
+					cache_sourceFiles = {};
+				}
+			}
 			
 			selectedStackFrame.Listen(function(newVal) self.Update(newVal));
 			currentFile.Listen(function(newVal, prevVal) self.UpdateCurrentFile(newVal, prevVal));
+			connected.Listen(function(newVal, oldVal) newVal != oldVal && self.Connected(newVal));
 		}
 		
 		function Traceto(filename, lineno) {
 		
 			var trace = debuggerRpc.TraceTo(filename, lineno);
-			Trace( [ Strdup(' ',d)+LTrim(codeManager.GetSourceFile(f).code[l-1]) for each ( [i, [f,l,d]] in Iterator(trace)) ].join('\n') );
+			Trace( [ Strdup(' ',d)+LTrim(codeManager.GetSourceFile(f)[l-1]) for each ( [i, [f,l,d]] in Iterator(trace)) ].join('\n') );
 			UpdateState();
 		}
 		
@@ -654,6 +688,7 @@
 				<tree id="watch" hidecolumnpicker="false" flags="dont-build-content" context="watchContextMenu" flex="1">
 					<menupopup id="watchContextMenu">
 						<menuitem label="value to clipboard" oncommand="var idx = $('watch').currentIndex; if ( idx != -1 ) CallWithPrivilege('UniversalXPConnect', function() CopyToClipboard(watchManager.GetValueByIndex(idx)) )"/>
+						<menuitem label="source to clipboard" oncommand="var idx = $('watch').currentIndex; if ( idx != -1 ) CallWithPrivilege('UniversalXPConnect', function() CopyToClipboard(watchManager.GetSourceByIndex(idx)) )"/>
 						<menuitem label="remove" oncommand="var idx = $('watch').currentIndex; if ( idx != -1 ) watchManager.RemoveByIndex(idx);"/>
 						<menuitem label="clean" oncommand="watchManager.RemoveAll();"/>
 					</menupopup>
@@ -691,6 +726,9 @@
 		</toolbar>
 	</toolbox>
 	<statusbar>
-		<statusbarpanel id="statusInfo" flex="1"/>
+		<statusbarpanel id="status" flex="1"/>
+		<statusbarpanel id="statusBreakReason" flex="0"/>
+		<statusbarpanel id="statusException" style="color: red" flex="0"/>
+		<statusbarpanel id="statusTime" flex="0"/>
 	</statusbar>
 </window>
