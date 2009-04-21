@@ -37,7 +37,7 @@ LoadModule('jsdebug');
 					if ( val === null )
 						return 'null';
 					if ( val instanceof Array )
-						return '['+Crop(val.join(','),16)+']';
+						return '['+Crop(val.join(','),16)+'] (#'+val.length+')';
 					return val.constructor.name+'{'+Crop(val.toString(),16)+'}';
 			}
 			return String(val);
@@ -246,12 +246,21 @@ LoadModule('jsdebug');
 		
 		ExpressionInfo: function(path, stackFrameIndex, ChildListOnly) {
 			
+			stackFrameIndex = stackFrameIndex == undefined ? _breakContext.stackFrameIndex : stackFrameIndex;
+			var val, expression = path.shift();
 			try {
-				var val = dbg.EvalInStackFrame('('+path.shift()+')', stackFrameIndex == undefined ? _breakContext.stackFrameIndex : stackFrameIndex );
+				if ( expression[0] != '.' ) {
+
+					val = dbg.EvalInStackFrame('('+expression+')', stackFrameIndex );
+				} else {
+
+					var auto = { stack:dbg.StackFrame(stackFrameIndex), rval:_breakContext.rval };
+					val = auto[expression.substr(1)];
+				}
 				val = path.reduce(function(prev, cur) prev[cur], val);
 				var isObj = typeof(val) == 'object';
 				if ( ChildListOnly )
-					return isObj ? [ name for ( name in val) ] : undefined;
+					return isObj ? [ name for ( name in val) ].concat(['__parent__', '__proto__', 'constructor']) : undefined;
 				else
 					return { isObj:isObj, string:Try(function() ValToString(val)), source:Try(function() uneval(val)) };
 			} catch(ex) {
@@ -259,16 +268,6 @@ LoadModule('jsdebug');
 			}
 		},
 		
-/*
-		ContextInfo: function(path, stackFrameIndex) {
-			
-			var context = { stack:dbg.StackFrame(stackFrameIndex == undefined ? context.stackFrameIndex : stackFrameIndex), rval:context.rval };
-			var val = context[path.shift()];
-			val = path.reduce(function(prev, cur) prev[cur], val);
-			return { childList:typeof(val) == 'object' ? [ name for ( name in val) ] : [], string:Try(function() ValToString(val)), source:Try(function() uneval(val)) };
-		},
-*/
-
 		DefinitionLocation: function(identifier, stackFrameIndex) {
 			
 			var value = dbg.EvalInStackFrame(identifier, stackFrameIndex == undefined ? _breakContext.stackFrameIndex : stackFrameIndex );

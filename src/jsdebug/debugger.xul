@@ -165,18 +165,13 @@
 			toggleOpenState: function(row) {
 			
 				if ( this.RowHasChild(row) ) {
-						
-					var count = 0;
-					while ( this.RowHasChild(row) ) {
-						
-						count--;
+					
+					for ( var count = 0; this.RowHasChild(row); count-- )
 						this.view.splice(row+1, 1);
-					}
 					this.treebox.rowCountChanged(row+1, count);
 				} else {
 					
-					var _this = this;
-					setTimeout(function() _this.onOpen(row, _this.view[row].path), 0);
+					this.onOpen(row, this.view[row].path);
 				}
 			},
 
@@ -198,6 +193,9 @@
 			
 			RemoveByIndex: function(index) {
 				
+				for ( var count = 0; this.RowHasChild(index); count-- )
+					this.view.splice(index+1, 1);
+				this.treebox.rowCountChanged(index+1, count);
 				this.view.splice(index, 1);
 				this.treebox.rowCountChanged(index, -1);
 			},
@@ -233,7 +231,6 @@
 			}
 		}      
       
-
 		function Variable() {
 			
 			this._value = undefined;
@@ -266,8 +263,9 @@
 		var selectedStackFrame = new Variable();
 		var currentFile = new Variable();
 		var connected = new Variable();
-				
-		var debuggerRpc = new SimpleRpc('127.0.0.1', 8009);
+		
+		var [address,port] = location.hash.substr(1).split(':')
+		var debuggerRpc = new SimpleRpc(address||'127.0.0.1', port||'8009');
 
 		function init() {
 
@@ -328,16 +326,13 @@
 			CallWithPrivilege('UniversalBrowserWrite', function() { watchElt.view = treeView });
 			
 			function UpdateRow(index) {
-				
-//				setTimeout(function() { // poor man's thread
-				
-					var row = treeView.content[index];
-					var res = debuggerRpc.ExpressionInfo(row.path, selectedStackFrame.value.index);
-					row.hasChild = res.isObj;
-					row.col.string = res.string;
-					row.col.source = res.source;
-					treeView.treebox.invalidateRow(index);
-//				}, 0);
+
+				var row = treeView.content[index];
+				var res = debuggerRpc.ExpressionInfo(row.path, selectedStackFrame.value.index);
+				row.hasChild = res.isObj;
+				row.col.string = res.string;
+				row.col.source = res.source;
+				treeView.treebox.invalidateRow(index);
 			}
 			
 			treeView.onOpen = function(row, path) {
@@ -372,16 +367,20 @@
 			this.GetValueByIndex = function(index) treeView.content[index].col.string;
 			this.GetSourceByIndex = function(index) treeView.content[index].col.source;
 
+			var currentView = 'watch';
+			var views = { auto:[] };
 			this.Show = function(type) {
-				
-				alert('TBD')
+			
+				views[currentView] = treeView.content;
+				treeView.content = views[type];
+				currentView = type;
 			}
 
 			this.Connected = function(polarity) {
 				
 				if ( polarity )
 					for each ( var expression in debuggerRpc.GetCookie('watch') )
-						treeView.Add(treeView.content.length-1, [expression]);
+						treeView.Add(treeView.content.length-1, expression);
 				else
 					treeView.RemoveAll();
 			}
@@ -395,8 +394,6 @@
 			selectedStackFrame.Listen(function(newVal) self.Update(newVal));
 			connected.Listen(function(newVal, oldVal) newVal != oldVal && self.Connected(newVal));
 		}
-
-
 
 
 		function StackManager() {
@@ -657,6 +654,26 @@
 	  <key modifiers="shift" keycode="VK_UP" command="cmd_frameup"/>
 	  <key modifiers="shift" keycode="VK_DOWN" command="cmd_framedown"/>
 	</keyset>
+	<toolbox>
+		<toolbar id="nav-toolbar">
+			<toolbarbutton label="Step" tooltiptext="F11" command="cmd_step"/>
+			<toolbarbutton label="over" tooltiptext="F10" command="cmd_stepover"/>
+			<toolbarbutton label="out" tooltiptext="Shift-F10" command="cmd_stepout"/>
+			<toolbarbutton label="through" tooltiptext="Shift-F11" command="cmd_stepthrough"/>
+			<toolbarbutton label="Continue" tooltiptext="F8" command="cmd_continue"/>
+			<toolbarbutton label="Goto" command="cmd_goto"/>
+			<toolbarseparator/>
+			<checkbox label="break on debugger keyword" command="cmd_breakondebuggerkeyword"/>
+			<checkbox label="break on error" command="cmd_breakonerror"/>
+			<checkbox label="break on exception" command="cmd_breakonexception"/>
+			<toolbarseparator/>
+			<menu label="scripts" onpopupshowing="for each (var item in debuggerRpc.GetScriptList()) this.appendItem(item)" onpopuphidden="while(this.removeItemAt(0));" oncommand="currentFile.value = event.target.label">
+				<menupopup/>
+			</menu>
+			<toolbarspacer flex="1"/> 
+			<toolbarbutton style="list-style-image: url('chrome://global/skin/icons/close.png'); -moz-image-region: rect(0px, 14px, 14px, 0px)" oncommand="if (confirm('Shutdown the debugger ?')) { debuggerRpc.Shutdown(); UpdateState() }"/>
+		</toolbar>
+	</toolbox>
 	<hbox flex="1">
 		<tree id="code" hidecolumnpicker="false" flags="dont-build-content" context="codeContextMenu" seltype="single" flex="1">
 			<menupopup id="codeContextMenu">
@@ -705,30 +722,10 @@
 			<textbox onchange="watchManager.Add(this.value); this.value=''" emptytext="&lt;new expression&gt;" />
 		</vbox>
 	</hbox>
-	<toolbox>
-		<toolbar id="nav-toolbar">
-			<toolbarbutton label="Step" tooltiptext="F11" command="cmd_step"/>
-			<toolbarbutton label="over" tooltiptext="F10" command="cmd_stepover"/>
-			<toolbarbutton label="out" tooltiptext="Shift-F10" command="cmd_stepout"/>
-			<toolbarbutton label="through" tooltiptext="Shift-F11" command="cmd_stepthrough"/>
-			<toolbarbutton label="Continue" tooltiptext="F8" command="cmd_continue"/>
-			<toolbarbutton label="Goto" command="cmd_goto"/>
-			<toolbarseparator/>
-			<checkbox label="break on 'debugger' keyword" command="cmd_breakondebuggerkeyword"/>
-			<checkbox label="break on error" command="cmd_breakonerror"/>
-			<checkbox label="break on exception" command="cmd_breakonexception"/>
-			<toolbarseparator/>
-			<menu label="scripts" onpopupshowing="for each (var item in debuggerRpc.GetScriptList()) this.appendItem(item)" onpopuphidden="while(this.removeItemAt(0));" oncommand="currentFile.value = event.target.label">
-				<menupopup/>
-			</menu>
-			<toolbarspacer flex="1"/> 
-			<toolbarbutton style="list-style-image: url('chrome://global/skin/icons/close.png'); -moz-image-region: rect(0px, 14px, 14px, 0px)" oncommand="if (confirm('Shutdown the debugger ?')) { debuggerRpc.Shutdown(); UpdateState() }"/>
-		</toolbar>
-	</toolbox>
 	<statusbar>
 		<statusbarpanel id="status" flex="1"/>
-		<statusbarpanel id="statusBreakReason" flex="0"/>
-		<statusbarpanel id="statusException" style="color: red" flex="0"/>
-		<statusbarpanel id="statusTime" flex="0"/>
+		<statusbarpanel id="statusException" style="color: red"/>
+		<statusbarpanel id="statusBreakReason" width="100" orient="vertical" align="center"/>
+		<statusbarpanel id="statusTime" width="100" orient="vertical" align="center"/>
 	</statusbar>
 </window>

@@ -987,6 +987,29 @@ DEFINE_FUNCTION(LocateLine) {
 }
 
 
+/*
+DEFINE_FUNCTION_FAST( PropertyDescArray ) {
+
+	J_S_ASSERT_ARG_MIN( 1 );
+	J_S_ASSERT_OBJECT( J_FARG(1) );
+
+	JSPropertyDescArray pda;
+//	J_CHK( JS_GetPropertyDescArray(cx, JSVAL_TO_OBJECT( J_FARG(1) ), &pda) );
+
+	JSScopeProperty *jssp  = NULL;
+	JS_PropertyIterator(JSVAL_TO_OBJECT( J_FARG(1) ), &jssp);
+	
+	while ( jssp ) {
+
+		JS_PropertyIterator(JSVAL_TO_OBJECT( J_FARG(1) ), &jssp);
+	}
+
+	return JS_TRUE;
+	JL_BAD;
+}
+*/
+
+
 DEFINE_FUNCTION( Test ) {
 
 	return JS_TRUE;
@@ -999,6 +1022,8 @@ CONFIGURE_STATIC
 
 	REVISION(SvnRevToInt("$Revision$"))
 	BEGIN_STATIC_FUNCTION_SPEC
+
+//		FUNCTION_FAST( PropertyDescArray )
 #ifdef DEBUG
 		FUNCTION_FAST( DumpHeap )
 		FUNCTION( Test )
