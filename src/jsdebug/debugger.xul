@@ -41,6 +41,8 @@
 	#code :-moz-tree-cell(condBreakpoint) { background-color: orange }
 	#code :-moz-tree-cell-text(breakpoint), #code :-moz-tree-cell(condBreakpoint) { color: white }
 
+	#watch :-moz-tree-cell-text(hidden) { color: #BBB }
+
 " type="text/css"?>
 
 <window id="window"
@@ -157,6 +159,12 @@
 			
 			get rowCount() this.view.length,
 			getCellText : function(row, column) column.id == 'path' ? this.view[row].path.slice(-1) : this.view[row].col[column.id],
+			getCellProperties: function(row,col,props) {
+				
+				for each ( prop in this.view[row].properties )
+					AddProp(props, prop);
+			},
+
 			isContainer: function(row) this.view[row].hasChild,
 			isContainerEmpty: function(row) false,
 			isContainerOpen: function(row) this.RowHasChild(row),
@@ -252,9 +260,9 @@
 			while ( defered.length ) Variable.prototype._FireListeners.apply(this, defered.shift());
 		}
 		
-      
+// tools
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		
+// application		
 		
 		var watchManager, stackManager, codeManager, breakpointManager;
 
@@ -332,6 +340,9 @@
 				row.hasChild = res.isObj;
 				row.col.string = res.string;
 				row.col.source = res.source;
+				//if ( !row.col.flags.enumerate ) row.properties = ['hidden'];
+				if ( ' __count__ __proto__ __parent__ constructor '.indexOf(' '+row.path.slice(-1)+' ') != -1 )
+					row.properties = ['hidden'];
 				treeView.treebox.invalidateRow(index);
 			}
 			

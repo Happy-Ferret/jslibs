@@ -14,6 +14,7 @@
 
 LoadModule('jsio');
 LoadModule('jsstd');
+LoadModule('jsz');
 LoadModule('jsdebug');
 !function() {
 	
@@ -48,6 +49,8 @@ LoadModule('jsdebug');
 	function SimpleHTTPServer(port, bind) {
 		
 		var pendingRequestList = [], serverSocket = new Socket(), socketList = [serverSocket];
+		
+		var deflate = new Z(Z.DEFLATE, Z.BEST_SPEED);
 		function CloseSocket(s) {
 
 			s.Close();
@@ -84,8 +87,15 @@ LoadModule('jsdebug');
 						return CloseSocket(s);
 					if ( response == undefined )
 						s.Write('HTTP/1.1 204 No Content\r\n\r\n');
-					else
-						s.Write('HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: '+response.length+'\r\n\r\n'+response);
+					else {
+						var head = 'HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n';
+						if ( response.length >= 1460 ) {
+						
+							response = deflate(response, true);
+							head += 'Content-Encoding: deflate\r\n';
+						}
+						s.Write(head + 'Content-Length: '+response.length+'\r\n\r\n' + response);
+					}
 					s.readable = ProcessRequest;
 					return true;
 				}]);
@@ -107,8 +117,11 @@ LoadModule('jsdebug');
 
 		this.GetNextRequest = function() {
 
-			while( !pendingRequestList.length )
+			while( !pendingRequestList.length ) {
+				
+//				if ( endSignal ) throw 'end signal';
 				Poll(socketList, 100);
+			}
 			return pendingRequestList.shift();
 		}	
 	}
@@ -135,8 +148,8 @@ LoadModule('jsdebug');
 		return Switch(pos, 'breakpoint', 'step', 'stepover', 'stepthrough', 'stepout', 'throw', 'error', 'debugger', 'execute', 'call');
 	}
 
-	function Action(id) { this.valueOf = function() id }
-	function Asynchronus(fct) { this.fct = fct }
+	function Action(id) { throw id }
+	function Asynchronus(fct) { throw fct }
 
 	var debuggerApi = {
 
@@ -258,11 +271,10 @@ LoadModule('jsdebug');
 					val = auto[expression.substr(1)];
 				}
 				val = path.reduce(function(prev, cur) prev[cur], val);
-				var isObj = typeof(val) == 'object';
 				if ( ChildListOnly )
-					return isObj ? [ name for ( name in val) ].concat(['__parent__', '__proto__', 'constructor']) : undefined;
+					return IsPrimitive(val) ? undefined : [ name for ( name in val) ].concat(['__count__', '__parent__', '__proto__', 'constructor']);
 				else
-					return { isObj:isObj, string:Try(function() ValToString(val)), source:Try(function() uneval(val)) };
+					return { isObj:!IsPrimitive(val), string:Try(function() ValToString(val)), source:Try(function() uneval(val)) };
 			} catch(ex) {
 				return { isObj:false, string:String(ex), source:'' };
 			}
@@ -282,7 +294,7 @@ LoadModule('jsdebug');
 			dbg.breakOnExecute = false;
 			delete dbg.onBreak;
 			delete global.__dbg;
-			return new Action(Debugger.DO_CONTINUE);
+			Action(Debugger.DO_CONTINUE);
 		},
 
 		Step: function() new Action(Debugger.DO_STEP),
@@ -295,13 +307,13 @@ LoadModule('jsdebug');
 			if ( _breakContext.filename == filename && _breakContext.lineno == lineno )
 				return;
 			if ( dbg.HasBreakpoint(filename, lineno) )
-				return new Action(Debugger.DO_CONTINUE);
+				Action(Debugger.DO_CONTINUE);
 			var lineno = dbg.ToggleBreakpoint(true, filename, lineno);
 			_reset.push(function() dbg.ToggleBreakpoint(false, filename, lineno));
-			return new Action(Debugger.DO_CONTINUE);
+			Action(Debugger.DO_CONTINUE);
 		},
 		
-		TraceTo: function(aimFilename, aimLineno) new Asynchronus(function(responseFunction) {
+		TraceTo: function(aimFilename, aimLineno) Asynchronus(function(responseFunction) {
 		
 			with (_breakContext)
 				var trace = [[filename, lineno, stackFrameIndex]]; // the current line
@@ -318,7 +330,7 @@ LoadModule('jsdebug');
 				responseFunction(uneval(trace));
 				return dbg.onBreak.apply(this, arguments);
 			}
-			return new Action(Debugger.DO_STEP);
+			Action(Debugger.DO_STEP);
 		}),
 	}
 	
@@ -343,28 +355,28 @@ LoadModule('jsdebug');
 		_breakContext = { filename:filename, lineno:lineno, scope:scope, breakOrigin:breakOrigin, stackFrameIndex:stackFrameIndex, hasException:hasException, exception:exception, rval:rval, enteringFunction:enteringFunction, time:tmpTime - _time };
 		for(;;) {
 
-			var res, [req, responseFunction] = server.GetNextRequest();
+			var res = undefined, [req, responseFunction] = server.GetNextRequest();
+			
 			try {
+				try {
 
-				req = eval('('+req+')');
-				res = debuggerApi[req[0]].apply(debuggerApi, req[1]);
-			} catch(ex) {
-				
-				res = ex;
-			}
-			
-			if ( res instanceof Asynchronus ) {
-			
-				res = res.fct.call(cx, responseFunction);
-				responseFunction = function(){}
-			}
+					req = eval('('+req+')');
+					res = debuggerApi[req[0]].apply(debuggerApi, req[1]);
+				} catch( fct if IsFunction(fct) ) {
 
-			if ( res instanceof Action ) {
-				
+					var tmp = responseFunction;
+					responseFunction = function(){}
+					fct.call(debuggerApi, tmp);
+					continue;
+				}
+			} catch( action if !isNaN(action) ) {
+
 				responseFunction();
-				res = Number(res);
 				_time = TimeCounter();
-				return res;
+				return action;
+			}  catch(ex) {
+					
+				res = ex;
 			}
 			
 			responseFunction(uneval(res));

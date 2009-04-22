@@ -987,27 +987,102 @@ DEFINE_FUNCTION(LocateLine) {
 }
 
 
-/*
-DEFINE_FUNCTION_FAST( PropertyDescArray ) {
+
+/**doc
+$TOC_MEMBER $INAME
+ $ARRAY $INAME( object );
+  Returns an array
+**/
+DEFINE_FUNCTION_FAST( PropertiesList ) {
 
 	J_S_ASSERT_ARG_MIN( 1 );
 	J_S_ASSERT_OBJECT( J_FARG(1) );
 
-	JSPropertyDescArray pda;
-//	J_CHK( JS_GetPropertyDescArray(cx, JSVAL_TO_OBJECT( J_FARG(1) ), &pda) );
+	JSObject *srcObj = JSVAL_TO_OBJECT( J_FARG(1) );
+	JSObject *arrayObject = JS_NewArrayObject(cx, 0, NULL);
+	J_S_ASSERT_ALLOC( arrayObject );
+	*J_FRVAL = OBJECT_TO_JSVAL( arrayObject );
 
-	JSScopeProperty *jssp  = NULL;
-	JS_PropertyIterator(JSVAL_TO_OBJECT( J_FARG(1) ), &jssp);
-	
+	jsval tmp;
+	int index = 0;
+
+	JSScopeProperty *jssp = NULL;
+	JS_PropertyIterator(srcObj, &jssp);
+
 	while ( jssp ) {
 
-		JS_PropertyIterator(JSVAL_TO_OBJECT( J_FARG(1) ), &jssp);
+		tmp = ID_TO_VALUE(jssp->id);
+		J_CHK( JS_SetElement(cx, arrayObject, index, &tmp) );
+		index++;
+		JS_PropertyIterator(srcObj, &jssp);
 	}
 
 	return JS_TRUE;
 	JL_BAD;
 }
-*/
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $OBJ $INAME( object );
+**/
+DEFINE_FUNCTION_FAST( PropertiesInfo ) {
+
+	J_S_ASSERT_ARG_MIN( 1 );
+	J_S_ASSERT_OBJECT( J_FARG(1) );
+
+	JSObject *srcObj = JSVAL_TO_OBJECT( J_FARG(1) );
+
+	JSObject *infoObject = JS_NewObjectWithGivenProto(cx, NULL, NULL, NULL);
+	*J_FRVAL = OBJECT_TO_JSVAL( infoObject );
+
+	JSPropertyDesc desc;
+
+	jsval tmp;
+	int index = 0;
+
+	JSScopeProperty *jssp = NULL;
+	JS_PropertyIterator(srcObj, &jssp);
+
+	while ( jssp ) {
+
+		J_CHK( JS_GetPropertyDesc(cx, srcObj, jssp, &desc) );
+
+		JSObject *descObj = JS_NewObject(cx, NULL, NULL, NULL);
+		tmp = OBJECT_TO_JSVAL(descObj);
+		J_CHK( JS_SetPropertyById(cx, infoObject, jssp->id, &tmp) );
+
+		tmp = desc.value;
+		if ( desc.flags & JSPD_EXCEPTION )
+			J_CHK( JS_SetProperty(cx, descObj, "exception", &tmp) );
+		else
+			J_CHK( JS_SetProperty(cx, descObj, "value", &tmp) );
+
+		tmp = desc.flags & JSPD_VARIABLE ? JSVAL_TRUE : JSVAL_FALSE;
+		J_CHK( JS_SetProperty(cx, descObj, "variable", &tmp) );
+
+		tmp = desc.flags & JSPD_ARGUMENT ? JSVAL_TRUE : JSVAL_FALSE;
+		J_CHK( JS_SetProperty(cx, descObj, "argument", &tmp) );
+
+		tmp = desc.flags & JSPD_ENUMERATE ? JSVAL_TRUE : JSVAL_FALSE;
+		J_CHK( JS_SetProperty(cx, descObj, "enumerate", &tmp) );
+
+		tmp = desc.flags & JSPD_READONLY ? JSVAL_TRUE : JSVAL_FALSE;
+		J_CHK( JS_SetProperty(cx, descObj, "readonly", &tmp) );
+
+		tmp = desc.flags & JSPD_PERMANENT ? JSVAL_TRUE : JSVAL_FALSE;
+		J_CHK( JS_SetProperty(cx, descObj, "permanent", &tmp) );
+
+		tmp = jssp->setter != NULL || jssp->getter != NULL ? JSVAL_TRUE : JSVAL_FALSE;
+		J_CHK( JS_SetProperty(cx, descObj, "native", &tmp) );
+
+		index++;
+		JS_PropertyIterator(srcObj, &jssp);
+	}
+
+	return JS_TRUE;
+	JL_BAD;
+}
 
 
 DEFINE_FUNCTION( Test ) {
@@ -1023,7 +1098,8 @@ CONFIGURE_STATIC
 	REVISION(SvnRevToInt("$Revision$"))
 	BEGIN_STATIC_FUNCTION_SPEC
 
-//		FUNCTION_FAST( PropertyDescArray )
+		FUNCTION_FAST_ARGC( PropertiesList, 1 )
+		FUNCTION_FAST_ARGC( PropertiesInfo, 1 )
 #ifdef DEBUG
 		FUNCTION_FAST( DumpHeap )
 		FUNCTION( Test )
