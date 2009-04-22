@@ -233,7 +233,7 @@
 			>
 		</File>
 		<File
-			RelativePath=".\qa.js"
+			RelativePath=".\jsz_qa.js"
 			>
 		</File>
 	</Files>

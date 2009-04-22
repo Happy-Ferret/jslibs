@@ -69,6 +69,20 @@ function test3() {
 
 
 
+function test4() {
+
+	var deflate = new Z(Z.DEFLATE);
+
+	for ( var i = 0; i < 10; i ++ ) {
+	
+		var str = deflate('abc', true);
+		Print( str.length, '\n' );
+	}
+
+}
+
+
+
 
 //try {
 
@@ -86,7 +100,9 @@ res2 += compressor2.Transform();
 Print( '['+res2+']' );
 */
 
-test2();
+//test2();
+//test4();
+Print( typeof Z.BEST_SPEED )
 Print('done')
 
 //} catch (ex if ex instanceof ZError) {

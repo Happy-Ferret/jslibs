@@ -16,13 +16,35 @@ LoadModule('jsz');
 		var deflater = new Z(Z.DEFLATE, 9);
 		var compressedText = deflater(uncompressezText);
 		compressedText += deflater(uncompressezText);
-		QA.ASSERT( deflater.eof, false, 'eof before the end' );
+//		QA.ASSERT( deflater.eof, false, 'eof before the end' );
 		compressedText += deflater(uncompressezText, true); //		compressedText += deflater();
-		QA.ASSERT( deflater.eof, true, 'eof after the end' );
+//		QA.ASSERT( deflater.eof, true, 'eof after the end' );
 		QA.ASSERT( compressedText.length, deflater.lengthOut, 'compressed text length' );
 		QA.ASSERT( deflater.adler32, 2686765097, 'adler32' );
 		QA.ASSERT( deflater.lengthIn, 420, 'lengthIn property' );
 		QA.ASSERT( deflater.lengthOut, 28, 'lengthOut property' );
+
+
+/// inflate object reusability [ftr]
+
+		var data = 'clear data';
+		var deflatedData = new Z(Z.DEFLATE)(data, true);
+		var inflater = new Z(Z.INFLATE);
+
+		QA.ASSERT( inflater(data,true), data, '1st complete inflate' );
+		QA.ASSERT( inflater(data,true), data, '2nd complete inflate' );
+		QA.ASSERT( inflater(data,true), data, '3rd complete inflate' );
+
+
+/// deflate object reusability [ftr]
+
+		var data = 'clear data';
+		var deflatedData = new Z(Z.DEFLATE)(data, true);
+		var deflater = new Z(Z.DEFLATE);
+
+		QA.ASSERT( deflater(data,true), deflatedData, '1st complete deflate' );
+		QA.ASSERT( deflater(data,true), deflatedData, '2nd complete deflate' );
+		QA.ASSERT( deflater(data,true), deflatedData, '3rd complete deflate' );
 
 
 /// inflate / deflate [ftr]

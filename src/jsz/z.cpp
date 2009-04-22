@@ -84,7 +84,6 @@ DEFINE_CONSTRUCTOR() {
 	z_streamp stream = (z_streamp)JS_malloc(cx, sizeof(z_stream));
 	stream->zalloc = Z_NULL;
 	stream->zfree = Z_NULL;
-	stream->opaque = (voidpf) false; // use this private member to store the "stream_end" status (eof)
 
 	int32 method;
 	JS_ValueToInt32( cx, argv[0], &method );
@@ -111,7 +110,6 @@ DEFINE_CONSTRUCTOR() {
 
 	JS_SetPrivate( cx, obj, stream );
 	JS_SetReservedSlot( cx, obj, SLOT_METHOD, INT_TO_JSVAL( method ) );
-//	JS_SetReservedSlot( cx, obj, SLOT_EOF, BOOLEAN_TO_JSVAL( JS_FALSE ) ); // eof
 
 //	J_CHK( SetStreamReadInterface(cx, obj, NativeInterfaceStreamRead) );
 
@@ -129,7 +127,7 @@ $TOC_MEMBER $INAME
   This function process _inputData_ as a stream.
   If _forceFinish_ is true, the _inputData_ and any buffered data are flushed to the _outputData_.
   If this function is call without any argument, All remaining data are flushed.
-  If eof has already reach, the function returns an empty _outputData_ string.
+  Once finished, the object can be reused to process a new stream of data.
   $H example
   {{{
   var compress = new Z( Z.DEFLATE );
@@ -158,13 +156,6 @@ DEFINE_CALL() {
 
 	z_streamp stream = (z_streamp)JS_GetPrivate( cx, thisObj );
 	J_S_ASSERT_RESOURCE( stream );
-
-// manage this call if eof is already reach : return an empty string
-	if ( stream->opaque != 0 ) { // ( (bool)stream->opaque == true )
-
-		*rval = JS_GetEmptyStringValue(cx);
-		return JS_TRUE;
-	}
 
 // get the action to do
 	jsval jsvalMethod;
@@ -232,8 +223,9 @@ DEFINE_CALL() {
 // close the stream and free resources
 	if ( xflateStatus == Z_STREAM_END ) {
 
-		stream->opaque = (voidp)true; // store the eof status
-		int status = method == DEFLATE ? deflateEnd(stream) : inflateEnd(stream); // free(stream) is done the Finalize
+		int status;
+		status = method == DEFLATE ? deflateReset(stream) : inflateReset(stream);
+//		status = method == DEFLATE ? deflateEnd(stream) : inflateEnd(stream); // free(stream) is done the Finalize
 		if ( status < 0 )
 			return ThrowZError( cx, status, stream->msg );
 	}
@@ -245,20 +237,6 @@ DEFINE_CALL() {
 /**doc
 === Properties ===
 **/
-
-/**doc
-$TOC_MEMBER $INAME
- *eof* $READONLY
-  Is `true` if the end of the stream has been reach.
-**/
-DEFINE_PROPERTY( eof ) {
-
-	z_streamp stream = (z_streamp)JS_GetPrivate( cx, obj );
-	J_S_ASSERT_RESOURCE( stream );
-	*vp = BOOLEAN_TO_JSVAL( stream->opaque != 0 ); // (bool)stream->opaque
-	return JS_TRUE;
-	JL_BAD;
-}
 
 
 /**doc
@@ -341,7 +319,6 @@ CONFIGURE_CLASS
 	HAS_CALL
 
 	BEGIN_PROPERTY_SPEC
-		PROPERTY_READ(eof)
 		PROPERTY_READ(adler32)
 		PROPERTY_READ(lengthIn)
 		PROPERTY_READ(lengthOut)
@@ -354,6 +331,8 @@ CONFIGURE_CLASS
 	BEGIN_CONST_INTEGER_SPEC
 		CONST_INTEGER_SINGLE(INFLATE)
 		CONST_INTEGER_SINGLE(DEFLATE)
+		CONST_INTEGER(BEST_SPEED, Z_BEST_SPEED)
+		CONST_INTEGER(BEST_COMPRESSION, Z_BEST_COMPRESSION)
 	END_CONST_INTEGER_SPEC
 
 END_CLASS
