@@ -1,6 +1,20 @@
 LoadModule('jsstd');
 LoadModule('jsio');
 
+  var obj = { a:11, b:22, c:33 };
+  for ( var p in obj )
+   Print(p, ', '); // prints: a, b, c
+  
+  SetPropertyEnumerate(obj, 'b', false);
+  for ( var p in obj )
+   Print(p, ', '); // prints: a, c
+
+  SetPropertyEnumerate(obj, 'b', true);
+  for ( var p in obj )
+   Print(p, ', '); // prints: a, c
+
+
+Halt(); /////////////////////////////////////////////////////////////////////
 
 var root = [];
 

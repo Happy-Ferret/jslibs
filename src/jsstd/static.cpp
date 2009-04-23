@@ -365,6 +365,123 @@ DEFINE_FUNCTION( HideProperties ) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
 $TOC_MEMBER $INAME
+ $VOID $INAME( object, propertyName, polarity )
+  Show/Hide a property from for-in loop.
+  $H note
+   Using this function may change the order of the properties within the object.
+  $H example
+  {{{
+  var obj = { a:1, b:2, c:3 };
+  for ( var p in obj )
+   Print(p, ', '); // prints: a, b, c
+  
+  SetPropertyEnumerate(obj, 'b', false);
+  for ( var p in obj )
+   Print(p, ', '); // prints: a, c
+
+  SetPropertyEnumerate(obj, 'b', true);
+  for ( var p in obj )
+   Print(p, ', '); // prints: a, c, b
+  }}}
+**/
+DEFINE_FUNCTION_FAST( SetPropertyEnumerate ) {
+	
+	J_S_ASSERT_ARG_MIN( 3 );
+	J_S_ASSERT_OBJECT( J_FARG(1) );
+
+	JSObject *object;
+	object = JSVAL_TO_OBJECT( J_FARG(1) );
+	jsid id;
+	J_CHK( JS_ValueToId(cx, J_FARG(2), &id) );
+	bool polarity;
+	J_CHK( JsvalToBool(cx, J_FARG(3), &polarity) );
+
+	uintN attrs;
+	JSObject *obj2;
+	JSProperty *prop;
+
+	J_CHK( OBJ_LOOKUP_PROPERTY(cx, object, id, &obj2, &prop) );
+	if (!prop || object != obj2) { // not found
+
+		if (prop)
+			OBJ_DROP_PROPERTY(cx, obj2, prop);
+		J_REPORT_ERROR( "Property not found" );
+	}
+	J_CHK( OBJ_GET_ATTRIBUTES(cx, object, id, prop, &attrs) );
+	if ( polarity )
+		attrs |= JSPROP_ENUMERATE;
+	else
+		attrs &= ~JSPROP_ENUMERATE;
+	J_CHK( OBJ_SET_ATTRIBUTES(cx, object, id, prop, &attrs) );
+	OBJ_DROP_PROPERTY(cx, object, prop);
+
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/**doc
+$TOC_MEMBER $INAME
+ $VOID $INAME( object, propertyName, polarity )
+  Make a property not settable. Any attempt to modify a read-only property fail silently.
+  $H example
+  {{{
+  var obj = { a:1 }
+
+  Print( obj.a ); // prints: 1
+
+  obj.a = 2;
+  Print( obj.a ); // prints: 2
+
+  SetPropertyReadonly( obj, 'a', true );
+  obj.a = 3;
+  Print( obj.a ); // prints: 2
+
+  SetPropertyReadonly( obj, 'a', false );
+  obj.a = 4;
+  Print( obj.a ); // prints: 4
+  }}}
+**/
+DEFINE_FUNCTION_FAST( SetPropertyReadonly ) {
+	
+	J_S_ASSERT_ARG_MIN( 3 );
+	J_S_ASSERT_OBJECT( J_FARG(1) );
+
+	JSObject *object;
+	object = JSVAL_TO_OBJECT( J_FARG(1) );
+	jsid id;
+	J_CHK( JS_ValueToId(cx, J_FARG(2), &id) );
+	bool polarity;
+	J_CHK( JsvalToBool(cx, J_FARG(3), &polarity) );
+
+	uintN attrs;
+	JSObject *obj2;
+	JSProperty *prop;
+
+	J_CHK( OBJ_LOOKUP_PROPERTY(cx, object, id, &obj2, &prop) );
+	if (!prop || object != obj2) { // not found
+
+		if (prop)
+			OBJ_DROP_PROPERTY(cx, obj2, prop);
+		J_REPORT_ERROR( "Property not found" );
+	}
+	J_CHK( OBJ_GET_ATTRIBUTES(cx, object, id, prop, &attrs) );
+	if ( polarity )
+		attrs |= JSPROP_READONLY;
+	else
+		attrs &= ~JSPROP_READONLY;
+	J_CHK( OBJ_SET_ATTRIBUTES(cx, object, id, prop, &attrs) );
+	OBJ_DROP_PROPERTY(cx, object, prop);
+
+	return JS_TRUE;
+	JL_BAD;
+}
+ 
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/**doc
+$TOC_MEMBER $INAME
  $INT $INAME( object )
   Returns an integer value that is a unique identifier of the object _object_ .
   $H example
@@ -511,6 +628,25 @@ DEFINE_FUNCTION_FAST( IsFunction ) {
 	
 	J_S_ASSERT_ARG_MIN(1);
 	*J_FRVAL = VALUE_IS_FUNCTION(cx, J_FARG(1)) ? JSVAL_TRUE : JSVAL_FALSE;
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/**doc
+$TOC_MEMBER $INAME
+ $BOOL $INAME()
+  Returns $TRUE if the value is undefined (ie. void 0).
+  $H example
+  {{{
+  Print( IsVoid(undefined) ); // prints: true
+  }}}
+**/
+DEFINE_FUNCTION_FAST( IsVoid ) {
+	
+	J_S_ASSERT_ARG_MIN(1);
+	*J_FRVAL = JSVAL_IS_VOID(J_FARG(1)) ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1310,6 +1446,9 @@ CONFIGURE_STATIC
 		FUNCTION( Clear )
 		FUNCTION( SetScope )
 		FUNCTION( HideProperties )
+		FUNCTION_FAST_ARGC( SetPropertyEnumerate, 3 )
+		FUNCTION_FAST_ARGC( SetPropertyReadonly, 3 )
+
 		FUNCTION_FAST( Exec )
 		FUNCTION_FAST(SandboxEval)
 		FUNCTION( IsStatementValid )
@@ -1322,6 +1461,7 @@ CONFIGURE_STATIC
 		FUNCTION_FAST( IdToObject )
 		FUNCTION_FAST_ARGC( IsPrimitive, 1 )
 		FUNCTION_FAST_ARGC( IsFunction, 1 )
+		FUNCTION_FAST_ARGC( IsVoid, 1 )
 #ifdef JS_HAS_XDR
 		FUNCTION_FAST( XdrEncode )
 		FUNCTION_FAST( XdrDecode )

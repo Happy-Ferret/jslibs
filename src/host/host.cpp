@@ -485,11 +485,11 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostOutput stdOut, HostOutput s
 	globalObject = JS_GetGlobalObject(cx);
 	J_CHKM( globalObject != NULL, "Global object not found." );
 
-
-	JSBool found;
-	uintN attrs;
-	J_CHKM( JS_GetPropertyAttributes(cx, globalObject, "undefined", &attrs, &found) );
-	J_CHKM( JS_SetPropertyAttributes(cx, globalObject, "undefined", attrs | JSPROP_READONLY, &found) );
+//	JSBool found;
+//	uintN attrs;
+//	J_CHK( JS_GetPropertyAttributes(cx, globalObject, "undefined", &attrs, &found) );
+//	J_CHK( JS_SetPropertyAttributes(cx, globalObject, "undefined", attrs | JSPROP_READONLY, &found) );
+	J_CHK( OBJ_DEFINE_PROPERTY(cx, globalObject, ATOM_TO_JSID(cx->runtime->atomState.typeAtoms[JSTYPE_VOID]), JSVAL_VOID, NULL, NULL, JSPROP_PERMANENT | JSPROP_READONLY, NULL) ); // see JS_InitStandardClasses() in jsapi.cpp
 
 
 // make GetErrorMessage available from any module
