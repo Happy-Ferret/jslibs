@@ -986,7 +986,31 @@ DEFINE_FUNCTION(LocateLine) {
 	JL_BAD;
 }
 
+/**doc
+$TOC_MEMBER $INAME
+ $OBJ $INAME( nFrame );
+  Returns the current script name and line number. nFrame is the number of stack frames to go back (0 is the current stack frame).
+**/
+DEFINE_FUNCTION(LocateFilename) {
 
+	J_S_ASSERT_ARG_MIN( 1 );
+	int frame;
+	J_CHK( JsvalToInt(cx, argv[0], &frame) );
+	J_S_ASSERT(frame <= 0, "Frame number must be <= 0");
+
+	JSStackFrame *fp;
+	fp = NULL;
+	for ( JS_FrameIterator(cx, &fp); fp; JS_FrameIterator(cx, &fp) ) {
+
+		if ( fp->script && !frame++ ) {
+
+			*rval = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, JS_GetScriptFilename(cx, JS_GetFrameScript(cx, fp))));
+			break;
+		}
+	}
+	return JS_TRUE;
+	JL_BAD;
+}
 
 /**doc
 $TOC_MEMBER $INAME
@@ -1112,6 +1136,7 @@ CONFIGURE_STATIC
 		FUNCTION( PCToLine )
 		FUNCTION( Locate )
 		FUNCTION( LocateLine )
+		FUNCTION( LocateFilename )
 		FUNCTION( DumpObjectPrivate )
 
 	END_STATIC_FUNCTION_SPEC

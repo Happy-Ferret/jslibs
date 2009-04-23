@@ -44,6 +44,10 @@ function Debug1() {
 
 	debugger;
 	
+	for ( var i = 0; i < 10; i++ )
+		Print( 'test ', i, ' \n' );
+
+	
 	try {
 		ThrowTest();
 	} catch(ex) {

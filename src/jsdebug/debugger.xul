@@ -42,6 +42,11 @@
 	#code :-moz-tree-cell-text(breakpoint), #code :-moz-tree-cell(condBreakpoint) { color: white }
 
 	#watch :-moz-tree-cell-text(hidden) { color: #BBB }
+	
+	#stdout {
+		font-family: monospace;
+		white-space: pre;
+	}
 
 " type="text/css"?>
 
@@ -77,7 +82,7 @@
 		function CallWithPrivilege( privilege, fct ) {
 			
 			netscape.security.PrivilegeManager.enablePrivilege(privilege);
-			var ret = fct();
+			var ret = fct.apply(this, arguments);
 			netscape.security.PrivilegeManager.revertPrivilege(privilege);
 			return ret;
 		}
@@ -323,6 +328,9 @@
 			$('cmd_breakonerror').setAttribute('checked', cfg.breakOnError);
 			$('cmd_breakonexception').setAttribute('checked', cfg.breakOnException);
 			$('cmd_breakondebuggerkeyword').setAttribute('checked', cfg.breakOnDebuggerKeyword);
+			
+			$('stdout').value += debuggerRpc.StdOut();
+			//Trace( CallWithPrivilege.call(this, 'UniversalXPConnect', function() this.editor) )
 		}
 
 
@@ -686,22 +694,28 @@
 		</toolbar>
 	</toolbox>
 	<hbox flex="1">
-		<tree id="code" hidecolumnpicker="false" flags="dont-build-content" context="codeContextMenu" seltype="single" flex="1">
-			<menupopup id="codeContextMenu">
-				<menuitem label="goto" command="cmd_goto"/>
-				<menuitem label="trace to" command="cmd_traceto"/>
-			</menupopup>
-			<treecols>
-				<treecol id="line" label="line"/>
-				<splitter class="tree-splitter"/>
-				<treecol id="bp" label="break condition" hidden="true"/>
-				<splitter class="tree-splitter"/>
-				<treecol id="sl" label="stack level" hidden="true"/>
-				<splitter class="tree-splitter"/>
-				<treecol id="code" label="code" flex="1"/>
-			</treecols>
-			<treechildren/>
-		</tree>
+		<vbox flex="1">
+			<tree id="code" hidecolumnpicker="false" flags="dont-build-content" context="codeContextMenu" seltype="single" flex="1">
+				<menupopup id="codeContextMenu">
+					<menuitem label="goto" command="cmd_goto"/>
+					<menuitem label="trace to" command="cmd_traceto"/>
+				</menupopup>
+				<treecols>
+					<treecol id="line" label="line"/>
+					<splitter class="tree-splitter"/>
+					<treecol id="bp" label="break condition" hidden="true"/>
+					<splitter class="tree-splitter"/>
+					<treecol id="sl" label="stack level" hidden="true"/>
+					<splitter class="tree-splitter"/>
+					<treecol id="code" label="code" flex="1"/>
+				</treecols>
+				<treechildren/>
+			</tree>
+			<splitter><grippy/></splitter>
+			<hbox>
+				<textbox id="stdout" multiline="true" readonly="true" spellcheck="false" height="20" onoverflow="" flex="1"/>
+			</hbox>
+		</vbox>
 		<splitter><grippy/></splitter>
 		<vbox>
 			<listbox id="stack" flex="1" onselect="if ( event.target.selectedItem ) stackManager.Select(Number(event.target.selectedItem.value))"/>
@@ -730,7 +744,7 @@
 				  <treechildren/>
 				</tree>
 			</vbox>
-			<textbox onchange="watchManager.Add(this.value); this.value=''" emptytext="&lt;new expression&gt;" />
+			<textbox onchange="watchManager.Add(this.value); this.value=''" emptytext="&lt;new expression&gt;"/>
 		</vbox>
 	</hbox>
 	<statusbar>

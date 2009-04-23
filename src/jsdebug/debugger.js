@@ -48,9 +48,8 @@ LoadModule('jsdebug');
 
 	function SimpleHTTPServer(port, bind) {
 		
-		var pendingRequestList = [], serverSocket = new Socket(), socketList = [serverSocket];
+		var pendingRequestList = [], serverSocket = new Socket(), socketList = [serverSocket], deflate = new Z(Z.DEFLATE, Z.BEST_SPEED);
 		
-		var deflate = new Z(Z.DEFLATE, Z.BEST_SPEED);
 		function CloseSocket(s) {
 
 			s.Close();
@@ -129,6 +128,8 @@ LoadModule('jsdebug');
 	var server = new SimpleHTTPServer(8009, '127.0.0.1');
 
 	var dbg = new Debugger();
+	
+	dbg.excludedFileList = [ Debugger.currentFilename ];
 
 	dbg.breakOnDebuggerKeyword = true;
 	dbg.breakOnError = true;
@@ -140,6 +141,12 @@ LoadModule('jsdebug');
 	var _time = TimeCounter();
 	var _reset = [];
 	var _breakContext;
+	var _stdout = '';
+	var _stderr = '';
+	var _prevStdout = _configuration.stdout;
+	var _prevStderr = _configuration.stdout;
+	_configuration.stdout = function() { _stdout += Array.slice(arguments).join(''); return _prevStdout.apply(this, arguments) }
+	_configuration.stderr = function() { _stderr += Array.slice(arguments).join(''); return _prevStderr.apply(this, arguments) }
 
 	function OriginToString( breakOrigin ) {
 
@@ -154,6 +161,20 @@ LoadModule('jsdebug');
 	var debuggerApi = {
 
 		Ping: function() true,
+		
+		StdOut: function() {
+			
+			var tmp = _stdout;
+			_stdout = '';
+			return tmp;
+		},
+
+		StdErr: function() {
+			
+			var tmp = _stderr;
+			_stderr = '';
+			return tmp;
+		},
 
 		State: function() {
 		
@@ -294,6 +315,8 @@ LoadModule('jsdebug');
 			dbg.breakOnExecute = false;
 			delete dbg.onBreak;
 			delete global.__dbg;
+			_configuration.stdout = _prevStdout;
+			_configuration.stdout = _prevStderr;
 			Action(Debugger.DO_CONTINUE);
 		},
 
@@ -318,7 +341,7 @@ LoadModule('jsdebug');
 			with (_breakContext)
 				var trace = [[filename, lineno, stackFrameIndex]]; // the current line
 			var prevBreakFct = dbg.onBreak;
-			dbg.onBreak = function(filename, lineno, scope, breakOrigin, stackFrameIndex, hasException, exception, rval) {
+			dbg.onBreak = function(filename, lineno, scope, func, breakOrigin, stackFrameIndex) {
 
 				if ( filename != aimFilename || lineno != aimLineno ) {
 				
@@ -328,14 +351,14 @@ LoadModule('jsdebug');
 			
 				dbg.onBreak = prevBreakFct;
 				responseFunction(uneval(trace));
-				return dbg.onBreak.apply(this, arguments);
+				return dbg.onBreak.apply(dbg, arguments);
 			}
 			Action(Debugger.DO_STEP);
 		}),
 	}
 	
-	dbg.onBreak = function(filename, lineno, scope, breakOrigin, stackFrameIndex, hasException, exception, rval, enteringFunction) {
-		
+	dbg.onBreak = function(filename, lineno, scope, func, breakOrigin, stackFrameIndex, hasException, exception, rval, enteringFunction) {
+			
 		var tmpTime = TimeCounter();
 		while (_reset.length) _reset.shift()();
 		
@@ -362,12 +385,12 @@ LoadModule('jsdebug');
 
 					req = eval('('+req+')');
 					res = debuggerApi[req[0]].apply(debuggerApi, req[1]);
+					responseFunction(uneval(res));
 				} catch( fct if IsFunction(fct) ) {
-
+					
 					var tmp = responseFunction;
 					responseFunction = function(){}
 					fct.call(debuggerApi, tmp);
-					continue;
 				}
 			} catch( action if !isNaN(action) ) {
 
@@ -375,11 +398,9 @@ LoadModule('jsdebug');
 				_time = TimeCounter();
 				return action;
 			}  catch(ex) {
-					
-				res = ex;
+				
+				responseFunction(uneval(ex));
 			}
-			
-			responseFunction(uneval(res));
 		}
 	}
 
