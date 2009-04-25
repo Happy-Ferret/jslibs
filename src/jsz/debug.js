@@ -71,13 +71,10 @@ function test3() {
 
 function test4() {
 
-	var deflate = new Z(Z.DEFLATE);
-
-	for ( var i = 0; i < 10; i ++ ) {
-	
-		var str = deflate('abc', true);
-		Print( str.length, '\n' );
-	}
+		var data = 'clear data';
+		var deflatedData = new Z(Z.DEFLATE)(data, true);
+		var inflater = new Z(Z.INFLATE);
+		inflater(deflatedData,true);
 
 }
 
@@ -101,8 +98,8 @@ Print( '['+res2+']' );
 */
 
 //test2();
-//test4();
-Print( typeof Z.BEST_SPEED )
+test4();
+
 Print('done')
 
 //} catch (ex if ex instanceof ZError) {

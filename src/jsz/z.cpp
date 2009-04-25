@@ -229,6 +229,20 @@ DEFINE_CALL() {
 === Properties ===
 **/
 
+/**doc
+$TOC_MEMBER $INAME
+ $BOOL *idle* $READONLY
+  Is $TRUE if the redy to process new data.
+**/
+DEFINE_PROPERTY( idle ) {
+
+	Private *pv = (Private*)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE(pv);
+	J_CHK( BoolToJsval(cx, pv->stream.state == Z_NULL, vp) );
+	return JS_TRUE;
+	JL_BAD;
+}
+
 
 /**doc
 $TOC_MEMBER $INAME
@@ -310,6 +324,7 @@ CONFIGURE_CLASS
 	HAS_CALL
 
 	BEGIN_PROPERTY_SPEC
+		PROPERTY_READ(idle)
 		PROPERTY_READ(adler32)
 		PROPERTY_READ(lengthIn)
 		PROPERTY_READ(lengthOut)

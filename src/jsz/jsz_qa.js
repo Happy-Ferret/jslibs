@@ -14,16 +14,17 @@ LoadModule('jsz');
 		var uncompressezText = 'zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz';
 
 		var deflater = new Z(Z.DEFLATE, 9);
+		QA.ASSERT( deflater.idle, true, 'idle' );
 		var compressedText = deflater(uncompressezText);
+		QA.ASSERT( deflater.idle, false, 'idle' );
 		compressedText += deflater(uncompressezText);
-//		QA.ASSERT( deflater.eof, false, 'eof before the end' );
+		QA.ASSERT( deflater.idle, false, 'idle' );
 		compressedText += deflater(uncompressezText, true); //		compressedText += deflater();
-//		QA.ASSERT( deflater.eof, true, 'eof after the end' );
+		QA.ASSERT( deflater.idle, true, 'idle' );
+
 		QA.ASSERT( compressedText.length, deflater.lengthOut, 'compressed text length' );
 		QA.ASSERT( deflater.adler32, 2686765097, 'adler32' );
-		QA.ASSERT( deflater.lengthIn, 420, 'lengthIn property' );
-		QA.ASSERT( deflater.lengthOut, 28, 'lengthOut property' );
-
+		QA.ASSERT( deflater.lengthIn, 3 * uncompressezText.length, 'lengthIn property' );
 
 /// inflate object reusability [ftr]
 
