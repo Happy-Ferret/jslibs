@@ -72,19 +72,24 @@ struct Private {
 };
 
 
-unsigned int StackSize(JSContext *cx, const JSStackFrame *frame) {
+inline JSStackFrame* CurrentStackFrame(JSContext *cx) {
+
+	JSStackFrame *fp = NULL;
+	return JS_FrameIterator(cx, &fp);
+}
+
+inline unsigned int StackSize(JSContext *cx, const JSStackFrame *frame) {
 
 	unsigned int length = 0;
-	JSStackFrame *fp = NULL;
-	for ( JS_FrameIterator(cx, &fp); fp; JS_FrameIterator(cx, &fp), length++);
+	for ( JSStackFrame *fp = CurrentStackFrame(cx); fp; JS_FrameIterator(cx, &fp) )
+		length++;
 	return length; // 0 is the first frame
 }
 
 
 JSStackFrame *StackFrameByIndex(JSContext *cx, unsigned int frameIndex) {
 
-	JSStackFrame *fp = NULL;
-	JS_FrameIterator(cx, &fp);
+	JSStackFrame *fp = CurrentStackFrame(cx);
 	unsigned int currentFrameIndex;
 	currentFrameIndex = StackSize(cx, fp)-1;
 
@@ -161,16 +166,13 @@ static JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSStackFrame *fp,
 
 static JSTrapStatus TrapHandler(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval, void *closure) {
 
-	JSStackFrame *fp = NULL;
-	JS_FrameIterator(cx, &fp);
-	return BreakHandler(cx, (JSObject*)closure, fp, FROM_BREAKPOINT);
+	return BreakHandler(cx, (JSObject*)closure, CurrentStackFrame(cx), FROM_BREAKPOINT);
 }
 
 
 JSBool DebugErrorHookHandler(JSContext *cx, const char *message, JSErrorReport *report, void *closure) {
 
-	JSStackFrame *fp = NULL;
-	JS_FrameIterator(cx, &fp);
+	JSStackFrame *fp = CurrentStackFrame(cx);
 	if ( !fp )
 		return JS_TRUE;
 	JSTrapStatus status = BreakHandler(cx, (JSObject*)closure, fp, FROM_ERROR);
@@ -180,9 +182,7 @@ JSBool DebugErrorHookHandler(JSContext *cx, const char *message, JSErrorReport *
 
 static JSTrapStatus ThrowHookHandler(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval, void *closure) {
 
-	JSStackFrame *fp = NULL;
-	JS_FrameIterator(cx, &fp);
-	return BreakHandler(cx, (JSObject*)closure, fp, FROM_THROW);
+	return BreakHandler(cx, (JSObject*)closure, CurrentStackFrame(cx), FROM_THROW);
 }
 
 
@@ -198,9 +198,7 @@ static void* ExecuteHookHandler(JSContext *cx, JSStackFrame *fp, JSBool before, 
 
 static JSTrapStatus DebuggerKeyword(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval, void *closure) {
 
-	JSStackFrame *fp = NULL;
-	JS_FrameIterator(cx, &fp);
-	return BreakHandler(cx, (JSObject*)closure, fp, FROM_DEBUGGER);
+	return BreakHandler(cx, (JSObject*)closure, CurrentStackFrame(cx), FROM_DEBUGGER);
 }
 
 
@@ -211,9 +209,7 @@ static JSTrapStatus Step(JSContext *cx, JSScript *script, jsbytecode *pc, jsval 
 		return JSTRAP_CONTINUE;
 	if ( jsCodeSpec[*pc].format & JOF_DECLARING )
 		return JSTRAP_CONTINUE;
-	JSStackFrame *fp = NULL;
-	JS_FrameIterator(cx, &fp);
-	return BreakHandler(cx, (JSObject*)closure, fp, FROM_STEP);
+	return BreakHandler(cx, (JSObject*)closure, CurrentStackFrame(cx), FROM_STEP);
 }
 
 
@@ -222,8 +218,7 @@ static JSTrapStatus StepOver(JSContext *cx, JSScript *script, jsbytecode *pc, js
 	Private *pv = (Private*)JS_GetPrivate(cx, (JSObject*)closure);
 	if ( script == pv->script && JS_PCToLineNumber(cx, script, pc) == pv->lineno )
 		return JSTRAP_CONTINUE;
-	JSStackFrame *fp = NULL;
-	JS_FrameIterator(cx, &fp);
+	JSStackFrame *fp = CurrentStackFrame(cx);
 	if ( fp != pv->frame && fp != pv->pframe )
 		return JSTRAP_CONTINUE;
 	return BreakHandler(cx, (JSObject*)closure, fp, FROM_STEP_OVER);
@@ -233,8 +228,7 @@ static JSTrapStatus StepOver(JSContext *cx, JSScript *script, jsbytecode *pc, js
 static JSTrapStatus StepOut(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval, void *closure) {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, (JSObject*)closure);
-	JSStackFrame *fp = NULL;
-	JS_FrameIterator(cx, &fp);
+	JSStackFrame *fp = CurrentStackFrame(cx);
 	if ( fp != pv->pframe )
 		return JSTRAP_CONTINUE;
 	return BreakHandler(cx, (JSObject*)closure, fp, FROM_STEP_OUT);
@@ -246,8 +240,7 @@ static JSTrapStatus StepThrough(JSContext *cx, JSScript *script, jsbytecode *pc,
 	Private *pv = (Private*)JS_GetPrivate(cx, (JSObject*)closure);
 	if ( script == pv->script && JS_PCToLineNumber(cx, script, pc) <= pv->lineno )
 		return JSTRAP_CONTINUE;
-	JSStackFrame *fp = NULL;
-	JS_FrameIterator(cx, &fp);
+	JSStackFrame *fp = CurrentStackFrame(cx);
 	if ( StackSize(cx, fp)-1 > pv->stackFrameIndex )
 		return JSTRAP_CONTINUE;
 	return BreakHandler(cx, (JSObject*)closure, fp, FROM_STEP_THROUGH);
@@ -882,7 +875,6 @@ DEFINE_PROPERTY( excludedFileList ) {
 
 		J_CHK( JS_GetElement(cx, arrayObject, i, &tmp ) );
 		J_CHK( JsvalToString(cx, &tmp, &buffer) );
-
 		filename = strdup(buffer);
 		J_S_ASSERT_ALLOC( filename );
 		AddExcludedFile(&pv->excludedFiles, filename);

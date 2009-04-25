@@ -42,11 +42,14 @@
 	#code :-moz-tree-cell-text(breakpoint), #code :-moz-tree-cell(condBreakpoint) { color: white }
 
 	#watch :-moz-tree-cell-text(hidden) { color: #BBB }
+	#watch { margin: 2px }
 	
-	#stdout {
-		font-family: monospace;
-		white-space: pre;
-	}
+	#output :-moz-tree-cell-text { font-family: monospace }
+	#output :-moz-tree-row(selected) { background-color: transparent }
+	#output :-moz-tree-cell-text(selected) { color: inherit }
+	#output { margin: 2px }
+	
+	tab { padding: 0px 8px }
 
 " type="text/css"?>
 
@@ -65,9 +68,7 @@
 		
 		function Strdup(s, n) {
 
-			res = '';
-			while (n--)
-				res += s;
+			for ( var res = ''; n--;  res += s );
 			return res;
 		}
 		
@@ -82,7 +83,9 @@
 		function CallWithPrivilege( privilege, fct ) {
 			
 			netscape.security.PrivilegeManager.enablePrivilege(privilege);
-			var ret = fct.apply(this, arguments);
+			try {
+				var ret = fct.apply(this, arguments);
+			} catch(ex) {}
 			netscape.security.PrivilegeManager.revertPrivilege(privilege);
 			return ret;
 		}
@@ -107,7 +110,7 @@
 			netscape.security.PrivilegeManager.revertPrivilege('UniversalXPConnect');
 		}
 		
-		DefaultTreeView = {
+		var defaultTreeView = {
 			QueryInterface: function QueryInterface(aIID) {
 				with (Components.interfaces)
 					if ( nsITreeView.equals(aIID) || nsIClassInfo.equals(aIID) || nsISupportsWeakReference.equals(aIID) || nsISupports.equals(aIID))
@@ -146,35 +149,30 @@
 			getLevel: function(row) 0,
 		};
 		
-
-   
+   	
 		function TreeView() {
 			
 			this.view = [];
 		}
 		
 		TreeView.prototype = {
-			__proto__: DefaultTreeView,
-			
+			__proto__: defaultTreeView,
 			RowHasChild: function(row) {
 			
 				if ( row < this.view.length-1 )
 					return this.view[row].path.every(function(elt, i) this.view[row+1].path[i] == elt, this);
 			},
-			
 			get rowCount() this.view.length,
-			getCellText : function(row, column) column.id == 'path' ? this.view[row].path.slice(-1) : this.view[row].col[column.id],
+			getCellText: function(row, column) column.id == 'path' ? let (p=this.view[row].path) p[p.length-1] : this.view[row].col[column.id],
 			getCellProperties: function(row,col,props) {
 				
 				for each ( prop in this.view[row].properties )
 					AddProp(props, prop);
 			},
-
 			isContainer: function(row) this.view[row].hasChild,
 			isContainerEmpty: function(row) false,
 			isContainerOpen: function(row) this.RowHasChild(row),
 			getLevel: function(row) this.view[row].path.length-1,
-			
 			toggleOpenState: function(row) {
 			
 				if ( this.RowHasChild(row) ) {
@@ -187,7 +185,6 @@
 					this.onOpen(row, this.view[row].path);
 				}
 			},
-
 			get content() this.view,
 			set content(value) {
 			
@@ -195,15 +192,13 @@
 				this.view = value;
 				this.treebox && this.treebox.rowCountChanged(0, value.length);
 			},
-			
-			Add: function( row, path, hasChild, col ) {
+			Add: function(row, path, hasChild, col) {
 			
 				this.view.splice(row+1, 0, {path:path, hasChild:hasChild, col:col||{}});
 				this.treebox.rowCountChanged(row, 1);
 				this.treebox.ensureRowIsVisible(row);
 				return row+1;
 			},
-			
 			RemoveByIndex: function(index) {
 				
 				for ( var count = 0; this.RowHasChild(index); count-- )
@@ -212,7 +207,6 @@
 				this.view.splice(index, 1);
 				this.treebox.rowCountChanged(index, -1);
 			},
-
 			RemoveAll: function() {
 				
 				this.treebox.rowCountChanged(0, -this.view.length);
@@ -269,7 +263,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // application		
 		
-		var watchManager, stackManager, codeManager, breakpointManager;
+		var watchManager, stackManager, codeManager, breakpointManager, outputManager;
 
 		var programState = new Variable();
 		var programStack = new Variable();
@@ -277,12 +271,13 @@
 		var currentFile = new Variable();
 		var connected = new Variable();
 		
-		var [address,port] = location.hash.substr(1).split(':')
+		var [address, port] = location.hash.substr(1).split(':')
 		var debuggerRpc = new SimpleRpc(address||'127.0.0.1', port||'8009');
 
 		function init() {
 
 			QueryPrivilege();
+			outputManager = new OutputManager();
 			watchManager = new WatchManager();
 			stackManager = new StackManager();
 			codeManager = new CodeManager();
@@ -328,9 +323,8 @@
 			$('cmd_breakonerror').setAttribute('checked', cfg.breakOnError);
 			$('cmd_breakonexception').setAttribute('checked', cfg.breakOnException);
 			$('cmd_breakondebuggerkeyword').setAttribute('checked', cfg.breakOnDebuggerKeyword);
-			
-			$('stdout').value += debuggerRpc.StdOut();
-			//Trace( CallWithPrivilege.call(this, 'UniversalXPConnect', function() this.editor) )
+			outputManager.Write('stdout', debuggerRpc.StdOut());
+			outputManager.Write('stderr', debuggerRpc.StdErr());
 		}
 
 
@@ -349,7 +343,7 @@
 				row.col.string = res.string;
 				row.col.source = res.source;
 				//if ( !row.col.flags.enumerate ) row.properties = ['hidden'];
-				if ( ' __count__ __proto__ __parent__ constructor '.indexOf(' '+row.path.slice(-1)+' ') != -1 )
+				if ( ' __count__ __proto__ __parent__ constructor '.indexOf(' '+row.path[row.path.length-1]+' ') != -1 )
 					row.properties = ['hidden'];
 				treeView.treebox.invalidateRow(index);
 			}
@@ -458,10 +452,72 @@
 		}
 
 
+		function OutputManager() {
+			
+			var self = this;
+			var outputElt = $('output');
+			var outputs = { stdout:{content:[''], offset:0}, stderr:{content:[''], offset:0}, output:{content:[''], offset:0} };
+			var current = outputs['stdout'];
+
+			var listView = {
+				__proto__: defaultTreeView,
+				get rowCount() current.content.length,
+				getCellText: function(row, col) current.content[row]
+			}
+			
+			CallWithPrivilege('UniversalBrowserWrite', function() { outputElt.view = listView });
+
+			this.Clean = function() {
+
+				outputElt.treeBoxObject.rowCountChanged(0, -current.content.length);
+				current.content.splice(0, current.content.length, '');
+			}
+			
+			this.Show = function(name) {
+				
+				current.offset = outputElt.treeBoxObject.getFirstVisibleRow();
+				outputElt.treeBoxObject.rowCountChanged(0, -current.content.length);
+				current = outputs[name];
+				outputElt.treeBoxObject.rowCountChanged(0, current.content.length);
+				outputElt.treeBoxObject.scrollToRow(current.offset);
+			}
+	
+			this.Write = function(name, text) {
+				
+				if ( text == '' )
+					return;
+				text = text.replace(/\t/g, '    ').split('\n');
+				var out = outputs[name].content;
+				var last = out.length-1;
+				out[last] += text.shift();
+				var count = text.length;
+				while ( text.length )
+					out.push(text.shift());
+				
+				if ( outputs[name] == current ) {
+
+					outputElt.treeBoxObject.invalidateRow(last);
+					outputElt.treeBoxObject.rowCountChanged(last+1, count);
+					outputElt.treeBoxObject.ensureRowIsVisible(out[out.length-1].length ? out.length-1 : out.length-2);
+				} else {
+
+					for ( var tab = $('outputTabs').tabs.firstChild; tab; tab = tab.nextSibling ) {
+
+						if ( tab.label != name )
+							continue;
+						tab.style.color = 'red';
+						setTimeout(function() { tab.style.color = '' }, 150);
+						break;
+					}
+				}
+			}
+		}
+		
+		
 		function CodeManager() {
 			
 			var self = this;
-			var code = $('code');
+			var codeElt = $('code');
 
 			var reset = [];
 			
@@ -470,7 +526,7 @@
 			var cache_prevStackLines = {};
 			
 			var listView = {
-				__proto__: DefaultTreeView,
+				__proto__: defaultTreeView,
 				getCellText: function(row, col) {
 						
 					try {
@@ -519,25 +575,25 @@
 				}
 			}
 			
-						
-			CallWithPrivilege('UniversalBrowserWrite', function() { code.view = listView });
+			CallWithPrivilege('UniversalBrowserWrite', function() { codeElt.view = listView });
+		
 			
 			var row={}, col={}, childElt={}, x={}, y={}, width={}, height={};
 /*
-			code.addEventListener('mousemove', function(ev) {
+			codeElt.addEventListener('mousemove', function(ev) {
 				
-				code.treeBoxObject.getCellAt(ev.clientX, ev.clientY, row, col, childElt);
+				codeElt.treeBoxObject.getCellAt(ev.clientX, ev.clientY, row, col, childElt);
 				if ( row.value == -1 || col.value == null || col.value.id != 'code' || childElt.value != 'text' )
 					return;
 				var text = cache_sourceFiles[currentFile.value].source[row.value];
-				code.treeBoxObject.getCoordsForCellItem( row, col.value, 'text', x, y, width, height );
-				var pos = ev.clientX - code.boxObject.x - x.value;
+				codeElt.treeBoxObject.getCoordsForCellItem( row, col.value, 'text', x, y, width, height );
+				var pos = ev.clientX - codeElt.boxObject.x - x.value;
 				Trace( text[Math.floor(pos/7)], width.value )
 			}, false);
 */
-			code.addEventListener('click', function(ev) {
+			codeElt.addEventListener('click', function(ev) {
 				
-				code.treeBoxObject.getCellAt(ev.clientX, ev.clientY, row, col, childElt);
+				codeElt.treeBoxObject.getCellAt(ev.clientX, ev.clientY, row, col, childElt);
 				if ( row.value == -1 || col.value == null || col.value.id != 'line' && col.value.id != 'bp' )
 					return;
 				lineno = row.value+1; // lineno = debuggerRpc.GetActualLineno(currentFile.value, lineno);
@@ -559,7 +615,7 @@
 							cache_breakpointList[lineno] = 'true';
 					}
 				}
-				code.treeBoxObject.invalidateRow(lineno-1);
+				codeElt.treeBoxObject.invalidateRow(lineno-1);
 			}, false);
 			
 			this.GetSourceFile = function(filename) {
@@ -580,8 +636,8 @@
 
 				if ( prevFilename ) {
 					
-					cache_sourceFiles[prevFilename].viewOffset = code.treeBoxObject.getFirstVisibleRow();
-					code.treeBoxObject.rowCountChanged(0, -cache_sourceFiles[prevFilename].source.length);
+					cache_sourceFiles[prevFilename].viewOffset = codeElt.treeBoxObject.getFirstVisibleRow();
+					codeElt.treeBoxObject.rowCountChanged(0, -cache_sourceFiles[prevFilename].source.length);
 				}
 
 				cache_prevStackLines = {};
@@ -599,9 +655,9 @@
 					if ( level.filename == filename )
 						cache_prevStackLines[level.lineno] = level.index;
 
-				code.treeBoxObject.rowCountChanged(0, cache_sourceFiles[filename].source.length);
+				codeElt.treeBoxObject.rowCountChanged(0, cache_sourceFiles[filename].source.length);
 				
-				let (offset = cache_sourceFiles[filename].viewOffset) offset && code.treeBoxObject.scrollToRow(offset);
+				let (offset = cache_sourceFiles[filename].viewOffset) offset && codeElt.treeBoxObject.scrollToRow(offset);
 			}
 			
 			this.Update = function(stackFrame) {
@@ -612,14 +668,14 @@
 				var row = stackFrame.lineno-1;
 				
 				for each ( var n in [-5,5,0] )
-					code.treeBoxObject.ensureRowIsVisible(row+n);
+					codeElt.treeBoxObject.ensureRowIsVisible(row+n);
 
 				cache_prevStackLines = {};
 				for each ( var level in programStack.value )
 					if ( level.filename == currentFile.value )
 						cache_prevStackLines[level.lineno] = level.index;
 
-				code.treeBoxObject.invalidate();
+				codeElt.treeBoxObject.invalidate();
 			}
 
 			this.Connected = function(polarity) {
@@ -639,7 +695,7 @@
 		function Traceto(filename, lineno) {
 		
 			var trace = debuggerRpc.TraceTo(filename, lineno);
-			Trace( [ Strdup(' ',d)+LTrim(codeManager.GetSourceFile(f)[l-1]) for each ( [i, [f,l,d]] in Iterator(trace)) ].join('\n') );
+			outputManager.Write('output', [ '..'+t+'ms. '+Strdup('\t',d)+LTrim(codeManager.GetSourceFile(f)[l-1]) for each ( [i, [f,l,d,t]] in Iterator(trace)) ].join('\n') );
 			UpdateState();
 		}
 		
@@ -660,6 +716,7 @@
 		<command id="cmd_breakondebuggerkeyword" oncommand="debuggerRpc.SetConfiguration({ breakOnDebuggerKeyword:event.explicitOriginalTarget.checked })"/>
 	</commandset>
 	<keyset>
+	  <key keycode="VK_F5" oncommand="window.document.documentElement.style.opacity='0.25'; window.location.reload()"/>
 	  <key keycode="VK_F8" command="cmd_continue"/>
 	  <key keycode="VK_F10" command="cmd_stepover"/>
 	  <key modifiers="shift" keycode="VK_F10" command="cmd_stepout"/>
@@ -673,6 +730,77 @@
 	  <key modifiers="shift" keycode="VK_UP" command="cmd_frameup"/>
 	  <key modifiers="shift" keycode="VK_DOWN" command="cmd_framedown"/>
 	</keyset>
+	<hbox id="root" flex="1">
+		<vbox flex="1">
+			<tree id="code" hidecolumnpicker="false" context="codeContextMenu" seltype="single" flex="1" treelines="false">
+				<menupopup id="codeContextMenu">
+					<menuitem label="goto" command="cmd_goto"/>
+					<menuitem label="trace to" command="cmd_traceto"/>
+				</menupopup>
+				<treecols>
+					<treecol id="line" label="line"/>
+					<splitter class="tree-splitter"/>
+					<treecol id="bp" label="break condition" hidden="true"/>
+					<splitter class="tree-splitter"/>
+					<treecol id="sl" label="stack level" hidden="true"/>
+					<splitter class="tree-splitter"/>
+					<treecol id="code" label="code" flex="1"/>
+				</treecols>
+				<treechildren/>
+			</tree>
+			<splitter collapse="after"><grippy/></splitter>
+			<hbox>
+				<vbox flex="1">
+					<tabbox id="outputTabs">
+						<tabs>
+							<tab label="stdout" oncommand="outputManager.Show(event.target.label); if ($('output').height == 0) $('output').height = 100"/>
+							<tab label="stderr" oncommand="outputManager.Show(event.target.label); if ($('output').height == 0) $('output').height = 100"/>
+							<tab label="output" oncommand="outputManager.Show(event.target.label); if ($('output').height == 0) $('output').height = 100"/>
+						</tabs>
+					</tabbox>
+					<tree id="output" hidecolumnpicker="true" context="outputContextMenu" seltype="single" height="0" flex="1">
+						<menupopup id="outputContextMenu">
+							<menuitem label="clean" oncommand="outputManager.Clean(event.target.label)"/>
+						</menupopup>
+						<treecols>
+							<treecol id="data" hideheader="true" flex="1"/>
+						</treecols>
+						<treechildren/>
+					</tree>
+				</vbox>
+			</hbox>
+		</vbox>
+		<splitter collapse="after"><grippy/></splitter>
+		<vbox>
+			<listbox id="stack" flex="1" onselect="if ( event.target.selectedItem ) stackManager.Select(Number(event.target.selectedItem.value))"/>
+			<splitter><grippy/></splitter>
+			<vbox flex="2">
+				<tabbox>
+					<tabs>
+						<tab label="watch" oncommand="watchManager.Show(event.target.label)"/>
+						<tab label="auto" oncommand="watchManager.Show(event.target.label)"/>
+					</tabs>
+				</tabbox>
+				<tree id="watch" hidecolumnpicker="false" context="watchContextMenu" flex="1">
+					<menupopup id="watchContextMenu">
+						<menuitem label="value to clipboard" oncommand="var idx = $('watch').currentIndex; if ( idx != -1 ) CallWithPrivilege('UniversalXPConnect', function() CopyToClipboard(watchManager.GetValueByIndex(idx)) )"/>
+						<menuitem label="source to clipboard" oncommand="var idx = $('watch').currentIndex; if ( idx != -1 ) CallWithPrivilege('UniversalXPConnect', function() CopyToClipboard(watchManager.GetSourceByIndex(idx)) )"/>
+						<menuitem label="remove" oncommand="var idx = $('watch').currentIndex; if ( idx != -1 ) watchManager.RemoveByIndex(idx);"/>
+						<menuitem label="clean" oncommand="watchManager.RemoveAll();"/>
+					</menupopup>
+					<treecols>
+						<treecol id="path" label="Expression" primary="true" flex="1"/>
+						<splitter class="tree-splitter"/>
+						<treecol id="string" label="Value" flex="5"/>
+						<splitter class="tree-splitter"/>
+						<treecol id="source" label="Source" hidden="true" flex="1"/>
+				  </treecols>
+				  <treechildren/>
+				</tree>
+			</vbox>
+			<textbox onchange="watchManager.Add(this.value); this.value=''" emptytext="&lt;new expression&gt;"/>
+		</vbox>
+	</hbox>
 	<toolbox>
 		<toolbar id="nav-toolbar">
 			<toolbarbutton label="Step" tooltiptext="F11" command="cmd_step"/>
@@ -693,60 +821,6 @@
 			<toolbarbutton style="list-style-image: url('chrome://global/skin/icons/close.png'); -moz-image-region: rect(0px, 14px, 14px, 0px)" oncommand="if (confirm('Shutdown the debugger ?')) { debuggerRpc.Shutdown(); UpdateState() }"/>
 		</toolbar>
 	</toolbox>
-	<hbox flex="1">
-		<vbox flex="1">
-			<tree id="code" hidecolumnpicker="false" flags="dont-build-content" context="codeContextMenu" seltype="single" flex="1">
-				<menupopup id="codeContextMenu">
-					<menuitem label="goto" command="cmd_goto"/>
-					<menuitem label="trace to" command="cmd_traceto"/>
-				</menupopup>
-				<treecols>
-					<treecol id="line" label="line"/>
-					<splitter class="tree-splitter"/>
-					<treecol id="bp" label="break condition" hidden="true"/>
-					<splitter class="tree-splitter"/>
-					<treecol id="sl" label="stack level" hidden="true"/>
-					<splitter class="tree-splitter"/>
-					<treecol id="code" label="code" flex="1"/>
-				</treecols>
-				<treechildren/>
-			</tree>
-			<splitter><grippy/></splitter>
-			<hbox>
-				<textbox id="stdout" multiline="true" readonly="true" spellcheck="false" height="20" onoverflow="" flex="1"/>
-			</hbox>
-		</vbox>
-		<splitter><grippy/></splitter>
-		<vbox>
-			<listbox id="stack" flex="1" onselect="if ( event.target.selectedItem ) stackManager.Select(Number(event.target.selectedItem.value))"/>
-			<splitter><grippy/></splitter>
-			<vbox flex="2">
-				<tabbox>
-					<tabs>
-						<tab label="watch" flex="1" oncommand="watchManager.Show(event.target.label)"/>
-						<tab label="auto" flex="1" oncommand="watchManager.Show(event.target.label)"/>
-					</tabs>
-				</tabbox>
-				<tree id="watch" hidecolumnpicker="false" flags="dont-build-content" context="watchContextMenu" flex="1">
-					<menupopup id="watchContextMenu">
-						<menuitem label="value to clipboard" oncommand="var idx = $('watch').currentIndex; if ( idx != -1 ) CallWithPrivilege('UniversalXPConnect', function() CopyToClipboard(watchManager.GetValueByIndex(idx)) )"/>
-						<menuitem label="source to clipboard" oncommand="var idx = $('watch').currentIndex; if ( idx != -1 ) CallWithPrivilege('UniversalXPConnect', function() CopyToClipboard(watchManager.GetSourceByIndex(idx)) )"/>
-						<menuitem label="remove" oncommand="var idx = $('watch').currentIndex; if ( idx != -1 ) watchManager.RemoveByIndex(idx);"/>
-						<menuitem label="clean" oncommand="watchManager.RemoveAll();"/>
-					</menupopup>
-					<treecols>
-						<treecol id="path" label="Expression" primary="true" flex="1"/>
-						<splitter class="tree-splitter"/>
-						<treecol id="string" label="Value" flex="5"/>
-						<splitter class="tree-splitter"/>
-						<treecol id="source" label="Source" hidden="true" flex="1"/>
-				  </treecols>
-				  <treechildren/>
-				</tree>
-			</vbox>
-			<textbox onchange="watchManager.Add(this.value); this.value=''" emptytext="&lt;new expression&gt;"/>
-		</vbox>
-	</hbox>
 	<statusbar>
 		<statusbarpanel id="status" flex="1"/>
 		<statusbarpanel id="statusException" style="color: red"/>

@@ -338,21 +338,23 @@ LoadModule('jsdebug');
 		
 		TraceTo: function(aimFilename, aimLineno) Asynchronus(function(responseFunction) {
 		
+			var time;
 			with (_breakContext)
-				var trace = [[filename, lineno, stackFrameIndex]]; // the current line
+				var trace = [[filename, lineno, stackFrameIndex, '?.???']]; // the current line
 			var prevBreakFct = dbg.onBreak;
 			dbg.onBreak = function(filename, lineno, scope, func, breakOrigin, stackFrameIndex) {
 
 				if ( filename != aimFilename || lineno != aimLineno ) {
 				
-					trace.push([filename, lineno, stackFrameIndex]);
+					trace.push([filename, lineno, stackFrameIndex, (TimeCounter() - time).toFixed(3)]);
+					time = TimeCounter();
 					return Debugger.DO_STEP;
 				}
-			
 				dbg.onBreak = prevBreakFct;
 				responseFunction(uneval(trace));
 				return dbg.onBreak.apply(dbg, arguments);
 			}
+			time = TimeCounter();
 			Action(Debugger.DO_STEP);
 		}),
 	}
