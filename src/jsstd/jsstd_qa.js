@@ -8,7 +8,7 @@ LoadModule('jsstd');
 
 		QA.ASSERT_TYPE( id, 'number', 'id type is good' );
 		QA.ASSERT( id >= 1, true, 'id is valid' );
-		QA.ASSERT_TYPE( IdToObject(id), obj, 'obj->id->obj' );
+		QA.ASSERT( IdToObject(id), obj, 'obj->id->obj' );
 		
 		QA.ASSERT( IdToObject(id).xxx, 123, 'IdToObject validity before GC' );
 		obj = null;
