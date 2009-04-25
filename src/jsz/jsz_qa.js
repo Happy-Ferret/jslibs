@@ -31,9 +31,9 @@ LoadModule('jsz');
 		var deflatedData = new Z(Z.DEFLATE)(data, true);
 		var inflater = new Z(Z.INFLATE);
 
-		QA.ASSERT( inflater(data,true), data, '1st complete inflate' );
-		QA.ASSERT( inflater(data,true), data, '2nd complete inflate' );
-		QA.ASSERT( inflater(data,true), data, '3rd complete inflate' );
+		QA.ASSERT( inflater(deflatedData,true), data, '1st complete inflate' );
+		QA.ASSERT( inflater(deflatedData,true), data, '2nd complete inflate' );
+		QA.ASSERT( inflater(deflatedData,true), data, '3rd complete inflate' );
 
 
 /// deflate object reusability [ftr]
