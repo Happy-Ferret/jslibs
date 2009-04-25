@@ -173,7 +173,7 @@ static JSTrapStatus TrapHandler(JSContext *cx, JSScript *script, jsbytecode *pc,
 JSBool DebugErrorHookHandler(JSContext *cx, const char *message, JSErrorReport *report, void *closure) {
 
 	JSStackFrame *fp = CurrentStackFrame(cx);
-	if ( !fp )
+	if ( !fp || !JS_GetFrameScript(cx, fp) )
 		return JS_TRUE;
 	JSTrapStatus status = BreakHandler(cx, (JSObject*)closure, fp, FROM_ERROR);
 	return status == JSTRAP_ERROR ? JS_FALSE : JS_TRUE; // (TBD) check return value management
@@ -195,6 +195,14 @@ static void* ExecuteHookHandler(JSContext *cx, JSStackFrame *fp, JSBool before, 
 	return NULL; // hookData for the "after" stage.
 }
 
+static void* FirstExecuteHookHandler(JSContext *cx, JSStackFrame *fp, JSBool before, JSBool *ok, void *closure) {
+
+	JSBool status = BreakHandler(cx, (JSObject*)closure, fp, FROM_EXECUTE); // (TBD) manage return value
+	JS_SetExecuteHook(JS_GetRuntime(cx), NULL, NULL);
+//	if ( status == JSTRAP_ERROR )
+//		*ok == JS_FALSE; // ok is NULL when before is true !!!
+	return NULL;
+}
 
 static JSTrapStatus DebuggerKeyword(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval, void *closure) {
 
@@ -255,7 +263,7 @@ static JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSStackFrame *fp,
 	JSScript *script;
 	script = JS_GetFrameScript(cx, fp);
 	const char *filename;
-	filename = JS_GetScriptFilename(cx, script);
+	filename = script ? JS_GetScriptFilename(cx, script) : "<no file>";
 	if ( pv->excludedFiles && IsExcludedFile(&pv->excludedFiles, filename) )
 		return JSTRAP_CONTINUE;
 
@@ -296,7 +304,7 @@ static JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSStackFrame *fp,
 	argv[7] = hasException ? JSVAL_TRUE : JSVAL_FALSE;
 	argv[8] = hasException ? exception : JSVAL_VOID;
 	argv[9] = breakOrigin == FROM_STEP_OUT ? fp->regs->sp[-1] : JSVAL_VOID; // try to the the functions's rval
-	argv[10] = JS_GetFramePC(cx, fp) == script->code ? JSVAL_TRUE : JSVAL_FALSE; // is entering function
+	argv[10] = script && JS_GetFramePC(cx, fp) == script->code ? JSVAL_TRUE : JSVAL_FALSE; // is entering function
 
 	JSDebugHooks prevHooks;
 	prevHooks = *JS_GetGlobalDebugHooks(rt); // save hooks
@@ -548,7 +556,10 @@ DEFINE_FUNCTION_FAST( StackFrame ) {
 	pc = JS_GetFramePC(cx, frame);
 
 	jsval tmp;
-	J_CHK( StringToJsval(cx, JS_GetScriptFilename(cx, script), &tmp) );
+	if ( script )
+		J_CHK( StringToJsval(cx, JS_GetScriptFilename(cx, script), &tmp) );
+	else 
+		tmp = JSVAL_VOID;
 	J_CHK( JS_DefineProperty(cx, stackItem, "filename", tmp, NULL, NULL, OBJ_PROP_FLAGS) );
 
 	J_CHK( JS_DefineProperty(cx, stackItem, "lineno", INT_TO_JSVAL(JS_PCToLineNumber(cx, script, pc)), NULL, NULL, OBJ_PROP_FLAGS) );
@@ -556,8 +567,8 @@ DEFINE_FUNCTION_FAST( StackFrame ) {
 	JSObject *callee;
 	callee = JS_GetFrameCalleeObject(cx, frame);
 	J_CHK( JS_DefineProperty(cx, stackItem, "callee", callee ? OBJECT_TO_JSVAL(callee) : JSVAL_VOID, NULL, NULL, OBJ_PROP_FLAGS) );
-	J_CHK( JS_DefineProperty(cx, stackItem, "baseLineNumber", INT_TO_JSVAL( JS_GetScriptBaseLineNumber(cx, script) ), NULL, NULL, OBJ_PROP_FLAGS) );
-	J_CHK( JS_DefineProperty(cx, stackItem, "lineExtent", INT_TO_JSVAL( JS_GetScriptLineExtent(cx, script) ), NULL, NULL, OBJ_PROP_FLAGS) );
+	J_CHK( JS_DefineProperty(cx, stackItem, "baseLineNumber", script ? INT_TO_JSVAL( JS_GetScriptBaseLineNumber(cx, script) ) : JSVAL_VOID, NULL, NULL, OBJ_PROP_FLAGS) );
+	J_CHK( JS_DefineProperty(cx, stackItem, "lineExtent", script ? INT_TO_JSVAL( JS_GetScriptLineExtent(cx, script) ) : JSVAL_VOID, NULL, NULL, OBJ_PROP_FLAGS) );
 
 	J_CHK( JS_DefineProperty(cx, stackItem, "scope", OBJECT_TO_JSVAL(JS_GetFrameScopeChain(cx, frame)), NULL, NULL, OBJ_PROP_FLAGS) );
 	J_CHK( JS_DefineProperty(cx, stackItem, "variables", frame->varobj ? OBJECT_TO_JSVAL(frame->varobj) : JSVAL_VOID, NULL, NULL, OBJ_PROP_FLAGS) );
@@ -859,6 +870,18 @@ DEFINE_PROPERTY( breakOnExecute ) {
 	JL_BAD;
 }
 
+DEFINE_PROPERTY( breakOnFirstExecute ) {
+
+	bool b;
+	J_CHK( JsvalToBool(cx, *vp, &b) );
+	Private *pv = (Private*)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE(pv);
+	pv->debugHooks->executeHook = b ? FirstExecuteHookHandler : NULL;
+	pv->debugHooks->executeHookData = b ? obj : NULL;
+	return JS_TRUE;
+	JL_BAD;
+}
+
 
 DEFINE_PROPERTY( excludedFileList ) {
 
@@ -931,6 +954,7 @@ CONFIGURE_CLASS
 		PROPERTY_WRITE_STORE( breakOnException )
 		PROPERTY_WRITE_STORE( breakOnDebuggerKeyword )
 		PROPERTY_WRITE_STORE( breakOnExecute )
+		PROPERTY_WRITE_STORE( breakOnFirstExecute )
 	END_PROPERTY_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC

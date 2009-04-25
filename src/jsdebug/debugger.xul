@@ -810,9 +810,9 @@
 			<toolbarbutton label="Continue" tooltiptext="F8" command="cmd_continue"/>
 			<toolbarbutton label="Goto" command="cmd_goto"/>
 			<toolbarseparator/>
-			<checkbox label="break on debugger keyword" command="cmd_breakondebuggerkeyword"/>
-			<checkbox label="break on error" command="cmd_breakonerror"/>
-			<checkbox label="break on exception" command="cmd_breakonexception"/>
+			<checkbox label="trap debugger keyword" command="cmd_breakondebuggerkeyword"/>
+			<checkbox label="trap errors" command="cmd_breakonerror"/>
+			<checkbox label="trap exceptions" command="cmd_breakonexception"/>
 			<toolbarseparator/>
 			<menu label="scripts" onpopupshowing="for each (var item in debuggerRpc.GetScriptList()) this.appendItem(item)" onpopuphidden="while(this.removeItemAt(0));" oncommand="currentFile.value = event.target.label">
 				<menupopup/>

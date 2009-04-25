@@ -16,10 +16,15 @@ LoadModule('jsio');
 LoadModule('jsstd');
 LoadModule('jsz');
 LoadModule('jsdebug');
+
 !function() {
+
+	if ( '__dbg' in global )
+		return;
+	global.__dbg = undefined;
+	SetPropertyEnumerate(global, '__dbg', false);
 	
 	function Try(fct) { try { return fct() } catch(ex) { return ex } }
-
 	function Match(v) Array.indexOf(arguments,v,1)-1;
 	function Switch(i) arguments[++i];
 	
@@ -388,22 +393,29 @@ LoadModule('jsdebug');
 					req = eval('('+req+')');
 					res = debuggerApi[req[0]].apply(debuggerApi, req[1]);
 					responseFunction(uneval(res));
-				} catch( fct if IsFunction(fct) ) {
+				} catch ( fct if IsFunction(fct) ) {
 					
 					var tmp = responseFunction;
 					responseFunction = function(){}
 					fct.call(debuggerApi, tmp);
 				}
-			} catch( action if !isNaN(action) ) {
+			} catch ( action if !isNaN(action) ) {
 
 				responseFunction();
 				_time = TimeCounter();
 				return action;
-			}  catch(ex) {
+			}  catch ( ex ) {
 				
 				responseFunction(uneval(ex));
 			}
 		}
+	}
+
+	if ( global.arguments[0] == Debugger.currentFilename ) { // debugger.js is used like: jshost jsdebugger.js programToDebug.js
+		
+		dbg.breakOnFirstExecute = true;
+		var prog = global.arguments.splice(1,1);
+		Exec(prog, false);
 	}
 
 	global.__dbg = dbg; // avoid CG
