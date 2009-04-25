@@ -558,7 +558,7 @@ DEFINE_FUNCTION_FAST( StackFrame ) {
 	jsval tmp;
 	if ( script )
 		J_CHK( StringToJsval(cx, JS_GetScriptFilename(cx, script), &tmp) );
-	else 
+	else
 		tmp = JSVAL_VOID;
 	J_CHK( JS_DefineProperty(cx, stackItem, "filename", tmp, NULL, NULL, OBJ_PROP_FLAGS) );
 
@@ -872,10 +872,10 @@ DEFINE_PROPERTY( breakOnExecute ) {
 
 DEFINE_PROPERTY( breakOnFirstExecute ) {
 
-	bool b;
-	J_CHK( JsvalToBool(cx, *vp, &b) );
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE(pv);
+	bool b;
+	J_CHK( JsvalToBool(cx, *vp, &b) );
 	pv->debugHooks->executeHook = b ? FirstExecuteHookHandler : NULL;
 	pv->debugHooks->executeHookData = b ? obj : NULL;
 	return JS_TRUE;
