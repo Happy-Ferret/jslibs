@@ -25,6 +25,8 @@
 
 #define NAME_CONFIGURATION_GETERRORMESSAGE "_getErrorMessage"
 
+#define NAME_MODULE_REVISION_PROPERTY_NAME "_revision"
+
 #define NAME_MODULE_INIT "ModuleInit"
 #define NAME_MODULE_RELEASE "ModuleRelease"
 #define NAME_MODULE_FREE "ModuleFree"

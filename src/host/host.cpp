@@ -516,9 +516,11 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostOutput stdOut, HostOutput s
 	value = OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunction(cx, (JSNative)JSDefaultStderrFunction, 1, JSFUN_FAST_NATIVE, NULL, NULL))); // If you do not assign a name to the function, it is assigned the name "anonymous".
 	J_CHK( SetConfigurationValue(cx, NAME_CONFIGURATION_STDERR, value) );
 
-
 // init static modules
 	J_CHKM( jslangInit(cx, globalObject), "Unable to initialize jslang." );
+
+	J_CHK( JS_DefineProperty(cx, globalObject, NAME_MODULE_REVISION_PROPERTY_NAME, INT_TO_JSVAL(SvnRevToInt("$Revision: 0 $")), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
+
 	return JS_TRUE;
 	JL_BAD;
 }

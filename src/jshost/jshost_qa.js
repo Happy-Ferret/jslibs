@@ -23,3 +23,8 @@
 
 		QA.ASSERT( typeof eval, 'function', 'eval function availability' );
 
+/// undefined mutability [ftr]
+		
+		QA.ASSERT( undefined, (void 0), 'compare to void 0 (default)' );
+		undefined = 123;
+		QA.ASSERT( undefined, (void 0), 'compare to void 0 (changed)' );

@@ -202,7 +202,10 @@ inline void _NormalizeFunctionNames( JSFunctionSpec *functionSpec ) {
 	if ( _init ) \
 		if ( _init(cx, obj) != JS_TRUE ) \
 			return JS_FALSE; \
-	J_CHK( JS_DefineProperty(cx, obj, "_revision", _revision, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) ); \
+	JSBool found; \
+	J_CHK( JS_HasProperty(cx, obj, "_revision", &found) ); \
+	if ( !found ) \
+		J_CHK( JS_DefineProperty(cx, obj, "_revision", _revision, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) ); \
 	return JS_TRUE; \
 	JL_BAD; \
  }
@@ -270,7 +273,7 @@ static JSBool RemoveClass( JSContext *cx, JSClass *cl ) {
 		if ( _init ) \
 			if ( _init(cx, dstObj) != JS_TRUE ) \
 				return JS_FALSE; \
-		J_CHK( JS_DefineProperty(cx, dstObj, "_revision", _revision, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) ); \
+		J_CHK( JS_DefineProperty(cx, dstObj, NAME_MODULE_REVISION_PROPERTY_NAME, _revision, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) ); \
 		return JS_TRUE; \
 		JL_BAD; \
 	}

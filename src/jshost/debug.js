@@ -1,12 +1,12 @@
+var rev = _revision;
+
 LoadModule('jsstd');
 LoadModule('jsstd');
 LoadModule('jsio');
 
-var b = new Blob( 'test' );
-Print( b.toSource() , '\n' );
+Print( rev )
 
-undefined = 123;
-Print(undefined)
+
 
 Halt();
 
