@@ -79,7 +79,8 @@ DEFINE_CONSTRUCTOR() {
 	J_S_ASSERT_CONSTRUCTING();
 	J_S_ASSERT_ARG_MIN(1);
 
-	Private *pv = (Private*)JS_malloc(cx, sizeof(Private));
+	Private *pv;
+	pv = (Private*)JS_malloc(cx, sizeof(Private));
 	J_S_ASSERT_ALLOC(pv);
 	J_CHK( JS_SetPrivate(cx, obj, pv) );
 	pv->stream.state = Z_NULL; // mendatory
@@ -135,7 +136,8 @@ DEFINE_CALL() {
 	// (TBD) check JS_InstanceOf( cx, thisObj, &NativeProc, NULL )
 	J_S_ASSERT_CLASS(thisObj, _class);
 
-	Private *pv = (Private*)JS_GetPrivate(cx, thisObj);
+	Private *pv;
+	pv = (Private*)JS_GetPrivate(cx, thisObj);
 	J_S_ASSERT_RESOURCE(pv);
 
 	if (pv->stream.state == Z_NULL) {
@@ -175,7 +177,7 @@ DEFINE_CALL() {
 	bool forceFinish;
 	if ( argc >= 2 )
 		J_CHK( JsvalToBool(cx, argv[1], &forceFinish) );
-	else 
+	else
 		forceFinish = JS_FALSE;
 
 	int flushType;
