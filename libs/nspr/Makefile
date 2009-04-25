@@ -16,8 +16,8 @@ $(INT_DIR)Makefile:
 	mkdir -p $(INT_DIR)
 	cd $(INT_DIR) && ../src/configure $(_CONFIGURE_OPTIONS) --enable-win32-target=WIN95
 
-all clean:: $(INT_DIR)Makefile
+all:: $(INT_DIR)Makefile
 	$(MAKE) -C $(INT_DIR) $@
 
 clean::
-	-[ -d "$(INT_DIR)" ] && rm -r ./$(INT_DIR)
+	-[ -d "./$(INT_DIR)" ] && rm -r ./$(INT_DIR)

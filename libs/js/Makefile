@@ -24,8 +24,8 @@ $(INT_DIR)Makefile: ./src/configure
 all:: $(INT_DIR)Makefile
 	diff -q ./jsversion.h ./src/jsversion.h || cp ./jsversion.h ./src/
 
-all clean::
+all::
 	$(MAKE) -C $(INT_DIR) $@
 
 clean::
-	-[ -d "$(INT_DIR)" ] && rm -r ./$(INT_DIR)
+	-[ -d "./$(INT_DIR)" ] && rm -r ./$(INT_DIR)

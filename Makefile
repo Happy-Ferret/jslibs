@@ -17,6 +17,7 @@ $(SUBDIRS):
 .PHONY: $(MAKECMDGOALS)
 $(MAKECMDGOALS):: $(SUBDIRS) ;
 
+.PHONY: clean
 clean::
 	-rm ./$(INT_DIR)/*
 	-rmdir ./$(INT_DIR)/

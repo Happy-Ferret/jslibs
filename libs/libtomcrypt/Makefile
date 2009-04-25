@@ -14,4 +14,4 @@ $(TARGET_FILES):
 all:: $(TARGET_FILES)
 
 clean::
-	rm $(TARGET_FILES)
+	-[ -d "./$(INT_DIR)" ] && rm -r ./$(INT_DIR)
