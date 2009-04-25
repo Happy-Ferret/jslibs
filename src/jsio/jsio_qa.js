@@ -502,9 +502,9 @@ LoadModule('jsio');
 
 /// current working directory [ftr]
 	
-		QA.ASSERT( 'currentWorkingDirectory' in global, true, 'has currentWorkingDirectory' );
-		QA.ASSERT( typeof currentWorkingDirectory, 'string', 'current working directory' );
-		QA.ASSERT( currentWorkingDirectory.length >= 1, true, 'cwd length' );
+		QA.ASSERT( 'currentDirectory' in global, true, 'has currentDirectory' );
+		QA.ASSERT( typeof currentDirectory, 'string', 'current directory' );
+		QA.ASSERT( currentDirectory.length >= 1, true, 'current directory length' );
 
 
 /// MemoryMapped class [ftr]
