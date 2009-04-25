@@ -374,7 +374,7 @@ $TOC_MEMBER $INAME
   var obj = { a:1, b:2, c:3 };
   for ( var p in obj )
    Print(p, ', '); // prints: a, b, c
-  
+
   SetPropertyEnumerate(obj, 'b', false);
   for ( var p in obj )
    Print(p, ', '); // prints: a, c
@@ -385,7 +385,7 @@ $TOC_MEMBER $INAME
   }}}
 **/
 DEFINE_FUNCTION_FAST( SetPropertyEnumerate ) {
-	
+
 	J_S_ASSERT_ARG_MIN( 3 );
 	J_S_ASSERT_OBJECT( J_FARG(1) );
 
@@ -444,7 +444,7 @@ $TOC_MEMBER $INAME
   }}}
 **/
 DEFINE_FUNCTION_FAST( SetPropertyReadonly ) {
-	
+
 	J_S_ASSERT_ARG_MIN( 3 );
 	J_S_ASSERT_OBJECT( J_FARG(1) );
 
@@ -477,7 +477,7 @@ DEFINE_FUNCTION_FAST( SetPropertyReadonly ) {
 	return JS_TRUE;
 	JL_BAD;
 }
- 
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
@@ -503,7 +503,7 @@ unsigned int objectIdAlloced = 0;
 JSGCCallback prevObjectIdGCCallback = NULL;
 
 JSBool ObjectIdGCCallback(JSContext *cx, JSGCStatus status) {
-	
+
 	if ( status == JSGC_MARK_END ) {
 
 		for ( ObjId *it = objIdList, *end = objIdList + objectIdAlloced; it < end; ++it ) {
@@ -524,9 +524,11 @@ DEFINE_FUNCTION_FAST( ObjectToId ) {
 
 	J_S_ASSERT_ARG_RANGE( 1, 1 );
 	J_S_ASSERT_OBJECT( J_FARG(1) );
-	JSObject *obj = JSVAL_TO_OBJECT( J_FARG(1) );
-	
-	ObjId *freeSlot = NULL;
+	JSObject *obj;
+	obj = JSVAL_TO_OBJECT( J_FARG(1) );
+
+	ObjId *freeSlot;
+	freeSlot = NULL;
 	for ( ObjId *it = objIdList, *end = objIdList + objectIdAlloced; it < end; ++it ) {
 
 		if ( it->obj == obj )
@@ -534,13 +536,13 @@ DEFINE_FUNCTION_FAST( ObjectToId ) {
 		if ( !freeSlot && it->id == 0 )
 			freeSlot = it;
 	}
-	
+
 	if ( !freeSlot ) {
 
 		unsigned int prevAlloced = objectIdAlloced;
 
 		if ( !objIdList ) {
-			
+
 			prevObjectIdGCCallback = JS_SetGCCallback(cx, ObjectIdGCCallback);
 			objectIdAlloced = 32;
 		} else {
@@ -563,7 +565,7 @@ DEFINE_FUNCTION_FAST( ObjectToId ) {
 /**doc
 $TOC_MEMBER $INAME
  $INT $INAME( id )
-  Returns the object with the identifier _id_ or undefined if the identifier do not exist or the object has been GCed. 
+  Returns the object with the identifier _id_ or undefined if the identifier do not exist or the object has been GCed.
   $H example 1
   {{{
   var myObj = {};
@@ -610,7 +612,7 @@ $TOC_MEMBER $INAME
   Returns $TRUE if the value is a primitive ( null or not an object ).
 **/
 DEFINE_FUNCTION_FAST( IsPrimitive ) {
-	
+
 	J_S_ASSERT_ARG_MIN(1);
 	*J_FRVAL = JSVAL_IS_PRIMITIVE(J_FARG(1)) ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;
@@ -625,7 +627,7 @@ $TOC_MEMBER $INAME
   Returns $TRUE if the value is a function.
 **/
 DEFINE_FUNCTION_FAST( IsFunction ) {
-	
+
 	J_S_ASSERT_ARG_MIN(1);
 	*J_FRVAL = VALUE_IS_FUNCTION(cx, J_FARG(1)) ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;
@@ -644,7 +646,7 @@ $TOC_MEMBER $INAME
   }}}
 **/
 DEFINE_FUNCTION_FAST( IsVoid ) {
-	
+
 	J_S_ASSERT_ARG_MIN(1);
 	*J_FRVAL = JSVAL_IS_VOID(J_FARG(1)) ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;

@@ -407,7 +407,7 @@ static char GCTraceFileName[PATH_MAX]; // (TBD) fix static keyword issue
 
 JSBool GCCallTrace(JSContext *cx, JSGCStatus status) {
 
-	char *statusStr[4] = { "JSGC_BEGIN", "JSGC_END", "JSGC_MARK_END", "JSGC_FINALIZE_END" };
+	const char *statusStr[4] = { "JSGC_BEGIN", "JSGC_END", "JSGC_MARK_END", "JSGC_FINALIZE_END" };
 	if ( status == JSGC_MARK_END || status == JSGC_FINALIZE_END )
 		return JS_TRUE;
 
@@ -1022,15 +1022,19 @@ DEFINE_FUNCTION_FAST( PropertiesList ) {
 	J_S_ASSERT_ARG_MIN( 1 );
 	J_S_ASSERT_OBJECT( J_FARG(1) );
 
-	JSObject *srcObj = JSVAL_TO_OBJECT( J_FARG(1) );
-	JSObject *arrayObject = JS_NewArrayObject(cx, 0, NULL);
+	JSObject *srcObj;
+	srcObj = JSVAL_TO_OBJECT( J_FARG(1) );
+	JSObject *arrayObject;
+	arrayObject = JS_NewArrayObject(cx, 0, NULL);
 	J_S_ASSERT_ALLOC( arrayObject );
 	*J_FRVAL = OBJECT_TO_JSVAL( arrayObject );
 
 	jsval tmp;
-	int index = 0;
+	int index;
+	index = 0;
 
-	JSScopeProperty *jssp = NULL;
+	JSScopeProperty *jssp;
+	jssp = NULL;
 	JS_PropertyIterator(srcObj, &jssp);
 
 	while ( jssp ) {
@@ -1055,17 +1059,21 @@ DEFINE_FUNCTION_FAST( PropertiesInfo ) {
 	J_S_ASSERT_ARG_MIN( 1 );
 	J_S_ASSERT_OBJECT( J_FARG(1) );
 
-	JSObject *srcObj = JSVAL_TO_OBJECT( J_FARG(1) );
+	JSObject *srcObj;
+	srcObj = JSVAL_TO_OBJECT( J_FARG(1) );
 
-	JSObject *infoObject = JS_NewObjectWithGivenProto(cx, NULL, NULL, NULL);
+	JSObject *infoObject;
+	infoObject = JS_NewObjectWithGivenProto(cx, NULL, NULL, NULL);
 	*J_FRVAL = OBJECT_TO_JSVAL( infoObject );
 
 	JSPropertyDesc desc;
 
 	jsval tmp;
-	int index = 0;
+	int index;
+	index = 0;
 
-	JSScopeProperty *jssp = NULL;
+	JSScopeProperty *jssp;
+	jssp = NULL;
 	JS_PropertyIterator(srcObj, &jssp);
 
 	while ( jssp ) {
