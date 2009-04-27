@@ -989,7 +989,7 @@ static JSScript* LoadScript(JSContext *cx, JSObject *obj, const char *fileName, 
 
 		size_t compFileSize = compFileStat.st_size;
 //		size_t compFileSize = filelength(file);
-		void *data = JS_malloc( cx, compFileSize );
+		void *data = JS_malloc(cx, compFileSize);
 
 		int readCount = read( file, data, compFileSize ); // here we can use "Memory-Mapped I/O Functions" ( http://developer.mozilla.org/en/docs/NSPR_API_Reference:I/O_Functions#Memory-Mapped_I.2FO_Functions )
 
@@ -1004,14 +1004,16 @@ static JSScript* LoadScript(JSContext *cx, JSObject *obj, const char *fileName, 
 		JSXDRState *xdr = JS_XDRNewMem(cx,JSXDR_DECODE);
 		if ( xdr == NULL )
 			return NULL;
-		JS_XDRMemSetData( xdr, data, compFileSize );
-		JSBool xdrSuccess = JS_XDRScript( xdr, &script );
+		JS_XDRMemSetData(xdr, data, compFileSize);
+		JSBool xdrSuccess = JS_XDRScript(xdr, &script);
 		if ( xdrSuccess != JS_TRUE )
 			return NULL;
 		// (TBD) manage BIG_ENDIAN here ?
 		JS_XDRMemSetData(xdr, NULL, 0);
 		JS_XDRDestroy(xdr);
-		JS_free( cx, data );
+		JS_free(cx, data);
+		if ( JS_GetScriptVersion(cx, script) < JS_GetVersion(cx) )
+			J_REPORT_WARNING_1("Trying to xdr-decode an old script (%s).", compiledFileName);
 	} else {
 
 //		JS_GC(cx); // ...and also just before doing anything that requires compilation (since compilation disables GC until complete).
