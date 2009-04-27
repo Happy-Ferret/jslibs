@@ -728,8 +728,8 @@ inline JSBool JsvalToStringAndLength( JSContext *cx, jsval *val, const char** bu
 
 	// and for anything else ...
 	JSString *jsstr = JS_ValueToString(cx, *val);
-	*val = STRING_TO_JSVAL(jsstr); // *val must be GC protected
 	J_S_ASSERT( jsstr != NULL, J__ERRMSG_STRING_CONVERSION_FAILED );
+	*val = STRING_TO_JSVAL(jsstr); // *val must be GC protected
 	*size = J_STRING_LENGTH(jsstr);
 	*buffer = JS_GetStringBytes(jsstr); // JS_GetStringBytes never returns NULL
 //	J_S_ASSERT( *buffer != NULL, J__ERRMSG_STRING_CONVERSION_FAILED );
