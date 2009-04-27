@@ -192,11 +192,11 @@
 				this.view = value;
 				this.treebox && this.treebox.rowCountChanged(0, value.length);
 			},
-			Add: function(row, path, hasChild, col) {
+			Add: function(row, path, hasChild, col, properties) {
 			
-				this.view.splice(row+1, 0, {path:path, hasChild:hasChild, col:col||{}});
-				this.treebox.rowCountChanged(row, 1);
-				this.treebox.ensureRowIsVisible(row);
+				this.view.splice(row+1, 0, {path:path, hasChild:hasChild, col:col||{}, properties:properties});
+				this.treebox.invalidateRow(row);
+				this.treebox.rowCountChanged(row+1, 1);
 				return row+1;
 			},
 			RemoveByIndex: function(index) {
@@ -228,7 +228,8 @@
 					SimpleRpc.xhr.send(uneval(Array.slice(arguments)));
 					return eval('('+SimpleRpc.xhr.responseText+')');
 				} catch(ex) {
-				
+					
+					Trace(ex);
 					return new Error(ex);
 				} finally {
 				
@@ -343,17 +344,20 @@
 				row.col.string = res.string;
 				row.col.source = res.source;
 				//if ( !row.col.flags.enumerate ) row.properties = ['hidden'];
-				if ( ' __count__ __proto__ __parent__ constructor '.indexOf(' '+row.path[row.path.length-1]+' ') != -1 )
-					row.properties = ['hidden'];
+//				if ( ' __count__ __proto__ __parent__ constructor '.indexOf(' '+row.path[row.path.length-1]+' ') != -1 )
+//					row.properties = ['hidden'];
 				treeView.treebox.invalidateRow(index);
 			}
 			
 			treeView.onOpen = function(row, path) {
 				
+				treeView.treebox.ensureRowIsVisible(row);
 				var childList = debuggerRpc.ExpressionInfo(path, selectedStackFrame.value.index, true);
 				for each ( child in childList ) {
 					
-					treeView.Add(row++, path.concat(child));
+//					if ( !child.enumerate )
+//						return;
+					treeView.Add(row++, path.concat(child.name), undefined, undefined, child.enumerate ? undefined : ['hidden']);
 					UpdateRow(row);
 				}
 			}
@@ -362,6 +366,7 @@
 				
 				var row = treeView.Add(treeView.content.length-1, [expression]);
 				UpdateRow(row);
+				treeView.treebox.ensureRowIsVisible(row);
 				debuggerRpc.SetCookie('watch', [ row.path for each ( row in treeView.content ) ]);
 			}
 

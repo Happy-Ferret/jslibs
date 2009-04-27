@@ -15,6 +15,7 @@
 LoadModule('jsio');
 LoadModule('jsstd');
 LoadModule('jsz');
+LoadModule('jscrypt');
 LoadModule('jsdebug');
 
 !function() {
@@ -51,12 +52,12 @@ LoadModule('jsdebug');
 		return '???';
 	}
 
-	function SimpleHTTPServer(port, bind) {
+	function SimpleHTTPServer(port, bind, basicAuth) {
 		
 		var pendingRequestList = [], serverSocket = new Socket(), socketList = [serverSocket], deflate = new Z(Z.DEFLATE, Z.BEST_SPEED);
 		
 		function CloseSocket(s) {
-
+			
 			s.Close();
 			socketList.splice( socketList.indexOf(s), 1 );
 		}
@@ -70,7 +71,10 @@ LoadModule('jsdebug');
 			var eoh = s.data.indexOf('\r\n\r\n');
 			if ( eoh == -1 )
 				return;
-			var contentLength = (/^content-length: ?(.*)$/im(s.data)||[])[1];
+			var headers = s.data.substring(0, eoh);
+			var contentLength = (/^content-length: ?(.*)$/im(headers)||[])[1];
+			var authorization = (/^authorization: ?Basic (.*)$/im(headers)||[])[1];
+
 			s.data = s.data.substring(eoh+4);
 			(function(s) {
 
@@ -81,6 +85,13 @@ LoadModule('jsdebug');
 					if ( buf == undefined )
 						return CloseSocket(s);						
 					s.data += buf;
+					return;
+				}
+				
+				if ( basicAuth && authorization != Base64Encode(basicAuth) ) {
+					
+					Sleep(2000);
+					s.Write('HTTP/1.1 401 Authorization Required\r\nWWW-Authenticate: Basic realm="debugger"\r\nContent-Length: 0\r\n\r\n');
 					return;
 				}
 			
@@ -121,11 +132,8 @@ LoadModule('jsdebug');
 
 		this.GetNextRequest = function() {
 
-			while( !pendingRequestList.length ) {
-				
-//				if ( endSignal ) throw 'end signal';
+			while( !endSignal && !pendingRequestList.length )
 				Poll(socketList, 100);
-			}
 			return pendingRequestList.shift();
 		}	
 	}
@@ -273,7 +281,7 @@ LoadModule('jsdebug');
 					contextInfo = '';
 
 				with (frameInfo)
-					stack.push({ index:i, filename:filename, lineno:lineno, isNative:isNative, contextInfo:contextInfo, variables:[n for ( n in variables )] });
+					stack.push({ index:i, filename:filename, lineno:lineno, isNative:isNative, contextInfo:contextInfo });
 			}
 			return stack;
 		},
@@ -298,9 +306,10 @@ LoadModule('jsdebug');
 				}
 				val = path.reduce(function(prev, cur) prev[cur], val);
 				if ( ChildListOnly )
-					return IsPrimitive(val) ? undefined : [ name for ( name in val) ].concat(['__count__', '__parent__', '__proto__', 'constructor']);
+					return IsPrimitive(val) ? undefined : [ { name:v.name, enumerate:v.enumerate, readonly:v.readonly, permanent:v.permanent } for each ( v in PropertiesInfo(val, true) ) ];
 				else
 					return { isObj:!IsPrimitive(val), string:Try(function() ValToString(val)), source:Try(function() uneval(val)) };
+
 			} catch(ex) {
 				return { isObj:false, string:String(ex), source:'' };
 			}

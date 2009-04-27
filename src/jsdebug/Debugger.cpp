@@ -521,6 +521,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION_FAST( ClearBreakpoints ) {
 
 	JS_ClearAllTraps(cx);
+	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
 
@@ -571,7 +572,7 @@ DEFINE_FUNCTION_FAST( StackFrame ) {
 	J_CHK( JS_DefineProperty(cx, stackItem, "lineExtent", script ? INT_TO_JSVAL( JS_GetScriptLineExtent(cx, script) ) : JSVAL_VOID, NULL, NULL, OBJ_PROP_FLAGS) );
 
 	J_CHK( JS_DefineProperty(cx, stackItem, "scope", OBJECT_TO_JSVAL(JS_GetFrameScopeChain(cx, frame)), NULL, NULL, OBJ_PROP_FLAGS) );
-	J_CHK( JS_DefineProperty(cx, stackItem, "variables", frame->varobj ? OBJECT_TO_JSVAL(frame->varobj) : JSVAL_VOID, NULL, NULL, OBJ_PROP_FLAGS) );
+//	J_CHK( JS_DefineProperty(cx, stackItem, "variables", frame->varobj ? OBJECT_TO_JSVAL(frame->varobj) : JSVAL_VOID, NULL, NULL, OBJ_PROP_FLAGS) );
 
 	J_CHK( JS_DefineProperty(cx, stackItem, "this", OBJECT_TO_JSVAL(JS_GetFrameThis(cx, frame)), NULL, NULL, OBJ_PROP_FLAGS) );
 

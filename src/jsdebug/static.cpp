@@ -1014,7 +1014,7 @@ DEFINE_FUNCTION(LocateFilename) {
 
 /**doc
 $TOC_MEMBER $INAME
- $ARRAY $INAME( object );
+ $ARRAY $INAME( object [, followPrototypeChain=false ] );
   Returns an array
 **/
 DEFINE_FUNCTION_FAST( PropertiesList ) {
@@ -1024,6 +1024,13 @@ DEFINE_FUNCTION_FAST( PropertiesList ) {
 
 	JSObject *srcObj;
 	srcObj = JSVAL_TO_OBJECT( J_FARG(1) );
+
+	bool followPrototypeChain;
+	if ( J_FARG_ISDEF(2) )
+		J_CHK( JsvalToBool(cx, J_FARG(2), &followPrototypeChain) );
+	else
+		followPrototypeChain = false;
+
 	JSObject *arrayObject;
 	arrayObject = JS_NewArrayObject(cx, 0, NULL);
 	J_S_ASSERT_ALLOC( arrayObject );
@@ -1034,15 +1041,21 @@ DEFINE_FUNCTION_FAST( PropertiesList ) {
 	index = 0;
 
 	JSScopeProperty *jssp;
-	jssp = NULL;
-	JS_PropertyIterator(srcObj, &jssp);
 
-	while ( jssp ) {
+	while ( srcObj ) {
 
-		tmp = ID_TO_VALUE(jssp->id);
-		J_CHK( JS_SetElement(cx, arrayObject, index, &tmp) );
-		index++;
+		jssp = NULL;
 		JS_PropertyIterator(srcObj, &jssp);
+
+		while ( jssp ) {
+
+			tmp = ID_TO_VALUE(jssp->id);
+			J_CHK( JS_SetElement(cx, arrayObject, index, &tmp) );
+			index++;
+			JS_PropertyIterator(srcObj, &jssp);
+		}
+
+		srcObj = JS_GetPrototype(cx, srcObj);
 	}
 
 	return JS_TRUE;
@@ -1052,7 +1065,7 @@ DEFINE_FUNCTION_FAST( PropertiesList ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $OBJ $INAME( object );
+ $ARRAY $INAME( object [, followPrototypeChain=false ] );
 **/
 DEFINE_FUNCTION_FAST( PropertiesInfo ) {
 
@@ -1062,54 +1075,83 @@ DEFINE_FUNCTION_FAST( PropertiesInfo ) {
 	JSObject *srcObj;
 	srcObj = JSVAL_TO_OBJECT( J_FARG(1) );
 
-	JSObject *infoObject;
-	infoObject = JS_NewObjectWithGivenProto(cx, NULL, NULL, NULL);
-	*J_FRVAL = OBJECT_TO_JSVAL( infoObject );
+	bool followPrototypeChain;
+	if ( J_FARG_ISDEF(2) )
+		J_CHK( JsvalToBool(cx, J_FARG(2), &followPrototypeChain) );
+	else
+		followPrototypeChain = false;
+
+//	JSObject *infoObject;
+//	infoObject = JS_NewObjectWithGivenProto(cx, NULL, NULL, NULL);
+//	*J_FRVAL = OBJECT_TO_JSVAL( infoObject );
+
+	JSObject *arrayObject;
+	arrayObject = JS_NewArrayObject(cx, 0, NULL);
+	J_S_ASSERT_ALLOC( arrayObject );
+	*J_FRVAL = OBJECT_TO_JSVAL( arrayObject );
 
 	JSPropertyDesc desc;
 
 	jsval tmp;
 	int index;
 	index = 0;
+	int prototypeLevel;
+	prototypeLevel = 0;
 
 	JSScopeProperty *jssp;
-	jssp = NULL;
-	JS_PropertyIterator(srcObj, &jssp);
 
-	while ( jssp ) {
+	while ( srcObj ) {
 
-		J_CHK( JS_GetPropertyDesc(cx, srcObj, jssp, &desc) );
-
-		JSObject *descObj = JS_NewObject(cx, NULL, NULL, NULL);
-		tmp = OBJECT_TO_JSVAL(descObj);
-		J_CHK( JS_SetPropertyById(cx, infoObject, jssp->id, &tmp) );
-
-		tmp = desc.value;
-		if ( desc.flags & JSPD_EXCEPTION )
-			J_CHK( JS_SetProperty(cx, descObj, "exception", &tmp) );
-		else
-			J_CHK( JS_SetProperty(cx, descObj, "value", &tmp) );
-
-		tmp = desc.flags & JSPD_VARIABLE ? JSVAL_TRUE : JSVAL_FALSE;
-		J_CHK( JS_SetProperty(cx, descObj, "variable", &tmp) );
-
-		tmp = desc.flags & JSPD_ARGUMENT ? JSVAL_TRUE : JSVAL_FALSE;
-		J_CHK( JS_SetProperty(cx, descObj, "argument", &tmp) );
-
-		tmp = desc.flags & JSPD_ENUMERATE ? JSVAL_TRUE : JSVAL_FALSE;
-		J_CHK( JS_SetProperty(cx, descObj, "enumerate", &tmp) );
-
-		tmp = desc.flags & JSPD_READONLY ? JSVAL_TRUE : JSVAL_FALSE;
-		J_CHK( JS_SetProperty(cx, descObj, "readonly", &tmp) );
-
-		tmp = desc.flags & JSPD_PERMANENT ? JSVAL_TRUE : JSVAL_FALSE;
-		J_CHK( JS_SetProperty(cx, descObj, "permanent", &tmp) );
-
-		tmp = jssp->setter != NULL || jssp->getter != NULL ? JSVAL_TRUE : JSVAL_FALSE;
-		J_CHK( JS_SetProperty(cx, descObj, "native", &tmp) );
-
-		index++;
+		jssp = NULL;
 		JS_PropertyIterator(srcObj, &jssp);
+
+		while ( jssp ) {
+
+			J_CHK( JS_GetPropertyDesc(cx, srcObj, jssp, &desc) );
+
+			JSObject *descObj = JS_NewObject(cx, NULL, NULL, NULL);
+			tmp = OBJECT_TO_JSVAL(descObj);
+			J_CHK( JS_SetElement(cx, arrayObject, index, &tmp) );
+
+			J_CHK( JS_IdToValue(cx, jssp->id, &tmp) );
+			J_CHK( JS_SetProperty(cx, descObj, "name", &tmp) );
+
+			tmp = desc.value;
+			if ( desc.flags & JSPD_EXCEPTION ) // doc. exception occurred fetching the property, value is exception.
+				J_CHK( JS_SetProperty(cx, descObj, "exception", &tmp) );
+			else
+				J_CHK( JS_SetProperty(cx, descObj, "value", &tmp) );
+
+			tmp = desc.flags & JSPD_VARIABLE ? JSVAL_TRUE : JSVAL_FALSE; // doc. local variable in function
+			J_CHK( JS_SetProperty(cx, descObj, "variable", &tmp) );
+
+			tmp = desc.flags & JSPD_ARGUMENT ? JSVAL_TRUE : JSVAL_FALSE; // doc. argument to function
+			J_CHK( JS_SetProperty(cx, descObj, "argument", &tmp) );
+
+			tmp = desc.flags & JSPD_ENUMERATE ? JSVAL_TRUE : JSVAL_FALSE; // visible to for/in loop
+			J_CHK( JS_SetProperty(cx, descObj, "enumerate", &tmp) );
+
+			tmp = desc.flags & JSPD_READONLY ? JSVAL_TRUE : JSVAL_FALSE;
+			J_CHK( JS_SetProperty(cx, descObj, "readonly", &tmp) );
+
+			tmp = desc.flags & JSPD_PERMANENT ? JSVAL_TRUE : JSVAL_FALSE;
+			J_CHK( JS_SetProperty(cx, descObj, "permanent", &tmp) );
+
+			tmp = jssp->setter != NULL || jssp->getter != NULL ? JSVAL_TRUE : JSVAL_FALSE;
+			J_CHK( JS_SetProperty(cx, descObj, "native", &tmp) );
+
+			tmp = INT_TO_JSVAL(prototypeLevel);
+			J_CHK( JS_SetProperty(cx, descObj, "prototypeLevel", &tmp) );
+
+			tmp = OBJECT_TO_JSVAL(srcObj);
+			J_CHK( JS_SetProperty(cx, descObj, "object", &tmp) );
+
+			index++;
+			JS_PropertyIterator(srcObj, &jssp);
+		}
+	
+		srcObj = JS_GetPrototype(cx, srcObj);
+		prototypeLevel++;
 	}
 
 	return JS_TRUE;

@@ -33,7 +33,7 @@ $MODULE_FOOTER
 
 void NewScriptHook(JSContext *cx, const char *filename, uintN lineno, JSScript *script, JSFunction *fun, void *callerdata) {
 
-//	printf( "add - %s:%d - %s - %d - %p\n", filename, lineno, fun ? JS_GetFunctionName(fun):"", script->staticDepth, script );
+//	printf( "add - %s:%d - %s - %d - %p\n", filename, lineno, fun ? JS_GetFunctionName(fun):"", script->staticLevel, script );
 
 	jl::QueueCell *it;
 	jl::Queue *scriptList = NULL;
@@ -59,7 +59,7 @@ void NewScriptHook(JSContext *cx, const char *filename, uintN lineno, JSScript *
 		for ( it = jl::QueueBegin(scriptList); it; it = jl::QueueNext(it) ) {
 
 			JSScript *s = (JSScript*)jl::QueueGetData(it);
-			if ( script->staticDepth >= s->staticDepth ) {
+			if ( script->staticLevel >= s->staticLevel ) {
 
 				jl::QueueInsertCell(scriptList, it, script);
 				break;
@@ -73,7 +73,7 @@ void NewScriptHook(JSContext *cx, const char *filename, uintN lineno, JSScript *
 
 void DestroyScriptHook(JSContext *cx, JSScript *script, void *callerdata) {
 
-//	printf( "del - %s:%d - ? - %d - %p\n", script->filename, script->lineno, script->staticDepth, script );
+//	printf( "del - %s:%d - ? - %d - %p\n", script->filename, script->lineno, script->staticLevel, script );
 
 	jl::QueueCell *it, *it1;
 	jl::Queue *scriptList = NULL;
