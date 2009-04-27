@@ -1,13 +1,21 @@
-var rev = _revision;
-
 LoadModule('jsstd');
 LoadModule('jsstd');
 LoadModule('jsio');
 
-Print( rev )
+var f = new Function("\
+		var buf = new Buffer();\
+		buf.Write('abcdefghi');\
+		function myStream() {\
+			this.Read = function(amount) {\
+				return buf.Read(2);\
+			}\
+		}\
+	Print( buf, Stringify( new myStream() ) )\
+");	
 
-
-
+f();
+		
+		
 Halt();
 
 	_configuration.stderr = function(){}
