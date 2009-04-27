@@ -121,6 +121,8 @@ DEFINE_XDR() {
 
 CONFIGURE_CLASS
 
+	REVISION(SvnRevToInt("$Revision: $"))
+
 	HAS_XDR
 
 //	HAS_CONSTRUCTOR // see issue#52

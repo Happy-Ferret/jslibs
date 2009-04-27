@@ -135,6 +135,8 @@ DEFINE_XDR() {
 
 CONFIGURE_CLASS
 
+	REVISION(SvnRevToInt("$Revision: $"))
+
 	HAS_XDR
 
 	HAS_HAS_INSTANCE // see issue#52

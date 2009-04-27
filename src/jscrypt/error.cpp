@@ -53,7 +53,7 @@ DEFINE_HAS_INSTANCE() { // see issue#52
 
 
 DEFINE_XDR() {
-	
+
 	if ( xdr->mode == JSXDR_ENCODE ) {
 
 		jsval tmp;
@@ -82,6 +82,8 @@ DEFINE_XDR() {
 
 
 CONFIGURE_CLASS
+
+	REVISION(SvnRevToInt("$Revision: $"))
 
 	HAS_XDR
 
