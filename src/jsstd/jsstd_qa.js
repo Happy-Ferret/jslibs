@@ -476,7 +476,10 @@ LoadModule('jsstd');
 /// hide properties [ftr]
 	
 		var o = { a:1, b:2, c:3, d:4 };
-		HideProperties(o, 'b', 'c');
+
+		SetPropertyEnumerate(o, 'b', false);
+		SetPropertyEnumerate(o, 'c', false);
+		
 		QA.ASSERT( o.b, 2, 'do not delete' );
 		QA.ASSERT( [p for each (p in o)].join(','), '1,4', 'visible properties' );
 

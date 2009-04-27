@@ -305,7 +305,7 @@ DEFINE_FUNCTION( SetScope ) {
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/**doc
+/** xx doc
 $TOC_MEMBER $INAME
  $VOID $INAME( obj, propertyName1 [, propertyName2 [, ... ] ] )
   Hide properties from for-in loop.
@@ -317,6 +317,7 @@ $TOC_MEMBER $INAME
   for ( var p in obj ) Print(p, ', '); // prints: a, c
   }}}
 **/
+/*
 DEFINE_FUNCTION( HideProperties ) {
 
 	J_S_ASSERT_ARG_MIN( 2 );
@@ -344,29 +345,29 @@ DEFINE_FUNCTION( HideProperties ) {
 		J_CHK( OBJ_SET_ATTRIBUTES(cx, object, id, prop, &attrs) );
 		OBJ_DROP_PROPERTY(cx, object, prop);
 
-/*
-	JSBool found;
-		...
-		propertyName = JS_GetStringBytes( JS_ValueToString( cx, J_ARG(i+1) ) );
-		J_S_ASSERT_1( propertyName != NULL, "Invalid property name (%s).", propertyName );
-		J_CHK( JS_GetPropertyAttributes( cx, object, propertyName, &attributes, &found ) );
-		if ( found == JS_FALSE )
-			continue;
-		attributes &= ~JSPROP_ENUMERATE;
-		J_CHK( JS_SetPropertyAttributes( cx, object, propertyName, attributes, &found ) );
-*/
+
+	//JSBool found;
+	//	...
+	//	propertyName = JS_GetStringBytes( JS_ValueToString( cx, J_ARG(i+1) ) );
+	//	J_S_ASSERT_1( propertyName != NULL, "Invalid property name (%s).", propertyName );
+	//	J_CHK( JS_GetPropertyAttributes( cx, object, propertyName, &attributes, &found ) );
+	//	if ( found == JS_FALSE )
+	//		continue;
+	//	attributes &= ~JSPROP_ENUMERATE;
+	//	J_CHK( JS_SetPropertyAttributes( cx, object, propertyName, attributes, &found ) );
+
 	}
 	return JS_TRUE;
 	JL_BAD;
 }
-
+*/
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
 $TOC_MEMBER $INAME
  $VOID $INAME( object, propertyName, polarity )
-  Show/Hide a property from for-in loop.
+  Show/Hide a property to for-in loop.
   $H note
    Using this function may change the order of the properties within the object.
   $H example
@@ -1447,7 +1448,7 @@ CONFIGURE_STATIC
 		FUNCTION( Seal )
 		FUNCTION( Clear )
 		FUNCTION( SetScope )
-		FUNCTION( HideProperties )
+//		FUNCTION( HideProperties )
 		FUNCTION_FAST_ARGC( SetPropertyEnumerate, 3 )
 		FUNCTION_FAST_ARGC( SetPropertyReadonly, 3 )
 
