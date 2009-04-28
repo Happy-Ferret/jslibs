@@ -376,19 +376,19 @@ inline unsigned int SvnRevToInt(const char *svnRev) {
 
 inline void *JL_GetPrivate(JSContext *cx, JSObject *obj) {
 
-	jsval v;
-	JS_ASSERT(OBJ_GET_CLASS(cx, obj)->flags & JSCLASS_HAS_PRIVATE);
-	v = obj->fslots[JSSLOT_PRIVATE];
-	if (!JSVAL_IS_INT(v))
-		return NULL;
-	return JSVAL_TO_PRIVATE(v);
+    jsval v;
+    JS_ASSERT(OBJ_GET_CLASS(cx, obj)->flags & JSCLASS_HAS_PRIVATE);
+    v = obj->fslots[JSSLOT_PRIVATE];
+    if (!JSVAL_IS_INT(v))
+        return NULL;
+    return JSVAL_TO_PRIVATE(v);
 }
 
 
 inline JSBool JL_SetPrivate(JSContext *cx, JSObject *obj, void *data) {
 
-	JS_ASSERT(OBJ_GET_CLASS(cx, obj)->flags & JSCLASS_HAS_PRIVATE);
-	obj->fslots[JSSLOT_PRIVATE] = PRIVATE_TO_JSVAL(data);
+    JS_ASSERT(OBJ_GET_CLASS(cx, obj)->flags & JSCLASS_HAS_PRIVATE);
+    obj->fslots[JSSLOT_PRIVATE] = PRIVATE_TO_JSVAL(data);
 	return JS_TRUE;
 }
 
@@ -434,7 +434,8 @@ inline bool IsNInfinity( JSContext *cx, jsval val ) {
 
 inline bool JsvalIsScript( JSContext *cx, jsval val ) {
 
-	return !JSVAL_IS_PRIMITIVE(val) && STOBJ_GET_CLASS(JSVAL_TO_OBJECT(val)) == &js_ScriptClass;
+//	return !JSVAL_IS_PRIMITIVE(val) && STOBJ_GET_CLASS(JSVAL_TO_OBJECT(val)) == &js_ScriptClass;
+	return !JSVAL_IS_PRIMITIVE(val) && JS_GET_CLASS(cx, JSVAL_TO_OBJECT(val)) == &js_ScriptClass;
 }
 
 inline bool JsvalIsFunction( JSContext *cx, jsval val ) {
