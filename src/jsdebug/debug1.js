@@ -36,6 +36,11 @@ function Debug1() {
 
 	debugger;
 	
+	
+	for ( var i = 0; i < 1000000; i++ ) {
+	
+	}
+	
 	Print('message test\nzzzzz', '\n');
 
 	var data = { d1:#1={ a:[4,5,6], b:null, b1:undefined, c:'test', d:{x:1, y:0, z:1}, e:123, e1:new Number(123), f:#1# } };

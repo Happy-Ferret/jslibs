@@ -55,7 +55,7 @@ int _puts(JSContext *cx, const char *str) {
 	return EOF;
 }
 
-
+/*
 int _printf(JSContext *cx, const char * format, ...) {
 
   char buffer[65535];
@@ -68,18 +68,6 @@ int _printf(JSContext *cx, const char * format, ...) {
 	  return -1;
   _puts(cx, buffer);
   return res;
-}
-
-
-/*
-DEFINE_FUNCTION( Print ) {
-
-	if ( stdoutFunction == NULL )
-		return JS_TRUE; // nowhere to write, but don't failed
-	for (uintN i = 0; i<argc; i++)
-		J_CHK( JS_CallFunction(cx, obj, stdoutFunction, 1, &argv[i], rval) );
-	return JS_TRUE;
-	JL_BAD;
 }
 */
 
@@ -294,6 +282,7 @@ DEFINE_FUNCTION( DumpStats )
 /**doc
 $TOC_MEMBER $INAME
  $INAME( [ filename [, startThing [, thingToFind [, maxDepth [, thingToIgnore] ] ] ] ] )
+ $H note
   This function in only available in DEBUG mode.
 **/
 DEFINE_FUNCTION_FAST( DumpHeap )
@@ -612,11 +601,9 @@ DEFINE_PROPERTY( currentMemoryUsage ) {
 //	bytes = pmc.PrivateUsage; // doc: The current amount of memory that cannot be shared with other processes, in bytes. Private bytes include memory that is committed and marked MEM_PRIVATE, data that is not mapped, and executable pages that have been written to.
 	bytes = pmc.WorkingSetSize; // same value as "windows task manager" "mem usage"
 #else
-
 	LinuxProcInfo pinfo;
 	GetProcInfo(getpid(), &pinfo);
 	bytes = pinfo.vsize;
-
 #endif // XP_WIN
 
 	J_CHK( JS_NewNumberValue(cx, bytes, vp) );
@@ -698,10 +685,9 @@ DEFINE_PROPERTY( privateMemoryUsage ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $INAME
-  TBD
+ $INAME $READONLY
+  Is the amount of bytes mallocated by the JavaScript engine.
 **/
-
 DEFINE_PROPERTY( gcMallocBytes ) {
 
     uint32 *pbytes, bytes;
@@ -718,10 +704,9 @@ DEFINE_PROPERTY( gcMallocBytes ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $INAME
-  TBD
+ $INAME $READONLY
+  Is the amount of bytes allocated by the JavaScript engine.
 **/
-
 DEFINE_PROPERTY( gcBytes ) {
 
     uint32 *pbytes, bytes;
@@ -744,19 +729,29 @@ help you find any GC hazards much more quickly. This is the same as
 ...
 in about:config javascript.options.gczeal = 2 (or 1, or 0, to disable).
 */
+/**doc
+$TOC_MEMBER $INAME
+ $INAME $READONLY
+ $H note
+  This function in only available in DEBUG mode.
+**/
+#ifdef JS_GC_ZEAL
 DEFINE_PROPERTY( gcZeal ) {
 
-#ifdef JS_GC_ZEAL
 	int zeal;
 	J_CHK( JsvalToInt(cx, *vp, &zeal) );
 	JS_SetGCZeal(cx, zeal);
-#else
-	J_REPORT_ERROR("Available in Debug mode only.");
-#endif // JS_GC_ZEAL
 	return JS_TRUE;
 	JL_BAD;
 }
+#endif // JS_GC_ZEAL
 
+
+/**doc
+$TOC_MEMBER $INAME
+ $INT $INAME()
+  TBD
+**/
 DEFINE_FUNCTION( DumpObjectPrivate ) {
 
 	J_S_ASSERT_ARG_MIN( 1 );
@@ -767,8 +762,6 @@ DEFINE_FUNCTION( DumpObjectPrivate ) {
 	return JS_TRUE;
 	JL_BAD;
 }
-
-
 
 
 
@@ -1014,8 +1007,8 @@ DEFINE_FUNCTION(LocateFilename) {
 
 /**doc
 $TOC_MEMBER $INAME
- $ARRAY $INAME( object [, followPrototypeChain=false ] );
-  Returns an array
+ $ARRAY $INAME( object [, followPrototypeChain=false ] )
+  Returns an array of properties name.
 **/
 DEFINE_FUNCTION_FAST( PropertiesList ) {
 
@@ -1065,7 +1058,8 @@ DEFINE_FUNCTION_FAST( PropertiesList ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $ARRAY $INAME( object [, followPrototypeChain=false ] );
+ $ARRAY $INAME( object [, followPrototypeChain=false ] )
+ Returns an array of properties information.
 **/
 DEFINE_FUNCTION_FAST( PropertiesInfo ) {
 
@@ -1159,11 +1153,13 @@ DEFINE_FUNCTION_FAST( PropertiesInfo ) {
 }
 
 
+#ifdef DEBUG
 DEFINE_FUNCTION( Test ) {
 
 	return JS_TRUE;
 	JL_BAD;
 }
+#endif // DEBUG
 
 
 
@@ -1171,7 +1167,6 @@ CONFIGURE_STATIC
 
 	REVISION(SvnRevToInt("$Revision$"))
 	BEGIN_STATIC_FUNCTION_SPEC
-
 		FUNCTION_FAST_ARGC( PropertiesList, 1 )
 		FUNCTION_FAST_ARGC( PropertiesInfo, 1 )
 #ifdef DEBUG
@@ -1188,18 +1183,17 @@ CONFIGURE_STATIC
 		FUNCTION( LocateLine )
 		FUNCTION( LocateFilename )
 		FUNCTION( DumpObjectPrivate )
-
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC
-
+#ifdef JS_GC_ZEAL
 		PROPERTY_WRITE( gcZeal )
+#endif
 		PROPERTY_READ( gcMallocBytes )
 		PROPERTY_READ( gcBytes )
 		PROPERTY_READ( currentMemoryUsage )
 		PROPERTY_READ( peakMemoryUsage )
 		PROPERTY_READ( privateMemoryUsage )
-
 	END_STATIC_PROPERTY_SPEC
 
 END_STATIC

@@ -59,7 +59,7 @@ LoadModule('jsdebug');
 		function CloseSocket(s) {
 			
 			s.Close();
-			socketList.splice( socketList.indexOf(s), 1 );
+			socketList.splice(socketList.indexOf(s), 1);
 		}
 	
 		function ProcessRequest(s) {
@@ -129,10 +129,15 @@ LoadModule('jsdebug');
 		serverSocket.nonblocking = true;
 		serverSocket.Bind(port, bind);
 		serverSocket.Listen();
+		this.HasPendingRequest = function() {
+
+			Poll(socketList, 0);
+			return pendingRequestList.length > 0;
+		}		
 
 		this.GetNextRequest = function() {
 
-			while( !endSignal && !pendingRequestList.length )
+			while( !endSignal && pendingRequestList.length == 0 )
 				Poll(socketList, 100);
 			return pendingRequestList.shift();
 		}	
@@ -148,6 +153,7 @@ LoadModule('jsdebug');
 	dbg.breakOnError = true;
 	dbg.breakOnException = false;
 	dbg.breakOnExecute = false;
+	dbg.interruptCounterLimit = 0;
 
 	var _breakpointList = {};
 	var _cookie = { __proto__:null };
@@ -164,8 +170,8 @@ LoadModule('jsdebug');
 	function OriginToString( breakOrigin ) {
 
 		with (Debugger)
-			var pos = Match(breakOrigin, FROM_BREAKPOINT, FROM_STEP, FROM_STEP_OVER, FROM_STEP_THROUGH, FROM_STEP_OUT, FROM_THROW, FROM_ERROR, FROM_DEBUGGER, FROM_EXECUTE, FROM_CALL);
-		return Switch(pos, 'breakpoint', 'step', 'stepover', 'stepthrough', 'stepout', 'throw', 'error', 'debugger', 'execute', 'call');
+			var pos = Match(breakOrigin, FROM_INTERRUPT, FROM_BREAKPOINT, FROM_STEP, FROM_STEP_OVER, FROM_STEP_THROUGH, FROM_STEP_OUT, FROM_THROW, FROM_ERROR, FROM_DEBUGGER, FROM_EXECUTE, FROM_CALL);
+		return Switch(pos, 'interrupt', 'breakpoint', 'step', 'stepover', 'stepthrough', 'stepout', 'throw', 'error', 'debugger', 'execute', 'call');
 	}
 
 	function Action(id) { throw id }
@@ -271,7 +277,7 @@ LoadModule('jsdebug');
 			var stack = [];
 			for ( var i = 0; i <= _breakContext.stackFrameIndex; i++ ) {
 			
-				var frameInfo = dbg.StackFrame(i);
+				var frameInfo = dbg.StackFrameInfo(i);
 				var contextInfo;
 				if ( frameInfo.isEval )
 					contextInfo = '(eval)';
@@ -301,8 +307,7 @@ LoadModule('jsdebug');
 					val = dbg.EvalInStackFrame('('+expression+')', stackFrameIndex );
 				} else {
 
-					var auto = { stack:dbg.StackFrame(stackFrameIndex), rval:_breakContext.rval };
-					val = auto[expression.substr(1)];
+					val = { stack:dbg.StackFrameInfo(stackFrameIndex), rval:_breakContext.rval }[expression.substr(1)];
 				}
 				val = path.reduce(function(prev, cur) prev[cur], val);
 				if ( ChildListOnly )
@@ -328,6 +333,7 @@ LoadModule('jsdebug');
 			dbg.breakOnException = false;
 			dbg.breakOnExecute = false;
 			delete dbg.onBreak;
+			dbg.ClearBreakpoints();
 			delete global.__dbg;
 			_configuration.stdout = _prevStdout;
 			_configuration.stdout = _prevStderr;
@@ -356,7 +362,7 @@ LoadModule('jsdebug');
 			with (_breakContext)
 				var trace = [[filename, lineno, stackFrameIndex, '?.???']]; // the current line
 			var prevBreakFct = dbg.onBreak;
-			dbg.onBreak = function(filename, lineno, scope, func, breakOrigin, stackFrameIndex) {
+			dbg.onBreak = function(filename, lineno, breakOrigin, stackFrameIndex) {
 
 				if ( filename != aimFilename || lineno != aimLineno ) {
 				
@@ -373,8 +379,11 @@ LoadModule('jsdebug');
 		}),
 	}
 	
-	dbg.onBreak = function(filename, lineno, scope, func, breakOrigin, stackFrameIndex, hasException, exception, rval, enteringFunction) {
-			
+	dbg.onBreak = function(filename, lineno, breakOrigin, stackFrameIndex, hasException, exception, rval, enteringFunction) {
+		
+//		if ( breakOrigin == Debugger.FROM_INTERRUPT && !server.HasPendingRequest() )
+//			return Debugger.DO_CONTINUE;
+		
 		var tmpTime = TimeCounter();
 		while (_reset.length) _reset.shift()();
 		
@@ -391,7 +400,7 @@ LoadModule('jsdebug');
 			}
 		}
 		
-		_breakContext = { filename:filename, lineno:lineno, scope:scope, breakOrigin:breakOrigin, stackFrameIndex:stackFrameIndex, hasException:hasException, exception:exception, rval:rval, enteringFunction:enteringFunction, time:tmpTime - _time };
+		_breakContext = { filename:filename, lineno:lineno, breakOrigin:breakOrigin, stackFrameIndex:stackFrameIndex, hasException:hasException, exception:exception, rval:rval, enteringFunction:enteringFunction, time:tmpTime - _time };
 		for(;;) {
 
 			var res = undefined, [req, responseFunction] = server.GetNextRequest();

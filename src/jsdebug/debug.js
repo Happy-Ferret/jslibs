@@ -1,21 +1,5 @@
-
-
-function B( c ) {
-
-	c();
-}
-
-var foo = new Function("\
-	var a = {};\
-	function C() {\
-		return function() {\
-			return a;\
-		}\
-	}\
-	B( C() );\
-");
-
-foo(); //  ReferenceError: a is not defined
+LoadModule('jsstd');
+LoadModule('jsdebug');
 
 
 /*
@@ -31,9 +15,8 @@ Print('\n');
 Halt();
 */
 
-/*
+
 Exec('debugger.js');
 Exec('debug1.js');
 Debug1();
 Print('Done.\n');
-*/
