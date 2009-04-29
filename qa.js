@@ -74,10 +74,11 @@ function CreateQaItemList(startDir, filter) {
 
 		try {
 		
-			item.relativeLineNumber = LocateLine(0); item.func = new Function('QA', 'ITEM', item.code.join('\n'));
+			item.relativeLineNumber = LocateLine(0); item.func = new Function('QA', 'ITEM', item.code.join('\n')); // keep this on the same line
 		} catch(ex) {
 			
-			Print( ex + ' at ' + item.file + ':' + (item.line + ex.lineNumber - item.relativeLineNumber) + ' ('+item.name+')', '\n' );
+			item.func = function() {}
+			Print( '*** ' + ex + ' @' + item.file + ':' + (item.line + ex.lineNumber - item.relativeLineNumber) + ' ('+item.name+')', '\n' );
 		}
 		
 //		if ( !item.func )
@@ -141,12 +142,11 @@ var QAAPI = new function() {
 		try {
 		
 			fct();
-			this.REPORT( CodeLocation()+' Failure not detected: '+testName );
-		} catch(ex if ex instanceof exType) {
-			// good
+			this.REPORT( CodeLocation()+' Exception not detected: '+testName );
 		} catch(ex) {
-			
-			this.REPORT( CodeLocation()+' Invalid exception ('+ex.constructor.name+' != '+exType.constructor.name+') for: '+testName );
+	
+			if ( !(ex instanceof exType) )
+				this.REPORT( CodeLocation()+' Invalid exception ('+ex.constructor.name+' != '+exType.name+') for: '+testName );
 		}
 	} 
 
