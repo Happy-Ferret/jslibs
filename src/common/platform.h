@@ -458,9 +458,9 @@ inline unsigned int JLSessionId() {
 
 	inline JLThreadHandler JLThreadStart( JLThreadRoutine threadRoutine, void *pv ) {
 
-		#if defined XP_WIN
+	#if defined XP_WIN
 		return (JLThreadHandler)CreateThread(NULL, 0, threadRoutine, pv, 0, NULL);
-		#elif defined XP_UNIX
+	#elif defined XP_UNIX
 		pthread_t *thread = (pthread_t*)malloc(sizeof(pthread_t));
 		pthread_attr_t attr;
 		pthread_attr_init(&attr);
@@ -469,33 +469,33 @@ inline unsigned int JLSessionId() {
 		rc = pthread_create(thread, &attr, threadRoutine, pv);
 		pthread_attr_destroy(&attr);
 		return rc ? 0 : thread;
-		#endif
+	#endif
 	}
 
 	inline void JLThreadExit() {
 
-		#if defined XP_WIN
+	#if defined XP_WIN
 		ExitThread(0);
-		#elif defined XP_UNIX
+	#elif defined XP_UNIX
 		pthread_exit(NULL);
-		#endif
+	#endif
 	}
 
 	inline void JLThreadCancel( JLThreadHandler thread ) {
 
-		#if defined XP_WIN
+	#if defined XP_WIN
 		TerminateThread(thread, 0); // The handle must have the THREAD_TERMINATE access right.
-		#elif defined XP_UNIX
+	#elif defined XP_UNIX
 		pthread_cancel(*thread);
-		#endif
+	#endif
 	}
 
 
 	inline void JLThreadPriority( JLThreadHandler thread, JLThreadPriorityType priority ) {
 
-		#if defined XP_WIN
+	#if defined XP_WIN
 		SetThreadPriority(thread, priority);
-		#elif defined XP_UNIX
+	#elif defined XP_UNIX
 		int policy;
 		struct sched_param param;
 		int rv;
@@ -504,66 +504,66 @@ inline unsigned int JLSessionId() {
 		int min = sched_get_priority_min(policy);
 		param.sched_priority = min + priority * (max - min) / 128;
 		rv = pthread_setschedparam(*thread, policy, &param);
-		#endif
+	#endif
 	}
 
 	inline bool JLThreadIsActive( JLThreadHandler thread ) {
 
 		if ( !JLThreadOk(thread) )
 			return false;
-		#if defined XP_WIN
+	#if defined XP_WIN
 		DWORD result = WaitForSingleObject( thread, 0 );
 		return result != WAIT_OBJECT_0; // else WAIT_TIMEOUT ?
-		#elif defined XP_UNIX
+	#elif defined XP_UNIX
 		int policy;
 		struct sched_param param;
 		int rv = pthread_getschedparam(*thread, &policy, &param);
 		return rv != ESRCH; // errno.h
-		#endif
+	#endif
 	}
 
 	inline void JLWaitThread( JLThreadHandler thread ) {
 
 		if ( !JLThreadOk(thread) )
 			return;
-		#if defined XP_WIN
+	#if defined XP_WIN
 		WaitForSingleObject( thread, INFINITE ); // WAIT_OBJECT_0
-		#elif defined XP_UNIX
+	#elif defined XP_UNIX
 		void *status;
 		int rc;
 		rc = pthread_join(*thread, &status);
-		#endif
+	#endif
 	}
 
 	inline void JLFreeThread( JLThreadHandler *pThread ) {
 
 		if ( !pThread || !JLThreadOk(*pThread) )
 			return;
-		#if defined XP_WIN
+	#if defined XP_WIN
 		CloseHandle(*pThread);
-		#elif defined XP_UNIX
+	#elif defined XP_UNIX
 		pthread_detach(**pThread);
 		free(*pThread);
-		#endif
+	#endif
 		*pThread = (JLThreadHandler)0;
 	}
 
 // dynamic libraries
-	#if defined XP_WIN
+#if defined XP_WIN
 	typedef HMODULE JLLibraryHandler;
-	#elif defined XP_UNIX
+#elif defined XP_UNIX
 	typedef void* JLLibraryHandler;
-	#endif
+#endif
 
 	inline JLLibraryHandler JLDynamicLibraryOpen( const char *filename ) {
 
-		#if defined XP_WIN
+	#if defined XP_WIN
 		return LoadLibrary(filename);
-		#elif defined XP_UNIX
+	#elif defined XP_UNIX
 		dlerror();
 		void* handler = dlopen( filename, RTLD_LAZY ); // RTLD_NOW
 		return handler;
-		#endif
+	#endif
 	}
 
 	inline bool JLDynamicLibraryOk( JLLibraryHandler libraryHandler ) {
@@ -573,7 +573,7 @@ inline unsigned int JLSessionId() {
 
 	inline void JLDynamicLibraryLastErrorMessage( char *message, size_t maxLength ) {
 
-		#if defined XP_WIN
+	#if defined XP_WIN
 		DWORD errorCode = ::GetLastError();
 		LPVOID lpMsgBuf;
 		DWORD result = ::FormatMessage(
@@ -585,7 +585,7 @@ inline unsigned int JLSessionId() {
 			message[maxLength-1] = '\0';
 		} else
 			*message = '\0';
-		#elif defined XP_UNIX
+	#elif defined XP_UNIX
 		const char *msgBuf = dlerror();
 		if ( msgBuf != NULL ) {
 
@@ -593,27 +593,27 @@ inline unsigned int JLSessionId() {
 			message[maxLength-1] = '\0';
 		} else
 			*message = '\0';
-		#endif
+	#endif
 	}
 
 	inline void *JLDynamicLibrarySymbol( JLLibraryHandler libraryHandler, const char *symbolName ) {
 
-		#if defined XP_WIN
+	#if defined XP_WIN
 		return (void*)GetProcAddress(libraryHandler, symbolName);
-		#elif defined XP_UNIX
+	#elif defined XP_UNIX
 		dlerror();
 		return dlsym(libraryHandler, symbolName);
-		#endif
+	#endif
 	}
 
 	inline void JLDynamicLibraryClose( JLLibraryHandler *libraryHandler ) {
 
-		#if defined XP_WIN
+	#if defined XP_WIN
 		FreeLibrary(*libraryHandler);
-		#elif defined XP_UNIX
+	#elif defined XP_UNIX
 		dlerror();
 		dlclose(*libraryHandler);
-		#endif
+	#endif
 		*libraryHandler = (JLLibraryHandler)0;
 	}
 

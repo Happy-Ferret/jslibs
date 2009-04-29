@@ -74,37 +74,6 @@ struct Private {
 };
 
 
-inline JSStackFrame* CurrentStackFrame(JSContext *cx) {
-
-//	JSStackFrame *fp = NULL;
-//	return JS_FrameIterator(cx, &fp);
-	return js_GetTopStackFrame(cx);
-}
-
-inline unsigned int StackSize(JSContext *cx, JSStackFrame *fp) {
-
-	unsigned int length = 0;
-	for ( ; fp; fp = fp->down ) // for ( JSStackFrame *fp = CurrentStackFrame(cx); fp; JS_FrameIterator(cx, &fp) )
-		++length;
-	return length; // 0 is the first frame
-}
-
-
-inline JSStackFrame *StackFrameByIndex(JSContext *cx, unsigned int frameIndex) {
-
-	JSStackFrame *fp = CurrentStackFrame(cx);
-	unsigned int currentFrameIndex = StackSize(cx, fp)-1;
-	if ( frameIndex > currentFrameIndex )
-		return NULL;
-	// now, select the right frame
-	while ( fp && currentFrameIndex > frameIndex ) {
-
-		fp = fp->down; //JS_FrameIterator(cx, &fp); // avoid a function call
-		--currentFrameIndex;
-	}
-	return fp;
-}
-
 
 bool IsExcludedFile( void **excludedFiles, const char *filename ) {
 

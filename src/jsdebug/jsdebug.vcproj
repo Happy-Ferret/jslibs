@@ -234,6 +234,10 @@
 			RelativePath=".\debugger.js"
 			>
 		</File>
+		<File
+			RelativePath=".\jsdebug_qa.js"
+			>
+		</File>
 	</Files>
 	<Globals>
 	</Globals>

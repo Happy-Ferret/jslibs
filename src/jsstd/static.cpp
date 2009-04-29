@@ -16,6 +16,8 @@
 
 #include <string.h>
 
+#include "../common/jsNames.h"
+
 #include "static.h"
 
 #include "jsxdrapi.h"
@@ -73,26 +75,26 @@ $TOC_MEMBER $INAME
   Expand(' $(h) $(w)', { h:'Hello', w:'World' }); // returns "Hello World"
   }}}
 **/
-DEFINE_FUNCTION( Expand ) {
+DEFINE_FUNCTION_FAST( Expand ) {
 
 	J_S_ASSERT_ARG_MIN( 1 );
 
 	const char *srcBegin;
 	size_t srcLen;
 
-	J_CHK( JsvalToStringAndLength(cx, &J_ARG(1), &srcBegin, &srcLen) );
+	J_CHK( JsvalToStringAndLength(cx, &J_FARG(1), &srcBegin, &srcLen) );
 	J_S_ASSERT( srcBegin[srcLen] == '\0', "Invalid input string." ); // else strstr may failed.
 	const char *srcEnd;
 	srcEnd = srcBegin + srcLen;
 
 	JSObject *table;
-	if ( J_ARG_ISDEF(2) ) {
+	if ( J_FARG_ISDEF(2) ) {
 
-		J_S_ASSERT_OBJECT( J_ARG(2) );
-		table = JSVAL_TO_OBJECT( J_ARG(2) );
+		J_S_ASSERT_OBJECT( J_FARG(2) );
+		table = JSVAL_TO_OBJECT( J_FARG(2) );
 	} else {
 
-		table = obj;
+		table = J_FOBJ;
 	}
 
 	typedef struct {
@@ -167,7 +169,7 @@ DEFINE_FUNCTION( Expand ) {
 	JSString *jsstr;
 	jsstr = JS_NewString(cx, expandedString, totalLength);
 	J_S_ASSERT_ALLOC( jsstr );
-	*rval = STRING_TO_JSVAL( jsstr );
+	*J_FRVAL = STRING_TO_JSVAL( jsstr );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -200,17 +202,18 @@ $TOC_MEMBER $INAME
   Prevents all write access to the object, either to add a new property, delete an existing property, or set the value or attributes of an existing property.
   If _recursively_ is true, the function seal any non-null objects in the graph connected to obj's slots.
 **/
-DEFINE_FUNCTION( Seal ) {
+DEFINE_FUNCTION_FAST( Seal ) {
 
 	J_S_ASSERT_ARG_MIN(1);
-	J_S_ASSERT_OBJECT( J_ARG(1) );
+	J_S_ASSERT_OBJECT( J_FARG(1) );
 	//J_CHK( JS_ValueToObject(cx, J_ARG(1), &obj) );
 	JSBool deep;
-	if ( J_ARG_ISDEF(2) )
-		J_CHK( JS_ValueToBoolean(cx, J_ARG(2), &deep) );
+	if ( J_FARG_ISDEF(2) )
+		J_CHK( JS_ValueToBoolean(cx, J_FARG(2), &deep) );
 	else
 		deep = JS_FALSE;
-	return JS_SealObject(cx, JSVAL_TO_OBJECT(J_ARG(1)), deep);
+	*J_FRVAL = JSVAL_VOID;
+	return JS_SealObject(cx, JSVAL_TO_OBJECT(J_FARG(1)), deep);
 	JL_BAD;
 }
 
@@ -221,16 +224,16 @@ $TOC_MEMBER $INAME
  $VOID $INAME( obj )
   Removes all properties and elements from _obj_ in a single operation.
 **/
-DEFINE_FUNCTION( Clear ) {
+DEFINE_FUNCTION_FAST( Clear ) {
 
 	J_S_ASSERT_ARG_MIN( 1 );
 //	J_S_ASSERT_OBJECT(J_ARG(1));
-	if ( JSVAL_IS_OBJECT( J_ARG(1) ) ) {
+	if ( JSVAL_IS_OBJECT( J_FARG(1) ) ) {
 
-		JS_ClearScope(cx, JSVAL_TO_OBJECT( J_ARG(1) ));
-		*rval = JSVAL_TRUE;
+		JS_ClearScope(cx, JSVAL_TO_OBJECT( J_FARG(1) ));
+		*J_FRVAL = JSVAL_TRUE;
 	} else
-		*rval = JSVAL_FALSE;
+		*J_FRVAL = JSVAL_FALSE;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1146,7 +1149,9 @@ $TOC_MEMBER $INAME
 struct SandboxContextPrivate {
 
 	size_t maxExecutionTime;
-	JSFunction *queryFunction;
+//	JSFunction *queryFunction;
+	JSContext *cx;
+	jsval queryFunctionValue;
 };
 
 static JSBool SandboxMaxOperationCallback(JSContext *cx) {
@@ -1167,20 +1172,18 @@ JLThreadFuncDecl WatchDogThreadProc(void *threadArg) {
 }
 
 
-static JSBool SandboxQueryFunction(JSContext *cx, uintN argc, jsval *vp) {
+static JSBool SandboxQueryFunction(JSContext *scx, uintN argc, jsval *vp) {
 
-	SandboxContextPrivate *pv = (SandboxContextPrivate*)JS_GetContextPrivate(cx);
-	JSFunction *fun = pv->queryFunction;
-	if ( fun ) {
+	SandboxContextPrivate *pv = (SandboxContextPrivate*)JS_GetContextPrivate(scx);
+	JSContext *cx = pv->cx; // needed to send errors in the right context.
+	if ( JSVAL_IS_VOID( pv->queryFunctionValue ) ) {
 
-		J_CHK( JS_CallFunction(cx, J_FOBJ, fun, argc, J_FARGV, J_FRVAL) );
-		if ( !JSVAL_IS_PRIMITIVE(*J_FRVAL) ) { // for security reasons, you must return primitive values.
-
-			JS_ReportError(cx, "Only primitive value can be used.");
-			return JS_FALSE;
-		}
-	} else
 		*J_FRVAL = JSVAL_VOID;
+	} else {
+
+		J_CHK( JS_CallFunctionValue(scx, J_FOBJ, pv->queryFunctionValue, argc, J_FARGV, J_FRVAL) );
+		J_CHKM( JSVAL_IS_PRIMITIVE(*J_FRVAL), "Only primitive value can be returned." );
+	}
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1209,15 +1212,16 @@ DEFINE_FUNCTION_FAST( SandboxEval ) {
 
 	SandboxContextPrivate pv;
 	JS_SetContextPrivate(scx, &pv);
+	pv.cx = cx;
 
 	if ( J_FARG_ISDEF(2) ) {
 
 		J_S_ASSERT_FUNCTION( J_FARG(2) );
-		pv.queryFunction = JS_ValueToFunction(cx, J_FARG(2));
+		pv.queryFunctionValue = J_FARG(2);
 		J_CHK( JS_DefineFunction(scx, globalObject, "Query", (JSNative)SandboxQueryFunction, 1, JSFUN_FAST_NATIVE | JSPROP_PERMANENT | JSPROP_READONLY) );
 	} else {
 
-		pv.queryFunction = NULL;
+		pv.queryFunctionValue = JSVAL_VOID;
 	}
 
 	if ( J_FARG_ISDEF(3) )
@@ -1225,14 +1229,6 @@ DEFINE_FUNCTION_FAST( SandboxEval ) {
 	else
 		pv.maxExecutionTime = 1000; // default value
 
-/*
-	if ( J_FARG_ISDEF(2) ) {
-
-		JSObject *aobj = JSVAL_TO_OBJECT( J_FARG(2) );
-		JS_SetParent(scx, aobj, globalObject);
-		globalObject = aobj;
-	}
-*/
 
 	JSString *jsstr;
 	jsstr = JS_ValueToString(cx, J_FARG(1));
@@ -1243,7 +1239,8 @@ DEFINE_FUNCTION_FAST( SandboxEval ) {
 
 	JS_SetOperationCallback(scx, SandboxMaxOperationCallback);
 	JLThreadHandler watchDogThread;
-	watchDogThread = JLThreadStart(WatchDogThreadProc, scx); // (TBD) check the restult
+	watchDogThread = JLThreadStart(WatchDogThreadProc, scx);
+	J_CHK( JLThreadOk(watchDogThread) );
 
 	JS_SetGlobalObject(scx, globalObject);
 	JSStackFrame *fp;
@@ -1266,7 +1263,7 @@ DEFINE_FUNCTION_FAST( SandboxEval ) {
 			JS_ReportError(cx, "Unexpected error.");
 	}
 
-	JS_DestroyContextMaybeGC(scx);
+	JS_DestroyContextNoGC(scx);
 	return ok;
 	JL_BAD;
 }
@@ -1358,23 +1355,45 @@ $TOC_MEMBER $INAME
  $BOOL $INAME
   Set to $TRUE, this property desactivates the garbage collector.
 **/
-DEFINE_PROPERTY( disableGarbageCollection ) {
-// <shaver>	you could install a vetoing callback!
-// <crowder>	oh, true
+JSBool VetoingCallback(JSContext *cx, JSGCStatus status) {
 
-//	JS_SetGCCallback(cx, ..
+	// doc. JSGC_BEGIN: Start of GC. The callback may prevent GC from starting by returning JS_FALSE.
+	//      But even if the callback returns JS_TRUE, the garbage collector may determine that GC is not necessary,
+	//      in which case the other three callbacks are skipped.
+	if ( status == JSGC_BEGIN )
+		return JS_FALSE;
+	return JS_TRUE;
+}
 
+JSGCCallback prevJSGCCallback = NULL;
+
+DEFINE_PROPERTY_SETTER( disableGarbageCollection ) {
+
+	// <shaver>	you could install a vetoing callback!
+	// <crowder>	oh, true
 	bool disableGC;
 	J_CHK( JsvalToBool(cx, *vp, &disableGC) );
-
 	if ( disableGC ) {
 
-		JS_LOCK_GC(JS_GetRuntime(cx));
+		JSGCCallback tmp = JS_SetGCCallback(cx, VetoingCallback);
+		if ( tmp != VetoingCallback )
+			prevJSGCCallback = tmp;
 	} else {
 
-		JS_UNLOCK_GC(JS_GetRuntime(cx));
+		JSGCCallback tmp = JS_SetGCCallback(cx, prevJSGCCallback);
+		if ( tmp != VetoingCallback )
+			JS_SetGCCallback(cx, tmp);
 	}
+	return JS_TRUE;
+	JL_BAD;
+}
 
+
+DEFINE_PROPERTY_GETTER( disableGarbageCollection ) {
+
+	JSGCCallback cb = JS_SetGCCallback(cx, NULL);
+	JS_SetGCCallback(cx, cb);
+	*vp = cb == VetoingCallback ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1403,39 +1422,9 @@ DEFINE_PROPERTY( processPrioritySetter ) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #ifdef _DEBUG
-
 DEFINE_FUNCTION_FAST( Test ) {
 
-	char *ref = (char*)malloc(2000000);
-	for ( int i = 0; i < 2000000; i++ )
-		ref[i] = rand() & 0xff; // 0->255
-	int refPos = 0;
-
-	using namespace jl;
-	Buffer b;
-	BufferInitialize(&b, bufferTypeAuto, bufferGrowTypePage);
-
-	for ( int i = 0; i < 1000; i++ ) {
-
-		int rnd = rand() & 0xff; // 0->127
-		char *tmp = BufferNewChunk(&b, rnd);
-		memcpy(tmp, ref + refPos, rnd);
-		BufferConfirm(&b, rnd);
-		refPos += rnd;
-	}
-
-	int l = BufferGetLength(&b);
-
-	char *tmp = (char*)malloc(l);
-	BufferCopyData(&b, tmp, l);
-
-	const char *d = BufferGetData(&b);
-	bool success = memcmp(ref, d, l) == 0 && memcmp(ref, tmp, l) == 0;
-
-	BoolToJsval(cx, success, J_FRVAL);
-
-
-	return JS_TRUE;
+	return JS_FALSE;
 }
 #endif // _DEBUG
 
@@ -1445,10 +1434,10 @@ CONFIGURE_STATIC
 	REVISION(SvnRevToInt("$Revision$"))
 
 	BEGIN_STATIC_FUNCTION_SPEC
-		FUNCTION( Expand )
+		FUNCTION_FAST( Expand )
 		FUNCTION_FAST( InternString )
-		FUNCTION( Seal )
-		FUNCTION( Clear )
+		FUNCTION_FAST( Seal )
+		FUNCTION_FAST( Clear )
 		FUNCTION( SetScope )
 //		FUNCTION( HideProperties )
 		FUNCTION_FAST_ARGC( SetPropertyEnumerate, 3 )
@@ -1482,7 +1471,7 @@ CONFIGURE_STATIC
 
 	BEGIN_STATIC_PROPERTY_SPEC
 		PROPERTY_READ( isConstructing )
-		PROPERTY_WRITE( disableGarbageCollection )
+		PROPERTY( disableGarbageCollection )
 //		PROPERTY( processPriority )
 	END_STATIC_PROPERTY_SPEC
 

@@ -1,6 +1,17 @@
 LoadModule('jsstd');
 LoadModule('jsio');
 
+for ( var i = 0; i < 1000; i++ ) {
+
+	StringRepeat('x', 1000000);
+	Sleep(10);
+}
+
+
+
+Halt(); /////////////////////////////////////////////////////////////////////
+
+
   var obj = { a:11, b:22, c:33 };
   for ( var p in obj )
    Print(p, ', '); // prints: a, b, c

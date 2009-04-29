@@ -367,6 +367,49 @@ inline bool SwapObjects( JSContext *cx, JSObject *obj1, JSObject *obj2 ) {
 }
 */
 
+
+inline JSStackFrame* CurrentStackFrame(JSContext *cx) {
+
+//	JSStackFrame *fp = NULL;
+//	return JS_FrameIterator(cx, &fp);
+	return js_GetTopStackFrame(cx);
+}
+
+inline unsigned int StackSize(JSContext *cx, JSStackFrame *fp) {
+
+	unsigned int length = 0;
+	for ( ; fp; fp = fp->down ) // for ( JSStackFrame *fp = CurrentStackFrame(cx); fp; JS_FrameIterator(cx, &fp) )
+		++length;
+	return length; // 0 is the first frame
+}
+
+
+inline JSStackFrame *StackFrameByIndex(JSContext *cx, int frameIndex) {
+
+	JSStackFrame *fp = CurrentStackFrame(cx);
+	if ( frameIndex > 0 ) {
+
+		int currentFrameIndex = StackSize(cx, fp)-1;
+		if ( frameIndex > currentFrameIndex )
+			return NULL;
+		// now, select the right frame
+		while ( fp && currentFrameIndex > frameIndex ) {
+
+			fp = fp->down; //JS_FrameIterator(cx, &fp);
+			--currentFrameIndex;
+		}
+		return fp;
+	}
+
+	while ( fp && frameIndex < 0 ) {
+
+		fp = fp->down; //JS_FrameIterator(cx, &fp);
+		++frameIndex;
+	}
+	return fp;
+}
+
+
 inline unsigned int SvnRevToInt(const char *svnRev) {
 
 	const char *p = strchr(svnRev, ' ');

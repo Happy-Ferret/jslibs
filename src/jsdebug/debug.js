@@ -2,6 +2,16 @@ LoadModule('jsstd');
 LoadModule('jsdebug');
 
 
+function test() {
+	
+	Print( Locate(-1) );
+}
+
+test();
+
+Halt();
+
+
 /*
 LoadModule('jsdebug');
 var o = { x:5 }

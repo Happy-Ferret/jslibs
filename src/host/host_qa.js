@@ -4,7 +4,11 @@
 		_configuration.stderr = function(chunk) errBuffer.Write(chunk);
 		Warning('test')
 		delete _configuration.stderr;
-		QA.ASSERT( errBuffer.toString().indexOf('warning: test') != -1, true, 'stderr redirection' ); 
+		QA.ASSERT( errBuffer.toString().indexOf('warning: test') != -1, true, 'stderr redirection ('+errBuffer+')' ); 
+
+	/* try to understand this (see issue #95):
+	- src/host/host_qa.js:7 stderr redirection, false != true
+	*/
 
 /// LoadModule function [ftr]
 		

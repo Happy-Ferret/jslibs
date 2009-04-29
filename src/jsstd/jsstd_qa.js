@@ -632,15 +632,56 @@ LoadModule('jsstd');
 
 /// Sandbox global objects
 	
-	var res = SandboxEval('Math');
-	QA.ASSERT( res.Math == Math, false, 'Global objects' );
+		var res = SandboxEval('Math');
+		QA.ASSERT( res.Math == Math, false, 'Global objects' );
 
 
 /// Sandbox external access
 
-	LoadModule('jsio');
-	var res = SandboxEval('typeof File');
-	QA.ASSERT( res == typeof File, false, 'forbidden File class access' );
-	var res = SandboxEval('typeof LoadModule');
-	QA.ASSERT( res == typeof LoadModule, false, 'forbidden LoadModule function access' );
+		LoadModule('jsio');
+		var res = SandboxEval('typeof File');
+		QA.ASSERT( res == typeof File, false, 'forbidden File class access' );
+		var res = SandboxEval('typeof LoadModule');
+		QA.ASSERT( res == typeof LoadModule, false, 'forbidden LoadModule function access' );
+
+
+/// Sandbox Query
+
+		var res = Function("var v = 567; return SandboxEval('Query()', function(val) v)")();
+		QA.ASSERT( res, 567, 'SandboxEval result using Function( Query function )' );
+
+		var res = SandboxEval('Query(123)', function(val) val + 1 );
+		QA.ASSERT( res, 124, 'SandboxEval result using Query function' );
+		
+		var obj = {};
+		QA.ASSERT_EXCEPTION( function() {  SandboxEval('Query()', function(val) obj)  }, Error, 'Query returns a non-primitive value');
+
+
+/// Disabled GC
+
+		disableGarbageCollection = true;
+		QA.GC();
+		var mem0 = privateMemoryUsage;
+		var str = StringRepeat('x', 1000000);
+		str = undefined;
+		QA.GC();
+		var mem1 = privateMemoryUsage;
+		QA.ASSERT( Math.abs(mem1/mem0) > 1.1, true, 'without GC' );
+
+
+		disableGarbageCollection = false;
+		QA.GC();
+		var mem0 = privateMemoryUsage;
+		var str = StringRepeat('x', 1000000);
+		str = undefined;
+		QA.GC();
+		var mem1 = privateMemoryUsage;
+		QA.ASSERT( Math.abs(mem1/mem0) < 1.1, true, 'with GC' );
+
+		QA.ASSERT( disableGarbageCollection, false, 'GC is enabled' );
+
+
+/// Sandbox watchdog
+	
+//		QA.ASSERT_EXCEPTION( function() { SandboxEval('for (var i=0; i<10000000; ++i);') }, OperationLimit, 'OperationLimit detection' );
 

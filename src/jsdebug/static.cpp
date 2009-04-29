@@ -662,7 +662,10 @@ DEFINE_PROPERTY( privateMemoryUsage ) {
 	// SIZE_T is compatible with uint32
 	HANDLE hProcess = GetCurrentProcess(); // doc: (HANDLE)-1, that is interpreted as the current process handle
 	PROCESS_MEMORY_COUNTERS_EX pmc;
-	GetProcessMemoryInfo( hProcess, (PPROCESS_MEMORY_COUNTERS)&pmc, sizeof(pmc) ); // MEM_PRIVATE
+	BOOL status = GetProcessMemoryInfo( hProcess, (PPROCESS_MEMORY_COUNTERS)&pmc, sizeof(pmc) ); // MEM_PRIVATE
+	J_CHKM( status, "GetProcessMemoryInfo error." );
+// doc. If the function fails, the return value is zero. To get extended error information, call GetLastError.
+
 //	bytes = pmc.PrivateUsage; // doc: The current amount of memory that cannot be shared with other processes, in bytes. Private bytes include memory that is committed and marked MEM_PRIVATE, data that is not mapped, and executable pages that have been written to.
 	bytes = pmc.WorkingSetSize; // same value as "windows task manager" "mem usage"
 #else
@@ -925,29 +928,22 @@ $TOC_MEMBER $INAME
  $OBJ $INAME( nFrame );
   Returns the current script name and line number. nFrame is the number of stack frames to go back (0 is the current stack frame).
 **/
-DEFINE_FUNCTION(Locate) {
+DEFINE_FUNCTION_FAST(Locate) {
 
 	J_S_ASSERT_ARG_MIN( 1 );
 	int frame;
-	J_CHK( JsvalToInt(cx, argv[0], &frame) );
-	J_S_ASSERT(frame <= 0, "Frame number must be <= 0");
+	J_CHK( JsvalToInt(cx, J_FARG(1), &frame) );
 
-	JSStackFrame *fp;
-	fp = NULL;
-	for ( JS_FrameIterator(cx, &fp); fp; JS_FrameIterator(cx, &fp) ) {
+	JSStackFrame *fp = StackFrameByIndex(cx, frame);
+	JSScript *script = JS_GetFrameScript(cx, fp); // because we are in a fast native function, this frame is ok.
+	uintN lineno = JS_PCToLineNumber(cx, script, JS_GetFramePC(cx, fp));
 
-		jsbytecode *pc = JS_GetFramePC(cx,fp);
-		if ( fp->script && pc && !frame++ ) {
+	char tmp[512];
+	strcpy(tmp, JS_GetScriptFilename(cx, script));
+	strcat(tmp, ":");
+	strcat(tmp, IntegerToString(lineno, 10));
+	J_CHK( StringToJsval(cx, tmp, J_FRVAL ) );
 
-			char tmp[512];
-			JSScript *script = JS_GetFrameScript(cx, fp);
-			strcpy(tmp, JS_GetScriptFilename(cx, script));
-			strcat(tmp, ":");
-			strcat(tmp, IntegerToString(JS_PCToLineNumber(cx, script, pc), 10));
-			*rval = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, tmp));
-			break;
-		}
-	}
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1143,7 +1139,7 @@ DEFINE_FUNCTION_FAST( PropertiesInfo ) {
 			index++;
 			JS_PropertyIterator(srcObj, &jssp);
 		}
-	
+
 		srcObj = JS_GetPrototype(cx, srcObj);
 		prototypeLevel++;
 	}
@@ -1179,7 +1175,7 @@ CONFIGURE_STATIC
 		FUNCTION( Untrap )
 		FUNCTION( LineToPC )
 		FUNCTION( PCToLine )
-		FUNCTION( Locate )
+		FUNCTION_FAST( Locate )
 		FUNCTION( LocateLine )
 		FUNCTION( LocateFilename )
 		FUNCTION( DumpObjectPrivate )

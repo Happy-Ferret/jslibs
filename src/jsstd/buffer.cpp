@@ -607,15 +607,16 @@ $TOC_MEMBER $INAME
  $VOID $INAME()
   Empty the whole buffer.
 **/
-DEFINE_FUNCTION( Clear ) {
+DEFINE_FUNCTION_FAST( Clear ) {
 
-	J_S_ASSERT_THIS_CLASS();
+	J_S_ASSERT_CLASS(J_FOBJ, _class);
 	BufferPrivate *pv;
-	pv = (BufferPrivate*)JS_GetPrivate(cx, obj);
+	pv = (BufferPrivate*)JS_GetPrivate(cx, J_FOBJ);
 	J_S_ASSERT_RESOURCE( pv );
 	while ( !QueueIsEmpty(pv->queue) )
 		J_CHK( ShiftJsval(cx, pv->queue, NULL) );
 	pv->length = 0;
+	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -624,38 +625,39 @@ DEFINE_FUNCTION( Clear ) {
 /**doc
 $TOC_MEMBER $INAME
  $INAME( data [, length] )
- * $INAME( buffer )
+ * $VOID $INAME( buffer )
   Add _data_ in the buffer. If _length_ is used, only the first _length_ bytes of _data_ are added.
   The second form allow to add another whole buffer in the current buffer.
 **/
-DEFINE_FUNCTION( Write ) {
+DEFINE_FUNCTION_FAST( Write ) {
 
-	J_S_ASSERT_THIS_CLASS();
+	J_S_ASSERT_CLASS(J_FOBJ, _class);
 	BufferPrivate *pv;
-	pv = (BufferPrivate*)JS_GetPrivate(cx, obj);
+	pv = (BufferPrivate*)JS_GetPrivate(cx, J_FOBJ);
 	J_S_ASSERT_RESOURCE( pv );
 	J_S_ASSERT_ARG_MIN( 1 );
 
-	if ( J_JSVAL_IS_CLASS(J_ARG(1), _class ) )
-		return AddBuffer(cx, obj, JSVAL_TO_OBJECT( J_ARG(1) ));
+	if ( J_JSVAL_IS_CLASS(J_FARG(1), _class ) )
+		return AddBuffer(cx, J_FOBJ, JSVAL_TO_OBJECT( J_FARG(1) ));
 
-	if ( J_ARG_ISDEF(2) ) {
+	*J_FRVAL = JSVAL_VOID;
+	if ( J_FARG_ISDEF(2) ) {
 
 		size_t amount, strLen;
 		const char *buf;
-		J_CHK( JsvalToStringAndLength(cx, &J_ARG(1), &buf, &strLen) ); // warning: GC on the returned buffer !
+		J_CHK( JsvalToStringAndLength(cx, &J_FARG(1), &buf, &strLen) ); // warning: GC on the returned buffer !
 
 		if ( strLen == 0 )
 			return JS_TRUE;
 
-		J_CHK( JsvalToUInt(cx, J_ARG(2), &amount) );
+		J_CHK( JsvalToUInt(cx, J_FARG(2), &amount) );
 		if ( amount > strLen )
 			amount = strLen;
 
-		return WriteRawChunk(cx, obj, amount, buf);
+		return WriteRawChunk(cx, J_FOBJ, amount, buf);
 	} else {
 
-		return WriteChunk(cx, obj, J_ARG(1));
+		return WriteChunk(cx, J_FOBJ, J_FARG(1));
 	}
 	JL_BAD;
 }
@@ -671,37 +673,37 @@ $TOC_MEMBER $INAME
   $H return value
    true if it matchs, else false.
 **/
-DEFINE_FUNCTION( Match ) {
+DEFINE_FUNCTION_FAST( Match ) {
 
-	J_S_ASSERT_THIS_CLASS();
-	J_S_ASSERT_ARG_MIN( 1 );
+	J_S_ASSERT_CLASS(J_FOBJ, _class);
+	J_S_ASSERT_ARG_MIN(1);
 
 	const char *str;
 	size_t len;
-	J_CHK( JsvalToStringAndLength(cx, &J_ARG(1), &str, &len) ); // warning: GC on the returned buffer !
+	J_CHK( JsvalToStringAndLength(cx, &J_FARG(1), &str, &len) ); // warning: GC on the returned buffer !
 
 	char *src;
 	src = (char *)malloc(len);
 	size_t amount;
 	amount = len;
 	JSBool st;
-	st = ReadRawAmount(cx, obj, &amount, src);
+	st = ReadRawAmount(cx, J_FOBJ, &amount, src);
 	if ( st != JS_TRUE )
 		goto err;
 
 	if ( amount != len )
-		*rval = JSVAL_FALSE;
+		*J_FRVAL = JSVAL_FALSE;
 	else
-		*rval = strncmp( str, src, len ) == 0 ? JSVAL_TRUE : JSVAL_FALSE;
+		*J_FRVAL = strncmp( str, src, len ) == 0 ? JSVAL_TRUE : JSVAL_FALSE;
 
 	bool consume;
-	if ( J_ARG_ISDEF(2) )
-		J_CHK( JsvalToBool(cx, J_ARG(2), &consume) );
+	if ( J_FARG_ISDEF(2) )
+		J_CHK( JsvalToBool(cx, J_FARG(2), &consume) );
 	else
 		consume = false;
 
 	if ( !consume )
-		J_CHK( UnReadRawChunk(cx, obj, src, amount) );
+		J_CHK( UnReadRawChunk(cx, J_FOBJ, src, amount) );
 
 err:
 	free(src);
@@ -813,16 +815,16 @@ $TOC_MEMBER $INAME
  $INT $INAME( string )
   Find _string_ in the buffer and returns the offset of the first letter. If not found, this function returns -1.
 **/
-DEFINE_FUNCTION( IndexOf ) {
+DEFINE_FUNCTION_FAST( IndexOf ) {
 
-	J_S_ASSERT_THIS_CLASS();
+	J_S_ASSERT_CLASS(J_FOBJ, _class);
 	J_S_ASSERT_ARG_MIN( 1 );
 	const char *boundary;
 	size_t boundaryLength;
-	J_CHK( JsvalToStringAndLength(cx, &J_ARG(1), &boundary, &boundaryLength) ); // warning: GC on the returned buffer !
+	J_CHK( JsvalToStringAndLength(cx, &J_FARG(1), &boundary, &boundaryLength) ); // warning: GC on the returned buffer !
 	int found;
-	J_CHK( FindInBuffer(cx, obj, boundary, boundaryLength, &found) );
-	*rval = INT_TO_JSVAL(found);
+	J_CHK( FindInBuffer(cx, J_FOBJ, boundary, boundaryLength, &found) );
+	*J_FRVAL = INT_TO_JSVAL(found);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -840,13 +842,13 @@ $TOC_MEMBER $INAME
   }
   }}}
 **/
-DEFINE_FUNCTION( Unread ) {
+DEFINE_FUNCTION_FAST( Unread ) {
 
-	J_S_ASSERT_THIS_CLASS();
+	J_S_ASSERT_CLASS(J_FOBJ, _class);
 	J_S_ASSERT_ARG_MIN( 1 );
 	J_S_ASSERT_ARG_MAX( 1 ); // discourages one to use Unread like Write
-	J_CHK( UnReadChunk(cx, obj, J_ARG(1)) );
-	*rval = J_ARG(1);
+	J_CHK( UnReadChunk(cx, J_FOBJ, J_FARG(1)) );
+	*J_FRVAL = J_FARG(1);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1088,13 +1090,13 @@ CONFIGURE_CLASS
 	HAS_SET_PROPERTY
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION(Clear)
-		FUNCTION(Write)
-		FUNCTION(Unread)
+		FUNCTION_FAST(Clear)
+		FUNCTION_FAST(Write)
+		FUNCTION_FAST(Match)
 		FUNCTION(Read)
+		FUNCTION_FAST(Unread)
 		FUNCTION(ReadUntil)
-		FUNCTION(IndexOf)
-		FUNCTION(Match)
+		FUNCTION_FAST(IndexOf)
 		FUNCTION(Skip)
 		FUNCTION(toString) // used when the buffer has to be transformed into a javascript string
 	END_FUNCTION_SPEC

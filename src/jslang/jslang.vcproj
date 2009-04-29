@@ -236,6 +236,10 @@
 				>
 			</File>
 		</Filter>
+		<File
+			RelativePath=".\blob_qa.js"
+			>
+		</File>
 	</Files>
 	<Globals>
 	</Globals>

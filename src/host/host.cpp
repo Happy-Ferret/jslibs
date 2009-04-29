@@ -560,6 +560,7 @@ void DestroyHost( JSContext *cx ) {
 //  - Is the only side effect of JS_DestroyContextNoGC that any finalizers I may have specified in custom objects will not get called ?
 //  - Not if you destroy all contexts (whether by NoGC or not), destroy all runtimes, and call JS_ShutDown before exiting or hibernating.
 //    The last JS_DestroyContext* API call will run a GC, no matter which API of that form you call on the last context in the runtime. /be
+	
 	JS_DestroyContext(cx);
 	JS_DestroyRuntime(rt);
 
@@ -624,17 +625,22 @@ JSBool ExecuteScriptFileName( JSContext *cx, const char *scriptFileName, bool co
 	file = fopen(scriptFileName, "r");
 	J_CHKM1( file != NULL, "Script %s file cannot be opened.", scriptFileName );
 
-	char s;
+	char s, b;
 	s = getc(file);
-	char b;
-	b = getc(file);
-	if ( s == '#' && b == '!' ) {
+	if ( s == '#' ) {
 
-		ungetc('/', file);
-		ungetc('/', file);
+		b = getc(file);
+		if ( b == '!' ) {
+
+			ungetc('/', file);
+			ungetc('/', file);
+		} else {
+			
+			ungetc(b, file);
+			ungetc(s, file);
+		}
 	} else {
 
-		ungetc(b, file);
 		ungetc(s, file);
 	}
 
@@ -660,13 +666,11 @@ JSBool ExecuteScriptFileName( JSContext *cx, const char *scriptFileName, bool co
 
 	// You need to protect a JSScript (via a rooted script object) if and only if a garbage collection can occur between compilation and the start of execution.
 
-	if ( !compileOnly ) {
-
+	if ( !compileOnly )
 		J_CHK( JS_ExecuteScript( cx, globalObject, script, rval ) ); // MUST be executed only once ( JSOPTION_COMPILE_N_GO )
-	} else {
-
+	else
 		*rval = JSVAL_VOID;
-	}
+
 
 //	J_CHK( J_REMOVE_ROOT(cx, &scrobj) );
 //	JS_DestroyScript(cx, script);

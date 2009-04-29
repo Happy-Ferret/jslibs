@@ -189,6 +189,10 @@
 			RelativePath="..\common\errors.msg"
 			>
 		</File>
+		<File
+			RelativePath=".\host_qa.js"
+			>
+		</File>
 	</Files>
 	<Globals>
 	</Globals>

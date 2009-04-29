@@ -161,7 +161,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 
 	bool unsafeMode = false;
 	bool compileOnly = false;
-	size_t maybeGCInterval = 60*1000; // 60 seconds
+	size_t maybeGCInterval = 15*1000; // 15 seconds
 	int camelCase = 0; // 0:default, 1:lower, 2:upper
 
 	char** argumentVector = argv;
