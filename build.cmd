@@ -1,5 +1,5 @@
 
-set MOZ_BUILD_SCRIPT=D:\TOOLS\mozilla-build\start-msvc8.bat
+set MOZ_BUILD_SCRIPT=C:\TOOLS\mozilla-build\start-msvc8.bat
 
 rem ==========================================================================
 for %%A in ("%CD%") do set _CD_SHORT=%%~sfA
