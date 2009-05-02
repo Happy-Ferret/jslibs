@@ -92,9 +92,12 @@ void stdErrRouter( JSContext *cx, const char *message, size_t length ) {
 		jsval fct;
 		if ( GetConfigurationValue(cx, NAME_CONFIGURATION_STDERR, &fct) == JS_TRUE && JsvalIsFunction(cx, fct) ) {
 
-			jsval rval, strVal;
-			J_CHK( StringAndLengthToJsval(cx, &strVal, message, length) );
-			J_CHK( JS_CallFunctionValue(cx, globalObject, fct, 1, &strVal, &rval) );
+			JSTempValueRooter tvr;
+			JS_PUSH_SINGLE_TEMP_ROOT(cx, JSVAL_NULL, &tvr); // needed to protect the string.
+			J_CHKB( StringAndLengthToJsval(cx, &tvr.u.value, message, length), bad2 );
+			J_CHKB( JS_CallFunctionValue(cx, globalObject, fct, 1, &tvr.u.value, &tvr.u.value), bad2 );
+		bad2:
+			JS_POP_TEMP_ROOT(cx, &tvr);
 			return;
 		}
 	}
@@ -102,6 +105,7 @@ void stdErrRouter( JSContext *cx, const char *message, size_t length ) {
 	pv = GetHostPrivate(cx);
 	if ( pv != NULL && pv->hostStdErr != NULL )
 		pv->hostStdErr(pv->privateData, message, length); // else, use the default.
+	return;
 bad:
 	return;
 }
@@ -223,10 +227,10 @@ static JSBool OperationCallback(JSContext *cx) {
 JLThreadFuncDecl WatchDogThreadProc(void *threadArg) {
 
 	JSContext *cx = (JSContext*)threadArg;
-	size_t interval = GetHostPrivate(cx)->maybeGCInterval;
+	size_t *interval = &GetHostPrivate(cx)->maybeGCInterval;
 	for (;;) {
 	
-		SleepMilliseconds(interval);
+		SleepMilliseconds(*interval);
 		JS_TriggerOperationCallback(cx);
 	}
 }
@@ -537,7 +541,7 @@ void DestroyHost( JSContext *cx ) {
 	if ( JLThreadOk(pv->watchDogThread) ) {
 
 		JLThreadCancel(pv->watchDogThread);
-		JLFreeThread(&pv->watchDogThread);
+		JLFreeThread(&pv->watchDogThread); // beware: it is important to destroy the thread BEFORE destroying the cx !!!
 	}
 
 	for ( jl::QueueCell *it = jl::QueueBegin(&pv->moduleList); it; it = jl::QueueNext(it) ) {
@@ -552,20 +556,20 @@ void DestroyHost( JSContext *cx ) {
 
 	RemoveConfiguration(cx);
 
-	JS_SetGlobalObject(cx, JSVAL_TO_OBJECT(JSVAL_NULL)); // remove the global object
+	JS_SetGlobalObject(cx, JSVAL_TO_OBJECT(JSVAL_NULL)); // remove the global object (TBD) check if it is good to do this.
 
 // cleanup
 
-// doc:
-//  - Is the only side effect of JS_DestroyContextNoGC that any finalizers I may have specified in custom objects will not get called ?
-//  - Not if you destroy all contexts (whether by NoGC or not), destroy all runtimes, and call JS_ShutDown before exiting or hibernating.
-//    The last JS_DestroyContext* API call will run a GC, no matter which API of that form you call on the last context in the runtime. /be
-	
+	// doc:
+	//  - Is the only side effect of JS_DestroyContextNoGC that any finalizers I may have specified in custom objects will not get called ?
+	//  - Not if you destroy all contexts (whether by NoGC or not), destroy all runtimes, and call JS_ShutDown before exiting or hibernating.
+	//    The last JS_DestroyContext* API call will run a GC, no matter which API of that form you call on the last context in the runtime. /be
 	JS_DestroyContext(cx);
 	JS_DestroyRuntime(rt);
 
-// Beware: because JS engine allocate memory from the DLL, all memory must be disallocated before releasing the DLL
-//	ModuleFreeAll();
+
+	// Beware: because JS engine allocate memory from the DLL, all memory must be disallocated before releasing the DLL
+	//	ModuleFreeAll();
 
 	while ( !jl::QueueIsEmpty(&pv->moduleList) ) {
 
