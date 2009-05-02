@@ -96,7 +96,7 @@ void FinalizeTrimesh(void *data) {
 void *data;
 J_CHK( CreateId(cx, 'TEST', 10, &data, FinalizeTrimesh, J_RVAL) );
 
-bool c = IsIdType(cx, *J_RVAL, 'TET');
+bool c = IsIdType(cx, *J_RVAL, 'TEST');
 
 bool d = data == GetIdPrivate(cx, *J_RVAL);
 

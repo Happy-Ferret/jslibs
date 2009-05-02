@@ -553,7 +553,7 @@ DEFINE_CONSTRUCTOR() {
 
 /*
 		// (TBD) loop over all args
-		if ( J_JSVAL_IS_CLASS(J_ARG(1), _class) ) {
+		if ( JsvalIsClass(cx, J_ARG(1), _class) ) {
 
 			return AddBuffer(cx, obj, JSVAL_TO_OBJECT( J_ARG(1) ));
 		} else {
@@ -583,7 +583,7 @@ DEFINE_CONSTRUCTOR() {
 DEFINE_FUNCTION( Clone ) {
 
 		// (TBD) loop over all args
-		if ( J_JSVAL_IS_CLASS(J_ARG(1), _class) ) {
+		if ( JsvalIsClass(cx, J_ARG(1), _class) ) {
 
 			return AddBuffer(cx, obj, JSVAL_TO_OBJECT( J_ARG(1) ));
 		} else {
@@ -637,7 +637,7 @@ DEFINE_FUNCTION_FAST( Write ) {
 	J_S_ASSERT_RESOURCE( pv );
 	J_S_ASSERT_ARG_MIN( 1 );
 
-	if ( J_JSVAL_IS_CLASS(J_FARG(1), _class ) )
+	if ( JsvalIsClass(cx, J_FARG(1), _class ) )
 		return AddBuffer(cx, J_FOBJ, JSVAL_TO_OBJECT( J_FARG(1) ));
 
 	*J_FRVAL = JSVAL_VOID;

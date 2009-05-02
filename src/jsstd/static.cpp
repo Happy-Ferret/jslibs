@@ -227,13 +227,15 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION_FAST( Clear ) {
 
 	J_S_ASSERT_ARG_MIN( 1 );
-//	J_S_ASSERT_OBJECT(J_ARG(1));
-	if ( JSVAL_IS_OBJECT( J_FARG(1) ) ) {
+	J_S_ASSERT_OBJECT(J_FARG(1));
 
+//	if ( JSVAL_IS_OBJECT( J_FARG(1) ) ) {
+//
 		JS_ClearScope(cx, JSVAL_TO_OBJECT( J_FARG(1) ));
-		*J_FRVAL = JSVAL_TRUE;
-	} else
-		*J_FRVAL = JSVAL_FALSE;
+//		*J_FRVAL = JSVAL_TRUE;
+//	} else
+//		*J_FRVAL = JSVAL_FALSE;
+	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -294,13 +296,13 @@ $TOC_MEMBER $INAME
   fct(); // prints: foo
   }}}
 **/
-DEFINE_FUNCTION( SetScope ) {
+DEFINE_FUNCTION_FAST( SetScope ) {
 
 	J_S_ASSERT_ARG_MIN( 2 );
 	JSObject *o, *p;
-	J_CHK( JS_ValueToObject(cx, J_ARG(1), &o) );
-	J_CHK( JS_ValueToObject(cx, J_ARG(2), &p) );
-	*rval = OBJECT_TO_JSVAL(JS_GetParent(cx, o));
+	J_CHK( JS_ValueToObject(cx, J_FARG(1), &o) ); // o = JSVAL_TO_OBJECT(J_FARG(1));
+	J_CHK( JS_ValueToObject(cx, J_FARG(2), &p) ); // p = JSVAL_TO_OBJECT(J_FARG(2));
+	*J_FRVAL = OBJECT_TO_JSVAL(JS_GetParent(cx, o));
 	J_CHK( JS_SetParent(cx, o, p) );
 	return JS_TRUE;
 	JL_BAD;
@@ -565,6 +567,7 @@ DEFINE_FUNCTION_FAST( ObjectToId ) {
 	JL_BAD;
 }
 
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
 $TOC_MEMBER $INAME
@@ -691,7 +694,7 @@ DEFINE_FUNCTION_FAST( XdrEncode ) {
 $TOC_MEMBER $INAME
  $VAL $INAME( xdrBlob )
   Decode (deserialize) XDR (eXternal Data Representation) blob to a JavaScript value.
-  $H note
+  $H beware
    Decoding malformed XDR data can lead the program to crash. This may be a security issue.
 **/
 #ifdef JS_HAS_XDR
@@ -724,11 +727,9 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION_FAST( Warning ) {
 
 	J_S_ASSERT_ARG_MIN( 1 );
-	JSString *jssMesage;
-	jssMesage = JS_ValueToString(cx, J_FARG(1));
-	J_S_ASSERT_ALLOC( jssMesage );
-	J_FARG(1) = STRING_TO_JSVAL(jssMesage);
-	JS_ReportWarning( cx, "%s", JS_GetStringBytes(jssMesage) );
+	const char *message;
+	J_CHK( JsvalToString(cx, &J_FARG(1), &message) );
+	J_CHK( JS_ReportWarning( cx, "%s", message ) );
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
@@ -743,14 +744,15 @@ $TOC_MEMBER $INAME
   $H example
   {{{
   var foo = ['a', 'b', 'c'];
-  ASSERT( i >= 0 || i < 3, 'Invalid value.' );
+  $INAME( i >= 0 || i < 3, 'Invalid value.' );
   Print( foo[i] );
   }}}
   $H note
    The error output can be redirected by redefining the _configuration.stderr function. see the Print() function.
 **/
-DEFINE_FUNCTION( ASSERT ) {
+DEFINE_FUNCTION( Assert ) {
 
+	J_S_ASSERT_ARG_MIN(1);
 	bool assert;
 	J_CHK( JsvalToBool(cx, J_ARG(1), &assert) );
 	if ( !assert ) {
@@ -1181,7 +1183,7 @@ static JSBool SandboxQueryFunction(JSContext *scx, uintN argc, jsval *vp) {
 		*J_FRVAL = JSVAL_VOID;
 	} else {
 
-		J_CHK( JS_CallFunctionValue(scx, J_FOBJ, pv->queryFunctionValue, argc, J_FARGV, J_FRVAL) );
+		J_CHK( JS_CallFunctionValue(scx, J_FOBJ, pv->queryFunctionValue, J_ARGC, J_FARGV, J_FRVAL) );
 		J_CHKM( JSVAL_IS_PRIMITIVE(*J_FRVAL), "Only primitive value can be returned." );
 	}
 	return JS_TRUE;
@@ -1438,7 +1440,7 @@ CONFIGURE_STATIC
 		FUNCTION_FAST( InternString )
 		FUNCTION_FAST( Seal )
 		FUNCTION_FAST( Clear )
-		FUNCTION( SetScope )
+		FUNCTION_FAST( SetScope )
 //		FUNCTION( HideProperties )
 		FUNCTION_FAST_ARGC( SetPropertyEnumerate, 3 )
 		FUNCTION_FAST_ARGC( SetPropertyReadonly, 3 )
@@ -1461,7 +1463,7 @@ CONFIGURE_STATIC
 		FUNCTION_FAST( XdrDecode )
 #endif // JS_HAS_XDR
 		FUNCTION_FAST( Warning )
-		FUNCTION( ASSERT )
+		FUNCTION( Assert )
 		FUNCTION_FAST( Halt )
 //		FUNCTION( StrSet )
 #ifdef _DEBUG

@@ -56,7 +56,7 @@
 		#define FASTCALL
 	#endif
 
-	#define ALWAYS_INLINE __attribute__((always_inline))
+	#define ALWAYS_INLINE __attribute__((always_inline)) __inline__
 
 #else
 

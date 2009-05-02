@@ -2,7 +2,9 @@ LoadModule('jsstd');
 LoadModule('jsstd');
 LoadModule('jsio');
 
+//_configuration.stderr = function(){}
 
+asdfasdf;
 		
 Halt();
 

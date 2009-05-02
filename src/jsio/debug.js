@@ -1,8 +1,34 @@
 LoadModule('jsstd');
 LoadModule('jsio');
 
-Print( pathSeparator );
-Print( directorySeparator );
+	host = 'www.google.com'
+	
+	var response = '';
+
+	var soc = new Socket();
+	soc.nonblocking = true;
+	soc.Connect( host, 80 );
+	soc.writable = function(s) {
+	
+		delete soc.writable;
+		s.Write('GET\r\n\r\n');
+	}
+	soc.readable = function(s) {
+		
+		var res = s.Read();
+		if ( res )
+			response += res;
+	}
+	
+	var i = 0;
+	while( ++i < 100 )
+		Poll([soc], 20);
+		
+	Print(response);
+
+	
+
+
 
 
 Halt();

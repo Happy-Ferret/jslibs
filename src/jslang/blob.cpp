@@ -329,7 +329,7 @@ DEFINE_FUNCTION_FAST( substr ) {
 	arg1 = J_FARG(1);
 
 	int start;
-	if ( IsPInfinity(cx, arg1) )
+	if ( JsvalIsPInfinity(cx, arg1) )
 		start = (signed)dataLength;
 	else if ( !JsvalToInt(cx, arg1, &start) )
 		start = 0;
@@ -354,7 +354,7 @@ DEFINE_FUNCTION_FAST( substr ) {
 		jsval arg2;
 		arg2 = J_FARG(2);
 
-		if ( IsPInfinity(cx, arg2) )
+		if ( JsvalIsPInfinity(cx, arg2) )
 			length = dataLength;
 		else if ( !JsvalToInt(cx, arg2, &length) )
 			length = 0;
@@ -434,12 +434,12 @@ DEFINE_FUNCTION_FAST( substring ) {
 
 	jsval arg1;
 	arg1 = J_FARG(1);
-	if ( IsPInfinity(cx, arg1) )
+	if ( JsvalIsPInfinity(cx, arg1) )
 		indexA = (signed)dataLength;
 	else if ( !JsvalToInt(cx, J_FARG(1), &indexA) )
 		indexA = 0;
 
-	if ( J_ARGC < 2 || IsPInfinity(cx, J_FARG(2)) )
+	if ( J_ARGC < 2 || JsvalIsPInfinity(cx, J_FARG(2)) )
 		indexB = (signed)dataLength;
 	else if ( !JsvalToInt(cx, J_FARG(2), &indexB) )
 		indexB = 0;
@@ -589,12 +589,12 @@ DEFINE_FUNCTION_FAST( lastIndexOf ) {
 		
 		jsval arg2 = J_FARG(2);
 
-		if ( JSVAL_IS_INT(arg2) && JSVAL_TO_INT(arg2) < 0 || IsNInfinity(cx, arg2) ) {
+		if ( JSVAL_IS_INT(arg2) && JSVAL_TO_INT(arg2) < 0 || JsvalIsNInfinity(cx, arg2) ) {
 			
 			start = 0;
 		} else {
 
-			if ( IsPInfinity(cx, arg2) || IsNaN(cx, arg2) ) {
+			if ( JsvalIsPInfinity(cx, arg2) || IsNaN(cx, arg2) ) {
 				
 				start = length - sLength;
 			} else {
@@ -645,7 +645,7 @@ DEFINE_FUNCTION_FAST( charAt ) {
 		jsval arg1 = J_FARG(1);
 		if ( !JSVAL_IS_INT(arg1) ) {
 
-			if ( IsPInfinity(cx, arg1) || IsNInfinity(cx, arg1) || IsNaN(cx, arg1) ) {
+			if ( JsvalIsPInfinity(cx, arg1) || JsvalIsNInfinity(cx, arg1) || IsNaN(cx, arg1) ) {
 				
 				*J_FRVAL = JS_GetEmptyStringValue(cx);
 				return JS_TRUE;
@@ -702,7 +702,7 @@ DEFINE_FUNCTION_FAST( charCodeAt ) {
 		jsval arg1 = J_FARG(1);
 		if ( !JSVAL_IS_INT(arg1) ) {
 
-			if ( IsPInfinity(cx, arg1) || IsNInfinity(cx, arg1) ) {
+			if ( JsvalIsPInfinity(cx, arg1) || JsvalIsNInfinity(cx, arg1) ) {
 				
 				*J_FRVAL = JS_GetNaNValue(cx);
 				return JS_TRUE;
@@ -844,7 +844,7 @@ DEFINE_SET_PROPERTY() {
 
 DEFINE_EQUALITY() {
 
-	if ( J_JSVAL_IS_CLASS(v, _class) ) {
+	if ( JsvalIsClass(cx, v, _class) ) {
 
 		if ( !IsBlobValid(cx, obj) || !IsBlobValid(cx, JSVAL_TO_OBJECT(v)) ) {
 			
