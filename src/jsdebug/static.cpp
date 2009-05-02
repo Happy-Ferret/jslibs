@@ -37,6 +37,9 @@
 
 #include "string.h"
 
+extern jl::Queue *scriptFileList;
+JSBool GetScriptLocation( JSContext *cx, jsval *val, uintN lineno, JSScript **script, jsbytecode **pc );
+
 
 int _puts(JSContext *cx, const char *str) {
 
@@ -48,8 +51,11 @@ int _puts(JSContext *cx, const char *str) {
 		if ( jsstr == NULL )
 			return EOF;
 	//	jsstr = JS_ConcatStrings(cx, jsstr, JS_NewStringCopyZ(cx, "\n"));
-		jsval rval, strval = STRING_TO_JSVAL(jsstr);
-		if ( JS_CallFunctionValue(cx, JS_GetGlobalObject(cx), stdoutFunction, 1, &strval, &rval) == JS_TRUE )
+		JSTempValueRooter tvr;
+		JS_PUSH_SINGLE_TEMP_ROOT(cx, STRING_TO_JSVAL(jsstr), &tvr); // protects jsstr against GC
+		JSBool status = JS_CallFunctionValue(cx, JS_GetGlobalObject(cx), stdoutFunction, 1, &tvr.u.value, &tvr.u.value);
+		JS_POP_TEMP_ROOT(cx, &tvr);
+		if ( status == JS_TRUE )
 			return len;
 	}
 	return EOF;
@@ -277,7 +283,6 @@ DEFINE_FUNCTION( DumpStats )
 
 
 #ifdef DEBUG
-
 
 /**doc
 $TOC_MEMBER $INAME
@@ -735,6 +740,8 @@ in about:config javascript.options.gczeal = 2 (or 1, or 0, to disable).
 /**doc
 $TOC_MEMBER $INAME
  $INAME $READONLY
+  Enable GC zeal, a testing and debugging feature that helps find GC-related bugs in JSAPI applications.
+  Level of garbage collection: 0 for normal, 1 for very frequent GC, 2 for extremely frequent GC.
  $H note
   This function in only available in DEBUG mode.
 **/
@@ -755,7 +762,7 @@ $TOC_MEMBER $INAME
  $INT $INAME()
   TBD
 **/
-DEFINE_FUNCTION( DumpObjectPrivate ) {
+DEFINE_FUNCTION( GetObjectPrivate ) {
 
 	J_S_ASSERT_ARG_MIN( 1 );
 	J_S_ASSERT_OBJECT( J_ARG( 1 ) );
@@ -768,7 +775,7 @@ DEFINE_FUNCTION( DumpObjectPrivate ) {
 
 
 
-
+/*
 static JSScript *
 ValueToScript(JSContext *cx, jsval v)
 {
@@ -837,11 +844,11 @@ TrapHandler(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval,
     return JSTRAP_CONTINUE;
 }
 
-/**doc
+/ **doc
 $TOC_MEMBER $INAME
  $VOID $INAME( ??? )
   TBD
-**/
+** /
 DEFINE_FUNCTION( Trap )
 {
     JSString *str;
@@ -861,11 +868,11 @@ DEFINE_FUNCTION( Trap )
 	JL_BAD;
 }
 
-/**doc
+/ **doc
 $TOC_MEMBER $INAME
  $INAME( ??? )
   TBD
-**/
+** /
 DEFINE_FUNCTION( Untrap )
 {
     JSScript *script;
@@ -877,11 +884,11 @@ DEFINE_FUNCTION( Untrap )
     return JS_TRUE;
 }
 
-/**doc
+/ **doc
 $TOC_MEMBER $INAME
  $INAME( ??? )
   TBD
-**/
+** /
 DEFINE_FUNCTION( LineToPC )
 {
     JSScript *script;
@@ -903,11 +910,11 @@ DEFINE_FUNCTION( LineToPC )
 	 JL_BAD;
 }
 
-/**doc
+/ **doc
 $TOC_MEMBER $INAME
  $INAME( ??? )
   TBD
-**/
+** /
 DEFINE_FUNCTION( PCToLine )
 {
     JSScript *script;
@@ -922,88 +929,391 @@ DEFINE_FUNCTION( PCToLine )
     *rval = INT_TO_JSVAL(lineno);
     return JS_TRUE;
 }
+*/
+
+/// /// /// /// /// /// /// /// /// /// /// /// /// /// /// /// /// /// /// /// /// /// /// /// /// /// /// /// /// /// /// /// /// /// /// 
+
 
 /**doc
 $TOC_MEMBER $INAME
- $OBJ $INAME( nFrame );
-  Returns the current script name and line number. nFrame is the number of stack frames to go back (0 is the current stack frame).
+ $ARRAY $INAME $READONLY
+  Is the list of all detected and active scripts.
 **/
-DEFINE_FUNCTION_FAST(Locate) {
+DEFINE_PROPERTY( scriptFilenameList ) {
+
+	JSObject *arr = JS_NewArrayObject(cx, 0, NULL);
+	J_S_ASSERT_ALLOC(arr);
+	*vp = OBJECT_TO_JSVAL(arr);
+
+	int index = 0;
+	for ( jl::QueueCell *it = jl::QueueBegin(scriptFileList); it; it = jl::QueueNext(it) ) {
+
+		jl::Queue *scriptList = (jl::Queue*)jl::QueueGetData(it);
+		JSScript *s = (JSScript*)jl::QueueGetData(jl::QueueBegin(scriptList));
+
+		jsval filename;
+		J_CHK( StringToJsval(cx, s->filename, &filename) );
+		J_CHK( JS_SetElement(cx, arr, index, &filename) );
+		++index;
+	}
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $ARRAY $INAME $READONLY
+  Is the filename of the script being executed.
+  $H note
+   The current filename is also available using: `StackFrameInfo(stackSize-1).filename`
+**/
+DEFINE_PROPERTY( currentFilename ) {
+
+	JSStackFrame *fp = CurrentStackFrame(cx);
+	if ( fp == NULL ) {
+		
+		*vp = JSVAL_VOID;
+		return JS_TRUE;
+	}
+	JSScript *script = JS_GetFrameScript(cx, fp);
+	if ( script == NULL ) {
+		
+		*vp = JSVAL_VOID;
+		return JS_TRUE;
+	}
+
+	const char *filename = JS_GetScriptFilename(cx, script);
+	J_CHK( StringToJsval(cx, filename, vp) );
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $INT | $UNDEF $INAME( filename, lineno )
+ $INT | $UNDEF $INAME( function, relativeLineno )
+  Transform a random line number into an actual line number or $UNDEFINED if the file number cannot be reached.
+  $H example
+  {{{
+  1.  var i = 0;
+  2.  
+  3.  i++;
+  
+  GetActualLineno('test.js', 2); // returns: 3
+  GetActualLineno('nofile.js', 2); // returns: undefined
+  }}}
+**/
+DEFINE_FUNCTION_FAST( GetActualLineno ) {
+
+	J_S_ASSERT_ARG_MIN( 2 );
+
+	uintN lineno;
+	J_CHK( JsvalToUInt(cx, J_FARG(2), &lineno) );
+
+	JSScript *script;
+	jsbytecode *pc;
+	J_CHK( GetScriptLocation(cx, &J_FARG(1), lineno, &script, &pc) );
+	if ( script == NULL ) {
+
+		*J_FRVAL = JSVAL_VOID;
+		return JS_TRUE;
+	}
+	*J_FRVAL = INT_TO_JSVAL(JS_PCToLineNumber(cx, script, pc));
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $ARRAY $INAME $READONLY
+  Is the number of stack frames. 0 is the older stack frame index. The current stack frame index is (stackSize-1).
+**/
+DEFINE_PROPERTY( stackSize ) {
+
+	return IntToJsval(cx, StackSize(cx, CurrentStackFrame(cx)), vp);
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $OBJ $INAME( frameLevel )
+  Returns an object that describes the given stack frame index.
+  0 is the older stack frame index. The current (last) stack frame index is (stackSize-1). See Locate() function for more details. $LF
+  The object contains the following properties:
+  * filename: filename of the script being executed.
+  * lineno: line number of the script being executed.
+  * callee: function being executed.
+  * baseLineNumber: first line number of the function being executed.
+  * lineExtent: number of lines of the function being executed.
+  * scope: scope object.
+  * this: this object.
+  * argv: argument array of the function being executed.
+  * rval: return value.
+  * isNative: the frame is running native code.
+  * isConstructing: frame is for a constructor invocation.
+  * isEval: frame for eval.
+  * isAssigning: a complex op is currently assigning to a property.
+**/
+DEFINE_FUNCTION_FAST( StackFrameInfo ) {
+
+	J_S_ASSERT_ARG_MIN( 1 );
+
+	unsigned int frameIndex;
+	J_CHK( JsvalToUInt(cx, J_FARG(1), &frameIndex) );
+
+	JSStackFrame *fp;
+	fp = StackFrameByIndex(cx, frameIndex);
+	if ( fp == NULL ) {
+
+		*J_FRVAL = JSVAL_VOID;
+		return JS_TRUE;
+	}
+
+	JSObject *frameInfo;
+	frameInfo = JS_NewObject(cx, NULL, NULL, NULL);
+	J_S_ASSERT_ALLOC( frameInfo );
+	*J_FRVAL = OBJECT_TO_JSVAL(frameInfo);
+	jsval tmp;
+
+	JSScript *script;
+	script = JS_GetFrameScript(cx, fp);
+	if ( script )
+		J_CHK( StringToJsval(cx, JS_GetScriptFilename(cx, script), &tmp) );
+	else
+		tmp = JSVAL_VOID;
+	J_CHK( JS_SetProperty(cx, frameInfo, "filename", &tmp) );
+
+	jsbytecode *pc;
+	pc = JS_GetFramePC(cx, fp);
+	tmp = INT_TO_JSVAL(JS_PCToLineNumber(cx, script, pc));
+	J_CHK( JS_SetProperty(cx, frameInfo, "lineno", &tmp) );
+
+	JSObject *callee;
+	callee = JS_GetFrameFunctionObject(cx, fp);
+	tmp = callee ? OBJECT_TO_JSVAL(callee) : JSVAL_VOID;
+	J_CHK( JS_SetProperty(cx, frameInfo, "callee", &tmp) );
+
+	tmp = script ? INT_TO_JSVAL( JS_GetScriptBaseLineNumber(cx, script) ) : JSVAL_VOID;
+	J_CHK( JS_SetProperty(cx, frameInfo, "baseLineNumber", &tmp) );
+
+	tmp = script ? INT_TO_JSVAL( JS_GetScriptLineExtent(cx, script) ) : JSVAL_VOID;
+	J_CHK( JS_SetProperty(cx, frameInfo, "lineExtent", &tmp) );
+
+	tmp = OBJECT_TO_JSVAL(JS_GetFrameScopeChain(cx, fp));
+	J_CHK( JS_SetProperty(cx, frameInfo, "scope", &tmp) );
+
+//	J_CHK( JS_DefineProperty(cx, frameInfo, "variables", fp->varobj ? OBJECT_TO_JSVAL(fp->varobj) : JSVAL_VOID, NULL, NULL, JSPROP_ENUMERATE) );
+
+	tmp = OBJECT_TO_JSVAL(JS_GetFrameThis(cx, fp));
+	J_CHK( JS_SetProperty(cx, frameInfo, "this", &tmp) );
+
+	if ( fp->argv ) {
+
+		JSObject *arguments;
+		arguments = JS_NewArrayObject(cx, fp->argc, fp->argv);
+//		arguments = js_GetArgsObject(cx, fp);
+		tmp = OBJECT_TO_JSVAL(arguments);
+	} else {
+
+		tmp = JSVAL_VOID;
+	}
+	J_CHK( JS_SetProperty(cx, frameInfo, "argv", &tmp) );
+
+	tmp = JS_GetFrameReturnValue(cx, fp);
+	J_CHK( JS_SetProperty(cx, frameInfo, "rval", &tmp) );
+
+	tmp = BOOLEAN_TO_JSVAL(JS_IsNativeFrame(cx, fp));
+	J_CHK( JS_SetProperty(cx, frameInfo, "isNative", &tmp) );
+
+	tmp = JS_IsConstructorFrame(cx, fp) ? JSVAL_TRUE : JSVAL_FALSE;
+	J_CHK( JS_SetProperty(cx, frameInfo, "isConstructing", &tmp) );
+
+	tmp = fp->flags & JSFRAME_EVAL ? JSVAL_TRUE : JSVAL_FALSE;
+	J_CHK( JS_SetProperty(cx, frameInfo, "isEval", &tmp) );
+
+	tmp = fp->flags & JSFRAME_ASSIGNING ? JSVAL_TRUE : JSVAL_FALSE;
+	J_CHK( JS_SetProperty(cx, frameInfo, "isAssigning", &tmp) );
+
+//	J_CHK( JS_DefineProperty(cx, frameInfo, "opnd", fp->regs->sp[-1], NULL, NULL, JSPROP_ENUMERATE) );
+//	char * s = JS_GetStringBytes(JS_ValueToString(cx, fp->regs->sp[-1]));
+
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $OBJ $INAME( code, frameLevel )
+ Evaluates code in the given stack frame.
+ 0 is the older stack frame index. The current (last) stack frame index is (stackSize-1). See Locate() function for more details.
+**/
+DEFINE_FUNCTION_FAST( EvalInStackFrame ) {
+
+	J_S_ASSERT_ARG_MIN( 2 );
+
+	J_S_ASSERT_STRING( J_FARG(1) );
+
+	unsigned int frameIndex;
+	J_CHK( JsvalToUInt(cx, J_FARG(2), &frameIndex) );
+
+	JSStackFrame *fp;
+	fp = StackFrameByIndex(cx, frameIndex);
+
+	if ( fp == NULL ) {
+
+		*J_FRVAL = JSVAL_VOID;
+		return JS_TRUE;
+	}
+
+	JSScript *script;
+	script = JS_GetFrameScript(cx, fp);
+
+	jsbytecode *pc;
+	pc = JS_GetFramePC(cx, fp);
+
+	JSString *jsstr;
+	jsstr = JSVAL_TO_STRING( J_FARG(1) );
+	J_CHK( JS_EvaluateUCInStackFrame(cx, fp, JS_GetStringChars(jsstr), JS_GetStringLength(jsstr), JS_GetScriptFilename(cx, script), JS_PCToLineNumber(cx, script, pc), J_FRVAL) );
+
+	return JS_TRUE;
+	JL_BAD;
+}
+
+/**doc
+$TOC_MEMBER $INAME
+ $OBJ $INAME( frameIndex );
+  Returns the current script name and line number.
+  0 is the older (the first) stack frame index. The current stack frame index is (stackSize-1).
+  Negative numbers are interpreted as starting from the current stack frame.$LF
+  The function returns $UNDEFINED if the given stack frame is not defined.
+  $H note
+   `Locate(-1) == Locate(stackSize-2)`
+  $H example
+  (file debug.js)
+  {{{
+   1 LoadModule('jsstd');
+   2 LoadModule('jsdebug');
+   3
+   4 function test2() {
+   5
+   6 Print( stackSize, ' - ', Locate(stackSize-1), '\n' ); // prints: 3 - debug.js,6
+   7 Print( Locate(-1), ' - ', Locate(-2), ' - ', Locate(-3), '\n' ); // prints: debug.js,13 - debug.js,16 - undefined
+   8 Print( Locate(0), ' - ', Locate(1), ' - ', Locate(2), '\n' ); // prints: debug.js,16 - debug.js,13 - debug.js,8
+   9 }
+  10
+  11 function test() {
+  12   
+  13  test2();
+  14 }
+  15 
+  16 test();
+  }}}
+**/
+DEFINE_FUNCTION_FAST( Locate ) {
 
 	J_S_ASSERT_ARG_MIN( 1 );
 	int frame;
 	J_CHK( JsvalToInt(cx, J_FARG(1), &frame) );
 
 	JSStackFrame *fp = StackFrameByIndex(cx, frame);
+	if ( fp == NULL ) {
+		
+		*J_FRVAL = JSVAL_VOID;
+		return JS_TRUE;
+	}
+
 	JSScript *script = JS_GetFrameScript(cx, fp); // because we are in a fast native function, this frame is ok.
 	uintN lineno = JS_PCToLineNumber(cx, script, JS_GetFramePC(cx, fp));
 
-	char tmp[512];
-	strcpy(tmp, JS_GetScriptFilename(cx, script));
-	strcat(tmp, ":");
-	strcat(tmp, IntegerToString(lineno, 10));
-	J_CHK( StringToJsval(cx, tmp, J_FRVAL ) );
+	JSObject *arrObj = JS_NewArrayObject(cx, 2, NULL);
+	*J_FRVAL = OBJECT_TO_JSVAL(arrObj);
+	
+	jsval tmp;
+	if ( script ) {
+
+		const char *filename;
+		filename = JS_GetScriptFilename(cx, script);
+		J_CHK( StringToJsval(cx, filename, &tmp) );
+	} else { // native frame ?
+
+		tmp = JSVAL_VOID;
+	}
+	J_CHK( JS_SetElement(cx, arrObj, 0, &tmp) );
+
+	tmp = INT_TO_JSVAL(lineno);
+	J_CHK( JS_SetElement(cx, arrObj, 1, &tmp) );
 
 	return JS_TRUE;
 	JL_BAD;
 }
 
+
 /**doc
 $TOC_MEMBER $INAME
- $OBJ $INAME( nFrame );
-  Returns the current script line number. nFrame is the number of stack frames to go back (0 is the current stack frame).
+ $ARRAY $INAME( value )
+  Try to find the definition location of the given value.
 **/
-DEFINE_FUNCTION(LocateLine) {
+DEFINE_FUNCTION_FAST( DefinitionLocation ) {
 
 	J_S_ASSERT_ARG_MIN( 1 );
-	int frame;
-	J_CHK( JsvalToInt(cx, argv[0], &frame) );
-	J_S_ASSERT(frame <= 0, "Frame number must be <= 0");
 
-	JSStackFrame *fp;
-	fp = NULL;
-	for ( JS_FrameIterator(cx, &fp); fp; JS_FrameIterator(cx, &fp) ) {
+	JSScript *script;
+	script = NULL;
 
-		jsbytecode *pc = JS_GetFramePC(cx,fp);
-		if ( fp->script && pc && !frame++ ) {
+	if ( JsvalIsFunction(cx, J_FARG(1)) ) {
 
-			*rval = INT_TO_JSVAL(JS_PCToLineNumber(cx, JS_GetFrameScript(cx, fp), pc));
-			break;
+		JSFunction *fun;
+		fun = JS_ValueToFunction(cx, J_FARG(1));
+		if ( JS_GetFunctionScript(cx, fun) )
+			script = JS_GetFunctionScript(cx, fun);
+		goto next;
+	}
+
+	if ( !JSVAL_IS_PRIMITIVE( J_FARG(1) ) ) {
+
+		JSObject* obj;
+		obj = JS_GetConstructor(cx, JSVAL_TO_OBJECT( J_FARG(1) ));
+		JSFunction *fun;
+		fun = JS_ValueToFunction(cx, OBJECT_TO_JSVAL( obj ) );
+		if ( fun ) {
+
+			script = JS_GetFunctionScript(cx, fun);
+			if ( script )
+				goto next;
 		}
 	}
+
+	if ( JsvalIsScript(cx, J_FARG(1)) ) {
+
+		JSObject* obj;
+		obj = JSVAL_TO_OBJECT(J_FARG(1));
+		script = (JSScript*)JS_GetPrivate(cx, obj);
+	}
+
+next:
+	if ( !script ) {
+
+		*J_FRVAL = JSVAL_VOID;
+		return JS_TRUE;
+	}
+
+	jsval values[2];
+	J_CHK( StringToJsval(cx, script->filename, &values[0]) );
+	IntToJsval(cx, script->lineno, &values[1] );
+	*J_FRVAL = OBJECT_TO_JSVAL( JS_NewArrayObject(cx, COUNTOF(values), values) );
+
 	return JS_TRUE;
 	JL_BAD;
 }
 
-/**doc
-$TOC_MEMBER $INAME
- $OBJ $INAME( nFrame );
-  Returns the current script name and line number. nFrame is the number of stack frames to go back (0 is the current stack frame).
-**/
-DEFINE_FUNCTION(LocateFilename) {
-
-	J_S_ASSERT_ARG_MIN( 1 );
-	int frame;
-	J_CHK( JsvalToInt(cx, argv[0], &frame) );
-	J_S_ASSERT(frame <= 0, "Frame number must be <= 0");
-
-	JSStackFrame *fp;
-	fp = NULL;
-	for ( JS_FrameIterator(cx, &fp); fp; JS_FrameIterator(cx, &fp) ) {
-
-		if ( fp->script && !frame++ ) {
-
-			*rval = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, JS_GetScriptFilename(cx, JS_GetFrameScript(cx, fp))));
-			break;
-		}
-	}
-	return JS_TRUE;
-	JL_BAD;
-}
 
 /**doc
 $TOC_MEMBER $INAME
- $ARRAY $INAME( object [, followPrototypeChain=false ] )
+ $ARRAY $INAME( object [, followPrototypeChain = false ] )
   Returns an array of properties name.
 **/
 DEFINE_FUNCTION_FAST( PropertiesList ) {
@@ -1054,7 +1364,7 @@ DEFINE_FUNCTION_FAST( PropertiesList ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $ARRAY $INAME( object [, followPrototypeChain=false ] )
+ $ARRAY $INAME( object [, followPrototypeChain = false ] )
  Returns an array of properties information.
 **/
 DEFINE_FUNCTION_FAST( PropertiesInfo ) {
@@ -1152,6 +1462,24 @@ DEFINE_FUNCTION_FAST( PropertiesInfo ) {
 #ifdef DEBUG
 DEFINE_FUNCTION( Test ) {
 
+	jsval rv;
+	jsval arg[3];
+	arg[0] = OBJECT_TO_JSVAL(JS_NewObject(cx, NULL, NULL, NULL));
+
+//	JSTempValueRooter tvr;
+//	JS_PUSH_TEMP_ROOT(cx, 3, arg, &tvr);
+
+//	JS_GC(cx);
+
+	JSBool status;
+	status = JS_CallFunctionValue(cx, obj, J_ARG(1), 3, arg, &rv);
+
+	JS_GC(cx);
+
+	*J_RVAL = rv;
+
+//	JS_POP_TEMP_ROOT(cx, &tvr);
+
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1163,28 +1491,34 @@ CONFIGURE_STATIC
 
 	REVISION(SvnRevToInt("$Revision$"))
 	BEGIN_STATIC_FUNCTION_SPEC
-		FUNCTION_FAST_ARGC( PropertiesList, 1 )
-		FUNCTION_FAST_ARGC( PropertiesInfo, 1 )
-#ifdef DEBUG
-		FUNCTION_FAST( DumpHeap )
-		FUNCTION( Test )
-#endif // DEBUG
+		FUNCTION( GetObjectPrivate )
 		FUNCTION( DumpStats )
 		FUNCTION_FAST( TraceGC )
-		FUNCTION( Trap )
-		FUNCTION( Untrap )
-		FUNCTION( LineToPC )
-		FUNCTION( PCToLine )
+//		FUNCTION( Trap )
+//		FUNCTION( Untrap )
+//		FUNCTION( LineToPC )
+//		FUNCTION( PCToLine )
+		
+		FUNCTION_FAST( GetActualLineno )
 		FUNCTION_FAST( Locate )
-		FUNCTION( LocateLine )
-		FUNCTION( LocateFilename )
-		FUNCTION( DumpObjectPrivate )
+		FUNCTION_FAST( DefinitionLocation )
+		FUNCTION_FAST( StackFrameInfo )
+		FUNCTION_FAST( EvalInStackFrame )
+		FUNCTION_FAST_ARGC( PropertiesList, 1 )
+		FUNCTION_FAST_ARGC( PropertiesInfo, 1 )
+	#ifdef DEBUG
+		FUNCTION_FAST( DumpHeap )
+		FUNCTION( Test )
+	#endif // DEBUG
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC
-#ifdef JS_GC_ZEAL
+		PROPERTY_READ( scriptFilenameList )
+		PROPERTY_READ( currentFilename )
+		PROPERTY_READ( stackSize )
+	#ifdef JS_GC_ZEAL
 		PROPERTY_WRITE( gcZeal )
-#endif
+	#endif
 		PROPERTY_READ( gcMallocBytes )
 		PROPERTY_READ( gcBytes )
 		PROPERTY_READ( currentMemoryUsage )

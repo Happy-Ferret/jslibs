@@ -147,7 +147,7 @@ LoadModule('jsdebug');
 
 	var dbg = new Debugger();
 	
-	dbg.excludedFileList = [ Debugger.currentFilename ];
+	dbg.excludedFileList = [ currentFilename ];
 
 	dbg.breakOnDebuggerKeyword = true;
 	dbg.breakOnError = true;
@@ -240,17 +240,17 @@ LoadModule('jsdebug');
 		
 		GetScriptList: function() {
 		
-			return dbg.scriptList;
+			return scriptFilenameList;
 		},
 		
 		GetActualLineno: function(filename, lineno) {
 		
-			return dbg.GetActualLineno(filename, lineno);
+			return GetActualLineno(filename, lineno);
 		},
 		
 		AddBreakpoint: function(filename, lineno, condition) {
 			
-			if ( dbg.GetActualLineno(filename, lineno) != lineno )
+			if ( GetActualLineno(filename, lineno) != lineno )
 				return false;
 			dbg.ToggleBreakpoint(true, filename, lineno);
 			var list = (filename in _breakpointList) ? _breakpointList[filename] : (_breakpointList[filename] = {});
@@ -260,7 +260,7 @@ LoadModule('jsdebug');
 
 		RemoveBreakpoint: function(filename, lineno) {
 
-			if ( dbg.GetActualLineno(filename, lineno) != lineno )
+			if ( GetActualLineno(filename, lineno) != lineno )
 				return false;
 			dbg.ToggleBreakpoint(false, filename, lineno);
 			delete _breakpointList[filename][lineno];
@@ -277,7 +277,7 @@ LoadModule('jsdebug');
 			var stack = [];
 			for ( var i = 0; i <= _breakContext.stackFrameIndex; i++ ) {
 			
-				var frameInfo = dbg.StackFrameInfo(i);
+				var frameInfo = StackFrameInfo(i);
 				var contextInfo;
 				if ( frameInfo.isEval )
 					contextInfo = '(eval)';
@@ -294,7 +294,7 @@ LoadModule('jsdebug');
 
 		Eval: function(code, stackFrameIndex) {
 
-			return dbg.EvalInStackFrame(code, stackFrameIndex == undefined ? _breakContext.stackFrameIndex : stackFrameIndex );
+			return EvalInStackFrame(code, stackFrameIndex == undefined ? _breakContext.stackFrameIndex : stackFrameIndex );
 		},
 		
 		ExpressionInfo: function(path, stackFrameIndex, ChildListOnly) {
@@ -304,10 +304,10 @@ LoadModule('jsdebug');
 			try {
 				if ( expression[0] != '.' ) {
 
-					val = dbg.EvalInStackFrame('('+expression+')', stackFrameIndex );
+					val = EvalInStackFrame('('+expression+')', stackFrameIndex );
 				} else {
 
-					val = { stack:dbg.StackFrameInfo(stackFrameIndex), rval:_breakContext.rval }[expression.substr(1)];
+					val = { stack:StackFrameInfo(stackFrameIndex), rval:_breakContext.rval }[expression.substr(1)];
 				}
 				val = path.reduce(function(prev, cur) prev[cur], val);
 				if ( ChildListOnly )
@@ -322,8 +322,8 @@ LoadModule('jsdebug');
 		
 		DefinitionLocation: function(identifier, stackFrameIndex) {
 			
-			var value = dbg.EvalInStackFrame(identifier, stackFrameIndex == undefined ? _breakContext.stackFrameIndex : stackFrameIndex );
-			return dbg.DefinitionLocation(value);
+			var value = EvalInStackFrame(identifier, stackFrameIndex == undefined ? _breakContext.stackFrameIndex : stackFrameIndex );
+			return DefinitionLocation(value);
 		},
 		
 		Shutdown: function() {
@@ -393,7 +393,7 @@ LoadModule('jsdebug');
 			if ( condition && condition != 'true' ) {
 			
 				try {
-					var test = dbg.EvalInStackFrame(condition, stackFrameIndex);
+					var test = EvalInStackFrame(condition, stackFrameIndex);
 				} catch(ex) {}
 				if ( !test )
 					return Debugger.DO_CONTINUE;
@@ -429,7 +429,7 @@ LoadModule('jsdebug');
 		}
 	}
 
-	if ( global.arguments[0] == Debugger.currentFilename ) { // debugger.js is used like: jshost jsdebugger.js programToDebug.js
+	if ( global.arguments[0] == currentFilename ) { // debugger.js is used like: jshost jsdebugger.js programToDebug.js
 		
 		dbg.breakOnFirstExecute = true;
 		var prog = global.arguments.splice(1,1);

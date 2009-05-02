@@ -20,6 +20,7 @@ DECLARE_CLASS( Debugger );
 
 extern bool _unsafeMode = false;
 extern jl::Queue *scriptFileList = NULL;
+JSBool GetScriptLocation( JSContext *cx, jsval *val, uintN lineno, JSScript **script, jsbytecode **pc );
 
 /**doc t:header
 $MODULE_HEADER
@@ -30,8 +31,12 @@ $MODULE_HEADER
 $MODULE_FOOTER
 **/
 
+//////////////////////
+// tools functions
 
 void NewScriptHook(JSContext *cx, const char *filename, uintN lineno, JSScript *script, JSFunction *fun, void *callerdata) {
+
+// (TBD) protect new file-based scripts against GC to allow later debugging them ?
 
 //	printf( "add - %s:%d - %s - %d - %p\n", filename, lineno, fun ? JS_GetFunctionName(fun):"", script->staticLevel, script );
 
@@ -97,39 +102,92 @@ void DestroyScriptHook(JSContext *cx, JSScript *script, void *callerdata) {
 }
 
 
+
+JSScript *ScriptByLocation(JSContext *cx, jl::Queue *scriptFileList, const char *filename, unsigned int lineno) {
+
+	jl::QueueCell *it;
+	jl::Queue *scriptList = NULL;
+
+	// find the right script filename
+	for ( it = jl::QueueBegin(scriptFileList); it; it = jl::QueueNext(it) ) {
+
+		scriptList = (jl::Queue*)jl::QueueGetData(it);
+		JSScript *s = (JSScript*)jl::QueueGetData(jl::QueueBegin(scriptList));
+
+		if ( strcmp(filename, s->filename) == 0 )
+			break;
+	}
+
+	if ( it == NULL )
+		return NULL;
+
+	JSScript *script = NULL;
+	for ( it = jl::QueueBegin(scriptList); it; it = jl::QueueNext(it) ) {
+
+		script = (JSScript*)jl::QueueGetData(it);
+		uintN extent = JS_GetScriptLineExtent(cx, script);
+
+		if ( lineno >= script->lineno && lineno <= script->lineno + extent )
+			break;
+		// else the last script in the list (depth 0) will be selected
+	}
+	return script;
+}
+
+
+JSBool GetScriptLocation( JSContext *cx, jsval *val, uintN lineno, JSScript **script, jsbytecode **pc ) {
+	
+	if ( JsvalIsFunction(cx, *val) ) {
+
+		*script = JS_GetFunctionScript(cx, JS_ValueToFunction(cx, *val));
+		if ( *script == NULL )
+			return JS_TRUE;
+		lineno += JS_GetScriptBaseLineNumber(cx, *script);
+	} else
+	if ( JsvalIsScript(cx, *val) ) {
+
+		*script = (JSScript *) JS_GetPrivate(cx, JSVAL_TO_OBJECT(*val));
+		if ( *script == NULL )
+			return JS_TRUE;
+		lineno += JS_GetScriptBaseLineNumber(cx, *script);
+	} else {
+
+		const char *filename;
+		J_CHK( JsvalToString(cx, val, &filename) );
+		*script = ScriptByLocation(cx, scriptFileList, filename, lineno);
+		if ( *script == NULL )
+			return JS_TRUE;
+	}
+	*pc = JS_LineNumberToPC(cx, *script, lineno);
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
 	_unsafeMode = GetHostPrivate(cx)->unsafeMode;
 
 	scriptFileList = jl::QueueConstruct();
+
+	// record the caller's scripts (at least).
+	for ( JSStackFrame *fp = CurrentStackFrame(cx); fp; fp = fp->down ) { // cf. JS_FrameIterator
+	
+		JSScript *script = JS_GetFrameScript(cx, fp);
+		if ( !script ) // !JS_IsNativeFrame ?
+			continue;
+		const char *filename = JS_GetScriptFilename(cx, script);
+		if ( !filename )
+			continue;
+		uintN lineno = JS_GetScriptBaseLineNumber(cx, script);
+		JSFunction *fun = JS_GetFrameFunction(cx, fp);
+		NewScriptHook(cx, filename, lineno, script, NULL, NULL);
+	}
+
+	// records script creation/destruction from this point.
 	JS_SetNewScriptHookProc(JS_GetRuntime(cx), NewScriptHook, NULL);
 	JS_SetDestroyScriptHookProc(JS_GetRuntime(cx), DestroyScriptHook, NULL);
-
-
-//	JSObject *scope = JS_GetFrameScopeChain(cx, frame);
-
-/*
-	JSStackFrame *fp = NULL;
-	for ( JS_FrameIterator(cx, &fp); fp; fp=JS_FrameIterator(cx, &fp))
-		printf("%p\n", fp->script);
-*/	
-
-
-//	JS_GetFunctionScript
-
-	
-
-/*
-	// add the current script to the list.
-	for ( JSStackFrame *fp = JS_GetScriptedCaller(cx, NULL); fp; fp = fp->down ) {
-
-		if ( !JS_IsNativeFrame(cx, fp) ) {
-
-			JSScript *script = JS_GetFrameScript(cx, fp);
-			NewScriptHook(cx, JS_GetScriptFilename(cx, script), script->lineno, script, JS_GetFrameFunction(cx, fp), NULL);
-		}
-	}
-*/
 
 	INIT_STATIC();
 	INIT_CLASS( Debugger );
