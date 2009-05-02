@@ -58,8 +58,8 @@ inline JSBool NotifyObject( int slotIndex, JSContext *cx, JSObject *obj, jsval i
 	args[1] = *vp;
 	args[2] = aux;
 	args[3] = INT_TO_JSVAL(slotIndex);
-
-	return JS_CallFunctionValue( cx, obj, slot, sizeof(args)/sizeof(*args), args, vp );
+	// at the moment, no GC protection is needed for argv and rval.
+	return JS_CallFunctionValue( cx, obj, slot, COUNTOF(args), args, vp );
 	JL_BAD;
 }
 

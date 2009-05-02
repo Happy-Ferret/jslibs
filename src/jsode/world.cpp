@@ -101,14 +101,18 @@ static void nearCallback(void *data, ode::dGeomID o1, ode::dGeomID o2) {
 
 				if ( !JSVAL_IS_VOID( func1 ) ) {
 
-					jsval rval, argv[] = { INT_TO_JSVAL(i), OBJECT_TO_JSVAL(obj1), obj2 ? OBJECT_TO_JSVAL(obj2) : JSVAL_VOID, pos }; // INT_TO_JSVAL(vel[0]), INT_TO_JSVAL(vel[1]), INT_TO_JSVAL(vel[2])
-					JS_CallFunctionValue( cx, obj1, func1, sizeof(argv)/sizeof(*argv), argv, &rval); // JS_CallFunction() DO NOT WORK !!!
+					jsval tmp, argv[] = { INT_TO_JSVAL(i), OBJECT_TO_JSVAL(obj1), obj2 ? OBJECT_TO_JSVAL(obj2) : JSVAL_VOID, pos }; // INT_TO_JSVAL(vel[0]), INT_TO_JSVAL(vel[1]), INT_TO_JSVAL(vel[2])
+					// GC protection seems to be not needed because these objects (obj1 and obj2) have an owner
+					// (TBD) check the previous comment.
+					JS_CallFunctionValue(cx, obj1, func1, COUNTOF(argv), argv, &tmp); // JS_CallFunction() DO NOT WORK !!!
 				}
 
 				if ( !JSVAL_IS_VOID( func2 ) ) {
 
-					jsval rval, argv[] = { INT_TO_JSVAL(i), OBJECT_TO_JSVAL(obj2), obj1 ? OBJECT_TO_JSVAL(obj1) : JSVAL_VOID, pos }; // INT_TO_JSVAL(vel[0]), INT_TO_JSVAL(vel[1]), INT_TO_JSVAL(vel[2])
-					JS_CallFunctionValue( cx, obj2, func2, sizeof(argv)/sizeof(*argv), argv, &rval); // JS_CallFunction() DO NOT WORK !!!
+					jsval tmp, argv[] = { INT_TO_JSVAL(i), OBJECT_TO_JSVAL(obj2), obj1 ? OBJECT_TO_JSVAL(obj1) : JSVAL_VOID, pos }; // INT_TO_JSVAL(vel[0]), INT_TO_JSVAL(vel[1]), INT_TO_JSVAL(vel[2])
+					// GC protection seems to be not needed because these objects (obj1 and obj2) have an owner
+					// (TBD) check the previous comment.
+					JS_CallFunctionValue( cx, obj2, func2, COUNTOF(argv), argv, &tmp); // JS_CallFunction() DO NOT WORK !!!
 				}
 			}
 

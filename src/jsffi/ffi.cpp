@@ -1107,8 +1107,9 @@ JSBool NativeModule_Close(JSContext *cx, JSObject *obj, uintN argc, jsval *argv,
 
     if ( !JSVAL_IS_VOID( onRelease ) ) {
 
-      jsval ret;
-      JS_CallFunctionValue( cx, obj, onRelease, 0, NULL, &ret );
+		 // no GC protection is needed
+      jsval tmp;
+      JS_CallFunctionValue( cx, obj, onRelease, 0, NULL, &tmp );
     }
 
 /* TODO:
@@ -1211,8 +1212,9 @@ void Release_JSNI( JSContext *cx ) {
     JS_GetProperty( cx, obj, "onRelease", &onRelease );
     if ( !JSVAL_IS_VOID( onRelease ) ) {
 
-      jsval ret;
-      JS_CallFunctionValue( cx, obj, onRelease, 0, NULL, &ret );
+		 // no GC protection is needed
+      jsval tmp;
+      JS_CallFunctionValue( cx, obj, onRelease, 0, NULL, &tmp );
     }
 
     JS_RemoveRoot( cx, rt );

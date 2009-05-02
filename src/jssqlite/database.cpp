@@ -461,52 +461,52 @@ void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArg
 
 	jsval fVal = (jsval)sqlite3_user_data(sCx);
 	DbContext *pv = GetDbContext(sqlite3_context_db_handle(sCx));
+	JSContext *cx = pv->cx;
 
-	jsval argv[128];
-	jsval rval;
+	jsval argv[64+1]; // argv[0] is rval
 
-	if ( sArgc > COUNTOF(argv) ) {
+	if ( sArgc > COUNTOF(argv)-1 ) {
 
 		sqlite3_result_error(sCx, "Too many arguments", -1 );
 		return;
 	}
 
-	JSContext *cx = pv->cx;
+	memset(argv, 0, sizeof(argv));
+	JSTempValueRooter tvr;
+	JS_PUSH_TEMP_ROOT(cx, COUNTOF(argv), argv, &tvr);
+	
+	for ( int r = 0; r < sArgc; r++ ) {
 
-	int r = 0;
-	for ( ; r < sArgc; r++ ) {
-
-		JS_AddRoot(cx, &argv[r]);
-		if ( SqliteToJsval(cx, sArgv[r], &argv[r]) == JS_FALSE ) {
+		if ( SqliteToJsval(cx, sArgv[r], &argv[r+1]) == JS_FALSE ) {
 
 			sqlite3_result_error(sCx, "Invalid type", -1 ); // (TBD) enhance error report & remove roots on error
 			goto bad;
 		}
 	}
 
-	if ( JS_CallFunctionValue(cx, pv->obj, fVal, sArgc, argv, &rval) != JS_TRUE ) {
+	if ( JS_CallFunctionValue(cx, pv->obj, fVal, sArgc, argv+1, argv) != JS_TRUE ) {
 
 		sqlite3_result_error(sCx, "Function call error", -1 ); // (TBD) better error message
 		goto bad;
 	}
 
 	// (TBD) how to use sqlite3_result_value
-	switch ( JS_TypeOfValue(cx, rval) ) {
+	switch ( JS_TypeOfValue(cx, argv[0]) ) {
 		case JSTYPE_VOID:
 		case JSTYPE_NULL:
 			sqlite3_result_null(sCx); // http://www.sqlite.org/nulls.html
 			break;
 		case JSTYPE_BOOLEAN:
-			sqlite3_result_int(sCx, JSVAL_TO_BOOLEAN(rval) == JS_TRUE ? 1 : 0 );
+			sqlite3_result_int(sCx, JSVAL_TO_BOOLEAN(argv[0]) == JS_TRUE ? 1 : 0 );
 			break;
 		case JSTYPE_NUMBER:
-			if ( JSVAL_IS_INT(rval) ) {
+			if ( JSVAL_IS_INT(argv[0]) ) {
 
-				sqlite3_result_int(sCx, JSVAL_TO_INT(rval));
+				sqlite3_result_int(sCx, JSVAL_TO_INT(argv[0]));
 			} else {
 
 				jsdouble jd;
-				JS_ValueToNumber(cx, rval, &jd);
+				J_CHK( JS_ValueToNumber(cx, argv[0], &jd) );
 				if ( jd >= INT_MIN && jd <= INT_MAX && jd == (int)jd )
 					sqlite3_result_int(sCx, (int)jd);
 				else
@@ -514,25 +514,26 @@ void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArg
 			}
 			break;
 		case JSTYPE_OBJECT: // beware: no break; because we use the JSTYPE_STRING's case JS_ValueToString conversion
-			if ( JSVAL_IS_NULL(rval) ) {
+			if ( JSVAL_IS_NULL(argv[0]) ) {
 
 				sqlite3_result_null(sCx);
 				break;
 			}
-			if ( JS_GET_CLASS(cx, JSVAL_TO_OBJECT(rval)) == BlobJSClass(cx) ) { // beware: with SQLite, blob != text
+			if ( JS_GET_CLASS(cx, JSVAL_TO_OBJECT(argv[0])) == BlobJSClass(cx) ) { // beware: with SQLite, blob != text
 
 				const char *data;
 				size_t length;
-				JsvalToStringAndLength(cx, &rval, &data, &length);
+				J_CHK( JsvalToStringAndLength(cx, &argv[0], &data, &length) );
 				sqlite3_result_blob(sCx, data, length, SQLITE_STATIC); // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT
 				break;
 			}
 		case JSTYPE_XML:
 		case JSTYPE_FUNCTION: // (TBD) call the function and pass its result to SQLite ?
 		case JSTYPE_STRING: {
-			JSString *jsstr = JS_ValueToString(cx, rval);
-			// (TBD) GC protect (root) jsstr
-			sqlite3_result_text(sCx, JS_GetStringBytes(jsstr), J_STRING_LENGTH(jsstr), SQLITE_STATIC); // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT // cf.  int sqlite3_bind_text16(sqlite3_stmt*, int, const void*, int n, void(*)(void*));
+			const char *str;
+			size_t len;
+			J_CHK( JsvalToStringAndLength(cx, &argv[0], &str, &len) );
+			sqlite3_result_text(sCx, str, len, SQLITE_STATIC); // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT // cf.  int sqlite3_bind_text16(sqlite3_stmt*, int, const void*, int n, void(*)(void*));
 			break;
 		}
 		default:
@@ -540,8 +541,7 @@ void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArg
 	}
 
 bad:
-	for ( --r; r >= 0; --r )
-		JS_RemoveRoot(cx, &argv[r]);
+	JS_POP_TEMP_ROOT(cx, &tvr);
 }
 
 

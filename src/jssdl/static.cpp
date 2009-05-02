@@ -549,7 +549,12 @@ JSBool FireListener( JSContext *cx, JSObject *listenerObj, SDL_Event *ev, jsval 
 					STRING_TO_JSVAL(ucChar),
 					INT_TO_JSVAL(ev->key.keysym.scancode),
 				};
-				J_CHK( JS_CallFunctionValue(cx, listenerObj, fVal, COUNTOF(argv), argv, rval) );
+
+				JSTempValueRooter tvr;
+				JS_PUSH_TEMP_ROOT(cx, COUNTOF(argv), argv, &tvr); // protects the new string against the GC
+				JSBool status = JS_CallFunctionValue(cx, listenerObj, fVal, COUNTOF(argv), argv, rval);
+				JS_POP_TEMP_ROOT(cx, &tvr);
+				J_CHK( status );
 			}
 			break;
 
@@ -566,6 +571,7 @@ JSBool FireListener( JSContext *cx, JSObject *listenerObj, SDL_Event *ev, jsval 
 					INT_TO_JSVAL(ev->motion.state),
 					INT_TO_JSVAL(modState),
 				};
+				// no argv GC protection needed.
 				J_CHK( JS_CallFunctionValue(cx, listenerObj, fVal, COUNTOF(argv), argv, rval) );
 			}
 			break;
@@ -584,6 +590,7 @@ JSBool FireListener( JSContext *cx, JSObject *listenerObj, SDL_Event *ev, jsval 
 					INT_TO_JSVAL(buttonState),
 					INT_TO_JSVAL(modState),
 				};
+				// no argv GC protection needed.
 				J_CHK( JS_CallFunctionValue(cx, listenerObj, fVal, COUNTOF(argv), argv, rval) );
 			}
 			break;
@@ -592,6 +599,7 @@ JSBool FireListener( JSContext *cx, JSObject *listenerObj, SDL_Event *ev, jsval 
 			J_CHK( JS_GetProperty(cx, listenerObj, "onQuit", &fVal) );
 			if ( JsvalIsFunction(cx, fVal) ) {
 
+				// no argv GC protection needed.
 				J_CHK( JS_CallFunctionValue(cx, listenerObj, fVal, 0, NULL, rval) );
 			}
 			break;
@@ -605,6 +613,7 @@ JSBool FireListener( JSContext *cx, JSObject *listenerObj, SDL_Event *ev, jsval 
 					INT_TO_JSVAL(ev->resize.w),
 					INT_TO_JSVAL(ev->resize.h)
 				};
+				// no argv GC protection needed.
 				J_CHK( JS_CallFunctionValue(cx, listenerObj, fVal, COUNTOF(argv), argv, rval) );
 			}
 			break;
@@ -613,11 +622,12 @@ JSBool FireListener( JSContext *cx, JSObject *listenerObj, SDL_Event *ev, jsval 
 			J_CHK( JS_GetProperty(cx, listenerObj, "onVideoExpose", &fVal) );
 			if ( JsvalIsFunction(cx, fVal) ) {
 
+				// no argv GC protection needed.
 				J_CHK( JS_CallFunctionValue(cx, listenerObj, fVal, 0, NULL, rval) );
 			}
 			break;
 	}
-	return JS_IsExceptionPending(cx) ? JS_FALSE : JS_TRUE;
+	return JS_IsExceptionPending(cx) ? JS_FALSE : JS_TRUE; // (TBD) why this line is needed ?
 	JL_BAD;
 }
 

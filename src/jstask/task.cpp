@@ -112,13 +112,15 @@ DEFINE_FINALIZE() {
 
 JSBool Task(JSContext *cx, Private *pv) {
 
-	jsval code, rval;
+	jsval argv[3] = { JSVAL_NULL }; // argv[0] is rval and code
+	JSTempValueRooter tvr;
+	JS_PUSH_TEMP_ROOT(cx, COUNTOF(argv), argv, &tvr);
 
-	J_CHK( UnserializeJsval(cx, &pv->serializedCode, &code) ); // no need to mutex this because this is the only place that access pv->serializedCode
+	J_CHK( UnserializeJsval(cx, &pv->serializedCode, &argv[0]) ); // no need to mutex this because this is the only place that access pv->serializedCode
 	SerializerFree(&pv->serializedCode);
 
 	JSFunction *fun;
-	fun = JS_ValueToFunction(cx, code);
+	fun = JS_ValueToFunction(cx, argv[0]);
 	JSObject *funObj;
 	funObj = JS_GetFunctionObject(fun);
 	JSObject *globalObj;
@@ -144,14 +146,10 @@ JSBool Task(JSContext *cx, Private *pv) {
 		pv->processingRequestCount = 1;
 		JLReleaseMutex(pv->mutex); // ++
 
-		jsval request;
-		J_CHK( UnserializeJsval(cx, &serializedRequest, &request) );
+		J_CHK( UnserializeJsval(cx, &serializedRequest, &argv[1]) );
 		SerializerFree(&serializedRequest);
-
-		jsval argv[2]; // (TBD) root something ?
-		argv[0] = request;
-		argv[1] = INT_TO_JSVAL(index++);
-		JSBool status = JS_CallFunction(cx, globalObj, fun, COUNTOF(argv), argv, &rval);
+		argv[2] = INT_TO_JSVAL(index++);
+		JSBool status = JS_CallFunction(cx, globalObj, fun, COUNTOF(argv)-1, argv+1, argv);
 
 		if ( !status ) {
 
@@ -185,7 +183,7 @@ JSBool Task(JSContext *cx, Private *pv) {
 
 			Serialized serializedResponse;
 			SerializerCreate(&serializedResponse);
-			J_CHK( SerializeJsval(cx, &serializedResponse, &rval) ); // (TBD) need a better exception management
+			J_CHK( SerializeJsval(cx, &serializedResponse, &argv[0]) ); // (TBD) need a better exception management
 
 			JLAcquireMutex(pv->mutex); // --
 			QueuePush(&pv->responseList, serializedResponse);
@@ -197,8 +195,11 @@ JSBool Task(JSContext *cx, Private *pv) {
 		JLReleaseSemaphore(pv->responseSem); // +1 // signals a response
 	}
 
+	JS_POP_TEMP_ROOT(cx, &tvr);
 	return JS_TRUE;
-	JL_BAD;
+bad:
+	JS_POP_TEMP_ROOT(cx, &tvr);
+	return JS_FALSE;
 }
 
 
@@ -221,7 +222,7 @@ JLThreadFuncDecl ThreadProc( void *threadArg ) {
 		return 0;
 
 	J_CHK( InitHost(cx, _unsafeMode, NULL, TaskStdErrHostOutput, &errBuffer) );
-	
+
 	JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_DONT_REPORT_UNCAUGHT);
 
 	Private *pv;
@@ -535,7 +536,7 @@ END_CLASS
 
   var sum = 0;
   for ( var i = 0; i < request; i++) {
-   
+
    sum = sum + i;
   }
   return sum;
@@ -544,7 +545,7 @@ END_CLASS
  var myTask = new Task(MyTask);
 
  for ( var i = 0; i < 100; i++ ) {
-  
+
   myTask.Request(i);
  }
 

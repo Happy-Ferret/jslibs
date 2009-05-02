@@ -81,9 +81,13 @@ private:
 			return;
 		}
 
-		jsval argv[] = { INT_TO_JSVAL(level), INT_TO_JSVAL(area), NULL };
+		jsval argv[3] = { INT_TO_JSVAL(level), INT_TO_JSVAL(area) };
 		StringToJsval(_cx, message.c_str(), &argv[2]);
+
+		JSTempValueRooter tvr;
+		JS_PUSH_TEMP_ROOT(_cx, COUNTOF(argv), argv, &tvr);
 		JS_CallFunctionValue(_cx, _obj, fval, COUNTOF(argv), argv, &rval); // errors will be managed later by JS_IsExceptionPending(cx)
+		JS_POP_TEMP_ROOT(_cx, &tvr);
 	}
 
 	bool onTLSConnect( const CertInfo& info ) {
@@ -179,7 +183,7 @@ private:
 	void handleRosterError( Stanza* stanza ) {}
 	void handleRosterPresence( const RosterItem& item, const std::string& resource, Presence presence, const std::string& msg ) {
 
-		jsval fval, rval;
+		jsval fval;
 		if ( !JS_GetProperty(_cx, _obj, "onRosterPresence", &fval) || JSVAL_IS_VOID( fval ) )
 			return;
 		if ( !JsvalIsFunction(_cx, fval) ) {
@@ -188,13 +192,13 @@ private:
 			return;
 		}
 
-		jsval fromVal, presenceVal, msgVal;
+		jsval fromVal, presenceVal, msgVal, tmp;
 		JidToJsval(_cx, &JID(item.jid()), &fromVal);
 		IntToJsval(_cx, presence, &presenceVal);
 		StringToJsval(_cx, msg.c_str(), &msgVal);
 
 		jsval argv[] = { fromVal, presenceVal, msgVal };
-		JS_CallFunctionValue(_cx, _obj, fval, COUNTOF(argv), argv, &rval); // errors will be managed later by JS_IsExceptionPending(cx)
+		JS_CallFunctionValue(_cx, _obj, fval, COUNTOF(argv), argv, &tmp); // errors will be managed later by JS_IsExceptionPending(cx)
 	}
 
 // SIProfileFTHandler (file transfer)

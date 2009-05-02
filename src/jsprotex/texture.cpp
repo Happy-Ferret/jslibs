@@ -231,17 +231,24 @@ inline JSBool InitCurveData( JSContext* cx, jsval value, int length, float *curv
 	} else
 	if ( JsvalIsFunction(cx, value) ) {
 
-		jsval val[2], resultValue;
 		jsdouble fval;
-		for ( int i = 0; i < length; i++ ) {
+		jsval argv[3]; // argv[0] is the rval
+		JSTempValueRooter tvr;
+		JS_PUSH_TEMP_ROOT(cx, COUNTOF(argv), argv, &tvr);
+		for ( int i = 0; i < length; ++i ) {
 
 			fval = i / (float)(length-1);
-			J_CHK( JS_NewDoubleValue(cx, fval, val) );
-			val[1] = INT_TO_JSVAL(i);
-			J_CHK( JS_CallFunctionValue(cx, JS_GetGlobalObject(cx), value, 2, val, &resultValue) );
-			J_CHK( JS_ValueToNumber(cx, resultValue, &fval) );
+			J_CHKB( JS_NewDoubleValue(cx, fval, &argv[1]), bad2 );
+			argv[2] = INT_TO_JSVAL(i);
+			J_CHKB( JS_CallFunctionValue(cx, JS_GetGlobalObject(cx), value, 2, argv+1, argv), bad2 );
+			J_CHKB( JS_ValueToNumber(cx, argv[0], &fval), bad2 );
 			curve[i] = fval;
+			goto good2;
 		}
+	bad2:
+		JS_POP_TEMP_ROOT(cx, &tvr);
+	good2:
+		;
 	} else
 	if ( JsvalIsArray(cx, value) ) {
 
@@ -2297,41 +2304,39 @@ DEFINE_FUNCTION_FAST( ForEachPixels ) {
 
 	TextureSetupBackBuffer(cx, tex);
 
-	jsval callArgv[3];
-	jsval callRval;
+	jsval callArgv[4]; // callArgv[] is rval
 
 	JSObject *cArrayObj;
 	cArrayObj = JS_NewArrayObject(cx, channels, NULL);
-	callArgv[2] = OBJECT_TO_JSVAL(cArrayObj);
+	callArgv[3] = OBJECT_TO_JSVAL(cArrayObj);
 
-	for ( int y = 0; y < height; y++ ) {
+	JSTempValueRooter tvr;
+	JS_PUSH_TEMP_ROOT(cx, COUNTOF(callArgv), callArgv, &tvr);
 
+	for ( int y = 0; y < height; y++ )
 		for ( int x = 0; x < width; x++ ) {
 
 			size_t pos = (x+y*width)*channels;
-
-			callArgv[0] = INT_TO_JSVAL(x);
-			callArgv[1] = INT_TO_JSVAL(y);
+			callArgv[1] = INT_TO_JSVAL(x);
+			callArgv[2] = INT_TO_JSVAL(y);
 			for ( int c = 0; c < channels; c++ ) {
 
 				jsval level;
-				JS_NewNumberValue(cx, tex->cbuffer[pos+c], &level);
-				JS_SetElement(cx, cArrayObj, c, &level);
+				J_CHKB( JS_NewNumberValue(cx, tex->cbuffer[pos+c], &level), bad2 );
+				J_CHKB( JS_SetElement(cx, cArrayObj, c, &level), bad2 );
 			}
 
-			if ( !JS_CallFunctionValue(cx, J_FOBJ, functionValue, 3, callArgv, &callRval) )
-				return JS_FALSE;
+			J_CHKB( JS_CallFunctionValue(cx, J_FOBJ, functionValue, COUNTOF(callArgv)-1, callArgv+1, callArgv), bad2 );
 
-			if ( JsvalIsArray(cx, callRval) ) {
+			if ( JsvalIsArray(cx, callArgv[0]) ) {
 
-				JSObject *returnedArray = JSVAL_TO_OBJECT(callRval);
-
+				JSObject *returnedArray = JSVAL_TO_OBJECT(callArgv[0]);
 				for ( int c = 0; c < channels; c++ ) {
 
 					jsval level;
 					jsdouble d;
-					JS_GetElement(cx, returnedArray, c, &level);
-					JS_ValueToNumber(cx, level, &d);
+					J_CHKB( JS_GetElement(cx, returnedArray, c, &level), bad2 );
+					J_CHKB( JS_ValueToNumber(cx, level, &d), bad2 );
 					tex->cbackBuffer[pos+c] = d;
 				}
 			} else {
@@ -2339,12 +2344,14 @@ DEFINE_FUNCTION_FAST( ForEachPixels ) {
 				for ( int c = 0; c < channels; c++ )
 					tex->cbackBuffer[pos+c] = tex->cbuffer[pos+c];
 			}
-		}
 	}
 	TextureSwapBuffers(tex);
 
 	return JS_TRUE;
-	JL_BAD;
+bad2:
+	JS_POP_TEMP_ROOT(cx, &tvr);
+bad:
+	return JS_FALSE;
 }
 
 

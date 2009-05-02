@@ -112,6 +112,23 @@ LoadModule('jsstd');
 		QA.ASSERT( StringRepeat( 'abc', 10 ), 'abcabcabcabcabcabcabcabcabcabc', '10 x string' );
 
 
+
+/// buffer and GC []
+
+		var errBuffer = new Buffer();
+		CollectGarbage();
+		for ( var i = 0; i < 3; i++ ) {
+			errBuffer.Write(StringRepeat('z', 1000000));
+			CollectGarbage();
+		}
+		
+		var res = errBuffer.toString().indexOf('zzz') 
+		CollectGarbage();
+		
+		QA.ASSERT( res, 0, 'buffer test' ); 
+
+	
+
 /// Buffer access [ftr]
 
 		var b = new Buffer();
