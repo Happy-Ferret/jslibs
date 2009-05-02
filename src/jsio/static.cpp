@@ -62,20 +62,23 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Poll ) {
 
-	PRInt32 result;
-
 	// NSPR Poll Method:
 	//   http://www.mozilla.org/projects/nspr/tech-notes/poll-method.html
 
 	// http://developer.mozilla.org/en/docs/PR_Poll
 
-	J_S_ASSERT_ARG_MIN( 1 );
-
-	J_S_ASSERT_ARRAY( J_ARG(1) );
-	JSIdArray *idArray;
-	idArray = JS_Enumerate( cx, JSVAL_TO_OBJECT(J_ARG(1)) ); // make a kind of auto-ptr for this
-
+	PRInt32 result;
 	PRIntervalTime pr_timeout;
+	jsval tmp, prop;
+	jsint i;
+	JSIdArray *arrayIds = NULL;
+	PRPollDesc staticPollDesc[128]; // 1KB
+	PRPollDesc *pollDesc = staticPollDesc;
+
+	J_S_ASSERT_ARG_MIN( 1 );
+	J_S_ASSERT_ARRAY( J_ARG(1) );
+	JSObject *fdArrayObj = JSVAL_TO_OBJECT(J_ARG(1));
+
 	if ( J_ARG_ISDEF(2) ) {
 
 		PRUint32 tmp;
@@ -86,151 +89,144 @@ DEFINE_FUNCTION( Poll ) {
 		pr_timeout = PR_INTERVAL_NO_TIMEOUT;
 	}
 
-	if ( idArray->length == 0 ) { // optimization
+	arrayIds = JS_Enumerate(cx, fdArrayObj);
 
-		JS_DestroyIdArray(cx, idArray);
-		result = PR_Poll( NULL, 0, pr_timeout ); // we can replace this by a delay, but the function is Pool, not Sleep
+	if ( arrayIds->length == 0 ) { // optimization
+
+		JS_DestroyIdArray(cx, arrayIds);
+		result = PR_Poll(NULL, 0, pr_timeout); // we can replace this by a delay, but the function is Pool, not Sleep
 		if ( result == -1 )
 			return ThrowIoError(cx);
 		*rval = JSVAL_ZERO;
 		return JS_TRUE;
 	}
 
-	PRPollDesc staticPollDesc[32];
-	PRPollDesc *pollDesc;
-	pollDesc = staticPollDesc; // Optimization to avoid dynamic allocation when it is possible
+	// Optimization to avoid dynamic allocation when it is possible
+	if ( arrayIds->length > COUNTOF(staticPollDesc) ) 
+		pollDesc = (PRPollDesc*)malloc(arrayIds->length * sizeof(PRPollDesc));
+	else
+		pollDesc = staticPollDesc;
 
-	if ( idArray->length > (signed)(sizeof(staticPollDesc) / sizeof(staticPollDesc[0])) )
-		pollDesc = (PRPollDesc*) malloc(idArray->length * sizeof(PRPollDesc));
+	for ( i = 0; i < arrayIds->length; ++i ) {
 
-	jsint i;
-	for ( i = 0; i < idArray->length; i++ ) {
-
-		jsval propVal;
-		J_CHK( JS_IdToValue(cx, idArray->vector[i], &propVal ));
-		J_CHK( JS_GetElement(cx, JSVAL_TO_OBJECT(J_ARG(1)), JSVAL_TO_INT(propVal), &propVal ));
-		J_S_ASSERT_OBJECT( propVal );
-		JSObject *fdObj = JSVAL_TO_OBJECT( propVal );
+		J_CHK( JS_GetElement(cx, fdArrayObj, JSID_TO_INT(arrayIds->vector[i]), &prop) );
+		if ( JSVAL_IS_VOID( prop ) ) {
+			
+			pollDesc[i].fd = 0;
+			pollDesc[i].in_flags = 0;
+			pollDesc[i].out_flags = 0;
+			continue;
+		}
+		JSObject *fdObj = JSVAL_TO_OBJECT( prop );
 		J_S_ASSERT( InheritFrom(cx, fdObj, classDescriptor), J__ERRMSG_INVALID_CLASS );
-		PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, fdObj );
-//		J_S_ASSERT_RESOURCE( fd ); // fd == NULL is supported !
-
-		pollDesc[i].fd = fd; // fd is A pointer to a PRFileDesc object representing a socket or a pollable event.  This field can be set to NULL to indicate to PR_Poll that this PRFileDesc object should be ignored.
+		pollDesc[i].fd = (PRFileDesc *)JS_GetPrivate(cx, fdObj); // fd is A pointer to a PRFileDesc object representing a socket or a pollable event.  This field can be set to NULL to indicate to PR_Poll that this PRFileDesc object should be ignored.
+//		J_S_ASSERT_RESOURCE( fd ); // beware: fd == NULL is supported !
 		pollDesc[i].in_flags = 0;
 		pollDesc[i].out_flags = 0;
-		jsval prop;
 
-		if ( JS_GetProperty( cx, fdObj, "writable", &prop ) == JS_FALSE )
-			goto failed;
-		if ( !JSVAL_IS_VOID( prop ) )
+		J_CHK( JS_GetProperty( cx, fdObj, "writable", &prop ) );
+		if ( JsvalIsFunction(cx, prop) )
 			pollDesc[i].in_flags |= PR_POLL_WRITE;
 
-		if ( JS_GetProperty( cx, fdObj, "readable", &prop ) == JS_FALSE )
-			goto failed;
-		if ( !JSVAL_IS_VOID( prop ) )
+		J_CHK( JS_GetProperty( cx, fdObj, "readable", &prop ) );
+		if ( JsvalIsFunction(cx, prop) )
 			pollDesc[i].in_flags |= PR_POLL_READ;
-
-		if ( JS_GetProperty( cx, fdObj, "hangup", &prop ) == JS_FALSE )
-			goto failed;
-		if ( !JSVAL_IS_VOID( prop ) )
+		
+		J_CHK( JS_GetProperty( cx, fdObj, "hangup", &prop ) );
+		if ( JsvalIsFunction(cx, prop) )
 			pollDesc[i].in_flags |= PR_POLL_HUP;
-
-		if ( JS_GetProperty( cx, fdObj, "exception", &prop ) == JS_FALSE )
-			goto failed;
-		if ( !JSVAL_IS_VOID( prop ) )
+		
+		J_CHK( JS_GetProperty( cx, fdObj, "exception", &prop ) );
+		if ( JsvalIsFunction(cx, prop) )
 			pollDesc[i].in_flags |= PR_POLL_EXCEPT;
-
-		if ( JS_GetProperty( cx, fdObj, "error", &prop ) == JS_FALSE )
-			goto failed;
-		if ( !JSVAL_IS_VOID( prop ) )
+		
+		J_CHK( JS_GetProperty( cx, fdObj, "error", &prop ) );
+		if ( JsvalIsFunction(cx, prop) )
 			pollDesc[i].in_flags |= PR_POLL_ERR;
 	}
 
-	result = PR_Poll( pollDesc, idArray->length, pr_timeout );
-	if ( result == -1 ) {  // failed. see PR_GetError()
+	result = PR_Poll(pollDesc, arrayIds->length, pr_timeout);
+	if ( result == -1 ) // failed. see PR_GetError()
+		J_CHK( ThrowIoError(cx) ); // returns later
 
-		ThrowIoError(cx); // returns later
-		goto failed;
+	if ( result == 0 ) { // has no event(s)
+
+		*rval = JSVAL_ZERO;
+		JS_DestroyIdArray(cx, arrayIds);
+		if ( pollDesc != staticPollDesc )
+			free(pollDesc);
+		return JS_TRUE;
 	}
 
-	if ( result > 0 ) { // has event(s)
+	jsval cbArgv[3];
 
-		for ( i = 0; i < idArray->length; i++ ) {
+	// the following protection against GC is not needed bacause all arguments are already safe (fd object, int, int)
+//	memset(cbArgv, 0, sizeof(cbArgv));
+//	JSTempValueRooter tvr;
+//	JS_PUSH_TEMP_ROOT(cx, COUNTOF(cbArgv), cbArgv, &tvr);
 
-			jsval arrayItem;
-			J_CHK( JS_IdToValue(cx, idArray->vector[i], &arrayItem) );
-			J_CHK( JS_GetElement(cx, JSVAL_TO_OBJECT(J_ARG(1)), JSVAL_TO_INT(arrayItem), &arrayItem) );
-			if ( JSVAL_IS_VOID( arrayItem ) ) // socket has been removed from the list while js func "poll()" is runing
-				continue;
-			JSObject *fdObj = JSVAL_TO_OBJECT( arrayItem ); //JS_ValueToObject
-			jsval prop, ret;
-			PRInt16 outFlag = pollDesc[i].out_flags;
-			jsval cbArgv[2] = { arrayItem, (outFlag & PR_POLL_HUP) ? JSVAL_TRUE : JSVAL_FALSE }; // fd, hup_flag
+	for ( i = 0; i < arrayIds->length; ++i ) {
 
-			if ( outFlag & PR_POLL_ERR ) {
+		J_CHK( JS_GetElement(cx, fdArrayObj, JSID_TO_INT(arrayIds->vector[i]), &prop) );
+		if ( JSVAL_IS_VOID( prop ) ) // socket has been removed from the list while js func "poll()" is runing
+			continue;
+		JSObject *fdObj = JSVAL_TO_OBJECT( prop ); //JS_ValueToObject
+		PRInt16 outFlag = pollDesc[i].out_flags;
+		cbArgv[0] = prop;
+		cbArgv[1] = ID_TO_VALUE(arrayIds->vector[i]);
+		cbArgv[2] = (outFlag & PR_POLL_HUP) ? JSVAL_TRUE : JSVAL_FALSE;
 
-				JS_GetProperty( cx, fdObj, "error", &prop );
-				if ( JS_TypeOfValue( cx, prop ) == JSTYPE_FUNCTION )
-					if ( JS_CallFunctionValue( cx, fdObj, prop, sizeof(cbArgv)/sizeof(*cbArgv), cbArgv, &ret ) == JS_FALSE ) // JS_CallFunction() DO NOT WORK !!!
-						goto failed;
-			}
-			if (JS_IsExceptionPending(cx))
-				goto failed;
+		if ( outFlag & PR_POLL_ERR ) {
 
-			if ( outFlag & PR_POLL_EXCEPT ) {
-
-				JS_GetProperty( cx, fdObj, "exception", &prop );
-				if (JS_TypeOfValue( cx, prop ) == JSTYPE_FUNCTION )
-					if ( JS_CallFunctionValue( cx, fdObj, prop, sizeof(cbArgv)/sizeof(*cbArgv), cbArgv, &ret ) == JS_FALSE ) // JS_CallFunction() DO NOT WORK !!!
-						goto failed;
-			}
-			if (JS_IsExceptionPending(cx))
-				goto failed;
-
-			if ( outFlag & PR_POLL_HUP ) {
-
-				JS_GetProperty( cx, fdObj, "hangup", &prop );
-				if ( JS_TypeOfValue( cx, prop ) == JSTYPE_FUNCTION )
-					if ( JS_CallFunctionValue( cx, fdObj, prop, sizeof(cbArgv)/sizeof(*cbArgv), cbArgv, &ret ) == JS_FALSE ) // JS_CallFunction() DO NOT WORK !!!
-						goto failed;
-			}
-			if (JS_IsExceptionPending(cx))
-				goto failed;
-
-			if ( outFlag & PR_POLL_READ ) {
-
-				JS_GetProperty( cx, fdObj, "readable", &prop );
-				if ( JS_TypeOfValue( cx, prop ) == JSTYPE_FUNCTION )
-					if ( JS_CallFunctionValue( cx, fdObj, prop, sizeof(cbArgv)/sizeof(*cbArgv), cbArgv, &ret ) == JS_FALSE ) // JS_CallFunction() DO NOT WORK !!!
-						goto failed;
-			}
-			if (JS_IsExceptionPending(cx))
-				goto failed;
-
-			if ( outFlag & PR_POLL_WRITE ) {
-
-				JS_GetProperty( cx, fdObj, "writable", &prop );
-				if ( JS_TypeOfValue( cx, prop ) == JSTYPE_FUNCTION )
-					if ( JS_CallFunctionValue( cx, fdObj, prop, sizeof(cbArgv)/sizeof(*cbArgv), cbArgv, &ret ) == JS_FALSE ) // JS_CallFunction() DO NOT WORK !!!
-						goto failed;
-			}
-			if (JS_IsExceptionPending(cx))
-				goto failed;
+			J_CHKB( JS_GetProperty( cx, fdObj, "error", &prop ), bad2 );
+			if ( JsvalIsFunction(cx, prop) )
+				J_CHKB( JS_CallFunctionValue( cx, fdObj, prop, COUNTOF(cbArgv), cbArgv, &tmp ), bad2 );
 		}
-	}
+
+		if ( outFlag & PR_POLL_EXCEPT ) {
+
+			J_CHKB( JS_GetProperty( cx, fdObj, "exception", &prop ), bad2 );
+			if ( JsvalIsFunction(cx, prop) )
+				J_CHKB( JS_CallFunctionValue( cx, fdObj, prop, COUNTOF(cbArgv), cbArgv, &tmp ), bad2 );
+		}
+
+		if ( outFlag & PR_POLL_HUP ) {
+
+			J_CHKB( JS_GetProperty( cx, fdObj, "hangup", &prop ), bad2 );
+			if ( JsvalIsFunction(cx, prop) )
+				J_CHKB( JS_CallFunctionValue( cx, fdObj, prop, COUNTOF(cbArgv), cbArgv, &tmp ), bad2 );
+		}
+
+		if ( outFlag & PR_POLL_READ ) {
+
+			J_CHKB( JS_GetProperty( cx, fdObj, "readable", &prop ), bad2 );
+			if ( JsvalIsFunction(cx, prop) )
+				J_CHKB( JS_CallFunctionValue( cx, fdObj, prop, COUNTOF(cbArgv), cbArgv, &tmp ), bad2 );
+		}
+
+		if ( outFlag & PR_POLL_WRITE ) {
+
+			J_CHKB( JS_GetProperty( cx, fdObj, "writable", &prop ), bad2 );
+			if ( JsvalIsFunction(cx, prop) )
+				J_CHKB( JS_CallFunctionValue( cx, fdObj, prop, COUNTOF(cbArgv), cbArgv, &tmp ), bad2 );
+		}
+	} // for
 
 	*rval = INT_TO_JSVAL( result );
-	if ( pollDesc != staticPollDesc )
-		free(pollDesc);
-	JS_DestroyIdArray(cx, idArray);
-	return JS_TRUE;
 
-failed: // goto is the cheaper solution
+//	JS_POP_TEMP_ROOT(cx, &tvr);
+	JS_DestroyIdArray(cx, arrayIds);
 	if ( pollDesc != staticPollDesc )
 		free(pollDesc);
-	JS_DestroyIdArray( cx, idArray );
+	return JS_TRUE;
+bad2:
+//	JS_POP_TEMP_ROOT(cx, &tvr);
+bad:
+	if ( arrayIds )
+		JS_DestroyIdArray(cx, arrayIds);
+	if ( pollDesc != staticPollDesc )
+		free(pollDesc);
 	return JS_FALSE;
-	JL_BAD;
 }
 
 /**doc
