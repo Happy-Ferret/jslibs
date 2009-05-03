@@ -74,7 +74,8 @@ function CreateQaItemList(startDir, filter) {
 
 		try {
 		
-			item.relativeLineNumber = LocateLine(0); item.func = new Function('QA', 'ITEM', item.code.join('\n')); // keep this on the same line
+			item.relativeLineNumber = Locate()[1]+1;
+			item.func = new Function('QA', 'ITEM', item.code.join('\n'));
 		} catch(ex) {
 			
 			item.func = function() {}
@@ -102,7 +103,7 @@ var QAAPI = new function() {
 
 	function CodeLocation() {
 		
-		return currentItem.file+':'+( LocateLine(-2) - currentItem.relativeLineNumber + currentItem.line);
+		return currentItem.file+':'+( Locate(-2)[1] - currentItem.relativeLineNumber + currentItem.line);
 	}
 	
 	function FormatVariable(val) {
@@ -122,6 +123,7 @@ var QAAPI = new function() {
 
 		issues++;
 		errors.push(message);
+		Print( ' X >>> ', message, '\n' );
 	}
 
 	this.ASSERT_TYPE = function( value, type, testName ) {
@@ -179,29 +181,36 @@ var QAAPI = new function() {
 		CollectGarbage();
 		CollectGarbage();
 	}
-	
-   this.RandomString = function(length) { // [0-9A-Za-z]
 
-		 var str = '';
-		 for ( ; str.length < length; str += Math.random().toString(36).substr(2) );
-		 return str.substr(0, length);
+   this.RandomString = function(length) { // [0-9A-Za-z]
+		
+/*		
+		var rndData = [], rndLen = 0;
+		while( rndLen < length ) {
+
+			var rnd = String(Math.random());
+			rndData.push(rnd);
+			rndLen += rnd.length;
+		}
+		return rndData.join('').substr(0, length);
+*/
+		return 'a6z5er46az54vraz6e54raz';
    }
 }
 
 
-function LaunchTests(itemList, repeat) {
-
-	if ( repeat == undefined )
-		repeat = 1;
+function LaunchTests(itemList, conf) {
 
 	for each ( currentItem in itemList ) {
 
 		try {
 			
-			currentItem.name && Print( currentItem.file+' - '+currentItem.name, '\n' );
+			currentItem.name && Print( ' - '+currentItem.file+' - '+currentItem.name, '\n' );
 			
-			for ( var i = 0; i < repeat; i++ )
+			gcZeal = conf.gcZeal;
+			for ( var i = 0; i < conf.repeat; i++ )
 				currentItem.func(QAAPI, currentItem);
+			gcZeal = 0;
 			CollectGarbage();
 		} catch(ex) {
 
@@ -233,7 +242,9 @@ function LaunchRandomTests(itemList) {
 
 		try {
 			
+			gcZeal = conf.gcZeal;
 			currentItem.func(QAAPI, currentItem);
+			gcZeal = 0;
 		} catch(ex) {
 
 			Print( ex + ' at ' + currentItem.file + ':' + (ex.lineNumber - currentItem.relativeLineNumber + currentItem.line) + ' ('+currentItem.name+')' );
@@ -243,36 +254,59 @@ function LaunchRandomTests(itemList) {
 }
 
 
+function ParseCommandLine(conf) {
 
-var savePrio = processPriority;
-processPriority = 2;
+	var args = global.arguments;
+	conf.args = [];
+	while ( args.length > 1 ) {
 
-var t0 = TimeCounter();
-
-var repeat = 4;
-
-if ( arguments[1] == '-r' ) {
-	
-	LaunchRandomTests(CreateQaItemList('src', undefined));
-
-	repeat = 1;	// ...
-
-} else {
-
-	LaunchTests(CreateQaItemList('src', new RegExp(arguments[1] || '.*', 'i')), repeat);
+		if ( args[1][0] != '-' ) {
+		
+			conf.args.push( args.splice(1,1) );
+			continue;
+		}
+		var dbldash = (args[1][1] == '-');
+		var item = [ c for (c in conf) if ( dbldash && c == args[1].substr(2) || !dbldash && c[0] == args[1][1] ) ][0];
+		if ( IsVoid(item) )
+			throw Error('Invalid argument: '+args[1]);
+		if ( IsBoolean(conf[item]) ) {
+		
+			conf[item] = !conf[item];
+			args.splice(1,1);
+			continue;
+		}
+		conf[item] = args[2];
+		args.splice(1,2);
+	}
 }
 
-var t = TimeCounter() - t0;
 
+
+var conf = { help:false, repeat:1, gcZeal:0, loop:false, dir:'src', prio:0, exclude:'', flags:'' };
+ParseCommandLine(conf);
+Print( 'configuraion: '+[k+'='+v for ([k,v] in Iterator(conf))].join(' / '), '\n' );
+if ( conf.help )
+	Halt();
+
+var savePrio = processPriority;
+processPriority = conf.prio;
+var t0 = TimeCounter();
+
+if ( conf.loop )
+	LaunchRandomTests(CreateQaItemList(conf.dir, undefined), conf);
+else
+	LaunchTests(CreateQaItemList(conf.dir, new RegExp(conf.args[0] || '.*', 'i')), conf);
+
+var t = TimeCounter() - t0;
 processPriority = savePrio || 0; // savePrio may be undefined
 
 
-Print( '\n', issues + ' issues / ' + testCount + ' tests in ' + t.toFixed(2) + 'ms ('+repeat+' repeat).\n' );
+Print( '\n', issues + ' issues / ' + testCount + ' tests in ' + t.toFixed(2) + 'ms ('+(conf.repeat)+' repeat).', '\n' );
 errors.sort();
 errors.reduce( function(previousValue, currentValue, index, array) {
 
     if ( previousValue != currentValue )
-		Print( '- ' + currentValue, '\n' );
+		Print( ' X ' + currentValue, '\n' );
     return currentValue;
 }, undefined);
 
