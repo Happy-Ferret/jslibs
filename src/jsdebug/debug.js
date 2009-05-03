@@ -1,16 +1,7 @@
 LoadModule('jsstd');
 LoadModule('jsdebug');
 
-gcZeal = 2;  
 
-var o = Test(function(a1, a2, a3) {
-	
-	
-	Print(a1);
-	return 1;
-});
-
-Print(o);
 
 Halt();
 

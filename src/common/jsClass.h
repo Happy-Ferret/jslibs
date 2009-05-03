@@ -48,18 +48,10 @@ struct JSLIBS_ConstIntegerSpec {
 #define FUNCTION_ARGC(name,nargs) JS_FS( #name, _##name, nargs, 0, 0 ),
 #define FUNCTION_ALIAS(alias, name) JS_FS( #alias, _##name, 0, 0, 0 ),
 
-// JS_FN(name,fastcall,minargs,nargs,flags) vs JS_FN(name,fastcall,nargs,flags) (see. http://hg.mozilla.org/tracemonkey/diff/9e185457c656/js/src/jsapi.h)
-#ifdef JSSLOT_CLASS
-	#define FUNCTION_FAST(name) JS_FN( #name, _##name, 0, 0, 0 ),
-	#define FUNCTION_FAST_ARGC(name,nargs) JS_FN( #name, _##name, 0, nargs, 0 ),
-	#define FUNCTION_FAST_ALIAS(alias, name) JS_FN( #alias, _##name, 0, 0, 0 ),
-#else // JSSLOT_CLASS
-	#define FUNCTION_FAST(name) JS_FN( #name, _##name, 0, 0 ),
-	#define FUNCTION_FAST_ARGC(name,nargs) JS_FN( #name, _##name, nargs, 0 ),
-	#define FUNCTION_FAST_ALIAS(alias, name) JS_FN( #alias, _##name, 0, 0 ),
-#endif // JSSLOT_CLASS
-
-
+	// JS_FN(name,fastcall,minargs,nargs,flags) vs JS_FN(name,fastcall,nargs,flags) (see. http://hg.mozilla.org/tracemonkey/diff/9e185457c656/js/src/jsapi.h)
+#define FUNCTION_FAST(name) JS_FN( #name, _##name, 0, 0 ),
+#define FUNCTION_FAST_ARGC(name,nargs) JS_FN( #name, _##name, nargs, 0 ),
+#define FUNCTION_FAST_ALIAS(alias, name) JS_FN( #alias, _##name, 0, 0 ),
 
 // properties
 #define BEGIN_PROPERTY_SPEC JSPropertySpec _tmp_ps[] = { // *name, tinyid, flags, getter, setter

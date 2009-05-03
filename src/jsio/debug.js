@@ -1,6 +1,12 @@
 LoadModule('jsstd');
 LoadModule('jsio');
 
+
+Print( (new File('debug.js')).content );
+
+
+Halt();
+
 	host = 'www.google.com'
 	
 	var response = '';
@@ -27,9 +33,6 @@ LoadModule('jsio');
 	Print(response);
 
 	
-
-
-
 
 Halt();
 

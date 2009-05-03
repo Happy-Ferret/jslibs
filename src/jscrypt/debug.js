@@ -1,6 +1,24 @@
 LoadModule('jsstd');
 LoadModule('jscrypt');
 
+
+Halt();
+
+		var fortuna = new Prng('fortuna');
+		fortuna.AutoEntropy(123); // give more entropy
+		//Alice
+		var alice = new AsymmetricCipher('dsa', 'sha1', fortuna);
+		alice.CreateKeys(64);
+		var publicKey = alice.publicKey;
+		//Bob
+		var bob = new AsymmetricCipher('dsa', 'sha1', fortuna);
+		bob.publicKey = publicKey;
+		( bob.blockLength, 20, 'Asymmetric Cipher block length' );
+		Print( bob.keySize, 512, 'Asymmetric Cipher key size' );
+
+
+Halt();
+
 var h1 = new Hash("md5")("some data");
 
 var h2 = new Hash("md5");

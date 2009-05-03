@@ -4,7 +4,11 @@ LoadModule('jsio');
 
 //_configuration.stderr = function(){}
 
-asdfasdf;
+	var s = new Blob('this is a string object');
+	s.substring(-Infinity, -Infinity);
+
+//	eval("var s = new Blob('this is a string object'); s.substring(-Infinity, -Infinity)") );
+
 		
 Halt();
 
