@@ -50,7 +50,7 @@ BEGIN_CLASS( Window )
 //	JS_GetPrivate(cx, obj);
 //}
 //static JSBool ClassConstruct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
-//	J_S_ASSERT( JS_IsConstructing(cx) && JS_GET_CLASS(cx,obj) == thisClass, RT_ERROR_INVALID_CLASS );
+//	J_S_ASSERT( JS_IsConstructing(cx) && JL_GetClass(obj) == thisClass, RT_ERROR_INVALID_CLASS );
 //	return JS_TRUE;
 //}
 //	JSBool Call(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
@@ -397,7 +397,7 @@ static JSBool _SwapBuffers(JSContext *cx, JSObject *obj, uintN argc, jsval *argv
 
 	glFlush();
 	glFinish();
-	J_S_ASSERT( JS_GET_CLASS(cx,obj) == _class, RT_ERROR_INVALID_CLASS );
+	J_S_ASSERT( JL_GetClass(obj) == _class, RT_ERROR_INVALID_CLASS );
 	HDC hDC = wglGetCurrentDC();
 	J_S_ASSERT( hDC != NULL, "Could not get the Current Device Context." );
 	BOOL res = SwapBuffers(hDC); // Doc: With multithread applications, flush the drawing commands in any other threads drawing to the same window before calling SwapBuffers.
@@ -408,7 +408,7 @@ static JSBool _SwapBuffers(JSContext *cx, JSObject *obj, uintN argc, jsval *argv
 
 DEFINE_FUNCTION( CreateOpenGLContext ) {
 
-//	J_S_ASSERT( JS_IsConstructing(cx) && JS_GET_CLASS(cx,obj) == _class, RT_ERROR_INVALID_CLASS );
+//	J_S_ASSERT( JS_IsConstructing(cx) && JL_GetClass(obj) == _class, RT_ERROR_INVALID_CLASS );
 //	J_S_ASSERT_ARG_MIN(1);
 //	J_S_ASSERT_OBJECT(argv[0]);
 //	J_S_ASSERT_CLASS(JSVAL_TO_OBJECT(argv[0]), &classWindow);
@@ -476,7 +476,7 @@ static JSBool _SwapBuffers(JSContext *cx, JSObject *obj, uintN argc, jsval *argv
 
 //	glFlush();
 //	glFinish();
-//	J_S_ASSERT( JS_GET_CLASS(cx,obj) == _class, RT_ERROR_INVALID_CLASS );
+//	J_S_ASSERT( JL_GetClass(obj) == _class, RT_ERROR_INVALID_CLASS );
 	HDC hDC = wglGetCurrentDC(); // (TBD) un-specialize from OpenGL
 	J_S_ASSERT( hDC != NULL, "Could not get the Current Device Context." );
 	BOOL res = SwapBuffers(hDC); // Doc: With multithread applications, flush the drawing commands in any other threads drawing to the same window before calling SwapBuffers.

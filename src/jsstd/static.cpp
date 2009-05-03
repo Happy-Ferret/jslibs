@@ -616,6 +616,21 @@ DEFINE_FUNCTION_FAST( IdToObject ) {
 /**doc
 $TOC_MEMBER $INAME
  $BOOL $INAME()
+  Returns $TRUE if the value is a boolean.
+**/
+DEFINE_FUNCTION_FAST( IsBoolean ) {
+
+	J_S_ASSERT_ARG_MIN(1);
+	*J_FRVAL = JSVAL_IS_BOOLEAN(J_FARG(1)) ? JSVAL_TRUE : JSVAL_FALSE;
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/**doc
+$TOC_MEMBER $INAME
+ $BOOL $INAME()
   Returns $TRUE if the value is a primitive ( null or not an object ).
 **/
 DEFINE_FUNCTION_FAST( IsPrimitive ) {
@@ -1455,6 +1470,7 @@ CONFIGURE_STATIC
 		FUNCTION_FAST( MaybeCollectGarbage )
 		FUNCTION_FAST( ObjectToId )
 		FUNCTION_FAST( IdToObject )
+		FUNCTION_FAST_ARGC( IsBoolean, 1 )
 		FUNCTION_FAST_ARGC( IsPrimitive, 1 )
 		FUNCTION_FAST_ARGC( IsFunction, 1 )
 		FUNCTION_FAST_ARGC( IsVoid, 1 )

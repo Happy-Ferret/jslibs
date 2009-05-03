@@ -18,18 +18,18 @@
 #include "../common/jsHelper.h"
 
 
-inline JSClass* BlobJSClass( JSContext *cx ) {
+ALWAYS_INLINE JSClass* BlobJSClass( JSContext *cx ) {
 
 	static JSClass *jsClass = NULL; // it's safe to use static keyword because JSClass do not depend on the rt or cx.
-	if ( jsClass == NULL )
-		jsClass = GetGlobalClassByName(cx, "Blob");
+	if (unlikely( jsClass == NULL ))
+		jsClass = JL_GetRegistredNativeClass(cx, "Blob");
 	return jsClass;
 }
 
 
-inline bool JsvalIsBlob( JSContext *cx, jsval val ) {
+ALWAYS_INLINE bool JsvalIsBlob( JSContext *cx, jsval val ) {
 
-	return ( JSVAL_IS_OBJECT(val) && !JSVAL_IS_NULL(val) && JS_GET_CLASS(cx, JSVAL_TO_OBJECT(val)) == BlobJSClass(cx) );
+	return JsvalIsClass(val, BlobJSClass(cx) );
 }
 
 /*

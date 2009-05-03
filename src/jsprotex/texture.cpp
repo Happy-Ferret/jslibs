@@ -311,7 +311,8 @@ JSBool NativeInterfaceBufferGet( JSContext *cx, JSObject *obj, const char **buf,
 
 inline bool IsTexture( JSContext *cx, jsval value ) {
 
-	return ( JSVAL_IS_OBJECT( value ) && JS_GET_CLASS(cx, JSVAL_TO_OBJECT( value )) == classTexture );
+//	return ( !JSVAL_IS_PRIMITIVE( value ) && JL_GetClass(JSVAL_TO_OBJECT( value )) == classTexture );
+	return JsvalIsClass(value, classTexture);
 }
 
 

@@ -23,24 +23,22 @@
 #define SLOT_BLOB_LENGTH 0
 
 
-inline JSBool InvalidateBlob( JSContext *cx, JSObject *blobObject ) {
+ALWAYS_INLINE JSBool InvalidateBlob( JSContext *cx, JSObject *blobObject ) {
 
-	J_CHK( JS_SetReservedSlot(cx, blobObject, SLOT_BLOB_LENGTH, JSVAL_VOID) );
-	return JS_TRUE;
-	JL_BAD;
+	return JS_SetReservedSlot(cx, blobObject, SLOT_BLOB_LENGTH, JSVAL_VOID);
 }
 
-inline bool IsBlobValid( JSContext *cx, JSObject *blobObject ) {
+ALWAYS_INLINE bool IsBlobValid( JSContext *cx, JSObject *blobObject ) {
 
 	jsval lengthVal;
 	J_CHK( JS_GetReservedSlot(cx, blobObject, SLOT_BLOB_LENGTH, &lengthVal) );
-	return JSVAL_IS_VOID( lengthVal ) ? false : true;
+	return !JSVAL_IS_VOID( lengthVal );
 bad:
 	return false;
 }
 
 
-inline JSBool BlobLength( JSContext *cx, JSObject *blobObject, size_t *length ) {
+ALWAYS_INLINE JSBool BlobLength( JSContext *cx, JSObject *blobObject, size_t *length ) {
 
 	J_S_ASSERT_CLASS(blobObject, BlobJSClass( cx ));
 	jsval lengthVal;
@@ -54,7 +52,7 @@ inline JSBool BlobLength( JSContext *cx, JSObject *blobObject, size_t *length ) 
 }
 
 
-inline JSBool BlobBuffer( JSContext *cx, JSObject *blobObject, const char **buffer ) {
+ALWAYS_INLINE JSBool BlobBuffer( JSContext *cx, JSObject *blobObject, const char **buffer ) {
 
 	J_S_ASSERT_CLASS(blobObject, BlobJSClass( cx ));
 	*buffer = (char*)JS_GetPrivate(cx, blobObject);
@@ -71,7 +69,7 @@ BEGIN_CLASS( Blob )
 
 JSBool NativeInterfaceBufferGet( JSContext *cx, JSObject *obj, const char **buf, size_t *size ) {
 
-	if ( JS_GET_CLASS(cx, obj) == classBlob ) {
+	if ( JL_GetClass(obj) == classBlob ) {
 		
 		if ( !IsBlobValid(cx, obj) ) {
 
@@ -594,7 +592,7 @@ DEFINE_FUNCTION_FAST( lastIndexOf ) {
 			start = 0;
 		} else {
 
-			if ( JsvalIsPInfinity(cx, arg2) || IsNaN(cx, arg2) ) {
+			if ( JsvalIsPInfinity(cx, arg2) || JsvalIsNaN(cx, arg2) ) {
 				
 				start = length - sLength;
 			} else {
@@ -645,7 +643,7 @@ DEFINE_FUNCTION_FAST( charAt ) {
 		jsval arg1 = J_FARG(1);
 		if ( !JSVAL_IS_INT(arg1) ) {
 
-			if ( JsvalIsPInfinity(cx, arg1) || JsvalIsNInfinity(cx, arg1) || IsNaN(cx, arg1) ) {
+			if ( JsvalIsPInfinity(cx, arg1) || JsvalIsNInfinity(cx, arg1) || JsvalIsNaN(cx, arg1) ) {
 				
 				*J_FRVAL = JS_GetEmptyStringValue(cx);
 				return JS_TRUE;
@@ -844,7 +842,7 @@ DEFINE_SET_PROPERTY() {
 
 DEFINE_EQUALITY() {
 
-	if ( JsvalIsClass(cx, v, _class) ) {
+	if ( JsvalIsClass(v, _class) ) {
 
 		if ( !IsBlobValid(cx, obj) || !IsBlobValid(cx, JSVAL_TO_OBJECT(v)) ) {
 			
@@ -923,13 +921,8 @@ DEFINE_NEW_RESOLVE() {
 	obj->fslots[JSSLOT_PROTO] = strObj->fslots[JSSLOT_PROTO];
 	// Make sure we preserve any flags borrowing bits in JSSLOT_CLASS.
 
-#ifdef JSSLOT_CLASS
-	obj->fslots[JSSLOT_CLASS] ^= (jsval) JS_GET_CLASS(cx, obj);
-	obj->fslots[JSSLOT_CLASS] |= (jsval) JS_GET_CLASS(cx, strObj);
-#else // JSSLOT_CLASS
 	obj->classword ^= (jsuword)OBJ_GET_CLASS(cx, obj);
 	obj->classword |= (jsuword)OBJ_GET_CLASS(cx, strObj);
-#endif // JSSLOT_CLASS
 
 	obj->fslots[JSSLOT_PRIVATE] = strObj->fslots[JSSLOT_PRIVATE];
 	obj->map->ops = strObj->map->ops;

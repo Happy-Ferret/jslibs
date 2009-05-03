@@ -114,6 +114,6 @@ JSBool WinThrowError( JSContext *cx, DWORD errorCode ) {
 
 /*
 
-Sure, you can JS_GetProperty(cx, global, "Error", &v) to get the constructor, then JS_GetProperty(cx, JSVAL_TO_OBJECT(v), "prototype", &v), then JS_GET_CLASS(cx, JSVAL_TO_OBJECT(v)).  Error and type checking elided, as usual.
+Sure, you can JS_GetProperty(cx, global, "Error", &v) to get the constructor, then JS_GetProperty(cx, JSVAL_TO_OBJECT(v), "prototype", &v), then JL_GetClass(JSVAL_TO_OBJECT(v)).  Error and type checking elided, as usual.
 
 */

@@ -336,7 +336,7 @@ DEFINE_FUNCTION( SendTo ) {
 	J_S_ASSERT_ARG_MIN( 3 );
 
 	PRFileDesc *fd;
-	if ( JS_GET_CLASS(cx, obj) == _class )
+	if ( JL_GetClass(obj) == _class )
 		fd = (PRFileDesc*)JS_GetPrivate( cx, obj );
 	else
 		fd = PR_NewUDPSocket(); // allow to use SendTo as static function
@@ -394,7 +394,7 @@ DEFINE_FUNCTION( SendTo ) {
 	else
 		*rval = JS_GetEmptyStringValue(cx); // nothing remains
 
-	if ( JS_GET_CLASS(cx, obj) != _class )
+	if ( JL_GetClass(obj) != _class )
 		PR_Close(fd);
 
 	return JS_TRUE;
@@ -414,7 +414,7 @@ DEFINE_FUNCTION( RecvFrom ) {
 	J_S_ASSERT_CLASS( obj, _class );
 
 	PRFileDesc *fd;
-	if ( JS_GET_CLASS(cx, obj) == _class )
+	if ( JL_GetClass(obj) == _class )
 		fd = (PRFileDesc*)JS_GetPrivate( cx, obj );
 	else
 		fd = PR_NewUDPSocket(); // allow to use SendTo as static function

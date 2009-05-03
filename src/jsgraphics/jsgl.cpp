@@ -1847,7 +1847,7 @@ DEFINE_FUNCTION_FAST( LoadTrimesh ) {
 	J_S_ASSERT_ARG_MIN(1);
 	J_S_ASSERT_OBJECT(J_FARG(1));
 	JSObject *trimeshObj = JSVAL_TO_OBJECT(J_FARG(1));
-	J_S_ASSERT( IsTrimeshObject(cx, trimeshObj), "Invalid Trimesh object" );
+	J_S_ASSERT( JsvalIsTrimesh(cx, J_FARG(1)), "Invalid Trimesh object" );
 	Surface *srf = GetTrimeshSurface(cx, trimeshObj);
 	J_S_ASSERT_RESOURCE(srf);
 
@@ -2000,7 +2000,7 @@ DEFINE_FUNCTION_FAST( DefineTextureImage ) {
 
 	JSObject *tObj = JSVAL_TO_OBJECT(J_FARG(3));
 
-	if ( JS_GET_CLASS(cx, tObj) == TextureJSClass(cx) ) {
+	if ( JL_GetClass(tObj) == TextureJSClass(cx) ) {
 
 		Texture *tex = (Texture *)JS_GetPrivate(cx, tObj);
 		J_S_ASSERT_RESOURCE(tex);

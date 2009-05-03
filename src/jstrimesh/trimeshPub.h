@@ -15,8 +15,6 @@
 #ifndef _TRIMESH_PUB_H_
 #define _TRIMESH_PUB_H_
 
-#define TRIMESH_CLASS_NAME "Trimesh"
-
 #define SURFACE_REAL_TYPE float
 #define SURFACE_INDEX_TYPE int
 
@@ -33,9 +31,18 @@ struct Surface {
 };
 
 
-bool IsTrimeshObject( JSContext *cx, JSObject *obj ) {
+ALWAYS_INLINE JSClass* TrimeshJSClass( JSContext *cx ) {
 
-	return IsClassName(cx, obj, TRIMESH_CLASS_NAME );
+	static JSClass *jsClass = NULL; // it's safe to use static keyword because JSClass do not depend on the rt or cx.
+	if (unlikely( jsClass == NULL ))
+		jsClass = JL_GetRegistredNativeClass(cx, "Blob");
+	return jsClass;
+}
+
+
+bool JsvalIsTrimesh( JSContext *cx, jsval val ) {
+
+	return JsvalIsClass(val, TrimeshJSClass(cx));
 }
 
 

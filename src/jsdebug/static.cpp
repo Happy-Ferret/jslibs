@@ -749,7 +749,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY( gcZeal ) {
 
 	int zeal;
-	J_CHK( JsvalToInt(cx, *vp, &zeal) );
+	J_CHKM( JsvalToInt(cx, *vp, &zeal), "Invalid value." );
 	JS_SetGCZeal(cx, zeal);
 	return JS_TRUE;
 	JL_BAD;
@@ -783,7 +783,7 @@ ValueToScript(JSContext *cx, jsval v)
     JSFunction *fun;
 
     if (!JSVAL_IS_PRIMITIVE(v) &&
-        JS_GET_CLASS(cx, JSVAL_TO_OBJECT(v)) == &js_ScriptClass) {
+        JL_GetClass(JSVAL_TO_OBJECT(v)) == &js_ScriptClass) {
         script = (JSScript *) JS_GetPrivate(cx, JSVAL_TO_OBJECT(v));
     } else {
         fun = JS_ValueToFunction(cx, v);
@@ -808,8 +808,8 @@ GetTrapArgs(JSContext *cx, uintN argc, jsval *argv, JSScript **scriptp,
         v = argv[0];
         intarg = 0;
         if (!JSVAL_IS_PRIMITIVE(v) &&
-            (JS_GET_CLASS(cx, JSVAL_TO_OBJECT(v)) == &js_FunctionClass ||
-             JS_GET_CLASS(cx, JSVAL_TO_OBJECT(v)) == &js_ScriptClass)) {
+            (JL_GetClass(JSVAL_TO_OBJECT(v)) == &js_FunctionClass ||
+             JL_GetClass(JSVAL_TO_OBJECT(v)) == &js_ScriptClass)) {
             script = ValueToScript(cx, v);
             if (!script)
                 return JS_FALSE;
@@ -1185,9 +1185,9 @@ DEFINE_FUNCTION_FAST( EvalInStackFrame ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $OBJ $INAME( frameIndex );
+ $OBJ $INAME( [frameIndex] );
   Returns the current script name and line number.
-  0 is the older (the first) stack frame index. The current stack frame index is (stackSize-1).
+  0 is the older (the first) stack frame index. The current stack frame index is Locate() or Locate(stackSize-1).
   Negative numbers are interpreted as starting from the current stack frame.$LF
   The function returns $UNDEFINED if the given stack frame is not defined.
   $H note
@@ -1215,11 +1215,17 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Locate ) {
 
-	J_S_ASSERT_ARG_MIN( 1 );
-	int frame;
-	J_CHK( JsvalToInt(cx, J_FARG(1), &frame) );
+	JSStackFrame *fp;
+	if ( J_FARG_ISDEF(1) ) {
 
-	JSStackFrame *fp = StackFrameByIndex(cx, frame);
+		int frame;
+		J_CHK( JsvalToInt(cx, J_FARG(1), &frame) );
+		fp = StackFrameByIndex(cx, frame);
+	} else {
+
+		fp = CurrentStackFrame(cx);
+	}
+
 	if ( fp == NULL ) {
 		
 		*J_FRVAL = JSVAL_VOID;
@@ -1461,24 +1467,6 @@ DEFINE_FUNCTION_FAST( PropertiesInfo ) {
 
 #ifdef DEBUG
 DEFINE_FUNCTION( Test ) {
-
-	jsval rv;
-	jsval arg[3];
-	arg[0] = OBJECT_TO_JSVAL(JS_NewObject(cx, NULL, NULL, NULL));
-
-//	JSTempValueRooter tvr;
-//	JS_PUSH_TEMP_ROOT(cx, 3, arg, &tvr);
-
-//	JS_GC(cx);
-
-	JSBool status;
-	status = JS_CallFunctionValue(cx, obj, J_ARG(1), 3, arg, &rv);
-
-	JS_GC(cx);
-
-	*J_RVAL = rv;
-
-//	JS_POP_TEMP_ROOT(cx, &tvr);
 
 	return JS_TRUE;
 	JL_BAD;

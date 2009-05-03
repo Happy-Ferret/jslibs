@@ -55,8 +55,8 @@ DEFINE_CONSTRUCTOR() {
 		J_CHK( ValToSpaceID(cx, J_ARG(1), &space) );
 
 	jsval trimeshVal = J_ARG(2);
+	J_S_ASSERT( JsvalIsTrimesh(cx, trimeshVal), "Invalid Trimesh object." );
 	JSObject *trimesh = JSVAL_TO_OBJECT(trimeshVal);
-	J_S_ASSERT( IsTrimeshObject(cx, trimesh), "Invalid Trimesh object." );
 	Surface *srf = GetTrimeshSurface(cx, trimesh);
 	J_S_ASSERT_RESOURCE( srf );
 	J_S_ASSERT( srf->vertex && srf->vertexCount && srf->index && srf->indexCount, "No enough data" );

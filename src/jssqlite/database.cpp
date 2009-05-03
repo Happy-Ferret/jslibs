@@ -519,7 +519,7 @@ void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArg
 				sqlite3_result_null(sCx);
 				break;
 			}
-			if ( JS_GET_CLASS(cx, JSVAL_TO_OBJECT(argv[0])) == BlobJSClass(cx) ) { // beware: with SQLite, blob != text
+			if ( JL_GetClass(JSVAL_TO_OBJECT(argv[0])) == BlobJSClass(cx) ) { // beware: with SQLite, blob != text
 
 				const char *data;
 				size_t length;

@@ -127,7 +127,7 @@ JSBool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *objAt,
 					break;
 				}
 
-				if ( JS_GET_CLASS(cx, JSVAL_TO_OBJECT(val)) == BlobJSClass(cx) ) { // beware: with SQLite, blob != text
+				if ( JL_GetClass(JSVAL_TO_OBJECT(val)) == BlobJSClass(cx) ) { // beware: with SQLite, blob != text
 
 					size_t length;
 					const char *data;

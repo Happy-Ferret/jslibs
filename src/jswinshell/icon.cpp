@@ -71,7 +71,7 @@ DEFINE_CONSTRUCTOR() {
 		HINSTANCE hInst = (HINSTANCE)GetModuleHandle(NULL);
 		JSObject *imgObj = JSVAL_TO_OBJECT(iconVal);
 
-		J_S_ASSERT_CLASS_NAME(imgObj, "Image"); // (TBD) need something better/safer ?
+		J_S_ASSERT_CLASS_NAME(imgObj, "Image"); // (TBD) need something better/safer ? like JsvalIsClass(iconVal, JL_GetRegistredNativeClass(cx, "Image"));
 		jsval tmp;
 		JS_GetProperty(cx, imgObj, "width", &tmp);
 		J_S_ASSERT_INT(tmp);

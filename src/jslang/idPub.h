@@ -28,8 +28,8 @@ struct IdPrivate {
 inline JSClass *GetIdJSClass( JSContext *cx ) {
 
 	static JSClass *idJSClass = NULL; // it's safe to use static keyword because JSClass do not depend on the rt or cx.
-	if ( idJSClass == NULL )
-		idJSClass = GetGlobalClassByName(cx, "Id");
+	if (unlikely( idJSClass == NULL ))
+		idJSClass = JL_GetRegistredNativeClass(cx, "Id");
 	return idJSClass;
 }
 
@@ -71,7 +71,7 @@ inline ID_TYPE GetIdType( JSContext *cx, jsval idVal ) {
 inline bool IsIdType( JSContext *cx, jsval idVal, ID_TYPE idType ) {
 
 	JSClass *idJSClass = GetIdJSClass(cx);
-	if ( idJSClass == NULL || !JsvalIsClass(cx, idVal, idJSClass) )
+	if ( idJSClass == NULL || !JsvalIsClass(idVal, idJSClass) )
 		return false;
 	JSObject *idObj = JSVAL_TO_OBJECT(idVal);
 	IdPrivate *pv = (IdPrivate*)JS_GetPrivate(cx, idObj);

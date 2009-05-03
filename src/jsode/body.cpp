@@ -339,12 +339,12 @@ END_CLASS
 JSObject *o;
 jsval *sp = cx->fp->sp;
 JS_ValueToObject(cx, *(sp-1) , &o);
-JSClass *cl = JS_GET_CLASS(cx,o);
+JSClass *cl = JL_GetClass(o);
 
 
 //	cx.lastInternalResult
 //	JSObject *o;
 //	JS_ValueToObject(cx, cx->lastInternalResult, &o);
-//	JSClass *cl = JS_GET_CLASS(cx,o);
+//	JSClass *cl = JL_GetClass(o);
 
 */
