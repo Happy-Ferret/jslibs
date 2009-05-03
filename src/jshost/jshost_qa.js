@@ -15,7 +15,7 @@
 		var mod = LoadModule('jsstd');
 		var mod1 = LoadModule('jsstd');
 		QA.ASSERT( mod, mod1, 'LoadModule' );
-		QA.ASSERT( _configuration.unsafeMode, false, 'unsafe mode is inactive' );
+		QA.ASSERT( 'unsafeMode' in _configuration, true, 'unsafe mode is present' );
 		QA.ASSERT( global.arguments[0], 'qa.js', 'javascript program name' );
 
 

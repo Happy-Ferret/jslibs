@@ -31,12 +31,30 @@ LoadModule('jsstd');
 		QA.ASSERT( stream._NI_StreamRead, prev, 'NativeInterface security' )
 
 
+/// Blob memory usage
+
+		var length = 1024*1024;
+		var times = 3;
+		QA.GC();
+		var data = [];
+	
+		var mem0 = privateMemoryUsage;
+		for ( var i = 0; i < times; ++i ) {
+		
+			data.push( Blob(StringRepeat('a', length)) );
+			QA.GC();
+		}
+		
+		var mem = (privateMemoryUsage - mem0) / length / times;
+		QA.ASSERT( mem > 1 && mem < 1.02, true, 'Blob memory usage ('+mem+')' );
+
+
 /// Blob toSource and Uneval
 
 		LoadModule('jsstd');
 		var b = new Blob('test');
 		QA.ASSERT( b.toSource(), '"test"', 'blob.toSource()' )
-		QA.ASSERT( uneval(b), '"test"', 'uneval(blobà' )
+		QA.ASSERT( uneval(b), '"test"', 'uneval(blob)' )
 
 
 /// Blob BufferGet NativeInterface

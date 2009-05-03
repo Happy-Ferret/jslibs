@@ -114,7 +114,7 @@ LoadModule('jsio');
 
 		serverSocket.Bind( 9998, '127.0.0.1' );
 		
-		QA.ASSERT( DumpObjectPrivate(serverSocket) != 0, true, 'descriptor' );
+		QA.ASSERT( GetObjectPrivate(serverSocket) != 0, true, 'descriptor' );
 		
 		serverSocket.Listen();
 		dlist.push(serverSocket);
@@ -147,15 +147,13 @@ LoadModule('jsio');
 
 /// Creating a lot of sockets + GC [r]
 
-	for ( var j = 0; j < 100; j++ ) {
+	var s = [];
+	for ( var j = 0; j < 1000; j++ ) {
 
-		let ( s = [] ) {
-			for ( var i=0 ; i < 1000 ; i++ ) {
-
-				s.push(new Socket( Socket.TCP ));
-			}
-		}
-		CollectGarbage();
+		for ( var i=0 ; i < 100 ; i++ )
+			s.push(new Socket( Socket.TCP ));
+		s = [];
+		QA.GC();
 	}
 
 /// Create/remove a lot of sockets [r]

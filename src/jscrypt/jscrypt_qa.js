@@ -53,15 +53,20 @@ LoadModule('jscrypt');
 		QA.ASSERT_STR( plainText, rsa.Decrypt( rsaEncryptedData ), 'data integrity' );
 
 
+/// QA.RandomString [r]
+
+		var data = QA.RandomString(300000);
+		QA.ASSERT(data.length, 300000, 'random data length');
+		
+
 /// Cipher 1 [ftr]
 		
-		var data = QA.RandomString(300000);
-		
+		var data = QA.RandomString(30000);
 		var IV = QA.RandomString(100);
 		var cr = new Cipher('CFB', "cast5", "my  key of  16B ", IV );
 		var encryptedText = cr.Encrypt(data);
 		var cr = new Cipher('CFB', "cast5", "my  key of  16B ", IV );
-		
+	
 		QA.ASSERT_STR( cr.Decrypt(encryptedText), data, 'crypy/decript with Cast5 cipher using CFB mode' );
 
 
