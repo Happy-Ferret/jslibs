@@ -25,22 +25,13 @@ function RecursiveDir(path, callback) {
 }
 
 
-function CreateQaItemList(startDir, filter) {
+function CreateQaItemList(startDir, filter, flags) {
 
 	var hidden = /\/\./;
 	var qaFile = /\qa.js$/;
-
 	var newQaItem = /^\/\/\/\s*(.*?)\s*$/;
-	
-	var GetFlags = function(str) {
-		
-		var flags = {};
-		var res = /\[(.*?)\]/(str);
-		if ( res )
-			for each ( f in res[1] )
-				flags[f] = true;
-		return flags;
-	}
+	var parseFlags = function(str) (/\[(.*?)\]/(str)||[,''])[1];
+
 
 	var itemList = [];
 	var index = 0;
@@ -54,7 +45,7 @@ function CreateQaItemList(startDir, filter) {
 			
 			var lines = source.split('\n');
 			
-			var item = { file:file.name, line:1, flags:'', code:[], init:true }; // initialization item
+			var item = { name:'', file:file.name, line:1, flags:'', code:[], init:true }; // for the initialization item
 			
 			for ( var l in lines ) {
 				
@@ -62,7 +53,7 @@ function CreateQaItemList(startDir, filter) {
 				if ( res ) {
 					
 					itemList.push(item);
-					item = { file:file.name, line:Number(l)+1, name:res[1], flags:GetFlags(res[1]), code:[] };
+					item = { file:file.name, line:Number(l)+1, name:res[1], flags:parseFlags(res[1]), code:[] };
 				}
 				item.code.push(lines[l]);
 			}
@@ -81,14 +72,9 @@ function CreateQaItemList(startDir, filter) {
 			item.func = function() {}
 			Print( '*** ' + ex + ' @' + item.file + ':' + (item.line + ex.lineNumber - item.relativeLineNumber) + ' ('+item.name+')', '\n' );
 		}
-		
-//		if ( !item.func )
-//			Print( 'Unable to create the function', '\n' );
-
-		
 	}
 
-	itemList = [ item for each ( item in itemList ) if ( !filter || item.init || ( (filter(item.file) || filter(item.name)) && !item.flags.d ) ) ];
+	itemList = [ item for each ( item in itemList ) if ( item.init || (!filter || filter(item.name) || filter(item.file)) && (!flags || flags(item.flags))  ) ];
 	itemList = itemList.sort( function(a,b) a.init ? -1 : 1 );
 	return itemList;
 }
@@ -102,8 +88,11 @@ var errors = [];
 var QAAPI = new function() {
 
 	function CodeLocation() {
-		
-		return currentItem.file+':'+( Locate(-2)[1] - currentItem.relativeLineNumber + currentItem.line);
+	
+		var lineno = Locate(-2)[1] - currentItem.relativeLineNumber + currentItem.line;
+		if ( isNaN(lineno) )
+			lineno = '('+String(Locate(-2)[1]) +'-'+ (currentItem.relativeLineNumber + currentItem.line) + ')';
+		return currentItem.file+':'+lineno;
 	}
 	
 	function FormatVariable(val) {
@@ -121,6 +110,7 @@ var QAAPI = new function() {
 
 	this.REPORT = function( message ) {
 
+		message += ' - '+currentItem.name;
 		issues++;
 		errors.push(message);
 		Print( ' X >>> ', message, '\n' );
@@ -179,22 +169,28 @@ var QAAPI = new function() {
 	this.GC = function() {
 
 		CollectGarbage();
-		CollectGarbage();
 	}
 
-   this.RandomString = function(length) { // [0-9A-Za-z]
-		
-/*		
-		var rndData = [], rndLen = 0;
-		while( rndLen < length ) {
+	var randomData = '';
+	for ( var i = 0; i < 1024; ++i )
+		randomData += String.fromCharCode(Math.random()*255);
+   this.RandomData = function(length) {
 
-			var rnd = String(Math.random());
-			rndData.push(rnd);
-			rndLen += rnd.length;
-		}
-		return rndData.join('').substr(0, length);
-*/
-		return 'a6z5er46az54vraz6e54raz';
+        var data = '';
+        while( data.length < length )
+            data += randomData.substring( Math.random()*randomData.length, Math.random()*randomData.length );
+        return data.substr(0, length);
+   }
+
+	var randomString = '';
+	for ( var i = 0; i < 1024; ++i )
+		randomString += Math.random().toString(36).substr(2);
+   this.RandomString = function(length) { // [0-9A-Za-z]
+
+        var data = '';
+        while( data.length < length )
+            data += randomString.substring( Math.random()*randomString.length, Math.random()*randomString.length );
+        return data.substr(0, length);
    }
 }
 
@@ -205,17 +201,45 @@ function LaunchTests(itemList, conf) {
 
 		try {
 			
-			currentItem.name && Print( ' - '+currentItem.file+' - '+currentItem.name, '\n' );
+			Print( ' - '+currentItem.file+' - '+ (currentItem.name||'INIT?') );
 			
+			var globalPropertiesCount = global.__count__;
 			gcZeal = conf.gcZeal;
-			for ( var i = 0; i < conf.repeat; i++ )
+
+			if( !conf.noGcBetweenTests )
+				CollectGarbage();
+
+			var m0 = privateMemoryUsage;
+			var t0 = TimeCounter();
+
+			if ( conf.nogcDuringTests )
+				disableGarbageCollection = true;
+				
+			for ( var i = 0; i < conf.repeatEachTest; i++ )
 				currentItem.func(QAAPI, currentItem);
-			gcZeal = 0;
-			CollectGarbage();
+
+			if ( conf.nogcDuringTests )
+				disableGarbageCollection = false;
+
+			var t = (TimeCounter() - t0) / conf.repeatEachTest;
+			var m = (privateMemoryUsage - m0) / conf.repeatEachTest;
+			Print( '  ('+t.toFixed(2) + 'ms / '+(m/1024)+'KB)' );
+
+			if ( global.__count__ != globalPropertiesCount )
+				QAAPI.REPORT( 'WARNING '+ currentItem.file +':'+ currentItem.line + ' ('+currentItem.name+') is using a global variable.' );
+				
 		} catch(ex) {
 
-			QAAPI.REPORT( ex + ' at ' + currentItem.file + ':' + (ex.lineNumber - currentItem.relativeLineNumber + currentItem.line) + ' ('+currentItem.name+')' );
+			var lineno = ex.lineNumber - currentItem.relativeLineNumber + currentItem.line;
+			if ( isNaN(lineno) )
+				lineno = '('+String(ex.lineNumber) +'-'+ (currentItem.relativeLineNumber + currentItem.line) + ')';
+			QAAPI.REPORT( 'EXCEPTION '+ ex + ' at ' + currentItem.file + ':' + lineno + ' ('+currentItem.name+')' );
 		}
+		
+		disableGarbageCollection = false; // in case of
+		gcZeal = 0;
+
+		Print( '\n' );
 
 		if ( endSignal )
 			break;
@@ -223,33 +247,39 @@ function LaunchTests(itemList, conf) {
 }
 
 
-function LaunchRandomTests(itemList) {
+function LaunchRandomTests(itemList, conf) {
 
 	for each ( var item in itemList ) {
 
-		if ( item.init )
-			item.func(QAAPI, currentItem);
-		else
-			break; // list is sorted, init are first.
+		if ( !item.init ) // list is sorted, init are first.
+			break;
+		item.func(QAAPI, currentItem);
 	}
 
 	while ( !endSignal ) {
 
 		currentItem = itemList[Math.floor(Math.random() * itemList.length)];
 		
-		if ( currentItem.flags.d || !currentItem.flags.f )
-			continue;
+		gcZeal = conf.gcZeal;
 
 		try {
 			
-			gcZeal = conf.gcZeal;
-			currentItem.func(QAAPI, currentItem);
-			gcZeal = 0;
+			for ( var i = 0; i < conf.repeatEachTest; i++ )
+				currentItem.func(QAAPI, currentItem);
+
+			if( !conf.noGcBetweenTests )
+				CollectGarbage();
+			
 		} catch(ex) {
 
-			Print( ex + ' at ' + currentItem.file + ':' + (ex.lineNumber - currentItem.relativeLineNumber + currentItem.line) + ' ('+currentItem.name+')' );
-			Print('\n');
+			var lineno = ex.lineNumber - currentItem.relativeLineNumber + currentItem.line;
+			if ( isNaN(lineno) )
+				lineno = '('+String(ex.lineNumber) +'-'+ (currentItem.relativeLineNumber + currentItem.line) + ')';
+			QAAPI.REPORT( 'EXCEPTION '+ ex + ' at ' + currentItem.file + ':' + lineno + ' ('+currentItem.name+')' );
 		}
+
+		disableGarbageCollection = false; // in case of
+		gcZeal = 0;
 	}
 }
 
@@ -265,8 +295,10 @@ function ParseCommandLine(conf) {
 			conf.args.push( args.splice(1,1) );
 			continue;
 		}
-		var dbldash = (args[1][1] == '-');
-		var item = [ c for (c in conf) if ( dbldash && c == args[1].substr(2) || !dbldash && c[0] == args[1][1] ) ][0];
+		var items = [ c for (c in conf) if ( c.indexOf(args[1].substr(1)) == 0 ) ];
+		if ( items.length > 1 )
+			throw Error('Multiple argument match: '+items.join(', '));
+		var item = items[0];
 		if ( IsVoid(item) )
 			throw Error('Invalid argument: '+args[1]);
 		if ( IsBoolean(conf[item]) ) {
@@ -282,26 +314,58 @@ function ParseCommandLine(conf) {
 
 
 
-var conf = { help:false, repeat:1, gcZeal:0, loop:false, dir:'src', prio:0, exclude:'', flags:'' };
+var conf = { help:false, repeatEachTest:1, gcZeal:0, loopForever:false, directory:'src', priority:0, flags:'', save:'', load:'', disableJIT:false, listTestsOnly:false, nogcBetweenTests:false, nogcDuringTests:false };
 ParseCommandLine(conf);
-Print( 'configuraion: '+[k+'='+v for ([k,v] in Iterator(conf))].join(' / '), '\n' );
+Print( 'configuraion: '+[k+'='+v for ([k,v] in Iterator(conf))].join(' / '), '\n\n' );
+
 if ( conf.help )
 	Halt();
 
+
+function MatchFlags(flags) {
+	
+	if ( flags.indexOf('d') != -1 )
+		return false;
+	if ( !conf.flags )
+		return true;
+	if ( !flags )
+		return false;
+	for each ( var c in conf.flags )
+		if ( flags.indexOf(c) == -1 )
+			return false;
+	 return true;
+}
+
+var itemFilter = new RegExp(conf.args[0] || '.*', 'i');
+
+var testList;
+if ( conf.load )
+	testList = eval(new File(conf.load).content);
+else
+	testList = CreateQaItemList(conf.directory, itemFilter, MatchFlags);
+
+if ( conf.listTestsOnly ) {
+	
+	Print([String.quote(t.file+' - '+t.name) for each ( t in testList )].join('\n'), '\n');
+	Halt();
+}
+
+if ( conf.save )
+	new File(conf.save).content = uneval(testList);
+
+if ( conf.disableJIT )
+	DisableJIT();
+
 var savePrio = processPriority;
-processPriority = conf.prio;
+processPriority = conf.priority;
 var t0 = TimeCounter();
 
-if ( conf.loop )
-	LaunchRandomTests(CreateQaItemList(conf.dir, undefined), conf);
-else
-	LaunchTests(CreateQaItemList(conf.dir, new RegExp(conf.args[0] || '.*', 'i')), conf);
+( conf.loopForever ? LaunchRandomTests : LaunchTests )(testList, conf);
 
 var t = TimeCounter() - t0;
 processPriority = savePrio || 0; // savePrio may be undefined
 
-
-Print( '\n', issues + ' issues / ' + testCount + ' tests in ' + t.toFixed(2) + 'ms ('+(conf.repeat)+' repeat).', '\n' );
+Print( '\n\n', issues + ' issues / ' + testCount + ' tests in ' + t.toFixed(2) + 'ms ('+(conf.repeatEachTest)+' repeat).', '\n' );
 errors.sort();
 errors.reduce( function(previousValue, currentValue, index, array) {
 
@@ -313,9 +377,9 @@ errors.reduce( function(previousValue, currentValue, index, array) {
 
 /* flags:
 
-	d for desactivated: the test is disabled.
-	f for fast: the test execution is fast. Time should be less that 10ms.
-	t for time: the test execution time is always the same. The test do not use any variable-execution-time function (CollectGarbage, Poll, Socket, ...)
-	r for reliable: external parameters (like the platform, CPU load, TCP/IP connection, weather, ...) cannot make the test to fail.
-
+	'd' for desactivated: the test is disabled.
+	'f' for fast: the test execution is fast. Time should be less that 10ms.
+	't' for time: the test execution time is always the same. The test do not use any variable-execution-time function (CollectGarbage, Poll, Socket, ...)
+	'r' for reliable: external parameters (like the platform, CPU load, TCP/IP connection, weather, ...) cannot make the test to fail.
+	'm' for low memory usage. The test uses the minimum amount of memory in the script part. no QA.RandomString(300000000) or StringRepeat('x', 10000000000)
 */
