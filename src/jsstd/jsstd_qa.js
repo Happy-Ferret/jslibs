@@ -684,7 +684,7 @@ LoadModule('jsstd');
 		str = undefined;
 		QA.GC();
 		var mem1 = privateMemoryUsage;
-		QA.ASSERT( Math.abs(mem1/mem0) > 1.1, true, 'without GC' );
+		QA.ASSERT( mem1 >= mem0 + 1000000, true, 'without GC' );
 		
 		disableGarbageCollection = prev;
 

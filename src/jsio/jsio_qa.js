@@ -232,8 +232,8 @@ LoadModule('jsio');
 			}
 			
 			var i = 0;
-			while( ++i < 100 )
-				Poll([soc], 20);
+			while( ++i < 400 )
+				Poll([soc], 5);
 				
 		} catch( ex if ex instanceof IoError ) {
 			
