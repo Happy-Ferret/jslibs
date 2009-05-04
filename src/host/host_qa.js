@@ -24,12 +24,16 @@
 
 		QA.GC();
 		var mem0 = privateMemoryUsage;
+		
+		var prev = disableGarbageCollection;
 		disableGarbageCollection = true;
+		
 		for ( var i = 0; i < times; ++i ) {
 		
 			data.push( StringRepeat('a', length) ); // disableGarbageCollection should be enough
 		}
 		var mem = (privateMemoryUsage - mem0) / length / times;
-		disableGarbageCollection = false;
+		
+		disableGarbageCollection = prev;
 
 		QA.ASSERT( mem > 3 && mem < 3.02, true, 'string memory usage ('+mem+')' );

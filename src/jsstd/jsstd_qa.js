@@ -115,7 +115,7 @@ LoadModule('jsstd');
 
 /// big StringRepeat[tr]
 
-		QA.ASSERT( StringRepeat( '123', 1024*1024 ).length = 3*1024*1024, '', '3MB' );
+		QA.ASSERT( StringRepeat( '123', 1024*1024 ).length, 3*1024*1024, '3MB' );
 
 
 /// buffer and GC []
@@ -478,13 +478,12 @@ LoadModule('jsstd');
 		QA.ASSERT( v, pack.ReadInt(2), 'data validity' );
 
 
-/// Garbage collector [r]
+/// Garbage collector [rd]
 		
 		LoadModule('jsdebug');
 		
 		var str = QA.RandomString(1024*1024);
 		
-		disableGarbageCollection = true;
 		CollectGarbage();
 	
 		for ( var i = 0; i < 4; i++ )
@@ -675,7 +674,10 @@ LoadModule('jsstd');
 
 /// Disabled GC [r]
 
+		var prev = disableGarbageCollection;
 		disableGarbageCollection = true;
+		QA.ASSERT( disableGarbageCollection, true, 'GC is disabled' );
+		
 		QA.GC();
 		var mem0 = privateMemoryUsage;
 		var str = StringRepeat('x', 1000000);
@@ -683,9 +685,10 @@ LoadModule('jsstd');
 		QA.GC();
 		var mem1 = privateMemoryUsage;
 		QA.ASSERT( Math.abs(mem1/mem0) > 1.1, true, 'without GC' );
+		
+		disableGarbageCollection = prev;
 
-
-		disableGarbageCollection = false;
+/*	
 		QA.GC();
 		var mem0 = privateMemoryUsage;
 		var str = StringRepeat('x', 1000000);
@@ -693,8 +696,7 @@ LoadModule('jsstd');
 		QA.GC();
 		var mem1 = privateMemoryUsage;
 		QA.ASSERT( Math.abs(mem1/mem0) < 1.1, true, 'with GC' );
-
-		QA.ASSERT( disableGarbageCollection, false, 'GC is enabled' );
+*/
 
 
 /// Sandbox watchdog

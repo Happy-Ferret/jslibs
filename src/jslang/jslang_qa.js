@@ -373,7 +373,7 @@ LoadModule('jsstd');
 		QA.ASSERT_STR( res, '123123456789abc', 'Blob concat' );
 
 
-/// Blob substr [ftrm]
+/// Blob substr [ftr]
 
 		var b = new Blob('ABCDEF');
 		var s = 'ABCDEF'
@@ -400,7 +400,7 @@ LoadModule('jsstd');
 		QA.ASSERT( (b instanceof Blob) && !(b instanceof String), true, 'b is a Blob, not a String' );
 
 
-/// Blob substring [ftrm]
+/// Blob substring [ftr]
 
 		var b = new Blob('ABCDEF');
 		var s = 'ABCDEF'
