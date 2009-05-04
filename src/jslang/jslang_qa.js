@@ -434,11 +434,23 @@ LoadModule('jsstd');
 /// Blob setter [ftrm]
 
 		var b = new Blob('ABCDEF');
-		QA.ASSERT_EXCEPTION( function() { b[0] = 'X' }, Error, '"Cannot modify immutable objects" exception' );
+		
+		QA.ASSERT_EXCEPTION( function() {
+			b[0] = 'X'
+		}, Error, '"Cannot modify immutable objects" exception' );
+		
 		QA.ASSERT( ''+b.substr(0,1), 'X', 'setter' );
-		b[5] = 'W';
+
+		QA.ASSERT_EXCEPTION( function() {
+			b[5] = 'W';
+		}, Error, '"Cannot modify immutable objects" exception' );
+			
 		QA.ASSERT( ''+b[5], 'W', 'setted value' );
-		b[5] = 'W';
+		
+		QA.ASSERT_EXCEPTION( function() {
+			b[5] = 'W';
+		}, Error, '"Cannot modify immutable objects" exception' );
+		
 		QA.ASSERT( String(b), 'XBCDEW', 'setter' );
 		QA.ASSERT_EXCEPTION( function() { b[-1] = 'Y'; }, Error, 'out of range' );
 		QA.ASSERT_EXCEPTION( function() { b[6] = 'Z'; }, Error, 'out of range' );
