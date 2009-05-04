@@ -295,7 +295,7 @@ function ParseCommandLine(conf) {
 			conf.args.push( args.splice(1,1) );
 			continue;
 		}
-		var items = [ c for (c in conf) if ( c.indexOf(args[1].substr(1)) == 0 ) ];
+		var items = [ c for (c in conf) if ( c.toLowerCase().indexOf(args[1].substr(1).toLowerCase()) == 0 ) ];
 		if ( items.length > 1 )
 			throw Error('Multiple argument match: '+items.join(', '));
 		var item = items[0];
