@@ -1,12 +1,7 @@
 LoadModule('jsstd');
 LoadModule('jsio');
 
-for ( var i = 0; i < 1000; i++ ) {
-
-	StringRepeat('x', 1000000);
-	Sleep(10);
-}
-
+Warning('test');
 
 
 Halt(); /////////////////////////////////////////////////////////////////////

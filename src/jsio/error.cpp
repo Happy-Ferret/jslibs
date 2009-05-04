@@ -160,7 +160,7 @@ JSBool ThrowIoErrorArg( JSContext *cx, PRErrorCode errorCode, PRInt32 osError ) 
 */
 
 #ifdef DEBUG
-	JS_ReportWarning( cx, "IoError exception" );
+	J_REPORT_WARNING( "IoError exception" );
 #endif // DEBUG
 
 	JSObject *error = JS_NewObject( cx, classIoError, NULL, NULL );

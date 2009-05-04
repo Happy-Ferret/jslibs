@@ -2,6 +2,23 @@ LoadModule('jsstd');
 LoadModule('jsstd');
 LoadModule('jsio');
 
+var f = new Function("\
+	var buf = '';\
+	_configuration.stderr = function(chunk) buf += chunk;\
+	Warning('test');\
+	delete _configuration.stderr;\
+	if ( buf.indexOf('test') == -1 )\
+		Print('error');\
+	CollectGarbage();\
+");
+
+
+for ( var i=0; i<1000; i++ )
+	f();
+
+
+Halt();
+
 //_configuration.stderr = function(){}
 
 	var s = new Blob('this is a string object');

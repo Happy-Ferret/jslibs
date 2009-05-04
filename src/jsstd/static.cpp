@@ -744,7 +744,7 @@ DEFINE_FUNCTION_FAST( Warning ) {
 	J_S_ASSERT_ARG_MIN( 1 );
 	const char *message;
 	J_CHK( JsvalToString(cx, &J_FARG(1), &message) );
-	J_CHK( JS_ReportWarning( cx, "%s", message ) );
+	J_CHK( JS_ReportWarning(cx, "%s", message) );
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
@@ -1216,7 +1216,7 @@ DEFINE_FUNCTION_FAST( SandboxEval ) {
 		JS_ReportOutOfMemory(cx); // the only error that is not catchable
 		return JS_FALSE;
 	}
-	JS_ToggleOptions(scx, JSOPTION_DONT_REPORT_UNCAUGHT | JSOPTION_VAROBJFIX | JSOPTION_COMPILE_N_GO | JSOPTION_RELIMIT | JSOPTION_JIT);
+	JS_SetOptions(scx, JS_GetOptions(scx) | JSOPTION_DONT_REPORT_UNCAUGHT | JSOPTION_VAROBJFIX | JSOPTION_COMPILE_N_GO | JSOPTION_RELIMIT | JSOPTION_JIT);
 
 	JSObject *globalObject;
 	globalObject = JS_NewObject(scx, classSandbox, NULL, NULL);

@@ -50,14 +50,15 @@ static const JSErrorFormatString *GetErrorMessage(void *userRef, const char *loc
 //	if ( !(condition) ) { consoleStdErr( cx, errorMessage, sizeof(errorMessage)-1 ); return -1; }
 
 
-static JSBool JSDefaultStdoutFunction(JSContext *cx, uintN argc, jsval *vp) {
+static JSBool JSDefaultStdoutFunction(JSContext *cx, uintN argc, jsval *vp) { // fast native
 
 	HostPrivate *pv = GetHostPrivate(cx);
-	if ( pv == NULL || pv->hostStdOut == NULL )
+	if (unlikely( pv == NULL || pv->hostStdOut == NULL ))
 		return JS_TRUE;
+
 	const char *buffer;
 	size_t length;
-	for ( uintN i = 0; i < argc; i++ ) {
+	for ( uintN i = 0; i < argc; ++i ) {
 
 		J_CHK( JsvalToStringAndLength(cx, &J_FARG(i+1), &buffer, &length) );
 		pv->hostStdOut(pv->privateData, buffer, length);
@@ -67,14 +68,15 @@ static JSBool JSDefaultStdoutFunction(JSContext *cx, uintN argc, jsval *vp) {
 }
 
 
-static JSBool JSDefaultStderrFunction(JSContext *cx, uintN argc, jsval *vp) {
+static JSBool JSDefaultStderrFunction(JSContext *cx, uintN argc, jsval *vp) { // fast native
 
 	HostPrivate *pv = GetHostPrivate(cx);
-	if ( pv == NULL || pv->hostStdErr == NULL )
+	if (unlikely( pv == NULL || pv->hostStdErr == NULL ))
 		return JS_TRUE;
+
 	const char *buffer;
 	size_t length;
-	for ( uintN i = 0; i < argc; i++ ) {
+	for ( uintN i = 0; i < argc; ++i ) {
 
 		J_CHK( JsvalToStringAndLength(cx, &J_FARG(i+1), &buffer, &length) );
 		pv->hostStdErr(pv->privateData, buffer, length);
@@ -84,28 +86,32 @@ static JSBool JSDefaultStderrFunction(JSContext *cx, uintN argc, jsval *vp) {
 }
 
 
-void stdErrRouter( JSContext *cx, const char *message, size_t length ) {
+void stdErrRouter(JSContext *cx, const char *message, size_t length) {
 
 	JSObject *globalObject = JS_GetGlobalObject(cx);
-	if ( globalObject != NULL ) {
+	if (likely( globalObject != NULL )) {
 
 		jsval fct;
-		if ( GetConfigurationValue(cx, NAME_CONFIGURATION_STDERR, &fct) == JS_TRUE && JsvalIsFunction(cx, fct) ) {
+		if (likely( GetConfigurationValue(cx, NAME_CONFIGURATION_STDERR, &fct) == JS_TRUE && JsvalIsFunction(cx, fct) )) {
 
+			jsval tmp;
 			JSTempValueRooter tvr;
 			JS_PUSH_SINGLE_TEMP_ROOT(cx, JSVAL_NULL, &tvr); // needed to protect the string.
 			J_CHKB( StringAndLengthToJsval(cx, &tvr.u.value, message, length), bad2 );
-			J_CHKB( JS_CallFunctionValue(cx, globalObject, fct, 1, &tvr.u.value, &tvr.u.value), bad2 );
+			J_CHKB( JS_CallFunctionValue(cx, globalObject, fct, 1, &tvr.u.value, &tmp), bad2 );
+
 		bad2:
 			JS_POP_TEMP_ROOT(cx, &tvr);
 			return;
 		}
 	}
+
 	HostPrivate *pv;
 	pv = GetHostPrivate(cx);
-	if ( pv != NULL && pv->hostStdErr != NULL )
-		pv->hostStdErr(pv->privateData, message, length); // else, use the default.
-	return;
+	if (unlikely( pv == NULL || pv->hostStdErr == NULL ))
+		return;
+
+	pv->hostStdErr(pv->privateData, message, length); // else, use the default.
 bad:
 	return;
 }
@@ -115,11 +121,10 @@ bad:
 static void ErrorReporter(JSContext *cx, const char *message, JSErrorReport *report) {
 
 	HostPrivate *pv = GetHostPrivate(cx);
-	if ( pv == NULL )
+	if (likely( pv != NULL && JSREPORT_IS_WARNING(report->flags) && pv->unsafeMode )) // no warnings in unsafe mode.
 		return;
-	bool reportWarnings = !pv->unsafeMode; // no warnings in unsafe mode.
-	char *msg;
 
+	char *msg;
 
 
     int i, j, k, n;
@@ -132,10 +137,6 @@ static void ErrorReporter(JSContext *cx, const char *message, JSErrorReport *rep
 		 stdErrRouter( cx, "\n", 1 );
         return;
     }
-
-    /* Conditionally ignore reported warnings. */
-    if (JSREPORT_IS_WARNING(report->flags) && !reportWarnings)
-        return;
 
     prefix = NULL;
     if (report->filename)
@@ -385,8 +386,7 @@ JSContext* CreateHost(size_t maxMem, size_t maxAlloc, size_t maybeGCInterval ) {
 //	JS_SetCStringsAreUTF8(); // don't use !
 	JSRuntime *rt = JS_NewRuntime(0); // maxMem specifies the number of allocated bytes after which garbage collection is run.
 //	J_CHKM( rt != NULL, "unable to create the runtime." );
-	if ( rt == NULL )
-		return NULL;
+	J_CHK( rt );
 
 //call of  'js_malloc'  acts on  'runtime->gcMallocBytes'
 //do gc IF rt->gcMallocBytes >= rt->gcMaxMallocBytes
@@ -395,8 +395,7 @@ JSContext* CreateHost(size_t maxMem, size_t maxAlloc, size_t maybeGCInterval ) {
 	JS_SetGCParameter(rt, JSGC_MAX_MALLOC_BYTES, maxAlloc); /* # of JS_malloc bytes before last ditch GC */
 
 	JSContext *cx = JS_NewContext(rt, 8192L); // set the chunk size of the stack pool to 8192. see http://groups.google.com/group/mozilla.dev.tech.js-engine/browse_thread/thread/be9f404b623acf39/9efdfca81be99ca3
-	if ( cx == NULL )
-		return NULL; //, "unable to create the context." );
+	J_CHK( cx ); //, "unable to create the context." );
 
 	// Info: Increasing JSContext stack size slows down my scripts:
 	//   http://groups.google.com/group/mozilla.dev.tech.js-engine/browse_thread/thread/be9f404b623acf39/9efdfca81be99ca3
@@ -414,14 +413,13 @@ JSContext* CreateHost(size_t maxMem, size_t maxAlloc, size_t maybeGCInterval ) {
 	//	uint32 options = JSOPTION_VAROBJFIX | JSOPTION_XML | JSOPTION_COMPILE_N_GO;
 	//	if ( !unsafeMode )
 	//		options |= JSOPTION_STRICT;
-	//	JS_ToggleOptions(cx, options );
 
 	#ifdef JSOPTION_JIT
 	JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_JIT);
 	// JSOPTION_JIT: "I think it's possible we'll remove even this little bit of API, and just have the JIT always-on. -j"
 	#endif // JSOPTION_JIT
 
-	JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_VAROBJFIX | JSOPTION_XML | JSOPTION_RELIMIT);
+	JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_VAROBJFIX | JSOPTION_XML);
 	// JSOPTION_VAROBJFIX:
 	//  Not quite: with JSOPTION_VAROBJFIX, both explicitly declared global
 	//  variables (var x) and implicit ones (x = 42 where no x exists yet in the
@@ -437,8 +435,7 @@ JSContext* CreateHost(size_t maxMem, size_t maxAlloc, size_t maybeGCInterval ) {
 
 	JSObject *globalObject;
 	globalObject = JS_NewObject(cx, &global_class, NULL, NULL);
-	if ( globalObject == NULL )
-		return NULL; //, "unable to create the global object." );
+	J_CHK( globalObject ); // "unable to create the global object." );
 
 	//	JS_SetGlobalObject(cx, globalObject); // not needed. Doc: As a side effect, JS_InitStandardClasses establishes obj as the global object for cx, if one is not already established.
 
@@ -449,8 +446,8 @@ JSContext* CreateHost(size_t maxMem, size_t maxAlloc, size_t maybeGCInterval ) {
 	JS_SetGlobalObject(cx, globalObject); // see LAZY_STANDARD_CLASSES
 
 	HostPrivate *pv = (HostPrivate*)malloc(sizeof(HostPrivate));
-	if ( pv == NULL )
-		return NULL; // out of memory ?
+	J_CHK( pv ); // out of memory ?
+
 	memset(pv, 0, sizeof(HostPrivate)); // mandatory !
 	SetHostPrivate(cx, pv);
 
@@ -463,6 +460,9 @@ JSContext* CreateHost(size_t maxMem, size_t maxAlloc, size_t maybeGCInterval ) {
 	}
 
 	return cx;
+
+bad:
+	return NULL;
 }
 
 
@@ -483,7 +483,7 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostOutput stdOut, HostOutput s
 	pv->unsafeMode = unsafeMode;
 
 	if ( unsafeMode )
-		JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_STRICT);
+		JS_SetOptions(cx, JS_GetOptions(cx) & ~JSOPTION_STRICT);
 
 	JSObject *globalObject;
 	globalObject = JS_GetGlobalObject(cx);
@@ -514,11 +514,13 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostOutput stdOut, HostOutput s
 //	J_CHK( SetConfigurationValue(cx, NAME_CONFIGURATION_UNSAFE_MODE, BOOLEAN_TO_JSVAL(_unsafeMode)) );
 	J_CHK( SetConfigurationReadonlyValue(cx, NAME_CONFIGURATION_UNSAFE_MODE, unsafeMode ? JSVAL_TRUE : JSVAL_FALSE) );
 
+// support this: var prevStderr = _configuration.stderr; _configuration.stderr = function(txt) { file.Write(txt); prevStderr(txt) };
 	jsval value;
 	value = OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunction(cx, (JSNative)JSDefaultStdoutFunction, 1, JSFUN_FAST_NATIVE, NULL, NULL))); // If you do not assign a name to the function, it is assigned the name "anonymous".
 	J_CHK( SetConfigurationValue(cx, NAME_CONFIGURATION_STDOUT, value) );
 	value = OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunction(cx, (JSNative)JSDefaultStderrFunction, 1, JSFUN_FAST_NATIVE, NULL, NULL))); // If you do not assign a name to the function, it is assigned the name "anonymous".
 	J_CHK( SetConfigurationValue(cx, NAME_CONFIGURATION_STDERR, value) );
+
 
 // init static modules
 	J_CHKM( jslangInit(cx, globalObject), "Unable to initialize jslang." );

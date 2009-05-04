@@ -757,6 +757,14 @@ DEFINE_PROPERTY( gcZeal ) {
 #endif // JS_GC_ZEAL
 
 
+DEFINE_FUNCTION_FAST( DisableJIT ) {
+
+	JS_SetOptions(cx, JS_GetOptions(cx) & ~JSOPTION_JIT);
+	return JS_TRUE;
+}
+
+
+
 /**doc
 $TOC_MEMBER $INAME
  $INT $INAME()
@@ -1468,6 +1476,7 @@ DEFINE_FUNCTION_FAST( PropertiesInfo ) {
 #ifdef DEBUG
 DEFINE_FUNCTION( Test ) {
 
+	J_REPORT_ERROR("error test");
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1498,6 +1507,7 @@ CONFIGURE_STATIC
 		FUNCTION_FAST( DumpHeap )
 		FUNCTION( Test )
 	#endif // DEBUG
+		FUNCTION_FAST( DisableJIT )
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC
@@ -1507,6 +1517,7 @@ CONFIGURE_STATIC
 	#ifdef JS_GC_ZEAL
 		PROPERTY_WRITE( gcZeal )
 	#endif
+
 		PROPERTY_READ( gcMallocBytes )
 		PROPERTY_READ( gcBytes )
 		PROPERTY_READ( currentMemoryUsage )

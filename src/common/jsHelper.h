@@ -193,7 +193,7 @@ ALWAYS_INLINE void SetHostPrivate( JSContext *cx, HostPrivate *hostPrivate ) {
 
 // check and branch to a errorLabel label on error.
 #define J_CHKB( status, errorLabel ) do { \
-	if (unlikely(!(status))) { goto errorLabel; } \
+	if (unlikely( !(status) )) { goto errorLabel; } \
 } while(0)
 
 
@@ -230,7 +230,7 @@ ALWAYS_INLINE void SetHostPrivate( JSContext *cx, HostPrivate *hostPrivate ) {
 	do { if (likely( _unsafeMode )) {code;} } while(0)
 
 
-// Reports warnings. May be disabled in unsafemode
+// Reports warnings only in non-unsafeMode.
 #define J_REPORT_WARNING(errorMessage) \
 	do { if (unlikely(!_unsafeMode)) JS_ReportWarning( cx, (errorMessage IFDEBUG(" (@" J__CODE_LOCATION ")")) ); } while(0)
 
