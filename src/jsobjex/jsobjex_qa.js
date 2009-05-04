@@ -1,6 +1,6 @@
 LoadModule('jsobjex');
 
-/// callback functions [ftr]
+/// callback functions [ftrm]
 		
 		var aux = {};
 		
@@ -45,7 +45,7 @@ LoadModule('jsobjex');
 		QA.ASSERT( setCallbackCalls, 2, 'setCallback calls count' );
 
 
-/// setter [ftr]
+/// setter [ftrm]
 
 		function MyException() {}
 		function SetOnceObject() new ObjEx( undefined,undefined,undefined, function(name, value) this[name] ? (function() { throw new MyException() })() : value );
@@ -54,7 +54,7 @@ LoadModule('jsobjex');
 		QA.ASSERT_EXCEPTION( function() {  o.abc = 456;  }, MyException, 'using setter' );
 
 
-/// data slot [ftr]
+/// data slot [ftrm]
 
 		function newDataNode(parent) new ObjEx(undefined,undefined,newDataNode.get,undefined,{listenerList:[],parent:parent});
 

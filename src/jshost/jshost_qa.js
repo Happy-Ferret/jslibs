@@ -1,11 +1,11 @@
-/// arguments [ftr]
+/// arguments [ftrm]
 
 		QA.ASSERT( global.arguments[2], 'arg2', 'script argument 2' );
 		QA.ASSERT( global.arguments[3], 'arg3', 'script argument 3' );
 		QA.ASSERT( global.arguments[4], 'arg4', 'script argument 4' );
 
 
-/// global variables [ftr]
+/// global variables [ftrm]
 
 		QA.ASSERT( scripthostpath.length > 0, true, 'script host path' );
 		QA.ASSERT( scripthostname.substr(0, 6), 'jshost', 'script host name' );
@@ -19,11 +19,11 @@
 		QA.ASSERT( global.arguments[0], 'qa.js', 'javascript program name' );
 
 
-/// eval function [ftr]
+/// eval function [ftrm]
 
 		QA.ASSERT( typeof eval, 'function', 'eval function availability' );
 
-/// undefined mutability [ftr]
+/// undefined mutability [ftrm]
 		
 		QA.ASSERT( undefined, (void 0), 'compare to void 0 (default)' );
 		undefined = 123;

@@ -1,6 +1,6 @@
 LoadModule('jssqlite');
 
-/// InMemory Database [ftr]
+/// InMemory Database [ftrm]
 
 		var db = new Database();
 		var res = db.Exec('SELECT 1');
@@ -8,7 +8,7 @@ LoadModule('jssqlite');
 		db.Close();
 
 
-/// InMemory Database Create table [ftr]
+/// InMemory Database Create table [ftrm]
 		
 		try {
 
@@ -26,7 +26,7 @@ LoadModule('jssqlite');
 		}
 
 
-/// Result format [ftr]
+/// Result format [ftrm]
 
 		var db = new Database();
 		var res = db.Exec('create table a (b integer primary key, c varchar, d integer)');
@@ -64,7 +64,7 @@ LoadModule('jssqlite');
 		db.Close();
 
 
-/// exceptions [ftr]
+/// exceptions [ftrm]
 
 		var db = new Database();
 
@@ -81,7 +81,7 @@ LoadModule('jssqlite');
 		db.Close();
 
 
-/// Query no data [ftr]
+/// Query no data [ftrm]
 
 		var db = new Database();
 
@@ -102,7 +102,7 @@ LoadModule('jssqlite');
 		QA.ASSERT( result.Row()[0], 2, 'row 3' );
 
 
-/// Database file [ftr]
+/// Database file [ftrm]
 
 		var db = new Database('test_sqlite_database');
 		db.Close();
@@ -113,7 +113,7 @@ LoadModule('jssqlite');
 		QA.ASSERT( file.exist, false, 'database file exist' );
 
 
-/// Bindings [ftr]
+/// Bindings [ftrm]
 
 		var db = new Database();
 
@@ -127,13 +127,13 @@ LoadModule('jssqlite');
 		db.Close();
 
 
-/// version [ftr]
+/// version [ftrm]
 
 		QA.ASSERT( Database.version[1], '.', 'version string' );
 		QA.ASSERT( Database.version[3], '.', 'version string' );
 
 
-/// named variables [ftr]
+/// named variables [ftrm]
 
 		var db = new Database();
 		var res = db.Exec('SELECT @varTest', { varTest:123} );
@@ -141,7 +141,7 @@ LoadModule('jssqlite');
 		db.Close();
 
 
-/// question mark [ftr]
+/// question mark [ftrm]
 
 		var db = new Database();
 	
@@ -154,7 +154,7 @@ LoadModule('jssqlite');
 		db.Close();
 
 
-/// Function binding [ftr]
+/// Function binding [ftrm]
 
 		var db = new Database('');
 	

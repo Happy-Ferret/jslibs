@@ -23,7 +23,7 @@ LoadModule('jsstd');
 			ObjectToId({});
 
 
-/// Map object with new [ftr]
+/// Map object with new [ftrm]
 
 		var m = new Map();
 
@@ -60,7 +60,8 @@ LoadModule('jsstd');
 		m.__proto__ = { a:1 };
 		QA.ASSERT( m.a, undefined, 'no __proto__ behavior' );
 
-/// Map object without new [ftr]
+
+/// Map object without new [ftrm]
 
 		var m = Map();
 
@@ -97,7 +98,8 @@ LoadModule('jsstd');
 		m.__proto__ = { a:1 };
 		QA.ASSERT( m.a, undefined, 'no __proto__ behavior' );
 		
-/// StringRepeat function [ftr]
+
+/// StringRepeat function [ftrm]
 
 		QA.ASSERT( StringRepeat( '', 0 ), '', '0 x empty' );
 		QA.ASSERT( StringRepeat( '', 1 ), '', '1 x empty' );
@@ -111,6 +113,9 @@ LoadModule('jsstd');
 		QA.ASSERT( StringRepeat( 'abc', 1 ), 'abc', '1 x string' );
 		QA.ASSERT( StringRepeat( 'abc', 10 ), 'abcabcabcabcabcabcabcabcabcabc', '10 x string' );
 
+/// big StringRepeat[tr]
+
+		QA.ASSERT( StringRepeat( '123', 1024*1024 ).length = 3*1024*1024, '', '3MB' );
 
 
 /// buffer and GC []
@@ -129,7 +134,7 @@ LoadModule('jsstd');
 
 	
 
-/// Buffer access [ftr]
+/// Buffer access [ftrm]
 
 		var b = new Buffer();
 		b.Write('');
@@ -150,7 +155,7 @@ LoadModule('jsstd');
 
 
 
-/// empty Buffer [ftr]
+/// empty Buffer [ftrm]
 
 		var b = new Buffer();
 		QA.ASSERT( typeof b.Read(), 'string', 'empty buffer read' );
@@ -164,7 +169,7 @@ LoadModule('jsstd');
 		QA.ASSERT( b.Read() instanceof Blob, true, 'buffer read' );
 
 
-/// Buffer test 1 [ftr]
+/// Buffer test 1 [ftrm]
 		
 		var b = new Buffer();
 		b.Read(0);
@@ -191,7 +196,7 @@ LoadModule('jsstd');
 		QA.ASSERT_STR( t, 'eeeeffffgggg', 'buffer match' );
 
 
-/// Buffer test 2 [ftr]
+/// Buffer test 2 [ftrm]
 
 		var b = new Buffer();
 		b.Write("abcdefghi");
@@ -202,7 +207,7 @@ LoadModule('jsstd');
 		QA.ASSERT_STR( b.Read(2), 'i', 'buffer match' );
 
 
-/// Buffer underflow [ftr]
+/// Buffer underflow [ftrm]
 		
 		var times = 0;
 		var toto = 'Zz';
@@ -241,7 +246,7 @@ LoadModule('jsstd');
 		QA.ASSERT_STR( buf.Read(), 'z', 'read()' );
 
 
-/// Buffer copy [ftr]
+/// Buffer copy [ftrm]
 
 		var b1 = new Buffer();
 		b1.Write('1');
@@ -266,7 +271,7 @@ LoadModule('jsstd');
 		QA.ASSERT_STR( b1.toString(), '111', 'source buffer content' );	
 
 
-/// Buffer simple read [ftr]
+/// Buffer simple read [ftrm]
 	
 		var b = new Buffer();
 		b.Write('123');
@@ -274,7 +279,7 @@ LoadModule('jsstd');
 
 
 
-/// Buffer toString [ftr]
+/// Buffer toString [ftrm]
 	
 		var b = new Buffer();
 		b.Write('12345');
@@ -284,7 +289,7 @@ LoadModule('jsstd');
 		QA.ASSERT_STR( b, '123456789', 'buffer toString' );	
 
 
-/// Buffer toString consumption [ftr]
+/// Buffer toString consumption [ftrm]
 
 		var b = new Buffer();
 		b.Write('123');
@@ -297,7 +302,7 @@ LoadModule('jsstd');
 		QA.ASSERT( str2, '123', 'second toString result' );
 
 
-/// Buffer valueOf [ftr]
+/// Buffer valueOf [ftrm]
 	
 		var b = new Buffer();
 		b.Write('12345');
@@ -307,7 +312,7 @@ LoadModule('jsstd');
 		QA.ASSERT_STR( b.valueOf(), '123456789', 'buffer valueOf' );	
 
 
-/// Buffer values store [ftr]
+/// Buffer values store [ftrm]
 	
 		var b = new Buffer();
 		b.Write({ toString:function(){return '01'} });
@@ -317,7 +322,7 @@ LoadModule('jsstd');
 		QA.ASSERT_STR( b.Read(), '012,345678.9', 'buffer read stored values' );	
 
 
-/// Buffer values store [ftr]
+/// Buffer values store [ftrm]
 	
 		var b = new Buffer();
 		b.Write({ toString:function(){return '01'} });
@@ -331,7 +336,7 @@ LoadModule('jsstd');
 		QA.ASSERT_STR( b.Read(1), '9', 'buffer read stored values' );	
 
 
-/// Buffer and Blob [ftr]
+/// Buffer and Blob [ftrm]
 
 		var str = new Blob('123');
 		var b = new Buffer();
@@ -341,7 +346,7 @@ LoadModule('jsstd');
 		QA.ASSERT_STR( b.Read(), '1237', 'buffer containing a Blob' );
 
 
-/// Buffer IndexOf [ftr]
+/// Buffer IndexOf [ftrm]
 	
 		var b = new Buffer();
 		b.Write('abcd');
@@ -352,7 +357,7 @@ LoadModule('jsstd');
 		QA.ASSERT( b.IndexOf('def'), 3, 'buffer read' );	
 
 
-/// Buffer readUntil [ftr]
+/// Buffer readUntil [ftrm]
 
 		var buf = new Buffer();
 		buf.Write('xxx');
@@ -366,7 +371,7 @@ LoadModule('jsstd');
 		QA.ASSERT_STR( buf, 'cccbuffer2', 'remaining' );
 
 
-/// Buffer misc [ftr]
+/// Buffer misc [ftrm]
 
 		var buf = new Buffer();
 		buf.Write('12345');
@@ -382,14 +387,14 @@ LoadModule('jsstd');
 		QA.ASSERT( buf.length, 3, 'content length' );
 
 
-/// Buffer missing unroot [ftr]
+/// Buffer missing unroot [ftrm]
 
 		var buf = new Buffer();
 		buf.Write('1234');
 		buf.Read(4);
 
 
-/// Buffer Source [ftr]
+/// Buffer Source [ftrm]
 
 		var buf = new Buffer(Stream('456'));
 		buf.Write('123');
@@ -420,7 +425,7 @@ LoadModule('jsstd');
 		QA.ASSERT_STR( buf3.Read(6), '123xxx', 'read' );
 
 
-/// Pack endian [ftr]
+/// Pack endian [ftrm]
 	
 		if ( Pack.systemBigEndian == false ) {
 		
@@ -435,7 +440,7 @@ LoadModule('jsstd');
 		}
 
 
-/// Pack read integer [ftr]
+/// Pack read integer [ftrm]
 
 		var buf = new Buffer();
 		buf.Write('\xAA\xBB\xCC\xDD');
@@ -443,7 +448,7 @@ LoadModule('jsstd');
 		QA.ASSERT( pack.ReadInt(4, false, true).toString(16), 'aabbccdd', 'ReadInt' );
 
 
-/// Pack read string [ftr]
+/// Pack read string [ftrm]
 
 		var buf = new Buffer();
 		buf.Write('\xAA\xBB\xCC\xDD');
@@ -451,7 +456,7 @@ LoadModule('jsstd');
 		QA.ASSERT_STR( pack.ReadString(4), "\xAA\xBB\xCC\xDD", 'ReadString' );
 
 
-/// Pack class [ftr]
+/// Pack class [ftrm]
 
 		var buf = new Buffer();
 		var pack = new Pack(buf);
@@ -490,7 +495,7 @@ LoadModule('jsstd');
 		CollectGarbage();
 
 
-/// hide properties [ftr]
+/// hide properties [ftrm]
 	
 		var o = { a:1, b:2, c:3, d:4 };
 
@@ -501,7 +506,7 @@ LoadModule('jsstd');
 		QA.ASSERT( [p for each (p in o)].join(','), '1,4', 'visible properties' );
 
 
-/// SetScope function [ftr]
+/// SetScope function [ftrm]
 
 		var data = 55;
 		function bar() { QA.ASSERT( data, 7, 'modified scope' ); }
@@ -510,20 +515,14 @@ LoadModule('jsstd');
 
 
 
-/// Expand function [ftr]
+/// Expand function [ftrm]
 
 		QA.ASSERT( Expand('', { h:'Hello', w:'World' }), '', 'expanding an empty string' );
-
 		QA.ASSERT( Expand('Hello World'), 'Hello World', 'expanding a simple string' );
-
 		QA.ASSERT( Expand(' $(h) $(w)', { h:'Hello', w:'World' }), ' Hello World', 'expanding a string' );
-
 		QA.ASSERT( Expand(' $(h) $(w', { h:'Hello', w:'World' }), ' Hello ', 'expanding a bugous string' );
-
 		QA.ASSERT( Expand(' $(h) $(', { h:'Hello', w:'World' }), ' Hello ', 'expanding a bugous string' );
-
 		QA.ASSERT( Expand(' $(h) $', { h:'Hello', w:'World' }), ' Hello $', 'expanding a string' );
-
 		QA.ASSERT( Expand(' $(h)', { h:'Hello', w:'World' }), ' Hello', 'expanding a string' );
 		
 		var obj = {
@@ -546,7 +545,7 @@ LoadModule('jsstd');
 		QA.ASSERT_STR( o, '<html><title>My HTML Page</title>\n', 'expand string using this object' );
 
 
-/// Exec using XDR [ftr]
+/// Exec using XDR [ftrm]
 		
 		LoadModule('jsio');
 	
@@ -581,7 +580,7 @@ LoadModule('jsstd');
 		}
 
 
-/// Clear function [ftr]
+/// Clear function [ftrm]
 
 		var o = { x:5, y:6, z:7 };
 		QA.ASSERT( 'z' in o, true, 'has z property' );
@@ -589,7 +588,7 @@ LoadModule('jsstd');
 		QA.ASSERT( 'z' in o, false, 'property z is cleared' );
 
 
-/// Clear on an array [ftr]
+/// Clear on an array [ftrm]
 	
 		var o = { x:5, y:6, z:7 };
 		QA.ASSERT( 'z' in o, true, 'has z property' );
@@ -598,7 +597,7 @@ LoadModule('jsstd');
 
 
 
-/// Seal function [ftr]
+/// Seal function [ftrm]
 		
 		var o = { a:1 };
 		Seal(o);
@@ -615,7 +614,7 @@ LoadModule('jsstd');
 		}
 
 
-/// IsStatementValid  function [ftr]
+/// IsStatementValid  function [ftrm]
 		
 		QA.ASSERT( IsStatementValid( 'for ( var i; i<10; i++ )' ), false, 'invalid statement' );
 		QA.ASSERT( IsStatementValid( 'for ( var i; i<10; i++ );' ), true, 'valid statement' );
@@ -634,7 +633,7 @@ LoadModule('jsstd');
 
 
 
-/// MultiLineStringUsingE4X [ftr]
+/// MultiLineStringUsingE4X [ftrm]
 				
 		var t = <text>
 		this is
@@ -647,13 +646,13 @@ LoadModule('jsstd');
 		QA.ASSERT_STR( t, "\n\t\tthis is\n\t\ta multiline\n\n\t\ttext\n\t\t", 'text' );
 
 
-/// Sandbox global objects
+/// Sandbox global objects [tfrm]
 	
 		var res = SandboxEval('Math');
 		QA.ASSERT( res.Math == Math, false, 'Global objects' );
 
 
-/// Sandbox external access
+/// Sandbox external access [tfrm]
 
 		LoadModule('jsio');
 		var res = SandboxEval('typeof File');
@@ -662,7 +661,7 @@ LoadModule('jsstd');
 		QA.ASSERT( res == typeof LoadModule, false, 'forbidden LoadModule function access' );
 
 
-/// Sandbox Query
+/// Sandbox Query [tfrm]
 
 		var res = Function("var v = 567; return SandboxEval('Query()', function(val) v)")();
 		QA.ASSERT( res, 567, 'SandboxEval result using Function( Query function )' );
@@ -674,7 +673,7 @@ LoadModule('jsstd');
 		QA.ASSERT_EXCEPTION( function() {  SandboxEval('Query()', function(val) obj)  }, Error, 'Query returns a non-primitive value');
 
 
-/// Disabled GC
+/// Disabled GC [r]
 
 		disableGarbageCollection = true;
 		QA.GC();

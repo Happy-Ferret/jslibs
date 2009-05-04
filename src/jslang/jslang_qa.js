@@ -1,6 +1,6 @@
 LoadModule('jsstd');
 
-/// ReadOnlyGlobalClasses [ftr]
+/// ReadOnlyGlobalClasses [ftrm]
 
 		var bstr = Blob;
 		Blob = null;
@@ -15,13 +15,13 @@ LoadModule('jsstd');
 		QA.ASSERT( Blob, bstr1, 'Blob integrity' );
 
 
-/// NativeInterface [ftr]
+/// NativeInterface [ftrm]
 
 		var stream = new Stream('456');
 		QA.ASSERT( !isNaN(stream._NI_StreamRead), true, 'NativeInterface system' )
 
 
-/// NativeInterface security [ftr]
+/// NativeInterface security [ftrm]
 
 		var stream = new Stream('456');
 		var prev = stream._NI_StreamRead;
@@ -31,7 +31,7 @@ LoadModule('jsstd');
 		QA.ASSERT( stream._NI_StreamRead, prev, 'NativeInterface security' )
 
 
-/// Blob memory usage
+/// Blob memory usage []
 
 		var length = 1024*1024;
 		var times = 3;
@@ -49,17 +49,15 @@ LoadModule('jsstd');
 		QA.ASSERT( mem > 1 && mem < 1.02, true, 'Blob memory usage ('+mem+')' );
 
 
-/// Blob toSource and Uneval
+/// Blob toSource and Uneval [mrtf]
 
-		LoadModule('jsstd');
 		var b = new Blob('test');
 		QA.ASSERT( b.toSource(), '"test"', 'blob.toSource()' )
 		QA.ASSERT( uneval(b), '"test"', 'uneval(blob)' )
 
 
-/// Blob BufferGet NativeInterface
+/// Blob BufferGet NativeInterface [ftrm]
 
-		LoadModule('jsstd');
 		var buffer = new Buffer();
 		buffer.Write('123');
 		var blob = buffer.Read(2);
@@ -69,17 +67,15 @@ LoadModule('jsstd');
 		QA.ASSERT( blob._NI_BufferGet, true, 'returned Blob _NI_BufferGet is active' );
 
 
-/// Mutated Blob BufferGet NativeInterface
+/// Mutated Blob BufferGet NativeInterface [ftrm]
 
 		var b = new Blob('123');
 		b.replace; // force mutation
 		QA.ASSERT(  b instanceof String, true, 'blob is a String' )
 		QA.ASSERT(  b._NI_BufferGet, true, 'mutated blob has _NI_BufferGet' )
-		
-		
 
 
-/// Blob mutation preserves BufferGet NativeInterface
+/// Blob mutation preserves BufferGet NativeInterface [ftrm]
 
 		var b = new Blob();
 		QA.ASSERT( b._NI_BufferGet, true, 'constructed Blob has _NI_BufferGet enabled' );
@@ -89,7 +85,7 @@ LoadModule('jsstd');
 		QA.ASSERT( b._NI_BufferGet, true, 'mutated Blob has _NI_BufferGet' );
 
 
-/// Blob mutation keep properties [ftr]
+/// Blob mutation keep properties [ftrm]
 	
 		var b = new Blob('abcdef');
 		b.prop1 = 11; b.prop2 = 22; b.prop3 = 33; b.prop4 = 44; b.prop5 = 55; b.prop6 = 66; b.prop7 = 77;
@@ -99,7 +95,7 @@ LoadModule('jsstd');
 		QA.ASSERT( b.prop1+b.prop2+b.prop3+b.prop4+b.prop5+b.prop6+b.prop7, 308, 'properties are preserved' )
 
 
-/// Blob no mutation on concat [ftr]
+/// Blob no mutation on concat [ftrm]
 
 		var b1 = new Blob('abcdef');
 		var b2 = b1.concat('123');
@@ -112,7 +108,7 @@ LoadModule('jsstd');
 		QA.ASSERT( b2 instanceof String, false, 'is not String' )
 
 
-/// Blob mutation on replace [ftr]
+/// Blob mutation on replace [ftrm]
 
 		var b1 = new Blob('abcdef');
 		var b2 = b1.replace('bcde', '123');
@@ -125,7 +121,7 @@ LoadModule('jsstd');
 		QA.ASSERT_TYPE( b2, 'string' )
 
 
-/// Blob avoid mutation [ftr]
+/// Blob avoid mutation [ftrm]
 
 		var b = new Blob('123');
 		QA.ASSERT( b.length, 3, 'Blob length' );
@@ -183,14 +179,16 @@ LoadModule('jsstd');
 		QA.ASSERT( e instanceof Blob, true )
 		QA.ASSERT( e instanceof String, false )
 
-/// Blob misc mutation tests [ftr]
+
+/// Blob misc mutation tests [ftrm]
 
 	var b = Blob('123')
 	b.toUpperCase();
 	QA.ASSERT( b instanceof String, true );
 	QA.ASSERT( b.constructor, String );
 
-/// Blob mutation reliability [ftr]
+
+/// Blob mutation reliability [ftrm]
 
 		var b = new Blob('123');
 		b.replace;
@@ -208,7 +206,7 @@ LoadModule('jsstd');
 		QA.ASSERT_TYPE( b, String )
 
 
-/// Blob API [ftr]
+/// Blob API [ftrm]
 		
 		QA.ASSERT( Blob('123456').indexOf(''), 0, 'Blob indexOf' )
 		QA.ASSERT( Blob('123456').indexOf('1'), 0, 'Blob indexOf' )
@@ -272,7 +270,8 @@ LoadModule('jsstd');
 		for ( var j = -2; j < s.length+2; j++ )
 			QA.ASSERT( b.charCodeAt(j), s.charCodeAt(j), 'Blob/String charCodeAt('+j+')' )
 
-/// Blob and String comparaison (substr, substring) [ftr]
+
+/// Blob and String comparaison (substr, substring) [tr]
 
 	function argGenerator(count, argList) {
 
@@ -308,13 +307,13 @@ LoadModule('jsstd');
 
 
 
-/// Blob construct with data [ftr]
+/// Blob construct with data [ftrm]
 		
 		var bstr = new Blob('98765');
 		QA.ASSERT( String(bstr), '98765', 'string value' );
 
 
-/// Blob not constructed [ftr]
+/// Blob not constructed [ftrm]
 
 		var bstr = Blob('98765');
 		QA.ASSERT( String(bstr), '98765', 'string value' );
@@ -324,17 +323,17 @@ LoadModule('jsstd');
 		QA.ASSERT( String(v), '123', 'content' );
 
 
-/// Blob toString [ftr]
+/// Blob toString [ftrm]
 
 		QA.ASSERT( Blob('345').toString(), '345', 'string value' );
 
 
-/// Blob valueOf [ftr]
+/// Blob valueOf [ftrm]
 
 		QA.ASSERT( Blob('567').valueOf(), '567', 'value of' );
 
 
-/// Blob misc [ftr]
+/// Blob misc [ftrm]
 	
 		var b = new Blob();
 		b = b.concat( 'ABCD' );
@@ -360,21 +359,21 @@ LoadModule('jsstd');
 //		QA.ASSERT( b.length, 0, 'length' );
 
 
-/// Blob errors [ftr]
+/// Blob errors [ftrm]
 
 		var b = new Blob();
 		b.concat( 'ABCD' ); // ????
 		QA.ASSERT_EXCEPTION( function() b[5] = 'X', Error, 'set an out-of-range item' );
 
 
-/// Blob concat [ftr]
+/// Blob concat [ftrm]
 
 		var b = Blob('123');
 		var res = b.concat(b,Blob('456'),789,'abc');
 		QA.ASSERT_STR( res, '123123456789abc', 'Blob concat' );
 
 
-/// Blob substr [ftr]
+/// Blob substr [ftrm]
 
 		var b = new Blob('ABCDEF');
 		var s = 'ABCDEF'
@@ -401,7 +400,7 @@ LoadModule('jsstd');
 		QA.ASSERT( (b instanceof Blob) && !(b instanceof String), true, 'b is a Blob, not a String' );
 
 
-/// Blob substring [ftr]
+/// Blob substring [ftrm]
 
 		var b = new Blob('ABCDEF');
 		var s = 'ABCDEF'
@@ -432,10 +431,10 @@ LoadModule('jsstd');
 		QA.ASSERT( (b instanceof Blob) && !(b instanceof String), true, 'b is a Blob, not a String' );
 
 
-/// Blob setter [ftrd]
+/// Blob setter [ftrm]
 
 		var b = new Blob('ABCDEF');
-		b[0] = 'X';
+		QA.ASSERT_EXCEPTION( function() { b[0] = 'X' }, Error, '"Cannot modify immutable objects" exception' );
 		QA.ASSERT( ''+b.substr(0,1), 'X', 'setter' );
 		b[5] = 'W';
 		QA.ASSERT( ''+b[5], 'W', 'setted value' );
@@ -445,7 +444,7 @@ LoadModule('jsstd');
 		QA.ASSERT_EXCEPTION( function() { b[6] = 'Z'; }, Error, 'out of range' );
 
 
-/// Blob boolean test [ftr]
+/// Blob boolean test [ftrm]
 	
 		QA.ASSERT( !!Blob(''), true, 'empty Blob cast to boolean' );
 		QA.ASSERT( !!Blob('x'), true, 'non-empty Blob cast to boolean' );
@@ -453,7 +452,7 @@ LoadModule('jsstd');
 //		QA.ASSERT( !!Blob('a'), !!('a'), 'empty Blob cast to boolean' );
 
 
-/// Blob equality operator [ftr]
+/// Blob equality operator [ftrm]
 
 		var b = new Blob('ABCDEF');
 
@@ -466,7 +465,7 @@ LoadModule('jsstd');
 		QA.ASSERT( (Blob('abc') == Blob('xyz')), false, 'Blob == Blob' )
 
 
-/// Blob and String similarity [ftr]
+/// Blob and String similarity [ftrm]
 
 //		QA.ASSERT( (new Blob('abc') == new Blob('abc')), (new String('abc') == new String('abc')), 'new a == a' );
 //		QA.ASSERT( (new Blob('abc') != new Blob('abc')), (new String('abc') != new String('abc')), 'new a != a' );
@@ -500,7 +499,7 @@ LoadModule('jsstd');
 		QA.ASSERT( (Blob('abc') == 'abc'), (String('abc') == 'abc'), ' Str(a) == "a" ' );
 
 
-/// Stream [ftr]
+/// Stream [ftrm]
 
 		var blob = new Blob("1234567");
 		var stream = Stream(blob);
@@ -518,7 +517,7 @@ LoadModule('jsstd');
 		QA.ASSERT( String(stream.Read(blob.length)), '1234567', 'read the exact length' )
 
 
-/// Stream add [ftr]
+/// Stream add [ftrm]
 
 		var blob = new Blob("1234");
 		var stream = Stream(blob);
@@ -535,7 +534,7 @@ LoadModule('jsstd');
 		QA.ASSERT( String(s1.Read(3)), '123', 'stream Read()' )
 
 
-/// non-native Stream [ftr]
+/// non-native Stream [ftrm]
 
 		var buf = new Buffer();
 		buf.Write('abcdefghi');
@@ -570,7 +569,7 @@ LoadModule('jsstd');
 		QA.ASSERT( s.length, len, 'string length' );
 
 
-/// blob serialization [ftr]
+/// blob serialization [ftrm]
 
 		var b = Blob("my blob");
 		b.aPropertyOfMyBlob = 12345;
@@ -581,14 +580,10 @@ LoadModule('jsstd');
 		QA.ASSERT_STR( val, "my blob", 'blob content' );
 
 
-/// map serialization [ftrd]
+/// map serialization [ftrm]
 
-//		var m = Map({a:1, b:2, c:3});
-		
-//		var m2 = new Map([1,2,3,4]);
-
-//		QA.ASSERT_STR( [k+'='+v for ([k,v] in Iterator(m))], "my blob", 'blob content' );
-
-
-		
-		
+		var obj = {a:1, b:2, c:3};
+		var m = Map(obj);
+		var xdrData = XdrEncode(m);
+		var val = XdrDecode(xdrData);
+		QA.ASSERT_STR( uneval(obj), uneval(val), 'map content' );

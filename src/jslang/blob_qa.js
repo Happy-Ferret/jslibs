@@ -134,7 +134,7 @@ TestCase( SECTION, "var s = new Blob('hello'); s.lastIndexOf('ll', NaN)",    Las
 TestCase( SECTION, "var s = new Blob('hello'); s.lastIndexOf('ll', -0)",    LastIndexOf("hello","ll",-0), eval("var s = new Blob('hello'); s.lastIndexOf('ll', -0)") );
 
 
-var j = 0;
+var i, k, j = 0;
 
 for ( k = 0, i = 0x0021; i < 0x007e; i++, j++, k++ ) {
   new TestCase( SECTION,
@@ -225,6 +225,7 @@ new TestCase( SECTION,  "String.lastIndexOf(" +TEST_STRING + ")", 0, TEST_STRING
 function TestCase( section, name, expected, result ) QA.ASSERT( result, expected, name );
 var SECTION = '';
 
+var x;
 
 new TestCase( SECTION,     "x = new Blob(); x.charAt(0)",    "",     eval("x=new Blob();x.charAt(0)") );
 new TestCase( SECTION,     "x = new Blob(); x.charAt(1)",    "",     eval("x=new Blob();x.charAt(1)") );

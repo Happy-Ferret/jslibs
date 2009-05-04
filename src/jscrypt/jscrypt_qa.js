@@ -1,20 +1,20 @@
 LoadModule('jscrypt');
 
-/// MD5 digest [ftr]
+/// MD5 digest [ftrm]
 
 		var md5 = new Hash('md5');
 		md5.Process('foobarxxx');
 		QA.ASSERT_STR( md5.Done(), "\b\t\xAA\xC0\x10\xB1G\xA8\xC71'}*\x80\x07\xBF", 'digest integrity' );
 
 
-/// Cipher, Hash, Prng list [ftr]
+/// Cipher, Hash, Prng list [ftrm]
 	
 		QA.ASSERT( Cipher.list.toSource().length, 1609, 'length of Cipher.list' );
 		QA.ASSERT( Hash.list.toSource().length, 535, 'length of Hash.list' );
 		QA.ASSERT( Prng.list.toSource().length, 51, 'length of Prng.list' );
 
 
-/// DSA asymmetric crypt and decrypt [r]
+/// DSA asymmetric crypt and decrypt [rm]
 		
 		var fortuna = new Prng('fortuna');
 		fortuna.AutoEntropy(123); // give more entropy
@@ -33,7 +33,7 @@ LoadModule('jscrypt');
 		QA.ASSERT_STR( alice.Decrypt(encryptedData), secretMessage, 'data integrity' );
 
 
-/// RSA asymmetric crypt and decrypt [r]
+/// RSA asymmetric crypt and decrypt [rm]
 
 		var rnd = new Prng('fortuna');
 		rnd.AutoEntropy(128); // give more entropy
@@ -70,7 +70,7 @@ LoadModule('jscrypt');
 		QA.ASSERT_STR( cr.Decrypt(encryptedText), data, 'crypy/decript with Cast5 cipher using CFB mode' );
 
 
-/// Cipher 2 [ftrd]
+/// Cipher 2 [ftrdm]
 
 			var hkey = new Hash("sha256")('this is a secret key');
 			Print( HexEncode(hkey), '\n');

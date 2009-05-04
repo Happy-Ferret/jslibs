@@ -1,13 +1,13 @@
 // don't remove this first line !! ( see MemoryMapped test )
 LoadModule('jsio');
 
-/// File ancestor [ftr]
+/// File ancestor [ftrm]
 
 		var f = new File('');
 		QA.ASSERT( f instanceof Descriptor, true, 'Descriptor inheritance' );
 
 
-/// system info [ftr]
+/// system info [ftmr]
 
 		QA.ASSERT( typeof systemInfo, 'object', 'system info' );
 		var res = delete systemInfo.architecture;
@@ -19,24 +19,24 @@ LoadModule('jsio');
 		QA.ASSERT_HAS_PROPERTIES( systemInfo, 'architecture,name,release' );
 
 
-/// physical memory [ftr]
+/// physical memory [ftrm]
 
 		QA.ASSERT( physicalMemorySize == physicalMemorySize && physicalMemorySize > 1000000, true, 'physical Memory Size' );
 
 
-/// Noise generation 
+/// Noise generation [m]
 		
 		QA.ASSERT( GetRandomNoise(1).length, 1, 'random noise 1 byte' );
 		QA.ASSERT( GetRandomNoise(3).length, 3, 'random noise 3 bytes' );
 
 
-/// environment variables [ft]
+/// environment variables [ftm]
 		
 		QA.ASSERT( GetEnv('PATH').length > 1, true, 'get an environment' );
 		QA.ASSERT( GetEnv('sdfrwetwergfqwuyoruiqwye'), undefined, 'undefined environment variable' );
 
 
-/// process priority [ftr]
+/// process priority [ftrm]
 	
 		var save = processPriority;
 		
@@ -52,7 +52,7 @@ LoadModule('jsio');
 		processPriority = save;
 
 
-/// host name [ft]
+/// host name [ftm]
 
 		switch (systemInfo.name) {
 			case 'Windows_NT':
@@ -64,7 +64,7 @@ LoadModule('jsio');
 		}
 
 
-/// GetHostByName function [r]
+/// GetHostByName function [rm]
 
 		var res = Socket.GetHostsByName('localhost');
 		QA.ASSERT( res.indexOf('127.0.0.1') != -1, true, 'localhost is 127.0.0.1' );
@@ -74,13 +74,13 @@ LoadModule('jsio');
 		QA.ASSERT( res.length, 0, 'find nonexistent hostName' );
 
 
-/// GetHostByName function with hostName argument
+/// GetHostByName function with hostName argument [m]
 
 		var res = Socket.GetHostsByName(hostName);
 		QA.ASSERT( res.length >= 1, true, 'find hostName (may fail)' );
 
 
-/// empty poll [tr]
+/// empty poll [trm]
 
 		var t0 = IntervalNow();
 		var count = Poll([], 100);
@@ -89,7 +89,7 @@ LoadModule('jsio');
 		QA.ASSERT( t >= 99 && t < 150, true, 'poll timeout (may fail if high CPU load) t='+t );
 
 
-/// Non-blocking TCP Socket [tr]
+/// Non-blocking TCP Socket [trm]
 
 		var count = 0;
 		var dlist = [];
@@ -143,14 +143,15 @@ LoadModule('jsio');
 		}
 		
 		while (dlist.length)
-			dlist.pop().Close();
+		dlist.pop().Close();
 
-/// Creating a lot of sockets + GC [r]
+
+/// Creating a lot (64K+) of sockets + GC [r]
 
 	var s = [];
-	for ( var j = 0; j < 1000; j++ ) {
+	for ( var j = 0; j < 8; j++ ) {
 
-		for ( var i=0 ; i < 100 ; i++ )
+		for ( var i=0 ; i < 10000 ; i++ )
 			s.push(new Socket( Socket.TCP ));
 		s = [];
 		QA.GC();
@@ -159,13 +160,13 @@ LoadModule('jsio');
 /// Create/remove a lot of sockets [r]
 
 	var s = [];
-	for ( var i=0 ; i < 500 ; i++ )
+	for ( var i=0 ; i < 1000 ; i++ )
 		s.push(new Socket( Socket.TCP ));
 	while (s.length)
 		s.pop().Close();
 
 
-/// Non-blocking UDP Socket [tr]
+/// Non-blocking UDP Socket [trm]
 	
 		var s2 = new Socket( Socket.UDP );
 		s2.nonblocking = true;
@@ -195,7 +196,7 @@ LoadModule('jsio');
 		}
 
 
-/// TCP get
+/// TCP get [m]
 
 		var res, host, hostList = ['proxy', 'www.google.com', 'localhost']; // try to find a web server on port 80
 		do {
@@ -246,7 +247,7 @@ LoadModule('jsio');
 		QA.ASSERT( response.length > 0, true, 'has response content from '+host );
 
 
-/// closing Socket [ftr]
+/// closing Socket [ftrm]
 
 		var soc = new Socket();
 		QA.ASSERT( soc.type, Descriptor.DESC_SOCKET_TCP, 'descriptor type' );
@@ -255,7 +256,7 @@ LoadModule('jsio');
 		QA.ASSERT( soc.closed, true, 'socket is closed' );
 
 
-/// time interval [tr]
+/// time interval [trm]
 
 		var t0 = IntervalNow();
 		Sleep(250);
@@ -263,7 +264,7 @@ LoadModule('jsio');
 		QA.ASSERT( t >= 249 && t < 275, true, 'time accuracy' );
 
 
-/// shared memory simple test 1 [ftr]
+/// shared memory simple test 1 [ftrm]
 
 		var fileName = 'qa'+QA.RandomString(10);
 		var mem = new SharedMemory( fileName, 100 );
@@ -273,7 +274,7 @@ LoadModule('jsio');
 		QA.ASSERT( new File(fileName).exist, false, 'SharedMemory file has been removed (linux only ?)' );
 		
 
-/// shared memory simple test 2 [ftr]
+/// shared memory simple test 2 [ftrm]
 
 		var fileName = 'qa'+QA.RandomString(10);
 		
@@ -288,7 +289,7 @@ LoadModule('jsio');
 		QA.ASSERT( new File(fileName).exist, false, 'SharedMemory file has been removed (linux only ?)' );
 
 
-/// shared memory [ftr]
+/// shared memory [ftrm]
 
 		var fileName = 'qa'+QA.RandomString(10);
 		
@@ -308,7 +309,7 @@ LoadModule('jsio');
 		QA.ASSERT( new File(fileName).exist, false, 'SharedMemory file has been removed (linux only ?)' );
 
 
-/// standard file descriptors [ftr]
+/// standard file descriptors [ftrm]
 		
 		QA.ASSERT_HAS_PROPERTIES( File, 'stdin,stdout,stderr' );
 		QA.ASSERT( File.stdin.type, File.FILE_FILE, 'stdin file type');
@@ -316,7 +317,7 @@ LoadModule('jsio');
 		QA.ASSERT( File.stderr.type, File.FILE_FILE, 'stderr file type');
 
 
-/// File I/O [ftr]
+/// File I/O [ftrm]
 
 		var f = new File('qa_tmp_file.txt')
 		f.Open(File.CREATE_FILE | File.RDWR);
@@ -331,7 +332,7 @@ LoadModule('jsio');
 		QA.ASSERT( f.exist, false, 'file delete' );
 
 
-/// File info [ftr]
+/// File info [ftrm]
 	
 		var f = new File('qa_tmp_file_FileInfo.txt');
 		
@@ -350,7 +351,7 @@ LoadModule('jsio');
 		f.Delete();
 
 
-/// File content [ftr]
+/// File content [ftrm]
 
 		var data = String(new Date());
 		var f = new File('qa_tmp_content.txt');
@@ -362,7 +363,7 @@ LoadModule('jsio');
 		QA.ASSERT( f.exist, false, 'file exist' );
 
 
-/// File exception [ftr]
+/// File exception [ftrm]
 
 		var f = new File('qa_tmp_notfound.txt')
 		try {
@@ -378,20 +379,20 @@ LoadModule('jsio');
 		}
 
 
-/// File constants [ftr]
+/// File constants [ftrm]
 	
 		QA.ASSERT_HAS_PROPERTIES( File, 'RDONLY,WRONLY,RDWR,CREATE_FILE,APPEND,TRUNCATE,SYNC,EXCL' );
 		QA.ASSERT_HAS_PROPERTIES( File, 'SEEK_SET,SEEK_CUR,SEEK_END' );
 		QA.ASSERT_HAS_PROPERTIES( File, 'FILE_FILE,FILE_DIRECTORY,FILE_OTHER' );
 
 
-/// Directory constants [ftr]
+/// Directory constants [ftrm]
 		
 		delete Directory.SKIP_DOT_DOT;
 		QA.ASSERT_HAS_PROPERTIES( Directory, 'SKIP_NONE,SKIP_DOT,SKIP_DOT_DOT,SKIP_BOTH,SKIP_HIDDEN' );
 
 
-/// Directory [ftr]
+/// Directory [ftrm]
 		
 		var f = new File('qa_tmp_dir.txt');
 		f.content = 'test';
@@ -400,7 +401,7 @@ LoadModule('jsio');
 		f.content = undefined;
 
 
-/// Directory exist [ftr]
+/// Directory exist [ftrm]
 		
 		var d = new Directory('.');
 		QA.ASSERT( d.exist, true, 'directory exist' );
@@ -410,7 +411,7 @@ LoadModule('jsio');
 		QA.ASSERT( d1.name, 'qa_directory_do_not_exist', 'directory name' );
 
 
-/// create process read pipe
+/// create process read pipe [m]
 	
 		switch (systemInfo.name) {
 			case 'Windows_NT':
@@ -438,7 +439,7 @@ LoadModule('jsio');
 		}
 
 
-/// create process wait for exitcode
+/// create process wait for exitcode [m]
 
 		switch ( systemInfo.name ) {
 			case 'Windows_NT':
@@ -465,7 +466,7 @@ LoadModule('jsio');
 		QA.ASSERT( exitCode, 0, 'process exit code 0' );
 
 
-/// create process error detection [ftr]
+/// create process error detection [ftrm]
 
 		try {
 
@@ -478,7 +479,7 @@ LoadModule('jsio');
 		QA.FAILED( "no exception (cf mozilla bug #113095)" );
 	
 
-/// create process detach
+/// create process detach [m]
 		
 		switch ( systemInfo.name ) {
 			case 'Windows_NT':
@@ -498,14 +499,14 @@ LoadModule('jsio');
 		process.Detach();
 
 
-/// current working directory [ftr]
+/// current working directory [ftrm]
 	
 		QA.ASSERT( 'currentDirectory' in global, true, 'has currentDirectory' );
 		QA.ASSERT( typeof currentDirectory, 'string', 'current directory' );
 		QA.ASSERT( currentDirectory.length >= 1, true, 'current directory length' );
 
 
-/// MemoryMapped class [ftr]
+/// MemoryMapped class [ftrm]
 
 		var thisFilename = ITEM.file;
 		

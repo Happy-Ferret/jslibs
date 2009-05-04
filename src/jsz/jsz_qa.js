@@ -1,6 +1,6 @@
 LoadModule('jsz');
 
-/// deflate ratio 1 [ftr]
+/// deflate ratio 1 [ftrm]
 		
 		var uncompressezText = 'jjjjjjjjjjjssssssssssssssssssslllllliiiiiiiibbsssssssssssssss';
 		var level = 9; // 0..9
@@ -9,7 +9,7 @@ LoadModule('jsz');
 		QA.ASSERT( ratio, '37.70%', 'Bad compression ratio' );
 
 
-/// deflate ratio 2 [ftr]
+/// deflate ratio 2 [ftrm]
 		
 		var uncompressezText = 'zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz';
 
@@ -26,7 +26,7 @@ LoadModule('jsz');
 		QA.ASSERT( deflater.adler32, 2686765097, 'adler32' );
 		QA.ASSERT( deflater.lengthIn, 3 * uncompressezText.length, 'lengthIn property' );
 
-/// inflate object reusability [ftr]
+/// inflate object reusability [ftrm]
 
 		var data = 'clear data';
 		var deflatedData = new Z(Z.DEFLATE)(data, true);
@@ -37,7 +37,7 @@ LoadModule('jsz');
 		QA.ASSERT( inflater(deflatedData,true), data, '3rd complete inflate' );
 
 
-/// deflate object reusability [ftr]
+/// deflate object reusability [ftrm]
 
 		var data = 'clear data';
 		var deflatedData = new Z(Z.DEFLATE)(data, true);
@@ -48,7 +48,7 @@ LoadModule('jsz');
 		QA.ASSERT( deflater(data,true), deflatedData, '3rd complete deflate' );
 
 
-/// inflate / deflate [ftr]
+/// inflate / deflate [ftrm]
 		
 		var deflate = new Z(Z.DEFLATE);
 		var inflate = new Z(Z.INFLATE);
