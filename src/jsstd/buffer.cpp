@@ -199,7 +199,7 @@ inline JSBool BufferRefill( JSContext *cx, JSObject *obj, size_t amount ) { // a
 
 		char *buf;
 		buf = (char*)JS_malloc(cx, len);
-		J_S_ASSERT_ALLOC( buf );
+		J_CHK( buf );
 
 		J_CHK( nisr(cx, srcObj, buf, &len) );
 
@@ -372,7 +372,7 @@ JSBool ReadAmount( JSContext *cx, JSObject *obj, size_t amount, jsval *rval ) {
 
 	char *str;
 	str = (char*)JS_malloc(cx, amount +1); // (TBD) memory leak if ReadRawAmount failed
-	J_S_ASSERT_ALLOC(str);
+	J_CHK( str );
 
 	// (TBD) IMPORTANT: here, amount should be MIN( amount, buffer_size ). This can avoid an useless memory allocation.
 	int requestedAmount;
@@ -391,7 +391,7 @@ JSBool ReadAmount( JSContext *cx, JSObject *obj, size_t amount, jsval *rval ) {
 	if ( MaybeRealloc( requestedAmount, amount ) ) {
 
 		str = (char*)JS_realloc(cx, str, amount +1);
-		J_S_ASSERT_ALLOC(str);
+		J_CHK( str );
 	}
 
 	J_CHK( J_NewBlob(cx, str, amount, rval) );
@@ -543,7 +543,7 @@ DEFINE_CONSTRUCTOR() {
 
 	BufferPrivate *pv;
 	pv = (BufferPrivate *)JS_malloc(cx, sizeof(BufferPrivate));
-	J_S_ASSERT_ALLOC(pv);
+	J_CHK( pv );
 	J_CHK( JS_SetPrivate(cx, obj, pv) );
 	pv->queue = jl::QueueConstruct();
 	J_S_ASSERT_ALLOC(pv->queue);
@@ -878,7 +878,7 @@ DEFINE_FUNCTION( toString ) {
 
 	char *buffer;
 	buffer = (char*)JS_malloc(cx, pv->length +1);
-	J_S_ASSERT_ALLOC( buffer );
+	J_CHK( buffer );
 	buffer[pv->length] = '\0';
 
 	size_t pos;
@@ -898,14 +898,14 @@ DEFINE_FUNCTION( toString ) {
 
 	JSString *str;
 	str = JS_NewString(cx, buffer, pv->length);
-	J_S_ASSERT_ALLOC( str );
+	J_CHK( str );
 	*rval = STRING_TO_JSVAL(str);
 //	pv->length = 0;
 
 
 	// we have to return a real string !?
 	//char *bstrBuf = (char*)JS_malloc(cx, pv->length);
-	//J_S_ASSERT_ALLOC( bstrBuf );
+	//J_CHK( bstrBuf );
 	//size_t amount = pv->length;
 	//J_CHK( ReadRawAmount(cx, obj, &amount, bstrBuf) );
 	//JSObject *bstrObj = NewBlob(cx, bstrBuf, pv->length);
@@ -954,7 +954,7 @@ DEFINE_GET_PROPERTY() {
 
 				jschar chr = ((char*)chunk)[slot - offset];
 				JSString *str1 = JS_NewUCStringCopyN(cx, &chr, 1);
-				J_S_ASSERT_ALLOC( str1 );
+				J_CHK( str1 );
 				*vp = STRING_TO_JSVAL(str1);
 				return JS_TRUE;
 			}

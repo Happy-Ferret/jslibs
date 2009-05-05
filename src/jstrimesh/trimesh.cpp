@@ -39,10 +39,10 @@ BEGIN_CLASS( Trimesh ) // Start the definition of the class. It defines some sym
 DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are no remaing references to this object.
 
 	Surface *pv = (Surface*)JS_malloc(cx, sizeof(Surface));
-	if ( pv ) {
+	if ( !pv )
+		return;
 
-		JS_free(cx, pv);
-	}
+	JS_free(cx, pv);
 }
 
 DEFINE_CONSTRUCTOR() {
@@ -50,6 +50,7 @@ DEFINE_CONSTRUCTOR() {
 	J_S_ASSERT_CONSTRUCTING();
 	J_S_ASSERT_THIS_CLASS();
 	Surface *pv = (Surface*)JS_malloc(cx, sizeof(Surface));
+	J_CHK( pv );
 
 	Surface empty;
 	memset(&empty, 0, sizeof(Surface));
@@ -69,7 +70,7 @@ DEFINE_CONSTRUCTOR() {
 DEFINE_FUNCTION_FAST( AddVertex ) {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_ALLOC(pv);
+	J_S_ASSERT_RESOURCE(pv);
 
 	double x, y, z;
 	J_CHK( JsvalToDouble(cx, J_FARG(1), &x) );
@@ -82,7 +83,7 @@ DEFINE_FUNCTION_FAST( AddVertex ) {
 		pv->vertices = (SURFACE_REAL_TYPE*)JS_realloc(cx, pv->vertices, pv->verticesDataSize);
 	}
 
-	J_S_ASSERT_ALLOC(pv->vertices);
+	J_CHK( pv->vertices );
 
 	SURFACE_REAL_TYPE *pos = pv->vertices + pv->vertexCount * 3;
 	*(pos++) = x;
@@ -100,7 +101,7 @@ DEFINE_FUNCTION_FAST( AddVertex ) {
 DEFINE_FUNCTION_FAST( AddTriangle ) {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_ALLOC(pv);
+	J_S_ASSERT_RESOURCE(pv);
 
 	INDEX i1, i2, i3;
 	J_CHK( JsvalToUInt(cx, J_FARG(1), &i1) );
@@ -115,7 +116,7 @@ DEFINE_FUNCTION_FAST( AddTriangle ) {
 		pv->vertices = (SURFACE_REAL_TYPE*)JS_realloc(cx, pv->vertices, pv->verticesDataSize);
 	}
 
-	J_S_ASSERT_ALLOC(pv->indices);
+	J_CHK( pv->indices );
 
 	SURFACE_INDEX_TYPE *pos = pv->indices + pv->indexCount * 3;
 	*(pos++) = i1;
@@ -133,13 +134,13 @@ DEFINE_FUNCTION_FAST( AddTriangle ) {
 DEFINE_FUNCTION_FAST( AddIndices ) {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_ALLOC(pv);
+	J_S_ASSERT_RESOURCE( pv );
 
 	for ( size_t i = 0; i < argc; i++ )
 		J_S_ASSERT_INT(J_FARG(i+1));
 
 	pv->indices = (SURFACE_INDEX_TYPE*)JS_realloc(cx, pv->indices, (pv->indexCount + argc) * sizeof(SURFACE_REAL_TYPE));
-	J_S_ASSERT_ALLOC(pv->vertices);
+	J_CHK( pv->vertices );
 
 	SURFACE_INDEX_TYPE *pos = pv->indices;
 
@@ -162,7 +163,7 @@ DEFINE_FUNCTION_FAST( DefineVertexBuffer ) {
 	J_S_ASSERT_ARG_MIN( 1 );
 	J_S_ASSERT_ARRAY( J_FARG(1) );
 	Surface *pv = (Surface*)JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_ALLOC(pv);
+	J_S_ASSERT_RESOURCE(pv);
 
 	JSObject *arrayObj = JSVAL_TO_OBJECT(J_FARG(1));
 	jsuint count;
@@ -192,7 +193,7 @@ DEFINE_FUNCTION_FAST( DefineNormalBuffer ) {
 	J_S_ASSERT_ARG_MIN( 1 );
 	J_S_ASSERT_ARRAY( J_FARG(1) );
 	Surface *pv = (Surface*)JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_ALLOC(pv);
+	J_S_ASSERT_RESOURCE(pv);
 
 	JSObject *arrayObj = JSVAL_TO_OBJECT(J_FARG(1));
 	jsuint count;
@@ -219,7 +220,7 @@ DEFINE_FUNCTION_FAST( DefineTextureCoordinateBuffer ) {
 	J_S_ASSERT_ARG_MIN( 1 );
 	J_S_ASSERT_ARRAY( J_FARG(1) );
 	Surface *pv = (Surface*)JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_ALLOC(pv);
+	J_S_ASSERT_RESOURCE(pv);
 
 	JSObject *arrayObj = JSVAL_TO_OBJECT(J_FARG(1));
 	jsuint count;
@@ -246,7 +247,7 @@ DEFINE_FUNCTION_FAST( DefineColorBuffer ) {
 	J_S_ASSERT_ARG_MIN( 1 );
 	J_S_ASSERT_ARRAY( J_FARG(1) );
 	Surface *pv = (Surface*)JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_ALLOC(pv);
+	J_S_ASSERT_RESOURCE(pv);
 
 	JSObject *arrayObj = JSVAL_TO_OBJECT(J_FARG(1));
 	jsuint count;
@@ -273,7 +274,7 @@ DEFINE_FUNCTION_FAST( DefineIndexBuffer ) {
 	J_S_ASSERT_ARG_MIN( 1 );
 	J_S_ASSERT_ARRAY( J_FARG(1) );
 	Surface *pv = (Surface*)JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_ALLOC(pv);
+	J_S_ASSERT_RESOURCE(pv);
 
 	JSObject *arrayObj = JSVAL_TO_OBJECT(J_FARG(1));
 	jsuint count;
@@ -298,7 +299,7 @@ DEFINE_FUNCTION_FAST( DefineIndexBuffer ) {
 DEFINE_PROPERTY( vertexCount ) {
 
 	Surface *pv = (Surface*)JS_GetPrivate(cx, J_OBJ);
-	J_S_ASSERT_ALLOC(pv);
+	J_S_ASSERT_RESOURCE(pv);
 	J_CHK( IntToJsval(cx, pv->vertexCount, vp) );
 	return JS_TRUE;
 	JL_BAD;
@@ -307,7 +308,7 @@ DEFINE_PROPERTY( vertexCount ) {
 DEFINE_PROPERTY( indexCount ) {
 
 	Surface *pv = (Surface*)JS_GetPrivate(cx, J_OBJ);
-	J_S_ASSERT_ALLOC(pv);
+	J_S_ASSERT_RESOURCE(pv);
 	J_CHK( IntToJsval(cx, pv->indexCount, vp) );
 	return JS_TRUE;
 	JL_BAD;
@@ -317,7 +318,7 @@ DEFINE_PROPERTY( indexCount ) {
 DEFINE_PROPERTY( hasNormal ) {
 
 	Surface *pv = (Surface*)JS_GetPrivate(cx, J_OBJ);
-	J_S_ASSERT_ALLOC(pv);
+	J_S_ASSERT_RESOURCE(pv);
 	*vp = pv->normal != NULL ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;
 	JL_BAD;
@@ -326,7 +327,7 @@ DEFINE_PROPERTY( hasNormal ) {
 DEFINE_PROPERTY( hasTextureCoordinateBuffer ) {
 
 	Surface *pv = (Surface*)JS_GetPrivate(cx, J_OBJ);
-	J_S_ASSERT_ALLOC(pv);
+	J_S_ASSERT_RESOURCE(pv);
 	*vp = pv->normal != NULL ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;
 	JL_BAD;
@@ -335,7 +336,7 @@ DEFINE_PROPERTY( hasTextureCoordinateBuffer ) {
 DEFINE_PROPERTY( hasColor ) {
 
 	Surface *pv = (Surface*)JS_GetPrivate(cx, J_OBJ);
-	J_S_ASSERT_ALLOC(pv);
+	J_S_ASSERT_RESOURCE(pv);
 	*vp = pv->normal != NULL ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;
 	JL_BAD;

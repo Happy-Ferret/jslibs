@@ -95,7 +95,7 @@ JSBool CloseSharedMemory( JSContext *cx, JSObject *obj ) {
 		J_CHKB( PR_DeleteSemaphore(semName) == PR_SUCCESS, bad_ioerror );
 	}
 
-	free(pv->name);
+	JS_free(cx, pv);
 	J_CHK( JS_SetPrivate(cx, J_OBJ, NULL) );
 
 	return JS_TRUE;
@@ -176,8 +176,8 @@ DEFINE_CONSTRUCTOR() {
 	J_CHKB( mem != NULL, bad_ioerror ); // PR_SHM_READONLY
 
 	ClassPrivate *pv;
-	pv = (ClassPrivate*)malloc( sizeof(ClassPrivate) );
-	J_S_ASSERT_ALLOC( pv );
+	pv = (ClassPrivate*)JS_malloc(cx, sizeof(ClassPrivate));
+	J_CHK( pv );
 
 	strcpy(pv->name, name);
 	pv->shm = shm;
@@ -277,6 +277,7 @@ DEFINE_FUNCTION_FAST( Read ) {
 
 	char *data;
 	data = (char*)JS_malloc(cx, dataLength +1);
+	J_CHK( data );
 	data[dataLength] = '\0';
 
 	memmove(	data, (char *)pv->mem + sizeof(MemHeader) + offset, dataLength );
@@ -386,6 +387,7 @@ DEFINE_PROPERTY( contentGetter ) {
 	dataLength = mh->currentDataLength;
 	char *data;
 	data = (char*)JS_malloc(cx, dataLength +1);
+	J_CHK( data );
 	data[dataLength] = '\0';
 
 	memmove(	data, (char *)pv->mem + sizeof(MemHeader), dataLength );

@@ -33,10 +33,11 @@ struct Surface {
 
 ALWAYS_INLINE JSClass* TrimeshJSClass( JSContext *cx ) {
 
-	static JSClass *jsClass = NULL; // it's safe to use static keyword because JSClass do not depend on the rt or cx.
-	if (unlikely( jsClass == NULL ))
-		jsClass = JL_GetRegistredNativeClass(cx, "Blob");
-	return jsClass;
+//	static JSClass *jsClass = NULL; // it's safe to use static keyword because JSClass do not depend on the rt or cx.
+//	if (unlikely( jsClass == NULL ))
+//		jsClass = JL_GetRegistredNativeClass(cx, "Blob");
+//	return jsClass;
+	return JL_GetRegistredNativeClass(cx, "Blob");
 }
 
 

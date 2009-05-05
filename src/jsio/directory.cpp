@@ -286,7 +286,7 @@ DEFINE_FUNCTION( List ) {
 
 	JSObject *addrJsObj;
 	addrJsObj = JS_NewArrayObject(cx, 0, NULL);
-	J_S_ASSERT_ALLOC( addrJsObj );
+	J_CHK( addrJsObj );
 	*rval = OBJECT_TO_JSVAL( addrJsObj );
 
 	int index;
@@ -325,7 +325,7 @@ DEFINE_FUNCTION( List ) {
 		}
 
 		JSString *jsStr = JS_NewStringCopyZ( cx, dirEntry->name );
-		J_S_ASSERT_ALLOC( jsStr );
+		J_CHK( jsStr );
 		J_CHK(	JS_DefineElement(cx, addrJsObj, index++, STRING_TO_JSVAL(jsStr), NULL, NULL, JSPROP_ENUMERATE) );
 	}
 

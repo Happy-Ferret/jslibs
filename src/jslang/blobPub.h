@@ -20,10 +20,11 @@
 
 ALWAYS_INLINE JSClass* BlobJSClass( JSContext *cx ) {
 
-	static JSClass *jsClass = NULL; // it's safe to use static keyword because JSClass do not depend on the rt or cx.
-	if (unlikely( jsClass == NULL ))
-		jsClass = JL_GetRegistredNativeClass(cx, "Blob");
-	return jsClass;
+//	static JSClass *jsClass = NULL; // it's safe to use static keyword because JSClass do not depend on the rt or cx.
+//	if (unlikely( jsClass == NULL ))
+//		jsClass = JL_GetRegistredNativeClass(cx, "Blob");
+//	return jsClass;
+	return JL_GetRegistredNativeClass(cx, "Blob");
 }
 
 
@@ -53,7 +54,7 @@ inline JSObject* NewBlob( JSContext *cx, void *jsMallocatedBuffer, size_t buffer
 inline JSBool NewBlobCopyN(JSContext *cx, const void *data, size_t amount, JSObject **bstrObj) {
 
 	char *bstrBuf = (char*)JS_malloc(cx, amount);
-	J_S_ASSERT_ALLOC( bstrBuf );
+	J_CHK( bstrBuf );
 	memcpy( bstrBuf, data, amount );
 	*bstrObj = NewBlob(cx, bstrBuf, amount);
 	J_S_ASSERT( *bstrObj != NULL, "Unable to create a Blob." );

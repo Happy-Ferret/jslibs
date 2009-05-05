@@ -50,10 +50,11 @@ struct RGB {
 
 inline JSClass* TextureJSClass( JSContext *cx ) {
 
-	static JSClass *jsClass = NULL; // it's safe to use static keyword because JSClass do not depend on the rt or cx.
-	if (unlikely( jsClass == NULL ))
-		jsClass = JL_GetRegistredNativeClass(cx, "Texture");
-	return jsClass;
+//	static JSClass *jsClass = NULL; // it's safe to use static keyword because JSClass do not depend on the rt or cx.
+//	if (unlikely( jsClass == NULL ))
+//		jsClass = JL_GetRegistredNativeClass(cx, "Texture");
+//	return jsClass;
+	return JL_GetRegistredNativeClass(cx, "Texture");
 }
 
 #endif // _TEXTURE_H_

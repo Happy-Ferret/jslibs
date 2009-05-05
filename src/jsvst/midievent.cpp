@@ -34,13 +34,13 @@ BEGIN_CLASS( MidiEvent )
 DEFINE_FINALIZE() {
 
 	void *pv = JS_GetPrivate(cx, obj);
-	if ( pv ) {
+	if ( !pv )
+		return;
 
-		jsval constructed;
-		JS_GetReservedSlot(cx, obj, 0, &constructed);
-		if ( !JSVAL_IS_VOID( constructed ) )
-			JS_free(cx, pv);
-	}
+	jsval constructed;
+	JS_GetReservedSlot(cx, obj, 0, &constructed);
+	if ( !JSVAL_IS_VOID( constructed ) )
+		JS_free(cx, pv);
 }
 
 
@@ -49,9 +49,10 @@ DEFINE_CONSTRUCTOR() {
 	J_S_ASSERT_CONSTRUCTING();
 	J_CHK( JS_SetReservedSlot(cx, obj, 0, JSVAL_TRUE) );
 	VstMidiEvent *pv = (VstMidiEvent*)JS_malloc(cx, sizeof(VstMidiEvent));
+	J_CHK( pv );
+
 	pv->byteSize = sizeof(VstMidiEvent);
 	pv->type = kVstMidiType;
-	J_S_ASSERT_ALLOC(pv);
 	JS_SetPrivate(cx, obj, pv);
 	return JS_TRUE;
 	JL_BAD;

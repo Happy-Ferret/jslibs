@@ -79,7 +79,7 @@ DEFINE_FUNCTION( GetParam ) {
 		if ( paramValue != NULL ) {
 
 			JSString *jsstr = JS_NewStringCopyZ(cx, paramValue);
-			J_S_ASSERT_ALLOC( jsstr );
+			J_CHK( jsstr );
 			*rval = STRING_TO_JSVAL( jsstr );
 		} else
 			*rval = JSVAL_VOID;
@@ -87,7 +87,7 @@ DEFINE_FUNCTION( GetParam ) {
 		
 		// (TDB) use FCGX_ParamArray instead ?
 		JSObject *argsObj = JS_NewObject(cx, NULL, NULL, NULL);
-		J_S_ASSERT_ALLOC(argsObj);
+		J_CHK(argsObj);
 		int index = 0;
 		for ( char** ptr = _request.envp; *ptr; ptr++ ) {
 
@@ -122,7 +122,7 @@ DEFINE_FUNCTION( Read ) {
 	str[result] = '\0';
 	JSString *jsstr;
 	jsstr = JS_NewString(cx, str, result);
-	J_S_ASSERT_ALLOC( jsstr );
+	J_CHK( jsstr );
 	*rval = STRING_TO_JSVAL( jsstr );
 	return JS_TRUE;
 	JL_BAD;
@@ -182,7 +182,7 @@ DEFINE_FUNCTION( URLEncode ) {
 	J_CHK( JsvalToStringAndLength(cx, &argv[0], &src, &srcLen) );
 	char *dest;
 	dest = (char *)JS_malloc(cx, 3 * srcLen + 1);
-	J_S_ASSERT_ALLOC( dest );
+	J_CHK( dest );
 
 	const char *it;
 	char *it1;
@@ -214,7 +214,7 @@ DEFINE_FUNCTION( URLDecode ) {
 	J_CHK( JsvalToStringAndLength(cx, &argv[0], &src, &srcLen) );
 	char *dest;
 	dest = (char *)JS_malloc(cx, srcLen + 1);
-	J_S_ASSERT_ALLOC( dest );
+	J_CHK( dest );
 
 	const char *it;
 	char *it1;
@@ -444,7 +444,7 @@ DEFINE_FUNCTION( MakeHeader ) { // type, requestId, contentLength
 	J_S_ASSERT_ARG_MIN( 3 );
 
 	FCGI_Header *record = (FCGI_Header*) JS_malloc(cx, sizeof(FCGI_Header));
-	J_S_ASSERT_ALLOC( record );
+	J_CHK( record );
 
 	record->version = 1;
 
@@ -465,7 +465,7 @@ DEFINE_FUNCTION( MakeHeader ) { // type, requestId, contentLength
 	record->reserved = 0;
 
 	JSString *jsstr = JS_NewString(cx, (char*)record, sizeof(FCGI_Header));
-	J_S_ASSERT_ALLOC( jsstr );
+	J_CHK( jsstr );
 	*rval = STRING_TO_JSVAL(jsstr);
 	return JS_TRUE;
 	JL_BAD;
@@ -477,7 +477,7 @@ DEFINE_FUNCTION( MakeEndRequestBody ) {
 	J_S_ASSERT_ARG_MIN( 2 );
 
 	FCGI_EndRequestBody *body = (FCGI_EndRequestBody*) JS_malloc(cx, sizeof(FCGI_EndRequestBody));
-	J_S_ASSERT_ALLOC( body );
+	J_CHK( body );
 
 	unsigned long appStatus;
 	J_CHK( JsvalToUInt(cx, argv[0], &appStatus) );
@@ -490,7 +490,7 @@ DEFINE_FUNCTION( MakeEndRequestBody ) {
 	body->protocolStatus = JSVAL_TO_INT(argv[1]);
 
 	JSString *jsstr = JS_NewString(cx, (char*)body, sizeof(FCGI_EndRequestRecord));
-	J_S_ASSERT_ALLOC( jsstr );
+	J_CHK( jsstr );
 	*rval = STRING_TO_JSVAL(jsstr);
 	return JS_TRUE;
 	JL_BAD;

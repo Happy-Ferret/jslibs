@@ -143,7 +143,7 @@ DEFINE_FUNCTION( Close ) {
 JSBool ReadToJsval( JSContext *cx, PRFileDesc *fd, int amount, jsval *rval ) {
 
 	char *buf = (char*)JS_malloc(cx, amount +1);
-	J_S_ASSERT_ALLOC(buf);
+	J_CHK( buf );
 	buf[amount] = '\0';
 
 	PRInt32 res;
@@ -169,7 +169,7 @@ JSBool ReadToJsval( JSContext *cx, PRFileDesc *fd, int amount, jsval *rval ) {
 	if ( MaybeRealloc(amount, res) ) {
 
 		buf = (char*)JS_realloc(cx, buf, res + 1); // realloc the string using its real size
-		J_S_ASSERT_ALLOC(buf);
+		J_CHK( buf );
 	}
 
 	J_CHKB( J_NewBlob(cx, buf, res, rval), bad_free );
@@ -333,7 +333,7 @@ DEFINE_FUNCTION( Write ) {
 		//*rval = STRING_TO_JSVAL( JS_NewDependentString(cx, JSVAL_TO_STRING( J_ARG(1) ), sentAmount, len - sentAmount) ); // return unsent data // (TBD) use Blob ?
 
 		buffer = (char*)JS_malloc(cx, len - sentAmount +1);
-		J_S_ASSERT_ALLOC(buffer);
+		J_CHK( buffer );
 		buffer[len - sentAmount] = '\0';
 		memcpy(buffer, str, len - sentAmount);
 		J_CHKB( J_NewBlob(cx, buffer, len - sentAmount, rval), bad_free );
@@ -492,7 +492,7 @@ DEFINE_FUNCTION( Import ) {
 	if ( fd == NULL )
 		return ThrowIoError(cx);
 
-	J_S_ASSERT_ALLOC( descriptorObject );
+	J_CHK( descriptorObject );
 	J_CHK( JS_SetPrivate(cx, descriptorObject, (void*)fd) );
 	J_CHK( JS_SetReservedSlot(cx, descriptorObject, SLOT_JSIO_DESCRIPTOR_IMPORTED, JSVAL_TRUE) );
 

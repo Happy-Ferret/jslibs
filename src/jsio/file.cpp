@@ -257,7 +257,7 @@ DEFINE_FUNCTION( Move ) {
 
 	JSString *jsstr;
 	jsstr = JS_NewStringCopyZ(cx, destFileName);
-	J_S_ASSERT_ALLOC( jsstr );
+	J_CHK( jsstr );
 
 	J_CHK( JS_SetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, STRING_TO_JSVAL(jsstr) ) );
 
@@ -343,7 +343,7 @@ DEFINE_PROPERTY( contentGetter ) {
 		return ThrowIoError(cx);
 	char *buf;
 	buf = (char*)JS_malloc( cx, available +1 );
-	J_S_ASSERT_ALLOC(buf);
+	J_CHK(buf);
 	buf[available] = '\0';
 
 	PRInt32 res;
@@ -364,7 +364,7 @@ DEFINE_PROPERTY( contentGetter ) {
 	if ( MaybeRealloc( available, res ) ) { // should never occured
 
 		buf = (char*)JS_realloc(cx, buf, res + 1); // realloc the string using its real size
-		J_S_ASSERT_ALLOC(buf);
+		J_CHK(buf);
 	}
 
 	J_CHK( J_NewBlob( cx, buf, res, vp ) );

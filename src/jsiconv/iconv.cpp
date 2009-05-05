@@ -36,11 +36,11 @@ BEGIN_CLASS( Iconv ) // Start the definition of the class. It defines some symbo
 DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are no remaing references to this object.
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	if ( pv != NULL ) {
+	if ( !pv )
+		return;
 		
-		int status = iconv_close(pv->cd); // if ( status == -1 ) error is in errno.
-		JS_free(cx, pv);
-	}
+	int status = iconv_close(pv->cd); // if ( status == -1 ) error is in errno.
+	JS_free(cx, pv);
 }
 
 /**doc
@@ -67,7 +67,7 @@ DEFINE_CONSTRUCTOR() {
 
 	Private *pv;
 	pv = (Private*)JS_malloc(cx, sizeof(Private));
-	J_S_ASSERT_ALLOC(pv);
+	J_CHK(pv);
 
 	pv->remainderLen = 0;
 	pv->cd = iconv_open(tocode, fromcode);
@@ -141,7 +141,7 @@ DEFINE_CALL() {
 
 	outLen = inLen + MB_LEN_MAX + 512; // * 3/2; // * 1.5 (we use + MB_LEN_MAX to avoid remainderLen... section to failed with E2BIG)
 	outBuf = (char*)JS_malloc(cx, outLen +1);
-	J_S_ASSERT_ALLOC( outBuf );
+	J_CHK( outBuf );
 
 	char *outPtr;
 	outPtr = outBuf;
@@ -187,7 +187,7 @@ DEFINE_CALL() {
 						int processedOut = outPtr - outBuf;
 						outLen = inLen * processedOut / (inPtr - inBuf) + 512; // try to guess a better outLen based on the current in/out ratio.
 						outBuf = (char*)JS_realloc(cx, outBuf, outLen +1);
-						J_S_ASSERT_ALLOC(outBuf);
+						J_CHK(outBuf);
 						outPtr = outBuf + processedOut;
 						outLeft = outLen - processedOut;
 					}
@@ -200,7 +200,7 @@ DEFINE_CALL() {
 						int processedOut = outPtr - outBuf;
 						outLen = inLen * processedOut / (inPtr - inBuf) + 512; // try to guess a better outLen based on the current in/out ratio.
 						outBuf = (char*)JS_realloc(cx, outBuf, outLen +1);
-						J_S_ASSERT_ALLOC(outBuf);
+						J_CHK(outBuf);
 						outPtr = outBuf + processedOut;
 						outLeft = outLen - processedOut;
 					}
@@ -232,7 +232,7 @@ DEFINE_CALL() {
 	if ( MaybeRealloc(outLen, length) ) {
 
 		outBuf = (char*)JS_realloc(cx, outBuf, length +1);
-		J_S_ASSERT_ALLOC(outBuf);
+		J_CHK( outBuf );
 	}
 	outBuf[length] = '\0';
 
@@ -281,7 +281,7 @@ DEFINE_PROPERTY( list ) {
 	if ( JSVAL_IS_VOID( *vp ) ) {
 
 		JSObject *list = JS_NewArrayObject(cx, 0, NULL);
-		J_S_ASSERT_ALLOC( list );
+		J_CHK( list );
 		*vp = OBJECT_TO_JSVAL( list );
 		IteratorPrivate ipv = { cx, list, 0 };
 		iconvlist(do_one, &ipv);

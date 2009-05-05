@@ -376,7 +376,7 @@ DEFINE_PROPERTY( env ) {
 	if ( JSVAL_IS_VOID( *vp ) ) { //  create it if it does not exist and store it (cf. PROPERTY_READ_STORE)
 
 		JSObject *staticBody = JS_NewObject(cx, classBody, NULL, NULL);
-		J_S_ASSERT_ALLOC(staticBody);
+		J_CHK(staticBody);
 		JS_SetPrivate(cx, staticBody, (ode::dBodyID)0);
 		*vp = OBJECT_TO_JSVAL(staticBody);
 	}

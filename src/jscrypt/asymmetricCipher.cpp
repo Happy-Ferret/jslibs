@@ -87,7 +87,7 @@ DEFINE_FINALIZE() {
 		}
 	}
 	zeromem(pv, sizeof(AsymmetricCipherPrivate)); // safe clean
-	free(pv);
+	JS_free(cx, pv);
 }
 
 /**doc
@@ -127,8 +127,8 @@ DEFINE_CONSTRUCTOR() { // ( cipherName, hashName [, prngObject] [, PKCSVersion] 
 		J_REPORT_ERROR_1("Invalid asymmetric cipher %s.", asymmetricCipherName);
 
 	AsymmetricCipherPrivate *pv;
-	pv = (AsymmetricCipherPrivate *)malloc( sizeof(AsymmetricCipherPrivate) );
-	J_S_ASSERT_ALLOC( pv );
+	pv = (AsymmetricCipherPrivate *)JS_malloc(cx, sizeof(AsymmetricCipherPrivate));
+	J_CHK( pv );
 
 	pv->cipher = asymmetricCipher;
 
@@ -290,7 +290,6 @@ DEFINE_FUNCTION( Encrypt ) { // ( data [, lparam] )
 			break;
 		}
 		case ecc: {
-			J_S_ASSERT_ALLOC( out );
 			err = ecc_encrypt_key( (unsigned char *)in, inLength, (unsigned char *)out, &outLength, prngState, prngIndex, hashIndex, &pv->key.eccKey );
 			break;
 		}

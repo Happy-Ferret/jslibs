@@ -44,7 +44,7 @@ JSBool SqliteToJsval( JSContext *cx, sqlite3_value *value, jsval *rval ) {
 		case SQLITE_BLOB: {
 				int length = sqlite3_value_bytes(value);
 				void *data = JS_malloc(cx, length);
-				J_S_ASSERT_ALLOC(data);
+				J_CHK( data );
 				memcpy(data, sqlite3_value_blob(value), length);
 				J_CHK( J_NewBlob(cx, data, length, rval) );
 			}

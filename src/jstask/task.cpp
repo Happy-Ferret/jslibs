@@ -66,47 +66,47 @@ BEGIN_CLASS( Task )
 DEFINE_FINALIZE() {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	if ( pv ) {
+	if ( !pv )
+		return;
 
-		JLAcquireMutex(pv->mutex); // --
-		pv->end = true;
-		JLReleaseMutex(pv->mutex); // ++
+	JLAcquireMutex(pv->mutex); // --
+	pv->end = true;
+	JLReleaseMutex(pv->mutex); // ++
 
-		JLReleaseSemaphore(pv->requestSem); // +1 // unlock the thread an let it manage the "end"
+	JLReleaseSemaphore(pv->requestSem); // +1 // unlock the thread an let it manage the "end"
 
-		JLWaitThread(pv->threadHandle); // wait for the end of the thread
-		JLFreeThread(&pv->threadHandle);
+	JLWaitThread(pv->threadHandle); // wait for the end of the thread
+	JLFreeThread(&pv->threadHandle);
 
-		JLFreeSemaphore(&pv->requestSem);
-		JLFreeSemaphore(&pv->responseSem);
+	JLFreeSemaphore(&pv->requestSem);
+	JLFreeSemaphore(&pv->responseSem);
 
-		JLFreeMutex(&pv->mutex);
+	JLFreeMutex(&pv->mutex);
 
-		// cleanup lists
-		while ( !QueueIsEmpty(&pv->responseList) ) {
+	// cleanup lists
+	while ( !QueueIsEmpty(&pv->responseList) ) {
 
-			Serialized ser = (Serialized)QueueShift(&pv->responseList);
-			SerializerFree(&ser);
-		}
-		pv->pendingResponseCount = 0;
-
-		while ( !QueueIsEmpty(&pv->requestList) ) {
-
-			Serialized ser = (Serialized)QueueShift(&pv->requestList);
-			SerializerFree(&ser);
-		}
-		pv->pendingRequestCount = 0;
-
-		while ( !QueueIsEmpty(&pv->exceptionList) ) {
-
-			Serialized ser = (Serialized)QueueShift(&pv->exceptionList);
-			SerializerFree(&ser);
-		}
-
-		pv->processingRequestCount = 0;
-
-		JS_free(cx, pv);
+		Serialized ser = (Serialized)QueueShift(&pv->responseList);
+		SerializerFree(&ser);
 	}
+	pv->pendingResponseCount = 0;
+
+	while ( !QueueIsEmpty(&pv->requestList) ) {
+
+		Serialized ser = (Serialized)QueueShift(&pv->requestList);
+		SerializerFree(&ser);
+	}
+	pv->pendingRequestCount = 0;
+
+	while ( !QueueIsEmpty(&pv->exceptionList) ) {
+
+		Serialized ser = (Serialized)QueueShift(&pv->exceptionList);
+		SerializerFree(&ser);
+	}
+
+	pv->processingRequestCount = 0;
+
+	JS_free(cx, pv);
 }
 
 
@@ -287,7 +287,7 @@ DEFINE_CONSTRUCTOR() {
 	J_S_ASSERT_FUNCTION( J_ARG(1) );
 
 	pv = (Private*)JS_malloc(cx, sizeof(Private));
-	J_S_ASSERT_ALLOC(pv);
+	J_CHK( pv );
 
 	JLThreadPriorityType priority;
 	if ( J_ARG_ISDEF(2) ) {
@@ -550,6 +550,6 @@ END_CLASS
  }
 
  while ( !myTask.idle )
- Print( myTask.Response(), '\n' );
+  Print( myTask.Response(), '\n' );
  }}}
  **/

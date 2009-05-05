@@ -27,10 +27,11 @@ struct IdPrivate {
 
 inline JSClass *GetIdJSClass( JSContext *cx ) {
 
-	static JSClass *idJSClass = NULL; // it's safe to use static keyword because JSClass do not depend on the rt or cx.
-	if (unlikely( idJSClass == NULL ))
-		idJSClass = JL_GetRegistredNativeClass(cx, "Id");
-	return idJSClass;
+//	static JSClass *idJSClass = NULL; // it's safe to use static keyword because JSClass do not depend on the rt or cx.
+//	if (unlikely( idJSClass == NULL ))
+//		idJSClass = JL_GetRegistredNativeClass(cx, "Id");
+//	return idJSClass;
+	return JL_GetRegistredNativeClass(cx, "Id");
 }
 
 
@@ -41,11 +42,11 @@ inline JSBool CreateId( JSContext *cx, ID_TYPE idType, size_t userSize, void** u
 
 	JSObject *idObj;
 	idObj = JS_NewObject( cx, idJSClass, NULL, NULL );
-	J_S_ASSERT_ALLOC( idObj );
+	J_CHK( idObj );
 	*idVal = OBJECT_TO_JSVAL(idObj);
 	IdPrivate *pv;
 	pv = (IdPrivate*)JS_malloc(cx, sizeof(IdPrivate) + userSize);
-	J_S_ASSERT_ALLOC(pv);
+	J_CHK(pv);
 	J_CHKB( JS_SetPrivate(cx, idObj, pv), bad_free );
 
 	pv->idType = idType;

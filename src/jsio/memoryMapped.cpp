@@ -43,12 +43,12 @@ BEGIN_CLASS( MemoryMapped )
 DEFINE_FINALIZE() {
 
 	MemoryMappedPrivate *pv = (MemoryMappedPrivate*)JS_GetPrivate(cx, obj);
-	if ( pv != NULL ) {
+	if ( !pv )
+		return;
 
-		PR_MemUnmap(pv->addr, pv->size);
-		PR_CloseFileMap(pv->fmap);
-		free(pv);
-	}
+	PR_MemUnmap(pv->addr, pv->size);
+	PR_CloseFileMap(pv->fmap);
+	JS_free(cx, pv);
 }
 
 /**doc
@@ -75,7 +75,8 @@ DEFINE_CONSTRUCTOR() {
 	J_S_ASSERT_RESOURCE( fd );
 
 	MemoryMappedPrivate *pv;
-	pv = (MemoryMappedPrivate*)malloc(sizeof(MemoryMappedPrivate));
+	pv = (MemoryMappedPrivate*)JS_malloc(cx, sizeof(MemoryMappedPrivate));
+	J_CHK( pv );
 
 	pv->size = PR_Available(fd);
 

@@ -46,8 +46,8 @@ DEFINE_FUNCTION( Base64Encode ) {
 	outLength = 4 * ((inLength + 2) / 3) +1;
 	char *out;
 	out = (char *)JS_malloc( cx, outLength +1 );
+	J_CHK( out );
 	out[outLength] = '\0';
-	J_S_ASSERT_ALLOC( out );
 
 	int err;
 	err = base64_encode( (const unsigned char *)in, inLength, (unsigned char *)out, &outLength );
@@ -80,7 +80,7 @@ DEFINE_FUNCTION( Base64Decode ) {
 	outLength = 3 * (inLength-2) / 4 +1;
 	char *out;
 	out = (char *)JS_malloc(cx, outLength +1);
-	J_S_ASSERT_ALLOC( out );
+	J_CHK( out );
 	out[outLength] = '\0';
 
 	int err;
@@ -116,7 +116,7 @@ DEFINE_FUNCTION( HexEncode ) {
 	outLength = inLength * 2;
 	char *out;
 	out = (char *)JS_malloc(cx, outLength +1);
-	J_S_ASSERT_ALLOC( out );
+	J_CHK( out );
 	out[outLength] = '\0';
 
 	unsigned char c;
@@ -166,7 +166,7 @@ DEFINE_FUNCTION( HexDecode ) {
 	outLength = inLength / 2;
 	char *out;
 	out = (char *)JS_malloc(cx, outLength +1);
-	J_S_ASSERT_ALLOC( out );
+	J_CHK( out );
 	out[outLength] = '\0';
 
 	for ( unsigned long i=0; i<outLength; ++i )

@@ -83,6 +83,7 @@ DEFINE_CONSTRUCTOR() {
 
 		processArgc = 0 +1; // +1 is argv[0]
 		processArgv = (const char**)malloc(sizeof(const char**) * (processArgc +1)); // +1 is NULL
+		J_S_ASSERT_ALLOC( processArgv );
 	}
 
 	const char *path;

@@ -329,7 +329,7 @@ DEFINE_FINALIZE() {
 	JS_SetExecuteHook(rt, NULL, NULL);
 	if ( pv->excludedFiles )
 		CleanExcludedFileList(&pv->excludedFiles);
-	free(pv);
+	JS_free(cx, pv);
 }
 
 /**doc
@@ -362,8 +362,9 @@ DEFINE_CONSTRUCTOR() {
 	J_S_ASSERT_THIS_CLASS();
 
 	Private *pv;
-	pv = (Private*)malloc(sizeof(Private));
-	J_S_ASSERT_ALLOC(pv);
+	pv = (Private*)JS_malloc(cx, sizeof(Private));
+	J_CHK(pv);
+
 	memset(pv, 0, sizeof(Private));
 	J_CHK( JS_SetPrivate(cx, obj, pv) );
 	pv->debugHooks = JS_GetGlobalDebugHooks(JS_GetRuntime(cx));

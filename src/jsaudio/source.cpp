@@ -66,7 +66,7 @@ inline JSBool UnshiftJsval( JSContext *cx, jl::Queue *queue, jsval value ) {
 JSBool QueueBuffersJsval( JSContext *cx, jl::Queue *queue, jsval value ) {
 
 	jsval *pItem = (jsval*)JS_malloc(cx, sizeof(jsval));
-	J_S_ASSERT_ALLOC( pItem );
+	J_CHK( pItem );
 	*pItem = value;
 	QueuePush(queue, pItem); // no need to JS_AddRoot *pItem, see Tracer callback !
 	return JS_TRUE;
@@ -146,6 +146,8 @@ $TOC_MEMBER $INAME
 DEFINE_CONSTRUCTOR() {
 
 	Private *pv = (Private*)JS_malloc(cx, sizeof(Private));
+	J_CHK( pv );
+
 	pv->queue = jl::QueueConstruct();
 
 	alGenSources(1, &pv->sid);

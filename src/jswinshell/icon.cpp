@@ -117,8 +117,8 @@ DEFINE_CONSTRUCTOR() {
 		J_S_ASSERT( hIcon != NULL, "Unable to create the icon." );
 	}
 
-	HICON *phIcon = (HICON*)malloc(sizeof(HICON)); // this is needed because JS_SetPrivate stores ONLY alligned values
-	J_S_ASSERT_ALLOC( phIcon );
+	HICON *phIcon = (HICON*)JS_malloc(cx, sizeof(HICON)); // this is needed because JS_SetPrivate stores ONLY alligned values
+	J_CHK( phIcon );
 	*phIcon = hIcon;
 	JS_SetPrivate(cx, obj, phIcon);
 	return JS_TRUE;
@@ -128,13 +128,12 @@ DEFINE_CONSTRUCTOR() {
 DEFINE_FINALIZE() {
 
 	HICON *phIcon = (HICON*)JS_GetPrivate(cx, obj);
-	if ( phIcon != NULL ) {
+	if ( !phIcon )
+		return;
 
-		if ( *phIcon != NULL )
-			DestroyIcon(*phIcon);
-
-		free(phIcon);
-	}
+	if ( *phIcon != NULL )
+		DestroyIcon(*phIcon);
+	JS_free(cx, phIcon);
 }
 
 CONFIGURE_CLASS

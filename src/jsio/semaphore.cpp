@@ -36,17 +36,17 @@ struct ClassPrivate {
 DEFINE_FINALIZE() {
 
 	ClassPrivate *pv = (ClassPrivate*)JS_GetPrivate(cx, J_OBJ);
-	if ( pv != NULL ) {
+	if ( !pv )
+		return;
 
-		PRStatus status;
-		status = PR_CloseSemaphore(pv->semaphore);
+	PRStatus status;
+	status = PR_CloseSemaphore(pv->semaphore);
 
-		if ( pv->owner )
-			status = PR_DeleteSemaphore(pv->name);
+	if ( pv->owner )
+		status = PR_DeleteSemaphore(pv->name);
 
-		free(pv->name);
-		JS_SetPrivate(cx, J_OBJ, NULL);
-	}
+	JS_free(cx, pv);
+	JS_SetPrivate(cx, J_OBJ, NULL);
 }
 
 
@@ -94,8 +94,8 @@ DEFINE_CONSTRUCTOR() {
 	}
 
 	ClassPrivate *pv;
-	pv = (ClassPrivate*)malloc( sizeof(ClassPrivate) );
-	J_S_ASSERT_ALLOC( pv );
+	pv = (ClassPrivate*)JS_malloc(cx, sizeof(ClassPrivate));
+	J_CHK( pv );
 
 //	strcpy( pv->name, name ); // (TBD) use memcpy instead ?
 	memcpy(pv->name, name, nameLength);

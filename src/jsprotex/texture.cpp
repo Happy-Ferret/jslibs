@@ -340,12 +340,12 @@ inline void FreeTextureBuffers( JSContext* cx, Texture *tex ) {
 DEFINE_FINALIZE() {
 
 	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
-	if ( tex != NULL ) {
+	if ( !tex )
+		return;
 
-		FreeTextureBuffers(cx, tex);
-		JS_free(cx, tex);
-		JS_SetPrivate(cx, obj, NULL);
-	}
+	FreeTextureBuffers(cx, tex);
+	JS_free(cx, tex);
+	JS_SetPrivate(cx, obj, NULL);
 }
 
 /**doc
@@ -380,6 +380,7 @@ DEFINE_CONSTRUCTOR() {
 	J_S_ASSERT_ARG_MIN( 1 );
 	Texture *tex;
 	tex = (Texture *)JS_malloc(cx, sizeof(Texture));
+	J_CHK( tex );
 	tex->cbackBuffer = NULL;
 
 	J_CHK( SetBufferGetInterface(cx, obj, NativeInterfaceBufferGet) );
@@ -396,7 +397,7 @@ DEFINE_CONSTRUCTOR() {
 		J_S_ASSERT( channels <= PMAXCHANNELS, "Too many channels." );
 
 		tex->cbuffer = (PTYPE*)JS_malloc(cx, width * height * channels * sizeof(PTYPE) );
-		J_S_ASSERT_ALLOC( tex->cbuffer );
+		J_CHK( tex->cbuffer );
 
 		tex->width = width;
 		tex->height = height;
@@ -413,7 +414,7 @@ DEFINE_CONSTRUCTOR() {
 		int tsize;
 		tsize = srcTex->width * srcTex->height * srcTex->channels;
 		tex->cbuffer = (PTYPE*)JS_malloc(cx, tsize * sizeof(PTYPE) );
-		J_S_ASSERT_ALLOC( tex->cbuffer );
+		J_CHK( tex->cbuffer );
 
 		memcpy( tex->cbuffer, srcTex->cbuffer, tsize * sizeof(PTYPE) );
 		tex->width = srcTex->width;
@@ -456,7 +457,7 @@ DEFINE_CONSTRUCTOR() {
 		tsize = sWidth * sHeight * sChannels;
 
 		tex->cbuffer = (PTYPE*)JS_malloc(cx, tsize * sizeof(PTYPE) );
-		J_S_ASSERT_ALLOC( tex->cbuffer );
+		J_CHK( tex->cbuffer );
 
 		for ( int i=0; i<tsize; i++ )
 			tex->cbuffer[i] = (PTYPE)buffer[i] / (PTYPE)255.f; // map [0 -> 255] to [0.0 -> 1.0]
@@ -2009,7 +2010,7 @@ DEFINE_FUNCTION_FAST( Resize ) {
 
 
 		PTYPE *newBuffer = (PTYPE*)JS_malloc(cx, newWidth * newHeight * channels * sizeof(PTYPE) );
-		J_S_ASSERT_ALLOC( newBuffer );
+		J_CHK( newBuffer );
 
 		int spx, spy; // position in the source
 		float prx, pry; // pixel ratio

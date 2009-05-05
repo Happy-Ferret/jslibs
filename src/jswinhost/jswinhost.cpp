@@ -12,7 +12,7 @@ int consoleStdOut( JSContext *cx, const char *data, int length ) {
 
 		J_S_ASSERT_FUNCTION( functionVal );
 		JSString *str = JS_NewStringCopyN(cx, data, length);
-		J_S_ASSERT_ALLOC( str ); 
+		J_CHK( str ); 
 		jsval rval, arg = STRING_TO_JSVAL(str);
 		J_CHK ( JS_CallFunctionValue(cx, obj, functionVal, 1, &arg, &rval) );
 	}
@@ -29,7 +29,7 @@ int consoleStdErr( JSContext *cx, const char *data, int length ) {
 
 		J_S_ASSERT_FUNCTION( functionVal );
 		JSString *str = JS_NewStringCopyN(cx, data, length);
-		J_S_ASSERT_ALLOC( str ); 
+		J_CHK( str ); 
 		jsval rval, arg = STRING_TO_JSVAL(str);
 		J_CHK( JS_CallFunctionValue(cx, obj, functionVal, 1, &arg, &rval) );
 	}

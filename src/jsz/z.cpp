@@ -52,11 +52,10 @@ struct Private {
 DEFINE_FINALIZE() {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	if ( pv ) {
-
-		JS_free(cx, pv);
-		JS_SetPrivate(cx, obj, NULL);
-	}
+	if ( !pv )
+		return;
+	JS_free(cx, pv);
+	JS_SetPrivate(cx, obj, NULL);
 }
 
 
@@ -81,7 +80,8 @@ DEFINE_CONSTRUCTOR() {
 
 	Private *pv;
 	pv = (Private*)JS_malloc(cx, sizeof(Private));
-	J_S_ASSERT_ALLOC(pv);
+	J_CHK(pv);
+
 	J_CHK( JS_SetPrivate(cx, obj, pv) );
 	pv->stream.state = Z_NULL; // mendatory
 	pv->stream.zalloc = Z_NULL;
@@ -164,7 +164,7 @@ DEFINE_CALL() {
 		J_CHK( JsvalToStringAndLength(cx, &argv[0], &inputData, &inputLength) ); // warning: GC on the returned buffer !
 
 //		JSString *jssData = JS_ValueToString( cx, argv[0] );
-//		J_S_ASSERT_ALLOC( jssData );
+//		J_CHK( jssData );
 //		argv[0] = STRING_TO_JSVAL( jssData );
 //		inputLength = JS_GetStringLength( jssData );
 //		inputData = JS_GetStringBytes( jssData ); // no copy is done, we read directly in the string hold by SM

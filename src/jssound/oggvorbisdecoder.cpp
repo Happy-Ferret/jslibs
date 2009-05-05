@@ -129,7 +129,7 @@ DEFINE_FINALIZE() {
 	if ( pv != NULL ) {
 
 		ov_clear(&pv->ofDescriptor); // beware: info must be valid
-		free(pv);
+		JS_free(cx, pv);
 	}
 }
 
@@ -164,8 +164,8 @@ DEFINE_CONSTRUCTOR() {
 	J_S_ASSERT_ARG_MIN(1);
 	J_S_ASSERT_OBJECT( J_ARG(1) );
 
-	Private *pv = (Private*)malloc(sizeof(Private));
-	J_S_ASSERT_ALLOC(pv);
+	Private *pv = (Private*)JS_malloc(cx, sizeof(Private));
+	J_CHK( pv );
 	J_CHK( JS_SetPrivate(cx, obj, pv) );
 
 	J_CHK( JS_SetReservedSlot(cx, obj, SLOT_INPUT_STREAM, J_ARG(1) ) );
@@ -295,7 +295,7 @@ DEFINE_FUNCTION_FAST( Read ) {
 		do {
 
 			char *buffer = (char*)JS_malloc(cx, bufferSize);
-			J_S_ASSERT_ALLOC(buffer);
+			J_CHK( buffer );
 			jl::StackPush(&stack, buffer);
 
 			char *data = buffer+sizeof(int);
@@ -330,7 +330,7 @@ DEFINE_FUNCTION_FAST( Read ) {
 
 		// convert data chunks into a single memory buffer.
 		buf = (char*)JS_malloc(cx, totalSize);
-		J_S_ASSERT_ALLOC(buf);
+		J_CHK( buf );
 
 		// because the stack is LIFO, we have to start from the end.
 		buf += totalSize;

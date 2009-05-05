@@ -237,12 +237,12 @@ BEGIN_CLASS( Jabber )
 DEFINE_FINALIZE() {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	if ( pv ) {
+	if ( !pv )
+		return;
 
-		delete pv->client;
-		delete pv->handlers;
-		JS_free(cx, pv);
-	}
+	delete pv->client;
+	delete pv->handlers;
+	JS_free(cx, pv);
 }
 
 
@@ -260,7 +260,7 @@ DEFINE_CONSTRUCTOR() {
 	J_S_ASSERT_THIS_CLASS();
 	J_S_ASSERT_ARG_MIN(2);
 	Private *pv = (Private*)JS_malloc(cx, sizeof(Private));
-	J_S_ASSERT_ALLOC( pv );
+	J_CHK( pv );
 	J_CHK( JS_SetPrivate(cx, obj, pv) );
 	const char *jid, *password;
 	J_CHK( JsvalToString(cx, &J_ARG(1), &jid) );

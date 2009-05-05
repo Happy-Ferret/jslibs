@@ -89,11 +89,11 @@ BEGIN_CLASS( SVG ) // Start the definition of the class. It defines some symbols
 DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are no remaing references to this object.
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	if ( pv ) {
+	if ( !pv )
+		return;
 
-		g_object_unref(pv->handle);
-		JS_free(cx, pv);
-	}
+	g_object_unref(pv->handle);
+	JS_free(cx, pv);
 }
 
 
@@ -108,7 +108,7 @@ DEFINE_CONSTRUCTOR() {
 	J_S_ASSERT_THIS_CLASS();
 
 	Private *pv = (Private*)JS_malloc(cx, sizeof(Private));
-	J_S_ASSERT_ALLOC(pv);
+	J_CHK( pv );
 	pv->handle = rsvg_handle_new();
 	J_S_ASSERT( pv->handle != NULL, "Unable to create rsvg handler." );
 	cairo_matrix_init_identity(&pv->transformation);
@@ -349,7 +349,7 @@ DEFINE_FUNCTION_FAST( RenderImage ) { // using cairo
 	size_t length = pixelCount * channels;
 
 	void *image = JS_malloc(cx, length);
-	J_S_ASSERT_ALLOC(image);
+	J_CHK( image );
 
 
 	switch ( surfaceFormat ) {

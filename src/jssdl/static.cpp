@@ -77,14 +77,14 @@ DEFINE_FUNCTION_FAST( GetVideoModeList ) {
 	}
 
 	JSObject *modesArray = JS_NewArrayObject(cx, 0, NULL);
-	J_S_ASSERT_ALLOC(modesArray);
+	J_CHK(modesArray);
 	*J_FRVAL = OBJECT_TO_JSVAL( modesArray );
 
 	jsval tmp;
 	for ( int i = 0; modes[i] != NULL; i++ ) {
 
 		JSObject *rectArray = JS_NewArrayObject(cx, 2, NULL);
-		J_S_ASSERT_ALLOC(rectArray);
+		J_CHK(rectArray);
 
 		tmp = OBJECT_TO_JSVAL(rectArray);
 		J_CHK( JS_SetElement(cx, modesArray, i, &tmp) );

@@ -87,9 +87,10 @@ DEFINE_CONSTRUCTOR() {
 
 //	FT_Long faceIndex = 0;
 	int faceIndex;
-	faceIndex = 0;
 	if ( J_ARG_ISDEF(2) )
 		J_CHK( JsvalToInt(cx, J_ARG(2), &faceIndex) );
+	else
+		faceIndex = 0;
 
 	const char *filePathName;
 	J_CHK( JsvalToString(cx, &J_ARG(1), &filePathName) );

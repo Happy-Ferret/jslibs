@@ -427,7 +427,7 @@ DEFINE_FUNCTION( RecvFrom ) {
 
 	char *buffer;
 	buffer = (char *)JS_malloc(cx, available+1); // (TBD) optimize this if  available == 0 !!
-	J_S_ASSERT_ALLOC( buffer );
+	J_CHK( buffer );
 	buffer[available] = '\0';
 
 	PRNetAddr addr;
@@ -444,7 +444,7 @@ DEFINE_FUNCTION( RecvFrom ) {
 	}
 	JSString *strPeerName;
 	strPeerName = JS_NewStringCopyZ(cx, peerName);
-	J_S_ASSERT_ALLOC(strPeerName); // (TBD) else free buffer ? ( or, this is a fatal error, program should stop )
+	J_CHK( strPeerName ); // (TBD) else free buffer ? ( or, this is a fatal error, program should stop )
 
 	PRUint16 port;
 	port = PR_NetAddrInetPort(&addr);
@@ -474,7 +474,7 @@ DEFINE_FUNCTION( RecvFrom ) {
 
 	JSObject *arrayObject;
 	arrayObject = JS_NewArrayObject(cx, sizeof(arrayItems), arrayItems );
-	J_S_ASSERT_ALLOC( arrayObject ); // (TBD) else free buffer
+	J_CHK( arrayObject ); // (TBD) else free buffer
 	*rval = OBJECT_TO_JSVAL( arrayObject );
 
 	return JS_TRUE;
@@ -928,7 +928,7 @@ DEFINE_FUNCTION( GetHostsByName ) {
 
 	JSObject *addrJsObj;
 	addrJsObj = JS_NewArrayObject(cx, 0, NULL);
-	J_S_ASSERT_ALLOC( addrJsObj );
+	J_CHK( addrJsObj );
 
 	const char *host;
 	J_CHK( JsvalToString(cx, &J_ARG(1), &host) );
@@ -961,7 +961,7 @@ DEFINE_FUNCTION( GetHostsByName ) {
 		if ( PR_NetAddrToString(&addr, addrStr, sizeof(addrStr)) != PR_SUCCESS )
 			return ThrowIoError(cx);
 		JSString *str = JS_NewStringCopyZ(cx, addrStr);
-		J_S_ASSERT_ALLOC( str );
+		J_CHK( str );
 		JS_DefineElement(cx, addrJsObj, index++, STRING_TO_JSVAL(str), NULL, NULL, JSPROP_ENUMERATE);
 	}
 	*rval = OBJECT_TO_JSVAL(addrJsObj);

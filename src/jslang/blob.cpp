@@ -102,7 +102,7 @@ inline JSBool JsvalToBlob( JSContext *cx, jsval val, JSObject **obj ) {
 		if ( srcLen > 0 ) {
 
 			dst = JS_malloc(cx, srcLen +1);
-			J_S_ASSERT_ALLOC( dst );
+			J_CHK( dst );
 			((char*)dst)[srcLen] = '\0';
 			memcpy(dst, src, srcLen);
 		}
@@ -114,7 +114,7 @@ inline JSBool JsvalToBlob( JSContext *cx, jsval val, JSObject **obj ) {
 		if ( srcLen > 0 ) {
 
 			dst = JS_malloc(cx, srcLen +1);
-			J_S_ASSERT_ALLOC( dst );
+			J_CHK( dst );
 			((char*)dst)[srcLen] = '\0';
 
 			// (TBD) try to know if the string is deflated befor using JS_GetStringChars ??
@@ -134,8 +134,9 @@ inline JSBool JsvalToBlob( JSContext *cx, jsval val, JSObject **obj ) {
 DEFINE_FINALIZE() {
 
 	void *pv = JS_GetPrivate(cx, obj);
-	if (pv != NULL)
-		JS_free(cx, pv);
+	if ( !pv )
+		return;
+	JS_free(cx, pv);
 }
 
 
@@ -150,13 +151,15 @@ DEFINE_CONSTRUCTOR() {
 
 	void *dBuffer = NULL; // keep on top
 
-	if ( JS_IsConstructing(cx) != JS_TRUE ) { // supports this form (w/o new operator) : result.param1 = Blob('Hello World');
+	if ( !JS_IsConstructing(cx) ) { // supports this form (w/o new operator) : result.param1 = Blob('Hello World');
 
 		obj = JS_NewObject(cx, _class, NULL, NULL);
 		J_S_ASSERT( obj != NULL, "Blob construction failed." );
 		*rval = OBJECT_TO_JSVAL(obj);
 	} else {
-
+		
+//		JSClass *tmp = JL_GetRegistredNativeClass(cx, "Blob");
+//		printf("\n***DBG:%d\n", JS_GetClass(obj) == tmp);
 		J_S_ASSERT_THIS_CLASS();
 	}
 
@@ -167,7 +170,7 @@ DEFINE_CONSTRUCTOR() {
 		J_CHK( JsvalToStringAndLength(cx, &J_ARG(1), &sBuffer, &length) ); // warning: GC on the returned buffer !
 
 		dBuffer = JS_malloc(cx, length +1);
-		J_S_ASSERT_ALLOC( dBuffer );
+		J_CHK( dBuffer );
 		((char*)dBuffer)[length] = '\0';
 		memcpy(dBuffer, sBuffer, length);
 		J_CHK( JS_SetPrivate(cx, obj, dBuffer) );
@@ -181,6 +184,7 @@ DEFINE_CONSTRUCTOR() {
 	J_CHK( ReserveBufferGetInterface(cx, obj) );
 	J_CHK( SetBufferGetInterface(cx, obj, NativeInterfaceBufferGet) );
 	return JS_TRUE;
+
 bad:
 	if ( dBuffer )
 		JS_free(cx, dBuffer);
@@ -271,7 +275,7 @@ DEFINE_FUNCTION_FAST( concat ) {
 	}
 
 	dst = (char*)JS_malloc(cx, dstLen +1);
-	J_S_ASSERT_ALLOC( dst );
+	J_CHK( dst );
 	dst[dstLen] = '\0';
 
 	char *tmp;
@@ -373,7 +377,7 @@ DEFINE_FUNCTION_FAST( substr ) {
 
 	void *buffer;
 	buffer = JS_malloc(cx, length +1);
-	J_S_ASSERT_ALLOC( buffer );
+	J_CHK( buffer );
 	((char*)buffer)[length] = '\0';
 
 	memcpy(buffer, ((int8_t*)bstrBuffer) + start, length);
@@ -471,7 +475,7 @@ DEFINE_FUNCTION_FAST( substring ) {
 
 	void *buffer;
 	buffer = JS_malloc(cx, length +1);
-	J_S_ASSERT_ALLOC( buffer );
+	J_CHK( buffer );
 	((char*)buffer)[length] = '\0';
 
 	memcpy(buffer, ((int8_t*)bstrBuffer) + indexA, length);
@@ -676,7 +680,7 @@ DEFINE_FUNCTION_FAST( charAt ) {
 	chr = ((char*)buffer)[index];
 	JSString *str1;
 	str1 = JS_NewUCStringCopyN(cx, &chr, 1);
-	J_S_ASSERT_ALLOC( str1 );
+	J_CHK( str1 );
 	*J_FRVAL = STRING_TO_JSVAL(str1);
 
 	return JS_TRUE;
@@ -823,7 +827,7 @@ DEFINE_GET_PROPERTY() {
 	chr = ((char*)pv)[slot];
 	JSString *str1;
 	str1 = JS_NewUCStringCopyN(cx, &chr, 1);
-	J_S_ASSERT_ALLOC( str1 );
+	J_CHK( str1 );
 
 	*vp = STRING_TO_JSVAL(str1);
 

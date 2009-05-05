@@ -17,9 +17,10 @@
 
 inline JSClass* ImageJSClass( JSContext *cx ) {
 
-	static JSClass *jsClass = NULL; // it's safe to use static keyword because JSClass do not depend on the rt or cx.
-	if (unlikely( jsClass == NULL ))
-		jsClass = JL_GetRegistredNativeClass(cx, "Image");
+//	static JSClass *jsClass = NULL; // it's safe to use static keyword because JSClass do not depend on the rt or cx.
+//	if (unlikely( jsClass == NULL ))
+//		jsClass = JL_GetRegistredNativeClass(cx, "Image");
+	JSClass *jsClass = JL_GetRegistredNativeClass(cx, "Image");
 	return jsClass;
 }
 

@@ -94,7 +94,7 @@ DEFINE_CONSTRUCTOR() {
 	if ( JS_IsConstructing(cx) == JS_FALSE ) { // supports this form (w/o new operator) : result.param1 = Blob('Hello World');
 
 		obj = JS_NewObject(cx, _class, NULL, NULL);
-		J_S_ASSERT_ALLOC( obj );
+		J_CHK( obj );
 		*rval = OBJECT_TO_JSVAL(obj);
 	} else {
 
@@ -129,7 +129,7 @@ DEFINE_FUNCTION_FAST( Read ) {
 
 	char *buffer;
 	buffer = (char*)JS_malloc(cx, amount +1);
-	J_S_ASSERT_ALLOC(buffer);
+	J_CHK(buffer);
 
 	size_t readAmount;
 	readAmount = amount;

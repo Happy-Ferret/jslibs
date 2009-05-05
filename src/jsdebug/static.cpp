@@ -694,7 +694,7 @@ DEFINE_PROPERTY( privateMemoryUsage ) {
 /**doc
 $TOC_MEMBER $INAME
  $INAME $READONLY
-  Is the amount of bytes mallocated by the JavaScript engine.
+  Is the amount of bytes mallocated by the JavaScript engine. It is incremented each time the JavaScript engine allocates memory.
 **/
 DEFINE_PROPERTY( gcMallocBytes ) {
 
@@ -713,7 +713,7 @@ DEFINE_PROPERTY( gcMallocBytes ) {
 /**doc
 $TOC_MEMBER $INAME
  $INAME $READONLY
-  Is the amount of bytes allocated by the JavaScript engine.
+  It is the total amount of memory that the GC uses now and right after the last GC.
 **/
 DEFINE_PROPERTY( gcBytes ) {
 
@@ -755,6 +755,7 @@ DEFINE_PROPERTY( gcZeal ) {
 	JL_BAD;
 }
 #endif // JS_GC_ZEAL
+
 
 
 DEFINE_FUNCTION_FAST( DisableJIT ) {
@@ -950,7 +951,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY( scriptFilenameList ) {
 
 	JSObject *arr = JS_NewArrayObject(cx, 0, NULL);
-	J_S_ASSERT_ALLOC(arr);
+	J_CHK(arr);
 	*vp = OBJECT_TO_JSVAL(arr);
 
 	int index = 0;
@@ -1082,7 +1083,7 @@ DEFINE_FUNCTION_FAST( StackFrameInfo ) {
 
 	JSObject *frameInfo;
 	frameInfo = JS_NewObject(cx, NULL, NULL, NULL);
-	J_S_ASSERT_ALLOC( frameInfo );
+	J_CHK( frameInfo );
 	*J_FRVAL = OBJECT_TO_JSVAL(frameInfo);
 	jsval tmp;
 
@@ -1346,7 +1347,7 @@ DEFINE_FUNCTION_FAST( PropertiesList ) {
 
 	JSObject *arrayObject;
 	arrayObject = JS_NewArrayObject(cx, 0, NULL);
-	J_S_ASSERT_ALLOC( arrayObject );
+	J_CHK( arrayObject );
 	*J_FRVAL = OBJECT_TO_JSVAL( arrayObject );
 
 	jsval tmp;
@@ -1401,7 +1402,7 @@ DEFINE_FUNCTION_FAST( PropertiesInfo ) {
 
 	JSObject *arrayObject;
 	arrayObject = JS_NewArrayObject(cx, 0, NULL);
-	J_S_ASSERT_ALLOC( arrayObject );
+	J_CHK( arrayObject );
 	*J_FRVAL = OBJECT_TO_JSVAL( arrayObject );
 
 	JSPropertyDesc desc;

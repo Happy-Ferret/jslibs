@@ -145,7 +145,7 @@ DEFINE_FUNCTION_FAST( DecodeOggVorbis ) {
 
 	// convert data chunks into a single memory buffer.
 	char *buf = (char*)JS_malloc(cx, totalSize);
-	J_S_ASSERT_ALLOC(buf);
+	J_CHK( buf );
 
 	jsval bstr;
 	J_CHK( J_NewBlob(cx, buf, totalSize, &bstr) );
@@ -350,7 +350,7 @@ DEFINE_FUNCTION_FAST( DecodeSound ) {
 
 	// convert data chunks into a single memory buffer.
 	char *buf = (char*)JS_malloc(cx, totalSize);
-	J_S_ASSERT_ALLOC(buf);
+	J_CHK( buf );
 
 //	JSObject *bstrObj = J_NewBlob(cx, buf, totalSize);
 //	J_S_ASSERT( bstrObj != NULL, "Unable to create the Blob object.");

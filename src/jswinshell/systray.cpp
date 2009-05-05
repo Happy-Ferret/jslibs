@@ -185,7 +185,7 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 		case WM_SETFOCUS:
 		case WM_KILLFOCUS:
 		case WM_COMMAND: {
-			MSGInfo *msg = (MSGInfo*)malloc(sizeof(MSGInfo));
+			MSGInfo *msg = (MSGInfo*)malloc(sizeof(MSGInfo)); // (TBD) free msg ?
 			// BOOL swapButtons = GetSystemMetrics(SM_SWAPBUTTON); // (TBD) use it
 
 			msg->lButton = GetAsyncKeyState(VK_LBUTTON) > 0; // (TBD) check !!
@@ -313,7 +313,7 @@ DEFINE_CONSTRUCTOR() {
 	J_S_ASSERT( tpd.hWnd != NULL, "Unable to create the window." );
 	SetWindowLong(tpd.hWnd, GWL_USERDATA, GetCurrentThreadId() ); // thread where the messages will be routed
 
-	NOTIFYICONDATA *nid = (NOTIFYICONDATA*)malloc( sizeof(NOTIFYICONDATA) );
+	NOTIFYICONDATA *nid = (NOTIFYICONDATA*)JS_malloc(cx, sizeof(NOTIFYICONDATA) );
 	memset(nid, 0, sizeof(NOTIFYICONDATA));
 	nid->cbSize = sizeof(NOTIFYICONDATA);
 	nid->hWnd = tpd.hWnd;
@@ -336,11 +336,12 @@ DEFINE_CONSTRUCTOR() {
 DEFINE_FINALIZE() {
 
 	NOTIFYICONDATA *nid = (NOTIFYICONDATA*)JS_GetPrivate(cx, obj);
-	if ( nid != NULL ) { // if not already closed
+	if ( !nid )
+		return;
 
-		SendMessage( nid->hWnd, WM_CLOSE, 0, 0 ); // PostMessage
-		BOOL status = Shell_NotifyIcon(NIM_DELETE, nid); // (TBD) error check
-	}
+	SendMessage( nid->hWnd, WM_CLOSE, 0, 0 ); // PostMessage
+	BOOL status = Shell_NotifyIcon(NIM_DELETE, nid); // (TBD) error check
+	JS_free(cx, nid);
 }
 
 
@@ -393,7 +394,7 @@ DEFINE_FUNCTION( ProcessEvents ) {
 			int mButton = trayWndMsg->lButton ? 1 : trayWndMsg->rButton ? 2 : 0;
 			int mouseX = trayWndMsg->mouseX;
 			int mouseY = trayWndMsg->mouseY;
-			free(trayWndMsg);
+			free(trayWndMsg); // (TBD) check this
 			jsval functionVal;
 
 			switch ( message ) {

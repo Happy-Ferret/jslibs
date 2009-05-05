@@ -193,7 +193,7 @@ DEFINE_FUNCTION( DecodeJpegImage ) {
 	length = height * bytePerRow;
 	JOCTET * data;
 	data = (JOCTET *)JS_malloc(cx, length);
-	J_S_ASSERT_ALLOC(data);
+	J_CHK( data );
 
 	jsval blobVal;
 	J_CHK( J_NewBlob(cx, data, length, &blobVal) );
@@ -308,7 +308,7 @@ DEFINE_FUNCTION( DecodePngImage ) {
 	length = height * bytePerRow;
 	png_bytep data;
 	data = (png_bytep)JS_malloc(cx, length);
-	J_S_ASSERT_ALLOC(data);
+	J_CHK( data );
 
 	jsval blobVal;
 	J_CHK( J_NewBlob(cx, data, length, &blobVal) );
@@ -382,7 +382,7 @@ DEFINE_FUNCTION_FAST( EncodePngImage ) {
 	PngWriteUserStruct desc;
 
 	desc.buffer = JS_malloc(cx, sWidth * sHeight * sChannels + 1024);
-	J_S_ASSERT_ALLOC( desc.buffer );
+	J_CHK( desc.buffer );
 	desc.pos = 0;
 
 	const char *sBuffer;

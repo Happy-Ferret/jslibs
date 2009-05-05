@@ -139,11 +139,11 @@ static SF_VIRTUAL_IO sfCallbacks = { SfGetFilelen, SfSeek, SfRead, 0, SfTell };
 DEFINE_FINALIZE() {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	if ( pv != NULL ) {
+	if ( !pv )
+		return;
 
-		sf_close(pv->sfDescriptor);
-		free(pv);
-	}
+	sf_close(pv->sfDescriptor);
+	JS_free(cx, pv);
 }
 
 /**doc
@@ -176,8 +176,8 @@ DEFINE_CONSTRUCTOR() {
 	J_S_ASSERT_ARG_MIN(1);
 	J_S_ASSERT_OBJECT( J_ARG(1) );
 
-	Private *pv = (Private*)malloc(sizeof(Private));
-	J_S_ASSERT_ALLOC(pv);
+	Private *pv = (Private*)JS_malloc(cx, sizeof(Private));
+	J_CHK( pv );
 	J_CHK( JS_SetPrivate(cx, obj, pv) );
 
 	J_CHK( JS_SetReservedSlot(cx, obj, SLOT_INPUT_STREAM, J_ARG(1) ) );
@@ -289,7 +289,7 @@ $TOC_MEMBER $INAME
 		do {
 
 			char *buffer = (char*)JS_malloc(cx, bufferSize);
-			J_S_ASSERT_ALLOC(buffer);
+			J_CHK( buffer );
 			jl::StackPush(&stack, buffer);
 
 			char *data = buffer+sizeof(int);
@@ -317,7 +317,7 @@ $TOC_MEMBER $INAME
 
 		// convert data chunks into a single memory buffer.
 		buf = (char*)JS_malloc(cx, totalSize);
-		J_S_ASSERT_ALLOC(buf);
+		J_CHK( buf );
 
 		// because the stack is LIFO, we have to start from the end.
 		buf += totalSize;

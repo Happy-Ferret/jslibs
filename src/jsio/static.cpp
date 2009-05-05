@@ -369,7 +369,7 @@ DEFINE_FUNCTION( GetEnv ) {
 
 //		JSString *jsstr = JS_NewExternalString(cx, (jschar*)value, strlen(value), JS_AddExternalStringFinalizer(NULL)); only works with unicode strings
 		JSString *jsstr = JS_NewStringCopyZ(cx,value);
-		J_S_ASSERT_ALLOC( jsstr );
+		J_CHK( jsstr );
 		*rval = STRING_TO_JSVAL(jsstr);
 	}
 	return JS_TRUE;
@@ -422,7 +422,7 @@ DEFINE_FUNCTION( GetRandomNoise ) {
 	rndSize = JSVAL_TO_INT( J_ARG(1) );
 	void *buf;
 	buf = (void*)JS_malloc(cx, rndSize);
-	J_S_ASSERT_ALLOC( buf );
+	J_CHK( buf );
 	PRSize size;
 	size = PR_GetRandomNoise(buf, rndSize);
 	if ( size <= 0 ) {
@@ -734,7 +734,7 @@ DEFINE_PROPERTY( hostName ) {
 	if ( status != PR_SUCCESS )
 		return ThrowIoError(cx);
 	JSString *jsstr = JS_NewStringCopyZ(cx,tmp);
-	J_S_ASSERT_ALLOC( jsstr );
+	J_CHK( jsstr );
 	*vp = STRING_TO_JSVAL(jsstr);
 	return JS_TRUE;
 	JL_BAD;
@@ -779,7 +779,7 @@ DEFINE_PROPERTY( systemInfo ) {
 		char tmp[SYS_INFO_BUFFER_LENGTH];
 
 		JSObject *info = JS_NewObject(cx, NULL, NULL, NULL);
-		J_S_ASSERT_ALLOC( info );
+		J_CHK( info );
 		*vp = OBJECT_TO_JSVAL( info );
 
 		PRStatus status;
@@ -792,7 +792,7 @@ DEFINE_PROPERTY( systemInfo ) {
 		if ( status != PR_SUCCESS )
 			return ThrowIoError(cx);
 		jsstr = JS_NewStringCopyZ(cx,tmp);
-		J_S_ASSERT_ALLOC( jsstr );
+		J_CHK( jsstr );
 //		tmpVal = STRING_TO_JSVAL(jsstr);
 //		JS_SetProperty(cx, info, "architecture", &tmpVal);
 		J_CHK( JS_DefineProperty(cx, info, "architecture", STRING_TO_JSVAL(jsstr), NULL, NULL, JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT) );
@@ -801,7 +801,7 @@ DEFINE_PROPERTY( systemInfo ) {
 		if ( status != PR_SUCCESS )
 			return ThrowIoError(cx);
 		jsstr = JS_NewStringCopyZ(cx,tmp);
-		J_S_ASSERT_ALLOC( jsstr );
+		J_CHK( jsstr );
 //		tmpVal = STRING_TO_JSVAL(jsstr);
 //		JS_SetProperty(cx, info, "name", &tmpVal);
 		J_CHK( JS_DefineProperty(cx, info, "name", STRING_TO_JSVAL(jsstr), NULL, NULL, JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT) );
@@ -810,7 +810,7 @@ DEFINE_PROPERTY( systemInfo ) {
 		if ( status != PR_SUCCESS )
 			return ThrowIoError(cx);
 		jsstr = JS_NewStringCopyZ(cx,tmp);
-		J_S_ASSERT_ALLOC( jsstr );
+		J_CHK( jsstr );
 //		tmpVal = STRING_TO_JSVAL(jsstr);
 //		JS_SetProperty(cx, info, "release", &tmpVal);
 		J_CHK( JS_DefineProperty(cx, info, "release", STRING_TO_JSVAL(jsstr), NULL, NULL, JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT) );
@@ -921,7 +921,7 @@ DEFINE_PROPERTY_GETTER( currentDirectory ) {
 	getcwd(buf, sizeof(buf));
 #endif // XP_WIN
 	JSString *str = JS_NewStringCopyZ(cx, buf);
-	J_S_ASSERT_ALLOC( str );
+	J_CHK( str );
 	*vp = STRING_TO_JSVAL( str );
 	return JS_TRUE;
 	JL_BAD;
@@ -957,7 +957,7 @@ DEFINE_PROPERTY( directorySeparator ) {
 
 		jschar sep = PR_GetDirectorySeparator();
 		JSString *str = JS_InternUCStringN(cx, &sep, 1);
-		J_S_ASSERT_ALLOC( str );
+		J_CHK( str );
 		*vp = STRING_TO_JSVAL( str );
 	}
 	return JS_TRUE;
@@ -979,7 +979,7 @@ DEFINE_PROPERTY( pathSeparator ) {
 
 		jschar sep = PR_GetPathSeparator();
 		JSString *str = JS_InternUCStringN(cx, &sep, 1);
-		J_S_ASSERT_ALLOC( str );
+		J_CHK( str );
 		*vp = STRING_TO_JSVAL( str );
 	}
 	return JS_TRUE;

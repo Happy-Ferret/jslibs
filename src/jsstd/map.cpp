@@ -50,7 +50,7 @@ DEFINE_CONSTRUCTOR() {
 
 		//Doc: JS_NewObject, JS_NewObjectWithGivenProto behaves exactly the same, except that if proto is NULL, it creates an object with no prototype.
 		obj = JS_NewObjectWithGivenProto(cx, _class, NULL, NULL);
-		J_S_ASSERT_ALLOC( obj );
+		J_CHK( obj );
 		*rval = OBJECT_TO_JSVAL(obj);
 	}
 

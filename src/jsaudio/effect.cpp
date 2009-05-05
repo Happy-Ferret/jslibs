@@ -50,6 +50,7 @@ $TOC_MEMBER $INAME
 DEFINE_CONSTRUCTOR() {
 
 	Private *pv = (Private*)JS_malloc(cx, sizeof(Private));
+	J_CHK( pv );
 	alGenEffects(1, &pv->effect);
 	J_CHK( CheckThrowCurrentOalError(cx) );
 

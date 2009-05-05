@@ -303,10 +303,10 @@ ALWAYS_INLINE void SetHostPrivate( JSContext *cx, HostPrivate *hostPrivate ) {
 	J_S_ASSERT( JsvalIsFunction(cx, (value)), " Function is expected." )
 
 #define J_S_ASSERT_CLASS(jsObject, jsClass) \
-	J_S_ASSERT_1( (jsObject) != NULL && JL_GetClass(jsObject) == (jsClass), J__ERRMSG_INVALID_CLASS "%s expected.", (jsClass)->name )
+	J_S_ASSERT_1( (jsObject) != NULL && JL_GetClass(jsObject) == (jsClass), J__ERRMSG_INVALID_CLASS " %s expected.", (jsClass)->name )
 
 #define J_S_ASSERT_CLASS_NAME(jsObject, className) \
-	J_S_ASSERT_1( IsClassName(jsObject, className), J__ERRMSG_INVALID_CLASS "%s expected.", className )
+	J_S_ASSERT_1( IsClassName(jsObject, className), J__ERRMSG_INVALID_CLASS " %s expected.", className )
 
 #define J_S_ASSERT_THIS_CLASS() \
 	J_S_ASSERT_CLASS(obj, _class)
@@ -668,7 +668,6 @@ inline JSClass *GetGlobalClassByName( JSContext *cx, const char *className ) {
 // test and conversion functions
 
 
-
 // note: a Blob is either a JSString or a Blob object is the jslang module has been loaded.
 ALWAYS_INLINE JSBool J_NewBlob( JSContext *cx, void* buffer, size_t length, jsval *vp ) {
 
@@ -678,9 +677,12 @@ ALWAYS_INLINE JSBool J_NewBlob( JSContext *cx, void* buffer, size_t length, jsva
 		return JS_TRUE;
 	}
 
-	static JSClass *blobClass = NULL; // it's safe to use static keyword because the JSClass do not depend on the rt or cx.
-	if (unlikely( blobClass == NULL ))
-		blobClass = JL_GetRegistredNativeClass(cx, "Blob");
+// warning: the following code is not compatible with jstask module.
+//	static JSClass *blobClass = NULL; // it's safe to use static keyword because the JSClass do not depend on the rt or cx.
+//	if (unlikely( blobClass == NULL ))
+//		blobClass = JL_GetRegistredNativeClass(cx, "Blob");
+
+	JSClass *blobClass = JL_GetRegistredNativeClass(cx, "Blob");
 
 	if (likely( blobClass != NULL )) { // we have Blob class, jslang is present.
 
@@ -714,7 +716,7 @@ ALWAYS_INLINE JSBool J_NewBlobCopyN( JSContext *cx, const void *data, size_t amo
 	}
 	// possible optimization: if Blob class is not abailable, copy data into JSString's jschar to avoid js_InflateString.
 	char *blobBuf = (char*)JS_malloc(cx, amount);
-	J_S_ASSERT_ALLOC( blobBuf );
+	J_CHK( blobBuf );
 	memcpy( blobBuf, data, amount );
 	J_CHK( J_NewBlob(cx, blobBuf, amount, vp) );
 	return JS_TRUE;

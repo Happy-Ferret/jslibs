@@ -49,6 +49,7 @@ $TOC_MEMBER $INAME
 DEFINE_CONSTRUCTOR() {
 
 	Private *pv = (Private*)JS_malloc(cx, sizeof(Private));
+	J_CHK( pv );
 
 	alGenFilters(1, &pv->filter);
 	J_CHK( CheckThrowCurrentOalError(cx) );

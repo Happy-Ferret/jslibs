@@ -132,7 +132,7 @@ DEFINE_FUNCTION_FAST( GetInteger ) {
 		J_S_ASSERT_INT( J_FARG(2) );
 		int count = JSVAL_TO_INT( J_FARG(2) );
 		JSObject *arrayObj = JS_NewArrayObject(cx, 0, NULL);
-		J_S_ASSERT_ALLOC(arrayObj);
+		J_CHK(arrayObj);
 		*J_FRVAL = OBJECT_TO_JSVAL(arrayObj);
 		jsval tmpValue;
 		while (count--) {
@@ -173,7 +173,7 @@ DEFINE_FUNCTION_FAST( GetDouble ) {
 		J_S_ASSERT_INT( J_FARG(2) );
 		int count = JSVAL_TO_INT( J_FARG(2) );
 		JSObject *arrayObj = JS_NewArrayObject(cx, 0, NULL);
-		J_S_ASSERT_ALLOC(arrayObj);
+		J_CHK(arrayObj);
 		*J_FRVAL = OBJECT_TO_JSVAL(arrayObj);
 		jsval tmpValue;
 		while (count--) {
@@ -2096,7 +2096,7 @@ DEFINE_FUNCTION_FAST( RenderToImage ) {
 
 	// (TBD) render to a blob !
 	JSObject *blobObj = NewImage(cx, tWidth, tHeight, 4, pixels);
-	J_S_ASSERT_ALLOC(blobObj);
+	J_CHK( blobObj );
 	*J_FRVAL = OBJECT_TO_JSVAL(blobObj);
 
 	glDeleteTextures(1, &texture);

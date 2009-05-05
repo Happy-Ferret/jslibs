@@ -154,7 +154,7 @@ DEFINE_FUNCTION_FAST( Expand ) {
 
 	char *expandedString;
 	expandedString = (char*)JS_malloc(cx, totalLength +1);
-	J_S_ASSERT_ALLOC( expandedString );
+	J_CHK( expandedString );
 	expandedString[totalLength] = '\0';
 
 	expandedString += totalLength;
@@ -168,7 +168,7 @@ DEFINE_FUNCTION_FAST( Expand ) {
 
 	JSString *jsstr;
 	jsstr = JS_NewString(cx, expandedString, totalLength);
-	J_S_ASSERT_ALLOC( jsstr );
+	J_CHK( jsstr );
 	*J_FRVAL = STRING_TO_JSVAL( jsstr );
 	return JS_TRUE;
 	JL_BAD;
@@ -690,7 +690,7 @@ DEFINE_FUNCTION_FAST( XdrEncode ) {
 	J_S_ASSERT_ARG_MIN( 1 );
 	JSXDRState *xdr;
 	xdr = JS_XDRNewMem(cx, JSXDR_ENCODE);
-	J_S_ASSERT_ALLOC(xdr);
+	J_CHK( xdr );
 	J_CHK( JS_XDRValue(xdr, &J_FARG(1)) );
 	uint32 length;
 	void *buffer;
@@ -719,7 +719,7 @@ DEFINE_FUNCTION_FAST( XdrDecode ) {
 
 	JSXDRState *xdr;
 	xdr = JS_XDRNewMem(cx, JSXDR_DECODE);
-	J_S_ASSERT_ALLOC(xdr);
+	J_CHK( xdr );
 	const char *buffer;
 	size_t length;
 	J_CHK( JsvalToStringAndLength(cx, &J_FARG(1), &buffer, &length) );
@@ -895,7 +895,7 @@ DEFINE_FUNCTION_FAST( StringRepeat ) {
 
 	char *newBuf;
 	newBuf = (char *)JS_malloc(cx, newLen +1);
-	J_S_ASSERT_ALLOC(newBuf);
+	J_CHK( newBuf );
 	newBuf[newLen] = '\0';
 
 	if ( len == 1 ) {
@@ -912,7 +912,7 @@ DEFINE_FUNCTION_FAST( StringRepeat ) {
 
 	JSString *jsstr;
 	jsstr = JS_NewString(cx, newBuf, newLen);
-	J_S_ASSERT_ALLOC(jsstr);
+	J_CHK( jsstr );
 	*J_FRVAL = STRING_TO_JSVAL( jsstr );
 	return JS_TRUE;
 	JL_BAD;
@@ -1332,14 +1332,14 @@ DEFINE_FUNCTION( StrSet ) {
 	J_CHK( JsvalToUInt(cx, J_ARG(2), &count) );
 
 	char *buf = (char*)JS_malloc(cx, count +1);
-	J_S_ASSERT_ALLOC( buf );
+	J_CHK( buf );
 	buf[count] = '\0';
 
 	memset(buf, chr[0], count);
 
 	JSString *jsstr = JS_NewString(cx, buf, count);
 
-	J_S_ASSERT_ALLOC( jsstr );
+	J_CHK( jsstr );
 	*J_RVAL = STRING_TO_JSVAL( jsstr );
 
 	return JS_TRUE;
