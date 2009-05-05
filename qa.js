@@ -137,7 +137,7 @@ var QAAPI = new function() {
 			this.REPORT( CodeLocation()+' Exception not detected: '+testName );
 		} catch(ex) {
 	
-			if ( !(ex instanceof exType) )
+			if ( (ex != exType) && !(ex instanceof exType) )
 				this.REPORT( CodeLocation()+' Invalid exception ('+ex.constructor.name+' != '+exType.name+') for: '+testName );
 		}
 	} 
