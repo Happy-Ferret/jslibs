@@ -226,6 +226,10 @@
 			RelativePath=".\debug.js"
 			>
 		</File>
+		<File
+			RelativePath=".\jstask_qa.js"
+			>
+		</File>
 	</Files>
 	<Globals>
 	</Globals>
