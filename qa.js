@@ -45,7 +45,7 @@ function CreateQaItemList(startDir, filter, flags) {
 			
 			var lines = source.split('\n');
 			
-			var item = { name:'', file:file.name, line:1, flags:'', code:[], init:true }; // for the initialization item
+			var item = { name:'[INIT]', file:file.name, line:1, flags:'', code:[], init:true }; // for the initialization item
 			
 			for ( var l in lines ) {
 				
@@ -143,10 +143,10 @@ var QAAPI = new function() {
 	} 
 
 	this.ASSERT = function( value, expect, testName ) {
-
+	
 		testCount++;
-		if ( value !== expect && !(isNaN(value) && isNaN(expect)) )
-			this.REPORT( CodeLocation()+' '+(testName||'?') + ', '+FormatVariable(value)+' != '+FormatVariable(expect) );
+		if ( value !== expect && !(typeof(value) == 'number' && isNaN(value) && typeof(expect) == 'number' && isNaN(expect)) )
+			this.REPORT( CodeLocation()+' '+(testName||'?') + ', '+FormatVariable(value)+' !== '+FormatVariable(expect) );
 	}
 
 	this.ASSERT_STR = function( value, expect, testName ) {
@@ -201,9 +201,10 @@ function LaunchTests(itemList, conf) {
 
 		try {
 			
-			Print( ' - '+currentItem.file+' - '+ (currentItem.name||'INIT?') );
+			Print( ' - '+currentItem.file+' - '+ currentItem.name );
 			
-			var globalPropertiesCount = global.__count__;
+//			var globalProperties = PropertiesList(global);
+
 			gcZeal = conf.gcZeal;
 
 			if( !conf.noGcBetweenTests )
@@ -223,10 +224,10 @@ function LaunchTests(itemList, conf) {
 
 			var t = (TimeCounter() - t0) / conf.repeatEachTest;
 			var m = (privateMemoryUsage - m0) / conf.repeatEachTest;
-			Print( '  ('+t.toFixed(2) + 'ms / '+(m/1024)+'KB)' );
+			Print( '  ...('+t.toFixed(1) + 'ms / '+(m/1024).toFixed(1)+'KB)' );
 
-			if ( global.__count__ != globalPropertiesCount )
-				QAAPI.REPORT( 'WARNING '+ currentItem.file +':'+ currentItem.line + ' ('+currentItem.name+') is using a global variable.' );
+//			if ( !currentItem.init && PropertiesList(global).length != globalProperties.length )
+//				QAAPI.REPORT( 'WARNING '+ currentItem.file +':'+ currentItem.line + ' ('+currentItem.name+') is using global variable ('+[n for each (n in PropertiesList(global)) if ( globalProperties.indexOf(n) == -1 ) ]+')') ;
 				
 		} catch(ex) {
 
@@ -240,8 +241,11 @@ function LaunchTests(itemList, conf) {
 		gcZeal = 0;
 
 		Print( '\n' );
-
+		
 		if ( endSignal )
+			break;
+			
+		if ( conf.stopAfterNIssues && issues > conf.stopAfterNIssues )
 			break;
 	}
 }
@@ -314,7 +318,7 @@ function ParseCommandLine(conf) {
 
 
 
-var conf = { help:false, repeatEachTest:1, gcZeal:0, loopForever:false, directory:'src', priority:0, flags:'', save:'', load:'', disableJIT:false, listTestsOnly:false, nogcBetweenTests:false, nogcDuringTests:false };
+var conf = { help:false, repeatEachTest:1, gcZeal:0, loopForever:false, directory:'src', priority:0, flags:'', save:'', load:'', disableJIT:false, listTestsOnly:false, nogcBetweenTests:false, nogcDuringTests:false, stopAfterNIssues:0 };
 ParseCommandLine(conf);
 Print( 'configuraion: '+[k+'='+v for ([k,v] in Iterator(conf))].join(' / '), '\n\n' );
 
