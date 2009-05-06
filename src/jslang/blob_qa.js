@@ -323,14 +323,14 @@ QA.ASSERT( (aString instanceof Blob) && !(aString instanceof String), true, 'no 
 
 /// Blob::substring tests using Mozilla String tests
 
-function TestCase( section, name, expected, result ) QA.ASSERT( result, expected, name );
+function TestCase( section, name, expected, result ) QA.ASSERT_STR( result, expected, name );
 function AssertBlob(b) b instanceof Blob;
 var SECTION = '';
 
 
 new TestCase(   SECTION,
 		"var s = new Blob('this is a string object'); typeof s.substring()",
-		"string",
+		"object",
 		eval("var s = new Blob('this is a string object'); typeof s.substring()") );
 
 new TestCase(   SECTION,

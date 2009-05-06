@@ -56,15 +56,14 @@ LoadModule('jsio');
 	
 /// multiple tasks [rf]
 
-	function MyTask(req) req;
-
-	var myTask = new Task(MyTask);
+	var myTask = new Task(function(req) req);
 
 	for ( var i = 0; i < 100; i++ )
 		myTask.Request(i);
 
+	Sleep(20);
 	var pending = myTask.pendingRequestCount + myTask.pendingResponseCount;
-	QA.ASSERT( pending == 100 || pending == 99, true, 'pending count: '+pending);
+	QA.ASSERT( pending == 100 || pending == 99, true, 'pending count: '+pending);    // (TBD) check this case: src/jstask/jstask_qa.js:XX pending count: 108, false != true - multiple tasks [rf]
 
 	for ( var i = 0; i < 100; i++ )
 		QA.ASSERT( myTask.Response(), i, 'task response');
@@ -117,30 +116,15 @@ LoadModule('jsio');
 
 /// task and LoadModule [r]
 
-	function MyTask() {
+	function MyTask(req, i) {
 	
-		LoadModule('jsio');
-		Sleep(10);
+		i || LoadModule('jsio');
+		return currentDirectory;
 	}
 
-	var myTask = new Task(MyTask);
-	myTask.Request(undefined);
-	myTask.Request(undefined);
-	Sleep(5);
-	QA.ASSERT( myTask.pendingRequestCount, 1, 'pendingRequestCount');
-	QA.ASSERT( myTask.pendingResponseCount, 0, 'pendingResponseCount');
-	Sleep(10);
-	QA.ASSERT( myTask.pendingRequestCount, 0, 'pendingRequestCount');
-	QA.ASSERT( myTask.pendingResponseCount, 1, 'pendingResponseCount');
-	Sleep(10);
-	QA.ASSERT( myTask.pendingRequestCount, 0, 'pendingRequestCount');
-	QA.ASSERT( myTask.pendingResponseCount, 2, 'pendingResponseCount');
-	
-	myTask.Response();
-	myTask.Response();
-
-	QA.ASSERT( myTask.pendingResponseCount, 0, 'pendingResponseCount');
-	
+	var myTask = new Task(MyTask, -1);
+	myTask.Request();
+	QA.ASSERT( myTask.Response(), currentDirectory, 'currentDirectory');
 
 
 /// local context [fr]
@@ -191,11 +175,11 @@ LoadModule('jsio');
 	myTask.Request('anita');
 
 	var res = myTask.Response();
-	QA.ASSERT( res.req, 'hello', 'response' );
+	QA.ASSERT_STR( res.req, 'hello', 'response' );
 	QA.ASSERT( res.i, 0, 'response' );
 	
 	var res = myTask.Response();
-	QA.ASSERT( res.req, 'anita', 'response' );
+	QA.ASSERT_STR( res.req, 'anita', 'response' );
 	QA.ASSERT( res.i, 1, 'response' );
 
 
@@ -206,7 +190,9 @@ LoadModule('jsio');
 		
 		if ( !i )
 			LoadModule('jsio');
-		var res = new File(filename).content;
+		var file = new File(filename); 
+		var res = file.content;
+		file.content = undefined;
 		return res;
 	}
 
@@ -217,5 +203,17 @@ LoadModule('jsio');
 	myTask.Request(filename);
 	Sleep(10);
 	var res = myTask.Response();
-	QA.ASSERT( res, 'XXX'+filename, 'response' );
+	QA.ASSERT_STR( res, 'XXX'+filename, 'response' );
+
+
+/// task stderr custom test [frd]
+
+	function MyFileTask() {
+
+		_configuration.stderr('myerror');
+	}
+
+	var myTask = new Task(MyFileTask);
+	myTask.Request(undefined);
+	myTask.Response();
 

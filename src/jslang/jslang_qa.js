@@ -300,8 +300,8 @@ LoadModule('jsstd');
 		 
 				var args = argGen.next();
 //				Print( 'substr('+args+')\n' );
-				QA.ASSERT( s.substr.apply(s, args), b.substr.apply(b, args), 'substr('+args.toSource()+')' );
-				QA.ASSERT( s.substring.apply(s, args), b.substring.apply(b, args), 'substring('+args.toSource()+')' );
+				QA.ASSERT_STR( s.substr.apply(s, args), b.substr.apply(b, args), 'substr('+args.toSource()+')' );
+				QA.ASSERT_STR( s.substring.apply(s, args), b.substring.apply(b, args), 'substring('+args.toSource()+')' );
 		 }
 	} catch (ex if ex instanceof StopIteration) {}
 
@@ -439,19 +439,19 @@ LoadModule('jsstd');
 			b[0] = 'X'
 		}, Error, '"Cannot modify immutable objects" exception' );
 		
-		QA.ASSERT( ''+b.substr(0,1), 'X', 'setter' );
+//		QA.ASSERT_STR( b.substr(0,1), 'X', 'setter' );
 
 		QA.ASSERT_EXCEPTION( function() {
 			b[5] = 'W';
 		}, Error, '"Cannot modify immutable objects" exception' );
 			
-		QA.ASSERT( ''+b[5], 'W', 'setted value' );
+//		QA.ASSERT_STR( b[5], 'W', 'setted value' );
 		
 		QA.ASSERT_EXCEPTION( function() {
 			b[5] = 'W';
 		}, Error, '"Cannot modify immutable objects" exception' );
 		
-		QA.ASSERT( String(b), 'XBCDEW', 'setter' );
+//		QA.ASSERT( String(b), 'XBCDEW', 'setter' );
 		QA.ASSERT_EXCEPTION( function() { b[-1] = 'Y'; }, Error, 'out of range' );
 		QA.ASSERT_EXCEPTION( function() { b[6] = 'Z'; }, Error, 'out of range' );
 

@@ -32,9 +32,9 @@ LoadModule('jsz');
 		var deflatedData = new Z(Z.DEFLATE)(data, true);
 		var inflater = new Z(Z.INFLATE);
 
-		QA.ASSERT( inflater(deflatedData,true), data, '1st complete inflate' );
-		QA.ASSERT( inflater(deflatedData,true), data, '2nd complete inflate' );
-		QA.ASSERT( inflater(deflatedData,true), data, '3rd complete inflate' );
+		QA.ASSERT_STR( inflater(deflatedData,true), data, '1st complete inflate' );
+		QA.ASSERT_STR( inflater(deflatedData,true), data, '2nd complete inflate' );
+		QA.ASSERT_STR( inflater(deflatedData,true), data, '3rd complete inflate' );
 
 
 /// deflate object reusability [ftrm]
@@ -43,9 +43,9 @@ LoadModule('jsz');
 		var deflatedData = new Z(Z.DEFLATE)(data, true);
 		var deflater = new Z(Z.DEFLATE);
 
-		QA.ASSERT( deflater(data,true), deflatedData, '1st complete deflate' );
-		QA.ASSERT( deflater(data,true), deflatedData, '2nd complete deflate' );
-		QA.ASSERT( deflater(data,true), deflatedData, '3rd complete deflate' );
+		QA.ASSERT_STR( deflater(data,true), deflatedData, '1st complete deflate' );
+		QA.ASSERT_STR( deflater(data,true), deflatedData, '2nd complete deflate' );
+		QA.ASSERT_STR( deflater(data,true), deflatedData, '3rd complete deflate' );
 
 
 /// inflate / deflate [ftrm]
