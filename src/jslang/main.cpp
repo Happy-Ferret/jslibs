@@ -46,8 +46,8 @@ JSBool jslangInit(JSContext *cx, JSObject *obj) {
 	INIT_CLASS( Stream );
 	INIT_STATIC();
 
-	JL_RegisterNativeClass(cx, classBlob);
-	JL_RegisterNativeClass(cx, classId);
+	J_CHK( JL_RegisterNativeClass(cx, classBlob) );
+	J_CHK( JL_RegisterNativeClass(cx, classId) );
 
 	return JS_TRUE;
 	JL_BAD;

@@ -36,7 +36,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
 	INIT_CLASS( Texture );
 
-	JL_RegisterNativeClass(cx, classTexture);
+	J_CHK( JL_RegisterNativeClass(cx, classTexture) );
 
 	return JS_TRUE;
 	JL_BAD;

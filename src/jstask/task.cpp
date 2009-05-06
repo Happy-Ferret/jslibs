@@ -32,13 +32,13 @@ struct Private {
 
 	JLSemaphoreHandler requestSem;
 	jl::Queue requestList;
-	size_t pendingRequestCount;
+	volatile size_t pendingRequestCount;
 
-	size_t processingRequestCount;
+	volatile size_t processingRequestCount;
 
 	JLSemaphoreHandler responseSem;
 	jl::Queue responseList;
-	size_t pendingResponseCount;
+	volatile size_t pendingResponseCount;
 
 	jl::Queue exceptionList;
 };
@@ -116,7 +116,8 @@ JSBool Task(JSContext *cx, Private *pv) {
 	JSTempValueRooter tvr;
 	JS_PUSH_TEMP_ROOT(cx, COUNTOF(argv), argv, &tvr);
 
-	J_CHK( UnserializeJsval(cx, &pv->serializedCode, &argv[0]) ); // no need to mutex this because this is the only place that access pv->serializedCode
+	// no need to mutex this because this and the constructor are the only places that access pv->serializedCode.
+	J_CHK( UnserializeJsval(cx, &pv->serializedCode, &argv[0]) );
 	SerializerFree(&pv->serializedCode);
 
 	JSFunction *fun;
@@ -143,7 +144,7 @@ JSBool Task(JSContext *cx, Private *pv) {
 
 		Serialized serializedRequest = (Serialized)QueueShift(&pv->requestList);
 		pv->pendingRequestCount--;
-		pv->processingRequestCount = 1;
+		pv->processingRequestCount++; // = 1;
 		JLReleaseMutex(pv->mutex); // ++
 
 		J_CHK( UnserializeJsval(cx, &serializedRequest, &argv[1]) );
@@ -175,7 +176,7 @@ JSBool Task(JSContext *cx, Private *pv) {
 			QueuePush(&pv->exceptionList, serializedException);
 			QueuePush(&pv->responseList, NULL); // signals an exception
 			pv->pendingResponseCount++;
-			pv->processingRequestCount = 0;
+			pv->processingRequestCount--;
 			JLReleaseMutex(pv->mutex); // ++
 
 			JS_ClearPendingException(cx);
@@ -274,8 +275,8 @@ $TOC_MEMBER $INAME
  $INAME( taskFunc [ , priority = 0 ] )
   Creates a new Task object from the given function.
   $H arguments
-   $ARG $FUN taskFunc:
-   $ARG $INT priority:
+   $ARG $FUN taskFunc: the JavaScrip function that will bi run as thread.
+   $ARG $INT priority: 0 is normal, -1 is low, 1 is high.
    The _taskFunc_ prototype is: `function( request, index )`.
 **/
 DEFINE_CONSTRUCTOR() {
@@ -344,20 +345,24 @@ bad:
 
 /**doc
 $TOC_MEMBER $INAME
- $VOID $INAME( data )
+ $VOID $INAME( [data] )
   Send data to the task. This function do not block. If the task is already processing a request, next requests are automatically queued.
 **/
 DEFINE_FUNCTION_FAST( Request ) {
 
 	J_S_ASSERT_CLASS( J_FOBJ, _class );
-	J_S_ASSERT_ARG_MIN(1);
 	Private *pv;
 	pv = (Private*)JS_GetPrivate(cx, J_FOBJ);
 	J_S_ASSERT_RESOURCE(pv);
 
 	Serialized serializedRequest;
 	SerializerCreate(&serializedRequest);
-	J_CHK( SerializeJsval(cx, &serializedRequest, &J_FARG(1)) );
+	if ( J_FARG_ISDEF(1) )
+		J_CHK( SerializeJsval(cx, &serializedRequest, &J_FARG(1)) );
+	else {
+		jsval arg = JSVAL_VOID;
+		J_CHK( SerializeJsval(cx, &serializedRequest, &arg) );
+	}
 	JLAcquireMutex(pv->mutex); // --
 	QueuePush(&pv->requestList, serializedRequest);
 	pv->pendingRequestCount++;
@@ -464,6 +469,25 @@ DEFINE_PROPERTY( pendingRequestCount ) {
 /**doc
 $TOC_MEMBER $INAME
  $INT $INAME
+  Is the number of requests that are currently processed by the task.
+**/
+DEFINE_PROPERTY( processingRequestCount ) {
+
+	J_S_ASSERT_CLASS( obj, _class );
+	Private *pv;
+	pv = (Private*)JS_GetPrivate(cx, obj);
+	J_S_ASSERT_RESOURCE(pv);
+	JLAcquireMutex(pv->mutex); // --
+	J_CHK( UIntToJsval(cx, pv->processingRequestCount, vp) );
+	JLReleaseMutex(pv->mutex); // ++
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $INT $INAME
   Is the number of available responses that has already been processed by the task.
 **/
 DEFINE_PROPERTY( pendingResponseCount ) {
@@ -515,6 +539,7 @@ CONFIGURE_CLASS
 
 	BEGIN_PROPERTY_SPEC
 		PROPERTY_READ(pendingRequestCount)
+		PROPERTY_READ(processingRequestCount)
 		PROPERTY_READ(pendingResponseCount)
 		PROPERTY_READ(idle)
 	END_PROPERTY_SPEC

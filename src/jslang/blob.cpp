@@ -32,7 +32,7 @@ ALWAYS_INLINE bool IsBlobValid( JSContext *cx, JSObject *blobObject ) {
 
 	jsval lengthVal;
 	J_CHK( JS_GetReservedSlot(cx, blobObject, SLOT_BLOB_LENGTH, &lengthVal) );
-	return !JSVAL_IS_VOID( lengthVal );
+	return JSVAL_IS_INT( lengthVal );
 bad:
 	return false;
 }
@@ -43,9 +43,10 @@ ALWAYS_INLINE JSBool BlobLength( JSContext *cx, JSObject *blobObject, size_t *le
 	J_S_ASSERT_CLASS(blobObject, BlobJSClass( cx ));
 	jsval lengthVal;
 	J_CHK( JS_GetReservedSlot(cx, blobObject, SLOT_BLOB_LENGTH, &lengthVal) );
-//	if ( JSVAL_IS_VOID( lengthVal ) )  // invalidated
-//		J_REPORT_ERROR("Invalidated blob.");
-	J_S_ASSERT_INT( lengthVal );
+//	J_S_ASSERT_INT( lengthVal );
+	J_SAFE(
+		J_CHKM( JSVAL_IS_INT( lengthVal ), "Invalidated blob." );
+	);
 	*length = JSVAL_TO_INT( lengthVal );
 	return JS_TRUE;
 	JL_BAD;
@@ -71,11 +72,8 @@ JSBool NativeInterfaceBufferGet( JSContext *cx, JSObject *obj, const char **buf,
 
 	if ( JL_GetClass(obj) == classBlob ) {
 		
-		if ( !IsBlobValid(cx, obj) ) {
-
+		if ( !IsBlobValid(cx, obj) )
 			J_REPORT_ERROR("Invalid Blob object.");
-		}
-
 		J_CHK( BlobLength(cx, obj, size) );
 		J_CHK( BlobBuffer(cx, obj, buf) );
 		return JS_TRUE;

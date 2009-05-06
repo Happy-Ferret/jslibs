@@ -65,24 +65,27 @@ inline JSBool SetConfigurationPrivateValue(JSContext *cx, const char *name, jsva
 
 	JSObject *cobj = GetConfigurationObject(cx);
 	if ( cobj )
-		JS_DefineProperty(cx, cobj, name, value, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT);
+		J_CHK( JS_DefineProperty(cx, cobj, name, value, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 inline JSBool SetConfigurationValue(JSContext *cx, const char *name, jsval value) {
 
 	JSObject *cobj = GetConfigurationObject(cx);
 	if ( cobj )
-		JS_DefineProperty(cx, cobj, name, value, NULL, NULL, JSPROP_ENUMERATE);
+		J_CHK( JS_DefineProperty(cx, cobj, name, value, NULL, NULL, JSPROP_ENUMERATE) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 inline JSBool SetConfigurationReadonlyValue(JSContext *cx, const char *name, jsval value) {
 
 	JSObject *cobj = GetConfigurationObject(cx);
 	if ( cobj )
-		JS_DefineProperty(cx, cobj, name, value, NULL, NULL, JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT);
+		J_CHK( JS_DefineProperty(cx, cobj, name, value, NULL, NULL, JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 #endif // _JSCONFIGURATION_H_

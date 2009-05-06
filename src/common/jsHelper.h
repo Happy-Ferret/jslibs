@@ -600,9 +600,12 @@ ALWAYS_INLINE bool MaybeRealloc( int requested, int received ) {
 
 
 // stores JSClasses that other jslibs modules may rely on.
-ALWAYS_INLINE void JL_RegisterNativeClass( JSContext *cx, JSClass *jsClass ) {
+ALWAYS_INLINE bool JL_RegisterNativeClass( JSContext *cx, JSClass *jsClass ) {
 
+	if (unlikely( *jsClass->name == '\0' )) // (TBD) check if an empty string is a possible case. else remove this test.
+		return false;
 	QueuePush(&GetHostPrivate(cx)->registredNativeClasses, (void*)jsClass);
+	return true;
 }
 
 ALWAYS_INLINE JSClass *JL_GetRegistredNativeClass( JSContext *cx, const char *className ) {
@@ -611,7 +614,9 @@ ALWAYS_INLINE JSClass *JL_GetRegistredNativeClass( JSContext *cx, const char *cl
 	for ( jl::QueueCell *it = jl::QueueBegin(&GetHostPrivate(cx)->registredNativeClasses); it; it = jl::QueueNext(it) ) {
 
 		jsClass = (JSClass*)QueueGetData(it);
-		if ( strcmp(className, jsClass->name) == 0 )
+		if ( className[0] != jsClass->name[0] ) // optimization
+			continue;
+		if ( strcmp(className+1, jsClass->name+1) == 0 ) // +1 because [0] has already been tested.
 			return jsClass;
 	}
 	return NULL;
@@ -622,6 +627,7 @@ ALWAYS_INLINE bool JL_UnregisterNativeClass( JSContext *cx, JSClass *jsClass ) {
 	for ( jl::QueueCell *it = jl::QueueBegin(&GetHostPrivate(cx)->registredNativeClasses); it; it = jl::QueueNext(it) ) {
 
 		if ( QueueGetData(it) == (void*)jsClass ) {
+
 			QueueRemoveCell(&GetHostPrivate(cx)->registredNativeClasses, it);
 			return true;
 		}
@@ -677,15 +683,11 @@ ALWAYS_INLINE JSBool J_NewBlob( JSContext *cx, void* buffer, size_t length, jsva
 		return JS_TRUE;
 	}
 
-// warning: the following code is not compatible with jstask module.
-//	static JSClass *blobClass = NULL; // it's safe to use static keyword because the JSClass do not depend on the rt or cx.
-//	if (unlikely( blobClass == NULL ))
-//		blobClass = JL_GetRegistredNativeClass(cx, "Blob");
-
-	JSClass *blobClass = JL_GetRegistredNativeClass(cx, "Blob");
+	JSClass *blobClass = JL_GetRegistredNativeClass(cx, "Blob"); // don't use static keyword (cf. jstask module)
 
 	if (likely( blobClass != NULL )) { // we have Blob class, jslang is present.
 
+		// A blob/string object can be created without using any jslang/blob.h dependances
 		JSObject *blob;
 //		blob = JS_NewObject(cx, blobClass, NULL, NULL);
 		blob = JS_ConstructObject(cx, blobClass, NULL, NULL); // need to be constructed else Buffer NativeInterface will not be set !

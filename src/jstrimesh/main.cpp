@@ -24,7 +24,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
 	INIT_CLASS( Trimesh );
 
-	JL_RegisterNativeClass(cx, classTrimesh);
+	J_CHK( JL_RegisterNativeClass(cx, classTrimesh) );
 
 	return JS_TRUE;
 	JL_BAD;
