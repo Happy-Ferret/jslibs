@@ -21,12 +21,13 @@ LoadModule('jscrypt');
 		//Alice
 		var alice = new AsymmetricCipher('dsa', 'sha1', fortuna);
 		alice.CreateKeys(64);
+		QA.ASSERT( alice.keySize, 512, 'Asymmetric Cipher key size (alice)' );
 		var publicKey = alice.publicKey;
 		//Bob
 		var bob = new AsymmetricCipher('dsa', 'sha1', fortuna);
 		bob.publicKey = publicKey;
 		QA.ASSERT( bob.blockLength, 20, 'Asymmetric Cipher block length' );
-		QA.ASSERT( bob.keySize, 512, 'Asymmetric Cipher key size' );
+		QA.ASSERT( bob.keySize, 512, 'Asymmetric Cipher key size (bob)' );
 		var secretMessage = QA.RandomString(bob.blockLength);
 		var encryptedData = bob.Encrypt( secretMessage );
 		//Alice

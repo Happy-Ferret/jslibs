@@ -121,7 +121,6 @@ inline void QueueUnshift( Queue *queue, void *data ) {
 
 inline void *QueueShift( Queue *queue ) {
 
-	// (TBD) how to manage empty queue
 	QueueCell *cell = queue->begin;
 	if ( queue->begin == queue->end ) { // do we have only one cell ?
 

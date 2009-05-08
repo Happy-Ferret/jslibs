@@ -242,10 +242,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( concat ) {
 
+	char *dst = NULL;
 	J_S_ASSERT_CLASS(J_FOBJ, _class);
-	J_S_ASSERT_ARG_MIN( 1 );
-	char *dst;
-	dst = NULL;
+
+	// note: var a = new String(123);  a.concat() !== a
 
 	size_t thisLength;
 	const char *thisBuffer;

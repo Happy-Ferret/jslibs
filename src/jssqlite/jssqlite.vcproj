@@ -235,6 +235,10 @@
 			>
 		</File>
 		<File
+			RelativePath=".\jssqlite_qa.js"
+			>
+		</File>
+		<File
 			RelativePath=".\readme.txt"
 			>
 		</File>

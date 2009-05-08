@@ -646,13 +646,13 @@ LoadModule('jsstd');
 		QA.ASSERT_STR( t, "\n\t\tthis is\n\t\ta multiline\n\n\t\ttext\n\t\t", 'text' );
 
 
-/// Sandbox global objects [tfrm]
+/// Sandbox global objects [tfm]
 	
 		var res = SandboxEval('Math');
 		QA.ASSERT( res.Math == Math, false, 'Global objects' );
 
 
-/// Sandbox external access [tfrm]
+/// Sandbox external access [tfm]
 
 		LoadModule('jsio');
 		var res = SandboxEval('typeof File');
@@ -661,7 +661,7 @@ LoadModule('jsstd');
 		QA.ASSERT( res == typeof LoadModule, false, 'forbidden LoadModule function access' );
 
 
-/// Sandbox Query [tfrm]
+/// Sandbox Query [tfm]
 
 		var res = Function("var v = 567; return SandboxEval('Query()', function(val) v)")();
 		QA.ASSERT( res, 567, 'SandboxEval result using Function( Query function )' );

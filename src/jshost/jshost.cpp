@@ -169,18 +169,22 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 		switch ( argumentVector[0][1] ) {
 			case 'm': // maxbytes (GC)
 				argumentVector++;
+				HOST_MAIN_ASSERT( *argumentVector, "Missing argument." );
 				maxMem = atol( *argumentVector ) * 1024L * 1024L;
 				break;
 			case 'n': // maxAlloc (GC)
 				argumentVector++;
+				HOST_MAIN_ASSERT( *argumentVector, "Missing argument." );
 				maxAlloc = atol( *argumentVector ) * 1024L * 1024L;
 				break;
 			case 'u': // avoid any runtime checks
 				argumentVector++;
+				HOST_MAIN_ASSERT( *argumentVector, "Missing argument." );
 				unsafeMode = ( atoi( *argumentVector ) != 0 );
 				break;
 			case 'g': // operationLimitGC
 				argumentVector++;
+				HOST_MAIN_ASSERT( *argumentVector, "Missing argument." );
 				maybeGCInterval = atol( *argumentVector ) * 1000; // s to ms
 				break;
 			case 'c':
@@ -188,6 +192,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 				break;
 			case 'l':
 				argumentVector++;
+				HOST_MAIN_ASSERT( *argumentVector, "Missing argument." );
 				camelCase = atoi( *argumentVector );
 				break;
 	}

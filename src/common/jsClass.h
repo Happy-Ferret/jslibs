@@ -249,6 +249,7 @@ static JSBool RemoveClass( JSContext *cx, JSClass *cl ) {
 			_NormalizeFunctionNames(_functionSpec); \
 			_NormalizeFunctionNames(_staticFunctionSpec); \
 		} \
+		J_CHKM( _class->name && _class->name[0], "Invalid class name." ); \
 		*_prototype = JS_InitClass(cx, obj, *_parentPrototype, _class, _constructor, 0, _propertySpec, _functionSpec, _staticPropertySpec, _staticFunctionSpec); \
 		JSObject *dstObj = _constructor ? JS_GetConstructor(cx, *_prototype) : *_prototype; \
 		if ( _constIntegerSpec != NULL ) { \

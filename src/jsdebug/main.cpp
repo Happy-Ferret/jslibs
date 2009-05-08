@@ -36,7 +36,7 @@ $MODULE_FOOTER
 
 void NewScriptHook(JSContext *cx, const char *filename, uintN lineno, JSScript *script, JSFunction *fun, void *callerdata) {
 
-// (TBD) protect new file-based scripts against GC to allow later debugging them ?
+// (TBD) do we protect new file-based scripts against GC to allow later debugging them ?
 
 //	printf( "add - %s:%d - %s - %d - %p\n", filename, lineno, fun ? JS_GetFunctionName(fun):"", script->staticLevel, script );
 
