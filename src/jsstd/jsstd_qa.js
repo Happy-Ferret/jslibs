@@ -12,13 +12,13 @@ LoadModule('jsstd');
 		
 		QA.ASSERT( IdToObject(id).xxx, 123, 'IdToObject validity before GC' );
 		obj = null;
-		CollectGarbage();
+		QA.GC();
 		QA.ASSERT( IdToObject(id), undefined, 'IdToObject after GC' );
 		
 		
 		for ( var i = 0; i<500; i++ )
 			ObjectToId({});
-		CollectGarbage();
+		QA.GC();
 		for ( var i = 0; i<1000; i++ )
 			ObjectToId({});
 
@@ -121,14 +121,15 @@ LoadModule('jsstd');
 /// buffer and GC []
 
 		var errBuffer = new Buffer();
-		CollectGarbage();
+		QA.GC();
 		for ( var i = 0; i < 3; i++ ) {
+		
 			errBuffer.Write(StringRepeat('z', 1000000));
-			CollectGarbage();
+			QA.GC();
 		}
 		
 		var res = errBuffer.toString().indexOf('zzz') 
-		CollectGarbage();
+		QA.GC();
 		
 		QA.ASSERT( res, 0, 'buffer test' ); 
 
@@ -484,14 +485,14 @@ LoadModule('jsstd');
 		
 		var str = QA.RandomString(1024*1024);
 		
-		CollectGarbage();
+		QA.GC();
 	
 		for ( var i = 0; i < 4; i++ )
 			str += str;
 			
 //		QA.ASSERT( gcBytes, str.length, 'lot of allocated memory' );
 		
-		CollectGarbage();
+		QA.GC();
 
 
 /// hide properties [ftrm]

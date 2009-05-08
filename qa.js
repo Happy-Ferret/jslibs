@@ -2,6 +2,106 @@ LoadModule('jsstd');
 LoadModule('jsio');
 LoadModule('jsdebug');
 
+
+function QAAPI(cx) {
+
+	function FormatVariable(val) {
+
+		if ( typeof(val) == 'string' ) {
+		
+			if ( val.length > 50 )
+				return val.substr(0, 47).quote()+'...';
+			return val.quote();
+		}
+		if ( val instanceof Array )
+			return '['+val+']';
+		return val;
+	}
+	
+	this.__defineGetter__('cx', function() cx);
+
+	this.FAILED = function( message ) {
+
+		cx.ReportIssue( message );
+	}
+
+	this.ASSERT_TYPE = function( value, type, testName ) {
+
+		cx.Checkpoint('ASSERT_TYPE', testName);
+		if ( typeof(value) != type && !(value instanceof type) )
+			cx.ReportIssue( 'Invalid type, '+type.name+' is expected.', testName );
+	}
+
+	this.ASSERT_EXCEPTION = function( fct, exType, testName ) {
+		
+		cx.Checkpoint('ASSERT_EXCEPTION', testName);
+		try {
+		
+			fct();
+			cx.ReportIssue( 'Exception not detected', testName );
+		} catch(ex) {
+	
+			if ( (ex != exType) && !(ex instanceof exType) )
+				cx.ReportIssue('Invalid exception ('+ex.constructor.name+' != '+exType.name+')', testName );
+		}
+	} 
+
+	this.ASSERT = function( value, expect, testName ) {
+	
+		cx.Checkpoint('ASSERT', testName);
+		if ( value !== expect && !(typeof(value) == 'number' && isNaN(value) && typeof(expect) == 'number' && isNaN(expect)) )
+			cx.ReportIssue( FormatVariable(value)+' !== '+FormatVariable(expect), testName );
+	}
+
+	this.ASSERT_STR = function( value, expect, testName ) {
+	
+		cx.Checkpoint('ASSERT_STR', testName);
+		if ( value != expect ) // value = String(value); expect = String(expect); // not needed because we use the != sign, not !== sign
+			cx.ReportIssue( FormatVariable(value)+' != '+FormatVariable(expect), testName );
+	}
+
+   this.ASSERT_HAS_PROPERTIES = function( obj, names ) {
+   	
+		cx.Checkpoint('ASSERT_HAS_PROPERTIES', names);
+   	for each ( var p in names.split(/\s*,\s*/) ) {
+   	
+   		if ( !(p in obj) )
+	  			cx.ReportIssue( 'Property '+p.quote()+' not found.' );
+	  	}
+   }
+
+
+	this.GC = function() {
+
+		cx.conf.nogcDuringTests || CollectGarbage();
+	}
+
+
+	var randomData = '';
+	for ( var i = 0; i < 1024; ++i )
+		randomData += String.fromCharCode(Math.random()*255);
+   this.RandomData = function(length) {
+
+        var data = '';
+        while( data.length < length )
+            data += randomData.substring( Math.random()*randomData.length, Math.random()*randomData.length );
+        return data.substr(0, length);
+   }
+
+	var randomString = '';
+	for ( var i = 0; i < 1024; ++i )
+		randomString += Math.random().toString(36).substr(2);
+   this.RandomString = function(length) { // [0-9A-Za-z]
+
+        var data = '';
+        while( data.length < length )
+            data += randomString.substring( Math.random()*randomString.length, Math.random()*randomString.length );
+        return data.substr(0, length);
+   }
+}
+
+
+
 function RecursiveDir(path, callback) {
 	
 	(function(path) {
@@ -31,7 +131,6 @@ function CreateQaItemList(startDir, filter, flags) {
 	var qaFile = /\qa.js$/;
 	var newQaItem = /^\/\/\/\s*(.*?)\s*$/;
 	var parseFlags = function(str) (/\[(.*?)\]/(str)||[,''])[1];
-
 
 	var itemList = [];
 	var index = 0;
@@ -65,12 +164,12 @@ function CreateQaItemList(startDir, filter, flags) {
 
 		try {
 		
-			item.relativeLineNumber = Locate()[1]+1;
+			item.relativeLineNumber = Locate()[1]+1 - item.line;
 			item.func = new Function('QA', item.code.join('\n'));
 		} catch(ex) {
 			
 			item.func = function() {}
-			var lineno = item.line + ex.lineNumber - item.relativeLineNumber;
+			var lineno = ex.lineNumber - item.relativeLineNumber;
 			message = 'COMPILATION: @'+ item.file +':'+ lineno +' - '+ item.name +' - '+ ex;
 			Print( '*** ' + message, '\n' );
 		}
@@ -83,169 +182,57 @@ function CreateQaItemList(startDir, filter, flags) {
 
 
 
-function QAAPI(cx) {
+function CommonReportIssue(cx, type, location, testName, checkName, details) {
 
-	function FormatVariable(val) {
-
-		if ( typeof(val) == 'string' ) {
-		
-			if ( val.length > 50 )
-				return val.substr(0, 47).quote()+'...';
-			return val.quote();
-		}
-		if ( val instanceof Array )
-			return '['+val+']';
-		return val;
-	}
-	
-	this.__defineGetter__('cx', function() cx);
-
-	this.FAILED = function( message ) {
-
-		cx.ReportIssue( message );
-	}
-
-	this.ASSERT_TYPE = function( value, type, testName ) {
-
-		cx.CheckPoint('ASSERT_TYPE', testName);
-		if ( typeof(value) != type && !(value instanceof type) )
-			cx.ReportIssue( 'Invalid type, '+type.name+' is expected.', testName );
-	}
-
-	this.ASSERT_EXCEPTION = function( fct, exType, testName ) {
-		
-		cx.CheckPoint('ASSERT_EXCEPTION', testName);
-		try {
-		
-			fct();
-			cx.ReportIssue( 'Exception not detected', testName );
-		} catch(ex) {
-	
-			if ( (ex != exType) && !(ex instanceof exType) )
-				cx.ReportIssue('Invalid exception ('+ex.constructor.name+' != '+exType.name+')', testName );
-		}
-	} 
-
-	this.ASSERT = function( value, expect, testName ) {
-	
-		cx.CheckPoint('ASSERT', testName);
-		if ( value !== expect && !(typeof(value) == 'number' && isNaN(value) && typeof(expect) == 'number' && isNaN(expect)) )
-			cx.ReportIssue( FormatVariable(value)+' !== '+FormatVariable(expect), testName );
-	}
-
-	this.ASSERT_STR = function( value, expect, testName ) {
-	
-		cx.CheckPoint('ASSERT_STR', testName);
-		if ( value != expect ) // value = String(value); expect = String(expect); // not needed because we use the != sign, not !== sign
-			cx.ReportIssue( FormatVariable(value)+' != '+FormatVariable(expect), testName );
-	}
-
-   this.ASSERT_HAS_PROPERTIES = function( obj, names ) {
-   	
-		cx.CheckPoint('ASSERT_HAS_PROPERTIES', names);
-   	for each ( var p in names.split(/\s*,\s*/) ) {
-   	
-   		if ( !(p in obj) )
-	  			cx.ReportIssue( 'Property '+p.quote()+' not found.' );
-	  	}
-   }
-
-
-	this.GC = function() {
-
-		CollectGarbage();
-	}
-
-	var randomData = '';
-	for ( var i = 0; i < 1024; ++i )
-		randomData += String.fromCharCode(Math.random()*255);
-   this.RandomData = function(length) {
-
-        var data = '';
-        while( data.length < length )
-            data += randomData.substring( Math.random()*randomData.length, Math.random()*randomData.length );
-        return data.substr(0, length);
-   }
-
-	var randomString = '';
-	for ( var i = 0; i < 1024; ++i )
-		randomString += Math.random().toString(36).substr(2);
-   this.RandomString = function(length) { // [0-9A-Za-z]
-
-        var data = '';
-        while( data.length < length )
-            data += randomString.substring( Math.random()*randomString.length, Math.random()*randomString.length );
-        return data.substr(0, length);
-   }
+	message = type +' @'+ location +' - '+ (testName||'') +' - '+ (checkName||'') +' - '+ details;
+	cx.issueList.push(message);
+	Print( '\n X '+ message, '\n' );
 }
 
 
-
-
 function LaunchTests(itemList, conf) {
-	
-	var issueList = [];
-	var checkpointCount = 0;
-	
-	function ReportIssue(message, testName) {
 
-		var lineno = Locate(this.stackIndex+1)[1] - this.item.relativeLineNumber + this.item.line;
-		message = 'TEST: @'+ this.item.file+':'+lineno +' - '+ (testName||'') +' - '+ message;
-		issueList.push(message);
-		Print( '\n X '+ message, '\n' );
-	}
-	
-	function CheckPoint(title, testName) {
-	
-		checkpointCount++;	
-	}
-
-	var cx = { stackIndex:stackSize-1, conf:conf, ReportIssue:ReportIssue, CheckPoint:CheckPoint };
+	var cx = { 
+		checkCount:0, 
+		issueList:[], 
+		stackIndex:stackSize-1, 
+		conf:conf, 
+		ReportIssue:function(message, checkName) {
+		
+			CommonReportIssue(cx, 'ASSERT',  this.item.file+':'+(Locate(this.stackIndex+1)[1] - this.item.relativeLineNumber), this.item.name, checkName, message );
+		},
+		Checkpoint:function(title, testName) {
+			this.checkCount++;
+		}
+	};
 
 	var qaapi = new QAAPI(cx);
 
 	for each ( var currentItem in itemList ) {
 
 		cx.item = currentItem;
+		Print( ' - '+currentItem.file+' - '+ currentItem.name );
+
+		conf.noGcBetweenTests || CollectGarbage();
+		gcZeal = conf.gcZeal;
+		disableGarbageCollection = conf.nogcDuringTests;
 
 		try {
-			
-			Print( ' - '+currentItem.file+' - '+ currentItem.name );
-			
-			gcZeal = conf.gcZeal;
-
-			if( !conf.noGcBetweenTests )
-				CollectGarbage();
 
 			var m0 = privateMemoryUsage;
 			var t0 = TimeCounter();
-
-			if ( conf.nogcDuringTests )
-				disableGarbageCollection = true;
-			
-			for ( var i = 0; i < conf.repeatEachTest; i++ )
+			for ( var i = conf.repeatEachTest; i && !endSignal ; --i )
 				currentItem.func(qaapi);
-
-			if ( conf.nogcDuringTests )
-				disableGarbageCollection = false;
-
 			var t = (TimeCounter() - t0) / conf.repeatEachTest;
 			var m = (privateMemoryUsage - m0) / conf.repeatEachTest;
-			Print( '  ...('+t.toFixed(1) + 'ms / '+(m/1024).toFixed(1)+'KB)' );
-
-			Print('\n');
-				
+			Print( '  ...('+t.toFixed(1) + 'ms, '+(m/1024).toFixed(1)+'KB)', '\n' );
 		} catch(ex) {
 			
 			Print('\n');
-			
-			var lineno = ex.lineNumber - currentItem.relativeLineNumber + currentItem.line;
-			var message = 'EXCEPTION: @'+ currentItem.file+':'+lineno + ' - '+ currentItem.name +' - '+ ex;
-			issueList.push(message);
-			Print( ' X '+ message, '\n' );			
+			CommonReportIssue(cx, 'EXCEPTION', currentItem.file+':'+(ex.lineNumber - currentItem.relativeLineNumber), currentItem.name, '', ex );
 		}
 		
-		disableGarbageCollection = false; // in case of
+		disableGarbageCollection = false;
 		gcZeal = 0;
 
 		if ( conf.stopAfterNIssues && issues > conf.stopAfterNIssues )
@@ -253,71 +240,94 @@ function LaunchTests(itemList, conf) {
 
 		if ( endSignal )
 			break;
+
+		if ( conf.sleepBetweenTests )
+			Sleep(conf.sleepBetweenTests);
 	}
 	
-	return [issueList, checkpointCount];
+	return [cx.issueList, cx.checkCount];
 }
 
 
 
 function LaunchRandomTests(itemList, conf) {
 
-	var issueList = [];
-	var checkpointCount = 0;
-	
-	function ReportIssue(message, testName) {
-
-		var lineno = Locate(this.stackIndex+1)[1] - this.item.relativeLineNumber + this.item.line;
-		message = 'TEST: @'+ this.item.file+':'+lineno +' - '+ (testName||'') +' - '+ message;
-		issueList.push(message);
-		Print( '\n X '+ message, '\n' );
-	}
-	
-	function CheckPoint(title, testName) {
-	
-		checkpointCount++;	
-	}
-
-	var cx = { stackIndex:stackSize-1, conf:conf, ReportIssue:ReportIssue, CheckPoint:CheckPoint };
+	var cx = { 
+		checkCount:0, 
+		issueList:[], 
+		stackIndex:stackSize-1, 
+		conf:conf, 
+		ReportIssue:function(message, checkName) {
+		
+			CommonReportIssue(cx, 'ASSERT',  this.item.file+':'+(Locate(this.stackIndex+1)[1] - this.item.relativeLineNumber), this.item.name, checkName, message );
+		},
+		Checkpoint:function(title, testName) {
+			this.checkCount++;
+		}
+	};
 
 	var qaapi = new QAAPI(cx);
 
-
+	var initCount = 0;
 	for each ( var item in itemList ) {
 
 		if ( !item.init ) // list is sorted, init are first.
 			break;
 		item.func(qaapi);
+		initCount++;
+	}
+
+	var logFile;
+	if ( conf.logFilename ) {
+	
+		logFile = new File(conf.logFilename);
+		logFile.Open('w');
+		
+	}
+		
+	if ( logFile ) {
+		
+		var configurationText = 'configuraion: '+[k+':'+v for ([k,v] in Iterator(conf))].join(' - ');
+		logFile.Write( configurationText + '\n\n' );
 	}
 
 	while ( !endSignal ) {
 
-		currentItem = itemList[Math.floor(Math.random() * itemList.length)];
+		currentItem = itemList[ initCount + Math.floor(Math.random() * (itemList.length - initCount)) ];
 		cx.item = currentItem;
-		
-		gcZeal = conf.gcZeal;
 
+		Print(cx.checkCount+' checks.', '\r');
+//		Print(currentItem.name + '\n');
+		
+		if ( logFile ) {
+
+			logFile.Write(currentItem.name + '\n');
+			logFile.Sync();
+		}		
+		
+		conf.noGcBetweenTests || CollectGarbage();
+		gcZeal = conf.gcZeal;
+		
 		try {
 			
-			for ( var i = 0; i < conf.repeatEachTest; i++ )
+			for ( var i = conf.repeatEachTest; i && !endSignal ; --i )
 				currentItem.func(qaapi);
-
-			if( !conf.noGcBetweenTests )
-				CollectGarbage();
-			
 		} catch(ex) {
 
-			var lineno = ex.lineNumber - currentItem.relativeLineNumber + currentItem.line;
-			var message = 'EXCEPTION: @'+ currentItem.file+':'+lineno + ' - '+ currentItem.name +' - '+ ex;
-			issueList.push(message);
-			Print( ' X '+ message, '\n' );
+			CommonReportIssue(cx, 'EXCEPTION', currentItem.file+':'+(ex.lineNumber - currentItem.relativeLineNumber), currentItem.name, '', ex );
 		}
 
-		disableGarbageCollection = false; // in case of
+		disableGarbageCollection = false;
 		gcZeal = 0;
+		
+		if ( conf.sleepBetweenTests )
+			Sleep(conf.sleepBetweenTests);
 	}
 	
-	return [issueList, checkpointCount]; 
+	if ( logFile )
+		logFile.Close();
+	
+	return [cx.issueList, cx.checkCount]; 
 }
 
 
@@ -351,7 +361,7 @@ function ParseCommandLine(conf) {
 
 
 
-var conf = { help:false, repeatEachTest:1, gcZeal:0, loopForever:false, directory:'src', priority:0, flags:'', save:'', load:'', disableJIT:false, listTestsOnly:false, nogcBetweenTests:false, nogcDuringTests:false, stopAfterNIssues:0 };
+var conf = { help:false, repeatEachTest:1, gcZeal:0, loopForever:false, directory:'src', priority:0, flags:'', save:'', load:'', disableJIT:false, listTestsOnly:false, nogcBetweenTests:false, nogcDuringTests:false, stopAfterNIssues:0, logFilename:'', sleepBetweenTests:0 };
 ParseCommandLine(conf);
 var configurationText = 'configuraion: '+[k+':'+v for ([k,v] in Iterator(conf))].join(' - ');
 Print( configurationText, '\n\n' );
@@ -398,17 +408,17 @@ var savePrio = processPriority;
 processPriority = conf.priority;
 var t0 = TimeCounter();
 
-var [issueList, checkpointCount] = ( conf.loopForever ? LaunchRandomTests : LaunchTests )(testList, conf);
+var [issueList, checkCount] = ( conf.loopForever ? LaunchRandomTests : LaunchTests )(testList, conf);
 
 var t = TimeCounter() - t0;
 processPriority = savePrio || 0; // savePrio may be undefined
 
-Print( '\n\n', configurationText, '\n\n', issueList.length +' issues, '+ testList.length +' tests, ' + checkpointCount + ' checkpoints in ' + t.toFixed(2) + 'ms ('+(conf.repeatEachTest)+' repeat per test).', '\n' );
+Print( '\n----------\n', configurationText, '\n\n', issueList.length +' issues, '+conf.repeatEachTest+' * '+ [t for each (t in testList) if (!t.init)].length +' tests, ' + checkCount + ' checks in ' + t.toFixed(2) + 'ms.', '\n' );
 issueList.sort();
 issueList.reduce( function(previousValue, currentValue, index, array) {
 
     if ( previousValue != currentValue )
-		Print( ' X ' + currentValue, '\n' );
+		Print( '- ' + currentValue, '\n' );
     return currentValue;
 }, undefined );
 
