@@ -107,14 +107,14 @@ function QAAPI(cx) {
 
 	this.ASSERT_TYPE = function( value, type, testName ) {
 
-		cx.Testing('ASSERT_TYPE', testName);
+		cx.CheckPoint('ASSERT_TYPE', testName);
 		if ( typeof(value) != type && !(value instanceof type) )
 			cx.ReportIssue( 'Invalid type, '+type.name+' is expected.', testName );
 	}
 
 	this.ASSERT_EXCEPTION = function( fct, exType, testName ) {
 		
-		cx.Testing('ASSERT_EXCEPTION', testName);
+		cx.CheckPoint('ASSERT_EXCEPTION', testName);
 		try {
 		
 			fct();
@@ -128,21 +128,21 @@ function QAAPI(cx) {
 
 	this.ASSERT = function( value, expect, testName ) {
 	
-		cx.Testing('ASSERT', testName);
+		cx.CheckPoint('ASSERT', testName);
 		if ( value !== expect && !(typeof(value) == 'number' && isNaN(value) && typeof(expect) == 'number' && isNaN(expect)) )
 			cx.ReportIssue( FormatVariable(value)+' !== '+FormatVariable(expect), testName );
 	}
 
 	this.ASSERT_STR = function( value, expect, testName ) {
 	
-		cx.Testing('ASSERT_STR', testName);
+		cx.CheckPoint('ASSERT_STR', testName);
 		if ( value != expect ) // value = String(value); expect = String(expect); // not needed because we use the != sign, not !== sign
 			cx.ReportIssue( FormatVariable(value)+' != '+FormatVariable(expect), testName );
 	}
 
    this.ASSERT_HAS_PROPERTIES = function( obj, names ) {
    	
-		cx.Testing('ASSERT_HAS_PROPERTIES', names);
+		cx.CheckPoint('ASSERT_HAS_PROPERTIES', names);
    	for each ( var p in names.split(/\s*,\s*/) ) {
    	
    		if ( !(p in obj) )
@@ -185,7 +185,7 @@ function QAAPI(cx) {
 function LaunchTests(itemList, conf) {
 	
 	var issueList = [];
-	var testCount = 0;
+	var checkpointCount = 0;
 	
 	function ReportIssue(message, testName) {
 
@@ -195,12 +195,12 @@ function LaunchTests(itemList, conf) {
 		Print( '\n X '+ message, '\n' );
 	}
 	
-	function Testing(title, testName) {
+	function CheckPoint(title, testName) {
 	
-		testCount++;	
+		checkpointCount++;	
 	}
 
-	var cx = { stackIndex:stackSize-1, conf:conf, ReportIssue:ReportIssue, Testing:Testing };
+	var cx = { stackIndex:stackSize-1, conf:conf, ReportIssue:ReportIssue, CheckPoint:CheckPoint };
 
 	var qaapi = new QAAPI(cx);
 
@@ -255,7 +255,7 @@ function LaunchTests(itemList, conf) {
 			break;
 	}
 	
-	return [issueList, testCount];
+	return [issueList, checkpointCount];
 }
 
 
@@ -263,7 +263,7 @@ function LaunchTests(itemList, conf) {
 function LaunchRandomTests(itemList, conf) {
 
 	var issueList = [];
-	var testCount = 0;
+	var checkpointCount = 0;
 	
 	function ReportIssue(message, testName) {
 
@@ -273,12 +273,12 @@ function LaunchRandomTests(itemList, conf) {
 		Print( '\n X '+ message, '\n' );
 	}
 	
-	function Testing(title, testName) {
+	function CheckPoint(title, testName) {
 	
-		testCount++;	
+		checkpointCount++;	
 	}
 
-	var cx = { stackIndex:stackSize-1, conf:conf, ReportIssue:ReportIssue, Testing:Testing };
+	var cx = { stackIndex:stackSize-1, conf:conf, ReportIssue:ReportIssue, CheckPoint:CheckPoint };
 
 	var qaapi = new QAAPI(cx);
 
@@ -317,7 +317,7 @@ function LaunchRandomTests(itemList, conf) {
 		gcZeal = 0;
 	}
 	
-	return [issueList, testCount]; 
+	return [issueList, checkpointCount]; 
 }
 
 
@@ -398,12 +398,12 @@ var savePrio = processPriority;
 processPriority = conf.priority;
 var t0 = TimeCounter();
 
-var [issueList, testCount] = ( conf.loopForever ? LaunchRandomTests : LaunchTests )(testList, conf);
+var [issueList, checkpointCount] = ( conf.loopForever ? LaunchRandomTests : LaunchTests )(testList, conf);
 
 var t = TimeCounter() - t0;
 processPriority = savePrio || 0; // savePrio may be undefined
 
-Print( '\n\n', configurationText, '\n', issueList.length + ' issues / ' + testCount + ' tests in ' + t.toFixed(2) + 'ms ('+(conf.repeatEachTest)+' repeat per test).', '\n' );
+Print( '\n\n', configurationText, '\n\n', issueList.length +' issues, '+ testList.length +' tests, ' + checkpointCount + ' checkpoints in ' + t.toFixed(2) + 'ms ('+(conf.repeatEachTest)+' repeat per test).', '\n' );
 issueList.sort();
 issueList.reduce( function(previousValue, currentValue, index, array) {
 
