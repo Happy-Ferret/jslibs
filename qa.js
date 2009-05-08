@@ -66,35 +66,25 @@ function CreateQaItemList(startDir, filter, flags) {
 		try {
 		
 			item.relativeLineNumber = Locate()[1]+1;
-			item.func = new Function('QA', 'ITEM', item.code.join('\n'));
+			item.func = new Function('QA', item.code.join('\n'));
 		} catch(ex) {
 			
 			item.func = function() {}
-			Print( '*** ' + ex + ' @' + item.file + ':' + (item.line + ex.lineNumber - item.relativeLineNumber) + ' ('+item.name+')', '\n' );
+			var lineno = item.line + ex.lineNumber - item.relativeLineNumber;
+			message = 'COMPILATION: @'+ item.file +':'+ lineno +' - '+ item.name +' - '+ ex;
+			Print( '*** ' + message, '\n' );
 		}
 	}
 
-	itemList = [ item for each ( item in itemList ) if ( item.init || (!filter || filter(item.name) || filter(item.file)) && (!flags || flags(item.flags))  ) ];
-	itemList = itemList.sort( function(a,b) a.init ? -1 : 1 );
+	itemList = [ item for each ( item in itemList ) if (  item.init || (!filter || filter(item.name) || filter(item.file)) && (!flags || flags(item.flags))  ) ];
+	itemList = itemList.sort( function(a,b) a.init ? -1 : 1 ); // put all init function at the top of the test list.
 	return itemList;
 }
 
 
-var currentItem;
-var issues = 0;
-var testCount = 0;
-var errors = [];
 
-var QAAPI = new function() {
+function QAAPI(cx) {
 
-	function CodeLocation() {
-	
-		var lineno = Locate(-2)[1] - currentItem.relativeLineNumber + currentItem.line;
-		if ( isNaN(lineno) )
-			lineno = '('+String(Locate(-2)[1]) +'-'+ (currentItem.relativeLineNumber + currentItem.line) + ')';
-		return currentItem.file+':'+lineno;
-	}
-	
 	function FormatVariable(val) {
 
 		if ( typeof(val) == 'string' ) {
@@ -107,64 +97,59 @@ var QAAPI = new function() {
 			return '['+val+']';
 		return val;
 	}
+	
+	this.__defineGetter__('cx', function() cx);
 
-	this.REPORT = function( message ) {
+	this.FAILED = function( message ) {
 
-		message += ' - '+currentItem.name;
-		issues++;
-		errors.push(message);
-		Print( ' X >>> ', message, '\n' );
+		cx.ReportIssue( message );
 	}
 
 	this.ASSERT_TYPE = function( value, type, testName ) {
 
-		testCount++;
+		cx.Testing('ASSERT_TYPE', testName);
 		if ( typeof(value) != type && !(value instanceof type) )
-			this.REPORT( CodeLocation()+' '+(testName||'?')+', Invalid type, '+(type.name)+' is expected' );
+			cx.ReportIssue( 'Invalid type, '+type.name+' is expected.', testName );
 	}
 
-	this.FAILED = function( message ) {
-
-		this.REPORT( CodeLocation()+' '+message );
-	}
-	
 	this.ASSERT_EXCEPTION = function( fct, exType, testName ) {
 		
-		testCount++;
+		cx.Testing('ASSERT_EXCEPTION', testName);
 		try {
 		
 			fct();
-			this.REPORT( CodeLocation()+' Exception not detected: '+testName );
+			cx.ReportIssue( 'Exception not detected', testName );
 		} catch(ex) {
 	
 			if ( (ex != exType) && !(ex instanceof exType) )
-				this.REPORT( CodeLocation()+' Invalid exception ('+ex.constructor.name+' != '+exType.name+') for: '+testName );
+				cx.ReportIssue('Invalid exception ('+ex.constructor.name+' != '+exType.name+')', testName );
 		}
 	} 
 
 	this.ASSERT = function( value, expect, testName ) {
 	
-		testCount++;
+		cx.Testing('ASSERT', testName);
 		if ( value !== expect && !(typeof(value) == 'number' && isNaN(value) && typeof(expect) == 'number' && isNaN(expect)) )
-			this.REPORT( CodeLocation()+' '+(testName||'?') + ', '+FormatVariable(value)+' !== '+FormatVariable(expect) );
+			cx.ReportIssue( FormatVariable(value)+' !== '+FormatVariable(expect), testName );
 	}
 
 	this.ASSERT_STR = function( value, expect, testName ) {
 	
-		testCount++;
+		cx.Testing('ASSERT_STR', testName);
 		if ( value != expect ) // value = String(value); expect = String(expect); // not needed because we use the != sign, not !== sign
-			this.REPORT( CodeLocation()+' '+(testName||'?') + ', '+FormatVariable(value)+' != '+FormatVariable(expect) );
+			cx.ReportIssue( FormatVariable(value)+' != '+FormatVariable(expect), testName );
 	}
 
    this.ASSERT_HAS_PROPERTIES = function( obj, names ) {
    	
+		cx.Testing('ASSERT_HAS_PROPERTIES', names);
    	for each ( var p in names.split(/\s*,\s*/) ) {
    	
-			testCount++;
    		if ( !(p in obj) )
-	  			this.REPORT( CodeLocation()+' Property '+p+' not found' );
+	  			cx.ReportIssue( 'Property '+p.quote()+' not found.' );
 	  	}
    }
+
 
 	this.GC = function() {
 
@@ -195,16 +180,38 @@ var QAAPI = new function() {
 }
 
 
-function LaunchTests(itemList, conf) {
 
-	for each ( currentItem in itemList ) {
+
+function LaunchTests(itemList, conf) {
+	
+	var issueList = [];
+	var testCount = 0;
+	
+	function ReportIssue(message, testName) {
+
+		var lineno = Locate(this.stackIndex+1)[1] - this.item.relativeLineNumber + this.item.line;
+		message = 'TEST: @'+ this.item.file+':'+lineno +' - '+ (testName||'') +' - '+ message;
+		issueList.push(message);
+		Print( '\n X '+ message, '\n' );
+	}
+	
+	function Testing(title, testName) {
+	
+		testCount++;	
+	}
+
+	var cx = { stackIndex:stackSize-1, conf:conf, ReportIssue:ReportIssue, Testing:Testing };
+
+	var qaapi = new QAAPI(cx);
+
+	for each ( var currentItem in itemList ) {
+
+		cx.item = currentItem;
 
 		try {
 			
 			Print( ' - '+currentItem.file+' - '+ currentItem.name );
 			
-//			var globalProperties = PropertiesList(global);
-
 			gcZeal = conf.gcZeal;
 
 			if( !conf.noGcBetweenTests )
@@ -215,9 +222,9 @@ function LaunchTests(itemList, conf) {
 
 			if ( conf.nogcDuringTests )
 				disableGarbageCollection = true;
-				
+			
 			for ( var i = 0; i < conf.repeatEachTest; i++ )
-				currentItem.func(QAAPI, currentItem);
+				currentItem.func(qaapi);
 
 			if ( conf.nogcDuringTests )
 				disableGarbageCollection = false;
@@ -226,50 +233,74 @@ function LaunchTests(itemList, conf) {
 			var m = (privateMemoryUsage - m0) / conf.repeatEachTest;
 			Print( '  ...('+t.toFixed(1) + 'ms / '+(m/1024).toFixed(1)+'KB)' );
 
-//			if ( !currentItem.init && PropertiesList(global).length != globalProperties.length )
-//				QAAPI.REPORT( 'WARNING '+ currentItem.file +':'+ currentItem.line + ' ('+currentItem.name+') is using global variable ('+[n for each (n in PropertiesList(global)) if ( globalProperties.indexOf(n) == -1 ) ]+')') ;
+			Print('\n');
 				
 		} catch(ex) {
-
+			
+			Print('\n');
+			
 			var lineno = ex.lineNumber - currentItem.relativeLineNumber + currentItem.line;
-			if ( isNaN(lineno) )
-				lineno = '('+String(ex.lineNumber) +'-'+ (currentItem.relativeLineNumber + currentItem.line) + ')';
-			QAAPI.REPORT( 'EXCEPTION '+ ex + ' at ' + currentItem.file + ':' + lineno + ' ('+currentItem.name+')' );
+			var message = 'EXCEPTION: @'+ currentItem.file+':'+lineno + ' - '+ currentItem.name +' - '+ ex;
+			issueList.push(message);
+			Print( ' X '+ message, '\n' );			
 		}
 		
 		disableGarbageCollection = false; // in case of
 		gcZeal = 0;
 
-		Print( '\n' );
-		
-		if ( endSignal )
-			break;
-			
 		if ( conf.stopAfterNIssues && issues > conf.stopAfterNIssues )
 			break;
+
+		if ( endSignal )
+			break;
 	}
+	
+	return [issueList, testCount];
 }
 
 
+
 function LaunchRandomTests(itemList, conf) {
+
+	var issueList = [];
+	var testCount = 0;
+	
+	function ReportIssue(message, testName) {
+
+		var lineno = Locate(this.stackIndex+1)[1] - this.item.relativeLineNumber + this.item.line;
+		message = 'TEST: @'+ this.item.file+':'+lineno +' - '+ (testName||'') +' - '+ message;
+		issueList.push(message);
+		Print( '\n X '+ message, '\n' );
+	}
+	
+	function Testing(title, testName) {
+	
+		testCount++;	
+	}
+
+	var cx = { stackIndex:stackSize-1, conf:conf, ReportIssue:ReportIssue, Testing:Testing };
+
+	var qaapi = new QAAPI(cx);
+
 
 	for each ( var item in itemList ) {
 
 		if ( !item.init ) // list is sorted, init are first.
 			break;
-		item.func(QAAPI, currentItem);
+		item.func(qaapi);
 	}
 
 	while ( !endSignal ) {
 
 		currentItem = itemList[Math.floor(Math.random() * itemList.length)];
+		cx.item = currentItem;
 		
 		gcZeal = conf.gcZeal;
 
 		try {
 			
 			for ( var i = 0; i < conf.repeatEachTest; i++ )
-				currentItem.func(QAAPI, currentItem);
+				currentItem.func(qaapi);
 
 			if( !conf.noGcBetweenTests )
 				CollectGarbage();
@@ -277,14 +308,16 @@ function LaunchRandomTests(itemList, conf) {
 		} catch(ex) {
 
 			var lineno = ex.lineNumber - currentItem.relativeLineNumber + currentItem.line;
-			if ( isNaN(lineno) )
-				lineno = '('+String(ex.lineNumber) +'-'+ (currentItem.relativeLineNumber + currentItem.line) + ')';
-			QAAPI.REPORT( 'EXCEPTION '+ ex + ' at ' + currentItem.file + ':' + lineno + ' ('+currentItem.name+')' );
+			var message = 'EXCEPTION: @'+ currentItem.file+':'+lineno + ' - '+ currentItem.name +' - '+ ex;
+			issueList.push(message);
+			Print( ' X '+ message, '\n' );
 		}
 
 		disableGarbageCollection = false; // in case of
 		gcZeal = 0;
 	}
+	
+	return [issueList, testCount]; 
 }
 
 
@@ -320,7 +353,8 @@ function ParseCommandLine(conf) {
 
 var conf = { help:false, repeatEachTest:1, gcZeal:0, loopForever:false, directory:'src', priority:0, flags:'', save:'', load:'', disableJIT:false, listTestsOnly:false, nogcBetweenTests:false, nogcDuringTests:false, stopAfterNIssues:0 };
 ParseCommandLine(conf);
-Print( 'configuraion: '+[k+'='+v for ([k,v] in Iterator(conf))].join(' / '), '\n\n' );
+var configurationText = 'configuraion: '+[k+':'+v for ([k,v] in Iterator(conf))].join(' - ');
+Print( configurationText, '\n\n' );
 
 if ( conf.help )
 	Halt();
@@ -350,7 +384,7 @@ else
 
 if ( conf.listTestsOnly ) {
 	
-	Print([String.quote(t.file+' - '+t.name) for each ( t in testList )].join('\n'), '\n');
+	Print([String.quote(t.file+' - '+t.name) for each ( t in testList )].join('\n'), '\n', testList.length +' tests.', '\n');
 	Halt();
 }
 
@@ -364,19 +398,19 @@ var savePrio = processPriority;
 processPriority = conf.priority;
 var t0 = TimeCounter();
 
-( conf.loopForever ? LaunchRandomTests : LaunchTests )(testList, conf);
+var [issueList, testCount] = ( conf.loopForever ? LaunchRandomTests : LaunchTests )(testList, conf);
 
 var t = TimeCounter() - t0;
 processPriority = savePrio || 0; // savePrio may be undefined
 
-Print( '\n\n', issues + ' issues / ' + testCount + ' tests in ' + t.toFixed(2) + 'ms ('+(conf.repeatEachTest)+' repeat).', '\n' );
-errors.sort();
-errors.reduce( function(previousValue, currentValue, index, array) {
+Print( '\n\n', configurationText, '\n', issueList.length + ' issues / ' + testCount + ' tests in ' + t.toFixed(2) + 'ms ('+(conf.repeatEachTest)+' repeat per test).', '\n' );
+issueList.sort();
+issueList.reduce( function(previousValue, currentValue, index, array) {
 
     if ( previousValue != currentValue )
 		Print( ' X ' + currentValue, '\n' );
     return currentValue;
-}, undefined);
+}, undefined );
 
 
 /* flags:

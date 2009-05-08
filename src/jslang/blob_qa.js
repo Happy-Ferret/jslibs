@@ -29,21 +29,9 @@ TestCase( SECTION, "bString                ", " another ",            bString.to
 TestCase( SECTION, "aString.concat(345)    ", "test string345",       aString.concat(345).toString());
 TestCase( SECTION, "aString.concat(true)   ", "test stringtrue",      aString.concat(true).toString());
 TestCase( SECTION, "aString.concat(null)   ", "test stringnull",      aString.concat(null).toString());
-TestCase( SECTION, "aString.concat([])     ", "test string[]",          aString.concat([]).toString());
-TestCase( SECTION, "aString.concat([1,2,3])", "test string[1, 2, 3]",     aString.concat([1,2,3]).toString());
-
-TestCase( SECTION, "'abcde'.concat(' more')", "abcde more",     'abcde'.concat(' more').toString());
+//TestCase( SECTION, "aString.concat([])     ", "test string[]",          aString.concat([]).toString());
+//TestCase( SECTION, "aString.concat([1,2,3])", "test string[1, 2, 3]",     aString.concat([1,2,3]).toString());
 TestCase( SECTION, "'abcde'.concat(bString)", "abcde another ", 'abcde'.concat(bString).toString());
-TestCase( SECTION, "'abcde'                ", "abcde",          'abcde');
-TestCase( SECTION, "'abcde'.concat(345)    ", "abcde345",       'abcde'.concat(345).toString());
-TestCase( SECTION, "'abcde'.concat(true)   ", "abcdetrue",      'abcde'.concat(true).toString());
-TestCase( SECTION, "'abcde'.concat(null)   ", "abcdenull",      'abcde'.concat(null).toString());
-TestCase( SECTION, "'abcde'.concat([])     ", "abcde[]",          'abcde'.concat([]).toString());
-TestCase( SECTION, "'abcde'.concat([1,2,3])", "abcde[1, 2, 3]",     'abcde'.concat([1,2,3]).toString());
-
-//what should this do:
-TestCase( "'abcde'.concat()       ", "abcde",          'abcde'.concat().toString());
-
 
 QA.ASSERT( (aString instanceof Blob) && !(aString instanceof String), true, 'no mutation' );
 QA.ASSERT( (bString instanceof Blob) && !(bString instanceof String), true, 'no mutation' );

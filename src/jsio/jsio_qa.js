@@ -508,7 +508,7 @@ LoadModule('jsio');
 
 /// MemoryMapped class [ftrm]
 
-		var thisFilename = ITEM.file;
+		var thisFilename = QA.cx.item.file;
 		
 		var m = new MemoryMapped(new File(thisFilename).Open('r'));
 		
