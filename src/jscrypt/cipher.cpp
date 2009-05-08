@@ -124,6 +124,8 @@ $TOC_MEMBER $INAME
 // mode, cipher, key, IV
 DEFINE_CONSTRUCTOR() {
 
+	CipherPrivate *pv = NULL; // see. bad label
+
 	J_S_ASSERT_CONSTRUCTING();
 	J_S_ASSERT_THIS_CLASS();
 	J_S_ASSERT_ARG_MIN( 3 );
@@ -175,10 +177,10 @@ DEFINE_CONSTRUCTOR() {
 	if ( argc >= 6 && !JSVAL_IS_VOID( argv[5] ) )
 		J_CHK( JsvalToInt(cx, argv[5], &numRounds) );
 
-	CipherPrivate *pv;
 	pv = (CipherPrivate*)JS_malloc(cx, sizeof(CipherPrivate));
 	J_CHK( pv );
 
+	pv->symmetric_XXX = NULL; // see. bad label
 	pv->mode = mode;
 
 	int cipherIndex;
@@ -257,11 +259,23 @@ DEFINE_CONSTRUCTOR() {
 		}
 	}
 
-	if (err != CRYPT_OK)
-		return ThrowCryptError(cx, err); // (TBD) free pv and psctr
+	if (err != CRYPT_OK) {
+		
+		ThrowCryptError(cx, err);
+		goto bad;
+	}
+
 	JS_SetPrivate( cx, obj, pv );
 	return JS_TRUE;
-	JL_BAD;
+
+bad:
+	if ( pv ) {
+		
+		free(pv);
+		if ( pv->symmetric_XXX )
+			free(pv->symmetric_XXX);
+	}
+	return JS_FALSE;
 }
 
 /**doc

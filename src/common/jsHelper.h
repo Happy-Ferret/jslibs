@@ -600,10 +600,9 @@ ALWAYS_INLINE bool MaybeRealloc( int requested, int received ) {
 
 
 // stores JSClasses that other jslibs modules may rely on.
+// note: in jslibs, class->name length is >= 1 (see END_CLASS macro)
 ALWAYS_INLINE bool JL_RegisterNativeClass( JSContext *cx, JSClass *jsClass ) {
 
-	if (unlikely( *jsClass->name == '\0' )) // (TBD) check if an empty string is a possible case. else remove this test.
-		return false;
 	QueuePush(&GetHostPrivate(cx)->registredNativeClasses, (void*)jsClass);
 	return true;
 }
@@ -614,7 +613,7 @@ ALWAYS_INLINE JSClass *JL_GetRegistredNativeClass( JSContext *cx, const char *cl
 	for ( jl::QueueCell *it = jl::QueueBegin(&GetHostPrivate(cx)->registredNativeClasses); it; it = jl::QueueNext(it) ) {
 
 		jsClass = (JSClass*)QueueGetData(it);
-		if ( className[0] != jsClass->name[0] ) // optimization
+		if ( className[0] != jsClass->name[0] ) // optimization (see the note above)
 			continue;
 		if ( strcmp(className+1, jsClass->name+1) == 0 ) // +1 because [0] has already been tested.
 			return jsClass;
@@ -824,7 +823,7 @@ ALWAYS_INLINE JSBool StringToJsval( JSContext *cx, const char* cstr, jsval *val 
 
 	if (unlikely( cstr == NULL )) {
 
-		*val = JSVAL_VOID; // (TBD) perhaps JSVAL_NULL is better ?
+		*val = JSVAL_VOID;
 		return JS_TRUE;
 	}
 	if (unlikely( *cstr == '\0' )) {
@@ -853,7 +852,7 @@ ALWAYS_INLINE JSBool StringAndLengthToJsval( JSContext *cx, jsval *val, const ch
 	}
 	if (unlikely( cstr == NULL )) {
 
-		*val = JSVAL_VOID; // (TBD) perhaps JSVAL_NULL is better ?
+		*val = JSVAL_VOID;
 		return JS_TRUE;
 	}
 	*val = JS_GetEmptyStringValue(cx);
@@ -1433,7 +1432,7 @@ inline JSBool JSBufferGet( JSContext *cx, JSObject *obj, const char **buffer, si
 	JS_PUSH_SINGLE_TEMP_ROOT(cx, JSVAL_NULL, &tvr); // needed to protect the returned value.
 
 	J_CHKM( JS_CallFunctionName(cx, obj, "Get", 0, NULL, &tvr.u.value), "Get() function not found."); // do not use toString() !? no !
-	J_CHK( JsvalToStringAndLength(cx, &tvr.u.value, buffer, size) ); // (TBD) GC protect rval !!!
+	J_CHK( JsvalToStringAndLength(cx, &tvr.u.value, buffer, size) ); // (TBD) GC warning, when tvr.u.value will be no more protected, the buffer will be unprotected.
 
 	JS_POP_TEMP_ROOT(cx, &tvr);
 	return JS_TRUE;

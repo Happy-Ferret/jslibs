@@ -32,7 +32,7 @@ typedef void (*ModuleFreeFunction)(void);
 
 JSContext* CreateHost( size_t maxMem, size_t maxAlloc, size_t maybeGCInterval );
 JSBool InitHost( JSContext *cx, bool unsafeMode, HostOutput stdOut, HostOutput stdErr, void* privateData );
-void DestroyHost( JSContext *cx );
+JSBool DestroyHost( JSContext *cx );
 JSBool ExecuteScriptFileName( JSContext *cx, const char *scriptFileName, bool compileOnly, int argc, const char * const * argv, jsval *rval );
 
 #endif // _HOST_H_

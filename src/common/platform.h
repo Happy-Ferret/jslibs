@@ -236,7 +236,7 @@ inline double AccurateTimeCounter() {
 	gettimeofday(&time, &tz);
 	return (double)time.tv_sec / 1000L*1000L;
 #endif
-	return -1; // (TBD) see. JS_Now() ? no, it could be expensive and is not suitable for calls when a GC lock is held.
+	return -1; // (TBD) see. js_IntervalNow() or JS_Now() ? no, it could be expensive and is not suitable for calls when a GC lock is held.
 }
 
 
@@ -269,11 +269,11 @@ inline unsigned int JLSessionId() {
 // Atomic operations
 	// MS doc: http://msdn.microsoft.com/en-us/library/ms686360.aspx
 
-	#if defined XP_WIN
+#if defined XP_WIN
 	typedef volatile LONG * JLAtomicPtr;
-	#elif defined XP_UNIX
+#elif defined XP_UNIX
 	typedef volatile long * JLAtomicPtr;
-	#endif // XP_UNIX
+#endif // XP_UNIX
 
 	inline bool JLAtomicInc( JLAtomicPtr ptr ) {
 
@@ -301,23 +301,51 @@ inline unsigned int JLSessionId() {
 #endif
 
 
-// semaphores
+// system errors
+	inline void JLLastSysetmErrorMessage( char *message, size_t maxLength ) {
+
 	#if defined XP_WIN
-	typedef HANDLE JLSemaphoreHandler;
+		DWORD errorCode = ::GetLastError();
+		LPVOID lpMsgBuf;
+		DWORD result = ::FormatMessage(
+			FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS | FORMAT_MESSAGE_MAX_WIDTH_MASK,
+			NULL, errorCode, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&lpMsgBuf, 0, NULL );
+		if ( result != 0 ) {
+
+			strncpy(message, (char*)lpMsgBuf, maxLength-1);
+			message[maxLength-1] = '\0';
+		} else
+			*message = '\0';
 	#elif defined XP_UNIX
-	typedef sem_t* JLSemaphoreHandler;
+		const char *msgBuf = error();
+		if ( msgBuf != NULL ) {
+
+			strncpy(message, msgBuf, maxLength-1);
+			message[maxLength-1] = '\0';
+		} else
+			*message = '\0';
 	#endif
+	}
+
+// semaphores
+#if defined XP_WIN
+	typedef HANDLE JLSemaphoreHandler;
+#elif defined XP_UNIX
+	typedef sem_t* JLSemaphoreHandler;
+#endif
 
 
 	inline JLSemaphoreHandler JLCreateSemaphore( int initCount ) {
 
-		#if defined XP_WIN
+	#if defined XP_WIN
 		return CreateSemaphore(NULL, initCount, LONG_MAX, NULL);
-		#elif defined XP_UNIX
+	#elif defined XP_UNIX
 		sem_t *sem = (sem_t*)malloc(sizeof(sem_t)); // (TBD) max ???
+		if ( !sem )
+			return NULL;
 		sem_init(sem, 0, initCount);
 		return sem;
-		#endif
+	#endif
 	}
 
 	inline bool JLSemaphoreOk( JLSemaphoreHandler semaphore ) {
@@ -325,38 +353,48 @@ inline unsigned int JLSessionId() {
 		return semaphore != (JLSemaphoreHandler)0;
 	}
 
-	inline void JLAcquireSemaphore( JLSemaphoreHandler semaphore ) {
+	inline bool JLAcquireSemaphore( JLSemaphoreHandler semaphore ) {
 
 		if ( !JLSemaphoreOk(semaphore) )
-			return;
-		#if defined XP_WIN
-		WaitForSingleObject(semaphore, INFINITE);
-		#elif defined XP_UNIX
-		sem_wait(semaphore);
-		#endif
+			return false;
+	#if defined XP_WIN
+		if ( WaitForSingleObject(semaphore, INFINITE) != WAIT_OBJECT_0 )
+			return false;
+	#elif defined XP_UNIX
+		if ( sem_wait(semaphore) != 0 )
+			return false;
+	#endif
+		return true;
 	}
 
-	inline void JLReleaseSemaphore( JLSemaphoreHandler semaphore ) {
+	inline bool JLReleaseSemaphore( JLSemaphoreHandler semaphore ) {
 
 		if ( !JLSemaphoreOk(semaphore) )
-			return;
-		#if defined XP_WIN
-		ReleaseSemaphore(semaphore, 1, NULL);
-		#elif defined XP_UNIX
-		sem_post(semaphore);
-		#endif
+			return false;
+	#if defined XP_WIN
+		if ( ReleaseSemaphore(semaphore, 1, NULL) == 0 )
+			return false;
+	#elif defined XP_UNIX
+		if ( sem_post(semaphore) != 0 )
+			return false;
+	#endif
+		return true;
 	}
 
-	inline void JLFreeSemaphore( JLSemaphoreHandler *pSemaphore ) {
+	inline bool JLFreeSemaphore( JLSemaphoreHandler *pSemaphore ) {
 
 		if ( !pSemaphore || !JLSemaphoreOk(*pSemaphore) )
-			return;
-		#if defined XP_WIN
-		CloseHandle(*pSemaphore);
-		#elif defined XP_UNIX
-		sem_destroy(*pSemaphore);
-		#endif
+			return false;
+	#if defined XP_WIN
+		if ( CloseHandle(*pSemaphore) == 0 )
+			return false;
+	#elif defined XP_UNIX
+		if ( sem_destroy(*pSemaphore) != 0 )
+			return false;
+		free(*pSemaphore);
+	#endif
 		*pSemaphore = (JLSemaphoreHandler)0;
+		return true;
 	}
 
 
@@ -371,21 +409,21 @@ inline unsigned int JLSessionId() {
 	each successful lock request that it has outstanding on the mutex.
 	PTHREAD_MUTEX_RECURSIVE
 */
-	#if defined XP_WIN
+#if defined XP_WIN
 	typedef HANDLE JLMutexHandler;
-	#elif defined XP_UNIX
+#elif defined XP_UNIX
 	typedef pthread_mutex_t* JLMutexHandler;
-	#endif
+#endif
 
 	inline JLMutexHandler JLCreateMutex() {
 
-		#if defined XP_WIN
+	#if defined XP_WIN
 		return CreateMutex(NULL, FALSE, NULL);
-		#elif defined XP_UNIX
+	#elif defined XP_UNIX
 		pthread_mutex_t *mutex = (pthread_mutex_t*)malloc(sizeof(pthread_mutex_t));
 		pthread_mutex_init(mutex, NULL);
 		return mutex;
-		#endif
+	#endif
 	}
 
 	inline bool JLMutexOk( JLMutexHandler mutex ) {
@@ -393,38 +431,48 @@ inline unsigned int JLSessionId() {
 		return mutex != (JLMutexHandler)0;
 	}
 
-	inline void JLAcquireMutex( JLMutexHandler mutex ) {
+	inline bool JLAcquireMutex( JLMutexHandler mutex ) {
 
 		if ( !JLMutexOk(mutex) )
-			return;
-		#if defined XP_WIN
-		WaitForSingleObject(mutex, INFINITE);
-		#elif defined XP_UNIX
-		pthread_mutex_lock(mutex);
-		#endif
+			return false;
+	#if defined XP_WIN
+		if ( WaitForSingleObject(mutex, INFINITE) != WAIT_OBJECT_0 )
+			return false;
+	#elif defined XP_UNIX
+		if ( pthread_mutex_lock(mutex) != 0 )
+			return false;
+	#endif
+		return true;
 	}
 
-	inline void JLReleaseMutex( JLMutexHandler mutex ) {
+	inline bool JLReleaseMutex( JLMutexHandler mutex ) {
 
 		if ( !JLMutexOk(mutex) )
-			return;
-		#if defined XP_WIN
-		ReleaseMutex(mutex);
-		#elif defined XP_UNIX
-		pthread_mutex_unlock(mutex);
-		#endif
+			return false;
+	#if defined XP_WIN
+		if ( ReleaseMutex(mutex) == 0 )
+			return false;
+	#elif defined XP_UNIX
+		if ( pthread_mutex_unlock(mutex) != 0 )
+			return false;
+	#endif
+		return true;
 	}
 
-	inline void JLFreeMutex( JLMutexHandler *pMutex ) {
+	inline bool JLFreeMutex( JLMutexHandler *pMutex ) {
 
 		if ( !pMutex || !JLMutexOk(*pMutex) )
-			return;
-		#if defined XP_WIN
-		CloseHandle(*pMutex);
-		#elif defined XP_UNIX
-		pthread_mutex_destroy(*pMutex);
-		#endif
+			return false;
+	#if defined XP_WIN
+		if ( CloseHandle(*pMutex) == 0 )
+			return false;
+	#elif defined XP_UNIX
+		if ( pthread_mutex_destroy(*pMutex) != 0 )
+			return false;
+		free(*pMutex);
+	#endif
 		*pMutex = (JLMutexHandler)0;
+		return true;
 	}
 
 // thread
@@ -462,6 +510,8 @@ inline unsigned int JLSessionId() {
 		return (JLThreadHandler)CreateThread(NULL, 0, threadRoutine, pv, 0, NULL);
 	#elif defined XP_UNIX
 		pthread_t *thread = (pthread_t*)malloc(sizeof(pthread_t));
+		if ( thread == NULL )
+			return NULL;
 		pthread_attr_t attr;
 		pthread_attr_init(&attr);
 		pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE); // optional ?
@@ -481,13 +531,16 @@ inline unsigned int JLSessionId() {
 	#endif
 	}
 
-	inline void JLThreadCancel( JLThreadHandler thread ) {
+	inline bool JLThreadCancel( JLThreadHandler thread ) {
 
 	#if defined XP_WIN
-		TerminateThread(thread, 0); // The handle must have the THREAD_TERMINATE access right.
+		if ( TerminateThread(thread, 0) == 0 ) // The handle must have the THREAD_TERMINATE access right.
+			return false;
 	#elif defined XP_UNIX
-		pthread_cancel(*thread);
+		if ( pthread_cancel(*thread) != 0 )
+			return false;
 	#endif
+		return true;
 	}
 
 
@@ -507,7 +560,7 @@ inline unsigned int JLSessionId() {
 	#endif
 	}
 
-	inline bool JLThreadIsActive( JLThreadHandler thread ) {
+	inline bool JLThreadIsActive( JLThreadHandler thread ) { //(TBD) how to manage errors ?
 
 		if ( !JLThreadOk(thread) )
 			return false;
@@ -522,30 +575,35 @@ inline unsigned int JLSessionId() {
 	#endif
 	}
 
-	inline void JLWaitThread( JLThreadHandler thread ) {
+	inline bool JLWaitThread( JLThreadHandler thread ) {
 
 		if ( !JLThreadOk(thread) )
-			return;
+			return false;
 	#if defined XP_WIN
-		WaitForSingleObject( thread, INFINITE ); // WAIT_OBJECT_0
+		if ( WaitForSingleObject( thread, INFINITE ) != WAIT_OBJECT_0 )
+			return false;
 	#elif defined XP_UNIX
 		void *status;
-		int rc;
-		rc = pthread_join(*thread, &status);
+		if ( pthread_join(*thread, &status) != 0 )
+			return false;
 	#endif
+		return true;
 	}
 
-	inline void JLFreeThread( JLThreadHandler *pThread ) {
+	inline bool JLFreeThread( JLThreadHandler *pThread ) {
 
 		if ( !pThread || !JLThreadOk(*pThread) )
-			return;
+			return false;
 	#if defined XP_WIN
-		CloseHandle(*pThread);
+		if ( CloseHandle(*pThread) == 0 )
+			return false;
 	#elif defined XP_UNIX
-		pthread_detach(**pThread);
+		if ( pthread_detach(**pThread) != 0 )
+			return false;
 		free(*pThread);
 	#endif
 		*pThread = (JLThreadHandler)0;
+		return true;
 	}
 
 // dynamic libraries
@@ -606,15 +664,18 @@ inline unsigned int JLSessionId() {
 	#endif
 	}
 
-	inline void JLDynamicLibraryClose( JLLibraryHandler *libraryHandler ) {
+	inline bool JLDynamicLibraryClose( JLLibraryHandler *libraryHandler ) {
 
 	#if defined XP_WIN
-		FreeLibrary(*libraryHandler);
+		if ( FreeLibrary(*libraryHandler) == 0 )
+			return false;
 	#elif defined XP_UNIX
 		dlerror();
-		dlclose(*libraryHandler);
+		if ( dlclose(*libraryHandler) != 0 )
+			return false;
 	#endif
 		*libraryHandler = (JLLibraryHandler)0;
+		return true;
 	}
 
 

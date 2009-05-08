@@ -167,7 +167,7 @@ DEFINE_CONSTRUCTOR() { // ( cipherName, hashName [, prngObject] [, PKCSVersion] 
 	}
 
 	pv->hasKey = false;
-	JS_SetPrivate( cx, obj, pv );
+	J_CHK( JS_SetPrivate( cx, obj, pv ) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -224,22 +224,23 @@ DEFINE_FUNCTION( CreateKeys ) { // ( bitsSize )
 			//120 30 256 (2^8)
 			//140 35 384
 			//160 40 512 (2^9)
-			// Max diff between group and modulus size in bytes: 512
-			// Max DSA group size in bytes (default allows 4k-bit groups): 512
-			int groupSize = keySize/4; // Bytes
-			int modulusSize = 1<<(keySize / 40 + 5); // Bytes
+			// Max diff between group and modulus size in bytes: MDSA_DELTA (512)
+			// Max DSA group size in bytes (default allows 4k-bit groups): MDSA_MAX_GROUP 512
+			int groupSize = keySize / 4; // Bytes
+			int modulusSize = 1 << (keySize / 40 + 5); // Bytes
 			err = dsa_make_key( prngState, prngIndex, groupSize, modulusSize, &pv->key.dsaKey );
+
 			//int stat = 0; // default: failed
 			//dsa_verify_key(&pv->key.dsaKey, &stat);
-			//if (stat != 1) { // If the result is stat = 1 the DSA key is valid (as far as valid mathematics are concerned).
-			//}
+			//if (stat != 1) // If the result is stat = 1 the DSA key is valid (as far as valid mathematics are concerned).
+			//	J_REPORT_ERROR("Invalid key.");
 			break;
 		}
 		default:
 			J_REPORT_ERROR("Invalid case.");
 	}
 	if (err != CRYPT_OK)
-		return ThrowCryptError(cx, err); // (TBD) free something ?
+		return ThrowCryptError(cx, err);
 
 	pv->hasKey = true;
 	return JS_TRUE;
@@ -301,7 +302,7 @@ DEFINE_FUNCTION( Encrypt ) { // ( data [, lparam] )
 			J_REPORT_ERROR("Invalid case.");
 	}
 	if (err != CRYPT_OK)
-		return ThrowCryptError(cx, err); // (TBD) free something ?
+		return ThrowCryptError(cx, err);
 
 	J_CHK( J_NewBlobCopyN(cx, out, outLength, rval) );
 	zeromem(out, sizeof(out)); // safe clear
@@ -378,7 +379,7 @@ DEFINE_FUNCTION( Decrypt ) { // ( encryptedData [, lparam] )
 	}
 
 	if (err != CRYPT_OK)
-		return ThrowCryptError(cx, err); // (TBD) free something ?
+		return ThrowCryptError(cx, err);
 
 	out[outLength] = '\0';
 
@@ -446,7 +447,7 @@ DEFINE_FUNCTION( Sign ) { // ( data [, saltLength] )
 	}
 
 	if (err != CRYPT_OK)
-		return ThrowCryptError(cx, err); // (TBD) free something ?
+		return ThrowCryptError(cx, err);
 
 	J_CHK( J_NewBlobCopyN( cx, out, outLength, rval ) );
 	zeromem(out, sizeof(out));
@@ -507,12 +508,13 @@ DEFINE_FUNCTION( VerifySignature ) { // ( data, signature [, saltLength] )
 	}
 
 	if (err != CRYPT_OK)
-		return ThrowCryptError(cx, err); // (TBD) free something ?
+		return ThrowCryptError(cx, err);
 
 	*rval = BOOLEAN_TO_JSVAL( stat == 1 ? JSVAL_TRUE : JSVAL_FALSE );
 	return JS_TRUE;
 	JL_BAD;
 }
+
 
 /**doc
 === Properties ===
@@ -570,7 +572,8 @@ DEFINE_PROPERTY( keySize ) {
 			keySize = mp_unsigned_bin_size((mp_int*)(pv->key.eccKey.pubkey.x)) * 8; // Ok !
 			break;
 		case dsa:
-			keySize = mp_unsigned_bin_size((mp_int*)(pv->key.dsaKey.y)) * 8; // ???
+//			keySize = mp_unsigned_bin_size((mp_int*)(pv->key.dsaKey.x)) * 8;
+			keySize = mp_unsigned_bin_size((mp_int*)(pv->key.dsaKey.y)) * 8; // ??? seems to randomly failed.
 			break;
 		default:
 			J_REPORT_ERROR("Invalid case.");
@@ -615,16 +618,20 @@ DEFINE_PROPERTY( keySetter ) {
 			err = ecc_import( (unsigned char *)key, keyLength, &pv->key.eccKey );
 			J_S_ASSERT( pv->key.rsaKey.type == type, "Invalid key type." );
 			break;
-		case dsa:
+		case dsa: {
 			err = dsa_import( (unsigned char *)key, keyLength, &pv->key.dsaKey );
 			J_S_ASSERT( pv->key.rsaKey.type == type, "Invalid key type." );
-			//dsa_verify_key(
+			//int stat = 0;
+			//dsa_verify_key(&pv->key.dsaKey, &stat);
+			//if (stat != 1) // If the result is stat = 1 the DSA key is valid (as far as valid mathematics are concerned).
+			//	J_REPORT_ERROR("Invalid key.");
 			break;
+		}
 		default:
 			J_REPORT_ERROR("Invalid case.");
 	}
 	if (err != CRYPT_OK)
-		return ThrowCryptError(cx, err); // (TBD) free something ?
+		return ThrowCryptError(cx, err);
 
 	pv->hasKey = true;
 	return JS_TRUE;
@@ -665,7 +672,7 @@ DEFINE_PROPERTY( keyGetter ) {
 			J_REPORT_ERROR("Invalid case.");
 	}
 	if (err != CRYPT_OK)
-		return ThrowCryptError(cx, err); // (TBD) free something ?
+		return ThrowCryptError(cx, err);
 
 	J_CHK( J_NewBlobCopyN(cx, key, keyLength, vp) );
 	zeromem(key, sizeof(key)); // safe clean

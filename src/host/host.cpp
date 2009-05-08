@@ -282,7 +282,6 @@ static JSBool LoadModule(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, 
 	J_S_ASSERT( libFileName != NULL && *libFileName != '\0', "Invalid module filename." );
 	JLLibraryHandler module;
 	module = JLDynamicLibraryOpen(libFileName);
-
 	J_SAFE(
 		if ( !JLDynamicLibraryOk(module) ) {
 
@@ -311,7 +310,7 @@ static JSBool LoadModule(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, 
 
 	if ( alreadyLoaded ) { // and already init
 
-		JLDynamicLibraryClose(&module);
+		J_CHK( JLDynamicLibraryClose(&module) );
 		*rval = JSVAL_VOID;
 		return JS_TRUE;
 	}
@@ -323,7 +322,7 @@ static JSBool LoadModule(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, 
 	return JS_TRUE;
 
 bad_dl_close:
-	JLDynamicLibraryClose(&module);
+	J_CHK( JLDynamicLibraryClose(&module) );
 bad:
 	return JS_FALSE;
 }
@@ -456,7 +455,8 @@ JSContext* CreateHost(size_t maxMem, size_t maxAlloc, size_t maybeGCInterval ) {
 
 		pv->maybeGCInterval = maybeGCInterval;
 		JS_SetOperationCallback(cx, OperationCallback);
-		pv->watchDogThread = JLThreadStart(WatchDogThreadProc, cx); // (TBD) check the restult
+		pv->watchDogThread = JLThreadStart(WatchDogThreadProc, cx);
+		J_CHKM( JLThreadOk(pv->watchDogThread), "Unable to create the thread." );
 	}
 
 	return cx;
@@ -532,7 +532,7 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostOutput stdOut, HostOutput s
 }
 
 
-void DestroyHost( JSContext *cx ) {
+JSBool DestroyHost( JSContext *cx ) {
 
 	JSRuntime *rt = JS_GetRuntime(cx);
 
@@ -542,8 +542,8 @@ void DestroyHost( JSContext *cx ) {
 
 	if ( JLThreadOk(pv->watchDogThread) ) {
 
-		JLThreadCancel(pv->watchDogThread);
-		JLFreeThread(&pv->watchDogThread); // beware: it is important to destroy the thread BEFORE destroying the cx !!!
+		J_CHK( JLThreadCancel(pv->watchDogThread) );
+		J_CHK( JLFreeThread(&pv->watchDogThread) ); // beware: it is important to destroy the thread BEFORE destroying the cx !!!
 	}
 
 	for ( jl::QueueCell *it = jl::QueueBegin(&pv->moduleList); it; it = jl::QueueNext(it) ) {
@@ -556,9 +556,9 @@ void DestroyHost( JSContext *cx ) {
 
 	//	don't try to break linked objects with JS_GC(cx) !
 
-	RemoveConfiguration(cx);
+	J_CHKM( RemoveConfiguration(cx), "Unable to remove the configuration item" );
 
-	JS_SetGlobalObject(cx, JSVAL_TO_OBJECT(JSVAL_NULL)); // remove the global object (TBD) check if it is good to do this.
+	JS_SetGlobalObject(cx, JSVAL_TO_OBJECT(JSVAL_NULL)); // remove the global object (TBD) check if it is good or needed to do this.
 
 // cleanup
 
@@ -579,13 +579,17 @@ void DestroyHost( JSContext *cx ) {
 		ModuleFreeFunction moduleFree = (ModuleFreeFunction)JLDynamicLibrarySymbol(module, NAME_MODULE_FREE);
 		if ( moduleFree != NULL )
 			moduleFree();
-		JLDynamicLibraryClose(&module);
+		J_CHK( JLDynamicLibraryClose(&module) );
 	}
 
 	while ( !jl::QueueIsEmpty(&pv->registredNativeClasses) )
 		jl::QueueShift(&pv->registredNativeClasses);
 
 	free(pv);
+	return JS_TRUE;
+bad:
+	free(pv);
+	return JS_FALSE;
 }
 
 

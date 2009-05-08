@@ -246,7 +246,7 @@ static JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSStackFrame *fp,
 	argv[4] = INT_TO_JSVAL( stackFrameIndex );
 	argv[5] = hasException ? JSVAL_TRUE : JSVAL_FALSE;
 	argv[6] = hasException ? exception : JSVAL_VOID;
-	argv[7] = breakOrigin == FROM_STEP_OUT ? fp->regs->sp[-1] : JSVAL_VOID; // (TBD) try to the the functions's rval
+	argv[7] = breakOrigin == FROM_STEP_OUT ? fp->regs->sp[-1] : JSVAL_VOID; // (TBD) try to get the functions's rval. ask in the mailing list.
 	argv[8] = script && JS_GetFramePC(cx, fp) == script->code ? JSVAL_TRUE : JSVAL_FALSE; // is entering function
 
 	JSDebugHooks prevHooks;
@@ -322,14 +322,18 @@ DEFINE_FINALIZE() {
 	if ( !pv )
 		return;
 	JSRuntime *rt = JS_GetRuntime(cx);
-	JS_SetInterrupt(rt, NULL, NULL);
-	JS_SetDebuggerHandler(rt, NULL, NULL);
-	JS_SetDebugErrorHook(rt, NULL, NULL);
-	JS_SetThrowHook(rt, NULL,NULL);
-	JS_SetExecuteHook(rt, NULL, NULL);
+	J_CHK( JS_SetInterrupt(rt, NULL, NULL) );
+	J_CHK( JS_SetDebuggerHandler(rt, NULL, NULL) );
+	J_CHK( JS_SetDebugErrorHook(rt, NULL, NULL) );
+	J_CHK( JS_SetThrowHook(rt, NULL,NULL) );
+	J_CHK( JS_SetExecuteHook(rt, NULL, NULL) );
 	if ( pv->excludedFiles )
 		CleanExcludedFileList(&pv->excludedFiles);
 	JS_free(cx, pv);
+	return;
+bad:
+	// report a warning ?
+	return;
 }
 
 /**doc

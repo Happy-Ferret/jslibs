@@ -1174,7 +1174,9 @@ struct SandboxContextPrivate {
 static JSBool SandboxMaxOperationCallback(JSContext *cx) {
 
 	JSObject *branchLimitExceptionObj = JS_NewObject( cx, classOperationLimit, NULL, NULL );
+	J_CHK( branchLimitExceptionObj );
 	JS_SetPendingException( cx, OBJECT_TO_JSVAL( branchLimitExceptionObj ) );
+bad:
 	return JS_FALSE;
 }
 
@@ -1182,12 +1184,10 @@ JLThreadFuncDecl WatchDogThreadProc(void *threadArg) {
 
 	JSContext *scx = (JSContext*)threadArg;
 	SandboxContextPrivate *pv = (SandboxContextPrivate*)JS_GetContextPrivate(scx);
-	size_t maxExecutionTime = pv->maxExecutionTime;
-	SleepMilliseconds(maxExecutionTime);
+	SleepMilliseconds(pv->maxExecutionTime);
 	JS_TriggerOperationCallback(scx);
 	return 0;
 }
-
 
 static JSBool SandboxQueryFunction(JSContext *scx, uintN argc, jsval *vp) {
 
@@ -1207,25 +1207,17 @@ static JSBool SandboxQueryFunction(JSContext *scx, uintN argc, jsval *vp) {
 
 DEFINE_FUNCTION_FAST( SandboxEval ) {
 
+	JSContext *scx = NULL;
+
 	J_S_ASSERT_ARG_MIN(1);
 
-	JSContext *scx;
 	scx = JS_NewContext(JS_GetRuntime(cx), 8192L); // see host/host.cpp
-	if ( !scx ) {
-
-		JS_ReportOutOfMemory(cx); // the only error that is not catchable
-		return JS_FALSE;
-	}
+	J_CHK( scx );
 	JS_SetOptions(scx, JS_GetOptions(scx) | JSOPTION_DONT_REPORT_UNCAUGHT | JSOPTION_VAROBJFIX | JSOPTION_COMPILE_N_GO | JSOPTION_RELIMIT | JSOPTION_JIT);
 
 	JSObject *globalObject;
 	globalObject = JS_NewObject(scx, classSandbox, NULL, NULL);
-	if ( !globalObject ) {
-
-		JS_DestroyContextNoGC(scx);
-		JS_ReportOutOfMemory(cx); // the only error that is not catchable
-		return JS_FALSE;
-	}
+	J_CHK( globalObject );
 
 	SandboxContextPrivate pv;
 	JS_SetContextPrivate(scx, &pv);
@@ -1246,18 +1238,25 @@ DEFINE_FUNCTION_FAST( SandboxEval ) {
 	else
 		pv.maxExecutionTime = 1000; // default value
 
-
 	JSString *jsstr;
 	jsstr = JS_ValueToString(cx, J_FARG(1));
+	J_CHK( jsstr );
 	uintN srclen;
 	srclen = JS_GetStringLength(jsstr);
 	jschar *src;
 	src = JS_GetStringChars(jsstr);
 
-	JS_SetOperationCallback(scx, SandboxMaxOperationCallback);
+	JSOperationCallback prev = JS_SetOperationCallback(scx, SandboxMaxOperationCallback);
 	JLThreadHandler watchDogThread;
 	watchDogThread = JLThreadStart(WatchDogThreadProc, scx);
-	J_CHK( JLThreadOk(watchDogThread) );
+	if ( !JLThreadOk(watchDogThread) ) {
+
+		char reason[1024];
+		JLLastSysetmErrorMessage(reason, sizeof(reason));
+		JLThreadCancel(watchDogThread);
+		JLFreeThread(&watchDogThread);
+		J_REPORT_ERROR_1( "Unable to create the thread (%s).", reason );
+	}
 
 	JS_SetGlobalObject(scx, globalObject);
 	JSStackFrame *fp;
@@ -1265,8 +1264,10 @@ DEFINE_FUNCTION_FAST( SandboxEval ) {
 	JSBool ok;
 	ok = JS_EvaluateUCScript(scx, globalObject, src, srclen, fp->script->filename, JS_PCToLineNumber(cx, fp->script, fp->regs->pc), J_FRVAL);
 
-	JLThreadCancel(watchDogThread);
-	JLFreeThread(&watchDogThread);
+	prev = JS_SetOperationCallback(scx, prev);
+	J_S_ASSERT( prev == SandboxMaxOperationCallback, "Invalid SandboxMaxOperationCallback handler." );
+
+	J_CHK( JLThreadCancel(watchDogThread) );
 
 //	JSPrincipals principals = { "sandbox context", NULL, NULL, 1, NULL, NULL };
 //	JSBool ok = JS_EvaluateUCScriptForPrincipals(scx, globalObject, &principals, src, srclen, fp->script->filename, JS_PCToLineNumber(cx, fp->script, fp->regs->pc), J_FRVAL);
@@ -1280,9 +1281,15 @@ DEFINE_FUNCTION_FAST( SandboxEval ) {
 			JS_ReportError(cx, "Unexpected error.");
 	}
 
+	JLFreeThread(&watchDogThread);
 	JS_DestroyContextNoGC(scx);
 	return ok;
-	JL_BAD;
+
+bad:
+	JLFreeThread(&watchDogThread);
+	if ( scx )
+		JS_DestroyContextNoGC(scx);
+	return JS_FALSE;
 }
 
 
