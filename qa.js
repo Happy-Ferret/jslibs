@@ -22,7 +22,7 @@ function QAAPI(cx) {
 
 	this.FAILED = function( message ) {
 
-		cx.ReportIssue( message );
+		cx.ReportIssue( message, 'FAILURE' );
 	}
 
 	this.ASSERT_TYPE = function( value, type, testName ) {
@@ -187,6 +187,14 @@ function CommonReportIssue(cx, type, location, testName, checkName, details) {
 	message = type +' @'+ location +' - '+ (testName||'') +' - '+ (checkName||'') +' - '+ details;
 	cx.issueList.push(message);
 	Print( '\n X '+ message, '\n' );
+	
+	if ( cx.conf.logFilename ) {
+	
+		logFile = new File(conf.logFilename);
+		logFile.Open('w+');
+		logFile.Write(message + '\n');
+		logFile.Close();
+	}
 }
 
 
@@ -202,43 +210,76 @@ function LaunchTests(itemList, conf) {
 			CommonReportIssue(cx, 'ASSERT',  this.item.file+':'+(Locate(this.stackIndex+1)[1] - this.item.relativeLineNumber), this.item.name, checkName, message );
 		},
 		Checkpoint:function(title, testName) {
+		
 			this.checkCount++;
 		}
 	};
 
 	var qaapi = new QAAPI(cx);
+	
+	
+	if ( conf.loopForever ) {
 
-	for each ( var currentItem in itemList ) {
+		for ( var i in itemList ) {
 
-		cx.item = currentItem;
-		Print( ' - '+currentItem.file+' - '+ currentItem.name );
+			if ( !itemList[i].init ) // list is sorted, init are first.
+				break;
+			itemList[i].func(qaapi);
+		}
+		itemList = itemList.slice(i);
+	}	
+	
 
-		conf.noGcBetweenTests || CollectGarbage();
+	CollectGarbage();
+
+	testIndex = 0;
+
+	for (;;) {
+
+		if ( conf.loopForever )
+			testIndex = Math.floor(Math.random() * itemList.length);
+			
+		cx.item = itemList[testIndex];
+
+		Print( ' - '+cx.item.file+' - '+ cx.item.name );
+
 		gcZeal = conf.gcZeal;
 		disableGarbageCollection = conf.nogcDuringTests;
 
 		try {
 
+
 			var m0 = privateMemoryUsage;
 			var t0 = TimeCounter();
 			for ( var i = conf.repeatEachTest; i && !endSignal ; --i )
-				currentItem.func(qaapi);
-			var t = (TimeCounter() - t0) / conf.repeatEachTest;
-			var m = (privateMemoryUsage - m0) / conf.repeatEachTest;
-			Print( '  ...('+t.toFixed(1) + 'ms, '+(m/1024).toFixed(1)+'KB)', '\n' );
+				cx.item.func(qaapi);
+			var t1 = TimeCounter() - t0;
+			var m1 = privateMemoryUsage - m0;
+			Print( '  ...('+(t1/conf.repeatEachTest).toFixed(1) + 'ms, '+ conf.repeatEachTest +'x '+ (m1/1024/conf.repeatEachTest).toFixed(1)+'KB)' );
 		} catch(ex) {
 			
-			Print('\n');
-			CommonReportIssue(cx, 'EXCEPTION', currentItem.file+':'+(ex.lineNumber - currentItem.relativeLineNumber), currentItem.name, '', ex );
+			CommonReportIssue(cx, 'EXCEPTION', cx.item.file+':'+(ex.lineNumber - cx.item.relativeLineNumber), cx.item.name, '', ex );
 		}
 		
 		disableGarbageCollection = false;
 		gcZeal = 0;
 
+		conf.noGcBetweenTests || CollectGarbage();
+		
+		var m2 = privateMemoryUsage - m0;
+		if ( m2 > 0 )
+			Print( '... leak: '+(m2/1024)+'KB');
+
+		Print('\n');
+
+		
 		if ( conf.stopAfterNIssues && issues > conf.stopAfterNIssues )
 			break;
 
 		if ( endSignal )
+			break;
+			
+		if ( !conf.loopForever && ++testIndex >= itemList.length )
 			break;
 
 		if ( conf.sleepBetweenTests )
@@ -248,87 +289,6 @@ function LaunchTests(itemList, conf) {
 	return [cx.issueList, cx.checkCount];
 }
 
-
-
-function LaunchRandomTests(itemList, conf) {
-
-	var cx = { 
-		checkCount:0, 
-		issueList:[], 
-		stackIndex:stackSize-1, 
-		conf:conf, 
-		ReportIssue:function(message, checkName) {
-		
-			CommonReportIssue(cx, 'ASSERT',  this.item.file+':'+(Locate(this.stackIndex+1)[1] - this.item.relativeLineNumber), this.item.name, checkName, message );
-		},
-		Checkpoint:function(title, testName) {
-			this.checkCount++;
-		}
-	};
-
-	var qaapi = new QAAPI(cx);
-
-	var initCount = 0;
-	for each ( var item in itemList ) {
-
-		if ( !item.init ) // list is sorted, init are first.
-			break;
-		item.func(qaapi);
-		initCount++;
-	}
-
-	var logFile;
-	if ( conf.logFilename ) {
-	
-		logFile = new File(conf.logFilename);
-		logFile.Open('w');
-		
-	}
-		
-	if ( logFile ) {
-		
-		var configurationText = 'configuraion: '+[k+':'+v for ([k,v] in Iterator(conf))].join(' - ');
-		logFile.Write( configurationText + '\n\n' );
-	}
-
-	while ( !endSignal ) {
-
-		currentItem = itemList[ initCount + Math.floor(Math.random() * (itemList.length - initCount)) ];
-		cx.item = currentItem;
-
-		Print(cx.checkCount+' checks.', '\r');
-//		Print(currentItem.name + '\n');
-		
-		if ( logFile ) {
-
-			logFile.Write(currentItem.name + '\n');
-			logFile.Sync();
-		}		
-		
-		conf.noGcBetweenTests || CollectGarbage();
-		gcZeal = conf.gcZeal;
-		
-		try {
-			
-			for ( var i = conf.repeatEachTest; i && !endSignal ; --i )
-				currentItem.func(qaapi);
-		} catch(ex) {
-
-			CommonReportIssue(cx, 'EXCEPTION', currentItem.file+':'+(ex.lineNumber - currentItem.relativeLineNumber), currentItem.name, '', ex );
-		}
-
-		disableGarbageCollection = false;
-		gcZeal = 0;
-		
-		if ( conf.sleepBetweenTests )
-			Sleep(conf.sleepBetweenTests);
-	}
-	
-	if ( logFile )
-		logFile.Close();
-	
-	return [cx.issueList, cx.checkCount]; 
-}
 
 
 function ParseCommandLine(conf) {
@@ -408,12 +368,12 @@ var savePrio = processPriority;
 processPriority = conf.priority;
 var t0 = TimeCounter();
 
-var [issueList, checkCount] = ( conf.loopForever ? LaunchRandomTests : LaunchTests )(testList, conf);
+var [issueList, checkCount] = LaunchTests(testList, conf);
 
 var t = TimeCounter() - t0;
 processPriority = savePrio || 0; // savePrio may be undefined
 
-Print( '\n----------\n', configurationText, '\n\n', issueList.length +' issues, '+conf.repeatEachTest+' * '+ [t for each (t in testList) if (!t.init)].length +' tests, ' + checkCount + ' checks in ' + t.toFixed(2) + 'ms.', '\n' );
+Print( '\n----------\n', configurationText, '\n\n', issueList.length +' issues, '+conf.repeatEachTest+'x '+ [t for each (t in testList) if (!t.init)].length +' tests, ' + checkCount + ' checks in ' + t.toFixed(2) + 'ms.', '\n' );
 issueList.sort();
 issueList.reduce( function(previousValue, currentValue, index, array) {
 
