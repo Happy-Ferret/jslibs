@@ -298,6 +298,7 @@ inline unsigned int JLSessionId() {
 #include <semaphore.h>
 #include <errno.h>
 #include <string.h>
+#include <error.h>
 #endif
 
 
@@ -317,7 +318,7 @@ inline unsigned int JLSessionId() {
 		} else
 			*message = '\0';
 	#elif defined XP_UNIX
-		const char *msgBuf = error();
+		const char *msgBuf = strerror(errno);
 		if ( msgBuf != NULL ) {
 
 			strncpy(message, msgBuf, maxLength-1);

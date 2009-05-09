@@ -230,7 +230,7 @@ JLThreadFuncDecl WatchDogThreadProc(void *threadArg) {
 	JSContext *cx = (JSContext*)threadArg;
 	size_t *interval = &GetHostPrivate(cx)->maybeGCInterval;
 	for (;;) {
-	
+
 		SleepMilliseconds(*interval);
 		JS_TriggerOperationCallback(cx);
 	}
@@ -393,7 +393,8 @@ JSContext* CreateHost(size_t maxMem, size_t maxAlloc, size_t maybeGCInterval ) {
 	JS_SetGCParameter(rt, JSGC_MAX_BYTES, maxMem); /* maximum nominal heap before last ditch GC */
 	JS_SetGCParameter(rt, JSGC_MAX_MALLOC_BYTES, maxAlloc); /* # of JS_malloc bytes before last ditch GC */
 
-	JSContext *cx = JS_NewContext(rt, 8192L); // set the chunk size of the stack pool to 8192. see http://groups.google.com/group/mozilla.dev.tech.js-engine/browse_thread/thread/be9f404b623acf39/9efdfca81be99ca3
+	JSContext *cx;
+	cx = JS_NewContext(rt, 8192L); // set the chunk size of the stack pool to 8192. see http://groups.google.com/group/mozilla.dev.tech.js-engine/browse_thread/thread/be9f404b623acf39/9efdfca81be99ca3
 	J_CHK( cx ); //, "unable to create the context." );
 
 	// Info: Increasing JSContext stack size slows down my scripts:
@@ -444,7 +445,8 @@ JSContext* CreateHost(size_t maxMem, size_t maxAlloc, size_t maybeGCInterval ) {
 
 	JS_SetGlobalObject(cx, globalObject); // see LAZY_STANDARD_CLASSES
 
-	HostPrivate *pv = (HostPrivate*)malloc(sizeof(HostPrivate));
+	HostPrivate *pv;
+	pv = (HostPrivate*)malloc(sizeof(HostPrivate));
 	J_CHK( pv ); // out of memory ?
 
 	memset(pv, 0, sizeof(HostPrivate)); // mandatory !
@@ -645,7 +647,7 @@ JSBool ExecuteScriptFileName( JSContext *cx, const char *scriptFileName, bool co
 			ungetc('/', file);
 			ungetc('/', file);
 		} else {
-			
+
 			ungetc(b, file);
 			ungetc(s, file);
 		}

@@ -183,7 +183,8 @@ inline void _NormalizeFunctionNames( JSFunctionSpec *functionSpec ) {
 	if ( _staticFunctionSpec != NULL ) JS_DefineFunctions(cx, obj, _staticFunctionSpec); \
 	if ( _staticPropertySpec != NULL ) JS_DefineProperties(cx, obj, _staticPropertySpec); \
 	if ( _constIntegerSpec != NULL ) { \
-	  JSObject *dstObj = obj; \
+	  JSObject *dstObj; \
+	  dstObj = obj; \
 		for (; _constIntegerSpec->name; _constIntegerSpec++) \
 		if ( JS_DefineProperty(cx, dstObj, _constIntegerSpec->name, INT_TO_JSVAL(_constIntegerSpec->ival), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) != JS_TRUE ) \
 			return JS_FALSE; \
@@ -251,7 +252,8 @@ static JSBool RemoveClass( JSContext *cx, JSClass *cl ) {
 		} \
 		J_CHKM( _class->name && _class->name[0], "Invalid class name." ); \
 		*_prototype = JS_InitClass(cx, obj, *_parentPrototype, _class, _constructor, 0, _propertySpec, _functionSpec, _staticPropertySpec, _staticFunctionSpec); \
-		JSObject *dstObj = _constructor ? JS_GetConstructor(cx, *_prototype) : *_prototype; \
+		JSObject *dstObj; \
+		dstObj = _constructor ? JS_GetConstructor(cx, *_prototype) : *_prototype; \
 		if ( _constIntegerSpec != NULL ) { \
 			for (; _constIntegerSpec->name; _constIntegerSpec++) \
 			if ( JS_DefineProperty(cx, dstObj, _constIntegerSpec->name, INT_TO_JSVAL(_constIntegerSpec->ival), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) != JS_TRUE ) \

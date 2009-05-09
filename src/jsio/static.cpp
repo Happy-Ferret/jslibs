@@ -77,7 +77,8 @@ DEFINE_FUNCTION( Poll ) {
 
 	J_S_ASSERT_ARG_MIN( 1 );
 	J_S_ASSERT_ARRAY( J_ARG(1) );
-	JSObject *fdArrayObj = JSVAL_TO_OBJECT(J_ARG(1));
+	JSObject *fdArrayObj;
+	fdArrayObj = JSVAL_TO_OBJECT(J_ARG(1));
 
 	if ( J_ARG_ISDEF(2) ) {
 
@@ -102,7 +103,7 @@ DEFINE_FUNCTION( Poll ) {
 	}
 
 	// Optimization to avoid dynamic allocation when it is possible
-	if ( arrayIds->length > COUNTOF(staticPollDesc) ) 
+	if ( arrayIds->length > COUNTOF(staticPollDesc) )
 		pollDesc = (PRPollDesc*)malloc(arrayIds->length * sizeof(PRPollDesc));
 	else
 		pollDesc = staticPollDesc;
@@ -111,7 +112,7 @@ DEFINE_FUNCTION( Poll ) {
 
 		J_CHK( JS_GetElement(cx, fdArrayObj, JSID_TO_INT(arrayIds->vector[i]), &prop) );
 		if ( JSVAL_IS_VOID( prop ) ) {
-			
+
 			pollDesc[i].fd = 0;
 			pollDesc[i].in_flags = 0;
 			pollDesc[i].out_flags = 0;
@@ -131,15 +132,15 @@ DEFINE_FUNCTION( Poll ) {
 		J_CHK( JS_GetProperty( cx, fdObj, "readable", &prop ) );
 		if ( JsvalIsFunction(cx, prop) )
 			pollDesc[i].in_flags |= PR_POLL_READ;
-		
+
 		J_CHK( JS_GetProperty( cx, fdObj, "hangup", &prop ) );
 		if ( JsvalIsFunction(cx, prop) )
 			pollDesc[i].in_flags |= PR_POLL_HUP;
-		
+
 		J_CHK( JS_GetProperty( cx, fdObj, "exception", &prop ) );
 		if ( JsvalIsFunction(cx, prop) )
 			pollDesc[i].in_flags |= PR_POLL_EXCEPT;
-		
+
 		J_CHK( JS_GetProperty( cx, fdObj, "error", &prop ) );
 		if ( JsvalIsFunction(cx, prop) )
 			pollDesc[i].in_flags |= PR_POLL_ERR;
@@ -363,7 +364,7 @@ DEFINE_FUNCTION( GetEnv ) {
 	value = PR_GetEnv(name); // If the environment variable is not defined, the function returns NULL.
 
 	if ( value == NULL || *value == '\0' ) { // this will cause an 'undefined' return value
-		
+
 		*J_RVAL = JSVAL_VOID;
 	} else {
 
@@ -394,7 +395,7 @@ doc:
 	const char *name, *value;
 	J_CHK( JsvalToString(cx, &J_ARG(1), &name) );
 	J_CHK( JsvalToString(cx, &J_ARG(2), &value) );
-	
+
 	PRStatus status = PR_SetEnv...
 
 	return JS_TRUE;

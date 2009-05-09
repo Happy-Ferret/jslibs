@@ -940,7 +940,7 @@ DEFINE_FUNCTION( PCToLine )
 }
 */
 
-/// /// /// /// /// /// /// /// /// /// /// /// /// /// /// /// /// /// /// /// /// /// /// /// /// /// /// /// /// /// /// /// /// /// /// 
+/// /// /// /// /// /// /// /// /// /// /// /// /// /// /// /// /// /// /// /// /// /// /// /// /// /// /// /// /// /// /// /// /// /// ///
 
 
 /**doc
@@ -954,7 +954,8 @@ DEFINE_PROPERTY( scriptFilenameList ) {
 	J_CHK(arr);
 	*vp = OBJECT_TO_JSVAL(arr);
 
-	int index = 0;
+	int index;
+	index = 0;
 	for ( jl::QueueCell *it = jl::QueueBegin(scriptFileList); it; it = jl::QueueNext(it) ) {
 
 		jl::Queue *scriptList = (jl::Queue*)jl::QueueGetData(it);
@@ -981,13 +982,13 @@ DEFINE_PROPERTY( currentFilename ) {
 
 	JSStackFrame *fp = CurrentStackFrame(cx);
 	if ( fp == NULL ) {
-		
+
 		*vp = JSVAL_VOID;
 		return JS_TRUE;
 	}
 	JSScript *script = JS_GetFrameScript(cx, fp);
 	if ( script == NULL ) {
-		
+
 		*vp = JSVAL_VOID;
 		return JS_TRUE;
 	}
@@ -1007,9 +1008,9 @@ $TOC_MEMBER $INAME
   $H example
   {{{
   1.  var i = 0;
-  2.  
+  2.
   3.  i++;
-  
+
   GetActualLineno('test.js', 2); // returns: 3
   GetActualLineno('nofile.js', 2); // returns: undefined
   }}}
@@ -1215,10 +1216,10 @@ $TOC_MEMBER $INAME
    9 }
   10
   11 function test() {
-  12   
+  12
   13  test2();
   14 }
-  15 
+  15
   16 test();
   }}}
 **/
@@ -1236,17 +1237,20 @@ DEFINE_FUNCTION_FAST( Locate ) {
 	}
 
 	if ( fp == NULL ) {
-		
+
 		*J_FRVAL = JSVAL_VOID;
 		return JS_TRUE;
 	}
 
-	JSScript *script = JS_GetFrameScript(cx, fp); // because we are in a fast native function, this frame is ok.
-	uintN lineno = JS_PCToLineNumber(cx, script, JS_GetFramePC(cx, fp));
+	JSScript *script;
+	script = JS_GetFrameScript(cx, fp); // because we are in a fast native function, this frame is ok.
+	uintN lineno;
+	lineno = JS_PCToLineNumber(cx, script, JS_GetFramePC(cx, fp));
 
-	JSObject *arrObj = JS_NewArrayObject(cx, 2, NULL);
+	JSObject *arrObj;
+	arrObj = JS_NewArrayObject(cx, 2, NULL);
 	*J_FRVAL = OBJECT_TO_JSVAL(arrObj);
-	
+
 	jsval tmp;
 	if ( script ) {
 
@@ -1496,7 +1500,7 @@ CONFIGURE_STATIC
 //		FUNCTION( Untrap )
 //		FUNCTION( LineToPC )
 //		FUNCTION( PCToLine )
-		
+
 		FUNCTION_FAST( GetActualLineno )
 		FUNCTION_FAST( Locate )
 		FUNCTION_FAST( DefinitionLocation )

@@ -1246,7 +1246,8 @@ DEFINE_FUNCTION_FAST( SandboxEval ) {
 	jschar *src;
 	src = JS_GetStringChars(jsstr);
 
-	JSOperationCallback prev = JS_SetOperationCallback(scx, SandboxMaxOperationCallback);
+	JSOperationCallback prev;
+	prev = JS_SetOperationCallback(scx, SandboxMaxOperationCallback);
 	JLThreadHandler watchDogThread;
 	watchDogThread = JLThreadStart(WatchDogThreadProc, scx);
 	if ( !JLThreadOk(watchDogThread) ) {

@@ -697,7 +697,8 @@ ALWAYS_INLINE JSBool J_NewBlob( JSContext *cx, void* buffer, size_t length, jsva
 		return JS_TRUE;
 	}
 
-	JSString *jsstr = JS_NewString(cx, (char*)buffer, length); // JS_NewString takes ownership of bytes on success, avoiding a copy; but on error (signified by null return), it leaves bytes owned by the caller. So the caller must free bytes in the error case, if it has no use for them.
+	JSString *jsstr;
+	jsstr = JS_NewString(cx, (char*)buffer, length); // JS_NewString takes ownership of bytes on success, avoiding a copy; but on error (signified by null return), it leaves bytes owned by the caller. So the caller must free bytes in the error case, if it has no use for them.
 	J_CHK( jsstr );
 	*vp = STRING_TO_JSVAL(jsstr);
 	return JS_TRUE;

@@ -143,7 +143,7 @@ LoadModule('jsdebug');
 		}	
 	}
 
-	var server = new SimpleHTTPServer(8009, '127.0.0.1');
+	var server = new SimpleHTTPServer(8009, '192.168.0.10'/*, '127.0.0.1'*/);
 
 	var dbg = new Debugger();
 	
