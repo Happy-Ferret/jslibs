@@ -189,6 +189,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\objex.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\operationLimitException.cpp"
 				>
 			</File>
@@ -236,6 +240,10 @@
 			</File>
 			<File
 				RelativePath=".\map.h"
+				>
+			</File>
+			<File
+				RelativePath=".\objex.h"
 				>
 			</File>
 			<File

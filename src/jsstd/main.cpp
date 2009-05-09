@@ -23,6 +23,7 @@ extern bool _unsafeMode = false;
 
 DECLARE_CLASS( OperationLimit )
 DECLARE_CLASS( Sandbox )
+DECLARE_CLASS( ObjEx )
 
 /**doc t:header
 $MODULE_HEADER
@@ -42,6 +43,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	INIT_CLASS( Sandbox );
 	INIT_CLASS( Buffer );
 	INIT_CLASS( Pack );
+	INIT_CLASS( ObjEx );
 	return JS_TRUE;
 	JL_BAD;
 }
