@@ -644,7 +644,9 @@ DEFINE_PROPERTY( peakMemoryUsage ) {
 	bytes = pmc.PeakWorkingSetSize; // same value as "windows task manager" "peak mem usage"
 #else
 
-	J_REPORT_ERROR("Not implemented yet.");
+	J_REPORT_WARNING("peakMemoryUsage() is not implemented yet for this platform.");
+	*vp = JSVAL_VOID;
+	return JS_TRUE;
 
 #endif // XP_WIN
 
@@ -675,7 +677,9 @@ DEFINE_PROPERTY( privateMemoryUsage ) {
 	bytes = pmc.WorkingSetSize; // same value as "windows task manager" "mem usage"
 #else
 
-	J_REPORT_ERROR("Not implemented yet.");
+	J_REPORT_WARNING("privateMemoryUsage() is not implemented yet for this platform.");
+	*vp = JSVAL_VOID;
+	return JS_TRUE;
 
 #endif // XP_WIN
 
@@ -758,6 +762,11 @@ DEFINE_PROPERTY( gcZeal ) {
 
 
 
+/**doc
+$TOC_MEMBER $INAME
+ $INT $INAME()
+  TBD
+**/
 DEFINE_FUNCTION_FAST( DisableJIT ) {
 
 	JS_SetOptions(cx, JS_GetOptions(cx) & ~JSOPTION_JIT);
@@ -775,6 +784,12 @@ DEFINE_FUNCTION( GetObjectPrivate ) {
 
 	J_S_ASSERT_ARG_MIN( 1 );
 	J_S_ASSERT_OBJECT( J_ARG( 1 ) );
+
+	if ( !(JL_GetClass(obj)->flags & JSCLASS_HAS_PRIVATE) ) {
+		
+		*J_RVAL = JSVAL_VOID;
+		return JS_TRUE;
+	}
 	unsigned int n;
 	n = (unsigned int)JS_GetPrivate(cx, JSVAL_TO_OBJECT( J_ARG( 1 ) ));
 	J_CHK( JS_NewNumberValue(cx, (double)n, J_RVAL) );
