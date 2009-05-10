@@ -1,3 +1,14 @@
+LoadModule('jsstd');
+	
+/// GC test [r]
+		
+		var s = StringRepeat('x', 100000);
+		QA.ASSERT( gcMallocBytes > 100000 && gcMallocBytes < 300100, true, 'Before GC' );
+		s = undefined;
+		QA.GC();
+		QA.ASSERT( gcMallocBytes < 100, true, 'After GC');
+		
+
 /// stdout standard output redirection [ftrm]
 
 		var buffer = '';

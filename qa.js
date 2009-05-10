@@ -73,7 +73,7 @@ function QAAPI(cx) {
 
 	this.GC = function() {
 
-		cx.conf.nogcDuringTests || CollectGarbage();
+		cx.cfg.nogcDuringTests || CollectGarbage();
 	}
 
 
@@ -188,9 +188,9 @@ function CommonReportIssue(cx, type, location, testName, checkName, details) {
 	cx.issueList.push(message);
 	Print( '\n X '+ message, '\n' );
 	
-	if ( cx.conf.logFilename ) {
+	if ( cx.cfg.logFilename ) {
 	
-		logFile = new File(conf.logFilename);
+		logFile = new File(cfg.logFilename);
 		logFile.Open('w+');
 		logFile.Write(message + '\n');
 		logFile.Close();
@@ -198,13 +198,13 @@ function CommonReportIssue(cx, type, location, testName, checkName, details) {
 }
 
 
-function LaunchTests(itemList, conf) {
+function LaunchTests(itemList, cfg) {
 
 	var cx = { 
 		checkCount:0, 
 		issueList:[], 
 		stackIndex:stackSize-1, 
-		conf:conf, 
+		cfg:cfg, 
 		ReportIssue:function(message, checkName) {
 		
 			CommonReportIssue(cx, 'ASSERT',  this.item.file+':'+(Locate(this.stackIndex+1)[1] - this.item.relativeLineNumber), this.item.name, checkName, message );
@@ -217,8 +217,8 @@ function LaunchTests(itemList, conf) {
 
 	var qaapi = new QAAPI(cx);
 	
-	
-	if ( conf.loopForever ) {
+
+	if ( cfg.loopForever ) {
 
 		for ( var i in itemList ) {
 
@@ -236,26 +236,31 @@ function LaunchTests(itemList, conf) {
 
 	for (;;) {
 
-		if ( conf.loopForever )
+		if ( cfg.loopForever )
 			testIndex = Math.floor(Math.random() * itemList.length);
-			
+
 		cx.item = itemList[testIndex];
+		
+		cfg.quiet || Print( ' - '+cx.item.file+' - '+ cx.item.name );
 
-		Print( ' - '+cx.item.file+' - '+ cx.item.name );
+		cfg.noGcBetweenTests || CollectGarbage();
 
-		gcZeal = conf.gcZeal;
-		disableGarbageCollection = conf.nogcDuringTests;
+		gcZeal = cfg.gcZeal;
+		disableGarbageCollection = cfg.nogcDuringTests;
 
 		try {
 
-
 			var m0 = privateMemoryUsage;
 			var t0 = TimeCounter();
-			for ( var i = conf.repeatEachTest; i && !endSignal ; --i )
-				cx.item.func(qaapi);
+			for ( var i = cfg.repeatEachTest; i && !endSignal ; --i ) {
+			
+				void cx.item.func(qaapi);
+				if ( cx.item.init )
+					break;
+			}
 			var t1 = TimeCounter() - t0;
 			var m1 = privateMemoryUsage - m0;
-			Print( '  ...('+(t1/conf.repeatEachTest).toFixed(1) + 'ms, '+ conf.repeatEachTest +'x '+ (m1/1024/conf.repeatEachTest).toFixed(1)+'KB)' );
+			cfg.quiet || Print( '  ...('+(t1/cfg.repeatEachTest).toFixed(1) + 'ms, '+ cfg.repeatEachTest +'x '+ (m1/1024/cfg.repeatEachTest).toFixed(1)+'KB)' );
 		} catch(ex) {
 			
 			CommonReportIssue(cx, 'EXCEPTION', cx.item.file+':'+(ex.lineNumber - cx.item.relativeLineNumber), cx.item.name, '', ex );
@@ -263,27 +268,27 @@ function LaunchTests(itemList, conf) {
 		
 		disableGarbageCollection = false;
 		gcZeal = 0;
-
-		conf.noGcBetweenTests || CollectGarbage();
+		
+		cfg.noGcBetweenTests || CollectGarbage();
 		
 		var m2 = privateMemoryUsage - m0;
 		if ( m2 > 0 )
-			Print( '... leak: '+(m2/1024)+'KB');
-
-		Print('\n');
-
+			cfg.quiet || Print( '... leak: '+(m2/1024)+'KB');
 		
-		if ( conf.stopAfterNIssues && issues > conf.stopAfterNIssues )
+		cfg.quiet || Print('\n');
+		
+		
+		if ( cfg.stopAfterNIssues && issues > cfg.stopAfterNIssues )
 			break;
 
 		if ( endSignal )
 			break;
 			
-		if ( !conf.loopForever && ++testIndex >= itemList.length )
+		if ( !cfg.loopForever && ++testIndex >= itemList.length )
 			break;
 
-		if ( conf.sleepBetweenTests )
-			Sleep(conf.sleepBetweenTests);
+		if ( cfg.sleepBetweenTests )
+			Sleep(cfg.sleepBetweenTests);
 	}
 	
 	return [cx.issueList, cx.checkCount];
@@ -291,42 +296,42 @@ function LaunchTests(itemList, conf) {
 
 
 
-function ParseCommandLine(conf) {
+function ParseCommandLine(cfg) {
 
 	var args = global.arguments;
-	conf.args = [];
+	cfg.args = [];
 	while ( args.length > 1 ) {
 
 		if ( args[1][0] != '-' ) {
 		
-			conf.args.push( args.splice(1,1) );
+			cfg.args.push( args.splice(1,1) );
 			continue;
 		}
-		var items = [ c for (c in conf) if ( c.toLowerCase().indexOf(args[1].substr(1).toLowerCase()) == 0 ) ];
+		var items = [ c for (c in cfg) if ( c.toLowerCase().indexOf(args[1].substr(1).toLowerCase()) == 0 ) ];
 		if ( items.length > 1 )
 			throw Error('Multiple argument match: '+items.join(', '));
 		var item = items[0];
 		if ( IsVoid(item) )
 			throw Error('Invalid argument: '+args[1]);
-		if ( IsBoolean(conf[item]) ) {
+		if ( IsBoolean(cfg[item]) ) {
 		
-			conf[item] = !conf[item];
+			cfg[item] = !cfg[item];
 			args.splice(1,1);
 			continue;
 		}
-		conf[item] = args[2];
+		cfg[item] = args[2];
 		args.splice(1,2);
 	}
 }
 
 
 
-var conf = { help:false, repeatEachTest:1, gcZeal:0, loopForever:false, directory:'src', priority:0, flags:'', save:'', load:'', disableJIT:false, listTestsOnly:false, nogcBetweenTests:false, nogcDuringTests:false, stopAfterNIssues:0, logFilename:'', sleepBetweenTests:0 };
-ParseCommandLine(conf);
-var configurationText = 'configuraion: '+[k+':'+v for ([k,v] in Iterator(conf))].join(' - ');
+var cfg = { help:false, repeatEachTest:1, gcZeal:0, loopForever:false, directory:'src', priority:0, flags:'', save:'', load:'', disableJIT:false, listTestsOnly:false, nogcBetweenTests:false, nogcDuringTests:false, stopAfterNIssues:0, logFilename:'', sleepBetweenTests:0, quiet:false };
+ParseCommandLine(cfg);
+var configurationText = 'configuraion: '+[k+':'+v for ([k,v] in Iterator(cfg))].join(' - ');
 Print( configurationText, '\n\n' );
 
-if ( conf.help )
+if ( cfg.help )
 	Halt();
 
 
@@ -334,46 +339,47 @@ function MatchFlags(flags) {
 	
 	if ( flags.indexOf('d') != -1 )
 		return false;
-	if ( !conf.flags )
+	if ( !cfg.flags )
 		return true;
 	if ( !flags )
 		return false;
-	for each ( var c in conf.flags )
+	for each ( var c in cfg.flags )
 		if ( flags.indexOf(c) == -1 )
 			return false;
 	 return true;
 }
 
-var itemFilter = new RegExp(conf.args[0] || '.*', 'i');
+
+var itemFilter = new RegExp(cfg.args[0] || '.*', 'i');
 
 var testList;
-if ( conf.load )
-	testList = eval(new File(conf.load).content);
+if ( cfg.load )
+	testList = eval(new File(cfg.load).content);
 else
-	testList = CreateQaItemList(conf.directory, itemFilter, MatchFlags);
+	testList = CreateQaItemList(cfg.directory, itemFilter, MatchFlags);
 
-if ( conf.listTestsOnly ) {
+if ( cfg.listTestsOnly ) {
 	
 	Print([String.quote(t.file+' - '+t.name) for each ( t in testList )].join('\n'), '\n', testList.length +' tests.', '\n');
 	Halt();
 }
 
-if ( conf.save )
-	new File(conf.save).content = uneval(testList);
+if ( cfg.save )
+	new File(cfg.save).content = uneval(testList);
 
-if ( conf.disableJIT )
+if ( cfg.disableJIT )
 	DisableJIT();
 
 var savePrio = processPriority;
-processPriority = conf.priority;
+processPriority = cfg.priority;
 var t0 = TimeCounter();
 
-var [issueList, checkCount] = LaunchTests(testList, conf);
+var [issueList, checkCount] = LaunchTests(testList, cfg);
 
 var t = TimeCounter() - t0;
 processPriority = savePrio || 0; // savePrio may be undefined
 
-Print( '\n----------\n', configurationText, '\n\n', issueList.length +' issues, '+conf.repeatEachTest+'x '+ [t for each (t in testList) if (!t.init)].length +' tests, ' + checkCount + ' checks in ' + t.toFixed(2) + 'ms.', '\n' );
+Print( '\n----------\n', configurationText, '\n\n', issueList.length +' issues, '+cfg.repeatEachTest+'x '+ [t for each (t in testList) if (!t.init)].length +' tests, ' + checkCount + ' checks in ' + t.toFixed(2) + 'ms.', '\n' );
 issueList.sort();
 issueList.reduce( function(previousValue, currentValue, index, array) {
 

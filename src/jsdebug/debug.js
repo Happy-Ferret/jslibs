@@ -1,16 +1,6 @@
 LoadModule('jsstd');
 LoadModule('jsdebug');
 
-try {
-Test();
-} catch(ex) {
-	Print( uneval(ex.lineNumber) );
-
-}
-
-Halt();
-
-
 
 /*
 LoadModule('jsdebug');

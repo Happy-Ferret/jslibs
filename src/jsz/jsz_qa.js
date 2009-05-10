@@ -96,5 +96,3 @@ LoadModule('jsz');
 		
 		QA.ASSERT( deflate1.lengthOut <= deflate2.lengthOut, true, 'lengthOut' );
 		QA.ASSERT( deflate1.adler32, deflate2.adler32 , 'adler32' );
-
-

@@ -38,7 +38,7 @@ LoadModule('jsio');
 	Sleep(10);
 
 	QA.ASSERT( myTask.pendingRequestCount, 0, 'pendingRequestCount');
-	QA.ASSERT( myTask.pendingResponseCount, 1, 'pendingResponseCount');
+	QA.ASSERT( myTask.pendingResponseCount, 1, 'pendingResponseCount'); // ASSERT @src/jstask/jstask_qa.js:41 - pending properties [r] - pendingResponseCount - 0 !== 1
 
 	myTask.Response();
 	QA.ASSERT( myTask.pendingRequestCount, 0, 'pendingRequestCount');
