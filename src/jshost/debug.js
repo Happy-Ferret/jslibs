@@ -1,13 +1,13 @@
 LoadModule('jsstd');
-LoadModule('jsstd');
 
 LoadModule('jsio');
 
 
-Print( Blob('abc').concat() );
-
-
 Halt();
+
+
+
+
 
 
 var f = new Function("\

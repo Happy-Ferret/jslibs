@@ -5,8 +5,11 @@ LoadModule('jstask');
 
 var myTask = new Task(function(){});
 
-myTask.Request(undefined);
-myTask.Response();
+for ( var i = 0; i < 10; i++ )
+	myTask.Request(123);
 	
 	
+//for ( var i = 0; i < 10; i++ )
+//	myTask.Response();
 	
+

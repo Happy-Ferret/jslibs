@@ -145,7 +145,7 @@ struct JSLIBS_ConstIntegerSpec {
 
 inline char *_NormalizeFunctionName( const char *name ) {
 
-	char *buf = strdup(name);
+	char *buf = strdup(name); // (TBD) free ?
 	buf[0] = tolower(buf[0]);
 	return buf;
 }
@@ -160,6 +160,18 @@ inline void _NormalizeFunctionNames( JSFunctionSpec *functionSpec ) {
 // static definition
 #define DECLARE_STATIC() \
 	JSBool InitializeStatic(JSContext *cx, JSObject *obj);
+
+
+
+static JSBool RemoveStatic( JSContext *cx ) {
+
+	// (TBD)
+	// JS_InitClass( ... ?
+	return JS_TRUE;
+}
+
+#define REMOVE_STATIC() \
+	J_CHK( RemoveStatic( cx ) )
 
 #define INIT_STATIC() \
 	InitializeStatic(cx, obj)

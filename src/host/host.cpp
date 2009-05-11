@@ -468,7 +468,7 @@ bad:
 }
 
 
-JSBool InitHost( JSContext *cx, bool unsafeMode, HostOutput stdOut, HostOutput stdErr, void* privateData ) { // init the host for jslibs usage (modules, errors, ...)
+JSBool InitHost( JSContext *cx, bool unsafeMode, HostOutput stdOut, HostOutput stdErr, void* userPrivateData ) { // init the host for jslibs usage (modules, errors, ...)
 
 	HostPrivate *pv = GetHostPrivate(cx);
 	if ( pv == NULL ) { // in the case of CreateHost has not been called (because the caller wants to create and manage its own JS runtime)
@@ -479,7 +479,7 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostOutput stdOut, HostOutput s
 		SetHostPrivate(cx, pv);
 	}
 
-	pv->privateData = privateData;
+	pv->privateData = userPrivateData;
 
 	jl::QueueInitialize(&pv->moduleList);
 	pv->unsafeMode = unsafeMode;
@@ -500,10 +500,11 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostOutput stdOut, HostOutput s
 
 // make GetErrorMessage available from any module
 
-	void **_pGetErrorMessage;
-	_pGetErrorMessage = (void**)JS_malloc(cx, sizeof(void*)); // (TBD) free it !
-	*_pGetErrorMessage = (void*)&GetErrorMessage; // this indirection is needed for alignement purpose. see PRIVATE_TO_JSVAL and C function alignement.
-	J_CHK( SetConfigurationPrivateValue(cx, NAME_CONFIGURATION_GETERRORMESSAGE, PRIVATE_TO_JSVAL(&_pGetErrorMessage)) );
+	void **pGetErrorMessage;
+	pGetErrorMessage = (void**)malloc(sizeof(void*)); // free is done in DestroyHost()
+	*pGetErrorMessage = (void*)&GetErrorMessage; // this indirection is needed for alignement purpose. see PRIVATE_TO_JSVAL and C function alignement.
+	J_CHK( SetConfigurationPrivateValue(cx, NAME_CONFIGURATION_GETERRORMESSAGE, PRIVATE_TO_JSVAL(pGetErrorMessage)) );
+
 
 	pv->hostStdErr = stdErr;
 	pv->hostStdOut = stdOut;
@@ -545,6 +546,7 @@ JSBool DestroyHost( JSContext *cx ) {
 	if ( JLThreadOk(pv->watchDogThread) ) {
 
 		J_CHK( JLThreadCancel(pv->watchDogThread) );
+		J_CHK( JLWaitThread(pv->watchDogThread) );
 		J_CHK( JLFreeThread(&pv->watchDogThread) ); // beware: it is important to destroy the thread BEFORE destroying the cx !!!
 	}
 
@@ -557,6 +559,11 @@ JSBool DestroyHost( JSContext *cx ) {
 	}
 
 	//	don't try to break linked objects with JS_GC(cx) !
+
+	jsval tmp;
+	J_CHK( GetConfigurationValue(cx, NAME_CONFIGURATION_GETERRORMESSAGE, &tmp) );
+	if ( tmp != JSVAL_VOID && JSVAL_TO_PRIVATE(tmp) )
+		free( JSVAL_TO_PRIVATE(tmp) );
 
 	J_CHKM( RemoveConfiguration(cx), "Unable to remove the configuration item" );
 
@@ -670,23 +677,25 @@ JSBool ExecuteScriptFileName( JSContext *cx, const char *scriptFileName, bool co
 	JSScript *script;
 	script = JS_CompileFileHandle(cx, globalObject, scriptFileName, file);
 //	JSScript *script = JS_CompileFileHandleForPrincipals(cx, globalObject, scriptFileName, file, principals);
-	J_CHKM1( script != NULL, "Unable to compile the script %s.", scriptFileName );
 	fclose(file);
 
-//	JSObject *scrobj = JS_NewScriptObject(cx, script);
-//	J_CHK( J_ADD_ROOT(cx, &scrobj) );
+	J_CHKM1( script != NULL, "Unable to compile the script %s.", scriptFileName );
+
+	JSTempValueRooter tvr;
+	JSObject *scrobj = JS_NewScriptObject(cx, script);
+	JS_PUSH_TEMP_ROOT_OBJECT(cx, scrobj, &tvr);
 
 	// You need to protect a JSScript (via a rooted script object) if and only if a garbage collection can occur between compilation and the start of execution.
-
+	JSBool status;
 	if ( !compileOnly )
-		J_CHK( JS_ExecuteScript( cx, globalObject, script, rval ) ); // MUST be executed only once ( JSOPTION_COMPILE_N_GO )
+		status = JS_ExecuteScript( cx, globalObject, script, rval ); // MUST be executed only once ( JSOPTION_COMPILE_N_GO )
 	else
 		*rval = JSVAL_VOID;
 
+	JS_POP_TEMP_ROOT(cx, &tvr);
+	J_CHK( status );
 
-//	J_CHK( J_REMOVE_ROOT(cx, &scrobj) );
-//	JS_DestroyScript(cx, script);
-
+	//	JS_DestroyScript(cx, script); // Warning: This API is subject to bug 438633, which can cause crashes in almost any program that uses JS_DestroyScript.
 
 	J_CHKM( JS_DeleteProperty(cx, globalObject, NAME_GLOBAL_ARGUMENTS ), "Unable to remove argument property" );
 	return JS_TRUE;

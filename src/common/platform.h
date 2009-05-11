@@ -96,6 +96,14 @@
 
 #if defined(_WINDOWS) || defined(WIN32) // Windows platform
 
+
+	#ifdef _DEBUG
+	# define _CRTDBG_MAP_ALLOC
+	# include <stdlib.h>
+	# include <crtdbg.h>
+	#endif // _DEBUG
+
+
 	#define XP_WIN // used by SpiderMonkey and jslibs
 
 	#ifndef WINVER         // Allow use of features specific to Windows 95 and Windows NT 4 or later.
@@ -112,6 +120,7 @@
 
 	#define WIN32_LEAN_AND_MEAN   // Exclude rarely-used stuff from Windows headers
 	#include <windows.h>
+
 
 	#include <direct.h> // function declarations for directory handling/creation
 	#include <process.h> // threads, ...
@@ -305,7 +314,7 @@ inline unsigned int JLSessionId() {
 // system errors
 	inline void JLLastSysetmErrorMessage( char *message, size_t maxLength ) {
 
-	#if defined XP_WIN
+#if defined XP_WIN
 		DWORD errorCode = ::GetLastError();
 		LPVOID lpMsgBuf;
 		DWORD result = ::FormatMessage(
@@ -317,7 +326,7 @@ inline unsigned int JLSessionId() {
 			message[maxLength-1] = '\0';
 		} else
 			*message = '\0';
-	#elif defined XP_UNIX
+#elif defined XP_UNIX
 		const char *msgBuf = strerror(errno);
 		if ( msgBuf != NULL ) {
 
@@ -325,7 +334,7 @@ inline unsigned int JLSessionId() {
 			message[maxLength-1] = '\0';
 		} else
 			*message = '\0';
-	#endif
+#endif
 	}
 
 // semaphores
@@ -535,7 +544,7 @@ inline unsigned int JLSessionId() {
 	inline bool JLThreadCancel( JLThreadHandler thread ) {
 
 	#if defined XP_WIN
-		if ( TerminateThread(thread, 0) == 0 ) // The handle must have the THREAD_TERMINATE access right.
+		if ( TerminateThread(thread, 0) == 0 ) // doc. The handle must have the THREAD_TERMINATE access right. ... Use the GetExitCodeThread function to retrieve a thread's exit value.
 			return false;
 	#elif defined XP_UNIX
 		if ( pthread_cancel(*thread) != 0 )
@@ -585,7 +594,7 @@ inline unsigned int JLSessionId() {
 			return false;
 	#elif defined XP_UNIX
 		void *status;
-		if ( pthread_join(*thread, &status) != 0 )
+		if ( pthread_join(*thread, &status) != 0 ) // doc. The thread exit status returned by pthread_join() on a canceled thread is PTHREAD_CANCELED. 
 			return false;
 	#endif
 		return true;

@@ -1,6 +1,37 @@
 LoadModule('jstask');
 LoadModule('jsio');
 
+
+/// many Request with big data [r]
+
+	var myTask = new Task(function(){});
+	for ( var i = 0; i < 1000; i++ )
+		myTask.Request(StringRepeat('x', 9000));
+
+	for ( var j = 0; j < 1000; j++ )
+		myTask.Response();
+
+
+/// many Request/Response with low priority [r]
+
+	var myTask = new Task(function(){}, -1);
+	for ( var i = 0; i < 1000; i++ )
+		myTask.Request();
+	for ( var j = 0; j < 1000; j++ )
+		myTask.Response();
+
+		
+/// many Request/Response with high priority [r]
+
+	var myTask = new Task(function(){}, -1);
+	Sleep(2);
+	for ( var i = 0; i < 1000; i++ )
+		myTask.Request();
+	Sleep(2);
+	for ( var j = 0; j < 1000; j++ )
+		myTask.Response();
+
+
 /// idle property [fr]
 
 	function MyTask() {}
@@ -34,8 +65,8 @@ LoadModule('jsio');
 	QA.ASSERT( myTask.pendingRequestCount, 0, 'pendingRequestCount');
 	QA.ASSERT( myTask.pendingResponseCount, 0, 'pendingResponseCount');
 
-	myTask.Request(undefined);
-	Sleep(10);
+	myTask.Request();
+	Sleep(20);
 
 	QA.ASSERT( myTask.pendingRequestCount, 0, 'pendingRequestCount');
 	QA.ASSERT( myTask.pendingResponseCount, 1, 'pendingResponseCount'); // ASSERT @src/jstask/jstask_qa.js:41 - pending properties [r] - pendingResponseCount - 0 !== 1
@@ -44,8 +75,8 @@ LoadModule('jsio');
 	QA.ASSERT( myTask.pendingRequestCount, 0, 'pendingRequestCount');
 	QA.ASSERT( myTask.pendingResponseCount, 0, 'pendingResponseCount');
 
-	myTask.Request(undefined);
-	myTask.Request(undefined);
+	myTask.Request();
+	myTask.Request();
 	Sleep(10);
 	QA.ASSERT( myTask.pendingRequestCount, 0, 'pendingRequestCount');
 	myTask.Response();

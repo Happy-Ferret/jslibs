@@ -107,9 +107,10 @@ DEFINE_FINALIZE() {
 	pv->processingRequestCount = 0;
 
 	JS_free(cx, pv);
-
 	return;
 bad:
+
+	JS_free(cx, pv);
 	// (TBD) report a warning.
 	return;
 }
@@ -363,7 +364,7 @@ DEFINE_FUNCTION_FAST( Request ) {
 	Serialized serializedRequest;
 	SerializerCreate(&serializedRequest);
 	if ( J_FARG_ISDEF(1) )
-		J_CHK( SerializeJsval(cx, &serializedRequest, &J_FARG(1)) );
+		J_CHK( SerializeJsval(cx, &serializedRequest, &J_FARG(1)) ); // leak ???
 	else {
 		jsval arg = JSVAL_VOID;
 		J_CHK( SerializeJsval(cx, &serializedRequest, &arg) );

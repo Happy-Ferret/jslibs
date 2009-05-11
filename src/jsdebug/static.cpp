@@ -695,6 +695,19 @@ DEFINE_PROPERTY( privateMemoryUsage ) {
 === Static properties ===
 **/
 
+
+/**doc
+$TOC_MEMBER $INAME
+ $INAME $READONLY
+  Number of times when GC was invoked.
+**/
+DEFINE_PROPERTY( gcNumber ) {
+
+	uint32 bytes = JS_GetGCParameter(JS_GetRuntime(cx), JSGC_NUMBER);
+	return JS_NewNumberValue(cx, bytes, vp);
+}
+
+
 /**doc
 $TOC_MEMBER $INAME
  $INAME $READONLY
@@ -702,16 +715,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( gcMallocBytes ) {
 
-    uint32 *pbytes, bytes;
-#ifdef JS_THREADSAFE
-    pbytes = &cx->thread->gcMallocBytes;
-#else
-    pbytes = &cx->runtime->gcMallocBytes;
-#endif
-    bytes = *pbytes;
-	 J_CHK( JS_NewNumberValue(cx, bytes, vp) );
-	return JS_TRUE;
-	JL_BAD;
+	uint32 bytes = JS_GetGCParameter(JS_GetRuntime(cx), JSGC_MAX_MALLOC_BYTES);
+	return JS_NewNumberValue(cx, bytes, vp);
 }
 
 /**doc
@@ -721,16 +726,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( gcBytes ) {
 
-    uint32 *pbytes, bytes;
-#ifdef JS_THREADSAFE
-    pbytes = &cx->thread->gcBytes;
-#else
-	 pbytes = &cx->runtime->gcBytes;
-#endif
-    bytes = *pbytes;
-	 J_CHK( JS_NewNumberValue(cx, bytes, vp) );
-	return JS_TRUE;
-	JL_BAD;
+	uint32 bytes = JS_GetGCParameter(JS_GetRuntime(cx), JSGC_BYTES);
+	return JS_NewNumberValue(cx, bytes, vp);
 }
 
 /*
@@ -1538,6 +1535,7 @@ CONFIGURE_STATIC
 		PROPERTY_WRITE( gcZeal )
 	#endif
 
+		PROPERTY_READ( gcNumber )
 		PROPERTY_READ( gcMallocBytes )
 		PROPERTY_READ( gcBytes )
 		PROPERTY_READ( currentMemoryUsage )

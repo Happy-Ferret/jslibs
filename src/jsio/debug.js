@@ -1,5 +1,6 @@
 LoadModule('jsstd');
 LoadModule('jsio');
+LoadModule('jsio');
 
 
 Print( (new File('debug.js')).content );

@@ -50,7 +50,15 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
 EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
 
-	return JS_FALSE;
+	REMOVE_STATIC();
+	REMOVE_CLASS( Map );
+	REMOVE_CLASS( OperationLimit ); // exception
+	REMOVE_CLASS( Sandbox );
+	REMOVE_CLASS( Buffer );
+	REMOVE_CLASS( Pack );
+	REMOVE_CLASS( ObjEx );
+	return JS_TRUE;
+	JL_BAD;
 }
 
 EXTERN_C DLLEXPORT void ModuleFree() {

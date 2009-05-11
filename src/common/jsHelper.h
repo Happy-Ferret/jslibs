@@ -1257,8 +1257,8 @@ ALWAYS_INLINE void SerializerFree( Serialized *xdr ) {
 
 	if ( *xdr != NULL ) {
 
-		JS_XDRMemSetData(*xdr, NULL, 0);
 		JS_XDRDestroy(*xdr);
+//		JS_XDRMemSetData(*xdr, NULL, 0);
 		*xdr = NULL;
 	}
 }

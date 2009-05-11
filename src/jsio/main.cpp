@@ -72,7 +72,7 @@ EXTERN_C DLLEXPORT void ModuleFree() {
 
 	PR_AtomicDecrement(&instanceCount);
 	if ( instanceCount == 0 && PR_Initialized() )
-		PR_Cleanup();
+		PR_Cleanup(); // doc. PR_Cleanup must be called by the primordial thread near the end of the main function. 
 }
 
 #ifdef XP_WIN
