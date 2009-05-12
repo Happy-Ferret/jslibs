@@ -1,5 +1,12 @@
 LoadModule('jsz');
 
+/// empty operation [ftrm]
+
+		var deflate = new Z(Z.DEFLATE);
+		var inflate = new Z(Z.INFLATE);
+		inflate(deflate());
+
+
 /// deflate ratio 1 [ftrm]
 		
 		var uncompressezText = 'jjjjjjjjjjjssssssssssssssssssslllllliiiiiiiibbsssssssssssssss';

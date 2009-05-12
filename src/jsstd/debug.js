@@ -1,15 +1,9 @@
 LoadModule('jsstd');
 LoadModule('jsio');
 
-
-
-
-
-
-var o = new ObjEx();
-o.foo = 123;
-Print( o.constructor );
-Print( o.foo );
+	var buf = new Buffer(Stream('456'));
+	buf.Read(5);
+		
 
 Halt(); //////////////////////////////
 

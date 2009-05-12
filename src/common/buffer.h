@@ -131,7 +131,7 @@ inline void BufferInitialize( Buffer *buffer, BufferType type, BufferGrowType gr
 		case bufferTypeAuto:
 		case bufferTypeRealloc:
 			chunk0->size = BUFFER_INIT_CHUNK_SIZE;
-			chunk0->begin = (char*)malloc(chunk0->size);
+			chunk0->begin = (char*)malloc(chunk0->size); // leak from here
 			break;
 	}
 }
@@ -180,6 +180,7 @@ inline void BufferConfirm( Buffer *buffer, size_t amount ) {
 	buffer->length += amount;
 }
 
+
 inline size_t BufferGetRecommendedLength( const Buffer *buffer ) {
 
 	return 4096;
@@ -196,44 +197,44 @@ inline const size_t BufferGetLength( const Buffer *buffer ) {
 	return buffer->length;
 }
 
+
 inline const char *BufferGetData( Buffer *buffer ) {
 
 	BufferChunk *chunk0 = &buffer->chunkList[0];
 	if ( buffer->chunkPos == 0 )
 		return chunk0->begin;
 
-	char *buf = (char*)malloc(buffer->length);
-	char *dest = buf + buffer->length;
-	size_t chunkIndex = buffer->chunkPos;
-
-	while ( dest != buf ) {
-
-		BufferChunk *chunk = &buffer->chunkList[chunkIndex--];
-		dest -= chunk->pos;
-		memcpy(dest, chunk->begin, chunk->pos);
-		if ( chunk->begin != buffer->staticBuffer )
-			free(chunk->begin);
-	}
-
-	chunk0->begin = buf;
+	if ( chunk0->begin == buffer->staticBuffer )
+		chunk0->begin = (char*)memcpy(malloc(buffer->length), chunk0->begin, chunk0->pos);
+	else
+		chunk0->begin = (char*)realloc(chunk0->begin, buffer->length);
 	chunk0->pos = buffer->length;
 	chunk0->size = buffer->length;
-	buffer->chunkPos = 0;
+
+	char *dest = chunk0->begin + buffer->length;
+	do {
+
+		BufferChunk *chunk = &buffer->chunkList[buffer->chunkPos];
+		dest -= chunk->pos;
+		memcpy(dest, chunk->begin, chunk->pos);
+		free(chunk->begin);
+	} while ( --buffer->chunkPos );
+
+	return chunk0->begin;
+}
+
+
+// it is up to the client to free the buffer.
+inline char *BufferGetDataOwnership( Buffer *buffer ) {
+	
+	char *buf = (char*)BufferGetData(buffer);
+	if ( buf == buffer->staticBuffer ) // unable to give ownership of the static buffer, (TBD) copy it
+		buf = (char*)memcpy(malloc(buffer->length), buf, buffer->length);
+
+	buffer->chunkList[0].begin = NULL;
 	return buf;
 }
 
-// it is up to the client to free the buffer.
-inline const char *BufferGetDataOwnership( Buffer *buffer ) {
-	
-	char *buf = (char*)BufferGetData(buffer);
-	BufferChunk *chunk0 = &buffer->chunkList[0];
-	if ( chunk0->begin == buffer->staticBuffer ) // unable to give ownership of the static buffer
-		return NULL;
-	chunk0->begin = NULL;
-	chunk0->pos = 0;
-	chunk0->size = 0;
-	return buf;
-}
 
 // length MUST be <= buffer->length !
 inline void BufferCopyData( const Buffer *buffer, char *dest, size_t length ) {
@@ -296,3 +297,16 @@ DEFINE_FUNCTION_FAST( Test ) {
 	return JS_TRUE;
 }
 */
+
+/* another test
+
+	Buffer resultBuffer;
+	BufferInitialize(&resultBuffer, bufferTypeAuto, bufferGrowTypeAuto);
+	BufferNewChunk(&resultBuffer, 10000);
+	BufferConfirm(&resultBuffer, 10000);
+	free( BufferGetDataOwnership(&resultBuffer) );
+//	BufferGetData(&resultBuffer);
+	BufferFinalize(&resultBuffer);
+	return JS_FALSE;
+*/
+

@@ -14,10 +14,12 @@
 
 #include "stdafx.h"
 
+using namespace jl;
+#include "../common/buffer.h"
+
 #include "zError.h"
 
 extern bool _unsafeMode = false;
-
 
 DECLARE_CLASS( Z )
 
@@ -31,6 +33,21 @@ $MODULE_HEADER
 $MODULE_FOOTER
 **/
 extern "C" DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
+
+/*
+	Buffer resultBuffer;
+	BufferInitialize(&resultBuffer, bufferTypeAuto, bufferGrowTypeAuto);
+	BufferNewChunk(&resultBuffer, 0);
+	BufferConfirm(&resultBuffer, 0);
+	BufferNewChunk(&resultBuffer, 1);
+	BufferConfirm(&resultBuffer, 1);
+//	free( BufferGetDataOwnership(&resultBuffer) );
+//	BufferGetData(&resultBuffer);
+	BufferFinalize(&resultBuffer);
+//	malloc(1);
+	return JS_FALSE;
+*/
+
 
 	_unsafeMode = GetHostPrivate(cx)->unsafeMode;
 

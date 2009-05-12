@@ -19,7 +19,8 @@
 #include "zError.h"
 #include "z.h"
 
-#include "buffer.h"
+using namespace jl;
+#include "../common/buffer.h"
 
 // current method
 enum Method {
@@ -50,12 +51,19 @@ struct Private {
 //}
 
 DEFINE_FINALIZE() {
-
+	
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
 	if ( !pv )
 		return;
+	
+	if ( pv->stream.state != Z_NULL ) {
+		
+		if ( pv->method == DEFLATE )
+			deflateEnd(&pv->stream);
+		else
+			inflateEnd(&pv->stream);
+	}
 	JS_free(cx, pv);
-	JS_SetPrivate(cx, obj, NULL);
 }
 
 
@@ -73,6 +81,18 @@ $TOC_MEMBER $INAME
   var compress = new Z( Z.DEFLATE, 9 );
   }}}
 **/
+
+
+voidpf jsz_alloc(voidpf opaque, uInt items, uInt size) {
+	
+	return malloc(items*size);
+}
+
+void jsz_free(voidpf opaque, voidpf address) {
+	
+	free(address);
+}
+
 DEFINE_CONSTRUCTOR() {
 
 	J_S_ASSERT_CONSTRUCTING();
@@ -84,8 +104,12 @@ DEFINE_CONSTRUCTOR() {
 
 	J_CHK( JS_SetPrivate(cx, obj, pv) );
 	pv->stream.state = Z_NULL; // mendatory
+	
 	pv->stream.zalloc = Z_NULL;
 	pv->stream.zfree = Z_NULL;
+
+//	pv->stream.zalloc = jsz_alloc;
+//	pv->stream.zfree = jsz_free;
 
 	J_CHK( JsvalToInt(cx, J_ARG(1), &pv->method) );
 
@@ -130,8 +154,6 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CALL() {
 
-	Buffer buffer; // placed here else: initialization of 'buffer' is skipped by 'goto bad'
-
 	JSObject *thisObj = JSVAL_TO_OBJECT(argv[-2]); // get 'this' object of the current object ...
 	// (TBD) check JS_InstanceOf( cx, thisObj, &NativeProc, NULL )
 	J_S_ASSERT_CLASS(thisObj, _class);
@@ -140,7 +162,32 @@ DEFINE_CALL() {
 	pv = (Private*)JS_GetPrivate(cx, thisObj);
 	J_S_ASSERT_RESOURCE(pv);
 
-	if (pv->stream.state == Z_NULL) {
+
+// prepare input data
+	const char *inputData;
+	size_t inputLength;
+	if ( J_ARG_ISDEF(1) ) {
+
+		J_CHK( JsvalToStringAndLength(cx, &J_ARG(1), &inputData, &inputLength) ); // warning: GC on the returned buffer !
+	} else {
+
+		inputData = NULL;
+		inputLength = 0;
+	}
+	
+// force finish
+	bool forceFinish;
+	if ( J_ARG_ISDEF(2) )
+		J_CHK( JsvalToBool(cx, J_ARG(2), &forceFinish) );
+	else
+		forceFinish = false;
+
+	// doc. Z_SYNC_FLUSH: all pending output is flushed to the output buffer and the output is aligned on a byte boundary, so that the decompressor can get all input data available so far.
+	// doc. Z_FINISH: pending input is processed, pending output is flushed and deflate returns with Z_STREAM_END if there was enough output space; if deflate returns with Z_OK, this function must be called again with Z_FINISH and more output space.
+	int flushType;
+	flushType = (J_ARGC == 0 || forceFinish) ? Z_FINISH : Z_SYNC_FLUSH;
+
+	if ( pv->stream.state == Z_NULL ) {
 
 		int status;
 		if ( pv->method == DEFLATE )
@@ -149,81 +196,68 @@ DEFINE_CALL() {
 			status = inflateInit2(&pv->stream, MAX_WBITS);
 
 		if ( status < 0 )
-			return ThrowZError(cx, status, pv->stream.msg);
+			J_CHK( ThrowZError(cx, status, pv->stream.msg) );
 
-		//	J_CHK( SetStreamReadInterface(cx, obj, NativeInterfaceStreamRead) ); ???
+		//	J_CHK( SetStreamReadInterface(cx, obj, NativeInterfaceStreamRead) ); (TBD) ???
 	}
 
-// prepare input data
-	const char *inputData;
-	inputData = NULL;
-	size_t inputLength;
-	inputLength = 0;
-	if ( argc >= 1 ) {
-
-		J_CHK( JsvalToStringAndLength(cx, &argv[0], &inputData, &inputLength) ); // warning: GC on the returned buffer !
-
-//		JSString *jssData = JS_ValueToString( cx, argv[0] );
-//		J_CHK( jssData );
-//		argv[0] = STRING_TO_JSVAL( jssData );
-//		inputLength = JS_GetStringLength( jssData );
-//		inputData = JS_GetStringBytes( jssData ); // no copy is done, we read directly in the string hold by SM
-	}
 	pv->stream.avail_in = inputLength;
 	pv->stream.next_in = (Bytef*)inputData;
 
+	Buffer resultBuffer;
+	BufferInitialize(&resultBuffer, bufferTypeAuto, bufferGrowTypeAuto);
 
-// force finish
-	bool forceFinish;
-	if ( argc >= 2 )
-		J_CHK( JsvalToBool(cx, argv[1], &forceFinish) );
-	else
-		forceFinish = JS_FALSE;
+	// first length is a guess.
+	size_t length = pv->method == DEFLATE ? (size_t)(12 + 1.001f * pv->stream.avail_in) : (size_t)(1.5f * pv->stream.avail_in); // if DEFLATE, dest. buffer must be at least 0.1% larger than sourceLen plus 12 bytes
 
-	int flushType;
-	flushType = inputLength == 0 || forceFinish == JS_TRUE ? Z_FINISH : Z_SYNC_FLUSH;
-
-	buffer.SetOptimalDefaultLength( pv->method == DEFLATE ? (size_t)(12 + 1.001f * pv->stream.avail_in) : (size_t)(1.5f * pv->stream.avail_in) ); // if DEFLATE, dest. buffer must be at least 0.1% larger than sourceLen plus 12 bytes
-
-// deflate / inflate loop
-	size_t outputLength;
 	int xflateStatus;
-	do {
+	for (;;) {
 
-		BufferChunk *chunk = buffer.Next(buffer.SmartLength());
-		pv->stream.avail_out = chunk->avail;
-		pv->stream.next_out = chunk->data;
+//		length = J_MAX( length, BufferGetOptimalLength(&resultBuffer) );
+
+		pv->stream.avail_out = length;
+		pv->stream.next_out = (Bytef*)BufferNewChunk(&resultBuffer, pv->stream.avail_out);
+		
 //		printf("D%d, ca%d ai%d ao%d ti%d to%d", method == DEFLATE, chunk->avail, stream->avail_in, stream->avail_out, stream->total_in, stream->total_out );
 		xflateStatus = pv->method == DEFLATE ? deflate(&pv->stream, flushType) : inflate(&pv->stream, flushType); // Before the call of inflate()/deflate(), the application should ensure that at least one of the actions is possible, by providing more input and/or consuming more output, ...
 //		printf("..ai%d ca%d ao%d ti%d to%d\n", 			method == DEFLATE, 			chunk->avail,			stream->avail_in, 			stream->avail_out, 			stream->total_in, 			stream->total_out		);
-		chunk->avail = pv->stream.avail_out;
-		chunk->data = pv->stream.next_out;
-		outputLength = buffer.Length();
-		if ( xflateStatus < 0 )
-			return ThrowZError(cx, xflateStatus, pv->stream.msg);
-	} while ( ( flushType != Z_FINISH && pv->stream.avail_in > 0 ) || // the input data is not exhausted
-	          ( flushType == Z_FINISH && xflateStatus != Z_STREAM_END ) || // the last data are not read
-	          ( xflateStatus == Z_OK && outputLength == 0 ) // we need to output something
-	        );
 
-// assamble chunks
-	unsigned char *outputData;
-	outputData = (unsigned char*)JS_malloc(cx, outputLength +1); // +1 for '\0' char
-	outputData[outputLength] = 0; // (TBD) understand WHY !? outputLength info is not enough ??
-	buffer.Read(outputData);
-	J_CHK( J_NewBlob(cx, (char*)outputData, outputLength, rval) );
+		if ( xflateStatus < Z_OK && xflateStatus != Z_BUF_ERROR ) // fatal error ?
+			J_CHKB( ThrowZError(cx, xflateStatus, pv->stream.msg), bad_freebuf );
+		BufferConfirm(&resultBuffer, length - pv->stream.avail_out);
+		if ( xflateStatus == Z_STREAM_END || pv->stream.avail_in == 0 )
+			break;
+		// doc. Z_BUF_ERROR if no progress is possible (for example avail_in or avail_out was zero). Note that Z_BUF_ERROR is not fatal, and deflate() can be called again with more input and more output space to continue compressing.
+		length = pv->stream.avail_in * pv->stream.total_out / pv->stream.total_in;
+
+//		if ( xflateStatus == Z_BUF_ERROR )
+//			length = length * 2 + 4096;
+	}
+
+//	J_CHK( StringAndLengthToJsval(cx, rval, BufferGetData(&resultBuffer), BufferGetLength(&resultBuffer)) );
+
+	*BufferNewChunk(&resultBuffer, 1) = '\0';
+	BufferConfirm(&resultBuffer, 1);
+	J_CHKB( J_NewBlob(cx, (void*)BufferGetDataOwnership(&resultBuffer), BufferGetLength(&resultBuffer)-1, rval), bad_freebuf );
+	BufferFinalize(&resultBuffer);
 
 // close the stream and free resources
-	if ( xflateStatus == Z_STREAM_END ) {
+	if ( xflateStatus == Z_STREAM_END && flushType == Z_FINISH ) {
 
 		int status;
 		status = pv->method == DEFLATE ? deflateEnd(&pv->stream) : inflateEnd(&pv->stream); // free(stream) is done the Finalize
-		if ( status < 0 )
-			return ThrowZError(cx, status, pv->stream.msg);
+		if ( status != Z_OK )
+			J_CHK( ThrowZError(cx, status, pv->stream.msg) );
 		J_S_ASSERT( pv->stream.state == Z_NULL, "Invalid state." );
 	}
+
 	return JS_TRUE;
-	JL_BAD;
+
+bad_freebuf:
+	BufferFinalize(&resultBuffer);
+
+bad:
+	return JS_FALSE;
 }
 
 
@@ -296,16 +330,19 @@ DEFINE_PROPERTY( lengthOut ) {
 === Static Properties ===
 **/
 
-/**doc
+/* *doc
 $TOC_MEMBER $INAME
  *idealInputLength* $READONLY
   This is the ideal size of input data to avoid buffer management overload.
 **/
+/*
 DEFINE_PROPERTY( idealInputLength ) {
 
 	JS_NewNumberValue(cx, Buffer::staticBufferLength, vp);
 	return JS_TRUE;
 }
+*/
+
 
 
 /**doc
@@ -333,7 +370,7 @@ CONFIGURE_CLASS
 	END_PROPERTY_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC
-		PROPERTY_READ(idealInputLength)
+//		PROPERTY_READ(idealInputLength)
 	END_STATIC_PROPERTY_SPEC
 
 	BEGIN_CONST_INTEGER_SPEC

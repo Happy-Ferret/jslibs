@@ -42,45 +42,36 @@ DEFINE_PROPERTY( text ) {
 	return JS_TRUE;
 }
 
+const char *ZConstString( int errorCode ) {
+	
+	switch (errorCode) {
+		case 0:
+			return "Z_OK";
+		case 1:
+			return "Z_STREAM_END";
+		case 2:
+			return "Z_NEED_DICT";
+		case -1:
+			return "Z_ERRNO";
+		case -2:
+			return "Z_STREAM_ERROR";
+		case -3:
+			return "Z_DATA_ERROR";
+		case -4:
+			return "Z_MEM_ERROR";
+		case -5:
+			return "Z_BUF_ERROR";
+		case -6:
+			return "Z_VERSION_ERROR";
+	}
+	return "UNKNOWN_ERROR";
+}
+
 DEFINE_PROPERTY( const ) {
 
 	JS_GetReservedSlot( cx, obj, 0, vp );
 	int errorCode = JSVAL_TO_INT(*vp);
-
-	char *errStr;
-	switch (errorCode) {
-		case 0:
-			errStr = "Z_OK";
-			break;
-		case 1:
-			errStr = "Z_STREAM_END";
-			break;
-		case 2:
-			errStr = "Z_NEED_DICT";
-			break;
-		case -1:
-			errStr = "Z_ERRNO";
-			break;
-		case -2:
-			errStr = "Z_STREAM_ERROR";
-			break;
-		case -3:
-			errStr = "Z_DATA_ERROR";
-			break;
-		case -4:
-			errStr = "Z_MEM_ERROR";
-			break;
-		case -5:
-			errStr = "Z_BUF_ERROR";
-			break;
-		case -6:
-			errStr = "Z_VERSION_ERROR";
-			break;
-		default:
-			errStr = "UNKNOWN_ERROR";
-	}
-
-	JSString *str = JS_NewStringCopyZ( cx, errStr );
+	JSString *str = JS_NewStringCopyZ( cx, ZConstString(errorCode) );
 	*vp = STRING_TO_JSVAL( str );
 	return JS_TRUE;
 }
@@ -161,6 +152,6 @@ JSBool ThrowZError( JSContext *cx, int errorCode, const char *errorMessage ) {
 	JSObject *error = JS_NewObject( cx, _class, NULL, NULL );
 	JS_SetPendingException( cx, OBJECT_TO_JSVAL( error ) );
 	JS_SetReservedSlot( cx, error, 0, INT_TO_JSVAL(errorCode) );
-	JS_SetReservedSlot( cx, error, 1, errorMessage != NULL ? STRING_TO_JSVAL(JS_NewStringCopyZ( cx, errorMessage )) : JSVAL_VOID );
+	JS_SetReservedSlot( cx, error, 1, STRING_TO_JSVAL(JS_NewStringCopyZ( cx, errorMessage != NULL ? errorMessage : ZConstString(errorCode) )) );
   return JS_FALSE;
 }

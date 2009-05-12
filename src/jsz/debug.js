@@ -1,15 +1,74 @@
 LoadModule('jsstd');
 LoadModule('jsz');
 
+	var inflate = new Z(Z.INFLATE);
+	inflate();
+
+
+Halt(); //////////////////////////////////////////////////////////////////////////
+
+var deflate = new Z(Z.DEFLATE);
+var inflate = new Z(Z.INFLATE);
+var source = StringRepeat('x', 100000);
+var str = deflate(source);
+str += deflate();
+
+var result = inflate(str, true);
+
+Print( result == source, '\n' );
+
+
+Halt(); //////////////////////////////////////////////////////////////////////////
+
 
 function randomString(size) {
-
-//return 'L\'autre jour, au café, je commande un demi. J\'en bois la moitié. Il ne m\'en restait plus. L\'héroïsme, c\'est encore la meilleure façon de devenir célèbre quand on n\'a pas de talent.';
 
 	var res = '';
 	while(size--)	res+=String.fromCharCode(Math.random()*256)
 	return res;
 }
+
+var deflate = new Z(Z.DEFLATE);
+var inflate = new Z(Z.INFLATE);
+var source = randomString(10000);
+var str = deflate(source, true);	
+var result = inflate(str, true);
+
+
+Halt(); //////////////////////////////////////////////////////////////////////////
+
+
+
+
+function randomString(size) {
+
+	var res = '';
+	while(size--)	res+=String.fromCharCode(Math.random()*256)
+	return res;
+}
+
+
+
+var deflate = new Z(Z.DEFLATE, 9);
+var inflate = new Z(Z.INFLATE);
+
+var str2 = '';
+for ( var i=10; i>0; --i ) {
+
+	str = deflate( randomString( i*1000 +1 ) );
+	str2 += inflate(str);
+}
+
+str2 += inflate( deflate() );
+inflate();
+
+Print( 'adler32:' + (deflate.adler32 == inflate.adler32) ,'\n');
+
+
+
+
+Halt(); //////////////////////////////////////////////////////////////////////////
+
 
 function test1() {
 
@@ -34,28 +93,6 @@ function test1() {
 			Print('error\n');
 		}
 	
-}
-
-
-
-function test2() {
-
-		var deflate = new Z(Z.DEFLATE,9);
-		var inflate = new Z(Z.INFLATE);
-		
-		var str = '';
-		var str2 = '';
-		for ( var i=10; i>=0; --i ) {
-		
-		
-			str = deflate( randomString( i*1000 +1 ) );
-			str2 += inflate(str);
-		}
-		
-		str2 += inflate( deflate() );
-		inflate();
-
-		Print( 'adler32:' + (deflate.adler32 == inflate.adler32) ,'\n');
 }
 
 
@@ -97,8 +134,8 @@ res2 += compressor2.Transform();
 Print( '['+res2+']' );
 */
 
-//test2();
-test4();
+test2();
+//test4();
 
 Print('done')
 

@@ -678,6 +678,7 @@ ALWAYS_INLINE JSBool J_NewBlob( JSContext *cx, void* buffer, size_t length, jsva
 
 	if (unlikely( length == 0 )) { // Empty Blob must acts like an empty string: !'' == true
 
+		JS_free(cx, buffer);
 		*vp = JS_GetEmptyStringValue(cx);
 		return JS_TRUE;
 	}
