@@ -2,7 +2,9 @@ LoadModule('jsstd');
 LoadModule('jsdebug');
 
 
+Print(gcMallocBytes, '\n');
 
+Halt(); /////////////////////
 
 
 

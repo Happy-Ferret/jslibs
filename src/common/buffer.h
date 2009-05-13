@@ -64,6 +64,12 @@ struct BufferChunk {
 	size_t size;
 };
 
+
+typedef void* (*BufferAlloc) (void * opaqueAllocatorContext, int size);
+typedef void (*BufferFree) (void * opaqueAllocatorContext, void* address);
+typedef void* (*BufferRealloc) (void * opaqueAllocatorContext, void* address, int size);
+
+
 struct Buffer {
 	BufferType type;
 	BufferGrowType growType;
@@ -74,6 +80,13 @@ struct Buffer {
 // static memory
 	BufferChunk staticChunkList[BUFFER_INIT_CHUNK_LIST_SIZE];
 	char staticBuffer[BUFFER_INIT_CHUNK_SIZE];
+
+// allocators
+	void* opaqueAllocatorContext;
+	BufferAlloc bufferAlloc;
+	BufferFree bufferFree;
+	BufferRealloc bufferRealloc;
+
 // buffer stats
 
 };
@@ -111,8 +124,33 @@ inline BufferType GuessType( const Buffer *buffer, size_t lastChunk, size_t requ
 }
 
 
+inline void BufferSetAllocators( Buffer *buffer, void* opaqueAllocatorContext, BufferAlloc bufferAlloc, BufferFree bufferFree, BufferRealloc bufferRealloc ) {
+
+	buffer->opaqueAllocatorContext = opaqueAllocatorContext;
+	buffer->bufferAlloc = bufferAlloc;
+	buffer->bufferFree = bufferFree;
+	buffer->bufferRealloc = bufferRealloc;
+}
+
+inline void* _BufferAlloc( Buffer *buf, size_t size ) {
+
+	return buf->bufferAlloc ? buf->bufferAlloc(buf->opaqueAllocatorContext, size) : malloc(size);
+}
+
+inline void _BufferFree( Buffer *buf, void* memory ) {
+
+	return buf->bufferFree ? buf->bufferFree(buf->opaqueAllocatorContext, memory) : free(memory);
+}
+
+inline void* _BufferRealloc( Buffer *buf, void* memory, size_t size ) {
+
+	return buf->bufferRealloc ? buf->bufferRealloc(buf->opaqueAllocatorContext, memory, size) : realloc(memory, size);
+}
+
+
 inline void BufferInitialize( Buffer *buffer, BufferType type, BufferGrowType growType ) {
 
+	BufferSetAllocators(buffer, NULL, NULL, NULL, NULL);
 	buffer->type = type;
 	buffer->growType = growType;
 
@@ -131,7 +169,7 @@ inline void BufferInitialize( Buffer *buffer, BufferType type, BufferGrowType gr
 		case bufferTypeAuto:
 		case bufferTypeRealloc:
 			chunk0->size = BUFFER_INIT_CHUNK_SIZE;
-			chunk0->begin = (char*)malloc(chunk0->size); // leak from here
+			chunk0->begin = (char*)_BufferAlloc(buffer, chunk0->size); // leak from here
 			break;
 	}
 }
@@ -146,7 +184,7 @@ inline char *BufferNewChunk( Buffer *buffer, size_t maxLength ) {
 	switch ( buffer->type == bufferTypeAuto ? GuessType(buffer, buffer->chunkPos, maxLength) : buffer->type ) {
 		case bufferTypeRealloc:
 			chunk->size += NextChunkSize(buffer, buffer->chunkPos, maxLength);
-			chunk->begin = (char*)realloc(chunk->begin, chunk->size);
+			chunk->begin = (char*)_BufferRealloc(buffer, chunk->begin, chunk->size);
 			return chunk->begin + chunk->pos;
 
 		case bufferTypeChunk:
@@ -156,17 +194,17 @@ inline char *BufferNewChunk( Buffer *buffer, size_t maxLength ) {
 				buffer->chunkListSize *= 2;
 				if ( buffer->chunkList == buffer->staticChunkList ) {
 
-					buffer->chunkList = (BufferChunk*)malloc(buffer->chunkListSize * sizeof(BufferChunk));
+					buffer->chunkList = (BufferChunk*)_BufferAlloc(buffer, buffer->chunkListSize * sizeof(BufferChunk));
 					memcpy(buffer->chunkList, buffer->staticChunkList, sizeof(buffer->staticChunkList));
 				} else {
 
-					buffer->chunkList = (BufferChunk*)realloc(buffer->chunkList, buffer->chunkListSize * sizeof(BufferChunk));
+					buffer->chunkList = (BufferChunk*)_BufferRealloc(buffer, buffer->chunkList, buffer->chunkListSize * sizeof(BufferChunk));
 				}
 			}
 
 			BufferChunk *chunk = &buffer->chunkList[buffer->chunkPos];
 			chunk->size = NextChunkSize(buffer, buffer->chunkPos-1, maxLength);
-			chunk->begin = (char*)malloc(chunk->size);
+			chunk->begin = (char*)_BufferAlloc(buffer, chunk->size);
 			chunk->pos = 0;
 			return chunk->begin;
 	}
@@ -205,9 +243,9 @@ inline const char *BufferGetData( Buffer *buffer ) {
 		return chunk0->begin;
 
 	if ( chunk0->begin == buffer->staticBuffer )
-		chunk0->begin = (char*)memcpy(malloc(buffer->length), chunk0->begin, chunk0->pos);
+		chunk0->begin = (char*)memcpy(_BufferAlloc(buffer, buffer->length), chunk0->begin, chunk0->pos);
 	else
-		chunk0->begin = (char*)realloc(chunk0->begin, buffer->length);
+		chunk0->begin = (char*)_BufferRealloc(buffer, chunk0->begin, buffer->length);
 	chunk0->pos = buffer->length;
 	chunk0->size = buffer->length;
 
@@ -217,7 +255,7 @@ inline const char *BufferGetData( Buffer *buffer ) {
 		BufferChunk *chunk = &buffer->chunkList[buffer->chunkPos];
 		dest -= chunk->pos;
 		memcpy(dest, chunk->begin, chunk->pos);
-		free(chunk->begin);
+		_BufferFree(buffer, chunk->begin);
 	} while ( --buffer->chunkPos );
 
 	return chunk0->begin;
@@ -229,7 +267,7 @@ inline char *BufferGetDataOwnership( Buffer *buffer ) {
 	
 	char *buf = (char*)BufferGetData(buffer);
 	if ( buf == buffer->staticBuffer ) // unable to give ownership of the static buffer, (TBD) copy it
-		buf = (char*)memcpy(malloc(buffer->length), buf, buffer->length);
+		buf = (char*)memcpy(_BufferAlloc(buffer, buffer->length), buf, buffer->length);
 
 	buffer->chunkList[0].begin = NULL;
 	return buf;
@@ -254,9 +292,9 @@ inline void BufferCopyData( const Buffer *buffer, char *dest, size_t length ) {
 inline void BufferFinalize( Buffer *buffer ) {
 
 	for ( size_t i = buffer->chunkList[0].begin == buffer->staticBuffer ? 1 : 0; i <= buffer->chunkPos; i++ )
-		free(buffer->chunkList[i].begin);
+		_BufferFree(buffer, buffer->chunkList[i].begin);
 	if ( buffer->chunkList != buffer->staticChunkList )
-		free(buffer->chunkList);
+		_BufferFree(buffer, buffer->chunkList);
 }
 
 

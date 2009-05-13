@@ -316,7 +316,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( IntervalNow ) {
 
-	PRUint32 interval = PR_IntervalToMilliseconds( PR_IntervalNow() );
+	PRUint32 interval = PR_IntervalToMilliseconds( PR_IntervalNow() ); // (TBD) Check if it may wrap around in about 12 hours. Is it related to the data type ???
 	JS_NewNumberValue( cx, interval, rval );
 	return JS_TRUE;
 }

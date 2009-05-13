@@ -715,7 +715,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( gcMallocBytes ) {
 
-	uint32 bytes = JS_GetGCParameter(JS_GetRuntime(cx), JSGC_MAX_MALLOC_BYTES);
+	uint32 bytes = JS_GetRuntime(cx)->gcMallocBytes;
 	return JS_NewNumberValue(cx, bytes, vp);
 }
 

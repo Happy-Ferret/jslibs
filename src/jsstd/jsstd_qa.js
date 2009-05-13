@@ -637,6 +637,26 @@ LoadModule('jsstd');
 		QA.ASSERT_STR( o, '<html><title>My HTML Page</title>\n', 'expand string using this object' );
 
 
+/// Exec error [ftrm]
+
+		QA.ASSERT_EXCEPTION( function() Exec('e654ser65t'), Error, 'Exec unknown file' );
+
+		
+/// Exec basic test [ftrm]
+		
+		LoadModule('jsio');
+		var f = new File('qa_exec_test.js');
+		f.content = '((1234))';
+		var res = Exec('qa_exec_test.js');
+		QA.ASSERT_STR( res, eval( f.content.toString() ), 'content validity' );
+
+		var res = Exec.call(this, 'qa_exec_test.js');
+		QA.ASSERT_STR( res, eval( f.content.toString() ), 'content validity' );
+
+
+		f.content = undefined;
+
+
 /// Exec using XDR [ftrm]
 		
 		LoadModule('jsio');

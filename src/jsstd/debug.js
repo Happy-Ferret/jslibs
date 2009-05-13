@@ -1,8 +1,11 @@
 LoadModule('jsstd');
 LoadModule('jsio');
 
-	var buf = new Buffer(Stream('456'));
-	buf.Read(5);
+var f = new File('qa_exec_test.js');
+//f.content = '(1234)';
+var res = Exec(f.name);
+//f.content = undefined;
+
 		
 
 Halt(); //////////////////////////////

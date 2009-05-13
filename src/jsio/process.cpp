@@ -59,6 +59,9 @@ DEFINE_CONSTRUCTOR() {
 	J_S_ASSERT_ARG_MIN(1);
 	J_S_ASSERT( !J_ARG_ISDEF(2) || J_ARG_ISDEF(2) && JsvalIsArray(cx, J_ARG(2)), "Invalid 2nd argument" );
 
+	const char *path;
+	J_CHK( JsvalToString(cx, &J_ARG(1), &path) );
+
 	int processArgc;
 	if ( J_ARG_ISDEF(2) ) {
 
@@ -71,23 +74,19 @@ DEFINE_CONSTRUCTOR() {
 		for ( int i=0; i<processArgc -1; i++ ) { // -1 because argv[0]
 
 			jsval propVal;
-			J_CHK( JS_IdToValue(cx, idArray->vector[i], &propVal ));
-			J_CHK( JS_GetElement(cx, JSVAL_TO_OBJECT(J_ARG(2)), JSVAL_TO_INT(propVal), &propVal )); // (TBD) optimize
-
+			J_CHK( JS_IdToValue(cx, idArray->vector[i], &propVal) );
+			J_CHK( JS_GetElement(cx, JSVAL_TO_OBJECT(J_ARG(2)), JSVAL_TO_INT(propVal), &propVal) ); // (TBD) optimize
 			const char *tmp;
 			J_CHK( JsvalToString(cx, &propVal, &tmp) ); // warning: GC on the returned buffer !
 			processArgv[i+1] = tmp;
 		}
-		JS_DestroyIdArray( cx, idArray );
+		JS_DestroyIdArray( cx, idArray ); // (TBD) free it on error too !
 	} else {
 
 		processArgc = 0 +1; // +1 is argv[0]
 		processArgv = (const char**)malloc(sizeof(const char**) * (processArgc +1)); // +1 is NULL
 		J_S_ASSERT_ALLOC( processArgv );
 	}
-
-	const char *path;
-	J_CHK( JsvalToString(cx, &J_ARG(1), &path) );
 
 	processArgv[0] = path;
 	processArgv[processArgc] = NULL;
@@ -99,7 +98,6 @@ DEFINE_CONSTRUCTOR() {
 	J_CHKB( PR_CreatePipe(&stdout_parent, &stdout_child) == PR_SUCCESS, bad_throw );
 	J_CHKB( PR_CreatePipe(&stderr_parent, &stderr_child) == PR_SUCCESS, bad_throw );
 
-
 	PRProcessAttr *psattr;
 	psattr = PR_NewProcessAttr();
 
@@ -109,43 +107,45 @@ DEFINE_CONSTRUCTOR() {
 	// PR_ProcessAttrSetCurrentDirectory ?
 
 	PRProcess *process;
-
+	
 	// cf. bug 113095 -  PR_CreateProcess reports success even when it fails to create the process. (https://bugzilla.mozilla.org/show_bug.cgi?id=113095)
 	process = PR_CreateProcess(path, (char * const *)processArgv, NULL, psattr); // (TBD) avoid cast to (char * const *)
+
 	PR_DestroyProcessAttr(psattr);
+	free(processArgv);
 
-
-	J_CHKB( PR_Close(stdin_child) == PR_SUCCESS, bad_throw );
-	J_CHKB( PR_Close(stdout_child) == PR_SUCCESS, bad_throw );
 	J_CHKB( PR_Close(stderr_child) == PR_SUCCESS, bad_throw );
+	J_CHKB( PR_Close(stdout_child) == PR_SUCCESS, bad_throw );
+	J_CHKB( PR_Close(stdin_child) == PR_SUCCESS, bad_throw );
+	if ( !process ) {
+
+		J_CHKB( PR_Close(stderr_parent) == PR_SUCCESS, bad_throw );
+		J_CHKB( PR_Close(stdout_parent) == PR_SUCCESS, bad_throw );
+		J_CHKB( PR_Close(stdin_parent) == PR_SUCCESS, bad_throw );
+	}
 	J_CHKB( process != NULL, bad_throw );
 	J_CHK( JS_SetPrivate(cx, obj, (void*)process) );
 
 	JSObject *fdIn;
 	fdIn = JS_NewObject( cx, classPipe, NULL, NULL );
+	J_CHK( JS_SetReservedSlot(cx, obj, SLOT_PROCESS_STDIN, OBJECT_TO_JSVAL(fdIn)) );
 	J_CHK( JS_SetPrivate( cx, fdIn, stdin_parent ) );
 
 	JSObject *fdOut;
 	fdOut = JS_NewObject( cx, classPipe, NULL, NULL );
+	J_CHK( JS_SetReservedSlot(cx, obj, SLOT_PROCESS_STDOUT, OBJECT_TO_JSVAL(fdOut)) );
 	J_CHK( JS_SetPrivate( cx, fdOut, stdout_parent ) );
 
 	JSObject *fdErr;
 	fdErr = JS_NewObject( cx, classPipe, NULL, NULL );
+	J_CHK( JS_SetReservedSlot(cx, obj, SLOT_PROCESS_STDERR, OBJECT_TO_JSVAL(fdErr)) );
 	J_CHK( JS_SetPrivate( cx, fdErr, stderr_parent ) );
 
-	J_CHK( JS_SetReservedSlot(cx, obj, SLOT_PROCESS_STDIN, OBJECT_TO_JSVAL(fdIn)) );
-	J_CHK( JS_SetReservedSlot(cx, obj, SLOT_PROCESS_STDOUT, OBJECT_TO_JSVAL(fdOut)) );
-	J_CHK( JS_SetReservedSlot(cx, obj, SLOT_PROCESS_STDERR, OBJECT_TO_JSVAL(fdErr)) );
-
-
-	if ( processArgv )
-		free(processArgv);
 	return JS_TRUE;
+
 bad_throw:
 	ThrowIoError(cx);
 bad:
-	if ( processArgv )
-		free(processArgv);
 	return JS_FALSE;
 }
 

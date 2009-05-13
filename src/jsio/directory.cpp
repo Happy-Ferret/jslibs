@@ -265,15 +265,14 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( List ) {
 
+	PRDir *dd = NULL;
 	J_S_ASSERT_ARG_MIN( 1 );
 	const char *directoryName;
 	size_t directoryNameLength;
 	J_CHK( JsvalToStringAndLength(cx, &J_ARG(1), &directoryName, &directoryNameLength) );
 	J_S_ASSERT( directoryNameLength < PATH_MAX, "Path too long" );
-	PRDir *dd;
 	dd = PR_OpenDir( directoryName );
-	if ( dd == NULL )
-		return ThrowIoError(cx);
+	J_CHKB( dd, bad_throw);
 
 	PRDirFlags flags;
 	flags = PR_SKIP_DOT;
@@ -296,11 +295,9 @@ DEFINE_FUNCTION( List ) {
 		PRDirEntry *dirEntry = PR_ReadDir( dd, flags ); // & 0x0F
 		if ( dirEntry == NULL ) {
 
-			PRErrorCode errorCode = PR_GetError();
-			if ( errorCode == PR_NO_MORE_FILES_ERROR )
+			if ( PR_GetError() == PR_NO_MORE_FILES_ERROR ) // reaching the end of the directory
 				break;
-			else
-				return ThrowIoError(cx);
+			goto bad_throw; // or when an error occurs.
 		}
 
 		if ( flags & (_SKIP_FILE | _SKIP_DIRECTORY | _SKIP_OTHER) ) {
@@ -315,8 +312,7 @@ DEFINE_FUNCTION( List ) {
 			strcat( fileName, dirEntry->name );
 
 			status = PR_GetFileInfo( fileName, &fileInfo );
-			if ( status != PR_SUCCESS )
-				return ThrowIoError(cx);
+			J_CHKB( status == PR_SUCCESS, bad_throw );
 
 			if ( flags & _SKIP_FILE && fileInfo.type == PR_FILE_FILE ||
 				  flags & _SKIP_DIRECTORY && fileInfo.type == PR_FILE_DIRECTORY ||
@@ -326,10 +322,16 @@ DEFINE_FUNCTION( List ) {
 
 		JSString *jsStr = JS_NewStringCopyZ( cx, dirEntry->name );
 		J_CHK( jsStr );
-		J_CHK(	JS_DefineElement(cx, addrJsObj, index++, STRING_TO_JSVAL(jsStr), NULL, NULL, JSPROP_ENUMERATE) );
+		J_CHK( JS_DefineElement(cx, addrJsObj, index++, STRING_TO_JSVAL(jsStr), NULL, NULL, JSPROP_ENUMERATE) );
 	}
 
+	J_CHKB( PR_CloseDir(dd) == PR_SUCCESS, bad_throw);
 	return JS_TRUE;
+
+bad_throw:
+	if (dd)
+		PR_CloseDir(dd);
+	ThrowIoError(cx);
 	JL_BAD;
 }
 

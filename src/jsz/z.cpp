@@ -152,6 +152,22 @@ $TOC_MEMBER $INAME
   var compressedData = new Z( Z.DEFLATE )( 'Hello world', true ); // flush
   }}}
 **/
+
+void* wrapped_JS_malloc(void * opaqueAllocatorContext, int size) {
+	
+	return JS_malloc((JSContext*)opaqueAllocatorContext, size);
+}
+
+void wrapped_JS_free(void * opaqueAllocatorContext, void* address) {
+	
+	return JS_free((JSContext*)opaqueAllocatorContext, address);
+}
+
+void* wrapped_JS_realloc(void * opaqueAllocatorContext, void* address, int size) {
+	
+	return JS_realloc((JSContext*)opaqueAllocatorContext, address, size);
+}
+
 DEFINE_CALL() {
 
 	JSObject *thisObj = JSVAL_TO_OBJECT(argv[-2]); // get 'this' object of the current object ...
@@ -206,6 +222,7 @@ DEFINE_CALL() {
 
 	Buffer resultBuffer;
 	BufferInitialize(&resultBuffer, bufferTypeAuto, bufferGrowTypeAuto);
+	BufferSetAllocators(&resultBuffer, cx, wrapped_JS_malloc, wrapped_JS_free, wrapped_JS_realloc);
 
 	// first length is a guess.
 	size_t length = pv->method == DEFLATE ? (size_t)(12 + 1.001f * pv->stream.avail_in) : (size_t)(1.5f * pv->stream.avail_in); // if DEFLATE, dest. buffer must be at least 0.1% larger than sourceLen plus 12 bytes
@@ -239,6 +256,7 @@ DEFINE_CALL() {
 	*BufferNewChunk(&resultBuffer, 1) = '\0';
 	BufferConfirm(&resultBuffer, 1);
 	J_CHKB( J_NewBlob(cx, (void*)BufferGetDataOwnership(&resultBuffer), BufferGetLength(&resultBuffer)-1, rval), bad_freebuf );
+//	js_UpdateMallocCounter(cx, 1);
 	BufferFinalize(&resultBuffer);
 
 // close the stream and free resources

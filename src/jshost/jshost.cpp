@@ -175,6 +175,10 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	bool compileOnly = false;
 	size_t maybeGCInterval = 15*1000; // 15 seconds
 	int camelCase = 0; // 0:default, 1:lower, 2:upper
+	
+	#ifdef DEBUG
+	bool debug; debug = false;
+	#endif
 
 	// (TBD) use getopt instead ?
 	char** argumentVector = argv;
@@ -208,13 +212,20 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 				HOST_MAIN_ASSERT( *argumentVector, "Missing argument." );
 				camelCase = atoi( *argumentVector );
 				break;
-		#if defined(XP_WIN) && defined(_DEBUG)
+		#ifdef DEBUG
 			case 'd': // debug
-				_CrtSetDbgFlag( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF );
-				_CrtSetReportMode( _CRT_WARN, _CRTDBG_MODE_FILE | _CRTDBG_MODE_DEBUG );
-				_CrtSetReportFile( _CRT_WARN, _CRTDBG_FILE_STDERR );
+				debug = true;
 		#endif // DEBUG
 	}
+
+#if defined(XP_WIN) && defined(DEBUG)
+	if ( debug ) {
+		_CrtSetDbgFlag( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF );
+		_CrtSetReportMode( _CRT_WARN, _CRTDBG_MODE_FILE | _CRTDBG_MODE_DEBUG );
+		_CrtSetReportFile( _CRT_WARN, _CRTDBG_FILE_STDERR );
+	}
+#endif
+
 
 	cx = CreateHost(maxMem, maxAlloc, maybeGCInterval);
 	HOST_MAIN_ASSERT( cx != NULL, "unable to create a javascript execution context" );

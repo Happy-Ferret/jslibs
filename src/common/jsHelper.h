@@ -189,6 +189,14 @@ ALWAYS_INLINE void SetHostPrivate( JSContext *cx, HostPrivate *hostPrivate ) {
 	} \
 } while(0)
 
+// check with message and argument (printf like)
+#define J_CHKM2( status, errorMessage, arg1, arg2 ) do { \
+	if (unlikely( !(status) )) { \
+		if ( !JS_IsExceptionPending(cx) ) \
+			JS_ReportError(cx, (errorMessage IFDEBUG(" (@" J__CODE_LOCATION ")")), (arg1), (arg2)); \
+		goto bad; \
+	} \
+} while(0)
 
 
 // check and branch to a errorLabel label on error.
@@ -1313,9 +1321,7 @@ bad:
 
 inline JSBool ReserveNativeInterface( JSContext *cx, JSObject *obj, const char *name ) {
 
-	J_CHK( JS_DefineProperty(cx, obj, name, JSVAL_FALSE, NULL, (JSPropertyOp)-1, JSPROP_READONLY | JSPROP_PERMANENT ) );
-	return JS_TRUE;
-	JL_BAD;
+	return JS_DefineProperty(cx, obj, name, JSVAL_FALSE, NULL, (JSPropertyOp)-1, JSPROP_READONLY | JSPROP_PERMANENT );
 }
 
 inline JSBool SetNativeInterface( JSContext *cx, JSObject *obj, const char *name, void *nativeFct ) {

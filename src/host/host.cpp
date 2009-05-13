@@ -582,13 +582,16 @@ JSBool DestroyHost( JSContext *cx ) {
 	// Beware: because JS engine allocate memory from the DLL, all memory must be disallocated before releasing the DLL
 	//	ModuleFreeAll();
 
+
 	while ( !jl::QueueIsEmpty(&pv->moduleList) ) {
 
 		JLLibraryHandler module = (JLLibraryHandler)jl::QueueShift(&pv->moduleList);
 		ModuleFreeFunction moduleFree = (ModuleFreeFunction)JLDynamicLibrarySymbol(module, NAME_MODULE_FREE);
 		if ( moduleFree != NULL )
 			moduleFree();
+//#ifndef DEBUG // else the memory block was allocated in a DLL that was unloaded prior to the _CrtMemDumpAllObjectsSince() call.
 		J_CHK( JLDynamicLibraryClose(&module) );
+//#endif
 	}
 
 	while ( !jl::QueueIsEmpty(&pv->registredNativeClasses) )
@@ -596,6 +599,7 @@ JSBool DestroyHost( JSContext *cx ) {
 
 	free(pv);
 	return JS_TRUE;
+
 bad:
 	free(pv);
 	return JS_FALSE;

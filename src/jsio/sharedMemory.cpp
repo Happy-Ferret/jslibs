@@ -83,6 +83,8 @@ JSBool CloseSharedMemory( JSContext *cx, JSObject *obj ) {
 	mh->accessCount--;
 
 	J_CHKB( PR_DetachSharedMemory(pv->shm, pv->mem) == PR_SUCCESS, bad_ioerror );
+	J_CHKB( PR_CloseSharedMemory(pv->shm) == PR_SUCCESS, bad_ioerror );
+
 	J_CHKB( PR_PostSemaphore(pv->accessSem) == PR_SUCCESS, bad_ioerror );
 	J_CHKB( PR_CloseSemaphore(pv->accessSem) == PR_SUCCESS, bad_ioerror );
 
@@ -114,10 +116,9 @@ BEGIN_CLASS( SharedMemory )
 
 DEFINE_FINALIZE() {
 
-	if ( JS_GetPrivate(cx, J_OBJ) != NULL ) {
-
-		CloseSharedMemory(cx, obj);
-	}
+	if ( !JS_GetPrivate(cx, J_OBJ) )
+		return;
+	CloseSharedMemory(cx, obj);
 }
 
 // doc.
@@ -202,6 +203,7 @@ DEFINE_CONSTRUCTOR() {
 	J_CHK( SetBufferGetInterface(cx, obj, BufferGet) );
 
 	return JS_TRUE;
+
 bad_ioerror:
 	ThrowIoError(cx);
 	JL_BAD;

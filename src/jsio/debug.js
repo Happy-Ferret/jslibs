@@ -3,8 +3,11 @@ LoadModule('jsio');
 LoadModule('jsio');
 
 
-Print( (new File('debug.js')).content );
+Print( uneval(Socket.GetHostsByName('localhost')) );
+		
+Halt();
 
+				
 
 Halt();
 

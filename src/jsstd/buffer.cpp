@@ -171,6 +171,7 @@ inline JSBool BufferRefill( JSContext *cx, JSObject *obj, size_t amount ) { // a
 
 inline JSBool BufferRefill( JSContext *cx, JSObject *obj, size_t amount ) { // amount = total needed amount
 
+	char *buf;
 	BufferPrivate *pv = (BufferPrivate*)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( pv );
 
@@ -197,26 +198,22 @@ inline JSBool BufferRefill( JSContext *cx, JSObject *obj, size_t amount ) { // a
 		prevBufferLength = pv->length;
 		len = amount - pv->length;
 
-		char *buf;
 		buf = (char*)JS_malloc(cx, len);
 		J_CHK( buf );
 
-		J_CHK( nisr(cx, srcObj, buf, &len) );
-
-		if ( len == 0 ) {
-
-			JS_free(cx, buf);
-		} else {
-
-			if ( MaybeRealloc(amount, len) )
-				buf = (char*)JS_realloc(cx, buf, len);
-			J_CHK( WriteRawChunk(cx, obj, len, buf) );
-		}
+		J_CHKB( nisr(cx, srcObj, buf, &len), bad_freebuf );
+		if ( len > 0 )
+			J_CHKB( WriteRawChunk(cx, obj, len, buf), bad_freebuf );
+		JS_free(cx, buf);
 
 	} while( pv->length < amount && pv->length > prevBufferLength ); // see RULES ( at the top of this file )
 
 	return JS_TRUE;
-	JL_BAD;
+
+bad_freebuf:
+	JS_free(cx, buf);
+bad:
+	return JS_FALSE;
 }
 
 
@@ -476,14 +473,13 @@ BEGIN_CLASS( Buffer )
 DEFINE_FINALIZE() {
 
 	BufferPrivate *pv = (BufferPrivate*)JS_GetPrivate(cx, obj);
-	if ( pv != NULL ) {
+	if ( !pv )
+		return;
 
-		while ( !QueueIsEmpty(pv->queue) )
-			ShiftJsval(cx, pv->queue, NULL);
-		QueueDestruct(pv->queue);
-		JS_free(cx, pv);
-		JS_SetPrivate(cx, obj, NULL); // optional ?
-	}
+	while ( !QueueIsEmpty(pv->queue) )
+		ShiftJsval(cx, pv->queue, NULL);
+	QueueDestruct(pv->queue);
+	JS_free(cx, pv);
 }
 
 /* prev doc:
@@ -569,7 +565,6 @@ DEFINE_CONSTRUCTOR() {
 
 		J_S_ASSERT_OBJECT( J_ARG(1) );
 		J_CHK( JS_SetReservedSlot(cx, obj, SLOT_SOURCE, J_ARG(1)) );
-
 	}
 	return JS_TRUE;
 	JL_BAD;

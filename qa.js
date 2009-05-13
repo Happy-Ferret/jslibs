@@ -241,42 +241,45 @@ function LaunchTests(itemList, cfg) {
 
 		cx.item = itemList[testIndex];
 		
-		cfg.quiet || Print( ' - '+cx.item.file+' - '+ cx.item.name );
+		if ( cx.item.init || cfg.runOnlyTestIndex == undefined || cfg.runOnlyTestIndex == testIndex ) {
 
-		cfg.noGcBetweenTests || CollectGarbage();
+			cfg.quiet || Print( ' - '+testIndex+' - '+cx.item.file+' - '+ cx.item.name );
 
-		gcZeal = cfg.gcZeal;
-		disableGarbageCollection = cfg.nogcDuringTests;
+			cfg.noGcBetweenTests || CollectGarbage();
 
-		try {
+			gcZeal = cfg.gcZeal;
+			disableGarbageCollection = cfg.nogcDuringTests;
 
-			var m0 = privateMemoryUsage;
-			var t0 = TimeCounter();
-			for ( var i = cfg.repeatEachTest; i && !endSignal ; --i ) {
-			
-				void cx.item.func(qaapi);
-				if ( cx.item.init )
-					break;
+			try {
+
+				var m0 = privateMemoryUsage;
+				var t0 = TimeCounter();
+				for ( var i = cfg.repeatEachTest; i && !endSignal ; --i ) {
+
+					void cx.item.func(qaapi);
+					if ( cx.item.init )
+						break;
+				}
+				var t1 = TimeCounter() - t0;
+				var m1 = privateMemoryUsage - m0;
+				cfg.quiet || Print( '  ...('+(t1/cfg.repeatEachTest).toFixed(1) + 'ms, '+ cfg.repeatEachTest +'x '+ (m1/1024/cfg.repeatEachTest).toFixed(1)+'KB)' );
+			} catch(ex) {
+
+				CommonReportIssue(cx, 'EXCEPTION', cx.item.file+':'+(ex.lineNumber - cx.item.relativeLineNumber), cx.item.name, '', ex );
 			}
-			var t1 = TimeCounter() - t0;
-			var m1 = privateMemoryUsage - m0;
-			cfg.quiet || Print( '  ...('+(t1/cfg.repeatEachTest).toFixed(1) + 'ms, '+ cfg.repeatEachTest +'x '+ (m1/1024/cfg.repeatEachTest).toFixed(1)+'KB)' );
-		} catch(ex) {
-			
-			CommonReportIssue(cx, 'EXCEPTION', cx.item.file+':'+(ex.lineNumber - cx.item.relativeLineNumber), cx.item.name, '', ex );
+
+			disableGarbageCollection = false;
+			gcZeal = 0;
+
+			cfg.noGcBetweenTests || CollectGarbage();
+
+			var m2 = privateMemoryUsage - m0;
+			if ( m2 > 0 )
+				cfg.quiet || Print( '... leak: '+(m2/1024)+'KB');
+
+			cfg.quiet || Print('\n');
+
 		}
-		
-		disableGarbageCollection = false;
-		gcZeal = 0;
-		
-		cfg.noGcBetweenTests || CollectGarbage();
-		
-		var m2 = privateMemoryUsage - m0;
-		if ( m2 > 0 )
-			cfg.quiet || Print( '... leak: '+(m2/1024)+'KB');
-		
-		cfg.quiet || Print('\n');
-		
 		
 		if ( cfg.stopAfterNIssues && issues > cfg.stopAfterNIssues )
 			break;
@@ -326,7 +329,7 @@ function ParseCommandLine(cfg) {
 
 
 
-var cfg = { help:false, repeatEachTest:1, gcZeal:0, loopForever:false, directory:'src', priority:0, flags:'', save:'', load:'', disableJIT:false, listTestsOnly:false, nogcBetweenTests:false, nogcDuringTests:false, stopAfterNIssues:0, logFilename:'', sleepBetweenTests:0, quiet:false };
+var cfg = { help:false, repeatEachTest:1, gcZeal:0, loopForever:false, directory:'src', priority:0, flags:'', save:'', load:'', disableJIT:false, listTestsOnly:false, nogcBetweenTests:false, nogcDuringTests:false, stopAfterNIssues:0, logFilename:'', sleepBetweenTests:0, quiet:false, runOnlyTestIndex:undefined };
 ParseCommandLine(cfg);
 var configurationText = 'configuraion: '+[k+':'+v for ([k,v] in Iterator(cfg))].join(' - ');
 Print( configurationText, '\n\n' );

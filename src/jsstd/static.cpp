@@ -976,99 +976,72 @@ DEFINE_FUNCTION_FAST( Print ) {
 //	/be
 static JSScript* LoadScript(JSContext *cx, JSObject *obj, const char *fileName, bool useCompFile) {
 
-#ifdef JS_HAS_XDR
+#ifndef JS_HAS_XDR
+	return JS_CompileFile(cx, obj, fileName);
+#endif // JS_HAS_XDR
+
+	JSScript *script = NULL;
 
 	char compiledFileName[PATH_MAX];
 	strcpy( compiledFileName, fileName );
 	strcat( compiledFileName, "xdr" );
 
-	struct stat srcFileStat;
+	struct stat srcFileStat, compFileStat;
 	bool hasSrcFile = ( stat( fileName, &srcFileStat ) != -1 ) ; // errno == ENOENT
-
-	struct stat compFileStat;
 	bool hasCompFile = ( stat( compiledFileName, &compFileStat ) != -1 );
+	bool compFileUpToDate = hasCompFile && !hasSrcFile || hasSrcFile && hasCompFile && (compFileStat.st_mtime > srcFileStat.st_mtime); // true if comp file is up to date or alone
 
-	bool compFileUpToDate = ( hasSrcFile && hasCompFile && (srcFileStat.st_mtime < compFileStat.st_mtime) ) || ( hasCompFile && !hasSrcFile );	// true if comp file is up to date or alone
-
-	if ( !hasSrcFile && !hasCompFile ) {
-
-		JS_ReportError( cx, "Unable to load Script, file \"%s\" or \"%s\" not found.", fileName, compiledFileName );
-		return NULL;
-	}
-
-	JSScript *script;
+	J_CHKM2( hasSrcFile || hasCompFile, "Unable to load Script, file \"%s\" or \"%s\" not found.", fileName, compiledFileName );
 
 	if ( useCompFile && compFileUpToDate ) {
 
 		int file = open(compiledFileName, O_RDONLY | O_BINARY);
-		if ( file == -1 ) {
+		J_CHKM1( file != -1, "Unable to open file \"%s\" for reading.", compiledFileName );
 
-			JS_ReportError( cx, "Unable to open file \"%s\" for reading.", compiledFileName );
-			return NULL;
-		}
-
-		size_t compFileSize = compFileStat.st_size;
-//		size_t compFileSize = filelength(file);
-		void *data = JS_malloc(cx, compFileSize);
-
+		size_t compFileSize = compFileStat.st_size; // filelength(file); ?
+		void *data = malloc(compFileSize); // (TBD) free on error
 		int readCount = read( file, data, compFileSize ); // here we can use "Memory-Mapped I/O Functions" ( http://developer.mozilla.org/en/docs/NSPR_API_Reference:I/O_Functions#Memory-Mapped_I.2FO_Functions )
-
-		if ( readCount == -1 || readCount != compFileSize ) {
-
-			JS_ReportError( cx, "Unable to read the file \"%s\" ", compiledFileName );
-			return NULL;
-		}
-
+		J_CHKM1( readCount != -1 && readCount == compFileSize, "Unable to read the file \"%s\" ", compiledFileName );
 		close( file );
 
-		JSXDRState *xdr = JS_XDRNewMem(cx,JSXDR_DECODE);
-		if ( xdr == NULL )
-			return NULL;
+		JSXDRState *xdr = JS_XDRNewMem(cx, JSXDR_DECODE);
+		J_CHK( xdr );
 		JS_XDRMemSetData(xdr, data, compFileSize);
-		JSBool xdrSuccess = JS_XDRScript(xdr, &script);
-		if ( xdrSuccess != JS_TRUE )
-			return NULL;
+		J_CHK( JS_XDRScript(xdr, &script) );
 		// (TBD) manage BIG_ENDIAN here ?
 		JS_XDRMemSetData(xdr, NULL, 0);
 		JS_XDRDestroy(xdr);
-		JS_free(cx, data);
+		free(data);
 		if ( JS_GetScriptVersion(cx, script) < JS_GetVersion(cx) )
 			J_REPORT_WARNING_1("Trying to xdr-decode an old script (%s).", compiledFileName);
-	} else {
+		return script;
+	} 
 
-//		JS_GC(cx); // ...and also just before doing anything that requires compilation (since compilation disables GC until complete).
-		script = JS_CompileFile(cx, obj, fileName);
+	script = JS_CompileFile(cx, obj, fileName);
+	J_CHK( script );
+	if ( !useCompFile )
+		return script;
 
-		if ( useCompFile && script != NULL ) {
+	int file = open( compiledFileName, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, 0700 );
+	if ( file == -1 ) // if the file cannot be write, this is not an error ( eg. read-only drive )
+		return script;
 
-			JSXDRState *xdr = JS_XDRNewMem(cx,JSXDR_ENCODE);
-			if (!xdr)
-				return NULL;
-			JSBool xdrSuccess = JS_XDRScript( xdr, &script );
-			if ( xdrSuccess != JS_TRUE )
-				return NULL;
-			int file = open( compiledFileName, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, 0700 ); // (TBD) use open/close/read/... instead of fopen/fclose/fread/...
-			if ( file != -1 ) { // if the file cannot be write, this is not an error ( eg. read-only drive )
+	JSXDRState *xdr = JS_XDRNewMem(cx, JSXDR_ENCODE);
+	J_CHK( xdr );
+	J_CHK( JS_XDRScript(xdr, &script) );
 
-				uint32 length;
-				void *buf = JS_XDRMemGetData( xdr, &length );
-				if ( buf == NULL )
-					return NULL;
-				// manage BIG_ENDIAN here ?
-				write( file, buf, length );
-				close(file);
-			}
-			JS_XDRDestroy( xdr );
-		}
-	}
+	uint32 length;
+	void *buf = JS_XDRMemGetData(xdr, &length);
+	J_CHK( buf );
+	// manage BIG_ENDIAN here ?
+	J_CHK( write(file, buf, length) != -1 ); // On error, -1 is returned, and errno is set appropriately.
+	J_CHK( close(file) == 0 );
+	JS_XDRDestroy(xdr);
 	return script;
 
-#else // JS_HAS_XDR
-
-//	JS_GC(cx);  // ...and also just before doing anything that requires compilation (since compilation disables GC until complete).
-	return JS_CompileFile(cx, obj, fileName);
-
-#endif // JS_HAS_XDR
+bad:
+	// report a warning ?
+	return script;
 }
 
 
@@ -1089,39 +1062,28 @@ $TOC_MEMBER $INAME
 // function copied from mozilla/js/src/js.c
 DEFINE_FUNCTION_FAST( Exec ) {
 
-	//  uintN i;
-	JSScript *script;
-	JSBool ok;
-	//  JSErrorReporter older;
-	uint32 oldopts;
-
 	J_S_ASSERT_ARG_MIN( 1 );
-	bool saveCompiledScripts;
-	saveCompiledScripts = !( J_FARG_ISDEF(2) && J_FARG(2) == JSVAL_FALSE );
 
-	errno = 0;
-	//        older = JS_SetErrorReporter(cx, LoadErrorReporter);
-	oldopts = JS_GetOptions(cx);
-	JS_SetOptions(cx, oldopts | JSOPTION_COMPILE_N_GO);
-	// script = JS_CompileFile(cx, obj, filename);
+	bool saveCompiledScripts;
+	saveCompiledScripts = !J_FARG_ISDEF(2) || J_FARG(2) == JSVAL_TRUE;
 	const char *filename;
 	J_CHK( JsvalToString(cx, &J_FARG(1), &filename) );
 
+	uint32 oldopts;
+	oldopts = JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_COMPILE_N_GO);
+	JSScript *script;
 	script = LoadScript( cx, J_FOBJ, filename, saveCompiledScripts );
-	if (!script) {
-		ok = JS_FALSE;
-	} else {
-
-//		if ( argc >= 3 )
-//			obj = JSVAL_TO_OBJECT( J_ARG(3) ); // try Exec.call( obj1, 'test.js' ); ...
-// see: http://groups.google.com/group/mozilla.dev.tech.js-engine/browse_thread/thread/97269b31d65d493d/be8a4f9c4e805bef
-		ok = JS_ExecuteScript(cx, J_FOBJ, script, J_FRVAL); // Doc: On successful completion, rval is a pointer to a variable that holds the value from the last executed expression statement processed in the script.
-		JS_DestroyScript(cx, script);
-	}
 	JS_SetOptions(cx, oldopts);
-	//        JS_SetErrorReporter(cx, older);
-	if (!ok)
-		return JS_FALSE;
+	J_CHK( script );
+
+	JSTempValueRooter tvr;
+	JSObject *scrobj = JS_NewScriptObject(cx, script);
+	JS_PUSH_TEMP_ROOT_OBJECT(cx, scrobj, &tvr);
+	JSBool ok;
+	ok = JS_ExecuteScript(cx, J_FOBJ, script, J_FRVAL); // Doc: On successful completion, rval is a pointer to a variable that holds the value from the last executed expression statement processed in the script.
+	JS_POP_TEMP_ROOT(cx, &tvr);
+	J_CHK( ok );
+
 	return JS_TRUE;
 	JL_BAD;
 }

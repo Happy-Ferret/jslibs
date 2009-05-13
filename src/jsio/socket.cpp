@@ -916,33 +916,23 @@ DEFINE_FUNCTION( GetHostsByName ) {
 
 	J_S_ASSERT_ARG_MIN( 1 );
 
-//	PRUint16 port;
-//	J_CHK( JsvalToInt(cx, J_ARG(1), &port) );
-
 	char netdbBuf[PR_NETDB_BUF_SIZE];
 	PRHostEnt hostEntry;
 	PRNetAddr addr;
 
-//	if ( PR_GetHostByName( host, netdbBuf, sizeof(netdbBuf), &hostEntry ) != PR_SUCCESS )
-//		return ThrowIoError(cx);
-
 	JSObject *addrJsObj;
 	addrJsObj = JS_NewArrayObject(cx, 0, NULL);
 	J_CHK( addrJsObj );
+	*rval = OBJECT_TO_JSVAL(addrJsObj);
 
 	const char *host;
 	J_CHK( JsvalToString(cx, &J_ARG(1), &host) );
 
 	if ( PR_GetHostByName( host, netdbBuf, sizeof(netdbBuf), &hostEntry ) != PR_SUCCESS ) {
-
-		PRErrorCode error = PR_GetError();
-		switch (error) {
-			case PR_DIRECTORY_LOOKUP_ERROR:
-				*rval = OBJECT_TO_JSVAL(addrJsObj); // returns an empty array
-				return JS_TRUE;
-			default:
-				return ThrowIoError(cx);
-		}
+		
+		if ( PR_GetError() == PR_DIRECTORY_LOOKUP_ERROR )
+			return JS_TRUE;
+		goto bad_throw;
 	}
 
 	int index;
@@ -954,18 +944,18 @@ DEFINE_FUNCTION( GetHostsByName ) {
 	for (;;) {
 
 		hostIndex = PR_EnumerateHostEnt(hostIndex, &hostEntry, 0, &addr);
-		if ( hostIndex == -1 )
-			return ThrowIoError(cx);
 		if ( hostIndex == 0 )
 			break;
-		if ( PR_NetAddrToString(&addr, addrStr, sizeof(addrStr)) != PR_SUCCESS )
-			return ThrowIoError(cx);
-		JSString *str = JS_NewStringCopyZ(cx, addrStr);
-		J_CHK( str );
-		JS_DefineElement(cx, addrJsObj, index++, STRING_TO_JSVAL(str), NULL, NULL, JSPROP_ENUMERATE);
+		J_CHKB( hostIndex != -1, bad_throw );
+		J_CHKB( PR_NetAddrToString(&addr, addrStr, sizeof(addrStr)) == PR_SUCCESS, bad_throw ); // memory leak
+		jsval tmp;
+		J_CHK( StringToJsval(cx, addrStr, &tmp) );
+		J_CHK( JS_DefineElement(cx, addrJsObj, index++, tmp, NULL, NULL, JSPROP_ENUMERATE) );
 	}
-	*rval = OBJECT_TO_JSVAL(addrJsObj);
 	return JS_TRUE;
+
+bad_throw:
+	ThrowIoError(cx);
 	JL_BAD;
 }
 

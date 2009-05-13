@@ -48,20 +48,35 @@ struct Private {
 $CLASS_HEADER
 $SVN_REVISION $Revision$
  With multicore CPUs becoming prevalent, splitting computationally expensive tasks is a good way to obtain better over-all performance.
- Task like:
- * Decoding a SVG image.
- * Generate a public/private key pair.
- * Decoding compressed Audio data.
- * Complex query on large database.
+ The aim of the Task class is to make use of CPU resources for doing computation task like decompressing data, decoding/computing images, create cryptographic keys, processing audio data, complex query on large database ...
+ A task can also manage asynchronous I/O, but it is not recommended. Poll() function is a preferred way to manage asynchronous I/O.
 
- $H note
+ The "new Task(taskFunc);" expression creates a new thread (or more), and a new JavaScript runtime that runs in the thread, then the thread is waiting for a request.
+ Each time the Request(req) function is called, the request req is stored in a queue and the thread is unlocked and call the function taskFunc with the first queued request.
+ When the taskFunc has finish, its return value is stored in the response queue and the thread returns in the "waiting for a request" state.
+ Responses are retrieved from the response queue using the Response() function.
+
+ $H notes
   Creating new tasks are expensive operating system calls. Tasks may have to be reused over the time.
+  The function taskFunc is completely isolated from the main program, Request()/Response() API is the only way to exchange data.
+  If no response are pending, the Response() function will block until a response is available.
+  The request/response queue size is only limited by the available amount of memory.
+  If an error or an exception occurs while a request is processed, the exception is stored as the response and raised again when the Response() function is called.
+  The execution context of the taskFunc function is reused, this mean that the global object can be used to store data.
+  The second argument of the taskFunc(req, index) is the index of the current request. This value can be used for initialization purpose.
+  eg.
+  {{{
+  function MyTask( req, idx ) {
+   
+   if ( idx == 0 ) {
+    LoadModule('jsio');
+   }
+   ...
+  }
+ }}}
 **/
 BEGIN_CLASS( Task )
 
-
-//void TaskCleanupLists(Private *pv) {
-//}
 
 DEFINE_FINALIZE() {
 
@@ -108,8 +123,8 @@ DEFINE_FINALIZE() {
 
 	JS_free(cx, pv);
 	return;
-bad:
 
+bad:
 	JS_free(cx, pv);
 	// (TBD) report a warning.
 	return;
@@ -404,6 +419,7 @@ DEFINE_FUNCTION_FAST( Response ) {
 		jsval exception;
 		J_CHK( UnserializeJsval(cx, &serializedException, &exception) );
 		JS_SetPendingException(cx, exception);
+		
 		return JS_FALSE;
 	}
 
@@ -439,6 +455,7 @@ DEFINE_FUNCTION_FAST( Response ) {
 		jsval exception;
 		J_CHK( UnserializeJsval(cx, &serializedException, &exception) ); // (TBD) throw a TaskException ?
 		JS_SetPendingException(cx, exception);
+		SerializerFree(&serializedException);
 		return JS_FALSE;
 	} else {
 

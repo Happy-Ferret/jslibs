@@ -6,7 +6,7 @@ LoadModule('jsio');
 
 	var myTask = new Task(function(){});
 	for ( var i = 0; i < 1000; i++ )
-		myTask.Request(StringRepeat('x', 9000));
+		myTask.Request(StringRepeat('x', 1000));
 
 	for ( var j = 0; j < 1000; j++ )
 		myTask.Response();
