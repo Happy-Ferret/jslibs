@@ -732,7 +732,7 @@ DEFINE_FUNCTION( Read ) { // Read( [ amount | <undefined> ] )
 	if ( J_ARGC == 1 && JSVAL_IS_VOID( J_ARG(1) ) ) // read the next chunk (of an unknown length) (read something as fast as possible)
 		return ReadChunk(cx, obj, rval);
 
-	size_t amount;
+	unsigned int amount;
 	if ( J_ARG_ISDEF(1) )
 		J_CHK( JsvalToUInt(cx, J_ARG(1), &amount) );
 	else
