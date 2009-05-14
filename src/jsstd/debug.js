@@ -1,10 +1,11 @@
 LoadModule('jsstd');
 LoadModule('jsio');
 
-var f = new File('qa_exec_test.js');
-//f.content = '(1234)';
-var res = Exec(f.name);
-//f.content = undefined;
+
+for ( var i = 0; i < 300; i++ ) {
+	
+	var res = SandboxEval('');
+}
 
 		
 

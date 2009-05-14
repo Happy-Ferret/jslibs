@@ -27,20 +27,10 @@
 #include "../common/buffer.h"
 
 
-//#ifndef PATH_MAX
-//	#define PATH_MAX FILENAME_MAX
-//#endif
-
-#ifdef XP_UNIX
-	#define MAX_PATH PATH_MAX
-	#define O_BINARY 0
-#endif
-
-/**doc fileIndex:topmost **/
-
 DECLARE_CLASS( OperationLimit )
 DECLARE_CLASS( Sandbox )
 
+/**doc fileIndex:topmost **/
 
 /**doc
 $CLASS_HEADER
@@ -174,33 +164,40 @@ DEFINE_FUNCTION_FAST( Expand ) {
 	JL_BAD;
 }
 
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
 $TOC_MEMBER $INAME
  $VOID $INAME( string )
-  Make an interned string, a string that is automatically shared with other code that needs a string with the same value.
+  Make an interned string, a string that is automatically shared with other code that needs a string with the same value. Use this function with care.
 **/
 // source: http://mxr.mozilla.org/mozilla/source/js/src/js.c
 DEFINE_FUNCTION_FAST( InternString ) {
 
-	JSString *str;
-	str = JS_ValueToString(cx, vp[2]);
-	if (!str)
-		return JS_FALSE;
-	if (!JS_InternUCStringN(cx, JS_GetStringChars(str), J_STRING_LENGTH(str))) {
-
-		return JS_FALSE;
-	}
+	JSString *str = JS_ValueToString(cx, vp[2]);
+	J_CHK( str );
+	J_CHK( JS_InternUCStringN(cx, JS_GetStringChars(str), J_STRING_LENGTH(str)) );
 	*vp = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
 $TOC_MEMBER $INAME
  $VOID $INAME( obj [ , recursively  ] )
-  Prevents all write access to the object, either to add a new property, delete an existing property, or set the value or attributes of an existing property.
+  Prevent modification of object fields. ie. all write access to the object, either to add a new property, delete an existing property, or set the value or attributes of an existing property.
   If _recursively_ is true, the function seal any non-null objects in the graph connected to obj's slots.
+  $H example
+  {{{
+  LoadModule('jsstd');
+  
+  var obj = { a:1 };
+  obj.b = 2;
+  Seal(obj);
+  obj.c = 3; // Error: obj.c is read-only
+}}}
 **/
 DEFINE_FUNCTION_FAST( Seal ) {
 
@@ -222,19 +219,25 @@ DEFINE_FUNCTION_FAST( Seal ) {
 /**doc
 $TOC_MEMBER $INAME
  $VOID $INAME( obj )
-  Removes all properties and elements from _obj_ in a single operation.
+  Remove all properties associated with an object.
+  $H note
+   $INAME removes all of obj's own properties, except the special __proto__ and __parent__ properties, in a single operation. Properties belonging to objects on obj's prototype chain are not affected.
+  $H example
+  {{{
+  LoadModule('jsstd');
+  
+  var obj = { a:1, b:[2,3,4], c:{} };
+  Print( uneval(obj) ); // prints: ({a:1, b:[2, 3, 4], c:{}})
+  
+  Clear(obj);
+  Print( uneval(obj) ); // prints: ({})
+  }}}
 **/
 DEFINE_FUNCTION_FAST( Clear ) {
 
 	J_S_ASSERT_ARG_MIN( 1 );
-	J_S_ASSERT_OBJECT(J_FARG(1));
-
-//	if ( JSVAL_IS_OBJECT( J_FARG(1) ) ) {
-//
-		JS_ClearScope(cx, JSVAL_TO_OBJECT( J_FARG(1) ));
-//		*J_FRVAL = JSVAL_TRUE;
-//	} else
-//		*J_FRVAL = JSVAL_FALSE;
+	J_S_ASSERT_OBJECT( J_FARG(1) );
+	JS_ClearScope(cx, JSVAL_TO_OBJECT( J_FARG(1) ));
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
@@ -245,7 +248,7 @@ DEFINE_FUNCTION_FAST( Clear ) {
 /**doc
 $TOC_MEMBER $INAME
  $OBJ $INAME( obj, scopeObject )
-  Set the scope object of _obj_.
+  Set the scope object of _obj_. Use this function with care.
   $H example 1
   {{{
   function foo() {
@@ -302,7 +305,7 @@ DEFINE_FUNCTION_FAST( SetScope ) {
 	JSObject *o, *p;
 	J_CHK( JS_ValueToObject(cx, J_FARG(1), &o) ); // o = JSVAL_TO_OBJECT(J_FARG(1));
 	J_CHK( JS_ValueToObject(cx, J_FARG(2), &p) ); // p = JSVAL_TO_OBJECT(J_FARG(2));
-	*J_FRVAL = OBJECT_TO_JSVAL(JS_GetParent(cx, o));
+	*J_FRVAL = OBJECT_TO_JSVAL( JS_GetParent(cx, o) );
 	J_CHK( JS_SetParent(cx, o, p) );
 	return JS_TRUE;
 	JL_BAD;
@@ -521,7 +524,6 @@ JSBool ObjectIdGCCallback(JSContext *cx, JSGCStatus status) {
 			}
 		}
 	}
-
 	return prevObjectIdGCCallback ? prevObjectIdGCCallback(cx, status) : JS_TRUE;
 }
 
@@ -572,18 +574,18 @@ DEFINE_FUNCTION_FAST( ObjectToId ) {
 /**doc
 $TOC_MEMBER $INAME
  $INT $INAME( id )
-  Returns the object with the identifier _id_ or undefined if the identifier do not exist or the object has been GCed.
+  Returns the object with the identifier _id_ or undefined if the identifier do not exist or the object has been GCed. It is up to you to keep a reference to the object if you want to keep it through GC cycles.
   $H example 1
   {{{
   var myObj = {};
-  Print( IdToObject(ObjectToId(myObj)) === myObj, '\n' ); // prints true
+  Print( IdToObject( ObjectToId(myObj) ) === myObj ); // prints true
   }}}
   $H example 2
   {{{
   var id = ObjectToId({});
-  Print( IdToObject(id), '\n' ); // prints: [object Object]
+  Print( IdToObject(id) ); // prints: [object Object]
   CollectGarbage();
-  Print( IdToObject(id), '\n' ); // prints: undefined
+  Print( IdToObject(id) ); // prints: undefined
   }}}
 **/
 DEFINE_FUNCTION_FAST( IdToObject ) {
@@ -710,7 +712,7 @@ $TOC_MEMBER $INAME
  $VAL $INAME( xdrBlob )
   Decode (deserialize) XDR (eXternal Data Representation) blob to a JavaScript value.
   $H beware
-   Decoding malformed XDR data can lead the program to crash. This may be a security issue.
+   Decoding malformed XDR data can lead the program to crash. This may be an important security issue. Decode only trusted data.
 **/
 #ifdef JS_HAS_XDR
 DEFINE_FUNCTION_FAST( XdrDecode ) {
@@ -830,12 +832,6 @@ DEFINE_FUNCTION_FAST( MaybeCollectGarbage ) {
 }
 
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//DEFINE_FUNCTION_FAST( Now ) {
-//
-//	JS_NewNumberValue(cx, JS_Now(), &JS_RVAL(cx,vp));
-//	return JS_TRUE;
-//}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
@@ -843,6 +839,15 @@ $TOC_MEMBER $INAME
  $REAL $INAME()
   Returns the current value of a high-resolution time counter in millisecond.
   The returned value is a relative time value.
+  $H example
+  {{{
+  LoadModule('jsstd');
+  LoadModule('jsio');
+  Print( 't0: '+TimeCounter(), '\n' ); // prints: 1743731894.4259675
+  Print( 't1: '+TimeCounter(), '\n' ); // prints: 1743731896.1083043
+  Sleep(100);
+  Print( 't2: '+TimeCounter(), '\n' ); // prints: 1743732003.6174989
+  }}}
 **/
 DEFINE_FUNCTION_FAST( TimeCounter ) {
 
@@ -930,7 +935,12 @@ $TOC_MEMBER $INAME
   }}}
   $H note
    The output can be redirected by redefining the _configuration.stdout function.
-   $H example
+   $H example 1
+   {{{
+   LoadModule('jsstd');
+   Print('Hello', 'World'); // prints: HelloWorld
+   }}}
+	$H example 2
    {{{
    LoadModule('jsstd');
    Print('foo\n'); // prints: foo
@@ -940,22 +950,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Print ) {
 
-	JSObject *globalObject = JS_GetGlobalObject(cx);
-	jsval fct;
-	J_CHK( GetConfigurationValue(cx, NAME_CONFIGURATION_STDOUT, &fct) );
-	if ( JS_TypeOfValue(cx, fct) == JSTYPE_FUNCTION )
-		J_CHK( JS_CallFunctionValue(cx, globalObject, fct, J_ARGC, J_FARGV, J_FRVAL) );
+	jsval fval;
+	J_CHK( GetConfigurationValue(cx, NAME_CONFIGURATION_STDOUT, &fval) );
 	*J_FRVAL = JSVAL_VOID;
-
-/*
-	if ( stdoutFunction == NULL )
-		return JS_TRUE; // nowhere to write, but don't failed
-
-	JS_SET_RVAL(cx, vp, JSVAL_VOID);
-
-	for (uintN i = 0; i < J_ARGC; i++)
-		J_CHK( JS_CallFunction(cx, J_FOBJ, stdoutFunction, 1, &J_FARG(1+i), J_FRVAL) );
-*/
+	if ( JsvalIsFunction(cx, fval) )
+		return JS_CallFunctionValue(cx, JS_GetGlobalObject(cx), fval, J_ARGC, J_FARGV, J_FRVAL);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -987,15 +986,15 @@ static JSScript* LoadScript(JSContext *cx, JSObject *obj, const char *fileName, 
 	strcat( compiledFileName, "xdr" );
 
 	struct stat srcFileStat, compFileStat;
-	bool hasSrcFile = ( stat( fileName, &srcFileStat ) != -1 ) ; // errno == ENOENT
-	bool hasCompFile = ( stat( compiledFileName, &compFileStat ) != -1 );
+	bool hasSrcFile = stat(fileName, &srcFileStat) != -1; // errno == ENOENT
+	bool hasCompFile = stat(compiledFileName, &compFileStat) != -1;
 	bool compFileUpToDate = hasCompFile && !hasSrcFile || hasSrcFile && hasCompFile && (compFileStat.st_mtime > srcFileStat.st_mtime); // true if comp file is up to date or alone
 
 	J_CHKM2( hasSrcFile || hasCompFile, "Unable to load Script, file \"%s\" or \"%s\" not found.", fileName, compiledFileName );
 
 	if ( useCompFile && compFileUpToDate ) {
 
-		int file = open(compiledFileName, O_RDONLY | O_BINARY);
+		int file = open(compiledFileName, O_RDONLY | O_BINARY | O_SEQUENTIAL);
 		J_CHKM1( file != -1, "Unable to open file \"%s\" for reading.", compiledFileName );
 
 		size_t compFileSize = compFileStat.st_size; // filelength(file); ?
@@ -1014,15 +1013,43 @@ static JSScript* LoadScript(JSContext *cx, JSObject *obj, const char *fileName, 
 		free(data);
 		if ( JS_GetScriptVersion(cx, script) < JS_GetVersion(cx) )
 			J_REPORT_WARNING_1("Trying to xdr-decode an old script (%s).", compiledFileName);
-		return script;
+		return script; // Done.
 	} 
 
-	script = JS_CompileFile(cx, obj, fileName);
+// script = JS_CompileFile(cx, obj, fileName);
+
+// shebang support
+	FILE *scriptFile;
+	scriptFile = fopen(fileName, "r");
+	J_CHKM1( scriptFile != NULL, "Script file \"%s\" cannot be opened.", fileName );
+
+	char s, b;
+	s = getc(scriptFile);
+	if ( s == '#' ) {
+
+		b = getc(scriptFile);
+		if ( b == '!' ) {
+
+			ungetc('/', scriptFile);
+			ungetc('/', scriptFile);
+		} else {
+
+			ungetc(b, scriptFile);
+			ungetc(s, scriptFile);
+		}
+	} else {
+
+		ungetc(s, scriptFile);
+	}
+
+	script = JS_CompileFileHandle(cx, obj, fileName, scriptFile);
+	fclose(scriptFile);
+
 	J_CHK( script );
 	if ( !useCompFile )
-		return script;
+		return script; // Done.
 
-	int file = open( compiledFileName, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, 0700 );
+	int file = open(compiledFileName, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY | O_SEQUENTIAL, 0700);
 	if ( file == -1 ) // if the file cannot be write, this is not an error ( eg. read-only drive )
 		return script;
 
@@ -1128,21 +1155,19 @@ $TOC_MEMBER $INAME
 struct SandboxContextPrivate {
 
 	size_t maxExecutionTime;
-//	JSFunction *queryFunction;
 	JSContext *cx;
 	jsval queryFunctionValue;
 };
 
-static JSBool SandboxMaxOperationCallback(JSContext *cx) {
+JSBool SandboxMaxOperationCallback(JSContext *cx) {
 
-	JSObject *branchLimitExceptionObj = JS_NewObject( cx, classOperationLimit, NULL, NULL );
+	JSObject *branchLimitExceptionObj = JS_NewObject(cx, classOperationLimit, NULL, NULL);
 	J_CHK( branchLimitExceptionObj );
-	JS_SetPendingException( cx, OBJECT_TO_JSVAL( branchLimitExceptionObj ) );
-bad:
-	return JS_FALSE;
+	JS_SetPendingException(cx, OBJECT_TO_JSVAL( branchLimitExceptionObj ));
+	JL_BAD;
 }
 
-JLThreadFuncDecl WatchDogThreadProc(void *threadArg) {
+JLThreadFuncDecl SandboxWatchDogThreadProc(void *threadArg) {
 
 	JSContext *scx = (JSContext*)threadArg;
 	SandboxContextPrivate *pv = (SandboxContextPrivate*)JS_GetContextPrivate(scx);
@@ -1151,7 +1176,7 @@ JLThreadFuncDecl WatchDogThreadProc(void *threadArg) {
 	return 0;
 }
 
-static JSBool SandboxQueryFunction(JSContext *scx, uintN argc, jsval *vp) {
+JSBool SandboxQueryFunction(JSContext *scx, uintN argc, jsval *vp) {
 
 	SandboxContextPrivate *pv = (SandboxContextPrivate*)JS_GetContextPrivate(scx);
 	JSContext *cx = pv->cx; // needed to send errors in the right context.
@@ -1175,14 +1200,13 @@ DEFINE_FUNCTION_FAST( SandboxEval ) {
 
 	scx = JS_NewContext(JS_GetRuntime(cx), 8192L); // see host/host.cpp
 	J_CHK( scx );
-	JS_SetOptions(scx, JS_GetOptions(scx) | JSOPTION_DONT_REPORT_UNCAUGHT | JSOPTION_VAROBJFIX | JSOPTION_COMPILE_N_GO | JSOPTION_RELIMIT | JSOPTION_JIT);
+	JS_SetOptions(scx, JS_GetOptions(scx) | JSOPTION_DONT_REPORT_UNCAUGHT | JSOPTION_VAROBJFIX | JSOPTION_XML | JSOPTION_COMPILE_N_GO | JSOPTION_RELIMIT | JSOPTION_JIT);
 
 	JSObject *globalObject;
 	globalObject = JS_NewObject(scx, classSandbox, NULL, NULL);
 	J_CHK( globalObject );
 
 	SandboxContextPrivate pv;
-	JS_SetContextPrivate(scx, &pv);
 	pv.cx = cx;
 
 	if ( J_FARG_ISDEF(2) ) {
@@ -1210,27 +1234,44 @@ DEFINE_FUNCTION_FAST( SandboxEval ) {
 
 	JSOperationCallback prev;
 	prev = JS_SetOperationCallback(scx, SandboxMaxOperationCallback);
-	JLThreadHandler watchDogThread;
-	watchDogThread = JLThreadStart(WatchDogThreadProc, scx);
-	if ( !JLThreadOk(watchDogThread) ) {
-
-		char reason[1024];
-		JLLastSysetmErrorMessage(reason, sizeof(reason));
-		JLThreadCancel(watchDogThread);
-		JLFreeThread(&watchDogThread);
-		J_REPORT_ERROR_1( "Unable to create the thread (%s).", reason );
-	}
 
 	JS_SetGlobalObject(scx, globalObject);
 	JSStackFrame *fp;
 	fp = JS_GetScriptedCaller(cx, NULL);
+	J_CHK( fp );
+	JSScript *script;
+	script = JS_GetFrameScript(cx, fp);
+	J_CHK( script );
+	const char *filename;
+	filename = JS_GetScriptFilename(cx, script);
+	jsbytecode *pc;
+	pc = JS_GetFramePC(cx, fp);
+	uintN lineno;
+	lineno = JS_PCToLineNumber(cx, script, pc);
+
+	JS_SetContextPrivate(scx, &pv);
+
+	JLThreadHandler sandboxWatchDogThread;
+	sandboxWatchDogThread = JLThreadStart(SandboxWatchDogThreadProc, scx);
+	if ( !JLThreadOk(sandboxWatchDogThread) ) {
+
+		char reason[1024];
+		JLLastSysetmErrorMessage(reason, sizeof(reason));
+		J_REPORT_ERROR_1( "Unable to create the thread (%s).", reason );
+	}
+	
 	JSBool ok;
-	ok = JS_EvaluateUCScript(scx, globalObject, src, srclen, fp->script->filename, JS_PCToLineNumber(cx, fp->script, fp->regs->pc), J_FRVAL);
+	ok = JS_EvaluateUCScript(scx, globalObject, src, srclen, filename, lineno, J_FRVAL);
+
+	J_CHK( JLThreadCancel(sandboxWatchDogThread) ); // <- this line make troubles
+	J_CHK( JLWaitThread(sandboxWatchDogThread) );
+	JLFreeThread(&sandboxWatchDogThread);
+
+	JS_SetContextPrivate(scx, NULL);
 
 	prev = JS_SetOperationCallback(scx, prev);
 	J_S_ASSERT( prev == SandboxMaxOperationCallback, "Invalid SandboxMaxOperationCallback handler." );
 
-	J_CHK( JLThreadCancel(watchDogThread) );
 
 //	JSPrincipals principals = { "sandbox context", NULL, NULL, 1, NULL, NULL };
 //	JSBool ok = JS_EvaluateUCScriptForPrincipals(scx, globalObject, &principals, src, srclen, fp->script->filename, JS_PCToLineNumber(cx, fp->script, fp->regs->pc), J_FRVAL);
@@ -1238,18 +1279,17 @@ DEFINE_FUNCTION_FAST( SandboxEval ) {
 	if (!ok) {
 
 		jsval ex;
-		if (JS_GetPendingException(scx, &ex))
+		if ( JS_GetPendingException(scx, &ex) )
 			JS_SetPendingException(cx, ex);
 		else
 			JS_ReportError(cx, "Unexpected error.");
 	}
 
-	JLFreeThread(&watchDogThread);
 	JS_DestroyContextNoGC(scx);
 	return ok;
 
 bad:
-	JLFreeThread(&watchDogThread);
+	JLFreeThread(&sandboxWatchDogThread);
 	if ( scx )
 		JS_DestroyContextNoGC(scx);
 	return JS_FALSE;
@@ -1263,6 +1303,35 @@ $TOC_MEMBER $INAME
   Returns true if _statementString_ is a valid Javascript statement.
   The intent is to support interactive compilation, accumulate lines in a buffer until IsStatementValid returns true, then pass it to an eval.
   This function is useful to write an interactive console.
+  $H example
+  {{{
+  LoadModule('jsstd');
+  LoadModule('jsio');
+
+  global.__defineGetter__('quit', Halt);
+
+  for (;;) {
+
+   Print('js> ');
+
+   var code = '';
+   do {
+
+    code += File.stdin.Read();
+	} while( !IsStatementValid( code ) );
+
+   try {
+
+    var res = eval( code );
+	} catch(ex) {
+
+    Print( ex, '\n' );
+	}
+
+   if ( res != undefined )
+    Print( res, '\n' );
+  }
+  }}}
 **/
 DEFINE_FUNCTION( IsStatementValid ) {
 
@@ -1286,37 +1355,6 @@ DEFINE_FUNCTION( Halt ) {
 
 	return JS_FALSE;
 }
-
-/*
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//
-DEFINE_FUNCTION( StrSet ) {
-
-	J_S_ASSERT_ARG_MIN( 2 );
-
-	const char *chr;
-	size_t charLen;
-	J_JSVAL_TO_STRING_AND_LENGTH( J_ARG(1), chr, charLen );
-
-	unsigned int count;
-	J_CHK( JsvalToUInt(cx, J_ARG(2), &count) );
-
-	char *buf = (char*)JS_malloc(cx, count +1);
-	J_CHK( buf );
-	buf[count] = '\0';
-
-	memset(buf, chr[0], count);
-
-	JSString *jsstr = JS_NewString(cx, buf, count);
-
-	J_CHK( jsstr );
-	*J_RVAL = STRING_TO_JSVAL( jsstr );
-
-	return JS_TRUE;
-}
-*/
-
-
 
 
 /**doc

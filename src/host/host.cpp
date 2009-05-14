@@ -686,7 +686,8 @@ JSBool ExecuteScriptFileName( JSContext *cx, const char *scriptFileName, bool co
 	J_CHKM1( script != NULL, "Unable to compile the script %s.", scriptFileName );
 
 	JSTempValueRooter tvr;
-	JSObject *scrobj = JS_NewScriptObject(cx, script);
+	JSObject *scrobj;
+	scrobj = JS_NewScriptObject(cx, script);
 	JS_PUSH_TEMP_ROOT_OBJECT(cx, scrobj, &tvr);
 
 	// You need to protect a JSScript (via a rooted script object) if and only if a garbage collection can occur between compilation and the start of execution.

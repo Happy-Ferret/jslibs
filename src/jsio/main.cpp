@@ -42,8 +42,11 @@ $MODULE_FOOTER
 
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
-	if ( instanceCount == 0 && !PR_Initialized() )
+	if ( instanceCount == 0 && !PR_Initialized() ) {
+		
 		PR_Init(PR_SYSTEM_THREAD, PR_PRIORITY_NORMAL, 0); // NSPR ignores threads of type PR_SYSTEM_THREAD when determining when a call to PR_Cleanup should return.
+		PR_DisableClockInterrupts();
+	}
 	PR_AtomicIncrement(&instanceCount);
 
 	_unsafeMode = GetHostPrivate(cx)->unsafeMode;
@@ -71,8 +74,10 @@ EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
 EXTERN_C DLLEXPORT void ModuleFree() {
 
 	PR_AtomicDecrement(&instanceCount);
-	if ( instanceCount == 0 && PR_Initialized() )
+	if ( instanceCount == 0 && PR_Initialized() ) {
+
 		PR_Cleanup(); // doc. PR_Cleanup must be called by the primordial thread near the end of the main function. 
+	}
 }
 
 #ifdef XP_WIN

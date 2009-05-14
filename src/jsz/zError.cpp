@@ -153,5 +153,6 @@ JSBool ThrowZError( JSContext *cx, int errorCode, const char *errorMessage ) {
 	JS_SetPendingException( cx, OBJECT_TO_JSVAL( error ) );
 	JS_SetReservedSlot( cx, error, 0, INT_TO_JSVAL(errorCode) );
 	JS_SetReservedSlot( cx, error, 1, STRING_TO_JSVAL(JS_NewStringCopyZ( cx, errorMessage != NULL ? errorMessage : ZConstString(errorCode) )) );
-  return JS_FALSE;
+	J_SAFE( ExceptionSetScriptLocation(cx, error) );
+	JL_BAD;
 }

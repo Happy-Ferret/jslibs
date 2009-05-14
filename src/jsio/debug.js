@@ -1,9 +1,16 @@
 LoadModule('jsstd');
 LoadModule('jsio');
-LoadModule('jsio');
 
 
-Print( uneval(Socket.GetHostsByName('localhost')) );
+try {
+
+	var res = new Process('uryqoiwueyrqoweu');
+} catch( ex if ex instanceof IoError ) {
+
+	Print( ex.filename+':'+ex.lineno, '\n' );
+}
+	
+	
 		
 Halt();
 

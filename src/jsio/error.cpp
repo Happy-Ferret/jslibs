@@ -146,19 +146,6 @@ END_CLASS
 
 JSBool ThrowIoErrorArg( JSContext *cx, PRErrorCode errorCode, PRInt32 osError ) {
 
-/*
-	const char * filename = NULL;
-	uintN lineno;
-  for (JSStackFrame *fp = cx->fp; fp; fp = fp->down)
-      if (fp->script && fp->pc) {
-
-          filename = fp->script->filename;
-          lineno = JS_PCToLineNumber(cx, fp->script, fp->pc);
-          break;
-      }
-	JS_ReportWarning( cx, "ThrowNSPRError %s:%d", filename, lineno );
-*/
-
 #ifdef DEBUG
 	J_REPORT_WARNING( "IoError exception" );
 #endif // DEBUG
@@ -167,7 +154,8 @@ JSBool ThrowIoErrorArg( JSContext *cx, PRErrorCode errorCode, PRInt32 osError ) 
 	JS_SetPendingException( cx, OBJECT_TO_JSVAL( error ) );
 	JS_SetReservedSlot( cx, error, 0, INT_TO_JSVAL(errorCode) );
 	JS_SetReservedSlot( cx, error, 1, INT_TO_JSVAL(osError) );
-	return JS_FALSE;
+	J_SAFE( ExceptionSetScriptLocation(cx, error) );
+	JL_BAD;
 }
 
 

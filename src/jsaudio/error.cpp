@@ -191,5 +191,6 @@ JSBool ThrowOalError( JSContext *cx, ALenum err ) {
 	jsval errVal;
 	J_CHK( IntToJsval(cx, err, &errVal) );
 	J_CHK( JS_SetReservedSlot( cx, error, 0, errVal ) );
+	J_SAFE( ExceptionSetScriptLocation(cx, error) );
 	JL_BAD;
 }

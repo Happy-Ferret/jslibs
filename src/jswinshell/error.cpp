@@ -108,7 +108,8 @@ JSBool WinThrowError( JSContext *cx, DWORD errorCode ) {
 //	J_S_ASSERT( error != NULL, "Unable to create WinError object." );
 	JS_SetPendingException( cx, OBJECT_TO_JSVAL( error ) );
 	JS_SetReservedSlot( cx, error, SLOT_WIN_ERROR_CODE, INT_TO_JSVAL(errorCode) );
-	return JS_FALSE;
+	J_SAFE( ExceptionSetScriptLocation(cx, error) );
+	JL_BAD;
 }
 
 

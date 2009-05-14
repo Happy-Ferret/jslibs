@@ -160,13 +160,13 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	//#endif // XP_WIN
 
 
-	#ifdef XP_WIN
+#ifdef XP_WIN
 	status = SetConsoleCtrlHandler((PHANDLER_ROUTINE)&Interrupt, TRUE);
 	HOST_MAIN_ASSERT( status == TRUE, "Unable to set console handler" );
-	#else
+#else
 	signal(SIGINT,Interrupt);
 	signal(SIGTERM,Interrupt);
-	#endif // XP_WIN
+#endif // XP_WIN
 
 	uint32 maxMem = (uint32)-1; // by default, there are no limit
 	uint32 maxAlloc = (uint32)-1; // by default, there are no limit
@@ -176,9 +176,9 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	size_t maybeGCInterval = 15*1000; // 15 seconds
 	int camelCase = 0; // 0:default, 1:lower, 2:upper
 	
-	#ifdef DEBUG
+#ifdef DEBUG
 	bool debug; debug = false;
-	#endif
+#endif
 
 	// (TBD) use getopt instead ?
 	char** argumentVector = argv;
@@ -234,11 +234,13 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 
 	HOST_MAIN_ASSERT( InitHost(cx, unsafeMode, HostStdout, HostStderr, NULL), "unable to initialize the host." );
 
-	JSObject *globalObject = JS_GetGlobalObject(cx);
+	JSObject *globalObject;
+	globalObject = JS_GetGlobalObject(cx);
 	J_CHK( JS_DefineProperty(cx, globalObject, "endSignal", JSVAL_VOID, EndSignalGetter, EndSignalSetter, JSPROP_SHARED | JSPROP_PERMANENT) );
 
 // script name
-	const char *scriptName = *argumentVector;
+	const char *scriptName;
+	scriptName = *argumentVector;
 	HOST_MAIN_ASSERT( scriptName != NULL, "no script specified" );
 
 	char hostFullPath[PATH_MAX +1];
@@ -273,9 +275,6 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	
 	J_CHK( JS_DefineProperty(cx, globalObject, NAME_GLOBAL_SCRIPT_HOST_PATH, STRING_TO_JSVAL(JS_NewStringCopyZ(cx, hostPath)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
 	J_CHK( JS_DefineProperty(cx, globalObject, NAME_GLOBAL_SCRIPT_HOST_NAME, STRING_TO_JSVAL(JS_NewStringCopyZ(cx, hostName)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
-
-//        JS_SetNewScriptHookProc(JS_GetRuntime(cx), NewScriptHook, NULL);
-//        JS_SetDestroyScriptHookProc(JS_GetRuntime(cx), DestroyScriptHook, NULL);
 
 	int exitValue;
 	jsval rval;
@@ -323,6 +322,8 @@ bad:
 		DestroyHost(cx);
 	return EXIT_FAILURE;
 }
+
+
 
 /**doc
 #summary jshost executable

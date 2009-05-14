@@ -124,7 +124,8 @@ JSBool SqliteThrowError( JSContext *cx, int status, int errorCode, const char *e
 	JS_SetPendingException( cx, OBJECT_TO_JSVAL( error ) );
 	JS_SetReservedSlot( cx, error, SLOT_SQLITE_ERROR_CODE, INT_TO_JSVAL(errorCode) );
 	JS_SetReservedSlot( cx, error, SLOT_SQLITE_ERROR_TEXT, STRING_TO_JSVAL(JS_NewStringCopyZ( cx, errorMsg )) );
-	return JS_FALSE;
+	J_SAFE( ExceptionSetScriptLocation(cx, error) );
+	JL_BAD;
 }
 
 /**doc

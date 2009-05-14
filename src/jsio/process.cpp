@@ -52,17 +52,16 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
-	const char **processArgv = NULL; // keep on top
-
 	J_S_ASSERT_CONSTRUCTING();
 	J_S_ASSERT_THIS_CLASS();
 	J_S_ASSERT_ARG_MIN(1);
-	J_S_ASSERT( !J_ARG_ISDEF(2) || J_ARG_ISDEF(2) && JsvalIsArray(cx, J_ARG(2)), "Invalid 2nd argument" );
+	J_S_ASSERT( !J_ARG_ISDEF(2) || JsvalIsArray(cx, J_ARG(2)), "Invalid 2nd argument" );
 
 	const char *path;
 	J_CHK( JsvalToString(cx, &J_ARG(1), &path) );
 
 	int processArgc;
+	const char **processArgv;
 	if ( J_ARG_ISDEF(2) ) {
 
 		JSIdArray *idArray;
@@ -106,9 +105,8 @@ DEFINE_CONSTRUCTOR() {
 	PR_ProcessAttrSetStdioRedirect(psattr, PR_StandardError, stderr_child);
 	// PR_ProcessAttrSetCurrentDirectory ?
 
-	PRProcess *process;
-	
 	// cf. bug 113095 -  PR_CreateProcess reports success even when it fails to create the process. (https://bugzilla.mozilla.org/show_bug.cgi?id=113095)
+	PRProcess *process;
 	process = PR_CreateProcess(path, (char * const *)processArgv, NULL, psattr); // (TBD) avoid cast to (char * const *)
 
 	PR_DestroyProcessAttr(psattr);
@@ -126,20 +124,20 @@ DEFINE_CONSTRUCTOR() {
 	J_CHKB( process != NULL, bad_throw );
 	J_CHK( JS_SetPrivate(cx, obj, (void*)process) );
 
-	JSObject *fdIn;
-	fdIn = JS_NewObject( cx, classPipe, NULL, NULL );
-	J_CHK( JS_SetReservedSlot(cx, obj, SLOT_PROCESS_STDIN, OBJECT_TO_JSVAL(fdIn)) );
-	J_CHK( JS_SetPrivate( cx, fdIn, stdin_parent ) );
+	JSObject *fdInObj;
+	fdInObj = JS_NewObject( cx, classPipe, NULL, NULL );
+	J_CHK( JS_SetReservedSlot(cx, obj, SLOT_PROCESS_STDIN, OBJECT_TO_JSVAL(fdInObj)) );
+	J_CHK( JS_SetPrivate( cx, fdInObj, stdin_parent ) );
 
-	JSObject *fdOut;
-	fdOut = JS_NewObject( cx, classPipe, NULL, NULL );
-	J_CHK( JS_SetReservedSlot(cx, obj, SLOT_PROCESS_STDOUT, OBJECT_TO_JSVAL(fdOut)) );
-	J_CHK( JS_SetPrivate( cx, fdOut, stdout_parent ) );
+	JSObject *fdOutObj;
+	fdOutObj = JS_NewObject( cx, classPipe, NULL, NULL );
+	J_CHK( JS_SetReservedSlot(cx, obj, SLOT_PROCESS_STDOUT, OBJECT_TO_JSVAL(fdOutObj)) );
+	J_CHK( JS_SetPrivate( cx, fdOutObj, stdout_parent ) );
 
-	JSObject *fdErr;
-	fdErr = JS_NewObject( cx, classPipe, NULL, NULL );
-	J_CHK( JS_SetReservedSlot(cx, obj, SLOT_PROCESS_STDERR, OBJECT_TO_JSVAL(fdErr)) );
-	J_CHK( JS_SetPrivate( cx, fdErr, stderr_parent ) );
+	JSObject *fdErrObj;
+	fdErrObj = JS_NewObject( cx, classPipe, NULL, NULL );
+	J_CHK( JS_SetReservedSlot(cx, obj, SLOT_PROCESS_STDERR, OBJECT_TO_JSVAL(fdErrObj)) );
+	J_CHK( JS_SetPrivate( cx, fdErrObj, stderr_parent ) );
 
 	return JS_TRUE;
 

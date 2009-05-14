@@ -111,5 +111,6 @@ JSBool ThrowCryptError( JSContext *cx, int errorCode ) {
 	JS_SetPendingException( cx, OBJECT_TO_JSVAL( error ) );
 	J_CHK( JS_SetReservedSlot( cx, error, 0, INT_TO_JSVAL(errorCode) ) );
 //	JS_SetReservedSlot( cx, error, 1, errorMessage != NULL ? STRING_TO_JSVAL(JS_NewStringCopyZ( cx, errorMessage )) : JSVAL_VOID );
+	J_SAFE( ExceptionSetScriptLocation(cx, error) );
 	JL_BAD;
 }

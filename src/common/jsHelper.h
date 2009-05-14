@@ -41,6 +41,7 @@ inline NIBufferGet BufferGetInterface( JSContext *cx, JSObject *obj );
 #include <jsstr.h>
 #include <jsscript.h>
 #include <jsxdrapi.h>
+#include <jsdbgapi.h>
 
 
 extern bool _unsafeMode;
@@ -330,7 +331,6 @@ ALWAYS_INLINE void SetHostPrivate( JSContext *cx, HostPrivate *hostPrivate ) {
 
 #define J_S_ASSERT_ALLOC(pointer) \
 	if (unlikely( (pointer) == NULL )) { J_REPORT_WARNING( J__ERRMSG_OUT_OF_MEMORY ); JS_ReportOutOfMemory(cx); return JS_FALSE; } // This does not cause an exception to be thrown.
-
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1242,7 +1242,33 @@ ALWAYS_INLINE JSBool GetPropertyUInt( JSContext *cx, JSObject *obj, const char *
 	JL_BAD;
 }
 
+///////////////////////////////////////////////////////////////////////////////
+// 
 
+ALWAYS_INLINE JSBool ExceptionSetScriptLocation( JSContext *cx, JSObject *obj ) {
+
+	JSStackFrame *fp = NULL;
+	do {
+
+		JS_FrameIterator(cx, &fp);
+	} while ( fp && !JS_GetFramePC(cx, fp) );
+
+	J_CHK( fp );
+	JSScript *script = JS_GetFrameScript(cx, fp);
+	J_CHK( script );
+	const char *filename = JS_GetScriptFilename(cx, script);
+	J_CHK( filename );
+	int lineno = JS_PCToLineNumber(cx, script, JS_GetFramePC(cx, fp));
+
+	jsval tmp;
+	J_CHK( StringToJsval(cx, filename, &tmp) );
+	J_CHK( JS_SetProperty(cx, obj, "fileName", &tmp) );
+	J_CHK( IntToJsval(cx, lineno, &tmp) );
+	J_CHK( JS_SetProperty(cx, obj, "lineNumber", &tmp) );
+
+	return JS_TRUE;
+	JL_BAD;
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 // Serialization

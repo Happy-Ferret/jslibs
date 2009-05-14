@@ -517,7 +517,7 @@ inline unsigned int JLSessionId() {
 	inline JLThreadHandler JLThreadStart( JLThreadRoutine threadRoutine, void *pv ) {
 
 	#if defined XP_WIN
-		return (JLThreadHandler)CreateThread(NULL, 0, threadRoutine, pv, 0, NULL);
+		return CreateThread(NULL, 0, threadRoutine, pv, 0, NULL); // (TBD) need THREAD_TERMINATE ?
 	#elif defined XP_UNIX
 		pthread_t *thread = (pthread_t*)malloc(sizeof(pthread_t));
 		if ( thread == NULL )
@@ -575,8 +575,8 @@ inline unsigned int JLSessionId() {
 		if ( !JLThreadOk(thread) )
 			return false;
 	#if defined XP_WIN
-		DWORD result = WaitForSingleObject( thread, 0 );
-		return result != WAIT_OBJECT_0; // else WAIT_TIMEOUT ?
+		DWORD result = WaitForSingleObject(thread, 0);
+		return result == WAIT_TIMEOUT; // else != WAIT_OBJECT_0 ?
 	#elif defined XP_UNIX
 		int policy;
 		struct sched_param param;
@@ -590,7 +590,7 @@ inline unsigned int JLSessionId() {
 		if ( !JLThreadOk(thread) )
 			return false;
 	#if defined XP_WIN
-		if ( WaitForSingleObject( thread, INFINITE ) != WAIT_OBJECT_0 )
+		if ( WaitForSingleObject(thread, INFINITE) != WAIT_OBJECT_0 )
 			return false;
 	#elif defined XP_UNIX
 		void *status;
