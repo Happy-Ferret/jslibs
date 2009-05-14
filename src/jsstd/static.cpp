@@ -192,7 +192,7 @@ $TOC_MEMBER $INAME
   $H example
   {{{
   LoadModule('jsstd');
-  
+
   var obj = { a:1 };
   obj.b = 2;
   Seal(obj);
@@ -225,10 +225,10 @@ $TOC_MEMBER $INAME
   $H example
   {{{
   LoadModule('jsstd');
-  
+
   var obj = { a:1, b:[2,3,4], c:{} };
   Print( uneval(obj) ); // prints: ({a:1, b:[2, 3, 4], c:{}})
-  
+
   Clear(obj);
   Print( uneval(obj) ); // prints: ({})
   }}}
@@ -1014,7 +1014,7 @@ static JSScript* LoadScript(JSContext *cx, JSObject *obj, const char *fileName, 
 		if ( JS_GetScriptVersion(cx, script) < JS_GetVersion(cx) )
 			J_REPORT_WARNING_1("Trying to xdr-decode an old script (%s).", compiledFileName);
 		return script; // Done.
-	} 
+	}
 
 // script = JS_CompileFile(cx, obj, fileName);
 
@@ -1058,7 +1058,8 @@ static JSScript* LoadScript(JSContext *cx, JSObject *obj, const char *fileName, 
 	J_CHK( JS_XDRScript(xdr, &script) );
 
 	uint32 length;
-	void *buf = JS_XDRMemGetData(xdr, &length);
+	void *buf;
+	buf = JS_XDRMemGetData(xdr, &length);
 	J_CHK( buf );
 	// manage BIG_ENDIAN here ?
 	J_CHK( write(file, buf, length) != -1 ); // On error, -1 is returned, and errno is set appropriately.
@@ -1259,7 +1260,7 @@ DEFINE_FUNCTION_FAST( SandboxEval ) {
 		JLLastSysetmErrorMessage(reason, sizeof(reason));
 		J_REPORT_ERROR_1( "Unable to create the thread (%s).", reason );
 	}
-	
+
 	JSBool ok;
 	ok = JS_EvaluateUCScript(scx, globalObject, src, srclen, filename, lineno, J_FRVAL);
 
