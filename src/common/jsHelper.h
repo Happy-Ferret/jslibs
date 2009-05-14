@@ -1243,7 +1243,7 @@ ALWAYS_INLINE JSBool GetPropertyUInt( JSContext *cx, JSObject *obj, const char *
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-// 
+//
 
 ALWAYS_INLINE JSBool ExceptionSetScriptLocation( JSContext *cx, JSObject *obj ) {
 
@@ -1254,11 +1254,14 @@ ALWAYS_INLINE JSBool ExceptionSetScriptLocation( JSContext *cx, JSObject *obj ) 
 	} while ( fp && !JS_GetFramePC(cx, fp) );
 
 	J_CHK( fp );
-	JSScript *script = JS_GetFrameScript(cx, fp);
+	JSScript *script;
+	script = JS_GetFrameScript(cx, fp);
 	J_CHK( script );
-	const char *filename = JS_GetScriptFilename(cx, script);
+	const char *filename;
+	filename = JS_GetScriptFilename(cx, script);
 	J_CHK( filename );
-	int lineno = JS_PCToLineNumber(cx, script, JS_GetFramePC(cx, fp));
+	int lineno;
+	lineno = JS_PCToLineNumber(cx, script, JS_GetFramePC(cx, fp));
 
 	jsval tmp;
 	J_CHK( StringToJsval(cx, filename, &tmp) );
