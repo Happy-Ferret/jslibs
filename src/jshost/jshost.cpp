@@ -149,7 +149,6 @@ void DestroyScriptHook(JSContext *cx, JSScript *script, void *callerdata) {
 int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[]) for UNICODE
 
 	JSContext *cx = NULL;
-	BOOL status;
 
 	//#ifdef XP_WIN
 	//HANDLE heap = HeapCreate(HEAP_GENERATE_EXCEPTIONS, 1024*1024 * 8, 0);
@@ -161,6 +160,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 
 
 #ifdef XP_WIN
+	BOOL status;
 	status = SetConsoleCtrlHandler((PHANDLER_ROUTINE)&Interrupt, TRUE);
 	HOST_MAIN_ASSERT( status == TRUE, "Unable to set console handler" );
 #else
@@ -175,7 +175,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	bool compileOnly = false;
 	size_t maybeGCInterval = 15*1000; // 15 seconds
 	int camelCase = 0; // 0:default, 1:lower, 2:upper
-	
+
 #ifdef DEBUG
 	bool debug; debug = false;
 #endif
@@ -272,7 +272,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	}
 
 //	RT_HOST_MAIN_ASSERT( name != NULL, "unable to get module FileName." );
-	
+
 	J_CHK( JS_DefineProperty(cx, globalObject, NAME_GLOBAL_SCRIPT_HOST_PATH, STRING_TO_JSVAL(JS_NewStringCopyZ(cx, hostPath)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
 	J_CHK( JS_DefineProperty(cx, globalObject, NAME_GLOBAL_SCRIPT_HOST_NAME, STRING_TO_JSVAL(JS_NewStringCopyZ(cx, hostName)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
 
@@ -374,7 +374,7 @@ The main features are:
  function Exit(code) {
   throw code;
  }
-  
+
  Exit(2);
  }}}
 
@@ -403,7 +403,7 @@ The main features are:
   $H example
   {{{
   for ( var i in arguments ) {
-   
+
    Print( 'argument['+i+'] = '+arguments[i] ,'\n' );
   }
   }}}
