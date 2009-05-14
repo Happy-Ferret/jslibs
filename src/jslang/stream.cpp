@@ -41,7 +41,7 @@ inline JSBool PositionGet( JSContext *cx, JSObject *obj, int *position ) {
 }
 
 
-JSBool StreamRead( JSContext *cx, JSObject *obj, char *buf, unsigned int *amount ) {
+JSBool StreamRead( JSContext *cx, JSObject *obj, char *buf, size_t *amount ) {
 
 	J_S_ASSERT_CLASS(obj, classStream);
 

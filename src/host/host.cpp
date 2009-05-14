@@ -318,7 +318,7 @@ static JSBool LoadModule(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, 
 	J_CHKBM( moduleInit(cx, obj), bad_dl_close, "Unable to initialize the module." );
 
 	jl::QueueUnshift( &pv->moduleList, module ); // LIFO
-	J_CHK( JS_NewNumberValue(cx, (unsigned int)module, rval) ); // really needed ? yes, UnloadModule need this ID
+	J_CHK( JS_NewNumberValue(cx, (unsigned long)module, rval) ); // really needed ? yes, UnloadModule need this ID
 	return JS_TRUE;
 
 bad_dl_close:
