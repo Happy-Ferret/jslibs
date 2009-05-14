@@ -1049,11 +1049,13 @@ static JSScript* LoadScript(JSContext *cx, JSObject *obj, const char *fileName, 
 	if ( !useCompFile )
 		return script; // Done.
 
-	int file = open(compiledFileName, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY | O_SEQUENTIAL, 0700);
+	int file;
+	file = open(compiledFileName, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY | O_SEQUENTIAL, 0700);
 	if ( file == -1 ) // if the file cannot be write, this is not an error ( eg. read-only drive )
 		return script;
 
-	JSXDRState *xdr = JS_XDRNewMem(cx, JSXDR_ENCODE);
+	JSXDRState *xdr;
+	xdr = JS_XDRNewMem(cx, JSXDR_ENCODE);
 	J_CHK( xdr );
 	J_CHK( JS_XDRScript(xdr, &script) );
 
@@ -1105,7 +1107,8 @@ DEFINE_FUNCTION_FAST( Exec ) {
 	J_CHK( script );
 
 	JSTempValueRooter tvr;
-	JSObject *scrobj = JS_NewScriptObject(cx, script);
+	JSObject *scrobj;
+	scrobj = JS_NewScriptObject(cx, script);
 	JS_PUSH_TEMP_ROOT_OBJECT(cx, scrobj, &tvr);
 	JSBool ok;
 	ok = JS_ExecuteScript(cx, J_FOBJ, script, J_FRVAL); // Doc: On successful completion, rval is a pointer to a variable that holds the value from the last executed expression statement processed in the script.
@@ -1155,7 +1158,7 @@ $TOC_MEMBER $INAME
 
 struct SandboxContextPrivate {
 
-	size_t maxExecutionTime;
+	unsigned int maxExecutionTime;
 	JSContext *cx;
 	jsval queryFunctionValue;
 };
