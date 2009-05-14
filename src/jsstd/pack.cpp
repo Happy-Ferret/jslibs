@@ -151,7 +151,7 @@ DEFINE_FUNCTION( ReadInt ) {
 	JSObject *bufferObject;
 	bufferObject = JSVAL_TO_OBJECT( bufferVal );
 
-	size_t size;
+	unsigned int size;
 	J_CHK( JsvalToUInt(cx, J_ARG(1), &size) );
 
 	bool isSigned;
@@ -263,7 +263,7 @@ DEFINE_FUNCTION( WriteInt ) { // incompatible with NIStreamRead
 	jsval jsvalue;
 	jsvalue = J_ARG(1);
 
-	size_t size;
+	unsigned int size;
 	J_CHK( JsvalToUInt(cx, J_ARG(2), &size) );
 
 	bool isSigned;
@@ -382,7 +382,7 @@ DEFINE_FUNCTION( ReadString ) {
 
 	if ( J_ARG_ISDEF(1) ) {
 
-		size_t amount;
+		unsigned int amount;
 		J_CHK( JsvalToUInt(cx, J_ARG(1), &amount) );
 		J_S_ASSERT( amount >= 0, "Invalid amount" );
 		J_CHK( ReadAmount(cx, bufferObject, amount, rval) );
