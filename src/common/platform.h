@@ -170,6 +170,15 @@
 	#include <sys/time.h>
 	#include <dlfcn.h>
 
+	#ifndef O_BINARY
+	#define O_BINARY 0
+	#endif // O_BINARY
+
+	#ifndef O_SEQUENTIAL
+	#define O_SEQUENTIAL 0
+	#endif // O_SEQUENTIAL
+
+
 	#define LLONG long long
 
 	#define DLL_EXT ".so"
@@ -594,7 +603,7 @@ inline unsigned int JLSessionId() {
 			return false;
 	#elif defined XP_UNIX
 		void *status;
-		if ( pthread_join(*thread, &status) != 0 ) // doc. The thread exit status returned by pthread_join() on a canceled thread is PTHREAD_CANCELED. 
+		if ( pthread_join(*thread, &status) != 0 ) // doc. The thread exit status returned by pthread_join() on a canceled thread is PTHREAD_CANCELED.
 			return false;
 	#endif
 		return true;
