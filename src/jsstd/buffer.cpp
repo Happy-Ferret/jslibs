@@ -638,7 +638,8 @@ DEFINE_FUNCTION_FAST( Write ) {
 	*J_FRVAL = JSVAL_VOID;
 	if ( J_FARG_ISDEF(2) ) {
 
-		size_t amount, strLen;
+		size_t strLen;
+		unsigned int amount;
 		const char *buf;
 		J_CHK( JsvalToStringAndLength(cx, &J_FARG(1), &buf, &strLen) ); // warning: GC on the returned buffer !
 
@@ -757,7 +758,7 @@ DEFINE_FUNCTION( Skip ) { // Skip( amount )
 	pv = (BufferPrivate*)JS_GetPrivate(cx, obj);
 	J_S_ASSERT_RESOURCE( pv );
 	J_S_ASSERT_ARG_MIN( 1 );
-	size_t amount;
+	unsigned int amount;
 	J_CHK( JsvalToUInt(cx, J_ARG(1), &amount) );
 	J_S_ASSERT( amount >= 0, "Invalid amount" );
 	size_t prevBufferLength;
