@@ -871,7 +871,7 @@ DEFINE_FUNCTION_FAST( StringRepeat ) {
 
 	J_S_ASSERT_ARG_MIN(2);
 
-	size_t count;
+	unsigned int count;
 	J_CHK( JsvalToUInt(cx, J_FARG(2), &count) );
 	if ( count == 0 ) {
 
