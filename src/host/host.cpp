@@ -228,10 +228,11 @@ static JSBool OperationCallback(JSContext *cx) {
 JLThreadFuncDecl WatchDogThreadProc(void *threadArg) {
 
 	JSContext *cx = (JSContext*)threadArg;
-	size_t *interval = &GetHostPrivate(cx)->maybeGCInterval;
+	HostPrivate *pv = GetHostPrivate(cx);
+	JLReleaseSemaphore(pv->watchDogSem);
 	for (;;) {
 
-		SleepMilliseconds(*interval);
+		SleepMilliseconds(pv->maybeGCInterval);
 		JS_TriggerOperationCallback(cx);
 	}
 }
@@ -246,6 +247,7 @@ static JSBool LoadModule(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, 
 	strcpy( libFileName, fileName );
 	strcat( libFileName, DLL_EXT );
 // MAC OSX: 	'@executable_path' ??
+
 /*
 	while (0) { // namespace management. Avoid using val ns = {}, LoadModule.call(ns, '...');
 
@@ -274,10 +276,9 @@ static JSBool LoadModule(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, 
 		}
 	}
 */
-
 	HostPrivate *pv;
 	pv = GetHostPrivate(cx);
-	J_S_ASSERT( pv != NULL, "Invalid context." );
+	J_S_ASSERT( pv != NULL, "Invalid host context." );
 
 	J_S_ASSERT( libFileName != NULL && *libFileName != '\0', "Invalid module filename." );
 	JLLibraryHandler module;
@@ -291,34 +292,21 @@ static JSBool LoadModule(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, 
 		}
 	);
 
+	for ( jl::QueueCell *it = jl::QueueBegin(&pv->moduleList); it; it = jl::QueueNext(it) )
+		if ( (JLLibraryHandler)jl::QueueGetData(it) == module ) {
+
+			J_CHK( JLDynamicLibraryClose(&module) );
+			*rval = JSVAL_VOID;
+			return JS_TRUE;
+		}
+
 	ModuleInitFunction moduleInit;
 	moduleInit = (ModuleInitFunction)JLDynamicLibrarySymbol(module, NAME_MODULE_INIT);
 	J_CHKBM( moduleInit, bad_dl_close, "Invalid module." );
-
-	bool alreadyLoaded;
-	alreadyLoaded = false;
-
-	for ( jl::QueueCell *it = jl::QueueBegin(&pv->moduleList); it; it = jl::QueueNext(it) ) {
-
-		JLLibraryHandler m = (JLLibraryHandler)jl::QueueGetData(it);
-		if ( m == module ) {
-
-			alreadyLoaded = true;
-			break;
-		}
-	}
-
-	if ( alreadyLoaded ) { // and already init
-
-		J_CHK( JLDynamicLibraryClose(&module) );
-		*rval = JSVAL_VOID;
-		return JS_TRUE;
-	}
-
 	J_CHKBM( moduleInit(cx, obj), bad_dl_close, "Unable to initialize the module." );
 
-	jl::QueueUnshift( &pv->moduleList, module ); // LIFO
-	J_CHK( JS_NewNumberValue(cx, (unsigned long)module, rval) ); // really needed ? yes, UnloadModule need this ID
+	jl::QueueUnshift( &pv->moduleList, module ); // store the module (LIFO)
+	J_CHK( JS_NewNumberValue(cx, (unsigned long)module, rval) ); // really needed ? yes, UnloadModule will need this ID
 	return JS_TRUE;
 
 bad_dl_close:
@@ -446,9 +434,8 @@ JSContext* CreateHost(size_t maxMem, size_t maxAlloc, size_t maybeGCInterval ) {
 	JS_SetGlobalObject(cx, globalObject); // see LAZY_STANDARD_CLASSES
 
 	HostPrivate *pv;
-	pv = (HostPrivate*)malloc(sizeof(HostPrivate));
-	J_CHK( pv ); // out of memory ?
-
+	pv = (HostPrivate*)malloc(sizeof(HostPrivate)); // beware: don't realloc, because WatchDogThreadProc points on it !!!
+	J_S_ASSERT_ALLOC( pv );
 	memset(pv, 0, sizeof(HostPrivate)); // mandatory !
 	SetHostPrivate(cx, pv);
 
@@ -457,8 +444,9 @@ JSContext* CreateHost(size_t maxMem, size_t maxAlloc, size_t maybeGCInterval ) {
 
 		pv->maybeGCInterval = maybeGCInterval;
 		JS_SetOperationCallback(cx, OperationCallback);
+		pv->watchDogSem = JLCreateSemaphore(0);
 		pv->watchDogThread = JLThreadStart(WatchDogThreadProc, cx);
-		J_CHKM( JLThreadOk(pv->watchDogThread), "Unable to create the thread." );
+		J_CHKM( JLSemaphoreOk(pv->watchDogSem) && JLThreadOk(pv->watchDogThread), "Unable to create the thread." );
 	}
 
 	return cx;
@@ -545,6 +533,8 @@ JSBool DestroyHost( JSContext *cx ) {
 
 	if ( JLThreadOk(pv->watchDogThread) ) {
 
+		J_CHK( JLAcquireSemaphore(pv->watchDogSem) ); // prevent thread destruction before it has started
+		J_CHK( JLFreeSemaphore(&pv->watchDogSem) );
 		J_CHK( JLThreadCancel(pv->watchDogThread) );
 		J_CHK( JLWaitThread(pv->watchDogThread) );
 		J_CHK( JLFreeThread(&pv->watchDogThread) ); // beware: it is important to destroy the thread BEFORE destroying the cx !!!
@@ -614,7 +604,7 @@ void HostPrincipalsDestroy(JSContext *cx, JSPrincipals *principals) {
 }
 */
 
-JSBool ExecuteScriptFileName( JSContext *cx, const char *scriptFileName, bool compileOnly, int argc, const char * const * argv, jsval *rval ) {
+JSBool ExecuteScriptFileName( JSContext *cx, const char *scriptFileName, bool compileOnly, int argc, const char * const * argv, jsval *rval ) { // (TBD) support xdr files 
 
 	JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_COMPILE_N_GO | JSOPTION_DONT_REPORT_UNCAUGHT);
 	// JSOPTION_COMPILE_N_GO:

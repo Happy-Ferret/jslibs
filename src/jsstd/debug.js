@@ -2,11 +2,7 @@ LoadModule('jsstd');
 LoadModule('jsio');
 
 
-for ( var i = 0; i < 300; i++ ) {
-	
-	var res = SandboxEval('');
-}
-
+Exec('../../test.js');
 		
 
 Halt(); //////////////////////////////

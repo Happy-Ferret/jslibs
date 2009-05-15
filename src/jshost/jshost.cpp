@@ -175,6 +175,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	bool compileOnly = false;
 	size_t maybeGCInterval = 15*1000; // 15 seconds
 	int camelCase = 0; // 0:default, 1:lower, 2:upper
+	bool bootstrap = false;
 
 #ifdef DEBUG
 	bool debug; debug = false;
@@ -195,23 +196,28 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 				maxAlloc = atol( *argumentVector ) * 1024L * 1024L;
 				break;
 			case 'u': // avoid any runtime checks
-				argumentVector++;
-				HOST_MAIN_ASSERT( *argumentVector, "Missing argument." );
-				unsafeMode = ( atoi( *argumentVector ) != 0 );
+//				argumentVector++;
+//				HOST_MAIN_ASSERT( *argumentVector, "Missing argument." );
+//				unsafeMode = ( atoi( *argumentVector ) != 0 );
+				unsafeMode = true;
 				break;
 			case 'g': // operationLimitGC
 				argumentVector++;
 				HOST_MAIN_ASSERT( *argumentVector, "Missing argument." );
 				maybeGCInterval = atol( *argumentVector ) * 1000; // s to ms
 				break;
-			case 'c':
+			case 'c': // compileOnly
 				compileOnly = true;
 				break;
-			case 'l':
+			case 'l': // camelCase
 				argumentVector++;
 				HOST_MAIN_ASSERT( *argumentVector, "Missing argument." );
 				camelCase = atoi( *argumentVector );
 				break;
+			case 'b': // bootstrap
+				bootstrap = true;
+				break;
+
 		#ifdef DEBUG
 			case 'd': // debug
 				debug = true;
@@ -276,6 +282,17 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	J_CHK( JS_DefineProperty(cx, globalObject, NAME_GLOBAL_SCRIPT_HOST_PATH, STRING_TO_JSVAL(JS_NewStringCopyZ(cx, hostPath)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
 	J_CHK( JS_DefineProperty(cx, globalObject, NAME_GLOBAL_SCRIPT_HOST_NAME, STRING_TO_JSVAL(JS_NewStringCopyZ(cx, hostName)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
 
+	if ( bootstrap ) {
+	
+		jsval tmp;
+		char bootstrapFilename[PATH_MAX +1];
+		strcpy(bootstrapFilename, hostPath);
+		strcat(bootstrapFilename, PATH_SEPARATOR_STRING);
+		strcat(bootstrapFilename, hostName);
+		strcat(bootstrapFilename, ".js"); // (TBD) perhaps find another extension for bootstrap scripts
+		J_CHKM( ExecuteScriptFileName(cx, bootstrapFilename, compileOnly, argc - (argumentVector-argv), argumentVector, &tmp), "Unable to execute the bootstrap." );
+	}
+
 	int exitValue;
 	jsval rval;
 	if ( ExecuteScriptFileName(cx, scriptName, compileOnly, argc - (argumentVector-argv), argumentVector, &rval) == JS_TRUE ) {
@@ -315,6 +332,12 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	signal(SIGINT, SIG_DFL);
 	signal(SIGTERM, SIG_DFL);
 #endif // XP_WIN
+
+#if defined(XP_WIN) && defined(DEBUG)
+	if ( debug ) {
+//		_CrtMemDumpAllObjectsSince(NULL);
+	}
+#endif
 
 	return exitValue;
 bad:

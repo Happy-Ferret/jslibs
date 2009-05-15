@@ -28,6 +28,9 @@ LoadModule('jsstd');
 		var id = LoadModule('jsstd');
 		QA.ASSERT( LoadModule('jsstd'), id, 'reloading the same module' );
 
+/// LoadModule in a namespace [ftrm]
+
+
 
 /// String memory usage (disabled GC) [tr]
 

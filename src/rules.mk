@@ -24,9 +24,9 @@ LDFLAGS += -Wl,-Bdynamic -L../../libs/js/$(INT_DIR) -lmozjs
 #,-lgcc_s
 
 ifeq ($(BITS),64)
-	CFLAGS += -m64
+	CFLAGS += -m64 -fPIC
 else
-        CFLAGS += -m32
+	CFLAGS += -m32
 endif
 
 CFLAGS += $(INCLUDES) $(DEFINES) -fno-exceptions -fno-rtti -felide-constructors

@@ -225,7 +225,8 @@ DEFINE_CALL() {
 	BufferSetAllocators(&resultBuffer, cx, wrapped_JS_malloc, wrapped_JS_free, wrapped_JS_realloc);
 
 	// first length is a guess.
-	size_t length = pv->method == DEFLATE ? (size_t)(12 + 1.001f * pv->stream.avail_in) : (size_t)(1.5f * pv->stream.avail_in); // if DEFLATE, dest. buffer must be at least 0.1% larger than sourceLen plus 12 bytes
+	size_t length;
+	length = pv->method == DEFLATE ? (size_t)(12 + 1.001f * pv->stream.avail_in) : (size_t)(1.5f * pv->stream.avail_in); // if DEFLATE, dest. buffer must be at least 0.1% larger than sourceLen plus 12 bytes
 
 	int xflateStatus;
 	for (;;) {

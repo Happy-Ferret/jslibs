@@ -230,6 +230,10 @@
 			RelativePath=".\debug.js"
 			>
 		</File>
+		<File
+			RelativePath=".\jsiconv_qa.js"
+			>
+		</File>
 	</Files>
 	<Globals>
 	</Globals>

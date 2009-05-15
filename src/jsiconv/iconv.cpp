@@ -121,6 +121,8 @@ DEFINE_CALL() {
 	size_t inLen;
 
 	if ( pv->wFrom ) { // source is wide.
+		
+		// (TBD) check the string size
 
 		JSString *jsstr = JS_ValueToString(cx, J_ARG(1));
 		J_ARG(1) = STRING_TO_JSVAL( jsstr );
@@ -138,6 +140,7 @@ DEFINE_CALL() {
 
 	char *outBuf;
 	size_t outLen;
+
 
 	outLen = inLen + MB_LEN_MAX + 512; // * 3/2; // * 1.5 (we use + MB_LEN_MAX to avoid remainderLen... section to failed with E2BIG)
 	outBuf = (char*)JS_malloc(cx, outLen +1);
@@ -167,7 +170,8 @@ DEFINE_CALL() {
 
 			// (TBD) manage EILSEQ like this ??? :
 			if ( errno == EILSEQ ) { // An invalid multibyte sequence has been encountered in the input.
-
+				
+				// (TBD) manage to add a '?' char
 				inPtr--; // rewind by 1
 				inLeft++;
 				break;
@@ -238,7 +242,7 @@ DEFINE_CALL() {
 
 	if ( pv->wTo ) { // destination is wide.
 		
-		JSString *wstr = JS_NewUCString(cx, (jschar*)outBuf, length / 2);
+		JSString *wstr = JS_NewUCString(cx, (jschar*)outBuf, (length+1) / 2);
 		*J_RVAL = STRING_TO_JSVAL(wstr);
 	} else {
 
@@ -250,12 +254,18 @@ DEFINE_CALL() {
 }
 
 
+
+/**doc
+$TOC_MEMBER $INAME
+ $OBJ $INAME $READONLY
+  Lists locale independent encodings.
+**/
+
 struct IteratorPrivate {
 	JSContext *cx;
 	JSObject *list;
 	size_t listLen;
 };
-
 
 int do_one( unsigned int namescount, const char * const * names, void* data ) {
 
@@ -270,12 +280,6 @@ int do_one( unsigned int namescount, const char * const * names, void* data ) {
 	return 0;
 }
 
-
-/**doc
-$TOC_MEMBER $INAME
- $OBJ $INAME $READONLY
-  Lists locale independent encodings.
-**/
 DEFINE_PROPERTY( list ) {
 
 	if ( JSVAL_IS_VOID( *vp ) ) {

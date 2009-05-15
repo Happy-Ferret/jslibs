@@ -1,7 +1,7 @@
 TARGET     = jsz.so
 SRC        = $(wildcard *.cpp)
-INCLUDES   = -I../../libs/zlib/src
-STATICLIBS = -L../../libs/zlib/src -lz
+INCLUDES   = -I../../libs/zlib/$(INT_DIR)
+STATICLIBS = -L../../libs/zlib/$(INT_DIR) -lz
 SHAREDLIBS =
 DEPENDS    = ../../libs/zlib/Makefile
 

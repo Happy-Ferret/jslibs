@@ -787,8 +787,8 @@ DEFINE_FUNCTION( GetObjectPrivate ) {
 		*J_RVAL = JSVAL_VOID;
 		return JS_TRUE;
 	}
-	unsigned int n;
-	n = (unsigned int)JS_GetPrivate(cx, JSVAL_TO_OBJECT( J_ARG( 1 ) ));
+	unsigned long n;
+	n = (unsigned long)JS_GetPrivate(cx, JSVAL_TO_OBJECT( J_ARG( 1 ) ));
 	J_CHK( JS_NewNumberValue(cx, (double)n, J_RVAL) );
 	return JS_TRUE;
 	JL_BAD;

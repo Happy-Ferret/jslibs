@@ -16,15 +16,7 @@
 #include "../common/stack.h"
 
 #include <errno.h>
-#include <fcntl.h>
-#ifdef XP_WIN
-	#include <io.h>
-#endif
-#ifdef XP_UNIX
-	#include <unistd.h>
-#endif
 #include <string.h>
-#include <sys/stat.h>
 #include <limits.h>
 
 

@@ -1,6 +1,7 @@
 LoadModule('jsstd');
 LoadModule('jsio');
 
+Halt();
 
 try {
 

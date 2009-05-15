@@ -139,10 +139,10 @@ DEFINE_CONSTRUCTOR() {
 	J_S_ASSERT_THIS_CLASS();
 	J_S_ASSERT_ARG_MIN( 2 );
 
-	PRSize size;
+	unsigned int size;
 	J_CHK( JsvalToUInt(cx, J_ARG(2), &size) );
 
-	PRUintn mode;
+	unsigned int mode;
 	mode = PR_IRUSR | PR_IWUSR; // read write permission for owner.
 	if ( J_ARG_ISDEF(3) )
 		J_CHK( JsvalToUInt(cx, J_ARG(3), &mode) );
@@ -226,7 +226,7 @@ DEFINE_FUNCTION_FAST( Write ) {
 	pv = (ClassPrivate*)JS_GetPrivate(cx, J_FOBJ);
 	J_S_ASSERT_RESOURCE( pv );
 
-	PRSize offset;
+	unsigned int offset;
 	offset = 0;
 	if ( J_FARG_ISDEF(2) )
 		J_CHK( JsvalToUInt(cx, J_FARG(2), &offset) );

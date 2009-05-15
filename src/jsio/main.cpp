@@ -62,6 +62,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	INIT_CLASS( Semaphore );
 	INIT_CLASS( Process );
 	INIT_STATIC();
+
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -76,9 +77,10 @@ EXTERN_C DLLEXPORT void ModuleFree() {
 	PR_AtomicDecrement(&instanceCount);
 	if ( instanceCount == 0 && PR_Initialized() ) {
 
-		PR_Cleanup(); // doc. PR_Cleanup must be called by the primordial thread near the end of the main function. 
+		PRStatus status = PR_Cleanup(); // doc. PR_Cleanup must be called by the primordial thread near the end of the main function. 
 	}
 }
+
 
 #ifdef XP_WIN
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {

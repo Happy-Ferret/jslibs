@@ -106,6 +106,7 @@ DEFINE_CONSTRUCTOR() {
 	// PR_ProcessAttrSetCurrentDirectory ?
 
 	// cf. bug 113095 -  PR_CreateProcess reports success even when it fails to create the process. (https://bugzilla.mozilla.org/show_bug.cgi?id=113095)
+	// workaround: check the rights and execution flag before runiong the file
 	PRProcess *process;
 	process = PR_CreateProcess(path, (char * const *)processArgv, NULL, psattr); // (TBD) avoid cast to (char * const *)
 

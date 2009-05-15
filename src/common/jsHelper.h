@@ -29,6 +29,11 @@ inline NIBufferGet BufferGetInterface( JSContext *cx, JSObject *obj );
 //#include <float.h>
 #include <cstring>
 #include <stdarg.h>
+#include <sys/stat.h>
+#ifdef XP_WIN
+	#include <io.h>
+#endif
+#include <fcntl.h>
 
 // JavaScript engine includes
 #include <jsnum.h>
@@ -57,7 +62,8 @@ typedef int (*HostOutput)( void *privateData, const char *buffer, size_t length 
 struct HostPrivate {
 
 	void *privateData;
-	size_t maybeGCInterval; // beware: don't realloc, because WatchDogThreadProc points on it !!!
+	size_t maybeGCInterval;
+	JLSemaphoreHandler watchDogSem;
 	JLThreadHandler watchDogThread;
 	bool unsafeMode;
 	HostOutput hostStdOut;
@@ -591,15 +597,123 @@ ALWAYS_INLINE JSBool JL_ValueOf( JSContext *cx, jsval *val, jsval *rval ) {
 		return JS_TRUE;
 	}
 	//J_CHK( JS_CallFunctionName(cx, JSVAL_TO_OBJECT(*val), "valueOf", 0, NULL, rval) );
-	J_CHK( OBJ_DEFAULT_VALUE(cx, JSVAL_TO_OBJECT(*val), JSTYPE_VOID, rval) );
-	return JS_TRUE;
-	JL_BAD;
+	return OBJ_DEFAULT_VALUE(cx, JSVAL_TO_OBJECT(*val), JSTYPE_VOID, rval);
 }
 
 
 ALWAYS_INLINE bool MaybeRealloc( int requested, int received ) {
 
 	return requested != 0 && (128 * received / requested < 115) && (requested - received > 32); // instead using percent, I use per-128
+}
+
+
+// XDR and bytecode compatibility:
+//   Backward compatibility is when you run old bytecode on a new engine, and that should work.
+//   What you seem to want is forward compatibility, which is new bytecode on an old engine, which is nothing we've ever promised.
+// year 2038 bug :
+//   Later than midnight, January 1, 1970, and before 19:14:07 January 18, 2038, UTC ( see _stat64 )
+// note:
+//	You really want to use Script.prototype.thaw and Script.prototype.freeze.  At
+//	least imitate their implementations in jsscript.c (script_thaw and
+//	script_freeze).  But you might do better to call these via JS_CallFunctionName
+//	on your script object.
+//
+//	/be
+ALWAYS_INLINE JSScript* JLLoadScript(JSContext *cx, JSObject *obj, const char *fileName, bool useCompFile) {
+
+	JSScript *script = NULL;
+
+	char compiledFileName[PATH_MAX];
+	strcpy( compiledFileName, fileName );
+	strcat( compiledFileName, "xdr" );
+
+	struct stat srcFileStat, compFileStat;
+	bool hasSrcFile = stat(fileName, &srcFileStat) != -1; // errno == ENOENT
+	bool hasCompFile = stat(compiledFileName, &compFileStat) != -1;
+	bool compFileUpToDate = hasCompFile && !hasSrcFile || hasSrcFile && hasCompFile && (compFileStat.st_mtime > srcFileStat.st_mtime); // true if comp file is up to date or alone
+
+	J_CHKM2( hasSrcFile || hasCompFile, "Unable to load Script, file \"%s\" or \"%s\" not found.", fileName, compiledFileName );
+
+	if ( useCompFile && compFileUpToDate ) {
+
+		int file = open(compiledFileName, O_RDONLY | O_BINARY | O_SEQUENTIAL);
+		J_CHKM1( file != -1, "Unable to open file \"%s\" for reading.", compiledFileName );
+
+		int compFileSize = compFileStat.st_size; // filelength(file); ?
+		void *data = malloc(compFileSize); // (TBD) free on error
+		int readCount = read( file, data, compFileSize ); // here we can use "Memory-Mapped I/O Functions" ( http://developer.mozilla.org/en/docs/NSPR_API_Reference:I/O_Functions#Memory-Mapped_I.2FO_Functions )
+		J_CHKM1( readCount != -1 && readCount == compFileSize, "Unable to read the file \"%s\" ", compiledFileName );
+		close( file );
+
+		JSXDRState *xdr = JS_XDRNewMem(cx, JSXDR_DECODE);
+		J_CHK( xdr );
+		JS_XDRMemSetData(xdr, data, compFileSize);
+		J_CHK( JS_XDRScript(xdr, &script) );
+		// (TBD) manage BIG_ENDIAN here ?
+		JS_XDRMemSetData(xdr, NULL, 0);
+		JS_XDRDestroy(xdr);
+		free(data);
+		if ( JS_GetScriptVersion(cx, script) < JS_GetVersion(cx) )
+			J_REPORT_WARNING_1("Trying to xdr-decode an old script (%s).", compiledFileName);
+		return script; // Done.
+	}
+
+// script = JS_CompileFile(cx, obj, fileName);
+
+// shebang support
+	FILE *scriptFile;
+	scriptFile = fopen(fileName, "r");
+	J_CHKM1( scriptFile != NULL, "Script file \"%s\" cannot be opened.", fileName );
+
+	char s, b;
+	s = getc(scriptFile);
+	if ( s == '#' ) {
+
+		b = getc(scriptFile);
+		if ( b == '!' ) {
+
+			ungetc('/', scriptFile);
+			ungetc('/', scriptFile);
+		} else {
+
+			ungetc(b, scriptFile);
+			ungetc(s, scriptFile);
+		}
+	} else {
+
+		ungetc(s, scriptFile);
+	}
+
+	script = JS_CompileFileHandle(cx, obj, fileName, scriptFile);
+	fclose(scriptFile);
+
+	J_CHK( script );
+	if ( !useCompFile )
+		return script; // Done.
+
+	int file;
+	file = open(compiledFileName, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY | O_SEQUENTIAL, srcFileStat.st_mode); // (TBD) check the mode
+	if ( file == -1 ) // if the file cannot be write, this is not an error ( eg. read-only drive )
+		return script;
+
+	JSXDRState *xdr;
+	xdr = JS_XDRNewMem(cx, JSXDR_ENCODE);
+	J_CHK( xdr );
+	J_CHK( JS_XDRScript(xdr, &script) );
+
+	uint32 length;
+	void *buf;
+	buf = JS_XDRMemGetData(xdr, &length);
+	J_CHK( buf );
+	// manage BIG_ENDIAN here ?
+	J_CHK( write(file, buf, length) != -1 ); // On error, -1 is returned, and errno is set appropriately.
+	J_CHK( close(file) == 0 );
+	JS_XDRDestroy(xdr);
+	return script;
+
+bad:
+	// report a warning ?
+	return script;
 }
 
 
@@ -1035,6 +1149,7 @@ ALWAYS_INLINE JSBool DoubleToJsval( JSContext *cx, double d, jsval *val ) {
 }
 
 
+
 ///////////////////////////////////////////////////////////////////////////////
 // vector convertion functions
 
@@ -1242,6 +1357,8 @@ ALWAYS_INLINE JSBool GetPropertyUInt( JSContext *cx, JSObject *obj, const char *
 	JL_BAD;
 }
 
+
+
 ///////////////////////////////////////////////////////////////////////////////
 //
 
@@ -1272,6 +1389,8 @@ ALWAYS_INLINE JSBool ExceptionSetScriptLocation( JSContext *cx, JSObject *obj ) 
 	return JS_TRUE;
 	JL_BAD;
 }
+
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // Serialization
@@ -1343,6 +1462,7 @@ ALWAYS_INLINE jsid StringToJsid( JSContext *cx, const char *cstr ) {
 bad:
 	return 0;
 }
+
 
 
 ///////////////////////////////////////////////////////////////////////////////
