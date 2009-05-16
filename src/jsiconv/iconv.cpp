@@ -280,6 +280,7 @@ int do_one( unsigned int namescount, const char * const * names, void* data ) {
 	return 0;
 }
 
+
 DEFINE_PROPERTY( list ) {
 
 	if ( JSVAL_IS_VOID( *vp ) ) {
@@ -292,6 +293,19 @@ DEFINE_PROPERTY( list ) {
 	}
 	return JS_TRUE;
 	JL_BAD;
+}
+
+DEFINE_PROPERTY( version ) {
+
+	if ( JSVAL_IS_VOID( *vp ) ) {
+
+		char versionStr[16];
+		itoa( _LIBICONV_VERSION >> 8, versionStr, 10 );
+		strcat(versionStr, ".");
+		itoa( _LIBICONV_VERSION & 0xFF, versionStr + strlen(versionStr), 10 );
+		return StringToJsval(cx, versionStr, vp);
+	}
+	return JS_TRUE;
 }
 
 
@@ -307,6 +321,7 @@ CONFIGURE_CLASS
 
 	BEGIN_STATIC_PROPERTY_SPEC
 		PROPERTY_READ_STORE( list )
+		PROPERTY_READ_STORE( version )
 	END_STATIC_PROPERTY_SPEC
 
 END_CLASS

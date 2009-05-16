@@ -1,6 +1,8 @@
 LoadModule('jsstd');
 LoadModule('jsiconv');
 
+Print( Iconv.version );
+
 var conv = new Iconv('UCS-2-INTERNAL', 'ISO-8859-1', true, false); // source is not wide, dest is wide
 
 var src = [ String.fromCharCode(c) for each ( c in [256, 300, 65000] ) ].join('');
