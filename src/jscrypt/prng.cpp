@@ -109,7 +109,7 @@ DEFINE_CALL() {
 	pv = (PrngPrivate *)JS_GetPrivate( cx, thisObj );
 	J_S_ASSERT_RESOURCE( pv );
 
-	size_t readCount;
+	unsigned int readCount;
 	J_CHK( JsvalToUInt(cx, argv[0], &readCount) );
 
 	char *pr;
@@ -166,7 +166,7 @@ DEFINE_FUNCTION( AutoEntropy ) {
 	pv = (PrngPrivate *)JS_GetPrivate( cx, obj );
 	J_S_ASSERT_RESOURCE( pv );
 
-	size_t bits;
+	unsigned int bits;
 	J_CHK( JsvalToUInt(cx, argv[0], &bits) );
 	int err;
 	err = rng_make_prng( bits, find_prng(pv->prng.name), &pv->state, NULL );

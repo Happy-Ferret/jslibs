@@ -4,7 +4,6 @@ TARGET_FILES=$(INT_DIR)libz.a
 
 ifeq ($(BITS),64)
 	CFLAGS+=-fPIC
-#-L/usr/lib64 
 endif
 
 $(TARGET_FILES):

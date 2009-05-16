@@ -4,7 +4,7 @@ TARGET_FILES = $(INT_DIR)libtommath.a
 
 $(TARGET_FILES):
 	mkdir -p $(INT_DIR)
-	$(MAKE) -C ./src/ default
+	CFLAGS="-fPIC" $(MAKE) -C ./src/ default
 	mv ./src/libtommath.a $(INT_DIR)
 	$(MAKE) -C ./src/ clean
 
