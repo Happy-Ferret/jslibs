@@ -2,15 +2,16 @@ include ../subdirs.mk
 
 TARGET_FILES=$(INT_DIR)libz.a
 
-CFLAGS += -fPIC
+ifeq ($(BITS),64)
+	CFLAGS+=-fPIC
+#-L/usr/lib64 
+endif
 
-./src/Makefile:
-	cd ./src/ && ./configure
-
-$(TARGET_FILES): ./src/Makefile
-	$(MAKE) -C ./src/ 
+$(TARGET_FILES):
+	cd ./src/ && ./configure --libdir=/usr/lib64
+	$(MAKE) -C ./src/ clean all CFLAGS=$(CFLAGS)
 	mkdir -p $(INT_DIR)
-	cp ./src/libz.a ./src/zlib.h $(INT_DIR)
+	cp ./src/libz.a ./src/zlib.h ./src/zconf.h $(INT_DIR)
 	$(MAKE) -C ./src/ clean distclean
 
 all:: $(TARGET_FILES)
