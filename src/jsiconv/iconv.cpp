@@ -300,9 +300,9 @@ DEFINE_PROPERTY( version ) {
 	if ( JSVAL_IS_VOID( *vp ) ) {
 
 		char versionStr[16];
-		itoa( _LIBICONV_VERSION >> 8, versionStr, 10 );
-		strcat(versionStr, ".");
-		itoa( _LIBICONV_VERSION & 0xFF, versionStr + strlen(versionStr), 10 );
+		strcpy( versionStr, IntegerToString( _LIBICONV_VERSION >> 8, 10 ) );
+		strcat( versionStr, ".");
+		strcat( versionStr, IntegerToString( _LIBICONV_VERSION & 0xFF, 10 ) );
 		return StringToJsval(cx, versionStr, vp);
 	}
 	return JS_TRUE;
