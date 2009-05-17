@@ -252,7 +252,6 @@ function LaunchTests(itemList, cfg) {
 
 			try {
 
-				var m0 = privateMemoryUsage;
 				var t0 = TimeCounter();
 				for ( var i = cfg.repeatEachTest; i && !endSignal ; --i ) {
 
@@ -261,8 +260,7 @@ function LaunchTests(itemList, cfg) {
 						break;
 				}
 				var t1 = TimeCounter() - t0;
-				var m1 = privateMemoryUsage - m0;
-				cfg.quiet || Print( '  ...('+(t1/cfg.repeatEachTest).toFixed(1) + 'ms, '+ cfg.repeatEachTest +'x '+ (m1/1024/cfg.repeatEachTest).toFixed(1)+'KB)' );
+				cfg.quiet || Print( ' ...('+(t1/cfg.repeatEachTest).toFixed(1) + 'ms)' );
 			} catch(ex) {
 
 				CommonReportIssue(cx, 'EXCEPTION', cx.item.file+':'+(ex.lineNumber - cx.item.relativeLineNumber), cx.item.name, '', ex );
@@ -270,13 +268,8 @@ function LaunchTests(itemList, cfg) {
 
 			disableGarbageCollection = false;
 			gcZeal = 0;
-
+			
 			cfg.noGcBetweenTests || CollectGarbage();
-
-			var m2 = privateMemoryUsage - m0;
-			if ( m2 > 0 )
-				cfg.quiet || Print( '... leak: '+(m2/1024)+'KB');
-
 			cfg.quiet || Print('\n');
 
 		}
