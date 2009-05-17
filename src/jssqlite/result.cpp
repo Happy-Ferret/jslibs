@@ -377,39 +377,28 @@ DEFINE_FUNCTION( Row ) {
 }
 
 
-DEFINE_FUNCTION( next ) { // for details, see Row() function thet is the base of this function.
 
-	sqlite3_stmt *pStmt = (sqlite3_stmt *)JS_GetPrivate( cx, obj );
+DEFINE_FUNCTION_FAST( next ) { // for details, see Row() function thet is the base of this function.
+
+	sqlite3_stmt *pStmt = (sqlite3_stmt*)JS_GetPrivate(cx, J_FOBJ);
 	J_S_ASSERT_RESOURCE( pStmt );
-	J_CHK( _Step(cx, obj, 0, NULL, rval) );
-	if ( *rval == JSVAL_FALSE ) // means SQLITE_DONE
+	J_CHK( _Step(cx, J_FOBJ, 0, NULL, J_FRVAL) );
+	if ( *J_FRVAL == JSVAL_FALSE ) // means SQLITE_DONE
 		return JS_ThrowStopIteration(cx);
-
 	JSObject *row;
 	row = JS_NewObject(cx, NULL, NULL, NULL);
-	*rval = OBJECT_TO_JSVAL(row);
+	*J_FRVAL = OBJECT_TO_JSVAL(row);
 	int columnCount;
 	columnCount = sqlite3_data_count(pStmt);
-	
-	JSTempValueRooter tvr;
-	JS_PUSH_SINGLE_TEMP_ROOT(cx, JSVAL_NULL, &tvr);
-
+	jsval tmp;
 	for ( int col = 0; col < columnCount; ++col ) {
 
-		J_CHKB( SqliteColumnToJsval(cx, pStmt, col, &tvr.u.value ), bad_poproot );
-		J_CHKB( JS_SetProperty( cx, row, sqlite3_column_name( pStmt, col ), &tvr.u.value ), bad_poproot );
+		J_CHK( SqliteColumnToJsval(cx, pStmt, col, &tmp) );
+		J_CHK( JS_SetProperty(cx, row, sqlite3_column_name(pStmt, col), &tmp) );
 	}
-
-	JS_POP_TEMP_ROOT(cx, &tvr);
 	return JS_TRUE;
-
-bad_poproot:
-	JS_POP_TEMP_ROOT(cx, &tvr);
-bad:
-	return JS_FALSE;
+	JL_BAD;
 }
-
-
 
 
 /**doc
@@ -578,7 +567,7 @@ CONFIGURE_CLASS
 		FUNCTION( Close )
 		FUNCTION( Col )
 		FUNCTION( Row )
-		FUNCTION( next )
+		FUNCTION_FAST( next )
 	END_FUNCTION_SPEC
 
 	HAS_PRIVATE
