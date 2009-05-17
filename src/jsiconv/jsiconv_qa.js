@@ -92,11 +92,11 @@ LoadModule('jsiconv');
 	var res = conv('z');
 	QA.ASSERT( res.length, 1, '"z" UC string length' );
 	
-		var conv = new Iconv('UCS-2-INTERNAL', 'ISO-8859-1', true, false); // source is not wide, dest is wide
+	var conv = new Iconv('UCS-2-INTERNAL', 'ISO-8859-1', true, false); // source is not wide, dest is wide
 	var res = conv('été');
 	QA.ASSERT( res.length, 3, '"été" UC string length' );
 
-	QA.ASSERT( res, 'été, 'string test' );
+	QA.ASSERT( res, 'été', 'string test' );
 
 
 /// store UCS-2-INTERNAL to JS unicode
