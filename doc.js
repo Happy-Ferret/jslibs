@@ -67,6 +67,10 @@ var api = {
 			if ( res[1] == 'GET_PROPERTY' ) {
 		
 				cx.center = '*_[N] operator_*';
+			} else {				
+			if ( res[1] == 'ITERATOR_OBJECT' ) {
+		
+				cx.center = '*_iterator_*';
 			} else
 			if ( res[1] == 'CONSTRUCTOR' ) {
 			

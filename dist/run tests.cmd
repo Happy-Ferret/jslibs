@@ -1,3 +1,3 @@
 set PATH=%PATH%;%CD%\bin
-jshost tests\qa.js ".*" arg2 arg3 arg4
+jshost -u qa.js -dir ./tests ".*" arg1 arg2 arg3
 pause

@@ -630,7 +630,7 @@ ALWAYS_INLINE JSScript* JLLoadScript(JSContext *cx, JSObject *obj, const char *f
 	struct stat srcFileStat, compFileStat;
 	bool hasSrcFile = stat(fileName, &srcFileStat) != -1; // errno == ENOENT
 	bool hasCompFile = stat(compiledFileName, &compFileStat) != -1;
-	bool compFileUpToDate = hasCompFile && !hasSrcFile || hasSrcFile && hasCompFile && (compFileStat.st_mtime > srcFileStat.st_mtime); // true if comp file is up to date or alone
+	bool compFileUpToDate = ( hasCompFile && !hasSrcFile ) || ( hasCompFile && hasSrcFile && (compFileStat.st_mtime > srcFileStat.st_mtime) ); // true if comp file is up to date or alone
 
 	J_CHKM2( hasSrcFile || hasCompFile, "Unable to load Script, file \"%s\" or \"%s\" not found.", fileName, compiledFileName );
 
@@ -731,6 +731,7 @@ ALWAYS_INLINE bool JL_RegisterNativeClass( JSContext *cx, JSClass *jsClass ) {
 
 ALWAYS_INLINE JSClass *JL_GetRegistredNativeClass( JSContext *cx, const char *className ) {
 
+	// see js_FindClassObject impl.
 	JSClass *jsClass;
 	for ( jl::QueueCell *it = jl::QueueBegin(&GetHostPrivate(cx)->registredNativeClasses); it; it = jl::QueueNext(it) ) {
 
