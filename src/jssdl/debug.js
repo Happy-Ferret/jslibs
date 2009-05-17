@@ -22,7 +22,7 @@ var image = svg.RenderImage(32,32);
 Print( GetVideoModeList(8, FULLSCREEN).join('\n') );
 //Halt();
 
-SetIcon(image);
+icon = image;
 
 //GlSetAttribute( GL_SWAP_CONTROL, 1 ); // vsync
 

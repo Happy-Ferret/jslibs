@@ -37,7 +37,7 @@ ALWAYS_INLINE JSClass* TrimeshJSClass( JSContext *cx ) {
 //	if (unlikely( jsClass == NULL ))
 //		jsClass = JL_GetRegistredNativeClass(cx, "Blob");
 //	return jsClass;
-	return JL_GetRegistredNativeClass(cx, "Blob");
+	return JL_GetRegistredNativeClass(cx, "Trimesh");
 }
 
 
