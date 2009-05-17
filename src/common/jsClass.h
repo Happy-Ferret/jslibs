@@ -108,6 +108,7 @@ struct JSLIBS_ConstIntegerSpec {
 #define DEFINE_GET_OBJECT_OPS() static JSObjectOps* GetObjectOps(JSContext *cx, JSClass *clasp)
 #define DEFINE_CHECK_ACCESS() static JSBool CheckAccess(JSContext *cx, JSObject *obj, jsval id, JSAccessMode mode, jsval *vp)
 #define DEFINE_XDR() static JSBool XDRObject(JSXDRState *xdr, JSObject **objp)
+#define DEFINE_ITERATOR_OBJECT() static JSObject* IteratorObject(JSContext *cx, JSObject *obj, JSBool keysonly)
 
 // class configuration
 #define HAS_PRIVATE   _class->flags |= JSCLASS_HAS_PRIVATE;
@@ -139,6 +140,8 @@ struct JSLIBS_ConstIntegerSpec {
 #define HAS_CHECK_ACCESS   _class->checkAccess = CheckAccess;
 #define IS_GLOBAL  _class->flags |= JSCLASS_IS_GLOBAL;
 #define HAS_XDR _class->xdrObject = XDRObject;
+#define HAS_ITERATOR_OBJECT _xclass.base.flags |= JSCLASS_IS_EXTENDED; _xclass.iteratorObject = IteratorObject;
+
 
 #define REVISION(REV) (_revision = INT_TO_JSVAL(REV));
 

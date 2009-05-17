@@ -166,10 +166,33 @@ JSBool SqliteColumnToJsval( JSContext *cx, sqlite3_stmt *pStmt, int iCol, jsval 
 /**doc
 $CLASS_HEADER
 $SVN_REVISION $Revision$
- A Result object is used to store a compiled SQL statement ready to be executed.
- $LF
+ A Result object is used to store a compiled SQL statement ready to be executed.$LF
  When a statement has been prepared with Database.*Query* function, you need to execute it ( with *Step* function ) before any data can be read.
- However, some properties (like *columnCount*, ... ) can be read before the first *Step* has been done.
+ However, some properties (like *columnCount*, ... ) can be read before the first *Step* has been done.$LF
+ A result has the ability to be iterated through a  _for each..in_  loop (_for..in_ loop is note supported).
+ $H example 1
+  {{{
+  var db = new Database(); // in-memory database
+  db.Exec('create table t1 (name,value);');
+  db.Exec('insert into t1 (name,value) values ("red","#F00")');
+  db.Exec('insert into t1 (name,value) values ("green","#0F0")');
+  db.Exec('insert into t1 (name,value) values ("blue","#00F")');
+  
+  for each ( row in db.Query('SELECT * from t1') )
+   Print( row.name + ' = ' + row.value, '\n' );
+  }}}
+  prints:
+  {{{
+  red = #F00
+  green = #0F0
+  blue = #00F
+  }}}
+
+ $H example 2
+  {{{
+  Print( [ color.name for each ( color in db.Query('SELECT * from t1') ) ] ); // prints: red,green,blue
+  }}}
+
  $H note
   You cannot construct this class.
 **/
@@ -345,13 +368,48 @@ DEFINE_FUNCTION( Row ) {
 		J_CHK( SqliteColumnToJsval(cx, pStmt, col, &colJsValue ) ); // if something goes wrong in SqliteColumnToJsval, error report has already been set.
 
 		if ( namedRows )
-			JS_SetProperty( cx, row, sqlite3_column_name( pStmt, col ), &colJsValue );
+			J_CHK( JS_SetProperty( cx, row, sqlite3_column_name( pStmt, col ), &colJsValue ) );
 		else
-			JS_DefineElement( cx, row, col, colJsValue, NULL, NULL, JSPROP_ENUMERATE );
+			J_CHK( JS_DefineElement( cx, row, col, colJsValue, NULL, NULL, JSPROP_ENUMERATE ) );
 	}
 	return JS_TRUE;
 	JL_BAD;
 }
+
+
+DEFINE_FUNCTION( next ) { // for details, see Row() function thet is the base of this function.
+
+	sqlite3_stmt *pStmt = (sqlite3_stmt *)JS_GetPrivate( cx, obj );
+	J_S_ASSERT_RESOURCE( pStmt );
+	J_CHK( _Step(cx, obj, 0, NULL, rval) );
+	if ( *rval == JSVAL_FALSE ) // means SQLITE_DONE
+		return JS_ThrowStopIteration(cx);
+
+	JSObject *row;
+	row = JS_NewObject(cx, NULL, NULL, NULL);
+	*rval = OBJECT_TO_JSVAL(row);
+	int columnCount;
+	columnCount = sqlite3_data_count(pStmt);
+	
+	JSTempValueRooter tvr;
+	JS_PUSH_SINGLE_TEMP_ROOT(cx, JSVAL_NULL, &tvr);
+
+	for ( int col = 0; col < columnCount; ++col ) {
+
+		J_CHKB( SqliteColumnToJsval(cx, pStmt, col, &tvr.u.value ), bad_poproot );
+		J_CHKB( JS_SetProperty( cx, row, sqlite3_column_name( pStmt, col ), &tvr.u.value ), bad_poproot );
+	}
+
+	JS_POP_TEMP_ROOT(cx, &tvr);
+	return JS_TRUE;
+
+bad_poproot:
+	JS_POP_TEMP_ROOT(cx, &tvr);
+bad:
+	return JS_FALSE;
+}
+
+
 
 
 /**doc
@@ -482,6 +540,21 @@ DEFINE_SET_PROPERTY() {
 	return JS_TRUE;
 }
 
+DEFINE_EQUALITY() {
+
+	*bp = JS_FALSE;
+	return JS_TRUE;
+}
+
+DEFINE_ITERATOR_OBJECT() {
+
+	J_S_ASSERT( !keysonly, "Only for each..in is supported." );
+	return obj;
+bad:
+	return NULL;
+}
+
+
 CONFIGURE_CLASS
 
 	REVISION(SvnRevToInt("$Revision$"))
@@ -489,6 +562,8 @@ CONFIGURE_CLASS
 	HAS_FINALIZE
 	HAS_SET_PROPERTY
 	HAS_DEL_PROPERTY
+	HAS_ITERATOR_OBJECT
+	HAS_EQUALITY
 
 	BEGIN_PROPERTY_SPEC
 		PROPERTY_READ( columnCount )
@@ -503,6 +578,7 @@ CONFIGURE_CLASS
 		FUNCTION( Close )
 		FUNCTION( Col )
 		FUNCTION( Row )
+		FUNCTION( next )
 	END_FUNCTION_SPEC
 
 	HAS_PRIVATE

@@ -1,6 +1,19 @@
 LoadModule('jsstd');
 LoadModule('jssqlite');
 
+
+var db = new Database(); // in-memory database
+db.Exec('create table t1 (name,value);');
+db.Exec('insert into t1 (name,value) values ("red","#F00")');
+db.Exec('insert into t1 (name,value) values ("green","#0F0")');
+db.Exec('insert into t1 (name,value) values ("blue","#00F")');
+
+Print( [ color.name for each ( color in db.Query('SELECT * from t1') ) ] );
+
+
+
+Halt(); //////////////////////////////////////////////////////////////////
+
 /*
 try {
 
