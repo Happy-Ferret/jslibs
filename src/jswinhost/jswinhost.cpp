@@ -1,5 +1,10 @@
 #include "stdafx.h"
 
+static char embededBootstrapScript[] = {
+	#include "embededBootstrapScript.js.cres"
+	'\0'
+};
+
 
 /*
 int consoleStdOut( JSContext *cx, const char *data, int length ) {
@@ -109,6 +114,12 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 
 	//#pragma comment (lib, "User32.lib")
 	//MessageBox(NULL, scriptName, "script name", 0);
+
+	if ( embededBootstrapScript[0] ) { 
+
+		jsval tmp;
+		J_CHKM( JS_EvaluateScript(cx, JS_GetGlobalObject(cx), embededBootstrapScript, sizeof(embededBootstrapScript)-1, "bootstrap", 1, &tmp), "Invalid bootstrap." );
+	}
 
 	jsval rval;
 	const char *argv[] = { scriptName, lpCmdLine };

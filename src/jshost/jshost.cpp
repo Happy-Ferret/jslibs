@@ -14,6 +14,11 @@
 
 #include "stdafx.h"
 
+static char embededBootstrapScript[] = {
+	#include "embededBootstrapScript.js.cres"
+	'\0'
+};
+
 // to be used in the main() function only
 #define HOST_MAIN_ASSERT( condition, errorMessage ) if ( !(condition) ) { fprintf(stderr, errorMessage ); goto bad; }
 
@@ -162,7 +167,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 #ifdef XP_WIN
 	BOOL status;
 	status = SetConsoleCtrlHandler((PHANDLER_ROUTINE)&Interrupt, TRUE);
-	HOST_MAIN_ASSERT( status == TRUE, "Unable to set console handler" );
+	HOST_MAIN_ASSERT( status == TRUE, "Unable to set the Ctrl-C handler" );
 #else
 	signal(SIGINT,Interrupt);
 	signal(SIGTERM,Interrupt);
@@ -175,7 +180,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	bool compileOnly = false;
 	size_t maybeGCInterval = 15*1000; // 15 seconds
 	int camelCase = 0; // 0:default, 1:lower, 2:upper
-	bool bootstrap = false;
+	bool useFileBootstrapScript = false;
 
 #ifdef DEBUG
 	bool debug; debug = false;
@@ -215,14 +220,14 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 				camelCase = atoi( *argumentVector );
 				break;
 			case 'b': // bootstrap
-				bootstrap = true;
+				useFileBootstrapScript = true;
 				break;
-
 		#ifdef DEBUG
 			case 'd': // debug
 				debug = true;
 		#endif // DEBUG
 	}
+
 
 #if defined(XP_WIN) && defined(DEBUG)
 	if ( debug ) {
@@ -234,11 +239,11 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 
 
 	cx = CreateHost(maxMem, maxAlloc, maybeGCInterval);
-	HOST_MAIN_ASSERT( cx != NULL, "unable to create a javascript execution context" );
+	HOST_MAIN_ASSERT( cx != NULL, "Unable to create a javascript execution context" );
 
 	GetHostPrivate(cx)->camelCase = camelCase;
 
-	HOST_MAIN_ASSERT( InitHost(cx, unsafeMode, HostStdout, HostStderr, NULL), "unable to initialize the host." );
+	HOST_MAIN_ASSERT( InitHost(cx, unsafeMode, HostStdout, HostStderr, NULL), "Unable to initialize the host." );
 
 	JSObject *globalObject;
 	globalObject = JS_GetGlobalObject(cx);
@@ -247,7 +252,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 // script name
 	const char *scriptName;
 	scriptName = *argumentVector;
-	HOST_MAIN_ASSERT( scriptName != NULL, "no script specified" );
+	HOST_MAIN_ASSERT( scriptName != NULL, "No script specified." );
 
 	char hostFullPath[PATH_MAX +1];
 
@@ -255,10 +260,10 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 // get hostpath and hostname
 	HINSTANCE hInstance = (HINSTANCE)GetModuleHandle(NULL);
 	DWORD len = GetModuleFileName(hInstance, hostFullPath, sizeof(hostFullPath));
-	HOST_MAIN_ASSERT( len != 0, "unable to GetModuleFileName." );
+	HOST_MAIN_ASSERT( len != 0, "Unable to GetModuleFileName." );
 #else // XP_WIN
 	GetAbsoluteModulePath(hostFullPath, sizeof(hostFullPath), argv[0]);
-	HOST_MAIN_ASSERT( hostFullPath[0] != '\0', "unable to get module FileName." );
+	HOST_MAIN_ASSERT( hostFullPath[0] != '\0', "Unable to get module FileName." );
 //	int len = readlink("/proc/self/exe", moduleFileName, sizeof(moduleFileName)); // doc: readlink does not append a NUL character to buf.
 //	moduleFileName[len] = '\0';
 //	strcpy(hostFullPath, argv[0]);
@@ -282,14 +287,20 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	J_CHK( JS_DefineProperty(cx, globalObject, NAME_GLOBAL_SCRIPT_HOST_PATH, STRING_TO_JSVAL(JS_NewStringCopyZ(cx, hostPath)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
 	J_CHK( JS_DefineProperty(cx, globalObject, NAME_GLOBAL_SCRIPT_HOST_NAME, STRING_TO_JSVAL(JS_NewStringCopyZ(cx, hostName)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
 
-	if ( bootstrap ) {
+	if ( embededBootstrapScript[0] ) { 
+
+		jsval tmp;
+		J_CHKM( JS_EvaluateScript(cx, JS_GetGlobalObject(cx), embededBootstrapScript, sizeof(embededBootstrapScript)-1, "bootstrap", 1, &tmp), "Invalid bootstrap." );
+	}
+
+	if ( useFileBootstrapScript ) {
 	
 		jsval tmp;
 		char bootstrapFilename[PATH_MAX +1];
 		strcpy(bootstrapFilename, hostPath);
 		strcat(bootstrapFilename, PATH_SEPARATOR_STRING);
 		strcat(bootstrapFilename, hostName);
-		strcat(bootstrapFilename, ".js"); // (TBD) perhaps find another extension for bootstrap scripts
+		strcat(bootstrapFilename, ".js"); // (TBD) perhaps find another extension for bootstrap scripts (on windows: jshost.exe.js)
 		J_CHKM( ExecuteScriptFileName(cx, bootstrapFilename, compileOnly, argc - (argumentVector-argv), argumentVector, &tmp), "Unable to execute the bootstrap." );
 	}
 

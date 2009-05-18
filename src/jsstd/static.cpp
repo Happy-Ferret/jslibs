@@ -980,15 +980,15 @@ DEFINE_FUNCTION_FAST( Exec ) {
 
 	J_S_ASSERT_ARG_MIN( 1 );
 
-	bool saveCompiledScripts;
-	saveCompiledScripts = !J_FARG_ISDEF(2) || J_FARG(2) == JSVAL_TRUE;
+	bool useAndSaveCompiledScripts;
+	useAndSaveCompiledScripts = !J_FARG_ISDEF(2) || J_FARG(2) == JSVAL_TRUE;
 	const char *filename;
 	J_CHK( JsvalToString(cx, &J_FARG(1), &filename) );
 
 	uint32 oldopts;
 	oldopts = JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_COMPILE_N_GO);
 	JSScript *script;
-	script = JLLoadScript( cx, J_FOBJ, filename, saveCompiledScripts );
+	script = JLLoadScript( cx, J_FOBJ, filename, useAndSaveCompiledScripts, useAndSaveCompiledScripts );
 	JS_SetOptions(cx, oldopts);
 	J_CHK( script );
 

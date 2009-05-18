@@ -619,45 +619,18 @@ JSBool ExecuteScriptFileName( JSContext *cx, const char *scriptFileName, bool co
 // arguments
 	JSObject *argsObj;
 	argsObj = JS_NewArrayObject(cx, 0, NULL);
-	J_CHKM( argsObj != NULL, "unable to create argument array on the global object." );
+	J_CHKM( argsObj != NULL, "Unable to create argument array on the global object." );
 
 	J_CHKM( JS_DefineProperty(cx, globalObject, NAME_GLOBAL_ARGUMENTS, OBJECT_TO_JSVAL(argsObj), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT), "unable to store the argument array." );
 
 	for ( int index = 0; index < argc; index++ ) {
 
 		JSString *str = JS_NewStringCopyZ(cx, argv[index]);
-		J_CHKM( str != NULL, "unable to store the argument." );
+		J_CHKM( str != NULL, "Unable to store the argument." );
 		J_CHKM( JS_DefineElement(cx, argsObj, index, STRING_TO_JSVAL(str), NULL, NULL, JSPROP_ENUMERATE), "unable to define the argument." );
 	}
 
 // compile & executes the script
-//	script = JS_CompileFile( cx, globalObject, scriptName );
-
-// shebang support
-	FILE *file;
-	file = fopen(scriptFileName, "r");
-	J_CHKM1( file != NULL, "Script %s file cannot be opened.", scriptFileName );
-
-	char s, b;
-	s = getc(file);
-	if ( s == '#' ) {
-
-		b = getc(file);
-		if ( b == '!' ) {
-
-			ungetc('/', file);
-			ungetc('/', file);
-		} else {
-
-			ungetc(b, file);
-			ungetc(s, file);
-		}
-	} else {
-
-		ungetc(s, file);
-	}
-
-//	JS_GC(cx); // ...and also just before doing anything that requires compilation (since compilation disables GC until complete).
 
 /*
 	JSPrincipals *principals = (JSPrincipals*)malloc(sizeof(JSPrincipals));
@@ -668,12 +641,11 @@ JSBool ExecuteScriptFileName( JSContext *cx, const char *scriptFileName, bool co
 	principals->refcount = 1;
 	principals->destroy = HostPrincipalsDestroy;
 */
-	JSScript *script;
-	script = JS_CompileFileHandle(cx, globalObject, scriptFileName, file);
-//	JSScript *script = JS_CompileFileHandleForPrincipals(cx, globalObject, scriptFileName, file, principals);
-	fclose(file);
 
-	J_CHKM1( script != NULL, "Unable to compile the script %s.", scriptFileName );
+	JSScript *script;
+	script = JLLoadScript(cx, globalObject, scriptFileName, true, false); // use xdr if available, but don't save it.
+	J_CHK( script );
+
 
 	JSTempValueRooter tvr;
 	JSObject *scrobj;
@@ -683,7 +655,7 @@ JSBool ExecuteScriptFileName( JSContext *cx, const char *scriptFileName, bool co
 	// You need to protect a JSScript (via a rooted script object) if and only if a garbage collection can occur between compilation and the start of execution.
 	JSBool status;
 	if ( !compileOnly )
-		status = JS_ExecuteScript( cx, globalObject, script, rval ); // MUST be executed only once ( JSOPTION_COMPILE_N_GO )
+		status = JS_ExecuteScript(cx, globalObject, script, rval); // MUST be executed only once ( JSOPTION_COMPILE_N_GO )
 	else
 		*rval = JSVAL_VOID;
 

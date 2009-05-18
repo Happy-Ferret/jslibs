@@ -619,7 +619,7 @@ ALWAYS_INLINE bool MaybeRealloc( int requested, int received ) {
 //	on your script object.
 //
 //	/be
-ALWAYS_INLINE JSScript* JLLoadScript(JSContext *cx, JSObject *obj, const char *fileName, bool useCompFile) {
+ALWAYS_INLINE JSScript* JLLoadScript(JSContext *cx, JSObject *obj, const char *fileName, bool useCompFile, bool saveCompFile) {
 
 	JSScript *script = NULL;
 
@@ -658,8 +658,6 @@ ALWAYS_INLINE JSScript* JLLoadScript(JSContext *cx, JSObject *obj, const char *f
 		return script; // Done.
 	}
 
-// script = JS_CompileFile(cx, obj, fileName);
-
 // shebang support
 	FILE *scriptFile;
 	scriptFile = fopen(fileName, "r");
@@ -686,9 +684,9 @@ ALWAYS_INLINE JSScript* JLLoadScript(JSContext *cx, JSObject *obj, const char *f
 
 	script = JS_CompileFileHandle(cx, obj, fileName, scriptFile);
 	fclose(scriptFile);
+	J_CHKM1( script, "Unable to compile the script %s.", fileName );
 
-	J_CHK( script );
-	if ( !useCompFile )
+	if ( !saveCompFile )
 		return script; // Done.
 
 	int file;

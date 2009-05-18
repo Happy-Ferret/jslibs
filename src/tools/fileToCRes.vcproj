@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8,00"
-	Name="jshost"
-	ProjectGUID="{ACE81FB6-A393-4EC0-936E-BBE6DE72DF14}"
-	RootNamespace="jshost"
+	Name="fileToCRes"
+	ProjectGUID="{7993EFA2-8340-46DB-9781-936E28989A6D}"
+	RootNamespace="fileToCRes"
 	Keyword="Win32Proj"
 	>
 	<Platforms>
@@ -17,13 +17,14 @@
 	<Configurations>
 		<Configuration
 			Name="DBG|Win32"
+			OutputDirectory="$(SolutionDir)$(platformName)_$(ConfigurationName)"
+			IntermediateDirectory="$(platformName)_$(ConfigurationName)"
 			ConfigurationType="1"
-			InheritedPropertySheets="..\jslibs_DBG.vsprops"
-			CharacterSet="2"
+			CharacterSet="1"
+			BuildLogFile="$(IntDir)\$(ProjectName)_BuildLog.htm"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine=""
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -39,16 +40,15 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				UseUnicodeResponseFiles="false"
 				Optimization="0"
-				AdditionalIncludeDirectories=""
-				PreprocessorDefinitions="_WINDOWS;WIN32;_DEBUG;_CONSOLE"
+				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
 				MinimalRebuild="true"
-				ExceptionHandling="0"
 				BasicRuntimeChecks="3"
-				UsePrecompiledHeader="2"
-				WarningLevel="4"
-				Detect64BitPortabilityProblems="false"
+				RuntimeLibrary="3"
+				UsePrecompiledHeader="0"
+				ProgramDataBaseFileName="$(IntDir)\$(ProjectName)_vc80.pdb"
+				WarningLevel="3"
+				Detect64BitPortabilityProblems="true"
 				DebugInformationFormat="4"
 			/>
 			<Tool
@@ -62,6 +62,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="kernel32.lib $(NoInherit)"
 				LinkIncremental="2"
 				GenerateDebugInformation="true"
 				SubSystem="1"
@@ -72,6 +73,7 @@
 			/>
 			<Tool
 				Name="VCManifestTool"
+				DependencyInformationFile="$(IntDir)\$(ProjectName)_mt.dep"
 			/>
 			<Tool
 				Name="VCXDCMakeTool"
@@ -94,14 +96,15 @@
 		</Configuration>
 		<Configuration
 			Name="OPT|Win32"
+			OutputDirectory="$(SolutionDir)$(platformName)_$(ConfigurationName)"
+			IntermediateDirectory="$(platformName)_$(ConfigurationName)"
 			ConfigurationType="1"
-			InheritedPropertySheets="..\jslibs_OPT.vsprops"
-			CharacterSet="2"
+			CharacterSet="1"
 			WholeProgramOptimization="1"
+			BuildLogFile="$(IntDir)\$(ProjectName)_BuildLog.htm"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine=""
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -117,18 +120,13 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				UseUnicodeResponseFiles="false"
-				Optimization="2"
-				InlineFunctionExpansion="2"
-				FavorSizeOrSpeed="1"
-				OmitFramePointers="true"
-				AdditionalIncludeDirectories=""
-				PreprocessorDefinitions="_WINDOWS;WIN32;NDEBUG;_CONSOLE"
-				ExceptionHandling="0"
-				BufferSecurityCheck="false"
-				UsePrecompiledHeader="2"
-				WarningLevel="4"
-				Detect64BitPortabilityProblems="false"
+				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
+				RuntimeLibrary="2"
+				UsePrecompiledHeader="0"
+				ProgramDataBaseFileName="$(IntDir)\$(ProjectName)_vc80.pdb"
+				WarningLevel="3"
+				Detect64BitPortabilityProblems="true"
+				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -141,8 +139,9 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="kernel32.lib $(NoInherit)"
 				LinkIncremental="1"
-				GenerateDebugInformation="false"
+				GenerateDebugInformation="true"
 				SubSystem="1"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
@@ -153,6 +152,7 @@
 			/>
 			<Tool
 				Name="VCManifestTool"
+				DependencyInformationFile="$(IntDir)\$(ProjectName)_mt.dep"
 			/>
 			<Tool
 				Name="VCXDCMakeTool"
@@ -183,48 +183,10 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath=".\jshost.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\stdafx.cpp"
-				>
-				<FileConfiguration
-					Name="DBG|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="1"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="OPT|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="1"
-					/>
-				</FileConfiguration>
-			</File>
-		</Filter>
-		<Filter
-			Name="Header Files"
-			Filter="h;hpp;hxx;hm;inl;inc;xsd"
-			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
-			>
-			<File
-				RelativePath=".\stdafx.h"
+				RelativePath=".\fileToCRes.cpp"
 				>
 			</File>
 		</Filter>
-		<File
-			RelativePath=".\debug.js"
-			>
-		</File>
-		<File
-			RelativePath=".\jshost_qa.js"
-			>
-		</File>
 	</Files>
 	<Globals>
 	</Globals>
