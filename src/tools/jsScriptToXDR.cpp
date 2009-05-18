@@ -15,6 +15,8 @@
 #include <fcntl.h>
 #ifdef WIN32
 	#include <io.h>
+#else
+	#include <unistd.h> 
 #endif
 
 #ifndef O_BINARY
