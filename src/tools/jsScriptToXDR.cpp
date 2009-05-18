@@ -1,7 +1,11 @@
-#define _CRT_SECURE_NO_WARNINGS
-#define _CRT_NONSTDC_NO_WARNINGS
+#ifdef WIN32
+	#define _CRT_SECURE_NO_WARNINGS
+	#define _CRT_NONSTDC_NO_WARNINGS
+	#define XP_WIN
+#else
+	#define XP_UNIX
+#endif
 
-#define XP_WIN
 #include <jsapi.h>
 #include <jsxdrapi.h>
 
@@ -9,7 +13,17 @@
 #include <string.h>
 #include <stdlib.h>
 #include <fcntl.h>
-#include <io.h>
+#ifdef WIN32
+	#include <io.h>
+#endif
+
+#ifndef O_BINARY
+	#define O_BINARY 0
+#endif
+
+#ifndef O_SEQUENTIAL
+	#define O_SEQUENTIAL 0
+#endif
 
 
 int main(int argc, char* argv[]) {
@@ -17,7 +31,7 @@ int main(int argc, char* argv[]) {
 	if ( argc < 2 )
 		return EXIT_FAILURE;
 
-	JSRuntime *rt = JS_NewRuntime(8192);
+	JSRuntime *rt = JS_NewRuntime(8 * 1024 * 1024);
 	JSContext *cx = JS_NewContext(rt, 8192);
 	
 	JSScript *script = JS_CompileFile(cx, JS_GetGlobalObject(cx), argv[1]);

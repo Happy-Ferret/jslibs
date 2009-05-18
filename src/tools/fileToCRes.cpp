@@ -4,7 +4,17 @@
 #include <string.h>
 #include <stdlib.h>
 #include <fcntl.h>
-#include <io.h>
+#ifdef WIN32
+	#include <io.h>
+#endif
+
+#ifndef O_BINARY
+	#define O_BINARY 0
+#endif
+
+#ifndef O_SEQUENTIAL
+	#define O_SEQUENTIAL 0
+#endif
 
 char hex[] = "0123456789abcdef";
 
