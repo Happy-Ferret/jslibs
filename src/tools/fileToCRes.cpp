@@ -39,8 +39,8 @@ int main(int argc, char* argv[]) {
 		return EXIT_FAILURE;
 	}
 
-	char srcBuf[8192];
-	char dstBuf[sizeof(srcBuf)*5]; // 0xff,
+	unsigned char srcBuf[8192];
+	unsigned char dstBuf[sizeof(srcBuf)*5]; // 0xff,
 
 	int readCount, writtenCount;
 	do {
