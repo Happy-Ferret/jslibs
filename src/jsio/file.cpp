@@ -661,7 +661,20 @@ CONFIGURE_CLASS
 END_CLASS
 
 /**doc
-=== Example ===
+=== Example 1 ===
+{{{
+function Copy(fromFilename, toFilename) {
+
+ var fromFile = new File(fromFilename).Open(File.RDONLY);
+ var toFile = new File(toFilename).Open(File.WRONLY | File.CREATE_FILE | File.TRUNCATE);
+ for ( var buf; buf = fromFile.Read(65536); )
+  toFile.Write(buf);
+ toFile.Close();
+ fromFile.Close();
+}
+}}}
+
+=== Example 2 ===
 {{{
 LoadModule('jsstd');
 LoadModule('jsio');

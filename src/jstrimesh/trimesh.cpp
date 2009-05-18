@@ -38,9 +38,21 @@ BEGIN_CLASS( Trimesh ) // Start the definition of the class. It defines some sym
 
 DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are no remaing references to this object.
 
-	Surface *pv = (Surface*)JS_malloc(cx, sizeof(Surface));
+	Surface *pv = (Surface*)JS_GetPrivate(cx, obj);
 	if ( !pv )
 		return;
+
+	if ( pv->vertex )
+		JS_free(cx, pv->vertex);
+	if ( pv->normal )
+		JS_free(cx, pv->normal);
+	if ( pv->textureCoordinate )
+		JS_free(cx, pv->textureCoordinate);
+	if ( pv->color )
+		JS_free(cx, pv->color);
+
+	if ( pv->index )
+		JS_free(cx, pv->index);
 
 	JS_free(cx, pv);
 }
@@ -49,13 +61,11 @@ DEFINE_CONSTRUCTOR() {
 
 	J_S_ASSERT_CONSTRUCTING();
 	J_S_ASSERT_THIS_CLASS();
+
 	Surface *pv = (Surface*)JS_malloc(cx, sizeof(Surface));
 	J_CHK( pv );
 
-	Surface empty;
-	memset(&empty, 0, sizeof(Surface));
-
-	*pv = empty;
+	memset(pv, 0, sizeof(Surface));
 
 	J_CHK( JS_SetPrivate(cx, obj, pv) );
 	return JS_TRUE;

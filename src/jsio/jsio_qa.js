@@ -1,6 +1,38 @@
 // don't remove this first line !! ( see MemoryMapped test )
 LoadModule('jsio');
 
+/// File copy [tr]
+
+		var filename = QA.RandomString(10);
+
+		function Copy(fromFilename, toFilename) {
+
+		 var fromFile = new File(fromFilename).Open(File.RDONLY);
+		 var toFile = new File(toFilename).Open(File.WRONLY | File.CREATE_FILE | File.TRUNCATE);
+		 for ( var buf; buf = fromFile.Read(65536); )
+		  toFile.Write(buf);
+		 toFile.Close();
+		 fromFile.Close();
+		}
+		
+		var file = new File(filename).Open('w');
+		for ( var i = 0; i < 1000; i++ )
+			file.Write( StringRepeat('z', 1024) );
+		file.Close();
+
+		Copy( filename, 'copy_'+filename );
+		
+		var cf = new File( 'copy_'+filename );
+		QA.ASSERT( cf.info.size, 1000*1024, 'copied file size');
+
+		cf.Open('r');
+		QA.ASSERT_STR( cf.Read(), StringRepeat('z', 1000*1024), 'copied data');
+		cf.Close();		
+
+		cf.Delete();
+		file.Delete();
+
+
 /// File ancestor [ftrm]
 
 		var f = new File('');

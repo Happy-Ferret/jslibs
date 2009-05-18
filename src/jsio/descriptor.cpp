@@ -77,22 +77,20 @@ JSBool NativeInterfaceStreamRead( JSContext *cx, JSObject *obj, char *buf, size_
 void FinalizeDescriptor(JSContext *cx, JSObject *obj) {
 
 	PRFileDesc *fd = (PRFileDesc*)JS_GetPrivate( cx, obj );
-	if ( fd != NULL ) { // check if not already closed
+	if ( !fd ) // check if not already closed
+		return;
+	jsval imported;
+	J_CHK( JS_GetReservedSlot(cx, obj, SLOT_JSIO_DESCRIPTOR_IMPORTED, &imported) );
+	if ( imported == JSVAL_TRUE ) // Descriptor was inported, then do not close it
+		return;
+	PRStatus status = PR_Close(fd); // what to do on error ??
+	if ( status != PR_SUCCESS ) {
 
-		jsval imported;
-		J_CHK( JS_GetReservedSlot(cx, obj, SLOT_JSIO_DESCRIPTOR_IMPORTED, &imported) );
-		if ( imported != JSVAL_TRUE ) { // Descriptor was inported, then do not close it
-
-			PRStatus status = PR_Close( fd ); // what to do on error ??
-			if (status != PR_SUCCESS) {
-
-				PRErrorCode errorCode = PR_GetError();
-				if ( errorCode != PR_WOULD_BLOCK_ERROR ) // if non-blocking descriptor, this is a non-fatal error
-					JS_ReportError( cx, "A descriptor cannot be closed while Finalize." );
-			}
-			J_CHK( JS_SetPrivate( cx, obj, NULL ) );
-		}
+		if ( PR_GetError() != PR_WOULD_BLOCK_ERROR ) // if non-blocking descriptor, this is a non-fatal error
+			JS_ReportError( cx, "A descriptor cannot be closed while Finalize." );
 	}
+	J_CHK( JS_SetPrivate( cx, obj, NULL ) );
+
 bad:
 	return;
 }
