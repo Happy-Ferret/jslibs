@@ -37,14 +37,24 @@ fi
 cd $TOP/libs/nspr && make all copy >> $LOGFILE 2>&1
 [[ $? != 0 ]] && echo ... failed. && exit
 
+if [ "$1" == "" ]; then
+	for slnFile in $(ls $TOP/src/*/*.sln); do
 
-for slnFile in $(ls $TOP/src/*/*.sln); do
+		echo building $slnFile ...	
+		(echo;echo;echo) >> $LOGFILE
+		cd $(dirname $slnFile)
+		vcbuild.exe //nohtmllog //nologo //useenv $VCBUILD_OPT $(basename $slnFile) "$BUILD|WIN32" >> $LOGFILE 2>&1
+		[ $? != 0 ] && echo ... failed.
+	done
+else
 
+	slnFile=$TOP/src/$1/$1.sln
 	echo building $slnFile ...	
 	(echo;echo;echo) >> $LOGFILE
 	cd $(dirname $slnFile)
 	vcbuild.exe //nohtmllog //nologo //useenv $VCBUILD_OPT $(basename $slnFile) "$BUILD|WIN32" >> $LOGFILE 2>&1
 	[ $? != 0 ] && echo ... failed.
-done
+
+fi
 
 echo Build done.
