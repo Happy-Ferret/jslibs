@@ -14,8 +14,8 @@
 
 #include "stdafx.h"
 
-static char embededBootstrapScript[] = {
-	#include "embededBootstrapScript.js.cres"
+unsigned char embeddedBootstrapScript[] = {
+	#include "embeddedBootstrapScript.js.xdr.cres"
 	'\0'
 };
 
@@ -287,10 +287,20 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	J_CHK( JS_DefineProperty(cx, globalObject, NAME_GLOBAL_SCRIPT_HOST_PATH, STRING_TO_JSVAL(JS_NewStringCopyZ(cx, hostPath)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
 	J_CHK( JS_DefineProperty(cx, globalObject, NAME_GLOBAL_SCRIPT_HOST_NAME, STRING_TO_JSVAL(JS_NewStringCopyZ(cx, hostName)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
 
-	if ( embededBootstrapScript[0] ) { 
+	if ( sizeof(embeddedBootstrapScript)-1 ) {
 
 		jsval tmp;
-		J_CHKM( JS_EvaluateScript(cx, JS_GetGlobalObject(cx), embededBootstrapScript, sizeof(embededBootstrapScript)-1, "bootstrap", 1, &tmp), "Invalid bootstrap." );
+//		J_CHKM( JS_EvaluateScript(cx, JS_GetGlobalObject(cx), embeddedBootstrapScript, sizeof(embeddedBootstrapScript)-1, "bootstrap", 1, &tmp), "Invalid bootstrap." ); // for plain text scripts.
+		JSXDRState *xdr = JS_XDRNewMem(cx, JSXDR_DECODE);
+		J_CHK( xdr );
+		JS_XDRMemSetData(xdr, embeddedBootstrapScript, sizeof(embeddedBootstrapScript)-1);
+		JSScript *script;
+		J_CHK( JS_XDRScript(xdr, &script) );
+		JS_XDRMemSetData(xdr, NULL, 0); // embeddedBootstrapScript is a static buffer, this avoid JS_free to be called on it.
+		JS_XDRDestroy(xdr);
+		JS_GetScriptObject(script);
+		JS_NewScriptObject(cx, script); // JS_DestroyScript(cx, script);
+		J_CHKM( JS_ExecuteScript(cx, JS_GetGlobalObject(cx), script, &tmp), "Invalid embedded bootstrap." );
 	}
 
 	if ( useFileBootstrapScript ) {
@@ -301,14 +311,14 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 		strcat(bootstrapFilename, PATH_SEPARATOR_STRING);
 		strcat(bootstrapFilename, hostName);
 		strcat(bootstrapFilename, ".js"); // (TBD) perhaps find another extension for bootstrap scripts (on windows: jshost.exe.js)
-		J_CHKM( ExecuteScriptFileName(cx, bootstrapFilename, compileOnly, argc - (argumentVector-argv), argumentVector, &tmp), "Unable to execute the bootstrap." );
+		J_CHKM( ExecuteScriptFileName(cx, bootstrapFilename, compileOnly, argc - (argumentVector-argv), argumentVector, &tmp), "Invalid external bootstrap." );
 	}
 
 	int exitValue;
 	jsval rval;
 	if ( ExecuteScriptFileName(cx, scriptName, compileOnly, argc - (argumentVector-argv), argumentVector, &rval) == JS_TRUE ) {
 
-		if ( JSVAL_IS_INT(rval) && JSVAL_TO_INT(rval) >= 0 )
+		if ( JSVAL_IS_INT(rval) && JSVAL_TO_INT(rval) >= 0 ) // (TBD) enhance this, use JsvalToInt()
 			exitValue = JSVAL_TO_INT(rval);
 		else
 			exitValue = EXIT_SUCCESS;

@@ -21,6 +21,18 @@
 			ConfigurationType="10"
 			CharacterSet="2"
 			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
 		</Configuration>
 		<Configuration
 			Name="OPT|Win32"
@@ -30,21 +42,33 @@
 			CharacterSet="2"
 			WholeProgramOptimization="1"
 			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
 		</Configuration>
 	</Configurations>
 	<References>
 	</References>
 	<Files>
 		<File
-			RelativePath=".\embededBootstrapScript.js"
+			RelativePath=".\embeddedBootstrapScript.js"
 			>
 			<FileConfiguration
 				Name="DBG|Win32"
 				>
 				<Tool
 					Name="VCCustomBuildTool"
-					CommandLine="&quot;$(IntDir)\fileToCRes.exe&quot; &quot;$(InputPath)&quot; &quot;$(InputPath).cres&quot; "
-					Outputs="&quot;$(InputPath).cres&quot;"
+					CommandLine="set PATH=%PATH%;$(SolutionDir)..\..\libs\js\$(IntDir)\dist\bin&#x0D;&#x0A;&quot;$(IntDir)\jsScriptToXDR.exe&quot; &quot;$(InputPath)&quot; &quot;$(InputPath).xdr&quot; true bootstrap&#x0D;&#x0A;&quot;$(IntDir)\fileToCRes.exe&quot; &quot;$(InputPath).xdr&quot; &quot;$(InputPath).xdr.cres&quot;&#x0D;&#x0A;del &quot;$(InputPath).xdr&quot;&#x0D;&#x0A;"
+					Outputs="&quot;$(InputPath).xdr.cres&quot;"
 				/>
 			</FileConfiguration>
 			<FileConfiguration
@@ -52,8 +76,8 @@
 				>
 				<Tool
 					Name="VCCustomBuildTool"
-					CommandLine="&quot;$(IntDir)\fileToCRes.exe&quot; &quot;$(InputPath)&quot; &quot;$(InputPath).cres&quot; "
-					Outputs="&quot;$(InputPath).cres&quot;"
+					CommandLine="set PATH=%PATH%;$(SolutionDir)..\..\libs\js\$(IntDir)\dist\bin&#x0D;&#x0A;&quot;$(IntDir)\jsScriptToXDR.exe&quot; &quot;$(InputPath)&quot; &quot;$(InputPath).xdr&quot; true bootstrap&#x0D;&#x0A;&quot;$(IntDir)\fileToCRes.exe&quot; &quot;$(InputPath).xdr&quot; &quot;$(InputPath).xdr.cres&quot;&#x0D;&#x0A;del &quot;$(InputPath).xdr&quot;&#x0D;&#x0A;"
+					Outputs="&quot;$(InputPath).xdr.cres&quot;"
 				/>
 			</FileConfiguration>
 		</File>

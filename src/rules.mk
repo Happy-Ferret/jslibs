@@ -67,16 +67,16 @@ $(DEPENDS):
 	$(MAKE) $(MFLAGS) -C $(dir $@) -f $(notdir $@) $(MAKECMDGOALS)
 
 .PHONY: clean distclean
-clean distclean: $(DEPENDS)
+clean distclean:: $(DEPENDS)
 	-rm $(OBJECTS)
 	-rm $(INT_DIR)$(TARGET)
 	-rmdir ./$(INT_DIR)
 
 .PHONY: all
-all: $(DEPENDS) $(INT_DIR) $(INT_DIR)$(TARGET)
+all:: $(DEPENDS) $(INT_DIR) $(INT_DIR)$(TARGET)
 
 .PHONY: copy 
-copy:
+copy::
 	mkdir -p $(DEST_DIR)
 	cp ./$(INT_DIR)$(TARGET) $(DEST_DIR)
 
