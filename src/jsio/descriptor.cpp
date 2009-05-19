@@ -83,7 +83,8 @@ void FinalizeDescriptor(JSContext *cx, JSObject *obj) {
 	J_CHK( JS_GetReservedSlot(cx, obj, SLOT_JSIO_DESCRIPTOR_IMPORTED, &imported) );
 	if ( imported == JSVAL_TRUE ) // Descriptor was inported, then do not close it
 		return;
-	PRStatus status = PR_Close(fd); // what to do on error ??
+	PRStatus status;
+	status = PR_Close(fd); // what to do on error ??
 	if ( status != PR_SUCCESS ) {
 
 		if ( PR_GetError() != PR_WOULD_BLOCK_ERROR ) // if non-blocking descriptor, this is a non-fatal error

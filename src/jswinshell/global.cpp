@@ -167,13 +167,17 @@ DEFINE_FUNCTION( CreateProcess ) {
 	if ( argc >= 4 && !JSVAL_IS_VOID( argv[3] ) )
 		J_CHK( JsvalToString(cx, &argv[3], &currentDirectory) ); // warning: GC on the returned buffer !
 
-	STARTUPINFO si;// = { sizeof(STARTUPINFO) };
+	STARTUPINFO si;
+	ZeroMemory(&si, sizeof(STARTUPINFO));
 	si.cb = sizeof(STARTUPINFO);
 
 	PROCESS_INFORMATION pi;
 	BOOL st = CreateProcess( applicationName, (LPSTR)commandLine, NULL, NULL, FALSE, 0, (LPVOID)environment, currentDirectory, &si, &pi ); // doc: http://msdn2.microsoft.com/en-us/library/ms682425.aspx
-	if ( st = FALSE )
+	if ( st == FALSE )
 		return WinThrowError(cx, GetLastError());
+
+	CloseHandle(pi.hProcess);
+	CloseHandle(pi.hThread);
 	return JS_TRUE;
 	JL_BAD;
 }
