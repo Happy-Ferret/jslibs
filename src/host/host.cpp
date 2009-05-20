@@ -388,26 +388,13 @@ JSContext* CreateHost(size_t maxMem, size_t maxAlloc, size_t maybeGCInterval ) {
 	// Info: Increasing JSContext stack size slows down my scripts:
 	//   http://groups.google.com/group/mozilla.dev.tech.js-engine/browse_thread/thread/be9f404b623acf39/9efdfca81be99ca3
 
-	JS_SetScriptStackQuota(cx, JS_DEFAULT_SCRIPT_STACK_QUOTA); // good place to manage stack limit ( that is 32MB by default )
-	//	btw, JS_SetScriptStackQuota ( see also JS_SetThreadStackLimit )
+	JS_SetScriptStackQuota(cx, JS_DEFAULT_SCRIPT_STACK_QUOTA); // good place to manage stack limit ( that is 32MB by default ). Btw, JS_SetScriptStackQuota ( see also JS_SetThreadStackLimit )
 
 	JS_SetVersion(cx, (JSVersion)JSVERSION_LATEST);
 
-// error management
 	JS_SetErrorReporter(cx, ErrorReporter);
 
-	// language options
-	// options
-	//	uint32 options = JSOPTION_VAROBJFIX | JSOPTION_XML | JSOPTION_COMPILE_N_GO;
-	//	if ( !unsafeMode )
-	//		options |= JSOPTION_STRICT;
-
-	#ifdef JSOPTION_JIT
-	JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_JIT);
-	// JSOPTION_JIT: "I think it's possible we'll remove even this little bit of API, and just have the JIT always-on. -j"
-	#endif // JSOPTION_JIT
-
-	JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_VAROBJFIX | JSOPTION_XML);
+	JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_VAROBJFIX | JSOPTION_XML |JSOPTION_JIT);
 	// JSOPTION_VAROBJFIX:
 	//  Not quite: with JSOPTION_VAROBJFIX, both explicitly declared global
 	//  variables (var x) and implicit ones (x = 42 where no x exists yet in the
@@ -420,6 +407,7 @@ JSContext* CreateHost(size_t maxMem, size_t maxAlloc, size_t maybeGCInterval ) {
 	//  around all JS_Evaluate*Script* and JS_Compile* API calls.)
 	// JSOPTION_RELIMIT:
 	//  Throw exception on any regular expression which backtracks more than n^3 times, where n is length of the input string
+	// JSOPTION_JIT: "I think it's possible we'll remove even this little bit of API, and just have the JIT always-on. -j"
 
 	JSObject *globalObject;
 	globalObject = JS_NewObject(cx, &global_class, NULL, NULL);
@@ -606,7 +594,7 @@ void HostPrincipalsDestroy(JSContext *cx, JSPrincipals *principals) {
 
 JSBool ExecuteScriptFileName( JSContext *cx, const char *scriptFileName, bool compileOnly, int argc, const char * const * argv, jsval *rval ) { // (TBD) support xdr files 
 
-	JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_COMPILE_N_GO | JSOPTION_DONT_REPORT_UNCAUGHT);
+	uint32 prevOpt = JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_COMPILE_N_GO | JSOPTION_DONT_REPORT_UNCAUGHT);
 	// JSOPTION_COMPILE_N_GO:
 	//  caller of JS_Compile*Script promises to execute compiled script once only; enables compile-time scope chain resolution of consts.
 	// JSOPTION_DONT_REPORT_UNCAUGHT:
@@ -665,7 +653,10 @@ JSBool ExecuteScriptFileName( JSContext *cx, const char *scriptFileName, bool co
 	//	JS_DestroyScript(cx, script); // Warning: This API is subject to bug 438633, which can cause crashes in almost any program that uses JS_DestroyScript.
 
 	J_CHKM( JS_DeleteProperty(cx, globalObject, NAME_GLOBAL_ARGUMENTS ), "Unable to remove argument property" );
+	JS_SetOptions(cx, prevOpt);
 	return JS_TRUE;
-	JL_BAD;
+bad:
+	JS_SetOptions(cx, prevOpt);
+	return JS_TRUE;
 }
 
