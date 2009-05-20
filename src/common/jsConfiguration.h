@@ -21,17 +21,15 @@
 
 inline JSBool RemoveConfiguration(JSContext *cx) {
 
-//	return JS_TRUE;
 	JSObject *globalObject = JS_GetGlobalObject(cx);
 	J_S_ASSERT( globalObject != NULL, "Unable to find the global object." );
 	return JS_DeleteProperty(cx, globalObject, NAME_CONFIGURATION_OBJECT);
 	JL_BAD;
 }
- 
+
 
 inline JSObject *GetConfigurationObject(JSContext *cx) {
 
-//	return JS_GetGlobalObject(cx);
 	JSObject *cobj, *globalObject = JS_GetGlobalObject(cx);
 	J_CHK( globalObject );
 	jsval configurationValue;
@@ -54,38 +52,33 @@ inline JSBool GetConfigurationValue(JSContext *cx, const char *name, jsval *valu
 
 	JSObject *cobj = GetConfigurationObject(cx);
 	if ( cobj )
-		J_CHK( JS_GetProperty(cx, cobj, name, value) );
-	else
-		*value = JSVAL_VOID;
+		return JS_GetProperty(cx, cobj, name, value);
+	*value = JSVAL_VOID;
 	return JS_TRUE;
-	JL_BAD;
-}
-
-inline JSBool SetConfigurationPrivateValue(JSContext *cx, const char *name, jsval value) {
-
-	JSObject *cobj = GetConfigurationObject(cx);
-	if ( cobj )
-		J_CHK( JS_DefineProperty(cx, cobj, name, value, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
-	return JS_TRUE;
-	JL_BAD;
 }
 
 inline JSBool SetConfigurationValue(JSContext *cx, const char *name, jsval value) {
 
 	JSObject *cobj = GetConfigurationObject(cx);
 	if ( cobj )
-		J_CHK( JS_DefineProperty(cx, cobj, name, value, NULL, NULL, JSPROP_ENUMERATE) );
+		return JS_DefineProperty(cx, cobj, name, value, NULL, NULL, JSPROP_ENUMERATE);
 	return JS_TRUE;
-	JL_BAD;
 }
 
 inline JSBool SetConfigurationReadonlyValue(JSContext *cx, const char *name, jsval value) {
 
 	JSObject *cobj = GetConfigurationObject(cx);
 	if ( cobj )
-		J_CHK( JS_DefineProperty(cx, cobj, name, value, NULL, NULL, JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT) );
+		return JS_DefineProperty(cx, cobj, name, value, NULL, NULL, JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT);
 	return JS_TRUE;
-	JL_BAD;
+}
+
+inline JSBool SetConfigurationPrivateValue(JSContext *cx, const char *name, jsval value) {
+
+	JSObject *cobj = GetConfigurationObject(cx);
+	if ( cobj )
+		return JS_DefineProperty(cx, cobj, name, value, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT);
+	return JS_TRUE;
 }
 
 #endif // _JSCONFIGURATION_H_

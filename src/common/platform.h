@@ -78,6 +78,7 @@
 	#pragma warning(disable : 4996) // warning C4996: 'function': was declared deprecated
 	#pragma warning(disable : 4100) // warning C4100: 'xxx' : unreferenced formal parameter
 	#pragma warning(disable : 4102) // warning C4102: 'xxx' : unreferenced label
+	#pragma warning(disable : 4125) // warning C4125: decimal digit terminates octal escape sequence
 	// force warning to error:
 	#pragma warning(error : 4715) // not all control paths return a value
 	#pragma warning(error : 4018) // warning C4018: '<' : signed/unsigned mismatch
