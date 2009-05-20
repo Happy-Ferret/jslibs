@@ -18,54 +18,108 @@
 	#define O_SEQUENTIAL 0
 #endif
 
-char hex[] = "0123456789abcdef";
+char hex[] = "0123456789ABCDEF";
 
 int main(int argc, char* argv[]) {
+
+//	for ( int i = 0; i < sizeof(str); i++ )
+//		printf("%d:%d \n", i, str[i] );
+
+//	int f = open(argv[1], O_WRONLY | O_BINARY );
+//	for ( unsigned char c = 0; c < 255; c++ )
+//		write(f, &c, 1);
+//	close(f);
+
+//	return EXIT_FAILURE;
 
 	if ( argc < 2 )
 		return EXIT_FAILURE;
 
-	printf("Converting file %s.\n", argv[1]);
+	printf("Deleting the destination file %s\n", argv[2]);
+	remove(argv[2]);
+
+	printf("Opening source file %s.\n", argv[1]);
 	int srcFd = open( argv[1], O_RDONLY | O_BINARY | O_SEQUENTIAL );
 	if ( srcFd <= 0 ) {
 
-		printf( "file not found %s\n", argv[1]);
+		printf( "Unable to open %s.\n", argv[1]);
 		return EXIT_FAILURE;
 	}
 
-	int dstFd = open( argv[2], O_WRONLY | O_CREAT | O_TRUNC | O_BINARY | O_SEQUENTIAL, 00644 );
-	if ( dstFd <= 0 ) {
+	printf("Opening destination file %s.\n", argv[2]);
+	FILE *dstFile = fopen(argv[2], "w");
+	if ( !dstFile ) {
 
-		printf( "unable to create %s\n", argv[2]);
+		printf( "Unable to create %s\n", argv[2]);
 		return EXIT_FAILURE;
 	}
 
 	unsigned char srcBuf[8192];
-	unsigned char dstBuf[sizeof(srcBuf)*5]; // 0xff,
+	int readCount;
 
-	int readCount, writtenCount;
+	fputc( '"', dstFile );
 	do {
 
 		readCount = read(srcFd, srcBuf, sizeof(srcBuf));
-		if ( readCount < 0 )
+		if ( readCount < 0 ) {
+
+			printf( "Source file read error\n" );
 			return EXIT_FAILURE;
-
-		for ( int i = 0; i < readCount; ++i ) {
-
-			dstBuf[i*5+0] = '0';
-			dstBuf[i*5+1] = 'x';
-			dstBuf[i*5+2] = hex[srcBuf[i]>>4];
-			dstBuf[i*5+3] = hex[srcBuf[i]&15];
-			dstBuf[i*5+4] = ',';
 		}
 
-		writtenCount = write(dstFd, dstBuf, readCount*5);
-		if ( writtenCount < 0 )
-			return EXIT_FAILURE;
+		for ( int i = 0; i < readCount; ++i ) {
+			
+			unsigned char c = srcBuf[i];
+
+			switch (c) {
+				case '\0':
+					fputs( "\\000", dstFile );
+					continue;
+				case '\a':
+					fputs( "\\a", dstFile );
+					continue;
+				case '\b':
+					fputs( "\\b", dstFile );
+					continue;
+				case '\t':
+					fputs( "\\t", dstFile );
+					continue;
+				case '\n':
+					fputs( "\\n", dstFile );
+					continue;
+				case '\v':
+					fputs( "\\v", dstFile );
+					continue;
+				case '\f':
+					fputs( "\\f", dstFile );
+					continue;
+				case '\r':
+					fputs( "\\r", dstFile );
+					continue;
+				case '"':
+					fputs( "\\\"", dstFile );
+					continue;
+				case '\\':
+					fputs( "\\\\", dstFile );
+					continue;
+			}
+
+			if ( c < 32 || c >= 127 ) {
+				
+				fputc( '\\', dstFile );
+				fputc( hex[ (c>>6) & 0x7 ], dstFile );
+				fputc( hex[ (c>>3) & 0x7 ], dstFile );
+				fputc( hex[ (c>>0) & 0x7 ], dstFile );
+				continue;
+			}
+
+			fputc( c, dstFile );
+		}
 
 	} while ( readCount == sizeof(srcBuf) );
 
-	close(dstFd);
+	fputc( '"', dstFile );
+	fclose(dstFile);
 	close(srcFd);
 
 	printf("Done.\n");

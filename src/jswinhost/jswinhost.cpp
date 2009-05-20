@@ -1,10 +1,8 @@
 #include "stdafx.h"
 
-unsigned char embeddedBootstrapScript[] = {
+static unsigned char embeddedBootstrapScript[] =
 	#include "embeddedBootstrapScript.js.xdr.cres"
-	'\0'
-};
-
+;
 
 /*
 int consoleStdOut( JSContext *cx, const char *data, int length ) {
@@ -117,7 +115,7 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 
 	if ( sizeof(embeddedBootstrapScript)-1 ) {
 
-		jsval tmp;
+		JS_SetOptions(cx, JS_GetOptions(cx) & ~JSOPTION_DONT_REPORT_UNCAUGHT); // report uncautch exceptions !
 //		J_CHKM( JS_EvaluateScript(cx, JS_GetGlobalObject(cx), embeddedBootstrapScript, sizeof(embeddedBootstrapScript)-1, "bootstrap", 1, &tmp), "Invalid embedded bootstrap." ); // for plain text scripts.
 		JSXDRState *xdr = JS_XDRNewMem(cx, JSXDR_DECODE);
 		J_CHK( xdr );
@@ -126,9 +124,10 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 		J_CHK( JS_XDRScript(xdr, &script) );
 		JS_XDRMemSetData(xdr, NULL, 0); // embeddedBootstrapScript is a static buffer, this avoid JS_free to be called on it.
 		JS_XDRDestroy(xdr);
-		JS_GetScriptObject(script);
-		JS_NewScriptObject(cx, script); // JS_DestroyScript(cx, script);
-		J_CHKM( JS_ExecuteScript(cx, JS_GetGlobalObject(cx), script, &tmp), "Invalid embedded bootstrap." );
+		JSObject *bootstrapScriptObject = JS_NewScriptObject(cx, script);
+		J_CHK( SetConfigurationReadonlyValue(cx, "bootstrapScript", OBJECT_TO_JSVAL(bootstrapScriptObject)) );
+		jsval tmp;
+		J_CHK( JS_ExecuteScript(cx, JS_GetGlobalObject(cx), script, &tmp) );
 	}
 
 	jsval rval;
@@ -192,4 +191,8 @@ LoadModule('jsstd');
 Print('toto');
 hkqjsfhkqsdu_error();
 }}}
+
+== Embedding JS scripts in your jswinhost binary ==
+ see [jshost]
+
 **/

@@ -14,10 +14,9 @@
 
 #include "stdafx.h"
 
-unsigned char embeddedBootstrapScript[] = {
+static unsigned char embeddedBootstrapScript[] =
 	#include "embeddedBootstrapScript.js.xdr.cres"
-	'\0'
-};
+;
 
 // to be used in the main() function only
 #define HOST_MAIN_ASSERT( condition, errorMessage ) if ( !(condition) ) { fprintf(stderr, errorMessage ); goto bad; }
@@ -288,8 +287,8 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	J_CHK( JS_DefineProperty(cx, globalObject, NAME_GLOBAL_SCRIPT_HOST_NAME, STRING_TO_JSVAL(JS_NewStringCopyZ(cx, hostName)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
 
 	if ( sizeof(embeddedBootstrapScript)-1 ) {
-
-		jsval tmp;
+		
+		JS_SetOptions(cx, JS_GetOptions(cx) & ~JSOPTION_DONT_REPORT_UNCAUGHT); // report uncautch exceptions !
 //		J_CHKM( JS_EvaluateScript(cx, JS_GetGlobalObject(cx), embeddedBootstrapScript, sizeof(embeddedBootstrapScript)-1, "bootstrap", 1, &tmp), "Invalid bootstrap." ); // for plain text scripts.
 		JSXDRState *xdr = JS_XDRNewMem(cx, JSXDR_DECODE);
 		J_CHK( xdr );
@@ -299,8 +298,10 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 		JS_XDRMemSetData(xdr, NULL, 0); // embeddedBootstrapScript is a static buffer, this avoid JS_free to be called on it.
 		JS_XDRDestroy(xdr);
 		JS_GetScriptObject(script);
-		JS_NewScriptObject(cx, script); // JS_DestroyScript(cx, script);
-		J_CHKM( JS_ExecuteScript(cx, JS_GetGlobalObject(cx), script, &tmp), "Invalid embedded bootstrap." );
+		JSObject *bootstrapScriptObject = JS_NewScriptObject(cx, script);
+		J_CHK( SetConfigurationReadonlyValue(cx, "bootstrapScript", OBJECT_TO_JSVAL(bootstrapScriptObject)) );
+		jsval tmp;
+		J_CHK( JS_ExecuteScript(cx, JS_GetGlobalObject(cx), script, &tmp) );
 	}
 
 	if ( useFileBootstrapScript ) {
@@ -311,7 +312,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 		strcat(bootstrapFilename, PATH_SEPARATOR_STRING);
 		strcat(bootstrapFilename, hostName);
 		strcat(bootstrapFilename, ".js"); // (TBD) perhaps find another extension for bootstrap scripts (on windows: jshost.exe.js)
-		J_CHKM( ExecuteScriptFileName(cx, bootstrapFilename, compileOnly, argc - (argumentVector-argv), argumentVector, &tmp), "Invalid external bootstrap." );
+		J_CHK( ExecuteScriptFileName(cx, bootstrapFilename, compileOnly, argc - (argumentVector-argv), argumentVector, &tmp) );
 	}
 
 	int exitValue;
@@ -364,6 +365,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 bad:
 	if ( cx )
 		DestroyHost(cx);
+	JS_ShutDown();
 	return EXIT_FAILURE;
 }
 
@@ -488,6 +490,12 @@ extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj)
 
  return JS_TRUE;
 }
+
+== Embedding JS scripts in your jshost binary ==
+ This can only be done at jshost compilation time.
+ # Checkout [http://code.google.com/p/jslibs/source/checkout jslibs sources]
+ # Save your embbeded script in the file _jslibs/src/jshost/embeddedBootstrapScript.js_
+ # [jslibsBuild Compile jslibs] (or only jshost if jslibs has already been compiled once)
 }}}
 **/
 

@@ -40,6 +40,7 @@
 #include <jsapi.h>
 
 #include "../common/jsHelper.h"
+#include "../common/jsConfiguration.h"
 
 #include "../host/host.h"
 #include "../common/jsNames.h"

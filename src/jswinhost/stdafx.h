@@ -4,6 +4,7 @@
 
 #include <jsapi.h>
 #include "../common/jsNames.h"
-#include "../common/jshelper.h"
+#include "../common/jsHelper.h"
+#include "../common/jsConfiguration.h"
 
 #include "../host/host.h"

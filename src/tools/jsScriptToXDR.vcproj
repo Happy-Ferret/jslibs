@@ -21,7 +21,7 @@
 			IntermediateDirectory="$(platformName)_$(ConfigurationName)"
 			ConfigurationType="1"
 			InheritedPropertySheets="..\jslibs_DBG.vsprops"
-			CharacterSet="1"
+			CharacterSet="2"
 			BuildLogFile="$(IntDir)\$(ProjectName)_BuildLog.htm"
 			>
 			<Tool
@@ -100,7 +100,7 @@
 			IntermediateDirectory="$(platformName)_$(ConfigurationName)"
 			ConfigurationType="1"
 			InheritedPropertySheets="..\jslibs_OPT.vsprops"
-			CharacterSet="1"
+			CharacterSet="2"
 			WholeProgramOptimization="1"
 			BuildLogFile="$(IntDir)\$(ProjectName)_BuildLog.htm"
 			>
