@@ -965,7 +965,7 @@ DEFINE_FUNCTION_FAST( Print ) {
 	J_CHK( GetConfigurationValue(cx, NAME_CONFIGURATION_STDOUT, &fval) );
 	*J_FRVAL = JSVAL_VOID;
 	if ( JsvalIsFunction(cx, fval) )
-		return JS_CallFunctionValue(cx, JS_GetGlobalObject(cx), fval, J_ARGC, J_FARGV, J_FRVAL);
+		return JS_CallFunctionValue(cx, JS_GetGlobalObject(cx), fval, J_ARGC, J_FARGV, &fval);
 	return JS_TRUE;
 	JL_BAD;
 }

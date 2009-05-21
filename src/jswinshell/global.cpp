@@ -37,7 +37,8 @@ BEGIN_STATIC
 /**doc
 $TOC_MEMBER $INAME
  $TYPE Icon $INAME( fileName [, iconIndex ] )
-  Retrieves an icon from the specified executable file, DLL, or icon file.
+  Retrieves an icon from the specified executable file, DLL, or icon file.$LF
+  The function returns $UNDEF if no icon is found.
   $H beware
    This function is not supported for icons in 16-bit executables and DLLs.
 **/
@@ -52,8 +53,13 @@ DEFINE_FUNCTION( ExtractIcon ) {
 	const char *fileName;
 	J_CHK( JsvalToString(cx, &argv[0], &fileName) );
 	HICON hIcon = ExtractIcon( hInst, fileName, iconIndex ); // see SHGetFileInfo(
-	if ( hIcon == NULL )
-		return WinThrowError(cx, GetLastError());
+	if ( hIcon == NULL ) {
+
+		if ( GetLastError() != 0 )
+			return WinThrowError(cx, GetLastError());
+		*rval = JSVAL_VOID;
+		return JS_TRUE;
+	}
 	JSObject *icon = JS_NewObject(cx, classIcon, NULL, NULL);
 	HICON *phIcon = (HICON*)malloc(sizeof(HICON)); // this is needed because JS_SetPrivate stores ONLY alligned values
 	J_S_ASSERT_ALLOC( phIcon );
