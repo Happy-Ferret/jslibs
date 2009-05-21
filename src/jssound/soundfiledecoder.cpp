@@ -230,7 +230,6 @@ $TOC_MEMBER $INAME
    A Blob object that has the following properties set: bits, rate, channels, frames
   $H beware
    If all data has been decoded and the Read function is called again, the return expression is evaluated to false.
-   This is because an empty Blob must be evaluated as false, like string literals ( !empty_blob == !"" )
   $H example
   {{{
   LoadModule('jsstd');
@@ -331,6 +330,12 @@ $TOC_MEMBER $INAME
 		}
 	}
 	pv->cx = NULL; // see definition
+
+	if ( totalSize == 0 ) {
+	
+		*J_FRVAL = JSVAL_VOID;
+		return JS_TRUE;
+	}
 
 	jsval blobVal;
 	J_CHK( J_NewBlob(cx, buf, totalSize, &blobVal) );
