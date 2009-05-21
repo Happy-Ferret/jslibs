@@ -22,10 +22,7 @@ IMPORTANT:
 
 
 QUICK TEST:
-  launch console.cmd and type:
-    jshost examples\helloworld.js
-    jshost examples\miniInteractiveConsole.js
-    jshost examples\systray.js
+  launch "run console.cmd" and type: jshost helloworld.js
 
 
 DOCUMENTATION:
@@ -34,7 +31,7 @@ DOCUMENTATION:
 
 
 SOURCE CODE:
-  The source code of jslibs is here:
+  The source code of jslibs is available here:
     http://code.google.com/p/jslibs/source/checkout
 
 
@@ -48,5 +45,4 @@ CONTACT:
 
 
 CHANGES:
-
 $(changes)

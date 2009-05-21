@@ -113,6 +113,7 @@ if ( !dist.exist )
 
 var [type, version, revision, changes] = GetLatestChanges();
 changes = changes.replace(/<pre>|<\/pre>/g, ''); // cleanup
+changes = changes.replace(/\n/g, '\r\n');
 
 var readme = Expand(new File('./dist/readme.txt.tpl').content, function(id) {
 	
