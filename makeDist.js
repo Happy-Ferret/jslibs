@@ -6,7 +6,7 @@ function Zip(dir, destFilename) {
 
 	// eXclude Recursively .svn directories
 	// eXclude .tpl files
-	var p = new Process('D:/Tools/mozilla-build/7zip/7z.exe', ['a', '-tzip', '-mx0', '-xr!.svn', '-x!.tpl', destFilename, dir]);
+	var p = new Process('D:/Tools/mozilla-build/7zip/7z.exe', ['a', '-tzip', '-mx9', '-xr!.svn', '-x!.tpl', destFilename, dir]);
 	for ( let data; data = p.stdout.Read(); )
 		Print(data);
 	for ( let data; data = p.stderr.Read(); )
@@ -104,7 +104,7 @@ function RecursiveDir(path, callback) {
 
 
 
-// main
+// main ======================================================================
 
 var dist = new Directory('./dist');
 if ( !dist.exist )
@@ -139,8 +139,8 @@ Copy('./tests/systray.js', './dist/examples');
 Copy('./tests/miniInteractiveConsole.js', './dist/examples');
 Copy('./tests/3d.js', './dist/examples');
 
-Copy('./src/jsdebug/debugger.js', './dist/examples');
-Copy('./src/jsdebug/debugger.xul', './dist/examples');
+Copy('./src/jsdebug/debugger.js', './dist/bin');
+Copy('./src/jsdebug/debugger.xul', './dist/bin');
 
 RecursiveDir('./Win32_opt', function(file) /\.dll$/(file.name) && Copy(file.name, './dist/bin') );
 

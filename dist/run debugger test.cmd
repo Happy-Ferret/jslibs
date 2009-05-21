@@ -1,5 +1,4 @@
 @echo off
 set PATH=%PATH%;%CD%\bin
-cd examples
-start debugger.xul
-jshost debugger.js helloworld.js
+start bin/debugger.xul
+jshost bin/debugger.js examples/helloworld.js

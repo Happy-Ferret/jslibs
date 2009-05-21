@@ -1,5 +1,7 @@
 LoadModule('jsstd');
 
+/// Print returns undefined [ftrm]
+		QA.ASSERT( Print(), undefined, 'Print return value' );
 
 /// ObjEx callback functions [ftrm]
 		
