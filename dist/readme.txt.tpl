@@ -1,5 +1,5 @@
                                      jslibs
-                                     version 0.95 r????
+                                     $(type) $(version) $(revision)
 
 
 LICENSE:
@@ -49,4 +49,4 @@ CONTACT:
 
 CHANGES:
 
-  ???
+$(changes)
