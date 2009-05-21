@@ -288,7 +288,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 
 	if ( sizeof(embeddedBootstrapScript)-1 ) {
 		
-		JS_SetOptions(cx, JS_GetOptions(cx) & ~JSOPTION_DONT_REPORT_UNCAUGHT); // report uncautch exceptions !
+		uint32 prevOpt = JS_SetOptions(cx, JS_GetOptions(cx) & ~JSOPTION_DONT_REPORT_UNCAUGHT); // report uncautch exceptions !
 //		J_CHKM( JS_EvaluateScript(cx, JS_GetGlobalObject(cx), embeddedBootstrapScript, sizeof(embeddedBootstrapScript)-1, "bootstrap", 1, &tmp), "Invalid bootstrap." ); // for plain text scripts.
 		JSXDRState *xdr = JS_XDRNewMem(cx, JSXDR_DECODE);
 		J_CHK( xdr );
@@ -302,6 +302,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 		J_CHK( SetConfigurationReadonlyValue(cx, "bootstrapScript", OBJECT_TO_JSVAL(bootstrapScriptObject)) );
 		jsval tmp;
 		J_CHK( JS_ExecuteScript(cx, JS_GetGlobalObject(cx), script, &tmp) );
+		JS_SetOptions(cx, prevOpt);
 	}
 
 	if ( useFileBootstrapScript ) {
@@ -319,7 +320,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	jsval rval;
 	if ( ExecuteScriptFileName(cx, scriptName, compileOnly, argc - (argumentVector-argv), argumentVector, &rval) == JS_TRUE ) {
 
-		if ( JSVAL_IS_INT(rval) && JSVAL_TO_INT(rval) >= 0 ) // (TBD) enhance this, use JsvalToInt()
+		if ( JSVAL_IS_INT(rval) && JSVAL_TO_INT(rval) >= 0 ) // (TBD) enhance this, use JsvalToInt() ?
 			exitValue = JSVAL_TO_INT(rval);
 		else
 			exitValue = EXIT_SUCCESS;
@@ -333,7 +334,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 			if ( JSVAL_IS_INT(ex) ) {
 
 				exitValue = JSVAL_TO_INT(ex);
-		} else {
+			} else {
 
 				JS_ReportPendingException(cx);
 				exitValue = EXIT_FAILURE;

@@ -115,7 +115,7 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 
 	if ( sizeof(embeddedBootstrapScript)-1 ) {
 
-		JS_SetOptions(cx, JS_GetOptions(cx) & ~JSOPTION_DONT_REPORT_UNCAUGHT); // report uncautch exceptions !
+		uint32 prevOpt = JS_SetOptions(cx, JS_GetOptions(cx) & ~JSOPTION_DONT_REPORT_UNCAUGHT); // report uncautch exceptions !
 //		J_CHKM( JS_EvaluateScript(cx, JS_GetGlobalObject(cx), embeddedBootstrapScript, sizeof(embeddedBootstrapScript)-1, "bootstrap", 1, &tmp), "Invalid embedded bootstrap." ); // for plain text scripts.
 		JSXDRState *xdr = JS_XDRNewMem(cx, JSXDR_DECODE);
 		J_CHK( xdr );
@@ -128,6 +128,7 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 		J_CHK( SetConfigurationReadonlyValue(cx, "bootstrapScript", OBJECT_TO_JSVAL(bootstrapScriptObject)) );
 		jsval tmp;
 		J_CHK( JS_ExecuteScript(cx, JS_GetGlobalObject(cx), script, &tmp) );
+		JS_SetOptions(cx, prevOpt);
 	}
 
 	jsval rval;

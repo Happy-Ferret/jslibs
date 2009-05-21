@@ -594,7 +594,7 @@ void HostPrincipalsDestroy(JSContext *cx, JSPrincipals *principals) {
 
 JSBool ExecuteScriptFileName( JSContext *cx, const char *scriptFileName, bool compileOnly, int argc, const char * const * argv, jsval *rval ) { // (TBD) support xdr files 
 
-	uint32 prevOpt = JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_COMPILE_N_GO | JSOPTION_DONT_REPORT_UNCAUGHT);
+	uint32 prevOpt = JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_COMPILE_N_GO); //  | JSOPTION_DONT_REPORT_UNCAUGHT
 	// JSOPTION_COMPILE_N_GO:
 	//  caller of JS_Compile*Script promises to execute compiled script once only; enables compile-time scope chain resolution of consts.
 	// JSOPTION_DONT_REPORT_UNCAUGHT:
@@ -640,6 +640,8 @@ JSBool ExecuteScriptFileName( JSContext *cx, const char *scriptFileName, bool co
 	scrobj = JS_NewScriptObject(cx, script);
 	JS_PUSH_TEMP_ROOT_OBJECT(cx, scrobj, &tvr);
 
+	JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_DONT_REPORT_UNCAUGHT); // mendatory else the exception is converted into an error before JS_IsExceptionPending can be used.
+
 	// You need to protect a JSScript (via a rooted script object) if and only if a garbage collection can occur between compilation and the start of execution.
 	JSBool status;
 	if ( !compileOnly )
@@ -657,6 +659,6 @@ JSBool ExecuteScriptFileName( JSContext *cx, const char *scriptFileName, bool co
 	return JS_TRUE;
 bad:
 	JS_SetOptions(cx, prevOpt);
-	return JS_TRUE;
+	return JS_FALSE;
 }
 
