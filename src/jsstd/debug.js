@@ -1,8 +1,10 @@
 LoadModule('jsstd');
 LoadModule('jsio');
 
-
-Exec('../../test.js');
+var ids = '';
+var i = 0;
+var res = Expand('ab$(c)$(d)e$(f)g$(h)ij', function(id) { ids+=id; return i++ } );
+Print( res +'-'+ ids == 'ab01e2g3ij-cdfh' );
 		
 
 Halt(); //////////////////////////////

@@ -640,7 +640,8 @@ JSBool ExecuteScriptFileName( JSContext *cx, const char *scriptFileName, bool co
 	scrobj = JS_NewScriptObject(cx, script);
 	JS_PUSH_TEMP_ROOT_OBJECT(cx, scrobj, &tvr);
 
-	JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_DONT_REPORT_UNCAUGHT); // mendatory else the exception is converted into an error before JS_IsExceptionPending can be used.
+	// mendatory else the exception is converted into an error before JS_IsExceptionPending can be used. Exceptions can be reported with JS_ReportPendingException().
+	JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_DONT_REPORT_UNCAUGHT);
 
 	// You need to protect a JSScript (via a rooted script object) if and only if a garbage collection can occur between compilation and the start of execution.
 	JSBool status;

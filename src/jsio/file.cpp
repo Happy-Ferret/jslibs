@@ -312,9 +312,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( contentGetter ) {
 
-	J_S_ASSERT( (PRFileDesc *)JS_GetPrivate( cx, obj ) == NULL, "Cannot get content of an open file.");
+	J_S_ASSERT( (PRFileDesc*)JS_GetPrivate(cx, obj) == NULL, "Cannot get content of an open file.");
 	jsval jsvalFileName;
-	JS_GetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName );
+	J_CHK( JS_GetReservedSlot(cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName) ); // (TBD) add somthing like J_SCHK instead
 	J_S_ASSERT_DEFINED( jsvalFileName );
 	const char *fileName;
 	J_CHK( JsvalToString(cx, &jsvalFileName, &fileName) );

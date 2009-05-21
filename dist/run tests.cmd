@@ -1,4 +1,5 @@
 @echo off
 set PATH=%PATH%;%CD%\bin
-jshost -u .\tests\qa.js -dir ./tests arg1 arg2 arg3
+jshost -u ./tests/qa.js -repeat 3 -dir ./tests
+echo.
 pause

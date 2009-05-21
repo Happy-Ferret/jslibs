@@ -637,6 +637,14 @@ LoadModule('jsstd');
 		QA.ASSERT_STR( o, '<html><title>My HTML Page</title>\n', 'expand string using this object' );
 
 
+/// Expand using a callback function [ftrm]
+
+	var ids = '';
+	var i = 0;
+	var res = Expand('ab$(c)$(d)e$(f)g$(h)ij', function(id) { ids+=id; return i++ } );
+	QA.ASSERT_STR( res +'-'+ ids == 'ab01e2g3ij-cdfh' );
+
+
 /// Exec error [ftrm]
 
 		QA.ASSERT_EXCEPTION( function() Exec('e654ser65t'), Error, 'Exec unknown file' );
@@ -647,12 +655,11 @@ LoadModule('jsstd');
 		LoadModule('jsio');
 		var f = new File('qa_exec_test.js');
 		f.content = '((1234))';
-		var res = Exec('qa_exec_test.js');
+		var res = Exec('qa_exec_test.js', false);
 		QA.ASSERT_STR( res, eval( f.content.toString() ), 'content validity' );
 
-		var res = Exec.call(this, 'qa_exec_test.js');
+		var res = Exec.call(this, 'qa_exec_test.js', false);
 		QA.ASSERT_STR( res, eval( f.content.toString() ), 'content validity' );
-
 
 		f.content = undefined;
 

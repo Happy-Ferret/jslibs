@@ -46,7 +46,7 @@ BEGIN_STATIC
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
 $TOC_MEMBER $INAME
- $STR $INAME( str [, obj] )
+ $STR $INAME( str [, obj | function] )
   Return an expanded string using key/value stored in _obj_.
   $LF
   If _obj_ is omitted, the current object is used to look for key/value.
@@ -77,14 +77,16 @@ DEFINE_FUNCTION_FAST( Expand ) {
 	const char *srcEnd;
 	srcEnd = srcBegin + srcLen;
 
-	JSObject *table;
+	bool mapIsFunction;
+	jsval map;
 	if ( J_FARG_ISDEF(2) ) {
 
-		J_S_ASSERT_OBJECT( J_FARG(2) );
-		table = JSVAL_TO_OBJECT( J_FARG(2) );
+		mapIsFunction = JsvalIsFunction(cx, J_FARG(2));
+		map = J_FARG(2);
 	} else {
-
-		table = J_FOBJ;
+		
+		mapIsFunction = false;
+		map = OBJECT_TO_JSVAL( J_FOBJ );
 	}
 
 	typedef struct {
@@ -128,7 +130,16 @@ DEFINE_FUNCTION_FAST( Expand ) {
 		// (TBD) try to replace the following code
 		char tmp = *tok;
 		*((char*)tok) = 0;
-		J_CHK( JS_GetProperty(cx, table, srcBegin, &val) );
+		
+		if ( mapIsFunction ) {
+			
+			J_CHK( StringToJsval(cx, srcBegin, &val) );
+			J_CHK( JS_CallFunctionValue(cx, J_FOBJ, map, 1, &val , &val) );
+		} else {
+		
+			J_CHK( JS_GetProperty(cx, JSVAL_TO_OBJECT(map), srcBegin, &val) );
+		}
+
 		*((char*)tok) = tmp;
 
 		if ( !JSVAL_IS_VOID( val ) ) {

@@ -1,6 +1,7 @@
 // don't remove this first line !! ( see MemoryMapped test )
 LoadModule('jsio');
 
+
 /// File copy [tr]
 
 		var filename = QA.RandomString(10);
@@ -385,14 +386,17 @@ LoadModule('jsio');
 
 /// File content [ftrm]
 
+		var f = new File(QA.RandomString(10));
 		var data = String(new Date());
-		var f = new File('qa_tmp_content.txt');
 		QA.ASSERT( f.exist, false, 'file exist' );
 		f.content = data;
 		QA.ASSERT( f.exist, true, 'file exist' );
 		QA.ASSERT_STR( f.content, data, 'file content' );
 		f.content = undefined;
 		QA.ASSERT( f.exist, false, 'file exist' );
+
+		var f = new File(QA.RandomString(10));
+		QA.ASSERT( f.content, undefined, 'file2 does not exist' );
 
 
 /// File exception [ftrm]

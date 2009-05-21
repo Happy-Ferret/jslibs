@@ -375,7 +375,7 @@ var [issueList, checkCount] = LaunchTests(testList, cfg);
 var t = TimeCounter() - t0;
 processPriority = savePrio || 0; // savePrio may be undefined
 
-Print( '\n----------\n', configurationText, '\n\n', issueList.length +' issues, '+cfg.repeatEachTest+'x '+ [t for each (t in testList) if (!t.init)].length +' tests, ' + checkCount + ' checks in ' + t.toFixed(2) + 'ms.', '\n' );
+Print( '\n'+StringRepeat('-',97)+'\n', configurationText, '\n\n', issueList.length +' issues, '+cfg.repeatEachTest+'x '+ [t for each (t in testList) if (!t.init)].length +' tests, ' + checkCount + ' checks in ' + t.toFixed(2) + 'ms.', '\n' );
 issueList.sort();
 issueList.reduce( function(previousValue, currentValue, index, array) {
 
