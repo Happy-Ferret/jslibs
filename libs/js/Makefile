@@ -19,7 +19,7 @@ TARGET_FILES=$(INT_DIR)dist/bin/*.{so,dll}
 
 $(INT_DIR)Makefile: ./src/configure
 	mkdir -p $(INT_DIR)
-	cd $(INT_DIR) && CXXFLAGS=$(_CFLAGS) ../src/configure $(_CONFIGURE_OPTIONS) --with-windows-version=501 --disable-static --disable-profile-guided-optimization --disable-vista-sdk-requirements
+	cd $(INT_DIR) && CXXFLAGS=$(_CFLAGS) ../src/configure $(_CONFIGURE_OPTIONS) --with-windows-version=501 --disable-static --disable-profile-guided-optimization --disable-vista-sdk-requirements --disable-tests
 
 all:: $(INT_DIR)Makefile
 	diff -q ./jsversion.h ./src/jsversion.h || cp ./jsversion.h ./src/
@@ -28,4 +28,5 @@ all::
 	$(MAKE) -C $(INT_DIR) $@
 
 clean::
+	rm ./src/configure
 	-[ -d "./$(INT_DIR)" ] && rm -r ./$(INT_DIR)
