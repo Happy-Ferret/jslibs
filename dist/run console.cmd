@@ -1,2 +1,6 @@
+@echo off
 set PATH=%PATH%;%CD%\bin
-cmd
+cd examples
+echo Try: jshost helloworld.js
+echo.
+cmd /k

@@ -125,10 +125,10 @@ function RecursiveDir(path, callback) {
 }
 
 
-function CreateQaItemList(startDir, filter, flags) {
+function CreateQaItemList(startDir, files, filter, flags) {
 
 	var hidden = /\/\./;
-	var qaFile = /\qa.js$/;
+	var qaFile = new RegExp(files);
 	var newQaItem = /^\/\/\/\s*(.*?)\s*$/;
 	var parseFlags = function(str) (/\[(.*?)\]/(str)||[,''])[1];
 
@@ -322,7 +322,7 @@ function ParseCommandLine(cfg) {
 
 
 
-var cfg = { help:false, repeatEachTest:1, gcZeal:0, loopForever:false, directory:'src', priority:0, flags:'', save:'', load:'', disableJIT:false, listTestsOnly:false, nogcBetweenTests:false, nogcDuringTests:false, stopAfterNIssues:0, logFilename:'', sleepBetweenTests:0, quiet:false, runOnlyTestIndex:undefined };
+var cfg = { help:false, repeatEachTest:1, gcZeal:0, loopForever:false, directory:'src', files:'_qa.js$', priority:0, flags:'', save:'', load:'', disableJIT:false, listTestsOnly:false, nogcBetweenTests:false, nogcDuringTests:false, stopAfterNIssues:0, logFilename:'', sleepBetweenTests:0, quiet:false, runOnlyTestIndex:undefined };
 ParseCommandLine(cfg);
 var configurationText = 'configuraion: '+[k+':'+v for ([k,v] in Iterator(cfg))].join(' - ');
 Print( configurationText, '\n\n' );
@@ -352,7 +352,7 @@ var testList;
 if ( cfg.load )
 	testList = eval(new File(cfg.load).content);
 else
-	testList = CreateQaItemList(cfg.directory, itemFilter, MatchFlags);
+	testList = CreateQaItemList(cfg.directory, cfg.files, itemFilter, MatchFlags);
 
 if ( cfg.listTestsOnly ) {
 	
