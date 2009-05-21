@@ -19,7 +19,7 @@
 	<Tool
 		Name="VCCLCompilerTool"
 		PreprocessorDefinitions="WIN32;NDEBUG;_LIB"
-		AdditionalIncludeDirectories="..\..\libs\js\$(PlatformName)_$(ConfigurationName)\dist\include\js"
+		AdditionalIncludeDirectories="..\..\libs\js\$(PlatformName)_$(ConfigurationName)\dist\include"
 		ExceptionHandling="0"
 		RuntimeLibrary="2"
 	/>
