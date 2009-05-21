@@ -1,6 +1,8 @@
 LoadModule('jsstd');
 LoadModule('jsio');
 
+Print('Type "exit" to exit', '\n');
+
 global.__defineGetter__('quit', Halt);
 global.__defineGetter__('exit', Halt);
 global.__defineGetter__('bye', Halt);
