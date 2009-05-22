@@ -6,7 +6,7 @@ function Zip(dir, destFilename) {
 
 	// eXclude Recursively .svn directories
 	// eXclude .tpl files
-	var p = new Process('D:/Tools/mozilla-build/7zip/7z.exe', ['a', '-tzip', '-mx9', '-xr!.svn', '-x!.tpl', destFilename, dir]);
+	var p = new Process('D:/Tools/mozilla-build/7zip/7z.exe', ['a', '-tzip', '-mx9', '-xr!*.tpl', '-xr!*.svn', destFilename, dir]);
 	for ( let data; data = p.stdout.Read(); )
 		Print(data);
 	for ( let data; data = p.stderr.Read(); )
@@ -138,6 +138,10 @@ Copy('./tests/helloworld.js', './dist/examples');
 Copy('./tests/systray.js', './dist/examples');
 Copy('./tests/miniInteractiveConsole.js', './dist/examples');
 Copy('./tests/3d.js', './dist/examples');
+Copy('./tests/ffiTest.js', './dist/examples');
+Copy('./tests/md5.js', './dist/examples');
+Copy('./tests/oggFilePlayer.js', './dist/examples');
+Copy('./tests/41_30secOgg-q0.ogg', './dist/examples');
 
 Copy('./src/jsdebug/debugger.js', './dist/bin');
 Copy('./src/jsdebug/debugger.xul', './dist/bin');

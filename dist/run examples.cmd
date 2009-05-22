@@ -1,8 +1,8 @@
 @echo off
 set PATH=%PATH%;%CD%\bin
 cd examples
-echo available tests:
-echo ---------------
+echo available examples:
+echo ------------------
 dir /B *.js
 echo.
 echo.

@@ -22,7 +22,8 @@ IMPORTANT:
 
 
 QUICK TEST:
-  launch "run console.cmd" and type: jshost helloworld.js
+  launch "run console.cmd" and type:
+    jshost helloworld.js
 
 
 DOCUMENTATION:
