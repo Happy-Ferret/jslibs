@@ -343,12 +343,16 @@ ALWAYS_INLINE void SetHostPrivate( JSContext *cx, HostPrivate *hostPrivate ) {
 // helper macros to avoid a function call to the jsapi
 
 ALWAYS_INLINE JSClass* JL_GetClass(JSObject *obj) {
-
+	
+#ifdef DEBUG
+	JS_ASSERT( STOBJ_GET_CLASS(obj) == JS_GetClass(obj) ); // Mozilla JS engine private API behavior has changed.
+#endif //DEBUG
 	return STOBJ_GET_CLASS(obj); // JS_GET_CLASS(cx, obj);
 }
 
 #define J_STRING_LENGTH(jsstr) (JSSTRING_LENGTH(jsstr)) // JS_GetStringLength(jsstr)
 
+// Is string or has jslibs BufferGet interface.
 #define J_JSVAL_IS_STRING(val) ( JSVAL_IS_STRING(val) || (!JSVAL_IS_PRIMITIVE(val) && BufferGetInterface(cx, JSVAL_TO_OBJECT(val)) != NULL) )
 
 ALWAYS_INLINE void *JL_GetPrivate(JSContext *cx, JSObject *obj) {
@@ -357,6 +361,9 @@ ALWAYS_INLINE void *JL_GetPrivate(JSContext *cx, JSObject *obj) {
 	jsval v;
 	JS_ASSERT(OBJ_GET_CLASS(cx, obj)->flags & JSCLASS_HAS_PRIVATE);
 	v = obj->fslots[JSSLOT_PRIVATE];
+#ifdef DEBUG
+	JS_ASSERT( (JSVAL_IS_INT(v) ? JSVAL_TO_PRIVATE(v) : NULL) == JS_GetPrivate(cx, obj) ); // Mozilla JS engine private API behavior has changed.
+#endif //DEBUG
 	if (!JSVAL_IS_INT(v))
 		return NULL;
 	return JSVAL_TO_PRIVATE(v);
@@ -368,6 +375,9 @@ ALWAYS_INLINE JSBool JL_SetPrivate(JSContext *cx, JSObject *obj, void *data) {
 //	return JS_SetPrivate(cx, obj, data);
 	JS_ASSERT(OBJ_GET_CLASS(cx, obj)->flags & JSCLASS_HAS_PRIVATE);
 	obj->fslots[JSSLOT_PRIVATE] = PRIVATE_TO_JSVAL(data);
+#ifdef DEBUG
+	JS_ASSERT( data == JS_GetPrivate(cx, obj) ); // Mozilla JS engine private API behavior has changed.
+#endif //DEBUG
 	return JS_TRUE;
 }
 
@@ -410,8 +420,10 @@ inline bool SwapObjects( JSContext *cx, JSObject *obj1, JSObject *obj2 ) {
 
 ALWAYS_INLINE JSStackFrame* CurrentStackFrame(JSContext *cx) {
 
-//	JSStackFrame *fp = NULL;
-//	return JS_FrameIterator(cx, &fp);
+#ifdef DEBUG
+	JSStackFrame *fp = NULL;
+	JS_ASSERT( JS_FrameIterator(cx, &fp) == js_GetTopStackFrame(cx) ); // Mozilla JS engine private API behavior has changed.
+#endif //DEBUG
 	return js_GetTopStackFrame(cx);
 }
 
@@ -450,14 +462,6 @@ ALWAYS_INLINE JSStackFrame *StackFrameByIndex(JSContext *cx, int frameIndex) {
 	return fp;
 }
 
-
-ALWAYS_INLINE unsigned int SvnRevToInt(const char *svnRev) {
-
-	const char *p = strchr(svnRev, ' ');
-	return p ? atol(p+1) : 0;
-}
-
-
 ALWAYS_INLINE bool JsvalIsNaN( JSContext *cx, jsval val ) {
 
 	return JSVAL_IS_DOUBLE( val ) && JSDOUBLE_IS_NaN( *JSVAL_TO_DOUBLE( val ) );
@@ -470,11 +474,17 @@ ALWAYS_INLINE jsdouble JsvalIsInfinity( JSContext *cx, jsval val ) {
 
 ALWAYS_INLINE bool JsvalIsPInfinity( JSContext *cx, jsval val ) {
 
+#ifdef DEBUG
+	JS_ASSERT( *cx->runtime->jsPositiveInfinity == JS_GetPositiveInfinityValue(cx) ); // Mozilla JS engine private API behavior has changed.
+#endif //DEBUG
 	return JSVAL_IS_DOUBLE(val) && *JSVAL_TO_DOUBLE(val) == *cx->runtime->jsPositiveInfinity; // JS_GetPositiveInfinityValue
 }
 
 ALWAYS_INLINE bool JsvalIsNInfinity( JSContext *cx, jsval val ) {
 
+#ifdef DEBUG
+	JS_ASSERT( *cx->runtime->jsNegativeInfinity == JS_GetNegativeInfinityValue(cx) ); // Mozilla JS engine private API behavior has changed.
+#endif //DEBUG
 	return JSVAL_IS_DOUBLE(val) && *JSVAL_TO_DOUBLE(val) == *cx->runtime->jsNegativeInfinity; // JS_GetNegativeInfinityValue
 }
 
@@ -486,7 +496,10 @@ ALWAYS_INLINE bool JsvalIsScript( JSContext *cx, jsval val ) {
 
 ALWAYS_INLINE bool JsvalIsFunction( JSContext *cx, jsval val ) {
 
-//	return !JSVAL_IS_PRIMITIVE(val) && JS_ObjectIsFunction(cx, JSVAL_TO_OBJECT(val)); // faster than (JS_TypeOfValue(cx, (val)) == JSTYPE_FUNCTION)
+#ifdef DEBUG
+	JS_ASSERT( VALUE_IS_FUNCTION(cx, val) == !JSVAL_IS_PRIMITIVE(val) && JS_ObjectIsFunction(cx, JSVAL_TO_OBJECT(val)) ); // Mozilla JS engine private API behavior has changed.
+#endif //DEBUG
+	//	return !JSVAL_IS_PRIMITIVE(val) && JS_ObjectIsFunction(cx, JSVAL_TO_OBJECT(val)); // faster than (JS_TypeOfValue(cx, (val)) == JSTYPE_FUNCTION)
 	return VALUE_IS_FUNCTION(cx, val);
 }
 
@@ -514,7 +527,7 @@ ALWAYS_INLINE bool JsvalIsClass( jsval val, JSClass *jsClass ) {
 
 ALWAYS_INLINE bool IsClassName( JSObject *obj, const char *name ) {
 
-	return obj != NULL && strcmp(JL_GetClass(obj)->name, (name)) == 0;
+	return obj != NULL && strcmp(JL_GetClass(obj)->name, name) == 0;
 }
 
 /*
@@ -591,19 +604,10 @@ ALWAYS_INLINE JSBool JL_CallFunctionName( JSContext *cx, JSObject *obj, const ch
 
 ALWAYS_INLINE JSBool JL_ValueOf( JSContext *cx, jsval *val, jsval *rval ) {
 
-	if ( JSVAL_IS_PRIMITIVE(*val) ) {
-
-		*rval = *val;
-		return JS_TRUE;
-	}
-	//J_CHK( JS_CallFunctionName(cx, JSVAL_TO_OBJECT(*val), "valueOf", 0, NULL, rval) );
-	return OBJ_DEFAULT_VALUE(cx, JSVAL_TO_OBJECT(*val), JSTYPE_VOID, rval);
-}
-
-
-ALWAYS_INLINE bool MaybeRealloc( int requested, int received ) {
-
-	return requested != 0 && (128 * received / requested < 115) && (requested - received > 32); // instead using percent, I use per-128
+	if ( !JSVAL_IS_PRIMITIVE(*val) )
+		return OBJ_DEFAULT_VALUE(cx, JSVAL_TO_OBJECT(*val), JSTYPE_VOID, rval); // JS_CallFunctionName(cx, JSVAL_TO_OBJECT(*val), "valueOf", 0, NULL, rval)
+	*rval = *val;
+	return JS_TRUE;
 }
 
 
@@ -716,7 +720,19 @@ bad:
 
 
 ///////////////////////////////////////////////////////////////////////////////
-//
+// jslibs tools
+
+
+ALWAYS_INLINE unsigned int SvnRevToInt(const char *svnRev) {
+
+	const char *p = strchr(svnRev, ' ');
+	return p ? atol(p+1) : 0;
+}
+
+ALWAYS_INLINE bool MaybeRealloc( int requested, int received ) {
+
+	return requested != 0 && (128 * received / requested < 115) && (requested - received > 32); // instead using percent, I use per-128
+}
 
 
 // stores JSClasses that other jslibs modules may rely on.
@@ -799,7 +815,7 @@ ALWAYS_INLINE JSBool J_NewBlob( JSContext *cx, void* buffer, size_t length, jsva
 
 	if (unlikely( length == 0 )) { // Empty Blob must acts like an empty string: !'' == true
 
-		JS_free(cx, buffer);
+		JS_free(cx, buffer); // buffer can be NULL
 		*vp = JS_GetEmptyStringValue(cx);
 		return JS_TRUE;
 	}
@@ -810,7 +826,6 @@ ALWAYS_INLINE JSBool J_NewBlob( JSContext *cx, void* buffer, size_t length, jsva
 
 		// A blob/string object can be created without using any jslang/blob.h dependances
 		JSObject *blob;
-//		blob = JS_NewObject(cx, blobClass, NULL, NULL);
 		blob = JS_ConstructObject(cx, blobClass, NULL, NULL); // need to be constructed else Buffer NativeInterface will not be set !
 		J_CHK( blob );
 		*vp = OBJECT_TO_JSVAL(blob);
@@ -822,7 +837,11 @@ ALWAYS_INLINE JSBool J_NewBlob( JSContext *cx, void* buffer, size_t length, jsva
 	JSString *jsstr;
 	jsstr = JS_NewString(cx, (char*)buffer, length); // JS_NewString takes ownership of bytes on success, avoiding a copy; but on error (signified by null return), it leaves bytes owned by the caller. So the caller must free bytes in the error case, if it has no use for them.
 	J_CHK( jsstr );
-	*vp = STRING_TO_JSVAL(jsstr);
+	*vp = STRING_TO_JSVAL(jsstr); // protect from GC.
+	
+	JSObject *strObj;
+	J_CHK( JS_ValueToObject(cx, STRING_TO_JSVAL(jsstr), &strObj) ); // see. OBJ_DEFAULT_VALUE(cx, obj, JSTYPE_OBJECT, &v)
+	*vp = OBJECT_TO_JSVAL(strObj);
 	return JS_TRUE;
 
 bad:

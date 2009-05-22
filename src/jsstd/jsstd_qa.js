@@ -641,10 +641,10 @@ LoadModule('jsstd');
 
 /// Expand using a callback function [ftrm]
 
-	var ids = '';
-	var i = 0;
-	var res = Expand('ab$(c)$(d)e$(f)g$(h)ij', function(id) { ids+=id; return i++ } );
-	QA.ASSERT_STR( res +'-'+ ids == 'ab01e2g3ij-cdfh' );
+		var ids = '';
+		var i = 0;
+		var res = Expand('ab$(c)$(d)e$(f)g$(h)ij', function(id) { ids+=id; return i++ } );
+		QA.ASSERT_STR( res +'-'+ ids, 'ab01e2g3ij-cdfh', 'Expand result is correct' );
 
 
 /// Exec error [ftrm]

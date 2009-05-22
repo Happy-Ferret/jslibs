@@ -1,14 +1,11 @@
 LoadModule('jsstd');
 LoadModule('jsio');
 
-	var s = Script('/./');
-	var res = XdrDecode(XdrEncode(s));
 
-
-var ids = '';
-var i = 0;
-var res = Expand('ab$(c)$(d)e$(f)g$(h)ij', function(id) { ids+=id; return i++ } );
-Print( res +'-'+ ids == 'ab01e2g3ij-cdfh' );
+	var ids = '';
+	var i = 0;
+	var res = Expand('ab$(c)$(d)e$(f)g$(h)ij', function(id) { ids+=id; return i++ } );
+	Print( res +'-'+ ids == 'ab01e2g3ij-cdfh' );
 		
 
 Halt(); //////////////////////////////

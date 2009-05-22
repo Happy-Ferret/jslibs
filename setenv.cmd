@@ -1,3 +1,3 @@
 @echo off
-set PATH=%CD%\%1;%PATH%
-echo jslibs %1 environment set.
+echo Setting jslibs %1 environment.
+cmd /k set PATH=%CD%\%1;%PATH%
