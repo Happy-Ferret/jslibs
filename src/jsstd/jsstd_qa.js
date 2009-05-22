@@ -701,6 +701,17 @@ LoadModule('jsstd');
 		}
 
 
+/// XDR test [ftrm]
+
+		var s = new Script('for ( var i = 0; i < 1000; ++i ) i++;');
+		var res = XdrDecode(XdrEncode(s));
+		QA.ASSERT_STR( s.toSource(), res.toSource(), 'XDR->unXDR a Script' );
+
+		var s = new Script('/./');
+		var res = XdrDecode(XdrEncode(s));
+		QA.ASSERT_STR( s.toSource(), res.toSource(), 'XDR->unXDR a Script' );
+
+
 /// Clear function [ftrm]
 
 		var o = { x:5, y:6, z:7 };

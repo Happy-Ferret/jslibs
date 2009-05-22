@@ -12,6 +12,8 @@
 #include <jsxdrapi.h>
 #include <jsprf.h>
 
+#include <jsscript.h>
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -160,7 +162,6 @@ int main(int argc, char* argv[]) {
 	if ( !script ) {
 
 		printf( "Unable to compile %s\n", argv[1]);
-		
 		return EXIT_FAILURE;
 	}
 

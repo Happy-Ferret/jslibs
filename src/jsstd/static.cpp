@@ -704,7 +704,15 @@ DEFINE_FUNCTION_FAST( XdrEncode ) {
 	JSXDRState *xdr;
 	xdr = JS_XDRNewMem(cx, JSXDR_ENCODE);
 	J_CHK( xdr );
-	J_CHK( JS_XDRValue(xdr, &J_FARG(1)) );
+	if (unlikely( JsvalIsScript(cx, J_FARG(1)) )) {
+
+		JSScript *script = (JSScript*)JL_GetPrivate(cx, JSVAL_TO_OBJECT(J_FARG(1)));
+		J_S_ASSERT_RESOURCE(script);
+		J_CHK( JS_XDRScript(xdr, &script) );
+	} else {
+
+		J_CHK( JS_XDRValue(xdr, &J_FARG(1)) );
+	}
 	uint32 length;
 	void *buffer;
 	buffer = JS_XDRMemGetData(xdr, &length);

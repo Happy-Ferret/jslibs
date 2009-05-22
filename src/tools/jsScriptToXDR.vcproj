@@ -187,6 +187,10 @@
 				>
 			</File>
 		</Filter>
+		<File
+			RelativePath=".\jsScriptToXDR_test.js"
+			>
+		</File>
 	</Files>
 	<Globals>
 	</Globals>
