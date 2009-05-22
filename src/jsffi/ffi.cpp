@@ -792,7 +792,7 @@ void NativeData_Finalize(JSContext *cx, JSObject *obj) {
   jsval rootObj;
   JS_GetReservedSlot( cx, obj, 0, &rootObj );
 
-  if ( JSVAL_TO_OBJECT(rootObj) == obj ) { // the root object is being finalized
+  if ( !JSVAL_IS_PRIMITIVE(rootObj) && JSVAL_TO_OBJECT(rootObj) == obj ) { // the root object is being finalized
 
     void** pv = (void**)JS_GetPrivate( cx, obj ); // get the pointer to the list
     void** ppList = pv+1; // see NativeData_Construct
@@ -965,7 +965,7 @@ JSBool NativeProc_Call(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, js
   for ( unsigned int argIterator = 0; argIterator < argc; ++argIterator ) {
 
     jsval currentArg = argv[argIterator];
-    if ( !JSVAL_IS_OBJECT(currentArg) || !JS_InstanceOf( cx, JSVAL_TO_OBJECT( currentArg ), &NativeType, NULL ) ) {
+    if ( JSVAL_IS_PRIMITIVE(currentArg) || !JS_InstanceOf( cx, JSVAL_TO_OBJECT( currentArg ), &NativeType, NULL ) ) {
 
       JS_ReportError( cx, "argument %d must be a NativeType ( current type: %d )", argIterator+1, JS_TypeOfValue( cx, currentArg ) );
       return JS_FALSE;

@@ -9,7 +9,7 @@ LIBNAME = $(dest)
 	cl /nologo $(CFLAGS) /Fo$@ /c $<
 
 $(LIBNAME): $(OBJECTS)
-	mkdir "$(@D)"
+	-mkdir "$(@D)"
 	lib /nologo /out:$@ $(OBJECTS)
 
 build: $(LIBNAME)
