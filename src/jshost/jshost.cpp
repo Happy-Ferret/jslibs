@@ -391,8 +391,8 @@ The main features are:
 === Command line options ===
  * `-c <0 or 1>` (default = 0)
   Compile-only. The script is compiled but not executed. This is useful to detect syntax errors.
- * `-u <0 or 1>` (default = 0)
-  Unsafe-mode is a kind of 'release mode'. If 1, any runtime checks is avoid and warnings display is disabled. This mode allow to increase performances.
+ * `-u` (disabled by default)
+  Run in unsafe-mode that is a kind of 'release mode'. In unsafe-mode, any runtime checks is avoid and warnings are not reported. This mode allow a better execution speed.
  * `-m <size>` (default: no limit)
   Specifies the maximum memory usage of the script in megabytes.
  * `-n  <size>` (default: no limit)
@@ -456,7 +456,7 @@ The main features are:
   }}}
   <pre>
   ...
-  c:\>jshost -g 600 -u 0 foo.js bar
+  c:\>jshost -g 600 -u foo.js bar
   argument[0] = foo.js
   argument[1] = bar
   </pre>
