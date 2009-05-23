@@ -258,7 +258,7 @@ $TOC_MEMBER $INAME
   }}}
   $H example 3
   {{{
-  var result = db.Query('SELECT ? FROM table WHERE id=?', ['name', 1341] ); // array-like {0:'name', 1:1341, length:2} works too.
+  var result = db.Query('SELECT ? FROM table WHERE id=?', ['name', 1341] ); // array-like objects {0:'name', 1:1341, length:2} works too.
   Print( result.Col(0) );
   }}}
 **/
@@ -300,7 +300,7 @@ DEFINE_FUNCTION( Query ) {
 	// (TBD) enhance
 	*rval = OBJECT_TO_JSVAL( dbStatement );
 
-	if ( argc >= 2 && !JSVAL_IS_VOID( argv[1] ) && JSVAL_IS_OBJECT(argv[1]) )
+	if ( argc >= 2 && !JSVAL_IS_PRIMITIVE(argv[1]) )
 		JS_SetReservedSlot(cx, dbStatement, SLOT_RESULT_QUERY_ARGUMENT_OBJECT, argv[1]);
 
 	return JS_TRUE;

@@ -497,7 +497,7 @@ ALWAYS_INLINE bool JsvalIsScript( JSContext *cx, jsval val ) {
 ALWAYS_INLINE bool JsvalIsFunction( JSContext *cx, jsval val ) {
 
 #ifdef DEBUG
-	JS_ASSERT( VALUE_IS_FUNCTION(cx, val) == !JSVAL_IS_PRIMITIVE(val) && JS_ObjectIsFunction(cx, JSVAL_TO_OBJECT(val)) ); // Mozilla JS engine private API behavior has changed.
+	JS_ASSERT( VALUE_IS_FUNCTION(cx, val) == (!JSVAL_IS_PRIMITIVE(val) && JS_ObjectIsFunction(cx, JSVAL_TO_OBJECT(val))) ); // Mozilla JS engine private API behavior has changed.
 #endif //DEBUG
 	//	return !JSVAL_IS_PRIMITIVE(val) && JS_ObjectIsFunction(cx, JSVAL_TO_OBJECT(val)); // faster than (JS_TypeOfValue(cx, (val)) == JSTYPE_FUNCTION)
 	return VALUE_IS_FUNCTION(cx, val);
@@ -686,7 +686,11 @@ ALWAYS_INLINE JSScript* JLLoadScript(JSContext *cx, JSObject *obj, const char *f
 		ungetc(s, scriptFile);
 	}
 
+	if ( saveCompFile )
+		JS_SetOptions( cx, JS_GetOptions(cx) & ~JSOPTION_COMPILE_N_GO ); // see https://bugzilla.mozilla.org/show_bug.cgi?id=494363
+
 	script = JS_CompileFileHandle(cx, obj, fileName, scriptFile);
+
 	fclose(scriptFile);
 	J_CHKM1( script, "Unable to compile the script %s.", fileName );
 

@@ -1,6 +1,32 @@
 LoadModule('jsstd');
 LoadModule('jssqlite');
 
+   var db = new Database();
+   db.Exec('create table t1 (name,id,c);');
+
+   db.Exec('insert into t1 (name, id,c) values ("Fred",6,7)');
+   db.Exec('insert into t1 (name, id,c) values ("Bart",3,4)');
+   db.Exec('insert into t1 (name, id,c) values ("Sally","b","c")');
+
+   var result1 = db.Query('Select ?, c From t1 Where id=?', ['name', 3] );
+   
+   
+	Print('before Step: \n');
+  Print( 'columnNames.toSource(): ' + result1.columnNames.toSource(), '\n' );   
+
+   Print( 'Col(0): ' + result1.Col(0) + '\n');
+   Print( 'Row().toSource(): ' + result1.Row().toSource(), '\n\n' );
+
+   Print('after Step: \n');
+   result1.Step();
+   Print( 'columnNames.toSource(): ' + result1.columnNames.toSource(), '\n' );
+   Print( 'Col(0): ' + result1.Col(0) + '\n');
+
+
+
+Halt(); //////////////////////////////////////////////////////////////////
+
+
 
 var db = new Database(); // in-memory database
 db.Exec('create table t1 (name,value);');

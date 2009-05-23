@@ -153,7 +153,8 @@ int main(int argc, char* argv[]) {
 	bool allowEmptyDest = argc >= 3 && strcmp(argv[3], "true") == 0;
 	printf("Empty source give empty destination: %s\n", allowEmptyDest ? "true" : "false");
 
-	JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_COMPILE_N_GO | JSOPTION_VAROBJFIX | JSOPTION_XML | /*JSOPTION_JIT |*/ JSOPTION_STRICT );
+	// do not use JSOPTION_COMPILE_N_GO option (see https://bugzilla.mozilla.org/show_bug.cgi?id=494363)
+	JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_VAROBJFIX | JSOPTION_XML | JSOPTION_STRICT ); /*JSOPTION_JIT |*/ 
 
 	printf("Script name: %s\n", argc >= 4 ? argv[4] : "(NULL)" );
 	printf("Compiling file %s\n", argv[1]);
