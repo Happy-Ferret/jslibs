@@ -16,6 +16,9 @@
 <?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
 <?xml-stylesheet href="data:text/css,
 
+	#root { opacity: 0.5 }
+	#root.interactive { opacity: 1 }
+
 	#code :-moz-tree-row(selected) { background-color: transparent }
 	#code :-moz-tree-cell-text(selected) { color: inherit }
 	#code :-moz-tree-cell-text(line) { color: white; }
@@ -229,7 +232,7 @@
 					return eval('('+SimpleRpc.xhr.responseText+')');
 				} catch(ex) {
 					
-					Trace(ex);
+//					Trace(ex);
 					return new Error(ex);
 				} finally {
 				
@@ -299,6 +302,8 @@
 		
 		function UpdateState() {
 		
+			var timeout = setTimeout(function() { $('root').className = '' }, 500);
+			
 			$('status').label = 'querying state...';
 			var s = debuggerRpc.State();
 			$('status').label = '';
@@ -326,6 +331,8 @@
 			$('cmd_breakondebuggerkeyword').setAttribute('checked', cfg.breakOnDebuggerKeyword);
 			outputManager.Write('stdout', debuggerRpc.StdOut());
 			outputManager.Write('stderr', debuggerRpc.StdErr());
+			clearTimeout(timeout);
+			$('root').className = 'interactive';
 		}
 
 
@@ -763,7 +770,7 @@
 							<tab label="output" oncommand="outputManager.Show(event.target.label); if ($('output').height == 0) $('output').height = 100"/>
 						</tabs>
 					</tabbox>
-					<tree id="output" hidecolumnpicker="true" context="outputContextMenu" seltype="single" height="0" flex="1">
+					<tree id="output" hidecolumnpicker="true" context="outputContextMenu" seltype="single" height="25" flex="1">
 						<menupopup id="outputContextMenu">
 							<menuitem label="clean" oncommand="outputManager.Clean(event.target.label)"/>
 						</menupopup>
