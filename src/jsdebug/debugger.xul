@@ -60,7 +60,7 @@
 >
 	<script type="text/javascript"><![CDATA[
 		
-		function Trace() window.console.debug.apply(this, arguments);
+		function Trace() window.console && window.console.debug.apply(this, arguments);
 		
 		function Stack() { try { throw Error() } catch (ex) { return 'stack:\n'+String(ex.stack).split('\n').slice(2).join('\n') }}        		
 		
