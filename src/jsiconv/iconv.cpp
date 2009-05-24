@@ -126,7 +126,7 @@ DEFINE_CALL() {
 
 		JSString *jsstr = JS_ValueToString(cx, J_ARG(1));
 		J_ARG(1) = STRING_TO_JSVAL( jsstr );
-		inLen = JS_GetStringLength(jsstr) * 2;
+		inLen = JL_GetStringLength(jsstr) * 2;
 		inBuf = (char*)JS_GetStringChars(jsstr);
 	} else {
 

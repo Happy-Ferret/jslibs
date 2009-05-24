@@ -350,7 +350,13 @@ ALWAYS_INLINE JSClass* JL_GetClass(JSObject *obj) {
 	return STOBJ_GET_CLASS(obj); // JS_GET_CLASS(cx, obj);
 }
 
-#define J_STRING_LENGTH(jsstr) (JSSTRING_LENGTH(jsstr)) // JS_GetStringLength(jsstr)
+ALWAYS_INLINE size_t JL_GetStringLength(JSString *jsstr) {
+	
+#ifdef DEBUG
+	JS_ASSERT( JSSTRING_LENGTH(jsstr) == JS_GetStringLength(jsstr) ); // Mozilla JS engine private API behavior has changed.
+#endif //DEBUG
+	return JSSTRING_LENGTH(jsstr);
+}
 
 // Is string or has jslibs BufferGet interface.
 #define J_JSVAL_IS_STRING(val) ( JSVAL_IS_STRING(val) || (!JSVAL_IS_PRIMITIVE(val) && BufferGetInterface(cx, JSVAL_TO_OBJECT(val)) != NULL) )
@@ -900,7 +906,7 @@ ALWAYS_INLINE JSBool JsvalToStringAndLength( JSContext *cx, jsval *val, const ch
 
 		JSString *str = JSVAL_TO_STRING(*val);
 		*buffer = JS_GetStringBytes(str); // JS_GetStringBytes never returns NULL, then J_S_ASSERT( *buffer != NULL, "Invalid string." ); is not needed.
-		*size = J_STRING_LENGTH(str);
+		*size = JL_GetStringLength(str);
 		return JS_TRUE;
 	}
 	if ( !JSVAL_IS_PRIMITIVE(*val) ) { // for NIBufferGet support
@@ -913,7 +919,7 @@ ALWAYS_INLINE JSBool JsvalToStringAndLength( JSContext *cx, jsval *val, const ch
 	JSString *jsstr = JS_ValueToString(cx, *val);
 	J_S_ASSERT( jsstr != NULL, J__ERRMSG_STRING_CONVERSION_FAILED );
 	*val = STRING_TO_JSVAL(jsstr); // protects *val against GC.
-	*size = J_STRING_LENGTH(jsstr);
+	*size = JL_GetStringLength(jsstr);
 	*buffer = JS_GetStringBytes(jsstr); // JS_GetStringBytes never returns NULL, then useless to check if (*buffer != NULL).
 	return JS_TRUE;
 	JL_BAD;
@@ -923,7 +929,7 @@ ALWAYS_INLINE JSBool JsvalToStringLength( JSContext *cx, jsval val, size_t *leng
 
 	if ( JSVAL_IS_STRING(val) ) { // for string literals
 
-		*length = J_STRING_LENGTH( JSVAL_TO_STRING(val) );
+		*length = JL_GetStringLength( JSVAL_TO_STRING(val) );
 		return JS_TRUE;
 	}
 	if ( !JSVAL_IS_PRIMITIVE(val) ) { // for NIBufferGet support
@@ -935,7 +941,7 @@ ALWAYS_INLINE JSBool JsvalToStringLength( JSContext *cx, jsval val, size_t *leng
 	}
 	JSString *str = JS_ValueToString(cx, val); // unfortunately, we have to convert to a string to know its length
 	J_CHK( str != NULL );
-	*length = J_STRING_LENGTH(str);
+	*length = JL_GetStringLength(str);
 	return JS_TRUE;
 	JL_BAD;
 }

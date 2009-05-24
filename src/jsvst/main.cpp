@@ -1079,7 +1079,7 @@ DEFINE_PROPERTY( uniqueID ) {
 	J_S_ASSERT_RESOURCE( vstPlugin );
 	J_S_ASSERT_STRING( *vp );
 	JSString *jsstr = JS_ValueToString(cx, *vp);
-	J_S_ASSERT( JS_GetStringLength(jsstr) == 4, "Invalid ID length" );
+	J_S_ASSERT( JL_GetStringLength(jsstr) == 4, "Invalid ID length" );
 	char *str = JS_GetStringBytes(jsstr);
 	VstInt32 vstid = CCONST( str[0], str[1], str[2], str[3] );
 	vstPlugin->setUniqueID( vstid );

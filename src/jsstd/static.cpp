@@ -187,7 +187,7 @@ DEFINE_FUNCTION_FAST( InternString ) {
 
 	JSString *str = JS_ValueToString(cx, vp[2]);
 	J_CHK( str );
-	J_CHK( JS_InternUCStringN(cx, JS_GetStringChars(str), J_STRING_LENGTH(str)) );
+	J_CHK( JS_InternUCStringN(cx, JS_GetStringChars(str), JL_GetStringLength(str)) );
 	*vp = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
@@ -1140,7 +1140,7 @@ DEFINE_FUNCTION_FAST( SandboxEval ) {
 	jsstr = JS_ValueToString(cx, J_FARG(1));
 	J_CHK( jsstr );
 	uintN srclen;
-	srclen = JS_GetStringLength(jsstr);
+	srclen = JL_GetStringLength(jsstr);
 	jschar *src;
 	src = JS_GetStringChars(jsstr);
 

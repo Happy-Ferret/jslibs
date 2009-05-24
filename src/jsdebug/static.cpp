@@ -1199,7 +1199,7 @@ DEFINE_FUNCTION_FAST( EvalInStackFrame ) {
 
 	JSString *jsstr;
 	jsstr = JSVAL_TO_STRING( J_FARG(1) );
-	J_CHK( JS_EvaluateUCInStackFrame(cx, fp, JS_GetStringChars(jsstr), JS_GetStringLength(jsstr), JS_GetScriptFilename(cx, script), JS_PCToLineNumber(cx, script, pc), J_FRVAL) );
+	J_CHK( JS_EvaluateUCInStackFrame(cx, fp, JS_GetStringChars(jsstr), JL_GetStringLength(jsstr), JS_GetScriptFilename(cx, script), JS_PCToLineNumber(cx, script, pc), J_FRVAL) );
 
 	return JS_TRUE;
 	JL_BAD;

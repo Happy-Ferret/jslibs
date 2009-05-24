@@ -119,7 +119,7 @@ protected:
 		JSString *jsstr = JS_ValueToString(_cx, val);
 		if ( jsstr == NULL )
 			throw JsException(_cx, "cannot convert the value to a string");
-		size_t len = JS_GetStringLength(jsstr);
+		size_t len = JL_GetStringLength(jsstr);
 		if ( len > maxLength - 1 )
 			 len = maxLength - 1;
 		memcpy(str, JS_GetStringBytes(jsstr), len);

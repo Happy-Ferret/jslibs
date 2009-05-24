@@ -82,7 +82,7 @@ JSBool NativeInterfaceBufferGet( JSContext *cx, JSObject *obj, const char **buf,
 	JSString *jsstr;
 	jsstr = JS_ValueToString(cx, OBJECT_TO_JSVAL(obj));
 	*buf = JS_GetStringBytes(jsstr);
-	*size = JS_GetStringLength(jsstr);
+	*size = JL_GetStringLength(jsstr);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -108,7 +108,7 @@ inline JSBool JsvalToBlob( JSContext *cx, jsval val, JSObject **obj ) {
 
 		JSString *jsstr = JS_ValueToString(cx, val);
 		J_S_ASSERT( jsstr != NULL, "Unable to convert to string." );
-		srcLen = J_STRING_LENGTH(jsstr);
+		srcLen = JL_GetStringLength(jsstr);
 		if ( srcLen > 0 ) {
 
 			dst = JS_malloc(cx, srcLen +1);
@@ -268,7 +268,7 @@ DEFINE_FUNCTION_FAST( concat ) {
 
 			JSString *jsstr = JS_ValueToString(cx, J_FARG(arg));
 			J_FARG(arg) = STRING_TO_JSVAL(jsstr);
-			dstLen += J_STRING_LENGTH(jsstr);
+			dstLen += JL_GetStringLength(jsstr);
 		}
 	}
 
