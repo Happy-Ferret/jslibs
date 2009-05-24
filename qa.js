@@ -191,7 +191,7 @@ function CommonReportIssue(cx, type, location, testName, checkName, details) {
 	if ( cx.cfg.logFilename ) {
 	
 		logFile = new File(cfg.logFilename);
-		logFile.Open('w+');
+		logFile.Open('a+');
 		logFile.Write(message + '\n');
 		logFile.Close();
 	}
