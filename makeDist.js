@@ -4,6 +4,7 @@ LoadModule('jsio');
 
 function Zip(dir, destFilename) {
 
+	Print( 'zip '+dir+' to '+destFilename, '\n' );
 	// eXclude Recursively .svn directories
 	// eXclude .tpl files
 	var p = new Process('D:/Tools/mozilla-build/7zip/7z.exe', ['a', '-tzip', '-mx9', '-xr!*.tpl', '-xr!*.svn', destFilename, dir]);
@@ -15,6 +16,7 @@ function Zip(dir, destFilename) {
 
 function GetLatestSVNRevision() {
 	
+	Print( 'Get latest SVN revision', '\n' );
 	var p = new Process(GetEnv('ComSpec'), ['/c', 'svn', 'info', '--xml']);
 	var svnInfo = '';
 	for ( let data; data = p.stdout.Read(); )
@@ -115,6 +117,8 @@ var [type, version, revision, changes] = GetLatestChanges();
 changes = changes.replace(/<pre>|<\/pre>/g, ''); // cleanup
 changes = changes.replace(/\n/g, '\r\n');
 
+//revision = 'r'+GetLatestSVNRevision();
+
 var readme = Expand(new File('./dist/readme.txt.tpl').content, function(id) {
 	
 	switch(id) {
@@ -123,7 +127,7 @@ var readme = Expand(new File('./dist/readme.txt.tpl').content, function(id) {
 		case 'version':
 			return version;
 		case 'revision':
-			return revision; //GetLatestSVNRevision();
+			return revision
 		case 'changes':
 			return IndentText(changes, '  ');
 	}
@@ -144,7 +148,6 @@ Copy('./tests/oggFilePlayer.js', './dist/examples');
 Copy('./tests/41_30secOgg-q0.ogg', './dist/examples');
 Copy('./tests/testForDebugger.js', './dist/examples');
 
-
 Copy('./src/jsdebug/debugger.js', './dist/bin');
 Copy('./src/jsdebug/debugger.xul', './dist/bin');
 
@@ -159,4 +162,3 @@ Copy('./libs/openal/sdk/redist/wrap_oal.dll', './dist/bin');
 new File('./dist/README.TXT').content = readme;
 
 Zip('./dist/*', 'jslibs_'+type+'_'+version+'_'+'rxxx'+'.zip');
-
