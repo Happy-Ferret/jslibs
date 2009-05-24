@@ -6,5 +6,9 @@ if not exist %firefox% (
  pause
  exit
 )
+
+echo Starting debugger user interface...
 start %firefox% bin\debugger.xul
-jshost bin/debugger.js examples/helloworld.js
+
+echo Starting JavaScript program...
+jshost bin/debugger.js examples/testForDebugger.js
