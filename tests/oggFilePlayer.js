@@ -5,7 +5,7 @@ LoadModule('jsaudio');
 
 var filename = arguments[1] || '41_30secOgg-q0.ogg';
 
-Print('playing '+filename, '\n' );
+Print('playing '+filename, '\npress Ctrl-c to exit\n' );
 
 var decoder = new OggVorbisDecoder(new File(filename).Open(File.RDONLY));
 
