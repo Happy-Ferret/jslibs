@@ -77,20 +77,29 @@ LoadModule('jsiconv');
 	QA.ASSERT( String.charCodeAt(res[3]), 43459, '"é" is (c3 a9)' );
 
 
-/// store UTF-16 to JS unicode
+/// store UTF-16 to JS string and unicode string
 
-	var conv = new Iconv('UTF-16', 'ISO-8859-1', true, false); // source is not wide, dest is wide
+	var conv = new Iconv('UTF-16', 'ISO-8859-1', false, false);
+	var res = conv('abc');
+	QA.ASSERT( res.length, 8, 'non-UC string length' );
+
+	var conv = new Iconv('UTF-16', 'ISO-8859-1', true, false);
+	var res = conv('abc');
+	QA.ASSERT( res.length, 4, 'UC string length' );
+
+
+/// store UTF-8 to JS string and unicode string
+
+	var conv = new Iconv('UTF-8', 'ISO-8859-1', false, false); // source is not wide, dest is wide
+	var res = conv('été');
+	QA.ASSERT( res.length, 5, 'UC string length' );
 	
+	var conv = new Iconv('UTF-8', 'ISO-8859-1', true, false); // source is not wide, dest is wide
 	var res = conv('été');
 	QA.ASSERT( res.length, 3, 'UC string length' );
 
-//	QA.ASSERT( String.charCodeAt(res[0]), 43459, '"é" is (c3 a9)' );
-//	QA.ASSERT( String.charCodeAt(res[1]), 116, '"t"' );
-//	QA.ASSERT( String.charCodeAt(res[2]), 43459, '"é" is (c3 a9)' );
 
-	var conv = new Iconv('UTF-8', 'ISO-8859-1', true, false); // source is not wide, dest is wide
-	var res = conv('z');
-	QA.ASSERT( res.length, 1, '"z" UC string length' );
+/// store UCS-2-INTERNAL to JS unicode
 	
 	var conv = new Iconv('UCS-2-INTERNAL', 'ISO-8859-1', true, false); // source is not wide, dest is wide
 	var res = conv('été');

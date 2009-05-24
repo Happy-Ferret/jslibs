@@ -24,8 +24,14 @@
 
 		QA.ASSERT( typeof eval, 'function', 'eval function availability' );
 
+
 /// undefined mutability [ftrm]
 		
 		QA.ASSERT( undefined, (void 0), 'compare to void 0 (default)' );
 		undefined = 123;
 		QA.ASSERT( undefined, (void 0), 'compare to void 0 (changed)' );
+
+
+/// embedded bootstrap script [ftrm]
+
+		QA.ASSERT( 'bootstrapScript' in _configuration, false, 'no embedded bootstrap script by default' );

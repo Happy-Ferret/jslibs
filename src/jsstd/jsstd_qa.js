@@ -701,15 +701,20 @@ LoadModule('jsstd');
 		}
 
 
-/// XDR test [ftrm]
-
-		var s = new Script('for ( var i = 0; i < 1000; ++i ) i++;');
-		var res = XdrDecode(XdrEncode(s));
-		QA.ASSERT_STR( s.toSource(), res.toSource(), 'XDR->unXDR a Script' );
+/// XDR serialization [ftrm]
 
 		var s = new Script('/./');
-		var res = XdrDecode(XdrEncode(s));
-		QA.ASSERT_STR( s.toSource(), res.toSource(), 'XDR->unXDR a Script' );
+		QA.ASSERT_EXCEPTION( function() XdrEncode(s), TypeError );
+		//var res = XdrDecode(XdrEncode(s));
+		//QA.ASSERT_STR( s.toSource(), res.toSource(), 'XDR->unXDR a Script' );
+
+		QA.ASSERT( XdrDecode(XdrEncode(Map({a:1, b:2, c:3}))).a, 1, 'XDR->unXDR a Map' );
+		QA.ASSERT( XdrDecode(XdrEncode(Map({a:1, b:2, c:3}))).b, 2, 'XDR->unXDR a Map' );
+		QA.ASSERT( XdrDecode(XdrEncode(Map({a:1, b:2, c:3}))).c, 3, 'XDR->unXDR a Map' );
+
+		QA.ASSERT( XdrDecode(XdrEncode('6r54aze6r5')), '6r54aze6r5', 'XDR->unXDR a string' );
+		QA.ASSERT( XdrDecode(XdrEncode(1234567)), 1234567, 'XDR->unXDR a number' );
+		QA.ASSERT( XdrDecode(XdrEncode(1.234567)), 1.234567, 'XDR->unXDR a double' );
 
 
 /// Clear function [ftrm]
