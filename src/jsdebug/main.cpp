@@ -38,7 +38,7 @@ void NewScriptHook(JSContext *cx, const char *filename, uintN lineno, JSScript *
 
 // (TBD) do we protect new file-based scripts against GC to allow later debugging them ?
 
-//	printf( "add - %s:%d - %s - %d - %p\n", filename, lineno, fun ? JS_GetFunctionName(fun):"", script->staticLevel, script );
+	printf( "add - %s:%d-%d - %s - %d - %p\n", filename, lineno, lineno+JS_GetScriptLineExtent(cx, script), fun ? JS_GetFunctionName(fun):"", script->staticLevel, script );
 
 	jl::QueueCell *it;
 	jl::Queue *scriptList = NULL;
@@ -67,18 +67,34 @@ void NewScriptHook(JSContext *cx, const char *filename, uintN lineno, JSScript *
 			if ( script->staticLevel >= s->staticLevel ) {
 
 				jl::QueueInsertCell(scriptList, it, script);
-				break;
+				return;
 			}
 		}
-		if ( it == NULL )
-			jl::QueueUnshift(scriptList, script);
+		jl::QueuePush(scriptList, script);
 	}
+
+/*
+	{
+	printf("<DUMP>\n");
+	jl::QueueCell *it, *it1; jl::Queue *scriptList = NULL;
+	for ( it = jl::QueueBegin(scriptFileList); it; it = jl::QueueNext(it) ) {
+
+		scriptList = (jl::Queue*)jl::QueueGetData(it);
+		for ( it1 = jl::QueueBegin(scriptList); it1; it1 = jl::QueueNext(it1) ) {
+
+			JSScript *s = (JSScript*)jl::QueueGetData(it1);
+			printf( "script: - %s:%d-%d - %d - %p\n", s->filename, s->lineno, s->lineno+JS_GetScriptLineExtent(cx, s), script->staticLevel, s );
+		}
+	}
+	printf("</DUMP>\n\n");
+	}
+*/
 }
 
 
 void DestroyScriptHook(JSContext *cx, JSScript *script, void *callerdata) {
 
-//	printf( "del - %s:%d - ? - %d - %p\n", script->filename, script->lineno, script->staticLevel, script );
+	printf( "del - %s:%d - ? - %d - %p\n", script->filename, script->lineno, script->staticLevel, script );
 
 	jl::QueueCell *it, *it1;
 	jl::Queue *scriptList = NULL;
@@ -127,7 +143,7 @@ JSScript *ScriptByLocation(JSContext *cx, jl::Queue *scriptFileList, const char 
 		script = (JSScript*)jl::QueueGetData(it);
 		uintN extent = JS_GetScriptLineExtent(cx, script);
 
-		if ( lineno >= script->lineno && lineno <= script->lineno + extent )
+		if ( lineno >= script->lineno && lineno < script->lineno + extent )
 			break;
 		// else the last script in the list (depth 0) will be selected
 	}
