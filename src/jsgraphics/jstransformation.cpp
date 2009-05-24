@@ -23,6 +23,10 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 
+// (TBD) move this in the class private
+Matrix44 *matrixPool[2048];
+int matrixPoolLength = 0;
+
 
 static int ReadMatrix(JSContext *cx, JSObject *obj, float **m) { // Doc: __declspec(noinline) tells the compiler to never inline a particular function.
 	
@@ -30,6 +34,7 @@ static int ReadMatrix(JSContext *cx, JSObject *obj, float **m) { // Doc: __decls
 	*m = objMatrix->raw; // returns its private pointer. Caller SHOULD not modify it
 	return true;
 }
+
 
 /**doc
 $CLASS_HEADER
@@ -39,26 +44,45 @@ BEGIN_CLASS( Transformation )
 
 DEFINE_FINALIZE() {
 
+//	printf("Fin:%d\n", matrixPoolLength);
 	Matrix44 *m = (Matrix44*)JS_GetPrivate(cx, obj);
-	if ( m != NULL ) {
-
+	if ( !m )
+		return;
+	if ( matrixPoolLength < COUNTOF(matrixPool) )
+		matrixPool[matrixPoolLength++] = m;
+	else
 		Matrix44Free(m);
-		JS_SetPrivate(cx, obj, NULL);
-	}
+	JL_SetPrivate(cx, obj, NULL);
 }
+
 
 /**doc
 $TOC_MEMBER $INAME
- $INAME()
-  Creates a new uninitialized Transformation object.
+ $INAME( [initToIdentity] )
+  Creates a new Transformation object. If _initToIdentity_ is given and true, the transformation is initialized to identity. Else the transformation is not initialized.
 **/
 DEFINE_CONSTRUCTOR() {
 
+//	printf("New:%d\n", matrixPoolLength);
+
 	J_S_ASSERT_CONSTRUCTING();
-	Matrix44 *m = Matrix44Alloc();
-	J_S_ASSERT_ALLOC(m);
-//	Matrix44Identity(m);
-	JS_SetPrivate(cx, J_OBJ, m);
+	Matrix44 *m;
+	if ( matrixPoolLength )
+		m = matrixPool[--matrixPoolLength];
+	else {
+		m = Matrix44Alloc();
+		J_S_ASSERT_ALLOC(m);
+	}
+
+	if ( J_ARG_ISDEF(1) ) {
+		
+		bool b;
+		JsvalToBool(cx, J_ARG(1), &b);
+		if ( b )
+			Matrix44Identity(m);
+	}
+
+	JL_SetPrivate(cx, J_OBJ, m);
 	J_CHK( SetMatrix44ReadInterface(cx, obj, ReadMatrix) );
 	return JS_TRUE;
 	JL_BAD;
@@ -500,16 +524,20 @@ DEFINE_FUNCTION_FAST( LookAt ) {
 }
 
 
+/**doc
+$TOC_MEMBER $INAME
+ $THIS $INAME( x, y, z )
+  Apply the (0,0,1)-(x,y,z) angle to the current transformation.
+**/
 DEFINE_FUNCTION_FAST( RotateToVector ) {
 
 	J_S_ASSERT_ARG_MIN(3); // x, y, z
 	Matrix44 *m = (Matrix44*)JS_GetPrivate(cx, J_FOBJ);
 	J_S_ASSERT_RESOURCE(m);
 	float x, y, z;
-	J_CHK( JsvalToFloat(cx, J_FARG(1), &x) ); 
-	J_CHK( JsvalToFloat(cx, J_FARG(2), &y) ); 
-	J_CHK( JsvalToFloat(cx, J_FARG(3), &z) ); 
-
+	J_CHK( JsvalToFloat(cx, J_FARG(1), &x) );
+	J_CHK( JsvalToFloat(cx, J_FARG(2), &y) );
+	J_CHK( JsvalToFloat(cx, J_FARG(3), &z) );
 
 	Vector3 to, up;
 	Vector3Set(&to, x,y,z);
@@ -524,7 +552,7 @@ DEFINE_FUNCTION_FAST( RotateToVector ) {
 	Matrix44Identity(&r);
 	Matrix44SetRotation(&r, &up, -angle * M_PI / 360.0f);
 	Matrix44Product(m, &r);
-	*J_FRVAL = JSVAL_VOID;
+	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
 
 	return JS_TRUE;
 	JL_BAD;
@@ -593,7 +621,7 @@ DEFINE_FUNCTION_FAST( ReverseProduct ) {
 /**doc
 $TOC_MEMBER $INAME
  $VOID $INAME( vector )
-  transforms the 3D or 4D _vector_ by the current transformation.
+  Transforms the 3D or 4D _vector_ by the current transformation.
   $H arguments
    $ARG $ARRAY vector
 **/
@@ -618,13 +646,13 @@ DEFINE_FUNCTION_FAST( TransformVector ) {
 		J_CHK( JsvalToFloatVector(cx, J_FARG(1), src.raw, 3, &length ) );
 		Matrix44MultVector3( tm, &src, &dst );
 
-		J_CHK( JS_NewNumberValue(cx, dst.x, &tmpValue) );
+		J_CHK( DoubleToJsval(cx, dst.x, &tmpValue) );
 		J_CHK( JS_SetElement(cx, JSVAL_TO_OBJECT( J_FARG(1) ), 0, &tmpValue) );
 
-		J_CHK( JS_NewNumberValue(cx, dst.y, &tmpValue) );
+		J_CHK( DoubleToJsval(cx, dst.y, &tmpValue) );
 		J_CHK( JS_SetElement(cx, JSVAL_TO_OBJECT( J_FARG(1) ), 1, &tmpValue) );
 
-		J_CHK( JS_NewNumberValue(cx, dst.z, &tmpValue) );
+		J_CHK( DoubleToJsval(cx, dst.z, &tmpValue) );
 		J_CHK( JS_SetElement(cx, JSVAL_TO_OBJECT( J_FARG(1) ), 2, &tmpValue) );
 	} else
 	if ( length == 4 ) {
@@ -633,16 +661,16 @@ DEFINE_FUNCTION_FAST( TransformVector ) {
 		J_CHK( JsvalToFloatVector(cx, J_FARG(1), src.raw, 4, &length ) );
 		Matrix44MultVector4( tm, &src, &dst );
 
-		J_CHK( JS_NewNumberValue(cx, dst.x, &tmpValue) );
+		J_CHK( DoubleToJsval(cx, dst.x, &tmpValue) );
 		J_CHK( JS_SetElement(cx, JSVAL_TO_OBJECT( J_FARG(1) ), 0, &tmpValue) );
 
-		J_CHK( JS_NewNumberValue(cx, dst.y, &tmpValue) );
+		J_CHK( DoubleToJsval(cx, dst.y, &tmpValue) );
 		J_CHK( JS_SetElement(cx, JSVAL_TO_OBJECT( J_FARG(1) ), 1, &tmpValue) );
 
-		J_CHK( JS_NewNumberValue(cx, dst.z, &tmpValue) );
+		J_CHK( DoubleToJsval(cx, dst.z, &tmpValue) );
 		J_CHK( JS_SetElement(cx, JSVAL_TO_OBJECT( J_FARG(1) ), 2, &tmpValue) );
 
-		J_CHK( JS_NewNumberValue(cx, dst.w, &tmpValue) );
+		J_CHK( DoubleToJsval(cx, dst.w, &tmpValue) );
 		J_CHK( JS_SetElement(cx, JSVAL_TO_OBJECT( J_FARG(1) ), 3, &tmpValue) );
 	} else {
 
@@ -693,7 +721,7 @@ DEFINE_GET_PROPERTY() {
 		J_S_ASSERT_RESOURCE(tm);
 		jsint slot = JSVAL_TO_INT( id );
 		J_S_ASSERT( slot >= 0 && slot <= 15, "Out of range." );
-		J_CHK( JS_NewNumberValue(cx, tm->raw[slot], vp) );
+		J_CHK( DoubleToJsval(cx, tm->raw[slot], vp) );
 	}
 	return JS_TRUE;
 	JL_BAD;

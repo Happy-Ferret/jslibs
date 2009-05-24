@@ -525,6 +525,7 @@ JSBool FireListener( JSContext *cx, JSObject *listenerObj, SDL_Event *ev, jsval 
 
 	jsval fVal;
 
+//	printf("DBG: event %d\n", ev->type);
 	switch (ev->type) {
 		case SDL_ACTIVEEVENT:
 			J_CHK( JS_GetProperty(cx, listenerObj, "onActive", &fVal) );

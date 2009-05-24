@@ -1140,9 +1140,7 @@ bad:
 
 ALWAYS_INLINE JSBool FloatToJsval( JSContext *cx, float f, jsval *val ) {
 
-	J_CHK( JS_NewNumberValue(cx, f, val) );
-	return JS_TRUE;
-	JL_BAD;
+	return JS_NewNumberValue(cx, f, val);
 }
 
 
@@ -1165,9 +1163,7 @@ bad:
 
 ALWAYS_INLINE JSBool DoubleToJsval( JSContext *cx, double d, jsval *val ) {
 
-	J_CHK( JS_NewNumberValue(cx, d, val) );
-	return JS_TRUE;
-	JL_BAD;
+	return JS_NewNumberValue(cx, d, val);
 }
 
 

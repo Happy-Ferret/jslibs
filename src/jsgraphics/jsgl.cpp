@@ -178,12 +178,12 @@ DEFINE_FUNCTION_FAST( GetDouble ) {
 		jsval tmpValue;
 		while (count--) {
 
-			J_CHK( JS_NewDoubleValue(cx, params[count], &tmpValue) );
+			J_CHK( DoubleToJsval(cx, params[count], &tmpValue) );
 			J_CHK( JS_SetElement(cx, arrayObj, count, &tmpValue) );
 		}
 	} else {
 
-		J_CHK( JS_NewDoubleValue(cx, params[0], J_FRVAL) );
+		J_CHK( DoubleToJsval(cx, params[0], J_FRVAL) );
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -205,7 +205,7 @@ DEFINE_FUNCTION_FAST( Accum ) {
 	J_S_ASSERT_INT(J_FARG(1));
 	GLenum op = JSVAL_TO_INT(J_FARG(1));
 	jsdouble value;
-	JS_ValueToNumber(cx, J_FARG(2), &value);
+	JsvalToDouble(cx, J_FARG(2), &value);
 	glAccum(op, value);
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
@@ -228,7 +228,7 @@ DEFINE_FUNCTION_FAST( AlphaFunc ) {
 	J_S_ASSERT_INT(J_FARG(1));
 	J_S_ASSERT_NUMBER(J_FARG(2));
 	jsdouble ref;
-	JS_ValueToNumber(cx, J_FARG(2), &ref);
+	JsvalToDouble(cx, J_FARG(2), &ref);
 	glAlphaFunc( JSVAL_TO_INT(J_FARG(1)), ref );
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
@@ -287,7 +287,7 @@ DEFINE_FUNCTION_FAST( Fog ) {
 	if ( JSVAL_IS_NUMBER(J_FARG(2)) ) {
 
 		jsdouble param;
-		JS_ValueToNumber(cx, J_FARG(2), &param);
+		JsvalToDouble(cx, J_FARG(2), &param);
 		glFogf( JSVAL_TO_INT(J_FARG(1)), param );
 		return JS_TRUE;
 	}
@@ -346,11 +346,11 @@ DEFINE_FUNCTION_FAST( Vertex ) {
 //	float vec[3];
 //	FloatArrayToVector(cx, 3, &argv[0], vec);
 	jsdouble x, y, z;
-	JS_ValueToNumber(cx, J_FARG(1), &x);
-	JS_ValueToNumber(cx, J_FARG(2), &y);
+	JsvalToDouble(cx, J_FARG(1), &x);
+	JsvalToDouble(cx, J_FARG(2), &y);
 	if ( J_ARGC >= 3 ) {
 
-		JS_ValueToNumber(cx, J_FARG(3), &z);
+		JsvalToDouble(cx, J_FARG(3), &z);
 		glVertex3d(x, y, z);
 	} else {
 
@@ -379,12 +379,12 @@ DEFINE_FUNCTION_FAST( Color ) {
 //	float vec[3];
 //	FloatArrayToVector(cx, 3, &argv[0], vec);
 	jsdouble r, g, b, a;
-	JS_ValueToNumber(cx, J_FARG(1), &r);
-	JS_ValueToNumber(cx, J_FARG(2), &g);
-	JS_ValueToNumber(cx, J_FARG(3), &b);
+	JsvalToDouble(cx, J_FARG(1), &r);
+	JsvalToDouble(cx, J_FARG(2), &g);
+	JsvalToDouble(cx, J_FARG(3), &b);
 	if ( J_FARG_ISDEF(4) ) {
 
-		JS_ValueToNumber(cx, J_FARG(4), &a);
+		JsvalToDouble(cx, J_FARG(4), &a);
 		glColor4d(r, g, b, a);
 	} else {
 
@@ -412,9 +412,9 @@ DEFINE_FUNCTION_FAST( Normal ) {
 //	float vec[3];
 //	FloatArrayToVector(cx, 3, &argv[0], vec);
 	jsdouble nx, ny, nz;
-	JS_ValueToNumber(cx, J_FARG(1), &nx);
-	JS_ValueToNumber(cx, J_FARG(2), &ny);
-	JS_ValueToNumber(cx, J_FARG(3), &nz);
+	JsvalToDouble(cx, J_FARG(1), &nx);
+	JsvalToDouble(cx, J_FARG(2), &ny);
+	JsvalToDouble(cx, J_FARG(3), &nz);
 	glNormal3d(nx, ny, nz);
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
@@ -437,21 +437,21 @@ DEFINE_FUNCTION_FAST( TexCoord ) {
 	J_S_ASSERT_ARG_MIN(1);
 	*J_FRVAL = JSVAL_VOID;
 	jsdouble s;
-	JS_ValueToNumber(cx, J_FARG(1), &s);
+	JsvalToDouble(cx, J_FARG(1), &s);
 	if ( J_ARGC == 1 ) {
 
 		glTexCoord1d(s);
 		return JS_TRUE;
 	}
 	jsdouble t;
-	JS_ValueToNumber(cx, J_FARG(2), &t);
+	JsvalToDouble(cx, J_FARG(2), &t);
 	if ( J_ARGC == 2 ) {
 
 		glTexCoord2d(s, t);
 		return JS_TRUE;
 	}
 	jsdouble r;
-	JS_ValueToNumber(cx, J_FARG(3), &r);
+	JsvalToDouble(cx, J_FARG(3), &r);
 	if ( J_ARGC == 3 ) {
 
 		glTexCoord3d(s, t, r);
@@ -488,7 +488,7 @@ DEFINE_FUNCTION_FAST( TexParameter ) {
 	if ( JSVAL_IS_DOUBLE(J_FARG(3)) ) {
 
 		jsdouble param;
-		J_CHK( JS_ValueToNumber(cx, J_FARG(3), &param) );
+		J_CHK( JsvalToDouble(cx, J_FARG(3), &param) );
 		glTexParameterf( JSVAL_TO_INT( J_FARG(1) ), JSVAL_TO_INT( J_FARG(2) ), param );
 		return JS_TRUE;
 	}
@@ -532,7 +532,7 @@ DEFINE_FUNCTION_FAST( TexEnv ) {
 	if ( JSVAL_IS_NUMBER(J_FARG(3)) ) {
 
 		jsdouble param;
-		JS_ValueToNumber(cx, J_FARG(3), &param);
+		JsvalToDouble(cx, J_FARG(3), &param);
 		glTexEnvf( JSVAL_TO_INT(J_FARG(1)), JSVAL_TO_INT(J_FARG(2)), param );
 		return JS_TRUE;
 	}
@@ -573,7 +573,7 @@ DEFINE_FUNCTION_FAST( LightModel ) {
 	if ( JSVAL_IS_DOUBLE(J_FARG(2)) ) {
 
 		jsdouble param;
-		J_CHK( JS_ValueToNumber(cx, J_FARG(2), &param) );
+		J_CHK( JsvalToDouble(cx, J_FARG(2), &param) );
 		glLightModelf( JSVAL_TO_INT( J_FARG(1) ), param );
 		return JS_TRUE;
 	}
@@ -616,7 +616,7 @@ DEFINE_FUNCTION_FAST( Light ) {
 	if ( JSVAL_IS_DOUBLE(J_FARG(3)) ) {
 
 		jsdouble param;
-		J_CHK( JS_ValueToNumber(cx, J_FARG(3), &param) );
+		J_CHK( JsvalToDouble(cx, J_FARG(3), &param) );
 		glLightf( JSVAL_TO_INT( J_FARG(1) ), JSVAL_TO_INT( J_FARG(2) ), param );
 		return JS_TRUE;
 	}
@@ -659,7 +659,7 @@ DEFINE_FUNCTION_FAST( Material ) {
 	if ( JSVAL_IS_DOUBLE(J_FARG(3)) ) {
 
 		jsdouble param;
-		J_CHK( JS_ValueToNumber(cx, J_FARG(3), &param) );
+		J_CHK( JsvalToDouble(cx, J_FARG(3), &param) );
 		glMaterialf( JSVAL_TO_INT( J_FARG(1) ), JSVAL_TO_INT( J_FARG(2) ), param );
 		return JS_TRUE;
 	}
@@ -727,7 +727,7 @@ DEFINE_FUNCTION_FAST( PointSize ) {
 
 	J_S_ASSERT_ARG_MIN(1);
 	jsdouble size;
-	JS_ValueToNumber(cx, J_FARG(1), &size);
+	JsvalToDouble(cx, J_FARG(1), &size);
 	glPointSize(size);
 	return JS_TRUE;
 	JL_BAD;
@@ -746,7 +746,7 @@ DEFINE_FUNCTION_FAST( LineWidth ) {
 
 	J_S_ASSERT_ARG_MIN(1);
 	jsdouble width;
-	JS_ValueToNumber(cx, J_FARG(1), &width);
+	JsvalToDouble(cx, J_FARG(1), &width);
 	glLineWidth(width);
 	return JS_TRUE;
 	JL_BAD;
@@ -824,8 +824,8 @@ DEFINE_FUNCTION_FAST( DepthRange ) {
 
 	J_S_ASSERT_ARG_MIN(2);
 	jsdouble zNear, zFar;
-	JS_ValueToNumber(cx, J_FARG(1), &zNear);
-	JS_ValueToNumber(cx, J_FARG(2), &zFar);
+	JsvalToDouble(cx, J_FARG(1), &zNear);
+	JsvalToDouble(cx, J_FARG(2), &zFar);
 	glDepthRange(zNear, zFar);
 	return JS_TRUE;
 	JL_BAD;
@@ -901,7 +901,7 @@ DEFINE_FUNCTION_FAST( ClearDepth ) {
 
 	J_S_ASSERT_ARG_MIN(1);
 	jsdouble depth;
-	JS_ValueToNumber(cx, J_FARG(1), &depth);
+	JsvalToDouble(cx, J_FARG(1), &depth);
 	glClearDepth(depth);
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
@@ -924,10 +924,10 @@ DEFINE_FUNCTION_FAST( ClearColor ) {
 
 	J_S_ASSERT_ARG_MIN(4);
 	jsdouble r, g, b, a;
-	JS_ValueToNumber(cx, J_FARG(1), &r);
-	JS_ValueToNumber(cx, J_FARG(2), &g);
-	JS_ValueToNumber(cx, J_FARG(3), &b);
-	JS_ValueToNumber(cx, J_FARG(4), &a);
+	JsvalToDouble(cx, J_FARG(1), &r);
+	JsvalToDouble(cx, J_FARG(2), &g);
+	JsvalToDouble(cx, J_FARG(3), &b);
+	JsvalToDouble(cx, J_FARG(4), &a);
 	glClearColor(r, g, b, a);
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
@@ -950,10 +950,10 @@ DEFINE_FUNCTION_FAST( ClearAccum ) {
 
 	J_S_ASSERT_ARG_MIN(4);
 	jsdouble r, g, b, a;
-	JS_ValueToNumber(cx, J_FARG(1), &r);
-	JS_ValueToNumber(cx, J_FARG(2), &g);
-	JS_ValueToNumber(cx, J_FARG(3), &b);
-	JS_ValueToNumber(cx, J_FARG(4), &a);
+	JsvalToDouble(cx, J_FARG(1), &r);
+	JsvalToDouble(cx, J_FARG(2), &g);
+	JsvalToDouble(cx, J_FARG(3), &b);
+	JsvalToDouble(cx, J_FARG(4), &a);
 	glClearAccum(r, g, b, a);
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
@@ -1046,12 +1046,12 @@ DEFINE_FUNCTION_FAST( Frustum ) {
 
 	J_S_ASSERT_ARG_MIN(6);
 	jsdouble left, right, bottom, top, zNear, zFar;
-	JS_ValueToNumber(cx, J_FARG(1), &left);
-	JS_ValueToNumber(cx, J_FARG(2), &right);
-	JS_ValueToNumber(cx, J_FARG(3), &bottom);
-	JS_ValueToNumber(cx, J_FARG(4), &top);
-	JS_ValueToNumber(cx, J_FARG(5), &zNear);
-	JS_ValueToNumber(cx, J_FARG(6), &zFar);
+	JsvalToDouble(cx, J_FARG(1), &left);
+	JsvalToDouble(cx, J_FARG(2), &right);
+	JsvalToDouble(cx, J_FARG(3), &bottom);
+	JsvalToDouble(cx, J_FARG(4), &top);
+	JsvalToDouble(cx, J_FARG(5), &zNear);
+	JsvalToDouble(cx, J_FARG(6), &zFar);
 	glFrustum(left, right, bottom, top, zNear, zFar);
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
@@ -1076,12 +1076,12 @@ DEFINE_FUNCTION_FAST( Ortho ) {
 
 	J_S_ASSERT_ARG_MIN(6);
 	jsdouble left, right, bottom, top, zNear, zFar;
-	JS_ValueToNumber(cx, J_FARG(1), &left);
-	JS_ValueToNumber(cx, J_FARG(2), &right);
-	JS_ValueToNumber(cx, J_FARG(3), &bottom);
-	JS_ValueToNumber(cx, J_FARG(4), &top);
-	JS_ValueToNumber(cx, J_FARG(5), &zNear);
-	JS_ValueToNumber(cx, J_FARG(6), &zFar);
+	JsvalToDouble(cx, J_FARG(1), &left);
+	JsvalToDouble(cx, J_FARG(2), &right);
+	JsvalToDouble(cx, J_FARG(3), &bottom);
+	JsvalToDouble(cx, J_FARG(4), &top);
+	JsvalToDouble(cx, J_FARG(5), &zNear);
+	JsvalToDouble(cx, J_FARG(6), &zFar);
 
 //	glMatrixMode(GL_PROJECTION);
 //	glLoadIdentity();
@@ -1112,9 +1112,9 @@ DEFINE_FUNCTION_FAST( Perspective ) {
 
 	J_S_ASSERT_ARG_MIN(3);
 	jsdouble fovy, zNear, zFar;
-	JS_ValueToNumber(cx, J_FARG(1), &fovy);
-	JS_ValueToNumber(cx, J_FARG(2), &zNear);
-	JS_ValueToNumber(cx, J_FARG(3), &zFar);
+	JsvalToDouble(cx, J_FARG(1), &fovy);
+	JsvalToDouble(cx, J_FARG(2), &zNear);
+	JsvalToDouble(cx, J_FARG(3), &zFar);
 
 //	GLint prevMatrixMode;
 //	glGetIntegerv(GL_MATRIX_MODE, &prevMatrixMode); // GL_MODELVIEW
@@ -1234,10 +1234,10 @@ DEFINE_FUNCTION_FAST( Rotate ) {
 
 	J_S_ASSERT_ARG_MIN(4);
 	jsdouble angle, x, y, z;
-	JS_ValueToNumber(cx, J_FARG(1), &angle);
-	JS_ValueToNumber(cx, J_FARG(2), &x);
-	JS_ValueToNumber(cx, J_FARG(3), &y);
-	JS_ValueToNumber(cx, J_FARG(4), &z);
+	JsvalToDouble(cx, J_FARG(1), &angle);
+	JsvalToDouble(cx, J_FARG(2), &x);
+	JsvalToDouble(cx, J_FARG(3), &y);
+	JsvalToDouble(cx, J_FARG(4), &z);
 	glRotated(angle, x, y, z);
 	*J_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
@@ -1259,10 +1259,10 @@ DEFINE_FUNCTION_FAST( Translate ) {
 
 	J_S_ASSERT_ARG_MIN(3);
 	jsdouble x, y, z;
-	JS_ValueToNumber(cx, J_FARG(1), &x);
-	JS_ValueToNumber(cx, J_FARG(2), &y);
+	JsvalToDouble(cx, J_FARG(1), &x);
+	JsvalToDouble(cx, J_FARG(2), &y);
 	if ( J_FARG_ISDEF(3) )
-		JS_ValueToNumber(cx, J_FARG(3), &z);
+		JsvalToDouble(cx, J_FARG(3), &z);
 	else
 		z = 0;
 	glTranslated(x, y, z);
@@ -1286,10 +1286,10 @@ DEFINE_FUNCTION_FAST( Scale ) {
 
 	J_S_ASSERT_ARG_MIN(2);
 	jsdouble x, y, z;
-	JS_ValueToNumber(cx, J_FARG(1), &x);
-	JS_ValueToNumber(cx, J_FARG(2), &y);
+	JsvalToDouble(cx, J_FARG(1), &x);
+	JsvalToDouble(cx, J_FARG(2), &y);
 	if ( J_FARG_ISDEF(3) )
-		JS_ValueToNumber(cx, J_FARG(3), &z);
+		JsvalToDouble(cx, J_FARG(3), &z);
 	else
 		z = 1;
 	glScaled(x, y, z);
@@ -1677,7 +1677,7 @@ DEFINE_FUNCTION_FAST( PointParameter ) {
 	if ( JSVAL_IS_NUMBER(J_FARG(2)) ) {
 
 		jsdouble param;
-		JS_ValueToNumber(cx, J_FARG(2), &param);
+		JsvalToDouble(cx, J_FARG(2), &param);
 		glPointParameterf( JSVAL_TO_INT(J_FARG(1)), param );
 		return JS_TRUE;
 	}
@@ -1762,21 +1762,21 @@ DEFINE_FUNCTION_FAST( MultiTexCoord ) {
 
 	*J_FRVAL = JSVAL_VOID;
 	jsdouble s;
-	JS_ValueToNumber(cx, J_FARG(2), &s);
+	JsvalToDouble(cx, J_FARG(2), &s);
 	if ( J_ARGC == 2 ) {
 
 		glMultiTexCoord1d(target, s);
 		return JS_TRUE;
 	}
 	jsdouble t;
-	JS_ValueToNumber(cx, J_FARG(3), &t);
+	JsvalToDouble(cx, J_FARG(3), &t);
 	if ( J_ARGC == 3 ) {
 
 		glMultiTexCoord2d(target, s, t);
 		return JS_TRUE;
 	}
 	jsdouble r;
-	JS_ValueToNumber(cx, J_FARG(4), &r);
+	JsvalToDouble(cx, J_FARG(4), &r);
 	if ( J_ARGC == 4 ) {
 
 		glMultiTexCoord3d(target, s, t, r);
