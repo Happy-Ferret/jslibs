@@ -1,28 +1,24 @@
 LoadModule('jsstd');
 LoadModule('jsio');
-LoadModule('jsimage');
-LoadModule('jsode');
 LoadModule('jsgraphics');
-LoadModule('jsprotex');
 LoadModule('jstrimesh');
 LoadModule('jssdl');
 
 
-var time0 = new Date().valueOf();
-var ax = 0, ay = 0, pos = 0;
-
 var speedX = 0;
 var speedY = 0;
 
-var rotateX = 0;
-var rotateY = 0;
-
 var tremeshId;
-var tremeshTransformation = new Transformation();
-tremeshTransformation.Clear();
+var trimeshTransformation = new Transformation(true);
 
 
 function Init() {
+
+	GlSetAttribute( GL_SWAP_CONTROL, 1 ); // vsync
+	GlSetAttribute( GL_DOUBLEBUFFER, 1 );
+	GlSetAttribute( GL_DEPTH_SIZE, 16 );
+
+	SetVideoMode( 800, 600, 32, HWSURFACE | OPENGL | RESIZABLE ); // | ASYNCBLIT // RESIZABLE FULLSCREEN
 
 	var t = new Trimesh();
 
@@ -44,51 +40,35 @@ function Init() {
 	t.DefineVertexBuffer(vertex);
 	t.DefineColorBuffer(color);
 	t.DefineIndexBuffer(index);
-	
 	tremeshId = Ogl.LoadTrimesh(t);
-	
 
 	with (Ogl) {
+
 		Enable(DEPTH_TEST);
 		Enable(BLEND); //Enable alpha blending
 		BlendFunc(SRC_ALPHA, ONE_MINUS_SRC_ALPHA); //Set the blend function
-	  Enable(CULL_FACE);
+		Enable(CULL_FACE);
 	  
-  	LoadIdentity();
-	  PushMatrix(); 
-	 }
+		LoadIdentity();
+		PushMatrix();
+	}
 }
+
 
 function Draw() {
 
+	trimeshTransformation.Product(new Transformation(true).RotateToVector(-speedX, speedY, 1));
 	with (Ogl) {
 	
-		var t = new Date().valueOf() - time0;
-
-		LoadMatrix(tremeshTransformation);
-
+		LoadMatrix(trimeshTransformation);
 		Translate(-0.5, -0.5, -0.5);
 		Clear(COLOR_BUFFER_BIT | DEPTH_BUFFER_BIT);
 		DrawTrimesh(tremeshId);
-	};
-
-	var rotation = new Transformation();
-	rotation.Clear();
-	rotation.RotateToVector( -speedX, speedY, 1 );
-	tremeshTransformation.Product(rotation);
-
-
+	}
 }
 
-GlSetAttribute( GL_SWAP_CONTROL, 1 ); // vsync
-GlSetAttribute( GL_DOUBLEBUFFER, 1 );
-GlSetAttribute( GL_DEPTH_SIZE, 16 );
-
-SetVideoMode( 800, 600, 32, HWSURFACE | OPENGL | RESIZABLE ); // | ASYNCBLIT // RESIZABLE FULLSCREEN
-Ogl.Perspective( 90, 0.01, 1000 );
 
 showCursor = true;
-
 var done = false;
 
 var listeners = {
@@ -111,20 +91,15 @@ var listeners = {
 		Ogl.Viewport(0, 0, w, h);
 	},
 	onMouseMotion: function(x,y,dx,dy,button) {
-	},
-	onMouseMotion: function(x,y,dx,dy,button) {
 		
 		if ( button & BUTTON_LMASK ) {
 
 			speedX += dx;
 			speedY += dy;
 		}
-		
-		ax += dx;
-		ay += dy;
 	}
-
 };
+
 
 Init();
 
@@ -135,4 +110,3 @@ while ( !done ) {
 	GlSwapBuffers();
 	Sleep(10);
 }
-

@@ -32,9 +32,7 @@ str += String.fromCharCode(111) + ' ';
 str += CreateWorld();
 
 
-
 Print(str,'!\n');
 
-Print('Press Enter key to continue...');
-
-File.stdin.Read(); // Wait until Enter is pressed in the console.
+//Print('Press Enter key to continue...');
+//File.stdin.Read();
