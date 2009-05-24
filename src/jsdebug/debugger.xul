@@ -442,7 +442,7 @@
 				for ( var [i, l] in Iterator(programStack.value) ) {
 
 					var e = stack.insertItemAt(0, l.filename+':'+l.lineno+' - '+l.contextInfo, i);
-					e.style.color = let ( c = Math.floor( (1 - i / programStack.value.length) * 160) ) 'rgb('+c+','+c+','+c+')';
+					e.style.color = let ( c = Math.floor( (1 - (i+1) / programStack.value.length) * 160 ) ) 'rgb('+c+','+c+','+c+')';
 					e.className = i == programStack.value.length-1 ? 'currentLine' : 'selectedPrevLine';
 				}
 			}
