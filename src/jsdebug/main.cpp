@@ -38,7 +38,7 @@ void NewScriptHook(JSContext *cx, const char *filename, uintN lineno, JSScript *
 
 // (TBD) do we protect new file-based scripts against GC to allow later debugging them ?
 
-	printf( "add - %s:%d-%d - %s - %d - %p\n", filename, lineno, lineno+JS_GetScriptLineExtent(cx, script), fun ? JS_GetFunctionName(fun):"", script->staticLevel, script );
+//	printf( "add - %s:%d-%d - %s - %d - %p\n", filename, lineno, lineno+JS_GetScriptLineExtent(cx, script), fun ? JS_GetFunctionName(fun):"", script->staticLevel, script );
 
 	jl::QueueCell *it;
 	jl::Queue *scriptList = NULL;
@@ -94,7 +94,7 @@ void NewScriptHook(JSContext *cx, const char *filename, uintN lineno, JSScript *
 
 void DestroyScriptHook(JSContext *cx, JSScript *script, void *callerdata) {
 
-	printf( "del - %s:%d - ? - %d - %p\n", script->filename, script->lineno, script->staticLevel, script );
+//	printf( "del - %s:%d - ? - %d - %p\n", script->filename, script->lineno, script->staticLevel, script );
 
 	jl::QueueCell *it, *it1;
 	jl::Queue *scriptList = NULL;
