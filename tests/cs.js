@@ -13,7 +13,12 @@ try {
 	dlist.push(serverSocket); // add the socket to the descriptor list.
 
 	Print('SERVER - listening...\n');
-	serverSocket.Bind(80, '127.0.0.1'); // listen port 80 on 127.0.0.1 interface only.
+	try {
+		serverSocket.Bind(8099, '127.0.0.1'); // listen port 8099 on 127.0.0.1 interface only.
+	} catch( ex if ex.code == -5966 ) {
+		Print('Error: port 8099 is not available.\n');
+		Halt();
+	}
 	serverSocket.Listen();
 
 	serverSocket.readable = function(s) { // after Listen(), readable mean incoming connexion.
@@ -72,7 +77,7 @@ try {
 	}
 
 	Print('CLIENT - connecting...\n');
-	clientSocket.Connect( 'localhost', 80 );
+	clientSocket.Connect( 'localhost', 8099 );
 	
 	
 	// MAIN

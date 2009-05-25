@@ -17,7 +17,7 @@ function Zip(dir, destFilename) {
 function GetLatestSVNRevision() {
 	
 	Print( 'Get latest SVN revision', '\n' );
-	var p = new Process(GetEnv('ComSpec'), ['/c', 'svn', 'info', '--xml']);
+	var p = new Process(GetEnv('ComSpec'), ['/c', 'svn', 'info', '--xml']); // '-r', 'HEAD', 
 	var svnInfo = '';
 	for ( let data; data = p.stdout.Read(); )
 		svnInfo += data;
@@ -119,7 +119,7 @@ if ( revision[0] == 'r' )
 changes = changes.replace(/<pre>|<\/pre>/g, ''); // cleanup
 changes = changes.replace(/\n/g, '\r\n');
 
-revision = 'r'+GetLatestSVNRevision();
+//revision = 'r'+GetLatestSVNRevision();
 
 
 var readme = Expand(new File('./dist/readme.txt.tpl').content, function(id) {

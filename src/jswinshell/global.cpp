@@ -55,8 +55,8 @@ DEFINE_FUNCTION( ExtractIcon ) {
 	HICON hIcon = ExtractIcon( hInst, fileName, iconIndex ); // see SHGetFileInfo(
 	if ( hIcon == NULL ) {
 
-		if ( GetLastError() != 0 )
-			return WinThrowError(cx, GetLastError());
+//		if ( GetLastError() != 0 )
+//			return WinThrowError(cx, GetLastError());
 		*rval = JSVAL_VOID;
 		return JS_TRUE;
 	}
