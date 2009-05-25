@@ -144,9 +144,16 @@ Copy('./tests/miniInteractiveConsole.js', './dist/examples');
 Copy('./tests/3d.js', './dist/examples');
 Copy('./tests/ffiTest.js', './dist/examples');
 Copy('./tests/md5.js', './dist/examples');
+Copy('./tests/cs.js', './dist/examples');
+Copy('./tests/sqlite.js', './dist/examples');
+Copy('./tests/ode.js', './dist/examples');
+Copy('./tests/proceduralTextures.js', './dist/examples');
 Copy('./tests/oggFilePlayer.js', './dist/examples');
 Copy('./tests/41_30secOgg-q0.ogg', './dist/examples');
 Copy('./tests/testForDebugger.js', './dist/examples');
+
+Copy('./tests/svg.js', './dist/examples');
+Copy('./src/jssvg/fonts.conf', './dist/bin');
 
 Copy('./src/jsdebug/debugger.js', './dist/bin');
 Copy('./src/jsdebug/debugger.xul', './dist/bin');

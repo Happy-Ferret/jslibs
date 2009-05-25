@@ -1,34 +1,39 @@
 LoadModule('jsstd');
 LoadModule('jssqlite');
 
-//try {
+try {
 
-	print('database version: ' + Database.version ,'\n' );
+	Print('Using SQLite version ' + Database.version ,'\n' );
 
-	var db = new Database('test_database');
-	var result = db.Query(arguments[1]);
-	print( 'column count       :'+result.columnCount ,'\n' );
+	var db = new Database(); // in-memory database
+	db.Exec('CREATE TABLE color (id INTEGER PRIMARY KEY AUTOINCREMENT, name,r,g,b);');
+	function AddColor(name, r,g,b) {
+		
+		Print( 'Adding '+name+' color.\n');
+		db.Exec('insert into color (name,r,g,b) values (?,?,?,?)', arguments);
+	}
 	
+	AddColor('red', 1,0,0);
+	AddColor('green', 0,1,0);
+	AddColor('blue', 0,0,1);
+	AddColor('black', 0,0,0);
+	AddColor('white', 1,1,1);
 
-//	print( 'step result        :'+result.Step() ,'\n' );
-	print( 'last insert row ID :'+db.lastInsertRowid ,'\n' );
-	print( 'changes            :'+db.changes ,'\n' );
-	print( 'col names          :'+result.columnNames.toSource() ,'\n' );
-	print( 'col indexes        :'+result.columnIndexes.toSource() ,'\n' );
+	Print( 'Last ID :'+db.lastInsertRowid ,'\n' );
 	
+	Print('\n');
 
-	var r;
-//	while( r = result.Row() )
-//		print( 'row          :'+r.toSource() ,'\n' );
+	db.toHtmlCode = function(r,g,b) {
+		
+		return '#' + Math.floor(r*15).toString(16) + Math.floor(g*15).toString(16) + Math.floor(b*15).toString(16);
+	}
 	
-//	print( 'first col only     :'+result.Col(0).toSource() ,'\n' );
-
-
-
-	result.Close();
+	for each ( row in db.Query('SELECT id, name, toHtmlCode(r,g,b) as htmlCode from color') )
+		Print( Expand('<p style="color:$(htmlCode)">$(id): $(name)</p>\n', row) ); // or Print( '<p style="color:'+row.htmlCode+'">'+row.id+': '+row.name+'</p>\n' );
+	
 	db.Close();
 
+} catch ( ex if ex instanceof SqliteError ) {
 
-//} catch ( ex if ex instanceof SqliteError ) {
-//	print( 'SqliteError: ' + ex.text + '('+ex.code+')' );
-//}
+	Print( 'SqliteError at '+ex.fileName+':'+ex.lineNumber+': ' + ex.text + ' (code:'+ex.code+')' );
+}
