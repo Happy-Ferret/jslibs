@@ -171,4 +171,4 @@ Copy('./libs/openal/sdk/redist/wrap_oal.dll', './dist/bin');
 
 new File('./dist/README.TXT').content = readme;
 
-Zip('./dist/*', 'jslibs_'+type+'_'+version+'_'+'rxxx'+'.zip');
+Zip('./dist/*', 'jslibs_'+type+'_'+version+'_'+'r'+revision+'.zip');
