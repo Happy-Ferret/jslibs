@@ -153,7 +153,7 @@ Copy('./tests/41_30secOgg-q0.ogg', './dist/examples');
 Copy('./tests/testForDebugger.js', './dist/examples');
 
 Copy('./tests/svg.js', './dist/examples');
-Copy('./src/jssvg/fonts.conf', './dist/bin');
+Copy('./src/jssvg/fonts.conf', './dist/examples');
 
 Copy('./src/jsdebug/debugger.js', './dist/bin');
 Copy('./src/jsdebug/debugger.xul', './dist/bin');
