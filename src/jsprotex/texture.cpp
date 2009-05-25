@@ -2122,7 +2122,6 @@ $TOC_MEMBER $INAME
   const kernelLaplacian = [-1,-1,-1, -1,8,-1, -1,-1,-1];
   const kernelLaplacian4 = [0,-1,0, -1,4,-1 ,0,-1,0];
   const kernelShift = [0,0,0, 0,0,0 ,0,0,1];
-  const kernelEmboss = [-1,0,0, 0,0,0 ,0,0,1];
   const kernelCrystals = [0,-1,0, -1,5,-1, 0,-1,0];
   ...
   texture.Convolution(kernelGaussian);
@@ -2152,8 +2151,6 @@ DEFINE_FUNCTION_FAST( Convolution ) {
 	//J_CHK( FloatArrayToVector(cx, count, &J_FARG(1), kernel) );
 	size_t length;
 	J_CHK( JsvalToFloatVector(cx, J_FARG(1), kernel, count, &length) );
-	J_S_ASSERT( length == 3, "Invalid array size." );
-
 
 	int size;
 	size = (int)sqrtf(count);

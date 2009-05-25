@@ -852,6 +852,23 @@ DEFINE_FUNCTION_FAST( MaybeCollectGarbage ) {
 }
 
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/**doc
+$TOC_MEMBER $INAME
+ $REAL $INAME( time )
+  Suspends the execution of the current program during _time_ milliseconds.
+**/
+DEFINE_FUNCTION_FAST( Sleep ) {
+
+	J_S_ASSERT_ARG_MIN(1);
+	unsigned int time;
+	J_CHK( JsvalToUInt(cx, J_FARG(1), &time) );
+	SleepMilliseconds(time);
+	*J_FRVAL = JSVAL_VOID;
+	return JS_TRUE;
+	JL_BAD;
+}
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
@@ -871,8 +888,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( TimeCounter ) {
 
-	JS_NewNumberValue(cx, AccurateTimeCounter(), J_FRVAL);
-	return JS_TRUE;
+	return DoubleToJsval(cx, AccurateTimeCounter(), J_FRVAL);
 }
 
 
@@ -1383,6 +1399,7 @@ CONFIGURE_STATIC
 		FUNCTION( IsStatementValid )
 		FUNCTION_FAST( StringRepeat )
 		FUNCTION_FAST( Print )
+		FUNCTION_FAST( Sleep )
 		FUNCTION_FAST( TimeCounter )
 		FUNCTION_FAST( CollectGarbage )
 		FUNCTION_FAST( MaybeCollectGarbage )

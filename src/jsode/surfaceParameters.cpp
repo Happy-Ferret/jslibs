@@ -97,10 +97,10 @@ DEFINE_PROPERTY( surfaceSetter ) {
 	bool set;
 	if ( JSVAL_IS_VOID( *vp ) ) {
 
-		set = true;
+		set = false;
 	} else {
 
-		set = false;
+		set = true;
 		value = JSValToODEReal(cx, *vp);
 	}
 

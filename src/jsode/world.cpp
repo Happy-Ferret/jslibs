@@ -44,94 +44,105 @@ static void nearCallback(void *data, ode::dGeomID o1, ode::dGeomID o2) {
 	if (Body1 && Body2 && dAreConnected(Body1, Body2))
 		return;
 
-	ode::dContact contact[MAX_CONTACTS];
+	ode::dContact contact[MAX_CONTACTS]; // (TBD) make this configurable.
 	int n = ode::dCollide(o1, o2, MAX_CONTACTS, &contact[0].geom, sizeof(ode::dContact)); // (TBD) or sizeof(ode::dContactGeom) ??? // It is an error for skip to be smaller than sizeof(dContactGeom).
 
-	if ( n > 0 ) {
+	if ( n <= 0 )
+		return;
 
-		JSObject *obj1 = (JSObject*)ode::dGeomGetData(o1);
-		JSObject *obj2 = (JSObject*)ode::dGeomGetData(o2);
+	JSObject *obj1 = (JSObject*)ode::dGeomGetData(o1);
+	JSObject *obj2 = (JSObject*)ode::dGeomGetData(o2);
 
-		jsval func1 = JSVAL_VOID, func2 = JSVAL_VOID;
+	jsval func1, func2;
 
-		if ( obj1 != NULL ) { // assert that the javascript object (over the Geom) is not finalized
+	if ( obj1 != NULL ) { // assert that the javascript object (over the Geom) is not finalized
 
-			JS_GetProperty(cx, obj1, COLLIDE_FEEDBACK_FUNCTION_NAME, &func1);
-			J_SAFE( if ( !JSVAL_IS_VOID( func1 ) && JS_TypeOfValue(cx, func1) != JSTYPE_FUNCTION ) { JS_ReportError(cx, J__ERRMSG_UNEXPECTED_TYPE " Function expected."); return; } ); // we need a function, nothing else
-		}
+		JS_GetProperty(cx, obj1, COLLIDE_FEEDBACK_FUNCTION_NAME, &func1);
+		J_S_ASSERT( JSVAL_IS_VOID(func1) || JsvalIsFunction(cx, func1), "Invalid impact function." );
+	} else {
 
-		if ( obj2 != NULL ) { // assert that the javascript object (over the Geom) is not finalized
+		func1 = JSVAL_VOID;
+	}
 
-			JS_GetProperty(cx, obj2, COLLIDE_FEEDBACK_FUNCTION_NAME, &func2);
-			J_SAFE( if ( !JSVAL_IS_VOID( func2 ) && JS_TypeOfValue(cx, func2) != JSTYPE_FUNCTION ) { JS_ReportError(cx, J__ERRMSG_UNEXPECTED_TYPE " Function expected."); return; } ); // we need a function, nothing else
-		}
 
-		for ( int i=0; i<n; i++ ) {
+	if ( obj2 != NULL ) { // assert that the javascript object (over the Geom) is not finalized
+
+		JS_GetProperty(cx, obj2, COLLIDE_FEEDBACK_FUNCTION_NAME, &func2);
+		J_S_ASSERT( JSVAL_IS_VOID(func2) || JsvalIsFunction(cx, func2), "Invalid impact function." );
+	} else {
+
+		func2 = JSVAL_VOID;
+	}
+
+
+	for ( int i=0; i<n; i++ ) {
 
 //			ode::dVector3 vel;
-			if ( !JSVAL_IS_VOID( func1 ) || !JSVAL_IS_VOID( func2 ) ) { // compute impact velocity only if needed
+		if ( !JSVAL_IS_VOID( func1 ) || !JSVAL_IS_VOID( func2 ) ) { // compute impact velocity only if needed
 /*
 
-				ode::dVector3 *pos = &contact[i].geom.pos;
-				ode::dVector3 vel2;
-				if ( Body1 != NULL ) {
+			ode::dVector3 *pos = &contact[i].geom.pos;
+			ode::dVector3 vel2;
+			if ( Body1 != NULL ) {
 
-					ode::dBodyGetPointVel( Body1, *pos[0], *pos[1], *pos[2], vel ); // dReal px, dReal py, dReal pz, dVector3 result
-				} else { // static thing
+				ode::dBodyGetPointVel( Body1, *pos[0], *pos[1], *pos[2], vel ); // dReal px, dReal py, dReal pz, dVector3 result
+			} else { // static thing
 
-					vel[0] = 0; vel[1] = 0; vel[2] = 0;
-				}
-
-				if ( Body2 != NULL ) {
-
-					ode::dBodyGetPointVel( Body2, *pos[0], *pos[1], *pos[2], vel2 ); // dReal px, dReal py, dReal pz, dVector3 result
-				} else { // static thing
-
-					vel2[0] = 0; vel2[1] = 0; vel2[2] = 0;
-				}
-
-				vel[0] += vel2[0];
-				vel[1] += vel2[1];
-				vel[2] += vel2[2];
-*/
-
-				jsval pos;
-				//FloatVectorToArray(cx, 3, contact[i].geom.pos, &pos);
-				FloatVectorToJsval(cx, contact[i].geom.pos, 3, &pos);
-
-				if ( !JSVAL_IS_VOID( func1 ) ) {
-
-					jsval tmp, argv[] = { INT_TO_JSVAL(i), OBJECT_TO_JSVAL(obj1), obj2 ? OBJECT_TO_JSVAL(obj2) : JSVAL_VOID, pos }; // INT_TO_JSVAL(vel[0]), INT_TO_JSVAL(vel[1]), INT_TO_JSVAL(vel[2])
-					// GC protection seems to be not needed because these objects (obj1 and obj2) have an owner
-					// (TBD) check the previous comment.
-					JS_CallFunctionValue(cx, obj1, func1, COUNTOF(argv), argv, &tmp); // JS_CallFunction() DO NOT WORK !!!
-				}
-
-				if ( !JSVAL_IS_VOID( func2 ) ) {
-
-					jsval tmp, argv[] = { INT_TO_JSVAL(i), OBJECT_TO_JSVAL(obj2), obj1 ? OBJECT_TO_JSVAL(obj1) : JSVAL_VOID, pos }; // INT_TO_JSVAL(vel[0]), INT_TO_JSVAL(vel[1]), INT_TO_JSVAL(vel[2])
-					// GC protection seems to be not needed because these objects (obj1 and obj2) have an owner
-					// (TBD) check the previous comment.
-					JS_CallFunctionValue( cx, obj2, func2, COUNTOF(argv), argv, &tmp); // JS_CallFunction() DO NOT WORK !!!
-				}
+				vel[0] = 0; vel[1] = 0; vel[2] = 0;
 			}
 
-			contact[i].surface = *ccp->defaultSurfaceParameters;
+			if ( Body2 != NULL ) {
 
-			// mixing :
-			//dReal mu;		// min
-			//dReal mu2;	// min
-			//dReal bounce;	// average
-			//dReal bounce_vel; // min
-			//dReal soft_erp; // average
-			//dReal soft_cfm; // average
-			//dReal motion1,motion2;	// add
-			//dReal slip1,slip2;	// ?
+				ode::dBodyGetPointVel( Body2, *pos[0], *pos[1], *pos[2], vel2 ); // dReal px, dReal py, dReal pz, dVector3 result
+			} else { // static thing
 
-			ode::dJointID c = ode::dJointCreateContact(ccp->worldId, ccp->contactGroupId, &contact[i]);
-			ode::dJointAttach(c, dGeomGetBody(contact[i].geom.g1), dGeomGetBody(contact[i].geom.g2));
+				vel2[0] = 0; vel2[1] = 0; vel2[2] = 0;
+			}
+
+			vel[0] += vel2[0];
+			vel[1] += vel2[1];
+			vel[2] += vel2[2];
+*/
+
+			jsval pos;
+			//FloatVectorToArray(cx, 3, contact[i].geom.pos, &pos);
+			FloatVectorToJsval(cx, contact[i].geom.pos, 3, &pos);
+
+			if ( !JSVAL_IS_VOID( func1 ) ) {
+
+				jsval tmp, argv[] = { INT_TO_JSVAL(i), OBJECT_TO_JSVAL(obj1), obj2 ? OBJECT_TO_JSVAL(obj2) : JSVAL_VOID, pos }; // INT_TO_JSVAL(vel[0]), INT_TO_JSVAL(vel[1]), INT_TO_JSVAL(vel[2])
+				// GC protection seems to be not needed because these objects (obj1 and obj2) have an owner
+				// (TBD) check the previous comment.
+				J_CHK( JS_CallFunctionValue(cx, obj1, func1, COUNTOF(argv), argv, &tmp) );
+			}
+
+			if ( !JSVAL_IS_VOID( func2 ) ) {
+
+				jsval tmp, argv[] = { INT_TO_JSVAL(i), OBJECT_TO_JSVAL(obj2), obj1 ? OBJECT_TO_JSVAL(obj1) : JSVAL_VOID, pos }; // INT_TO_JSVAL(vel[0]), INT_TO_JSVAL(vel[1]), INT_TO_JSVAL(vel[2])
+				// GC protection seems to be not needed because these objects (obj1 and obj2) have an owner
+				// (TBD) check the previous comment.
+				J_CHK( JS_CallFunctionValue( cx, obj2, func2, COUNTOF(argv), argv, &tmp) );
+			}
 		}
+
+		contact[i].surface = *ccp->defaultSurfaceParameters;
+
+		// mixing :
+		//dReal mu;		// min
+		//dReal mu2;	// min
+		//dReal bounce;	// average
+		//dReal bounce_vel; // min
+		//dReal soft_erp; // average
+		//dReal soft_cfm; // average
+		//dReal motion1,motion2;	// add
+		//dReal slip1,slip2;	// ?
+
+		ode::dJointID c = ode::dJointCreateContact(ccp->worldId, ccp->contactGroupId, &contact[i]);
+		ode::dJointAttach(c, dGeomGetBody(contact[i].geom.g1), dGeomGetBody(contact[i].geom.g2));
 	}
+
+bad:
+	return;
 }
 
 /**doc fileIndex:top
@@ -246,7 +257,7 @@ DEFINE_FUNCTION( Step ) {
 	ccp.defaultSurfaceParameters = defaultSurfaceParameters;
 	ccp.contactGroupId = contactgroup;
 	ccp.worldId = worldID;
-	
+
 	ode::dSpaceCollide(spaceId, (void*)&ccp, &nearCallback);
 
 	// (TBD) see dWorldSetQuickStepW and dWorldSetAutoEnableDepthSF1
@@ -257,6 +268,7 @@ DEFINE_FUNCTION( Step ) {
 		ode::dWorldSetQuickStepNumIterations(worldID, JSVAL_TO_INT(argv[1]));
 		ode::dWorldQuickStep(worldID, value);
 	} else {
+
 		ode::dWorldStep(worldID, value);
 	}
 	ode::dJointGroupDestroy(contactgroup); // dJointGroupEmpty calls dJointGroupEmpty
