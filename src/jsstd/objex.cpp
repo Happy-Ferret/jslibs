@@ -27,7 +27,7 @@ inline JSBool NotifyObject( int slotIndex, JSContext *cx, JSObject *obj, jsval i
 //	if ( JSVAL_IS_VOID(*vp) && strcmp( JS_GetStringBytes(JS_ValueToString(cx,id)), "__iterator__" ) == 0 ) // we don't want to override the iterator
 //		return JS_TRUE;
 	jsid idid;
-	J_CHK( JS_ValueToId(cx, id, &idid) );
+	JL_CHK( JS_ValueToId(cx, id, &idid) );
 	if ( idid == ATOM_TO_JSID(cx->runtime->atomState.iteratorAtom) ) // (TBD) check if it is faster
 		return JS_TRUE;
 
@@ -36,23 +36,23 @@ inline JSBool NotifyObject( int slotIndex, JSContext *cx, JSObject *obj, jsval i
 /*
 	JSObject *pobj;
 	jsid propid;
-	J_CHK( JS_ValueToId(cx, id, &propid) );
+	JL_CHK( JS_ValueToId(cx, id, &propid) );
 	JSProperty *prop;
-	J_CHK( OBJ_LOOKUP_PROPERTY(cx, obj, propid, &pobj, &prop) );
+	JL_CHK( OBJ_LOOKUP_PROPERTY(cx, obj, propid, &pobj, &prop) );
 	jsval prevValue;
-	J_CHK( JS_IdToValue(cx, prop->id, &prevValue) );
+	JL_CHK( JS_IdToValue(cx, prop->id, &prevValue) );
 	OBJ_DROP_PROPERTY(cx, pobj, prop);
 */
 
 //	jsval prevValue;
-//	J_CHK( JS_LookupPropertyWithFlags(cx, obj, JS_GetStringBytes(JS_ValueToString(cx, id)), JSRESOLVE_QUALIFIED|JSRESOLVE_ASSIGNING|JSRESOLVE_DECLARING, &prevValue) );
+//	JL_CHK( JS_LookupPropertyWithFlags(cx, obj, JS_GetStringBytes(JS_ValueToString(cx, id)), JSRESOLVE_QUALIFIED|JSRESOLVE_ASSIGNING|JSRESOLVE_DECLARING, &prevValue) );
 
 	jsval slot;
-	J_CHK( JS_GetReservedSlot( cx, obj, slotIndex , &slot ) );
+	JL_CHK( JS_GetReservedSlot( cx, obj, slotIndex , &slot ) );
 	if ( JSVAL_IS_VOID(slot) )
 		return JS_TRUE;
 	jsval aux;
-	J_CHK( JS_GetReservedSlot( cx, obj, AUX_SLOT, &aux ) );
+	JL_CHK( JS_GetReservedSlot( cx, obj, AUX_SLOT, &aux ) );
 	jsval args[4]; // = { id, *vp, aux, INT_TO_JSVAL(slotIndex) }; // ( propertyName, propertyValue, auxObject, callbackIndex )
 	args[0] = id;
 	args[1] = *vp;
@@ -108,18 +108,18 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
-	J_S_ASSERT_CONSTRUCTING();
-	J_S_ASSERT_THIS_CLASS();
+	JL_S_ASSERT_CONSTRUCTING();
+	JL_S_ASSERT_THIS_CLASS();
 
-	for ( uintN i = 0; i < J_ARGC && i < 4; i++ )
-		if ( J_ARG_ISDEF(i+1) ) {
+	for ( uintN i = 0; i < JL_ARGC && i < 4; i++ )
+		if ( JL_ARG_ISDEF(i+1) ) {
 
-			J_S_ASSERT_FUNCTION(J_ARG(i+1));
-			J_CHK( JS_SetReservedSlot( cx, obj, i, J_ARG(i+1) ) );
+			JL_S_ASSERT_FUNCTION(JL_ARG(i+1));
+			JL_CHK( JS_SetReservedSlot( cx, obj, i, JL_ARG(i+1) ) );
 		}
-	if ( J_ARGC >= 5 ) // AUX object
-		J_CHK( JS_SetReservedSlot( cx, obj, AUX_SLOT, J_ARG(5) ) );
-	J_CHK( JS_SetPrototype(cx, obj, NULL) ); // this creates an empty object ( without __proto__, __parent__, toString, ... )
+	if ( JL_ARGC >= 5 ) // AUX object
+		JL_CHK( JS_SetReservedSlot( cx, obj, AUX_SLOT, JL_ARG(5) ) );
+	JL_CHK( JS_SetPrototype(cx, obj, NULL) ); // this creates an empty object ( without __proto__, __parent__, toString, ... )
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -137,16 +137,16 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Aux ) {
 
-	J_S_ASSERT_ARG_MIN(1);
-	J_S_ASSERT_OBJECT( J_FARG(1) );
-	J_S_ASSERT_CLASS( JSVAL_TO_OBJECT(J_FARG(1)), _class);
+	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_OBJECT( JL_FARG(1) );
+	JL_S_ASSERT_CLASS( JSVAL_TO_OBJECT(JL_FARG(1)), _class);
 
 	JSObject *object;
-	object = JSVAL_TO_OBJECT(J_FARG(1));
-	J_S_ASSERT_CLASS( object, _class );
-	J_CHK( JS_GetReservedSlot( cx, object, AUX_SLOT, J_FRVAL ) );
-	if ( J_FARG_ISDEF(2) )
-	  J_CHK( JS_SetReservedSlot( cx, object, AUX_SLOT, J_FARG(2) ) );
+	object = JSVAL_TO_OBJECT(JL_FARG(1));
+	JL_S_ASSERT_CLASS( object, _class );
+	JL_CHK( JS_GetReservedSlot( cx, object, AUX_SLOT, JL_FRVAL ) );
+	if ( JL_FARG_ISDEF(2) )
+	  JL_CHK( JS_SetReservedSlot( cx, object, AUX_SLOT, JL_FARG(2) ) );
 	return JS_TRUE;
 	JL_BAD;
 }

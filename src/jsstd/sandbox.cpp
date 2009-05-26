@@ -28,7 +28,7 @@ DEFINE_NEW_RESOLVE() {
 //		JS_IdToValue(cx, id, &tmp);
 //		char *str = JS_GetStringBytes(JS_ValueToString(cx, tmp));
 
-		J_CHK( JS_ResolveStandardClass(cx, obj, id, &resolved) );
+		JL_CHK( JS_ResolveStandardClass(cx, obj, id, &resolved) );
 		if (resolved) {
 
 			*objp = obj;

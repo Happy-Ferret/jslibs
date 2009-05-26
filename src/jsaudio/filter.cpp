@@ -30,7 +30,7 @@ BEGIN_CLASS( OalFilter )
 
 DEFINE_FINALIZE() {
 
-	Private *pv = (Private*)JS_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	if ( pv ) {
 
 		if ( alcGetCurrentContext() ) {
@@ -49,12 +49,12 @@ $TOC_MEMBER $INAME
 DEFINE_CONSTRUCTOR() {
 
 	Private *pv = (Private*)JS_malloc(cx, sizeof(Private));
-	J_CHK( pv );
+	JL_CHK( pv );
 
 	alGenFilters(1, &pv->filter);
-	J_CHK( CheckThrowCurrentOalError(cx) );
+	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	J_CHK( JS_SetPrivate(cx, obj, pv) );
+	JL_CHK( JL_SetPrivate(cx, obj, pv) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -71,9 +71,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( valueOf ) {
 
-	Private *pv = (Private*)JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_RESOURCE( pv );
-	J_CHK( UIntToJsval(cx, pv->filter, J_FRVAL) );
+	Private *pv = (Private*)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE( pv );
+	JL_CHK( UIntToJsval(cx, pv->filter, JL_FRVAL) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -96,31 +96,31 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( type ) {
 
-	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(pv);
+	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(pv);
 	int filterType;
 	if ( JSVAL_IS_VOID(*vp) )
 		filterType = AL_FILTER_NULL;
 	else
-		J_CHK( JsvalToInt(cx, *vp, &filterType) );
+		JL_CHK( JsvalToInt(cx, *vp, &filterType) );
 	alFilteri(pv->filter, AL_FILTER_TYPE, filterType);
-	J_CHK( CheckThrowCurrentOalError(cx) );
+	JL_CHK( CheckThrowCurrentOalError(cx) );
 	return JS_TRUE;
 	JL_BAD;
 }
 
 DEFINE_PROPERTY_GETTER( type ) {
 
-	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(pv);
+	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(pv);
 	int filterType;
 	alGetFilteri(pv->filter, AL_FILTER_TYPE, &filterType);
-	J_CHK( CheckThrowCurrentOalError(cx) );
+	JL_CHK( CheckThrowCurrentOalError(cx) );
 
 	if ( filterType == AL_FILTER_NULL )
 		*vp = JSVAL_VOID;
 	else
-		J_CHK( IntToJsval(cx, filterType, vp) );
+		JL_CHK( IntToJsval(cx, filterType, vp) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -130,26 +130,26 @@ DEFINE_PROPERTY_GETTER( type ) {
 
 DEFINE_PROPERTY_SETTER( filterFloat ) {
 
-	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE( pv );
+	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( pv );
 	ALenum param = JSVAL_TO_INT(id);
 	float f;
-	J_CHK( JsvalToFloat(cx, *vp, &f) );
+	JL_CHK( JsvalToFloat(cx, *vp, &f) );
 	alFilterf(pv->filter, param, f);
-	J_CHK( CheckThrowCurrentOalError(cx) );
+	JL_CHK( CheckThrowCurrentOalError(cx) );
 	return JS_TRUE;
 	JL_BAD;
 }
 
 DEFINE_PROPERTY_GETTER( filterFloat ) {
 
-	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE( pv );
+	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( pv );
 	ALenum param = JSVAL_TO_INT(id);
 	float f;
 	alGetFilterf(pv->filter, param, &f);
-	J_CHK( CheckThrowCurrentOalError(cx) );
-	J_CHK( FloatToJsval(cx, f, vp) );
+	JL_CHK( CheckThrowCurrentOalError(cx) );
+	JL_CHK( FloatToJsval(cx, f, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }

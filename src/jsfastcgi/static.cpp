@@ -52,10 +52,10 @@ DEFINE_FUNCTION( Accept ) {
 	if (!_initDone) {
 	
 		int status = FCGX_Init(); // (TBD) do it only once
-		J_S_ASSERT( status == 0, "Unable to initialize FCGX." );
+		JL_S_ASSERT( status == 0, "Unable to initialize FCGX." );
 		FCGX_InitRequest(&_request, 0, FCGI_FAIL_ACCEPT_ON_INTR); // doc: fail_on_intr is ignored in the Win lib.
 		status = atexit(&onExit);
-		J_S_ASSERT( status == 0, "Unable to setup fcgi exit.");
+		JL_S_ASSERT( status == 0, "Unable to setup fcgi exit.");
 		_initDone = true;
 	}
 
@@ -74,12 +74,12 @@ DEFINE_FUNCTION( GetParam ) {
 	if ( argc >= 1 ) {
 
 		const char *paramName;
-		J_CHK( JsvalToString(cx, &argv[0], &paramName) );
+		JL_CHK( JsvalToString(cx, &argv[0], &paramName) );
 		char *paramValue = FCGX_GetParam(paramName, _request.envp);
 		if ( paramValue != NULL ) {
 
 			JSString *jsstr = JS_NewStringCopyZ(cx, paramValue);
-			J_CHK( jsstr );
+			JL_CHK( jsstr );
 			*rval = STRING_TO_JSVAL( jsstr );
 		} else
 			*rval = JSVAL_VOID;
@@ -87,12 +87,12 @@ DEFINE_FUNCTION( GetParam ) {
 		
 		// (TDB) use FCGX_ParamArray instead ?
 		JSObject *argsObj = JS_NewObject(cx, NULL, NULL, NULL);
-		J_CHK(argsObj);
+		JL_CHK(argsObj);
 		int index = 0;
 		for ( char** ptr = _request.envp; *ptr; ptr++ ) {
 
 			char *separator = strchr( *ptr, '=' );
-			J_S_ASSERT( separator != NULL, "Unable to find the value." );
+			JL_S_ASSERT( separator != NULL, "Unable to find the value." );
 			*separator = '\0';
 			JSString *value = JS_NewStringCopyZ(cx, separator + 1);
 			JSBool jsStatus = JS_DefineProperty(cx, argsObj, *ptr, STRING_TO_JSVAL(value), NULL, NULL, JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT);
@@ -106,9 +106,9 @@ DEFINE_FUNCTION( GetParam ) {
 
 DEFINE_FUNCTION( Read ) {
 
-	J_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_ARG_MIN( 1 );
 	size_t len;
-	J_CHK( JsvalToUInt(cx, argv[0], &len) );
+	JL_CHK( JsvalToUInt(cx, argv[0], &len) );
 	char* str;
 	str = (char*)JS_malloc(cx, len + 1);
 	int result;
@@ -122,7 +122,7 @@ DEFINE_FUNCTION( Read ) {
 	str[result] = '\0';
 	JSString *jsstr;
 	jsstr = JS_NewString(cx, str, result);
-	J_CHK( jsstr );
+	JL_CHK( jsstr );
 	*rval = STRING_TO_JSVAL( jsstr );
 	return JS_TRUE;
 	JL_BAD;
@@ -132,13 +132,13 @@ DEFINE_FUNCTION( Write ) {
 
 	const char *str;
 	size_t len;
-	J_CHK( JsvalToStringAndLength(cx, &argv[0], &str, &len) );
+	JL_CHK( JsvalToStringAndLength(cx, &argv[0], &str, &len) );
 	int result;
 	result = FCGX_PutStr(str, len, _request.out);
 	if ( result >= 0 && (size_t)result < len ) { // returns unwritten data
 
 		JSString *jsstr = JS_NewDependentString(cx, JSVAL_TO_STRING(argv[0]), result, len - result);
-		J_S_ASSERT( jsstr != NULL, "Unable to create the NewDependentString." );
+		JL_S_ASSERT( jsstr != NULL, "Unable to create the NewDependentString." );
 		*rval = STRING_TO_JSVAL( jsstr );
 	} else
 		*rval = JS_GetEmptyStringValue(cx);
@@ -149,7 +149,7 @@ DEFINE_FUNCTION( Write ) {
 DEFINE_FUNCTION( Flush ) {
 
 	int result = FCGX_FFlush(_request.out);
-	J_S_ASSERT( result != -1, "Unable to flush the output stream." );
+	JL_S_ASSERT( result != -1, "Unable to flush the output stream." );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -158,10 +158,10 @@ DEFINE_FUNCTION( Log ) {
 
 	const char *str;
 	size_t len;
-	J_CHK( JsvalToStringAndLength(cx, &argv[0], &str, &len) );
+	JL_CHK( JsvalToStringAndLength(cx, &argv[0], &str, &len) );
 	int result;
 	result = FCGX_PutStr(str, len, _request.err);
-	J_S_ASSERT( result != -1, "Unable to write to the log." );
+	JL_S_ASSERT( result != -1, "Unable to write to the log." );
 	FCGX_FFlush(_request.err);
 	return JS_TRUE;
 	JL_BAD;
@@ -175,14 +175,14 @@ DEFINE_FUNCTION( ShutdownPending ) {
 
 DEFINE_FUNCTION( URLEncode ) {
 
-	J_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_ARG_MIN( 1 );
 	static unsigned char hex[] = "0123456789ABCDEF";
 	const char *src;
 	size_t srcLen;
-	J_CHK( JsvalToStringAndLength(cx, &argv[0], &src, &srcLen) );
+	JL_CHK( JsvalToStringAndLength(cx, &argv[0], &src, &srcLen) );
 	char *dest;
 	dest = (char *)JS_malloc(cx, 3 * srcLen + 1);
-	J_CHK( dest );
+	JL_CHK( dest );
 
 	const char *it;
 	char *it1;
@@ -208,13 +208,13 @@ DEFINE_FUNCTION( URLEncode ) {
 
 DEFINE_FUNCTION( URLDecode ) {
 
-	J_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_ARG_MIN( 1 );
 	const char *src;
 	size_t srcLen;
-	J_CHK( JsvalToStringAndLength(cx, &argv[0], &src, &srcLen) );
+	JL_CHK( JsvalToStringAndLength(cx, &argv[0], &src, &srcLen) );
 	char *dest;
 	dest = (char *)JS_malloc(cx, srcLen + 1);
-	J_CHK( dest );
+	JL_CHK( dest );
 
 	const char *it;
 	char *it1;
@@ -308,11 +308,11 @@ BEGIN_STATIC
 
 DEFINE_FUNCTION( ParseHeader ) {
 
-	J_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_ARG_MIN( 1 );
 
 	JSObject *record;
 	if ( argc >= 2 ) {
-		J_S_ASSERT_OBJECT(argv[1]);
+		JL_S_ASSERT_OBJECT(argv[1]);
 		record = JSVAL_TO_OBJECT(argv[1]);
 	} else
 		record = JS_NewObject(cx, NULL, NULL, NULL);
@@ -332,11 +332,11 @@ DEFINE_FUNCTION( ParseHeader ) {
 
 DEFINE_FUNCTION( ParseBeginRequestBody ) {
 
-	J_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_ARG_MIN( 1 );
 
 	JSObject *record;
 	if ( argc >= 2 ) {
-		J_S_ASSERT_OBJECT(argv[1]);
+		JL_S_ASSERT_OBJECT(argv[1]);
 		record = JSVAL_TO_OBJECT(argv[1]);
 	} else
 		record = JS_NewObject(cx, NULL, NULL, NULL);
@@ -355,11 +355,11 @@ DEFINE_FUNCTION( ParseBeginRequestBody ) {
 
 //DEFINE_FUNCTION( ParseEndRequest ) {
 //
-//	J_S_ASSERT_ARG_MIN( 1 );
+//	JL_S_ASSERT_ARG_MIN( 1 );
 //
 //	JSObject *record;
 //	if ( argc >= 2 ) {
-//		J_S_ASSERT_OBJECT(argv[1]);
+//		JL_S_ASSERT_OBJECT(argv[1]);
 //		record = JSVAL_TO_OBJECT(argv[1]);
 //	} else
 //		record = JS_NewObject(cx, NULL, NULL, NULL);
@@ -380,7 +380,7 @@ DEFINE_FUNCTION( ParseBeginRequestBody ) {
 
 DEFINE_FUNCTION( ParsePairs ) { // arguments: data [, paramObject ]
 
-	J_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_ARG_MIN( 1 );
 
 	char *tmp;
 	int length;
@@ -391,7 +391,7 @@ DEFINE_FUNCTION( ParsePairs ) { // arguments: data [, paramObject ]
 	char buf[128];
 	JSObject *params;
 	if ( argc >= 2 ) {
-		J_S_ASSERT_OBJECT(argv[1]);
+		JL_S_ASSERT_OBJECT(argv[1]);
 		params = JSVAL_TO_OBJECT(argv[1]);
 	} else
 		params = JS_NewObject(cx, NULL, NULL, NULL);
@@ -441,22 +441,22 @@ DEFINE_FUNCTION( ParsePairs ) { // arguments: data [, paramObject ]
 
 DEFINE_FUNCTION( MakeHeader ) { // type, requestId, contentLength
 	
-	J_S_ASSERT_ARG_MIN( 3 );
+	JL_S_ASSERT_ARG_MIN( 3 );
 
 	FCGI_Header *record = (FCGI_Header*) JS_malloc(cx, sizeof(FCGI_Header));
-	J_CHK( record );
+	JL_CHK( record );
 
 	record->version = 1;
 
-	J_S_ASSERT_INT(argv[0]);
+	JL_S_ASSERT_INT(argv[0]);
 	record->type = JSVAL_TO_INT(argv[0]);
 
-	J_S_ASSERT_INT(argv[1]);
+	JL_S_ASSERT_INT(argv[1]);
 	unsigned short requestId = JSVAL_TO_INT(argv[1]);
 	record->requestIdB0 = requestId & 0xFF;
 	record->requestIdB1 = (requestId >> 8) & 0xFF;
 
-	J_S_ASSERT_INT(argv[2]);
+	JL_S_ASSERT_INT(argv[2]);
 	unsigned short contentLength = JSVAL_TO_INT(argv[2]);
 	record->contentLengthB0 = contentLength & 0xFF;
 	record->contentLengthB1 = (contentLength >> 8) & 0xFF;
@@ -465,7 +465,7 @@ DEFINE_FUNCTION( MakeHeader ) { // type, requestId, contentLength
 	record->reserved = 0;
 
 	JSString *jsstr = JS_NewString(cx, (char*)record, sizeof(FCGI_Header));
-	J_CHK( jsstr );
+	JL_CHK( jsstr );
 	*rval = STRING_TO_JSVAL(jsstr);
 	return JS_TRUE;
 	JL_BAD;
@@ -474,23 +474,23 @@ DEFINE_FUNCTION( MakeHeader ) { // type, requestId, contentLength
 
 DEFINE_FUNCTION( MakeEndRequestBody ) {
 
-	J_S_ASSERT_ARG_MIN( 2 );
+	JL_S_ASSERT_ARG_MIN( 2 );
 
 	FCGI_EndRequestBody *body = (FCGI_EndRequestBody*) JS_malloc(cx, sizeof(FCGI_EndRequestBody));
-	J_CHK( body );
+	JL_CHK( body );
 
 	unsigned long appStatus;
-	J_CHK( JsvalToUInt(cx, argv[0], &appStatus) );
+	JL_CHK( JsvalToUInt(cx, argv[0], &appStatus) );
 	body->appStatusB0 = appStatus & 0xFF;
 	body->appStatusB1 = (appStatus >> 8) & 0xFF;
 	body->appStatusB2 = (appStatus >> 16) & 0xFF;
 	body->appStatusB3 = (appStatus >> 24) & 0xFF;
 
-	J_S_ASSERT_NUMBER(argv[1]);
+	JL_S_ASSERT_NUMBER(argv[1]);
 	body->protocolStatus = JSVAL_TO_INT(argv[1]);
 
 	JSString *jsstr = JS_NewString(cx, (char*)body, sizeof(FCGI_EndRequestRecord));
-	J_CHK( jsstr );
+	JL_CHK( jsstr );
 	*rval = STRING_TO_JSVAL(jsstr);
 	return JS_TRUE;
 	JL_BAD;
@@ -500,8 +500,8 @@ DEFINE_FUNCTION( MakeEndRequestBody ) {
 
 DEFINE_FUNCTION( MakePairs ) {
 
-	J_S_ASSERT_ARG_MIN( 1 );
-	J_S_ASSERT_OBJECT( argv[0] );
+	JL_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_OBJECT( argv[0] );
 
 	int bufferPos = 0;
 	int bufferLength = 256;
@@ -512,7 +512,7 @@ DEFINE_FUNCTION( MakePairs ) {
 	for ( int i=0; i<pairsArray->length; i++ ) {
 		
 		jsval keyVal;
-		J_CHK( JS_IdToValue(cx, pairsArray->vector[i], &keyVal) );
+		JL_CHK( JS_IdToValue(cx, pairsArray->vector[i], &keyVal) );
 		char *key;
 		unsigned long keyLen;
 		J_JSVAL_TO_STRING_AND_LENGTH( keyVal, key, keyLen );
@@ -584,7 +584,7 @@ DEFINE_FUNCTION( ParseRecord ) {
 
 	// http://www.fastcgi.com/devkit/doc/fcgi-spec.html
 
-	J_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_ARG_MIN( 1 );
 
 	char *tmp;
 	J_JSVAL_TO_STRING( argv[0], tmp );

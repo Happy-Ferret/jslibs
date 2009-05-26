@@ -35,7 +35,7 @@ struct ClassPrivate {
 
 DEFINE_FINALIZE() {
 
-	ClassPrivate *pv = (ClassPrivate*)JS_GetPrivate(cx, J_OBJ);
+	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(cx, JL_OBJ);
 	if ( !pv )
 		return;
 
@@ -46,7 +46,7 @@ DEFINE_FINALIZE() {
 		status = PR_DeleteSemaphore(pv->name);
 
 	JS_free(cx, pv);
-	JS_SetPrivate(cx, J_OBJ, NULL);
+	JL_SetPrivate(cx, JL_OBJ, NULL);
 }
 
 
@@ -61,24 +61,24 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
-	J_S_ASSERT_CONSTRUCTING();
-	J_S_ASSERT_THIS_CLASS();
-	J_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_CONSTRUCTING();
+	JL_S_ASSERT_THIS_CLASS();
+	JL_S_ASSERT_ARG_MIN( 1 );
 
 	PRUintn count;
 	count = 0;
-	if ( J_ARG_ISDEF(2) )
-		J_CHK( JsvalToUInt(cx, J_ARG(2), &count) );
+	if ( JL_ARG_ISDEF(2) )
+		JL_CHK( JsvalToUInt(cx, JL_ARG(2), &count) );
 
 	PRUintn mode;
 	mode = PR_IRUSR | PR_IWUSR; // read write permission for owner.
-	if ( J_ARG_ISDEF(3) )
-		J_CHK( JsvalToUInt(cx, J_ARG(3), &mode) );
+	if ( JL_ARG_ISDEF(3) )
+		JL_CHK( JsvalToUInt(cx, JL_ARG(3), &mode) );
 
 	const char *name;
 	size_t nameLength;
-	J_CHK( JsvalToStringAndLength(cx, &J_ARG(1), &name, &nameLength) );
-	J_S_ASSERT( nameLength < PATH_MAX, "Semaphore name too long." );
+	JL_CHK( JsvalToStringAndLength(cx, &JL_ARG(1), &name, &nameLength) );
+	JL_S_ASSERT( nameLength < PATH_MAX, "Semaphore name too long." );
 
 	bool isCreation;
 	isCreation = true;
@@ -95,7 +95,7 @@ DEFINE_CONSTRUCTOR() {
 
 	ClassPrivate *pv;
 	pv = (ClassPrivate*)JS_malloc(cx, sizeof(ClassPrivate));
-	J_CHK( pv );
+	JL_CHK( pv );
 
 //	strcpy( pv->name, name ); // (TBD) use memcpy instead ?
 	memcpy(pv->name, name, nameLength);
@@ -104,7 +104,7 @@ DEFINE_CONSTRUCTOR() {
 	pv->semaphore = semaphore;
 	pv->owner = isCreation;
 
-	J_CHK( JS_SetPrivate(cx, J_OBJ, pv) );
+	JL_CHK( JL_SetPrivate(cx, JL_OBJ, pv) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -122,14 +122,14 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Wait ) {
 
-	ClassPrivate *pv = (ClassPrivate*)JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_RESOURCE( pv );
+	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE( pv );
 
 	PRStatus status;
 	status = PR_WaitSemaphore( pv->semaphore );
 	if ( status != PR_SUCCESS )
 		return ThrowIoError(cx);
-	*J_FRVAL = JSVAL_VOID;
+	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -141,14 +141,14 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Post ) {
 
-	ClassPrivate *pv = (ClassPrivate*)JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_RESOURCE( pv );
+	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE( pv );
 
 	PRStatus status;
 	status = PR_PostSemaphore( pv->semaphore );
 	if ( status != PR_SUCCESS )
 		return ThrowIoError(cx);
-	*J_FRVAL = JSVAL_VOID;
+	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }

@@ -447,14 +447,14 @@ JSBool NativeType_Construct(JSContext *cx, JSObject *obj, uintN argc, jsval *arg
 // .Alloc( sizeToAlloc, initialValue )
 JSBool NativeType_Alloc(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
-  ffi_type *type = (ffi_type*) JS_GetPrivate( cx, obj );
+  ffi_type *type = (ffi_type*) JL_GetPrivate( cx, obj );
 
 jsval val;
 JS_GetReservedSlot(cx, obj, 1, &val); // ..., JSVAL_TO_OBJECT(val)
 
-void ** pptr = (void**)JS_GetPrivate( cx, JSVAL_TO_OBJECT(val) );
+void ** pptr = (void**)JL_GetPrivate( cx, JSVAL_TO_OBJECT(val) );
 
-//  void ** x_pptr = (void**)JS_GetPrivate( cx, JSVAL_TO_OBJECT(argv[-1]) );
+//  void ** x_pptr = (void**)JL_GetPrivate( cx, JSVAL_TO_OBJECT(argv[-1]) );
 
 
   size_t size = type->size * ( argc >= 1 ? JSVAL_TO_INT( argv[0] ) : 1 ); // argv[0]: number of elements in the array
@@ -463,7 +463,7 @@ void ** pptr = (void**)JS_GetPrivate( cx, JSVAL_TO_OBJECT(val) );
 
   jsval rootObj;
   JS_GetReservedSlot( cx, JSVAL_TO_OBJECT(val), 0, &rootObj ); // get the slot[0] of the slot[1] object (NativeData)
-  void** ppList = &((void**)JS_GetPrivate( cx, JSVAL_TO_OBJECT( rootObj ) ))[1]; // get the pointer to the list
+  void** ppList = &((void**)JL_GetPrivate( cx, JSVAL_TO_OBJECT( rootObj ) ))[1]; // get the pointer to the list
 
   StackPush( ppList, *pptr );
 
@@ -482,8 +482,8 @@ JS_GetReservedSlot(cx, obj, 1, &val); // ..., JSVAL_TO_OBJECT(val)
 
   jsval rootObj;
   JS_GetReservedSlot( cx, JSVAL_TO_OBJECT(val), 0, &rootObj ); // get the slot [0] of the slot[1] object (NativeData)
-  void** ppList = &((void**)JS_GetPrivate( cx, JSVAL_TO_OBJECT( rootObj ) ))[1]; // get the pointer to the list
-  void *ptr = *(void**)JS_GetPrivate( cx, JSVAL_TO_OBJECT(val) );
+  void** ppList = &((void**)JL_GetPrivate( cx, JSVAL_TO_OBJECT( rootObj ) ))[1]; // get the pointer to the list
+  void *ptr = *(void**)JL_GetPrivate( cx, JSVAL_TO_OBJECT(val) );
   StackRemove( ppList, ptr ); // remove the ptr from the stack to avoid it to be freed on Finalize
   free(ptr);
   return JS_TRUE;
@@ -494,8 +494,8 @@ JS_GetReservedSlot(cx, obj, 1, &val); // ..., JSVAL_TO_OBJECT(val)
 // .Init( data1, data2, ... ) || .Vector( "this is a string\x00" ) || .Vector( offset, JSArray ) // all of this can be done with [ xxx, xxx, ... ]
 JSBool NativeType_Init(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
-  ffi_type *type = (ffi_type*) JS_GetPrivate( cx, obj );
-  void ** pptr = (void**)JS_GetPrivate( cx, JS_GetParent( cx, obj ) ); CHANGE GetParent INTO slot[1]
+  ffi_type *type = (ffi_type*) JL_GetPrivate( cx, obj );
+  void ** pptr = (void**)JL_GetPrivate( cx, JS_GetParent( cx, obj ) ); CHANGE GetParent INTO slot[1]
 
   for ( int i = 0; i < argc; i++ ) {
   }
@@ -520,7 +520,7 @@ JSBool NativeType_getter(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
   if ( JSVAL_IS_INT( id ) ) {
 
     int index = JSVAL_TO_INT( id );
-    ffi_type *ffiType = (ffi_type*) JS_GetPrivate( cx, obj );
+    ffi_type *ffiType = (ffi_type*) JL_GetPrivate( cx, obj );
 
 
 jsval val;
@@ -528,7 +528,7 @@ JS_GetReservedSlot(cx, obj, 1, &val); // ..., JSVAL_TO_OBJECT(val)
 
 
     JSObject *nativeDataObj = JSVAL_TO_OBJECT(val);
-    void **pptr = (void **)JS_GetPrivate( cx, nativeDataObj );
+    void **pptr = (void **)JL_GetPrivate( cx, nativeDataObj );
 
     switch ( ffiType->type ) {
 
@@ -586,7 +586,7 @@ JS_GetReservedSlot(cx, obj, 1, &val); // ..., JSVAL_TO_OBJECT(val)
 		// (TBD) check the following line. I transformed it from: JS_SetReservedSlot( cx, dataObj, 0, OBJECT_TO_JSVAL( rootObj ) );
 		JS_SetReservedSlot( cx, dataObj, 0, rootObj ); // a reference of the root object is stored in the slot[0]
 
-      JS_SetPrivate( cx, dataObj, pptr[index] ); // do not free because JS_NewObject do not call the constructor !!
+      JL_SetPrivate( cx, dataObj, pptr[index] ); // do not free because JS_NewObject do not call the constructor !!
       *vp = OBJECT_TO_JSVAL( dataObj );
       }
       break;
@@ -610,12 +610,12 @@ JSBool NativeType_setter(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
     // remove the property from the object ( JSPROP_SHARED ? ) JS_SetProperty
 
     int index = JSVAL_TO_INT( id );
-    ffi_type *ffiType = (ffi_type*) JS_GetPrivate( cx, obj );
+    ffi_type *ffiType = (ffi_type*) JL_GetPrivate( cx, obj );
 
 jsval val;
 JS_GetReservedSlot(cx, obj, 1, &val); // ..., JSVAL_TO_OBJECT(val)
 
-    void ** pptr = (void**)JS_GetPrivate( cx, JSVAL_TO_OBJECT(val) );
+    void ** pptr = (void**)JL_GetPrivate( cx, JSVAL_TO_OBJECT(val) );
 
     switch ( ffiType->type ) {
       // note: JSVAL_IS_INT is faster than any conversion like JS_ValueTo...
@@ -736,7 +736,7 @@ JS_GetReservedSlot(cx, obj, 1, &val); // ..., JSVAL_TO_OBJECT(val)
       {
         if ( JSVAL_IS_OBJECT( *vp ) && JS_InstanceOf( cx, JSVAL_TO_OBJECT( *vp ), &NativeData, NULL ) ) {
 
-          ((void**)*pptr)[index] = *(void**)JS_GetPrivate( cx, JSVAL_TO_OBJECT( *vp ) );
+          ((void**)*pptr)[index] = *(void**)JL_GetPrivate( cx, JSVAL_TO_OBJECT( *vp ) );
 
 			 // (TBD) check the following line. I transformed it from: JS_SetReservedSlot( cx, obj, 0, OBJECT_TO_JSVAL( *vp ) );
           JS_SetReservedSlot( cx, obj, 0, *vp ); // it is important to keep a reference to the NativeData *vp to avoid it to be finalised before this one
@@ -787,14 +787,14 @@ JSClass NativeType = {
 // http://groups.google.fr/group/netscape.public.mozilla.jseng/browse_thread/thread/404b546c34515543/22b875b4a2e41f59?q=Finalize+construct&rnum=2&hl=fr#22b875b4a2e41f59
 void NativeData_Finalize(JSContext *cx, JSObject *obj) {
 
-  // JS_GetPrivate( cx, obj ) != NULL ) { // this appends only once, when the prototype (created on JS_InitClass) is destroyed, so it's not usefull here
+  // JL_GetPrivate( cx, obj ) != NULL ) { // this appends only once, when the prototype (created on JS_InitClass) is destroyed, so it's not usefull here
 
   jsval rootObj;
   JS_GetReservedSlot( cx, obj, 0, &rootObj );
 
   if ( !JSVAL_IS_PRIMITIVE(rootObj) && JSVAL_TO_OBJECT(rootObj) == obj ) { // the root object is being finalized
 
-    void** pv = (void**)JS_GetPrivate( cx, obj ); // get the pointer to the list
+    void** pv = (void**)JL_GetPrivate( cx, obj ); // get the pointer to the list
     void** ppList = pv+1; // see NativeData_Construct
 
     // free all the memory allocated by the underlying objects
@@ -811,12 +811,12 @@ JSBool NativeData_Construct(JSContext *cx, JSObject *obj, uintN argc, jsval *arg
   if ( !JS_IsConstructing(cx) ) // JS_IsConstructing(cx): var a = new Toto(123); !JS_IsConstructing(cx): var a = Toto(123);
 	  return JS_FALSE;
 
-  JS_SetReservedSlot( cx, obj, 0, OBJECT_TO_JSVAL(obj) ); // the slot[0] points to this root object. We use this because all the memory allocations are stored in this object ( (*JS_GetPrivate)[1] )
+  JS_SetReservedSlot( cx, obj, 0, OBJECT_TO_JSVAL(obj) ); // the slot[0] points to this root object. We use this because all the memory allocations are stored in this object ( (*JL_GetPrivate)[1] )
 
   void** ppPrivate = (void**)malloc( sizeof(void*) * 2 ); // freed in NativeData_Finalize
   ppPrivate[0] = NULL; // pointer to the start of the native data structure
   ppPrivate[1] = NULL; // chained-list of pointer to free
-  JS_SetPrivate( cx, obj, ppPrivate );
+  JL_SetPrivate( cx, obj, ppPrivate );
   return JS_TRUE;
 }
 
@@ -845,7 +845,7 @@ JSBool NativeData_getter_Type(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
 
   JS_SetReservedSlot(cx, accessObj, 1, OBJECT_TO_JSVAL( obj ));
 
-  JS_SetPrivate( cx, accessObj, ffiTypeList[ JSVAL_TO_INT( id ) ] );
+  JL_SetPrivate( cx, accessObj, ffiTypeList[ JSVAL_TO_INT( id ) ] );
   *vp = OBJECT_TO_JSVAL( accessObj );
   return JS_TRUE;
 }
@@ -854,7 +854,7 @@ JSBool NativeData_getter_Type(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
 // the string hold by arg MUST be null terminated, else use arg.Data(len)
 JSBool NativeData_getter_String(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 
-  void** pptr = (void**)JS_GetPrivate( cx, obj );
+  void** pptr = (void**)JL_GetPrivate( cx, obj );
 
   if ( *pptr == NULL ) {
 
@@ -880,7 +880,7 @@ JSBool NativeData_setter_String(JSContext *cx, JSObject *obj, jsval id, jsval *v
   size_t len = JS_GetStringLength( JSVAL_TO_STRING( *vp ) );
   char* str = JS_GetStringBytes( JSVAL_TO_STRING( *vp ) ); // this string is terminated with \0 or not? ( only thrust len )
 
-  void** pptr = (void**)JS_GetPrivate( cx, obj );
+  void** pptr = (void**)JL_GetPrivate( cx, obj );
   char** sptr = (char**)malloc( sizeof(char*) );
   *sptr = (char*)malloc( len+1 ); // len+1 because we will add a '\0' at the end ( don't thrust JS_GetStringBytes about '\0' )
   memcpy( *sptr, str, len );
@@ -889,7 +889,7 @@ JSBool NativeData_setter_String(JSContext *cx, JSObject *obj, jsval id, jsval *v
 
   jsval rootObj;
   JS_GetReservedSlot( cx, obj, 0, &rootObj ); // get the slot [0] of the slot[1] object (NativeData)
-  void** ppList = &((void**)JS_GetPrivate( cx, JSVAL_TO_OBJECT( rootObj ) ))[1]; // get the pointer to the list
+  void** ppList = &((void**)JL_GetPrivate( cx, JSVAL_TO_OBJECT( rootObj ) ))[1]; // get the pointer to the list
 
   StackPush( ppList, sptr );
   StackPush( ppList, *sptr );
@@ -913,7 +913,7 @@ JSBool NativeData_Data(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, js
     return JS_FALSE;
   }
 
-  void** pptr = (void**)JS_GetPrivate( cx, obj );
+  void** pptr = (void**)JL_GetPrivate( cx, obj );
 
   if ( *pptr == NULL ) {
 
@@ -971,20 +971,20 @@ JSBool NativeProc_Call(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, js
       return JS_FALSE;
     }
 
-    ffiArgTypeList[argIterator] = (ffi_type*) JS_GetPrivate( cx, JSVAL_TO_OBJECT( currentArg ) );
+    ffiArgTypeList[argIterator] = (ffi_type*) JL_GetPrivate( cx, JSVAL_TO_OBJECT( currentArg ) );
 
 jsval val;
 JS_GetReservedSlot(cx, JSVAL_TO_OBJECT( currentArg ), 1, &val); // ..., JSVAL_TO_OBJECT(val)
 
 
-    ffiValueList[argIterator] = *((void**)JS_GetPrivate( cx, JSVAL_TO_OBJECT(val) ) );
+    ffiValueList[argIterator] = *((void**)JL_GetPrivate( cx, JSVAL_TO_OBJECT(val) ) );
   }
 
   JSObject *thisObj = JSVAL_TO_OBJECT(argv[-2]); // get 'this' object of the current object ... TODO: check JS_InstanceOf( cx, thisObj, &NativeProc, NULL )
 
   jsval val;
   JS_GetReservedSlot(cx, thisObj, 1, &val );
-  HMODULE module = (HMODULE)JS_GetPrivate( cx, JSVAL_TO_OBJECT( val ) ); // slot[1]: ClassModule
+  HMODULE module = (HMODULE)JL_GetPrivate( cx, JSVAL_TO_OBJECT( val ) ); // slot[1]: ClassModule
 
   jsval id;
   JS_GetReservedSlot( cx, thisObj, 0, &id ); // slot[0] = name of the proc. to call
@@ -1061,7 +1061,7 @@ JSBool NativeModule_Construct(JSContext *cx, JSObject *obj, uintN argc, jsval *a
     return JS_FALSE;
   }
 
-  JS_SetPrivate( cx, obj, (void*)module );
+  JL_SetPrivate( cx, obj, (void*)module );
 
   if ( argc <= 1 || JSVAL_TO_BOOLEAN( argv[1] ) != JS_TRUE ) { // if automatic mode
 
@@ -1078,7 +1078,7 @@ JSBool NativeModule_Construct(JSContext *cx, JSObject *obj, uintN argc, jsval *a
 
 void NativeModule_Finalize(JSContext *cx, JSObject *obj) {
 
-  void *pv = JS_GetPrivate( cx, obj );
+  void *pv = JL_GetPrivate( cx, obj );
   if ( pv != NULL ) {
 
     if ( !StackHas( &_loadedLibraries, pv ) ) { // manual mode
@@ -1092,7 +1092,7 @@ void NativeModule_Finalize(JSContext *cx, JSObject *obj) {
 
 JSBool NativeModule_Close(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
-  void *pv = JS_GetPrivate( cx, obj );
+  void *pv = JL_GetPrivate( cx, obj );
   if ( pv != NULL ) {
 
     if ( StackHas( &_loadedLibraries, pv ) ) {
@@ -1118,7 +1118,7 @@ JSBool NativeModule_Close(JSContext *cx, JSObject *obj, uintN argc, jsval *argv,
 */
 
     ::FreeLibrary( (HMODULE)pv );
-    JS_SetPrivate( cx, obj, NULL ); // lib is freed
+    JL_SetPrivate( cx, obj, NULL ); // lib is freed
   }
   return JS_TRUE;
 }

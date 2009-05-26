@@ -31,7 +31,7 @@ BEGIN_CLASS( Process )
 DEFINE_FINALIZE() {
 
 	PRProcess *process;
-	process = (PRProcess*)JS_GetPrivate(cx, obj);
+	process = (PRProcess*)JL_GetPrivate(cx, obj);
 	if ( process )
 		PR_DetachProcess(process); // may crash ?
 }
@@ -52,31 +52,31 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
-	J_S_ASSERT_CONSTRUCTING();
-	J_S_ASSERT_THIS_CLASS();
-	J_S_ASSERT_ARG_MIN(1);
-	J_S_ASSERT( !J_ARG_ISDEF(2) || JsvalIsArray(cx, J_ARG(2)), "Invalid 2nd argument" );
+	JL_S_ASSERT_CONSTRUCTING();
+	JL_S_ASSERT_THIS_CLASS();
+	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT( !JL_ARG_ISDEF(2) || JsvalIsArray(cx, JL_ARG(2)), "Invalid 2nd argument" );
 
 	const char *path;
-	J_CHK( JsvalToString(cx, &J_ARG(1), &path) );
+	JL_CHK( JsvalToString(cx, &JL_ARG(1), &path) );
 
 	int processArgc;
 	const char **processArgv;
-	if ( J_ARG_ISDEF(2) ) {
+	if ( JL_ARG_ISDEF(2) ) {
 
 		JSIdArray *idArray;
-		idArray = JS_Enumerate( cx, JSVAL_TO_OBJECT(J_ARG(2)) ); // make a kind of auto-ptr for this
+		idArray = JS_Enumerate( cx, JSVAL_TO_OBJECT(JL_ARG(2)) ); // make a kind of auto-ptr for this
 		processArgc = idArray->length +1; // +1 is argv[0]
 		processArgv = (const char**)malloc(sizeof(const char**) * (processArgc +1)); // +1 because the NULL list terminator.
-		J_S_ASSERT_ALLOC( processArgv );
+		JL_S_ASSERT_ALLOC( processArgv );
 
 		for ( int i=0; i<processArgc -1; i++ ) { // -1 because argv[0]
 
 			jsval propVal;
-			J_CHK( JS_IdToValue(cx, idArray->vector[i], &propVal) );
-			J_CHK( JS_GetElement(cx, JSVAL_TO_OBJECT(J_ARG(2)), JSVAL_TO_INT(propVal), &propVal) ); // (TBD) optimize
+			JL_CHK( JS_IdToValue(cx, idArray->vector[i], &propVal) );
+			JL_CHK( JS_GetElement(cx, JSVAL_TO_OBJECT(JL_ARG(2)), JSVAL_TO_INT(propVal), &propVal) ); // (TBD) optimize
 			const char *tmp;
-			J_CHK( JsvalToString(cx, &propVal, &tmp) ); // warning: GC on the returned buffer !
+			JL_CHK( JsvalToString(cx, &propVal, &tmp) ); // warning: GC on the returned buffer !
 			processArgv[i+1] = tmp;
 		}
 		JS_DestroyIdArray( cx, idArray ); // (TBD) free it on error too !
@@ -84,7 +84,7 @@ DEFINE_CONSTRUCTOR() {
 
 		processArgc = 0 +1; // +1 is argv[0]
 		processArgv = (const char**)malloc(sizeof(const char**) * (processArgc +1)); // +1 is NULL
-		J_S_ASSERT_ALLOC( processArgv );
+		JL_S_ASSERT_ALLOC( processArgv );
 	}
 
 	processArgv[0] = path;
@@ -93,9 +93,9 @@ DEFINE_CONSTRUCTOR() {
 	PRFileDesc *stdin_child, *stdout_child, *stderr_child;
 	PRFileDesc *stdin_parent, *stdout_parent, *stderr_parent;
 
-	J_CHKB( PR_CreatePipe(&stdin_parent, &stdin_child) == PR_SUCCESS, bad_throw );
-	J_CHKB( PR_CreatePipe(&stdout_parent, &stdout_child) == PR_SUCCESS, bad_throw );
-	J_CHKB( PR_CreatePipe(&stderr_parent, &stderr_child) == PR_SUCCESS, bad_throw );
+	JL_CHKB( PR_CreatePipe(&stdin_parent, &stdin_child) == PR_SUCCESS, bad_throw );
+	JL_CHKB( PR_CreatePipe(&stdout_parent, &stdout_child) == PR_SUCCESS, bad_throw );
+	JL_CHKB( PR_CreatePipe(&stderr_parent, &stderr_child) == PR_SUCCESS, bad_throw );
 
 	PRProcessAttr *psattr;
 	psattr = PR_NewProcessAttr();
@@ -113,32 +113,32 @@ DEFINE_CONSTRUCTOR() {
 	PR_DestroyProcessAttr(psattr);
 	free(processArgv);
 
-	J_CHKB( PR_Close(stderr_child) == PR_SUCCESS, bad_throw );
-	J_CHKB( PR_Close(stdout_child) == PR_SUCCESS, bad_throw );
-	J_CHKB( PR_Close(stdin_child) == PR_SUCCESS, bad_throw );
+	JL_CHKB( PR_Close(stderr_child) == PR_SUCCESS, bad_throw );
+	JL_CHKB( PR_Close(stdout_child) == PR_SUCCESS, bad_throw );
+	JL_CHKB( PR_Close(stdin_child) == PR_SUCCESS, bad_throw );
 	if ( !process ) {
 
-		J_CHKB( PR_Close(stderr_parent) == PR_SUCCESS, bad_throw );
-		J_CHKB( PR_Close(stdout_parent) == PR_SUCCESS, bad_throw );
-		J_CHKB( PR_Close(stdin_parent) == PR_SUCCESS, bad_throw );
+		JL_CHKB( PR_Close(stderr_parent) == PR_SUCCESS, bad_throw );
+		JL_CHKB( PR_Close(stdout_parent) == PR_SUCCESS, bad_throw );
+		JL_CHKB( PR_Close(stdin_parent) == PR_SUCCESS, bad_throw );
 	}
-	J_CHKB( process != NULL, bad_throw );
-	J_CHK( JS_SetPrivate(cx, obj, (void*)process) );
+	JL_CHKB( process != NULL, bad_throw );
+	JL_CHK( JL_SetPrivate(cx, obj, (void*)process) );
 
 	JSObject *fdInObj;
 	fdInObj = JS_NewObject( cx, classPipe, NULL, NULL );
-	J_CHK( JS_SetReservedSlot(cx, obj, SLOT_PROCESS_STDIN, OBJECT_TO_JSVAL(fdInObj)) );
-	J_CHK( JS_SetPrivate( cx, fdInObj, stdin_parent ) );
+	JL_CHK( JS_SetReservedSlot(cx, obj, SLOT_PROCESS_STDIN, OBJECT_TO_JSVAL(fdInObj)) );
+	JL_CHK( JL_SetPrivate( cx, fdInObj, stdin_parent ) );
 
 	JSObject *fdOutObj;
 	fdOutObj = JS_NewObject( cx, classPipe, NULL, NULL );
-	J_CHK( JS_SetReservedSlot(cx, obj, SLOT_PROCESS_STDOUT, OBJECT_TO_JSVAL(fdOutObj)) );
-	J_CHK( JS_SetPrivate( cx, fdOutObj, stdout_parent ) );
+	JL_CHK( JS_SetReservedSlot(cx, obj, SLOT_PROCESS_STDOUT, OBJECT_TO_JSVAL(fdOutObj)) );
+	JL_CHK( JL_SetPrivate( cx, fdOutObj, stdout_parent ) );
 
 	JSObject *fdErrObj;
 	fdErrObj = JS_NewObject( cx, classPipe, NULL, NULL );
-	J_CHK( JS_SetReservedSlot(cx, obj, SLOT_PROCESS_STDERR, OBJECT_TO_JSVAL(fdErrObj)) );
-	J_CHK( JS_SetPrivate( cx, fdErrObj, stderr_parent ) );
+	JL_CHK( JS_SetReservedSlot(cx, obj, SLOT_PROCESS_STDERR, OBJECT_TO_JSVAL(fdErrObj)) );
+	JL_CHK( JL_SetPrivate( cx, fdErrObj, stderr_parent ) );
 
 	return JS_TRUE;
 
@@ -159,14 +159,14 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Wait ) {
 
-	J_S_ASSERT_CLASS( J_FOBJ, _class );
+	JL_S_ASSERT_CLASS( JL_FOBJ, _class );
 	PRProcess *process;
-	process = (PRProcess*)JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_RESOURCE(process);
+	process = (PRProcess*)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(process);
 	PRInt32 exitValue;
-	J_CHK( PR_WaitProcess(process, &exitValue) == PR_SUCCESS );
-	J_CHK( JS_SetPrivate(cx, J_FOBJ, NULL) );
-	J_CHK( IntToJsval(cx, exitValue, J_FRVAL) );
+	JL_CHK( PR_WaitProcess(process, &exitValue) == PR_SUCCESS );
+	JL_CHK( JL_SetPrivate(cx, JL_FOBJ, NULL) );
+	JL_CHK( IntToJsval(cx, exitValue, JL_FRVAL) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -179,13 +179,13 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Detach ) {
 
-	J_S_ASSERT_CLASS( J_FOBJ, _class );
+	JL_S_ASSERT_CLASS( JL_FOBJ, _class );
 	PRProcess *process;
-	process = (PRProcess*)JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_RESOURCE(process);
-	J_CHK( PR_DetachProcess(process) == PR_SUCCESS );
-	J_CHK( JS_SetPrivate(cx, J_FOBJ, NULL) ); // On return, the value of process becomes an invalid pointer and should not be passed to other functions.
-	*J_FRVAL = JSVAL_VOID;
+	process = (PRProcess*)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(process);
+	JL_CHK( PR_DetachProcess(process) == PR_SUCCESS );
+	JL_CHK( JL_SetPrivate(cx, JL_FOBJ, NULL) ); // On return, the value of process becomes an invalid pointer and should not be passed to other functions.
+	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -198,13 +198,13 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Kill ) {
 
-	J_S_ASSERT_CLASS( J_FOBJ, _class );
+	JL_S_ASSERT_CLASS( JL_FOBJ, _class );
 	PRProcess *process;
-	process = (PRProcess*)JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_RESOURCE(process);
-	J_CHK( PR_KillProcess(process) == PR_SUCCESS );
-	J_CHK( JS_SetPrivate(cx, J_FOBJ, NULL) ); // Invalidates the current process pointer.
-	*J_FRVAL = JSVAL_VOID;
+	process = (PRProcess*)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(process);
+	JL_CHK( PR_KillProcess(process) == PR_SUCCESS );
+	JL_CHK( JL_SetPrivate(cx, JL_FOBJ, NULL) ); // Invalidates the current process pointer.
+	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -217,8 +217,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( stdin ) {
 
-	J_S_ASSERT_CLASS( obj, _class );
-	J_CHK( JS_GetReservedSlot(cx, obj, SLOT_PROCESS_STDIN, vp) );
+	JL_S_ASSERT_CLASS( obj, _class );
+	JL_CHK( JS_GetReservedSlot(cx, obj, SLOT_PROCESS_STDIN, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -230,8 +230,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( stdout ) {
 
-	J_S_ASSERT_CLASS( obj, _class );
-	J_CHK( JS_GetReservedSlot(cx, obj, SLOT_PROCESS_STDOUT, vp) );
+	JL_S_ASSERT_CLASS( obj, _class );
+	JL_CHK( JS_GetReservedSlot(cx, obj, SLOT_PROCESS_STDOUT, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -243,8 +243,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( stderr ) {
 
-	J_S_ASSERT_CLASS( obj, _class );
-	J_CHK( JS_GetReservedSlot(cx, obj, SLOT_PROCESS_STDERR, vp) );
+	JL_S_ASSERT_CLASS( obj, _class );
+	JL_CHK( JS_GetReservedSlot(cx, obj, SLOT_PROCESS_STDERR, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }

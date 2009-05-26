@@ -46,11 +46,11 @@ JSBool JidToJsval( JSContext *cx, const JID *jid, jsval *rval ) {
 
 	JSObject *jidObj = JS_NewObject(cx, NULL, NULL, NULL);
 	*rval = OBJECT_TO_JSVAL(jidObj);
-	J_CHK( SetPropertyString(cx, jidObj, "bare", jid->bare().c_str()) );
-	J_CHK( SetPropertyString(cx, jidObj, "full", jid->full().c_str()) );
-	J_CHK( SetPropertyString(cx, jidObj, "server", jid->server().c_str()) );
-	J_CHK( SetPropertyString(cx, jidObj, "username", jid->username().c_str()) );
-	J_CHK( SetPropertyString(cx, jidObj, "resource", jid->resource().c_str()) );
+	JL_CHK( SetPropertyString(cx, jidObj, "bare", jid->bare().c_str()) );
+	JL_CHK( SetPropertyString(cx, jidObj, "full", jid->full().c_str()) );
+	JL_CHK( SetPropertyString(cx, jidObj, "server", jid->server().c_str()) );
+	JL_CHK( SetPropertyString(cx, jidObj, "username", jid->username().c_str()) );
+	JL_CHK( SetPropertyString(cx, jidObj, "resource", jid->resource().c_str()) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -236,7 +236,7 @@ BEGIN_CLASS( Jabber )
 
 DEFINE_FINALIZE() {
 
-	Private *pv = (Private*)JS_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	if ( !pv )
 		return;
 
@@ -256,15 +256,15 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
-	J_S_ASSERT_CONSTRUCTING();
-	J_S_ASSERT_THIS_CLASS();
-	J_S_ASSERT_ARG_MIN(2);
+	JL_S_ASSERT_CONSTRUCTING();
+	JL_S_ASSERT_THIS_CLASS();
+	JL_S_ASSERT_ARG_MIN(2);
 	Private *pv = (Private*)JS_malloc(cx, sizeof(Private));
-	J_CHK( pv );
-	J_CHK( JS_SetPrivate(cx, obj, pv) );
+	JL_CHK( pv );
+	JL_CHK( JL_SetPrivate(cx, obj, pv) );
 	const char *jid, *password;
-	J_CHK( JsvalToString(cx, &J_ARG(1), &jid) );
-	J_CHK( JsvalToString(cx, &J_ARG(2), &password) );
+	JL_CHK( JsvalToString(cx, &JL_ARG(1), &jid) );
+	JL_CHK( JsvalToString(cx, &JL_ARG(2), &password) );
 	pv->handlers = new Handlers(obj);
 	pv->client = new Client(JID(jid), password);
 	pv->client->logInstance().registerLogHandler(LogLevelDebug, LogAreaAll, pv->handlers); // LogLevelDebug
@@ -288,16 +288,16 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Connect ) {
 
-	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE( pv );
-	J_S_ASSERT_ARG_MIN(1);
+	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT_ARG_MIN(1);
 	const char *serverName;
-	J_CHK( JsvalToString(cx, &J_ARG(1), &serverName) );
+	JL_CHK( JsvalToString(cx, &JL_ARG(1), &serverName) );
 	pv->client->setServer( serverName );
-	if ( J_ARG_ISDEF(2) ) {
+	if ( JL_ARG_ISDEF(2) ) {
 
 		int port;
-		JsvalToInt(cx, J_ARG(2), &port);
+		JsvalToInt(cx, JL_ARG(2), &port);
 		pv->client->setPort( port);
 	}
 	pv->handlers->_cx = cx;
@@ -316,7 +316,7 @@ DEFINE_FUNCTION( Connect ) {
 	if ( sock == -1 )
 		return JS_TRUE;
 
-	J_CHK( IntToJsval(cx, sock, J_RVAL) );
+	JL_CHK( IntToJsval(cx, sock, J_RVAL) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -329,8 +329,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Disconnect ) {
 
-	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE( pv );
+	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( pv );
 
 	pv->handlers->_cx = cx;
 	pv->client->disconnect();
@@ -351,8 +351,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Process ) {
 
-	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE( pv );
+	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( pv );
 
 	pv->handlers->_cx = cx;
 	ConnectionError cErr = pv->client->recv();
@@ -361,7 +361,7 @@ DEFINE_FUNCTION( Process ) {
 	if ( JS_IsExceptionPending(cx) )
 		return JS_FALSE;
 
-	J_CHK( IntToJsval(cx, (int)cErr, rval) );
+	JL_CHK( IntToJsval(cx, (int)cErr, rval) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -378,14 +378,14 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( SendMessage ) {
 
-	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE( pv );
+	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( pv );
 
-	J_S_ASSERT_ARG_MIN(2);
+	JL_S_ASSERT_ARG_MIN(2);
 
 	const char *to, *body;
-	J_CHK( JsvalToString(cx, &J_ARG(1), &to) );
-	J_CHK( JsvalToString(cx, &J_ARG(2), &body) );
+	JL_CHK( JsvalToString(cx, &JL_ARG(1), &to) );
+	JL_CHK( JsvalToString(cx, &JL_ARG(2), &body) );
 
 	Tag *message = new Tag( "message" );
 	message->addAttribute( "type", "chat" );
@@ -404,9 +404,9 @@ DEFINE_FUNCTION( SendMessage ) {
 /*
 DEFINE_FUNCTION( RosterItem ) {
 
-	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE( pv );
-	J_S_ASSERT_ARG_MIN(1);
+	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT_ARG_MIN(1);
 
 	return JS_TRUE;
 	JL_BAD;
@@ -420,8 +420,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( socket ) {
 
-	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE( pv );
+	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( pv );
 	ConnectionTCPClient *connection = dynamic_cast<ConnectionTCPClient*>( pv->client->connectionImpl() );
 	if ( !connection ) {
 
@@ -434,7 +434,7 @@ DEFINE_PROPERTY( socket ) {
 		*vp = JSVAL_VOID;
 		return JS_TRUE;
 	}
-	J_CHK( IntToJsval(cx, sock, vp) );
+	JL_CHK( IntToJsval(cx, sock, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -447,9 +447,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( status ) {
 
-	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE( pv );
-	J_CHK( StringToJsval(cx, pv->client->status().c_str(), vp) );
+	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( pv );
+	JL_CHK( StringToJsval(cx, pv->client->status().c_str(), vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -457,10 +457,10 @@ DEFINE_PROPERTY_GETTER( status ) {
 
 DEFINE_PROPERTY_SETTER( status ) {
 
-	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE( pv );
+	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( pv );
 	const char *status;
-	J_CHK( JsvalToString(cx, vp, &status) );
+	JL_CHK( JsvalToString(cx, vp, &status) );
 	pv->client->setPresence(pv->client->presence(), pv->client->priority(), status);
 	return JS_TRUE;
 	JL_BAD;
@@ -474,20 +474,20 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( presence ) {
 
-	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE( pv );
+	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( pv );
 	Presence presence = pv->client->presence();
-	J_CHK( IntToJsval(cx, presence, vp) );
+	JL_CHK( IntToJsval(cx, presence, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
 
 DEFINE_PROPERTY_SETTER( presence ) {
 
-	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE( pv );
+	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( pv );
 	int presence;
-	J_CHK( JsvalToInt(cx, *vp, &presence) );
+	JL_CHK( JsvalToInt(cx, *vp, &presence) );
 	pv->client->setPresence((Presence)presence, pv->client->priority(), pv->client->status());
 	return JS_TRUE;
 	JL_BAD;
@@ -496,8 +496,8 @@ DEFINE_PROPERTY_SETTER( presence ) {
 /*
 DEFINE_PROPERTY( roster ) {
 
-	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE( pv );
+	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( pv );
 
 //	JSObject *rosterObj = JS_NewObjectWithGivenProto(cx, NULL, NULL, NULL);
 	Roster *roster = pv->client->rosterManager()->roster();
@@ -506,8 +506,8 @@ DEFINE_PROPERTY( roster ) {
 	for ( Roster::const_iterator it = roster->begin(); it != roster->end(); it++ ) {
 
 		jsval rosterItem;
-		J_CHK( StringToJsval(cx, (*it).first.c_str(), &rosterItem ) );
-		J_CHK( JS_SetElement(cx, rosterList, i, &rosterItem) );
+		JL_CHK( StringToJsval(cx, (*it).first.c_str(), &rosterItem ) );
+		JL_CHK( JS_SetElement(cx, rosterList, i, &rosterItem) );
 		i++;
 	}
 	return JS_TRUE;
@@ -523,11 +523,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( connectionTotalIn ) {
 
-	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE( pv );
+	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( pv );
 	int totalIn, totalOut;
 	pv->client->connectionImpl()->getStatistics( totalIn, totalOut);
-	J_CHK( IntToJsval(cx, totalIn, vp) );
+	JL_CHK( IntToJsval(cx, totalIn, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -540,11 +540,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( connectionTotalOut ) {
 
-	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE( pv );
+	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( pv );
 	int totalIn, totalOut;
 	pv->client->connectionImpl()->getStatistics( totalIn, totalOut);
-	J_CHK( IntToJsval(cx, totalOut, vp) );
+	JL_CHK( IntToJsval(cx, totalOut, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }

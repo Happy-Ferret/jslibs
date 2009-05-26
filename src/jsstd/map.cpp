@@ -44,35 +44,35 @@ DEFINE_CONSTRUCTOR() {
 
 	if ( JS_IsConstructing(cx) == JS_TRUE ) {
 
-		J_S_ASSERT_THIS_CLASS();
-		J_CHK( JS_SetPrototype(cx, obj, NULL) );
+		JL_S_ASSERT_THIS_CLASS();
+		JL_CHK( JS_SetPrototype(cx, obj, NULL) );
 	} else {
 
 		//Doc: JS_NewObject, JS_NewObjectWithGivenProto behaves exactly the same, except that if proto is NULL, it creates an object with no prototype.
 		obj = JS_NewObjectWithGivenProto(cx, _class, NULL, NULL);
-		J_CHK( obj );
+		JL_CHK( obj );
 		*rval = OBJECT_TO_JSVAL(obj);
 	}
 
-	if ( J_ARG_ISDEF(1) ) {
+	if ( JL_ARG_ISDEF(1) ) {
 
 		jsid id;
 		jsval key, value;
 		JSObject *srcObj;
-		J_CHK( JS_ValueToObject(cx, J_ARG(1), &srcObj) );
+		JL_CHK( JS_ValueToObject(cx, JL_ARG(1), &srcObj) );
 		JSObject *it = JS_NewPropertyIterator(cx, srcObj);
-		J_S_ASSERT( it != NULL, "Unable to iterate the object." );
-		J_ARG(1) = OBJECT_TO_JSVAL(it); // protect against GC
+		JL_S_ASSERT( it != NULL, "Unable to iterate the object." );
+		JL_ARG(1) = OBJECT_TO_JSVAL(it); // protect against GC
 		for (;;) {
 
-			J_CHK( JS_NextProperty(cx, it, &id) );
+			JL_CHK( JS_NextProperty(cx, it, &id) );
 			if ( id == JSVAL_VOID )
 				break;
-			J_CHK( JS_IdToValue(cx, id, &key) );
-			//J_CHK( OBJ_GET_PROPERTY(cx, srcObj, id, &value) );
-			J_CHK( JS_GetPropertyById(cx, srcObj, id, &value) );
-			//J_CHK( OBJ_SET_PROPERTY(cx, obj, id, &value) );
-			J_CHK( JS_SetPropertyById(cx, obj, id, &value) );
+			JL_CHK( JS_IdToValue(cx, id, &key) );
+			//JL_CHK( OBJ_GET_PROPERTY(cx, srcObj, id, &value) );
+			JL_CHK( JS_GetPropertyById(cx, srcObj, id, &value) );
+			//JL_CHK( OBJ_SET_PROPERTY(cx, obj, id, &value) );
+			JL_CHK( JS_SetPropertyById(cx, obj, id, &value) );
 		}
 	}
 	return JS_TRUE;
@@ -90,18 +90,18 @@ DEFINE_XDR() {
 		JSObject *it = JS_NewPropertyIterator(xdr->cx, *objp);
 		for (;;) {
 
-			J_CHK( JS_NextProperty(xdr->cx, it, &id) );
+			JL_CHK( JS_NextProperty(xdr->cx, it, &id) );
 			if ( id == JSVAL_VOID ) { // ... or JSVAL_VOID if there is no such property left to visit.
 
 				jsval tmp = JSVAL_VOID;
-				J_CHK( JS_XDRValue(xdr, &tmp) );
+				JL_CHK( JS_XDRValue(xdr, &tmp) );
 				break;
 			}
-			J_CHK( JS_IdToValue(xdr->cx, id, &key) );
-//			J_CHK( OBJ_GET_PROPERTY(xdr->cx, *objp, id, &value) ); // returning false on error or exception, true on success.
-			J_CHK( JS_GetPropertyById(xdr->cx, *objp, id, &value) );
-			J_CHK( JS_XDRValue(xdr, &key) );
-			J_CHK( JS_XDRValue(xdr, &value) );
+			JL_CHK( JS_IdToValue(xdr->cx, id, &key) );
+//			JL_CHK( OBJ_GET_PROPERTY(xdr->cx, *objp, id, &value) ); // returning false on error or exception, true on success.
+			JL_CHK( JS_GetPropertyById(xdr->cx, *objp, id, &value) );
+			JL_CHK( JS_XDRValue(xdr, &key) );
+			JL_CHK( JS_XDRValue(xdr, &value) );
 		}
 		return JS_TRUE;
 	}
@@ -111,12 +111,12 @@ DEFINE_XDR() {
 		*objp = JS_NewObject(xdr->cx, _class, NULL, NULL);
 		for (;;) {
 
-			J_CHK( JS_XDRValue(xdr, &key) );
+			JL_CHK( JS_XDRValue(xdr, &key) );
 			if ( key == JSVAL_VOID )
 				break;
 			JS_ValueToId(xdr->cx, key, &id);
-			J_CHK( JS_XDRValue(xdr, &value) );
-			J_CHK( OBJ_SET_PROPERTY(xdr->cx, *objp, id, &value) );
+			JL_CHK( JS_XDRValue(xdr, &value) );
+			JL_CHK( OBJ_SET_PROPERTY(xdr->cx, *objp, id, &value) );
 		}
 		return JS_TRUE;
 	}

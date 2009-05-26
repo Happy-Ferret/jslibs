@@ -35,7 +35,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	_unsafeMode = GetHostPrivate(cx)->unsafeMode;
 
 #ifdef XP_WIN
-//	J_CHK( INIT_CLASS( Window ) );
+//	JL_CHK( INIT_CLASS( Window ) );
 #endif
 
 	INIT_CLASS( Transformation );

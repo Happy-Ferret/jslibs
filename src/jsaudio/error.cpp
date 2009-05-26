@@ -44,7 +44,7 @@ DEFINE_PROPERTY( text ) {
 
 	JS_GetReservedSlot( cx, obj, 0, vp );
 	int errorCode;
-	J_CHK( JsvalToInt(cx, *vp, &errorCode) );
+	JL_CHK( JsvalToInt(cx, *vp, &errorCode) );
 	char *errStr;
 	switch (errorCode) {
 		case AL_NO_ERROR:
@@ -84,7 +84,7 @@ DEFINE_PROPERTY( const ) {
 
 	JS_GetReservedSlot( cx, obj, 0, vp );
 	int errorCode;
-	J_CHK( JsvalToInt(cx, *vp, &errorCode) );
+	JL_CHK( JsvalToInt(cx, *vp, &errorCode) );
 	char *errStr;
 	switch (errorCode) {
 		case AL_NO_ERROR:
@@ -122,7 +122,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( toString ) {
 
-	J_CHK( _text(cx, obj, 0, rval) );
+	JL_CHK( _text(cx, obj, 0, rval) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -140,7 +140,7 @@ DEFINE_XDR() {
 	if ( xdr->mode == JSXDR_ENCODE ) {
 
 		jsval tmp;
-		J_CHK( JS_GetReservedSlot(xdr->cx, *objp, 0, &tmp) );
+		JL_CHK( JS_GetReservedSlot(xdr->cx, *objp, 0, &tmp) );
 		JS_XDRValue(xdr, &tmp);
 		return JS_TRUE;
 	}
@@ -150,7 +150,7 @@ DEFINE_XDR() {
 		*objp = JS_NewObject(xdr->cx, _class, NULL, NULL);
 		jsval tmp;
 		JS_XDRValue(xdr, &tmp);
-		J_CHK( JS_SetReservedSlot(xdr->cx, *objp, 0, tmp) );
+		JL_CHK( JS_SetReservedSlot(xdr->cx, *objp, 0, tmp) );
 		return JS_TRUE;
 	}
 
@@ -189,8 +189,8 @@ JSBool ThrowOalError( JSContext *cx, ALenum err ) {
 	JSObject *error = JS_NewObject( cx, _class, NULL, NULL );
 	JS_SetPendingException( cx, OBJECT_TO_JSVAL( error ) );
 	jsval errVal;
-	J_CHK( IntToJsval(cx, err, &errVal) );
-	J_CHK( JS_SetReservedSlot( cx, error, 0, errVal ) );
-	J_SAFE( ExceptionSetScriptLocation(cx, error) );
+	JL_CHK( IntToJsval(cx, err, &errVal) );
+	JL_CHK( JS_SetReservedSlot( cx, error, 0, errVal ) );
+	JL_SAFE( ExceptionSetScriptLocation(cx, error) );
 	JL_BAD;
 }

@@ -25,7 +25,7 @@ DECLARE_CLASS( Stream );
 inline JSBool PositionSet( JSContext *cx, JSObject *obj, int position ) {
 
 	jsval tmp;
-	J_CHK( IntToJsval(cx, position, &tmp) );
+	JL_CHK( IntToJsval(cx, position, &tmp) );
 	return JS_SetReservedSlot(cx, obj, SLOT_STREAM_POSITION, tmp);
 	JL_BAD;
 }
@@ -34,8 +34,8 @@ inline JSBool PositionSet( JSContext *cx, JSObject *obj, int position ) {
 inline JSBool PositionGet( JSContext *cx, JSObject *obj, int *position ) {
 
 	jsval tmp;
-	J_CHK( JS_GetReservedSlot(cx, obj, SLOT_STREAM_POSITION, &tmp) );
-	J_CHK( JsvalToInt(cx, tmp, position) );
+	JL_CHK( JS_GetReservedSlot(cx, obj, SLOT_STREAM_POSITION, &tmp) );
+	JL_CHK( JsvalToInt(cx, tmp, position) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -43,16 +43,16 @@ inline JSBool PositionGet( JSContext *cx, JSObject *obj, int *position ) {
 
 JSBool StreamRead( JSContext *cx, JSObject *obj, char *buf, size_t *amount ) {
 
-	J_S_ASSERT_CLASS(obj, classStream);
+	JL_S_ASSERT_CLASS(obj, classStream);
 
 	int position;
-	J_CHK( PositionGet(cx, obj, &position) );
+	JL_CHK( PositionGet(cx, obj, &position) );
 	jsval source;
-	J_CHK( JS_GetReservedSlot(cx, obj, SLOT_STREAM_SOURCE, &source) );
+	JL_CHK( JS_GetReservedSlot(cx, obj, SLOT_STREAM_SOURCE, &source) );
 
 	const char *buffer;
 	size_t length;
-	J_CHK( JsvalToStringAndLength(cx, &source, &buffer, &length) ); // (TBD) GC protect source
+	JL_CHK( JsvalToStringAndLength(cx, &source, &buffer, &length) ); // (TBD) GC protect source
 
 	if ( length - position <= 0 ) { // position >= length
 
@@ -89,25 +89,25 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
-	J_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_ARG_MIN( 1 );
 
 	if ( JS_IsConstructing(cx) == JS_FALSE ) { // supports this form (w/o new operator) : result.param1 = Blob('Hello World');
 
 		obj = JS_NewObject(cx, _class, NULL, NULL);
-		J_CHK( obj );
+		JL_CHK( obj );
 		*rval = OBJECT_TO_JSVAL(obj);
 	} else {
 
-		J_S_ASSERT_THIS_CLASS();
+		JL_S_ASSERT_THIS_CLASS();
 	}
 
-	J_S_ASSERT( !JSVAL_IS_VOID(J_ARG(1)) && !JSVAL_IS_NULL(J_ARG(1)), "Invalid stream source." );
+	JL_S_ASSERT( !JSVAL_IS_VOID(JL_ARG(1)) && !JSVAL_IS_NULL(JL_ARG(1)), "Invalid stream source." );
 
-	J_CHK( JS_SetReservedSlot(cx, obj, SLOT_STREAM_SOURCE, J_ARG(1)) );
-	J_CHK( PositionSet(cx, obj, 0) );
+	JL_CHK( JS_SetReservedSlot(cx, obj, SLOT_STREAM_SOURCE, JL_ARG(1)) );
+	JL_CHK( PositionSet(cx, obj, 0) );
 
-	J_CHK( ReserveStreamReadInterface(cx, obj) );
-	J_CHK( SetStreamReadInterface(cx, obj, StreamRead) );
+	JL_CHK( ReserveStreamReadInterface(cx, obj) );
+	JL_CHK( SetStreamReadInterface(cx, obj, StreamRead) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -121,26 +121,26 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Read ) {
 
-	J_S_ASSERT_CLASS(J_FOBJ, _class);
-	J_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_CLASS(JL_FOBJ, _class);
+	JL_S_ASSERT_ARG_MIN( 1 );
 
 	int amount;
-	J_CHK( JsvalToInt(cx, J_FARG(1), &amount) );
+	JL_CHK( JsvalToInt(cx, JL_FARG(1), &amount) );
 
 	char *buffer;
 	buffer = (char*)JS_malloc(cx, amount +1);
-	J_CHK(buffer);
+	JL_CHK(buffer);
 
 	size_t readAmount;
 	readAmount = amount;
-	J_CHK( StreamRead(cx, J_FOBJ, buffer, &readAmount ) );
+	JL_CHK( StreamRead(cx, JL_FOBJ, buffer, &readAmount ) );
 
 	if ( MaybeRealloc(amount, readAmount) )
 		buffer = (char*)JS_realloc(cx, buffer, readAmount +1);
 
 	buffer[readAmount] = '\0';
 
-	J_CHK( J_NewBlob(cx, buffer, readAmount, J_FRVAL) );
+	JL_CHK( JL_NewBlob(cx, buffer, readAmount, JL_FRVAL) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -154,9 +154,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( positionGetter ) {
 
-	J_S_ASSERT_CLASS(obj, _class);
+	JL_S_ASSERT_CLASS(obj, _class);
 	int position;
-	J_CHK( PositionGet(cx, obj, &position) );
+	JL_CHK( PositionGet(cx, obj, &position) );
 	*vp = INT_TO_JSVAL( position );
 	return JS_TRUE;
 	JL_BAD;
@@ -164,11 +164,11 @@ DEFINE_PROPERTY( positionGetter ) {
 
 DEFINE_PROPERTY( positionSetter ) {
 
-	J_S_ASSERT_CLASS(obj, _class);
+	JL_S_ASSERT_CLASS(obj, _class);
 	int position;
-	J_CHK( JsvalToInt(cx, *vp, &position) );
-	J_S_ASSERT( position >= 0, "Invalid stream position." );
-	J_CHK( PositionSet(cx, obj, position) );
+	JL_CHK( JsvalToInt(cx, *vp, &position) );
+	JL_S_ASSERT( position >= 0, "Invalid stream position." );
+	JL_CHK( PositionSet(cx, obj, position) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -180,20 +180,20 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( available ) {
 
-	J_S_ASSERT_CLASS(obj, _class);
-	J_CHK( JS_GetReservedSlot(cx, obj, SLOT_STREAM_SOURCE, vp) ); // use vp as a tmp variable
+	JL_S_ASSERT_CLASS(obj, _class);
+	JL_CHK( JS_GetReservedSlot(cx, obj, SLOT_STREAM_SOURCE, vp) ); // use vp as a tmp variable
 	JSObject *srcObj;
 	if ( JSVAL_IS_OBJECT( *vp ) )
 		srcObj = JSVAL_TO_OBJECT( *vp );
 	else
-		J_CHK( JS_ValueToObject(cx, *vp, &srcObj) );
+		JL_CHK( JS_ValueToObject(cx, *vp, &srcObj) );
 	int length, position;
-	J_CHK( PositionGet(cx, obj, &position) );
-	J_CHK( JS_GetProperty(cx, srcObj, "length", vp) ); // use vp as a tmp variable
+	JL_CHK( PositionGet(cx, obj, &position) );
+	JL_CHK( JS_GetProperty(cx, srcObj, "length", vp) ); // use vp as a tmp variable
 	if ( JSVAL_IS_VOID( *vp ) )
 		return JS_TRUE; // if length is not defined, the returned value is undefined
-	J_CHK( JsvalToInt(cx, *vp, &length) );
-	J_CHK( IntToJsval(cx, length - position, vp ) );
+	JL_CHK( JsvalToInt(cx, *vp, &length) );
+	JL_CHK( IntToJsval(cx, length - position, vp ) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -205,8 +205,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( source ) {
 
-	J_S_ASSERT_CLASS(obj, _class);
-	J_CHK( JS_GetReservedSlot(cx, obj, SLOT_STREAM_SOURCE, vp) );
+	JL_S_ASSERT_CLASS(obj, _class);
+	JL_CHK( JS_GetReservedSlot(cx, obj, SLOT_STREAM_SOURCE, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }

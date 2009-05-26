@@ -33,7 +33,7 @@ BEGIN_CLASS( MidiEvent )
 
 DEFINE_FINALIZE() {
 
-	void *pv = JS_GetPrivate(cx, obj);
+	void *pv = JL_GetPrivate(cx, obj);
 	if ( !pv )
 		return;
 
@@ -46,14 +46,14 @@ DEFINE_FINALIZE() {
 
 DEFINE_CONSTRUCTOR() {
 
-	J_S_ASSERT_CONSTRUCTING();
-	J_CHK( JS_SetReservedSlot(cx, obj, 0, JSVAL_TRUE) );
+	JL_S_ASSERT_CONSTRUCTING();
+	JL_CHK( JS_SetReservedSlot(cx, obj, 0, JSVAL_TRUE) );
 	VstMidiEvent *pv = (VstMidiEvent*)JS_malloc(cx, sizeof(VstMidiEvent));
-	J_CHK( pv );
+	JL_CHK( pv );
 
 	pv->byteSize = sizeof(VstMidiEvent);
 	pv->type = kVstMidiType;
-	JS_SetPrivate(cx, obj, pv);
+	JL_SetPrivate(cx, obj, pv);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -61,8 +61,8 @@ DEFINE_CONSTRUCTOR() {
 
 DEFINE_PROPERTY_GETTER( deltaFrames ) {
 
-	VstMidiEvent *pv = (VstMidiEvent*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(pv);
+	VstMidiEvent *pv = (VstMidiEvent*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(pv);
 	*vp = INT_TO_JSVAL(pv->deltaFrames);
 	return JS_TRUE;
 	JL_BAD;
@@ -70,9 +70,9 @@ DEFINE_PROPERTY_GETTER( deltaFrames ) {
 
 DEFINE_PROPERTY_SETTER( deltaFrames ) {
 
-	VstMidiEvent *pv = (VstMidiEvent*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(pv);
-	J_S_ASSERT_INT( *vp );
+	VstMidiEvent *pv = (VstMidiEvent*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(pv);
+	JL_S_ASSERT_INT( *vp );
 	pv->deltaFrames = JSVAL_TO_INT( *vp );
 	return JS_TRUE;
 	JL_BAD;
@@ -81,8 +81,8 @@ DEFINE_PROPERTY_SETTER( deltaFrames ) {
 
 DEFINE_PROPERTY_GETTER( realtime ) {
 
-	VstMidiEvent *pv = (VstMidiEvent*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(pv);
+	VstMidiEvent *pv = (VstMidiEvent*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(pv);
 	*vp = pv->flags & kVstMidiEventIsRealtime ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;
 	JL_BAD;
@@ -90,9 +90,9 @@ DEFINE_PROPERTY_GETTER( realtime ) {
 
 DEFINE_PROPERTY_SETTER( realtime ) {
 
-	VstMidiEvent *pv = (VstMidiEvent*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(pv);
-	J_S_ASSERT_BOOLEAN( *vp );
+	VstMidiEvent *pv = (VstMidiEvent*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(pv);
+	JL_S_ASSERT_BOOLEAN( *vp );
 	pv->flags = JSVAL_TO_BOOLEAN( *vp ) == JS_TRUE ? pv->flags & kVstMidiEventIsRealtime : pv->flags | ~kVstMidiEventIsRealtime;
 	return JS_TRUE;
 	JL_BAD;
@@ -101,8 +101,8 @@ DEFINE_PROPERTY_SETTER( realtime ) {
 
 DEFINE_PROPERTY_GETTER( noteLength ) {
 
-	VstMidiEvent *pv = (VstMidiEvent*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(pv);
+	VstMidiEvent *pv = (VstMidiEvent*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(pv);
 	*vp = INT_TO_JSVAL(pv->noteLength);
 	return JS_TRUE;
 	JL_BAD;
@@ -110,9 +110,9 @@ DEFINE_PROPERTY_GETTER( noteLength ) {
 
 DEFINE_PROPERTY_SETTER( noteLength ) {
 
-	VstMidiEvent *pv = (VstMidiEvent*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(pv);
-	J_S_ASSERT_INT( *vp );
+	VstMidiEvent *pv = (VstMidiEvent*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(pv);
+	JL_S_ASSERT_INT( *vp );
 	pv->noteLength = JSVAL_TO_INT( *vp );
 	return JS_TRUE;
 	JL_BAD;
@@ -121,8 +121,8 @@ DEFINE_PROPERTY_SETTER( noteLength ) {
 
 DEFINE_PROPERTY_GETTER( noteOffset ) {
 
-	VstMidiEvent *pv = (VstMidiEvent*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(pv);
+	VstMidiEvent *pv = (VstMidiEvent*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(pv);
 	*vp = INT_TO_JSVAL(pv->noteOffset);
 	return JS_TRUE;
 	JL_BAD;
@@ -130,9 +130,9 @@ DEFINE_PROPERTY_GETTER( noteOffset ) {
 
 DEFINE_PROPERTY_SETTER( noteOffset ) {
 
-	VstMidiEvent *pv = (VstMidiEvent*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(pv);
-	J_S_ASSERT_INT( *vp );
+	VstMidiEvent *pv = (VstMidiEvent*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(pv);
+	JL_S_ASSERT_INT( *vp );
 	pv->noteOffset = JSVAL_TO_INT( *vp );
 	return JS_TRUE;
 	JL_BAD;
@@ -141,8 +141,8 @@ DEFINE_PROPERTY_SETTER( noteOffset ) {
 
 DEFINE_PROPERTY_GETTER( detune ) {
 
-	VstMidiEvent *pv = (VstMidiEvent*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(pv);
+	VstMidiEvent *pv = (VstMidiEvent*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(pv);
 	*vp = INT_TO_JSVAL(pv->detune);
 	return JS_TRUE;
 	JL_BAD;
@@ -150,9 +150,9 @@ DEFINE_PROPERTY_GETTER( detune ) {
 
 DEFINE_PROPERTY_SETTER( detune ) {
 
-	VstMidiEvent *pv = (VstMidiEvent*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(pv);
-	J_S_ASSERT_INT( *vp );
+	VstMidiEvent *pv = (VstMidiEvent*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(pv);
+	JL_S_ASSERT_INT( *vp );
 	int value = JSVAL_TO_INT( *vp );
 	if ( value > 63 )
 		value = 63;
@@ -167,8 +167,8 @@ DEFINE_PROPERTY_SETTER( detune ) {
 
 DEFINE_PROPERTY_GETTER( noteOffVelocity ) {
 
-	VstMidiEvent *pv = (VstMidiEvent*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(pv);
+	VstMidiEvent *pv = (VstMidiEvent*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(pv);
 	*vp = INT_TO_JSVAL(pv->noteOffVelocity);
 	return JS_TRUE;
 	JL_BAD;
@@ -176,9 +176,9 @@ DEFINE_PROPERTY_GETTER( noteOffVelocity ) {
 
 DEFINE_PROPERTY_SETTER( noteOffVelocity ) {
 
-	VstMidiEvent *pv = (VstMidiEvent*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(pv);
-	J_S_ASSERT_INT( *vp );
+	VstMidiEvent *pv = (VstMidiEvent*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(pv);
+	JL_S_ASSERT_INT( *vp );
 	int value = JSVAL_TO_INT( *vp );
 	if ( value > 127 )
 		value = 127;
@@ -203,8 +203,8 @@ DEFINE_PROPERTY_SETTER( noteOffVelocity ) {
 
 DEFINE_PROPERTY_GETTER( status ) {
 
-	VstMidiEvent *pv = (VstMidiEvent*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(pv);
+	VstMidiEvent *pv = (VstMidiEvent*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(pv);
 	*vp = INT_TO_JSVAL(((unsigned char) pv->midiData[0]) >> 4);
 	return JS_TRUE;
 	JL_BAD;
@@ -212,11 +212,11 @@ DEFINE_PROPERTY_GETTER( status ) {
 
 DEFINE_PROPERTY_SETTER( status ) {
 
-	VstMidiEvent *pv = (VstMidiEvent*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(pv);
-	J_S_ASSERT_INT( *vp );
+	VstMidiEvent *pv = (VstMidiEvent*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(pv);
+	JL_S_ASSERT_INT( *vp );
 	unsigned int value = JSVAL_TO_INT( *vp );
-	J_S_ASSERT( value >= 0x8 && value <= 0xF, "Invalid status value.");
+	JL_S_ASSERT( value >= 0x8 && value <= 0xF, "Invalid status value.");
 	pv->midiData[0] = (pv->midiData[0] & 0x0F) | ((value & 0x0F) << 4);
 	return JS_TRUE;
 	JL_BAD;
@@ -225,8 +225,8 @@ DEFINE_PROPERTY_SETTER( status ) {
 
 DEFINE_PROPERTY_GETTER( channel ) {
 
-	VstMidiEvent *pv = (VstMidiEvent*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(pv);
+	VstMidiEvent *pv = (VstMidiEvent*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(pv);
 	*vp = INT_TO_JSVAL(pv->midiData[0] & 0x0F); // 0..15
 	return JS_TRUE;
 	JL_BAD;
@@ -234,11 +234,11 @@ DEFINE_PROPERTY_GETTER( channel ) {
 
 DEFINE_PROPERTY_SETTER( channel ) {
 
-	VstMidiEvent *pv = (VstMidiEvent*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(pv);
-	J_S_ASSERT_INT( *vp );
+	VstMidiEvent *pv = (VstMidiEvent*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(pv);
+	JL_S_ASSERT_INT( *vp );
 	unsigned int value = JSVAL_TO_INT( *vp );
-	J_S_ASSERT( value >= 0 && value <= 15, "Invalid channel value.");
+	JL_S_ASSERT( value >= 0 && value <= 15, "Invalid channel value.");
 	pv->midiData[0] = (pv->midiData[0] & 0xF0) | (value & 0x0F);
 	return JS_TRUE;
 	JL_BAD;
@@ -248,8 +248,8 @@ DEFINE_PROPERTY_SETTER( channel ) {
 /*
 DEFINE_PROPERTY_GETTER( noteOn ) {
 
-	VstMidiEvent *pv = (VstMidiEvent*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(pv);
+	VstMidiEvent *pv = (VstMidiEvent*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(pv);
 
 
 	*vp = INT_TO_JSVAL(pv->midiData[0] & 0x0F); // 0..15
@@ -259,11 +259,11 @@ DEFINE_PROPERTY_GETTER( noteOn ) {
 
 DEFINE_PROPERTY_SETTER( noteOn ) {
 
-	VstMidiEvent *pv = (VstMidiEvent*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(pv);
-	J_S_ASSERT_INT( *vp );
+	VstMidiEvent *pv = (VstMidiEvent*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(pv);
+	JL_S_ASSERT_INT( *vp );
 	unsigned int value = JSVAL_TO_INT( *vp );
-	J_S_ASSERT( value >= 0 && value <= 15, "Invalid channel value.");
+	JL_S_ASSERT( value >= 0 && value <= 15, "Invalid channel value.");
 	pv->midiData[0] = (pv->midiData[0] & 0xF0) | (value & 0x0F);
 	return JS_TRUE;
 	JL_BAD;
@@ -275,8 +275,8 @@ DEFINE_PROPERTY_SETTER( noteOn ) {
 
 DEFINE_PROPERTY_GETTER( value1 ) {
 
-	VstMidiEvent *pv = (VstMidiEvent*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(pv);
+	VstMidiEvent *pv = (VstMidiEvent*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(pv);
 	*vp = INT_TO_JSVAL(pv->midiData[1]);
 	return JS_TRUE;
 	JL_BAD;
@@ -284,9 +284,9 @@ DEFINE_PROPERTY_GETTER( value1 ) {
 
 DEFINE_PROPERTY_SETTER( value1 ) {
 
-	VstMidiEvent *pv = (VstMidiEvent*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(pv);
-	J_S_ASSERT_INT( *vp );
+	VstMidiEvent *pv = (VstMidiEvent*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(pv);
+	JL_S_ASSERT_INT( *vp );
 	int value = JSVAL_TO_INT( *vp );
 	pv->midiData[1] = value;
 	return JS_TRUE;
@@ -296,8 +296,8 @@ DEFINE_PROPERTY_SETTER( value1 ) {
 
 DEFINE_PROPERTY_GETTER( value2 ) {
 
-	VstMidiEvent *pv = (VstMidiEvent*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(pv);
+	VstMidiEvent *pv = (VstMidiEvent*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(pv);
 	*vp = INT_TO_JSVAL(pv->midiData[2]);
 	return JS_TRUE;
 	JL_BAD;
@@ -305,9 +305,9 @@ DEFINE_PROPERTY_GETTER( value2 ) {
 
 DEFINE_PROPERTY_SETTER( value2 ) {
 
-	VstMidiEvent *pv = (VstMidiEvent*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(pv);
-	J_S_ASSERT_INT( *vp );
+	VstMidiEvent *pv = (VstMidiEvent*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(pv);
+	JL_S_ASSERT_INT( *vp );
 	int value = JSVAL_TO_INT( *vp );
 	pv->midiData[2] = value;
 	return JS_TRUE;
@@ -352,6 +352,6 @@ JSObject* CreateMidiEventObject( JSContext *cx, VstMidiEvent *midiEvent ) {
 	JSObject *midiEventObject = JS_NewObject(cx, classMidiEvent, NULL, NULL);
 	if ( midiEventObject == NULL )
 		return NULL;
-	JS_SetPrivate(cx, midiEventObject, midiEvent);
+	JL_SetPrivate(cx, midiEventObject, midiEvent);
 	return midiEventObject;
 }

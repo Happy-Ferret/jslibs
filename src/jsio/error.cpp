@@ -33,7 +33,7 @@ BEGIN_CLASS( IoError )
 /* see issue#52
 DEFINE_CONSTRUCTOR() {
 
-	J_REPORT_ERROR( "This object cannot be construct." ); // (TBD) remove constructor and define HAS_HAS_INSTANCE
+	JL_REPORT_ERROR( "This object cannot be construct." ); // (TBD) remove constructor and define HAS_HAS_INSTANCE
 	return JS_TRUE;
 }
 */
@@ -73,7 +73,7 @@ DEFINE_PROPERTY( text ) {
 
 DEFINE_FUNCTION( toString ) {
 
-	J_CHK( _text(cx, obj, 0, rval) );
+	JL_CHK( _text(cx, obj, 0, rval) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -90,9 +90,9 @@ DEFINE_XDR() {
 	if ( xdr->mode == JSXDR_ENCODE ) {
 
 		jsval tmp;
-		J_CHK( JS_GetReservedSlot(xdr->cx, *objp, 0, &tmp) );
+		JL_CHK( JS_GetReservedSlot(xdr->cx, *objp, 0, &tmp) );
 		JS_XDRValue(xdr, &tmp);
-		J_CHK( JS_GetReservedSlot(xdr->cx, *objp, 1, &tmp) );
+		JL_CHK( JS_GetReservedSlot(xdr->cx, *objp, 1, &tmp) );
 		JS_XDRValue(xdr, &tmp);
 		return JS_TRUE;
 	}
@@ -102,9 +102,9 @@ DEFINE_XDR() {
 		*objp = JS_NewObject(xdr->cx, classIoError, NULL, NULL);
 		jsval tmp;
 		JS_XDRValue(xdr, &tmp);
-		J_CHK( JS_SetReservedSlot(xdr->cx, *objp, 0, tmp) );
+		JL_CHK( JS_SetReservedSlot(xdr->cx, *objp, 0, tmp) );
 		JS_XDRValue(xdr, &tmp);
-		J_CHK( JS_SetReservedSlot(xdr->cx, *objp, 1, tmp) );
+		JL_CHK( JS_SetReservedSlot(xdr->cx, *objp, 1, tmp) );
 		return JS_TRUE;
 	}
 
@@ -147,14 +147,14 @@ END_CLASS
 JSBool ThrowIoErrorArg( JSContext *cx, PRErrorCode errorCode, PRInt32 osError ) {
 
 #ifdef DEBUG
-	J_REPORT_WARNING( "IoError exception" );
+	JL_REPORT_WARNING( "IoError exception" );
 #endif // DEBUG
 
 	JSObject *error = JS_NewObject( cx, classIoError, NULL, NULL );
 	JS_SetPendingException( cx, OBJECT_TO_JSVAL( error ) );
 	JS_SetReservedSlot( cx, error, 0, INT_TO_JSVAL(errorCode) );
 	JS_SetReservedSlot( cx, error, 1, INT_TO_JSVAL(osError) );
-	J_SAFE( ExceptionSetScriptLocation(cx, error) );
+	JL_SAFE( ExceptionSetScriptLocation(cx, error) );
 	JL_BAD;
 }
 

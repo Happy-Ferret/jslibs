@@ -22,7 +22,7 @@ BEGIN_CLASS( Id )
 
 DEFINE_FINALIZE() {
 
-	IdPrivate *pv = (IdPrivate*)JS_GetPrivate(cx, obj);
+	IdPrivate *pv = (IdPrivate*)JL_GetPrivate(cx, obj);
 	if (pv != NULL) {
 		
 		if ( pv->finalizeCallback ) // callback function is present
@@ -39,9 +39,9 @@ DEFINE_HAS_INSTANCE() { // see issue#52
 
 DEFINE_INIT() {
 
-	J_SAFE_BEGIN
+	JL_SAFE_BEGIN
 		globalKey = JLSessionId();
-	J_SAFE_END
+	JL_SAFE_END
 	return JS_TRUE;
 }
 
@@ -64,7 +64,7 @@ DEFINE_XDR() {
 
 		uint32 gKey;
 		JS_XDRUint32(xdr, &gKey);
-		J_S_ASSERT( gKey == globalKey, "Incompatible Id." );
+		JL_S_ASSERT( gKey == globalKey, "Incompatible Id." );
 
 		return JS_TRUE;
 	}

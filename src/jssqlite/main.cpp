@@ -39,7 +39,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
 	if ( sqlite3_enable_shared_cache(true) != SQLITE_OK ) {
 		
-		J_REPORT_ERROR( "Unable to enable shared cache." );
+		JL_REPORT_ERROR( "Unable to enable shared cache." );
 	}
 
 	

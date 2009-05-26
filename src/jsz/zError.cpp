@@ -79,7 +79,7 @@ DEFINE_PROPERTY( const ) {
 
 DEFINE_FUNCTION( toString ) {
 
-	J_CHK( _text(cx, obj, 0, rval) );
+	JL_CHK( _text(cx, obj, 0, rval) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -96,9 +96,9 @@ DEFINE_XDR() {
 	if ( xdr->mode == JSXDR_ENCODE ) {
 
 		jsval tmp;
-		J_CHK( JS_GetReservedSlot(xdr->cx, *objp, 0, &tmp) );
+		JL_CHK( JS_GetReservedSlot(xdr->cx, *objp, 0, &tmp) );
 		JS_XDRValue(xdr, &tmp);
-		J_CHK( JS_GetReservedSlot(xdr->cx, *objp, 1, &tmp) );
+		JL_CHK( JS_GetReservedSlot(xdr->cx, *objp, 1, &tmp) );
 		JS_XDRValue(xdr, &tmp);
 		return JS_TRUE;
 	}
@@ -108,9 +108,9 @@ DEFINE_XDR() {
 		*objp = JS_NewObject(xdr->cx, _class, NULL, NULL);
 		jsval tmp;
 		JS_XDRValue(xdr, &tmp);
-		J_CHK( JS_SetReservedSlot(xdr->cx, *objp, 0, tmp) );
+		JL_CHK( JS_SetReservedSlot(xdr->cx, *objp, 0, tmp) );
 		JS_XDRValue(xdr, &tmp);
-		J_CHK( JS_SetReservedSlot(xdr->cx, *objp, 1, tmp) );
+		JL_CHK( JS_SetReservedSlot(xdr->cx, *objp, 1, tmp) );
 		return JS_TRUE;
 	}
 
@@ -153,6 +153,6 @@ JSBool ThrowZError( JSContext *cx, int errorCode, const char *errorMessage ) {
 	JS_SetPendingException( cx, OBJECT_TO_JSVAL( error ) );
 	JS_SetReservedSlot( cx, error, 0, INT_TO_JSVAL(errorCode) );
 	JS_SetReservedSlot( cx, error, 1, STRING_TO_JSVAL(JS_NewStringCopyZ( cx, errorMessage != NULL ? errorMessage : ZConstString(errorCode) )) );
-	J_SAFE( ExceptionSetScriptLocation(cx, error) );
+	JL_SAFE( ExceptionSetScriptLocation(cx, error) );
 	JL_BAD;
 }

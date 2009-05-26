@@ -8,16 +8,16 @@ static unsigned char embeddedBootstrapScript[] =
 int consoleStdOut( JSContext *cx, const char *data, int length ) {
 
 	JSObject *obj = GetConfigurationObject(cx);
-	J_S_ASSERT( obj != NULL, "Unable to get GetConfigurationObject" );
+	JL_S_ASSERT( obj != NULL, "Unable to get GetConfigurationObject" );
 	jsval functionVal;
 	JS_GetProperty(cx, obj, "stdout", &functionVal);
 	if ( !JSVAL_IS_VOID( functionVal ) ) {
 
-		J_S_ASSERT_FUNCTION( functionVal );
+		JL_S_ASSERT_FUNCTION( functionVal );
 		JSString *str = JS_NewStringCopyN(cx, data, length);
-		J_CHK( str ); 
+		JL_CHK( str ); 
 		jsval rval, arg = STRING_TO_JSVAL(str);
-		J_CHK ( JS_CallFunctionValue(cx, obj, functionVal, 1, &arg, &rval) );
+		JL_CHK ( JS_CallFunctionValue(cx, obj, functionVal, 1, &arg, &rval) );
 	}
 	return length;
 }
@@ -25,16 +25,16 @@ int consoleStdOut( JSContext *cx, const char *data, int length ) {
 int consoleStdErr( JSContext *cx, const char *data, int length ) {
 
 	JSObject *obj = GetConfigurationObject(cx);
-	J_S_ASSERT( obj != NULL, "Unable to get GetConfigurationObject" );
+	JL_S_ASSERT( obj != NULL, "Unable to get GetConfigurationObject" );
 	jsval functionVal;
 	JS_GetProperty(cx, obj, "stderr", &functionVal);
 	if ( !JSVAL_IS_VOID( functionVal ) ) {
 
-		J_S_ASSERT_FUNCTION( functionVal );
+		JL_S_ASSERT_FUNCTION( functionVal );
 		JSString *str = JS_NewStringCopyN(cx, data, length);
-		J_CHK( str ); 
+		JL_CHK( str ); 
 		jsval rval, arg = STRING_TO_JSVAL(str);
-		J_CHK( JS_CallFunctionValue(cx, obj, functionVal, 1, &arg, &rval) );
+		JL_CHK( JS_CallFunctionValue(cx, obj, functionVal, 1, &arg, &rval) );
 	}
 	return length;
 }
@@ -45,7 +45,7 @@ static JSBool stderrFunction(JSContext *cx, JSObject *obj, uintN argc, jsval *ar
 
 	JSString *str;
 	str = JS_ValueToString(cx, argv[0]);
-	J_S_ASSERT( str != NULL, "Unable to convert argument to string.");
+	JL_S_ASSERT( str != NULL, "Unable to convert argument to string.");
 	argv[0] = STRING_TO_JSVAL(str); // (TBD) needed ?
 	consoleStdErr( cx, JS_GetStringBytes(str), JS_GetStringLength(str) );
 	return JS_TRUE;
@@ -55,7 +55,7 @@ static JSBool stdoutFunction(JSContext *cx, JSObject *obj, uintN argc, jsval *ar
 
 	JSString *str;
 	str = JS_ValueToString(cx, argv[0]);
-	J_S_ASSERT( str != NULL, "Unable to convert argument to string.");
+	JL_S_ASSERT( str != NULL, "Unable to convert argument to string.");
 	argv[0] = STRING_TO_JSVAL(str); // (TBD) needed ?
 	consoleStdOut( cx, JS_GetStringBytes(str), JS_GetStringLength(str) );
 	return JS_TRUE;
@@ -65,27 +65,27 @@ static JSBool stdoutFunction(JSContext *cx, JSObject *obj, uintN argc, jsval *ar
 int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow ) {
 
 	JSContext *cx = CreateHost(-1, -1, 0);
-	J_CHK( cx != NULL );
-	J_CHK( InitHost(cx, true, NULL, NULL, NULL) );
+	JL_CHK( cx != NULL );
+	JL_CHK( InitHost(cx, true, NULL, NULL, NULL) );
 	errno_t err;
 	CHAR moduleFileName[PATH_MAX];
 	DWORD len = GetModuleFileName(hInstance, moduleFileName, sizeof(moduleFileName));
-	J_CHK( len );
+	JL_CHK( len );
 	char *name = strrchr( moduleFileName, '\\' );
-	J_CHK( name );
+	JL_CHK( name );
 	*name = '\0';
 	name++;
 
 	CHAR moduleName[PATH_MAX], scriptName[PATH_MAX];
 	DWORD moduleNameLen = GetModuleFileName(hInstance, moduleName, sizeof(moduleName));
 	err = strncpy_s(scriptName, sizeof(scriptName), moduleName, moduleNameLen );
-	J_S_ASSERT( err == 0, "Buffer overflow." );
+	JL_S_ASSERT( err == 0, "Buffer overflow." );
 //	DWORD scriptNameLen = GetModuleFileName(hInstance, scriptName, sizeof(scriptName));
 	char *dotPos = strrchr(scriptName, '.');
-	J_CHK( dotPos );
+	JL_CHK( dotPos );
 	*dotPos = '\0';
 	err = strcat_s( scriptName, sizeof(scriptName), ".js" );
-	J_S_ASSERT( err == 0, "Buffer overflow." );
+	JL_S_ASSERT( err == 0, "Buffer overflow." );
 
 	//If you need to detect whether another instance already exists, create a uniquely named mutex using the CreateMutex function. 
 	//CreateMutex will succeed even if the mutex already exists, but the function will return ERROR_ALREADY_EXISTS. 
@@ -95,9 +95,9 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 	// (TBD) use file index as mutexName. note: If the file is on an NTFS volume, you can get a unique 64 bit identifier for it with GetFileInformationByHandle.  The 64 bit identifier is the "file index". 
 	char mutexName[PATH_MAX];// = "jswinhost_";
 	err = strncpy_s(mutexName, sizeof(mutexName), moduleName, moduleNameLen);
-	J_S_ASSERT( err == 0, "Buffer overflow." );
+	JL_S_ASSERT( err == 0, "Buffer overflow." );
 	err = strcat_s(mutexName, sizeof(mutexName), name);
-	J_S_ASSERT( err == 0, "Buffer overflow." );
+	JL_S_ASSERT( err == 0, "Buffer overflow." );
 	SetLastError(0);
 	HANDLE instanceCheckMutex = CreateMutex(NULL, TRUE, mutexName);
 	bool hasPrevInstance = GetLastError() == ERROR_ALREADY_EXISTS;
@@ -105,10 +105,10 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 	JSObject *globalObject = JS_GetGlobalObject(cx);
 
 	// arguments
-//	J_CHK( JS_DefineProperty(cx, globalObject, NAME_GLOBAL_ARGUMENT, STRING_TO_JSVAL(JS_NewStringCopyZ(cx, lpCmdLine)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) ); // see ExecuteScriptFileName()
-	J_CHK( JS_DefineProperty(cx, globalObject, NAME_GLOBAL_SCRIPT_HOST_NAME, STRING_TO_JSVAL(JS_NewStringCopyZ(cx, name)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
-	J_CHK( JS_DefineProperty(cx, globalObject, NAME_GLOBAL_SCRIPT_HOST_PATH, STRING_TO_JSVAL(JS_NewStringCopyZ(cx, moduleFileName)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
-	J_CHK( JS_DefineProperty(cx, globalObject, NAME_GLOBAL_FIRST_INSTANCE, BOOLEAN_TO_JSVAL(hasPrevInstance?JS_FALSE:JS_TRUE), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
+//	JL_CHK( JS_DefineProperty(cx, globalObject, NAME_GLOBAL_ARGUMENT, STRING_TO_JSVAL(JS_NewStringCopyZ(cx, lpCmdLine)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) ); // see ExecuteScriptFileName()
+	JL_CHK( JS_DefineProperty(cx, globalObject, NAME_GLOBAL_SCRIPT_HOST_NAME, STRING_TO_JSVAL(JS_NewStringCopyZ(cx, name)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
+	JL_CHK( JS_DefineProperty(cx, globalObject, NAME_GLOBAL_SCRIPT_HOST_PATH, STRING_TO_JSVAL(JS_NewStringCopyZ(cx, moduleFileName)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
+	JL_CHK( JS_DefineProperty(cx, globalObject, NAME_GLOBAL_FIRST_INSTANCE, BOOLEAN_TO_JSVAL(hasPrevInstance?JS_FALSE:JS_TRUE), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
 
 	//#pragma comment (lib, "User32.lib")
 	//MessageBox(NULL, scriptName, "script name", 0);
@@ -116,18 +116,18 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 	if ( sizeof(embeddedBootstrapScript)-1 ) {
 
 		uint32 prevOpt = JS_SetOptions(cx, JS_GetOptions(cx) & ~JSOPTION_DONT_REPORT_UNCAUGHT); // report uncautch exceptions !
-//		J_CHKM( JS_EvaluateScript(cx, JS_GetGlobalObject(cx), embeddedBootstrapScript, sizeof(embeddedBootstrapScript)-1, "bootstrap", 1, &tmp), "Invalid embedded bootstrap." ); // for plain text scripts.
+//		JL_CHKM( JS_EvaluateScript(cx, JS_GetGlobalObject(cx), embeddedBootstrapScript, sizeof(embeddedBootstrapScript)-1, "bootstrap", 1, &tmp), "Invalid embedded bootstrap." ); // for plain text scripts.
 		JSXDRState *xdr = JS_XDRNewMem(cx, JSXDR_DECODE);
-		J_CHK( xdr );
+		JL_CHK( xdr );
 		JS_XDRMemSetData(xdr, embeddedBootstrapScript, sizeof(embeddedBootstrapScript)-1);
 		JSScript *script;
-		J_CHK( JS_XDRScript(xdr, &script) );
+		JL_CHK( JS_XDRScript(xdr, &script) );
 		JS_XDRMemSetData(xdr, NULL, 0); // embeddedBootstrapScript is a static buffer, this avoid JS_free to be called on it.
 		JS_XDRDestroy(xdr);
 		JSObject *bootstrapScriptObject = JS_NewScriptObject(cx, script);
-		J_CHK( SetConfigurationReadonlyValue(cx, "bootstrapScript", OBJECT_TO_JSVAL(bootstrapScriptObject)) );
+		JL_CHK( SetConfigurationReadonlyValue(cx, "bootstrapScript", OBJECT_TO_JSVAL(bootstrapScriptObject)) );
 		jsval tmp;
-		J_CHK( JS_ExecuteScript(cx, JS_GetGlobalObject(cx), script, &tmp) );
+		JL_CHK( JS_ExecuteScript(cx, JS_GetGlobalObject(cx), script, &tmp) );
 		JS_SetOptions(cx, prevOpt);
 	}
 

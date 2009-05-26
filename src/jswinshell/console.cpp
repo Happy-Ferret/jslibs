@@ -34,8 +34,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
-	J_S_ASSERT_CONSTRUCTING();
-	J_S_ASSERT_THIS_CLASS();
+	JL_S_ASSERT_CONSTRUCTING();
+	JL_S_ASSERT_THIS_CLASS();
 
 	BOOL status = AllocConsole();
 	if ( status == FALSE )
@@ -69,7 +69,7 @@ DEFINE_FUNCTION( Close ) {
 	BOOL status = FreeConsole();
 	if ( status == FALSE )
 		return WinThrowError(cx, GetLastError());
-//	J_S_ASSERT( res != 0, "Unable to free the console." );
+//	JL_S_ASSERT( res != 0, "Unable to free the console." );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -84,13 +84,13 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Write ) {
 
-	J_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_ARG_MIN( 1 );
 	HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
 	if ( hStdout == NULL )
 		return WinThrowError(cx, GetLastError());
 	const char *str;
 	size_t len;
-	J_CHK( JsvalToStringAndLength(cx, &argv[0], &str, &len) );
+	JL_CHK( JsvalToStringAndLength(cx, &argv[0], &str, &len) );
 	DWORD written;
 	BOOL status = WriteConsole(hStdout, str, len, &written, NULL);
 	if ( status == FALSE )
@@ -109,7 +109,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Read ) {
 
-	J_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_ARG_MIN( 1 );
 	HANDLE hStdin = GetStdHandle(STD_INPUT_HANDLE);
 	if ( hStdin == NULL )
 		return WinThrowError(cx, GetLastError());
@@ -135,7 +135,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY( titleSetter ) {
 
 	const char *str;
-	J_CHK( JsvalToString(cx, vp, &str) );
+	JL_CHK( JsvalToString(cx, vp, &str) );
 	SetConsoleTitle(str);
 	return JS_TRUE;
 	JL_BAD;
@@ -145,7 +145,7 @@ DEFINE_PROPERTY( titleGetter ) {
 
 	char buffer[2048];
 	DWORD res = GetConsoleTitle(buffer, sizeof(buffer));
-	J_S_ASSERT( res >= 0, "Unable to GetConsoleTitle." );
+	JL_S_ASSERT( res >= 0, "Unable to GetConsoleTitle." );
 	if ( res == 0 )
 		*vp = JS_GetEmptyStringValue(cx);
 	else

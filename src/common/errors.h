@@ -30,10 +30,10 @@ typedef enum J_ErrNum {
 
 
 // usage: JS_ReportErrorNumber(cx, my_GetErrorMessage, NULL, JSSMSG_OUT_OF_RANGE);
-static JSBool J_ReportError( JSContext *cx, J_ErrNum name ) {
+static JSBool JL_ReportError( JSContext *cx, J_ErrNum name ) {
 
 	jsval tmp;
-	J_CHK( GetConfigurationValue(cx, NAME_CONFIGURATION_GETERRORMESSAGE, &tmp) );
+	JL_CHK( GetConfigurationValue(cx, NAME_CONFIGURATION_GETERRORMESSAGE, &tmp) );
 	JSErrorCallback errorCallback;
 	errorCallback = NULL;
 	if ( !JSVAL_IS_VOID( tmp ) )

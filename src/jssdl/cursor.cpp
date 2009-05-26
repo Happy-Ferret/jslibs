@@ -24,7 +24,7 @@ BEGIN_CLASS( Cursor )
 
 DEFINE_FINALIZE() {
 
-	SDL_Cursor *cursor = (SDL_Cursor*)JS_GetPrivate(cx, obj);
+	SDL_Cursor *cursor = (SDL_Cursor*)JL_GetPrivate(cx, obj);
 	if ( cursor != NULL ) {
 
 		SDL_FreeCursor(cursor); // default cursor is restored
@@ -43,24 +43,24 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
-	J_S_ASSERT_CONSTRUCTING();
-	J_S_ASSERT_ARG_MIN(1);
-	J_S_ASSERT_OBJECT( J_ARG(1) );
+	JL_S_ASSERT_CONSTRUCTING();
+	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_OBJECT( JL_ARG(1) );
 	
-	JSObject *imageObj = JSVAL_TO_OBJECT( J_ARG(1) );
+	JSObject *imageObj = JSVAL_TO_OBJECT( JL_ARG(1) );
 	int sWidth, sHeight, sChannels;
-	J_CHK( GetPropertyInt(cx, imageObj, "width", &sWidth) );
-	J_CHK( GetPropertyInt(cx, imageObj, "height", &sHeight) );
-	J_CHK( GetPropertyInt(cx, imageObj, "channels", &sChannels) );
+	JL_CHK( GetPropertyInt(cx, imageObj, "width", &sWidth) );
+	JL_CHK( GetPropertyInt(cx, imageObj, "height", &sHeight) );
+	JL_CHK( GetPropertyInt(cx, imageObj, "channels", &sChannels) );
 
 	const unsigned char *sBuffer;
 	size_t bufferLength;
-	J_CHK( JsvalToStringAndLength(cx, &J_ARG(1), (const char**)&sBuffer, &bufferLength ) ); // warning: GC on the returned buffer !
+	JL_CHK( JsvalToStringAndLength(cx, &JL_ARG(1), (const char**)&sBuffer, &bufferLength ) ); // warning: GC on the returned buffer !
 
-	J_S_ASSERT( bufferLength == sWidth * sHeight * sChannels * 1, "Invalid image format." );
+	JL_S_ASSERT( bufferLength == sWidth * sHeight * sChannels * 1, "Invalid image format." );
 
-	J_S_ASSERT( sWidth % 8 == 0, "The cursor width must be a multiple of 8.");
-	J_S_ASSERT( sChannels == 3 || sChannels == 4, "Invalid image format (need RGB or RGBA).");
+	JL_S_ASSERT( sWidth % 8 == 0, "The cursor width must be a multiple of 8.");
+	JL_S_ASSERT( sChannels == 3 || sChannels == 4, "Invalid image format (need RGB or RGBA).");
 
 	int length = sWidth * sHeight;
 
@@ -88,13 +88,13 @@ DEFINE_CONSTRUCTOR() {
 
 	int hotX, hotY;
 
-	if ( J_ARG_ISDEF(2) )
-		J_CHK( JsvalToInt(cx, J_ARG(2), &hotX) );
+	if ( JL_ARG_ISDEF(2) )
+		JL_CHK( JsvalToInt(cx, JL_ARG(2), &hotX) );
 	else
 		hotX = 0;
 	
-	if ( J_ARG_ISDEF(3) )
-		J_CHK( JsvalToInt(cx, J_ARG(3), &hotY) );
+	if ( JL_ARG_ISDEF(3) )
+		JL_CHK( JsvalToInt(cx, JL_ARG(3), &hotY) );
 	else
 		hotY = 0;
 		
@@ -106,7 +106,7 @@ DEFINE_CONSTRUCTOR() {
 		return ThrowSdlError(cx);
 	}
 
-	J_CHK( JS_SetPrivate(cx, obj, cursor) );
+	JL_CHK( JL_SetPrivate(cx, obj, cursor) );
 
 	free(cursorImage);
 	return JS_TRUE;

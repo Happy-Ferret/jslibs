@@ -202,7 +202,7 @@ static JSTrapStatus StepThrough(JSContext *cx, JSScript *script, jsbytecode *pc,
 static JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSStackFrame *fp, BreakReason breakOrigin) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(pv);
+	JL_S_ASSERT_RESOURCE(pv);
 
 	JSScript *script;
 	script = JS_GetFrameScript(cx, fp);
@@ -228,7 +228,7 @@ static JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSStackFrame *fp,
 	hasException = JS_IsExceptionPending(cx);
 	if ( hasException ) {
 
-		J_CHK( JS_GetPendingException(cx, &exception) );
+		JL_CHK( JS_GetPendingException(cx, &exception) );
 		JS_ClearPendingException(cx);
 	}
 
@@ -240,7 +240,7 @@ static JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSStackFrame *fp,
 	stackFrameIndex = StackSize(cx, fp)-1;
 
 	// argv[0] is reserved for the rval
-	J_CHK( StringToJsval(cx, filename, &argv[1]) );
+	JL_CHK( StringToJsval(cx, filename, &argv[1]) );
 	argv[2] = INT_TO_JSVAL( lineno );
 	argv[3] = INT_TO_JSVAL( breakOrigin );
 	argv[4] = INT_TO_JSVAL( stackFrameIndex );
@@ -267,9 +267,9 @@ static JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSStackFrame *fp,
 	pv->debugHooks = JS_GetGlobalDebugHooks(rt); // restore debug hooks
 	*JS_GetGlobalDebugHooks(rt) = prevHooks;
 
-	J_CHK( status );
+	JL_CHK( status );
 
-	J_S_ASSERT_INT( argv[0] );
+	JL_S_ASSERT_INT( argv[0] );
 
 	if ( hasException ) // restore the exception
 		JS_SetPendingException(cx, exception); // (TBD) should return JSTRAP_ERROR ???
@@ -318,15 +318,15 @@ bad:
 
 DEFINE_FINALIZE() {
 
-	Private *pv = (Private*)JS_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	if ( !pv )
 		return;
 	JSRuntime *rt = JS_GetRuntime(cx);
-	J_CHK( JS_SetInterrupt(rt, NULL, NULL) );
-	J_CHK( JS_SetDebuggerHandler(rt, NULL, NULL) );
-	J_CHK( JS_SetDebugErrorHook(rt, NULL, NULL) );
-	J_CHK( JS_SetThrowHook(rt, NULL,NULL) );
-	J_CHK( JS_SetExecuteHook(rt, NULL, NULL) );
+	JL_CHK( JS_SetInterrupt(rt, NULL, NULL) );
+	JL_CHK( JS_SetDebuggerHandler(rt, NULL, NULL) );
+	JL_CHK( JS_SetDebugErrorHook(rt, NULL, NULL) );
+	JL_CHK( JS_SetThrowHook(rt, NULL,NULL) );
+	JL_CHK( JS_SetExecuteHook(rt, NULL, NULL) );
 	if ( pv->excludedFiles )
 		CleanExcludedFileList(&pv->excludedFiles);
 	JS_free(cx, pv);
@@ -362,15 +362,15 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
-	J_S_ASSERT_CONSTRUCTING();
-	J_S_ASSERT_THIS_CLASS();
+	JL_S_ASSERT_CONSTRUCTING();
+	JL_S_ASSERT_THIS_CLASS();
 
 	Private *pv;
 	pv = (Private*)JS_malloc(cx, sizeof(Private));
-	J_CHK(pv);
+	JL_CHK(pv);
 
 	memset(pv, 0, sizeof(Private));
-	J_CHK( JS_SetPrivate(cx, obj, pv) );
+	JL_CHK( JL_SetPrivate(cx, obj, pv) );
 	pv->debugHooks = JS_GetGlobalDebugHooks(JS_GetRuntime(cx));
 
 	return JS_TRUE;
@@ -395,32 +395,32 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( ToggleBreakpoint ) {
 
-	J_S_ASSERT_ARG_MIN( 3 );
+	JL_S_ASSERT_ARG_MIN( 3 );
 
 	bool polarity;
-	J_CHK( JsvalToBool(cx, J_FARG(1), &polarity) );
+	JL_CHK( JsvalToBool(cx, JL_FARG(1), &polarity) );
 
 	uintN lineno;
-	J_CHK( JsvalToUInt(cx, J_FARG(3), &lineno) );
+	JL_CHK( JsvalToUInt(cx, JL_FARG(3), &lineno) );
 
 	JSScript *script;
 	jsbytecode *pc;
-	J_CHK( GetScriptLocation(cx, &J_FARG(2), lineno, &script, &pc) );
+	JL_CHK( GetScriptLocation(cx, &JL_FARG(2), lineno, &script, &pc) );
 	if ( script == NULL )
-		J_REPORT_ERROR("Invalid location.");
+		JL_REPORT_ERROR("Invalid location.");
 
 	JSTrapHandler prevHandler;
 	void *prevClosure;
 	JS_ClearTrap(cx, script, pc, &prevHandler, &prevClosure);
 
 	if ( polarity ) {
-		J_CHK( JS_SetTrap(cx, script, pc, TrapHandler, J_FOBJ) );
+		JL_CHK( JS_SetTrap(cx, script, pc, TrapHandler, JL_FOBJ) );
 	} else {
-		if ( prevHandler != TrapHandler || prevClosure != J_FOBJ )
-			J_CHK( JS_SetTrap(cx, script, pc, TrapHandler, J_FOBJ) );
+		if ( prevHandler != TrapHandler || prevClosure != JL_FOBJ )
+			JL_CHK( JS_SetTrap(cx, script, pc, TrapHandler, JL_FOBJ) );
 	}
 
-	*J_FRVAL = INT_TO_JSVAL( JS_PCToLineNumber(cx, script, pc) );
+	*JL_FRVAL = INT_TO_JSVAL( JS_PCToLineNumber(cx, script, pc) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -434,27 +434,27 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( HasBreakpoint ) {
 
-	J_S_ASSERT_ARG_MIN( 2 );
+	JL_S_ASSERT_ARG_MIN( 2 );
 
 	uintN lineno;
-	J_CHK( JsvalToUInt(cx, J_FARG(2), &lineno) );
+	JL_CHK( JsvalToUInt(cx, JL_FARG(2), &lineno) );
 
 	JSScript *script;
 	jsbytecode *pc;
-	J_CHK( GetScriptLocation(cx, &J_FARG(1), lineno, &script, &pc) );
+	JL_CHK( GetScriptLocation(cx, &JL_FARG(1), lineno, &script, &pc) );
 	if ( script == NULL )
-		J_REPORT_ERROR("Invalid location.");
+		JL_REPORT_ERROR("Invalid location.");
 
 	JSTrapHandler prevHandler;
 	void *prevClosure;
 	JS_ClearTrap(cx, script, pc, &prevHandler, &prevClosure);
 	if ( prevHandler ) {
 
-		J_CHK( JS_SetTrap(cx, script, pc, prevHandler, prevClosure) );
-		*J_FRVAL = JSVAL_TRUE;
+		JL_CHK( JS_SetTrap(cx, script, pc, prevHandler, prevClosure) );
+		*JL_FRVAL = JSVAL_TRUE;
 	} else {
 
-		*J_FRVAL = JSVAL_FALSE;
+		*JL_FRVAL = JSVAL_FALSE;
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -469,7 +469,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION_FAST( ClearBreakpoints ) {
 
 	JS_ClearAllTraps(cx);
-	*J_FRVAL = JSVAL_VOID;
+	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
 
@@ -488,16 +488,16 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( interruptCounterLimit ) {
 
-	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(pv);
+	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(pv);
 
 	if ( JSVAL_IS_VOID(*vp) ) {
 		
 		pv->interruptCounterLimit = 0;
 	} else {
 
-		J_S_ASSERT_INT(*vp);
-		J_CHK( JsvalToUInt(cx, *vp, &pv->interruptCounterLimit) );
+		JL_S_ASSERT_INT(*vp);
+		JL_CHK( JsvalToUInt(cx, *vp, &pv->interruptCounterLimit) );
 	}
 
 	if ( pv->interruptCounterLimit == 0 && pv->debugHooks->interruptHandler == InterruptCounterHandler ) { // cancel the current one.
@@ -518,10 +518,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( breakOnError ) {
 
-	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(pv);
+	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(pv);
 	bool b;
-	J_CHK( JsvalToBool(cx, *vp, &b) );
+	JL_CHK( JsvalToBool(cx, *vp, &b) );
 	pv->debugHooks->debugErrorHook = b ? DebugErrorHookHandler : NULL;
 	pv->debugHooks->debugErrorHookData = b ? obj : NULL;
 	return JS_TRUE;
@@ -535,10 +535,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( breakOnException ) {
 
-	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(pv);
+	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(pv);
 	bool b;
-	J_CHK( JsvalToBool(cx, *vp, &b) );
+	JL_CHK( JsvalToBool(cx, *vp, &b) );
 	pv->debugHooks->throwHook = b ? ThrowHookHandler : NULL;
 	pv->debugHooks->throwHookData = b ? obj : NULL;
 	return JS_TRUE;
@@ -552,10 +552,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( breakOnDebuggerKeyword ) {
 
-	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(pv);
+	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(pv);
 	bool b;
-	J_CHK( JsvalToBool(cx, *vp, &b) );
+	JL_CHK( JsvalToBool(cx, *vp, &b) );
 	pv->debugHooks->debuggerHandler = b ? DebuggerKeyword : NULL;
 	pv->debugHooks->debuggerHandlerData = b ? obj : NULL;
 	return JS_TRUE;
@@ -569,10 +569,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( breakOnExecute ) {
 
-	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(pv);
+	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(pv);
 	bool b;
-	J_CHK( JsvalToBool(cx, *vp, &b) );
+	JL_CHK( JsvalToBool(cx, *vp, &b) );
 	pv->debugHooks->executeHook = b ? ExecuteHookHandler : NULL;
 	pv->debugHooks->executeHookData = b ? obj : NULL;
 	return JS_TRUE;
@@ -586,10 +586,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( breakOnFirstExecute ) {
 
-	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(pv);
+	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(pv);
 	bool b;
-	J_CHK( JsvalToBool(cx, *vp, &b) );
+	JL_CHK( JsvalToBool(cx, *vp, &b) );
 	pv->debugHooks->executeHook = b ? FirstExecuteHookHandler : NULL;
 	pv->debugHooks->executeHookData = b ? obj : NULL;
 	return JS_TRUE;
@@ -603,10 +603,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( excludedFileList ) {
 
-	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(pv);
+	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(pv);
 
-	J_S_ASSERT_ARRAY( *vp );
+	JL_S_ASSERT_ARRAY( *vp );
 
 	JSObject *arrayObject;
 	arrayObject = JSVAL_TO_OBJECT( *vp );
@@ -615,17 +615,17 @@ DEFINE_PROPERTY( excludedFileList ) {
 		CleanExcludedFileList(&pv->excludedFiles);
 
 	jsuint length;
-	J_CHK( JS_GetArrayLength(cx, arrayObject, &length) );
+	JL_CHK( JS_GetArrayLength(cx, arrayObject, &length) );
 
 	jsval tmp;
 	const char *buffer;
 	char *filename;
 	for ( jsuint i = 0; i < length; ++i ) {
 
-		J_CHK( JS_GetElement(cx, arrayObject, i, &tmp ) );
-		J_CHK( JsvalToString(cx, &tmp, &buffer) );
+		JL_CHK( JS_GetElement(cx, arrayObject, i, &tmp ) );
+		JL_CHK( JsvalToString(cx, &tmp, &buffer) );
 		filename = strdup(buffer);
-		J_S_ASSERT_ALLOC( filename );
+		JL_S_ASSERT_ALLOC( filename );
 		AddExcludedFile(&pv->excludedFiles, filename);
 	}
 

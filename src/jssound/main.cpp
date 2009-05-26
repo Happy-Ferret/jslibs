@@ -38,7 +38,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
 	_unsafeMode = GetHostPrivate(cx)->unsafeMode;
 
-	J_CHK( INIT_STATIC() );
+	JL_CHK( INIT_STATIC() );
 //	INIT_CLASS( Sound );
 
 	INIT_CLASS( SoundFileDecoder );

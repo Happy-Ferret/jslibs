@@ -31,12 +31,12 @@ using namespace jl;
 
 JSBool NativeInterfaceStreamRead( JSContext *cx, JSObject *obj, char *buf, size_t *amount ) {
 
-	J_S_ASSERT( InheritFrom(cx, obj, classDescriptor), "Invalid descriptor object." );
-//	J_S_ASSERT_CLASS(obj, classDescriptor);
+	JL_S_ASSERT( InheritFrom(cx, obj, classDescriptor), "Invalid descriptor object." );
+//	JL_S_ASSERT_CLASS(obj, classDescriptor);
 
 	PRFileDesc *fd;
-	fd = (PRFileDesc*)JS_GetPrivate(cx, obj); // (PRFileDesc *)pv;
-	J_S_ASSERT_RESOURCE(fd);
+	fd = (PRFileDesc*)JL_GetPrivate(cx, obj); // (PRFileDesc *)pv;
+	JL_S_ASSERT_RESOURCE(fd);
 
 	PRInt32 ret;
 	PRPollDesc desc;
@@ -76,11 +76,11 @@ JSBool NativeInterfaceStreamRead( JSContext *cx, JSObject *obj, char *buf, size_
 
 void FinalizeDescriptor(JSContext *cx, JSObject *obj) {
 
-	PRFileDesc *fd = (PRFileDesc*)JS_GetPrivate( cx, obj );
+	PRFileDesc *fd = (PRFileDesc*)JL_GetPrivate( cx, obj );
 	if ( !fd ) // check if not already closed
 		return;
 	jsval imported;
-	J_CHK( JS_GetReservedSlot(cx, obj, SLOT_JSIO_DESCRIPTOR_IMPORTED, &imported) );
+	JL_CHK( JS_GetReservedSlot(cx, obj, SLOT_JSIO_DESCRIPTOR_IMPORTED, &imported) );
 	if ( imported == JSVAL_TRUE ) // Descriptor was inported, then do not close it
 		return;
 	PRStatus status;
@@ -90,7 +90,7 @@ void FinalizeDescriptor(JSContext *cx, JSObject *obj) {
 		if ( PR_GetError() != PR_WOULD_BLOCK_ERROR ) // if non-blocking descriptor, this is a non-fatal error
 			JS_ReportError( cx, "A descriptor cannot be closed while Finalize." );
 	}
-	J_CHK( JS_SetPrivate( cx, obj, NULL ) );
+	JL_CHK( JL_SetPrivate( cx, obj, NULL ) );
 
 bad:
 	return;
@@ -105,7 +105,7 @@ BEGIN_CLASS( Descriptor )
 
 DEFINE_CONSTRUCTOR() {
 
-	J_REPORT_ERROR( J__ERRMSG_NO_CONSTRUCT ); // BUT constructor must be defined
+	JL_REPORT_ERROR( J__ERRMSG_NO_CONSTRUCT ); // BUT constructor must be defined
 	JL_BAD;
 }
 
@@ -118,10 +118,10 @@ $TOC_MEMBER $INAME
  $INAME()
   Close the descriptor.
 **/
-DEFINE_FUNCTION( Close ) {
+DEFINE_FUNCTION_FAST( Close ) {
 
-	PRFileDesc *fd = (PRFileDesc*)JS_GetPrivate( cx, obj );
-	J_S_ASSERT( fd != NULL, "file is closed." );
+	PRFileDesc *fd = (PRFileDesc*)JL_GetPrivate( cx, JL_FOBJ );
+	JL_S_ASSERT( fd != NULL, "file is closed." );
 	PRStatus status;
 	status = PR_Close( fd );
 	if ( status != PR_SUCCESS ) {
@@ -130,10 +130,10 @@ DEFINE_FUNCTION( Close ) {
 		if ( errorCode != PR_WOULD_BLOCK_ERROR ) // if non-blocking descriptor, this is a non-fatal error
 			return ThrowIoError(cx);
 	}
-	J_CHK( JS_SetPrivate( cx, obj, NULL ) );
+	JL_CHK( JL_SetPrivate(cx, JL_FOBJ, NULL) );
 //	JS_ClearScope( cx, obj ); // help to clear readable, writable, exception
-//	J_CHK( SetStreamReadInterface(cx, obj, NULL) );
-	J_CHK( SetStreamReadInterface(cx, obj, NULL) );
+//	JL_CHK( SetStreamReadInterface(cx, obj, NULL) );
+	JL_CHK( SetStreamReadInterface(cx, JL_FOBJ, NULL) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -142,19 +142,17 @@ DEFINE_FUNCTION( Close ) {
 JSBool ReadToJsval( JSContext *cx, PRFileDesc *fd, int amount, jsval *rval ) {
 
 	char *buf = (char*)JS_malloc(cx, amount +1);
-	J_CHK( buf );
-	buf[amount] = '\0';
+	JL_CHK( buf );
 
 	PRInt32 res;
 	res = PR_Read(fd, buf, amount);
 	if (res == -1) { // failure. The reason for the failure can be obtained by calling PR_GetError.
 
 		JS_free( cx, buf );
-
 		PRErrorCode errCode = PR_GetError();
 		if ( errCode != PR_WOULD_BLOCK_ERROR )
-			J_CHK( ThrowIoError(cx) );
-		*rval = JS_GetEmptyStringValue(cx);
+			JL_CHK( ThrowIoError(cx) );
+		*rval = JS_GetEmptyStringValue(cx); // mean no data available, but connection still established.
 		return JS_TRUE;
 	}
 
@@ -167,11 +165,12 @@ JSBool ReadToJsval( JSContext *cx, PRFileDesc *fd, int amount, jsval *rval ) {
 
 	if ( MaybeRealloc(amount, res) ) {
 
-		buf = (char*)JS_realloc(cx, buf, res + 1); // realloc the string using its real size
-		J_CHK( buf );
+		buf = (char*)JS_realloc(cx, buf, res +1); // realloc the string using its real size
+		JL_CHK( buf );
 	}
+	buf[res] = '\0';
 
-	J_CHKB( J_NewBlob(cx, buf, res, rval), bad_free );
+	JL_CHKB( JL_NewBlob(cx, buf, res, rval), bad_free );
 
 	return JS_TRUE;
 bad_free:
@@ -200,7 +199,7 @@ JSBool ReadAllToJsval(JSContext *cx, PRFileDesc *fd, jsval *rval ) {
 		} else if ( res == -1 ) { // failure. The reason for the failure can be obtained by calling PR_GetError.
 
 			if ( PR_GetError() != PR_WOULD_BLOCK_ERROR )
-				J_CHK( ThrowIoError(cx) );
+				JL_CHK( ThrowIoError(cx) );
 			break; // no error, no data received, we cannot reach currentReadLength
 		} else if ( res == 0 ) { // end of file/socket
 
@@ -229,7 +228,7 @@ JSBool ReadAllToJsval(JSContext *cx, PRFileDesc *fd, jsval *rval ) {
 	jsData = (char*)JS_malloc(cx, length +1);
 	BufferCopyData(&buf, jsData, length);
 	jsData[length] = '\0';
-	J_CHK( J_NewBlob( cx, jsData, length, rval ) );
+	JL_CHK( JL_NewBlob( cx, jsData, length, rval ) );
 
 	BufferFinalize(&buf);
 	return JS_TRUE;
@@ -244,33 +243,46 @@ $TOC_MEMBER $INAME
  $VAL $INAME( [amount] )
   Read _amount_ bytes of data from the current descriptor. If _amount_ is ommited, the whole available data is read.
   If the descriptor is exhausted (eof or disconnected), this function returns _undefined_.
+  If the descriptor is a blocking socket and _amount_ is set to the value $UNDEF value, the call blocks until data is available.
   $H beware
    This function returns a Blob or a string literal as empty string.
+  $H example
+  {{{
+  LoadModule('jsstd');
+  LoadModule('jsio');
+  
+  var soc = new Socket();
+  soc.Connect('www.google.com', 80);
+  soc.Write('GET\r\n\r\n');
+  Print( soc.Read(undefined), '\n' );
+  }}}
 **/
-DEFINE_FUNCTION( Read ) {
+DEFINE_FUNCTION_FAST( Read ) {
 
-	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE( fd );
+	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE( fd );
 
-	if ( J_ARG_ISDEF(1) ) {
-
-		PRInt32 amount;
-		J_CHK( JsvalToInt(cx, J_ARG(1), &amount) );
-
-//		if ( amount == 0 ) // (TBD) check if it is good to use this ( even if amount is 0, we must call Read
-//			*rval = JS_GetEmptyStringValue(cx);
-//		else
-
-		J_CHK( ReadToJsval(cx, fd, amount, rval) );
-
-	} else { // amount value is NOT provided, then try to read all
+	if (likely( JL_ARGC == 0 )) {
 
 		PRInt32 available = PR_Available( fd );
-		if ( available != -1 ) // we can use the 'available' information
-			J_CHK( ReadToJsval(cx, fd, available, rval) );
-		else // 'available' is not usable with this fd type, then we used a buffered read ( aka read while there is someting to read )
-			J_CHK( ReadAllToJsval(cx, fd, rval) );
+		if (likely( available != -1 )) // we can use the 'available' information
+			JL_CHK( ReadToJsval(cx, fd, available, JL_FRVAL) );
+		else // 'available' is not usable with this fd type, then we use a buffered read (ie. read while there is someting to read)
+			JL_CHK( ReadAllToJsval(cx, fd, JL_FRVAL) );
+			
+	} else { // amount value is NOT provided, then try to read all
+
+		if (likely( !JSVAL_IS_VOID(JL_FARG(1)) )) {
+			
+			PRInt32 amount;
+			JL_CHK( JsvalToInt(cx, JL_FARG(1), &amount) );
+			JL_CHK( ReadToJsval(cx, fd, amount, JL_FRVAL) ); // (TBD) check if it is good to call it even if amount is 0.
+		} else {
+
+			JL_CHK( ReadAllToJsval(cx, fd, JL_FRVAL) );
+		}
 	}
+
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -281,15 +293,15 @@ $TOC_MEMBER $INAME
  $STR $INAME( data )
   If the whole data cannot be written, Write returns that have not be written.
 **/
-DEFINE_FUNCTION( Write ) {
+DEFINE_FUNCTION_FAST( Write ) {
 
-	J_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_ARG_MIN( 1 );
 	PRFileDesc *fd;
-	fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
-	J_S_ASSERT_RESOURCE( fd );
+	fd = (PRFileDesc *)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE( fd );
 	const char *str;
 	size_t len;
-	J_CHK( JsvalToStringAndLength(cx, &J_ARG(1), &str, &len) );
+	JL_CHK( JsvalToStringAndLength(cx, &JL_FARG(1), &str, &len) );
 
 	size_t sentAmount;
 
@@ -329,20 +341,20 @@ DEFINE_FUNCTION( Write ) {
 
 	char *buffer;
 	if ( sentAmount < len ) {
-		//*rval = STRING_TO_JSVAL( JS_NewDependentString(cx, JSVAL_TO_STRING( J_ARG(1) ), sentAmount, len - sentAmount) ); // return unsent data // (TBD) use Blob ?
+		//*rval = STRING_TO_JSVAL( JS_NewDependentString(cx, JSVAL_TO_STRING( JL_ARG(1) ), sentAmount, len - sentAmount) ); // return unsent data // (TBD) use Blob ?
 
 		buffer = (char*)JS_malloc(cx, len - sentAmount +1);
-		J_CHK( buffer );
+		JL_CHK( buffer );
 		buffer[len - sentAmount] = '\0';
 		memcpy(buffer, str, len - sentAmount);
-		J_CHKB( J_NewBlob(cx, buffer, len - sentAmount, rval), bad_free );
+		JL_CHKB( JL_NewBlob(cx, buffer, len - sentAmount, JL_FRVAL), bad_free );
 	} else
 	if ( sentAmount == 0 ) {
 
-		*rval = J_ARG(1); // nothing has been sent
+		*JL_FRVAL = JL_FARG(1); // nothing has been sent
 	} else {
 
-		*rval = JS_GetEmptyStringValue(cx); // nothing remains
+		*JL_FRVAL = JS_GetEmptyStringValue(cx); // nothing remains
 	}
 
 	return JS_TRUE;
@@ -357,11 +369,11 @@ $TOC_MEMBER $INAME
  $INAME()
   Sync any buffered data for a fd to its backing device.
 **/
-DEFINE_FUNCTION( Sync ) {
+DEFINE_FUNCTION_FAST( Sync ) {
 
-	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
-	J_S_ASSERT_RESOURCE( fd );
-	J_CHKB( PR_Sync(fd) == PR_SUCCESS, bad_ioerror );
+	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE( fd );
+	JL_CHKB( PR_Sync(fd) == PR_SUCCESS, bad_ioerror );
 	return JS_TRUE;
 bad_ioerror:
 	ThrowIoError(cx);
@@ -380,17 +392,17 @@ $TOC_MEMBER $INAME
  **/
 DEFINE_PROPERTY( available ) {
 
-	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
-	J_S_ASSERT_RESOURCE( fd );
+	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate( cx, obj );
+	JL_S_ASSERT_RESOURCE( fd );
 
 	PRInt64 available;
 	available = PR_Available64( fd ); // For a normal file, these are the bytes beyond the current file pointer.
-	J_CHKB( available != -1, bad_ioerror );
+	JL_CHKB( available != -1, bad_ioerror );
 
 	if ( available <= JSVAL_INT_MAX )
 		*vp = INT_TO_JSVAL(available);
 	else
-		J_CHK( JS_NewNumberValue(cx, (jsdouble)available, vp) );
+		JL_CHK( JS_NewNumberValue(cx, (jsdouble)available, vp) );
 
 	return JS_TRUE;
 bad_ioerror:
@@ -406,8 +418,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( type ) {
 
-	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
-	J_S_ASSERT_RESOURCE( fd );
+	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate( cx, obj );
+	JL_S_ASSERT_RESOURCE( fd );
 	*vp = INT_TO_JSVAL( (int)PR_GetDescType(fd) );
 	return JS_TRUE;
 	JL_BAD;
@@ -423,7 +435,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( closed ) {
 
-	PRFileDesc *fd = (PRFileDesc *)JS_GetPrivate( cx, obj );
+	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate( cx, obj );
 	*vp = BOOLEAN_TO_JSVAL( fd == NULL );
 	return JS_TRUE;
 }
@@ -438,12 +450,12 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Import ) {
 
-	J_S_ASSERT_ARG_MIN(2);
+	JL_S_ASSERT_ARG_MIN(2);
 	//int stdfd;
-	//J_CHK( JsvalToInt(cx, J_ARG(1), &stdfd) );
+	//JL_CHK( JsvalToInt(cx, JL_ARG(1), &stdfd) );
 
 	PRInt32 osfd;
-	J_CHK( JsvalToInt(cx, J_ARG(1), &osfd) );
+	JL_CHK( JsvalToInt(cx, JL_ARG(1), &osfd) );
 
 	//switch (stdfd) {
 	//	case 0:
@@ -457,11 +469,11 @@ DEFINE_FUNCTION( Import ) {
 	//		break;
 	//	default:
 	//		osfd = stdfd;
-	//		//J_REPORT_ERROR("Unsupported standard handle.");
+	//		//JL_REPORT_ERROR("Unsupported standard handle.");
 	//}
 
 	int descType;
-	J_CHK( JsvalToInt(cx, J_ARG(2), &descType) );
+	JL_CHK( JsvalToInt(cx, JL_ARG(2), &descType) );
 	PRDescType type;
 	type = (PRDescType)descType;
 
@@ -486,14 +498,14 @@ DEFINE_FUNCTION( Import ) {
 			descriptorObject = JS_NewObject(cx, classFile, NULL, NULL); // (TBD) check if proto is needed !
 			break;
 		default:
-			J_REPORT_ERROR("Invalid descriptor type.");
+			JL_REPORT_ERROR("Invalid descriptor type.");
 	}
 	if ( fd == NULL )
 		return ThrowIoError(cx);
 
-	J_CHK( descriptorObject );
-	J_CHK( JS_SetPrivate(cx, descriptorObject, (void*)fd) );
-	J_CHK( JS_SetReservedSlot(cx, descriptorObject, SLOT_JSIO_DESCRIPTOR_IMPORTED, JSVAL_TRUE) );
+	JL_CHK( descriptorObject );
+	JL_CHK( JL_SetPrivate(cx, descriptorObject, (void*)fd) );
+	JL_CHK( JS_SetReservedSlot(cx, descriptorObject, SLOT_JSIO_DESCRIPTOR_IMPORTED, JSVAL_TRUE) );
 
 	*rval = OBJECT_TO_JSVAL(descriptorObject);
 	return JS_TRUE;
@@ -526,10 +538,10 @@ CONFIGURE_CLASS
 	HAS_CONSTRUCTOR
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION( Close )
-		FUNCTION( Read )
-		FUNCTION( Write )
-		FUNCTION( Sync )
+		FUNCTION_FAST( Close )
+		FUNCTION_FAST( Read )
+		FUNCTION_FAST( Write )
+		FUNCTION_FAST( Sync )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC

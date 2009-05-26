@@ -64,14 +64,14 @@ Manage GL extensions:
 	static proto name = NULL; \
 	if ( name == NULL ) { \
 		name = (proto) GL_GET_PROC_ADDRESS( #name ); \
-		J_S_ASSERT_1( name != NULL, "OpenGL extension %s unavailable.", #name ); \
+		JL_S_ASSERT_1( name != NULL, "OpenGL extension %s unavailable.", #name ); \
 	}
 */
 
  // (TBD) check static keyword issue
 #define LOAD_OPENGL_EXTENSION( name, proto ) \
 	static proto name = (proto) GL_GET_PROC_ADDRESS( #name ); \
-	J_S_ASSERT_1( name != NULL, "OpenGL extension %s unavailable.", #name );
+	JL_S_ASSERT_1( name != NULL, "OpenGL extension %s unavailable.", #name );
 
 
 
@@ -98,11 +98,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( GetBoolean ) {
 
-	J_S_ASSERT_ARG_MIN(1);
-	J_S_ASSERT_INT(J_FARG(1));
+	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_INT(JL_FARG(1));
 	GLboolean params;
-	glGetBooleanv(JSVAL_TO_INT(J_FARG(1)), &params);
-	*J_FRVAL = BOOLEAN_TO_JSVAL(params);
+	glGetBooleanv(JSVAL_TO_INT(JL_FARG(1)), &params);
+	*JL_FRVAL = BOOLEAN_TO_JSVAL(params);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -121,28 +121,28 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( GetInteger ) {
 
-	J_S_ASSERT_ARG_MIN(1);
-	J_S_ASSERT_INT(J_FARG(1));
+	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_INT(JL_FARG(1));
 
 	GLint params[16]; // (TBD) check if it is the max amount of data that glGetIntegerv may returns.
-	glGetIntegerv(JSVAL_TO_INT( J_FARG(1) ), params);
+	glGetIntegerv(JSVAL_TO_INT( JL_FARG(1) ), params);
 
-	if ( J_FARG_ISDEF(2) ) {
+	if ( JL_FARG_ISDEF(2) ) {
 
-		J_S_ASSERT_INT( J_FARG(2) );
-		int count = JSVAL_TO_INT( J_FARG(2) );
+		JL_S_ASSERT_INT( JL_FARG(2) );
+		int count = JSVAL_TO_INT( JL_FARG(2) );
 		JSObject *arrayObj = JS_NewArrayObject(cx, 0, NULL);
-		J_CHK(arrayObj);
-		*J_FRVAL = OBJECT_TO_JSVAL(arrayObj);
+		JL_CHK(arrayObj);
+		*JL_FRVAL = OBJECT_TO_JSVAL(arrayObj);
 		jsval tmpValue;
 		while (count--) {
 
 			tmpValue = INT_TO_JSVAL( params[count] );
-			J_CHK( JS_SetElement(cx, arrayObj, count, &tmpValue) );
+			JL_CHK( JS_SetElement(cx, arrayObj, count, &tmpValue) );
 		}
 	} else {
 
-		*J_FRVAL = INT_TO_JSVAL( params[0] );
+		*JL_FRVAL = INT_TO_JSVAL( params[0] );
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -162,28 +162,28 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( GetDouble ) {
 
-	J_S_ASSERT_ARG_MIN(1);
-	J_S_ASSERT_INT(J_FARG(1));
+	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_INT(JL_FARG(1));
 
 	GLdouble params[16]; // (TBD) check if it is the max amount of data that glGetDoublev may returns.
-	glGetDoublev(JSVAL_TO_INT(J_FARG(1)), params);
+	glGetDoublev(JSVAL_TO_INT(JL_FARG(1)), params);
 
-	if ( J_FARG_ISDEF(2) ) {
+	if ( JL_FARG_ISDEF(2) ) {
 
-		J_S_ASSERT_INT( J_FARG(2) );
-		int count = JSVAL_TO_INT( J_FARG(2) );
+		JL_S_ASSERT_INT( JL_FARG(2) );
+		int count = JSVAL_TO_INT( JL_FARG(2) );
 		JSObject *arrayObj = JS_NewArrayObject(cx, 0, NULL);
-		J_CHK(arrayObj);
-		*J_FRVAL = OBJECT_TO_JSVAL(arrayObj);
+		JL_CHK(arrayObj);
+		*JL_FRVAL = OBJECT_TO_JSVAL(arrayObj);
 		jsval tmpValue;
 		while (count--) {
 
-			J_CHK( DoubleToJsval(cx, params[count], &tmpValue) );
-			J_CHK( JS_SetElement(cx, arrayObj, count, &tmpValue) );
+			JL_CHK( DoubleToJsval(cx, params[count], &tmpValue) );
+			JL_CHK( JS_SetElement(cx, arrayObj, count, &tmpValue) );
 		}
 	} else {
 
-		J_CHK( DoubleToJsval(cx, params[0], J_FRVAL) );
+		JL_CHK( DoubleToJsval(cx, params[0], JL_FRVAL) );
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -201,13 +201,13 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Accum ) {
 
-	J_S_ASSERT_ARG_MIN(2);
-	J_S_ASSERT_INT(J_FARG(1));
-	GLenum op = JSVAL_TO_INT(J_FARG(1));
+	JL_S_ASSERT_ARG_MIN(2);
+	JL_S_ASSERT_INT(JL_FARG(1));
+	GLenum op = JSVAL_TO_INT(JL_FARG(1));
 	jsdouble value;
-	JsvalToDouble(cx, J_FARG(2), &value);
+	JsvalToDouble(cx, JL_FARG(2), &value);
 	glAccum(op, value);
-	*J_FRVAL = JSVAL_VOID;
+	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -224,13 +224,13 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( AlphaFunc ) {
 
-	J_S_ASSERT_ARG_MIN(2);
-	J_S_ASSERT_INT(J_FARG(1));
-	J_S_ASSERT_NUMBER(J_FARG(2));
+	JL_S_ASSERT_ARG_MIN(2);
+	JL_S_ASSERT_INT(JL_FARG(1));
+	JL_S_ASSERT_NUMBER(JL_FARG(2));
 	jsdouble ref;
-	JsvalToDouble(cx, J_FARG(2), &ref);
-	glAlphaFunc( JSVAL_TO_INT(J_FARG(1)), ref );
-	*J_FRVAL = JSVAL_VOID;
+	JsvalToDouble(cx, JL_FARG(2), &ref);
+	glAlphaFunc( JSVAL_TO_INT(JL_FARG(1)), ref );
+	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -245,7 +245,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION_FAST( Flush ) {
 
 	glFlush();
-	*J_FRVAL = JSVAL_VOID;
+	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
 
@@ -259,7 +259,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION_FAST( Finish ) {
 
 	glFinish();
-	*J_FRVAL = JSVAL_VOID;
+	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
 
@@ -275,31 +275,31 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Fog ) {
 
-	J_S_ASSERT_ARG_MIN(2);
-	J_S_ASSERT_INT(J_FARG(1));
+	JL_S_ASSERT_ARG_MIN(2);
+	JL_S_ASSERT_INT(JL_FARG(1));
 
-	*J_FRVAL = JSVAL_VOID;
-	if ( JSVAL_IS_INT(J_FARG(2)) ) {
+	*JL_FRVAL = JSVAL_VOID;
+	if ( JSVAL_IS_INT(JL_FARG(2)) ) {
 
-		glFogi(JSVAL_TO_INT(J_FARG(1)), JSVAL_TO_INT(J_FARG(2)));
+		glFogi(JSVAL_TO_INT(JL_FARG(1)), JSVAL_TO_INT(JL_FARG(2)));
 		return JS_TRUE;
 	}
-	if ( JSVAL_IS_NUMBER(J_FARG(2)) ) {
+	if ( JSVAL_IS_NUMBER(JL_FARG(2)) ) {
 
 		jsdouble param;
-		JsvalToDouble(cx, J_FARG(2), &param);
-		glFogf( JSVAL_TO_INT(J_FARG(1)), param );
+		JsvalToDouble(cx, JL_FARG(2), &param);
+		glFogf( JSVAL_TO_INT(JL_FARG(1)), param );
 		return JS_TRUE;
 	}
-	if ( JsvalIsArray(cx, J_FARG(2)) ) {
+	if ( JsvalIsArray(cx, JL_FARG(2)) ) {
 
 		GLfloat params[16];
 		size_t length;
-		J_CHK( JsvalToFloatVector(cx, J_FARG(2), params, COUNTOF(params), &length ) );
-		glFogfv( JSVAL_TO_INT(J_FARG(1)), params );
+		JL_CHK( JsvalToFloatVector(cx, JL_FARG(2), params, COUNTOF(params), &length ) );
+		glFogfv( JSVAL_TO_INT(JL_FARG(1)), params );
 		return JS_TRUE;
 	}
-	J_REPORT_ERROR("Invalid argument.");
+	JL_REPORT_ERROR("Invalid argument.");
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -316,11 +316,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Hint ) {
 
-	J_S_ASSERT_ARG_MIN(2);
-	J_S_ASSERT_INT(J_FARG(1));
-	J_S_ASSERT_INT(J_FARG(2));
-	glHint( JSVAL_TO_INT(J_FARG(1)), JSVAL_TO_INT(J_FARG(2)) );
-	*J_FRVAL = JSVAL_VOID;
+	JL_S_ASSERT_ARG_MIN(2);
+	JL_S_ASSERT_INT(JL_FARG(1));
+	JL_S_ASSERT_INT(JL_FARG(2));
+	glHint( JSVAL_TO_INT(JL_FARG(1)), JSVAL_TO_INT(JL_FARG(2)) );
+	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -338,25 +338,25 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Vertex ) {
 
-	J_S_ASSERT_ARG_MIN(2);
+	JL_S_ASSERT_ARG_MIN(2);
 
-//	if ( JsvalIsArray(cx, J_FARG(1)) ) {
+//	if ( JsvalIsArray(cx, JL_FARG(1)) ) {
 //	}
 
 //	float vec[3];
 //	FloatArrayToVector(cx, 3, &argv[0], vec);
 	jsdouble x, y, z;
-	JsvalToDouble(cx, J_FARG(1), &x);
-	JsvalToDouble(cx, J_FARG(2), &y);
-	if ( J_ARGC >= 3 ) {
+	JsvalToDouble(cx, JL_FARG(1), &x);
+	JsvalToDouble(cx, JL_FARG(2), &y);
+	if ( JL_ARGC >= 3 ) {
 
-		JsvalToDouble(cx, J_FARG(3), &z);
+		JsvalToDouble(cx, JL_FARG(3), &z);
 		glVertex3d(x, y, z);
 	} else {
 
 		glVertex2d(x, y);
 	}
-	*J_FRVAL = JSVAL_VOID;
+	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -375,22 +375,22 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Color ) {
 
-	J_S_ASSERT_ARG_MIN(3);
+	JL_S_ASSERT_ARG_MIN(3);
 //	float vec[3];
 //	FloatArrayToVector(cx, 3, &argv[0], vec);
 	jsdouble r, g, b, a;
-	JsvalToDouble(cx, J_FARG(1), &r);
-	JsvalToDouble(cx, J_FARG(2), &g);
-	JsvalToDouble(cx, J_FARG(3), &b);
-	if ( J_FARG_ISDEF(4) ) {
+	JsvalToDouble(cx, JL_FARG(1), &r);
+	JsvalToDouble(cx, JL_FARG(2), &g);
+	JsvalToDouble(cx, JL_FARG(3), &b);
+	if ( JL_FARG_ISDEF(4) ) {
 
-		JsvalToDouble(cx, J_FARG(4), &a);
+		JsvalToDouble(cx, JL_FARG(4), &a);
 		glColor4d(r, g, b, a);
 	} else {
 
 		glColor3d(r, g, b);
 	}
-	*J_FRVAL = JSVAL_VOID;
+	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -408,15 +408,15 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Normal ) {
 
-	J_S_ASSERT_ARG_MIN(3);
+	JL_S_ASSERT_ARG_MIN(3);
 //	float vec[3];
 //	FloatArrayToVector(cx, 3, &argv[0], vec);
 	jsdouble nx, ny, nz;
-	JsvalToDouble(cx, J_FARG(1), &nx);
-	JsvalToDouble(cx, J_FARG(2), &ny);
-	JsvalToDouble(cx, J_FARG(3), &nz);
+	JsvalToDouble(cx, JL_FARG(1), &nx);
+	JsvalToDouble(cx, JL_FARG(2), &ny);
+	JsvalToDouble(cx, JL_FARG(3), &nz);
 	glNormal3d(nx, ny, nz);
-	*J_FRVAL = JSVAL_VOID;
+	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -434,30 +434,30 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( TexCoord ) {
 
-	J_S_ASSERT_ARG_MIN(1);
-	*J_FRVAL = JSVAL_VOID;
+	JL_S_ASSERT_ARG_MIN(1);
+	*JL_FRVAL = JSVAL_VOID;
 	jsdouble s;
-	JsvalToDouble(cx, J_FARG(1), &s);
-	if ( J_ARGC == 1 ) {
+	JsvalToDouble(cx, JL_FARG(1), &s);
+	if ( JL_ARGC == 1 ) {
 
 		glTexCoord1d(s);
 		return JS_TRUE;
 	}
 	jsdouble t;
-	JsvalToDouble(cx, J_FARG(2), &t);
-	if ( J_ARGC == 2 ) {
+	JsvalToDouble(cx, JL_FARG(2), &t);
+	if ( JL_ARGC == 2 ) {
 
 		glTexCoord2d(s, t);
 		return JS_TRUE;
 	}
 	jsdouble r;
-	JsvalToDouble(cx, J_FARG(3), &r);
-	if ( J_ARGC == 3 ) {
+	JsvalToDouble(cx, JL_FARG(3), &r);
+	if ( JL_ARGC == 3 ) {
 
 		glTexCoord3d(s, t, r);
 		return JS_TRUE;
 	}
-	J_REPORT_ERROR("Invalid argument.");
+	JL_REPORT_ERROR("Invalid argument.");
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -475,33 +475,33 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( TexParameter ) {
 
-	J_S_ASSERT_ARG_MIN(3);
-	J_S_ASSERT_INT(J_FARG(1));
-	J_S_ASSERT_INT(J_FARG(2));
+	JL_S_ASSERT_ARG_MIN(3);
+	JL_S_ASSERT_INT(JL_FARG(1));
+	JL_S_ASSERT_INT(JL_FARG(2));
 
-	*J_FRVAL = JSVAL_VOID;
-	if ( JSVAL_IS_INT(J_FARG(3)) ) {
+	*JL_FRVAL = JSVAL_VOID;
+	if ( JSVAL_IS_INT(JL_FARG(3)) ) {
 
-		glTexParameteri( JSVAL_TO_INT( J_FARG(1) ), JSVAL_TO_INT( J_FARG(2) ), JSVAL_TO_INT( J_FARG(3) ) );
+		glTexParameteri( JSVAL_TO_INT( JL_FARG(1) ), JSVAL_TO_INT( JL_FARG(2) ), JSVAL_TO_INT( JL_FARG(3) ) );
 		return JS_TRUE;
 	}
-	if ( JSVAL_IS_DOUBLE(J_FARG(3)) ) {
+	if ( JSVAL_IS_DOUBLE(JL_FARG(3)) ) {
 
 		jsdouble param;
-		J_CHK( JsvalToDouble(cx, J_FARG(3), &param) );
-		glTexParameterf( JSVAL_TO_INT( J_FARG(1) ), JSVAL_TO_INT( J_FARG(2) ), param );
+		JL_CHK( JsvalToDouble(cx, JL_FARG(3), &param) );
+		glTexParameterf( JSVAL_TO_INT( JL_FARG(1) ), JSVAL_TO_INT( JL_FARG(2) ), param );
 		return JS_TRUE;
 	}
-	if ( JsvalIsArray(cx, J_FARG(3)) ) {
+	if ( JsvalIsArray(cx, JL_FARG(3)) ) {
 
 		GLfloat params[16];
 		size_t length;
-		J_CHK( JsvalToFloatVector(cx, J_FARG(3), params, COUNTOF(params), &length ) );
-		glTexParameterfv( JSVAL_TO_INT(J_FARG(1)), JSVAL_TO_INT(J_FARG(2)), params );
+		JL_CHK( JsvalToFloatVector(cx, JL_FARG(3), params, COUNTOF(params), &length ) );
+		glTexParameterfv( JSVAL_TO_INT(JL_FARG(1)), JSVAL_TO_INT(JL_FARG(2)), params );
 		return JS_TRUE;
 	}
 
-	J_REPORT_ERROR("Invalid argument.");
+	JL_REPORT_ERROR("Invalid argument.");
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -519,32 +519,32 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( TexEnv ) {
 
-	J_S_ASSERT_ARG_MIN(3);
-	J_S_ASSERT_INT(J_FARG(1));
-	J_S_ASSERT_INT(J_FARG(2));
+	JL_S_ASSERT_ARG_MIN(3);
+	JL_S_ASSERT_INT(JL_FARG(1));
+	JL_S_ASSERT_INT(JL_FARG(2));
 
-	*J_FRVAL = JSVAL_VOID;
-	if ( JSVAL_IS_INT(J_FARG(3)) ) {
+	*JL_FRVAL = JSVAL_VOID;
+	if ( JSVAL_IS_INT(JL_FARG(3)) ) {
 
-		glTexEnvi( JSVAL_TO_INT( J_FARG(1) ), JSVAL_TO_INT( J_FARG(2) ), JSVAL_TO_INT( J_FARG(3) ) );
+		glTexEnvi( JSVAL_TO_INT( JL_FARG(1) ), JSVAL_TO_INT( JL_FARG(2) ), JSVAL_TO_INT( JL_FARG(3) ) );
 		return JS_TRUE;
 	}
-	if ( JSVAL_IS_NUMBER(J_FARG(3)) ) {
+	if ( JSVAL_IS_NUMBER(JL_FARG(3)) ) {
 
 		jsdouble param;
-		JsvalToDouble(cx, J_FARG(3), &param);
-		glTexEnvf( JSVAL_TO_INT(J_FARG(1)), JSVAL_TO_INT(J_FARG(2)), param );
+		JsvalToDouble(cx, JL_FARG(3), &param);
+		glTexEnvf( JSVAL_TO_INT(JL_FARG(1)), JSVAL_TO_INT(JL_FARG(2)), param );
 		return JS_TRUE;
 	}
-	if ( JsvalIsArray(cx, J_FARG(3)) ) {
+	if ( JsvalIsArray(cx, JL_FARG(3)) ) {
 
 		GLfloat params[16];
 		size_t length;
-		J_CHK( JsvalToFloatVector(cx, J_FARG(3), params, COUNTOF(params), &length ) );
-		glTexEnvfv( JSVAL_TO_INT(J_FARG(1)), JSVAL_TO_INT(J_FARG(2)), params );
+		JL_CHK( JsvalToFloatVector(cx, JL_FARG(3), params, COUNTOF(params), &length ) );
+		glTexEnvfv( JSVAL_TO_INT(JL_FARG(1)), JSVAL_TO_INT(JL_FARG(2)), params );
 		return JS_TRUE;
 	}
-	J_REPORT_ERROR("Invalid argument.");
+	JL_REPORT_ERROR("Invalid argument.");
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -561,31 +561,31 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( LightModel ) {
 
-	J_S_ASSERT_ARG_MIN(2);
-	J_S_ASSERT_INT(J_FARG(1));
+	JL_S_ASSERT_ARG_MIN(2);
+	JL_S_ASSERT_INT(JL_FARG(1));
 
-	*J_FRVAL = JSVAL_VOID;
-	if ( JSVAL_IS_INT(J_FARG(2)) ) {
+	*JL_FRVAL = JSVAL_VOID;
+	if ( JSVAL_IS_INT(JL_FARG(2)) ) {
 
-		glLightModeli( JSVAL_TO_INT( J_FARG(1) ), JSVAL_TO_INT( J_FARG(2) ) );
+		glLightModeli( JSVAL_TO_INT( JL_FARG(1) ), JSVAL_TO_INT( JL_FARG(2) ) );
 		return JS_TRUE;
 	}
-	if ( JSVAL_IS_DOUBLE(J_FARG(2)) ) {
+	if ( JSVAL_IS_DOUBLE(JL_FARG(2)) ) {
 
 		jsdouble param;
-		J_CHK( JsvalToDouble(cx, J_FARG(2), &param) );
-		glLightModelf( JSVAL_TO_INT( J_FARG(1) ), param );
+		JL_CHK( JsvalToDouble(cx, JL_FARG(2), &param) );
+		glLightModelf( JSVAL_TO_INT( JL_FARG(1) ), param );
 		return JS_TRUE;
 	}
-	if ( JsvalIsArray(cx, J_FARG(2)) ) {
+	if ( JsvalIsArray(cx, JL_FARG(2)) ) {
 
 		GLfloat params[16];
 		size_t length;
-		J_CHK( JsvalToFloatVector(cx, J_FARG(2), params, COUNTOF(params), &length ) );
-		glLightModelfv( JSVAL_TO_INT(J_FARG(1)), params );
+		JL_CHK( JsvalToFloatVector(cx, JL_FARG(2), params, COUNTOF(params), &length ) );
+		glLightModelfv( JSVAL_TO_INT(JL_FARG(1)), params );
 		return JS_TRUE;
 	}
-	J_REPORT_ERROR("Invalid argument.");
+	JL_REPORT_ERROR("Invalid argument.");
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -603,32 +603,32 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Light ) {
 
-	J_S_ASSERT_ARG_MIN(3);
-	J_S_ASSERT_INT(J_FARG(1));
-	J_S_ASSERT_INT(J_FARG(2));
+	JL_S_ASSERT_ARG_MIN(3);
+	JL_S_ASSERT_INT(JL_FARG(1));
+	JL_S_ASSERT_INT(JL_FARG(2));
 
-	*J_FRVAL = JSVAL_VOID;
-	if ( JSVAL_IS_INT(J_FARG(3)) ) {
+	*JL_FRVAL = JSVAL_VOID;
+	if ( JSVAL_IS_INT(JL_FARG(3)) ) {
 
-		glLighti( JSVAL_TO_INT( J_FARG(1) ), JSVAL_TO_INT( J_FARG(2) ), JSVAL_TO_INT( J_FARG(3) ) );
+		glLighti( JSVAL_TO_INT( JL_FARG(1) ), JSVAL_TO_INT( JL_FARG(2) ), JSVAL_TO_INT( JL_FARG(3) ) );
 		return JS_TRUE;
 	}
-	if ( JSVAL_IS_DOUBLE(J_FARG(3)) ) {
+	if ( JSVAL_IS_DOUBLE(JL_FARG(3)) ) {
 
 		jsdouble param;
-		J_CHK( JsvalToDouble(cx, J_FARG(3), &param) );
-		glLightf( JSVAL_TO_INT( J_FARG(1) ), JSVAL_TO_INT( J_FARG(2) ), param );
+		JL_CHK( JsvalToDouble(cx, JL_FARG(3), &param) );
+		glLightf( JSVAL_TO_INT( JL_FARG(1) ), JSVAL_TO_INT( JL_FARG(2) ), param );
 		return JS_TRUE;
 	}
-	if ( JsvalIsArray(cx, J_FARG(3)) ) {
+	if ( JsvalIsArray(cx, JL_FARG(3)) ) {
 
 		GLfloat params[16];
 		size_t length;
-		J_CHK( JsvalToFloatVector(cx, J_FARG(3), params, COUNTOF(params), &length ) );
-		glLightfv( JSVAL_TO_INT(J_FARG(1)), JSVAL_TO_INT(J_FARG(2)), params );
+		JL_CHK( JsvalToFloatVector(cx, JL_FARG(3), params, COUNTOF(params), &length ) );
+		glLightfv( JSVAL_TO_INT(JL_FARG(1)), JSVAL_TO_INT(JL_FARG(2)), params );
 		return JS_TRUE;
 	}
-	J_REPORT_ERROR("Invalid argument.");
+	JL_REPORT_ERROR("Invalid argument.");
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -646,32 +646,32 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Material ) {
 
-	J_S_ASSERT_ARG_MIN(3);
-	J_S_ASSERT_INT(J_FARG(1));
-	J_S_ASSERT_INT(J_FARG(2));
+	JL_S_ASSERT_ARG_MIN(3);
+	JL_S_ASSERT_INT(JL_FARG(1));
+	JL_S_ASSERT_INT(JL_FARG(2));
 
-	*J_FRVAL = JSVAL_VOID;
-	if ( JSVAL_IS_INT(J_FARG(3)) ) {
+	*JL_FRVAL = JSVAL_VOID;
+	if ( JSVAL_IS_INT(JL_FARG(3)) ) {
 
-		glMateriali( JSVAL_TO_INT( J_FARG(1) ), JSVAL_TO_INT( J_FARG(2) ), JSVAL_TO_INT( J_FARG(3) ) );
+		glMateriali( JSVAL_TO_INT( JL_FARG(1) ), JSVAL_TO_INT( JL_FARG(2) ), JSVAL_TO_INT( JL_FARG(3) ) );
 		return JS_TRUE;
 	}
-	if ( JSVAL_IS_DOUBLE(J_FARG(3)) ) {
+	if ( JSVAL_IS_DOUBLE(JL_FARG(3)) ) {
 
 		jsdouble param;
-		J_CHK( JsvalToDouble(cx, J_FARG(3), &param) );
-		glMaterialf( JSVAL_TO_INT( J_FARG(1) ), JSVAL_TO_INT( J_FARG(2) ), param );
+		JL_CHK( JsvalToDouble(cx, JL_FARG(3), &param) );
+		glMaterialf( JSVAL_TO_INT( JL_FARG(1) ), JSVAL_TO_INT( JL_FARG(2) ), param );
 		return JS_TRUE;
 	}
-	if ( JsvalIsArray(cx, J_FARG(3)) ) {
+	if ( JsvalIsArray(cx, JL_FARG(3)) ) {
 
 		GLfloat params[16];
 		size_t length;
-		J_CHK( JsvalToFloatVector(cx, J_FARG(3), params, COUNTOF(params), &length ) );
-		glMaterialfv( JSVAL_TO_INT(J_FARG(1)), JSVAL_TO_INT(J_FARG(2)), params );
+		JL_CHK( JsvalToFloatVector(cx, JL_FARG(3), params, COUNTOF(params), &length ) );
+		glMaterialfv( JSVAL_TO_INT(JL_FARG(1)), JSVAL_TO_INT(JL_FARG(2)), params );
 		return JS_TRUE;
 	}
-	J_REPORT_ERROR("Invalid argument.");
+	JL_REPORT_ERROR("Invalid argument.");
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -687,10 +687,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Enable ) {
 
-	J_S_ASSERT_ARG_MIN(1);
-	J_S_ASSERT_INT(J_FARG(1));
-	glEnable( JSVAL_TO_INT(J_FARG(1)) );
-	*J_FRVAL = JSVAL_VOID;
+	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_INT(JL_FARG(1));
+	glEnable( JSVAL_TO_INT(JL_FARG(1)) );
+	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -706,10 +706,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Disable ) {
 
-	J_S_ASSERT_ARG_MIN(1);
-	J_S_ASSERT_INT(J_FARG(1));
-	glDisable( JSVAL_TO_INT(J_FARG(1)) );
-	*J_FRVAL = JSVAL_VOID;
+	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_INT(JL_FARG(1));
+	glDisable( JSVAL_TO_INT(JL_FARG(1)) );
+	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -725,9 +725,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( PointSize ) {
 
-	J_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_ARG_MIN(1);
 	jsdouble size;
-	JsvalToDouble(cx, J_FARG(1), &size);
+	JsvalToDouble(cx, JL_FARG(1), &size);
 	glPointSize(size);
 	return JS_TRUE;
 	JL_BAD;
@@ -744,9 +744,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( LineWidth ) {
 
-	J_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_ARG_MIN(1);
 	jsdouble width;
-	JsvalToDouble(cx, J_FARG(1), &width);
+	JsvalToDouble(cx, JL_FARG(1), &width);
 	glLineWidth(width);
 	return JS_TRUE;
 	JL_BAD;
@@ -763,9 +763,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( ShadeModel ) {
 
-	J_S_ASSERT_INT(J_FARG(1));
-	glShadeModel( JSVAL_TO_INT( J_FARG(1) ) );
-	*J_FRVAL = JSVAL_VOID;
+	JL_S_ASSERT_INT(JL_FARG(1));
+	glShadeModel( JSVAL_TO_INT( JL_FARG(1) ) );
+	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -782,11 +782,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( BlendFunc ) {
 
-	J_S_ASSERT_ARG_MIN(2);
-	J_S_ASSERT_INT(J_FARG(1));
-	J_S_ASSERT_INT(J_FARG(2));
-	glBlendFunc( JSVAL_TO_INT( J_FARG(1) ), JSVAL_TO_INT( J_FARG(2) ) );
-	*J_FRVAL = JSVAL_VOID;
+	JL_S_ASSERT_ARG_MIN(2);
+	JL_S_ASSERT_INT(JL_FARG(1));
+	JL_S_ASSERT_INT(JL_FARG(2));
+	glBlendFunc( JSVAL_TO_INT( JL_FARG(1) ), JSVAL_TO_INT( JL_FARG(2) ) );
+	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -802,10 +802,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( DepthFunc ) {
 
-	J_S_ASSERT_ARG_MIN(1);
-	J_S_ASSERT_INT(J_FARG(1));
-	glDepthFunc( JSVAL_TO_INT( J_FARG(1) ) );
-	*J_FRVAL = JSVAL_VOID;
+	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_INT(JL_FARG(1));
+	glDepthFunc( JSVAL_TO_INT( JL_FARG(1) ) );
+	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -822,10 +822,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( DepthRange ) {
 
-	J_S_ASSERT_ARG_MIN(2);
+	JL_S_ASSERT_ARG_MIN(2);
 	jsdouble zNear, zFar;
-	JsvalToDouble(cx, J_FARG(1), &zNear);
-	JsvalToDouble(cx, J_FARG(2), &zFar);
+	JsvalToDouble(cx, JL_FARG(1), &zNear);
+	JsvalToDouble(cx, JL_FARG(2), &zFar);
 	glDepthRange(zNear, zFar);
 	return JS_TRUE;
 	JL_BAD;
@@ -842,10 +842,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( CullFace ) {
 
-	J_S_ASSERT_ARG_MIN(1);
-	J_S_ASSERT_INT(J_FARG(1));
-	glCullFace(JSVAL_TO_INT( J_FARG(1) ));
-	*J_FRVAL = JSVAL_VOID;
+	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_INT(JL_FARG(1));
+	glCullFace(JSVAL_TO_INT( JL_FARG(1) ));
+	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -861,10 +861,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( FrontFace ) {
 
-	J_S_ASSERT_ARG_MIN(1);
-	J_S_ASSERT_INT(J_FARG(1));
-	glFrontFace( JSVAL_TO_INT( J_FARG(1) ) );
-	*J_FRVAL = JSVAL_VOID;
+	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_INT(JL_FARG(1));
+	glFrontFace( JSVAL_TO_INT( JL_FARG(1) ) );
+	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -880,10 +880,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( ClearStencil ) {
 
-	J_S_ASSERT_ARG_MIN(1);
-	J_S_ASSERT_INT(J_FARG(1));
-	glClearStencil(JSVAL_TO_INT( J_FARG(1) ));
-	*J_FRVAL = JSVAL_VOID;
+	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_INT(JL_FARG(1));
+	glClearStencil(JSVAL_TO_INT( JL_FARG(1) ));
+	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -899,11 +899,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( ClearDepth ) {
 
-	J_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_ARG_MIN(1);
 	jsdouble depth;
-	JsvalToDouble(cx, J_FARG(1), &depth);
+	JsvalToDouble(cx, JL_FARG(1), &depth);
 	glClearDepth(depth);
-	*J_FRVAL = JSVAL_VOID;
+	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -922,14 +922,14 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( ClearColor ) {
 
-	J_S_ASSERT_ARG_MIN(4);
+	JL_S_ASSERT_ARG_MIN(4);
 	jsdouble r, g, b, a;
-	JsvalToDouble(cx, J_FARG(1), &r);
-	JsvalToDouble(cx, J_FARG(2), &g);
-	JsvalToDouble(cx, J_FARG(3), &b);
-	JsvalToDouble(cx, J_FARG(4), &a);
+	JsvalToDouble(cx, JL_FARG(1), &r);
+	JsvalToDouble(cx, JL_FARG(2), &g);
+	JsvalToDouble(cx, JL_FARG(3), &b);
+	JsvalToDouble(cx, JL_FARG(4), &a);
 	glClearColor(r, g, b, a);
-	*J_FRVAL = JSVAL_VOID;
+	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -948,14 +948,14 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( ClearAccum ) {
 
-	J_S_ASSERT_ARG_MIN(4);
+	JL_S_ASSERT_ARG_MIN(4);
 	jsdouble r, g, b, a;
-	JsvalToDouble(cx, J_FARG(1), &r);
-	JsvalToDouble(cx, J_FARG(2), &g);
-	JsvalToDouble(cx, J_FARG(3), &b);
-	JsvalToDouble(cx, J_FARG(4), &a);
+	JsvalToDouble(cx, JL_FARG(1), &r);
+	JsvalToDouble(cx, JL_FARG(2), &g);
+	JsvalToDouble(cx, JL_FARG(3), &b);
+	JsvalToDouble(cx, JL_FARG(4), &a);
 	glClearAccum(r, g, b, a);
-	*J_FRVAL = JSVAL_VOID;
+	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -971,10 +971,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Clear ) {
 
-	J_S_ASSERT_ARG_MIN(1);
-	J_S_ASSERT_INT(J_FARG(1));
-	glClear(JSVAL_TO_INT(J_FARG(1)));
-	*J_FRVAL = JSVAL_VOID;
+	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_INT(JL_FARG(1));
+	glClear(JSVAL_TO_INT(JL_FARG(1)));
+	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -991,14 +991,14 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( ClipPlane ) {
 
-	J_S_ASSERT_ARG_MIN(2);
-	J_S_ASSERT_INT(J_FARG(1));
-	J_S_ASSERT_ARRAY(J_FARG(2));
+	JL_S_ASSERT_ARG_MIN(2);
+	JL_S_ASSERT_INT(JL_FARG(1));
+	JL_S_ASSERT_ARRAY(JL_FARG(2));
 	GLdouble equation[16];
 	size_t length;
-	J_CHK( JsvalToDoubleVector(cx, J_FARG(2), equation, COUNTOF(equation), &length ) );
-	glClipPlane(JSVAL_TO_INT(J_FARG(1)), equation);
-	*J_FRVAL = JSVAL_VOID;
+	JL_CHK( JsvalToDoubleVector(cx, JL_FARG(2), equation, COUNTOF(equation), &length ) );
+	glClipPlane(JSVAL_TO_INT(JL_FARG(1)), equation);
+	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1017,13 +1017,13 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Viewport ) {
 
-	J_S_ASSERT_ARG_MIN(4);
-	J_S_ASSERT_INT(J_FARG(1));
-	J_S_ASSERT_INT(J_FARG(2));
-	J_S_ASSERT_INT(J_FARG(3));
-	J_S_ASSERT_INT(J_FARG(4));
-	glViewport(JSVAL_TO_INT(J_FARG(1)), JSVAL_TO_INT(J_FARG(2)), JSVAL_TO_INT(J_FARG(3)), JSVAL_TO_INT(J_FARG(4)));
-	*J_FRVAL = JSVAL_VOID;
+	JL_S_ASSERT_ARG_MIN(4);
+	JL_S_ASSERT_INT(JL_FARG(1));
+	JL_S_ASSERT_INT(JL_FARG(2));
+	JL_S_ASSERT_INT(JL_FARG(3));
+	JL_S_ASSERT_INT(JL_FARG(4));
+	glViewport(JSVAL_TO_INT(JL_FARG(1)), JSVAL_TO_INT(JL_FARG(2)), JSVAL_TO_INT(JL_FARG(3)), JSVAL_TO_INT(JL_FARG(4)));
+	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1044,16 +1044,16 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Frustum ) {
 
-	J_S_ASSERT_ARG_MIN(6);
+	JL_S_ASSERT_ARG_MIN(6);
 	jsdouble left, right, bottom, top, zNear, zFar;
-	JsvalToDouble(cx, J_FARG(1), &left);
-	JsvalToDouble(cx, J_FARG(2), &right);
-	JsvalToDouble(cx, J_FARG(3), &bottom);
-	JsvalToDouble(cx, J_FARG(4), &top);
-	JsvalToDouble(cx, J_FARG(5), &zNear);
-	JsvalToDouble(cx, J_FARG(6), &zFar);
+	JsvalToDouble(cx, JL_FARG(1), &left);
+	JsvalToDouble(cx, JL_FARG(2), &right);
+	JsvalToDouble(cx, JL_FARG(3), &bottom);
+	JsvalToDouble(cx, JL_FARG(4), &top);
+	JsvalToDouble(cx, JL_FARG(5), &zNear);
+	JsvalToDouble(cx, JL_FARG(6), &zFar);
 	glFrustum(left, right, bottom, top, zNear, zFar);
-	*J_FRVAL = JSVAL_VOID;
+	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1074,19 +1074,19 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Ortho ) {
 
-	J_S_ASSERT_ARG_MIN(6);
+	JL_S_ASSERT_ARG_MIN(6);
 	jsdouble left, right, bottom, top, zNear, zFar;
-	JsvalToDouble(cx, J_FARG(1), &left);
-	JsvalToDouble(cx, J_FARG(2), &right);
-	JsvalToDouble(cx, J_FARG(3), &bottom);
-	JsvalToDouble(cx, J_FARG(4), &top);
-	JsvalToDouble(cx, J_FARG(5), &zNear);
-	JsvalToDouble(cx, J_FARG(6), &zFar);
+	JsvalToDouble(cx, JL_FARG(1), &left);
+	JsvalToDouble(cx, JL_FARG(2), &right);
+	JsvalToDouble(cx, JL_FARG(3), &bottom);
+	JsvalToDouble(cx, JL_FARG(4), &top);
+	JsvalToDouble(cx, JL_FARG(5), &zNear);
+	JsvalToDouble(cx, JL_FARG(6), &zFar);
 
 //	glMatrixMode(GL_PROJECTION);
 //	glLoadIdentity();
 	glOrtho(left, right, bottom, top, zNear, zFar);
-	*J_FRVAL = JSVAL_VOID;
+	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1110,11 +1110,11 @@ DEFINE_FUNCTION_FAST( Perspective ) {
 
 	//cf. gluPerspective(fovy, float(viewport[2]) / float(viewport[3]), zNear, zFar);
 
-	J_S_ASSERT_ARG_MIN(3);
+	JL_S_ASSERT_ARG_MIN(3);
 	jsdouble fovy, zNear, zFar;
-	JsvalToDouble(cx, J_FARG(1), &fovy);
-	JsvalToDouble(cx, J_FARG(2), &zNear);
-	JsvalToDouble(cx, J_FARG(3), &zFar);
+	JsvalToDouble(cx, JL_FARG(1), &fovy);
+	JsvalToDouble(cx, JL_FARG(2), &zNear);
+	JsvalToDouble(cx, JL_FARG(3), &zFar);
 
 //	GLint prevMatrixMode;
 //	glGetIntegerv(GL_MATRIX_MODE, &prevMatrixMode); // GL_MODELVIEW
@@ -1131,7 +1131,7 @@ DEFINE_FUNCTION_FAST( Perspective ) {
 
 	glFrustum(xmin, xmax, ymin, ymax, zNear, zFar);
 
-	*J_FRVAL = JSVAL_VOID;
+	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1147,10 +1147,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( MatrixMode ) {
 
-	J_S_ASSERT_ARG_MIN(1);
-	J_S_ASSERT_INT(J_FARG(1));
-	glMatrixMode(JSVAL_TO_INT( J_FARG(1) ));
-	*J_FRVAL = JSVAL_VOID;
+	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_INT(JL_FARG(1));
+	glMatrixMode(JSVAL_TO_INT( JL_FARG(1) ));
+	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1165,7 +1165,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION_FAST( LoadIdentity ) {
 
 	glLoadIdentity();
-	*J_FRVAL = JSVAL_VOID;
+	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
 
@@ -1179,7 +1179,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION_FAST( PushMatrix ) {
 
 	glPushMatrix();
-	*J_FRVAL = JSVAL_VOID;
+	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
 
@@ -1193,7 +1193,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION_FAST( PopMatrix ) {
 
 	glPopMatrix();
-	*J_FRVAL = JSVAL_VOID;
+	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
 
@@ -1208,12 +1208,12 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( LoadMatrix ) {
 
-	J_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_ARG_MIN(1);
 	Matrix44 tmp, *m = &tmp;
-	if (GetMatrixHelper(cx, J_FARG(1), &m) == JS_FALSE)
+	if (GetMatrixHelper(cx, JL_FARG(1), &m) == JS_FALSE)
 		return JS_FALSE;
 	glLoadMatrixf(m->raw);
-	*J_FRVAL = JSVAL_VOID;
+	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1232,14 +1232,14 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Rotate ) {
 
-	J_S_ASSERT_ARG_MIN(4);
+	JL_S_ASSERT_ARG_MIN(4);
 	jsdouble angle, x, y, z;
-	JsvalToDouble(cx, J_FARG(1), &angle);
-	JsvalToDouble(cx, J_FARG(2), &x);
-	JsvalToDouble(cx, J_FARG(3), &y);
-	JsvalToDouble(cx, J_FARG(4), &z);
+	JsvalToDouble(cx, JL_FARG(1), &angle);
+	JsvalToDouble(cx, JL_FARG(2), &x);
+	JsvalToDouble(cx, JL_FARG(3), &y);
+	JsvalToDouble(cx, JL_FARG(4), &z);
 	glRotated(angle, x, y, z);
-	*J_FRVAL = JSVAL_VOID;
+	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1257,16 +1257,16 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Translate ) {
 
-	J_S_ASSERT_ARG_MIN(3);
+	JL_S_ASSERT_ARG_MIN(3);
 	jsdouble x, y, z;
-	JsvalToDouble(cx, J_FARG(1), &x);
-	JsvalToDouble(cx, J_FARG(2), &y);
-	if ( J_FARG_ISDEF(3) )
-		JsvalToDouble(cx, J_FARG(3), &z);
+	JsvalToDouble(cx, JL_FARG(1), &x);
+	JsvalToDouble(cx, JL_FARG(2), &y);
+	if ( JL_FARG_ISDEF(3) )
+		JsvalToDouble(cx, JL_FARG(3), &z);
 	else
 		z = 0;
 	glTranslated(x, y, z);
-	*J_FRVAL = JSVAL_VOID;
+	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1284,16 +1284,16 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Scale ) {
 
-	J_S_ASSERT_ARG_MIN(2);
+	JL_S_ASSERT_ARG_MIN(2);
 	jsdouble x, y, z;
-	JsvalToDouble(cx, J_FARG(1), &x);
-	JsvalToDouble(cx, J_FARG(2), &y);
-	if ( J_FARG_ISDEF(3) )
-		JsvalToDouble(cx, J_FARG(3), &z);
+	JsvalToDouble(cx, JL_FARG(1), &x);
+	JsvalToDouble(cx, JL_FARG(2), &y);
+	if ( JL_FARG_ISDEF(3) )
+		JsvalToDouble(cx, JL_FARG(3), &z);
 	else
 		z = 1;
 	glScaled(x, y, z);
-	*J_FRVAL = JSVAL_VOID;
+	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1310,7 +1310,7 @@ DEFINE_FUNCTION_FAST( NewList ) {
 
 	GLuint list = glGenLists(1);
 	glNewList(list, GL_COMPILE);
-	*J_FRVAL = INT_TO_JSVAL(list);
+	*JL_FRVAL = INT_TO_JSVAL(list);
 	return JS_TRUE;
 }
 
@@ -1326,11 +1326,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( DeleteList ) {
 
-	J_S_ASSERT_ARG_MIN(1);
-	J_S_ASSERT_INT(J_FARG(1));
-	GLuint list = JSVAL_TO_INT(J_FARG(1));
+	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_INT(JL_FARG(1));
+	GLuint list = JSVAL_TO_INT(JL_FARG(1));
 	glDeleteLists(list, 1);
-	*J_FRVAL = JSVAL_VOID;
+	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1345,7 +1345,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION_FAST( EndList ) {
 
 	glEndList();
-	*J_FRVAL = JSVAL_VOID;
+	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
 
@@ -1361,26 +1361,26 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( CallList ) {
 
-	J_S_ASSERT_ARG_MIN(1);
-	*J_FRVAL = JSVAL_VOID;
+	JL_S_ASSERT_ARG_MIN(1);
+	*JL_FRVAL = JSVAL_VOID;
 
-	if (JSVAL_IS_INT( J_FARG(1) )) {
+	if (JSVAL_IS_INT( JL_FARG(1) )) {
 
-		GLuint list = JSVAL_TO_INT(J_FARG(1));
+		GLuint list = JSVAL_TO_INT(JL_FARG(1));
 		glCallList(list);
 		return JS_TRUE;
 	}
-	else if (JsvalIsArray(cx, J_FARG(1))) {
+	else if (JsvalIsArray(cx, JL_FARG(1))) {
 
-		JSObject *jsArray = JSVAL_TO_OBJECT(J_FARG(1));
+		JSObject *jsArray = JSVAL_TO_OBJECT(JL_FARG(1));
 		jsuint length;
-		J_CHK( JS_GetArrayLength(cx, jsArray, &length) );
+		JL_CHK( JS_GetArrayLength(cx, jsArray, &length) );
 
 		GLuint *lists = (GLuint*)malloc(length * sizeof(GLuint));
 		jsval value;
 		for (jsuint i=0; i<length; ++i) {
 
-			J_CHK( JS_GetElement(cx, jsArray, i, &value) );
+			JL_CHK( JS_GetElement(cx, jsArray, i, &value) );
 			lists[i] = JSVAL_TO_INT(value);
 		}
 		glCallLists(length, GL_UNSIGNED_INT, lists); // http://www.opengl.org/documentation/specs/man_pages/hardcopy/GL/html/gl/calllists.html
@@ -1388,7 +1388,7 @@ DEFINE_FUNCTION_FAST( CallList ) {
 		return JS_TRUE;
 	}
 
-	J_REPORT_ERROR("Invalid argument");
+	JL_REPORT_ERROR("Invalid argument");
 	JL_BAD;
 }
 
@@ -1403,10 +1403,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Begin ) {
 
-	J_S_ASSERT_ARG_MIN(1);
-	J_S_ASSERT_INT(J_FARG(1));
-	glBegin(JSVAL_TO_INT( J_FARG(1) ));
-	*J_FRVAL = JSVAL_VOID;
+	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_INT(JL_FARG(1));
+	glBegin(JSVAL_TO_INT( JL_FARG(1) ));
+	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1421,7 +1421,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION_FAST( End ) {
 
 	glEnd();
-	*J_FRVAL = JSVAL_VOID;
+	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
 
@@ -1436,10 +1436,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( PushAttrib ) {
 
-	J_S_ASSERT_ARG_MIN(1);
-	J_S_ASSERT_INT(J_FARG(1));
-	glPushAttrib(JSVAL_TO_INT( J_FARG(1) ));
-	*J_FRVAL = JSVAL_VOID;
+	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_INT(JL_FARG(1));
+	glPushAttrib(JSVAL_TO_INT( JL_FARG(1) ));
+	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1454,7 +1454,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION_FAST( PopAttrib ) {
 
 	glPopAttrib();
-	*J_FRVAL = JSVAL_VOID;
+	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
 
@@ -1470,7 +1470,7 @@ DEFINE_FUNCTION_FAST( GenTexture ) {
 
 	GLuint texture;
 	glGenTextures( 1, &texture );
-	*J_FRVAL = INT_TO_JSVAL(texture);
+	*JL_FRVAL = INT_TO_JSVAL(texture);
 	return JS_TRUE;
 }
 
@@ -1486,11 +1486,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( BindTexture ) {
 
-	J_S_ASSERT_ARG_MIN(2);
-	J_S_ASSERT_INT(J_FARG(1));
-	J_S_ASSERT_INT(J_FARG(2));
-	glBindTexture( JSVAL_TO_INT( J_FARG(1) ), JSVAL_TO_INT( J_FARG(2) ));
-	*J_FRVAL = JSVAL_VOID;
+	JL_S_ASSERT_ARG_MIN(2);
+	JL_S_ASSERT_INT(JL_FARG(1));
+	JL_S_ASSERT_INT(JL_FARG(2));
+	glBindTexture( JSVAL_TO_INT( JL_FARG(1) ), JSVAL_TO_INT( JL_FARG(2) ));
+	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1507,11 +1507,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( DeleteTexture ) {
 
-	J_S_ASSERT_ARG_MIN(1);
-	J_S_ASSERT_INT(J_FARG(1));
-	GLuint texture = JSVAL_TO_INT( J_FARG(1) );
+	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_INT(JL_FARG(1));
+	GLuint texture = JSVAL_TO_INT( JL_FARG(1) );
 	glDeleteTextures(1, &texture);
-	*J_FRVAL = JSVAL_VOID;
+	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1535,31 +1535,31 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( CopyTexImage2D ) {
 
-	J_S_ASSERT_ARG_MIN(6);
-	J_S_ASSERT_INT(J_FARG(1));
-	J_S_ASSERT_INT(J_FARG(2));
-	J_S_ASSERT_INT(J_FARG(3));
-	J_S_ASSERT_INT(J_FARG(4));
-	J_S_ASSERT_INT(J_FARG(5));
-	J_S_ASSERT_INT(J_FARG(6));
+	JL_S_ASSERT_ARG_MIN(6);
+	JL_S_ASSERT_INT(JL_FARG(1));
+	JL_S_ASSERT_INT(JL_FARG(2));
+	JL_S_ASSERT_INT(JL_FARG(3));
+	JL_S_ASSERT_INT(JL_FARG(4));
+	JL_S_ASSERT_INT(JL_FARG(5));
+	JL_S_ASSERT_INT(JL_FARG(6));
 
-	GLint level = JSVAL_TO_INT(J_FARG(1));
-	GLenum internalFormat = JSVAL_TO_INT(J_FARG(2));
+	GLint level = JSVAL_TO_INT(JL_FARG(1));
+	GLenum internalFormat = JSVAL_TO_INT(JL_FARG(2));
 
-	GLint x = JSVAL_TO_INT(J_FARG(3));
-	GLint y = JSVAL_TO_INT(J_FARG(4));
-	GLint width = JSVAL_TO_INT(J_FARG(5));
-	GLint height = JSVAL_TO_INT(J_FARG(6));
+	GLint x = JSVAL_TO_INT(JL_FARG(3));
+	GLint y = JSVAL_TO_INT(JL_FARG(4));
+	GLint width = JSVAL_TO_INT(JL_FARG(5));
+	GLint height = JSVAL_TO_INT(JL_FARG(6));
 
 	GLint border;
-	if ( J_FARG_ISDEF(7) )
-		border = JSVAL_TO_INT(J_FARG(7));
+	if ( JL_FARG_ISDEF(7) )
+		border = JSVAL_TO_INT(JL_FARG(7));
 	else
 		border = 0;
 
 	glCopyTexImage2D( GL_TEXTURE_2D, level, internalFormat, x, y, width, height, border );
 
-	*J_FRVAL = JSVAL_VOID;
+	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1568,33 +1568,33 @@ DEFINE_FUNCTION_FAST( CopyTexImage2D ) {
 /*
 DEFINE_FUNCTION_FAST( TexSubImage2D ) {
 
-	J_S_ASSERT_ARG_MIN(7);
-	J_S_ASSERT_INT(J_FARG(1));
-	J_S_ASSERT_INT(J_FARG(2));
-	J_S_ASSERT_INT(J_FARG(3));
-	J_S_ASSERT_INT(J_FARG(4));
-	J_S_ASSERT_INT(J_FARG(5));
-	J_S_ASSERT_INT(J_FARG(6));
+	JL_S_ASSERT_ARG_MIN(7);
+	JL_S_ASSERT_INT(JL_FARG(1));
+	JL_S_ASSERT_INT(JL_FARG(2));
+	JL_S_ASSERT_INT(JL_FARG(3));
+	JL_S_ASSERT_INT(JL_FARG(4));
+	JL_S_ASSERT_INT(JL_FARG(5));
+	JL_S_ASSERT_INT(JL_FARG(6));
 
-	GLint level = JSVAL_TO_INT(J_FARG(1));
-	GLenum internalFormat = JSVAL_TO_INT(J_FARG(2));
+	GLint level = JSVAL_TO_INT(JL_FARG(1));
+	GLenum internalFormat = JSVAL_TO_INT(JL_FARG(2));
 
-	GLint xoffset = JSVAL_TO_INT(J_FARG(3));
-	GLint yoffset = JSVAL_TO_INT(J_FARG(4));
-	GLint x = JSVAL_TO_INT(J_FARG(5));
-	GLint y = JSVAL_TO_INT(J_FARG(6));
-	GLint width = JSVAL_TO_INT(J_FARG(7));
-	GLint height = JSVAL_TO_INT(J_FARG(8));
+	GLint xoffset = JSVAL_TO_INT(JL_FARG(3));
+	GLint yoffset = JSVAL_TO_INT(JL_FARG(4));
+	GLint x = JSVAL_TO_INT(JL_FARG(5));
+	GLint y = JSVAL_TO_INT(JL_FARG(6));
+	GLint width = JSVAL_TO_INT(JL_FARG(7));
+	GLint height = JSVAL_TO_INT(JL_FARG(8));
 
 	GLint border;
-	if ( J_FARG_ISDEF(7) )
-		border = JSVAL_TO_INT(J_FARG(7));
+	if ( JL_FARG_ISDEF(7) )
+		border = JSVAL_TO_INT(JL_FARG(7));
 	else
 		border = 0;
 
 	glTexSubImage2D( GL_TEXTURE_2D, level, xoffset, yoffset, width, height, format,  border );
 
-	*J_FRVAL = JSVAL_VOID;
+	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1619,7 +1619,7 @@ DEFINE_FUNCTION_FAST( GenBuffer ) {
 
 	GLuint buffer;
 	glGenBuffersARB(1, &buffer);
-	*J_FRVAL = INT_TO_JSVAL(buffer);
+	*JL_FRVAL = INT_TO_JSVAL(buffer);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1638,13 +1638,13 @@ DEFINE_FUNCTION_FAST( BindBuffer ) {
 
 	LOAD_OPENGL_EXTENSION( glBindBufferARB, PFNGLBINDBUFFERARBPROC );
 
-	J_S_ASSERT_ARG_MIN(2);
-	J_S_ASSERT_INT(J_FARG(1));
-	J_S_ASSERT_INT(J_FARG(2));
-	GLenum target = JSVAL_TO_INT(J_FARG(1));
-	GLenum buffer = JSVAL_TO_INT(J_FARG(2));
+	JL_S_ASSERT_ARG_MIN(2);
+	JL_S_ASSERT_INT(JL_FARG(1));
+	JL_S_ASSERT_INT(JL_FARG(2));
+	GLenum target = JSVAL_TO_INT(JL_FARG(1));
+	GLenum buffer = JSVAL_TO_INT(JL_FARG(2));
 	glBindBufferARB(target, buffer);
-	*J_FRVAL = JSVAL_VOID;
+	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1665,31 +1665,31 @@ DEFINE_FUNCTION_FAST( PointParameter ) {
 	LOAD_OPENGL_EXTENSION( glPointParameterf, PFNGLPOINTPARAMETERFPROC );
 	LOAD_OPENGL_EXTENSION( glPointParameterfv, PFNGLPOINTPARAMETERFVPROC );
 
-	J_S_ASSERT_ARG_MIN(2);
-	J_S_ASSERT_INT(J_FARG(1));
+	JL_S_ASSERT_ARG_MIN(2);
+	JL_S_ASSERT_INT(JL_FARG(1));
 
-	*J_FRVAL = JSVAL_VOID;
-//	if ( JSVAL_IS_INT(J_FARG(2)) ) {
+	*JL_FRVAL = JSVAL_VOID;
+//	if ( JSVAL_IS_INT(JL_FARG(2)) ) {
 //
-//		glPointParameteri(JSVAL_TO_INT(J_FARG(1)), JSVAL_TO_INT(J_FARG(2)));
+//		glPointParameteri(JSVAL_TO_INT(JL_FARG(1)), JSVAL_TO_INT(JL_FARG(2)));
 //		return JS_TRUE;
 //	}
-	if ( JSVAL_IS_NUMBER(J_FARG(2)) ) {
+	if ( JSVAL_IS_NUMBER(JL_FARG(2)) ) {
 
 		jsdouble param;
-		JsvalToDouble(cx, J_FARG(2), &param);
-		glPointParameterf( JSVAL_TO_INT(J_FARG(1)), param );
+		JsvalToDouble(cx, JL_FARG(2), &param);
+		glPointParameterf( JSVAL_TO_INT(JL_FARG(1)), param );
 		return JS_TRUE;
 	}
-	if ( JsvalIsArray(cx, J_FARG(2)) ) {
+	if ( JsvalIsArray(cx, JL_FARG(2)) ) {
 
 		GLfloat params[16];
 		size_t length;
-		J_CHK( JsvalToFloatVector(cx, J_FARG(2), params, COUNTOF(params), &length ) );
-		glPointParameterfv( JSVAL_TO_INT(J_FARG(1)), params );
+		JL_CHK( JsvalToFloatVector(cx, JL_FARG(2), params, COUNTOF(params), &length ) );
+		glPointParameterfv( JSVAL_TO_INT(JL_FARG(1)), params );
 		return JS_TRUE;
 	}
-	J_REPORT_ERROR("Invalid argument.");
+	JL_REPORT_ERROR("Invalid argument.");
 	JL_BAD;
 }
 
@@ -1706,11 +1706,11 @@ DEFINE_FUNCTION_FAST( ActiveTexture ) {
 
 	LOAD_OPENGL_EXTENSION( glActiveTextureARB, PFNGLACTIVETEXTUREARBPROC );
 
-	J_S_ASSERT_ARG_MIN(1);
-	J_S_ASSERT_INT(J_FARG(1));
-	GLenum texture = JSVAL_TO_INT(J_FARG(1));
+	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_INT(JL_FARG(1));
+	GLenum texture = JSVAL_TO_INT(JL_FARG(1));
 	glActiveTextureARB(texture);
-	*J_FRVAL = JSVAL_VOID;
+	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1728,11 +1728,11 @@ DEFINE_FUNCTION_FAST( ClientActiveTexture ) {
 
 	LOAD_OPENGL_EXTENSION( glClientActiveTextureARB, PFNGLCLIENTACTIVETEXTUREARBPROC );
 
-	J_S_ASSERT_ARG_MIN(1);
-	J_S_ASSERT_INT(J_FARG(1));
-	GLenum texture = JSVAL_TO_INT(J_FARG(1));
+	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_INT(JL_FARG(1));
+	GLenum texture = JSVAL_TO_INT(JL_FARG(1));
 	glClientActiveTextureARB(texture);
-	*J_FRVAL = JSVAL_VOID;
+	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1755,34 +1755,34 @@ DEFINE_FUNCTION_FAST( MultiTexCoord ) {
 	LOAD_OPENGL_EXTENSION( glMultiTexCoord2d, PFNGLMULTITEXCOORD2DARBPROC );
 	LOAD_OPENGL_EXTENSION( glMultiTexCoord3d, PFNGLMULTITEXCOORD3DARBPROC );
 
-	J_S_ASSERT_ARG_MIN(2);
+	JL_S_ASSERT_ARG_MIN(2);
 
-	J_S_ASSERT_INT(J_FARG(1));
-	GLenum target = JSVAL_TO_INT(J_FARG(1));
+	JL_S_ASSERT_INT(JL_FARG(1));
+	GLenum target = JSVAL_TO_INT(JL_FARG(1));
 
-	*J_FRVAL = JSVAL_VOID;
+	*JL_FRVAL = JSVAL_VOID;
 	jsdouble s;
-	JsvalToDouble(cx, J_FARG(2), &s);
-	if ( J_ARGC == 2 ) {
+	JsvalToDouble(cx, JL_FARG(2), &s);
+	if ( JL_ARGC == 2 ) {
 
 		glMultiTexCoord1d(target, s);
 		return JS_TRUE;
 	}
 	jsdouble t;
-	JsvalToDouble(cx, J_FARG(3), &t);
-	if ( J_ARGC == 3 ) {
+	JsvalToDouble(cx, JL_FARG(3), &t);
+	if ( JL_ARGC == 3 ) {
 
 		glMultiTexCoord2d(target, s, t);
 		return JS_TRUE;
 	}
 	jsdouble r;
-	JsvalToDouble(cx, J_FARG(4), &r);
-	if ( J_ARGC == 4 ) {
+	JsvalToDouble(cx, JL_FARG(4), &r);
+	if ( JL_ARGC == 4 ) {
 
 		glMultiTexCoord3d(target, s, t, r);
 		return JS_TRUE;
 	}
-	J_REPORT_ERROR("Invalid argument.");
+	JL_REPORT_ERROR("Invalid argument.");
 	JL_BAD;
 }
 
@@ -1844,17 +1844,17 @@ DEFINE_FUNCTION_FAST( LoadTrimesh ) {
 	LOAD_OPENGL_EXTENSION( glBindBufferARB, PFNGLBINDBUFFERARBPROC );
 	LOAD_OPENGL_EXTENSION( glBufferDataARB, PFNGLBUFFERDATAARBPROC );
 
-	J_S_ASSERT_ARG_MIN(1);
-	J_S_ASSERT_OBJECT(J_FARG(1));
-	JSObject *trimeshObj = JSVAL_TO_OBJECT(J_FARG(1));
-	J_S_ASSERT( JsvalIsTrimesh(cx, J_FARG(1)), "Invalid Trimesh object" );
+	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_OBJECT(JL_FARG(1));
+	JSObject *trimeshObj = JSVAL_TO_OBJECT(JL_FARG(1));
+	JL_S_ASSERT( JsvalIsTrimesh(cx, JL_FARG(1)), "Invalid Trimesh object" );
 	Surface *srf = GetTrimeshSurface(cx, trimeshObj);
-	J_S_ASSERT_RESOURCE(srf);
+	JL_S_ASSERT_RESOURCE(srf);
 
-	J_S_ASSERT( srf->vertex && srf->vertexCount && srf->index && srf->indexCount, "No enough data" );
+	JL_S_ASSERT( srf->vertex && srf->vertexCount && srf->index && srf->indexCount, "No enough data" );
 
 	TrimeshInfo *info;
-	J_CHK( CreateId(cx, TRIMESH_ID_NAME, sizeof(TrimeshInfo), (void**)&info, FinalizeTrimesh, J_FRVAL) );
+	JL_CHK( CreateId(cx, TRIMESH_ID_NAME, sizeof(TrimeshInfo), (void**)&info, FinalizeTrimesh, JL_FRVAL) );
 
 	info->vertexCount = srf->vertexCount;
 	info->indexCount = srf->indexCount;
@@ -1893,7 +1893,7 @@ DEFINE_FUNCTION_FAST( LoadTrimesh ) {
 	} else
 		info->colorBuffer = 0;
 
-	J_CHK( CheckThrowCurrentOglError(cx) );
+	JL_CHK( CheckThrowCurrentOglError(cx) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -1912,12 +1912,12 @@ DEFINE_FUNCTION_FAST( DrawTrimesh ) {
 
 	LOAD_OPENGL_EXTENSION( glBindBufferARB, PFNGLBINDBUFFERARBPROC );
 
-	J_S_ASSERT_ARG_MIN(1);
-	J_S_ASSERT_OBJECT(J_FARG(1));
+	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_OBJECT(JL_FARG(1));
 
-	J_S_ASSERT( IsIdType(cx, J_FARG(1), TRIMESH_ID_NAME), "Invalid Id." );
+	JL_S_ASSERT( IsIdType(cx, JL_FARG(1), TRIMESH_ID_NAME), "Invalid Id." );
 
-	TrimeshInfo *info = (TrimeshInfo*)GetIdPrivate(cx, J_FARG(1));
+	TrimeshInfo *info = (TrimeshInfo*)GetIdPrivate(cx, JL_FARG(1));
 
 	GLenum dataType = sizeof(SURFACE_REAL_TYPE) == sizeof(float) ? GL_FLOAT : GL_DOUBLE;
 
@@ -1963,9 +1963,9 @@ DEFINE_FUNCTION_FAST( DrawTrimesh ) {
 //	glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
 //	glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
 
-	J_CHK( CheckThrowCurrentOglError(cx) );
+	JL_CHK( CheckThrowCurrentOglError(cx) );
 
-	*J_FRVAL = JSVAL_VOID;
+	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1988,22 +1988,22 @@ $TOC_MEMBER $INAME
 // (TBD) manage compression: http://www.opengl.org/registry/specs/ARB/texture_compression.txt
 DEFINE_FUNCTION_FAST( DefineTextureImage ) {
 
-	J_S_ASSERT_ARG_MIN(3);
-	J_S_ASSERT_INT(J_FARG(1));
-//	J_S_ASSERT_INT(J_FARG(2)); // may be undefined
-	J_S_ASSERT_OBJECT(J_FARG(3));
+	JL_S_ASSERT_ARG_MIN(3);
+	JL_S_ASSERT_INT(JL_FARG(1));
+//	JL_S_ASSERT_INT(JL_FARG(2)); // may be undefined
+	JL_S_ASSERT_OBJECT(JL_FARG(3));
 
 	GLsizei width, height;
 	GLenum format, type;
 	int channels;
 	const GLvoid *data;
 
-	JSObject *tObj = JSVAL_TO_OBJECT(J_FARG(3));
+	JSObject *tObj = JSVAL_TO_OBJECT(JL_FARG(3));
 
 	if ( JL_GetClass(tObj) == TextureJSClass(cx) ) {
 
-		Texture *tex = (Texture *)JS_GetPrivate(cx, tObj);
-		J_S_ASSERT_RESOURCE(tex);
+		Texture *tex = (Texture *)JL_GetPrivate(cx, tObj);
+		JL_S_ASSERT_RESOURCE(tex);
 
 		data = tex->cbuffer;
 		width = tex->width;
@@ -2012,23 +2012,23 @@ DEFINE_FUNCTION_FAST( DefineTextureImage ) {
 		type = GL_FLOAT;
 	} else {
 
-		J_CHK( GetPropertyInt(cx, tObj, "width", &width) );
-		J_CHK( GetPropertyInt(cx, tObj, "height", &height) );
-		J_CHK( GetPropertyInt(cx, tObj, "channels", &channels) );
+		JL_CHK( GetPropertyInt(cx, tObj, "width", &width) );
+		JL_CHK( GetPropertyInt(cx, tObj, "height", &height) );
+		JL_CHK( GetPropertyInt(cx, tObj, "channels", &channels) );
 		size_t bufferLength;
 		jsval tVal = OBJECT_TO_JSVAL(tObj);
-		J_CHK( JsvalToStringAndLength(cx, &tVal, (const char**)&data, &bufferLength ) );
-		J_S_ASSERT( bufferLength == width * height * channels * 1, "Invalid image format." );
-		J_S_ASSERT_RESOURCE(data);
+		JL_CHK( JsvalToStringAndLength(cx, &tVal, (const char**)&data, &bufferLength ) );
+		JL_S_ASSERT( bufferLength == width * height * channels * 1, "Invalid image format." );
+		JL_S_ASSERT_RESOURCE(data);
 		type = GL_UNSIGNED_BYTE;
 	}
 // else
-//		J_REPORT_ERROR("Invalid texture type.");
+//		JL_REPORT_ERROR("Invalid texture type.");
 
-	if ( J_FARG_ISDEF(2) ) {
+	if ( JL_FARG_ISDEF(2) ) {
 
-		J_S_ASSERT_INT(J_FARG(2));
-		format = JSVAL_TO_INT(J_FARG(2));
+		JL_S_ASSERT_INT(JL_FARG(2));
+		format = JSVAL_TO_INT(JL_FARG(2));
 	} else {
 
 		switch ( channels ) {
@@ -2048,8 +2048,8 @@ DEFINE_FUNCTION_FAST( DefineTextureImage ) {
 	}
 
 	glPixelStorei( GL_UNPACK_ALIGNMENT, 1 );
-	glTexImage2D( JSVAL_TO_INT(J_FARG(1)), 0, format, width, height, 0, format, type, data );
-	*J_FRVAL = JSVAL_VOID;
+	glTexImage2D( JSVAL_TO_INT(JL_FARG(1)), 0, format, width, height, 0, format, type, data );
+	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -2096,8 +2096,8 @@ DEFINE_FUNCTION_FAST( RenderToImage ) {
 
 	// (TBD) render to a blob !
 	JSObject *blobObj = NewImage(cx, tWidth, tHeight, 4, pixels);
-	J_CHK( blobObj );
-	*J_FRVAL = OBJECT_TO_JSVAL(blobObj);
+	JL_CHK( blobObj );
+	*JL_FRVAL = OBJECT_TO_JSVAL(blobObj);
 
 	glDeleteTextures(1, &texture);
 	return JS_TRUE;
@@ -2140,13 +2140,13 @@ static int MatrixGet(JSContext *cx, JSObject *obj, float **m) {
 			glGetFloatv(GL_TEXTURE_MATRIX, *m);
 			return true;
 	}
-	return false; // J_REPORT_ERROR( "Unsupported matrix mode." );
+	return false; // JL_REPORT_ERROR( "Unsupported matrix mode." );
 }
 
 
 JSBool Init( JSContext *cx, JSObject *obj ) {
 
-	J_CHK( SetMatrix44ReadInterface(cx, obj, MatrixGet) );
+	JL_CHK( SetMatrix44ReadInterface(cx, obj, MatrixGet) );
 	return JS_TRUE;
 	JL_BAD;
 }

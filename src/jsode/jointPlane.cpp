@@ -29,14 +29,14 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
-	J_S_ASSERT_CONSTRUCTING();
-	J_S_ASSERT_THIS_CLASS();
-	J_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_CONSTRUCTING();
+	JL_S_ASSERT_THIS_CLASS();
+	JL_S_ASSERT_ARG_MIN(1);
 	ode::dWorldID worldId;
 	if ( ValToWorldID( cx, argv[0], &worldId) == JS_FALSE )
 		return JS_FALSE;
 	ode::dJointID jointId = ode::dJointCreatePlane2D(worldId, 0); // The joint group ID is 0 to allocate the joint normally.
-	JS_SetPrivate(cx, obj, jointId);
+	JL_SetPrivate(cx, obj, jointId);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -49,8 +49,8 @@ DEFINE_CONSTRUCTOR() {
 /*
 DEFINE_PROPERTY( x ) {
 
-	ode::dJointID jointId = (ode::dJointID)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(jointId);
+	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(jointId);
 
 	ode::dJointSetPlane2DXParam( jointId, 
 

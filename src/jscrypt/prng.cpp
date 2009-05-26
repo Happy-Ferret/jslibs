@@ -26,7 +26,7 @@ BEGIN_CLASS( Prng )
 
 DEFINE_FINALIZE() {
 
-	PrngPrivate *pv = (PrngPrivate *)JS_GetPrivate( cx, obj );
+	PrngPrivate *pv = (PrngPrivate *)JL_GetPrivate( cx, obj );
 	if ( !pv )
 		return;
 
@@ -48,25 +48,25 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
-	J_S_ASSERT_CONSTRUCTING();
-	J_S_ASSERT_THIS_CLASS();
+	JL_S_ASSERT_CONSTRUCTING();
+	JL_S_ASSERT_THIS_CLASS();
 
-	J_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_ARG_MIN( 1 );
 
 	const char *prngName;
-	J_CHK( JsvalToString(cx, &argv[0], &prngName) );
+	JL_CHK( JsvalToString(cx, &argv[0], &prngName) );
 
 	int prngIndex;
 	prngIndex = find_prng(prngName);
-	J_S_ASSERT_1( prngIndex != -1, "prng %s is not available", prngName );
+	JL_S_ASSERT_1( prngIndex != -1, "prng %s is not available", prngName );
 
 	PrngPrivate *pv;
 	pv = (PrngPrivate*)JS_malloc(cx, sizeof(PrngPrivate));
-	J_CHK( pv );
+	JL_CHK( pv );
 
 	pv->prng = prng_descriptor[prngIndex];
 
-	J_S_ASSERT_1( pv->prng.test() == CRYPT_OK, "%s prng test failed.", prngName );
+	JL_S_ASSERT_1( pv->prng.test() == CRYPT_OK, "%s prng test failed.", prngName );
 
 	int err;
 	err = pv->prng.start( &pv->state );
@@ -75,7 +75,7 @@ DEFINE_CONSTRUCTOR() {
 	err = pv->prng.ready( &pv->state );
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx,err);
-	JS_SetPrivate( cx, obj, pv );
+	JL_SetPrivate( cx, obj, pv );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -101,25 +101,25 @@ $TOC_MEMBER $INAME
 DEFINE_CALL() {
 
 	JSObject *thisObj = JSVAL_TO_OBJECT(argv[-2]); // get 'this' object of the current object ...
-	J_S_ASSERT_CLASS( thisObj, _class );
+	JL_S_ASSERT_CLASS( thisObj, _class );
 
-	J_S_ASSERT_ARG_MIN( 1 );
-	J_S_ASSERT_CLASS( thisObj, _class );
+	JL_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_CLASS( thisObj, _class );
 	PrngPrivate *pv;
-	pv = (PrngPrivate *)JS_GetPrivate( cx, thisObj );
-	J_S_ASSERT_RESOURCE( pv );
+	pv = (PrngPrivate *)JL_GetPrivate( cx, thisObj );
+	JL_S_ASSERT_RESOURCE( pv );
 
 	unsigned int readCount;
-	J_CHK( JsvalToUInt(cx, argv[0], &readCount) );
+	JL_CHK( JsvalToUInt(cx, argv[0], &readCount) );
 
 	char *pr;
 	pr = (char*)JS_malloc( cx, readCount );
-	J_CHK( pr );
+	JL_CHK( pr );
 	unsigned long hasRead;
 	hasRead = pv->prng.read( (unsigned char*)pr, readCount, &pv->state );
-	J_S_ASSERT( hasRead == readCount, "unable to read prng." );
+	JL_S_ASSERT( hasRead == readCount, "unable to read prng." );
 
-	J_CHK( J_NewBlob( cx, pr, hasRead, rval ) );
+	JL_CHK( JL_NewBlob( cx, pr, hasRead, rval ) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -132,15 +132,15 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( AddEntropy ) {
 
-	J_S_ASSERT_CLASS( obj, _class );
-	J_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_CLASS( obj, _class );
+	JL_S_ASSERT_ARG_MIN( 1 );
 	PrngPrivate *pv;
-	pv = (PrngPrivate *)JS_GetPrivate( cx, obj );
-	J_S_ASSERT_RESOURCE( pv );
+	pv = (PrngPrivate *)JL_GetPrivate( cx, obj );
+	JL_S_ASSERT_RESOURCE( pv );
 
 	const char *entropy;
 	size_t entropyLength;
-	J_CHK( JsvalToStringAndLength(cx, &argv[0], &entropy, &entropyLength) );
+	JL_CHK( JsvalToStringAndLength(cx, &argv[0], &entropy, &entropyLength) );
 
 	int err;
 	err = pv->prng.add_entropy( (const unsigned char *)entropy, entropyLength, &pv->state );
@@ -160,14 +160,14 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( AutoEntropy ) {
 
-	J_S_ASSERT_CLASS( obj, _class );
-	J_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_CLASS( obj, _class );
+	JL_S_ASSERT_ARG_MIN( 1 );
 	PrngPrivate *pv;
-	pv = (PrngPrivate *)JS_GetPrivate( cx, obj );
-	J_S_ASSERT_RESOURCE( pv );
+	pv = (PrngPrivate *)JL_GetPrivate( cx, obj );
+	JL_S_ASSERT_RESOURCE( pv );
 
 	unsigned int bits;
-	J_CHK( JsvalToUInt(cx, argv[0], &bits) );
+	JL_CHK( JsvalToUInt(cx, argv[0], &bits) );
 	int err;
 	err = rng_make_prng( bits, find_prng(pv->prng.name), &pv->state, NULL );
 	if ( err != CRYPT_OK )
@@ -188,10 +188,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( stateGetter ) {
 
-	J_S_ASSERT_CLASS( obj, _class );
+	JL_S_ASSERT_CLASS( obj, _class );
 	PrngPrivate *pv;
-	pv = (PrngPrivate *)JS_GetPrivate( cx, obj );
-	J_S_ASSERT_RESOURCE( pv );
+	pv = (PrngPrivate *)JL_GetPrivate( cx, obj );
+	JL_S_ASSERT_RESOURCE( pv );
 
 	unsigned long size;
 	size = pv->prng.export_size;
@@ -203,24 +203,24 @@ DEFINE_PROPERTY( stateGetter ) {
 	err = pv->prng.pexport((unsigned char *)stateData, &stateLength, &pv->state);
 	if ( err != CRYPT_OK )
 		return ThrowCryptError(cx, err);
-	J_S_ASSERT( stateLength == size, "Invalid export size." );
+	JL_S_ASSERT( stateLength == size, "Invalid export size." );
 
-	J_CHK( J_NewBlob(cx, stateData, size, vp) );
+	JL_CHK( JL_NewBlob(cx, stateData, size, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
 
 DEFINE_PROPERTY( stateSetter ) {
 
-	J_S_ASSERT_CLASS( obj, _class );
+	JL_S_ASSERT_CLASS( obj, _class );
 	PrngPrivate *pv;
-	pv = (PrngPrivate *)JS_GetPrivate( cx, obj );
-	J_S_ASSERT_RESOURCE( pv );
+	pv = (PrngPrivate *)JL_GetPrivate( cx, obj );
+	JL_S_ASSERT_RESOURCE( pv );
 
 	const char *stateData;
 	size_t stateLength;
-	J_CHK( JsvalToStringAndLength(cx, vp, &stateData, &stateLength) );
-	J_S_ASSERT( stateLength == pv->prng.export_size, "Invalid import size." );
+	JL_CHK( JsvalToStringAndLength(cx, vp, &stateData, &stateLength) );
+	JL_S_ASSERT( stateLength == pv->prng.export_size, "Invalid import size." );
 	int err;
 	err = pv->prng.pimport((unsigned char *)stateData, stateLength, &pv->state);
 	if ( err != CRYPT_OK )
@@ -237,10 +237,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( name ) {
 
-	J_S_ASSERT_CLASS( obj, _class );
+	JL_S_ASSERT_CLASS( obj, _class );
 	PrngPrivate *pv;
-	pv = (PrngPrivate *)JS_GetPrivate( cx, obj );
-	J_S_ASSERT_RESOURCE( pv );
+	pv = (PrngPrivate *)JL_GetPrivate( cx, obj );
+	JL_S_ASSERT_RESOURCE( pv );
 
 	*vp = STRING_TO_JSVAL( JS_NewStringCopyZ(cx,pv->prng.name) );
 	return JS_TRUE;
@@ -257,7 +257,7 @@ DEFINE_PROPERTY( list ) {
 	if ( JSVAL_IS_VOID( *vp ) ) {
 
 		JSObject *list = JS_NewObject( cx, NULL, NULL, NULL );
-		J_CHK( list );
+		JL_CHK( list );
 		*vp = OBJECT_TO_JSVAL(list);
 		jsval value;
 		int i;

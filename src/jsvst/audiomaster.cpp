@@ -40,7 +40,7 @@ DEFINE_PROPERTY( version ) {
 
 	if ( JSVAL_IS_VOID( *vp ) ) {
 
-		audioMasterCallback audioMaster = (audioMasterCallback)JS_GetPrivate(cx, obj);
+		audioMasterCallback audioMaster = (audioMasterCallback)JL_GetPrivate(cx, obj);
 		VstIntPtr version = audioMaster(0, audioMasterVersion, 0, 0, 0, 0);
 		*vp = INT_TO_JSVAL( version );
 	}
@@ -69,6 +69,6 @@ JSObject * CreateAudioMasterObject( JSContext *cx, audioMasterCallback audioMast
 	JSObject *audioMasterObject = JS_NewObject(cx, classAudioMaster, NULL, NULL);
 	if ( audioMasterObject == NULL )
 		return NULL;
-	JS_SetPrivate(cx, audioMasterObject, audioMaster);
+	JL_SetPrivate(cx, audioMasterObject, audioMaster);
 	return audioMasterObject;
 }

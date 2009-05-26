@@ -32,13 +32,13 @@ $MODULE_FOOTER
 JSBool jslangInit(JSContext *cx, JSObject *obj) {
 
 //	jsval unsafeModePtrVal;
-//	J_CHK( GetConfigurationValue(cx, NAME_CONFIGURATION_UNSAFE_MODE_PTR, &unsafeModePtrVal) );
+//	JL_CHK( GetConfigurationValue(cx, NAME_CONFIGURATION_UNSAFE_MODE_PTR, &unsafeModePtrVal) );
 //	if ( !JSVAL_IS_VOID( unsafeModePtrVal ) )
 //		_pUnsafeMode = (bool*)JSVAL_TO_PRIVATE(unsafeModePtrVal);
 
 
 	JSObject *globalObject = JS_GetGlobalObject(cx);
-	J_S_ASSERT( obj == globalObject, "This module must be load into the global namespace" );
+	JL_S_ASSERT( obj == globalObject, "This module must be load into the global namespace" );
 //	obj = JS_GetGlobalObject(cx); // avoid LoadModule.call( foo, 'jslang' );
 
 	INIT_CLASS( Id );
@@ -46,8 +46,8 @@ JSBool jslangInit(JSContext *cx, JSObject *obj) {
 	INIT_CLASS( Stream );
 	INIT_STATIC();
 
-	J_CHK( JL_RegisterNativeClass(cx, classBlob) );
-	J_CHK( JL_RegisterNativeClass(cx, classId) );
+	JL_CHK( JL_RegisterNativeClass(cx, classBlob) );
+	JL_CHK( JL_RegisterNativeClass(cx, classId) );
 
 	return JS_TRUE;
 	JL_BAD;

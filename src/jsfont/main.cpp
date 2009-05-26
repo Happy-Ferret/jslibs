@@ -40,7 +40,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
 	FT_Error status;
 	status = FT_Init_FreeType(&_freetype);
-	J_S_ASSERT( status == 0, "Unable to initialize FreeType2 library." );
+	JL_S_ASSERT( status == 0, "Unable to initialize FreeType2 library." );
 
 	INIT_CLASS(Font);
 
@@ -59,7 +59,7 @@ EXTERN_C DLLEXPORT void ModuleFree() {
 
 	FT_Error status;
 	status = FT_Done_FreeType(_freetype);
-//	J_S_ASSERT( status == 0, "Unable to destroy FreeType2 library." );
+//	JL_S_ASSERT( status == 0, "Unable to destroy FreeType2 library." );
 }
 
 #ifdef XP_WIN

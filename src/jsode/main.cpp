@@ -67,7 +67,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	_unsafeMode = GetHostPrivate(cx)->unsafeMode;
 
 	int status = ode::dInitODE2(0);
-	J_S_ASSERT( status != 0, "Unable to initialize ODE." );
+	JL_S_ASSERT( status != 0, "Unable to initialize ODE." );
 
 	ode::dSetErrorHandler(messageHandler);
 	ode::dSetDebugHandler(messageHandler);

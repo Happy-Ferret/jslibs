@@ -147,26 +147,26 @@ DEFINE_FUNCTION( DecodeJpegImage ) {
 	src->pub.bytes_in_buffer = 0; // forces fill_input_buffer on first read
 	src->pub.next_input_byte = NULL; // until buffer loaded
 
-	J_S_ASSERT_OBJECT( J_ARG(1) );
-	src->obj = JSVAL_TO_OBJECT( J_ARG(1) ); // required by NIStreamRead
+	JL_S_ASSERT_OBJECT( JL_ARG(1) );
+	src->obj = JSVAL_TO_OBJECT( JL_ARG(1) ); // required by NIStreamRead
 	src->cx = cx; // required by NIStreamRead
 
 // try to use a fast way to read the data
-//	J_CHK( GetStreamReadInterface(cx, JSVAL_TO_OBJECT(argv[0]), &src->read) );
+//	JL_CHK( GetStreamReadInterface(cx, JSVAL_TO_OBJECT(argv[0]), &src->read) );
 
-//	J_S_ASSERT( src->read != NULL, "Unable to GetNativeResource." );
+//	JL_S_ASSERT( src->read != NULL, "Unable to GetNativeResource." );
 
 // else use a 'classic' method to read the data ( like var data = resourceObject.Read(amount); )
 //	if ( src->read == NULL ) {
 
-//		J_S_ASSERT( false, "TO BE DONE" ); // (TBD) read without NI_READ_RESOURCE
+//		JL_S_ASSERT( false, "TO BE DONE" ); // (TBD) read without NI_READ_RESOURCE
 //		CxObj
 //		src->pv = resourceObject;
 //		src->read = ReadUsingJsMethod;
 //	}
 
 //	JSBool status = GetNativeResource(cx, JSVAL_TO_OBJECT(argv[0]), &src->pv, &src->read, NULL );
-//	J_S_ASSERT( status == JS_TRUE, "Unable to GetNativeResource." );
+//	JL_S_ASSERT( status == JS_TRUE, "Unable to GetNativeResource." );
 
 // read image headers
 	jpeg_read_header(&cinfo, TRUE); //we passed TRUE to reject a tables-only JPEG file as an error.
@@ -193,14 +193,14 @@ DEFINE_FUNCTION( DecodeJpegImage ) {
 	length = height * bytePerRow;
 	JOCTET * data;
 	data = (JOCTET *)JS_malloc(cx, length);
-	J_CHK( data );
+	JL_CHK( data );
 
 	jsval blobVal;
-	J_CHK( J_NewBlob(cx, data, length, &blobVal) );
+	JL_CHK( JL_NewBlob(cx, data, length, &blobVal) );
 
 	JSObject *blobObj;
-	J_CHK( JS_ValueToObject(cx, blobVal, &blobObj) );
-	J_S_ASSERT( blobObj, "Unable to create Blob object." );
+	JL_CHK( JS_ValueToObject(cx, blobVal, &blobObj) );
+	JL_S_ASSERT( blobObj, "Unable to create Blob object." );
 	*rval = OBJECT_TO_JSVAL(blobObj);
 
 	JS_DefineProperty(cx, blobObj, "channels", INT_TO_JSVAL(channels), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
@@ -225,7 +225,7 @@ DEFINE_FUNCTION( DecodeJpegImage ) {
 
 DEFINE_FUNCTION( EncodeJpegImage ) {
 
-	J_REPORT_ERROR("TBD!"); // (TBD)
+	JL_REPORT_ERROR("TBD!"); // (TBD)
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -269,22 +269,22 @@ DEFINE_FUNCTION( DecodePngImage ) {
 	PngReadUserStruct desc;
 
 	desc.png = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL );
-	J_S_ASSERT( desc.png != NULL, "Unable to png_create_read_struct.");
+	JL_S_ASSERT( desc.png != NULL, "Unable to png_create_read_struct.");
 	desc.info = png_create_info_struct(desc.png);
-	J_S_ASSERT( desc.info != NULL, "Unable to png_create_info_struct.");
+	JL_S_ASSERT( desc.info != NULL, "Unable to png_create_info_struct.");
 
-//	J_CHK( GetStreamReadInterface(cx, JSVAL_TO_OBJECT(argv[0]), &desc.read) );
-//	J_S_ASSERT( desc.read != NULL, "Unable to GetNativeResource." );
+//	JL_CHK( GetStreamReadInterface(cx, JSVAL_TO_OBJECT(argv[0]), &desc.read) );
+//	JL_S_ASSERT( desc.read != NULL, "Unable to GetNativeResource." );
 
-	J_S_ASSERT_OBJECT( J_ARG(1) );
-	desc.obj = JSVAL_TO_OBJECT( J_ARG(1) );
+	JL_S_ASSERT_OBJECT( JL_ARG(1) );
+	desc.obj = JSVAL_TO_OBJECT( JL_ARG(1) );
 	desc.cx = cx;
 
 	png_set_read_fn( desc.png, (voidp)&desc, _png_read );
    png_read_info(desc.png, desc.info);
-	J_S_ASSERT( desc.info->height <= PNG_UINT_32_MAX/png_sizeof(png_bytep), "Image is too high to process with png_read_png()");
+	JL_S_ASSERT( desc.info->height <= PNG_UINT_32_MAX/png_sizeof(png_bytep), "Image is too high to process with png_read_png()");
 
-	J_S_ASSERT( png_set_interlace_handling(desc.png) == 1, "Cannot read interlaced image yet." );
+	JL_S_ASSERT( png_set_interlace_handling(desc.png) == 1, "Cannot read interlaced image yet." );
 
 // Load
 	png_set_strip_16(desc.png);
@@ -308,13 +308,13 @@ DEFINE_FUNCTION( DecodePngImage ) {
 	length = height * bytePerRow;
 	png_bytep data;
 	data = (png_bytep)JS_malloc(cx, length);
-	J_CHK( data );
+	JL_CHK( data );
 
 	jsval blobVal;
-	J_CHK( J_NewBlob(cx, data, length, &blobVal) );
+	JL_CHK( JL_NewBlob(cx, data, length, &blobVal) );
 	JSObject *blobObj;
-	J_CHK( JS_ValueToObject(cx, blobVal, &blobObj) );
-	J_S_ASSERT( blobObj, "Unable to create Blob object." );
+	JL_CHK( JS_ValueToObject(cx, blobVal, &blobObj) );
+	JL_S_ASSERT( blobObj, "Unable to create Blob object." );
 	*rval = OBJECT_TO_JSVAL(blobObj);
 
 	JS_DefineProperty(cx, blobObj, "channels", INT_TO_JSVAL(channels), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
@@ -358,42 +358,42 @@ void output_flush_fn(png_structp png_ptr) {
 
 DEFINE_FUNCTION_FAST( EncodePngImage ) {
 
-	J_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_ARG_MIN(1);
 
 	int compressionLevel;
-	if ( J_FARG_ISDEF(2) ) {
+	if ( JL_FARG_ISDEF(2) ) {
 
-		J_S_ASSERT_INT( J_FARG(2) );
-		compressionLevel = JSVAL_TO_INT( J_FARG(2) );
-		J_S_ASSERT( compressionLevel >= 0 && compressionLevel <= 9, "Invalid compression level." );
+		JL_S_ASSERT_INT( JL_FARG(2) );
+		compressionLevel = JSVAL_TO_INT( JL_FARG(2) );
+		JL_S_ASSERT( compressionLevel >= 0 && compressionLevel <= 9, "Invalid compression level." );
 	} else {
 
 		compressionLevel = Z_DEFAULT_COMPRESSION;
 	}
 
-	J_S_ASSERT_OBJECT( J_FARG(1) );
+	JL_S_ASSERT_OBJECT( JL_FARG(1) );
 	JSObject *image;
-	image = JSVAL_TO_OBJECT( J_FARG(1) );
+	image = JSVAL_TO_OBJECT( JL_FARG(1) );
 	int sWidth, sHeight, sChannels;
-	J_CHK( GetPropertyInt(cx, image, "width", &sWidth) );
-	J_CHK( GetPropertyInt(cx, image, "height", &sHeight) );
-	J_CHK( GetPropertyInt(cx, image, "channels", &sChannels) );
+	JL_CHK( GetPropertyInt(cx, image, "width", &sWidth) );
+	JL_CHK( GetPropertyInt(cx, image, "height", &sHeight) );
+	JL_CHK( GetPropertyInt(cx, image, "channels", &sChannels) );
 
 	PngWriteUserStruct desc;
 
 	desc.buffer = JS_malloc(cx, sWidth * sHeight * sChannels + 1024);
-	J_CHK( desc.buffer );
+	JL_CHK( desc.buffer );
 	desc.pos = 0;
 
 	const char *sBuffer;
 	size_t bufferLength;
-	J_CHK( JsvalToStringAndLength(cx, &J_FARG(1), &sBuffer, &bufferLength ) ); // warning: GC on the returned buffer !
-	J_S_ASSERT( bufferLength == sWidth * sHeight * sChannels * 1, "Invalid image format." );
+	JL_CHK( JsvalToStringAndLength(cx, &JL_FARG(1), &sBuffer, &bufferLength ) ); // warning: GC on the returned buffer !
+	JL_S_ASSERT( bufferLength == sWidth * sHeight * sChannels * 1, "Invalid image format." );
 
 	desc.png = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
-	J_S_ASSERT( desc.png != NULL, "Unable to png_create_write_struct.");
+	JL_S_ASSERT( desc.png != NULL, "Unable to png_create_write_struct.");
 	desc.info = png_create_info_struct(desc.png);
-	J_S_ASSERT( desc.info != NULL, "Unable to png_create_info_struct.");
+	JL_S_ASSERT( desc.info != NULL, "Unable to png_create_info_struct.");
 
 	png_set_write_fn( desc.png, (voidp)&desc, write_row_callback, output_flush_fn );
 
@@ -412,7 +412,7 @@ DEFINE_FUNCTION_FAST( EncodePngImage ) {
 			color_type = PNG_COLOR_TYPE_RGB_ALPHA;
 			break;
 		default:
-			J_REPORT_ERROR("Format not supported.");
+			JL_REPORT_ERROR("Format not supported.");
 	}
 
 	png_set_IHDR(desc.png, desc.info, sWidth, sHeight, 8, color_type, PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
@@ -426,7 +426,7 @@ DEFINE_FUNCTION_FAST( EncodePngImage ) {
 	png_destroy_write_struct(&desc.png, &desc.info);
 
 	JS_realloc(cx, desc.buffer, desc.pos);
-	J_CHK( J_NewBlob(cx, desc.buffer, desc.pos, J_FRVAL) );
+	JL_CHK( JL_NewBlob(cx, desc.buffer, desc.pos, JL_FRVAL) );
 
 	return JS_TRUE;
 	JL_BAD;

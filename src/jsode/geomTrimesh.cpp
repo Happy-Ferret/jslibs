@@ -28,7 +28,7 @@ BEGIN_CLASS( GeomTrimesh )
 
 DEFINE_FINALIZE() {
 
-	ode::dGeomID geomId = (ode::dGeomID)JS_GetPrivate(cx, obj);
+	ode::dGeomID geomId = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	if ( geomId != NULL ) {
 
 		ode::dGeomTriMeshDataDestroy(ode::dGeomTriMeshGetData(geomId));
@@ -44,22 +44,22 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
-	J_S_ASSERT_CONSTRUCTING();
-	J_S_ASSERT_THIS_CLASS();
+	JL_S_ASSERT_CONSTRUCTING();
+	JL_S_ASSERT_THIS_CLASS();
 
-	J_S_ASSERT_ARG_MIN(2);
-	J_S_ASSERT_OBJECT(J_ARG(2));
+	JL_S_ASSERT_ARG_MIN(2);
+	JL_S_ASSERT_OBJECT(JL_ARG(2));
 
 	ode::dSpaceID space = 0;
-	if ( J_ARG_ISDEF(1) ) // place it in a space ?
-		J_CHK( ValToSpaceID(cx, J_ARG(1), &space) );
+	if ( JL_ARG_ISDEF(1) ) // place it in a space ?
+		JL_CHK( ValToSpaceID(cx, JL_ARG(1), &space) );
 
-	jsval trimeshVal = J_ARG(2);
-	J_S_ASSERT( JsvalIsTrimesh(cx, trimeshVal), "Invalid Trimesh object." );
+	jsval trimeshVal = JL_ARG(2);
+	JL_S_ASSERT( JsvalIsTrimesh(cx, trimeshVal), "Invalid Trimesh object." );
 	JSObject *trimesh = JSVAL_TO_OBJECT(trimeshVal);
 	Surface *srf = GetTrimeshSurface(cx, trimesh);
-	J_S_ASSERT_RESOURCE( srf );
-	J_S_ASSERT( srf->vertex && srf->vertexCount && srf->index && srf->indexCount, "No enough data" );
+	JL_S_ASSERT_RESOURCE( srf );
+	JL_S_ASSERT( srf->vertex && srf->vertexCount && srf->index && srf->indexCount, "No enough data" );
 
 	ode::dTriMeshDataID triMeshDataID = ode::dGeomTriMeshDataCreate();
 
@@ -68,9 +68,9 @@ DEFINE_CONSTRUCTOR() {
 
 	ode::dGeomID geomId = ode::dCreateTriMesh(space, triMeshDataID, NULL, NULL, NULL);
 
-	J_CHK( JS_SetReservedSlot(cx, obj, SLOT_TRIMESH, trimeshVal) ); // keep e reference to the trimesh object because dGeomTriMeshDataBuildSingle do not make a copy of the data.
-	J_CHK( JS_SetPrivate(cx, obj, geomId) );
-	J_CHK( SetupReadMatrix(cx, obj) ); // (TBD) check return status
+	JL_CHK( JS_SetReservedSlot(cx, obj, SLOT_TRIMESH, trimeshVal) ); // keep e reference to the trimesh object because dGeomTriMeshDataBuildSingle do not make a copy of the data.
+	JL_CHK( JL_SetPrivate(cx, obj, geomId) );
+	JL_CHK( SetupReadMatrix(cx, obj) ); // (TBD) check return status
 	ode::dGeomSetData(geomId, obj); // 'obj' do not need to be rooted because Goem's data is reset to NULL when 'obj' is finalized.
 
 	return JS_TRUE;

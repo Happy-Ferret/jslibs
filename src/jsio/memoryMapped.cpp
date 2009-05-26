@@ -28,7 +28,7 @@ struct MemoryMappedPrivate {
 
 static JSBool BufferGet( JSContext *cx, JSObject *obj, const char **buf, size_t *size ) {
 
-	MemoryMappedPrivate *pv = (MemoryMappedPrivate*)JS_GetPrivate(cx, obj);
+	MemoryMappedPrivate *pv = (MemoryMappedPrivate*)JL_GetPrivate(cx, obj);
 	*size = pv->size;
 	*buf = (const char*)pv->addr;
 	return JS_TRUE;
@@ -42,7 +42,7 @@ BEGIN_CLASS( MemoryMapped )
 
 DEFINE_FINALIZE() {
 
-	MemoryMappedPrivate *pv = (MemoryMappedPrivate*)JS_GetPrivate(cx, obj);
+	MemoryMappedPrivate *pv = (MemoryMappedPrivate*)JL_GetPrivate(cx, obj);
 	if ( !pv )
 		return;
 
@@ -60,23 +60,23 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
-	J_S_ASSERT_CONSTRUCTING();
-	J_S_ASSERT_THIS_CLASS();
-	J_S_ASSERT_ARG_MIN( 1 );
-	J_S_ASSERT_OBJECT( J_ARG(1) );
+	JL_S_ASSERT_CONSTRUCTING();
+	JL_S_ASSERT_THIS_CLASS();
+	JL_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_OBJECT( JL_ARG(1) );
 
 	JSObject *fdObj;
-	fdObj = JSVAL_TO_OBJECT( J_ARG(1) );
-	J_S_ASSERT_CLASS( fdObj, classFile );
-	J_CHK( JS_SetReservedSlot(cx, obj, MEMORYMAPPED_SLOT_FILE, J_ARG(1)) ); // avoid the file to be GCed while being used by MemoryMapped
+	fdObj = JSVAL_TO_OBJECT( JL_ARG(1) );
+	JL_S_ASSERT_CLASS( fdObj, classFile );
+	JL_CHK( JS_SetReservedSlot(cx, obj, MEMORYMAPPED_SLOT_FILE, JL_ARG(1)) ); // avoid the file to be GCed while being used by MemoryMapped
 
 	PRFileDesc *fd;
-	fd = (PRFileDesc*)JS_GetPrivate(cx, fdObj);
-	J_S_ASSERT_RESOURCE( fd );
+	fd = (PRFileDesc*)JL_GetPrivate(cx, fdObj);
+	JL_S_ASSERT_RESOURCE( fd );
 
 	MemoryMappedPrivate *pv;
 	pv = (MemoryMappedPrivate*)JS_malloc(cx, sizeof(MemoryMappedPrivate));
-	J_CHK( pv );
+	JL_CHK( pv );
 
 	pv->size = PR_Available(fd);
 
@@ -87,8 +87,8 @@ DEFINE_CONSTRUCTOR() {
 /* 
 	// Doc. The offset must be aligned to whole pages. !!!
 	PROffset64 offset;
-	if ( J_ARG_ISDEF(2) )
-		J_CHK( JsvalToInt(cx, J_ARG(2), &offset) );
+	if ( JL_ARG_ISDEF(2) )
+		JL_CHK( JsvalToInt(cx, JL_ARG(2), &offset) );
 	else
 		offset = 0;
 
@@ -108,9 +108,9 @@ DEFINE_CONSTRUCTOR() {
 	pv->addr = PR_MemMap(pv->fmap, 0, pv->size);
 	if ( pv->addr == NULL )
 		return ThrowIoError(cx);
-	J_CHK( JS_SetPrivate(cx, obj, pv) );
+	JL_CHK( JL_SetPrivate(cx, obj, pv) );
 
-	J_CHK( SetBufferGetInterface(cx, obj, BufferGet) );
+	JL_CHK( SetBufferGetInterface(cx, obj, BufferGet) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -127,7 +127,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( file ) {
 
-	J_CHK( JS_GetReservedSlot(cx, obj, MEMORYMAPPED_SLOT_FILE, vp) );
+	JL_CHK( JS_GetReservedSlot(cx, obj, MEMORYMAPPED_SLOT_FILE, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }

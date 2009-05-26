@@ -36,17 +36,17 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Base64Encode ) {
 
-	J_S_ASSERT_ARG_MIN( 1 );
-	J_S_ASSERT_STRING(argv[0]);
+	JL_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_STRING(argv[0]);
 	const char *in;
 	size_t inLength;
-	J_CHK( JsvalToStringAndLength(cx, &argv[0], &in, &inLength) ); // warning: GC on the returned buffer !
+	JL_CHK( JsvalToStringAndLength(cx, &argv[0], &in, &inLength) ); // warning: GC on the returned buffer !
 
 	unsigned long outLength;
 	outLength = 4 * ((inLength + 2) / 3) +1;
 	char *out;
 	out = (char *)JS_malloc( cx, outLength +1 );
-	J_CHK( out );
+	JL_CHK( out );
 	out[outLength] = '\0';
 
 	int err;
@@ -56,7 +56,7 @@ DEFINE_FUNCTION( Base64Encode ) {
 
 	JSString *jssOutData;
 	jssOutData = JS_NewString( cx, out, outLength );
-	J_S_ASSERT( jssOutData != NULL, "unable to create the base64 string." );
+	JL_S_ASSERT( jssOutData != NULL, "unable to create the base64 string." );
 	*rval = STRING_TO_JSVAL(jssOutData);
 
 	return JS_TRUE;
@@ -70,17 +70,17 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Base64Decode ) {
 
-	J_S_ASSERT_ARG_MIN( 1 );
-	J_S_ASSERT_STRING(argv[0]);
+	JL_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_STRING(argv[0]);
 	const char *in;
 	size_t inLength;
-	J_CHK( JsvalToStringAndLength(cx, &argv[0], &in, &inLength) ); // warning: GC on the returned buffer !
+	JL_CHK( JsvalToStringAndLength(cx, &argv[0], &in, &inLength) ); // warning: GC on the returned buffer !
 
 	unsigned long outLength;
 	outLength = 3 * (inLength-2) / 4 +1;
 	char *out;
 	out = (char *)JS_malloc(cx, outLength +1);
-	J_CHK( out );
+	JL_CHK( out );
 	out[outLength] = '\0';
 
 	int err;
@@ -88,7 +88,7 @@ DEFINE_FUNCTION( Base64Decode ) {
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err);
 
-	J_CHK( J_NewBlob( cx, out, outLength, rval ) );
+	JL_CHK( JL_NewBlob( cx, out, outLength, rval ) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -104,19 +104,19 @@ DEFINE_FUNCTION( HexEncode ) {
 
 	static const char hex[] = "0123456789ABCDEF";
 
-	J_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_ARG_MIN( 1 );
 
-	J_S_ASSERT_STRING(argv[0]);
+	JL_S_ASSERT_STRING(argv[0]);
 
 	const char *in;
 	size_t inLength;
-	J_CHK( JsvalToStringAndLength(cx, &argv[0], &in, &inLength) ); // warning: GC on the returned buffer !
+	JL_CHK( JsvalToStringAndLength(cx, &argv[0], &in, &inLength) ); // warning: GC on the returned buffer !
 
 	unsigned long outLength;
 	outLength = inLength * 2;
 	char *out;
 	out = (char *)JS_malloc(cx, outLength +1);
-	J_CHK( out );
+	JL_CHK( out );
 	out[outLength] = '\0';
 
 	unsigned char c;
@@ -129,7 +129,7 @@ DEFINE_FUNCTION( HexEncode ) {
 
 	JSString *jssOutData;
 	jssOutData = JS_NewString( cx, out, outLength );
-	J_S_ASSERT( jssOutData != NULL, "unable to create the hex string." );
+	JL_S_ASSERT( jssOutData != NULL, "unable to create the hex string." );
 	*rval = STRING_TO_JSVAL(jssOutData);
 
 	return JS_TRUE;
@@ -156,23 +156,23 @@ DEFINE_FUNCTION( HexDecode ) {
 		XX, 10, 11, 12, 13, 14, 15, XX, XX, XX, XX, XX, XX, XX, XX, XX
 	};
 
-	J_S_ASSERT_ARG_MIN( 1 );
-	J_S_ASSERT_STRING(argv[0]);
+	JL_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_STRING(argv[0]);
 	const char *in;
 	size_t inLength;
-	J_CHK( JsvalToStringAndLength(cx, &argv[0], &in, &inLength) ); // warning: GC on the returned buffer !
+	JL_CHK( JsvalToStringAndLength(cx, &argv[0], &in, &inLength) ); // warning: GC on the returned buffer !
 
 	unsigned long outLength;
 	outLength = inLength / 2;
 	char *out;
 	out = (char *)JS_malloc(cx, outLength +1);
-	J_CHK( out );
+	JL_CHK( out );
 	out[outLength] = '\0';
 
 	for ( unsigned long i=0; i<outLength; ++i )
 		out[i] = unhex[ (unsigned char)in[i*2] ] << 4 | unhex[ (unsigned char)in[i*2+1] ];
 
-	J_CHK( J_NewBlob( cx, out, outLength, rval ) );
+	JL_CHK( JL_NewBlob( cx, out, outLength, rval ) );
 
 	return JS_TRUE;
 	JL_BAD;

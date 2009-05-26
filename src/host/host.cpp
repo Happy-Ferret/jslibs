@@ -60,7 +60,7 @@ static JSBool JSDefaultStdoutFunction(JSContext *cx, uintN argc, jsval *vp) { //
 	size_t length;
 	for ( uintN i = 0; i < argc; ++i ) {
 
-		J_CHK( JsvalToStringAndLength(cx, &J_FARG(i+1), &buffer, &length) );
+		JL_CHK( JsvalToStringAndLength(cx, &JL_FARG(i+1), &buffer, &length) );
 		pv->hostStdOut(pv->privateData, buffer, length);
 	}
 	return JS_TRUE;
@@ -78,7 +78,7 @@ static JSBool JSDefaultStderrFunction(JSContext *cx, uintN argc, jsval *vp) { //
 	size_t length;
 	for ( uintN i = 0; i < argc; ++i ) {
 
-		J_CHK( JsvalToStringAndLength(cx, &J_FARG(i+1), &buffer, &length) );
+		JL_CHK( JsvalToStringAndLength(cx, &JL_FARG(i+1), &buffer, &length) );
 		pv->hostStdErr(pv->privateData, buffer, length);
 	}
 	return JS_TRUE;
@@ -97,8 +97,8 @@ void stdErrRouter(JSContext *cx, const char *message, size_t length) {
 			jsval tmp;
 			JSTempValueRooter tvr;
 			JS_PUSH_SINGLE_TEMP_ROOT(cx, JSVAL_NULL, &tvr); // needed to protect the string.
-			J_CHKB( StringAndLengthToJsval(cx, &tvr.u.value, message, length), bad2 );
-			J_CHKB( JS_CallFunctionValue(cx, globalObject, fct, 1, &tvr.u.value, &tmp), bad2 );
+			JL_CHKB( StringAndLengthToJsval(cx, &tvr.u.value, message, length), bad2 );
+			JL_CHKB( JS_CallFunctionValue(cx, globalObject, fct, 1, &tvr.u.value, &tmp), bad2 );
 
 		bad2:
 			JS_POP_TEMP_ROOT(cx, &tvr);
@@ -240,9 +240,9 @@ JLThreadFuncDecl WatchDogThreadProc(void *threadArg) {
 
 static JSBool LoadModule(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
-	J_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_ARG_MIN(1);
 	const char *fileName;
-	J_CHK( JsvalToString(cx, &argv[0], &fileName) );
+	JL_CHK( JsvalToString(cx, &argv[0], &fileName) );
 	char libFileName[PATH_MAX];
 	strcpy( libFileName, fileName );
 	strcat( libFileName, DLL_EXT );
@@ -251,24 +251,24 @@ static JSBool LoadModule(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, 
 /*
 	while (0) { // namespace management. Avoid using val ns = {}, LoadModule.call(ns, '...');
 
-		if ( J_ARG_ISDEF(2) ) {
+		if ( JL_ARG_ISDEF(2) ) {
 
-			if ( JSVAL_IS_OBJECT(J_ARG(2)) ) {
-				obj = JSVAL_TO_OBJECT(J_ARG(2));
+			if ( JSVAL_IS_OBJECT(JL_ARG(2)) ) {
+				obj = JSVAL_TO_OBJECT(JL_ARG(2));
 			} else {
 				const char *ns;
-				J_CHK( JsvalToString(cx, &J_ARG(2), &ns) );
+				JL_CHK( JsvalToString(cx, &JL_ARG(2), &ns) );
 
 				jsval existingNsVal;
-				J_CHK( JS_GetProperty(cx, obj, ns, &existingNsVal) );
+				JL_CHK( JS_GetProperty(cx, obj, ns, &existingNsVal) );
 				JSObject *nsObj;
 				if ( existingNsVal == JSVAL_VOID ) {
 
 					nsObj = JS_NewObject(cx, NULL, NULL, NULL);
-					J_CHK( JS_DefineProperty(cx, obj, ns, OBJECT_TO_JSVAL(nsObj), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) ); // doc. On success, JS_DefineProperty returns JS_TRUE. If the property already exists or cannot be created, JS_DefineProperty returns JS_FALSE.
+					JL_CHK( JS_DefineProperty(cx, obj, ns, OBJECT_TO_JSVAL(nsObj), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) ); // doc. On success, JS_DefineProperty returns JS_TRUE. If the property already exists or cannot be created, JS_DefineProperty returns JS_FALSE.
 				} else {
 
-					J_S_ASSERT_OBJECT( existingNsVal );
+					JL_S_ASSERT_OBJECT( existingNsVal );
 					nsObj = JSVAL_TO_OBJECT( existingNsVal );
 				}
 				obj = nsObj;
@@ -278,39 +278,39 @@ static JSBool LoadModule(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, 
 */
 	HostPrivate *pv;
 	pv = GetHostPrivate(cx);
-	J_S_ASSERT( pv != NULL, "Invalid host context." );
+	JL_S_ASSERT( pv != NULL, "Invalid host context." );
 
-	J_S_ASSERT( libFileName != NULL && *libFileName != '\0', "Invalid module filename." );
+	JL_S_ASSERT( libFileName != NULL && *libFileName != '\0', "Invalid module filename." );
 	JLLibraryHandler module;
 	module = JLDynamicLibraryOpen(libFileName);
-	J_SAFE(
+	JL_SAFE(
 		if ( !JLDynamicLibraryOk(module) ) {
 
 			char errorBuffer[256];
 			JLDynamicLibraryLastErrorMessage( errorBuffer, sizeof(errorBuffer) );
-			J_REPORT_ERROR_2( "Unable to load the module \"%s\". %s", libFileName, errorBuffer );
+			JL_REPORT_ERROR_2( "Unable to load the module \"%s\". %s", libFileName, errorBuffer );
 		}
 	);
 
 	for ( jl::QueueCell *it = jl::QueueBegin(&pv->moduleList); it; it = jl::QueueNext(it) )
 		if ( (JLLibraryHandler)jl::QueueGetData(it) == module ) {
 
-			J_CHK( JLDynamicLibraryClose(&module) );
+			JL_CHK( JLDynamicLibraryClose(&module) );
 			*rval = JSVAL_VOID;
 			return JS_TRUE;
 		}
 
 	ModuleInitFunction moduleInit;
 	moduleInit = (ModuleInitFunction)JLDynamicLibrarySymbol(module, NAME_MODULE_INIT);
-	J_CHKBM( moduleInit, bad_dl_close, "Invalid module." );
-	J_CHKBM( moduleInit(cx, obj), bad_dl_close, "Unable to initialize the module." );
+	JL_CHKBM( moduleInit, bad_dl_close, "Invalid module." );
+	JL_CHKBM( moduleInit(cx, obj), bad_dl_close, "Unable to initialize the module." );
 
 	jl::QueueUnshift( &pv->moduleList, module ); // store the module (LIFO)
-	J_CHK( JS_NewNumberValue(cx, (unsigned long)module, rval) ); // really needed ? yes, UnloadModule will need this ID
+	JL_CHK( JS_NewNumberValue(cx, (unsigned long)module, rval) ); // really needed ? yes, UnloadModule will need this ID
 	return JS_TRUE;
 
 bad_dl_close:
-	J_CHK( JLDynamicLibraryClose(&module) );
+	JL_CHK( JLDynamicLibraryClose(&module) );
 bad:
 	return JS_FALSE;
 }
@@ -318,15 +318,15 @@ bad:
 /* (TBD)
 static JSBool UnloadModule(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
-	J_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_ARG_MIN(1);
 	jsdouble dVal;
-	J_CHK( JS_ValueToNumber(cx, argv[0], &dVal) );
+	JL_CHK( JS_ValueToNumber(cx, argv[0], &dVal) );
 	ModuleId id = (ModuleId)dVal;
 
 	if ( ModuleIsUnloadable(id) ) {
 
 		bool st = ModuleUnload(id, cx);
-		J_S_ASSERT( st == true, "Unable to unload the module" );
+		JL_S_ASSERT( st == true, "Unable to unload the module" );
 		*rval = JSVAL_TRUE;
 	} else {
 
@@ -372,8 +372,8 @@ JSContext* CreateHost(size_t maxMem, size_t maxAlloc, size_t maybeGCInterval ) {
 
 //	JS_SetCStringsAreUTF8(); // don't use !
 	JSRuntime *rt = JS_NewRuntime(0); // maxMem specifies the number of allocated bytes after which garbage collection is run.
-//	J_CHKM( rt != NULL, "unable to create the runtime." );
-	J_CHK( rt );
+//	JL_CHKM( rt != NULL, "unable to create the runtime." );
+	JL_CHK( rt );
 
 //call of  'js_malloc'  acts on  'runtime->gcMallocBytes'
 //do gc IF rt->gcMallocBytes >= rt->gcMaxMallocBytes
@@ -383,7 +383,7 @@ JSContext* CreateHost(size_t maxMem, size_t maxAlloc, size_t maybeGCInterval ) {
 
 	JSContext *cx;
 	cx = JS_NewContext(rt, 8192L); // set the chunk size of the stack pool to 8192. see http://groups.google.com/group/mozilla.dev.tech.js-engine/browse_thread/thread/be9f404b623acf39/9efdfca81be99ca3
-	J_CHK( cx ); //, "unable to create the context." );
+	JL_CHK( cx ); //, "unable to create the context." );
 
 	// Info: Increasing JSContext stack size slows down my scripts:
 	//   http://groups.google.com/group/mozilla.dev.tech.js-engine/browse_thread/thread/be9f404b623acf39/9efdfca81be99ca3
@@ -411,7 +411,7 @@ JSContext* CreateHost(size_t maxMem, size_t maxAlloc, size_t maybeGCInterval ) {
 
 	JSObject *globalObject;
 	globalObject = JS_NewObject(cx, &global_class, NULL, NULL);
-	J_CHK( globalObject ); // "unable to create the global object." );
+	JL_CHK( globalObject ); // "unable to create the global object." );
 
 	//	JS_SetGlobalObject(cx, globalObject); // not needed. Doc: As a side effect, JS_InitStandardClasses establishes obj as the global object for cx, if one is not already established.
 
@@ -423,7 +423,7 @@ JSContext* CreateHost(size_t maxMem, size_t maxAlloc, size_t maybeGCInterval ) {
 
 	HostPrivate *pv;
 	pv = (HostPrivate*)malloc(sizeof(HostPrivate)); // beware: don't realloc, because WatchDogThreadProc points on it !!!
-	J_S_ASSERT_ALLOC( pv );
+	JL_S_ASSERT_ALLOC( pv );
 	memset(pv, 0, sizeof(HostPrivate)); // mandatory !
 	SetHostPrivate(cx, pv);
 
@@ -434,7 +434,7 @@ JSContext* CreateHost(size_t maxMem, size_t maxAlloc, size_t maybeGCInterval ) {
 		JS_SetOperationCallback(cx, OperationCallback);
 		pv->watchDogSem = JLCreateSemaphore(0);
 		pv->watchDogThread = JLThreadStart(WatchDogThreadProc, cx);
-		J_CHKM( JLSemaphoreOk(pv->watchDogSem) && JLThreadOk(pv->watchDogThread), "Unable to create the thread." );
+		JL_CHKM( JLSemaphoreOk(pv->watchDogSem) && JLThreadOk(pv->watchDogThread), "Unable to create the thread." );
 	}
 
 	return cx;
@@ -450,7 +450,7 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostOutput stdOut, HostOutput s
 	if ( pv == NULL ) { // in the case of CreateHost has not been called (because the caller wants to create and manage its own JS runtime)
 
 		pv = (HostPrivate*)malloc(sizeof(HostPrivate));
-		J_S_ASSERT_ALLOC(pv);
+		JL_S_ASSERT_ALLOC(pv);
 		memset(pv, 0, sizeof(HostPrivate)); // mandatory !
 		SetHostPrivate(cx, pv);
 	}
@@ -465,13 +465,13 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostOutput stdOut, HostOutput s
 
 	JSObject *globalObject;
 	globalObject = JS_GetGlobalObject(cx);
-	J_CHKM( globalObject != NULL, "Global object not found." );
+	JL_CHKM( globalObject != NULL, "Global object not found." );
 
 //	JSBool found;
 //	uintN attrs;
-//	J_CHK( JS_GetPropertyAttributes(cx, globalObject, "undefined", &attrs, &found) );
-//	J_CHK( JS_SetPropertyAttributes(cx, globalObject, "undefined", attrs | JSPROP_READONLY, &found) );
-	J_CHK( OBJ_DEFINE_PROPERTY(cx, globalObject, ATOM_TO_JSID(cx->runtime->atomState.typeAtoms[JSTYPE_VOID]), JSVAL_VOID, NULL, NULL, JSPROP_PERMANENT | JSPROP_READONLY, NULL) ); // see JS_InitStandardClasses() in jsapi.cpp
+//	JL_CHK( JS_GetPropertyAttributes(cx, globalObject, "undefined", &attrs, &found) );
+//	JL_CHK( JS_SetPropertyAttributes(cx, globalObject, "undefined", attrs | JSPROP_READONLY, &found) );
+	JL_CHK( OBJ_DEFINE_PROPERTY(cx, globalObject, ATOM_TO_JSID(cx->runtime->atomState.typeAtoms[JSTYPE_VOID]), JSVAL_VOID, NULL, NULL, JSPROP_PERMANENT | JSPROP_READONLY, NULL) ); // see JS_InitStandardClasses() in jsapi.cpp
 
 
 // make GetErrorMessage available from any module
@@ -479,32 +479,32 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostOutput stdOut, HostOutput s
 	void **pGetErrorMessage;
 	pGetErrorMessage = (void**)malloc(sizeof(void*)); // free is done in DestroyHost()
 	*pGetErrorMessage = (void*)&GetErrorMessage; // this indirection is needed for alignement purpose. see PRIVATE_TO_JSVAL and C function alignement.
-	J_CHK( SetConfigurationPrivateValue(cx, NAME_CONFIGURATION_GETERRORMESSAGE, PRIVATE_TO_JSVAL(pGetErrorMessage)) );
+	JL_CHK( SetConfigurationPrivateValue(cx, NAME_CONFIGURATION_GETERRORMESSAGE, PRIVATE_TO_JSVAL(pGetErrorMessage)) );
 
 
 	pv->hostStdErr = stdErr;
 	pv->hostStdOut = stdOut;
 
 // global functions & properties
-	J_CHKM( JS_DefineProperty( cx, globalObject, NAME_GLOBAL_GLOBAL_OBJECT, OBJECT_TO_JSVAL(JS_GetGlobalObject(cx)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ), "unable to define a property." );
-	J_CHKM( JS_DefineFunction( cx, globalObject, GetHostPrivate(cx)->camelCase == 1 ? _NormalizeFunctionName(NAME_GLOBAL_FUNCTION_LOAD_MODULE) : NAME_GLOBAL_FUNCTION_LOAD_MODULE, LoadModule, 0, 0 ), "unable to define a property." );
-//	J_CHKM( JS_DefineFunction( cx, globalObject, GetHostPrivate(cx)->camelCase == 1 ? _NormalizeFunctionName(NAME_GLOBAL_FUNCTION_UNLOAD_MODULE) : NAME_GLOBAL_FUNCTION_UNLOAD_MODULE, UnloadModule, 0, 0 ), "unable to define a property." );
+	JL_CHKM( JS_DefineProperty( cx, globalObject, NAME_GLOBAL_GLOBAL_OBJECT, OBJECT_TO_JSVAL(JS_GetGlobalObject(cx)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ), "unable to define a property." );
+	JL_CHKM( JS_DefineFunction( cx, globalObject, GetHostPrivate(cx)->camelCase == 1 ? _NormalizeFunctionName(NAME_GLOBAL_FUNCTION_LOAD_MODULE) : NAME_GLOBAL_FUNCTION_LOAD_MODULE, LoadModule, 0, 0 ), "unable to define a property." );
+//	JL_CHKM( JS_DefineFunction( cx, globalObject, GetHostPrivate(cx)->camelCase == 1 ? _NormalizeFunctionName(NAME_GLOBAL_FUNCTION_UNLOAD_MODULE) : NAME_GLOBAL_FUNCTION_UNLOAD_MODULE, UnloadModule, 0, 0 ), "unable to define a property." );
 
-//	J_CHK( SetConfigurationValue(cx, NAME_CONFIGURATION_UNSAFE_MODE, BOOLEAN_TO_JSVAL(_unsafeMode)) );
-	J_CHK( SetConfigurationReadonlyValue(cx, NAME_CONFIGURATION_UNSAFE_MODE, unsafeMode ? JSVAL_TRUE : JSVAL_FALSE) );
+//	JL_CHK( SetConfigurationValue(cx, NAME_CONFIGURATION_UNSAFE_MODE, BOOLEAN_TO_JSVAL(_unsafeMode)) );
+	JL_CHK( SetConfigurationReadonlyValue(cx, NAME_CONFIGURATION_UNSAFE_MODE, unsafeMode ? JSVAL_TRUE : JSVAL_FALSE) );
 
 // support this: var prevStderr = _configuration.stderr; _configuration.stderr = function(txt) { file.Write(txt); prevStderr(txt) };
 	jsval value;
 	value = OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunction(cx, (JSNative)JSDefaultStdoutFunction, 1, JSFUN_FAST_NATIVE, NULL, NULL))); // If you do not assign a name to the function, it is assigned the name "anonymous".
-	J_CHK( SetConfigurationValue(cx, NAME_CONFIGURATION_STDOUT, value) );
+	JL_CHK( SetConfigurationValue(cx, NAME_CONFIGURATION_STDOUT, value) );
 	value = OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunction(cx, (JSNative)JSDefaultStderrFunction, 1, JSFUN_FAST_NATIVE, NULL, NULL))); // If you do not assign a name to the function, it is assigned the name "anonymous".
-	J_CHK( SetConfigurationValue(cx, NAME_CONFIGURATION_STDERR, value) );
+	JL_CHK( SetConfigurationValue(cx, NAME_CONFIGURATION_STDERR, value) );
 
 
 // init static modules
-	J_CHKM( jslangInit(cx, globalObject), "Unable to initialize jslang." );
+	JL_CHKM( jslangInit(cx, globalObject), "Unable to initialize jslang." );
 
-	J_CHK( JS_DefineProperty(cx, globalObject, NAME_MODULE_REVISION_PROPERTY_NAME, INT_TO_JSVAL(SvnRevToInt("$Revision: 0 $")), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
+	JL_CHK( JS_DefineProperty(cx, globalObject, NAME_MODULE_REVISION_PROPERTY_NAME, INT_TO_JSVAL(SvnRevToInt("$Revision: 0 $")), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -521,11 +521,11 @@ JSBool DestroyHost( JSContext *cx ) {
 
 	if ( JLThreadOk(pv->watchDogThread) ) {
 
-		J_CHK( JLAcquireSemaphore(pv->watchDogSem) ); // prevent thread destruction before it has started
-		J_CHK( JLFreeSemaphore(&pv->watchDogSem) );
-		J_CHK( JLThreadCancel(pv->watchDogThread) );
-		J_CHK( JLWaitThread(pv->watchDogThread) );
-		J_CHK( JLFreeThread(&pv->watchDogThread) ); // beware: it is important to destroy the thread BEFORE destroying the cx !!!
+		JL_CHK( JLAcquireSemaphore(pv->watchDogSem) ); // prevent thread destruction before it has started
+		JL_CHK( JLFreeSemaphore(&pv->watchDogSem) );
+		JL_CHK( JLThreadCancel(pv->watchDogThread) );
+		JL_CHK( JLWaitThread(pv->watchDogThread) );
+		JL_CHK( JLFreeThread(&pv->watchDogThread) ); // beware: it is important to destroy the thread BEFORE destroying the cx !!!
 	}
 
 	for ( jl::QueueCell *it = jl::QueueBegin(&pv->moduleList); it; it = jl::QueueNext(it) ) {
@@ -539,11 +539,11 @@ JSBool DestroyHost( JSContext *cx ) {
 	//	don't try to break linked objects with JS_GC(cx) !
 
 	jsval tmp;
-	J_CHK( GetConfigurationValue(cx, NAME_CONFIGURATION_GETERRORMESSAGE, &tmp) );
+	JL_CHK( GetConfigurationValue(cx, NAME_CONFIGURATION_GETERRORMESSAGE, &tmp) );
 	if ( tmp != JSVAL_VOID && JSVAL_TO_PRIVATE(tmp) )
 		free( JSVAL_TO_PRIVATE(tmp) );
 
-	J_CHKM( RemoveConfiguration(cx), "Unable to remove the configuration item" );
+	JL_CHKM( RemoveConfiguration(cx), "Unable to remove the configuration item" );
 
 	JS_SetGlobalObject(cx, JSVAL_TO_OBJECT(JSVAL_NULL)); // remove the global object (TBD) check if it is good or needed to do this.
 
@@ -568,7 +568,7 @@ JSBool DestroyHost( JSContext *cx ) {
 		if ( moduleFree != NULL )
 			moduleFree();
 //#ifndef DEBUG // else the memory block was allocated in a DLL that was unloaded prior to the _CrtMemDumpAllObjectsSince() call.
-		J_CHK( JLDynamicLibraryClose(&module) );
+		JL_CHK( JLDynamicLibraryClose(&module) );
 //#endif
 	}
 
@@ -602,20 +602,20 @@ JSBool ExecuteScriptFileName( JSContext *cx, const char *scriptFileName, bool co
 	//  we can use JS_ReportPendingException to report it manually
 
 	JSObject *globalObject = JS_GetGlobalObject(cx);
-	J_CHKM( globalObject != NULL, "Global object not found." );
+	JL_CHKM( globalObject != NULL, "Global object not found." );
 
 // arguments
 	JSObject *argsObj;
 	argsObj = JS_NewArrayObject(cx, 0, NULL);
-	J_CHKM( argsObj != NULL, "Unable to create argument array on the global object." );
+	JL_CHKM( argsObj != NULL, "Unable to create argument array on the global object." );
 
-	J_CHKM( JS_DefineProperty(cx, globalObject, NAME_GLOBAL_ARGUMENTS, OBJECT_TO_JSVAL(argsObj), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT), "unable to store the argument array." );
+	JL_CHKM( JS_DefineProperty(cx, globalObject, NAME_GLOBAL_ARGUMENTS, OBJECT_TO_JSVAL(argsObj), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT), "unable to store the argument array." );
 
 	for ( int index = 0; index < argc; index++ ) {
 
 		JSString *str = JS_NewStringCopyZ(cx, argv[index]);
-		J_CHKM( str != NULL, "Unable to store the argument." );
-		J_CHKM( JS_DefineElement(cx, argsObj, index, STRING_TO_JSVAL(str), NULL, NULL, JSPROP_ENUMERATE), "unable to define the argument." );
+		JL_CHKM( str != NULL, "Unable to store the argument." );
+		JL_CHKM( JS_DefineElement(cx, argsObj, index, STRING_TO_JSVAL(str), NULL, NULL, JSPROP_ENUMERATE), "unable to define the argument." );
 	}
 
 // compile & executes the script
@@ -632,7 +632,7 @@ JSBool ExecuteScriptFileName( JSContext *cx, const char *scriptFileName, bool co
 
 	JSScript *script;
 	script = JLLoadScript(cx, globalObject, scriptFileName, true, false); // use xdr if available, but don't save it.
-	J_CHK( script );
+	JL_CHK( script );
 
 
 	JSTempValueRooter tvr;
@@ -651,11 +651,11 @@ JSBool ExecuteScriptFileName( JSContext *cx, const char *scriptFileName, bool co
 		*rval = JSVAL_VOID;
 
 	JS_POP_TEMP_ROOT(cx, &tvr);
-	J_CHK( status );
+	JL_CHK( status );
 
 	//	JS_DestroyScript(cx, script); // Warning: This API is subject to bug 438633, which can cause crashes in almost any program that uses JS_DestroyScript.
 
-	J_CHKM( JS_DeleteProperty(cx, globalObject, NAME_GLOBAL_ARGUMENTS ), "Unable to remove argument property" );
+	JL_CHKM( JS_DeleteProperty(cx, globalObject, NAME_GLOBAL_ARGUMENTS ), "Unable to remove argument property" );
 	JS_SetOptions(cx, prevOpt);
 	return JS_TRUE;
 bad:

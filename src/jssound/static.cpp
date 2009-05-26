@@ -83,13 +83,13 @@ $TOC_MEMBER $INAME
 
 DEFINE_FUNCTION_FAST( DecodeOggVorbis ) {
 
-	J_S_ASSERT_ARG_MIN( 1 );
-	J_S_ASSERT_OBJECT( J_FARG(1) );
-	JSObject *streamObj = JSVAL_TO_OBJECT( J_FARG(1) );
+	JL_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_OBJECT( JL_FARG(1) );
+	JSObject *streamObj = JSVAL_TO_OBJECT( JL_FARG(1) );
 
 //	NIStreamRead streamReader;
-//	J_CHK( GetStreamReadInterface(cx, StreamObj, &streamReader) );
-//	J_S_ASSERT( streamReader != NULL, "Invalid stream." );
+//	JL_CHK( GetStreamReadInterface(cx, StreamObj, &streamReader) );
+//	JL_S_ASSERT( streamReader != NULL, "Invalid stream." );
 
 	StreamReadInfo pv; // = { cx, StreamObj };
 	pv.cx = cx;
@@ -103,8 +103,8 @@ DEFINE_FUNCTION_FAST( DecodeOggVorbis ) {
 	vorbis_info *info = ov_info(&descriptor, -1);
 	int bits = 16;
 
-	J_S_ASSERT( bits != 8 || bits == 16, "Unsupported bits count." );
-	J_S_ASSERT( info->channels == 1 || info->channels == 2, "Unsupported channel count." );
+	JL_S_ASSERT( bits != 8 || bits == 16, "Unsupported bits count." );
+	JL_S_ASSERT( info->channels == 1 || info->channels == 2, "Unsupported channel count." );
 
 	int bitStream;
 	void *stack;
@@ -117,7 +117,7 @@ DEFINE_FUNCTION_FAST( DecodeOggVorbis ) {
 	do {
 
 		char *buffer = (char*)malloc(bufferSize);
-		J_S_ASSERT_ALLOC(buffer);
+		JL_S_ASSERT_ALLOC(buffer);
 
 		jl::StackPush(&stack, buffer);
 
@@ -145,18 +145,18 @@ DEFINE_FUNCTION_FAST( DecodeOggVorbis ) {
 
 	// convert data chunks into a single memory buffer.
 	char *buf = (char*)JS_malloc(cx, totalSize);
-	J_CHK( buf );
+	JL_CHK( buf );
 
 	jsval bstr;
-	J_CHK( J_NewBlob(cx, buf, totalSize, &bstr) );
+	JL_CHK( JL_NewBlob(cx, buf, totalSize, &bstr) );
 	JSObject *bstrObj;
-	J_CHK( JS_ValueToObject(cx, bstr, &bstrObj) );
-	J_S_ASSERT( bstrObj != NULL, "Unable to create the Blob object.");
-	*J_FRVAL = OBJECT_TO_JSVAL(bstrObj);
+	JL_CHK( JS_ValueToObject(cx, bstr, &bstrObj) );
+	JL_S_ASSERT( bstrObj != NULL, "Unable to create the Blob object.");
+	*JL_FRVAL = OBJECT_TO_JSVAL(bstrObj);
 
-	J_CHK( SetPropertyInt(cx, bstrObj, "bits", bits) ); // bits per sample
-	J_CHK( SetPropertyInt(cx, bstrObj, "rate", info->rate) );
-	J_CHK( SetPropertyInt(cx, bstrObj, "channels", info->channels) );
+	JL_CHK( SetPropertyInt(cx, bstrObj, "bits", bits) ); // bits per sample
+	JL_CHK( SetPropertyInt(cx, bstrObj, "rate", info->rate) );
+	JL_CHK( SetPropertyInt(cx, bstrObj, "channels", info->channels) );
 
 	ov_clear(&descriptor); // beware: info must be valid
 
@@ -287,14 +287,14 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( DecodeSound ) {
 
-	J_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_ARG_MIN( 1 );
 
-	J_S_ASSERT_OBJECT( J_FARG(1) );
-	JSObject *streamObj = JSVAL_TO_OBJECT( J_FARG(1) );
+	JL_S_ASSERT_OBJECT( JL_FARG(1) );
+	JSObject *streamObj = JSVAL_TO_OBJECT( JL_FARG(1) );
 
 //	NIStreamRead streamReader;
-//	J_CHK( GetStreamReadInterface(cx, StreamObj, &streamReader) );
-//	J_S_ASSERT( streamReader != NULL, "Invalid stream." );
+//	JL_CHK( GetStreamReadInterface(cx, StreamObj, &streamReader) );
+//	JL_S_ASSERT( streamReader != NULL, "Invalid stream." );
 
 	StreamReadInfo pv;// = { cx, streamObj };
 	pv.cx = cx;
@@ -304,13 +304,13 @@ DEFINE_FUNCTION_FAST( DecodeSound ) {
 
 	SNDFILE *descriptor = sf_open_virtual(&sfCallbacks, SFM_READ, &info, &pv);
 
-	J_S_ASSERT_1( sf_error(descriptor) == SF_ERR_NO_ERROR, "sndfile error: %d", sf_error(descriptor) );
-	J_S_ASSERT( descriptor != NULL, "Invalid stream." );
+	JL_S_ASSERT_1( sf_error(descriptor) == SF_ERR_NO_ERROR, "sndfile error: %d", sf_error(descriptor) );
+	JL_S_ASSERT( descriptor != NULL, "Invalid stream." );
 
 	if ( JS_IsExceptionPending(cx) )
 		return JS_FALSE;
 
-	J_S_ASSERT( info.channels == 1 || info.channels == 2, "Unsupported channel count." );
+	JL_S_ASSERT( info.channels == 1 || info.channels == 2, "Unsupported channel count." );
 
 	sf_command(descriptor, SFC_SET_SCALE_FLOAT_INT_READ, NULL, SF_TRUE); // Doc. Set/clear the scale factor when integer (short/int) data is read from a file containing floating point data.
 
@@ -324,7 +324,7 @@ DEFINE_FUNCTION_FAST( DecodeSound ) {
 	do {
 
 		char *buffer = (char*)malloc(bufferSize);
-		J_S_ASSERT_ALLOC(buffer);
+		JL_S_ASSERT_ALLOC(buffer);
 		jl::StackPush(&stack, buffer);
 
 		char *data = buffer+sizeof(int);
@@ -333,7 +333,7 @@ DEFINE_FUNCTION_FAST( DecodeSound ) {
 
 		items = sf_read_short(descriptor, (short*)data, maxlen/sizeof(short)); // bits per sample
 
-		J_S_ASSERT_1( sf_error(descriptor) == SF_ERR_NO_ERROR, "sndfile error: %d", sf_error(descriptor) );
+		JL_S_ASSERT_1( sf_error(descriptor) == SF_ERR_NO_ERROR, "sndfile error: %d", sf_error(descriptor) );
 
 		if ( items <= 0 ) { // 0 indicates EOF
 
@@ -350,22 +350,22 @@ DEFINE_FUNCTION_FAST( DecodeSound ) {
 
 	// convert data chunks into a single memory buffer.
 	char *buf = (char*)JS_malloc(cx, totalSize);
-	J_CHK( buf );
+	JL_CHK( buf );
 
-//	JSObject *bstrObj = J_NewBlob(cx, buf, totalSize);
-//	J_S_ASSERT( bstrObj != NULL, "Unable to create the Blob object.");
-//	*J_FRVAL = OBJECT_TO_JSVAL(bstrObj);
+//	JSObject *bstrObj = JL_NewBlob(cx, buf, totalSize);
+//	JL_S_ASSERT( bstrObj != NULL, "Unable to create the Blob object.");
+//	*JL_FRVAL = OBJECT_TO_JSVAL(bstrObj);
 
 	jsval bstr;
-	J_CHK( J_NewBlob(cx, buf, totalSize, &bstr) );
+	JL_CHK( JL_NewBlob(cx, buf, totalSize, &bstr) );
 	JSObject *bstrObj;
-	J_CHK( JS_ValueToObject(cx, bstr, &bstrObj) );
-	J_S_ASSERT( bstrObj != NULL, "Unable to create the Blob object.");
-	*J_FRVAL = OBJECT_TO_JSVAL(bstrObj);
+	JL_CHK( JS_ValueToObject(cx, bstr, &bstrObj) );
+	JL_S_ASSERT( bstrObj != NULL, "Unable to create the Blob object.");
+	*JL_FRVAL = OBJECT_TO_JSVAL(bstrObj);
 
-	J_CHK( SetPropertyInt(cx, bstrObj, "bits", 16) ); // bits per sample
-	J_CHK( SetPropertyInt(cx, bstrObj, "rate", info.samplerate) );
-	J_CHK( SetPropertyInt(cx, bstrObj, "channels", info.channels) );
+	JL_CHK( SetPropertyInt(cx, bstrObj, "bits", 16) ); // bits per sample
+	JL_CHK( SetPropertyInt(cx, bstrObj, "rate", info.samplerate) );
+	JL_CHK( SetPropertyInt(cx, bstrObj, "channels", info.channels) );
 
 	sf_close(descriptor);
 
@@ -396,24 +396,24 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( SplitChannels ) {
 
-	J_S_ASSERT_ARG_MIN( 1 );
-	J_S_ASSERT_OBJECT( J_FARG(1) );
+	JL_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_OBJECT( JL_FARG(1) );
 
 	unsigned int rate, channelCount, bits, frames;
-	JSObject *srcBlobObj = JSVAL_TO_OBJECT(J_FARG(1));
-	J_CHK( GetPropertyUInt(cx, srcBlobObj, "rate", &rate) );
-	J_CHK( GetPropertyUInt(cx, srcBlobObj, "channels", &channelCount) );
-	J_CHK( GetPropertyUInt(cx, srcBlobObj, "bits", &bits) );
-	J_CHK( GetPropertyUInt(cx, srcBlobObj, "frames", &frames) );
+	JSObject *srcBlobObj = JSVAL_TO_OBJECT(JL_FARG(1));
+	JL_CHK( GetPropertyUInt(cx, srcBlobObj, "rate", &rate) );
+	JL_CHK( GetPropertyUInt(cx, srcBlobObj, "channels", &channelCount) );
+	JL_CHK( GetPropertyUInt(cx, srcBlobObj, "bits", &bits) );
+	JL_CHK( GetPropertyUInt(cx, srcBlobObj, "frames", &frames) );
 
-	J_S_ASSERT( bits == 8 || bits == 16, "Invalid channel sound resolution." );
+	JL_S_ASSERT( bits == 8 || bits == 16, "Invalid channel sound resolution." );
 
 	const char *srcBuf;
 	size_t srcBufLength;
-	JsvalToStringAndLength(cx, &J_FARG(1), &srcBuf, &srcBufLength);
+	JsvalToStringAndLength(cx, &JL_FARG(1), &srcBuf, &srcBufLength);
 
 	JSObject *destArray = JS_NewArrayObject(cx, 0, NULL); 
-	*J_FRVAL = OBJECT_TO_JSVAL(destArray);
+	*JL_FRVAL = OBJECT_TO_JSVAL(destArray);
 
 	for ( size_t c = 0; c < channelCount; c++ ) {
 
@@ -432,17 +432,17 @@ DEFINE_FUNCTION_FAST( SplitChannels ) {
 		}
 
 		jsval blobVal;
-		J_CHK( J_NewBlob(cx, buf, totalSize, &blobVal) );
+		JL_CHK( JL_NewBlob(cx, buf, totalSize, &blobVal) );
 		JSObject *blobObj;
-		J_CHK( JS_ValueToObject(cx, blobVal, &blobObj) );
-		J_S_ASSERT( blobObj != NULL, "Unable to create the Blob object.");
+		JL_CHK( JS_ValueToObject(cx, blobVal, &blobObj) );
+		JL_S_ASSERT( blobObj != NULL, "Unable to create the Blob object.");
 		blobVal = OBJECT_TO_JSVAL(blobObj);
-		J_CHK( JS_SetElement(cx, destArray, c, &blobVal) );
+		JL_CHK( JS_SetElement(cx, destArray, c, &blobVal) );
 
-		J_CHK( SetPropertyInt(cx, blobObj, "bits", bits) );
-		J_CHK( SetPropertyInt(cx, blobObj, "rate", rate) );
-		J_CHK( SetPropertyInt(cx, blobObj, "channels", 1) );
-		J_CHK( SetPropertyInt(cx, blobObj, "frames", frames ) );
+		JL_CHK( SetPropertyInt(cx, blobObj, "bits", bits) );
+		JL_CHK( SetPropertyInt(cx, blobObj, "rate", rate) );
+		JL_CHK( SetPropertyInt(cx, blobObj, "channels", 1) );
+		JL_CHK( SetPropertyInt(cx, blobObj, "frames", frames ) );
 	}
 
 	return JS_TRUE;

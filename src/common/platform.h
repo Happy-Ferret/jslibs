@@ -235,6 +235,7 @@ inline char* IntegerToString(int val, int base) {
 
 
 inline void SleepMilliseconds(unsigned int ms) {
+
 #if defined XP_WIN
 	Sleep(ms); // winbase.h
 #elif defined XP_UNIX
@@ -701,9 +702,9 @@ inline unsigned int JLSessionId() {
 
 /* (TBD) manage error
 #if defined XP_UNIX
-	J_S_ASSERT_2( id != 0, "Unable to load the module \"%s\": %s", libFileName, dlerror() );
+	JL_S_ASSERT_2( id != 0, "Unable to load the module \"%s\": %s", libFileName, dlerror() );
 #else // XP_UNIX
-	J_S_ASSERT_2( id != 0, "Unable to load the module \"%s\": %x", libFileName, GetLastError() );
+	JL_S_ASSERT_2( id != 0, "Unable to load the module \"%s\": %x", libFileName, GetLastError() );
 #endif // XP_UNIX
 */
 

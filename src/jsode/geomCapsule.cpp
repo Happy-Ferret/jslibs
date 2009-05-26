@@ -25,7 +25,7 @@ BEGIN_CLASS( GeomCapsule )
 
 DEFINE_FINALIZE() {
 
-	ode::dGeomID geomId = (ode::dGeomID)JS_GetPrivate(cx, obj);
+	ode::dGeomID geomId = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	if ( geomId != NULL )
 		ode::dGeomSetData(geomId, NULL);
 }
@@ -37,13 +37,13 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
-	J_S_ASSERT_CONSTRUCTING();
-	J_S_ASSERT_THIS_CLASS();
+	JL_S_ASSERT_CONSTRUCTING();
+	JL_S_ASSERT_THIS_CLASS();
 	ode::dSpaceID space = 0;
 	if ( argc >= 1 ) // place it in a space ?
-		J_CHK( ValToSpaceID(cx, argv[0], &space) );
+		JL_CHK( ValToSpaceID(cx, argv[0], &space) );
 	ode::dGeomID geomId = ode::dCreateCapsule(space, 1, 1); // default radius and length are 1
-	JS_SetPrivate(cx, obj, geomId);
+	JL_SetPrivate(cx, obj, geomId);
 	SetupReadMatrix(cx, obj); // (TBD) check return status
 	ode::dGeomSetData(geomId, obj); // 'obj' do not need to be rooted because Goem's data is reset to NULL when 'obj' is finalized.
 	return JS_TRUE;
@@ -61,9 +61,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( radiusSetter ) {
 
-	ode::dGeomID geom = (ode::dGeomID)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE( geom );
-	J_S_ASSERT_NUMBER( *vp );
+	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( geom );
+	JL_S_ASSERT_NUMBER( *vp );
 	ode::dReal radius, length;
 	ode::dGeomCapsuleGetParams(geom, &radius, &length);
 	jsdouble value;
@@ -75,8 +75,8 @@ DEFINE_PROPERTY( radiusSetter ) {
 
 DEFINE_PROPERTY( radiusGetter ) {
 
-	ode::dGeomID geom = (ode::dGeomID)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE( geom );
+	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( geom );
 	ode::dReal radius, length;
 	ode::dGeomCapsuleGetParams(geom, &radius, &length);
 	JS_NewDoubleValue(cx, radius, vp); // see JS_NewNumberValue and JS_NewDouble
@@ -91,9 +91,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( lengthSetter ) {
 
-	ode::dGeomID geom = (ode::dGeomID)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE( geom );
-	J_S_ASSERT_NUMBER( *vp );
+	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( geom );
+	JL_S_ASSERT_NUMBER( *vp );
 	ode::dReal radius, length;
 	ode::dGeomCapsuleGetParams(geom, &radius, &length);
 	jsdouble value;
@@ -105,8 +105,8 @@ DEFINE_PROPERTY( lengthSetter ) {
 
 DEFINE_PROPERTY( lengthGetter ) {
 
-	ode::dGeomID geom = (ode::dGeomID)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE( geom );
+	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( geom );
 	ode::dReal radius, length;
 	ode::dGeomCapsuleGetParams(geom, &radius, &length);
 	JS_NewDoubleValue(cx, length, vp); // see JS_NewNumberValue and JS_NewDouble

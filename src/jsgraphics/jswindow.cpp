@@ -47,10 +47,10 @@ $SVN_REVISION $Revision$
 BEGIN_CLASS( Window )
 
 //void Finalize(JSContext *cx, JSObject *obj) {
-//	JS_GetPrivate(cx, obj);
+//	JL_GetPrivate(cx, obj);
 //}
 //static JSBool ClassConstruct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
-//	J_S_ASSERT( JS_IsConstructing(cx) && JL_GetClass(obj) == thisClass, RT_ERROR_INVALID_CLASS );
+//	JL_S_ASSERT( JS_IsConstructing(cx) && JL_GetClass(obj) == thisClass, RT_ERROR_INVALID_CLASS );
 //	return JS_TRUE;
 //}
 //	JSBool Call(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
@@ -83,14 +83,14 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 			JS_GetProperty(cx, obj, "onchar", &functionVal);
 			if ( !JSVAL_IS_VOID( functionVal ) ) {
 
-				J_S_ASSERT_FUNCTION(functionVal); // (TBD) return value of assert is not compatible with this function (WndProc)
+				JL_S_ASSERT_FUNCTION(functionVal); // (TBD) return value of assert is not compatible with this function (WndProc)
 				char c = wParam;
 				jsval argv[] = { STRING_TO_JSVAL(JS_NewStringCopyN(cx, &c, 1)), INT_TO_JSVAL(lParam) };
 				JSTempValueRooter tvr;
 				JS_PUSH_TEMP_ROOT(cx, COUNTOF(argv), argv, &tvr); // needed to protect the new string
 				JSBool status = JS_CallFunctionValue(cx, obj, functionVal, COUNTOF(argv), argv, &rval);
 				JS_POP_TEMP_ROOT(cx, &tvr);
-				J_CHK( status );
+				JL_CHK( status );
 				return 0;
 			}
 			break;
@@ -98,13 +98,13 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 			JS_GetProperty(cx, obj, "onkeyup", &functionVal);
 			if ( !JSVAL_IS_VOID( functionVal ) ) {
 
-				J_S_ASSERT_FUNCTION(functionVal); // (TBD) return value of assert is not compatible with this function (WndProc)
+				JL_S_ASSERT_FUNCTION(functionVal); // (TBD) return value of assert is not compatible with this function (WndProc)
 				jsval argv[] = { INT_TO_JSVAL(wParam), INT_TO_JSVAL(lParam) };
 				JSTempValueRooter tvr;
 				JS_PUSH_TEMP_ROOT(cx, COUNTOF(argv), argv, &tvr); // not really needed
 				JSBool status = JS_CallFunctionValue(cx, obj, functionVal, COUNTOF(argv), argv, &rval);
 				JS_POP_TEMP_ROOT(cx, &tvr);
-				J_CHK( status );
+				JL_CHK( status );
 				return 0;
 			}
 			break;
@@ -112,13 +112,13 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 			JS_GetProperty(cx, obj, "onkeydown", &functionVal);
 			if ( !JSVAL_IS_VOID( functionVal ) ) {
 
-				J_S_ASSERT_FUNCTION(functionVal); // (TBD) return value of assert is not compatible with this function (WndProc)
+				JL_S_ASSERT_FUNCTION(functionVal); // (TBD) return value of assert is not compatible with this function (WndProc)
 				jsval argv[] = { INT_TO_JSVAL(wParam), INT_TO_JSVAL(lParam) };
 				JSTempValueRooter tvr;
 				JS_PUSH_TEMP_ROOT(cx, COUNTOF(argv), argv, &tvr); // not really needed
 				JSBool status = JS_CallFunctionValue(cx, obj, functionVal, COUNTOF(argv), argv, &rval);
 				JS_POP_TEMP_ROOT(cx, &tvr);
-				J_CHK( status );
+				JL_CHK( status );
 				return 0;
 			}
 			break;
@@ -126,13 +126,13 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 			JS_GetProperty(cx, obj, "onactivate", &functionVal);
 			if ( !JSVAL_IS_VOID( functionVal ) ) {
 
-				J_S_ASSERT_FUNCTION(functionVal); // (TBD) return value of assert is not compatible with this function (WndProc)
+				JL_S_ASSERT_FUNCTION(functionVal); // (TBD) return value of assert is not compatible with this function (WndProc)
 				jsval argv[] = { BOOLEAN_TO_JSVAL(wParam != WA_INACTIVE) };
 				JSTempValueRooter tvr;
 				JS_PUSH_TEMP_ROOT(cx, COUNTOF(argv), argv, &tvr); // not really needed
 				JSBool status = JS_CallFunctionValue(cx, obj, functionVal, COUNTOF(argv), argv, &rval);
 				JS_POP_TEMP_ROOT(cx, &tvr);
-				J_CHK( status );
+				JL_CHK( status );
 				return 0;
 			}
 			break;
@@ -141,13 +141,13 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 			JS_GetProperty(cx, obj, "onsize", &functionVal);
 			if ( !JSVAL_IS_VOID( functionVal ) ) {
 
-				J_S_ASSERT_FUNCTION(functionVal); // (TBD) return value of assert is not compatible with this function (WndProc)
+				JL_S_ASSERT_FUNCTION(functionVal); // (TBD) return value of assert is not compatible with this function (WndProc)
 				jsval argv[] = { INT_TO_JSVAL((short)LOWORD(lParam)), INT_TO_JSVAL((short)HIWORD(lParam)) };
 				JSTempValueRooter tvr;
 				JS_PUSH_TEMP_ROOT(cx, COUNTOF(argv), argv, &tvr); // not really needed
 				JSBool status = JS_CallFunctionValue(cx, obj, functionVal, COUNTOF(argv), argv, &rval);
 				JS_POP_TEMP_ROOT(cx, &tvr);
-				J_CHK( status );
+				JL_CHK( status );
 				return 0;
 			}
 			break;
@@ -155,13 +155,13 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 			JS_GetProperty(cx, obj, "onmousemove", &functionVal);
 			if ( !JSVAL_IS_VOID( functionVal ) ) {
 
-				J_S_ASSERT_FUNCTION(functionVal); // (TBD) return value of assert is not compatible with this function (WndProc)
+				JL_S_ASSERT_FUNCTION(functionVal); // (TBD) return value of assert is not compatible with this function (WndProc)
 				jsval argv[] = { INT_TO_JSVAL(MAKEPOINTS(lParam).x), INT_TO_JSVAL(MAKEPOINTS(lParam).y), BOOLEAN_TO_JSVAL(wParam & MK_LBUTTON), BOOLEAN_TO_JSVAL(wParam & MK_RBUTTON), BOOLEAN_TO_JSVAL(wParam & MK_MBUTTON) };
 				JSTempValueRooter tvr;
 				JS_PUSH_TEMP_ROOT(cx, COUNTOF(argv), argv, &tvr); // not really needed
 				JSBool status = JS_CallFunctionValue(cx, obj, functionVal, COUNTOF(argv), argv, &rval);
 				JS_POP_TEMP_ROOT(cx, &tvr);
-				J_CHK( status );
+				JL_CHK( status );
 				return 0;
 			}
 			break;
@@ -169,13 +169,13 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 			JS_GetProperty(cx, obj, "onmousewheel", &functionVal);
 			if ( !JSVAL_IS_VOID( functionVal ) ) {
 
-				J_S_ASSERT_FUNCTION(functionVal); // (TBD) return value of assert is not compatible with this function (WndProc)
+				JL_S_ASSERT_FUNCTION(functionVal); // (TBD) return value of assert is not compatible with this function (WndProc)
 				jsval argv[] = { INT_TO_JSVAL( GET_WHEEL_DELTA_WPARAM(wParam)/WHEEL_DELTA ), BOOLEAN_TO_JSVAL(wParam & MK_LBUTTON), BOOLEAN_TO_JSVAL(wParam & MK_RBUTTON), BOOLEAN_TO_JSVAL(wParam & MK_MBUTTON) };
 				JSTempValueRooter tvr;
 				JS_PUSH_TEMP_ROOT(cx, COUNTOF(argv), argv, &tvr); // not really needed
 				JSBool status = JS_CallFunctionValue(cx, obj, functionVal, COUNTOF(argv), argv, &rval);
 				JS_POP_TEMP_ROOT(cx, &tvr);
-				J_CHK( status );
+				JL_CHK( status );
 				return 0;
 			}
 			break;
@@ -188,7 +188,7 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 				// xPos = GET_X_LPARAM(lParam);
 				// yPos = GET_Y_LPARAM(lParam);
 
-				J_S_ASSERT_FUNCTION(functionVal); // (TBD) return value of assert is not compatible with this function (WndProc)
+				JL_S_ASSERT_FUNCTION(functionVal); // (TBD) return value of assert is not compatible with this function (WndProc)
 				jsval argv[] = { INT_TO_JSVAL( message==WM_LBUTTONDOWN ? 1 : message==WM_RBUTTONDOWN ? 2 : message==WM_MBUTTONDOWN ? 3 : 0 ), JSVAL_TRUE };
 //					BOOLEAN_TO_JSVAL(wParam & MK_LBUTTON),
 //					BOOLEAN_TO_JSVAL(wParam & MK_RBUTTON),
@@ -197,7 +197,7 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 				JS_PUSH_TEMP_ROOT(cx, COUNTOF(argv), argv, &tvr); // not really needed
 				JSBool status = JS_CallFunctionValue(cx, obj, functionVal, COUNTOF(argv), argv, &rval);
 				JS_POP_TEMP_ROOT(cx, &tvr);
-				J_CHK( status );
+				JL_CHK( status );
 				return 0;
 			}
 			break;
@@ -210,13 +210,13 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 				// xPos = GET_X_LPARAM(lParam);
 				// yPos = GET_Y_LPARAM(lParam);
 
-				J_S_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." );
+				JL_S_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." );
 				jsval argv[] = { INT_TO_JSVAL( message==WM_LBUTTONUP ? 1 : message==WM_RBUTTONUP ? 2 : message==WM_MBUTTONUP ? 3 : 0 ), JSVAL_FALSE };
 				JSTempValueRooter tvr;
 				JS_PUSH_TEMP_ROOT(cx, COUNTOF(argv), argv, &tvr); // not really needed
 				JSBool status = JS_CallFunctionValue(cx, obj, functionVal, COUNTOF(argv), argv, &rval);
 				JS_POP_TEMP_ROOT(cx, &tvr);
-				J_CHK( status );
+				JL_CHK( status );
 				return 0;
 			}
 			break;
@@ -235,31 +235,31 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 DEFINE_CONSTRUCTOR() {
 
 //	JSClass *test = JS_GetClass(obj);
-	J_S_ASSERT_CLASS( obj, _class );
+	JL_S_ASSERT_CLASS( obj, _class );
 	HINSTANCE hInst = (HINSTANCE)GetModuleHandle(NULL);
-	J_S_ASSERT( hInst != NULL, "Unable to GetModuleHandle." );
+	JL_S_ASSERT( hInst != NULL, "Unable to GetModuleHandle." );
 
 	// hCursor doc: To use a predefined cursors, the application must set the hInstance parameter to NULL and the lpCursorName parameter to one the cursor values.
 	WNDCLASS wc = { CS_HREDRAW | CS_VREDRAW | CS_OWNDC, (WNDPROC)WndProc, 0, 0, hInst, LoadIcon((HINSTANCE)NULL, IDI_APPLICATION), LoadCursor((HINSTANCE) NULL, IDC_ARROW), NULL, NULL, WINDOW_CLASS_NAME };
 	ATOM rc = RegisterClass(&wc);
-	J_S_ASSERT( rc != 0, "Unable to RegisterClass." );
+	JL_S_ASSERT( rc != 0, "Unable to RegisterClass." );
 
 // http://nehe.gamedev.net/data/lessons/lesson.asp?lesson=01
 //	AdjustWindowRectEx(&WindowRect, dwStyle, FALSE, dwExStyle);
 
 	HWND hWnd = CreateWindow( (LPSTR)rc, NULL,    WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN | WS_CLIPSIBLINGS,
 	                          CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,    (HWND)NULL, (HMENU)NULL, hInst, (LPVOID)NULL);
-	J_S_ASSERT( hWnd != NULL, "Unable to CreateWindow." );
-	JS_SetPrivate(cx, obj, hWnd);
+	JL_S_ASSERT( hWnd != NULL, "Unable to CreateWindow." );
+	JL_SetPrivate(cx, obj, hWnd);
 
 	CxObj *cxobj = (CxObj*)malloc(sizeof(CxObj));
 	cxobj->cx = cx;
 	cxobj->obj = obj;
 
 	DWORD err;
-	J_SAFE(SetLastError(0));
+	JL_SAFE(SetLastError(0));
 	LONG prevWindowLong = SetWindowLong(hWnd, GWL_USERDATA, (LONG)cxobj );
-	J_S_ASSERT_1( prevWindowLong != 0 || (err=GetLastError()) == 0, "Unable to SetWindowLong. (error %d)", err );
+	JL_S_ASSERT_1( prevWindowLong != 0 || (err=GetLastError()) == 0, "Unable to SetWindowLong. (error %d)", err );
 	return JS_TRUE;
 }
 
@@ -270,13 +270,13 @@ bool TrackMouseLeave( HWND hWnd ) {
 	trackMouseEvent.dwFlags = TME_LEAVE;
 	trackMouseEvent.hwndTrack = hWnd;
 	return TrackMouseEvent(&trackMouseEvent) != 0;
-//	J_S_ASSERT_1( status != 0, "Unable to TrackMouseEvent.(%d)", GetLastError() );
+//	JL_S_ASSERT_1( status != 0, "Unable to TrackMouseEvent.(%d)", GetLastError() );
 }
 
 DEFINE_FUNCTION( Open ) {
 
-	HWND hWnd = (HWND)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE( hWnd );
+	HWND hWnd = (HWND)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( hWnd );
 
 	ShowWindow(hWnd, SW_SHOWNORMAL);
 	SetForegroundWindow(hWnd);
@@ -288,8 +288,8 @@ DEFINE_FUNCTION( Open ) {
 
 DEFINE_FUNCTION( ProcessEvents ) {
 
-	HWND hWnd = (HWND)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE( hWnd );
+	HWND hWnd = (HWND)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( hWnd );
 
 //	jsval functionVal;
 	int msgCount;
@@ -300,12 +300,12 @@ DEFINE_FUNCTION( ProcessEvents ) {
 /*
 		JS_GetProperty(cx, obj, "onidle", &functionVal);
 		if ( !JSVAL_IS_VOID( functionVal ) ) {
-			J_S_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." );
-			J_CHK( JS_CallFunctionValue(cx, obj, functionVal, 0, NULL, rval) );
+			JL_S_ASSERT( JS_TypeOfValue( cx, functionVal ) == JSTYPE_FUNCTION, "Need a function." );
+			JL_CHK( JS_CallFunctionValue(cx, obj, functionVal, 0, NULL, rval) );
 		}
 */
 
-		J_SAFE( msgCount = 0 );
+		JL_SAFE( msgCount = 0 );
 		while(PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) { //GetInputState() // determines whether there are mouse-button or keyboard messages in the calling thread's message queue.
 
 			if (JS_IsExceptionPending(cx)) // need JS_ErrorFromException(...) ??
@@ -318,7 +318,7 @@ DEFINE_FUNCTION( ProcessEvents ) {
 				*rval = INT_TO_JSVAL((int)msg.wParam);
 //				quit = true;
 			}
-			J_S_ASSERT( ++msgCount < 100, "Message loop deadlock detected." );
+			JL_S_ASSERT( ++msgCount < 100, "Message loop deadlock detected." );
 		}
 
 //	} while(!quit);
@@ -331,8 +331,8 @@ DEFINE_FUNCTION( Close ) {
 
 // some events can occur after this point, then we NUST keep cxobj as long as possible
 
-	HWND hWnd = (HWND)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE( hWnd );
+	HWND hWnd = (HWND)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( hWnd );
 
 	CxObj *cxobj = (CxObj*)GetWindowLong(hWnd, GWL_USERDATA);
 	DestroyWindow(hWnd);
@@ -355,7 +355,7 @@ static JSBool Exit(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval 
 
 DEFINE_FUNCTION( WaitForMessage ) {
 
-	J_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_ARG_MIN(1);
 	int32 val;
 	JS_ValueToInt32(cx, argv[0], &val);
 
@@ -397,30 +397,30 @@ static JSBool _SwapBuffers(JSContext *cx, JSObject *obj, uintN argc, jsval *argv
 
 	glFlush();
 	glFinish();
-	J_S_ASSERT( JL_GetClass(obj) == _class, RT_ERROR_INVALID_CLASS );
+	JL_S_ASSERT( JL_GetClass(obj) == _class, RT_ERROR_INVALID_CLASS );
 	HDC hDC = wglGetCurrentDC();
-	J_S_ASSERT( hDC != NULL, "Could not get the Current Device Context." );
+	JL_S_ASSERT( hDC != NULL, "Could not get the Current Device Context." );
 	BOOL res = SwapBuffers(hDC); // Doc: With multithread applications, flush the drawing commands in any other threads drawing to the same window before calling SwapBuffers.
-	J_S_ASSERT_1( res, "Unable to SwapBuffers.(%x)", GetLastError() );
+	JL_S_ASSERT_1( res, "Unable to SwapBuffers.(%x)", GetLastError() );
 	return JS_TRUE;
 }
 */
 
 DEFINE_FUNCTION( CreateOpenGLContext ) {
 
-//	J_S_ASSERT( JS_IsConstructing(cx) && JL_GetClass(obj) == _class, RT_ERROR_INVALID_CLASS );
-//	J_S_ASSERT_ARG_MIN(1);
-//	J_S_ASSERT_OBJECT(argv[0]);
-//	J_S_ASSERT_CLASS(JSVAL_TO_OBJECT(argv[0]), &classWindow);
+//	JL_S_ASSERT( JS_IsConstructing(cx) && JL_GetClass(obj) == _class, RT_ERROR_INVALID_CLASS );
+//	JL_S_ASSERT_ARG_MIN(1);
+//	JL_S_ASSERT_OBJECT(argv[0]);
+//	JL_S_ASSERT_CLASS(JSVAL_TO_OBJECT(argv[0]), &classWindow);
 
-	HWND hWnd = (HWND)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE( hWnd );
+	HWND hWnd = (HWND)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( hWnd );
 
 //	JS_SetReservedSlot(cx, obj, SLOT_WINDOW_OBJECT, argv[0]); // avoid being GC while Gl is in use
 
 	BOOL res;
 	HDC hDC = GetDC(hWnd);
-	J_S_ASSERT( hDC != NULL, "Could not get window Device Context." );
+	JL_S_ASSERT( hDC != NULL, "Could not get window Device Context." );
 
 	// PFD_DRAW_TO_BITMAP : http://msdn.microsoft.com/library/default.asp?url=/library/en-us/dnopen/html/msdn_gl6.asp
 
@@ -446,23 +446,23 @@ DEFINE_FUNCTION( CreateOpenGLContext ) {
 	};
 
 	int pixelFormat = ChoosePixelFormat(hDC, &pfd);
-	J_S_ASSERT( pixelFormat != 0, "Could not Find A Suitable OpenGL PixelFormat." );
+	JL_S_ASSERT( pixelFormat != 0, "Could not Find A Suitable OpenGL PixelFormat." );
 
 	// If you are using the Win32 interface (as opposed to GLUT), call DescribePixelFormat() and check the returned dwFlags bitfield.
 	// If PFD_GENERIC_ACCELERATED is clear and PFD_GENERIC_FORMAT is set, then the pixel format is only supported by the generic implementation.
 	// Hardware acceleration is not possible for this format. For hardware acceleration, you need to choose a different format.
 	DescribePixelFormat(hDC, pixelFormat, sizeof(PIXELFORMATDESCRIPTOR), &pfd); // (TBD) check return value for error
 	bool hasNoAccel = (pfd.dwFlags & PFD_GENERIC_FORMAT) != 0 && (pfd.dwFlags & PFD_GENERIC_ACCELERATED) == 0;
-	J_S_ASSERT( hasNoAccel == false, "Hardware acceleration is not possible for this format." );
+	JL_S_ASSERT( hasNoAccel == false, "Hardware acceleration is not possible for this format." );
 
 	res = SetPixelFormat(hDC,pixelFormat,&pfd);
-	J_S_ASSERT( res, "Could not Set The PixelFormat." );
+	JL_S_ASSERT( res, "Could not Set The PixelFormat." );
 
 	HGLRC hRC = wglCreateContext(hDC);
-	J_S_ASSERT_1( hRC != NULL , "Cannot Create A GL Rendering Context. (%x)", GetLastError() );
+	JL_S_ASSERT_1( hRC != NULL , "Cannot Create A GL Rendering Context. (%x)", GetLastError() );
 
 	res = wglMakeCurrent(hDC,hRC);
-	J_S_ASSERT_1( res, "Cannot Activate The GL Rendering Context. (%x)", GetLastError());
+	JL_S_ASSERT_1( res, "Cannot Activate The GL Rendering Context. (%x)", GetLastError());
 
 //  wglMakeCurrent(NULL,NULL); // This step is not required, but it can help find errors, especially when you are using multiple rendering contexts.
 //  wglDeleteContext(hRC);
@@ -476,11 +476,11 @@ static JSBool _SwapBuffers(JSContext *cx, JSObject *obj, uintN argc, jsval *argv
 
 //	glFlush();
 //	glFinish();
-//	J_S_ASSERT( JL_GetClass(obj) == _class, RT_ERROR_INVALID_CLASS );
+//	JL_S_ASSERT( JL_GetClass(obj) == _class, RT_ERROR_INVALID_CLASS );
 	HDC hDC = wglGetCurrentDC(); // (TBD) un-specialize from OpenGL
-	J_S_ASSERT( hDC != NULL, "Could not get the Current Device Context." );
+	JL_S_ASSERT( hDC != NULL, "Could not get the Current Device Context." );
 	BOOL res = SwapBuffers(hDC); // Doc: With multithread applications, flush the drawing commands in any other threads drawing to the same window before calling SwapBuffers.
-	J_S_ASSERT_1( res, "Unable to SwapBuffers.(%x)", GetLastError() );
+	JL_S_ASSERT_1( res, "Unable to SwapBuffers.(%x)", GetLastError() );
 	return JS_TRUE;
 }
 
@@ -490,17 +490,17 @@ DEFINE_FUNCTION( Mode ) {
 	LONG status;
 	if ( argc > 0 ) {
 
-		J_S_ASSERT_ARG_MIN(3);
+		JL_S_ASSERT_ARG_MIN(3);
 		int32 bits;
 		JSBool fullscreen;
 
 		unsigned int size[2];
 //		IntArrayToVector(cx, 2, argv, size);
 		size_t length;
-		J_CHK( JsvalToUIntVector(cx, argv[0], size, 2, &length) );
-		J_S_ASSERT( length == 2, "Invalid array size." );
-		J_CHK( JS_ValueToInt32(cx, argv[1], &bits) );
-		J_CHK( JS_ValueToBoolean(cx, argv[2], &fullscreen) );
+		JL_CHK( JsvalToUIntVector(cx, argv[0], size, 2, &length) );
+		JL_S_ASSERT( length == 2, "Invalid array size." );
+		JL_CHK( JS_ValueToInt32(cx, argv[1], &bits) );
+		JL_CHK( JS_ValueToBoolean(cx, argv[2], &fullscreen) );
 
 		DEVMODE dmScreenSettings;
 		memset(&dmScreenSettings, 0, sizeof(dmScreenSettings));
@@ -516,21 +516,21 @@ DEFINE_FUNCTION( Mode ) {
 
 		status = ChangeDisplaySettings(NULL, 0);
 	}
-	J_S_ASSERT_1( status == DISP_CHANGE_SUCCESSFUL, "Unable to ChangeDisplaySettings.(%d)", status);
+	JL_S_ASSERT_1( status == DISP_CHANGE_SUCCESSFUL, "Unable to ChangeDisplaySettings.(%d)", status);
 	return JS_TRUE;
 }
 
 
 DEFINE_PROPERTY( clipCursor ) {
 
-	HWND hWnd = (HWND)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_INITIALIZED(hWnd);
+	HWND hWnd = (HWND)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_INITIALIZED(hWnd);
 	JSBool clip;
 	JS_ValueToBoolean(cx, *vp, &clip);
 	RECT r;
 	GetWindowRect(hWnd, &r);
 	BOOL sysStatus = ClipCursor( clip ? &r : NULL );
-	J_S_ASSERT( sysStatus != 0, "Unable to ClipCursor." );
+	JL_S_ASSERT( sysStatus != 0, "Unable to ClipCursor." );
 	return JS_TRUE;
 }
 
@@ -543,8 +543,8 @@ DEFINE_PROPERTY( absoluteClipCursor ) {
 		int v[4];
 //		IntArrayToVector(cx, 4, vp, v);
 		size_t length;
-		J_CHK( JsvalToIntVector(cx, *vp, v, 4, &length) );
-		J_S_ASSERT( length == 4, "Invalid array size." );
+		JL_CHK( JsvalToIntVector(cx, *vp, v, 4, &length) );
+		JL_S_ASSERT( length == 4, "Invalid array size." );
 
 		JSBool clip;
 		JS_ValueToBoolean(cx, *vp, &clip);
@@ -553,7 +553,7 @@ DEFINE_PROPERTY( absoluteClipCursor ) {
 	} else {
 		sysStatus = ClipCursor( NULL );
 	}
-	J_S_ASSERT( sysStatus != 0, "Unable to ClipCursor." );
+	JL_S_ASSERT( sysStatus != 0, "Unable to ClipCursor." );
 	return JS_TRUE;
 }
 
@@ -572,8 +572,8 @@ DEFINE_PROPERTY( showCursor ) {
 
 DEFINE_PROPERTY( clientRect ) {
 
-	HWND hWnd = (HWND)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(hWnd);
+	HWND hWnd = (HWND)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(hWnd);
 	RECT r;
 	GetClientRect(hWnd, &r);
 
@@ -581,7 +581,7 @@ DEFINE_PROPERTY( clientRect ) {
 	if ( !JsvalIsArray(cx, *vp) ) {
 
 		arrayObj = JS_NewArrayObject(cx, 0, NULL);
-		J_CHK(arrayObj);
+		JL_CHK(arrayObj);
 		*vp = OBJECT_TO_JSVAL(arrayObj);
 	} else { // reusing the stored array is a good idea.
 
@@ -590,21 +590,21 @@ DEFINE_PROPERTY( clientRect ) {
 
 	jsval value;
 	value = INT_TO_JSVAL(r.left);
-	J_CHK( JS_SetElement(cx, arrayObj, 0, &value) );
+	JL_CHK( JS_SetElement(cx, arrayObj, 0, &value) );
 	value = INT_TO_JSVAL(r.top);
-	J_CHK( JS_SetElement(cx, arrayObj, 1, &value) );
+	JL_CHK( JS_SetElement(cx, arrayObj, 1, &value) );
 	value = INT_TO_JSVAL(r.right);
-	J_CHK( JS_SetElement(cx, arrayObj, 2, &value) );
+	JL_CHK( JS_SetElement(cx, arrayObj, 2, &value) );
 	value = INT_TO_JSVAL(r.bottom);
-	J_CHK( JS_SetElement(cx, arrayObj, 3, &value) );
+	JL_CHK( JS_SetElement(cx, arrayObj, 3, &value) );
 	return JS_TRUE;
 }
 
 
 DEFINE_PROPERTY( rectGetter ) {
 
-	HWND hWnd = (HWND)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(hWnd);
+	HWND hWnd = (HWND)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(hWnd);
 	RECT r;
 	GetWindowRect(hWnd, &r);
 	//	IntVectorToArray(cx, COUNTOF(vector), vector, vp);
@@ -614,17 +614,17 @@ DEFINE_PROPERTY( rectGetter ) {
 		JSObject *arrayObj = JSVAL_TO_OBJECT(*vp);
 		jsval value;
 		value = INT_TO_JSVAL(r.left);
-		J_CHK( JS_SetElement(cx, arrayObj, 0, &value) );
+		JL_CHK( JS_SetElement(cx, arrayObj, 0, &value) );
 		value = INT_TO_JSVAL(r.top);
-		J_CHK( JS_SetElement(cx, arrayObj, 1, &value) );
+		JL_CHK( JS_SetElement(cx, arrayObj, 1, &value) );
 		value = INT_TO_JSVAL(r.right);
-		J_CHK( JS_SetElement(cx, arrayObj, 2, &value) );
+		JL_CHK( JS_SetElement(cx, arrayObj, 2, &value) );
 		value = INT_TO_JSVAL(r.bottom);
-		J_CHK( JS_SetElement(cx, arrayObj, 3, &value) );
+		JL_CHK( JS_SetElement(cx, arrayObj, 3, &value) );
 	} else {
 */
 	int vector[] = { r.left, r.top, r.right, r.bottom };
-	J_CHK( IntVectorToJsval(cx, vector, COUNTOF(vector), vp) );
+	JL_CHK( IntVectorToJsval(cx, vector, COUNTOF(vector), vp) );
 //	}
 	return JS_TRUE;
 }
@@ -632,16 +632,16 @@ DEFINE_PROPERTY( rectGetter ) {
 
 DEFINE_PROPERTY( rectSetter ) {
 
-	HWND hWnd = (HWND)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(hWnd);
+	HWND hWnd = (HWND)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(hWnd);
 	int v[4];
 
 //	IntArrayToVector(cx, 4, vp, v);
 	unsigned int length;
 
 //	J_JSVAL_TO_INT_VECTOR(*vp, v, length);
-	J_CHK( JsvalToIntVector(cx, *vp, v, 4, &length) );
-	J_S_ASSERT( length == 4, "Invalid array size." );
+	JL_CHK( JsvalToIntVector(cx, *vp, v, 4, &length) );
+	JL_S_ASSERT( length == 4, "Invalid array size." );
 
 	SetWindowPos(hWnd, 0, v[0], v[1], v[2] - v[0], v[3] - v[1], SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_NOACTIVATE);
 	return JS_TRUE;
@@ -650,69 +650,69 @@ DEFINE_PROPERTY( rectSetter ) {
 
 DEFINE_PROPERTY( cursorAbsolutePositionSetter ) {
 
-	HWND hWnd = (HWND)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(hWnd);
+	HWND hWnd = (HWND)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(hWnd);
 	int vec[2];
 
 //	IntArrayToVector(cx, 2, vp, vec);
 	size_t length;
-	J_CHK( JsvalToIntVector(cx, *vp, vec, 2, &length) );
-	J_S_ASSERT( length == 2, "Invalid array size." );
+	JL_CHK( JsvalToIntVector(cx, *vp, vec, 2, &length) );
+	JL_S_ASSERT( length == 2, "Invalid array size." );
 
 	BOOL sysStatus = SetCursorPos(vec[0], vec[1]); // http://windowssdk.msdn.microsoft.com/en-us/library/ms648394.aspx
-	J_S_ASSERT( sysStatus != 0, "Unable to SetCursorPos." );
+	JL_S_ASSERT( sysStatus != 0, "Unable to SetCursorPos." );
 	return JS_TRUE;
 }
 
 
 DEFINE_PROPERTY( cursorAbsolutePositionGetter ) {
 
-	HWND hWnd = (HWND)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(hWnd);
+	HWND hWnd = (HWND)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(hWnd);
 	POINT pt;
 	GetCursorPos( &pt );
 	int vector[] = { pt.x, pt.y };
 	//IntVectorToArray(cx, COUNTOF(vector), vector, vp);
-	J_CHK( IntVectorToJsval(cx, vector, COUNTOF(vector), vp) );
+	JL_CHK( IntVectorToJsval(cx, vector, COUNTOF(vector), vp) );
 	return JS_TRUE;
 }
 
 DEFINE_PROPERTY( cursorPositionSetter ) {
 
-	HWND hWnd = (HWND)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(hWnd);
+	HWND hWnd = (HWND)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(hWnd);
 	int vec[2];
 //	IntArrayToVector(cx, 2, vp, vec);
 	size_t length;
-	J_CHK( JsvalToIntVector(cx, *vp, vec, 2, &length) );
-	J_S_ASSERT( length == 2, "Invalid array size." );
+	JL_CHK( JsvalToIntVector(cx, *vp, vec, 2, &length) );
+	JL_S_ASSERT( length == 2, "Invalid array size." );
 
 	POINT pt = { vec[0], vec[1] };
 	ClientToScreen(hWnd, &pt);
 	BOOL sysStatus = SetCursorPos(pt.x, pt.y); // http://windowssdk.msdn.microsoft.com/en-us/library/ms648394.aspx
-	J_S_ASSERT( sysStatus != 0, "Unable to SetCursorPos." );
+	JL_S_ASSERT( sysStatus != 0, "Unable to SetCursorPos." );
 	return JS_TRUE;
 }
 
 DEFINE_PROPERTY( cursorPositionGetter ) {
 
-	HWND hWnd = (HWND)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(hWnd);
+	HWND hWnd = (HWND)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(hWnd);
 	POINT pt;
 	GetCursorPos( &pt );
 	ScreenToClient(hWnd, &pt);
 	int vector[] = { pt.x, pt.y };
 //	IntVectorToArray(cx, COUNTOF(vector), vector, vp);
-	J_CHK( IntVectorToJsval(cx, vector, COUNTOF(vector), vp) );
+	JL_CHK( IntVectorToJsval(cx, vector, COUNTOF(vector), vp) );
 	return JS_TRUE;
 }
 
 DEFINE_PROPERTY( title ) {
 
-	HWND hWnd = (HWND)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(hWnd);
+	HWND hWnd = (HWND)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(hWnd);
 	const char *title;
-	J_CHK( JsvalToString(cx, vp, &title) );
+	JL_CHK( JsvalToString(cx, vp, &title) );
 	SetWindowText(hWnd, title);
 	return JS_TRUE;
 }
@@ -720,8 +720,8 @@ DEFINE_PROPERTY( title ) {
 
 DEFINE_PROPERTY( showFrame ) {
 
-	HWND hWnd = (HWND)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(hWnd);
+	HWND hWnd = (HWND)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(hWnd);
 
 	JSBool show;
 	JS_ValueToBoolean(cx, *vp, &show);
@@ -748,15 +748,15 @@ DEFINE_PROPERTY( desktopRect ) {
 	GetWindowRect(GetDesktopWindow(), &r);
 	int vector[] = { r.left, r.top, r.right, r.bottom };
 //	IntVectorToArray(cx, COUNTOF(vector), vector, vp);
-	J_CHK( IntVectorToJsval(cx, vector, COUNTOF(vector), vp) );
+	JL_CHK( IntVectorToJsval(cx, vector, COUNTOF(vector), vp) );
 	return JS_TRUE;
 }
 
 
 DEFINE_PROPERTY( captureMouse ) {
 
-	HWND hWnd = (HWND)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(hWnd);
+	HWND hWnd = (HWND)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(hWnd);
 	JSBool capture;
 	JS_ValueToBoolean(cx, *vp, &capture);
 
@@ -771,16 +771,16 @@ DEFINE_PROPERTY( captureMouse ) {
 
 DEFINE_PROPERTY( activeGetter ) {
 
-	HWND hWnd = (HWND)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(hWnd);
+	HWND hWnd = (HWND)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(hWnd);
 	*vp = BOOLEAN_TO_JSVAL( GetActiveWindow() == hWnd );
 	return JS_TRUE;
 }
 
 DEFINE_PROPERTY( activeSetter ) {
 
-	HWND hWnd = (HWND)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(hWnd);
+	HWND hWnd = (HWND)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(hWnd);
 	JSBool active;
 	JS_ValueToBoolean(cx, *vp, &active);
 	if ( active )

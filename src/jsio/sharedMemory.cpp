@@ -56,8 +56,8 @@ JSBool Unlock( JSContext *cx, ClassPrivate *pv ) {
 
 static JSBool BufferGet( JSContext *cx, JSObject *obj, const char **buf, size_t *size ) {
 
-	ClassPrivate *pv = (ClassPrivate*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE( pv );
+	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( pv );
 	MemHeader *mh;
 	mh = (MemHeader*)pv->mem;
 	*buf = (char *)pv->mem + sizeof(MemHeader);
@@ -70,10 +70,10 @@ static JSBool BufferGet( JSContext *cx, JSObject *obj, const char **buf, size_t 
 
 JSBool CloseSharedMemory( JSContext *cx, JSObject *obj ) {
 
-	ClassPrivate *pv = (ClassPrivate*)JS_GetPrivate(cx, J_OBJ);
-	J_S_ASSERT_RESOURCE(pv);
+	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(cx, JL_OBJ);
+	JL_S_ASSERT_RESOURCE(pv);
 
-	J_CHKB( PR_WaitSemaphore( pv->accessSem ) == PR_SUCCESS, bad_ioerror );
+	JL_CHKB( PR_WaitSemaphore( pv->accessSem ) == PR_SUCCESS, bad_ioerror );
 
 	MemHeader *mh;
 	mh = (MemHeader*)pv->mem;
@@ -82,23 +82,23 @@ JSBool CloseSharedMemory( JSContext *cx, JSObject *obj ) {
 	isLast = (mh->accessCount == 0);
 	mh->accessCount--;
 
-	J_CHKB( PR_DetachSharedMemory(pv->shm, pv->mem) == PR_SUCCESS, bad_ioerror );
-	J_CHKB( PR_CloseSharedMemory(pv->shm) == PR_SUCCESS, bad_ioerror );
+	JL_CHKB( PR_DetachSharedMemory(pv->shm, pv->mem) == PR_SUCCESS, bad_ioerror );
+	JL_CHKB( PR_CloseSharedMemory(pv->shm) == PR_SUCCESS, bad_ioerror );
 
-	J_CHKB( PR_PostSemaphore(pv->accessSem) == PR_SUCCESS, bad_ioerror );
-	J_CHKB( PR_CloseSemaphore(pv->accessSem) == PR_SUCCESS, bad_ioerror );
+	JL_CHKB( PR_PostSemaphore(pv->accessSem) == PR_SUCCESS, bad_ioerror );
+	JL_CHKB( PR_CloseSemaphore(pv->accessSem) == PR_SUCCESS, bad_ioerror );
 
 	if ( isLast ) {
 
-		J_CHKB( PR_DeleteSharedMemory(pv->name) == PR_SUCCESS, bad_ioerror );
+		JL_CHKB( PR_DeleteSharedMemory(pv->name) == PR_SUCCESS, bad_ioerror );
 		char semName[PATH_MAX];
 		strcpy(semName, pv->name);
 		strcat(semName, SEMAPHORE_EXTENSION);
-		J_CHKB( PR_DeleteSemaphore(semName) == PR_SUCCESS, bad_ioerror );
+		JL_CHKB( PR_DeleteSemaphore(semName) == PR_SUCCESS, bad_ioerror );
 	}
 
 	JS_free(cx, pv);
-	J_CHK( JS_SetPrivate(cx, J_OBJ, NULL) );
+	JL_CHK( JL_SetPrivate(cx, JL_OBJ, NULL) );
 
 	return JS_TRUE;
 bad_ioerror:
@@ -116,7 +116,7 @@ BEGIN_CLASS( SharedMemory )
 
 DEFINE_FINALIZE() {
 
-	if ( !JS_GetPrivate(cx, J_OBJ) )
+	if ( !JL_GetPrivate(cx, JL_OBJ) )
 		return;
 	CloseSharedMemory(cx, obj);
 }
@@ -135,20 +135,20 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
-	J_S_ASSERT_CONSTRUCTING();
-	J_S_ASSERT_THIS_CLASS();
-	J_S_ASSERT_ARG_MIN( 2 );
+	JL_S_ASSERT_CONSTRUCTING();
+	JL_S_ASSERT_THIS_CLASS();
+	JL_S_ASSERT_ARG_MIN( 2 );
 
 	unsigned int size;
-	J_CHK( JsvalToUInt(cx, J_ARG(2), &size) );
+	JL_CHK( JsvalToUInt(cx, JL_ARG(2), &size) );
 
 	unsigned int mode;
 	mode = PR_IRUSR | PR_IWUSR; // read write permission for owner.
-	if ( J_ARG_ISDEF(3) )
-		J_CHK( JsvalToUInt(cx, J_ARG(3), &mode) );
+	if ( JL_ARG_ISDEF(3) )
+		JL_CHK( JsvalToUInt(cx, JL_ARG(3), &mode) );
 
 	const char *name;
-	J_CHK( JsvalToString(cx, &J_ARG(1), &name) );
+	JL_CHK( JsvalToString(cx, &JL_ARG(1), &name) );
 
 	char semName[PATH_MAX];
 	strcpy(semName, name);
@@ -162,23 +162,23 @@ DEFINE_CONSTRUCTOR() {
 	if ( accessSem == NULL ) {
 
 		accessSem = PR_OpenSemaphore(semName, 0, 0, 0); // If PR_SEM_CREATE is not specified, the third and fourth arguments are ignored.
-		J_CHKB( accessSem != NULL, bad_ioerror );
+		JL_CHKB( accessSem != NULL, bad_ioerror );
 		isCreation = false;
 	}
 
-	J_CHKB( PR_WaitSemaphore( accessSem ) == PR_SUCCESS, bad_ioerror );
+	JL_CHKB( PR_WaitSemaphore( accessSem ) == PR_SUCCESS, bad_ioerror );
 
 	PRSharedMemory *shm;
 	shm = PR_OpenSharedMemory( name, size + sizeof(MemHeader), PR_SHM_CREATE, mode );
-	J_CHKB( shm != NULL, bad_ioerror ); // PR_SHM_READONLY
+	JL_CHKB( shm != NULL, bad_ioerror ); // PR_SHM_READONLY
 
 	void *mem;
 	mem = PR_AttachSharedMemory(shm, 0);
-	J_CHKB( mem != NULL, bad_ioerror ); // PR_SHM_READONLY
+	JL_CHKB( mem != NULL, bad_ioerror ); // PR_SHM_READONLY
 
 	ClassPrivate *pv;
 	pv = (ClassPrivate*)JS_malloc(cx, sizeof(ClassPrivate));
-	J_CHK( pv );
+	JL_CHK( pv );
 
 	strcpy(pv->name, name);
 	pv->shm = shm;
@@ -198,9 +198,9 @@ DEFINE_CONSTRUCTOR() {
 		mh->accessCount++;
 	}
 
-	J_CHKB( PR_PostSemaphore( accessSem ) == PR_SUCCESS, bad_ioerror );
-	J_CHK( JS_SetPrivate(cx, obj, pv) );
-	J_CHK( SetBufferGetInterface(cx, obj, BufferGet) );
+	JL_CHKB( PR_PostSemaphore( accessSem ) == PR_SUCCESS, bad_ioerror );
+	JL_CHK( JL_SetPrivate(cx, obj, pv) );
+	JL_CHK( SetBufferGetInterface(cx, obj, BufferGet) );
 
 	return JS_TRUE;
 
@@ -221,23 +221,23 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Write ) {
 
-	J_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_ARG_MIN( 1 );
 	ClassPrivate *pv;
-	pv = (ClassPrivate*)JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_RESOURCE( pv );
+	pv = (ClassPrivate*)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE( pv );
 
 	unsigned int offset;
 	offset = 0;
-	if ( J_FARG_ISDEF(2) )
-		J_CHK( JsvalToUInt(cx, J_FARG(2), &offset) );
+	if ( JL_FARG_ISDEF(2) )
+		JL_CHK( JsvalToUInt(cx, JL_FARG(2), &offset) );
 
 	const char *data;
 	size_t dataLength;
-	J_CHK( JsvalToStringAndLength(cx, &J_FARG(1), &data, &dataLength) );
+	JL_CHK( JsvalToStringAndLength(cx, &JL_FARG(1), &data, &dataLength) );
 
-	J_S_ASSERT( sizeof(MemHeader) + offset + dataLength <= pv->size, "SharedMemory too small to hold the given data." );
+	JL_S_ASSERT( sizeof(MemHeader) + offset + dataLength <= pv->size, "SharedMemory too small to hold the given data." );
 
-	J_CHK( Lock(cx, pv) );
+	JL_CHK( Lock(cx, pv) );
 
 	MemHeader *mh;
 	mh = (MemHeader*)pv->mem;
@@ -245,7 +245,7 @@ DEFINE_FUNCTION_FAST( Write ) {
 		mh->currentDataLength = offset + dataLength;
 	memmove(	(char *)pv->mem + sizeof(MemHeader) + offset, data, dataLength );
 
-	J_CHK( Unlock(cx, pv) );
+	JL_CHK( Unlock(cx, pv) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -259,34 +259,34 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Read ) {
 
-	ClassPrivate *pv = (ClassPrivate*)JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_RESOURCE( pv );
+	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE( pv );
 
 	unsigned int offset;
 	offset = 0;
-	if ( J_FARG_ISDEF(2) )
-		J_CHK( JsvalToUInt(cx, J_FARG(2), &offset) );
+	if ( JL_FARG_ISDEF(2) )
+		JL_CHK( JsvalToUInt(cx, JL_FARG(2), &offset) );
 
-	J_CHK( Lock(cx, pv) );
+	JL_CHK( Lock(cx, pv) );
 	MemHeader *mh;
 	mh = (MemHeader*)pv->mem;
 
 	unsigned int dataLength;
-	if ( J_FARG_ISDEF(1) )
-		J_CHK( JsvalToUInt(cx, J_FARG(1), &dataLength) );
+	if ( JL_FARG_ISDEF(1) )
+		JL_CHK( JsvalToUInt(cx, JL_FARG(1), &dataLength) );
 	else
 		dataLength = mh->currentDataLength;
 
 	char *data;
 	data = (char*)JS_malloc(cx, dataLength +1);
-	J_CHK( data );
+	JL_CHK( data );
 	data[dataLength] = '\0';
 
 	memmove(	data, (char *)pv->mem + sizeof(MemHeader) + offset, dataLength );
 
-	J_CHK( Unlock(cx, pv) );
+	JL_CHK( Unlock(cx, pv) );
 
-	J_CHK( J_NewBlob( cx, data, dataLength, J_FRVAL ) );
+	JL_CHK( JL_NewBlob( cx, data, dataLength, JL_FRVAL ) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -300,17 +300,17 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Clear ) {
 
-	J_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_ARG_MIN( 1 );
 	ClassPrivate *pv;
-	pv = (ClassPrivate*)JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_RESOURCE( pv );
+	pv = (ClassPrivate*)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE( pv );
 
-	J_CHK( Lock(cx, pv) );
+	JL_CHK( Lock(cx, pv) );
 	MemHeader *mh;
 	mh = (MemHeader*)pv->mem;
 	mh->currentDataLength = 0;
 	memset( (char *)pv->mem + sizeof(MemHeader), 0, pv->size - sizeof(MemHeader) );
-	J_CHK( Unlock(cx, pv) );
+	JL_CHK( Unlock(cx, pv) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -324,9 +324,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Close ) {
 
-	ClassPrivate *pv = (ClassPrivate*)JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_RESOURCE( pv );
-	J_CHK( CloseSharedMemory(cx, J_FOBJ) );
+	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE( pv );
+	JL_CHK( CloseSharedMemory(cx, JL_FOBJ) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -343,32 +343,32 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( contentSetter ) {
 
-	ClassPrivate *pv = (ClassPrivate*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE( pv );
+	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( pv );
 
 	if ( JSVAL_IS_VOID( *vp ) ) {
 
-		J_CHK( Lock(cx, pv) );
+		JL_CHK( Lock(cx, pv) );
 		MemHeader *mh = (MemHeader*)pv->mem;
 		mh->currentDataLength = 0;
 		memset( (char *)pv->mem + sizeof(MemHeader), 0, pv->size - sizeof(MemHeader) );
-		J_CHK( Unlock(cx, pv) );
+		JL_CHK( Unlock(cx, pv) );
 	} else {
 
 		const char *data;
 		size_t dataLength;
-		J_CHK( JsvalToStringAndLength(cx, vp, &data, &dataLength) );
+		JL_CHK( JsvalToStringAndLength(cx, vp, &data, &dataLength) );
 
-		J_S_ASSERT( sizeof(MemHeader) + dataLength <= pv->size, "SharedMemory too small to hold the given data." );
+		JL_S_ASSERT( sizeof(MemHeader) + dataLength <= pv->size, "SharedMemory too small to hold the given data." );
 
-		J_CHK( Lock(cx, pv) );
+		JL_CHK( Lock(cx, pv) );
 
 		MemHeader *mh = (MemHeader*)pv->mem;
 		if ( dataLength > mh->currentDataLength )
 			mh->currentDataLength = dataLength;
 		memmove(	(char *)pv->mem + sizeof(MemHeader), data, dataLength );
 
-		J_CHK( Unlock(cx, pv) );
+		JL_CHK( Unlock(cx, pv) );
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -377,10 +377,10 @@ DEFINE_PROPERTY( contentSetter ) {
 
 DEFINE_PROPERTY( contentGetter ) {
 
-	ClassPrivate *pv = (ClassPrivate*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE( pv );
+	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( pv );
 
-	J_CHK( Lock(cx, pv) );
+	JL_CHK( Lock(cx, pv) );
 
 	MemHeader *mh;
 	mh = (MemHeader*)pv->mem;
@@ -389,14 +389,14 @@ DEFINE_PROPERTY( contentGetter ) {
 	dataLength = mh->currentDataLength;
 	char *data;
 	data = (char*)JS_malloc(cx, dataLength +1);
-	J_CHK( data );
+	JL_CHK( data );
 	data[dataLength] = '\0';
 
 	memmove(	data, (char *)pv->mem + sizeof(MemHeader), dataLength );
 
-	J_CHK( Unlock(cx, pv) );
+	JL_CHK( Unlock(cx, pv) );
 
-	J_CHK( J_NewBlob( cx, data, dataLength, vp ) );
+	JL_CHK( JL_NewBlob( cx, data, dataLength, vp ) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -413,20 +413,20 @@ TypeError: can't XDR class Array
 
 DEFINE_PROPERTY( xdrSetter ) {
 
-	ClassPrivate *pv = (ClassPrivate*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE( pv );
+	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( pv );
 
-	J_CHK( Lock(cx, pv) );
+	JL_CHK( Lock(cx, pv) );
 	MemHeader *mh = (MemHeader*)pv->mem;
 
 	JSXDRState *xdr = JS_XDRNewMem(cx, JSXDR_ENCODE);
-	J_S_ASSERT( xdr, "Unable to create XDR encoder." );
+	JL_S_ASSERT( xdr, "Unable to create XDR encoder." );
 
-	J_CHK( JS_XDRValue( xdr, vp ) );
+	JL_CHK( JS_XDRValue( xdr, vp ) );
 
 	uint32 length;
 	void *buffer = JS_XDRMemGetData( xdr, &length );
-	J_S_ASSERT( buffer, "Unable to create XDR data." );
+	JL_S_ASSERT( buffer, "Unable to create XDR data." );
 
 	memmove( (char*)pv->mem + sizeof(MemHeader), buffer, length );
 
@@ -434,7 +434,7 @@ DEFINE_PROPERTY( xdrSetter ) {
 
 	JS_XDRDestroy( xdr );
 
-	J_CHK( Unlock(cx, pv) );
+	JL_CHK( Unlock(cx, pv) );
 
 	return JS_TRUE;
 }
@@ -442,23 +442,23 @@ DEFINE_PROPERTY( xdrSetter ) {
 
 DEFINE_PROPERTY( xdrGetter ) {
 
-	ClassPrivate *pv = (ClassPrivate*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE( pv );
+	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( pv );
 
-	J_CHK( Lock(cx, pv) );
+	JL_CHK( Lock(cx, pv) );
 	MemHeader *mh = (MemHeader*)pv->mem;
 
 	JSXDRState *xdr = JS_XDRNewMem(cx, JSXDR_DECODE);
-	J_S_ASSERT( xdr, "Unable to create XDR decoder." );
+	JL_S_ASSERT( xdr, "Unable to create XDR decoder." );
 
 	JS_XDRMemSetData( xdr, (char*)pv->mem + sizeof(MemHeader), mh->currentDataLength );
 
-	J_CHK( JS_XDRValue(xdr, vp) );
+	JL_CHK( JS_XDRValue(xdr, vp) );
 
 	JS_XDRMemSetData(xdr, NULL, 0);
 	JS_XDRDestroy(xdr);
 
-	J_CHK( Unlock(cx, pv) );
+	JL_CHK( Unlock(cx, pv) );
 	return JS_TRUE;
 }
 */

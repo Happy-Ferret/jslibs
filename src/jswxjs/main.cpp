@@ -39,22 +39,22 @@ static HMODULE _moduleList[MAX_WXJS_MODULES] = { NULL };
 
 DEFINE_FUNCTION( LoadWXJSModule ) {
 
-	J_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_ARG_MIN(1);
 	const char *fileName;
-	J_CHK( JsvalToString(cx, &argv[0], &fileName) );
+	JL_CHK( JsvalToString(cx, &argv[0], &fileName) );
 	char libFileName[PATH_MAX];
 	strcpy( libFileName, fileName );
 	strcat( libFileName, DLL_EXT );
 	HMODULE module = ::LoadLibrary(libFileName);
-	J_S_ASSERT_2( module != NULL, "Unable to load the library %s (error:%d).", libFileName, GetLastError() );
+	JL_S_ASSERT_2( module != NULL, "Unable to load the library %s (error:%d).", libFileName, GetLastError() );
 	int i;
 	for ( i = 0; _moduleList[i] != NULL; ++i ); // find a free module slot
-	J_S_ASSERT( i < 32, "unable to load more libraries" );
+	JL_S_ASSERT( i < 32, "unable to load more libraries" );
 	_moduleList[i] = module;
 
 	WXJS_INIT_PROC moduleInit = (WXJS_INIT_PROC)::GetProcAddress( module, WXJS_INIT_CLASS );
 
-	J_S_ASSERT_1( moduleInit != NULL, "Module initialization function not found in %s.", libFileName );
+	JL_S_ASSERT_1( moduleInit != NULL, "Module initialization function not found in %s.", libFileName );
 	*rval = moduleInit( cx, obj ) ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;
 	JL_BAD;

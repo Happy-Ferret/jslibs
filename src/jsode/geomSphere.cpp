@@ -25,7 +25,7 @@ BEGIN_CLASS( GeomSphere )
 
 DEFINE_FINALIZE() {
 
-	ode::dGeomID geomId = (ode::dGeomID)JS_GetPrivate(cx, obj);
+	ode::dGeomID geomId = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	if ( geomId != NULL )
 		ode::dGeomSetData(geomId, NULL);
 }
@@ -37,13 +37,13 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
-	J_S_ASSERT_CONSTRUCTING();
-	J_S_ASSERT_THIS_CLASS();
+	JL_S_ASSERT_CONSTRUCTING();
+	JL_S_ASSERT_THIS_CLASS();
 	ode::dSpaceID space = 0;
 	if ( argc >= 1 ) // place it in a space ?
-		J_CHK( ValToSpaceID(cx, argv[0], &space) );
+		JL_CHK( ValToSpaceID(cx, argv[0], &space) );
 	ode::dGeomID geomId = ode::dCreateSphere(space, 1); // default radius is 1
-	JS_SetPrivate(cx, obj, geomId);
+	JL_SetPrivate(cx, obj, geomId);
 	SetupReadMatrix(cx, obj); // (TBD) check return status
 	ode::dGeomSetData(geomId, obj); // 'obj' do not need to be rooted because Goem's data is reset to NULL when 'obj' is finalized.
 	return JS_TRUE;
@@ -60,9 +60,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( radiusSetter ) {
 
-	ode::dGeomID geom = (ode::dGeomID)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE( geom );
-	J_S_ASSERT_NUMBER( *vp );
+	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( geom );
+	JL_S_ASSERT_NUMBER( *vp );
 	jsdouble radius;
 	JS_ValueToNumber(cx, *vp, &radius);
 	ode::dGeomSphereSetRadius(geom, radius);
@@ -72,8 +72,8 @@ DEFINE_PROPERTY( radiusSetter ) {
 
 DEFINE_PROPERTY( radiusGetter ) {
 
-	ode::dGeomID geom = (ode::dGeomID)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE( geom );
+	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( geom );
 	JS_NewDoubleValue(cx, ode::dGeomSphereGetRadius(geom), vp); // see JS_NewNumberValue and JS_NewDouble
 	return JS_TRUE;
 	JL_BAD;

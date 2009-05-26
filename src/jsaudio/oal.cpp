@@ -42,11 +42,11 @@ DEFINE_FUNCTION_FAST( Open ) {
 
 	// Initialize the OpenAL library (cf. alutInit)
 
-	J_S_ASSERT( alcGetCurrentContext() == NULL, "OpenAL already open." );
+	JL_S_ASSERT( alcGetCurrentContext() == NULL, "OpenAL already open." );
 
 	const char *deviceName;
-	if ( J_FARG_ISDEF(1) )
-		J_CHK( JsvalToString(cx, &J_FARG(1), &deviceName) );
+	if ( JL_FARG_ISDEF(1) )
+		JL_CHK( JsvalToString(cx, &JL_FARG(1), &deviceName) );
 	else
 		deviceName = NULL;
 
@@ -59,7 +59,7 @@ DEFINE_FUNCTION_FAST( Open ) {
 	// If no device name is specified, we will attempt to use DS3D.
 	ALCdevice *device = alcOpenDevice (deviceName);
 	if (device == NULL)
-		J_REPORT_ERROR("ALUT_ERROR_OPEN_DEVICE");
+		JL_REPORT_ERROR("ALUT_ERROR_OPEN_DEVICE");
 
 //	ALint attribs[4] = { 0 };
 //	attribs[0] = ALC_MAX_AUXILIARY_SENDS;
@@ -68,18 +68,18 @@ DEFINE_FUNCTION_FAST( Open ) {
 	ALCcontext *context = alcCreateContext (device, NULL);
 	if (context == NULL) {
 		alcCloseDevice (device);
-		J_REPORT_ERROR("ALUT_ERROR_CREATE_CONTEXT");
+		JL_REPORT_ERROR("ALUT_ERROR_CREATE_CONTEXT");
 	}
 	if (!alcMakeContextCurrent(context)) {
 
 		alcDestroyContext (context);
 		alcCloseDevice (device);
-		J_REPORT_ERROR("ALUT_ERROR_MAKE_CONTEXT_CURRENT");
+		JL_REPORT_ERROR("ALUT_ERROR_MAKE_CONTEXT_CURRENT");
 	}
 
 	InitEfxApi();
 
-	*J_FRVAL = JSVAL_VOID;
+	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -97,21 +97,21 @@ DEFINE_FUNCTION_FAST( Close ) {
 	ResetEfxApi();
 	// cf. alutExit
 	ALCcontext *context = alcGetCurrentContext();
-	J_S_ASSERT( context != NULL, "OpenAL already closed." );
+	JL_S_ASSERT( context != NULL, "OpenAL already closed." );
 	ALCdevice *device;
 	if (!alcMakeContextCurrent (NULL))
-		J_REPORT_ERROR("ALUT_ERROR_MAKE_CONTEXT_CURRENT");
+		JL_REPORT_ERROR("ALUT_ERROR_MAKE_CONTEXT_CURRENT");
 	device = alcGetContextsDevice (context);
 	if (alcGetError (device) != ALC_NO_ERROR )
-		J_REPORT_ERROR("ALUT_ERROR_ALC_ERROR_ON_ENTRY");
+		JL_REPORT_ERROR("ALUT_ERROR_ALC_ERROR_ON_ENTRY");
 	alcDestroyContext (context);
 	if (alcGetError (device) != ALC_NO_ERROR)
-		J_REPORT_ERROR("ALUT_ERROR_DESTROY_CONTEXT");
+		JL_REPORT_ERROR("ALUT_ERROR_DESTROY_CONTEXT");
 	if (!alcMakeContextCurrent(NULL))
-		J_REPORT_ERROR("ALUT_ERROR_MAKE_CONTEXT_CURRENT");
+		JL_REPORT_ERROR("ALUT_ERROR_MAKE_CONTEXT_CURRENT");
 	if (!alcCloseDevice (device))
-		J_REPORT_ERROR("ALUT_ERROR_CLOSE_DEVICE");
-	*J_FRVAL = JSVAL_VOID;
+		JL_REPORT_ERROR("ALUT_ERROR_CLOSE_DEVICE");
+	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -141,7 +141,7 @@ DEFINE_PROPERTY( maxAuxiliarySends ) {
 	ALCdevice *pDevice = alcGetContextsDevice(pContext);
 	ALCint numSends;
 	alcGetIntegerv(pDevice, ALC_MAX_AUXILIARY_SENDS, 1, &numSends);
-	J_CHK( IntToJsval(cx, numSends, vp) );
+	JL_CHK( IntToJsval(cx, numSends, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -158,12 +158,12 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( DopplerFactor ) {
 
-	J_S_ASSERT_ARG_MIN(1);
-	J_S_ASSERT_INT(J_FARG(1));
+	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_INT(JL_FARG(1));
 	float value;
-	J_CHK( JsvalToFloat(cx, J_FARG(1), &value) );
+	JL_CHK( JsvalToFloat(cx, JL_FARG(1), &value) );
 	alDopplerFactor( value );
-	*J_FRVAL = JSVAL_VOID;
+	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -180,12 +180,12 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( DopplerVelocity ) {
 
-	J_S_ASSERT_ARG_MIN(1);
-	J_S_ASSERT_INT(J_FARG(1));
+	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_INT(JL_FARG(1));
 	float value;
-	J_CHK( JsvalToFloat(cx, J_FARG(1), &value) );
+	JL_CHK( JsvalToFloat(cx, JL_FARG(1), &value) );
 	alDopplerVelocity( value );
-	*J_FRVAL = JSVAL_VOID;
+	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -202,12 +202,12 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( SpeedOfSound ) {
 
-	J_S_ASSERT_ARG_MIN(1);
-	J_S_ASSERT_INT(J_FARG(1));
+	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_INT(JL_FARG(1));
 	float value;
-	J_CHK( JsvalToFloat(cx, J_FARG(1), &value) );
+	JL_CHK( JsvalToFloat(cx, JL_FARG(1), &value) );
 	alSpeedOfSound( value );
-	*J_FRVAL = JSVAL_VOID;
+	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -223,12 +223,12 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( DistanceModel ) {
 
-	J_S_ASSERT_ARG_MIN(1);
-	J_S_ASSERT_INT(J_FARG(1));
+	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_INT(JL_FARG(1));
 	unsigned int distanceModel;
-	J_CHK( JsvalToUInt(cx, J_FARG(1), &distanceModel) );
+	JL_CHK( JsvalToUInt(cx, JL_FARG(1), &distanceModel) );
 	alDistanceModel( distanceModel );
-	*J_FRVAL = JSVAL_VOID;
+	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -244,10 +244,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Enable ) {
 
-	J_S_ASSERT_ARG_MIN(1);
-	J_S_ASSERT_INT(J_FARG(1));
-	alEnable( JSVAL_TO_INT(J_FARG(1)) );
-	*J_FRVAL = JSVAL_VOID;
+	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_INT(JL_FARG(1));
+	alEnable( JSVAL_TO_INT(JL_FARG(1)) );
+	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -263,10 +263,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Disable ) {
 
-	J_S_ASSERT_ARG_MIN(1);
-	J_S_ASSERT_INT(J_FARG(1));
-	alDisable( JSVAL_TO_INT(J_FARG(1)) );
-	*J_FRVAL = JSVAL_VOID;
+	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_INT(JL_FARG(1));
+	alDisable( JSVAL_TO_INT(JL_FARG(1)) );
+	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -282,9 +282,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( IsEnabled ) {
 
-	J_S_ASSERT_ARG_MIN(1);
-	J_S_ASSERT_INT(J_FARG(1));
-	*J_FRVAL = BOOLEAN_TO_JSVAL( alIsEnabled( JSVAL_TO_INT(J_FARG(1)) ) );
+	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_INT(JL_FARG(1));
+	*JL_FRVAL = BOOLEAN_TO_JSVAL( alIsEnabled( JSVAL_TO_INT(JL_FARG(1)) ) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -302,17 +302,17 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( GetString ) {
 
-	J_S_ASSERT_ARG_MIN(1);
-	J_S_ASSERT_INT(J_FARG(1));
-	const ALchar* str = alGetString(JSVAL_TO_INT(J_FARG(1)));
+	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_INT(JL_FARG(1));
+	const ALchar* str = alGetString(JSVAL_TO_INT(JL_FARG(1)));
 	if ( str == NULL ) {
 
-		*J_FRVAL = JSVAL_VOID;
+		*JL_FRVAL = JSVAL_VOID;
 		return JS_TRUE;
 	}
 	JSString *jsstr = JS_NewStringCopyZ(cx, str);
-	J_CHK( jsstr );
-	*J_FRVAL = STRING_TO_JSVAL( jsstr );
+	JL_CHK( jsstr );
+	*JL_FRVAL = STRING_TO_JSVAL( jsstr );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -330,11 +330,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( GetBoolean ) {
 
-	J_S_ASSERT_ARG_MIN(1);
-	J_S_ASSERT_INT(J_FARG(1));
+	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_INT(JL_FARG(1));
 	ALboolean params;
-	alGetBooleanv(JSVAL_TO_INT(J_FARG(1)), &params);
-	*J_FRVAL = BOOLEAN_TO_JSVAL(params);
+	alGetBooleanv(JSVAL_TO_INT(JL_FARG(1)), &params);
+	*JL_FRVAL = BOOLEAN_TO_JSVAL(params);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -354,28 +354,28 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( GetInteger ) {
 
-	J_S_ASSERT_ARG_MIN(1);
-	J_S_ASSERT_INT(J_FARG(1));
+	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_INT(JL_FARG(1));
 
 	ALint params[16];
-	alGetIntegerv(JSVAL_TO_INT( J_FARG(1) ), params);
+	alGetIntegerv(JSVAL_TO_INT( JL_FARG(1) ), params);
 
-	if ( J_FARG_ISDEF(2) ) {
+	if ( JL_FARG_ISDEF(2) ) {
 
-		J_S_ASSERT_INT( J_FARG(2) );
-		int count = JSVAL_TO_INT( J_FARG(2) );
+		JL_S_ASSERT_INT( JL_FARG(2) );
+		int count = JSVAL_TO_INT( JL_FARG(2) );
 		JSObject *arrayObj = JS_NewArrayObject(cx, 0, NULL);
-		J_CHK( arrayObj );
-		*J_FRVAL = OBJECT_TO_JSVAL(arrayObj);
+		JL_CHK( arrayObj );
+		*JL_FRVAL = OBJECT_TO_JSVAL(arrayObj);
 		jsval tmpValue;
 		while (count--) {
 
 			tmpValue = INT_TO_JSVAL( params[count] );
-			J_CHK( JS_SetElement(cx, arrayObj, count, &tmpValue) );
+			JL_CHK( JS_SetElement(cx, arrayObj, count, &tmpValue) );
 		}
 	} else {
 
-		*J_FRVAL = INT_TO_JSVAL( params[0] );
+		*JL_FRVAL = INT_TO_JSVAL( params[0] );
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -395,28 +395,28 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( GetDouble ) {
 
-	J_S_ASSERT_ARG_MIN(1);
-	J_S_ASSERT_INT(J_FARG(1));
+	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_INT(JL_FARG(1));
 
 	ALdouble params[16];
-	alGetDoublev(JSVAL_TO_INT(J_FARG(1)), params);
+	alGetDoublev(JSVAL_TO_INT(JL_FARG(1)), params);
 
-	if ( J_FARG_ISDEF(2) ) {
+	if ( JL_FARG_ISDEF(2) ) {
 
-		J_S_ASSERT_INT( J_FARG(2) );
-		int count = JSVAL_TO_INT( J_FARG(2) );
+		JL_S_ASSERT_INT( JL_FARG(2) );
+		int count = JSVAL_TO_INT( JL_FARG(2) );
 		JSObject *arrayObj = JS_NewArrayObject(cx, 0, NULL);
-		J_CHK( arrayObj );
-		*J_FRVAL = OBJECT_TO_JSVAL(arrayObj);
+		JL_CHK( arrayObj );
+		*JL_FRVAL = OBJECT_TO_JSVAL(arrayObj);
 		jsval tmpValue;
 		while (count--) {
 
-			J_CHK( JS_NewDoubleValue(cx, params[count], &tmpValue) );
-			J_CHK( JS_SetElement(cx, arrayObj, count, &tmpValue) );
+			JL_CHK( JS_NewDoubleValue(cx, params[count], &tmpValue) );
+			JL_CHK( JS_SetElement(cx, arrayObj, count, &tmpValue) );
 		}
 	} else {
 
-		J_CHK( JS_NewDoubleValue(cx, params[0], J_FRVAL) );
+		JL_CHK( JS_NewDoubleValue(cx, params[0], JL_FRVAL) );
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -434,33 +434,33 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Listener ) {
 
-	J_S_ASSERT_ARG_MIN(2);
-	J_S_ASSERT_INT(J_FARG(1));
+	JL_S_ASSERT_ARG_MIN(2);
+	JL_S_ASSERT_INT(JL_FARG(1));
 
-	*J_FRVAL = JSVAL_VOID;
-	if ( JSVAL_IS_INT(J_FARG(2)) ) {
+	*JL_FRVAL = JSVAL_VOID;
+	if ( JSVAL_IS_INT(JL_FARG(2)) ) {
 
-		alListeneri( JSVAL_TO_INT( J_FARG(1) ), JSVAL_TO_INT( J_FARG(2) ) );
+		alListeneri( JSVAL_TO_INT( JL_FARG(1) ), JSVAL_TO_INT( JL_FARG(2) ) );
 		return JS_TRUE;
 	}
-	if ( JSVAL_IS_DOUBLE(J_FARG(2)) ) {
+	if ( JSVAL_IS_DOUBLE(JL_FARG(2)) ) {
 
 		jsdouble param;
-		J_CHK( JS_ValueToNumber(cx, J_FARG(2), &param) );
-		alListenerf( JSVAL_TO_INT( J_FARG(1) ), param );
+		JL_CHK( JS_ValueToNumber(cx, JL_FARG(2), &param) );
+		alListenerf( JSVAL_TO_INT( JL_FARG(1) ), param );
 		return JS_TRUE;
 	}
-	if ( JsvalIsArray(cx, J_FARG(2)) ) {
+	if ( JsvalIsArray(cx, JL_FARG(2)) ) {
 
 		ALfloat params[16];
 		size_t length;
-//		J_JSVAL_TO_REAL_VECTOR( J_FARG(2), params, length );
-		J_CHK( JsvalToFloatVector(cx, J_FARG(2), params, 16, &length) );
-		alListenerfv( JSVAL_TO_INT(J_FARG(1)), params );
+//		J_JSVAL_TO_REAL_VECTOR( JL_FARG(2), params, length );
+		JL_CHK( JsvalToFloatVector(cx, JL_FARG(2), params, 16, &length) );
+		alListenerfv( JSVAL_TO_INT(JL_FARG(1)), params );
 		return JS_TRUE;
 	}
 
-	J_REPORT_ERROR("Invalid argument.");
+	JL_REPORT_ERROR("Invalid argument.");
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -480,28 +480,28 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( GetListenerReal ) {
 
-	J_S_ASSERT_ARG_MIN(1);
-	J_S_ASSERT_INT(J_FARG(1));
+	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_INT(JL_FARG(1));
 
 	ALfloat params[16];
-	alGetListenerfv(JSVAL_TO_INT(J_FARG(1)), params);
+	alGetListenerfv(JSVAL_TO_INT(JL_FARG(1)), params);
 
-	if ( J_FARG_ISDEF(2) ) {
+	if ( JL_FARG_ISDEF(2) ) {
 
-		J_S_ASSERT_INT( J_FARG(2) );
-		int count = JSVAL_TO_INT( J_FARG(2) );
+		JL_S_ASSERT_INT( JL_FARG(2) );
+		int count = JSVAL_TO_INT( JL_FARG(2) );
 		JSObject *arrayObj = JS_NewArrayObject(cx, 0, NULL);
-		J_CHK( arrayObj );
-		*J_FRVAL = OBJECT_TO_JSVAL(arrayObj);
+		JL_CHK( arrayObj );
+		*JL_FRVAL = OBJECT_TO_JSVAL(arrayObj);
 		jsval tmpValue;
 		while (count--) {
 
-			J_CHK( JS_NewDoubleValue(cx, params[count], &tmpValue) );
-			J_CHK( JS_SetElement(cx, arrayObj, count, &tmpValue) );
+			JL_CHK( JS_NewDoubleValue(cx, params[count], &tmpValue) );
+			JL_CHK( JS_SetElement(cx, arrayObj, count, &tmpValue) );
 		}
 	} else {
 
-		J_CHK( JS_NewDoubleValue(cx, params[0], J_FRVAL) );
+		JL_CHK( JS_NewDoubleValue(cx, params[0], JL_FRVAL) );
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -519,7 +519,7 @@ DEFINE_FUNCTION_FAST( GenSource ) {
 
 	ALuint sourceID; // The OpenAL sound source
 	alGenSources(1, &sourceID);
-	J_CHK( UIntToJsval(cx, sourceID, J_FRVAL) );
+	JL_CHK( UIntToJsval(cx, sourceID, JL_FRVAL) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -537,35 +537,35 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Source ) {
 
-	J_S_ASSERT_ARG_MIN(3);
-	J_S_ASSERT_NUMBER(J_FARG(1));
-	J_S_ASSERT_INT(J_FARG(2));
+	JL_S_ASSERT_ARG_MIN(3);
+	JL_S_ASSERT_NUMBER(JL_FARG(1));
+	JL_S_ASSERT_INT(JL_FARG(2));
 
 	ALuint sid;
-	J_CHK( JsvalToUInt(cx, J_FARG(1), &sid ) );
+	JL_CHK( JsvalToUInt(cx, JL_FARG(1), &sid ) );
 
-	*J_FRVAL = JSVAL_VOID;
-	if ( JSVAL_IS_INT(J_FARG(3)) ) {
+	*JL_FRVAL = JSVAL_VOID;
+	if ( JSVAL_IS_INT(JL_FARG(3)) ) {
 
-		alSourcei( sid, JSVAL_TO_INT( J_FARG(2) ), JSVAL_TO_INT( J_FARG(3) ) );
+		alSourcei( sid, JSVAL_TO_INT( JL_FARG(2) ), JSVAL_TO_INT( JL_FARG(3) ) );
 		return JS_TRUE;
 	}
-	if ( JSVAL_IS_DOUBLE(J_FARG(3)) ) {
+	if ( JSVAL_IS_DOUBLE(JL_FARG(3)) ) {
 
 		jsdouble param;
-		J_CHK( JS_ValueToNumber(cx, J_FARG(3), &param) );
-		alSourcef( sid, JSVAL_TO_INT( J_FARG(2) ), param );
+		JL_CHK( JS_ValueToNumber(cx, JL_FARG(3), &param) );
+		alSourcef( sid, JSVAL_TO_INT( JL_FARG(2) ), param );
 		return JS_TRUE;
 	}
-	if ( JsvalIsArray(cx, J_FARG(3)) ) {
+	if ( JsvalIsArray(cx, JL_FARG(3)) ) {
 
 		ALfloat params[16];
 		size_t length;
-		J_CHK( JsvalToFloatVector(cx, J_FARG(3), params, COUNTOF(params), &length ) );
-		alSourcefv( sid, JSVAL_TO_INT(J_FARG(2)), params );
+		JL_CHK( JsvalToFloatVector(cx, JL_FARG(3), params, COUNTOF(params), &length ) );
+		alSourcefv( sid, JSVAL_TO_INT(JL_FARG(2)), params );
 		return JS_TRUE;
 	}
-	J_REPORT_ERROR("Invalid argument.");
+	JL_REPORT_ERROR("Invalid argument.");
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -585,35 +585,35 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( GetSourceReal ) {
 
-	J_S_ASSERT_ARG_MIN(2);
-	J_S_ASSERT_NUMBER(J_FARG(1));
-	J_S_ASSERT_INT(J_FARG(2));
+	JL_S_ASSERT_ARG_MIN(2);
+	JL_S_ASSERT_NUMBER(JL_FARG(1));
+	JL_S_ASSERT_INT(JL_FARG(2));
 
 	ALuint sid;
-	J_CHK( JsvalToUInt(cx, J_FARG(1), &sid ) );
+	JL_CHK( JsvalToUInt(cx, JL_FARG(1), &sid ) );
 
 	ALfloat params[16];
 
-	ALenum pname = JSVAL_TO_INT(J_FARG(2));
+	ALenum pname = JSVAL_TO_INT(JL_FARG(2));
 	alGetSourcef(sid, pname, params);
-	J_CHK( CheckThrowCurrentOalError(cx) );
+	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	if ( J_FARG_ISDEF(3) ) {
+	if ( JL_FARG_ISDEF(3) ) {
 
-		J_S_ASSERT_INT( J_FARG(3) );
-		int count = JSVAL_TO_INT( J_FARG(3) );
+		JL_S_ASSERT_INT( JL_FARG(3) );
+		int count = JSVAL_TO_INT( JL_FARG(3) );
 		JSObject *arrayObj = JS_NewArrayObject(cx, 0, NULL);
-		J_CHK( arrayObj );
-		*J_FRVAL = OBJECT_TO_JSVAL(arrayObj);
+		JL_CHK( arrayObj );
+		*JL_FRVAL = OBJECT_TO_JSVAL(arrayObj);
 		jsval tmpValue;
 		while (count--) {
 
-			J_CHK( JS_NewDoubleValue(cx, params[count], &tmpValue) );
-			J_CHK( JS_SetElement(cx, arrayObj, count, &tmpValue) );
+			JL_CHK( JS_NewDoubleValue(cx, params[count], &tmpValue) );
+			JL_CHK( JS_SetElement(cx, arrayObj, count, &tmpValue) );
 		}
 	} else {
 
-		J_CHK( JS_NewDoubleValue(cx, params[0], J_FRVAL) );
+		JL_CHK( JS_NewDoubleValue(cx, params[0], JL_FRVAL) );
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -626,36 +626,36 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( GetSourceInteger ) {
 
-	J_S_ASSERT_ARG_MIN(2);
-	J_S_ASSERT_NUMBER(J_FARG(1));
-	J_S_ASSERT_INT(J_FARG(2));
+	JL_S_ASSERT_ARG_MIN(2);
+	JL_S_ASSERT_NUMBER(JL_FARG(1));
+	JL_S_ASSERT_INT(JL_FARG(2));
 
 	ALuint sid;
-	J_CHK( JsvalToUInt(cx, J_FARG(1), &sid ) );
+	JL_CHK( JsvalToUInt(cx, JL_FARG(1), &sid ) );
 
 	ALint params[16];
 
-	ALenum pname = JSVAL_TO_INT(J_FARG(2));
+	ALenum pname = JSVAL_TO_INT(JL_FARG(2));
 	alGetSourcei(sid, pname, params);
 
-	J_CHK( CheckThrowCurrentOalError(cx) );
+	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	if ( J_FARG_ISDEF(3) ) {
+	if ( JL_FARG_ISDEF(3) ) {
 
-		J_S_ASSERT_INT( J_FARG(3) );
-		int count = JSVAL_TO_INT( J_FARG(3) );
+		JL_S_ASSERT_INT( JL_FARG(3) );
+		int count = JSVAL_TO_INT( JL_FARG(3) );
 		JSObject *arrayObj = JS_NewArrayObject(cx, 0, NULL);
-		J_CHK( arrayObj );
-		*J_FRVAL = OBJECT_TO_JSVAL(arrayObj);
+		JL_CHK( arrayObj );
+		*JL_FRVAL = OBJECT_TO_JSVAL(arrayObj);
 		jsval tmpValue;
 		while (count--) {
 
-			J_CHK( IntToJsval(cx, params[count], &tmpValue) );
-			J_CHK( JS_SetElement(cx, arrayObj, count, &tmpValue) );
+			JL_CHK( IntToJsval(cx, params[count], &tmpValue) );
+			JL_CHK( JS_SetElement(cx, arrayObj, count, &tmpValue) );
 		}
 	} else {
 
-		J_CHK( JS_NewDoubleValue(cx, params[0], J_FRVAL) );
+		JL_CHK( JS_NewDoubleValue(cx, params[0], JL_FRVAL) );
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -673,10 +673,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( DeleteSource ) {
 
-	J_S_ASSERT_ARG_MIN(1);
-	J_S_ASSERT_NUMBER(J_FARG(1));
+	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_NUMBER(JL_FARG(1));
 	ALuint sid;
-	J_CHK( JsvalToUInt(cx, J_FARG(1), &sid ) );
+	JL_CHK( JsvalToUInt(cx, JL_FARG(1), &sid ) );
 	alDeleteSources(1, &sid);
 	return JS_TRUE;
 	JL_BAD;
@@ -695,32 +695,32 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( SourceQueueBuffers ) {
 
-	J_S_ASSERT_ARG_MIN(2);
-	J_S_ASSERT_NUMBER(J_FARG(1));
+	JL_S_ASSERT_ARG_MIN(2);
+	JL_S_ASSERT_NUMBER(JL_FARG(1));
 	ALuint sid;
-	J_CHK( JsvalToUInt(cx, J_FARG(1), &sid ) );
+	JL_CHK( JsvalToUInt(cx, JL_FARG(1), &sid ) );
 
-	if ( JSVAL_IS_INT(J_FARG(2)) ) {
+	if ( JSVAL_IS_INT(JL_FARG(2)) ) {
 
 		ALuint buffer;
-		J_CHK( JsvalToUInt(cx, J_FARG(2), &buffer) );
+		JL_CHK( JsvalToUInt(cx, JL_FARG(2), &buffer) );
 		alSourceQueueBuffers( sid, 1, &buffer );
-		J_CHK( CheckThrowCurrentOalError(cx) );
+		JL_CHK( CheckThrowCurrentOalError(cx) );
 		return JS_TRUE;
 	}
 
-	if ( JsvalIsArray(cx, J_FARG(2)) ) {
+	if ( JsvalIsArray(cx, JL_FARG(2)) ) {
 
 		ALuint params[1024];
  		unsigned int length = sizeof(params)/sizeof(*params);
-//		J_JSVAL_TO_INT_VECTOR( J_FARG(2), params, length );
-		J_CHK( JsvalToUIntVector(cx, J_FARG(2), params, sizeof(params)/sizeof(*params), &length) );
+//		J_JSVAL_TO_INT_VECTOR( JL_FARG(2), params, length );
+		JL_CHK( JsvalToUIntVector(cx, JL_FARG(2), params, sizeof(params)/sizeof(*params), &length) );
 		alSourceQueueBuffers( sid, length, params );
-		J_CHK( CheckThrowCurrentOalError(cx) );
+		JL_CHK( CheckThrowCurrentOalError(cx) );
 		return JS_TRUE;
 	}
 
-	J_REPORT_ERROR("Invalid argument.");
+	JL_REPORT_ERROR("Invalid argument.");
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -738,32 +738,32 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( SourceUnqueueBuffers ) {
 
-	J_S_ASSERT_ARG_MIN(2);
-	J_S_ASSERT_NUMBER(J_FARG(1));
+	JL_S_ASSERT_ARG_MIN(2);
+	JL_S_ASSERT_NUMBER(JL_FARG(1));
 	ALuint sid;
-	J_CHK( JsvalToUInt(cx, J_FARG(1), &sid ) );
+	JL_CHK( JsvalToUInt(cx, JL_FARG(1), &sid ) );
 
-	if ( JSVAL_IS_INT(J_FARG(2)) ) {
+	if ( JSVAL_IS_INT(JL_FARG(2)) ) {
 
 		ALuint buffer;
-		J_CHK( JsvalToUInt(cx, J_FARG(2), &buffer) );
+		JL_CHK( JsvalToUInt(cx, JL_FARG(2), &buffer) );
 		alSourceUnqueueBuffers( sid, 1, &buffer );
 		return JS_TRUE;
 	}
 
-	if ( JsvalIsArray(cx, J_FARG(2)) ) {
+	if ( JsvalIsArray(cx, JL_FARG(2)) ) {
 
 		ALuint params[1024];
 		unsigned int length;
 
-//		J_JSVAL_TO_INT_VECTOR( J_FARG(2), params, length );
-		J_CHK( JsvalToUIntVector(cx, J_FARG(2), params, sizeof(params)/sizeof(*params), &length) );
+//		J_JSVAL_TO_INT_VECTOR( JL_FARG(2), params, length );
+		JL_CHK( JsvalToUIntVector(cx, JL_FARG(2), params, sizeof(params)/sizeof(*params), &length) );
 
 		alSourceUnqueueBuffers( sid, length, params );
 		return JS_TRUE;
 	}
 
-	J_REPORT_ERROR("Invalid argument.");
+	JL_REPORT_ERROR("Invalid argument.");
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -781,15 +781,15 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Buffer ) {
 
-	J_S_ASSERT_ARG_MIN( 1 );
-	J_S_ASSERT_OBJECT( J_FARG(1) );
+	JL_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_OBJECT( JL_FARG(1) );
 
-	JSObject *blobObj = JSVAL_TO_OBJECT(J_FARG(1));
+	JSObject *blobObj = JSVAL_TO_OBJECT(JL_FARG(1));
 
 	int rate, channels, bits;
-	J_CHK( GetPropertyInt(cx, blobObj, "rate", &rate) );
-	J_CHK( GetPropertyInt(cx, blobObj, "channels", &channels) );
-	J_CHK( GetPropertyInt(cx, blobObj, "bits", &bits) );
+	JL_CHK( GetPropertyInt(cx, blobObj, "rate", &rate) );
+	JL_CHK( GetPropertyInt(cx, blobObj, "channels", &channels) );
+	JL_CHK( GetPropertyInt(cx, blobObj, "bits", &bits) );
 
 	const char *buffer;
 	size_t bufferLength;
@@ -809,14 +809,14 @@ DEFINE_FUNCTION_FAST( Buffer ) {
 			format = bits == 16 ? AL_FORMAT_STEREO16 : AL_FORMAT_STEREO8;
 			break;
 		default:
-			J_REPORT_ERROR("Too may channels");
+			JL_REPORT_ERROR("Too may channels");
 	}
 
 	// Upload sound data to buffer
 	alBufferData(bufferID, format, buffer, bufferLength, rate);
-	J_CHK( CheckThrowCurrentOalError(cx) );
+	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	J_CHK( UIntToJsval(cx, bufferID, J_FRVAL) );
+	JL_CHK( UIntToJsval(cx, bufferID, JL_FRVAL) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -837,28 +837,28 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( GetBufferReal ) {
 
-	J_S_ASSERT_ARG_MIN(1);
-	J_S_ASSERT_INT(J_FARG(1));
+	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_INT(JL_FARG(1));
 
 	ALfloat params[16];
-	alGetBufferfv(JSVAL_TO_INT(J_FARG(1)), JSVAL_TO_INT(J_FARG(2)), params);
+	alGetBufferfv(JSVAL_TO_INT(JL_FARG(1)), JSVAL_TO_INT(JL_FARG(2)), params);
 
-	if ( J_FARG_ISDEF(2) ) {
+	if ( JL_FARG_ISDEF(2) ) {
 
-		J_S_ASSERT_INT( J_FARG(2) );
-		int count = JSVAL_TO_INT( J_FARG(2) );
+		JL_S_ASSERT_INT( JL_FARG(2) );
+		int count = JSVAL_TO_INT( JL_FARG(2) );
 		JSObject *arrayObj = JS_NewArrayObject(cx, 0, NULL);
-		J_CHK( arrayObj );
-		*J_FRVAL = OBJECT_TO_JSVAL(arrayObj);
+		JL_CHK( arrayObj );
+		*JL_FRVAL = OBJECT_TO_JSVAL(arrayObj);
 		jsval tmpValue;
 		while (count--) {
 
-			J_CHK( JS_NewDoubleValue(cx, params[count], &tmpValue) );
-			J_CHK( JS_SetElement(cx, arrayObj, count, &tmpValue) );
+			JL_CHK( JS_NewDoubleValue(cx, params[count], &tmpValue) );
+			JL_CHK( JS_SetElement(cx, arrayObj, count, &tmpValue) );
 		}
 	} else {
 
-		J_CHK( JS_NewDoubleValue(cx, params[0], J_FRVAL) );
+		JL_CHK( JS_NewDoubleValue(cx, params[0], JL_FRVAL) );
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -879,28 +879,28 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( GetBufferInteger ) {
 
-	J_S_ASSERT_ARG_MIN(1);
-	J_S_ASSERT_INT(J_FARG(1));
+	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_INT(JL_FARG(1));
 
 	ALint params[16];
-	alGetBufferiv(JSVAL_TO_INT(J_FARG(1)), JSVAL_TO_INT(J_FARG(2)), params);
+	alGetBufferiv(JSVAL_TO_INT(JL_FARG(1)), JSVAL_TO_INT(JL_FARG(2)), params);
 
-	if ( J_FARG_ISDEF(2) ) {
+	if ( JL_FARG_ISDEF(2) ) {
 
-		J_S_ASSERT_INT( J_FARG(2) );
-		int count = JSVAL_TO_INT( J_FARG(2) );
+		JL_S_ASSERT_INT( JL_FARG(2) );
+		int count = JSVAL_TO_INT( JL_FARG(2) );
 		JSObject *arrayObj = JS_NewArrayObject(cx, 0, NULL);
-		J_CHK( arrayObj );
-		*J_FRVAL = OBJECT_TO_JSVAL(arrayObj);
+		JL_CHK( arrayObj );
+		*JL_FRVAL = OBJECT_TO_JSVAL(arrayObj);
 		jsval tmpValue;
 		while (count--) {
 
-			J_CHK( JS_NewDoubleValue(cx, params[count], &tmpValue) );
-			J_CHK( JS_SetElement(cx, arrayObj, count, &tmpValue) );
+			JL_CHK( JS_NewDoubleValue(cx, params[count], &tmpValue) );
+			JL_CHK( JS_SetElement(cx, arrayObj, count, &tmpValue) );
 		}
 	} else {
 
-		J_CHK( JS_NewDoubleValue(cx, params[0], J_FRVAL) );
+		JL_CHK( JS_NewDoubleValue(cx, params[0], JL_FRVAL) );
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -922,10 +922,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( DeleteBuffer ) {
 
-	J_S_ASSERT_ARG_MIN(1);
-	J_S_ASSERT_NUMBER(J_FARG(1));
+	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_NUMBER(JL_FARG(1));
 	ALuint bufferId;
-	J_CHK( JsvalToUInt(cx, J_FARG(1), &bufferId ) );
+	JL_CHK( JsvalToUInt(cx, JL_FARG(1), &bufferId ) );
 //	alBufferData(bufferId, 0, NULL, 0, 0);
 	alDeleteBuffers(1, &bufferId);
 	return JS_TRUE;
@@ -942,10 +942,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( PlaySource ) {
 
-	J_S_ASSERT_ARG_MIN(1);
-	J_S_ASSERT_NUMBER(J_FARG(1));
+	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_NUMBER(JL_FARG(1));
 	ALuint sid;
-	J_CHK( JsvalToUInt(cx, J_FARG(1), &sid ) );
+	JL_CHK( JsvalToUInt(cx, JL_FARG(1), &sid ) );
 	alSourcePlay(sid);
 	return JS_TRUE;
 	JL_BAD;
@@ -961,10 +961,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( StopSource ) {
 
-	J_S_ASSERT_ARG_MIN(1);
-	J_S_ASSERT_NUMBER(J_FARG(1));
+	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_NUMBER(JL_FARG(1));
 	ALuint sid;
-	J_CHK( JsvalToUInt(cx, J_FARG(1), &sid ) );
+	JL_CHK( JsvalToUInt(cx, JL_FARG(1), &sid ) );
 	alSourceStop(sid);
 	return JS_TRUE;
 	JL_BAD;
@@ -980,10 +980,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( PauseSource ) {
 
-	J_S_ASSERT_ARG_MIN(1);
-	J_S_ASSERT_NUMBER(J_FARG(1));
+	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_NUMBER(JL_FARG(1));
 	ALuint sid;
-	J_CHK( JsvalToUInt(cx, J_FARG(1), &sid ) );
+	JL_CHK( JsvalToUInt(cx, JL_FARG(1), &sid ) );
 	alSourcePause(sid);
 	return JS_TRUE;
 	JL_BAD;
@@ -999,10 +999,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( RewindSource ) {
 
-	J_S_ASSERT_ARG_MIN(1);
-	J_S_ASSERT_NUMBER(J_FARG(1));
+	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_NUMBER(JL_FARG(1));
 	ALuint sid;
-	J_CHK( JsvalToUInt(cx, J_FARG(1), &sid ) );
+	JL_CHK( JsvalToUInt(cx, JL_FARG(1), &sid ) );
 	alSourceRewind(sid);
 	return JS_TRUE;
 	JL_BAD;
@@ -1019,7 +1019,7 @@ DEFINE_FUNCTION_FAST( GenEffect ) {
 
 	ALuint eid;
 	alGenEffects(1, &eid);
-	J_CHK( UIntToJsval(cx, eid, J_FRVAL) );
+	JL_CHK( UIntToJsval(cx, eid, JL_FRVAL) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1034,7 +1034,7 @@ DEFINE_FUNCTION_FAST( DeleteEffect ) {
 
 	ALuint eid;
 	alDeleteEffects(1, &eid);
-	J_CHK( UIntToJsval(cx, eid, J_FRVAL) );
+	JL_CHK( UIntToJsval(cx, eid, JL_FRVAL) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1051,15 +1051,15 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( PlaySound ) {
 
-	J_S_ASSERT_ARG_MIN( 1 );
-	J_S_ASSERT_OBJECT( J_FARG(1) );
+	JL_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_OBJECT( JL_FARG(1) );
 
-	JSObject *blobObj = JSVAL_TO_OBJECT(J_FARG(1));
+	JSObject *blobObj = JSVAL_TO_OBJECT(JL_FARG(1));
 
 	int rate, channels, bits;
-	J_CHK( GetPropertyInt(cx, blobObj, "rate", &rate) );
-	J_CHK( GetPropertyInt(cx, blobObj, "channels", &channels) );
-	J_CHK( GetPropertyInt(cx, blobObj, "bits", &bits) );
+	JL_CHK( GetPropertyInt(cx, blobObj, "rate", &rate) );
+	JL_CHK( GetPropertyInt(cx, blobObj, "channels", &channels) );
+	JL_CHK( GetPropertyInt(cx, blobObj, "bits", &bits) );
 
 	const char *buffer;
 	size_t bufferLength;
@@ -1081,7 +1081,7 @@ DEFINE_FUNCTION_FAST( PlaySound ) {
 
   alGenSources(1, &sourceID);
 
-	J_CHK( CheckThrowCurrentOalError(cx) );
+	JL_CHK( CheckThrowCurrentOalError(cx) );
 
   // Set the source and listener to the same location
   alListener3i(AL_POSITION, 0,0,0 );
@@ -1124,7 +1124,7 @@ DEFINE_FUNCTION_FAST( PlaySound ) {
   alDeleteBuffers(1, &bufferID);
   alDeleteSources(1, &sourceID);
 
-//  *J_FRVAL = JSVAL_VOID;
+//  *JL_FRVAL = JSVAL_VOID;
 
 	return JS_TRUE;
 	JL_BAD;

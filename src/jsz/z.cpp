@@ -52,7 +52,7 @@ struct Private {
 
 DEFINE_FINALIZE() {
 	
-	Private *pv = (Private*)JS_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	if ( !pv )
 		return;
 	
@@ -95,14 +95,14 @@ void jsz_free(voidpf opaque, voidpf address) {
 
 DEFINE_CONSTRUCTOR() {
 
-	J_S_ASSERT_CONSTRUCTING();
-	J_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_CONSTRUCTING();
+	JL_S_ASSERT_ARG_MIN(1);
 
 	Private *pv;
 	pv = (Private*)JS_malloc(cx, sizeof(Private));
-	J_CHK(pv);
+	JL_CHK(pv);
 
-	J_CHK( JS_SetPrivate(cx, obj, pv) );
+	JL_CHK( JL_SetPrivate(cx, obj, pv) );
 	pv->stream.state = Z_NULL; // mendatory
 	
 	pv->stream.zalloc = Z_NULL;
@@ -111,13 +111,13 @@ DEFINE_CONSTRUCTOR() {
 //	pv->stream.zalloc = jsz_alloc;
 //	pv->stream.zfree = jsz_free;
 
-	J_CHK( JsvalToInt(cx, J_ARG(1), &pv->method) );
+	JL_CHK( JsvalToInt(cx, JL_ARG(1), &pv->method) );
 
-	if ( J_ARG_ISDEF(2) ) {
+	if ( JL_ARG_ISDEF(2) ) {
 
-		J_S_ASSERT( pv->method == DEFLATE, "The second argument is overmuch for this method.");
-		J_CHK( JsvalToInt(cx, J_ARG(1), &pv->level) );
-		J_S_ASSERT( pv->level >= Z_NO_COMPRESSION && pv->level <= Z_BEST_COMPRESSION, "Invalid compression level." );
+		JL_S_ASSERT( pv->method == DEFLATE, "The second argument is overmuch for this method.");
+		JL_CHK( JsvalToInt(cx, JL_ARG(1), &pv->level) );
+		JL_S_ASSERT( pv->level >= Z_NO_COMPRESSION && pv->level <= Z_BEST_COMPRESSION, "Invalid compression level." );
 	} else {
 
 		pv->level = Z_DEFAULT_COMPRESSION; // default value
@@ -172,19 +172,19 @@ DEFINE_CALL() {
 
 	JSObject *thisObj = JSVAL_TO_OBJECT(argv[-2]); // get 'this' object of the current object ...
 	// (TBD) check JS_InstanceOf( cx, thisObj, &NativeProc, NULL )
-	J_S_ASSERT_CLASS(thisObj, _class);
+	JL_S_ASSERT_CLASS(thisObj, _class);
 
 	Private *pv;
-	pv = (Private*)JS_GetPrivate(cx, thisObj);
-	J_S_ASSERT_RESOURCE(pv);
+	pv = (Private*)JL_GetPrivate(cx, thisObj);
+	JL_S_ASSERT_RESOURCE(pv);
 
 
 // prepare input data
 	const char *inputData;
 	size_t inputLength;
-	if ( J_ARG_ISDEF(1) ) {
+	if ( JL_ARG_ISDEF(1) ) {
 
-		J_CHK( JsvalToStringAndLength(cx, &J_ARG(1), &inputData, &inputLength) ); // warning: GC on the returned buffer !
+		JL_CHK( JsvalToStringAndLength(cx, &JL_ARG(1), &inputData, &inputLength) ); // warning: GC on the returned buffer !
 	} else {
 
 		inputData = NULL;
@@ -193,15 +193,15 @@ DEFINE_CALL() {
 	
 // force finish
 	bool forceFinish;
-	if ( J_ARG_ISDEF(2) )
-		J_CHK( JsvalToBool(cx, J_ARG(2), &forceFinish) );
+	if ( JL_ARG_ISDEF(2) )
+		JL_CHK( JsvalToBool(cx, JL_ARG(2), &forceFinish) );
 	else
 		forceFinish = false;
 
 	// doc. Z_SYNC_FLUSH: all pending output is flushed to the output buffer and the output is aligned on a byte boundary, so that the decompressor can get all input data available so far.
 	// doc. Z_FINISH: pending input is processed, pending output is flushed and deflate returns with Z_STREAM_END if there was enough output space; if deflate returns with Z_OK, this function must be called again with Z_FINISH and more output space.
 	int flushType;
-	flushType = (J_ARGC == 0 || forceFinish) ? Z_FINISH : Z_SYNC_FLUSH;
+	flushType = (JL_ARGC == 0 || forceFinish) ? Z_FINISH : Z_SYNC_FLUSH;
 
 	if ( pv->stream.state == Z_NULL ) {
 
@@ -212,9 +212,9 @@ DEFINE_CALL() {
 			status = inflateInit2(&pv->stream, MAX_WBITS);
 
 		if ( status < 0 )
-			J_CHK( ThrowZError(cx, status, pv->stream.msg) );
+			JL_CHK( ThrowZError(cx, status, pv->stream.msg) );
 
-		//	J_CHK( SetStreamReadInterface(cx, obj, NativeInterfaceStreamRead) ); (TBD) ???
+		//	JL_CHK( SetStreamReadInterface(cx, obj, NativeInterfaceStreamRead) ); (TBD) ???
 	}
 
 	pv->stream.avail_in = inputLength;
@@ -231,7 +231,7 @@ DEFINE_CALL() {
 	int xflateStatus;
 	for (;;) {
 
-//		length = J_MAX( length, BufferGetOptimalLength(&resultBuffer) );
+//		length = JL_MAX( length, BufferGetOptimalLength(&resultBuffer) );
 
 		pv->stream.avail_out = length;
 		pv->stream.next_out = (Bytef*)BufferNewChunk(&resultBuffer, pv->stream.avail_out);
@@ -241,7 +241,7 @@ DEFINE_CALL() {
 //		printf("..ai%d ca%d ao%d ti%d to%d\n", 			method == DEFLATE, 			chunk->avail,			stream->avail_in, 			stream->avail_out, 			stream->total_in, 			stream->total_out		);
 
 		if ( xflateStatus < Z_OK && xflateStatus != Z_BUF_ERROR ) // fatal error ?
-			J_CHKB( ThrowZError(cx, xflateStatus, pv->stream.msg), bad_freebuf );
+			JL_CHKB( ThrowZError(cx, xflateStatus, pv->stream.msg), bad_freebuf );
 		BufferConfirm(&resultBuffer, length - pv->stream.avail_out);
 		if ( xflateStatus == Z_STREAM_END || pv->stream.avail_in == 0 )
 			break;
@@ -252,11 +252,11 @@ DEFINE_CALL() {
 //			length = length * 2 + 4096;
 	}
 
-//	J_CHK( StringAndLengthToJsval(cx, rval, BufferGetData(&resultBuffer), BufferGetLength(&resultBuffer)) );
+//	JL_CHK( StringAndLengthToJsval(cx, rval, BufferGetData(&resultBuffer), BufferGetLength(&resultBuffer)) );
 
 	*BufferNewChunk(&resultBuffer, 1) = '\0';
 	BufferConfirm(&resultBuffer, 1);
-	J_CHKB( J_NewBlob(cx, (void*)BufferGetDataOwnership(&resultBuffer), BufferGetLength(&resultBuffer)-1, rval), bad_freebuf );
+	JL_CHKB( JL_NewBlob(cx, (void*)BufferGetDataOwnership(&resultBuffer), BufferGetLength(&resultBuffer)-1, rval), bad_freebuf );
 //	js_UpdateMallocCounter(cx, 1);
 	BufferFinalize(&resultBuffer);
 
@@ -266,8 +266,8 @@ DEFINE_CALL() {
 		int status;
 		status = pv->method == DEFLATE ? deflateEnd(&pv->stream) : inflateEnd(&pv->stream); // free(stream) is done the Finalize
 		if ( status != Z_OK )
-			J_CHK( ThrowZError(cx, status, pv->stream.msg) );
-		J_S_ASSERT( pv->stream.state == Z_NULL, "Invalid state." );
+			JL_CHK( ThrowZError(cx, status, pv->stream.msg) );
+		JL_S_ASSERT( pv->stream.state == Z_NULL, "Invalid state." );
 	}
 
 	return JS_TRUE;
@@ -291,9 +291,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( idle ) {
 
-	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(pv);
-	J_CHK( BoolToJsval(cx, pv->stream.state == Z_NULL, vp) );
+	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(pv);
+	JL_CHK( BoolToJsval(cx, pv->stream.state == Z_NULL, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -307,9 +307,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( adler32 ) {
 
-	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(pv);
-	J_CHK( JS_NewNumberValue(cx, pv->stream.adler, vp) );
+	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(pv);
+	JL_CHK( JS_NewNumberValue(cx, pv->stream.adler, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -322,9 +322,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( lengthIn ) {
 
-	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(pv);
-	J_CHK( JS_NewNumberValue(cx, pv->stream.total_in, vp) );
+	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(pv);
+	JL_CHK( JS_NewNumberValue(cx, pv->stream.total_in, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -337,9 +337,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( lengthOut ) {
 
-	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(pv);
-	J_CHK( JS_NewNumberValue(cx, pv->stream.total_out, vp) );
+	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(pv);
+	JL_CHK( JS_NewNumberValue(cx, pv->stream.total_out, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }

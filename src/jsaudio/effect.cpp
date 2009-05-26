@@ -29,7 +29,7 @@ BEGIN_CLASS( OalEffect )
 
 DEFINE_FINALIZE() {
 
-	Private *pv = (Private*)JS_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	if ( pv ) {
 
 		if ( alcGetCurrentContext() ) {
@@ -50,11 +50,11 @@ $TOC_MEMBER $INAME
 DEFINE_CONSTRUCTOR() {
 
 	Private *pv = (Private*)JS_malloc(cx, sizeof(Private));
-	J_CHK( pv );
+	JL_CHK( pv );
 	alGenEffects(1, &pv->effect);
-	J_CHK( CheckThrowCurrentOalError(cx) );
+	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	J_CHK( JS_SetPrivate(cx, obj, pv) );
+	JL_CHK( JL_SetPrivate(cx, obj, pv) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -71,10 +71,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( valueOf ) {
 
-	Private *pv = (Private*)JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_RESOURCE( pv );
+	Private *pv = (Private*)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE( pv );
 
-	J_CHK( UIntToJsval(cx, pv->effect, J_FRVAL) );
+	JL_CHK( UIntToJsval(cx, pv->effect, JL_FRVAL) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -105,13 +105,13 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( type ) {
 
-	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(pv);
+	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(pv);
 	int effectType;
-	J_CHK( JsvalToInt(cx, *vp, &effectType) );
+	JL_CHK( JsvalToInt(cx, *vp, &effectType) );
 
 	alEffecti(pv->effect, AL_EFFECT_TYPE, effectType);
-	J_CHK( CheckThrowCurrentOalError(cx) );
+	JL_CHK( CheckThrowCurrentOalError(cx) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -119,14 +119,14 @@ DEFINE_PROPERTY_SETTER( type ) {
 
 DEFINE_PROPERTY_GETTER( type ) {
 
-	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(pv);
+	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(pv);
 	int effectType;
 
 	alGetEffecti(pv->effect, AL_EFFECT_TYPE, &effectType);
-	J_CHK( CheckThrowCurrentOalError(cx) );
+	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	J_CHK( IntToJsval(cx, effectType, vp) );
+	JL_CHK( IntToJsval(cx, effectType, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -135,11 +135,11 @@ DEFINE_PROPERTY_GETTER( type ) {
 /*
 DEFINE_FUNCTION_FAST( Test ) {
 
-	Private *pv = (Private*)JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_RESOURCE( pv );
+	Private *pv = (Private*)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE( pv );
 
 
-	J_CHK( CheckThrowCurrentOalError(cx) );
+	JL_CHK( CheckThrowCurrentOalError(cx) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -147,77 +147,77 @@ DEFINE_FUNCTION_FAST( Test ) {
 
 DEFINE_PROPERTY_SETTER( effectFloat ) {
 
-	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE( pv );
+	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( pv );
 	ALenum param = JSVAL_TO_INT(id);
 	float f;
-	J_CHK( JsvalToFloat(cx, *vp, &f) );
+	JL_CHK( JsvalToFloat(cx, *vp, &f) );
 	alEffectf(pv->effect, param, f);
-	J_CHK( CheckThrowCurrentOalError(cx) );
+	JL_CHK( CheckThrowCurrentOalError(cx) );
 	return JS_TRUE;
 	JL_BAD;
 }
 
 DEFINE_PROPERTY_GETTER( effectFloat ) {
 
-	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE( pv );
+	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( pv );
 	ALenum param = JSVAL_TO_INT(id);
 	float f;
 	alGetEffectf(pv->effect, param, &f);
-	J_CHK( CheckThrowCurrentOalError(cx) );
-	J_CHK( FloatToJsval(cx, f, vp) );
+	JL_CHK( CheckThrowCurrentOalError(cx) );
+	JL_CHK( FloatToJsval(cx, f, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
 
 DEFINE_PROPERTY_SETTER( effectInt ) {
 
-	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE( pv );
+	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( pv );
 	ALenum param = JSVAL_TO_INT(id);
 	int i;
-	J_CHK( JsvalToInt(cx, *vp, &i) );
+	JL_CHK( JsvalToInt(cx, *vp, &i) );
 	alEffecti(pv->effect, param, i);
-	J_CHK( CheckThrowCurrentOalError(cx) );
+	JL_CHK( CheckThrowCurrentOalError(cx) );
 	return JS_TRUE;
 	JL_BAD;
 }
 
 DEFINE_PROPERTY_GETTER( effectInt ) {
 
-	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE( pv );
+	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( pv );
 	ALenum param = JSVAL_TO_INT(id);
 	int i;
 	alGetEffecti(pv->effect, param, &i);
-	J_CHK( CheckThrowCurrentOalError(cx) );
-	J_CHK( IntToJsval(cx, i, vp) );
+	JL_CHK( CheckThrowCurrentOalError(cx) );
+	JL_CHK( IntToJsval(cx, i, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
 
 DEFINE_PROPERTY_SETTER( effectBool ) {
 
-	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE( pv );
+	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( pv );
 	ALenum param = JSVAL_TO_INT(id);
 	bool b;
-	J_CHK( JsvalToBool(cx, *vp, &b) );
+	JL_CHK( JsvalToBool(cx, *vp, &b) );
 	alEffecti(pv->effect, param, b ? AL_TRUE : AL_FALSE);
-	J_CHK( CheckThrowCurrentOalError(cx) );
+	JL_CHK( CheckThrowCurrentOalError(cx) );
 	return JS_TRUE;
 	JL_BAD;
 }
 
 DEFINE_PROPERTY_GETTER( effectBool ) {
 
-	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE( pv );
+	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( pv );
 	ALenum param = JSVAL_TO_INT(id);
 	int i;
 	alGetEffecti(pv->effect, param, &i);
-	J_CHK( CheckThrowCurrentOalError(cx) );
+	JL_CHK( CheckThrowCurrentOalError(cx) );
 	*vp = i == AL_TRUE ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;
 	JL_BAD;

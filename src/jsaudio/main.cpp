@@ -47,7 +47,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	_unsafeMode = GetHostPrivate(cx)->unsafeMode;
 
 /*
-	//J_S_ASSERT( context == NULL, "Invalid initialization context." );
+	//JL_S_ASSERT( context == NULL, "Invalid initialization context." );
 
 	ALCcontext *context;
 	ALCdevice *device;
@@ -63,17 +63,17 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	// If no device name is specified, we will attempt to use DS3D.
 	device = alcOpenDevice ("Generic Software");
 	if (device == NULL)
-		J_REPORT_ERROR("ALUT_ERROR_OPEN_DEVICE");
+		JL_REPORT_ERROR("ALUT_ERROR_OPEN_DEVICE");
 	context = alcCreateContext (device, NULL);
 	if (context == NULL) {
 		alcCloseDevice (device);
-		J_REPORT_ERROR("ALUT_ERROR_CREATE_CONTEXT");
+		JL_REPORT_ERROR("ALUT_ERROR_CREATE_CONTEXT");
 	}
 	if (!alcMakeContextCurrent(context)) {
 
 		alcDestroyContext (context);
 		alcCloseDevice (device);
-		J_REPORT_ERROR("ALUT_ERROR_MAKE_CONTEXT_CURRENT");
+		JL_REPORT_ERROR("ALUT_ERROR_MAKE_CONTEXT_CURRENT");
 	}
 */
 
@@ -95,20 +95,20 @@ EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
 	ALCcontext *context = alcGetCurrentContext();
 	if ( context == NULL )
 		return JS_TRUE; // already closed
-//		J_REPORT_ERROR("Unable to get the current context.");
+//		JL_REPORT_ERROR("Unable to get the current context.");
 
 	// cf. alutExit
 	ALCdevice *device;
 	if (!alcMakeContextCurrent (NULL))
-		J_REPORT_ERROR("ALUT_ERROR_MAKE_CONTEXT_CURRENT");
+		JL_REPORT_ERROR("ALUT_ERROR_MAKE_CONTEXT_CURRENT");
 	device = alcGetContextsDevice (context);
 	if (alcGetError (device) != ALC_NO_ERROR )
-		J_REPORT_ERROR("ALUT_ERROR_ALC_ERROR_ON_ENTRY");
+		JL_REPORT_ERROR("ALUT_ERROR_ALC_ERROR_ON_ENTRY");
 	alcDestroyContext (context);
 	if (alcGetError (device) != ALC_NO_ERROR)
-		J_REPORT_ERROR("ALUT_ERROR_DESTROY_CONTEXT");
+		JL_REPORT_ERROR("ALUT_ERROR_DESTROY_CONTEXT");
 	if (!alcCloseDevice (device))
-		J_REPORT_ERROR("ALUT_ERROR_CLOSE_DEVICE");
+		JL_REPORT_ERROR("ALUT_ERROR_CLOSE_DEVICE");
 
 	return JS_TRUE;
 	JL_BAD;

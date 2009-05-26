@@ -138,7 +138,7 @@ static SF_VIRTUAL_IO sfCallbacks = { SfGetFilelen, SfSeek, SfRead, 0, SfTell };
 
 DEFINE_FINALIZE() {
 
-	Private *pv = (Private*)JS_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	if ( !pv )
 		return;
 
@@ -171,17 +171,17 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
-	J_S_ASSERT_CONSTRUCTING();
-	J_S_ASSERT_THIS_CLASS();
-	J_S_ASSERT_ARG_MIN(1);
-	J_S_ASSERT_OBJECT( J_ARG(1) );
+	JL_S_ASSERT_CONSTRUCTING();
+	JL_S_ASSERT_THIS_CLASS();
+	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_OBJECT( JL_ARG(1) );
 
 	Private *pv = (Private*)JS_malloc(cx, sizeof(Private));
-	J_CHK( pv );
-	J_CHK( JS_SetPrivate(cx, obj, pv) );
+	JL_CHK( pv );
+	JL_CHK( JL_SetPrivate(cx, obj, pv) );
 
-	J_CHK( JS_SetReservedSlot(cx, obj, SLOT_INPUT_STREAM, J_ARG(1) ) );
-	pv->streamObject = JSVAL_TO_OBJECT(J_ARG(1));
+	JL_CHK( JS_SetReservedSlot(cx, obj, SLOT_INPUT_STREAM, JL_ARG(1) ) );
+	pv->streamObject = JSVAL_TO_OBJECT(JL_ARG(1));
 
 	SF_INFO tmp; // = {0};
 	memset(&tmp, 0, sizeof(SF_INFO));
@@ -196,8 +196,8 @@ DEFINE_CONSTRUCTOR() {
 		return JS_FALSE;
 
 	// (TBD) manage sf_error_str()
-	J_S_ASSERT_1( sf_error(pv->sfDescriptor) == SF_ERR_NO_ERROR, "sndfile error: %d", sf_error(pv->sfDescriptor) );
-	J_S_ASSERT( pv->sfDescriptor != NULL, "Invalid stream." ); // (TBD) needed ?
+	JL_S_ASSERT_1( sf_error(pv->sfDescriptor) == SF_ERR_NO_ERROR, "sndfile error: %d", sf_error(pv->sfDescriptor) );
+	JL_S_ASSERT( pv->sfDescriptor != NULL, "Invalid stream." ); // (TBD) needed ?
 
 	int subFormat = pv->sfInfo.format & SF_FORMAT_SUBMASK;
 	if ( subFormat == SF_FORMAT_FLOAT || subFormat == SF_FORMAT_DOUBLE ) {
@@ -246,25 +246,25 @@ $TOC_MEMBER $INAME
   }}}
 **/DEFINE_FUNCTION_FAST( Read ) {
 
-	Private *pv = (Private*)JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_RESOURCE(pv);
+	Private *pv = (Private*)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(pv);
 
-	J_S_ASSERT( pv->sfInfo.channels == 1 || pv->sfInfo.channels == 2, "Unsupported channel count." );
+	JL_S_ASSERT( pv->sfInfo.channels == 1 || pv->sfInfo.channels == 2, "Unsupported channel count." );
 
 	char *buf;
 	long totalSize = 0;
 
 	pv->cx = cx;
-	if ( J_FARG_ISDEF(1) ) {
+	if ( JL_FARG_ISDEF(1) ) {
 
 		size_t frames;
-		J_CHK( JsvalToUInt(cx, J_FARG(1), &frames) );
+		JL_CHK( JsvalToUInt(cx, JL_FARG(1), &frames) );
 
 		if ( frames > 0 ) {
 
 			size_t amount = frames * pv->sfInfo.channels * pv->bits/8; // amount in bytes
 			buf = (char*)malloc(amount);
-			J_S_ASSERT_ALLOC(buf);
+			JL_S_ASSERT_ALLOC(buf);
 
 			sf_count_t items = sf_read_short(pv->sfDescriptor, (short*)buf, amount/sizeof(short));
 
@@ -288,7 +288,7 @@ $TOC_MEMBER $INAME
 		do {
 
 			char *buffer = (char*)JS_malloc(cx, bufferSize);
-			J_CHK( buffer );
+			JL_CHK( buffer );
 			jl::StackPush(&stack, buffer);
 
 			char *data = buffer+sizeof(int);
@@ -301,7 +301,7 @@ $TOC_MEMBER $INAME
 			if ( JS_IsExceptionPending(cx) )
 				return JS_FALSE; // (TBD) free memory
 
-			J_S_ASSERT_1( sf_error(pv->sfDescriptor) == SF_ERR_NO_ERROR, "sndfile error: %d", sf_error(pv->sfDescriptor) );
+			JL_S_ASSERT_1( sf_error(pv->sfDescriptor) == SF_ERR_NO_ERROR, "sndfile error: %d", sf_error(pv->sfDescriptor) );
 
 			if ( items <= 0 ) { // 0 indicates EOF
 
@@ -316,7 +316,7 @@ $TOC_MEMBER $INAME
 
 		// convert data chunks into a single memory buffer.
 		buf = (char*)JS_malloc(cx, totalSize);
-		J_CHK( buf );
+		JL_CHK( buf );
 
 		// because the stack is LIFO, we have to start from the end.
 		buf += totalSize;
@@ -333,21 +333,21 @@ $TOC_MEMBER $INAME
 
 	if ( totalSize == 0 ) {
 	
-		*J_FRVAL = JSVAL_VOID;
+		*JL_FRVAL = JSVAL_VOID;
 		return JS_TRUE;
 	}
 
 	jsval blobVal;
-	J_CHK( J_NewBlob(cx, buf, totalSize, &blobVal) );
+	JL_CHK( JL_NewBlob(cx, buf, totalSize, &blobVal) );
 	JSObject *blobObj;
-	J_CHK( JS_ValueToObject(cx, blobVal, &blobObj) );
-	J_S_ASSERT( blobObj != NULL, "Unable to create the Blob object.");
-	*J_FRVAL = OBJECT_TO_JSVAL(blobObj);
+	JL_CHK( JS_ValueToObject(cx, blobVal, &blobObj) );
+	JL_S_ASSERT( blobObj != NULL, "Unable to create the Blob object.");
+	*JL_FRVAL = OBJECT_TO_JSVAL(blobObj);
 
-	J_CHK( SetPropertyInt(cx, blobObj, "bits", pv->bits) ); // bits per sample
-	J_CHK( SetPropertyInt(cx, blobObj, "rate", pv->sfInfo.samplerate) ); // samples per second
-	J_CHK( SetPropertyInt(cx, blobObj, "channels", pv->sfInfo.channels) ); // 1:mono, 2:stereo
-	J_CHK( SetPropertyInt(cx, blobObj, "frames", totalSize / (pv->sfInfo.channels * pv->bits / 8) ) );
+	JL_CHK( SetPropertyInt(cx, blobObj, "bits", pv->bits) ); // bits per sample
+	JL_CHK( SetPropertyInt(cx, blobObj, "rate", pv->sfInfo.samplerate) ); // samples per second
+	JL_CHK( SetPropertyInt(cx, blobObj, "channels", pv->sfInfo.channels) ); // 1:mono, 2:stereo
+	JL_CHK( SetPropertyInt(cx, blobObj, "frames", totalSize / (pv->sfInfo.channels * pv->bits / 8) ) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -366,9 +366,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( inputStream ) {
 
-	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(pv);
-	J_CHK( JS_GetReservedSlot(cx, obj, SLOT_INPUT_STREAM, vp) );
+	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(pv);
+	JL_CHK( JS_GetReservedSlot(cx, obj, SLOT_INPUT_STREAM, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -381,8 +381,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( bits ) {
 
-	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(pv);
+	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(pv);
 	*vp = INT_TO_JSVAL( pv->bits );
 	return JS_TRUE;
 	JL_BAD;
@@ -395,8 +395,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( rate ) {
 
-	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(pv);
+	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(pv);
 	*vp = INT_TO_JSVAL( pv->sfInfo.samplerate );
 	return JS_TRUE;
 	JL_BAD;
@@ -409,8 +409,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( channels ) {
 
-	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(pv);
+	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(pv);
 	*vp = INT_TO_JSVAL( pv->sfInfo.channels );
 	return JS_TRUE;
 	JL_BAD;
@@ -424,8 +424,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( frames ) {
 
-	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(pv);
+	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(pv);
 	*vp = INT_TO_JSVAL( pv->sfInfo.frames );
 	return JS_TRUE;
 	JL_BAD;

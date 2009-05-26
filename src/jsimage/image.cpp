@@ -25,25 +25,25 @@ BEGIN_CLASS( Image )
 
 DEFINE_FINALIZE() {
 
-	void *data = JS_GetPrivate(cx, obj);
+	void *data = JL_GetPrivate(cx, obj);
 	if ( data != NULL )
 		free(data);
 }
 
 DEFINE_FUNCTION( Alloc ) {
 
-	J_S_ASSERT_CLASS(obj, _class);
-	J_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_CLASS(obj, _class);
+	JL_S_ASSERT_ARG_MIN(1);
 
 	void *data;
-	data = JS_GetPrivate(cx, obj);
+	data = JL_GetPrivate(cx, obj);
 	if ( data != NULL )
 		free(data);
 
 	unsigned int size;
 	size = JSVAL_TO_INT(argv[0]);
 	data = malloc(size);
-	JS_SetPrivate(cx, obj, data);
+	JL_SetPrivate(cx, obj, data);
 
 	return JS_TRUE;
 	JL_BAD;
@@ -52,11 +52,11 @@ DEFINE_FUNCTION( Alloc ) {
 
 DEFINE_CONSTRUCTOR() {
 
-	J_S_ASSERT_CONSTRUCTING();
-	J_S_ASSERT_THIS_CLASS();
+	JL_S_ASSERT_CONSTRUCTING();
+	JL_S_ASSERT_THIS_CLASS();
 	JSFunction *allocFunction;
 	allocFunction = JS_NewFunction(cx, _Alloc, 0, 0, NULL, "Alloc");
-	J_S_ASSERT( allocFunction != NULL, "Unable to create allocation function." );
+	JL_S_ASSERT( allocFunction != NULL, "Unable to create allocation function." );
 	JSObject *functionObject;
 	functionObject = JS_GetFunctionObject(allocFunction);
 	JS_SetReservedSlot(cx, obj, SLOT_FUNCTION_ALLOC, OBJECT_TO_JSVAL(functionObject));
@@ -67,10 +67,10 @@ DEFINE_CONSTRUCTOR() {
 
 DEFINE_FUNCTION( Free ) {
 
-	void *data = JS_GetPrivate(cx, obj);
+	void *data = JL_GetPrivate(cx, obj);
 	if ( data != NULL ) {
 
-		JS_SetPrivate(cx, obj, NULL);
+		JL_SetPrivate(cx, obj, NULL);
 		free(data);
 	}
 	return JS_TRUE;
@@ -78,12 +78,12 @@ DEFINE_FUNCTION( Free ) {
 
 DEFINE_FUNCTION( Trim ) {
 
-	J_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_ARG_MIN(1);
 	int vect[4];
 	//IntArrayToVector(cx, 4, &argv[0], vect);
 	size_t length;
-	J_CHK( JsvalToIntVector(cx, argv[0], vect, 4, &length) );
-	J_S_ASSERT( length == 4, "Invalid array size." );
+	JL_CHK( JsvalToIntVector(cx, argv[0], vect, 4, &length) );
+	JL_S_ASSERT( length == 4, "Invalid array size." );
 
 	int x;
 	x = vect[0];
@@ -96,22 +96,22 @@ DEFINE_FUNCTION( Trim ) {
 
 	jsval tmp;
 	JS_GetProperty(cx, obj, "width", &tmp);
-	J_S_ASSERT_INT( tmp );
+	JL_S_ASSERT_INT( tmp );
 	int width;
 	width = JSVAL_TO_INT(tmp);
 
 	JS_GetProperty(cx, obj, "height", &tmp);
-	J_S_ASSERT_INT( tmp );
+	JL_S_ASSERT_INT( tmp );
 	int height;
 	height = JSVAL_TO_INT(tmp);
 
 	JS_GetProperty(cx, obj, "channels", &tmp);
-	J_S_ASSERT_INT( tmp );
+	JL_S_ASSERT_INT( tmp );
 	int channels;
 	channels = JSVAL_TO_INT(tmp);
 	// assume that we have 1 Byte/channel
 
-	J_S_ASSERT( !(x<0 || x1<0 || x>width || x1>width || y<0 || y1<0 || y>height || y1>height), "Invalid size." );
+	JL_S_ASSERT( !(x<0 || x1<0 || x>width || x1>width || y<0 || y1<0 || y>height || y1>height), "Invalid size." );
 
 	JSBool reuseBuffer;
 	reuseBuffer = false; // default
@@ -119,8 +119,8 @@ DEFINE_FUNCTION( Trim ) {
 		JS_ValueToBoolean(cx, argv[1], &reuseBuffer);
 
 	char *data;
-	data = (char*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE( data );
+	data = (char*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( data );
 
 	char *tmpDataPtr;
 	tmpDataPtr = data;
@@ -130,7 +130,7 @@ DEFINE_FUNCTION( Trim ) {
 		newData = data;
 	else {
 		newData = (char*)malloc( channels * (x1-x) * (y1-y) );
-		JS_SetPrivate(cx, obj, newData);
+		JL_SetPrivate(cx, obj, newData);
 	}
 
 	int newWidth;
@@ -159,7 +159,7 @@ DEFINE_FUNCTION( Trim ) {
 
 DEFINE_FUNCTION( Gamma ) {
 
-	J_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_ARG_MIN(1);
 
 	return JS_TRUE;
 	JL_BAD;

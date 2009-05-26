@@ -75,15 +75,15 @@ DEFINE_FUNCTION( Poll ) {
 	PRPollDesc staticPollDesc[128]; // 1KB
 	PRPollDesc *pollDesc = staticPollDesc;
 
-	J_S_ASSERT_ARG_MIN( 1 );
-	J_S_ASSERT_ARRAY( J_ARG(1) );
+	JL_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_ARRAY( JL_ARG(1) );
 	JSObject *fdArrayObj;
-	fdArrayObj = JSVAL_TO_OBJECT(J_ARG(1));
+	fdArrayObj = JSVAL_TO_OBJECT(JL_ARG(1));
 
-	if ( J_ARG_ISDEF(2) ) {
+	if ( JL_ARG_ISDEF(2) ) {
 
 		PRUint32 tmp;
-		J_CHK( JsvalToUInt(cx, J_ARG(2), &tmp) );
+		JL_CHK( JsvalToUInt(cx, JL_ARG(2), &tmp) );
 		pr_timeout = PR_MillisecondsToInterval(tmp);
 	} else {
 
@@ -110,7 +110,7 @@ DEFINE_FUNCTION( Poll ) {
 
 	for ( i = 0; i < arrayIds->length; ++i ) {
 
-		J_CHK( JS_GetElement(cx, fdArrayObj, JSID_TO_INT(arrayIds->vector[i]), &prop) );
+		JL_CHK( JS_GetElement(cx, fdArrayObj, JSID_TO_INT(arrayIds->vector[i]), &prop) );
 		if ( JSVAL_IS_VOID( prop ) ) {
 
 			pollDesc[i].fd = 0;
@@ -119,36 +119,36 @@ DEFINE_FUNCTION( Poll ) {
 			continue;
 		}
 		JSObject *fdObj = JSVAL_TO_OBJECT( prop );
-		J_S_ASSERT( InheritFrom(cx, fdObj, classDescriptor), J__ERRMSG_INVALID_CLASS );
-		pollDesc[i].fd = (PRFileDesc *)JS_GetPrivate(cx, fdObj); // fd is A pointer to a PRFileDesc object representing a socket or a pollable event.  This field can be set to NULL to indicate to PR_Poll that this PRFileDesc object should be ignored.
-//		J_S_ASSERT_RESOURCE( fd ); // beware: fd == NULL is supported !
+		JL_S_ASSERT( InheritFrom(cx, fdObj, classDescriptor), J__ERRMSG_INVALID_CLASS );
+		pollDesc[i].fd = (PRFileDesc *)JL_GetPrivate(cx, fdObj); // fd is A pointer to a PRFileDesc object representing a socket or a pollable event.  This field can be set to NULL to indicate to PR_Poll that this PRFileDesc object should be ignored.
+//		JL_S_ASSERT_RESOURCE( fd ); // beware: fd == NULL is supported !
 		pollDesc[i].in_flags = 0;
 		pollDesc[i].out_flags = 0;
 
-		J_CHK( JS_GetProperty( cx, fdObj, "writable", &prop ) );
+		JL_CHK( JS_GetProperty( cx, fdObj, "writable", &prop ) );
 		if ( JsvalIsFunction(cx, prop) )
 			pollDesc[i].in_flags |= PR_POLL_WRITE;
 
-		J_CHK( JS_GetProperty( cx, fdObj, "readable", &prop ) );
+		JL_CHK( JS_GetProperty( cx, fdObj, "readable", &prop ) );
 		if ( JsvalIsFunction(cx, prop) )
 			pollDesc[i].in_flags |= PR_POLL_READ;
 
-		J_CHK( JS_GetProperty( cx, fdObj, "hangup", &prop ) );
+		JL_CHK( JS_GetProperty( cx, fdObj, "hangup", &prop ) );
 		if ( JsvalIsFunction(cx, prop) )
 			pollDesc[i].in_flags |= PR_POLL_HUP;
 
-		J_CHK( JS_GetProperty( cx, fdObj, "exception", &prop ) );
+		JL_CHK( JS_GetProperty( cx, fdObj, "exception", &prop ) );
 		if ( JsvalIsFunction(cx, prop) )
 			pollDesc[i].in_flags |= PR_POLL_EXCEPT;
 
-		J_CHK( JS_GetProperty( cx, fdObj, "error", &prop ) );
+		JL_CHK( JS_GetProperty( cx, fdObj, "error", &prop ) );
 		if ( JsvalIsFunction(cx, prop) )
 			pollDesc[i].in_flags |= PR_POLL_ERR;
 	}
 
 	result = PR_Poll(pollDesc, arrayIds->length, pr_timeout);
 	if ( result == -1 ) // failed. see PR_GetError()
-		J_CHK( ThrowIoError(cx) ); // returns later
+		JL_CHK( ThrowIoError(cx) ); // returns later
 
 	if ( result == 0 ) { // has no event(s)
 
@@ -168,7 +168,7 @@ DEFINE_FUNCTION( Poll ) {
 
 	for ( i = 0; i < arrayIds->length; ++i ) {
 
-		J_CHK( JS_GetElement(cx, fdArrayObj, JSID_TO_INT(arrayIds->vector[i]), &prop) );
+		JL_CHK( JS_GetElement(cx, fdArrayObj, JSID_TO_INT(arrayIds->vector[i]), &prop) );
 		if ( JSVAL_IS_VOID( prop ) ) // socket has been removed from the list while js func "poll()" is runing
 			continue;
 		JSObject *fdObj = JSVAL_TO_OBJECT( prop ); //JS_ValueToObject
@@ -179,37 +179,37 @@ DEFINE_FUNCTION( Poll ) {
 
 		if ( outFlag & PR_POLL_ERR ) {
 
-			J_CHKB( JS_GetProperty( cx, fdObj, "error", &prop ), bad2 );
+			JL_CHKB( JS_GetProperty( cx, fdObj, "error", &prop ), bad2 );
 			if ( JsvalIsFunction(cx, prop) )
-				J_CHKB( JS_CallFunctionValue( cx, fdObj, prop, COUNTOF(cbArgv), cbArgv, &tmp ), bad2 );
+				JL_CHKB( JS_CallFunctionValue( cx, fdObj, prop, COUNTOF(cbArgv), cbArgv, &tmp ), bad2 );
 		}
 
 		if ( outFlag & PR_POLL_EXCEPT ) {
 
-			J_CHKB( JS_GetProperty( cx, fdObj, "exception", &prop ), bad2 );
+			JL_CHKB( JS_GetProperty( cx, fdObj, "exception", &prop ), bad2 );
 			if ( JsvalIsFunction(cx, prop) )
-				J_CHKB( JS_CallFunctionValue( cx, fdObj, prop, COUNTOF(cbArgv), cbArgv, &tmp ), bad2 );
+				JL_CHKB( JS_CallFunctionValue( cx, fdObj, prop, COUNTOF(cbArgv), cbArgv, &tmp ), bad2 );
 		}
 
 		if ( outFlag & PR_POLL_HUP ) {
 
-			J_CHKB( JS_GetProperty( cx, fdObj, "hangup", &prop ), bad2 );
+			JL_CHKB( JS_GetProperty( cx, fdObj, "hangup", &prop ), bad2 );
 			if ( JsvalIsFunction(cx, prop) )
-				J_CHKB( JS_CallFunctionValue( cx, fdObj, prop, COUNTOF(cbArgv), cbArgv, &tmp ), bad2 );
+				JL_CHKB( JS_CallFunctionValue( cx, fdObj, prop, COUNTOF(cbArgv), cbArgv, &tmp ), bad2 );
 		}
 
 		if ( outFlag & PR_POLL_READ ) {
 
-			J_CHKB( JS_GetProperty( cx, fdObj, "readable", &prop ), bad2 );
+			JL_CHKB( JS_GetProperty( cx, fdObj, "readable", &prop ), bad2 );
 			if ( JsvalIsFunction(cx, prop) )
-				J_CHKB( JS_CallFunctionValue( cx, fdObj, prop, COUNTOF(cbArgv), cbArgv, &tmp ), bad2 );
+				JL_CHKB( JS_CallFunctionValue( cx, fdObj, prop, COUNTOF(cbArgv), cbArgv, &tmp ), bad2 );
 		}
 
 		if ( outFlag & PR_POLL_WRITE ) {
 
-			J_CHKB( JS_GetProperty( cx, fdObj, "writable", &prop ), bad2 );
+			JL_CHKB( JS_GetProperty( cx, fdObj, "writable", &prop ), bad2 );
 			if ( JsvalIsFunction(cx, prop) )
-				J_CHKB( JS_CallFunctionValue( cx, fdObj, prop, COUNTOF(cbArgv), cbArgv, &tmp ), bad2 );
+				JL_CHKB( JS_CallFunctionValue( cx, fdObj, prop, COUNTOF(cbArgv), cbArgv, &tmp ), bad2 );
 		}
 	} // for
 
@@ -237,20 +237,20 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( IsReadable ) {
 
-	J_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_ARG_MIN( 1 );
 
 	JSObject *descriptorObj;
-	descriptorObj = JSVAL_TO_OBJECT( J_ARG(1) );
-	J_S_ASSERT( InheritFrom(cx, descriptorObj, classDescriptor), J__ERRMSG_INVALID_CLASS );
+	descriptorObj = JSVAL_TO_OBJECT( JL_ARG(1) );
+	JL_S_ASSERT( InheritFrom(cx, descriptorObj, classDescriptor), J__ERRMSG_INVALID_CLASS );
 	PRFileDesc *fd;
-	fd = (PRFileDesc *)JS_GetPrivate( cx, descriptorObj );
-//	J_S_ASSERT_RESOURCE( fd ); // fd == NULL is supported !
+	fd = (PRFileDesc *)JL_GetPrivate( cx, descriptorObj );
+//	JL_S_ASSERT_RESOURCE( fd ); // fd == NULL is supported !
 
 	PRIntervalTime prTimeout;
-	if ( J_ARG_ISDEF(2) ) {
+	if ( JL_ARG_ISDEF(2) ) {
 
 		PRUint32 timeout;
-		J_CHK( JsvalToUInt(cx, J_ARG(2), &timeout) );
+		JL_CHK( JsvalToUInt(cx, JL_ARG(2), &timeout) );
 		prTimeout = PR_MillisecondsToInterval(timeout);
 	} else
 		prTimeout = PR_INTERVAL_NO_WAIT; //PR_INTERVAL_NO_TIMEOUT;
@@ -276,20 +276,20 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( IsWritable ) {
 
-	J_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_ARG_MIN( 1 );
 
 	JSObject *descriptorObj;
-	descriptorObj = JSVAL_TO_OBJECT( J_ARG(1) );
-	J_S_ASSERT( InheritFrom(cx, descriptorObj, classDescriptor), J__ERRMSG_INVALID_CLASS );
+	descriptorObj = JSVAL_TO_OBJECT( JL_ARG(1) );
+	JL_S_ASSERT( InheritFrom(cx, descriptorObj, classDescriptor), J__ERRMSG_INVALID_CLASS );
 	PRFileDesc *fd;
-	fd = (PRFileDesc *)JS_GetPrivate( cx, descriptorObj );
-//	J_S_ASSERT_RESOURCE( fd ); // fd == NULL is supported !
+	fd = (PRFileDesc *)JL_GetPrivate( cx, descriptorObj );
+//	JL_S_ASSERT_RESOURCE( fd ); // fd == NULL is supported !
 
 	PRIntervalTime prTimeout;
-	if ( J_ARG_ISDEF(2) ) {
+	if ( JL_ARG_ISDEF(2) ) {
 
 		PRUint32 timeout;
-		J_CHK( JsvalToUInt(cx, J_ARG(2), &timeout) );
+		JL_CHK( JsvalToUInt(cx, JL_ARG(2), &timeout) );
 		prTimeout = PR_MillisecondsToInterval(timeout);
 	} else
 		prTimeout = PR_INTERVAL_NO_WAIT; //PR_INTERVAL_NO_TIMEOUT;
@@ -343,7 +343,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Sleep ) {
 
 	uint32 timeout;
-	J_CHK( JS_ValueToECMAUint32( cx, J_ARG(1), &timeout ) );
+	JL_CHK( JS_ValueToECMAUint32( cx, JL_ARG(1), &timeout ) );
 	PR_Sleep( PR_MillisecondsToInterval(timeout) );
 	return JS_TRUE;
 	JL_BAD;
@@ -357,9 +357,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( GetEnv ) {
 
-	J_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_ARG_MIN(1);
 	const char *name;
-	J_CHK( JsvalToString(cx, &J_ARG(1), &name) );
+	JL_CHK( JsvalToString(cx, &JL_ARG(1), &name) );
 	char* value;
 	value = PR_GetEnv(name); // If the environment variable is not defined, the function returns NULL.
 
@@ -370,7 +370,7 @@ DEFINE_FUNCTION( GetEnv ) {
 
 //		JSString *jsstr = JS_NewExternalString(cx, (jschar*)value, strlen(value), JS_AddExternalStringFinalizer(NULL)); only works with unicode strings
 		JSString *jsstr = JS_NewStringCopyZ(cx,value);
-		J_CHK( jsstr );
+		JL_CHK( jsstr );
 		*rval = STRING_TO_JSVAL(jsstr);
 	}
 	return JS_TRUE;
@@ -391,10 +391,10 @@ doc:
 	to PR_SetEnv() is persistent. That is: The string should
 	not be on the stack, where it can be overwritten
 
-	J_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_ARG_MIN(1);
 	const char *name, *value;
-	J_CHK( JsvalToString(cx, &J_ARG(1), &name) );
-	J_CHK( JsvalToString(cx, &J_ARG(2), &value) );
+	JL_CHK( JsvalToString(cx, &JL_ARG(1), &name) );
+	JL_CHK( JsvalToString(cx, &JL_ARG(2), &value) );
 
 	PRStatus status = PR_SetEnv...
 
@@ -417,22 +417,22 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( GetRandomNoise ) {
 
-	J_S_ASSERT_ARG_MIN( 1 );
-	J_S_ASSERT_INT( J_ARG(1) );
+	JL_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_INT( JL_ARG(1) );
 	PRSize rndSize;
-	rndSize = JSVAL_TO_INT( J_ARG(1) );
+	rndSize = JSVAL_TO_INT( JL_ARG(1) );
 	void *buf;
 	buf = (void*)JS_malloc(cx, rndSize);
-	J_CHK( buf );
+	JL_CHK( buf );
 	PRSize size;
 	size = PR_GetRandomNoise(buf, rndSize);
 	if ( size <= 0 ) {
 
 		JS_free(cx, buf);
-		J_REPORT_ERROR( "PR_GetRandomNoise is not implemented on this platform." );
+		JL_REPORT_ERROR( "PR_GetRandomNoise is not implemented on this platform." );
 	}
 
-	J_CHK( J_NewBlob( cx, buf, size, rval ) );
+	JL_CHK( JL_NewBlob( cx, buf, size, rval ) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -449,10 +449,10 @@ DEFINE_FUNCTION( GetRandomNoise ) {
 
 DEFINE_FUNCTION( hton ) {
 
-	J_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_ARG_MIN( 1 );
 
 	PRUint32 val;
-	J_JSVAL_TO_UINT32( J_ARG(1), val );
+	J_JSVAL_TO_UINT32( JL_ARG(1), val );
 
 	val = PR_ntohl(val);
 
@@ -477,16 +477,16 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( WaitSemaphore ) {
 
-	J_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_ARG_MIN( 1 );
 
 	PRUintn mode;
 	mode = PR_IRUSR | PR_IWUSR; // read write permission for owner.
-	if ( J_FARG_ISDEF(2) )
-		J_CHK( JsvalToUInt(cx, J_FARG(2), &mode) );
+	if ( JL_FARG_ISDEF(2) )
+		JL_CHK( JsvalToUInt(cx, JL_FARG(2), &mode) );
 
 	const char *name;
 	size_t nameLength;
-	J_CHK( JsvalToStringAndLength(cx, &J_FARG(1), &name, &nameLength) );
+	JL_CHK( JsvalToStringAndLength(cx, &JL_FARG(1), &name, &nameLength) );
 
 	bool isCreation;
 	isCreation = true;
@@ -529,11 +529,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( PostSemaphore ) {
 
-	J_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_ARG_MIN( 1 );
 
 	const char *name;
 	size_t nameLength;
-	J_CHK( JsvalToStringAndLength(cx, &J_FARG(1), &name, &nameLength) );
+	JL_CHK( JsvalToStringAndLength(cx, &JL_FARG(1), &name, &nameLength) );
 
 	PRSem *semaphore;
 	semaphore = PR_OpenSemaphore(name, 0, 0, 0);
@@ -577,25 +577,25 @@ DEFINE_FUNCTION_FAST( CreateProcess ) {
 
 	const char **processArgv = NULL; // keep on top
 
-	J_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_ARG_MIN( 1 );
 
 	int processArgc;
-	if ( J_FARG_ISDEF(2) && JSVAL_IS_OBJECT(J_FARG(2)) && JS_IsArrayObject( cx, JSVAL_TO_OBJECT(J_FARG(2)) ) == JS_TRUE ) {
+	if ( JL_FARG_ISDEF(2) && JSVAL_IS_OBJECT(JL_FARG(2)) && JS_IsArrayObject( cx, JSVAL_TO_OBJECT(JL_FARG(2)) ) == JS_TRUE ) {
 
 		JSIdArray *idArray;
-		idArray = JS_Enumerate( cx, JSVAL_TO_OBJECT(J_FARG(2)) ); // make a kind of auto-ptr for this
+		idArray = JS_Enumerate( cx, JSVAL_TO_OBJECT(JL_FARG(2)) ); // make a kind of auto-ptr for this
 		processArgc = idArray->length +1; // +1 is argv[0]
 		processArgv = (const char**)malloc(sizeof(const char**) * (processArgc +1)); // +1 is NULL
-		J_S_ASSERT_ALLOC( processArgv );
+		JL_S_ASSERT_ALLOC( processArgv );
 
 		for ( int i=0; i<processArgc -1; i++ ) { // -1 because argv[0]
 
 			jsval propVal;
-			J_CHK( JS_IdToValue(cx, idArray->vector[i], &propVal ));
-			J_CHK( JS_GetElement(cx, JSVAL_TO_OBJECT(J_FARG(2)), JSVAL_TO_INT(propVal), &propVal )); // (TBD) optimize
+			JL_CHK( JS_IdToValue(cx, idArray->vector[i], &propVal ));
+			JL_CHK( JS_GetElement(cx, JSVAL_TO_OBJECT(JL_FARG(2)), JSVAL_TO_INT(propVal), &propVal )); // (TBD) optimize
 
 			const char *tmp;
-			J_CHK( JsvalToString(cx, &propVal, &tmp) ); // warning: GC on the returned buffer !
+			JL_CHK( JsvalToString(cx, &propVal, &tmp) ); // warning: GC on the returned buffer !
 			processArgv[i+1] = tmp;
 		}
 		JS_DestroyIdArray( cx, idArray );
@@ -606,19 +606,19 @@ DEFINE_FUNCTION_FAST( CreateProcess ) {
 	}
 
 	const char *path;
-	J_CHK( JsvalToString(cx, &J_FARG(1), &path) );
+	JL_CHK( JsvalToString(cx, &JL_FARG(1), &path) );
 
 	processArgv[0] = path;
 	processArgv[processArgc] = NULL;
 
 	bool waitEnd;
 	waitEnd = false;
-	if ( J_FARG_ISDEF(3) )
-		J_CHK( JsvalToBool(cx, J_FARG(3), &waitEnd) );
+	if ( JL_FARG_ISDEF(3) )
+		JL_CHK( JsvalToBool(cx, JL_FARG(3), &waitEnd) );
 
 	PRFileDesc *stdout_child, *stdout_parent, *stdin_child, *stdin_parent;
-	J_CHKB( PR_CreatePipe(&stdout_parent, &stdout_child) == PR_SUCCESS, bad_throw );
-	J_CHKB( PR_CreatePipe(&stdin_parent, &stdin_child) == PR_SUCCESS, bad_throw );
+	JL_CHKB( PR_CreatePipe(&stdout_parent, &stdout_child) == PR_SUCCESS, bad_throw );
+	JL_CHKB( PR_CreatePipe(&stdin_parent, &stdin_child) == PR_SUCCESS, bad_throw );
 
 	PRProcessAttr *psattr;
 	psattr = PR_NewProcessAttr();
@@ -630,15 +630,15 @@ DEFINE_FUNCTION_FAST( CreateProcess ) {
 	process = PR_CreateProcess(path, (char * const *)processArgv, NULL, psattr); // (TBD) avoid cast to (char * const *)
 	PR_DestroyProcessAttr(psattr);
 
-	J_CHKB( PR_Close(stdin_child) == PR_SUCCESS, bad_throw );
-	J_CHKB( PR_Close(stdout_child) == PR_SUCCESS, bad_throw );
-	J_CHKB( process != NULL, bad_throw );
+	JL_CHKB( PR_Close(stdin_child) == PR_SUCCESS, bad_throw );
+	JL_CHKB( PR_Close(stdout_child) == PR_SUCCESS, bad_throw );
+	JL_CHKB( process != NULL, bad_throw );
 
 	if ( waitEnd ) {
 
 		PRInt32 exitValue;
-		J_CHKB( PR_WaitProcess( process, &exitValue ) == PR_SUCCESS, bad_throw );
-		*J_FRVAL = INT_TO_JSVAL( exitValue );
+		JL_CHKB( PR_WaitProcess( process, &exitValue ) == PR_SUCCESS, bad_throw );
+		*JL_FRVAL = INT_TO_JSVAL( exitValue );
 	} else {
 
 //		status = PR_DetachProcess(process);
@@ -646,19 +646,19 @@ DEFINE_FUNCTION_FAST( CreateProcess ) {
 //			return ThrowIoError(cx);
 
 		JSObject *fdin = JS_NewObject( cx, classPipe, NULL, NULL );
-		J_CHK( JS_SetPrivate( cx, fdin, stdin_parent ) );
+		JL_CHK( JL_SetPrivate( cx, fdin, stdin_parent ) );
 
 		JSObject *fdout = JS_NewObject( cx, classPipe, NULL, NULL );
-		J_CHK( JS_SetPrivate( cx, fdout, stdout_parent ) );
+		JL_CHK( JL_SetPrivate( cx, fdout, stdout_parent ) );
 
-		J_CHK( ReserveStreamReadInterface(cx, fdout) );
-		J_CHK( SetStreamReadInterface(cx, fdout, NativeInterfaceStreamRead) );
+		JL_CHK( ReserveStreamReadInterface(cx, fdout) );
+		JL_CHK( SetStreamReadInterface(cx, fdout, NativeInterfaceStreamRead) );
 
 		jsval vector[2];
 		vector[0] = OBJECT_TO_JSVAL( fdin );
 		vector[1] = OBJECT_TO_JSVAL( fdout );
 		JSObject *arrObj = JS_NewArrayObject(cx, 2, vector);
-		*J_FRVAL = OBJECT_TO_JSVAL( arrObj );
+		*JL_FRVAL = OBJECT_TO_JSVAL( arrObj );
 	}
 
 
@@ -687,9 +687,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( AvailableSpace ) {
 
-	J_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_ARG_MIN( 1 );
 	const char *path;
-	J_CHK( JsvalToString(cx, &J_FARG(1), &path) );
+	JL_CHK( JsvalToString(cx, &JL_FARG(1), &path) );
 
 	jsdouble available;
 
@@ -697,16 +697,16 @@ DEFINE_FUNCTION_FAST( AvailableSpace ) {
 	ULARGE_INTEGER freeBytesAvailable;
 	BOOL res = ::GetDiskFreeSpaceEx(path, &freeBytesAvailable, NULL, NULL);
 	if ( res == 0 )
-		J_REPORT_ERROR_1("Unable to get the available space of %s.", path);
+		JL_REPORT_ERROR_1("Unable to get the available space of %s.", path);
 	available = freeBytesAvailable.QuadPart;
 #else // now for XP_UNIX an MacOS ?
 	struct statvfs fsd;
 	if ( statvfs(path, &fsd) < 0 )
-		J_REPORT_ERROR_1("Unable to get the available space of %s.", path);
+		JL_REPORT_ERROR_1("Unable to get the available space of %s.", path);
 	available = (jsdouble)fsd.f_bsize * (jsdouble)fsd.f_bavail;
 #endif // XP_WIN
 
-	J_CHK( JS_NewDoubleValue(cx, available, J_FRVAL) );
+	JL_CHK( JS_NewDoubleValue(cx, available, JL_FRVAL) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -735,7 +735,7 @@ DEFINE_PROPERTY( hostName ) {
 	if ( status != PR_SUCCESS )
 		return ThrowIoError(cx);
 	JSString *jsstr = JS_NewStringCopyZ(cx,tmp);
-	J_CHK( jsstr );
+	JL_CHK( jsstr );
 	*vp = STRING_TO_JSVAL(jsstr);
 	return JS_TRUE;
 	JL_BAD;
@@ -750,7 +750,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY( physicalMemorySize ) {
 
 	PRUint64 mem = PR_GetPhysicalMemorySize();
-	J_CHK( JS_NewNumberValue(cx, (jsdouble)mem, vp) );
+	JL_CHK( JS_NewNumberValue(cx, (jsdouble)mem, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -780,7 +780,7 @@ DEFINE_PROPERTY( systemInfo ) {
 		char tmp[SYS_INFO_BUFFER_LENGTH];
 
 		JSObject *info = JS_NewObject(cx, NULL, NULL, NULL);
-		J_CHK( info );
+		JL_CHK( info );
 		*vp = OBJECT_TO_JSVAL( info );
 
 		PRStatus status;
@@ -793,28 +793,28 @@ DEFINE_PROPERTY( systemInfo ) {
 		if ( status != PR_SUCCESS )
 			return ThrowIoError(cx);
 		jsstr = JS_NewStringCopyZ(cx,tmp);
-		J_CHK( jsstr );
+		JL_CHK( jsstr );
 //		tmpVal = STRING_TO_JSVAL(jsstr);
 //		JS_SetProperty(cx, info, "architecture", &tmpVal);
-		J_CHK( JS_DefineProperty(cx, info, "architecture", STRING_TO_JSVAL(jsstr), NULL, NULL, JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT) );
+		JL_CHK( JS_DefineProperty(cx, info, "architecture", STRING_TO_JSVAL(jsstr), NULL, NULL, JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT) );
 
 		status = PR_GetSystemInfo( PR_SI_SYSNAME, tmp, sizeof(tmp) );
 		if ( status != PR_SUCCESS )
 			return ThrowIoError(cx);
 		jsstr = JS_NewStringCopyZ(cx,tmp);
-		J_CHK( jsstr );
+		JL_CHK( jsstr );
 //		tmpVal = STRING_TO_JSVAL(jsstr);
 //		JS_SetProperty(cx, info, "name", &tmpVal);
-		J_CHK( JS_DefineProperty(cx, info, "name", STRING_TO_JSVAL(jsstr), NULL, NULL, JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT) );
+		JL_CHK( JS_DefineProperty(cx, info, "name", STRING_TO_JSVAL(jsstr), NULL, NULL, JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT) );
 
 		status = PR_GetSystemInfo( PR_SI_RELEASE, tmp, sizeof(tmp) );
 		if ( status != PR_SUCCESS )
 			return ThrowIoError(cx);
 		jsstr = JS_NewStringCopyZ(cx,tmp);
-		J_CHK( jsstr );
+		JL_CHK( jsstr );
 //		tmpVal = STRING_TO_JSVAL(jsstr);
 //		JS_SetProperty(cx, info, "release", &tmpVal);
-		J_CHK( JS_DefineProperty(cx, info, "release", STRING_TO_JSVAL(jsstr), NULL, NULL, JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT) );
+		JL_CHK( JS_DefineProperty(cx, info, "release", STRING_TO_JSVAL(jsstr), NULL, NULL, JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT) );
 	}
 
 	return JS_TRUE;
@@ -851,7 +851,7 @@ DEFINE_PROPERTY( processPriorityGetter ) {
 			priorityValue = 2;
 			break;
 		default:
-			J_REPORT_ERROR( "Invalid thread priority." );
+			JL_REPORT_ERROR( "Invalid thread priority." );
 	}
 	*vp = INT_TO_JSVAL( priorityValue );
 	return JS_TRUE;
@@ -861,7 +861,7 @@ DEFINE_PROPERTY( processPriorityGetter ) {
 DEFINE_PROPERTY( processPrioritySetter ) {
 
 	int priorityValue;
-	J_CHK( JsvalToInt(cx, *vp, &priorityValue) );
+	JL_CHK( JsvalToInt(cx, *vp, &priorityValue) );
 	PRThreadPriority priority;
 	switch (priorityValue) {
 		case -1:
@@ -877,7 +877,7 @@ DEFINE_PROPERTY( processPrioritySetter ) {
 			priority = PR_PRIORITY_URGENT;
 			break;
 		default:
-			J_REPORT_ERROR( "Invalid thread priority." );
+			JL_REPORT_ERROR( "Invalid thread priority." );
 	}
 	PRThread *thread;
 	thread = PR_GetCurrentThread();
@@ -896,8 +896,8 @@ DEFINE_PROPERTY( numberOfProcessors ) {
 
 	PRInt32 count = PR_GetNumberOfProcessors();
 	if ( count < 0 )
-		J_REPORT_ERROR( "Unable to get the number of processors." );
-	J_CHK( IntToJsval(cx, count, vp) );
+		JL_REPORT_ERROR( "Unable to get the number of processors." );
+	JL_CHK( IntToJsval(cx, count, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -922,7 +922,7 @@ DEFINE_PROPERTY_GETTER( currentDirectory ) {
 	getcwd(buf, sizeof(buf));
 #endif // XP_WIN
 	JSString *str = JS_NewStringCopyZ(cx, buf);
-	J_CHK( str );
+	JL_CHK( str );
 	*vp = STRING_TO_JSVAL( str );
 	return JS_TRUE;
 	JL_BAD;
@@ -931,7 +931,7 @@ DEFINE_PROPERTY_GETTER( currentDirectory ) {
 DEFINE_PROPERTY_SETTER( currentDirectory ) {
 
 	const char *buf;
-	J_CHK( JsvalToString(cx, vp, &buf ) );
+	JL_CHK( JsvalToString(cx, vp, &buf ) );
 #ifdef XP_WIN
 //	_chdir(buf);
 	::SetCurrentDirectory(buf);
@@ -958,7 +958,7 @@ DEFINE_PROPERTY( directorySeparator ) {
 
 		jschar sep = PR_GetDirectorySeparator();
 		JSString *str = JS_InternUCStringN(cx, &sep, 1);
-		J_CHK( str );
+		JL_CHK( str );
 		*vp = STRING_TO_JSVAL( str );
 	}
 	return JS_TRUE;
@@ -980,7 +980,7 @@ DEFINE_PROPERTY( pathSeparator ) {
 
 		jschar sep = PR_GetPathSeparator();
 		JSString *str = JS_InternUCStringN(cx, &sep, 1);
-		J_CHK( str );
+		JL_CHK( str );
 		*vp = STRING_TO_JSVAL( str );
 	}
 	return JS_TRUE;

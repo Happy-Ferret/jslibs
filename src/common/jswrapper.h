@@ -170,7 +170,7 @@ protected:
 		if ( !JS_InstanceOf( cx, obj, &_jsClass, NULL) // (TBD) ... && !HasPrototype(cx, obj) ...  )
       return NULL;
 
-    return (T_Class *) JS_GetPrivate(cx, obj);
+    return (T_Class *) JL_GetPrivate(cx, obj);
 	}
 
 
@@ -191,14 +191,14 @@ private:
 		if ( o == NULL )
       return JS_FALSE;
 
-		JS_SetPrivate(cx, obj, o);
+		JL_SetPrivate(cx, obj, o);
 		return JS_TRUE;
   }
 
   static void Destructor(JSContext *cx, JSObject *obj) {
 
-    // (TBD) check obj and JS_GetPrivate return
-    T_Class *o = (T_Class *) JS_GetPrivate(cx, obj);
+    // (TBD) check obj and JL_GetPrivate return
+    T_Class *o = (T_Class *) JL_GetPrivate(cx, obj);
 		if ( o != NULL )
 			delete o;
 	}

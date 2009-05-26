@@ -43,13 +43,13 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Stringify ) {
 
-	J_S_ASSERT_ARG_MIN(1);
-	J_S_ASSERT_ARG_MAX(1);
+	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_ARG_MAX(1);
 
-	if ( !JSVAL_IS_PRIMITIVE(J_ARG(1)) ) {
+	if ( !JSVAL_IS_PRIMITIVE(JL_ARG(1)) ) {
 
 		JSObject *sobj;
-		sobj = JSVAL_TO_OBJECT( J_ARG(1) );
+		sobj = JSVAL_TO_OBJECT( JL_ARG(1) );
 		NIStreamRead read = StreamReadInterface(cx, sobj);
 		if ( read ) {
 
@@ -59,7 +59,7 @@ DEFINE_FUNCTION( Stringify ) {
 			size_t length;
 			do {
 				length = 4096;
-				J_CHKB( read(cx, sobj, BufferNewChunk(&buf, length), &length), bad_freeBuffer );
+				JL_CHKB( read(cx, sobj, BufferNewChunk(&buf, length), &length), bad_freeBuffer );
 				BufferConfirm(&buf, length);
 			} while ( length != 0 );
 
@@ -67,13 +67,13 @@ DEFINE_FUNCTION( Stringify ) {
 			total = BufferGetLength(&buf);
 			char *newBuffer;
 			newBuffer = (char*)JS_malloc(cx, total +1);
-			J_CHK( newBuffer );
+			JL_CHK( newBuffer );
 			newBuffer[total] = '\0';
 			BufferCopyData(&buf, newBuffer, total);
 			
 			JSString *jsstr;
 			jsstr = JS_NewString(cx, newBuffer, total);
-			J_CHK( jsstr );
+			JL_CHK( jsstr );
 			*J_RVAL = STRING_TO_JSVAL( jsstr );
 
 			BufferFinalize(&buf);
@@ -87,11 +87,11 @@ DEFINE_FUNCTION( Stringify ) {
 	const char *buffer;
 	size_t length;
 	 // this include NIBufferGet compatible objects
-	J_CHK( JsvalToStringAndLength(cx, &J_ARG(1), &buffer, &length) ); // warning: GC on the returned buffer !
+	JL_CHK( JsvalToStringAndLength(cx, &JL_ARG(1), &buffer, &length) ); // warning: GC on the returned buffer !
 
 	char *newBuffer;
 	newBuffer = (char*)JS_malloc(cx, length +1);
-	J_CHK( newBuffer );
+	JL_CHK( newBuffer );
 	newBuffer[length] = '\0';
 	memcpy(newBuffer, buffer, length);
 

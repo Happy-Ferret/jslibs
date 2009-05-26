@@ -25,25 +25,25 @@ DECLARE_CLASS(Transformation)
  */
 inline JSBool GetMatrixHelper( JSContext *cx, jsval val, Matrix44 **m ) {
 
-	J_S_ASSERT_OBJECT(val);
+	JL_S_ASSERT_OBJECT(val);
 	JSObject *matrixObj = JSVAL_TO_OBJECT(val);
 
 	NIMatrix44Read Matrix44Read;
-	J_CHK( GetMatrix44ReadInterface(cx, matrixObj, &Matrix44Read) );
+	JL_CHK( GetMatrix44ReadInterface(cx, matrixObj, &Matrix44Read) );
 	if ( Matrix44Read != NULL ) {
 
-		J_CHK( Matrix44Read(cx, matrixObj, (float**)m) );
+		JL_CHK( Matrix44Read(cx, matrixObj, (float**)m) );
 		return JS_TRUE;
 	}
 
 	if ( JsvalIsArray(cx, val) ) {
 
 		size_t length;
-		J_CHK( JsvalToFloatVector(cx, val, (*m)->raw, 16, &length ) );
-		J_S_ASSERT_1( length == 16, "Too few (%d) elements in the array.", length );
+		JL_CHK( JsvalToFloatVector(cx, val, (*m)->raw, 16, &length ) );
+		JL_S_ASSERT_1( length == 16, "Too few (%d) elements in the array.", length );
 		return JS_TRUE;
 	}
 
-	J_REPORT_ERROR("Unable to read a 4x4 matrix.");
+	JL_REPORT_ERROR("Unable to read a 4x4 matrix.");
 	JL_BAD;
 }

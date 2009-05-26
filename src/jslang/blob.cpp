@@ -31,7 +31,7 @@ ALWAYS_INLINE JSBool InvalidateBlob( JSContext *cx, JSObject *blobObject ) {
 ALWAYS_INLINE bool IsBlobValid( JSContext *cx, JSObject *blobObject ) {
 
 	jsval lengthVal;
-	J_CHK( JS_GetReservedSlot(cx, blobObject, SLOT_BLOB_LENGTH, &lengthVal) );
+	JL_CHK( JS_GetReservedSlot(cx, blobObject, SLOT_BLOB_LENGTH, &lengthVal) );
 	return JSVAL_IS_INT( lengthVal );
 bad:
 	return false;
@@ -40,12 +40,12 @@ bad:
 
 ALWAYS_INLINE JSBool BlobLength( JSContext *cx, JSObject *blobObject, size_t *length ) {
 
-	J_S_ASSERT_CLASS(blobObject, BlobJSClass( cx ));
+	JL_S_ASSERT_CLASS(blobObject, BlobJSClass( cx ));
 	jsval lengthVal;
-	J_CHK( JS_GetReservedSlot(cx, blobObject, SLOT_BLOB_LENGTH, &lengthVal) );
-//	J_S_ASSERT_INT( lengthVal );
-	J_SAFE(
-		J_CHKM( JSVAL_IS_INT( lengthVal ), "Invalidated blob." );
+	JL_CHK( JS_GetReservedSlot(cx, blobObject, SLOT_BLOB_LENGTH, &lengthVal) );
+//	JL_S_ASSERT_INT( lengthVal );
+	JL_SAFE(
+		JL_CHKM( JSVAL_IS_INT( lengthVal ), "Invalidated blob." );
 	);
 	*length = JSVAL_TO_INT( lengthVal );
 	return JS_TRUE;
@@ -55,8 +55,8 @@ ALWAYS_INLINE JSBool BlobLength( JSContext *cx, JSObject *blobObject, size_t *le
 
 ALWAYS_INLINE JSBool BlobBuffer( JSContext *cx, JSObject *blobObject, const char **buffer ) {
 
-	J_S_ASSERT_CLASS(blobObject, BlobJSClass( cx ));
-	*buffer = (char*)JS_GetPrivate(cx, blobObject);
+	JL_S_ASSERT_CLASS(blobObject, BlobJSClass( cx ));
+	*buffer = (char*)JL_GetPrivate(cx, blobObject);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -73,9 +73,9 @@ JSBool NativeInterfaceBufferGet( JSContext *cx, JSObject *obj, const char **buf,
 	if ( JL_GetClass(obj) == classBlob ) {
 		
 		if ( !IsBlobValid(cx, obj) )
-			J_REPORT_ERROR("Invalid Blob object.");
-		J_CHK( BlobLength(cx, obj, size) );
-		J_CHK( BlobBuffer(cx, obj, buf) );
+			JL_REPORT_ERROR("Invalid Blob object.");
+		JL_CHK( BlobLength(cx, obj, size) );
+		JL_CHK( BlobBuffer(cx, obj, buf) );
 		return JS_TRUE;
 	}
 
@@ -100,19 +100,19 @@ inline JSBool JsvalToBlob( JSContext *cx, jsval val, JSObject **obj ) {
 		if ( srcLen > 0 ) {
 
 			dst = JS_malloc(cx, srcLen +1);
-			J_CHK( dst );
+			JL_CHK( dst );
 			((char*)dst)[srcLen] = '\0';
 			memcpy(dst, src, srcLen);
 		}
 	} else {
 
 		JSString *jsstr = JS_ValueToString(cx, val);
-		J_S_ASSERT( jsstr != NULL, "Unable to convert to string." );
+		JL_S_ASSERT( jsstr != NULL, "Unable to convert to string." );
 		srcLen = JL_GetStringLength(jsstr);
 		if ( srcLen > 0 ) {
 
 			dst = JS_malloc(cx, srcLen +1);
-			J_CHK( dst );
+			JL_CHK( dst );
 			((char*)dst)[srcLen] = '\0';
 
 			// (TBD) try to know if the string is deflated befor using JS_GetStringChars ??
@@ -131,7 +131,7 @@ inline JSBool JsvalToBlob( JSContext *cx, jsval val, JSObject **obj ) {
 
 DEFINE_FINALIZE() {
 
-	void *pv = JS_GetPrivate(cx, obj);
+	void *pv = JL_GetPrivate(cx, obj);
 	if ( !pv )
 		return;
 	JS_free(cx, pv);
@@ -152,35 +152,35 @@ DEFINE_CONSTRUCTOR() {
 	if ( !JS_IsConstructing(cx) ) { // supports this form (w/o new operator) : result.param1 = Blob('Hello World');
 
 		obj = JS_NewObject(cx, _class, NULL, NULL);
-		J_S_ASSERT( obj != NULL, "Blob construction failed." );
+		JL_S_ASSERT( obj != NULL, "Blob construction failed." );
 		*rval = OBJECT_TO_JSVAL(obj);
 	} else {
 		
 //		JSClass *tmp = JL_GetRegistredNativeClass(cx, "Blob");
 //		printf("\n***DBG:%d\n", JS_GetClass(obj) == tmp);
-		J_S_ASSERT_THIS_CLASS();
+		JL_S_ASSERT_THIS_CLASS();
 	}
 
-	if ( J_ARGC >= 1 ) {
+	if ( JL_ARGC >= 1 ) {
 
 		size_t length;
 		const char *sBuffer;
-		J_CHK( JsvalToStringAndLength(cx, &J_ARG(1), &sBuffer, &length) ); // warning: GC on the returned buffer !
+		JL_CHK( JsvalToStringAndLength(cx, &JL_ARG(1), &sBuffer, &length) ); // warning: GC on the returned buffer !
 
 		dBuffer = JS_malloc(cx, length +1);
-		J_CHK( dBuffer );
+		JL_CHK( dBuffer );
 		((char*)dBuffer)[length] = '\0';
 		memcpy(dBuffer, sBuffer, length);
-		J_CHK( JS_SetPrivate(cx, obj, dBuffer) );
-		J_CHK( JS_SetReservedSlot(cx, obj, SLOT_BLOB_LENGTH, INT_TO_JSVAL(length) ) );
+		JL_CHK( JL_SetPrivate(cx, obj, dBuffer) );
+		JL_CHK( JS_SetReservedSlot(cx, obj, SLOT_BLOB_LENGTH, INT_TO_JSVAL(length) ) );
 	} else {
 
-		J_CHK( JS_SetPrivate(cx, obj, NULL) );
-		J_CHK( JS_SetReservedSlot(cx, obj, SLOT_BLOB_LENGTH, INT_TO_JSVAL(0) ) );
+		JL_CHK( JL_SetPrivate(cx, obj, NULL) );
+		JL_CHK( JS_SetReservedSlot(cx, obj, SLOT_BLOB_LENGTH, INT_TO_JSVAL(0) ) );
 	}
 
-	J_CHK( ReserveBufferGetInterface(cx, obj) );
-	J_CHK( SetBufferGetInterface(cx, obj, NativeInterfaceBufferGet) );
+	JL_CHK( ReserveBufferGetInterface(cx, obj) );
+	JL_CHK( SetBufferGetInterface(cx, obj, NativeInterfaceBufferGet) );
 	return JS_TRUE;
 
 bad:
@@ -206,28 +206,28 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Free ) {
 
-	J_S_ASSERT_CLASS(J_FOBJ, _class);
+	JL_S_ASSERT_CLASS(JL_FOBJ, _class);
 	void *pv;
-	pv = JS_GetPrivate(cx, J_FOBJ);
+	pv = JL_GetPrivate(cx, JL_FOBJ);
 
-	if ( J_FARG_ISDEF(1) ) {
+	if ( JL_FARG_ISDEF(1) ) {
 
 		bool wipe;
-		J_CHK( JsvalToBool(cx, J_FARG(1), &wipe ) );
+		JL_CHK( JsvalToBool(cx, JL_FARG(1), &wipe ) );
 		if ( wipe ) {
 
 			size_t length;
-			J_CHK( BlobLength(cx, J_FOBJ, &length) );
+			JL_CHK( BlobLength(cx, JL_FOBJ, &length) );
 			memset(pv, 0, length);
 		}
 	}
 
 	JS_free(cx, pv);
-	J_CHK( JS_SetPrivate(cx, J_FOBJ, NULL) );
-	J_CHK( InvalidateBlob(cx, J_FOBJ) );
+	JL_CHK( JL_SetPrivate(cx, JL_FOBJ, NULL) );
+	JL_CHK( InvalidateBlob(cx, JL_FOBJ) );
 	// removes all of obj's own properties, except the special __proto__ and __parent__ properties, in a single operation.
 	// Properties belonging to objects on obj's prototype chain are not affected.
-	JS_ClearScope(cx, J_FOBJ);
+	JS_ClearScope(cx, JL_FOBJ);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -243,37 +243,37 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION_FAST( concat ) {
 
 	char *dst = NULL;
-	J_S_ASSERT_CLASS(J_FOBJ, _class);
+	JL_S_ASSERT_CLASS(JL_FOBJ, _class);
 
 	// note: var a = new String(123);  a.concat() !== a
 
 	size_t thisLength;
 	const char *thisBuffer;
-	J_CHK( BlobBuffer(cx, J_FOBJ, &thisBuffer) );
-	J_CHK( BlobLength(cx, J_FOBJ, &thisLength) );
+	JL_CHK( BlobBuffer(cx, JL_FOBJ, &thisBuffer) );
+	JL_CHK( BlobLength(cx, JL_FOBJ, &thisLength) );
 
 	size_t dstLen;
 	dstLen = thisLength;
 
 	unsigned int arg;
-	for ( arg = 1; arg <= J_ARGC; arg++ ) {
+	for ( arg = 1; arg <= JL_ARGC; arg++ ) {
 	
-		if ( JsvalIsBlob(cx, J_FARG(arg)) ) {
+		if ( JsvalIsBlob(cx, JL_FARG(arg)) ) {
 
 			size_t tmp;
-			J_CHK( BlobLength(cx, JSVAL_TO_OBJECT( J_FARG(arg) ), &tmp) );
+			JL_CHK( BlobLength(cx, JSVAL_TO_OBJECT( JL_FARG(arg) ), &tmp) );
 			dstLen += tmp;
 		
 		} else {
 
-			JSString *jsstr = JS_ValueToString(cx, J_FARG(arg));
-			J_FARG(arg) = STRING_TO_JSVAL(jsstr);
+			JSString *jsstr = JS_ValueToString(cx, JL_FARG(arg));
+			JL_FARG(arg) = STRING_TO_JSVAL(jsstr);
 			dstLen += JL_GetStringLength(jsstr);
 		}
 	}
 
 	dst = (char*)JS_malloc(cx, dstLen +1);
-	J_CHK( dst );
+	JL_CHK( dst );
 	dst[dstLen] = '\0';
 
 	char *tmp;
@@ -285,17 +285,17 @@ DEFINE_FUNCTION_FAST( concat ) {
 		tmp += thisLength;
 	}
 
-	for ( arg = 1; arg <= J_ARGC; arg++ ) {
+	for ( arg = 1; arg <= JL_ARGC; arg++ ) {
 		
 		const char *buffer;
 		size_t length;
-		J_CHK( JsvalToStringAndLength(cx, &J_FARG(arg), &buffer, &length) );
+		JL_CHK( JsvalToStringAndLength(cx, &JL_FARG(arg), &buffer, &length) );
 
 		memcpy(tmp, buffer, length);
 		tmp += length;
 	}
 
-	J_CHK( J_NewBlob(cx, dst, dstLen, J_FRVAL) );
+	JL_CHK( JL_NewBlob(cx, dst, dstLen, JL_FRVAL) );
 	return JS_TRUE;
 bad:
 	if ( dst )
@@ -316,17 +316,17 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( substr ) {
 
-	J_S_ASSERT_CLASS(J_FOBJ, _class);
-	J_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_CLASS(JL_FOBJ, _class);
+	JL_S_ASSERT_ARG_MIN(1);
 
 	const char *bstrBuffer;
-	J_CHK( BlobBuffer(cx, J_FOBJ, &bstrBuffer) );
+	JL_CHK( BlobBuffer(cx, JL_FOBJ, &bstrBuffer) );
 
 	size_t dataLength;
-	J_CHK( BlobLength(cx, J_FOBJ, &dataLength) );
+	JL_CHK( BlobLength(cx, JL_FOBJ, &dataLength) );
 
 	jsval arg1;
-	arg1 = J_FARG(1);
+	arg1 = JL_FARG(1);
 
 	int start;
 	if ( JsvalIsPInfinity(cx, arg1) )
@@ -336,7 +336,7 @@ DEFINE_FUNCTION_FAST( substr ) {
 
 	if ( start >= (signed)dataLength ) {
 
-		*J_FRVAL = JS_GetEmptyStringValue(cx);
+		*JL_FRVAL = JS_GetEmptyStringValue(cx);
 		return JS_TRUE;
 	}
 
@@ -352,7 +352,7 @@ DEFINE_FUNCTION_FAST( substr ) {
 	if ( argc >= 2 ) {
 
 		jsval arg2;
-		arg2 = J_FARG(2);
+		arg2 = JL_FARG(2);
 
 		if ( JsvalIsPInfinity(cx, arg2) )
 			length = dataLength;
@@ -361,7 +361,7 @@ DEFINE_FUNCTION_FAST( substr ) {
 
 		if ( length <= 0 ) {
 
-			*J_FRVAL = JS_GetEmptyStringValue(cx);
+			*JL_FRVAL = JS_GetEmptyStringValue(cx);
 			return JS_TRUE;
 		}
 
@@ -375,11 +375,11 @@ DEFINE_FUNCTION_FAST( substr ) {
 
 	void *buffer;
 	buffer = JS_malloc(cx, length +1);
-	J_CHK( buffer );
+	JL_CHK( buffer );
 	((char*)buffer)[length] = '\0';
 
 	memcpy(buffer, ((int8_t*)bstrBuffer) + start, length);
-	J_CHKB( J_NewBlob(cx, buffer, length, J_FRVAL), bad_free );
+	JL_CHKB( JL_NewBlob(cx, buffer, length, JL_FRVAL), bad_free );
 
 	return JS_TRUE;
 bad_free:
@@ -407,22 +407,22 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( substring ) {
 
-	J_S_ASSERT_CLASS(J_FOBJ, _class);
-	if ( J_ARGC == 0 ) {
+	JL_S_ASSERT_CLASS(JL_FOBJ, _class);
+	if ( JL_ARGC == 0 ) {
 		
-		*J_FRVAL = J_FARG(1);
+		*JL_FRVAL = JL_FARG(1);
 		return JS_TRUE;
 	}
 
 	const char *bstrBuffer;
-	J_CHK( BlobBuffer(cx, J_FOBJ, &bstrBuffer) );
+	JL_CHK( BlobBuffer(cx, JL_FOBJ, &bstrBuffer) );
 	size_t dataLength;
-	J_CHK( BlobLength(cx, J_FOBJ, &dataLength) );
+	JL_CHK( BlobLength(cx, JL_FOBJ, &dataLength) );
 
 	int indexA, indexB;
 /*
-	jsval arg1 = J_FARG(1);
-	jsval arg2 = J_FARG(1);
+	jsval arg1 = JL_FARG(1);
+	jsval arg2 = JL_FARG(1);
 
 	if ( JSVAL_IS_INT(arg1) )
 		indexA = JSVAL_TO_INT(arg1)
@@ -433,15 +433,15 @@ DEFINE_FUNCTION_FAST( substring ) {
 */
 
 	jsval arg1;
-	arg1 = J_FARG(1);
+	arg1 = JL_FARG(1);
 	if ( JsvalIsPInfinity(cx, arg1) )
 		indexA = (signed)dataLength;
-	else if ( !JsvalToInt(cx, J_FARG(1), &indexA) )
+	else if ( !JsvalToInt(cx, JL_FARG(1), &indexA) )
 		indexA = 0;
 
-	if ( J_ARGC < 2 || JsvalIsPInfinity(cx, J_FARG(2)) )
+	if ( JL_ARGC < 2 || JsvalIsPInfinity(cx, JL_FARG(2)) )
 		indexB = (signed)dataLength;
-	else if ( !JsvalToInt(cx, J_FARG(2), &indexB) )
+	else if ( !JsvalToInt(cx, JL_FARG(2), &indexB) )
 		indexB = 0;
 
 	if ( indexA < 0 )
@@ -463,7 +463,7 @@ DEFINE_FUNCTION_FAST( substring ) {
 
 	if ( indexA == indexB || indexA >= (signed)dataLength ) {
 
-		*J_FRVAL = JS_GetEmptyStringValue(cx);
+		*JL_FRVAL = JS_GetEmptyStringValue(cx);
 		return JS_TRUE;
 	}
 
@@ -473,11 +473,11 @@ DEFINE_FUNCTION_FAST( substring ) {
 
 	void *buffer;
 	buffer = JS_malloc(cx, length +1);
-	J_CHK( buffer );
+	JL_CHK( buffer );
 	((char*)buffer)[length] = '\0';
 
 	memcpy(buffer, ((int8_t*)bstrBuffer) + indexA, length);
-	J_CHKB( J_NewBlob(cx, buffer, length, J_FRVAL), bad_free );
+	JL_CHKB( JL_NewBlob(cx, buffer, length, JL_FRVAL), bad_free );
 
 	return JS_TRUE;
 bad_free:
@@ -498,33 +498,33 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( indexOf ) {
 
-	J_S_ASSERT_CLASS(J_FOBJ, _class);
-	J_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_CLASS(JL_FOBJ, _class);
+	JL_S_ASSERT_ARG_MIN(1);
 
 	const char *sBuffer;
 	size_t sLength;
-	J_CHK( JsvalToStringAndLength(cx, &J_FARG(1), &sBuffer, &sLength) ); // warning: GC on the returned buffer !
+	JL_CHK( JsvalToStringAndLength(cx, &JL_FARG(1), &sBuffer, &sLength) ); // warning: GC on the returned buffer !
 
 	if ( sLength == 0 ) {
 
-		*J_FRVAL = INT_TO_JSVAL(0);
+		*JL_FRVAL = INT_TO_JSVAL(0);
 		return JS_TRUE;
 	}
 
 	size_t length;
-	J_CHK( BlobLength(cx, J_FOBJ, &length) );
+	JL_CHK( BlobLength(cx, JL_FOBJ, &length) );
 
 	long start;
-	if ( J_FARG_ISDEF(2) ) {
+	if ( JL_FARG_ISDEF(2) ) {
 
-		J_S_ASSERT_INT( J_FARG(2) );
-		start = JSVAL_TO_INT( J_FARG(2) );
+		JL_S_ASSERT_INT( JL_FARG(2) );
+		start = JSVAL_TO_INT( JL_FARG(2) );
 
 		if ( start < 0 )
 			start = 0;
 		else if ( start + sLength > length ) {
 
-			*J_FRVAL = INT_TO_JSVAL(-1);
+			*JL_FRVAL = INT_TO_JSVAL(-1);
 			return JS_TRUE;
 		}
 
@@ -534,7 +534,7 @@ DEFINE_FUNCTION_FAST( indexOf ) {
 	}
 
 	const char *buffer;
-	J_CHK( BlobBuffer(cx, J_FOBJ, &buffer) );
+	JL_CHK( BlobBuffer(cx, JL_FOBJ, &buffer) );
 
 	for ( size_t i = start; i < length; i++ ) {
 
@@ -542,12 +542,12 @@ DEFINE_FUNCTION_FAST( indexOf ) {
 		for ( j = 0; j < sLength && buffer[i+j] == sBuffer[j]; j++ );
 		if ( j == sLength ) {
 
-			J_CHK( JS_NewNumberValue(cx, i, J_FRVAL) );
+			JL_CHK( JS_NewNumberValue(cx, i, JL_FRVAL) );
 			return JS_TRUE;
 		}
 	}
 
-	*J_FRVAL = INT_TO_JSVAL(-1);
+	*JL_FRVAL = INT_TO_JSVAL(-1);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -565,29 +565,29 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( lastIndexOf ) {
 
-	J_S_ASSERT_CLASS(J_FOBJ, _class);
-	J_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_CLASS(JL_FOBJ, _class);
+	JL_S_ASSERT_ARG_MIN(1);
 
 	const char *sBuffer;
 	size_t sLength;
-	J_CHK( JsvalToStringAndLength(cx, &J_FARG(1), &sBuffer, &sLength) ); // warning: GC on the returned buffer !
+	JL_CHK( JsvalToStringAndLength(cx, &JL_FARG(1), &sBuffer, &sLength) ); // warning: GC on the returned buffer !
 
 
 	const char *buffer;
 	size_t length;
-	J_CHK( BlobBuffer(cx, J_FOBJ, &buffer) );
-	J_CHK( BlobLength(cx, J_FOBJ, &length) );
+	JL_CHK( BlobBuffer(cx, JL_FOBJ, &buffer) );
+	JL_CHK( BlobLength(cx, JL_FOBJ, &length) );
 
 	if ( sLength == 0 && argc < 2 ) {
 
-		*J_FRVAL = INT_TO_JSVAL(length);
+		*JL_FRVAL = INT_TO_JSVAL(length);
 		return JS_TRUE;
 	}
 
 	int start;
-	if ( J_FARG_ISDEF(2) ) {
+	if ( JL_FARG_ISDEF(2) ) {
 		
-		jsval arg2 = J_FARG(2);
+		jsval arg2 = JL_FARG(2);
 
 		if ( JSVAL_IS_INT(arg2) && JSVAL_TO_INT(arg2) < 0 || JsvalIsNInfinity(cx, arg2) ) {
 			
@@ -599,7 +599,7 @@ DEFINE_FUNCTION_FAST( lastIndexOf ) {
 				start = length - sLength;
 			} else {
 				
-				J_CHK( JsvalToInt(cx, J_FARG(2), &start) );
+				JL_CHK( JsvalToInt(cx, JL_FARG(2), &start) );
 				if ( start + sLength > length ) {
 
 					start = length - sLength;
@@ -618,12 +618,12 @@ DEFINE_FUNCTION_FAST( lastIndexOf ) {
 		for ( j = 0; j < sLength && buffer[i+j] == sBuffer[j]; j++ );
 		if ( j == sLength ) {
 
-			J_CHK( JS_NewNumberValue(cx, i, J_FRVAL) );
+			JL_CHK( JS_NewNumberValue(cx, i, JL_FRVAL) );
 			return JS_TRUE;
 		}
 	}
 
-	*J_FRVAL = INT_TO_JSVAL(-1);
+	*JL_FRVAL = INT_TO_JSVAL(-1);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -638,20 +638,20 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( charAt ) {
 
-	J_S_ASSERT_CLASS(J_FOBJ, _class);
+	JL_S_ASSERT_CLASS(JL_FOBJ, _class);
 	int index;
-	if ( J_FARG_ISDEF(1) ) {
+	if ( JL_FARG_ISDEF(1) ) {
 
-		jsval arg1 = J_FARG(1);
+		jsval arg1 = JL_FARG(1);
 		if ( !JSVAL_IS_INT(arg1) ) {
 
 			if ( JsvalIsPInfinity(cx, arg1) || JsvalIsNInfinity(cx, arg1) || JsvalIsNaN(cx, arg1) ) {
 				
-				*J_FRVAL = JS_GetEmptyStringValue(cx);
+				*JL_FRVAL = JS_GetEmptyStringValue(cx);
 				return JS_TRUE;
 			}
 
-			J_CHK( JsvalToInt(cx, arg1, &index) );
+			JL_CHK( JsvalToInt(cx, arg1, &index) );
 		} else {
 
 			index = JSVAL_TO_INT(arg1);
@@ -663,23 +663,23 @@ DEFINE_FUNCTION_FAST( charAt ) {
 
 
 	size_t length;
-	J_CHK( BlobLength(cx, J_FOBJ, &length) );
+	JL_CHK( BlobLength(cx, JL_FOBJ, &length) );
 
 	if ( length == 0 || index < 0 || (unsigned)index >= length ) {
 
-		*J_FRVAL = JS_GetEmptyStringValue(cx);
+		*JL_FRVAL = JS_GetEmptyStringValue(cx);
 		return JS_TRUE;
 	}
 
 	const char *buffer;
-	J_CHK( BlobBuffer(cx, J_FOBJ, &buffer) );
+	JL_CHK( BlobBuffer(cx, JL_FOBJ, &buffer) );
 
 	jschar chr;
 	chr = ((char*)buffer)[index];
 	JSString *str1;
 	str1 = JS_NewUCStringCopyN(cx, &chr, 1);
-	J_CHK( str1 );
-	*J_FRVAL = STRING_TO_JSVAL(str1);
+	JL_CHK( str1 );
+	*JL_FRVAL = STRING_TO_JSVAL(str1);
 
 	return JS_TRUE;
 	JL_BAD;
@@ -695,22 +695,22 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( charCodeAt ) {
 
-	J_S_ASSERT_CLASS(J_FOBJ, _class);
+	JL_S_ASSERT_CLASS(JL_FOBJ, _class);
 	int index;
-	if ( J_FARG_ISDEF(1) ) {
+	if ( JL_FARG_ISDEF(1) ) {
 
-		jsval arg1 = J_FARG(1);
+		jsval arg1 = JL_FARG(1);
 		if ( !JSVAL_IS_INT(arg1) ) {
 
 			if ( JsvalIsPInfinity(cx, arg1) || JsvalIsNInfinity(cx, arg1) ) {
 				
-				*J_FRVAL = JS_GetNaNValue(cx);
+				*JL_FRVAL = JS_GetNaNValue(cx);
 				return JS_TRUE;
 			}
 
-			J_CHK( JsvalToInt(cx, arg1, &index) );
+			JL_CHK( JsvalToInt(cx, arg1, &index) );
 
-//			J_REPORT_ERROR( J__ERRMSG_UNEXPECTED_TYPE " Integer expected." );
+//			JL_REPORT_ERROR( J__ERRMSG_UNEXPECTED_TYPE " Integer expected." );
 			return JS_FALSE;
 		}
 		index = JSVAL_TO_INT(arg1);
@@ -720,17 +720,17 @@ DEFINE_FUNCTION_FAST( charCodeAt ) {
 	}
 
 	size_t length;
-	J_CHK( BlobLength(cx, J_FOBJ, &length) );
+	JL_CHK( BlobLength(cx, JL_FOBJ, &length) );
 
 	if ( length == 0 || index < 0 || (unsigned)index >= length ) {
 
-		*J_FRVAL = JS_GetNaNValue(cx);
+		*JL_FRVAL = JS_GetNaNValue(cx);
 		return JS_TRUE;
 	}
 
 	const char *buffer;
-	J_CHK( BlobBuffer(cx, J_FOBJ, &buffer) );
-	*J_FRVAL = INT_TO_JSVAL( buffer[index] );
+	JL_CHK( BlobBuffer(cx, JL_FOBJ, &buffer) );
+	*JL_FRVAL = INT_TO_JSVAL( buffer[index] );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -745,11 +745,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( toString ) { // and valueOf ?
 
-	J_S_ASSERT_CLASS(J_FOBJ, _class);
+	JL_S_ASSERT_CLASS(JL_FOBJ, _class);
 	void *pv;
-	pv = JS_GetPrivate(cx, J_FOBJ);
+	pv = JL_GetPrivate(cx, JL_FOBJ);
 	size_t length;
-	J_CHK( BlobLength(cx, J_FOBJ, &length) );
+	JL_CHK( BlobLength(cx, JL_FOBJ, &length) );
 	JSString *jsstr;
 	if ( length == 0 ) {
 
@@ -763,8 +763,8 @@ DEFINE_FUNCTION_FAST( toString ) { // and valueOf ?
 		jsstr = JS_NewUCString(cx, ucStr, length);
 	}
 
-	J_S_ASSERT( jsstr != NULL, "Unable to convert Blob to String." );
-	*J_FRVAL = STRING_TO_JSVAL(jsstr);
+	JL_S_ASSERT( jsstr != NULL, "Unable to convert Blob to String." );
+	*JL_FRVAL = STRING_TO_JSVAL(jsstr);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -773,7 +773,7 @@ DEFINE_FUNCTION_FAST( toString ) { // and valueOf ?
 DEFINE_FUNCTION_FAST( toSource ) {
 
 	// (TBD) try something faster !!
-	*J_FRVAL = STRING_TO_JSVAL(JS_ValueToSource(cx, STRING_TO_JSVAL(JS_ValueToString(cx, OBJECT_TO_JSVAL(J_FOBJ)))));
+	*JL_FRVAL = STRING_TO_JSVAL(JS_ValueToSource(cx, STRING_TO_JSVAL(JS_ValueToString(cx, OBJECT_TO_JSVAL(JL_FOBJ)))));
 	return JS_TRUE;
 }
 
@@ -789,9 +789,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( length ) {
 
-	J_S_ASSERT_THIS_CLASS();
+	JL_S_ASSERT_THIS_CLASS();
 	size_t length;
-	J_CHK( BlobLength(cx, obj, &length) );
+	JL_CHK( BlobLength(cx, obj, &length) );
 	*vp = INT_TO_JSVAL( length );
 	return JS_TRUE;
 	JL_BAD;
@@ -805,18 +805,18 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_GET_PROPERTY() {
 
-//	J_S_ASSERT_THIS_CLASS(); // when mutated, this is a String
+//	JL_S_ASSERT_THIS_CLASS(); // when mutated, this is a String
 	if ( !JSVAL_IS_INT(id) )
 		return JS_TRUE;
 
 	jsint slot = JSVAL_TO_INT( id );
 
-	void *pv = JS_GetPrivate(cx, obj);
+	void *pv = JL_GetPrivate(cx, obj);
 	if ( pv == NULL )
 		return JS_TRUE;
 
 	size_t length;
-	J_CHK( BlobLength(cx, obj, &length) );
+	JL_CHK( BlobLength(cx, obj, &length) );
 
 	if ( slot < 0 || slot >= (int)length )
 		return JS_TRUE;
@@ -825,7 +825,7 @@ DEFINE_GET_PROPERTY() {
 	chr = ((char*)pv)[slot];
 	JSString *str1;
 	str1 = JS_NewUCStringCopyN(cx, &chr, 1);
-	J_CHK( str1 );
+	JL_CHK( str1 );
 
 	*vp = STRING_TO_JSVAL(str1);
 
@@ -836,7 +836,7 @@ DEFINE_GET_PROPERTY() {
 
 DEFINE_SET_PROPERTY() {
 
-	J_S_ASSERT( !JSVAL_IS_NUMBER(id), "Cannot modify immutable objects" );
+	JL_S_ASSERT( !JSVAL_IS_NUMBER(id), "Cannot modify immutable objects" );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -848,15 +848,15 @@ DEFINE_EQUALITY() {
 
 		if ( !IsBlobValid(cx, obj) || !IsBlobValid(cx, JSVAL_TO_OBJECT(v)) ) {
 			
-			J_REPORT_ERROR("Invalid Blob object.");
+			JL_REPORT_ERROR("Invalid Blob object.");
 		}
 		
 		const char *buf1, *buf2;
 		size_t len1, len2;
-		J_CHK( BlobBuffer(cx, obj, &buf1) );
-		J_CHK( BlobLength(cx, obj, &len1) );
-		J_CHK( BlobBuffer(cx, JSVAL_TO_OBJECT(v), &buf2) );
-		J_CHK( BlobLength(cx, JSVAL_TO_OBJECT(v), &len2) );
+		JL_CHK( BlobBuffer(cx, obj, &buf1) );
+		JL_CHK( BlobLength(cx, obj, &len1) );
+		JL_CHK( BlobBuffer(cx, JSVAL_TO_OBJECT(v), &buf2) );
+		JL_CHK( BlobLength(cx, JSVAL_TO_OBJECT(v), &len2) );
 		
 		if ( len1 == len2 && memcmp(buf1, buf2, len1) == 0 ) {
 
@@ -879,19 +879,19 @@ DEFINE_NEW_RESOLVE() {
 
 	if ( !IsBlobValid(cx, obj) ) {
 
-		J_REPORT_ERROR("Invalid Blob object.");
+		JL_REPORT_ERROR("Invalid Blob object.");
 	}
 
 	if ( !(flags & JSRESOLVE_QUALIFIED) || (flags & JSRESOLVE_ASSIGNING) )
 		return JS_TRUE;
 
 	jsid propId;
-	J_CHK( JS_ValueToId(cx, id, &propId) );
+	JL_CHK( JS_ValueToId(cx, id, &propId) );
 
 
 	// search propId in Blob's prototype
 	JSProperty *prop;
-	J_CHK( OBJ_LOOKUP_PROPERTY(cx, prototypeBlob, propId, objp, &prop) );
+	JL_CHK( OBJ_LOOKUP_PROPERTY(cx, prototypeBlob, propId, objp, &prop) );
 	if ( prop ) {
 
 		OBJ_DROP_PROPERTY(cx, *objp, prop);
@@ -900,8 +900,8 @@ DEFINE_NEW_RESOLVE() {
 
 	// search propId in String's prototype.
 	JSObject *stringPrototype;
-	J_CHK( JS_GetClassObject(cx, JS_GetGlobalObject(cx), JSProto_String, &stringPrototype) );
-	J_CHK( OBJ_LOOKUP_PROPERTY(cx, stringPrototype, propId, objp, &prop) );
+	JL_CHK( JS_GetClassObject(cx, JS_GetGlobalObject(cx), JSProto_String, &stringPrototype) );
+	JL_CHK( OBJ_LOOKUP_PROPERTY(cx, stringPrototype, propId, objp, &prop) );
 	if ( prop )
 		OBJ_DROP_PROPERTY(cx, *objp, prop);
 	else
@@ -912,13 +912,13 @@ DEFINE_NEW_RESOLVE() {
 
 	const char *buffer;
 	size_t length;
-	J_CHK( BlobBuffer(cx, obj, &buffer) );
-	J_CHK( BlobLength(cx, obj, &length) );
+	JL_CHK( BlobBuffer(cx, obj, &buffer) );
+	JL_CHK( BlobLength(cx, obj, &length) );
 	// ownership of buffer is given to the JSString
 	JSString *jsstr;
 	jsstr = JS_NewString(cx, (char*)buffer, length); // JS_NewString don't accepts (const char *)
 	JSObject *strObj;
-	J_CHK( JS_ValueToObject(cx, STRING_TO_JSVAL(jsstr), &strObj) );
+	JL_CHK( JS_ValueToObject(cx, STRING_TO_JSVAL(jsstr), &strObj) );
 
 	obj->fslots[JSSLOT_PROTO] = strObj->fslots[JSSLOT_PROTO];
 	// Make sure we preserve any flags borrowing bits in JSSLOT_CLASS.
@@ -929,7 +929,7 @@ DEFINE_NEW_RESOLVE() {
 	obj->fslots[JSSLOT_PRIVATE] = strObj->fslots[JSSLOT_PRIVATE];
 	obj->map->ops = strObj->map->ops;
 
-//	J_CHKM( MutateToJSString(cx, obj), "Unable to transform the Blob into a String." );
+//	JL_CHKM( MutateToJSString(cx, obj), "Unable to transform the Blob into a String." );
 //	const char *debug_name = JS_GetStringBytes(JS_ValueToString(cx, id));
 	return JS_TRUE;
 	JL_BAD;
@@ -945,30 +945,30 @@ DEFINE_XDR() {
 
 		const char *buffer;
 		size_t length;
-		J_CHK( BlobLength(xdr->cx, *objp, &length) );
-		J_CHK( BlobBuffer(xdr->cx, *objp, &buffer) );
+		JL_CHK( BlobLength(xdr->cx, *objp, &length) );
+		JL_CHK( BlobBuffer(xdr->cx, *objp, &buffer) );
 		uint32 tmp;
 		tmp = length;
-		J_CHK( JS_XDRUint32(xdr, &tmp) );
-		J_CHK( JS_XDRBytes(xdr, (char*)buffer, length) ); // ugly but safe de-const because we are JSXDR_ENCODE.
+		JL_CHK( JS_XDRUint32(xdr, &tmp) );
+		JL_CHK( JS_XDRBytes(xdr, (char*)buffer, length) ); // ugly but safe de-const because we are JSXDR_ENCODE.
 
 		JSObject *it;
 		it = JS_NewPropertyIterator(xdr->cx, *objp); // see JS_Enumerate that calls obj's JSClass.enumerate hook. JS_DestroyIdArray.
-		J_CHK( it );
+		JL_CHK( it );
 
 		for (;;) {
 
-			J_CHK( JS_NextProperty(xdr->cx, it, &id) );
+			JL_CHK( JS_NextProperty(xdr->cx, it, &id) );
 			if ( id != JSVAL_VOID ) { // ... or JSVAL_VOID if there is no such property left to visit.
 
-				J_CHK( JS_IdToValue(xdr->cx, id, &key) );
-				J_CHK( OBJ_GET_PROPERTY(xdr->cx, *objp, id, &value) ); // returning false on error or exception, true on success.
-				J_CHK( JS_XDRValue(xdr, &key) );
-				J_CHK( JS_XDRValue(xdr, &value) );
+				JL_CHK( JS_IdToValue(xdr->cx, id, &key) );
+				JL_CHK( OBJ_GET_PROPERTY(xdr->cx, *objp, id, &value) ); // returning false on error or exception, true on success.
+				JL_CHK( JS_XDRValue(xdr, &key) );
+				JL_CHK( JS_XDRValue(xdr, &value) );
 			} else {
 
 				jsval tmp = JSVAL_VOID;
-				J_CHK( JS_XDRValue(xdr, &tmp) );
+				JL_CHK( JS_XDRValue(xdr, &tmp) );
 				break;
 			}
 		}
@@ -980,23 +980,23 @@ DEFINE_XDR() {
 
 		uint32 length;
 		char *buffer;
-		J_CHK( JS_XDRUint32(xdr, &length) );
+		JL_CHK( JS_XDRUint32(xdr, &length) );
 		buffer = (char*)JS_malloc(xdr->cx, length +1);
 		buffer[length] = '\0'; // (TBD) needed ?
-		J_CHKB( JS_XDRBytes(xdr, buffer, length), bad_free_buffer );
+		JL_CHKB( JS_XDRBytes(xdr, buffer, length), bad_free_buffer );
 
 		jsval tmp;
-		J_CHKB( J_NewBlob(xdr->cx, buffer, length, &tmp), bad_free_buffer );
-		J_CHKB( JS_ValueToObject(xdr->cx, tmp, objp), bad_free_buffer );
+		JL_CHKB( JL_NewBlob(xdr->cx, buffer, length, &tmp), bad_free_buffer );
+		JL_CHKB( JS_ValueToObject(xdr->cx, tmp, objp), bad_free_buffer );
 
 		for (;;) {
 
-			J_CHKB( JS_XDRValue(xdr, &key), bad_free_buffer );
+			JL_CHKB( JS_XDRValue(xdr, &key), bad_free_buffer );
 			if ( key != JSVAL_VOID ) {
 
 				JS_ValueToId(xdr->cx, key, &id);
-				J_CHKB( JS_XDRValue(xdr, &value), bad_free_buffer );
-				J_CHKB( OBJ_SET_PROPERTY(xdr->cx, *objp, id, &value), bad_free_buffer );
+				JL_CHKB( JS_XDRValue(xdr, &value), bad_free_buffer );
+				JL_CHKB( OBJ_SET_PROPERTY(xdr->cx, *objp, id, &value), bad_free_buffer );
 			} else {
 
 				break;

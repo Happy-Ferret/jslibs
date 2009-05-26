@@ -16,10 +16,10 @@ DECLARE_CLASS( Space );
 
 inline JSBool ValToSpaceID( JSContext *cx, jsval val, ode::dSpaceID *spaceId ) {
 
-	J_S_ASSERT_OBJECT(val);
+	JL_S_ASSERT_OBJECT(val);
 	JSObject *obj = JSVAL_TO_OBJECT(val);
-	J_S_ASSERT_CLASS(obj, classSpace);
-	*spaceId = (ode::dSpaceID)JS_GetPrivate(cx,obj);
+	JL_S_ASSERT_CLASS(obj, classSpace);
+	*spaceId = (ode::dSpaceID)JL_GetPrivate(cx,obj);
 	return JS_TRUE;
 	JL_BAD;
 }

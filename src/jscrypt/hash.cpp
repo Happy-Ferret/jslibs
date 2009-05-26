@@ -32,7 +32,7 @@ BEGIN_CLASS( Hash )
 
 DEFINE_FINALIZE() {
 
-	HashPrivate *pv = (HashPrivate *)JS_GetPrivate( cx, obj );
+	HashPrivate *pv = (HashPrivate *)JL_GetPrivate( cx, obj );
 	if ( !pv )
 		return;
 	JS_free(cx, pv);
@@ -64,31 +64,31 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
-	J_S_ASSERT_CONSTRUCTING();
-	J_S_ASSERT_THIS_CLASS();
-	J_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_CONSTRUCTING();
+	JL_S_ASSERT_THIS_CLASS();
+	JL_S_ASSERT_ARG_MIN( 1 );
 
 	const char *hashName;
-	J_CHK( JsvalToString(cx, &argv[0], &hashName) );
+	JL_CHK( JsvalToString(cx, &argv[0], &hashName) );
 
 	int hashIndex;
 	hashIndex = find_hash(hashName);
-	J_S_ASSERT_1( hashIndex != -1, "hash %s is not available", hashName );
+	JL_S_ASSERT_1( hashIndex != -1, "hash %s is not available", hashName );
 
 	HashPrivate *pv;
 	pv = (HashPrivate*)JS_malloc(cx, sizeof(HashPrivate));
-	J_CHK( pv );
+	JL_CHK( pv );
 
 	pv->descriptor = &hash_descriptor[hashIndex];
 
-	J_S_ASSERT_1( pv->descriptor->test() == CRYPT_OK, "%s hash test failed.", hashName );
+	JL_S_ASSERT_1( pv->descriptor->test() == CRYPT_OK, "%s hash test failed.", hashName );
 
 	int err;
 	if ( (err = pv->descriptor->init(&pv->state)) != CRYPT_OK )
 		return ThrowCryptError(cx, err);
 	pv->inputLength = 0;
 
-	JS_SetPrivate( cx, obj, pv );
+	JL_SetPrivate( cx, obj, pv );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -105,12 +105,12 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Init ) {
 
-	J_S_ASSERT_CLASS( obj, _class );
-	J_S_ASSERT_ARG_MAX( 0 );
+	JL_S_ASSERT_CLASS( obj, _class );
+	JL_S_ASSERT_ARG_MAX( 0 );
 
 	HashPrivate *pv;
-	pv = (HashPrivate *)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE( pv );
+	pv = (HashPrivate *)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( pv );
 
 	int err;
 	err = pv->descriptor->init(&pv->state); // Initialize the hash state
@@ -130,18 +130,18 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Process ) {
 
-	J_S_ASSERT_CLASS( obj, _class );
-	J_S_ASSERT_ARG_MIN( 1 );
-	J_S_ASSERT_STRING( argv[0] );
+	JL_S_ASSERT_CLASS( obj, _class );
+	JL_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_STRING( argv[0] );
 
 	HashPrivate *pv;
-	pv = (HashPrivate *)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE( pv );
+	pv = (HashPrivate *)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( pv );
 
 	int err;
 	const char *in;
 	size_t inLength;
-	J_CHK( JsvalToStringAndLength(cx, &argv[0], &in, &inLength) );
+	JL_CHK( JsvalToStringAndLength(cx, &argv[0], &in, &inLength) );
 
 	err = pv->descriptor->process(&pv->state, (const unsigned char *)in, inLength); // Process a block of memory though the hash
 	if ( err != CRYPT_OK )
@@ -170,22 +170,22 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Done ) {
 
-	J_S_ASSERT_CLASS( obj, _class );
+	JL_S_ASSERT_CLASS( obj, _class );
 	HashPrivate *pv;
-	pv = (HashPrivate *)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE( pv );
+	pv = (HashPrivate *)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( pv );
 
 	unsigned long outLength;
 	outLength = pv->descriptor->hashsize;
 	char *out;
 	out = (char *)JS_malloc( cx, outLength );
-	J_CHK( out );
+	JL_CHK( out );
 	int err;
 	err = pv->descriptor->done(&pv->state, (unsigned char*)out); // Terminate the hash to get the digest
 	if ( err != CRYPT_OK )
 		return ThrowCryptError(cx, err);
 
-	J_CHK( J_NewBlob( cx, out, outLength, rval ) );
+	JL_CHK( JL_NewBlob( cx, out, outLength, rval ) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -211,14 +211,14 @@ $TOC_MEMBER $INAME
 DEFINE_CALL() {
 
 	JSObject *thisObj = JSVAL_TO_OBJECT(argv[-2]); // get 'this' object of the current object ...
-	J_S_ASSERT_CLASS( thisObj, _class );
+	JL_S_ASSERT_CLASS( thisObj, _class );
 	
-	J_S_ASSERT_ARG_MIN( 1 );
-	J_S_ASSERT_STRING( argv[0] );
+	JL_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_STRING( argv[0] );
 
 	HashPrivate *pv;
-	pv = (HashPrivate *)JS_GetPrivate( cx, thisObj );
-	J_S_ASSERT_RESOURCE( pv );
+	pv = (HashPrivate *)JL_GetPrivate( cx, thisObj );
+	JL_S_ASSERT_RESOURCE( pv );
 
 	int err;
 
@@ -226,11 +226,11 @@ DEFINE_CALL() {
 	outLength = pv->descriptor->hashsize;
 	char *out;
 	out = (char *)JS_malloc( cx, outLength );
-	J_CHK( out );
+	JL_CHK( out );
 
 	const char *in;
 	size_t inLength;
-	J_CHK( JsvalToStringAndLength(cx, &argv[0], &in, &inLength) );
+	JL_CHK( JsvalToStringAndLength(cx, &argv[0], &in, &inLength) );
 
 	err = pv->descriptor->init(&pv->state);
 	if (err != CRYPT_OK)
@@ -249,7 +249,7 @@ DEFINE_CALL() {
 		return ThrowCryptError(cx, err);
 	pv->inputLength = 0;
 
-	J_CHK( J_NewBlob( cx, out, outLength, rval ) );
+	JL_CHK( JL_NewBlob( cx, out, outLength, rval ) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -266,13 +266,13 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( name ) {
 
-	J_S_ASSERT_CLASS( obj, _class );
+	JL_S_ASSERT_CLASS( obj, _class );
 	HashPrivate *pv;
-	pv = (HashPrivate *)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE( pv );
+	pv = (HashPrivate *)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( pv );
 	JSString *jsstr;
 	jsstr = JS_NewStringCopyZ(cx, pv->descriptor->name );
-	J_CHK( jsstr );
+	JL_CHK( jsstr );
 	*vp = STRING_TO_JSVAL( jsstr );
 	return JS_TRUE;
 	JL_BAD;
@@ -285,10 +285,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( blockSize ) {
 
-	J_S_ASSERT_CLASS( obj, _class );
+	JL_S_ASSERT_CLASS( obj, _class );
 	HashPrivate *pv;
-	pv = (HashPrivate *)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE( pv );
+	pv = (HashPrivate *)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( pv );
 	*vp = INT_TO_JSVAL( pv->descriptor->blocksize );
 	return JS_TRUE;
 	JL_BAD;
@@ -301,10 +301,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( length ) {
 
-	J_S_ASSERT_CLASS( obj, _class );
+	JL_S_ASSERT_CLASS( obj, _class );
 	HashPrivate *pv;
-	pv = (HashPrivate *)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE( pv );
+	pv = (HashPrivate *)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( pv );
 	*vp = INT_TO_JSVAL( pv->descriptor->hashsize );
 	return JS_TRUE;
 	JL_BAD;
@@ -317,10 +317,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( inputLength ) {
 
-	J_S_ASSERT_CLASS( obj, _class );
+	JL_S_ASSERT_CLASS( obj, _class );
 	HashPrivate *pv;
-	pv = (HashPrivate *)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE( pv );
+	pv = (HashPrivate *)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( pv );
 	*vp = INT_TO_JSVAL( 	pv->inputLength );
 	return JS_TRUE;
 	JL_BAD;
@@ -341,13 +341,13 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( CipherHash ) {
 
-	J_S_ASSERT_CLASS( obj, _class );
-	J_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_CLASS( obj, _class );
+	JL_S_ASSERT_ARG_MIN(1);
 	const char *cipherName;
-	J_CHK( JsvalToString(cx, &argv[0], &cipherName) );
+	JL_CHK( JsvalToString(cx, &argv[0], &cipherName) );
 	int cipherIndex;
 	cipherIndex = find_cipher(cipherName);
-	J_S_ASSERT_1( cipherIndex >= 0, "Cipher not found: %s", cipherName );
+	JL_S_ASSERT_1( cipherIndex >= 0, "Cipher not found: %s", cipherName );
 	int err;
 	if ((err = chc_register(cipherIndex)) != CRYPT_OK)
 		return ThrowCryptError(cx, err);
@@ -375,7 +375,7 @@ DEFINE_PROPERTY( list ) {
 	if ( JSVAL_IS_VOID( *vp ) ) {
 
 		JSObject *list = JS_NewObject( cx, NULL, NULL, NULL );
-		J_CHK( list );
+		JL_CHK( list );
 		*vp = OBJECT_TO_JSVAL(list);
 		jsval value;
 		int i;

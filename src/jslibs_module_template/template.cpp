@@ -24,10 +24,10 @@ BEGIN_CLASS( Template ) // Start the definition of the class. It defines some sy
 DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are no remaing references to this object.
 }
 
-DEFINE_CONSTRUCTOR() { // Called when the object is constructed ( a = new Template() ) or activated ( a = Template() ). To distinguish the cases, use JS_IsConstructing() or use the J_S_ASSERT_CONSTRUCTING() macro.
+DEFINE_CONSTRUCTOR() { // Called when the object is constructed ( a = new Template() ) or activated ( a = Template() ). To distinguish the cases, use JS_IsConstructing() or use the JL_S_ASSERT_CONSTRUCTING() macro.
 
-	J_S_ASSERT_CONSTRUCTING();
-	J_S_ASSERT_THIS_CLASS();
+	JL_S_ASSERT_CONSTRUCTING();
+	JL_S_ASSERT_THIS_CLASS();
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -51,7 +51,7 @@ DEFINE_CONSTRUCTOR() { // Called when the object is constructed ( a = new Templa
 //	if ( xdr->mode == JSXDR_ENCODE ) {
 //
 //		jsval tmp;
-//		J_CHK( JS_GetReservedSlot(xdr->cx, *objp, 0, &tmp) );
+//		JL_CHK( JS_GetReservedSlot(xdr->cx, *objp, 0, &tmp) );
 //		JS_XDRValue(xdr, &tmp);
 //		return JS_TRUE;
 //	}
@@ -61,7 +61,7 @@ DEFINE_CONSTRUCTOR() { // Called when the object is constructed ( a = new Templa
 //		*objp = JS_NewObject(xdr->cx, _class, NULL, NULL);
 //		jsval tmp;
 //		JS_XDRValue(xdr, &tmp);
-//		J_CHK( JS_SetReservedSlot(xdr->cx, *objp, 0, tmp) );
+//		JL_CHK( JS_SetReservedSlot(xdr->cx, *objp, 0, tmp) );
 //		return JS_TRUE;
 //	}
 //

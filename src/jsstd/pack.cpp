@@ -34,7 +34,7 @@ JSBool DetectSystemEndian(JSContext *cx) {
 
 JSBool CheckSystemTypesSize(JSContext *cx) {
 
-	J_S_ASSERT( sizeof(int8_t) == 1 && sizeof(int16_t) == 2 && sizeof(int32_t) == 4, "The system has no suitable type for using Pack class." );
+	JL_S_ASSERT( sizeof(int8_t) == 1 && sizeof(int16_t) == 2 && sizeof(int32_t) == 4, "The system has no suitable type for using Pack class." );
 	return JS_TRUE;
 JL_BAD;
 }
@@ -121,12 +121,12 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
-	J_S_ASSERT_CONSTRUCTING();
-	J_S_ASSERT_THIS_CLASS();
-	J_S_ASSERT_ARG_MIN( 1 );
-	J_S_ASSERT_OBJECT( J_ARG(1) );
-	J_S_ASSERT_CLASS( JSVAL_TO_OBJECT( J_ARG(1) ), classBuffer );
-	J_CHK( JS_SetReservedSlot(cx, obj, SLOT_PACK_BUFFEROBJECT, J_ARG(1)) );
+	JL_S_ASSERT_CONSTRUCTING();
+	JL_S_ASSERT_THIS_CLASS();
+	JL_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_OBJECT( JL_ARG(1) );
+	JL_S_ASSERT_CLASS( JSVAL_TO_OBJECT( JL_ARG(1) ), classBuffer );
+	JL_CHK( JS_SetReservedSlot(cx, obj, SLOT_PACK_BUFFEROBJECT, JL_ARG(1)) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -142,27 +142,27 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( ReadInt ) {
 
-	J_S_ASSERT_THIS_CLASS();
-	J_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_THIS_CLASS();
+	JL_S_ASSERT_ARG_MIN(1);
 
 	jsval bufferVal;
-	J_CHK( JS_GetReservedSlot(cx, obj, SLOT_PACK_BUFFEROBJECT, &bufferVal) );
-	J_S_ASSERT_DEFINED( bufferVal );
+	JL_CHK( JS_GetReservedSlot(cx, obj, SLOT_PACK_BUFFEROBJECT, &bufferVal) );
+	JL_S_ASSERT_DEFINED( bufferVal );
 	JSObject *bufferObject;
 	bufferObject = JSVAL_TO_OBJECT( bufferVal );
 
 	unsigned int size;
-	J_CHK( JsvalToUInt(cx, J_ARG(1), &size) );
+	JL_CHK( JsvalToUInt(cx, JL_ARG(1), &size) );
 
 	bool isSigned;
-	if ( J_ARG_ISDEF(2) )
-		J_CHK( JsvalToBool(cx, J_ARG(2), &isSigned) );
+	if ( JL_ARG_ISDEF(2) )
+		JL_CHK( JsvalToBool(cx, JL_ARG(2), &isSigned) );
 	else
 		isSigned = false;
 
 	bool netConv;
-	if ( J_ARG_ISDEF(3) )
-		J_CHK( JsvalToBool(cx, J_ARG(3), &netConv) );
+	if ( JL_ARG_ISDEF(3) )
+		JL_CHK( JsvalToBool(cx, JL_ARG(3), &netConv) );
 	else
 		netConv = false;
 
@@ -171,10 +171,10 @@ DEFINE_FUNCTION( ReadInt ) {
 
 	size_t amount;
 	amount = size;
-	J_CHK( ReadRawAmount(cx, bufferObject, &amount, (char*)data) );
+	JL_CHK( ReadRawAmount(cx, bufferObject, &amount, (char*)data) );
 	if ( amount < size ) { // not enough data to complete the requested operation, then unread the few data we have read.
 
-		J_CHK( UnReadRawChunk(cx, bufferObject, (char*)data, amount) ); // incompatible with NIStreamRead
+		JL_CHK( UnReadRawChunk(cx, bufferObject, (char*)data, amount) ); // incompatible with NIStreamRead
 		*rval = JSVAL_VOID;
 		return JS_TRUE;
 	}
@@ -203,14 +203,14 @@ DEFINE_FUNCTION( ReadInt ) {
 				if ( val >> JSVAL_INT_BITS == 0 ) // check if we can store the value in a simple JSVAL_INT
 					*rval = INT_TO_JSVAL( val );
 				else // if not, we have to create a new number
-					J_CHK( JS_NewNumberValue(cx, val, rval) );
+					JL_CHK( JS_NewNumberValue(cx, val, rval) );
 			} else {
 
 				uint32_t val = *(uint32_t*)data;
 				if ( val >> (JSVAL_INT_BITS-1) == 0 ) // check if we can store the value in a simple JSVAL_INT ( -1 because the sign )
 					*rval = INT_TO_JSVAL( val );
 				else // if not, we have to create a new number
-					J_CHK( JS_NewNumberValue(cx, val, rval) );
+					JL_CHK( JS_NewNumberValue(cx, val, rval) );
 			}
 			break;
 		case sizeof(int64_t):
@@ -219,15 +219,15 @@ DEFINE_FUNCTION( ReadInt ) {
 			if ( isSigned ) {
 
 				int64_t val = *(int64_t*)data;
-				J_CHK( JS_NewNumberValue(cx, val, rval) );
+				JL_CHK( JS_NewNumberValue(cx, val, rval) );
 			} else {
 
 				uint64_t val = *(uint64_t*)data;
-				J_CHK( JS_NewNumberValue(cx, val, rval) );
+				JL_CHK( JS_NewNumberValue(cx, val, rval) );
 			}
 			break;
 		default:
-			J_REPORT_ERROR("Unable to manage this size.");
+			JL_REPORT_ERROR("Unable to manage this size.");
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -238,7 +238,7 @@ DEFINE_FUNCTION( Test ) {
 
 	int32_t c;
 	bool isOutOfRange;
-	JsvalToSInt32(cx, J_ARG(1), &c, &isOutOfRange);
+	JsvalToSInt32(cx, JL_ARG(1), &c, &isOutOfRange);
 
 	return JS_TRUE;
 }
@@ -251,30 +251,30 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( WriteInt ) { // incompatible with NIStreamRead
 
-	J_S_ASSERT_THIS_CLASS();
-	J_S_ASSERT_ARG_MIN(2);
+	JL_S_ASSERT_THIS_CLASS();
+	JL_S_ASSERT_ARG_MIN(2);
 
 	jsval bufferVal;
-	J_CHK( JS_GetReservedSlot(cx, obj, SLOT_PACK_BUFFEROBJECT, &bufferVal) );
-	J_S_ASSERT_DEFINED( bufferVal );
+	JL_CHK( JS_GetReservedSlot(cx, obj, SLOT_PACK_BUFFEROBJECT, &bufferVal) );
+	JL_S_ASSERT_DEFINED( bufferVal );
 	JSObject *bufferObject;
 	bufferObject = JSVAL_TO_OBJECT( bufferVal );
 
 	jsval jsvalue;
-	jsvalue = J_ARG(1);
+	jsvalue = JL_ARG(1);
 
 	unsigned int size;
-	J_CHK( JsvalToUInt(cx, J_ARG(2), &size) );
+	JL_CHK( JsvalToUInt(cx, JL_ARG(2), &size) );
 
 	bool isSigned;
-	if ( J_ARG_ISDEF(3) )
-		J_CHK( JsvalToBool(cx, J_ARG(3), &isSigned) );
+	if ( JL_ARG_ISDEF(3) )
+		JL_CHK( JsvalToBool(cx, JL_ARG(3), &isSigned) );
 	else
 		isSigned = false;
 
 	bool netConv;
-	if ( J_ARG_ISDEF(4) )
-		J_CHK( JsvalToBool(cx, J_ARG(4), &netConv) );
+	if ( JL_ARG_ISDEF(4) )
+		JL_CHK( JsvalToBool(cx, JL_ARG(4), &netConv) );
 	else
 		netConv = false;
 
@@ -287,23 +287,23 @@ DEFINE_FUNCTION( WriteInt ) { // incompatible with NIStreamRead
 	switch (size) {
 		case sizeof(int8_t):
 			if ( isSigned )
-				J_CHK( JsvalToSInt8(cx, jsvalue, (int8_t*)data, &outOfRange) );
+				JL_CHK( JsvalToSInt8(cx, jsvalue, (int8_t*)data, &outOfRange) );
 			else
-				J_CHK( JsvalToUInt8(cx, jsvalue, (uint8_t*)data, &outOfRange) );
+				JL_CHK( JsvalToUInt8(cx, jsvalue, (uint8_t*)data, &outOfRange) );
 			break;
 		case sizeof(int16_t):
 			if ( isSigned )
-				J_CHK( JsvalToSInt16(cx, jsvalue, (int16_t*)data, &outOfRange) );
+				JL_CHK( JsvalToSInt16(cx, jsvalue, (int16_t*)data, &outOfRange) );
 			else
-				J_CHK( JsvalToUInt16(cx, jsvalue, (uint16_t*)data, &outOfRange) );
+				JL_CHK( JsvalToUInt16(cx, jsvalue, (uint16_t*)data, &outOfRange) );
 			if ( netConv )
 				Host16ToNetwork16(data);
 			break;
 		case sizeof(int32_t):
 			if ( isSigned )
-				J_CHK( JsvalToSInt32(cx, jsvalue, (int32_t*)data, &outOfRange) );
+				JL_CHK( JsvalToSInt32(cx, jsvalue, (int32_t*)data, &outOfRange) );
 			else
-				J_CHK( JsvalToUInt32(cx, jsvalue, (uint32_t*)data, &outOfRange) );
+				JL_CHK( JsvalToUInt32(cx, jsvalue, (uint32_t*)data, &outOfRange) );
 			if ( netConv )
 				Host32ToNetwork32(data);
 			break;
@@ -311,12 +311,12 @@ DEFINE_FUNCTION( WriteInt ) { // incompatible with NIStreamRead
 			// (TBD) implement it
 			// break;
 		default:
-			J_REPORT_ERROR("Unable to manage this size.");
+			JL_REPORT_ERROR("Unable to manage this size.");
 	}
 
-	J_S_ASSERT( !outOfRange, "Value size too big to be stored." );
+	JL_S_ASSERT( !outOfRange, "Value size too big to be stored." );
 
-	J_CHK( WriteRawChunk(cx, bufferObject, size, (char*)data) );
+	JL_CHK( WriteRawChunk(cx, bufferObject, size, (char*)data) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -329,35 +329,35 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( ReadReal ) {
 
-	J_S_ASSERT_THIS_CLASS();
-	J_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_THIS_CLASS();
+	JL_S_ASSERT_ARG_MIN(1);
 
 	jsval bufferVal;
-	J_CHK( JS_GetReservedSlot(cx, obj, SLOT_PACK_BUFFEROBJECT, &bufferVal) );
-	J_S_ASSERT_DEFINED( bufferVal );
+	JL_CHK( JS_GetReservedSlot(cx, obj, SLOT_PACK_BUFFEROBJECT, &bufferVal) );
+	JL_S_ASSERT_DEFINED( bufferVal );
 	JSObject *bufferObject;
 	bufferObject = JSVAL_TO_OBJECT( bufferVal );
 
 	size_t size;
-	size = JSVAL_TO_INT( J_ARG(1) );
+	size = JSVAL_TO_INT( JL_ARG(1) );
 
 	uint8_t data[16];
 	size_t amount;
 	amount = size;
-	J_CHK( ReadRawAmount(cx, bufferObject, &amount, (char*)data) );
+	JL_CHK( ReadRawAmount(cx, bufferObject, &amount, (char*)data) );
 	if ( amount < size ) { // not enough data to complete the requested operation, then unread the few data we read
 
-		J_CHK( UnReadRawChunk(cx, bufferObject, (char*)data, amount) ); // incompatible with NIStreamRead
+		JL_CHK( UnReadRawChunk(cx, bufferObject, (char*)data, amount) ); // incompatible with NIStreamRead
 		*rval = JSVAL_VOID;
 		return JS_TRUE;
 	}
 
 	switch (size) {
 		case sizeof(float):
-			J_CHK( JS_NewNumberValue(cx, *((float*)data), rval) );
+			JL_CHK( JS_NewNumberValue(cx, *((float*)data), rval) );
 			break;
 		case sizeof(double):
-			J_CHK( JS_NewNumberValue(cx, *((double*)data), rval) );
+			JL_CHK( JS_NewNumberValue(cx, *((double*)data), rval) );
 			break;
 		default:
 			*rval = JSVAL_VOID;
@@ -373,19 +373,19 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( ReadString ) {
 
-	J_S_ASSERT_THIS_CLASS();
+	JL_S_ASSERT_THIS_CLASS();
 	jsval bufferVal;
-	J_CHK( JS_GetReservedSlot(cx, obj, SLOT_PACK_BUFFEROBJECT, &bufferVal) );
-	J_S_ASSERT_DEFINED( bufferVal );
+	JL_CHK( JS_GetReservedSlot(cx, obj, SLOT_PACK_BUFFEROBJECT, &bufferVal) );
+	JL_S_ASSERT_DEFINED( bufferVal );
 	JSObject *bufferObject;
 	bufferObject = JSVAL_TO_OBJECT( bufferVal );
 
-	if ( J_ARG_ISDEF(1) ) {
+	if ( JL_ARG_ISDEF(1) ) {
 
 		unsigned int amount;
-		J_CHK( JsvalToUInt(cx, J_ARG(1), &amount) );
-		J_S_ASSERT( amount >= 0, "Invalid amount" );
-		J_CHK( ReadAmount(cx, bufferObject, amount, rval) );
+		JL_CHK( JsvalToUInt(cx, JL_ARG(1), &amount) );
+		JL_S_ASSERT( amount >= 0, "Invalid amount" );
+		JL_CHK( ReadAmount(cx, bufferObject, amount, rval) );
 	} else {
 
 		// get a chunk
@@ -412,8 +412,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( buffer ) {
 
-	J_S_ASSERT_THIS_CLASS();
-	J_CHK( JS_GetReservedSlot(cx, obj, SLOT_PACK_BUFFEROBJECT, vp ) );
+	JL_S_ASSERT_THIS_CLASS();
+	JL_CHK( JS_GetReservedSlot(cx, obj, SLOT_PACK_BUFFEROBJECT, vp ) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -430,7 +430,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( systemIntSize ) {
 
-	J_S_ASSERT_THIS_CLASS();
+	JL_S_ASSERT_THIS_CLASS();
 	*vp = INT_TO_JSVAL( sizeof(int) );
 	return JS_TRUE;
 	JL_BAD;
@@ -450,8 +450,8 @@ DEFINE_PROPERTY( systemBigEndian ) {
 
 JSBool Init(JSContext *cx, JSObject *obj) {
 
-	J_CHK( DetectSystemEndian(cx) );
-	J_CHK( CheckSystemTypesSize(cx) );
+	JL_CHK( DetectSystemEndian(cx) );
+	JL_CHK( CheckSystemTypesSize(cx) );
 	return JS_TRUE;
 	JL_BAD;
 }

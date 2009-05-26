@@ -44,14 +44,14 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( ExtractIcon ) {
 
-	J_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_ARG_MIN(1);
 	UINT iconIndex = 0;
 	if ( argc >= 2 )
-		J_CHK( JsvalToUInt(cx, argv[1], &iconIndex) );
+		JL_CHK( JsvalToUInt(cx, argv[1], &iconIndex) );
 	HINSTANCE hInst = (HINSTANCE)GetModuleHandle(NULL);
-	J_S_ASSERT( hInst != NULL, "Unable to GetModuleHandle." );
+	JL_S_ASSERT( hInst != NULL, "Unable to GetModuleHandle." );
 	const char *fileName;
-	J_CHK( JsvalToString(cx, &argv[0], &fileName) );
+	JL_CHK( JsvalToString(cx, &argv[0], &fileName) );
 	HICON hIcon = ExtractIcon( hInst, fileName, iconIndex ); // see SHGetFileInfo(
 	if ( hIcon == NULL ) {
 
@@ -61,10 +61,10 @@ DEFINE_FUNCTION( ExtractIcon ) {
 		return JS_TRUE;
 	}
 	JSObject *icon = JS_NewObject(cx, classIcon, NULL, NULL);
-	HICON *phIcon = (HICON*)malloc(sizeof(HICON)); // this is needed because JS_SetPrivate stores ONLY alligned values
-	J_S_ASSERT_ALLOC( phIcon );
+	HICON *phIcon = (HICON*)malloc(sizeof(HICON)); // this is needed because JL_SetPrivate stores ONLY alligned values
+	JL_S_ASSERT_ALLOC( phIcon );
 	*phIcon = hIcon;
-	JS_SetPrivate(cx, icon, phIcon);
+	JL_SetPrivate(cx, icon, phIcon);
 	*rval = OBJECT_TO_JSVAL(icon);
 	return JS_TRUE;
 	JL_BAD;
@@ -121,21 +121,21 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( MessageBox ) {
 
-	J_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_ARG_MIN(1);
 
 	UINT type = 0;
 	if ( argc >= 3 )
-		J_CHK( JsvalToUInt(cx, argv[2], &type) );
+		JL_CHK( JsvalToUInt(cx, argv[2], &type) );
 
 	const char *caption = NULL;
 	if ( argc >= 2 && !JSVAL_IS_VOID( argv[1] ) )
-		J_CHK( JsvalToString(cx, &argv[1], &caption) );
+		JL_CHK( JsvalToString(cx, &argv[1], &caption) );
 
 	const char *text;
-	J_CHK( JsvalToString(cx, &argv[0], &text) );
+	JL_CHK( JsvalToString(cx, &argv[0], &text) );
 
 	int res = MessageBox(NULL, text, caption, type);
-	J_S_ASSERT( res != 0, "MessageBox call Failed." );
+	JL_S_ASSERT( res != 0, "MessageBox call Failed." );
 	*rval = INT_TO_JSVAL( res );
 	return JS_TRUE;
 	JL_BAD;
@@ -158,20 +158,20 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( CreateProcess ) {
 
-	J_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_ARG_MIN(1);
 
 	const char *applicationName, *commandLine = NULL, *environment = NULL, *currentDirectory = NULL;
 
-	J_CHK( JsvalToString(cx, &argv[0], &applicationName) ); // warning: GC on the returned buffer !
+	JL_CHK( JsvalToString(cx, &argv[0], &applicationName) ); // warning: GC on the returned buffer !
 
 	if ( argc >= 2 && !JSVAL_IS_VOID( argv[1] ) )
-		J_CHK( JsvalToString(cx, &argv[1], &commandLine) ); // warning: GC on the returned buffer !
+		JL_CHK( JsvalToString(cx, &argv[1], &commandLine) ); // warning: GC on the returned buffer !
 
 	if ( argc >= 3 && !JSVAL_IS_VOID( argv[2] ) )
-		J_CHK( JsvalToString(cx, &argv[2], &environment) ); // warning: GC on the returned buffer !
+		JL_CHK( JsvalToString(cx, &argv[2], &environment) ); // warning: GC on the returned buffer !
 
 	if ( argc >= 4 && !JSVAL_IS_VOID( argv[3] ) )
-		J_CHK( JsvalToString(cx, &argv[3], &currentDirectory) ); // warning: GC on the returned buffer !
+		JL_CHK( JsvalToString(cx, &argv[3], &currentDirectory) ); // warning: GC on the returned buffer !
 
 	STARTUPINFO si;
 	ZeroMemory(&si, sizeof(STARTUPINFO));
@@ -208,7 +208,7 @@ DEFINE_FUNCTION( FileOpenDialog ) {
 
 		const char *str;
 		size_t len;
-		J_CHK( JsvalToStringAndLength(cx, &argv[0], &str, &len) );
+		JL_CHK( JsvalToStringAndLength(cx, &argv[0], &str, &len) );
 		strcpy( filter, str );
 		for ( char *tmp = filter; tmp = strchr( tmp, '|' ); tmp++ )
 			*tmp = '\0'; // doc: Pointer to a buffer containing pairs of null-terminated filter strings.
@@ -219,7 +219,7 @@ DEFINE_FUNCTION( FileOpenDialog ) {
 	if ( argc >= 2 && !JSVAL_IS_VOID( argv[1] ) ) {
 
 		const char *tmp;
-		J_CHK( JsvalToString(cx, &argv[1], &tmp) );
+		JL_CHK( JsvalToString(cx, &argv[1], &tmp) );
 		strcpy( fileName, tmp );
 	} else {
 		*fileName = '\0';
@@ -231,7 +231,7 @@ DEFINE_FUNCTION( FileOpenDialog ) {
 	BOOL res = GetOpenFileName(&ofn); // doc: http://msdn.microsoft.com/library/default.asp?url=/library/en-us/winui/winui/windowsuserinterface/userinput/commondialogboxlibrary/commondialogboxreference/commondialogboxstructures/openfilename.asp
 	DWORD err = CommDlgExtendedError();
 
-	J_S_ASSERT( res == TRUE || err == 0, "Unable to GetOpenFileName." );
+	JL_S_ASSERT( res == TRUE || err == 0, "Unable to GetOpenFileName." );
 
 	if ( res == FALSE && err == 0 )
 		*rval = JSVAL_VOID;
@@ -249,12 +249,12 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( ExpandEnvironmentStrings ) {
 
-	J_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_ARG_MIN(1);
 	const char *src;
-	J_CHK( JsvalToString(cx, &argv[0], &src) );
+	JL_CHK( JsvalToString(cx, &argv[0], &src) );
 	TCHAR dst[MAX_PATH];
 	DWORD res = ExpandEnvironmentStrings( src, dst, sizeof(dst) );
-	J_S_ASSERT( res != 0, "Unable to ExpandEnvironmentStrings." );
+	JL_S_ASSERT( res != 0, "Unable to ExpandEnvironmentStrings." );
 	*rval = STRING_TO_JSVAL( JS_NewStringCopyN(cx, dst, res) );
 	return JS_TRUE;
 	JL_BAD;
@@ -268,9 +268,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Sleep ) {
 
-	J_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_ARG_MIN(1);
 	unsigned int timeout;
-	J_CHK( JsvalToUInt(cx, argv[0], &timeout) );
+	JL_CHK( JsvalToUInt(cx, argv[0], &timeout) );
 	Sleep(timeout);
 	return JS_TRUE;
 	JL_BAD;
@@ -294,7 +294,7 @@ DEFINE_FUNCTION( MessageBeep ) {
 
 	UINT type = -1;
 	if ( argc >= 1 )
-		J_CHK( JsvalToUInt(cx, argv[0], &type) );
+		JL_CHK( JsvalToUInt(cx, argv[0], &type) );
 	MessageBeep(type);
 	return JS_TRUE;
 	JL_BAD;
@@ -310,10 +310,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Beep ) {
 
-	J_S_ASSERT_ARG_MIN(2);
+	JL_S_ASSERT_ARG_MIN(2);
 	unsigned int freq, duration;
-	J_CHK( JsvalToUInt(cx, argv[0], &freq) );
-	J_CHK( JsvalToUInt(cx, argv[1], &duration) );
+	JL_CHK( JsvalToUInt(cx, argv[0], &freq) );
+	JL_CHK( JsvalToUInt(cx, argv[1], &duration) );
 	Beep(freq, duration);
 	return JS_TRUE;
 	JL_BAD;
@@ -331,18 +331,18 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY( clipboardGetter ) {
 
 	BOOL res = OpenClipboard(NULL);
-	J_S_ASSERT( res != 0, "Unable to open the clipboard." );
+	JL_S_ASSERT( res != 0, "Unable to open the clipboard." );
 	if ( IsClipboardFormatAvailable(CF_TEXT) == 0 ) {
 
 		*vp = JSVAL_NULL;
 	} else {
 
 		HANDLE hglb = GetClipboardData(CF_TEXT);
-		J_S_ASSERT_RESOURCE( hglb );
+		JL_S_ASSERT_RESOURCE( hglb );
 		LPTSTR lptstr = (LPTSTR)GlobalLock(hglb);
-		J_S_ASSERT( lptstr != NULL, "Unable to lock memory." );
+		JL_S_ASSERT( lptstr != NULL, "Unable to lock memory." );
 		JSString *str = JS_NewStringCopyZ(cx, lptstr);
-		J_S_ASSERT( str != NULL, "Unable to create the string.");
+		JL_S_ASSERT( str != NULL, "Unable to create the string.");
 		*vp = STRING_TO_JSVAL(str);
 		GlobalUnlock(hglb);
 		CloseClipboard();
@@ -354,26 +354,26 @@ DEFINE_PROPERTY( clipboardGetter ) {
 DEFINE_PROPERTY( clipboardSetter ) {
 
 	BOOL res = OpenClipboard(NULL);
-	J_S_ASSERT( res != 0, "Unable to open the clipboard." );
+	JL_S_ASSERT( res != 0, "Unable to open the clipboard." );
 	EmptyClipboard(); // doc: If the application specifies a NULL window handle when opening the clipboard, EmptyClipboard succeeds but sets the clipboard owner to NULL. Note that this causes SetClipboardData to fail.
 	CloseClipboard();
 
 	if ( !JSVAL_IS_VOID( *vp ) ) {
 
 		res = OpenClipboard(NULL);
-		J_S_ASSERT( res != 0, "Unable to open the clipboard." );
+		JL_S_ASSERT( res != 0, "Unable to open the clipboard." );
 		const char *str;
 		size_t len;
-		J_CHK( JsvalToStringAndLength(cx, vp, &str, &len) );
+		JL_CHK( JsvalToStringAndLength(cx, vp, &str, &len) );
 		HGLOBAL hglbCopy = GlobalAlloc(GMEM_MOVEABLE, len + 1);
-		J_S_ASSERT_ALLOC( hglbCopy );
+		JL_S_ASSERT_ALLOC( hglbCopy );
 		LPTSTR lptstrCopy = (LPTSTR)GlobalLock(hglbCopy);
-		J_S_ASSERT( lptstrCopy != NULL, "Unable to lock memory." );
+		JL_S_ASSERT( lptstrCopy != NULL, "Unable to lock memory." );
 		memcpy(lptstrCopy, str, len + 1);
 		lptstrCopy[len] = 0;
 		GlobalUnlock(hglbCopy);
 		HANDLE h = SetClipboardData(CF_TEXT,hglbCopy);
-		J_S_ASSERT( h != NULL, "Unable to SetClipboardData." );
+		JL_S_ASSERT( h != NULL, "Unable to SetClipboardData." );
 		CloseClipboard();
 	}
 	return JS_TRUE;

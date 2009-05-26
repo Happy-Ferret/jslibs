@@ -25,7 +25,7 @@ BEGIN_CLASS( GeomRay )
 
 DEFINE_FINALIZE() {
 
-	ode::dGeomID geomId = (ode::dGeomID)JS_GetPrivate(cx, obj);
+	ode::dGeomID geomId = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	if ( geomId != NULL )
 		ode::dGeomSetData(geomId, NULL);
 }
@@ -37,13 +37,13 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
-	J_S_ASSERT_CONSTRUCTING();
-	J_S_ASSERT_THIS_CLASS();
+	JL_S_ASSERT_CONSTRUCTING();
+	JL_S_ASSERT_THIS_CLASS();
 	ode::dSpaceID space = 0;
 	if ( argc >= 1 ) // place it in a space ?
-		J_CHK( ValToSpaceID(cx, argv[0], &space) );
+		JL_CHK( ValToSpaceID(cx, argv[0], &space) );
 	ode::dGeomID geomId = ode::dCreateRay(space, 1); // default ray length is 1
-	JS_SetPrivate(cx, obj, geomId);
+	JL_SetPrivate(cx, obj, geomId);
 	SetupReadMatrix(cx, obj); // (TBD) check return status
 	ode::dGeomSetData(geomId, obj); // 'obj' do not need to be rooted because Goem's data is reset to NULL when 'obj' is finalized.
 	return JS_TRUE;
@@ -57,9 +57,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( lengthSetter ) {
 
-	ode::dGeomID geom = (ode::dGeomID)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE( geom );
-	J_S_ASSERT_NUMBER( *vp );
+	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( geom );
+	JL_S_ASSERT_NUMBER( *vp );
 	jsdouble radius;
 	JS_ValueToNumber(cx, *vp, &radius);
 	ode::dGeomRaySetLength(geom, radius);
@@ -69,8 +69,8 @@ DEFINE_PROPERTY( lengthSetter ) {
 
 DEFINE_PROPERTY( lengthGetter ) {
 
-	ode::dGeomID geom = (ode::dGeomID)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE( geom );
+	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( geom );
 	JS_NewDoubleValue(cx, ode::dGeomRayGetLength(geom), vp); // see JS_NewNumberValue and JS_NewDouble
 	return JS_TRUE;
 	JL_BAD;
@@ -84,14 +84,14 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( startSetter ) {
 
-	ode::dGeomID geom = (ode::dGeomID)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE( geom );
+	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( geom );
 	ode::dVector3 start, dir;
 	ode::dGeomRayGet(geom, start, dir);
 //	FloatArrayToVector(cx, 3, vp, start);
 	size_t length;
-	J_CHK( JsvalToFloatVector(cx, *vp, start, 3, &length) );
-	J_S_ASSERT( length == 3, "Invalid array size." );
+	JL_CHK( JsvalToFloatVector(cx, *vp, start, 3, &length) );
+	JL_S_ASSERT( length == 3, "Invalid array size." );
 	ode::dGeomRaySet(geom, start[0], start[1], start[2], dir[0], dir[1], dir[2]);
 	return JS_TRUE;
 	JL_BAD;
@@ -99,12 +99,12 @@ DEFINE_PROPERTY( startSetter ) {
 
 DEFINE_PROPERTY( startGetter ) {
 
-	ode::dGeomID geom = (ode::dGeomID)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE( geom );
+	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( geom );
 	ode::dVector3 start, dir;
 	ode::dGeomRayGet(geom, start, dir);
 	//FloatVectorToArray(cx, 3, start, vp);
-	J_CHK( FloatVectorToJsval(cx, start, 3, vp) );
+	JL_CHK( FloatVectorToJsval(cx, start, 3, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -117,14 +117,14 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( directionSetter ) {
 
-	ode::dGeomID geom = (ode::dGeomID)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE( geom );
+	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( geom );
 	ode::dVector3 start, dir;
 	ode::dGeomRayGet(geom, start, dir);
 //	FloatArrayToVector(cx, 3, vp, dir);
 	size_t length;
-	J_CHK( JsvalToFloatVector(cx, *vp, dir, 3, &length) );
-	J_S_ASSERT( length == 3, "Invalid array size." );
+	JL_CHK( JsvalToFloatVector(cx, *vp, dir, 3, &length) );
+	JL_S_ASSERT( length == 3, "Invalid array size." );
 	ode::dGeomRaySet(geom, start[0], start[1], start[2], dir[0], dir[1], dir[2]);
 	return JS_TRUE;
 	JL_BAD;
@@ -132,12 +132,12 @@ DEFINE_PROPERTY( directionSetter ) {
 
 DEFINE_PROPERTY( directionGetter ) {
 
-	ode::dGeomID geom = (ode::dGeomID)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE( geom );
+	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( geom );
 	ode::dVector3 start, dir;
 	ode::dGeomRayGet(geom, start, dir);
 	//FloatVectorToArray(cx, 3, dir, vp);
-	J_CHK( FloatVectorToJsval(cx, dir, 3, vp) );
+	JL_CHK( FloatVectorToJsval(cx, dir, 3, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }

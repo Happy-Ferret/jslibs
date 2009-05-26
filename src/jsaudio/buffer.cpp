@@ -24,7 +24,7 @@ BEGIN_CLASS( OalBuffer )
 
 DEFINE_FINALIZE() {
 
-	ALuint bid = (ALuint) JS_GetPrivate(cx, obj);
+	ALuint bid = (ALuint) JL_GetPrivate(cx, obj);
 	if ( bid )
 		alDeleteBuffers(1, &bid);
 }
@@ -37,15 +37,15 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
-	J_S_ASSERT_ARG_MIN( 1 );
-	J_S_ASSERT_OBJECT( J_ARG(1) );
+	JL_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_OBJECT( JL_ARG(1) );
 
-	JSObject *blobObj = JSVAL_TO_OBJECT(J_ARG(1));
+	JSObject *blobObj = JSVAL_TO_OBJECT(JL_ARG(1));
 
 	int rate, channels, bits;
-	J_CHK( GetPropertyInt(cx, blobObj, "rate", &rate) );
-	J_CHK( GetPropertyInt(cx, blobObj, "channels", &channels) );
-	J_CHK( GetPropertyInt(cx, blobObj, "bits", &bits) );
+	JL_CHK( GetPropertyInt(cx, blobObj, "rate", &rate) );
+	JL_CHK( GetPropertyInt(cx, blobObj, "channels", &channels) );
+	JL_CHK( GetPropertyInt(cx, blobObj, "bits", &bits) );
 
 	const char *buffer;
 	size_t bufferLength;
@@ -61,18 +61,18 @@ DEFINE_CONSTRUCTOR() {
 			format = bits == 16 ? AL_FORMAT_STEREO16 : AL_FORMAT_STEREO8;
 			break;
 		default:
-			J_REPORT_ERROR("Too may channels");
+			JL_REPORT_ERROR("Too may channels");
 	}
 
 	ALuint bid; // The OpenAL sound buffer ID
 
 	alGenBuffers(1, &bid);
-	J_CHK( CheckThrowCurrentOalError(cx) );
+	JL_CHK( CheckThrowCurrentOalError(cx) );
 
 	alBufferData(bid, format, buffer, bufferLength, rate); // Upload sound data to buffer
-	J_CHK( CheckThrowCurrentOalError(cx) );
+	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	J_CHK( JS_SetPrivate(cx, obj, (void*)bid) );
+	JL_CHK( JL_SetPrivate(cx, obj, (void*)bid) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -85,8 +85,8 @@ DEFINE_CONSTRUCTOR() {
 /*
 DEFINE_FUNCTION_FAST( Free ) {
 
-	ALuint bid = (ALuint) JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_RESOURCE( bid );
+	ALuint bid = (ALuint) JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE( bid );
 	alBufferData(bid, AL_FORMAT_MONO8, NULL, 0, 0);
 	return JS_TRUE;
 	JL_BAD;
@@ -99,9 +99,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( valueOf ) {
 
-	ALuint bid = (ALuint) JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_RESOURCE( bid );
-	J_CHK( UIntToJsval(cx, bid, J_FRVAL) );
+	ALuint bid = (ALuint) JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE( bid );
+	JL_CHK( UIntToJsval(cx, bid, JL_FRVAL) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -118,14 +118,14 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( frequency ) {
 
-	ALuint bid = (ALuint) JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE( bid );
+	ALuint bid = (ALuint) JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( bid );
 	ALint frequency;
 
 	alGetBufferi(bid, AL_FREQUENCY, &frequency);
-	J_CHK( CheckThrowCurrentOalError(cx) );
+	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	J_CHK( IntToJsval(cx, frequency, vp) );
+	JL_CHK( IntToJsval(cx, frequency, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -137,14 +137,14 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( size ) {
 
-	ALuint bid = (ALuint) JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE( bid );
+	ALuint bid = (ALuint) JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( bid );
 	ALint size;
 
 	alGetBufferi(bid, AL_SIZE, &size);
-	J_CHK( CheckThrowCurrentOalError(cx) );
+	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	J_CHK( IntToJsval(cx, size, vp) );
+	JL_CHK( IntToJsval(cx, size, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -157,14 +157,14 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( bits ) {
 
-	ALuint bid = (ALuint) JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE( bid );
+	ALuint bid = (ALuint) JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( bid );
 	ALint bits;
 
 	alGetBufferi(bid, AL_BITS, &bits);
-	J_CHK( CheckThrowCurrentOalError(cx) );
+	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	J_CHK( IntToJsval(cx, bits, vp) );
+	JL_CHK( IntToJsval(cx, bits, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -176,14 +176,14 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( channels ) {
 
-	ALuint bid = (ALuint) JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE( bid );
+	ALuint bid = (ALuint) JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( bid );
 	ALint channels;
 
 	alGetBufferi(bid, AL_CHANNELS, &channels);
-	J_CHK( CheckThrowCurrentOalError(cx) );
+	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	J_CHK( IntToJsval(cx, channels, vp) );
+	JL_CHK( IntToJsval(cx, channels, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }

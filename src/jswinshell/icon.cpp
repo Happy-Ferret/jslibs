@@ -38,9 +38,9 @@ $TOC_MEMBER $INAME
 
 DEFINE_CONSTRUCTOR() {
 
-	J_S_ASSERT_CONSTRUCTING();
-	J_S_ASSERT_THIS_CLASS();
-	J_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_CONSTRUCTING();
+	JL_S_ASSERT_THIS_CLASS();
+	JL_S_ASSERT_ARG_MIN(1);
 
 	jsval iconVal = argv[0];
 
@@ -71,18 +71,18 @@ DEFINE_CONSTRUCTOR() {
 		HINSTANCE hInst = (HINSTANCE)GetModuleHandle(NULL);
 		JSObject *imgObj = JSVAL_TO_OBJECT(iconVal);
 
-		J_S_ASSERT_CLASS_NAME(imgObj, "Image"); // (TBD) need something better/safer ? like JsvalIsClass(iconVal, JL_GetRegistredNativeClass(cx, "Image"));
+		JL_S_ASSERT_CLASS_NAME(imgObj, "Image"); // (TBD) need something better/safer ? like JsvalIsClass(iconVal, JL_GetRegistredNativeClass(cx, "Image"));
 		jsval tmp;
 		JS_GetProperty(cx, imgObj, "width", &tmp);
-		J_S_ASSERT_INT(tmp);
+		JL_S_ASSERT_INT(tmp);
 		int width = JSVAL_TO_INT(tmp);
 		JS_GetProperty(cx, imgObj, "height", &tmp);
-		J_S_ASSERT_INT(tmp);
+		JL_S_ASSERT_INT(tmp);
 		int height = JSVAL_TO_INT(tmp);
 		JS_GetProperty(cx, imgObj, "channels", &tmp);
-		J_S_ASSERT_INT(tmp);
+		JL_S_ASSERT_INT(tmp);
 		int channels = JSVAL_TO_INT(tmp);
-		unsigned char *imageData = (unsigned char*)JS_GetPrivate(cx, imgObj);
+		unsigned char *imageData = (unsigned char*)JL_GetPrivate(cx, imgObj);
 
 		// http://groups.google.com/group/microsoft.public.win32.programmer.gdi/browse_frm/thread/adaf38d715cef81/3825af9edde28cdc?lnk=st&q=RGB+CreateIcon&rnum=9&hl=en#3825af9edde28cdc
 		HDC screenDC = GetDC(NULL); // doc: If this value is NULL, GetDC retrieves the DC for the entire screen.
@@ -114,20 +114,20 @@ DEFINE_CONSTRUCTOR() {
 		hIcon = CreateIconIndirect( &ii );
 		DeleteObject(colorBMP);
 		DeleteObject(maskBMP); 
-		J_S_ASSERT( hIcon != NULL, "Unable to create the icon." );
+		JL_S_ASSERT( hIcon != NULL, "Unable to create the icon." );
 	}
 
-	HICON *phIcon = (HICON*)JS_malloc(cx, sizeof(HICON)); // this is needed because JS_SetPrivate stores ONLY alligned values
-	J_CHK( phIcon );
+	HICON *phIcon = (HICON*)JS_malloc(cx, sizeof(HICON)); // this is needed because JL_SetPrivate stores ONLY alligned values
+	JL_CHK( phIcon );
 	*phIcon = hIcon;
-	JS_SetPrivate(cx, obj, phIcon);
+	JL_SetPrivate(cx, obj, phIcon);
 	return JS_TRUE;
 	JL_BAD;
 }
 
 DEFINE_FINALIZE() {
 
-	HICON *phIcon = (HICON*)JS_GetPrivate(cx, obj);
+	HICON *phIcon = (HICON*)JL_GetPrivate(cx, obj);
 	if ( !phIcon )
 		return;
 

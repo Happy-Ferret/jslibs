@@ -38,16 +38,16 @@ inline JSClass *GetIdJSClass( JSContext *cx ) {
 inline JSBool CreateId( JSContext *cx, ID_TYPE idType, size_t userSize, void** userData, IdFinalizeCallback_t finalizeCallback, jsval *idVal ) {
 
 	JSClass *idJSClass = GetIdJSClass(cx);
-	J_S_ASSERT( idJSClass != NULL, "Id class not initialized.");
+	JL_S_ASSERT( idJSClass != NULL, "Id class not initialized.");
 
 	JSObject *idObj;
 	idObj = JS_NewObject( cx, idJSClass, NULL, NULL );
-	J_CHK( idObj );
+	JL_CHK( idObj );
 	*idVal = OBJECT_TO_JSVAL(idObj);
 	IdPrivate *pv;
 	pv = (IdPrivate*)JS_malloc(cx, sizeof(IdPrivate) + userSize);
-	J_CHK(pv);
-	J_CHKB( JS_SetPrivate(cx, idObj, pv), bad_free );
+	JL_CHK(pv);
+	JL_CHKB( JL_SetPrivate(cx, idObj, pv), bad_free );
 
 	pv->idType = idType;
 	pv->finalizeCallback = finalizeCallback;
@@ -64,7 +64,7 @@ bad_free:
 inline ID_TYPE GetIdType( JSContext *cx, jsval idVal ) {
 
 	JSObject *idObj = JSVAL_TO_OBJECT(idVal);
-	IdPrivate *pv = (IdPrivate*)JS_GetPrivate(cx, idObj);
+	IdPrivate *pv = (IdPrivate*)JL_GetPrivate(cx, idObj);
 	return pv->idType;
 }
 
@@ -75,14 +75,14 @@ inline bool IsIdType( JSContext *cx, jsval idVal, ID_TYPE idType ) {
 	if ( idJSClass == NULL || !JsvalIsClass(idVal, idJSClass) )
 		return false;
 	JSObject *idObj = JSVAL_TO_OBJECT(idVal);
-	IdPrivate *pv = (IdPrivate*)JS_GetPrivate(cx, idObj);
+	IdPrivate *pv = (IdPrivate*)JL_GetPrivate(cx, idObj);
 	return pv != NULL && pv->idType == idType;
 }
 
 
 inline void* GetIdPrivate( JSContext *cx, jsval idVal ) {
 
-	IdPrivate *pv = (IdPrivate*)JS_GetPrivate(cx, JSVAL_TO_OBJECT(idVal));
+	IdPrivate *pv = (IdPrivate*)JL_GetPrivate(cx, JSVAL_TO_OBJECT(idVal));
 	return (char*)pv + sizeof(IdPrivate); // user data is just behind our private structure.
 }
 
@@ -95,7 +95,7 @@ void FinalizeTrimesh(void *data) {
 ...
 
 void *data;
-J_CHK( CreateId(cx, 'TEST', 10, &data, FinalizeTrimesh, J_RVAL) );
+JL_CHK( CreateId(cx, 'TEST', 10, &data, FinalizeTrimesh, J_RVAL) );
 
 bool c = IsIdType(cx, *J_RVAL, 'TEST');
 

@@ -93,7 +93,7 @@ volatile bool gEndSignal = false;
 
 JSBool EndSignalGetter(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 
-	J_CHK( BoolToJsval(cx, gEndSignal, vp) );
+	JL_CHK( BoolToJsval(cx, gEndSignal, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -101,7 +101,7 @@ JSBool EndSignalGetter(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 JSBool EndSignalSetter(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 
 	bool tmp;
-	J_CHK( JsvalToBool(cx, *vp, &tmp) );
+	JL_CHK( JsvalToBool(cx, *vp, &tmp) );
 	gEndSignal = tmp;
 	return JS_TRUE;
 	JL_BAD;
@@ -246,7 +246,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 
 	JSObject *globalObject;
 	globalObject = JS_GetGlobalObject(cx);
-	J_CHK( JS_DefineProperty(cx, globalObject, "endSignal", JSVAL_VOID, EndSignalGetter, EndSignalSetter, JSPROP_SHARED | JSPROP_PERMANENT) );
+	JL_CHK( JS_DefineProperty(cx, globalObject, "endSignal", JSVAL_VOID, EndSignalGetter, EndSignalSetter, JSPROP_SHARED | JSPROP_PERMANENT) );
 
 // script name
 	const char *scriptName;
@@ -283,25 +283,25 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 
 //	RT_HOST_MAIN_ASSERT( name != NULL, "unable to get module FileName." );
 
-	J_CHK( JS_DefineProperty(cx, globalObject, NAME_GLOBAL_SCRIPT_HOST_PATH, STRING_TO_JSVAL(JS_NewStringCopyZ(cx, hostPath)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
-	J_CHK( JS_DefineProperty(cx, globalObject, NAME_GLOBAL_SCRIPT_HOST_NAME, STRING_TO_JSVAL(JS_NewStringCopyZ(cx, hostName)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
+	JL_CHK( JS_DefineProperty(cx, globalObject, NAME_GLOBAL_SCRIPT_HOST_PATH, STRING_TO_JSVAL(JS_NewStringCopyZ(cx, hostPath)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
+	JL_CHK( JS_DefineProperty(cx, globalObject, NAME_GLOBAL_SCRIPT_HOST_NAME, STRING_TO_JSVAL(JS_NewStringCopyZ(cx, hostName)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
 
 	if ( sizeof(embeddedBootstrapScript)-1 ) {
 		
 		uint32 prevOpt = JS_SetOptions(cx, JS_GetOptions(cx) & ~JSOPTION_DONT_REPORT_UNCAUGHT); // report uncautch exceptions !
-//		J_CHKM( JS_EvaluateScript(cx, JS_GetGlobalObject(cx), embeddedBootstrapScript, sizeof(embeddedBootstrapScript)-1, "bootstrap", 1, &tmp), "Invalid bootstrap." ); // for plain text scripts.
+//		JL_CHKM( JS_EvaluateScript(cx, JS_GetGlobalObject(cx), embeddedBootstrapScript, sizeof(embeddedBootstrapScript)-1, "bootstrap", 1, &tmp), "Invalid bootstrap." ); // for plain text scripts.
 		JSXDRState *xdr = JS_XDRNewMem(cx, JSXDR_DECODE);
-		J_CHK( xdr );
+		JL_CHK( xdr );
 		JS_XDRMemSetData(xdr, embeddedBootstrapScript, sizeof(embeddedBootstrapScript)-1);
 		JSScript *script;
-		J_CHK( JS_XDRScript(xdr, &script) );
+		JL_CHK( JS_XDRScript(xdr, &script) );
 		JS_XDRMemSetData(xdr, NULL, 0); // embeddedBootstrapScript is a static buffer, this avoid JS_free to be called on it.
 		JS_XDRDestroy(xdr);
 		JS_GetScriptObject(script);
 		JSObject *bootstrapScriptObject = JS_NewScriptObject(cx, script);
-		J_CHK( SetConfigurationReadonlyValue(cx, "bootstrapScript", OBJECT_TO_JSVAL(bootstrapScriptObject)) );
+		JL_CHK( SetConfigurationReadonlyValue(cx, "bootstrapScript", OBJECT_TO_JSVAL(bootstrapScriptObject)) );
 		jsval tmp;
-		J_CHK( JS_ExecuteScript(cx, JS_GetGlobalObject(cx), script, &tmp) );
+		JL_CHK( JS_ExecuteScript(cx, JS_GetGlobalObject(cx), script, &tmp) );
 		JS_SetOptions(cx, prevOpt);
 	}
 
@@ -313,7 +313,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 		strcat(bootstrapFilename, PATH_SEPARATOR_STRING);
 		strcat(bootstrapFilename, hostName);
 		strcat(bootstrapFilename, ".js"); // (TBD) perhaps find another extension for bootstrap scripts (on windows: jshost.exe.js)
-		J_CHK( ExecuteScriptFileName(cx, bootstrapFilename, compileOnly, argc - (argumentVector-argv), argumentVector, &tmp) );
+		JL_CHK( ExecuteScriptFileName(cx, bootstrapFilename, compileOnly, argc - (argumentVector-argv), argumentVector, &tmp) );
 	}
 
 	int exitValue;

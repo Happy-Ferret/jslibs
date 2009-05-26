@@ -39,7 +39,7 @@ DEFINE_PROPERTY( text ) {
 
 DEFINE_FUNCTION( toString ) {
 
-	J_CHK( _text(cx, obj, 0, rval) );
+	JL_CHK( _text(cx, obj, 0, rval) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -57,7 +57,7 @@ DEFINE_XDR() {
 	if ( xdr->mode == JSXDR_ENCODE ) {
 
 		jsval tmp;
-		J_CHK( JS_GetReservedSlot(xdr->cx, *objp, 0, &tmp) );
+		JL_CHK( JS_GetReservedSlot(xdr->cx, *objp, 0, &tmp) );
 		JS_XDRValue(xdr, &tmp);
 		return JS_TRUE;
 	}
@@ -67,7 +67,7 @@ DEFINE_XDR() {
 		*objp = JS_NewObject(xdr->cx, _class, NULL, NULL);
 		jsval tmp;
 		JS_XDRValue(xdr, &tmp);
-		J_CHK( JS_SetReservedSlot(xdr->cx, *objp, 0, tmp) );
+		JL_CHK( JS_SetReservedSlot(xdr->cx, *objp, 0, tmp) );
 		return JS_TRUE;
 	}
 
@@ -109,8 +109,8 @@ JSBool ThrowCryptError( JSContext *cx, int errorCode ) {
 //	JS_ReportWarning( cx, "CryptError exception" );
 	JSObject *error = JS_NewObject( cx, _class, NULL, NULL );
 	JS_SetPendingException( cx, OBJECT_TO_JSVAL( error ) );
-	J_CHK( JS_SetReservedSlot( cx, error, 0, INT_TO_JSVAL(errorCode) ) );
+	JL_CHK( JS_SetReservedSlot( cx, error, 0, INT_TO_JSVAL(errorCode) ) );
 //	JS_SetReservedSlot( cx, error, 1, errorMessage != NULL ? STRING_TO_JSVAL(JS_NewStringCopyZ( cx, errorMessage )) : JSVAL_VOID );
-	J_SAFE( ExceptionSetScriptLocation(cx, error) );
+	JL_SAFE( ExceptionSetScriptLocation(cx, error) );
 	JL_BAD;
 }

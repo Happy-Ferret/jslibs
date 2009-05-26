@@ -33,14 +33,14 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
-	J_S_ASSERT_CONSTRUCTING();
-	J_S_ASSERT_THIS_CLASS();
-	J_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_CONSTRUCTING();
+	JL_S_ASSERT_THIS_CLASS();
+	JL_S_ASSERT_ARG_MIN(1);
 	ode::dWorldID worldId;
 	if ( ValToWorldID( cx, argv[0], &worldId) == JS_FALSE )
 		return JS_FALSE;
 	ode::dJointID jointId = ode::dJointCreateHinge(worldId, 0); // The joint group ID is 0 to allocate the joint normally.
-	JS_SetPrivate(cx, obj, jointId);
+	JL_SetPrivate(cx, obj, jointId);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -53,9 +53,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( AddTorque ) {
 
-	J_S_ASSERT_ARG_MIN(1);
-	ode::dJointID jointId = (ode::dJointID)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(jointId);
+	JL_S_ASSERT_ARG_MIN(1);
+	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(jointId);
 	jsdouble torque;
 	JS_ValueToNumber(cx, argv[0], &torque);
 	ode::dJointAddHingeTorque(jointId, torque);
@@ -75,13 +75,13 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( anchorSetter ) {
 
-	ode::dJointID jointId = (ode::dJointID)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(jointId); // (TBD) check if NULL is meaningful for joints !
+	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(jointId); // (TBD) check if NULL is meaningful for joints !
 	ode::dVector3 vector;
 //	FloatArrayToVector(cx, 3, vp, vector);
 	size_t length;
-	J_CHK( JsvalToFloatVector(cx, *vp, vector, 3, &length) );
-	J_S_ASSERT( length == 3, "Invalid array size." );
+	JL_CHK( JsvalToFloatVector(cx, *vp, vector, 3, &length) );
+	JL_S_ASSERT( length == 3, "Invalid array size." );
 	ode::dJointSetHingeAnchor( jointId, vector[0], vector[1], vector[2] );
 	return JS_TRUE;
 	JL_BAD;
@@ -89,12 +89,12 @@ DEFINE_PROPERTY( anchorSetter ) {
 
 DEFINE_PROPERTY( anchorGetter ) {
 
-	ode::dJointID jointId = (ode::dJointID)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(jointId);
+	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(jointId);
 	ode::dVector3 vector;
 	ode::dJointGetHingeAnchor(jointId,vector);
 	//FloatVectorToArray(cx, 3, vector, vp);
-	J_CHK( FloatVectorToJsval(cx, vector, 3, vp) );
+	JL_CHK( FloatVectorToJsval(cx, vector, 3, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -106,12 +106,12 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( anchor2 ) { // read only
 
-	ode::dJointID jointId = (ode::dJointID)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(jointId);
+	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(jointId);
 	ode::dVector3 vector;
 	ode::dJointGetHingeAnchor2(jointId,vector);
 	//FloatVectorToArray(cx, 3, vector, vp);
-	J_CHK( FloatVectorToJsval(cx, vector, 3, vp) );
+	JL_CHK( FloatVectorToJsval(cx, vector, 3, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -123,13 +123,13 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( axisSetter ) {
 
-	ode::dJointID jointId = (ode::dJointID)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(jointId); // (TBD) check if NULL is meaningful for joints !
+	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(jointId); // (TBD) check if NULL is meaningful for joints !
 	ode::dVector3 vector;
 //	FloatArrayToVector(cx, 3, vp, vector);
 	size_t length;
-	J_CHK( JsvalToFloatVector(cx, *vp, vector, 3, &length) );
-	J_S_ASSERT( length == 3, "Invalid array size." );
+	JL_CHK( JsvalToFloatVector(cx, *vp, vector, 3, &length) );
+	JL_S_ASSERT( length == 3, "Invalid array size." );
 	ode::dJointSetHingeAxis( jointId, vector[0], vector[1], vector[2] );
 	return JS_TRUE;
 	JL_BAD;
@@ -137,12 +137,12 @@ DEFINE_PROPERTY( axisSetter ) {
 
 DEFINE_PROPERTY( axisGetter ) {
 
-	ode::dJointID jointId = (ode::dJointID)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(jointId);
+	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(jointId);
 	ode::dVector3 vector;
 	ode::dJointGetHingeAxis(jointId,vector);
 	//FloatVectorToArray(cx, 3, vector, vp);
-	J_CHK( FloatVectorToJsval(cx, vector, 3, vp) );
+	JL_CHK( FloatVectorToJsval(cx, vector, 3, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -154,8 +154,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( angle ) {
 
-	ode::dJointID jointId = (ode::dJointID)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(jointId);
+	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(jointId);
 	JS_NewDoubleValue(cx, ode::dJointGetHingeAngle(jointId), vp);
 	return JS_TRUE;
 	JL_BAD;
@@ -168,8 +168,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( angleRate ) {
 
-	ode::dJointID jointId = (ode::dJointID)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(jointId);
+	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(jointId);
 	JS_NewDoubleValue(cx, ode::dJointGetHingeAngleRate(jointId), vp);
 	return JS_TRUE;
 	JL_BAD;

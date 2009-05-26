@@ -46,15 +46,15 @@ struct AsymmetricCipherPrivate {
 JSBool SlotGetPrng(JSContext *cx, JSObject *obj, int *prngIndex, prng_state **prngState) {
 
 	jsval prngVal;
-	J_CHK( JS_GetReservedSlot(cx, obj, ASYMMETRIC_CIPHER_PRNG_SLOT, &prngVal) );
-	J_S_ASSERT_OBJECT(	prngVal );
-	J_S_ASSERT_CLASS( JSVAL_TO_OBJECT(prngVal), classPrng );
+	JL_CHK( JS_GetReservedSlot(cx, obj, ASYMMETRIC_CIPHER_PRNG_SLOT, &prngVal) );
+	JL_S_ASSERT_OBJECT(	prngVal );
+	JL_S_ASSERT_CLASS( JSVAL_TO_OBJECT(prngVal), classPrng );
 	PrngPrivate *prngPrivate;
-	prngPrivate = (PrngPrivate *)JS_GetPrivate(cx, JSVAL_TO_OBJECT(prngVal));
-	J_S_ASSERT_RESOURCE( prngPrivate );
+	prngPrivate = (PrngPrivate *)JL_GetPrivate(cx, JSVAL_TO_OBJECT(prngVal));
+	JL_S_ASSERT_RESOURCE( prngPrivate );
 	*prngState = &prngPrivate->state;
 	*prngIndex = find_prng(prngPrivate->prng.name);
-	J_S_ASSERT_1( *prngIndex != -1, "prng %s is not available.", prngPrivate->prng.name );
+	JL_S_ASSERT_1( *prngIndex != -1, "prng %s is not available.", prngPrivate->prng.name );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -69,7 +69,7 @@ BEGIN_CLASS( AsymmetricCipher )
 
 DEFINE_FINALIZE() {
 
-	AsymmetricCipherPrivate *pv = (AsymmetricCipherPrivate *)JS_GetPrivate(cx, obj);
+	AsymmetricCipherPrivate *pv = (AsymmetricCipherPrivate *)JL_GetPrivate(cx, obj);
 	if ( pv == NULL )
 		return;
 	if ( pv->hasKey ) {
@@ -109,12 +109,12 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() { // ( cipherName, hashName [, prngObject] [, PKCSVersion] )
 
-	J_S_ASSERT_CONSTRUCTING();
-	J_S_ASSERT_THIS_CLASS();
-	J_S_ASSERT_ARG_MIN( 3 );
+	JL_S_ASSERT_CONSTRUCTING();
+	JL_S_ASSERT_THIS_CLASS();
+	JL_S_ASSERT_ARG_MIN( 3 );
 
 	const char *asymmetricCipherName;
-	J_CHK( JsvalToString(cx, &argv[0], &asymmetricCipherName) );
+	JL_CHK( JsvalToString(cx, &argv[0], &asymmetricCipherName) );
 
 	AsymmetricCipher asymmetricCipher;
 	if ( strcasecmp( asymmetricCipherName, "RSA" ) == 0 )
@@ -124,29 +124,29 @@ DEFINE_CONSTRUCTOR() { // ( cipherName, hashName [, prngObject] [, PKCSVersion] 
 	else if ( strcasecmp( asymmetricCipherName, "DSA" ) == 0 )
 		asymmetricCipher = dsa;
 	else
-		J_REPORT_ERROR_1("Invalid asymmetric cipher %s.", asymmetricCipherName);
+		JL_REPORT_ERROR_1("Invalid asymmetric cipher %s.", asymmetricCipherName);
 
 	AsymmetricCipherPrivate *pv;
 	pv = (AsymmetricCipherPrivate *)JS_malloc(cx, sizeof(AsymmetricCipherPrivate));
-	J_CHK( pv );
+	JL_CHK( pv );
 
 	pv->cipher = asymmetricCipher;
 
 	const char *hashName;
-	J_CHK( JsvalToString(cx, &argv[1], &hashName) );
+	JL_CHK( JsvalToString(cx, &argv[1], &hashName) );
 	int hashIndex;
 	hashIndex = find_hash(hashName);
-	J_S_ASSERT_1( hashIndex != -1, "hash %s is not available.", hashName );
+	JL_S_ASSERT_1( hashIndex != -1, "hash %s is not available.", hashName );
 	pv->hashDescriptor = &hash_descriptor[hashIndex];
 
 	if ( argc >= 3 ) {
 
-		J_S_ASSERT_OBJECT(	argv[2] );
-		J_S_ASSERT_CLASS( JSVAL_TO_OBJECT(argv[2]), classPrng );
-		J_CHK( JS_SetReservedSlot(cx, obj, ASYMMETRIC_CIPHER_PRNG_SLOT, argv[2]) );
+		JL_S_ASSERT_OBJECT(	argv[2] );
+		JL_S_ASSERT_CLASS( JSVAL_TO_OBJECT(argv[2]), classPrng );
+		JL_CHK( JS_SetReservedSlot(cx, obj, ASYMMETRIC_CIPHER_PRNG_SLOT, argv[2]) );
 	} else {
 
-		J_CHK( JS_SetReservedSlot(cx, obj, ASYMMETRIC_CIPHER_PRNG_SLOT, JSVAL_VOID) );
+		JL_CHK( JS_SetReservedSlot(cx, obj, ASYMMETRIC_CIPHER_PRNG_SLOT, JSVAL_VOID) );
 	}
 
 	pv->padding = LTC_LTC_PKCS_1_OAEP;
@@ -154,7 +154,7 @@ DEFINE_CONSTRUCTOR() { // ( cipherName, hashName [, prngObject] [, PKCSVersion] 
 	if ( argc >= 4 && !JSVAL_IS_VOID( argv[3] ) ) {
 
 		const char *paddingName;
-		J_CHK( JsvalToString(cx, &argv[3], &paddingName) );
+		JL_CHK( JsvalToString(cx, &argv[3], &paddingName) );
 
 		if ( strcmp(paddingName, "1_OAEP") == 0 ) {
 
@@ -163,11 +163,11 @@ DEFINE_CONSTRUCTOR() { // ( cipherName, hashName [, prngObject] [, PKCSVersion] 
 
 			pv->padding = LTC_LTC_PKCS_1_V1_5;
 		} else
-			J_REPORT_ERROR("Invalid padding version.");
+			JL_REPORT_ERROR("Invalid padding version.");
 	}
 
 	pv->hasKey = false;
-	J_CHK( JS_SetPrivate( cx, obj, pv ) );
+	JL_CHK( JL_SetPrivate( cx, obj, pv ) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -191,18 +191,18 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( CreateKeys ) { // ( bitsSize )
 
-	J_S_ASSERT_CLASS( obj, _class );
-	J_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_CLASS( obj, _class );
+	JL_S_ASSERT_ARG_MIN( 1 );
 	AsymmetricCipherPrivate *pv;
-	pv = (AsymmetricCipherPrivate *)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE( pv );
+	pv = (AsymmetricCipherPrivate *)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( pv );
 
 	prng_state *prngState;
 	int prngIndex;
-	J_CHK( SlotGetPrng(cx, obj, &prngIndex, &prngState) );
+	JL_CHK( SlotGetPrng(cx, obj, &prngIndex, &prngState) );
 
 	unsigned int keySize;
-	J_CHK( JsvalToUInt(cx, argv[0], &keySize) );
+	JL_CHK( JsvalToUInt(cx, argv[0], &keySize) );
 
 	int err;
 	err = -1; // default
@@ -233,11 +233,11 @@ DEFINE_FUNCTION( CreateKeys ) { // ( bitsSize )
 			//int stat = 0; // default: failed
 			//dsa_verify_key(&pv->key.dsaKey, &stat);
 			//if (stat != 1) // If the result is stat = 1 the DSA key is valid (as far as valid mathematics are concerned).
-			//	J_REPORT_ERROR("Invalid key.");
+			//	JL_REPORT_ERROR("Invalid key.");
 			break;
 		}
 		default:
-			J_REPORT_ERROR("Invalid case.");
+			JL_REPORT_ERROR("Invalid case.");
 	}
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err);
@@ -256,23 +256,23 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Encrypt ) { // ( data [, lparam] )
 
-	J_S_ASSERT_CLASS( obj, _class );
-	J_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_CLASS( obj, _class );
+	JL_S_ASSERT_ARG_MIN( 1 );
 	AsymmetricCipherPrivate *pv;
-	pv = (AsymmetricCipherPrivate *)JS_GetPrivate( cx, obj );
-	J_S_ASSERT_RESOURCE( pv );
-	J_S_ASSERT( pv->hasKey, "No key found." );
+	pv = (AsymmetricCipherPrivate *)JL_GetPrivate( cx, obj );
+	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT( pv->hasKey, "No key found." );
 
 	prng_state *prngState;
 	int prngIndex;
-	J_CHK( SlotGetPrng(cx, obj, &prngIndex, &prngState) );
+	JL_CHK( SlotGetPrng(cx, obj, &prngIndex, &prngState) );
 
 	int hashIndex;
 	hashIndex = find_hash(pv->hashDescriptor->name);
 
 	const char *in;
 	size_t inLength;
-	J_CHK( JsvalToStringAndLength( cx, &argv[0], &in, &inLength ) );
+	JL_CHK( JsvalToStringAndLength( cx, &argv[0], &in, &inLength ) );
 
 	char out[4096];
 	unsigned long outLength;
@@ -286,7 +286,7 @@ DEFINE_FUNCTION( Encrypt ) { // ( data [, lparam] )
 			unsigned char *lparam = NULL; // default: lparam not used
 			unsigned long lparamlen = 0;
 			if (argc >= 2 && !JSVAL_IS_VOID( argv[1] ))
-				J_CHK( JsvalToStringAndLength(cx, &argv[1], &in, &inLength) );
+				JL_CHK( JsvalToStringAndLength(cx, &argv[1], &in, &inLength) );
 			err = rsa_encrypt_key_ex( (unsigned char *)in, inLength, (unsigned char *)out, &outLength, lparam, lparamlen, prngState, prngIndex, hashIndex, pv->padding, &pv->key.rsaKey ); // ltc_mp.rsa_me()
 			break;
 		}
@@ -299,12 +299,12 @@ DEFINE_FUNCTION( Encrypt ) { // ( data [, lparam] )
 			break;
 		}
 		default:
-			J_REPORT_ERROR("Invalid case.");
+			JL_REPORT_ERROR("Invalid case.");
 	}
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err);
 
-	J_CHK( J_NewBlobCopyN(cx, out, outLength, rval) );
+	JL_CHK( JL_NewBlobCopyN(cx, out, outLength, rval) );
 	zeromem(out, sizeof(out)); // safe clear
 
 	return JS_TRUE;
@@ -329,16 +329,16 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Decrypt ) { // ( encryptedData [, lparam] )
 
-	J_S_ASSERT_CLASS( obj, _class );
-	J_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_CLASS( obj, _class );
+	JL_S_ASSERT_ARG_MIN( 1 );
 	AsymmetricCipherPrivate *pv;
-	pv = (AsymmetricCipherPrivate *)JS_GetPrivate( cx, obj );
-	J_S_ASSERT_RESOURCE( pv );
-	J_S_ASSERT( pv->hasKey, "No key found." );
+	pv = (AsymmetricCipherPrivate *)JL_GetPrivate( cx, obj );
+	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT( pv->hasKey, "No key found." );
 
 	const char *in;
 	size_t inLength;
-	J_CHK( JsvalToStringAndLength(cx, &argv[0], &in, &inLength) );
+	JL_CHK( JsvalToStringAndLength(cx, &argv[0], &in, &inLength) );
 
 	char out[4096];
 	unsigned long outLength;
@@ -354,7 +354,7 @@ DEFINE_FUNCTION( Decrypt ) { // ( encryptedData [, lparam] )
 			const char *lparam = NULL; // default: lparam not used
 			size_t lparamlen = 0;
 			if (argc >= 2 && !JSVAL_IS_VOID( argv[1] ))
-				J_CHK( JsvalToStringAndLength(cx, &argv[1], &lparam, &lparamlen) );
+				JL_CHK( JsvalToStringAndLength(cx, &argv[1], &lparam, &lparamlen) );
 
 			int stat = 0; // default: failed
 			err = rsa_decrypt_key_ex( (unsigned char *)in, inLength, (unsigned char *)out, &outLength, (const unsigned char *)lparam, lparamlen, hashIndex, pv->padding, &stat, &pv->key.rsaKey );
@@ -375,7 +375,7 @@ DEFINE_FUNCTION( Decrypt ) { // ( encryptedData [, lparam] )
 			break;
 		}
 		default:
-			J_REPORT_ERROR("Invalid case.");
+			JL_REPORT_ERROR("Invalid case.");
 	}
 
 	if (err != CRYPT_OK)
@@ -383,7 +383,7 @@ DEFINE_FUNCTION( Decrypt ) { // ( encryptedData [, lparam] )
 
 	out[outLength] = '\0';
 
-	J_CHK( J_NewBlobCopyN( cx, out, outLength, rval ) );
+	JL_CHK( JL_NewBlobCopyN( cx, out, outLength, rval ) );
 	zeromem(out, sizeof(out));
 
 	return JS_TRUE;
@@ -400,21 +400,21 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Sign ) { // ( data [, saltLength] )
 
-	J_S_ASSERT_CLASS( obj, _class );
-	J_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_CLASS( obj, _class );
+	JL_S_ASSERT_ARG_MIN( 1 );
 	AsymmetricCipherPrivate *pv;
-	pv = (AsymmetricCipherPrivate *)JS_GetPrivate( cx, obj );
-	J_S_ASSERT_RESOURCE( pv );
+	pv = (AsymmetricCipherPrivate *)JL_GetPrivate( cx, obj );
+	JL_S_ASSERT_RESOURCE( pv );
 
-	J_S_ASSERT( pv->hasKey, "No key found." );
+	JL_S_ASSERT( pv->hasKey, "No key found." );
 
 	prng_state *prngState;
 	int prngIndex;
-	J_CHK( SlotGetPrng(cx, obj, &prngIndex, &prngState) );
+	JL_CHK( SlotGetPrng(cx, obj, &prngIndex, &prngState) );
 
 	const char *in;
 	size_t inLength;
-	J_CHK( JsvalToStringAndLength(cx, &argv[0], &in, &inLength) );
+	JL_CHK( JsvalToStringAndLength(cx, &argv[0], &in, &inLength) );
 
 	char out[4096];
 	unsigned long outLength;
@@ -429,7 +429,7 @@ DEFINE_FUNCTION( Sign ) { // ( data [, saltLength] )
 			// int saltLength = 16; // OR saltLength = mp_unsigned_bin_size((mp_int*)(pv->key.rsaKey.N)) - hash_descriptor[hashIndex].hashsize - 2  -1;
 			int saltLength = RSA_SIGN_DEFAULT_SALT_LENGTH;
 			if ( argc >= 2 && !JSVAL_IS_VOID( argv[1] ) )
-				J_CHK( JsvalToInt(cx, argv[1], &saltLength) );
+				JL_CHK( JsvalToInt(cx, argv[1], &saltLength) );
 
 			err = rsa_sign_hash_ex( (unsigned char *)in, inLength, (unsigned char *)out, &outLength, LTC_LTC_PKCS_1_PSS, prngState, prngIndex, hashIndex, saltLength, &pv->key.rsaKey );
 			break;
@@ -443,13 +443,13 @@ DEFINE_FUNCTION( Sign ) { // ( data [, saltLength] )
 			break;
 		}
 		default:
-			J_REPORT_ERROR("Invalid case.");
+			JL_REPORT_ERROR("Invalid case.");
 	}
 
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err);
 
-	J_CHK( J_NewBlobCopyN( cx, out, outLength, rval ) );
+	JL_CHK( JL_NewBlobCopyN( cx, out, outLength, rval ) );
 	zeromem(out, sizeof(out));
 
 	return JS_TRUE;
@@ -465,20 +465,20 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( VerifySignature ) { // ( data, signature [, saltLength] )
 
-	J_S_ASSERT_CLASS( obj, _class );
-	J_S_ASSERT_ARG_MIN( 2 );
+	JL_S_ASSERT_CLASS( obj, _class );
+	JL_S_ASSERT_ARG_MIN( 2 );
 	AsymmetricCipherPrivate *pv;
-	pv = (AsymmetricCipherPrivate *)JS_GetPrivate( cx, obj );
-	J_S_ASSERT_RESOURCE( pv );
-	J_S_ASSERT( pv->hasKey, "No key found." );
+	pv = (AsymmetricCipherPrivate *)JL_GetPrivate( cx, obj );
+	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT( pv->hasKey, "No key found." );
 
 	const char *data;
 	size_t dataLength;
-	J_CHK( JsvalToStringAndLength(cx, &argv[0], &data, &dataLength ) ); // warning: GC on the returned buffer !
+	JL_CHK( JsvalToStringAndLength(cx, &argv[0], &data, &dataLength ) ); // warning: GC on the returned buffer !
 
 	const char *sign;
 	size_t signLength;
-	J_CHK( JsvalToStringAndLength(cx, &argv[1], &sign, &signLength) ); // warning: GC on the returned buffer !
+	JL_CHK( JsvalToStringAndLength(cx, &argv[1], &sign, &signLength) ); // warning: GC on the returned buffer !
 
 	int stat;
 	stat = 0; // default: failed
@@ -488,7 +488,7 @@ DEFINE_FUNCTION( VerifySignature ) { // ( data, signature [, saltLength] )
 		case rsa: {
 			int saltLength = RSA_SIGN_DEFAULT_SALT_LENGTH; // default
 			if ( argc >= 3 && !JSVAL_IS_VOID( argv[2] ) )
-				J_CHK( JsvalToInt(cx, argv[2], &saltLength) );
+				JL_CHK( JsvalToInt(cx, argv[2], &saltLength) );
 
 			int hashIndex = find_hash(pv->hashDescriptor->name);
 
@@ -504,7 +504,7 @@ DEFINE_FUNCTION( VerifySignature ) { // ( data, signature [, saltLength] )
 			break;
 		}
 		default:
-			J_REPORT_ERROR("Invalid case.");
+			JL_REPORT_ERROR("Invalid case.");
 	}
 
 	if (err != CRYPT_OK)
@@ -527,11 +527,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( blockLength ) {
 
-	J_S_ASSERT_CLASS( obj, _class );
+	JL_S_ASSERT_CLASS( obj, _class );
 	AsymmetricCipherPrivate *pv;
-	pv = (AsymmetricCipherPrivate *)JS_GetPrivate( cx, obj );
-	J_S_ASSERT_RESOURCE( pv );
-	J_S_ASSERT( pv->hasKey, "No key found." );
+	pv = (AsymmetricCipherPrivate *)JL_GetPrivate( cx, obj );
+	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT( pv->hasKey, "No key found." );
 	int blockLength;
 	switch ( pv->cipher ) {
 		case rsa:
@@ -544,7 +544,7 @@ DEFINE_PROPERTY( blockLength ) {
 			blockLength = pv->hashDescriptor->hashsize; // seems OK
 			break;
 		default:
-			J_REPORT_ERROR("Invalid case.");
+			JL_REPORT_ERROR("Invalid case.");
 	}
 	*vp = INT_TO_JSVAL( blockLength );
 	return JS_TRUE;
@@ -558,11 +558,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( keySize ) {
 
-	J_S_ASSERT_CLASS( obj, _class );
+	JL_S_ASSERT_CLASS( obj, _class );
 	AsymmetricCipherPrivate *pv;
-	pv = (AsymmetricCipherPrivate *)JS_GetPrivate( cx, obj );
-	J_S_ASSERT_RESOURCE( pv );
-	J_S_ASSERT( pv->hasKey, "No key found." );
+	pv = (AsymmetricCipherPrivate *)JL_GetPrivate( cx, obj );
+	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT( pv->hasKey, "No key found." );
 	int keySize;
 	switch ( pv->cipher ) {
 		case rsa:
@@ -576,7 +576,7 @@ DEFINE_PROPERTY( keySize ) {
 			keySize = mp_unsigned_bin_size((mp_int*)(pv->key.dsaKey.y)) * 8; // ??? seems to randomly failed.
 			break;
 		default:
-			J_REPORT_ERROR("Invalid case.");
+			JL_REPORT_ERROR("Invalid case.");
 	}
 	*vp = INT_TO_JSVAL( keySize );
 	return JS_TRUE;
@@ -595,40 +595,40 @@ $TOC_MEMBER $INAME
 
 DEFINE_PROPERTY( keySetter ) {
 
-	J_S_ASSERT_CLASS( obj, _class );
+	JL_S_ASSERT_CLASS( obj, _class );
 	AsymmetricCipherPrivate *pv;
-	pv = (AsymmetricCipherPrivate *)JS_GetPrivate( cx, obj );
-	J_S_ASSERT_RESOURCE( pv );
+	pv = (AsymmetricCipherPrivate *)JL_GetPrivate( cx, obj );
+	JL_S_ASSERT_RESOURCE( pv );
 
 	int type;
-	J_CHK( JsvalToInt(cx, id, &type) );
+	JL_CHK( JsvalToInt(cx, id, &type) );
 
 	const char *key;
 	size_t keyLength;
-	J_CHK( JsvalToStringAndLength(cx, vp, &key, &keyLength) );
+	JL_CHK( JsvalToStringAndLength(cx, vp, &key, &keyLength) );
 
 	int err;
 	err = -1; // default
 	switch ( pv->cipher ) {
 		case rsa:
 			err = rsa_import( (unsigned char *)key, keyLength, &pv->key.rsaKey );
-			J_S_ASSERT( pv->key.rsaKey.type == type, "Invalid key type." );
+			JL_S_ASSERT( pv->key.rsaKey.type == type, "Invalid key type." );
 			break;
 		case ecc:
 			err = ecc_import( (unsigned char *)key, keyLength, &pv->key.eccKey );
-			J_S_ASSERT( pv->key.rsaKey.type == type, "Invalid key type." );
+			JL_S_ASSERT( pv->key.rsaKey.type == type, "Invalid key type." );
 			break;
 		case dsa: {
 			err = dsa_import( (unsigned char *)key, keyLength, &pv->key.dsaKey );
-			J_S_ASSERT( pv->key.rsaKey.type == type, "Invalid key type." );
+			JL_S_ASSERT( pv->key.rsaKey.type == type, "Invalid key type." );
 			//int stat = 0;
 			//dsa_verify_key(&pv->key.dsaKey, &stat);
 			//if (stat != 1) // If the result is stat = 1 the DSA key is valid (as far as valid mathematics are concerned).
-			//	J_REPORT_ERROR("Invalid key.");
+			//	JL_REPORT_ERROR("Invalid key.");
 			break;
 		}
 		default:
-			J_REPORT_ERROR("Invalid case.");
+			JL_REPORT_ERROR("Invalid case.");
 	}
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err);
@@ -641,16 +641,16 @@ DEFINE_PROPERTY( keySetter ) {
 
 DEFINE_PROPERTY( keyGetter ) {
 
-	J_S_ASSERT_CLASS( obj, _class );
+	JL_S_ASSERT_CLASS( obj, _class );
 	AsymmetricCipherPrivate *pv;
-	pv = (AsymmetricCipherPrivate *)JS_GetPrivate( cx, obj );
-	J_S_ASSERT_RESOURCE( pv );
-	J_S_ASSERT( pv->hasKey, "No key found." );
+	pv = (AsymmetricCipherPrivate *)JL_GetPrivate( cx, obj );
+	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT( pv->hasKey, "No key found." );
 
 	JSBool jsErr;
 	int32 type;
 	jsErr = JS_ValueToInt32(cx, id, &type);
-	J_S_ASSERT( jsErr == JS_TRUE, "Invalid operation." );
+	JL_S_ASSERT( jsErr == JS_TRUE, "Invalid operation." );
 
 	char key[4096];
 	unsigned long keyLength;
@@ -669,12 +669,12 @@ DEFINE_PROPERTY( keyGetter ) {
 			err = dsa_export( (unsigned char *)key, &keyLength, type, &pv->key.dsaKey );
 			break;
 		default:
-			J_REPORT_ERROR("Invalid case.");
+			JL_REPORT_ERROR("Invalid case.");
 	}
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err);
 
-	J_CHK( J_NewBlobCopyN(cx, key, keyLength, vp) );
+	JL_CHK( JL_NewBlobCopyN(cx, key, keyLength, vp) );
 	zeromem(key, sizeof(key)); // safe clean
 
 	return JS_TRUE;

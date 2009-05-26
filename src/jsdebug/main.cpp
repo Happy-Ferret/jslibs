@@ -162,14 +162,14 @@ JSBool GetScriptLocation( JSContext *cx, jsval *val, uintN lineno, JSScript **sc
 	} else
 	if ( JsvalIsScript(cx, *val) ) {
 
-		*script = (JSScript *) JS_GetPrivate(cx, JSVAL_TO_OBJECT(*val));
+		*script = (JSScript *) JL_GetPrivate(cx, JSVAL_TO_OBJECT(*val));
 		if ( *script == NULL )
 			return JS_TRUE;
 		lineno += JS_GetScriptBaseLineNumber(cx, *script);
 	} else {
 
 		const char *filename;
-		J_CHK( JsvalToString(cx, val, &filename) );
+		JL_CHK( JsvalToString(cx, val, &filename) );
 		*script = ScriptByLocation(cx, scriptFileList, filename, lineno);
 		if ( *script == NULL )
 			return JS_TRUE;

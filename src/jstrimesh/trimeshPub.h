@@ -49,7 +49,7 @@ bool JsvalIsTrimesh( JSContext *cx, jsval val ) {
 
 Surface *GetTrimeshSurface( JSContext *cx, JSObject *obj ) {
 
-	return (Surface*)JS_GetPrivate(cx, obj);
+	return (Surface*)JL_GetPrivate(cx, obj);
 }
 
 

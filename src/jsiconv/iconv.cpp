@@ -35,7 +35,7 @@ BEGIN_CLASS( Iconv ) // Start the definition of the class. It defines some symbo
 
 DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are no remaing references to this object.
 
-	Private *pv = (Private*)JS_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	if ( !pv )
 		return;
 		
@@ -55,41 +55,41 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
-	J_S_ASSERT_CONSTRUCTING();
-	J_S_ASSERT_THIS_CLASS();
-	J_S_ASSERT_ARG_MIN(2);
+	JL_S_ASSERT_CONSTRUCTING();
+	JL_S_ASSERT_THIS_CLASS();
+	JL_S_ASSERT_ARG_MIN(2);
 
 	const char *tocode;
 	const char *fromcode;
 
-	J_CHK( JsvalToString(cx, &J_ARG(1), &tocode) );
-	J_CHK( JsvalToString(cx, &J_ARG(2), &fromcode) );
+	JL_CHK( JsvalToString(cx, &JL_ARG(1), &tocode) );
+	JL_CHK( JsvalToString(cx, &JL_ARG(2), &fromcode) );
 
 	Private *pv;
 	pv = (Private*)JS_malloc(cx, sizeof(Private));
-	J_CHK(pv);
+	JL_CHK(pv);
 
 	pv->remainderLen = 0;
 	pv->cd = iconv_open(tocode, fromcode);
 
-	if ( J_ARG_ISDEF(3) )
-		J_CHK( JsvalToBool(cx, J_ARG(3), &pv->wTo) );
+	if ( JL_ARG_ISDEF(3) )
+		JL_CHK( JsvalToBool(cx, JL_ARG(3), &pv->wTo) );
 	else
 		pv->wTo = false;
 
-	if ( J_ARG_ISDEF(4) )
-		J_CHK( JsvalToBool(cx, J_ARG(4), &pv->wFrom) );
+	if ( JL_ARG_ISDEF(4) )
+		JL_CHK( JsvalToBool(cx, JL_ARG(4), &pv->wFrom) );
 	else
 		pv->wFrom = false;
 
 	if ( (size_t)pv->cd == (size_t)-1 ) {
 		
 		if ( errno == EINVAL )
-			J_REPORT_ERROR_2( "The conversion from %s to %s is not supported.", fromcode, tocode );
+			JL_REPORT_ERROR_2( "The conversion from %s to %s is not supported.", fromcode, tocode );
 		else
-			J_REPORT_ERROR( "Unknown iconv error." );
+			JL_REPORT_ERROR( "Unknown iconv error." );
 	}
-	J_CHK( JS_SetPrivate(cx, obj, pv) );
+	JL_CHK( JL_SetPrivate(cx, obj, pv) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -103,15 +103,15 @@ $TOC_MEMBER $INAME
 DEFINE_CALL() {
 		
 	JSObject *thisObj = JSVAL_TO_OBJECT(argv[-2]); // get 'this' object of the current object ...
-	J_S_ASSERT_CLASS(thisObj, classIconv);
+	JL_S_ASSERT_CLASS(thisObj, classIconv);
 
 	Private *pv;
-	pv = (Private*)JS_GetPrivate(cx, thisObj);
-	J_S_ASSERT_RESOURCE( pv );
+	pv = (Private*)JL_GetPrivate(cx, thisObj);
+	JL_S_ASSERT_RESOURCE( pv );
 
 	size_t status;
 
-	if ( !J_ARG_ISDEF(1) ) {
+	if ( !JL_ARG_ISDEF(1) ) {
 		
 		status = iconv(pv->cd, NULL, NULL, NULL, NULL); // sets cd's conversion state to the initial state.
 		return JS_TRUE;
@@ -124,13 +124,13 @@ DEFINE_CALL() {
 		
 		// (TBD) check the string size
 
-		JSString *jsstr = JS_ValueToString(cx, J_ARG(1));
-		J_ARG(1) = STRING_TO_JSVAL( jsstr );
+		JSString *jsstr = JS_ValueToString(cx, JL_ARG(1));
+		JL_ARG(1) = STRING_TO_JSVAL( jsstr );
 		inLen = JL_GetStringLength(jsstr) * 2;
 		inBuf = (char*)JS_GetStringChars(jsstr);
 	} else {
 
-		J_CHK( JsvalToStringAndLength(cx, &J_ARG(1), &inBuf, &inLen) );
+		JL_CHK( JsvalToStringAndLength(cx, &JL_ARG(1), &inBuf, &inLen) );
 	}
 
 	const char *inPtr;
@@ -144,7 +144,7 @@ DEFINE_CALL() {
 
 	outLen = inLen + MB_LEN_MAX + 512; // * 3/2; // * 1.5 (we use + MB_LEN_MAX to avoid remainderLen... section to failed with E2BIG)
 	outBuf = (char*)JS_malloc(cx, outLen +1);
-	J_CHK( outBuf );
+	JL_CHK( outBuf );
 
 	char *outPtr;
 	outPtr = outBuf;
@@ -191,7 +191,7 @@ DEFINE_CALL() {
 						int processedOut = outPtr - outBuf;
 						outLen = inLen * processedOut / (inPtr - inBuf) + 512; // try to guess a better outLen based on the current in/out ratio.
 						outBuf = (char*)JS_realloc(cx, outBuf, outLen +1);
-						J_CHK(outBuf);
+						JL_CHK(outBuf);
 						outPtr = outBuf + processedOut;
 						outLeft = outLen - processedOut;
 					}
@@ -204,7 +204,7 @@ DEFINE_CALL() {
 						int processedOut = outPtr - outBuf;
 						outLen = inLen * processedOut / (inPtr - inBuf) + 512; // try to guess a better outLen based on the current in/out ratio.
 						outBuf = (char*)JS_realloc(cx, outBuf, outLen +1);
-						J_CHK(outBuf);
+						JL_CHK(outBuf);
 						outPtr = outBuf + processedOut;
 						outLeft = outLen - processedOut;
 					}
@@ -219,7 +219,7 @@ DEFINE_CALL() {
 
 				case EINVAL: { // An incomplete multibyte sequence has been encountered in the input.
 
-					J_S_ASSERT(inLeft < MB_LEN_MAX, "Unable to manage incomplete multibyte sequence.");
+					JL_S_ASSERT(inLeft < MB_LEN_MAX, "Unable to manage incomplete multibyte sequence.");
 					memcpy(pv->remainderBuf + pv->remainderLen, inPtr, inLeft); // save
 					pv->remainderLen = inLeft;
 					inPtr += inLeft;
@@ -236,7 +236,7 @@ DEFINE_CALL() {
 	if ( MaybeRealloc(outLen, length) ) {
 
 		outBuf = (char*)JS_realloc(cx, outBuf, length +1);
-		J_CHK( outBuf );
+		JL_CHK( outBuf );
 	}
 	outBuf[length] = '\0';
 
@@ -246,7 +246,7 @@ DEFINE_CALL() {
 		*J_RVAL = STRING_TO_JSVAL(wstr);
 	} else {
 
-		J_CHK( StringAndLengthToJsval(cx, J_RVAL, outBuf, length) );
+		JL_CHK( StringAndLengthToJsval(cx, J_RVAL, outBuf, length) );
 	}
 
 	return JS_TRUE;
@@ -286,7 +286,7 @@ DEFINE_PROPERTY( list ) {
 	if ( JSVAL_IS_VOID( *vp ) ) {
 
 		JSObject *list = JS_NewArrayObject(cx, 0, NULL);
-		J_CHK( list );
+		JL_CHK( list );
 		*vp = OBJECT_TO_JSVAL( list );
 		IteratorPrivate ipv = { cx, list, 0 };
 		iconvlist(do_one, &ipv);

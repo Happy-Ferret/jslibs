@@ -22,8 +22,8 @@
 static JSBool ReadMatrix( JSContext *cx, JSObject *obj, float **pm) { // Doc: __declspec(noinline) tells the compiler to never inline a particular function.
 
 	//ode::dBodyID id = (ode::dBodyID)pv;
-	ode::dBodyID id = (ode::dBodyID)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(id);
+	ode::dBodyID id = (ode::dBodyID)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(id);
 
 	const ode::dReal * m43 = dBodyGetRotation( id );
 	const ode::dReal * pos = dBodyGetPosition( id );
@@ -60,11 +60,11 @@ DEFINE_FINALIZE() {
 
 // (TBD) manage Mass object (body.mass)
 /*
-	ode::dBodyID bodyId = (ode::dBodyID)JS_GetPrivate( cx, obj );
+	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate( cx, obj );
 //	JSObject *parent = JS_GetParent(cx,obj); // If the object does not have a parent, or the object finalize function is active, JS_GetParent returns NULL.
 	if ( bodyId != NULL ) {
 		dBodyDestroy(bodyId);
-		JS_SetPrivate(cx, obj, NULL);
+		JL_SetPrivate(cx, obj, NULL);
 	}
 */
 }
@@ -77,26 +77,26 @@ $TOC_MEMBER $INAME
 
 DEFINE_CONSTRUCTOR() {
 
-	J_S_ASSERT_CONSTRUCTING();
-//	J_S_ASSERT_CLASS(&classBody);
-	J_S_ASSERT_THIS_CLASS();
+	JL_S_ASSERT_CONSTRUCTING();
+//	JL_S_ASSERT_CLASS(&classBody);
+	JL_S_ASSERT_THIS_CLASS();
 
-	J_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_ARG_MIN(1);
 
 	ode::dWorldID worldId;
 	ValToWorldID(cx, argv[0], &worldId);
 
 	ode::dBodyID bodyID = ode::dBodyCreate(worldId);
-	J_S_ASSERT( bodyID != NULL, "unable to create the body." );
+	JL_S_ASSERT( bodyID != NULL, "unable to create the body." );
 
-	JS_SetPrivate(cx, obj, bodyID);
+	JL_SetPrivate(cx, obj, bodyID);
 	JS_SetReservedSlot(cx, obj, BODY_SLOT_WORLD, argv[0]);
 
 //	JS_AddRoot(cx, obj); // Doc: The pointer or jsval whose address is passed as rp must live in storage that remains allocated until the balancing JS_RemoveRoot call is made.
 //	ode::dBodySetData(bodyID, obj);
 
 //	ode::dBodySetData(bodyID,worldObject);
-	J_CHK( SetMatrix44GetInterface(cx, obj, ReadMatrix) );
+	JL_CHK( SetMatrix44GetInterface(cx, obj, ReadMatrix) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -112,11 +112,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Destroy ) {
 
-	J_S_ASSERT_CLASS(obj, classBody);
-	ode::dBodyID bodyId = (ode::dBodyID)JS_GetPrivate( cx, obj );
-	J_S_ASSERT_RESOURCE( bodyId ); // (TBD) manage world-connected ( when bodyId == 0 )
+	JL_S_ASSERT_CLASS(obj, classBody);
+	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate( cx, obj );
+	JL_S_ASSERT_RESOURCE( bodyId ); // (TBD) manage world-connected ( when bodyId == 0 )
 	dBodyDestroy(bodyId);
-	JS_SetPrivate(cx, obj, NULL);
+	JL_SetPrivate(cx, obj, NULL);
 	JS_SetReservedSlot(cx, obj, BODY_SLOT_WORLD, JSVAL_VOID);
 	return JS_TRUE;
 	JL_BAD;
@@ -129,10 +129,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( IsConnectedTo ) {
 
-	J_S_ASSERT_ARG_MIN(1);
-	J_S_ASSERT_CLASS(obj, classBody);
-	ode::dBodyID thisBodyID = (ode::dBodyID)JS_GetPrivate( cx, obj );
-	J_S_ASSERT_RESOURCE( thisBodyID );
+	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_CLASS(obj, classBody);
+	ode::dBodyID thisBodyID = (ode::dBodyID)JL_GetPrivate( cx, obj );
+	JL_S_ASSERT_RESOURCE( thisBodyID );
 	ode::dBodyID bodyId;
 	ValToBodyID(cx, argv[0], &bodyId);
 	ode::dAreConnected(thisBodyID, bodyId);
@@ -168,8 +168,13 @@ enum { position, quaternion, linearVel, angularVel, force, torque };
 
 DEFINE_PROPERTY( vectorGetter ) {
 
-	ode::dBodyID bodyID = (ode::dBodyID)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE( bodyID );
+	ode::dBodyID bodyID = (ode::dBodyID)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( bodyID );
+	//if ( bodyID == 0 ) {
+	//	*vp = JSVAL_VOID;
+	//	return JS_TRUE;
+	//}
+
 	const ode::dReal *vector;
 	int dim;
 	switch(JSVAL_TO_INT(id)) {
@@ -199,7 +204,7 @@ DEFINE_PROPERTY( vectorGetter ) {
 			break;
 	}
 	//FloatVectorToArray(cx, dim, vector, vp);
-	J_CHK( FloatVectorToJsval(cx, vector, dim, vp) );
+	JL_CHK( FloatVectorToJsval(cx, vector, dim, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -207,46 +212,46 @@ DEFINE_PROPERTY( vectorGetter ) {
 
 DEFINE_PROPERTY( vectorSetter ) {
 
-	ode::dBodyID bodyID = (ode::dBodyID)JS_GetPrivate( cx, obj );
-	J_S_ASSERT_RESOURCE( bodyID );
+	ode::dBodyID bodyID = (ode::dBodyID)JL_GetPrivate( cx, obj );
+	JL_S_ASSERT_RESOURCE( bodyID );
 	ode::dVector3 vector;
 	ode::dVector4 quatern;
 	size_t length;
 	switch(JSVAL_TO_INT(id)) {
 		case position:
 			//FloatArrayToVector(cx, 3, vp, vector);
-			J_CHK( JsvalToFloatVector(cx, *vp, vector, 3, &length) );
-			J_S_ASSERT( length == 3, "Invalid array size." );
+			JL_CHK( JsvalToFloatVector(cx, *vp, vector, 3, &length) );
+			JL_S_ASSERT( length == 3, "Invalid array size." );
 			ode::dBodySetPosition( bodyID, vector[0], vector[1], vector[2] );
 			break;
 		case quaternion:
 			//FloatArrayToVector(cx, 4, vp, vector);
-			J_CHK( JsvalToFloatVector(cx, *vp, quatern, 4, &length) );
-			J_S_ASSERT( length == 4, "Invalid array size." );
+			JL_CHK( JsvalToFloatVector(cx, *vp, quatern, 4, &length) );
+			JL_S_ASSERT( length == 4, "Invalid array size." );
 			ode::dBodySetQuaternion( bodyID, quatern );
 			break;
 		case linearVel:
 			//FloatArrayToVector(cx, 3, vp, vector);
-			J_CHK( JsvalToFloatVector(cx, *vp, vector, 3, &length) );
-			J_S_ASSERT( length == 3, "Invalid array size." );
+			JL_CHK( JsvalToFloatVector(cx, *vp, vector, 3, &length) );
+			JL_S_ASSERT( length == 3, "Invalid array size." );
 			ode::dBodySetLinearVel( bodyID, vector[0], vector[1], vector[2] );
 			break;
 		case angularVel:
 			//FloatArrayToVector(cx, 3, vp, vector);
-			J_CHK( JsvalToFloatVector(cx, *vp, vector, 3, &length) );
-			J_S_ASSERT( length == 3, "Invalid array size." );
+			JL_CHK( JsvalToFloatVector(cx, *vp, vector, 3, &length) );
+			JL_S_ASSERT( length == 3, "Invalid array size." );
 			ode::dBodySetAngularVel( bodyID, vector[0], vector[1], vector[2] );
 			break;
 		case force:
 			//FloatArrayToVector(cx, 3, vp, vector);
-			J_CHK( JsvalToFloatVector(cx, *vp, vector, 3, &length) );
-			J_S_ASSERT( length == 3, "Invalid array size." );
+			JL_CHK( JsvalToFloatVector(cx, *vp, vector, 3, &length) );
+			JL_S_ASSERT( length == 3, "Invalid array size." );
 			ode::dBodySetForce( bodyID, vector[0], vector[1], vector[2] );
 			break;
 		case torque:
 			//FloatArrayToVector(cx, 3, vp, vector);
-			J_CHK( JsvalToFloatVector(cx, *vp, vector, 3, &length) );
-			J_S_ASSERT( length == 3, "Invalid array size." );
+			JL_CHK( JsvalToFloatVector(cx, *vp, vector, 3, &length) );
+			JL_S_ASSERT( length == 3, "Invalid array size." );
 			ode::dBodySetTorque( bodyID, vector[0], vector[1], vector[2] );
 			break;
 	}
@@ -264,7 +269,7 @@ DEFINE_PROPERTY( mass ) {
 	if ( JSVAL_IS_VOID( *vp ) ) { // if mass do not exist, we have to create it and store it
 
 		JSObject *massObject = JS_NewObject(cx, classMass, NULL, NULL);
-		J_S_ASSERT(massObject != NULL, "unable to construct Mass object.");
+		JL_S_ASSERT(massObject != NULL, "unable to construct Mass object.");
 		JS_SetReservedSlot(cx, massObject, MASS_SLOT_BODY, OBJECT_TO_JSVAL(obj));
 		*vp = OBJECT_TO_JSVAL(massObject);
 	}
@@ -275,13 +280,13 @@ DEFINE_PROPERTY( mass ) {
 
 //JSBool body_set_mass(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 //
-//	ode::dBodyID bodyID = (ode::dBodyID)JS_GetPrivate( cx, obj );
-//	J_S_ASSERT( bodyID != NULL, RT_ERROR_NOT_INITIALIZED );
+//	ode::dBodyID bodyID = (ode::dBodyID)JL_GetPrivate( cx, obj );
+//	JL_S_ASSERT( bodyID != NULL, RT_ERROR_NOT_INITIALIZED );
 //	JSObject *massObject;
 //	JS_ValueToObject(cx, *vp, &massObject);
-//	J_S_ASSERT_CLASS(massObject, &mass_class);
-//	ode::dMass *mass = (ode::dMass*)JS_GetPrivate(cx, massObject);
-//	J_S_ASSERT(mass != NULL, RT_ERROR_NOT_INITIALIZED);
+//	JL_S_ASSERT_CLASS(massObject, &mass_class);
+//	ode::dMass *mass = (ode::dMass*)JL_GetPrivate(cx, massObject);
+//	JL_S_ASSERT(mass != NULL, RT_ERROR_NOT_INITIALIZED);
 //
 //	ode::dBodySetMass(bodyID, mass);
 //	return JS_TRUE;

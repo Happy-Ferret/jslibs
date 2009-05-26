@@ -24,10 +24,10 @@ BEGIN_CLASS( SurfaceParameters )
 
 DEFINE_FINALIZE() {
 
-	ode::dSurfaceParameters *data = (ode::dSurfaceParameters*)JS_GetPrivate(cx, obj);
+	ode::dSurfaceParameters *data = (ode::dSurfaceParameters*)JL_GetPrivate(cx, obj);
 	if ( data != NULL )
 		free(data);
-	JS_SetPrivate(cx, obj, NULL);
+	JL_SetPrivate(cx, obj, NULL);
 }
 
 /**doc
@@ -39,13 +39,13 @@ $TOC_MEMBER $INAME
 DEFINE_CONSTRUCTOR() {
 
 	static const ode::dSurfaceParameters initSurfaceParameters = {0};
-	J_S_ASSERT_CONSTRUCTING();
-	J_S_ASSERT_THIS_CLASS();
+	JL_S_ASSERT_CONSTRUCTING();
+	JL_S_ASSERT_THIS_CLASS();
 	ode::dSurfaceParameters *data = (ode::dSurfaceParameters*)malloc(sizeof(ode::dSurfaceParameters));
 	*data = initSurfaceParameters;
 	data->mu = dInfinity;
-	J_S_ASSERT_ALLOC(data);
-	JS_SetPrivate(cx, obj, data);
+	JL_S_ASSERT_ALLOC(data);
+	JL_SetPrivate(cx, obj, data);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -89,9 +89,9 @@ DEFINE_PROPERTY_NULL( surfaceGetter )
 
 DEFINE_PROPERTY( surfaceSetter ) {
 
-	ode::dSurfaceParameters *surface = (ode::dSurfaceParameters*)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(surface); // (TBD) check if NULL is meaningful for joints !
-	J_S_ASSERT_NUMBER( *vp );
+	ode::dSurfaceParameters *surface = (ode::dSurfaceParameters*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(surface); // (TBD) check if NULL is meaningful for joints !
+	JL_S_ASSERT_NUMBER( *vp );
 
 	ode::dReal value;
 	bool set;

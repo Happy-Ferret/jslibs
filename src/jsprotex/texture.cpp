@@ -175,7 +175,7 @@ inline JSBool InitLevelData( JSContext* cx, jsval value, int count, PTYPE *level
 	if ( JSVAL_IS_NUMBER(value) ) {
 
 		jsdouble dval;
-		J_CHK( JS_ValueToNumber(cx, value, &dval) );
+		JL_CHK( JS_ValueToNumber(cx, value, &dval) );
 		PTYPE val;
 		val = (PTYPE)dval;
 		for ( int i = 0; i < count; i++ )
@@ -184,14 +184,14 @@ inline JSBool InitLevelData( JSContext* cx, jsval value, int count, PTYPE *level
 
 		//FloatArrayToVector(cx, count, &value, level);
 		size_t length;
-		J_CHK( JsvalToFloatVector(cx, value, level, count, &length) );
-//		J_S_ASSERT( length == 3, "Invalid array size." );
+		JL_CHK( JsvalToFloatVector(cx, value, level, count, &length) );
+//		JL_S_ASSERT( length == 3, "Invalid array size." );
 
 	} else if ( JSVAL_IS_STRING(value) ) {
 
 		const char *color;
 		size_t length;
-		J_CHK( JsvalToStringAndLength(cx, &value, &color, &length) );
+		JL_CHK( JsvalToStringAndLength(cx, &value, &color, &length) );
 		if ( *color++ == '#' && ((int)length-1) / 2 >= count ) {
 
 			unsigned char val;
@@ -211,7 +211,7 @@ inline JSBool InitLevelData( JSContext* cx, jsval value, int count, PTYPE *level
 		}
 	}
 
-//	J_REPORT_ERROR("Invalid level data.");
+//	JL_REPORT_ERROR("Invalid level data.");
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -223,7 +223,7 @@ inline JSBool InitCurveData( JSContext* cx, jsval value, int length, float *curv
 	if ( JSVAL_IS_NUMBER(value) ) {
 
 		jsdouble dval;
-		J_CHK( JS_ValueToNumber(cx, value, &dval) );
+		JL_CHK( JS_ValueToNumber(cx, value, &dval) );
 		PTYPE val;
 		val = (PTYPE)dval;
 		for ( int i = 0; i < length; i++ )
@@ -238,10 +238,10 @@ inline JSBool InitCurveData( JSContext* cx, jsval value, int length, float *curv
 		for ( int i = 0; i < length; ++i ) {
 
 			fval = i / (float)(length-1);
-			J_CHKB( JS_NewDoubleValue(cx, fval, &argv[1]), bad2 );
+			JL_CHKB( JS_NewDoubleValue(cx, fval, &argv[1]), bad2 );
 			argv[2] = INT_TO_JSVAL(i);
-			J_CHKB( JS_CallFunctionValue(cx, JS_GetGlobalObject(cx), value, 2, argv+1, argv), bad2 );
-			J_CHKB( JS_ValueToNumber(cx, argv[0], &fval), bad2 );
+			JL_CHKB( JS_CallFunctionValue(cx, JS_GetGlobalObject(cx), value, 2, argv+1, argv), bad2 );
+			JL_CHKB( JS_ValueToNumber(cx, argv[0], &fval), bad2 );
 			curve[i] = fval;
 			goto good2;
 		}
@@ -253,14 +253,14 @@ inline JSBool InitCurveData( JSContext* cx, jsval value, int length, float *curv
 	if ( JsvalIsArray(cx, value) ) {
 
 		jsuint curveArrayLength;
-		//J_CHK( ArrayLength(cx, &curveArrayLength, value) );
-		J_CHK( JS_GetArrayLength( cx, JSVAL_TO_OBJECT(value), &curveArrayLength ) );
+		//JL_CHK( ArrayLength(cx, &curveArrayLength, value) );
+		JL_CHK( JS_GetArrayLength( cx, JSVAL_TO_OBJECT(value), &curveArrayLength ) );
 		float *curveArray;
 		curveArray = (float*)malloc( curveArrayLength * sizeof(float) ); // (TBD) free the curveArray ???
-		//J_CHK( FloatArrayToVector(cx, curveArrayLength, &value, curveArray) );
+		//JL_CHK( FloatArrayToVector(cx, curveArrayLength, &value, curveArray) );
 		size_t tmp;
-		J_CHK( JsvalToFloatVector(cx, value, curveArray, curveArrayLength, &tmp) );
-		J_S_ASSERT( length == 3, "Invalid array size." );
+		JL_CHK( JsvalToFloatVector(cx, value, curveArray, curveArrayLength, &tmp) );
+		JL_S_ASSERT( length == 3, "Invalid array size." );
 
 		for ( int i = 0; i < length; i++ )
 			curve[i] = curveArray[ i * curveArrayLength / length ];
@@ -273,7 +273,7 @@ inline JSBool InitCurveData( JSContext* cx, jsval value, int length, float *curv
 		const uint8_t *bstrData;
 
 //		BlobGetBufferAndLength( cx, bstrObj, (void**)&bstrData, &bstrLen );
-		J_CHK( JsvalToStringAndLength( cx, &value, (const char **)&bstrData, &bstrLen ) );
+		JL_CHK( JsvalToStringAndLength( cx, &value, (const char **)&bstrData, &bstrLen ) );
 
 		for ( int i = 0; i < length; i++ )
 			curve[i] = (PTYPE)bstrData[ i * bstrLen / length ] / 255.f; // (TBD) check
@@ -300,8 +300,8 @@ BEGIN_CLASS( Texture )
 
 JSBool NativeInterfaceBufferGet( JSContext *cx, JSObject *obj, const char **buf, size_t *size ) {
 
-	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE( tex );
+	Texture *tex = (Texture *)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( tex );
 	*buf = (char*)tex->cbuffer;
 	*size = tex->width * tex->height * tex->channels * sizeof(PTYPE);
 	return JS_TRUE;
@@ -318,12 +318,12 @@ inline bool IsTexture( JSContext *cx, jsval value ) {
 
 JSBool ValueToTexture( JSContext* cx, jsval value, Texture **tex ) {
 
-	J_S_ASSERT_OBJECT( value );
+	JL_S_ASSERT_OBJECT( value );
 	JSObject *texObj;
 	texObj = JSVAL_TO_OBJECT( value );
-	J_S_ASSERT_CLASS( texObj, classTexture );
-	*tex = (Texture *)JS_GetPrivate(cx, texObj);
-	J_S_ASSERT_RESOURCE(tex);
+	JL_S_ASSERT_CLASS( texObj, classTexture );
+	*tex = (Texture *)JL_GetPrivate(cx, texObj);
+	JL_S_ASSERT_RESOURCE(tex);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -339,13 +339,13 @@ inline void FreeTextureBuffers( JSContext* cx, Texture *tex ) {
 
 DEFINE_FINALIZE() {
 
-	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
+	Texture *tex = (Texture *)JL_GetPrivate(cx, obj);
 	if ( !tex )
 		return;
 
 	FreeTextureBuffers(cx, tex);
 	JS_free(cx, tex);
-	JS_SetPrivate(cx, obj, NULL);
+	JL_SetPrivate(cx, obj, NULL);
 }
 
 /**doc
@@ -375,61 +375,61 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
-	J_S_ASSERT_CONSTRUCTING();
-	J_S_ASSERT_THIS_CLASS();
-	J_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_CONSTRUCTING();
+	JL_S_ASSERT_THIS_CLASS();
+	JL_S_ASSERT_ARG_MIN( 1 );
 	Texture *tex;
 	tex = (Texture *)JS_malloc(cx, sizeof(Texture));
-	J_CHK( tex );
+	JL_CHK( tex );
 	tex->cbackBuffer = NULL;
 
-	J_CHK( SetBufferGetInterface(cx, obj, NativeInterfaceBufferGet) );
+	JL_CHK( SetBufferGetInterface(cx, obj, NativeInterfaceBufferGet) );
 
-	if ( J_ARGC >= 3 ) {
+	if ( JL_ARGC >= 3 ) {
 
 		int width, height, channels;
-		J_CHK( JsvalToInt(cx, J_ARG(1), &width) );
-		J_CHK( JsvalToInt(cx, J_ARG(2), &height) );
-		J_CHK( JsvalToInt(cx, J_ARG(3), &channels) );
+		JL_CHK( JsvalToInt(cx, JL_ARG(1), &width) );
+		JL_CHK( JsvalToInt(cx, JL_ARG(2), &height) );
+		JL_CHK( JsvalToInt(cx, JL_ARG(3), &channels) );
 
-		J_S_ASSERT( width > 0, "Invalid width." );
-		J_S_ASSERT( height > 0, "Invalid height." );
-		J_S_ASSERT( channels <= PMAXCHANNELS, "Too many channels." );
+		JL_S_ASSERT( width > 0, "Invalid width." );
+		JL_S_ASSERT( height > 0, "Invalid height." );
+		JL_S_ASSERT( channels <= PMAXCHANNELS, "Too many channels." );
 
 		tex->cbuffer = (PTYPE*)JS_malloc(cx, width * height * channels * sizeof(PTYPE) );
-		J_CHK( tex->cbuffer );
+		JL_CHK( tex->cbuffer );
 
 		tex->width = width;
 		tex->height = height;
 		tex->channels = channels;
-		JS_SetPrivate(cx, obj, tex);
+		JL_SetPrivate(cx, obj, tex);
 		return JS_TRUE;
 	}
 
-	if ( IsTexture(cx, J_ARG(1)) ) { // copy constructor
+	if ( IsTexture(cx, JL_ARG(1)) ) { // copy constructor
 
-		Texture *srcTex = (Texture *)JS_GetPrivate(cx, JSVAL_TO_OBJECT(J_ARG(1)));
-		J_S_ASSERT_RESOURCE(srcTex);
+		Texture *srcTex = (Texture *)JL_GetPrivate(cx, JSVAL_TO_OBJECT(JL_ARG(1)));
+		JL_S_ASSERT_RESOURCE(srcTex);
 
 		int tsize;
 		tsize = srcTex->width * srcTex->height * srcTex->channels;
 		tex->cbuffer = (PTYPE*)JS_malloc(cx, tsize * sizeof(PTYPE) );
-		J_CHK( tex->cbuffer );
+		JL_CHK( tex->cbuffer );
 
 		memcpy( tex->cbuffer, srcTex->cbuffer, tsize * sizeof(PTYPE) );
 		tex->width = srcTex->width;
 		tex->height = srcTex->height;
 		tex->channels = srcTex->channels;
-		JS_SetPrivate(cx, obj, tex);
+		JL_SetPrivate(cx, obj, tex);
 		return JS_TRUE;
 	}
 
-//	if ( JsvalIsDataBuffer( cx, J_ARG(1) ) ) {
-	if ( JSVAL_IS_STRING(J_ARG(1)) || JSVAL_IS_OBJECT(J_ARG(1)) && BufferGetInterface(cx, JSVAL_TO_OBJECT(J_ARG(1))) != NULL ) {
+//	if ( JsvalIsDataBuffer( cx, JL_ARG(1) ) ) {
+	if ( JSVAL_IS_STRING(JL_ARG(1)) || JSVAL_IS_OBJECT(JL_ARG(1)) && BufferGetInterface(cx, JSVAL_TO_OBJECT(JL_ARG(1))) != NULL ) {
 
 		JSObject *bstrObj;
-//		bstrObj = JSVAL_TO_OBJECT( J_ARG(1) );
-		J_CHK( JS_ValueToObject(cx, J_ARG(1), &bstrObj) );
+//		bstrObj = JSVAL_TO_OBJECT( JL_ARG(1) );
+		JL_CHK( JS_ValueToObject(cx, JL_ARG(1), &bstrObj) );
 
 		int dWidth;
 		dWidth = tex->width;
@@ -439,14 +439,14 @@ DEFINE_CONSTRUCTOR() {
 		dChannels = tex->channels;
 
 		int sWidth, sHeight, sChannels;
-		J_CHK( GetPropertyInt(cx, bstrObj, "width", &sWidth) );
-		J_CHK( GetPropertyInt(cx, bstrObj, "height", &sHeight) );
-		J_CHK( GetPropertyInt(cx, bstrObj, "channels", &sChannels) );
+		JL_CHK( GetPropertyInt(cx, bstrObj, "width", &sWidth) );
+		JL_CHK( GetPropertyInt(cx, bstrObj, "height", &sHeight) );
+		JL_CHK( GetPropertyInt(cx, bstrObj, "channels", &sChannels) );
 
 		const uint8_t *buffer;
 //		uint8_t *buffer = (uint8_t*)
-//		J_CHK( BlobBuffer(cx, bstr, (const void **)&buffer) );
-		J_CHK( JsvalToString(cx, &J_ARG(1), (const char **)&buffer) ); // warning: GC on the returned buffer !
+//		JL_CHK( BlobBuffer(cx, bstr, (const void **)&buffer) );
+		JL_CHK( JsvalToString(cx, &JL_ARG(1), (const char **)&buffer) ); // warning: GC on the returned buffer !
 
 		tex->width = sWidth;
 		tex->height = sHeight;
@@ -457,17 +457,17 @@ DEFINE_CONSTRUCTOR() {
 		tsize = sWidth * sHeight * sChannels;
 
 		tex->cbuffer = (PTYPE*)JS_malloc(cx, tsize * sizeof(PTYPE) );
-		J_CHK( tex->cbuffer );
+		JL_CHK( tex->cbuffer );
 
 		for ( int i=0; i<tsize; i++ )
 			tex->cbuffer[i] = (PTYPE)buffer[i] / (PTYPE)255.f; // map [0 -> 255] to [0.0 -> 1.0]
 
-		JS_SetPrivate(cx, obj, tex);
+		JL_SetPrivate(cx, obj, tex);
 
 		return JS_TRUE;
 	}
 
-	J_REPORT_ERROR( "Invalid arguments" );
+	JL_REPORT_ERROR( "Invalid arguments" );
 	JL_BAD;
 }
 
@@ -483,10 +483,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Free ) {
 
-	J_S_ASSERT_CLASS(obj, _class);
+	JL_S_ASSERT_CLASS(obj, _class);
 
 	Texture *tex;
-	tex = (Texture*)JS_GetPrivate(cx, obj);
+	tex = (Texture*)JL_GetPrivate(cx, obj);
 	if ( tex != NULL )
 		FreeTextureBuffers(cx, tex);
 	return JS_TRUE;
@@ -513,17 +513,17 @@ $TOC_MEMBER $INAME
 // PTYPE ok
 DEFINE_FUNCTION_FAST( Swap ) {
 
-	J_S_ASSERT_ARG_MIN( 1 );
-	J_S_ASSERT_CLASS( J_FOBJ, _class );
-	J_S_ASSERT_OBJECT( J_FARG(1) );
+	JL_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_CLASS( JL_FOBJ, _class );
+	JL_S_ASSERT_OBJECT( JL_FARG(1) );
 	JSObject *texObj;
-	texObj = JSVAL_TO_OBJECT( J_FARG(1) );
-	J_S_ASSERT_CLASS( texObj, _class );
+	texObj = JSVAL_TO_OBJECT( JL_FARG(1) );
+	JL_S_ASSERT_CLASS( texObj, _class );
 	void *tmp;
-	tmp = JS_GetPrivate(cx, J_FOBJ);
-	JS_SetPrivate(cx, J_FOBJ, JS_GetPrivate(cx, texObj));
-	J_CHK( JS_SetPrivate(cx, texObj, tmp) );
-	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
+	tmp = JL_GetPrivate(cx, JL_FOBJ);
+	JL_SetPrivate(cx, JL_FOBJ, JL_GetPrivate(cx, texObj));
+	JL_CHK( JL_SetPrivate(cx, texObj, tmp) );
+	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -536,8 +536,8 @@ $TOC_MEMBER $INAME
 // PTYPE ok
 DEFINE_FUNCTION_FAST( ClearChannel ) {
 
-	Texture *tex = (Texture *)JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_RESOURCE(tex);
+	Texture *tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(tex);
 
 	if ( argc == 0 ) { // clear all channels
 
@@ -546,8 +546,8 @@ DEFINE_FUNCTION_FAST( ClearChannel ) {
 	if ( argc >= 1 ) {
 
 		int channel;
-		J_CHK( JsvalToInt(cx, J_FARG(1), &channel) );
-		J_S_ASSERT( channel < tex->channels, "Invalid channel." );
+		JL_CHK( JsvalToInt(cx, JL_FARG(1), &channel) );
+		JL_S_ASSERT( channel < tex->channels, "Invalid channel." );
 
 		PTYPE *ptr;
 		ptr = tex->cbuffer;
@@ -563,7 +563,7 @@ DEFINE_FUNCTION_FAST( ClearChannel ) {
 			ptr += channels;
 		}
 	}
-	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
+	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -590,35 +590,35 @@ $TOC_MEMBER $INAME
 // PTYPE ok
 DEFINE_FUNCTION_FAST( SetChannel ) {
 
-	J_S_ASSERT_ARG_MIN( 3 );
+	JL_S_ASSERT_ARG_MIN( 3 );
 	Texture *tex;
-	tex = (Texture *)JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_RESOURCE(tex);
+	tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(tex);
 
 	int dstChannel;
-	J_CHK( JsvalToInt(cx, J_FARG(1), &dstChannel) );
+	JL_CHK( JsvalToInt(cx, JL_FARG(1), &dstChannel) );
 
 	Texture *tex1;
-	J_CHK( ValueToTexture(cx, J_FARG(2), &tex1) );
+	JL_CHK( ValueToTexture(cx, JL_FARG(2), &tex1) );
 
 	int srcChannel;
-	J_CHK( JsvalToInt(cx, J_FARG(3), &srcChannel) );
+	JL_CHK( JsvalToInt(cx, JL_FARG(3), &srcChannel) );
 
 	int texChannel;
 	texChannel = tex->channels;
 	int tex1Channel;
 	tex1Channel = tex1->channels;
 
-	J_S_ASSERT( tex->width == tex1->width && tex->height == tex1->height, "Images must have the same size.");
-	J_S_ASSERT( srcChannel < tex1Channel && srcChannel <= PMAXCHANNELS, "Invalid source channel.");
-	J_S_ASSERT( dstChannel < texChannel && dstChannel <= PMAXCHANNELS, "Invalid destination channel.");
+	JL_S_ASSERT( tex->width == tex1->width && tex->height == tex1->height, "Images must have the same size.");
+	JL_S_ASSERT( srcChannel < tex1Channel && srcChannel <= PMAXCHANNELS, "Invalid source channel.");
+	JL_S_ASSERT( dstChannel < texChannel && dstChannel <= PMAXCHANNELS, "Invalid destination channel.");
 
 	int size;
 	size = tex->width * tex->height;
 	for ( int i = 0; i < size; i++ )
 		tex->cbuffer[texChannel * i + dstChannel] = tex1->cbuffer[tex1Channel * i + srcChannel];
 
-	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
+	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -634,11 +634,11 @@ DEFINE_FUNCTION_FAST( ToHLS ) { // (TBD) test it
 
 	// see http://svn.gnome.org/viewcvs/gimp/trunk/libgimpcolor/gimpcolorspace.c?view=markup
 
-	Texture *tex = (Texture *)JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_RESOURCE(tex);
+	Texture *tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(tex);
 	int channels;
 	channels = tex->channels;
-	J_S_ASSERT( channels >= 3, "Invalid pixel format (need RGB).");
+	JL_S_ASSERT( channels >= 3, "Invalid pixel format (need RGB).");
 
 	int size;
 	size = tex->width * tex->height;
@@ -683,7 +683,7 @@ DEFINE_FUNCTION_FAST( ToHLS ) { // (TBD) test it
 		tex->cbuffer[pos+2] = S;
 	}
 
-	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
+	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -708,12 +708,12 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION_FAST( ToRGB ) { // (TBD) test it
 	// see http://svn.gnome.org/viewcvs/gimp/trunk/libgimpcolor/gimpcolorspace.c?view=markup
 
-	Texture *tex = (Texture *)JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_RESOURCE(tex);
+	Texture *tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(tex);
 	int channels;
 	channels = tex->channels;
 
-	J_S_ASSERT( channels >= 3, "Invalid pixel format (need HLS).");
+	JL_S_ASSERT( channels >= 3, "Invalid pixel format (need HLS).");
 
 	int size;
 	size = tex->width * tex->height;
@@ -747,7 +747,7 @@ DEFINE_FUNCTION_FAST( ToRGB ) { // (TBD) test it
 		tex->cbuffer[pos+2] = B;
 	}
 
-	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
+	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -780,14 +780,14 @@ $TOC_MEMBER $INAME
 // PTYPE ok
 DEFINE_FUNCTION_FAST( Aliasing ) {
 
-	J_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_ARG_MIN( 1 );
 	Texture *tex;
-	tex = (Texture *)JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_RESOURCE(tex);
+	tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(tex);
 
 	size_t count;
-	J_CHK( JsvalToUInt(cx, J_FARG(1), &count) );
-	J_S_ASSERT( count >= 1, "Invalid aliasing levels count." );
+	JL_CHK( JsvalToUInt(cx, JL_FARG(1), &count) );
+	JL_S_ASSERT( count >= 1, "Invalid aliasing levels count." );
 
 	bool useCurve;
 
@@ -796,7 +796,7 @@ DEFINE_FUNCTION_FAST( Aliasing ) {
 
 		useCurve = true;
 		curve = (float*)malloc( count * sizeof(float) ); // (TBD) free curve ???
-		J_CHK( InitCurveData( cx, J_FARG(2), count, curve ) );
+		JL_CHK( InitCurveData( cx, JL_FARG(2), count, curve ) );
 	} else
 		useCurve = false;
 
@@ -813,7 +813,7 @@ DEFINE_FUNCTION_FAST( Aliasing ) {
 		for ( int i = 0; i < tsize; i++ )
 			tex->cbuffer[i] = floor( count * tex->cbuffer[i] ) / count;
 
-	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
+	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -840,24 +840,24 @@ DEFINE_FUNCTION_FAST( Colorize ) {
 	// GIMP color to alpha: http://www.google.com/codesearch?hl=en&q=+gimp+%22color+to+alpha%22
 	// color exchange algo. : http://www.koders.com/c/fidB39DAC5A8DB8B6073D78FB23363C5E0541208B02.aspx
 
-	J_S_ASSERT_ARG_MAX(2);
+	JL_S_ASSERT_ARG_MAX(2);
 
 	Texture *tex;
-	tex = (Texture *)JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_RESOURCE(tex);
+	tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(tex);
 
 	int channels;
 	channels = tex->channels;
 
 	PTYPE colorSrc[PMAXCHANNELS];
-	J_CHK( InitLevelData(cx, J_FARG(1), channels, colorSrc) );
+	JL_CHK( InitLevelData(cx, JL_FARG(1), channels, colorSrc) );
 
 	PTYPE colorDst[PMAXCHANNELS];
-	J_CHK( InitLevelData(cx, J_FARG(2), channels, colorDst) );
+	JL_CHK( InitLevelData(cx, JL_FARG(2), channels, colorDst) );
 
 	double power;
 	if ( argc >= 3 )
-		J_CHK( JsvalToDouble(cx, J_FARG(3), &power) );
+		JL_CHK( JsvalToDouble(cx, JL_FARG(3), &power) );
 	else
 		power = 1;
 
@@ -886,7 +886,7 @@ DEFINE_FUNCTION_FAST( Colorize ) {
 		for ( c = 0; c < channels; c++ )
 			tex->cbuffer[pos+c] = (tex->cbuffer[pos+c] * (1-ratio) + colorDst[c] * ratio);
 	}
-	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
+	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -910,24 +910,24 @@ $TOC_MEMBER $INAME
 // PTYPE ok
 DEFINE_FUNCTION_FAST( ExtractColor ) {
 
-	Texture *tex = (Texture *)JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_RESOURCE(tex);
+	Texture *tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(tex);
 
-	J_S_ASSERT( tex->channels == 1, "Destination texture must have only 1 channel.");
+	JL_S_ASSERT( tex->channels == 1, "Destination texture must have only 1 channel.");
 
 	Texture *texSrc;
-	J_CHK( ValueToTexture(cx, J_FARG(1), &texSrc) );
-	J_S_ASSERT( tex->width == texSrc->width && tex->height == texSrc->height, "Images must have the same width and height." );
+	JL_CHK( ValueToTexture(cx, JL_FARG(1), &texSrc) );
+	JL_S_ASSERT( tex->width == texSrc->width && tex->height == texSrc->height, "Images must have the same width and height." );
 
 	int srcChannels;
 	srcChannels = texSrc->channels;
 
 	PTYPE color[PMAXCHANNELS];
-	J_CHK( InitLevelData(cx, J_FARG(2), srcChannels, color) );
+	JL_CHK( InitLevelData(cx, JL_FARG(2), srcChannels, color) );
 
 	double power;
 	if ( argc >= 3 )
-		J_CHK( JsvalToDouble(cx, J_FARG(3), &power) );
+		JL_CHK( JsvalToDouble(cx, JL_FARG(3), &power) );
 	else
 		power = 1;
 
@@ -945,7 +945,7 @@ DEFINE_FUNCTION_FAST( ExtractColor ) {
 			ratio = powf(ratio, 1 / power);
 		tex->cbuffer[i] = ratio;
 	}
-	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
+	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -960,8 +960,8 @@ $TOC_MEMBER $INAME
 // PTYPE ok
 DEFINE_FUNCTION_FAST( NormalizeLevels ) {
 
-	Texture *tex = (Texture *)JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_RESOURCE(tex);
+	Texture *tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(tex);
 
 	PTYPE min;
 	min = PMAXLIMIT;
@@ -983,7 +983,7 @@ DEFINE_FUNCTION_FAST( NormalizeLevels ) {
 	amp = max - min;
 	for ( int i = 0; i < tsize; i++ )
 		tex->cbuffer[i] = PMAX * ( tex->cbuffer[i] - min ) / amp; // value is normalized to 0...PMAX
-	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
+	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1000,15 +1000,15 @@ $TOC_MEMBER $INAME
 // PTYPE ok
 DEFINE_FUNCTION_FAST( ClampLevels ) { // (TBD) check if this algo is right
 
-	J_S_ASSERT_ARG_MIN( 2 );
+	JL_S_ASSERT_ARG_MIN( 2 );
 
 	Texture *tex;
-	tex = (Texture *)JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_RESOURCE(tex);
+	tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(tex);
 
 	double min, max;
-	J_CHK( JsvalToDouble(cx, J_FARG(1), &min) );
-	J_CHK( JsvalToDouble(cx, J_FARG(2), &max) );
+	JL_CHK( JsvalToDouble(cx, JL_FARG(1), &min) );
+	JL_CHK( JsvalToDouble(cx, JL_FARG(2), &max) );
 
 	PTYPE tmp;
 	int tsize;
@@ -1021,7 +1021,7 @@ DEFINE_FUNCTION_FAST( ClampLevels ) { // (TBD) check if this algo is right
 		else if ( tmp < min )
 			tex->cbuffer[i] = min;
 	}
-	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
+	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1038,15 +1038,15 @@ $TOC_MEMBER $INAME
 // PTYPE ok
 DEFINE_FUNCTION_FAST( CutLevels ) { // (TBD) check if this algo is right
 
-	J_S_ASSERT_ARG_MIN( 2 );
+	JL_S_ASSERT_ARG_MIN( 2 );
 
 	Texture *tex;
-	tex = (Texture *)JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_RESOURCE(tex);
+	tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(tex);
 
 	double min, max;
-	J_CHK( JsvalToDouble(cx, J_FARG(1), &min) );
-	J_CHK( JsvalToDouble(cx, J_FARG(2), &max) );
+	JL_CHK( JsvalToDouble(cx, JL_FARG(1), &min) );
+	JL_CHK( JsvalToDouble(cx, JL_FARG(2), &max) );
 
 	PTYPE tmp;
 	int tsize;
@@ -1059,7 +1059,7 @@ DEFINE_FUNCTION_FAST( CutLevels ) { // (TBD) check if this algo is right
 		else if ( tmp < min )
 			tex->cbuffer[i] = 0;
 	}
-	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
+	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1068,8 +1068,8 @@ DEFINE_FUNCTION_FAST( CutLevels ) { // (TBD) check if this algo is right
 // PTYPE ok
 DEFINE_FUNCTION_FAST( CutLevels ) {
 
-	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(tex);
+	Texture *tex = (Texture *)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(tex);
 
 	PTYPE min, max;
 
@@ -1081,13 +1081,13 @@ DEFINE_FUNCTION_FAST( CutLevels ) {
 
 	if ( argc >= 1 ) {
 
-		J_CHK( JsvalToDouble(cx, J_FARG(1), &min) );
+		JL_CHK( JsvalToDouble(cx, JL_FARG(1), &min) );
 		max = min;
 	}
 
 	if ( argc >= 2 ) {
 
-		J_CHK( JsvalToDouble(cx, J_FARG(2), &max) );
+		JL_CHK( JsvalToDouble(cx, JL_FARG(2), &max) );
 	}
 
 	PTYPE level, lmin, lmax; // local min & max
@@ -1115,7 +1115,7 @@ DEFINE_FUNCTION_FAST( CutLevels ) {
 			for ( c = 0; c < channels; c++ )
 				tex->cbuffer[pos+c] = 0;
 	}
-	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
+	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1129,13 +1129,13 @@ $TOC_MEMBER $INAME
 // PTYPE ok
 DEFINE_FUNCTION_FAST( InvertLevels ) { // level = 1 / level
 
-	Texture *tex = (Texture *)JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_RESOURCE(tex);
+	Texture *tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(tex);
 	int tsize;
 	tsize = tex->width * tex->height * tex->channels;
 	for ( int i = 0; i < tsize; i++ )
 		tex->cbuffer[i] = 1 / tex->cbuffer[i];
-	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
+	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1148,13 +1148,13 @@ $TOC_MEMBER $INAME
 // PTYPE ok
 DEFINE_FUNCTION_FAST( OppositeLevels ) { // level = -level
 
-	Texture *tex = (Texture *)JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_RESOURCE(tex);
+	Texture *tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(tex);
 	int tsize;
 	tsize = tex->width * tex->height * tex->channels;
 	for ( int i = 0; i < tsize; i++ )
 		tex->cbuffer[i] =  - tex->cbuffer[i];
-	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
+	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1167,19 +1167,19 @@ $TOC_MEMBER $INAME
 // PTYPE ok
 DEFINE_FUNCTION_FAST( PowLevels ) { //
 
-	Texture *tex = (Texture *)JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_RESOURCE(tex);
+	Texture *tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(tex);
 
-	J_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_ARG_MIN( 1 );
 
 	double power;
-	J_CHK( JsvalToDouble(cx, J_FARG(1), &power) );
+	JL_CHK( JsvalToDouble(cx, JL_FARG(1), &power) );
 
 	int tsize;
 	tsize = tex->width * tex->height * tex->channels;
 	for ( int i = 0; i < tsize; i++ )
 		tex->cbuffer[i] =  powf(tex->cbuffer[i], power);
-	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
+	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1196,17 +1196,17 @@ $TOC_MEMBER $INAME
 // PTYPE ok
 DEFINE_FUNCTION_FAST( MirrorLevels ) {
 
-	J_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_ARG_MIN( 1 );
 
 	Texture *tex;
-	tex = (Texture *)JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_RESOURCE(tex);
+	tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(tex);
 	double threshold;
-	J_CHK( JsvalToDouble(cx, J_FARG(1), &threshold) );
+	JL_CHK( JsvalToDouble(cx, JL_FARG(1), &threshold) );
 
 	bool mirrorTop;
-	if ( argc >= 2 && !JSVAL_IS_VOID(J_FARG(2)) )
-		J_CHK( JsvalToBool(cx, J_FARG(2), &mirrorTop) );
+	if ( argc >= 2 && !JSVAL_IS_VOID(JL_FARG(2)) )
+		JL_CHK( JsvalToBool(cx, JL_FARG(2), &mirrorTop) );
 	else
 		mirrorTop = true;
 
@@ -1228,7 +1228,7 @@ DEFINE_FUNCTION_FAST( MirrorLevels ) {
 			if ( value < threshold )
 				tex->cbuffer[i] = 2 * threshold - value;
 		}
-	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
+	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1243,14 +1243,14 @@ $TOC_MEMBER $INAME
 // PTYPE ok
 DEFINE_FUNCTION_FAST( WrapLevels ) { // real modulo
 
-	J_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_ARG_MIN( 1 );
 
 	Texture *tex;
-	tex = (Texture *)JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_RESOURCE(tex);
+	tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(tex);
 
 	double wrap;
-	J_CHK( JsvalToDouble(cx, J_FARG(1), &wrap) );
+	JL_CHK( JsvalToDouble(cx, JL_FARG(1), &wrap) );
 
 	PTYPE div;
 	int tsize;
@@ -1261,7 +1261,7 @@ DEFINE_FUNCTION_FAST( WrapLevels ) { // real modulo
 		tex->cbuffer[i] = div - (long)div;
 	}
 
-	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
+	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1276,8 +1276,8 @@ $TOC_MEMBER $INAME
 // PTYPE ok
 DEFINE_FUNCTION_FAST( AddNoise ) {
 
-	Texture *tex = (Texture *)JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_RESOURCE(tex);
+	Texture *tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(tex);
 	int channels;
 	channels = tex->channels;
 
@@ -1286,7 +1286,7 @@ DEFINE_FUNCTION_FAST( AddNoise ) {
 	PTYPE pixel[PMAXCHANNELS];
 	if ( argc >= 1 ) {
 
-		J_CHK( InitLevelData(cx, J_FARG(1), tex->channels, pixel) );
+		JL_CHK( InitLevelData(cx, JL_FARG(1), tex->channels, pixel) );
 		fullLevel = false;
 	} else {
 
@@ -1301,7 +1301,7 @@ DEFINE_FUNCTION_FAST( AddNoise ) {
 	else
 		for ( i = 0; i < tsize; i++ )
 			tex->cbuffer[i] += PRAND * pixel[i % channels] / PMAX; //(TBD) test if i%channels works fine, else use double for loop
-	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
+	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1318,19 +1318,19 @@ $TOC_MEMBER $INAME
 // PTYPE ok
 DEFINE_FUNCTION_FAST( Desaturate ) {
 
-	J_S_ASSERT_ARG_MIN(2);
+	JL_S_ASSERT_ARG_MIN(2);
 
 	Texture *tex;
-	tex = (Texture *)JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_RESOURCE(tex);
-	J_S_ASSERT( tex->channels == 1, "Destination texture must have only one channel.");
+	tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(tex);
+	JL_S_ASSERT( tex->channels == 1, "Destination texture must have only one channel.");
 
 	Texture *texSrc;
-	J_CHK( ValueToTexture(cx, J_FARG(1), &texSrc) );
-	J_S_ASSERT( tex->width == texSrc->width && tex->height == texSrc->height, "Images must have the same width and height." );
+	JL_CHK( ValueToTexture(cx, JL_FARG(1), &texSrc) );
+	JL_S_ASSERT( tex->width == texSrc->width && tex->height == texSrc->height, "Images must have the same width and height." );
 
 	int modeVal;
-	J_CHK( JsvalToInt(cx, J_FARG(2), &modeVal) );
+	JL_CHK( JsvalToInt(cx, JL_FARG(2), &modeVal) );
 	DesaturateMode mode;
 	mode = (DesaturateMode)modeVal;
 
@@ -1372,7 +1372,7 @@ DEFINE_FUNCTION_FAST( Desaturate ) {
 		}
 		tex->cbuffer[pos] = val;
 	}
-	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
+	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1390,25 +1390,25 @@ $TOC_MEMBER $INAME
 // PTYPE ok
 DEFINE_FUNCTION_FAST( Set ) {
 
-	J_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_ARG_MIN( 1 );
 	Texture *tex;
-	tex = (Texture *)JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_RESOURCE(tex);
+	tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(tex);
 	int channels;
 	channels = tex->channels;
 	int tsize;
 	tsize = tex->width * tex->height * channels;
-	if ( IsTexture(cx, J_FARG(1)) ) {
+	if ( IsTexture(cx, JL_FARG(1)) ) {
 
 		Texture *tex1;
-		J_CHK( ValueToTexture(cx, J_FARG(1), &tex1) );
-		J_S_ASSERT( tex->width == tex1->width && tex->height == tex1->height && channels == tex1->channels, "Images must have the same size." );
+		JL_CHK( ValueToTexture(cx, JL_FARG(1), &tex1) );
+		JL_S_ASSERT( tex->width == tex1->width && tex->height == tex1->height && channels == tex1->channels, "Images must have the same size." );
 		for ( int i = 0; i < tsize; i++ )
 			tex->cbuffer[i] = tex1->cbuffer[i];
 	} else {
 
 		PTYPE pixel[PMAXCHANNELS];
-		J_CHK( InitLevelData(cx, J_FARG(1), channels, pixel) );
+		JL_CHK( InitLevelData(cx, JL_FARG(1), channels, pixel) );
 /* slower
 		int tsize = tex->width * tex->height * channels;
 		for ( int i = 0; i < tsize; i++ )
@@ -1420,7 +1420,7 @@ DEFINE_FUNCTION_FAST( Set ) {
 				tex->cbuffer[i*channels+c] = pixel[c];
 
 	}
-	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
+	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1435,31 +1435,31 @@ $TOC_MEMBER $INAME
 // PTYPE ok
 DEFINE_FUNCTION_FAST( Add ) {
 
-	J_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_ARG_MIN( 1 );
 	Texture *tex;
-	tex = (Texture *)JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_RESOURCE(tex);
+	tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(tex);
 	int channels;
 	channels = tex->channels;
 	int tsize;
 	tsize = tex->width * tex->height * channels;
-	if ( IsTexture(cx, J_FARG(1)) ) {
+	if ( IsTexture(cx, JL_FARG(1)) ) {
 
 		Texture *tex1;
-		J_CHK( ValueToTexture(cx, J_FARG(1), &tex1) );
-		J_S_ASSERT( tex->width == tex1->width && tex->height == tex1->height && channels == tex1->channels, "Images must have the same size." );
+		JL_CHK( ValueToTexture(cx, JL_FARG(1), &tex1) );
+		JL_S_ASSERT( tex->width == tex1->width && tex->height == tex1->height && channels == tex1->channels, "Images must have the same size." );
 		for ( int i = 0; i < tsize; i++ )
 			tex->cbuffer[i] += tex1->cbuffer[i];
 	} else {
 
 		PTYPE pixel[PMAXCHANNELS];
-		J_CHK( InitLevelData(cx, J_FARG(1), channels, pixel) );
+		JL_CHK( InitLevelData(cx, JL_FARG(1), channels, pixel) );
 		int i, c, size = tex->width * tex->height;
 		for ( i = 0; i < size; i++ )
 			for ( c = 0; c < channels; c++ )
 				tex->cbuffer[i*channels+c] += pixel[c];
 	}
-	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
+	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1474,32 +1474,32 @@ $TOC_MEMBER $INAME
 // PTYPE ok
 DEFINE_FUNCTION_FAST( Mult ) {
 
-	J_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_ARG_MIN( 1 );
 	Texture *tex;
-	tex = (Texture *)JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_RESOURCE(tex);
+	tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(tex);
 	int channels;
 	channels = tex->channels;
 	int tsize;
 	tsize = tex->width * tex->height * channels;
 
-	if ( IsTexture(cx, J_FARG(1)) ) {
+	if ( IsTexture(cx, JL_FARG(1)) ) {
 
 		Texture *tex1;
-		J_CHK( ValueToTexture(cx, J_FARG(1), &tex1) );
-		J_S_ASSERT( tex->width == tex1->width && tex->height == tex1->height && channels == tex1->channels, "Images must have the same size." );
+		JL_CHK( ValueToTexture(cx, JL_FARG(1), &tex1) );
+		JL_S_ASSERT( tex->width == tex1->width && tex->height == tex1->height && channels == tex1->channels, "Images must have the same size." );
 		for ( int i = 0; i < tsize; i++ )
 			tex->cbuffer[i] *= tex1->cbuffer[i];
 /* using Aliasing() seems more useful than Mult()
 	} else
-	if ( JsvalIsFunction(cx, J_FARG(1)) ) {
+	if ( JsvalIsFunction(cx, JL_FARG(1)) ) {
 
-		J_S_ASSERT_ARG_MIN( 2 );
+		JL_S_ASSERT_ARG_MIN( 2 );
 		int aliasing;
-		J_CHK( JsvalToInt(cx, J_FARG(2), &aliasing) );
+		JL_CHK( JsvalToInt(cx, JL_FARG(2), &aliasing) );
 
 		PTYPE *curve = (PTYPE*)malloc( sizeof(PTYPE) * aliasing );
-		J_CHK( InitCurveData(cx, J_FARG(1), aliasing, curve) );
+		JL_CHK( InitCurveData(cx, JL_FARG(1), aliasing, curve) );
 
 		int i, c, size = tex->width * tex->height;
 		for ( i = 0; i < size; i++ )
@@ -1515,7 +1515,7 @@ DEFINE_FUNCTION_FAST( Mult ) {
 	} else {
 
 		PTYPE pixel[PMAXCHANNELS];
-		J_CHK( InitLevelData(cx, J_FARG(1), channels, pixel) );
+		JL_CHK( InitLevelData(cx, JL_FARG(1), channels, pixel) );
 		int i, c, size;
 		size = tex->width * tex->height;
 		for ( i = 0; i < size; i++ )
@@ -1523,7 +1523,7 @@ DEFINE_FUNCTION_FAST( Mult ) {
 				tex->cbuffer[i*channels+c] *= pixel[c];
 	}
 
-	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
+	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1551,26 +1551,26 @@ $TOC_MEMBER $INAME
 // PTYPE ok
 DEFINE_FUNCTION_FAST( Blend ) { // texture1, blenderTexture|blenderColor
 
-	J_S_ASSERT_ARG_MIN( 2 );
+	JL_S_ASSERT_ARG_MIN( 2 );
 	Texture *tex;
-	tex = (Texture *)JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_RESOURCE(tex);
+	tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(tex);
 	int channels;
 	channels = tex->channels;
 	int tsize;
 	tsize = tex->width * tex->height * channels;
 
 	Texture *tex1;
-	J_CHK( ValueToTexture(cx, J_FARG(1), &tex1) );
-	J_S_ASSERT( tex->width == tex1->width && tex->height == tex1->height && channels == tex1->channels, "Images must have the same size." );
+	JL_CHK( ValueToTexture(cx, JL_FARG(1), &tex1) );
+	JL_S_ASSERT( tex->width == tex1->width && tex->height == tex1->height && channels == tex1->channels, "Images must have the same size." );
 
 	float blend;
 
-	if ( IsTexture(cx, J_FARG(2)) ) {
+	if ( IsTexture(cx, JL_FARG(2)) ) {
 
 		Texture *blenderTex;
-		J_CHK( ValueToTexture(cx, J_FARG(1), &blenderTex) );
-		J_S_ASSERT( tex->width == blenderTex->width && tex->height == blenderTex->height && channels == blenderTex->channels, "Images must have the same size." );
+		JL_CHK( ValueToTexture(cx, JL_FARG(1), &blenderTex) );
+		JL_S_ASSERT( tex->width == blenderTex->width && tex->height == blenderTex->height && channels == blenderTex->channels, "Images must have the same size." );
 		for ( int i = 0; i < tsize; i++ ) {
 
 			blend = blenderTex->cbuffer[i];
@@ -1579,7 +1579,7 @@ DEFINE_FUNCTION_FAST( Blend ) { // texture1, blenderTexture|blenderColor
 	} else {
 
 		PTYPE pixel[PMAXCHANNELS];
-		J_CHK( InitLevelData(cx, J_FARG(2), channels, pixel) );
+		JL_CHK( InitLevelData(cx, JL_FARG(2), channels, pixel) );
 
 		int pos, c, size;
 		size = tex->width * tex->height;
@@ -1601,7 +1601,7 @@ DEFINE_FUNCTION_FAST( Blend ) { // texture1, blenderTexture|blenderColor
 		}
 */
 	}
-	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
+	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1617,21 +1617,21 @@ $TOC_MEMBER $INAME
 // PTYPE ok
 DEFINE_FUNCTION_FAST( SetPixel ) { // x, y, levels
 
-	J_S_ASSERT_ARG_MIN( 3 );
+	JL_S_ASSERT_ARG_MIN( 3 );
 
 	Texture *tex;
-	tex = (Texture *)JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_RESOURCE(tex);
+	tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(tex);
 
 	int x, y;
-	J_CHK( JsvalToInt(cx, J_FARG(1), &x) );
-	J_CHK( JsvalToInt(cx, J_FARG(2), &y) );
+	JL_CHK( JsvalToInt(cx, JL_FARG(1), &x) );
+	JL_CHK( JsvalToInt(cx, JL_FARG(2), &y) );
 
 	x = Wrap(x, tex->width);
 	y = Wrap(y, tex->height);
 
 	PTYPE pixel[PMAXCHANNELS];
-	J_CHK( InitLevelData(cx, J_FARG(3), tex->channels, pixel) );
+	JL_CHK( InitLevelData(cx, JL_FARG(3), tex->channels, pixel) );
 
 	int c, channels;
 	channels = tex->channels;
@@ -1640,7 +1640,7 @@ DEFINE_FUNCTION_FAST( SetPixel ) { // x, y, levels
 	for ( c = 0; c < channels; c++ )
 		tex->cbuffer[pos+c] = pixel[c];
 
-	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
+	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1659,24 +1659,24 @@ $TOC_MEMBER $INAME
 // PTYPE ok
 DEFINE_FUNCTION_FAST( SetRectangle ) {
 
-	J_S_ASSERT_ARG_MIN( 5 );
+	JL_S_ASSERT_ARG_MIN( 5 );
 
 	Texture *tex;
-	tex = (Texture *)JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_RESOURCE(tex);
+	tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(tex);
 
 	int x0, y0, x1, y1;
-	J_CHK( JsvalToInt(cx, J_FARG(1), &x0) );
-	J_CHK( JsvalToInt(cx, J_FARG(2), &y0) );
-	J_CHK( JsvalToInt(cx, J_FARG(3), &x1) );
-	J_CHK( JsvalToInt(cx, J_FARG(4), &y1) );
+	JL_CHK( JsvalToInt(cx, JL_FARG(1), &x0) );
+	JL_CHK( JsvalToInt(cx, JL_FARG(2), &y0) );
+	JL_CHK( JsvalToInt(cx, JL_FARG(3), &x1) );
+	JL_CHK( JsvalToInt(cx, JL_FARG(4), &y1) );
 
 	PTYPE pixel[PMAXCHANNELS];
-	J_CHK( InitLevelData(cx, J_FARG(5), tex->channels, pixel) );
+	JL_CHK( InitLevelData(cx, JL_FARG(5), tex->channels, pixel) );
 
 //	PTYPE alpha;
 //	if ( argc >= 6 )
-//		J_CHK( JsvalToDouble(cx, J_FARG(6), &alpha) )
+//		JL_CHK( JsvalToDouble(cx, JL_FARG(6), &alpha) )
 //	else
 //		alpha = 1;
 
@@ -1697,7 +1697,7 @@ DEFINE_FUNCTION_FAST( SetRectangle ) {
 				tex->cbuffer[pos+c] = pixel[c];
 		}
 
-	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
+	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1714,14 +1714,14 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Rotate90 ) { // (TBD) test it
 
-	J_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_ARG_MIN( 1 );
 
 	Texture *tex;
-	tex = (Texture *)JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_RESOURCE(tex);
+	tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(tex);
 
 	int turn;
-	J_CHK( JsvalToInt(cx, J_FARG(1), &turn) );
+	JL_CHK( JsvalToInt(cx, JL_FARG(1), &turn) );
 
 	turn = Wrap(turn, turn);
 
@@ -1773,7 +1773,7 @@ DEFINE_FUNCTION_FAST( Rotate90 ) { // (TBD) test it
 
 	TextureSwapBuffers(tex);
 
-	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
+	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1789,15 +1789,15 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Flip ) {
 
-	J_S_ASSERT_ARG_MIN( 2 );
+	JL_S_ASSERT_ARG_MIN( 2 );
 
 	Texture *tex;
-	tex = (Texture *)JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_RESOURCE(tex);
+	tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(tex);
 
 	bool flipX, flipY;
-	J_CHK( JsvalToBool(cx, J_FARG(1), &flipX) );
-	J_CHK( JsvalToBool(cx, J_FARG(2), &flipY) );
+	JL_CHK( JsvalToBool(cx, JL_FARG(1), &flipX) );
+	JL_CHK( JsvalToBool(cx, JL_FARG(2), &flipY) );
 
 	TextureSetupBackBuffer(cx, tex);
 
@@ -1819,7 +1819,7 @@ DEFINE_FUNCTION_FAST( Flip ) {
 				tex->cbackBuffer[posDst+c] = tex->cbuffer[posSrc+c];
 		}
 	TextureSwapBuffers(tex);
-	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
+	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1838,11 +1838,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( RotoZoom ) { // source: FxGen
 
-	J_S_ASSERT_ARG_MIN( 5 );
+	JL_S_ASSERT_ARG_MIN( 5 );
 
 	Texture *tex;
-	tex = (Texture *)JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_RESOURCE(tex);
+	tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(tex);
 	int width;
 	width = tex->width;
 	int height;
@@ -1856,12 +1856,12 @@ DEFINE_FUNCTION_FAST( RotoZoom ) { // source: FxGen
 	newHeight = height;
 
 	double centerX, centerY;
-	J_CHK( JsvalToDouble(cx, J_FARG(1), &centerX) );
-	J_CHK( JsvalToDouble(cx, J_FARG(2), &centerY) );
+	JL_CHK( JsvalToDouble(cx, JL_FARG(1), &centerX) );
+	JL_CHK( JsvalToDouble(cx, JL_FARG(2), &centerY) );
 
 	double zoomX, zoomY;
-	J_CHK( JsvalToDouble(cx, J_FARG(3), &zoomX) );
-	J_CHK( JsvalToDouble(cx, J_FARG(4), &zoomY) );
+	JL_CHK( JsvalToDouble(cx, JL_FARG(3), &zoomX) );
+	JL_CHK( JsvalToDouble(cx, JL_FARG(4), &zoomY) );
 
 //	zoomX = 0.5 - ( zoomX / 2 );
 //	zoomX = exp( zoomX * 6 );
@@ -1870,7 +1870,7 @@ DEFINE_FUNCTION_FAST( RotoZoom ) { // source: FxGen
 //	zoomY = exp( zoomY * 6 );
 
 	double rotate;
-	J_CHK( JsvalToDouble(cx, J_FARG(5), &rotate) ); // 1 for 1 turn
+	JL_CHK( JsvalToDouble(cx, JL_FARG(5), &rotate) ); // 1 for 1 turn
 
 	rotate = M_PI * 2 * rotate;
 
@@ -1956,7 +1956,7 @@ DEFINE_FUNCTION_FAST( RotoZoom ) { // source: FxGen
 
 	TextureSwapBuffers(tex);
 
-	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
+	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1975,10 +1975,10 @@ $TOC_MEMBER $INAME
 // PTYPE ok
 DEFINE_FUNCTION_FAST( Resize ) {
 
-	J_S_ASSERT_ARG_MIN( 2 );
+	JL_S_ASSERT_ARG_MIN( 2 );
 	Texture *tex;
-	tex = (Texture *)JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_RESOURCE(tex);
+	tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(tex);
 	int width;
 	width = tex->width;
 	int height;
@@ -1987,20 +1987,20 @@ DEFINE_FUNCTION_FAST( Resize ) {
 	channels = tex->channels;
 
 	size_t newWidth, newHeight;
-	J_CHK( JsvalToUInt(cx, J_FARG(1), &newWidth) );
-	J_CHK( JsvalToUInt(cx, J_FARG(2), &newHeight) );
+	JL_CHK( JsvalToUInt(cx, JL_FARG(1), &newWidth) );
+	JL_CHK( JsvalToUInt(cx, JL_FARG(2), &newHeight) );
 
 	bool interpolate;
-	if ( J_FARG_ISDEF(3) )
-		J_CHK( JsvalToBool(cx, J_FARG(3), &interpolate) );
+	if ( JL_FARG_ISDEF(3) )
+		JL_CHK( JsvalToBool(cx, JL_FARG(3), &interpolate) );
 	else
 		interpolate = false;
 
 	BorderMode borderMode; // (TBD) from function arg
-	if ( J_FARG_ISDEF(4) ) {
+	if ( JL_FARG_ISDEF(4) ) {
 
 		int tmp;
-		J_CHK( JsvalToInt(cx, J_FARG(4), &tmp) );
+		JL_CHK( JsvalToInt(cx, JL_FARG(4), &tmp) );
 		borderMode = (BorderMode)tmp;
 	} else
 		borderMode = borderWrap;
@@ -2010,7 +2010,7 @@ DEFINE_FUNCTION_FAST( Resize ) {
 
 
 		PTYPE *newBuffer = (PTYPE*)JS_malloc(cx, newWidth * newHeight * channels * sizeof(PTYPE) );
-		J_CHK( newBuffer );
+		JL_CHK( newBuffer );
 
 		int spx, spy; // position in the source
 		float prx, pry; // pixel ratio
@@ -2062,7 +2062,7 @@ DEFINE_FUNCTION_FAST( Resize ) {
 							// (TBD)
 							break;
 						default:
-							J_REPORT_ERROR( "Invalid border mode." );
+							JL_REPORT_ERROR( "Invalid border mode." );
 					}
 
 					ratio1 = (1.f - prx) * (1.f - pry);
@@ -2096,7 +2096,7 @@ DEFINE_FUNCTION_FAST( Resize ) {
 		tex->height = newHeight;
 		// channels don't change
 	}
-	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
+	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -2132,36 +2132,36 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION_FAST( Convolution ) {
 
 	// (TBD) accumulate precalculated pixels ? ( like BoxBlur )
-	J_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_ARG_MIN( 1 );
 
 	Texture *tex;
-	tex = (Texture *)JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_RESOURCE(tex);
+	tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(tex);
 	int width;
 	width = tex->width;
 	int height;
 	height = tex->height;
 
 	jsuint count;
-	// J_CHK( ArrayLength(cx, &count, J_FARG(1)) );
-	J_CHK( JS_GetArrayLength( cx, JSVAL_TO_OBJECT(J_FARG(1)), &count ) );
+	// JL_CHK( ArrayLength(cx, &count, JL_FARG(1)) );
+	JL_CHK( JS_GetArrayLength( cx, JSVAL_TO_OBJECT(JL_FARG(1)), &count ) );
 	float *kernel;
 	kernel = (float*)malloc(sizeof(float) * count);
-	J_S_ASSERT_ALLOC( kernel );
-	//J_CHK( FloatArrayToVector(cx, count, &J_FARG(1), kernel) );
+	JL_S_ASSERT_ALLOC( kernel );
+	//JL_CHK( FloatArrayToVector(cx, count, &JL_FARG(1), kernel) );
 	size_t length;
-	J_CHK( JsvalToFloatVector(cx, J_FARG(1), kernel, count, &length) );
+	JL_CHK( JsvalToFloatVector(cx, JL_FARG(1), kernel, count, &length) );
 
 	int size;
 	size = (int)sqrtf(count);
 
-	J_S_ASSERT( size * size == count, "Invalid convolution kernel size.");
+	JL_S_ASSERT( size * size == count, "Invalid convolution kernel size.");
 
 	BorderMode borderMode;
-	if ( J_FARG_ISDEF(2) ) {
+	if ( JL_FARG_ISDEF(2) ) {
 
 		int tmp;
-		J_CHK( JsvalToInt(cx, J_FARG(2), &tmp) );
+		JL_CHK( JsvalToInt(cx, JL_FARG(2), &tmp) );
 		borderMode = (BorderMode)tmp;
 	} else
 		borderMode = borderWrap;
@@ -2247,7 +2247,7 @@ DEFINE_FUNCTION_FAST( Convolution ) {
 						}
 					break;
 				default:
-					J_REPORT_ERROR( "Invalid border mode." );
+					JL_REPORT_ERROR( "Invalid border mode." );
 			}
 
 			pos = (x + y * width) * channels;
@@ -2257,7 +2257,7 @@ DEFINE_FUNCTION_FAST( Convolution ) {
 
 	free(kernel);
 	TextureSwapBuffers(tex);
-	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
+	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -2285,15 +2285,15 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( ForEachPixels ) {
 
-	J_S_ASSERT_ARG_MIN( 1 );
-	J_S_ASSERT_FUNCTION( J_FARG(1) );
+	JL_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_FUNCTION( JL_FARG(1) );
 
 	jsval functionValue;
-	functionValue = J_FARG(1);
+	functionValue = JL_FARG(1);
 
 	Texture *tex;
-	tex = (Texture *)JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_RESOURCE(tex);
+	tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(tex);
 	int width;
 	width = tex->width;
 	int height;
@@ -2321,11 +2321,11 @@ DEFINE_FUNCTION_FAST( ForEachPixels ) {
 			for ( int c = 0; c < channels; c++ ) {
 
 				jsval level;
-				J_CHKB( JS_NewNumberValue(cx, tex->cbuffer[pos+c], &level), bad2 );
-				J_CHKB( JS_SetElement(cx, cArrayObj, c, &level), bad2 );
+				JL_CHKB( JS_NewNumberValue(cx, tex->cbuffer[pos+c], &level), bad2 );
+				JL_CHKB( JS_SetElement(cx, cArrayObj, c, &level), bad2 );
 			}
 
-			J_CHKB( JS_CallFunctionValue(cx, J_FOBJ, functionValue, COUNTOF(callArgv)-1, callArgv+1, callArgv), bad2 );
+			JL_CHKB( JS_CallFunctionValue(cx, JL_FOBJ, functionValue, COUNTOF(callArgv)-1, callArgv+1, callArgv), bad2 );
 
 			if ( JsvalIsArray(cx, callArgv[0]) ) {
 
@@ -2334,8 +2334,8 @@ DEFINE_FUNCTION_FAST( ForEachPixels ) {
 
 					jsval level;
 					jsdouble d;
-					J_CHKB( JS_GetElement(cx, returnedArray, c, &level), bad2 );
-					J_CHKB( JS_ValueToNumber(cx, level, &d), bad2 );
+					JL_CHKB( JS_GetElement(cx, returnedArray, c, &level), bad2 );
+					JL_CHKB( JS_ValueToNumber(cx, level, &d), bad2 );
 					tex->cbackBuffer[pos+c] = d;
 				}
 			} else {
@@ -2376,19 +2376,19 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( BoxBlur ) {
 
-	J_S_ASSERT_ARG_MIN( 2 );
+	JL_S_ASSERT_ARG_MIN( 2 );
 
 	Texture *tex;
-	tex = (Texture *)JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_RESOURCE(tex);
+	tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(tex);
 	int width;
 	width = tex->width;
 	int height;
 	height = tex->height;
 
 	int bw, bh; // blur width & height
-	J_CHK( JsvalToInt(cx, J_FARG(1), &bw) );
-	J_CHK( JsvalToInt(cx, J_FARG(2), &bh) );
+	JL_CHK( JsvalToInt(cx, JL_FARG(1), &bw) );
+	JL_CHK( JsvalToInt(cx, JL_FARG(2), &bh) );
 
 	if ( bw > width )
 		bw = width;
@@ -2440,7 +2440,7 @@ DEFINE_FUNCTION_FAST( BoxBlur ) {
 		}
 
 	free( line );
-	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
+	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -2453,8 +2453,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( NormalizeVectors ) {
 
-	Texture *tex = (Texture *)JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_RESOURCE(tex);
+	Texture *tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(tex);
 
 	int width;
 	width = tex->width;
@@ -2481,7 +2481,7 @@ DEFINE_FUNCTION_FAST( NormalizeVectors ) {
 		for ( c = 0; c < channels; c++ )
 			tex->cbuffer[pos+c] *= length;
 	}
-	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
+	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -2495,8 +2495,8 @@ $TOC_MEMBER $INAME
 // (TBD) PTYPE
 DEFINE_FUNCTION_FAST( Normals ) {
 
-	Texture *tex = (Texture *)JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_RESOURCE(tex);
+	Texture *tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(tex);
 
 	if ( tex->channels != 3 && tex->cbackBuffer != NULL ) { // back buffer do not have the right format
 
@@ -2511,7 +2511,7 @@ DEFINE_FUNCTION_FAST( Normals ) {
 
 	double amp;
 	if ( argc >= 1 )
-		J_CHK( JsvalToDouble(cx, J_FARG(1), &amp) );
+		JL_CHK( JsvalToDouble(cx, JL_FARG(1), &amp) );
 	else
 		amp = 1;
 
@@ -2586,7 +2586,7 @@ DEFINE_FUNCTION_FAST( Normals ) {
 
 	tex->channels = 3;
 
-	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
+	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -2617,11 +2617,11 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION_FAST( Light ) {
 	// Simple Lighting: http://www.gamasutra.com/features/19990416/intel_simd_04.htm
 
-	J_S_ASSERT_ARG_MIN( 5 );
+	JL_S_ASSERT_ARG_MIN( 5 );
 
 	Texture *normals, *tex;
-	tex = (Texture *)JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_RESOURCE(tex);
+	tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(tex);
 
 	int width;
 	width = tex->width;
@@ -2630,41 +2630,41 @@ DEFINE_FUNCTION_FAST( Light ) {
 	int channels;
 	channels = tex->channels;
 
-	J_CHK( ValueToTexture(cx, J_FARG(1), &normals) );
-	J_S_ASSERT( normals->channels == 3, "Invalid normals texture channel count." );
+	JL_CHK( ValueToTexture(cx, JL_FARG(1), &normals) );
+	JL_S_ASSERT( normals->channels == 3, "Invalid normals texture channel count." );
 
-	J_S_ASSERT( tex->channels >= 3, "normals applys on a RGB or RGBA texture." );
+	JL_S_ASSERT( tex->channels >= 3, "normals applys on a RGB or RGBA texture." );
 
-	J_S_ASSERT( normals->width == tex->width && normals->height == tex->height, "Invalid normals texture size." );
+	JL_S_ASSERT( normals->width == tex->width && normals->height == tex->height, "Invalid normals texture size." );
 
 	Vector3 lightPos;
-//	J_CHK( FloatArrayToVector(cx, 3, &J_FARG(2), lightPos.raw ) );
+//	JL_CHK( FloatArrayToVector(cx, 3, &JL_FARG(2), lightPos.raw ) );
 	size_t length;
-	J_CHK( JsvalToFloatVector(cx, J_FARG(2), lightPos.raw, 3, &length) );
-	J_S_ASSERT( length == 3, "Invalid array size." );
+	JL_CHK( JsvalToFloatVector(cx, JL_FARG(2), lightPos.raw, 3, &length) );
+	JL_S_ASSERT( length == 3, "Invalid array size." );
 
 	PTYPE ambient[3];
-	J_CHK( InitLevelData(cx, J_FARG(3), 3, ambient) );
+	JL_CHK( InitLevelData(cx, JL_FARG(3), 3, ambient) );
 	bool ambiantTexture;
 	ambiantTexture = false;
 
 	PTYPE diffuse[3];
-	J_CHK( InitLevelData(cx, J_FARG(4), 3, diffuse) );
+	JL_CHK( InitLevelData(cx, JL_FARG(4), 3, diffuse) );
 
 	PTYPE specular[3];
-	J_CHK( InitLevelData(cx, J_FARG(5), 3, specular) );
+	JL_CHK( InitLevelData(cx, JL_FARG(5), 3, specular) );
 	bool specularTexture;
 	specularTexture = false;
 
 	double bumpPower; // (TBD) default value
 	if ( argc >= 6 )
-		J_CHK( JsvalToDouble(cx, J_FARG(6), &bumpPower) );
+		JL_CHK( JsvalToDouble(cx, JL_FARG(6), &bumpPower) );
 	else
 		bumpPower = 1;
 
 	double specularPower; // (TBD) default value
 	if ( argc >= 7 )
-		J_CHK( JsvalToDouble(cx, J_FARG(7), &specularPower) );
+		JL_CHK( JsvalToDouble(cx, JL_FARG(7), &specularPower) );
 	else
 		specularPower = 1;
 
@@ -2716,7 +2716,7 @@ DEFINE_FUNCTION_FAST( Light ) {
 			for ( c = 0; c < 3; c++ )
 				tex->cbuffer[pos+c] = tex->cbuffer[pos+c] * ( localAmbient[c] + fDiffDot * diffuse[c] ) / PMAX + fSpecDot * localSpecular[c];  // sdword r	= (sdword) ((sdword(pPxSrc->r*(localAmbient.r + fDiffDot*Diffuse.r)) >> 8) + (fSpecDot*localSpecular.r));
 		}
-	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
+	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -2729,16 +2729,16 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Trim ) { // (TBD) test this new version that use memcpy
 
-	J_S_ASSERT_ARG_MIN( 4 );
+	JL_S_ASSERT_ARG_MIN( 4 );
 	Texture *tex;
-	tex = (Texture *)JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_RESOURCE(tex);
+	tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(tex);
 
 	int x0, y0, x1, y1;
-	J_CHK( JsvalToInt(cx, J_FARG(1), &x0) );
-	J_CHK( JsvalToInt(cx, J_FARG(2), &y0) );
-	J_CHK( JsvalToInt(cx, J_FARG(3), &x1) );
-	J_CHK( JsvalToInt(cx, J_FARG(4), &y1) );
+	JL_CHK( JsvalToInt(cx, JL_FARG(1), &x0) );
+	JL_CHK( JsvalToInt(cx, JL_FARG(2), &y0) );
+	JL_CHK( JsvalToInt(cx, JL_FARG(3), &x1) );
+	JL_CHK( JsvalToInt(cx, JL_FARG(4), &y1) );
 
 	int width;
 	width = tex->width;
@@ -2799,7 +2799,7 @@ DEFINE_FUNCTION_FAST( Trim ) { // (TBD) test this new version that use memcpy
 	tex->width = newWidth;
 	tex->height = newHeight;
 
-	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
+	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -2817,24 +2817,24 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Copy ) {
 
-	J_S_ASSERT_ARG_MIN( 3 );
+	JL_S_ASSERT_ARG_MIN( 3 );
 
 	Texture *srcTex, *tex;
-	tex = (Texture *)JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_RESOURCE(tex);
-	J_CHK( ValueToTexture(cx, J_FARG(1), &srcTex) );
+	tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(tex);
+	JL_CHK( ValueToTexture(cx, JL_FARG(1), &srcTex) );
 
-	J_S_ASSERT( tex->channels == srcTex->channels, "Invalid channel count." );
+	JL_S_ASSERT( tex->channels == srcTex->channels, "Invalid channel count." );
 
 	int px, py; // position
-	J_CHK( JsvalToInt(cx, J_FARG(2), &px) );
-	J_CHK( JsvalToInt(cx, J_FARG(3), &py) );
+	JL_CHK( JsvalToInt(cx, JL_FARG(2), &px) );
+	JL_CHK( JsvalToInt(cx, JL_FARG(3), &py) );
 
 	BorderMode borderMode; // (TBD) from function arg
-	if ( J_FARG_ISDEF(4) ) {
+	if ( JL_FARG_ISDEF(4) ) {
 
 		int tmp;
-		J_CHK( JsvalToInt(cx, J_FARG(4), &tmp) );
+		JL_CHK( JsvalToInt(cx, JL_FARG(4), &tmp) );
 		borderMode = (BorderMode)tmp;
 	} else
 		borderMode = borderClamp;
@@ -2872,7 +2872,7 @@ DEFINE_FUNCTION_FAST( Copy ) {
 					continue; // skip
 				break;
 			default:
-				J_REPORT_ERROR( "Invalid border mode." );
+				JL_REPORT_ERROR( "Invalid border mode." );
 			}
 
 			posDst = ( x + y * texWidth ) * channels;
@@ -2881,7 +2881,7 @@ DEFINE_FUNCTION_FAST( Copy ) {
 				tex->cbuffer[posDst+c] = srcTex->cbuffer[posSrc+c];
 		}
 
-	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
+	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -2899,24 +2899,24 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Paste ) { // (Texture)texture, (int)x, (int)y, (bool)borderMode
 
-	J_S_ASSERT_ARG_MIN( 4 );
+	JL_S_ASSERT_ARG_MIN( 4 );
 
 	Texture *tex1, *tex;
-	tex = (Texture *)JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_RESOURCE(tex);
+	tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(tex);
 
-	J_CHK( ValueToTexture(cx, J_FARG(1), &tex1) );
-	J_S_ASSERT( tex->channels == tex1->channels, "Invalid channel count." );
+	JL_CHK( ValueToTexture(cx, JL_FARG(1), &tex1) );
+	JL_S_ASSERT( tex->channels == tex1->channels, "Invalid channel count." );
 
 	int px, py; // position
-	J_CHK( JsvalToInt(cx, J_FARG(2), &px) );
-	J_CHK( JsvalToInt(cx, J_FARG(3), &py) );
+	JL_CHK( JsvalToInt(cx, JL_FARG(2), &px) );
+	JL_CHK( JsvalToInt(cx, JL_FARG(3), &py) );
 
 	BorderMode borderMode;
-	if ( J_FARG_ISDEF(4) ) {
+	if ( JL_FARG_ISDEF(4) ) {
 
 		int tmp;
-		J_CHK( JsvalToInt(cx, J_FARG(4), &tmp) );
+		JL_CHK( JsvalToInt(cx, JL_FARG(4), &tmp) );
 		borderMode = (BorderMode)tmp;
 	} else
 		borderMode = borderClamp;
@@ -2955,7 +2955,7 @@ DEFINE_FUNCTION_FAST( Paste ) { // (Texture)texture, (int)x, (int)y, (bool)borde
 				}
 				break;
 			default:
-				J_REPORT_ERROR( "Invalid border mode." );
+				JL_REPORT_ERROR( "Invalid border mode." );
 			}
 
 			posDst = ( dx + dy * texWidth ) * channels;
@@ -2964,7 +2964,7 @@ DEFINE_FUNCTION_FAST( Paste ) { // (Texture)texture, (int)x, (int)y, (bool)borde
 				tex->cbuffer[posDst+c] = tex1->cbuffer[posSrc+c];
 		}
 
-	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
+	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -3003,8 +3003,8 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION_FAST( Export ) { // (int)x, (int)y, (int)width, (int)height. Returns a Blob
 
 	Texture *tex;
-	tex = (Texture *)JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_RESOURCE(tex);
+	tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(tex);
 
 	int sChannels;
 	sChannels = tex->channels;
@@ -3020,7 +3020,7 @@ DEFINE_FUNCTION_FAST( Export ) { // (int)x, (int)y, (int)width, (int)height. Ret
 
 	int px, py;
 
-	if ( J_ARGC == 0 ) { // copy the whole image
+	if ( JL_ARGC == 0 ) { // copy the whole image
 
 		px = 0;
 		py = 0;
@@ -3028,12 +3028,12 @@ DEFINE_FUNCTION_FAST( Export ) { // (int)x, (int)y, (int)width, (int)height. Ret
 		dHeight = sHeight;
 	} else {
 
-		J_S_ASSERT_ARG_MIN( 4 );
+		JL_S_ASSERT_ARG_MIN( 4 );
 		int px, py;
-		J_CHK( JsvalToInt(cx, J_FARG(1), &px) );
-		J_CHK( JsvalToInt(cx, J_FARG(2), &py) );
-		J_CHK( JsvalToInt(cx, J_FARG(3), &dWidth) );
-		J_CHK( JsvalToInt(cx, J_FARG(4), &dHeight) );
+		JL_CHK( JsvalToInt(cx, JL_FARG(1), &px) );
+		JL_CHK( JsvalToInt(cx, JL_FARG(2), &py) );
+		JL_CHK( JsvalToInt(cx, JL_FARG(3), &dWidth) );
+		JL_CHK( JsvalToInt(cx, JL_FARG(4), &dHeight) );
 	}
 
 	bufferLength = dWidth * dHeight * sChannels;
@@ -3061,10 +3061,10 @@ DEFINE_FUNCTION_FAST( Export ) { // (int)x, (int)y, (int)width, (int)height. Ret
 		}
 
 	jsval bstr;
-	J_CHK( J_NewBlob(cx, buffer, bufferLength, &bstr ) );
+	JL_CHK( JL_NewBlob(cx, buffer, bufferLength, &bstr ) );
 	JSObject *bstrObj;
-	J_CHK( JS_ValueToObject(cx, bstr, &bstrObj) );
-	*J_FRVAL = OBJECT_TO_JSVAL( bstrObj );
+	JL_CHK( JS_ValueToObject(cx, bstr, &bstrObj) );
+	*JL_FRVAL = OBJECT_TO_JSVAL( bstrObj );
 
 	SetPropertyInt(cx, bstrObj, "width", dWidth);
 	SetPropertyInt(cx, bstrObj, "height", dHeight);
@@ -3100,26 +3100,26 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Import ) { // (Blob)image, (int)x, (int)y
 
-	J_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_ARG_MIN(1);
 
 	Texture *tex;
-	tex = (Texture *)JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_RESOURCE(tex);
+	tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(tex);
 
-	J_S_ASSERT_OBJECT( J_FARG(1) );
+	JL_S_ASSERT_OBJECT( JL_FARG(1) );
 	JSObject *bstr;
-	bstr = JSVAL_TO_OBJECT( J_FARG(1) );
-	J_S_ASSERT_CLASS( bstr, BlobJSClass(cx) );
+	bstr = JSVAL_TO_OBJECT( JL_FARG(1) );
+	JL_S_ASSERT_CLASS( bstr, BlobJSClass(cx) );
 
 	int px, py;
-	J_CHK( JsvalToInt(cx, J_FARG(2), &px) );
-	J_CHK( JsvalToInt(cx, J_FARG(3), &py) );
+	JL_CHK( JsvalToInt(cx, JL_FARG(2), &px) );
+	JL_CHK( JsvalToInt(cx, JL_FARG(3), &py) );
 
 	BorderMode borderMode;
-	if ( J_FARG_ISDEF(4) ) {
+	if ( JL_FARG_ISDEF(4) ) {
 
 		int tmp;
-		J_CHK( JsvalToInt(cx, J_FARG(4), &tmp) );
+		JL_CHK( JsvalToInt(cx, JL_FARG(4), &tmp) );
 		borderMode = (BorderMode)tmp;
 	} else
 		borderMode = borderClamp;
@@ -3140,9 +3140,9 @@ DEFINE_FUNCTION_FAST( Import ) { // (Blob)image, (int)x, (int)y
 	//uint8_t *buffer = (uint8_t*)BlobData(cx, bstr);
 
 	const uint8_t *buffer;
-//	J_CHK( BlobBuffer(cx, bstr, (const void **)&buffer) );
+//	JL_CHK( BlobBuffer(cx, bstr, (const void **)&buffer) );
 
-	J_CHK( JsvalToString(cx, &J_FARG(1), (const char **)&buffer) );
+	JL_CHK( JsvalToString(cx, &JL_FARG(1), (const char **)&buffer) );
 
 	int x, y;
 	int dx, dy; // destination
@@ -3166,7 +3166,7 @@ DEFINE_FUNCTION_FAST( Import ) { // (Blob)image, (int)x, (int)y
 				break;
 
 			default:
-				J_REPORT_ERROR( "Invalid border mode." );
+				JL_REPORT_ERROR( "Invalid border mode." );
 			}
 
 			posDst = ( dx + dy * dWidth ) * dChannels;
@@ -3175,7 +3175,7 @@ DEFINE_FUNCTION_FAST( Import ) { // (Blob)image, (int)x, (int)y
 				tex->cbuffer[posDst+c] = (PTYPE)buffer[posSrc+c] / (PTYPE)255.f;
 		}
 
-	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
+	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -3193,21 +3193,21 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION_FAST( Shift ) {
 	// (TBD) I think it is possible to do the Shift operation without using a second buffer.
 
-	J_S_ASSERT_ARG_MIN( 2 );
+	JL_S_ASSERT_ARG_MIN( 2 );
 
 	Texture *tex;
-	tex = (Texture *)JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_RESOURCE(tex);
+	tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(tex);
 
 	int offsetX, offsetY;
-	J_CHK( JsvalToInt(cx, J_FARG(1), &offsetX) );
-	J_CHK( JsvalToInt(cx, J_FARG(2), &offsetY) );
+	JL_CHK( JsvalToInt(cx, JL_FARG(1), &offsetX) );
+	JL_CHK( JsvalToInt(cx, JL_FARG(2), &offsetY) );
 
 	BorderMode borderMode;
-	if ( J_FARG_ISDEF(3) ) {
+	if ( JL_FARG_ISDEF(3) ) {
 
 		int tmp;
-		J_CHK( JsvalToInt(cx, J_FARG(3), &tmp) );
+		JL_CHK( JsvalToInt(cx, JL_FARG(3), &tmp) );
 		borderMode = (BorderMode)tmp;
 	} else
 		borderMode = borderClamp;
@@ -3256,13 +3256,13 @@ DEFINE_FUNCTION_FAST( Shift ) {
 					break;
 
 				default:
-					J_REPORT_ERROR( "Invalid border mode." );
+					JL_REPORT_ERROR( "Invalid border mode." );
 			}
 			for ( c = 0; c < channels; c++ )
 				tex->cbackBuffer[(x + y * width) * channels + c] = tex->cbuffer[(sx + sy * width) * channels + c];
 		}
 	TextureSwapBuffers(tex);
-	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
+	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -3279,11 +3279,11 @@ $TOC_MEMBER $INAME
 // (TBD) PTYPE
 DEFINE_FUNCTION_FAST( Displace ) {
 
-	J_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_ARG_MIN( 1 );
 
 	Texture *tex1, *tex;
-	tex = (Texture *)JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_RESOURCE(tex);
+	tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(tex);
 	int width;
 	width = tex->width;
 	int height;
@@ -3291,17 +3291,17 @@ DEFINE_FUNCTION_FAST( Displace ) {
 	int channels;
 	channels = tex->channels;
 
-	J_CHK( ValueToTexture(cx, J_FARG(1), &tex1) );
+	JL_CHK( ValueToTexture(cx, JL_FARG(1), &tex1) );
 
 	int displaceChannels;
 	displaceChannels = tex1->channels;
 
-	J_S_ASSERT( width == tex1->width && height == tex1->height, "Textures must have the same size." );
-	J_S_ASSERT( tex1->channels >= 2, "Displacement texture must have 2 or more channels." );
+	JL_S_ASSERT( width == tex1->width && height == tex1->height, "Textures must have the same size." );
+	JL_S_ASSERT( tex1->channels >= 2, "Displacement texture must have 2 or more channels." );
 
 	double factor;
 	if ( argc >= 2 )
-		J_CHK( JsvalToDouble(cx, J_FARG(2), &factor) );
+		JL_CHK( JsvalToDouble(cx, JL_FARG(2), &factor) );
 	else
 		factor = 1;
 
@@ -3352,7 +3352,7 @@ DEFINE_FUNCTION_FAST( Displace ) {
 					if ( sy >= height )  sy = width - sy;
 					break;
 				default:
-					J_REPORT_ERROR( "Invalid border mode." );
+					JL_REPORT_ERROR( "Invalid border mode." );
 			}
 
 			pos = (x + y * width) * channels;
@@ -3361,7 +3361,7 @@ DEFINE_FUNCTION_FAST( Displace ) {
 				tex->cbackBuffer[pos+c] = tex->cbuffer[pos1+c];
 		}
 	TextureSwapBuffers(tex);
-	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
+	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -3377,16 +3377,16 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Cells ) { // source: FxGen
 
-	J_S_ASSERT_ARG_MIN( 2 );
+	JL_S_ASSERT_ARG_MIN( 2 );
 
 	int density;
 	double regularity;
-	J_CHK( JsvalToInt(cx, J_FARG(1), &density) );
-	J_CHK( JsvalToDouble(cx, J_FARG(2), &regularity) );
+	JL_CHK( JsvalToInt(cx, JL_FARG(1), &density) );
+	JL_CHK( JsvalToDouble(cx, JL_FARG(2), &regularity) );
 
 	Texture *tex;
-	tex = (Texture *)JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_RESOURCE(tex);
+	tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(tex);
 
 	density = MINMAX( density, 1, 128 );
 	regularity = MINMAX( regularity, 0, 1 );
@@ -3469,7 +3469,7 @@ DEFINE_FUNCTION_FAST( Cells ) { // source: FxGen
 
 	free(cellPoints);
 
-	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
+	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -3496,11 +3496,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( AddGradiantQuad ) {
 
-	J_S_ASSERT_ARG_MIN( 4 );
+	JL_S_ASSERT_ARG_MIN( 4 );
 
 	Texture *tex;
-	tex = (Texture *)JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_RESOURCE(tex);
+	tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(tex);
 	int width;
 	width = tex->width;
 	int height;
@@ -3510,16 +3510,16 @@ DEFINE_FUNCTION_FAST( AddGradiantQuad ) {
 
 
 	PTYPE pixel1[PMAXCHANNELS];
-	J_CHK( InitLevelData(cx, J_FARG(1), channels, pixel1) );
+	JL_CHK( InitLevelData(cx, JL_FARG(1), channels, pixel1) );
 
 	PTYPE pixel2[PMAXCHANNELS];
-	J_CHK( InitLevelData(cx, J_FARG(2), channels, pixel2) );
+	JL_CHK( InitLevelData(cx, JL_FARG(2), channels, pixel2) );
 
 	PTYPE pixel3[PMAXCHANNELS];
-	J_CHK( InitLevelData(cx, J_FARG(3), channels, pixel3) );
+	JL_CHK( InitLevelData(cx, JL_FARG(3), channels, pixel3) );
 
 	PTYPE pixel4[PMAXCHANNELS];
-	J_CHK( InitLevelData(cx, J_FARG(4), channels, pixel4) );
+	JL_CHK( InitLevelData(cx, JL_FARG(4), channels, pixel4) );
 
 	float aspectRatio;
 	aspectRatio = width * height;
@@ -3539,7 +3539,7 @@ DEFINE_FUNCTION_FAST( AddGradiantQuad ) {
 			for ( c = 0; c < channels; c++ )
 				tex->cbuffer[pos+c] += pixel1[c]*r1 + pixel2[c]*r2 + pixel3[c]*r3 + pixel4[c]*r4;
 		}
-	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
+	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -3566,11 +3566,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( AddGradiantLinear ) {
 
-	J_S_ASSERT_ARG_MIN( 2 );
+	JL_S_ASSERT_ARG_MIN( 2 );
 
 	Texture *tex;
-	tex = (Texture *)JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_RESOURCE(tex);
+	tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(tex);
 
 	int width;
 	width = tex->width;
@@ -3581,11 +3581,11 @@ DEFINE_FUNCTION_FAST( AddGradiantLinear ) {
 
 	float *curvex;
 	curvex = (float*)malloc( width * sizeof(float) ); // (TBD) free curvex
-	J_CHK( InitCurveData( cx, J_FARG(1), width, curvex ) );
+	JL_CHK( InitCurveData( cx, JL_FARG(1), width, curvex ) );
 
 	float *curvey;
 	curvey = (float*)malloc( height * sizeof(float) ); // (TBD) free curvey
-	J_CHK( InitCurveData( cx, J_FARG(2), height, curvey ) );
+	JL_CHK( InitCurveData( cx, JL_FARG(2), height, curvey ) );
 
 	int x, y, c;
 	int pos;
@@ -3597,7 +3597,7 @@ DEFINE_FUNCTION_FAST( AddGradiantLinear ) {
 				tex->cbuffer[pos+c] += curvex[x] * curvey[y];
 		}
 
-	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
+	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -3623,11 +3623,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( AddGradiantRadial ) {
 
-	J_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_ARG_MIN( 1 );
 
 	Texture *tex;
-	tex = (Texture *)JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_RESOURCE(tex);
+	tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(tex);
 	int width;
 	width = tex->width;
 	int height;
@@ -3636,8 +3636,8 @@ DEFINE_FUNCTION_FAST( AddGradiantRadial ) {
 	channels = tex->channels;
 
 	bool drawToCorner;
-	if ( J_FARG_ISDEF(2) )
-		J_CHK( JsvalToBool(cx, J_FARG(2), &drawToCorner) );
+	if ( JL_FARG_ISDEF(2) )
+		JL_CHK( JsvalToBool(cx, JL_FARG(2), &drawToCorner) );
 	else
 		drawToCorner = false;
 
@@ -3649,7 +3649,7 @@ DEFINE_FUNCTION_FAST( AddGradiantRadial ) {
 
 	float *curve;
 	curve = (float*)malloc( (int)radius * sizeof(float) ); // (TBD) free curve
-	InitCurveData(cx, J_FARG(1), (int)radius, curve);
+	InitCurveData(cx, JL_FARG(1), (int)radius, curve);
 
 	float aspectRatio;
 	aspectRatio = (float)width / (float)height;
@@ -3682,7 +3682,7 @@ DEFINE_FUNCTION_FAST( AddGradiantRadial ) {
 			}
 		}
 
-	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
+	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -3692,26 +3692,26 @@ DEFINE_FUNCTION_FAST( AddGradiantRadial ) {
 /*
 DEFINE_FUNCTION( AddGradiantRadial ) {
 
-	J_S_ASSERT_ARG_MIN( 3 );
+	JL_S_ASSERT_ARG_MIN( 3 );
 
-	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(tex);
+	Texture *tex = (Texture *)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(tex);
 
 	int width = tex->width;
 	int height = tex->height;
 	int channels = tex->channels;
 
 	int ox, oy;
-	J_CHK( JsvalToInt(cx, J_FARG(1), &ox) );
-	J_CHK( JsvalToInt(cx, J_FARG(2), &oy) );
+	JL_CHK( JsvalToInt(cx, JL_FARG(1), &ox) );
+	JL_CHK( JsvalToInt(cx, JL_FARG(2), &oy) );
 
 	int radius;
-	J_CHK( JsvalToInt(cx, J_FARG(3), &radius) );
+	JL_CHK( JsvalToInt(cx, JL_FARG(3), &radius) );
 
 	BorderMode borderMode = borderWrap;
 
 	float *curve = (float*)malloc( radius * sizeof(float) ); // JS_malloc(cx,
-	InitCurveData( cx, J_FARG(4), radius, curve );
+	InitCurveData( cx, JL_FARG(4), radius, curve );
 
 	// draw
 	Vector3 p;
@@ -3746,7 +3746,7 @@ DEFINE_FUNCTION( AddGradiantRadial ) {
 			}
 		}
 
-	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
+	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -3780,11 +3780,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( AddCracks ) { // source: FxGen
 
-	J_S_ASSERT_ARG_MIN( 2 );
+	JL_S_ASSERT_ARG_MIN( 2 );
 
 	Texture *tex;
-	tex = (Texture *)JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_RESOURCE(tex);
+	tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(tex);
 
 	int width;
 	width = tex->width;
@@ -3794,21 +3794,21 @@ DEFINE_FUNCTION_FAST( AddCracks ) { // source: FxGen
 	channels = tex->channels;
 
 	int count;
-	J_CHK( JsvalToInt(cx, J_FARG(1), &count) );
+	JL_CHK( JsvalToInt(cx, JL_FARG(1), &count) );
 
 	int crackMaxLength;
-	J_CHK( JsvalToInt(cx, J_FARG(2), &crackMaxLength) );
+	JL_CHK( JsvalToInt(cx, JL_FARG(2), &crackMaxLength) );
 
 	double variation;
-	if ( J_FARG_ISDEF(3) )
-		J_CHK( JsvalToDouble(cx, J_FARG(3), &variation) );
+	if ( JL_FARG_ISDEF(3) )
+		JL_CHK( JsvalToDouble(cx, JL_FARG(3), &variation) );
 	else
 		variation = 0;
 
 	PTYPE pixel[PMAXCHANNELS];
-	if ( J_FARG_ISDEF(4) ) {
+	if ( JL_FARG_ISDEF(4) ) {
 
-		J_CHK( InitLevelData(cx, J_FARG(4), channels, pixel) );
+		JL_CHK( InitLevelData(cx, JL_FARG(4), channels, pixel) );
 	} else {
 		for ( int i=0; i<PMAXCHANNELS; i++ )
 			pixel[i] = PMAX;
@@ -3817,9 +3817,9 @@ DEFINE_FUNCTION_FAST( AddCracks ) { // source: FxGen
 
 	float *curve;
 	curve = (float*)malloc( crackMaxLength * sizeof(float) );
-	if ( J_FARG_ISDEF(5) ) {
+	if ( JL_FARG_ISDEF(5) ) {
 
-		J_CHK( InitCurveData( cx, J_FARG(5), crackMaxLength, curve ) );
+		JL_CHK( InitCurveData( cx, JL_FARG(5), crackMaxLength, curve ) );
 	} else {
 		for ( int i=0; i<crackMaxLength; i++ )
 			curve[i] = PMAX;
@@ -3861,7 +3861,7 @@ DEFINE_FUNCTION_FAST( AddCracks ) { // source: FxGen
 		}
 	}
 	free(curve);
-	*J_FRVAL = OBJECT_TO_JSVAL(J_FOBJ);
+	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -3887,25 +3887,25 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( PixelAt ) {
 
-	J_S_ASSERT_ARG_MIN(2);
-	J_S_ASSERT_INT(J_FARG(1));
-	J_S_ASSERT_INT(J_FARG(2));
+	JL_S_ASSERT_ARG_MIN(2);
+	JL_S_ASSERT_INT(JL_FARG(1));
+	JL_S_ASSERT_INT(JL_FARG(2));
 
 	int x;
-	x = JSVAL_TO_INT(J_FARG(1));
+	x = JSVAL_TO_INT(JL_FARG(1));
 	int y;
-	y = JSVAL_TO_INT(J_FARG(2));
+	y = JSVAL_TO_INT(JL_FARG(2));
 
 	Texture *tex;
-	tex = (Texture *)JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_RESOURCE(tex);
+	tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(tex);
 
 	PTYPE *ptr;
 	ptr = tex->cbuffer + tex->channels * ( x + tex->width * y );
 
 	JSObject *jsArray;
 	jsArray = JS_NewArrayObject(cx, 0, NULL);
-	*J_FRVAL = OBJECT_TO_JSVAL(jsArray);
+	*JL_FRVAL = OBJECT_TO_JSVAL(jsArray);
 	jsval value;
 	for (int i=0; i<tex->channels; ++i) {
 
@@ -3925,8 +3925,8 @@ $TOC_MEMBER $INAME
 // PTYPE ok
 DEFINE_FUNCTION_FAST( LevelRange ) {
 
-	Texture *tex = (Texture *)JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_RESOURCE(tex);
+	Texture *tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(tex);
 
 	PTYPE min;
 	min = PMAXLIMIT;
@@ -3948,8 +3948,8 @@ DEFINE_FUNCTION_FAST( LevelRange ) {
 	vector[0] = min;
 	vector[1] = max;
 
-//	J_REAL_VECTOR_TO_JSVAL(vector, 2, *J_FRVAL);
-	J_CHK( DoubleVectorToJsval(cx, vector, 2, J_FRVAL) );
+//	J_REAL_VECTOR_TO_JSVAL(vector, 2, *JL_FRVAL);
+	JL_CHK( DoubleVectorToJsval(cx, vector, 2, JL_FRVAL) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -3971,7 +3971,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( vmax ) {
 
-	J_CHK( JS_NewNumberValue(cx, PMAX, vp) );
+	JL_CHK( JS_NewNumberValue(cx, PMAX, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -3984,11 +3984,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( width ) {
 
-	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(tex);
+	Texture *tex = (Texture *)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(tex);
 	jsdouble d;
 	d = tex->width;
-	J_CHK( JS_NewNumberValue(cx, d, vp) );
+	JL_CHK( JS_NewNumberValue(cx, d, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -4001,11 +4001,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( height ) {
 
-	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(tex);
+	Texture *tex = (Texture *)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(tex);
 	jsdouble d;
 	d = tex->height;
-	J_CHK( JS_NewNumberValue(cx, d, vp) );
+	JL_CHK( JS_NewNumberValue(cx, d, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -4018,11 +4018,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( channels ) {
 
-	Texture *tex = (Texture *)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(tex);
+	Texture *tex = (Texture *)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(tex);
 	jsdouble d;
 	d = tex->channels;
-	J_CHK( JS_NewNumberValue(cx, d, vp) );
+	JL_CHK( JS_NewNumberValue(cx, d, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -4052,9 +4052,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( RandSeed ) {
 
-	J_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_ARG_MIN(1);
 	unsigned int seed;
-	J_CHK( JsvalToUInt(cx, J_FARG(1), &seed) );
+	JL_CHK( JsvalToUInt(cx, JL_FARG(1), &seed) );
 	init_genrand(seed);
 	return JS_TRUE;
 	JL_BAD;
@@ -4069,7 +4069,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION_FAST( RandInt ) {
 
 	int i = genrand_int31();
-	*J_FRVAL = INT_TO_JSVAL(i);
+	*JL_FRVAL = INT_TO_JSVAL(i);
 	return JS_TRUE;
 }
 
@@ -4082,7 +4082,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION_FAST( RandReal ) {
 
 	jsdouble d = genrand_real1();
-	J_CHK( JS_NewNumberValue(cx, d, J_FRVAL) );
+	JL_CHK( JS_NewNumberValue(cx, d, JL_FRVAL) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -4090,11 +4090,11 @@ DEFINE_FUNCTION_FAST( RandReal ) {
 
 //DEFINE_FUNCTION( Noise ) {
 //
-//	J_S_ASSERT_ARG_MIN(1);
+//	JL_S_ASSERT_ARG_MIN(1);
 //	unsigned long seed;
-//	J_CHK( JsvalToUInt(cx, J_FARG(1), &seed) );
+//	JL_CHK( JsvalToUInt(cx, JL_FARG(1), &seed) );
 //	jsdouble d = NoiseInt(seed);
-//	J_CHK( JS_NewNumberValue(cx, d, rval) );
+//	JL_CHK( JS_NewNumberValue(cx, d, rval) );
 //	return JS_TRUE;
 //}
 

@@ -31,8 +31,8 @@ JSBool GetBodyAndMass(JSContext *cx, JSObject *massObject, ode::dBodyID *pBodyID
 	JS_GetReservedSlot(cx, massObject, MASS_SLOT_BODY, &bodyVal);
 	JSObject *bodyObject;
 	JS_ValueToObject(cx, bodyVal, &bodyObject);
-	J_S_ASSERT_CLASS(bodyObject, classBody);
-	*pBodyID = (ode::dBodyID)JS_GetPrivate(cx, bodyObject);
+	JL_S_ASSERT_CLASS(bodyObject, classBody);
+	*pBodyID = (ode::dBodyID)JL_GetPrivate(cx, bodyObject);
 	ode::dBodyGetMass(*pBodyID, pMass);
 	return JS_TRUE;
 	JL_BAD;
@@ -53,13 +53,13 @@ DEFINE_FUNCTION( Translate ) {
 
 	ode::dBodyID bodyID;
 	ode::dMass mass;
-	J_S_ASSERT_ARG_MIN(1);
-	J_CHK( GetBodyAndMass(cx, obj, &bodyID, &mass) );
+	JL_S_ASSERT_ARG_MIN(1);
+	JL_CHK( GetBodyAndMass(cx, obj, &bodyID, &mass) );
 	real translation[3];
-//	J_CHK( FloatArrayToVector(cx, 3, &argv[0], translation) );
+//	JL_CHK( FloatArrayToVector(cx, 3, &argv[0], translation) );
 	size_t length;
-	J_CHK( JsvalToFloatVector(cx, argv[0], translation, 3, &length) );
-	J_S_ASSERT( length == 3, "Invalid array size." );
+	JL_CHK( JsvalToFloatVector(cx, argv[0], translation, 3, &length) );
+	JL_S_ASSERT( length == 3, "Invalid array size." );
 	ode::dMassTranslate(&mass, translation[0], translation[1], translation[2]);
 	ode::dBodySetMass(bodyID, &mass);
 	return JS_TRUE;
@@ -75,8 +75,8 @@ DEFINE_FUNCTION( Adjust ) {
 
 	ode::dBodyID bodyID;
 	ode::dMass mass;
-	J_S_ASSERT_ARG_MIN(1);
-	J_CHK( GetBodyAndMass(cx, obj, &bodyID, &mass) );
+	JL_S_ASSERT_ARG_MIN(1);
+	JL_CHK( GetBodyAndMass(cx, obj, &bodyID, &mass) );
 	jsdouble newMass;
 	JS_ValueToNumber(cx, argv[0], &newMass);
 	ode::dMassAdjust(&mass, newMass);
@@ -95,7 +95,7 @@ DEFINE_FUNCTION( SetZero ) {
 
 	ode::dBodyID bodyID;
 	ode::dMass mass;
-	J_CHK( GetBodyAndMass(cx, obj, &bodyID, &mass) );
+	JL_CHK( GetBodyAndMass(cx, obj, &bodyID, &mass) );
 	ode::dMassSetZero(&mass);
 	ode::dBodySetMass(bodyID, &mass);
 	return JS_TRUE;
@@ -111,19 +111,19 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( SetBoxTotal ) {
 
 	ode::dMass mass;
-	J_S_ASSERT_ARG_MIN(2);
+	JL_S_ASSERT_ARG_MIN(2);
 // get mass object
 	ode::dBodyID bodyID;
-	J_CHK( GetBodyAndMass(cx, obj, &bodyID, &mass) );
+	JL_CHK( GetBodyAndMass(cx, obj, &bodyID, &mass) );
 // arg 0
 	jsdouble totalMass;
 	JS_ValueToNumber(cx, argv[0], &totalMass);
 // arg 1
 	real dimensions[3];
-	//	J_CHK( FloatArrayToVector(cx, 3, &argv[1], dimensions) );
+	//	JL_CHK( FloatArrayToVector(cx, 3, &argv[1], dimensions) );
 	size_t length;
-	J_CHK( JsvalToFloatVector(cx, argv[1], dimensions, 3, &length) );
-	J_S_ASSERT( length == 3, "Invalid array size." );
+	JL_CHK( JsvalToFloatVector(cx, argv[1], dimensions, 3, &length) );
+	JL_S_ASSERT( length == 3, "Invalid array size." );
 
 // apply the formulae
 	ode::dMassSetBoxTotal(&mass, totalMass, dimensions[0], dimensions[0], dimensions[0]);
@@ -147,7 +147,7 @@ DEFINE_PROPERTY( valueSetter ) {
 
 	ode::dBodyID bodyID;
 	ode::dMass mass;
-	J_CHK( GetBodyAndMass(cx, obj, &bodyID, &mass) );
+	JL_CHK( GetBodyAndMass(cx, obj, &bodyID, &mass) );
 	jsdouble massValue;
 	JS_ValueToNumber(cx, *vp, &massValue);
 	mass.mass = massValue;
@@ -161,7 +161,7 @@ DEFINE_PROPERTY( valueGetter ) {
 
 	ode::dBodyID bodyID;
 	ode::dMass mass;
-	J_CHK( GetBodyAndMass(cx, obj, &bodyID, &mass) );
+	JL_CHK( GetBodyAndMass(cx, obj, &bodyID, &mass) );
 	JS_NewDoubleValue(cx, mass.mass, vp);
 	return JS_TRUE;
 	JL_BAD;
@@ -178,13 +178,13 @@ DEFINE_PROPERTY( centerSetter ) {
 
 	ode::dBodyID bodyID;
 	ode::dMass mass;
-	J_CHK( GetBodyAndMass(cx, obj, &bodyID, &mass) );
+	JL_CHK( GetBodyAndMass(cx, obj, &bodyID, &mass) );
 //	jsdouble massValue;
 //	jsdouble translation[3];
-	//J_CHK( FloatArrayToVector(cx, 3, vp, mass.c) );
+	//JL_CHK( FloatArrayToVector(cx, 3, vp, mass.c) );
 	size_t length;
-	J_CHK( JsvalToFloatVector(cx, *vp, mass.c, 3, &length) );
-	J_S_ASSERT( length == 3, "Invalid array size." );
+	JL_CHK( JsvalToFloatVector(cx, *vp, mass.c, 3, &length) );
+	JL_S_ASSERT( length == 3, "Invalid array size." );
 	ode::dBodySetMass(bodyID, &mass);
 	return JS_TRUE;
 	JL_BAD;
@@ -195,9 +195,9 @@ DEFINE_PROPERTY( centerGetter ) {
 
 	ode::dBodyID bodyID;
 	ode::dMass mass;
-	J_CHK( GetBodyAndMass(cx, obj, &bodyID, &mass) );
-	//J_CHK( FloatVectorToArray(cx, 3, mass.c, vp) );
-	J_CHK( FloatVectorToJsval(cx, mass.c, 3, vp) );
+	JL_CHK( GetBodyAndMass(cx, obj, &bodyID, &mass) );
+	//JL_CHK( FloatVectorToArray(cx, 3, mass.c, vp) );
+	JL_CHK( FloatVectorToJsval(cx, mass.c, 3, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }

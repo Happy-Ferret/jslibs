@@ -24,10 +24,10 @@ DECLARE_CLASS( World )
 
 inline JSBool ValToWorldID( JSContext *cx, jsval val, ode::dWorldID *worldId ) {
 
-	J_S_ASSERT_OBJECT(val);
+	JL_S_ASSERT_OBJECT(val);
 	JSObject *worldObject = JSVAL_TO_OBJECT(val);
-	J_S_ASSERT_CLASS(worldObject, classWorld);
-	*worldId = (ode::dWorldID)JS_GetPrivate(cx,worldObject);
+	JL_S_ASSERT_CLASS(worldObject, classWorld);
+	*worldId = (ode::dWorldID)JL_GetPrivate(cx,worldObject);
 	return JS_TRUE;
 	JL_BAD;
 }

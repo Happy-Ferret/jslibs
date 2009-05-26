@@ -37,7 +37,7 @@ extern FT_Library _freetype;
 
 #define FTCHK( call ) do { \
 	if ( (call) != FT_Err_Ok ) { \
-		J_REPORT_ERROR("freetype error."); \
+		JL_REPORT_ERROR("freetype error."); \
 	} \
 } while(0)
 
@@ -63,11 +63,11 @@ BEGIN_CLASS( Font ) // Start the definition of the class. It defines some symbol
 
 DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are no remaing references to this object.
 
-	FT_Face face = (FT_Face)JS_GetPrivate(cx, obj);
+	FT_Face face = (FT_Face)JL_GetPrivate(cx, obj);
 	if ( face != NULL ) {
 
 		FT_Done_Face(face);
-		JS_SetPrivate(cx, obj, NULL);
+		JL_SetPrivate(cx, obj, NULL);
 	}
 }
 
@@ -81,27 +81,27 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
-	J_S_ASSERT_CONSTRUCTING();
-	J_S_ASSERT_THIS_CLASS();
-	J_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_CONSTRUCTING();
+	JL_S_ASSERT_THIS_CLASS();
+	JL_S_ASSERT_ARG_MIN(1);
 
 //	FT_Long faceIndex = 0;
 	int faceIndex;
-	if ( J_ARG_ISDEF(2) )
-		J_CHK( JsvalToInt(cx, J_ARG(2), &faceIndex) );
+	if ( JL_ARG_ISDEF(2) )
+		JL_CHK( JsvalToInt(cx, JL_ARG(2), &faceIndex) );
 	else
 		faceIndex = 0;
 
 	const char *filePathName;
-	J_CHK( JsvalToString(cx, &J_ARG(1), &filePathName) );
+	JL_CHK( JsvalToString(cx, &JL_ARG(1), &filePathName) );
 
 	FT_Face face;
 	FTCHK( FT_New_Face( _freetype, filePathName, faceIndex, &face ) );
 	// from memory: FT_New_Memory_Face
 	// see. FT_Open_Face
 
-	J_S_ASSERT_RESOURCE(face);
-	J_CHK( JS_SetPrivate(cx, obj, face) );
+	JL_S_ASSERT_RESOURCE(face);
+	JL_CHK( JL_SetPrivate(cx, obj, face) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -114,19 +114,19 @@ DEFINE_CONSTRUCTOR() {
 /*
 DEFINE_FUNCTION_FAST( SetSize ) {
 
-	J_S_ASSERT_ARG_MIN(2);
+	JL_S_ASSERT_ARG_MIN(2);
 
-	FT_Face face = (FT_Face)JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_RESOURCE(face);
+	FT_Face face = (FT_Face)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(face);
 
 	FT_UInt width, height;
 
-	J_CHK( JsvalToInt(cx, J_FARG(1), &width) ); // a value of 0 for one of the dimensions means same as the other.
-	J_CHK( JsvalToInt(cx, J_FARG(2), &height) );
+	JL_CHK( JsvalToInt(cx, JL_FARG(1), &width) ); // a value of 0 for one of the dimensions means same as the other.
+	JL_CHK( JsvalToInt(cx, JL_FARG(2), &height) );
 
 	FT_Error status;
 	status = FT_Set_Pixel_Sizes(face, width, height);
-	J_S_ASSERT( status == 0, "Unable to FT_Set_Pixel_Sizes." );
+	JL_S_ASSERT( status == 0, "Unable to FT_Set_Pixel_Sizes." );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -144,21 +144,21 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( DrawChar ) {
 
-	J_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_ARG_MIN(1);
 
 	FT_Face face;
-	face = (FT_Face)JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_RESOURCE(face);
+	face = (FT_Face)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(face);
 
-	J_S_ASSERT( face->size->metrics.height > 0, "Invalid font size." );
+	JL_S_ASSERT( face->size->metrics.height > 0, "Invalid font size." );
 
 	JSString *jsstr;
-	jsstr = JS_ValueToString(cx, J_FARG(1));
-	J_S_ASSERT( jsstr != NULL, "Invalid string." );
-	J_S_ASSERT( JL_GetStringLength(jsstr) == 1, "Invalid char" );
+	jsstr = JS_ValueToString(cx, JL_FARG(1));
+	JL_S_ASSERT( jsstr != NULL, "Invalid string." );
+	JL_S_ASSERT( JL_GetStringLength(jsstr) == 1, "Invalid char" );
 	jschar *str;
 	str = JS_GetStringChars(jsstr);
-	J_S_ASSERT( str != NULL, "Invalid string." );
+	JL_S_ASSERT( str != NULL, "Invalid string." );
 
 	FTCHK( FT_Load_Char(face, str[0], FT_LOAD_RENDER) );
 
@@ -174,14 +174,14 @@ DEFINE_FUNCTION_FAST( DrawChar ) {
 	buf = JS_malloc(cx, bufLength);
 
 	jsval blobVal;
-	J_CHK( J_NewBlob(cx, buf, bufLength, &blobVal) );
+	JL_CHK( JL_NewBlob(cx, buf, bufLength, &blobVal) );
 	JSObject *blobObj;
-	J_CHK( JS_ValueToObject(cx, blobVal, &blobObj) );
-	*J_FRVAL = OBJECT_TO_JSVAL( blobObj );
+	JL_CHK( JS_ValueToObject(cx, blobVal, &blobObj) );
+	*JL_FRVAL = OBJECT_TO_JSVAL( blobObj );
 
-	J_CHK( SetPropertyInt(cx, blobObj, "width", width) );
-	J_CHK( SetPropertyInt(cx, blobObj, "height", height) );
-	J_CHK( SetPropertyInt(cx, blobObj, "channels", 1) );
+	JL_CHK( SetPropertyInt(cx, blobObj, "width", width) );
+	JL_CHK( SetPropertyInt(cx, blobObj, "height", height) );
+	JL_CHK( SetPropertyInt(cx, blobObj, "channels", 1) );
 	memcpy( buf, face->glyph->bitmap.buffer, bufLength );
 
 	return JS_TRUE;
@@ -203,71 +203,71 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( DrawString ) {
 
-	J_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_ARG_MIN(1);
 
 	FT_Face face;
-	face = (FT_Face)JS_GetPrivate(cx, J_FOBJ);
-	J_S_ASSERT_RESOURCE(face);
+	face = (FT_Face)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(face);
 
-	J_S_ASSERT( face->size->metrics.height > 0, "Invalid font size." );
+	JL_S_ASSERT( face->size->metrics.height > 0, "Invalid font size." );
 
 	JSString *jsstr;
-	jsstr = JS_ValueToString(cx, J_FARG(1));
-	J_S_ASSERT( jsstr != NULL, "Invalid string." );
+	jsstr = JS_ValueToString(cx, JL_FARG(1));
+	JL_S_ASSERT( jsstr != NULL, "Invalid string." );
 	jschar *str;
 	str = JS_GetStringChars(jsstr);
-	J_S_ASSERT( str != NULL, "Invalid string." );
+	JL_S_ASSERT( str != NULL, "Invalid string." );
 	size_t strlen;
 	strlen = JL_GetStringLength(jsstr);
 
 	bool keepTrailingSpace;
 	keepTrailingSpace = false;
-	if ( J_FARG_ISDEF(2) )
-		J_CHK( JsvalToBool(cx, J_FARG(2), &keepTrailingSpace) );
+	if ( JL_FARG_ISDEF(2) )
+		JL_CHK( JsvalToBool(cx, JL_FARG(2), &keepTrailingSpace) );
 
 	bool getWidthOnly;
 	getWidthOnly = false;
-	if ( J_FARG_ISDEF(3) )
-		J_CHK( JsvalToBool(cx, J_FARG(3), &getWidthOnly) );
+	if ( JL_FARG_ISDEF(3) )
+		JL_CHK( JsvalToBool(cx, JL_FARG(3), &getWidthOnly) );
 
 
 	jsval tmp;
 
 	int letterSpacing;
 	letterSpacing = 0;
-	J_CHK( JS_GetReservedSlot(cx, J_FOBJ, FONT_SLOT_LETTERSPACING, &tmp) );
+	JL_CHK( JS_GetReservedSlot(cx, JL_FOBJ, FONT_SLOT_LETTERSPACING, &tmp) );
 	if ( !JSVAL_IS_VOID( tmp ) )
-		J_CHK( JsvalToInt(cx, tmp, &letterSpacing) );
+		JL_CHK( JsvalToInt(cx, tmp, &letterSpacing) );
 
 	int horizontalPadding;
 	horizontalPadding = 0;
-	J_CHK( JS_GetReservedSlot(cx, J_FOBJ, FONT_SLOT_HORIZONTALPADDING, &tmp) );
+	JL_CHK( JS_GetReservedSlot(cx, JL_FOBJ, FONT_SLOT_HORIZONTALPADDING, &tmp) );
 	if ( !JSVAL_IS_VOID( tmp ) )
-		J_CHK( JsvalToInt(cx, tmp, &horizontalPadding) );
+		JL_CHK( JsvalToInt(cx, tmp, &horizontalPadding) );
 
 	int verticalPadding;
 	verticalPadding = 0;
-	J_CHK( JS_GetReservedSlot(cx, J_FOBJ, FONT_SLOT_VERTICALPADDING, &tmp) );
+	JL_CHK( JS_GetReservedSlot(cx, JL_FOBJ, FONT_SLOT_VERTICALPADDING, &tmp) );
 	if ( !JSVAL_IS_VOID( tmp ) )
-		J_CHK( JsvalToInt(cx, tmp, &verticalPadding) );
+		JL_CHK( JsvalToInt(cx, tmp, &verticalPadding) );
 
 	bool useKerning;
 	useKerning = true;
-	J_CHK( JS_GetReservedSlot(cx, J_FOBJ, FONT_SLOT_USEKERNING, &tmp) );
+	JL_CHK( JS_GetReservedSlot(cx, JL_FOBJ, FONT_SLOT_USEKERNING, &tmp) );
 	if ( !JSVAL_IS_VOID( tmp ) )
-		J_CHK( JsvalToBool(cx, tmp, &useKerning) );
+		JL_CHK( JsvalToBool(cx, tmp, &useKerning) );
 
 	bool isItalic;
 	isItalic = false;
-	J_CHK( JS_GetReservedSlot(cx, J_FOBJ, FONT_SLOT_ITALIC, &tmp) );
+	JL_CHK( JS_GetReservedSlot(cx, JL_FOBJ, FONT_SLOT_ITALIC, &tmp) );
 	if ( !JSVAL_IS_VOID( tmp ) )
-		J_CHK( JsvalToBool(cx, tmp, &isItalic) );
+		JL_CHK( JsvalToBool(cx, tmp, &isItalic) );
 
 	bool isBold;
 	isBold = false;
-	J_CHK( JS_GetReservedSlot(cx, J_FOBJ, FONT_SLOT_BOLD, &tmp) );
+	JL_CHK( JS_GetReservedSlot(cx, JL_FOBJ, FONT_SLOT_BOLD, &tmp) );
 	if ( !JSVAL_IS_VOID( tmp ) )
-		J_CHK( JsvalToBool(cx, tmp, &isBold) );
+		JL_CHK( JsvalToBool(cx, tmp, &isBold) );
 
 
 	typedef struct {
@@ -340,7 +340,7 @@ DEFINE_FUNCTION_FAST( DrawString ) {
 
 	if ( getWidthOnly ) {
 
-		*J_FRVAL = INT_TO_JSVAL( width );
+		*JL_FRVAL = INT_TO_JSVAL( width );
 	} else {
 
 		// allocates the resulting image buffer
@@ -349,14 +349,14 @@ DEFINE_FUNCTION_FAST( DrawString ) {
 		char *buf = (char*)JS_malloc(cx, bufLength); // JS_malloc do not supports 0 bytes size
 
 		jsval blobVal;
-		J_CHK( J_NewBlob(cx, buf, bufLength, &blobVal) );
+		JL_CHK( JL_NewBlob(cx, buf, bufLength, &blobVal) );
 		JSObject *blobObj;
-		J_CHK( JS_ValueToObject(cx, blobVal, &blobObj) );
-		*J_FRVAL = OBJECT_TO_JSVAL( blobObj );
+		JL_CHK( JS_ValueToObject(cx, blobVal, &blobObj) );
+		*JL_FRVAL = OBJECT_TO_JSVAL( blobObj );
 
-		J_CHK( SetPropertyInt(cx, blobObj, "width", width) );
-		J_CHK( SetPropertyInt(cx, blobObj, "height", height) );
-		J_CHK( SetPropertyInt(cx, blobObj, "channels", 1) );
+		JL_CHK( SetPropertyInt(cx, blobObj, "width", width) );
+		JL_CHK( SetPropertyInt(cx, blobObj, "height", height) );
+		JL_CHK( SetPropertyInt(cx, blobObj, "channels", 1) );
 
 		// render glyphs in the bitmap
 		memset(buf, 0, bufLength);
@@ -409,8 +409,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( ascender ) {
 
-	FT_Face face = (FT_Face)JS_GetPrivate(cx, J_OBJ);
-	J_S_ASSERT_RESOURCE(face);
+	FT_Face face = (FT_Face)JL_GetPrivate(cx, JL_OBJ);
+	JL_S_ASSERT_RESOURCE(face);
 	*vp = INT_TO_JSVAL(face->size->metrics.ascender >> 6);
 	return JS_TRUE;
 	JL_BAD;
@@ -425,8 +425,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( descender ) {
 
-	FT_Face face = (FT_Face)JS_GetPrivate(cx, J_OBJ);
-	J_S_ASSERT_RESOURCE(face);
+	FT_Face face = (FT_Face)JL_GetPrivate(cx, JL_OBJ);
+	JL_S_ASSERT_RESOURCE(face);
 	*vp = INT_TO_JSVAL(face->size->metrics.descender >> 6);
 	return JS_TRUE;
 	JL_BAD;
@@ -439,8 +439,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( width ) {
 
-	FT_Face face = (FT_Face)JS_GetPrivate(cx, J_OBJ);
-	J_S_ASSERT_RESOURCE(face);
+	FT_Face face = (FT_Face)JL_GetPrivate(cx, JL_OBJ);
+	JL_S_ASSERT_RESOURCE(face);
 	*vp = INT_TO_JSVAL(face->size->metrics.max_advance >> 6);
 	return JS_TRUE;
 	JL_BAD;
@@ -454,15 +454,15 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( size ) {
 
-	FT_Face face = (FT_Face)JS_GetPrivate(cx, J_OBJ);
-	J_S_ASSERT_RESOURCE(face);
+	FT_Face face = (FT_Face)JL_GetPrivate(cx, JL_OBJ);
+	JL_S_ASSERT_RESOURCE(face);
 
 	int size;
 	size = 0;
 	if ( !JSVAL_IS_VOID( *vp ) )
-		J_CHK( JsvalToInt(cx, *vp, &size) );
+		JL_CHK( JsvalToInt(cx, *vp, &size) );
 
-	J_S_ASSERT( size >= 0, "Invalid font size." );
+	JL_S_ASSERT( size >= 0, "Invalid font size." );
 	FTCHK( FT_Set_Pixel_Sizes(face, size, size) );
 	return JS_TRUE;
 	JL_BAD;
@@ -496,10 +496,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( encoding ) {
 
-	FT_Face face = (FT_Face)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(face);
+	FT_Face face = (FT_Face)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(face);
 	int encoding;
-	J_CHK( JsvalToInt(cx, *vp, &encoding) );
+	JL_CHK( JsvalToInt(cx, *vp, &encoding) );
 	FTCHK( FT_Select_Charmap(face, (FT_Encoding)encoding) );
 	return JS_TRUE;
 	JL_BAD;
@@ -513,9 +513,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( poscriptName ) {
 
-	FT_Face face = (FT_Face)JS_GetPrivate(cx, obj);
-	J_S_ASSERT_RESOURCE(face);
-	J_CHK( StringToJsval(cx, FT_Get_Postscript_Name(face), vp) );
+	FT_Face face = (FT_Face)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(face);
+	JL_CHK( StringToJsval(cx, FT_Get_Postscript_Name(face), vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
