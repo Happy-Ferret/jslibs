@@ -2,19 +2,26 @@ LoadModule('jsstd');
 LoadModule('jsode');
 
 var world = new World;
-world.gravity = [0,0,-9.81];
+world.gravity = [0,0,-9.809];
 var floor = new GeomPlane(world.space);
-//floor.body = world.env;
+floor.body = world.env;
 
-var body1 = new Body(world);
-var geom = new GeomSphere(world.space);
-geom.body = body1;
-geom.impact = function(n, b1, b2, pos) { Print('impact '+n+' at [ '+pos[0].toFixed(2)+' , '+pos[1].toFixed(2)+' , '+pos[2].toFixed(2)+' ]\n') }
+var ball = new GeomSphere(world.space);
+ball.body = new Body(world);
+ball.impact = function(n, geom1, geom2, pos) { 
+	
+	if ( geom1.body.linearVel[2] < 0 )
+		Print('impact velocity: '+-geom1.body.linearVel[2].toFixed(2)+'\n' );
+}
 
-world.defaultSurfaceParameters.bounce = 0.7;
+world.defaultSurfaceParameters.bounce = 0.8;
 world.defaultSurfaceParameters.bounceVel = 0;
 
-body1.position = [0,0,5];
+ball.body.position = [0,0,5];
+
+Print('Gravity is '+(-world.gravity[2])+' m/s^2\n');
+Print('Placing the ball at '+ball.body.position[2]+' m high.\n');
+Print('Starting the simulation...\n');
 
 while ( !endSignal ) {
 
