@@ -1,15 +1,15 @@
                                jslibs
-                               $(type) $(version) r$(revision)
-
-
-DESCRIPTION:
-  jslibs is a standalone JavaScript development runtime environment for using JavaScript as a general-purpose scripting language.
-  Check the project website http://jslibs.googlecode.com for more details.
+                               $(type) $(version) r$(revision) win32
 
 
 LICENSE:
   This software is under the GNU GENERAL PUBLIC LICENSE Version 2
   Refer to the file gpl-2.0.txt for license agreement.
+
+
+DESCRIPTION:
+  jslibs is a standalone JavaScript development runtime environment for using JavaScript as a general-purpose scripting language.
+  Check the project website http://jslibs.googlecode.com for more details.
 
 
 IMPORTANT:
