@@ -15,7 +15,7 @@ LoadModule('jstrimesh');
 
 	t.DefineIndexBuffer([
 		0,1,2,
-		0,3,1,4
+		0,3,1
 	]);
 
 

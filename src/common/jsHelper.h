@@ -481,7 +481,7 @@ ALWAYS_INLINE jsdouble JsvalIsInfinity( JSContext *cx, jsval val ) {
 ALWAYS_INLINE bool JsvalIsPInfinity( JSContext *cx, jsval val ) {
 
 #ifdef DEBUG
-	JS_ASSERT( *cx->runtime->jsPositiveInfinity == JS_GetPositiveInfinityValue(cx) ); // Mozilla JS engine private API behavior has changed.
+	JS_ASSERT( *cx->runtime->jsPositiveInfinity == *JSVAL_TO_DOUBLE(JS_GetPositiveInfinityValue(cx)) ); // Mozilla JS engine private API behavior has changed.
 #endif //DEBUG
 	return JSVAL_IS_DOUBLE(val) && *JSVAL_TO_DOUBLE(val) == *cx->runtime->jsPositiveInfinity; // JS_GetPositiveInfinityValue
 }
@@ -489,7 +489,7 @@ ALWAYS_INLINE bool JsvalIsPInfinity( JSContext *cx, jsval val ) {
 ALWAYS_INLINE bool JsvalIsNInfinity( JSContext *cx, jsval val ) {
 
 #ifdef DEBUG
-	JS_ASSERT( *cx->runtime->jsNegativeInfinity == JS_GetNegativeInfinityValue(cx) ); // Mozilla JS engine private API behavior has changed.
+	JS_ASSERT( *cx->runtime->jsNegativeInfinity == *JSVAL_TO_DOUBLE(JS_GetNegativeInfinityValue(cx)) ); // Mozilla JS engine private API behavior has changed.
 #endif //DEBUG
 	return JSVAL_IS_DOUBLE(val) && *JSVAL_TO_DOUBLE(val) == *cx->runtime->jsNegativeInfinity; // JS_GetNegativeInfinityValue
 }
