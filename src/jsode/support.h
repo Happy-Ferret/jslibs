@@ -12,11 +12,17 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-inline ode::dReal JSValToODEReal( JSContext *cx, jsval val ) {
+ALWAYS_INLINE ode::dReal JSValToODEReal( JSContext *cx, jsval val ) {
+
+	if ( JsvalIsPInfinity(cx, val) )
+		return dInfinity;
+	if ( JsvalIsNInfinity(cx, val) )
+		return -dInfinity;
 
 	jsdouble value;
-	if ( JS_ValueToNumber(cx, val, &value) == JS_FALSE ) // (TBD) manage errors
+	if (unlikely( JsvalToDouble(cx, val, &value) != JS_TRUE )) // (TBD) manage errors
 		return 0;
+
 	if ( value > dInfinity )
 		return dInfinity;
 	if ( value < -dInfinity )

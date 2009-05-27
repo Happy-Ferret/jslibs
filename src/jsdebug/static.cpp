@@ -38,7 +38,7 @@
 #include "string.h"
 
 extern jl::Queue *scriptFileList;
-JSBool GetScriptLocation( JSContext *cx, jsval *val, uintN lineno, JSScript **script, jsbytecode **pc );
+JSBool GetScriptLocation( JSContext *cx, jsval *val, uintN lineno, JSScript **script, jsbytecode **pc ); // defined in main.cpp
 
 
 int _puts(JSContext *cx, const char *str) {
@@ -992,7 +992,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( currentFilename ) {
 
-	JSStackFrame *fp = CurrentStackFrame(cx);
+	JSStackFrame *fp = JL_CurrentStackFrame(cx);
 	if ( fp == NULL ) {
 
 		*vp = JSVAL_VOID;
@@ -1055,7 +1055,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( stackSize ) {
 
-	return IntToJsval(cx, StackSize(cx, CurrentStackFrame(cx)), vp);
+	return IntToJsval(cx, JL_StackSize(cx, JL_CurrentStackFrame(cx)), vp);
 }
 
 
@@ -1087,7 +1087,7 @@ DEFINE_FUNCTION_FAST( StackFrameInfo ) {
 	JL_CHK( JsvalToUInt(cx, JL_FARG(1), &frameIndex) );
 
 	JSStackFrame *fp;
-	fp = StackFrameByIndex(cx, frameIndex);
+	fp = JL_StackFrameByIndex(cx, frameIndex);
 	if ( fp == NULL ) {
 
 		*JL_FRVAL = JSVAL_VOID;
@@ -1183,7 +1183,7 @@ DEFINE_FUNCTION_FAST( EvalInStackFrame ) {
 	JL_CHK( JsvalToUInt(cx, JL_FARG(2), &frameIndex) );
 
 	JSStackFrame *fp;
-	fp = StackFrameByIndex(cx, frameIndex);
+	fp = JL_StackFrameByIndex(cx, frameIndex);
 
 	if ( fp == NULL ) {
 
@@ -1242,10 +1242,10 @@ DEFINE_FUNCTION_FAST( Locate ) {
 
 		int frame;
 		JL_CHK( JsvalToInt(cx, JL_FARG(1), &frame) );
-		fp = StackFrameByIndex(cx, frame);
+		fp = JL_StackFrameByIndex(cx, frame);
 	} else {
 
-		fp = CurrentStackFrame(cx);
+		fp = JL_CurrentStackFrame(cx);
 	}
 
 	if ( fp == NULL ) {
@@ -1503,7 +1503,7 @@ DEFINE_FUNCTION( Test ) {
 
 CONFIGURE_STATIC
 
-	REVISION(SvnRevToInt("$Revision$"))
+	REVISION(JL_SvnRevToInt("$Revision$"))
 	BEGIN_STATIC_FUNCTION_SPEC
 		FUNCTION( GetObjectPrivate )
 		FUNCTION( DumpStats )

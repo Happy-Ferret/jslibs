@@ -59,7 +59,7 @@ DEFINE_PROPERTY( text ) {
 
 DEFINE_HAS_INSTANCE() { // see issue#52
 
-	*bp = !JSVAL_IS_PRIMITIVE(v) && OBJ_GET_CLASS(cx, JSVAL_TO_OBJECT(v)) == _class;
+	*bp = !JSVAL_IS_PRIMITIVE(v) && JL_GetClass(JSVAL_TO_OBJECT(v)) == _class;
 	return JS_TRUE;
 }
 
@@ -99,7 +99,7 @@ DEFINE_XDR() {
 
 CONFIGURE_CLASS
 
-	REVISION(SvnRevToInt("$Revision: $"))
+	REVISION(JL_SvnRevToInt("$Revision: $"))
 
 	HAS_XDR
 

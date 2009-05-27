@@ -385,7 +385,7 @@ JSBool ReadAmount( JSContext *cx, JSObject *obj, size_t amount, jsval *rval ) {
 
 	str[amount] = '\0'; // (TBD) explain this
 
-	if ( MaybeRealloc( requestedAmount, amount ) ) {
+	if ( JL_MaybeRealloc( requestedAmount, amount ) ) {
 
 		str = (char*)JS_realloc(cx, str, amount +1);
 		JL_CHK( str );
@@ -1073,7 +1073,7 @@ $TOC_MEMBER $INAME
 
 CONFIGURE_CLASS
 
-	REVISION(SvnRevToInt("$Revision$"))
+	REVISION(JL_SvnRevToInt("$Revision$"))
 
 	HAS_PRIVATE
 	HAS_RESERVED_SLOTS(1)

@@ -29,6 +29,7 @@ struct ColideContextPrivate {
 	ode::dSurfaceParameters *defaultSurfaceParameters;
 	ode::dJointGroupID contactGroupId;
 	ode::dWorldID worldId;
+	int maxContacts;
 //	int contactCount;
 };
 
@@ -44,8 +45,8 @@ static void nearCallback(void *data, ode::dGeomID o1, ode::dGeomID o2) {
 	if (Body1 && Body2 && dAreConnected(Body1, Body2))
 		return;
 
-	ode::dContact contact[MAX_CONTACTS]; // (TBD) make this configurable.
-	int n = ode::dCollide(o1, o2, MAX_CONTACTS, &contact[0].geom, sizeof(ode::dContact)); // (TBD) or sizeof(ode::dContactGeom) ??? // It is an error for skip to be smaller than sizeof(dContactGeom).
+	ode::dContact contact[MAX_CONTACTS];
+	int n = ode::dCollide(o1, o2, ccp->maxContacts, &contact[0].geom, sizeof(ode::dContact)); // (TBD) or sizeof(ode::dContactGeom) ??? // It is an error for skip to be smaller than sizeof(dContactGeom).
 
 	if ( n <= 0 )
 		return;
@@ -74,43 +75,46 @@ static void nearCallback(void *data, ode::dGeomID o1, ode::dGeomID o2) {
 		func2 = JSVAL_VOID;
 	}
 
-
 	for ( int i=0; i<n; i++ ) {
 
-//			ode::dVector3 vel;
-		if ( !JSVAL_IS_VOID( func1 ) || !JSVAL_IS_VOID( func2 ) ) { // compute impact velocity only if needed
-/*
+		ode::dVector3 vel;
+		
+		if ( !JSVAL_IS_VOID( func1 ) || !JSVAL_IS_VOID( func2 ) ) { // compute impact velocity only if needed.
 
-			ode::dVector3 *pos = &contact[i].geom.pos;
-			ode::dVector3 vel2;
+			ode::dVector3 vel2, *pos = &contact[i].geom.pos;
+
 			if ( Body1 != NULL ) {
 
-				ode::dBodyGetPointVel( Body1, *pos[0], *pos[1], *pos[2], vel ); // dReal px, dReal py, dReal pz, dVector3 result
+				ode::dBodyGetPointVel(Body1, *pos[0], *pos[1], *pos[2], vel); // dReal px, dReal py, dReal pz, dVector3 result
 			} else { // static thing
 
-				vel[0] = 0; vel[1] = 0; vel[2] = 0;
+				vel[0] = 0;
+				vel[1] = 0; 
+				vel[2] = 0;
 			}
 
 			if ( Body2 != NULL ) {
 
-				ode::dBodyGetPointVel( Body2, *pos[0], *pos[1], *pos[2], vel2 ); // dReal px, dReal py, dReal pz, dVector3 result
+				ode::dBodyGetPointVel(Body2, *pos[0], *pos[1], *pos[2], vel2); // dReal px, dReal py, dReal pz, dVector3 result
 			} else { // static thing
 
-				vel2[0] = 0; vel2[1] = 0; vel2[2] = 0;
+				vel2[0] = 0; 
+				vel2[1] = 0; 
+				vel2[2] = 0;
 			}
 
 			vel[0] += vel2[0];
 			vel[1] += vel2[1];
 			vel[2] += vel2[2];
-*/
 
-			jsval pos;
+			jsval tmp, posVal, velVal;
 			//FloatVectorToArray(cx, 3, contact[i].geom.pos, &pos);
-			FloatVectorToJsval(cx, contact[i].geom.pos, 3, &pos);
+			JL_CHK( FloatVectorToJsval(cx, contact[i].geom.pos, 3, &posVal) );
+			JL_CHK( FloatVectorToJsval(cx, vel, 3, &velVal) );
 
 			if ( !JSVAL_IS_VOID( func1 ) ) {
 
-				jsval tmp, argv[] = { INT_TO_JSVAL(i), OBJECT_TO_JSVAL(obj1), obj2 ? OBJECT_TO_JSVAL(obj2) : JSVAL_VOID, pos }; // INT_TO_JSVAL(vel[0]), INT_TO_JSVAL(vel[1]), INT_TO_JSVAL(vel[2])
+				jsval argv[] = { INT_TO_JSVAL(i), OBJECT_TO_JSVAL(obj1), obj2 ? OBJECT_TO_JSVAL(obj2) : JSVAL_VOID, posVal, velVal }; // INT_TO_JSVAL(vel[0]), INT_TO_JSVAL(vel[1]), INT_TO_JSVAL(vel[2])
 				// GC protection seems to be not needed because these objects (obj1 and obj2) have an owner
 				// (TBD) check the previous comment.
 				JL_CHK( JS_CallFunctionValue(cx, obj1, func1, COUNTOF(argv), argv, &tmp) );
@@ -118,13 +122,40 @@ static void nearCallback(void *data, ode::dGeomID o1, ode::dGeomID o2) {
 
 			if ( !JSVAL_IS_VOID( func2 ) ) {
 
-				jsval tmp, argv[] = { INT_TO_JSVAL(i), OBJECT_TO_JSVAL(obj2), obj1 ? OBJECT_TO_JSVAL(obj1) : JSVAL_VOID, pos }; // INT_TO_JSVAL(vel[0]), INT_TO_JSVAL(vel[1]), INT_TO_JSVAL(vel[2])
+				jsval argv[] = { INT_TO_JSVAL(i), OBJECT_TO_JSVAL(obj2), obj1 ? OBJECT_TO_JSVAL(obj1) : JSVAL_VOID, posVal, velVal }; // INT_TO_JSVAL(vel[0]), INT_TO_JSVAL(vel[1]), INT_TO_JSVAL(vel[2])
 				// GC protection seems to be not needed because these objects (obj1 and obj2) have an owner
 				// (TBD) check the previous comment.
 				JL_CHK( JS_CallFunctionValue( cx, obj2, func2, COUNTOF(argv), argv, &tmp) );
 			}
 		}
 
+		
+/*
+		// tentative of fusion two differents surface parameters:
+		//   http://www.google.com/codesearch/p?hl=en#OdJU363NVS8/plugins/scmsvn/viewcvs.php/Feedback/Sources/PsOde/PsOdeWorld.cc%3Frev%3D3&amp;root%3Dopenmask&amp;view%3Dmarkup-001&q=dSurfaceParameters&l=51
+		// doc
+		//   http://opende.sourceforge.net/wiki/index.php/Manual_(Joint_Types_and_Functions)#Contact
+
+		jsval obj1surf, obj2surf;
+		JL_CHK( JS_GetReservedSlot(cx, obj1, SLOT_GEOM_SURFACEPARAMETER, &obj1surf) );
+		if ( JsvalIsClass(obj1surf, classSurfaceParameters) ) {
+			
+			ode::dSurfaceParameters *surf = (ode::dSurfaceParameters*)JL_GetPrivate(cx, JSVAL_TO_OBJECT(obj1surf));
+			JL_S_ASSERT_RESOURCE( surf );
+			contact[i].surface = *surf;
+		} else {
+
+			contact[i].surface = *ccp->defaultSurfaceParameters;
+		}
+
+		JL_CHK( JS_GetReservedSlot(cx, obj2, SLOT_GEOM_SURFACEPARAMETER, &obj2surf) );
+		if ( JsvalIsClass(obj2surf, classSurfaceParameters) ) {
+
+			ode::dSurfaceParameters *surf = (ode::dSurfaceParameters*)JL_GetPrivate(cx, JSVAL_TO_OBJECT(obj1surf));
+			JL_S_ASSERT_RESOURCE( surf );
+
+		}
+*/
 		contact[i].surface = *ccp->defaultSurfaceParameters;
 
 		// mixing :
@@ -257,6 +288,7 @@ DEFINE_FUNCTION( Step ) {
 	ccp.defaultSurfaceParameters = defaultSurfaceParameters;
 	ccp.contactGroupId = contactgroup;
 	ccp.worldId = worldID;
+	ccp.maxContacts = 3; // (TBD) make this configurable
 
 	ode::dSpaceCollide(spaceId, (void*)&ccp, &nearCallback);
 
@@ -409,7 +441,7 @@ $TOC_MEMBER $INAME
 
 CONFIGURE_CLASS
 
-	REVISION(SvnRevToInt("$Revision$"))
+	REVISION(JL_SvnRevToInt("$Revision$"))
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE
 

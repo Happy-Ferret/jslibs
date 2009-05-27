@@ -177,7 +177,7 @@ DEFINE_PROPERTY( angleRate ) {
 
 CONFIGURE_CLASS
 
-	REVISION(SvnRevToInt("$Revision$"))
+	REVISION(JL_SvnRevToInt("$Revision$"))
 	HAS_CONSTRUCTOR
 
 	BEGIN_PROPERTY_SPEC

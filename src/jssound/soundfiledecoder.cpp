@@ -273,7 +273,7 @@ $TOC_MEMBER $INAME
 
 			totalSize = items * sizeof(short);
 
-			if ( MaybeRealloc(amount, totalSize) )
+			if ( JL_MaybeRealloc(amount, totalSize) )
 				buf = (char*)realloc(buf, totalSize);
 		}
 
@@ -434,7 +434,7 @@ DEFINE_PROPERTY( frames ) {
 
 CONFIGURE_CLASS
 
-	REVISION(SvnRevToInt("$Revision$"))
+	REVISION(JL_SvnRevToInt("$Revision$"))
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE
 

@@ -105,7 +105,7 @@ DEFINE_FUNCTION( Stringify ) {
 
 CONFIGURE_STATIC
 
-//	REVISION(SvnRevToInt("$Revision$")) // avoid to set a revision to the global context
+//	REVISION(JL_SvnRevToInt("$Revision$")) // avoid to set a revision to the global context
 	BEGIN_STATIC_FUNCTION_SPEC
 		FUNCTION_ARGC( Stringify, 1 )
 	END_STATIC_FUNCTION_SPEC

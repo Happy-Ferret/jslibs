@@ -188,7 +188,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	scriptFileList = jl::QueueConstruct();
 
 	// record the caller's scripts (at least).
-	for ( JSStackFrame *fp = CurrentStackFrame(cx); fp; fp = fp->down ) { // cf. JS_FrameIterator
+	for ( JSStackFrame *fp = JL_CurrentStackFrame(cx); fp; fp = fp->down ) { // cf. JS_FrameIterator
 	
 		JSScript *script = JS_GetFrameScript(cx, fp);
 		if ( !script ) // !JS_IsNativeFrame ?

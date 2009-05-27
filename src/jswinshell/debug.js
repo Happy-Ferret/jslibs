@@ -1,7 +1,17 @@
 LoadModule('jsstd');
-LoadModule('jsnspr');
 LoadModule('jsimage');
 LoadModule('jswinshell');
+
+try {
+
+	Print( uneval( RegistryGet('HKEY_CURRENT_USER\\Software\\7-Zip\\') ) );
+
+} catch(ex) {
+
+	Print(ex.text);
+}
+
+Halt(); //////////////////////////////////////////////////////////////////////
 
 // MessageBox() Flags
 const MB = {

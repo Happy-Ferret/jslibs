@@ -181,7 +181,7 @@ DEFINE_FUNCTION( HexDecode ) {
 
 CONFIGURE_STATIC
 
-	REVISION(SvnRevToInt("$Revision$"))
+	REVISION(JL_SvnRevToInt("$Revision$"))
 	BEGIN_STATIC_FUNCTION_SPEC
 		FUNCTION( Base64Encode )
 		FUNCTION( Base64Decode )

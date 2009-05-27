@@ -80,7 +80,7 @@ CONFIGURE_CLASS // This section containt the declaration and the configuration o
 //	HAS_XDR
 
 
-	REVISION(SvnRevToInt("$Revision$"))
+	REVISION(JL_SvnRevToInt("$Revision$"))
 	HAS_PRIVATE
 //	HAS_RESERVED_SLOTS(1)
 

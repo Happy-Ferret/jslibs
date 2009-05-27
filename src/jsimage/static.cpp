@@ -436,7 +436,7 @@ DEFINE_FUNCTION_FAST( EncodePngImage ) {
 
 CONFIGURE_STATIC
 
-	REVISION(SvnRevToInt("$Revision$"))
+	REVISION(JL_SvnRevToInt("$Revision$"))
 	BEGIN_STATIC_FUNCTION_SPEC
 		FUNCTION( DecodePngImage )
 		FUNCTION_FAST( EncodePngImage )

@@ -133,7 +133,7 @@ DEFINE_XDR() {
 
 
 CONFIGURE_CLASS
-	REVISION(SvnRevToInt("$Revision$"))
+	REVISION(JL_SvnRevToInt("$Revision$"))
 	HAS_CONSTRUCTOR
 	HAS_XDR
 END_CLASS

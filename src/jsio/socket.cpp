@@ -79,7 +79,7 @@ $TOC_MEMBER $INAME
   $LF
   if _what_ is $TRUE, further sends will be disallowed.
   $LF
-  if _what_ is ommited or $UNDEF,  further sends and receives will be disallowed
+  if _what_ is ommited or $UNDEF, further sends and receives will be disallowed
 **/
 DEFINE_FUNCTION( Shutdown ) { // arg[0] =  false: SHUTDOWN_RCV | true: SHUTDOWN_SEND | else it will SHUTDOWN_BOTH
 
@@ -986,7 +986,7 @@ $TOC_MEMBER $INAME
 
 CONFIGURE_CLASS
 
-	REVISION(SvnRevToInt("$Revision$"))
+	REVISION(JL_SvnRevToInt("$Revision$"))
 	HAS_PROTOTYPE( prototypeDescriptor )
 
 	HAS_CONSTRUCTOR

@@ -992,7 +992,7 @@ DEFINE_PROPERTY( hasAltiVec ) {
 
 CONFIGURE_STATIC
 
-	REVISION(SvnRevToInt("$Revision$"))
+	REVISION(JL_SvnRevToInt("$Revision$"))
 	BEGIN_STATIC_FUNCTION_SPEC
 		FUNCTION_FAST( GetVideoModeList )
 		FUNCTION_FAST( VideoModeOK )

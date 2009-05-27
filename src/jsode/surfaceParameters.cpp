@@ -25,9 +25,9 @@ BEGIN_CLASS( SurfaceParameters )
 DEFINE_FINALIZE() {
 
 	ode::dSurfaceParameters *data = (ode::dSurfaceParameters*)JL_GetPrivate(cx, obj);
-	if ( data != NULL )
-		free(data);
-	JL_SetPrivate(cx, obj, NULL);
+	if ( !data )
+		return;
+	free(data);
 }
 
 /**doc
@@ -58,32 +58,40 @@ DEFINE_CONSTRUCTOR() {
 
 /**doc
 $TOC_MEMBER $INAME
- $REAL *mu*
-
+ * $REAL *mu*
+  Coulomb friction coefficient. This must be in the range 0 to dInfinity. 0 results in a frictionless contact, and dInfinity results in a contact that never slips.
+  Note that frictionless contacts are less time consuming to compute than ones with friction, and infinite friction contacts can be cheaper than contacts with finite friction.
+  This must always be set.
+ 
  * $REAL *mu2*
+  Optional Coulomb friction coefficient for friction direction 2 (0..dInfinity).
 
  * $REAL *bounce*
+  Restitution parameter (0..1). 0 means the surfaces are not bouncy at all, 1 is maximum bouncyness.
 
  * $REAL *bounceVel*
+  The minimum incoming velocity necessary for bounce. Incoming velocities below this will effectively have a bounce parameter of 0.
 
  * $REAL *softERP*
+  Contact normal "softness" parameter. 
 
  * $REAL *softCFM*
+  Contact normal "softness" parameter.
 
- * $REAL *motion1*
+ * $REAL *motion1*, $REAL *motion2*, $REAL motionN
+  Surface velocity in friction directions 1 and 2 and along the normal.
 
- * $REAL *motion2*
-
- * $REAL *slip1*
-
- * $REAL *slip2*
+ * $REAL *slip1*, $REAL *slip2*
+  The coefficients of force-dependent-slip (FDS) for friction directions 1 and 2. 
 
  $H note
   Use $UNDEF as value to reset the property.
 
+ $H ODE API
+  [http://opende.sourceforge.net/wiki/index.php/Manual_(Joint_Types_and_Functions)#Contact dSurfaceParameters]
 **/
 
-enum { mu, mu2, bounce, bounceVel, softERP, softCFM, motion1, motion2, slip1, slip2 };
+enum { mu, mu2, bounce, bounceVel, softERP, softCFM, motion1, motion2, motionN, slip1, slip2 };
 
 DEFINE_PROPERTY_NULL( surfaceGetter )
 
@@ -145,6 +153,10 @@ DEFINE_PROPERTY( surfaceSetter ) {
 			SETBIT( surface->mode, ode::dContactMotion2, set );
 			if ( set )
 				surface->motion2 = value;
+		case motionN:
+			SETBIT( surface->mode, ode::dContactMotionN, set );
+			if ( set )
+				surface->motionN = value;
 		case slip1:
 			SETBIT( surface->mode, ode::dContactSlip1, set );
 			if ( set )
@@ -156,6 +168,7 @@ DEFINE_PROPERTY( surfaceSetter ) {
 				surface->slip2 = value;
 			break;
 	}
+
 // Doc: http://opende.sourceforge.net/wiki/index.php/Manual_%28Joint_Types_and_Functions%29#Contact
 // (TBD) manage this:
 // dContactFDir1 ?
@@ -170,7 +183,7 @@ DEFINE_PROPERTY( surfaceSetter ) {
 
 CONFIGURE_CLASS
 
-	REVISION(SvnRevToInt("$Revision$"))
+	REVISION(JL_SvnRevToInt("$Revision$"))
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE
 
@@ -183,6 +196,7 @@ CONFIGURE_CLASS
 		PROPERTY_SWITCH_STORE( softCFM  , surface )
 		PROPERTY_SWITCH_STORE( motion1  , surface )
 		PROPERTY_SWITCH_STORE( motion2  , surface )
+		PROPERTY_SWITCH_STORE( motionN  , surface )
 		PROPERTY_SWITCH_STORE( slip1    , surface )
 		PROPERTY_SWITCH_STORE( slip2    , surface )
 	END_PROPERTY_SPEC

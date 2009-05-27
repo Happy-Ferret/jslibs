@@ -135,7 +135,7 @@ DEFINE_FUNCTION_FAST( Read ) {
 	readAmount = amount;
 	JL_CHK( StreamRead(cx, JL_FOBJ, buffer, &readAmount ) );
 
-	if ( MaybeRealloc(amount, readAmount) )
+	if ( JL_MaybeRealloc(amount, readAmount) )
 		buffer = (char*)JS_realloc(cx, buffer, readAmount +1);
 
 	buffer[readAmount] = '\0';
@@ -224,7 +224,7 @@ DEFINE_PROPERTY( source ) {
 
 CONFIGURE_CLASS
 
-	REVISION(SvnRevToInt("$Revision$"))
+	REVISION(JL_SvnRevToInt("$Revision$"))
 	HAS_CONSTRUCTOR
 	HAS_RESERVED_SLOTS(2)
 

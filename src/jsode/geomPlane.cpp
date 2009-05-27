@@ -82,12 +82,13 @@ DEFINE_PROPERTY( lengthsGetter ) {
 
 CONFIGURE_CLASS
 
-	REVISION(SvnRevToInt("$Revision$"))
+	REVISION(JL_SvnRevToInt("$Revision$"))
 	HAS_FINALIZE
 
 	HAS_PROTOTYPE( prototypeGeom )
 	HAS_CONSTRUCTOR
 
 	HAS_PRIVATE
+	HAS_RESERVED_SLOTS(1)
 
 END_CLASS

@@ -504,7 +504,7 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostOutput stdOut, HostOutput s
 // init static modules
 	JL_CHKM( jslangInit(cx, globalObject), "Unable to initialize jslang." );
 
-	JL_CHK( JS_DefineProperty(cx, globalObject, NAME_MODULE_REVISION_PROPERTY_NAME, INT_TO_JSVAL(SvnRevToInt("$Revision: 0 $")), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
+	JL_CHK( JS_DefineProperty(cx, globalObject, NAME_MODULE_REVISION_PROPERTY_NAME, INT_TO_JSVAL(JL_SvnRevToInt("$Revision: 0 $")), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
 
 	return JS_TRUE;
 	JL_BAD;

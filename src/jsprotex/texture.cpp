@@ -4175,7 +4175,7 @@ static JSBool _Test(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval
 
 CONFIGURE_CLASS
 
-	REVISION(SvnRevToInt("$Revision$"))
+	REVISION(JL_SvnRevToInt("$Revision$"))
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE
 

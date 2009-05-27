@@ -38,7 +38,7 @@ DEFINE_FINALIZE() {
 
 CONFIGURE_CLASS
 
-	REVISION(SvnRevToInt("$Revision$"))
+	REVISION(JL_SvnRevToInt("$Revision$"))
 	HAS_PROTOTYPE( prototypeDescriptor )
 
 	HAS_FINALIZE

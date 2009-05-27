@@ -103,19 +103,19 @@ static JSTrapStatus InterruptCounterHandler(JSContext *cx, JSScript *script, jsb
 	Private *pv = (Private*)JL_GetPrivate(cx, (JSObject*)closure);
 	if ( --pv->interruptCounter != 0 )
 		return JSTRAP_CONTINUE;
-	return BreakHandler(cx, (JSObject*)closure, CurrentStackFrame(cx), FROM_INTERRUPT);
+	return BreakHandler(cx, (JSObject*)closure, JL_CurrentStackFrame(cx), FROM_INTERRUPT);
 }
 
 
 static JSTrapStatus TrapHandler(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval, void *closure) {
 
-	return BreakHandler(cx, (JSObject*)closure, CurrentStackFrame(cx), FROM_BREAKPOINT);
+	return BreakHandler(cx, (JSObject*)closure, JL_CurrentStackFrame(cx), FROM_BREAKPOINT);
 }
 
 
 JSBool DebugErrorHookHandler(JSContext *cx, const char *message, JSErrorReport *report, void *closure) {
 
-	JSStackFrame *fp = CurrentStackFrame(cx);
+	JSStackFrame *fp = JL_CurrentStackFrame(cx);
 	if ( !fp || !JS_GetFrameScript(cx, fp) )
 		return JS_TRUE;
 	JSTrapStatus status = BreakHandler(cx, (JSObject*)closure, fp, FROM_ERROR);
@@ -125,7 +125,7 @@ JSBool DebugErrorHookHandler(JSContext *cx, const char *message, JSErrorReport *
 
 static JSTrapStatus ThrowHookHandler(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval, void *closure) {
 
-	return BreakHandler(cx, (JSObject*)closure, CurrentStackFrame(cx), FROM_THROW);
+	return BreakHandler(cx, (JSObject*)closure, JL_CurrentStackFrame(cx), FROM_THROW);
 }
 
 
@@ -149,7 +149,7 @@ static void* FirstExecuteHookHandler(JSContext *cx, JSStackFrame *fp, JSBool bef
 
 static JSTrapStatus DebuggerKeyword(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval, void *closure) {
 
-	return BreakHandler(cx, (JSObject*)closure, CurrentStackFrame(cx), FROM_DEBUGGER);
+	return BreakHandler(cx, (JSObject*)closure, JL_CurrentStackFrame(cx), FROM_DEBUGGER);
 }
 
 
@@ -160,7 +160,7 @@ static JSTrapStatus Step(JSContext *cx, JSScript *script, jsbytecode *pc, jsval 
 		return JSTRAP_CONTINUE;
 	if ( jsCodeSpec[*pc].format & JOF_DECLARING )
 		return JSTRAP_CONTINUE;
-	return BreakHandler(cx, (JSObject*)closure, CurrentStackFrame(cx), FROM_STEP);
+	return BreakHandler(cx, (JSObject*)closure, JL_CurrentStackFrame(cx), FROM_STEP);
 }
 
 
@@ -169,7 +169,7 @@ static JSTrapStatus StepOver(JSContext *cx, JSScript *script, jsbytecode *pc, js
 	Private *pv = (Private*)JL_GetPrivate(cx, (JSObject*)closure);
 	if ( script == pv->script && JS_PCToLineNumber(cx, script, pc) == pv->lineno )
 		return JSTRAP_CONTINUE;
-	JSStackFrame *fp = CurrentStackFrame(cx);
+	JSStackFrame *fp = JL_CurrentStackFrame(cx);
 	if ( fp != pv->frame && fp != pv->pframe )
 		return JSTRAP_CONTINUE;
 	return BreakHandler(cx, (JSObject*)closure, fp, FROM_STEP_OVER);
@@ -179,7 +179,7 @@ static JSTrapStatus StepOver(JSContext *cx, JSScript *script, jsbytecode *pc, js
 static JSTrapStatus StepOut(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval, void *closure) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, (JSObject*)closure);
-	JSStackFrame *fp = CurrentStackFrame(cx);
+	JSStackFrame *fp = JL_CurrentStackFrame(cx);
 	if ( fp != pv->pframe )
 		return JSTRAP_CONTINUE;
 	return BreakHandler(cx, (JSObject*)closure, fp, FROM_STEP_OUT);
@@ -192,8 +192,8 @@ static JSTrapStatus StepThrough(JSContext *cx, JSScript *script, jsbytecode *pc,
 	if ( script == pv->script && JS_PCToLineNumber(cx, script, pc) <= pv->lineno )
 		return JSTRAP_CONTINUE;
 
-	JSStackFrame *fp = CurrentStackFrame(cx);
-	if ( StackSize(cx, fp)-1 > pv->stackFrameIndex )
+	JSStackFrame *fp = JL_CurrentStackFrame(cx);
+	if ( JL_StackSize(cx, fp)-1 > pv->stackFrameIndex )
 		return JSTRAP_CONTINUE;
 	return BreakHandler(cx, (JSObject*)closure, fp, FROM_STEP_THROUGH);
 }
@@ -237,7 +237,7 @@ static JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSStackFrame *fp,
 	uintN lineno;
 	lineno = JS_PCToLineNumber(cx, script, JS_GetFramePC(cx, fp));
 	unsigned int stackFrameIndex;
-	stackFrameIndex = StackSize(cx, fp)-1;
+	stackFrameIndex = JL_StackSize(cx, fp)-1;
 
 	// argv[0] is reserved for the rval
 	JL_CHK( StringToJsval(cx, filename, &argv[1]) );
@@ -636,7 +636,7 @@ DEFINE_PROPERTY( excludedFileList ) {
 
 CONFIGURE_CLASS
 
-	REVISION(SvnRevToInt("$Revision: 2290 $"))
+	REVISION(JL_SvnRevToInt("$Revision: 2290 $"))
 	HAS_PRIVATE
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE

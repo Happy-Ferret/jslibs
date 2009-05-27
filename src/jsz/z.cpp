@@ -123,6 +123,8 @@ DEFINE_CONSTRUCTOR() {
 		pv->level = Z_DEFAULT_COMPRESSION; // default value
 	}
 
+	JL_CHK( ReserveStreamReadInterface(cx, obj) );
+
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -374,7 +376,7 @@ DEFINE_PROPERTY( idealInputLength ) {
 **/
 CONFIGURE_CLASS
 
-	REVISION(SvnRevToInt("$Revision$"))
+	REVISION(JL_SvnRevToInt("$Revision$"))
 	HAS_PRIVATE
 
 	HAS_CONSTRUCTOR

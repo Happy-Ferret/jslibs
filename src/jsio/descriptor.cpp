@@ -163,7 +163,7 @@ JSBool ReadToJsval( JSContext *cx, PRFileDesc *fd, int amount, jsval *rval ) {
 		return JS_TRUE;
 	}
 
-	if ( MaybeRealloc(amount, res) ) {
+	if ( JL_MaybeRealloc(amount, res) ) {
 
 		buf = (char*)JS_realloc(cx, buf, res +1); // realloc the string using its real size
 		JL_CHK( buf );
@@ -534,7 +534,7 @@ DEFINE_FUNCTION( Import ) {
 
 CONFIGURE_CLASS
 
-	REVISION(SvnRevToInt("$Revision$"))
+	REVISION(JL_SvnRevToInt("$Revision$"))
 	HAS_CONSTRUCTOR
 
 	BEGIN_FUNCTION_SPEC

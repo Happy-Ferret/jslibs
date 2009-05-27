@@ -370,7 +370,7 @@ DEFINE_PROPERTY( contentGetter ) {
 		return JS_TRUE;
 	}
 
-	if ( MaybeRealloc( available, res ) ) { // should never occured
+	if ( JL_MaybeRealloc( available, res ) ) { // should never occured
 
 		buf = (char*)JS_realloc(cx, buf, res +1); // realloc the string using its real size
 		JL_CHK(buf);
@@ -619,7 +619,7 @@ $TOC_MEMBER $INAME
 
 CONFIGURE_CLASS
 
-	REVISION(SvnRevToInt("$Revision$"))
+	REVISION(JL_SvnRevToInt("$Revision$"))
 	HAS_PROTOTYPE( prototypeDescriptor )
 
 	HAS_CONSTRUCTOR

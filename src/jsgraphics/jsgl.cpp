@@ -2166,7 +2166,7 @@ JSBool Init( JSContext *cx, JSObject *obj ) {
 
 CONFIGURE_CLASS
 
-	REVISION(SvnRevToInt("$Revision$"))
+	REVISION(JL_SvnRevToInt("$Revision$"))
 	BEGIN_CONST_INTEGER_SPEC
 
 // OpenGL constants

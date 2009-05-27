@@ -622,7 +622,7 @@ DEFINE_PROPERTY_SETTER( bold ) {
 
 CONFIGURE_CLASS // This section containt the declaration and the configuration of the class
 
-	REVISION(SvnRevToInt("$Revision$"))
+	REVISION(JL_SvnRevToInt("$Revision$"))
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE
 	HAS_PRIVATE

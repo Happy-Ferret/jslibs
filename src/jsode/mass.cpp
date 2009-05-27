@@ -205,7 +205,7 @@ DEFINE_PROPERTY( centerGetter ) {
 
 CONFIGURE_CLASS
 
-	REVISION(SvnRevToInt("$Revision$"))
+	REVISION(JL_SvnRevToInt("$Revision$"))
 	BEGIN_FUNCTION_SPEC
 		FUNCTION( Translate )
 		FUNCTION( Adjust )

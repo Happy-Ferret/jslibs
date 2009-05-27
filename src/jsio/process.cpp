@@ -252,7 +252,7 @@ DEFINE_PROPERTY( stderr ) {
 
 CONFIGURE_CLASS
 
-	REVISION(SvnRevToInt("$Revision: 2212 $"))
+	REVISION(JL_SvnRevToInt("$Revision: 2212 $"))
 
 	HAS_PRIVATE
 	HAS_RESERVED_SLOTS( 3 )

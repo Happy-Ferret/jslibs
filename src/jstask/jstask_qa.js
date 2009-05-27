@@ -248,3 +248,30 @@ LoadModule('jsio');
 	myTask.Request(undefined);
 	myTask.Response();
 
+
+/// blocking TCP client
+
+	var myTask = new Task(function() {
+		
+		LoadModule('jsio');
+		var serverSocket = new Socket();
+		serverSocket.Bind(8099, '127.0.0.1');
+		serverSocket.Listen();
+
+		serverSocket.readable = function(s) {
+
+			s.Accept().Write('hello');
+			s.Shutdown();
+		}
+		
+		Poll([serverSocket], 1000);
+		serverSocket.Close();
+	});
+	
+	myTask.Request();
+
+	var client = new Socket();
+	client.Connect('127.0.0.1', 8099);
+	var res = client.Read(5);
+	QA.ASSERT_STR( res, 'hello', 'response' );
+

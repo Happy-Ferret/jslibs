@@ -319,6 +319,144 @@ DEFINE_FUNCTION( Beep ) {
 	JL_BAD;
 }
 
+
+/**doc
+$TOC_MEMBER $INAME
+ $VOID $INAME( path )
+  Get a value of the system registry
+**/
+DEFINE_FUNCTION_FAST( RegistryGet ) {
+
+	JL_S_ASSERT_ARG_MIN(1);
+	
+	const char *path;
+	JL_CHK( JsvalToString(cx, &JL_FARG(1), &path) );
+
+	HKEY rootKey;
+	if ( !strncmp(path, "HKCU", 4) ) {
+		//RegOpenCurrentUser(
+		rootKey = HKEY_CURRENT_USER;
+		path += 4;
+	}
+	else
+	if ( !strncmp(path, "HKEY_CURRENT_USER", 17) ) {
+		//RegOpenCurrentUser(
+		rootKey = HKEY_CURRENT_USER;
+		path += 17;
+	}
+	else
+	if ( !strncmp(path, "HKEY_LOCAL_MACHINE", 18) ) {
+		rootKey = HKEY_LOCAL_MACHINE;
+		path += 18;
+	}
+	else
+	if ( !strncmp(path, "HKEY_CLASSES_ROOT", 17) ) {
+		rootKey = HKEY_CLASSES_ROOT;
+		path += 17;
+	}
+	else
+	if ( !strncmp(path, "HKEY_CURRENT_CONFIG", 19) ) {
+		rootKey = HKEY_CURRENT_CONFIG;
+		path += 19;
+	}
+	else
+	if ( !strncmp(path, "HKEY_USERS", 10) ) {
+		rootKey = HKEY_USERS;
+		path += 10;
+	}
+	
+	JL_S_ASSERT( path[0] != '\0', "Invalid registry path." );
+	path++;
+
+	LONG error;
+	DWORD type, size;
+
+	HKEY key;
+	error = RegOpenKeyEx(rootKey, path, 0, KEY_READ, &key);
+	if ( error != ERROR_SUCCESS )
+		return WinThrowError(cx, error);
+
+	const char *valueName = strrchr(path, '\\');
+
+	if ( valueName[1] == '\0' ) {
+		
+		JSObject *arrObj = JS_NewArrayObject(cx, 0, NULL);
+		JL_CHK( arrObj );
+		*JL_FRVAL = OBJECT_TO_JSVAL(arrObj);
+
+		char name[1024];
+		DWORD nameLength;
+		DWORD index = 0;
+		for (;;) {
+
+			nameLength = sizeof(name);
+			// doc. http://msdn.microsoft.com/en-us/library/ms724865(VS.85).aspx
+			error = RegEnumValue(key, index, name, &nameLength, NULL, NULL, NULL, NULL);
+			if ( error != ERROR_SUCCESS )
+				break;
+			jsval strName;
+			JL_CHK( StringAndLengthToJsval(cx, &strName, name, nameLength) );
+			JL_CHK( JS_SetElement(cx, arrObj, index, &strName) );
+			index++;
+		}
+		if ( error != ERROR_NO_MORE_ITEMS )
+			return WinThrowError(cx, error);
+
+		RegCloseKey(key);
+		return JS_TRUE;
+	}
+
+	// doc. http://msdn.microsoft.com/en-us/library/ms724911(VS.85).aspx
+	error = RegQueryValueEx(key, valueName, NULL, &type, NULL, &size);
+	if ( error != ERROR_SUCCESS ) {
+
+		RegCloseKey(key);
+		return WinThrowError(cx, error);
+	}
+
+	void *buffer = JS_malloc(cx, size +1);
+	error = RegQueryValueEx(key, valueName, NULL, NULL, (LPBYTE)buffer, &size);
+
+	// doc. http://msdn.microsoft.com/en-us/library/ms724884(VS.85).aspx
+	switch (type) {
+		case REG_NONE:
+			*JL_FRVAL = JSVAL_VOID;
+			JS_free(cx, buffer);
+			break;
+		case REG_BINARY:
+			JL_CHK( JL_NewBlob(cx, buffer, size, JL_FRVAL) );
+			break;
+		case REG_DWORD:
+			JL_CHK( UIntToJsval(cx, (DWORD)buffer, JL_FRVAL) );
+			JS_free(cx, buffer);
+			break;
+		case REG_QWORD:
+			JL_CHK( DoubleToJsval(cx, (double)(__int64)buffer, JL_FRVAL) );
+			break;
+		case REG_LINK: {
+			JSString *jsstr = JS_NewUCString(cx, (jschar*)buffer, size/2);
+			JL_CHK( jsstr );
+			*JL_FRVAL = STRING_TO_JSVAL(jsstr);
+			break;
+		}
+		case REG_EXPAND_SZ:
+		case REG_MULTI_SZ:
+		case REG_SZ: {
+			JSString *jsstr = JS_NewString(cx, (char*)buffer, size);
+			JL_CHK( jsstr );
+			*JL_FRVAL = STRING_TO_JSVAL(jsstr);
+			break;
+		}
+	}
+
+	RegCloseKey(key);
+
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+
 /**doc
 === Static properties ===
 **/
@@ -382,7 +520,7 @@ DEFINE_PROPERTY( clipboardSetter ) {
 
 CONFIGURE_STATIC
 
-	REVISION(SvnRevToInt("$Revision$"))
+	REVISION(JL_SvnRevToInt("$Revision$"))
 	BEGIN_STATIC_FUNCTION_SPEC
 		FUNCTION( MessageBox )
 		FUNCTION( CreateProcess )
@@ -392,6 +530,7 @@ CONFIGURE_STATIC
 		FUNCTION( Sleep )
 		FUNCTION( MessageBeep )
 		FUNCTION( Beep )
+		FUNCTION_FAST( RegistryGet )
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC

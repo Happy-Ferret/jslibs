@@ -233,7 +233,7 @@ DEFINE_CALL() {
 	size_t length;
 	length = outPtr - outBuf;
 
-	if ( MaybeRealloc(outLen, length) ) {
+	if ( JL_MaybeRealloc(outLen, length) ) {
 
 		outBuf = (char*)JS_realloc(cx, outBuf, length +1);
 		JL_CHK( outBuf );
@@ -311,7 +311,7 @@ DEFINE_PROPERTY( version ) {
 
 CONFIGURE_CLASS
 
-	REVISION(SvnRevToInt("$Revision$"))
+	REVISION(JL_SvnRevToInt("$Revision$"))
 	HAS_PRIVATE
 
 	HAS_CONSTRUCTOR

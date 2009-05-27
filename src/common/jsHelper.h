@@ -344,17 +344,17 @@ ALWAYS_INLINE void SetHostPrivate( JSContext *cx, HostPrivate *hostPrivate ) {
 
 ALWAYS_INLINE JSClass* JL_GetClass(JSObject *obj) {
 	
-#ifdef DEBUG
-	JS_ASSERT( STOBJ_GET_CLASS(obj) == JS_GetClass(obj) ); // Mozilla JS engine private API behavior has changed.
-#endif //DEBUG
+	#ifdef DEBUG
+		JS_ASSERT( STOBJ_GET_CLASS(obj) == JS_GetClass(obj) ); // Mozilla JS engine private API behavior has changed.
+	#endif //DEBUG
 	return STOBJ_GET_CLASS(obj); // JS_GET_CLASS(cx, obj);
 }
 
 ALWAYS_INLINE size_t JL_GetStringLength(JSString *jsstr) {
 	
-#ifdef DEBUG
-	JS_ASSERT( JSSTRING_LENGTH(jsstr) == JS_GetStringLength(jsstr) ); // Mozilla JS engine private API behavior has changed.
-#endif //DEBUG
+	#ifdef DEBUG
+		JS_ASSERT( JSSTRING_LENGTH(jsstr) == JS_GetStringLength(jsstr) ); // Mozilla JS engine private API behavior has changed.
+	#endif //DEBUG
 	return JSSTRING_LENGTH(jsstr);
 }
 
@@ -368,9 +368,9 @@ ALWAYS_INLINE void *JL_GetPrivate(JSContext *cx, JSObject *obj) {
 	jsval v;
 	JS_ASSERT(OBJ_GET_CLASS(cx, obj)->flags & JSCLASS_HAS_PRIVATE);
 	v = obj->fslots[JSSLOT_PRIVATE];
-#ifdef DEBUG
-	JS_ASSERT( (JSVAL_IS_INT(v) ? JSVAL_TO_PRIVATE(v) : NULL) == JS_GetPrivate(cx, obj) ); // Mozilla JS engine private API behavior has changed.
-#endif //DEBUG
+	#ifdef DEBUG
+		JS_ASSERT( (JSVAL_IS_INT(v) ? JSVAL_TO_PRIVATE(v) : NULL) == JS_GetPrivate(cx, obj) ); // Mozilla JS engine private API behavior has changed.
+	#endif //DEBUG
 	if (!JSVAL_IS_INT(v))
 		return NULL;
 	return JSVAL_TO_PRIVATE(v);
@@ -381,9 +381,9 @@ ALWAYS_INLINE JSBool JL_SetPrivate(JSContext *cx, JSObject *obj, void *data) {
 
 	JS_ASSERT(OBJ_GET_CLASS(cx, obj)->flags & JSCLASS_HAS_PRIVATE);
 	obj->fslots[JSSLOT_PRIVATE] = PRIVATE_TO_JSVAL(data);
-#ifdef DEBUG
-	JS_ASSERT( data == JS_GetPrivate(cx, obj) ); // Mozilla JS engine private API behavior has changed.
-#endif //DEBUG
+	#ifdef DEBUG
+		JS_ASSERT( data == JS_GetPrivate(cx, obj) ); // Mozilla JS engine private API behavior has changed.
+	#endif //DEBUG
 	return JS_TRUE;
 }
 
@@ -391,64 +391,32 @@ ALWAYS_INLINE JSBool JL_SetPrivate(JSContext *cx, JSObject *obj, void *data) {
 ///////////////////////////////////////////////////////////////////////////////
 // Helper functions
 
-/* properly
-inline bool SwapObjects( JSContext *cx, JSObject *obj1, JSObject *obj2 ) {
 
-	if ( obj1 == NULL || obj2 == NULL )
-		return JS_FALSE;
+ALWAYS_INLINE JSStackFrame* JL_CurrentStackFrame(JSContext *cx) {
 
-// When JSObject.dslots is not null, JSObject.dslots[-1] records the number of available slots.
-//	JSScope *s1 = OBJ_SCOPE(obj1);
-
-//js_ObjectOps.newObjectMap(cx, obj2->map->nrefs, obj2->map->ops, JL_GetClass(cx, obj2), obj1);
-
-	//	JSObjectMap *map1 = obj1->map->ops->newObjectMap(cx, obj2->map->nrefs, obj2->map->ops, JL_GetClass(cx, obj2), obj2);
-
-	// exchange object contents
-	JSObject tmp = *obj1;
-	*obj1 = *obj2;
-	*obj2 = tmp;
-
-	// fix scope owners
-	OBJ_SCOPE(obj1)->object = obj1;
-	OBJ_SCOPE(obj2)->object = obj2;
-
-	// fix referencing objects count  ?????
-	jsrefcount nrefs = obj1->map->nrefs;
-	obj1->map->nrefs = obj2->map->nrefs;
-	obj2->map->nrefs = nrefs;
-
-	return JS_TRUE;
-	JL_BAD;
-}
-*/
-
-
-ALWAYS_INLINE JSStackFrame* CurrentStackFrame(JSContext *cx) {
-
-#ifdef DEBUG
-	JSStackFrame *fp = NULL;
-	JS_ASSERT( JS_FrameIterator(cx, &fp) == js_GetTopStackFrame(cx) ); // Mozilla JS engine private API behavior has changed.
-#endif //DEBUG
+	#ifdef DEBUG
+		JSStackFrame *fp = NULL;
+		JS_ASSERT( JS_FrameIterator(cx, &fp) == js_GetTopStackFrame(cx) ); // Mozilla JS engine private API behavior has changed.
+	#endif //DEBUG
 	return js_GetTopStackFrame(cx);
 }
 
 
-ALWAYS_INLINE unsigned int StackSize(JSContext *cx, JSStackFrame *fp) {
+ALWAYS_INLINE unsigned int JL_StackSize(JSContext *cx, JSStackFrame *fp) {
 
 	unsigned int length = 0;
-	for ( ; fp; fp = fp->down ) // for ( JSStackFrame *fp = CurrentStackFrame(cx); fp; JS_FrameIterator(cx, &fp) )
+	for ( ; fp; fp = fp->down ) // for ( JSStackFrame *fp = JL_CurrentStackFrame(cx); fp; JS_FrameIterator(cx, &fp) )
 		++length;
 	return length; // 0 is the first frame
 }
 
 
-ALWAYS_INLINE JSStackFrame *StackFrameByIndex(JSContext *cx, int frameIndex) {
+ALWAYS_INLINE JSStackFrame *JL_StackFrameByIndex(JSContext *cx, int frameIndex) {
 
-	JSStackFrame *fp = CurrentStackFrame(cx);
+	JSStackFrame *fp = JL_CurrentStackFrame(cx);
 	if ( frameIndex >= 0 ) {
 
-		int currentFrameIndex = StackSize(cx, fp)-1;
+		int currentFrameIndex = JL_StackSize(cx, fp)-1;
 		if ( frameIndex > currentFrameIndex )
 			return NULL;
 		// now, select the right frame
@@ -480,17 +448,17 @@ ALWAYS_INLINE jsdouble JsvalIsInfinity( JSContext *cx, jsval val ) {
 
 ALWAYS_INLINE bool JsvalIsPInfinity( JSContext *cx, jsval val ) {
 
-#ifdef DEBUG
-	JS_ASSERT( *cx->runtime->jsPositiveInfinity == *JSVAL_TO_DOUBLE(JS_GetPositiveInfinityValue(cx)) ); // Mozilla JS engine private API behavior has changed.
-#endif //DEBUG
+	#ifdef DEBUG
+		JS_ASSERT( *cx->runtime->jsPositiveInfinity == *JSVAL_TO_DOUBLE(JS_GetPositiveInfinityValue(cx)) ); // Mozilla JS engine private API behavior has changed.
+	#endif //DEBUG
 	return JSVAL_IS_DOUBLE(val) && *JSVAL_TO_DOUBLE(val) == *cx->runtime->jsPositiveInfinity; // JS_GetPositiveInfinityValue
 }
 
 ALWAYS_INLINE bool JsvalIsNInfinity( JSContext *cx, jsval val ) {
 
-#ifdef DEBUG
-	JS_ASSERT( *cx->runtime->jsNegativeInfinity == *JSVAL_TO_DOUBLE(JS_GetNegativeInfinityValue(cx)) ); // Mozilla JS engine private API behavior has changed.
-#endif //DEBUG
+	#ifdef DEBUG
+		JS_ASSERT( *cx->runtime->jsNegativeInfinity == *JSVAL_TO_DOUBLE(JS_GetNegativeInfinityValue(cx)) ); // Mozilla JS engine private API behavior has changed.
+	#endif //DEBUG
 	return JSVAL_IS_DOUBLE(val) && *JSVAL_TO_DOUBLE(val) == *cx->runtime->jsNegativeInfinity; // JS_GetNegativeInfinityValue
 }
 
@@ -502,9 +470,9 @@ ALWAYS_INLINE bool JsvalIsScript( JSContext *cx, jsval val ) {
 
 ALWAYS_INLINE bool JsvalIsFunction( JSContext *cx, jsval val ) {
 
-#ifdef DEBUG
-	JS_ASSERT( VALUE_IS_FUNCTION(cx, val) == (!JSVAL_IS_PRIMITIVE(val) && JS_ObjectIsFunction(cx, JSVAL_TO_OBJECT(val))) ); // Mozilla JS engine private API behavior has changed.
-#endif //DEBUG
+	#ifdef DEBUG
+		JS_ASSERT( VALUE_IS_FUNCTION(cx, val) == (!JSVAL_IS_PRIMITIVE(val) && JS_ObjectIsFunction(cx, JSVAL_TO_OBJECT(val))) ); // Mozilla JS engine private API behavior has changed.
+	#endif //DEBUG
 	//	return !JSVAL_IS_PRIMITIVE(val) && JS_ObjectIsFunction(cx, JSVAL_TO_OBJECT(val)); // faster than (JS_TypeOfValue(cx, (val)) == JSTYPE_FUNCTION)
 	return VALUE_IS_FUNCTION(cx, val);
 }
@@ -733,13 +701,13 @@ bad:
 // jslibs tools
 
 
-ALWAYS_INLINE unsigned int SvnRevToInt(const char *svnRev) {
+ALWAYS_INLINE unsigned int JL_SvnRevToInt(const char *svnRev) {
 
 	const char *p = strchr(svnRev, ' ');
 	return p ? atol(p+1) : 0;
 }
 
-ALWAYS_INLINE bool MaybeRealloc( int requested, int received ) {
+ALWAYS_INLINE bool JL_MaybeRealloc( int requested, int received ) {
 
 	return requested != 0 && (128 * received / requested < 115) && (requested - received > 32); // instead using percent, I use per-128
 }
@@ -830,7 +798,7 @@ ALWAYS_INLINE bool JL_ValueIsBlob( JSContext *cx, jsval v ) {
 // note: a Blob is either a JSString or a Blob object is the jslang module has been loaded.
 ALWAYS_INLINE JSBool JL_NewBlob( JSContext *cx, void* buffer, size_t length, jsval *vp ) {
 
-	if (unlikely( length == 0 )) { // Empty Blob must acts like an empty string: !'' == true
+	if (unlikely( length == 0 )) { // Empty Blob must acts like an empty string: !'' === true
 		
 		if ( buffer )
 			JS_free(cx, buffer);
@@ -932,6 +900,7 @@ ALWAYS_INLINE JSBool JsvalToStringAndLength( JSContext *cx, jsval *val, const ch
 	return JS_TRUE;
 	JL_BAD;
 }
+
 
 ALWAYS_INLINE JSBool JsvalToStringLength( JSContext *cx, jsval val, size_t *length ) {
 
@@ -1245,7 +1214,7 @@ ALWAYS_INLINE JSBool JsvalToUIntVector( JSContext *cx, jsval val, unsigned int *
 ALWAYS_INLINE JSBool DoubleVectorToJsval( JSContext *cx, const double *vector, size_t length, jsval *val ) {
 
 	JSObject *arrayObj = JS_NewArrayObject(cx, length, NULL);
-	JL_CHKM( arrayObj, "Unable to create the Array." );
+	JL_CHK( arrayObj );
 	*val = OBJECT_TO_JSVAL(arrayObj);
 	jsval tmp;
 	for ( size_t i = 0; i < length; i++ ) {
@@ -1260,7 +1229,7 @@ ALWAYS_INLINE JSBool DoubleVectorToJsval( JSContext *cx, const double *vector, s
 ALWAYS_INLINE JSBool FloatVectorToJsval( JSContext *cx, const float *vector, size_t length, jsval *val ) {
 
 	JSObject *arrayObj = JS_NewArrayObject(cx, length, NULL);
-	JL_CHKM( arrayObj, "Unable to create the Array." );
+	JL_CHK( arrayObj );
 	*val = OBJECT_TO_JSVAL(arrayObj);
 	jsval tmp;
 	for ( size_t i = 0; i < length; i++ ) {
