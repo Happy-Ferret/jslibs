@@ -119,7 +119,7 @@ DEFINE_FUNCTION( Poll ) {
 			continue;
 		}
 		JSObject *fdObj = JSVAL_TO_OBJECT( prop );
-		JL_S_ASSERT( InheritFrom(cx, fdObj, classDescriptor), J__ERRMSG_INVALID_CLASS );
+		JL_S_ASSERT( JL_InheritFrom(cx, fdObj, classDescriptor), J__ERRMSG_INVALID_CLASS );
 		pollDesc[i].fd = (PRFileDesc *)JL_GetPrivate(cx, fdObj); // fd is A pointer to a PRFileDesc object representing a socket or a pollable event.  This field can be set to NULL to indicate to PR_Poll that this PRFileDesc object should be ignored.
 //		JL_S_ASSERT_RESOURCE( fd ); // beware: fd == NULL is supported !
 		pollDesc[i].in_flags = 0;
@@ -241,7 +241,7 @@ DEFINE_FUNCTION( IsReadable ) {
 
 	JSObject *descriptorObj;
 	descriptorObj = JSVAL_TO_OBJECT( JL_ARG(1) );
-	JL_S_ASSERT( InheritFrom(cx, descriptorObj, classDescriptor), J__ERRMSG_INVALID_CLASS );
+	JL_S_ASSERT( JL_InheritFrom(cx, descriptorObj, classDescriptor), J__ERRMSG_INVALID_CLASS );
 	PRFileDesc *fd;
 	fd = (PRFileDesc *)JL_GetPrivate( cx, descriptorObj );
 //	JL_S_ASSERT_RESOURCE( fd ); // fd == NULL is supported !
@@ -280,7 +280,7 @@ DEFINE_FUNCTION( IsWritable ) {
 
 	JSObject *descriptorObj;
 	descriptorObj = JSVAL_TO_OBJECT( JL_ARG(1) );
-	JL_S_ASSERT( InheritFrom(cx, descriptorObj, classDescriptor), J__ERRMSG_INVALID_CLASS );
+	JL_S_ASSERT( JL_InheritFrom(cx, descriptorObj, classDescriptor), J__ERRMSG_INVALID_CLASS );
 	PRFileDesc *fd;
 	fd = (PRFileDesc *)JL_GetPrivate( cx, descriptorObj );
 //	JL_S_ASSERT_RESOURCE( fd ); // fd == NULL is supported !

@@ -146,10 +146,6 @@ END_CLASS
 
 JSBool ThrowIoErrorArg( JSContext *cx, PRErrorCode errorCode, PRInt32 osError ) {
 
-#ifdef DEBUG
-	JL_REPORT_WARNING( "IoError exception" );
-#endif // DEBUG
-
 	JSObject *error = JS_NewObject( cx, classIoError, NULL, NULL );
 	JS_SetPendingException( cx, OBJECT_TO_JSVAL( error ) );
 	JS_SetReservedSlot( cx, error, 0, INT_TO_JSVAL(errorCode) );

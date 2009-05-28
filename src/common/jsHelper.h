@@ -482,8 +482,35 @@ ALWAYS_INLINE bool JsvalIsArray( JSContext *cx, jsval val ) {
 	return !JSVAL_IS_PRIMITIVE(val) && JS_IsArrayObject(cx, JSVAL_TO_OBJECT(val));
 }
 
+/*
+ALWAYS_INLINE bool JL_IsAssigningCallResult( JSContext *cx ) {
 
-ALWAYS_INLINE bool InheritFrom( JSContext *cx, JSObject *obj, JSClass *clasp ) {
+	struct CodeSpec {
+		 int8 length; // length including opcode byte
+		 uint32 format; // immediate operand format
+	};
+	static const CodeSpec codeSpec[] = {
+	#define OPDEF(op,val,name,token,length,nuses,ndefs,prec,format) \
+		{length, format},
+	#include "jsopcode.tbl"
+	#undef OPDEF
+	};
+	
+	JSStackFrame *fp = JL_CurrentStackFrame(cx);
+	if ( !fp || !fp->regs || !fp->script )
+		return false;
+	jsbytecode *pc = fp->regs->pc;
+	pc += codeSpec[*pc].length;
+	if ( pc > fp->script->code + fp->script->length )
+		return false;
+
+	// miss: var c = Test()[1];
+	
+	return (codeSpec[*pc].format & JOF_SET) || *pc == JSOP_ITER || *pc == JSOP_DUP;
+}
+*/
+
+ALWAYS_INLINE bool JL_InheritFrom( JSContext *cx, JSObject *obj, JSClass *clasp ) {
 
 	while ( obj != NULL ) {
 

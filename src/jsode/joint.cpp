@@ -80,7 +80,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Destroy ) {
 
-	JL_S_ASSERT( InheritFrom(cx, obj, _class), J__ERRMSG_INVALID_CLASS );
+	JL_S_ASSERT( JL_InheritFrom(cx, obj, _class), J__ERRMSG_INVALID_CLASS );
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate( cx, obj );
 	JL_S_ASSERT_RESOURCE( jointId );
 

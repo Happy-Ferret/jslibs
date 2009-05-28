@@ -410,75 +410,84 @@ $TOC_MEMBER $INAME
   See. Static functions.
 **/
 DEFINE_FUNCTION( RecvFrom ) {
+	
+	char *buffer = NULL;
 
-	JL_S_ASSERT_CLASS( obj, _class );
+//	JL_S_ASSERT_CLASS( obj, _class );
 
 	PRFileDesc *fd;
-	if ( JL_GetClass(obj) == _class )
+	if ( JL_GetClass(obj) == _class ) {
+		
 		fd = (PRFileDesc*)JL_GetPrivate( cx, obj );
-	else
-		fd = PR_NewUDPSocket(); // allow to use SendTo as static function
-	JL_S_ASSERT_RESOURCE( fd );
+		JL_S_ASSERT_RESOURCE( fd );
+	} else {
+
+		fd = PR_NewUDPSocket(); // allow to use RecvFrom as static function
+		JL_CHKM( fd, "Unable to create the UDP socket." );
+	}
 
 	PRInt64 available;
 	available = PR_Available64( fd );
 	if ( available == -1 )
 		return ThrowIoError(cx);
-
-	char *buffer;
-	buffer = (char *)JS_malloc(cx, available+1); // (TBD) optimize this if  available == 0 !!
+	
+	buffer = (char *)JS_malloc(cx, available +1); // (TBD) optimize this if  available == 0 !!
 	JL_CHK( buffer );
-	buffer[available] = '\0';
 
 	PRNetAddr addr;
 	PRInt32 res;
-	res = PR_RecvFrom(fd, buffer, available, 0, &addr, PR_INTERVAL_NO_TIMEOUT );
-
-	char peerName[46]; // If addr is an IPv4 address, size needs to be at least 16. If addr is an IPv6 address, size needs to be at least 46.
-	PRStatus status;
-	status = PR_NetAddrToString(&addr, peerName, sizeof(peerName)); // Converts a character string to a network address.
-	if ( status != PR_SUCCESS ) {
-
+	res = PR_RecvFrom(fd, buffer, available, 0, &addr, PR_INTERVAL_NO_TIMEOUT);
+	if (unlikely( res == -1 )) {
+		goto bad_ex;
+/*
 		JS_free(cx, buffer);
-		return ThrowIoError(cx);
+			return ThrowIoError(cx);
+		tmp = JS_GetEmptyStringValue(cx);
+		JL_CHK( JS_SetElement(cx, arrayObject, 0, &tmp));
+*/
 	}
-	JSString *strPeerName;
-	strPeerName = JS_NewStringCopyZ(cx, peerName);
-	JL_CHK( strPeerName ); // (TBD) else free buffer ? ( or, this is a fatal error, program should stop )
+
+	char peerName[47]; // If addr is an IPv4 address, size needs to be at least 16. If addr is an IPv6 address, size needs to be at least 46.
+
+	JSObject *arrayObject;
+	arrayObject = JS_NewArrayObject(cx, 3, NULL);
+	JL_CHK( arrayObject ); // (TBD) else free buffer
+	*rval = OBJECT_TO_JSVAL( arrayObject );
+
+	JL_CHKB( PR_NetAddrToString(&addr, peerName, sizeof(peerName)) == PR_SUCCESS, bad_ex ); // Converts a character string to a network address.
+
+	jsval tmp;
+	JL_CHK( StringToJsval(cx, peerName, &tmp) );
+	JL_CHK( JS_SetElement(cx, arrayObject, 1, &tmp) );
 
 	PRUint16 port;
 	port = PR_NetAddrInetPort(&addr);
 
-	jsval data;
-	if (res > 0) {
+	JL_CHK( UIntToJsval(cx, port, &tmp) );
+	JL_CHK( JS_SetElement(cx, arrayObject, 2, &tmp) );
 
-		JL_CHK( JL_NewBlob( cx, buffer, res, &data ) );
-		*rval = data; // protect from GC
-	} else if (res == 0) {
+	if (likely( res > 0 )) {
+
+		buffer[res] = '\0';
+		JL_CHK( JL_NewBlob( cx, buffer, res, &tmp ) );
+		JL_CHK( JS_SetElement(cx, arrayObject, 0, &tmp) );
+		return JS_TRUE;
+	} else 
+	if ( res == 0 ) {
 
 		JS_free(cx, buffer);
-		data = JSVAL_VOID;
-	} else if (res == -1) {
-
-		JS_free(cx, buffer);
-		PRErrorCode errCode = PR_GetError();
-		if ( errCode != PR_WOULD_BLOCK_ERROR )
-			return ThrowIoError(cx);
-		data = JS_GetEmptyStringValue(cx);
+		tmp = JSVAL_VOID;
+		JL_CHK( JS_SetElement(cx, arrayObject, 0, &tmp) );
 	}
-
-	jsval arrayItems[3]; // = { data, STRING_TO_JSVAL(strPeerName), INT_TO_JSVAL(port) };
-	arrayItems[0] = data;
-	arrayItems[1] = STRING_TO_JSVAL(strPeerName);
-	arrayItems[2] = INT_TO_JSVAL(port);
-
-	JSObject *arrayObject;
-	arrayObject = JS_NewArrayObject(cx, sizeof(arrayItems), arrayItems );
-	JL_CHK( arrayObject ); // (TBD) else free buffer
-	*rval = OBJECT_TO_JSVAL( arrayObject );
-
+	
 	return JS_TRUE;
-	JL_BAD;
+
+bad_ex:
+	ThrowIoError(cx);
+bad:
+	if ( buffer )
+		JS_free(cx, buffer);
+	return JS_FALSE;
 }
 
 

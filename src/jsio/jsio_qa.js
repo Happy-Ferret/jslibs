@@ -1,6 +1,58 @@
 // don't remove this first line !! ( see MemoryMapped test )
 LoadModule('jsio');
 
+/// File Read [tr]
+
+		var filename = QA.RandomString(10);
+
+		var f1 = new File(filename).Open('w');
+		var f2 = new File(filename).Open('r');
+		
+		f1.Write('1234');
+		QA.ASSERT_STR( f2.Read(5), '1234' );
+		f1.Write('56');
+		QA.ASSERT_STR( f2.Read(1), '5' );
+		QA.ASSERT_STR( f2.Read(1), '6' );
+		QA.ASSERT( f2.Read(1), undefined );
+		QA.ASSERT( f2.Read(), undefined );
+		f1.Write('78');
+		QA.ASSERT_STR( f2.Read(), '78' );
+		QA.ASSERT( f2.Read(), undefined );
+		f1.Write('9');
+		QA.ASSERT_STR( f2.Read(), '9' );
+		QA.ASSERT( f2.Read(), undefined );
+		f1.Write('');
+		QA.ASSERT( f2.Read(), undefined );
+		var str = StringRepeat('x', 1023);
+		f1.Write(str);
+		QA.ASSERT_STR( f2.Read(), str );
+		var str = StringRepeat('x', 1024);
+		f1.Write(str);
+		QA.ASSERT_STR( f2.Read(), str );
+		var str = StringRepeat('x', 1025);
+		f1.Write(str);
+		QA.ASSERT_STR( f2.Read(), str );
+		QA.ASSERT( f2.Read(), undefined );
+		var str = StringRepeat('x', 1000000);
+		f1.Write(str);
+		QA.ASSERT_STR( f2.Read(), str );
+		QA.ASSERT( f2.Read(), undefined );
+		
+		f1.Close();
+		f2.Close();
+		
+		new File(filename).content = undefined;
+
+
+/// File busy [trfm]	
+
+		var filename = QA.RandomString(10);
+
+		var f2 = new File(filename).Open('w');
+		QA.ASSERT_EXCEPTION(function() { new File(filename).content = undefined }, IoError, 'Checking busy file error' );
+		f2.Close();
+		new File(filename).content = undefined;
+
 
 /// File copy [tr]
 

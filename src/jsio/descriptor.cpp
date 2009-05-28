@@ -31,7 +31,7 @@ using namespace jl;
 
 JSBool NativeInterfaceStreamRead( JSContext *cx, JSObject *obj, char *buf, size_t *amount ) {
 
-	JL_S_ASSERT( InheritFrom(cx, obj, classDescriptor), "Invalid descriptor object." );
+	JL_S_ASSERT( JL_InheritFrom(cx, obj, classDescriptor), "Invalid descriptor object." );
 //	JL_S_ASSERT_CLASS(obj, classDescriptor);
 
 	PRFileDesc *fd;
@@ -102,13 +102,6 @@ $SVN_REVISION $Revision$
 **/
 BEGIN_CLASS( Descriptor )
 
-
-DEFINE_CONSTRUCTOR() {
-
-	JL_REPORT_ERROR( J__ERRMSG_NO_CONSTRUCT ); // BUT constructor must be defined
-	JL_BAD;
-}
-
 /**doc
 === Methods ===
 **/
@@ -131,8 +124,7 @@ DEFINE_FUNCTION_FAST( Close ) {
 			return ThrowIoError(cx);
 	}
 	JL_CHK( JL_SetPrivate(cx, JL_FOBJ, NULL) );
-//	JS_ClearScope( cx, obj ); // help to clear readable, writable, exception
-//	JL_CHK( SetStreamReadInterface(cx, obj, NULL) );
+	//	JS_ClearScope( cx, obj ); // help to clear readable, writable, exception ?
 	JL_CHK( SetStreamReadInterface(cx, JL_FOBJ, NULL) );
 	return JS_TRUE;
 	JL_BAD;
@@ -146,33 +138,33 @@ JSBool ReadToJsval( JSContext *cx, PRFileDesc *fd, int amount, jsval *rval ) {
 
 	PRInt32 res;
 	res = PR_Read(fd, buf, amount);
-	if (res == -1) { // failure. The reason for the failure can be obtained by calling PR_GetError.
 
-		JS_free( cx, buf );
-		PRErrorCode errCode = PR_GetError();
-		if ( errCode != PR_WOULD_BLOCK_ERROR )
-			JL_CHK( ThrowIoError(cx) );
-		*rval = JS_GetEmptyStringValue(cx); // mean no data available, but connection still established.
+	if (likely( res > 0 )) {
+
+		if (unlikely( JL_MaybeRealloc(amount, res) )) {
+
+			buf = (char*)JS_realloc(cx, buf, res +1); // realloc the string using its real size
+			JL_CHK( buf );
+		}
+		buf[res] = '\0';
+		JL_CHKB( JL_NewBlob(cx, buf, res, rval), bad_free );
 		return JS_TRUE;
-	}
-
+	} else
 	if (res == 0) {
 
 		JS_free( cx, buf );
 		*rval = JSVAL_VOID; // end of file/socket
 		return JS_TRUE;
+	} else
+	if (unlikely( res == -1 )) { // failure. The reason for the failure can be obtained by calling PR_GetError.
+
+		JS_free( cx, buf );
+		if (unlikely( PR_GetError() != PR_WOULD_BLOCK_ERROR ))
+			JL_CHK( ThrowIoError(cx) );
+		*rval = JS_GetEmptyStringValue(cx); // mean no data available, but connection still established.
+		return JS_TRUE;
 	}
 
-	if ( JL_MaybeRealloc(amount, res) ) {
-
-		buf = (char*)JS_realloc(cx, buf, res +1); // realloc the string using its real size
-		JL_CHK( buf );
-	}
-	buf[res] = '\0';
-
-	JL_CHKB( JL_NewBlob(cx, buf, res, rval), bad_free );
-
-	return JS_TRUE;
 bad_free:
 	JS_free(cx, buf);
 	JL_BAD;
@@ -183,55 +175,57 @@ JSBool ReadAllToJsval(JSContext *cx, PRFileDesc *fd, jsval *rval ) {
 
 	Buffer buf;
 	BufferInitialize(&buf, bufferTypeChunk, bufferGrowTypeNoGuess);
-	PRInt32 currentReadLength = 512;
+	PRInt32 currentReadLength = 1024;
 	for (;;) {
 
-		if ( currentReadLength < 16384 )
-			currentReadLength *= 2;
-
 		PRInt32 res = PR_Read(fd, BufferNewChunk(&buf, currentReadLength), currentReadLength);
-		if ( res > 0 ) {
+		if (likely( res > 0 )) {
 
 			BufferConfirm(&buf, res);
 			if ( res < currentReadLength )
 				break;
+		} else
+		if ( res == 0 ) { // end of file is reached or the network connection is closed.
 
-		} else if ( res == -1 ) { // failure. The reason for the failure can be obtained by calling PR_GetError.
+			if ( BufferGetLength(&buf) > 0 ) // we reach eof BUT we have read some data.
+				break; // no error, no data received, we cannot reach currentReadLength
+
+			BufferFinalize(&buf);
+			*rval = JSVAL_VOID;
+			return JS_TRUE;
+		} else
+		if (unlikely( res == -1 )) { // failure. The reason for the failure can be obtained by calling PR_GetError.
 
 			if ( PR_GetError() != PR_WOULD_BLOCK_ERROR )
 				JL_CHK( ThrowIoError(cx) );
 			break; // no error, no data received, we cannot reach currentReadLength
-		} else if ( res == 0 ) { // end of file/socket
-
-			if ( BufferGetLength(&buf) > 0 ) { // we reach eof BUT we have read some data.
-
-				break; // no error, no data received, we cannot reach currentReadLength
-			} else {
-
-				BufferFinalize(&buf);
-				*rval = JSVAL_VOID;
-				return JS_TRUE;
-			}
 		}
+		
+//		if ( res == currentReadLength ) {
+//
+			if ( currentReadLength < 32768 )
+				currentReadLength *= 2;
+//		} else {
+//
+//			if ( currentReadLength > 1024 )
+//				currentReadLength /= 2;
+//		}
 	}
 
-	if ( BufferGetLength(&buf) == 0 ) { // PR_WOULD_BLOCK_ERROR and NOT end of file/socket
+	if ( BufferGetLength(&buf) == 0 ) { // no data but NOT end of file/socket
 
 		BufferFinalize(&buf);
 		*rval = JS_GetEmptyStringValue(cx);
 		return JS_TRUE;
 	}
 
-	size_t length;
-	length = BufferGetLength(&buf);
-	char *jsData;
-	jsData = (char*)JS_malloc(cx, length +1);
-	BufferCopyData(&buf, jsData, length);
-	jsData[length] = '\0';
-	JL_CHK( JL_NewBlob( cx, jsData, length, rval ) );
+	*BufferNewChunk(&buf, 1) = '\0';
+	BufferConfirm(&buf, 1);
+	JL_CHK( JL_NewBlob(cx, BufferGetDataOwnership(&buf), BufferGetLength(&buf) -1, rval) );
 
 	BufferFinalize(&buf);
 	return JS_TRUE;
+
 bad:
 	BufferFinalize(&buf);
 	return JS_FALSE;
@@ -307,7 +301,7 @@ DEFINE_FUNCTION_FAST( Write ) {
 
 	PRInt32 res;
 	res = PR_Write( fd, str, len );
-	if ( res == -1 ) {
+	if (unlikely( res == -1 )) {
 
 		PRErrorCode errCode = PR_GetError();
 /*
@@ -331,16 +325,27 @@ DEFINE_FUNCTION_FAST( Write ) {
 			*rval = JSVAL_VOID; // TCP connection reset by peer
 			return JS_TRUE;
 		}
-*/ // find a better solution !
+*/ // find a better solution !?
 
 		if ( errCode != PR_WOULD_BLOCK_ERROR )
 			return ThrowIoError(cx);
 		sentAmount = 0;
-	} else
+	} else {
+
 		sentAmount = res;
+	}
+
+	// (TBD) try to detect if the return value will be used else just return.
+	//	js_Disassemble1(cx, JL_CurrentStackFrame(cx)->script, JL_CurrentStackFrame(cx)->regs->pc +3, 0, false, stdout); // 00000:  setgvar "test"
 
 	char *buffer;
-	if ( sentAmount < len ) {
+
+	if (likely( sentAmount == len )) {
+
+		*JL_FRVAL = JS_GetEmptyStringValue(cx); // nothing remains
+	} else
+	if (unlikely( sentAmount < len )) {
+		
 		//*rval = STRING_TO_JSVAL( JS_NewDependentString(cx, JSVAL_TO_STRING( JL_ARG(1) ), sentAmount, len - sentAmount) ); // return unsent data // (TBD) use Blob ?
 
 		buffer = (char*)JS_malloc(cx, len - sentAmount +1);
@@ -352,9 +357,6 @@ DEFINE_FUNCTION_FAST( Write ) {
 	if ( sentAmount == 0 ) {
 
 		*JL_FRVAL = JL_FARG(1); // nothing has been sent
-	} else {
-
-		*JL_FRVAL = JS_GetEmptyStringValue(cx); // nothing remains
 	}
 
 	return JS_TRUE;
@@ -532,10 +534,17 @@ DEFINE_FUNCTION( Import ) {
 **/
 
 
+DEFINE_HAS_INSTANCE() { // see issue#52
+
+	// Check whether v is an instance of obj.
+	*bp = !JSVAL_IS_PRIMITIVE(v) && JL_InheritFrom(cx, JSVAL_TO_OBJECT(v), JL_GetClass(obj));
+	return JS_TRUE;
+}
+
 CONFIGURE_CLASS
 
 	REVISION(JL_SvnRevToInt("$Revision$"))
-	HAS_CONSTRUCTOR
+	HAS_HAS_INSTANCE // see issue#52
 
 	BEGIN_FUNCTION_SPEC
 		FUNCTION_FAST( Close )

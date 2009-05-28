@@ -394,7 +394,11 @@ JSContext* CreateHost(size_t maxMem, size_t maxAlloc, size_t maybeGCInterval ) {
 
 	JS_SetErrorReporter(cx, ErrorReporter);
 
-	JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_VAROBJFIX | JSOPTION_XML |JSOPTION_JIT);
+	JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_VAROBJFIX | JSOPTION_XML | JSOPTION_JIT);
+
+//JS_SetOptions(cx, JS_GetOptions(cx) & ~JSOPTION_JIT);
+
+
 	// JSOPTION_VAROBJFIX:
 	//  Not quite: with JSOPTION_VAROBJFIX, both explicitly declared global
 	//  variables (var x) and implicit ones (x = 42 where no x exists yet in the

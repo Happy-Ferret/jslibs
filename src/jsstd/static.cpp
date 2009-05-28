@@ -90,16 +90,16 @@ DEFINE_FUNCTION_FAST( Expand ) {
 	}
 
 	typedef struct {
-
 		const char *data;
 		size_t length;
+		JSTempValueRooter tvr;
+		bool hasTvr;
 	} Chunk;
 
 	void *stack;
 	jl::StackInit( &stack );
 	Chunk *chunk;
 	const char *tok;
-	jsval val;
 	int totalLength;
 	totalLength = 0;
 
@@ -111,6 +111,7 @@ DEFINE_FUNCTION_FAST( Expand ) {
 			chunk = (Chunk*)malloc(sizeof(Chunk));
 			chunk->data = srcBegin;
 			chunk->length = srcEnd - srcBegin;
+			chunk->hasTvr = false;
 			totalLength += chunk->length;
 			jl::StackPush( &stack, chunk );
 			break;
@@ -119,6 +120,7 @@ DEFINE_FUNCTION_FAST( Expand ) {
 		chunk = (Chunk*)malloc(sizeof(Chunk));
 		chunk->data = srcBegin;
 		chunk->length = tok - srcBegin;
+		chunk->hasTvr = false;
 		totalLength += chunk->length;
 		jl::StackPush( &stack, chunk );
 
@@ -126,26 +128,29 @@ DEFINE_FUNCTION_FAST( Expand ) {
 		tok = strchr(srcBegin, ')'); // tok = strstr(srcBegin, ")"); // slower for only one char
 		if ( tok == NULL ) // not found
 			break;
-
-		// (TBD) try to replace the following code
-		char tmp = *tok;
-		*((char*)tok) = 0;
 		
+
 		if ( mapIsFunction ) {
 			
-			JL_CHK( StringToJsval(cx, srcBegin, &val) );
-			JL_CHK( JS_CallFunctionValue(cx, JL_FOBJ, map, 1, &val , &val) );
+			JL_CHK( StringAndLengthToJsval(cx, JL_FRVAL, srcBegin, tok-srcBegin) );
+			JL_CHK( JS_CallFunctionValue(cx, JL_FOBJ, map, 1, JL_FRVAL, JL_FRVAL) );
 		} else {
 		
-			JL_CHK( JS_GetProperty(cx, JSVAL_TO_OBJECT(map), srcBegin, &val) );
+			// (TBD) try to replace the following code
+			char tmp = *tok;
+			*((char*)tok) = 0;
+			JL_CHK( JS_GetProperty(cx, JSVAL_TO_OBJECT(map), srcBegin, JL_FRVAL) );
+			*((char*)tok) = tmp;
 		}
 
-		*((char*)tok) = tmp;
-
-		if ( !JSVAL_IS_VOID( val ) ) {
+		if ( !JSVAL_IS_VOID( *JL_FRVAL ) ) {
 
 			chunk = (Chunk*)malloc(sizeof(Chunk));
-			JL_CHK( JsvalToStringAndLength(cx, &val, &chunk->data, &chunk->length) ); // warning: GC on the returned buffer !
+			
+			chunk->hasTvr = true;
+			JS_PUSH_SINGLE_TEMP_ROOT(cx, *JL_FRVAL, &chunk->tvr);
+
+			JL_CHK( JsvalToStringAndLength(cx, JL_FRVAL, &chunk->data, &chunk->length) ); // warning: GC on the returned buffer !
 			totalLength += chunk->length;
 			jl::StackPush( &stack, chunk );
 		}
@@ -153,9 +158,11 @@ DEFINE_FUNCTION_FAST( Expand ) {
 		srcBegin = tok + 1; // length of ")"
 	}
 
+//	JS_GC(cx);
+
 	char *expandedString;
 	expandedString = (char*)JS_malloc(cx, totalLength +1);
-	JL_CHK( expandedString );
+	JL_CHK( expandedString ); // (TBD) free !
 	expandedString[totalLength] = '\0';
 
 	expandedString += totalLength;
@@ -164,6 +171,8 @@ DEFINE_FUNCTION_FAST( Expand ) {
 		Chunk *chunk = (Chunk*)jl::StackPop(&stack);
 		expandedString -= chunk->length;
 		memcpy(expandedString, chunk->data, chunk->length);
+		if ( chunk->hasTvr )
+			JS_POP_TEMP_ROOT(cx, &chunk->tvr);
 		free(chunk);
 	}
 
@@ -1375,7 +1384,9 @@ DEFINE_PROPERTY( processPrioritySetter ) {
 #ifdef _DEBUG
 DEFINE_FUNCTION_FAST( Test ) {
 
-	return JS_FALSE;
+//	printf("JL_IsAssigningCallResult: %d\n\n", JL_IsAssigningCallResult(cx) );
+
+	return JS_TRUE;
 }
 #endif // _DEBUG
 

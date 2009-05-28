@@ -64,8 +64,8 @@ DEFINE_CONSTRUCTOR() {
 	JL_S_ASSERT_CONSTRUCTING();
 	JL_S_ASSERT_THIS_CLASS();
 	JL_S_ASSERT_ARG_MIN(1);
-	JS_SetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, JL_ARG(1) );
-	JL_SetPrivate(cx, obj, NULL); // (TBD) optional ?
+	JL_CHK( JS_SetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, JL_ARG(1) ) );
+	JL_CHK( JL_SetPrivate(cx, obj, NULL) ); // (TBD) optional ?
 	ReserveStreamReadInterface(cx, obj);
 	return JS_TRUE;
 	JL_BAD;
@@ -105,9 +105,9 @@ DEFINE_FUNCTION( Open ) {
 	if ( JL_ARG_ISDEF(2) ) {
 
 		JL_CHK( JsvalToInt(cx, JL_ARG(2), &mode) );
-	} else {
+	} else { // default
 
-		mode = PR_IRUSR + PR_IWUSR; // read write permission, owner
+		mode = PR_IRUSR | PR_IWUSR | PR_IRGRP | PR_IWGRP; // read write permission for owner & group
 	}
 
 	jsval jsvalFileName;
@@ -120,11 +120,11 @@ DEFINE_FUNCTION( Open ) {
 	fd = PR_Open( fileName, flags, mode ); // The mode parameter is currently applicable only on Unix platforms.
 	if ( fd == NULL )
 		return ThrowIoError(cx);
-	JL_SetPrivate( cx, obj, fd );
+	JL_CHK( JL_SetPrivate( cx, obj, fd ) );
 
 //	JL_CHK( SetStreamReadInterface(cx, obj, NativeInterfaceStreamRead) );
 
-	JL_CHK( ReserveStreamReadInterface(cx, obj) ); // this reserves the NativeInterface, then it can be switched on/off safely (see Descriptor::Close)
+//	JL_CHK( ReserveStreamReadInterface(cx, obj) ); // this reserves the NativeInterface, then it can be switched on/off safely (see Descriptor::Close)
 	JL_CHK( SetStreamReadInterface(cx, obj, NativeInterfaceStreamRead) );
 
 	*rval = OBJECT_TO_JSVAL(obj); // allows to write f.Open(...).Read()

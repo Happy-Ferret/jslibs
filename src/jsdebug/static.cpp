@@ -1489,6 +1489,31 @@ DEFINE_FUNCTION_FAST( PropertiesInfo ) {
 	JL_BAD;
 }
 
+/*
+DEFINE_FUNCTION_FAST( Disassemble ) {
+
+
+
+    jsbytecode *pc, *end;
+    uintN len;
+
+    pc = script->code;
+    end = pc + script->length;
+    while (pc < end) {
+        if (pc == script->main)
+            fputs("main:\n", fp);
+        len = js_Disassemble1(cx, script, pc,
+                              pc - script->code,
+                              lines, fp);
+        if (!len)
+            return JS_FALSE;
+        pc += len;
+    }
+    return JS_TRUE;
+}
+*/
+
+
 
 #ifdef DEBUG
 DEFINE_FUNCTION( Test ) {
