@@ -255,17 +255,18 @@ LoadModule('jsio');
 		
 		LoadModule('jsio');
 		var serverSocket = new Socket();
+		serverSocket.reuseAddr = true;
 		serverSocket.Bind(8099, '127.0.0.1');
 		serverSocket.Listen();
 
 		serverSocket.readable = function(s) {
 
 			s.Accept().Write('hello');
-			s.linger = 500;
+			s.linger = 100;
 			s.Close();
 		}
 		
-		Poll([serverSocket], 1000);
+		Poll([serverSocket], 500);
 		serverSocket.Close();
 	});
 	
@@ -273,6 +274,6 @@ LoadModule('jsio');
 
 	var client = new Socket();
 	client.Connect('127.0.0.1', 8099);
-	var res = client.Read(5);
+	var res = client.Read();
 	QA.ASSERT_STR( res, 'hello', 'response' );
 

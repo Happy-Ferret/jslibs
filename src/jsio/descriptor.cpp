@@ -260,7 +260,7 @@ DEFINE_FUNCTION_FAST( Read ) {
 
 		PRInt32 available = PR_Available( fd );
 		if (likely( available != -1 )) // we can use the 'available' information
-			JL_CHK( ReadToJsval(cx, fd, available, JL_FRVAL) );
+			JL_CHK( ReadToJsval(cx, fd, available, JL_FRVAL) ); // may block !
 		else // 'available' is not usable with this fd type, then we use a buffered read (ie. read while there is someting to read)
 			JL_CHK( ReadAllToJsval(cx, fd, JL_FRVAL) );
 			
@@ -273,7 +273,7 @@ DEFINE_FUNCTION_FAST( Read ) {
 			JL_CHK( ReadToJsval(cx, fd, amount, JL_FRVAL) ); // (TBD) check if it is good to call it even if amount is 0.
 		} else {
 
-			JL_CHK( ReadAllToJsval(cx, fd, JL_FRVAL) );
+			JL_CHK( ReadAllToJsval(cx, fd, JL_FRVAL) ); // may block !
 		}
 	}
 

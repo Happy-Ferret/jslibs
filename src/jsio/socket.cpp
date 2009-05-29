@@ -110,10 +110,26 @@ DEFINE_FUNCTION( Shutdown ) { // arg[0] =  false: SHUTDOWN_RCV | true: SHUTDOWN_
 
 /**doc
 $TOC_MEMBER $INAME
- $INAME( port [, ip] )
-  Bind an ip address to a socket.
-  _ip_ is the address to which the socket will be bound.
+ $INAME( [port] [, ip] )
+  When a new socket is created, it has no address bound to it. Bind assigns the specified address (also known as name) to the socket.
+  _ip_ is the address (interface) to which the socket will be bound.
   If _address_ is ommited, any address is will match.
+  If _port_ is $UNDEF, the socket will not br bind to any port.
+  $H return value
+   $FALSE if the address is already is in use otherwise $TRUE.
+  $H example 1
+{{{
+var server = new Socket();
+server.Bind(8099, '127.0.0.1');
+server.Listen();
+}}}
+
+  $H example 2
+{{{
+var client = new Socket();
+client.Bind(0, '192.168.0.1');
+client.Connect('127.0.0.1', 8099);
+}}}
 **/
 DEFINE_FUNCTION( Bind ) {
 
@@ -124,8 +140,14 @@ DEFINE_FUNCTION( Bind ) {
 
 	PRNetAddr addr;
 	unsigned int port;
-	JL_CHK( JsvalToUInt(cx, JL_ARG(1), &port) );
-	JL_S_ASSERT( port < 65536, "Invalid port number." );
+	if ( JL_ARG_ISDEF(1) ) {
+
+		JL_CHK( JsvalToUInt(cx, JL_ARG(1), &port) );
+		JL_S_ASSERT( port < 65536, "Invalid port number." );
+	} else {
+
+		port = 0; // doc. If you do not care about the TCP/UDP port assigned to the socket, set the inet.port field of PRNetAddr to 0.
+	}
 
 	if ( JL_ARG_ISDEF(2) ) { // if we have a second argument and this argument is not undefined
 
@@ -145,18 +167,15 @@ DEFINE_FUNCTION( Bind ) {
 
 	if ( PR_Bind(fd, &addr) != PR_SUCCESS ) {
 
-		PRErrorCode errorCode = PR_GetError();
-		switch (errorCode) {
-			case PR_ADDRESS_IN_USE_ERROR: // do not failed but return false
-				*rval = JSVAL_FALSE;
-				break;
-			default:
-				return ThrowIoErrorArg(cx, errorCode, PR_GetOSError());
-		}
-	} else {
+		if ( PR_GetError() == PR_ADDRESS_IN_USE_ERROR ) { // do not failed but return false
 
-		*rval = JSVAL_TRUE; // no error, return true
+			*rval = JSVAL_FALSE;
+			return JS_TRUE;
+		}
+		return ThrowIoError(cx);
 	}
+
+	*rval = JSVAL_TRUE; // no error, return true
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -992,6 +1011,12 @@ $TOC_MEMBER $INAME
 === Native Interface ===
  * *NIStreamRead*
 **/
+
+/**doc
+=== Intresting lecture ===
+ # [http://www.ibm.com/developerworks/linux/library/l-sockpit/ Five pitfalls of Linux sockets programming]
+**/
+
 
 CONFIGURE_CLASS
 
