@@ -261,7 +261,8 @@ LoadModule('jsio');
 		serverSocket.readable = function(s) {
 
 			s.Accept().Write('hello');
-			s.Shutdown();
+			s.linger = 500;
+			s.Close();
 		}
 		
 		Poll([serverSocket], 1000);
