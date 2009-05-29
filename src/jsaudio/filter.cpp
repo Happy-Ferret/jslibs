@@ -54,7 +54,7 @@ DEFINE_CONSTRUCTOR() {
 	alGenFilters(1, &pv->filter);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	JL_CHK( JL_SetPrivate(cx, obj, pv) );
+	JL_SetPrivate(cx, obj, pv);
 	return JS_TRUE;
 	JL_BAD;
 }

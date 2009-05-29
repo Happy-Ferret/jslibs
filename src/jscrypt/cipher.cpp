@@ -617,32 +617,38 @@ DEFINE_PROPERTY( list ) {
 
 	if ( JSVAL_IS_VOID( *vp ) ) {
 
+		JSTempValueRooter tvr;
+		JS_PUSH_SINGLE_TEMP_ROOT(cx, JSVAL_NULL, &tvr); // (TBD) remove this workaround. cf. bz495422 || bz397177
+
 		JSObject *list = JS_NewObject( cx, NULL, NULL, NULL );
-		JL_CHK( list );
-		*vp = OBJECT_TO_JSVAL(list);
-		jsval value;
+		tvr.u.value = OBJECT_TO_JSVAL(list);
 		int i;
+		jsval tmp;
 		LTC_MUTEX_LOCK(&ltc_cipher_mutex);
-		for (i=0; i<TAB_SIZE; i++)
+		for ( i = 0; i < TAB_SIZE; i++ ) {
+
 			if ( cipher_is_valid(i) == CRYPT_OK ) {
 
 				JSObject *desc = JS_NewObject( cx, NULL, NULL, NULL );
-				value = OBJECT_TO_JSVAL(desc);
-				JS_SetProperty( cx, list, cipher_descriptor[i].name, &value );
+				tmp = OBJECT_TO_JSVAL( desc );
+				JS_SetProperty( cx, list, cipher_descriptor[i].name, &tmp );
 
-				value = INT_TO_JSVAL( cipher_descriptor[i].min_key_length );
-				JS_SetProperty( cx, desc, "minKeyLength", &value );
-				value = INT_TO_JSVAL( cipher_descriptor[i].max_key_length );
-				JS_SetProperty( cx, desc, "maxKeyLength", &value );
-				value = INT_TO_JSVAL( cipher_descriptor[i].block_length );
-				JS_SetProperty( cx, desc, "blockLength", &value );
-				value = INT_TO_JSVAL( cipher_descriptor[i].default_rounds );
-				JS_SetProperty( cx, desc, "defaultRounds", &value );
+				tmp = INT_TO_JSVAL( cipher_descriptor[i].min_key_length );
+				JS_SetProperty( cx, desc, "minKeyLength", &tmp );
+				tmp = INT_TO_JSVAL( cipher_descriptor[i].max_key_length );
+				JS_SetProperty( cx, desc, "maxKeyLength", &tmp );
+				tmp = INT_TO_JSVAL( cipher_descriptor[i].block_length );
+				JS_SetProperty( cx, desc, "blockLength", &tmp );
+				tmp = INT_TO_JSVAL( cipher_descriptor[i].default_rounds );
+				JS_SetProperty( cx, desc, "defaultRounds", &tmp );
 			}
+		}
 		LTC_MUTEX_UNLOCK(&ltc_cipher_mutex);
+
+		*vp = tvr.u.value;
+		JS_POP_TEMP_ROOT(cx, &tvr);
 	}
 	return JS_TRUE;
-	JL_BAD;
 }
 
 

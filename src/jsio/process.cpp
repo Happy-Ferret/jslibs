@@ -123,22 +123,22 @@ DEFINE_CONSTRUCTOR() {
 		JL_CHKB( PR_Close(stdin_parent) == PR_SUCCESS, bad_throw );
 	}
 	JL_CHKB( process != NULL, bad_throw );
-	JL_CHK( JL_SetPrivate(cx, obj, (void*)process) );
+	JL_SetPrivate(cx, obj, (void*)process);
 
 	JSObject *fdInObj;
 	fdInObj = JS_NewObject( cx, classPipe, NULL, NULL );
 	JL_CHK( JS_SetReservedSlot(cx, obj, SLOT_PROCESS_STDIN, OBJECT_TO_JSVAL(fdInObj)) );
-	JL_CHK( JL_SetPrivate( cx, fdInObj, stdin_parent ) );
+	JL_SetPrivate( cx, fdInObj, stdin_parent );
 
 	JSObject *fdOutObj;
 	fdOutObj = JS_NewObject( cx, classPipe, NULL, NULL );
 	JL_CHK( JS_SetReservedSlot(cx, obj, SLOT_PROCESS_STDOUT, OBJECT_TO_JSVAL(fdOutObj)) );
-	JL_CHK( JL_SetPrivate( cx, fdOutObj, stdout_parent ) );
+	JL_SetPrivate( cx, fdOutObj, stdout_parent );
 
 	JSObject *fdErrObj;
 	fdErrObj = JS_NewObject( cx, classPipe, NULL, NULL );
 	JL_CHK( JS_SetReservedSlot(cx, obj, SLOT_PROCESS_STDERR, OBJECT_TO_JSVAL(fdErrObj)) );
-	JL_CHK( JL_SetPrivate( cx, fdErrObj, stderr_parent ) );
+	JL_SetPrivate( cx, fdErrObj, stderr_parent );
 
 	return JS_TRUE;
 
@@ -165,7 +165,7 @@ DEFINE_FUNCTION_FAST( Wait ) {
 	JL_S_ASSERT_RESOURCE(process);
 	PRInt32 exitValue;
 	JL_CHK( PR_WaitProcess(process, &exitValue) == PR_SUCCESS );
-	JL_CHK( JL_SetPrivate(cx, JL_FOBJ, NULL) );
+	JL_SetPrivate(cx, JL_FOBJ, NULL);
 	JL_CHK( IntToJsval(cx, exitValue, JL_FRVAL) );
 	return JS_TRUE;
 	JL_BAD;
@@ -184,7 +184,7 @@ DEFINE_FUNCTION_FAST( Detach ) {
 	process = (PRProcess*)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE(process);
 	JL_CHK( PR_DetachProcess(process) == PR_SUCCESS );
-	JL_CHK( JL_SetPrivate(cx, JL_FOBJ, NULL) ); // On return, the value of process becomes an invalid pointer and should not be passed to other functions.
+	JL_SetPrivate(cx, JL_FOBJ, NULL); // On return, the value of process becomes an invalid pointer and should not be passed to other functions.
 	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
@@ -203,7 +203,7 @@ DEFINE_FUNCTION_FAST( Kill ) {
 	process = (PRProcess*)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE(process);
 	JL_CHK( PR_KillProcess(process) == PR_SUCCESS );
-	JL_CHK( JL_SetPrivate(cx, JL_FOBJ, NULL) ); // Invalidates the current process pointer.
+	JL_SetPrivate(cx, JL_FOBJ, NULL); // Invalidates the current process pointer.
 	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;

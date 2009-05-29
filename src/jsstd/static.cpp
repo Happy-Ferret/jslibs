@@ -132,25 +132,22 @@ DEFINE_FUNCTION_FAST( Expand ) {
 
 		if ( mapIsFunction ) {
 			
-			JL_CHK( StringAndLengthToJsval(cx, JL_FRVAL, srcBegin, tok-srcBegin) );
-			JL_CHK( JS_CallFunctionValue(cx, JL_FOBJ, map, 1, JL_FRVAL, JL_FRVAL) );
+			JL_CHKB( StringAndLengthToJsval(cx, JL_FRVAL, srcBegin, tok-srcBegin), bad_free_stack );
+			JL_CHKB( JS_CallFunctionValue(cx, JL_FOBJ, map, 1, JL_FRVAL, JL_FRVAL), bad_free_stack );
 		} else {
 		
-			// (TBD) try to replace the following code
-			char tmp = *tok;
-			*((char*)tok) = 0;
-			JL_CHK( JS_GetProperty(cx, JSVAL_TO_OBJECT(map), srcBegin, JL_FRVAL) );
+			char tmp = *tok; // (TBD) try to replace this trick
+			*((char*)tok) = '\0';
+			JL_CHKB( JS_GetProperty(cx, JSVAL_TO_OBJECT(map), srcBegin, JL_FRVAL), bad_free_stack );
 			*((char*)tok) = tmp;
 		}
 
 		if ( !JSVAL_IS_VOID( *JL_FRVAL ) ) {
 
 			chunk = (Chunk*)malloc(sizeof(Chunk));
-			
-			chunk->hasTvr = true;
 			JS_PUSH_SINGLE_TEMP_ROOT(cx, *JL_FRVAL, &chunk->tvr);
-
-			JL_CHK( JsvalToStringAndLength(cx, JL_FRVAL, &chunk->data, &chunk->length) ); // warning: GC on the returned buffer !
+			chunk->hasTvr = true;
+			JL_CHKB( JsvalToStringAndLength(cx, &chunk->tvr.u.value, &chunk->data, &chunk->length), bad_free_stack );
 			totalLength += chunk->length;
 			jl::StackPush( &stack, chunk );
 		}
@@ -158,11 +155,9 @@ DEFINE_FUNCTION_FAST( Expand ) {
 		srcBegin = tok + 1; // length of ")"
 	}
 
-//	JS_GC(cx);
-
 	char *expandedString;
 	expandedString = (char*)JS_malloc(cx, totalLength +1);
-	JL_CHK( expandedString ); // (TBD) free !
+	JL_CHKB( expandedString, bad_free_stack );
 	expandedString[totalLength] = '\0';
 
 	expandedString += totalLength;
@@ -181,7 +176,18 @@ DEFINE_FUNCTION_FAST( Expand ) {
 	JL_CHK( jsstr );
 	*JL_FRVAL = STRING_TO_JSVAL( jsstr );
 	return JS_TRUE;
-	JL_BAD;
+
+bad_free_stack:
+
+	while ( !jl::StackIsEnd(&stack) ) {
+
+		Chunk *chunk = (Chunk*)jl::StackPop(&stack);
+		if ( chunk->hasTvr )
+			JS_POP_TEMP_ROOT(cx, &chunk->tvr);
+		free(chunk);
+	}
+bad:
+	return JS_FALSE;
 }
 
 
@@ -1382,12 +1388,39 @@ DEFINE_PROPERTY( processPrioritySetter ) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #ifdef _DEBUG
-DEFINE_FUNCTION_FAST( Test ) {
 
-//	printf("JL_IsAssigningCallResult: %d\n\n", JL_IsAssigningCallResult(cx) );
+JSBool testProp(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
+
+	JSObject *list = JS_NewObject( cx, NULL, NULL, NULL );
+	*vp = OBJECT_TO_JSVAL(list);
+	
+	jsval tmp;
+
+	JSObject *desc = JS_NewObject( cx, NULL, NULL, NULL );
+	tmp = OBJECT_TO_JSVAL( desc );
+	JS_SetProperty( cx, list, "name", &tmp );
+
+	desc = JS_NewObject( cx, NULL, NULL, NULL );
+	tmp = OBJECT_TO_JSVAL( desc );
+	JS_SetProperty( cx, list, "foo", &tmp );
+
+//	JS_GC(cx); // crash the program
 
 	return JS_TRUE;
+	JL_BAD;
 }
+
+DEFINE_FUNCTION( Test ) {
+
+	JS_SetGCZeal(cx, 1);
+
+	JL_CHK( JS_DefineProperty(cx, obj, "testProp", JSVAL_VOID, testProp, NULL, 0) );
+
+//	printf("JL_IsAssigningCallResult: %d\n\n", JL_IsAssigningCallResult(cx) );
+	return JS_TRUE;
+	JL_BAD;
+}
+
 #endif // _DEBUG
 
 
@@ -1429,7 +1462,7 @@ CONFIGURE_STATIC
 		FUNCTION_FAST( Halt )
 //		FUNCTION( StrSet )
 #ifdef _DEBUG
-		FUNCTION_FAST( Test )
+		FUNCTION( Test )
 #endif // _DEBUG
 	END_STATIC_FUNCTION_SPEC
 
@@ -1437,6 +1470,9 @@ CONFIGURE_STATIC
 		PROPERTY_READ( isConstructing )
 		PROPERTY( disableGarbageCollection )
 //		PROPERTY( processPriority )
+#ifdef _DEBUG
+//		PROPERTY( testProp )
+#endif // _DEBUG
 	END_STATIC_PROPERTY_SPEC
 
 END_STATIC

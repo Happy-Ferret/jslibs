@@ -261,7 +261,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_S_ASSERT_ARG_MIN(2);
 	Private *pv = (Private*)JS_malloc(cx, sizeof(Private));
 	JL_CHK( pv );
-	JL_CHK( JL_SetPrivate(cx, obj, pv) );
+	JL_SetPrivate(cx, obj, pv);
 	const char *jid, *password;
 	JL_CHK( JsvalToString(cx, &JL_ARG(1), &jid) );
 	JL_CHK( JsvalToString(cx, &JL_ARG(2), &password) );

@@ -108,7 +108,7 @@ DEFINE_CONSTRUCTOR() {
 	pv->addr = PR_MemMap(pv->fmap, 0, pv->size);
 	if ( pv->addr == NULL )
 		return ThrowIoError(cx);
-	JL_CHK( JL_SetPrivate(cx, obj, pv) );
+	JL_SetPrivate(cx, obj, pv);
 
 	JL_CHK( SetBufferGetInterface(cx, obj, BufferGet) );
 

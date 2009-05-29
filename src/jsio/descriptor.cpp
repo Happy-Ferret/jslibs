@@ -90,7 +90,7 @@ void FinalizeDescriptor(JSContext *cx, JSObject *obj) {
 		if ( PR_GetError() != PR_WOULD_BLOCK_ERROR ) // if non-blocking descriptor, this is a non-fatal error
 			JS_ReportError( cx, "A descriptor cannot be closed while Finalize." );
 	}
-	JL_CHK( JL_SetPrivate( cx, obj, NULL ) );
+	JL_SetPrivate( cx, obj, NULL );
 
 bad:
 	return;
@@ -123,7 +123,7 @@ DEFINE_FUNCTION_FAST( Close ) {
 		if ( errorCode != PR_WOULD_BLOCK_ERROR ) // if non-blocking descriptor, this is a non-fatal error
 			return ThrowIoError(cx);
 	}
-	JL_CHK( JL_SetPrivate(cx, JL_FOBJ, NULL) );
+	JL_SetPrivate(cx, JL_FOBJ, NULL);
 	//	JS_ClearScope( cx, obj ); // help to clear readable, writable, exception ?
 	JL_CHK( SetStreamReadInterface(cx, JL_FOBJ, NULL) );
 	return JS_TRUE;
@@ -506,7 +506,7 @@ DEFINE_FUNCTION( Import ) {
 		return ThrowIoError(cx);
 
 	JL_CHK( descriptorObject );
-	JL_CHK( JL_SetPrivate(cx, descriptorObject, (void*)fd) );
+	JL_SetPrivate(cx, descriptorObject, (void*)fd);
 	JL_CHK( JS_SetReservedSlot(cx, descriptorObject, SLOT_JSIO_DESCRIPTOR_IMPORTED, JSVAL_TRUE) );
 
 	*rval = OBJECT_TO_JSVAL(descriptorObject);

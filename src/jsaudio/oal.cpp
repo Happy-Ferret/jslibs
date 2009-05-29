@@ -411,12 +411,12 @@ DEFINE_FUNCTION_FAST( GetDouble ) {
 		jsval tmpValue;
 		while (count--) {
 
-			JL_CHK( JS_NewDoubleValue(cx, params[count], &tmpValue) );
+			JL_CHK( DoubleToJsval(cx, params[count], &tmpValue) );
 			JL_CHK( JS_SetElement(cx, arrayObj, count, &tmpValue) );
 		}
 	} else {
 
-		JL_CHK( JS_NewDoubleValue(cx, params[0], JL_FRVAL) );
+		JL_CHK( DoubleToJsval(cx, params[0], JL_FRVAL) );
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -495,13 +495,13 @@ DEFINE_FUNCTION_FAST( GetListenerReal ) {
 		*JL_FRVAL = OBJECT_TO_JSVAL(arrayObj);
 		jsval tmpValue;
 		while (count--) {
-
-			JL_CHK( JS_NewDoubleValue(cx, params[count], &tmpValue) );
+			
+			JL_CHK( FloatToJsval(cx, params[count], &tmpValue) );
 			JL_CHK( JS_SetElement(cx, arrayObj, count, &tmpValue) );
 		}
 	} else {
 
-		JL_CHK( JS_NewDoubleValue(cx, params[0], JL_FRVAL) );
+		JL_CHK( FloatToJsval(cx, params[0], JL_FRVAL) );
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -552,8 +552,8 @@ DEFINE_FUNCTION_FAST( Source ) {
 	}
 	if ( JSVAL_IS_DOUBLE(JL_FARG(3)) ) {
 
-		jsdouble param;
-		JL_CHK( JS_ValueToNumber(cx, JL_FARG(3), &param) );
+		float param;
+		JL_CHK( JsvalToFloat(cx, JL_FARG(3), &param) );
 		alSourcef( sid, JSVAL_TO_INT( JL_FARG(2) ), param );
 		return JS_TRUE;
 	}
@@ -608,12 +608,12 @@ DEFINE_FUNCTION_FAST( GetSourceReal ) {
 		jsval tmpValue;
 		while (count--) {
 
-			JL_CHK( JS_NewDoubleValue(cx, params[count], &tmpValue) );
+			JL_CHK( FloatToJsval(cx, params[count], &tmpValue) );
 			JL_CHK( JS_SetElement(cx, arrayObj, count, &tmpValue) );
 		}
 	} else {
 
-		JL_CHK( JS_NewDoubleValue(cx, params[0], JL_FRVAL) );
+		JL_CHK( FloatToJsval(cx, params[0], JL_FRVAL) );
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -655,7 +655,7 @@ DEFINE_FUNCTION_FAST( GetSourceInteger ) {
 		}
 	} else {
 
-		JL_CHK( JS_NewDoubleValue(cx, params[0], JL_FRVAL) );
+		JL_CHK( IntToJsval(cx, params[0], JL_FRVAL) );
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -853,12 +853,12 @@ DEFINE_FUNCTION_FAST( GetBufferReal ) {
 		jsval tmpValue;
 		while (count--) {
 
-			JL_CHK( JS_NewDoubleValue(cx, params[count], &tmpValue) );
+			JL_CHK( FloatToJsval(cx, params[count], &tmpValue) );
 			JL_CHK( JS_SetElement(cx, arrayObj, count, &tmpValue) );
 		}
 	} else {
 
-		JL_CHK( JS_NewDoubleValue(cx, params[0], JL_FRVAL) );
+		JL_CHK( FloatToJsval(cx, params[0], JL_FRVAL) );
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -895,12 +895,12 @@ DEFINE_FUNCTION_FAST( GetBufferInteger ) {
 		jsval tmpValue;
 		while (count--) {
 
-			JL_CHK( JS_NewDoubleValue(cx, params[count], &tmpValue) );
+			JL_CHK( IntToJsval(cx, params[count], &tmpValue) );
 			JL_CHK( JS_SetElement(cx, arrayObj, count, &tmpValue) );
 		}
 	} else {
 
-		JL_CHK( JS_NewDoubleValue(cx, params[0], JL_FRVAL) );
+		JL_CHK( IntToJsval(cx, params[0], JL_FRVAL) );
 	}
 	return JS_TRUE;
 	JL_BAD;

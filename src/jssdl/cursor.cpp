@@ -106,7 +106,7 @@ DEFINE_CONSTRUCTOR() {
 		return ThrowSdlError(cx);
 	}
 
-	JL_CHK( JL_SetPrivate(cx, obj, cursor) );
+	JL_SetPrivate(cx, obj, cursor);
 
 	free(cursorImage);
 	return JS_TRUE;

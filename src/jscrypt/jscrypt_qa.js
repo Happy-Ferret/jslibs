@@ -9,9 +9,14 @@ LoadModule('jscrypt');
 
 /// Cipher, Hash, Prng list [ftrm]
 	
-		QA.ASSERT( Cipher.list.toSource().length, 1609, 'length of Cipher.list' );
-		QA.ASSERT( Hash.list.toSource().length, 535, 'length of Hash.list' );
-		QA.ASSERT( Prng.list.toSource().length, 51, 'length of Prng.list' );
+		QA.ASSERT( Cipher.list.__count__, 21, 'length of Cipher.list' );
+		QA.ASSERT( Cipher.list.toSource().length, 1609, 'length of Cipher.list.toString' );
+		
+		QA.ASSERT( Hash.list.__count__, 15, 'length of Cipher.list' );
+		QA.ASSERT( Hash.list.toSource().length, 535, 'length of Hash.list.toString' );
+		
+		QA.ASSERT( Prng.list.__count__, 5, 'length of Cipher.list' );
+		QA.ASSERT( Prng.list.toSource().length, 51, 'length of Prng.list.toString' );
 
 
 /// DSA asymmetric crypt and decrypt [rm]

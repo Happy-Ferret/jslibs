@@ -104,7 +104,7 @@ DEFINE_CONSTRUCTOR() {
 	pv->semaphore = semaphore;
 	pv->owner = isCreation;
 
-	JL_CHK( JL_SetPrivate(cx, JL_OBJ, pv) );
+	JL_SetPrivate(cx, JL_OBJ, pv);
 
 	return JS_TRUE;
 	JL_BAD;

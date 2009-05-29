@@ -171,11 +171,11 @@ DEFINE_CONSTRUCTOR() {
 		JL_CHK( dBuffer );
 		((char*)dBuffer)[length] = '\0';
 		memcpy(dBuffer, sBuffer, length);
-		JL_CHK( JL_SetPrivate(cx, obj, dBuffer) );
+		JL_SetPrivate(cx, obj, dBuffer);
 		JL_CHK( JS_SetReservedSlot(cx, obj, SLOT_BLOB_LENGTH, INT_TO_JSVAL(length) ) );
 	} else {
 
-		JL_CHK( JL_SetPrivate(cx, obj, NULL) );
+		JL_SetPrivate(cx, obj, NULL);
 		JL_CHK( JS_SetReservedSlot(cx, obj, SLOT_BLOB_LENGTH, INT_TO_JSVAL(0) ) );
 	}
 
@@ -223,7 +223,7 @@ DEFINE_FUNCTION_FAST( Free ) {
 	}
 
 	JS_free(cx, pv);
-	JL_CHK( JL_SetPrivate(cx, JL_FOBJ, NULL) );
+	JL_SetPrivate(cx, JL_FOBJ, NULL);
 	JL_CHK( InvalidateBlob(cx, JL_FOBJ) );
 	// removes all of obj's own properties, except the special __proto__ and __parent__ properties, in a single operation.
 	// Properties belonging to objects on obj's prototype chain are not affected.

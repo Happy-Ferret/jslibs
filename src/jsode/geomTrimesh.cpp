@@ -69,7 +69,7 @@ DEFINE_CONSTRUCTOR() {
 	ode::dGeomID geomId = ode::dCreateTriMesh(space, triMeshDataID, NULL, NULL, NULL);
 
 	JL_CHK( JS_SetReservedSlot(cx, obj, SLOT_TRIMESH, trimeshVal) ); // keep e reference to the trimesh object because dGeomTriMeshDataBuildSingle do not make a copy of the data.
-	JL_CHK( JL_SetPrivate(cx, obj, geomId) );
+	JL_SetPrivate(cx, obj, geomId);
 	JL_CHK( SetupReadMatrix(cx, obj) ); // (TBD) check return status
 	ode::dGeomSetData(geomId, obj); // 'obj' do not need to be rooted because Goem's data is reset to NULL when 'obj' is finalized.
 

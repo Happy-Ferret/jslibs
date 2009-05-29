@@ -1461,6 +1461,7 @@ DEFINE_FUNCTION_FAST( PropertiesInfo ) {
 
 			tmp = desc.flags & JSPD_ENUMERATE ? JSVAL_TRUE : JSVAL_FALSE; // visible to for/in loop
 			JL_CHK( JS_SetProperty(cx, descObj, "enumerate", &tmp) );
+//			JL_CHK( SetPropertyBool(cx, descObj, "enumerate", desc.flags & JSPD_ENUMERATE) );
 
 			tmp = desc.flags & JSPD_READONLY ? JSVAL_TRUE : JSVAL_FALSE;
 			JL_CHK( JS_SetProperty(cx, descObj, "readonly", &tmp) );
@@ -1493,7 +1494,6 @@ DEFINE_FUNCTION_FAST( PropertiesInfo ) {
 DEFINE_FUNCTION_FAST( Disassemble ) {
 
 
-
     jsbytecode *pc, *end;
     uintN len;
 
@@ -1518,7 +1518,6 @@ DEFINE_FUNCTION_FAST( Disassemble ) {
 #ifdef DEBUG
 DEFINE_FUNCTION( Test ) {
 
-	JL_REPORT_ERROR("error test");
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1533,6 +1532,10 @@ CONFIGURE_STATIC
 		FUNCTION( GetObjectPrivate )
 		FUNCTION( DumpStats )
 		FUNCTION_FAST( TraceGC )
+
+//		FUNCTION_FAST( Disassemble );
+
+
 //		FUNCTION( Trap )
 //		FUNCTION( Untrap )
 //		FUNCTION( LineToPC )

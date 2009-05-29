@@ -1,7 +1,34 @@
-LoadModule('jsstd');
+LoadModule('jsdebug');
 LoadModule('jsio');
 
-Halt();
+gcZeal = 2;
+
+
+var s1 = new Socket( Socket.UDP );
+s1.Connect('127.0.0.1', 9999);
+
+var s2 = new Socket( Socket.UDP );
+s2.Bind(9999);
+s2.readable = function(s) {
+
+	s.RecvFrom();
+}
+
+
+var dlist = [s1,s2];
+
+Poll(dlist, 10);
+s1.Write('x');
+
+Poll(dlist, 10);
+s1.Write('y');
+
+Poll(dlist, 10);
+s1.Write('z');
+
+
+
+Halt(); //////////////////////////////////////////////////////////////////////
 
 try {
 

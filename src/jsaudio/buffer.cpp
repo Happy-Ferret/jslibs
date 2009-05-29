@@ -72,7 +72,7 @@ DEFINE_CONSTRUCTOR() {
 	alBufferData(bid, format, buffer, bufferLength, rate); // Upload sound data to buffer
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	JL_CHK( JL_SetPrivate(cx, obj, (void*)bid) );
+	JL_SetPrivate(cx, obj, (void*)bid);
 	return JS_TRUE;
 	JL_BAD;
 }

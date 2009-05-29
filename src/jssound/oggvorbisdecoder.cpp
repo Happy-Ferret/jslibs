@@ -166,7 +166,7 @@ DEFINE_CONSTRUCTOR() {
 
 	Private *pv = (Private*)JS_malloc(cx, sizeof(Private));
 	JL_CHK( pv );
-	JL_CHK( JL_SetPrivate(cx, obj, pv) );
+	JL_SetPrivate(cx, obj, pv);
 
 	JL_CHK( JS_SetReservedSlot(cx, obj, SLOT_INPUT_STREAM, JL_ARG(1) ) );
 	pv->streamObject = JSVAL_TO_OBJECT(JL_ARG(1));

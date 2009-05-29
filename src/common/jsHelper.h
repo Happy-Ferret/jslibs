@@ -377,14 +377,13 @@ ALWAYS_INLINE void *JL_GetPrivate(JSContext *cx, JSObject *obj) {
 }
 
 
-ALWAYS_INLINE JSBool JL_SetPrivate(JSContext *cx, JSObject *obj, void *data) {
+ALWAYS_INLINE void JL_SetPrivate(JSContext *cx, JSObject *obj, void *data) {
 
 	JS_ASSERT(OBJ_GET_CLASS(cx, obj)->flags & JSCLASS_HAS_PRIVATE);
 	obj->fslots[JSSLOT_PRIVATE] = PRIVATE_TO_JSVAL(data);
 	#ifdef DEBUG
 		JS_ASSERT( data == JS_GetPrivate(cx, obj) ); // Mozilla JS engine private API behavior has changed.
 	#endif //DEBUG
-	return JS_TRUE;
 }
 
 
@@ -814,6 +813,24 @@ inline JSClass *GetGlobalClassByName( JSContext *cx, const char *className ) {
 ///////////////////////////////////////////////////////////////////////////////
 // test and conversion functions
 
+/*
+inline bool JsvalIsDataBuffer( JSContext *cx, jsval val ) {
+
+	if ( JSVAL_IS_STRING(val) )
+		return true;
+
+	if ( !JSVAL_IS_OBJECT(val) )
+		return false;
+//	NIBufferGet fct = BufferGetNativeInterface(cx, JSVAL_TO_OBJECT(val)); // why not BufferGetInterface() ?
+	NIBufferGet fct = BufferGetInterface(cx, JSVAL_TO_OBJECT(val));
+	if ( fct )
+		return true;
+	return false;
+//	if ( !JSVAL_IS_PRIMITIVE(val) && JL_GetClass(cx, JSVAL_TO_OBJECT(val)) == BlobJSClass(cx) )
+//		return true;
+}
+*/
+
 ALWAYS_INLINE bool JL_ValueIsBlob( JSContext *cx, jsval v ) {
 	
 	if ( JSVAL_IS_PRIMITIVE(v) )
@@ -843,7 +860,7 @@ ALWAYS_INLINE JSBool JL_NewBlob( JSContext *cx, void* buffer, size_t length, jsv
 		JL_CHK( blob );
 		*vp = OBJECT_TO_JSVAL(blob);
 		JL_CHK( JS_SetReservedSlot(cx, blob, 0, INT_TO_JSVAL( length )) ); // 0 for SLOT_BLOB_LENGTH !!!
-		JL_CHK( JL_SetPrivate(cx, blob, buffer) ); // blob data
+		JL_SetPrivate(cx, blob, buffer); // blob data
 		return JS_TRUE;
 	}
 
@@ -879,27 +896,21 @@ ALWAYS_INLINE JSBool JL_NewBlobCopyN( JSContext *cx, const void *data, size_t am
 	JL_BAD;
 }
 
-/*
-inline bool JsvalIsDataBuffer( JSContext *cx, jsval val ) {
-
-	if ( JSVAL_IS_STRING(val) )
-		return true;
-
-	if ( !JSVAL_IS_OBJECT(val) )
-		return false;
-//	NIBufferGet fct = BufferGetNativeInterface(cx, JSVAL_TO_OBJECT(val)); // why not BufferGetInterface() ?
-	NIBufferGet fct = BufferGetInterface(cx, JSVAL_TO_OBJECT(val));
-	if ( fct )
-		return true;
-	return false;
-//	if ( !JSVAL_IS_PRIMITIVE(val) && JL_GetClass(cx, JSVAL_TO_OBJECT(val)) == BlobJSClass(cx) )
-//		return true;
-}
-*/
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // jsval convertion functions
+
+
+ALWAYS_INLINE jsid StringToJsid( JSContext *cx, const char *cstr ) {
+
+	jsid tmp;
+	JSString *jsstr = JS_InternString(cx, cstr);
+	JL_CHK( jsstr != NULL );
+	JL_CHK( JS_ValueToId(cx, STRING_TO_JSVAL(jsstr), &tmp) );
+	return tmp;
+bad:
+	return 0;
+}
 
 
 // beware: caller should keep a reference to buffer as short time as possible, because it is difficult to protect it from GC.
@@ -1177,7 +1188,6 @@ ALWAYS_INLINE JSBool DoubleToJsval( JSContext *cx, double d, jsval *val ) {
 }
 
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // vector convertion functions
 
@@ -1253,6 +1263,7 @@ ALWAYS_INLINE JSBool DoubleVectorToJsval( JSContext *cx, const double *vector, s
 	JL_BAD;
 }
 
+
 ALWAYS_INLINE JSBool FloatVectorToJsval( JSContext *cx, const float *vector, size_t length, jsval *val ) {
 
 	JSObject *arrayObj = JS_NewArrayObject(cx, length, NULL);
@@ -1308,6 +1319,8 @@ ALWAYS_INLINE JSBool JsvalToDoubleVector( JSContext *cx, jsval val, double *vect
 	JL_BAD;
 }
 
+///////////////////////////////////////////////////////////////////////////////
+// properties helper
 
 
 ALWAYS_INLINE JSBool SetPropertyString( JSContext *cx, JSObject *obj, const char *propertyName, const char *str ) {
@@ -1384,7 +1397,6 @@ ALWAYS_INLINE JSBool GetPropertyUInt( JSContext *cx, JSObject *obj, const char *
 	return JS_TRUE;
 	JL_BAD;
 }
-
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1480,19 +1492,6 @@ ALWAYS_INLINE JSBool UnserializeJsval( JSContext *cx, const Serialized *xdr, jsv
 }
 
 
-ALWAYS_INLINE jsid StringToJsid( JSContext *cx, const char *cstr ) {
-
-	jsid tmp;
-	JSString *jsstr = JS_InternString(cx, cstr);
-	JL_CHK( jsstr != NULL );
-	JL_CHK( JS_ValueToId(cx, STRING_TO_JSVAL(jsstr), &tmp) );
-	return tmp;
-bad:
-	return 0;
-}
-
-
-
 ///////////////////////////////////////////////////////////////////////////////
 // NativeInterface
 
@@ -1516,6 +1515,9 @@ inline JSBool SetNativeInterface( JSContext *cx, JSObject *obj, const char *name
 }
 
 inline JSBool GetNativeInterface( JSContext *cx, JSObject *obj, JSObject **obj2p, jsid iid, void **nativeFct ) {
+
+//	jsval tmp;
+//	JL_CHK( JS_GetPropertyById(cx, obj, iid, &tmp) );
 
 //	JSObject *obj2;
 	JSProperty *prop;

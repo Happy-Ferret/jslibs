@@ -67,7 +67,7 @@ DEFINE_CONSTRUCTOR() {
 
 	memset(pv, 0, sizeof(Surface));
 
-	JL_CHK( JL_SetPrivate(cx, obj, pv) );
+	JL_SetPrivate(cx, obj, pv);
 	return JS_TRUE;
 	JL_BAD;
 }

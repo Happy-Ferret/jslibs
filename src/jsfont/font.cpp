@@ -101,7 +101,7 @@ DEFINE_CONSTRUCTOR() {
 	// see. FT_Open_Face
 
 	JL_S_ASSERT_RESOURCE(face);
-	JL_CHK( JL_SetPrivate(cx, obj, face) );
+	JL_SetPrivate(cx, obj, face);
 	return JS_TRUE;
 	JL_BAD;
 }

@@ -89,7 +89,7 @@ DEFINE_CONSTRUCTOR() {
 		else
 			JL_REPORT_ERROR( "Unknown iconv error." );
 	}
-	JL_CHK( JL_SetPrivate(cx, obj, pv) );
+	JL_SetPrivate(cx, obj, pv);
 	return JS_TRUE;
 	JL_BAD;
 }

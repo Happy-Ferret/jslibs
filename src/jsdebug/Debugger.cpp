@@ -367,10 +367,10 @@ DEFINE_CONSTRUCTOR() {
 
 	Private *pv;
 	pv = (Private*)JS_malloc(cx, sizeof(Private));
-	JL_CHK(pv);
+	JL_CHK( pv );
 
 	memset(pv, 0, sizeof(Private));
-	JL_CHK( JL_SetPrivate(cx, obj, pv) );
+	JL_SetPrivate(cx, obj, pv);
 	pv->debugHooks = JS_GetGlobalDebugHooks(JS_GetRuntime(cx));
 
 	return JS_TRUE;

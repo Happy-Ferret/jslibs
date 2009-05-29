@@ -98,7 +98,7 @@ JSBool CloseSharedMemory( JSContext *cx, JSObject *obj ) {
 	}
 
 	JS_free(cx, pv);
-	JL_CHK( JL_SetPrivate(cx, JL_OBJ, NULL) );
+	JL_SetPrivate(cx, JL_OBJ, NULL);
 
 	return JS_TRUE;
 bad_ioerror:
@@ -199,7 +199,7 @@ DEFINE_CONSTRUCTOR() {
 	}
 
 	JL_CHKB( PR_PostSemaphore( accessSem ) == PR_SUCCESS, bad_ioerror );
-	JL_CHK( JL_SetPrivate(cx, obj, pv) );
+	JL_SetPrivate(cx, obj, pv);
 	JL_CHK( SetBufferGetInterface(cx, obj, BufferGet) );
 
 	return JS_TRUE;

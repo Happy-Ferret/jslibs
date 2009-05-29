@@ -109,8 +109,11 @@ void DestroyScriptHook(JSContext *cx, JSScript *script, void *callerdata) {
 			if ( s == script ) {
 
 				jl::QueueRemoveCell(scriptList, it1);
-				if ( jl::QueueIsEmpty(scriptList) )
+				if ( jl::QueueIsEmpty(scriptList) ) {
+
 					jl::QueueRemoveCell(scriptFileList, it);
+					jl::QueueDestruct(scriptList);
+				}
 				return;
 			}
 		}

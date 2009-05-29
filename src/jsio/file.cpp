@@ -65,7 +65,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_S_ASSERT_THIS_CLASS();
 	JL_S_ASSERT_ARG_MIN(1);
 	JL_CHK( JS_SetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, JL_ARG(1) ) );
-	JL_CHK( JL_SetPrivate(cx, obj, NULL) ); // (TBD) optional ?
+	JL_SetPrivate(cx, obj, NULL); // (TBD) optional ?
 	ReserveStreamReadInterface(cx, obj);
 	return JS_TRUE;
 	JL_BAD;
@@ -120,7 +120,7 @@ DEFINE_FUNCTION( Open ) {
 	fd = PR_Open( fileName, flags, mode ); // The mode parameter is currently applicable only on Unix platforms.
 	if ( fd == NULL )
 		return ThrowIoError(cx);
-	JL_CHK( JL_SetPrivate( cx, obj, fd ) );
+	JL_SetPrivate( cx, obj, fd );
 
 //	JL_CHK( SetStreamReadInterface(cx, obj, NativeInterfaceStreamRead) );
 

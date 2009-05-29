@@ -256,9 +256,11 @@ DEFINE_PROPERTY( list ) {
 
 	if ( JSVAL_IS_VOID( *vp ) ) {
 
+		JSTempValueRooter tvr;
+		JS_PUSH_SINGLE_TEMP_ROOT(cx, JSVAL_NULL, &tvr); // (TBD) remove this workaround. cf. bz495422 || bz397177
+
 		JSObject *list = JS_NewObject( cx, NULL, NULL, NULL );
-		JL_CHK( list );
-		*vp = OBJECT_TO_JSVAL(list);
+		tvr.u.value = OBJECT_TO_JSVAL(list);
 		jsval value;
 		int i;
 		LTC_MUTEX_LOCK(&ltc_prng_mutex);
@@ -269,9 +271,11 @@ DEFINE_PROPERTY( list ) {
 				JS_SetProperty( cx, list, prng_descriptor[i].name, &value );
 			}
 		LTC_MUTEX_UNLOCK(&ltc_prng_mutex);
+
+		*vp = tvr.u.value;
+		JS_POP_TEMP_ROOT(cx, &tvr);
 	}
 	return JS_TRUE;
-	JL_BAD;
 }
 
 

@@ -522,7 +522,7 @@ DEFINE_FUNCTION_FAST( Swap ) {
 	void *tmp;
 	tmp = JL_GetPrivate(cx, JL_FOBJ);
 	JL_SetPrivate(cx, JL_FOBJ, JL_GetPrivate(cx, texObj));
-	JL_CHK( JL_SetPrivate(cx, texObj, tmp) );
+	JL_SetPrivate(cx, texObj, tmp);
 	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
 	return JS_TRUE;
 	JL_BAD;

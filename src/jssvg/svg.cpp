@@ -112,7 +112,7 @@ DEFINE_CONSTRUCTOR() {
 	pv->handle = rsvg_handle_new();
 	JL_S_ASSERT( pv->handle != NULL, "Unable to create rsvg handler." );
 	cairo_matrix_init_identity(&pv->transformation);
-	JL_CHK( JL_SetPrivate(cx, obj, pv) );
+	JL_SetPrivate(cx, obj, pv);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -187,7 +187,7 @@ DEFINE_PROPERTY( xmlData ) {
 		g_object_unref(handle);
 	handle = rsvg_handle_new();
 	JL_S_ASSERT( handle != NULL, "Unable to create rsvg handler." );
-	JL_CHK( JL_SetPrivate(cx, obj, handle) );
+	JL_SetPrivate(cx, obj, handle);
 
 	const char *data;
 	size_t length;

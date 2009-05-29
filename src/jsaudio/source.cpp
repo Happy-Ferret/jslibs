@@ -156,7 +156,7 @@ DEFINE_CONSTRUCTOR() {
 	alGenAuxiliaryEffectSlots(1, &pv->effectSlot);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	JL_CHK( JL_SetPrivate(cx, obj, pv) );
+	JL_SetPrivate(cx, obj, pv);
 	return JS_TRUE;
 	JL_BAD;
 }

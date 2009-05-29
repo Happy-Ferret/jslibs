@@ -540,7 +540,7 @@ DEFINE_CONSTRUCTOR() {
 	BufferPrivate *pv;
 	pv = (BufferPrivate *)JS_malloc(cx, sizeof(BufferPrivate));
 	JL_CHK( pv );
-	JL_CHK( JL_SetPrivate(cx, obj, pv) );
+	JL_SetPrivate(cx, obj, pv);
 	pv->queue = jl::QueueConstruct();
 	JL_S_ASSERT_ALLOC(pv->queue);
 	pv->length = 0;

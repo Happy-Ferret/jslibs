@@ -47,7 +47,7 @@ inline JSBool CreateId( JSContext *cx, ID_TYPE idType, size_t userSize, void** u
 	IdPrivate *pv;
 	pv = (IdPrivate*)JS_malloc(cx, sizeof(IdPrivate) + userSize);
 	JL_CHK(pv);
-	JL_CHKB( JL_SetPrivate(cx, idObj, pv), bad_free );
+	JL_SetPrivate(cx, idObj, pv);
 
 	pv->idType = idType;
 	pv->finalizeCallback = finalizeCallback;

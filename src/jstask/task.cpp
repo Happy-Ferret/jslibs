@@ -331,7 +331,7 @@ DEFINE_CONSTRUCTOR() {
 		}
 	}
 
-	JL_CHK( JL_SetPrivate(cx, obj, pv) );
+	JL_SetPrivate(cx, obj, pv);
 
 	pv->mutex = JLCreateMutex();
 	JL_CHKM( JLMutexOk(pv->mutex), "Unable to create the mutex." );

@@ -102,7 +102,7 @@ DEFINE_CONSTRUCTOR() {
 	pv = (Private*)JS_malloc(cx, sizeof(Private));
 	JL_CHK(pv);
 
-	JL_CHK( JL_SetPrivate(cx, obj, pv) );
+	JL_SetPrivate(cx, obj, pv);
 	pv->stream.state = Z_NULL; // mendatory
 	
 	pv->stream.zalloc = Z_NULL;

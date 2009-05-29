@@ -60,7 +60,7 @@ DEFINE_CONSTRUCTOR() {
 	if ( fd == NULL )
 		return ThrowIoError(cx);
 
-	JL_CHK( JL_SetPrivate( cx, obj, fd ) );
+	JL_SetPrivate( cx, obj, fd );
 	JL_CHK( ReserveStreamReadInterface(cx, obj) );
 	return JS_TRUE;
 	JL_BAD;
