@@ -1,6 +1,8 @@
 LoadModule('jsstd');
 LoadModule('jsio');
 
+Print( 'Press ctrl-c to exit.\n' );
+
 try {
 
 	var dlist = []; // descriptor list (sockets)
@@ -80,9 +82,8 @@ try {
 	clientSocket.Connect( 'localhost', 8099 );
 	
 	
-	// MAIN
+	// EVENT LOOP
 	
-	Print( 'Press ctrl-c to exit.\n' );
 
 	while( !endSignal ) { // ctrl-c
 		

@@ -26,7 +26,7 @@ try {
 				if ( button == 1 ) // left-click to run.
 					CreateProcess( id );
 				else // right-click to remove.
-					if ( MessageBox( 'Remove item: ' + id + '? ', 'Question', MB_YESNO) == IDYES )
+					if ( MessageBox( 'Remove ' + id + ' from the list ? ', 'Question', MB_YESNO) == IDYES )
 						delete s.menu[id];
 			}
 	}

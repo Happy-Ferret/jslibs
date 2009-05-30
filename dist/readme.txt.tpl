@@ -46,6 +46,6 @@ CONTACT:
 
 
 CHANGES:
-	http://code.google.com/p/jslibs/wiki/ReleaseNotes
+  http://code.google.com/p/jslibs/wiki/ReleaseNotes
 
 $(changes)
