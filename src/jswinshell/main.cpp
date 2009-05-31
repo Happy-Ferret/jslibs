@@ -25,6 +25,7 @@ extern bool _unsafeMode = false;
 
 /**doc t:header
 $MODULE_HEADER
+$FILE_TOC
 **/
 
 /**doc t:footer

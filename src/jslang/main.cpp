@@ -23,6 +23,7 @@ $MODULE_HEADER
  This module contains all common classes used by other jslibs modules.
  $H note
   This module is automatically loaded by jshost and jswinhost. Then LoadModule call is not needed.
+$FILE_TOC
 **/
 
 /**doc t:footer

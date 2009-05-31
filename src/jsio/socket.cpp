@@ -111,25 +111,25 @@ DEFINE_FUNCTION( Shutdown ) { // arg[0] =  false: SHUTDOWN_RCV | true: SHUTDOWN_
 /**doc
 $TOC_MEMBER $INAME
  $INAME( [port] [, ip] )
-  When a new socket is created, it has no address bound to it. Bind assigns the specified address (also known as name) to the socket.
+  When a new socket is created, it has no address bound to it.
+  Bind assigns the specified address (also known as name) to the socket.
   _ip_ is the address (interface) to which the socket will be bound.
   If _address_ is ommited, any address is will match.
-  If _port_ is $UNDEF, the socket will not br bind to any port.
+  If _port_ is $UNDEF, the socket is not bind to any port.
   $H return value
    $FALSE if the address is already is in use otherwise $TRUE.
   $H example 1
-{{{
-var server = new Socket();
-server.Bind(8099, '127.0.0.1');
-server.Listen();
-}}}
-
+  {{{
+  var server = new Socket();
+  server.Bind(8099, '127.0.0.1');
+  server.Listen();
+  }}}
   $H example 2
-{{{
-var client = new Socket();
-client.Bind(0, '192.168.0.1');
-client.Connect('127.0.0.1', 8099);
-}}}
+  {{{
+  var client = new Socket();
+  client.Bind(0, '192.168.0.1');
+  client.Connect('127.0.0.1', 8099);
+  }}}
 **/
 DEFINE_FUNCTION( Bind ) {
 
@@ -428,14 +428,14 @@ $TOC_MEMBER $INAME
   See. Static functions.
 **/
 DEFINE_FUNCTION( RecvFrom ) {
-	
+
 	char *buffer = NULL;
 
 //	JL_S_ASSERT_CLASS( obj, _class );
 
 	PRFileDesc *fd;
 	if ( JL_GetClass(obj) == _class ) {
-		
+
 		fd = (PRFileDesc*)JL_GetPrivate( cx, obj );
 		JL_S_ASSERT_RESOURCE( fd );
 	} else {
@@ -448,7 +448,7 @@ DEFINE_FUNCTION( RecvFrom ) {
 	available = PR_Available64( fd );
 	if ( available == -1 )
 		return ThrowIoError(cx);
-	
+
 	buffer = (char *)JS_malloc(cx, available +1); // (TBD) optimize this if  available == 0 !!
 	JL_CHK( buffer );
 
@@ -490,14 +490,14 @@ DEFINE_FUNCTION( RecvFrom ) {
 		JL_CHK( JL_NewBlob( cx, buffer, res, &tmp ) );
 		JL_CHK( JS_SetElement(cx, arrayObject, 0, &tmp) );
 		return JS_TRUE;
-	} else 
+	} else
 	if ( res == 0 ) {
 
 		JS_free(cx, buffer);
 		tmp = JSVAL_VOID;
 		JL_CHK( JS_SetElement(cx, arrayObject, 0, &tmp) );
 	}
-	
+
 	return JS_TRUE;
 
 bad_ex:
@@ -682,36 +682,45 @@ DEFINE_PROPERTY( connectionClosed ) {
 
 
 /**doc
-$TOC_MEMBER $INAME
+$TOC_MEMBER linger
  $INT *linger*
   The time in milliseconds to linger on close if data present.
   A value of zero means no linger.
 
- * $BOOL *noDelay*
+$TOC_MEMBER noDelay
+ $BOOL *noDelay*
   Don't delay send to coalesce packets.
 
- * $BOOL *reuseAddr*
+$TOC_MEMBER reuseAddr
+ $BOOL *reuseAddr*
   Allow local address reuse.
 
- * $BOOL *keepAlive*
+$TOC_MEMBER keepAlive
+ $BOOL *keepAlive*
   Keep connections alive.
 
- * $INT *recvBufferSize*
+$TOC_MEMBER recvBufferSize
+ $INT *recvBufferSize*
   Receive buffer size.
 
- * $INT *sendBufferSize*
+$TOC_MEMBER sendBufferSize
+ $INT *sendBufferSize*
   Send buffer size.
 
- * $INT *maxSegment*
+$TOC_MEMBER maxSegment
+ $INT *maxSegment*
   Maximum segment size.
 
- * $BOOL *nonblocking*
+$TOC_MEMBER nonblocking
+ $BOOL *nonblocking*
   Non-blocking (network) I/O.
 
- * $BOOL *broadcast*
+$TOC_MEMBER broadcast
+ $BOOL *broadcast*
   Enable broadcast.
 
- * $BOOL *multicastLoopback*
+$TOC_MEMBER multicastLoopback
+ $BOOL *multicastLoopback*
   IP multicast loopback.
 **/
 
@@ -956,7 +965,7 @@ DEFINE_FUNCTION( GetHostsByName ) {
 	JL_CHK( JsvalToString(cx, &JL_ARG(1), &host) );
 
 	if ( PR_GetHostByName( host, netdbBuf, sizeof(netdbBuf), &hostEntry ) != PR_SUCCESS ) {
-		
+
 		if ( PR_GetError() == PR_DIRECTORY_LOOKUP_ERROR )
 			return JS_TRUE;
 		goto bad_throw;
@@ -1001,10 +1010,10 @@ $TOC_MEMBER $INAME
 **/
 
 /**doc
-$TOC_MEMBER $INAME
  Socket.TCP
- * Socket.UDP
+ Socket.UDP
 **/
+
 
 /**doc
 === Native Interface ===

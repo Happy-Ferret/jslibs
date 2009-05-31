@@ -275,6 +275,10 @@ DEFINE_CONSTRUCTOR() {
 	JL_BAD;
 }
 
+/**doc
+=== Static functions ===
+**/
+
 
 /**doc
 $TOC_MEMBER $INAME
@@ -412,6 +416,12 @@ DEFINE_FUNCTION( RosterItem ) {
 	JL_BAD;
 }
 */
+
+
+/**doc
+=== Static properties ===
+**/
+
 
 /**doc
 $TOC_MEMBER $INAME

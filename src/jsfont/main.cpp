@@ -28,6 +28,7 @@ extern bool _unsafeMode = false;
 $MODULE_HEADER
  Support text rendering (text to image) from the following font format:$LF
  TrueType, Type 1, CID-keyed Type 1, CFF, OpenType TrueType, OpenType CFF, SFNT-based bitmap, X11 PCF, Windows FNT, BDF, PFR, Type 42
+$FILE_TOC
 **/
 
 /**doc t:footer

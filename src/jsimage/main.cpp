@@ -23,6 +23,7 @@ $MODULE_HEADER
  This module manage jpeg and png image decomppression and png image compression.
  Supported output format:
   1:Gray 2:Gray,Alpha 3:Red,Green,Blue 4:Red,Green,Blue,Alpha
+$FILE_TOC
 **/
 
 /**doc t:footer

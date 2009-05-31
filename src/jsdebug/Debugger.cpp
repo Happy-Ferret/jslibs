@@ -356,8 +356,8 @@ $TOC_MEMBER $INAME
   {{{
   var dbg = new Debugger();
   dbg.onBreak = function(filename, lineno, breakOrigin, stackFrameIndex, hasException, exception, rval, isEnteringFunction) {
-   
-	Print( 'break at '+ filename +':'+ lineno + ' because '+breakOrigin ,'\n' );
+
+   Print( 'break at '+ filename +':'+ lineno + ' because '+breakOrigin ,'\n' );
   }}}
 **/
 DEFINE_CONSTRUCTOR() {
@@ -492,7 +492,7 @@ DEFINE_PROPERTY( interruptCounterLimit ) {
 	JL_S_ASSERT_RESOURCE(pv);
 
 	if ( JSVAL_IS_VOID(*vp) ) {
-		
+
 		pv->interruptCounterLimit = 0;
 	} else {
 

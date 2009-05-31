@@ -108,7 +108,7 @@ BEGIN_CLASS( Descriptor )
 
 /**doc
 $TOC_MEMBER $INAME
- $INAME()
+ $VOID $INAME()
   Close the descriptor.
 **/
 DEFINE_FUNCTION_FAST( Close ) {
@@ -375,13 +375,14 @@ bad_free:
 
 /**doc
 $TOC_MEMBER $INAME
- $INAME()
+ $VOID $INAME()
   Sync any buffered data for a fd to its backing device.
 **/
 DEFINE_FUNCTION_FAST( Sync ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE( fd );
+	*JL_FRVAL = JSVAL_VOID;
 	JL_CHKB( PR_Sync(fd) == PR_SUCCESS, bad_ioerror );
 	return JS_TRUE;
 bad_ioerror:
@@ -438,9 +439,9 @@ DEFINE_PROPERTY( type ) {
 /**doc
 $TOC_MEMBER $INAME
  $INAME $READONLY
-  Is $TRUE if the file descriptor has been closed.
+  Is $TRUE if the file descriptor is closed.
   $H beware
-   Do not confuse with disconnected. eg. A socket descriptor can be open but disconnected.
+   Do not confuse with disconnected.$LF eg. A socket descriptor can be open but disconnected.
 **/
 DEFINE_PROPERTY( closed ) {
 
@@ -523,15 +524,15 @@ DEFINE_FUNCTION( Import ) {
 
 /**doc
 === Constants ===
- * *`DESC_FILE`*
+ Descriptor.`DESC_FILE`
 
- * *`DESC_SOCKET_TCP`*
+ Descriptor.`DESC_SOCKET_TCP`
 
- * *`DESC_SOCKET_UDP`*
+ Descriptor.`DESC_SOCKET_UDP`
 
- * *`DESC_LAYERED`*
+ Descriptor.`DESC_LAYERED`
 
- * *`DESC_PIPE`*
+ Descriptor.`DESC_PIPE`
 **/
 
 /**doc

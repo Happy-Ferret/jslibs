@@ -24,6 +24,7 @@ extern bool _unsafeMode = false;
 $MODULE_HEADER
  Support wav, aiff, au, voc, sd2, flac, ... sound format using libsndfile
  and ogg vorbis using libogg and libvorbis.
+$FILE_TOC
 **/
 
 /**doc t:footer

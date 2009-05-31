@@ -27,6 +27,7 @@ DECLARE_CLASS( Z )
 /**doc t:header
 $MODULE_HEADER
  This module manage zlib data compression and decompression. [http://en.wikipedia.org/wiki/Zlib more].
+$FILE_TOC
 **/
 
 /**doc t:footer

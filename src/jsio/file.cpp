@@ -333,7 +333,7 @@ DEFINE_PROPERTY( contentGetter ) {
 
 		PRErrorCode err = PR_GetError();
 		if ( err == PR_FILE_NOT_FOUND_ERROR ) {
-			
+
 			*vp = JSVAL_VOID;
 			return JS_TRUE;
 		}
@@ -352,7 +352,7 @@ DEFINE_PROPERTY( contentGetter ) {
 	PRInt32 res;
 	res = PR_Read(fd, buf, available);
 	if (unlikely( res == -1 )) {
-		
+
 		JS_free(cx, buf);
 		return ThrowIoError(cx);
 	}
@@ -556,10 +556,10 @@ $TOC_MEMBER $INAME
  $TYPE File *stdin* $READONLY
   Is a jsio::File that represents the standard input.
 
- * $TYPE File *stdout* $READONLY
+ $TYPE File *stdout* $READONLY
   Is a jsio::File that represents the standard output.
 
- * $TYPE File *stderr* $READONLY
+ $TYPE File *stderr* $READONLY
   Is a jsio::File that represents the standard error.
 **/
 DEFINE_PROPERTY( standard ) {
@@ -588,7 +588,7 @@ DEFINE_PROPERTY( standard ) {
 
 /**doc
 $TOC_MEMBER $INAME
- *Open* mode
+ []*Open* mode
   * File.`RDONLY`
   * File.`WRONLY`
   * File.`RDWR`
@@ -598,12 +598,12 @@ $TOC_MEMBER $INAME
   * File.`SYNC`
   * File.`EXCL`
 
- * *Seek* mode
+ []*Seek* mode
   * File.`SEEK_SET`
   * File.`SEEK_CUR`
   * File.`SEEK_END`
 
- * *info.type*
+ []*info.type*
   * File.`FILE_FILE`
   * File.`FILE_DIRECTORY`
   * File.`FILE_OTHER`

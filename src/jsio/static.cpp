@@ -412,7 +412,7 @@ $TOC_MEMBER $INAME
    Calls to $INAME() may use a lot of CPU on some platforms.
    Some platforms may block for up to a few seconds while they accumulate some noise.
    Busy machines generate lots of noise, but care is advised when using $INAME() frequently in your application.
-  $H underlying API
+   $LF
    [http://developer.mozilla.org/en/docs/PR_GetRandomNoise NSPR API]
 **/
 DEFINE_FUNCTION( GetRandomNoise ) {

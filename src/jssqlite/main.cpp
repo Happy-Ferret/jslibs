@@ -27,6 +27,7 @@ extern jl::Queue *dbContextList = NULL;
 
 /**doc t:header
 $MODULE_HEADER
+$FILE_TOC
 **/
 
 /**doc t:footer
@@ -38,11 +39,11 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	_unsafeMode = GetHostPrivate(cx)->unsafeMode;
 
 	if ( sqlite3_enable_shared_cache(true) != SQLITE_OK ) {
-		
+
 		JL_REPORT_ERROR( "Unable to enable shared cache." );
 	}
 
-	
+
 	dbContextList = jl::QueueConstruct();
 
 	INIT_CLASS( SqliteError );

@@ -31,6 +31,7 @@ DECLARE_CLASS(OalFilter);
 /**doc t:header
 $MODULE_HEADER
  Support 2D and 3D sound source and listener using OpenAL library.
+$FILE_TOC
 **/
 
 /**doc t:footer

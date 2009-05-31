@@ -25,6 +25,7 @@ JSBool GetScriptLocation( JSContext *cx, jsval *val, uintN lineno, JSScript **sc
 /**doc t:header
 $MODULE_HEADER
  Various debug tools.
+$FILE_TOC
 **/
 
 /**doc t:footer
@@ -55,7 +56,7 @@ void NewScriptHook(JSContext *cx, const char *filename, uintN lineno, JSScript *
 	}
 
 	if ( it == NULL ) { // if not found, create one
-	
+
 		scriptList = jl::QueueConstruct();
 		jl::QueueUnshift(scriptFileList, scriptList);
 		jl::QueuePush(scriptList, script);
@@ -155,7 +156,7 @@ JSScript *ScriptByLocation(JSContext *cx, jl::Queue *scriptFileList, const char 
 
 
 JSBool GetScriptLocation( JSContext *cx, jsval *val, uintN lineno, JSScript **script, jsbytecode **pc ) {
-	
+
 	if ( JsvalIsFunction(cx, *val) ) {
 
 		*script = JS_GetFunctionScript(cx, JS_ValueToFunction(cx, *val));
@@ -192,7 +193,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
 	// record the caller's scripts (at least).
 	for ( JSStackFrame *fp = JL_CurrentStackFrame(cx); fp; fp = fp->down ) { // cf. JS_FrameIterator
-	
+
 		JSScript *script = JS_GetFrameScript(cx, fp);
 		if ( !script ) // !JS_IsNativeFrame ?
 			continue;

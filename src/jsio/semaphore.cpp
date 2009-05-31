@@ -160,30 +160,30 @@ DEFINE_FUNCTION_FAST( Post ) {
 **/
 
 /**doc
-  * Semaphore.`IRWXU`
-   read, write, execute/search by owner 
-  * Semaphore.`IRUSR`
-   read permission, owner 
-  * Semaphore.`IWUSR`
-   write permission, owner 
-  * Semaphore.`IXUSR`
-   execute/search permission, owner 
-  * Semaphore.`IRWXG`
-   read, write, execute/search by group 
-  * Semaphore.`IRGRP`
-   read permission, group 
-  * Semaphore.`IWGRP`
-   write permission, group 
-  * Semaphore.`IXGRP`
-   execute/search permission, group 
-  * Semaphore.`IRWXO`
-   read, write, execute/search by others 
-  * Semaphore.`IROTH`
-   read permission, others 
-  * Semaphore.`IWOTH`
-   write permission, others 
-  * Semaphore.`IXOTH`
-   execute/search permission, others 
+  Semaphore.`IRWXU`
+   read, write, execute/search by owner
+  Semaphore.`IRUSR`
+   read permission, owner
+  Semaphore.`IWUSR`
+   write permission, owner
+  Semaphore.`IXUSR`
+   execute/search permission, owner
+  Semaphore.`IRWXG`
+   read, write, execute/search by group
+  Semaphore.`IRGRP`
+   read permission, group
+  Semaphore.`IWGRP`
+   write permission, group
+  Semaphore.`IXGRP`
+   execute/search permission, group
+  Semaphore.`IRWXO`
+   read, write, execute/search by others
+  Semaphore.`IROTH`
+   read permission, others
+  Semaphore.`IWOTH`
+   write permission, others
+  Semaphore.`IXOTH`
+   execute/search permission, others
 **/
 
 

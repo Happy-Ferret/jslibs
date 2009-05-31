@@ -84,7 +84,7 @@ DEFINE_FUNCTION_FAST( Expand ) {
 		mapIsFunction = JsvalIsFunction(cx, JL_FARG(2));
 		map = JL_FARG(2);
 	} else {
-		
+
 		mapIsFunction = false;
 		map = OBJECT_TO_JSVAL( JL_FOBJ );
 	}
@@ -128,14 +128,14 @@ DEFINE_FUNCTION_FAST( Expand ) {
 		tok = strchr(srcBegin, ')'); // tok = strstr(srcBegin, ")"); // slower for only one char
 		if ( tok == NULL ) // not found
 			break;
-		
+
 
 		if ( mapIsFunction ) {
-			
+
 			JL_CHKB( StringAndLengthToJsval(cx, JL_FRVAL, srcBegin, tok-srcBegin), bad_free_stack );
 			JL_CHKB( JS_CallFunctionValue(cx, JL_FOBJ, map, 1, JL_FRVAL, JL_FRVAL), bad_free_stack );
 		} else {
-		
+
 			char tmp = *tok; // (TBD) try to replace this trick
 			*((char*)tok) = '\0';
 			JL_CHKB( JS_GetProperty(cx, JSVAL_TO_OBJECT(map), srcBegin, JL_FRVAL), bad_free_stack );
@@ -991,7 +991,7 @@ $TOC_MEMBER $INAME
    LoadModule('jsstd');
    Print('Hello', 'World'); // prints: HelloWorld
    }}}
-	$H example 2
+   $H example 2
    {{{
    LoadModule('jsstd');
    Print('foo\n'); // prints: foo
@@ -1110,7 +1110,7 @@ JSBool SandboxMaxOperationCallback(JSContext *cx) {
 }
 
 JLThreadFuncDecl SandboxWatchDogThreadProc(void *threadArg) {
-	
+
 	JSContext *scx = (JSContext*)threadArg;
 	SandboxContextPrivate *pv = (SandboxContextPrivate*)JS_GetContextPrivate(scx);
 	JLReleaseSemaphore(pv->sem);
@@ -1204,7 +1204,7 @@ DEFINE_FUNCTION_FAST( SandboxEval ) {
 		JLLastSysetmErrorMessage(reason, sizeof(reason));
 		JL_REPORT_ERROR_1( "Unable to create the thread (%s).", reason );
 	}
-		
+
 	JSBool ok;
 	ok = JS_EvaluateUCScript(scx, globalObject, src, srclen, filename, lineno, JL_FRVAL);
 
@@ -1259,15 +1259,15 @@ $TOC_MEMBER $INAME
    do {
 
     code += File.stdin.Read();
-	} while( !IsStatementValid( code ) );
+   } while( !IsStatementValid( code ) );
 
    try {
 
     var res = eval( code );
-	} catch(ex) {
+   } catch(ex) {
 
     Print( ex, '\n' );
-	}
+   }
 
    if ( res != undefined )
     Print( res, '\n' );
@@ -1393,7 +1393,7 @@ JSBool testProp(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 
 	JSObject *list = JS_NewObject( cx, NULL, NULL, NULL );
 	*vp = OBJECT_TO_JSVAL(list);
-	
+
 	jsval tmp;
 
 	JSObject *desc = JS_NewObject( cx, NULL, NULL, NULL );

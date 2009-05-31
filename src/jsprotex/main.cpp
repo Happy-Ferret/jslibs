@@ -20,10 +20,11 @@ DECLARE_CLASS( Texture )
 
 /**doc t:header
 $MODULE_HEADER
- jsprotex is a procedural texture generation module to let you create 
+ jsprotex is a procedural texture generation module to let you create
  high resolution textures that fit in few lines of source code.
  The texture generator is separated into small operators with each their set of parameters.
  These operators can be connected togethers to produce the final result.
+$FILE_TOC
 **/
 
 /**doc t:footer

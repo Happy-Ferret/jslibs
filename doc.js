@@ -62,19 +62,19 @@ var api = {
 		
 			if ( res[1] == 'CALL' ) {
 			
-				cx.center = '*_call operator_*';
+				cx.center = '_*call operator*_';
 			} else
 			if ( res[1] == 'GET_PROPERTY' ) {
 		
-				cx.center = '*_[N] operator_*';
-			} else {				
+				cx.center = '_*[N] operator*_';
+			} else				
 			if ( res[1] == 'ITERATOR_OBJECT' ) {
 		
-				cx.center = '*_iterator_*';
+				cx.center = '_*iterator*_';
 			} else
 			if ( res[1] == 'CONSTRUCTOR' ) {
 			
-				cx.center = '*_constructor_*';
+				cx.center = '_*constructor*_';
 			} else {
 				
 				 var identifierName = res[2];
@@ -88,15 +88,17 @@ var api = {
 				 if ( identifierName == 'valueOf' || identifierName == 'toString' )
 				 	identifierName = '_'+identifierName+'_';
 
-				cx.center = '*'+identifierName+'*';
+				cx.center = '[]*'+identifierName+'*'; // [] avoid bullets
 			}
 			
 			var fctArgs = ReadCx(cx, /^\(.*?\)/);
 			if ( fctArgs[0] ) // this is a function definition doc. like $INAME( flags [, mode] )
 				cx.center += StringReplacer({ '[':'[[]', ']':']' })(fctArgs[0]); // avoid wiki to transform optional arguments (eg. [, mode]) into a link.
 				
-		} else
+		} else {
+		
 			cx.center = '???';
+		}
 	},
 	
 	$MODULE_HEADER: function(cx, item) {
@@ -105,7 +107,7 @@ var api = {
 		cx.center += '<b>If something seems wrong or incomplete, please enter [#commentform a comment at the bottom of this page].</b><br/><br/>';
 		cx.center += '- [http://jslibs.googlecode.com/svn/trunk/'+item.path+'/ source] - [JSLibs main] - [http://jslibs.googlecode.com/svn/trunk/'+item.path+'/qa.js QA] -\n';
 		cx.center += '= '+item.lastDir+' module =\n';
-		cx.center += '<wiki:toc max_depth="4"/>';
+//		cx.center += '<wiki:toc max_depth="4"/>';
 		
 	},
 
@@ -495,17 +497,21 @@ for each ( var module in moduleList )
 		}
 
 // write the doc
-	var f = new File( 'jslibs095doc.wiki' );
-	f.Open('w');
+//var f = new File( 'jslibs095doc.wiki' );
+//f.Open('w');
+
 for each ( var module in moduleList ) {
 
 	var moduleName = module[0][0].lastDir;
+	var f = new File( moduleName+'.wiki' );
+	f.Open('w');
+
 	for each ( var file in module )
 		for each ( var item in file ) {
 			if ( !('hidden' in item.attr) )
 				f.Write( item.text + '\n' ); 
 		}
-}
 	f.Close();
+}
 
 Print('Done.\n');

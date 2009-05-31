@@ -32,6 +32,7 @@ $MODULE_HEADER
  jscrypt is a cryptographic toolkit that provides developers with a vast array of well known published block ciphers,
  one-way hash functions, chaining modes, pseudo-random number generators, public key cryptography and a plethora of other routines.
  The underlying native code of this module is based on [http://libtom.org/ LibTom library].
+$FILE_TOC
 **/
 
 /**doc t:footer

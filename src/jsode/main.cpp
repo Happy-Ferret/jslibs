@@ -56,6 +56,7 @@ $MODULE_HEADER
  It is currently used in many computer games, 3D authoring tools and simulation tools.
  $H note
   In the following API description, ,,vec3,, type is a js 3 dimentions $ARRAY like `[1,3,5]`
+$FILE_TOC
 **/
 
 /**doc t:footer
@@ -72,7 +73,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	ode::dSetErrorHandler(messageHandler);
 	ode::dSetDebugHandler(messageHandler);
 	ode::dSetMessageHandler(messageHandler);
-	
+
 	INIT_CLASS( Space );
 	INIT_CLASS( Joint );
 	INIT_CLASS( JointBall );

@@ -149,6 +149,10 @@ bad:
 }
 
 
+/**doc
+=== Methods ===
+**/
+
 
 /**doc
 $TOC_MEMBER $INAME
@@ -208,6 +212,11 @@ DEFINE_FUNCTION_FAST( Kill ) {
 	return JS_TRUE;
 	JL_BAD;
 }
+
+
+/**doc
+=== Properties ===
+**/
 
 
 /**doc
