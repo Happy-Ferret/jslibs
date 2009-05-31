@@ -22,6 +22,21 @@ extern bool _unsafeMode = false;
 
 DECLARE_CLASS( Cursor )
 
+/**doc t:header
+$MODULE_HEADER
+ jssdl is a wrapper to the Simple DirectMedia Layer (SDL) library.
+ Simple DirectMedia Layer is a cross-platform multimedia library designed to provide low level access to
+ audio, keyboard, mouse, joystick, 3D hardware via OpenGL, and 2D video framebuffer.
+ It is used by MPEG playback software, emulators, and many popular games,
+ including the award winning Linux port of "Civilization: Call To Power."
+ $FILE_TOC
+**/
+
+/**doc t:footer
+$MODULE_FOOTER
+**/
+
+
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
 	_unsafeMode = GetHostPrivate(cx)->unsafeMode;

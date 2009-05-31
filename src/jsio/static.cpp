@@ -271,8 +271,8 @@ DEFINE_FUNCTION( IsReadable ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $BOOL $INAME( _descriptor_ )
-  Returns true if the _descriptor_ can be write without blocking.
+ $BOOL $INAME( descriptor )
+  Returns $TRUE if the _descriptor_ can be write without blocking.
 **/
 DEFINE_FUNCTION( IsWritable ) {
 

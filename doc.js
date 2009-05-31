@@ -62,19 +62,19 @@ var api = {
 		
 			if ( res[1] == 'CALL' ) {
 			
-				cx.center = '_*call operator*_';
+				cx.center = '<i><b>call operator</b></i>';
 			} else
 			if ( res[1] == 'GET_PROPERTY' ) {
 		
-				cx.center = '_*[N] operator*_';
+				cx.center = '<i><b>[N] operator</b></i>';
 			} else				
 			if ( res[1] == 'ITERATOR_OBJECT' ) {
 		
-				cx.center = '_*iterator*_';
+				cx.center = '<i><b>iterator</b></i>';
 			} else
 			if ( res[1] == 'CONSTRUCTOR' ) {
 			
-				cx.center = '_*constructor*_';
+				cx.center = '<i><b>constructor</b></i>';
 			} else {
 				
 				 var identifierName = res[2];
@@ -86,9 +86,9 @@ var api = {
 					  identifierName = identifierName.substring(0, identifierName.length - 1);
 				
 				 if ( identifierName == 'valueOf' || identifierName == 'toString' )
-				 	identifierName = '_'+identifierName+'_';
+				 	identifierName = '<i>'+identifierName+'</i>';
 
-				cx.center = '[]*'+identifierName+'*'; // [] avoid bullets
+				cx.center = '<b>'+identifierName+'</b>'; // [] avoid bullets
 			}
 			
 			var fctArgs = ReadCx(cx, /^\(.*?\)/);
@@ -159,9 +159,9 @@ var api = {
 	
 	$SVN_REVISION: function(cx, item) {
 
-		var res = /Revision.*?(\w+)/(ReadEol(cx));
+		var res = /\$Revision: (\d+) \$/(ReadEol(cx));
 		if ( res )
-		cx.center = '[http://code.google.com/p/jslibs/source/browse/trunk/'+item.path+'/'+item.fileName+'?r='+res[1]+' revision] - ';
+			cx.center = '[http://code.google.com/p/jslibs/source/browse/trunk/'+item.path+'/'+item.fileName+'?r='+res[1]+' revision] - ';
 		else
 			cx.center = '';
 //		cx.center += '<br/>';
@@ -214,7 +214,7 @@ var api = {
 
 
 
-	$VOID:'',
+	$VOID:'<font size="1" color="gray">,,void,,</font>',
 	$VAL:',,value,,',
 	$INT:',,integer,,',
 	$REAL:',,real,,',
@@ -238,7 +238,7 @@ var api = {
 
 	$CONST:function(cx, item) {
 	
-		cx.center = '`'+ReadArg(cx)+'`';
+		cx.center = '<b>`'+ReadArg(cx)+'`</b>';
 	},
 
 	$LF:'<br/>',

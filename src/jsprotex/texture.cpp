@@ -351,8 +351,8 @@ DEFINE_FINALIZE() {
 /**doc
 $TOC_MEMBER $INAME
  $INAME( width, height, channels )
- * $INAME( sourceTexture )
- * $INAME( image )
+ $INAME( sourceTexture )
+ $INAME( image )
   Creates a new Texture object.
   $H arguments
    $ARG $INT height: height of texture.
@@ -1381,7 +1381,7 @@ DEFINE_FUNCTION_FAST( Desaturate ) {
 /**doc
 $TOC_MEMBER $INAME
  $THIS $INAME( otherTexture )
- * $THIS $INAME( color )
+ $THIS $INAME( color )
   $H arguments
    $ARG Texture otherTexture:
    $ARG colorInfo color:
@@ -1429,7 +1429,7 @@ DEFINE_FUNCTION_FAST( Set ) {
 /**doc
 $TOC_MEMBER $INAME
  $THIS $INAME( textureObject )
- * $THIS $INAME( colorInfo )
+ $THIS $INAME( colorInfo )
   Mathematically adds a texture (_textureObject_) or a given color (_colorInfo_) to the current texture.
 **/
 // PTYPE ok
@@ -1468,7 +1468,7 @@ DEFINE_FUNCTION_FAST( Add ) {
 /**doc
 $TOC_MEMBER $INAME
  $THIS $INAME( textureObject )
- * $THIS $INAME( colorInfo )
+ $THIS $INAME( colorInfo )
   Mathematically multiply a texture (_textureObject_) or a given color (_colorInfo_) to the current texture.
 **/
 // PTYPE ok
@@ -1532,7 +1532,7 @@ DEFINE_FUNCTION_FAST( Mult ) {
 /**doc
 $TOC_MEMBER $INAME
  $THIS $INAME( otherTexture, blendTexture )
- * $THIS $INAME( otherTexture, color )
+ $THIS $INAME( otherTexture, color )
   Mathematically blends a texture (_textureObject_) or a given color (_colorInfo_) to the current texture.
   $H arguments
    $ARG Texture otherTexture: the texture to blend with the current one.

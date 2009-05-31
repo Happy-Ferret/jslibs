@@ -412,7 +412,7 @@ DEFINE_FUNCTION_FAST( SplitChannels ) {
 	size_t srcBufLength;
 	JsvalToStringAndLength(cx, &JL_FARG(1), &srcBuf, &srcBufLength);
 
-	JSObject *destArray = JS_NewArrayObject(cx, 0, NULL); 
+	JSObject *destArray = JS_NewArrayObject(cx, 0, NULL);
 	*JL_FRVAL = OBJECT_TO_JSVAL(destArray);
 
 	for ( size_t c = 0; c < channelCount; c++ ) {
@@ -452,7 +452,7 @@ DEFINE_FUNCTION_FAST( SplitChannels ) {
 
 /**doc
 === Note ===
- SoundObject concatenation an be achieved using .concat() method. This works becuase a sound object is a Blob with some extra properties.
+ SoundObject concatenation can be achieved using the concat() method. This works becuase a sound object is a Blob with some extra properties.
 **/
 
 CONFIGURE_STATIC
@@ -476,7 +476,7 @@ END_STATIC
  LoadModule('jsstd');
  LoadModule('jsio');
  LoadModule('jssound');
- 
+
  var file = new File('41_30secOgg-q0.wav');
  file.Open('r');
  var pcm = DecodeSound(file);
@@ -489,12 +489,12 @@ END_STATIC
  LoadModule('jsstd');
  LoadModule('jsio');
  LoadModule('jssound');
- 
+
  var file = new File('41_30secOgg-q0.wav');
  var buffer = file.content;
  var stream = new Stream(buffer);
  var pcm = DecodeSound(stream);
- 
+
  Print('sample length: '+pcm.length, '\n');
  }}}
 **/

@@ -19,6 +19,17 @@
 
 extern bool _unsafeMode = false;
 
+/**doc t:header
+$MODULE_HEADER
+ jsjabber is a wrapper to the gloox library.$LF
+ gloox is a full-featured Jabber/XMPP client library.
+ $FILE_TOC
+**/
+
+/**doc t:footer
+$MODULE_FOOTER
+**/
+
 
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 

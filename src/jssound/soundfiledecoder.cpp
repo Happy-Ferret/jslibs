@@ -185,7 +185,7 @@ DEFINE_CONSTRUCTOR() {
 
 	SF_INFO tmp; // = {0};
 	memset(&tmp, 0, sizeof(SF_INFO));
-	
+
 	pv->sfInfo = tmp; // ok, memset does the same thing
 
 	pv->cx = cx;
@@ -229,7 +229,7 @@ $TOC_MEMBER $INAME
   $H return value
    A Blob object that has the following properties set: bits, rate, channels, frames
   $H beware
-   If all data has been decoded and the Read function is called again, the return expression is evaluated to false.
+   If all data has been decoded and the Read function is called again, the return expression is evaluated to $FALSE.
   $H example
   {{{
   LoadModule('jsstd');
@@ -332,7 +332,7 @@ $TOC_MEMBER $INAME
 	pv->cx = NULL; // see definition
 
 	if ( totalSize == 0 ) {
-	
+
 		*JL_FRVAL = JSVAL_VOID;
 		return JS_TRUE;
 	}

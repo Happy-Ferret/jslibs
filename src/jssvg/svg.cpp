@@ -686,7 +686,7 @@ DEFINE_PROPERTY(images) {
 /**doc
 === callback functions ===
  * $TYPE ImageObject *onImage*( uri )
-  Called when the SVG renderer need to draw an image element. _uri_ is the name of the requested image.
+  Called when the SVG renderer need to draw an image element. _uri_ is the name of the requested image. The function must return an image Object.
   $H example
   {{{
   var svg = new SVG();

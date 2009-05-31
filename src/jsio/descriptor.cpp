@@ -524,15 +524,16 @@ DEFINE_FUNCTION( Import ) {
 
 /**doc
 === Constants ===
- Descriptor.`DESC_FILE`
+ $CONST DESC_FILE
 
- Descriptor.`DESC_SOCKET_TCP`
+ $CONST DESC_SOCKET_TCP
 
- Descriptor.`DESC_SOCKET_UDP`
+ $CONST DESC_SOCKET_UDP
 
- Descriptor.`DESC_LAYERED`
+ $CONST DESC_LAYERED
 
- Descriptor.`DESC_PIPE`
+ $CONST DESC_PIPE
+
 **/
 
 /**doc

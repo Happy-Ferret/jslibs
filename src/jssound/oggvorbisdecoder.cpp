@@ -204,7 +204,7 @@ $TOC_MEMBER $INAME
   $H return value
    A Blob object that has the following properties set: bits, rate, channels, frames
   $H beware
-   If all data has been decoded and the Read function is called again, the return expression is evaluated to false.
+   If all data has been decoded and the Read function is called again, the return expression is evaluated to $FALSE.
   $H example
   {{{
   LoadModule('jsstd');
@@ -345,7 +345,7 @@ DEFINE_FUNCTION_FAST( Read ) {
 	pv->cx = NULL; // see definition
 
 	if ( totalSize == 0 ) {
-	
+
 		*JL_FRVAL = JSVAL_VOID;
 		return JS_TRUE;
 	}

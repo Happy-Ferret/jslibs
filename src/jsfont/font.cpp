@@ -474,25 +474,7 @@ $TOC_MEMBER $INAME
  $TYPE enum $INAME
   is the current encoding.
   $H supported encodings
-   * Font.NONE
-   * Font.MS_SYMBOL
-   * Font.UNICODE
-   * Font.SJIS
-   * Font.GB2312
-   * Font.BIG5
-   * Font.WANSUNG
-   * Font.JOHAB
-   * Font.MS_SJIS
-   * Font.MS_GB2312
-   * Font.MS_BIG5
-   * Font.MS_WANSUNG
-   * Font.MS_JOHAB
-   * Font.ADOBE_STANDARD
-   * Font.ADOBE_EXPERT
-   * Font.ADOBE_CUSTOM
-   * Font.ADOBE_LATIN_1
-   * Font.OLD_LATIN_2
-   * Font.APPLE_ROMAN
+   see constants section below.
 **/
 DEFINE_PROPERTY( encoding ) {
 
@@ -618,6 +600,53 @@ DEFINE_PROPERTY_SETTER( bold ) {
 
 	return JS_SetReservedSlot(cx, obj, FONT_SLOT_BOLD, *vp);
 }
+
+/**doc
+=== Constants ===
+**/
+
+/**doc
+
+ Encoding constants
+  $CONST NONE
+
+  $CONST MS_SYMBOL
+
+  $CONST UNICODE
+
+  $CONST SJIS
+
+  $CONST GB2312
+
+  $CONST BIG5
+
+  $CONST WANSUNG
+
+  $CONST JOHAB
+
+  $CONST MS_SJIS
+
+  $CONST MS_GB2312
+
+  $CONST MS_BIG5
+
+  $CONST MS_WANSUNG
+
+  $CONST MS_JOHAB
+
+  $CONST ADOBE_STANDARD
+
+  $CONST ADOBE_EXPERT
+
+  $CONST ADOBE_CUSTOM
+
+  $CONST ADOBE_LATIN_1
+
+  $CONST OLD_LATIN_2
+
+  $CONST APPLE_ROMAN
+
+**/
 
 
 CONFIGURE_CLASS // This section containt the declaration and the configuration of the class

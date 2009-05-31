@@ -1828,7 +1828,7 @@ void FinalizeTrimesh(void *pv) {
 
 	if ( data[3] )
 		glDeleteBuffersARB( 1, data[3] );
-	
+
 	if ( data[4] )
 		glDeleteBuffersARB( 1, data[4] );
 */
@@ -2119,7 +2119,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY(error) {
 
 	// When an error occurs, the error flag is set to the appropriate error code value. No other errors are recorded
-	// until glGetError is called, the error code is returned, and the flag is reset to GL_NO_ERROR. 
+	// until glGetError is called, the error code is returned, and the flag is reset to GL_NO_ERROR.
 	*vp = INT_TO_JSVAL(glGetError());
 	return JS_TRUE;
 }

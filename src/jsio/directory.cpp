@@ -337,15 +337,15 @@ bad_throw:
 
 /**doc
 === Constants ===
- Directory.`SKIP_NONE`
+ $CONST SKIP_NONE
   Do not skip any files.
- Directory.`SKIP_DOT`
+ $CONST SKIP_DOT
   Skip the directory entry "." representing the current directory.
- Directory.`SKIP_DOT_DOT`
+ $CONST SKIP_DOT_DOT
   Skip the directory entry ".." representing the parent directory.
- Directory.`SKIP_BOTH`
+ $CONST SKIP_BOTH
   Skip both "." and ".." ( same as Directory.`SKIP_DOT` | Directory.`SKIP_DOT_DOT` )
- Directory.`SKIP_HIDDEN`
+ $CONST SKIP_HIDDEN
   Skip hidden files. On Windows platforms and the Mac OS, this value identifies files with the "hidden" attribute set. On Unix platform, this value identifies files whose names begin with a period (".").
 **/
 

@@ -996,11 +996,12 @@ bad_throw:
 }
 
 /**doc
-$TOC_MEMBER $INAME
- *SendTo* ...
+$TOC_MEMBER SendTo
+ SendTo
   see Socket::SendTo
 
- * *RecvFrom* ...
+$TOC_MEMBER RecvFrom
+ RecvFrom
   see Socket::RecvFrom
 **/
 
@@ -1010,8 +1011,10 @@ $TOC_MEMBER $INAME
 **/
 
 /**doc
- Socket.TCP
- Socket.UDP
+ $CONST TCP
+
+ $CONST UDP
+
 **/
 
 

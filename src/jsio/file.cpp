@@ -588,25 +588,37 @@ DEFINE_PROPERTY( standard ) {
 
 /**doc
 $TOC_MEMBER $INAME
- []*Open* mode
-  * File.`RDONLY`
-  * File.`WRONLY`
-  * File.`RDWR`
-  * File.`CREATE_FILE`
-  * File.`APPEND`
-  * File.`TRUNCATE`
-  * File.`SYNC`
-  * File.`EXCL`
+ Open mode
+  $CONST RDONLY
 
- []*Seek* mode
-  * File.`SEEK_SET`
-  * File.`SEEK_CUR`
-  * File.`SEEK_END`
+  $CONST WRONLY
 
- []*info.type*
-  * File.`FILE_FILE`
-  * File.`FILE_DIRECTORY`
-  * File.`FILE_OTHER`
+  $CONST RDWR
+
+  $CONST CREATE_FILE
+
+  $CONST APPEND
+
+  $CONST TRUNCATE
+
+  $CONST SYNC
+
+  $CONST EXCL
+
+ Seek mode
+  $CONST SEEK_SET
+
+  $CONST SEEK_CUR
+
+  $CONST SEEK_END
+
+ info.type
+  $CONST FILE_FILE
+
+  $CONST FILE_DIRECTORY
+
+  $CONST FILE_OTHER
+
 **/
 
 

@@ -18,6 +18,16 @@ extern bool _unsafeMode = false;
 
 DECLARE_CLASS( SVG )
 
+/**doc t:header
+$MODULE_HEADER
+ $FILE_TOC
+**/
+
+/**doc t:footer
+$MODULE_FOOTER
+**/
+
+
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
 	_unsafeMode = GetHostPrivate(cx)->unsafeMode;

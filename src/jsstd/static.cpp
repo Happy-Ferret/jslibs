@@ -290,10 +290,9 @@ $TOC_MEMBER $INAME
   foo();
   }}}
   prints:
-   $F 55
-   $F 7
-   $F 55
-
+   $F 55 $LF
+   $F 7 $LF
+   $F 55 $LF
   $H example 2
   {{{
   LoadModule('jsstd');

@@ -18,6 +18,18 @@ extern bool _unsafeMode = false;
 
 DECLARE_CLASS( Iconv )
 
+/**doc t:header
+$MODULE_HEADER
+ jsiconv is a wrapper to the GNU iconv library.
+ iconv is a library convert between different character encodings.
+ $FILE_TOC
+**/
+
+/**doc t:footer
+$MODULE_FOOTER
+**/
+
+
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
 	_unsafeMode = GetHostPrivate(cx)->unsafeMode;
