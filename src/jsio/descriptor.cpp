@@ -88,9 +88,9 @@ void FinalizeDescriptor(JSContext *cx, JSObject *obj) {
 	if ( status != PR_SUCCESS ) {
 
 		if ( PR_GetError() != PR_WOULD_BLOCK_ERROR ) // if non-blocking descriptor, this is a non-fatal error
-			JS_ReportError( cx, "A descriptor cannot be closed while Finalize." );
+			JS_ReportWarning(cx, "A descriptor cannot be closed while Finalize.");
 	}
-	JL_SetPrivate( cx, obj, NULL );
+	JL_SetPrivate(cx, obj, NULL);
 
 bad:
 	return;
@@ -113,14 +113,21 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Close ) {
 
-	PRFileDesc *fd = (PRFileDesc*)JL_GetPrivate( cx, JL_FOBJ );
-	JL_S_ASSERT( fd != NULL, "file is closed." );
+	*JL_FRVAL = JSVAL_VOID;
+	PRFileDesc *fd = (PRFileDesc*)JL_GetPrivate(cx, JL_FOBJ);
+
+	JL_S_ASSERT( fd != NULL, "The descriptor is closed." ); // see PublicApiRules (http://code.google.com/p/jslibs/wiki/PublicApiRules)
+//	if ( !fd ) { // (TBD) apply jslibsAPIRules
+//
+//		JL_REPORT_WARNING( "The descriptor is closed." );
+//		return JS_TRUE;
+//	}
+
 	PRStatus status;
-	status = PR_Close( fd );
+	status = PR_Close(fd);
 	if ( status != PR_SUCCESS ) {
 
-		PRErrorCode errorCode = PR_GetError();
-		if ( errorCode != PR_WOULD_BLOCK_ERROR ) // if non-blocking descriptor, this is a non-fatal error
+		if ( PR_GetError() != PR_WOULD_BLOCK_ERROR ) // if non-blocking descriptor, this is a non-fatal error
 			return ThrowIoError(cx);
 	}
 	JL_SetPrivate(cx, JL_FOBJ, NULL);
@@ -200,7 +207,7 @@ JSBool ReadAllToJsval(JSContext *cx, PRFileDesc *fd, jsval *rval ) {
 				JL_CHK( ThrowIoError(cx) );
 			break; // no error, no data received, we cannot reach currentReadLength
 		}
-		
+
 //		if ( res == currentReadLength ) {
 //
 			if ( currentReadLength < 32768 )
@@ -244,7 +251,7 @@ $TOC_MEMBER $INAME
   {{{
   LoadModule('jsstd');
   LoadModule('jsio');
-  
+
   var soc = new Socket();
   soc.Connect('www.google.com', 80);
   soc.Write('GET\r\n\r\n');
@@ -263,11 +270,11 @@ DEFINE_FUNCTION_FAST( Read ) {
 			JL_CHK( ReadToJsval(cx, fd, available, JL_FRVAL) ); // may block !
 		else // 'available' is not usable with this fd type, then we use a buffered read (ie. read while there is someting to read)
 			JL_CHK( ReadAllToJsval(cx, fd, JL_FRVAL) );
-			
+
 	} else { // amount value is NOT provided, then try to read all
 
 		if (likely( !JSVAL_IS_VOID(JL_FARG(1)) )) {
-			
+
 			PRInt32 amount;
 			JL_CHK( JsvalToInt(cx, JL_FARG(1), &amount) );
 			JL_CHK( ReadToJsval(cx, fd, amount, JL_FRVAL) ); // (TBD) check if it is good to call it even if amount is 0.
@@ -345,7 +352,7 @@ DEFINE_FUNCTION_FAST( Write ) {
 		*JL_FRVAL = JS_GetEmptyStringValue(cx); // nothing remains
 	} else
 	if (unlikely( sentAmount < len )) {
-		
+
 		//*rval = STRING_TO_JSVAL( JS_NewDependentString(cx, JSVAL_TO_STRING( JL_ARG(1) ), sentAmount, len - sentAmount) ); // return unsent data // (TBD) use Blob ?
 
 		buffer = (char*)JS_malloc(cx, len - sentAmount +1);

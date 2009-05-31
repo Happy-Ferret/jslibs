@@ -280,12 +280,12 @@ DEFINE_FUNCTION( Connect ) {
 
 	JL_S_ASSERT_ARG_MIN( 2 );
 	PRFileDesc *fd;
-	fd = (PRFileDesc*)JL_GetPrivate( cx, obj );
+	fd = (PRFileDesc*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( fd );
 
 	unsigned int port;
 	JL_CHK( JsvalToUInt(cx, JL_ARG(2), &port) );
-	JL_S_ASSERT( port < 65536, "Invalid port number." );
+	JL_S_ASSERT( port <= 65535, "Invalid port number." );
 
 	PRIntervalTime connectTimeout;
 	if ( JL_ARG_ISDEF(3) ) {
@@ -320,11 +320,11 @@ DEFINE_FUNCTION( Connect ) {
 			return ThrowIoError(cx);
 	}
 
-	if ( PR_Connect( fd, &addr, connectTimeout ) != PR_SUCCESS ) { // Doc: timeout is ignored in nonblocking mode ( cf. PR_INTERVAL_NO_WAIT )
+	if ( PR_Connect(fd, &addr, connectTimeout) != PR_SUCCESS ) { // Doc: timeout is ignored in nonblocking mode ( cf. PR_INTERVAL_NO_WAIT )
 
-		PRErrorCode errorCode = PR_GetError();
-		switch (errorCode) {
+		switch ( PR_GetError() ) {
 			case PR_CONNECT_TIMEOUT_ERROR:
+			case PR_IO_TIMEOUT_ERROR:
 				*rval = JSVAL_FALSE;
 				return JS_TRUE;
 			case PR_IN_PROGRESS_ERROR: // not nonblocking-error
@@ -335,7 +335,6 @@ DEFINE_FUNCTION( Connect ) {
 	}
 	// see 	PR_GetConnectStatus or PR_ConnectContinue INSTEAD ???
 
-//	JL_CHK( SetStreamReadInterface(cx, obj, NativeInterfaceStreamRead) );
 	JL_CHK( SetStreamReadInterface(cx, obj, NativeInterfaceStreamRead) );
 	*rval = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;

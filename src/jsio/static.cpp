@@ -556,7 +556,7 @@ DEFINE_FUNCTION_FAST( PostSemaphore ) {
 
 
 
-/*doc
+/** doc
 $TOC_MEMBER $INAME
  $VAL $INAME( path [, argv [, waitExit ]] )
   This function starts a new process optionaly using the JavaScript Array _argv_ for arguments or _undefined_ for no arguments.
@@ -987,6 +987,17 @@ DEFINE_PROPERTY( pathSeparator ) {
 	JL_BAD;
 }
 
+/**doc
+$TOC_MEMBER $INAME
+ $INAME $READONLY
+  Hold the current version of NSPR.
+**/
+DEFINE_PROPERTY( version ) {
+
+	*vp = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, PR_VERSION));
+  return JS_TRUE;
+}
+
 
 CONFIGURE_STATIC
 
@@ -1015,6 +1026,7 @@ CONFIGURE_STATIC
 		PROPERTY( currentDirectory )
 		PROPERTY_READ_STORE( directorySeparator )
 		PROPERTY_READ_STORE( pathSeparator )
+		PROPERTY_READ( version )
 	END_STATIC_PROPERTY_SPEC
 
 END_STATIC

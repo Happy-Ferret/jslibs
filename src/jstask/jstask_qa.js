@@ -252,7 +252,7 @@ LoadModule('jsio');
 /// blocking TCP client
 
 	var myTask = new Task(function() {
-		
+
 		LoadModule('jsio');
 		var serverSocket = new Socket();
 		serverSocket.reuseAddr = true;
@@ -262,18 +262,19 @@ LoadModule('jsio');
 		serverSocket.readable = function(s) {
 
 			s.Accept().Write('hello');
-			s.linger = 100;
-			s.Close();
 		}
-		
-		Poll([serverSocket], 500);
+
+		Poll([serverSocket], 1000);
+		serverSocket.linger = 1000;
 		serverSocket.Close();
 	});
-	
+
 	myTask.Request();
 
 	var client = new Socket();
+	Print('connecting ... ');
 	client.Connect('127.0.0.1', 8099);
-	var res = client.Read();
+	Print('connected\n');
+	var res = client.Read(5);
 	QA.ASSERT_STR( res, 'hello', 'response' );
-
+	myTask.Response();
