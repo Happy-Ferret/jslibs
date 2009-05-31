@@ -121,10 +121,6 @@ changes = changes.replace(/\n/g, '\r\n');
 //jslibsRevision = 'r'+GetLatestSVNRevision();
 
 
-Print( type, '\n', version, '\n', jslibsRevision, '\n' );
-Halt();
-
-
 var readme = Expand(new File('./dist/readme.txt.tpl').content, function(id) {
 	
 	switch(id) {
