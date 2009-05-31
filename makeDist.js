@@ -128,13 +128,12 @@ var readme = Expand(new File('./dist/readme.txt.tpl').content, function(id) {
 			return type;
 		case 'version':
 			return jslibsVersion;
-		case 'jslibsRevision':
+		case 'revision':
 			return jslibsRevision;
 		case 'changes':
 			return IndentText(changes, '  ');
 	}
 });
-
 
 Copy('qa.js', './dist/tests');
 
