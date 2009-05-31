@@ -242,6 +242,8 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 
 	GetHostPrivate(cx)->camelCase = camelCase;
 
+	JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_STRICT);
+
 	HOST_MAIN_ASSERT( InitHost(cx, unsafeMode, HostStdout, HostStderr, NULL), "Unable to initialize the host." );
 
 	JSObject *globalObject;
