@@ -272,9 +272,7 @@ LoadModule('jsio');
 	myTask.Request();
 
 	var client = new Socket();
-	Print('connecting ... ');
 	client.Connect('127.0.0.1', 8099);
-	Print('connected\n');
 	var res = client.Read(5);
 	QA.ASSERT_STR( res, 'hello', 'response' );
 	myTask.Response();
