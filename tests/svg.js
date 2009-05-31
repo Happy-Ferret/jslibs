@@ -28,13 +28,12 @@ xmlns="http://www.w3.org/2000/svg">
 </g>
 </svg>;
 
-
+Print( 'Processing SVG image (caching font data might take a while).\n' );
 var svg = new SVG();
 svg.Write(s);
 Print( 'width: '+svg.width + ' height: '+svg.height, '\n' );
-Print( 'Processing SVG image (caching font data might take a while).\n' );
 
-svgimage = svg.RenderImage(128, 64, 3, true);
+var svgimage = svg.RenderImage(128, 64, 3, true);
 
 var destFile = './svg.png';
 Print( 'Writing '+destFile, '\n' );

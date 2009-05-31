@@ -21,7 +21,7 @@ ball.body.position = [0,0,5];
 
 Print('Gravity is '+(-world.gravity[2])+' m/s^2\n');
 Print('Placing the ball at '+ball.body.position[2]+' m high.\n');
-Print('Starting the simulation...\n');
+Print('Starting the simulation (press ctrl-c to abort)...\n');
 
 while ( !endSignal ) {
 

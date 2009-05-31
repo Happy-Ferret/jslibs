@@ -23,7 +23,7 @@ while ( (pcm = decoder.Read(decodeSize)) && !endSignal ) {
 
 var totalTime = decoder.frames/decoder.rate;
 var currentTimeOffset = Oal.GetSourceReal(src, Oal.SEC_OFFSET);
-for ( i = 0; !endSignal && i < totalTime - currentTimeOffset; i++ )
+for ( var i = 0; !endSignal && i < totalTime - currentTimeOffset; i++ )
 	Sleep(1000);
 
 Oal.Close();

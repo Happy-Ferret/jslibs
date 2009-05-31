@@ -9,4 +9,4 @@ if not exist "%firefox%" (
  start "" "%firefox%" ".\bin\debugger.xul"
 )
 echo Starting JavaScript program...
-jshost bin/debugger.js examples/testForDebugger.js
+jshost -u bin/debugger.js examples/testForDebugger.js
