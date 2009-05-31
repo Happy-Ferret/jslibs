@@ -113,13 +113,16 @@ if ( !dist.exist )
 	throw 'Unable to find '+dist.name;
 
 
-var [type, version, revision, changes] = GetLatestChanges();
-if ( revision[0] == 'r' )
-	revision = revision.substr(1);
+var [type, jslibsVersion, jslibsRevision, changes] = GetLatestChanges();
+if ( jslibsRevision[0] == 'r' )
+	jslibsRevision = jslibsRevision.substr(1);
 changes = changes.replace(/<pre>|<\/pre>/g, ''); // cleanup
 changes = changes.replace(/\n/g, '\r\n');
+//jslibsRevision = 'r'+GetLatestSVNRevision();
 
-//revision = 'r'+GetLatestSVNRevision();
+
+Print( type, '\n', version, '\n', jslibsRevision, '\n' );
+Halt();
 
 
 var readme = Expand(new File('./dist/readme.txt.tpl').content, function(id) {
@@ -128,9 +131,9 @@ var readme = Expand(new File('./dist/readme.txt.tpl').content, function(id) {
 		case 'type':
 			return type;
 		case 'version':
-			return version;
-		case 'revision':
-			return revision
+			return jslibsVersion;
+		case 'jslibsRevision':
+			return jslibsRevision;
 		case 'changes':
 			return IndentText(changes, '  ');
 	}
@@ -171,4 +174,4 @@ Copy('./libs/openal/sdk/redist/wrap_oal.dll', './dist/bin');
 
 new File('./dist/README.TXT').content = readme;
 
-Zip('./dist/*', 'jslibs_'+type+'_'+version+'_'+'r'+revision+'.zip');
+Zip('./dist/*', 'jslibs_'+type+'_'+jslibsVersion+'_'+'r'+jslibsRevision+'.zip');
