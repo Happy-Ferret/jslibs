@@ -65,10 +65,11 @@ def exportToFile(filename):
 
 			Write( ',center:[%s,%s,%s]' % (objectCenter[0],objectCenter[1],objectCenter[2]) );
 			Write( ',size:[%s,%s,%s]' % o.size );
-			Write( ',vertex:{ length:' + str(len(o.data.verts)) );
+#do not need length prop.			Write( ',vertex:{ length:' + str(len(o.data.verts)) );
+			Write( ',vertex:{');
 			# format: x, y, z, normal.x, normal.y, normal.z, u, v
 			for v in o.data.verts:
-				Write(',%s:[%s,%s,%s,%s,%s,%s,%s,%s,0]' % (v.index, v.co[0],v.co[1],v.co[2],v.no[0],v.no[1],v.no[2],v.uvco[0],v.uvco[1]))
+				Write('%s:[%s,%s,%s,%s,%s,%s,%s,%s,0],' % (v.index, v.co[0],v.co[1],v.co[2],v.no[0],v.no[1],v.no[2],v.uvco[0],v.uvco[1]))
 			Write( '}' );
 
 #

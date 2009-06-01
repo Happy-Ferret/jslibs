@@ -2,20 +2,26 @@ LoadModule('jsstd');
 LoadModule('jstrimesh');
 LoadModule('jsio');
 
-var t = new Trimesh();
+function MeshToTrimesh(filename) {
 
+	var trimeshList = {};
+	var mesh = eval('('+(new File('cube.json').content)+')');
+	for ( var id in mesh ) {
 
-t.DefineVertexBuffer([
-0,0,0,
-0,0,1,
-0,1,0,
-1,0,0
-]);
+		var tm = new Trimesh();
+		trimeshList[id] = tm;
 
-t.DefineIndexBuffer([
-0,1,2,
-0,3,1
-]);
+		var vertexList = [];
+		for each ( var it in mesh[id].vertex )
+			vertexList.push(it[0], it[1], it[2]);
+		tm.DefineVertexBuffer(vertexList);
 
+		var faceList = [];
+		for each ( var it in mesh[id].face )
+			faceList.push(it[0], it[1], it[2]);
+		tm.DefineIndexBuffer(faceList);
+	}
+	return trimeshList;
+}
 
-
+Print(uneval(MeshToTrimesh('cube.json')));

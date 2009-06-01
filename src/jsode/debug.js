@@ -1,33 +1,269 @@
 LoadModule('jsstd');
-LoadModule('jsode');
+LoadModule('jsio');
+LoadModule('jsgraphics');
 LoadModule('jstrimesh');
+LoadModule('jssdl');
+LoadModule('jsode');
 
+function MeshToTrimesh(filename) {
 
+	var trimeshList = {};
+	var mesh = eval('('+(new File('cube.json').content)+')');
+	for ( var id in mesh ) {
 
-var world = new World;
-world.gravity = [0,0,-9.81];
+		var tm = new Trimesh();
+		trimeshList[id] = tm;
+
+		var vertexList = [];
+		var normalList = [];
+		for each ( var it in mesh[id].vertex ) {
+			vertexList.push(it[0], it[1], it[2]);
+			normalList.push(it[3], it[4], it[5]);
+		}
+		tm.DefineVertexBuffer(vertexList);
+		tm.DefineNormalBuffer(vertexList);
+
+		var faceList = [];
+		for each ( var it in mesh[id].face )
+			faceList.push(it[0], it[1], it[2]);
+		tm.DefineIndexBuffer(faceList);
+	}
+	return trimeshList;
+}
+
+var cubeTrimesh = MeshToTrimesh('cube.json').Cube;
+
+var world = new World();
+world.gravity = [0,0,-9.809];
 var floor = new GeomPlane(world.space);
-//floor.body = world.env;
+floor.body = world.env;
 
-var body1 = new Body(world);
-var geom = new GeomSphere(world.space);
-geom.body = body1;
-geom.impact = function(n, b1, b2, pos) { Print('impact '+n+' at [ '+pos[0].toFixed(2)+' , '+pos[1].toFixed(2)+' , '+pos[2].toFixed(2)+' ]\n') }
+var boxes = [];
+for ( var i = 0; i < 10; i++ ) {
 
-world.defaultSurfaceParameters.bounce = 0.7;
-world.defaultSurfaceParameters.bounceVel = 0;
+	var box = new GeomBox(world.space);
+	var box = new GeomTrimesh(world.space, cubeTrimesh);
+//	box.lengths = [2,2,2];
+	box.body = new Body(world);
+	box.body.position = [0,0,3+i*2];
+	boxes.push(box);
+}
 
-body1.position = [0,0,5];
+var cursor = new GeomBox(world.space);
+cursor.lengths = [2,2,2];
+cursor.body = new Body(world);
+cursor.body.position = [2,2,1];
+cursor.body.mass.value = 10;
 
-while ( !endSignal ) {
+//world.defaultSurfaceParameters.softERP = 0.4;
+//world.defaultSurfaceParameters.softCFM = 0.00001;
+//world.defaultSurfaceParameters.slip1 = 0.1;
+//world.defaultSurfaceParameters.slip2 = 0.001;
+world.defaultSurfaceParameters.bounce = 0.2;
+world.defaultSurfaceParameters.bounceVel = 5;
 
+
+GlSetAttribute( GL_SWAP_CONTROL, 1 ); // vsync
+GlSetAttribute( GL_DOUBLEBUFFER, 1 );
+GlSetAttribute( GL_DEPTH_SIZE, 16 );
+SetVideoMode( 800, 600, 32, HWSURFACE | OPENGL | RESIZABLE ); // | ASYNCBLIT // RESIZABLE FULLSCREEN
+
+with (Ogl) {
+
+	Enable(DEPTH_TEST);
+	Enable(BLEND); //Enable alpha blending
+	BlendFunc(SRC_ALPHA, ONE_MINUS_SRC_ALPHA); //Set the blend function
+	Enable(CULL_FACE);
+
+	MatrixMode(PROJECTION);
+	Perspective(60, 0.01, 1000);
+	MatrixMode(MODELVIEW);
+	
+//	Enable(LIGHTING);
+	Enable(LIGHT0);
+//	Light(LIGHT0, SPECULAR, [1, 1, 1, 1]);
+//	Light(LIGHT0, POSITION, [-1,-2, 10 ]);
+	
+//  LightModel(LIGHT_MODEL_AMBIENT, [0.5, 0.5, 0.5, 1.0]);
+  ShadeModel(SMOOTH);
+
+
+	
+
+
+	
+
+	LoadIdentity();
+	PushMatrix();
+}
+
+var [x,y,] = cursor.body.position;
+
+showCursor = false;
+grabInput = true;
+
+var done = false;
+var listeners = {
+	onQuit: function() done = true,
+	onKeyDown: function(key, mod) {
+		
+		switch (key) {
+			case K_ESCAPE:
+				done = true;
+				break;
+		}
+	},
+	onVideoResize: function(w,h) {
+
+		Ogl.Viewport(0, 0, w, h);
+	},
+	onMouseMotion: function(px,py,dx,dy,button) {
+			
+		var vel = cursor.body.linearVel;
+		if ( dx )
+			vel[0] += dx/100;
+		if ( dy )
+			vel[1] += -dy/100;
+		if ( button == 1 )
+			vel[2] += Math.abs(dx+dy)/200;
+		cursor.body.linearVel = vel;
+
+		x += dx;
+		y += dy;
+	}
+};
+
+
+function Cube(x, y, z) {
+
+	with (Ogl) {
+		Begin(QUADS);
+		Normal(0.5,0.5,-1);
+		Vertex(0,0,0);
+		Vertex(0,y,0);
+		Vertex(x,y,0);
+		Vertex(x,0,0);
+
+		Vertex(0,0,0);
+		Vertex(0,0,z);
+		Vertex(0,y,z);
+		Vertex(0,y,0);
+
+		Vertex(0,0,0);
+		Vertex(x,0,0);
+		Vertex(x,0,z);
+		Vertex(0,0,z);
+
+		Vertex(x,0,0);
+		Vertex(x,y,0);
+		Vertex(x,y,z);
+		Vertex(x,0,z);
+
+		Vertex(0,y,0);
+		Vertex(0,y,z);
+		Vertex(x,y,z);
+		Vertex(x,y,0);
+
+		Vertex(0,0,z);
+		Vertex(x,0,z);
+		Vertex(x,y,z);
+		Vertex(0,y,z);
+		End();
+	}
+
+}
+
+function DrawFloor(cx, cy) {
+
+	with (Ogl) {
+		Begin(QUADS);
+		for ( var x = 0; x < cx; x++ )
+			for ( var y = 0; y < cy; y++ ) {
+				if ( (x + y) % 2 )
+					Color(1,1,1,1);
+				else
+					Color(1,0,0,1);
+				Vertex(x,y);
+				Vertex(x+1,y);
+				Vertex(x+1,y+1);
+				Vertex(x, y+1);
+			}
+		End();
+	}
+}
+
+var cubeId = Ogl.LoadTrimesh(cubeTrimesh);
+
+function Draw(t) {
+
+	with (Ogl) {
+	
+		Clear(COLOR_BUFFER_BIT | DEPTH_BUFFER_BIT);
+		LoadIdentity();
+
+// camera		
+		Translate(0, 0, -10);
+		Rotate(-60, 1, 0, 0);
+		Translate(0, 0, -2);
+
+// floor
+		PushMatrix();
+		Translate(-5,-5,0);
+		DrawFloor(10, 10);
+		PopMatrix();
+	
+// objects
+		for each (box in boxes) {
+			PushMatrix();
+			MultMatrix(box.body);
+			Color(0.5,0.5,0.5,1);
+			Translate(-1,-1,-1);
+			Ogl.DrawTrimesh(cubeId);
+			PopMatrix();
+		}
+		
+		PushMatrix();
+		MultMatrix(cursor.body);
+		Color(0,0,1,1);
+		Translate(-1,-1,-1);
+		Ogl.DrawTrimesh(cubeId);
+		PopMatrix();
+	}
+}
+
+
+var t0, t1;
+
+CollectGarbage();
+while ( !done ) {
+
+	PollEvent(listeners);
+	
+	var t1 = TimeCounter()/1000;
+
+	if ( !t0 )
+		t0 = t1-0.001;
+	
+//	cursor.body.position = [x/100, -y/100, 0.5];
+//	cursor.body.quaternion = [0,0,0,1];
+
+	world.Step(t1-t0);
+
+	Draw(t1);
+	t0 = t1;
+	GlSwapBuffers();
 	Sleep(10);
-	world.Step(0.01);
 }
 
 
 
 Halt(); //////////////////////////////////////////////////////////////////////
+
+
+
+
+
+
 
 
 var world = new World;

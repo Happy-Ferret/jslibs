@@ -25,7 +25,7 @@ Manage GL extensions:
 #include "jswindow.h"
 //#include "../common/jsNativeInterface.h"
 
-#include "jstransformation.h"
+//#include "jstransformation.h"
 
 #include "../jsimage/image.h"
 #include "../jslang/blob.h"
@@ -1209,10 +1209,42 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION_FAST( LoadMatrix ) {
 
 	JL_S_ASSERT_ARG_MIN(1);
-	Matrix44 tmp, *m = &tmp;
-	if (GetMatrixHelper(cx, JL_FARG(1), &m) == JS_FALSE)
-		return JS_FALSE;
-	glLoadMatrixf(m->raw);
+	float tmp[16];
+	float *m = tmp;
+
+	JL_S_ASSERT_OBJECT( JL_FARG(1) );
+	JSObject *matrixObj = JSVAL_TO_OBJECT( JL_FARG(1) );
+	NIMatrix44Get fct = Matrix44GetInterface(cx, matrixObj);
+	JL_S_ASSERT( fct, "Invalid Matrix44 interface." );
+	JL_CHK( fct(cx, matrixObj, &m) );
+
+	glLoadMatrixf(m);
+	*JL_FRVAL = JSVAL_VOID;
+	return JS_TRUE;
+	JL_BAD;
+}
+
+/**doc
+$TOC_MEMBER $INAME
+ $VOID $INAME( matrix )
+  $H arguments
+   $ARG $VAL matrix: either a matrix object or an Array
+  $H OpenGL API
+   glLoadMatrixf
+**/
+DEFINE_FUNCTION_FAST( MultMatrix ) {
+
+	JL_S_ASSERT_ARG_MIN(1);
+	float tmp[16];
+	float *m = tmp;
+
+	JL_S_ASSERT_OBJECT( JL_FARG(1) );
+	JSObject *matrixObj = JSVAL_TO_OBJECT( JL_FARG(1) );
+	NIMatrix44Get fct = Matrix44GetInterface(cx, matrixObj);
+	JL_S_ASSERT( fct, "Invalid Matrix44 interface." );
+	JL_CHK( fct(cx, matrixObj, &m) );
+
+	glMultMatrixf(m);
 	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
@@ -2146,7 +2178,7 @@ static int MatrixGet(JSContext *cx, JSObject *obj, float **m) {
 
 JSBool Init( JSContext *cx, JSObject *obj ) {
 
-	JL_CHK( SetMatrix44ReadInterface(cx, obj, MatrixGet) );
+	JL_CHK( SetMatrix44GetInterface(cx, obj, MatrixGet) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -2944,6 +2976,7 @@ CONFIGURE_CLASS
 		FUNCTION_FAST_ARGC(PushMatrix, 0)
 		FUNCTION_FAST_ARGC(PopMatrix, 0)
 		FUNCTION_FAST_ARGC(LoadMatrix, 1) // matrix
+		FUNCTION_FAST_ARGC(MultMatrix, 1) // matrix
 		FUNCTION_FAST_ARGC(Rotate, 4) // angle, x, y, z
 		FUNCTION_FAST_ARGC(Translate, 3) // x, y, z
 		FUNCTION_FAST_ARGC(Scale, 3) // x, y, z

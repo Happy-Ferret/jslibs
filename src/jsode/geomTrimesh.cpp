@@ -63,7 +63,7 @@ DEFINE_CONSTRUCTOR() {
 
 	ode::dTriMeshDataID triMeshDataID = ode::dGeomTriMeshDataCreate();
 
-	ode::dGeomTriMeshDataBuildSingle(triMeshDataID, srf->vertex, 3*sizeof(SURFACE_REAL_TYPE), srf->vertexCount, srf->index, srf->indexCount, sizeof(SURFACE_INDEX_TYPE));
+	ode::dGeomTriMeshDataBuildSingle(triMeshDataID, srf->vertex, 3*sizeof(SURFACE_REAL_TYPE), srf->vertexCount, srf->index, srf->indexCount, 3*sizeof(SURFACE_INDEX_TYPE));
 	ode::dGeomTriMeshDataPreprocess(triMeshDataID);
 
 	ode::dGeomID geomId = ode::dCreateTriMesh(space, triMeshDataID, NULL, NULL, NULL);

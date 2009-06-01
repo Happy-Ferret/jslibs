@@ -38,6 +38,7 @@ void messageHandler(int errnum, const char *msg, va_list ap) {
 
 	char text[1024];
 	int len = vsprintf(text, msg, ap);
+//	vprintf(msg, ap);
 
 	// ThrowOdeException(cx, ...
 
