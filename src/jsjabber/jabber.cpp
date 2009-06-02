@@ -320,7 +320,7 @@ DEFINE_FUNCTION( Connect ) {
 	if ( sock == -1 )
 		return JS_TRUE;
 
-	JL_CHK( IntToJsval(cx, sock, J_RVAL) );
+	JL_CHK( IntToJsval(cx, sock, JL_RVAL) );
 	return JS_TRUE;
 	JL_BAD;
 }

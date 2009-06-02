@@ -95,11 +95,11 @@ void FinalizeTrimesh(void *data) {
 ...
 
 void *data;
-JL_CHK( CreateId(cx, 'TEST', 10, &data, FinalizeTrimesh, J_RVAL) );
+JL_CHK( CreateId(cx, 'TEST', 10, &data, FinalizeTrimesh, JL_RVAL) );
 
-bool c = IsIdType(cx, *J_RVAL, 'TEST');
+bool c = IsIdType(cx, *JL_RVAL, 'TEST');
 
-bool d = data == GetIdPrivate(cx, *J_RVAL);
+bool d = data == GetIdPrivate(cx, *JL_RVAL);
 
 
 */

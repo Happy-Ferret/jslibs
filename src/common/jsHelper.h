@@ -156,7 +156,7 @@ ALWAYS_INLINE void SetHostPrivate( JSContext *cx, HostPrivate *hostPrivate ) {
 #define JL_FOBJ (argc, JS_THIS_OBJECT(cx, vp))
 
 // the return value
-#define J_RVAL (rval)
+#define JL_RVAL (rval)
 // same for fast native
 #define JL_FRVAL (&JS_RVAL(cx, vp))
 

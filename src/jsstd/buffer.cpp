@@ -906,7 +906,7 @@ DEFINE_FUNCTION( toString ) {
 	//JL_CHK( ReadRawAmount(cx, obj, &amount, bstrBuf) );
 	//JSObject *bstrObj = NewBlob(cx, bstrBuf, pv->length);
 	//JL_S_ASSERT( bstrObj != NULL, "Unable to create the Blob." );
-	//*J_RVAL = OBJECT_TO_JSVAL(bstrObj);
+	//*JL_RVAL = OBJECT_TO_JSVAL(bstrObj);
 
 	return JS_TRUE;
 	JL_BAD;

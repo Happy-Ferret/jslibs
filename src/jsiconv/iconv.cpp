@@ -243,10 +243,10 @@ DEFINE_CALL() {
 	if ( pv->wTo ) { // destination is wide.
 		
 		JSString *wstr = JS_NewUCString(cx, (jschar*)outBuf, (length+1) / 2);
-		*J_RVAL = STRING_TO_JSVAL(wstr);
+		*JL_RVAL = STRING_TO_JSVAL(wstr);
 	} else {
 
-		JL_CHK( StringAndLengthToJsval(cx, J_RVAL, outBuf, length) );
+		JL_CHK( StringAndLengthToJsval(cx, JL_RVAL, outBuf, length) );
 	}
 
 	return JS_TRUE;

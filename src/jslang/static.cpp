@@ -74,7 +74,7 @@ DEFINE_FUNCTION( Stringify ) {
 			JSString *jsstr;
 			jsstr = JS_NewString(cx, newBuffer, total);
 			JL_CHK( jsstr );
-			*J_RVAL = STRING_TO_JSVAL( jsstr );
+			*JL_RVAL = STRING_TO_JSVAL( jsstr );
 
 			BufferFinalize(&buf);
 			return JS_TRUE;
@@ -97,7 +97,7 @@ DEFINE_FUNCTION( Stringify ) {
 
 	JSString *jsstr;
 	jsstr = JS_NewString(cx, newBuffer, length);
-	*J_RVAL = STRING_TO_JSVAL( jsstr );
+	*JL_RVAL = STRING_TO_JSVAL( jsstr );
 	return JS_TRUE;
 	JL_BAD;
 }

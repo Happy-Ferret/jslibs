@@ -784,12 +784,12 @@ DEFINE_FUNCTION( GetObjectPrivate ) {
 
 	if ( !(JL_GetClass(obj)->flags & JSCLASS_HAS_PRIVATE) ) {
 		
-		*J_RVAL = JSVAL_VOID;
+		*JL_RVAL = JSVAL_VOID;
 		return JS_TRUE;
 	}
 	unsigned long n;
 	n = (unsigned long)JL_GetPrivate(cx, JSVAL_TO_OBJECT( JL_ARG( 1 ) ));
-	JL_CHK( JS_NewNumberValue(cx, (double)n, J_RVAL) );
+	JL_CHK( JS_NewNumberValue(cx, (double)n, JL_RVAL) );
 	return JS_TRUE;
 	JL_BAD;
 }

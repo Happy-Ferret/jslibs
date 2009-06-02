@@ -365,7 +365,7 @@ DEFINE_FUNCTION( GetEnv ) {
 
 	if ( value == NULL || *value == '\0' ) { // this will cause an 'undefined' return value
 
-		*J_RVAL = JSVAL_VOID;
+		*JL_RVAL = JSVAL_VOID;
 	} else {
 
 //		JSString *jsstr = JS_NewExternalString(cx, (jschar*)value, strlen(value), JS_AddExternalStringFinalizer(NULL)); only works with unicode strings
