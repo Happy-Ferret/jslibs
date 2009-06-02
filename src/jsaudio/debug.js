@@ -4,38 +4,30 @@ LoadModule('jssound');
 LoadModule('jsaudio');
 LoadModule('jsdebug');
 
-try {
+var filename = '41_30secOgg-q0.ogg';
 
-	Oal.Open('Generic Software');
+Print('playing '+filename, '\npress Ctrl-c to exit\n' );
 
-	var dec = new OggVorbisDecoder( new File('41_30secOgg-q0.ogg').Open('r') );
+var decoder = new OggVorbisDecoder(new File(filename).Open(File.RDONLY));
 
-	var buf1 = new OalBuffer(dec.Read(50000));
-	var buf2 = new OalBuffer(dec.Read(50000));
+Oal.Open();
+var src = Oal.GenSource();
 
-	var src = new OalSource();
+var pcm, decodeSize = 512;
+while ( (pcm = decoder.Read(decodeSize)) && !endSignal ) {
 
-	//src.buffer = buf1;
-	//src.buffer = buf2;
-
-	src.QueueBuffers(buf1);
-	src.QueueBuffers(buf1);
-	src.QueueBuffers(buf2);
-	src.QueueBuffers(buf2);
-
-	//src.looping = true;
-	src.Position(1,0,0);
-
-	src.Play();
-
-	Sleep( src.remainingTime * 1000 );
-
-	src.Stop();
-
-} catch(ex) {
-
-	Print('ex: '+ex);
+	Oal.SourceQueueBuffers(src, Oal.Buffer(pcm));
+	if ( Oal.GetSourceInteger(src, Oal.SOURCE_STATE) == Oal.INITIAL )
+		Oal.PlaySource(src);
+	decodeSize = pcm.frames * 2;
 }
+
+var totalTime = decoder.frames/decoder.rate;
+var currentTimeOffset = Oal.GetSourceReal(src, Oal.SEC_OFFSET);
+for ( i = 0; !endSignal && i < totalTime - currentTimeOffset; i++ )
+	Sleep(1000);
+
+Oal.Close();
 
 Halt(); ////////////////////////////////////////////////////////////////////////////////////////////////////
 
