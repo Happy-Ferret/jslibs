@@ -19,13 +19,19 @@ ALWAYS_INLINE ode::dReal JSValToODEReal( JSContext *cx, jsval val ) {
 	if ( JsvalIsNInfinity(cx, val) )
 		return -dInfinity;
 
-	jsdouble value;
-	if (unlikely( JsvalToDouble(cx, val, &value) != JS_TRUE )) // (TBD) manage errors
-		return 0;
+	ode::dReal value;
+#if defined(dSINGLE)
+	JL_CHK( JsvalToFloat(cx, val, &value) );
+#else
+	JL_CHK( JsvalToDouble(cx, val, &value) );
+#endif
 
 	if ( value > dInfinity )
 		return dInfinity;
 	if ( value < -dInfinity )
 		return -dInfinity;
 	return value;
+bad:
+	return 0;
 }
+

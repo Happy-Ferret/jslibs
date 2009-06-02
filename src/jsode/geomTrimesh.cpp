@@ -31,7 +31,7 @@ DEFINE_FINALIZE() {
 	ode::dGeomID geomId = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	if ( geomId != NULL ) {
 
-		ode::dGeomTriMeshDataDestroy(ode::dGeomTriMeshGetData(geomId));
+//		ode::dGeomTriMeshDataDestroy(ode::dGeomTriMeshGetData(geomId));
 		ode::dGeomSetData(geomId, NULL);
 	}
 }
@@ -50,9 +50,11 @@ DEFINE_CONSTRUCTOR() {
 	JL_S_ASSERT_ARG_MIN(2);
 	JL_S_ASSERT_OBJECT(JL_ARG(2));
 
-	ode::dSpaceID space = 0;
-	if ( JL_ARG_ISDEF(1) ) // place it in a space ?
+	ode::dSpaceID space;
+	if ( JL_ARG_ISDEF(1) )
 		JL_CHK( ValToSpaceID(cx, JL_ARG(1), &space) );
+	else
+		space = 0;
 
 	jsval trimeshVal = JL_ARG(2);
 	JL_S_ASSERT( JsvalIsTrimesh(cx, trimeshVal), "Invalid Trimesh object." );
@@ -63,15 +65,15 @@ DEFINE_CONSTRUCTOR() {
 
 	ode::dTriMeshDataID triMeshDataID = ode::dGeomTriMeshDataCreate();
 
-	ode::dGeomTriMeshDataBuildSingle(triMeshDataID, srf->vertex, 3*sizeof(SURFACE_REAL_TYPE), srf->vertexCount, srf->index, srf->indexCount, 3*sizeof(SURFACE_INDEX_TYPE));
+	ode::dGeomTriMeshDataBuildSingle(triMeshDataID, srf->vertex, 3 * sizeof(SURFACE_REAL_TYPE), srf->vertexCount, srf->index, srf->indexCount, 3 * sizeof(SURFACE_INDEX_TYPE));
 	ode::dGeomTriMeshDataPreprocess(triMeshDataID);
-
 	ode::dGeomID geomId = ode::dCreateTriMesh(space, triMeshDataID, NULL, NULL, NULL);
+	ode::dGeomTriMeshDataDestroy(triMeshDataID); // once the trimesh is created, del trimesh data.
+//	JL_CHK( JS_SetReservedSlot(cx, obj, SLOT_TRIMESH, trimeshVal) ); // keep e reference to the trimesh object because dGeomTriMeshDataBuildSingle do not make a copy of the data.
 
-	JL_CHK( JS_SetReservedSlot(cx, obj, SLOT_TRIMESH, trimeshVal) ); // keep e reference to the trimesh object because dGeomTriMeshDataBuildSingle do not make a copy of the data.
 	JL_SetPrivate(cx, obj, geomId);
-	JL_CHK( SetupReadMatrix(cx, obj) ); // (TBD) check return status
 	ode::dGeomSetData(geomId, obj); // 'obj' do not need to be rooted because Goem's data is reset to NULL when 'obj' is finalized.
+	JL_CHK( SetupReadMatrix(cx, obj) );
 
 	return JS_TRUE;
 	JL_BAD;

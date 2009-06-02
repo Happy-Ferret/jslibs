@@ -41,6 +41,44 @@ DEFINE_CONSTRUCTOR() {
 	JL_BAD;
 }
 
+
+/**doc
+=== Methods ===
+**/
+
+/**doc
+$TOC_MEMBER $INAME
+ $INAME()
+
+**/
+DEFINE_FUNCTION( ResetBody ) {
+
+	// fc. http://opende.sourceforge.net/wiki/index.php/Manual_(Joint_Types_and_Functions)#Plane_2D
+	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(jointId); // (TBD) check if NULL is meaningful for joints !
+
+	ode::dBodyID bodyId = ode::dJointGetBody(jointId, 0);
+
+	const ode::dReal *rot = ode::dBodyGetAngularVel(bodyId);
+	const ode::dReal *quat_ptr;
+	ode::dReal quat[4], quat_len;
+	quat_ptr = ode::dBodyGetQuaternion(bodyId);
+	quat[0] = quat_ptr[0];
+	quat[1] = 0;
+	quat[2] = 0; 
+	quat[3] = quat_ptr[3]; 
+	quat_len = sqrt(quat[0] * quat[0] + quat[3] * quat[3]);
+	quat[0] /= quat_len;
+	quat[3] /= quat_len;
+	ode::dBodySetQuaternion(bodyId, quat);
+	ode::dBodySetAngularVel(bodyId, 0, 0, rot[2]);
+
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+
 // dJointSetPlane2DXParam
 // dJointSetPlane2DYParam
 // dJointSetPlane2DAngleParam
@@ -63,6 +101,10 @@ CONFIGURE_CLASS
 
 	REVISION(JL_SvnRevToInt("$Revision$"))
 	HAS_CONSTRUCTOR
+
+	BEGIN_FUNCTION_SPEC
+		FUNCTION_ARGC( ResetBody, 0 )
+	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
 //		PROPERTY_WRITE_STORE( x )

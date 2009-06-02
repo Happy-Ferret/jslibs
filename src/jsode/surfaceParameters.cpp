@@ -153,10 +153,12 @@ DEFINE_PROPERTY( surfaceSetter ) {
 			SETBIT( surface->mode, ode::dContactMotion2, set );
 			if ( set )
 				surface->motion2 = value;
+			break;
 		case motionN:
 			SETBIT( surface->mode, ode::dContactMotionN, set );
 			if ( set )
 				surface->motionN = value;
+			break;
 		case slip1:
 			SETBIT( surface->mode, ode::dContactSlip1, set );
 			if ( set )

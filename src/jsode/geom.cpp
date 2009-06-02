@@ -75,7 +75,7 @@ BEGIN_CLASS( Geom )
 
 /**doc
 $TOC_MEMBER $INAME
- *Destroy*()
+ $INAME()
   dGeomSetData NULL, dGeomDestroy
 **/
 DEFINE_FUNCTION( Destroy ) {

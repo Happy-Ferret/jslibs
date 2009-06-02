@@ -8,7 +8,7 @@ LoadModule('jsode');
 function MeshToTrimesh(filename) {
 
 	var trimeshList = {};
-	var mesh = eval('('+(new File('cube.json').content)+')');
+	var mesh = eval('('+(new File(filename).content)+')');
 	for ( var id in mesh ) {
 
 		var tm = new Trimesh();
@@ -31,36 +31,49 @@ function MeshToTrimesh(filename) {
 	return trimeshList;
 }
 
+
+
 var cubeTrimesh = MeshToTrimesh('cube.json').Cube;
+var sphereTrimesh = MeshToTrimesh('sphere.json').Sphere;
+
 
 var world = new World();
 world.gravity = [0,0,-9.809];
+
 var floor = new GeomPlane(world.space);
-floor.body = world.env;
+floor.params = [0,0,1,0]; // floor
+var floor = new GeomPlane(world.space);
+floor.params = [0,0,-1,-50]; // ceil
+
+
 
 var boxes = [];
-for ( var i = 0; i < 10; i++ ) {
+for ( var i = 0; i < 20; i++ ) {
 
+//	var box = new GeomTrimesh(world.space, cubeTrimesh);
 	var box = new GeomBox(world.space);
-	var box = new GeomTrimesh(world.space, cubeTrimesh);
-//	box.lengths = [2,2,2];
+	box.lengths = [2,2,2];
 	box.body = new Body(world);
-	box.body.position = [0,0,3+i*2];
+	box.body.position = [0,0,1 + i*2];
 	boxes.push(box);
 }
 
-var cursor = new GeomBox(world.space);
-cursor.lengths = [2,2,2];
+//var cursor = new GeomTrimesh(world.space, cubeTrimesh);
+var cursor = new GeomSphere(world.space);
+cursor.radius = 2;
 cursor.body = new Body(world);
-cursor.body.position = [2,2,1];
-cursor.body.mass.value = 10;
+cursor.body.position = [10,10,cursor.radius];
+cursor.body.mass.value = 20;
 
-//world.defaultSurfaceParameters.softERP = 0.4;
-//world.defaultSurfaceParameters.softCFM = 0.00001;
-//world.defaultSurfaceParameters.slip1 = 0.1;
-//world.defaultSurfaceParameters.slip2 = 0.001;
-world.defaultSurfaceParameters.bounce = 0.2;
-world.defaultSurfaceParameters.bounceVel = 5;
+
+world.defaultSurfaceParameters.softERP = 0.2;
+/*
+world.defaultSurfaceParameters.softCFM = 0.000001;
+world.defaultSurfaceParameters.slip1 = 0.1;
+world.defaultSurfaceParameters.slip2 = 0.001;
+*/
+world.defaultSurfaceParameters.bounce = 0.3;
+world.defaultSurfaceParameters.bounceVel = 10;
 
 
 GlSetAttribute( GL_SWAP_CONTROL, 1 ); // vsync
@@ -76,22 +89,18 @@ with (Ogl) {
 	Enable(CULL_FACE);
 
 	MatrixMode(PROJECTION);
-	Perspective(60, 0.01, 1000);
+	Perspective(120, 0.01, 1000);
 	MatrixMode(MODELVIEW);
 	
-//	Enable(LIGHTING);
+	Enable(LIGHTING);
 	Enable(LIGHT0);
-//	Light(LIGHT0, SPECULAR, [1, 1, 1, 1]);
-//	Light(LIGHT0, POSITION, [-1,-2, 10 ]);
-	
-//  LightModel(LIGHT_MODEL_AMBIENT, [0.5, 0.5, 0.5, 1.0]);
-  ShadeModel(SMOOTH);
-
-
-	
-
-
-	
+	Light(LIGHT0, SPECULAR, [1, 1, 1, 1]);
+//	Light(LIGHT0, POSITION, [-1,-2, 10]);
+//  LightModel(LIGHT_MODEL_AMBIENT, [0.5, 0.5, 0.5, 1]);
+//  ShadeModel(SMOOTH);
+  
+  Enable( COLOR_MATERIAL );
+//  ColorMaterial( FRONT_AND_BACK, EMISSION );
 
 	LoadIdentity();
 	PushMatrix();
@@ -117,17 +126,29 @@ var listeners = {
 
 		Ogl.Viewport(0, 0, w, h);
 	},
+	onMouseButtonUp: function(button) {
+		
+		var vel = cursor.body.linearVel;
+		if ( button == 4 )
+			vel[2] += 1;
+		else
+		if ( button == 5 )
+			vel[2] -= 1;
+		cursor.body.linearVel = vel;
+		
+	},
 	onMouseMotion: function(px,py,dx,dy,button) {
-			
+		
 		var vel = cursor.body.linearVel;
 		if ( dx )
 			vel[0] += dx/100;
 		if ( dy )
 			vel[1] += -dy/100;
+
 		if ( button == 1 )
 			vel[2] += Math.abs(dx+dy)/200;
-		cursor.body.linearVel = vel;
 
+		cursor.body.linearVel = vel;
 		x += dx;
 		y += dy;
 	}
@@ -180,9 +201,9 @@ function DrawFloor(cx, cy) {
 		for ( var x = 0; x < cx; x++ )
 			for ( var y = 0; y < cy; y++ ) {
 				if ( (x + y) % 2 )
-					Color(1,1,1,1);
+					Color(0,0,0.5);
 				else
-					Color(1,0,0,1);
+					Color(0.9,0.8,0.7);
 				Vertex(x,y);
 				Vertex(x+1,y);
 				Vertex(x+1,y+1);
@@ -193,6 +214,7 @@ function DrawFloor(cx, cy) {
 }
 
 var cubeId = Ogl.LoadTrimesh(cubeTrimesh);
+var sphereId = Ogl.LoadTrimesh(sphereTrimesh);
 
 function Draw(t) {
 
@@ -204,11 +226,13 @@ function Draw(t) {
 // camera		
 		Translate(0, 0, -10);
 		Rotate(-60, 1, 0, 0);
-		Translate(0, 0, -2);
+		Rotate(30, 0, 0, 1);
+		Translate(0, 0, -10);
 
 // floor
 		PushMatrix();
-		Translate(-5,-5,0);
+		Scale(5,5,0);
+		Translate(-5, -5, 0);
 		DrawFloor(10, 10);
 		PopMatrix();
 	
@@ -216,17 +240,16 @@ function Draw(t) {
 		for each (box in boxes) {
 			PushMatrix();
 			MultMatrix(box.body);
-			Color(0.5,0.5,0.5,1);
-			Translate(-1,-1,-1);
+			Color(0.5,0.5,0.5);
 			Ogl.DrawTrimesh(cubeId);
 			PopMatrix();
 		}
 		
 		PushMatrix();
 		MultMatrix(cursor.body);
-		Color(0,0,1,1);
-		Translate(-1,-1,-1);
-		Ogl.DrawTrimesh(cubeId);
+		Color(0,0,1);
+		Scale(2,2,2);
+		Ogl.DrawTrimesh(sphereId);
 		PopMatrix();
 	}
 }
@@ -247,7 +270,7 @@ while ( !done ) {
 //	cursor.body.position = [x/100, -y/100, 0.5];
 //	cursor.body.quaternion = [0,0,0,1];
 
-	world.Step(t1-t0);
+	world.Step(t1-t0, 20);
 
 	Draw(t1);
 	t0 = t1;

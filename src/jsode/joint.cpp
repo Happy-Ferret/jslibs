@@ -153,6 +153,12 @@ void JointSetParam( ode::dJointID jointId, int parameter, ode::dReal value ) {
 			ode::dJointSetPlane2DYParam(jointId, parameter, value);
 //			ode::dJointSetPlane2DAngleParam(jointId, parameter, value);
 			break;
+		case ode::dJointTypeLMotor:
+			ode::dJointSetLMotorParam(jointId, parameter, value);
+			break;
+		case ode::dJointTypeAMotor:
+			ode::dJointSetAMotorParam(jointId, parameter, value);
+			break;
 	}
 }
 
@@ -161,11 +167,15 @@ ode::dReal JointGetParam( ode::dJointID jointId, int parameter ) {
 
 	switch( ode::dJointGetType(jointId) ) {
 		case ode::dJointTypeHinge:
-			ode::dJointGetHingeParam(jointId, parameter);
-			break;
+			return ode::dJointGetHingeParam(jointId, parameter);
 		case ode::dJointTypeSlider:
-			ode::dJointGetSliderParam(jointId, parameter);
-			break;
+			return ode::dJointGetSliderParam(jointId, parameter);
+		case ode::dJointTypePlane2D:
+			return 0; // (TBD)
+		case ode::dJointTypeLMotor:
+			return ode::dJointGetLMotorParam(jointId, parameter);
+		case ode::dJointTypeAMotor:
+			return ode::dJointGetAMotorParam(jointId, parameter);
 	}
 	return 0;
 }

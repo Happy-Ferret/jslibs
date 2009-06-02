@@ -42,6 +42,28 @@ DEFINE_CONSTRUCTOR() {
 }
 
 /**doc
+=== Methods ===
+**/
+
+/**doc
+$TOC_MEMBER $INAME
+ $VOID $INAME( force )
+  TBD
+**/
+DEFINE_FUNCTION( AddForce ) {
+
+	JL_S_ASSERT_ARG_MIN(1);
+	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(jointId);
+	ode::dReal force;
+	JL_CHK( JsvalToFloat(cx, JL_ARG(1), &force) );
+	ode::dJointAddSliderForce(jointId, force);
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+/**doc
 === Properties ===
 **/
 
@@ -95,7 +117,6 @@ $TOC_MEMBER $INAME
  $REAL $INAME $READONLY
   TBD
 **/
-
 DEFINE_PROPERTY( positionRate ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
@@ -110,6 +131,10 @@ CONFIGURE_CLASS
 
 	REVISION(JL_SvnRevToInt("$Revision$"))
 	HAS_CONSTRUCTOR
+
+	BEGIN_FUNCTION_SPEC
+		FUNCTION_ARGC( AddForce, 1 )
+	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
 		PROPERTY( axis )

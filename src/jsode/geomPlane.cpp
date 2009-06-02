@@ -50,6 +50,38 @@ DEFINE_CONSTRUCTOR() {
 	JL_BAD;
 }
 
+/**doc
+$TOC_MEMBER $INAME
+ $REAL $INAME
+**/
+DEFINE_PROPERTY( paramsSetter ) {
+
+	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( geom );
+	JL_S_ASSERT_ARRAY( *vp );
+	ode::dVector4 params;
+	size_t length;
+	JL_CHK( JsvalToFloatVector(cx, *vp, params, 4, &length) );
+	JL_S_ASSERT( length == 4, "Invalid array size." );
+	ode::dGeomPlaneSetParams(geom, params[0], params[1], params[2], params[3]);
+	return JS_TRUE;
+	JL_BAD;
+}
+
+DEFINE_PROPERTY( paramsGetter ) {
+
+	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( geom );
+	ode::dVector4 result;
+	ode::dGeomPlaneGetParams(geom, result);
+	JL_CHK( FloatVectorToJsval(cx, result, COUNTOF(result), vp) );
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+
+
 /*
 DEFINE_PROPERTY( lengthsSetter ) {
 
@@ -87,6 +119,10 @@ CONFIGURE_CLASS
 
 	HAS_PROTOTYPE( prototypeGeom )
 	HAS_CONSTRUCTOR
+
+	BEGIN_PROPERTY_SPEC
+		PROPERTY( params )
+	END_PROPERTY_SPEC
 
 	HAS_PRIVATE
 	HAS_RESERVED_SLOTS(1)

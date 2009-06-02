@@ -636,6 +636,26 @@ DEFINE_FUNCTION_FAST( Light ) {
 
 /**doc
 $TOC_MEMBER $INAME
+ $VOID $INAME( face, mode )
+  $H arguments
+   $ARG GLenum face
+   $ARG GLenum mode
+  $H OpenGL API
+   glColorMaterial
+**/
+DEFINE_FUNCTION_FAST( ColorMaterial ) {
+
+	JL_S_ASSERT_ARG_MIN(2);
+	JL_S_ASSERT_INT(JL_FARG(1));
+	JL_S_ASSERT_INT(JL_FARG(2));
+	glColorMaterial(JSVAL_TO_INT( JL_FARG(1) ), JSVAL_TO_INT( JL_FARG(2) ));
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
  $VOID $INAME( face, pname, params )
   $H arguments
    $ARG GLenum face
@@ -2950,6 +2970,7 @@ CONFIGURE_CLASS
 		FUNCTION_FAST_ARGC(TexEnv, 3) // target, pname, param | array of params
 		FUNCTION_FAST_ARGC(LightModel, 2) // pname, param
 		FUNCTION_FAST_ARGC(Light, 3) // light, pname, param
+		FUNCTION_FAST_ARGC(ColorMaterial, 2) // face, mode
 		FUNCTION_FAST_ARGC(Material, 3) // face, pname, param
 		FUNCTION_FAST_ARGC(Enable, 1) // cap
 		FUNCTION_FAST_ARGC(Disable ,1) // cap

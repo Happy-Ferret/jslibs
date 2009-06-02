@@ -141,6 +141,26 @@ DEFINE_FUNCTION( IsConnectedTo ) {
 }
 
 /**doc
+$TOC_MEMBER $INAME
+ $VOID $INAME( $TYPE vec3 torque )
+**/
+DEFINE_FUNCTION( AddTorque ) {
+
+	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_CLASS(obj, classBody);
+	ode::dBodyID thisBodyID = (ode::dBodyID)JL_GetPrivate( cx, obj );
+	JL_S_ASSERT_RESOURCE( thisBodyID );
+	ode::dVector3 vector;
+	size_t length;
+	JL_CHK( JsvalToFloatVector(cx, JL_ARG(1), vector, 3, &length) );
+	JL_S_ASSERT( length == 3, "Invalid array size." );
+	ode::dBodyAddTorque(thisBodyID, vector[0], vector[1], vector[2] );
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+/**doc
 === Properties ===
 **/
 
@@ -308,6 +328,7 @@ CONFIGURE_CLASS
 	BEGIN_FUNCTION_SPEC
 		FUNCTION( Destroy )
 		FUNCTION( IsConnectedTo )
+		FUNCTION( AddTorque )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC

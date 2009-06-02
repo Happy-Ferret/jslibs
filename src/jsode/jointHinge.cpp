@@ -47,6 +47,10 @@ DEFINE_CONSTRUCTOR() {
 
 
 /**doc
+=== Methods ===
+**/
+
+/**doc
 $TOC_MEMBER $INAME
  $VOID $INAME( torque )
   TBD
@@ -179,6 +183,10 @@ CONFIGURE_CLASS
 
 	REVISION(JL_SvnRevToInt("$Revision$"))
 	HAS_CONSTRUCTOR
+
+	BEGIN_FUNCTION_SPEC
+		FUNCTION_ARGC( AddTorque, 1 )
+	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
 		PROPERTY( anchor )
