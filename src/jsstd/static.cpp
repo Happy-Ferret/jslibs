@@ -26,7 +26,6 @@
 
 #include "../common/buffer.h"
 
-
 DECLARE_CLASS( OperationLimit )
 DECLARE_CLASS( Sandbox )
 
@@ -1390,32 +1389,13 @@ DEFINE_PROPERTY( processPrioritySetter ) {
 
 JSBool testProp(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 
-	JSObject *list = JS_NewObject( cx, NULL, NULL, NULL );
-	*vp = OBJECT_TO_JSVAL(list);
-
-	jsval tmp;
-
-	JSObject *desc = JS_NewObject( cx, NULL, NULL, NULL );
-	tmp = OBJECT_TO_JSVAL( desc );
-	JS_SetProperty( cx, list, "name", &tmp );
-
-	desc = JS_NewObject( cx, NULL, NULL, NULL );
-	tmp = OBJECT_TO_JSVAL( desc );
-	JS_SetProperty( cx, list, "foo", &tmp );
-
-//	JS_GC(cx); // crash the program
-
 	return JS_TRUE;
 	JL_BAD;
 }
 
+
 DEFINE_FUNCTION( Test ) {
 
-	JS_SetGCZeal(cx, 1);
-
-	JL_CHK( JS_DefineProperty(cx, obj, "testProp", JSVAL_VOID, testProp, NULL, 0) );
-
-//	printf("JL_IsAssigningCallResult: %d\n\n", JL_IsAssigningCallResult(cx) );
 	return JS_TRUE;
 	JL_BAD;
 }
