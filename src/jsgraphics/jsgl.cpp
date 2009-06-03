@@ -1229,8 +1229,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION_FAST( LoadMatrix ) {
 
 	JL_S_ASSERT_ARG_MIN(1);
-	float tmp[16];
-	float *m = tmp;
+	float tmp[16], *m = tmp;
 
 	JL_S_ASSERT_OBJECT( JL_FARG(1) );
 	JSObject *matrixObj = JSVAL_TO_OBJECT( JL_FARG(1) );
@@ -1255,8 +1254,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION_FAST( MultMatrix ) {
 
 	JL_S_ASSERT_ARG_MIN(1);
-	float tmp[16];
-	float *m = tmp;
+	float tmp[16], *m = tmp;
 
 	JL_S_ASSERT_OBJECT( JL_FARG(1) );
 	JSObject *matrixObj = JSVAL_TO_OBJECT( JL_FARG(1) );
@@ -2198,9 +2196,7 @@ static int MatrixGet(JSContext *cx, JSObject *obj, float **m) {
 
 JSBool Init( JSContext *cx, JSObject *obj ) {
 
-	JL_CHK( SetMatrix44GetInterface(cx, obj, MatrixGet) );
-	return JS_TRUE;
-	JL_BAD;
+	return SetMatrix44GetInterface(cx, obj, MatrixGet);
 }
 
 

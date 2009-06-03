@@ -27,8 +27,7 @@
 Matrix44 *matrixPool[2048];
 int matrixPoolLength = 0;
 
-
-static int ReadMatrix(JSContext *cx, JSObject *obj, float **m) { // Doc: __declspec(noinline) tells the compiler to never inline a particular function.
+static int GetMatrix(JSContext *cx, JSObject *obj, float **m) { // Doc: __declspec(noinline) tells the compiler to never inline a particular function.
 	
 	Matrix44 *objMatrix = (Matrix44*)JL_GetPrivate(cx, obj);
 	*m = objMatrix->raw; // returns its private pointer. Caller SHOULD not modify it
@@ -58,8 +57,11 @@ DEFINE_FINALIZE() {
 
 /**doc
 $TOC_MEMBER $INAME
- $INAME( [initToIdentity] )
-  Creates a new Transformation object. If _initToIdentity_ is given and true, the transformation is initialized to identity. Else the transformation is not initialized.
+ $INAME( [init] )
+  Creates a new Transformation object. 
+  If no argument is given, the transformation is not initialized.
+  If _init_ is $UNDEF, the transformation is initialized to identity.
+  If _init_ is a matrix, the transormation is initialized with the matrix.
 **/
 DEFINE_CONSTRUCTOR() {
 
@@ -74,16 +76,16 @@ DEFINE_CONSTRUCTOR() {
 		JL_S_ASSERT_ALLOC(m);
 	}
 
-	if ( JL_ARG_ISDEF(1) ) {
+	if ( JL_ARGC >= 1 ) {
 		
-		bool b;
-		JsvalToBool(cx, JL_ARG(1), &b);
-		if ( b )
+		if ( JSVAL_IS_VOID(JL_ARG(1)) )
 			Matrix44Identity(m);
+		else
+			JL_CHK( GetMatrixHelper(cx, JL_ARG(1), &m) );
 	}
 
 	JL_SetPrivate(cx, JL_OBJ, m);
-	JL_CHK( SetMatrix44ReadInterface(cx, obj, ReadMatrix) );
+	JL_CHK( SetMatrix44GetInterface(cx, obj, GetMatrix) );
 	return JS_TRUE;
 	JL_BAD;
 }

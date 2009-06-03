@@ -14,7 +14,6 @@
 
 #include "../common/vector3.h"
 #include "../common/matrix44.h"
-#include "../common/jsNativeInterface.h"
 
 DECLARE_CLASS(Transformation)
 
@@ -28,11 +27,10 @@ inline JSBool GetMatrixHelper( JSContext *cx, jsval val, Matrix44 **m ) {
 	JL_S_ASSERT_OBJECT(val);
 	JSObject *matrixObj = JSVAL_TO_OBJECT(val);
 
-	NIMatrix44Read Matrix44Read;
-	JL_CHK( GetMatrix44ReadInterface(cx, matrixObj, &Matrix44Read) );
-	if ( Matrix44Read != NULL ) {
+	NIMatrix44Get MatrixGet = Matrix44GetInterface(cx, matrixObj);
+	if ( MatrixGet != NULL ) {
 
-		JL_CHK( Matrix44Read(cx, matrixObj, (float**)m) );
+		JL_CHK( MatrixGet(cx, matrixObj, (float**)m) );
 		return JS_TRUE;
 	}
 
