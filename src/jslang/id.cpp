@@ -23,13 +23,38 @@ BEGIN_CLASS( Id )
 DEFINE_FINALIZE() {
 
 	IdPrivate *pv = (IdPrivate*)JL_GetPrivate(cx, obj);
-	if (pv != NULL) {
-		
-		if ( pv->finalizeCallback ) // callback function is present
-			pv->finalizeCallback(pv + 2);
-		JS_free(cx, pv);
-	}
+	if (!pv)
+		return;
+	if ( pv->finalizeCallback ) // callback function is present
+		pv->finalizeCallback((char*)pv + sizeof(IdPrivate)); // (TBD) test it !
+	JS_free(cx, pv);
 }
+
+
+DEFINE_FUNCTION_FAST( toString ) {
+
+	IdPrivate *pv = (IdPrivate*)JL_GetPrivate(cx, JL_FOBJ);
+	JSString *idStr;
+	char str[] = "[Id XXXX]";
+
+	if ( DetectSystemEndianType() == LittleEndian ) {
+
+		str[4] = ((char*)&pv->idType)[3];
+		str[5] = ((char*)&pv->idType)[2];
+		str[6] = ((char*)&pv->idType)[1];
+		str[7] = ((char*)&pv->idType)[0];
+	} else {
+
+		*((ID_TYPE*)str+4) = pv->idType;
+	}
+
+	idStr = JS_NewStringCopyN(cx, str, sizeof(str));
+	JL_CHK(idStr);
+	*JL_FRVAL = STRING_TO_JSVAL(idStr);
+	return JS_TRUE;
+	JL_BAD;
+}
+
 
 DEFINE_HAS_INSTANCE() { // see issue#52
 
@@ -88,4 +113,9 @@ CONFIGURE_CLASS
 	HAS_FINALIZE
 	HAS_HAS_INSTANCE
 //	HAS_XDR
+
+	BEGIN_FUNCTION_SPEC
+		FUNCTION_FAST( toString )
+	END_FUNCTION_SPEC
+	
 END_CLASS

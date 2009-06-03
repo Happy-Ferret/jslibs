@@ -41,8 +41,8 @@ inline JSBool CreateId( JSContext *cx, ID_TYPE idType, size_t userSize, void** u
 	JL_S_ASSERT( idJSClass != NULL, "Id class not initialized.");
 
 	JSObject *idObj;
-	idObj = JS_NewObject( cx, idJSClass, NULL, NULL );
-	JL_CHK( idObj );
+	idObj = JS_NewObject(cx, idJSClass, NULL, NULL);
+	JL_CHK(idObj);
 	*idVal = OBJECT_TO_JSVAL(idObj);
 	IdPrivate *pv;
 	pv = (IdPrivate*)JS_malloc(cx, sizeof(IdPrivate) + userSize);
@@ -55,8 +55,6 @@ inline JSBool CreateId( JSContext *cx, ID_TYPE idType, size_t userSize, void** u
 		*userData = (char*)pv + sizeof(IdPrivate);
 
 	return JS_TRUE;
-bad_free:
-	JS_free(cx, pv);
 	JL_BAD;
 }
 
