@@ -48,20 +48,23 @@ DEFINE_PROPERTY( body2 ) {
 
 inline JSBool SetJoint( JSContext *cx, JSObject *obj, jsval *b1, jsval *b2 ) {
 
-	ode::dJointID jointID = (ode::dJointID)JL_GetPrivate( cx, obj );
+	ode::dJointID jointID = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( jointID );
 
 	if ( JSVAL_IS_VOID( *b1 ) || JSVAL_IS_VOID( *b2 ) )
 		ode::dJointAttach(jointID, 0, 0); // detach it. The only way to attach it to the world environment is to use World.env
 
-	ode::dBodyID bId1 = 0;
-	ode::dBodyID bId2 = 0;
-
+	ode::dBodyID bId1;
 	if ( !JSVAL_IS_VOID( *b1 ) )
 		JL_CHK( ValToBodyID(cx, *b1, &bId1) );
+	else
+		bId1 = 0;
 
+	ode::dBodyID bId2;
 	if ( !JSVAL_IS_VOID( *b2 ) )
 		JL_CHK( ValToBodyID(cx, *b2, &bId2) );
+	else
+		bId2 = 0;
 
 	ode::dJointAttach(jointID, bId1, bId2);
 	return JS_TRUE;
@@ -81,16 +84,16 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Destroy ) {
 
 	JL_S_ASSERT( JL_InheritFrom(cx, obj, _class), J__ERRMSG_INVALID_CLASS );
-	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate( cx, obj );
+	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( jointId );
 
 	ode::dJointFeedback *currentFeedback = ode::dJointGetFeedback(jointId);
 	if ( currentFeedback != NULL )
-		free(currentFeedback);
+		JS_free(cx, currentFeedback);
 	// remove references to bodies
-	jsval val = JSVAL_VOID;
-	JS_SetProperty(cx, obj, "body1", &val); // (TBD) find why to not use JS_DeleteProperty
-	JS_SetProperty(cx, obj, "body2", &val);
+	JL_CHK( JS_SetReservedSlot(cx, obj, SLOT_JOINT_BODY1, JSVAL_VOID) );
+	JL_CHK( JS_SetReservedSlot(cx, obj, SLOT_JOINT_BODY2, JSVAL_VOID) );
+
 	JL_SetPrivate(cx, obj, NULL);
 	ode::dJointDestroy(jointId);
 	return JS_TRUE;
@@ -184,18 +187,25 @@ ode::dReal JointGetParam( ode::dJointID jointId, int parameter ) {
 === Properties ===
 **/
 
+
 /**doc
 $TOC_MEMBER $INAME
  $TYPE Body $INAME
   Set the first body of the joint.
 **/
-DEFINE_PROPERTY( body1 ) {
+DEFINE_PROPERTY_SETTER( body1 ) {
 
+	JS_SetReservedSlot(cx, obj, SLOT_JOINT_BODY1, *vp);
 	jsval b2;
-	JS_GetProperty(cx, obj, "body2", &b2);
+	JS_GetReservedSlot(cx, obj, SLOT_JOINT_BODY2, &b2);
 	JL_CHK( SetJoint(cx, obj, vp, &b2) );
 	return JS_TRUE;
 	JL_BAD;
+}
+
+DEFINE_PROPERTY_GETTER( body1 ) {
+
+	return JS_GetReservedSlot(cx, obj, SLOT_JOINT_BODY1, vp);
 }
 
 
@@ -204,14 +214,21 @@ $TOC_MEMBER $INAME
  $TYPE Body $INAME
   Set the second body of the joint.
 **/
-DEFINE_PROPERTY( body2 ) {
+DEFINE_PROPERTY_SETTER( body2 ) {
 
+	JS_SetReservedSlot(cx, obj, SLOT_JOINT_BODY2, *vp);
 	jsval b1;
-	JS_GetProperty(cx, obj, "body1", &b1);
+	JS_GetReservedSlot(cx, obj, SLOT_JOINT_BODY1, &b1);
 	JL_CHK( SetJoint(cx, obj, &b1, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
+
+DEFINE_PROPERTY_GETTER( body2 ) {
+
+	return JS_GetReservedSlot(cx, obj, SLOT_JOINT_BODY2, vp);
+}
+
 
 /**doc
 $TOC_MEMBER $INAME
@@ -225,20 +242,21 @@ DEFINE_PROPERTY( useFeedback ) {
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate( cx, obj );
 	JL_S_ASSERT_RESOURCE( jointId );
 
-	JSBool b;
-	JS_ValueToBoolean(cx, *vp, &b);
+	bool b;
+	JL_CHK( JsvalToBool(cx, *vp, &b) );
 
 	ode::dJointFeedback *currentFeedback = ode::dJointGetFeedback(jointId);
 
-	if ( currentFeedback == NULL && b == JS_TRUE ) {
+	if ( currentFeedback == NULL && b ) {
 
-		ode::dJointFeedback *fb = (ode::dJointFeedback*)malloc(sizeof(ode::dJointFeedback));
-		JL_S_ASSERT_ALLOC(fb);
+		ode::dJointFeedback *fb = (ode::dJointFeedback*)JS_malloc(cx, sizeof(ode::dJointFeedback));
+		JL_CHK(fb);
 		ode::dJointSetFeedback(jointId, fb);
-	} else if ( currentFeedback != NULL && b == JS_FALSE ) {
+	} else
+	if ( currentFeedback != NULL && !b ) {
 
 		ode::dJointSetFeedback(jointId, NULL);
-		free(currentFeedback);
+		JS_free(cx, currentFeedback);
 	}
 
 	return JS_TRUE;
@@ -250,14 +268,17 @@ $TOC_MEMBER $INAME
  $TYPE vec3 *body1Force*
   Is the current force vector that applies to the body1 if feedback is activated.
 
- * $TYPE vec3 *body1Torque*
-  Is the current torque vector that applies to the body1 if feedback is activated.
+ $TOC_MEMBER $INAME
+  $TYPE vec3 *body1Torque*
+   Is the current torque vector that applies to the body1 if feedback is activated.
 
-  * $TYPE vec3 *body2Force*
-  Is the current force vector that applies to the body2 if feedback is activated.
+ $TOC_MEMBER $INAME
+  $TYPE vec3 *body2Force*
+   Is the current force vector that applies to the body2 if feedback is activated.
 
- * $TYPE vec3 *body2Torque*
-  Is the current torque vector that applies to the body2 if feedback is activated.
+ $TOC_MEMBER $INAME
+  $TYPE vec3 *body2Torque*
+   Is the current torque vector that applies to the body2 if feedback is activated.
 **/
 enum { body1Force, body1Torque, body2Force, body2Torque };
 
@@ -327,21 +348,31 @@ DEFINE_PROPERTY( feedbackVectorGetter ) {
 $TOC_MEMBER $INAME
  $REAL *loStop*
 
- * $REAL *hiStop*
+$TOC_MEMBER $INAME
+ $REAL *hiStop*
 
- * $REAL *bounce*
+$TOC_MEMBER $INAME
+ $REAL *velocity*
 
- * $REAL *CFM*
+$TOC_MEMBER $INAME
+ $REAL *maxForce*
 
- * $REAL *stopERP*
+$TOC_MEMBER $INAME
+ $REAL *fudgeFactor*
 
- * $REAL *stopCFM*
+$TOC_MEMBER $INAME
+ $REAL *bounce*
 
- * $REAL *velocity*
+$TOC_MEMBER $INAME
+ $REAL *CFM*
 
- * $REAL *maxForce*
+$TOC_MEMBER $INAME
+ $REAL *stopERP*
+
+$TOC_MEMBER $INAME
+ $REAL *stopCFM*
 **/
-enum { loStop, hiStop, bounce, CFM, stopERP, stopCFM, velocity, maxForce };
+enum { loStop, hiStop, velocity, maxForce, fudgeFactor, bounce, CFM, stopERP, stopCFM };
 
 DEFINE_PROPERTY( jointParamSetter ) {
 
@@ -357,6 +388,15 @@ DEFINE_PROPERTY( jointParamSetter ) {
 		case hiStop:
 			parameter = ode::dParamHiStop;
 			break;
+		case velocity:
+			parameter = ode::dParamVel;
+			break;
+		case maxForce:
+			parameter = ode::dParamFMax;
+			break;
+		case fudgeFactor:
+			parameter = ode::dParamFudgeFactor;
+			break;
 		case bounce:
 			parameter = ode::dParamBounce;
 			break;
@@ -368,12 +408,6 @@ DEFINE_PROPERTY( jointParamSetter ) {
 			break;
 		case stopCFM:
 			parameter = ode::dParamStopCFM;
-			break;
-		case velocity:
-			parameter = ode::dParamVel;
-			break;
-		case maxForce:
-			parameter = ode::dParamFMax;
 			break;
 	}
 	JointSetParam(jointId, parameter, JSValToODEReal(cx, *vp));
@@ -394,6 +428,15 @@ DEFINE_PROPERTY( jointParamGetter ) {
 		case hiStop:
 			parameter = ode::dParamHiStop;
 			break;
+		case velocity:
+			parameter = ode::dParamVel;
+			break;
+		case maxForce:
+			parameter = ode::dParamFMax;
+			break;
+		case fudgeFactor:
+			parameter = ode::dParamFudgeFactor;
+			break;
 		case bounce:
 			parameter = ode::dParamBounce;
 			break;
@@ -406,14 +449,8 @@ DEFINE_PROPERTY( jointParamGetter ) {
 		case stopCFM:
 			parameter = ode::dParamStopCFM;
 			break;
-		case velocity:
-			parameter = ode::dParamVel;
-			break;
-		case maxForce:
-			parameter = ode::dParamFMax;
-			break;
 	}
-	JS_NewDoubleValue(cx, JointGetParam(jointId, parameter), vp);
+	*vp = ODERealToJsval(cx, JointGetParam(jointId, parameter));
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -424,13 +461,14 @@ DEFINE_PROPERTY( jointParamGetter ) {
 CONFIGURE_CLASS
 
 	REVISION(JL_SvnRevToInt("$Revision$"))
+
 	BEGIN_FUNCTION_SPEC
 		FUNCTION( Destroy )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
-		PROPERTY_WRITE_STORE( body1 )
-		PROPERTY_WRITE_STORE( body2 )
+		PROPERTY( body1 )
+		PROPERTY( body2 )
 
 		PROPERTY_WRITE_STORE( useFeedback )
 
@@ -439,27 +477,15 @@ CONFIGURE_CLASS
 		PROPERTY_SWITCH( body2Force , feedbackVector )
 		PROPERTY_SWITCH( body2Torque, feedbackVector )
 
-		PROPERTY_SWITCH( loStop  , jointParam )
-		PROPERTY_SWITCH( hiStop  , jointParam )
-		PROPERTY_SWITCH( bounce  , jointParam )
-		PROPERTY_SWITCH( CFM     , jointParam )
-		PROPERTY_SWITCH( stopERP , jointParam )
-		PROPERTY_SWITCH( stopCFM , jointParam )
+		PROPERTY_SWITCH( loStop, jointParam )
+		PROPERTY_SWITCH( hiStop, jointParam )
 		PROPERTY_SWITCH( velocity, jointParam )
 		PROPERTY_SWITCH( maxForce, jointParam )
-
-/*
-		PROPERTY( loStop )
-		PROPERTY( hiStop )
-		PROPERTY( bounce )
-
-		PROPERTY( CFM )
-		PROPERTY( stopERP )
-		PROPERTY( stopCFM )
-
-		PROPERTY( velocity )
-		PROPERTY( maxForce )
-*/
+		PROPERTY_SWITCH( fudgeFactor, jointParam )
+		PROPERTY_SWITCH( bounce, jointParam )
+		PROPERTY_SWITCH( CFM, jointParam )
+		PROPERTY_SWITCH( stopERP, jointParam )
+		PROPERTY_SWITCH( stopCFM, jointParam )
 	END_PROPERTY_SPEC
 
 END_CLASS;

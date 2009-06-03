@@ -81,6 +81,8 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	INIT_CLASS( JointHinge );
 	INIT_CLASS( JointSlider );
 	INIT_CLASS( JointFixed );
+	INIT_CLASS( JointAMotor );
+	INIT_CLASS( JointLMotor );
 	INIT_CLASS( Mass );
 	INIT_CLASS( Body );
 	INIT_CLASS( Geom );

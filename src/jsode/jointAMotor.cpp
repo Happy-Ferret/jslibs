@@ -33,7 +33,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_S_ASSERT_THIS_CLASS();
 	JL_S_ASSERT_ARG_MIN(1);
 	ode::dWorldID worldId;
-	JL_CHK( ValToWorldID( cx, argv[0], &worldId) );
+	JL_CHK( ValToWorldID( cx, JL_ARG(1), &worldId) );
 	ode::dJointID jointId = ode::dJointCreateAMotor(worldId, 0);
 	JL_SetPrivate(cx, obj, jointId);
 	return JS_TRUE;
@@ -50,7 +50,7 @@ $TOC_MEMBER $INAME
  $INAME()
   dJointAddAMotorTorques
 **/
-DEFINE_FUNCTION( AddTorque1 ) {
+DEFINE_FUNCTION( AddTorque0 ) {
 
 	JL_S_ASSERT_ARG_MIN( 1 );
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
@@ -67,7 +67,7 @@ $TOC_MEMBER $INAME
  $INAME()
   dJointAddAMotorTorques
 **/
-DEFINE_FUNCTION( AddTorque2 ) {
+DEFINE_FUNCTION( AddTorque1 ) {
 
 	JL_S_ASSERT_ARG_MIN( 1 );
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
@@ -84,7 +84,7 @@ $TOC_MEMBER $INAME
  $INAME()
   dJointAddAMotorTorques
 **/
-DEFINE_FUNCTION( AddTorque3 ) {
+DEFINE_FUNCTION( AddTorque2 ) {
 
 	JL_S_ASSERT_ARG_MIN( 1 );
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
@@ -108,7 +108,6 @@ DEFINE_FUNCTION( SetAxis ) {
 	JL_S_ASSERT_ARG_MIN( 3 );
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId); // (TBD) check if NULL is meaningful for joints !
-	
 	int anum, rel;
 	JsvalToInt(cx, JL_ARG(1), &anum);
 	JsvalToInt(cx, JL_ARG(2), &rel);
@@ -116,7 +115,11 @@ DEFINE_FUNCTION( SetAxis ) {
 	size_t length;
 	JL_CHK( JsvalToFloatVector(cx, JL_ARG(3), vector, 3, &length) );
 	JL_S_ASSERT( length == 3, "Invalid array size." );
-	ode::dJointSetAMotorAxis( jointId, anum, rel, vector[0], vector[1], vector[2] );
+
+	if ( anum+1 > ode::dJointGetAMotorNumAxes(jointId) )
+		ode::dJointSetAMotorNumAxes(jointId, anum+1);
+	
+	ode::dJointSetAMotorAxis(jointId, anum, rel, vector[0], vector[1], vector[2]);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -137,7 +140,11 @@ DEFINE_FUNCTION( SetAngle ) {
 	float angle;
 	JsvalToInt(cx, JL_ARG(1), &anum);
 	JsvalToFloat(cx, JL_ARG(2), &angle);
-	ode::dJointSetAMotorAngle( jointId, anum, angle );
+
+	if ( anum+1 > ode::dJointGetAMotorNumAxes(jointId) )
+		ode::dJointSetAMotorNumAxes(jointId, anum+1);
+
+	ode::dJointSetAMotorAngle(jointId, anum, angle);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -178,7 +185,7 @@ $TOC_MEMBER $INAME
  $REAL $INAME $READONLY
 	In euler mode this is the corresponding euler angle rate of axis 1.
 **/
-DEFINE_PROPERTY( angle1Rate ) {
+DEFINE_PROPERTY( angle0Rate ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId);
@@ -191,7 +198,7 @@ $TOC_MEMBER $INAME
  $REAL $INAME $READONLY
 	In euler mode this is the corresponding euler angle rate of axis 2.
 **/
-DEFINE_PROPERTY( angle2Rate ) {
+DEFINE_PROPERTY( angle1Rate ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId);
@@ -204,7 +211,7 @@ $TOC_MEMBER $INAME
  $REAL $INAME $READONLY
 	In euler mode this is the corresponding euler angle rate of axis 3.
 **/
-DEFINE_PROPERTY( angle3Rate ) {
+DEFINE_PROPERTY( angle2Rate ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId);
@@ -219,20 +226,23 @@ CONFIGURE_CLASS
 	HAS_CONSTRUCTOR
 
 	BEGIN_FUNCTION_SPEC
+		FUNCTION_ARGC( SetAxis, 3 )
+		FUNCTION_ARGC( SetAngle, 2 )
+		FUNCTION_ARGC( AddTorque0, 1 )
 		FUNCTION_ARGC( AddTorque1, 1 )
 		FUNCTION_ARGC( AddTorque2, 1 )
-		FUNCTION_ARGC( AddTorque3, 1 )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
 		PROPERTY( eulerMode )
+		PROPERTY_READ( angle0Rate )
 		PROPERTY_READ( angle1Rate )
 		PROPERTY_READ( angle2Rate )
-		PROPERTY_READ( angle3Rate )
 	END_PROPERTY_SPEC
 
 	HAS_PROTOTYPE( prototypeJoint )
 	HAS_PRIVATE
+	HAS_RESERVED_SLOTS(2) // body1, body2
 
 END_CLASS
 

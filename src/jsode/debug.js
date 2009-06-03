@@ -46,17 +46,35 @@ var floor = new GeomPlane(world.space);
 floor.params = [0,0,-1,-50]; // ceil
 
 
+var testBox = new GeomBox(world.space);
+testBox.lengths = [2,2,5];
+testBox.body = new Body(world);
+testBox.body.position = [-4,-4,1];
+
+var j1 = new JointBall(world);
+j1.body1 = testBox.body;
+//j1.anchor = [3,3,3];
+//j1.anchor2 = [1,1,3];
+
+/*
+var j = new	JointAMotor(world);
+j.body1 = testBox.body;
+j.SetAxis(0,0,[0,0,1]);
+j.SetAngle(0, 2);
+*/
+
 
 var boxes = [];
 for ( var i = 0; i < 20; i++ ) {
 
-//	var box = new GeomTrimesh(world.space, cubeTrimesh);
 	var box = new GeomBox(world.space);
 	box.lengths = [2,2,2];
 	box.body = new Body(world);
 	box.body.position = [0,0,1 + i*2];
 	boxes.push(box);
 }
+
+boxes.push(testBox);
 
 //var cursor = new GeomTrimesh(world.space, cubeTrimesh);
 var cursor = new GeomSphere(world.space);
@@ -130,10 +148,10 @@ var listeners = {
 		
 		var vel = cursor.body.linearVel;
 		if ( button == 4 )
-			vel[2] += 1;
+			vel[2] += modifierState & KMOD_LCTRL ? 10 : 1;
 		else
 		if ( button == 5 )
-			vel[2] -= 1;
+			vel[2] -= modifierState & KMOD_LCTRL ? 10 : 1;
 		cursor.body.linearVel = vel;
 		
 	},
@@ -223,12 +241,23 @@ function Draw(t) {
 		Clear(COLOR_BUFFER_BIT | DEPTH_BUFFER_BIT);
 		LoadIdentity();
 
-// camera		
+// camera
+
+
 		Translate(0, 0, -10);
 		Rotate(-60, 1, 0, 0);
-		Rotate(30, 0, 0, 1);
-		Translate(0, 0, -10);
+		Rotate(0, 0, 0, 1);
 
+		Scale(-1,-1,-1);
+		var t = new Transformation(cursor.body);
+		t.ClearRotation();
+		MultMatrix(t);
+		Scale(-1,-1,-1);
+
+		
+/*
+		Translate(0, 0, -10);
+*/
 // floor
 		PushMatrix();
 		Scale(5,5,0);
@@ -247,7 +276,7 @@ function Draw(t) {
 		
 		PushMatrix();
 		MultMatrix(cursor.body);
-		Color(0,0,1);
+		Color(1,0,0);
 		Scale(2,2,2);
 		Ogl.DrawTrimesh(sphereId);
 		PopMatrix();

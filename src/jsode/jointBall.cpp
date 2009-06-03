@@ -32,8 +32,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_S_ASSERT_THIS_CLASS();
 	JL_S_ASSERT_ARG_MIN(1);
 	ode::dWorldID worldId;
-	if ( ValToWorldID( cx, argv[0], &worldId) == JS_FALSE )
-		return JS_FALSE;
+	JL_CHK( ValToWorldID( cx, JL_ARG(1), &worldId) );
 	ode::dJointID jointId = ode::dJointCreateBall(worldId, 0); // The joint group ID is 0 to allocate the joint normally.
 	JL_SetPrivate(cx, obj, jointId);
 	return JS_TRUE;
@@ -75,10 +74,42 @@ DEFINE_PROPERTY( anchorGetter ) {
 	JL_BAD;
 }
 
+
 /**doc
+$TOC_MEMBER $INAME
+ $TYPE vec3 $INAME
+**/
+DEFINE_PROPERTY( anchor2Setter ) {
+
+	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(jointId); // (TBD) check if NULL is meaningful for joints !
+	ode::dVector3 vector;
+	//FloatArrayToVector(cx, 3, vp, vector);
+	size_t length;
+	JL_CHK( JsvalToFloatVector(cx, *vp, vector, 3, &length) );
+	JL_S_ASSERT( length == 3, "Invalid array size." );
+	ode::dJointSetBallAnchor2( jointId, vector[0], vector[1], vector[2] );
+	return JS_TRUE;
+	JL_BAD;
+}
+
+DEFINE_PROPERTY( anchor2Getter ) {
+
+	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(jointId);
+	ode::dVector3 vector;
+	ode::dJointGetBallAnchor2(jointId,vector);
+	JL_CHK( FloatVectorToJsval(cx, vector, 3, vp) );
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+/** doc
 $TOC_MEMBER $INAME
  $TYPE vec3 $INAME $READONLY
 **/
+/*
 DEFINE_PROPERTY( anchor2 ) { // read only
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
@@ -90,6 +121,7 @@ DEFINE_PROPERTY( anchor2 ) { // read only
 	return JS_TRUE;
 	JL_BAD;
 }
+*/
 
 CONFIGURE_CLASS
 
@@ -98,11 +130,13 @@ CONFIGURE_CLASS
 
 	BEGIN_PROPERTY_SPEC
 		PROPERTY( anchor )
-		PROPERTY_READ( anchor2 )
+		PROPERTY( anchor2 )
+//		PROPERTY_READ( anchor2 )
 	END_PROPERTY_SPEC
 
 	HAS_PROTOTYPE( prototypeJoint )
 	HAS_PRIVATE
-//	HAS_RESERVED_SLOTS(2)
+
+	HAS_RESERVED_SLOTS(2) // body1, body2
 
 END_CLASS

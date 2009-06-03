@@ -17,7 +17,7 @@ DECLARE_CLASS( Body )
 #define BODY_SLOT_WORLD 0 // the world
 
 inline JSBool ValToBodyID( JSContext *cx, jsval val, ode::dBodyID *bodyId ) {
-
+	
 	JL_S_ASSERT_OBJECT(val);
 	JSObject *obj = JSVAL_TO_OBJECT(val);
 	JL_S_ASSERT_CLASS(obj, classBody);

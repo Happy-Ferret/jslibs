@@ -12,9 +12,14 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
+#define SLOT_JOINT_BODY1 0
+#define SLOT_JOINT_BODY2 1
+
 DECLARE_CLASS( Joint );
 DECLARE_CLASS( JointBall );
 DECLARE_CLASS( JointHinge );
 DECLARE_CLASS( JointSlider );
 DECLARE_CLASS( JointFixed );
+DECLARE_CLASS( JointAMotor );
+DECLARE_CLASS( JointLMotor );
 

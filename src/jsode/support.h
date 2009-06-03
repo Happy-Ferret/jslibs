@@ -35,3 +35,21 @@ bad:
 	return 0;
 }
 
+ALWAYS_INLINE jsval ODERealToJsval( JSContext *cx, ode::dReal val ) {
+	
+	if ( val >= dInfinity )
+		return JS_GetPositiveInfinityValue(cx);
+	if ( val <= -dInfinity )
+		return JS_GetNegativeInfinityValue(cx);
+
+	jsval value;
+#if defined(dSINGLE)
+	JL_CHK( FloatToJsval(cx, val, &value) );
+#else
+	JL_CHK( DoubleVectorToJsval(cx, val, &value) );
+#endif
+	return value;
+bad:
+	return 0;
+}
+
