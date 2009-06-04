@@ -4,6 +4,9 @@ LoadModule('jsgraphics');
 LoadModule('jstrimesh');
 LoadModule('jssdl');
 LoadModule('jsode');
+LoadModule('jssound');
+LoadModule('jsaudio');
+
 
 function MeshToTrimesh(filename) {
 
@@ -31,6 +34,33 @@ function MeshToTrimesh(filename) {
 	return trimeshList;
 }
 
+/////////////////////
+
+
+Oal.Open('Generic Software');
+
+var dec = new SoundFileDecoder(new File('blip.wav').Open(File.RDONLY));
+var b = new OalBuffer(dec.Read());
+
+var src = new OalSource();
+
+/*
+var effect = new OalEffect();
+effect.type = Oal.EFFECT_REVERB;
+effect.reverbDensity = 0;
+effect.reverbDiffusion = 1;
+effect.reverbGain = 1;
+effect.reverbDecayTime = 20;
+src.effect = effect;
+*/
+
+src.buffer = b;
+src.looping = false;
+src.Position(-1,0,0);
+
+src.Play();
+
+
 
 
 var cubeTrimesh = MeshToTrimesh('cube.json').Cube;
@@ -40,19 +70,31 @@ var sphereTrimesh = MeshToTrimesh('sphere.json').Sphere;
 var world = new World();
 world.gravity = [0,0,-9.809];
 
+
 var floor = new GeomPlane(world.space);
 floor.params = [0,0,1,0]; // floor
-var floor = new GeomPlane(world.space);
-floor.params = [0,0,-1,-50]; // ceil
+//var ceil = new GeomPlane(world.space);
+//ceil.params = [0,0,-1,-50]; // ceil
 
+floor.impact = function(n, geom, geom2, pos, vel, depth) {
+	
+	if ( depth > 0.1 ) {
+	
+		src.gain = depth;
+		src.Play();
+		return false;
+	}
+}
 
+/*
 var testBox = new GeomBox(world.space);
 testBox.lengths = [2,2,5];
 testBox.body = new Body(world);
 testBox.body.position = [-4,-4,1];
+*/
 
 var j1 = new JointBall(world);
-j1.body1 = testBox.body;
+//j1.body1 = testBox.body;
 //j1.anchor = [3,3,3];
 //j1.anchor2 = [1,1,3];
 
@@ -65,7 +107,7 @@ j.SetAngle(0, 2);
 
 
 var boxes = [];
-for ( var i = 0; i < 20; i++ ) {
+for ( var i = 0; i < 10; i++ ) {
 
 	var box = new GeomBox(world.space);
 	box.lengths = [2,2,2];
@@ -74,30 +116,32 @@ for ( var i = 0; i < 20; i++ ) {
 	boxes.push(box);
 }
 
-boxes.push(testBox);
+
+//boxes.push(testBox);
 
 //var cursor = new GeomTrimesh(world.space, cubeTrimesh);
 var cursor = new GeomSphere(world.space);
 cursor.radius = 2;
 cursor.body = new Body(world);
 cursor.body.position = [10,10,cursor.radius];
-cursor.body.mass.value = 20;
+cursor.body.mass.value = 10;
 
 
-world.defaultSurfaceParameters.softERP = 0.2;
+
 /*
+world.defaultSurfaceParameters.softERP = 0.2;
 world.defaultSurfaceParameters.softCFM = 0.000001;
 world.defaultSurfaceParameters.slip1 = 0.1;
 world.defaultSurfaceParameters.slip2 = 0.001;
 */
-world.defaultSurfaceParameters.bounce = 0.3;
+world.defaultSurfaceParameters.bounce = 0.5;
 world.defaultSurfaceParameters.bounceVel = 10;
 
 
 GlSetAttribute( GL_SWAP_CONTROL, 1 ); // vsync
 GlSetAttribute( GL_DOUBLEBUFFER, 1 );
 GlSetAttribute( GL_DEPTH_SIZE, 16 );
-SetVideoMode( 800, 600, 32, HWSURFACE | OPENGL | RESIZABLE ); // | ASYNCBLIT // RESIZABLE FULLSCREEN
+SetVideoMode( 640, 480, 32, HWSURFACE | OPENGL | RESIZABLE ); // | ASYNCBLIT // RESIZABLE FULLSCREEN
 
 with (Ogl) {
 
@@ -146,22 +190,23 @@ var listeners = {
 	},
 	onMouseButtonUp: function(button) {
 		
+		var forceMult = modifierState & KMOD_LCTRL ? 10 : 1;
 		var vel = cursor.body.linearVel;
 		if ( button == 4 )
-			vel[2] += modifierState & KMOD_LCTRL ? 10 : 1;
+			vel[2] += forceMult;
 		else
 		if ( button == 5 )
-			vel[2] -= modifierState & KMOD_LCTRL ? 10 : 1;
+			vel[2] -= forceMult;
 		cursor.body.linearVel = vel;
-		
 	},
 	onMouseMotion: function(px,py,dx,dy,button) {
 		
+		var forceMult = modifierState & KMOD_LCTRL ? 10 : 1;
 		var vel = cursor.body.linearVel;
 		if ( dx )
-			vel[0] += dx/100;
+			vel[0] += forceMult * dx/100;
 		if ( dy )
-			vel[1] += -dy/100;
+			vel[1] += forceMult * -dy/100;
 
 		if ( button == 1 )
 			vel[2] += Math.abs(dx+dy)/200;
@@ -306,6 +351,9 @@ while ( !done ) {
 	GlSwapBuffers();
 	Sleep(10);
 }
+
+
+
 
 
 

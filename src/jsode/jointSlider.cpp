@@ -33,8 +33,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_S_ASSERT_THIS_CLASS();
 	JL_S_ASSERT_ARG_MIN(1);
 	ode::dWorldID worldId;
-	if ( ValToWorldID( cx, argv[0], &worldId) == JS_FALSE )
-		return JS_FALSE;
+	JL_CHK( ValToWorldID( cx, argv[0], &worldId) );
 	ode::dJointID jointId = ode::dJointCreateSlider(worldId, 0); // The joint group ID is 0 to allocate the joint normally.
 	JL_SetPrivate(cx, obj, jointId);
 	return JS_TRUE;

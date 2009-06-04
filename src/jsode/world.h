@@ -22,12 +22,19 @@ DECLARE_CLASS( World )
 //#define WORLD_SLOT_CONTACTGROUP 0
 #define WORLD_SLOT_SPACE 1
 
-inline JSBool ValToWorldID( JSContext *cx, jsval val, ode::dWorldID *worldId ) {
+
+struct WorldPrivate {
+	ode::dWorldID worldId;
+	ode::dJointGroupID contactGroupId;
+};
+
+
+ALWAYS_INLINE JSBool ValToWorldID( JSContext *cx, jsval val, ode::dWorldID *worldId ) {
 
 	JL_S_ASSERT_OBJECT(val);
 	JSObject *worldObject = JSVAL_TO_OBJECT(val);
 	JL_S_ASSERT_CLASS(worldObject, classWorld);
-	*worldId = (ode::dWorldID)JL_GetPrivate(cx,worldObject);
+	*worldId = ((WorldPrivate*)JL_GetPrivate(cx, worldObject))->worldId;
 	return JS_TRUE;
 	JL_BAD;
 }

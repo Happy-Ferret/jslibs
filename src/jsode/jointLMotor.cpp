@@ -33,7 +33,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_S_ASSERT_THIS_CLASS();
 	JL_S_ASSERT_ARG_MIN(1);
 	ode::dWorldID worldId;
-	JL_CHK( ValToWorldID( cx, argv[0], &worldId) );
+	JL_CHK( ValToWorldID(cx, argv[0], &worldId) );
 	ode::dJointID jointId = ode::dJointCreateLMotor(worldId, 0);
 	JL_SetPrivate(cx, obj, jointId);
 	return JS_TRUE;

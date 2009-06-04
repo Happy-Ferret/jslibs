@@ -68,7 +68,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
 	_unsafeMode = GetHostPrivate(cx)->unsafeMode;
 
-	int status = ode::dInitODE2(0);
+	int status = ode::dInitODE2(0); // (TBD) use dAllocateFlagCollisionData ?
 	JL_S_ASSERT( status != 0, "Unable to initialize ODE." );
 
 	ode::dSetErrorHandler(messageHandler);
@@ -95,9 +95,6 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	INIT_CLASS( World );
 	INIT_CLASS( SurfaceParameters );
 
-//	JSObject *p = JS_GetPrototype(cx, classObjectJointHinge);
-//	JSObject *q = JS_GetPrototype(cx, p);
-
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -109,6 +106,7 @@ EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx, JSObject *obj) {
 }
 
 EXTERN_C DLLEXPORT void ModuleFree() {
+
 }
 
 
@@ -124,15 +122,4 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
 
 /*
 User guide: http://www.ode.org/ode-latest-userguide.html
-
-
-var world = new ode.World;
-world.gravity = [0,0,-9.81];
-
-
-new world.Body;
--or-
-new ode.Body(world);
-
-
 */

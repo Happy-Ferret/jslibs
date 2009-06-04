@@ -25,3 +25,9 @@ DECLARE_CLASS( GeomTrimesh )
 DECLARE_CLASS( SurfaceParameters )
 
 JSBool SetupReadMatrix(JSContext *cx, JSObject *obj);
+
+
+ALWAYS_INLINE JSObject *GeomToJSObject( ode::dGeomID geomId ) {
+
+	return (JSObject*)ode::dGeomGetData(geomId);
+}
