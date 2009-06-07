@@ -192,28 +192,24 @@ static JSBool RemoveStatic( JSContext *cx ) {
 	jsval _revision = JSVAL_VOID;
 
 #define END_STATIC \
-	if ( GetHostPrivate(cx)->camelCase == 1 ) { \
+	if ( GetHostPrivate(cx)->camelCase == 1 ) \
 		_NormalizeFunctionNames(_staticFunctionSpec); \
-	} \
 	if ( _staticFunctionSpec != NULL ) JS_DefineFunctions(cx, obj, _staticFunctionSpec); \
 	if ( _staticPropertySpec != NULL ) JS_DefineProperties(cx, obj, _staticPropertySpec); \
 	if ( _constIntegerSpec != NULL ) { \
 	  JSObject *dstObj; \
 	  dstObj = obj; \
-		for (; _constIntegerSpec->name; _constIntegerSpec++) \
-		if ( JS_DefineProperty(cx, dstObj, _constIntegerSpec->name, INT_TO_JSVAL(_constIntegerSpec->ival), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) != JS_TRUE ) \
-			return JS_FALSE; \
+		for ( ; _constIntegerSpec->name; _constIntegerSpec++ ) \
+		JL_CHK( JS_DefineProperty(cx, dstObj, _constIntegerSpec->name, INT_TO_JSVAL(_constIntegerSpec->ival), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) ); \
 	} \
 	if ( _constDoubleSpec != NULL ) \
-		if ( JS_DefineConstDoubles(cx, obj, _constDoubleSpec) != JS_TRUE ) \
-			return JS_FALSE; \
-	if ( _init ) \
-		if ( _init(cx, obj) != JS_TRUE ) \
-			return JS_FALSE; \
+		JL_CHK( JS_DefineConstDoubles(cx, obj, _constDoubleSpec) ); \
 	JSBool found; \
-	JL_CHK( JS_HasProperty(cx, obj, "_revision", &found) ); \
+	JL_CHK( JS_HasProperty(cx, obj, NAME_MODULE_REVISION_PROPERTY_NAME, &found) ); \
 	if ( !found ) \
-		JL_CHK( JS_DefineProperty(cx, obj, "_revision", _revision, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) ); \
+		JL_CHK( JS_DefineProperty(cx, obj, NAME_MODULE_REVISION_PROPERTY_NAME, _revision, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) ); \
+	if ( _init ) \
+		JL_CHK( _init(cx, obj) ); \
 	return JS_TRUE; \
 	JL_BAD; \
  }
@@ -265,25 +261,21 @@ static JSBool RemoveClass( JSContext *cx, JSClass *cl ) {
 			_NormalizeFunctionNames(_functionSpec); \
 			_NormalizeFunctionNames(_staticFunctionSpec); \
 		} \
-		JL_CHKM( _class->name && _class->name[0], "Invalid class name." ); \
+		JL_S_ASSERT( _class->name && _class->name[0], "Invalid class name." ); \
 		*_prototype = JS_InitClass(cx, obj, *_parentPrototype, _class, _constructor, 0, _propertySpec, _functionSpec, _staticPropertySpec, _staticFunctionSpec); \
 		JSObject *dstObj; \
 		dstObj = _constructor ? JS_GetConstructor(cx, *_prototype) : *_prototype; \
-		if ( _constIntegerSpec != NULL ) { \
-			for (; _constIntegerSpec->name; _constIntegerSpec++) \
-			if ( JS_DefineProperty(cx, dstObj, _constIntegerSpec->name, INT_TO_JSVAL(_constIntegerSpec->ival), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) != JS_TRUE ) \
-				return JS_FALSE; \
-		} \
+		if ( _constIntegerSpec != NULL ) \
+			for ( ; _constIntegerSpec->name; _constIntegerSpec++ ) \
+				JL_CHK( JS_DefineProperty(cx, dstObj, _constIntegerSpec->name, INT_TO_JSVAL(_constIntegerSpec->ival), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) ); \
 		JSBool found; \
 		JL_CHK( JS_SetPropertyAttributes(cx, obj, _class->name, JSPROP_READONLY | JSPROP_PERMANENT, &found) ); \
-		JL_CHKM( found, "Unable to set class flags" ); \
+		JL_CHKM( found, "Unable to set class flags." ); \
 		if ( _constDoubleSpec != NULL ) \
-			if ( JS_DefineConstDoubles(cx, dstObj, _constDoubleSpec) != JS_TRUE ) \
-				return JS_FALSE; \
-		if ( _init ) \
-			if ( _init(cx, dstObj) != JS_TRUE ) \
-				return JS_FALSE; \
+			JL_CHK( JS_DefineConstDoubles(cx, dstObj, _constDoubleSpec) ); \
 		JL_CHK( JS_DefineProperty(cx, dstObj, NAME_MODULE_REVISION_PROPERTY_NAME, _revision, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) ); \
+		if ( _init ) \
+			JL_CHK( _init(cx, dstObj) ); \
 		return JS_TRUE; \
 		JL_BAD; \
 	}

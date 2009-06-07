@@ -364,14 +364,15 @@ ALWAYS_INLINE size_t JL_GetStringLength(JSString *jsstr) {
 
 ALWAYS_INLINE void *JL_GetPrivate(JSContext *cx, JSObject *obj) {
 
-//	return JL_GetPrivate(cx, obj);
+//	return JS_GetPrivate(cx, obj);
 	jsval v;
 	JS_ASSERT(OBJ_GET_CLASS(cx, obj)->flags & JSCLASS_HAS_PRIVATE);
 	v = obj->fslots[JSSLOT_PRIVATE];
 	#ifdef DEBUG
+		JS_ASSERT( obj );
 		JS_ASSERT( (JSVAL_IS_INT(v) ? JSVAL_TO_PRIVATE(v) : NULL) == JS_GetPrivate(cx, obj) ); // Mozilla JS engine private API behavior has changed.
 	#endif //DEBUG
-	if (!JSVAL_IS_INT(v))
+	if ( !JSVAL_IS_INT(v) )
 		return NULL;
 	return JSVAL_TO_PRIVATE(v);
 }
@@ -379,6 +380,7 @@ ALWAYS_INLINE void *JL_GetPrivate(JSContext *cx, JSObject *obj) {
 
 ALWAYS_INLINE void JL_SetPrivate(JSContext *cx, JSObject *obj, void *data) {
 
+//	JS_SetPrivate(cx, obj, data); return;
 	JS_ASSERT(OBJ_GET_CLASS(cx, obj)->flags & JSCLASS_HAS_PRIVATE);
 	obj->fslots[JSSLOT_PRIVATE] = PRIVATE_TO_JSVAL(data);
 	#ifdef DEBUG
