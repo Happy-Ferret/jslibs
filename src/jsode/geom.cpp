@@ -27,6 +27,7 @@ check:
 #include "geom.h"
 //#include "../common/jsNativeInterface.h"
 
+
 JSBool ReadMatrix(JSContext *cx, JSObject *obj, float **pm) { // Doc: __declspec(noinline) tells the compiler to never inline a particular function.
 
 	ode::dGeomID geomID = (ode::dGeomID)JL_GetPrivate(cx, obj);
@@ -63,6 +64,53 @@ JSBool SetupReadMatrix(JSContext *cx, JSObject *obj) {
 }
 
 
+void FinalizeGeom(JSContext *cx, JSObject *obj) {
+
+	ode::dGeomID geomId = (ode::dGeomID)JL_GetPrivate(cx, obj);
+	if ( !geomId )
+		return;
+	ode::dGeomSetData(geomId, NULL);
+	if ( !ode::dGeomGetBody(geomId) || _odeFinalization ) // geom is lost
+		ode::dGeomDestroy(geomId);
+}
+
+
+JSBool ReconstructGeom(JSContext *cx, ode::dGeomID geomId, JSObject **obj) {
+
+	JL_S_ASSERT( ode::dGeomGetData(geomId) == NULL, "Invalid case (object not finalized)." );
+	JL_S_ASSERT( geomId != NULL, "Invalid ode object." );
+
+	switch( ode::dGeomGetClass(geomId) ) {
+		case ode::dBoxClass:
+			*obj = JS_NewObject(cx, classGeomBox, NULL, NULL);
+			break;
+		case ode::dCapsuleClass:
+			*obj = JS_NewObject(cx, classGeomCapsule, NULL, NULL);
+			break;
+		case ode::dPlaneClass:
+			*obj = JS_NewObject(cx, classGeomPlane, NULL, NULL);
+			break;
+		case ode::dRayClass:
+			*obj = JS_NewObject(cx, classGeomRay, NULL, NULL);
+			break;
+		case ode::dSphereClass:
+			*obj = JS_NewObject(cx, classGeomSphere, NULL, NULL);
+			break;
+		case ode::dTriMeshClass:
+			*obj = JS_NewObject(cx, classGeomTrimesh, NULL, NULL);
+			break;
+		default:
+			JL_REPORT_ERROR("Unable to reconstruct the geom.");
+	}
+	JL_CHK( *obj );
+
+	ode::dGeomSetData(geomId, *obj);
+	JL_SetPrivate(cx, *obj, geomId);
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
 /**doc
 $CLASS_HEADER
 $SVN_REVISION $Revision$
@@ -82,9 +130,9 @@ DEFINE_FUNCTION( Destroy ) {
 
 	ode::dGeomID geomId = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( geomId );
-	ode::dGeomSetData(geomId, NULL); // perhaps useless
 	ode::dGeomDestroy(geomId);
 	JL_SetPrivate(cx, obj, NULL);
+	SetMatrix44GetInterface(cx, obj, NULL);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -128,23 +176,24 @@ $TOC_MEMBER $INAME
  $TYPE body *body*
   Bind the current geometry to the given body object.
 **/
-DEFINE_PROPERTY( body ) {
-
-	// (TBD) check if the obj's private data is the right body. else ERROR
-	//ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
-	//JL_S_ASSERT_RESOURCE( geom );
-	//ode::dBodyID bodyId = dGeomGetBody(geom);
+DEFINE_PROPERTY( bodySetter ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( geom );
 	ode::dBodyID bodyId;
-	if ( ValToBodyID(cx, *vp, &bodyId) == JS_FALSE )
-		return JS_FALSE;
+	JL_CHK( JsvalToBody(cx, *vp, &bodyId) );
 	ode::dGeomSetBody(geom, bodyId);
 	return JS_TRUE;
 	JL_BAD;
 }
 
+DEFINE_PROPERTY( bodyGetter ) {
+
+	ode::dGeomID geomId = (ode::dGeomID)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( geomId );
+	return BodyToJsval(cx, ode::dGeomGetBody(geomId), vp);
+	JL_BAD;
+}
 
 /**doc
 $TOC_MEMBER $INAME
@@ -314,7 +363,7 @@ CONFIGURE_CLASS
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
-		PROPERTY_WRITE_STORE( body )
+		PROPERTY_STORE( body ) // store it to keep a reference (GC protection)
 		PROPERTY_WRITE( tansformation )
 		PROPERTY_WRITE( offset )
 		PROPERTY( enable )

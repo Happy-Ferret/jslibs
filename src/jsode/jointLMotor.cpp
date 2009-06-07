@@ -22,6 +22,12 @@ $SVN_REVISION $Revision: 2555 $
 **/
 BEGIN_CLASS( JointLMotor )
 
+
+DEFINE_FINALIZE() {
+
+	FinalizeJoint(cx, obj);
+}
+
 /**doc
 $TOC_MEMBER $INAME
  $INAME( world )
@@ -33,8 +39,10 @@ DEFINE_CONSTRUCTOR() {
 	JL_S_ASSERT_THIS_CLASS();
 	JL_S_ASSERT_ARG_MIN(1);
 	ode::dWorldID worldId;
-	JL_CHK( ValToWorldID(cx, argv[0], &worldId) );
+	JL_CHK( JsvalToWorldID( cx, JL_ARG(1), &worldId) );
 	ode::dJointID jointId = ode::dJointCreateLMotor(worldId, 0);
+	ode::dJointSetData(jointId, obj);
+	ode::dJointSetFeedback(jointId, NULL);
 	JL_SetPrivate(cx, obj, jointId);
 	return JS_TRUE;
 	JL_BAD;
@@ -51,6 +59,7 @@ CONFIGURE_CLASS
 
 	REVISION(JL_SvnRevToInt("$Revision: 2555 $"))
 	HAS_CONSTRUCTOR
+	HAS_FINALIZE
 
 	BEGIN_PROPERTY_SPEC
 	END_PROPERTY_SPEC

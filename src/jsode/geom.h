@@ -12,7 +12,11 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
+extern bool _odeFinalization;
+
 #define SLOT_GEOM_SURFACEPARAMETER 0
+
+DECLARE_CLASS( SurfaceParameters )
 
 DECLARE_CLASS( Geom )
 DECLARE_CLASS( GeomSphere )
@@ -22,12 +26,18 @@ DECLARE_CLASS( GeomCapsule )
 DECLARE_CLASS( GeomRay )
 DECLARE_CLASS( GeomTrimesh )
 
-DECLARE_CLASS( SurfaceParameters )
-
 JSBool SetupReadMatrix(JSContext *cx, JSObject *obj);
 
+void FinalizeGeom(JSContext *cx, JSObject *obj);
 
-ALWAYS_INLINE JSObject *GeomToJSObject( ode::dGeomID geomId ) {
+JSBool ReconstructGeom(JSContext *cx, ode::dGeomID geomId, JSObject **obj);
 
-	return (JSObject*)ode::dGeomGetData(geomId);
+ALWAYS_INLINE JSBool GeomToJsval( JSContext *cx, ode::dGeomID geomId, jsval *val ) {
+
+	JSObject *obj = (JSObject*)ode::dGeomGetData(geomId);
+	if (unlikely( !obj ))
+		JL_CHK( ReconstructGeom(cx, geomId, &obj) );
+	*val = OBJECT_TO_JSVAL( obj );
+	return JS_TRUE;
+	JL_BAD;
 }

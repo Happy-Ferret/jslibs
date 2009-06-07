@@ -28,9 +28,10 @@ BEGIN_CLASS( Mass )
 JSBool GetBodyAndMass(JSContext *cx, JSObject *massObject, ode::dBodyID *pBodyID, ode::dMass *pMass) {
 
 	jsval bodyVal;
-	JS_GetReservedSlot(cx, massObject, MASS_SLOT_BODY, &bodyVal);
+	JL_CHK( JS_GetReservedSlot(cx, massObject, MASS_SLOT_BODY, &bodyVal) );
+	JL_S_ASSERT_OBJECT(bodyVal);
 	JSObject *bodyObject;
-	JS_ValueToObject(cx, bodyVal, &bodyObject);
+	bodyObject = JSVAL_TO_OBJECT(bodyVal);
 	JL_S_ASSERT_CLASS(bodyObject, classBody);
 	*pBodyID = (ode::dBodyID)JL_GetPrivate(cx, bodyObject);
 	ode::dBodyGetMass(*pBodyID, pMass);
@@ -206,6 +207,7 @@ DEFINE_PROPERTY( centerGetter ) {
 CONFIGURE_CLASS
 
 	REVISION(JL_SvnRevToInt("$Revision$"))
+
 	BEGIN_FUNCTION_SPEC
 		FUNCTION( Translate )
 		FUNCTION( Adjust )

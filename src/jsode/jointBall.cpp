@@ -22,6 +22,11 @@ $SVN_REVISION $Revision$
 **/
 BEGIN_CLASS( JointBall )
 
+DEFINE_FINALIZE() {
+
+	FinalizeJoint(cx, obj);
+}
+
 /**doc
 $TOC_MEMBER $INAME
  $INAME( world )
@@ -32,8 +37,10 @@ DEFINE_CONSTRUCTOR() {
 	JL_S_ASSERT_THIS_CLASS();
 	JL_S_ASSERT_ARG_MIN(1);
 	ode::dWorldID worldId;
-	JL_CHK( ValToWorldID( cx, JL_ARG(1), &worldId) );
+	JL_CHK( JsvalToWorldID( cx, JL_ARG(1), &worldId) );
 	ode::dJointID jointId = ode::dJointCreateBall(worldId, 0); // The joint group ID is 0 to allocate the joint normally.
+	ode::dJointSetData(jointId, obj);
+	ode::dJointSetFeedback(jointId, NULL);
 	JL_SetPrivate(cx, obj, jointId);
 	return JS_TRUE;
 	JL_BAD;
@@ -127,6 +134,7 @@ CONFIGURE_CLASS
 
 	REVISION(JL_SvnRevToInt("$Revision$"))
 	HAS_CONSTRUCTOR
+	HAS_FINALIZE
 
 	BEGIN_PROPERTY_SPEC
 		PROPERTY( anchor )

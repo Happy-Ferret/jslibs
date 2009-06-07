@@ -14,7 +14,7 @@
 
 DECLARE_CLASS( Space );
 
-inline JSBool ValToSpaceID( JSContext *cx, jsval val, ode::dSpaceID *spaceId ) {
+ALWAYS_INLINE JSBool JsvalToSpaceID( JSContext *cx, jsval val, ode::dSpaceID *spaceId ) {
 
 	JL_S_ASSERT_OBJECT(val);
 	JSObject *obj = JSVAL_TO_OBJECT(val);

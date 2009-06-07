@@ -48,7 +48,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_S_ASSERT_THIS_CLASS();
 	ode::dSpaceID parentSpace = 0;
 	if ( argc >= 1 )
-		if ( ValToSpaceID(cx, argv[0], &parentSpace) == JS_FALSE )
+		if ( JsvalToSpaceID(cx, argv[0], &parentSpace) == JS_FALSE )
 			return JS_FALSE;
 	ode::dSpaceID spaceId = ode::dSimpleSpaceCreate(parentSpace);
 	JL_SetPrivate(cx, obj, spaceId); // dSimpleSpaceCreate / dHashSpaceCreate / dQuadTreeSpaceCreate

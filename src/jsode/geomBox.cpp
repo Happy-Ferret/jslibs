@@ -25,27 +25,27 @@ BEGIN_CLASS( GeomBox )
 
 DEFINE_FINALIZE() {
 
-	ode::dGeomID geomId = (ode::dGeomID)JL_GetPrivate(cx, obj);
-	if ( geomId != NULL )
-		ode::dGeomSetData(geomId, NULL);
+	FinalizeGeom(cx, obj);
 }
 
 /**doc
 $TOC_MEMBER $INAME
  $INAME( space )
+  It is up to the user to store new object to prevent it to be garbage collected.
   TBD
 **/
 DEFINE_CONSTRUCTOR() {
 
 	JL_S_ASSERT_CONSTRUCTING();
 	JL_S_ASSERT_THIS_CLASS();
-	ode::dSpaceID space = 0;
-	if ( argc >= 1 ) // place it in a space ?
-		if ( ValToSpaceID(cx, argv[0], &space) == JS_FALSE )
-			return JS_FALSE;
+	ode::dSpaceID space;
+	if ( JL_ARG_ISDEF(1) ) // place it in a space ?
+		JL_CHK( JsvalToSpaceID(cx, JL_ARG(1), &space) );
+	else
+		space = 0;
 	ode::dGeomID geomId = ode::dCreateBox(space, 1.0f,1.0f,1.0f); // default lengths are 1
 	JL_SetPrivate(cx, obj, geomId);
-	SetupReadMatrix(cx, obj); // (TBD) check return status
+	JL_CHK( SetupReadMatrix(cx, obj) );
 	ode::dGeomSetData(geomId, obj); // 'obj' do not need to be rooted because Goem's data is reset to NULL when 'obj' is finalized.
 	return JS_TRUE;
 	JL_BAD;

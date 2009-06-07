@@ -25,9 +25,7 @@ BEGIN_CLASS( GeomPlane )
 
 DEFINE_FINALIZE() {
 
-	ode::dGeomID geomId = (ode::dGeomID)JL_GetPrivate(cx, obj);
-	if ( geomId != NULL )
-		ode::dGeomSetData(geomId, NULL);
+	FinalizeGeom(cx, obj);
 }
 
 /**doc
@@ -39,12 +37,14 @@ DEFINE_CONSTRUCTOR() {
 
 	JL_S_ASSERT_CONSTRUCTING();
 	JL_S_ASSERT_THIS_CLASS();
-	ode::dSpaceID space = 0;
-	if ( argc >= 1 ) // place it in a space ?
-		JL_CHK( ValToSpaceID(cx, argv[0], &space) );
+	ode::dSpaceID space;
+	if ( JL_ARG_ISDEF(1) ) // place it in a space ?
+		JL_CHK( JsvalToSpaceID(cx, JL_ARG(1), &space) );
+	else
+		space = 0;
 	ode::dGeomID geomId = ode::dCreatePlane(space, 0,0,1,0); // default lengths are 1
 	JL_SetPrivate(cx, obj, geomId);
-	SetupReadMatrix(cx, obj); // (TBD) check return status
+	JL_CHK( SetupReadMatrix(cx, obj) );
 	ode::dGeomSetData(geomId, obj); // 'obj' do not need to be rooted because Goem's data is reset to NULL when 'obj' is finalized.
 	return JS_TRUE;
 	JL_BAD;

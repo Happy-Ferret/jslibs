@@ -12,8 +12,7 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-#define SLOT_JOINT_BODY1 0
-#define SLOT_JOINT_BODY2 1
+extern bool _odeFinalization;
 
 DECLARE_CLASS( Joint );
 DECLARE_CLASS( JointBall );
@@ -22,4 +21,16 @@ DECLARE_CLASS( JointSlider );
 DECLARE_CLASS( JointFixed );
 DECLARE_CLASS( JointAMotor );
 DECLARE_CLASS( JointLMotor );
+DECLARE_CLASS( JointPlane );
 
+void FinalizeJoint(JSContext *cx, JSObject *obj);
+
+JSBool ReconstructJoint( JSContext *cx, ode::dJointID jointId, JSObject **obj );
+
+ALWAYS_INLINE JSBool JointToJSObject( JSContext *cx, ode::dJointID jointId, JSObject **obj ) {
+
+	*obj = (JSObject*)ode::dJointGetData(jointId);
+	if ( *obj != NULL )
+		return JS_TRUE;
+	return ReconstructJoint(cx, jointId, obj);
+}

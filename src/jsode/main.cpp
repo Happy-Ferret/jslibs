@@ -24,6 +24,8 @@
 
 extern bool _unsafeMode = false;
 
+extern bool _odeFinalization = false;
+
 // the following avoid ODE to be linked with User32.lib ( MessageBox* symbol is used in ../ode/src/ode/src/error.cpp )
 
 #ifdef XP_WIN
@@ -68,7 +70,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
 	_unsafeMode = GetHostPrivate(cx)->unsafeMode;
 
-	int status = ode::dInitODE2(0); // (TBD) use dAllocateFlagCollisionData ?
+	int status = ode::dInitODE2(ode::dAllocateFlagCollisionData);
 	JL_S_ASSERT( status != 0, "Unable to initialize ODE." );
 
 	ode::dSetErrorHandler(messageHandler);
@@ -100,13 +102,17 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 }
 
 EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx, JSObject *obj) {
+	
+	_odeFinalization = true;
 
-	ode::dCloseODE();
 	return JS_TRUE;
 }
 
 EXTERN_C DLLEXPORT void ModuleFree() {
 
+
+
+	ode::dCloseODE();
 }
 
 

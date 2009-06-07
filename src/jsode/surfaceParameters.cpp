@@ -21,13 +21,12 @@ $SVN_REVISION $Revision$
 **/
 BEGIN_CLASS( SurfaceParameters )
 
-
 DEFINE_FINALIZE() {
 
-	ode::dSurfaceParameters *data = (ode::dSurfaceParameters*)JL_GetPrivate(cx, obj);
-	if ( !data )
+	ode::dSurfaceParameters *pv = (ode::dSurfaceParameters*)JL_GetPrivate(cx, obj);
+	if ( !pv )
 		return;
-	free(data);
+	JS_free(cx, pv);
 }
 
 /**doc
@@ -38,14 +37,13 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
-	static const ode::dSurfaceParameters initSurfaceParameters = {0};
 	JL_S_ASSERT_CONSTRUCTING();
 	JL_S_ASSERT_THIS_CLASS();
-	ode::dSurfaceParameters *data = (ode::dSurfaceParameters*)malloc(sizeof(ode::dSurfaceParameters));
-	*data = initSurfaceParameters;
-	data->mu = dInfinity;
-	JL_S_ASSERT_ALLOC(data);
-	JL_SetPrivate(cx, obj, data);
+	ode::dSurfaceParameters *pv = (ode::dSurfaceParameters*)JS_malloc(cx, sizeof(ode::dSurfaceParameters));
+	JL_CHK( pv );
+	pv->mu = dInfinity;
+	pv->mode = 0;
+	JL_SetPrivate(cx, obj, pv);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -91,7 +89,7 @@ $TOC_MEMBER $INAME
   [http://opende.sourceforge.net/wiki/index.php/Manual_(Joint_Types_and_Functions)#Contact dSurfaceParameters]
 **/
 
-enum { mu, mu2, bounce, bounceVel, softERP, softCFM, motion1, motion2, motionN, slip1, slip2 };
+enum { mu, mu2, fDir1, bounce, bounceVel, softERP, softCFM, motion1, motion2, motionN, slip1, slip2 };
 
 DEFINE_PROPERTY_NULL( surfaceGetter )
 
@@ -123,6 +121,10 @@ DEFINE_PROPERTY( surfaceSetter ) {
 			SETBIT( surface->mode, ode::dContactMu2, set );
 			if ( set )
 				surface->mu2 = value;
+			break;
+		case fDir1:
+			SETBIT( surface->mode, ode::dContactFDir1, set );
+			// (TBD) manage the value
 			break;
 		case bounce:
 			SETBIT( surface->mode, ode::dContactBounce, set );

@@ -28,12 +28,7 @@ BEGIN_CLASS( GeomTrimesh )
 
 DEFINE_FINALIZE() {
 
-	ode::dGeomID geomId = (ode::dGeomID)JL_GetPrivate(cx, obj);
-	if ( geomId != NULL ) {
-
-//		ode::dGeomTriMeshDataDestroy(ode::dGeomTriMeshGetData(geomId));
-		ode::dGeomSetData(geomId, NULL);
-	}
+	FinalizeGeom(cx, obj);
 }
 
 
@@ -51,8 +46,8 @@ DEFINE_CONSTRUCTOR() {
 	JL_S_ASSERT_OBJECT(JL_ARG(2));
 
 	ode::dSpaceID space;
-	if ( JL_ARG_ISDEF(1) )
-		JL_CHK( ValToSpaceID(cx, JL_ARG(1), &space) );
+	if ( JL_ARG_ISDEF(1) ) // place it in a space ?
+		JL_CHK( JsvalToSpaceID(cx, JL_ARG(1), &space) );
 	else
 		space = 0;
 

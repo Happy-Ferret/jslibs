@@ -26,7 +26,6 @@
 
 #define MAX_CONTACTS 50
 
-
 struct ColideContextPrivate {
 	JSContext *cx;
 	ode::dSurfaceParameters *defaultSurfaceParameters;
@@ -38,57 +37,56 @@ struct ColideContextPrivate {
 
 static void nearCallback(void *data, ode::dGeomID geom1, ode::dGeomID geom2) {
 	
-//	if ( geom1 == geom2 )
-//		return;
-
 	// Doc: http://opende.sourceforge.net/wiki/index.php/Manual_%28Joint_Types_and_Functions%29
-	ColideContextPrivate *ccp = (ColideContextPrivate*)data; // beware: *data is local to Step function
-	JSContext *cx = ccp->cx;
-/*
-	// ignore collisions between bodies that are connected by the same joint: why ?
-	ode::dBodyID Body1 = NULL, Body2 = NULL;
-	if (o1) Body1 = dGeomGetBody(o1);
-	if (o2) Body2 = dGeomGetBody(o2);
-	if (Body1 && Body2 && dAreConnected(Body1, Body2))
-		return;
-*/
 
-	ode::dContactGeom geomContactList[MAX_CONTACTS];
-	int n = ode::dCollide(geom1, geom2, ccp->maxContacts, geomContactList, sizeof(ode::dContactGeom));
+	ColideContextPrivate *ccp = (ColideContextPrivate*)data; // beware: *data is local to Step function
+
+	ode::dContact contactList[MAX_CONTACTS];
+	JL_SAFE_BEGIN
+	if ( ccp->maxContacts >= COUNTOF(contactList) )
+		ccp->maxContacts = COUNTOF(contactList);
+	JL_SAFE_END
+	int n = ode::dCollide(geom1, geom2, ccp->maxContacts, &contactList[0].geom, sizeof(ode::dContact));
 	if ( n <= 0 )
 		return;
 
-	JSObject *jsGeom1 = GeomToJSObject(geom1);
-	JSObject *jsGeom2 = GeomToJSObject(geom2);
+	JSContext *cx = ccp->cx;
+
+	bool geom1HasWrapper = ode::dGeomGetData(geom1) != 0;
+	bool geom2HasWrapper = ode::dGeomGetData(geom2) != 0;
+
+	jsval valGeom1, valGeom2;
+	JL_CHK( GeomToJsval(cx, geom1, &valGeom1) );
+	JL_CHK( GeomToJsval(cx, geom2, &valGeom2) );
 
 	jsval func1, func2;
-	if ( jsGeom1 != NULL ) { // js Geom* wrapper is not finalized
+	if ( geom1HasWrapper ) {
 
-		JS_GetProperty(cx, jsGeom1, COLLIDE_FEEDBACK_FUNCTION_NAME, &func1);
+		JS_GetProperty(cx, JSVAL_TO_OBJECT(valGeom1), COLLIDE_FEEDBACK_FUNCTION_NAME, &func1);
 		JL_S_ASSERT( JSVAL_IS_VOID(func1) || JsvalIsFunction(cx, func1), "Invalid impact function." );
 	} else {
 
 		func1 = JSVAL_VOID;
 	}
 
-	if ( jsGeom2 != NULL ) { // js Geom* wrapper is not finalized
+	if ( geom2HasWrapper ) {
 
-		JS_GetProperty(cx, jsGeom2, COLLIDE_FEEDBACK_FUNCTION_NAME, &func2);
+		JS_GetProperty(cx, JSVAL_TO_OBJECT(valGeom2), COLLIDE_FEEDBACK_FUNCTION_NAME, &func2);
 		JL_S_ASSERT( JSVAL_IS_VOID(func2) || JsvalIsFunction(cx, func2), "Invalid impact function." );
 	} else {
 
 		func2 = JSVAL_VOID;
 	}
 
+
 	ode::dBodyID body1 = dGeomGetBody(geom1);
 	ode::dBodyID body2 = dGeomGetBody(geom2);
 
 	for ( int i = 0; i < n; ++i ) {
 
-		ode::dVector3 *pos = &geomContactList[i].pos;
-
+		ode::dVector3 *pos = &contactList[i].geom.pos;
 		ode::dVector3 vel;
-		
+
 		if ( !JSVAL_IS_VOID( func1 ) || !JSVAL_IS_VOID( func2 ) ) { // compute impact velocity only if needed.
 
 			ode::dVector3 vel2;
@@ -120,32 +118,35 @@ static void nearCallback(void *data, ode::dGeomID geom1, ode::dGeomID geom2) {
 			vel[1] += vel2[1];
 			vel[2] += vel2[2];
 
+//	JSTempValueRooter tvr;
+//	JS_PUSH_SINGLE_TEMP_ROOT(cx, JSVAL_NULL, &tvr); // needed to protect the returned value.
+
 			jsval rval, posVal, velVal;
 			JL_CHK( FloatVectorToJsval(cx, vel, 3, &velVal) ); // (TBD)! GC protect
 
 			JL_CHK( FloatVectorToJsval(cx, *pos, 3, &posVal) ); // (TBD)! GC protect
 
-			jsval depth; // (TBD)! GC protect
 //			float f = sqrtf( vel[0] * vel[0] + vel[1] * vel[1] + vel[2] * vel[2] );
 //			JL_CHK( FloatToJsval(cx, f, &force) );
-			JL_CHK( FloatToJsval(cx, geomContactList[i].depth, &depth) );
+			jsval depth; // (TBD)! GC protect
+			JL_CHK( FloatToJsval(cx, contactList[i].geom.depth, &depth) );
 			
 			if ( !JSVAL_IS_VOID( func1 ) ) {
 
-				jsval argv[] = { INT_TO_JSVAL(i), OBJECT_TO_JSVAL(jsGeom1), geom2 ? OBJECT_TO_JSVAL(jsGeom2) : JSVAL_VOID, posVal, velVal, depth }; // INT_TO_JSVAL(vel[0]), INT_TO_JSVAL(vel[1]), INT_TO_JSVAL(vel[2])
+				jsval argv[] = { INT_TO_JSVAL(i), valGeom1, valGeom2, posVal, velVal, depth }; // INT_TO_JSVAL(vel[0]), INT_TO_JSVAL(vel[1]), INT_TO_JSVAL(vel[2])
 				// GC protection seems to be not needed because these objects (obj1 and obj2) have an owner
 				// (TBD) check the previous comment.
-				JL_CHK( JS_CallFunctionValue(cx, jsGeom1, func1, COUNTOF(argv), argv, &rval) );
+				JL_CHK( JS_CallFunctionValue(cx, JSVAL_TO_OBJECT(valGeom1), func1, COUNTOF(argv), argv, &rval) );
 				if ( rval == JSVAL_FALSE )
 					func1 = JSVAL_VOID;
 			}
 
 			if ( !JSVAL_IS_VOID( func2 ) ) {
 
-				jsval argv[] = { INT_TO_JSVAL(i), OBJECT_TO_JSVAL(jsGeom2), geom1 ? OBJECT_TO_JSVAL(jsGeom1) : JSVAL_VOID, posVal, velVal, depth }; // INT_TO_JSVAL(vel[0]), INT_TO_JSVAL(vel[1]), INT_TO_JSVAL(vel[2])
+				jsval argv[] = { INT_TO_JSVAL(i), valGeom2, valGeom1, posVal, velVal, depth }; // INT_TO_JSVAL(vel[0]), INT_TO_JSVAL(vel[1]), INT_TO_JSVAL(vel[2])
 				// GC protection seems to be not needed because these objects (obj1 and obj2) have an owner
 				// (TBD) check the previous comment.
-				JL_CHK( JS_CallFunctionValue( cx, jsGeom1, func2, COUNTOF(argv), argv, &rval) );
+				JL_CHK( JS_CallFunctionValue( cx, JSVAL_TO_OBJECT(valGeom2), func2, COUNTOF(argv), argv, &rval) );
 				if ( rval == JSVAL_FALSE )
 					func2 = JSVAL_VOID;
 			}
@@ -179,17 +180,15 @@ static void nearCallback(void *data, ode::dGeomID geom1, ode::dGeomID geom2) {
 		}
 */
 
-		ode::dContact contact;
-		contact.surface = *ccp->defaultSurfaceParameters;
-		contact.geom = geomContactList[i];
-
+		contactList[i].surface = *ccp->defaultSurfaceParameters;
 		// doc. fdir1 — Returns the "first friction direction" vector that defines a direction along which frictional 
 		//      force is applied if the contact’s surfaceuseFrictionDirection? flag is true.
 		//      If useFrictionDirection? is false, this setting is unused, though it can still be set.
-		if ( contact.surface.mode & ode::dContactFDir1 ) {
-			contact.fdir1[0] = 0;
-			contact.fdir1[1] = 0;
-			contact.fdir1[2] = 0;
+		if ( ccp->defaultSurfaceParameters->mode & ode::dContactFDir1 ) {
+
+			contactList[i].fdir1[0] = 0;
+			contactList[i].fdir1[1] = 0;
+			contactList[i].fdir1[2] = 0;
 		}
 
 		// mixing :
@@ -202,7 +201,7 @@ static void nearCallback(void *data, ode::dGeomID geom1, ode::dGeomID geom2) {
 		//dReal motion1,motion2;	// add
 		//dReal slip1,slip2;	// ?
 
-		ode::dJointID contactJoint = ode::dJointCreateContact(ccp->worldId, ccp->contactGroupId, &contact);
+		ode::dJointID contactJoint = ode::dJointCreateContact(ccp->worldId, ccp->contactGroupId, &contactList[i]);
 		ode::dJointAttach(contactJoint, body1, body2);
 	}
 
@@ -222,14 +221,10 @@ DEFINE_FINALIZE() {
 	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(cx, obj);
 	if ( !pv )
 		return;
-
-//		jsval val;
-//		JS_GetReservedSlot(cx, obj, WORLD_SLOT_CONTACTGROUP, &val);
-//		ode::dJointGroupDestroy((ode::dJointGroupID)JSVAL_TO_PRIVATE(val));
+//	ode::dxWorld* w = pv->worldId;
 	ode::dJointGroupDestroy(pv->contactGroupId);
-	ode::dWorldDestroy(pv->worldId); // (TBD) Destroy a world and everything in it ?.
+	ode::dWorldDestroy(pv->worldId);
 	JS_free(cx, pv);
-	JL_SetPrivate(cx,obj,NULL);
 }
 
 /**doc
@@ -245,25 +240,19 @@ DEFINE_CONSTRUCTOR() {
 	JL_S_ASSERT_THIS_CLASS();
 
 	WorldPrivate *pv = (WorldPrivate*)JS_malloc(cx, sizeof(WorldPrivate));
+	JL_CHK( pv );
 	JL_SetPrivate(cx, obj, pv);
 
 	pv->worldId = ode::dWorldCreate();
-	pv->contactGroupId = ode::dJointGroupCreate(0);
-
-	//ode::dJointGroupID contactgroup = ode::dJointGroupCreate(0);
-	//JL_S_ASSERT( contactgroup != NULL, "Unable to create contact group." );
-	//JS_SetReservedSlot(cx, obj, WORLD_SLOT_CONTACTGROUP, PRIVATE_TO_JSVAL(contactgroup));
+	pv->contactGroupId = ode::dJointGroupCreate(0); // see nearCallback()
 
 	JSObject *spaceObject = JS_ConstructObject(cx, classSpace, NULL, NULL); // no arguments = create a topmost space object
 	JL_S_ASSERT( spaceObject != NULL, "Unable to construct Space for the World." );
-	JS_DefineProperty(cx, obj, WORLD_SPACE_PROPERTY_NAME, OBJECT_TO_JSVAL(spaceObject), NULL, NULL, JSPROP_PERMANENT | JSPROP_READONLY);
-
-//	JS_SetReservedSlot(cx, obj, WORLD_SLOT_SPACE, PRIVATE_TO_JSVAL(spaceObject));
-//	JS_DefineObject(cx, obj, WORLD_SPACE_PROPERTY_NAME, &classSpace, NULL, JSPROP_PERMANENT|JSPROP_READONLY );
+	JL_CHK( JS_DefineProperty(cx, obj, WORLD_SPACE_PROPERTY_NAME, OBJECT_TO_JSVAL(spaceObject), NULL, NULL, JSPROP_PERMANENT | JSPROP_READONLY) );
 
 	JSObject *surfaceParameters = JS_ConstructObject(cx, classSurfaceParameters, NULL, NULL);
 	JL_S_ASSERT( surfaceParameters != NULL, "Unable to construct classSurfaceParameters." );
-	JS_DefineProperty(cx, obj, DEFAULT_SURFACE_PARAMETERS_PROPERTY_NAME, OBJECT_TO_JSVAL(surfaceParameters), NULL, NULL, JSPROP_PERMANENT | JSPROP_READONLY );
+	JL_CHK( JS_DefineProperty(cx, obj, DEFAULT_SURFACE_PARAMETERS_PROPERTY_NAME, OBJECT_TO_JSVAL(surfaceParameters), NULL, NULL, JSPROP_PERMANENT | JSPROP_READONLY) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -273,32 +262,39 @@ DEFINE_CONSTRUCTOR() {
 === Methods ===
 **/
 
-/**doc
+/** doc
 $TOC_MEMBER $INAME
  $INAME()
   TBD
 **/
+/* ISSUE: all underlying objects have to be notified of this operation else on their finalizers,
+          they will try to reset ode object private data that has already been freed !!
 DEFINE_FUNCTION( Destroy ) {
 
-	Finalize(cx, obj); // shortcut
+	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( pv );
+	ode::dJointGroupDestroy(pv->contactGroupId);
+	ode::dWorldDestroy(pv->worldId);
+	JL_SetPrivate(cx, obj, NULL);
 	return JS_TRUE;
+	JL_BAD;
 }
+*/
 
 /**doc
 $TOC_MEMBER $INAME
- $INAME( time [, iterations] )
+ $INAME( time [, $INT iterations] )
   $H note
    If the _iterations_ argument is given, this uses an iterative method that takes time on the order of m*N and memory on the order of m, where m is the total number of constraint rows and N is the number of iterations.
 **/
-
 DEFINE_FUNCTION( Step ) {
 
 	JL_S_ASSERT_ARG_MIN(1);
 	JL_S_ASSERT_CLASS(obj, classWorld);
 	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
-	jsdouble value;
-	JS_ValueToNumber(cx, argv[0], &value);
+	float time;
+	JL_CHK( JsvalToFloat(cx, JL_ARG(1), &time) );
 
 	//jsval val;
 	//JS_GetReservedSlot(cx, obj, WORLD_SLOT_SPACE, &val);
@@ -309,11 +305,10 @@ DEFINE_FUNCTION( Step ) {
 	jsval val;
 	JS_GetProperty(cx, obj, WORLD_SPACE_PROPERTY_NAME, &val);
 	JL_S_ASSERT_DEFINED( val );
-	JL_CHK( ValToSpaceID(cx, val, &spaceId) );
+	JL_CHK( JsvalToSpaceID(cx, val, &spaceId) );
 
 	jsval defaultSurfaceParametersObject;
 	JS_GetProperty(cx, obj, DEFAULT_SURFACE_PARAMETERS_PROPERTY_NAME, &defaultSurfaceParametersObject);
-	JL_S_ASSERT_DEFINED( defaultSurfaceParametersObject );
 	JL_S_ASSERT_OBJECT( defaultSurfaceParametersObject );
 	JL_S_ASSERT_CLASS( JSVAL_TO_OBJECT(defaultSurfaceParametersObject), classSurfaceParameters ); // (TBD) simplify RT_ASSERT
 	ode::dSurfaceParameters *defaultSurfaceParameters = (ode::dSurfaceParameters*)JL_GetPrivate(cx, JSVAL_TO_OBJECT(defaultSurfaceParametersObject)); // beware: local variable !
@@ -321,7 +316,6 @@ DEFINE_FUNCTION( Step ) {
 
 //	JS_GetReservedSlot(cx, obj, WORLD_SLOT_CONTACTGROUP, &val);
 //	ode::dJointGroupID contactgroup = (ode::dJointGroupID)JSVAL_TO_PRIVATE(val);
-	
 
 	ColideContextPrivate ccp;
 	ccp.cx = cx; // the context will only be used while the worls step.
@@ -332,24 +326,14 @@ DEFINE_FUNCTION( Step ) {
 
 	ode::dSpaceCollide(spaceId, (void*)&ccp, &nearCallback);
 
-	// (TBD) see dWorldSetQuickStepW and dWorldSetAutoEnableDepthSF1
+	if ( ode::dWorldGetQuickStepNumIterations(pv->worldId) == 0 )
+		ode::dWorldStep(pv->worldId, time);
+	else
+		ode::dWorldQuickStep(pv->worldId, time);
 
-	if ( argc >= 2 ) {
+	ode::dJointGroupEmpty(pv->contactGroupId); // contactGroupId will be reused at the next step!
 
-		JL_S_ASSERT_INT(argv[1]);
-		ode::dWorldSetQuickStepNumIterations(pv->worldId, JSVAL_TO_INT(argv[1]));
-		ode::dWorldQuickStep(pv->worldId, value);
-	} else {
-
-		ode::dWorldStep(pv->worldId, value);
-	}
-
-	ode::dJointGroupEmpty(pv->contactGroupId);
-
-	if (JS_IsExceptionPending(cx)) // an exception may be throw in geom.impact
-		return JS_FALSE;
-
-	return JS_TRUE;
+	return !JS_IsExceptionPending(cx); // an exception may have been thrown in nearCallback
 	JL_BAD;
 }
 
@@ -402,14 +386,14 @@ $TOC_MEMBER $INAME
   dWorldGetContactSurfaceLayer
 **/
 
-enum { ERP, CFM, /*quickStepNumIterations,*/ contactSurfaceLayer };
+enum { ERP, CFM, quickStepNumIterations, quickStepW, contactSurfaceLayer, contactMaxCorrectingVel, linearDamping, linearDampingThreshold, angularDamping, angularDampingThreshold, maxAngularSpeed };
 
 DEFINE_PROPERTY( realSetter ) {
 
 	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
-	jsdouble value;
-	JS_ValueToNumber(cx, *vp, &value);
+	float value;
+	JL_CHK( JsvalToFloat(cx, *vp, &value) );
 	switch(JSVAL_TO_INT(id)) {
 		case ERP:
 			ode::dWorldSetERP(pv->worldId, value);
@@ -417,11 +401,32 @@ DEFINE_PROPERTY( realSetter ) {
 		case CFM:
 			ode::dWorldSetCFM(pv->worldId, value);
 			break;
-//		case quickStepNumIterations:
-//			ode::dWorldSetQuickStepNumIterations(worldID, (int)value);
-//			break;
+		case quickStepNumIterations:
+			ode::dWorldSetQuickStepNumIterations(pv->worldId, (int)value);
+			break;
+		case quickStepW:
+			ode::dWorldSetQuickStepW(pv->worldId, value);
+			break;
 		case contactSurfaceLayer:
 			ode::dWorldSetContactSurfaceLayer(pv->worldId, value);
+			break;
+		case contactMaxCorrectingVel:
+			ode::dWorldSetContactMaxCorrectingVel(pv->worldId, value);
+			break;
+		case linearDamping:
+			dWorldSetLinearDamping(pv->worldId, value);
+			break;
+		case linearDampingThreshold:
+			ode::dWorldSetLinearDampingThreshold(pv->worldId, value);
+			break;
+		case angularDamping:
+			dWorldSetAngularDamping(pv->worldId, value);
+			break;
+		case angularDampingThreshold:
+			dWorldSetAngularDampingThreshold(pv->worldId, value);
+			break;
+		case maxAngularSpeed:
+			ode::dWorldSetMaxAngularSpeed(pv->worldId, value);
 			break;
 	}
 	return JS_TRUE;
@@ -433,7 +438,7 @@ DEFINE_PROPERTY( realGetter ) {
 
 	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
-	jsdouble value;
+	float value;
 	switch(JSVAL_TO_INT(id)) {
 		case ERP:
 			value = ode::dWorldGetERP(pv->worldId);
@@ -441,14 +446,35 @@ DEFINE_PROPERTY( realGetter ) {
 		case CFM:
 			value = ode::dWorldGetCFM(pv->worldId);
 			break;
-//		case quickStepNumIterations:
-//			value = ode::dWorldGetQuickStepNumIterations(worldID);
-//			break;
+		case quickStepNumIterations:
+			value = (float)ode::dWorldGetQuickStepNumIterations(pv->worldId);
+			break;
+		case quickStepW:
+			value = ode::dWorldGetQuickStepW(pv->worldId);
+			break;
 		case contactSurfaceLayer:
 			value = ode::dWorldGetContactSurfaceLayer(pv->worldId);
 			break;
+		case contactMaxCorrectingVel:
+			value = ode::dWorldGetContactMaxCorrectingVel(pv->worldId);
+			break;
+		case linearDamping:
+			value = ode::dWorldGetLinearDamping(pv->worldId);
+			break;
+		case linearDampingThreshold:
+			value = ode::dWorldGetLinearDampingThreshold(pv->worldId);
+			break;
+		case angularDamping:
+			value = ode::dWorldGetAngularDamping(pv->worldId);
+			break;
+		case angularDampingThreshold:
+			value = ode::dWorldGetAngularDampingThreshold(pv->worldId);
+			break;
+		case maxAngularSpeed:
+			value = ode::dWorldGetMaxAngularSpeed(pv->worldId);
+			break;
 	}
-	JS_NewDoubleValue(cx, value, vp);
+	JL_CHK( FloatToJsval(cx, value, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -490,7 +516,7 @@ CONFIGURE_CLASS
 
 	BEGIN_FUNCTION_SPEC
 		FUNCTION( Step )
-		FUNCTION( Destroy )
+//		FUNCTION( Destroy )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
@@ -498,10 +524,16 @@ CONFIGURE_CLASS
 		PROPERTY_READ_STORE( env )
 		PROPERTY_SWITCH( ERP, real )
 		PROPERTY_SWITCH( CFM, real )
-//		PROPERTY_SWITCH( quickStepNumIterations, real )
+		PROPERTY_SWITCH( quickStepNumIterations, real )
 		PROPERTY_SWITCH( contactSurfaceLayer, real )
+		PROPERTY_SWITCH( quickStepW, real )
+		PROPERTY_SWITCH( contactMaxCorrectingVel, real )
+		PROPERTY_SWITCH( linearDamping, real )
+		PROPERTY_SWITCH( linearDampingThreshold, real )
+		PROPERTY_SWITCH( angularDamping, real )
+		PROPERTY_SWITCH( angularDampingThreshold, real )
+		PROPERTY_SWITCH( maxAngularSpeed, real )
 	END_PROPERTY_SPEC
 
 	HAS_PRIVATE
-	HAS_RESERVED_SLOTS(2) // contactGroup, space
 END_CLASS

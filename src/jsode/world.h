@@ -19,22 +19,19 @@ DECLARE_CLASS( World )
 #define COLLIDE_FEEDBACK_FUNCTION_NAME "impact"
 
 
-//#define WORLD_SLOT_CONTACTGROUP 0
-#define WORLD_SLOT_SPACE 1
-
-
 struct WorldPrivate {
 	ode::dWorldID worldId;
 	ode::dJointGroupID contactGroupId;
 };
 
 
-ALWAYS_INLINE JSBool ValToWorldID( JSContext *cx, jsval val, ode::dWorldID *worldId ) {
+ALWAYS_INLINE JSBool JsvalToWorldID( JSContext *cx, jsval val, ode::dWorldID *worldId ) {
 
 	JL_S_ASSERT_OBJECT(val);
 	JSObject *worldObject = JSVAL_TO_OBJECT(val);
 	JL_S_ASSERT_CLASS(worldObject, classWorld);
 	*worldId = ((WorldPrivate*)JL_GetPrivate(cx, worldObject))->worldId;
+	JL_CHKM( *worldId, "Invalid world object." );
 	return JS_TRUE;
 	JL_BAD;
 }
