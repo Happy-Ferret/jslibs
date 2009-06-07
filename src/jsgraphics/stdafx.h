@@ -16,5 +16,7 @@
 #include "../common/jsConversionHelper.h"
 #include "../common/jsConfiguration.h"
 
+#include "../common/pool.h"
+
 
 //#include <stdio.h>

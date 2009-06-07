@@ -24,8 +24,8 @@
 #include <math.h>
 
 // (TBD) move this in the class private
-Matrix44 *matrixPool[2048];
-int matrixPoolLength = 0;
+
+jl::Pool matrixPool;
 
 static int GetMatrix(JSContext *cx, JSObject *obj, float **m) { // Doc: __declspec(noinline) tells the compiler to never inline a particular function.
 	
@@ -42,16 +42,18 @@ $SVN_REVISION $Revision$
 BEGIN_CLASS( Transformation )
 
 DEFINE_FINALIZE() {
+	
+	if ( obj == *_prototype ) {
 
+		while ( !PoolIsEmpty(&matrixPool) )
+			Matrix44Free((Matrix44*)jl::PoolPop(&matrixPool));
+		jl::PoolFinalize(&matrixPool);
+		return;
+	}
 //	printf("Fin:%d\n", matrixPoolLength);
 	Matrix44 *m = (Matrix44*)JL_GetPrivate(cx, obj);
-	if ( !m )
-		return;
-	if ( matrixPoolLength < COUNTOF(matrixPool) )
-		matrixPool[matrixPoolLength++] = m;
-	else
+	if ( !jl::PoolPush(&matrixPool, m) )
 		Matrix44Free(m);
-	JL_SetPrivate(cx, obj, NULL);
 }
 
 
@@ -69,12 +71,11 @@ DEFINE_CONSTRUCTOR() {
 
 	JL_S_ASSERT_CONSTRUCTING();
 	Matrix44 *m;
-	if ( matrixPoolLength )
-		m = matrixPool[--matrixPoolLength];
-	else {
+	if ( PoolIsEmpty(&matrixPool) )
 		m = Matrix44Alloc();
-		JL_S_ASSERT_ALLOC(m);
-	}
+	else
+		m = (Matrix44*)jl::PoolPop(&matrixPool);
+	JL_S_ASSERT_ALLOC(m);
 
 	if ( JL_ARGC >= 1 ) {
 		
@@ -751,10 +752,18 @@ DEFINE_SET_PROPERTY() {
   The current transformation matrix.
 **/
 
+DEFINE_INIT() {
+
+	jl::PoolInitialize( &matrixPool, 4096 );
+	return JS_TRUE;
+}
+
+
 CONFIGURE_CLASS
 
 	REVISION(JL_SvnRevToInt("$Revision$"))
-	HAS_PRIVATE 
+	HAS_PRIVATE
+	HAS_INIT
 
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE
