@@ -1495,12 +1495,12 @@ ALWAYS_INLINE JSBool UnserializeJsval( JSContext *cx, const Serialized *xdr, jsv
 ///////////////////////////////////////////////////////////////////////////////
 // NativeInterface
 
-inline JSBool ReserveNativeInterface( JSContext *cx, JSObject *obj, const char *name ) {
+ALWAYS_INLINE JSBool ReserveNativeInterface( JSContext *cx, JSObject *obj, const char *name ) {
 
 	return JS_DefineProperty(cx, obj, name, JSVAL_FALSE, NULL, (JSPropertyOp)-1, JSPROP_READONLY | JSPROP_PERMANENT );
 }
 
-inline JSBool SetNativeInterface( JSContext *cx, JSObject *obj, const char *name, void *nativeFct ) {
+ALWAYS_INLINE JSBool SetNativeInterface( JSContext *cx, JSObject *obj, const char *name, void *nativeFct ) {
 
 	if ( nativeFct != NULL ) {
 
@@ -1514,14 +1514,14 @@ inline JSBool SetNativeInterface( JSContext *cx, JSObject *obj, const char *name
 	JL_BAD;
 }
 
-inline JSBool GetNativeInterface( JSContext *cx, JSObject *obj, JSObject **obj2p, jsid iid, void **nativeFct ) {
+ALWAYS_INLINE JSBool GetNativeInterface( JSContext *cx, JSObject *obj, JSObject **obj2p, jsid iid, void **nativeFct ) {
 
 //	jsval tmp;
 //	JL_CHK( JS_GetPropertyById(cx, obj, iid, &tmp) );
 
 //	JSObject *obj2;
 	JSProperty *prop;
-	JL_CHKM( OBJ_LOOKUP_PROPERTY(cx, obj, iid, obj2p, &prop), "Unable to get the native interface."); //(TBD) use JS_LookupPropertyById or JS_GetPropertyById
+	JL_CHKM( OBJ_LOOKUP_PROPERTY(cx, obj, iid, obj2p, &prop), "Unable to get the native interface." ); //(TBD) use JS_LookupPropertyById or JS_GetPropertyById
 
 //	const char *name = JS_GetStringBytes(JS_ValueToString(cx, iid));
 	if ( prop && obj == *obj2p && ((JSScopeProperty*)prop)->setter != (JSPropertyOp)-1 )
@@ -1727,5 +1727,6 @@ inline NIMatrix44Get Matrix44GetInterface( JSContext *cx, JSObject *obj ) {
 */
 	return NULL;
 }
+
 
 #endif // _JSHELPER_H_
