@@ -24,15 +24,12 @@
 
 #include "../common/vector3.h"
 
-#define MAX_CONTACTS 50
 
 struct ColideContextPrivate {
 	JSContext *cx;
 	ode::dSurfaceParameters *defaultSurfaceParameters;
 	ode::dJointGroupID contactGroupId;
 	ode::dWorldID worldId;
-	int maxContacts;
-//	int contactCount;
 };
 
 static void nearCallback(void *data, ode::dGeomID geom1, ode::dGeomID geom2) {
@@ -41,116 +38,30 @@ static void nearCallback(void *data, ode::dGeomID geom1, ode::dGeomID geom2) {
 
 	ColideContextPrivate *ccp = (ColideContextPrivate*)data; // beware: *data is local to Step function
 
-	ode::dContact contactList[MAX_CONTACTS];
-	JL_SAFE_BEGIN
-	if ( ccp->maxContacts >= COUNTOF(contactList) )
-		ccp->maxContacts = COUNTOF(contactList);
-	JL_SAFE_END
-	int n = ode::dCollide(geom1, geom2, ccp->maxContacts, &contactList[0].geom, sizeof(ode::dContact));
+	ode::dContact contact;
+	int n = ode::dCollide(geom1, geom2, 1, &contact.geom, sizeof(ode::dContact));
 	if ( n <= 0 )
 		return;
 
 	JSContext *cx = ccp->cx;
 
-	bool geom1HasWrapper = ode::dGeomGetData(geom1) != 0;
-	bool geom2HasWrapper = ode::dGeomGetData(geom2) != 0;
+	ode::dBodyID body1 = dGeomGetBody(geom1);
+	ode::dBodyID body2 = dGeomGetBody(geom2);
 
 	jsval valGeom1, valGeom2;
 	JL_CHK( GeomToJsval(cx, geom1, &valGeom1) );
 	JL_CHK( GeomToJsval(cx, geom2, &valGeom2) );
 
-	jsval func1, func2;
-	if ( geom1HasWrapper ) {
+	contact.surface = *ccp->defaultSurfaceParameters;
+	// doc. fdir1 — Returns the "first friction direction" vector that defines a direction along which frictional 
+	//      force is applied if the contact’s surfaceuseFrictionDirection? flag is true.
+	//      If useFrictionDirection? is false, this setting is unused, though it can still be set.
+	if ( ccp->defaultSurfaceParameters->mode & ode::dContactFDir1 ) {
 
-		JS_GetProperty(cx, JSVAL_TO_OBJECT(valGeom1), COLLIDE_FEEDBACK_FUNCTION_NAME, &func1);
-		JL_S_ASSERT( JSVAL_IS_VOID(func1) || JsvalIsFunction(cx, func1), "Invalid impact function." );
-	} else {
-
-		func1 = JSVAL_VOID;
+		contact.fdir1[0] = 0;
+		contact.fdir1[1] = 0;
+		contact.fdir1[2] = 0;
 	}
-
-	if ( geom2HasWrapper ) {
-
-		JS_GetProperty(cx, JSVAL_TO_OBJECT(valGeom2), COLLIDE_FEEDBACK_FUNCTION_NAME, &func2);
-		JL_S_ASSERT( JSVAL_IS_VOID(func2) || JsvalIsFunction(cx, func2), "Invalid impact function." );
-	} else {
-
-		func2 = JSVAL_VOID;
-	}
-
-
-	ode::dBodyID body1 = dGeomGetBody(geom1);
-	ode::dBodyID body2 = dGeomGetBody(geom2);
-
-	for ( int i = 0; i < n; ++i ) {
-
-		ode::dVector3 *pos = &contactList[i].geom.pos;
-		ode::dVector3 vel;
-
-		if ( !JSVAL_IS_VOID( func1 ) || !JSVAL_IS_VOID( func2 ) ) { // compute impact velocity only if needed.
-
-			ode::dVector3 vel2;
-			float px = (*pos)[0];
-			float py = (*pos)[1];
-			float pz = (*pos)[2];
-
-			if ( body1 != NULL ) {
-
-				ode::dBodyGetPointVel(body1, px, py, pz, vel); // dReal px, dReal py, dReal pz, dVector3 result
-			} else { // static thing
-
-				vel[0] = 0;
-				vel[1] = 0; 
-				vel[2] = 0;
-			}
-
-			if ( body2 != NULL ) {
-
-				ode::dBodyGetPointVel(body2, px, py, pz, vel2); // dReal px, dReal py, dReal pz, dVector3 result
-			} else { // static thing
-
-				vel2[0] = 0; 
-				vel2[1] = 0; 
-				vel2[2] = 0;
-			}
-
-			vel[0] += vel2[0];
-			vel[1] += vel2[1];
-			vel[2] += vel2[2];
-
-//	JSTempValueRooter tvr;
-//	JS_PUSH_SINGLE_TEMP_ROOT(cx, JSVAL_NULL, &tvr); // needed to protect the returned value.
-
-			jsval rval, posVal, velVal;
-			JL_CHK( FloatVectorToJsval(cx, vel, 3, &velVal) ); // (TBD)! GC protect
-
-			JL_CHK( FloatVectorToJsval(cx, *pos, 3, &posVal) ); // (TBD)! GC protect
-
-//			float f = sqrtf( vel[0] * vel[0] + vel[1] * vel[1] + vel[2] * vel[2] );
-//			JL_CHK( FloatToJsval(cx, f, &force) );
-			jsval depth; // (TBD)! GC protect
-			JL_CHK( FloatToJsval(cx, contactList[i].geom.depth, &depth) );
-			
-			if ( !JSVAL_IS_VOID( func1 ) ) {
-
-				jsval argv[] = { INT_TO_JSVAL(i), valGeom1, valGeom2, posVal, velVal, depth }; // INT_TO_JSVAL(vel[0]), INT_TO_JSVAL(vel[1]), INT_TO_JSVAL(vel[2])
-				// GC protection seems to be not needed because these objects (obj1 and obj2) have an owner
-				// (TBD) check the previous comment.
-				JL_CHK( JS_CallFunctionValue(cx, JSVAL_TO_OBJECT(valGeom1), func1, COUNTOF(argv), argv, &rval) );
-				if ( rval == JSVAL_FALSE )
-					func1 = JSVAL_VOID;
-			}
-
-			if ( !JSVAL_IS_VOID( func2 ) ) {
-
-				jsval argv[] = { INT_TO_JSVAL(i), valGeom2, valGeom1, posVal, velVal, depth }; // INT_TO_JSVAL(vel[0]), INT_TO_JSVAL(vel[1]), INT_TO_JSVAL(vel[2])
-				// GC protection seems to be not needed because these objects (obj1 and obj2) have an owner
-				// (TBD) check the previous comment.
-				JL_CHK( JS_CallFunctionValue( cx, JSVAL_TO_OBJECT(valGeom2), func2, COUNTOF(argv), argv, &rval) );
-				if ( rval == JSVAL_FALSE )
-					func2 = JSVAL_VOID;
-			}
-		}
 
 		
 /*
@@ -180,30 +91,102 @@ static void nearCallback(void *data, ode::dGeomID geom1, ode::dGeomID geom2) {
 		}
 */
 
-		contactList[i].surface = *ccp->defaultSurfaceParameters;
-		// doc. fdir1 — Returns the "first friction direction" vector that defines a direction along which frictional 
-		//      force is applied if the contact’s surfaceuseFrictionDirection? flag is true.
-		//      If useFrictionDirection? is false, this setting is unused, though it can still be set.
-		if ( ccp->defaultSurfaceParameters->mode & ode::dContactFDir1 ) {
+	// mixing :
+	//dReal mu;		// min
+	//dReal mu2;	// min
+	//dReal bounce;	// average
+	//dReal bounce_vel; // min
+	//dReal soft_erp; // average
+	//dReal soft_cfm; // average
+	//dReal motion1,motion2;	// add
+	//dReal slip1,slip2;	// ?
 
-			contactList[i].fdir1[0] = 0;
-			contactList[i].fdir1[1] = 0;
-			contactList[i].fdir1[2] = 0;
+	ode::dJointID contactJoint = ode::dJointCreateContact(ccp->worldId, ccp->contactGroupId, &contact);
+	ode::dJointAttach(contactJoint, body1, body2);
+
+	jsval func1, func2;
+	JL_CHK( JS_GetReservedSlot(cx, JSVAL_TO_OBJECT(valGeom1), SLOT_GEOM_IMPACT_FUNCTION, &func1) );
+	JL_CHK( JS_GetReservedSlot(cx, JSVAL_TO_OBJECT(valGeom2), SLOT_GEOM_IMPACT_FUNCTION, &func2) );
+	
+	if ( JSVAL_IS_VOID( func1 ) && JSVAL_IS_VOID( func2 ) )
+		return;
+
+/*
+	ode::dVector3 *pos = &contact[i].geom.pos;
+	ode::dVector3 vel;
+	if ( !JSVAL_IS_VOID( func1 ) || !JSVAL_IS_VOID( func2 ) ) { // compute impact velocity only if needed.
+
+		ode::dVector3 vel2;
+		float px = (*pos)[0];
+		float py = (*pos)[1];
+		float pz = (*pos)[2];
+
+		if ( body1 != NULL ) {
+
+			ode::dBodyGetPointVel(body1, px, py, pz, vel); // dReal px, dReal py, dReal pz, dVector3 result
+		} else { // static thing
+
+			vel[0] = 0;
+			vel[1] = 0; 
+			vel[2] = 0;
 		}
 
-		// mixing :
-		//dReal mu;		// min
-		//dReal mu2;	// min
-		//dReal bounce;	// average
-		//dReal bounce_vel; // min
-		//dReal soft_erp; // average
-		//dReal soft_cfm; // average
-		//dReal motion1,motion2;	// add
-		//dReal slip1,slip2;	// ?
+		if ( body2 != NULL ) {
 
-		ode::dJointID contactJoint = ode::dJointCreateContact(ccp->worldId, ccp->contactGroupId, &contactList[i]);
-		ode::dJointAttach(contactJoint, body1, body2);
+			ode::dBodyGetPointVel(body2, px, py, pz, vel2); // dReal px, dReal py, dReal pz, dVector3 result
+		} else { // static thing
+
+			vel2[0] = 0; 
+			vel2[1] = 0; 
+			vel2[2] = 0;
+		}
+
+		vel[0] += vel2[0];
+		vel[1] += vel2[1];
+		vel[2] += vel2[2];
+		jsval velVal;
+*/
+
+
+
+//			__count++;
+//			if ( __count % 100 == 0 )
+//				printf("%d\n", __count);
+
+//			JL_CHK( FloatVectorToJsval(cx, vel, 3, &velVal) ); // (TBD)! GC protect
+
+//			JL_CHK( FloatVectorToJsval(cx, *pos, 3, &posVal) ); // (TBD)! GC protect
+
+//			float f = sqrtf( vel[0] * vel[0] + vel[1] * vel[1] + vel[2] * vel[2] );
+//			JL_CHK( FloatToJsval(cx, f, &force) );
+
+	jsval argv[7];
+	JSTempValueRooter tvr;
+	JS_PUSH_TEMP_ROOT(cx, COUNTOF(argv), argv, &tvr);
+
+	argv[0] = JSVAL_NULL; // rval
+	JL_CHKB( FloatToJsval(cx, contact.geom.depth, &argv[3]), bad_pop_root );
+	JL_CHKB( FloatToJsval(cx, contact.geom.pos[0], &argv[4]), bad_pop_root );
+	JL_CHKB( FloatToJsval(cx, contact.geom.pos[1], &argv[5]), bad_pop_root );
+	JL_CHKB( FloatToJsval(cx, contact.geom.pos[2], &argv[6]), bad_pop_root );
+
+	if ( !JSVAL_IS_VOID( func1 ) ) {
+
+		argv[1] = valGeom1;
+		argv[2] = valGeom2;
+		JL_CHKB( JS_CallFunctionValue(cx, JSVAL_TO_OBJECT(valGeom1), func1, COUNTOF(argv)-1, argv+1, argv), bad_pop_root );
 	}
+
+	if ( !JSVAL_IS_VOID( func2 ) ) {
+
+		argv[1] = valGeom2;
+		argv[2] = valGeom1;
+		JL_CHKB( JS_CallFunctionValue(cx, JSVAL_TO_OBJECT(valGeom2), func2, COUNTOF(argv)-1, argv+1, argv), bad_pop_root );
+	}
+
+bad_pop_root:
+	JS_POP_TEMP_ROOT(cx, &tvr);
+
 
 bad:
 	return;
@@ -322,7 +305,6 @@ DEFINE_FUNCTION( Step ) {
 	ccp.defaultSurfaceParameters = defaultSurfaceParameters;
 	ccp.contactGroupId = pv->contactGroupId;
 	ccp.worldId = pv->worldId;
-	ccp.maxContacts = 8; // (TBD) make this configurable
 
 	ode::dSpaceCollide(spaceId, (void*)&ccp, &nearCallback);
 
@@ -394,7 +376,7 @@ DEFINE_PROPERTY( realSetter ) {
 	JL_S_ASSERT_RESOURCE( pv );
 	float value;
 	JL_CHK( JsvalToFloat(cx, *vp, &value) );
-	switch(JSVAL_TO_INT(id)) {
+	switch ( JSVAL_TO_INT(id) ) {
 		case ERP:
 			ode::dWorldSetERP(pv->worldId, value);
 			break;
@@ -439,7 +421,7 @@ DEFINE_PROPERTY( realGetter ) {
 	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
 	float value;
-	switch(JSVAL_TO_INT(id)) {
+	switch ( JSVAL_TO_INT(id) ) {
 		case ERP:
 			value = ode::dWorldGetERP(pv->worldId);
 			break;

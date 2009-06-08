@@ -16,7 +16,6 @@ DECLARE_CLASS( World )
 
 #define DEFAULT_SURFACE_PARAMETERS_PROPERTY_NAME "defaultSurfaceParameters"
 #define WORLD_SPACE_PROPERTY_NAME "space"
-#define COLLIDE_FEEDBACK_FUNCTION_NAME "impact"
 
 
 struct WorldPrivate {

@@ -195,6 +195,26 @@ DEFINE_PROPERTY( bodyGetter ) {
 	JL_BAD;
 }
 
+
+/**doc
+$TOC_MEMBER $INAME
+ $FUNCTION *impact*
+  The impact callback.
+**/
+DEFINE_PROPERTY( impactSetter ) {
+	
+	JL_S_ASSERT( JsvalIsFunction(cx, *vp) || JSVAL_IS_VOID(*vp), "Invalid type." );
+	return JS_SetReservedSlot(cx, obj, SLOT_GEOM_IMPACT_FUNCTION, *vp);
+	JL_BAD;
+}
+
+DEFINE_PROPERTY( impactGetter ) {
+
+	return JS_GetReservedSlot(cx, obj, SLOT_GEOM_IMPACT_FUNCTION, vp);
+}
+
+
+
 /**doc
 $TOC_MEMBER $INAME
  *offset*
@@ -358,11 +378,14 @@ DEFINE_PROPERTY( offsetPositionSetter ) {
 CONFIGURE_CLASS
 
 	REVISION(JL_SvnRevToInt("$Revision$"))
+//	HAS_PRIVATE
+
 	BEGIN_FUNCTION_SPEC
 		FUNCTION( Destroy )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
+		PROPERTY( impact )
 		PROPERTY_STORE( body ) // store it to keep a reference (GC protection)
 		PROPERTY_WRITE( tansformation )
 		PROPERTY_WRITE( offset )
@@ -370,9 +393,6 @@ CONFIGURE_CLASS
 		PROPERTY( position )
 //		PROPERTY( offsetPosition )
 	END_PROPERTY_SPEC
-
-	// (TBD) explain why HAS_PRIVATE is needed in Geom
-	HAS_PRIVATE // needed because Finalize use JL_GetPrivate
 
 END_CLASS
 

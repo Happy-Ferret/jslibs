@@ -1,3 +1,4 @@
+LoadModule('jsdebug');
 LoadModule('jsstd');
 LoadModule('jsio');
 LoadModule('jsgraphics');
@@ -36,13 +37,23 @@ function MeshToTrimesh(filename) {
 
 /////////////////////
 
-
-Oal.Open('Generic Software');
-
-var dec = new SoundFileDecoder(new File('blip.wav').Open(File.RDONLY));
+// "Generic Hardware", "Generic Software", "DirectSound3D" (for legacy), "DirectSound", "MMSYSTEM"
+Oal.Open('MMSYSTEM');
+var dec = new SoundFileDecoder(new File('29996__thanvannispen__stone_on_stone_impact13.aif').Open(File.RDONLY));
 var b = new OalBuffer(dec.Read());
 
-var src = new OalSource();
+try {
+
+var srcPool = [];
+for ( var i = 0; i < 2; i++ ) {
+	
+	var src = new OalSource();
+	src.looping = false;
+	src.buffer = b;
+	srcPool.push(src);
+}
+
+Print('xx');
 
 /*
 var effect = new OalEffect();
@@ -54,13 +65,11 @@ effect.reverbDecayTime = 20;
 src.effect = effect;
 */
 
-src.buffer = b;
-src.looping = false;
-src.Position(-1,0,0);
-
-src.Play();
-
-
+} catch(ex) {
+	
+	Print( ex.fileName+':'+ex.lineNumber+' '+ex, '\n' );
+	Halt();
+}
 
 
 var cubeTrimesh = MeshToTrimesh('cube.json').Cube;
@@ -69,6 +78,8 @@ var sphereTrimesh = MeshToTrimesh('sphere.json').Sphere;
 
 var world = new World();
 world.gravity = [0,0,-9.809];
+world.linearDamping = 0.005;
+world.angularDamping = 0.005;
 
 
 var floor = new GeomPlane(world.space);
@@ -76,15 +87,21 @@ floor.params = [0,0,1,0]; // floor
 //var ceil = new GeomPlane(world.space);
 //ceil.params = [0,0,-1,-50]; // ceil
 
-floor.impact = function(n, geom, geom2, pos, vel, depth) {
-	
-	if ( depth > 0.1 ) {
-	
+
+floor.impact = function(geom, geom2, depth, px, py, pz) {
+
+	if ( depth > 0.08 ) {
+		
+		var src = srcPool.pop();
+		src.Stop();
+		src.Position(px, py, pz);
 		src.gain = depth;
 		src.Play();
-		return false;
+		srcPool.unshift(src);
+		
 	}
 }
+
 
 /*
 var testBox = new GeomBox(world.space);
@@ -107,7 +124,7 @@ j.SetAngle(0, 2);
 
 
 var boxes = [];
-for ( var i = 0; i < 10; i++ ) {
+for ( var i = 0; i < 100; i++ ) {
 
 	var box = new GeomBox(world.space);
 	box.lengths = [2,2,2];
@@ -288,7 +305,6 @@ function Draw(t) {
 
 // camera
 
-
 		Translate(0, 0, -10);
 		Rotate(-60, 1, 0, 0);
 		Rotate(0, 0, 0, 1);
@@ -298,7 +314,6 @@ function Draw(t) {
 		t.ClearRotation();
 		MultMatrix(t);
 		Scale(-1,-1,-1);
-
 		
 /*
 		Translate(0, 0, -10);
@@ -331,7 +346,6 @@ function Draw(t) {
 
 var t0, t1;
 
-CollectGarbage();
 while ( !done ) {
 
 	PollEvent(listeners);

@@ -15,6 +15,7 @@
 extern bool _odeFinalization;
 
 #define SLOT_GEOM_SURFACEPARAMETER 0
+#define SLOT_GEOM_IMPACT_FUNCTION 1
 
 DECLARE_CLASS( SurfaceParameters )
 
