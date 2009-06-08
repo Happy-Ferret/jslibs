@@ -332,6 +332,33 @@ DEFINE_PROPERTY( gravityModeGetter ) {
 }
 
 
+
+/**doc
+$TOC_MEMBER $INAME
+ $BOOL $INAME
+  (TBD)
+**/
+DEFINE_PROPERTY( gyroscopicModeSetter ) {
+
+	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( bodyId );
+	bool gravityMode;
+	JL_CHK( JsvalToBool(cx, *vp, &gravityMode) );
+	ode::dBodySetGyroscopicMode(bodyId, gravityMode);
+	return JS_TRUE;
+	JL_BAD;
+}
+
+DEFINE_PROPERTY( gyroscopicModeGetter ) {
+
+	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( bodyId );
+	JL_CHK( BoolToJsval(cx, ode::dBodyGetGyroscopicMode(bodyId) != 0, vp) );
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
 /**doc
 $TOC_MEMBER $INAME
  $BOOL $INAME
@@ -716,8 +743,7 @@ CONFIGURE_CLASS
 		
 		PROPERTY( disabled )
 		PROPERTY( gravityMode )
-
-//		dBodySetGyroscopicMode
+		PROPERTY( gyroscopicMode )
 
 		PROPERTY( finiteRotationMode )
 		PROPERTY( finiteRotationAxis )

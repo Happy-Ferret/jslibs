@@ -307,6 +307,36 @@ DEFINE_PROPERTY_GETTER( body2 ) {
 /**doc
 $TOC_MEMBER $INAME
  $BOOL $INAME
+  (TBD)
+**/
+DEFINE_PROPERTY( disabledSetter ) {
+
+	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate( cx, obj );
+	JL_S_ASSERT_RESOURCE( jointId );
+	bool disabled;
+	JL_CHK( JsvalToBool(cx, *vp, &disabled) );
+	if ( disabled )
+		ode::dJointDisable(jointId);
+	else
+		ode::dJointEnable(jointId);
+	return JS_TRUE;
+	JL_BAD;
+}
+
+DEFINE_PROPERTY( disabledGetter ) {
+
+	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate( cx, obj );
+	JL_S_ASSERT_RESOURCE( jointId );
+	JL_CHK( BoolToJsval(cx, ode::dJointIsEnabled(jointId) == 0, vp) );
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $BOOL $INAME
   Set to $TRUE activates the feedback, and $FALSE to desactivates it.
   $LF
   Using feedback will allows body1Force, body1Torque, body2Force and body2Torque to be used.
@@ -542,6 +572,7 @@ CONFIGURE_CLASS
 		PROPERTY_STORE( body1 ) // store it to keep a reference (GC protection)
 		PROPERTY_STORE( body2 ) // store it to keep a reference (GC protection)
 
+		PROPERTY( disabled )
 		PROPERTY( useFeedback )
 
 		PROPERTY_SWITCH( body1Force , feedbackVector )
