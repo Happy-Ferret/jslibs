@@ -118,30 +118,28 @@ my_ErrorReporter(JSContext *cx, const char *message, JSErrorReport *report)
 
 int main(int argc, char* argv[]) {
 	
-
 	JSRuntime *rt = JS_NewRuntime(0);
 	JS_SetGCParameter(rt, JSGC_MAX_BYTES, (uint32)-1);
 	JS_SetGCParameter(rt, JSGC_MAX_MALLOC_BYTES, (uint32)-1);
 	JSContext *cx = JS_NewContext(rt, 8192L);
 	JS_SetVersion(cx, (JSVersion)JSVERSION_LATEST);
-	JS_SetErrorReporter(cx, my_ErrorReporter);
+//	JS_SetErrorReporter(cx, my_ErrorReporter);
 
 	JSObject *globalObject = JS_NewObject(cx, NULL, NULL, NULL);
 	JS_SetGlobalObject(cx, globalObject);
 	JS_InitStandardClasses(cx, globalObject);
 
-	// do not use JSOPTION_COMPILE_N_GO option (see https://bugzilla.mozilla.org/show_bug.cgi?id=494363)
-	JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_VAROBJFIX | JSOPTION_XML | JSOPTION_STRICT ); /*JSOPTION_JIT |*/ 
+	JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_COMPILE_N_GO | JSOPTION_VAROBJFIX | JSOPTION_XML | JSOPTION_STRICT | JSOPTION_JIT );
 
 	char scriptSrc[] = "for ( var i = 0; i < 100000; i++ ) [1];";
 
-	JSScript *script = JS_CompileScript(cx, globalObject, scriptSrc, strlen(scriptSrc), "the script", 1);
+	JSScript *script = JS_CompileScript(cx, globalObject, scriptSrc, strlen(scriptSrc), "myScript", 1);
 
 	jsval rval;
 	JSBool res = JS_ExecuteScript(cx, globalObject, script, &rval);
-
 	printf("result: %d\n", res);
 
+	JS_GC(cx);
 
 	JS_DestroyContext(cx);
 	JS_DestroyRuntime(rt);
