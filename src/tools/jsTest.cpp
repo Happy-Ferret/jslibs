@@ -129,7 +129,7 @@ int main(int argc, char* argv[]) {
 	JS_SetGlobalObject(cx, globalObject);
 	JS_InitStandardClasses(cx, globalObject);
 
-	JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_COMPILE_N_GO | JSOPTION_VAROBJFIX | JSOPTION_XML | JSOPTION_STRICT | JSOPTION_JIT );
+	JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_VAROBJFIX );
 
 	char scriptSrc[] = "for ( var i = 0; i < 100000; i++ ) [1];";
 
