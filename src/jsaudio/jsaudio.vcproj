@@ -184,6 +184,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\effectSlot.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\error.cpp"
 				>
 			</File>

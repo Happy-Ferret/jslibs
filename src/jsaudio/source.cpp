@@ -153,9 +153,6 @@ DEFINE_CONSTRUCTOR() {
 	alGenSources(1, &pv->sid);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	alGenAuxiliaryEffectSlots(1, &pv->effectSlot);
-	JL_CHK( CheckThrowCurrentOalError(cx) );
-
 	JL_SetPrivate(cx, obj, pv);
 	return JS_TRUE;
 	JL_BAD;
@@ -314,90 +311,27 @@ DEFINE_FUNCTION_FAST( valueOf ) {
 }
 
 
-
 /**doc
 === Properties ===
 **/
 
-DEFINE_PROPERTY( effect ) {
+DEFINE_PROPERTY( effectSlot ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
 
-	ALuint effect;
+	ALuint effectSlot;
 	if ( !JSVAL_IS_VOID(*vp) )
-		JL_CHK( JsvalToUInt(cx, *vp, &effect) );
+		JL_CHK( JsvalToUInt(cx, *vp, &effectSlot) );
 	else
-		effect = AL_EFFECT_NULL;
+		effectSlot = AL_EFFECTSLOT_NULL;
 
-	alAuxiliaryEffectSloti( pv->effectSlot, AL_EFFECTSLOT_EFFECT, effect );
-	JL_CHK( CheckThrowCurrentOalError(cx) );
-//		effectSlot = AL_EFFECTSLOT_NULL;
-
-//	int tmp[10];
-//	alGetSource3i(pv->sid, AL_AUXILIARY_SEND_FILTER, tmp);
-//	JL_CHK( CheckThrowCurrentOalError(cx) );
-
-	alSource3i(pv->sid, AL_AUXILIARY_SEND_FILTER, pv->effectSlot, 0, AL_FILTER_NULL);
+	alSource3i(pv->sid, AL_AUXILIARY_SEND_FILTER, effectSlot, 0, AL_FILTER_NULL);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
 	return JS_TRUE;
 	JL_BAD;
 }
-
-
-
-DEFINE_PROPERTY_SETTER( effectGain ) {
-
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( pv );
-	float gain;
-	JL_CHK( JsvalToFloat(cx, *vp, &gain) );
-	alAuxiliaryEffectSlotf( pv->effectSlot, AL_EFFECTSLOT_GAIN, gain );
-	JL_CHK( CheckThrowCurrentOalError(cx) );
-	return JS_TRUE;
-	JL_BAD;
-}
-
-DEFINE_PROPERTY_GETTER( effectGain ) {
-
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( pv );
-	float gain;
-	alGetAuxiliaryEffectSlotf( pv->effectSlot, AL_EFFECTSLOT_GAIN, &gain );
-	JL_CHK( CheckThrowCurrentOalError(cx) );
-	JL_CHK( FloatToJsval(cx, gain, vp) );
-	return JS_TRUE;
-	JL_BAD;
-}
-
-
-
-DEFINE_PROPERTY_SETTER( effectSendAuto ) {
-
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( pv );
-	bool sendAuto;
-	JL_CHK( JsvalToBool(cx, *vp, &sendAuto) );
-	alAuxiliaryEffectSloti( pv->effectSlot, AL_EFFECTSLOT_AUXILIARY_SEND_AUTO, sendAuto ? AL_TRUE : AL_FALSE );
-	JL_CHK( CheckThrowCurrentOalError(cx) );
-	return JS_TRUE;
-	JL_BAD;
-}
-
-DEFINE_PROPERTY_GETTER( effectSendAuto ) {
-
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( pv );
-	int sendAuto;
-	alGetAuxiliaryEffectSloti( pv->effectSlot, AL_EFFECTSLOT_AUXILIARY_SEND_AUTO, &sendAuto );
-	JL_CHK( CheckThrowCurrentOalError(cx) );
-	JL_CHK( BoolToJsval(cx, sendAuto == AL_TRUE ? true : false, vp) );
-	return JS_TRUE;
-	JL_BAD;
-}
-
-
 
 
 DEFINE_PROPERTY( directFilter ) {
@@ -438,6 +372,7 @@ DEFINE_PROPERTY_SETTER( buffer ) {
 	return JS_TRUE;
 	JL_BAD;
 }
+
 
 DEFINE_PROPERTY_GETTER( buffer ) {
 
@@ -762,11 +697,8 @@ CONFIGURE_CLASS
 //		PROPERTY_WRITE_STORE( buffer )
 		PROPERTY_STORE( buffer )
 
-		PROPERTY_WRITE_STORE( effect )
+		PROPERTY_WRITE_STORE( effectSlot )
 		PROPERTY_WRITE_STORE( directFilter )
-
-		PROPERTY( effectGain )
-		PROPERTY( effectSendAuto )
 
 		PROPERTY_READ( remainingTime )
 

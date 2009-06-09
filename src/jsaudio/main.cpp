@@ -21,6 +21,7 @@ DECLARE_CLASS(Oal)
 DECLARE_CLASS(OalBuffer)
 DECLARE_CLASS(OalSource)
 DECLARE_CLASS(OalListener)
+DECLARE_CLASS(OalEffectSlot);
 DECLARE_CLASS(OalEffect);
 DECLARE_CLASS(OalFilter);
 
@@ -83,6 +84,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	INIT_CLASS( OalBuffer );
 	INIT_CLASS( OalSource );
 	INIT_CLASS( OalListener );
+	INIT_CLASS( OalEffectSlot );
 	INIT_CLASS( OalEffect );
 	INIT_CLASS( OalFilter );
 
