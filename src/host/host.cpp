@@ -229,11 +229,13 @@ JLThreadFuncDecl WatchDogThreadProc(void *threadArg) {
 
 	JSContext *cx = (JSContext*)threadArg;
 	HostPrivate *pv = GetHostPrivate(cx);
+	JSPackedBool *gcRunning = &cx->runtime->gcRunning;
 	JLReleaseSemaphore(pv->watchDogSem);
 	for (;;) {
 
 		SleepMilliseconds(pv->maybeGCInterval);
-		JS_TriggerOperationCallback(cx);
+		if ( !*gcRunning )
+			JS_TriggerOperationCallback(cx);
 	}
 }
 
@@ -378,8 +380,9 @@ JSContext* CreateHost(size_t maxMem, size_t maxAlloc, size_t maybeGCInterval ) {
 //call of  'js_malloc'  acts on  'runtime->gcMallocBytes'
 //do gc IF rt->gcMallocBytes >= rt->gcMaxMallocBytes
 
-	JS_SetGCParameter(rt, JSGC_MAX_BYTES, maxMem); /* maximum nominal heap before last ditch GC */
-	JS_SetGCParameter(rt, JSGC_MAX_MALLOC_BYTES, maxAlloc); /* # of JS_malloc bytes before last ditch GC */
+	JS_SetGCParameter(rt, JSGC_MAX_BYTES, maxMem); // maximum nominal heap before last ditch GC
+	JS_SetGCParameter(rt, JSGC_MAX_MALLOC_BYTES, maxAlloc); // # of JS_malloc bytes before last ditch GC
+//	JS_SetGCParameter(rt, JSGC_TRIGGER_FACTOR, 3);
 
 	JSContext *cx;
 	cx = JS_NewContext(rt, 8192L); // set the chunk size of the stack pool to 8192. see http://groups.google.com/group/mozilla.dev.tech.js-engine/browse_thread/thread/be9f404b623acf39/9efdfca81be99ca3

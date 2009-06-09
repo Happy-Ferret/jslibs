@@ -155,7 +155,8 @@ static void nearCallback(void *data, ode::dGeomID geom1, ode::dGeomID geom2) {
 
 //			JL_CHK( FloatVectorToJsval(cx, vel, 3, &velVal) ); // (TBD)! GC protect
 
-//			JL_CHK( FloatVectorToJsval(cx, *pos, 3, &posVal) ); // (TBD)! GC protect
+//			jsval posVal;
+//			JL_CHK( FloatVectorToJsval(cx, contact.geom.pos, 3, &posVal) ); // (TBD)! GC protect
 
 //			float f = sqrtf( vel[0] * vel[0] + vel[1] * vel[1] + vel[2] * vel[2] );
 //			JL_CHK( FloatToJsval(cx, f, &force) );

@@ -483,6 +483,14 @@ inline void Matrix44SetTranslation( Matrix44 *m, const float x, const float y, c
 	//	m->m4 = t->m128; m->m4 = _mm_add_ps(m->m4, t->m128);
 }
 
+inline void Matrix44GetTranslation( Matrix44 *m, float *x, float *y, float *z ) {
+
+	*x = m->m[3][0];
+	*y = m->m[3][1];
+	*z = m->m[3][2];
+}
+
+
 inline void Matrix44ClearTranslation( Matrix44 *m ) {
 
 	m->m[3][0] = 0;

@@ -12,6 +12,8 @@
 #include <jsxdrapi.h>
 #include <jsprf.h>
 
+#include <jscntxt.h>
+
 #include <jsscript.h>
 
 #include <stdio.h>
@@ -139,7 +141,10 @@ int main(int argc, char* argv[]) {
 	JSBool res = JS_ExecuteScript(cx, globalObject, script, &rval);
 	printf("result: %d\n", res);
 
+	printf("gcBytes before: %d\n", rt->gcBytes );
 	JS_GC(cx);
+	printf("gcBytes after: %d\n", rt->gcBytes );
+	
 
 	JS_DestroyContext(cx);
 	JS_DestroyRuntime(rt);

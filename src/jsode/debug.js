@@ -1,3 +1,5 @@
+try {
+
 LoadModule('jsdebug');
 LoadModule('jsstd');
 LoadModule('jsio');
@@ -37,38 +39,30 @@ function MeshToTrimesh(filename) {
 
 /////////////////////
 
-// "Generic Hardware", "Generic Software", "DirectSound3D" (for legacy), "DirectSound", "MMSYSTEM"
-Oal.Open('MMSYSTEM');
+
+Oal.Open("Generic Software"); // "Generic Hardware", "Generic Software", "DirectSound3D" (for legacy), "DirectSound", "MMSYSTEM"
 var dec = new SoundFileDecoder(new File('29996__thanvannispen__stone_on_stone_impact13.aif').Open(File.RDONLY));
-var b = new OalBuffer(dec.Read());
+var b = new OalBuffer( SplitChannels(dec.Read())[0] );
 
-try {
-
-var srcPool = [];
-for ( var i = 0; i < 2; i++ ) {
-	
-	var src = new OalSource();
-	src.looping = false;
-	src.buffer = b;
-	srcPool.push(src);
-}
-
-Print('xx');
-
-/*
 var effect = new OalEffect();
 effect.type = Oal.EFFECT_REVERB;
 effect.reverbDensity = 0;
 effect.reverbDiffusion = 1;
-effect.reverbGain = 1;
-effect.reverbDecayTime = 20;
-src.effect = effect;
-*/
+effect.reverbGain = 0.1;
+effect.reverbDecayTime = 2;
 
-} catch(ex) {
+var effectSlot = new OalEffectSlot();
+effectSlot.effect = effect;
+
+
+var srcPool = [];
+for ( var i = 0; i < 100; i++ ) {
 	
-	Print( ex.fileName+':'+ex.lineNumber+' '+ex, '\n' );
-	Halt();
+	var src = new OalSource();
+	src.effectSlot = effectSlot;
+	src.looping = false;
+	src.buffer = b;
+	srcPool.push(src);
 }
 
 
@@ -90,7 +84,7 @@ floor.params = [0,0,1,0]; // floor
 
 floor.impact = function(geom, geom2, depth, px, py, pz) {
 
-	if ( depth > 0.08 ) {
+	if ( depth > 0.1 ) {
 		
 		var src = srcPool.pop();
 		src.Stop();
@@ -98,7 +92,6 @@ floor.impact = function(geom, geom2, depth, px, py, pz) {
 		src.gain = depth;
 		src.Play();
 		srcPool.unshift(src);
-		
 	}
 }
 
@@ -314,6 +307,8 @@ function Draw(t) {
 		t.ClearRotation();
 		MultMatrix(t);
 		Scale(-1,-1,-1);
+
+		OalListener.position = t.translation;
 		
 /*
 		Translate(0, 0, -10);
@@ -366,6 +361,13 @@ while ( !done ) {
 	Sleep(10);
 }
 
+
+
+} catch(ex) {
+	
+	Print( ex.fileName+':'+ex.lineNumber+' '+ex, '\n' );
+	Halt();
+}
 
 
 

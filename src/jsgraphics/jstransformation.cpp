@@ -689,6 +689,36 @@ DEFINE_FUNCTION_FAST( TransformVector ) {
 === Properties ===
 **/
 
+/**doc
+$TOC_MEMBER $INAME
+ $ARRAY $INAME
+  Gets or sets the position component.
+**/
+DEFINE_PROPERTY_SETTER( translation ) {
+
+	JL_S_ASSERT_ARRAY( *vp );
+	Matrix44 *tm = (Matrix44*)JL_GetPrivate(cx, obj); // tm for thisMatrix
+	JL_S_ASSERT_RESOURCE(tm);
+	float pos[3];
+	size_t len;
+	JL_CHK( JsvalToFloatVector(cx, *vp, pos, 3, &len) );
+	Matrix44SetTranslation(tm, pos[0], pos[1], pos[2]);
+	return JS_TRUE;
+	JL_BAD;
+}
+
+DEFINE_PROPERTY_GETTER( translation ) {
+
+	Matrix44 *tm = (Matrix44*)JL_GetPrivate(cx, obj); // tm for thisMatrix
+	JL_S_ASSERT_RESOURCE(tm);
+	float pos[3];
+	Matrix44GetTranslation(tm, &pos[0], &pos[1], &pos[2]);
+	JL_CHK( FloatVectorToJsval(cx, pos, 3, vp) );
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
 /*
 DEFINE_NEW_RESOLVE() {
 
@@ -793,6 +823,11 @@ CONFIGURE_CLASS
 		FUNCTION_FAST_ARGC( LookAt, 3 ) // x, y, z
 		FUNCTION_FAST_ARGC( TransformVector, 1 )
 	END_FUNCTION_SPEC
+
+
+	BEGIN_PROPERTY_SPEC
+		PROPERTY( translation )
+	END_PROPERTY_SPEC
 
 END_CLASS
 
