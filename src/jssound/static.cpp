@@ -59,7 +59,7 @@ size_t readStream( void *ptr, size_t size, size_t nmemb, void *pv ) {
 static const ov_callbacks ovCallbacks = { readStream,0,0,0 };
 
 
-/**doc
+/**   doc
 $TOC_MEMBER $INAME
  $TYPE soundObject $INAME( stream ) $DEPRECATED
   Decodes a ogg vorbis sample to a sound object.
@@ -276,7 +276,7 @@ sf_count_t SfRead(void *ptr, sf_count_t count, void *user_data) {
 static SF_VIRTUAL_IO sfCallbacks = { SfGetFilelen, SfSeek, SfRead, 0, SfTell };
 
 
-/**doc
+/**   doc
 $TOC_MEMBER $INAME
  $TYPE soundObject $INAME( stream ) $DEPRECATED
   Decodes a sample from any supported sound format to a sound object.

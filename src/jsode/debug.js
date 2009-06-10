@@ -41,7 +41,7 @@ function MeshToTrimesh(filename) {
 
 
 Oal.Open("Generic Software"); // "Generic Hardware", "Generic Software", "DirectSound3D" (for legacy), "DirectSound", "MMSYSTEM"
-var dec = new SoundFileDecoder(new File('29996__thanvannispen__stone_on_stone_impact13.aif').Open(File.RDONLY));
+var dec = new SoundFileDecoder( new File('29996__thanvannispen__stone_on_stone_impact13.aif').Open(File.RDONLY) );
 var b = new OalBuffer( SplitChannels(dec.Read())[0] );
 
 var effect = new OalEffect();
@@ -56,7 +56,7 @@ effectSlot.effect = effect;
 
 
 var srcPool = [];
-for ( var i = 0; i < 100; i++ ) {
+for ( var i = 0; i < 1; i++ ) {
 	
 	var src = new OalSource();
 	src.effectSlot = effectSlot;
@@ -81,7 +81,6 @@ floor.params = [0,0,1,0]; // floor
 //var ceil = new GeomPlane(world.space);
 //ceil.params = [0,0,-1,-50]; // ceil
 
-
 floor.impact = function(geom, geom2, depth, px, py, pz) {
 
 	if ( depth > 0.1 ) {
@@ -94,7 +93,6 @@ floor.impact = function(geom, geom2, depth, px, py, pz) {
 		srcPool.unshift(src);
 	}
 }
-
 
 /*
 var testBox = new GeomBox(world.space);
@@ -146,6 +144,8 @@ world.defaultSurfaceParameters.slip2 = 0.001;
 */
 world.defaultSurfaceParameters.bounce = 0.5;
 world.defaultSurfaceParameters.bounceVel = 10;
+
+world.quickStepNumIterations = 20;
 
 
 GlSetAttribute( GL_SWAP_CONTROL, 1 ); // vsync
@@ -289,7 +289,7 @@ function DrawFloor(cx, cy) {
 var cubeId = Ogl.LoadTrimesh(cubeTrimesh);
 var sphereId = Ogl.LoadTrimesh(sphereTrimesh);
 
-function Draw(t) {
+function Draw() {
 
 	with (Ogl) {
 	
@@ -338,27 +338,27 @@ function Draw(t) {
 	}
 }
 
+CollectGarbage();
 
-var t0, t1;
+var defaultTime = 15;
+var t0, at, t;
+
+PollEvent();
 
 while ( !done ) {
 
+	var t0 = TimeCounter();
 	PollEvent(listeners);
-	
-	var t1 = TimeCounter()/1000;
-
-	if ( !t0 )
-		t0 = t1-0.001;
-	
-//	cursor.body.position = [x/100, -y/100, 0.5];
-//	cursor.body.quaternion = [0,0,0,1];
-
-	world.Step(t1-t0, 20);
-
-	Draw(t1);
-	t0 = t1;
+	if ( t > 30 )
+		t = 20;
+	if ( t )
+		world.Step(t + at);
+	Draw();
 	GlSwapBuffers();
-	Sleep(10);
+	t = TimeCounter() - t0;
+	
+	at = t < defaultTime ? defaultTime - t : 0
+	Sleep(at);
 }
 
 
@@ -368,135 +368,4 @@ while ( !done ) {
 	Print( ex.fileName+':'+ex.lineNumber+' '+ex, '\n' );
 	Halt();
 }
-
-
-
-
-
-Halt(); //////////////////////////////////////////////////////////////////////
-
-
-
-
-
-
-
-
-var world = new World;
-
-
-var t = new Trimesh();
-
-t.DefineVertexBuffer([
-	0,0,0,
-	1,0,0,
-	0,1,0,
-	0,0,1,
-]);
-
-t.DefineIndexBuffer([
-	0,3,1,
-	0,1,2,
-	0,2,3,
-	1,3,2,
-]);
-
-
-var g = new GeomTrimesh( world.space, t );
-
-
-
-Halt();
-
-function main() {
-
-	var g = new GeomBox();
-
-//	return;
-
-	/*
-	var world = new World;
-	world.gravity = [0,0,-0.81];
-
-	var body1 = new Body(world);
-	var body2 = new Body(world);
-	var joint = new JointHinge(world);
-
-
-	joint.body1 = body1;
-	joint.body2 = body2;
-	joint.anchor = [4,4,0];
-	joint.axis = [1,0,0];
-	joint.loStop = 1;
-	joint.hiStop = 1.5;
-
-	body1.linearVel = [0,0,19];
-	body1.angularVel = [1,1,0];
-	*/
-
-
-
-	var world = new World;
-	//world.Body = Body;
-	//var b = new world.Body();
-
-	//world.gravity = [0,0,-9.81];
-
-	var body1 = new Body(world);
-	var g = new GeomBox( world.space );
-	g.body = body1;
-	g.impact = function(n, against, pos) { Print('hit'+n+'@['+pos+']\n') }
-
-
-	var body2 = new Body(world);
-	new GeomBox( world.space ).body = body2;
-
-	//body1.mass.SetBoxTotal(10,[1,1,100]);
-	//body.mass.mass = 1;
-	//body.mass.Translate([2,1,0]);
-	//body.mass.center = [2,0,0];
-	//body.mass.Adjust(10);
-
-	var joint = new JointHinge(world);
-
-	//joint.Attach(body,body1);
-	joint.body1 = body1;
-	joint.body2 = body2;
-	joint.anchor = [10,0,0];
-	joint.axis = [1,1,1];
-	
-	joint.CFM = Infinity;
-
-	joint.useFeedback = true;
-
-	body1.position = [0,0,0]
-	new JointHinge(world)
-
-	body2.position = [0,0,5]
-	body2.linearVel = [0,0,-5];
-
-	var floor = new GeomPlane(world.space);
-
-	//body.linearVel = [10,10,10];
-	//body.angularVel = [10,0,0];
-
-	for ( var i = 0; i<20; i++ ) {
-	//	Print( 'Step:', i,  '\n' );
-
-
-	//	Print( ' Position:', body1.position , '\n' );
-
-	//	Print( ' Force:', body.force , '\n' );
-		world.Step(0.1,20);
-		
-		Print( ' ->', joint.body1Torque, '\n' );
-		
-	}
-
-	//Print( 'joint angle rate:'+joint.angleRate ,'\n');
-	
-	delete g.impact;
-}
-
-main();
 

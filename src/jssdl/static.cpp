@@ -635,9 +635,11 @@ JSBool FireListener( JSContext *cx, JSObject *listenerObj, SDL_Event *ev, jsval 
 
 /**doc
 $TOC_MEMBER $INAME
- $VAL $INAME( listeners )
+ $BOOL $INAME( listeners )
   $H arguments
    $ARG $OBJ listeners: is an object that contains callback functions.
+  $H return value
+   $TRUE if an event has been processed.
   $H example
    {{{
    var done = false;
@@ -656,8 +658,6 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( PollEvent ) {
 
-	JL_S_ASSERT_OBJECT( JL_FARG(1) );
-
 	SDL_Event ev;
 	SDL_PumpEvents();
 
@@ -667,13 +667,19 @@ DEFINE_FUNCTION_FAST( PollEvent ) {
 	if ( status == -1 )
 		return ThrowSdlError(cx);
 
-	if ( status == 1 ) {
-
-		JL_CHK( FireListener(cx, JSVAL_TO_OBJECT(JL_FARG(1)), &ev, JL_FRVAL) );
-	} else {
-
-		*JL_FRVAL = JSVAL_VOID;
+	if ( status == 0 ) {
+		
+		*JL_FRVAL = JSVAL_FALSE;
+		return JS_TRUE;
 	}
+
+	if ( JL_FARG_ISDEF(1) ) {
+	
+		JL_S_ASSERT_OBJECT( JL_FARG(1) );
+		JL_CHK( FireListener(cx, JSVAL_TO_OBJECT(JL_FARG(1)), &ev, JL_FRVAL) );
+	}
+
+	*JL_FRVAL = JSVAL_TRUE;
 	return JS_TRUE;
 	JL_BAD;
 }

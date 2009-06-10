@@ -267,9 +267,9 @@ DEFINE_FUNCTION( Destroy ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $INAME( time [, $INT iterations] )
-  $H note
-   If the _iterations_ argument is given, this uses an iterative method that takes time on the order of m*N and memory on the order of m, where m is the total number of constraint rows and N is the number of iterations.
+ $VOID $INAME( stepsize )
+  $H arguments
+   $ARG real stepsize: The number of milliseconds that the simulation has to advance.
 **/
 DEFINE_FUNCTION( Step ) {
 
@@ -277,8 +277,8 @@ DEFINE_FUNCTION( Step ) {
 	JL_S_ASSERT_CLASS(obj, classWorld);
 	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
-	float time;
-	JL_CHK( JsvalToFloat(cx, JL_ARG(1), &time) );
+	float stepSize;
+	JL_CHK( JsvalToFloat(cx, JL_ARG(1), &stepSize) );
 
 	//jsval val;
 	//JS_GetReservedSlot(cx, obj, WORLD_SLOT_SPACE, &val);
@@ -310,15 +310,46 @@ DEFINE_FUNCTION( Step ) {
 	ode::dSpaceCollide(spaceId, (void*)&ccp, &nearCallback);
 
 	if ( ode::dWorldGetQuickStepNumIterations(pv->worldId) == 0 )
-		ode::dWorldStep(pv->worldId, time);
+		ode::dWorldStep(pv->worldId, stepSize / 1000);
 	else
-		ode::dWorldQuickStep(pv->worldId, time);
+		ode::dWorldQuickStep(pv->worldId, stepSize / 1000);
 
 	ode::dJointGroupEmpty(pv->contactGroupId); // contactGroupId will be reused at the next step!
 
 	return !JS_IsExceptionPending(cx); // an exception may have been thrown in nearCallback
 	JL_BAD;
 }
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $INAME( $TYPE vec3 force, stepSize )
+**/
+DEFINE_FUNCTION_FAST( ScaleImpulse ) {
+
+	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT_ARG_MIN(1);
+	ode::dVector3 force;
+	size_t len;
+	JL_CHK( JsvalToFloatVector(cx, JL_FARG(1), force, COUNTOF(force), &len) );
+	JL_S_ASSERT( len == COUNTOF(force), "Invalid array size." );
+
+	float stepSize;
+	JL_CHK( JsvalToFloat(cx, JL_FARG(2), &stepSize) );
+	ode::dWorldImpulseToForce(pv->worldId, stepSize / 1000, force[0], force[1], force[2], force);
+	
+	JSObject *objArr = JSVAL_TO_OBJECT(JL_FARG(1));
+	for ( size_t i = 0; i < COUNTOF(force); i++ ) {
+
+		JL_CHK( FloatToJsval(cx, force[i], JL_FRVAL) );
+		JL_CHK( JS_SetElement(cx, objArr, i, JL_FRVAL) );
+	}
+
+	return JS_TRUE;
+	JL_BAD;
+}
+
 
 /**doc
 === Properties ===
@@ -356,17 +387,21 @@ DEFINE_PROPERTY( gravitySetter ) {
 }
 
 /**doc
-$TOC_MEMBER $INAME
+$TOC_MEMBER ERP
  $REAL *ERP*
   dWorldGetERP
 
-$TOC_MEMBER $INAME
+$TOC_MEMBER CFM
  $REAL *CFM*
   dWorldGetCFM
 
-$TOC_MEMBER $INAME
+$TOC_MEMBER contactSurfaceLayer
  $REAL *contactSurfaceLayer*
   dWorldGetContactSurfaceLayer
+
+$TOC_MEMBER quickStepNumIterations
+  $REAL *quickStepNumIterations*
+   If greater than 0, step will uses an iterative method that takes time on the order of m*N and memory on the order of m, where m is the total number of constraint rows and N is the number of iterations.
 **/
 
 enum { ERP, CFM, quickStepNumIterations, quickStepW, contactSurfaceLayer, contactMaxCorrectingVel, linearDamping, linearDampingThreshold, angularDamping, angularDampingThreshold, maxAngularSpeed };
@@ -499,7 +534,7 @@ CONFIGURE_CLASS
 
 	BEGIN_FUNCTION_SPEC
 		FUNCTION( Step )
-//		FUNCTION( Destroy )
+		FUNCTION_FAST( ScaleImpulse )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
