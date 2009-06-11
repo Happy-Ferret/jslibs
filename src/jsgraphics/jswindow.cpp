@@ -259,7 +259,7 @@ DEFINE_CONSTRUCTOR() {
 	DWORD err;
 	JL_SAFE(SetLastError(0));
 	LONG prevWindowLong = SetWindowLong(hWnd, GWL_USERDATA, (LONG)cxobj );
-	JL_S_ASSERT_1( prevWindowLong != 0 || (err=GetLastError()) == 0, "Unable to SetWindowLong. (error %d)", err );
+	JL_S_ASSERT( prevWindowLong != 0 || (err=GetLastError()) == 0, "Unable to SetWindowLong. (error %d)", err );
 	return JS_TRUE;
 }
 
@@ -270,7 +270,7 @@ bool TrackMouseLeave( HWND hWnd ) {
 	trackMouseEvent.dwFlags = TME_LEAVE;
 	trackMouseEvent.hwndTrack = hWnd;
 	return TrackMouseEvent(&trackMouseEvent) != 0;
-//	JL_S_ASSERT_1( status != 0, "Unable to TrackMouseEvent.(%d)", GetLastError() );
+//	JL_S_ASSERT( status != 0, "Unable to TrackMouseEvent.(%d)", GetLastError() );
 }
 
 DEFINE_FUNCTION( Open ) {
@@ -401,7 +401,7 @@ static JSBool _SwapBuffers(JSContext *cx, JSObject *obj, uintN argc, jsval *argv
 	HDC hDC = wglGetCurrentDC();
 	JL_S_ASSERT( hDC != NULL, "Could not get the Current Device Context." );
 	BOOL res = SwapBuffers(hDC); // Doc: With multithread applications, flush the drawing commands in any other threads drawing to the same window before calling SwapBuffers.
-	JL_S_ASSERT_1( res, "Unable to SwapBuffers.(%x)", GetLastError() );
+	JL_S_ASSERT( res, "Unable to SwapBuffers.(%x)", GetLastError() );
 	return JS_TRUE;
 }
 */
@@ -459,10 +459,10 @@ DEFINE_FUNCTION( CreateOpenGLContext ) {
 	JL_S_ASSERT( res, "Could not Set The PixelFormat." );
 
 	HGLRC hRC = wglCreateContext(hDC);
-	JL_S_ASSERT_1( hRC != NULL , "Cannot Create A GL Rendering Context. (%x)", GetLastError() );
+	JL_S_ASSERT( hRC != NULL , "Cannot Create A GL Rendering Context. (%x)", GetLastError() );
 
 	res = wglMakeCurrent(hDC,hRC);
-	JL_S_ASSERT_1( res, "Cannot Activate The GL Rendering Context. (%x)", GetLastError());
+	JL_S_ASSERT( res, "Cannot Activate The GL Rendering Context. (%x)", GetLastError());
 
 //  wglMakeCurrent(NULL,NULL); // This step is not required, but it can help find errors, especially when you are using multiple rendering contexts.
 //  wglDeleteContext(hRC);
@@ -480,7 +480,7 @@ static JSBool _SwapBuffers(JSContext *cx, JSObject *obj, uintN argc, jsval *argv
 	HDC hDC = wglGetCurrentDC(); // (TBD) un-specialize from OpenGL
 	JL_S_ASSERT( hDC != NULL, "Could not get the Current Device Context." );
 	BOOL res = SwapBuffers(hDC); // Doc: With multithread applications, flush the drawing commands in any other threads drawing to the same window before calling SwapBuffers.
-	JL_S_ASSERT_1( res, "Unable to SwapBuffers.(%x)", GetLastError() );
+	JL_S_ASSERT( res, "Unable to SwapBuffers.(%x)", GetLastError() );
 	return JS_TRUE;
 }
 
@@ -516,7 +516,7 @@ DEFINE_FUNCTION( Mode ) {
 
 		status = ChangeDisplaySettings(NULL, 0);
 	}
-	JL_S_ASSERT_1( status == DISP_CHANGE_SUCCESSFUL, "Unable to ChangeDisplaySettings.(%d)", status);
+	JL_S_ASSERT( status == DISP_CHANGE_SUCCESSFUL, "Unable to ChangeDisplaySettings.(%d)", status);
 	return JS_TRUE;
 }
 

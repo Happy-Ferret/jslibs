@@ -30,7 +30,7 @@ inline JSBool GetMatrixHelper( JSContext *cx, jsval val, Matrix44 **m ) {
 	NIMatrix44Get MatrixGet = Matrix44GetInterface(cx, matrixObj);
 	if ( MatrixGet != NULL ) {
 
-		JL_CHK( MatrixGet(cx, matrixObj, (float**)m) );
+		JL_CHK( MatrixGet(cx, matrixObj, (float**)m));
 		return JS_TRUE;
 	}
 
@@ -38,7 +38,7 @@ inline JSBool GetMatrixHelper( JSContext *cx, jsval val, Matrix44 **m ) {
 
 		size_t length;
 		JL_CHK( JsvalToFloatVector(cx, val, (*m)->raw, 16, &length ) );
-		JL_S_ASSERT_1( length == 16, "Too few (%d) elements in the array.", length );
+		JL_S_ASSERT( length == 16, "Too few (%d) elements in the array.", length );
 		return JS_TRUE;
 	}
 

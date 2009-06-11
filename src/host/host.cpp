@@ -290,7 +290,7 @@ static JSBool LoadModule(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, 
 
 			char errorBuffer[256];
 			JLDynamicLibraryLastErrorMessage( errorBuffer, sizeof(errorBuffer) );
-			JL_REPORT_ERROR_2( "Unable to load the module \"%s\". %s", libFileName, errorBuffer );
+			JL_REPORT_ERROR( "Unable to load the module \"%s\". %s", libFileName, errorBuffer );
 		}
 	);
 

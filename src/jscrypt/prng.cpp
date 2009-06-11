@@ -58,7 +58,7 @@ DEFINE_CONSTRUCTOR() {
 
 	int prngIndex;
 	prngIndex = find_prng(prngName);
-	JL_S_ASSERT_1( prngIndex != -1, "prng %s is not available", prngName );
+	JL_S_ASSERT( prngIndex != -1, "prng %s is not available", prngName );
 
 	PrngPrivate *pv;
 	pv = (PrngPrivate*)JS_malloc(cx, sizeof(PrngPrivate));
@@ -66,7 +66,7 @@ DEFINE_CONSTRUCTOR() {
 
 	pv->prng = prng_descriptor[prngIndex];
 
-	JL_S_ASSERT_1( pv->prng.test() == CRYPT_OK, "%s prng test failed.", prngName );
+	JL_S_ASSERT( pv->prng.test() == CRYPT_OK, "%s prng test failed.", prngName );
 
 	int err;
 	err = pv->prng.start( &pv->state );

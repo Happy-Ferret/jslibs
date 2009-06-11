@@ -46,7 +46,7 @@ DEFINE_FUNCTION( LoadWXJSModule ) {
 	strcpy( libFileName, fileName );
 	strcat( libFileName, DLL_EXT );
 	HMODULE module = ::LoadLibrary(libFileName);
-	JL_S_ASSERT_2( module != NULL, "Unable to load the library %s (error:%d).", libFileName, GetLastError() );
+	JL_S_ASSERT( module != NULL, "Unable to load the library %s (error:%d).", libFileName, GetLastError() );
 	int i;
 	for ( i = 0; _moduleList[i] != NULL; ++i ); // find a free module slot
 	JL_S_ASSERT( i < 32, "unable to load more libraries" );
@@ -54,7 +54,7 @@ DEFINE_FUNCTION( LoadWXJSModule ) {
 
 	WXJS_INIT_PROC moduleInit = (WXJS_INIT_PROC)::GetProcAddress( module, WXJS_INIT_CLASS );
 
-	JL_S_ASSERT_1( moduleInit != NULL, "Module initialization function not found in %s.", libFileName );
+	JL_S_ASSERT( moduleInit != NULL, "Module initialization function not found in %s.", libFileName );
 	*rval = moduleInit( cx, obj ) ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;
 	JL_BAD;

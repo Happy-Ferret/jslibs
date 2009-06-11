@@ -73,7 +73,7 @@ DEFINE_CONSTRUCTOR() {
 
 	int hashIndex;
 	hashIndex = find_hash(hashName);
-	JL_S_ASSERT_1( hashIndex != -1, "hash %s is not available", hashName );
+	JL_S_ASSERT( hashIndex != -1, "hash %s is not available", hashName );
 
 	HashPrivate *pv;
 	pv = (HashPrivate*)JS_malloc(cx, sizeof(HashPrivate));
@@ -81,7 +81,7 @@ DEFINE_CONSTRUCTOR() {
 
 	pv->descriptor = &hash_descriptor[hashIndex];
 
-	JL_S_ASSERT_1( pv->descriptor->test() == CRYPT_OK, "%s hash test failed.", hashName );
+	JL_S_ASSERT( pv->descriptor->test() == CRYPT_OK, "%s hash test failed.", hashName );
 
 	int err;
 	if ( (err = pv->descriptor->init(&pv->state)) != CRYPT_OK )
@@ -347,7 +347,7 @@ DEFINE_FUNCTION( CipherHash ) {
 	JL_CHK( JsvalToString(cx, &argv[0], &cipherName) );
 	int cipherIndex;
 	cipherIndex = find_cipher(cipherName);
-	JL_S_ASSERT_1( cipherIndex >= 0, "Cipher not found: %s", cipherName );
+	JL_S_ASSERT( cipherIndex >= 0, "Cipher not found: %s", cipherName );
 	int err;
 	if ((err = chc_register(cipherIndex)) != CRYPT_OK)
 		return ThrowCryptError(cx, err);

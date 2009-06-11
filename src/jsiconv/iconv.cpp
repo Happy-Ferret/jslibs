@@ -85,7 +85,7 @@ DEFINE_CONSTRUCTOR() {
 	if ( (size_t)pv->cd == (size_t)-1 ) {
 		
 		if ( errno == EINVAL )
-			JL_REPORT_ERROR_2( "The conversion from %s to %s is not supported.", fromcode, tocode );
+			JL_REPORT_ERROR( "The conversion from %s to %s is not supported.", fromcode, tocode );
 		else
 			JL_REPORT_ERROR( "Unknown iconv error." );
 	}

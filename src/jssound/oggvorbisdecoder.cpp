@@ -314,7 +314,7 @@ DEFINE_FUNCTION_FAST( Read ) {
 			if ( bytes == OV_HOLE)
 				continue; // ignore corrupted/dropped/lost parts
 
-//(TBD)			JL_S_ASSERT_1( sf_error(pv->ofDescriptor) == SF_ERR_NO_ERROR, "sndfile error: %d", sf_error(pv->sfDescriptor) );
+//(TBD)			JL_S_ASSERT( sf_error(pv->ofDescriptor) == SF_ERR_NO_ERROR, "sndfile error: %d", sf_error(pv->sfDescriptor) );
 
 			if ( bytes <= 0 ) { // < 0 is an error
 

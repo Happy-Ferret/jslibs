@@ -27,6 +27,7 @@
 
 jl::Pool matrixPool;
 
+
 static int GetMatrix(JSContext *cx, JSObject *obj, float **m) { // Doc: __declspec(noinline) tells the compiler to never inline a particular function.
 	
 	Matrix44 *objMatrix = (Matrix44*)JL_GetPrivate(cx, obj);
@@ -677,7 +678,7 @@ DEFINE_FUNCTION_FAST( TransformVector ) {
 		JL_CHK( JS_SetElement(cx, JSVAL_TO_OBJECT( JL_FARG(1) ), 3, &tmpValue) );
 	} else {
 
-		JL_REPORT_ERROR_1( "Unsupported vector length (%d).", length );
+		JL_REPORT_ERROR( "Unsupported vector length (%d).", length );
 	}
 
 	*JL_FRVAL = JSVAL_VOID;

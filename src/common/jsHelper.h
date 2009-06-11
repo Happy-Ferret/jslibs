@@ -161,14 +161,6 @@ ALWAYS_INLINE void SetHostPrivate( JSContext *cx, HostPrivate *hostPrivate ) {
 #define JL_FRVAL (&JS_RVAL(cx, vp))
 
 
-#ifdef DEBUG
-	#define JL_ADD_ROOT(cx, rp) (JS_AddNamedRoot((cx), (void*)(rp), J__CODE_LOCATION))
-#else
-	#define JL_ADD_ROOT(cx, rp) (JS_AddRoot((cx),(void*)(rp)))
-#endif // DEBUG
-
-#define JL_REMOVE_ROOT(cx, rp) (JS_RemoveRoot((cx),(void*)(rp)))
-
 #define JL_BAD bad:return(JS_FALSE)
 
 // check: used to forward an error.
@@ -179,32 +171,14 @@ ALWAYS_INLINE void SetHostPrivate( JSContext *cx, HostPrivate *hostPrivate ) {
 } while(0)
 
 // check with message: if status is false, a js exception is rised if it is not already pending.
-#define JL_CHKM( status, errorMessage ) do { \
+// (Support for variadic macros was introduced in Visual C++ 2005)
+#define JL_CHKM( status, errorMessage, ... ) do { \
 	if (unlikely( !(status) )) { \
 		if ( !JS_IsExceptionPending(cx) ) \
-			JS_ReportError(cx, (errorMessage IFDEBUG(" (@" J__CODE_LOCATION ")"))); \
+			JS_ReportError(cx, (errorMessage IFDEBUG(" (@" J__CODE_LOCATION ")")), __VA_ARGS__); \
 		goto bad; \
 	} \
 } while(0)
-
-// check with message and argument (printf like)
-#define JL_CHKM1( status, errorMessage, arg ) do { \
-	if (unlikely( !(status) )) { \
-		if ( !JS_IsExceptionPending(cx) ) \
-			JS_ReportError(cx, (errorMessage IFDEBUG(" (@" J__CODE_LOCATION ")")), (arg)); \
-		goto bad; \
-	} \
-} while(0)
-
-// check with message and argument (printf like)
-#define JL_CHKM2( status, errorMessage, arg1, arg2 ) do { \
-	if (unlikely( !(status) )) { \
-		if ( !JS_IsExceptionPending(cx) ) \
-			JS_ReportError(cx, (errorMessage IFDEBUG(" (@" J__CODE_LOCATION ")")), (arg1), (arg2)); \
-		goto bad; \
-	} \
-} while(0)
-
 
 // check and branch to a errorLabel label on error.
 #define JL_CHKB( status, errorLabel ) do { \
@@ -213,23 +187,13 @@ ALWAYS_INLINE void SetHostPrivate( JSContext *cx, HostPrivate *hostPrivate ) {
 
 
 // check and branch to a errorLabel label on error AND report an error if no exception is pending.
-#define JL_CHKBM( status, errorLabel, errorMessage ) do { \
+#define JL_CHKBM( status, errorLabel, errorMessage, ... ) do { \
 	if (unlikely( !(status) )) { \
 		if ( !JS_IsExceptionPending(cx) ) \
-			JS_ReportError(cx, (errorMessage IFDEBUG(" (@" J__CODE_LOCATION ")"))); \
+			JS_ReportError(cx, (errorMessage IFDEBUG(" (@" J__CODE_LOCATION ")")), __VA_ARGS__); \
 		goto errorLabel; \
 	} \
 } while(0)
-
-// same that JL_CHKBM with a additional argument (printf like)
-#define JL_CHKBM1( status, errorLabel, errorMessage, arg ) do { \
-	if (unlikely( !(status) )) { \
-		if ( !JS_IsExceptionPending(cx) ) \
-			JS_ReportError(cx, (errorMessage IFDEBUG(" (@" J__CODE_LOCATION ")")), (arg)); \
-		goto errorLabel; \
-	} \
-} while(0)
-
 
 #define JL_SAFE_BEGIN if (unlikely( !_unsafeMode )) {
 #define JL_SAFE_END }
@@ -246,42 +210,21 @@ ALWAYS_INLINE void SetHostPrivate( JSContext *cx, HostPrivate *hostPrivate ) {
 
 
 // Reports warnings only in non-unsafeMode.
-#define JL_REPORT_WARNING(errorMessage) \
-	do { if (unlikely(!_unsafeMode)) JS_ReportWarning( cx, (errorMessage IFDEBUG(" (@" J__CODE_LOCATION ")")) ); } while(0)
-
-#define JL_REPORT_WARNING_1(errorMessage, arg) \
-	do { if (unlikely(!_unsafeMode)) JS_ReportWarning( cx, (errorMessage IFDEBUG(" (@" J__CODE_LOCATION ")")), (arg) ); } while(0)
-
-#define JL_REPORT_WARNING_2(errorMessage, arg1, arg2) \
-	do { if (unlikely(!_unsafeMode)) JS_ReportWarning( cx, (errorMessage IFDEBUG(" (@" J__CODE_LOCATION ")")), (arg1), (arg2) ); } while(0)
-
+#define JL_REPORT_WARNING(errorMessage, ... ) \
+	do { if (unlikely( !_unsafeMode )) JS_ReportWarning( cx, (errorMessage IFDEBUG(" (@" J__CODE_LOCATION ")")), __VA_ARGS__ ); } while(0)
 
 // Reports a fatal errors, script must stop as soon as possible.
-#define JL_REPORT_ERROR(errorMessage) \
-	do { JS_ReportError( cx, (errorMessage IFDEBUG(" (@" J__CODE_LOCATION ")")) ); goto bad; } while(0)
-
-#define JL_REPORT_ERROR_1(errorMessage, arg) \
-	do { JS_ReportError( cx, (errorMessage IFDEBUG(" (@" J__CODE_LOCATION ")")), (arg) ); goto bad; } while(0)
-
-#define JL_REPORT_ERROR_2(errorMessage, arg1, arg2) \
-	do { JS_ReportError( cx, (errorMessage IFDEBUG(" (@" J__CODE_LOCATION ")")), (arg1), (arg2) ); goto bad; } while(0)
+#define JL_REPORT_ERROR(errorMessage, ...) \
+	do { JS_ReportError( cx, (errorMessage IFDEBUG(" (@" J__CODE_LOCATION ")")), __VA_ARGS__ ); goto bad; } while(0)
 
 
+// JL_S_ stands for (J)s(L)ibs _ (S)afemode _ and mean that these macros will only be meaningful when _unsafeMode is false (see jslibs unsafemode).
 
-// J_S_ stands for (J)slibs _ (S)afemode _ and mean that these macros will only be meaningful when unsafemode is false (see jslibs unsafemode).
-
-#define JL_S_ASSERT( condition, errorMessage ) \
-	do { if (unlikely( !_unsafeMode && !(condition) )) { JS_ReportError( cx, errorMessage IFDEBUG(" (" #condition " @" J__CODE_LOCATION ")") ); goto bad; } } while(0)
-
-#define JL_S_ASSERT_1( condition, errorMessage, arg ) \
-	do { if (unlikely( !_unsafeMode && !(condition) )) { JS_ReportError( cx, errorMessage IFDEBUG(" (" #condition " @" J__CODE_LOCATION ")"), (arg) ); goto bad; } } while(0)
-
-#define JL_S_ASSERT_2( condition, errorMessage, arg1, arg2 ) \
-	do { if (unlikely( !_unsafeMode && !(condition) )) { JS_ReportError( cx, errorMessage IFDEBUG(" (" #condition " @" J__CODE_LOCATION ")"), (arg1), (arg2) ); goto bad; } } while(0)
-
+#define JL_S_ASSERT( condition, errorMessage, ... ) \
+	do { if (unlikely( !_unsafeMode )) if (unlikely( !(condition) )) { JS_ReportError( cx, errorMessage IFDEBUG(" (" #condition " @" J__CODE_LOCATION ")"), __VA_ARGS__ ); goto bad; } } while(0)
 
 #define JL_S_ASSERT_ARG_MIN(minCount) \
-	JL_S_ASSERT_1( argc >= (minCount), J__ERRMSG_MISSING_N_ARGUMENT, (minCount)-argc )
+	JL_S_ASSERT( argc >= (minCount), J__ERRMSG_MISSING_N_ARGUMENT, (minCount)-argc )
 
 #define JL_S_ASSERT_ARG_MAX(maxCount) \
 	JL_S_ASSERT( argc <= (maxCount), J__ERRMSG_TOO_MANY_ARGUMENTS )
@@ -315,13 +258,13 @@ ALWAYS_INLINE void SetHostPrivate( JSContext *cx, HostPrivate *hostPrivate ) {
 	JL_S_ASSERT( JsvalIsArray(cx, value), J__ERRMSG_UNEXPECTED_TYPE " Array expected." )
 
 #define JL_S_ASSERT_FUNCTION(value) \
-	JL_S_ASSERT( JsvalIsFunction(cx, (value)), " Function is expected." )
+	JL_S_ASSERT( JsvalIsFunction(cx, (value)), " Function expected." )
 
 #define JL_S_ASSERT_CLASS(jsObject, jsClass) \
-	JL_S_ASSERT_1( (jsObject) != NULL && JL_GetClass(jsObject) == (jsClass), J__ERRMSG_INVALID_CLASS " %s expected.", (jsClass)->name )
+	JL_S_ASSERT( (jsObject) != NULL && JL_GetClass(jsObject) == (jsClass), J__ERRMSG_INVALID_CLASS " %s expected.", (jsClass)->name )
 
 #define JL_S_ASSERT_CLASS_NAME(jsObject, className) \
-	JL_S_ASSERT_1( IsClassName(jsObject, className), J__ERRMSG_INVALID_CLASS " %s expected.", className )
+	JL_S_ASSERT( IsClassName(jsObject, className), J__ERRMSG_INVALID_CLASS " %s expected.", className )
 
 #define JL_S_ASSERT_THIS_CLASS() \
 	JL_S_ASSERT_CLASS(obj, _class)
@@ -358,7 +301,7 @@ ALWAYS_INLINE size_t JL_GetStringLength(JSString *jsstr) {
 	return JSSTRING_LENGTH(jsstr);
 }
 
-// Is string or has jslibs BufferGet interface.
+// Is string or has jslibs BufferGet interface (including Blob).
 #define JL_JSVAL_IS_STRING(val) ( JSVAL_IS_STRING(val) || (!JSVAL_IS_PRIMITIVE(val) && BufferGetInterface(cx, JSVAL_TO_OBJECT(val)) != NULL) )
 
 
@@ -638,17 +581,17 @@ ALWAYS_INLINE JSScript* JLLoadScript(JSContext *cx, JSObject *obj, const char *f
 	bool hasCompFile = stat(compiledFileName, &compFileStat) != -1;
 	bool compFileUpToDate = ( hasCompFile && !hasSrcFile ) || ( hasCompFile && hasSrcFile && (compFileStat.st_mtime > srcFileStat.st_mtime) ); // true if comp file is up to date or alone
 
-	JL_CHKM2( hasSrcFile || hasCompFile, "Unable to load Script, file \"%s\" or \"%s\" not found.", fileName, compiledFileName );
+	JL_CHKM( hasSrcFile || hasCompFile, "Unable to load Script, file \"%s\" or \"%s\" not found.", fileName, compiledFileName );
 
 	if ( useCompFile && compFileUpToDate ) {
 
 		int file = open(compiledFileName, O_RDONLY | O_BINARY | O_SEQUENTIAL);
-		JL_CHKM1( file != -1, "Unable to open file \"%s\" for reading.", compiledFileName );
+		JL_CHKM( file != -1, "Unable to open file \"%s\" for reading.", compiledFileName );
 
 		int compFileSize = compFileStat.st_size; // filelength(file); ?
 		void *data = malloc(compFileSize); // (TBD) free on error
 		int readCount = read( file, data, compFileSize ); // here we can use "Memory-Mapped I/O Functions" ( http://developer.mozilla.org/en/docs/NSPR_API_Reference:I/O_Functions#Memory-Mapped_I.2FO_Functions )
-		JL_CHKM1( readCount != -1 && readCount == compFileSize, "Unable to read the file \"%s\" ", compiledFileName );
+		JL_CHKM( readCount != -1 && readCount == compFileSize, "Unable to read the file \"%s\" ", compiledFileName );
 		close( file );
 
 		JSXDRState *xdr = JS_XDRNewMem(cx, JSXDR_DECODE);
@@ -660,14 +603,14 @@ ALWAYS_INLINE JSScript* JLLoadScript(JSContext *cx, JSObject *obj, const char *f
 		JS_XDRDestroy(xdr);
 		free(data);
 		if ( JS_GetScriptVersion(cx, script) < JS_GetVersion(cx) )
-			JL_REPORT_WARNING_1("Trying to xdr-decode an old script (%s).", compiledFileName);
+			JL_REPORT_WARNING("Trying to xdr-decode an old script (%s).", compiledFileName);
 		return script; // Done.
 	}
 
 // shebang support
 	FILE *scriptFile;
 	scriptFile = fopen(fileName, "r");
-	JL_CHKM1( scriptFile != NULL, "Script file \"%s\" cannot be opened.", fileName );
+	JL_CHKM( scriptFile != NULL, "Script file \"%s\" cannot be opened.", fileName );
 
 	char s, b;
 	s = getc(scriptFile);
@@ -694,7 +637,7 @@ ALWAYS_INLINE JSScript* JLLoadScript(JSContext *cx, JSObject *obj, const char *f
 	script = JS_CompileFileHandle(cx, obj, fileName, scriptFile);
 
 	fclose(scriptFile);
-	JL_CHKM1( script, "Unable to compile the script %s.", fileName );
+	JL_CHKM( script, "Unable to compile the script %s.", fileName );
 
 	if ( !saveCompFile )
 		return script; // Done.
@@ -1337,7 +1280,7 @@ ALWAYS_INLINE JSBool SetPropertyString( JSContext *cx, JSObject *obj, const char
 ALWAYS_INLINE JSBool GetPropertyString( JSContext *cx, JSObject *obj, const char *propertyName, const char **str ) {
 
 	jsval val;
-	JL_CHKM1( JS_GetProperty(cx, obj, propertyName, &val), "Unable to read the property %s.", propertyName );
+	JL_CHKM( JS_GetProperty(cx, obj, propertyName, &val), "Unable to read the property %s.", propertyName );
 	JL_CHK( JsvalToString(cx, &val, str) );
 	return JS_TRUE;
 	JL_BAD;
@@ -1356,7 +1299,7 @@ ALWAYS_INLINE JSBool SetPropertyBool( JSContext *cx, JSObject *obj, const char *
 ALWAYS_INLINE JSBool GetPropertyBool( JSContext *cx, JSObject *obj, const char *propertyName, bool *b ) {
 
 	jsval val;
-	JL_CHKM1( JS_GetProperty(cx, obj, propertyName, &val), "Unable to read the property %s.", propertyName );
+	JL_CHKM( JS_GetProperty(cx, obj, propertyName, &val), "Unable to read the property %s.", propertyName );
 	JL_CHK( JsvalToBool(cx, val, b) );
 	return JS_TRUE;
 	JL_BAD;
@@ -1375,7 +1318,7 @@ ALWAYS_INLINE JSBool SetPropertyInt( JSContext *cx, JSObject *obj, const char *p
 ALWAYS_INLINE JSBool GetPropertyInt( JSContext *cx, JSObject *obj, const char *propertyName, int *intVal ) {
 
 	jsval val;
-	JL_CHKM1( JS_GetProperty(cx, obj, propertyName, &val), "Unable to read the property %s.", propertyName );
+	JL_CHKM( JS_GetProperty(cx, obj, propertyName, &val), "Unable to read the property %s.", propertyName );
 	JL_CHK( JsvalToInt(cx, val, intVal) );
 	return JS_TRUE;
 	JL_BAD;
@@ -1394,7 +1337,7 @@ ALWAYS_INLINE JSBool SetPropertyUInt( JSContext *cx, JSObject *obj, const char *
 ALWAYS_INLINE JSBool GetPropertyUInt( JSContext *cx, JSObject *obj, const char *propertyName, unsigned int *ui ) {
 
 	jsval val;
-	JL_CHKM1( JS_GetProperty(cx, obj, propertyName, &val), "Unable to read the property %s.", propertyName ); // try. OBJ_GET_PROPERTY(...
+	JL_CHKM( JS_GetProperty(cx, obj, propertyName, &val), "Unable to read the property %s.", propertyName ); // try. OBJ_GET_PROPERTY(...
 	JL_CHK( JsvalToUInt(cx, val, ui) );
 	return JS_TRUE;
 	JL_BAD;

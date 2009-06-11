@@ -64,14 +64,14 @@ Manage GL extensions:
 	static proto name = NULL; \
 	if ( name == NULL ) { \
 		name = (proto) GL_GET_PROC_ADDRESS( #name ); \
-		JL_S_ASSERT_1( name != NULL, "OpenGL extension %s unavailable.", #name ); \
+		JL_S_ASSERT( name != NULL, "OpenGL extension %s unavailable.", #name ); \
 	}
 */
 
  // (TBD) check static keyword issue
 #define LOAD_OPENGL_EXTENSION( name, proto ) \
 	static proto name = (proto) GL_GET_PROC_ADDRESS( #name ); \
-	JL_S_ASSERT_1( name != NULL, "OpenGL extension %s unavailable.", #name );
+	JL_S_ASSERT( name != NULL, "OpenGL extension %s unavailable.", #name );
 
 
 

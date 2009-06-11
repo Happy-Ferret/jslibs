@@ -697,12 +697,12 @@ DEFINE_FUNCTION_FAST( AvailableSpace ) {
 	ULARGE_INTEGER freeBytesAvailable;
 	BOOL res = ::GetDiskFreeSpaceEx(path, &freeBytesAvailable, NULL, NULL);
 	if ( res == 0 )
-		JL_REPORT_ERROR_1("Unable to get the available space of %s.", path);
+		JL_REPORT_ERROR("Unable to get the available space of %s.", path);
 	available = freeBytesAvailable.QuadPart;
 #else // now for XP_UNIX an MacOS ?
 	struct statvfs fsd;
 	if ( statvfs(path, &fsd) < 0 )
-		JL_REPORT_ERROR_1("Unable to get the available space of %s.", path);
+		JL_REPORT_ERROR("Unable to get the available space of %s.", path);
 	available = (jsdouble)fsd.f_bsize * (jsdouble)fsd.f_bavail;
 #endif // XP_WIN
 

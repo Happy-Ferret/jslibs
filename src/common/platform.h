@@ -702,9 +702,9 @@ inline unsigned int JLSessionId() {
 
 /* (TBD) manage error
 #if defined XP_UNIX
-	JL_S_ASSERT_2( id != 0, "Unable to load the module \"%s\": %s", libFileName, dlerror() );
+	JL_S_ASSERT( id != 0, "Unable to load the module \"%s\": %s", libFileName, dlerror() );
 #else // XP_UNIX
-	JL_S_ASSERT_2( id != 0, "Unable to load the module \"%s\": %x", libFileName, GetLastError() );
+	JL_S_ASSERT( id != 0, "Unable to load the module \"%s\": %x", libFileName, GetLastError() );
 #endif // XP_UNIX
 */
 

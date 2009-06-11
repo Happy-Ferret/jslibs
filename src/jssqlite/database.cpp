@@ -378,7 +378,7 @@ DEFINE_FUNCTION( Exec ) {
 			JL_CHK( SqliteColumnToJsval(cx, pStmt, 0, rval) );
 			break;
 		default:
-			JL_REPORT_ERROR_1("invalid case (status:%d)", status );
+			JL_REPORT_ERROR("invalid case (status:%d)", status );
 	}
 
 	status = sqlite3_finalize( pStmt );

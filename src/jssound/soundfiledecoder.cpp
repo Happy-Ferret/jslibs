@@ -196,7 +196,7 @@ DEFINE_CONSTRUCTOR() {
 		return JS_FALSE;
 
 	// (TBD) manage sf_error_str()
-	JL_S_ASSERT_1( sf_error(pv->sfDescriptor) == SF_ERR_NO_ERROR, "sndfile error: %d", sf_error(pv->sfDescriptor) );
+	JL_S_ASSERT( sf_error(pv->sfDescriptor) == SF_ERR_NO_ERROR, "sndfile error: %d", sf_error(pv->sfDescriptor) );
 	JL_S_ASSERT( pv->sfDescriptor != NULL, "Invalid stream." ); // (TBD) needed ?
 
 	int subFormat = pv->sfInfo.format & SF_FORMAT_SUBMASK;
@@ -301,7 +301,7 @@ $TOC_MEMBER $INAME
 			if ( JS_IsExceptionPending(cx) )
 				return JS_FALSE; // (TBD) free memory
 
-			JL_S_ASSERT_1( sf_error(pv->sfDescriptor) == SF_ERR_NO_ERROR, "sndfile error: %d", sf_error(pv->sfDescriptor) );
+			JL_S_ASSERT( sf_error(pv->sfDescriptor) == SF_ERR_NO_ERROR, "sndfile error: %d", sf_error(pv->sfDescriptor) );
 
 			if ( items <= 0 ) { // 0 indicates EOF
 

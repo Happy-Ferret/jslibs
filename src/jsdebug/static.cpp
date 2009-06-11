@@ -220,7 +220,7 @@ DEFINE_FUNCTION( DumpStats )
 		if ( fileName[0] != '\0' ) {
 
 			gOutFile = fopen(fileName, "w");
-			JL_S_ASSERT_2( gOutFile, "can't open %s: %s", fileName, strerror(errno));
+			JL_S_ASSERT( gOutFile, "can't open %s: %s", fileName, strerror(errno));
 		}
 	}
 	FILE *gErrFile;
@@ -632,7 +632,7 @@ DEFINE_PROPERTY( peakMemoryUsage ) {
 	HANDLE hProcess;
 	hProcess = GetCurrentProcess();
 	if (!GetProcessWorkingSetSize(hProcess, &dwMin, &dwMax))
-		JL_REPORT_ERROR_1("GetProcessWorkingSetSize failed (%d)\n", GetLastError());
+		JL_REPORT_ERROR("GetProcessWorkingSetSize failed (%d)\n", GetLastError());
 //	printf("Minimum working set: %lu Kbytes\n", dwMin/1024);
 //	printf("Maximum working set: %lu Kbytes\n", dwMax/1024);
 	bytes = dwMax;

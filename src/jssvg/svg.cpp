@@ -48,7 +48,7 @@ JSBool RequestPixbufImage(JSContext *cx, JSObject *obj, const char *name, GdkPix
 			JL_CHK( GetPropertyInt(cx, imageObj, "height", &sHeight) );
 			JL_CHK( GetPropertyInt(cx, imageObj, "channels", &sChannels) );
 
-			JL_S_ASSERT_1( sChannels == 3 || sChannels == 4, "Unsupported image format for %s.", name );
+			JL_S_ASSERT( sChannels == 3 || sChannels == 4, "Unsupported image format for %s.", name );
 			const char *sBuffer;
 			size_t bufferLength;
 			JL_CHK( JsvalToStringAndLength(cx, &image, &sBuffer, &bufferLength ) ); // warning: GC on the returned buffer !
@@ -168,9 +168,9 @@ DEFINE_FUNCTION_FAST( Write ) {
 
 		xmlErrorPtr xmlErr = xmlGetLastError();
 		if ( xmlErr != NULL ) { // XML error
-			JL_REPORT_ERROR_2("SVG error: %s. %s", error->message, xmlErr->message);
+			JL_REPORT_ERROR("SVG error: %s. %s", error->message, xmlErr->message);
 		} else
-			JL_REPORT_ERROR_1("SVG error: %s", error->message);
+			JL_REPORT_ERROR("SVG error: %s", error->message);
 	}
 
 	*JL_FRVAL = JSVAL_VOID;
@@ -212,9 +212,9 @@ DEFINE_PROPERTY( xmlData ) {
 
 		xmlErrorPtr xmlErr = xmlGetLastError();
 		if ( xmlErr != NULL ) { // XML error
-			JL_REPORT_ERROR_2("SVG error: %s. %s", error->message, xmlErr->message);
+			JL_REPORT_ERROR("SVG error: %s. %s", error->message, xmlErr->message);
 		} else
-			JL_REPORT_ERROR_1("SVG error: %s", error->message);
+			JL_REPORT_ERROR("SVG error: %s", error->message);
 	}
 	return JS_TRUE;
 }
@@ -250,7 +250,7 @@ DEFINE_FUNCTION_FAST( RenderImage ) { // using cairo
 	GError *error = NULL;
 	status = rsvg_handle_close(handle, &error);
 	if ( !status )
-		JL_REPORT_ERROR_1( "SVG error: %s", error->message );
+		JL_REPORT_ERROR( "SVG error: %s", error->message );
 
 	RsvgDimensionData dim;
 	rsvg_handle_get_dimensions(handle, &dim);
@@ -337,7 +337,7 @@ DEFINE_FUNCTION_FAST( RenderImage ) { // using cairo
 	cairo_set_matrix(cr, &pv->transformation);
 	status = rsvg_handle_render_cairo_sub(handle, cr, id);
 
-	JL_S_ASSERT_1( status == TRUE, "Unable to render the SVG. %s", cairo_status_to_string(cairo_status(cr)) );
+	JL_S_ASSERT( status == TRUE, "Unable to render the SVG. %s", cairo_status_to_string(cairo_status(cr)) );
 
 //	cairo_format_t surfaceFormat = cairo_image_surface_get_format(surface);
 

@@ -304,7 +304,7 @@ DEFINE_FUNCTION_FAST( DecodeSound ) {
 
 	SNDFILE *descriptor = sf_open_virtual(&sfCallbacks, SFM_READ, &info, &pv);
 
-	JL_S_ASSERT_1( sf_error(descriptor) == SF_ERR_NO_ERROR, "sndfile error: %d", sf_error(descriptor) );
+	JL_S_ASSERT( sf_error(descriptor) == SF_ERR_NO_ERROR, "sndfile error: %d", sf_error(descriptor) );
 	JL_S_ASSERT( descriptor != NULL, "Invalid stream." );
 
 	if ( JS_IsExceptionPending(cx) )
@@ -333,7 +333,7 @@ DEFINE_FUNCTION_FAST( DecodeSound ) {
 
 		items = sf_read_short(descriptor, (short*)data, maxlen/sizeof(short)); // bits per sample
 
-		JL_S_ASSERT_1( sf_error(descriptor) == SF_ERR_NO_ERROR, "sndfile error: %d", sf_error(descriptor) );
+		JL_S_ASSERT( sf_error(descriptor) == SF_ERR_NO_ERROR, "sndfile error: %d", sf_error(descriptor) );
 
 		if ( items <= 0 ) { // 0 indicates EOF
 

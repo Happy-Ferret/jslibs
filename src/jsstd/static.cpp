@@ -381,7 +381,7 @@ DEFINE_FUNCTION( HideProperties ) {
 	//JSBool found;
 	//	...
 	//	propertyName = JS_GetStringBytes( JS_ValueToString( cx, JL_ARG(i+1) ) );
-	//	JL_S_ASSERT_1( propertyName != NULL, "Invalid property name (%s).", propertyName );
+	//	JL_S_ASSERT( propertyName != NULL, "Invalid property name (%s).", propertyName );
 	//	JL_CHK( JS_GetPropertyAttributes( cx, object, propertyName, &attributes, &found ) );
 	//	if ( found == JS_FALSE )
 	//		continue;
@@ -1200,7 +1200,7 @@ DEFINE_FUNCTION_FAST( SandboxEval ) {
 
 		char reason[1024];
 		JLLastSysetmErrorMessage(reason, sizeof(reason));
-		JL_REPORT_ERROR_1( "Unable to create the thread (%s).", reason );
+		JL_REPORT_ERROR( "Unable to create the thread (%s).", reason );
 	}
 
 	JSBool ok;

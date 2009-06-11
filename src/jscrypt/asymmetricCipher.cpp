@@ -54,7 +54,7 @@ JSBool SlotGetPrng(JSContext *cx, JSObject *obj, int *prngIndex, prng_state **pr
 	JL_S_ASSERT_RESOURCE( prngPrivate );
 	*prngState = &prngPrivate->state;
 	*prngIndex = find_prng(prngPrivate->prng.name);
-	JL_S_ASSERT_1( *prngIndex != -1, "prng %s is not available.", prngPrivate->prng.name );
+	JL_S_ASSERT( *prngIndex != -1, "prng %s is not available.", prngPrivate->prng.name );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -124,7 +124,7 @@ DEFINE_CONSTRUCTOR() { // ( cipherName, hashName [, prngObject] [, PKCSVersion] 
 	else if ( strcasecmp( asymmetricCipherName, "DSA" ) == 0 )
 		asymmetricCipher = dsa;
 	else
-		JL_REPORT_ERROR_1("Invalid asymmetric cipher %s.", asymmetricCipherName);
+		JL_REPORT_ERROR("Invalid asymmetric cipher %s.", asymmetricCipherName);
 
 	AsymmetricCipherPrivate *pv;
 	pv = (AsymmetricCipherPrivate *)JS_malloc(cx, sizeof(AsymmetricCipherPrivate));
@@ -136,7 +136,7 @@ DEFINE_CONSTRUCTOR() { // ( cipherName, hashName [, prngObject] [, PKCSVersion] 
 	JL_CHK( JsvalToString(cx, &argv[1], &hashName) );
 	int hashIndex;
 	hashIndex = find_hash(hashName);
-	JL_S_ASSERT_1( hashIndex != -1, "hash %s is not available.", hashName );
+	JL_S_ASSERT( hashIndex != -1, "hash %s is not available.", hashName );
 	pv->hashDescriptor = &hash_descriptor[hashIndex];
 
 	if ( argc >= 3 ) {
