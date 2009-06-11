@@ -106,8 +106,7 @@ ALWAYS_INLINE void SetHostPrivate( JSContext *cx, HostPrivate *hostPrivate ) {
 #define J__ERRMSG_NEED_CONSTRUCTION "Construction is needed for this object."
 #define J__ERRMSG_MISSING_ARGUMENT "This function require more arguments."
 #define J__ERRMSG_TOO_MANY_ARGUMENTS "You provide too many argument to the function."
-#define J__ERRMSG_MISSING_N_ARGUMENT "This function require %d more argument(s)."
-#define J__ERRMSG_INVALID_ARGUMENT "Invalid argument."
+#define J__ERRMSG_INVALID_ARGUMENT_COUNT "Invalid argument count (%d)."
 #define J__ERRMSG_INVALID_CLASS "Wrong object type."
 #define J__ERRMSG_STRING_CONVERSION_FAILED "Unable to convert to string."
 #define J__ERRMSG_INT_CONVERSION_FAILED "Unable to convert to integer."
@@ -160,40 +159,67 @@ ALWAYS_INLINE void SetHostPrivate( JSContext *cx, HostPrivate *hostPrivate ) {
 // same for fast native
 #define JL_FRVAL (&JS_RVAL(cx, vp))
 
+#define JL_MACRO_BEGIN do {
+#define JL_MACRO_END } while(0)
 
 #define JL_BAD bad:return(JS_FALSE)
 
 // check: used to forward an error.
-#define JL_CHK( status ) do { \
-	if (unlikely( !(status) )) { \
-		goto bad; \
-	} \
-} while(0)
+#define JL_CHK( status ) \
+JL_MACRO_BEGIN \
+	if (unlikely( !(status) )) { goto bad; } \
+JL_MACRO_END
+
+#define JL_SCHK( ... ) \
+JL_MACRO_BEGIN \
+	if (unlikely( !_unsafeMode )) JL_CHK( __VA_ARGS__ ) \
+JL_MACRO_END
+
 
 // check with message: if status is false, a js exception is rised if it is not already pending.
 // (Support for variadic macros was introduced in Visual C++ 2005)
-#define JL_CHKM( status, errorMessage, ... ) do { \
+#define JL_CHKM( status, errorMessage, ... ) \
+JL_MACRO_BEGIN \
 	if (unlikely( !(status) )) { \
 		if ( !JS_IsExceptionPending(cx) ) \
 			JS_ReportError(cx, (errorMessage IFDEBUG(" (@" J__CODE_LOCATION ")")), __VA_ARGS__); \
 		goto bad; \
 	} \
-} while(0)
+JL_MACRO_END
+
+#define JL_SCHKM( ... ) \
+JL_MACRO_BEGIN \
+	if (unlikely( !_unsafeMode )) JL_CHKM( __VA_ARGS__ ) \
+JL_MACRO_END
+
 
 // check and branch to a errorLabel label on error.
-#define JL_CHKB( status, errorLabel ) do { \
+#define JL_CHKB( status, errorLabel ) \
+JL_MACRO_BEGIN \
 	if (unlikely( !(status) )) { goto errorLabel; } \
-} while(0)
+JL_MACRO_END
+
+#define JL_SCHKB( ... ) \
+JL_MACRO_BEGIN \
+	if (unlikely( !_unsafeMode )) JL_CHKB( __VA_ARGS__ ) \
+JL_MACRO_END
 
 
 // check and branch to a errorLabel label on error AND report an error if no exception is pending.
-#define JL_CHKBM( status, errorLabel, errorMessage, ... ) do { \
+#define JL_CHKBM( status, errorLabel, errorMessage, ... ) \
+JL_MACRO_BEGIN \
 	if (unlikely( !(status) )) { \
 		if ( !JS_IsExceptionPending(cx) ) \
 			JS_ReportError(cx, (errorMessage IFDEBUG(" (@" J__CODE_LOCATION ")")), __VA_ARGS__); \
 		goto errorLabel; \
 	} \
-} while(0)
+JL_MACRO_END
+
+#define JL_SCHKBM( ... ) \
+JL_MACRO_BEGIN \
+	if (unlikely( !_unsafeMode )) JL_CHKBM( __VA_ARGS__ ) \
+JL_MACRO_END
+
 
 #define JL_SAFE_BEGIN if (unlikely( !_unsafeMode )) {
 #define JL_SAFE_END }
@@ -203,34 +229,49 @@ ALWAYS_INLINE void SetHostPrivate( JSContext *cx, HostPrivate *hostPrivate ) {
 
 
 #define JL_SAFE(code) \
-	do { if (unlikely( !_unsafeMode )) {code;} } while(0)
+JL_MACRO_BEGIN \
+	if (unlikely( !_unsafeMode )) {code;} \
+JL_MACRO_END
 
 #define JL_UNSAFE(code) \
-	do { if (likely( _unsafeMode )) {code;} } while(0)
+JL_MACRO_BEGIN \
+	if (likely( _unsafeMode )) {code;} \
+JL_MACRO_END
 
 
 // Reports warnings only in non-unsafeMode.
 #define JL_REPORT_WARNING(errorMessage, ... ) \
-	do { if (unlikely( !_unsafeMode )) JS_ReportWarning( cx, (errorMessage IFDEBUG(" (@" J__CODE_LOCATION ")")), __VA_ARGS__ ); } while(0)
+JL_MACRO_BEGIN \
+	if (unlikely( !_unsafeMode )) JS_ReportWarning( cx, (errorMessage IFDEBUG(" (@" J__CODE_LOCATION ")")), __VA_ARGS__ ); \
+JL_MACRO_END
+
 
 // Reports a fatal errors, script must stop as soon as possible.
 #define JL_REPORT_ERROR(errorMessage, ...) \
-	do { JS_ReportError( cx, (errorMessage IFDEBUG(" (@" J__CODE_LOCATION ")")), __VA_ARGS__ ); goto bad; } while(0)
+JL_MACRO_BEGIN \
+	JS_ReportError( cx, (errorMessage IFDEBUG(" (@" J__CODE_LOCATION ")")), __VA_ARGS__ ); goto bad; \
+JL_MACRO_END
+
 
 
 // JL_S_ stands for (J)s(L)ibs _ (S)afemode _ and mean that these macros will only be meaningful when _unsafeMode is false (see jslibs unsafemode).
 
 #define JL_S_ASSERT( condition, errorMessage, ... ) \
-	do { if (unlikely( !_unsafeMode )) if (unlikely( !(condition) )) { JS_ReportError( cx, errorMessage IFDEBUG(" (" #condition " @" J__CODE_LOCATION ")"), __VA_ARGS__ ); goto bad; } } while(0)
+JL_MACRO_BEGIN \
+	if (unlikely( !_unsafeMode )) if (unlikely( !(condition) )) { JS_ReportError( cx, errorMessage IFDEBUG(" (" #condition " @" J__CODE_LOCATION ")"), __VA_ARGS__ ); goto bad; } \
+JL_MACRO_END
+
+#define JL_S_ASSERT_ARG(count) \
+	JL_S_ASSERT( argc != (count), J__ERRMSG_INVALID_ARGUMENT_COUNT " Need %d.", argc, count )
 
 #define JL_S_ASSERT_ARG_MIN(minCount) \
-	JL_S_ASSERT( argc >= (minCount), J__ERRMSG_MISSING_N_ARGUMENT, (minCount)-argc )
+	JL_S_ASSERT( argc >= (minCount), J__ERRMSG_INVALID_ARGUMENT_COUNT " Need at least %d.", argc, minCount )
 
 #define JL_S_ASSERT_ARG_MAX(maxCount) \
-	JL_S_ASSERT( argc <= (maxCount), J__ERRMSG_TOO_MANY_ARGUMENTS )
+	JL_S_ASSERT( argc <= (maxCount), J__ERRMSG_INVALID_ARGUMENT_COUNT " Need no more than %d.", argc, maxCount )
 
 #define JL_S_ASSERT_ARG_RANGE(minCount, maxCount) \
-	JL_S_ASSERT( argc >= (minCount) && argc <= (maxCount), "Invalid argument count." )
+	JL_S_ASSERT( argc >= (minCount) && argc <= (maxCount), J__ERRMSG_INVALID_ARGUMENT_COUNT " Need between %d and %d.", argc, minCount, maxCount )
 
 
 #define JL_S_ASSERT_DEFINED(value) \
