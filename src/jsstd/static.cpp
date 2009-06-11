@@ -66,7 +66,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Expand ) {
 
-	JL_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_ARG_RANGE(1, 2);
 
 	const char *srcBegin;
 	size_t srcLen;
@@ -226,7 +226,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Seal ) {
 
-	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_ARG_RANGE(1, 2);
 	JL_S_ASSERT_OBJECT( JL_FARG(1) );
 	//JL_CHK( JS_ValueToObject(cx, JL_ARG(1), &obj) );
 	JSBool deep;
@@ -260,7 +260,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Clear ) {
 
-	JL_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_ARG(1);
 	JL_S_ASSERT_OBJECT( JL_FARG(1) );
 	JS_ClearScope(cx, JSVAL_TO_OBJECT( JL_FARG(1) ));
 	*JL_FRVAL = JSVAL_VOID;
@@ -325,7 +325,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( SetScope ) {
 
-	JL_S_ASSERT_ARG_MIN( 2 );
+	JL_S_ASSERT_ARG(2);
 	JSObject *o, *p;
 	JL_CHK( JS_ValueToObject(cx, JL_FARG(1), &o) ); // o = JSVAL_TO_OBJECT(JL_FARG(1));
 	JL_CHK( JS_ValueToObject(cx, JL_FARG(2), &p) ); // p = JSVAL_TO_OBJECT(JL_FARG(2));
@@ -419,7 +419,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( SetPropertyEnumerate ) {
 
-	JL_S_ASSERT_ARG_MIN( 3 );
+	JL_S_ASSERT_ARG(3);
 	JL_S_ASSERT_OBJECT( JL_FARG(1) );
 
 	JSObject *object;
@@ -478,7 +478,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( SetPropertyReadonly ) {
 
-	JL_S_ASSERT_ARG_MIN( 3 );
+	JL_S_ASSERT_ARG(3);
 	JL_S_ASSERT_OBJECT( JL_FARG(1) );
 
 	JSObject *object;
@@ -554,7 +554,7 @@ JSBool ObjectIdGCCallback(JSContext *cx, JSGCStatus status) {
 
 DEFINE_FUNCTION_FAST( ObjectToId ) {
 
-	JL_S_ASSERT_ARG_RANGE( 1, 1 );
+	JL_S_ASSERT_ARG(1);
 	JL_S_ASSERT_OBJECT( JL_FARG(1) );
 	JSObject *obj;
 	obj = JSVAL_TO_OBJECT( JL_FARG(1) );
@@ -614,7 +614,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( IdToObject ) {
 
-	JL_S_ASSERT_ARG_RANGE( 1, 1 );
+	JL_S_ASSERT_ARG(1);
 	JL_S_ASSERT_NUMBER( JL_FARG(1) );
 
 	unsigned int id;
@@ -646,7 +646,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( IsBoolean ) {
 
-	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_ARG(1);
 	*JL_FRVAL = JSVAL_IS_BOOLEAN(JL_FARG(1)) ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;
 	JL_BAD;
@@ -661,7 +661,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( IsPrimitive ) {
 
-	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_ARG(1);
 	*JL_FRVAL = JSVAL_IS_PRIMITIVE(JL_FARG(1)) ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;
 	JL_BAD;
@@ -676,7 +676,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( IsFunction ) {
 
-	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_ARG(1);
 	*JL_FRVAL = VALUE_IS_FUNCTION(cx, JL_FARG(1)) ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;
 	JL_BAD;
@@ -695,7 +695,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( IsVoid ) {
 
-	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_ARG(1);
 	*JL_FRVAL = JSVAL_IS_VOID(JL_FARG(1)) ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;
 	JL_BAD;
@@ -713,7 +713,7 @@ $TOC_MEMBER $INAME
 #ifdef JS_HAS_XDR
 DEFINE_FUNCTION_FAST( XdrEncode ) {
 
-	JL_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_ARG(1);
 	JSXDRState *xdr;
 	xdr = JS_XDRNewMem(cx, JSXDR_ENCODE);
 	JL_CHK( xdr );
@@ -749,7 +749,7 @@ $TOC_MEMBER $INAME
 #ifdef JS_HAS_XDR
 DEFINE_FUNCTION_FAST( XdrDecode ) {
 
-	JL_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_ARG(1);
 
 	JSXDRState *xdr;
 	xdr = JS_XDRNewMem(cx, JSXDR_DECODE);
@@ -776,7 +776,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Warning ) {
 
-	JL_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_ARG(1);
 	const char *message;
 	JL_CHK( JsvalToString(cx, &JL_FARG(1), &message) );
 	JL_CHK( JS_ReportWarning(cx, "%s", message) );
@@ -802,7 +802,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Assert ) {
 
-	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_ARG_RANGE(1,2);
 	bool assert;
 	JL_CHK( JsvalToBool(cx, JL_ARG(1), &assert) );
 	if ( !assert ) {
@@ -873,7 +873,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Sleep ) {
 
-	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_ARG(1);
 	unsigned int time;
 	JL_CHK( JsvalToUInt(cx, JL_FARG(1), &time) );
 	SleepMilliseconds(time);
@@ -918,7 +918,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( StringRepeat ) {
 
-	JL_S_ASSERT_ARG_MIN(2);
+	JL_S_ASSERT_ARG(2);
 
 	unsigned int count;
 	JL_CHK( JsvalToUInt(cx, JL_FARG(2), &count) );
@@ -1027,7 +1027,7 @@ $TOC_MEMBER $INAME
 // function copied from mozilla/js/src/js.c
 DEFINE_FUNCTION_FAST( Exec ) {
 
-	JL_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_ARG_RANGE(1, 2);
 
 	bool useAndSaveCompiledScripts;
 	useAndSaveCompiledScripts = !JL_FARG_ISDEF(2) || JL_FARG(2) == JSVAL_TRUE;
@@ -1137,7 +1137,7 @@ DEFINE_FUNCTION_FAST( SandboxEval ) {
 
 	JSContext *scx = NULL;
 
-	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_ARG_RANGE(1, 3);
 
 	scx = JS_NewContext(JS_GetRuntime(cx), 8192L); // see host/host.cpp
 	JL_CHK( scx );
@@ -1274,7 +1274,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( IsStatementValid ) {
 
-	JL_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_ARG(1);
 	const char *buffer;
 	size_t length;
 	JL_CHK( JsvalToStringAndLength(cx, &JL_ARG(1), &buffer, &length) );

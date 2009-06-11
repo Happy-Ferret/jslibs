@@ -630,7 +630,7 @@ DEFINE_FUNCTION_FAST( Write ) {
 	BufferPrivate *pv;
 	pv = (BufferPrivate*)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE( pv );
-	JL_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_ARG_RANGE(1, 2);
 
 	if ( JsvalIsClass(JL_FARG(1), _class ) )
 		return AddBuffer(cx, JL_FOBJ, JSVAL_TO_OBJECT( JL_FARG(1) ));
@@ -672,7 +672,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION_FAST( Match ) {
 
 	JL_S_ASSERT_CLASS(JL_FOBJ, _class);
-	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_ARG_RANGE(1, 2);
 
 	const char *str;
 	size_t len;
@@ -757,7 +757,7 @@ DEFINE_FUNCTION( Skip ) { // Skip( amount )
 	BufferPrivate *pv;
 	pv = (BufferPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
-	JL_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_ARG(1);
 	unsigned int amount;
 	JL_CHK( JsvalToUInt(cx, JL_ARG(1), &amount) );
 	JL_S_ASSERT( amount >= 0, "Invalid amount" );
@@ -779,7 +779,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( ReadUntil ) {
 
 	JL_S_ASSERT_THIS_CLASS();
-	JL_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_ARG_RANGE(1, 2);
 	const char *boundary;
 	size_t boundaryLength;
 
@@ -814,7 +814,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION_FAST( IndexOf ) {
 
 	JL_S_ASSERT_CLASS(JL_FOBJ, _class);
-	JL_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_ARG(1);
 	const char *boundary;
 	size_t boundaryLength;
 	JL_CHK( JsvalToStringAndLength(cx, &JL_FARG(1), &boundary, &boundaryLength) ); // warning: GC on the returned buffer !
@@ -841,8 +841,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION_FAST( Unread ) {
 
 	JL_S_ASSERT_CLASS(JL_FOBJ, _class);
-	JL_S_ASSERT_ARG_MIN( 1 );
-	JL_S_ASSERT_ARG_MAX( 1 ); // discourages one to use Unread like Write
+	JL_S_ASSERT_ARG(1);
 	JL_CHK( UnReadChunk(cx, JL_FOBJ, JL_FARG(1)) );
 	*JL_FRVAL = JL_FARG(1);
 	return JS_TRUE;

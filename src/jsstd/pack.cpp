@@ -123,7 +123,7 @@ DEFINE_CONSTRUCTOR() {
 
 	JL_S_ASSERT_CONSTRUCTING();
 	JL_S_ASSERT_THIS_CLASS();
-	JL_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_ARG(1);
 	JL_S_ASSERT_OBJECT( JL_ARG(1) );
 	JL_S_ASSERT_CLASS( JSVAL_TO_OBJECT( JL_ARG(1) ), classBuffer );
 	JL_CHK( JS_SetReservedSlot(cx, obj, SLOT_PACK_BUFFEROBJECT, JL_ARG(1)) );
@@ -143,7 +143,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( ReadInt ) {
 
 	JL_S_ASSERT_THIS_CLASS();
-	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_ARG_RANGE(1, 3);
 
 	jsval bufferVal;
 	JL_CHK( JS_GetReservedSlot(cx, obj, SLOT_PACK_BUFFEROBJECT, &bufferVal) );
@@ -252,7 +252,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( WriteInt ) { // incompatible with NIStreamRead
 
 	JL_S_ASSERT_THIS_CLASS();
-	JL_S_ASSERT_ARG_MIN(2);
+	JL_S_ASSERT_ARG_RANGE(1, 3);
 
 	jsval bufferVal;
 	JL_CHK( JS_GetReservedSlot(cx, obj, SLOT_PACK_BUFFEROBJECT, &bufferVal) );
@@ -330,7 +330,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( ReadReal ) {
 
 	JL_S_ASSERT_THIS_CLASS();
-	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_ARG(1);
 
 	jsval bufferVal;
 	JL_CHK( JS_GetReservedSlot(cx, obj, SLOT_PACK_BUFFEROBJECT, &bufferVal) );
