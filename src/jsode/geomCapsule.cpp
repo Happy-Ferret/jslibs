@@ -30,13 +30,14 @@ DEFINE_FINALIZE() {
 
 /**doc
 $TOC_MEMBER $INAME
- $INAME( space )
+ $INAME( [ space ] )
   TBD
 **/
 DEFINE_CONSTRUCTOR() {
 
 	JL_S_ASSERT_CONSTRUCTING();
 	JL_S_ASSERT_THIS_CLASS();
+	JL_S_ASSERT_ARG_RANGE(0, 1);
 	ode::dSpaceID space;
 	if ( JL_ARG_ISDEF(1) ) // place it in a space ?
 		JL_CHK( JsvalToSpaceID(cx, JL_ARG(1), &space) );
@@ -49,6 +50,7 @@ DEFINE_CONSTRUCTOR() {
 	return JS_TRUE;
 	JL_BAD;
 }
+
 
 /**doc
 === Properties ===
@@ -118,12 +120,11 @@ DEFINE_PROPERTY( lengthGetter ) {
 CONFIGURE_CLASS
 
 	REVISION(JL_SvnRevToInt("$Revision$"))
+	HAS_PROTOTYPE( prototypeGeom )
+	HAS_CONSTRUCTOR
 	HAS_FINALIZE
 	HAS_PRIVATE
 	HAS_RESERVED_SLOTS(2)
-
-	HAS_PROTOTYPE( prototypeGeom )
-	HAS_CONSTRUCTOR
 
 	BEGIN_PROPERTY_SPEC
 		PROPERTY( radius )

@@ -127,8 +127,8 @@ for ( var i = 0; i < 100; i++ ) {
 
 //boxes.push(testBox);
 
-//var cursor = new GeomTrimesh(world.space, cubeTrimesh);
-var cursor = new GeomSphere(world.space);
+var cursor = new GeomTrimesh(cubeTrimesh, world.space);
+//var cursor = new GeomSphere(world.space);
 cursor.radius = 2;
 cursor.body = new Body(world);
 cursor.body.position = [10,10,cursor.radius];

@@ -19,9 +19,9 @@
 
 /**doc
 $CLASS_HEADER Geom
-$SVN_REVISION $Revision$
+$SVN_REVISION $Revision: 2614 $
 **/
-BEGIN_CLASS( GeomSphere )
+BEGIN_CLASS( GeomCylinder )
 
 DEFINE_FINALIZE() {
 
@@ -43,13 +43,14 @@ DEFINE_CONSTRUCTOR() {
 		JL_CHK( JsvalToSpaceID(cx, JL_ARG(1), &space) );
 	else
 		space = 0;
-	ode::dGeomID geomId = ode::dCreateSphere(space, 1.0f); // default radius is 1
+	ode::dGeomID geomId = ode::dCreateCylinder(space, 1, 1); // default radius and length are 1
 	JL_SetPrivate(cx, obj, geomId);
 	JL_CHK( SetupReadMatrix(cx, obj) );
 	ode::dGeomSetData(geomId, obj); // 'obj' do not need to be rooted because Goem's data is reset to NULL when 'obj' is finalized.
 	return JS_TRUE;
 	JL_BAD;
 }
+
 
 /**doc
 === Properties ===
@@ -58,15 +59,18 @@ DEFINE_CONSTRUCTOR() {
 /**doc
 $TOC_MEMBER $INAME
  $REAL $INAME
+  TBD
 **/
 DEFINE_PROPERTY( radiusSetter ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( geom );
 	JL_S_ASSERT_NUMBER( *vp );
-	jsdouble radius;
-	JS_ValueToNumber(cx, *vp, &radius);
-	ode::dGeomSphereSetRadius(geom, radius);
+	ode::dReal radius, length;
+	ode::dGeomCylinderGetParams(geom, &radius, &length);
+	jsdouble value;
+	JS_ValueToNumber(cx, *vp, &value);
+	ode::dGeomCylinderSetParams(geom, value, length);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -75,7 +79,39 @@ DEFINE_PROPERTY( radiusGetter ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( geom );
-	JS_NewDoubleValue(cx, ode::dGeomSphereGetRadius(geom), vp); // see JS_NewNumberValue and JS_NewDouble
+	ode::dReal radius, length;
+	ode::dGeomCylinderGetParams(geom, &radius, &length);
+	JS_NewDoubleValue(cx, radius, vp); // see JS_NewNumberValue and JS_NewDouble
+	return JS_TRUE;
+	JL_BAD;
+}
+
+/**doc
+$TOC_MEMBER $INAME
+ $REAL $INAME
+  Is the length of the Cylinder.
+**/
+DEFINE_PROPERTY( lengthSetter ) {
+
+	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( geom );
+	JL_S_ASSERT_NUMBER( *vp );
+	ode::dReal radius, length;
+	ode::dGeomCylinderGetParams(geom, &radius, &length);
+	jsdouble value;
+	JS_ValueToNumber(cx, *vp, &value);
+	ode::dGeomCylinderSetParams(geom, radius, value);
+	return JS_TRUE;
+	JL_BAD;
+}
+
+DEFINE_PROPERTY( lengthGetter ) {
+
+	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( geom );
+	ode::dReal radius, length;
+	ode::dGeomCylinderGetParams(geom, &radius, &length);
+	JS_NewDoubleValue(cx, length, vp); // see JS_NewNumberValue and JS_NewDouble
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -83,7 +119,7 @@ DEFINE_PROPERTY( radiusGetter ) {
 
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision$"))
+	REVISION(JL_SvnRevToInt("$Revision: 2614 $"))
 	HAS_PROTOTYPE( prototypeGeom )
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE
@@ -92,6 +128,7 @@ CONFIGURE_CLASS
 
 	BEGIN_PROPERTY_SPEC
 		PROPERTY( radius )
+		PROPERTY( length )
 	END_PROPERTY_SPEC
 
 END_CLASS

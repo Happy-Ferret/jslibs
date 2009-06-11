@@ -190,6 +190,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\geomCylinder.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\geomPlane.cpp"
 				>
 			</File>

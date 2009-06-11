@@ -92,6 +92,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	INIT_CLASS( GeomBox );
 	INIT_CLASS( GeomPlane );
 	INIT_CLASS( GeomCapsule );
+	INIT_CLASS( GeomCylinder );
 	INIT_CLASS( GeomRay );
 	INIT_CLASS( GeomTrimesh );
 	INIT_CLASS( World );

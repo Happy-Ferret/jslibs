@@ -30,13 +30,14 @@ DEFINE_FINALIZE() {
 
 /**doc
 $TOC_MEMBER $INAME
- $INAME( space )
+ $INAME( [ space ] )
   TBD
 **/
 DEFINE_CONSTRUCTOR() {
 
 	JL_S_ASSERT_CONSTRUCTING();
 	JL_S_ASSERT_THIS_CLASS();
+	JL_S_ASSERT_ARG_RANGE(0, 1);
 	ode::dSpaceID space;
 	if ( JL_ARG_ISDEF(1) ) // place it in a space ?
 		JL_CHK( JsvalToSpaceID(cx, JL_ARG(1), &space) );
@@ -49,6 +50,11 @@ DEFINE_CONSTRUCTOR() {
 	return JS_TRUE;
 	JL_BAD;
 }
+
+
+/**doc
+=== Properties ===
+**/
 
 /**doc
 $TOC_MEMBER $INAME
@@ -143,20 +149,108 @@ DEFINE_PROPERTY( directionGetter ) {
 }
 
 
+/**doc
+$TOC_MEMBER $INAME
+ $REAL $INAME
+**/
+DEFINE_PROPERTY( firstContactSetter ) {
+
+	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( geom );
+	JL_S_ASSERT_INT( *vp );
+	int firstContact, backfaceCull;
+	ode::dGeomRayGetParams(geom, &firstContact, &backfaceCull);
+	JL_CHK( JsvalToInt(cx, *vp, &firstContact) );
+	ode::dGeomRaySetParams(geom, firstContact, backfaceCull);
+	return JS_TRUE;
+	JL_BAD;
+}
+
+DEFINE_PROPERTY( firstContactGetter ) {
+
+	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( geom );
+	int firstContact, backfaceCull;
+	ode::dGeomRayGetParams(geom, &firstContact, &backfaceCull);
+	JL_CHK( IntToJsval(cx, firstContact, vp) );
+	return JS_TRUE;
+	JL_BAD;
+}
+
+/**doc
+$TOC_MEMBER $INAME
+ $REAL $INAME
+**/
+DEFINE_PROPERTY( backfaceCullSetter ) {
+
+	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( geom );
+	JL_S_ASSERT_INT( *vp );
+	int firstContact, backfaceCull;
+	ode::dGeomRayGetParams(geom, &firstContact, &backfaceCull);
+	JL_CHK( JsvalToInt(cx, *vp, &backfaceCull) );
+	ode::dGeomRaySetParams(geom, firstContact, backfaceCull);
+	return JS_TRUE;
+	JL_BAD;
+}
+
+DEFINE_PROPERTY( backfaceCullGetter ) {
+
+	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( geom );
+	int firstContact, backfaceCull;
+	ode::dGeomRayGetParams(geom, &firstContact, &backfaceCull);
+	JL_CHK( IntToJsval(cx, backfaceCull, vp) );
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $REAL $INAME
+  TBD
+**/
+DEFINE_PROPERTY( closestHitSetter ) {
+
+	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( geom );
+	JL_S_ASSERT_NUMBER( *vp );
+	int closestHit;
+	JL_CHK( JsvalToInt(cx, *vp, &closestHit) );
+	ode::dGeomRaySetClosestHit(geom, closestHit);
+	return JS_TRUE;
+	JL_BAD;
+}
+
+DEFINE_PROPERTY( closestHitGetter ) {
+
+	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( geom );
+	int closestHit;
+	closestHit = ode::dGeomRayGetClosestHit(geom);
+	JL_CHK( IntToJsval(cx, closestHit, vp) );
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
 CONFIGURE_CLASS
 
 	REVISION(JL_SvnRevToInt("$Revision$"))
+	HAS_PROTOTYPE( prototypeGeom )
+	HAS_CONSTRUCTOR
 	HAS_FINALIZE
 	HAS_PRIVATE
 	HAS_RESERVED_SLOTS(2)
-
-	HAS_PROTOTYPE( prototypeGeom )
-	HAS_CONSTRUCTOR
 
 	BEGIN_PROPERTY_SPEC
 		PROPERTY( length )
 		PROPERTY( start )
 		PROPERTY( direction )
+		PROPERTY( firstContact )
+		PROPERTY( backfaceCull )
+		PROPERTY( closestHit )
 	END_PROPERTY_SPEC
 
 END_CLASS

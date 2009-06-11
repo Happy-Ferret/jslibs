@@ -87,6 +87,9 @@ JSBool ReconstructGeom(JSContext *cx, ode::dGeomID geomId, JSObject **obj) {
 		case ode::dCapsuleClass:
 			*obj = JS_NewObject(cx, classGeomCapsule, NULL, NULL);
 			break;
+		case ode::dCylinderClass:
+			*obj = JS_NewObject(cx, classGeomCylinder, NULL, NULL);
+			break;
 		case ode::dPlaneClass:
 			*obj = JS_NewObject(cx, classGeomPlane, NULL, NULL);
 			break;
@@ -137,6 +140,44 @@ DEFINE_FUNCTION( Destroy ) {
 	JL_BAD;
 }
 
+
+/**doc
+$TOC_MEMBER $INAME
+ $REAL $INAME( $TYPE vec3 point )
+**/
+DEFINE_FUNCTION_FAST( PointDepth ) {
+	
+	ode::dGeomID geomId = (ode::dGeomID)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE( geomId );
+	JL_S_ASSERT_ARRAY( JL_FARG(1) );
+	float depth, point[3];
+	size_t len;
+	JL_CHK( JsvalToFloatVector(cx, *vp, point, 3, &len) );
+	JL_S_ASSERT( len == 3, "Invalid array size." );
+	
+	switch( ode::dGeomGetClass(geomId) ) {
+		case ode::dBoxClass:
+			depth = ode::dGeomBoxPointDepth(geomId, point[0], point[1], point[2]);
+			break;
+		case ode::dCapsuleClass:
+			depth = ode::dGeomCapsulePointDepth(geomId, point[0], point[1], point[2]);
+			break;
+		case ode::dPlaneClass:
+			depth = ode::dGeomPlanePointDepth(geomId, point[0], point[1], point[2]);
+			break;
+		case ode::dSphereClass:
+			depth = ode::dGeomSpherePointDepth(geomId, point[0], point[1], point[2]);
+			break;
+		default:
+			JL_REPORT_ERROR("Not support for this geometry.");
+	}
+
+	JL_CHK( FloatToJsval(cx, depth, JL_FRVAL) );
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
 /**doc
 === Properties ===
 **/
@@ -170,6 +211,34 @@ DEFINE_PROPERTY( enableGetter ) {
 	return JS_TRUE;
 	JL_BAD;
 }
+
+/**doc
+$TOC_MEMBER $INAME
+ $BOOL *temporalCoherence*
+  Is the status of the geometry.
+**/
+
+DEFINE_PROPERTY( temporalCoherenceSetter ) {
+
+	ode::dGeomID geomId = (ode::dGeomID)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(geomId);
+	bool enableState;
+	JL_CHK( JsvalToBool(cx, *vp, &enableState) );
+	ode::dGeomTriMeshEnableTC(geomId, ode::dGeomGetClass(geomId), enableState ? 1 : 0 );
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+DEFINE_PROPERTY( temporalCoherenceGetter ) {
+
+	ode::dGeomID geomId = (ode::dGeomID)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( geomId );
+	*vp = ode::dGeomTriMeshIsTCEnabled(geomId, ode::dGeomGetClass(geomId)) == 1 ? JSVAL_TRUE : JSVAL_FALSE;
+	return JS_TRUE;
+	JL_BAD;
+}
+
 
 /**doc
 $TOC_MEMBER $INAME
@@ -276,7 +345,6 @@ DEFINE_PROPERTY( tansformation ) {
 		NIMatrix44Get matrixGet = Matrix44GetInterface(cx, srcObj);
 		JL_S_ASSERT( matrixGet != NULL, "Invalid matrix interface." );
 		matrixGet(cx, srcObj, &m);
-
 /*
 		NIMatrix44Read ReadMatrix;
 		JL_CHK( GetMatrix44ReadInterface(cx, srcObj, &ReadMatrix) );
@@ -382,6 +450,7 @@ CONFIGURE_CLASS
 
 	BEGIN_FUNCTION_SPEC
 		FUNCTION( Destroy )
+		FUNCTION_FAST( PointDepth )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
@@ -390,6 +459,7 @@ CONFIGURE_CLASS
 		PROPERTY_WRITE( tansformation )
 		PROPERTY_WRITE( offset )
 		PROPERTY( enable )
+		PROPERTY( temporalCoherence )
 		PROPERTY( position )
 //		PROPERTY( offsetPosition )
 	END_PROPERTY_SPEC

@@ -133,18 +133,16 @@ DEFINE_PROPERTY( anchor2 ) { // read only
 CONFIGURE_CLASS
 
 	REVISION(JL_SvnRevToInt("$Revision$"))
+	HAS_PROTOTYPE( prototypeJoint )
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE
+	HAS_PRIVATE
+	HAS_RESERVED_SLOTS(2) // body1, body2
 
 	BEGIN_PROPERTY_SPEC
 		PROPERTY( anchor )
 		PROPERTY( anchor2 )
 //		PROPERTY_READ( anchor2 )
 	END_PROPERTY_SPEC
-
-	HAS_PROTOTYPE( prototypeJoint )
-	HAS_PRIVATE
-
-	HAS_RESERVED_SLOTS(2) // body1, body2
 
 END_CLASS

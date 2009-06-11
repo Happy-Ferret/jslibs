@@ -16,6 +16,7 @@ extern bool _odeFinalization;
 
 #define SLOT_GEOM_SURFACEPARAMETER 0
 #define SLOT_GEOM_IMPACT_FUNCTION 1
+#define SLOT_TRIMESH_TRIMESH 2
 
 DECLARE_CLASS( SurfaceParameters )
 
@@ -24,6 +25,7 @@ DECLARE_CLASS( GeomSphere )
 DECLARE_CLASS( GeomBox )
 DECLARE_CLASS( GeomPlane )
 DECLARE_CLASS( GeomCapsule )
+DECLARE_CLASS( GeomCylinder )
 DECLARE_CLASS( GeomRay )
 DECLARE_CLASS( GeomTrimesh )
 
