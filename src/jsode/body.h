@@ -34,6 +34,7 @@ ALWAYS_INLINE JSBool BodyToJsval( JSContext *cx, ode::dBodyID bodyId, jsval *val
 	JSObject *obj = (JSObject*)ode::dBodyGetData(bodyId);
 	if (unlikely( !obj ))
 		JL_CHK( ReconstructBody(cx, bodyId, &obj) );
+	JL_S_ASSERT_CLASS(obj, classBody);
 	*val = OBJECT_TO_JSVAL( obj );
 	return JS_TRUE;
 	JL_BAD;

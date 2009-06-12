@@ -96,67 +96,36 @@ static void nearCallback(void *data, ode::dGeomID geom1, ode::dGeomID geom2) {
 
 	if ( !JSVAL_IS_VOID( func1 ) || !JSVAL_IS_VOID( func2 ) ) {
 
-	/*
-		ode::dVector3 *pos = &contact[i].geom.pos;
-		ode::dVector3 vel;
-		if ( !JSVAL_IS_VOID( func1 ) || !JSVAL_IS_VOID( func2 ) ) { // compute impact velocity only if needed.
+		ode::dVector3 *pos = &contact.geom.pos;
 
-			ode::dVector3 vel2;
-			float px = (*pos)[0];
-			float py = (*pos)[1];
-			float pz = (*pos)[2];
+		float px = (*pos)[0];
+		float py = (*pos)[1];
+		float pz = (*pos)[2];
 
-			if ( body1 != NULL ) {
+		Vector3 vel, tmp, normal;
 
-				ode::dBodyGetPointVel(body1, px, py, pz, vel); // dReal px, dReal py, dReal pz, dVector3 result
-			} else { // static thing
-
-				vel[0] = 0;
-				vel[1] = 0; 
-				vel[2] = 0;
-			}
-
-			if ( body2 != NULL ) {
-
-				ode::dBodyGetPointVel(body2, px, py, pz, vel2); // dReal px, dReal py, dReal pz, dVector3 result
-			} else { // static thing
-
-				vel2[0] = 0; 
-				vel2[1] = 0; 
-				vel2[2] = 0;
-			}
-
-			vel[0] += vel2[0];
-			vel[1] += vel2[1];
-			vel[2] += vel2[2];
-			jsval velVal;
-	*/
-
-
-
-	//			__count++;
-	//			if ( __count % 100 == 0 )
-	//				printf("%d\n", __count);
-
-	//			JL_CHK( FloatVectorToJsval(cx, vel, 3, &velVal) ); // (TBD)! GC protect
-
-	//			jsval posVal;
-	//			JL_CHK( FloatVectorToJsval(cx, contact.geom.pos, 3, &posVal) ); // (TBD)! GC protect
-
-// (TBD)? project velVal against contact.geom.normal
-
-	//			float f = sqrtf( vel[0] * vel[0] + vel[1] * vel[1] + vel[2] * vel[2] );
-	//			JL_CHK( FloatToJsval(cx, f, &force) );
+		if ( body2 != NULL )
+			ode::dBodyGetPointVel(body2, px, py, pz, vel.raw);
+		else
+			Vector3Identity(&vel);
+		if ( body1 != NULL )
+			ode::dBodyGetPointVel(body1, px, py, pz, tmp.raw);
+		else
+			Vector3Identity(&tmp);
+		Vector3Sub(&vel, &tmp);
+		Vector3SetFromPtr(&normal, contact.geom.normal);
+		float impactVelocity = Vector3Dot(&vel, &normal);
 
 		JSTempValueRooter tvr;
 		jsval argv[9];
 		JS_PUSH_TEMP_ROOT(cx, COUNTOF(argv), argv, &tvr);
 
 		argv[0] = JSVAL_NULL; // rval
-		JL_CHKB( FloatToJsval(cx, contact.geom.depth, &argv[3]), bad_pop_root );
-		JL_CHKB( FloatToJsval(cx, contact.geom.pos[0], &argv[4]), bad_pop_root );
-		JL_CHKB( FloatToJsval(cx, contact.geom.pos[1], &argv[5]), bad_pop_root );
-		JL_CHKB( FloatToJsval(cx, contact.geom.pos[2], &argv[6]), bad_pop_root );
+//		JL_CHKB( FloatToJsval(cx, contact.geom.depth, &argv[3]), bad_poproot );
+		JL_CHKB( FloatToJsval(cx, impactVelocity, &argv[3]), bad_poproot );
+		JL_CHKB( FloatToJsval(cx, contact.geom.pos[0], &argv[4]), bad_poproot );
+		JL_CHKB( FloatToJsval(cx, contact.geom.pos[1], &argv[5]), bad_poproot );
+		JL_CHKB( FloatToJsval(cx, contact.geom.pos[2], &argv[6]), bad_poproot );
 
 		//contact.geom.side1; // TriIndex
 		//contact.geom.side2; // TriIndex
@@ -167,7 +136,7 @@ static void nearCallback(void *data, ode::dGeomID geom1, ode::dGeomID geom2) {
 			argv[2] = valGeom2;
 			argv[7] = INT_TO_JSVAL( contact.geom.side1 );
 			argv[8] = INT_TO_JSVAL( contact.geom.side2 );
-			JL_CHKB( JS_CallFunctionValue(cx, JSVAL_TO_OBJECT(valGeom1), func1, COUNTOF(argv)-1, argv+1, argv), bad_pop_root );
+			JL_CHKB( JS_CallFunctionValue(cx, JSVAL_TO_OBJECT(valGeom1), func1, COUNTOF(argv)-1, argv+1, argv), bad_poproot );
 		}
 
 		if ( !JSVAL_IS_VOID( func2 ) ) {
@@ -176,10 +145,10 @@ static void nearCallback(void *data, ode::dGeomID geom1, ode::dGeomID geom2) {
 			argv[2] = valGeom1;
 			argv[7] = INT_TO_JSVAL( contact.geom.side2 );
 			argv[8] = INT_TO_JSVAL( contact.geom.side1 );
-			JL_CHKB( JS_CallFunctionValue(cx, JSVAL_TO_OBJECT(valGeom2), func2, COUNTOF(argv)-1, argv+1, argv), bad_pop_root );
+			JL_CHKB( JS_CallFunctionValue(cx, JSVAL_TO_OBJECT(valGeom2), func2, COUNTOF(argv)-1, argv+1, argv), bad_poproot );
 		}
 	
-	bad_pop_root:
+	bad_poproot:
 		JS_POP_TEMP_ROOT(cx, &tvr);
 	}
 

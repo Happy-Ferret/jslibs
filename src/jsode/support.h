@@ -12,6 +12,7 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
+
 ALWAYS_INLINE ode::dReal JSValToODEReal( JSContext *cx, jsval val ) {
 
 	if ( JsvalIsPInfinity(cx, val) )
@@ -31,6 +32,7 @@ ALWAYS_INLINE ode::dReal JSValToODEReal( JSContext *cx, jsval val ) {
 	if ( value < -dInfinity )
 		return -dInfinity;
 	return value;
+
 bad:
 	return 0;
 }
@@ -49,6 +51,7 @@ ALWAYS_INLINE jsval ODERealToJsval( JSContext *cx, ode::dReal val ) {
 	JL_CHK( DoubleVectorToJsval(cx, val, &value) );
 #endif
 	return value;
+
 bad:
 	return 0;
 }

@@ -77,7 +77,7 @@ DEFINE_PROPERTY( lengthGetter ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( geom );
-	JS_NewDoubleValue(cx, ode::dGeomRayGetLength(geom), vp); // see JS_NewNumberValue and JS_NewDouble
+	JL_CHK( FloatToJsval(cx, ode::dGeomRayGetLength(geom), vp) );
 	return JS_TRUE;
 	JL_BAD;
 }

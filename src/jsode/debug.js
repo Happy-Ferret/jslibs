@@ -81,14 +81,15 @@ floor.params = [0,0,1,0]; // floor
 //var ceil = new GeomPlane(world.space);
 //ceil.params = [0,0,-1,-50]; // ceil
 
-floor.impact = function(geom, geom2, depth, px, py, pz) {
 
-	if ( depth > 0.1 ) {
+floor.impact = function(geom, geom2, vel, px, py, pz) {
+
+	if ( vel > 5 ) {
 		
 		var src = srcPool.pop();
 		src.Stop();
 		src.Position(px, py, pz);
-		src.gain = depth;
+		src.gain = vel/100;
 		src.Play();
 		srcPool.unshift(src);
 	}
@@ -113,9 +114,19 @@ j.SetAxis(0,0,[0,0,1]);
 j.SetAngle(0, 2);
 */
 
+var cursor = new GeomTrimesh(sphereTrimesh, world.space);
+//Print( 'triangleCount: ', cursor.triangleCount, '\n' );
+
+cursor.body = new Body(world);
+cursor.body.position = [10,10,1];
+cursor.body.mass.value = 1;
+
+
+
+
 
 var boxes = [];
-for ( var i = 0; i < 100; i++ ) {
+for ( var i = 0; i < 50; i++ ) {
 
 	var box = new GeomBox(world.space);
 	box.lengths = [2,2,2];
@@ -123,17 +134,6 @@ for ( var i = 0; i < 100; i++ ) {
 	box.body.position = [0,0,1 + i*2];
 	boxes.push(box);
 }
-
-
-//boxes.push(testBox);
-
-var cursor = new GeomTrimesh(cubeTrimesh, world.space);
-//var cursor = new GeomSphere(world.space);
-cursor.radius = 2;
-cursor.body = new Body(world);
-cursor.body.position = [10,10,cursor.radius];
-cursor.body.mass.value = 10;
-
 
 
 /*
@@ -145,7 +145,7 @@ world.defaultSurfaceParameters.slip2 = 0.001;
 world.defaultSurfaceParameters.bounce = 0.5;
 world.defaultSurfaceParameters.bounceVel = 10;
 
-world.quickStepNumIterations = 20;
+world.quickStepNumIterations = 0;
 
 
 GlSetAttribute( GL_SWAP_CONTROL, 1 ); // vsync
@@ -300,13 +300,14 @@ function Draw() {
 
 		Translate(0, 0, -10);
 		Rotate(-60, 1, 0, 0);
-		Rotate(0, 0, 0, 1);
+		var t = new Transformation(cursor.body);
+
 
 		Scale(-1,-1,-1);
-		var t = new Transformation(cursor.body);
 		t.ClearRotation();
 		MultMatrix(t);
 		Scale(-1,-1,-1);
+
 
 		OalListener.position = t.translation;
 		
@@ -332,7 +333,6 @@ function Draw() {
 		PushMatrix();
 		MultMatrix(cursor.body);
 		Color(1,0,0);
-		Scale(2,2,2);
 		Ogl.DrawTrimesh(sphereId);
 		PopMatrix();
 	}
@@ -343,7 +343,7 @@ CollectGarbage();
 var defaultTime = 15;
 var t0, at, t;
 
-PollEvent();
+while (PollEvent()); // clear the event queue
 
 while ( !done ) {
 
@@ -356,7 +356,6 @@ while ( !done ) {
 	Draw();
 	GlSwapBuffers();
 	t = TimeCounter() - t0;
-	
 	at = t < defaultTime ? defaultTime - t : 0
 	Sleep(at);
 }

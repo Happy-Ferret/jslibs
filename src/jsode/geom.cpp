@@ -188,26 +188,26 @@ $TOC_MEMBER $INAME
   Is the status of the geometry.
 **/
 
-DEFINE_PROPERTY( enableSetter ) {
+DEFINE_PROPERTY( disabledSetter ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(geom);
-	JSBool enableState;
-	JS_ValueToBoolean(cx, *vp, &enableState);
-	if ( enableState )
-		ode::dGeomEnable(geom);
-	else
+	bool disabled;
+	JL_CHK( JsvalToBool(cx, *vp, &disabled) );
+	if ( disabled )
 		ode::dGeomDisable(geom);
+	else
+		ode::dGeomEnable(geom);
 	return JS_TRUE;
 	JL_BAD;
 }
 
 
-DEFINE_PROPERTY( enableGetter ) {
+DEFINE_PROPERTY( disabledGetter ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( geom );
-	*vp = ode::dGeomIsEnabled(geom) == 1 ? JSVAL_TRUE : JSVAL_FALSE;
+	*vp = ode::dGeomIsEnabled(geom) != 1 ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -458,7 +458,7 @@ CONFIGURE_CLASS
 		PROPERTY_STORE( body ) // store it to keep a reference (GC protection)
 		PROPERTY_WRITE( tansformation )
 		PROPERTY_WRITE( offset )
-		PROPERTY( enable )
+		PROPERTY( disabled )
 		PROPERTY( temporalCoherence )
 		PROPERTY( position )
 //		PROPERTY( offsetPosition )
