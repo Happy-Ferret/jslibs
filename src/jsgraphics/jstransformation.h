@@ -36,6 +36,31 @@ inline JSBool GetMatrixHelper( JSContext *cx, jsval val, Matrix44 **m ) {
 
 	if ( JsvalIsArray(cx, val) ) {
 
+		jsval element;
+		JL_CHK( JS_GetElement(cx, JSVAL_TO_OBJECT(val), 0, &element) );
+		if ( JsvalIsArray(cx, element) ) { // support for: [ [1,1,1,1], [2,2,2,2], [3,3,3,3], [4,4,4,4] ] matrix
+
+			size_t length;
+			JL_CHK( JsvalToFloatVector(cx, element, (*m)->m[0], 4, &length ) );
+			JL_S_ASSERT( length == 4, "Too few (%d) elements in the array.", length );
+			
+			JL_CHK( JS_GetElement(cx, JSVAL_TO_OBJECT(val), 1, &element) );
+			JL_S_ASSERT_ARRAY( element );
+			JL_CHK( JsvalToFloatVector(cx, element, (*m)->m[1], 4, &length ) );
+			JL_S_ASSERT( length == 4, "Too few (%d) elements in the array.", length );
+
+			JL_CHK( JS_GetElement(cx, JSVAL_TO_OBJECT(val), 2, &element) );
+			JL_S_ASSERT_ARRAY( element );
+			JL_CHK( JsvalToFloatVector(cx, element, (*m)->m[2], 4, &length ) );
+			JL_S_ASSERT( length == 4, "Too few (%d) elements in the array.", length );
+
+			JL_CHK( JS_GetElement(cx, JSVAL_TO_OBJECT(val), 3, &element) );
+			JL_S_ASSERT_ARRAY( element );
+			JL_CHK( JsvalToFloatVector(cx, element, (*m)->m[3], 4, &length ) );
+			JL_S_ASSERT( length == 4, "Too few (%d) elements in the array.", length );
+			return JS_TRUE;
+		}
+
 		size_t length;
 		JL_CHK( JsvalToFloatVector(cx, val, (*m)->raw, 16, &length ) );
 		JL_S_ASSERT( length == 16, "Too few (%d) elements in the array.", length );
