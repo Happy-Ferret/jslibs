@@ -101,6 +101,17 @@ inline void Vector3Set( Vector3 *v, const float _x, const float _y, const float 
 }
 
 
+inline void Vector3SetFromPtr( Vector3 *v, const float *ptr ) {
+
+#ifdef SSE
+    v->m128 = _mm_set_ps(0.0f, ptr[2], ptr[1], ptr[0]);
+#else // SSE
+	v->x = ptr[0];
+	v->y = ptr[1];
+	v->z = ptr[2];
+#endif // SSE
+}
+
 inline float Vector3Len( Vector3 *v ) {
 
 #ifdef SSE

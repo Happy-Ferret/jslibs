@@ -170,11 +170,6 @@ JL_MACRO_BEGIN \
 	if (unlikely( !(status) )) { goto bad; } \
 JL_MACRO_END
 
-#define JL_SCHK( ... ) \
-JL_MACRO_BEGIN \
-	if (unlikely( !_unsafeMode )) JL_CHK( __VA_ARGS__ ) \
-JL_MACRO_END
-
 
 // check with message: if status is false, a js exception is rised if it is not already pending.
 // (Support for variadic macros was introduced in Visual C++ 2005)
@@ -187,21 +182,11 @@ JL_MACRO_BEGIN \
 	} \
 JL_MACRO_END
 
-#define JL_SCHKM( ... ) \
-JL_MACRO_BEGIN \
-	if (unlikely( !_unsafeMode )) JL_CHKM( __VA_ARGS__ ) \
-JL_MACRO_END
-
 
 // check and branch to a errorLabel label on error.
 #define JL_CHKB( status, errorLabel ) \
 JL_MACRO_BEGIN \
 	if (unlikely( !(status) )) { goto errorLabel; } \
-JL_MACRO_END
-
-#define JL_SCHKB( ... ) \
-JL_MACRO_BEGIN \
-	if (unlikely( !_unsafeMode )) JL_CHKB( __VA_ARGS__ ) \
 JL_MACRO_END
 
 
@@ -213,11 +198,6 @@ JL_MACRO_BEGIN \
 			JS_ReportError(cx, (errorMessage IFDEBUG(" (@" J__CODE_LOCATION ")")), __VA_ARGS__); \
 		goto errorLabel; \
 	} \
-JL_MACRO_END
-
-#define JL_SCHKBM( ... ) \
-JL_MACRO_BEGIN \
-	if (unlikely( !_unsafeMode )) JL_CHKBM( __VA_ARGS__ ) \
 JL_MACRO_END
 
 
@@ -262,7 +242,7 @@ JL_MACRO_BEGIN \
 JL_MACRO_END
 
 #define JL_S_ASSERT_ARG(count) \
-	JL_S_ASSERT( argc != (count), J__ERRMSG_INVALID_ARGUMENT_COUNT " Need %d.", argc, count )
+	JL_S_ASSERT( argc == (count), J__ERRMSG_INVALID_ARGUMENT_COUNT " Need %d.", argc, count )
 
 #define JL_S_ASSERT_ARG_MIN(minCount) \
 	JL_S_ASSERT( argc >= (minCount), J__ERRMSG_INVALID_ARGUMENT_COUNT " Need at least %d.", argc, minCount )
@@ -1128,29 +1108,6 @@ bad:
 }
 
 
-ALWAYS_INLINE JSBool JsvalToFloat( JSContext *cx, jsval val, float *f ) {
-
-	if (likely( JSVAL_IS_DOUBLE(val) )) {
-
-		*f = *JSVAL_TO_DOUBLE(val);
-		return JS_TRUE;
-	}
-	jsdouble tmp;
-	JL_CHK( JS_ValueToNumber( cx, val, &tmp ) );
-	*f = tmp;
-	return JS_TRUE;
-
-bad:
-	JL_REPORT_WARNING( "Unable to convert to a real." );
-	return JS_FALSE;
-}
-
-ALWAYS_INLINE JSBool FloatToJsval( JSContext *cx, float f, jsval *val ) {
-
-	return JS_NewNumberValue(cx, f, val);
-}
-
-
 ALWAYS_INLINE JSBool JsvalToDouble( JSContext *cx, jsval val, double *d ) {
 
 	if (likely( JSVAL_IS_DOUBLE(val) )) {
@@ -1168,9 +1125,32 @@ bad:
 	return JS_FALSE;
 }
 
-ALWAYS_INLINE JSBool DoubleToJsval( JSContext *cx, double d, jsval *val ) {
+ALWAYS_INLINE JSBool DoubleToJsval( JSContext *cx, double d, jsval *rval ) {
 
-	return JS_NewNumberValue(cx, d, val);
+	return JS_NewDoubleValue(cx, d, rval); // return JS_NewNumberValue(cx, f, val); // slower ?
+}
+
+
+ALWAYS_INLINE JSBool JsvalToFloat( JSContext *cx, jsval val, float *f ) {
+
+	if (likely( JSVAL_IS_DOUBLE(val) )) {
+
+		*f = *JSVAL_TO_DOUBLE(val);
+		return JS_TRUE;
+	}
+	jsdouble tmp;
+	JL_CHK( JS_ValueToNumber( cx, val, &tmp ) );
+	*f = tmp;
+	return JS_TRUE;
+
+bad:
+	JL_REPORT_WARNING( "Unable to convert to a real." );
+	return JS_FALSE;
+}
+
+ALWAYS_INLINE JSBool FloatToJsval( JSContext *cx, float f, jsval *rval ) {
+
+	return DoubleToJsval(cx, f, rval); // return JS_NewNumberValue(cx, f, val); // slower ?
 }
 
 
