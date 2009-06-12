@@ -62,12 +62,13 @@ def exportToFile(filename):
 
 			Write( '"mass":%s,' % o.rbMass ); # try: getSBMass()
 
-			BB = o.getBoundBox(); # list of 8 (x,y,z) float coordinate vectors (WRAPPED DATA)
-			objectCenter = [ BB[0][n]+(BB[-2][n]-BB[0][n])/2.0 for n in [0,1,2] ]
+			bb = o.getBoundBox(); # list of 8 (x,y,z) float coordinate vectors (WRAPPED DATA)
+#			size = [ bb[0][n]+(bb[-2][n]-bb[0][n]) for n in [0,1,2] ]
 
-			Write( '"center":[%s,%s,%s],' % (objectCenter[0],objectCenter[1],objectCenter[2]) );
+			Write( '"box":[[%s,%s,%s],[%s,%s,%s]],' % (bb[0][0],bb[0][1],bb[0][2], bb[-2][0],bb[-2][1],bb[-2][2]) );
+			
 			Write( '"rotation":[%s,%s,%s],' % (o.RotX, o.RotY, o.RotZ) );
-			Write( '"size":[%s,%s,%s],' % o.size );
+			Write( '"scale":[%s,%s,%s],' % o.size );
 
 			Write( '"drawType":%s,' % o.drawType ); # 1 - Bounding box, 2 - wire, 3 - Solid, 4- Shaded, 5 - Textured. 
 
