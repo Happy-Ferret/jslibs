@@ -1,14 +1,29 @@
-LoadModule('jsstd');
-LoadModule('jsstd');
+LoadModule('jsdebug');
 LoadModule('jsstd');
 
+var count = 1000000;
+var v;
+
+CollectGarbage();
+
+var gc1 = gcBytes;
+
+for ( i = 0; i < count; i++ ) {
+}
+
+var gc2 = gcBytes;
+
+
+for ( i = 0; i < count; i++ ) {
+	
+	v = [1.1,2.2]
+}
+
+
+Print( (gcBytes - gc2 - (gc2-gc1))/count, '\n' );
 
 
 Halt();
-
-
-
-
 
 
 var f = new Function("\

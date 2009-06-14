@@ -152,16 +152,14 @@ void DestroyScriptHook(JSContext *cx, JSScript *script, void *callerdata) {
 
 int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[]) for UNICODE
 
+#ifdef XP_WIN
+	// enable low fragmentation heap
+	HANDLE heap = GetProcessHeap();
+	ULONG enable = 2;
+	HeapSetInformation(heap, HeapCompatibilityInformation, &enable, sizeof(enable)); // enable low fragmentation heap
+#endif // XP_WIN
+
 	JSContext *cx = NULL;
-
-	//#ifdef XP_WIN
-	//HANDLE heap = HeapCreate(HEAP_GENERATE_EXCEPTIONS, 1024*1024 * 8, 0);
-	//ULONG enable = 2;
-	//status = HeapSetInformation(heap, HeapCompatibilityInformation, &enable, sizeof(enable)); // enable low fragmentation heap
-	//char msg[1024];
-	//JLLastSysetmErrorMessage(msg, sizeof(msg));
-	//#endif // XP_WIN
-
 
 #ifdef XP_WIN
 	BOOL status;
@@ -177,7 +175,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 
 	bool unsafeMode = false;
 	bool compileOnly = false;
-	size_t maybeGCInterval = 15*1000; // 15 seconds
+	float maybeGCInterval = 15; // seconds
 	int camelCase = 0; // 0:default, 1:lower, 2:upper
 	bool useFileBootstrapScript = false;
 
@@ -208,7 +206,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 			case 'g': // operationLimitGC
 				argumentVector++;
 				HOST_MAIN_ASSERT( *argumentVector, "Missing argument." );
-				maybeGCInterval = atol( *argumentVector ) * 1000; // s to ms
+				maybeGCInterval = atof(*argumentVector);
 				break;
 			case 'c': // compileOnly
 				compileOnly = true;
@@ -236,8 +234,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	}
 #endif
 
-
-	cx = CreateHost(maxMem, maxAlloc, maybeGCInterval);
+	cx = CreateHost(maxMem, maxAlloc, maybeGCInterval * 1000);
 	HOST_MAIN_ASSERT( cx != NULL, "Unable to create a javascript execution context" );
 
 	GetHostPrivate(cx)->camelCase = camelCase;
