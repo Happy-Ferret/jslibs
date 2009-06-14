@@ -40,15 +40,6 @@
 #include "../common/vector3.h"
 #include "../common/vector4.h"
 
-static float Matrix44IdentityValue[] = {
-
-    1.0f, 0.0f, 0.0f, 0.0f,
-    0.0f, 1.0f, 0.0f, 0.0f,
-    0.0f, 0.0f, 1.0f, 0.0f,
-    0.0f, 0.0f, 0.0f, 1.0f
-};
-
-
 #ifdef SSE // SSE (Streaming SIMD Extensions)
 
 #include <xmmintrin.h>
@@ -62,7 +53,7 @@ typedef __declspec(align(16)) union {
 		__m128 m4;
 	};
 	struct {
-		float m[4][4];
+		float m[4][4]; // m[line][col]
 	};
 	struct {
 		float raw[16];
@@ -81,6 +72,15 @@ typedef union {
 } Matrix44;
 
 #endif // SSE (Streaming SIMD Extensions)
+
+static Matrix44 Matrix44IdentityValue = {
+
+    1.0f, 0.0f, 0.0f, 0.0f,
+    0.0f, 1.0f, 0.0f, 0.0f,
+    0.0f, 0.0f, 1.0f, 0.0f,
+    0.0f, 0.0f, 0.0f, 1.0f
+};
+
 
 
 inline void Matrix44Free( Matrix44 *m ) {
@@ -107,58 +107,90 @@ inline Matrix44 *Matrix44Alloc() {
 
 inline void Matrix44Identity( Matrix44 *m ) {
 
+#ifdef SSE
+	m->m1 = Matrix44IdentityValue.m1;
+	m->m2 = Matrix44IdentityValue.m2;
+	m->m3 = Matrix44IdentityValue.m3;
+	m->m4 = Matrix44IdentityValue.m4;
+#else // SSE
 	memcpy(m->raw, Matrix44IdentityValue, sizeof(Matrix44IdentityValue));
+#endif // SSE
 }
 
 inline void Matrix44Load( Matrix44 *m, Matrix44 *m1 ) {
 
-	memcpy(m->raw, m1->raw, sizeof(Matrix44));
-}
-
-inline void Matrix44Product( Matrix44 *m, const Matrix44 *mx ) { // m = m * mx
-
 #ifdef SSE
-	__m128 sm1 = mx->m1;
-	__m128 sm2 = mx->m2;
-	__m128 sm3 = mx->m3;
-	__m128 sm4 = mx->m4;
-
-	__m128 mx1 = m->m1;
-	__m128 mx2 = m->m2;
-	__m128 mx3 = m->m3;
-	__m128 mx4 = m->m4;
-
-	m->m1 = _mm_add_ps(_mm_add_ps(_mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(sm1, sm1, _MM_SHUFFLE(0,0,0,0)), mx1), _mm_mul_ps(_mm_shuffle_ps(sm1, sm1, _MM_SHUFFLE(1,1,1,1)), mx2)), _mm_mul_ps(_mm_shuffle_ps(sm1, sm1, _MM_SHUFFLE(2,2,2,2)), mx3)), _mm_mul_ps(_mm_shuffle_ps(sm1, sm1, _MM_SHUFFLE(3,3,3,3)), mx4));
-	m->m2 = _mm_add_ps(_mm_add_ps(_mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(sm2, sm2, _MM_SHUFFLE(0,0,0,0)), mx1), _mm_mul_ps(_mm_shuffle_ps(sm2, sm2, _MM_SHUFFLE(1,1,1,1)), mx2)), _mm_mul_ps(_mm_shuffle_ps(sm2, sm2, _MM_SHUFFLE(2,2,2,2)), mx3)), _mm_mul_ps(_mm_shuffle_ps(sm2, sm2, _MM_SHUFFLE(3,3,3,3)), mx4));
-	m->m3 = _mm_add_ps(_mm_add_ps(_mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(sm3, sm3, _MM_SHUFFLE(0,0,0,0)), mx1), _mm_mul_ps(_mm_shuffle_ps(sm3, sm3, _MM_SHUFFLE(1,1,1,1)), mx2)), _mm_mul_ps(_mm_shuffle_ps(sm3, sm3, _MM_SHUFFLE(2,2,2,2)), mx3)), _mm_mul_ps(_mm_shuffle_ps(sm3, sm3, _MM_SHUFFLE(3,3,3,3)), mx4));
-	m->m4 = _mm_add_ps(_mm_add_ps(_mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(sm4, sm4, _MM_SHUFFLE(0,0,0,0)), mx1), _mm_mul_ps(_mm_shuffle_ps(sm4, sm4, _MM_SHUFFLE(1,1,1,1)), mx2)), _mm_mul_ps(_mm_shuffle_ps(sm4, sm4, _MM_SHUFFLE(2,2,2,2)), mx3)), _mm_mul_ps(_mm_shuffle_ps(sm4, sm4, _MM_SHUFFLE(3,3,3,3)), mx4));
+	m->m1 = m1->m1;
+	m->m2 = m1->m2;
+	m->m3 = m1->m3;
+	m->m4 = m1->m4;
 #else // SSE
-	float _tmp[16];
-
-	_tmp[0]  = m->raw[0]*mx->raw[0]  + m->raw[4]*mx->raw[1]  + m->raw[8] *mx->raw[2]  + m->raw[12]*mx->raw[3];
-	_tmp[1]  = m->raw[1]*mx->raw[0]  + m->raw[5]*mx->raw[1]  + m->raw[9] *mx->raw[2]  + m->raw[13]*mx->raw[3];
-	_tmp[2]  = m->raw[2]*mx->raw[0]  + m->raw[6]*mx->raw[1]  + m->raw[10]*mx->raw[2]  + m->raw[14]*mx->raw[3];
-	_tmp[3]  = m->raw[3]*mx->raw[0]  + m->raw[7]*mx->raw[1]  + m->raw[11]*mx->raw[2]  + m->raw[15]*mx->raw[3];
-
-	_tmp[4]  = m->raw[0]*mx->raw[4]  + m->raw[4]*mx->raw[5]  + m->raw[8] *mx->raw[6]  + m->raw[12]*mx->raw[7];
-	_tmp[5]  = m->raw[1]*mx->raw[4]  + m->raw[5]*mx->raw[5]  + m->raw[9] *mx->raw[6]  + m->raw[13]*mx->raw[7];
-	_tmp[6]  = m->raw[2]*mx->raw[4]  + m->raw[6]*mx->raw[5]  + m->raw[10]*mx->raw[6]  + m->raw[14]*mx->raw[7];
-	_tmp[7]  = m->raw[3]*mx->raw[4]  + m->raw[7]*mx->raw[5]  + m->raw[11]*mx->raw[6]  + m->raw[15]*mx->raw[7];
-
-	_tmp[8]  = m->raw[0]*mx->raw[8]  + m->raw[4]*mx->raw[9]  + m->raw[8] *mx->raw[10] + m->raw[12]*mx->raw[11];
-	_tmp[9]  = m->raw[1]*mx->raw[8]  + m->raw[5]*mx->raw[9]  + m->raw[9] *mx->raw[10] + m->raw[13]*mx->raw[11];
-	_tmp[10] = m->raw[2]*mx->raw[8]  + m->raw[6]*mx->raw[9]  + m->raw[10]*mx->raw[10] + m->raw[14]*mx->raw[11];
-	_tmp[11] = m->raw[3]*mx->raw[8]  + m->raw[7]*mx->raw[9]  + m->raw[11]*mx->raw[10] + m->raw[15]*mx->raw[11];
-
-	_tmp[12] = m->raw[0]*mx->raw[12] + m->raw[4]*mx->raw[13] + m->raw[8] *mx->raw[14] + m->raw[12]*mx->raw[15];
-	_tmp[13] = m->raw[1]*mx->raw[12] + m->raw[5]*mx->raw[13] + m->raw[9] *mx->raw[14] + m->raw[13]*mx->raw[15];
-	_tmp[14] = m->raw[2]*mx->raw[12] + m->raw[6]*mx->raw[13] + m->raw[10]*mx->raw[14] + m->raw[14]*mx->raw[15];
-	_tmp[15] = m->raw[3]*mx->raw[12] + m->raw[7]*mx->raw[13] + m->raw[11]*mx->raw[14] + m->raw[15]*mx->raw[15];
-
-	memcpy(m->raw, _tmp, sizeof(_tmp) );
+	memcpy(m->raw, m1->raw, sizeof(Matrix44));
 #endif // SSE
 }
 
+
+inline void Matrix44LoadFromPtr( Matrix44 *m, float *ptr ) {
+
+#ifdef SSE
+	m->m1 = _mm_set_ps(ptr[3], ptr[2], ptr[1], ptr[0]);
+	m->m2 = _mm_set_ps(ptr[7], ptr[6], ptr[5], ptr[4]);
+	m->m3 = _mm_set_ps(ptr[11], ptr[10], ptr[9], ptr[8]);
+	m->m4 = _mm_set_ps(ptr[15], ptr[14], ptr[13], ptr[12]);
+#else // SSE
+	memcpy(m->raw, ptr, sizeof(Matrix44));
+#endif // SSE
+}
+
+
+inline void Matrix44Product( Matrix44 *rm, Matrix44 *m1, const Matrix44 *m2 ) { // rm = m1 * m2
+
+#ifdef SSE
+	__m128 sm1 = m1->m1;
+	__m128 sm2 = m1->m2;
+	__m128 sm3 = m1->m3;
+	__m128 sm4 = m1->m4;
+
+	__m128 mx1 = m2->m1;
+	__m128 mx2 = m2->m2;
+	__m128 mx3 = m2->m3;
+	__m128 mx4 = m2->m4;
+
+	rm->m1 = _mm_add_ps(_mm_add_ps(_mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(sm1, sm1, _MM_SHUFFLE(0,0,0,0)), mx1), _mm_mul_ps(_mm_shuffle_ps(sm1, sm1, _MM_SHUFFLE(1,1,1,1)), mx2)), _mm_mul_ps(_mm_shuffle_ps(sm1, sm1, _MM_SHUFFLE(2,2,2,2)), mx3)), _mm_mul_ps(_mm_shuffle_ps(sm1, sm1, _MM_SHUFFLE(3,3,3,3)), mx4));
+	rm->m2 = _mm_add_ps(_mm_add_ps(_mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(sm2, sm2, _MM_SHUFFLE(0,0,0,0)), mx1), _mm_mul_ps(_mm_shuffle_ps(sm2, sm2, _MM_SHUFFLE(1,1,1,1)), mx2)), _mm_mul_ps(_mm_shuffle_ps(sm2, sm2, _MM_SHUFFLE(2,2,2,2)), mx3)), _mm_mul_ps(_mm_shuffle_ps(sm2, sm2, _MM_SHUFFLE(3,3,3,3)), mx4));
+	rm->m3 = _mm_add_ps(_mm_add_ps(_mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(sm3, sm3, _MM_SHUFFLE(0,0,0,0)), mx1), _mm_mul_ps(_mm_shuffle_ps(sm3, sm3, _MM_SHUFFLE(1,1,1,1)), mx2)), _mm_mul_ps(_mm_shuffle_ps(sm3, sm3, _MM_SHUFFLE(2,2,2,2)), mx3)), _mm_mul_ps(_mm_shuffle_ps(sm3, sm3, _MM_SHUFFLE(3,3,3,3)), mx4));
+	rm->m4 = _mm_add_ps(_mm_add_ps(_mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(sm4, sm4, _MM_SHUFFLE(0,0,0,0)), mx1), _mm_mul_ps(_mm_shuffle_ps(sm4, sm4, _MM_SHUFFLE(1,1,1,1)), mx2)), _mm_mul_ps(_mm_shuffle_ps(sm4, sm4, _MM_SHUFFLE(2,2,2,2)), mx3)), _mm_mul_ps(_mm_shuffle_ps(sm4, sm4, _MM_SHUFFLE(3,3,3,3)), mx4));
+
+#else // SSE
+
+	float _tmp[16];
+
+	_tmp[0]  = m1->raw[0]*m2->raw[0]  + m1->raw[4]*m2->raw[1]  + m1->raw[8] *m2->raw[2]  + m1->raw[12]*m2->raw[3];
+	_tmp[1]  = m1->raw[1]*m2->raw[0]  + m1->raw[5]*m2->raw[1]  + m1->raw[9] *m2->raw[2]  + m1->raw[13]*m2->raw[3];
+	_tmp[2]  = m1->raw[2]*m2->raw[0]  + m1->raw[6]*m2->raw[1]  + m1->raw[10]*m2->raw[2]  + m1->raw[14]*m2->raw[3];
+	_tmp[3]  = m1->raw[3]*m2->raw[0]  + m1->raw[7]*m2->raw[1]  + m1->raw[11]*m2->raw[2]  + m1->raw[15]*m2->raw[3];
+
+	_tmp[4]  = m1->raw[0]*m2->raw[4]  + m1->raw[4]*m2->raw[5]  + m1->raw[8] *m2->raw[6]  + m1->raw[12]*m2->raw[7];
+	_tmp[5]  = m1->raw[1]*m2->raw[4]  + m1->raw[5]*m2->raw[5]  + m1->raw[9] *m2->raw[6]  + m1->raw[13]*m2->raw[7];
+	_tmp[6]  = m1->raw[2]*m2->raw[4]  + m1->raw[6]*m2->raw[5]  + m1->raw[10]*m2->raw[6]  + m1->raw[14]*m2->raw[7];
+	_tmp[7]  = m1->raw[3]*m2->raw[4]  + m1->raw[7]*m2->raw[5]  + m1->raw[11]*m2->raw[6]  + m1->raw[15]*m2->raw[7];
+
+	_tmp[8]  = m1->raw[0]*m2->raw[8]  + m1->raw[4]*m2->raw[9]  + m1->raw[8] *m2->raw[10] + m1->raw[12]*m2->raw[11];
+	_tmp[9]  = m1->raw[1]*m2->raw[8]  + m1->raw[5]*m2->raw[9]  + m1->raw[9] *m2->raw[10] + m1->raw[13]*m2->raw[11];
+	_tmp[10] = m1->raw[2]*m2->raw[8]  + m1->raw[6]*m2->raw[9]  + m1->raw[10]*m2->raw[10] + m1->raw[14]*m2->raw[11];
+	_tmp[11] = m1->raw[3]*m2->raw[8]  + m1->raw[7]*m2->raw[9]  + m1->raw[11]*m2->raw[10] + m1->raw[15]*m2->raw[11];
+
+	_tmp[12] = m1->raw[0]*m2->raw[12] + m1->raw[4]*m2->raw[13] + m1->raw[8] *m2->raw[14] + m1->raw[12]*m2->raw[15];
+	_tmp[13] = m1->raw[1]*m2->raw[12] + m1->raw[5]*m2->raw[13] + m1->raw[9] *m2->raw[14] + m1->raw[13]*m2->raw[15];
+	_tmp[14] = m1->raw[2]*m2->raw[12] + m1->raw[6]*m2->raw[13] + m1->raw[10]*m2->raw[14] + m1->raw[14]*m2->raw[15];
+	_tmp[15] = m1->raw[3]*m2->raw[12] + m1->raw[7]*m2->raw[13] + m1->raw[11]*m2->raw[14] + m1->raw[15]*m2->raw[15];
+
+	memcpy(rm->raw, _tmp, sizeof(_tmp) );
+#endif // SSE
+
+}
+
+/*
 // (TBD) optimize it, try to base it on Matrix44Multiply()
 inline void Matrix44ReverseProduct( Matrix44 *m, const Matrix44 *mx ) { // m = mx * m
 
@@ -203,7 +235,7 @@ inline void Matrix44ReverseProduct( Matrix44 *m, const Matrix44 *mx ) { // m = m
 	memcpy(m->raw, _tmp, sizeof(_tmp) );
 #endif // SSE
 }
-
+*/
 
 inline void Matrix44SetXRotation( Matrix44 *m, float radAngle ) {
 
@@ -331,7 +363,6 @@ inline FORCEINLINE float Sqrt(float val) {
 
 inline void Matrix44SetRotation( Matrix44 *m, const Vector3 *axis, float radAngle ) {
 
-#ifdef SSE
 /*
 	Vector3 v = *axis;
 	Vector3Normalize(&v); // (TBD) Opt: check if already normalized
@@ -399,14 +430,11 @@ inline void Matrix44SetRotation( Matrix44 *m, const Vector3 *axis, float radAngl
 	m->raw[8]  =     2 * ( xz - yw );
 	m->raw[9]  =     2 * ( yz + xw );
 	m->raw[10] = 1 - 2 * ( xx + yy );
-#else // SSE
-	// (TBD)
-#endif // SSE
 }
+
 
 inline void Matrix44ClearRotation( Matrix44 *m ) {
 
-#ifdef SSE
 	m->raw[0]  = 1;
 	m->raw[1]  = 0;
 	m->raw[2]  = 0;
@@ -418,9 +446,6 @@ inline void Matrix44ClearRotation( Matrix44 *m ) {
 	m->raw[8]  = 0;
 	m->raw[9]  = 0;
 	m->raw[10] = 1;
-#else // SSE
-	// (TBD)
-#endif // SSE
 }
 
 /*
@@ -480,10 +505,9 @@ inline void Matrix44SetTranslation( Matrix44 *m, const float x, const float y, c
 	m->m[3][0] = x;
 	m->m[3][1] = y;
 	m->m[3][2] = z;
-	//	m->m4 = t->m128; m->m4 = _mm_add_ps(m->m4, t->m128);
 }
 
-inline void Matrix44GetTranslation( Matrix44 *m, float *x, float *y, float *z ) {
+inline void Matrix44GetTranslation( const Matrix44 *m, float *x, float *y, float *z ) {
 
 	*x = m->m[3][0];
 	*y = m->m[3][1];
@@ -511,27 +535,25 @@ inline void Matrix44ClearTranslation( Matrix44 *m ) {
 //}
 
 
-inline void Matrix44LookAt( Matrix44 *m, const Vector3 *to, const Vector3 *up ) {
+inline void Matrix44LookAt( Matrix44 *m, const Vector3 *eye, const Vector3 *center, const Vector3 *up ) {
 
-#ifdef SSE
-	Vector3 z;
-	z.x = m->m[3][0];
-	z.y = m->m[3][1];
-	z.z = m->m[3][2];
-	Vector3Sub(&z, to); // z = z - to
-	Vector3Normalize(&z); // z = |z|
-	Vector3 y = *up;
-	Vector3 x;
-	Vector3Cross(&x, &y, &z); // x = y cross z
-	Vector3Cross(&y, &z, &x); // y = z cross x
-	Vector3Normalize(&x); // x = |x|
-	Vector3Normalize(&y); // y = |y|
-	m->m1 = x.m128;
-	m->m2 = y.m128;
-	m->m3 = z.m128;
-#else // SSE
-	// (TBD)
-#endif // SSE
+	Matrix44 tmp;
+	Vector3 f, s, u;
+
+	Vector3Sub(&f, center, eye);
+	Vector3Normalize(&f);
+	Vector3Cross(&s, &f, up); // s = f x up
+	Vector3Normalize(&s);
+	Vector3Cross(&u, &s, &f); // u = s x f
+	Vector3Inv(&f, &f);
+	Matrix44Identity(&tmp);
+	tmp.m1 = s.m128;
+	tmp.m2 = u.m128;
+	tmp.m3 = f.m128;
+	Matrix44Product(m, m, &tmp);
+	m->m[3][0] -= eye->x;
+	m->m[3][1] -= eye->y;
+	m->m[3][2] -= eye->z;
 }
 
 
@@ -539,10 +561,11 @@ inline void Matrix44Billboard( Matrix44 *m, const Vector3 *to, const Vector3 *up
 
 #ifdef SSE
 	Vector3 z;
-	z.x = m->m[3][0];
-	z.y = m->m[3][1];
-	z.z = m->m[3][2];
-	Vector3Sub(&z, to); // z = z - to
+//	z.x = m->m[3][0];
+//	z.y = m->m[3][1];
+//	z.z = m->m[3][2];
+	z.m128 = m->m4;
+	Vector3Sub(&z, &z, to); // z = z - to
 	Vector3Normalize(&z); // z = |z|
 	Vector3 y = *up;
 	Vector3 x;
@@ -725,6 +748,20 @@ inline void Matrix44MultVector4( Matrix44 *m, Vector4 *srcVector, Vector4 *dstVe
 	// (TBD)
 #endif // SSE
 
+}
+
+
+inline void Matrix44Transpose( Matrix44 *rm, Matrix44 *m ) {
+
+	__m128 t3, t2, t1, t0;
+	t0 = _mm_unpacklo_ps(m->m1, m->m2);
+	t2 = _mm_unpackhi_ps(m->m1, m->m2);
+	t1 = _mm_unpacklo_ps(m->m3, m->m4);
+	t3 = _mm_unpackhi_ps(m->m3, m->m4);
+	rm->m1 = _mm_movelh_ps(t0, t1);
+	rm->m2 = _mm_movehl_ps(t1, t0);
+	rm->m3 = _mm_movelh_ps(t2, t3);
+	rm->m4 = _mm_movehl_ps(t3, t2);
 }
 
 
