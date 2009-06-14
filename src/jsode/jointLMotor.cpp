@@ -39,11 +39,43 @@ DEFINE_CONSTRUCTOR() {
 	JL_S_ASSERT_THIS_CLASS();
 	JL_S_ASSERT_ARG_MIN(1);
 	ode::dWorldID worldId;
-	JL_CHK( JsvalToWorldID( cx, JL_ARG(1), &worldId) );
+	JL_CHK( JsvalToWorldID(cx, JL_ARG(1), &worldId) );
 	ode::dJointID jointId = ode::dJointCreateLMotor(worldId, 0);
 	ode::dJointSetData(jointId, obj);
 	ode::dJointSetFeedback(jointId, NULL);
 	JL_SetPrivate(cx, obj, jointId);
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+/**doc
+=== Methods ===
+**/
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $INAME( axisIndex, rel, $TYPE vec3 axis )
+  (TBD)
+**/
+DEFINE_FUNCTION( SetAxis ) {
+	
+	JL_S_ASSERT_ARG_MIN( 3 );
+	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(jointId); // (TBD) check if NULL is meaningful for joints !
+	int anum, rel;
+	JL_CHK( JsvalToInt(cx, JL_ARG(1), &anum) );
+	JL_CHK( JsvalToInt(cx, JL_ARG(2), &rel) );
+	ode::dVector3 vector;
+	size_t length;
+	JL_CHK( JsvalToFloatVector(cx, JL_ARG(3), vector, 3, &length) );
+	JL_S_ASSERT( length == 3, "Invalid array size." );
+
+	if ( anum+1 > ode::dJointGetLMotorNumAxes(jointId) )
+		ode::dJointSetLMotorNumAxes(jointId, anum+1);
+	
+	ode::dJointSetLMotorAxis(jointId, anum, rel, vector[0], vector[1], vector[2]);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -62,8 +94,9 @@ CONFIGURE_CLASS
 	HAS_PRIVATE
 	HAS_RESERVED_SLOTS(2) // body1, body2
 
-	BEGIN_PROPERTY_SPEC
-	END_PROPERTY_SPEC
+	BEGIN_FUNCTION_SPEC
+		FUNCTION_ARGC( SetAxis, 3 )
+	END_FUNCTION_SPEC
 
 END_CLASS
 

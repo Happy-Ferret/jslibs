@@ -70,7 +70,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
 	_unsafeMode = GetHostPrivate(cx)->unsafeMode;
 
-	int status = ode::dInitODE2(ode::dAllocateFlagCollisionData);
+	int status = ode::dInitODE2(/*ode::dAllocateFlagCollisionData*/0);
 	JL_S_ASSERT( status != 0, "Unable to initialize ODE." );
 
 	ode::dSetErrorHandler(messageHandler);
@@ -82,6 +82,8 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	INIT_CLASS( JointBall );
 	INIT_CLASS( JointHinge );
 	INIT_CLASS( JointSlider );
+	INIT_CLASS( JointUniversal );
+	INIT_CLASS( JointPiston );
 	INIT_CLASS( JointFixed );
 	INIT_CLASS( JointAMotor );
 	INIT_CLASS( JointLMotor );

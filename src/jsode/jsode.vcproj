@@ -234,11 +234,19 @@
 				>
 			</File>
 			<File
+				RelativePath=".\jointPiston.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\jointPlane.cpp"
 				>
 			</File>
 			<File
 				RelativePath=".\jointSlider.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\jointUniversal.cpp"
 				>
 			</File>
 			<File

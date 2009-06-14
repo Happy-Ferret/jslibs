@@ -112,7 +112,7 @@ static void nearCallback(void *data, ode::dGeomID geom1, ode::dGeomID geom2) {
 			ode::dBodyGetPointVel(body1, px, py, pz, tmp.raw);
 		else
 			Vector3Identity(&tmp);
-		Vector3Sub(&vel, &tmp);
+		Vector3Sub(&vel, &vel, &tmp);
 		Vector3SetFromPtr(&normal, contact.geom.normal);
 		float impactVelocity = Vector3Dot(&vel, &normal);
 

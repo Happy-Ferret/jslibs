@@ -71,9 +71,22 @@ var sphereTrimesh = MeshToTrimesh('sphere.json').Sphere;
 
 
 var world = new World();
-world.gravity = [0,0,-9.809];
-world.linearDamping = 0.005;
-world.angularDamping = 0.005;
+//world.gravity = [0,0,-9.809];
+world.linearDamping = 0.001;
+world.angularDamping = 0.001;
+
+
+
+var boxes = [];
+for ( var i = 0; i < 0; i++ ) {
+
+	var box = new GeomBox(world.space);
+	box.lengths = [2,2,2];
+	box.body = new Body(world);
+	box.body.mass.value = 1;
+	box.body.position = [0,0,1 + i*2];
+	boxes.push(box);
+}
 
 
 var floor = new GeomPlane(world.space);
@@ -102,50 +115,57 @@ testBox.body = new Body(world);
 testBox.body.position = [-4,-4,1];
 */
 
-var j1 = new JointBall(world);
-//j1.body1 = testBox.body;
-//j1.anchor = [3,3,3];
-//j1.anchor2 = [1,1,3];
-
-/*
-var j = new	JointAMotor(world);
-j.body1 = testBox.body;
-j.SetAxis(0,0,[0,0,1]);
-j.SetAngle(0, 2);
-*/
 
 var cursor = new GeomTrimesh(sphereTrimesh, world.space);
 //Print( 'triangleCount: ', cursor.triangleCount, '\n' );
 
 cursor.body = new Body(world);
-cursor.body.position = [10,10,1];
+cursor.body.position = [10,-5,1];
 cursor.body.mass.value = 1;
 
 
 
+var box = new GeomBox(world.space);
+box.lengths = [2,2,2];
+box.body = new Body(world);
+box.body.mass.value = 1;
+box.body.position = [0,0,2];
+boxes.push(box);
 
 
-var boxes = [];
-for ( var i = 0; i < 50; i++ ) {
+//var j = new JointBall(world);
+//j.body1 = box.body;
 
-	var box = new GeomBox(world.space);
-	box.lengths = [2,2,2];
-	box.body = new Body(world);
-	box.body.position = [0,0,1 + i*2];
-	boxes.push(box);
-}
+var j = new	JointAMotor(world);
+j.body1 = box.body;
+j.SetAxis(0, 1, [0,0,1]);
+j.maxForce = 1;
+j.velocity = 100;
+//j.SetAngle(0, 100);
+
+//j.AddTorque0(1000); // ok
 
 
+
+//var j = new JointHinge(world);
+//j.body1 = box.body;
 /*
-world.defaultSurfaceParameters.softERP = 0.2;
+var j = new JointLMotor(world);
+j.body1 = box.body;
+j.SetAxis(0, 1, [0,0,1]);
+j.maxForce = 10;
+j.velocity = 1;
+*/
+
+
+world.defaultSurfaceParameters.softERP = 1;
 world.defaultSurfaceParameters.softCFM = 0.000001;
+/*
 world.defaultSurfaceParameters.slip1 = 0.1;
 world.defaultSurfaceParameters.slip2 = 0.001;
 */
-world.defaultSurfaceParameters.bounce = 0.5;
-world.defaultSurfaceParameters.bounceVel = 10;
-
-world.quickStepNumIterations = 0;
+//world.defaultSurfaceParameters.bounce = 0.5;
+//world.defaultSurfaceParameters.bounceVel = 10;
 
 
 GlSetAttribute( GL_SWAP_CONTROL, 1 ); // vsync
@@ -155,13 +175,14 @@ SetVideoMode( 640, 480, 32, HWSURFACE | OPENGL | RESIZABLE ); // | ASYNCBLIT // 
 
 with (Ogl) {
 
+	Hint( PERSPECTIVE_CORRECTION_HINT, NICEST );
 	Enable(DEPTH_TEST);
 	Enable(BLEND); //Enable alpha blending
 	BlendFunc(SRC_ALPHA, ONE_MINUS_SRC_ALPHA); //Set the blend function
 	Enable(CULL_FACE);
 
 	MatrixMode(PROJECTION);
-	Perspective(120, 0.01, 1000);
+	Perspective(100, 0.001, 1000);
 	MatrixMode(MODELVIEW);
 	
 	Enable(LIGHTING);
@@ -228,6 +249,156 @@ var listeners = {
 };
 
 
+function DrawFloor(cx, cy) {
+
+	with (Ogl) {
+		Begin(QUADS);
+		for ( var x = 0; x < cx; x++ )
+			for ( var y = 0; y < cy; y++ ) {
+				if ( (x + y) % 2 )
+					Color(0,0,0.5);
+				else
+					Color(0.9,0.8,0.7);
+				Vertex(x,y);
+				Vertex(x+1,y);
+				Vertex(x+1,y+1);
+				Vertex(x, y+1);
+			}
+		End();
+	}
+}
+
+function Point(x,y,z) {
+
+	with (Ogl) {
+		PushAttrib(LIGHTING | DEPTH_TEST);
+		Disable(LIGHTING);
+		Disable(DEPTH_TEST);
+		Enable(POINT_SMOOTH);
+		PointSize(3);
+		Begin(POINTS);
+		Vertex(x,y,z);
+		End();
+		PopAttrib();
+	}
+}
+
+function Axis(x,y,z) {
+
+	with (Ogl) {
+		PushAttrib(LIGHTING | DEPTH_TEST);
+		Disable(LIGHTING);
+		Disable(DEPTH_TEST);
+		LineWidth(2);
+		Begin(LINES);
+		Color(1,0,0);
+		Vertex(x,y,z);
+		Vertex(x+1,y,z);
+		Color(0,1,0);
+		Vertex(x,y,z);
+		Vertex(x,y+1,z);
+		Color(0,0,1);
+		Vertex(x,y,z);
+		Vertex(x,y,z+1);
+		End();
+		PopAttrib();
+	}
+}
+
+
+var cubeId = Ogl.LoadTrimesh(cubeTrimesh);
+var sphereId = Ogl.LoadTrimesh(sphereTrimesh);
+
+function Draw() {
+
+	with (Ogl) {
+	
+		Clear(COLOR_BUFFER_BIT | DEPTH_BUFFER_BIT);
+		LoadIdentity();
+
+// camera
+
+//		var p = cursor.position;
+		var t = new Transformation(undefined);
+		t.LookAt(-10,-10,10, 0,0,0);
+		MultMatrix(t);
+
+		OalListener.position = t.translation;
+		
+// floor
+		PushMatrix();
+		Scale(5,5,0);
+		Translate(-5, -5, 0);
+		DrawFloor(10, 10);
+		PopMatrix();
+	
+// objects
+		for each (box in boxes) {
+			PushMatrix();
+			MultMatrix(box.body);
+			Color(0.5,0.5,0.5);
+			Ogl.DrawTrimesh(cubeId);
+			PopMatrix();
+		}
+		
+		PushMatrix();
+		MultMatrix(cursor.body);
+		Color(1,0,0);
+		Ogl.DrawTrimesh(sphereId);
+		PopMatrix();
+/*
+		Color(1,1,1);
+		Point.apply(this, j1.anchor);
+		Color(1,1,0);
+		Point.apply(this, j1.anchor2);
+*/
+		PushMatrix();
+		
+		var t = new Transformation(undefined);
+//		t.LookAt(cursor.body.position[0], cursor.body.position[1], cursor.body.position[2]);
+		MultMatrix(t);
+		Axis(0,0,0);
+		PopMatrix();
+	}
+	
+	
+
+}
+
+world.quickStepNumIterations = 20;
+
+CollectGarbage();
+
+var defaultTime = 15;
+var t0, at, t;
+
+while (PollEvent()); // clear the event queue
+
+while ( !done ) {
+
+	var t0 = TimeCounter();
+	PollEvent(listeners);
+	if ( t > 30 )
+		t = 20;
+	if ( t )
+		world.Step(t + at);
+	Draw();
+	GlSwapBuffers();
+	t = TimeCounter() - t0;
+	at = t < defaultTime ? defaultTime - t : 0
+	Sleep(at);
+}
+
+
+
+} catch(ex) {
+	
+	Print( ex.fileName+':'+ex.lineNumber+' '+ex, '\n' );
+	Halt();
+}
+
+
+
 function Cube(x, y, z) {
 
 	with (Ogl) {
@@ -264,107 +435,54 @@ function Cube(x, y, z) {
 		Vertex(0,y,z);
 		End();
 	}
-
 }
 
-function DrawFloor(cx, cy) {
 
-	with (Ogl) {
-		Begin(QUADS);
-		for ( var x = 0; x < cx; x++ )
-			for ( var y = 0; y < cy; y++ ) {
-				if ( (x + y) % 2 )
-					Color(0,0,0.5);
-				else
-					Color(0.9,0.8,0.7);
-				Vertex(x,y);
-				Vertex(x+1,y);
-				Vertex(x+1,y+1);
-				Vertex(x, y+1);
-			}
-		End();
+function DumpMatrix(m) {
+    
+    for (var y = 0; y < 4; ++y) {
+        Print('[  ' );
+        for (var x = 0; x < 4; ++x)
+            Print( m[x+y*4].toFixed(1) + '  ' );
+        Print(']\n\n' );
+    }
+}
+
+function Renderer() {
+	
+	var camera = new Transformation();
+	var objectList = [];
+	
+	this.SetCameraPosition = function(x,y,z) {
+		
+		camera.Translation(-x, -y, -z);
+	}
+
+	this.SetCameraTarget = function(x,y,z) {
+		
+		camera.LookAt(x, y, z);
+	}
+	
+	this.Add = function(object) {
+		
+		objectList.push(object);
+	}
+	
+	this.Render = function(time) {
+
+		Ogl.Clear(COLOR_BUFFER_BIT | DEPTH_BUFFER_BIT);
+		Ogl.LoadIdentity();
+		Ogl.MultMatrix(camera);
+
+		for each ( object in objectList )
+			this.Render();
 	}
 }
 
-var cubeId = Ogl.LoadTrimesh(cubeTrimesh);
-var sphereId = Ogl.LoadTrimesh(sphereTrimesh);
 
-function Draw() {
-
-	with (Ogl) {
+function Particle() {
 	
-		Clear(COLOR_BUFFER_BIT | DEPTH_BUFFER_BIT);
-		LoadIdentity();
-
-// camera
-
-		Translate(0, 0, -10);
-		Rotate(-60, 1, 0, 0);
-		var t = new Transformation(cursor.body);
-
-
-		Scale(-1,-1,-1);
-		t.ClearRotation();
-		MultMatrix(t);
-		Scale(-1,-1,-1);
-
-
-		OalListener.position = t.translation;
-		
-/*
-		Translate(0, 0, -10);
-*/
-// floor
-		PushMatrix();
-		Scale(5,5,0);
-		Translate(-5, -5, 0);
-		DrawFloor(10, 10);
-		PopMatrix();
-	
-// objects
-		for each (box in boxes) {
-			PushMatrix();
-			MultMatrix(box.body);
-			Color(0.5,0.5,0.5);
-			Ogl.DrawTrimesh(cubeId);
-			PopMatrix();
-		}
-		
-		PushMatrix();
-		MultMatrix(cursor.body);
-		Color(1,0,0);
-		Ogl.DrawTrimesh(sphereId);
-		PopMatrix();
+	this.Render = function(time) {
 	}
-}
-
-CollectGarbage();
-
-var defaultTime = 15;
-var t0, at, t;
-
-while (PollEvent()); // clear the event queue
-
-while ( !done ) {
-
-	var t0 = TimeCounter();
-	PollEvent(listeners);
-	if ( t > 30 )
-		t = 20;
-	if ( t )
-		world.Step(t + at);
-	Draw();
-	GlSwapBuffers();
-	t = TimeCounter() - t0;
-	at = t < defaultTime ? defaultTime - t : 0
-	Sleep(at);
-}
-
-
-
-} catch(ex) {
-	
-	Print( ex.fileName+':'+ex.lineNumber+' '+ex, '\n' );
-	Halt();
 }
 

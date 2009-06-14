@@ -18,21 +18,18 @@
 
 /**doc
 $CLASS_HEADER Joint
-$SVN_REVISION $Revision: 2555 $
+$SVN_REVISION $Revision: 2620 $
 **/
-BEGIN_CLASS( JointAMotor )
-
+BEGIN_CLASS( JointUniversal )
 
 DEFINE_FINALIZE() {
 
 	FinalizeJoint(cx, obj);
 }
 
-
 /**doc
 $TOC_MEMBER $INAME
  $INAME( world )
-  TBD
 **/
 DEFINE_CONSTRUCTOR() {
 
@@ -41,119 +38,10 @@ DEFINE_CONSTRUCTOR() {
 	JL_S_ASSERT_ARG_MIN(1);
 	ode::dWorldID worldId;
 	JL_CHK( JsvalToWorldID( cx, JL_ARG(1), &worldId) );
-	ode::dJointID jointId = ode::dJointCreateAMotor(worldId, 0);
+	ode::dJointID jointId = ode::dJointCreateUniversal(worldId, 0); // The joint group ID is 0 to allocate the joint normally.
 	ode::dJointSetData(jointId, obj);
 	ode::dJointSetFeedback(jointId, NULL);
 	JL_SetPrivate(cx, obj, jointId);
-	return JS_TRUE;
-	JL_BAD;
-}
-
-
-/**doc
-=== Methods ===
-**/
-
-/**doc
-$TOC_MEMBER $INAME
- $INAME()
-  dJointAddAMotorTorques
-**/
-DEFINE_FUNCTION( AddTorque0 ) {
-
-	JL_S_ASSERT_ARG_MIN( 1 );
-	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(jointId); // (TBD) check if NULL is meaningful for joints !
-	float torque;
-	JL_CHK( JsvalToFloat(cx, JL_ARG(1), &torque) );
-	ode::dJointAddAMotorTorques(jointId, torque,0,0);
-	return JS_TRUE;
-	JL_BAD;
-}
-
-/**doc
-$TOC_MEMBER $INAME
- $INAME()
-  dJointAddAMotorTorques
-**/
-DEFINE_FUNCTION( AddTorque1 ) {
-
-	JL_S_ASSERT_ARG_MIN( 1 );
-	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(jointId); // (TBD) check if NULL is meaningful for joints !
-	float torque;
-	JL_CHK( JsvalToFloat(cx, JL_ARG(1), &torque) );
-	ode::dJointAddAMotorTorques(jointId, 0,torque,0);
-	return JS_TRUE;
-	JL_BAD;
-}
-
-/**doc
-$TOC_MEMBER $INAME
- $INAME()
-  dJointAddAMotorTorques
-**/
-DEFINE_FUNCTION( AddTorque2 ) {
-
-	JL_S_ASSERT_ARG_MIN( 1 );
-	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(jointId); // (TBD) check if NULL is meaningful for joints !
-	float torque;
-	JL_CHK( JsvalToFloat(cx, JL_ARG(1), &torque) );
-	ode::dJointAddAMotorTorques(jointId, 0,0,torque);
-	return JS_TRUE;
-	JL_BAD;
-}
-
-
-
-/**doc
-$TOC_MEMBER $INAME
- $INAME()
-  (TBD)
-**/
-DEFINE_FUNCTION( SetAxis ) {
-	
-	JL_S_ASSERT_ARG_MIN( 3 );
-	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(jointId); // (TBD) check if NULL is meaningful for joints !
-	int anum, rel;
-	JsvalToInt(cx, JL_ARG(1), &anum);
-	JsvalToInt(cx, JL_ARG(2), &rel);
-	ode::dVector3 vector;
-	size_t length;
-	JL_CHK( JsvalToFloatVector(cx, JL_ARG(3), vector, 3, &length) );
-	JL_S_ASSERT( length == 3, "Invalid array size." );
-
-	if ( anum+1 > ode::dJointGetAMotorNumAxes(jointId) )
-		ode::dJointSetAMotorNumAxes(jointId, anum+1);
-	
-	ode::dJointSetAMotorAxis(jointId, anum, rel, vector[0], vector[1], vector[2]);
-	return JS_TRUE;
-	JL_BAD;
-}
-
-
-/**doc
-$TOC_MEMBER $INAME
- $INAME( axisIndex, angle )
-  (TBD)
-**/
-DEFINE_FUNCTION( SetAngle ) {
-	
-	JL_S_ASSERT_ARG(2);
-	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(jointId); // (TBD) check if NULL is meaningful for joints !
-	
-	int anum;
-	float angle;
-	JsvalToInt(cx, JL_ARG(1), &anum);
-	JsvalToFloat(cx, JL_ARG(2), &angle);
-
-	if ( anum+1 > ode::dJointGetAMotorNumAxes(jointId) )
-		ode::dJointSetAMotorNumAxes(jointId, anum+1);
-
-	ode::dJointSetAMotorAngle(jointId, anum, angle);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -166,92 +54,177 @@ DEFINE_FUNCTION( SetAngle ) {
 /**doc
 $TOC_MEMBER $INAME
  $TYPE vec3 $INAME
-  TBD
 **/
-DEFINE_PROPERTY( eulerModeSetter ) {
+DEFINE_PROPERTY( anchorSetter ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId); // (TBD) check if NULL is meaningful for joints !
-	bool eulerMode;
-	JL_CHK( JsvalToBool(cx, *vp, &eulerMode) );
-	ode::dJointSetAMotorMode(jointId, eulerMode ?  ode::dAMotorEuler :  ode::dAMotorUser);
+	ode::dVector3 vector;
+	//FloatArrayToVector(cx, 3, vp, vector);
+	size_t length;
+	JL_CHK( JsvalToFloatVector(cx, *vp, vector, 3, &length) );
+	JL_S_ASSERT( length == 3, "Invalid array size." );
+	ode::dJointSetUniversalAnchor( jointId, vector[0], vector[1], vector[2] );
 	return JS_TRUE;
 	JL_BAD;
 }
 
-DEFINE_PROPERTY( eulerModeGetter ) {
+DEFINE_PROPERTY( anchorGetter ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId);
-	bool eulerMode = ode::dJointGetAMotorMode(jointId) == ode::dAMotorEuler;
-	JL_CHK( BoolToJsval(cx, eulerMode, vp) );
+	ode::dVector3 vector;
+	ode::dJointGetUniversalAnchor(jointId,vector);
+	//FloatVectorToArray(cx, 3, vector, vp);
+	JL_CHK( FloatVectorToJsval(cx, vector, 3, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
 
+
 /**doc
 $TOC_MEMBER $INAME
- $REAL $INAME $READONLY
-	In euler mode this is the corresponding euler angle rate of axis 1.
+ $TYPE vec3 $INAME $READONLY
 **/
-DEFINE_PROPERTY( angle0Rate ) {
+DEFINE_PROPERTY( anchor2 ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId);
-	return FloatToJsval(cx, ode::dJointGetAMotorAngleRate(jointId, 0), vp);
+	ode::dVector3 vector;
+	ode::dJointGetUniversalAnchor2(jointId,vector);
+	JL_CHK( FloatVectorToJsval(cx, vector, 3, vp) );
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $TYPE vec3 $INAME
+  Get or set the axis of the joint.
+**/
+DEFINE_PROPERTY( axis1Setter ) {
+
+	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(jointId); // (TBD) check if NULL is meaningful for joints !
+	ode::dVector3 vector;
+	size_t length;
+	JL_CHK( JsvalToFloatVector(cx, *vp, vector, 3, &length) );
+	JL_S_ASSERT( length == 3, "Invalid array size." );
+	ode::dJointSetUniversalAxis1( jointId, vector[0], vector[1], vector[2] );
+	return JS_TRUE;
+	JL_BAD;
+}
+
+DEFINE_PROPERTY( axis1Getter ) {
+
+	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(jointId);
+	ode::dVector3 vector;
+	ode::dJointGetUniversalAxis1(jointId,vector);
+	JL_CHK( FloatVectorToJsval(cx, vector, 3, vp) );
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $TYPE vec3 $INAME
+  Get or set the axis of the joint.
+**/
+DEFINE_PROPERTY( axis2Setter ) {
+
+	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(jointId); // (TBD) check if NULL is meaningful for joints !
+	ode::dVector3 vector;
+	size_t length;
+	JL_CHK( JsvalToFloatVector(cx, *vp, vector, 3, &length) );
+	JL_S_ASSERT( length == 3, "Invalid array size." );
+	ode::dJointSetUniversalAxis2( jointId, vector[0], vector[1], vector[2] );
+	return JS_TRUE;
+	JL_BAD;
+}
+
+DEFINE_PROPERTY( axis2Getter ) {
+
+	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(jointId);
+	ode::dVector3 vector;
+	ode::dJointGetUniversalAxis2(jointId,vector);
+	JL_CHK( FloatVectorToJsval(cx, vector, 3, vp) );
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $REAL $INAME $READONLY
+**/
+DEFINE_PROPERTY( angle1 ) {
+
+	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(jointId);
+	return FloatToJsval(cx, ode::dJointGetUniversalAngle1(jointId), vp);
 	JL_BAD;
 }
 
 /**doc
 $TOC_MEMBER $INAME
  $REAL $INAME $READONLY
-	In euler mode this is the corresponding euler angle rate of axis 2.
+**/
+DEFINE_PROPERTY( angle2 ) {
+
+	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(jointId);
+	return FloatToJsval(cx, ode::dJointGetUniversalAngle2(jointId), vp);
+	JL_BAD;
+}
+
+/**doc
+$TOC_MEMBER $INAME
+ $REAL $INAME $READONLY
 **/
 DEFINE_PROPERTY( angle1Rate ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId);
-	return FloatToJsval(cx, ode::dJointGetAMotorAngleRate(jointId, 1), vp);
+	return FloatToJsval(cx, ode::dJointGetUniversalAngle1Rate(jointId), vp);
 	JL_BAD;
 }
 
 /**doc
 $TOC_MEMBER $INAME
  $REAL $INAME $READONLY
-	In euler mode this is the corresponding euler angle rate of axis 3.
 **/
 DEFINE_PROPERTY( angle2Rate ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId);
-	return FloatToJsval(cx, ode::dJointGetAMotorAngleRate(jointId, 2), vp);
+	return FloatToJsval(cx, ode::dJointGetUniversalAngle2Rate(jointId), vp);
 	JL_BAD;
 }
 
-
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision: 2555 $"))
+	REVISION(JL_SvnRevToInt("$Revision: 2620 $"))
 	HAS_PROTOTYPE( prototypeJoint )
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE
 	HAS_PRIVATE
 	HAS_RESERVED_SLOTS(2) // body1, body2
 
-	BEGIN_FUNCTION_SPEC
-		FUNCTION_ARGC( SetAxis, 3 )
-		FUNCTION_ARGC( SetAngle, 2 )
-		FUNCTION_ARGC( AddTorque0, 1 )
-		FUNCTION_ARGC( AddTorque1, 1 )
-		FUNCTION_ARGC( AddTorque2, 1 )
-	END_FUNCTION_SPEC
-
 	BEGIN_PROPERTY_SPEC
-		PROPERTY( eulerMode )
-		PROPERTY_READ( angle0Rate )
+		PROPERTY( anchor )
+		PROPERTY_READ( anchor2 )
+		PROPERTY( axis1 )
+		PROPERTY( axis2 )
+		PROPERTY_READ( angle1 )
+		PROPERTY_READ( angle2 )
 		PROPERTY_READ( angle1Rate )
 		PROPERTY_READ( angle2Rate )
 	END_PROPERTY_SPEC
 
 END_CLASS
-

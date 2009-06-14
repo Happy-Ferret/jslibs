@@ -20,6 +20,7 @@
 #include "math.h"
 
 
+
 void FinalizeJoint(JSContext *cx, JSObject *obj) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
@@ -47,6 +48,12 @@ JSBool ReconstructJoint( JSContext *cx, ode::dJointID jointId, JSObject **obj ) 
 			break;
 		case ode::dJointTypeSlider:
 			*obj = JS_NewObject(cx, classJointSlider, NULL, NULL);
+			break;
+		case ode::dJointTypeUniversal:
+			*obj = JS_NewObject(cx, classJointUniversal, NULL, NULL);
+			break;
+		case ode::dJointTypePiston:
+			*obj = JS_NewObject(cx, classJointPiston, NULL, NULL);
 			break;
 		case ode::dJointTypeFixed:
 			*obj = JS_NewObject(cx, classJointFixed, NULL, NULL);
@@ -194,34 +201,40 @@ DEFINE_FUNCTION( Attach ) {
 	//dJointTypePlane2D 	A Plane 2D joint.
 	//dJointTypePR 	A Rotoide and Prismatic joint.
 
-void JointSetParam( ode::dJointID jointId, int parameter, ode::dReal value ) {
+ALWAYS_INLINE void JointSetParam( ode::dJointID jointId, int parameter, ode::dReal value ) {
 
 	switch( ode::dJointGetType(jointId) ) {
 		case ode::dJointTypeBall:
 			ode::dJointSetBallParam(jointId, parameter, value);
-			break;
+			return;
 		case ode::dJointTypeHinge:
 			ode::dJointSetHingeParam(jointId, parameter, value);
-			break;
+			return;
 		case ode::dJointTypeSlider:
 			ode::dJointSetSliderParam(jointId, parameter, value);
-			break;
+			return;
+		case ode::dJointTypeUniversal:
+			ode::dJointSetUniversalParam(jointId, parameter, value);
+			return;
+		case ode::dJointTypePiston:
+			ode::dJointSetPistonParam(jointId, parameter, value);
+			return;
 		case ode::dJointTypePlane2D:
 			ode::dJointSetPlane2DXParam(jointId, parameter, value); // (TBD) split them
 			ode::dJointSetPlane2DYParam(jointId, parameter, value);
 //			ode::dJointSetPlane2DAngleParam(jointId, parameter, value);
-			break;
+			return;
 		case ode::dJointTypeLMotor:
 			ode::dJointSetLMotorParam(jointId, parameter, value);
-			break;
+			return;
 		case ode::dJointTypeAMotor:
 			ode::dJointSetAMotorParam(jointId, parameter, value);
-			break;
+			return;
 	}
 }
 
 
-ode::dReal JointGetParam( ode::dJointID jointId, int parameter ) {
+ALWAYS_INLINE ode::dReal JointGetParam( ode::dJointID jointId, int parameter ) {
 
 	switch( ode::dJointGetType(jointId) ) {
 		case ode::dJointTypeBall:
@@ -230,6 +243,10 @@ ode::dReal JointGetParam( ode::dJointID jointId, int parameter ) {
 			return ode::dJointGetHingeParam(jointId, parameter);
 		case ode::dJointTypeSlider:
 			return ode::dJointGetSliderParam(jointId, parameter);
+		case ode::dJointTypeUniversal:
+			return ode::dJointGetUniversalParam(jointId, parameter);
+		case ode::dJointTypePiston:
+			return ode::dJointGetPistonParam(jointId, parameter);
 		case ode::dJointTypePlane2D:
 			return 0; // (TBD)
 		case ode::dJointTypeLMotor:
@@ -252,7 +269,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( body1 ) {
 
-	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate( cx, obj );
+	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( jointId );
 	ode::dBodyID bodyId;
 	JL_CHK( JsvalToBody(cx, *vp, &bodyId) );
@@ -263,7 +280,7 @@ DEFINE_PROPERTY_SETTER( body1 ) {
 
 DEFINE_PROPERTY_GETTER( body1 ) {
 
-	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate( cx, obj );
+	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( jointId );
 	ode::dBodyID bodyId = ode::dJointGetBody(jointId, 0);
 	if ( bodyId )
@@ -475,90 +492,97 @@ $TOC_MEMBER $INAME
 $TOC_MEMBER $INAME
  $REAL *stopCFM*
 **/
-enum { loStop, hiStop, velocity, maxForce, fudgeFactor, bounce, CFM, stopERP, stopCFM };
+enum { 
+	loStop = ode::dParamLoStop,
+	hiStop = ode::dParamHiStop,
+	velocity = ode::dParamVel,
+	maxForce = ode::dParamFMax,
+	fudgeFactor = ode::dParamFudgeFactor,
+	bounce = ode::dParamBounce,
+	CFM = ode::dParamCFM,
+	stopERP = ode::dParamStopERP,
+	stopCFM = ode::dParamStopCFM,
 
-DEFINE_PROPERTY( jointParamSetter ) {
+	loStop2 = ode::dParamLoStop,
+	hiStop2 = ode::dParamHiStop,
+	velocity2 = ode::dParamVel,
+	maxForce2 = ode::dParamFMax,
+	fudgeFactor2 = ode::dParamFudgeFactor,
+	bounce2 = ode::dParamBounce,
+	CFM2 = ode::dParamCFM,
+	stopERP2 = ode::dParamStopERP,
+	stopCFM2 = ode::dParamStopCFM,
+
+	loStop3 = ode::dParamLoStop,
+	hiStop3 = ode::dParamHiStop,
+	velocity3 = ode::dParamVel,
+	maxForce3 = ode::dParamFMax,
+	fudgeFactor3 = ode::dParamFudgeFactor,
+	bounce3 = ode::dParamBounce,
+	CFM3 = ode::dParamCFM,
+	stopERP3 = ode::dParamStopERP,
+	stopCFM3 = ode::dParamStopCFM,
+};
+
+
+DEFINE_PROPERTY( jointParam1Setter ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId);
 	JL_S_ASSERT_NUMBER( *vp );
-
-	int parameter;
-	switch(JSVAL_TO_INT(id)) {
-		case loStop:
-			parameter = ode::dParamLoStop;
-			break;
-		case hiStop:
-			parameter = ode::dParamHiStop;
-			break;
-		case velocity:
-			parameter = ode::dParamVel;
-			break;
-		case maxForce:
-			parameter = ode::dParamFMax;
-			break;
-		case fudgeFactor:
-			parameter = ode::dParamFudgeFactor;
-			break;
-		case bounce:
-			parameter = ode::dParamBounce;
-			break;
-		case CFM:
-			parameter = ode::dParamCFM;
-			break;
-		case stopERP:
-			parameter = ode::dParamStopERP;
-			break;
-		case stopCFM:
-			parameter = ode::dParamStopCFM;
-			break;
-	}
-	JointSetParam(jointId, parameter, JSValToODEReal(cx, *vp));
+	JointSetParam(jointId, JSVAL_TO_INT(id), JSValToODEReal(cx, *vp));
 	return JS_TRUE;
 	JL_BAD;
 }
 
-
-DEFINE_PROPERTY( jointParamGetter ) {
+DEFINE_PROPERTY( jointParam1Getter ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId);
-	int parameter;
-	switch(JSVAL_TO_INT(id)) {
-		case loStop:
-			parameter = ode::dParamLoStop;
-			break;
-		case hiStop:
-			parameter = ode::dParamHiStop;
-			break;
-		case velocity:
-			parameter = ode::dParamVel;
-			break;
-		case maxForce:
-			parameter = ode::dParamFMax;
-			break;
-		case fudgeFactor:
-			parameter = ode::dParamFudgeFactor;
-			break;
-		case bounce:
-			parameter = ode::dParamBounce;
-			break;
-		case CFM:
-			parameter = ode::dParamCFM;
-			break;
-		case stopERP:
-			parameter = ode::dParamStopERP;
-			break;
-		case stopCFM:
-			parameter = ode::dParamStopCFM;
-			break;
-	}
-	*vp = ODERealToJsval(cx, JointGetParam(jointId, parameter));
+	*vp = ODERealToJsval(cx, JointGetParam(jointId, JSVAL_TO_INT(id)));
 	return JS_TRUE;
 	JL_BAD;
 }
 
 
+DEFINE_PROPERTY( jointParam2Setter ) {
+
+	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(jointId);
+	JL_S_ASSERT_NUMBER( *vp );
+	JointSetParam(jointId, JSVAL_TO_INT(id) + ode::dParamGroup2, JSValToODEReal(cx, *vp));
+	return JS_TRUE;
+	JL_BAD;
+}
+
+DEFINE_PROPERTY( jointParam2Getter ) {
+
+	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(jointId);
+	*vp = ODERealToJsval(cx, JointGetParam(jointId, JSVAL_TO_INT(id) + ode::dParamGroup2));
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+DEFINE_PROPERTY( jointParam3Setter ) {
+
+	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(jointId);
+	JL_S_ASSERT_NUMBER( *vp );
+	JointSetParam(jointId, JSVAL_TO_INT(id) + ode::dParamGroup3, JSValToODEReal(cx, *vp));
+	return JS_TRUE;
+	JL_BAD;
+}
+
+DEFINE_PROPERTY( jointParam3Getter ) {
+
+	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(jointId);
+	*vp = ODERealToJsval(cx, JointGetParam(jointId, JSVAL_TO_INT(id) + ode::dParamGroup3));
+	return JS_TRUE;
+	JL_BAD;
+}
 
 CONFIGURE_CLASS
 	REVISION(JL_SvnRevToInt("$Revision$"))
@@ -580,14 +604,38 @@ CONFIGURE_CLASS
 		PROPERTY_SWITCH( body2Force , feedbackVector )
 		PROPERTY_SWITCH( body2Torque, feedbackVector )
 
-		PROPERTY_SWITCH( loStop, jointParam )
-		PROPERTY_SWITCH( hiStop, jointParam )
-		PROPERTY_SWITCH( velocity, jointParam )
-		PROPERTY_SWITCH( maxForce, jointParam )
-		PROPERTY_SWITCH( fudgeFactor, jointParam )
-		PROPERTY_SWITCH( bounce, jointParam )
-		PROPERTY_SWITCH( CFM, jointParam )
-		PROPERTY_SWITCH( stopERP, jointParam )
-		PROPERTY_SWITCH( stopCFM, jointParam )
-	END_PROPERTY_SPEC
+		// group 1
+		PROPERTY_SWITCH( loStop, jointParam1 )
+		PROPERTY_SWITCH( hiStop, jointParam1 )
+		PROPERTY_SWITCH( velocity, jointParam1 )
+		PROPERTY_SWITCH( maxForce, jointParam1 )
+		PROPERTY_SWITCH( fudgeFactor, jointParam1 )
+		PROPERTY_SWITCH( bounce, jointParam1 )
+		PROPERTY_SWITCH( CFM, jointParam1 )
+		PROPERTY_SWITCH( stopERP, jointParam1 )
+		PROPERTY_SWITCH( stopCFM, jointParam1 )
+
+		// group 2
+		PROPERTY_SWITCH( loStop2, jointParam2 )
+		PROPERTY_SWITCH( hiStop2, jointParam2 )
+		PROPERTY_SWITCH( velocity2, jointParam2 )
+		PROPERTY_SWITCH( maxForce2, jointParam2 )
+		PROPERTY_SWITCH( fudgeFactor2, jointParam2 )
+		PROPERTY_SWITCH( bounce2, jointParam2 )
+		PROPERTY_SWITCH( CFM2, jointParam2 )
+		PROPERTY_SWITCH( stopERP2, jointParam2 )
+		PROPERTY_SWITCH( stopCFM2, jointParam2 )
+
+		// group 3
+		PROPERTY_SWITCH( loStop3, jointParam3 )
+		PROPERTY_SWITCH( hiStop3, jointParam3 )
+		PROPERTY_SWITCH( velocity3, jointParam3 )
+		PROPERTY_SWITCH( maxForce3, jointParam3 )
+		PROPERTY_SWITCH( fudgeFactor3, jointParam3 )
+		PROPERTY_SWITCH( bounce3, jointParam3 )
+		PROPERTY_SWITCH( CFM3, jointParam3 )
+		PROPERTY_SWITCH( stopERP3, jointParam3 )
+		PROPERTY_SWITCH( stopCFM3, jointParam3 )
+
+		END_PROPERTY_SPEC
 END_CLASS
