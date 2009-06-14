@@ -41,6 +41,11 @@ Manage GL extensions:
 
 #include "../common/matrix44.h"
 
+/* doc.
+  OpenGL matrices are 16-value arrays with base vectors laid out contiguously in memory. 
+  The translation components occupy the 13th, 14th, and 15th elements of the 16-element matrix, 
+  where indices are numbered from 1 to 16 as described in section 2.11.2 of the OpenGL 2.1 Specification.
+*/
 #ifdef _MACOSX // MacosX platform specific
 	#include <AGL/agl.h>
 	#include <OpenGL/gl.h>
@@ -1130,7 +1135,7 @@ DEFINE_FUNCTION_FAST( Perspective ) {
 
 	//cf. gluPerspective(fovy, float(viewport[2]) / float(viewport[3]), zNear, zFar);
 
-	JL_S_ASSERT_ARG_MIN(3);
+	JL_S_ASSERT_ARG(3);
 	jsdouble fovy, zNear, zFar;
 	JsvalToDouble(cx, JL_FARG(1), &fovy);
 	JsvalToDouble(cx, JL_FARG(2), &zNear);
@@ -1236,7 +1241,6 @@ DEFINE_FUNCTION_FAST( LoadMatrix ) {
 	NIMatrix44Get fct = Matrix44GetInterface(cx, matrixObj);
 	JL_S_ASSERT( fct, "Invalid Matrix44 interface." );
 	JL_CHK( fct(cx, matrixObj, &m) );
-
 	glLoadMatrixf(m);
 	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
@@ -1261,7 +1265,6 @@ DEFINE_FUNCTION_FAST( MultMatrix ) {
 	NIMatrix44Get fct = Matrix44GetInterface(cx, matrixObj);
 	JL_S_ASSERT( fct, "Invalid Matrix44 interface." );
 	JL_CHK( fct(cx, matrixObj, &m) );
-
 	glMultMatrixf(m);
 	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
@@ -2179,7 +2182,7 @@ static int MatrixGet(JSContext *cx, JSObject *obj, float **m) {
 
 	GLint matrixMode;
 	glGetIntegerv(GL_MATRIX_MODE, &matrixMode);
-	switch (matrixMode) {
+	switch ( matrixMode ) {
 		case GL_MODELVIEW:
 			glGetFloatv(GL_MODELVIEW_MATRIX, *m);
 			return true;

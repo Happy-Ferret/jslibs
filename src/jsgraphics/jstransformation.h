@@ -17,7 +17,6 @@
 
 DECLARE_CLASS(Transformation)
 
-
 /* This function tries to read a matrix44 from a Transformation object OR a NI_READ_MATRIX44 interface
  * *m MUST be a valid matrix pointer BUT m MAY be modified and replaced by a private matrix pointer ( in this case, you MUST copy the data )
  * see Load for an example

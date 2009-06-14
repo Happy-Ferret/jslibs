@@ -11,14 +11,24 @@ LoadModule('jssdl');
 
 function DumpMatrix(m) {
     
-    for (var x = 0; x < 4; x++) {
+    for (var y = 0; y < 4; ++y) {
         Print('[  ' );
-        for (var y = 0; y < 4; y++)
+        for (var x = 0; x < 4; ++x)
             Print( m[x+y*4].toFixed(1) + '  ' );
-        Print(']\n' );
+        Print(']\n\n' );
     }
 }
 
+
+var t = new Transformation( undefined );
+t.LookAt(-10,0,10, 0,0,0);
+
+DumpMatrix(t);
+
+
+
+
+Halt();
 
 function Axis(size) {
 
