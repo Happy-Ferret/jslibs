@@ -2,12 +2,29 @@ LoadModule('jsstd');
 LoadModule('jsio');
 LoadModule('jsimage');
 LoadModule('jsode');
-LoadModule('jsgraphics');
 LoadModule('jsprotex');
 LoadModule('jstrimesh');
 LoadModule('jssdl');
+LoadModule('jsgraphics');
+
+var t = new Transformation(undefined);
+
+//t.Translate(10, 10, 15);
+t.LookAt(10, 10, 15, 0,0,0, 0,0,1);
 
 
+for ( var i = 0; i < 16; i++ )
+	Print( i%4 ? ' ' : '  ', t[i].toFixed(2) );
+Print( '\n' );
+
+
+Halt();
+
+var t = new Transformation(undefined);
+t.LookAt(-10,-10,10, 0,0,0, 0,0,1);
+		
+Transformation.Test();
+Halt();
 
 function DumpMatrix(m) {
     
@@ -21,14 +38,12 @@ function DumpMatrix(m) {
 
 
 var t = new Transformation( undefined );
-t.LookAt(-10,0,10, 0,0,0);
+t.LookAt(1,1,10, 0,0,0);
 
 DumpMatrix(t);
 
-
-
-
 Halt();
+
 
 function Axis(size) {
 
@@ -217,7 +232,7 @@ GlSetAttribute( GL_SWAP_CONTROL, 1 ); // vsync
 GlSetAttribute( GL_DOUBLEBUFFER, 1 );
 GlSetAttribute( GL_DEPTH_SIZE, 16 );
 
-SetVideoMode( 800, 600, 32, HWSURFACE | OPENGL | RESIZABLE ); // | ASYNCBLIT // RESIZABLE FULLSCREEN
+SetVideoMode( 320, 200, 32, HWSURFACE | OPENGL | RESIZABLE ); // | ASYNCBLIT // RESIZABLE FULLSCREEN
 Ogl.Perspective( 90, 0.01, 1000 );
 
 showCursor = true;

@@ -130,7 +130,7 @@ inline float Vector3Len( Vector3 *v ) {
 
 }
 
-
+/*
 #ifdef SSE
 static __forceinline __m128 rsqrt_nr(const __m128& x) {
 	static const __m128 v0pt5 = { 0.5f, 0.5f, 0.5f, 0.5f };
@@ -140,7 +140,7 @@ static __forceinline __m128 rsqrt_nr(const __m128& x) {
 }
 #else // SSE
 #endif // SSE
-
+*/
 
 inline void Vector3Normalize( Vector3 *v ) {
 
@@ -181,9 +181,9 @@ inline void Vector3Add( Vector3 *vr, const Vector3 *va, const Vector3 *vb ) {
 #ifdef SSE
 	vr->m128 = _mm_add_ps(va->m128, vb->m128);
 #else // SSE
-	v->x += v1->x;
-	v->y += v1->y;
-	v->z += v1->z;
+	vr->x = va->x + vb->x;
+	vr->y = va->y + vb->y;
+	vr->z = va->z + vb->z;
 #endif // SSE
 
 }
@@ -194,9 +194,9 @@ inline void Vector3Sub( Vector3 *vr, const Vector3 *va, const Vector3 *vb ) {
 #ifdef SSE
 	vr->m128 = _mm_sub_ps(va->m128, vb->m128);
 #else // SSE
-	v->x -= v1->x;
-	v->y -= v1->y;
-	v->z -= v1->z;
+	vr->x = va->x - vb->x;
+	vr->y = va->y - vb->y;
+	vr->z = va->z - vb->z;
 #endif // SSE
 
 }

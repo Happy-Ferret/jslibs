@@ -56,6 +56,8 @@ Manage GL extensions:
 #include <gl/gl.h>
 #include "glext.h"
 
+#include <gl/glu.h>
+
 #include "oglError.h"
 
 // http://www.opengl.org/registry/api/glext.h
@@ -1841,6 +1843,38 @@ DEFINE_FUNCTION_FAST( MultiTexCoord ) {
 
 
 
+
+/**doc
+$TOC_MEMBER $INAME
+ $VOID $INAME( eyex, eyey, eyez, centerx, centery, centerz, upx, upy, upz )
+  $H arguments
+   $ARG $REAL x
+   $ARG $REAL y
+   $ARG $REAL z
+  $H API
+   gluLookAt
+**/
+DEFINE_FUNCTION_FAST( LookAt ) {
+
+	JL_S_ASSERT_ARG(9);
+	double eyex, eyey, eyez, centerx, centery, centerz, upx, upy, upz;
+	JsvalToDouble(cx, JL_FARG(1), &eyex);
+	JsvalToDouble(cx, JL_FARG(2), &eyey);
+	JsvalToDouble(cx, JL_FARG(3), &eyez);
+
+	JsvalToDouble(cx, JL_FARG(4), &centerx);
+	JsvalToDouble(cx, JL_FARG(5), &centery);
+	JsvalToDouble(cx, JL_FARG(6), &centerz);
+
+	JsvalToDouble(cx, JL_FARG(7), &upx);
+	JsvalToDouble(cx, JL_FARG(8), &upy);
+	JsvalToDouble(cx, JL_FARG(9), &upz);
+	gluLookAt(eyex, eyey, eyez, centerx, centery, centerz, upx, upy, upz);
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
 ///////////////////////////////////////////////////////////////////////////////
 // non-OpenGL API
 
@@ -3014,6 +3048,8 @@ CONFIGURE_CLASS
 		FUNCTION_FAST_ARGC(CopyTexImage2D, 7) // level, internalFormat, x, y, width, height, border
 		FUNCTION_FAST_ARGC(DefineTextureImage, 3) // target, format, image (non-OpenGL API)
 		FUNCTION_FAST_ARGC(RenderToImage, 0) // (non-OpenGL API)
+
+		FUNCTION_FAST_ARGC(LookAt, 9) // (non-OpenGL API)
 
 		// OpenGL extensions
 		FUNCTION_FAST_ARGC(GenBuffer, 0)

@@ -35,7 +35,7 @@ typedef __declspec(align(4)) union {
 typedef union {
     struct { float x, y, z, w; };
     float raw[4];
-} Vector3;
+} Vector4;
 
 #endif // SSE
 
