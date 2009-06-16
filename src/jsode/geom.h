@@ -27,6 +27,7 @@ DECLARE_CLASS( GeomPlane )
 DECLARE_CLASS( GeomCapsule )
 DECLARE_CLASS( GeomCylinder )
 DECLARE_CLASS( GeomRay )
+DECLARE_CLASS( GeomConvex )
 DECLARE_CLASS( GeomTrimesh )
 
 JSBool SetupReadMatrix(JSContext *cx, JSObject *obj);

@@ -190,6 +190,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\geomConvex.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\geomCylinder.cpp"
 				>
 			</File>
@@ -286,6 +290,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\vector.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\world.cpp"
 				>
 			</File>
@@ -321,6 +329,10 @@
 			</File>
 			<File
 				RelativePath=".\support.h"
+				>
+			</File>
+			<File
+				RelativePath=".\vector.h"
 				>
 			</File>
 			<File

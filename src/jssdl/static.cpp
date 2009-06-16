@@ -579,7 +579,7 @@ JSBool FireListener( JSContext *cx, JSObject *listenerObj, SDL_Event *ev, jsval 
 
 		case SDL_MOUSEBUTTONDOWN:
 		case SDL_MOUSEBUTTONUP:
-			JL_CHK( JS_GetProperty(cx, listenerObj, ev->type == SDL_KEYDOWN ? "onMouseButtonDown" : "onMouseButtonUp", &fVal) );
+			JL_CHK( JS_GetProperty(cx, listenerObj, ev->type == SDL_MOUSEBUTTONDOWN ? "onMouseButtonDown" : "onMouseButtonUp", &fVal) );
 			if ( JsvalIsFunction(cx, fVal) ) {
 
 				SDLMod modState = SDL_GetModState();
@@ -1220,6 +1220,14 @@ CONFIGURE_STATIC
 		CONST_INTEGER( K_POWER				, SDLK_POWER)
 		CONST_INTEGER( K_EURO				, SDLK_EURO)
 		CONST_INTEGER( K_UNDO				, SDLK_UNDO)
+
+		CONST_INTEGER( BUTTON_LEFT      ,SDL_BUTTON_LEFT )
+		CONST_INTEGER( BUTTON_MIDDLE    ,SDL_BUTTON_MIDDLE )
+		CONST_INTEGER( BUTTON_RIGHT     ,SDL_BUTTON_RIGHT )
+		CONST_INTEGER( BUTTON_WHEELUP   ,SDL_BUTTON_WHEELUP )
+		CONST_INTEGER( BUTTON_WHEELDOWN ,SDL_BUTTON_WHEELDOWN )
+		CONST_INTEGER( BUTTON_X1        ,SDL_BUTTON_X1 )
+		CONST_INTEGER( BUTTON_X2        ,SDL_BUTTON_X2 )
 
 		CONST_INTEGER( BUTTON_LMASK		,SDL_BUTTON_LMASK )
 		CONST_INTEGER( BUTTON_MMASK		,SDL_BUTTON_MMASK )

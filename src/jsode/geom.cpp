@@ -69,9 +69,10 @@ void FinalizeGeom(JSContext *cx, JSObject *obj) {
 	ode::dGeomID geomId = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	if ( !geomId )
 		return;
-	ode::dGeomSetData(geomId, NULL);
-	if ( !ode::dGeomGetBody(geomId) || _odeFinalization ) // geom is lost
-		ode::dGeomDestroy(geomId);
+//	if ( !ode::dGeomGetBody(geomId) || _odeFinalization ) // geom is lost
+//		ode::dGeomDestroy(geomId);
+//	else
+		ode::dGeomSetData(geomId, NULL);
 }
 
 
@@ -81,6 +82,9 @@ JSBool ReconstructGeom(JSContext *cx, ode::dGeomID geomId, JSObject **obj) {
 	JL_S_ASSERT( geomId != NULL, "Invalid ode object." );
 
 	switch( ode::dGeomGetClass(geomId) ) {
+		case ode::dSphereClass:
+			*obj = JS_NewObject(cx, classGeomSphere, NULL, NULL);
+			break;
 		case ode::dBoxClass:
 			*obj = JS_NewObject(cx, classGeomBox, NULL, NULL);
 			break;
@@ -96,8 +100,8 @@ JSBool ReconstructGeom(JSContext *cx, ode::dGeomID geomId, JSObject **obj) {
 		case ode::dRayClass:
 			*obj = JS_NewObject(cx, classGeomRay, NULL, NULL);
 			break;
-		case ode::dSphereClass:
-			*obj = JS_NewObject(cx, classGeomSphere, NULL, NULL);
+		case ode::dConvexClass:
+			*obj = JS_NewObject(cx, classGeomConvex, NULL, NULL);
 			break;
 		case ode::dTriMeshClass:
 			*obj = JS_NewObject(cx, classGeomTrimesh, NULL, NULL);
@@ -146,7 +150,7 @@ $TOC_MEMBER $INAME
  $REAL $INAME( $TYPE vec3 point )
 **/
 DEFINE_FUNCTION_FAST( PointDepth ) {
-	
+
 	ode::dGeomID geomId = (ode::dGeomID)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE( geomId );
 	JL_S_ASSERT_ARRAY( JL_FARG(1) );
@@ -154,8 +158,11 @@ DEFINE_FUNCTION_FAST( PointDepth ) {
 	size_t len;
 	JL_CHK( JsvalToFloatVector(cx, *vp, point, 3, &len) );
 	JL_S_ASSERT( len == 3, "Invalid array size." );
-	
+
 	switch( ode::dGeomGetClass(geomId) ) {
+		case ode::dSphereClass:
+			depth = ode::dGeomSpherePointDepth(geomId, point[0], point[1], point[2]);
+			break;
 		case ode::dBoxClass:
 			depth = ode::dGeomBoxPointDepth(geomId, point[0], point[1], point[2]);
 			break;
@@ -164,9 +171,6 @@ DEFINE_FUNCTION_FAST( PointDepth ) {
 			break;
 		case ode::dPlaneClass:
 			depth = ode::dGeomPlanePointDepth(geomId, point[0], point[1], point[2]);
-			break;
-		case ode::dSphereClass:
-			depth = ode::dGeomSpherePointDepth(geomId, point[0], point[1], point[2]);
 			break;
 		default:
 			JL_REPORT_ERROR("Not support for this geometry.");
@@ -271,7 +275,7 @@ $TOC_MEMBER $INAME
   The impact callback.
 **/
 DEFINE_PROPERTY( impactSetter ) {
-	
+
 	JL_S_ASSERT( JsvalIsFunction(cx, *vp) || JSVAL_IS_VOID(*vp), "Invalid type." );
 	return JS_SetReservedSlot(cx, obj, SLOT_GEOM_IMPACT_FUNCTION, *vp);
 	JL_BAD;
@@ -393,6 +397,24 @@ DEFINE_PROPERTY( positionSetter ) {
 }
 
 
+
+/**doc
+$TOC_MEMBER $INAME
+ $TYPE vec3 *position*
+  Is the axis-aligned bounding box [minx, maxx, miny, maxy, minz, maxz].
+**/
+DEFINE_PROPERTY( AABB ) {
+
+	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(geom);
+	ode::dReal aabb[6];
+	ode::dGeomGetAABB(geom, aabb);
+	JL_CHK( FloatVectorToJsval(cx, aabb, 6, vp) );
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
 /*
 
 DEFINE_PROPERTY( offsetPositionGetter ) {
@@ -461,6 +483,7 @@ CONFIGURE_CLASS
 		PROPERTY( disabled )
 		PROPERTY( temporalCoherence )
 		PROPERTY( position )
+		PROPERTY_READ( AABB )
 //		PROPERTY( offsetPosition )
 	END_PROPERTY_SPEC
 

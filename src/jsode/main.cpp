@@ -22,6 +22,8 @@
 
 #include "geom.h"
 
+DECLARE_CLASS( Vector )
+
 extern bool _unsafeMode = false;
 
 extern bool _odeFinalization = false;
@@ -77,6 +79,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	ode::dSetDebugHandler(messageHandler);
 	ode::dSetMessageHandler(messageHandler);
 
+	INIT_CLASS( Vector );
 	INIT_CLASS( Space );
 	INIT_CLASS( Joint );
 	INIT_CLASS( JointBall );
@@ -96,6 +99,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	INIT_CLASS( GeomCapsule );
 	INIT_CLASS( GeomCylinder );
 	INIT_CLASS( GeomRay );
+	INIT_CLASS( GeomConvex );
 	INIT_CLASS( GeomTrimesh );
 	INIT_CLASS( World );
 	INIT_CLASS( SurfaceParameters );

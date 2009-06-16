@@ -1810,7 +1810,7 @@ DEFINE_FUNCTION_FAST( MultiTexCoord ) {
 	LOAD_OPENGL_EXTENSION( glMultiTexCoord2d, PFNGLMULTITEXCOORD2DARBPROC );
 	LOAD_OPENGL_EXTENSION( glMultiTexCoord3d, PFNGLMULTITEXCOORD3DARBPROC );
 
-	JL_S_ASSERT_ARG_MIN(2);
+	JL_S_ASSERT_ARG_RANGE(2,4);
 
 	JL_S_ASSERT_INT(JL_FARG(1));
 	GLenum target = JSVAL_TO_INT(JL_FARG(1));
@@ -1897,33 +1897,32 @@ DEFINE_FUNCTION_FAST( LookAt ) {
 
 #define TRIMESH_ID_NAME 'GlTr'
 
-struct TrimeshInfo {
+struct OpenGlTrimeshInfo {
 
 	GLuint indexBuffer, vertexBuffer, normalBuffer, texCoordBuffer, colorBuffer;
 	int vertexCount, indexCount;
 };
 
 void FinalizeTrimesh(void *pv) {
-/*
-	static PFNGLDELETEBUFFERSARBPROC glDeleteBuffersARB = (glDeleteBuffersARB) GL_GET_PROC_ADDRESS( "PFNGLDELETEBUFFERSARBPROC" );
 
-	glDeleteBuffersARB( 1, data[0] );
-	glDeleteBuffersARB( 1, data[1] );
+/* (TBD)!
+	static PFNGLDELETEBUFFERSARBPROC glDeleteBuffersARB = (PFNGLDELETEBUFFERSARBPROC) GL_GET_PROC_ADDRESS( "PFNGLDELETEBUFFERSARBPROC" );
 
-	if ( data[2] )
-		glDeleteBuffersARB( 1, data[2] );
-
-	if ( data[3] )
-		glDeleteBuffersARB( 1, data[3] );
-
-	if ( data[4] )
-		glDeleteBuffersARB( 1, data[4] );
+	OpenGlTrimeshInfo *info = (OpenGlTrimeshInfo*)pv;
+	glDeleteBuffersARB( 1, &info->indexBuffer );
+	glDeleteBuffersARB( 1, &info->vertexBuffer );
+	if ( info->indexBuffer )
+		glDeleteBuffersARB( 1, &info->indexBuffer );
+	if ( info->texCoordBuffer )
+		glDeleteBuffersARB( 1, &info->texCoordBuffer );
+	if ( info->colorBuffer )
+		glDeleteBuffersARB( 1, &info->colorBuffer );
 */
 }
 
 /**doc
 $TOC_MEMBER $INAME
- $VOID $INAME( trimesh )
+ $TYPE Id $INAME( trimesh )
 **/
 DEFINE_FUNCTION_FAST( LoadTrimesh ) {
 
@@ -1940,8 +1939,8 @@ DEFINE_FUNCTION_FAST( LoadTrimesh ) {
 
 	JL_S_ASSERT( srf->vertex && srf->vertexCount && srf->index && srf->indexCount, "No enough data" );
 
-	TrimeshInfo *info;
-	JL_CHK( CreateId(cx, TRIMESH_ID_NAME, sizeof(TrimeshInfo), (void**)&info, FinalizeTrimesh, JL_FRVAL) );
+	OpenGlTrimeshInfo *info;
+	JL_CHK( CreateId(cx, TRIMESH_ID_NAME, sizeof(OpenGlTrimeshInfo), (void**)&info, FinalizeTrimesh, JL_FRVAL) );
 
 	info->vertexCount = srf->vertexCount;
 	info->indexCount = srf->indexCount;
@@ -2004,7 +2003,7 @@ DEFINE_FUNCTION_FAST( DrawTrimesh ) {
 
 	JL_S_ASSERT( IsIdType(cx, JL_FARG(1), TRIMESH_ID_NAME), "Invalid Id." );
 
-	TrimeshInfo *info = (TrimeshInfo*)GetIdPrivate(cx, JL_FARG(1));
+	OpenGlTrimeshInfo *info = (OpenGlTrimeshInfo*)GetIdPrivate(cx, JL_FARG(1));
 
 	GLenum dataType = sizeof(SURFACE_REAL_TYPE) == sizeof(float) ? GL_FLOAT : GL_DOUBLE;
 

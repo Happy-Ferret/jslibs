@@ -3,41 +3,11 @@ try {
 LoadModule('jsdebug');
 LoadModule('jsstd');
 LoadModule('jsio');
-LoadModule('jsgraphics');
-LoadModule('jstrimesh');
-LoadModule('jssdl');
-LoadModule('jsode');
-LoadModule('jssound');
-LoadModule('jsaudio');
 
-
-function MeshToTrimesh(filename) {
-
-	var trimeshList = {};
-	var mesh = eval('('+(new File(filename).content)+')');
-	for ( var id in mesh ) {
-
-		var tm = new Trimesh();
-		trimeshList[id] = tm;
-
-		var vertexList = [];
-		var normalList = [];
-		for each ( var it in mesh[id].vertex ) {
-			vertexList.push(it[0], it[1], it[2]);
-			normalList.push(it[3], it[4], it[5]);
-		}
-		tm.DefineVertexBuffer(vertexList);
-		tm.DefineNormalBuffer(vertexList);
-
-		var faceList = [];
-		for each ( var it in mesh[id].face )
-			faceList.push(it[0], it[1], it[2]);
-		tm.DefineIndexBuffer(faceList);
-	}
-	return trimeshList;
-}
 
 //////////////////////////////////////////////////////////////////////////////
+
+LoadModule('jsode');
 
 var world = new World();
 world.quickStepNumIterations = 20;
@@ -46,10 +16,13 @@ world.linearDamping = 0.001;
 world.angularDamping = 0.001;
 world.defaultSurfaceParameters.softERP = 1;
 world.defaultSurfaceParameters.softCFM = 0.000001;
+world.defaultSurfaceParameters.bounce = 0.5;
+world.defaultSurfaceParameters.bounceVel = 2;
 
 
 var InputManager = new function () {
 	
+	LoadModule('jssdl');	
 	var self = this;
 	
 	var listenerList = [];
@@ -61,7 +34,7 @@ var InputManager = new function () {
 	showCursor = false;
 	grabInput = true;
 
-	while (PollEvent()); // clear the event queue
+	while ( PollEvent() ); // clear the event queue
 
 	var listeners = {
 		onQuit: function() done = true,
@@ -80,17 +53,17 @@ var InputManager = new function () {
 		onMouseButtonDown: function(button) {
 			
 			for each ( var listener in listenerList )
-				listener.onMouseDown && listener.onMouseButtonDown(button);
+				listener.onMouseButtonDown && listener.onMouseButtonDown.apply(listener, arguments);
 		},
 		onMouseButtonUp: function(button) {
 			
 			for each ( var listener in listenerList )
-				listener.onMouseButtonUp && listener.onMouseButtonUp(button);
+				listener.onMouseButtonUp && listener.onMouseButtonUp.apply(listener, arguments);
 		},
 		onMouseMotion: function(px,py,dx,dy,button) {
 			
 			for each ( var listener in listenerList )
-				listener.onMouseMotion && listener.onMouseMotion(px,py,dx,dy,button);
+				listener.onMouseMotion && listener.onMouseMotion.apply(listener, arguments);
 		}
 	};
 	
@@ -101,8 +74,51 @@ var InputManager = new function () {
 }
 
 
-var SoundManager = new function() {
+var TrimeshManager = new function() {
+	
+	LoadModule('jstrimesh');
+	
+	var trimeshList = [];
+		
+	this.Load = function(filename) {
 
+		if ( filename in trimeshList )
+			return trimeshList[filename];
+
+		var objects = {};
+		var mesh = eval('('+(new File(filename).content)+')');
+		for ( var id in mesh ) {
+
+			var tm = new Trimesh();
+			objects[id] = tm;
+
+			var vertexList = [];
+			var normalList = [];
+			for each ( var it in mesh[id].vertex ) {
+			
+				vertexList.push(it[0], it[1], it[2]);
+				normalList.push(it[3], it[4], it[5]);
+			}
+			tm.DefineVertexBuffer(vertexList);
+			tm.DefineNormalBuffer(vertexList);
+
+			var faceList = [];
+			for each ( var it in mesh[id].face ) {
+			
+				faceList.push(it[0], it[1], it[2]);
+			}
+			tm.DefineIndexBuffer(faceList);
+		}
+		
+		return trimeshList[filename] = objects;
+	}
+}
+
+
+var SoundManager = new function() {
+	
+	LoadModule('jsaudio');
+	LoadModule('jssound');
 	Oal.Open("Generic Software"); // "Generic Hardware", "Generic Software", "DirectSound3D" (for legacy), "DirectSound", "MMSYSTEM"
 
 	var bufferList = {};
@@ -130,7 +146,7 @@ var SoundManager = new function() {
 
 		if ( filename in bufferList )
 			return bufferList[filename];
-		var decoder = filename.substr(-4) == '.ogg' ? OggVorbisDecoder :SoundFileDecoder;
+		var decoder = filename.substr(-4) == '.ogg' ? OggVorbisDecoder : SoundFileDecoder;
 		var decoder = new decoder( new File(filename).Open(File.RDONLY) );
 		return bufferList[filename] = new OalBuffer( SplitChannels(decoder.Read())[0] );
 	}
@@ -149,6 +165,9 @@ var SoundManager = new function() {
 
 
 var DisplayManager = new function() {
+
+	LoadModule('jssdl');
+	LoadModule('jsgraphics');
 	
 	GlSetAttribute( GL_SWAP_CONTROL, 1 ); // vsync
 	GlSetAttribute( GL_DOUBLEBUFFER, 1 );
@@ -158,9 +177,6 @@ var DisplayManager = new function() {
 	with (Ogl) {
 	
 		Hint( PERSPECTIVE_CORRECTION_HINT, NICEST );
-		MatrixMode(PROJECTION);
-		Perspective(60, 0.001, 1000);
-		MatrixMode(MODELVIEW);
 
 		Enable(BLEND); //Enable alpha blending
 		BlendFunc(SRC_ALPHA, ONE_MINUS_SRC_ALPHA); //Set the blend function
@@ -169,6 +185,7 @@ var DisplayManager = new function() {
 		Enable(LIGHTING);
 		Enable(LIGHT0);
 		Light(LIGHT0, SPECULAR, [1, 1, 1, 1]);
+		
 //	Light(LIGHT0, POSITION, [-1,-2, 10]);
 //  LightModel(LIGHT_MODEL_AMBIENT, [0.5, 0.5, 0.5, 1]);
 //  ShadeModel(SMOOTH);
@@ -176,21 +193,41 @@ var DisplayManager = new function() {
 	  Enable( COLOR_MATERIAL );
 //  ColorMaterial( FRONT_AND_BACK, EMISSION );
 	}
-
 }
 
 
-var Renderer = new function() {
+var TimeManager = new function() {
+	
+	var prev, t1, t0 = TimeCounter();
+	this.Lap = function() {
+		
+		var t = TimeCounter();
+		prev = t - t1;
+		t1 = t;
+	}
+	
+	this.__defineGetter__('time', function() t1-t0 );
+	this.__defineGetter__('prev', function() prev );
+}
+
+
+var SceneManager = new function() {
 
 	var px, py, pz,  tx, ty, tz;
 	var objectList = [];
 
-	this.SetCameraPosition = function(x,y,z) {
+	this.CameraFOV = function(fov) {
+	
+		Ogl.MatrixMode(Ogl.PROJECTION);
+		Ogl.Perspective(fov, 0.001, 1000);
+	}
+
+	this.CameraPosition = function(x,y,z) {
 		
 		px = x; py = y; pz = z;
 	}
 
-	this.SetCameraTarget = function(x,y,z) {
+	this.CameraTarget = function(x,y,z) {
 		
 		tx = x; ty = y; tz = z;
 	}
@@ -204,16 +241,26 @@ var Renderer = new function() {
 		
 		objectList.splice(objectList.lastIndexOf(object), 1);
 	}
+	
+	this.Update = function() {
+
+		for each ( object in objectList )
+			object.Update && object.Update();
+	}
 
 	this.Render = function() {
 		
 		OalListener.position = [px, py, pz];
 		Ogl.Clear(Ogl.COLOR_BUFFER_BIT | Ogl.DEPTH_BUFFER_BIT);
+		Ogl.MatrixMode(Ogl.MODELVIEW);
 		Ogl.LoadIdentity();
 		Ogl.LookAt(px, py, pz, tx, ty, tz, 0,0,1);
 
 		for each ( object in objectList ) {
-		
+
+			if ( !object.Render )
+				continue;
+			// check if object is inside the frustum (see PlanesCollider::PlanesAABBOverlap)
 			Ogl.PushMatrix();
 			object.Render();
 			Ogl.PopMatrix();
@@ -222,7 +269,6 @@ var Renderer = new function() {
 		GlSwapBuffers();
 	}
 }
-
 
 
 function Floor() {
@@ -237,7 +283,6 @@ function Floor() {
 		Ogl.Translate(-10,-10,0);
 		Ogl.Scale(2,2,0);
 		var cx=10, cy=10;
-//		Ogl.Translate(-1,-1,0);
 		Ogl.Begin(Ogl.QUADS);
 		for ( var x = 0; x < cx; x++ )
 			for ( var y = 0; y < cy; y++ ) {
@@ -259,27 +304,50 @@ function Floor() {
 function Ball() {
 	
 	var self = this;
-	var trimesh = MeshToTrimesh('sphere.json').Sphere;
+	
+	var trimesh = TrimeshManager.Load('sphere.json').Sphere;
 	var glTrimeshId = Ogl.LoadTrimesh(trimesh);
 	var geom = new GeomTrimesh(trimesh, world.space);
 	var body = new Body(world);
 	geom.body = body;
 	body.mass.value = 1;
-	body.position = [10,-5,10];
+	body.position = [10,-5,1];
 	
 	var impactSound = SoundManager.Load('29996__thanvannispen__stone_on_stone_impact13.aif');
 
 	geom.impact = function(geom, geom2, vel, px, py, pz) {
 
-		if ( vel > 5 ) {
-
+		if ( vel > 5 )
 			SoundManager.Play(impactSound, px, py, pz, vel/100);
+	}
+
+	this.onMouseButtonDown = function(button) {
+		
+		if ( button == BUTTON_WHEELDOWN ) {
+		
+			var vel = body.linearVel;
+			vel[2] -= 10;
+			body.linearVel = vel;
 		}
+	}
+	
+	this.onMouseMotion = function(px,py,dx,dy,button) {
+	
+		var vel = body.linearVel;
+		vel[0] += dx / 100;
+		vel[1] -= dy / 100;
+		body.linearVel = vel;
+	}
+	
+	this.Update = function() {
+		
+		var pos = body.position;
+		SceneManager.CameraTarget(pos[0], pos[1], pos[2]);
 	}
 	
 	this.Render = function() {
 
-		Ogl.MultMatrix(body);
+		Ogl.MultMatrix(geom);
 		Ogl.Color(1,0,0);
 		Ogl.DrawTrimesh(glTrimeshId);
 	}
@@ -291,20 +359,28 @@ function Ball() {
 	} 
 }
 
-Renderer.SetCameraPosition(-10,-10,10);
-Renderer.SetCameraTarget(0,0,0);
-Renderer.Add(new Floor());
-Renderer.Add(new Ball());
 
+SceneManager.CameraFOV(60);
+SceneManager.CameraPosition(-10,-10,10);
+SceneManager.CameraTarget(0,0,0);
+SceneManager.Add(new Floor());
+
+var ball = new Ball();
+SceneManager.Add(ball);
+InputManager.AddEventListener(ball);
+
+CollectGarbage();
 
 var end = false;
-
 while ( !end ) {
-
+	
+	TimeManager.Lap();
 	InputManager.ProcessEvents();
+	SceneManager.Update();
 	world.Step(20);
-	Renderer.Render();
+	SceneManager.Render();
 	Sleep(10);
+	Print( (1000/(TimeManager.prev - 10)).toFixed(0),' fps    \r' );
 }
 
 

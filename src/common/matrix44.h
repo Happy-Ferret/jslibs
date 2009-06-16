@@ -183,7 +183,7 @@ inline void Matrix44MultSimple( Matrix44 *rm, Matrix44 *m, Matrix44 *mx ) {
 }
 
 
-
+// see. http://www.google.com/codesearch/p?hl=en&sa=N&cd=6&ct=rc#DSL5kIMUUeU/Utils.cpp&q=xorps%20xmm0,xmm0%20movaps%20fsincos&l=91
 
 inline void Matrix44SetXRotation( Matrix44 *m, float radAngle ) {
 

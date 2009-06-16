@@ -19,6 +19,8 @@
 #include "geom.h"
 #include "joint.h"
 
+//#include "vector.h"
+
 static JSBool ReadMatrix( JSContext *cx, JSObject *obj, float **pm) { // Doc: __declspec(noinline) tells the compiler to never inline a particular function.
 
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
@@ -74,9 +76,9 @@ DEFINE_FINALIZE() {
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	if ( !bodyId )
 		return;
-	if ( _odeFinalization )
-		ode::dBodyDestroy(bodyId);
-	else
+//	if ( _odeFinalization )
+//		ode::dBodyDestroy(bodyId);
+//	else
 		ode::dBodySetData(bodyId, NULL);
 }
 
@@ -551,6 +553,28 @@ DEFINE_PROPERTY( angularDampingThresholdSetter ) {
 	JL_BAD;
 }
 
+/*
+void BodyPositionSet(void *userData, int index, float value) {
+	
+	ode::dxBody* body = (ode::dxBody*)userData;
+	body->posr.pos[index] = value;
+}
+
+float BodyPositionGet(void *userData, int index) {
+	
+	return ode::dBodyGetPosition((ode::dxBody*)userData)[index];
+}
+
+DEFINE_PROPERTY( position ) {
+
+	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( bodyId );
+	if ( JSVAL_IS_VOID(*vp) )
+		return CreateVector(cx, obj, bodyId, BodyPositionSet, BodyPositionGet, vp);
+	return JS_TRUE;
+	JL_BAD;
+}
+*/
 
 
 /**doc
@@ -761,6 +785,9 @@ CONFIGURE_CLASS
 		PROPERTY_SWITCH( force     , vector )
 		PROPERTY_SWITCH( torque    , vector )
 		PROPERTY_READ_STORE( mass ) // mass is only a wrapper to dBodyGetMass and dBodySetMass
+
+//		PROPERTY_READ_STORE( position )
+		
 	END_PROPERTY_SPEC
 
 	BEGIN_STATIC_FUNCTION_SPEC
