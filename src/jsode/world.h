@@ -21,6 +21,7 @@ DECLARE_CLASS( World )
 struct WorldPrivate {
 	ode::dWorldID worldId;
 	ode::dJointGroupID contactGroupId;
+//	JSContext *stepJsCx;
 };
 
 
@@ -34,4 +35,3 @@ ALWAYS_INLINE JSBool JsvalToWorldID( JSContext *cx, jsval val, ode::dWorldID *wo
 	return JS_TRUE;
 	JL_BAD;
 }
-

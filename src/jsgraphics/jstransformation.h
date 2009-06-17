@@ -17,23 +17,32 @@
 
 DECLARE_CLASS(Transformation)
 
-/* This function tries to read a matrix44 from a Transformation object OR a NI_READ_MATRIX44 interface
- * *m MUST be a valid matrix pointer BUT m MAY be modified and replaced by a private matrix pointer ( in this case, you MUST copy the data )
- * see Load for an example
- */
+struct TransformationPrivate {
+	bool isIdentity;
+	Matrix44 *mat;
+};
+
+// This function tries to read a matrix44 from a Transformation object OR a NI_READ_MATRIX44 interface.
 inline JSBool GetMatrixHelper( JSContext *cx, jsval val, Matrix44 **m ) {
 
 	JL_S_ASSERT_OBJECT(val);
 	JSObject *matrixObj = JSVAL_TO_OBJECT(val);
 
-	NIMatrix44Get MatrixGet = Matrix44GetInterface(cx, matrixObj);
-	if ( MatrixGet != NULL ) {
-
-		JL_CHK( MatrixGet(cx, matrixObj, (float**)m));
+	if ( JL_GetClass(matrixObj) == classTransformation ) {
+		
+		TransformationPrivate *pv = (TransformationPrivate *)JL_GetPrivate(cx, matrixObj);
+		*m = pv->mat;
 		return JS_TRUE;
 	}
 
-	if ( JsvalIsArray(cx, val) ) {
+	NIMatrix44Get Matrix44Get = Matrix44GetInterface(cx, matrixObj);
+	if ( Matrix44Get != NULL ) {
+
+		JL_CHK( Matrix44Get(cx, matrixObj, (float**)m) );
+		return JS_TRUE;
+	}
+
+	if ( JS_IsArrayObject(cx, matrixObj) ) {
 
 		jsval element;
 		JL_CHK( JS_GetElement(cx, JSVAL_TO_OBJECT(val), 0, &element) );

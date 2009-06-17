@@ -30,16 +30,25 @@ DEFINE_FINALIZE() {
 
 /**doc
 $TOC_MEMBER $INAME
- $INAME( world )
+ $INAME( world, [ jointGroup ] )
 **/
 DEFINE_CONSTRUCTOR() {
 
 	JL_S_ASSERT_CONSTRUCTING();
 	JL_S_ASSERT_THIS_CLASS();
-	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_ARG_RANGE(1,2);
+
+	ode::dJointGroupID groupId;
+	JL_S_ASSERT_OBJECT( JL_ARG(2) );
+	JL_S_ASSERT_CLASS( JSVAL_TO_OBJECT( JL_ARG(2) ), classJointGroup );
+	if ( JL_ARG_ISDEF(2) )
+		groupId = (ode::dJointGroupID)JL_GetPrivate(cx, JSVAL_TO_OBJECT(JL_ARG(2)));
+	else
+		groupId = 0;
+	
 	ode::dWorldID worldId;
 	JL_CHK( JsvalToWorldID( cx, JL_ARG(1), &worldId) );
-	ode::dJointID jointId = ode::dJointCreateFixed(worldId, 0); // The joint group ID is 0 to allocate the joint normally.
+	ode::dJointID jointId = ode::dJointCreateFixed(worldId, groupId); // The joint group ID is 0 to allocate the joint normally.
 	ode::dJointSetData(jointId, obj);
 	ode::dJointSetFeedback(jointId, NULL);
 	JL_SetPrivate(cx, obj, jointId);

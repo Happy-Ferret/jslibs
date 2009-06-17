@@ -400,10 +400,10 @@ DEFINE_PROPERTY( positionSetter ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $TYPE vec3 *position*
+ $TYPE vec6 *position*
   Is the axis-aligned bounding box [minx, maxx, miny, maxy, minz, maxz].
 **/
-DEFINE_PROPERTY( AABB ) {
+DEFINE_PROPERTY( aabb ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(geom);
@@ -483,7 +483,7 @@ CONFIGURE_CLASS
 		PROPERTY( disabled )
 		PROPERTY( temporalCoherence )
 		PROPERTY( position )
-		PROPERTY_READ( AABB )
+		PROPERTY_READ( aabb )
 //		PROPERTY( offsetPosition )
 	END_PROPERTY_SPEC
 

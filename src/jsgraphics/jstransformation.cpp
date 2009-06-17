@@ -23,6 +23,8 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 
+#define DEG_TO_RAD(a) (-angle * M_PI / 180.0f)
+
 // (TBD) move this in the class private
 
 jl::Pool matrixPool;
@@ -30,8 +32,10 @@ jl::Pool matrixPool;
 
 static int GetMatrix(JSContext *cx, JSObject *obj, float **m) { // Doc: __declspec(noinline) tells the compiler to never inline a particular function.
 	
-	Matrix44 *objMatrix = (Matrix44*)JL_GetPrivate(cx, obj);
-	*m = objMatrix->raw; // returns its private pointer. Caller SHOULD not modify it
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
+	if ( !pv )
+		return false;
+	*m = pv->mat->raw; // returns its private pointer. Caller SHOULD not modify it
 	return true;
 }
 
@@ -52,9 +56,10 @@ DEFINE_FINALIZE() {
 		return;
 	}
 //	printf("Fin:%d\n", matrixPoolLength);
-	Matrix44 *m = (Matrix44*)JL_GetPrivate(cx, obj);
-	if ( !jl::PoolPush(&matrixPool, m) )
-		Matrix44Free(m);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
+	if ( !jl::PoolPush(&matrixPool, pv->mat) )
+		Matrix44Free(pv->mat);
+	JS_free(cx, pv);
 }
 
 
@@ -63,30 +68,38 @@ $TOC_MEMBER $INAME
  $INAME( [init] )
   Creates a new Transformation object. 
   If no argument is given, the transformation is not initialized.
-  If _init_ is $UNDEF, the transformation is initialized to identity.
+  If _init_ is $NULL, the transformation is initialized to identity.
   If _init_ is a matrix, the transormation is initialized with the matrix.
 **/
 DEFINE_CONSTRUCTOR() {
 
-//	printf("New:%d\n", matrixPoolLength);
-
 	JL_S_ASSERT_CONSTRUCTING();
-	Matrix44 *m;
-	if ( PoolIsEmpty(&matrixPool) )
-		m = Matrix44Alloc();
-	else
-		m = (Matrix44*)jl::PoolPop(&matrixPool);
-	JL_S_ASSERT_ALLOC(m);
+	JL_S_ASSERT_THIS_CLASS();
+	JL_S_ASSERT_ARG_RANGE(0,1);
+
+	TransformationPrivate *pv = (TransformationPrivate *)JS_malloc(cx, sizeof(TransformationPrivate));
+	JL_CHK(pv);
+	JL_SetPrivate(cx, JL_OBJ, pv);
+
+	pv->mat = PoolIsEmpty(&matrixPool) ? Matrix44Alloc() : (Matrix44*)jl::PoolPop(&matrixPool);
+	JL_S_ASSERT_ALLOC(pv->mat);
 
 	if ( JL_ARGC >= 1 ) {
 		
-		if ( JSVAL_IS_VOID(JL_ARG(1)) )
-			Matrix44Identity(m);
-		else
-			JL_CHK( GetMatrixHelper(cx, JL_ARG(1), &m) );
+		if ( JSVAL_IS_NULL(JL_ARG(1)) ) {
+			
+			Matrix44Identity(pv->mat);
+			pv->isIdentity = true;
+		} else {
+			
+			Matrix44 *m = pv->mat;
+			JL_CHKM( GetMatrixHelper(cx, JL_ARG(1), &m), "Unable to access Matrix44 interface." );
+			if ( m != pv->mat ) // check if the pointer has been modified
+				Matrix44Load(pv->mat, m);
+			pv->isIdentity = false;
+		}
 	}
 
-	JL_SetPrivate(cx, JL_OBJ, m);
 	JL_CHK( SetMatrix44GetInterface(cx, obj, GetMatrix) );
 	return JS_TRUE;
 	JL_BAD;
@@ -100,9 +113,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Clear ) {
 
-	Matrix44 *tm = (Matrix44*)JL_GetPrivate(cx, JL_FOBJ);
-	JL_S_ASSERT_RESOURCE(tm);
-	Matrix44Identity(tm);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(pv);
+	Matrix44Identity(pv->mat);
+	pv->isIdentity = true;
 	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
 	return JS_TRUE;
 	JL_BAD;
@@ -116,9 +130,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( ClearRotation ) {
 
-	Matrix44 *tm = (Matrix44*)JL_GetPrivate(cx, JL_FOBJ);
-	JL_S_ASSERT_RESOURCE(tm);
-	Matrix44ClearRotation(tm);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(pv);
+	Matrix44ClearRotation(pv->mat);
 	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
 	return JS_TRUE;
 	JL_BAD;
@@ -132,9 +146,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( ClearTranslation ) {
 
-	Matrix44 *tm = (Matrix44*)JL_GetPrivate(cx, JL_FOBJ);
-	JL_S_ASSERT_RESOURCE(tm);
-	Matrix44ClearTranslation(tm);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(pv);
+	Matrix44ClearTranslation(pv->mat);
 	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
 	return JS_TRUE;
 	JL_BAD;
@@ -150,15 +164,18 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Load ) {
 
-	JL_S_ASSERT_ARG_MIN(1);
-	Matrix44 *tm = (Matrix44*)JL_GetPrivate(cx, JL_FOBJ);
-	JL_S_ASSERT_RESOURCE(tm);
-	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(pv);
 
-	Matrix44 *m = tm;
-	JL_CHK( GetMatrixHelper(cx, JL_FARG(1), &m) ); // GetMatrixHelper will copy data into tmp OR replace tmp by its own float pointer
-	if ( m != tm ) // check if the pointer has been modified
-		memcpy(tm, m, sizeof(Matrix44)); // if it is, copy the data
+	JL_S_ASSERT_ARG(1);
+
+	Matrix44 *tmp = pv->mat;
+	JL_CHK( GetMatrixHelper(cx, JL_FARG(1), &tmp) );
+	if ( tmp != pv->mat ) // check if the pointer has been modified
+		Matrix44Load(pv->mat, tmp);
+	pv->isIdentity = false; // (TBD) detect identity
+
+	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -173,23 +190,28 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( LoadRotation ) {
 
-	JL_S_ASSERT_ARG_MIN(1);
-	Matrix44 *tm = (Matrix44*)JL_GetPrivate(cx, JL_FOBJ); // tm for thisMatrix
-	JL_S_ASSERT_RESOURCE(tm);
+	JL_S_ASSERT_ARG(1);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(pv);
+
 	Matrix44 tmp, *m = &tmp;
 	JL_CHK( GetMatrixHelper(cx, JL_FARG(1), &m) );
-	tm->raw[0]  = m->raw[0] ; //L1
-	tm->raw[1]  = m->raw[1] ;
-	tm->raw[2]  = m->raw[2] ;
 
-	tm->raw[4]  = m->raw[4] ; //L2
-	tm->raw[5]  = m->raw[5] ;
-	tm->raw[6]  = m->raw[6] ;
+	pv->mat->raw[0]  = m->raw[0] ; //L1
+	pv->mat->raw[1]  = m->raw[1] ;
+	pv->mat->raw[2]  = m->raw[2] ;
 
-	tm->raw[8]  = m->raw[8] ; //L3
-	tm->raw[9]  = m->raw[9] ;
-	tm->raw[10] = m->raw[10];
-	*JL_FRVAL = JSVAL_VOID;
+	pv->mat->raw[4]  = m->raw[4] ; //L2
+	pv->mat->raw[5]  = m->raw[5] ;
+	pv->mat->raw[6]  = m->raw[6] ;
+
+	pv->mat->raw[8]  = m->raw[8] ; //L3
+	pv->mat->raw[9]  = m->raw[9] ;
+	pv->mat->raw[10] = m->raw[10];
+
+	pv->isIdentity = false; // (TBD) detect identity
+
+	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -205,39 +227,19 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( LoadTranslation ) {
 
-	JL_S_ASSERT_ARG_MIN(1);
-	Matrix44 *tm = (Matrix44*)JL_GetPrivate(cx, JL_FOBJ); // tm for thisMatrix
-	JL_S_ASSERT_RESOURCE(tm);
+	JL_S_ASSERT_ARG(1);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(pv);
+
 	Matrix44 tmp, *m = &tmp;
 	JL_CHK( GetMatrixHelper(cx, JL_FARG(1), &m) );
-	tm->raw[3]  = m->raw[3];
-	tm->raw[7]  = m->raw[7];
-	tm->raw[11] = m->raw[11];
-	*JL_FRVAL = JSVAL_VOID;
-	return JS_TRUE;
-	JL_BAD;
-}
 
+	pv->mat->raw[3]  = m->raw[3];
+	pv->mat->raw[7]  = m->raw[7];
+	pv->mat->raw[11] = m->raw[11];
 
-/**doc
-$TOC_MEMBER $INAME
- $THIS $INAME( x, y, z )
-  Sets the translation part of the current transformation.
-  $H arguments
-   $ARG $REAL x
-   $ARG $REAL y
-   $ARG $REAL z
-**/
-DEFINE_FUNCTION_FAST( Translation ) {
+	pv->isIdentity = false; // (TBD) detect identity
 
-	JL_S_ASSERT_ARG(3);
-	Matrix44 *m = (Matrix44*)JL_GetPrivate(cx, JL_FOBJ);
-	JL_S_ASSERT_RESOURCE(m);
-	float x, y, z;
-	JL_CHK( JsvalToFloat(cx, JL_FARG(1), &x) ); 
-	JL_CHK( JsvalToFloat(cx, JL_FARG(2), &y) ); 
-	JL_CHK( JsvalToFloat(cx, JL_FARG(3), &z) ); 
-	Matrix44SetTranslation(m, x,y,z);
 	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
 	return JS_TRUE;
 	JL_BAD;
@@ -255,17 +257,27 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Translate ) {
 
-	JL_S_ASSERT_ARG_MIN(3); // x, y, z
-	Matrix44 *m = (Matrix44*)JL_GetPrivate(cx, JL_FOBJ);
-	JL_S_ASSERT_RESOURCE(m);
+	JL_S_ASSERT_ARG(3);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(pv);
+
 	float x, y, z;
-	JL_CHK( JsvalToFloat(cx, JL_FARG(1), &x) ); 
-	JL_CHK( JsvalToFloat(cx, JL_FARG(2), &y) ); 
-	JL_CHK( JsvalToFloat(cx, JL_FARG(3), &z) ); 
-	Matrix44 t;
-	Matrix44Identity(&t);
-	Matrix44SetTranslation(&t, x, y, z);
-	Matrix44MultSimple(m, m, &t);
+	JL_CHK( JsvalToFloat(cx, JL_FARG(1), &x) );
+	JL_CHK( JsvalToFloat(cx, JL_FARG(2), &y) );
+	JL_CHK( JsvalToFloat(cx, JL_FARG(3), &z) );
+
+	if ( pv->isIdentity ) {
+	
+		Matrix44SetTranslation(pv->mat, x, y, z);
+		pv->isIdentity = false;
+	} else {
+
+		Matrix44 t;
+		Matrix44Identity(&t);
+		Matrix44SetTranslation(&t, x, y, z);
+		Matrix44Mult(pv->mat, pv->mat, &t);
+	}
+
 	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
 	return JS_TRUE;
 	JL_BAD;
@@ -285,16 +297,15 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( RotationFromQuaternion ) {
 
-	JL_S_ASSERT_ARG_MIN(4); // w, x, y, z
-	Matrix44 *tm = (Matrix44*)JL_GetPrivate(cx, JL_FOBJ); // tm for thisMatrix
-	JL_S_ASSERT_RESOURCE(tm);
+	JL_S_ASSERT_ARG(4);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(pv);
 
 	float w, x, y, z;
 	JL_CHK( JsvalToFloat(cx, JL_FARG(1), &w) ); 
 	JL_CHK( JsvalToFloat(cx, JL_FARG(2), &x) ); 
 	JL_CHK( JsvalToFloat(cx, JL_FARG(3), &y) ); 
 	JL_CHK( JsvalToFloat(cx, JL_FARG(4), &z) ); 
-
 
 	float fTx  = 2.0 * x;
 	float fTy  = 2.0 * y;
@@ -309,16 +320,19 @@ DEFINE_FUNCTION_FAST( RotationFromQuaternion ) {
 	float fTyz = fTz * y;
 	float fTzz = fTz * z;
 
-	tm->m[0][0] = 1.0-(fTyy+fTzz);
-	tm->m[0][1] = fTxy-fTwz;
-	tm->m[0][2] = fTxz+fTwy;
-	tm->m[1][0] = fTxy+fTwz;
-	tm->m[1][1] = 1.0-(fTxx+fTzz);
-	tm->m[1][2] = fTyz-fTwx;
-	tm->m[2][0] = fTxz-fTwy;
-	tm->m[2][1] = fTyz+fTwx;
-	tm->m[2][2] = 1.0-(fTxx+fTyy);
+	pv->mat->m[0][0] = 1.0-(fTyy+fTzz);
+	pv->mat->m[0][1] = fTxy-fTwz;
+	pv->mat->m[0][2] = fTxz+fTwy;
+	pv->mat->m[1][0] = fTxy+fTwz;
+	pv->mat->m[1][1] = 1.0-(fTxx+fTzz);
+	pv->mat->m[1][2] = fTyz-fTwx;
+	pv->mat->m[2][0] = fTxz-fTwy;
+	pv->mat->m[2][1] = fTyz+fTwx;
+	pv->mat->m[2][2] = 1.0-(fTxx+fTyy);
 
+	pv->isIdentity = false;
+
+	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -326,7 +340,7 @@ DEFINE_FUNCTION_FAST( RotationFromQuaternion ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $THIS $INAME( roll, pitch, yaw )
+ $THIS $INAME( roll, pitch, yaw ) ,,not implemented yet,,
   Sets the Tait-Bryan rotation.
   $H arguments
    $ARG $REAL roll
@@ -335,9 +349,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( TaitBryanRotation ) {
 
-	JL_S_ASSERT_ARG_MIN(3); // roll, pitch, yaw
-	Matrix44 *tm = (Matrix44*)JL_GetPrivate(cx, JL_FOBJ); // tm for thisMatrix
-	JL_S_ASSERT_RESOURCE(tm);
+	JL_S_ASSERT_ARG(3);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(pv);
 
 	float roll, pitch, yaw;
 	JL_CHK( JsvalToFloat(cx, JL_FARG(1), &roll) );
@@ -345,38 +359,8 @@ DEFINE_FUNCTION_FAST( TaitBryanRotation ) {
 	JL_CHK( JsvalToFloat(cx, JL_FARG(3), &yaw) );
 
 	// (TBD)
+	pv->isIdentity = false;
 
-	return JS_TRUE;
-	JL_BAD;
-}
-
-
-
-/**doc
-$TOC_MEMBER $INAME
- $THIS $INAME( angle, x, y, z )
-  Sets the rotation part of the current transformation.
-  $H arguments
-   $ARG $REAL angle in degres
-   $ARG $REAL x
-   $ARG $REAL y
-   $ARG $REAL z
-**/
-DEFINE_FUNCTION_FAST( Rotation ) {
-
-	JL_S_ASSERT_ARG_MIN(4); // angle, x, y, z
-	Matrix44 *tm = (Matrix44*)JL_GetPrivate(cx, JL_FOBJ); // tm for thisMatrix
-	JL_S_ASSERT_RESOURCE(tm);
-
-	float angle, x, y, z;
-	JL_CHK( JsvalToFloat(cx, JL_FARG(1), &angle) ); 
-	JL_CHK( JsvalToFloat(cx, JL_FARG(2), &x) ); 
-	JL_CHK( JsvalToFloat(cx, JL_FARG(3), &y) ); 
-	JL_CHK( JsvalToFloat(cx, JL_FARG(4), &z) ); 
-	Vector3 axis;
-	Vector3Set(&axis, x,y,z);
-	Matrix44SetRotation(tm, &axis, -angle * M_PI / 180.0f);
-	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -395,20 +379,34 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION_FAST( Rotate ) {
 
 	JL_S_ASSERT_ARG(4);
-	Matrix44 *m = (Matrix44*)JL_GetPrivate(cx, JL_FOBJ);
-	JL_S_ASSERT_RESOURCE(m);
-	float angle, x, y, z;
-	JL_CHK( JsvalToFloat(cx, JL_FARG(1), &angle) ); 
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(pv);
+	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
+
+	float angle;
+	JL_CHK( JsvalToFloat(cx, JL_FARG(1), &angle) );
+	if ( angle == 0.0f )
+		return JS_TRUE;
+
+	float x, y, z;
 	JL_CHK( JsvalToFloat(cx, JL_FARG(2), &x) ); 
 	JL_CHK( JsvalToFloat(cx, JL_FARG(3), &y) ); 
 	JL_CHK( JsvalToFloat(cx, JL_FARG(4), &z) ); 
 	Vector3 axis;
 	Vector3Set(&axis, x,y,z);
-	Matrix44 r;
-	Matrix44Identity(&r);
-	Matrix44SetRotation(&r, &axis, -angle * M_PI / 180.0f);
-	Matrix44MultSimple(m, m, &r);
-	*JL_FRVAL = JSVAL_VOID;
+
+	if ( pv->isIdentity ) {
+
+		Matrix44SetRotation(pv->mat, &axis, DEG_TO_RAD(angle));
+		pv->isIdentity = false;
+	} else {
+
+		Matrix44 r;
+		Matrix44Identity(&r);
+		Matrix44SetRotation(&r, &axis, DEG_TO_RAD(angle));
+		Matrix44Mult(pv->mat, pv->mat, &r);
+	}
+
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -417,21 +415,34 @@ DEFINE_FUNCTION_FAST( Rotate ) {
 /**doc
 $TOC_MEMBER $INAME
  $THIS $INAME( angle )
-  Set the rotation around the X axis.
+  Rotate around the X axis.
   $H arguments
    $ARG $REAL angle in degres
 **/
-DEFINE_FUNCTION_FAST( RotationX ) {
+DEFINE_FUNCTION_FAST( RotateX ) {
 
-	JL_S_ASSERT_ARG_MIN(1); // angle
-	Matrix44 *m = (Matrix44*)JL_GetPrivate(cx, JL_FOBJ);
-	JL_S_ASSERT_RESOURCE(m);
+	JL_S_ASSERT_ARG(1);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(pv);
+	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
+
 	float angle;
 	JL_CHK( JsvalToFloat(cx, JL_FARG(1), &angle) ); 
-//	Matrix44 r;
-	Matrix44SetXRotation(m, -angle * M_PI / 180.0f);
-//	Matrix44Product(m, &r);
-	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
+	if ( angle == 0.0f )
+		return JS_TRUE;
+
+	if ( pv->isIdentity ) {
+
+		Matrix44SetXRotation(pv->mat, DEG_TO_RAD(angle));
+		pv->isIdentity = false;
+	} else {
+
+		Matrix44 r;
+		Matrix44Identity(&r);
+		Matrix44SetXRotation(&r, DEG_TO_RAD(angle));
+		Matrix44Mult(pv->mat, pv->mat, &r);
+	}
+
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -440,21 +451,34 @@ DEFINE_FUNCTION_FAST( RotationX ) {
 /**doc
 $TOC_MEMBER $INAME
  $THIS $INAME( angle )
-  Set the rotation around the Y axis.
+  Rotate around the Y axis.
   $H arguments
    $ARG $REAL angle in degres
 **/
-DEFINE_FUNCTION_FAST( RotationY ) {
+DEFINE_FUNCTION_FAST( RotateY ) {
 
-	JL_S_ASSERT_ARG_MIN(1); // angle
-	Matrix44 *m = (Matrix44*)JL_GetPrivate(cx, JL_FOBJ);
-	JL_S_ASSERT_RESOURCE(m);
+	JL_S_ASSERT_ARG(1);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(pv);
+	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
+
 	float angle;
 	JL_CHK( JsvalToFloat(cx, JL_FARG(1), &angle) ); 
-//	Matrix44 r;
-	Matrix44SetYRotation(m, -angle * M_PI / 180.0f);
-//	Matrix44Product(m, &r);
-	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
+	if ( angle == 0.0f )
+		return JS_TRUE;
+
+	if ( pv->isIdentity ) {
+
+		Matrix44SetYRotation(pv->mat, DEG_TO_RAD(angle));
+		pv->isIdentity = false;
+	} else {
+
+		Matrix44 r;
+		Matrix44Identity(&r);
+		Matrix44SetYRotation(&r, DEG_TO_RAD(angle));
+		Matrix44Mult(pv->mat, pv->mat, &r);
+	}
+
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -463,21 +487,34 @@ DEFINE_FUNCTION_FAST( RotationY ) {
 /**doc
 $TOC_MEMBER $INAME
  $THIS $INAME( angle )
-  Set the rotation around the Z axis.
+  Rotate around the Z axis.
   $H arguments
    $ARG $REAL angle in degres
 **/
-DEFINE_FUNCTION_FAST( RotationZ ) {
+DEFINE_FUNCTION_FAST( RotateZ ) {
 
-	JL_S_ASSERT_ARG_MIN(1); // angle
-	Matrix44 *m = (Matrix44*)JL_GetPrivate(cx, JL_FOBJ);
-	JL_S_ASSERT_RESOURCE(m);
-	float angle;
-	JL_CHK( JsvalToFloat(cx, JL_FARG(1), &angle) ); 
-//	Matrix44 r;
-	Matrix44SetZRotation(m, -angle * M_PI / 180.0f);
-//	Matrix44Product(m, &r);
+	JL_S_ASSERT_ARG(1);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(pv);
 	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
+
+	float angle;
+	JL_CHK( JsvalToFloat(cx, JL_FARG(1), &angle) );
+	if ( angle == 0.0f )
+		return JS_TRUE;
+
+	if ( pv->isIdentity ) {
+
+		Matrix44SetZRotation(pv->mat, DEG_TO_RAD(angle));
+		pv->isIdentity = false;
+	} else {
+
+		Matrix44 r;
+		Matrix44Identity(&r);
+		Matrix44SetZRotation(&r, DEG_TO_RAD(angle));
+		Matrix44Mult(pv->mat, pv->mat, &r);
+	}
+
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -509,8 +546,9 @@ DEFINE_FUNCTION_FAST( LookAt ) {
 */
 
 	JL_S_ASSERT_ARG(9);
-	Matrix44 *m = (Matrix44*)JL_GetPrivate(cx, JL_FOBJ);
-	JL_S_ASSERT_RESOURCE(m);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(pv);
+
 	float eyex, eyey, eyez, centerx, centery, centerz, upx, upy, upz;
 
 	JsvalToFloat(cx, JL_FARG(1), &eyex);
@@ -533,14 +571,14 @@ DEFINE_FUNCTION_FAST( LookAt ) {
 	Vector3Set(&up, upx, upy, upz);
 
 	Matrix44 tmp;
-	Matrix44LookAt(&tmp, &eye, &center, &up);
-	m->m[3][0] = -eyex;
-	m->m[3][1] = -eyey;
-	m->m[3][2] = -eyez;
+	Matrix44SetLookAt(&tmp, &eye, &center, &up);
+	pv->mat->m[3][0] = -eyex;
+	pv->mat->m[3][1] = -eyey;
+	pv->mat->m[3][2] = -eyez;
 
-	Matrix44MultSimple(m, m, &tmp);
+	Matrix44Mult(pv->mat, pv->mat, &tmp);
 	
-//	Matrix44Transpose(&tmp);
+	pv->isIdentity = false;
 
 	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
 	return JS_TRUE;
@@ -555,9 +593,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( RotateToVector ) {
 
-	JL_S_ASSERT_ARG_MIN(3); // x, y, z
-	Matrix44 *m = (Matrix44*)JL_GetPrivate(cx, JL_FOBJ);
-	JL_S_ASSERT_RESOURCE(m);
+	JL_S_ASSERT_ARG(3);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(pv);
+
 	float x, y, z;
 	JL_CHK( JsvalToFloat(cx, JL_FARG(1), &x) );
 	JL_CHK( JsvalToFloat(cx, JL_FARG(2), &y) );
@@ -567,15 +606,21 @@ DEFINE_FUNCTION_FAST( RotateToVector ) {
 	Vector3Set(&to, x,y,z);
 	Vector3Normalize(&to);
 	Vector3Set(&up, 0,0,1);
-
 	float angle = acos(Vector3Dot(&up, &to));
-	
 	Vector3Cross(&up, &up, &to);
 
-	Matrix44 r;
-	Matrix44Identity(&r);
-	Matrix44SetRotation(&r, &up, -angle * M_PI / 360.0f);
-	Matrix44MultSimple(m, m, &r);
+	if ( pv->isIdentity ) {
+
+		Matrix44SetRotation(pv->mat, &up, DEG_TO_RAD(angle));
+		pv->isIdentity = false;
+	} else {
+
+		Matrix44 r;
+		Matrix44Identity(&r);
+		Matrix44SetRotation(&r, &up, DEG_TO_RAD(angle));
+		Matrix44Mult(pv->mat, pv->mat, &r);
+	}
+	
 	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
 
 	return JS_TRUE;
@@ -589,9 +634,13 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Invert ) {
 
-	Matrix44 *m = (Matrix44*)JL_GetPrivate(cx, JL_FOBJ);
-	JL_S_ASSERT_RESOURCE(m);
-	Matrix44Invert(m);
+	JL_S_ASSERT_ARG(0);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(pv);
+
+	if ( !pv->isIdentity )
+		Matrix44Invert(pv->mat);
+
 	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
 	return JS_TRUE;
 	JL_BAD;
@@ -600,20 +649,26 @@ DEFINE_FUNCTION_FAST( Invert ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $THIS $INAME( newTransformation )
-  Apply a _newTransformation_ to the current transformation.
-  this = this . new
+ $THIS $INAME( _newTransformation_ )
+  Apply the _newTransformation_ to the current transformation.
   $H arguments
    $ARG $VAL newTransformation: an Array or an object that supports NIMatrix44Read native interface.
 **/
 DEFINE_FUNCTION_FAST( Product ) {
 
-	JL_S_ASSERT_ARG_MIN(1);
-	Matrix44 *tm = (Matrix44*)JL_GetPrivate(cx, JL_FOBJ); // tm for thisMatrix
-	JL_S_ASSERT_RESOURCE(tm);
+	JL_S_ASSERT_ARG(1);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(pv);
+
 	Matrix44 tmp, *m = &tmp;
 	JL_CHK( GetMatrixHelper(cx, JL_FARG(1), &m) );
-	Matrix44MultSimple(tm, tm,  m); // <- mult
+	
+	if ( pv->isIdentity )
+		Matrix44Load(pv->mat, m);
+	else
+		Matrix44Mult(pv->mat, pv->mat,  m);
+	pv->isIdentity = false;
+
 	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
 	return JS_TRUE;
 	JL_BAD;
@@ -653,11 +708,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( TransformVector ) {
 
-	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_ARG(1);
 	JL_S_ASSERT_ARRAY( JL_FARG(1) );
-
-	Matrix44 *tm = (Matrix44*)JL_GetPrivate(cx, JL_FOBJ); // tm for thisMatrix
-	JL_S_ASSERT_RESOURCE(tm);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(pv);
 
 	size_t length;
 //	J_JSVAL_TO_ARRAY_LENGTH( JL_FARG(1), length );
@@ -670,7 +724,7 @@ DEFINE_FUNCTION_FAST( TransformVector ) {
 
 		Vector3 src, dst;
 		JL_CHK( JsvalToFloatVector(cx, JL_FARG(1), src.raw, 3, &length ) );
-		Matrix44MultVector3( tm, &src, &dst );
+		Matrix44MultVector3( pv->mat, &src, &dst );
 
 		JL_CHK( DoubleToJsval(cx, dst.x, &tmpValue) );
 		JL_CHK( JS_SetElement(cx, JSVAL_TO_OBJECT( JL_FARG(1) ), 0, &tmpValue) );
@@ -685,7 +739,7 @@ DEFINE_FUNCTION_FAST( TransformVector ) {
 
 		Vector4 src, dst;
 		JL_CHK( JsvalToFloatVector(cx, JL_FARG(1), src.raw, 4, &length ) );
-		Matrix44MultVector4( tm, &src, &dst );
+		Matrix44MultVector4( pv->mat, &src, &dst );
 
 		JL_CHK( DoubleToJsval(cx, dst.x, &tmpValue) );
 		JL_CHK( JS_SetElement(cx, JSVAL_TO_OBJECT( JL_FARG(1) ), 0, &tmpValue) );
@@ -703,7 +757,7 @@ DEFINE_FUNCTION_FAST( TransformVector ) {
 		JL_REPORT_ERROR( "Unsupported vector length (%d).", length );
 	}
 
-	*JL_FRVAL = JSVAL_VOID;
+	*JL_FRVAL = JL_FARG(1);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -720,22 +774,25 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( translation ) {
 
 	JL_S_ASSERT_ARRAY( *vp );
-	Matrix44 *tm = (Matrix44*)JL_GetPrivate(cx, obj); // tm for thisMatrix
-	JL_S_ASSERT_RESOURCE(tm);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(pv);
+
 	float pos[3];
 	size_t len;
 	JL_CHK( JsvalToFloatVector(cx, *vp, pos, 3, &len) );
-	Matrix44SetTranslation(tm, pos[0], pos[1], pos[2]);
+	Matrix44SetTranslation(pv->mat, pos[0], pos[1], pos[2]);
+	pv->isIdentity = false;
 	return JS_TRUE;
 	JL_BAD;
 }
 
 DEFINE_PROPERTY_GETTER( translation ) {
 
-	Matrix44 *tm = (Matrix44*)JL_GetPrivate(cx, obj); // tm for thisMatrix
-	JL_S_ASSERT_RESOURCE(tm);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(pv);
+
 	float pos[3];
-	Matrix44GetTranslation(tm, &pos[0], &pos[1], &pos[2]);
+	Matrix44GetTranslation(pv->mat, &pos[0], &pos[1], &pos[2]);
 	JL_CHK( FloatVectorToJsval(cx, pos, 3, vp) );
 	return JS_TRUE;
 	JL_BAD;
@@ -773,11 +830,12 @@ DEFINE_GET_PROPERTY() {
 
 	if ( !JSVAL_IS_INT(id) )
 		return JS_TRUE;
-	Matrix44 *tm = (Matrix44*)JL_GetPrivate(cx, obj); // tm for thisMatrix
-	JL_S_ASSERT_RESOURCE(tm);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(pv);
+
 	jsint slot = JSVAL_TO_INT( id );
 	JL_S_ASSERT( slot >= 0 && slot <= 15, "Out of range." );
-	JL_CHK( FloatToJsval(cx, tm->raw[slot], vp) );
+	JL_CHK( FloatToJsval(cx, pv->mat->raw[slot], vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -786,13 +844,15 @@ DEFINE_GET_PROPERTY() {
 DEFINE_SET_PROPERTY() {
 
 	if ( !JSVAL_IS_INT(id) )
-	return JS_TRUE;
-	Matrix44 *tm = (Matrix44*)JL_GetPrivate(cx, obj); // tm for thisMatrix
-	JL_S_ASSERT_RESOURCE(tm);
+		return JS_TRUE;
 	JL_S_ASSERT_NUMBER(*vp);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(pv);
+
 	jsint slot = JSVAL_TO_INT( id );
 	JL_S_ASSERT( slot >= 0 && slot <= 15, "Out of range." );
-	tm->raw[slot] = JSVAL_IS_DOUBLE(*vp) ? *JSVAL_TO_DOUBLE(*vp) : JSVAL_TO_INT(*vp);
+	pv->mat->raw[slot] = JSVAL_IS_DOUBLE(*vp) ? *JSVAL_TO_DOUBLE(*vp) : JSVAL_TO_INT(*vp);
+	pv->isIdentity = false;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -813,22 +873,6 @@ DEFINE_INIT() {
 
 #ifdef DEBUG
 DEFINE_FUNCTION( Test ) {
-/*
-	Vector3 v1, v2, v3;
-
-	Matrix44 m2;
-	Matrix44Identity(&m2);
-
-	Vector3 eye, center, up;
-	Vector3Set(&eye, 0,0,0);
-	Vector3Set(&center, 1,0,0);
-*/
-
-	Matrix44 m2;
-	Matrix44Identity(&m2);
-
-	Vector3 to;
-	Vector3Set(&to, 1,0,0);
 
 	return JS_TRUE;
 }
@@ -856,16 +900,14 @@ CONFIGURE_CLASS
 //		FUNCTION_FAST_ARGC( ReverseProduct, 1 )
 		FUNCTION_FAST_ARGC( Invert, 0 )
 		FUNCTION_FAST_ARGC( Translate, 3 ) // x, y, z
-		FUNCTION_FAST_ARGC( Translation, 3 ) // x, y, z
 		FUNCTION_FAST_ARGC( ClearRotation, 0 )
 		FUNCTION_FAST_ARGC( ClearTranslation, 0 )
 		FUNCTION_FAST_ARGC( RotationFromQuaternion, 4 ) // w,x,y,z
 		FUNCTION_FAST_ARGC( RotateToVector, 3 ) // x,y,z
 		FUNCTION_FAST_ARGC( Rotate, 4 ) // angle, x, y, z
-		FUNCTION_FAST_ARGC( RotationX, 1 ) // angle
-		FUNCTION_FAST_ARGC( RotationY, 1 ) // angle
-		FUNCTION_FAST_ARGC( RotationZ, 1 ) // angle
-		FUNCTION_FAST_ARGC( Rotation, 4 ) // angle, x, y, z
+		FUNCTION_FAST_ARGC( RotateX, 1 ) // angle
+		FUNCTION_FAST_ARGC( RotateY, 1 ) // angle
+		FUNCTION_FAST_ARGC( RotateZ, 1 ) // angle
 		FUNCTION_FAST_ARGC( LookAt, 3 ) // x, y, z
 		FUNCTION_FAST_ARGC( TransformVector, 1 )
 	END_FUNCTION_SPEC

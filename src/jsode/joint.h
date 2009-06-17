@@ -14,6 +14,7 @@
 
 extern bool _odeFinalization;
 
+DECLARE_CLASS( JointGroup );
 DECLARE_CLASS( Joint );
 DECLARE_CLASS( JointBall );
 DECLARE_CLASS( JointHinge );

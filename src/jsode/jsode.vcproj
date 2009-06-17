@@ -230,6 +230,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\jointGroup.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\jointHinge.cpp"
 				>
 			</File>

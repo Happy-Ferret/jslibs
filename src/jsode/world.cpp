@@ -185,6 +185,9 @@ DEFINE_FINALIZE() {
 		return;
 //	ode::dxWorld* w = pv->worldId;
 	ode::dJointGroupDestroy(pv->contactGroupId);
+
+	// destroy joints
+	// destroy bodies
 	ode::dWorldDestroy(pv->worldId);
 	JS_free(cx, pv);
 }
@@ -287,10 +290,12 @@ DEFINE_FUNCTION( Step ) {
 
 	ode::dSpaceCollide(spaceId, (void*)&ccp, &nearCallback);
 
+//	pv->stepJsCx = cx;
 	if ( ode::dWorldGetQuickStepNumIterations(pv->worldId) == 0 )
 		ode::dWorldStep(pv->worldId, stepSize / 1000);
 	else
 		ode::dWorldQuickStep(pv->worldId, stepSize / 1000);
+//	pv->stepJsCx = NULL; // avoid using the JSContext outside the step
 
 	ode::dJointGroupEmpty(pv->contactGroupId); // contactGroupId will be reused at the next step!
 

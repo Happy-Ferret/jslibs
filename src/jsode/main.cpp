@@ -28,13 +28,13 @@ extern bool _unsafeMode = false;
 
 extern bool _odeFinalization = false;
 
-// the following avoid ODE to be linked with User32.lib ( MessageBox* symbol is used in ../ode/src/ode/src/error.cpp )
 
 #ifdef XP_WIN
-int WINAPI MessageBoxA(__in_opt HWND hWnd, __in_opt LPCSTR lpText, __in_opt LPCSTR lpCaption, __in UINT uType) {
-
-	return IDCANCEL;
-}
+// the following avoid ODE to be linked with User32.lib ( MessageBox* symbol is used in ../ode/src/ode/src/error.cpp )
+#pragma warning( push )
+#pragma warning(disable : 4273)
+int WINAPI MessageBoxA( HWND hWnd, LPCSTR lpText, LPCSTR lpCaption, UINT uType) { return IDOK; }
+#pragma warning( pop )
 #endif
 
 
@@ -80,6 +80,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	ode::dSetMessageHandler(messageHandler);
 
 	INIT_CLASS( Vector );
+	INIT_CLASS( JointGroup );
 	INIT_CLASS( Space );
 	INIT_CLASS( Joint );
 	INIT_CLASS( JointBall );

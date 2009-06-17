@@ -98,7 +98,6 @@ DEFINE_CONSTRUCTOR() {
 	JL_CHK( JsvalToWorldID(cx, JL_ARG(1), &worldId) );
 	ode::dBodyID bodyId = ode::dBodyCreate(worldId);
 	JL_S_ASSERT( bodyId != NULL, "unable to create the body." );
-//	ode::dBodySetMovedCallback(bodyId, // (TBD) manage hasMoved property with this ?
 	JL_CHK( SetMatrix44GetInterface(cx, obj, ReadMatrix) );
 	JL_SetPrivate(cx, obj, bodyId);
 	ode::dBodySetData(bodyId, obj);
@@ -706,7 +705,6 @@ DEFINE_PROPERTY( mass ) {
 
 
 
-
 /**doc
 === Static Functions ===
 **/
@@ -740,6 +738,34 @@ DEFINE_FUNCTION_FAST( AreConnected ) {
 //	return JS_TRUE;
 //}
 
+/**doc
+=== Callback ===
+**/
+
+/**doc
+$TOC_MEMBER $INAME
+ $FUNCTION $INAME ,,not implemented yet,,
+**/
+void moveCallback(ode::dBodyID bodyId) {
+
+	ode::dWorldID worldId = ode::dBodyGetWorld(bodyId);
+	if ( !worldId ) {
+		// error
+	}
+	// no way to access the JSContext
+}
+DEFINE_PROPERTY( onMove ) {
+
+	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( bodyId );
+	if ( JSVAL_IS_VOID(*vp) )
+		ode::dBodySetMovedCallback(bodyId, NULL);
+	else
+		ode::dBodySetMovedCallback(bodyId, moveCallback);
+	return JS_TRUE;
+	JL_BAD;
+}
+
 
 /**doc
 === Native Interface ===
@@ -764,7 +790,7 @@ CONFIGURE_CLASS
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
-		
+
 		PROPERTY( disabled )
 		PROPERTY( gravityMode )
 		PROPERTY( gyroscopicMode )
@@ -787,7 +813,9 @@ CONFIGURE_CLASS
 		PROPERTY_READ_STORE( mass ) // mass is only a wrapper to dBodyGetMass and dBodySetMass
 
 //		PROPERTY_READ_STORE( position )
-		
+
+		PROPERTY_WRITE_STORE( onMove )
+
 	END_PROPERTY_SPEC
 
 	BEGIN_STATIC_FUNCTION_SPEC

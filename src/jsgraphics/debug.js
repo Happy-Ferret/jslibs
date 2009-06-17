@@ -7,15 +7,44 @@ LoadModule('jstrimesh');
 LoadModule('jssdl');
 LoadModule('jsgraphics');
 
-var t = new Transformation(undefined);
 
-//t.Translate(10, 10, 15);
-t.LookAt(10, 10, 15, 0,0,0, 0,0,1);
+var t = new Transformation(null);
+
+
+t.Translate(0, 0, 0);
+
+t.RotateZ(-90);
+t.Translate(2, 0, 0);
+
+t.RotateZ(45);
+t.Rotate(45, 0,0,1);
+t.Translate(1, 0, 0);
+t.RotateY(90);
+t.Translate(1, 0, 0);
+t.Translate(1, 0, 0);
+t.Translate(1, 0, 0);
+
+
+var v = [0,0,0];
+Print( [c.toFixed(2) for each ( c in t.TransformVector(v) )].join('  '), '\n' );
+
+
+t.Invert();
+
+Print( [c.toFixed(1) for each ( c in t.TransformVector(v) )].join('  '), '\n' );
+
+Print( '\n\n' );
+
+Halt();
+
 
 
 for ( var i = 0; i < 16; i++ )
 	Print( i%4 ? ' ' : '  ', t[i].toFixed(2) );
 Print( '\n' );
+
+
+
 
 
 Halt();

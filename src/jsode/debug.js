@@ -261,6 +261,7 @@ var SceneManager = new function() {
 			if ( !object.Render )
 				continue;
 			// check if object is inside the frustum (see PlanesCollider::PlanesAABBOverlap)
+			// frustum bounding sphere: http://www.flipcode.com/archives/Frustum_Culling.shtml
 			Ogl.PushMatrix();
 			object.Render();
 			Ogl.PopMatrix();

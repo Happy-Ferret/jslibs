@@ -257,6 +257,17 @@ inline double AccurateTimeCounter() {
 	return (double)time.tv_sec / 1000L*1000L;
 #endif
 	return -1; // (TBD) see. js_IntervalNow() or JS_Now() ? no, it could be expensive and is not suitable for calls when a GC lock is held.
+/* see also:
+__int64 GetTime() {
+    __int64 clock;
+    __asm {
+        rdtsc                        // Resad the RDTSC Timer
+        mov    dword ptr[clock], eax // Store the value in EAX and EDX Registers
+        mov    dword ptr[clock+4], edx
+    }
+    return clock;
+}
+*/
 }
 
 

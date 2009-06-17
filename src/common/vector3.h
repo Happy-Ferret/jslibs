@@ -93,6 +93,18 @@ inline void Vector3Identity( Vector3 *v ) {
 
 }
 
+inline void Vector3SetVector( Vector3 *v, const Vector3 *v1 ) {
+
+#ifdef SSE
+	v->m128 = v1->m128;
+#else // SSE
+	v->x = v1->x;
+	v->y = v1->y;
+	v->z = v1->z;
+#endif // SSE
+
+}
+
 
 inline void Vector3Set( Vector3 *v, const float _x, const float _y, const float _z ) {
 
