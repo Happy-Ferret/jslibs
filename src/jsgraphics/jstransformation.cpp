@@ -93,7 +93,7 @@ DEFINE_CONSTRUCTOR() {
 		} else {
 			
 			Matrix44 *m = pv->mat;
-			JL_CHKM( GetMatrixHelper(cx, JL_ARG(1), &m), "Unable to access Matrix44 interface." );
+			JL_CHKM( GetMatrixHelper(cx, JL_ARG(1), (float**)&m), "Unable to access Matrix44 interface." );
 			if ( m != pv->mat ) // check if the pointer has been modified
 				Matrix44Load(pv->mat, m);
 			pv->isIdentity = false;
@@ -170,7 +170,7 @@ DEFINE_FUNCTION_FAST( Load ) {
 	JL_S_ASSERT_ARG(1);
 
 	Matrix44 *tmp = pv->mat;
-	JL_CHK( GetMatrixHelper(cx, JL_FARG(1), &tmp) );
+	JL_CHK( GetMatrixHelper(cx, JL_FARG(1), (float**)&tmp) );
 	if ( tmp != pv->mat ) // check if the pointer has been modified
 		Matrix44Load(pv->mat, tmp);
 	pv->isIdentity = false; // (TBD) detect identity
@@ -195,7 +195,7 @@ DEFINE_FUNCTION_FAST( LoadRotation ) {
 	JL_S_ASSERT_RESOURCE(pv);
 
 	Matrix44 tmp, *m = &tmp;
-	JL_CHK( GetMatrixHelper(cx, JL_FARG(1), &m) );
+	JL_CHK( GetMatrixHelper(cx, JL_FARG(1), (float**)&m) );
 
 	pv->mat->raw[0]  = m->raw[0] ; //L1
 	pv->mat->raw[1]  = m->raw[1] ;
@@ -232,7 +232,7 @@ DEFINE_FUNCTION_FAST( LoadTranslation ) {
 	JL_S_ASSERT_RESOURCE(pv);
 
 	Matrix44 tmp, *m = &tmp;
-	JL_CHK( GetMatrixHelper(cx, JL_FARG(1), &m) );
+	JL_CHK( GetMatrixHelper(cx, JL_FARG(1), (float**)&m) );
 
 	pv->mat->raw[3]  = m->raw[3];
 	pv->mat->raw[7]  = m->raw[7];
@@ -545,7 +545,7 @@ DEFINE_FUNCTION_FAST( LookAt ) {
     m3 = z.m128;
 */
 
-	JL_S_ASSERT_ARG(9);
+	JL_S_ASSERT_ARG_RANGE(6,9);
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE(pv);
 
@@ -559,25 +559,31 @@ DEFINE_FUNCTION_FAST( LookAt ) {
 	JsvalToFloat(cx, JL_FARG(5), &centery);
 	JsvalToFloat(cx, JL_FARG(6), &centerz);
 
-	JsvalToFloat(cx, JL_FARG(7), &upx);
-	JsvalToFloat(cx, JL_FARG(8), &upy);
-	JsvalToFloat(cx, JL_FARG(9), &upz);
+	Vector3 up;
+	if ( argc >= 7 ) {
+
+		JsvalToFloat(cx, JL_FARG(7), &upx);
+		JsvalToFloat(cx, JL_FARG(8), &upy);
+		JsvalToFloat(cx, JL_FARG(9), &upz);
+		Vector3Set(&up, upx, upy, upz);
+	} else {
+
+		Vector3Set(&up, 0, 0, 1);
+	}
 
 	Vector3 eye;
 	Vector3Set(&eye, eyex, eyey, eyez);
 	Vector3 center;
 	Vector3Set(&center, centerx, centery, centerz);
-	Vector3 up;
-	Vector3Set(&up, upx, upy, upz);
 
 	Matrix44 tmp;
 	Matrix44SetLookAt(&tmp, &eye, &center, &up);
-	pv->mat->m[3][0] = -eyex;
-	pv->mat->m[3][1] = -eyey;
-	pv->mat->m[3][2] = -eyez;
-
 	Matrix44Mult(pv->mat, pv->mat, &tmp);
-	
+
+//	pv->mat->m[3][0] = -eyex;
+//	pv->mat->m[3][1] = -eyey;
+//	pv->mat->m[3][2] = -eyez;
+
 	pv->isIdentity = false;
 
 	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
@@ -649,24 +655,34 @@ DEFINE_FUNCTION_FAST( Invert ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $THIS $INAME( _newTransformation_ )
+ $THIS $INAME( _newTransformation_ [ , preMultiply ] )
   Apply the _newTransformation_ to the current transformation.
   $H arguments
    $ARG $VAL newTransformation: an Array or an object that supports NIMatrix44Read native interface.
 **/
 DEFINE_FUNCTION_FAST( Product ) {
 
-	JL_S_ASSERT_ARG(1);
+	JL_S_ASSERT_ARG_RANGE(1,2);
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE(pv);
 
 	Matrix44 tmp, *m = &tmp;
-	JL_CHK( GetMatrixHelper(cx, JL_FARG(1), &m) );
+	JL_CHK( GetMatrixHelper(cx, JL_FARG(1), (float**)&m) );
 	
+	bool preMultiply;
+	if ( JL_FARG_ISDEF(2) )
+		JL_CHK( JsvalToBool(cx, JL_FARG(2), &preMultiply) );
+	else
+		preMultiply = false;
+
 	if ( pv->isIdentity )
 		Matrix44Load(pv->mat, m);
 	else
-		Matrix44Mult(pv->mat, pv->mat,  m);
+		if ( preMultiply )
+			Matrix44Mult(pv->mat, pv->mat, m);
+		else
+			Matrix44Mult(pv->mat, m, pv->mat);
+
 	pv->isIdentity = false;
 
 	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
@@ -675,33 +691,9 @@ DEFINE_FUNCTION_FAST( Product ) {
 }
 
 
-/** doc
-$TOC_MEMBER $INAME
- $THIS $INAME( otherTransformation )
-  Apply the current transformation to the _otherTransformation_ and stores the result to the current transformation.
-  this = new . this
-  $H arguments
-   $ARG $VAL otherTransformation: an Array or an object that supports NIMatrix44Read native interface.
-**/
-/*
-DEFINE_FUNCTION_FAST( ReverseProduct ) {
-
-	JL_S_ASSERT_ARG_MIN(1);
-	Matrix44 *tm = (Matrix44*)JL_GetPrivate(cx, JL_FOBJ); // tm for thisMatrix
-	JL_S_ASSERT_RESOURCE(tm);
-	Matrix44 tmp, *m = &tmp;
-	JL_CHK( GetMatrixHelper(cx, JL_FARG(1), &m) );
-//	Matrix44MultSimple(tm, m); // (TBD)
-
-	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
-	return JS_TRUE;
-	JL_BAD;
-}
-*/
-
 /**doc
 $TOC_MEMBER $INAME
- $VOID $INAME( vector )
+ $TYPE vector $INAME( vector )
   Transforms the 3D or 4D _vector_ by the current transformation.
   $H arguments
    $ARG $ARRAY vector
@@ -724,6 +716,7 @@ DEFINE_FUNCTION_FAST( TransformVector ) {
 
 		Vector3 src, dst;
 		JL_CHK( JsvalToFloatVector(cx, JL_FARG(1), src.raw, 3, &length ) );
+
 		Matrix44MultVector3( pv->mat, &src, &dst );
 
 		JL_CHK( DoubleToJsval(cx, dst.x, &tmpValue) );
@@ -739,6 +732,7 @@ DEFINE_FUNCTION_FAST( TransformVector ) {
 
 		Vector4 src, dst;
 		JL_CHK( JsvalToFloatVector(cx, JL_FARG(1), src.raw, 4, &length ) );
+
 		Matrix44MultVector4( pv->mat, &src, &dst );
 
 		JL_CHK( DoubleToJsval(cx, dst.x, &tmpValue) );
@@ -794,6 +788,41 @@ DEFINE_PROPERTY_GETTER( translation ) {
 	float pos[3];
 	Matrix44GetTranslation(pv->mat, &pos[0], &pos[1], &pos[2]);
 	JL_CHK( FloatVectorToJsval(cx, pos, 3, vp) );
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $ARRAY $INAME
+  Returns the [x,y,z,radius] sphere that surrounds the frustrum.
+**/
+DEFINE_FUNCTION_FAST( ComputeFrustumSphere ) {
+	
+	// see. http://www.flipcode.com/archives/Frustum_Culling.shtml
+
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(pv);
+
+	Matrix44 tmp;
+	Matrix44Load(&tmp, pv->mat);
+
+	Matrix44Invert(&tmp);
+
+	Vector4 src, dst1, dst2;
+	Vector4Set(&src, 0, 0, 0, 1);
+	Matrix44MultVector4(&tmp, &src, &dst1);
+	Vector4Div(&dst1, &dst1, dst1.w);
+
+	Vector4Set(&src, 0, 0, 1, 1);
+	Matrix44MultVector4(&tmp, &src, &dst2);
+	Vector4Div(&dst2, &dst2, dst2.w);
+
+//	Vector4Sub(&dst1, &dst2, &dst1);
+
+
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -897,7 +926,6 @@ CONFIGURE_CLASS
 		FUNCTION_FAST_ARGC( LoadRotation, 1 )
 		FUNCTION_FAST_ARGC( LoadTranslation, 1 )
 		FUNCTION_FAST_ARGC( Product, 1 )
-//		FUNCTION_FAST_ARGC( ReverseProduct, 1 )
 		FUNCTION_FAST_ARGC( Invert, 0 )
 		FUNCTION_FAST_ARGC( Translate, 3 ) // x, y, z
 		FUNCTION_FAST_ARGC( ClearRotation, 0 )
@@ -909,7 +937,8 @@ CONFIGURE_CLASS
 		FUNCTION_FAST_ARGC( RotateY, 1 ) // angle
 		FUNCTION_FAST_ARGC( RotateZ, 1 ) // angle
 		FUNCTION_FAST_ARGC( LookAt, 3 ) // x, y, z
-		FUNCTION_FAST_ARGC( TransformVector, 1 )
+		FUNCTION_FAST_ARGC( TransformVector, 1 ) // 3D or 4D vector
+		FUNCTION_FAST_ARGC( ComputeFrustumSphere, 0 )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC

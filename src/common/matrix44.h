@@ -53,14 +53,17 @@ Note that post-multiplying with column-major matrices produces the same result a
 #ifdef SSE // SSE (Streaming SIMD Extensions)
 
 #include <xmmintrin.h>
-#include <fvec.h>
+//#include <fvec.h>
 
-typedef __declspec(align(16)) union {
+typedef union { //  __declspec(align(16))
 	struct {
 		__m128 m1;
 		__m128 m2;
 		__m128 m3;
 		__m128 m4;
+	};
+	struct {
+		__m128 m128[4];
 	};
 	struct {
 		float m[4][4]; // m[line][col]
@@ -92,7 +95,6 @@ static Matrix44 Matrix44IdentityValue = {
 };
 
 
-
 inline void Matrix44Free( Matrix44 *m ) {
 
 #ifdef SSE
@@ -115,51 +117,46 @@ inline Matrix44 *Matrix44Alloc() {
 #endif // SSE
 }
 
-/* http://oglshell.googlecode.com/svn/ 
-    inline bool Mat4::IsIdentity() const
-    {
-        __m128 n1, n2, n3, n4;
 
-        n1 = _mm_set_ps( 0.0f, 0.0f, 0.0f, 1.0f );
-        n2 = _mm_shuffle_ps( n1, n1, _MM_SHUFFLE( 1, 1, 0, 1 ) );
-        n3 = _mm_shuffle_ps( n1, n1, _MM_SHUFFLE( 1, 0, 1, 1 ) );
-        n4 = _mm_shuffle_ps( n1, n1, _MM_SHUFFLE( 0, 1, 1, 1 ) );
+inline bool Matrix44IsIdentity( Matrix44 *m ) {
 
-        __m128 r0, r1, r2, r3;
+#ifdef SSE
 
-        r0 = _mm_cmpeq_ps( m1, n1 );
-        r1 = _mm_cmpeq_ps( m2, n2 );
-        r2 = _mm_cmpeq_ps( m3, n3 );
-        r3 = _mm_cmpeq_ps( m4, n4 );
-        r0 = _mm_and_ps( r0, r1 );
-        r2 = _mm_and_ps( r2, r3 );
-        r0 = _mm_and_ps( r0, r2 );
+	__m128 r0, r1, r2, r3;
+	r0 = _mm_cmpeq_ps( m->m1, Matrix44IdentityValue.m1 );
+	r1 = _mm_cmpeq_ps( m->m2, Matrix44IdentityValue.m2 );
+	r2 = _mm_cmpeq_ps( m->m3, Matrix44IdentityValue.m3 );
+	r3 = _mm_cmpeq_ps( m->m4, Matrix44IdentityValue.m4 );
+	r0 = _mm_and_ps( r0, r1 );
+	r2 = _mm_and_ps( r2, r3 );
+	r0 = _mm_and_ps( r0, r2 );
+	if ( r0.m128_u32[0] != 0xFFFFFFFF || r0.m128_u32[1] != 0xFFFFFFFF || r0.m128_u32[2] != 0xFFFFFFFF || r0.m128_u32[3] != 0xFFFFFFFF )
+		return false;
+	return true;
 
-        for (int i = 0; i < 4; ++i)
-        {
-            if (r0.m128_u32[i] != 0xFFFFFFFF)
-                return false;
-        }
+#else // SSE
 
-        return true;
-    }
+	return memcmp(m->raw, Matrix44IdentityValue.raw, sizeof(Matrix44IdentityValue)) == 0;
 
-*/
+#endif // SSE
+
+}
+
 
 inline void Matrix44Identity( Matrix44 *m ) {
 
 #ifdef SSE
+
 	m->m1 = Matrix44IdentityValue.m1;
 	m->m2 = Matrix44IdentityValue.m2;
 	m->m3 = Matrix44IdentityValue.m3;
 	m->m4 = Matrix44IdentityValue.m4;
 
-/* or:
-	m->m1 = _mm_set_ps( 0.0f, 0.0f, 0.0f, 1.0f );
-	m->m2 = _mm_shuffle_ps( m->m1, m->m1, _MM_SHUFFLE( 1, 1, 0, 1 ) );
-	m->m3 = _mm_shuffle_ps( m->m1, m->m1, _MM_SHUFFLE( 1, 0, 1, 1 ) );
-	m->m4 = _mm_shuffle_ps( m->m1, m->m1, _MM_SHUFFLE( 0, 1, 1, 1 ) );
-*/
+	//register __m128 tmp = { 1.0f, 0.0f, 0.0f, 0.0f };
+	//m->m1 = tmp;
+	//m->m2 = _mm_shuffle_ps(tmp, tmp, _MM_SHUFFLE(1,1,0,1));
+	//m->m3 = _mm_shuffle_ps(tmp, tmp, _MM_SHUFFLE(1,0,1,1));
+	//m->m4 = _mm_shuffle_ps(tmp, tmp, _MM_SHUFFLE(0,1,1,1));
 
 #else // SSE
 	memcpy(m->raw, Matrix44IdentityValue.raw, sizeof(Matrix44IdentityValue));
@@ -167,7 +164,7 @@ inline void Matrix44Identity( Matrix44 *m ) {
 
 }
 
-inline void Matrix44Load( Matrix44 *m, Matrix44 *m1 ) {
+inline void Matrix44Load( Matrix44 *m, const Matrix44 *m1 ) {
 
 #ifdef SSE
 	m->m1 = m1->m1;
@@ -204,142 +201,89 @@ inline void Matrix44Mult( Matrix44 *rm, const Matrix44 *m, const Matrix44 *mx ) 
 	// see. http://www.61nord.no/agar/trunk/math/m_matrix44_sse.h
 	// see. http://software.intel.com/en-us/articles/optimized-matrix-library-for-use-with-the-intel-pentiumr-4-processors-sse2-instructions/
 	// see. http://homepages.cae.wisc.edu/~sedlacek/Doxygen/html/class_matrix_s_s_e.html
+	// see. http://www.google.com/codesearch/p?hl=en&sa=N&cd=70&ct=rc#45SLCQu26VI/zooengine 24/Basic/ZooMatrix.cpp&q=_mm_add_ps _mm_mul_ps _mm_shuffle_ps
 
-
-	#define RM rm-> 
-	#define M1 m-> 
+	#define RM rm->
+	#define M1 m->
 	#define M2 mx->
 
-	RM m1 = _mm_add_ps(_mm_add_ps(_mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(M1 m1, M1 m1, _MM_SHUFFLE(0,0,0,0)), M2 m1), _mm_mul_ps(_mm_shuffle_ps(M1 m1, M1 m1, _MM_SHUFFLE(1,1,1,1)), M2 m2)), _mm_mul_ps(_mm_shuffle_ps(M1 m1, M1 m1, _MM_SHUFFLE(2,2,2,2)), M2 m3)), _mm_mul_ps(_mm_shuffle_ps(M1 m1, M1 m1, _MM_SHUFFLE(3,3,3,3)), M2 m4));
-	RM m2 = _mm_add_ps(_mm_add_ps(_mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(M1 m2, M1 m2, _MM_SHUFFLE(0,0,0,0)), M2 m1), _mm_mul_ps(_mm_shuffle_ps(M1 m2, M1 m2, _MM_SHUFFLE(1,1,1,1)), M2 m2)), _mm_mul_ps(_mm_shuffle_ps(M1 m2, M1 m2, _MM_SHUFFLE(2,2,2,2)), M2 m3)), _mm_mul_ps(_mm_shuffle_ps(M1 m2, M1 m2, _MM_SHUFFLE(3,3,3,3)), M2 m4));
-	RM m3 = _mm_add_ps(_mm_add_ps(_mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(M1 m3, M1 m3, _MM_SHUFFLE(0,0,0,0)), M2 m1), _mm_mul_ps(_mm_shuffle_ps(M1 m3, M1 m3, _MM_SHUFFLE(1,1,1,1)), M2 m2)), _mm_mul_ps(_mm_shuffle_ps(M1 m3, M1 m3, _MM_SHUFFLE(2,2,2,2)), M2 m3)), _mm_mul_ps(_mm_shuffle_ps(M1 m3, M1 m3, _MM_SHUFFLE(3,3,3,3)), M2 m4));
-	RM m4 = _mm_add_ps(_mm_add_ps(_mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(M1 m4, M1 m4, _MM_SHUFFLE(0,0,0,0)), M2 m1), _mm_mul_ps(_mm_shuffle_ps(M1 m4, M1 m4, _MM_SHUFFLE(1,1,1,1)), M2 m2)), _mm_mul_ps(_mm_shuffle_ps(M1 m4, M1 m4, _MM_SHUFFLE(2,2,2,2)), M2 m3)), _mm_mul_ps(_mm_shuffle_ps(M1 m4, M1 m4, _MM_SHUFFLE(3,3,3,3)), M2 m4));
+	register __m128 l1 = M1 m1;
+	register __m128 l2 = M1 m2; 
+	register __m128 l3 = M1 m3; 
+	register __m128 l4 = M1 m4; 
+	register __m128 tmp;
+	
+	tmp = mx->m1;
+	RM m1 = _mm_add_ps(_mm_add_ps(_mm_add_ps(
+		_mm_mul_ps(_mm_shuffle_ps(tmp, tmp, _MM_SHUFFLE(0,0,0,0)), l1),
+		_mm_mul_ps(_mm_shuffle_ps(tmp, tmp, _MM_SHUFFLE(1,1,1,1)), l2)),
+		_mm_mul_ps(_mm_shuffle_ps(tmp, tmp, _MM_SHUFFLE(2,2,2,2)), l3)),
+		_mm_mul_ps(_mm_shuffle_ps(tmp, tmp, _MM_SHUFFLE(3,3,3,3)), l4));
 
+	tmp = mx->m2;
+	RM m2 = _mm_add_ps(_mm_add_ps(_mm_add_ps(
+		_mm_mul_ps(_mm_shuffle_ps(tmp, tmp, _MM_SHUFFLE(0,0,0,0)), l1),
+		_mm_mul_ps(_mm_shuffle_ps(tmp, tmp, _MM_SHUFFLE(1,1,1,1)), l2)),
+		_mm_mul_ps(_mm_shuffle_ps(tmp, tmp, _MM_SHUFFLE(2,2,2,2)), l3)),
+		_mm_mul_ps(_mm_shuffle_ps(tmp, tmp, _MM_SHUFFLE(3,3,3,3)), l4));
 
-/*
-        __m128 r0, r1, r2, r3;
-        __m128 k0, k1, k2;
+	tmp = mx->m3;
+	RM m3 = _mm_add_ps(_mm_add_ps(_mm_add_ps(
+		_mm_mul_ps(_mm_shuffle_ps(tmp, tmp, _MM_SHUFFLE(0,0,0,0)), l1),
+		_mm_mul_ps(_mm_shuffle_ps(tmp, tmp, _MM_SHUFFLE(1,1,1,1)), l2)),
+		_mm_mul_ps(_mm_shuffle_ps(tmp, tmp, _MM_SHUFFLE(2,2,2,2)), l3)),
+		_mm_mul_ps(_mm_shuffle_ps(tmp, tmp, _MM_SHUFFLE(3,3,3,3)), l4));
 
-        r0 = _mm_load_ss( &n[ 0 ].x );
-        r1 = _mm_load_ss( &n[ 0 ].y );
-        r2 = _mm_load_ss( &n[ 0 ].z );
-        r3 = _mm_load_ss( &n[ 0 ].w );
-
-        r0 = _mm_shuffle_ps( r0, r0, _MM_SHUFFLE( 0, 0, 0, 0 ) );
-        r1 = _mm_shuffle_ps( r1, r1, _MM_SHUFFLE( 0, 0, 0, 0 ) );
-        r2 = _mm_shuffle_ps( r2, r2, _MM_SHUFFLE( 0, 0, 0, 0 ) );
-        r3 = _mm_shuffle_ps( r3, r3, _MM_SHUFFLE( 0, 0, 0, 0 ) );
-
-        r0 = _mm_mul_ps( r0, m1 );
-        r1 = _mm_mul_ps( r1, m2 );
-        r2 = _mm_mul_ps( r2, m3 );
-        r3 = _mm_mul_ps( r3, m4 );
-        r0 = _mm_add_ps( r0, r1 );
-        r2 = _mm_add_ps( r2, r3 );
-        k0 = _mm_add_ps( r0, r2 );
-
-        r0 = _mm_load_ss( &n[ 1 ].x );
-        r1 = _mm_load_ss( &n[ 1 ].y );
-        r2 = _mm_load_ss( &n[ 1 ].z );
-        r3 = _mm_load_ss( &n[ 1 ].w );
-
-        r0 = _mm_shuffle_ps( r0, r0, _MM_SHUFFLE( 0, 0, 0, 0 ) );
-        r1 = _mm_shuffle_ps( r1, r1, _MM_SHUFFLE( 0, 0, 0, 0 ) );
-        r2 = _mm_shuffle_ps( r2, r2, _MM_SHUFFLE( 0, 0, 0, 0 ) );
-        r3 = _mm_shuffle_ps( r3, r3, _MM_SHUFFLE( 0, 0, 0, 0 ) );
-
-        r0 = _mm_mul_ps( r0, m1 );
-        r1 = _mm_mul_ps( r1, m2 );
-        r2 = _mm_mul_ps( r2, m3 );
-        r3 = _mm_mul_ps( r3, m4 );
-        r0 = _mm_add_ps( r0, r1 );
-        r2 = _mm_add_ps( r2, r3 );
-        k1 = _mm_add_ps( r0, r2 );
-
-        r0 = _mm_load_ss( &n[ 2 ].x );
-        r1 = _mm_load_ss( &n[ 2 ].y );
-        r2 = _mm_load_ss( &n[ 2 ].z );
-        r3 = _mm_load_ss( &n[ 2 ].w );
-
-        r0 = _mm_shuffle_ps( r0, r0, _MM_SHUFFLE( 0, 0, 0, 0 ) );
-        r1 = _mm_shuffle_ps( r1, r1, _MM_SHUFFLE( 0, 0, 0, 0 ) );
-        r2 = _mm_shuffle_ps( r2, r2, _MM_SHUFFLE( 0, 0, 0, 0 ) );
-        r3 = _mm_shuffle_ps( r3, r3, _MM_SHUFFLE( 0, 0, 0, 0 ) );
-
-        r0 = _mm_mul_ps( r0, m1 );
-        r1 = _mm_mul_ps( r1, m2 );
-        r2 = _mm_mul_ps( r2, m3 );
-        r3 = _mm_mul_ps( r3, m4 );
-        r0 = _mm_add_ps( r0, r1 );
-        r2 = _mm_add_ps( r2, r3 );
-        k2 = _mm_add_ps( r0, r2 );
-
-        r0 = _mm_load_ss( &n[ 3 ].x );
-        r1 = _mm_load_ss( &n[ 3 ].y );
-        r2 = _mm_load_ss( &n[ 3 ].z );
-        r3 = _mm_load_ss( &n[ 3 ].w );
-
-        r0 = _mm_shuffle_ps( r0, r0, _MM_SHUFFLE( 0, 0, 0, 0 ) );
-        r1 = _mm_shuffle_ps( r1, r1, _MM_SHUFFLE( 0, 0, 0, 0 ) );
-        r2 = _mm_shuffle_ps( r2, r2, _MM_SHUFFLE( 0, 0, 0, 0 ) );
-        r3 = _mm_shuffle_ps( r3, r3, _MM_SHUFFLE( 0, 0, 0, 0 ) );
-
-        r0 = _mm_mul_ps( r0, m1 );
-        r1 = _mm_mul_ps( r1, m2 );
-        r2 = _mm_mul_ps( r2, m3 );
-        r3 = _mm_mul_ps( r3, m4 );
-        r0 = _mm_add_ps( r0, r1 );
-        r2 = _mm_add_ps( r2, r3 );
-        r0 = _mm_add_ps( r0, r2 );
-
-        return Mat4_SSE( k0, k1, k2, r0 );
-*/
-
+	tmp = mx->m4;
+	RM m4 = _mm_add_ps(_mm_add_ps(_mm_add_ps(
+		_mm_mul_ps(_mm_shuffle_ps(tmp, tmp, _MM_SHUFFLE(0,0,0,0)), l1),
+		_mm_mul_ps(_mm_shuffle_ps(tmp, tmp, _MM_SHUFFLE(1,1,1,1)), l2)),
+		_mm_mul_ps(_mm_shuffle_ps(tmp, tmp, _MM_SHUFFLE(2,2,2,2)), l3)),
+		_mm_mul_ps(_mm_shuffle_ps(tmp, tmp, _MM_SHUFFLE(3,3,3,3)), l4));
 
 #else // SSE
-/*
-	for (int i=0; i<4; i++) {
 
-		float mi0 = m->m[i][0];
-		float mi1 = m->m[i][1];
-		float mi2 = m->m[i][2];
-		m->m[i][0] = mi0*mx->m[0][0] + mi1*mx->m[1][0] + mi2*mx->m[2][0];
-		m->m[i][1] = mi0*mx->m[0][1] + mi1*mx->m[1][1] + mi2*mx->m[2][1];
-		m->m[i][2] = mi0*mx->m[0][2] + mi1*mx->m[1][2] + mi2*mx->m[2][2];
+	Matrix44 tmp;
+/*
+	#define A(row,col)  m->raw[(col<<2)+row]
+	#define B(row,col)  mx->raw[(col<<2)+row]
+	#define P(row,col)  tmp.raw[(col<<2)+row]
+	for (int i = 0; i < 4; i++) {
+		const float ai0=A(i,0),  ai1=A(i,1),  ai2=A(i,2),  ai3=A(i,3);
+		P(i,0) = ai0 * B(0,0) + ai1 * B(1,0) + ai2 * B(2,0) + ai3 * B(3,0);
+		P(i,1) = ai0 * B(0,1) + ai1 * B(1,1) + ai2 * B(2,1) + ai3 * B(3,1);
+		P(i,2) = ai0 * B(0,2) + ai1 * B(1,2) + ai2 * B(2,2) + ai3 * B(3,2);
+		P(i,3) = ai0 * B(0,3) + ai1 * B(1,3) + ai2 * B(2,3) + ai3 * B(3,3);
 	}
-	m->m[3][0] += mx->m[3][0];
-	m->m[3][1] += mx->m[3][1];
-	m->m[3][2] += mx->m[3][2];
-	m->m[0][3] = 0.0f;
-	m->m[1][3] = 0.0f;
-	m->m[2][3] = 0.0f;
-	m->m[3][3] = 1.0f;
+	#undef A
+	#undef B
+	#undef P
 */
 
-	float _tmp[16];
+	tmp.raw[0]  = m->raw[0]*mx->raw[0]  + m->raw[4]*mx->raw[1]  + m->raw[8] *mx->raw[2]  + m->raw[12]*mx->raw[3];
+	tmp.raw[1]  = m->raw[1]*mx->raw[0]  + m->raw[5]*mx->raw[1]  + m->raw[9] *mx->raw[2]  + m->raw[13]*mx->raw[3];
+	tmp.raw[2]  = m->raw[2]*mx->raw[0]  + m->raw[6]*mx->raw[1]  + m->raw[10]*mx->raw[2]  + m->raw[14]*mx->raw[3];
+	tmp.raw[3]  = m->raw[3]*mx->raw[0]  + m->raw[7]*mx->raw[1]  + m->raw[11]*mx->raw[2]  + m->raw[15]*mx->raw[3];
 
-	_tmp[0]  = m->raw[0]*mx->raw[0]  + m->raw[4]*mx->raw[1]  + m->raw[8] *mx->raw[2]  + m->raw[12]*mx->raw[3];
-	_tmp[1]  = m->raw[1]*mx->raw[0]  + m->raw[5]*mx->raw[1]  + m->raw[9] *mx->raw[2]  + m->raw[13]*mx->raw[3];
-	_tmp[2]  = m->raw[2]*mx->raw[0]  + m->raw[6]*mx->raw[1]  + m->raw[10]*mx->raw[2]  + m->raw[14]*mx->raw[3];
-	_tmp[3]  = m->raw[3]*mx->raw[0]  + m->raw[7]*mx->raw[1]  + m->raw[11]*mx->raw[2]  + m->raw[15]*mx->raw[3];
 
-	_tmp[4]  = m->raw[0]*mx->raw[4]  + m->raw[4]*mx->raw[5]  + m->raw[8] *mx->raw[6]  + m->raw[12]*mx->raw[7];
-	_tmp[5]  = m->raw[1]*mx->raw[4]  + m->raw[5]*mx->raw[5]  + m->raw[9] *mx->raw[6]  + m->raw[13]*mx->raw[7];
-	_tmp[6]  = m->raw[2]*mx->raw[4]  + m->raw[6]*mx->raw[5]  + m->raw[10]*mx->raw[6]  + m->raw[14]*mx->raw[7];
-	_tmp[7]  = m->raw[3]*mx->raw[4]  + m->raw[7]*mx->raw[5]  + m->raw[11]*mx->raw[6]  + m->raw[15]*mx->raw[7];
+	tmp.raw[4]  = m->raw[0]*mx->raw[4]  + m->raw[4]*mx->raw[5]  + m->raw[8] *mx->raw[6]  + m->raw[12]*mx->raw[7];
+	tmp.raw[5]  = m->raw[1]*mx->raw[4]  + m->raw[5]*mx->raw[5]  + m->raw[9] *mx->raw[6]  + m->raw[13]*mx->raw[7];
+	tmp.raw[6]  = m->raw[2]*mx->raw[4]  + m->raw[6]*mx->raw[5]  + m->raw[10]*mx->raw[6]  + m->raw[14]*mx->raw[7];
+	tmp.raw[7]  = m->raw[3]*mx->raw[4]  + m->raw[7]*mx->raw[5]  + m->raw[11]*mx->raw[6]  + m->raw[15]*mx->raw[7];
 
-	_tmp[8]  = m->raw[0]*mx->raw[8]  + m->raw[4]*mx->raw[9]  + m->raw[8] *mx->raw[10] + m->raw[12]*mx->raw[11];
-	_tmp[9]  = m->raw[1]*mx->raw[8]  + m->raw[5]*mx->raw[9]  + m->raw[9] *mx->raw[10] + m->raw[13]*mx->raw[11];
-	_tmp[10] = m->raw[2]*mx->raw[8]  + m->raw[6]*mx->raw[9]  + m->raw[10]*mx->raw[10] + m->raw[14]*mx->raw[11];
-	_tmp[11] = m->raw[3]*mx->raw[8]  + m->raw[7]*mx->raw[9]  + m->raw[11]*mx->raw[10] + m->raw[15]*mx->raw[11];
 
-	_tmp[12] = m->raw[0]*mx->raw[12] + m->raw[4]*mx->raw[13] + m->raw[8] *mx->raw[14] + m->raw[12]*mx->raw[15];
-	_tmp[13] = m->raw[1]*mx->raw[12] + m->raw[5]*mx->raw[13] + m->raw[9] *mx->raw[14] + m->raw[13]*mx->raw[15];
-	_tmp[14] = m->raw[2]*mx->raw[12] + m->raw[6]*mx->raw[13] + m->raw[10]*mx->raw[14] + m->raw[14]*mx->raw[15];
-	_tmp[15] = m->raw[3]*mx->raw[12] + m->raw[7]*mx->raw[13] + m->raw[11]*mx->raw[14] + m->raw[15]*mx->raw[15];
+	tmp.raw[8]  = m->raw[0]*mx->raw[8]  + m->raw[4]*mx->raw[9]  + m->raw[8] *mx->raw[10] + m->raw[12]*mx->raw[11];
+	tmp.raw[9]  = m->raw[1]*mx->raw[8]  + m->raw[5]*mx->raw[9]  + m->raw[9] *mx->raw[10] + m->raw[13]*mx->raw[11];
+	tmp.raw[10] = m->raw[2]*mx->raw[8]  + m->raw[6]*mx->raw[9]  + m->raw[10]*mx->raw[10] + m->raw[14]*mx->raw[11];
+	tmp.raw[11] = m->raw[3]*mx->raw[8]  + m->raw[7]*mx->raw[9]  + m->raw[11]*mx->raw[10] + m->raw[15]*mx->raw[11];
 
-	memcpy(rm->raw, _tmp, sizeof(_tmp));
 
+	tmp.raw[12] = m->raw[0]*mx->raw[12] + m->raw[4]*mx->raw[13] + m->raw[8] *mx->raw[14] + m->raw[12]*mx->raw[15];
+	tmp.raw[13] = m->raw[1]*mx->raw[12] + m->raw[5]*mx->raw[13] + m->raw[9] *mx->raw[14] + m->raw[13]*mx->raw[15];
+	tmp.raw[14] = m->raw[2]*mx->raw[12] + m->raw[6]*mx->raw[13] + m->raw[10]*mx->raw[14] + m->raw[14]*mx->raw[15];
+	tmp.raw[15] = m->raw[3]*mx->raw[12] + m->raw[7]*mx->raw[13] + m->raw[11]*mx->raw[14] + m->raw[15]*mx->raw[15];
+
+	Matrix44Load(rm, &tmp);
 
 #endif // SSE
 
@@ -448,7 +392,7 @@ inline FORCEINLINE float Sin(float angle) {
 	__asm fld	angle
 	__asm fsin
 #else // SSE
-	// (TBD)
+	return sinf(angle);
 #endif // SSE
 }
 
@@ -458,7 +402,7 @@ inline FORCEINLINE float Cos(float angle)	{
 	__asm fld	angle
 	__asm fcos
 #else // SSE
-	// (TBD)
+	return cosf(angle);
 #endif // SSE
 }
 
@@ -472,7 +416,8 @@ inline FORCEINLINE void SinCos(float angle, float *sinVal, float *cosVal) {
 	__asm mov		eax,sinVal
 	__asm fstp		dword ptr [eax]
 #else // SSE
-	// (TBD)
+	*sinVal = cosf(angle);
+	*cosVal = cosf(angle);
 #endif // SSE
 }
 
@@ -486,7 +431,24 @@ inline FORCEINLINE float Sqrt(float val) {
 #endif // SSE
 }
 
+
 inline void Matrix44SetRotation( Matrix44 *m, const Vector3 *axis, float radAngle ) {
+
+	Vector3 v;
+	Vector3SetVector(&v, axis);
+	Vector3Normalize(&v);
+	float sa = (float) sinf(-radAngle);
+	float ca = (float) cosf(-radAngle);
+
+	m->m[0][0] = ca + (1.0f - ca) * v.x * v.x;
+	m->m[0][1] = (1.0f - ca) * v.x * v.y - sa * v.z;
+	m->m[0][2] = (1.0f - ca) * v.z * v.x + sa * v.y;
+	m->m[1][0] = (1.0f - ca) * v.x * v.y + sa * v.z;
+	m->m[1][1] = ca + (1.0f - ca) * v.y * v.y;
+	m->m[1][2] = (1.0f - ca) * v.y * v.z - sa * v.x;
+	m->m[2][0] = (1.0f - ca) * v.z * v.x - sa * v.y;
+	m->m[2][1] = (1.0f - ca) * v.y * v.z + sa * v.x;
+	m->m[2][2] = ca + (1.0f - ca) * v.z * v.z;
 
 /*
 	Vector3 v = *axis;
@@ -559,22 +521,6 @@ inline void Matrix44SetRotation( Matrix44 *m, const Vector3 *axis, float radAngl
 	m->raw[9]  =     2 * ( yz + xw );
 	m->raw[10] = 1 - 2 * ( xx + yy );
 */
-
-    Vector3 v;
-	 Vector3SetVector(&v, axis);
-    Vector3Normalize(&v);
-    float sa = (float) sinf(-radAngle);
-    float ca = (float) cosf(-radAngle);
-
-	 m->m[0][0] = ca + (1.0f - ca) * v.x * v.x;
-    m->m[0][1] = (1.0f - ca) * v.x * v.y - sa * v.z;
-    m->m[0][2] = (1.0f - ca) * v.z * v.x + sa * v.y;
-    m->m[1][0] = (1.0f - ca) * v.x * v.y + sa * v.z;
-    m->m[1][1] = ca + (1.0f - ca) * v.y * v.y;
-    m->m[1][2] = (1.0f - ca) * v.y * v.z - sa * v.x;
-    m->m[2][0] = (1.0f - ca) * v.z * v.x - sa * v.y;
-    m->m[2][1] = (1.0f - ca) * v.y * v.z + sa * v.x;
-    m->m[2][2] = ca + (1.0f - ca) * v.z * v.z;
 
 }
 
@@ -750,12 +696,12 @@ inline void Matrix44SetLookAt( Matrix44 *m, const Vector3 *from, const Vector3 *
 	Vector3Normalize(&x); // x = |x|
 	Vector3Normalize(&y); // y = |y|
 //	Vector3Inv(&z, &z);
-//	m->m1 = x.m128;
-//	m->m2 = y.m128;
-//	m->m3 = z.m128;
-//	m->m4 = _mm_set_ps(1.0f, 0.0f, 0.0f, 0.0f);
-//	_MM_TRANSPOSE4_PS(m->m1, m->m2, m->m3, m->m4);
+	m->m1 = x.m128;
+	m->m2 = y.m128;
+	m->m3 = z.m128;
+	m->m4 = _mm_set_ps(1.0f, 0.0f, 0.0f, 0.0f);
 
+/*
 	Matrix44Identity(m);
 	m->m[0][0] = x.x;
 	m->m[1][0] = x.y;
@@ -773,6 +719,7 @@ inline void Matrix44SetLookAt( Matrix44 *m, const Vector3 *from, const Vector3 *
 	m->m[3][2] = 0.0f;
 	
 //	m->m4 = _mm_set_ps(1.0f, 0.0f, 0.0f, 0.0f);
+*/
 
 }
 
@@ -810,7 +757,7 @@ inline void Matrix44Billboard( Matrix44 *m, const Vector3 *to, const Vector3 *up
 
 inline void Matrix44Invert( Matrix44 *m ) {
 
-#ifdef SSEx
+#ifdef SSE
 
 	static __m128 undef;
 	register float* src = m->raw;
@@ -975,7 +922,7 @@ inline void Matrix44Invert( Matrix44 *m ) {
 	tmp.m[3][2] = s*(M41*(M13*M22 - M12*M23) + M42*(M11*M23 - M13*M21) + M43*(M12*M21 - M11*M22));
 	tmp.m[3][3] = s*(M11*(M22*M33 - M23*M32) + M12*(M23*M31 - M21*M33) + M13*(M21*M32 - M22*M31));
 
-	memcpy(m, &tmp, sizeof(Matrix44));
+	Matrix44Load(m, &tmp);
 
 #endif // SSE
 
@@ -997,13 +944,14 @@ inline void Matrix44MultVector3( Matrix44 *m, Vector3 *src, Vector3 *dst ) { // 
 			_mm_mul_ps(m->m4, _mm_set_ps(0.0f, 1.0f, 1.0f, 1.0f)));
 
 /*
-	dst->m128 = _mm_add_ps(
-               _mm_add_ps(
-               _mm_add_ps(
-                    _mm_mul_ps(m->m1, _mm_shuffle_ps(src->m128, src->m128, _MM_SHUFFLE(0,0,0,0))),
-                    _mm_mul_ps(m->m2, _mm_shuffle_ps(src->m128, src->m128, _MM_SHUFFLE(1,1,1,1)))),
-                    _mm_mul_ps(m->m3, _mm_shuffle_ps(src->m128, src->m128, _MM_SHUFFLE(2,2,2,2)))),
-                    _mm_mul_ps(m->m4, _mm_shuffle_ps(src->m128, src->m128, _MM_SHUFFLE(3,3,3,3))));
+	dst->m128 = 
+		_mm_add_ps(
+      _mm_add_ps(
+      _mm_add_ps(
+           _mm_mul_ps(m->m1, _mm_shuffle_ps(src->m128, src->m128, _MM_SHUFFLE(0,0,0,0))),
+           _mm_mul_ps(m->m2, _mm_shuffle_ps(src->m128, src->m128, _MM_SHUFFLE(1,1,1,1)))),
+           _mm_mul_ps(m->m3, _mm_shuffle_ps(src->m128, src->m128, _MM_SHUFFLE(2,2,2,2)))),
+           _mm_mul_ps(m->m4, _mm_shuffle_ps(src->m128, src->m128, _MM_SHUFFLE(3,3,3,3))));
 */
 
 #else // SSE
@@ -1018,13 +966,14 @@ inline void Matrix44MultVector4( Matrix44 *m, Vector4 *src, Vector4 *dst ) { // 
 
 #ifdef SSE
 
-	dst->m128 = _mm_add_ps(
-               _mm_add_ps(
-               _mm_add_ps(
-                    _mm_mul_ps(m->m1, _mm_shuffle_ps(src->m128, src->m128, _MM_SHUFFLE(0,0,0,0))),
-                    _mm_mul_ps(m->m2, _mm_shuffle_ps(src->m128, src->m128, _MM_SHUFFLE(1,1,1,1)))),
-                    _mm_mul_ps(m->m3, _mm_shuffle_ps(src->m128, src->m128, _MM_SHUFFLE(2,2,2,2)))),
-                    _mm_mul_ps(m->m4, _mm_shuffle_ps(src->m128, src->m128, _MM_SHUFFLE(3,3,3,3))));
+	dst->m128 = 
+		_mm_add_ps(
+      _mm_add_ps(
+      _mm_add_ps(
+           _mm_mul_ps(m->m1, _mm_shuffle_ps(src->m128, src->m128, _MM_SHUFFLE(0,0,0,0))),
+           _mm_mul_ps(m->m2, _mm_shuffle_ps(src->m128, src->m128, _MM_SHUFFLE(1,1,1,1)))),
+           _mm_mul_ps(m->m3, _mm_shuffle_ps(src->m128, src->m128, _MM_SHUFFLE(2,2,2,2)))),
+           _mm_mul_ps(m->m4, _mm_shuffle_ps(src->m128, src->m128, _MM_SHUFFLE(3,3,3,3))));
 
 #else // SSE
 	// (TBD)

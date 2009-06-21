@@ -3072,3 +3072,54 @@ CONFIGURE_CLASS
 	HAS_INIT
 
 END_CLASS
+
+
+/**
+
+== Example ==
+{{{
+
+LoadModule('jsstd');
+LoadModule('jssdl');
+LoadModule('jsgraphics');
+
+GlSetAttribute( GL_SWAP_CONTROL, 1 ); // vsync
+GlSetAttribute( GL_DOUBLEBUFFER, 1 );
+GlSetAttribute( GL_DEPTH_SIZE, 16 );
+SetVideoMode( 320, 200, 32, HWSURFACE | OPENGL | RESIZABLE ); // | ASYNCBLIT // RESIZABLE FULLSCREEN
+
+var listeners = {
+	onQuit: function() { end = true },
+	onKeyDown: function(key, mod) { end = key == K_ESCAPE }
+}
+
+Ogl.MatrixMode(Ogl.PROJECTION);
+Ogl.Perspective(60, 0.001, 1000);
+Ogl.MatrixMode(Ogl.MODELVIEW);
+
+for (var end = false; !end ;) {
+	
+	PollEvent(listeners);
+	
+	with (Ogl) {
+
+		Clear(COLOR_BUFFER_BIT | DEPTH_BUFFER_BIT);
+		LoadIdentity();
+		
+		LookAt(-1,-1,1, 0,0,0, 0,0,1);
+		
+		Begin(QUADS);
+		Color(1,0,0);
+		Vertex( -0.5, -0.5, 0);
+		Vertex( -0.5, 0.5, 0);
+		Vertex( 0.5, 0.5, 0);
+		Vertex( 0.5, -0.5, 0);
+		End(QUADS);
+ }
+	
+	GlSwapBuffers();
+	Sleep(10);
+}
+
+}}}
+**/

@@ -1687,7 +1687,7 @@ inline NIMatrix44Get Matrix44GetInterface( JSContext *cx, JSObject *obj ) {
 		return (NIMatrix44Get)fct;
 /*
 	jsval res;
-	if ( JS_GetProperty(cx, obj, "Get", &res) != JS_TRUE || !JsvalIsFunction(cx, res) )
+	if ( JS_GetProperty(cx, obj, "GetMatrix", &res) != JS_TRUE || !JsvalIsFunction(cx, res) )
 		return NULL;
 	return JSMatrix44Get;
 */

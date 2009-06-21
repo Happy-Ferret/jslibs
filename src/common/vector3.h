@@ -28,12 +28,6 @@ source: http://nebuladevice.svn.sourceforge.net/viewvc/nebuladevice/trunk/nebula
 #include <xmmintrin.h>
 #include <ivec.h>
 
-/*
-static const int X = 0;
-static const int Y = 1;
-static const int Z = 2;
-static const int W = 3;
-*/
 
 #define X 0
 #define Y 1
@@ -157,14 +151,12 @@ static __forceinline __m128 rsqrt_nr(const __m128& x) {
 inline void Vector3Normalize( Vector3 *v ) {
 
 #ifdef SSE
-	__m128 m128 = v->m128;
-	__m128 a = _mm_mul_ps(m128, m128);
-	// horizontal add
-	__m128 b = _mm_add_ss(_mm_shuffle_ps(a, a, _MM_SHUFFLE(X,X,X,X)), _mm_add_ss(_mm_shuffle_ps(a, a, _MM_SHUFFLE(Y,Y,Y,Y)), _mm_shuffle_ps(a, a, _MM_SHUFFLE(Z,Z,Z,Z))));
-	// get reciprocal of square root of squared length
-	__m128 f = _mm_rsqrt_ss(b);
-	__m128 oneDivLen = _mm_shuffle_ps(f, f, _MM_SHUFFLE(X,X,X,X));
-	v->m128 = _mm_mul_ps(m128, oneDivLen);
+
+	register __m128 m128 = v->m128;
+	register __m128 a = _mm_mul_ps(m128, m128);
+	register __m128 b = _mm_add_ss(_mm_shuffle_ps(a, a, _MM_SHUFFLE(X,X,X,X)), _mm_add_ss(_mm_shuffle_ps(a, a, _MM_SHUFFLE(Y,Y,Y,Y)), _mm_shuffle_ps(a, a, _MM_SHUFFLE(Z,Z,Z,Z))));
+	register __m128 f = _mm_rsqrt_ss(b);
+	v->m128 = _mm_mul_ps(m128, _mm_shuffle_ps(f, f, _MM_SHUFFLE(X,X,X,X)));
 
 /*
 	__m128 vec = v->m128;
@@ -179,7 +171,9 @@ inline void Vector3Normalize( Vector3 *v ) {
 	#endif
 	v->m128 = _mm_mul_ps(vec, _mm_shuffle_ps(t,t,0x00));
 */
+
 #else // SSE
+
 	float len = Vector3Len(v);
 	v->x /= len;
 	v->y /= len;

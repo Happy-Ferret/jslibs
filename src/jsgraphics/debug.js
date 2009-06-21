@@ -7,35 +7,182 @@ LoadModule('jstrimesh');
 LoadModule('jssdl');
 LoadModule('jsgraphics');
 
+function DumpMatrix(m) {
+    
+    for (var y = 0; y < 4; ++y) {
+        Print('[ ' );
+        for (var x = 0; x < 4; ++x)
+            Print( m[x+y*4].toFixed(3) + '  ' );
+        Print(']\n' );
+    }
+		Print('\n' );
+}
+
+var perspective = new Transformation();
+var mat = new Transformation();
+
+var lines = [];
+
+var vx=0, vy=0;
+GlSetAttribute( GL_SWAP_CONTROL, 1 ); // vsync
+GlSetAttribute( GL_DOUBLEBUFFER, 1 );
+GlSetAttribute( GL_DEPTH_SIZE, 16 );
+SetVideoMode( 320, 200, 32, HWSURFACE | OPENGL | RESIZABLE ); // | ASYNCBLIT // RESIZABLE FULLSCREEN
+
+var listeners = {
+	onQuit: function() { end = true },
+	onKeyDown: function(key, mod) { end = key == K_ESCAPE },
+	onVideoResize: function(w,h) { Ogl.Viewport(0, 0, w, h) },
+	
+	onMouseButtonDown: function(button, x, y) {
+		if ( button == BUTTON_LEFT ) {
+			
+			x = 2*x/videoWidth - 1;
+			y = -(2*y/videoHeight - 1);
+			
+			mat.Load(Ogl);
+			mat.Product(perspective)
+			
+			mat.ComputeFrustumSphere();
+			
+			mat.Invert();
+
+			var p1 = mat.TransformVector([x,y,0,1]);
+			p1[0] /= p1[3];
+			p1[1] /= p1[3];
+			p1[2] /= p1[3];
+
+			var p2 = mat.TransformVector([x,y,1,1]);
+			p2[0] /= p2[3];
+			p2[1] /= p2[3];
+			p2[2] /= p2[3];
+			
+			lines.push([p1,p2]);
+		}
+		if ( button == BUTTON_RIGHT ) {
+			showCursor = false;
+			grabInput = true;
+		}
+	},
+	onMouseButtonUp: function(button) {
+		if ( button == BUTTON_RIGHT ) {
+			showCursor = true;
+			grabInput = false;
+		}
+	},
+	onMouseMotion: function(px,py,dx,dy,button) {
+		if ( grabInput ) {
+			vx += dx;
+			vy += dy;
+		}
+	}
+}
+
+
+Ogl.MatrixMode(Ogl.PROJECTION);
+Ogl.Perspective(60, 0.01, 1000);
+perspective.Load(Ogl);
+Ogl.Enable(Ogl.DEPTH_TEST);
+
+Ogl.MatrixMode(Ogl.MODELVIEW);
+
+//Ogl.Enable(Ogl.LINE_SMOOTH);
+	Ogl.LineWidth(2);
+	Ogl.PointSize(2);
+	
+for (var end = false; !end ;) {
+	
+	PollEvent(listeners);
+	
+	with (Ogl) {
+
+		Clear(COLOR_BUFFER_BIT | DEPTH_BUFFER_BIT);
+		LoadIdentity();
+		LookAt(-Math.cos(vx/500)*1,Math.sin(vx/500)*1,vy/1000+1, 0,0,0, 0,0,1);
+
+		Begin(QUADS);
+		Color(1,0,0);
+		Vertex( -0.5, -0.5, 0); Vertex( -0.5, 0.5, 0); Vertex( 0.5, 0.5, 0); Vertex( 0.5, -0.5, 0);
+		End(QUADS);
+		
+		var c = 0;
+		for each ( var [p1, p2] in lines ) {
+			
+			Color(1,1,1);
+		
+			Begin(POINTS);
+			Vertex( p1[0], p1[1], p1[2] );
+			End(POINTS);
+
+			Begin(LINES);
+			Vertex( p1[0], p1[1], p1[2] );
+			Vertex( p2[0], p2[1], p2[2] );
+			End(LINES);
+
+
+/*
+//			Ogl.PushMatrix();
+//			LookAt(p1[0], p1[1], p1[2],  -Math.cos(vx/500)*1,Math.sin(vx/500)*1,vy/1000+1, 0,0,1);
+			Begin(QUADS);
+			Color(1,1,1);
+			Vertex( p1[0], p1[1], p1[2] );
+			Vertex( p1[0], p1[1], p1[2]+0.1 );
+			Vertex( p2[0], p2[1], p2[2] );
+			Vertex( p2[0], p2[1], p2[2]+0.1 );
+			End(QUADS);
+//			Ogl.PushMatrix();
+*/
+
+			c++;
+		}
+
+		
+ }
+
+	GlSwapBuffers();
+	Sleep(20);
+}
+
+
+Halt(); //////////////////////////////////////////////////////////////////////
 
 var t = new Transformation(null);
-
-
-t.Translate(0, 0, 0);
-
-t.RotateZ(-90);
-t.Translate(2, 0, 0);
-
-t.RotateZ(45);
-t.Rotate(45, 0,0,1);
-t.Translate(1, 0, 0);
-t.RotateY(90);
-t.Translate(1, 0, 0);
-t.Translate(1, 0, 0);
-t.Translate(1, 0, 0);
-
+t.LookAt(0,0,0, 1,0,0, 0,0,1);
+t.Translate(0, 0, 1);
 
 var v = [0,0,0];
 Print( [c.toFixed(2) for each ( c in t.TransformVector(v) )].join('  '), '\n' );
 
 
+Halt(); //////////////////////////////////////////////////////////////////////
+
+
+var t = new Transformation(null);
+t.Translate(0, 0, 0);
+t.RotateZ(-90);
+t.Translate(2, 0, 0);
+t.RotateY(360);
+t.RotateZ(45);
+t.Rotate(45, 0,0,1);
+t.Translate(1, 0, 0);
+t.RotateY(90);
+t.Translate(1, 0, 0);
+t.RotateY(360);
+t.Translate(1, 0, 0);
+t.RotateX(360);
+t.Translate(1, 0, 0);
+t.RotateY(123);
+t.Translate(5, 6, 7);
+t.Translate(-5, -6, -7);
+
+var v = [0,0,0];
+Print( [c.toFixed(2) for each ( c in t.TransformVector(v) )].join('  '), '\n' );
 t.Invert();
-
 Print( [c.toFixed(1) for each ( c in t.TransformVector(v) )].join('  '), '\n' );
-
 Print( '\n\n' );
 
-Halt();
+
+Halt(); //////////////////////////////////////////////////////////////////////
 
 
 
@@ -55,15 +202,6 @@ t.LookAt(-10,-10,10, 0,0,0, 0,0,1);
 Transformation.Test();
 Halt();
 
-function DumpMatrix(m) {
-    
-    for (var y = 0; y < 4; ++y) {
-        Print('[  ' );
-        for (var x = 0; x < 4; ++x)
-            Print( m[x+y*4].toFixed(1) + '  ' );
-        Print(']\n\n' );
-    }
-}
 
 
 var t = new Transformation( undefined );

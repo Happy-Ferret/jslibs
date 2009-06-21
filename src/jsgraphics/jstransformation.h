@@ -22,8 +22,8 @@ struct TransformationPrivate {
 	Matrix44 *mat;
 };
 
-// This function tries to read a matrix44 from a Transformation object OR a NI_READ_MATRIX44 interface.
-inline JSBool GetMatrixHelper( JSContext *cx, jsval val, Matrix44 **m ) {
+// This function tries to read a matrix44 from a Transformation object OR a NI_READ_MATRIX44 interface OR a javascript Array.
+inline JSBool GetMatrixHelper( JSContext *cx, jsval val, float **m ) {
 
 	JL_S_ASSERT_OBJECT(val);
 	JSObject *matrixObj = JSVAL_TO_OBJECT(val);
@@ -31,16 +31,13 @@ inline JSBool GetMatrixHelper( JSContext *cx, jsval val, Matrix44 **m ) {
 	if ( JL_GetClass(matrixObj) == classTransformation ) {
 		
 		TransformationPrivate *pv = (TransformationPrivate *)JL_GetPrivate(cx, matrixObj);
-		*m = pv->mat;
+		*m = pv->mat->raw;
 		return JS_TRUE;
 	}
 
 	NIMatrix44Get Matrix44Get = Matrix44GetInterface(cx, matrixObj);
-	if ( Matrix44Get != NULL ) {
-
-		JL_CHK( Matrix44Get(cx, matrixObj, (float**)m) );
-		return JS_TRUE;
-	}
+	if ( Matrix44Get )
+		return Matrix44Get(cx, matrixObj, m);
 
 	if ( JS_IsArrayObject(cx, matrixObj) ) {
 
@@ -49,28 +46,28 @@ inline JSBool GetMatrixHelper( JSContext *cx, jsval val, Matrix44 **m ) {
 		if ( JsvalIsArray(cx, element) ) { // support for: [ [1,1,1,1], [2,2,2,2], [3,3,3,3], [4,4,4,4] ] matrix
 
 			size_t length;
-			JL_CHK( JsvalToFloatVector(cx, element, (*m)->m[0], 4, &length ) );
+			JL_CHK( JsvalToFloatVector(cx, element, (*m)+0, 4, &length ) );
 			JL_S_ASSERT( length == 4, "Too few (%d) elements in the array.", length );
 			
 			JL_CHK( JS_GetElement(cx, JSVAL_TO_OBJECT(val), 1, &element) );
 			JL_S_ASSERT_ARRAY( element );
-			JL_CHK( JsvalToFloatVector(cx, element, (*m)->m[1], 4, &length ) );
+			JL_CHK( JsvalToFloatVector(cx, element, (*m)+4, 4, &length ) );
 			JL_S_ASSERT( length == 4, "Too few (%d) elements in the array.", length );
 
 			JL_CHK( JS_GetElement(cx, JSVAL_TO_OBJECT(val), 2, &element) );
 			JL_S_ASSERT_ARRAY( element );
-			JL_CHK( JsvalToFloatVector(cx, element, (*m)->m[2], 4, &length ) );
+			JL_CHK( JsvalToFloatVector(cx, element, (*m)+8, 4, &length ) );
 			JL_S_ASSERT( length == 4, "Too few (%d) elements in the array.", length );
 
 			JL_CHK( JS_GetElement(cx, JSVAL_TO_OBJECT(val), 3, &element) );
 			JL_S_ASSERT_ARRAY( element );
-			JL_CHK( JsvalToFloatVector(cx, element, (*m)->m[3], 4, &length ) );
+			JL_CHK( JsvalToFloatVector(cx, element, (*m)+12, 4, &length ) );
 			JL_S_ASSERT( length == 4, "Too few (%d) elements in the array.", length );
 			return JS_TRUE;
 		}
 
 		size_t length;
-		JL_CHK( JsvalToFloatVector(cx, val, (*m)->raw, 16, &length ) );
+		JL_CHK( JsvalToFloatVector(cx, val, *m, 16, &length ) );
 		JL_S_ASSERT( length == 16, "Too few (%d) elements in the array.", length );
 		return JS_TRUE;
 	}
