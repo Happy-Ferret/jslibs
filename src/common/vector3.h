@@ -26,7 +26,9 @@ source: http://nebuladevice.svn.sourceforge.net/viewvc/nebuladevice/trunk/nebula
 #ifdef SSE
 
 #include <xmmintrin.h>
-#include <ivec.h>
+//#include <ivec.h>
+
+#include "vector4.h"
 
 
 #define X 0
@@ -35,7 +37,7 @@ source: http://nebuladevice.svn.sourceforge.net/viewvc/nebuladevice/trunk/nebula
 #define W 3
 
 
-typedef __declspec(align(4)) union {
+typedef union { // __declspec(align(4)) 
     __m128 m128;
     struct { float x, y, z, pad; };
     float raw[4];
@@ -87,7 +89,8 @@ inline void Vector3Identity( Vector3 *v ) {
 
 }
 
-inline void Vector3SetVector( Vector3 *v, const Vector3 *v1 ) {
+
+inline void Vector3Load( Vector3 *v, const Vector3 *v1 ) {
 
 #ifdef SSE
 	v->m128 = v1->m128;
@@ -98,6 +101,20 @@ inline void Vector3SetVector( Vector3 *v, const Vector3 *v1 ) {
 #endif // SSE
 
 }
+
+
+inline void Vector3LoadVector4( Vector3 *v, const Vector4 *v1 ) {
+
+#ifdef SSE
+	v->m128 = v1->m128;
+#else // SSE
+	v->x = v1->x;
+	v->y = v1->y;
+	v->z = v1->z;
+#endif // SSE
+
+}
+
 
 
 inline void Vector3Set( Vector3 *v, const float _x, const float _y, const float _z ) {
@@ -125,11 +142,12 @@ inline void Vector3SetFromPtr( Vector3 *v, const float *ptr ) {
 
 }
 
-inline float Vector3Len( Vector3 *v ) {
+
+inline float Vector3Length( Vector3 *v ) {
 
 #ifdef SSE
-    __m128 a = _mm_mul_ps(v->m128, v->m128);
-    return _mm_sqrt_ss(_mm_add_ss(_mm_shuffle_ps(a, a, _MM_SHUFFLE(X,X,X,X)), _mm_add_ss(_mm_shuffle_ps(a, a, _MM_SHUFFLE(Y,Y,Y,Y)), _mm_shuffle_ps(a, a, _MM_SHUFFLE(Z,Z,Z,Z))))).m128_f32[X];
+    register __m128 a = _mm_mul_ps(v->m128, v->m128);
+    return _mm_sqrt_ss(_mm_add_ss(_mm_shuffle_ps(a, a, _MM_SHUFFLE(0,0,0,0)), _mm_add_ss(_mm_shuffle_ps(a, a, _MM_SHUFFLE(1,1,1,1)), _mm_shuffle_ps(a, a, _MM_SHUFFLE(2,2,2,2))))).m128_f32[0];
 #else // SSE
 	return sqrt( v->x * v->x + v->y * v->y + v->z * v->z );
 #endif // SSE
@@ -148,15 +166,14 @@ static __forceinline __m128 rsqrt_nr(const __m128& x) {
 #endif // SSE
 */
 
-inline void Vector3Normalize( Vector3 *v ) {
+inline void Vector3Normalize( Vector3 *rv, Vector3 *v ) {
 
 #ifdef SSE
 
 	register __m128 m128 = v->m128;
 	register __m128 a = _mm_mul_ps(m128, m128);
-	register __m128 b = _mm_add_ss(_mm_shuffle_ps(a, a, _MM_SHUFFLE(X,X,X,X)), _mm_add_ss(_mm_shuffle_ps(a, a, _MM_SHUFFLE(Y,Y,Y,Y)), _mm_shuffle_ps(a, a, _MM_SHUFFLE(Z,Z,Z,Z))));
-	register __m128 f = _mm_rsqrt_ss(b);
-	v->m128 = _mm_mul_ps(m128, _mm_shuffle_ps(f, f, _MM_SHUFFLE(X,X,X,X)));
+	register __m128 f = _mm_rsqrt_ss(_mm_add_ss(_mm_shuffle_ps(a, a, _MM_SHUFFLE(X,X,X,X)), _mm_add_ss(_mm_shuffle_ps(a, a, _MM_SHUFFLE(Y,Y,Y,Y)), _mm_shuffle_ps(a, a, _MM_SHUFFLE(Z,Z,Z,Z)))));
+	rv->m128 = _mm_mul_ps(m128, _mm_shuffle_ps(f, f, _MM_SHUFFLE(X,X,X,X)));
 
 /*
 	__m128 vec = v->m128;
@@ -174,7 +191,7 @@ inline void Vector3Normalize( Vector3 *v ) {
 
 #else // SSE
 
-	float len = Vector3Len(v);
+	float len = sqrt( v->x * v->x + v->y * v->y + v->z * v->z );
 	v->x /= len;
 	v->y /= len;
 	v->z /= len;
@@ -182,7 +199,7 @@ inline void Vector3Normalize( Vector3 *v ) {
 
 }
 
-inline void Vector3Add( Vector3 *vr, const Vector3 *va, const Vector3 *vb ) {
+inline void Vector3AddVector3( Vector3 *vr, const Vector3 *va, const Vector3 *vb ) {
 
 #ifdef SSE
 	vr->m128 = _mm_add_ps(va->m128, vb->m128);
@@ -195,7 +212,7 @@ inline void Vector3Add( Vector3 *vr, const Vector3 *va, const Vector3 *vb ) {
 }
 
 
-inline void Vector3Sub( Vector3 *vr, const Vector3 *va, const Vector3 *vb ) {
+inline void Vector3SubVector3( Vector3 *vr, const Vector3 *va, const Vector3 *vb ) {
 
 #ifdef SSE
 	vr->m128 = _mm_sub_ps(va->m128, vb->m128);
@@ -234,10 +251,23 @@ inline void Vector3Mult( Vector3 *rv, Vector3 *v, float s ) {
 }
 
 
+inline void Vector3Div( Vector3 *rv, Vector3 *v, float s ) {
+
+#ifdef SSE
+	rv->m128 = _mm_div_ps(v->m128, _mm_set1_ps(s));
+#else // SSE
+	rv->x = v->x / s;
+	rv->y = v->y / s;
+	rv->z = v->z / s;
+#endif // SSE
+
+}
+
+
 inline float Vector3Dot(const Vector3 *v0, const Vector3 *v1) { // Dot Product
 
 #ifdef SSE
-	__m128 a = _mm_mul_ps(v0->m128, v1->m128);
+	register __m128 a = _mm_mul_ps(v0->m128, v1->m128);
 	return _mm_add_ss(_mm_shuffle_ps(a, a, _MM_SHUFFLE(0,0,0,0)), _mm_add_ss(_mm_shuffle_ps(a, a, _MM_SHUFFLE(1,1,1,1)), _mm_shuffle_ps(a, a, _MM_SHUFFLE(2,2,2,2)))).m128_f32[0];
 #else // SSE
 	return v0->x * v1->x + v0->y * v1->y + v0->z * v1->z;
@@ -246,14 +276,14 @@ inline float Vector3Dot(const Vector3 *v0, const Vector3 *v1) { // Dot Product
 }
 
 
-inline void Vector3Cross(Vector3 *v, const Vector3 *v0, const Vector3 *v1) { // Cross Product
+inline void Vector3Cross(Vector3 *rv, const Vector3 *v0, const Vector3 *v1) { // Cross Product
 
 #ifdef SSE
-	v->m128 = _mm_sub_ps(_mm_mul_ps(_mm_shuffle_ps(v0->m128, v0->m128, _MM_SHUFFLE(W, X, Z, Y)), _mm_shuffle_ps(v1->m128, v1->m128, _MM_SHUFFLE(W, Y, X, Z))), _mm_mul_ps(_mm_shuffle_ps(v0->m128, v0->m128, _MM_SHUFFLE(W, Y, X, Z)), _mm_shuffle_ps(v1->m128, v1->m128, _MM_SHUFFLE(W, X, Z, Y))));
+	rv->m128 = _mm_sub_ps(_mm_mul_ps(_mm_shuffle_ps(v0->m128, v0->m128, _MM_SHUFFLE(W, X, Z, Y)), _mm_shuffle_ps(v1->m128, v1->m128, _MM_SHUFFLE(W, Y, X, Z))), _mm_mul_ps(_mm_shuffle_ps(v0->m128, v0->m128, _MM_SHUFFLE(W, Y, X, Z)), _mm_shuffle_ps(v1->m128, v1->m128, _MM_SHUFFLE(W, X, Z, Y))));
 #else // SSE
-	v->x = v0->y * v1->z - v0->z * v1->y;
-	v->y = v0->z * v1->x - v0->x * v1->z;
-	v->z = v0->x * v1->y - v0->y * v1->x;
+	rv->x = v0->y * v1->z - v0->z * v1->y;
+	rv->y = v0->z * v1->x - v0->x * v1->z;
+	rv->z = v0->x * v1->y - v0->y * v1->x;
 #endif // SSE
 
 }

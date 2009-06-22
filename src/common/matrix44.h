@@ -435,8 +435,8 @@ inline FORCEINLINE float Sqrt(float val) {
 inline void Matrix44SetRotation( Matrix44 *m, const Vector3 *axis, float radAngle ) {
 
 	Vector3 v;
-	Vector3SetVector(&v, axis);
-	Vector3Normalize(&v);
+	Vector3Load(&v, axis);
+	Vector3Normalize(&v, &v);
 	float sa = (float) sinf(-radAngle);
 	float ca = (float) cosf(-radAngle);
 
@@ -686,15 +686,15 @@ inline void Matrix44SetLookAt( Matrix44 *m, const Vector3 *from, const Vector3 *
 */
 
 	Vector3 z;
-	Vector3Sub(&z, from, to);
-	Vector3Normalize(&z); // z = |z|
+	Vector3SubVector3(&z, from, to);
+	Vector3Normalize(&z, &z); // z = |z|
 	Vector3 y = *up;
 //	y.pad = 0.0f;
 	Vector3 x;
 	Vector3Cross(&x, &y, &z); // x = y cross z
 	Vector3Cross(&y, &z, &x); // z = x cross y
-	Vector3Normalize(&x); // x = |x|
-	Vector3Normalize(&y); // y = |y|
+	Vector3Normalize(&x, &x); // x = |x|
+	Vector3Normalize(&y, &y); // y = |y|
 //	Vector3Inv(&z, &z);
 	m->m1 = x.m128;
 	m->m2 = y.m128;
@@ -734,15 +734,15 @@ inline void Matrix44Billboard( Matrix44 *m, const Vector3 *to, const Vector3 *up
 //	z.y = m->m[3][1];
 //	z.z = m->m[3][2];
 	z.m128 = m->m4;
-	Vector3Sub(&z, &z, to); // z = z - to
-	Vector3Normalize(&z); // z = |z|
+	Vector3SubVector3(&z, &z, to); // z = z - to
+	Vector3Normalize(&z, &z); // z = |z|
 	Vector3 y = *up;
 	Vector3 x;
 	Vector3Cross(&x, &y, &z); // x = y cross z
 	Vector3Cross(&z, &x, &y); // z = x cross y
-	Vector3Normalize(&x); // x = |x|
-	Vector3Normalize(&y); // y = |y|
-	Vector3Normalize(&z); // z = |z|
+	Vector3Normalize(&x, &x); // x = |x|
+	Vector3Normalize(&y, &y); // y = |y|
+	Vector3Normalize(&z, &z); // z = |z|
 	m->m1 = x.m128;
 	m->m2 = y.m128;
 	m->m3 = z.m128;
@@ -930,7 +930,7 @@ inline void Matrix44Invert( Matrix44 *m ) {
 
 
 
-inline void Matrix44MultVector3( Matrix44 *m, Vector3 *src, Vector3 *dst ) { // dstVector = srcVector . m
+inline void Matrix44MultVector3( Matrix44 *m, Vector3 *dst, Vector3 *src ) { // dstVector = srcVector . m
 
 #ifdef SSE
 
@@ -962,7 +962,7 @@ inline void Matrix44MultVector3( Matrix44 *m, Vector3 *src, Vector3 *dst ) { // 
 
 
 
-inline void Matrix44MultVector4( Matrix44 *m, Vector4 *src, Vector4 *dst ) { // dstVector = srcVector . m
+inline void Matrix44MultVector4( Matrix44 *m, Vector4 *dst, Vector4 *src ) {
 
 #ifdef SSE
 

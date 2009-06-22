@@ -610,7 +610,7 @@ DEFINE_FUNCTION_FAST( RotateToVector ) {
 
 	Vector3 to, up;
 	Vector3Set(&to, x,y,z);
-	Vector3Normalize(&to);
+	Vector3Normalize(&to, &to);
 	Vector3Set(&up, 0,0,1);
 	float angle = acos(Vector3Dot(&up, &to));
 	Vector3Cross(&up, &up, &to);
@@ -717,7 +717,7 @@ DEFINE_FUNCTION_FAST( TransformVector ) {
 		Vector3 src, dst;
 		JL_CHK( JsvalToFloatVector(cx, JL_FARG(1), src.raw, 3, &length ) );
 
-		Matrix44MultVector3( pv->mat, &src, &dst );
+		Matrix44MultVector3(pv->mat, &dst, &src);
 
 		JL_CHK( DoubleToJsval(cx, dst.x, &tmpValue) );
 		JL_CHK( JS_SetElement(cx, JSVAL_TO_OBJECT( JL_FARG(1) ), 0, &tmpValue) );
@@ -733,7 +733,7 @@ DEFINE_FUNCTION_FAST( TransformVector ) {
 		Vector4 src, dst;
 		JL_CHK( JsvalToFloatVector(cx, JL_FARG(1), src.raw, 4, &length ) );
 
-		Matrix44MultVector4( pv->mat, &src, &dst );
+		Matrix44MultVector4(pv->mat, &dst, &src);
 
 		JL_CHK( DoubleToJsval(cx, dst.x, &tmpValue) );
 		JL_CHK( JS_SetElement(cx, JSVAL_TO_OBJECT( JL_FARG(1) ), 0, &tmpValue) );
@@ -806,21 +806,67 @@ DEFINE_FUNCTION_FAST( ComputeFrustumSphere ) {
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE(pv);
 
-	Matrix44 tmp;
-	Matrix44Load(&tmp, pv->mat);
+	Vector4 tmp;
+	Vector3 p0, p1, p2;
 
-	Matrix44Invert(&tmp);
+	Vector4Set(&tmp, 0, 0, 0, 1);
+	Matrix44MultVector4(pv->mat, &tmp, &tmp);
+	Vector4Div(&tmp, &tmp, tmp.w);
+	Vector3LoadVector4(&p0, &tmp);
 
-	Vector4 src, dst1, dst2;
-	Vector4Set(&src, 0, 0, 0, 1);
-	Matrix44MultVector4(&tmp, &src, &dst1);
-	Vector4Div(&dst1, &dst1, dst1.w);
+	Vector4Set(&tmp, 0, 0, 1, 1);
+	Matrix44MultVector4(pv->mat, &tmp, &tmp);
+	Vector4Div(&tmp, &tmp, tmp.w);
+	Vector3LoadVector4(&p1, &tmp);
+	
+	Vector4Set(&tmp, 1, 1, 1, 1);
+	Matrix44MultVector4(pv->mat, &tmp, &tmp);
+	Vector4Div(&tmp, &tmp, tmp.w);
+	Vector3LoadVector4(&p2, &tmp);
+
+	Vector3SubVector3(&p1, &p1, &p0);
+	Vector3SubVector3(&p2, &p2, &p0);
+
+// 
+
+	float d = 0.5 * Vector3Dot(&p1, &p2) / Vector3Dot(&p1, &p1);
+
+	Vector3 center;
+
+	Vector3Mult(&center, &p1, d);
+
+	Vector3 tmp2;
+	Vector3SubVector3(&tmp2, &p2, &center);
+	float d1 = Vector3Length(&tmp2);
+	float d2 = Vector3Length(&center);
+
+	d2 = 0;
+
+
+
+/*
+	Vector4 src, p0, p1, center;
+	Vector4Set(&src, 0, 0, -1, 1);
+	Matrix44MultVector4(pv->mat, &src, &src);
+	Vector4Div(&p0, &src, src.w);
 
 	Vector4Set(&src, 0, 0, 1, 1);
-	Matrix44MultVector4(&tmp, &src, &dst2);
-	Vector4Div(&dst2, &dst2, dst2.w);
+	Matrix44MultVector4(pv->mat, &src, &src);
+	Vector4Div(&p1, &src, src.w);
 
-//	Vector4Sub(&dst1, &dst2, &dst1);
+	Vector4SubVector4(&p1, &p1, &p0);
+	Vector4Div(&p1, &p1, 2);
+	Vector4AddVector4(&center, &p1, &p0);
+
+	Vector4Set(&src, 1, 1, 1, 1);
+	Matrix44MultVector4(pv->mat, &src, &src);
+	Vector4Div(&p1, &src, src.w);
+
+	Vector4SubVector4(&p1, &p1, &center);
+	center.w = Vector4Length(&p1); // tmp
+
+	JL_CHK( FloatVectorToJsval(cx, center.raw, 4, JL_FRVAL) );
+*/
 
 
 	return JS_TRUE;

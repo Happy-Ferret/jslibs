@@ -40,13 +40,6 @@ var listeners = {
 			x = 2*x/videoWidth - 1;
 			y = -(2*y/videoHeight - 1);
 			
-			mat.Load(Ogl);
-			mat.Product(perspective)
-			
-			mat.ComputeFrustumSphere();
-			
-			mat.Invert();
-
 			var p1 = mat.TransformVector([x,y,0,1]);
 			p1[0] /= p1[3];
 			p1[1] /= p1[3];
@@ -80,7 +73,7 @@ var listeners = {
 
 
 Ogl.MatrixMode(Ogl.PROJECTION);
-Ogl.Perspective(60, 0.01, 1000);
+Ogl.Perspective(90, 0.1, 100);
 perspective.Load(Ogl);
 Ogl.Enable(Ogl.DEPTH_TEST);
 
@@ -94,11 +87,26 @@ for (var end = false; !end ;) {
 	
 	PollEvent(listeners);
 	
+	Ogl.LoadIdentity();
+//	Ogl.LookAt(-Math.cos(vx/500)*1,Math.sin(vx/500)*1,vy/1000+1, 0,0,0, 0,0,1);
+//	Ogl.LookAt(2,2,2, -Math.cos(vx/500)*1,Math.sin(vx/500)*1, vy/1000+1, 0,0,1);
+	Ogl.LookAt(0,0,0, 0,1,0, 0,0,1);
+
+	mat.Load(Ogl);
+	mat.Product(perspective)
+	mat.Invert();
+	
+	var fs = mat.ComputeFrustumSphere() ;
+	//Print( [ c.toFixed(2)+' ' for each ( c in fs ) ], '\n' );
+	
+	Print( '[0,0,0] in the view ? ', Math.sqrt(fs[0]*fs[0] + fs[1]*fs[1] + fs[2]*fs[2]) ,' ', fs[3], '\n' );
+	
+
+	
+	
 	with (Ogl) {
 
 		Clear(COLOR_BUFFER_BIT | DEPTH_BUFFER_BIT);
-		LoadIdentity();
-		LookAt(-Math.cos(vx/500)*1,Math.sin(vx/500)*1,vy/1000+1, 0,0,0, 0,0,1);
 
 		Begin(QUADS);
 		Color(1,0,0);
@@ -132,6 +140,7 @@ for (var end = false; !end ;) {
 			End(QUADS);
 //			Ogl.PushMatrix();
 */
+
 
 			c++;
 		}
