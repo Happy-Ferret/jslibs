@@ -401,7 +401,7 @@ DEFINE_PROPERTY( positionSetter ) {
 /**doc
 $TOC_MEMBER $INAME
  $TYPE vec6 *position*
-  Is the axis-aligned bounding box [minx, maxx, miny, maxy, minz, maxz].
+  Is the axis-aligned bounding box [minx, miny, minz,  maxx, maxy, maxz].
 **/
 DEFINE_PROPERTY( aabb ) {
 
@@ -409,7 +409,16 @@ DEFINE_PROPERTY( aabb ) {
 	JL_S_ASSERT_RESOURCE(geom);
 	ode::dReal aabb[6];
 	ode::dGeomGetAABB(geom, aabb);
-	JL_CHK( FloatVectorToJsval(cx, aabb, 6, vp) );
+
+	float tmp[6];
+	tmp[0] = aabb[0];
+	tmp[1] = aabb[2];
+	tmp[2] = aabb[4];
+	tmp[3] = aabb[1];
+	tmp[4] = aabb[3];
+	tmp[5] = aabb[5];
+
+	JL_CHK( FloatVectorToJsval(cx, tmp, 6, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }

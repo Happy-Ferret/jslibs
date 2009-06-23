@@ -216,6 +216,10 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath=".\math3d.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\oglError.cpp"
 				>
 			</File>
@@ -230,6 +234,10 @@
 						UsePrecompiledHeader="1"
 					/>
 				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\winTools.js"
+				>
 			</File>
 		</Filter>
 		<Filter

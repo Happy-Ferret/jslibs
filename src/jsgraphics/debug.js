@@ -37,6 +37,8 @@ var listeners = {
 	onMouseButtonDown: function(button, x, y) {
 		if ( button == BUTTON_LEFT ) {
 			
+			
+			
 			x = 2*x/videoWidth - 1;
 			y = -(2*y/videoHeight - 1);
 			
@@ -73,7 +75,7 @@ var listeners = {
 
 
 Ogl.MatrixMode(Ogl.PROJECTION);
-Ogl.Perspective(90, 0.1, 100);
+Ogl.Perspective(100, 0.1, 100);
 perspective.Load(Ogl);
 Ogl.Enable(Ogl.DEPTH_TEST);
 
@@ -89,20 +91,16 @@ for (var end = false; !end ;) {
 	
 	Ogl.LoadIdentity();
 //	Ogl.LookAt(-Math.cos(vx/500)*1,Math.sin(vx/500)*1,vy/1000+1, 0,0,0, 0,0,1);
-//	Ogl.LookAt(2,2,2, -Math.cos(vx/500)*1,Math.sin(vx/500)*1, vy/1000+1, 0,0,1);
-	Ogl.LookAt(0,0,0, 0,1,0, 0,0,1);
+	Ogl.LookAt(0,1,1, -Math.cos(vx/500) + 0, Math.sin(vx/500) + 1, vy/1000 + 1, 0,0,1);
+//	Ogl.LookAt(0,0,0, 0,1,0, 0,0,1);
 
 	mat.Load(Ogl);
 	mat.Product(perspective)
 	mat.Invert();
 	
-	var fs = mat.ComputeFrustumSphere() ;
-	//Print( [ c.toFixed(2)+' ' for each ( c in fs ) ], '\n' );
-	
-	Print( '[0,0,0] in the view ? ', Math.sqrt(fs[0]*fs[0] + fs[1]*fs[1] + fs[2]*fs[2]) ,' ', fs[3], '\n' );
-	
-
-	
+	var fs = [];
+	Math3d.FrustumSphere(mat, fs);
+	Print( '[0,0,0] in the view ? ', Math3d.Vector3Length(fs) < fs[3], '\n' );
 	
 	with (Ogl) {
 

@@ -23,6 +23,8 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 
+
+
 #define DEG_TO_RAD(a) (-angle * M_PI / 180.0f)
 
 // (TBD) move this in the class private
@@ -794,85 +796,6 @@ DEFINE_PROPERTY_GETTER( translation ) {
 
 
 
-/**doc
-$TOC_MEMBER $INAME
- $ARRAY $INAME
-  Returns the [x,y,z,radius] sphere that surrounds the frustrum.
-**/
-DEFINE_FUNCTION_FAST( ComputeFrustumSphere ) {
-	
-	// see. http://www.flipcode.com/archives/Frustum_Culling.shtml
-
-	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, JL_FOBJ);
-	JL_S_ASSERT_RESOURCE(pv);
-
-	Vector4 tmp;
-	Vector3 p0, p1, p2;
-
-	Vector4Set(&tmp, 0, 0, 0, 1);
-	Matrix44MultVector4(pv->mat, &tmp, &tmp);
-	Vector4Div(&tmp, &tmp, tmp.w);
-	Vector3LoadVector4(&p0, &tmp);
-
-	Vector4Set(&tmp, 0, 0, 1, 1);
-	Matrix44MultVector4(pv->mat, &tmp, &tmp);
-	Vector4Div(&tmp, &tmp, tmp.w);
-	Vector3LoadVector4(&p1, &tmp);
-	
-	Vector4Set(&tmp, 1, 1, 1, 1);
-	Matrix44MultVector4(pv->mat, &tmp, &tmp);
-	Vector4Div(&tmp, &tmp, tmp.w);
-	Vector3LoadVector4(&p2, &tmp);
-
-	Vector3SubVector3(&p1, &p1, &p0);
-	Vector3SubVector3(&p2, &p2, &p0);
-
-// 
-
-	float d = 0.5 * Vector3Dot(&p1, &p2) / Vector3Dot(&p1, &p1);
-
-	Vector3 center;
-
-	Vector3Mult(&center, &p1, d);
-
-	Vector3 tmp2;
-	Vector3SubVector3(&tmp2, &p2, &center);
-	float d1 = Vector3Length(&tmp2);
-	float d2 = Vector3Length(&center);
-
-	d2 = 0;
-
-
-
-/*
-	Vector4 src, p0, p1, center;
-	Vector4Set(&src, 0, 0, -1, 1);
-	Matrix44MultVector4(pv->mat, &src, &src);
-	Vector4Div(&p0, &src, src.w);
-
-	Vector4Set(&src, 0, 0, 1, 1);
-	Matrix44MultVector4(pv->mat, &src, &src);
-	Vector4Div(&p1, &src, src.w);
-
-	Vector4SubVector4(&p1, &p1, &p0);
-	Vector4Div(&p1, &p1, 2);
-	Vector4AddVector4(&center, &p1, &p0);
-
-	Vector4Set(&src, 1, 1, 1, 1);
-	Matrix44MultVector4(pv->mat, &src, &src);
-	Vector4Div(&p1, &src, src.w);
-
-	Vector4SubVector4(&p1, &p1, &center);
-	center.w = Vector4Length(&p1); // tmp
-
-	JL_CHK( FloatVectorToJsval(cx, center.raw, 4, JL_FRVAL) );
-*/
-
-
-	return JS_TRUE;
-	JL_BAD;
-}
-
 
 /*
 DEFINE_NEW_RESOLVE() {
@@ -984,7 +907,6 @@ CONFIGURE_CLASS
 		FUNCTION_FAST_ARGC( RotateZ, 1 ) // angle
 		FUNCTION_FAST_ARGC( LookAt, 3 ) // x, y, z
 		FUNCTION_FAST_ARGC( TransformVector, 1 ) // 3D or 4D vector
-		FUNCTION_FAST_ARGC( ComputeFrustumSphere, 0 )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC

@@ -1214,9 +1214,17 @@ ALWAYS_INLINE JSBool JsvalToUIntVector( JSContext *cx, jsval val, unsigned int *
 }
 
 
-ALWAYS_INLINE JSBool DoubleVectorToJsval( JSContext *cx, const double *vector, size_t length, jsval *val ) {
+ALWAYS_INLINE JSBool DoubleVectorToJsval( JSContext *cx, const double *vector, size_t length, jsval *val, bool useValArray = false ) {
 
-	JSObject *arrayObj = JS_NewArrayObject(cx, length, NULL);
+	JSObject *arrayObj;
+	if ( useValArray ) {
+		
+		JL_S_ASSERT_ARRAY(*val);
+		arrayObj = JSVAL_TO_OBJECT(*val);
+	} else {
+
+		arrayObj = JS_NewArrayObject(cx, length, NULL);
+	}
 	JL_CHK( arrayObj );
 	*val = OBJECT_TO_JSVAL(arrayObj);
 	jsval tmp;
@@ -1229,10 +1237,18 @@ ALWAYS_INLINE JSBool DoubleVectorToJsval( JSContext *cx, const double *vector, s
 	JL_BAD;
 }
 
+// if useValArray is true, val must be a valid array that is used to store the values.
+ALWAYS_INLINE JSBool FloatVectorToJsval( JSContext *cx, const float *vector, size_t length, jsval *val, bool useValArray = false ) {
 
-ALWAYS_INLINE JSBool FloatVectorToJsval( JSContext *cx, const float *vector, size_t length, jsval *val ) {
+	JSObject *arrayObj;
+	if ( useValArray ) {
+		
+		JL_S_ASSERT_ARRAY(*val);
+		arrayObj = JSVAL_TO_OBJECT(*val);
+	} else {
 
-	JSObject *arrayObj = JS_NewArrayObject(cx, length, NULL);
+		arrayObj = JS_NewArrayObject(cx, length, NULL);
+	}
 	JL_CHK( arrayObj );
 	*val = OBJECT_TO_JSVAL(arrayObj);
 	jsval tmp;

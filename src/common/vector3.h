@@ -116,6 +116,18 @@ inline void Vector3LoadVector4( Vector3 *v, const Vector4 *v1 ) {
 }
 
 
+inline void Vector3LoadPtr( Vector3 *v, const float *ptr ) {
+
+#ifdef SSE
+    v->m128 = _mm_set_ps(0.0f, ptr[2], ptr[1], ptr[0]); // see	 _mm_loadu_ps
+#else // SSE
+	v->x = ptr[0];
+	v->y = ptr[1];
+	v->z = ptr[2];
+#endif // SSE
+
+}
+
 
 inline void Vector3Set( Vector3 *v, const float _x, const float _y, const float _z ) {
 
@@ -125,19 +137,6 @@ inline void Vector3Set( Vector3 *v, const float _x, const float _y, const float 
 	v->x = _x;
 	v->y = _y;
 	v->z = _z;
-#endif // SSE
-
-}
-
-
-inline void Vector3SetFromPtr( Vector3 *v, const float *ptr ) {
-
-#ifdef SSE
-    v->m128 = _mm_set_ps(0.0f, ptr[2], ptr[1], ptr[0]); // see	 _mm_loadu_ps
-#else // SSE
-	v->x = ptr[0];
-	v->y = ptr[1];
-	v->z = ptr[2];
 #endif // SSE
 
 }
