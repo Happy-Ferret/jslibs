@@ -60,7 +60,7 @@ DEFINE_FUNCTION( Translate ) {
 //	JL_CHK( FloatArrayToVector(cx, 3, &argv[0], translation) );
 	size_t length;
 	JL_CHK( JsvalToFloatVector(cx, argv[0], translation, 3, &length) );
-	JL_S_ASSERT( length == 3, "Invalid array size." );
+	JL_S_ASSERT( length >= 3, "Invalid array size." );
 	ode::dMassTranslate(&mass, translation[0], translation[1], translation[2]);
 	ode::dBodySetMass(bodyID, &mass);
 	return JS_TRUE;
@@ -124,7 +124,7 @@ DEFINE_FUNCTION( SetBoxTotal ) {
 	//	JL_CHK( FloatArrayToVector(cx, 3, &argv[1], dimensions) );
 	size_t length;
 	JL_CHK( JsvalToFloatVector(cx, argv[1], dimensions, 3, &length) );
-	JL_S_ASSERT( length == 3, "Invalid array size." );
+	JL_S_ASSERT( length >= 3, "Invalid array size." );
 
 // apply the formulae
 	ode::dMassSetBoxTotal(&mass, totalMass, dimensions[0], dimensions[0], dimensions[0]);
@@ -185,7 +185,7 @@ DEFINE_PROPERTY( centerSetter ) {
 	//JL_CHK( FloatArrayToVector(cx, 3, vp, mass.c) );
 	size_t length;
 	JL_CHK( JsvalToFloatVector(cx, *vp, mass.c, 3, &length) );
-	JL_S_ASSERT( length == 3, "Invalid array size." );
+	JL_S_ASSERT( length >= 3, "Invalid array size." );
 	ode::dBodySetMass(bodyID, &mass);
 	return JS_TRUE;
 	JL_BAD;

@@ -72,7 +72,7 @@ DEFINE_PROPERTY( anchorSetter ) {
 	//FloatArrayToVector(cx, 3, vp, vector);
 	size_t length;
 	JL_CHK( JsvalToFloatVector(cx, *vp, vector, 3, &length) );
-	JL_S_ASSERT( length == 3, "Invalid array size." );
+	JL_S_ASSERT( length >= 3, "Invalid array size." );
 	ode::dJointSetUniversalAnchor( jointId, vector[0], vector[1], vector[2] );
 	return JS_TRUE;
 	JL_BAD;
@@ -119,7 +119,7 @@ DEFINE_PROPERTY( axis1Setter ) {
 	ode::dVector3 vector;
 	size_t length;
 	JL_CHK( JsvalToFloatVector(cx, *vp, vector, 3, &length) );
-	JL_S_ASSERT( length == 3, "Invalid array size." );
+	JL_S_ASSERT( length >= 3, "Invalid array size." );
 	ode::dJointSetUniversalAxis1( jointId, vector[0], vector[1], vector[2] );
 	return JS_TRUE;
 	JL_BAD;
@@ -149,7 +149,7 @@ DEFINE_PROPERTY( axis2Setter ) {
 	ode::dVector3 vector;
 	size_t length;
 	JL_CHK( JsvalToFloatVector(cx, *vp, vector, 3, &length) );
-	JL_S_ASSERT( length == 3, "Invalid array size." );
+	JL_S_ASSERT( length >= 3, "Invalid array size." );
 	ode::dJointSetUniversalAxis2( jointId, vector[0], vector[1], vector[2] );
 	return JS_TRUE;
 	JL_BAD;

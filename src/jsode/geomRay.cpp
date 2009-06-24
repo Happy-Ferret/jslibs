@@ -97,7 +97,7 @@ DEFINE_PROPERTY( startSetter ) {
 //	FloatArrayToVector(cx, 3, vp, start);
 	size_t length;
 	JL_CHK( JsvalToFloatVector(cx, *vp, start, 3, &length) );
-	JL_S_ASSERT( length == 3, "Invalid array size." );
+	JL_S_ASSERT( length >= 3, "Invalid array size." );
 	ode::dGeomRaySet(geom, start[0], start[1], start[2], dir[0], dir[1], dir[2]);
 	return JS_TRUE;
 	JL_BAD;
@@ -130,7 +130,7 @@ DEFINE_PROPERTY( directionSetter ) {
 //	FloatArrayToVector(cx, 3, vp, dir);
 	size_t length;
 	JL_CHK( JsvalToFloatVector(cx, *vp, dir, 3, &length) );
-	JL_S_ASSERT( length == 3, "Invalid array size." );
+	JL_S_ASSERT( length >= 3, "Invalid array size." );
 	ode::dGeomRaySet(geom, start[0], start[1], start[2], dir[0], dir[1], dir[2]);
 	return JS_TRUE;
 	JL_BAD;

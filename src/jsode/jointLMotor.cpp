@@ -79,7 +79,7 @@ DEFINE_FUNCTION( SetAxis ) {
 	ode::dVector3 vector;
 	size_t length;
 	JL_CHK( JsvalToFloatVector(cx, JL_ARG(3), vector, 3, &length) );
-	JL_S_ASSERT( length == 3, "Invalid array size." );
+	JL_S_ASSERT( length >= 3, "Invalid array size." );
 
 	if ( anum+1 > ode::dJointGetLMotorNumAxes(jointId) )
 		ode::dJointSetLMotorNumAxes(jointId, anum+1);

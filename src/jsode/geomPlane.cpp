@@ -69,7 +69,7 @@ DEFINE_PROPERTY( paramsSetter ) {
 	ode::dVector4 params;
 	size_t length;
 	JL_CHK( JsvalToFloatVector(cx, *vp, params, 4, &length) );
-	JL_S_ASSERT( length == 4, "Invalid array size." );
+	JL_S_ASSERT( length >= 4, "Invalid array size." );
 	ode::dGeomPlaneSetParams(geom, params[0], params[1], params[2], params[3]);
 	return JS_TRUE;
 	JL_BAD;
@@ -99,7 +99,7 @@ DEFINE_PROPERTY( lengthsSetter ) {
 //	FloatArrayToVector(cx, 3, vp, vector);
 	size_t length;
 	JL_CHK( JsvalToFloatVector(cx, *vp, vector, 3, &length) );
-	JL_S_ASSERT( length == 3, "Invalid array size." );
+	JL_S_ASSERT( length >= 3, "Invalid array size." );
 	ode::dGeomPlaneSetLengths(geom, vector[0], vector[1], vector[2]);
 	return JS_TRUE;
 	JL_BAD;

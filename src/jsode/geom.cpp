@@ -25,8 +25,8 @@ check:
 #include "stdafx.h"
 #include "body.h"
 #include "geom.h"
-//#include "../common/jsNativeInterface.h"
 
+#include "../common/vector3.h"
 
 JSBool ReadMatrix(JSContext *cx, JSObject *obj, float **pm) { // Doc: __declspec(noinline) tells the compiler to never inline a particular function.
 
@@ -157,7 +157,7 @@ DEFINE_FUNCTION_FAST( PointDepth ) {
 	float depth, point[3];
 	size_t len;
 	JL_CHK( JsvalToFloatVector(cx, *vp, point, 3, &len) );
-	JL_S_ASSERT( len == 3, "Invalid array size." );
+	JL_S_ASSERT( len >= 3, "Invalid array size." );
 
 	switch( ode::dGeomGetClass(geomId) ) {
 		case ode::dSphereClass:
@@ -375,7 +375,6 @@ DEFINE_PROPERTY( positionGetter ) {
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(geom);
 	const ode::dReal *vector = ode::dGeomGetPosition(geom);
-	//FloatVectorToArray(cx, 3, vector, vp);
 	JL_CHK( FloatVectorToJsval(cx, vector, 3, vp) );
 	return JS_TRUE;
 	JL_BAD;
@@ -387,10 +386,9 @@ DEFINE_PROPERTY( positionSetter ) {
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(geom);
 	ode::dVector3 vector;
-//	FloatArrayToVector(cx, 3, vp, vector);
 	size_t length;
 	JL_CHK( JsvalToFloatVector(cx, *vp, vector, 3, &length) );
-	JL_S_ASSERT( length == 3, "Invalid array size." );
+	JL_S_ASSERT( length >= 3, "Invalid array size." );
 	ode::dGeomSetPosition( geom, vector[0], vector[1], vector[2] );
 	return JS_TRUE;
 	JL_BAD;
@@ -400,7 +398,7 @@ DEFINE_PROPERTY( positionSetter ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $TYPE vec6 *position*
+ $TYPE vec6 $INAME
   Is the axis-aligned bounding box [minx, miny, minz,  maxx, maxy, maxz].
 **/
 DEFINE_PROPERTY( aabb ) {
@@ -419,6 +417,37 @@ DEFINE_PROPERTY( aabb ) {
 	tmp[5] = aabb[5];
 
 	JL_CHK( FloatVectorToJsval(cx, tmp, 6, vp) );
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $TYPE vec4 $INAME
+  Is the bounding sphere [x,y,z, radius]
+**/
+DEFINE_PROPERTY( boundarySphere ) {
+
+	ode::dGeomID geomId = (ode::dGeomID)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(geomId);
+	ode::dReal aabb[6];
+	ode::dGeomGetAABB(geomId, aabb);
+
+	Vector3 v1, v2, center;
+	Vector3Set(&v1, aabb[0], aabb[2], aabb[4] );
+	Vector3Set(&v2, aabb[1], aabb[3], aabb[5] );
+
+	Vector3SubVector3(&center, &v1, &v2);
+	Vector3Div(&center, &center, 2);
+	float radius = Vector3Length(&center);
+	Vector3AddVector3(&center, &center, &v2);
+	
+	JL_CHK( FloatVectorToJsval(cx, center.raw, 3, vp) );
+	jsval tmpVal;
+	JL_CHK( FloatToJsval(cx, radius, &tmpVal) );
+	JL_CHK( JS_SetElement(cx, JSVAL_TO_OBJECT(*vp), 3, &tmpVal) );
+
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -447,7 +476,7 @@ DEFINE_PROPERTY( offsetPositionSetter ) {
 //	FloatArrayToVector(cx, 3, vp, vector);
 	size_t length;
 	JL_CHK( JsvalToFloatVector(cx, *vp, vector, 3, &length) );
-	JL_S_ASSERT( length == 3, "Invalid array size." );
+	JL_S_ASSERT( length >= 3, "Invalid array size." );
 	ode::dGeomSetOffsetPosition( geom, vector[0], vector[1], vector[2] ); // (TBD) dGeomSetOffsetWorldRotation
 	return JS_TRUE;
 	JL_BAD;
@@ -493,6 +522,7 @@ CONFIGURE_CLASS
 		PROPERTY( temporalCoherence )
 		PROPERTY( position )
 		PROPERTY_READ( aabb )
+		PROPERTY_READ( boundarySphere )
 //		PROPERTY( offsetPosition )
 	END_PROPERTY_SPEC
 

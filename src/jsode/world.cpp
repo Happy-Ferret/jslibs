@@ -113,7 +113,7 @@ static void nearCallback(void *data, ode::dGeomID geom1, ode::dGeomID geom2) {
 		else
 			Vector3Identity(&tmp);
 		Vector3SubVector3(&vel, &vel, &tmp);
-		Vector3SetFromPtr(&normal, contact.geom.normal);
+		Vector3LoadPtr(&normal, contact.geom.normal);
 		float impactVelocity = Vector3Dot(&vel, &normal);
 
 		JSTempValueRooter tvr;
@@ -316,7 +316,7 @@ DEFINE_FUNCTION_FAST( ScaleImpulse ) {
 	ode::dVector3 force;
 	size_t len;
 	JL_CHK( JsvalToFloatVector(cx, JL_FARG(1), force, COUNTOF(force), &len) );
-	JL_S_ASSERT( len == COUNTOF(force), "Invalid array size." );
+	JL_S_ASSERT( len >= 3, "Invalid array size." );
 
 	float stepSize;
 	JL_CHK( JsvalToFloat(cx, JL_FARG(2), &stepSize) );
@@ -363,7 +363,7 @@ DEFINE_PROPERTY( gravitySetter ) {
 	//FloatArrayToVector(cx, 3, vp, gravity);
 	size_t length;
 	JL_CHK( JsvalToFloatVector(cx, *vp, gravity, 3, &length) );
-	JL_S_ASSERT( length == 3, "Invalid array size." );
+	JL_S_ASSERT( length >= 3, "Invalid array size." );
 	ode::dWorldSetGravity( pv->worldId, gravity[0], gravity[1], gravity[2] );
 	return JS_TRUE;
 	JL_BAD;

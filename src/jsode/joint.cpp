@@ -434,7 +434,7 @@ DEFINE_PROPERTY( feedbackVectorSetter ) {
 			JL_CHK( JsvalToFloatVector(cx, *vp, feedback->t2, 3, &length) );
 			break;
 	}
-	JL_S_ASSERT( length == 3, "Invalid array size." );
+	JL_S_ASSERT( length >= 3, "Invalid array size." );
 	return JS_TRUE;
 	JL_BAD;
 }

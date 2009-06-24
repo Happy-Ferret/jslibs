@@ -224,12 +224,12 @@ DEFINE_FUNCTION_FAST( AddForce ) {
 	size_t length;
 	ode::dVector3 forceVec;
 	JL_CHK( JsvalToFloatVector(cx, JL_FARG(1), forceVec, 3, &length) );
-	JL_S_ASSERT( length == 3, "Invalid array size." );
+	JL_S_ASSERT( length >= 3, "Invalid array size." );
 	if ( JL_FARG_ISDEF(2) ) {
 
 		ode::dVector3 posVec;
 		JL_CHK( JsvalToFloatVector(cx, JL_FARG(2), posVec, 3, &length) );
-		JL_S_ASSERT( length == 3, "Invalid array size." );
+		JL_S_ASSERT( length >= 3, "Invalid array size." );
 		ode::dBodyAddForceAtPos(thisBodyID, forceVec[0], forceVec[1], forceVec[2], posVec[0], posVec[1], posVec[2] );
 		return JS_TRUE;
 	}
@@ -252,7 +252,7 @@ DEFINE_FUNCTION_FAST( AddTorque ) {
 	ode::dVector3 vector;
 	size_t length;
 	JL_CHK( JsvalToFloatVector(cx, JL_FARG(1), vector, 3, &length) );
-	JL_S_ASSERT( length == 3, "Invalid array size." );
+	JL_S_ASSERT( length >= 3, "Invalid array size." );
 	ode::dBodyAddTorque(thisBodyID, vector[0], vector[1], vector[2] );
 	return JS_TRUE;
 	JL_BAD;
@@ -406,7 +406,7 @@ DEFINE_PROPERTY( finiteRotationAxisSetter ) {
 		
 		JL_CHK( JsvalToFloatVector(cx, *vp, vec, 3, &len) );
 	}
-	JL_S_ASSERT( len == 3, "Invalid array size." );
+	JL_S_ASSERT( len >= 3, "Invalid array size." );
 	ode::dBodySetFiniteRotationAxis(bodyId, vec[0], vec[1], vec[2]);
 	return JS_TRUE;
 	JL_BAD;
@@ -652,32 +652,32 @@ DEFINE_PROPERTY( vectorSetter ) {
 	switch ( JSVAL_TO_INT(id) ) {
 		case position:
 			JL_CHK( JsvalToFloatVector(cx, *vp, vector, 3, &length) );
-			JL_S_ASSERT( length == 3, "Invalid array size." );
+			JL_S_ASSERT( length >= 3, "Invalid array size." );
 			ode::dBodySetPosition( bodyID, vector[0], vector[1], vector[2] );
 			break;
 		case quaternion:
 			JL_CHK( JsvalToFloatVector(cx, *vp, quatern, 4, &length) );
-			JL_S_ASSERT( length == 4, "Invalid array size." );
+			JL_S_ASSERT( length >= 4, "Invalid array size." );
 			ode::dBodySetQuaternion( bodyID, quatern );
 			break;
 		case linearVel:
 			JL_CHK( JsvalToFloatVector(cx, *vp, vector, 3, &length) );
-			JL_S_ASSERT( length == 3, "Invalid array size." );
+			JL_S_ASSERT( length >= 3, "Invalid array size." );
 			ode::dBodySetLinearVel( bodyID, vector[0], vector[1], vector[2] );
 			break;
 		case angularVel:
 			JL_CHK( JsvalToFloatVector(cx, *vp, vector, 3, &length) );
-			JL_S_ASSERT( length == 3, "Invalid array size." );
+			JL_S_ASSERT( length >= 3, "Invalid array size." );
 			ode::dBodySetAngularVel( bodyID, vector[0], vector[1], vector[2] );
 			break;
 		case force:
 			JL_CHK( JsvalToFloatVector(cx, *vp, vector, 3, &length) );
-			JL_S_ASSERT( length == 3, "Invalid array size." );
+			JL_S_ASSERT( length >= 3, "Invalid array size." );
 			ode::dBodySetForce( bodyID, vector[0], vector[1], vector[2] );
 			break;
 		case torque:
 			JL_CHK( JsvalToFloatVector(cx, *vp, vector, 3, &length) );
-			JL_S_ASSERT( length == 3, "Invalid array size." );
+			JL_S_ASSERT( length >= 3, "Invalid array size." );
 			ode::dBodySetTorque( bodyID, vector[0], vector[1], vector[2] );
 			break;
 	}
