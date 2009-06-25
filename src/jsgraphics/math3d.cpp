@@ -163,9 +163,21 @@ DEFINE_FUNCTION_FAST( BoxToCircumscribedSphere ) {
 }
 
 
+
+/** doc
+$TOC_MEMBER $INAME
+ $ARRAY $INAME( transformation )
+**/
+/*
+DEFINE_FUNCTION_FAST( PixelWidth ) {
 	
+	JL_S_ASSERT_ARG(1);
 
-
+	Matrix44 tmpMat, *m = &tmpMat;
+	JL_CHK( GetMatrixHelper(cx, JL_FARG(1), (float**)&m) );
+}	
+*/	
+	
 CONFIGURE_CLASS
 
 	REVISION(JL_SvnRevToInt("$Revision: 2633 $"))
@@ -173,7 +185,7 @@ CONFIGURE_CLASS
 	BEGIN_STATIC_FUNCTION_SPEC
 		FUNCTION_FAST_ARGC( FrustumSphere, 2 )
 		FUNCTION_FAST_ARGC( Vector3Length, 3 )
-		FUNCTION_FAST_ARGC( AabbToBoundarySphere, 1 )
+		FUNCTION_FAST_ARGC( BoxToCircumscribedSphere, 1 )
 	END_STATIC_FUNCTION_SPEC
 
 END_CLASS

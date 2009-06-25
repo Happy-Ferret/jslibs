@@ -21,8 +21,8 @@ Manage GL extensions:
 #include "stdafx.h"
 //#include "jsobj.h"
 
-#include "jsgl.h"
-#include "jswindow.h"
+DECLARE_CLASS(Ogl)
+
 //#include "../common/jsNativeInterface.h"
 
 //#include "jstransformation.h"
@@ -40,6 +40,7 @@ Manage GL extensions:
 #include "math.h"
 
 #include "../common/matrix44.h"
+#include "../common/vector3.h"
 
 /* doc.
   OpenGL matrices are 16-value arrays with base vectors laid out contiguously in memory. 
@@ -1158,6 +1159,22 @@ DEFINE_FUNCTION_FAST( Perspective ) {
 
 	glFrustum(xmin, xmax, ymin, ymax, zNear, zFar);
 
+/*
+   float x = (2.0F*nearZ) / (right-left);
+   float y = (2.0F*nearZ) / (top-bottom);
+   float a = (right+left) / (right-left);
+   float b = (top+bottom) / (top-bottom);
+   float c = -(farZ+nearZ) / ( farZ-nearZ);
+   float d = -(2.0F*farZ*nearZ) / (farZ-nearZ);
+
+#define M(row,col)  m[col*4+row]
+   M(0,0) = x;     M(0,1) = 0.0F;  M(0,2) = a;      M(0,3) = 0.0F;
+   M(1,0) = 0.0F;  M(1,1) = y;     M(1,2) = b;      M(1,3) = 0.0F;
+   M(2,0) = 0.0F;  M(2,1) = 0.0F;  M(2,2) = c;      M(2,3) = d;
+   M(3,0) = 0.0F;  M(3,1) = 0.0F;  M(3,2) = -1.0F;  M(3,3) = 0.0F;
+#undef M
+*/
+
 	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
@@ -2192,6 +2209,28 @@ DEFINE_FUNCTION_FAST( RenderToImage ) {
 
 
 /**doc
+$TOC_MEMBER $INAME()
+**/
+DEFINE_FUNCTION_FAST( PixelWidth ) {
+
+	// see. http://www.songho.ca/opengl/gl_projectionmatrix.html
+	// see. engine_core.h
+	JL_S_ASSERT_ARG(2);
+	float width, distance;
+	JL_CHK( JsvalToFloat(cx, JL_FARG(1), &width) );
+	JL_CHK( JsvalToFloat(cx, JL_FARG(2), &distance) );
+	GLint viewport[4];
+	glGetIntegerv(GL_VIEWPORT, viewport);
+	int viewportWidth = viewport[2]; // int viewportHeight = viewport[3];
+	GLfloat m[16];
+	glGetFloatv(GL_PROJECTION_MATRIX, m);
+	float pixelWidth = width * viewportWidth * m[0] / distance;
+	return FloatToJsval(cx, pixelWidth, JL_FRVAL);
+	JL_BAD;
+}
+
+
+/**doc
 === Static properties ===
 **/
 
@@ -3064,6 +3103,7 @@ CONFIGURE_CLASS
 		FUNCTION_FAST_ARGC(LoadTrimesh, 1) // Trimesh object
 		FUNCTION_FAST_ARGC(DrawTrimesh, 1) // Trimesh id
 
+		FUNCTION_FAST_ARGC(PixelWidth, 2)
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC

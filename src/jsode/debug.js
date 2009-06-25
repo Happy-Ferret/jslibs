@@ -219,7 +219,7 @@ var SceneManager = new function() {
 	this.CameraFOV = function(fov) {
 	
 		Ogl.MatrixMode(Ogl.PROJECTION);
-		Ogl.Perspective(fov, 0.001, 1000);
+		Ogl.Perspective(fov, 0.1, 1000);
 	}
 
 	this.CameraPosition = function(x,y,z) {

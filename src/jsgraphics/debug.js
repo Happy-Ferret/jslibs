@@ -27,7 +27,7 @@ var vx=0, vy=0;
 GlSetAttribute( GL_SWAP_CONTROL, 1 ); // vsync
 GlSetAttribute( GL_DOUBLEBUFFER, 1 );
 GlSetAttribute( GL_DEPTH_SIZE, 16 );
-SetVideoMode( 320, 200, 32, HWSURFACE | OPENGL | RESIZABLE ); // | ASYNCBLIT // RESIZABLE FULLSCREEN
+SetVideoMode( 100, 100, 32, HWSURFACE | OPENGL | RESIZABLE ); // | ASYNCBLIT // RESIZABLE FULLSCREEN
 
 var listeners = {
 	onQuit: function() { end = true },
@@ -75,7 +75,7 @@ var listeners = {
 
 
 Ogl.MatrixMode(Ogl.PROJECTION);
-Ogl.Perspective(100, 0.1, 100);
+Ogl.Perspective(90, 0.1, 1000);
 perspective.Load(Ogl);
 Ogl.Enable(Ogl.DEPTH_TEST);
 
@@ -93,6 +93,9 @@ for (var end = false; !end ;) {
 //	Ogl.LookAt(-Math.cos(vx/500)*1,Math.sin(vx/500)*1,vy/1000+1, 0,0,0, 0,0,1);
 	Ogl.LookAt(0,1,1, -Math.cos(vx/500) + 0, Math.sin(vx/500) + 1, vy/1000 + 1, 0,0,1);
 //	Ogl.LookAt(0,0,0, 0,1,0, 0,0,1);
+	Print( 'PixelWidth: ', Ogl.PixelWidth(2,10), '\n' );
+
+
 
 	mat.Load(Ogl);
 	mat.Product(perspective)
@@ -100,7 +103,7 @@ for (var end = false; !end ;) {
 	
 	var fs = [];
 	Math3d.FrustumSphere(mat, fs);
-	Print( '[0,0,0] in the view ? ', Math3d.Vector3Length(fs) < fs[3], '\n' );
+//	Print( '[0,0,0] in the view ? ', Math3d.Vector3Length(fs) < fs[3], '\n' );
 	
 	with (Ogl) {
 

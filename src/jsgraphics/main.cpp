@@ -15,7 +15,9 @@
 #include "stdafx.h"
 
 //#include "jswindow.h"
-#include "jsgl.h"
+
+DECLARE_CLASS(Ogl)
+
 #include "jstransformation.h"
 
 DECLARE_CLASS( Math3d )
