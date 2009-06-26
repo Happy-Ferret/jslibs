@@ -48,11 +48,11 @@ inline JSBool GetMatrixHelper( JSContext *cx, jsval val, float **m ) {
 
 	if ( JS_IsArrayObject(cx, matrixObj) ) {
 
+		uint32 length;
 		jsval element;
 		JL_CHK( JS_GetElement(cx, JSVAL_TO_OBJECT(val), 0, &element) );
 		if ( JsvalIsArray(cx, element) ) { // support for: [ [1,1,1,1], [2,2,2,2], [3,3,3,3], [4,4,4,4] ] matrix
 
-			size_t length;
 			JL_CHK( JsvalToFloatVector(cx, element, (*m)+0, 4, &length ) );
 			JL_S_ASSERT( length == 4, "Too few (%d) elements in the array.", length );
 			
@@ -73,7 +73,6 @@ inline JSBool GetMatrixHelper( JSContext *cx, jsval val, float **m ) {
 			return JS_TRUE;
 		}
 
-		size_t length;
 		JL_CHK( JsvalToFloatVector(cx, val, *m, 16, &length ) );
 		JL_S_ASSERT( length == 16, "Too few (%d) elements in the array.", length );
 		return JS_TRUE;

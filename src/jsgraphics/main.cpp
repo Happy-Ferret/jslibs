@@ -20,7 +20,7 @@ DECLARE_CLASS(Ogl)
 
 #include "jstransformation.h"
 
-DECLARE_CLASS( Math3d )
+DECLARE_STATIC()
 DECLARE_CLASS( OglError )
 
 extern bool _unsafeMode = false;
@@ -42,8 +42,8 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 //	JL_CHK( INIT_CLASS( Window ) );
 #endif
 
+	INIT_STATIC();
 	INIT_CLASS( Transformation );
-	INIT_CLASS( Math3d );
 	INIT_CLASS( Ogl );
 	INIT_CLASS( OglError );
 	return JS_TRUE;

@@ -182,6 +182,8 @@ var DisplayManager = new function() {
 		BlendFunc(SRC_ALPHA, ONE_MINUS_SRC_ALPHA); //Set the blend function
 		Enable(CULL_FACE);
 	
+		Enable(POINT_SMOOTH);
+	
 		Enable(LIGHTING);
 		Enable(LIGHT0);
 		Light(LIGHT0, SPECULAR, [1, 1, 1, 1]);
@@ -211,27 +213,25 @@ var TimeManager = new function() {
 }
 
 
+
 var SceneManager = new function() {
 
-	var px, py, pz,  tx, ty, tz;
+	var perspective = new Transformation();
+	var mat = new Transformation();
+	var frustumSphere = [];
+
 	var objectList = [];
+
+	this.cameraPosition = [];
+	this.cameraTarget = [];
 
 	this.CameraFOV = function(fov) {
 	
 		Ogl.MatrixMode(Ogl.PROJECTION);
-		Ogl.Perspective(fov, 0.1, 1000);
+		Ogl.Perspective(fov, 0.1, 15);
+		perspective.Load(Ogl);
 	}
 
-	this.CameraPosition = function(x,y,z) {
-		
-		px = x; py = y; pz = z;
-	}
-
-	this.CameraTarget = function(x,y,z) {
-		
-		tx = x; ty = y; tz = z;
-	}
-	
 	this.Add = function(object) {
 		
 		objectList.push(object);
@@ -250,18 +250,36 @@ var SceneManager = new function() {
 
 	this.Render = function() {
 		
-		OalListener.position = [px, py, pz];
+		OalListener.position = this.cameraPosition;
 		Ogl.Clear(Ogl.COLOR_BUFFER_BIT | Ogl.DEPTH_BUFFER_BIT);
 		Ogl.MatrixMode(Ogl.MODELVIEW);
 		Ogl.LoadIdentity();
-		Ogl.LookAt(px, py, pz, tx, ty, tz, 0,0,1);
+		var pos = this.cameraPosition;
+		var target = this.cameraTarget;
+//		Ogl.LookAt(pos[0], pos[1], pos[2], target[0], target[1], target[2], 0,0,1);
+		Ogl.LookAt(0,-5,15, 0,0,0 , 0,0,1);
+		
+		mat.Load(Ogl);
+		mat.Product(perspective);
+		mat.Invert();
+		frustumSphere = FrustumSphere(mat, frustumSphere);
 
 		for each ( object in objectList ) {
 
 			if ( !object.Render )
 				continue;
-			// check if object is inside the frustum (see PlanesCollider::PlanesAABBOverlap)
-			// frustum bounding sphere: http://www.flipcode.com/archives/Frustum_Culling.shtml
+
+			// - check if object is inside the frustum (see PlanesCollider::PlanesAABBOverlap)
+			// - build the frustum by hand
+
+			if ( object.GetBoundarySphere ) {
+			
+				var bs = object.GetBoundarySphere();
+				Vector3Sub(bs, frustumSphere);
+				if ( Vector3Length(bs) - bs[3] - frustumSphere[3] > 0 )
+					continue;
+			}
+			
 			Ogl.PushMatrix();
 			object.Render();
 			Ogl.PopMatrix();
@@ -314,6 +332,8 @@ function Ball() {
 	body.mass.value = 1;
 	body.position = [10,-5,1];
 	
+	this.GetBoundarySphere = function() geom.boundarySphere;
+	
 	var impactSound = SoundManager.Load('29996__thanvannispen__stone_on_stone_impact13.aif');
 
 	geom.impact = function(geom, geom2, vel, px, py, pz) {
@@ -343,14 +363,37 @@ function Ball() {
 	this.Update = function() {
 		
 		var pos = body.position;
-		SceneManager.CameraTarget(pos[0], pos[1], pos[2]);
+		SceneManager.cameraTarget = pos;
 	}
 	
 	this.Render = function() {
+		
+		with (Ogl) {
+			var bsphere = geom.boundarySphere;
+	//		var width = bsphere[3]*2;
+			var bbox = geom.aabb;
+			var width = bbox[3]-bbox[0];
+					
+			var v = NewVector3(SceneManager.cameraPosition);
+			Vector3Sub(v, bsphere);
+			var dist = Vector3Length(v);
 
-		Ogl.MultMatrix(geom);
-		Ogl.Color(1,0,0);
-		Ogl.DrawTrimesh(glTrimeshId);
+			var objSize = Ogl.PixelWidth(width, dist)/2;
+	
+			MultMatrix(geom);
+			Color(1,0,0,1);
+		
+			if ( objSize > 10 ) {
+
+				DrawTrimesh(glTrimeshId);
+			} else {
+
+				PushAttrib(LIGHTING);
+				Disable(LIGHTING);
+				DrawPoint(objSize);
+				PopAttrib();
+			}
+		}
 	}
 	
 	this.Destroy = function() {
@@ -362,8 +405,8 @@ function Ball() {
 
 
 SceneManager.CameraFOV(60);
-SceneManager.CameraPosition(-10,-10,10);
-SceneManager.CameraTarget(0,0,0);
+SceneManager.cameraPosition = [-10,-10,10];
+SceneManager.cameraTarget = [0,0,0];
 SceneManager.Add(new Floor());
 
 var ball = new Ball();
@@ -381,7 +424,7 @@ while ( !end ) {
 	world.Step(20);
 	SceneManager.Render();
 	Sleep(10);
-	Print( (1000/(TimeManager.prev - 10)).toFixed(0),' fps    \r' );
+//	Print( (1000/(TimeManager.prev - 10)).toFixed(0),' fps    \r' );
 }
 
 

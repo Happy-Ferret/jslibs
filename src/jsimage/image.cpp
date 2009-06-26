@@ -81,7 +81,7 @@ DEFINE_FUNCTION( Trim ) {
 	JL_S_ASSERT_ARG_MIN(1);
 	int vect[4];
 	//IntArrayToVector(cx, 4, &argv[0], vect);
-	size_t length;
+	uint32 length;
 	JL_CHK( JsvalToIntVector(cx, argv[0], vect, 4, &length) );
 	JL_S_ASSERT( length == 4, "Invalid array size." );
 

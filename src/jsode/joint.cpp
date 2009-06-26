@@ -419,7 +419,7 @@ DEFINE_PROPERTY( feedbackVectorSetter ) {
 	JL_S_ASSERT_RESOURCE( jointId );
 	ode::dJointFeedback *feedback = ode::dJointGetFeedback(jointId);
 	JL_S_ASSERT( feedback != NULL, "Feedback is disabled." );
-	size_t length;
+	uint32 length;
 	switch(JSVAL_TO_INT(id)) {
 		case body1Force:
 			JL_CHK( JsvalToFloatVector(cx, *vp, feedback->f1, 3, &length) );

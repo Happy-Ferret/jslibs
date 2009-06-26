@@ -1154,152 +1154,180 @@ ALWAYS_INLINE JSBool FloatToJsval( JSContext *cx, float f, jsval *rval ) {
 }
 
 
+
 ///////////////////////////////////////////////////////////////////////////////
 // vector convertion functions
 
+// if useValArray is true, val must be a valid array that is used to store the values.
+ALWAYS_INLINE JSBool IntVectorToJsval( JSContext *cx, int *vector, uint32 length, jsval *val, bool useValArray = false ) {
 
-ALWAYS_INLINE JSBool IntVectorToJsval( JSContext *cx, int *vector, size_t length, jsval *val ) {
+	JSObject *arrayObj;
+	if ( useValArray ) {
+		
+		JL_S_ASSERT_OBJECT(*val);
+		arrayObj = JSVAL_TO_OBJECT(*val);
+	} else {
 
-	JSObject *arrayObj = JS_NewArrayObject(cx, length, NULL);
-	JL_CHKM( arrayObj, "Unable to create the Array." );
-	*val = OBJECT_TO_JSVAL(arrayObj);
+		arrayObj = JS_NewArrayObject(cx, length, NULL);
+		JL_CHK( arrayObj );
+		*val = OBJECT_TO_JSVAL(arrayObj);
+	}
 	jsval tmp;
 	for ( size_t i = 0; i < length; i++ ) {
 
 		JL_CHK( IntToJsval(cx, vector[i], &tmp) );
 		JL_CHK( JS_SetElement(cx, arrayObj, i, &tmp) );
 	}
+//	JL_CHK( JS_SetArrayLength(cx, arrayObj, length) );
 	return JS_TRUE;
 	JL_BAD;
 }
 
 
-ALWAYS_INLINE JSBool JsvalToIntVector( JSContext *cx, jsval val, int *vector, size_t maxLength, size_t *currentLength ) {
+ALWAYS_INLINE JSBool JsvalToIntVector( JSContext *cx, jsval val, int *vector, uint32 maxLength, uint32 *currentLength ) {
 
-	JL_S_ASSERT_ARRAY(val);
+	JL_S_ASSERT_OBJECT(val);
 	JSObject *arrayObj;
 	arrayObj = JSVAL_TO_OBJECT(val);
-	jsuint tmp;
-	JL_CHK( JS_GetArrayLength(cx, arrayObj, &tmp) );
-	*currentLength = tmp;
+	JL_CHK( JS_GetArrayLength(cx, arrayObj, currentLength) );
 	maxLength = JL_MIN( *currentLength, maxLength );
-	jsval item;
 	for ( jsuint i = 0; i < maxLength; i++ ) {
 
-		JL_CHK( JS_GetElement(cx, arrayObj, i, &item) );
-		JL_CHK( JsvalToInt(cx, item, &vector[i]) );
+		JL_CHK( JS_GetElement(cx, arrayObj, i, &val) );
+		JL_CHK( JsvalToInt(cx, val, &vector[i]) );
 	}
 	return JS_TRUE;
 	JL_BAD;
 }
 
 
-ALWAYS_INLINE JSBool JsvalToUIntVector( JSContext *cx, jsval val, unsigned int *vector, size_t maxLength, size_t *currentLength ) {
 
-	JL_S_ASSERT_ARRAY(val);
-	JSObject *arrayObj;
-	arrayObj = JSVAL_TO_OBJECT(val);
-	jsuint tmp;
-	JL_CHK( JS_GetArrayLength(cx, arrayObj, &tmp) );
-	*currentLength = tmp;
-	maxLength = JL_MIN( *currentLength, maxLength );
-	jsval item;
-	for ( jsuint i = 0; i < maxLength; i++ ) {
-
-		JL_CHK( JS_GetElement(cx, arrayObj, i, &item) );
-		JL_CHK( JsvalToUInt(cx, item, &vector[i]) );
-	}
-	return JS_TRUE;
-	JL_BAD;
-}
-
-
-ALWAYS_INLINE JSBool DoubleVectorToJsval( JSContext *cx, const double *vector, size_t length, jsval *val, bool useValArray = false ) {
+ALWAYS_INLINE JSBool UIntVectorToJsval( JSContext *cx, unsigned int *vector, uint32 length, jsval *val, bool useValArray = false ) {
 
 	JSObject *arrayObj;
 	if ( useValArray ) {
 		
-		JL_S_ASSERT_ARRAY(*val);
+		JL_S_ASSERT_OBJECT(*val);
 		arrayObj = JSVAL_TO_OBJECT(*val);
 	} else {
 
 		arrayObj = JS_NewArrayObject(cx, length, NULL);
+		JL_CHK( arrayObj );
+		*val = OBJECT_TO_JSVAL(arrayObj);
 	}
-	JL_CHK( arrayObj );
-	*val = OBJECT_TO_JSVAL(arrayObj);
 	jsval tmp;
 	for ( size_t i = 0; i < length; i++ ) {
 
-		JL_CHK( DoubleToJsval(cx, vector[i], &tmp) );
+		JL_CHK( UIntToJsval(cx, vector[i], &tmp) );
 		JL_CHK( JS_SetElement(cx, arrayObj, i, &tmp) );
+	}
+//	JL_CHK( JS_SetArrayLength(cx, arrayObj, length) );
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+
+ALWAYS_INLINE JSBool JsvalToUIntVector( JSContext *cx, jsval val, unsigned int *vector, uint32 maxLength, uint32 *currentLength ) {
+
+	JL_S_ASSERT_OBJECT(val);
+	JSObject *arrayObj;
+	arrayObj = JSVAL_TO_OBJECT(val);
+	JL_CHK( JS_GetArrayLength(cx, arrayObj, currentLength) );
+	maxLength = JL_MIN( *currentLength, maxLength );
+	for ( jsuint i = 0; i < maxLength; i++ ) {
+
+		JL_CHK( JS_GetElement(cx, arrayObj, i, &val) );
+		JL_CHK( JsvalToUInt(cx, val, &vector[i]) );
 	}
 	return JS_TRUE;
 	JL_BAD;
 }
 
-// if useValArray is true, val must be a valid array that is used to store the values.
-ALWAYS_INLINE JSBool FloatVectorToJsval( JSContext *cx, const float *vector, size_t length, jsval *val, bool useValArray = false ) {
+
+ALWAYS_INLINE JSBool FloatVectorToJsval( JSContext *cx, const float *vector, uint32 length, jsval *val, bool useValArray = false ) {
 
 	JSObject *arrayObj;
 	if ( useValArray ) {
 		
-		JL_S_ASSERT_ARRAY(*val);
+		JL_S_ASSERT_OBJECT(*val);
 		arrayObj = JSVAL_TO_OBJECT(*val);
 	} else {
 
 		arrayObj = JS_NewArrayObject(cx, length, NULL);
+		JL_CHK( arrayObj );
+		*val = OBJECT_TO_JSVAL(arrayObj);
 	}
-	JL_CHK( arrayObj );
-	*val = OBJECT_TO_JSVAL(arrayObj);
 	jsval tmp;
 	for ( size_t i = 0; i < length; i++ ) {
 
 		JL_CHK( FloatToJsval(cx, vector[i], &tmp) );
 		JL_CHK( JS_SetElement(cx, arrayObj, i, &tmp) );
 	}
+//	JL_CHK( JS_SetArrayLength(cx, arrayObj, length) );
 	return JS_TRUE;
 	JL_BAD;
 }
 
 
-ALWAYS_INLINE JSBool JsvalToFloatVector( JSContext *cx, jsval val, float *vector, size_t maxLength, size_t *currentLength ) {
+ALWAYS_INLINE JSBool JsvalToFloatVector( JSContext *cx, jsval val, float *vector, uint32 maxLength, uint32 *currentLength ) {
 
-	JL_S_ASSERT_ARRAY(val);
+	JL_S_ASSERT_OBJECT(val);
 	JSObject *arrayObj;
 	arrayObj = JSVAL_TO_OBJECT(val);
-	jsuint tmp;
-	JL_CHK( JS_GetArrayLength(cx, arrayObj, &tmp) );
-	*currentLength = tmp;
+	JL_CHK( JS_GetArrayLength(cx, arrayObj, currentLength) );
 	maxLength = JL_MIN( *currentLength, maxLength );
-	jsval item;
 	for ( jsuint i = 0; i < maxLength; i++ ) {
 
-		JL_CHK( JS_GetElement(cx, arrayObj, i, &item) );
-		JL_CHK( JsvalToFloat(cx, item, &vector[i]) );
+		JL_CHK( JS_GetElement(cx, arrayObj, i, &val) );
+		JL_CHK( JsvalToFloat(cx, val, &vector[i]) );
 	}
 	return JS_TRUE;
 	JL_BAD;
 }
 
 
-ALWAYS_INLINE JSBool JsvalToDoubleVector( JSContext *cx, jsval val, double *vector, size_t maxLength, size_t *currentLength ) {
+ALWAYS_INLINE JSBool DoubleVectorToJsval( JSContext *cx, const double *vector, uint32 length, jsval *val, bool useValArray = false ) {
 
-	JL_S_ASSERT_ARRAY(val);
+	JSObject *arrayObj;
+	if ( useValArray ) {
+		
+		JL_S_ASSERT_OBJECT(*val);
+		arrayObj = JSVAL_TO_OBJECT(*val);
+	} else {
+
+		arrayObj = JS_NewArrayObject(cx, length, NULL);
+		JL_CHK( arrayObj );
+		*val = OBJECT_TO_JSVAL(arrayObj);
+	}
+	jsval tmp;
+	for ( size_t i = 0; i < length; i++ ) {
+
+		JL_CHK( DoubleToJsval(cx, vector[i], &tmp) );
+		JL_CHK( JS_SetElement(cx, arrayObj, i, &tmp) );
+	}
+//	JL_CHK( JS_SetArrayLength(cx, arrayObj, length) );
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+ALWAYS_INLINE JSBool JsvalToDoubleVector( JSContext *cx, jsval val, double *vector, uint32 maxLength, uint32 *currentLength ) {
+
+	JL_S_ASSERT_OBJECT(val);
 	JSObject *arrayObj;
 	arrayObj = JSVAL_TO_OBJECT(val);
-	jsuint tmp;
-	JL_CHK( JS_GetArrayLength(cx, arrayObj, &tmp) );
-	*currentLength = tmp;
+	JL_CHK( JS_GetArrayLength(cx, arrayObj, currentLength) );
 	maxLength = JL_MIN( *currentLength, maxLength );
-	jsval item;
 	for ( jsuint i = 0; i < maxLength; i++ ) {
 
-		JL_CHK( JS_GetElement(cx, arrayObj, i, &item) );
-		JL_CHK( JsvalToDouble(cx, item, &vector[i]) );
+		JL_CHK( JS_GetElement(cx, arrayObj, i, &val) );
+		JL_CHK( JsvalToDouble(cx, val, &vector[i]) );
 	}
 	return JS_TRUE;
 	JL_BAD;
 }
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // properties helper

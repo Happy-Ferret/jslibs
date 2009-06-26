@@ -183,7 +183,7 @@ inline JSBool InitLevelData( JSContext* cx, jsval value, int count, PTYPE *level
 	} else if ( JSVAL_IS_OBJECT(value) && JS_IsArrayObject(cx, JSVAL_TO_OBJECT(value)) ) {
 
 		//FloatArrayToVector(cx, count, &value, level);
-		size_t length;
+		uint32 length;
 		JL_CHK( JsvalToFloatVector(cx, value, level, count, &length) );
 //		JL_S_ASSERT( length == 3, "Invalid array size." );
 
@@ -258,7 +258,7 @@ inline JSBool InitCurveData( JSContext* cx, jsval value, int length, float *curv
 		float *curveArray;
 		curveArray = (float*)malloc( curveArrayLength * sizeof(float) ); // (TBD) free the curveArray ???
 		//JL_CHK( FloatArrayToVector(cx, curveArrayLength, &value, curveArray) );
-		size_t tmp;
+		uint32 tmp;
 		JL_CHK( JsvalToFloatVector(cx, value, curveArray, curveArrayLength, &tmp) );
 		JL_S_ASSERT( length == 3, "Invalid array size." );
 
@@ -2149,7 +2149,7 @@ DEFINE_FUNCTION_FAST( Convolution ) {
 	kernel = (float*)malloc(sizeof(float) * count);
 	JL_S_ASSERT_ALLOC( kernel );
 	//JL_CHK( FloatArrayToVector(cx, count, &JL_FARG(1), kernel) );
-	size_t length;
+	uint32 length;
 	JL_CHK( JsvalToFloatVector(cx, JL_FARG(1), kernel, count, &length) );
 
 	int size;
@@ -2568,7 +2568,7 @@ DEFINE_FUNCTION_FAST( Normals ) {
 			dX+= PNORM(fPix) * 1.f;
 
 			Vector3Set(&normal, dX*amp, dY*amp, 1.f);
-			Vector3Normalize(&normal);
+			Vector3Normalize(&normal, &normal);
 
 			pos = (x + y * width) * 3; // 3 is the number of channels
 			tex->cbackBuffer[pos+0] = PUNZNORM( normal.x );
@@ -2639,7 +2639,7 @@ DEFINE_FUNCTION_FAST( Light ) {
 
 	Vector3 lightPos;
 //	JL_CHK( FloatArrayToVector(cx, 3, &JL_FARG(2), lightPos.raw ) );
-	size_t length;
+	uint32 length;
 	JL_CHK( JsvalToFloatVector(cx, JL_FARG(2), lightPos.raw, 3, &length) );
 	JL_S_ASSERT( length == 3, "Invalid array size." );
 
@@ -2668,14 +2668,14 @@ DEFINE_FUNCTION_FAST( Light ) {
 	else
 		specularPower = 1;
 
-	Vector3Normalize(&lightPos);
+	Vector3Normalize(&lightPos, &lightPos);
 	Vector3 halfV;
 	halfV.x = lightPos.x;
 	halfV.y = lightPos.y;
 	halfV.z = lightPos.z;
 
 	halfV.z += 1;
-	Vector3Normalize(&halfV);
+	Vector3Normalize(&halfV, &halfV);
 	Vector3 n;
 
 	int x, y, c;
@@ -2685,7 +2685,7 @@ DEFINE_FUNCTION_FAST( Light ) {
 
 			pos = (x + y * width) * 3; // normal texture is only 3 channels
 			Vector3Set(&n, PZNORM(normals->cbuffer[pos+0]), PZNORM(normals->cbuffer[pos+1]), PZNORM(normals->cbuffer[pos+2]) / bumpPower );
-			Vector3Normalize(&n);
+			Vector3Normalize(&n, &n);
 
 			float fDiffDot = Vector3Dot(&n, &lightPos);
 			if ( fDiffDot < 0 )

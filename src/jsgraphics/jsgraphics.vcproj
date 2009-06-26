@@ -216,11 +216,11 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\math3d.cpp"
+				RelativePath=".\oglError.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\oglError.cpp"
+				RelativePath=".\static.cpp"
 				>
 			</File>
 			<File

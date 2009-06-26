@@ -23,12 +23,12 @@ source: http://nebuladevice.svn.sourceforge.net/viewvc/nebuladevice/trunk/nebula
 
 #include <stdlib.h>
 
+#include "vector4.h"
+
 #ifdef SSE
 
 #include <xmmintrin.h>
 //#include <ivec.h>
-
-#include "vector4.h"
 
 
 #define X 0

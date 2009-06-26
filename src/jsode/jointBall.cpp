@@ -70,7 +70,7 @@ DEFINE_PROPERTY( anchorSetter ) {
 	JL_S_ASSERT_RESOURCE(jointId); // (TBD) check if NULL is meaningful for joints !
 	ode::dVector3 vector;
 	//FloatArrayToVector(cx, 3, vp, vector);
-	size_t length;
+	uint32 length;
 	JL_CHK( JsvalToFloatVector(cx, *vp, vector, 3, &length) );
 	JL_S_ASSERT( length >= 3, "Invalid array size." );
 	ode::dJointSetBallAnchor( jointId, vector[0], vector[1], vector[2] );
@@ -101,7 +101,7 @@ DEFINE_PROPERTY( anchor2Setter ) {
 	JL_S_ASSERT_RESOURCE(jointId); // (TBD) check if NULL is meaningful for joints !
 	ode::dVector3 vector;
 	//FloatArrayToVector(cx, 3, vp, vector);
-	size_t length;
+	uint32 length;
 	JL_CHK( JsvalToFloatVector(cx, *vp, vector, 3, &length) );
 	JL_S_ASSERT( length >= 3, "Invalid array size." );
 	ode::dJointSetBallAnchor2( jointId, vector[0], vector[1], vector[2] );

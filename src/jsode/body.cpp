@@ -221,7 +221,7 @@ DEFINE_FUNCTION_FAST( AddForce ) {
 	JL_S_ASSERT_CLASS(JL_FOBJ, classBody);
 	ode::dBodyID thisBodyID = (ode::dBodyID)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE( thisBodyID );
-	size_t length;
+	uint32 length;
 	ode::dVector3 forceVec;
 	JL_CHK( JsvalToFloatVector(cx, JL_FARG(1), forceVec, 3, &length) );
 	JL_S_ASSERT( length >= 3, "Invalid array size." );
@@ -250,7 +250,7 @@ DEFINE_FUNCTION_FAST( AddTorque ) {
 	ode::dBodyID thisBodyID = (ode::dBodyID)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE( thisBodyID );
 	ode::dVector3 vector;
-	size_t length;
+	uint32 length;
 	JL_CHK( JsvalToFloatVector(cx, JL_FARG(1), vector, 3, &length) );
 	JL_S_ASSERT( length >= 3, "Invalid array size." );
 	ode::dBodyAddTorque(thisBodyID, vector[0], vector[1], vector[2] );
@@ -396,7 +396,7 @@ DEFINE_PROPERTY( finiteRotationAxisSetter ) {
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( bodyId );
 	float vec[3];
-	size_t len;
+	uint32 len;
 	if ( *vp == JSVAL_VOID ) {
 
 		vec[0] = 0;
@@ -648,7 +648,7 @@ DEFINE_PROPERTY( vectorSetter ) {
 	JL_S_ASSERT_RESOURCE( bodyID );
 	ode::dVector3 vector;
 	ode::dVector4 quatern;
-	size_t length;
+	uint32 length;
 	switch ( JSVAL_TO_INT(id) ) {
 		case position:
 			JL_CHK( JsvalToFloatVector(cx, *vp, vector, 3, &length) );

@@ -18,6 +18,7 @@ function DumpMatrix(m) {
 		Print('\n' );
 }
 
+
 var perspective = new Transformation();
 var mat = new Transformation();
 
@@ -102,7 +103,7 @@ for (var end = false; !end ;) {
 	mat.Invert();
 	
 	var fs = [];
-	Math3d.FrustumSphere(mat, fs);
+	FrustumSphere(mat, fs);
 //	Print( '[0,0,0] in the view ? ', Math3d.Vector3Length(fs) < fs[3], '\n' );
 	
 	with (Ogl) {

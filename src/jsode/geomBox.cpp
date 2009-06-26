@@ -69,7 +69,7 @@ DEFINE_PROPERTY( lengthsSetter ) {
 	JL_S_ASSERT_ARRAY( *vp );
 	ode::dVector3 vector;
 //	FloatArrayToVector(cx, 3, vp, vector);
-	size_t length;
+	uint32 length;
 	JL_CHK( JsvalToFloatVector(cx, *vp, vector, 3, &length) );
 	JL_S_ASSERT( length >= 3, "Invalid array size." );
 	ode::dGeomBoxSetLengths(geom, vector[0], vector[1], vector[2]);

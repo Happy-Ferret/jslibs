@@ -453,7 +453,7 @@ DEFINE_FUNCTION_FAST( Listener ) {
 	if ( JsvalIsArray(cx, JL_FARG(2)) ) {
 
 		ALfloat params[16];
-		size_t length;
+		uint32 length;
 //		J_JSVAL_TO_REAL_VECTOR( JL_FARG(2), params, length );
 		JL_CHK( JsvalToFloatVector(cx, JL_FARG(2), params, 16, &length) );
 		alListenerfv( JSVAL_TO_INT(JL_FARG(1)), params );
@@ -560,7 +560,7 @@ DEFINE_FUNCTION_FAST( Source ) {
 	if ( JsvalIsArray(cx, JL_FARG(3)) ) {
 
 		ALfloat params[16];
-		size_t length;
+		uint32 length;
 		JL_CHK( JsvalToFloatVector(cx, JL_FARG(3), params, COUNTOF(params), &length ) );
 		alSourcefv( sid, JSVAL_TO_INT(JL_FARG(2)), params );
 		return JS_TRUE;
@@ -712,9 +712,8 @@ DEFINE_FUNCTION_FAST( SourceQueueBuffers ) {
 	if ( JsvalIsArray(cx, JL_FARG(2)) ) {
 
 		ALuint params[1024];
- 		unsigned int length = sizeof(params)/sizeof(*params);
-//		J_JSVAL_TO_INT_VECTOR( JL_FARG(2), params, length );
-		JL_CHK( JsvalToUIntVector(cx, JL_FARG(2), params, sizeof(params)/sizeof(*params), &length) );
+ 		uint32 length = COUNTOF(params);
+		JL_CHK( JsvalToUIntVector(cx, JL_FARG(2), params, COUNTOF(params), &length) );
 		alSourceQueueBuffers( sid, length, params );
 		JL_CHK( CheckThrowCurrentOalError(cx) );
 		return JS_TRUE;
@@ -754,11 +753,8 @@ DEFINE_FUNCTION_FAST( SourceUnqueueBuffers ) {
 	if ( JsvalIsArray(cx, JL_FARG(2)) ) {
 
 		ALuint params[1024];
-		unsigned int length;
-
-//		J_JSVAL_TO_INT_VECTOR( JL_FARG(2), params, length );
-		JL_CHK( JsvalToUIntVector(cx, JL_FARG(2), params, sizeof(params)/sizeof(*params), &length) );
-
+		uint32 length;
+		JL_CHK( JsvalToUIntVector(cx, JL_FARG(2), params, COUNTOF(params), &length) );
 		alSourceUnqueueBuffers( sid, length, params );
 		return JS_TRUE;
 	}

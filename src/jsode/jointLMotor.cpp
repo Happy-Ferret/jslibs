@@ -77,7 +77,7 @@ DEFINE_FUNCTION( SetAxis ) {
 	JL_CHK( JsvalToInt(cx, JL_ARG(1), &anum) );
 	JL_CHK( JsvalToInt(cx, JL_ARG(2), &rel) );
 	ode::dVector3 vector;
-	size_t length;
+	uint32 length;
 	JL_CHK( JsvalToFloatVector(cx, JL_ARG(3), vector, 3, &length) );
 	JL_S_ASSERT( length >= 3, "Invalid array size." );
 

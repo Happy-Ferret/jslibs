@@ -707,11 +707,9 @@ DEFINE_FUNCTION_FAST( TransformVector ) {
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE(pv);
 
-	size_t length;
+	uint32 length;
 //	J_JSVAL_TO_ARRAY_LENGTH( JL_FARG(1), length );
-	jsuint tmp;
-	JL_CHK( JS_GetArrayLength(cx, JSVAL_TO_OBJECT(JL_FARG(1)), &tmp) );
-	length = tmp;
+	JL_CHK( JS_GetArrayLength(cx, JSVAL_TO_OBJECT(JL_FARG(1)), &length) );
 
 	jsval tmpValue;
 	if ( length == 3 ) {
@@ -774,7 +772,7 @@ DEFINE_PROPERTY_SETTER( translation ) {
 	JL_S_ASSERT_RESOURCE(pv);
 
 	float pos[3];
-	size_t len;
+	uint32 len;
 	JL_CHK( JsvalToFloatVector(cx, *vp, pos, 3, &len) );
 	Matrix44SetTranslation(pv->mat, pos[0], pos[1], pos[2]);
 	pv->isIdentity = false;

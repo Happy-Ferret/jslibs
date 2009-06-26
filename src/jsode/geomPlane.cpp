@@ -67,7 +67,7 @@ DEFINE_PROPERTY( paramsSetter ) {
 	JL_S_ASSERT_RESOURCE( geom );
 	JL_S_ASSERT_ARRAY( *vp );
 	ode::dVector4 params;
-	size_t length;
+	uint32 length;
 	JL_CHK( JsvalToFloatVector(cx, *vp, params, 4, &length) );
 	JL_S_ASSERT( length >= 4, "Invalid array size." );
 	ode::dGeomPlaneSetParams(geom, params[0], params[1], params[2], params[3]);

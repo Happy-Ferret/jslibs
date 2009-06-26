@@ -314,7 +314,7 @@ DEFINE_FUNCTION_FAST( ScaleImpulse ) {
 	JL_S_ASSERT_RESOURCE( pv );
 	JL_S_ASSERT_ARG_MIN(1);
 	ode::dVector3 force;
-	size_t len;
+	uint32 len;
 	JL_CHK( JsvalToFloatVector(cx, JL_FARG(1), force, COUNTOF(force), &len) );
 	JL_S_ASSERT( len >= 3, "Invalid array size." );
 
@@ -361,7 +361,7 @@ DEFINE_PROPERTY( gravitySetter ) {
 	JL_S_ASSERT_RESOURCE( pv );
 	ode::dVector3 gravity;
 	//FloatArrayToVector(cx, 3, vp, gravity);
-	size_t length;
+	uint32 length;
 	JL_CHK( JsvalToFloatVector(cx, *vp, gravity, 3, &length) );
 	JL_S_ASSERT( length >= 3, "Invalid array size." );
 	ode::dWorldSetGravity( pv->worldId, gravity[0], gravity[1], gravity[2] );

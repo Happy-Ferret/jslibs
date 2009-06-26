@@ -302,7 +302,7 @@ DEFINE_FUNCTION_FAST( Fog ) {
 	if ( JsvalIsArray(cx, JL_FARG(2)) ) {
 
 		GLfloat params[16];
-		size_t length;
+		uint32 length;
 		JL_CHK( JsvalToFloatVector(cx, JL_FARG(2), params, COUNTOF(params), &length ) );
 		glFogfv( JSVAL_TO_INT(JL_FARG(1)), params );
 		return JS_TRUE;
@@ -503,7 +503,7 @@ DEFINE_FUNCTION_FAST( TexParameter ) {
 	if ( JsvalIsArray(cx, JL_FARG(3)) ) {
 
 		GLfloat params[16];
-		size_t length;
+		uint32 length;
 		JL_CHK( JsvalToFloatVector(cx, JL_FARG(3), params, COUNTOF(params), &length ) );
 		glTexParameterfv( JSVAL_TO_INT(JL_FARG(1)), JSVAL_TO_INT(JL_FARG(2)), params );
 		return JS_TRUE;
@@ -547,7 +547,7 @@ DEFINE_FUNCTION_FAST( TexEnv ) {
 	if ( JsvalIsArray(cx, JL_FARG(3)) ) {
 
 		GLfloat params[16];
-		size_t length;
+		uint32 length;
 		JL_CHK( JsvalToFloatVector(cx, JL_FARG(3), params, COUNTOF(params), &length ) );
 		glTexEnvfv( JSVAL_TO_INT(JL_FARG(1)), JSVAL_TO_INT(JL_FARG(2)), params );
 		return JS_TRUE;
@@ -588,7 +588,7 @@ DEFINE_FUNCTION_FAST( LightModel ) {
 	if ( JsvalIsArray(cx, JL_FARG(2)) ) {
 
 		GLfloat params[16];
-		size_t length;
+		uint32 length;
 		JL_CHK( JsvalToFloatVector(cx, JL_FARG(2), params, COUNTOF(params), &length ) );
 		glLightModelfv( JSVAL_TO_INT(JL_FARG(1)), params );
 		return JS_TRUE;
@@ -631,7 +631,7 @@ DEFINE_FUNCTION_FAST( Light ) {
 	if ( JsvalIsArray(cx, JL_FARG(3)) ) {
 
 		GLfloat params[16];
-		size_t length;
+		uint32 length;
 		JL_CHK( JsvalToFloatVector(cx, JL_FARG(3), params, COUNTOF(params), &length ) );
 		glLightfv( JSVAL_TO_INT(JL_FARG(1)), JSVAL_TO_INT(JL_FARG(2)), params );
 		return JS_TRUE;
@@ -694,7 +694,7 @@ DEFINE_FUNCTION_FAST( Material ) {
 	if ( JsvalIsArray(cx, JL_FARG(3)) ) {
 
 		GLfloat params[16];
-		size_t length;
+		uint32 length;
 		JL_CHK( JsvalToFloatVector(cx, JL_FARG(3), params, COUNTOF(params), &length ) );
 		glMaterialfv( JSVAL_TO_INT(JL_FARG(1)), JSVAL_TO_INT(JL_FARG(2)), params );
 		return JS_TRUE;
@@ -1023,7 +1023,7 @@ DEFINE_FUNCTION_FAST( ClipPlane ) {
 	JL_S_ASSERT_INT(JL_FARG(1));
 	JL_S_ASSERT_ARRAY(JL_FARG(2));
 	GLdouble equation[16];
-	size_t length;
+	uint32 length;
 	JL_CHK( JsvalToDoubleVector(cx, JL_FARG(2), equation, COUNTOF(equation), &length ) );
 	glClipPlane(JSVAL_TO_INT(JL_FARG(1)), equation);
 	*JL_FRVAL = JSVAL_VOID;
@@ -1756,7 +1756,7 @@ DEFINE_FUNCTION_FAST( PointParameter ) {
 	if ( JsvalIsArray(cx, JL_FARG(2)) ) {
 
 		GLfloat params[16];
-		size_t length;
+		uint32 length;
 		JL_CHK( JsvalToFloatVector(cx, JL_FARG(2), params, COUNTOF(params), &length ) );
 		glPointParameterfv( JSVAL_TO_INT(JL_FARG(1)), params );
 		return JS_TRUE;
@@ -2209,7 +2209,7 @@ DEFINE_FUNCTION_FAST( RenderToImage ) {
 
 
 /**doc
-$TOC_MEMBER $INAME()
+$TOC_MEMBER $INAME( width, distance )
 **/
 DEFINE_FUNCTION_FAST( PixelWidth ) {
 
@@ -2226,6 +2226,23 @@ DEFINE_FUNCTION_FAST( PixelWidth ) {
 	glGetFloatv(GL_PROJECTION_MATRIX, m);
 	float pixelWidth = width * viewportWidth * m[0] / distance;
 	return FloatToJsval(cx, pixelWidth, JL_FRVAL);
+	JL_BAD;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME( size )
+**/
+DEFINE_FUNCTION_FAST( DrawPoint ) {
+
+	JL_S_ASSERT_ARG(1);
+	float size;
+	JL_CHK( JsvalToFloat(cx, JL_FARG(1), &size) );
+	glPointSize(size);
+	glBegin(GL_POINTS);
+	glVertex2i(0,0);
+	glEnd();
+	return JS_TRUE;
 	JL_BAD;
 }
 
@@ -3104,6 +3121,9 @@ CONFIGURE_CLASS
 		FUNCTION_FAST_ARGC(DrawTrimesh, 1) // Trimesh id
 
 		FUNCTION_FAST_ARGC(PixelWidth, 2)
+
+		FUNCTION_FAST_ARGC(DrawPoint, 1)
+
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC

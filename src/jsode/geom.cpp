@@ -155,7 +155,7 @@ DEFINE_FUNCTION_FAST( PointDepth ) {
 	JL_S_ASSERT_RESOURCE( geomId );
 	JL_S_ASSERT_ARRAY( JL_FARG(1) );
 	float depth, point[3];
-	size_t len;
+	uint32 len;
 	JL_CHK( JsvalToFloatVector(cx, *vp, point, 3, &len) );
 	JL_S_ASSERT( len >= 3, "Invalid array size." );
 
@@ -386,7 +386,7 @@ DEFINE_PROPERTY( positionSetter ) {
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(geom);
 	ode::dVector3 vector;
-	size_t length;
+	uint32 length;
 	JL_CHK( JsvalToFloatVector(cx, *vp, vector, 3, &length) );
 	JL_S_ASSERT( length >= 3, "Invalid array size." );
 	ode::dGeomSetPosition( geom, vector[0], vector[1], vector[2] );
