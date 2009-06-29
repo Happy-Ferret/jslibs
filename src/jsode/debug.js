@@ -115,6 +115,44 @@ var TrimeshManager = new function() {
 }
 
 
+var TextureManager = new function() {
+	
+	LoadModule('jsimage');
+	LoadModule('jsprotex');
+	LoadModule('jssvg');
+
+	var textureList = {};
+	
+	this.LoadSvg = function(name, svgData) {
+
+		var svg = new SVG();
+		//svg.onImage = function(href) { return DecodePngImage( new File('img.png').Open(File.RDONLY) ); }
+		svg.Write(svgData);
+		return textureList[name] = svg.RenderImage(undefined, undefined, 3);
+	}
+	
+	this.Load = function(filename) {
+		
+		if ( filename in textureList )
+			return textureList[filename];
+		var texture;
+		if ( filename.substr(-4) == '.png' ) {
+		
+			texture = DecodePngImage(new File(filename).Open(File.RDONLY));
+		} else
+		if ( filename.substr(-4) == '.jpg' ) {
+
+			texture = DecodeJpegImage(new File(filename).Open(File.RDONLY));
+		} else
+		if ( filename.substr(-4) == '.svg' ) {
+			
+			texture = this.LoadSvg(filename, new File(filename).content);
+		}
+		return textureList[filename] = texture;
+	}
+}
+
+
 var SoundManager = new function() {
 	
 	LoadModule('jsaudio');
@@ -182,8 +220,12 @@ var DisplayManager = new function() {
 		BlendFunc(SRC_ALPHA, ONE_MINUS_SRC_ALPHA); //Set the blend function
 		Enable(CULL_FACE);
 	
+		Hint(POINT_SMOOTH_HINT, NICEST);
 		Enable(POINT_SMOOTH);
+		Print( 'Point size range: ', GetInteger(POINT_SIZE_RANGE, 2), '\n' );
 	
+		Enable(TEXTURE_2D);
+				
 		Enable(LIGHTING);
 		Enable(LIGHT0);
 		Light(LIGHT0, SPECULAR, [1, 1, 1, 1]);
@@ -192,8 +234,24 @@ var DisplayManager = new function() {
 //  LightModel(LIGHT_MODEL_AMBIENT, [0.5, 0.5, 0.5, 1]);
 //  ShadeModel(SMOOTH);
  
-	  Enable( COLOR_MATERIAL );
+//	  Enable( COLOR_MATERIAL );
 //  ColorMaterial( FRONT_AND_BACK, EMISSION );
+	}
+	
+	var textureIdList = {};
+	this.LoadTexture = function(name) {
+
+		if ( name in textureIdList )
+			return textureIdList[name];
+		var textureId, texture = TextureManager.Load(name);
+		with (Ogl) {
+
+			DefineTextureImage(TEXTURE_2D, undefined, texture);
+			textureId = GenTexture();
+			BindTexture(TEXTURE_2D, textureId);
+//			Print( 'ogl error: ', Ogl.error, '\n' );
+		}
+		return textureIdList[name] = textureId;
 	}
 }
 
@@ -228,7 +286,7 @@ var SceneManager = new function() {
 	this.CameraFOV = function(fov) {
 	
 		Ogl.MatrixMode(Ogl.PROJECTION);
-		Ogl.Perspective(fov, 0.1, 15);
+		Ogl.Perspective(fov, 0.1, 100);
 		perspective.Load(Ogl);
 	}
 
@@ -331,10 +389,13 @@ function Ball() {
 	geom.body = body;
 	body.mass.value = 1;
 	body.position = [10,-5,1];
+
 	
 	this.GetBoundarySphere = function() geom.boundarySphere;
 	
 	var impactSound = SoundManager.Load('29996__thanvannispen__stone_on_stone_impact13.aif');
+	var ballTextureGlid = DisplayManager.LoadTexture('lines.svg');
+	
 
 	geom.impact = function(geom, geom2, vel, px, py, pz) {
 
@@ -369,29 +430,42 @@ function Ball() {
 	this.Render = function() {
 		
 		with (Ogl) {
+		
 			var bsphere = geom.boundarySphere;
-	//		var width = bsphere[3]*2;
+//			var width = bsphere[3]*2;
 			var bbox = geom.aabb;
-			var width = bbox[3]-bbox[0];
+			var width = bbox[3]-bbox[0]; // 2 * radius
 					
 			var v = NewVector3(SceneManager.cameraPosition);
 			Vector3Sub(v, bsphere);
 			var dist = Vector3Length(v);
 
-			var objSize = Ogl.PixelWidth(width, dist)/2;
+			var objSize = Ogl.PixelWidthFactor() * width / dist;
+//			Print(objSize, '\n');
 	
 			MultMatrix(geom);
-			Color(1,0,0,1);
-		
-			if ( objSize > 10 ) {
+			Color(1,1,1);
+
+			if ( objSize > 30 ) {
+
+				BindTexture( TEXTURE_2D, ballTextureGlid );
+				//Enable(BLEND);
+				//BlendFunc(SRC_ALPHA, ONE_MINUS_SRC_ALPHA);				
+				//TexParameter(TEXTURE_2D, TEXTURE_MIN_FILTER, NEAREST); // GL_LINEAR
+				//TexParameter(TEXTURE_2D, TEXTURE_MAG_FILTER, NEAREST);
+				//TexEnv(TEXTURE_ENV, TEXTURE_ENV_MODE, MODULATE);
+				//TexEnv(TEXTURE_ENV, TEXTURE_ENV_COLOR, [0,0,0,0]);
 
 				DrawTrimesh(glTrimeshId);
 			} else {
 
-				PushAttrib(LIGHTING);
-				Disable(LIGHTING);
-				DrawPoint(objSize);
-				PopAttrib();
+//				PushAttrib(LIGHTING);
+				PushMatrix();
+				KeepTranslation();
+//				Disable(LIGHTING);
+				DrawDisk(width/2);
+				PopMatrix();
+//				PopAttrib();
 			}
 		}
 	}

@@ -33,7 +33,6 @@ BEGIN_STATIC
 === Static functions ===
 **/
 
-
 /**doc
 $TOC_MEMBER $INAME
  $ARRAY $INAME( transformation [ , array ] ] )
@@ -95,8 +94,6 @@ DEFINE_FUNCTION_FAST( FrustumSphere ) {
 }
 
 
-
-
 /**doc
 $TOC_MEMBER $INAME
  $ARRAY $INAME([minx, miny, minz,  maxx, maxy, maxz])
@@ -130,7 +127,6 @@ DEFINE_FUNCTION_FAST( BoxToCircumscribedSphere ) {
 	return JS_TRUE;
 	JL_BAD;
 }
-
 
 
 /**doc
@@ -238,7 +234,6 @@ DEFINE_FUNCTION_FAST( Vector3Add ) {
 	return FloatVectorToJsval(cx, v.raw, 3, JL_FRVAL, true);
 	JL_BAD;
 }
-
 
 
 /**doc

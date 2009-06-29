@@ -2078,7 +2078,7 @@ DEFINE_FUNCTION_FAST( DrawTrimesh ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $VOID $INAME( target, [internalformat], texture )
+ $VOID $INAME( target, internalformat | $UNDEF, texture )
   $H arguments
    $ARG GLenum target
    $ARG $INT internalformat: is the internal PixelFormat. If undefined, the function will use the format of _texture_.
@@ -2209,23 +2209,21 @@ DEFINE_FUNCTION_FAST( RenderToImage ) {
 
 
 /**doc
-$TOC_MEMBER $INAME( width, distance )
+$TOC_MEMBER $INAME
+ $REAL $INAME()
+  pixelWidth = PixelWidthFactor() * width / distance
 **/
-DEFINE_FUNCTION_FAST( PixelWidth ) {
+DEFINE_FUNCTION_FAST( PixelWidthFactor ) {
 
 	// see. http://www.songho.ca/opengl/gl_projectionmatrix.html
 	// see. engine_core.h
-	JL_S_ASSERT_ARG(2);
-	float width, distance;
-	JL_CHK( JsvalToFloat(cx, JL_FARG(1), &width) );
-	JL_CHK( JsvalToFloat(cx, JL_FARG(2), &distance) );
+
+	JL_S_ASSERT_ARG(0);
 	GLint viewport[4];
-	glGetIntegerv(GL_VIEWPORT, viewport);
-	int viewportWidth = viewport[2]; // int viewportHeight = viewport[3];
 	GLfloat m[16];
+	glGetIntegerv(GL_VIEWPORT, viewport);
 	glGetFloatv(GL_PROJECTION_MATRIX, m);
-	float pixelWidth = width * viewportWidth * m[0] / distance;
-	return FloatToJsval(cx, pixelWidth, JL_FRVAL);
+	return FloatToJsval(cx, viewport[2] * m[0], JL_FRVAL); // viewportHeight = viewport[3];
 	JL_BAD;
 }
 
@@ -2238,10 +2236,51 @@ DEFINE_FUNCTION_FAST( DrawPoint ) {
 	JL_S_ASSERT_ARG(1);
 	float size;
 	JL_CHK( JsvalToFloat(cx, JL_FARG(1), &size) );
-	glPointSize(size);
+	glPointSize(size); // get max with GL_POINT_SIZE_RANGE
 	glBegin(GL_POINTS);
 	glVertex2i(0,0);
 	glEnd();
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
+$INAME( radius [ , vertexCount = 12 ] )
+**/
+DEFINE_FUNCTION_FAST( DrawDisk ) {
+
+	float s, c, angle, radius;
+	int vertexCount;
+	JL_S_ASSERT_ARG_RANGE(1,2);
+	JL_CHK( JsvalToFloat(cx, JL_FARG(1), &radius) );
+	if ( JL_FARG_ISDEF(2) )
+		JL_CHK( JsvalToInt(cx, JL_FARG(2), &vertexCount) );
+	else
+		vertexCount = 12;
+	angle = 2*M_PI / vertexCount;
+	glBegin(GL_POLYGON);
+	for (int i = 0; i < vertexCount; i++) {
+
+		SinCos(i * angle, &s, &c);
+		glVertex2f(radius * c, radius * s);
+	}
+	glEnd();
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME()
+**/
+DEFINE_FUNCTION_FAST( KeepTranslation ) {
+
+	GLfloat m[16];
+	glGetFloatv(GL_MODELVIEW_MATRIX, m);
+	glLoadIdentity();
+	glTranslatef(m[12], m[13], m[14]);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -3120,9 +3159,13 @@ CONFIGURE_CLASS
 		FUNCTION_FAST_ARGC(LoadTrimesh, 1) // Trimesh object
 		FUNCTION_FAST_ARGC(DrawTrimesh, 1) // Trimesh id
 
-		FUNCTION_FAST_ARGC(PixelWidth, 2)
+		FUNCTION_FAST_ARGC(PixelWidthFactor, 0)
 
 		FUNCTION_FAST_ARGC(DrawPoint, 1)
+		FUNCTION_FAST_ARGC(DrawDisk, 2)
+
+		FUNCTION_FAST_ARGC(KeepTranslation, 0)
+
 
 	END_STATIC_FUNCTION_SPEC
 

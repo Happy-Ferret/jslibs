@@ -223,13 +223,14 @@ DEFINE_FUNCTION( DecodeJpegImage ) {
 }
 
 
+/*
 DEFINE_FUNCTION( EncodeJpegImage ) {
 
 	JL_REPORT_ERROR("TBD!"); // (TBD)
 	return JS_TRUE;
 	JL_BAD;
 }
-
+*/
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -441,7 +442,7 @@ CONFIGURE_STATIC
 		FUNCTION( DecodePngImage )
 		FUNCTION_FAST( EncodePngImage )
 		FUNCTION( DecodeJpegImage )
-		FUNCTION( EncodeJpegImage )
+//		FUNCTION( EncodeJpegImage )
 	END_STATIC_FUNCTION_SPEC
 
 END_STATIC

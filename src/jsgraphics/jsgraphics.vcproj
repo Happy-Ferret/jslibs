@@ -235,10 +235,6 @@
 					/>
 				</FileConfiguration>
 			</File>
-			<File
-				RelativePath=".\winTools.js"
-				>
-			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"

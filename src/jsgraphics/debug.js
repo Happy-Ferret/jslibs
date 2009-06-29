@@ -28,7 +28,7 @@ var vx=0, vy=0;
 GlSetAttribute( GL_SWAP_CONTROL, 1 ); // vsync
 GlSetAttribute( GL_DOUBLEBUFFER, 1 );
 GlSetAttribute( GL_DEPTH_SIZE, 16 );
-SetVideoMode( 100, 100, 32, HWSURFACE | OPENGL | RESIZABLE ); // | ASYNCBLIT // RESIZABLE FULLSCREEN
+SetVideoMode( 150, 150, 32, HWSURFACE | OPENGL | RESIZABLE ); // | ASYNCBLIT // RESIZABLE FULLSCREEN
 
 var listeners = {
 	onQuit: function() { end = true },
@@ -37,8 +37,6 @@ var listeners = {
 	
 	onMouseButtonDown: function(button, x, y) {
 		if ( button == BUTTON_LEFT ) {
-			
-			
 			
 			x = 2*x/videoWidth - 1;
 			y = -(2*y/videoHeight - 1);
@@ -91,12 +89,10 @@ for (var end = false; !end ;) {
 	PollEvent(listeners);
 	
 	Ogl.LoadIdentity();
-//	Ogl.LookAt(-Math.cos(vx/500)*1,Math.sin(vx/500)*1,vy/1000+1, 0,0,0, 0,0,1);
-	Ogl.LookAt(0,1,1, -Math.cos(vx/500) + 0, Math.sin(vx/500) + 1, vy/1000 + 1, 0,0,1);
+	Ogl.LookAt(-Math.cos(vx/500)*1,Math.sin(vx/500)*1,vy/1000+1, 0,0,0, 0,0,1);
+//	Ogl.LookAt(0,1,1, -Math.cos(vx/500) + 0, Math.sin(vx/500) + 1, vy/1000 + 1, 0,0,1);
 //	Ogl.LookAt(0,0,0, 0,1,0, 0,0,1);
-	Print( 'PixelWidth: ', Ogl.PixelWidth(2,10), '\n' );
-
-
+	
 
 	mat.Load(Ogl);
 	mat.Product(perspective)
@@ -109,11 +105,23 @@ for (var end = false; !end ;) {
 	with (Ogl) {
 
 		Clear(COLOR_BUFFER_BIT | DEPTH_BUFFER_BIT);
-
+/*
 		Begin(QUADS);
 		Color(1,0,0);
 		Vertex( -0.5, -0.5, 0); Vertex( -0.5, 0.5, 0); Vertex( 0.5, 0.5, 0); Vertex( 0.5, -0.5, 0);
 		End(QUADS);
+*/
+		Color(1,0,0);
+		DrawDisk(1);
+		
+		PushMatrix();
+		KeepTranslation();
+		Color(0,1,0);
+		DrawDisk(1);
+		PopMatrix();
+		
+		
+//		DrawPoint(3);
 		
 		var c = 0;
 		for each ( var [p1, p2] in lines ) {
@@ -128,8 +136,7 @@ for (var end = false; !end ;) {
 			Vertex( p1[0], p1[1], p1[2] );
 			Vertex( p2[0], p2[1], p2[2] );
 			End(LINES);
-
-
+			
 /*
 //			Ogl.PushMatrix();
 //			LookAt(p1[0], p1[1], p1[2],  -Math.cos(vx/500)*1,Math.sin(vx/500)*1,vy/1000+1, 0,0,1);

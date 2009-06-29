@@ -1,6 +1,6 @@
 LoadModule('jsstd');
 LoadModule('jsimage');
-LoadModule('jsnspr');
+LoadModule('jsio');
 
 /*
 var f = new File('pngtest.png');
@@ -11,10 +11,6 @@ Print( img.Load().length , '\n' );
 */
 
 
-var texture = new Jpeg(new File('R0010235.JPG').Open( File.RDONLY )).Load().Trim([10,10,20,20]);
-Print( texture.width+'x'+texture.height+'x'+texture.channels, '\n' );
-
-
-var texture = new Png(new File('calendar2.png').Open( File.RDONLY )).Load();
+var texture = DecodePngImage(new File('Tremulous.png').Open( File.RDONLY ));
 Print( texture.width+'x'+texture.height+'x'+texture.channels, '\n' );
 
