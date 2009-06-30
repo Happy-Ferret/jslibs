@@ -214,28 +214,27 @@ var DisplayManager = new function() {
 
 	with (Ogl) {
 	
-		Hint( PERSPECTIVE_CORRECTION_HINT, NICEST );
-
-		Enable(BLEND); //Enable alpha blending
-		BlendFunc(SRC_ALPHA, ONE_MINUS_SRC_ALPHA); //Set the blend function
-		Enable(CULL_FACE);
-	
+		Hint(PERSPECTIVE_CORRECTION_HINT, NICEST);
 		Hint(POINT_SMOOTH_HINT, NICEST);
+
 		Enable(POINT_SMOOTH);
-		Print( 'Point size range: ', GetInteger(POINT_SIZE_RANGE, 2), '\n' );
+
+//		Enable(BLEND); //Enable alpha blending
+//		BlendFunc(SRC_ALPHA, ONE_MINUS_SRC_ALPHA); //Set the blend function
+//		Enable(CULL_FACE);
 	
-		Enable(TEXTURE_2D);
+//		Enable(TEXTURE_2D);
 				
-		Enable(LIGHTING);
-		Enable(LIGHT0);
-		Light(LIGHT0, SPECULAR, [1, 1, 1, 1]);
+//		Enable(LIGHTING);
+//		Enable(LIGHT0);
+//		Light(LIGHT0, SPECULAR, [1, 1, 1, 1]);
 		
 //	Light(LIGHT0, POSITION, [-1,-2, 10]);
 //  LightModel(LIGHT_MODEL_AMBIENT, [0.5, 0.5, 0.5, 1]);
 //  ShadeModel(SMOOTH);
  
-//	  Enable( COLOR_MATERIAL );
-//  ColorMaterial( FRONT_AND_BACK, EMISSION );
+//		Enable( COLOR_MATERIAL );
+//		ColorMaterial( FRONT_AND_BACK, EMISSION );
 	}
 	
 	var textureIdList = {};
@@ -258,16 +257,16 @@ var DisplayManager = new function() {
 
 var TimeManager = new function() {
 	
-	var prev, t1, t0 = TimeCounter();
-	this.Lap = function() {
-		
+	var t1, t0 = TimeCounter();
+
+	this.__defineGetter__('lap', function() {
+
 		var t = TimeCounter();
-		prev = t - t1;
+		var prev = t - t1;
 		t1 = t;
-	}
-	
-	this.__defineGetter__('time', function() t1-t0 );
-	this.__defineGetter__('prev', function() prev );
+		return prev;
+	});
+	this.__defineGetter__('time', function() t1 - t0 );
 }
 
 
@@ -355,24 +354,28 @@ function Floor() {
 	geom.params = [0,0,1,0];
 	
 	this.Render = function() {
-		
-		Ogl.Normal(0,0,1);
-		Ogl.Translate(-10,-10,0);
-		Ogl.Scale(2,2,0);
-		var cx=10, cy=10;
-		Ogl.Begin(Ogl.QUADS);
-		for ( var x = 0; x < cx; x++ )
-			for ( var y = 0; y < cy; y++ ) {
-				if ( (x + y) % 2 )
-					Ogl.Color(0,0,0.5);
-				else
-					Ogl.Color(0.9,0.8,0.7);
-				Ogl.Vertex(x,y);
-				Ogl.Vertex(x+1,y);
-				Ogl.Vertex(x+1,y+1);
-				Ogl.Vertex(x, y+1);
-			}
-		Ogl.End();
+
+		with (Ogl) {
+			
+			Disable(TEXTURE_2D);
+			Normal(0,0,1);
+			Translate(-10,-10,0);
+			Scale(2,2,0);
+			var cx=10, cy=10;
+			Begin(QUADS);
+			for ( var x = 0; x < cx; x++ )
+				for ( var y = 0; y < cy; y++ ) {
+					if ( (x + y) % 2 )
+						Color(0,0,0.5);
+					else
+						Color(0.9,0.8,0.7);
+					Vertex(x,y);
+					Vertex(x+1,y);
+					Vertex(x+1,y+1);
+					Vertex(x, y+1);
+				}
+			End();
+		}
 	}	
 }
 
@@ -394,9 +397,17 @@ function Ball() {
 	this.GetBoundarySphere = function() geom.boundarySphere;
 	
 	var impactSound = SoundManager.Load('29996__thanvannispen__stone_on_stone_impact13.aif');
-	var ballTextureGlid = DisplayManager.LoadTexture('lines.svg');
+//	var ballTextureGlid = DisplayManager.LoadTexture('lines.svg');
 	
+	var texture = new Texture(128, 128, 3);
+	texture.Set([1,0,1]);
 
+	Ogl.Enable(Ogl.TEXTURE_2D);
+
+	var ballTextureGlid = Ogl.GenTexture();
+	Ogl.BindTexture(Ogl.TEXTURE_2D, ballTextureGlid);
+	Ogl.DefineTextureImage(Ogl.TEXTURE_2D, undefined, texture);
+	
 	geom.impact = function(geom, geom2, vel, px, py, pz) {
 
 		if ( vel > 5 )
@@ -444,17 +455,18 @@ function Ball() {
 //			Print(objSize, '\n');
 	
 			MultMatrix(geom);
-			Color(1,1,1);
+			Color(1,0.5,0.75);
 
-			if ( objSize > 30 ) {
-
-				BindTexture( TEXTURE_2D, ballTextureGlid );
-				//Enable(BLEND);
-				//BlendFunc(SRC_ALPHA, ONE_MINUS_SRC_ALPHA);				
-				//TexParameter(TEXTURE_2D, TEXTURE_MIN_FILTER, NEAREST); // GL_LINEAR
-				//TexParameter(TEXTURE_2D, TEXTURE_MAG_FILTER, NEAREST);
-				//TexEnv(TEXTURE_ENV, TEXTURE_ENV_MODE, MODULATE);
-				//TexEnv(TEXTURE_ENV, TEXTURE_ENV_COLOR, [0,0,0,0]);
+			if ( objSize > 10 ) {
+			
+				Enable(TEXTURE_2D);
+				BindTexture(TEXTURE_2D, ballTextureGlid);
+//				Enable(BLEND);
+//				BlendFunc(SRC_ALPHA, ONE_MINUS_SRC_ALPHA);				
+//				TexParameter(TEXTURE_2D, TEXTURE_MIN_FILTER, NEAREST); // GL_LINEAR
+//				TexParameter(TEXTURE_2D, TEXTURE_MAG_FILTER, NEAREST);
+//				TexEnv(TEXTURE_ENV, TEXTURE_ENV_MODE, MODULATE);
+//				TexEnv(TEXTURE_ENV, TEXTURE_ENV_COLOR, [0,0,0,0]);
 
 				DrawTrimesh(glTrimeshId);
 			} else {
@@ -488,17 +500,19 @@ SceneManager.Add(ball);
 InputManager.AddEventListener(ball);
 
 CollectGarbage();
+var fps = 60;
 
+TimeManager.lap;
 var end = false;
 while ( !end ) {
 	
-	TimeManager.Lap();
 	InputManager.ProcessEvents();
 	SceneManager.Update();
 	world.Step(20);
 	SceneManager.Render();
-	Sleep(10);
-//	Print( (1000/(TimeManager.prev - 10)).toFixed(0),' fps    \r' );
+	var sleepTime = 1000/fps - TimeManager.lap;
+	if ( sleepTime > 0 )
+		Sleep(sleepTime);
 }
 
 

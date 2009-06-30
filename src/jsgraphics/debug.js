@@ -28,7 +28,41 @@ var vx=0, vy=0;
 GlSetAttribute( GL_SWAP_CONTROL, 1 ); // vsync
 GlSetAttribute( GL_DOUBLEBUFFER, 1 );
 GlSetAttribute( GL_DEPTH_SIZE, 16 );
-SetVideoMode( 150, 150, 32, HWSURFACE | OPENGL | RESIZABLE ); // | ASYNCBLIT // RESIZABLE FULLSCREEN
+SetVideoMode( 100, 100, 32, HWSURFACE | OPENGL | RESIZABLE ); // | ASYNCBLIT // RESIZABLE FULLSCREEN
+
+
+with (Ogl) {
+
+//		PointParameter( POINT_SIZE_MIN, 0 );
+//		PointParameter( POINT_SIZE_MAX, 1 );
+		PointParameter( POINT_DISTANCE_ATTENUATION, [0, 0, 0.01] ); // 1/(a + b*d + c *d^2)
+
+//	Enable(POINT_SPRITE); // http://www.informit.com/articles/article.aspx?p=770639&seqNum=7
+//	TexEnv(POINT_SPRITE, COORD_REPLACE, TRUE);
+	
+	
+	Enable( TEXTURE_2D );
+	BindTexture( TEXTURE_2D, GenTexture() );
+//	TexParameter(TEXTURE_2D, TEXTURE_MIN_FILTER, NEAREST); // GL_LINEAR
+//	TexParameter(TEXTURE_2D, TEXTURE_MAG_FILTER, NEAREST);
+//	TexEnv(TEXTURE_ENV, TEXTURE_ENV_MODE, MODULATE);
+//	TexEnv(TEXTURE_ENV, TEXTURE_ENV_COLOR, [1,1,1,0]);
+	
+	var texture = new Texture(128, 128, 3);
+	texture.Set([0, 0.5, 1]);
+	var curveGaussian = function(c) { return function(x) { return Math.exp( -(x*x)/(2*c*c) ) } }
+	texture.AddGradiantRadial( curveGaussian( 0.3 ), false );
+	texture.AddNoise(0.1);
+	DefineTextureImage( TEXTURE_2D, undefined, texture );
+	
+//	new File('myImage.png').content = EncodePngImage( texture.Export() );
+
+//	Enable(BLEND);
+//	BlendFunc(ONE, ONE);
+//	BlendFunc(SRC_ALPHA, ONE_MINUS_SRC_ALPHA);
+	
+}	
+	
 
 var listeners = {
 	onQuit: function() { end = true },
@@ -111,8 +145,10 @@ for (var end = false; !end ;) {
 		Vertex( -0.5, -0.5, 0); Vertex( -0.5, 0.5, 0); Vertex( 0.5, 0.5, 0); Vertex( 0.5, -0.5, 0);
 		End(QUADS);
 */
-		Color(1,0,0);
-		DrawDisk(1);
+
+//		Color(1,0,0);
+//		DrawDisk(1);
+		Cube();
 		
 		PushMatrix();
 		KeepTranslation();
@@ -650,7 +686,7 @@ with (Ogl) {
 //	var texture = new Jpeg(new File('R0010235.JPG').Open( File.RDONLY )).Load();
 	var texture = new Texture(128, 128, 1);
 	texture.Set([0]);
-	const curveGaussian = function(c) { return function(x) { return Math.exp( -(x*x)/(2*c*c) ) } }
+	var curveGaussian = function(c) { return function(x) { return Math.exp( -(x*x)/(2*c*c) ) } }
 	texture.AddGradiantRadial( curveGaussian( 0.3 ), false );
 	texture.AddNoise(0.1,0,0,0);
 

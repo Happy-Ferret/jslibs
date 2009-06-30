@@ -220,6 +220,7 @@ inline JSBool InitLevelData( JSContext* cx, jsval value, int count, PTYPE *level
 // curve: number | function | array
 inline JSBool InitCurveData( JSContext* cx, jsval value, int length, float *curve ) { // length is the curve resolution
 
+	JSTempValueRooter tvr;
 	if ( JSVAL_IS_NUMBER(value) ) {
 
 		jsdouble dval;
@@ -233,7 +234,6 @@ inline JSBool InitCurveData( JSContext* cx, jsval value, int length, float *curv
 
 		jsdouble fval;
 		jsval argv[3]; // argv[0] is the rval
-		JSTempValueRooter tvr;
 		JS_PUSH_TEMP_ROOT(cx, COUNTOF(argv), argv, &tvr);
 		for ( int i = 0; i < length; ++i ) {
 
@@ -243,12 +243,8 @@ inline JSBool InitCurveData( JSContext* cx, jsval value, int length, float *curv
 			JL_CHKB( JS_CallFunctionValue(cx, JS_GetGlobalObject(cx), value, 2, argv+1, argv), bad2 );
 			JL_CHKB( JS_ValueToNumber(cx, argv[0], &fval), bad2 );
 			curve[i] = fval;
-			goto good2;
 		}
-	bad2:
 		JS_POP_TEMP_ROOT(cx, &tvr);
-	good2:
-		;
 	} else
 	if ( JsvalIsArray(cx, value) ) {
 
@@ -284,7 +280,10 @@ inline JSBool InitCurveData( JSContext* cx, jsval value, int length, float *curv
 			curve[i] = PMAX;
 	}
 	return JS_TRUE;
-	JL_BAD;
+bad2:
+	JS_POP_TEMP_ROOT(cx, &tvr);
+bad:
+	return JS_FALSE;
 }
 
 /**doc
@@ -3649,7 +3648,7 @@ DEFINE_FUNCTION_FAST( AddGradiantRadial ) {
 
 	float *curve;
 	curve = (float*)malloc( (int)radius * sizeof(float) ); // (TBD) free curve
-	InitCurveData(cx, JL_FARG(1), (int)radius, curve);
+	JL_CHK( InitCurveData(cx, JL_FARG(1), (int)radius, curve) );
 
 	float aspectRatio;
 	aspectRatio = (float)width / (float)height;
