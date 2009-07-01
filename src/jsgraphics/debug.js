@@ -7,60 +7,130 @@ LoadModule('jstrimesh');
 LoadModule('jssdl');
 LoadModule('jsgraphics');
 
-function DumpMatrix(m) {
-    
-    for (var y = 0; y < 4; ++y) {
-        Print('[ ' );
-        for (var x = 0; x < 4; ++x)
-            Print( m[x+y*4].toFixed(3) + '  ' );
-        Print(']\n' );
-    }
-		Print('\n' );
+// OpenGl doc: http://www.opengl.org/sdk/docs/man/
+
+function MinMax(val, min, max) val < min ? min : val > max ? max : val;
+
+function Range(low, high) {
+
+  this.low = low;
+  this.high = high;
 }
 
+Range.prototype.__iterator__ = function() {
+
+  for (var i = this.low; i <= this.high; i++)
+    yield i;
+};
+
+function DumpMatrix(m) {
+    
+	for (var y = 0; y < 4; ++y) {
+		Print('[ ' );
+		for (var x = 0; x < 4; ++x)
+			Print( m[x+y*4].toFixed(3) + '  ' );
+		Print(']\n' );
+	}
+	Print('\n' );
+}
+
+
+var listList = { __proto__:null };
+function CondNewList(name, invalidate) {
+	
+	if ( name in listList && !invalidate ) {
+		
+		Ogl.CallList(listList[name]);
+		return false;
+	} else {
+		
+		listList[name] = Ogl.NewList();
+		return true;
+	}
+}
+
+
+
+function Cloud( size, amp ) {
+
+	var octaves = Math.log(size) / Math.LN2;
+	var a = 1, s = 1;
+	var cloud = new Texture(s, s, 1);
+	cloud.ClearChannel();
+	while ( octaves-- > 0 ) {
+		
+		cloud.AddNoise(a);
+		a *= amp;
+		s *= 2;
+		cloud.Resize(s, s, false);
+		cloud.BoxBlur(3, 3);
+	}
+	cloud.NormalizeLevels();
+	return cloud;
+}
+
+function CreateCloudTextureLayer() {
+	
+	var texture = Cloud(32, 1);
+	var gaussian = new Texture(texture.width, texture.height, 1);
+	gaussian.Set(0);
+	var curveGaussian = function(c) { return function(x) { return Math.exp( -(x*x)/(2*c*c) ) } }
+	gaussian.AddGradiantRadial(curveGaussian(0.4), false);
+	gaussian.Add(-0.1);
+	texture.Mult(gaussian);
+
+	with (Ogl) {
+		var tid = GenTexture();
+		BindTexture(TEXTURE_2D, tid);
+		DefineTextureImage(TEXTURE_2D, undefined, texture);
+		TexParameter(TEXTURE_2D, TEXTURE_MIN_FILTER, LINEAR);
+		TexParameter(TEXTURE_2D, TEXTURE_MAG_FILTER, LINEAR);
+		return tid;
+	}
+}
 
 var perspective = new Transformation();
 var mat = new Transformation();
 
+var cx, cy, cz; // camera
+var vx=0, vy=0, vz=2.5, t=0;
 var lines = [];
 
-var vx=0, vy=0;
 GlSetAttribute( GL_SWAP_CONTROL, 1 ); // vsync
 GlSetAttribute( GL_DOUBLEBUFFER, 1 );
 GlSetAttribute( GL_DEPTH_SIZE, 16 );
-SetVideoMode( 100, 100, 32, HWSURFACE | OPENGL | RESIZABLE ); // | ASYNCBLIT // RESIZABLE FULLSCREEN
+SetVideoMode( 200, 200, 32, HWSURFACE | OPENGL | RESIZABLE ); // | ASYNCBLIT // RESIZABLE FULLSCREEN
 
+Texture.RandSeed(1234);
+
+var cloudLayerList = [ [ Texture.RandReal()-0.5, Texture.RandReal()-0.5, Texture.RandReal()-0.5, CreateCloudTextureLayer() ] for (i in new Range(0, 4)) ];
 
 with (Ogl) {
 
+	Hint(PERSPECTIVE_CORRECTION_HINT, NICEST);
+
 //		PointParameter( POINT_SIZE_MIN, 0 );
 //		PointParameter( POINT_SIZE_MAX, 1 );
-		PointParameter( POINT_DISTANCE_ATTENUATION, [0, 0, 0.01] ); // 1/(a + b*d + c *d^2)
+		PointParameter( POINT_DISTANCE_ATTENUATION, [0, 0, 0.01/PixelWidthFactor(), 0] ); // 1/(a + b*d + c *d^2)
 
-//	Enable(POINT_SPRITE); // http://www.informit.com/articles/article.aspx?p=770639&seqNum=7
-//	TexEnv(POINT_SPRITE, COORD_REPLACE, TRUE);
-	
-	
-	Enable( TEXTURE_2D );
-	BindTexture( TEXTURE_2D, GenTexture() );
-//	TexParameter(TEXTURE_2D, TEXTURE_MIN_FILTER, NEAREST); // GL_LINEAR
-//	TexParameter(TEXTURE_2D, TEXTURE_MAG_FILTER, NEAREST);
-//	TexEnv(TEXTURE_ENV, TEXTURE_ENV_MODE, MODULATE);
+	Enable(POINT_SPRITE); // http://www.informit.com/articles/article.aspx?p=770639&seqNum=7
+	TexEnv(POINT_SPRITE, COORD_REPLACE, TRUE);
+
+	TexEnv(TEXTURE_ENV, TEXTURE_ENV_MODE, MODULATE);
 //	TexEnv(TEXTURE_ENV, TEXTURE_ENV_COLOR, [1,1,1,0]);
-	
-	var texture = new Texture(128, 128, 3);
-	texture.Set([0, 0.5, 1]);
-	var curveGaussian = function(c) { return function(x) { return Math.exp( -(x*x)/(2*c*c) ) } }
-	texture.AddGradiantRadial( curveGaussian( 0.3 ), false );
-	texture.AddNoise(0.1);
-	DefineTextureImage( TEXTURE_2D, undefined, texture );
-	
-//	new File('myImage.png').content = EncodePngImage( texture.Export() );
 
-//	Enable(BLEND);
+	Enable(BLEND);
+
+	// color = polygon * src + screen * dst
 //	BlendFunc(ONE, ONE);
-//	BlendFunc(SRC_ALPHA, ONE_MINUS_SRC_ALPHA);
-	
+	BlendFunc(ONE_MINUS_DST_COLOR, ONE);
+
+
+//	BlendFunc(DST_ALPHA, ONE_MINUS_DST_ALPHA);
+
+// see. http://jerome.jouvie.free.fr/OpenGl/Tutorials/Tutorial9.php
+
+	ClearColor(0.2,0.1,0.4,1);
 }	
 	
 
@@ -93,10 +163,16 @@ var listeners = {
 		}
 	},
 	onMouseButtonUp: function(button) {
+		
 		if ( button == BUTTON_RIGHT ) {
 			showCursor = true;
 			grabInput = false;
 		}
+		if ( button == BUTTON_WHEELUP )
+			vz -= modifierState & KMOD_LCTRL ? 0.1 : 1;
+		if ( button == BUTTON_WHEELDOWN )
+			vz += modifierState & KMOD_LCTRL ? 0.1 : 1;
+		
 	},
 	onMouseMotion: function(px,py,dx,dy,button) {
 		if ( grabInput ) {
@@ -115,58 +191,88 @@ Ogl.Enable(Ogl.DEPTH_TEST);
 Ogl.MatrixMode(Ogl.MODELVIEW);
 
 //Ogl.Enable(Ogl.LINE_SMOOTH);
-	Ogl.LineWidth(2);
-	Ogl.PointSize(2);
-	
+Ogl.LineWidth(2);
+Ogl.PointSize(2);
+
+
 for (var end = false; !end ;) {
+	
+	t = TimeCounter();
 	
 	PollEvent(listeners);
 	
 	Ogl.LoadIdentity();
-	Ogl.LookAt(-Math.cos(vx/500)*1,Math.sin(vx/500)*1,vy/1000+1, 0,0,0, 0,0,1);
-//	Ogl.LookAt(0,1,1, -Math.cos(vx/500) + 0, Math.sin(vx/500) + 1, vy/1000 + 1, 0,0,1);
-//	Ogl.LookAt(0,0,0, 0,1,0, 0,0,1);
-	
+
+	var tmp = Math.cos(vy/400);
+	cx = -Math.cos(vx/400)*Math.abs(tmp) * vz;
+	cy = Math.sin(vx/400)*Math.abs(tmp) * vz;
+	cz = Math.sin(vy/400) * vz;
+	Ogl.LookAt(cx, cy, cz, 0,0,0, 0,0,1);
 
 	mat.Load(Ogl);
 	mat.Product(perspective)
 	mat.Invert();
 	
-	var fs = [];
-	FrustumSphere(mat, fs);
-//	Print( '[0,0,0] in the view ? ', Math3d.Vector3Length(fs) < fs[3], '\n' );
-	
 	with (Ogl) {
 
 		Clear(COLOR_BUFFER_BIT | DEPTH_BUFFER_BIT);
-/*
-		Begin(QUADS);
-		Color(1,0,0);
-		Vertex( -0.5, -0.5, 0); Vertex( -0.5, 0.5, 0); Vertex( 0.5, 0.5, 0); Vertex( 0.5, -0.5, 0);
-		End(QUADS);
-*/
 
-//		Color(1,0,0);
+		Enable(TEXTURE_2D);
+		Enable(POINT_SPRITE);
+		Disable(DEPTH_TEST);
+		
+		if (CondNewList('cloud', true)) {
+
+			// var color = 0.3 + (Math.sin(t/400)/2+0.5) * 0.05;
+			for each ( var [x,y,z, tid] in cloudLayerList ) {
+
+				if ( false ) {
+					
+					Color(0.5, 0.4, 0.2);	
+					BindTexture(TEXTURE_2D, tid);
+					Begin(POINTS);
+					Vertex(x, y, z);
+					End();
+				} else {
+					
+					var dis = Vector3Length(cx-x, cy-y, cz);
+					
+					PushMatrix();
+					Translate(x, y);
+					KeepTranslation(); // unlistable
+
+					var fx = dis > 1 ? 1 : dis;
+					Color(0.5 * fx, 0.4 * fx, 0.2 * fx);	
+					Begin(QUADS);
+					TexCoord( 0, 0 ); Vertex( -1, -1 );
+					TexCoord( 1, 0 ); Vertex( +1, -1 );
+					TexCoord( 1, 1 ); Vertex( +1, +1 );
+					TexCoord( 0, 1 ); Vertex( -1, +1 );
+					End();
+					
+					PopMatrix();
+				}
+			}
+			EndList();
+		}
+
+//		PushMatrix();
+//		KeepTranslation();
+//		Color(0,1,0);
 //		DrawDisk(1);
-		Cube();
-		
-		PushMatrix();
-		KeepTranslation();
-		Color(0,1,0);
-		DrawDisk(1);
-		PopMatrix();
-		
-		
-//		DrawPoint(3);
-		
-		var c = 0;
+//		PopMatrix();
+
+		Disable(TEXTURE_2D);
+		Enable(DEPTH_TEST);
+		Axis(1);
+
 		for each ( var [p1, p2] in lines ) {
-			
+
+//			Disable( TEXTURE_2D );
+//			Disable(POINT_SPRITE);
+//			DrawPoint(2);
+
 			Color(1,1,1);
-		
-			Begin(POINTS);
-			Vertex( p1[0], p1[1], p1[2] );
-			End(POINTS);
 
 			Begin(LINES);
 			Vertex( p1[0], p1[1], p1[2] );
@@ -185,17 +291,20 @@ for (var end = false; !end ;) {
 			End(QUADS);
 //			Ogl.PushMatrix();
 */
-
-
-			c++;
 		}
-
-		
- }
+	}
 
 	GlSwapBuffers();
 	Sleep(20);
 }
+
+
+
+
+
+
+
+
 
 
 Halt(); //////////////////////////////////////////////////////////////////////
@@ -272,15 +381,9 @@ function Axis(size) {
 	
 		LineWidth(1);
 		Begin(LINES);
-		Color( 1,0,0 );
-		Vertex( 0,0,0 );
-		Vertex( size,0,0 );
-		Color( 0,1,0 );
-		Vertex( 0,0,0 );
-		Vertex( 0,size,0 );
-		Color( 0,0,1 );
-		Vertex( 0,0,0 );
-		Vertex( 0,0,size );
+		Color( 1,0,0, 0.5 ); Vertex( 0,0,0 ); Vertex( size,0,0 );
+		Color( 0,1,0, 0.5 ); Vertex( 0,0,0 ); Vertex( 0,size,0 );
+		Color( 0,0,1, 0.5 ); Vertex( 0,0,0 ); Vertex( 0,0,size );
 		End();
 	}
 }
@@ -336,43 +439,37 @@ function Line(x0, y0, z0, x1, y1, z1) {
 function Cube() {
 
 	with (Ogl) {
-		Begin(QUADS);		// Draw The Cube Using quads
+	
+		Begin(QUADS);
+		TexCoord(0.0, 0.0); Vertex(-1.0, -1.0,  1.0);
+		TexCoord(1.0, 0.0); Vertex( 1.0, -1.0,  1.0);
+		TexCoord(1.0, 1.0); Vertex( 1.0,  1.0,  1.0);
+		TexCoord(0.0, 1.0); Vertex(-1.0,  1.0,  1.0);
 
-		Color(1,0,0);
-		Vertex( 0.5, 0.5,-0.5);	// Top Right Of The Quad (Right)
-		Vertex( 0.5, 0.5, 0.5);	// Top Left Of The Quad (Right)
-		Vertex( 0.5,-0.5, 0.5);	// Bottom Left Of The Quad (Right)
-		Vertex( 0.5,-0.5,-0.5);	// Bottom Right Of The Quad (Right)
+		TexCoord(1.0, 0.0); Vertex(-1.0, -1.0, -1.0);
+		TexCoord(1.0, 1.0); Vertex(-1.0,  1.0, -1.0);
+		TexCoord(0.0, 1.0); Vertex( 1.0,  1.0, -1.0);
+		TexCoord(0.0, 0.0); Vertex( 1.0, -1.0, -1.0);
 
-		Color(0.5,0,0);
-		Vertex(-0.5, 0.5, 0.5);	// Top Right Of The Quad (Left)
-		Vertex(-0.5, 0.5,-0.5);	// Top Left Of The Quad (Left)
-		Vertex(-0.5,-0.5,-0.5);	// Bottom Left Of The Quad (Left)
-		Vertex(-0.5,-0.5, 0.5);	// Bottom Right Of The Quad (Left)
+		TexCoord(0.0, 1.0); Vertex(-1.0,  1.0, -1.0);
+		TexCoord(0.0, 0.0); Vertex(-1.0,  1.0,  1.0);
+		TexCoord(1.0, 0.0); Vertex( 1.0,  1.0,  1.0);
+		TexCoord(1.0, 1.0); Vertex( 1.0,  1.0, -1.0);
 
-		Color(0,1,0);
-		Vertex( 0.5, 0.5,-0.5);	// Top Right Of The Quad (Top)
-		Vertex(-0.5, 0.5,-0.5);	// Top Left Of The Quad (Top)
-		Vertex(-0.5, 0.5, 0.5);	// Bottom Left Of The Quad (Top)
-		Vertex( 0.5, 0.5, 0.5);	// Bottom Right Of The Quad (Top)
+		TexCoord(1.0, 1.0); Vertex(-1.0, -1.0, -1.0);
+		TexCoord(0.0, 1.0); Vertex( 1.0, -1.0, -1.0);
+		TexCoord(0.0, 0.0); Vertex( 1.0, -1.0,  1.0);
+		TexCoord(1.0, 0.0); Vertex(-1.0, -1.0,  1.0);
 
-		Color(0,0.5,0);
-		Vertex( 0.5,-0.5, 0.5);	// Top Right Of The Quad (Bottom)
-		Vertex(-0.5,-0.5, 0.5);	// Top Left Of The Quad (Bottom)
-		Vertex(-0.5,-0.5,-0.5);	// Bottom Left Of The Quad (Bottom)
-		Vertex( 0.5,-0.5,-0.5);	// Bottom Right Of The Quad (Bottom)
+		TexCoord(1.0, 0.0); Vertex( 1.0, -1.0, -1.0);
+		TexCoord(1.0, 1.0); Vertex( 1.0,  1.0, -1.0);
+		TexCoord(0.0, 1.0); Vertex( 1.0,  1.0,  1.0);
+		TexCoord(0.0, 0.0); Vertex( 1.0, -1.0,  1.0);
 
-		Color(0,0,1);
-		Vertex( 0.5, 0.5, 0.5);	// Top Right Of The Quad (Front)
-		Vertex(-0.5, 0.5, 0.5);	// Top Left Of The Quad (Front)
-		Vertex(-0.5,-0.5, 0.5);	// Bottom Left Of The Quad (Front)
-		Vertex( 0.5,-0.5, 0.5);	// Bottom Right Of The Quad (Front)
-
-		Color(0,0,0.5);
-		Vertex( 0.5,-0.5,-0.5);	// Top Right Of The Quad (Back)
-		Vertex(-0.5,-0.5,-0.5);	// Top Left Of The Quad (Back)
-		Vertex(-0.5, 0.5,-0.5);	// Bottom Left Of The Quad (Back)
-		Vertex( 0.5, 0.5,-0.5);	// Bottom Right Of The Quad (Back)
+		TexCoord(0.0, 0.0); Vertex(-1.0, -1.0, -1.0);
+		TexCoord(1.0, 0.0); Vertex(-1.0, -1.0,  1.0);
+		TexCoord(1.0, 1.0); Vertex(-1.0,  1.0,  1.0);
+		TexCoord(0.0, 1.0); Vertex(-1.0,  1.0, -1.0);
 		End();
 	}
 }

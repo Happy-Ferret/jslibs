@@ -1329,7 +1329,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Translate ) {
 
-	JL_S_ASSERT_ARG_MIN(3);
+	JL_S_ASSERT_ARG_RANGE(2, 3);
 	jsdouble x, y, z;
 	JsvalToDouble(cx, JL_FARG(1), &x);
 	JsvalToDouble(cx, JL_FARG(2), &y);
@@ -1373,15 +1373,20 @@ DEFINE_FUNCTION_FAST( Scale ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $INT $INAME()
+ $INT $INAME( [ , compileOnly ] )
   Returns a new display-list.
   $H OpenGL API
    glNewList
 **/
 DEFINE_FUNCTION_FAST( NewList ) {
 
+	bool compileOnly;
+	if ( JL_FARG_ISDEF(1) )
+		JsvalToBool(cx, JL_FARG(1), &compileOnly);
+	else
+		compileOnly = false;
 	GLuint list = glGenLists(1);
-	glNewList(list, GL_COMPILE);
+	glNewList(list, compileOnly ? GL_COMPILE : GL_COMPILE_AND_EXECUTE);
 	*JL_FRVAL = INT_TO_JSVAL(list);
 	return JS_TRUE;
 }
@@ -2264,7 +2269,8 @@ DEFINE_FUNCTION_FAST( DrawDisk ) {
 	for (int i = 0; i < vertexCount; i++) {
 
 		SinCos(i * angle, &s, &c);
-		glVertex2f(radius * c, radius * s);
+		glTexCoord2f(c / 2.f + 0.5f, s / 2.f + 0.5f);
+		glVertex2f(c * radius, s * radius);
 	}
 	glEnd();
 	return JS_TRUE;
