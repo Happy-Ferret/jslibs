@@ -53,6 +53,24 @@ inline void Vector4Set( Vector4 *v, const float _x, const float _y, const float 
 
 }
 
+inline void Vector4LoadFromPtr( Vector4 *v, const float *ptr ) {
+
+#ifdef SSE
+	v->m128 = _mm_loadu_ps(ptr);
+#else // SSE
+	memcpy(v->raw, ptr, sizeof(Vector4));
+#endif // SSE
+}
+
+inline void Vector4LoadToPtr( Vector4 *v, float *ptr ) {
+
+#ifdef SSE
+	_mm_storeu_ps(ptr, v->m128);
+#else // SSE
+	memcpy(ptr, v->raw, sizeof(Vector4));
+#endif // SSE
+}
+
 
 inline void Vector4Mult( Vector4 *rv, Vector4 *v, float s ) {
 

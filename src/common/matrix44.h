@@ -181,14 +181,25 @@ inline void Matrix44Load( Matrix44 *m, const Matrix44 *m1 ) {
 inline void Matrix44LoadFromPtr( Matrix44 *m, const float *ptr ) {
 
 #ifdef SSE
-
 	m->m1 = _mm_loadu_ps(ptr+0);
 	m->m2 = _mm_loadu_ps(ptr+4);
 	m->m3 = _mm_loadu_ps(ptr+8);
 	m->m4 = _mm_loadu_ps(ptr+12);
-
 #else // SSE
 	memcpy(m->raw, ptr, sizeof(Matrix44));
+#endif // SSE
+
+}
+
+inline void Matrix44LoadToPtr( Matrix44 *m, float *ptr ) {
+
+#ifdef SSE
+	_mm_storeu_ps(ptr+ 0, m->m1);
+	_mm_storeu_ps(ptr+ 4, m->m2);
+	_mm_storeu_ps(ptr+ 8 ,m->m3);
+	_mm_storeu_ps(ptr+12, m->m4);
+#else // SSE
+	memcpy(ptr, m->raw, sizeof(Matrix44));
 #endif // SSE
 
 }
@@ -610,6 +621,13 @@ inline void Matrix44ClearTranslation( Matrix44 *m ) {
 }
 
 
+inline void Matrix44SetScale( Matrix44 *m, const float x, const float y, const float z ) {
+
+	m->m[0][0] = x;
+	m->m[1][1] = y;
+	m->m[2][2] = z;
+}
+
 
 //inline void Matrix44Scale( Matrix44 *m, const Vector3 *s ) {
 //
@@ -696,10 +714,15 @@ inline void Matrix44SetLookAt( Matrix44 *m, const Vector3 *from, const Vector3 *
 	Vector3Normalize(&x, &x); // x = |x|
 	Vector3Normalize(&y, &y); // y = |y|
 //	Vector3Inv(&z, &z);
+#ifdef SSE
+
 	m->m1 = x.m128;
 	m->m2 = y.m128;
 	m->m3 = z.m128;
 	m->m4 = _mm_set_ps(1.0f, 0.0f, 0.0f, 0.0f);
+#else // SSE
+	// (TBD)
+#endif // SSE
 
 /*
 	Matrix44Identity(m);

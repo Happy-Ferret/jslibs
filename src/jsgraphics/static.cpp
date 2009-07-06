@@ -157,7 +157,7 @@ DEFINE_FUNCTION_FAST( NewVector3 ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $ARRAY $INAME( vector | x [,y,z] )
+ $REAL $INAME( vector | x [,y,z] )
   {{{
   $INAME(1,2,3) == $INAME([1,2,3]);
   }}}
@@ -179,7 +179,7 @@ DEFINE_FUNCTION_FAST( Vector3Length ) {
 		JL_CHK( JsvalToFloat(cx, JL_FARG(3), &v.z) );
 		return FloatToJsval(cx, Vector3Length(&v), JL_FRVAL);
 	}
-	JL_REPORT_ERROR( "Invalid vector." );
+	JL_REPORT_ERROR( "Unsupported vector type." );
 	JL_BAD;
 }
 
@@ -282,7 +282,7 @@ DEFINE_FUNCTION_FAST( Vector3Cross ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $ARRAY $INAME( vector, vector2 )
+ $REAL $INAME( vector, vector2 )
   vector . vector2
 **/
 DEFINE_FUNCTION_FAST( Vector3Dot ) {
@@ -293,10 +293,7 @@ DEFINE_FUNCTION_FAST( Vector3Dot ) {
 	JL_S_ASSERT( len >= 3, "Unsupported vector length (%d).", len );
 	JL_CHK( JsvalToFloatVector(cx, JL_FARG(2), v2.raw, 3, &len) );
 	JL_S_ASSERT( len >= 3, "Unsupported vector length (%d).", len );
-
-	float dot = Vector3Dot(&v, &v2);
-
-	return FloatToJsval(cx, dot, JL_FRVAL);
+	return FloatToJsval(cx, Vector3Dot(&v, &v2), JL_FRVAL);
 	JL_BAD;
 }
 

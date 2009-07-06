@@ -286,6 +286,52 @@ DEFINE_FUNCTION_FAST( Translate ) {
 }
 
 
+/**doc
+$TOC_MEMBER $INAME
+ $THIS $INAME( x [ , y, z ] )
+  Scale the current ransformation.
+  $H arguments
+   $ARG $REAL x
+   $ARG $REAL y
+   $ARG $REAL z
+**/
+DEFINE_FUNCTION_FAST( Scale ) {
+
+	JL_S_ASSERT_ARG_RANGE(1,3);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(pv);
+
+	float x, y, z;
+	JL_CHK( JsvalToFloat(cx, JL_FARG(1), &x) );
+
+	if ( argc >= 3 ) {
+		
+		JL_CHK( JsvalToFloat(cx, JL_FARG(2), &y) );
+		JL_CHK( JsvalToFloat(cx, JL_FARG(3), &z) );
+	} else {
+		
+		y = x;
+		z = x;
+	}
+
+	if ( pv->isIdentity ) {
+	
+		Matrix44SetScale(pv->mat, x, y, z);
+		pv->isIdentity = false;
+	} else {
+
+		Matrix44 t;
+		Matrix44Identity(&t);
+		Matrix44SetScale(&t, x, y, z);
+		Matrix44Mult(pv->mat, pv->mat, &t);
+	}
+
+	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
 
 /**doc
 $TOC_MEMBER $INAME
@@ -895,6 +941,7 @@ CONFIGURE_CLASS
 		FUNCTION_FAST_ARGC( Product, 1 )
 		FUNCTION_FAST_ARGC( Invert, 0 )
 		FUNCTION_FAST_ARGC( Translate, 3 ) // x, y, z
+		FUNCTION_FAST_ARGC( Scale, 3 ) // x, y, z
 		FUNCTION_FAST_ARGC( ClearRotation, 0 )
 		FUNCTION_FAST_ARGC( ClearTranslation, 0 )
 		FUNCTION_FAST_ARGC( RotationFromQuaternion, 4 ) // w,x,y,z

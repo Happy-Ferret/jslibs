@@ -31,6 +31,9 @@
 #include <limits.h>
 
 #include "../common/vector3.h"
+#include "../common/vector4.h"
+#include "../common/matrix44.h"
+#include "../common/matrix55.h"
 #include "../common/jsConversionHelper.h"
 
 extern "C" void init_genrand(unsigned long s);
@@ -839,7 +842,7 @@ DEFINE_FUNCTION_FAST( Colorize ) {
 	// GIMP color to alpha: http://www.google.com/codesearch?hl=en&q=+gimp+%22color+to+alpha%22
 	// color exchange algo. : http://www.koders.com/c/fidB39DAC5A8DB8B6073D78FB23363C5E0541208B02.aspx
 
-	JL_S_ASSERT_ARG_MAX(2);
+	JL_S_ASSERT_ARG_RANGE(2,3);
 
 	Texture *tex;
 	tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
@@ -2343,6 +2346,8 @@ DEFINE_FUNCTION_FAST( ForEachPixels ) {
 					tex->cbackBuffer[pos+c] = tex->cbuffer[pos+c];
 			}
 	}
+	JS_POP_TEMP_ROOT(cx, &tvr);
+
 	TextureSwapBuffers(tex);
 
 	return JS_TRUE;
@@ -3884,7 +3889,7 @@ $TOC_MEMBER $INAME
   Print( 'Red: '+pixel[0], 'Green: '+pixel[1], 'Blue: '+pixel[2] );
   }}}
 **/
-DEFINE_FUNCTION_FAST( PixelAt ) {
+DEFINE_FUNCTION_FAST( GetPixelAt ) {
 
 	JL_S_ASSERT_ARG_MIN(2);
 	JL_S_ASSERT_INT(JL_FARG(1));
@@ -3922,7 +3927,7 @@ $TOC_MEMBER $INAME
   Returns the [ lowest,highest ] level value of the texture.
 **/
 // PTYPE ok
-DEFINE_FUNCTION_FAST( LevelRange ) {
+DEFINE_FUNCTION_FAST( GetLevelRange ) {
 
 	Texture *tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE(tex);
@@ -3949,6 +3954,118 @@ DEFINE_FUNCTION_FAST( LevelRange ) {
 
 //	J_REAL_VECTOR_TO_JSVAL(vector, 2, *JL_FRVAL);
 	JL_CHK( DoubleVectorToJsval(cx, vector, 2, JL_FRVAL) );
+
+	return JS_TRUE;
+	JL_BAD;
+}
+
+/**doc
+$TOC_MEMBER $INAME
+ $THIS $INAME()
+  Returns the [ lowest, highest ] level value of the border of the texture.
+**/
+// PTYPE ok
+DEFINE_FUNCTION_FAST( GetBorderLevelRange ) {
+
+	Texture *tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(tex);
+
+	PTYPE min;
+	min = PMAXLIMIT;
+	PTYPE max;
+	max = PMINLIMIT;
+	PTYPE tmp;
+
+	int i, c, pos;
+	int lineSize, imageSize;
+	lineSize = tex->width * tex->channels;
+	imageSize = lineSize * tex->height;
+
+	for ( i = 0; i < lineSize; i++ ) {
+
+		tmp = tex->cbuffer[i];
+		if ( tmp > max )
+			max = tmp;
+		else if ( tmp < min )
+			min = tmp;
+	}
+	
+	for ( i = imageSize - lineSize - 1; i < imageSize; i++ ) {
+
+		tmp = tex->cbuffer[i];
+		if ( tmp > max )
+			max = tmp;
+		else if ( tmp < min )
+			min = tmp;
+	}
+
+	for ( c = 0; c < tex->channels; c++ ) {
+		
+		pos = c;
+		for ( i = 0; i < tex->height; i++ ) {
+		
+			tmp = tex->cbuffer[pos];
+			if ( tmp > max )
+				max = tmp;
+			else if ( tmp < min )
+				min = tmp;
+			pos += lineSize;
+		}
+	}
+
+	for ( c = 0; c < tex->channels; c++ ) {
+		
+		pos = lineSize - c - 1;
+		for ( i = 0; i < tex->height; i++ ) {
+		
+			tmp = tex->cbuffer[pos];
+			if ( tmp > max )
+				max = tmp;
+			else if ( tmp < min )
+				min = tmp;
+			pos += lineSize;
+		}
+	}
+
+	double vector[2]; // = { min, max };
+	vector[0] = min;
+	vector[1] = max;
+
+	JL_CHK( DoubleVectorToJsval(cx, vector, 2, JL_FRVAL) );
+
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $THIS $INAME( $TYPE matrix )
+**/
+DEFINE_FUNCTION_FAST( ApplyColorMatrix ) {
+
+	// 4x4 matrix for linear transformations, 5x5 matrix for non-linear transformations
+	// Color Transformations and the Color Matrix: http://www.c-sharpcorner.com/UploadFile/mahesh/Transformations0512192005050129AM/Transformations05.aspx
+	// Matrix Operations for Image Processing: http://www.graficaobscura.com/matrix/index.html
+	// Fun with the colormatrix: http://hirntier.blogspot.com/2008/09/fun-with-colormatrix.html
+
+	Texture *tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(tex);
+	JL_S_ASSERT( tex->channels == 4, "Invalid channel count." );
+	JL_S_ASSERT_ARG(1);
+	
+	Matrix44 colorMatrixTmp, *colorMatrix = &colorMatrixTmp;
+	JL_CHK( JsvalToMatrix44(cx, JL_FARG(1), (float**)&colorMatrix) );
+
+	Vector4 tmp;
+	float *end = tex->cbuffer + tex->width * tex->height * 4;
+	for ( float *pos = tex->cbuffer; pos < end; pos += 4 ) {
+
+		Vector4LoadFromPtr(&tmp, pos);
+		Matrix44MultVector4(colorMatrix, &tmp, &tmp);
+		Vector4LoadToPtr(&tmp, pos);
+	}
 
 	return JS_TRUE;
 	JL_BAD;
@@ -4225,8 +4342,10 @@ CONFIGURE_CLASS
 		FUNCTION_FAST( AddGradiantQuad )
 		FUNCTION_FAST( AddGradiantLinear )
 		FUNCTION_FAST( AddGradiantRadial )
-		FUNCTION_FAST( PixelAt )
-		FUNCTION_FAST( LevelRange )
+		FUNCTION_FAST( GetPixelAt )
+		FUNCTION_FAST( GetLevelRange )
+		FUNCTION_FAST( GetBorderLevelRange )
+		FUNCTION_FAST( ApplyColorMatrix )
 
 #ifdef _DEBUG
 		FUNCTION( Test )

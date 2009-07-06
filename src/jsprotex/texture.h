@@ -32,12 +32,8 @@ struct Point {
 };
 
 struct Texture {
-	union {
-		PTYPE *cbuffer;
-	};
-	union {
-		PTYPE *cbackBuffer;
-	};
+	PTYPE *cbuffer;
+	PTYPE *cbackBuffer;
 	int width;
 	int height;
 	char channels;

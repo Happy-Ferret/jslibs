@@ -197,6 +197,45 @@ DEFINE_FUNCTION_FAST( GetDouble ) {
 	JL_BAD;
 }
 
+/**doc
+$TOC_MEMBER $INAME
+ $VOID $INAME( mode )
+  $H OpenGL API
+   glDrawBuffer
+**/
+DEFINE_FUNCTION_FAST( DrawBuffer ) {
+
+	JL_S_ASSERT_ARG(1);
+	JL_S_ASSERT_INT(JL_FARG(1));
+	GLenum mode = JSVAL_TO_INT(JL_FARG(1));
+	
+	glDrawBuffer(mode);
+	
+	*JL_FRVAL = JSVAL_VOID;
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $VOID $INAME( mode )
+  $H OpenGL API
+   glReadBuffer
+**/
+DEFINE_FUNCTION_FAST( ReadBuffer ) {
+
+	JL_S_ASSERT_ARG(1);
+	JL_S_ASSERT_INT(JL_FARG(1));
+	GLenum mode = JSVAL_TO_INT(JL_FARG(1));
+	
+	glReadBuffer(mode);
+	
+	*JL_FRVAL = JSVAL_VOID;
+	return JS_TRUE;
+	JL_BAD;
+}
+
 
 /**doc
 $TOC_MEMBER $INAME
@@ -209,12 +248,77 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Accum ) {
 
-	JL_S_ASSERT_ARG_MIN(2);
+	JL_S_ASSERT_ARG(2);
 	JL_S_ASSERT_INT(JL_FARG(1));
 	GLenum op = JSVAL_TO_INT(JL_FARG(1));
-	jsdouble value;
+	double value;
 	JsvalToDouble(cx, JL_FARG(2), &value);
+	
 	glAccum(op, value);
+	
+	*JL_FRVAL = JSVAL_VOID;
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $VOID $INAME( func, ref, mask )
+  $H arguments
+   $ARG GLenum func
+   $ARG $INT ref
+   $ARG $UINT mask
+  $H OpenGL API
+   glStencilFunc
+**/
+DEFINE_FUNCTION_FAST( StencilFunc ) {
+
+	JL_S_ASSERT_ARG(3);
+
+	JL_S_ASSERT_INT(JL_FARG(1));
+	GLenum func = JSVAL_TO_INT(JL_FARG(1));
+
+	JL_S_ASSERT_INT(JL_FARG(2));
+	GLint ref = JSVAL_TO_INT(JL_FARG(2));
+
+	JL_S_ASSERT_INT(JL_FARG(3));
+	GLuint mask = JSVAL_TO_INT(JL_FARG(3));
+
+	glStencilFunc(func, ref, mask);
+
+	*JL_FRVAL = JSVAL_VOID;
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $VOID $INAME( fail, zfail, zpass )
+  $H arguments
+   $ARG GLenum fail
+   $ARG GLenum zfail
+   $ARG GLenum zpass
+  $H OpenGL API
+   glStencilOp
+**/
+DEFINE_FUNCTION_FAST( StencilOp ) {
+
+	JL_S_ASSERT_ARG(3);
+
+	JL_S_ASSERT_INT(JL_FARG(1));
+	GLenum fail = JSVAL_TO_INT(JL_FARG(1));
+
+	JL_S_ASSERT_INT(JL_FARG(2));
+	GLint zfail = JSVAL_TO_INT(JL_FARG(2));
+
+	JL_S_ASSERT_INT(JL_FARG(3));
+	GLuint zpass = JSVAL_TO_INT(JL_FARG(3));
+
+	glStencilOp(fail, zfail, zpass);
+
 	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
@@ -383,14 +487,14 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Color ) {
 
-	JL_S_ASSERT_ARG_MIN(3);
+	JL_S_ASSERT_ARG_RANGE(3,4);
 //	float vec[3];
 //	FloatArrayToVector(cx, 3, &argv[0], vec);
 	jsdouble r, g, b, a;
 	JsvalToDouble(cx, JL_FARG(1), &r);
 	JsvalToDouble(cx, JL_FARG(2), &g);
 	JsvalToDouble(cx, JL_FARG(3), &b);
-	if ( JL_FARG_ISDEF(4) ) {
+	if ( argc >= 4 ) {
 
 		JsvalToDouble(cx, JL_FARG(4), &a);
 		glColor4d(r, g, b, a);
@@ -928,7 +1032,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION_FAST( ClearDepth ) {
 
 	JL_S_ASSERT_ARG_MIN(1);
-	jsdouble depth;
+	double depth;
 	JsvalToDouble(cx, JL_FARG(1), &depth);
 	glClearDepth(depth);
 	*JL_FRVAL = JSVAL_VOID;
@@ -951,7 +1055,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION_FAST( ClearColor ) {
 
 	JL_S_ASSERT_ARG_MIN(4);
-	jsdouble r, g, b, a;
+	double r, g, b, a;
 	JsvalToDouble(cx, JL_FARG(1), &r);
 	JsvalToDouble(cx, JL_FARG(2), &g);
 	JsvalToDouble(cx, JL_FARG(3), &b);
@@ -977,7 +1081,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION_FAST( ClearAccum ) {
 
 	JL_S_ASSERT_ARG_MIN(4);
-	jsdouble r, g, b, a;
+	double r, g, b, a;
 	JsvalToDouble(cx, JL_FARG(1), &r);
 	JsvalToDouble(cx, JL_FARG(2), &g);
 	JsvalToDouble(cx, JL_FARG(3), &b);
@@ -1002,6 +1106,33 @@ DEFINE_FUNCTION_FAST( Clear ) {
 	JL_S_ASSERT_ARG_MIN(1);
 	JL_S_ASSERT_INT(JL_FARG(1));
 	glClear(JSVAL_TO_INT(JL_FARG(1)));
+	*JL_FRVAL = JSVAL_VOID;
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $VOID $INAME( red, green, blue, alpha )
+  $H arguments
+   $ARG boolean red
+   $ARG boolean green
+   $ARG boolean blue
+   $ARG boolean alpha
+  $H OpenGL API
+   glColorMask
+**/
+DEFINE_FUNCTION_FAST( ColorMask ) {
+
+	JL_S_ASSERT_ARG(4);
+	JL_S_ASSERT_BOOLEAN(JL_FARG(1));
+	JL_S_ASSERT_BOOLEAN(JL_FARG(2));
+	JL_S_ASSERT_BOOLEAN(JL_FARG(3));
+	JL_S_ASSERT_BOOLEAN(JL_FARG(4));
+
+	glColorMask(JSVAL_TO_BOOLEAN(JL_FARG(1)), JSVAL_TO_BOOLEAN(JL_FARG(2)), JSVAL_TO_BOOLEAN(JL_FARG(3)), JSVAL_TO_BOOLEAN(JL_FARG(4)) );
+
 	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
@@ -1045,7 +1176,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Viewport ) {
 
-	JL_S_ASSERT_ARG_MIN(4);
+	JL_S_ASSERT_ARG(4);
 	JL_S_ASSERT_INT(JL_FARG(1));
 	JL_S_ASSERT_INT(JL_FARG(2));
 	JL_S_ASSERT_INT(JL_FARG(3));
@@ -1347,6 +1478,7 @@ DEFINE_FUNCTION_FAST( Translate ) {
 /**doc
 $TOC_MEMBER $INAME
  $VOID $INAME( x, y [, z = 1] )
+ $VOID $INAME( factor )
   $H arguments
    $ARG $REAL x
    $ARG $REAL y
@@ -1356,16 +1488,26 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Scale ) {
 
-	JL_S_ASSERT_ARG_MIN(2);
-	jsdouble x, y, z;
-	JsvalToDouble(cx, JL_FARG(1), &x);
-	JsvalToDouble(cx, JL_FARG(2), &y);
-	if ( JL_FARG_ISDEF(3) )
-		JsvalToDouble(cx, JL_FARG(3), &z);
-	else
-		z = 1;
-	glScaled(x, y, z);
+	JL_S_ASSERT_ARG_RANGE(1,3);
 	*JL_FRVAL = JSVAL_VOID;
+	double x, y, z;
+	JsvalToDouble(cx, JL_FARG(1), &x);
+
+	if ( argc == 1 ) {
+
+		glScaled(x, x, x);
+		return JS_TRUE;
+	}
+	JsvalToDouble(cx, JL_FARG(2), &y);
+
+	if ( argc >= 3 ) {
+
+		JsvalToDouble(cx, JL_FARG(3), &z);
+		glScaled(x, y, z);
+		return JS_TRUE;
+	}
+
+	glScaled(x, y, 1);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1596,8 +1738,9 @@ DEFINE_FUNCTION_FAST( DeleteTexture ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $VOID $INAME( level, internalFormat, x, y, width, height, [ border ] )
+ $VOID $INAME( target, level, internalFormat, x, y, width, height, [ border ] )
   $H arguments
+   $ARG $INT target
    $ARG $INT level
    $ARG $INT internalFormat
    $ARG $INT x
@@ -1619,20 +1762,26 @@ DEFINE_FUNCTION_FAST( CopyTexImage2D ) {
 	JL_S_ASSERT_INT(JL_FARG(4));
 	JL_S_ASSERT_INT(JL_FARG(5));
 	JL_S_ASSERT_INT(JL_FARG(6));
+	JL_S_ASSERT_INT(JL_FARG(7));
 
-	GLint level = JSVAL_TO_INT(JL_FARG(1));
-	GLenum internalFormat = JSVAL_TO_INT(JL_FARG(2));
+	GLenum target = JSVAL_TO_INT(JL_FARG(1));
+	GLint level = JSVAL_TO_INT(JL_FARG(2));
+	GLenum internalFormat = JSVAL_TO_INT(JL_FARG(3));
 
-	GLint x = JSVAL_TO_INT(JL_FARG(3));
-	GLint y = JSVAL_TO_INT(JL_FARG(4));
-	GLint width = JSVAL_TO_INT(JL_FARG(5));
-	GLint height = JSVAL_TO_INT(JL_FARG(6));
+	GLint x = JSVAL_TO_INT(JL_FARG(4));
+	GLint y = JSVAL_TO_INT(JL_FARG(5));
+	GLint width = JSVAL_TO_INT(JL_FARG(6));
+	GLint height = JSVAL_TO_INT(JL_FARG(7));
 
 	GLint border;
-	if ( JL_FARG_ISDEF(7) )
-		border = JSVAL_TO_INT(JL_FARG(7));
-	else
+	if ( JL_FARG_ISDEF(8) ) {
+
+		JL_S_ASSERT_INT(JL_FARG(8));
+		border = JSVAL_TO_INT(JL_FARG(8));
+	} else {
+
 		border = 0;
+	}
 
 	glCopyTexImage2D( GL_TEXTURE_2D, level, internalFormat, x, y, width, height, border );
 
@@ -1869,10 +2018,6 @@ DEFINE_FUNCTION_FAST( MultiTexCoord ) {
 /**doc
 $TOC_MEMBER $INAME
  $VOID $INAME( eyex, eyey, eyez, centerx, centery, centerz, upx, upy, upz )
-  $H arguments
-   $ARG $REAL x
-   $ARG $REAL y
-   $ARG $REAL z
   $H API
    gluLookAt
 **/
@@ -2096,7 +2241,7 @@ $TOC_MEMBER $INAME
 // (TBD) manage compression: http://www.opengl.org/registry/specs/ARB/texture_compression.txt
 DEFINE_FUNCTION_FAST( DefineTextureImage ) {
 
-	JL_S_ASSERT_ARG_MIN(3);
+	JL_S_ASSERT_ARG(3);
 	JL_S_ASSERT_INT(JL_FARG(1));
 //	JL_S_ASSERT_INT(JL_FARG(2)); // may be undefined
 	JL_S_ASSERT_OBJECT(JL_FARG(3));
@@ -2137,7 +2282,7 @@ DEFINE_FUNCTION_FAST( DefineTextureImage ) {
 
 		JL_S_ASSERT_INT(JL_FARG(2));
 		format = JSVAL_TO_INT(JL_FARG(2));
-	} else {
+	} else { // guess
 
 		switch ( channels ) {
 			case 1:
@@ -2157,11 +2302,116 @@ DEFINE_FUNCTION_FAST( DefineTextureImage ) {
 
 	glPixelStorei( GL_UNPACK_ALIGNMENT, 1 );
 	glTexImage2D( JSVAL_TO_INT(JL_FARG(1)), 0, format, width, height, 0, format, type, data );
+//	GLenum err = glGetError();
 	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
 
+
+/**doc
+$TOC_MEMBER $INAME
+ $VOID $INAME( x, y [ , z [ , w ] ] )
+  $H OpenGL API
+   glRasterPos*
+**/
+DEFINE_FUNCTION_FAST( RasterPos ) {
+
+	JL_S_ASSERT_ARG_RANGE(2,4);
+	double x, y, z, w;
+
+	*JL_FRVAL = JSVAL_VOID;
+
+	JsvalToDouble(cx, JL_FARG(1), &x);
+	JsvalToDouble(cx, JL_FARG(2), &y);
+	if ( argc >= 3 ) {
+
+		JsvalToDouble(cx, JL_FARG(3), &z);
+		if ( argc >= 4 ) {
+
+			JsvalToDouble(cx, JL_FARG(4), &w);
+			glRasterPos4d(x, y, z, w);
+			return JS_TRUE;
+		}
+		glRasterPos3d(x, y, z);
+		return JS_TRUE;
+	}
+	glRasterPos2d(x, y);
+ 	return JS_TRUE;
+	JL_BAD;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $VOID $INAME( internalformat | $UNDEF, texture )
+  $H OpenGL API
+   glDrawPixels
+**/
+DEFINE_FUNCTION_FAST( DrawImage ) {
+
+	JL_S_ASSERT_ARG(2);
+	JL_S_ASSERT_OBJECT(JL_FARG(2));
+
+	GLsizei width, height;
+	GLenum format, type;
+	int channels;
+	const GLvoid *data;
+
+	JSObject *tObj = JSVAL_TO_OBJECT(JL_FARG(2));
+
+	if ( JL_GetClass(tObj) == TextureJSClass(cx) ) {
+
+		Texture *tex = (Texture *)JL_GetPrivate(cx, tObj);
+		JL_S_ASSERT_RESOURCE(tex);
+
+		data = tex->cbuffer;
+		width = tex->width;
+		height = tex->height;
+		channels = tex->channels;
+		type = GL_FLOAT;
+	} else {
+
+		JL_CHK( GetPropertyInt(cx, tObj, "width", &width) );
+		JL_CHK( GetPropertyInt(cx, tObj, "height", &height) );
+		JL_CHK( GetPropertyInt(cx, tObj, "channels", &channels) );
+		size_t bufferLength;
+		jsval tVal = OBJECT_TO_JSVAL(tObj);
+		JL_CHK( JsvalToStringAndLength(cx, &tVal, (const char**)&data, &bufferLength ) );
+		JL_S_ASSERT( bufferLength == width * height * channels * 1, "Invalid image format." );
+		JL_S_ASSERT_RESOURCE(data);
+		type = GL_UNSIGNED_BYTE;
+	}
+
+	if ( JL_FARG_ISDEF(1) ) {
+
+		JL_S_ASSERT_INT(JL_FARG(1));
+		format = JSVAL_TO_INT(JL_FARG(1));
+	} else { // guess
+
+		switch ( channels ) {
+			case 1:
+				format = GL_LUMINANCE;
+				break;
+			case 2:
+				format = GL_LUMINANCE_ALPHA;
+				break;
+			case 3:
+				format = GL_RGB;
+				break;
+			case 4:
+				format = GL_RGBA;
+				break;
+		}
+	}
+
+	glPixelStorei( GL_UNPACK_ALIGNMENT, 1 );
+	glDrawPixels(width, height, format, type, data);
+
+	*JL_FRVAL = JSVAL_VOID;
+	return JS_TRUE;
+	JL_BAD;
+}
 
 
 /**doc
@@ -2195,19 +2445,26 @@ DEFINE_FUNCTION_FAST( RenderToImage ) {
 	GLint tWidth, tHeight;
 	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &tWidth);
 	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &tHeight);
-//	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_COMPONENTS, &tComponents);
+	//glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_COMPONENTS, &tComponents);
 	//  glGet	with arguments GL_PACK_ALIGNMENT and others
 
-	int size = tWidth * tHeight * 4; // RGBA
-	void *pixels = malloc(size);
-	glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+	int length = tWidth * tHeight * 4; // RGBA
+	GLvoid *data = JS_malloc(cx, length);
+	JL_CHK( data );
+	glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+	glDeleteTextures(1, &texture);
 
-	// (TBD) render to a blob !
-	JSObject *blobObj = NewImage(cx, tWidth, tHeight, 4, pixels);
-	JL_CHK( blobObj );
+	jsval blobVal;
+	JL_CHK( JL_NewBlob(cx, data, length, &blobVal) );
+	JSObject *blobObj;
+	JL_CHK( JS_ValueToObject(cx, blobVal, &blobObj) );
+	JL_S_ASSERT( blobObj, "Unable to create Blob object." );
 	*JL_FRVAL = OBJECT_TO_JSVAL(blobObj);
 
-	glDeleteTextures(1, &texture);
+	JS_DefineProperty(cx, blobObj, "channels", INT_TO_JSVAL(4), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
+	JS_DefineProperty(cx, blobObj, "width", INT_TO_JSVAL(width), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
+	JS_DefineProperty(cx, blobObj, "height", INT_TO_JSVAL(height), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
+
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -2285,8 +2542,18 @@ DEFINE_FUNCTION_FAST( KeepTranslation ) {
 
 	GLfloat m[16];
 	glGetFloatv(GL_MODELVIEW_MATRIX, m);
-	glLoadIdentity();
-	glTranslatef(m[12], m[13], m[14]);
+
+//	glLoadIdentity();
+//	glTranslatef(m[12], m[13], m[14]);
+// ... compare perf with:
+
+	memset(m, 0, 12 * sizeof(GLfloat));
+	m[0] = 1.f;
+	m[5] = 1.f;
+	m[10] = 1.f;
+	m[15] = 1.f;
+	glLoadMatrixf(m);
+
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -3090,7 +3357,11 @@ CONFIGURE_CLASS
 		FUNCTION_FAST_ARGC(GetBoolean, 1) // pname
 		FUNCTION_FAST_ARGC(GetInteger, 1) // pname
 		FUNCTION_FAST_ARGC(GetDouble, 1) // pname
+		FUNCTION_FAST_ARGC(DrawBuffer, 1) // mode
+		FUNCTION_FAST_ARGC(ReadBuffer, 1) // mode
 		FUNCTION_FAST_ARGC(Accum, 2) // op, value
+		FUNCTION_FAST_ARGC(StencilFunc, 3) // func, ref, mask
+		FUNCTION_FAST_ARGC(StencilOp, 3) // fail, zfail, zpass
 		FUNCTION_FAST_ARGC(AlphaFunc, 2) // func, ref
 		FUNCTION_FAST_ARGC(Flush, 0)
 		FUNCTION_FAST_ARGC(Finish, 0)
@@ -3121,6 +3392,7 @@ CONFIGURE_CLASS
 		FUNCTION_FAST_ARGC(ClearColor, 4) // r, g, b, alpha
 		FUNCTION_FAST_ARGC(ClearAccum, 4) // r, g, b, alpha
 		FUNCTION_FAST_ARGC(Clear, 1) // mask
+		FUNCTION_FAST_ARGC(ColorMask, 4) // r,g,b,a
 		FUNCTION_FAST_ARGC(ClipPlane, 2) // plane, equation
 		FUNCTION_FAST_ARGC(Viewport, 4) // x, y, width, height
 		FUNCTION_FAST_ARGC(Frustum, 6) // left, right, bottom, top, zNear, zFar
@@ -3146,8 +3418,12 @@ CONFIGURE_CLASS
 		FUNCTION_FAST_ARGC(GenTexture, 0)
 		FUNCTION_FAST_ARGC(BindTexture, 2) // target, texture
 		FUNCTION_FAST_ARGC(DeleteTexture, 1) // textureId
-		FUNCTION_FAST_ARGC(CopyTexImage2D, 7) // level, internalFormat, x, y, width, height, border
+		FUNCTION_FAST_ARGC(CopyTexImage2D, 8) // target, level, internalFormat, x, y, width, height, border
 		FUNCTION_FAST_ARGC(DefineTextureImage, 3) // target, format, image (non-OpenGL API)
+
+		FUNCTION_FAST_ARGC(RasterPos, 4) // x,y,z,w
+		
+		FUNCTION_FAST_ARGC(DrawImage, 3) // target, format, image (non-OpenGL API)
 		FUNCTION_FAST_ARGC(RenderToImage, 0) // (non-OpenGL API)
 
 		FUNCTION_FAST_ARGC(LookAt, 9) // (non-OpenGL API)

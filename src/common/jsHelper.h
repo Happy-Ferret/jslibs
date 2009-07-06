@@ -1738,5 +1738,67 @@ inline NIMatrix44Get Matrix44GetInterface( JSContext *cx, JSObject *obj ) {
 	return NULL;
 }
 
+///////////////////////////////////////////////////////////////////////////////
+//
+
+inline JSBool JsvalToMatrix44( JSContext *cx, jsval val, float **m ) {
+
+	static float Matrix44IdentityValue[16] = {
+		 1.0f, 0.0f, 0.0f, 0.0f,
+		 0.0f, 1.0f, 0.0f, 0.0f,
+		 0.0f, 0.0f, 1.0f, 0.0f,
+		 0.0f, 0.0f, 0.0f, 1.0f
+	};
+
+	JL_S_ASSERT( JSVAL_IS_OBJECT(val), J__ERRMSG_UNEXPECTED_TYPE " Object expected." );
+
+	JSObject *matrixObj = JSVAL_TO_OBJECT(val);
+
+	if ( JSVAL_IS_NULL(matrixObj) ) {
+		
+		memcpy(*m, &Matrix44IdentityValue, sizeof(Matrix44IdentityValue));
+		return JS_TRUE;
+	}
+
+	NIMatrix44Get Matrix44Get = Matrix44GetInterface(cx, matrixObj);
+	if ( Matrix44Get )
+		return Matrix44Get(cx, matrixObj, m);
+
+	if ( JS_IsArrayObject(cx, matrixObj) ) {
+
+		uint32 length;
+		jsval element;
+		JL_CHK( JS_GetElement(cx, JSVAL_TO_OBJECT(val), 0, &element) );
+		if ( JsvalIsArray(cx, element) ) { // support for: [ [1,1,1,1], [2,2,2,2], [3,3,3,3], [4,4,4,4] ] matrix
+
+			JL_CHK( JsvalToFloatVector(cx, element, (*m)+0, 4, &length ) );
+			JL_S_ASSERT( length == 4, "Too few (%d) elements in the array.", length );
+			
+			JL_CHK( JS_GetElement(cx, JSVAL_TO_OBJECT(val), 1, &element) );
+			JL_S_ASSERT_ARRAY( element );
+			JL_CHK( JsvalToFloatVector(cx, element, (*m)+4, 4, &length ) );
+			JL_S_ASSERT( length == 4, "Too few (%d) elements in the array.", length );
+
+			JL_CHK( JS_GetElement(cx, JSVAL_TO_OBJECT(val), 2, &element) );
+			JL_S_ASSERT_ARRAY( element );
+			JL_CHK( JsvalToFloatVector(cx, element, (*m)+8, 4, &length ) );
+			JL_S_ASSERT( length == 4, "Too few (%d) elements in the array.", length );
+
+			JL_CHK( JS_GetElement(cx, JSVAL_TO_OBJECT(val), 3, &element) );
+			JL_S_ASSERT_ARRAY( element );
+			JL_CHK( JsvalToFloatVector(cx, element, (*m)+12, 4, &length ) );
+			JL_S_ASSERT( length == 4, "Too few (%d) elements in the array.", length );
+			return JS_TRUE;
+		}
+
+		JL_CHK( JsvalToFloatVector(cx, val, *m, 16, &length ) );
+		JL_S_ASSERT( length == 16, "Too few (%d) elements in the array.", length );
+		return JS_TRUE;
+	}
+
+	JL_REPORT_ERROR("Unable to read a 4x4 matrix.");
+	JL_BAD;
+}
+
 
 #endif // _JSHELPER_H_

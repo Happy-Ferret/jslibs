@@ -1,8 +1,11 @@
 LoadModule('jsstd');
 LoadModule('jsio');
+LoadModule('jssdl');
 LoadModule('jsgraphics');
 LoadModule('jsprotex');
 LoadModule('jsimage');
+
+//Halt(); //////////////////////////////////////////////////////////////////////
 
 
 const RED = [1,0,0,1];
@@ -119,7 +122,46 @@ var texture = new Texture(size, size, 3);
 
 function UpdateTexture(imageIndex) { // <<<<<<<<<<<<<<<<<-----------------------------------
 
-	Sleep(10);
+	tmp = new Texture(size, size, 4);
+	tmp.Set(0);
+	tmp.AddGradiantQuad(RED, GREEN, BLUE, BLACK);
+	var tr = new Transformation(null);
+	tr.Scale(5);
+	tr.Rotate(IntervalNow()/5, 1,1,1);
+	tmp.ApplyColorMatrix(tr);
+	texture.SetChannel(0, tmp, 0).SetChannel(1, tmp, 1).SetChannel(2, tmp, 2);
+return;
+
+
+	var t = Cloud(size, 0.2);
+	GrayToRGB( t );
+	
+	t.AddGradiantQuad(BLUE, GREEN, RED, YELLOW);
+	t.MirrorLevels( 0.5 );
+	t.Mult(2);
+	t.CutLevels(0.6, 0.8);
+	t.Colorize( BLACK, RED, 0 );
+	t.Colorize( WHITE, BLUE, 0 );
+	texture.Set(t);
+return;
+
+
+	var bump = Cloud( size, 0.5 );
+	bump.Normals();
+	texture.Set(1);
+	texture.Light( bump, [-1, -1, 1], 0, [0.1, 0.3, 0.4], 0.2, 0.5, 10 );
+return;
+
+
+
+//texture.SetRectangle(0,0,1,1, [1,0,0]);	
+
+	Texture.RandSeed(0);
+	texture.ClearChannel();
+	texture.AddGradiantRadial( 1, 0 );
+return;
+
+
 
 //	Texture.RandSeed(123);
 
@@ -137,26 +179,9 @@ function UpdateTexture(imageIndex) { // <<<<<<<<<<<<<<<<<-----------------------
 		}
   
   });
-  
-
-
-
-return;
-
-	var bump = Cloud( size, 0.5 );
-	bump.Normals();
-	texture.Set(1);
-	texture.Light( bump, [-1, -1, 1], 0, [0.1, 0.3, 0.4], 0.2, 0.5, 10 );
-
 return;
 
 
-//texture.SetRectangle(0,0,1,1, [1,0,0]);	
-
-	Texture.RandSeed(0);
-	texture.ClearChannel();
-	texture.AddGradiantRadial( [1], 0 );
-return;
 	
 	texture = Cloud( size, 0.5 * Math.sin(time()/1000) );
 	texture.CutLevels(0.49,0.51);
@@ -210,25 +235,12 @@ return;
 //	NoiseChannel( displace, 0 );
 //	NoiseChannel( displace, 1 );
 //	displace.ClearChannel(2);
-	
-	
-
 return;
-	var t = Cloud(size, 0.2);
-	GrayToRGB( t );
-	
-//	t.AddGradiantQuad(BLUE, GREEN, RED, YELLOW);
-	t.MirrorLevels( 0.5 );
-	t.Mult(2);
-	t.CutLevels(0.6, 0.8);
-	t.Colorize( BLACK, RED, 0 );
-	t.Colorize( WHITE, BLUE, 0 );
 
-	
-	
-//	
-		
-return;
+
+
+
+
 //	t.AddGradiantRadial(curveHalfSine);
 
 //	t.AddGradiantRadial(curveSine);
@@ -509,83 +521,66 @@ return;
 }
 
 
+var end=false, pause = false;
 
-var end = false;
-
-var win = new Window();
-win.Open();
-win.CreateOpenGLContext();
-
-function ResizeWindow(w, h) {
-
-	with (Ogl) {
-		Viewport(0,0,w,h);
-		MatrixMode(PROJECTION);
-		LoadIdentity();
-		Ortho(0,0,10,10, -1, 1);
-	}
-	Render();
+var listeners = {
+	onVideoResize: function(w,h) { Ogl.Viewport(0, 0, w, h) },
+	onQuit: function() { end = true },
+	onKeyDown: function(key, mod) { end = key == K_ESCAPE },
+	onMouseButtonDown: function(button, x, y) {
+		if ( button == BUTTON_LEFT )
+			pause = true;
+	},
+	onMouseButtonUp: function(button, x, y) {
+		if ( button == BUTTON_LEFT )
+			pause = false;
+	},
 }
+
+
+GlSetAttribute( GL_SWAP_CONTROL, 1 ); // vsync
+GlSetAttribute( GL_DOUBLEBUFFER, 1 );
+GlSetAttribute( GL_DEPTH_SIZE, 16 );
+SetVideoMode( 200, 200, 32, HWSURFACE | OPENGL | RESIZABLE ); // | ASYNCBLIT // RESIZABLE FULLSCREEN
 
 with (Ogl) {
 
+	MatrixMode(PROJECTION);
 	ShadeModel(FLAT);
-	FrontFace(CCW);
-	ClearColor(0, 0, 0, 0);
 	Enable(TEXTURE_2D);
-	var tid = GenTexture();
-	BindTexture(TEXTURE_2D, tid);
 	TexParameter(TEXTURE_2D, TEXTURE_MIN_FILTER, NEAREST); // GL_LINEAR
 	TexParameter(TEXTURE_2D, TEXTURE_MAG_FILTER, NEAREST);
-	Clear( COLOR_BUFFER_BIT | DEPTH_BUFFER_BIT );
+  Scale(1, -1, 1);
 }
-
-function Render(imageIndex) {
-
-	with (Ogl) {
-	
-		MatrixMode(MODELVIEW);
-
-		UpdateTexture();
-		
-		DefineTextureImage(TEXTURE_2D, undefined, texture);
-		
-		LoadIdentity();
-    Scale(1, -1, 1);
-		Translate(0,0,0);
-		Color(1,1,1);
-		Begin(QUADS);
-		TexCoord( 0, 0 );
-		Vertex( -1, -1, 0 );
-		TexCoord( 1, 0, 0 );
-		Vertex( 1, -1 );
-		TexCoord( 1, 1 );
-		Vertex( 1, 1 );
-		TexCoord( 0, 1 );
-		Vertex( -1, 1 );
-		End();
-	}
-	win.SwapBuffers();
-	
-	MaybeCollectGarbage();
-
-}
-
-win.onkeydown = function( key, l ) {
-
-		end = ( key == 0x1B );
-}
-
-win.onsize = ResizeWindow;
-
-
-//win.rect = [1700,1000,1900,1200]
-win.rect = [200,200,800,800];
 
 while (!end) {
 
-	win.ProcessEvents();
-	Render();
+	PollEvent(listeners);
+	if ( pause ) {
+		
+		Sleep(100);
+		continue;
+	}
+
+	var t = TimeCounter();
+	UpdateTexture();
+	t = TimeCounter() - t;
+	Print( t.toFixed(), 'ms     \r' );
+
+	with (Ogl) {
+		
+		DefineTextureImage(TEXTURE_2D, undefined, texture);
+		
+		Color(1,1,1,1);
+		Begin(QUADS);
+		TexCoord( 0, 0 );	Vertex( -1, -1 );
+		TexCoord( 1, 0 ); Vertex( 1, -1 );
+		TexCoord( 1, 1 ); Vertex( 1, 1 );
+		TexCoord( 0, 1 ); Vertex( -1, 1 );
+		End();
+	}
+
+	MaybeCollectGarbage();
+	GlSwapBuffers();
 }
 
-win.Close();
