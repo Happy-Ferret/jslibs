@@ -9,10 +9,33 @@ LoadModule('jsgraphics');
 
 // OpenGl doc: http://www.opengl.org/sdk/docs/man/
 
+GlSetAttribute( GL_SWAP_CONTROL, 1 ); // vsync
+GlSetAttribute( GL_DOUBLEBUFFER, 1 );
+GlSetAttribute( GL_DEPTH_SIZE, 16 );
+GlSetAttribute( GL_ACCELERATED_VISUAL, 1 );
+
+GlSetAttribute( GL_MULTISAMPLEBUFFERS, 1 );
+GlSetAttribute( GL_MULTISAMPLESAMPLES, 1 );
+
+SetVideoMode( 320, 200, 32, OPENGL | RESIZABLE ); // | ASYNCBLIT // RESIZABLE FULLSCREEN
+
+Print( Ogl.vendor, '\n' );
+Print( Ogl.renderer, '\n' );
+Print( Ogl.version, '\n' );
+Print( Ogl.extensions.split(' ').join('\n'), '\n' );
+
+Print( Ogl.HasExtension('glFramebufferTextureEXT'), '\n' );
+Trace('max texture size', Ogl.GetInteger(Ogl.MAX_TEXTURE_SIZE, 1) );
+
+
+//Halt(); //////////////////////////////////////////////////////////////////////
+
+
 function Trace() {
 	
 	for ( var i=0; i<arguments.length; i++ )
-		Print( arguments[i], '\n' );
+		Print( arguments[i], ' ' );
+	Print( '\n' );
 }
 
 function DumpMatrix(m) {
@@ -24,6 +47,91 @@ function DumpMatrix(m) {
 		Print(']\n' );
 	}
 	Print('\n' );
+}
+
+
+function MinMax(val, min, max) val < min ? min : val > max ? max : val;
+
+function Range(min, max) ({ __iterator__:function() { for (var i = min; i <= max; i++) yield i }});
+
+function Count(n) ({ __iterator__:function() { for (var i = 0; i < n; i++) yield i }});
+
+
+var perspective = new Transformation();
+var mat = new Transformation();
+
+var t, t1;
+var isCameraMoving;
+var cx, cy, cz; // camera
+var vx=0, vy=0, vz=2.5, t=0;
+var lines = [];
+
+var listeners = {
+	onQuit: function() { end = true },
+	onKeyDown: function(key, mod) { end = key == K_ESCAPE },
+	onVideoResize: function(w,h) { Ogl.Viewport(0, 0, w, h) },
+	onMouseButtonDown: function(button, x, y) {
+		
+		if ( button == BUTTON_LEFT ) {
+			
+			x = 2*x/videoWidth - 1;
+			y = -(2*y/videoHeight - 1);
+
+			var p1 = mat.TransformVector([x,y,0,1]);
+			p1[0] /= p1[3];
+			p1[1] /= p1[3];
+			p1[2] /= p1[3];
+
+			var p2 = mat.TransformVector([x,y,1,1]);
+			p2[0] /= p2[3];
+			p2[1] /= p2[3];
+			p2[2] /= p2[3];
+
+			lines.push([p1,p2]);
+		}
+		if ( button == BUTTON_RIGHT ) {
+			showCursor = false;
+			grabInput = true;
+		}
+	},
+	onMouseButtonUp: function(button) {
+		
+		if ( button == BUTTON_RIGHT ) {
+			showCursor = true;
+			grabInput = false;
+		}
+		if ( button == BUTTON_WHEELUP ) {
+		
+			vz -= modifierState & KMOD_LCTRL ? 0.1 : 1;
+			isCameraMoving = true;
+		}
+		if ( button == BUTTON_WHEELDOWN ) {
+		
+			vz += modifierState & KMOD_LCTRL ? 0.1 : 1;
+			isCameraMoving = true;
+		}
+	},
+	onMouseMotion: function(px,py,dx,dy,button) {
+		if ( grabInput ) {
+			vx += dx;
+			vy += dy;
+			isCameraMoving = true;
+		}
+	}
+}
+
+var listList = { __proto__:null };
+function CondNewList(name, invalidate) {
+	
+	if ( name in listList && !invalidate ) {
+		
+		Ogl.CallList(listList[name]);
+		return false;
+	} else {
+		
+		listList[name] = Ogl.NewList();
+		return true;
+	}
 }
 
 function Axis(size) {
@@ -49,28 +157,6 @@ function Quad() {
 		TexCoord(1, 1); Vertex(+1, +1);
 		TexCoord(0, 1); Vertex(-1, +1);
 		End();
-	}
-}
-
-
-function MinMax(val, min, max) val < min ? min : val > max ? max : val;
-
-function Range(min, max) ({ __iterator__:function() { for (var i = min; i <= max; i++) yield i }});
-
-function Count(n) ({ __iterator__:function() { for (var i = 0; i < n; i++) yield i }});
-
-
-var listList = { __proto__:null };
-function CondNewList(name, invalidate) {
-	
-	if ( name in listList && !invalidate ) {
-		
-		Ogl.CallList(listList[name]);
-		return false;
-	} else {
-		
-		listList[name] = Ogl.NewList();
-		return true;
 	}
 }
 
@@ -105,87 +191,17 @@ function CreateCloudTextureLayer() {
 	gaussian.Add(-gaussian.GetBorderLevelRange()[1]);
 
 	texture.Mult(gaussian);
-	with (Ogl) {
-	
-		var tid = GenTexture();
-		BindTexture(TEXTURE_2D, tid);
-		DefineTextureImage(TEXTURE_2D, ALPHA, texture);
-		TexParameter(TEXTURE_2D, TEXTURE_MIN_FILTER, LINEAR);
-		TexParameter(TEXTURE_2D, TEXTURE_MAG_FILTER, LINEAR);
-		return tid;
-	}
+	var tid = Ogl.GenTexture();
+	Ogl.BindTexture(Ogl.TEXTURE_2D, tid);
+	Ogl.DefineTextureImage(Ogl.TEXTURE_2D, Ogl.ALPHA, texture);
+	Ogl.TexParameter(Ogl.TEXTURE_2D, Ogl.TEXTURE_MIN_FILTER, Ogl.LINEAR);
+	Ogl.TexParameter(Ogl.TEXTURE_2D, Ogl.TEXTURE_MAG_FILTER, Ogl.LINEAR);
+	return tid;
 }
 
 
 
-var perspective = new Transformation();
-var mat = new Transformation();
 
-var t, t1;
-var isCameraMoving;
-var cx, cy, cz; // camera
-var vx=0, vy=0, vz=2.5, t=0;
-var lines = [];
-
-
-GlSetAttribute( GL_SWAP_CONTROL, 1 ); // vsync
-GlSetAttribute( GL_DOUBLEBUFFER, 1 );
-GlSetAttribute( GL_DEPTH_SIZE, 16 );
-SetVideoMode( 200, 200, 32, HWSURFACE | OPENGL | RESIZABLE ); // | ASYNCBLIT // RESIZABLE FULLSCREEN
-
-
-var listeners = {
-	onQuit: function() { end = true },
-	onKeyDown: function(key, mod) { end = key == K_ESCAPE },
-	onVideoResize: function(w,h) { Ogl.Viewport(0, 0, w, h) },
-	onMouseButtonDown: function(button, x, y) {
-		if ( button == BUTTON_LEFT ) {
-			
-			x = 2*x/videoWidth - 1;
-			y = -(2*y/videoHeight - 1);
-			
-			var p1 = mat.TransformVector([x,y,0,1]);
-			p1[0] /= p1[3];
-			p1[1] /= p1[3];
-			p1[2] /= p1[3];
-
-			var p2 = mat.TransformVector([x,y,1,1]);
-			p2[0] /= p2[3];
-			p2[1] /= p2[3];
-			p2[2] /= p2[3];
-			
-			lines.push([p1,p2]);
-		}
-		if ( button == BUTTON_RIGHT ) {
-			showCursor = false;
-			grabInput = true;
-		}
-	},
-	onMouseButtonUp: function(button) {
-		
-		if ( button == BUTTON_RIGHT ) {
-			showCursor = true;
-			grabInput = false;
-		}
-		if ( button == BUTTON_WHEELUP ) {
-		
-			vz -= modifierState & KMOD_LCTRL ? 0.1 : 1;
-			isCameraMoving = true;
-		}
-		if ( button == BUTTON_WHEELDOWN ) {
-		
-			vz += modifierState & KMOD_LCTRL ? 0.1 : 1;
-			isCameraMoving = true;
-		}
-	},
-	onMouseMotion: function(px,py,dx,dy,button) {
-		if ( grabInput ) {
-			vx += dx;
-			vy += dy;
-			isCameraMoving = true;
-		}
-	}
-}
 
 //Texture.RandSeed(1235);
 //var cloudLayerList = [ [ (Texture.RandReal()-0.5)*5, (Texture.RandReal()-0.5)*5, (Texture.RandReal()-0.5)*5, 5, CreateCloudTextureLayer() ] for (i in Count(5)) ];
@@ -221,7 +237,7 @@ function Draw3DCloud() {
 		
 		
 		Enable(TEXTURE_2D);
-		// var color = 0.3 + (Math.sin(t/400)/2+0.5) * 0.05;
+
 		for each ( var [x,y,z, scale, tid] in cloudLayerList ) {
 
 			BindTexture(TEXTURE_2D, tid);
@@ -266,9 +282,6 @@ with (Ogl) {
 
 	TexEnv(TEXTURE_ENV, TEXTURE_ENV_MODE, MODULATE);
 //	TexEnv(TEXTURE_ENV, TEXTURE_ENV_COLOR, [1,1,1,0]);
-
-		
-
 
 // see. http://jerome.jouvie.free.fr/OpenGl/Tutorials/Tutorial9.php
 
@@ -341,40 +354,28 @@ function Scene1() {
 }
 
 
-var maxSize = Ogl.GetInteger(Ogl.MAX_TEXTURE_SIZE, 1);
-Print('max texture size: ', maxSize, '\n' );
-
-var textureId = Ogl.GenTexture();
-Ogl.BindTexture(Ogl.TEXTURE_2D, textureId);
-var texture = DecodeJpegImage(new File('image.jpg').Open(File.RDONLY))
-with (Ogl) {
-	DefineTextureImage(TEXTURE_2D, undefined, texture);
-	TexParameter(TEXTURE_2D, TEXTURE_MIN_FILTER, LINEAR);
-	TexParameter(TEXTURE_2D, TEXTURE_MAG_FILTER, LINEAR);
-}
-
-
-function BlurTexture( width, height, matrix ) {
+/*
+function HWConvolution( width, height, matrix ) {
 	
 	with (Ogl) {
-		
-		var viewport = GetInteger(VIEWPORT, 4);
+
+		DrawBuffer(BACK);
 		Viewport(0, 0, width, height);
-//		Print( '(', height, ')\n' );
+
+		Trace( 'VIEWPORT', GetInteger( VIEWPORT, 4 ) );
 
 		MatrixMode(PROJECTION);
 		LoadIdentity();
-		Ortho(-1, 1, -1, 1, -1, 1);
+		Ortho(0, width, 0, height, -1, 1);
 		MatrixMode(MODELVIEW);
 		LoadIdentity();
 
-		
-		Disable(DEPTH_TEST);
 
+		Disable(DEPTH_TEST);
 		Enable(TEXTURE_2D);
-		Enable(BLEND); //Enable alpha blending
-//		BlendFunc(SRC_ALPHA, ONE_MINUS_SRC_ALPHA); //Set the blend function
-		BlendFunc(ONE, ONE);
+		Enable(BLEND);
+		BlendFunc(SRC_ALPHA, ONE_MINUS_SRC_ALPHA); //Set the blend function
+//		BlendFunc(ONE, ONE);
 		TexParameter(TEXTURE_2D, TEXTURE_MIN_FILTER, LINEAR); // NEAREST
 		TexParameter(TEXTURE_2D, TEXTURE_MAG_FILTER, LINEAR);
 		TexEnv(TEXTURE_ENV, TEXTURE_ENV_MODE, MODULATE);
@@ -382,34 +383,109 @@ function BlurTexture( width, height, matrix ) {
 		ClearColor(0,0,0,1);
 		Clear(COLOR_BUFFER_BIT);
 		ShadeModel(FLAT);
-		
+
 		for ( var [y, line] in Iterator(matrix) ) {
 			for ( var [x, ratio] in Iterator(line) ) {
 				
-				Viewport(x, y, width+x, height+y);
-				
-				Color(1,1,1, 1);
+				Color(1,1,1, ratio);
 				Begin(QUADS);
-				TexCoord(0, 0); Vertex(-1, -1);
-				TexCoord(1, 0); Vertex(+1, -1);
-				TexCoord(1, 1); Vertex(+1, +1);
-				TexCoord(0, 1); Vertex(-1, +1);
+				TexCoord(0, 0); Vertex(x, y);
+				TexCoord(1, 0); Vertex(width+x, y);
+				TexCoord(1, 1); Vertex(width+x, height+y);
+				TexCoord(0, 1); Vertex(x, height+y);
 				End();
-				Sleep(100);
 			}
-		}				
-
+		}
+		
+		
+		Halt();
+		
 		var tId = GenTexture();
 		BindTexture(TEXTURE_2D, tId);
 		ReadBuffer(BACK);
-		CopyTexImage2D(TEXTURE_2D, 0, RGBA, 0, 0, width, height, 0);
+		CopyTexImage2D(TEXTURE_2D, 0, RGBA, 0, 0,width, height, 0);
 		
-		Ogl.Viewport(viewport[0], viewport[1], viewport[2], viewport[3]);
-		
+		BindFramebuffer(FRAMEBUFFER_EXT, 0);
+		DeleteRenderbuffer(renderbuffer);
 		return tId;
 	}
 }
+*/
 
+
+
+function Blur() {
+	
+	with (Ogl) {
+	
+		// DBD chack display height and width.
+
+		var [,,width, height] = GetInteger(VIEWPORT, 4);
+		
+		var tId = GenTexture();
+		BindTexture(TEXTURE_2D, tId);
+		CopyTexImage2D(TEXTURE_2D, 0, RGB, 0, 0, width, height, 0);
+		
+		MatrixMode(PROJECTION);
+		LoadIdentity();
+		Ortho(0, width, 0, height, -1, 1);
+		MatrixMode(MODELVIEW);
+		LoadIdentity();
+		
+		Disable(DEPTH_TEST);
+		Enable(TEXTURE_2D);
+		Enable(BLEND);
+		BlendFunc(ONE, ONE);
+		TexParameter(TEXTURE_2D, TEXTURE_MIN_FILTER, LINEAR); // NEAREST
+		TexParameter(TEXTURE_2D, TEXTURE_MAG_FILTER, LINEAR);
+		TexEnv(TEXTURE_ENV, TEXTURE_ENV_MODE, MODULATE);
+		ShadeModel(FLAT);
+		
+		ClearColor(0,0,0,1);
+		Clear(COLOR_BUFFER_BIT);
+		
+		var factors = [5,12,15,12,5];
+		
+	
+		var y = 0;
+		for ( var x = -2; x <= +2; x++ ) {
+			
+			Color(factors[x+2]/49);
+			Begin(QUADS);
+			TexCoord(0, 0); Vertex(x, y);
+			TexCoord(1, 0); Vertex(width+x, y);
+			TexCoord(1, 1); Vertex(width+x, height+y);
+			TexCoord(0, 1); Vertex(x, height+y);
+			End();
+		}	
+
+		var x = 0;
+		for ( var y = -y; y <= +2; y++ ) {
+			
+			Color(factors[x+2]/49);
+			Begin(QUADS);
+			TexCoord(0, 0); Vertex(x, y);
+			TexCoord(1, 0); Vertex(width+x, y);
+			TexCoord(1, 1); Vertex(width+x, height+y);
+			TexCoord(0, 1); Vertex(x, height+y);
+			End();
+		}	
+		
+		DeleteTexture(tId);
+	}
+	
+//	new File('myImage.png').content = EncodePngImage(Ogl.RenderToImage());
+	
+}
+
+
+
+var textureId = Ogl.GenTexture();
+Ogl.BindTexture(Ogl.TEXTURE_2D, textureId);
+var texture = DecodeJpegImage(new File('image.jpg').Open(File.RDONLY))
+Ogl.DefineTextureImage(Ogl.TEXTURE_2D, undefined, texture);
+Ogl.TexParameter(Ogl.TEXTURE_2D, Ogl.TEXTURE_MIN_FILTER, Ogl.LINEAR);
+Ogl.TexParameter(Ogl.TEXTURE_2D, Ogl.TEXTURE_MAG_FILTER, Ogl.LINEAR);
 
 var sleep = 20;
 for (var end = false; !end ;) {
@@ -427,59 +503,40 @@ for (var end = false; !end ;) {
 	cz = Math.sin(vy/400) * vz;
 	Ogl.LookAt(cx,cy,cz, 0,0,0, 0,0,1);
 */
-	with (Ogl) {
 
-		MatrixMode(PROJECTION);
-		LoadIdentity();
-		MatrixMode(MODELVIEW);
-		LoadIdentity();
-	}
+	Ogl.MatrixMode(Ogl.PROJECTION);
+	Ogl.LoadIdentity();
+	Ogl.MatrixMode(Ogl.MODELVIEW);
+	Ogl.LoadIdentity();
 
 	mat.Load(Ogl);
 	mat.Product(perspective);
 	mat.Invert();
 	
-	with (Ogl) {
+	Ogl.Clear(Ogl.COLOR_BUFFER_BIT | Ogl.DEPTH_BUFFER_BIT);
 
-
-		BindTexture(TEXTURE_2D, textureId);
-
-		var tId = BlurTexture(512, 512,
-			[ 
-				[1],
-			]
-		);
-		
-		BindTexture(TEXTURE_2D, tId);
-
-		TexParameter(TEXTURE_2D, TEXTURE_MIN_FILTER, LINEAR);
-		TexParameter(TEXTURE_2D, TEXTURE_MAG_FILTER, LINEAR);
-
-		Clear(COLOR_BUFFER_BIT | DEPTH_BUFFER_BIT);
+	Ogl.Enable(Ogl.TEXTURE_2D);
 	
-//		DrawImage(undefined, texture);
-		
-	//Print( Ogl.error, '\n');
-		Enable(TEXTURE_2D);
-		
-		//Color(1,1,1);
-		Scale(1, -1);
-		Begin(QUADS);
-		TexCoord(0, 0); Vertex(-1, -1);
-		TexCoord(1, 0); Vertex(+1, -1);
-		TexCoord(1, 1); Vertex(+1, +1);
-		TexCoord(0, 1); Vertex(-1, +1);
-		End();
+	Ogl.BindTexture(Ogl.TEXTURE_2D, textureId);
+	
+	//Color(1,1,1);
+	Ogl.Scale(1, -1);
+	Ogl.Begin(Ogl.QUADS);
+	Ogl.TexCoord(0, 0); Ogl.Vertex(-1, -1);
+	Ogl.TexCoord(1, 0); Ogl.Vertex(+1, -1);
+	Ogl.TexCoord(1, 1); Ogl.Vertex(+1, +1);
+	Ogl.TexCoord(0, 1); Ogl.Vertex(-1, +1);
+	Ogl.End();
+	
+	Blur();
+//	Blur();
 
-		for each ( var [p1, p2] in lines ) {
+	for each ( var [p1, p2] in lines ) {
 
-			Begin(LINES);
-			Color(1,1,1); Vertex( p1[0], p1[1], p1[2] ); Vertex( p2[0], p2[1], p2[2] );
-			End(LINES);
-		}
+		Ogl.Begin(Ogl.LINES);
+		Ogl.Color(1,1,1); Ogl.Vertex( p1[0], p1[1], p1[2] ); Ogl.Vertex( p2[0], p2[1], p2[2] );
+		Ogl.End();
 	}
-
-//	new File('myImage.png').content = EncodePngImage(Ogl.RenderToImage());
 
 	GlSwapBuffers();
 	Sleep(sleep);
@@ -532,7 +589,11 @@ Print( [c.toFixed(1) for each ( c in t.TransformVector(v) )].join('  '), '\n' );
 Print( '\n\n' );
 
 
+
+
 Halt(); //////////////////////////////////////////////////////////////////////
+
+
 
 
 

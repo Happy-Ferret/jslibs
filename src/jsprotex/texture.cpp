@@ -41,6 +41,19 @@ extern "C" long genrand_int31(void);
 extern "C" unsigned long genrand_int32(void);
 extern "C" double genrand_real1(void);
 
+extern "C" {
+void init(void);
+double noise1(double);
+double noise2(double *);
+double noise3(double *);
+void normalize3(double *);
+void normalize2(double *);
+
+double PerlinNoise1D(double,double,double,int);
+double PerlinNoise2D(double,double,double,double,int);
+double PerlinNoise3D(double,double,double,double,double,int);
+}
+
 #define ABS(val) ( (val) < 0 ? -(val) : (val) )
 
 #define MIN(val1, val2) ( (val1) < (val2) ? (val1) : (val2) )
@@ -481,7 +494,7 @@ DEFINE_CONSTRUCTOR() {
 $TOC_MEMBER $INAME
  $VOID $INAME()
   Free the memory allocated by the current texture.
-  This operation is not mendatory but can be usefull to free memory.
+  This operation is not mendatory but can be usefull to free memory before GC doing it.
 **/
 DEFINE_FUNCTION( Free ) {
 
@@ -1966,7 +1979,7 @@ DEFINE_FUNCTION_FAST( RotoZoom ) { // source: FxGen
 
 /**doc
 $TOC_MEMBER $INAME
- $THIS $INAME( newWidth, newHeight, [ interpolate = false [, borderMode = Texture.borderWrap ]] )
+ $THIS $INAME( newWidth, newHeight, [ interpolate = false [, borderMode = Texture.borderWrap ] ] )
   Resize the current texture.
   $H arguments
    $ARG $INT newWidth:
@@ -2010,9 +2023,10 @@ DEFINE_FUNCTION_FAST( Resize ) {
 
 	if ( newWidth != width || newHeight != height ) { // nothing to do
 
-
-		PTYPE *newBuffer = (PTYPE*)JS_malloc(cx, newWidth * newHeight * channels * sizeof(PTYPE) );
-		JL_CHK( newBuffer );
+		unsigned int bufferSize = newWidth * newHeight * channels * sizeof(PTYPE);
+		
+		tex->cbackBuffer = (PTYPE*) (tex->cbackBuffer ? JS_realloc(cx, tex->cbackBuffer, bufferSize) : JS_malloc(cx, bufferSize));
+		JL_CHK( tex->cbackBuffer );
 
 		int spx, spy; // position in the source
 		float prx, pry; // pixel ratio
@@ -2074,7 +2088,7 @@ DEFINE_FUNCTION_FAST( Resize ) {
 
 					pos = (x + y * newWidth) * channels;
 					for ( c = 0; c < channels; c++ )
-						newBuffer[pos+c] = tex->cbuffer[pos1+c] * ratio1 + tex->cbuffer[pos2+c] * ratio2 + tex->cbuffer[pos3+c] * ratio3 + tex->cbuffer[pos4+c] * ratio4;
+						tex->cbackBuffer[pos+c] = tex->cbuffer[pos1+c] * ratio1 + tex->cbuffer[pos2+c] * ratio2 + tex->cbuffer[pos3+c] * ratio3 + tex->cbuffer[pos4+c] * ratio4;
 				} else {
 
 					spx = (int)(rx * x);
@@ -2082,18 +2096,12 @@ DEFINE_FUNCTION_FAST( Resize ) {
 					pos = (x + y * newWidth) * channels;
 					pos1 = (spx + spy * width) * channels;
 					for ( c = 0; c < channels; c++ )
-						newBuffer[pos+c] = tex->cbuffer[pos1+c];
+						tex->cbackBuffer[pos+c] = tex->cbuffer[pos1+c];
 				}
 			}
 
-		JS_free(cx, tex->cbuffer );
-		if ( tex->cbackBuffer != NULL ) {
+		TextureSwapBuffers(tex);
 
-			JS_free(cx, tex->cbackBuffer );
-			tex->cbackBuffer = NULL;
-		}
-
-		tex->cbuffer = newBuffer;
 		tex->width = newWidth;
 		tex->height = newHeight;
 		// channels don't change
@@ -2275,7 +2283,7 @@ $TOC_MEMBER $INAME
   {{{
   var texture = new Texture(100, 100, 3); // RGB texture
   texture.Set(0); // clears the texture
-  texture.ForEachPixels(function(x, y, pixel) {
+  texture.ForEachPixel(function(x, y, pixel) {
    if ( x == y ) {
     pixel[0] = 1; // Red
     pixel[1] = 1; // Green
@@ -2285,7 +2293,7 @@ $TOC_MEMBER $INAME
   });
   }}}
 **/
-DEFINE_FUNCTION_FAST( ForEachPixels ) {
+DEFINE_FUNCTION_FAST( ForEachPixel ) {
 
 	JL_S_ASSERT_ARG_MIN( 1 );
 	JL_S_ASSERT_FUNCTION( JL_FARG(1) );
@@ -2302,8 +2310,6 @@ DEFINE_FUNCTION_FAST( ForEachPixels ) {
 	height = tex->height;
 	int channels;
 	channels = tex->channels;
-
-	TextureSetupBackBuffer(cx, tex);
 
 	jsval callArgv[4]; // callArgv[] is rval
 
@@ -2329,26 +2335,19 @@ DEFINE_FUNCTION_FAST( ForEachPixels ) {
 
 			JL_CHKB( JS_CallFunctionValue(cx, JL_FOBJ, functionValue, COUNTOF(callArgv)-1, callArgv+1, callArgv), bad2 );
 
-			if ( JsvalIsArray(cx, callArgv[0]) ) {
+			if ( callArgv[0] != JSVAL_FALSE ) { // functionValue's rval
 
-				JSObject *returnedArray = JSVAL_TO_OBJECT(callArgv[0]);
 				for ( int c = 0; c < channels; c++ ) {
 
 					jsval level;
 					jsdouble d;
-					JL_CHKB( JS_GetElement(cx, returnedArray, c, &level), bad2 );
+					JL_CHKB( JS_GetElement(cx, cArrayObj, c, &level), bad2 );
 					JL_CHKB( JS_ValueToNumber(cx, level, &d), bad2 );
-					tex->cbackBuffer[pos+c] = d;
+					tex->cbuffer[pos+c] = d;
 				}
-			} else {
-
-				for ( int c = 0; c < channels; c++ )
-					tex->cbackBuffer[pos+c] = tex->cbuffer[pos+c];
 			}
 	}
 	JS_POP_TEMP_ROOT(cx, &tvr);
-
-	TextureSwapBuffers(tex);
 
 	return JS_TRUE;
 bad2:
@@ -2757,18 +2756,12 @@ DEFINE_FUNCTION_FAST( Trim ) { // (TBD) test this new version that use memcpy
 	int newHeight;
 	newHeight = y1 - y0;
 
-	if ( tex->cbackBuffer != NULL ) {
-
-		JS_free(cx, tex->cbackBuffer );
-		tex->cbackBuffer = NULL;
-	}
-
 	int srcLineLength;
 	srcLineLength = width * channels * sizeof(PTYPE);
 	int dstLineLength;
 	dstLineLength = newWidth * channels * sizeof(PTYPE);
 
-	tex->cbackBuffer = (PTYPE*)JS_malloc(cx, newHeight * dstLineLength );
+	tex->cbackBuffer = (PTYPE*)( tex->cbackBuffer ?  JS_realloc(cx, tex->cbackBuffer, newHeight * dstLineLength) : JS_malloc(cx, newHeight * dstLineLength) );
 
 	char *pSrc;
 	pSrc = (char*)tex->cbuffer + ( x0 + y0 * width ) * channels * sizeof(PTYPE);
@@ -2797,8 +2790,6 @@ DEFINE_FUNCTION_FAST( Trim ) { // (TBD) test this new version that use memcpy
 */
 
 	TextureSwapBuffers(tex);
-	JS_free(cx, tex->cbackBuffer );
-	tex->cbackBuffer = NULL;
 
 	tex->width = newWidth;
 	tex->height = newHeight;
@@ -3374,12 +3365,14 @@ DEFINE_FUNCTION_FAST( Displace ) {
 /**doc
 $TOC_MEMBER $INAME
  $THIS $INAME( density, regularity )
-  Draws cells in the current texture.
+  Draws cells (Worley noise) in the current texture.
   $H arguments
    $ARG $INT density:
    $ARG $REAL regularity:
 **/
 DEFINE_FUNCTION_FAST( Cells ) { // source: FxGen
+	
+	// http://petewarden.com/notes/archives/2005/05/testing.html
 
 	JL_S_ASSERT_ARG_MIN( 2 );
 
@@ -4204,6 +4197,40 @@ DEFINE_FUNCTION_FAST( RandReal ) {
 }
 
 
+/**doc
+$TOC_MEMBER $INAME( n, a, b, x [,y [,z] ] )
+ $REAL $INAME
+**/
+
+double Noise3DPerlin( double x, double y, double z, double alpha, double beta, int n );
+
+DEFINE_FUNCTION_FAST( PerlinNoise ) {
+
+	JL_S_ASSERT_ARG_RANGE(4,6);
+	int n;
+	double a, b, x, y, z;
+	JL_CHK( JsvalToDouble(cx, JL_FARG(1), &a) );
+	JL_CHK( JsvalToDouble(cx, JL_FARG(2), &b) );
+	JL_CHK( JsvalToInt(cx, JL_FARG(3), &n) );
+
+	JL_CHK( JsvalToDouble(cx, JL_FARG(4), &x) );
+	if ( argc == 4 )
+		return DoubleToJsval(cx, PerlinNoise1D(x, a, b, n), JL_FRVAL);
+
+	JL_CHK( JsvalToDouble(cx, JL_FARG(5), &y) );
+	if ( argc == 5 )
+		return DoubleToJsval(cx, PerlinNoise2D(x, y, a, b, n), JL_FRVAL);
+
+	JL_CHK( JsvalToDouble(cx, JL_FARG(6), &z) );
+	if ( argc == 6 )
+//		return DoubleToJsval(cx, PerlinNoise3D(x, y, z, a, b, n), JL_FRVAL);
+		return DoubleToJsval(cx, Noise3DPerlin(x, y, z, a, b, n), JL_FRVAL);
+
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
 //DEFINE_FUNCTION( Noise ) {
 //
 //	JL_S_ASSERT_ARG_MIN(1);
@@ -4215,13 +4242,23 @@ DEFINE_FUNCTION_FAST( RandReal ) {
 //}
 
 
+double Noise3D( double x, double y, double z );
 
-#ifdef _DEBUG
-static JSBool _Test(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+//#ifdef _DEBUG
+//static JSBool _Test(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+DEFINE_FUNCTION_FAST( Test ) {
 
-	return JS_FALSE;
+	double x, y, z;
+	JL_CHK( JsvalToDouble(cx, JL_FARG(1), &x) );
+	JL_CHK( JsvalToDouble(cx, JL_FARG(2), &y) );
+	JL_CHK( JsvalToDouble(cx, JL_FARG(3), &z) );
+	return DoubleToJsval(cx, Noise3D(x, y, z), JL_FRVAL);
+
+	return JS_TRUE;
+	JL_BAD;
+
 }
-#endif // _DEBUG
+//#endif // _DEBUG
 
 
 /**doc
@@ -4289,11 +4326,20 @@ static JSBool _Test(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval
   An image object is nothing else that a buffer of data with a width, a height and a channels properties.
 **/
 
+void InitNoise();
+
+DEFINE_INIT() {
+
+	InitNoise();
+	return JS_TRUE;
+}
+
 CONFIGURE_CLASS
 
 	REVISION(JL_SvnRevToInt("$Revision$"))
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE
+	HAS_INIT
 
 	BEGIN_FUNCTION_SPEC
 		FUNCTION_FAST( Free )
@@ -4322,7 +4368,7 @@ CONFIGURE_CLASS
 		FUNCTION_FAST( Flip )
 		FUNCTION_FAST( Shift )
 		FUNCTION_FAST( Convolution )
-		FUNCTION_FAST( ForEachPixels )
+		FUNCTION_FAST( ForEachPixel )
 		FUNCTION_FAST( Normals )
 		FUNCTION_FAST( NormalizeVectors )
 		FUNCTION_FAST( Light )
@@ -4347,10 +4393,6 @@ CONFIGURE_CLASS
 		FUNCTION_FAST( GetBorderLevelRange )
 		FUNCTION_FAST( ApplyColorMatrix )
 
-#ifdef _DEBUG
-		FUNCTION( Test )
-#endif // _DEBUG
-
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
@@ -4364,7 +4406,13 @@ CONFIGURE_CLASS
 		FUNCTION_FAST( RandSeed )
 		FUNCTION_FAST( RandInt )
 		FUNCTION_FAST( RandReal )
-//		FUNCTION_FAST( Noise )
+		FUNCTION_FAST( PerlinNoise )
+
+//		#ifdef _DEBUG
+		FUNCTION_FAST( Test )
+//		#endif // _DEBUG
+
+		//		FUNCTION_FAST( Noise )
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_CONST_INTEGER_SPEC

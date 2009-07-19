@@ -36,6 +36,10 @@ inline NIBufferGet BufferGetInterface( JSContext *cx, JSObject *obj );
 #include <fcntl.h>
 
 // JavaScript engine includes
+
+//#include <jsvector.h> // workaround because not found in dist/include:
+#include "../../libs/js/src/jsvector.h" // (TBD) remove the workaround ASAP
+
 #include <jsnum.h>
 #include <jscntxt.h>
 #include <jsinterp.h>
@@ -316,10 +320,7 @@ ALWAYS_INLINE JSClass* JL_GetClass(JSObject *obj) {
 
 ALWAYS_INLINE size_t JL_GetStringLength(JSString *jsstr) {
 	
-	#ifdef DEBUG
-		JS_ASSERT( JSSTRING_LENGTH(jsstr) == JS_GetStringLength(jsstr) ); // Mozilla JS engine private API behavior has changed.
-	#endif //DEBUG
-	return JSSTRING_LENGTH(jsstr);
+	return jsstr->length();
 }
 
 // Is string or has jslibs BufferGet interface (including Blob).
@@ -1115,9 +1116,7 @@ ALWAYS_INLINE JSBool JsvalToDouble( JSContext *cx, jsval val, double *d ) {
 		*d = *JSVAL_TO_DOUBLE(val);
 		return JS_TRUE;
 	}
-	jsdouble tmp;
-	JL_CHK( JS_ValueToNumber( cx, val, &tmp ) );
-	*d = tmp;
+	JL_CHK( JS_ValueToNumber( cx, val, d ) ); // jsdouble is a double
 	return JS_TRUE;
 
 bad:
@@ -1499,6 +1498,30 @@ ALWAYS_INLINE JSBool UnserializeJsval( JSContext *cx, const Serialized *xdr, jsv
 	JS_XDRDestroy(xdrDecoder);
 	return JS_TRUE;
 	JL_BAD;
+}
+
+
+
+ALWAYS_INLINE JSBool SetNativeFunction( JSContext *cx, JSObject *obj, const char *name, void *nativeFct ) {
+
+	return JS_DefineProperty(cx, obj, name, JSVAL_TRUE, NULL, (JSPropertyOp)nativeFct, JSPROP_READONLY | JSPROP_PERMANENT );
+	JL_BAD;
+}
+
+ALWAYS_INLINE JSBool GetNativeFunction( JSContext *cx, JSObject *obj, const char *name, void **nativeFct ) {
+
+	uintN attrs;
+	JSBool found;
+	JL_CHK( JS_GetPropertyAttrsGetterAndSetter(cx, obj, name, &attrs, &found, NULL, (JSPropertyOp*)nativeFct) );
+	if ( !found )
+		*nativeFct = NULL;
+	return JS_TRUE;
+	JL_BAD;
+}
+
+ALWAYS_INLINE JSBool DeleteNativeFunction( JSContext *cx, JSObject *obj, const char *name ) {
+
+	return JS_DeleteProperty(cx, obj, name);
 }
 
 

@@ -112,15 +112,29 @@ var size = 128;
 var texture = new Texture(size, size, 3);
 
 //	var myImage = DecodeJpegImage( new File('301_0185.jpg').Open('r') );
-	var file = new File('button2.png').Open('r');
-	var myImage = DecodePngImage( file );
-	file.Close();
-
-	texture.Set(0);
+//	var file = new File('button2.png').Open('r');
+//	var myImage = DecodePngImage( file );
+//	file.Close();
+//	texture.Set(0);
 //	texture.Import( myImage, 0, 0 );
 
+var z = 0;
+Texture.RandSeed(0);
 
 function UpdateTexture(imageIndex) { // <<<<<<<<<<<<<<<<<-----------------------------------
+
+	texture.Set(0);
+	texture.ForEachPixel(function(x, y, pixel) {
+		
+		pixel[0] = Texture.PerlinNoise(5, 1, 2, x, y, z);
+//		pixel[0] = Texture.Test(x/10,y/10,z/10);
+
+	});
+	z += 0;
+
+	texture.NormalizeLevels();
+return;
+
 
 	tmp = new Texture(size, size, 4);
 	tmp.Set(0);

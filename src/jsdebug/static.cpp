@@ -142,142 +142,7 @@ DumpScope(JSContext *cx, JSObject *obj)
 */
 
 
-static void
-DumpScope(JSContext *cx, JSObject *obj, FILE *fp)
-{
-    uintN i;
-    JSScope *scope;
-    JSScopeProperty *sprop;
-    jsval v;
-    JSString *str;
 
-    i = 0;
-    scope = OBJ_SCOPE(obj);
-    for (sprop = SCOPE_LAST_PROP(scope); sprop; sprop = sprop->parent) {
-        if (SCOPE_HAD_MIDDLE_DELETE(scope) && !SCOPE_HAS_PROPERTY(scope, sprop))
-            continue;
-        fprintf(fp, "%3u %p ", i, (void *)sprop);
-
-        v = ID_TO_VALUE(sprop->id);
-        if (JSID_IS_INT(sprop->id)) {
-            fprintf(fp, "[%ld]", (long)JSVAL_TO_INT(v));
-        } else {
-            if (JSID_IS_ATOM(sprop->id)) {
-                str = JSVAL_TO_STRING(v);
-            } else {
-                JS_ASSERT(JSID_IS_OBJECT(sprop->id));
-                str = js_ValueToString(cx, v);
-                fputs("object ", fp);
-            }
-				if (!str) {
-                fputs("<error>", fp);
-				} else {
-
-#if defined DEBUG || defined JS_DUMP_PROPTREE_STATS
-					char buffer[65535];
-					size_t count = js_PutEscapedStringImpl(buffer, sizeof(buffer), NULL, str, '"'); // js_FileEscapedString(fp, str, '"');
-					buffer[count] = '\0';
-					_puts(cx, buffer);
-#endif
-				}
-        }
-#define DUMP_ATTR(name) if (sprop->attrs & JSPROP_##name) fputs(" " #name, fp)
-        DUMP_ATTR(ENUMERATE);
-        DUMP_ATTR(READONLY);
-        DUMP_ATTR(PERMANENT);
-//        DUMP_ATTR(EXPORTED);
-        DUMP_ATTR(GETTER);
-        DUMP_ATTR(SETTER);
-#undef  DUMP_ATTR
-
-        fprintf(fp, " slot %lu flags %x shortid %d\n",
-                (unsigned long)sprop->slot, sprop->flags, sprop->shortid);
-    }
-}
-
-
-/**doc
-$TOC_MEMBER $INAME
- $INAME( [ filename [, type [, ...] ] ] )
-  type: 'gc' | 'arena' | 'atom' | 'global' | variable
-**/
-DEFINE_FUNCTION( DumpStats )
-{
-    uintN i;
-    JSString *str;
-    const char *bytes;
-    jsid id;
-    JSObject *obj2;
-    JSProperty *prop;
-    jsval value;
-
-
-	FILE *gOutFile = stdout;
-	if ( JL_ARG_ISDEF( 1 ) ) {
-
-		const char *fileName;
-		JL_CHK( JsvalToString(cx, &JL_ARG( 1 ), &fileName) );
-		if ( fileName[0] != '\0' ) {
-
-			gOutFile = fopen(fileName, "w");
-			JL_S_ASSERT( gOutFile, "can't open %s: %s", fileName, strerror(errno));
-		}
-	}
-	FILE *gErrFile;
-	gErrFile = gOutFile;
-
-
-    for (i = 0 +1; i < argc; i++) {
-        str = JS_ValueToString(cx, argv[i]);
-        if (!str)
-            return JS_FALSE;
-        argv[i] = STRING_TO_JSVAL(str);
-        bytes = JS_GetStringBytes(str);
-
-#ifdef JS_GCMETER
-        if (strcmp(bytes, "gc") == 0) {
-				js_DumpGCStats(cx->runtime, gOutFile);
-        } else
-#endif
-
-#ifdef JS_ARENAMETER
-        if (strcmp(bytes, "arena") == 0) {
-            JS_DumpArenaStats(gOutFile);
-		  } else
-#endif
-
-#ifdef DEBUG
-		  if (strcmp(bytes, "atom") == 0) {
-            js_DumpAtoms(cx, gOutFile);
-		  } else
-#endif
-
-		  if (strcmp(bytes, "global") == 0) {
-            DumpScope(cx, cx->globalObject, gOutFile);
-        } else {
-
-            if (!JS_ValueToId(cx, STRING_TO_JSVAL(str), &id))
-                return JS_FALSE;
-            if (!js_FindProperty(cx, id, &obj, &obj2, &prop))
-                return JS_FALSE;
-            if (prop) {
-                OBJ_DROP_PROPERTY(cx, obj2, prop);
-                if (!OBJ_GET_PROPERTY(cx, obj, id, &value))
-                    return JS_FALSE;
-            }
-            if (!prop || !JSVAL_IS_OBJECT(value)) {
-                fprintf(gErrFile, "js: invalid stats argument %s\n",
-                        bytes);
-                continue;
-            }
-            obj = JSVAL_TO_OBJECT(value);
-            if (obj)
-                DumpScope(cx, obj, gOutFile);
-        }
-    }
-	return JS_TRUE;
-	JL_BAD;
-}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -1530,7 +1395,7 @@ CONFIGURE_STATIC
 	REVISION(JL_SvnRevToInt("$Revision$"))
 	BEGIN_STATIC_FUNCTION_SPEC
 		FUNCTION( GetObjectPrivate )
-		FUNCTION( DumpStats )
+//		FUNCTION( DumpStats )
 		FUNCTION_FAST( TraceGC )
 
 //		FUNCTION_FAST( Disassemble );

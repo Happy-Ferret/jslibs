@@ -59,28 +59,22 @@ DECLARE_CLASS(Ogl)
 
 #include <gl/glu.h>
 
+#include "wglew.h"
+
 #include "oglError.h"
 
 // http://www.opengl.org/registry/api/glext.h
 
-#ifdef XP_WIN
-#define GL_GET_PROC_ADDRESS wglGetProcAddress
-#endif // XP_WIN
 
-/*
-#define LOAD_OPENGL_EXTENSION( name, proto ) \
-	static proto name = NULL; \
-	if ( name == NULL ) { \
-		name = (proto) GL_GET_PROC_ADDRESS( #name ); \
-		JL_S_ASSERT( name != NULL, "OpenGL extension %s unavailable.", #name ); \
-	}
-*/
+typedef void* (__cdecl *glGetProcAddress_t)(const char*);
+
+static glGetProcAddress_t glGetProcAddress = NULL;
 
  // (TBD) check static keyword issue
 #define LOAD_OPENGL_EXTENSION( name, proto ) \
-	static proto name = (proto) GL_GET_PROC_ADDRESS( #name ); \
+	JL_S_ASSERT( glGetProcAddress != NULL, "OpenGL extensions unavailable." ); \
+	static proto name = (proto) glGetProcAddress( #name ); \
 	JL_S_ASSERT( name != NULL, "OpenGL extension %s unavailable.", #name );
-
 
 
 /**doc fileIndex:top
@@ -92,6 +86,482 @@ BEGIN_CLASS( Ogl )
 /**doc
 === Static functions ===
 **/
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $BOOL $INAME( procName )
+  $H arguments
+   $ARG string procName
+  $H return value
+   true if the extension proc is available.
+**/
+DEFINE_FUNCTION_FAST( HasExtension ) {
+	
+	JL_S_ASSERT_ARG(1);
+	JL_S_ASSERT_STRING(JL_FARG(1));
+	const char *procName;
+	JL_S_ASSERT( glGetProcAddress != NULL, "OpenGL extensions unavailable." );
+	JL_CHK( JsvalToString(cx, &JL_FARG(1), &procName) );
+	void *procAddr = glGetProcAddress(procName);
+	*JL_FRVAL = procAddr != NULL ? JSVAL_TRUE : JSVAL_FALSE;
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+/*
+DEFINE_FUNCTION_FAST( Get ) {
+
+	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_INT(JL_FARG(1));
+
+	int pname = JSVAL_TO_INT( JL_FARG(1) );
+
+	switch ( pname ) { // http://www.opengl.org/sdk/docs/man/xhtml/glGet.xml
+
+		case GL_ALPHA_TEST:
+		case GL_AUTO_NORMAL:
+		case GL_BLEND:
+		case GL_CLIP_PLANE0:
+		case GL_CLIP_PLANE1:
+		case GL_CLIP_PLANE2:
+		case GL_CLIP_PLANE3:
+		case GL_CLIP_PLANE4:
+		case GL_CLIP_PLANE5:
+		case GL_COLOR_ARRAY:
+		case GL_COLOR_LOGIC_OP:
+		case GL_COLOR_MATERIAL:
+		case GL_COLOR_SUM:
+		case GL_COLOR_TABLE:
+		case GL_CONVOLUTION_1D:
+		case GL_CONVOLUTION_2D:
+		case GL_CULL_FACE:
+		case GL_CURRENT_RASTER_POSITION_VALID:
+		case GL_DEPTH_TEST:
+		case GL_DEPTH_WRITEMASK:
+		case GL_DITHER:
+		case GL_DOUBLEBUFFER:
+		case GL_EDGE_FLAG:
+		case GL_EDGE_FLAG_ARRAY:
+		case GL_FOG:
+		case GL_FOG_COORD_ARRAY:
+		case GL_HISTOGRAM:
+		case GL_INDEX_ARRAY:
+		case GL_INDEX_LOGIC_OP:
+		case GL_INDEX_MODE:
+		case GL_LIGHT0:
+		case GL_LIGHT1:
+		case GL_LIGHT2:
+		case GL_LIGHT3:
+		case GL_LIGHT4:
+		case GL_LIGHT5:
+		case GL_LIGHT6:
+		case GL_LIGHT7:
+		case GL_LIGHTING:
+		case GL_LIGHT_MODEL_LOCAL_VIEWER:
+		case GL_LIGHT_MODEL_TWO_SIDE:
+		case GL_LINE_SMOOTH:
+		case GL_LINE_STIPPLE:
+		case GL_MAP1_COLOR_4:
+		case GL_MAP1_INDEX:
+		case GL_MAP1_NORMAL:
+		case GL_MAP1_TEXTURE_COORD_1:
+		case GL_MAP1_TEXTURE_COORD_2:
+		case GL_MAP1_TEXTURE_COORD_3:
+		case GL_MAP1_TEXTURE_COORD_4:
+		case GL_MAP1_VERTEX_3:
+		case GL_MAP1_VERTEX_4:
+		case GL_MAP2_COLOR_4:
+		case GL_MAP2_INDEX:
+		case GL_MAP2_NORMAL:
+		case GL_MAP2_TEXTURE_COORD_1:
+		case GL_MAP2_TEXTURE_COORD_2:
+		case GL_MAP2_TEXTURE_COORD_3:
+		case GL_MAP2_TEXTURE_COORD_4:
+		case GL_MAP2_VERTEX_3:
+		case GL_MAP2_VERTEX_4:
+		case GL_MAP_COLOR:
+		case GL_MAP_STENCIL:
+		case GL_MINMAX:
+		case GL_NORMAL_ARRAY:
+		case GL_NORMALIZE:
+		case GL_PACK_LSB_FIRST:
+		case GL_PACK_SWAP_BYTES:
+		case GL_POINT_SMOOTH:
+		case GL_POINT_SPRITE:
+		case GL_POLYGON_OFFSET_FILL:
+		case GL_POLYGON_OFFSET_LINE:
+		case GL_POLYGON_OFFSET_POINT:
+		case GL_POLYGON_SMOOTH:
+		case GL_POLYGON_STIPPLE:
+		case GL_POST_COLOR_MATRIX_COLOR_TABLE:
+		case GL_POST_CONVOLUTION_COLOR_TABLE:
+		case GL_RESCALE_NORMAL:
+		case GL_RGBA_MODE:
+		case GL_SAMPLE_COVERAGE_INVERT:
+		case GL_SCISSOR_TEST:
+		case GL_SECONDARY_COLOR_ARRAY:
+		case GL_SEPARABLE_2D:
+		case GL_STENCIL_TEST:
+		case GL_STEREO:
+		case GL_TEXTURE_1D:
+		case GL_TEXTURE_2D:
+		case GL_TEXTURE_3D:
+		case GL_TEXTURE_COORD_ARRAY:
+		case GL_TEXTURE_CUBE_MAP:
+		case GL_TEXTURE_GEN_Q:
+		case GL_TEXTURE_GEN_R:
+		case GL_TEXTURE_GEN_S:
+		case GL_TEXTURE_GEN_T:
+		case GL_UNPACK_LSB_FIRST:
+		case GL_UNPACK_SWAP_BYTES:
+		case GL_VERTEX_ARRAY:
+		case GL_VERTEX_PROGRAM_POINT_SIZE:
+		case GL_VERTEX_PROGRAM_TWO_SIDE:
+		{
+			GLboolean b;
+			glGetBooleanv(pname, &b);
+			return JS_TRUE;
+		}
+
+
+		case GL_COLOR_WRITEMASK:
+		{
+		//	4 bool
+		}
+
+		case GL_ACCUM_ALPHA_BITS: // uint
+		case GL_ACCUM_BLUE_BITS: // uint
+		case GL_ACCUM_GREEN_BITS: // uint
+		case GL_ACCUM_RED_BITS: // uint
+		case GL_ACTIVE_TEXTURE: // enum
+		case GL_ALPHA_BITS: // uint
+		case GL_ALPHA_TEST_FUNC: // enum
+		case GL_ARRAY_BUFFER_BINDING: // name
+		case GL_ATTRIB_STACK_DEPTH: // uint
+		case GL_AUX_BUFFERS: // uint
+		case GL_BLEND_DST_ALPHA: // enum
+		case GL_BLEND_DST_RGB: // enum
+		case GL_BLEND_EQUATION_RGB: // enum
+		case GL_BLEND_EQUATION_ALPHA: // enum
+		case GL_BLEND_SRC_ALPHA: // enum
+		case GL_BLEND_SRC_RGB: // enum
+		case GL_BLUE_BITS: // uint
+		case GL_CLIENT_ACTIVE_TEXTURE: // enum
+		case GL_CLIENT_ATTRIB_STACK_DEPTH: // uint
+		case GL_COLOR_ARRAY_BUFFER_BINDING: // name
+		case GL_COLOR_ARRAY_SIZE: // uint
+		case GL_COLOR_ARRAY_STRIDE: // uint
+		case GL_COLOR_ARRAY_TYPE: // enum
+		case GL_COLOR_MATERIAL_FACE: // enum
+		case GL_COLOR_MATERIAL_PARAMETER: // enum
+		case GL_COLOR_MATRIX_STACK_DEPTH: // uint
+		case GL_CULL_FACE_MODE: // enum
+		case GL_CURRENT_PROGRAM: // uint
+		case GL_DEPTH_BITS: // uint
+		case GL_DEPTH_FUNC: // enum
+		case GL_DRAW_BUFFER0: // enum
+		case GL_DRAW_BUFFER1: // enum
+		case GL_DRAW_BUFFER2: // enum
+		case GL_DRAW_BUFFER3: // enum
+		case GL_DRAW_BUFFER4: // enum
+		case GL_DRAW_BUFFER5: // enum
+		case GL_DRAW_BUFFER6: // enum
+		case GL_DRAW_BUFFER7: // enum
+		case GL_DRAW_BUFFER8: // enum
+		case GL_DRAW_BUFFER9: // enum
+		case GL_DRAW_BUFFER10: // enum
+		case GL_DRAW_BUFFER11: // enum
+		case GL_DRAW_BUFFER12: // enum
+		case GL_DRAW_BUFFER13: // enum
+		case GL_DRAW_BUFFER14: // enum
+		case GL_DRAW_BUFFER15: // enum
+		case GL_EDGE_FLAG_ARRAY_BUFFER_BINDING: // enum
+		case GL_EDGE_FLAG_ARRAY_STRIDE: // uint
+		case GL_ELEMENT_ARRAY_BUFFER_BINDING: // name
+		case GL_FEEDBACK_BUFFER_SIZE: // uint
+		case GL_FEEDBACK_BUFFER_TYPE: // enum
+		case GL_FOG_COORD_ARRAY_BUFFER_BINDING:
+		case GL_FOG_COORD_ARRAY_STRIDE: // uint
+		case GL_FOG_COORD_ARRAY_TYPE: // enum
+		case GL_FOG_COORD_SRC: // enum
+		case GL_FOG_HINT: // enum
+		case GL_FOG_MODE: // enum
+		case GL_FRAGMENT_SHADER_DERIVATIVE_HINT: // enum
+		case GL_FRONT_FACE: // enum
+		case GL_GENERATE_MIPMAP_HINT: // enum
+		case GL_GREEN_BITS: // uint
+		case GL_INDEX_ARRAY_BUFFER_BINDING: // name
+		case GL_INDEX_ARRAY_STRIDE: // uint
+		case GL_INDEX_ARRAY_TYPE: // enum
+		case GL_INDEX_BITS: // uint
+		case GL_INDEX_OFFSET: // uint
+		case GL_INDEX_SHIFT: // int
+		case GL_INDEX_WRITEMASK: // uint
+		case GL_LIGHT_MODEL_COLOR_CONTROL: // enum
+		case GL_LINE_SMOOTH_HINT: // enum
+		case GL_LINE_STIPPLE_PATTERN: // uint
+		case GL_LINE_STIPPLE_REPEAT:
+		case GL_LIST_BASE: // uint
+		case GL_LIST_INDEX: // name
+		case GL_LIST_MODE : // enum
+		case GL_LOGIC_OP_MODE: // enum
+		case GL_MAP1_GRID_SEGMENTS: // uint
+		case GL_MATRIX_MODE: // enum
+		case GL_MAX_3D_TEXTURE_SIZE: // uint
+		case GL_MAX_CLIENT_ATTRIB_STACK_DEPTH: // uint
+		case GL_MAX_ATTRIB_STACK_DEPTH: // uint
+		case GL_MAX_CLIP_PLANES: // uint
+		case GL_MAX_COLOR_MATRIX_STACK_DEPTH: // uint
+		case GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS: // uint
+		case GL_MAX_CUBE_MAP_TEXTURE_SIZE: // uint
+		case GL_MAX_DRAW_BUFFERS: // uint
+		case GL_MAX_ELEMENTS_INDICES: // uint
+		case GL_MAX_ELEMENTS_VERTICES: // uint
+		case GL_MAX_EVAL_ORDER : // uint
+		case GL_MAX_FRAGMENT_UNIFORM_COMPONENTS : //uint
+		case GL_MAX_LIGHTS: // uint
+		case GL_MAX_LIST_NESTING: // uint
+		case GL_MAX_MODELVIEW_STACK_DEPTH: // uint
+		case GL_MAX_NAME_STACK_DEPTH: // uint
+		case GL_MAX_PIXEL_MAP_TABLE: // uint
+		case GL_MAX_PROJECTION_STACK_DEPTH: // uint
+		case GL_MAX_TEXTURE_COORDS: // uint
+		case GL_MAX_TEXTURE_IMAGE_UNITS: // uint
+		case GL_MAX_TEXTURE_SIZE: // uint
+		case GL_MAX_TEXTURE_STACK_DEPTH: // uint
+		case GL_MAX_TEXTURE_UNITS: // uint
+		case GL_MAX_VARYING_FLOATS: // uint
+		case GL_MAX_VERTEX_ATTRIBS: // uint
+		case GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS: // uint
+		case GL_MAX_VERTEX_UNIFORM_COMPONENTS: // uint
+		case GL_MODELVIEW_STACK_DEPTH: // uint
+		case GL_NAME_STACK_DEPTH: // uint
+		case GL_NORMAL_ARRAY_BUFFER_BINDING: // name
+		case GL_NORMAL_ARRAY_STRIDE: // uint
+		case GL_NORMAL_ARRAY_TYPE: // enum
+		case GL_NUM_COMPRESSED_TEXTURE_FORMATS: // uint
+		case GL_PACK_ALIGNMENT: // uint
+		case GL_PACK_IMAGE_HEIGHT: // uint
+		case GL_PACK_ROW_LENGTH: // uint
+		case GL_PACK_SKIP_IMAGES: // uint
+		case GL_PACK_SKIP_PIXELS: // uint
+		case GL_PACK_SKIP_ROWS: // uint
+		case GL_PERSPECTIVE_CORRECTION_HINT: // enum
+		case GL_PIXEL_MAP_A_TO_A_SIZE: // uint
+		case GL_PIXEL_MAP_B_TO_B_SIZE: // uint
+		case GL_PIXEL_MAP_G_TO_G_SIZE: // uint
+		case GL_PIXEL_MAP_I_TO_A_SIZE: // uint
+		case GL_PIXEL_MAP_I_TO_B_SIZE: // uint
+		case GL_PIXEL_MAP_I_TO_G_SIZE: // uint
+		case GL_PIXEL_MAP_I_TO_I_SIZE: // uint
+		case GL_PIXEL_MAP_I_TO_R_SIZE: // uint
+		case GL_PIXEL_MAP_R_TO_R_SIZE: // uint
+		case GL_PIXEL_MAP_S_TO_S_SIZE: // uint
+		case GL_PIXEL_PACK_BUFFER_BINDING: // name
+		case GL_PIXEL_UNPACK_BUFFER_BINDING: // name
+		case GL_POINT_SMOOTH_HINT: // enum
+		case GL_POLYGON_SMOOTH_HINT: // enum
+		case GL_PROJECTION_STACK_DEPTH: // uint
+		case GL_READ_BUFFER: // enum
+		case GL_RED_BITS: // uint
+		case GL_RENDER_MODE: // enum
+		case GL_SAMPLE_BUFFERS: // uint
+		case GL_SAMPLES: // uint
+		case GL_SECONDARY_COLOR_ARRAY_BUFFER_BINDING: // name
+		case GL_SECONDARY_COLOR_ARRAY_SIZE: // uint
+		case GL_SECONDARY_COLOR_ARRAY_STRIDE: // int
+		case GL_SECONDARY_COLOR_ARRAY_TYPE: // enum
+		case GL_SELECTION_BUFFER_SIZE: // uint
+		case GL_SHADE_MODEL: // enum
+		case GL_STENCIL_BACK_FAIL: // enum
+		case GL_STENCIL_BACK_FUNC: // enum
+		case GL_STENCIL_BACK_PASS_DEPTH_FAIL: // enum
+		case GL_STENCIL_BACK_PASS_DEPTH_PASS: // enum
+		case GL_STENCIL_BACK_REF: // uint
+		case GL_STENCIL_BACK_VALUE_MASK: // uint
+		case GL_STENCIL_BACK_WRITEMASK: // uint
+		case GL_STENCIL_BITS: // uint
+		case GL_STENCIL_CLEAR_VALUE:
+		case GL_STENCIL_FAIL: // enum
+		case GL_STENCIL_FUNC: // enum
+		case GL_STENCIL_PASS_DEPTH_FAIL: // enum
+		case GL_STENCIL_PASS_DEPTH_PASS: // enum
+		case GL_STENCIL_REF: // enum
+		case GL_STENCIL_VALUE_MASK: // enum
+		case GL_STENCIL_WRITEMASK: // uint
+		case GL_SUBPIXEL_BITS:
+		case GL_TEXTURE_BINDING_1D: // name
+		case GL_TEXTURE_BINDING_2D: // name
+		case GL_TEXTURE_BINDING_3D: // name
+		case GL_TEXTURE_BINDING_CUBE_MAP: // name
+		case GL_TEXTURE_COMPRESSION_HINT: // enum
+		case GL_TEXTURE_COORD_ARRAY_BUFFER_BINDING: // name
+		case GL_TEXTURE_COORD_ARRAY_SIZE:
+		case GL_TEXTURE_COORD_ARRAY_STRIDE:
+		case GL_TEXTURE_COORD_ARRAY_TYPE: // enum
+		case GL_TEXTURE_STACK_DEPTH:
+		case GL_UNPACK_ALIGNMENT:
+		case GL_UNPACK_IMAGE_HEIGHT:
+		case GL_UNPACK_ROW_LENGTH:
+		case GL_UNPACK_SKIP_IMAGES:
+		case GL_UNPACK_SKIP_PIXELS:
+		case GL_UNPACK_SKIP_ROWS:
+		case GL_VERTEX_ARRAY_BUFFER_BINDING:
+		case GL_VERTEX_ARRAY_SIZE:
+		case GL_VERTEX_ARRAY_STRIDE:
+		case GL_VERTEX_ARRAY_TYPE: // enum
+		case GL_ZOOM_X:
+		case GL_ZOOM_Y:
+		{
+			GLint i;
+			glGetIntegerv(pname, &i);
+			return JS_TRUE;
+		}
+
+		case GL_MAP2_GRID_SEGMENTS:
+		case GL_MAX_VIEWPORT_DIMS:
+		case GL_POLYGON_MODE: // enum
+		{
+		//	2 int
+		}
+
+		case GL_SCISSOR_BOX:
+		case GL_VIEWPORT:
+		{
+		//	4 int
+		}
+
+		case GL_ALPHA_BIAS:
+		case GL_ALPHA_SCALE:
+		case GL_ALPHA_TEST_REF:
+		case GL_BLUE_BIAS:
+		case GL_BLUE_SCALE:
+		case GL_CURRENT_FOG_COORD:
+		case GL_CURRENT_INDEX:
+		case GL_CURRENT_RASTER_DISTANCE:
+		case GL_CURRENT_RASTER_INDEX:
+		case GL_DEPTH_BIAS:
+		case GL_DEPTH_CLEAR_VALUE:
+		case GL_DEPTH_RANGE:
+		case GL_DEPTH_SCALE:
+		case GL_FOG_DENSITY:
+		case GL_FOG_END:
+		case GL_FOG_INDEX:
+		case GL_FOG_START:
+		case GL_GREEN_BIAS:
+		case GL_GREEN_SCALE:
+		case GL_INDEX_BITS:
+		case GL_LINE_WIDTH:
+		case GL_LINE_WIDTH_GRANULARITY:
+		case GL_MAX_TEXTURE_LOD_BIAS:
+		case GL_POINT_FADE_THRESHOLD_SIZE:
+		case GL_POINT_SIZE:
+		case GL_POINT_SIZE_GRANULARITY:
+		case GL_POINT_SIZE_MAX:
+		case GL_POINT_SIZE_MIN:
+		case GL_POLYGON_OFFSET_FACTOR:
+		case GL_POLYGON_OFFSET_UNITS:
+		case GL_POST_COLOR_MATRIX_RED_BIAS:
+		case GL_POST_COLOR_MATRIX_GREEN_BIAS:
+		case GL_POST_COLOR_MATRIX_BLUE_BIAS:
+		case GL_POST_COLOR_MATRIX_ALPHA_BIAS:
+		case GL_POST_COLOR_MATRIX_RED_SCALE:
+		case GL_POST_COLOR_MATRIX_GREEN_SCALE:
+		case GL_POST_COLOR_MATRIX_BLUE_SCALE:
+		case GL_POST_COLOR_MATRIX_ALPHA_SCALE:
+		case GL_POST_CONVOLUTION_RED_BIAS:
+		case GL_POST_CONVOLUTION_GREEN_BIAS:
+		case GL_POST_CONVOLUTION_BLUE_BIAS:
+		case GL_POST_CONVOLUTION_ALPHA_BIAS:
+		case GL_POST_CONVOLUTION_RED_SCALE:
+		case GL_POST_CONVOLUTION_GREEN_SCALE:
+		case GL_POST_CONVOLUTION_BLUE_SCALE:
+		case GL_POST_CONVOLUTION_ALPHA_SCALE:
+		case GL_RED_BIAS:
+		case GL_RED_SCALE:
+		case GL_SAMPLE_COVERAGE_VALUE:
+		case GL_SMOOTH_LINE_WIDTH_GRANULARITY:
+		{
+		//	1 real
+		}
+		case GL_ALIASED_POINT_SIZE_RANGE:
+		case GL_ALIASED_LINE_WIDTH_RANGE:
+		case GL_LINE_WIDTH_RANGE:
+		case GL_MAP1_GRID_DOMAIN:
+		case GL_POINT_SIZE_RANGE:
+		case GL_SMOOTH_LINE_WIDTH_RANGE:
+		case GL_SMOOTH_POINT_SIZE_RANGE:
+		{
+		//	2 real
+		}
+		case GL_CURRENT_NORMAL:
+		case GL_POINT_DISTANCE_ATTENUATION:
+		{
+		//	3 real
+		}
+		case GL_ACCUM_CLEAR_VALUE:
+		case GL_BLEND_COLOR:
+		case GL_COLOR_CLEAR_VALUE:
+		case GL_CURRENT_COLOR:
+		case GL_CURRENT_RASTER_COLOR:
+		case GL_CURRENT_RASTER_POSITION:
+		case GL_CURRENT_RASTER_SECONDARY_COLOR:
+		case GL_CURRENT_RASTER_TEXTURE_COORDS:
+		case GL_CURRENT_SECONDARY_COLOR:
+		case GL_CURRENT_TEXTURE_COORDS:
+		case GL_FOG_COLOR:
+		case GL_LIGHT_MODEL_AMBIENT:
+		case GL_MAP2_GRID_DOMAIN:
+		{
+		//	4 real
+		}
+		case GL_COLOR_MATRIX:
+		case GL_MODELVIEW_MATRIX:
+		case GL_PROJECTION_MATRIX:
+		case GL_TEXTURE_MATRIX:
+		case GL_TRANSPOSE_COLOR_MATRIX:
+		case GL_TRANSPOSE_MODELVIEW_MATRIX:
+		case GL_TRANSPOSE_PROJECTION_MATRIX:
+		case GL_TRANSPOSE_TEXTURE_MATRIX:
+		{
+			16 real
+		}
+		case GL_COMPRESSED_TEXTURE_FORMATS: // enum
+		{
+		//	GL_NUM_COMPRESSED_TEXTURE_FORMATS uint
+		}
+	
+	}
+
+//	*JL_FRVAL = BOOLEAN_TO_JSVAL(params);
+	return JS_TRUE;
+	JL_BAD;
+}
+*/
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $BOOL $INAME( cap )
+  $H arguments
+   $ARG GLenum cap
+  $H return value
+   test whether a capability is enabled.
+  $H OpenGL API
+   glIsEnabled
+**/
+DEFINE_FUNCTION_FAST( IsEnabled ) {
+
+	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_INT(JL_FARG(1));
+	*JL_FRVAL = BOOLEAN_TO_JSVAL( glIsEnabled(JSVAL_TO_INT(JL_FARG(1))) == GL_TRUE );
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
 
 
 /**doc
@@ -275,17 +745,11 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION_FAST( StencilFunc ) {
 
 	JL_S_ASSERT_ARG(3);
-
 	JL_S_ASSERT_INT(JL_FARG(1));
-	GLenum func = JSVAL_TO_INT(JL_FARG(1));
-
 	JL_S_ASSERT_INT(JL_FARG(2));
-	GLint ref = JSVAL_TO_INT(JL_FARG(2));
-
 	JL_S_ASSERT_INT(JL_FARG(3));
-	GLuint mask = JSVAL_TO_INT(JL_FARG(3));
 
-	glStencilFunc(func, ref, mask);
+	glStencilFunc(JSVAL_TO_INT(JL_FARG(1)), JSVAL_TO_INT(JL_FARG(2)), JSVAL_TO_INT(JL_FARG(3)));
 
 	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
@@ -307,17 +771,11 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION_FAST( StencilOp ) {
 
 	JL_S_ASSERT_ARG(3);
-
 	JL_S_ASSERT_INT(JL_FARG(1));
-	GLenum fail = JSVAL_TO_INT(JL_FARG(1));
-
 	JL_S_ASSERT_INT(JL_FARG(2));
-	GLint zfail = JSVAL_TO_INT(JL_FARG(2));
-
 	JL_S_ASSERT_INT(JL_FARG(3));
-	GLuint zpass = JSVAL_TO_INT(JL_FARG(3));
 
-	glStencilOp(fail, zfail, zpass);
+	glStencilOp(JSVAL_TO_INT(JL_FARG(1)), JSVAL_TO_INT(JL_FARG(2)), JSVAL_TO_INT(JL_FARG(3)));
 
 	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
@@ -336,12 +794,13 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( AlphaFunc ) {
 
-	JL_S_ASSERT_ARG_MIN(2);
+	JL_S_ASSERT_ARG(2);
 	JL_S_ASSERT_INT(JL_FARG(1));
-	JL_S_ASSERT_NUMBER(JL_FARG(2));
-	jsdouble ref;
+	double ref;
 	JsvalToDouble(cx, JL_FARG(2), &ref);
+
 	glAlphaFunc( JSVAL_TO_INT(JL_FARG(1)), ref );
+	
 	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
@@ -357,6 +816,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION_FAST( Flush ) {
 
 	glFlush();
+
 	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
@@ -371,6 +831,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION_FAST( Finish ) {
 
 	glFinish();
+
 	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
@@ -387,20 +848,23 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Fog ) {
 
-	JL_S_ASSERT_ARG_MIN(2);
+	JL_S_ASSERT_ARG(2);
 	JL_S_ASSERT_INT(JL_FARG(1));
 
 	*JL_FRVAL = JSVAL_VOID;
 	if ( JSVAL_IS_INT(JL_FARG(2)) ) {
 
 		glFogi(JSVAL_TO_INT(JL_FARG(1)), JSVAL_TO_INT(JL_FARG(2)));
+
 		return JS_TRUE;
 	}
-	if ( JSVAL_IS_NUMBER(JL_FARG(2)) ) {
+	if ( JSVAL_IS_DOUBLE(JL_FARG(2)) ) {
 
-		jsdouble param;
+		double param;
 		JsvalToDouble(cx, JL_FARG(2), &param);
+		
 		glFogf( JSVAL_TO_INT(JL_FARG(1)), param );
+		
 		return JS_TRUE;
 	}
 	if ( JsvalIsArray(cx, JL_FARG(2)) ) {
@@ -408,7 +872,9 @@ DEFINE_FUNCTION_FAST( Fog ) {
 		GLfloat params[16];
 		uint32 length;
 		JL_CHK( JsvalToFloatVector(cx, JL_FARG(2), params, COUNTOF(params), &length ) );
+
 		glFogfv( JSVAL_TO_INT(JL_FARG(1)), params );
+
 		return JS_TRUE;
 	}
 	JL_REPORT_ERROR("Invalid argument.");
@@ -428,10 +894,12 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Hint ) {
 
-	JL_S_ASSERT_ARG_MIN(2);
+	JL_S_ASSERT_ARG(2);
 	JL_S_ASSERT_INT(JL_FARG(1));
 	JL_S_ASSERT_INT(JL_FARG(2));
+
 	glHint( JSVAL_TO_INT(JL_FARG(1)), JSVAL_TO_INT(JL_FARG(2)) );
+	
 	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
@@ -450,25 +918,23 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Vertex ) {
 
-	JL_S_ASSERT_ARG_MIN(2);
+	JL_S_ASSERT_ARG_RANGE(2,3);
+	*JL_FRVAL = JSVAL_VOID;
 
-//	if ( JsvalIsArray(cx, JL_FARG(1)) ) {
-//	}
-
-//	float vec[3];
-//	FloatArrayToVector(cx, 3, &argv[0], vec);
-	jsdouble x, y, z;
+	double x, y, z;
 	JsvalToDouble(cx, JL_FARG(1), &x);
 	JsvalToDouble(cx, JL_FARG(2), &y);
 	if ( JL_ARGC >= 3 ) {
 
 		JsvalToDouble(cx, JL_FARG(3), &z);
+		
 		glVertex3d(x, y, z);
-	} else {
-
-		glVertex2d(x, y);
+		
+		return JS_TRUE;
 	}
-	*JL_FRVAL = JSVAL_VOID;
+
+	glVertex2d(x, y);
+
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -487,22 +953,25 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Color ) {
 
-	JL_S_ASSERT_ARG_RANGE(3,4);
-//	float vec[3];
-//	FloatArrayToVector(cx, 3, &argv[0], vec);
-	jsdouble r, g, b, a;
+	JL_S_ASSERT_ARG_RANGE(1,4);
+	*JL_FRVAL = JSVAL_VOID;
+
+	double r, g, b, a;
 	JsvalToDouble(cx, JL_FARG(1), &r);
+	if ( argc == 1 ) {
+		
+		glColor3d(r, r, r);
+		return JS_TRUE;
+	}		
 	JsvalToDouble(cx, JL_FARG(2), &g);
 	JsvalToDouble(cx, JL_FARG(3), &b);
-	if ( argc >= 4 ) {
-
-		JsvalToDouble(cx, JL_FARG(4), &a);
-		glColor4d(r, g, b, a);
-	} else {
+	if ( argc == 3 ) {
 
 		glColor3d(r, g, b);
-	}
-	*JL_FRVAL = JSVAL_VOID;
+		return JS_TRUE;
+	}		
+	JsvalToDouble(cx, JL_FARG(4), &a);
+	glColor4d(r, g, b, a);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -520,14 +989,14 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Normal ) {
 
-	JL_S_ASSERT_ARG_MIN(3);
-//	float vec[3];
-//	FloatArrayToVector(cx, 3, &argv[0], vec);
-	jsdouble nx, ny, nz;
+	JL_S_ASSERT_ARG(3);
+	double nx, ny, nz;
 	JsvalToDouble(cx, JL_FARG(1), &nx);
 	JsvalToDouble(cx, JL_FARG(2), &ny);
 	JsvalToDouble(cx, JL_FARG(3), &nz);
+
 	glNormal3d(nx, ny, nz);
+	
 	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
@@ -546,30 +1015,29 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( TexCoord ) {
 
-	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_ARG_RANGE(1,3);
 	*JL_FRVAL = JSVAL_VOID;
-	jsdouble s;
+	double s;
 	JsvalToDouble(cx, JL_FARG(1), &s);
 	if ( JL_ARGC == 1 ) {
 
 		glTexCoord1d(s);
+
 		return JS_TRUE;
 	}
-	jsdouble t;
+	double t;
 	JsvalToDouble(cx, JL_FARG(2), &t);
 	if ( JL_ARGC == 2 ) {
 
 		glTexCoord2d(s, t);
-		return JS_TRUE;
-	}
-	jsdouble r;
-	JsvalToDouble(cx, JL_FARG(3), &r);
-	if ( JL_ARGC == 3 ) {
 
-		glTexCoord3d(s, t, r);
 		return JS_TRUE;
 	}
-	JL_REPORT_ERROR("Invalid argument.");
+	double r;
+	JsvalToDouble(cx, JL_FARG(3), &r);
+
+	glTexCoord3d(s, t, r);
+
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -587,7 +1055,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( TexParameter ) {
 
-	JL_S_ASSERT_ARG_MIN(3);
+	JL_S_ASSERT_ARG(3);
 	JL_S_ASSERT_INT(JL_FARG(1));
 	JL_S_ASSERT_INT(JL_FARG(2));
 
@@ -595,13 +1063,16 @@ DEFINE_FUNCTION_FAST( TexParameter ) {
 	if ( JSVAL_IS_INT(JL_FARG(3)) ) {
 
 		glTexParameteri( JSVAL_TO_INT( JL_FARG(1) ), JSVAL_TO_INT( JL_FARG(2) ), JSVAL_TO_INT( JL_FARG(3) ) );
+
 		return JS_TRUE;
 	}
 	if ( JSVAL_IS_DOUBLE(JL_FARG(3)) ) {
 
-		jsdouble param;
-		JL_CHK( JsvalToDouble(cx, JL_FARG(3), &param) );
+		double param;
+		JsvalToDouble(cx, JL_FARG(3), &param);
+		
 		glTexParameterf( JSVAL_TO_INT( JL_FARG(1) ), JSVAL_TO_INT( JL_FARG(2) ), param );
+		
 		return JS_TRUE;
 	}
 	if ( JsvalIsArray(cx, JL_FARG(3)) ) {
@@ -609,7 +1080,9 @@ DEFINE_FUNCTION_FAST( TexParameter ) {
 		GLfloat params[16];
 		uint32 length;
 		JL_CHK( JsvalToFloatVector(cx, JL_FARG(3), params, COUNTOF(params), &length ) );
+		
 		glTexParameterfv( JSVAL_TO_INT(JL_FARG(1)), JSVAL_TO_INT(JL_FARG(2)), params );
+		
 		return JS_TRUE;
 	}
 
@@ -631,7 +1104,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( TexEnv ) {
 
-	JL_S_ASSERT_ARG_MIN(3);
+	JL_S_ASSERT_ARG(3);
 	JL_S_ASSERT_INT(JL_FARG(1));
 	JL_S_ASSERT_INT(JL_FARG(2));
 
@@ -639,13 +1112,16 @@ DEFINE_FUNCTION_FAST( TexEnv ) {
 	if ( JSVAL_IS_INT(JL_FARG(3)) ) {
 
 		glTexEnvi( JSVAL_TO_INT( JL_FARG(1) ), JSVAL_TO_INT( JL_FARG(2) ), JSVAL_TO_INT( JL_FARG(3) ) );
+
 		return JS_TRUE;
 	}
-	if ( JSVAL_IS_NUMBER(JL_FARG(3)) ) {
+	if ( JSVAL_IS_DOUBLE(JL_FARG(3)) ) {
 
-		jsdouble param;
+		double param;
 		JsvalToDouble(cx, JL_FARG(3), &param);
+
 		glTexEnvf( JSVAL_TO_INT(JL_FARG(1)), JSVAL_TO_INT(JL_FARG(2)), param );
+
 		return JS_TRUE;
 	}
 	if ( JsvalIsArray(cx, JL_FARG(3)) ) {
@@ -653,7 +1129,9 @@ DEFINE_FUNCTION_FAST( TexEnv ) {
 		GLfloat params[16];
 		uint32 length;
 		JL_CHK( JsvalToFloatVector(cx, JL_FARG(3), params, COUNTOF(params), &length ) );
+
 		glTexEnvfv( JSVAL_TO_INT(JL_FARG(1)), JSVAL_TO_INT(JL_FARG(2)), params );
+
 		return JS_TRUE;
 	}
 	JL_REPORT_ERROR("Invalid argument.");
@@ -673,20 +1151,23 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( LightModel ) {
 
-	JL_S_ASSERT_ARG_MIN(2);
+	JL_S_ASSERT_ARG(2);
 	JL_S_ASSERT_INT(JL_FARG(1));
 
 	*JL_FRVAL = JSVAL_VOID;
 	if ( JSVAL_IS_INT(JL_FARG(2)) ) {
 
 		glLightModeli( JSVAL_TO_INT( JL_FARG(1) ), JSVAL_TO_INT( JL_FARG(2) ) );
+
 		return JS_TRUE;
 	}
 	if ( JSVAL_IS_DOUBLE(JL_FARG(2)) ) {
 
-		jsdouble param;
-		JL_CHK( JsvalToDouble(cx, JL_FARG(2), &param) );
+		double param;
+		JsvalToDouble(cx, JL_FARG(2), &param);
+
 		glLightModelf( JSVAL_TO_INT( JL_FARG(1) ), param );
+		
 		return JS_TRUE;
 	}
 	if ( JsvalIsArray(cx, JL_FARG(2)) ) {
@@ -694,7 +1175,9 @@ DEFINE_FUNCTION_FAST( LightModel ) {
 		GLfloat params[16];
 		uint32 length;
 		JL_CHK( JsvalToFloatVector(cx, JL_FARG(2), params, COUNTOF(params), &length ) );
+
 		glLightModelfv( JSVAL_TO_INT(JL_FARG(1)), params );
+
 		return JS_TRUE;
 	}
 	JL_REPORT_ERROR("Invalid argument.");
@@ -715,7 +1198,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Light ) {
 
-	JL_S_ASSERT_ARG_MIN(3);
+	JL_S_ASSERT_ARG(3);
 	JL_S_ASSERT_INT(JL_FARG(1));
 	JL_S_ASSERT_INT(JL_FARG(2));
 
@@ -723,13 +1206,16 @@ DEFINE_FUNCTION_FAST( Light ) {
 	if ( JSVAL_IS_INT(JL_FARG(3)) ) {
 
 		glLighti( JSVAL_TO_INT( JL_FARG(1) ), JSVAL_TO_INT( JL_FARG(2) ), JSVAL_TO_INT( JL_FARG(3) ) );
+
 		return JS_TRUE;
 	}
 	if ( JSVAL_IS_DOUBLE(JL_FARG(3)) ) {
 
-		jsdouble param;
-		JL_CHK( JsvalToDouble(cx, JL_FARG(3), &param) );
+		double param;
+		JsvalToDouble(cx, JL_FARG(3), &param);
+
 		glLightf( JSVAL_TO_INT( JL_FARG(1) ), JSVAL_TO_INT( JL_FARG(2) ), param );
+
 		return JS_TRUE;
 	}
 	if ( JsvalIsArray(cx, JL_FARG(3)) ) {
@@ -737,7 +1223,9 @@ DEFINE_FUNCTION_FAST( Light ) {
 		GLfloat params[16];
 		uint32 length;
 		JL_CHK( JsvalToFloatVector(cx, JL_FARG(3), params, COUNTOF(params), &length ) );
+
 		glLightfv( JSVAL_TO_INT(JL_FARG(1)), JSVAL_TO_INT(JL_FARG(2)), params );
+
 		return JS_TRUE;
 	}
 	JL_REPORT_ERROR("Invalid argument.");
@@ -757,10 +1245,12 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( ColorMaterial ) {
 
-	JL_S_ASSERT_ARG_MIN(2);
+	JL_S_ASSERT_ARG(2);
 	JL_S_ASSERT_INT(JL_FARG(1));
 	JL_S_ASSERT_INT(JL_FARG(2));
+
 	glColorMaterial(JSVAL_TO_INT( JL_FARG(1) ), JSVAL_TO_INT( JL_FARG(2) ));
+
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -778,7 +1268,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Material ) {
 
-	JL_S_ASSERT_ARG_MIN(3);
+	JL_S_ASSERT_ARG(3);
 	JL_S_ASSERT_INT(JL_FARG(1));
 	JL_S_ASSERT_INT(JL_FARG(2));
 
@@ -790,8 +1280,8 @@ DEFINE_FUNCTION_FAST( Material ) {
 	}
 	if ( JSVAL_IS_DOUBLE(JL_FARG(3)) ) {
 
-		jsdouble param;
-		JL_CHK( JsvalToDouble(cx, JL_FARG(3), &param) );
+		double param;
+		JsvalToDouble(cx, JL_FARG(3), &param);
 		glMaterialf( JSVAL_TO_INT( JL_FARG(1) ), JSVAL_TO_INT( JL_FARG(2) ), param );
 		return JS_TRUE;
 	}
@@ -819,9 +1309,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Enable ) {
 
-	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_ARG(1);
 	JL_S_ASSERT_INT(JL_FARG(1));
+
 	glEnable( JSVAL_TO_INT(JL_FARG(1)) );
+
 	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
@@ -838,9 +1330,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Disable ) {
 
-	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_ARG(1);
 	JL_S_ASSERT_INT(JL_FARG(1));
+
 	glDisable( JSVAL_TO_INT(JL_FARG(1)) );
+
 	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
@@ -857,10 +1351,12 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( PointSize ) {
 
-	JL_S_ASSERT_ARG_MIN(1);
-	jsdouble size;
+	JL_S_ASSERT_ARG(1);
+	double size;
 	JsvalToDouble(cx, JL_FARG(1), &size);
+	
 	glPointSize(size);
+	
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -876,10 +1372,12 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( LineWidth ) {
 
-	JL_S_ASSERT_ARG_MIN(1);
-	jsdouble width;
+	JL_S_ASSERT_ARG(1);
+	double width;
 	JsvalToDouble(cx, JL_FARG(1), &width);
+	
 	glLineWidth(width);
+
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -895,8 +1393,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( ShadeModel ) {
 
+	JL_S_ASSERT_ARG(1);
 	JL_S_ASSERT_INT(JL_FARG(1));
-	glShadeModel( JSVAL_TO_INT( JL_FARG(1) ) );
+
+	glShadeModel(JSVAL_TO_INT( JL_FARG(1) ));
+	
 	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
@@ -914,10 +1415,12 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( BlendFunc ) {
 
-	JL_S_ASSERT_ARG_MIN(2);
+	JL_S_ASSERT_ARG(2);
 	JL_S_ASSERT_INT(JL_FARG(1));
 	JL_S_ASSERT_INT(JL_FARG(2));
-	glBlendFunc( JSVAL_TO_INT( JL_FARG(1) ), JSVAL_TO_INT( JL_FARG(2) ) );
+
+	glBlendFunc(JSVAL_TO_INT( JL_FARG(1) ), JSVAL_TO_INT( JL_FARG(2) ));
+	
 	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
@@ -934,9 +1437,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( DepthFunc ) {
 
-	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_ARG(1);
 	JL_S_ASSERT_INT(JL_FARG(1));
+	
 	glDepthFunc( JSVAL_TO_INT( JL_FARG(1) ) );
+	
 	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
@@ -954,11 +1459,13 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( DepthRange ) {
 
-	JL_S_ASSERT_ARG_MIN(2);
-	jsdouble zNear, zFar;
+	JL_S_ASSERT_ARG(2);
+	double zNear, zFar;
 	JsvalToDouble(cx, JL_FARG(1), &zNear);
 	JsvalToDouble(cx, JL_FARG(2), &zFar);
+	
 	glDepthRange(zNear, zFar);
+	
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -974,9 +1481,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( CullFace ) {
 
-	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_ARG(1);
 	JL_S_ASSERT_INT(JL_FARG(1));
+	
 	glCullFace(JSVAL_TO_INT( JL_FARG(1) ));
+	
 	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
@@ -993,9 +1502,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( FrontFace ) {
 
-	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_ARG(1);
 	JL_S_ASSERT_INT(JL_FARG(1));
-	glFrontFace( JSVAL_TO_INT( JL_FARG(1) ) );
+
+	glFrontFace(JSVAL_TO_INT( JL_FARG(1) ));
+	
 	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
@@ -1012,9 +1523,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( ClearStencil ) {
 
-	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_ARG(1);
 	JL_S_ASSERT_INT(JL_FARG(1));
+
 	glClearStencil(JSVAL_TO_INT( JL_FARG(1) ));
+	
 	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
@@ -1031,10 +1544,12 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( ClearDepth ) {
 
-	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_ARG(1);
 	double depth;
 	JsvalToDouble(cx, JL_FARG(1), &depth);
+
 	glClearDepth(depth);
+	
 	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
@@ -1054,13 +1569,15 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( ClearColor ) {
 
-	JL_S_ASSERT_ARG_MIN(4);
+	JL_S_ASSERT_ARG(4);
 	double r, g, b, a;
 	JsvalToDouble(cx, JL_FARG(1), &r);
 	JsvalToDouble(cx, JL_FARG(2), &g);
 	JsvalToDouble(cx, JL_FARG(3), &b);
 	JsvalToDouble(cx, JL_FARG(4), &a);
+
 	glClearColor(r, g, b, a);
+	
 	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
@@ -1080,13 +1597,15 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( ClearAccum ) {
 
-	JL_S_ASSERT_ARG_MIN(4);
+	JL_S_ASSERT_ARG(4);
 	double r, g, b, a;
 	JsvalToDouble(cx, JL_FARG(1), &r);
 	JsvalToDouble(cx, JL_FARG(2), &g);
 	JsvalToDouble(cx, JL_FARG(3), &b);
 	JsvalToDouble(cx, JL_FARG(4), &a);
+	
 	glClearAccum(r, g, b, a);
+	
 	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
@@ -1103,9 +1622,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Clear ) {
 
-	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_ARG(1);
 	JL_S_ASSERT_INT(JL_FARG(1));
+
 	glClear(JSVAL_TO_INT(JL_FARG(1)));
+	
 	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
@@ -1150,13 +1671,15 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( ClipPlane ) {
 
-	JL_S_ASSERT_ARG_MIN(2);
+	JL_S_ASSERT_ARG(2);
 	JL_S_ASSERT_INT(JL_FARG(1));
 	JL_S_ASSERT_ARRAY(JL_FARG(2));
 	GLdouble equation[16];
 	uint32 length;
 	JL_CHK( JsvalToDoubleVector(cx, JL_FARG(2), equation, COUNTOF(equation), &length ) );
+
 	glClipPlane(JSVAL_TO_INT(JL_FARG(1)), equation);
+	
 	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
@@ -1181,7 +1704,9 @@ DEFINE_FUNCTION_FAST( Viewport ) {
 	JL_S_ASSERT_INT(JL_FARG(2));
 	JL_S_ASSERT_INT(JL_FARG(3));
 	JL_S_ASSERT_INT(JL_FARG(4));
+
 	glViewport(JSVAL_TO_INT(JL_FARG(1)), JSVAL_TO_INT(JL_FARG(2)), JSVAL_TO_INT(JL_FARG(3)), JSVAL_TO_INT(JL_FARG(4)));
+	
 	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
@@ -1203,7 +1728,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Frustum ) {
 
-	JL_S_ASSERT_ARG_MIN(6);
+	JL_S_ASSERT_ARG(6);
 	jsdouble left, right, bottom, top, zNear, zFar;
 	JsvalToDouble(cx, JL_FARG(1), &left);
 	JsvalToDouble(cx, JL_FARG(2), &right);
@@ -1211,7 +1736,9 @@ DEFINE_FUNCTION_FAST( Frustum ) {
 	JsvalToDouble(cx, JL_FARG(4), &top);
 	JsvalToDouble(cx, JL_FARG(5), &zNear);
 	JsvalToDouble(cx, JL_FARG(6), &zFar);
+
 	glFrustum(left, right, bottom, top, zNear, zFar);
+	
 	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
@@ -1233,7 +1760,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Ortho ) {
 
-	JL_S_ASSERT_ARG_MIN(6);
+	JL_S_ASSERT_ARG(6);
 	jsdouble left, right, bottom, top, zNear, zFar;
 	JsvalToDouble(cx, JL_FARG(1), &left);
 	JsvalToDouble(cx, JL_FARG(2), &right);
@@ -1242,9 +1769,8 @@ DEFINE_FUNCTION_FAST( Ortho ) {
 	JsvalToDouble(cx, JL_FARG(5), &zNear);
 	JsvalToDouble(cx, JL_FARG(6), &zFar);
 
-//	glMatrixMode(GL_PROJECTION);
-//	glLoadIdentity();
 	glOrtho(left, right, bottom, top, zNear, zFar);
+	
 	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
@@ -1270,7 +1796,7 @@ DEFINE_FUNCTION_FAST( Perspective ) {
 	//cf. gluPerspective(fovy, float(viewport[2]) / float(viewport[3]), zNear, zFar);
 
 	JL_S_ASSERT_ARG(3);
-	jsdouble fovy, zNear, zFar;
+	double fovy, zNear, zFar;
 	JsvalToDouble(cx, JL_FARG(1), &fovy);
 	JsvalToDouble(cx, JL_FARG(2), &zNear);
 	JsvalToDouble(cx, JL_FARG(3), &zFar);
@@ -1322,9 +1848,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( MatrixMode ) {
 
-	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_ARG(1);
 	JL_S_ASSERT_INT(JL_FARG(1));
+	
 	glMatrixMode(JSVAL_TO_INT( JL_FARG(1) ));
+	
 	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
@@ -1339,9 +1867,13 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( LoadIdentity ) {
 
+	JL_S_ASSERT_ARG(0);
+
 	glLoadIdentity();
+
 	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -1353,9 +1885,13 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( PushMatrix ) {
 
+	JL_S_ASSERT_ARG(0);
+
 	glPushMatrix();
+
 	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -1367,9 +1903,13 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( PopMatrix ) {
 
+	JL_S_ASSERT_ARG(0);
+
 	glPopMatrix();
+
 	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -1383,7 +1923,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( LoadMatrix ) {
 
-	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_ARG(1);
 	float tmp[16], *m = tmp;
 
 	JL_S_ASSERT_OBJECT( JL_FARG(1) );
@@ -1391,11 +1931,14 @@ DEFINE_FUNCTION_FAST( LoadMatrix ) {
 	NIMatrix44Get fct = Matrix44GetInterface(cx, matrixObj);
 	JL_S_ASSERT( fct, "Invalid Matrix44 interface." );
 	JL_CHK( fct(cx, matrixObj, &m) );
+
 	glLoadMatrixf(m);
+
 	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
+
 
 /**doc
 $TOC_MEMBER $INAME
@@ -1407,7 +1950,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( MultMatrix ) {
 
-	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_ARG(1);
 	float tmp[16], *m = tmp;
 
 	JL_S_ASSERT_OBJECT( JL_FARG(1) );
@@ -1415,7 +1958,9 @@ DEFINE_FUNCTION_FAST( MultMatrix ) {
 	NIMatrix44Get fct = Matrix44GetInterface(cx, matrixObj);
 	JL_S_ASSERT( fct, "Invalid Matrix44 interface." );
 	JL_CHK( fct(cx, matrixObj, &m) );
+
 	glMultMatrixf(m);
+
 	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
@@ -1435,13 +1980,15 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Rotate ) {
 
-	JL_S_ASSERT_ARG_MIN(4);
+	JL_S_ASSERT_ARG(4);
 	jsdouble angle, x, y, z;
 	JsvalToDouble(cx, JL_FARG(1), &angle);
 	JsvalToDouble(cx, JL_FARG(2), &x);
 	JsvalToDouble(cx, JL_FARG(3), &y);
 	JsvalToDouble(cx, JL_FARG(4), &z);
+	
 	glRotated(angle, x, y, z);
+	
 	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
@@ -1460,15 +2007,17 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Translate ) {
 
-	JL_S_ASSERT_ARG_RANGE(2, 3);
-	jsdouble x, y, z;
+	JL_S_ASSERT_ARG_RANGE(2,3);
+	double x, y, z;
 	JsvalToDouble(cx, JL_FARG(1), &x);
 	JsvalToDouble(cx, JL_FARG(2), &y);
-	if ( JL_FARG_ISDEF(3) )
+	if ( argc >= 3 )
 		JsvalToDouble(cx, JL_FARG(3), &z);
 	else
 		z = 0;
+	
 	glTranslated(x, y, z);
+
 	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
@@ -1515,22 +2064,26 @@ DEFINE_FUNCTION_FAST( Scale ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $INT $INAME( [ , compileOnly ] )
+ $INT $INAME( [ compileOnly ] )
   Returns a new display-list.
   $H OpenGL API
-   glNewList
+   glGenLists, glNewList
 **/
 DEFINE_FUNCTION_FAST( NewList ) {
 
+	JL_S_ASSERT_ARG_RANGE(0,1);
 	bool compileOnly;
 	if ( JL_FARG_ISDEF(1) )
 		JsvalToBool(cx, JL_FARG(1), &compileOnly);
 	else
 		compileOnly = false;
+
 	GLuint list = glGenLists(1);
 	glNewList(list, compileOnly ? GL_COMPILE : GL_COMPILE_AND_EXECUTE);
+	
 	*JL_FRVAL = INT_TO_JSVAL(list);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -1545,10 +2098,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( DeleteList ) {
 
-	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_ARG(1);
 	JL_S_ASSERT_INT(JL_FARG(1));
-	GLuint list = JSVAL_TO_INT(JL_FARG(1));
-	glDeleteLists(list, 1);
+	
+	glDeleteLists(JSVAL_TO_INT(JL_FARG(1)), 1);
+	
 	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
@@ -1563,9 +2117,13 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( EndList ) {
 
+	JL_S_ASSERT_ARG(0);
+
 	glEndList();
+
 	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -1580,16 +2138,16 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( CallList ) {
 
-	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_ARG(1);
 	*JL_FRVAL = JSVAL_VOID;
 
 	if (JSVAL_IS_INT( JL_FARG(1) )) {
 
-		GLuint list = JSVAL_TO_INT(JL_FARG(1));
-		glCallList(list);
+		glCallList(JSVAL_TO_INT(JL_FARG(1)));
+
 		return JS_TRUE;
 	}
-	else if (JsvalIsArray(cx, JL_FARG(1))) {
+	if (JsvalIsArray(cx, JL_FARG(1))) {
 
 		JSObject *jsArray = JSVAL_TO_OBJECT(JL_FARG(1));
 		jsuint length;
@@ -1602,11 +2160,12 @@ DEFINE_FUNCTION_FAST( CallList ) {
 			JL_CHK( JS_GetElement(cx, jsArray, i, &value) );
 			lists[i] = JSVAL_TO_INT(value);
 		}
+
 		glCallLists(length, GL_UNSIGNED_INT, lists); // http://www.opengl.org/documentation/specs/man_pages/hardcopy/GL/html/gl/calllists.html
+
 		free(lists);
 		return JS_TRUE;
 	}
-
 	JL_REPORT_ERROR("Invalid argument");
 	JL_BAD;
 }
@@ -1622,9 +2181,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Begin ) {
 
-	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_ARG(1);
 	JL_S_ASSERT_INT(JL_FARG(1));
+	
 	glBegin(JSVAL_TO_INT( JL_FARG(1) ));
+	
 	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
@@ -1639,9 +2200,13 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( End ) {
 
+	JL_S_ASSERT_ARG(0);
+
 	glEnd();
+	
 	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -1655,9 +2220,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( PushAttrib ) {
 
-	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_ARG(1);
 	JL_S_ASSERT_INT(JL_FARG(1));
+	
 	glPushAttrib(JSVAL_TO_INT( JL_FARG(1) ));
+	
 	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
@@ -1672,9 +2239,13 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( PopAttrib ) {
 
+	JL_S_ASSERT_ARG(0);
+	
 	glPopAttrib();
+
 	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -1687,10 +2258,14 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( GenTexture ) {
 
+	JL_S_ASSERT_ARG(0);
 	GLuint texture;
+	
 	glGenTextures( 1, &texture );
+	
 	*JL_FRVAL = INT_TO_JSVAL(texture);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -1705,10 +2280,12 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( BindTexture ) {
 
-	JL_S_ASSERT_ARG_MIN(2);
+	JL_S_ASSERT_ARG(2);
 	JL_S_ASSERT_INT(JL_FARG(1));
 	JL_S_ASSERT_INT(JL_FARG(2));
+
 	glBindTexture( JSVAL_TO_INT( JL_FARG(1) ), JSVAL_TO_INT( JL_FARG(2) ));
+	
 	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
@@ -1726,10 +2303,12 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( DeleteTexture ) {
 
-	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_ARG(1);
 	JL_S_ASSERT_INT(JL_FARG(1));
 	GLuint texture = JSVAL_TO_INT( JL_FARG(1) );
+
 	glDeleteTextures(1, &texture);
+
 	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
@@ -1764,15 +2343,6 @@ DEFINE_FUNCTION_FAST( CopyTexImage2D ) {
 	JL_S_ASSERT_INT(JL_FARG(6));
 	JL_S_ASSERT_INT(JL_FARG(7));
 
-	GLenum target = JSVAL_TO_INT(JL_FARG(1));
-	GLint level = JSVAL_TO_INT(JL_FARG(2));
-	GLenum internalFormat = JSVAL_TO_INT(JL_FARG(3));
-
-	GLint x = JSVAL_TO_INT(JL_FARG(4));
-	GLint y = JSVAL_TO_INT(JL_FARG(5));
-	GLint width = JSVAL_TO_INT(JL_FARG(6));
-	GLint height = JSVAL_TO_INT(JL_FARG(7));
-
 	GLint border;
 	if ( JL_FARG_ISDEF(8) ) {
 
@@ -1783,7 +2353,7 @@ DEFINE_FUNCTION_FAST( CopyTexImage2D ) {
 		border = 0;
 	}
 
-	glCopyTexImage2D( GL_TEXTURE_2D, level, internalFormat, x, y, width, height, border );
+	glCopyTexImage2D(JSVAL_TO_INT(JL_FARG(1)), JSVAL_TO_INT(JL_FARG(2)), JSVAL_TO_INT(JL_FARG(3)), JSVAL_TO_INT(JL_FARG(4)), JSVAL_TO_INT(JL_FARG(5)), JSVAL_TO_INT(JL_FARG(6)), JSVAL_TO_INT(JL_FARG(7)), border);
 
 	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
@@ -1827,6 +2397,38 @@ DEFINE_FUNCTION_FAST( TexSubImage2D ) {
 */
 
 
+/**doc
+$TOC_MEMBER $INAME
+ $VOID $INAME( x, y [ , z [ , w ] ] )
+  $H OpenGL API
+   glRasterPos*
+**/
+DEFINE_FUNCTION_FAST( RasterPos ) {
+
+	JL_S_ASSERT_ARG_RANGE(2,4);
+	double x, y, z, w;
+
+	*JL_FRVAL = JSVAL_VOID;
+
+	JsvalToDouble(cx, JL_FARG(1), &x);
+	JsvalToDouble(cx, JL_FARG(2), &y);
+	if ( argc >= 3 ) {
+
+		JsvalToDouble(cx, JL_FARG(3), &z);
+		if ( argc >= 4 ) {
+
+			JsvalToDouble(cx, JL_FARG(4), &w);
+			glRasterPos4d(x, y, z, w);
+			return JS_TRUE;
+		}
+		glRasterPos3d(x, y, z);
+		return JS_TRUE;
+	}
+	glRasterPos2d(x, y);
+ 	return JS_TRUE;
+	JL_BAD;
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // OpenGL extensions
@@ -1842,9 +2444,12 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION_FAST( GenBuffer ) {
 
 	LOAD_OPENGL_EXTENSION( glGenBuffersARB, PFNGLGENBUFFERSARBPROC );
-
+	
+	JL_S_ASSERT_ARG(0);
 	GLuint buffer;
+	
 	glGenBuffersARB(1, &buffer);
+	
 	*JL_FRVAL = INT_TO_JSVAL(buffer);
 	return JS_TRUE;
 	JL_BAD;
@@ -1864,17 +2469,46 @@ DEFINE_FUNCTION_FAST( BindBuffer ) {
 
 	LOAD_OPENGL_EXTENSION( glBindBufferARB, PFNGLBINDBUFFERARBPROC );
 
-	JL_S_ASSERT_ARG_MIN(2);
+	JL_S_ASSERT_ARG(2);
 	JL_S_ASSERT_INT(JL_FARG(1));
 	JL_S_ASSERT_INT(JL_FARG(2));
-	GLenum target = JSVAL_TO_INT(JL_FARG(1));
-	GLenum buffer = JSVAL_TO_INT(JL_FARG(2));
-	glBindBufferARB(target, buffer);
+	
+	glBindBufferARB(JSVAL_TO_INT(JL_FARG(1)), JSVAL_TO_INT(JL_FARG(2)));
+
 	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
 
+
+/* *doc
+$TOC_MEMBER $INAME
+ $VOID $INAME( target, size )
+  $H arguments
+   $ARG GLenum target
+   $ARG $INT buffer
+  $H OpenGL API
+   glBindBufferARB
+**/
+/*
+DEFINE_FUNCTION_FAST( BufferData ) {
+
+	LOAD_OPENGL_EXTENSION( glBufferDataARB, PFNGLBUFFERDATAARBPROC ); // glBufferDataARB (GLenum target, GLsizeiptrARB size, const GLvoid *data, GLenum usage);
+
+	// see http://www.songho.ca/opengl/gl_pbo.html
+
+	JL_S_ASSERT_ARG_MIN(2);
+	JL_S_ASSERT_INT(JL_FARG(1));
+	JL_S_ASSERT_INT(JL_FARG(2));
+	GLenum target = JSVAL_TO_INT(JL_FARG(1));
+	GLenum buffer = JSVAL_TO_INT(JL_FARG(2));
+	
+	glBufferDataARB(target, buffer);
+	*JL_FRVAL = JSVAL_VOID;
+	return JS_TRUE;
+	JL_BAD;
+}
+*/
 
 
 /**doc
@@ -1888,23 +2522,26 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( PointParameter ) {
 
+	LOAD_OPENGL_EXTENSION( glPointParameteri, PFNGLPOINTPARAMETERIPROC );
 	LOAD_OPENGL_EXTENSION( glPointParameterf, PFNGLPOINTPARAMETERFPROC );
 	LOAD_OPENGL_EXTENSION( glPointParameterfv, PFNGLPOINTPARAMETERFVPROC );
 
-	JL_S_ASSERT_ARG_MIN(2);
+	JL_S_ASSERT_ARG(2);
 	JL_S_ASSERT_INT(JL_FARG(1));
 
 	*JL_FRVAL = JSVAL_VOID;
-//	if ( JSVAL_IS_INT(JL_FARG(2)) ) {
-//
-//		glPointParameteri(JSVAL_TO_INT(JL_FARG(1)), JSVAL_TO_INT(JL_FARG(2)));
-//		return JS_TRUE;
-//	}
-	if ( JSVAL_IS_NUMBER(JL_FARG(2)) ) {
+	if ( JSVAL_IS_INT(JL_FARG(2)) ) {
 
-		jsdouble param;
+		glPointParameteri(JSVAL_TO_INT(JL_FARG(1)), JSVAL_TO_INT(JL_FARG(2)));
+		return JS_TRUE;
+	}
+	if ( JSVAL_IS_DOUBLE(JL_FARG(2)) ) {
+
+		double param;
 		JsvalToDouble(cx, JL_FARG(2), &param);
+
 		glPointParameterf( JSVAL_TO_INT(JL_FARG(1)), param );
+		
 		return JS_TRUE;
 	}
 	if ( JsvalIsArray(cx, JL_FARG(2)) ) {
@@ -1932,10 +2569,11 @@ DEFINE_FUNCTION_FAST( ActiveTexture ) {
 
 	LOAD_OPENGL_EXTENSION( glActiveTextureARB, PFNGLACTIVETEXTUREARBPROC );
 
-	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_ARG(1);
 	JL_S_ASSERT_INT(JL_FARG(1));
-	GLenum texture = JSVAL_TO_INT(JL_FARG(1));
-	glActiveTextureARB(texture);
+	
+	glActiveTextureARB(JSVAL_TO_INT(JL_FARG(1)));
+	
 	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
@@ -1954,10 +2592,11 @@ DEFINE_FUNCTION_FAST( ClientActiveTexture ) {
 
 	LOAD_OPENGL_EXTENSION( glClientActiveTextureARB, PFNGLCLIENTACTIVETEXTUREARBPROC );
 
-	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_ARG(1);
 	JL_S_ASSERT_INT(JL_FARG(1));
-	GLenum texture = JSVAL_TO_INT(JL_FARG(1));
-	glClientActiveTextureARB(texture);
+
+	glClientActiveTextureARB(JSVAL_TO_INT(JL_FARG(1)));
+	
 	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
@@ -1982,26 +2621,26 @@ DEFINE_FUNCTION_FAST( MultiTexCoord ) {
 	LOAD_OPENGL_EXTENSION( glMultiTexCoord3d, PFNGLMULTITEXCOORD3DARBPROC );
 
 	JL_S_ASSERT_ARG_RANGE(2,4);
+	*JL_FRVAL = JSVAL_VOID;
 
 	JL_S_ASSERT_INT(JL_FARG(1));
 	GLenum target = JSVAL_TO_INT(JL_FARG(1));
 
-	*JL_FRVAL = JSVAL_VOID;
-	jsdouble s;
+	double s;
 	JsvalToDouble(cx, JL_FARG(2), &s);
 	if ( JL_ARGC == 2 ) {
 
 		glMultiTexCoord1d(target, s);
 		return JS_TRUE;
 	}
-	jsdouble t;
+	double t;
 	JsvalToDouble(cx, JL_FARG(3), &t);
 	if ( JL_ARGC == 3 ) {
 
 		glMultiTexCoord2d(target, s, t);
 		return JS_TRUE;
 	}
-	jsdouble r;
+	double r;
 	JsvalToDouble(cx, JL_FARG(4), &r);
 	if ( JL_ARGC == 4 ) {
 
@@ -2009,6 +2648,399 @@ DEFINE_FUNCTION_FAST( MultiTexCoord ) {
 		return JS_TRUE;
 	}
 	JL_REPORT_ERROR("Invalid argument.");
+	JL_BAD;
+}
+
+
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $VOID $INAME( target, renderbuffer )
+  $H arguments
+   $ARG enum target
+   $ARG uint renderbuffer
+  $H API
+   glBindRenderbufferEXT
+**/
+DEFINE_FUNCTION_FAST( BindRenderbuffer ) {
+
+	LOAD_OPENGL_EXTENSION( glBindRenderbufferEXT, PFNGLBINDRENDERBUFFEREXTPROC );
+
+	JL_S_ASSERT_ARG(2);
+	JL_S_ASSERT_INT(JL_FARG(1));
+	JL_S_ASSERT_INT(JL_FARG(2));
+	
+	glBindRenderbufferEXT(JSVAL_TO_INT(JL_FARG(1)), JSVAL_TO_INT(JL_FARG(2)) );
+	
+	*JL_FRVAL = JSVAL_VOID;
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $INT $INAME()
+  $H OpenGL API
+   glGenRenderbuffersEXT
+**/
+DEFINE_FUNCTION_FAST( GenRenderbuffer ) {
+
+	LOAD_OPENGL_EXTENSION( glGenRenderbuffersEXT, PFNGLGENRENDERBUFFERSEXTPROC );
+	
+	JL_S_ASSERT_ARG(0);
+	GLuint buffer;
+	
+	glGenRenderbuffersEXT(1, &buffer);
+	
+	*JL_FRVAL = INT_TO_JSVAL(buffer);
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $INT $INAME( renderbuffer )
+  $H arguments
+   $ARG int renderbuffer
+  $H OpenGL API
+   glDeleteRenderbuffersEXT
+**/
+DEFINE_FUNCTION_FAST( DeleteRenderbuffer ) {
+
+	LOAD_OPENGL_EXTENSION( glDeleteRenderbuffersEXT, PFNGLDELETERENDERBUFFERSEXTPROC );
+	JL_S_ASSERT_ARG(1);
+	JL_S_ASSERT_INT(JL_FARG(1));
+	GLuint buffer = JSVAL_TO_INT(JL_FARG(1));
+	glDeleteRenderbuffersEXT(1, &buffer);
+	*JL_FRVAL = JSVAL_VOID;
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $INT $INAME( target, internalformat, width, height )
+  $H arguments
+   $ARG enum target
+   $ARG enum internalformat
+   $ARG int width
+   $ARG int height
+  $H OpenGL API
+   glRenderbufferStorageEXT
+**/
+DEFINE_FUNCTION_FAST( RenderbufferStorage ) {
+
+	LOAD_OPENGL_EXTENSION( glRenderbufferStorageEXT, PFNGLRENDERBUFFERSTORAGEEXTPROC );
+	JL_S_ASSERT_ARG(4);
+	JL_S_ASSERT_INT(JL_FARG(1));
+	JL_S_ASSERT_INT(JL_FARG(2));
+	JL_S_ASSERT_INT(JL_FARG(3));
+	JL_S_ASSERT_INT(JL_FARG(4));
+	glRenderbufferStorageEXT(JSVAL_TO_INT(JL_FARG(1)), JSVAL_TO_INT(JL_FARG(2)), JSVAL_TO_INT(JL_FARG(3)), JSVAL_TO_INT(JL_FARG(4)) );
+	*JL_FRVAL = JSVAL_VOID;
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $INT $INAME( target, pname [, count] )
+  $H arguments
+   $ARG enum target
+   $ARG enum pname
+   $ARG int|Array params
+  $H OpenGL API
+   glGetRenderbufferParameterivEXT
+**/
+DEFINE_FUNCTION_FAST( GetRenderbufferParameter ) {
+
+	LOAD_OPENGL_EXTENSION( glGetRenderbufferParameterivEXT, PFNGLGETRENDERBUFFERPARAMETERIVEXTPROC );
+
+	JL_S_ASSERT_ARG_RANGE(2,3);
+	JL_S_ASSERT_INT(JL_FARG(1));
+	JL_S_ASSERT_INT(JL_FARG(2));
+
+	GLint params[16]; // (TBD) check if it is the max amount of data that glGetRenderbufferParameterivEXT may returns.
+	
+	glGetRenderbufferParameterivEXT(JSVAL_TO_INT(JL_FARG(1)), JSVAL_TO_INT(JL_FARG(2)), params );
+
+	if ( JL_FARG_ISDEF(3) ) {
+		
+		int count;
+		JL_CHK( JsvalToInt(cx, JL_FARG(3), &count) );
+		JL_S_ASSERT( count <= COUNTOF(params), "Too many params" );
+		JL_CHK( IntVectorToJsval(cx, params, count, JL_FRVAL, false) );
+	} else {
+
+		*JL_FRVAL = INT_TO_JSVAL( params[0] );
+	}
+
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $VOID $INAME( target, renderbuffer )
+  $H arguments
+   $ARG enum target
+   $ARG uint renderbuffer
+  $H API
+   glBindFramebufferEXT
+**/
+DEFINE_FUNCTION_FAST( BindFramebuffer ) {
+
+	LOAD_OPENGL_EXTENSION( glBindFramebufferEXT, PFNGLBINDFRAMEBUFFEREXTPROC );
+	JL_S_ASSERT_ARG(2);
+	JL_S_ASSERT_INT(JL_FARG(1));
+	JL_S_ASSERT_INT(JL_FARG(2));
+	glBindFramebufferEXT( JSVAL_TO_INT(JL_FARG(1)), JSVAL_TO_INT(JL_FARG(2)) );
+	*JL_FRVAL = JSVAL_VOID;
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $INT $INAME()
+  $H OpenGL API
+   glGenFramebuffersEXT
+**/
+DEFINE_FUNCTION_FAST( GenFramebuffer ) {
+
+	LOAD_OPENGL_EXTENSION( glGenFramebuffersEXT, PFNGLGENFRAMEBUFFERSEXTPROC );
+	JL_S_ASSERT_ARG(0);
+	GLuint buffer;
+	glGenFramebuffersEXT(1, &buffer);
+	*JL_FRVAL = INT_TO_JSVAL(buffer);
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $INT $INAME( renderbuffer )
+  $H arguments
+   $ARG int renderbuffer
+  $H OpenGL API
+   glDeleteFranebuffersEXT
+**/
+DEFINE_FUNCTION_FAST( DeleteFramebuffer ) {
+
+	LOAD_OPENGL_EXTENSION( glDeleteFramebuffersEXT, PFNGLDELETEFRAMEBUFFERSEXTPROC );
+	JL_S_ASSERT_ARG(1);
+	JL_S_ASSERT_INT(JL_FARG(1));
+	GLuint buffer = JSVAL_TO_INT(JL_FARG(1));
+	glDeleteFramebuffersEXT(1, &buffer);
+	*JL_FRVAL = JSVAL_VOID;
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $INT $INAME( target )
+  $H arguments
+   $ARG enum target
+  $H OpenGL API
+   glCheckFramebufferStatusEXT
+**/
+DEFINE_FUNCTION_FAST( CheckFramebufferStatus ) {
+
+	LOAD_OPENGL_EXTENSION( glCheckFramebufferStatusEXT, PFNGLCHECKFRAMEBUFFERSTATUSEXTPROC );
+	JL_S_ASSERT_ARG(1);
+	JL_S_ASSERT_INT(JL_FARG(1));
+	*JL_FRVAL = INT_TO_JSVAL( glCheckFramebufferStatusEXT(JL_FARG(1)) );
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $INT $INAME( target, attachment, textarget, texture, level )
+  $H arguments
+   $ARG enum target
+   $ARG enum attachment
+   $ARG enum textarget
+   $ARG uint texture
+   $ARG int level
+  $H OpenGL API
+   glFramebufferTexture1DEXT
+**/
+DEFINE_FUNCTION_FAST( FramebufferTexture1D ) {
+
+	LOAD_OPENGL_EXTENSION( glFramebufferTexture1DEXT, PFNGLFRAMEBUFFERTEXTURE1DEXTPROC );
+	JL_S_ASSERT_ARG(5);
+	JL_S_ASSERT_INT(JL_FARG(1));
+	JL_S_ASSERT_INT(JL_FARG(2));
+	JL_S_ASSERT_INT(JL_FARG(3));
+	JL_S_ASSERT_INT(JL_FARG(4));
+	JL_S_ASSERT_INT(JL_FARG(5));
+
+	glFramebufferTexture1DEXT( JSVAL_TO_INT(JL_FARG(1)), JSVAL_TO_INT(JL_FARG(2)), JSVAL_TO_INT(JL_FARG(3)), JSVAL_TO_INT(JL_FARG(4)), JSVAL_TO_INT(JL_FARG(5)) );
+	
+	*JL_FRVAL = JSVAL_VOID;
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $INT $INAME( target, attachment, textarget, texture, level )
+  $H arguments
+   $ARG enum target
+   $ARG enum attachment
+   $ARG enum textarget
+   $ARG uint texture
+   $ARG int level
+  $H OpenGL API
+   glFramebufferTexture2DEXT
+**/
+DEFINE_FUNCTION_FAST( FramebufferTexture2D ) {
+
+	LOAD_OPENGL_EXTENSION( glFramebufferTexture2DEXT, PFNGLFRAMEBUFFERTEXTURE2DEXTPROC );
+	JL_S_ASSERT_ARG(5);
+	JL_S_ASSERT_INT(JL_FARG(1));
+	JL_S_ASSERT_INT(JL_FARG(2));
+	JL_S_ASSERT_INT(JL_FARG(3));
+	JL_S_ASSERT_INT(JL_FARG(4));
+	JL_S_ASSERT_INT(JL_FARG(5));
+
+	glFramebufferTexture2DEXT( JSVAL_TO_INT(JL_FARG(1)), JSVAL_TO_INT(JL_FARG(2)), JSVAL_TO_INT(JL_FARG(3)), JSVAL_TO_INT(JL_FARG(4)), JSVAL_TO_INT(JL_FARG(5)) );
+	
+	*JL_FRVAL = JSVAL_VOID;
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $INT $INAME( target, attachment, textarget, texture, level, zoffset )
+  $H arguments
+   $ARG enum target
+   $ARG enum attachment
+   $ARG enum textarget
+   $ARG uint texture
+   $ARG int level
+   $ARG int zoffset
+  $H OpenGL API
+   glFramebufferTexture3DEXT
+**/
+DEFINE_FUNCTION_FAST( FramebufferTexture3D ) {
+
+	LOAD_OPENGL_EXTENSION( glFramebufferTexture3DEXT, PFNGLFRAMEBUFFERTEXTURE3DEXTPROC );
+	JL_S_ASSERT_ARG(5);
+	JL_S_ASSERT_INT(JL_FARG(1));
+	JL_S_ASSERT_INT(JL_FARG(2));
+	JL_S_ASSERT_INT(JL_FARG(3));
+	JL_S_ASSERT_INT(JL_FARG(4));
+	JL_S_ASSERT_INT(JL_FARG(5));
+	JL_S_ASSERT_INT(JL_FARG(6));
+
+	glFramebufferTexture3DEXT( JSVAL_TO_INT(JL_FARG(1)), JSVAL_TO_INT(JL_FARG(2)), JSVAL_TO_INT(JL_FARG(3)), JSVAL_TO_INT(JL_FARG(4)), JSVAL_TO_INT(JL_FARG(5)), JSVAL_TO_INT(JL_FARG(6)) );
+	
+	*JL_FRVAL = JSVAL_VOID;
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $INT $INAME( target, attachment, renderbuffertarget, renderbuffer )
+  $H arguments
+   $ARG enum target
+   $ARG enum attachment
+   $ARG enum renderbuffertarget
+   $ARG uint renderbuffer
+  $H OpenGL API
+   glFramebufferRenderbufferEXT
+**/
+DEFINE_FUNCTION_FAST( FramebufferRenderbuffer ) {
+
+	LOAD_OPENGL_EXTENSION( glFramebufferRenderbufferEXT, PFNGLFRAMEBUFFERRENDERBUFFEREXTPROC );
+	JL_S_ASSERT_ARG(5);
+	JL_S_ASSERT_INT(JL_FARG(1));
+	JL_S_ASSERT_INT(JL_FARG(2));
+	JL_S_ASSERT_INT(JL_FARG(3));
+	JL_S_ASSERT_INT(JL_FARG(4));
+
+	glFramebufferRenderbufferEXT( JSVAL_TO_INT(JL_FARG(1)), JSVAL_TO_INT(JL_FARG(2)), JSVAL_TO_INT(JL_FARG(3)), JSVAL_TO_INT(JL_FARG(4)) );
+	
+	*JL_FRVAL = JSVAL_VOID;
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $INT $INAME( target, attachment, pname [, count] )
+  $H arguments
+   $ARG enum target
+	$ARG enum attachment
+   $ARG enum pname
+   $ARG int|Array params
+  $H OpenGL API
+   glGetFramebufferAttachmentParameterivEXT
+**/
+DEFINE_FUNCTION_FAST( GetFramebufferAttachmentParameter ) {
+
+	LOAD_OPENGL_EXTENSION( glGetFramebufferAttachmentParameterivEXT, PFNGLGETFRAMEBUFFERATTACHMENTPARAMETERIVEXTPROC );
+
+	JL_S_ASSERT_ARG_RANGE(3,4);
+	JL_S_ASSERT_INT(JL_FARG(1));
+	JL_S_ASSERT_INT(JL_FARG(2));
+	JL_S_ASSERT_INT(JL_FARG(3));
+
+	GLint params[16]; // (TBD) check if it is the max amount of data that glGetRenderbufferParameterivEXT may returns.
+	
+	glGetFramebufferAttachmentParameterivEXT(JSVAL_TO_INT(JL_FARG(1)), JSVAL_TO_INT(JL_FARG(2)), JSVAL_TO_INT(JL_FARG(3)), params);
+
+	if ( JL_FARG_ISDEF(4) ) {
+		
+		int count;
+		JL_CHK( JsvalToInt(cx, JL_FARG(4), &count) );
+		JL_S_ASSERT( count <= COUNTOF(params), "Too many params" );
+		JL_CHK( IntVectorToJsval(cx, params, count, JL_FRVAL, false) );
+	} else {
+
+		*JL_FRVAL = INT_TO_JSVAL( params[0] );
+	}
+
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $INT $INAME( target, attachment, pname [, count] )
+  $H arguments
+   $ARG enum target
+  $H OpenGL API
+**/
+DEFINE_FUNCTION_FAST( CreatePbuffer ) {
+
+	LOAD_OPENGL_EXTENSION( wglCreatePbufferARB, PFNGLGETFRAMEBUFFERATTACHMENTPARAMETERIVEXTPROC );
+
+
+	return JS_TRUE;
 	JL_BAD;
 }
 
@@ -2036,7 +3068,9 @@ DEFINE_FUNCTION_FAST( LookAt ) {
 	JsvalToDouble(cx, JL_FARG(7), &upx);
 	JsvalToDouble(cx, JL_FARG(8), &upy);
 	JsvalToDouble(cx, JL_FARG(9), &upz);
+
 	gluLookAt(eyex, eyey, eyez, centerx, centery, centerz, upx, upy, upz);
+	
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -2073,6 +3107,7 @@ struct OpenGlTrimeshInfo {
 void FinalizeTrimesh(void *pv) {
 
 /* (TBD)!
+
 	static PFNGLDELETEBUFFERSARBPROC glDeleteBuffersARB = (PFNGLDELETEBUFFERSARBPROC) GL_GET_PROC_ADDRESS( "PFNGLDELETEBUFFERSARBPROC" );
 
 	OpenGlTrimeshInfo *info = (OpenGlTrimeshInfo*)pv;
@@ -2089,7 +3124,7 @@ void FinalizeTrimesh(void *pv) {
 
 /**doc
 $TOC_MEMBER $INAME
- $TYPE Id $INAME( trimesh )
+ $TYPE trimeshId $INAME( trimesh )
 **/
 DEFINE_FUNCTION_FAST( LoadTrimesh ) {
 
@@ -2097,7 +3132,7 @@ DEFINE_FUNCTION_FAST( LoadTrimesh ) {
 	LOAD_OPENGL_EXTENSION( glBindBufferARB, PFNGLBINDBUFFERARBPROC );
 	LOAD_OPENGL_EXTENSION( glBufferDataARB, PFNGLBUFFERDATAARBPROC );
 
-	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_ARG(1);
 	JL_S_ASSERT_OBJECT(JL_FARG(1));
 	JSObject *trimeshObj = JSVAL_TO_OBJECT(JL_FARG(1));
 	JL_S_ASSERT( JsvalIsTrimesh(cx, JL_FARG(1)), "Invalid Trimesh object" );
@@ -2157,7 +3192,7 @@ DEFINE_FUNCTION_FAST( LoadTrimesh ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $VOID $INAME()
+ $VOID $INAME( trimeshId )
   $H OpenGL API
    glVertexPointer
 **/
@@ -2308,38 +3343,6 @@ DEFINE_FUNCTION_FAST( DefineTextureImage ) {
 	JL_BAD;
 }
 
-
-/**doc
-$TOC_MEMBER $INAME
- $VOID $INAME( x, y [ , z [ , w ] ] )
-  $H OpenGL API
-   glRasterPos*
-**/
-DEFINE_FUNCTION_FAST( RasterPos ) {
-
-	JL_S_ASSERT_ARG_RANGE(2,4);
-	double x, y, z, w;
-
-	*JL_FRVAL = JSVAL_VOID;
-
-	JsvalToDouble(cx, JL_FARG(1), &x);
-	JsvalToDouble(cx, JL_FARG(2), &y);
-	if ( argc >= 3 ) {
-
-		JsvalToDouble(cx, JL_FARG(3), &z);
-		if ( argc >= 4 ) {
-
-			JsvalToDouble(cx, JL_FARG(4), &w);
-			glRasterPos4d(x, y, z, w);
-			return JS_TRUE;
-		}
-		glRasterPos3d(x, y, z);
-		return JS_TRUE;
-	}
-	glRasterPos2d(x, y);
- 	return JS_TRUE;
-	JL_BAD;
-}
 
 
 /**doc
@@ -2496,8 +3499,8 @@ $TOC_MEMBER $INAME( size )
 DEFINE_FUNCTION_FAST( DrawPoint ) {
 
 	JL_S_ASSERT_ARG(1);
-	float size;
-	JL_CHK( JsvalToFloat(cx, JL_FARG(1), &size) );
+	double size;
+	JL_CHK( JsvalToDouble(cx, JL_FARG(1), &size) );
 	glPointSize(size); // get max with GL_POINT_SIZE_RANGE
 	glBegin(GL_POINTS);
 	glVertex2i(0,0);
@@ -2547,7 +3550,7 @@ DEFINE_FUNCTION_FAST( KeepTranslation ) {
 //	glTranslatef(m[12], m[13], m[14]);
 // ... compare perf with:
 
-	memset(m, 0, 12 * sizeof(GLfloat));
+	memset(m, 0, 12 * sizeof(GLfloat)); // 0..11
 	m[0] = 1.f;
 	m[5] = 1.f;
 	m[10] = 1.f;
@@ -2555,7 +3558,6 @@ DEFINE_FUNCTION_FAST( KeepTranslation ) {
 	glLoadMatrixf(m);
 
 	return JS_TRUE;
-	JL_BAD;
 }
 
 
@@ -2579,6 +3581,44 @@ DEFINE_PROPERTY(error) {
 }
 
 
+
+/**doc
+$TOC_MEMBER $INAME
+ $STR $INAME $READONLY
+**/
+DEFINE_PROPERTY(vendor) {
+
+	return StringToJsval(cx, (char*)glGetString(GL_VENDOR), vp);
+}
+
+/**doc
+$TOC_MEMBER $INAME
+ $STR $INAME $READONLY
+**/
+DEFINE_PROPERTY(renderer) {
+
+	return StringToJsval(cx, (char*)glGetString(GL_RENDERER), vp);
+}
+
+/**doc
+$TOC_MEMBER $INAME
+ $STR $INAME $READONLY
+**/
+DEFINE_PROPERTY(version) {
+
+	return StringToJsval(cx, (char*)glGetString(GL_VERSION), vp);
+}
+
+/**doc
+$TOC_MEMBER $INAME
+ $STR $INAME $READONLY
+**/
+DEFINE_PROPERTY(extensions) {
+
+	return StringToJsval(cx, (char*)glGetString(GL_EXTENSIONS), vp);
+}
+
+
 static int MatrixGet(JSContext *cx, JSObject *obj, float **m) {
 
 	GLint matrixMode;
@@ -2593,15 +3633,22 @@ static int MatrixGet(JSContext *cx, JSObject *obj, float **m) {
 		case GL_TEXTURE:
 			glGetFloatv(GL_TEXTURE_MATRIX, *m);
 			return true;
+		case GL_COLOR_MATRIX: // glext
+			glGetFloatv(GL_COLOR_MATRIX, *m);
+			return true;
 	}
 	return false; // JL_REPORT_ERROR( "Unsupported matrix mode." );
 }
 
 
-JSBool Init( JSContext *cx, JSObject *obj ) {
+DEFINE_INIT() {
 
-	return SetMatrix44GetInterface(cx, obj, MatrixGet);
+	JL_CHK( GetNativeFunction(cx, JS_GetGlobalObject(cx), "_glGetProcAddress", (void**)&glGetProcAddress) );
+	JL_CHK( SetMatrix44GetInterface(cx, obj, MatrixGet) );
+	return JS_TRUE;
+	JL_BAD;
 }
+
 
 
 /**doc
@@ -2622,738 +3669,16 @@ CONFIGURE_CLASS
 	HAS_INIT
 
 	BEGIN_CONST_INTEGER_SPEC
-// OpenGL constants
-		CONST_INTEGER( ACCUM  , GL_ACCUM  )
-		CONST_INTEGER( LOAD   , GL_LOAD   )
-		CONST_INTEGER( RETURN , GL_RETURN )
-		CONST_INTEGER( MULT   , GL_MULT   )
-		CONST_INTEGER( ADD    , GL_ADD    )
-
-		CONST_INTEGER( NEVER    , GL_NEVER    )
-		CONST_INTEGER( LESS     , GL_LESS     )
-		CONST_INTEGER( EQUAL    , GL_EQUAL    )
-		CONST_INTEGER( LEQUAL   , GL_LEQUAL   )
-		CONST_INTEGER( GREATER  , GL_GREATER  )
-		CONST_INTEGER( NOTEQUAL , GL_NOTEQUAL )
-		CONST_INTEGER( GEQUAL   , GL_GEQUAL   )
-		CONST_INTEGER( ALWAYS   , GL_ALWAYS   )
-
-		CONST_INTEGER( CURRENT_BIT         , GL_CURRENT_BIT         )
-		CONST_INTEGER( POINT_BIT           , GL_POINT_BIT           )
-		CONST_INTEGER( LINE_BIT            , GL_LINE_BIT            )
-		CONST_INTEGER( POLYGON_BIT         , GL_POLYGON_BIT         )
-		CONST_INTEGER( POLYGON_STIPPLE_BIT , GL_POLYGON_STIPPLE_BIT )
-		CONST_INTEGER( PIXEL_MODE_BIT      , GL_PIXEL_MODE_BIT      )
-		CONST_INTEGER( LIGHTING_BIT        , GL_LIGHTING_BIT        )
-		CONST_INTEGER( FOG_BIT             , GL_FOG_BIT             )
-		CONST_INTEGER( DEPTH_BUFFER_BIT    , GL_DEPTH_BUFFER_BIT    )
-		CONST_INTEGER( ACCUM_BUFFER_BIT    , GL_ACCUM_BUFFER_BIT    )
-		CONST_INTEGER( STENCIL_BUFFER_BIT  , GL_STENCIL_BUFFER_BIT  )
-		CONST_INTEGER( VIEWPORT_BIT        , GL_VIEWPORT_BIT        )
-		CONST_INTEGER( TRANSFORM_BIT       , GL_TRANSFORM_BIT       )
-		CONST_INTEGER( ENABLE_BIT          , GL_ENABLE_BIT          )
-		CONST_INTEGER( COLOR_BUFFER_BIT    , GL_COLOR_BUFFER_BIT    )
-		CONST_INTEGER( HINT_BIT            , GL_HINT_BIT            )
-		CONST_INTEGER( EVAL_BIT            , GL_EVAL_BIT            )
-		CONST_INTEGER( LIST_BIT            , GL_LIST_BIT            )
-		CONST_INTEGER( TEXTURE_BIT         , GL_TEXTURE_BIT         )
-		CONST_INTEGER( SCISSOR_BIT         , GL_SCISSOR_BIT         )
-		CONST_INTEGER( ALL_ATTRIB_BITS     , GL_ALL_ATTRIB_BITS     )
-
-		CONST_INTEGER( POINTS         , GL_POINTS         )
-		CONST_INTEGER( LINES          , GL_LINES          )
-		CONST_INTEGER( LINE_LOOP      , GL_LINE_LOOP      )
-		CONST_INTEGER( LINE_STRIP     , GL_LINE_STRIP     )
-		CONST_INTEGER( TRIANGLES      , GL_TRIANGLES      )
-		CONST_INTEGER( TRIANGLE_STRIP , GL_TRIANGLE_STRIP )
-		CONST_INTEGER( TRIANGLE_FAN   , GL_TRIANGLE_FAN   )
-		CONST_INTEGER( QUADS          , GL_QUADS          )
-		CONST_INTEGER( QUAD_STRIP     , GL_QUAD_STRIP     )
-		CONST_INTEGER( POLYGON        , GL_POLYGON        )
-
-		CONST_INTEGER( ZERO                , GL_ZERO                )
-		CONST_INTEGER( ONE                 , GL_ONE                 )
-		CONST_INTEGER( SRC_COLOR           , GL_SRC_COLOR           )
-		CONST_INTEGER( ONE_MINUS_SRC_COLOR , GL_ONE_MINUS_SRC_COLOR )
-		CONST_INTEGER( SRC_ALPHA           , GL_SRC_ALPHA           )
-		CONST_INTEGER( ONE_MINUS_SRC_ALPHA , GL_ONE_MINUS_SRC_ALPHA )
-		CONST_INTEGER( DST_ALPHA           , GL_DST_ALPHA           )
-		CONST_INTEGER( ONE_MINUS_DST_ALPHA , GL_ONE_MINUS_DST_ALPHA )
-
-		CONST_INTEGER( DST_COLOR           , GL_DST_COLOR           )
-		CONST_INTEGER( ONE_MINUS_DST_COLOR , GL_ONE_MINUS_DST_COLOR )
-		CONST_INTEGER( SRC_ALPHA_SATURATE  , GL_SRC_ALPHA_SATURATE  )
-
-		CONST_INTEGER( TRUE  , GL_TRUE  )
-		CONST_INTEGER( FALSE , GL_FALSE )
-
-		CONST_INTEGER( CLIP_PLANE0 , GL_CLIP_PLANE0 )
-		CONST_INTEGER( CLIP_PLANE1 , GL_CLIP_PLANE1 )
-		CONST_INTEGER( CLIP_PLANE2 , GL_CLIP_PLANE2 )
-		CONST_INTEGER( CLIP_PLANE3 , GL_CLIP_PLANE3 )
-		CONST_INTEGER( CLIP_PLANE4 , GL_CLIP_PLANE4 )
-		CONST_INTEGER( CLIP_PLANE5 , GL_CLIP_PLANE5 )
-
-		CONST_INTEGER( BYTE           , GL_BYTE           )
-		CONST_INTEGER( UNSIGNED_BYTE  , GL_UNSIGNED_BYTE  )
-		CONST_INTEGER( SHORT          , GL_SHORT          )
-		CONST_INTEGER( UNSIGNED_SHORT , GL_UNSIGNED_SHORT )
-		CONST_INTEGER( INT            , GL_INT            )
-		CONST_INTEGER( UNSIGNED_INT   , GL_UNSIGNED_INT   )
-		CONST_INTEGER( FLOAT          , GL_FLOAT          )
-		CONST_INTEGER( 2_BYTES        , GL_2_BYTES        )
-		CONST_INTEGER( 3_BYTES        , GL_3_BYTES        )
-		CONST_INTEGER( 4_BYTES        , GL_4_BYTES        )
-		CONST_INTEGER( DOUBLE         , GL_DOUBLE         )
-
-		CONST_INTEGER( NONE           , GL_NONE           )
-		CONST_INTEGER( FRONT_LEFT     , GL_FRONT_LEFT     )
-		CONST_INTEGER( FRONT_RIGHT    , GL_FRONT_RIGHT    )
-		CONST_INTEGER( BACK_LEFT      , GL_BACK_LEFT      )
-		CONST_INTEGER( BACK_RIGHT     , GL_BACK_RIGHT     )
-		CONST_INTEGER( FRONT          , GL_FRONT          )
-		CONST_INTEGER( BACK           , GL_BACK           )
-		CONST_INTEGER( LEFT           , GL_LEFT           )
-		CONST_INTEGER( RIGHT          , GL_RIGHT          )
-		CONST_INTEGER( FRONT_AND_BACK , GL_FRONT_AND_BACK )
-		CONST_INTEGER( AUX0           , GL_AUX0           )
-		CONST_INTEGER( AUX1           , GL_AUX1           )
-		CONST_INTEGER( AUX2           , GL_AUX2           )
-		CONST_INTEGER( AUX3           , GL_AUX3           )
-
-		CONST_INTEGER( NO_ERROR          , GL_NO_ERROR          )
-		CONST_INTEGER( INVALID_ENUM      , GL_INVALID_ENUM      )
-		CONST_INTEGER( INVALID_VALUE     , GL_INVALID_VALUE     )
-		CONST_INTEGER( INVALID_OPERATION , GL_INVALID_OPERATION )
-		CONST_INTEGER( STACK_OVERFLOW    , GL_STACK_OVERFLOW    )
-		CONST_INTEGER( STACK_UNDERFLOW   , GL_STACK_UNDERFLOW   )
-		CONST_INTEGER( OUT_OF_MEMORY     , GL_OUT_OF_MEMORY     )
-
-		CONST_INTEGER( 2D               , GL_2D               )
-		CONST_INTEGER( 3D               , GL_3D               )
-		CONST_INTEGER( 3D_COLOR         , GL_3D_COLOR         )
-		CONST_INTEGER( 3D_COLOR_TEXTURE , GL_3D_COLOR_TEXTURE )
-		CONST_INTEGER( 4D_COLOR_TEXTURE , GL_4D_COLOR_TEXTURE )
-
-		CONST_INTEGER( PASS_THROUGH_TOKEN , GL_PASS_THROUGH_TOKEN )
-		CONST_INTEGER( POINT_TOKEN        , GL_POINT_TOKEN        )
-		CONST_INTEGER( LINE_TOKEN         , GL_LINE_TOKEN         )
-		CONST_INTEGER( POLYGON_TOKEN      , GL_POLYGON_TOKEN      )
-		CONST_INTEGER( BITMAP_TOKEN       , GL_BITMAP_TOKEN       )
-		CONST_INTEGER( DRAW_PIXEL_TOKEN   , GL_DRAW_PIXEL_TOKEN   )
-		CONST_INTEGER( COPY_PIXEL_TOKEN   , GL_COPY_PIXEL_TOKEN   )
-		CONST_INTEGER( LINE_RESET_TOKEN   , GL_LINE_RESET_TOKEN   )
-
-		CONST_INTEGER( EXP  , GL_EXP  )
-		CONST_INTEGER( EXP2 , GL_EXP2 )
-
-		CONST_INTEGER( CW  , GL_CW  )
-		CONST_INTEGER( CCW , GL_CCW )
-
-		CONST_INTEGER( COEFF  , GL_COEFF  )
-		CONST_INTEGER( ORDER  , GL_ORDER  )
-		CONST_INTEGER( DOMAIN , GL_DOMAIN )
-
-		CONST_INTEGER( CURRENT_COLOR                 , GL_CURRENT_COLOR                 )
-		CONST_INTEGER( CURRENT_INDEX                 , GL_CURRENT_INDEX                 )
-		CONST_INTEGER( CURRENT_NORMAL                , GL_CURRENT_NORMAL                )
-		CONST_INTEGER( CURRENT_TEXTURE_COORDS        , GL_CURRENT_TEXTURE_COORDS        )
-		CONST_INTEGER( CURRENT_RASTER_COLOR          , GL_CURRENT_RASTER_COLOR          )
-		CONST_INTEGER( CURRENT_RASTER_INDEX          , GL_CURRENT_RASTER_INDEX          )
-		CONST_INTEGER( CURRENT_RASTER_TEXTURE_COORDS , GL_CURRENT_RASTER_TEXTURE_COORDS )
-		CONST_INTEGER( CURRENT_RASTER_POSITION       , GL_CURRENT_RASTER_POSITION       )
-		CONST_INTEGER( CURRENT_RASTER_POSITION_VALID , GL_CURRENT_RASTER_POSITION_VALID )
-		CONST_INTEGER( CURRENT_RASTER_DISTANCE       , GL_CURRENT_RASTER_DISTANCE       )
-		CONST_INTEGER( POINT_SMOOTH                  , GL_POINT_SMOOTH                  )
-		CONST_INTEGER( POINT_SIZE                    , GL_POINT_SIZE                    )
-		CONST_INTEGER( POINT_SIZE_RANGE              , GL_POINT_SIZE_RANGE              )
-		CONST_INTEGER( POINT_SIZE_GRANULARITY        , GL_POINT_SIZE_GRANULARITY        )
-		CONST_INTEGER( LINE_SMOOTH                   , GL_LINE_SMOOTH                   )
-		CONST_INTEGER( LINE_WIDTH                    , GL_LINE_WIDTH                    )
-		CONST_INTEGER( LINE_WIDTH_RANGE              , GL_LINE_WIDTH_RANGE              )
-		CONST_INTEGER( LINE_WIDTH_GRANULARITY        , GL_LINE_WIDTH_GRANULARITY        )
-		CONST_INTEGER( LINE_STIPPLE                  , GL_LINE_STIPPLE                  )
-		CONST_INTEGER( LINE_STIPPLE_PATTERN          , GL_LINE_STIPPLE_PATTERN          )
-		CONST_INTEGER( LINE_STIPPLE_REPEAT           , GL_LINE_STIPPLE_REPEAT           )
-		CONST_INTEGER( LIST_MODE                     , GL_LIST_MODE                     )
-		CONST_INTEGER( MAX_LIST_NESTING              , GL_MAX_LIST_NESTING              )
-		CONST_INTEGER( LIST_BASE                     , GL_LIST_BASE                     )
-		CONST_INTEGER( LIST_INDEX                    , GL_LIST_INDEX                    )
-		CONST_INTEGER( POLYGON_MODE                  , GL_POLYGON_MODE                  )
-		CONST_INTEGER( POLYGON_SMOOTH                , GL_POLYGON_SMOOTH                )
-		CONST_INTEGER( POLYGON_STIPPLE               , GL_POLYGON_STIPPLE               )
-		CONST_INTEGER( EDGE_FLAG                     , GL_EDGE_FLAG                     )
-		CONST_INTEGER( CULL_FACE                     , GL_CULL_FACE                     )
-		CONST_INTEGER( CULL_FACE_MODE                , GL_CULL_FACE_MODE                )
-		CONST_INTEGER( FRONT_FACE                    , GL_FRONT_FACE                    )
-		CONST_INTEGER( LIGHTING                      , GL_LIGHTING                      )
-		CONST_INTEGER( LIGHT_MODEL_LOCAL_VIEWER      , GL_LIGHT_MODEL_LOCAL_VIEWER      )
-		CONST_INTEGER( LIGHT_MODEL_TWO_SIDE          , GL_LIGHT_MODEL_TWO_SIDE          )
-		CONST_INTEGER( LIGHT_MODEL_AMBIENT           , GL_LIGHT_MODEL_AMBIENT           )
-		CONST_INTEGER( SHADE_MODEL                   , GL_SHADE_MODEL                   )
-		CONST_INTEGER( COLOR_MATERIAL_FACE           , GL_COLOR_MATERIAL_FACE           )
-		CONST_INTEGER( COLOR_MATERIAL_PARAMETER      , GL_COLOR_MATERIAL_PARAMETER      )
-		CONST_INTEGER( COLOR_MATERIAL                , GL_COLOR_MATERIAL                )
-		CONST_INTEGER( FOG                           , GL_FOG                           )
-		CONST_INTEGER( FOG_INDEX                     , GL_FOG_INDEX                     )
-		CONST_INTEGER( FOG_DENSITY                   , GL_FOG_DENSITY                   )
-		CONST_INTEGER( FOG_START                     , GL_FOG_START                     )
-		CONST_INTEGER( FOG_END                       , GL_FOG_END                       )
-		CONST_INTEGER( FOG_MODE                      , GL_FOG_MODE                      )
-		CONST_INTEGER( FOG_COLOR                     , GL_FOG_COLOR                     )
-		CONST_INTEGER( DEPTH_RANGE                   , GL_DEPTH_RANGE                   )
-		CONST_INTEGER( DEPTH_TEST                    , GL_DEPTH_TEST                    )
-		CONST_INTEGER( DEPTH_WRITEMASK               , GL_DEPTH_WRITEMASK               )
-		CONST_INTEGER( DEPTH_CLEAR_VALUE             , GL_DEPTH_CLEAR_VALUE             )
-		CONST_INTEGER( DEPTH_FUNC                    , GL_DEPTH_FUNC                    )
-		CONST_INTEGER( ACCUM_CLEAR_VALUE             , GL_ACCUM_CLEAR_VALUE             )
-		CONST_INTEGER( STENCIL_TEST                  , GL_STENCIL_TEST                  )
-		CONST_INTEGER( STENCIL_CLEAR_VALUE           , GL_STENCIL_CLEAR_VALUE           )
-		CONST_INTEGER( STENCIL_FUNC                , GL_STENCIL_FUNC                )
-		CONST_INTEGER( STENCIL_VALUE_MASK          , GL_STENCIL_VALUE_MASK          )
-		CONST_INTEGER( STENCIL_FAIL                , GL_STENCIL_FAIL                )
-		CONST_INTEGER( STENCIL_PASS_DEPTH_FAIL     , GL_STENCIL_PASS_DEPTH_FAIL     )
-		CONST_INTEGER( STENCIL_PASS_DEPTH_PASS     , GL_STENCIL_PASS_DEPTH_PASS     )
-		CONST_INTEGER( STENCIL_REF                 , GL_STENCIL_REF                 )
-		CONST_INTEGER( STENCIL_WRITEMASK           , GL_STENCIL_WRITEMASK           )
-		CONST_INTEGER( MATRIX_MODE                 , GL_MATRIX_MODE                 )
-		CONST_INTEGER( NORMALIZE                   , GL_NORMALIZE                   )
-		CONST_INTEGER( VIEWPORT                    , GL_VIEWPORT                    )
-		CONST_INTEGER( MODELVIEW_STACK_DEPTH       , GL_MODELVIEW_STACK_DEPTH       )
-		CONST_INTEGER( PROJECTION_STACK_DEPTH      , GL_PROJECTION_STACK_DEPTH      )
-		CONST_INTEGER( TEXTURE_STACK_DEPTH         , GL_TEXTURE_STACK_DEPTH         )
-		CONST_INTEGER( MODELVIEW_MATRIX            , GL_MODELVIEW_MATRIX            )
-		CONST_INTEGER( PROJECTION_MATRIX           , GL_PROJECTION_MATRIX           )
-		CONST_INTEGER( TEXTURE_MATRIX              , GL_TEXTURE_MATRIX              )
-		CONST_INTEGER( ATTRIB_STACK_DEPTH          , GL_ATTRIB_STACK_DEPTH          )
-		CONST_INTEGER( CLIENT_ATTRIB_STACK_DEPTH   , GL_CLIENT_ATTRIB_STACK_DEPTH   )
-		CONST_INTEGER( ALPHA_TEST                  , GL_ALPHA_TEST                  )
-		CONST_INTEGER( ALPHA_TEST_FUNC             , GL_ALPHA_TEST_FUNC             )
-		CONST_INTEGER( ALPHA_TEST_REF              , GL_ALPHA_TEST_REF              )
-		CONST_INTEGER( DITHER                      , GL_DITHER                      )
-		CONST_INTEGER( BLEND_DST                   , GL_BLEND_DST                   )
-		CONST_INTEGER( BLEND_SRC                   , GL_BLEND_SRC                   )
-		CONST_INTEGER( BLEND                       , GL_BLEND                       )
-		CONST_INTEGER( LOGIC_OP_MODE               , GL_LOGIC_OP_MODE               )
-		CONST_INTEGER( INDEX_LOGIC_OP              , GL_INDEX_LOGIC_OP              )
-		CONST_INTEGER( COLOR_LOGIC_OP              , GL_COLOR_LOGIC_OP              )
-		CONST_INTEGER( AUX_BUFFERS                 , GL_AUX_BUFFERS                 )
-		CONST_INTEGER( DRAW_BUFFER                 , GL_DRAW_BUFFER                 )
-		CONST_INTEGER( READ_BUFFER                 , GL_READ_BUFFER                 )
-		CONST_INTEGER( SCISSOR_BOX                 , GL_SCISSOR_BOX                 )
-		CONST_INTEGER( SCISSOR_TEST                , GL_SCISSOR_TEST                )
-		CONST_INTEGER( INDEX_CLEAR_VALUE           , GL_INDEX_CLEAR_VALUE           )
-		CONST_INTEGER( INDEX_WRITEMASK             , GL_INDEX_WRITEMASK             )
-		CONST_INTEGER( COLOR_CLEAR_VALUE           , GL_COLOR_CLEAR_VALUE           )
-		CONST_INTEGER( COLOR_WRITEMASK             , GL_COLOR_WRITEMASK             )
-		CONST_INTEGER( INDEX_MODE                  , GL_INDEX_MODE                  )
-		CONST_INTEGER( RGBA_MODE                   , GL_RGBA_MODE                   )
-		CONST_INTEGER( DOUBLEBUFFER                , GL_DOUBLEBUFFER                )
-		CONST_INTEGER( STEREO                      , GL_STEREO                      )
-		CONST_INTEGER( RENDER_MODE                 , GL_RENDER_MODE                 )
-		CONST_INTEGER( PERSPECTIVE_CORRECTION_HINT , GL_PERSPECTIVE_CORRECTION_HINT )
-		CONST_INTEGER( POINT_SMOOTH_HINT           , GL_POINT_SMOOTH_HINT           )
-		CONST_INTEGER( LINE_SMOOTH_HINT            , GL_LINE_SMOOTH_HINT            )
-		CONST_INTEGER( POLYGON_SMOOTH_HINT         , GL_POLYGON_SMOOTH_HINT         )
-		CONST_INTEGER( FOG_HINT                    , GL_FOG_HINT                    )
-		CONST_INTEGER( TEXTURE_GEN_S               , GL_TEXTURE_GEN_S               )
-		CONST_INTEGER( TEXTURE_GEN_T               , GL_TEXTURE_GEN_T               )
-		CONST_INTEGER( TEXTURE_GEN_R               , GL_TEXTURE_GEN_R               )
-		CONST_INTEGER( TEXTURE_GEN_Q               , GL_TEXTURE_GEN_Q               )
-		CONST_INTEGER( PIXEL_MAP_I_TO_I            , GL_PIXEL_MAP_I_TO_I            )
-		CONST_INTEGER( PIXEL_MAP_S_TO_S            , GL_PIXEL_MAP_S_TO_S            )
-		CONST_INTEGER( PIXEL_MAP_I_TO_R            , GL_PIXEL_MAP_I_TO_R            )
-		CONST_INTEGER( PIXEL_MAP_I_TO_G            , GL_PIXEL_MAP_I_TO_G            )
-		CONST_INTEGER( PIXEL_MAP_I_TO_B            , GL_PIXEL_MAP_I_TO_B            )
-		CONST_INTEGER( PIXEL_MAP_I_TO_A            , GL_PIXEL_MAP_I_TO_A            )
-		CONST_INTEGER( PIXEL_MAP_R_TO_R            , GL_PIXEL_MAP_R_TO_R            )
-		CONST_INTEGER( PIXEL_MAP_G_TO_G              , GL_PIXEL_MAP_G_TO_G              )
-		CONST_INTEGER( PIXEL_MAP_B_TO_B              , GL_PIXEL_MAP_B_TO_B              )
-		CONST_INTEGER( PIXEL_MAP_A_TO_A              , GL_PIXEL_MAP_A_TO_A              )
-		CONST_INTEGER( PIXEL_MAP_I_TO_I_SIZE         , GL_PIXEL_MAP_I_TO_I_SIZE         )
-		CONST_INTEGER( PIXEL_MAP_S_TO_S_SIZE         , GL_PIXEL_MAP_S_TO_S_SIZE         )
-		CONST_INTEGER( PIXEL_MAP_I_TO_R_SIZE         , GL_PIXEL_MAP_I_TO_R_SIZE         )
-		CONST_INTEGER( PIXEL_MAP_I_TO_G_SIZE         , GL_PIXEL_MAP_I_TO_G_SIZE         )
-		CONST_INTEGER( PIXEL_MAP_I_TO_B_SIZE         , GL_PIXEL_MAP_I_TO_B_SIZE         )
-		CONST_INTEGER( PIXEL_MAP_I_TO_A_SIZE         , GL_PIXEL_MAP_I_TO_A_SIZE         )
-		CONST_INTEGER( PIXEL_MAP_R_TO_R_SIZE         , GL_PIXEL_MAP_R_TO_R_SIZE         )
-		CONST_INTEGER( PIXEL_MAP_G_TO_G_SIZE         , GL_PIXEL_MAP_G_TO_G_SIZE         )
-		CONST_INTEGER( PIXEL_MAP_B_TO_B_SIZE         , GL_PIXEL_MAP_B_TO_B_SIZE         )
-		CONST_INTEGER( PIXEL_MAP_A_TO_A_SIZE         , GL_PIXEL_MAP_A_TO_A_SIZE         )
-		CONST_INTEGER( UNPACK_SWAP_BYTES             , GL_UNPACK_SWAP_BYTES             )
-		CONST_INTEGER( UNPACK_LSB_FIRST              , GL_UNPACK_LSB_FIRST              )
-		CONST_INTEGER( UNPACK_ROW_LENGTH             , GL_UNPACK_ROW_LENGTH             )
-		CONST_INTEGER( UNPACK_SKIP_ROWS              , GL_UNPACK_SKIP_ROWS              )
-		CONST_INTEGER( UNPACK_SKIP_PIXELS            , GL_UNPACK_SKIP_PIXELS            )
-		CONST_INTEGER( UNPACK_ALIGNMENT              , GL_UNPACK_ALIGNMENT              )
-		CONST_INTEGER( PACK_SWAP_BYTES               , GL_PACK_SWAP_BYTES               )
-		CONST_INTEGER( PACK_LSB_FIRST                , GL_PACK_LSB_FIRST                )
-		CONST_INTEGER( PACK_ROW_LENGTH               , GL_PACK_ROW_LENGTH               )
-		CONST_INTEGER( PACK_SKIP_ROWS                , GL_PACK_SKIP_ROWS                )
-		CONST_INTEGER( PACK_SKIP_PIXELS              , GL_PACK_SKIP_PIXELS              )
-		CONST_INTEGER( PACK_ALIGNMENT                , GL_PACK_ALIGNMENT                )
-		CONST_INTEGER( MAP_COLOR                     , GL_MAP_COLOR                     )
-		CONST_INTEGER( MAP_STENCIL                   , GL_MAP_STENCIL                   )
-		CONST_INTEGER( INDEX_SHIFT                   , GL_INDEX_SHIFT                   )
-		CONST_INTEGER( INDEX_OFFSET                  , GL_INDEX_OFFSET                  )
-		CONST_INTEGER( RED_SCALE                     , GL_RED_SCALE                     )
-		CONST_INTEGER( RED_BIAS                      , GL_RED_BIAS                      )
-		CONST_INTEGER( ZOOM_X                        , GL_ZOOM_X                        )
-		CONST_INTEGER( ZOOM_Y                        , GL_ZOOM_Y                        )
-		CONST_INTEGER( GREEN_SCALE                   , GL_GREEN_SCALE                   )
-		CONST_INTEGER( GREEN_BIAS                    , GL_GREEN_BIAS                    )
-		CONST_INTEGER( BLUE_SCALE                    , GL_BLUE_SCALE                    )
-		CONST_INTEGER( BLUE_BIAS                     , GL_BLUE_BIAS                     )
-		CONST_INTEGER( ALPHA_SCALE                   , GL_ALPHA_SCALE                   )
-		CONST_INTEGER( ALPHA_BIAS                    , GL_ALPHA_BIAS                    )
-		CONST_INTEGER( DEPTH_SCALE                   , GL_DEPTH_SCALE                   )
-		CONST_INTEGER( DEPTH_BIAS                    , GL_DEPTH_BIAS                    )
-		CONST_INTEGER( MAX_EVAL_ORDER                , GL_MAX_EVAL_ORDER                )
-		CONST_INTEGER( MAX_LIGHTS                    , GL_MAX_LIGHTS                    )
-		CONST_INTEGER( MAX_CLIP_PLANES               , GL_MAX_CLIP_PLANES               )
-		CONST_INTEGER( MAX_TEXTURE_SIZE              , GL_MAX_TEXTURE_SIZE              )
-		CONST_INTEGER( MAX_PIXEL_MAP_TABLE           , GL_MAX_PIXEL_MAP_TABLE           )
-		CONST_INTEGER( MAX_ATTRIB_STACK_DEPTH        , GL_MAX_ATTRIB_STACK_DEPTH        )
-		CONST_INTEGER( MAX_MODELVIEW_STACK_DEPTH     , GL_MAX_MODELVIEW_STACK_DEPTH     )
-		CONST_INTEGER( MAX_NAME_STACK_DEPTH          , GL_MAX_NAME_STACK_DEPTH          )
-		CONST_INTEGER( MAX_PROJECTION_STACK_DEPTH    , GL_MAX_PROJECTION_STACK_DEPTH    )
-		CONST_INTEGER( MAX_TEXTURE_STACK_DEPTH       , GL_MAX_TEXTURE_STACK_DEPTH       )
-		CONST_INTEGER( MAX_VIEWPORT_DIMS             , GL_MAX_VIEWPORT_DIMS             )
-		CONST_INTEGER( MAX_CLIENT_ATTRIB_STACK_DEPTH , GL_MAX_CLIENT_ATTRIB_STACK_DEPTH )
-		CONST_INTEGER( SUBPIXEL_BITS                 , GL_SUBPIXEL_BITS                 )
-		CONST_INTEGER( INDEX_BITS                    , GL_INDEX_BITS                    )
-		CONST_INTEGER( RED_BITS                      , GL_RED_BITS                      )
-		CONST_INTEGER( GREEN_BITS               , GL_GREEN_BITS               )
-		CONST_INTEGER( BLUE_BITS                , GL_BLUE_BITS                )
-		CONST_INTEGER( ALPHA_BITS               , GL_ALPHA_BITS               )
-		CONST_INTEGER( DEPTH_BITS               , GL_DEPTH_BITS               )
-		CONST_INTEGER( STENCIL_BITS             , GL_STENCIL_BITS             )
-		CONST_INTEGER( ACCUM_RED_BITS           , GL_ACCUM_RED_BITS           )
-		CONST_INTEGER( ACCUM_GREEN_BITS         , GL_ACCUM_GREEN_BITS         )
-		CONST_INTEGER( ACCUM_BLUE_BITS          , GL_ACCUM_BLUE_BITS          )
-		CONST_INTEGER( ACCUM_ALPHA_BITS         , GL_ACCUM_ALPHA_BITS         )
-		CONST_INTEGER( NAME_STACK_DEPTH         , GL_NAME_STACK_DEPTH         )
-		CONST_INTEGER( AUTO_NORMAL              , GL_AUTO_NORMAL              )
-		CONST_INTEGER( MAP1_COLOR_4             , GL_MAP1_COLOR_4             )
-		CONST_INTEGER( MAP1_INDEX               , GL_MAP1_INDEX               )
-		CONST_INTEGER( MAP1_NORMAL              , GL_MAP1_NORMAL              )
-		CONST_INTEGER( MAP1_TEXTURE_COORD_1     , GL_MAP1_TEXTURE_COORD_1     )
-		CONST_INTEGER( MAP1_TEXTURE_COORD_2     , GL_MAP1_TEXTURE_COORD_2     )
-		CONST_INTEGER( MAP1_TEXTURE_COORD_3     , GL_MAP1_TEXTURE_COORD_3     )
-		CONST_INTEGER( MAP1_TEXTURE_COORD_4     , GL_MAP1_TEXTURE_COORD_4     )
-		CONST_INTEGER( MAP1_VERTEX_3            , GL_MAP1_VERTEX_3            )
-		CONST_INTEGER( MAP1_VERTEX_4            , GL_MAP1_VERTEX_4            )
-		CONST_INTEGER( MAP2_COLOR_4             , GL_MAP2_COLOR_4             )
-		CONST_INTEGER( MAP2_INDEX               , GL_MAP2_INDEX               )
-		CONST_INTEGER( MAP2_NORMAL              , GL_MAP2_NORMAL              )
-		CONST_INTEGER( MAP2_TEXTURE_COORD_1     , GL_MAP2_TEXTURE_COORD_1     )
-		CONST_INTEGER( MAP2_TEXTURE_COORD_2     , GL_MAP2_TEXTURE_COORD_2     )
-		CONST_INTEGER( MAP2_TEXTURE_COORD_3     , GL_MAP2_TEXTURE_COORD_3     )
-		CONST_INTEGER( MAP2_TEXTURE_COORD_4     , GL_MAP2_TEXTURE_COORD_4     )
-		CONST_INTEGER( MAP2_VERTEX_3            , GL_MAP2_VERTEX_3            )
-		CONST_INTEGER( MAP2_VERTEX_4            , GL_MAP2_VERTEX_4            )
-		CONST_INTEGER( MAP1_GRID_DOMAIN         , GL_MAP1_GRID_DOMAIN         )
-		CONST_INTEGER( MAP1_GRID_SEGMENTS       , GL_MAP1_GRID_SEGMENTS       )
-		CONST_INTEGER( MAP2_GRID_DOMAIN         , GL_MAP2_GRID_DOMAIN         )
-		CONST_INTEGER( MAP2_GRID_SEGMENTS       , GL_MAP2_GRID_SEGMENTS       )
-		CONST_INTEGER( TEXTURE_1D               , GL_TEXTURE_1D               )
-		CONST_INTEGER( TEXTURE_2D               , GL_TEXTURE_2D               )
-		CONST_INTEGER( FEEDBACK_BUFFER_POINTER  , GL_FEEDBACK_BUFFER_POINTER  )
-		CONST_INTEGER( FEEDBACK_BUFFER_SIZE     , GL_FEEDBACK_BUFFER_SIZE     )
-		CONST_INTEGER( FEEDBACK_BUFFER_TYPE     , GL_FEEDBACK_BUFFER_TYPE     )
-		CONST_INTEGER( SELECTION_BUFFER_POINTER , GL_SELECTION_BUFFER_POINTER )
-		CONST_INTEGER( SELECTION_BUFFER_SIZE    , GL_SELECTION_BUFFER_SIZE    )
-
-		CONST_INTEGER( TEXTURE_WIDTH           , GL_TEXTURE_WIDTH           )
-		CONST_INTEGER( TEXTURE_HEIGHT          , GL_TEXTURE_HEIGHT          )
-		CONST_INTEGER( TEXTURE_INTERNAL_FORMAT , GL_TEXTURE_INTERNAL_FORMAT )
-		CONST_INTEGER( TEXTURE_BORDER_COLOR    , GL_TEXTURE_BORDER_COLOR    )
-		CONST_INTEGER( TEXTURE_BORDER          , GL_TEXTURE_BORDER          )
-
-		CONST_INTEGER( DONT_CARE , GL_DONT_CARE )
-		CONST_INTEGER( FASTEST   , GL_FASTEST   )
-		CONST_INTEGER( NICEST    , GL_NICEST    )
-
-		CONST_INTEGER( LIGHT0 , GL_LIGHT0 )
-		CONST_INTEGER( LIGHT1 , GL_LIGHT1 )
-		CONST_INTEGER( LIGHT2 , GL_LIGHT2 )
-		CONST_INTEGER( LIGHT3 , GL_LIGHT3 )
-		CONST_INTEGER( LIGHT4 , GL_LIGHT4 )
-		CONST_INTEGER( LIGHT5 , GL_LIGHT5 )
-		CONST_INTEGER( LIGHT6 , GL_LIGHT6 )
-		CONST_INTEGER( LIGHT7 , GL_LIGHT7 )
-
-		CONST_INTEGER( AMBIENT               , GL_AMBIENT               )
-		CONST_INTEGER( DIFFUSE               , GL_DIFFUSE               )
-		CONST_INTEGER( SPECULAR              , GL_SPECULAR              )
-		CONST_INTEGER( POSITION              , GL_POSITION              )
-		CONST_INTEGER( SPOT_DIRECTION        , GL_SPOT_DIRECTION        )
-		CONST_INTEGER( SPOT_EXPONENT         , GL_SPOT_EXPONENT         )
-		CONST_INTEGER( SPOT_CUTOFF           , GL_SPOT_CUTOFF           )
-		CONST_INTEGER( CONSTANT_ATTENUATION  , GL_CONSTANT_ATTENUATION  )
-		CONST_INTEGER( LINEAR_ATTENUATION    , GL_LINEAR_ATTENUATION    )
-		CONST_INTEGER( QUADRATIC_ATTENUATION , GL_QUADRATIC_ATTENUATION )
-
-		CONST_INTEGER( COMPILE             , GL_COMPILE             )
-		CONST_INTEGER( COMPILE_AND_EXECUTE , GL_COMPILE_AND_EXECUTE )
-
-		CONST_INTEGER( CLEAR         , GL_CLEAR         )
-		CONST_INTEGER( AND           , GL_AND           )
-		CONST_INTEGER( AND_REVERSE   , GL_AND_REVERSE   )
-		CONST_INTEGER( COPY          , GL_COPY          )
-		CONST_INTEGER( AND_INVERTED  , GL_AND_INVERTED  )
-		CONST_INTEGER( NOOP          , GL_NOOP          )
-		CONST_INTEGER( XOR           , GL_XOR           )
-		CONST_INTEGER( OR            , GL_OR            )
-		CONST_INTEGER( NOR           , GL_NOR           )
-		CONST_INTEGER( EQUIV         , GL_EQUIV         )
-		CONST_INTEGER( INVERT        , GL_INVERT        )
-		CONST_INTEGER( OR_REVERSE    , GL_OR_REVERSE    )
-		CONST_INTEGER( COPY_INVERTED , GL_COPY_INVERTED )
-		CONST_INTEGER( OR_INVERTED   , GL_OR_INVERTED   )
-		CONST_INTEGER( NAND          , GL_NAND          )
-		CONST_INTEGER( SET           , GL_SET           )
-
-		CONST_INTEGER( EMISSION            , GL_EMISSION            )
-		CONST_INTEGER( SHININESS           , GL_SHININESS           )
-		CONST_INTEGER( AMBIENT_AND_DIFFUSE , GL_AMBIENT_AND_DIFFUSE )
-		CONST_INTEGER( COLOR_INDEXES       , GL_COLOR_INDEXES       )
-
-		CONST_INTEGER( MODELVIEW  , GL_MODELVIEW  )
-		CONST_INTEGER( PROJECTION , GL_PROJECTION )
-		CONST_INTEGER( TEXTURE    , GL_TEXTURE    )
-
-		CONST_INTEGER( COLOR   , GL_COLOR   )
-		CONST_INTEGER( DEPTH   , GL_DEPTH   )
-		CONST_INTEGER( STENCIL , GL_STENCIL )
-
-		CONST_INTEGER( COLOR_INDEX     , GL_COLOR_INDEX     )
-		CONST_INTEGER( STENCIL_INDEX   , GL_STENCIL_INDEX   )
-		CONST_INTEGER( DEPTH_COMPONENT , GL_DEPTH_COMPONENT )
-		CONST_INTEGER( RED             , GL_RED             )
-		CONST_INTEGER( GREEN           , GL_GREEN           )
-		CONST_INTEGER( BLUE            , GL_BLUE            )
-		CONST_INTEGER( ALPHA           , GL_ALPHA           )
-		CONST_INTEGER( RGB             , GL_RGB             )
-		CONST_INTEGER( RGBA            , GL_RGBA            )
-		CONST_INTEGER( LUMINANCE       , GL_LUMINANCE       )
-		CONST_INTEGER( LUMINANCE_ALPHA , GL_LUMINANCE_ALPHA )
-
-		CONST_INTEGER( BITMAP , GL_BITMAP )
-
-		CONST_INTEGER( POINT , GL_POINT )
-		CONST_INTEGER( LINE  , GL_LINE  )
-		CONST_INTEGER( FILL  , GL_FILL  )
-
-		CONST_INTEGER( RENDER   , GL_RENDER   )
-		CONST_INTEGER( FEEDBACK , GL_FEEDBACK )
-		CONST_INTEGER( SELECT   , GL_SELECT   )
-
-		CONST_INTEGER( FLAT   , GL_FLAT   )
-		CONST_INTEGER( SMOOTH , GL_SMOOTH )
-
-		CONST_INTEGER( KEEP    , GL_KEEP    )
-		CONST_INTEGER( REPLACE , GL_REPLACE )
-		CONST_INTEGER( INCR    , GL_INCR    )
-		CONST_INTEGER( DECR    , GL_DECR    )
-
-		CONST_INTEGER( VENDOR     , GL_VENDOR     )
-		CONST_INTEGER( RENDERER   , GL_RENDERER   )
-		CONST_INTEGER( VERSION    , GL_VERSION    )
-		CONST_INTEGER( EXTENSIONS , GL_EXTENSIONS )
-
-		CONST_INTEGER( S , GL_S )
-		CONST_INTEGER( T , GL_T )
-		CONST_INTEGER( R , GL_R )
-		CONST_INTEGER( Q , GL_Q )
-
-		CONST_INTEGER( MODULATE , GL_MODULATE )
-		CONST_INTEGER( DECAL    , GL_DECAL    )
-
-		CONST_INTEGER( TEXTURE_ENV_MODE  , GL_TEXTURE_ENV_MODE  )
-		CONST_INTEGER( TEXTURE_ENV_COLOR , GL_TEXTURE_ENV_COLOR )
-
-		CONST_INTEGER( TEXTURE_ENV , GL_TEXTURE_ENV )
-
-		CONST_INTEGER( EYE_LINEAR    , GL_EYE_LINEAR    )
-		CONST_INTEGER( OBJECT_LINEAR , GL_OBJECT_LINEAR )
-		CONST_INTEGER( SPHERE_MAP    , GL_SPHERE_MAP    )
-
-		CONST_INTEGER( TEXTURE_GEN_MODE , GL_TEXTURE_GEN_MODE )
-		CONST_INTEGER( OBJECT_PLANE     , GL_OBJECT_PLANE     )
-		CONST_INTEGER( EYE_PLANE        , GL_EYE_PLANE        )
-
-		CONST_INTEGER( NEAREST , GL_NEAREST )
-		CONST_INTEGER( LINEAR  , GL_LINEAR  )
-
-		CONST_INTEGER( NEAREST_MIPMAP_NEAREST , GL_NEAREST_MIPMAP_NEAREST )
-		CONST_INTEGER( LINEAR_MIPMAP_NEAREST  , GL_LINEAR_MIPMAP_NEAREST  )
-		CONST_INTEGER( NEAREST_MIPMAP_LINEAR  , GL_NEAREST_MIPMAP_LINEAR  )
-		CONST_INTEGER( LINEAR_MIPMAP_LINEAR   , GL_LINEAR_MIPMAP_LINEAR   )
-
-		CONST_INTEGER( TEXTURE_MAG_FILTER , GL_TEXTURE_MAG_FILTER )
-		CONST_INTEGER( TEXTURE_MIN_FILTER , GL_TEXTURE_MIN_FILTER )
-		CONST_INTEGER( TEXTURE_WRAP_S     , GL_TEXTURE_WRAP_S     )
-		CONST_INTEGER( TEXTURE_WRAP_T     , GL_TEXTURE_WRAP_T     )
-
-		CONST_INTEGER( CLAMP  , GL_CLAMP  )
-		CONST_INTEGER( REPEAT , GL_REPEAT )
-
-		CONST_INTEGER( CLIENT_PIXEL_STORE_BIT  , GL_CLIENT_PIXEL_STORE_BIT  )
-		CONST_INTEGER( CLIENT_VERTEX_ARRAY_BIT , GL_CLIENT_VERTEX_ARRAY_BIT )
-//		CONST_INTEGER( CLIENT_ALL_ATTRIB_BITS  , GL_CLIENT_ALL_ATTRIB_BITS  )
-
-		CONST_INTEGER( POLYGON_OFFSET_FACTOR , GL_POLYGON_OFFSET_FACTOR )
-		CONST_INTEGER( POLYGON_OFFSET_UNITS  , GL_POLYGON_OFFSET_UNITS  )
-		CONST_INTEGER( POLYGON_OFFSET_POINT  , GL_POLYGON_OFFSET_POINT  )
-		CONST_INTEGER( POLYGON_OFFSET_LINE   , GL_POLYGON_OFFSET_LINE   )
-		CONST_INTEGER( POLYGON_OFFSET_FILL   , GL_POLYGON_OFFSET_FILL   )
-
-		CONST_INTEGER( ALPHA4                 , GL_ALPHA4                 )
-		CONST_INTEGER( ALPHA8                 , GL_ALPHA8                 )
-		CONST_INTEGER( ALPHA12                , GL_ALPHA12                )
-		CONST_INTEGER( ALPHA16                , GL_ALPHA16                )
-		CONST_INTEGER( LUMINANCE4             , GL_LUMINANCE4             )
-		CONST_INTEGER( LUMINANCE8             , GL_LUMINANCE8             )
-		CONST_INTEGER( LUMINANCE12            , GL_LUMINANCE12            )
-		CONST_INTEGER( LUMINANCE16            , GL_LUMINANCE16            )
-		CONST_INTEGER( LUMINANCE4_ALPHA4      , GL_LUMINANCE4_ALPHA4      )
-		CONST_INTEGER( LUMINANCE6_ALPHA2      , GL_LUMINANCE6_ALPHA2      )
-		CONST_INTEGER( LUMINANCE8_ALPHA8      , GL_LUMINANCE8_ALPHA8      )
-		CONST_INTEGER( LUMINANCE12_ALPHA4     , GL_LUMINANCE12_ALPHA4     )
-		CONST_INTEGER( LUMINANCE12_ALPHA12    , GL_LUMINANCE12_ALPHA12    )
-		CONST_INTEGER( LUMINANCE16_ALPHA16    , GL_LUMINANCE16_ALPHA16    )
-		CONST_INTEGER( INTENSITY              , GL_INTENSITY              )
-		CONST_INTEGER( INTENSITY4             , GL_INTENSITY4             )
-		CONST_INTEGER( INTENSITY8             , GL_INTENSITY8             )
-		CONST_INTEGER( INTENSITY12            , GL_INTENSITY12            )
-		CONST_INTEGER( INTENSITY16            , GL_INTENSITY16            )
-		CONST_INTEGER( R3_G3_B2               , GL_R3_G3_B2               )
-		CONST_INTEGER( RGB4                   , GL_RGB4                   )
-		CONST_INTEGER( RGB5                   , GL_RGB5                   )
-		CONST_INTEGER( RGB8                   , GL_RGB8                   )
-		CONST_INTEGER( RGB10                  , GL_RGB10                  )
-		CONST_INTEGER( RGB12                  , GL_RGB12                  )
-		CONST_INTEGER( RGB16                  , GL_RGB16                  )
-		CONST_INTEGER( RGBA2                  , GL_RGBA2                  )
-		CONST_INTEGER( RGBA4                  , GL_RGBA4                  )
-		CONST_INTEGER( RGB5_A1                , GL_RGB5_A1                )
-		CONST_INTEGER( RGBA8                  , GL_RGBA8                  )
-		CONST_INTEGER( RGB10_A2               , GL_RGB10_A2               )
-		CONST_INTEGER( RGBA12                 , GL_RGBA12                 )
-		CONST_INTEGER( RGBA16                 , GL_RGBA16                 )
-		CONST_INTEGER( TEXTURE_RED_SIZE       , GL_TEXTURE_RED_SIZE       )
-		CONST_INTEGER( TEXTURE_GREEN_SIZE     , GL_TEXTURE_GREEN_SIZE     )
-		CONST_INTEGER( TEXTURE_BLUE_SIZE      , GL_TEXTURE_BLUE_SIZE      )
-		CONST_INTEGER( TEXTURE_ALPHA_SIZE     , GL_TEXTURE_ALPHA_SIZE     )
-		CONST_INTEGER( TEXTURE_LUMINANCE_SIZE , GL_TEXTURE_LUMINANCE_SIZE )
-		CONST_INTEGER( TEXTURE_INTENSITY_SIZE , GL_TEXTURE_INTENSITY_SIZE )
-		CONST_INTEGER( PROXY_TEXTURE_1D       , GL_PROXY_TEXTURE_1D       )
-		CONST_INTEGER( PROXY_TEXTURE_2D       , GL_PROXY_TEXTURE_2D       )
-
-		CONST_INTEGER( TEXTURE_PRIORITY   , GL_TEXTURE_PRIORITY   )
-		CONST_INTEGER( TEXTURE_RESIDENT   , GL_TEXTURE_RESIDENT   )
-		CONST_INTEGER( TEXTURE_BINDING_1D , GL_TEXTURE_BINDING_1D )
-		CONST_INTEGER( TEXTURE_BINDING_2D , GL_TEXTURE_BINDING_2D )
-
-		CONST_INTEGER( VERTEX_ARRAY                , GL_VERTEX_ARRAY                )
-		CONST_INTEGER( NORMAL_ARRAY                , GL_NORMAL_ARRAY                )
-		CONST_INTEGER( COLOR_ARRAY                 , GL_COLOR_ARRAY                 )
-		CONST_INTEGER( INDEX_ARRAY                 , GL_INDEX_ARRAY                 )
-		CONST_INTEGER( TEXTURE_COORD_ARRAY         , GL_TEXTURE_COORD_ARRAY         )
-		CONST_INTEGER( EDGE_FLAG_ARRAY             , GL_EDGE_FLAG_ARRAY             )
-		CONST_INTEGER( VERTEX_ARRAY_SIZE           , GL_VERTEX_ARRAY_SIZE           )
-		CONST_INTEGER( VERTEX_ARRAY_TYPE           , GL_VERTEX_ARRAY_TYPE           )
-		CONST_INTEGER( VERTEX_ARRAY_STRIDE         , GL_VERTEX_ARRAY_STRIDE         )
-		CONST_INTEGER( NORMAL_ARRAY_TYPE           , GL_NORMAL_ARRAY_TYPE           )
-		CONST_INTEGER( NORMAL_ARRAY_STRIDE         , GL_NORMAL_ARRAY_STRIDE         )
-		CONST_INTEGER( COLOR_ARRAY_SIZE            , GL_COLOR_ARRAY_SIZE            )
-		CONST_INTEGER( COLOR_ARRAY_TYPE            , GL_COLOR_ARRAY_TYPE            )
-		CONST_INTEGER( COLOR_ARRAY_STRIDE          , GL_COLOR_ARRAY_STRIDE          )
-		CONST_INTEGER( INDEX_ARRAY_TYPE            , GL_INDEX_ARRAY_TYPE            )
-		CONST_INTEGER( INDEX_ARRAY_STRIDE          , GL_INDEX_ARRAY_STRIDE          )
-		CONST_INTEGER( TEXTURE_COORD_ARRAY_SIZE    , GL_TEXTURE_COORD_ARRAY_SIZE    )
-		CONST_INTEGER( TEXTURE_COORD_ARRAY_TYPE    , GL_TEXTURE_COORD_ARRAY_TYPE    )
-		CONST_INTEGER( TEXTURE_COORD_ARRAY_STRIDE  , GL_TEXTURE_COORD_ARRAY_STRIDE  )
-		CONST_INTEGER( EDGE_FLAG_ARRAY_STRIDE      , GL_EDGE_FLAG_ARRAY_STRIDE      )
-		CONST_INTEGER( VERTEX_ARRAY_POINTER        , GL_VERTEX_ARRAY_POINTER        )
-		CONST_INTEGER( NORMAL_ARRAY_POINTER        , GL_NORMAL_ARRAY_POINTER        )
-		CONST_INTEGER( COLOR_ARRAY_POINTER         , GL_COLOR_ARRAY_POINTER         )
-		CONST_INTEGER( INDEX_ARRAY_POINTER         , GL_INDEX_ARRAY_POINTER         )
-		CONST_INTEGER( TEXTURE_COORD_ARRAY_POINTER , GL_TEXTURE_COORD_ARRAY_POINTER )
-		CONST_INTEGER( EDGE_FLAG_ARRAY_POINTER     , GL_EDGE_FLAG_ARRAY_POINTER     )
-		CONST_INTEGER( V2F                         , GL_V2F                         )
-		CONST_INTEGER( V3F                         , GL_V3F                         )
-		CONST_INTEGER( C4UB_V2F                    , GL_C4UB_V2F                    )
-		CONST_INTEGER( C4UB_V3F                    , GL_C4UB_V3F                    )
-		CONST_INTEGER( C3F_V3F                     , GL_C3F_V3F                     )
-		CONST_INTEGER( N3F_V3F                     , GL_N3F_V3F                     )
-		CONST_INTEGER( C4F_N3F_V3F                 , GL_C4F_N3F_V3F                 )
-		CONST_INTEGER( T2F_V3F                     , GL_T2F_V3F                     )
-		CONST_INTEGER( T4F_V4F                     , GL_T4F_V4F                     )
-		CONST_INTEGER( T2F_C4UB_V3F                , GL_T2F_C4UB_V3F                )
-		CONST_INTEGER( T2F_C3F_V3F                 , GL_T2F_C3F_V3F                 )
-		CONST_INTEGER( T2F_N3F_V3F                 , GL_T2F_N3F_V3F                 )
-		CONST_INTEGER( T2F_C4F_N3F_V3F             , GL_T2F_C4F_N3F_V3F             )
-		CONST_INTEGER( T4F_C4F_N3F_V4F             , GL_T4F_C4F_N3F_V4F             )
-
-		CONST_INTEGER( EXT_vertex_array        , GL_EXT_vertex_array        )
-		CONST_INTEGER( EXT_bgra                , GL_EXT_bgra                )
-		CONST_INTEGER( EXT_paletted_texture    , GL_EXT_paletted_texture    )
-		CONST_INTEGER( WIN_swap_hint           , GL_WIN_swap_hint           )
-		CONST_INTEGER( WIN_draw_range_elements , GL_WIN_draw_range_elements )
-
-		CONST_INTEGER( VERTEX_ARRAY_EXT                , GL_VERTEX_ARRAY_EXT                )
-		CONST_INTEGER( NORMAL_ARRAY_EXT                , GL_NORMAL_ARRAY_EXT                )
-		CONST_INTEGER( COLOR_ARRAY_EXT                 , GL_COLOR_ARRAY_EXT                 )
-		CONST_INTEGER( INDEX_ARRAY_EXT                 , GL_INDEX_ARRAY_EXT                 )
-		CONST_INTEGER( TEXTURE_COORD_ARRAY_EXT         , GL_TEXTURE_COORD_ARRAY_EXT         )
-		CONST_INTEGER( EDGE_FLAG_ARRAY_EXT             , GL_EDGE_FLAG_ARRAY_EXT             )
-		CONST_INTEGER( VERTEX_ARRAY_SIZE_EXT           , GL_VERTEX_ARRAY_SIZE_EXT           )
-		CONST_INTEGER( VERTEX_ARRAY_TYPE_EXT           , GL_VERTEX_ARRAY_TYPE_EXT           )
-		CONST_INTEGER( VERTEX_ARRAY_STRIDE_EXT         , GL_VERTEX_ARRAY_STRIDE_EXT         )
-		CONST_INTEGER( VERTEX_ARRAY_COUNT_EXT          , GL_VERTEX_ARRAY_COUNT_EXT          )
-		CONST_INTEGER( NORMAL_ARRAY_TYPE_EXT           , GL_NORMAL_ARRAY_TYPE_EXT           )
-		CONST_INTEGER( NORMAL_ARRAY_STRIDE_EXT         , GL_NORMAL_ARRAY_STRIDE_EXT         )
-		CONST_INTEGER( NORMAL_ARRAY_COUNT_EXT          , GL_NORMAL_ARRAY_COUNT_EXT          )
-		CONST_INTEGER( COLOR_ARRAY_SIZE_EXT            , GL_COLOR_ARRAY_SIZE_EXT            )
-		CONST_INTEGER( COLOR_ARRAY_TYPE_EXT            , GL_COLOR_ARRAY_TYPE_EXT            )
-		CONST_INTEGER( COLOR_ARRAY_STRIDE_EXT          , GL_COLOR_ARRAY_STRIDE_EXT          )
-		CONST_INTEGER( COLOR_ARRAY_COUNT_EXT           , GL_COLOR_ARRAY_COUNT_EXT           )
-		CONST_INTEGER( INDEX_ARRAY_TYPE_EXT            , GL_INDEX_ARRAY_TYPE_EXT            )
-		CONST_INTEGER( INDEX_ARRAY_STRIDE_EXT          , GL_INDEX_ARRAY_STRIDE_EXT          )
-		CONST_INTEGER( INDEX_ARRAY_COUNT_EXT           , GL_INDEX_ARRAY_COUNT_EXT           )
-		CONST_INTEGER( TEXTURE_COORD_ARRAY_SIZE_EXT    , GL_TEXTURE_COORD_ARRAY_SIZE_EXT    )
-		CONST_INTEGER( TEXTURE_COORD_ARRAY_TYPE_EXT    , GL_TEXTURE_COORD_ARRAY_TYPE_EXT    )
-		CONST_INTEGER( TEXTURE_COORD_ARRAY_STRIDE_EXT  , GL_TEXTURE_COORD_ARRAY_STRIDE_EXT  )
-		CONST_INTEGER( TEXTURE_COORD_ARRAY_COUNT_EXT   , GL_TEXTURE_COORD_ARRAY_COUNT_EXT   )
-		CONST_INTEGER( EDGE_FLAG_ARRAY_STRIDE_EXT      , GL_EDGE_FLAG_ARRAY_STRIDE_EXT      )
-		CONST_INTEGER( EDGE_FLAG_ARRAY_COUNT_EXT       , GL_EDGE_FLAG_ARRAY_COUNT_EXT       )
-		CONST_INTEGER( VERTEX_ARRAY_POINTER_EXT        , GL_VERTEX_ARRAY_POINTER_EXT        )
-		CONST_INTEGER( NORMAL_ARRAY_POINTER_EXT        , GL_NORMAL_ARRAY_POINTER_EXT        )
-		CONST_INTEGER( COLOR_ARRAY_POINTER_EXT         , GL_COLOR_ARRAY_POINTER_EXT         )
-		CONST_INTEGER( INDEX_ARRAY_POINTER_EXT         , GL_INDEX_ARRAY_POINTER_EXT         )
-		CONST_INTEGER( TEXTURE_COORD_ARRAY_POINTER_EXT , GL_TEXTURE_COORD_ARRAY_POINTER_EXT )
-		CONST_INTEGER( EDGE_FLAG_ARRAY_POINTER_EXT     , GL_EDGE_FLAG_ARRAY_POINTER_EXT     )
-		CONST_INTEGER( DOUBLE_EXT                      , GL_DOUBLE_EXT                      )
-
-		CONST_INTEGER( BGR_EXT  , GL_BGR_EXT  )
-		CONST_INTEGER( BGRA_EXT , GL_BGRA_EXT )
-
-		CONST_INTEGER( COLOR_TABLE_FORMAT_EXT         , GL_COLOR_TABLE_FORMAT_EXT         )
-		CONST_INTEGER( COLOR_TABLE_WIDTH_EXT          , GL_COLOR_TABLE_WIDTH_EXT          )
-		CONST_INTEGER( COLOR_TABLE_RED_SIZE_EXT       , GL_COLOR_TABLE_RED_SIZE_EXT       )
-		CONST_INTEGER( COLOR_TABLE_GREEN_SIZE_EXT     , GL_COLOR_TABLE_GREEN_SIZE_EXT     )
-		CONST_INTEGER( COLOR_TABLE_BLUE_SIZE_EXT      , GL_COLOR_TABLE_BLUE_SIZE_EXT      )
-		CONST_INTEGER( COLOR_TABLE_ALPHA_SIZE_EXT     , GL_COLOR_TABLE_ALPHA_SIZE_EXT     )
-		CONST_INTEGER( COLOR_TABLE_LUMINANCE_SIZE_EXT , GL_COLOR_TABLE_LUMINANCE_SIZE_EXT )
-		CONST_INTEGER( COLOR_TABLE_INTENSITY_SIZE_EXT , GL_COLOR_TABLE_INTENSITY_SIZE_EXT )
-
-		CONST_INTEGER( COLOR_INDEX1_EXT  , GL_COLOR_INDEX1_EXT  )
-		CONST_INTEGER( COLOR_INDEX2_EXT  , GL_COLOR_INDEX2_EXT  )
-		CONST_INTEGER( COLOR_INDEX4_EXT  , GL_COLOR_INDEX4_EXT  )
-		CONST_INTEGER( COLOR_INDEX8_EXT  , GL_COLOR_INDEX8_EXT  )
-		CONST_INTEGER( COLOR_INDEX12_EXT , GL_COLOR_INDEX12_EXT )
-		CONST_INTEGER( COLOR_INDEX16_EXT , GL_COLOR_INDEX16_EXT )
-
-		CONST_INTEGER( MAX_ELEMENTS_VERTICES_WIN , GL_MAX_ELEMENTS_VERTICES_WIN )
-		CONST_INTEGER( MAX_ELEMENTS_INDICES_WIN  , GL_MAX_ELEMENTS_INDICES_WIN  )
-
-		CONST_INTEGER( PHONG_WIN      , GL_PHONG_WIN      )
-		CONST_INTEGER( PHONG_HINT_WIN , GL_PHONG_HINT_WIN )
-
-		CONST_INTEGER( FOG_SPECULAR_TEXTURE_WIN , GL_FOG_SPECULAR_TEXTURE_WIN )
-
-		CONST_INTEGER( LOGIC_OP , GL_LOGIC_OP )
-		CONST_INTEGER( TEXTURE_COMPONENTS , GL_TEXTURE_COMPONENTS )
-
-//OpenGL extensions
-		CONST_INTEGER( POINT_SIZE_MIN             , GL_POINT_SIZE_MIN             )
-		CONST_INTEGER( POINT_SIZE_MAX             , GL_POINT_SIZE_MAX             )
-		CONST_INTEGER( POINT_FADE_THRESHOLD_SIZE  , GL_POINT_FADE_THRESHOLD_SIZE  )
-		CONST_INTEGER( POINT_DISTANCE_ATTENUATION , GL_POINT_DISTANCE_ATTENUATION )
-
-		CONST_INTEGER( POINT_SPRITE, GL_POINT_SPRITE )
-		CONST_INTEGER( COORD_REPLACE, GL_COORD_REPLACE )
-
-		#ifndef GL_ARB_multitexture
-		CONST_INTEGER( TEXTURE0_ARB             ,GL_TEXTURE0_ARB               )
-		CONST_INTEGER( TEXTURE1_ARB             ,GL_TEXTURE1_ARB               )
-		CONST_INTEGER( TEXTURE2_ARB             ,GL_TEXTURE2_ARB               )
-		CONST_INTEGER( TEXTURE3_ARB             ,GL_TEXTURE3_ARB               )
-		CONST_INTEGER( TEXTURE4_ARB             ,GL_TEXTURE4_ARB               )
-		CONST_INTEGER( TEXTURE5_ARB             ,GL_TEXTURE5_ARB               )
-		CONST_INTEGER( TEXTURE6_ARB             ,GL_TEXTURE6_ARB               )
-		CONST_INTEGER( TEXTURE7_ARB             ,GL_TEXTURE7_ARB               )
-		CONST_INTEGER( TEXTURE8_ARB             ,GL_TEXTURE8_ARB               )
-		CONST_INTEGER( TEXTURE9_ARB             ,GL_TEXTURE9_ARB               )
-		CONST_INTEGER( TEXTURE10_ARB            ,GL_TEXTURE10_ARB              )
-		CONST_INTEGER( TEXTURE11_ARB            ,GL_TEXTURE11_ARB              )
-		CONST_INTEGER( TEXTURE12_ARB            ,GL_TEXTURE12_ARB              )
-		CONST_INTEGER( TEXTURE13_ARB            ,GL_TEXTURE13_ARB              )
-		CONST_INTEGER( TEXTURE14_ARB            ,GL_TEXTURE14_ARB              )
-		CONST_INTEGER( TEXTURE15_ARB            ,GL_TEXTURE15_ARB              )
-		CONST_INTEGER( TEXTURE16_ARB            ,GL_TEXTURE16_ARB              )
-		CONST_INTEGER( TEXTURE17_ARB            ,GL_TEXTURE17_ARB              )
-		CONST_INTEGER( TEXTURE18_ARB            ,GL_TEXTURE18_ARB              )
-		CONST_INTEGER( TEXTURE19_ARB            ,GL_TEXTURE19_ARB              )
-		CONST_INTEGER( TEXTURE20_ARB            ,GL_TEXTURE20_ARB              )
-		CONST_INTEGER( TEXTURE21_ARB            ,GL_TEXTURE21_ARB              )
-		CONST_INTEGER( TEXTURE22_ARB            ,GL_TEXTURE22_ARB              )
-		CONST_INTEGER( TEXTURE23_ARB            ,GL_TEXTURE23_ARB              )
-		CONST_INTEGER( TEXTURE24_ARB            ,GL_TEXTURE24_ARB              )
-		CONST_INTEGER( TEXTURE25_ARB            ,GL_TEXTURE25_ARB              )
-		CONST_INTEGER( TEXTURE26_ARB            ,GL_TEXTURE26_ARB              )
-		CONST_INTEGER( TEXTURE27_ARB            ,GL_TEXTURE27_ARB              )
-		CONST_INTEGER( TEXTURE28_ARB            ,GL_TEXTURE28_ARB              )
-		CONST_INTEGER( TEXTURE29_ARB            ,GL_TEXTURE29_ARB              )
-		CONST_INTEGER( TEXTURE30_ARB            ,GL_TEXTURE30_ARB              )
-		CONST_INTEGER( TEXTURE31_ARB            ,GL_TEXTURE31_ARB              )
-		CONST_INTEGER( ACTIVE_TEXTURE_ARB       ,GL_ACTIVE_TEXTURE_ARB         )
-		CONST_INTEGER( CLIENT_ACTIVE_TEXTURE_ARB,GL_CLIENT_ACTIVE_TEXTURE_ARB  )
-		CONST_INTEGER( MAX_TEXTURE_UNITS_ARB    ,GL_MAX_TEXTURE_UNITS_ARB      )
-		#endif
-
-		#ifdef GL_ARB_vertex_buffer_object
-		CONST_INTEGER( BUFFER_SIZE_ARB                             ,GL_BUFFER_SIZE_ARB                           )
-		CONST_INTEGER( BUFFER_USAGE_ARB									  ,GL_BUFFER_USAGE_ARB								  )
-		CONST_INTEGER( ARRAY_BUFFER_ARB									  ,GL_ARRAY_BUFFER_ARB								  )
-		CONST_INTEGER( ELEMENT_ARRAY_BUFFER_ARB						  ,GL_ELEMENT_ARRAY_BUFFER_ARB						  )
-		CONST_INTEGER( ARRAY_BUFFER_BINDING_ARB						  ,GL_ARRAY_BUFFER_BINDING_ARB						  )
-		CONST_INTEGER( ELEMENT_ARRAY_BUFFER_BINDING_ARB				  ,GL_ELEMENT_ARRAY_BUFFER_BINDING_ARB			  )
-		CONST_INTEGER( VERTEX_ARRAY_BUFFER_BINDING_ARB				  ,GL_VERTEX_ARRAY_BUFFER_BINDING_ARB			  )
-		CONST_INTEGER( NORMAL_ARRAY_BUFFER_BINDING_ARB				  ,GL_NORMAL_ARRAY_BUFFER_BINDING_ARB			  )
-		CONST_INTEGER( COLOR_ARRAY_BUFFER_BINDING_ARB				  ,GL_COLOR_ARRAY_BUFFER_BINDING_ARB				  )
-		CONST_INTEGER( INDEX_ARRAY_BUFFER_BINDING_ARB				  ,GL_INDEX_ARRAY_BUFFER_BINDING_ARB				  )
-		CONST_INTEGER( TEXTURE_COORD_ARRAY_BUFFER_BINDING_ARB		  ,GL_TEXTURE_COORD_ARRAY_BUFFER_BINDING_ARB	  )
-		CONST_INTEGER( EDGE_FLAG_ARRAY_BUFFER_BINDING_ARB			  ,GL_EDGE_FLAG_ARRAY_BUFFER_BINDING_ARB		  )
-		CONST_INTEGER( SECONDARY_COLOR_ARRAY_BUFFER_BINDING_ARB	  ,GL_SECONDARY_COLOR_ARRAY_BUFFER_BINDING_ARB  )
-		CONST_INTEGER( FOG_COORDINATE_ARRAY_BUFFER_BINDING_ARB	  ,GL_FOG_COORDINATE_ARRAY_BUFFER_BINDING_ARB	  )
-		CONST_INTEGER( WEIGHT_ARRAY_BUFFER_BINDING_ARB				  ,GL_WEIGHT_ARRAY_BUFFER_BINDING_ARB			  )
-		CONST_INTEGER( VERTEX_ATTRIB_ARRAY_BUFFER_BINDING_ARB		  ,GL_VERTEX_ATTRIB_ARRAY_BUFFER_BINDING_ARB	  )
-		CONST_INTEGER( READ_ONLY_ARB										  ,GL_READ_ONLY_ARB									  )
-		CONST_INTEGER( WRITE_ONLY_ARB										  ,GL_WRITE_ONLY_ARB									  )
-		CONST_INTEGER( READ_WRITE_ARB										  ,GL_READ_WRITE_ARB									  )
-		CONST_INTEGER( BUFFER_ACCESS_ARB									  ,GL_BUFFER_ACCESS_ARB								  )
-		CONST_INTEGER( BUFFER_MAPPED_ARB									  ,GL_BUFFER_MAPPED_ARB								  )
-		CONST_INTEGER( BUFFER_MAP_POINTER_ARB							  ,GL_BUFFER_MAP_POINTER_ARB						  )
-		CONST_INTEGER( STREAM_DRAW_ARB									  ,GL_STREAM_DRAW_ARB									  )
-		CONST_INTEGER( STREAM_READ_ARB									  ,GL_STREAM_READ_ARB									  )
-		CONST_INTEGER( STREAM_COPY_ARB									  ,GL_STREAM_COPY_ARB									  )
-		CONST_INTEGER( STATIC_DRAW_ARB									  ,GL_STATIC_DRAW_ARB									  )
-		CONST_INTEGER( STATIC_READ_ARB									  ,GL_STATIC_READ_ARB									  )
-		CONST_INTEGER( STATIC_COPY_ARB									  ,GL_STATIC_COPY_ARB									  )
-		CONST_INTEGER( DYNAMIC_DRAW_ARB									  ,GL_DYNAMIC_DRAW_ARB								  )
-		CONST_INTEGER( DYNAMIC_READ_ARB									  ,GL_DYNAMIC_READ_ARB								  )
-		CONST_INTEGER( DYNAMIC_COPY_ARB									  ,GL_DYNAMIC_COPY_ARB								  )
-		#endif
-
-
+		// OpenGL constants
+		#include "jsglconst.h"
 	END_CONST_INTEGER_SPEC
 
 
 	BEGIN_STATIC_FUNCTION_SPEC
 
+		FUNCTION_FAST_ARGC(HasExtension, 1) // procName
+	
+		FUNCTION_FAST_ARGC(IsEnabled, 1) // cap
 		FUNCTION_FAST_ARGC(GetBoolean, 1) // pname
 		FUNCTION_FAST_ARGC(GetInteger, 1) // pname
 		FUNCTION_FAST_ARGC(GetDouble, 1) // pname
@@ -3419,10 +3744,25 @@ CONFIGURE_CLASS
 		FUNCTION_FAST_ARGC(BindTexture, 2) // target, texture
 		FUNCTION_FAST_ARGC(DeleteTexture, 1) // textureId
 		FUNCTION_FAST_ARGC(CopyTexImage2D, 8) // target, level, internalFormat, x, y, width, height, border
+		FUNCTION_FAST_ARGC(RasterPos, 4) // x,y,z,w
+
 		FUNCTION_FAST_ARGC(DefineTextureImage, 3) // target, format, image (non-OpenGL API)
 
-		FUNCTION_FAST_ARGC(RasterPos, 4) // x,y,z,w
-		
+		FUNCTION_FAST_ARGC(BindRenderbuffer, 2) // target, renderbuffer
+		FUNCTION_FAST_ARGC(GenRenderbuffer, 0)
+		FUNCTION_FAST_ARGC(DeleteRenderbuffer, 1) // renderbuffer
+		FUNCTION_FAST_ARGC(RenderbufferStorage, 4) // target, internalformat, width, height
+		FUNCTION_FAST_ARGC(GetRenderbufferParameter, 3) // target, pname [, count]
+		FUNCTION_FAST_ARGC(BindFramebuffer, 2) // target, renderbuffer
+		FUNCTION_FAST_ARGC(GenFramebuffer, 0)
+		FUNCTION_FAST_ARGC(DeleteFramebuffer, 1) // framebuffer
+		FUNCTION_FAST_ARGC(CheckFramebufferStatus, 1) // target
+		FUNCTION_FAST_ARGC(FramebufferTexture1D, 5) // target, attachment, textarget, texture, level
+		FUNCTION_FAST_ARGC(FramebufferTexture2D, 5) // target, attachment, textarget, texture, level
+		FUNCTION_FAST_ARGC(FramebufferTexture3D, 6) // target, attachment, textarget, texture, level, zoffset
+		FUNCTION_FAST_ARGC(FramebufferRenderbuffer, 4) // target, attachment, renderbuffertarget, renderbuffer
+		FUNCTION_FAST_ARGC(GetFramebufferAttachmentParameter, 4) // target, attachment, pname [, count]
+
 		FUNCTION_FAST_ARGC(DrawImage, 3) // target, format, image (non-OpenGL API)
 		FUNCTION_FAST_ARGC(RenderToImage, 0) // (non-OpenGL API)
 
@@ -3447,12 +3787,16 @@ CONFIGURE_CLASS
 		FUNCTION_FAST_ARGC(DrawDisk, 2)
 
 		FUNCTION_FAST_ARGC(KeepTranslation, 0)
-
-
 	END_STATIC_FUNCTION_SPEC
+
 
 	BEGIN_STATIC_PROPERTY_SPEC
 		PROPERTY_READ(error)
+
+		PROPERTY_READ(vendor)
+		PROPERTY_READ(renderer)
+		PROPERTY_READ(version)
+		PROPERTY_READ(extensions)
 	END_STATIC_PROPERTY_SPEC
 
 END_CLASS
@@ -3470,7 +3814,7 @@ LoadModule('jsgraphics');
 GlSetAttribute( GL_SWAP_CONTROL, 1 ); // vsync
 GlSetAttribute( GL_DOUBLEBUFFER, 1 );
 GlSetAttribute( GL_DEPTH_SIZE, 16 );
-SetVideoMode( 320, 200, 32, HWSURFACE | OPENGL | RESIZABLE ); // | ASYNCBLIT // RESIZABLE FULLSCREEN
+SetVideoMode( 320, 200, 32, HWSURFACE | OPENGL | RESIZABLE );
 
 var listeners = {
 	onQuit: function() { end = true },
@@ -3482,25 +3826,25 @@ Ogl.Perspective(60, 0.001, 1000);
 Ogl.MatrixMode(Ogl.MODELVIEW);
 
 for (var end = false; !end ;) {
-	
+   
 	PollEvent(listeners);
-	
-	with (Ogl) {
-
+   
+	with (Ogl) { // beware: slower than Ogl.*
+      
 		Clear(COLOR_BUFFER_BIT | DEPTH_BUFFER_BIT);
 		LoadIdentity();
-		
+      
 		LookAt(-1,-1,1, 0,0,0, 0,0,1);
-		
+      
 		Begin(QUADS);
 		Color(1,0,0);
-		Vertex( -0.5, -0.5, 0);
-		Vertex( -0.5, 0.5, 0);
-		Vertex( 0.5, 0.5, 0);
+		Vertex(-0.5, -0.5, 0);
+		Vertex(-0.5,  0.5, 0);
+		Vertex( 0.5,  0.5, 0);
 		Vertex( 0.5, -0.5, 0);
 		End(QUADS);
- }
-	
+   }
+   
 	GlSwapBuffers();
 	Sleep(10);
 }

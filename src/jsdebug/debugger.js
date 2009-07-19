@@ -70,7 +70,7 @@ LoadModule('jsdebug');
 			s.data += buf;
 			var eoh = s.data.indexOf('\r\n\r\n');
 			if ( eoh == -1 )
-				return;
+				return undefined;
 			var headers = s.data.substring(0, eoh);
 			var contentLength = (/^content-length: ?(.*)$/im(headers)||[])[1];
 			var authorization = (/^authorization: ?Basic (.*)$/im(headers)||[])[1];
@@ -85,14 +85,14 @@ LoadModule('jsdebug');
 					if ( buf == undefined )
 						return CloseSocket(s);						
 					s.data += buf;
-					return;
+					return undefined;
 				}
 				
 				if ( basicAuth && authorization != Base64Encode(basicAuth) ) {
 					
 					Sleep(2000);
 					s.Write('HTTP/1.1 401 Authorization Required\r\nWWW-Authenticate: Basic realm="debugger"\r\nContent-Length: 0\r\n\r\n');
-					return;
+					return undefined;
 				}
 			
 				delete s.readable;
@@ -115,7 +115,9 @@ LoadModule('jsdebug');
 					return true;
 				}]);
 				s.data = s.data.substring(contentLength);
+				return undefined;
 			})(s);
+			return undefined;
 		}
 			
 		serverSocket.readable = function() {
@@ -230,7 +232,7 @@ LoadModule('jsdebug');
 		
 		GetCookie: function(name) {
 			
-			return _cookie[name];
+			return name in _cookie ? _cookie[name] : undefined;
 		},
 		
 		GetSource: function(filename) {
@@ -351,7 +353,7 @@ LoadModule('jsdebug');
 				return;
 			if ( dbg.HasBreakpoint(filename, lineno) )
 				Action(Debugger.DO_CONTINUE);
-			var lineno = dbg.ToggleBreakpoint(true, filename, lineno);
+			lineno = dbg.ToggleBreakpoint(true, filename, lineno);
 			_reset.push(function() dbg.ToggleBreakpoint(false, filename, lineno));
 			Action(Debugger.DO_CONTINUE);
 		},
@@ -376,7 +378,7 @@ LoadModule('jsdebug');
 			}
 			time = TimeCounter();
 			Action(Debugger.DO_STEP);
-		}),
+		})
 	}
 	
 	dbg.onBreak = function(filename, lineno, breakOrigin, stackFrameIndex, hasException, exception, rval, enteringFunction) {

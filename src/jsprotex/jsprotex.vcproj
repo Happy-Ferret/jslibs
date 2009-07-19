@@ -207,6 +207,30 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath=".\noise.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\perlin.c"
+				>
+				<FileConfiguration
+					Name="DBG|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="OPT|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
 				RelativePath=".\static.cpp"
 				>
 			</File>

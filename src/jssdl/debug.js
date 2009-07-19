@@ -30,7 +30,7 @@ icon = image;
 GlSetAttribute( GL_DOUBLEBUFFER, 1 );
 GlSetAttribute( GL_DEPTH_SIZE, 16 );
 
-SetVideoMode( 320, 200, 32, HWSURFACE | OPENGL | RESIZABLE ); // | ASYNCBLIT
+SetVideoMode( 320, 200, 32, HWACCEL | OPENGL | RESIZABLE ); // | ASYNCBLIT
 //ToggleFullScreen();
 
 var cursor1 = new Cursor(image, 16,16);
