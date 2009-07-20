@@ -1381,8 +1381,13 @@ DEFINE_FUNCTION_FAST( Disassemble ) {
 
 
 #ifdef DEBUG
-DEFINE_FUNCTION( Test ) {
+DEFINE_FUNCTION( TestDebug ) {
 
+	// see https://bugzilla.mozilla.org/show_bug.cgi?id=488924
+	JSObject *o = JS_NewArrayObject(cx, 0, NULL);
+	JSScopeProperty *jssp;
+	jssp = NULL;
+	JS_PropertyIterator(o, &jssp);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1415,7 +1420,7 @@ CONFIGURE_STATIC
 		FUNCTION_FAST_ARGC( PropertiesInfo, 1 )
 	#ifdef DEBUG
 		FUNCTION_FAST( DumpHeap )
-		FUNCTION( Test )
+		FUNCTION( TestDebug )
 	#endif // DEBUG
 		FUNCTION_FAST( DisableJIT )
 	END_STATIC_FUNCTION_SPEC

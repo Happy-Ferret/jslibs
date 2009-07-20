@@ -1,6 +1,9 @@
 LoadModule('jsstd');
 LoadModule('jsdebug');
 
+TestDebug();
+
+
 var honda = new Array
 ( 'Honda',
 new Array("Accord", 25000), 
