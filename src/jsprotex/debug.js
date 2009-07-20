@@ -108,7 +108,7 @@ var t0 = IntervalNow();
 
 function time() IntervalNow() - t0;
 
-var size = 128;
+var size = 64;
 var texture = new Texture(size, size, 3);
 
 //	var myImage = DecodeJpegImage( new File('301_0185.jpg').Open('r') );
@@ -121,18 +121,23 @@ var texture = new Texture(size, size, 3);
 var z = 0;
 Texture.RandSeed(0);
 
+Texture.PerlinNoiseReset();
+
 function UpdateTexture(imageIndex) { // <<<<<<<<<<<<<<<<<-----------------------------------
 
+	// texture: nice fire
 	texture.Set(0);
 	texture.ForEachPixel(function(x, y, pixel) {
 		
-		pixel[0] = Texture.PerlinNoise(5, 1, 2, x, y, z);
-//		pixel[0] = Texture.Test(x/10,y/10,z/10);
-
+		var dis = Texture.PerlinNoise(1.9, 0.4, 5, x/2, y/2 + z*1.5);
+		var val = Texture.PerlinNoise(2, 0.5, 3, (x + dis*40)/6, (y + z + dis*160)/8);
+	
+		val *= y / texture.height * 1.5;
+		pixel[0] = val;
+		pixel[1] = val*val;
 	});
-	z += 0;
+	z += 0.5;
 
-	texture.NormalizeLevels();
 return;
 
 

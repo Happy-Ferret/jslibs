@@ -19,62 +19,131 @@
 extern "C" unsigned long genrand_int32(void);
 extern "C" void init_genrand(unsigned long s);
 
-#define RNDLEN 8192
+#define RM 0x7ff // mask
+#define R (RM+1)
 
-static unsigned long rnd[RNDLEN];
+static unsigned long rnd[R];
 
 void InitNoise() {
 
-	init_genrand(0);
-	for ( int i = 0; i < RNDLEN; i++ )
+	for ( int i = 0; i < R; i++ )
 		rnd[i] = genrand_int32();
 }
 
-
-double Noise3DInteger( long x, long y, long z ) {
+double Noise1DInteger( int x ) {
 	
-	unsigned long a = rnd[ x % RNDLEN ] ^ rnd[ ( x / RNDLEN ) % RNDLEN ];
-	unsigned long b = rnd[ (a+y) % RNDLEN ] ^ rnd[ ( (a+y) / RNDLEN ) % RNDLEN ];
-	unsigned long c = rnd[ (b+z) % RNDLEN ] ^ rnd[ ( (b+z) / RNDLEN ) % RNDLEN ];
-	return (double)(c) / (double)0xffffffff;
+	unsigned long a = rnd[ x & RM ];
+	unsigned long b = rnd[ (x/R+a) & RM ];
+	return (double)a / (double)0xffffffff;
 }
 
 
+double Noise2DInteger( int x, int y ) {
+	
+	unsigned long a = rnd[ x & RM ];
+	unsigned long b = rnd[ (x/R+y+a) & RM ];
+	return (double)b / (double)0xffffffff;
+}
+
+
+double Noise3DInteger( int x, int y, int z ) {
+	
+	unsigned long a = rnd[ x & RM ];
+	unsigned long b = rnd[ (x/R+y+a) & RM ];
+	unsigned long c = rnd[ (y/R+z+b) & RM ];
+	return (double)c / (double)0xffffffff;
+}
+
+double Smooth( double t) {
+	
+	return t * t * (3. - 2. * t);
+}
+
+double Noise1D( double x ) {
+
+	int fx = floor(x);
+	double xr = Smooth(x-fx);
+
+	return Noise1DInteger(fx) * (1.-xr) + Noise1DInteger(fx+1) * xr;
+}
+
+double Noise2D( double x, double y ) {
+
+	int fx = floor(x);
+	int fy = floor(y);
+	double xr = Smooth(x-fx);
+	double yr = Smooth(y-fy);
+
+	double x1 = Noise2DInteger(fx, fy  ) * (1.-xr) + Noise2DInteger(fx+1, fy  ) * xr;
+	double x2 = Noise2DInteger(fx, fy+1) * (1.-xr) + Noise2DInteger(fx+1, fy+1) * xr;
+	return x1 * (1.-yr) + x2 * yr;
+}
+
 double Noise3D( double x, double y, double z ) {
 
-	double xr = x-long(x);
-	double yr = y-long(y);
-	double zr = z-long(z);
+	int fx = floor(x);
+	int fy = floor(y);
+	int fz = floor(z);
+	double xr = Smooth(x-fx);
+	double yr = Smooth(y-fy);
+	double zr = Smooth(z-fz);
 
-	double x1 = Noise3DInteger(x  ,y  ,z  ) * (1-xr) + Noise3DInteger(x+1,y  ,z  ) * xr;
-	double x2 = Noise3DInteger(x  ,y+1,z  ) * (1-xr) + Noise3DInteger(x+1,y+1,z  ) * xr;
-	double x3 = Noise3DInteger(x  ,y  ,z+1) * (1-xr) + Noise3DInteger(x+1,y  ,z+1) * xr;
-	double x4 = Noise3DInteger(x  ,y+1,z+1) * (1-xr) + Noise3DInteger(x+1,y+1,z+1) * xr;
+	double xr1 = 1.-xr;
 
-	double y1 = x1 * (1-yr) + x2 * yr;
-	double y2 = x3 * (1-yr) + x4 * yr;
+	double tx1 = fx+1;
+	double ty1 = fy+1;
+	double tz1 = fz+1;
 
-	double z1 = y1 * (1-zr) + y2 * zr;
+	double x1 = Noise3DInteger(fx,fy ,fz ) * xr1 + Noise3DInteger(tx1,fy ,fz ) * xr;
+	double x2 = Noise3DInteger(fx,ty1,fz ) * xr1 + Noise3DInteger(tx1,ty1,fz ) * xr;
+	double x3 = Noise3DInteger(fx,fy ,tz1) * xr1 + Noise3DInteger(tx1,fy ,tz1) * xr;
+	double x4 = Noise3DInteger(fx,ty1,tz1) * xr1 + Noise3DInteger(tx1,ty1,tz1) * xr;
+	double y1 = x1 * (1.-yr) + x2 * yr;
+	double y2 = x3 * (1.-yr) + x4 * yr;
+	return y1 * (1.-zr) + y2 * zr;
+}
 
-	return z1;
+double Noise1DPerlin( double x, double alpha, double beta, int n ) {
+
+   double sum = 0, max = 0, scale = 1;
+
+   for ( int i = 0; i < n; i++ ) {
+
+      sum += Noise1D(x) * scale;
+		max += scale;
+      scale *= alpha;
+      x *= beta;
+   }
+   return sum / max;
+}
+
+double Noise2DPerlin( double x, double y, double alpha, double beta, int n ) {
+
+   double sum = 0, max = 0, scale = 1;
+
+   for ( int i = 0; i < n; i++ ) {
+
+      sum += Noise2D(x, y) * scale;
+		max += scale;
+      scale *= alpha;
+      x *= beta;
+      y *= beta;
+   }
+   return sum / max;
 }
 
 double Noise3DPerlin( double x, double y, double z, double alpha, double beta, int n ) {
 
-   int i;
-   double val,sum = 0;
-   double scale = 1;
+   double sum = 0, max = 1, scale = 1;
 
-   for ( i = 0; i < n; i++ ) {
+   for ( int i = 0; i < n; i++ ) {
 
-      val = Noise3D(x,y,z);
-      sum += val / scale;
+      sum += Noise3D(x, y, z) * scale;
+		max += scale;
       scale *= alpha;
       x *= beta;
       y *= beta;
       z *= beta;
    }
-   return(sum);
-
-
+   return sum / max;
 }

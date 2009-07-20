@@ -41,18 +41,12 @@ extern "C" long genrand_int31(void);
 extern "C" unsigned long genrand_int32(void);
 extern "C" double genrand_real1(void);
 
-extern "C" {
-void init(void);
-double noise1(double);
-double noise2(double *);
-double noise3(double *);
-void normalize3(double *);
-void normalize2(double *);
 
-double PerlinNoise1D(double,double,double,int);
-double PerlinNoise2D(double,double,double,double,int);
-double PerlinNoise3D(double,double,double,double,double,int);
-}
+void InitNoise();
+double Noise1DPerlin( double x, double alpha, double beta, int n );
+double Noise2DPerlin( double x, double y, double alpha, double beta, int n );
+double Noise3DPerlin( double x, double y, double z, double alpha, double beta, int n );
+
 
 #define ABS(val) ( (val) < 0 ? -(val) : (val) )
 
@@ -4202,8 +4196,6 @@ $TOC_MEMBER $INAME( n, a, b, x [,y [,z] ] )
  $REAL $INAME
 **/
 
-double Noise3DPerlin( double x, double y, double z, double alpha, double beta, int n );
-
 DEFINE_FUNCTION_FAST( PerlinNoise ) {
 
 	JL_S_ASSERT_ARG_RANGE(4,6);
@@ -4215,21 +4207,27 @@ DEFINE_FUNCTION_FAST( PerlinNoise ) {
 
 	JL_CHK( JsvalToDouble(cx, JL_FARG(4), &x) );
 	if ( argc == 4 )
-		return DoubleToJsval(cx, PerlinNoise1D(x, a, b, n), JL_FRVAL);
+		return DoubleToJsval(cx, Noise1DPerlin(x, a, b, n), JL_FRVAL);
 
 	JL_CHK( JsvalToDouble(cx, JL_FARG(5), &y) );
 	if ( argc == 5 )
-		return DoubleToJsval(cx, PerlinNoise2D(x, y, a, b, n), JL_FRVAL);
+		return DoubleToJsval(cx, Noise2DPerlin(x, y, a, b, n), JL_FRVAL);
 
 	JL_CHK( JsvalToDouble(cx, JL_FARG(6), &z) );
 	if ( argc == 6 )
-//		return DoubleToJsval(cx, PerlinNoise3D(x, y, z, a, b, n), JL_FRVAL);
 		return DoubleToJsval(cx, Noise3DPerlin(x, y, z, a, b, n), JL_FRVAL);
 
 	return JS_TRUE;
 	JL_BAD;
 }
 
+DEFINE_FUNCTION_FAST( PerlinNoiseReset ) {
+
+	JL_S_ASSERT_ARG(0);
+	InitNoise();
+	return JS_TRUE;
+	JL_BAD;
+}
 
 //DEFINE_FUNCTION( Noise ) {
 //
@@ -4242,23 +4240,15 @@ DEFINE_FUNCTION_FAST( PerlinNoise ) {
 //}
 
 
-double Noise3D( double x, double y, double z );
-
-//#ifdef _DEBUG
+#ifdef _DEBUG
 //static JSBool _Test(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 DEFINE_FUNCTION_FAST( Test ) {
-
-	double x, y, z;
-	JL_CHK( JsvalToDouble(cx, JL_FARG(1), &x) );
-	JL_CHK( JsvalToDouble(cx, JL_FARG(2), &y) );
-	JL_CHK( JsvalToDouble(cx, JL_FARG(3), &z) );
-	return DoubleToJsval(cx, Noise3D(x, y, z), JL_FRVAL);
 
 	return JS_TRUE;
 	JL_BAD;
 
 }
-//#endif // _DEBUG
+#endif // _DEBUG
 
 
 /**doc
@@ -4325,8 +4315,6 @@ DEFINE_FUNCTION_FAST( Test ) {
  * *ImageObject*
   An image object is nothing else that a buffer of data with a width, a height and a channels properties.
 **/
-
-void InitNoise();
 
 DEFINE_INIT() {
 
@@ -4407,10 +4395,11 @@ CONFIGURE_CLASS
 		FUNCTION_FAST( RandInt )
 		FUNCTION_FAST( RandReal )
 		FUNCTION_FAST( PerlinNoise )
+		FUNCTION_FAST( PerlinNoiseReset )
 
-//		#ifdef _DEBUG
+		#ifdef _DEBUG
 		FUNCTION_FAST( Test )
-//		#endif // _DEBUG
+		#endif // _DEBUG
 
 		//		FUNCTION_FAST( Noise )
 	END_STATIC_FUNCTION_SPEC
