@@ -3332,6 +3332,8 @@ DEFINE_FUNCTION_FAST( DefineTextureImage ) {
 			case 4:
 				format = GL_RGBA;
 				break;
+			default:
+				JL_REPORT_ERROR("Invalid texture format.");
 		}
 	}
 
