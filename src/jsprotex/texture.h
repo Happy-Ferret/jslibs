@@ -34,6 +34,7 @@ struct Point {
 struct Texture {
 	PTYPE *cbuffer;
 	PTYPE *cbackBuffer;
+	bool cbackBufferInvalidSize;
 	int width;
 	int height;
 	char channels;

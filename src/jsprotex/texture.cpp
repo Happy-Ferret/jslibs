@@ -12,7 +12,6 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-
 #include "stdafx.h"
 
 //DECLARE_CLASS( Texture )
@@ -36,16 +35,7 @@
 #include "../common/matrix55.h"
 #include "../common/jsConversionHelper.h"
 
-extern "C" void init_genrand(unsigned long s);
-extern "C" long genrand_int31(void);
-extern "C" unsigned long genrand_int32(void);
-extern "C" double genrand_real1(void);
-
-
-void InitNoise();
-double Noise1DPerlin( double x, double alpha, double beta, int n );
-double Noise2DPerlin( double x, double y, double alpha, double beta, int n );
-double Noise3DPerlin( double x, double y, double z, double alpha, double beta, int n );
+EXTERN_C double genrand_real1(void);
 
 
 #define ABS(val) ( (val) < 0 ? -(val) : (val) )
@@ -95,11 +85,13 @@ double Noise3DPerlin( double x, double y, double z, double alpha, double beta, i
 
 
 
-
 inline void TextureSetupBackBuffer( JSContext *cx, Texture *tex ) {
 
 	if ( tex->cbackBuffer == NULL )
 		tex->cbackBuffer = (PTYPE*)JS_malloc(cx, tex->width * tex->height * tex->channels * sizeof(PTYPE) );
+	if ( tex->cbackBufferInvalidSize )
+		tex->cbackBuffer = (PTYPE*)JS_realloc(cx, tex->cbackBuffer, tex->width * tex->height * tex->channels * sizeof(PTYPE) );
+	tex->cbackBufferInvalidSize = false;
 }
 
 inline void TextureSwapBuffers( Texture *tex ) {
@@ -391,6 +383,7 @@ DEFINE_CONSTRUCTOR() {
 	tex = (Texture *)JS_malloc(cx, sizeof(Texture));
 	JL_CHK( tex );
 	tex->cbackBuffer = NULL;
+	tex->cbackBufferInvalidSize = false;
 
 	JL_CHK( SetBufferGetInterface(cx, obj, NativeInterfaceBufferGet) );
 
@@ -1418,11 +1411,7 @@ DEFINE_FUNCTION_FAST( Set ) {
 
 		PTYPE pixel[PMAXCHANNELS];
 		JL_CHK( InitLevelData(cx, JL_FARG(1), channels, pixel) );
-/* slower
-		int tsize = tex->width * tex->height * channels;
-		for ( int i = 0; i < tsize; i++ )
-			tex->cbuffer[i] = pixel[i % channels];
-*/
+
 		int i, c, size = tex->width * tex->height;
 		for ( i = 0; i < size; i++ )
 			for ( c = 0; c < channels; c++ )
@@ -2007,10 +1996,9 @@ DEFINE_FUNCTION_FAST( Resize ) {
 
 	BorderMode borderMode; // (TBD) from function arg
 	if ( JL_FARG_ISDEF(4) ) {
-
-		int tmp;
-		JL_CHK( JsvalToInt(cx, JL_FARG(4), &tmp) );
-		borderMode = (BorderMode)tmp;
+		
+		JL_S_ASSERT_INT(JL_FARG(4));
+		borderMode = (BorderMode)JSVAL_TO_INT(JL_FARG(4));
 	} else
 		borderMode = borderWrap;
 
@@ -2095,6 +2083,7 @@ DEFINE_FUNCTION_FAST( Resize ) {
 			}
 
 		TextureSwapBuffers(tex);
+		tex->cbackBufferInvalidSize = true;
 
 		tex->width = newWidth;
 		tex->height = newHeight;
@@ -2305,25 +2294,26 @@ DEFINE_FUNCTION_FAST( ForEachPixel ) {
 	int channels;
 	channels = tex->channels;
 
-	jsval callArgv[4]; // callArgv[] is rval
+	jsval callArgv[4]; // callArgv[0] is the rval
 
 	JSObject *cArrayObj;
 	cArrayObj = JS_NewArrayObject(cx, channels, NULL);
-	callArgv[3] = OBJECT_TO_JSVAL(cArrayObj);
+	JL_CHK( cArrayObj );
+	callArgv[1] = OBJECT_TO_JSVAL(cArrayObj);
 
 	JSTempValueRooter tvr;
 	JS_PUSH_TEMP_ROOT(cx, COUNTOF(callArgv), callArgv, &tvr);
 
-	for ( int y = 0; y < height; y++ )
+	for ( int y = 0; y < height; y++ ) { // faster than (for 0 to (width*height))
 		for ( int x = 0; x < width; x++ ) {
 
 			size_t pos = (x+y*width)*channels;
-			callArgv[1] = INT_TO_JSVAL(x);
-			callArgv[2] = INT_TO_JSVAL(y);
+			callArgv[2] = INT_TO_JSVAL(x);
+			callArgv[3] = INT_TO_JSVAL(y);
 			for ( int c = 0; c < channels; c++ ) {
 
 				jsval level;
-				JL_CHKB( JS_NewNumberValue(cx, tex->cbuffer[pos+c], &level), bad2 );
+				JL_CHKB( FloatToJsval(cx, tex->cbuffer[pos+c], &level), bad2 );
 				JL_CHKB( JS_SetElement(cx, cArrayObj, c, &level), bad2 );
 			}
 
@@ -2336,10 +2326,11 @@ DEFINE_FUNCTION_FAST( ForEachPixel ) {
 					jsval level;
 					jsdouble d;
 					JL_CHKB( JS_GetElement(cx, cArrayObj, c, &level), bad2 );
-					JL_CHKB( JS_ValueToNumber(cx, level, &d), bad2 );
+					JL_CHKB( JsvalToDouble(cx, level, &d), bad2 );
 					tex->cbuffer[pos+c] = d;
 				}
 			}
+		}
 	}
 	JS_POP_TEMP_ROOT(cx, &tvr);
 
@@ -2784,6 +2775,7 @@ DEFINE_FUNCTION_FAST( Trim ) { // (TBD) test this new version that use memcpy
 */
 
 	TextureSwapBuffers(tex);
+	tex->cbackBufferInvalidSize = true;
 
 	tex->width = newWidth;
 	tex->height = newHeight;
@@ -3861,7 +3853,7 @@ DEFINE_FUNCTION_FAST( AddCracks ) { // source: FxGen
 
 /**doc
 $TOC_MEMBER $INAME
- $TYPE Array $INAME( x, y )
+ $TYPE Array $INAME( x, y [ , borderMode] )
   Read the value of a pixel in the current texture.
   $H arguments
    $ARG $INT x
@@ -3882,26 +3874,57 @@ DEFINE_FUNCTION_FAST( GetPixelAt ) {
 	JL_S_ASSERT_INT(JL_FARG(1));
 	JL_S_ASSERT_INT(JL_FARG(2));
 
-	int x;
-	x = JSVAL_TO_INT(JL_FARG(1));
-	int y;
-	y = JSVAL_TO_INT(JL_FARG(2));
+	int sx, sy;
+	BorderMode mode;
+	sx = JSVAL_TO_INT(JL_FARG(1));
+	sy = JSVAL_TO_INT(JL_FARG(2));
+	if ( JL_FARG_ISDEF(3) )
+		mode = (BorderMode)JSVAL_TO_INT(JL_FARG(3));
+	else
+		mode = borderWrap;
 
 	Texture *tex;
 	tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE(tex);
 
+	int width = tex->width;
+	int height = tex->height;
+
+	//PosByMode(tex, sx, sy, mode);
+
+	switch (mode) {
+		case borderWrap:
+			sx = Wrap(sx, width);
+			sy = Wrap(sy, height);
+			break;
+		case borderValue:
+			if ( sx < 0 ) sx = 0;
+			if ( sx >= width ) sx = width - 1;
+			if ( sy < 0 ) sy = 0;
+			if ( sy >= height ) sy = height - 1;
+			break;
+		case borderMirror:
+			if ( sx < 0 )  sx = 0 - sx;
+			if ( sy < 0 )  sx = 0 - sy;
+			if ( sx >= width )  sx = width - sx;
+			if ( sy >= height )  sy = width - sy;
+			break;
+		default:
+			JL_REPORT_ERROR( "Invalid border mode." );
+	}
+
 	PTYPE *ptr;
-	ptr = tex->cbuffer + tex->channels * ( x + tex->width * y );
+	ptr = tex->cbuffer + tex->channels * ( sx + tex->width * sy );
 
 	JSObject *jsArray;
 	jsArray = JS_NewArrayObject(cx, 0, NULL);
+	JL_CHK( jsArray );
 	*JL_FRVAL = OBJECT_TO_JSVAL(jsArray);
 	jsval value;
-	for (int i=0; i<tex->channels; ++i) {
+	for ( int c=0; c<tex->channels; ++c ) {
 
-		JS_NewNumberValue(cx, *(ptr + i), &value); // JS_NewDoubleValue(cx, vector[i], &value);
-		JS_SetElement(cx, jsArray, i, &value);
+		FloatToJsval(cx, *(ptr + c), &value); // JS_NewNumberValue(cx, , ); // JS_NewDoubleValue(cx, vector[i], &value);
+		JS_SetElement(cx, jsArray, c, &value);
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -3948,7 +3971,7 @@ DEFINE_FUNCTION_FAST( GetLevelRange ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $THIS $INAME()
+ $ARRAY $INAME()
   Returns the [ lowest, highest ] level value of the border of the texture.
 **/
 // PTYPE ok
@@ -4053,11 +4076,10 @@ DEFINE_FUNCTION_FAST( ApplyColorMatrix ) {
 		Matrix44MultVector4(colorMatrix, &tmp, &tmp);
 		Vector4LoadToPtr(&tmp, pos);
 	}
-
+	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
 	return JS_TRUE;
 	JL_BAD;
 }
-
 
 
 /**doc
@@ -4135,99 +4157,6 @@ DEFINE_PROPERTY( channels ) {
 === Static functions ===
 **/
 
-/**doc
-$TOC_MEMBER $INAME
- $VOID $INAME( seed )
-  Resets a random sequence of the Mersenne Twister random number generator.
-  $H example
-  {{{
-  Texture.RandSeed(1234);
-  Print( Texture.RandReal(), '\n' );
-  Print( Texture.RandReal(), '\n' );
-  Print( Texture.RandReal(), '\n' );
-  }}}
-  will always prints:
-  {{{
-  0.19151945020806033
-  0.4976636663772314
-  0.6221087664882906
-  }}}
-**/
-DEFINE_FUNCTION_FAST( RandSeed ) {
-
-	JL_S_ASSERT_ARG_MIN(1);
-	unsigned int seed;
-	JL_CHK( JsvalToUInt(cx, JL_FARG(1), &seed) );
-	init_genrand(seed);
-	return JS_TRUE;
-	JL_BAD;
-}
-
-
-/**doc
-$TOC_MEMBER $INAME
- $INT $INAME
-  Generates a random number on `[ 0 , 0x7fffffff ]` interval.
-**/
-DEFINE_FUNCTION_FAST( RandInt ) {
-
-	int i = genrand_int31();
-	*JL_FRVAL = INT_TO_JSVAL(i);
-	return JS_TRUE;
-}
-
-
-/**doc
-$TOC_MEMBER $INAME
- $REAL $INAME
-  Generates a random number on `[ 0 , 1 ]` real interval.
-**/
-DEFINE_FUNCTION_FAST( RandReal ) {
-
-	jsdouble d = genrand_real1();
-	JL_CHK( JS_NewNumberValue(cx, d, JL_FRVAL) );
-	return JS_TRUE;
-	JL_BAD;
-}
-
-
-/**doc
-$TOC_MEMBER $INAME( n, a, b, x [,y [,z] ] )
- $REAL $INAME
-**/
-
-DEFINE_FUNCTION_FAST( PerlinNoise ) {
-
-	JL_S_ASSERT_ARG_RANGE(4,6);
-	int n;
-	double a, b, x, y, z;
-	JL_CHK( JsvalToDouble(cx, JL_FARG(1), &a) );
-	JL_CHK( JsvalToDouble(cx, JL_FARG(2), &b) );
-	JL_CHK( JsvalToInt(cx, JL_FARG(3), &n) );
-
-	JL_CHK( JsvalToDouble(cx, JL_FARG(4), &x) );
-	if ( argc == 4 )
-		return DoubleToJsval(cx, Noise1DPerlin(x, a, b, n), JL_FRVAL);
-
-	JL_CHK( JsvalToDouble(cx, JL_FARG(5), &y) );
-	if ( argc == 5 )
-		return DoubleToJsval(cx, Noise2DPerlin(x, y, a, b, n), JL_FRVAL);
-
-	JL_CHK( JsvalToDouble(cx, JL_FARG(6), &z) );
-	if ( argc == 6 )
-		return DoubleToJsval(cx, Noise3DPerlin(x, y, z, a, b, n), JL_FRVAL);
-
-	return JS_TRUE;
-	JL_BAD;
-}
-
-DEFINE_FUNCTION_FAST( PerlinNoiseReset ) {
-
-	JL_S_ASSERT_ARG(0);
-	InitNoise();
-	return JS_TRUE;
-	JL_BAD;
-}
 
 //DEFINE_FUNCTION( Noise ) {
 //
@@ -4316,18 +4245,12 @@ DEFINE_FUNCTION_FAST( Test ) {
   An image object is nothing else that a buffer of data with a width, a height and a channels properties.
 **/
 
-DEFINE_INIT() {
-
-	InitNoise();
-	return JS_TRUE;
-}
 
 CONFIGURE_CLASS
 
 	REVISION(JL_SvnRevToInt("$Revision$"))
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE
-	HAS_INIT
 
 	BEGIN_FUNCTION_SPEC
 		FUNCTION_FAST( Free )
@@ -4381,6 +4304,10 @@ CONFIGURE_CLASS
 		FUNCTION_FAST( GetBorderLevelRange )
 		FUNCTION_FAST( ApplyColorMatrix )
 
+		#ifdef _DEBUG
+		FUNCTION_FAST( Test )
+		#endif // _DEBUG
+
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
@@ -4391,17 +4318,6 @@ CONFIGURE_CLASS
 	END_PROPERTY_SPEC
 
 	BEGIN_STATIC_FUNCTION_SPEC
-		FUNCTION_FAST( RandSeed )
-		FUNCTION_FAST( RandInt )
-		FUNCTION_FAST( RandReal )
-		FUNCTION_FAST( PerlinNoise )
-		FUNCTION_FAST( PerlinNoiseReset )
-
-		#ifdef _DEBUG
-		FUNCTION_FAST( Test )
-		#endif // _DEBUG
-
-		//		FUNCTION_FAST( Noise )
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_CONST_INTEGER_SPEC

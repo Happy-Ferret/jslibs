@@ -30,83 +30,82 @@ void InitNoise() {
 		rnd[i] = genrand_int32();
 }
 
-double Noise1DInteger( int x ) {
-	
+float Noise1DInteger( int x ) {
+
 	unsigned long a = rnd[ x & RM ];
 	unsigned long b = rnd[ (x/R+a) & RM ];
-	return (double)a / (double)0xffffffff;
+	return (float)b / (float)0xffffffff;
 }
 
 
-double Noise2DInteger( int x, int y ) {
-	
+float Noise2DInteger( int x, int y ) {
+
 	unsigned long a = rnd[ x & RM ];
 	unsigned long b = rnd[ (x/R+y+a) & RM ];
-	return (double)b / (double)0xffffffff;
+	return (float)b / (float)0xffffffff;
 }
 
 
-double Noise3DInteger( int x, int y, int z ) {
-	
+float Noise3DInteger( int x, int y, int z ) {
+
 	unsigned long a = rnd[ x & RM ];
 	unsigned long b = rnd[ (x/R+y+a) & RM ];
 	unsigned long c = rnd[ (y/R+z+b) & RM ];
-	return (double)c / (double)0xffffffff;
+	return (float)c / (float)0xffffffff;
 }
 
-double Smooth( double t) {
-	
-	return t * t * (3. - 2. * t);
+float Smooth( float t ) {
+
+	return t * t * (3. - 2. * t); // return t;
 }
 
-double Noise1D( double x ) {
+float Noise1D( float x ) {
 
-	int fx = floor(x);
-	double xr = Smooth(x-fx);
+	int flx = floor(x);
+	float xr = Smooth(x-flx);
 
-	return Noise1DInteger(fx) * (1.-xr) + Noise1DInteger(fx+1) * xr;
+	return Noise1DInteger(flx) * (1.-xr) + Noise1DInteger(flx+1) * xr;
 }
 
-double Noise2D( double x, double y ) {
+float Noise2D( float x, float y ) {
 
-	int fx = floor(x);
-	int fy = floor(y);
-	double xr = Smooth(x-fx);
-	double yr = Smooth(y-fy);
+	int flx = floor(x);
+	int fly = floor(y);
+	float xr = Smooth(x-flx);
+	float yr = Smooth(y-fly);
 
-	double x1 = Noise2DInteger(fx, fy  ) * (1.-xr) + Noise2DInteger(fx+1, fy  ) * xr;
-	double x2 = Noise2DInteger(fx, fy+1) * (1.-xr) + Noise2DInteger(fx+1, fy+1) * xr;
+	float x1 = Noise2DInteger(flx, fly  ) * (1.-xr) + Noise2DInteger(flx+1, fly  ) * xr;
+	float x2 = Noise2DInteger(flx, fly+1) * (1.-xr) + Noise2DInteger(flx+1, fly+1) * xr;
 	return x1 * (1.-yr) + x2 * yr;
 }
 
-double Noise3D( double x, double y, double z ) {
+float Noise3D( float x, float y, float z ) {
 
-	int fx = floor(x);
-	int fy = floor(y);
-	int fz = floor(z);
-	double xr = Smooth(x-fx);
-	double yr = Smooth(y-fy);
-	double zr = Smooth(z-fz);
+	int flx = floor(x);
+	int fly = floor(y);
+	int flz = floor(z);
+	float xr = Smooth(x-flx);
+	float yr = Smooth(y-fly);
+	float zr = Smooth(z-flz);
 
-	double xr1 = 1.-xr;
+	float xr1 = 1.-xr;
 
-	double tx1 = fx+1;
-	double ty1 = fy+1;
-	double tz1 = fz+1;
+	float flx1 = flx+1;
+	float fly1 = fly+1;
+	float flz1 = flz+1;
 
-	double x1 = Noise3DInteger(fx,fy ,fz ) * xr1 + Noise3DInteger(tx1,fy ,fz ) * xr;
-	double x2 = Noise3DInteger(fx,ty1,fz ) * xr1 + Noise3DInteger(tx1,ty1,fz ) * xr;
-	double x3 = Noise3DInteger(fx,fy ,tz1) * xr1 + Noise3DInteger(tx1,fy ,tz1) * xr;
-	double x4 = Noise3DInteger(fx,ty1,tz1) * xr1 + Noise3DInteger(tx1,ty1,tz1) * xr;
-	double y1 = x1 * (1.-yr) + x2 * yr;
-	double y2 = x3 * (1.-yr) + x4 * yr;
+	float x1 = Noise3DInteger(flx,fly ,flz ) * xr1 + Noise3DInteger(flx1,fly ,flz ) * xr;
+	float x2 = Noise3DInteger(flx,fly1,flz ) * xr1 + Noise3DInteger(flx1,fly1,flz ) * xr;
+	float x3 = Noise3DInteger(flx,fly ,flz1) * xr1 + Noise3DInteger(flx1,fly ,flz1) * xr;
+	float x4 = Noise3DInteger(flx,fly1,flz1) * xr1 + Noise3DInteger(flx1,fly1,flz1) * xr;
+	float y1 = x1 * (1.-yr) + x2 * yr;
+	float y2 = x3 * (1.-yr) + x4 * yr;
 	return y1 * (1.-zr) + y2 * zr;
 }
 
-double Noise1DPerlin( double x, double alpha, double beta, int n ) {
+float Noise1DPerlin( float x, float alpha, float beta, int n ) {
 
-   double sum = 0, max = 0, scale = 1;
-
+   float sum = 0, max = 0, scale = 1;
    for ( int i = 0; i < n; i++ ) {
 
       sum += Noise1D(x) * scale;
@@ -117,10 +116,10 @@ double Noise1DPerlin( double x, double alpha, double beta, int n ) {
    return sum / max;
 }
 
-double Noise2DPerlin( double x, double y, double alpha, double beta, int n ) {
+float Noise2DPerlin( float x, float y, float alpha, float beta, int n ) {
 
-   double sum = 0, max = 0, scale = 1;
-
+	y = -y; // avoid [0,0] issue
+   float sum = 0, max = 0, scale = 1;
    for ( int i = 0; i < n; i++ ) {
 
       sum += Noise2D(x, y) * scale;
@@ -132,10 +131,10 @@ double Noise2DPerlin( double x, double y, double alpha, double beta, int n ) {
    return sum / max;
 }
 
-double Noise3DPerlin( double x, double y, double z, double alpha, double beta, int n ) {
+float Noise3DPerlin( float x, float y, float z, float alpha, float beta, int n ) {
 
-   double sum = 0, max = 1, scale = 1;
-
+	y = -y; z = -z; // avoid [0,0,0] issue
+	float sum = 0, max = 1, scale = 1;
    for ( int i = 0; i < n; i++ ) {
 
       sum += Noise3D(x, y, z) * scale;

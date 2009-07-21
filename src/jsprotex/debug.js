@@ -119,28 +119,52 @@ var texture = new Texture(size, size, 3);
 //	texture.Import( myImage, 0, 0 );
 
 var z = 0;
-Texture.RandSeed(0);
+RandSeed(1);
+PerlinNoiseReinit();
 
-Texture.PerlinNoiseReset();
+
 
 function UpdateTexture(imageIndex) { // <<<<<<<<<<<<<<<<<-----------------------------------
 
-	// texture: nice fire
-	texture.Set(0);
-	texture.ForEachPixel(function(x, y, pixel) {
-		
-		var dis = Texture.PerlinNoise(1.9, 0.4, 5, x/2, y/2 + z*1.5);
-		var val = Texture.PerlinNoise(2, 0.5, 3, (x + dis*40)/6, (y + z + dis*160)/8);
-	
-		val *= y / texture.height * 1.5;
-		pixel[0] = val;
-		pixel[1] = val*val;
-	});
-	z += 0.5;
+	// nice clouds effect
+	texture.Set(1);
+	texture.ForEachPixel(function(pixel, x, y) {
 
+		var dis = PerlinNoise(2.1, 0.5, 5, x-z/2, y);
+		var val = PerlinNoise(1.8, 0.6, 7, x-z+dis*8, y);
+		pixel[0] = pixel[1] = 1-val;
+	});
+	z += 1;
 return;
 
 
+	// nice fire effect
+	texture.Set(0);
+	texture.ForEachPixel(function(pixel, x, y) {
+		
+		var displace = PerlinNoise(1.9, 0.4, 5, x/2, y/2 + z*1.5);
+		var val = PerlinNoise(2, 0.5, 3, (x + displace*40)/6, (y + z + displace*160+(texture.height-y))/8);
+		val *= y / texture.height * 1.5;
+		pixel[0] = val;
+		pixel[1] = val*val*val;
+	});
+	z += 0.5;
+return;
+
+
+	texture.Set(0);
+	texture.ForEachPixel(function(pixel, x, y) {
+		
+		var val = PerlinNoise(1.5, 0.75, 5, x/4, y/4, z/16);
+		pixel[0] = val;
+	});
+	z += 1;
+return;
+	
+
+
+
+	// disco effect
 	tmp = new Texture(size, size, 4);
 	tmp.Set(0);
 	tmp.AddGradiantQuad(RED, GREEN, BLUE, BLACK);
@@ -187,7 +211,7 @@ return;
   texture.Set(0); // clears the texture
 //  texture.AddCracks( 1000, 10, 0.1, 1, function(v) { return Texture.RandReal() } );
   
-  texture.ForEachPixels(function(x, y, pixel) {
+  texture.ForEachPixels(function(pixel, x, y) {
   
 		if ( x == y ) {
 		

@@ -16,6 +16,7 @@
 
 extern bool _unsafeMode = false;
 
+DECLARE_STATIC()
 DECLARE_CLASS( Texture )
 
 /**doc t:header
@@ -35,6 +36,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
 	_unsafeMode = GetHostPrivate(cx)->unsafeMode;
 
+	INIT_STATIC();
 	INIT_CLASS( Texture );
 
 	JL_CHK( JL_RegisterNativeClass(cx, classTexture) );
