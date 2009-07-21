@@ -1116,6 +1116,11 @@ ALWAYS_INLINE JSBool JsvalToDouble( JSContext *cx, jsval val, double *d ) {
 		*d = *JSVAL_TO_DOUBLE(val);
 		return JS_TRUE;
 	}
+	if ( JSVAL_IS_INT(val) ) {
+
+		*d = JSVAL_TO_INT(val);
+		return JS_TRUE;
+	}
 	JL_CHK( JS_ValueToNumber( cx, val, d ) ); // jsdouble is a double
 	return JS_TRUE;
 
@@ -1135,6 +1140,11 @@ ALWAYS_INLINE JSBool JsvalToFloat( JSContext *cx, jsval val, float *f ) {
 	if (likely( JSVAL_IS_DOUBLE(val) )) {
 
 		*f = *JSVAL_TO_DOUBLE(val);
+		return JS_TRUE;
+	}
+	if ( JSVAL_IS_INT(val) ) {
+
+		*f = JSVAL_TO_INT(val);
 		return JS_TRUE;
 	}
 	jsdouble tmp;
