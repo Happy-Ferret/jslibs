@@ -57,6 +57,8 @@ function Range(min, max) ({ __iterator__:function() { for (var i = min; i <= max
 function Count(n) ({ __iterator__:function() { for (var i = 0; i < n; i++) yield i }});
 
 
+const curveGaussian = function(c) { return function(x) { return Math.exp( -(x*x)/(2*c*c) ) } }
+
 var perspective = new Transformation();
 var mat = new Transformation();
 
@@ -185,7 +187,6 @@ function CreateCloudTextureLayer() {
 	var texture = Cloud(32, 1);
 	var gaussian = new Texture(texture.width, texture.height, 1);
 	gaussian.Set(0);
-	var curveGaussian = function(c) { return function(x) { return Math.exp( -(x*x)/(2*c*c) ) } }
 	gaussian.AddGradiantRadial(curveGaussian(0.5), true);
 //	gaussian.NormalizeLevels();
 	gaussian.Add(-gaussian.GetBorderLevelRange()[1]);
@@ -203,8 +204,8 @@ function CreateCloudTextureLayer() {
 
 
 
-//Texture.RandSeed(1235);
-//var cloudLayerList = [ [ (Texture.RandReal()-0.5)*5, (Texture.RandReal()-0.5)*5, (Texture.RandReal()-0.5)*5, 5, CreateCloudTextureLayer() ] for (i in Count(5)) ];
+RandSeed(1235);
+var cloudLayerList = [ [ (RandReal()-0.5)*5, (RandReal()-0.5)*5, (RandReal()-0.5)*5, 5, CreateCloudTextureLayer() ] for (i in Count(5)) ];
 
 function Draw3DCloud() {
 	
@@ -318,7 +319,7 @@ function Scene1() {
 		Color(0,0,1, 1);
 		Vertex( -10, 0.8 );
 		Vertex( 10, 0.8 );
-		End(LINES);
+		End();
 
 		if ( CondNewList('clouds', isCameraMoving) ) { // clouds are static.
 			
@@ -346,11 +347,79 @@ function Scene1() {
 		Color(0,0,1, 1);
 		Vertex( -10, 1.8 );
 		Vertex( 10, 1.8 );
-		End(LINES);
+		End();
 
 		Disable(TEXTURE_2D);
 		Axis(1);
 	}
+}
+
+
+var Scene2 = new function() {
+	
+	var vertexList = [];
+	var colorList = [];
+	
+	for ( var i = 0; i < 10000; i++ ) {
+
+//	for ( var x = -2; x <= 2; x += 0.1 )
+//		for ( var y = -2; y <= 2; y += 0.1 )
+//			for ( var z = -2; z <= 2; z += 0.1 ) {
+				
+//					var ox = (PerlinNoise( 1.6, 0.5, 5, x )-0.5)*20;
+//					var oy = (PerlinNoise( 1.6, 0.5, 5, y )-0.5)*20;
+//					var oz = (PerlinNoise( 1.6, 0.5, 5, z )-0.5)*20;
+				
+				var ox = RandReal()-0.5;
+				var oy = RandReal()-0.5;
+				var oz = RandReal()-0.5;
+				
+				var v = (PerlinNoise( 1.3, 0.3, 3, ox/2, oy/2, oz/2 ))*1.5;
+			
+				colorList.push( v, 1-v, 0.5, v/2 );
+				vertexList.push( ox,oy,oz );
+
+			}
+
+	Print( vertexList.length / 3, '\n' );
+	var tm = new Trimesh();
+	tm.DefineVertexBuffer(vertexList);
+	tm.DefineColorBuffer(colorList);
+	var tmid = Ogl.LoadTrimesh(tm);
+	
+//	var tex = DecodeJpegImage(new File('image.jpg').Open(File.RDONLY));
+	var tex = new Texture(32,32, 1);
+	tex.Set(0);
+	tex.AddGradiantRadial( curveGaussian( 0.5 ) );
+	
+	with (Ogl) {
+	
+		var textureId = GenTexture();
+		BindTexture(TEXTURE_2D, textureId);
+		DefineTextureImage(TEXTURE_2D, ALPHA, tex);
+		TexParameter(TEXTURE_2D, TEXTURE_MIN_FILTER, LINEAR);
+		TexParameter(TEXTURE_2D, TEXTURE_MAG_FILTER, LINEAR);
+//		PointParameter(POINT_DISTANCE_ATTENUATION, [0, 0, 0.01]); // 1/(a + b*d + c *d^2)
+		Enable(POINT_SPRITE);
+		TexEnv(POINT_SPRITE, COORD_REPLACE, TRUE);
+//		TexEnv(TEXTURE_ENV, TEXTURE_ENV_MODE, MODULATE);
+	}
+	
+	do {
+
+//		Ogl.Color(0, 0, 1, 0.5);
+//		Ogl.Enable(Ogl.POINT_SMOOTH);
+		Ogl.Disable(Ogl.DEPTH_TEST);
+		Ogl.Enable(Ogl.BLEND);
+		Ogl.BlendFunc(Ogl.SRC_ALPHA, Ogl.ONE_MINUS_SRC_ALPHA);
+		Ogl.PointSize(10);
+		Ogl.Enable(Ogl.TEXTURE_2D);
+		Ogl.BindTexture(Ogl.TEXTURE_2D, textureId);
+		Ogl.DrawTrimesh( tmid, Ogl.POINTS );
+//		Quad();
+	
+	} while ( !(yield) );
+
 }
 
 
@@ -414,7 +483,7 @@ function HWConvolution( width, height, matrix ) {
 
 
 
-function Blur() {
+function HWBlur() {
 	
 	with (Ogl) {
 	
@@ -479,13 +548,16 @@ function Blur() {
 }
 
 
-
+/*
 var textureId = Ogl.GenTexture();
 Ogl.BindTexture(Ogl.TEXTURE_2D, textureId);
 var texture = DecodeJpegImage(new File('image.jpg').Open(File.RDONLY))
 Ogl.DefineTextureImage(Ogl.TEXTURE_2D, undefined, texture);
 Ogl.TexParameter(Ogl.TEXTURE_2D, Ogl.TEXTURE_MIN_FILTER, Ogl.LINEAR);
 Ogl.TexParameter(Ogl.TEXTURE_2D, Ogl.TEXTURE_MAG_FILTER, Ogl.LINEAR);
+*/
+
+
 
 var sleep = 20;
 for (var end = false; !end ;) {
@@ -496,14 +568,23 @@ for (var end = false; !end ;) {
 	
 	isCameraMoving = false;
 	PollEvent(listeners);
-/*	
+
 	var tmp = Math.cos(vy/400);
 	cx = -Math.cos(vx/400)*Math.abs(tmp) * vz;
 	cy = Math.sin(vx/400)*Math.abs(tmp) * vz;
 	cz = Math.sin(vy/400) * vz;
-	Ogl.LookAt(cx,cy,cz, 0,0,0, 0,0,1);
-*/
 
+	Ogl.MatrixMode(Ogl.MODELVIEW);
+	Ogl.LoadIdentity();
+	Ogl.LookAt(cx,cy,cz, 0,0,0, 0,0,1);
+
+	Ogl.Clear(Ogl.COLOR_BUFFER_BIT | Ogl.DEPTH_BUFFER_BIT);
+	
+
+//	Scene1();
+	Scene2.next();
+
+/*
 	Ogl.MatrixMode(Ogl.PROJECTION);
 	Ogl.LoadIdentity();
 	Ogl.MatrixMode(Ogl.MODELVIEW);
@@ -513,12 +594,11 @@ for (var end = false; !end ;) {
 	mat.Product(perspective);
 	mat.Invert();
 	
-	Ogl.Clear(Ogl.COLOR_BUFFER_BIT | Ogl.DEPTH_BUFFER_BIT);
 
-	Ogl.Enable(Ogl.TEXTURE_2D);
+//	Ogl.Enable(Ogl.TEXTURE_2D);
 	
-	Ogl.BindTexture(Ogl.TEXTURE_2D, textureId);
-	
+//	Ogl.BindTexture(Ogl.TEXTURE_2D, textureId);
+
 	//Color(1,1,1);
 	Ogl.Scale(1, -1);
 	Ogl.Begin(Ogl.QUADS);
@@ -528,8 +608,8 @@ for (var end = false; !end ;) {
 	Ogl.TexCoord(0, 1); Ogl.Vertex(-1, +1);
 	Ogl.End();
 	
-	Blur();
-//	Blur();
+	HWBlur();
+*/
 
 	for each ( var [p1, p2] in lines ) {
 
@@ -1000,7 +1080,7 @@ with (Ogl) {
 //	var texture = new Jpeg(new File('R0010235.JPG').Open( File.RDONLY )).Load();
 	var texture = new Texture(128, 128, 1);
 	texture.Set([0]);
-	var curveGaussian = function(c) { return function(x) { return Math.exp( -(x*x)/(2*c*c) ) } }
+//	var curveGaussian = function(c) { return function(x) { return Math.exp( -(x*x)/(2*c*c) ) } }
 	texture.AddGradiantRadial( curveGaussian( 0.3 ), false );
 	texture.AddNoise(0.1,0,0,0);
 

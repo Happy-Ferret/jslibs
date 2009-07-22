@@ -179,7 +179,10 @@ DEFINE_FUNCTION_FAST( DefineVertexBuffer ) {
 	jsuint count;
 	JL_CHK( JS_GetArrayLength(cx, arrayObj, &count) );
 
-	JL_S_ASSERT( (count > 0) && (count % 3 == 0), "Invalid count, need [X,Y,Z,...]" );
+	if ( count == 0 )
+		return JS_TRUE;
+
+	JL_S_ASSERT( (count > 0) && (count % 3 == 0), "Invalid count, need [X,Y,Z, ...]" );
 
 	pv->vertex = (SURFACE_REAL_TYPE*)JS_malloc(cx, sizeof(SURFACE_REAL_TYPE) * count);
 
@@ -209,7 +212,10 @@ DEFINE_FUNCTION_FAST( DefineNormalBuffer ) {
 	jsuint count;
 	JL_CHK( JS_GetArrayLength(cx, arrayObj, &count) );
 
-	JL_S_ASSERT( (count > 0) && (count % 3 == 0), "Invalid count, need [X,Y,Z,...]" );
+	if ( count == 0 )
+		return JS_TRUE;
+
+	JL_S_ASSERT( (count > 0) && (count % 3 == 0), "Invalid count, need [X,Y,Z, ...]" );
 	JL_S_ASSERT( count == pv->vertexCount * 3, "Wrong array size %d, need %d.", count, pv->vertexCount * 3 );
 
 	pv->normal = (SURFACE_REAL_TYPE*)JS_malloc(cx, sizeof(SURFACE_REAL_TYPE) * count);
@@ -236,7 +242,10 @@ DEFINE_FUNCTION_FAST( DefineTextureCoordinateBuffer ) {
 	jsuint count;
 	JL_CHK( JS_GetArrayLength(cx, arrayObj, &count) );
 
-	JL_S_ASSERT( (count > 0) && (count % 3 == 0), "Invalid count, need [S,T,R,...]" );
+	if ( count == 0 )
+		return JS_TRUE;
+
+	JL_S_ASSERT( (count > 0) && (count % 3 == 0), "Invalid count, need [S,T,R, ...]" );
 	JL_S_ASSERT( count == pv->vertexCount * 3, "Wrong array size %d, need %d.", count, pv->vertexCount * 3 );
 
 	pv->textureCoordinate = (SURFACE_REAL_TYPE*)JS_malloc(cx, sizeof(SURFACE_REAL_TYPE) * count);
@@ -263,7 +272,10 @@ DEFINE_FUNCTION_FAST( DefineColorBuffer ) {
 	jsuint count;
 	JL_CHK( JS_GetArrayLength(cx, arrayObj, &count) );
 
-	JL_S_ASSERT( (count > 0) && (count % 4 == 0), "Invalid count, need [R,G,B,A,...]" );
+	if ( count == 0 )
+		return JS_TRUE;
+
+	JL_S_ASSERT( (count > 0) && (count % 4 == 0), "Invalid count, need [R,G,B,A, ...]" );
 	JL_S_ASSERT( count == pv->vertexCount * 4, "Wrong array size %d, need %d.", count, pv->vertexCount * 4 );
 
 	pv->color = (SURFACE_REAL_TYPE*)JS_malloc(cx, sizeof(SURFACE_REAL_TYPE) * count);
@@ -290,7 +302,10 @@ DEFINE_FUNCTION_FAST( DefineIndexBuffer ) {
 	jsuint count;
 	JL_CHK( JS_GetArrayLength(cx, arrayObj, &count) );
 
-	JL_S_ASSERT( (count > 0) && (count % 3 == 0), "Invalid count, need [V1,V2,V3,...]" );
+	if ( count == 0 )
+		return JS_TRUE;
+
+	JL_S_ASSERT( (count > 0) && (count % 3 == 0), "Invalid count, need [V1,V2,V3, ...]" );
 
 	pv->index = (SURFACE_INDEX_TYPE*)JS_malloc(cx, sizeof(SURFACE_INDEX_TYPE) * count);
 

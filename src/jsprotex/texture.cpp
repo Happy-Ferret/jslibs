@@ -176,20 +176,23 @@ inline JSBool InitLevelData( JSContext* cx, jsval value, int count, PTYPE *level
 
 	if ( JSVAL_IS_NUMBER(value) ) {
 
-		jsdouble dval;
-		JL_CHK( JS_ValueToNumber(cx, value, &dval) );
+		float tmp;
+		JL_CHK( JsvalToFloat(cx, value, &tmp) );
 		PTYPE val;
-		val = (PTYPE)dval;
+		val = (PTYPE)tmp;
 		for ( int i = 0; i < count; i++ )
 			level[i] = val;
-	} else if ( JSVAL_IS_OBJECT(value) && JS_IsArrayObject(cx, JSVAL_TO_OBJECT(value)) ) {
+		return JS_TRUE;
+	} else 
+	if ( JsvalIsArray(cx, value) ) {
 
 		//FloatArrayToVector(cx, count, &value, level);
 		uint32 length;
 		JL_CHK( JsvalToFloatVector(cx, value, level, count, &length) );
 //		JL_S_ASSERT( length == 3, "Invalid array size." );
-
-	} else if ( JSVAL_IS_STRING(value) ) {
+		return JS_TRUE;
+	} else 
+	if ( JSVAL_IS_STRING(value) ) {
 
 		const char *color;
 		size_t length;
@@ -211,10 +214,10 @@ inline JSBool InitLevelData( JSContext* cx, jsval value, int count, PTYPE *level
 				level[i] = PMAX * val / 255;
 			}
 		}
+		return JS_TRUE;
 	}
 
-//	JL_REPORT_ERROR("Invalid level data.");
-	return JS_TRUE;
+	JL_REPORT_ERROR("Invalid level data.");
 	JL_BAD;
 }
 
@@ -2294,6 +2297,8 @@ DEFINE_FUNCTION_FAST( ForEachPixel ) {
 	int channels;
 	channels = tex->channels;
 
+	TextureSetupBackBuffer(cx, tex);
+
 	jsval callArgv[4]; // callArgv[0] is the rval
 
 	JSObject *cArrayObj;
@@ -2327,13 +2332,14 @@ DEFINE_FUNCTION_FAST( ForEachPixel ) {
 					jsdouble d;
 					JL_CHKB( JS_GetElement(cx, cArrayObj, c, &level), bad2 );
 					JL_CHKB( JsvalToDouble(cx, level, &d), bad2 );
-					tex->cbuffer[pos+c] = d;
+					tex->cbackBuffer[pos+c] = d;
 				}
 			}
 		}
 	}
 	JS_POP_TEMP_ROOT(cx, &tvr);
 
+	TextureSwapBuffers(tex);
 	return JS_TRUE;
 bad2:
 	JS_POP_TEMP_ROOT(cx, &tvr);

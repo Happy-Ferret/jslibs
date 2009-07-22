@@ -130,8 +130,8 @@ function UpdateTexture(imageIndex) { // <<<<<<<<<<<<<<<<<-----------------------
 	texture.Set(1);
 	texture.ForEachPixel(function(pixel, x, y) {
 
-		var dis = PerlinNoise(2.1, 0.5, 5, x-z/2, y);
-		var val = PerlinNoise(1.8, 0.6, 7, x-z+dis*8, y);
+		var dis = PerlinNoise(2.1, 0.5, 6, x-z/2, y);
+		var val = PerlinNoise(2, 0.5, 5, (x-z+dis*24)/2, y/2);
 		pixel[0] = pixel[1] = 1-val;
 	});
 	z += 1;

@@ -3139,23 +3139,26 @@ DEFINE_FUNCTION_FAST( LoadTrimesh ) {
 	Surface *srf = GetTrimeshSurface(cx, trimeshObj);
 	JL_S_ASSERT_RESOURCE(srf);
 
-	JL_S_ASSERT( srf->vertex && srf->vertexCount && srf->index && srf->indexCount, "No enough data" );
-
 	OpenGlTrimeshInfo *info;
 	JL_CHK( CreateId(cx, TRIMESH_ID_NAME, sizeof(OpenGlTrimeshInfo), (void**)&info, FinalizeTrimesh, JL_FRVAL) );
 
-	info->vertexCount = srf->vertexCount;
-	info->indexCount = srf->indexCount;
+	if ( srf->vertex ) {
+	
+		info->vertexCount = srf->vertexCount;
+		glGenBuffersARB(1, &info->vertexBuffer);
+		glBindBufferARB(GL_ARRAY_BUFFER_ARB, info->vertexBuffer);
+		glBufferDataARB(GL_ARRAY_BUFFER_ARB, srf->vertexCount * 3 * sizeof(SURFACE_REAL_TYPE), srf->vertex, GL_STATIC_DRAW_ARB);
+	} else
+		info->vertexBuffer = 0;
 
-	glGenBuffersARB(1, &info->indexBuffer);
+	if ( srf->index ) {
 
-	glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, info->indexBuffer);
-
-	glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB, srf->indexCount * sizeof(SURFACE_INDEX_TYPE), srf->index, GL_STATIC_DRAW_ARB);
-
-	glGenBuffersARB(1, &info->vertexBuffer);
-	glBindBufferARB(GL_ARRAY_BUFFER_ARB, info->vertexBuffer);
-	glBufferDataARB(GL_ARRAY_BUFFER_ARB, srf->vertexCount * 3 * sizeof(SURFACE_REAL_TYPE), srf->vertex, GL_STATIC_DRAW_ARB);
+		info->indexCount = srf->indexCount;
+		glGenBuffersARB(1, &info->indexBuffer);
+		glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, info->indexBuffer);
+		glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB, srf->indexCount * sizeof(SURFACE_INDEX_TYPE), srf->index, GL_STATIC_DRAW_ARB);
+	} else
+		info->indexBuffer = 0;
 
 	if ( srf->normal ) {
 
@@ -3192,7 +3195,7 @@ DEFINE_FUNCTION_FAST( LoadTrimesh ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $VOID $INAME( trimeshId )
+ $VOID $INAME( trimeshId [, mode ] )
   $H OpenGL API
    glVertexPointer
 **/
@@ -3209,9 +3212,18 @@ DEFINE_FUNCTION_FAST( DrawTrimesh ) {
 
 	GLenum dataType = sizeof(SURFACE_REAL_TYPE) == sizeof(float) ? GL_FLOAT : GL_DOUBLE;
 
-	glEnableClientState(GL_VERTEX_ARRAY);
-	glBindBufferARB(GL_ARRAY_BUFFER_ARB, info->vertexBuffer);
-	glVertexPointer(3, dataType, 0, 0);
+	GLenum mode;
+	if ( JL_FARG_ISDEF(2) )
+		mode = JSVAL_TO_INT(JL_FARG(2));
+	else
+		mode = GL_TRIANGLES;
+
+	if ( info->vertexBuffer ) {
+
+		glEnableClientState(GL_VERTEX_ARRAY);
+		glBindBufferARB(GL_ARRAY_BUFFER_ARB, info->vertexBuffer);
+		glVertexPointer(3, dataType, 0, 0);
+	}
 
 	if ( info->normalBuffer ) {
 
@@ -3234,9 +3246,16 @@ DEFINE_FUNCTION_FAST( DrawTrimesh ) {
 		glColorPointer(4, dataType, 0, 0);
 	}
 
-//	glEnableClientState(GL_INDEX_ARRAY);
-	glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, info->indexBuffer);
-	glDrawElements(GL_TRIANGLES, info->indexCount, GL_UNSIGNED_INT, 0); // 1 triangle = 3 vertex
+	if ( info->indexBuffer ) {
+
+		//	glEnableClientState(GL_INDEX_ARRAY);
+		glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, info->indexBuffer);
+		glDrawElements(mode, info->indexCount, GL_UNSIGNED_INT, 0); // 1 triangle = 3 vertex
+	} else {
+		
+		if ( info->vertexBuffer )
+			glDrawArrays(mode, 0, info->vertexCount);
+	}
 
 //	glDisableClientState(GL_INDEX_ARRAY);
 	if ( info->colorBuffer )
@@ -3245,6 +3264,7 @@ DEFINE_FUNCTION_FAST( DrawTrimesh ) {
 		glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 	if ( info->normalBuffer )
 		glDisableClientState(GL_NORMAL_ARRAY);
+
 	glDisableClientState(GL_VERTEX_ARRAY); // deactivate vertex array
 
 	// bind with 0, so, switch back to normal pointer operation
@@ -3781,7 +3801,7 @@ CONFIGURE_CLASS
 		FUNCTION_FAST_ARGC(MultiTexCoord, 4) // target, s, t, r
 
 		FUNCTION_FAST_ARGC(LoadTrimesh, 1) // Trimesh object
-		FUNCTION_FAST_ARGC(DrawTrimesh, 1) // Trimesh id
+		FUNCTION_FAST_ARGC(DrawTrimesh, 2) // TrimeshId, mode
 
 		FUNCTION_FAST_ARGC(PixelWidthFactor, 0)
 

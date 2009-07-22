@@ -16,10 +16,9 @@
 
 #include <math.h>
 
-extern "C" unsigned long genrand_int32(void);
-extern "C" void init_genrand(unsigned long s);
+extern "C" unsigned long genrand_int32(void); /* generates a random number on [0,0xffffffff]-interval */
 
-#define RM 0x7ff // mask
+#define RM 0x3ff // mask (used for fast modulo)
 #define R (RM+1)
 
 static unsigned long rnd[R];
@@ -30,15 +29,14 @@ void InitNoise() {
 		rnd[i] = genrand_int32();
 }
 
-float Noise1DInteger( int x ) {
+float Noise1D( int x ) {
 
 	unsigned long a = rnd[ x & RM ];
 	unsigned long b = rnd[ (x/R+a) & RM ];
 	return (float)b / (float)0xffffffff;
 }
 
-
-float Noise2DInteger( int x, int y ) {
+float Noise2D( int x, int y ) {
 
 	unsigned long a = rnd[ x & RM ];
 	unsigned long b = rnd[ (x/R+y+a) & RM ];
@@ -46,7 +44,7 @@ float Noise2DInteger( int x, int y ) {
 }
 
 
-float Noise3DInteger( int x, int y, int z ) {
+float Noise3D( int x, int y, int z ) {
 
 	unsigned long a = rnd[ x & RM ];
 	unsigned long b = rnd[ (x/R+y+a) & RM ];
@@ -56,30 +54,30 @@ float Noise3DInteger( int x, int y, int z ) {
 
 float Smooth( float t ) {
 
-	return t * t * (3. - 2. * t); // return t;
+	return t * t * (3. - 2. * t);
 }
 
-float Noise1D( float x ) {
+float INoise1D( float x ) {
 
 	int flx = floor(x);
 	float xr = Smooth(x-flx);
 
-	return Noise1DInteger(flx) * (1.-xr) + Noise1DInteger(flx+1) * xr;
+	return Noise1D(flx) * (1.-xr) + Noise1D(flx+1) * xr;
 }
 
-float Noise2D( float x, float y ) {
+float INoise2D( float x, float y ) {
 
 	int flx = floor(x);
 	int fly = floor(y);
 	float xr = Smooth(x-flx);
 	float yr = Smooth(y-fly);
 
-	float x1 = Noise2DInteger(flx, fly  ) * (1.-xr) + Noise2DInteger(flx+1, fly  ) * xr;
-	float x2 = Noise2DInteger(flx, fly+1) * (1.-xr) + Noise2DInteger(flx+1, fly+1) * xr;
+	float x1 = Noise2D(flx, fly  ) * (1.-xr) + Noise2D(flx+1, fly  ) * xr;
+	float x2 = Noise2D(flx, fly+1) * (1.-xr) + Noise2D(flx+1, fly+1) * xr;
 	return x1 * (1.-yr) + x2 * yr;
 }
 
-float Noise3D( float x, float y, float z ) {
+float INoise3D( float x, float y, float z ) {
 
 	int flx = floor(x);
 	int fly = floor(y);
@@ -88,16 +86,16 @@ float Noise3D( float x, float y, float z ) {
 	float yr = Smooth(y-fly);
 	float zr = Smooth(z-flz);
 
-	float xr1 = 1.-xr;
-
 	float flx1 = flx+1;
 	float fly1 = fly+1;
 	float flz1 = flz+1;
 
-	float x1 = Noise3DInteger(flx,fly ,flz ) * xr1 + Noise3DInteger(flx1,fly ,flz ) * xr;
-	float x2 = Noise3DInteger(flx,fly1,flz ) * xr1 + Noise3DInteger(flx1,fly1,flz ) * xr;
-	float x3 = Noise3DInteger(flx,fly ,flz1) * xr1 + Noise3DInteger(flx1,fly ,flz1) * xr;
-	float x4 = Noise3DInteger(flx,fly1,flz1) * xr1 + Noise3DInteger(flx1,fly1,flz1) * xr;
+	float xr1 = 1.-xr;
+
+	float x1 = Noise3D(flx,fly ,flz ) * xr1 + Noise3D(flx1,fly ,flz ) * xr;
+	float x2 = Noise3D(flx,fly1,flz ) * xr1 + Noise3D(flx1,fly1,flz ) * xr;
+	float x3 = Noise3D(flx,fly ,flz1) * xr1 + Noise3D(flx1,fly ,flz1) * xr;
+	float x4 = Noise3D(flx,fly1,flz1) * xr1 + Noise3D(flx1,fly1,flz1) * xr;
 	float y1 = x1 * (1.-yr) + x2 * yr;
 	float y2 = x3 * (1.-yr) + x4 * yr;
 	return y1 * (1.-zr) + y2 * zr;
@@ -108,7 +106,7 @@ float Noise1DPerlin( float x, float alpha, float beta, int n ) {
    float sum = 0, max = 0, scale = 1;
    for ( int i = 0; i < n; i++ ) {
 
-      sum += Noise1D(x) * scale;
+      sum += INoise1D(x) * scale;
 		max += scale;
       scale *= alpha;
       x *= beta;
@@ -118,11 +116,11 @@ float Noise1DPerlin( float x, float alpha, float beta, int n ) {
 
 float Noise2DPerlin( float x, float y, float alpha, float beta, int n ) {
 
-	y = -y; // avoid [0,0] issue
+	y = -y; // avoid scale visual issue at 0
    float sum = 0, max = 0, scale = 1;
    for ( int i = 0; i < n; i++ ) {
 
-      sum += Noise2D(x, y) * scale;
+      sum += INoise2D(x, y) * scale;
 		max += scale;
       scale *= alpha;
       x *= beta;
@@ -133,11 +131,11 @@ float Noise2DPerlin( float x, float y, float alpha, float beta, int n ) {
 
 float Noise3DPerlin( float x, float y, float z, float alpha, float beta, int n ) {
 
-	y = -y; z = -z; // avoid [0,0,0] issue
+	y = -y; // avoid scale visual issue at 0
 	float sum = 0, max = 1, scale = 1;
    for ( int i = 0; i < n; i++ ) {
 
-      sum += Noise3D(x, y, z) * scale;
+      sum += INoise3D(x, y, z) * scale;
 		max += scale;
       scale *= alpha;
       x *= beta;
