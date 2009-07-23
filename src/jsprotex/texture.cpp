@@ -1610,7 +1610,7 @@ DEFINE_FUNCTION_FAST( Blend ) { // texture1, blenderTexture|blenderColor
 
 /**doc
 $TOC_MEMBER $INAME
- $THIS *SetPixel*( x, y, colorInfo )
+ $THIS $INAME( x, y, colorInfo )
   Sets the color of the given pixel.
   $H note
    If x and y are wrapped to the image width and height.
@@ -1634,9 +1634,8 @@ DEFINE_FUNCTION_FAST( SetPixel ) { // x, y, levels
 	PTYPE pixel[PMAXCHANNELS];
 	JL_CHK( InitLevelData(cx, JL_FARG(3), tex->channels, pixel) );
 
-	int c, channels;
+	int c, channels, pos;
 	channels = tex->channels;
-	int pos;
 	pos = (x + y * tex->width) * channels;
 	for ( c = 0; c < channels; c++ )
 		tex->cbuffer[pos+c] = pixel[c];
@@ -2288,18 +2287,16 @@ DEFINE_FUNCTION_FAST( ForEachPixel ) {
 	functionValue = JL_FARG(1);
 
 	Texture *tex;
-	tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
+	tex = (Texture*)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE(tex);
-	int width;
+	int width, height, channels;
 	width = tex->width;
-	int height;
 	height = tex->height;
-	int channels;
 	channels = tex->channels;
 
 	TextureSetupBackBuffer(cx, tex);
 
-	jsval callArgv[4]; // callArgv[0] is the rval
+	jsval level, callArgv[4]; // callArgv[0] is the rval
 
 	JSObject *cArrayObj;
 	cArrayObj = JS_NewArrayObject(cx, channels, NULL);
@@ -2317,22 +2314,18 @@ DEFINE_FUNCTION_FAST( ForEachPixel ) {
 			callArgv[3] = INT_TO_JSVAL(y);
 			for ( int c = 0; c < channels; c++ ) {
 
-				jsval level;
 				JL_CHKB( FloatToJsval(cx, tex->cbuffer[pos+c], &level), bad2 );
 				JL_CHKB( JS_SetElement(cx, cArrayObj, c, &level), bad2 );
 			}
 
 			JL_CHKB( JS_CallFunctionValue(cx, JL_FOBJ, functionValue, COUNTOF(callArgv)-1, callArgv+1, callArgv), bad2 );
 
-			if ( callArgv[0] != JSVAL_FALSE ) { // functionValue's rval
+			if ( callArgv[0] != JSVAL_FALSE ) { // function's return value
 
 				for ( int c = 0; c < channels; c++ ) {
 
-					jsval level;
-					jsdouble d;
 					JL_CHKB( JS_GetElement(cx, cArrayObj, c, &level), bad2 );
-					JL_CHKB( JsvalToDouble(cx, level, &d), bad2 );
-					tex->cbackBuffer[pos+c] = d;
+					JL_CHKB( JsvalToFloat(cx, level, &tex->cbackBuffer[pos+c]), bad2 );
 				}
 			}
 		}
@@ -2350,7 +2343,7 @@ bad:
 
 /**doc
 $TOC_MEMBER $INAME
- $THIS $INAME( blurWidth, blurHeight )
+ $THIS $INAME( blurWidth, blurHeight [, iterations = 1 ] )
   Apply a box blur of the given width and height.
   $H note
    BoxBlur is very fast but the result is not very smooth.
@@ -2370,19 +2363,25 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( BoxBlur ) {
 
-	JL_S_ASSERT_ARG_MIN( 2 );
+	JL_S_ASSERT_ARG_RANGE(2,3);
 
 	Texture *tex;
 	tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE(tex);
-	int width;
+	int width, height;
 	width = tex->width;
-	int height;
 	height = tex->height;
 
-	int bw, bh; // blur width & height
+	int bw, bh, iterations; // blur width & height
 	JL_CHK( JsvalToInt(cx, JL_FARG(1), &bw) );
 	JL_CHK( JsvalToInt(cx, JL_FARG(2), &bh) );
+
+
+	if ( JL_FARG_ISDEF(3) )
+		JL_CHK( JsvalToInt(cx, JL_FARG(3), &iterations) );
+	else
+		iterations = 1;
+
 
 	if ( bw > width )
 		bw = width;
@@ -2392,48 +2391,60 @@ DEFINE_FUNCTION_FAST( BoxBlur ) {
 	int channels;
 	channels = tex->channels;
 
-	PTYPE *line;
-	line = (PTYPE*)malloc( MAX( width, height ) * channels * sizeof(PTYPE) ); // line buffer
-	PTYPE sum[PMAXCHANNELS];
+	PTYPE sum;
+
+	TextureSetupBackBuffer(cx, tex);
 
 	int x, y, c;
-	for ( y = 0; y < height; y++ )
-		for ( c = 0; c < channels; c++ ) {
 
-			for ( x = 0; x < width; x++ )
-				line[x * channels + c] = tex->cbuffer[(x + y * width) * channels + c];
+	for ( int i = 0; i < iterations; i++ ) {
 
-			sum[c] = 0;
-
-			for ( x = 0; x < bw; x++ )
-				sum[c] += line[x * channels + c];
-
-			for ( x = 0; x < width; x++ ) {
-
-				tex->cbuffer[ ( (x + bw/2) % width + y * width ) * channels + c ] = sum[c] / bw;
-				sum[c] = sum[c] - line[x * channels + c] + line[( (x + bw) % width ) * channels + c];
-			}
-		}
-
-	for ( x = 0; x < width; x++ )
-		for ( c = 0; c < channels; c++ ) {
-
-			for ( y = 0; y < height; y++ )
-				line[y * channels + c] = tex->cbuffer[(x + y * width) * channels + c];
-
-			sum[c] = 0;
-
-			for ( y = 0; y < bh; y++ )
-				sum[c] += line[y * channels + c];
-
+		if ( bw > 1 ) {
 			for ( y = 0; y < height; y++ ) {
 
-				tex->cbuffer[ ( x + ((y + bh/2) % height) * width ) * channels + c ] = sum[c] / bh;
-				sum[c] = sum[c] - line[y * channels + c] + line[( (y + bh) % height ) * channels + c];
-			}
-		}
+				for ( c = 0; c < channels; c++ ) {
 
-	free( line );
+					PTYPE *pos = &tex->cbuffer[y * width * channels + c];
+					
+					sum = 0;
+					for ( x = 0; x < bw; x++ )
+						sum += pos[x * channels];
+
+					for ( x = 0; x < width; x++ ) {
+
+						tex->cbackBuffer[ ( (x + bw/2)%width + y * width ) * channels + c ] = sum / bw;
+						sum = sum - pos[x * channels] + pos[((x+bw)%width) * channels];
+					}
+				}
+			}
+			TextureSwapBuffers(tex);
+		}
+		
+		if ( bh > 1 ) {
+
+			int wc = width * channels;
+			for ( x = 0; x < width; x++ ) {
+
+				for ( c = 0; c < channels; c++ ) {
+
+					PTYPE *pos = &tex->cbuffer[x * channels + c];
+					
+					sum = 0;
+					for ( y = 0; y < bh; y++ )
+						sum += pos[y * wc];
+
+					for ( y = 0; y < height; y++ ) {
+
+						tex->cbackBuffer[ ( x + ((y + bh/2)%height) * width ) * channels + c ] = sum / bh;
+						sum = sum - pos[y * wc] + pos[((y+bh)%height) * wc];
+					}
+				}
+			}
+			TextureSwapBuffers(tex);
+		}
+	}
+
+//	free( line );
 	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
 	return JS_TRUE;
 	JL_BAD;

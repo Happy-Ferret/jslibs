@@ -27,7 +27,7 @@ float Noise1DPerlin( float x, float alpha, float beta, int n );
 float Noise2DPerlin( float x, float y, float alpha, float beta, int n );
 float Noise3DPerlin( float x, float y, float z, float alpha, float beta, int n );
 
-
+double PerlinNoise2(double x, double y, double z);
 
 /**doc
 $TOC_MEMBER $INAME
@@ -84,7 +84,6 @@ DEFINE_FUNCTION_FAST( RandReal ) {
 	JL_BAD;
 }
 
-
 /**doc
 $TOC_MEMBER $INAME
  $REAL $INAME( n, a, b, x [,y [,z] ] )
@@ -128,6 +127,23 @@ DEFINE_FUNCTION_FAST( PerlinNoiseReinit ) {
 	JL_BAD;
 }
 
+
+/**doc
+$TOC_MEMBER $INAME
+ $REAL $INAME(x, y, z)
+**/
+DEFINE_FUNCTION_FAST( PerlinNoise2 ) {
+
+	JL_S_ASSERT_ARG(3);
+	double x, y, z;
+	JL_CHK( JsvalToDouble(cx, JL_FARG(1), &x) );
+	JL_CHK( JsvalToDouble(cx, JL_FARG(2), &y) );
+	JL_CHK( JsvalToDouble(cx, JL_FARG(3), &z) );
+	return DoubleToJsval(cx, PerlinNoise2(x,y,z), JL_FRVAL);
+	JL_BAD;
+}
+
+
 DEFINE_INIT() {
 
 	InitNoise();
@@ -146,6 +162,8 @@ CONFIGURE_STATIC
 		FUNCTION_FAST( RandReal )
 		FUNCTION_FAST( PerlinNoise )
 		FUNCTION_FAST( PerlinNoiseReinit )
+
+		FUNCTION_FAST( PerlinNoise2 )
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC

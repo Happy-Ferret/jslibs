@@ -387,10 +387,7 @@ var Scene2 = new function() {
 	tm.DefineColorBuffer(colorList);
 	var tmid = Ogl.LoadTrimesh(tm);
 	
-//	var tex = DecodeJpegImage(new File('image.jpg').Open(File.RDONLY));
-	var tex = new Texture(32,32, 1);
-	tex.Set(0);
-	tex.AddGradiantRadial( curveGaussian( 0.5 ) );
+	var tex = new Texture(16,16, 1).Set(0).AddGradiantRadial( curveGaussian( 0.5 ) );
 	
 	with (Ogl) {
 	

@@ -103,12 +103,10 @@ function NoiseChannel( tex, channel ) {
 }
 
 
+////
 
-var t0 = IntervalNow();
 
-function time() IntervalNow() - t0;
-
-var size = 64;
+var size = 128;
 var texture = new Texture(size, size, 3);
 
 //	var myImage = DecodeJpegImage( new File('301_0185.jpg').Open('r') );
@@ -118,6 +116,8 @@ var texture = new Texture(size, size, 3);
 //	texture.Set(0);
 //	texture.Import( myImage, 0, 0 );
 
+var t0 = IntervalNow();
+function time() IntervalNow() - t0;
 var z = 0;
 RandSeed(1);
 PerlinNoiseReinit();
@@ -125,6 +125,38 @@ PerlinNoiseReinit();
 
 
 function UpdateTexture(imageIndex) { // <<<<<<<<<<<<<<<<<-----------------------------------
+
+	//
+	texture.Set(1);
+	for ( var y = 0; y < texture.height; y++ )
+		for ( var x = 0; x < texture.width; x++ ) {
+		
+			var val = PerlinNoise2((x/24 + -offsetx/30) * -offsetz/2, (y/24 + -offsety/30) * -offsetz/2, z/100);
+			texture.SetPixel(x,y, val);
+		}
+
+	z += 1;
+return;
+
+
+	// smooth colored noise
+	RandSeed(1);
+	texture.Set(0).AddNoise(1).BoxBlur(7,7, 3).NormalizeLevels();
+return;
+
+
+	// smoke effect
+	texture.Set(1);
+	texture.ForEachPixel(function(pixel, x, y) {
+		
+		var ry = (y/texture.height);
+//		val = PerlinNoise(2, 0.5, 1, x,y,z);
+		var val = ImprovedPerlinNoise(x/24, (y/24 + z/24), z/246) * ry;
+		pixel[0] = pixel[1] = pixel[2] = val;
+	});
+	z += 1;
+return;
+
 
 	// nice clouds effect
 	texture.Set(1);
@@ -142,7 +174,7 @@ return;
 	texture.Set(0);
 	texture.ForEachPixel(function(pixel, x, y) {
 		
-		var displace = PerlinNoise(1.9, 0.4, 5, x/2, y/2 + z*1.5);
+		var displace = PerlinNoise(1.9, 0.4, 5, x/2, y/2 + z);
 		var val = PerlinNoise(2, 0.5, 3, (x + displace*40)/6, (y + z + displace*160+(texture.height-y))/8);
 		val *= y / texture.height * 1.5;
 		pixel[0] = val;
@@ -564,6 +596,8 @@ return;
 }
 
 
+var offsetx = 0, offsety = 0, offsetz = 0;
+
 var end=false, pause = false;
 
 var listeners = {
@@ -571,14 +605,34 @@ var listeners = {
 	onQuit: function() { end = true },
 	onKeyDown: function(key, mod) { end = key == K_ESCAPE },
 	onMouseButtonDown: function(button, x, y) {
-		if ( button == BUTTON_LEFT )
-			pause = true;
+		if ( button == BUTTON_LEFT ) {
+			showCursor = false;
+			grabInput = true;
+		}
 	},
 	onMouseButtonUp: function(button, x, y) {
-		if ( button == BUTTON_LEFT )
-			pause = false;
+		if ( button == BUTTON_LEFT ) {
+			showCursor = true;
+			grabInput = false;
+		}
+		if ( button == BUTTON_WHEELUP ) {
+		
+			offsetz++;
+		}
+		if ( button == BUTTON_WHEELDOWN ) {
+		
+			offsetz--;
+		}
+		
 	},
+	onMouseMotion: function(px,py,dx,dy,button) {
+		if ( grabInput ) {
+			offsetx += dx;
+			offsety += dy;
+		}
+	}
 }
+
 
 
 GlSetAttribute( GL_SWAP_CONTROL, 1 ); // vsync
@@ -598,7 +652,7 @@ with (Ogl) {
 
 while (!end) {
 
-	PollEvent(listeners);
+	while (PollEvent(listeners));
 	if ( pause ) {
 		
 		Sleep(100);
