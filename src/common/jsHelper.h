@@ -1162,6 +1162,17 @@ ALWAYS_INLINE JSBool FloatToJsval( JSContext *cx, float f, jsval *rval ) {
 	return DoubleToJsval(cx, f, rval); // return JS_NewNumberValue(cx, f, val); // slower ?
 }
 
+//#define JL_OBJECT_TO_SCRIPT(obj) ((JSScript*)JL_GetPrivate(cx, (obj)))
+ALWAYS_INLINE JSBool ObjectToScript( JSContext *cx, JSObject *obj, JSScript **script ) {
+
+	#ifdef DEBUG
+		JS_ASSERT( JS_GetClass(obj) == &js_ScriptClass ); // Mozilla JS engine private API behavior has changed.
+	#endif //DEBUG
+
+	*script = (JSScript*)JL_GetPrivate(cx, obj);
+	return JS_TRUE;
+	JL_BAD;
+}
 
 
 ///////////////////////////////////////////////////////////////////////////////

@@ -1,14 +1,22 @@
 LoadModule('jsstd');
 LoadModule('jsdebug');
+eval('function toto() {\
+var test = -1; \
+}');
 
-TestDebug();
+
+var MyTest;
+!function() {
+var x = 2;
+MyTest = function (arg) {
+	
+	try {
+	throw 123;
+	} catch(ex){}
+	return arg+x;
+}
+	
+}()
 
 
-var honda = new Array
-( 'Honda',
-new Array("Accord", 25000), 
-new Array("Insight", 26000), 
-new Array("Pilot", 39000), 
-new Array("Ridgeline", 27500)); 
-
-debugger;
+Print( DisassembleScript('debug.js', 3) );

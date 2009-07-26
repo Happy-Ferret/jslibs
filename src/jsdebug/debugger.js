@@ -328,6 +328,12 @@ LoadModule('jsdebug');
 			return DefinitionLocation(value);
 		},
 		
+		DisassembleScript: function(filename, lineno) {
+			
+			//DisassembleScript
+		
+		},
+		
 		Shutdown: function() {
 
 			dbg.breakOnDebuggerKeyword = false;

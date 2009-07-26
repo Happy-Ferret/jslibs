@@ -20,6 +20,7 @@
 #include <Psapi.h>
 #endif // XP_WIN
 
+
 #include <errno.h>
 
 #include <time.h>
@@ -37,8 +38,24 @@
 
 #include "string.h"
 
+
+void fpipe( FILE **read, FILE **write ) {
+
+	HANDLE readPipe, writePipe;
+	CreatePipe(&readPipe, &writePipe, NULL, 0);
+
+	// doc: The underlying handle is also closed by a call to _close,
+	//      so it is not necessary to call the Win32 function CloseHandle on the original handle. 
+	int readfd = _open_osfhandle((intptr_t)readPipe, _O_RDONLY);
+	int writefd = _open_osfhandle((intptr_t)writePipe, 0);
+	*read = fdopen(readfd, "r");
+	*write = fdopen(writefd, "w");
+}
+
+
 extern jl::Queue *scriptFileList;
 JSBool GetScriptLocation( JSContext *cx, jsval *val, uintN lineno, JSScript **script, jsbytecode **pc ); // defined in main.cpp
+JSScript *ScriptByLocation(JSContext *cx, jl::Queue *scriptFileList, const char *filename, unsigned int lineno);
 
 
 int _puts(JSContext *cx, const char *str) {
@@ -1355,9 +1372,122 @@ DEFINE_FUNCTION_FAST( PropertiesInfo ) {
 	JL_BAD;
 }
 
-/*
-DEFINE_FUNCTION_FAST( Disassemble ) {
 
+
+JS_STATIC_ASSERT(JSTRY_CATCH == 0);
+JS_STATIC_ASSERT(JSTRY_FINALLY == 1);
+JS_STATIC_ASSERT(JSTRY_ITER == 2);
+
+static const char* const TryNoteNames[] = { "catch", "finally", "iter" };
+
+static JSBool
+TryNotes(JSContext *cx, JSScript *script, FILE *gOutFile)
+{
+    JSTryNote *tn, *tnlimit;
+
+    if (script->trynotesOffset == 0)
+        return JS_TRUE;
+
+    tn = JS_SCRIPT_TRYNOTES(script)->vector;
+    tnlimit = tn + JS_SCRIPT_TRYNOTES(script)->length;
+    fprintf(gOutFile, "\nException table:\n"
+            "kind      stack    start      end\n");
+    do {
+        JS_ASSERT(tn->kind < JS_ARRAY_LENGTH(TryNoteNames));
+        fprintf(gOutFile, " %-7s %6u %8u %8u\n",
+                TryNoteNames[tn->kind], tn->stackDepth,
+                tn->start, tn->start + tn->length);
+    } while (++tn != tnlimit);
+    return JS_TRUE;
+}
+
+
+/* *doc
+$TOC_MEMBER $INAME
+ $TYPE Script $INAME( filename, lineno )
+**/
+/*
+DEFINE_FUNCTION_FAST( ScriptByLocation ) {
+
+	JL_S_ASSERT_ARG(2);
+
+	const char *filename;
+	unsigned int lineno;
+
+	JL_CHK( JsvalToString(cx, &JL_FARG(1), &filename) );
+	JL_CHK( JsvalToUInt(cx, JL_FARG(2), &lineno) );
+	JSScript *script = ScriptByLocation(cx, scriptFileList, filename, lineno);
+	JL_CHK( script );
+	JSObject *scrobj = JS_GetScriptObject(script);
+//	if ( scrobj == NULL )
+//		scrobj = JS_NewScriptObject(cx, script); // Doc: https://developer.mozilla.org/en/SpiderMonkey/JSAPI_Reference/JS_NewScriptObject
+
+	if ( scrobj == NULL ) {
+		
+		*JL_FRVAL = JSVAL_VOID;
+		return JS_TRUE;
+	}
+	
+	*JL_FRVAL = OBJECT_TO_JSVAL(scrobj);
+	return JS_TRUE;
+	JL_BAD;
+}
+*/
+
+/**doc
+$TOC_MEMBER $INAME
+ $ARRAY $INAME( filename, lineno )
+  Prints the assembly of the given function.
+**/
+DEFINE_FUNCTION_FAST( DisassembleScript ) {
+
+	JL_S_ASSERT_ARG(2);
+//	JL_S_ASSERT( JsvalIsScript(cx, JL_FARG(1)), "Script object expected." );
+	const char *filename;
+	unsigned int lineno;
+
+	JL_CHK( JsvalToString(cx, &JL_FARG(1), &filename) );
+	JL_CHK( JsvalToUInt(cx, JL_FARG(2), &lineno) );
+	JSScript *script = ScriptByLocation(cx, scriptFileList, filename, lineno);
+	JL_CHK( script );
+
+//	JSFunction *fun = JS_ValueToFunction(cx, JL_FARG(1));
+//	JSScript *script = FUN_SCRIPT(fun);
+
+	int length;
+	FILE *rf, *wf;
+	fpipe(&rf, &wf);
+
+/*
+	if (fun && (fun->flags & ~7U)) {
+		
+		uint16 flags = fun->flags;
+		fputs("flags:", wf);
+
+#define SHOW_FLAG(flag) if (flags & JSFUN_##flag) fputs(" " #flag, wf);
+
+		SHOW_FLAG(LAMBDA);
+		SHOW_FLAG(SETTER);
+		SHOW_FLAG(GETTER);
+		SHOW_FLAG(BOUND_METHOD);
+		SHOW_FLAG(HEAVYWEIGHT);
+		SHOW_FLAG(THISP_STRING);
+		SHOW_FLAG(THISP_NUMBER);
+		SHOW_FLAG(THISP_BOOLEAN);
+		SHOW_FLAG(EXPR_CLOSURE);
+		SHOW_FLAG(TRACEABLE);
+
+#undef SHOW_FLAG
+
+      if (FUN_NULL_CLOSURE(fun))
+          fputs(" NULL_CLOSURE", wf);
+      else if (FUN_FLAT_CLOSURE(fun))
+          fputs(" FLAT_CLOSURE", wf);
+      fputs("\n", wf);
+	}
+*/
+
+//	JL_CHK( js_Disassemble(cx, script, JS_TRUE, wf) );
 
     jsbytecode *pc, *end;
     uintN len;
@@ -1366,22 +1496,52 @@ DEFINE_FUNCTION_FAST( Disassemble ) {
     end = pc + script->length;
     while (pc < end) {
         if (pc == script->main)
-            fputs("main:\n", fp);
-        len = js_Disassemble1(cx, script, pc,
-                              pc - script->code,
-                              lines, fp);
+            fputs("main:\n", wf);
+        len = js_Disassemble1(cx, script, pc, pc - script->code, JS_TRUE, wf);
         if (!len)
             return JS_FALSE;
         pc += len;
     }
-    return JS_TRUE;
-}
+
+//	TryNotes(cx, script, wf);
+
+	length = ftell(wf);
+	fflush(wf);
+	fclose(wf);
+
+/*
+	char buf[1024];
+	int rd;
+	do {
+		rd = fread(buf, 1, sizeof(buf)-1, rf);
+		printf("%d\n", rd);
+		buf[rd] = '\0';
+		_puts(cx, buf);
+
+	} while (rd == sizeof(buf)-1);
 */
+
+	char *data = (char*)malloc(length+1);
+	JL_S_ASSERT_ALLOC( data );
+	fread(data, 1, length, rf);
+	data[length] = '\0';
+	fclose(rf);
+
+	JSString *jsstr = JS_NewStringCopyN(cx, data, length);
+	free(data);
+	JL_S_ASSERT_ALLOC( jsstr );
+
+	*JL_FRVAL = STRING_TO_JSVAL(jsstr);
+
+	return JS_TRUE;
+	JL_BAD;
+}
 
 
 
 #ifdef DEBUG
 DEFINE_FUNCTION( TestDebug ) {
+
 
 	// see https://bugzilla.mozilla.org/show_bug.cgi?id=488924
 	JSObject *o = JS_NewArrayObject(cx, 0, NULL);
@@ -1403,8 +1563,8 @@ CONFIGURE_STATIC
 //		FUNCTION( DumpStats )
 		FUNCTION_FAST( TraceGC )
 
-//		FUNCTION_FAST( Disassemble );
-
+//		FUNCTION_FAST( ScriptByLocation )
+		FUNCTION_FAST( DisassembleScript )
 
 //		FUNCTION( Trap )
 //		FUNCTION( Untrap )
