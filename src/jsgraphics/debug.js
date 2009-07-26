@@ -292,7 +292,7 @@ with (Ogl) {
 	Enable(DEPTH_TEST);
 
 	MatrixMode(PROJECTION);
-	Perspective(90, 0.1, 1000);
+	Perspective(60, 0.1, 10000);
 	perspective.Load(Ogl);
 	MatrixMode(MODELVIEW);
 }
@@ -414,6 +414,50 @@ var Scene2 = new function() {
 		Ogl.BindTexture(Ogl.TEXTURE_2D, textureId);
 		Ogl.DrawTrimesh( tmid, Ogl.POINTS );
 //		Quad();
+	
+	} while ( !(yield) );
+
+}
+
+
+
+var Scene3 = new function() {
+	
+	var vertexList = [];
+	var colorList = [];
+	
+	var dx, dy, dz;
+	var x=1, y=0, z=0;
+	
+	for ( var t = 0; t < 1000; t += 0.01 ) {
+		
+    dx = 10 * (y - x)
+    dy = 28 * x - y - x * z
+    dz = x * y - 8 / 3 * y
+
+		x = dx;
+		y = dy;
+		z = dz;
+			
+//		colorList.push( v, 1-v, 0.5, v/2 );
+		vertexList.push( x,y,z );
+	}
+	
+//	Print( vertexList );
+
+	var tm = new Trimesh();
+	tm.DefineVertexBuffer(vertexList);
+//	tm.DefineColorBuffer(colorList);
+	var tmid = Ogl.LoadTrimesh(tm);
+	
+	Ogl.PointSize(1);
+	Ogl.Disable(Ogl.DEPTH_TEST);
+
+	do {
+		
+		Axis(1);
+		Ogl.Color(1);
+		Ogl.DrawTrimesh( tmid, Ogl.LINE_STRIP );
 	
 	} while ( !(yield) );
 
@@ -564,7 +608,7 @@ for (var end = false; !end ;) {
 	t = t1;
 	
 	isCameraMoving = false;
-	PollEvent(listeners);
+	while (PollEvent(listeners));
 
 	var tmp = Math.cos(vy/400);
 	cx = -Math.cos(vx/400)*Math.abs(tmp) * vz;
@@ -579,7 +623,9 @@ for (var end = false; !end ;) {
 	
 
 //	Scene1();
-	Scene2.next();
+//	Scene2.next();
+	Scene3.next();
+
 
 /*
 	Ogl.MatrixMode(Ogl.PROJECTION);

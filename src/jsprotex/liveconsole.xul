@@ -1,0 +1,170 @@
+<?xml version="1.0"?>
+<!-- ***** BEGIN LICENSE BLOCK *****
+   - Version: GNU GPL 2.0
+   - 
+   - The contents of this file are subject to the
+   - GNU General Public License Version 2.0; you may not use this file except
+   - in compliance with the License. You may obtain a copy of the License at
+   - http://www.gnu.org/licenses/gpl.html
+   - 
+   - Software distributed under the License is distributed on an "AS IS" basis,
+   - WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+   - for the specific language governing rights and limitations under the
+   - License.
+   - ***** END LICENSE BLOCK ***** -->
+
+<?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
+<?xml-stylesheet href="data:text/css,
+
+" type="text/css"?>
+
+<window id="window"
+	xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+	xmlns:html="http://www.w3.org/1999/xhtml"
+	onload="init(event)"
+>
+	<script type="text/javascript"><![CDATA[
+			
+			function Trace() window.console && window.console.debug.apply(this, arguments);
+			
+			function Stack() { try { throw Error() } catch (ex) { return 'stack:\n'+String(ex.stack).split('\n').slice(2).join('\n') }}        		
+			
+			function $(id) document.getElementById(id);
+			
+			function Strdup(s, n) {
+	
+				for ( var res = ''; n--;  res += s );
+				return res;
+			}
+			
+			function LTrim(str) str.substr(str.search(/\S/));
+			
+			function QueryPrivilege() {
+	
+				netscape.security.PrivilegeManager.enablePrivilege('UniversalXPConnect UniversalBrowserRead UniversalBrowserWrite');
+				netscape.security.PrivilegeManager.revertPrivilege('UniversalXPConnect UniversalBrowserRead UniversalBrowserWrite');
+			}
+			
+			function CallWithPrivilege( privilege, fct ) {
+				
+				netscape.security.PrivilegeManager.enablePrivilege(privilege);
+				try {
+					var ret = fct.apply(this, arguments);
+				} catch(ex) {}
+				netscape.security.PrivilegeManager.revertPrivilege(privilege);
+				return ret;
+			}
+		
+		
+		SimpleRpc.xhr = new XMLHttpRequest();
+      function SimpleRpc(ip, port) {
+      
+      	this.__noSuchMethod__ = function() {
+				
+				delete this.__noSuchMethod__;
+				netscape.security.PrivilegeManager.enablePrivilege('UniversalBrowserRead'); // allow cross-domain xhr
+				try {
+					
+					SimpleRpc.xhr.open('POST', 'http://'+ip+':'+port+'/', false);
+					SimpleRpc.xhr.send(uneval(Array.slice(arguments)));
+					return eval('('+SimpleRpc.xhr.responseText+')');
+				} catch(ex) {
+					
+//					Trace(ex);
+					return new Error(ex);
+				} finally {
+				
+					netscape.security.PrivilegeManager.revertPrivilege('UniversalBrowserRead');
+					this.__noSuchMethod__ = arguments.callee;
+				}
+			}
+		}
+
+
+// tools
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// application		
+		
+		function InitCodeEditor() {
+		
+			$('code').addEventListener('keydown', function(ev) {
+
+				var elt = ev.target;
+				var val = elt.value;
+				var start = elt.selectionStart;
+				var end = elt.selectionEnd;
+				switch ( ev.keyCode ) {
+				case 9:
+					if ( start == end ) {
+						
+						val = val.substr(0, start) + '\t' + val.substr(end);
+						start++;
+						end = start;
+					}
+					break;
+				case 13:
+					if ( start == end ) {
+
+						var pos = val.lastIndexOf( '\n', start - 1 ) + 1;
+						var pad = '\n';
+						for ( var i = pos; val[i] == ' ' || val[i] == '\t'; i++ )
+							pad += val[i];
+						val = val.substr(0, start) + pad + val.substr(end);
+						start += pad.length;
+						end = start;
+					}
+					break;
+				default:
+					return;
+				}				
+				ev.preventDefault();
+				ev.stopPropagation();
+				elt.value = val;
+				elt.selectionStart = start;
+				elt.selectionEnd = end;
+			}, true);
+		}
+		
+		function CreateUserInterface(code) {
+			
+			// eg. slider(-1,1, 0.1, {w:20,h:1,col:red}); field({w:10})
+			var uiApi = {
+				
+				set width() {}
+				slider:function(min, max, step) {
+				}
+				button:function(initialState) {
+				}
+				field:function() {
+				}
+				label:function(text) {
+				}
+				get br() {
+				}
+				get spacer() {
+				}
+
+			}
+			
+			with(uiApi) eval(code);
+		}
+
+		function init() {
+
+			QueryPrivilege();
+			InitCodeEditor();
+			CreateUserInterface("slider(1,2)"
+		}
+		
+	]]></script>
+
+	<hbox flex="1">
+		<textbox id="code" multiline="true" wrap="off" flex="1" style="font-family: monospace" class="plain" spellcheck="false"/>
+		<splitter collapse="before" resizeafter="farthest">
+			<grippy/>
+		</splitter>
+		<vbox id="ui"/>
+	</hbox>
+
+
+</window>

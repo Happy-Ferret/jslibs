@@ -4,6 +4,7 @@ LoadModule('jssdl');
 LoadModule('jsgraphics');
 LoadModule('jsprotex');
 LoadModule('jsimage');
+LoadModule('jsdebug');
 
 //Halt(); //////////////////////////////////////////////////////////////////////
 
@@ -55,7 +56,7 @@ function Cloud( size, amp ) {
 		a *= amp;
 		s *= 2;
 		cloud.Resize(s, s, false);
-		cloud.BoxBlur(5, 5);
+		cloud.BoxBlur(3,3);
 	}
 	cloud.NormalizeLevels();
 	return cloud;
@@ -126,10 +127,93 @@ PerlinNoiseReinit();
 
 function UpdateTexture(imageIndex) { // <<<<<<<<<<<<<<<<<-----------------------------------
 
-	//
+
+
+	// ???
+	var bump = new Texture(texture.width, texture.height, 3).Cells(8, 0).Add( new Texture(size, size, 3).Cells(8, 1).OppositeLevels() ); // broken floor
+	bump.Normals();
+
+	var t = new Texture(size, size, 3);
+	t.Set(1);
+	t.Light( bump, [-1, -1, 0.5], [1,1,1], 0.5, 1 );
+
+	
+/*	
+	t.Normals();
+	var t1 = new Texture(size, size, 3);
+	t1.SetLevels(0.5);
+	t1.Light( t, 0, 0.5, '#ff0000', [1,1,3], 1, 1 );
+	t.Swap(t1);
+*/
+return;
+
+
+	// ???
+	RandSeed(1);
+	texture.Set(0); // clears the texture
+	texture.AddCracks( 1000, 10, 0.1, 1, function(v) { return RandReal() } );
+return;
+
+
+	// gozilla's skin
+	RandSeed(1);
+	var bump = Cloud( size, 0.6 );
+	bump.Normals();
 	texture.Set(1);
-	for ( var y = 0; y < texture.height; y++ )
-		for ( var x = 0; x < texture.width; x++ ) {
+	texture.Light( bump, [-1, -1, 0.5], 0, [0.4, 0.6, 0.0], 0.2, 0.7, 10 );
+return;
+
+
+	// disco effect
+	tmp = new Texture(size, size, 4);
+	tmp.Set(0);
+	tmp.AddGradiantQuad(RED, GREEN, BLUE, BLACK);
+	var tr = new Transformation(null);
+	tr.Scale(5);
+	tr.Rotate(IntervalNow()/5, 1,1,1);
+	tmp.ApplyColorMatrix(tr);
+	texture.SetChannel(0, tmp, 0).SetChannel(1, tmp, 1).SetChannel(2, tmp, 2);
+return;
+
+
+	// disco effect 2
+	var t = Cloud(size, 0.2);
+	GrayToRGB( t );
+	t.AddGradiantQuad(BLUE, GREEN, RED, YELLOW);
+	t.MirrorLevels( 0.5 );
+	t.Mult(2);
+	t.CutLevels(0.6, 0.8);
+	t.Colorize( BLACK, RED, 0 );
+	t.Colorize( WHITE, BLUE, 0 );
+	texture.Set(t);
+return;
+
+
+	// the sun
+	texture.Set(0);
+	texture.ForEachPixel(function(pixel, x, y) {
+		
+		var val = PerlinNoise(1.5, 0.75, 5, x/4, y/4, z/16);
+		pixel[0] = val;
+		pixel[1] = val;
+	});
+	texture.AddGradiantRadial( curveGaussian( 0.5 ), true ).Add(-1);
+	texture.AddGradiantRadial( function(v) v > 0.4 ? 1 : 0, true ).Add(-1);
+	z += 1;
+return;
+	
+
+	// gaussian like fast blur
+	var mx = texture.width/2, my = texture.height/2;
+	texture.Set(0).SetPixel(mx-mx/2, my, [1,0,0]).SetPixel(mx, my, [0,1,0]).SetPixel(mx+mx/2, my, [0,0,1]).BoxBlur(mx/2,mx/2, 5).NormalizeLevels();
+return;
+
+
+	// movable perlin texture
+	texture.Set(1);
+	var mx = texture.width, my = texture.height;
+	for ( var y = 0; y < my; y++ )
+		for ( var x = 0; x < mx; x++ ) {
 		
 			var val = PerlinNoise2((x/24 + -offsetx/30) * -offsetz/2, (y/24 + -offsety/30) * -offsetz/2, z/100);
 			texture.SetPixel(x,y, val);
@@ -152,7 +236,9 @@ return;
 		var ry = (y/texture.height);
 //		val = PerlinNoise(2, 0.5, 1, x,y,z);
 		var val = ImprovedPerlinNoise(x/24, (y/24 + z/24), z/246) * ry;
-		pixel[0] = pixel[1] = pixel[2] = val;
+		pixel[0] = val;
+		pixel[1] = val;
+		pixel[2] = val;
 	});
 	z += 1;
 return;
@@ -164,97 +250,19 @@ return;
 
 		var dis = PerlinNoise(2.1, 0.5, 6, x-z/2, y);
 		var val = PerlinNoise(2, 0.5, 5, (x-z+dis*24)/2, y/2);
-		pixel[0] = pixel[1] = 1-val;
+		pixel[0] = 1-val;
+		pixel[1] = 1-val;
 	});
 	z += 1;
 return;
 
 
-	// nice fire effect
-	texture.Set(0);
-	texture.ForEachPixel(function(pixel, x, y) {
-		
-		var displace = PerlinNoise(1.9, 0.4, 5, x/2, y/2 + z);
-		var val = PerlinNoise(2, 0.5, 3, (x + displace*40)/6, (y + z + displace*160+(texture.height-y))/8);
-		val *= y / texture.height * 1.5;
-		pixel[0] = val;
-		pixel[1] = val*val*val;
-	});
-	z += 0.5;
-return;
-
-
-	texture.Set(0);
-	texture.ForEachPixel(function(pixel, x, y) {
-		
-		var val = PerlinNoise(1.5, 0.75, 5, x/4, y/4, z/16);
-		pixel[0] = val;
-	});
-	z += 1;
-return;
-	
 
 
 
-	// disco effect
-	tmp = new Texture(size, size, 4);
-	tmp.Set(0);
-	tmp.AddGradiantQuad(RED, GREEN, BLUE, BLACK);
-	var tr = new Transformation(null);
-	tr.Scale(5);
-	tr.Rotate(IntervalNow()/5, 1,1,1);
-	tmp.ApplyColorMatrix(tr);
-	texture.SetChannel(0, tmp, 0).SetChannel(1, tmp, 1).SetChannel(2, tmp, 2);
-return;
-
-
-	var t = Cloud(size, 0.2);
-	GrayToRGB( t );
-	
-	t.AddGradiantQuad(BLUE, GREEN, RED, YELLOW);
-	t.MirrorLevels( 0.5 );
-	t.Mult(2);
-	t.CutLevels(0.6, 0.8);
-	t.Colorize( BLACK, RED, 0 );
-	t.Colorize( WHITE, BLUE, 0 );
-	texture.Set(t);
-return;
-
-
-	var bump = Cloud( size, 0.5 );
-	bump.Normals();
-	texture.Set(1);
-	texture.Light( bump, [-1, -1, 1], 0, [0.1, 0.3, 0.4], 0.2, 0.5, 10 );
-return;
 
 
 
-//texture.SetRectangle(0,0,1,1, [1,0,0]);	
-
-	Texture.RandSeed(0);
-	texture.ClearChannel();
-	texture.AddGradiantRadial( 1, 0 );
-return;
-
-
-
-//	Texture.RandSeed(123);
-
-  texture.Set(0); // clears the texture
-//  texture.AddCracks( 1000, 10, 0.1, 1, function(v) { return Texture.RandReal() } );
-  
-  texture.ForEachPixels(function(pixel, x, y) {
-  
-		if ( x == y ) {
-		
-			pixel[0] = 1;
-			pixel[1] = 1;
-			pixel[2] = 1;
-			return pixel;
-		}
-  
-  });
-return;
 
 
 	
@@ -413,22 +421,7 @@ return;
 	t.BoxBlur(3,3)
 
 return;
-	var bump = new Texture(size, size, 3).Cells(8, 0).Add( new Texture(size, size, 3).Cells(8, 1).OppositeLevels() ); // broken floor
-	bump.Normals();
 
-	var t = new Texture(size, size, 3);
-	t.Set(1);
-	t.Light( bump, 0, 1, 1, [1,1,1], 0.5, 1 );
-
-	
-/*	
-	t.Normals();
-	var t1 = new Texture(size, size, 3);
-	t1.SetLevels(0.5);
-	t1.Light( t, 0, 0.5, '#ff0000', [1,1,3], 1, 1 );
-	
-	t.Swap(t1);
-*/
 
 return;
 
