@@ -1448,9 +1448,18 @@ DEFINE_FUNCTION_FAST( Add ) {
 
 		Texture *tex1;
 		JL_CHK( ValueToTexture(cx, JL_FARG(1), &tex1) );
-		JL_S_ASSERT( tex->width == tex1->width && tex->height == tex1->height && channels == tex1->channels, "Images must have the same size." );
-		for ( int i = 0; i < tsize; i++ )
-			tex->cbuffer[i] += tex1->cbuffer[i];
+
+		JL_S_ASSERT( tex1->width == tex->width && tex1->height == tex->height && ( tex1->channels == 1 || tex1->channels == channels), "Incompatible image format." );
+
+		if ( tex1->channels == 1 ) {
+
+			for ( int i = 0; i < tsize; i++ )
+				tex->cbuffer[i] += tex1->cbuffer[i / channels];
+		} else {
+
+			for ( int i = 0; i < tsize; i++ )
+				tex->cbuffer[i] += tex1->cbuffer[i];
+		}
 	} else {
 
 		PTYPE pixel[PMAXCHANNELS];
@@ -1488,9 +1497,17 @@ DEFINE_FUNCTION_FAST( Mult ) {
 
 		Texture *tex1;
 		JL_CHK( ValueToTexture(cx, JL_FARG(1), &tex1) );
-		JL_S_ASSERT( tex->width == tex1->width && tex->height == tex1->height && channels == tex1->channels, "Images must have the same size." );
-		for ( int i = 0; i < tsize; i++ )
-			tex->cbuffer[i] *= tex1->cbuffer[i];
+		JL_S_ASSERT( tex1->width == tex->width && tex1->height == tex->height && ( tex1->channels == 1 || tex1->channels == channels), "Incompatible image format." );
+
+		if ( tex1->channels == 1 ) {
+
+			for ( int i = 0; i < tsize; i++ )
+				tex->cbuffer[i] *= tex1->cbuffer[i / channels];
+		} else {
+
+			for ( int i = 0; i < tsize; i++ )
+				tex->cbuffer[i] *= tex1->cbuffer[i];
+		}
 /* using Aliasing() seems more useful than Mult()
 	} else
 	if ( JsvalIsFunction(cx, JL_FARG(1)) ) {
@@ -3628,11 +3645,9 @@ DEFINE_FUNCTION_FAST( AddGradiantRadial ) {
 	Texture *tex;
 	tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE(tex);
-	int width;
+	int width, height, channels;
 	width = tex->width;
-	int height;
 	height = tex->height;
-	int channels;
 	channels = tex->channels;
 
 	bool drawToCorner;
