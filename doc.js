@@ -104,8 +104,8 @@ var api = {
 	$MODULE_HEADER: function(cx, item) {
 
 		cx.center = '#summary '+item.lastDir+' module\n' + '#labels doc\n';
-		cx.center += '<b>If something seems wrong or incomplete, please enter [#commentform a comment at the bottom of this page].</b><br/><br/>';
-		cx.center += '- [http://jslibs.googlecode.com/svn/trunk/'+item.path+'/ source] - [JSLibs main] - [http://jslibs.googlecode.com/svn/trunk/'+item.path+'/qa.js QA] -\n';
+		cx.center += '<b>If something seems wrong or incomplete, please enter a comment [#commentform at the bottom of the page].</b><br/><br/>';
+		cx.center += '- [http://jslibs.googlecode.com/svn/trunk/'+item.path+'/ source] - [JSLibs main] - [http://code.google.com/p/jslibs/source/browse/trunk/'+item.path+'/'+item.lastDir+'_qa.js QA] -\n';
 		cx.center += '= '+item.lastDir+' module =\n';
 //		cx.center += '<wiki:toc max_depth="4"/>';
 		
