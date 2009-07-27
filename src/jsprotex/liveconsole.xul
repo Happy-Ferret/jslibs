@@ -100,6 +100,11 @@
 						val = val.substr(0, start) + '\t' + val.substr(end);
 						start++;
 						end = start;
+					} else {
+
+						var tmp = [ '\t'+line for each ( line in val.substr(start, end).split('\n') ) ].join('\n');
+						val = val.substr(0, start) + tmp + val.substr(end);
+						end = start + tmp.length;
 					}
 					break;
 				case 13:
