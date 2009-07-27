@@ -125,41 +125,225 @@
 			}, true);
 		}
 		
-		function CreateUserInterface(code) {
+		
+		function ControllerManager(container) {
 			
-			// eg. slider(-1,1, 0.1, {w:20,h:1,col:red}); field({w:10})
-			var uiApi = {
-				
-				set width() {}
-				slider:function(min, max, step) {
-				}
-				button:function(initialState) {
-				}
-				field:function() {
-				}
-				label:function(text) {
-				}
-				get br() {
-				}
-				get spacer() {
-				}
+			var _this = this;
+			var _parser = new DOMParser();
+			function XULToNode(xulString) {
 
+				var doc = _parser.parseFromString('<dummy xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul" xmlns:html="http://www.w3.org/1999/xhtml">'+xulString+'</dummy>', 'text/xml').documentElement;
+				if ( doc.tagName == 'parsererror' )
+					throw('Parsing Error');
+				return window.document.importNode(doc, true).firstChild;
 			}
+
+			function SetDefault(options, def) {
+				
+				options = options || {};
+				for ( p in def )
+					if ( !(p in options) )
+						options[p] = def[p];
+				return options;
+			}
+
+			var updatedValues;
+			function Changing(name) {
 			
-			with(uiApi) eval(code);
+				updatedValues[name] = controlerList[name];
+
+				_this.onChange && _this.onChange(name);
+			}
+
+			var controlerList;
+			function DefineAccess(name, getter, setter) {
+			
+				controlerList.__defineGetter__(name, getter);
+				controlerList.__defineSetter__(name, setter);
+			}
+
+			this.SetUserInterface = function(code) {
+			
+				controlerList = {};
+				updatedValues = {};
+			
+				while ( container.firstChild )
+					container.removeNode(container.firstChild);
+			
+				var box = container.appendChild(XULToNode('<hbox style="padding: 4px"/>'));
+				container.appendChild(box);
+
+				with({
+					get br() {
+
+						box = document.createElement('hbox');
+						container.appendChild(box);
+					},
+					get hr() {
+
+						box = XULToNode('<hbox style="padding: 4px;border-top: 2px groove white"/>');
+						container.appendChild(box);
+					},
+					get spacer() {
+
+						var widget = document.createElement('spacer');
+						widget.setAttribute('flex', '1');
+						box.appendChild(widget);
+					},
+					slider:function(name, opt) {
+
+						opt = SetDefault(opt, { min:-1, max:1, step:0.1, w:'' });
+						var ratio = 1 / opt.step; // float support
+						var xul = XULToNode('<vbox tooltiptext="'+name+'" align="center"><hbox align="center"><label value="'+opt.min+'"/><scale width="'+opt.w+'" min="'+opt.min*ratio+'" max="'+opt.max*ratio+'" increment="'+opt.step*ratio+'" pageincrement="'+opt.step*ratio*10+'"/><label value="'+opt.max+'"/></hbox><label value="" style="color:gray"/></vbox>');
+						var widget = xul.firstChild.firstChild.nextSibling;
+						var label = xul.lastChild;
+						DefineAccess(name, function() widget.value/ratio, function(val) { widget.value = val*ratio; label.value = val });
+						widget.addEventListener('change', function() {
+
+							value = widget.value/ratio;
+							label.value = value;
+							widget.setAttribute('tooltiptext', value);
+							Changing(name);
+						}, false);
+						box.appendChild(xul);
+					},
+					button:function(name, opt) {
+
+						opt = SetDefault(opt, { text:name }); 
+						var xul = XULToNode('<vbox tooltiptext="'+name+'"><button type="checkbox" label="'+opt.text+'"/></vbox>');
+						var widget = xul.firstChild;
+						DefineAccess(name, function() widget.checked, function(val) widget.checked = val);
+						widget.addEventListener('command', function() {
+
+							widget.setAttribute('tooltiptext', name+'='+widget.checked);
+							Changing(name);
+						}, false);
+						box.appendChild(xul);
+					},
+					check:function(name, opt) {
+
+						opt = SetDefault(opt, { text:name }); 
+						var xul = XULToNode('<vbox tooltiptext="'+name+'"><checkbox label="'+opt.text+'" width="'+opt.width+'"/></vbox>');
+						var widget = xul.firstChild;
+						DefineAccess(name, function() widget.checked, function(val) widget.checked = val);
+						widget.addEventListener('command', function() {
+
+							widget.setAttribute('tooltiptext', name+'='+widget.checked);
+							Changing(name);
+						}, false);
+						box.appendChild(xul);
+					},
+					field:function(name, opt) {
+
+						opt = SetDefault(opt, { text:name, w:'' }); 
+						var xul = XULToNode('<vbox tooltiptext="'+name+'" width="'+opt.w+'"><textbox/></vbox>');
+						var widget = xul.firstChild;
+						widget.emptyText = name + ' ?';
+						DefineAccess(name, function() widget.value, function(val) widget.value = val);
+						widget.addEventListener('input', function() {
+
+							widget.setAttribute('tooltiptext', name+'='+widget.value);
+							Changing(name);
+						}, false);
+						box.appendChild(xul);
+					},
+					label:function(name, opt) {
+
+						opt = SetDefault(opt, { text:name }); 
+						var xul = XULToNode('<vbox tooltiptext="'+name+'"><hbox><label value="'+opt.text+'"/><label/></hbox></vbox>');
+						var widget = xul.firstChild.firstChild.nextSibling;
+						DefineAccess(name, function() widget.getAttribute('value'), function(val) { widget.setAttribute('value', val) });
+						box.appendChild(xul);
+					},
+					color:function(name, opt) {
+
+						opt = SetDefault(opt, {}); 
+						var xul = XULToNode('<vbox tooltiptext="'+name+'"><colorpicker type="button"/></vbox>');
+						var widget = xul.firstChild;
+						DefineAccess(name, function() widget.color, function(val) widget.color = val);
+						widget.addEventListener('select', function() {
+
+							widget.setAttribute('tooltiptext', name+'='+widget.color);
+							Changing(name);
+						}, false);
+						box.appendChild(xul);
+					},
+					radio:function(name, values, opt) {
+
+						opt = SetDefault(opt, { ro:false });
+						var xul = XULToNode('<radiogroup tooltiptext="'+name+'">'+['<radio label="'+name+'" value="'+name+'"/>' for each (name in values)].join('')+'</radiogroup>');
+						var widget = xul;
+						DefineAccess(name, function() widget.value, function(val) widget.value = val);
+						widget.addEventListener('select', function() {
+
+							Changing(name);
+						}, false);
+						box.appendChild(xul);
+					},
+					area:function(name, opt) {
+
+						opt = SetDefault(opt, { w:100, h:100 });
+						var xul = XULToNode('<vbox tooltiptext="'+name+'"><canvas xmlns="http://www.w3.org/1999/xhtml" width="'+opt.w+'" height="'+opt.h+'" style="background-color:black"/><label value=""/></vbox>');
+						var canvas = xul.firstChild;
+						var label = xul.firstChild.nextSibling;
+						var ctx = canvas.getContext('2d');
+						var w = canvas.width, h = canvas.height;
+
+						var x=0, y=0;
+
+						function Update() {
+
+							ctx.clearRect(0, 0, w, h);
+							ctx.fillStyle = draw ? 'red':'white';
+
+							var px = (x/2+0.5)*w;
+							var py = (y/2+0.5)*h;
+							ctx.fillRect(0,py,w,1);
+							ctx.fillRect(px,0,1,h);
+							label.value = x.toFixed(2)+' , '+y.toFixed(2);
+						}
+
+						DefineAccess(name, function() [x,y], function(val) { x = val[0]; y = val[1]; Update() });
+
+						var draw = false;
+						canvas.addEventListener('mousedown', function(ev) { draw = !draw; Update() }, true);
+
+						if ( opt.reset )
+							canvas.addEventListener('mouseup' , function(ev) { draw = false; x=0; y=0; Changing(name); Update() }, true);
+
+						canvas.addEventListener('mousemove', function(ev) {
+
+							if ( !draw )
+								return;
+							var px = ev.layerX - canvas.parentNode.boxObject.x;
+							x = (px/w - 0.5) * 2;
+							var py = ev.layerY - canvas.parentNode.boxObject.y;
+							y = (py/h - 0.5) * 2;
+							Update();
+							Changing(name);
+						}, false);
+						box.appendChild(xul);
+					}
+				}) eval(code);
+			}
 		}
 
+		var ctrlMan;
+		
 		function init() {
-
+		
 			QueryPrivilege();
 			InitCodeEditor();
-			CreateUserInterface("slider(1,2)"
+			ctrlMan = new ControllerManager($('ui'));
+			ctrlMan.SetUserInterface("slider('var1', {w:50});hr;area('pos', {reset:true});radio('s1', ['xxa','b','c']); spacer; check('chk'); field('foo');hr; label('l', {text:'test'})");
+			ctrlMan.onChange = function() {}
+			
 		}
 		
 	]]></script>
 
 	<hbox flex="1">
-		<textbox id="code" multiline="true" wrap="off" flex="1" style="font-family: monospace" class="plain" spellcheck="false"/>
+		<textbox id="code" multiline="true" wrap="off" flex="1" style="font-family: monospace; -moz-tab-size: 4" class="plain" spellcheck="false"/>
 		<splitter collapse="before" resizeafter="farthest">
 			<grippy/>
 		</splitter>
