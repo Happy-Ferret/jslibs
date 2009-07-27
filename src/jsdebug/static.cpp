@@ -1493,10 +1493,11 @@ DEFINE_FUNCTION_FAST( DisassembleScript ) {
     uintN len;
 
     pc = script->code;
+//	 pc = script->main;
     end = pc + script->length;
     while (pc < end) {
-        if (pc == script->main)
-            fputs("main:\n", wf);
+  //      if (pc == script->main)
+  //          fputs("main:\n", wf);
         len = js_Disassemble1(cx, script, pc, pc - script->code, JS_TRUE, wf);
         if (!len)
             return JS_FALSE;

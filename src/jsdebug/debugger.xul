@@ -710,6 +710,11 @@
 			outputManager.Write('output', [ '..'+t+'ms. '+Strdup('\t',d)+LTrim(codeManager.GetSourceFile(f)[l-1]) for each ( [i, [f,l,d,t]] in Iterator(trace)) ].join('\n') );
 			UpdateState();
 		}
+
+		function ShowAssembler(filename, lineno) {
+		
+			outputManager.Write('output', debuggerRpc.DisassembleScript(filename, lineno) );
+		}
 		
 	]]></script>
 	
@@ -721,6 +726,7 @@
 		<command id="cmd_continue" oncommand="debuggerRpc.Continue(); UpdateState()"/>
 		<command id="cmd_goto" oncommand="debuggerRpc.Goto(currentFile.value, $('code').currentIndex+1); UpdateState()"/>
 		<command id="cmd_traceto" oncommand="Traceto(currentFile.value, $('code').currentIndex+1)"/>
+		<command id="cmd_showassembler" oncommand="ShowAssembler(currentFile.value, $('code').currentIndex+1)"/>
 		<command id="cmd_frameup" oncommand="if (selectedStackFrame.value.index > 0) stackManager.Select( selectedStackFrame.value.index - 1 )"/>
 		<command id="cmd_framedown" oncommand="if (programState.value.stackFrameIndex > selectedStackFrame.value.index) stackManager.Select( selectedStackFrame.value.index + 1 )"/>
 		<command id="cmd_breakonerror" oncommand="debuggerRpc.SetConfiguration({ breakOnError:event.explicitOriginalTarget.checked })"/>
@@ -748,6 +754,7 @@
 				<menupopup id="codeContextMenu">
 					<menuitem label="goto" command="cmd_goto"/>
 					<menuitem label="trace to" command="cmd_traceto"/>
+					<menuitem label="show assembler" command="cmd_showassembler"/>
 				</menupopup>
 				<treecols>
 					<treecol id="line" label="line"/>
