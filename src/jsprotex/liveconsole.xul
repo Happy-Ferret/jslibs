@@ -283,7 +283,7 @@
 					area:function(name, opt) {
 
 						opt = SetDefault(opt, { w:100, h:100 });
-						var xul = XULToNode('<vbox tooltiptext="'+name+'"><canvas xmlns="http://www.w3.org/1999/xhtml" width="'+opt.w+'" height="'+opt.h+'" style="background-color:black"/><label value=""/></vbox>');
+						var xul = XULToNode('<vbox tooltiptext="'+name+'" style="-moz-user-focus: normal"><canvas xmlns="http://www.w3.org/1999/xhtml" width="'+opt.w+'" height="'+opt.h+'" style="background-color:black"/><label value=""/></vbox>');
 						var canvas = xul.firstChild;
 						var label = xul.firstChild.nextSibling;
 						var ctx = canvas.getContext('2d');
