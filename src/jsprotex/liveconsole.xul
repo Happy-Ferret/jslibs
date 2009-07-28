@@ -16,6 +16,12 @@
 <?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
 <?xml-stylesheet href="data:text/css,
 
+#code { 
+	background-color: white;
+	font-family: monospace;
+/*	-moz-tab-size: 4;*/
+}
+
 " type="text/css"?>
 
 <window id="window"
@@ -24,70 +30,103 @@
 	onload="init(event)"
 >
 	<script type="text/javascript"><![CDATA[
-			
-			function Trace() window.console && window.console.debug.apply(this, arguments);
-			
-			function Stack() { try { throw Error() } catch (ex) { return 'stack:\n'+String(ex.stack).split('\n').slice(2).join('\n') }}        		
-			
-			function $(id) document.getElementById(id);
-			
-			function Strdup(s, n) {
-	
-				for ( var res = ''; n--;  res += s );
-				return res;
-			}
-			
-			function LTrim(str) str.substr(str.search(/\S/));
-			
-			function QueryPrivilege() {
-	
-				netscape.security.PrivilegeManager.enablePrivilege('UniversalXPConnect UniversalBrowserRead UniversalBrowserWrite');
-				netscape.security.PrivilegeManager.revertPrivilege('UniversalXPConnect UniversalBrowserRead UniversalBrowserWrite');
-			}
-			
-			function CallWithPrivilege( privilege, fct ) {
-				
-				netscape.security.PrivilegeManager.enablePrivilege(privilege);
-				try {
-					var ret = fct.apply(this, arguments);
-				} catch(ex) {}
-				netscape.security.PrivilegeManager.revertPrivilege(privilege);
-				return ret;
-			}
-		
-		
-		SimpleRpc.xhr = new XMLHttpRequest();
-      function SimpleRpc(ip, port) {
-      
-      	this.__noSuchMethod__ = function() {
-				
-				delete this.__noSuchMethod__;
-				netscape.security.PrivilegeManager.enablePrivilege('UniversalBrowserRead'); // allow cross-domain xhr
-				try {
-					
-					SimpleRpc.xhr.open('POST', 'http://'+ip+':'+port+'/', false);
-					SimpleRpc.xhr.send(uneval(Array.slice(arguments)));
-					return eval('('+SimpleRpc.xhr.responseText+')');
-				} catch(ex) {
-					
-//					Trace(ex);
-					return new Error(ex);
-				} finally {
-				
-					netscape.security.PrivilegeManager.revertPrivilege('UniversalBrowserRead');
-					this.__noSuchMethod__ = arguments.callee;
-				}
-			}
-		}
 
+function Trace() window.console && window.console.debug.apply(this, arguments);
+
+function Stack() { try { throw Error() } catch (ex) { return 'stack:\n'+String(ex.stack).split('\n').slice(2).join('\n') }}        		
+
+function $(id) document.getElementById(id);
+
+function Strdup(s, n) {
+
+	for ( var res = ''; n--;  res += s );
+	return res;
+}
+
+function LTrim(str) str.substr(str.search(/\S/));
+
+function QueryPrivilege() {
+
+	netscape.security.PrivilegeManager.enablePrivilege('UniversalXPConnect UniversalBrowserRead UniversalBrowserWrite');
+	netscape.security.PrivilegeManager.revertPrivilege('UniversalXPConnect UniversalBrowserRead UniversalBrowserWrite');
+}
+
+function CallWithPrivilege( privilege, fct ) {
+
+	netscape.security.PrivilegeManager.enablePrivilege(privilege);
+	try {
+		var ret = fct.apply(this, arguments);
+	} catch(ex) {}
+	netscape.security.PrivilegeManager.revertPrivilege(privilege);
+	return ret;
+}
+
+
+function RemoteMessageClient(ip, port) {
+
+	var _this = this;
+	var requestList = [], xhrPool = [], xhrMax = 2;
+	for ( var i = 0; i < xhrMax; i++ )
+		xhrPool.push(new XMLHttpRequest());
+
+	this.Send = function Send(message) {
+
+		requestList.push(message);
+		if ( xhrPool.length >= 1 ) {
+
+			var xhr = xhrPool.shift();
+			netscape.security.PrivilegeManager.enablePrivilege('UniversalBrowserRead'); // allow cross-domain xhr
+			xhr.open('POST', 'http://'+ip+':'+port+'/', true);
+			xhr.onreadystatechange = function() {
+
+				if ( xhr.readyState != 4 )
+					return;
+				var res = xhr.responseText;
+
+Trace('receive', res);
+
+				xhrPool.push(xhr);
+				if ( xhr.status == 200 && res && _this.onMessage )
+					_this.onMessage(res);
+				if ( requestList.length || xhrPool.length == xhrMax )
+					Send(requestList.pop());
+			}
+			var data = requestList.shift();
+			xhr.send(data);
+Trace('send', data);
+			netscape.security.PrivilegeManager.revertPrivilege('UniversalBrowserRead');
+		}
+	}
+	this.Send();
+}
+
+function RemoteCall( remoteMessage ) {
+
+	var _this = this;
+	this.__noSuchMethod__ = function() {
+
+		remoteMessage.Send(uneval(Array.slice(arguments)));
+	}
+
+	remoteMessage.onMessage = function( message ) {
+
+		if ( !message )
+			return;
+		var call = eval('('+message+')');
+		_this.api[call[0]].apply(_this.api, call[1]);
+	}
+}
 
 // tools
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // application		
 		
-		function InitCodeEditor() {
-		
-			$('code').addEventListener('keydown', function(ev) {
+		function CodeEditor(editorElement) {
+			
+			var _this = this;
+			
+			var timeout;
+			editorElement.addEventListener('keydown', function(ev) {
 
 				var elt = ev.target;
 				var val = elt.value;
@@ -127,7 +166,17 @@
 				elt.value = val;
 				elt.selectionStart = start;
 				elt.selectionEnd = end;
+				
 			}, true);
+
+			editorElement.addEventListener('keyup', function(ev) {
+
+				clearTimeout(timeout);
+				timeout = setTimeout(function() {
+
+					_this.onChange && _this.onChange(editorElement.value);
+				}, 300);
+			}, false);
 		}
 		
 		
@@ -153,10 +202,17 @@
 			}
 
 			var updatedValues;
+			
+			this.GetValues = function() {
+				
+				var tmp = updatedValues;
+				updatedValues = {};
+				return tmp;
+			}
+
 			function Changing(name) {
 			
 				updatedValues[name] = controlerList[name];
-
 				_this.onChange && _this.onChange(name);
 			}
 
@@ -171,9 +227,12 @@
 			
 				controlerList = {};
 				updatedValues = {};
+
+				_this.__proto__ = controlerList;
 			
+//				container.style.display = 'none';
 				while ( container.firstChild )
-					container.removeNode(container.firstChild);
+					container.removeChild(container.firstChild);
 			
 				var box = container.appendChild(XULToNode('<hbox style="padding: 4px"/>'));
 				container.appendChild(box);
@@ -240,8 +299,8 @@
 					},
 					field:function(name, opt) {
 
-						opt = SetDefault(opt, { text:name, w:'' }); 
-						var xul = XULToNode('<vbox tooltiptext="'+name+'" width="'+opt.w+'"><textbox/></vbox>');
+						opt = SetDefault(opt, { text:name, w:'', lines:1 }); 
+						var xul = XULToNode('<vbox tooltiptext="'+name+'" width="'+opt.w+'"><textbox multiline="'+(opt.lines>1)+'" rows="'+opt.lines+'"/></vbox>');
 						var widget = xul.firstChild;
 						widget.emptyText = name + ' ?';
 						DefineAccess(name, function() widget.value, function(val) widget.value = val);
@@ -288,18 +347,19 @@
 					area:function(name, opt) {
 
 						opt = SetDefault(opt, { w:100, h:100 });
-						var xul = XULToNode('<vbox tooltiptext="'+name+'" style="-moz-user-focus: normal"><canvas xmlns="http://www.w3.org/1999/xhtml" width="'+opt.w+'" height="'+opt.h+'" style="background-color:black"/><label value=""/></vbox>');
+						var xul = XULToNode('<vbox tooltiptext="'+name+'" style="-moz-user-focus: normal"><canvas xmlns="http://www.w3.org/1999/xhtml" width="'+opt.w+'" height="'+opt.h+'" style="border: 1px solid gray"/><label value=""/></vbox>');
 						var canvas = xul.firstChild;
-						var label = xul.firstChild.nextSibling;
 						var ctx = canvas.getContext('2d');
 						var w = canvas.width, h = canvas.height;
+						var label = xul.firstChild.nextSibling;
 
 						var x=0, y=0;
+						var draw = false;
 
-						function Update() {
+						function UpdateView() {
 
 							ctx.clearRect(0, 0, w, h);
-							ctx.fillStyle = draw ? 'red':'white';
+							ctx.fillStyle = draw ? 'red' : 'black';
 
 							var px = (x/2+0.5)*w;
 							var py = (y/2+0.5)*h;
@@ -310,11 +370,10 @@
 
 						DefineAccess(name, function() [x,y], function(val) { x = val[0]; y = val[1]; Update() });
 
-						var draw = false;
-						canvas.addEventListener('mousedown', function(ev) { draw = !draw; Update() }, true);
+						canvas.addEventListener('mousedown', function(ev) { draw = !draw; UpdateView() }, true);
 
 						if ( opt.reset )
-							canvas.addEventListener('mouseup' , function(ev) { draw = false; x=0; y=0; Changing(name); Update() }, true);
+							canvas.addEventListener('mouseup' , function(ev) { draw = false; x=0; y=0; Changing(name); UpdateView() }, true);
 
 						canvas.addEventListener('mousemove', function(ev) {
 
@@ -324,31 +383,65 @@
 							x = (px/w - 0.5) * 2;
 							var py = ev.layerY - canvas.parentNode.boxObject.y;
 							y = (py/h - 0.5) * 2;
-							Update();
+							UpdateView();
 							Changing(name);
 						}, false);
 						box.appendChild(xul);
+					},
+					image:function(name, opt) {
+					
+						opt = SetDefault(opt, { w:'', h:'' });
+						var xul = XULToNode('<vbox><image width="'+opt.w+'" height="'+opt.h+'" src=""/></vbox>');
+						var img = xul.firstChild;
+						DefineAccess(name, function() undefined, function(val) { img.src='data:'+val });
+						box.appendChild(xul);
 					}
 				}) eval(code);
+//				container.style.display = '';
 			}
 		}
 
-		var ctrlMan;
-		
 		function init() {
-		
+			
 			QueryPrivilege();
-			InitCodeEditor();
-			ctrlMan = new ControllerManager($('ui'));
-			ctrlMan.SetUserInterface("slider('var1', {w:50});hr;area('pos', {reset:true});radio('s1', ['xxa','b','c']); spacer; check('chk'); field('foo');hr; label('l', {text:'test'})");
-			ctrlMan.onChange = function() {}
+
+			var ce = new CodeEditor($('code'));
+			var controllerManager = new ControllerManager($('ui'));
+
+			var api = {
+
+				SetUserInterface: function(uiCode) {
+
+					controllerManager.SetUserInterface(uiCode);
+				},
+				
+				ReportError: function(message) {
+					
+					Trace('ERROR ', message);
+				},
+			}
+
+			var rmc = new RemoteMessageClient('127.0.0.1', 8007 );
+			var rc = new RemoteCall(rmc);
+			rc.api = api;
+			
+			ce.onChange = function(code) {
+				
+				rc.SetCode(code);
+			}
+		
+
+//			ctrlMan.SetUserInterface("image('img');slider('var1', {w:50});hr;area('pos');radio('s1', ['xxa','b','c']); spacer; check('chk'); field('foo');hr; label('l', {text:'test'})");
+//			ctrlMan.SetUserInterface("image('img');radio('s1', ['xxa','b','c']);field('foo')");
+//			ctrlMan.onChange = function() {}
+//			ctrlMan.img = 'image/gif;base64,R0lGODdhMAAwAPAAAAAAAP///ywAAAAAMAAwAAAC8IyPqcvt3wCcDkiLc7C0qwyGHhSWpjQu5yqmCYsapyuvUUlvONmOZtfzgFzByTB10QgxOR0TqBQejhRNzOfkVJ+5YiUqrXF5Y5lKh/DeuNcP5yLWGsEbtLiOSpa/TPg7JpJHxyendzWTBfX0cxOnKPjgBzi4diinWGdkF8kjdfnycQZXZeYGejmJlZeGl9i2icVqaNVailT6F5iJ90m6mvuTS4OK05M0vDk0Q4XUtwvKOzrcd3iq9uisF81M1OIcR7lEewwcLp7tuNNkM3uNna3F2JQFo97Vriy/Xl4/f1cf5VWzXyym7PHhhx4dbgYKAAA7';
 			
 		}
 		
 	]]></script>
 
 	<hbox flex="1">
-		<textbox id="code" multiline="true" wrap="off" flex="1" style="font-family: monospace; -moz-tab-size: 4" class="plain" spellcheck="false"/>
+		<textbox id="code" multiline="true" wrap="off" flex="1" class="plain" spellcheck="false"/>
 		<splitter collapse="before" resizeafter="farthest">
 			<grippy/>
 		</splitter>
