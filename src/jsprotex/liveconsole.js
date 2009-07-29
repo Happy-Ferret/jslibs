@@ -17,6 +17,7 @@ LoadModule('jsio');
 LoadModule('jsstd');
 LoadModule('jsz');
 LoadModule('jscrypt');
+LoadModule('jsdebug');
 
 function SimpleHTTPServer(port, bind, basicAuth) {
 
@@ -97,6 +98,7 @@ function SimpleHTTPServer(port, bind, basicAuth) {
 	serverSocket.nonblocking = true;
 	serverSocket.Bind(port, bind);
 	serverSocket.Listen();
+
 	this.HasPendingRequest = function() {
 
 		Poll(socketList, 0);
@@ -126,8 +128,6 @@ function RemoteMessageServer( post, ip ) {
 				pendingResponseFunction();
 			var req;
 			[req, pendingResponseFunction] = server.GetNextRequest();
-Print('receive '+req, '\n');
-
 			_this.onMessage && _this.onMessage(req);
 			return true;
 		}
@@ -136,15 +136,15 @@ Print('receive '+req, '\n');
 	
 	this.Send = function( message ) {
 		
-		if ( !pendingResponseFunction ) {
-			
-			var req;
+		var req = undefined;
+		if ( !pendingResponseFunction )
 			[req, pendingResponseFunction] = server.GetNextRequest();
-			_this.onMessage && _this.onMessage(req);
-		}
-Print('send '+message, '\n');
-		pendingResponseFunction(message); // liveconsole.js:146: TypeError: pendingResponseFunction is not a function
+
+		pendingResponseFunction(message);
 		pendingResponseFunction = undefined;
+
+		if ( req != undefined )
+			_this.onMessage && _this.onMessage(req);
 	}
 }
 
@@ -172,37 +172,47 @@ var live = new function() {
 
 	var server = new SimpleHTTPServer(8008, '127.0.0.1');
 
-	var uiExpr = /\/\*\*ui(?:([^]*?))?\*\*\//g;
+	var uiExpr = /\/\*\*ui(?:([^]*?))?\*\*\//;
 
-	var codeFunction = function(){};
+	var userInterfaceCode;
+	var codeFunction = function(){}
+	var codeLocation;
 
-	this.LiveCode = function() {
+	this.Function = function() {
 
 		try {
 			
 			codeFunction();
 		} catch(ex) {
 			
-			rc.ReportError(ex);
+			rc.ReportError(ex+' (line '+(ex.lineNumber-codeLocation)+')');
+			codeFunction = function(){}
 		}
 	}
 
 	var api = {
 
 		SetCode: function(code) {
-
-			var userInterfaceCode = (uiExpr(code)|[])[1];
-			rc.SetUserInterface(userInterfaceCode);
+			
+			var tmp = (uiExpr(code)||[''])[1];
+			
+			if ( tmp != userInterfaceCode ) {
+				
+				userInterfaceCode = tmp;
+				rc.SetUserInterface(userInterfaceCode);
+			}
 			try {
 				
+				[,codeLocation] = Locate();
 				codeFunction = new Function(code);
 			} catch(ex) {
 				
-				rc.ReportError(ex);
+				rc.ReportError(ex+' (line '+(ex.lineNumber-codeLocation)+')');
+				codeFunction = function(){}
 			}
 		},
 
-		UpdateVariables: function(variables) {
+		SetVariables: function(variables) {
 
 			for ( var name in variables )
 				global[name] = variables[name];
@@ -224,6 +234,7 @@ while ( !endSignal ) {
 	
 	
 	live.Poll();
+	live.Function();
 	Sleep(500);
 }
 

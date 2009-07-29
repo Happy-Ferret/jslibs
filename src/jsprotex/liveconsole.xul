@@ -19,7 +19,7 @@
 #code { 
 	background-color: white;
 	font-family: monospace;
-/*	-moz-tab-size: 4;*/
+	/*	-moz-tab-size: 4; */
 }
 
 " type="text/css"?>
@@ -82,18 +82,13 @@ function RemoteMessageClient(ip, port) {
 				if ( xhr.readyState != 4 )
 					return;
 				var res = xhr.responseText;
-
-Trace('receive', res);
-
 				xhrPool.push(xhr);
 				if ( xhr.status == 200 && res && _this.onMessage )
 					_this.onMessage(res);
 				if ( requestList.length || xhrPool.length == xhrMax )
 					Send(requestList.pop());
 			}
-			var data = requestList.shift();
-			xhr.send(data);
-Trace('send', data);
+			xhr.send(requestList.shift());
 			netscape.security.PrivilegeManager.revertPrivilege('UniversalBrowserRead');
 		}
 	}
@@ -126,6 +121,16 @@ function RemoteCall( remoteMessage ) {
 			var _this = this;
 			
 			var timeout;
+			
+			function Changed() {
+			
+				clearTimeout(timeout);
+				timeout = setTimeout(function() {
+
+					_this.onChange && _this.onChange(editorElement.value);
+				}, 200);
+			}
+			
 			editorElement.addEventListener('keydown', function(ev) {
 
 				var elt = ev.target;
@@ -162,20 +167,17 @@ function RemoteCall( remoteMessage ) {
 					return;
 				}				
 				ev.preventDefault();
-				ev.stopPropagation();
+//				ev.stopPropagation();
 				elt.value = val;
 				elt.selectionStart = start;
 				elt.selectionEnd = end;
 				
+				Changed();
 			}, true);
 
-			editorElement.addEventListener('keyup', function(ev) {
-
-				clearTimeout(timeout);
-				timeout = setTimeout(function() {
-
-					_this.onChange && _this.onChange(editorElement.value);
-				}, 300);
+			editorElement.addEventListener('input', function(ev) {
+				
+				Changed();
 			}, false);
 		}
 		
@@ -191,6 +193,12 @@ function RemoteCall( remoteMessage ) {
 					throw('Parsing Error');
 				return window.document.importNode(doc, true).firstChild;
 			}
+			
+			var autoNames;
+			function CreateName() {
+				
+				return name ? name : '$'+(autoNames++).toString(36);
+			}
 
 			function SetDefault(options, def) {
 				
@@ -203,7 +211,7 @@ function RemoteCall( remoteMessage ) {
 
 			var updatedValues;
 			
-			this.GetValues = function() {
+			this.GetVariables = function() {
 				
 				var tmp = updatedValues;
 				updatedValues = {};
@@ -227,17 +235,13 @@ function RemoteCall( remoteMessage ) {
 			
 				controlerList = {};
 				updatedValues = {};
+				autoNames = 0;
 
 				_this.__proto__ = controlerList;
 			
-//				container.style.display = 'none';
-				while ( container.firstChild )
-					container.removeChild(container.firstChild);
-			
-				var box = container.appendChild(XULToNode('<hbox style="padding: 4px"/>'));
-				container.appendChild(box);
-
-				with({
+				var box;
+				
+				var uiApi = {
 					get br() {
 
 						box = document.createElement('hbox');
@@ -254,126 +258,171 @@ function RemoteCall( remoteMessage ) {
 						widget.setAttribute('flex', '1');
 						box.appendChild(widget);
 					},
-					slider:function(name, opt) {
-
-						opt = SetDefault(opt, { min:-1, max:1, step:0.1, w:'' });
+					slider:function(opt) {
+						
+						opt = SetDefault(opt, { min:-1, max:1, step:0.1, w:'', name:CreateName(), def:0 });
 						var ratio = 1 / opt.step; // float support
-						var xul = XULToNode('<vbox tooltiptext="'+name+'" align="center"><hbox align="center"><label value="'+opt.min+'"/><scale width="'+opt.w+'" min="'+opt.min*ratio+'" max="'+opt.max*ratio+'" increment="'+opt.step*ratio+'" pageincrement="'+opt.step*ratio*10+'"/><label value="'+opt.max+'"/></hbox><label value="" style="color:gray"/></vbox>');
+						var xul = XULToNode('<vbox tooltiptext="'+opt.name+'" align="center"><hbox align="center"><label value="'+opt.min+'"/><scale width="'+opt.w+'" min="'+opt.min*ratio+'" max="'+opt.max*ratio+'" increment="'+opt.step*ratio+'" pageincrement="'+opt.step*ratio*10+'"/><label value="'+opt.max+'"/></hbox><label value="" style="color:gray"/></vbox>');
 						var widget = xul.firstChild.firstChild.nextSibling;
 						var label = xul.lastChild;
-						DefineAccess(name, function() widget.value/ratio, function(val) { widget.value = val*ratio; label.value = val });
+						
+						widget.addEventListener('DOMMouseScroll', function(ev) {
+							
+							if ( ev.detail > 0 )
+								widget.decrease(ev.detail / 3);
+							else
+								widget.increase(-ev.detail / 3);
+						}, false);
+						
 						widget.addEventListener('change', function() {
 
 							value = widget.value/ratio;
 							label.value = value;
 							widget.setAttribute('tooltiptext', value);
-							Changing(name);
+							Changing(opt.name);
 						}, false);
+
+						widget.addEventListener('click', function(ev) {
+							
+							if ( ev.button != 2 )
+								return;
+							controlerList[opt.name] = opt.def;
+						}, false);
+
+						DefineAccess(opt.name, function() parseInt(widget.getAttribute('value'))/ratio, function(val) { widget.setAttribute('value', val*ratio); label.setAttribute('value', val) });
+						controlerList[opt.name] = opt.def;
 						box.appendChild(xul);
 					},
-					button:function(name, opt) {
-
-						opt = SetDefault(opt, { text:name }); 
-						var xul = XULToNode('<vbox tooltiptext="'+name+'"><button type="checkbox" label="'+opt.text+'"/></vbox>');
+					button:function(opt) {
+						
+						opt = SetDefault(opt, { name:CreateName(), def:false });
+						opt = SetDefault(opt, { text:opt.name });
+						var xul = XULToNode('<vbox tooltiptext="'+opt.name+'"><button type="checkbox" label="'+opt.text+'"/></vbox>');
 						var widget = xul.firstChild;
-						DefineAccess(name, function() widget.checked, function(val) widget.checked = val);
 						widget.addEventListener('command', function() {
 
-							widget.setAttribute('tooltiptext', name+'='+widget.checked);
-							Changing(name);
+							Changing(opt.name);
 						}, false);
+						DefineAccess(opt.name, function() widget.getAttribute('checked') == 'true', function(val) { val ? widget.setAttribute('checked', 'true') : widget.removeAttribute('checked') });
+						controlerList[opt.name] = opt.def;
 						box.appendChild(xul);
 					},
-					check:function(name, opt) {
-
-						opt = SetDefault(opt, { text:name }); 
-						var xul = XULToNode('<vbox tooltiptext="'+name+'"><checkbox label="'+opt.text+'" width="'+opt.width+'"/></vbox>');
+					check:function(opt) {
+						
+						opt = SetDefault(opt, { name:CreateName(), def:false });
+						opt = SetDefault(opt, { text:opt.name });
+						var xul = XULToNode('<vbox tooltiptext="'+opt.name+'"><checkbox label="'+opt.text+'" width="'+opt.width+'"/></vbox>');
 						var widget = xul.firstChild;
-						DefineAccess(name, function() widget.checked, function(val) widget.checked = val);
 						widget.addEventListener('command', function() {
 
-							widget.setAttribute('tooltiptext', name+'='+widget.checked);
-							Changing(name);
+							widget.setAttribute('tooltiptext', opt.name+'='+widget.checked);
+							Changing(opt.name);
 						}, false);
+						DefineAccess(opt.name, function() widget.getAttribute('checked') == 'true', function(val) { val ? widget.setAttribute('checked', 'true') : widget.removeAttribute('checked') });
+						controlerList[opt.name] = opt.def;
 						box.appendChild(xul);
 					},
-					field:function(name, opt) {
+					field:function(opt) {
 
-						opt = SetDefault(opt, { text:name, w:'', lines:1 }); 
-						var xul = XULToNode('<vbox tooltiptext="'+name+'" width="'+opt.w+'"><textbox multiline="'+(opt.lines>1)+'" rows="'+opt.lines+'"/></vbox>');
+						opt = SetDefault(opt, { w:'', lines:1, name:CreateName(), def:'' }); 
+						var xul = XULToNode('<vbox tooltiptext="'+opt.name+'" width="'+opt.w+'"><textbox multiline="'+(opt.lines>1)+'" rows="'+opt.lines+'"/></vbox>');
 						var widget = xul.firstChild;
-						widget.emptyText = name + ' ?';
-						DefineAccess(name, function() widget.value, function(val) widget.value = val);
+						widget.emptyText = opt.name + ' ?';
 						widget.addEventListener('input', function() {
 
-							widget.setAttribute('tooltiptext', name+'='+widget.value);
-							Changing(name);
+							widget.setAttribute('tooltiptext', opt.name+'='+widget.value);
+							Changing(opt.name);
 						}, false);
+						DefineAccess(opt.name, function() widget.getAttribute('value'), function(val) { widget.setAttribute('value', val) });
+						controlerList[opt.name] = opt.def;
 						box.appendChild(xul);
 					},
-					label:function(name, opt) {
+					label:function(opt) {
 
-						opt = SetDefault(opt, { text:name }); 
-						var xul = XULToNode('<vbox tooltiptext="'+name+'"><hbox><label value="'+opt.text+'"/><label/></hbox></vbox>');
+						opt = SetDefault(opt, { name:CreateName(), def:'' }); 
+						opt = SetDefault(opt, { text:opt.name });
+						var xul = XULToNode('<vbox tooltiptext="'+opt.name+'"><hbox><label value="'+opt.text+'"/><label/></hbox></vbox>');
 						var widget = xul.firstChild.firstChild.nextSibling;
-						DefineAccess(name, function() widget.getAttribute('value'), function(val) { widget.setAttribute('value', val) });
+						DefineAccess(opt.name, function() widget.getAttribute('value'), function(val) { widget.setAttribute('value', val) });
+						controlerList[opt.name] = opt.def;
 						box.appendChild(xul);
 					},
-					color:function(name, opt) {
+					color:function(opt) {
 
-						opt = SetDefault(opt, {}); 
-						var xul = XULToNode('<vbox tooltiptext="'+name+'"><colorpicker type="button"/></vbox>');
+						opt = SetDefault(opt, { name:CreateName(), def:'#777' });
+						var xul = XULToNode('<vbox tooltiptext="'+opt.name+'"><colorpicker type="button"/></vbox>');
 						var widget = xul.firstChild;
-						DefineAccess(name, function() widget.color, function(val) widget.color = val);
 						widget.addEventListener('select', function() {
 
-							widget.setAttribute('tooltiptext', name+'='+widget.color);
-							Changing(name);
+							widget.setAttribute('tooltiptext', opt.name+'='+widget.color);
+							Changing(opt.name);
 						}, false);
+						DefineAccess(opt.name, function() widget.getAttribute('color'), function(val) { widget.setAttribute('color',val) });
+						controlerList[opt.name] = opt.def;
 						box.appendChild(xul);
 					},
-					radio:function(name, values, opt) {
+					radio:function(opt) {
 
-						opt = SetDefault(opt, { ro:false });
-						var xul = XULToNode('<radiogroup tooltiptext="'+name+'">'+['<radio label="'+name+'" value="'+name+'"/>' for each (name in values)].join('')+'</radiogroup>');
+						opt = SetDefault(opt, { ro:false, name:CreateName(), num:false, values:'1,2,3,4', def:0 });
+						opt = SetDefault(opt, { def:opt.values[0] });
+						if ( typeof(opt.values) == 'string' )
+							opt.values = opt.values.split(',');
+						var xul = XULToNode('<radiogroup tooltiptext="'+opt.name+'">'+['<radio label="'+name+'" value="'+name+'"/>' for each (name in opt.values)].join('')+'</radiogroup>');
 						var widget = xul;
-						DefineAccess(name, function() widget.value, function(val) widget.value = val);
 						widget.addEventListener('select', function() {
 
-							Changing(name);
+							Changing(opt.name);
 						}, false);
+						DefineAccess(opt.name, function() opt.num ? widget.selectedIndex : widget.getAttribute('value'), function(val) { if (opt.num) widget.selectedIndex = val; else widget.setAttribute('value', val) });
+						controlerList[opt.name] = opt.def;
 						box.appendChild(xul);
 					},
-					area:function(name, opt) {
+					image:function(opt) {
+					
+						opt = SetDefault(opt, { w:'', h:'', name:CreateName(), def:'' });
+						var xul = XULToNode('<vbox><image width="'+opt.w+'" height="'+opt.h+'" src=""/></vbox>');
+						var img = xul.firstChild;
+						DefineAccess(opt.name, function() undefined, function(val) { img.setAttribute('src', 'data:'+val) });
+						controlerList[opt.name] = opt.def;
+						box.appendChild(xul);
+					},
+					area:function(opt) {
 
-						opt = SetDefault(opt, { w:100, h:100 });
-						var xul = XULToNode('<vbox tooltiptext="'+name+'" style="-moz-user-focus: normal"><canvas xmlns="http://www.w3.org/1999/xhtml" width="'+opt.w+'" height="'+opt.h+'" style="border: 1px solid gray"/><label value=""/></vbox>');
+						opt = SetDefault(opt, { w:100, h:100, name:CreateName(), def:[0,0,0] });
+						var xul = XULToNode('<vbox tooltiptext="'+opt.name+'" style="-moz-user-focus: normal"><canvas xmlns="http://www.w3.org/1999/xhtml" width="'+opt.w+'" height="'+opt.h+'" style="border: 1px solid gray"/><label value=""/></vbox>');
 						var canvas = xul.firstChild;
-						var ctx = canvas.getContext('2d');
-						var w = canvas.width, h = canvas.height;
 						var label = xul.firstChild.nextSibling;
 
-						var x=0, y=0;
+						var ctx = canvas.getContext('2d');
+						var w = canvas.width, h = canvas.height;
+
+						var x=0, y=0, z=0;
 						var draw = false;
 
 						function UpdateView() {
 
 							ctx.clearRect(0, 0, w, h);
-							ctx.fillStyle = draw ? 'red' : 'black';
-
+							
+							if ( draw ) {
+							
+								var c = Math.floor(z/2+0.5);
+								ctx.fillStyle = '#'+(0x10000ff+c*0xff0000).toString(16).substr(1,6);
+							} else {
+								
+								ctx.fillStyle = 'black';
+							}
+							
 							var px = (x/2+0.5)*w;
 							var py = (y/2+0.5)*h;
 							ctx.fillRect(0,py,w,1);
 							ctx.fillRect(px,0,1,h);
-							label.value = x.toFixed(2)+' , '+y.toFixed(2);
+							label.setAttribute('value', x.toFixed(1)+' , '+y.toFixed(1)+' , '+z.toFixed(1));
 						}
-
-						DefineAccess(name, function() [x,y], function(val) { x = val[0]; y = val[1]; Update() });
 
 						canvas.addEventListener('mousedown', function(ev) { draw = !draw; UpdateView() }, true);
 
 						if ( opt.reset )
-							canvas.addEventListener('mouseup' , function(ev) { draw = false; x=0; y=0; Changing(name); UpdateView() }, true);
+							canvas.addEventListener('mouseup' , function(ev) { draw = false; x=0; y=0; z=0; Changing(opt.name); UpdateView() }, true);
 
 						canvas.addEventListener('mousemove', function(ev) {
 
@@ -384,20 +433,38 @@ function RemoteCall( remoteMessage ) {
 							var py = ev.layerY - canvas.parentNode.boxObject.y;
 							y = (py/h - 0.5) * 2;
 							UpdateView();
-							Changing(name);
+							Changing(opt.name);
 						}, false);
+						
+						canvas.addEventListener('DOMMouseScroll', function(ev) {
+
+							if ( !draw )
+								return;
+							z += -ev.detail / 30;
+							UpdateView();
+							Changing(opt.name);
+						}, false);
+
+						DefineAccess(opt.name, function() [x,y,z], function(val) { [x,y,z] = val; UpdateView() });
+						controlerList[opt.name] = opt.def;
 						box.appendChild(xul);
 					},
-					image:function(name, opt) {
+				}
+				
+				container.style.display = 'none';
+				while ( container.firstChild )
+					container.removeChild(container.firstChild);
+				box = container.appendChild(container.appendChild(XULToNode('<hbox style="padding: 4px"/>')));
+				try {
 					
-						opt = SetDefault(opt, { w:'', h:'' });
-						var xul = XULToNode('<vbox><image width="'+opt.w+'" height="'+opt.h+'" src=""/></vbox>');
-						var img = xul.firstChild;
-						DefineAccess(name, function() undefined, function(val) { img.src='data:'+val });
-						box.appendChild(xul);
-					}
-				}) eval(code);
-//				container.style.display = '';
+					with(uiApi) eval(code);
+					$('uierrors').firstChild.data = '';
+				} catch(ex) {
+					
+					$('uierrors').firstChild.data = ex;
+				}
+				container.style.display = '';
+				
 			}
 		}
 
@@ -406,6 +473,7 @@ function RemoteCall( remoteMessage ) {
 			QueryPrivilege();
 
 			var ce = new CodeEditor($('code'));
+			$('code').focus();
 			var controllerManager = new ControllerManager($('ui'));
 
 			var api = {
@@ -416,36 +484,74 @@ function RemoteCall( remoteMessage ) {
 				},
 				
 				ReportError: function(message) {
-					
-					Trace('ERROR ', message);
+				
+					$('codeerrors').firstChild.data = message;
 				},
 			}
-
-			var rmc = new RemoteMessageClient('127.0.0.1', 8007 );
+			
+			var rmc = new RemoteMessageClient('127.0.0.1', 8007);
 			var rc = new RemoteCall(rmc);
 			rc.api = api;
 			
 			ce.onChange = function(code) {
 				
+				$('codeerrors').firstChild.data = '';
+				$('codetx').style.visibility = '';
 				rc.SetCode(code);
+				setTimeout(function() { $('codetx').style.visibility = 'hidden' }, 100);
 			}
+
+			var varTimeout;
+			controllerManager.onChange = function() {
+				
+				clearTimeout(varTimeout);
+				varTimeout = setTimeout(function() {
+					
+					$('uitx').style.visibility = '';
+					rc.SetVariables(controllerManager.GetVariables());
+					setTimeout(function() { $('uitx').style.visibility = 'hidden' }, 100);
+				}, 50);
+			}
+
 		
+
+/**ui
+image('img');slider('var1', {w:50});hr;area('pos');radio('s1', ['xxa','b','c']); spacer; check('chk'); field('foo');hr; label('l', {text:'test'})
+**/
 
 //			ctrlMan.SetUserInterface("image('img');slider('var1', {w:50});hr;area('pos');radio('s1', ['xxa','b','c']); spacer; check('chk'); field('foo');hr; label('l', {text:'test'})");
 //			ctrlMan.SetUserInterface("image('img');radio('s1', ['xxa','b','c']);field('foo')");
 //			ctrlMan.onChange = function() {}
 //			ctrlMan.img = 'image/gif;base64,R0lGODdhMAAwAPAAAAAAAP///ywAAAAAMAAwAAAC8IyPqcvt3wCcDkiLc7C0qwyGHhSWpjQu5yqmCYsapyuvUUlvONmOZtfzgFzByTB10QgxOR0TqBQejhRNzOfkVJ+5YiUqrXF5Y5lKh/DeuNcP5yLWGsEbtLiOSpa/TPg7JpJHxyendzWTBfX0cxOnKPjgBzi4diinWGdkF8kjdfnycQZXZeYGejmJlZeGl9i2icVqaNVailT6F5iJ90m6mvuTS4OK05M0vDk0Q4XUtwvKOzrcd3iq9uisF81M1OIcR7lEewwcLp7tuNNkM3uNna3F2JQFo97Vriy/Xl4/f1cf5VWzXyym7PHhhx4dbgYKAAA7';
-			
+			// ;
 		}
 		
 	]]></script>
 
 	<hbox flex="1">
-		<textbox id="code" multiline="true" wrap="off" flex="1" class="plain" spellcheck="false"/>
+		<vbox flex="1">
+			<stack allowevents="true" flex="1">
+				<textbox id="code" multiline="true" wrap="off" flex="1" class="plain" spellcheck="false"/>
+				<vbox mousethrough="always" align="end">
+					<image id="codetx" src="chrome://global/skin/icons/loading_16.png" style="visibility: hidden"/>
+				</vbox>
+			</stack>
+			<splitter collapse="before" resizeafter="farthest"/>
+			<description id="codeerrors" style="color: red; font-weight: bold"> </description>
+		</vbox>
 		<splitter collapse="before" resizeafter="farthest">
 			<grippy/>
 		</splitter>
-		<vbox id="ui"/>
+		<vbox>
+			<stack allowevents="true" flex="1">
+				<vbox id="ui" flex="1"/>
+				<vbox mousethrough="always" align="end">
+					<image id="uitx" src="chrome://global/skin/icons/loading_16.png" style="visibility: hidden"/>
+				</vbox>
+			</stack>
+			<splitter collapse="before" resizeafter="farthest"/>
+			<description id="uierrors" style="color: red; font-weight: bold"> </description>
+		</vbox>
 	</hbox>
 
 
