@@ -330,6 +330,8 @@ LoadModule('jsdebug');
 		
 		DisassembleScript: function(filename, lineno) {
 			
+			if ( typeof DisassembleScript == 'undefined' )
+				return 'Disassembly is only available in DEBUG mode\n';
 			var asm = DisassembleScript(filename, lineno);
 			asm = [ let (r = /(\d+): *(\d+) *(.*)/(line)) r ? r[2]+' '+r[3] : '' for each ( line in asm.split('\n') ) ].join('\n');
 			return 'Script at '+filename+':'+lineno+'\n'+asm+'\n';

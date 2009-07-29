@@ -1438,7 +1438,10 @@ DEFINE_FUNCTION_FAST( ScriptByLocation ) {
 $TOC_MEMBER $INAME
  $ARRAY $INAME( filename, lineno )
   Prints the assembly of the given function.
+ $H beware
+  This function isonly available in non-debug mode.
 **/
+#ifdef DEBUG 
 DEFINE_FUNCTION_FAST( DisassembleScript ) {
 
 	JL_S_ASSERT_ARG(2);
@@ -1537,7 +1540,7 @@ DEFINE_FUNCTION_FAST( DisassembleScript ) {
 	return JS_TRUE;
 	JL_BAD;
 }
-
+#endif // DEBUG
 
 
 #ifdef DEBUG
@@ -1565,7 +1568,9 @@ CONFIGURE_STATIC
 		FUNCTION_FAST( TraceGC )
 
 //		FUNCTION_FAST( ScriptByLocation )
+#ifdef DEBUG
 		FUNCTION_FAST( DisassembleScript )
+#endif // DEBUG
 
 //		FUNCTION( Trap )
 //		FUNCTION( Untrap )
