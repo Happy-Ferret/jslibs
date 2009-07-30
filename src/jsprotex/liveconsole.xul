@@ -65,7 +65,7 @@ function CallWithPrivilege( privilege, fct ) {
 function RemoteMessageClient(ip, port) {
 
 	var _this = this;
-	var requestList = [], xhrPool = [], xhrMax = 2;
+	var requestList = [], xhrPool = [], xhrMax = 3;
 	for ( var i = 0; i < xhrMax; i++ )
 		xhrPool.push(new XMLHttpRequest());
 
@@ -194,11 +194,7 @@ function RemoteCall( remoteMessage ) {
 				return window.document.importNode(doc, true).firstChild;
 			}
 			
-			var autoNames;
-			function CreateName() {
-				
-				return name ? name : '$'+(autoNames++).toString(36);
-			}
+			var controlerList, updatedValues, autoNames, uibox, box;
 
 			function SetDefault(options, def) {
 				
@@ -209,252 +205,47 @@ function RemoteCall( remoteMessage ) {
 				return options;
 			}
 
-			var updatedValues;
-			
-			this.GetVariables = function() {
+			function CreateName() {
 				
-				var tmp = updatedValues;
-				updatedValues = {};
-				return tmp;
+				return '$'+(++autoNames).toString(36);
 			}
-
+			
 			function Changing(name) {
 			
 				updatedValues[name] = controlerList[name];
 				_this.onChange && _this.onChange(name);
 			}
 
-			var controlerList;
 			function DefineAccess(name, getter, setter) {
 			
 				controlerList.__defineGetter__(name, getter);
 				controlerList.__defineSetter__(name, setter);
 			}
 
-			this.SetUserInterface = function(code) {
+			this.GetState = function() {
+				
+				var state = {};
+				for ( name in controlerList )
+					state[name] = controlerList[name];
+				return state;					
+			}
 			
+			this.SetState = function( state ) {
+			
+				for ( name in state )
+					if ( name in controlerList )
+						controlerList[name] = state[name];
+			}
+
+			this.SetUserInterface = function(code) {
+				
 				controlerList = {};
 				updatedValues = {};
 				autoNames = 0;
-
-				_this.__proto__ = controlerList;
 			
-				var box;
-				
-				var uiApi = {
-					get br() {
-
-						box = document.createElement('hbox');
-						container.appendChild(box);
-					},
-					get hr() {
-
-						box = XULToNode('<hbox style="padding: 4px;border-top: 2px groove white"/>');
-						container.appendChild(box);
-					},
-					get spacer() {
-
-						var widget = document.createElement('spacer');
-						widget.setAttribute('flex', '1');
-						box.appendChild(widget);
-					},
-					slider:function(opt) {
-						
-						opt = SetDefault(opt, { min:-1, max:1, step:0.1, w:'', name:CreateName(), def:0 });
-						var ratio = 1 / opt.step; // float support
-						var xul = XULToNode('<vbox tooltiptext="'+opt.name+'" align="center"><hbox align="center"><label value="'+opt.min+'"/><scale width="'+opt.w+'" min="'+opt.min*ratio+'" max="'+opt.max*ratio+'" increment="'+opt.step*ratio+'" pageincrement="'+opt.step*ratio*10+'"/><label value="'+opt.max+'"/></hbox><label value="" style="color:gray"/></vbox>');
-						var widget = xul.firstChild.firstChild.nextSibling;
-						var label = xul.lastChild;
-						
-						widget.addEventListener('DOMMouseScroll', function(ev) {
-							
-							if ( ev.detail > 0 )
-								widget.decrease(ev.detail / 3);
-							else
-								widget.increase(-ev.detail / 3);
-						}, false);
-						
-						widget.addEventListener('change', function() {
-
-							value = widget.value/ratio;
-							label.value = value;
-							widget.setAttribute('tooltiptext', value);
-							Changing(opt.name);
-						}, false);
-
-						widget.addEventListener('click', function(ev) {
-							
-							if ( ev.button != 2 )
-								return;
-							controlerList[opt.name] = opt.def;
-						}, false);
-
-						DefineAccess(opt.name, function() parseInt(widget.getAttribute('value'))/ratio, function(val) { widget.setAttribute('value', val*ratio); label.setAttribute('value', val) });
-						controlerList[opt.name] = opt.def;
-						box.appendChild(xul);
-					},
-					button:function(opt) {
-						
-						opt = SetDefault(opt, { name:CreateName(), def:false });
-						opt = SetDefault(opt, { text:opt.name });
-						var xul = XULToNode('<vbox tooltiptext="'+opt.name+'"><button type="checkbox" label="'+opt.text+'"/></vbox>');
-						var widget = xul.firstChild;
-						widget.addEventListener('command', function() {
-
-							Changing(opt.name);
-						}, false);
-						DefineAccess(opt.name, function() widget.getAttribute('checked') == 'true', function(val) { val ? widget.setAttribute('checked', 'true') : widget.removeAttribute('checked') });
-						controlerList[opt.name] = opt.def;
-						box.appendChild(xul);
-					},
-					check:function(opt) {
-						
-						opt = SetDefault(opt, { name:CreateName(), def:false });
-						opt = SetDefault(opt, { text:opt.name });
-						var xul = XULToNode('<vbox tooltiptext="'+opt.name+'"><checkbox label="'+opt.text+'" width="'+opt.width+'"/></vbox>');
-						var widget = xul.firstChild;
-						widget.addEventListener('command', function() {
-
-							widget.setAttribute('tooltiptext', opt.name+'='+widget.checked);
-							Changing(opt.name);
-						}, false);
-						DefineAccess(opt.name, function() widget.getAttribute('checked') == 'true', function(val) { val ? widget.setAttribute('checked', 'true') : widget.removeAttribute('checked') });
-						controlerList[opt.name] = opt.def;
-						box.appendChild(xul);
-					},
-					field:function(opt) {
-
-						opt = SetDefault(opt, { w:'', lines:1, name:CreateName(), def:'' }); 
-						var xul = XULToNode('<vbox tooltiptext="'+opt.name+'" width="'+opt.w+'"><textbox multiline="'+(opt.lines>1)+'" rows="'+opt.lines+'"/></vbox>');
-						var widget = xul.firstChild;
-						widget.emptyText = opt.name + ' ?';
-						widget.addEventListener('input', function() {
-
-							widget.setAttribute('tooltiptext', opt.name+'='+widget.value);
-							Changing(opt.name);
-						}, false);
-						DefineAccess(opt.name, function() widget.getAttribute('value'), function(val) { widget.setAttribute('value', val) });
-						controlerList[opt.name] = opt.def;
-						box.appendChild(xul);
-					},
-					label:function(opt) {
-
-						opt = SetDefault(opt, { name:CreateName(), def:'' }); 
-						opt = SetDefault(opt, { text:opt.name });
-						var xul = XULToNode('<vbox tooltiptext="'+opt.name+'"><hbox><label value="'+opt.text+'"/><label/></hbox></vbox>');
-						var widget = xul.firstChild.firstChild.nextSibling;
-						DefineAccess(opt.name, function() widget.getAttribute('value'), function(val) { widget.setAttribute('value', val) });
-						controlerList[opt.name] = opt.def;
-						box.appendChild(xul);
-					},
-					color:function(opt) {
-
-						opt = SetDefault(opt, { name:CreateName(), def:'#777' });
-						var xul = XULToNode('<vbox tooltiptext="'+opt.name+'"><colorpicker type="button"/></vbox>');
-						var widget = xul.firstChild;
-						widget.addEventListener('select', function() {
-
-							widget.setAttribute('tooltiptext', opt.name+'='+widget.color);
-							Changing(opt.name);
-						}, false);
-						DefineAccess(opt.name, function() widget.getAttribute('color'), function(val) { widget.setAttribute('color',val) });
-						controlerList[opt.name] = opt.def;
-						box.appendChild(xul);
-					},
-					radio:function(opt) {
-
-						opt = SetDefault(opt, { ro:false, name:CreateName(), num:false, values:'1,2,3,4', def:0 });
-						opt = SetDefault(opt, { def:opt.values[0] });
-						if ( typeof(opt.values) == 'string' )
-							opt.values = opt.values.split(',');
-						var xul = XULToNode('<radiogroup tooltiptext="'+opt.name+'">'+['<radio label="'+name+'" value="'+name+'"/>' for each (name in opt.values)].join('')+'</radiogroup>');
-						var widget = xul;
-						widget.addEventListener('select', function() {
-
-							Changing(opt.name);
-						}, false);
-						DefineAccess(opt.name, function() opt.num ? widget.selectedIndex : widget.getAttribute('value'), function(val) { if (opt.num) widget.selectedIndex = val; else widget.setAttribute('value', val) });
-						controlerList[opt.name] = opt.def;
-						box.appendChild(xul);
-					},
-					image:function(opt) {
-					
-						opt = SetDefault(opt, { w:'', h:'', name:CreateName(), def:'' });
-						var xul = XULToNode('<vbox><image width="'+opt.w+'" height="'+opt.h+'" src=""/></vbox>');
-						var img = xul.firstChild;
-						DefineAccess(opt.name, function() undefined, function(val) { img.setAttribute('src', 'data:'+val) });
-						controlerList[opt.name] = opt.def;
-						box.appendChild(xul);
-					},
-					area:function(opt) {
-
-						opt = SetDefault(opt, { w:100, h:100, name:CreateName(), def:[0,0,0] });
-						var xul = XULToNode('<vbox tooltiptext="'+opt.name+'" style="-moz-user-focus: normal"><canvas xmlns="http://www.w3.org/1999/xhtml" width="'+opt.w+'" height="'+opt.h+'" style="border: 1px solid gray"/><label value=""/></vbox>');
-						var canvas = xul.firstChild;
-						var label = xul.firstChild.nextSibling;
-
-						var ctx = canvas.getContext('2d');
-						var w = canvas.width, h = canvas.height;
-
-						var x=0, y=0, z=0;
-						var draw = false;
-
-						function UpdateView() {
-
-							ctx.clearRect(0, 0, w, h);
-							
-							if ( draw ) {
-							
-								var c = Math.floor(z/2+0.5);
-								ctx.fillStyle = '#'+(0x10000ff+c*0xff0000).toString(16).substr(1,6);
-							} else {
-								
-								ctx.fillStyle = 'black';
-							}
-							
-							var px = (x/2+0.5)*w;
-							var py = (y/2+0.5)*h;
-							ctx.fillRect(0,py,w,1);
-							ctx.fillRect(px,0,1,h);
-							label.setAttribute('value', x.toFixed(1)+' , '+y.toFixed(1)+' , '+z.toFixed(1));
-						}
-
-						canvas.addEventListener('mousedown', function(ev) { draw = !draw; UpdateView() }, true);
-
-						if ( opt.reset )
-							canvas.addEventListener('mouseup' , function(ev) { draw = false; x=0; y=0; z=0; Changing(opt.name); UpdateView() }, true);
-
-						canvas.addEventListener('mousemove', function(ev) {
-
-							if ( !draw )
-								return;
-							var px = ev.layerX - canvas.parentNode.boxObject.x;
-							x = (px/w - 0.5) * 2;
-							var py = ev.layerY - canvas.parentNode.boxObject.y;
-							y = (py/h - 0.5) * 2;
-							UpdateView();
-							Changing(opt.name);
-						}, false);
-						
-						canvas.addEventListener('DOMMouseScroll', function(ev) {
-
-							if ( !draw )
-								return;
-							z += -ev.detail / 30;
-							UpdateView();
-							Changing(opt.name);
-						}, false);
-
-						DefineAccess(opt.name, function() [x,y,z], function(val) { [x,y,z] = val; UpdateView() });
-						controlerList[opt.name] = opt.def;
-						box.appendChild(xul);
-					},
-				}
-				
-				container.style.display = 'none';
-				while ( container.firstChild )
-					container.removeChild(container.firstChild);
-				box = container.appendChild(container.appendChild(XULToNode('<hbox style="padding: 4px"/>')));
+				uibox = document.createElement('vbox');
+				box = XULToNode('<hbox style="padding: 4px"/>');
+				uibox.appendChild(box);
 				try {
 					
 					with(uiApi) eval(code);
@@ -463,10 +254,307 @@ function RemoteCall( remoteMessage ) {
 					
 					$('uierrors').firstChild.data = ex;
 				}
-				container.style.display = '';
 				
+				if ( container.firstChild )
+					container.replaceChild(uibox, container.firstChild);
+				else
+					container.appendChild(uibox);
+			}
+
+			var uiApi = {
+				get br() {
+
+					box = XULToNode('<hbox style="padding: 4px"/>');
+					uibox.appendChild(box);
+				},
+				get hr() {
+
+					box = XULToNode('<hbox style="padding: 4px;border-top: 2px groove white"/>');
+					uibox.appendChild(box);
+				},
+				get space() {
+
+					box.appendChild(XULToNode('<hbox width="30"/>'));
+				},
+				get spacer() {
+
+					box.appendChild(XULToNode('<spacer flex="1"/>'));
+				},
+				slider:function(opt) {
+
+					opt = SetDefault(opt, { min:-1, max:1, step:0.1, w:'', vert:false, q:0, name:CreateName(), def:0 });
+					if ( opt.max < opt.def ) opt.max = opt.def;
+					if ( opt.min > opt.def ) opt.min = opt.def;
+					var ratio = 1 / opt.step; // float support
+
+					var orient = opt.vert ? 'vertical' : 'horizontal'
+					var xul = XULToNode('<vbox tooltiptext="'+opt.name+'" align="center"><box orient="'+orient+'" align="center"><label value="'+opt.min+'"/><scale orient="'+orient+'" '+(opt.vert?'height="'+opt.w+'"':'width="'+opt.w+'"')+' min="'+opt.min*ratio+'" max="'+opt.max*ratio+'" increment="'+opt.step*ratio+'" pageincrement="'+opt.step*ratio*10+'"/><label value="'+opt.max+'"/></box><label value="" style="color:gray"/></vbox>');
+					var widget = xul.firstChild.firstChild.nextSibling;
+					var label = xul.lastChild;
+
+					widget.addEventListener('DOMMouseScroll', function(ev) {
+
+						if ( ev.detail > 0 )
+							widget.decrease(ev.detail / 3);
+						else
+							widget.increase(-ev.detail / 3);
+					}, false);
+
+					widget.addEventListener('change', function() {
+
+						value = widget.value/ratio;
+						label.value = value;
+						widget.setAttribute('tooltiptext', value);
+						Changing(opt.name);
+					}, false);
+
+					widget.addEventListener('click', function(ev) {
+
+						if ( ev.button != 2 )
+							return;
+						controlerList[opt.name] = opt.def;
+					}, false);
+
+					DefineAccess(opt.name,
+						function() parseInt(widget.getAttribute('value'))/ratio,
+						function(val) {
+							if ( val == controlerList[opt.name] )
+								return;
+							widget.setAttribute('value', val*ratio);
+							label.setAttribute('value', val);
+							Changing(opt.name);
+						}
+					);
+					controlerList[opt.name] = opt.def;
+					box.appendChild(xul);
+				},
+				button:function(opt) {
+
+					opt = SetDefault(opt, { name:CreateName(), def:false });
+					opt = SetDefault(opt, { text:opt.name });
+					var xul = XULToNode('<vbox tooltiptext="'+opt.name+'"><button type="checkbox" label="'+opt.text+'"/></vbox>');
+					var widget = xul.firstChild;
+					widget.addEventListener('command', function() {
+
+						Changing(opt.name);
+					}, false);
+					DefineAccess(opt.name,
+						function() widget.getAttribute('checked') == 'true',
+						function(val) { 
+							if ( val == controlerList[opt.name] )
+								return;
+							val ? widget.setAttribute('checked', 'true') : widget.removeAttribute('checked');
+							Changing(opt.name);
+						}
+					);
+					controlerList[opt.name] = opt.def;
+					box.appendChild(xul);
+				},
+				check:function(opt) {
+
+					opt = SetDefault(opt, { name:CreateName(), def:false });
+					opt = SetDefault(opt, { text:opt.name });
+					var xul = XULToNode('<vbox tooltiptext="'+opt.name+'"><checkbox label="'+opt.text+'" width="'+opt.width+'"/></vbox>');
+					var widget = xul.firstChild;
+					widget.addEventListener('command', function() {
+
+						widget.setAttribute('tooltiptext', opt.name+'='+widget.checked);
+						Changing(opt.name);
+					}, false);
+					DefineAccess(opt.name,
+						function() widget.getAttribute('checked') == 'true',
+						function(val) {
+							if ( val == controlerList[opt.name] )
+								return;
+							val ? widget.setAttribute('checked', 'true') : widget.removeAttribute('checked');
+							Changing(opt.name);
+						}
+					);
+					controlerList[opt.name] = opt.def;
+					box.appendChild(xul);
+				},
+				field:function(opt) {
+
+					opt = SetDefault(opt, { w:'', lines:1, name:CreateName(), def:'' }); 
+					var xul = XULToNode('<vbox tooltiptext="'+opt.name+'" width="'+opt.w+'"><textbox multiline="'+(opt.lines>1)+'" rows="'+opt.lines+'"/></vbox>');
+					var widget = xul.firstChild;
+					widget.emptyText = opt.name + ' ?';
+					widget.addEventListener('input', function() {
+
+						widget.setAttribute('tooltiptext', opt.name+'='+widget.value);
+						Changing(opt.name);
+					}, false);
+					DefineAccess(opt.name,
+						function() widget.getAttribute('value'),
+						function(val) {
+							if ( val == controlerList[opt.name] )
+								return;
+							widget.setAttribute('value', val);
+							Changing(opt.name);
+						}
+					);
+					controlerList[opt.name] = opt.def;
+					box.appendChild(xul);
+				},
+				label:function(opt) {
+
+					opt = SetDefault(opt, { name:CreateName(), def:'' }); 
+					opt = SetDefault(opt, { text:opt.name });
+					var xul = XULToNode('<vbox tooltiptext="'+opt.name+'"><hbox><label value="'+opt.text+'"/><label/></hbox></vbox>');
+					var widget = xul.firstChild.firstChild.nextSibling;
+					DefineAccess(opt.name,
+						function() widget.getAttribute('value'),
+						function(val) {
+							if ( val == controlerList[opt.name] )
+								return;
+							widget.setAttribute('value', val);
+							Changing(opt.name);
+						}
+					);
+					controlerList[opt.name] = opt.def;
+					box.appendChild(xul);
+				},
+				color:function(opt) {
+
+					opt = SetDefault(opt, { name:CreateName(), def:'#777' });
+					var xul = XULToNode('<vbox tooltiptext="'+opt.name+'"><colorpicker type="button"/></vbox>');
+					var widget = xul.firstChild;
+					widget.addEventListener('select', function() {
+
+						widget.setAttribute('tooltiptext', opt.name+'='+widget.color);
+						Changing(opt.name);
+					}, false);
+					DefineAccess(opt.name,
+						function() widget.getAttribute('color'),
+						function(val) {
+							if ( val == controlerList[opt.name] )
+								return;
+							widget.setAttribute('color',val);
+							Changing(opt.name);
+						}
+					);
+					controlerList[opt.name] = opt.def;
+					box.appendChild(xul);
+				},
+				radio:function(opt) {
+
+					opt = SetDefault(opt, { ro:false, name:CreateName(), num:false, values:'1,2,3,4', def:0 });
+					opt = SetDefault(opt, { def:opt.values[0] });
+					if ( typeof(opt.values) == 'string' )
+						opt.values = opt.values.split(',');
+					var xul = XULToNode('<radiogroup tooltiptext="'+opt.name+'">'+['<radio label="'+name+'" value="'+name+'"/>' for each (name in opt.values)].join('')+'</radiogroup>');
+					var widget = xul;
+					widget.addEventListener('select', function() {
+
+						Changing(opt.name);
+					}, false);
+					DefineAccess(opt.name,
+						function() opt.num ? widget.selectedIndex : widget.getAttribute('value'),
+						function(val) {
+							if ( val == controlerList[opt.name] )
+								return;
+							if (opt.num)
+								widget.selectedIndex = val;
+							else 
+								widget.setAttribute('value', val);
+							Changing(opt.name);
+						}
+					);
+					controlerList[opt.name] = opt.def;
+					box.appendChild(xul);
+				},
+				image:function(opt) {
+
+					opt = SetDefault(opt, { w:'', h:'', name:CreateName(), def:'' });
+					var xul = XULToNode('<vbox><image width="'+opt.w+'" height="'+opt.h+'" src=""/></vbox>');
+					var img = xul.firstChild;
+					DefineAccess(opt.name,
+						function() undefined,
+						function(val) {
+							if ( val == controlerList[opt.name] )
+								return;
+							img.setAttribute('src', 'data:'+val);
+							Changing(opt.name);
+						}
+					);
+					controlerList[opt.name] = opt.def;
+					box.appendChild(xul);
+				},
+				area:function(opt) {
+
+					opt = SetDefault(opt, { w:100, h:100, name:CreateName(), def:[0,0,0] });
+					var xul = XULToNode('<vbox tooltiptext="'+opt.name+'" style="-moz-user-focus: normal"><canvas xmlns="http://www.w3.org/1999/xhtml" width="'+opt.w+'" height="'+opt.h+'" style="border: 1px solid gray"/><label value=""/></vbox>');
+					var canvas = xul.firstChild;
+					var label = xul.firstChild.nextSibling;
+
+					var ctx = canvas.getContext('2d');
+					var w = canvas.width, h = canvas.height;
+
+					var x=0, y=0, z=0;
+					var draw = false;
+
+					function UpdateView() {
+
+						ctx.clearRect(0, 0, w, h);
+
+						if ( draw ) {
+
+							var c = Math.floor(z/2+0.5);
+							ctx.fillStyle = '#'+(0x10000ff+c*0xff0000).toString(16).substr(1,6);
+						} else {
+
+							ctx.fillStyle = 'black';
+						}
+
+						var px = (x/2+0.5)*w;
+						var py = (y/2+0.5)*h;
+						ctx.fillRect(0,py,w,1);
+						ctx.fillRect(px,0,1,h);
+						label.setAttribute('value', x.toFixed(1)+' , '+y.toFixed(1)+' , '+z.toFixed(1));
+					}
+
+					canvas.addEventListener('mousedown', function(ev) { draw = !draw; UpdateView() }, true);
+
+					if ( opt.reset )
+						canvas.addEventListener('mouseup' , function(ev) { draw = false; x=0; y=0; z=0; Changing(opt.name); UpdateView() }, true);
+
+					canvas.addEventListener('mousemove', function(ev) {
+
+						if ( !draw )
+							return;
+						var px = ev.layerX - canvas.parentNode.boxObject.x;
+						x = (px/w - 0.5) * 2;
+						var py = ev.layerY - canvas.parentNode.boxObject.y;
+						y = (py/h - 0.5) * 2;
+						UpdateView();
+						Changing(opt.name);
+					}, false);
+
+					canvas.addEventListener('DOMMouseScroll', function(ev) {
+
+						if ( !draw )
+							return;
+						z += -ev.detail / 30;
+						UpdateView();
+						Changing(opt.name);
+					}, false);
+
+					DefineAccess(opt.name,
+						function() [x,y,z],
+						function(val) {
+							if ( val.join(',') == controlerList[opt.name].join(',') )
+								return;
+							[x,y,z] = val;
+							UpdateView();
+							Changing(opt.name);
+						}
+					);
+					controlerList[opt.name] = opt.def;
+					box.appendChild(xul);
+				},
 			}
 		}
+
 
 		function init() {
 			
@@ -479,8 +567,15 @@ function RemoteCall( remoteMessage ) {
 			var api = {
 
 				SetUserInterface: function(uiCode) {
-
+					
+//					var state = controllerManager.GetState();
 					controllerManager.SetUserInterface(uiCode);
+//					controllerManager.SetState(state);
+				},
+				
+				SetVariables: function(variables) {
+					
+					controllerManager.SetState(variables);
 				},
 				
 				ReportError: function(message) {
@@ -508,10 +603,16 @@ function RemoteCall( remoteMessage ) {
 				varTimeout = setTimeout(function() {
 					
 					$('uitx').style.visibility = '';
-					rc.SetVariables(controllerManager.GetVariables());
+					rc.SetVariables(controllerManager.GetState());
 					setTimeout(function() { $('uitx').style.visibility = 'hidden' }, 100);
 				}, 50);
 			}
+
+			setTimeout(function() {
+				
+//				rc.GetVariables([ name for each ( name in controllerManager.GetState ) ]);
+				setTimeout(arguments.callee, 200);
+			}, 200);
 
 		
 
@@ -533,7 +634,7 @@ image('img');slider('var1', {w:50});hr;area('pos');radio('s1', ['xxa','b','c']);
 			<stack allowevents="true" flex="1">
 				<textbox id="code" multiline="true" wrap="off" flex="1" class="plain" spellcheck="false"/>
 				<vbox mousethrough="always" align="end">
-					<image id="codetx" src="chrome://global/skin/icons/loading_16.png" style="visibility: hidden"/>
+					<image id="codetx" style="visibility: hidden; list-style-image: url(chrome://global/skin/icons/find.png); -moz-image-region: rect(0px 32px 16px 16px);"/>
 				</vbox>
 			</stack>
 			<splitter collapse="before" resizeafter="farthest"/>
@@ -546,7 +647,7 @@ image('img');slider('var1', {w:50});hr;area('pos');radio('s1', ['xxa','b','c']);
 			<stack allowevents="true" flex="1">
 				<vbox id="ui" flex="1"/>
 				<vbox mousethrough="always" align="end">
-					<image id="uitx" src="chrome://global/skin/icons/loading_16.png" style="visibility: hidden"/>
+					<image id="uitx" style="visibility: hidden; list-style-image: url(chrome://global/skin/icons/find.png); -moz-image-region: rect(0px 32px 16px 16px);"/>
 				</vbox>
 			</stack>
 			<splitter collapse="before" resizeafter="farthest"/>

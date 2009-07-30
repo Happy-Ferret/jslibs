@@ -216,6 +216,14 @@ var live = new function() {
 
 			for ( var name in variables )
 				global[name] = variables[name];
+		},
+		
+		GetVariables: function(variableList) {
+			
+			var variables = {};
+			for each ( var name in variableList )
+				variables[name] = global[name];
+			rc.SetVariables(variables);
 		}
 	}
 	
