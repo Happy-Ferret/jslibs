@@ -19,6 +19,13 @@ LoadModule('jsz');
 LoadModule('jscrypt');
 LoadModule('jsdebug');
 
+function IsNotEmpty(obj) {
+
+	for ( var tmp in obj )
+		return true;
+	return false;
+}
+
 function SimpleHTTPServer(port, bind, basicAuth) {
 
 	var pendingRequestList = [], serverSocket = new Socket(), socketList = [serverSocket], deflate = new Z(Z.DEFLATE, Z.BEST_SPEED);
@@ -113,7 +120,6 @@ function SimpleHTTPServer(port, bind, basicAuth) {
 	}	
 }
 
-
 function RemoteMessageServer( post, ip ) {
 
 	var _this = this;
@@ -122,16 +128,15 @@ function RemoteMessageServer( post, ip ) {
 	
 	this.Poll = function() {
 
-		if ( server.HasPendingRequest() ) {
+		if ( !server.HasPendingRequest() )
+			return false;
 		
-			if ( pendingResponseFunction )
-				pendingResponseFunction();
-			var req;
-			[req, pendingResponseFunction] = server.GetNextRequest();
-			_this.onMessage && _this.onMessage(req);
-			return true;
-		}
-		return false;
+		if ( pendingResponseFunction )
+			pendingResponseFunction();
+		var req;
+		[req, pendingResponseFunction] = server.GetNextRequest();
+		_this.onMessage && _this.onMessage(req);
+		return true;
 	}
 	
 	this.Send = function( message ) {
@@ -166,64 +171,99 @@ function RemoteCall( remoteMessage ) {
 	}
 }
 
-
-
 var live = new function() {
 
 	var server = new SimpleHTTPServer(8008, '127.0.0.1');
 
-	var uiExpr = /\/\*\*ui(?:([^]*?))?\*\*\//;
+	var initExpr = /\/\*init (?:([^]*?))?\*\//;
+	var uiExpr = /\/\*ui (?:([^]*?))?\*\//;
 
+	var initData;
 	var userInterfaceCode;
-	var codeFunction = function(){}
-	var codeLocation;
+	var codeLocation, codeFunction, lastValidCodeFunection;
+	
+	var watchList = [];
+	var updatedVariables = {};
 
+	
 	this.Function = function() {
 
+		if ( !codeFunction )
+			return undefined;
+		
 		try {
 			
-			codeFunction();
+			var res = codeFunction.apply(this, arguments);
+			lastValidCodeFunection = codeFunction;
+			return res;
 		} catch(ex) {
 			
-			rc.ReportError(ex+' (line '+(ex.lineNumber-codeLocation)+')');
-			codeFunction = function(){}
+			rc.ReportError('Runtime error: '+ex+' (line '+(ex.lineNumber-codeLocation)+')');
+			codeFunction = lastValidCodeFunection;
 		}
+		return undefined;
 	}
-
+	
 	var api = {
 
 		SetCode: function(code) {
+
+			initData = (initExpr(code)||[''])[1];
 			
 			var tmp = (uiExpr(code)||[''])[1];
-			
 			if ( tmp != userInterfaceCode ) {
 				
 				userInterfaceCode = tmp;
 				rc.SetUserInterface(userInterfaceCode);
 			}
+			
+			var previousValidFunction = codeFunction;
 			try {
 				
 				[,codeLocation] = Locate();
 				codeFunction = new Function(code);
 			} catch(ex) {
 				
-				rc.ReportError(ex+' (line '+(ex.lineNumber-codeLocation)+')');
-				codeFunction = function(){}
+				rc.ReportError('Compilation error: '+ex+' (line '+(ex.lineNumber-codeLocation)+')');
+				codeFunction = previousValidFunction;
 			}
 		},
 
 		SetVariables: function(variables) {
 
-			for ( var name in variables )
+			for ( var name in variables ) {
+			
 				global[name] = variables[name];
+				delete updatedVariables[name];
+			}
 		},
 		
-		GetVariables: function(variableList) {
+		WatchVariables: function(variableList) {
 			
-			var variables = {};
+			for each ( var name in watchList )
+				global.unwatch(name);
+			watchList = variableList;
+			for each ( var name in watchList )
+				global.watch(name, function(id, oldval, newval) {
+					
+					if ( newval !== oldval )
+						updatedVariables[id] = true;
+					return newval;
+				});
+			
+			var state = {};
 			for each ( var name in variableList )
-				variables[name] = global[name];
-			rc.SetVariables(variables);
+				state[name] = global[name];
+			rc.SetVariables(state);
+			updatedVariables = {};
+		},
+		
+		Init: function() {
+			
+			var tmp = eval('('+initData+')');
+			for ( var name in tmp )
+				if ( name in global )
+					global[name] = tmp[name];
 		}
 	}
 	
@@ -233,19 +273,29 @@ var live = new function() {
 	
 	this.Poll = function() {
 		
-		rms.Poll();
-	}
+		while ( rms.Poll() );
 
+		if ( IsNotEmpty( updatedVariables ) ) {
+			
+			var state = {};
+			for ( var name in updatedVariables )
+				state[name] = global[name];
+			rc.SetVariables(state);
+			updatedVariables = {};
+		}
+	}
 }
 
+
+/* test part
 while ( !endSignal ) {
 	
 	
 	live.Poll();
-	live.Function();
-	Sleep(500);
+	live.Function('test');
+	Sleep(10);
 }
-
+*/
 
 /*
 try {

@@ -213,8 +213,8 @@ inline JSBool InitLevelData( JSContext* cx, jsval value, int count, PTYPE *level
 				color++;
 				level[i] = PMAX * val / 255;
 			}
+			return JS_TRUE;
 		}
-		return JS_TRUE;
 	}
 
 	JL_REPORT_ERROR("Invalid level data.");
