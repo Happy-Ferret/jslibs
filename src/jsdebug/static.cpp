@@ -18,6 +18,10 @@
 #define _WIN32_WINNT 0x0501
 #pragma comment(lib,"Psapi.lib") // need for currentMemoryUsage()
 #include <Psapi.h>
+
+#pragma comment(lib,"pdh.lib") // need for performance counters usage
+#include <pdh.h>
+
 #endif // XP_WIN
 
 
@@ -47,7 +51,7 @@ void fpipe( FILE **read, FILE **write ) {
 	// doc: The underlying handle is also closed by a call to _close,
 	//      so it is not necessary to call the Win32 function CloseHandle on the original handle. 
 	int readfd = _open_osfhandle((intptr_t)readPipe, _O_RDONLY);
-	int writefd = _open_osfhandle((intptr_t)writePipe, 0);
+	int writefd = _open_osfhandle((intptr_t)writePipe, 32768);
 	*read = fdopen(readfd, "r");
 	*write = fdopen(writefd, "w");
 }
@@ -576,7 +580,6 @@ DEFINE_PROPERTY( privateMemoryUsage ) {
 /**doc
 === Static properties ===
 **/
-
 
 /**doc
 $TOC_MEMBER $INAME
@@ -1436,16 +1439,17 @@ DEFINE_FUNCTION_FAST( ScriptByLocation ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $ARRAY $INAME( filename, lineno )
-  Prints the assembly of the given function.
+ $STRING $INAME( filename, lineno )
+  Returns the assembly code of the given block location.
  $H beware
-  This function isonly available in non-debug mode.
+  This function is only available in DEBUG mode.
 **/
-#ifdef DEBUG 
 DEFINE_FUNCTION_FAST( DisassembleScript ) {
 
 	JL_S_ASSERT_ARG(2);
-//	JL_S_ASSERT( JsvalIsScript(cx, JL_FARG(1)), "Script object expected." );
+
+#ifdef DEBUG 
+	
 	const char *filename;
 	unsigned int lineno;
 
@@ -1454,76 +1458,25 @@ DEFINE_FUNCTION_FAST( DisassembleScript ) {
 	JSScript *script = ScriptByLocation(cx, scriptFileList, filename, lineno);
 	JL_CHK( script );
 
-//	JSFunction *fun = JS_ValueToFunction(cx, JL_FARG(1));
-//	JSScript *script = FUN_SCRIPT(fun);
-
 	int length;
 	FILE *rf, *wf;
 	fpipe(&rf, &wf);
 
-/*
-	if (fun && (fun->flags & ~7U)) {
-		
-		uint16 flags = fun->flags;
-		fputs("flags:", wf);
+	jsbytecode *pc, *end;
+	uintN len;
+	pc = script->main;
+	end = script->code + script->length;
+	while (pc < end) {
 
-#define SHOW_FLAG(flag) if (flags & JSFUN_##flag) fputs(" " #flag, wf);
-
-		SHOW_FLAG(LAMBDA);
-		SHOW_FLAG(SETTER);
-		SHOW_FLAG(GETTER);
-		SHOW_FLAG(BOUND_METHOD);
-		SHOW_FLAG(HEAVYWEIGHT);
-		SHOW_FLAG(THISP_STRING);
-		SHOW_FLAG(THISP_NUMBER);
-		SHOW_FLAG(THISP_BOOLEAN);
-		SHOW_FLAG(EXPR_CLOSURE);
-		SHOW_FLAG(TRACEABLE);
-
-#undef SHOW_FLAG
-
-      if (FUN_NULL_CLOSURE(fun))
-          fputs(" NULL_CLOSURE", wf);
-      else if (FUN_FLAT_CLOSURE(fun))
-          fputs(" FLAT_CLOSURE", wf);
-      fputs("\n", wf);
+		len = js_Disassemble1(cx, script, pc, pc - script->code, JS_TRUE, wf);
+		if (!len)
+			return JS_FALSE;
+		pc += len;
 	}
-*/
-
-//	JL_CHK( js_Disassemble(cx, script, JS_TRUE, wf) );
-
-    jsbytecode *pc, *end;
-    uintN len;
-
-    pc = script->code;
-//	 pc = script->main;
-    end = pc + script->length;
-    while (pc < end) {
-  //      if (pc == script->main)
-  //          fputs("main:\n", wf);
-        len = js_Disassemble1(cx, script, pc, pc - script->code, JS_TRUE, wf);
-        if (!len)
-            return JS_FALSE;
-        pc += len;
-    }
-
-//	TryNotes(cx, script, wf);
 
 	length = ftell(wf);
 	fflush(wf);
 	fclose(wf);
-
-/*
-	char buf[1024];
-	int rd;
-	do {
-		rd = fread(buf, 1, sizeof(buf)-1, rf);
-		printf("%d\n", rd);
-		buf[rd] = '\0';
-		_puts(cx, buf);
-
-	} while (rd == sizeof(buf)-1);
-*/
 
 	char *data = (char*)malloc(length+1);
 	JL_S_ASSERT_ALLOC( data );
@@ -1537,15 +1490,112 @@ DEFINE_FUNCTION_FAST( DisassembleScript ) {
 
 	*JL_FRVAL = STRING_TO_JSVAL(jsstr);
 
+#else // DEBUG
+	
+	*JL_FRVAL = JSVAL_VOID;
+
+#endif // DEBUG
+
 	return JS_TRUE;
 	JL_BAD;
 }
-#endif // DEBUG
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $INAME $READONLY
+  Is the amount of CPU time (milliseconds) that the process has executed.
+**/
+DEFINE_PROPERTY( processTime ) {
+
+#ifdef XP_WIN
+
+	__int64 creationTime, exitTime, kernelTime, userTime;
+	BOOL status = GetThreadTimes(GetCurrentThread(), (FILETIME *)&creationTime, (FILETIME *)&exitTime, (FILETIME *)&kernelTime, (FILETIME *)&userTime);
+//	BOOL status = GetProcessTimes(GetCurrentProcess(), (FILETIME *)&creationTime, (FILETIME *)&exitTime, (FILETIME *)&kernelTime, (FILETIME *)&userTime);
+	if ( !status ) {
+
+		char message[1024];
+		JLLastSysetmErrorMessage(message, sizeof(message));
+		JL_REPORT_ERROR("%s", message);
+	}
+	return DoubleToJsval(cx, (kernelTime + userTime) / (double)10000 , vp);
+#else // XP_WIN
+
+	*vp = JSVAL_VOID;
+
+#endif // XP_WIN
+
+	JL_BAD;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $INAME $READONLY
+  Is the current CPU usage in percent.
+**/
+DEFINE_PROPERTY( cpuLoad ) {
+
+#ifdef XP_WIN
+
+  static PDH_STATUS status;
+  static PDH_FMT_COUNTERVALUE value;
+  static HQUERY query;
+  static HCOUNTER counter;
+  static DWORD ret;
+  static bool runonce = true;
+
+  char errorMessage[1024];
+
+	if ( runonce ) {
+
+		status = PdhOpenQuery(NULL, 0, &query);
+		if( status != ERROR_SUCCESS ) {
+
+			SetLastError(status);
+			JLLastSysetmErrorMessage(errorMessage, sizeof(errorMessage));
+			JL_REPORT_ERROR("%s", errorMessage);
+		}
+
+		PdhAddCounter(query, TEXT("\\Processor(_Total)\\% Processor Time"), 0, &counter); // A total of ALL CPU's in the system
+		PdhCollectQueryData(query); // No error checking here
+		runonce = false;
+	}
+
+	status = PdhCollectQueryData(query);
+	if ( status != ERROR_SUCCESS ) {
+
+		SetLastError(status);
+		JLLastSysetmErrorMessage(errorMessage, sizeof(errorMessage));
+		JL_REPORT_ERROR("%s", errorMessage);
+	}
+
+	status = PdhGetFormattedCounterValue(counter, PDH_FMT_DOUBLE | PDH_FMT_NOCAP100, &ret, &value);
+	if ( status != ERROR_SUCCESS ) {
+
+		SetLastError(status);
+		JLLastSysetmErrorMessage(errorMessage, sizeof(errorMessage));
+		JL_REPORT_ERROR("%s", errorMessage);
+	}
+
+	return DoubleToJsval(cx, value.doubleValue, vp);
+#else // XP_WIN
+
+
+	// cat /proc/stat
+
+	*vp = JSVAL_VOID;
+
+#endif // XP_WIN
+
+	JL_BAD;
+}
+
 
 
 #ifdef DEBUG
 DEFINE_FUNCTION( TestDebug ) {
-
 
 	// see https://bugzilla.mozilla.org/show_bug.cgi?id=488924
 	JSObject *o = JS_NewArrayObject(cx, 0, NULL);
@@ -1568,9 +1618,7 @@ CONFIGURE_STATIC
 		FUNCTION_FAST( TraceGC )
 
 //		FUNCTION_FAST( ScriptByLocation )
-#ifdef DEBUG
 		FUNCTION_FAST( DisassembleScript )
-#endif // DEBUG
 
 //		FUNCTION( Trap )
 //		FUNCTION( Untrap )
@@ -1605,6 +1653,8 @@ CONFIGURE_STATIC
 		PROPERTY_READ( currentMemoryUsage )
 		PROPERTY_READ( peakMemoryUsage )
 		PROPERTY_READ( privateMemoryUsage )
+		PROPERTY_READ( processTime )
+		PROPERTY_READ( cpuLoad )
 	END_STATIC_PROPERTY_SPEC
 
 END_STATIC

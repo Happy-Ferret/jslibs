@@ -518,7 +518,7 @@
 						if ( tab.label != name /* || outputElt.boxObject.height > 16 */ )
 							continue;
 						tab.style.color = 'red';
-						setTimeout(function() { tab.style.color = '' }, 150);
+						setTimeout(function() { tab.style.color = '' }, 200);
 						break;
 					}
 				}

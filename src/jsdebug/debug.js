@@ -1,5 +1,13 @@
 LoadModule('jsstd');
 LoadModule('jsdebug');
+
+	
+Print('processTime ', processTime, '\n');
+
+
+Halt();
+
+
 eval('function toto() {\
 var test = -1; \
 }');
