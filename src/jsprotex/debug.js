@@ -123,11 +123,44 @@ var z = 0;
 RandSeed(1);
 PerlinNoiseReinit();
 
-Exec('liveconsole.js');
+//Exec('liveconsole.js');
 
 function UpdateTexture(imageIndex) { // <<<<<<<<<<<<<<<<<-----------------------------------
 
 
+	// perlin noise
+	texture.Set(0.5);
+	texture.AddPerlin2(z,0,0, 8, 2);
+	texture.SetChannel(1, texture, 0);
+	texture.SetChannel(2, texture, 0);
+	texture.Dilate(1, 1);
+	texture.NormalizeLevels();
+
+	z += 1;
+return;
+
+
+	// perlin noise
+	texture.Set(0.5);
+	texture.AddPerlin2(z,0,0, 32, 1);
+	texture.AddPerlin2(z,0,0, 16, 0.5);
+	texture.AddPerlin2(z,0,0, 8, 0.25);
+	texture.AddPerlin2(z,0,0, 4, 0.125);
+	texture.SetChannel(1, texture, 0);
+	texture.SetChannel(2, texture, 0);
+	z += 1;
+return;
+
+
+	// dilate test
+	var mx = texture.width/2, my = texture.height/2;
+	texture.Set(0).SetPixel(mx-mx/2, my, [1,0,0]).SetPixel(mx, my, [0,0.7,0]).SetPixel(mx+mx/2, my, [0,0,1]).BoxBlur(mx/2,mx/2, 5);
+	
+	texture.Dilate(5);
+	texture.NormalizeLevels();
+return;
+
+	// live coding test
 	live.Poll();
 	live.Function(texture);
 return;
@@ -263,12 +296,31 @@ return;
 	z += 1;
 return;
 
+	// binary stream
+	texture.Set(0);
+	texture.ForEachPixel(function(pixel, x, y) {
 
+		var val = PerlinNoise2(x+z, y/3, 0);
+		pixel[1] = val;
+	});
+	z += 1;
+return;
 
+	// strange effect
+	texture.Set(0);
+	texture.ForEachPixel(function(pixel, x, y) {
 
+		var dx= PerlinNoise2(y*f, (x+z)*f, 0);
+		val = PerlinNoise2((x*dx+z)*f, (y*dx)*f, 0);
 
+		pixel[0] = val;
+		pixel[1] = val;
+		pixel[2] = val;
 
+	});
+	z += 1;
 
+return;
 
 
 
@@ -666,7 +718,9 @@ while (!end) {
 
 	with (Ogl) {
 		
-		DefineTextureImage(TEXTURE_2D, undefined, texture);
+		try {
+			DefineTextureImage(TEXTURE_2D, undefined, texture);
+		} catch (ex) {}
 		
 		Color(1,1,1,1);
 		Begin(QUADS);
