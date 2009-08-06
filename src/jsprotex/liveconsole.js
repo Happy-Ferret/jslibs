@@ -120,17 +120,16 @@ function SimpleHTTPServer(port, bind, basicAuth) {
 	}	
 }
 
-function RemoteMessageServer( post, ip ) {
+function RemoteMessageServer( port, ip ) {
 
 	var _this = this;
-	var server = new SimpleHTTPServer(8007, '127.0.0.1');
+	var server = new SimpleHTTPServer(port, ip);
 	var pendingResponseFunction;
 	
 	this.Poll = function() {
 
 		if ( !server.HasPendingRequest() )
 			return false;
-		
 		if ( pendingResponseFunction )
 			pendingResponseFunction();
 		var req;
@@ -141,14 +140,12 @@ function RemoteMessageServer( post, ip ) {
 	
 	this.Send = function( message ) {
 		
-		var req = undefined;
+		var req;
 		if ( !pendingResponseFunction )
 			[req, pendingResponseFunction] = server.GetNextRequest();
-
 		pendingResponseFunction(message);
 		pendingResponseFunction = undefined;
-
-		if ( req != undefined )
+		if ( req )
 			_this.onMessage && _this.onMessage(req);
 	}
 }
@@ -267,7 +264,7 @@ var live = new function() {
 		}
 	}
 	
-	var rms = new RemoteMessageServer(8008, '127.0.0.1');
+	var rms = new RemoteMessageServer(8007, '127.0.0.1');
 	var rc = new RemoteCall(rms);
 	rc.api = api;
 	
@@ -289,16 +286,9 @@ var live = new function() {
 
 /* test part
 while ( !endSignal ) {
-	
-	
+
 	live.Poll();
 	live.Function('test');
 	Sleep(10);
 }
-*/
-
-/*
-try {
-	
-} catch(ex) { Print(ex.fileName+':'+ex.lineNumber+' '+ex+' ', '\n') }
 */

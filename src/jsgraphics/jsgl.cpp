@@ -3320,9 +3320,9 @@ DEFINE_FUNCTION_FAST( DefineTextureImage ) {
 		type = GL_FLOAT;
 	} else {
 
-		JL_CHK( GetPropertyInt(cx, tObj, "width", &width) );
-		JL_CHK( GetPropertyInt(cx, tObj, "height", &height) );
-		JL_CHK( GetPropertyInt(cx, tObj, "channels", &channels) );
+		JL_CHKM( GetPropertyInt(cx, tObj, "width", &width), "Invalid texture object." );
+		JL_CHKM( GetPropertyInt(cx, tObj, "height", &height), "Invalid texture object." );
+		JL_CHKM( GetPropertyInt(cx, tObj, "channels", &channels), "Invalid texture object." );
 		size_t bufferLength;
 		jsval tVal = OBJECT_TO_JSVAL(tObj);
 		JL_CHK( JsvalToStringAndLength(cx, &tVal, (const char**)&data, &bufferLength ) );

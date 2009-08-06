@@ -402,6 +402,8 @@ The main features are:
   This is a temporary option that allow to select function name naming. 0:default, 1:lowerCamelCase, 2:UpperCamelCase
   $H node
    Default is UpperCamelCase for jslibs version < 1.0 and lowerCamelCase for jslibs version >= 1.0
+ * `-b`
+  Run the bootstrap file (<executable filename>.js, eg. jshost.exe.js on windows)
   $H example
   {{{
   loadModule('jsio');
