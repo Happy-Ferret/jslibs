@@ -946,7 +946,10 @@ DEFINE_PROPERTY( sockPort ) {
 /**doc
 $TOC_MEMBER $INAME
  $ARRAY $INAME( hostName )
-  Lookup a host by name and returns the results in a javascript array.
+  Lookup a host by name (DNS lookup) and returns the results in a javascript array.
+  {{{
+  Print( GetHostsByName('localhost')[0] ); // prints: 127.0.0.1
+  }}}
 **/
 DEFINE_FUNCTION( GetHostsByName ) {
 
@@ -994,6 +997,72 @@ bad_throw:
 	ThrowIoError(cx);
 	JL_BAD;
 }
+
+/**doc
+$TOC_MEMBER $INAME
+ $ARRAY $INAME( hostAddr )
+  Lookup a name by host (reverse DNS lookup) and returns the results in a javascript array.
+  $H example 1
+{{{
+ Print( GetHostsByAddr('127.0.0.1')[0] ); // prints: localhost
+}}}
+  $H example 2
+{{{
+ function ReverseLookup( ip ) {
+  try {
+   
+   return Socket.GetHostsByAddr(ip)[0];
+  } catch ( ex if ex instanceof IoError ) {
+   
+   return undefined; // not found
+  }
+}
+}}}
+**/
+DEFINE_FUNCTION_FAST( GetHostsByAddr ) {
+
+	JL_S_ASSERT_ARG( 1 );
+
+	const char *addr; // MAX_IP_STRING
+	JL_CHK( JsvalToString(cx, &JL_FARG(1), &addr) );
+
+	PRNetAddr netaddr;
+	if ( PR_StringToNetAddr(addr, &netaddr) != PR_SUCCESS )
+		return ThrowIoError(cx);
+
+	char buffer[PR_NETDB_BUF_SIZE * 2];
+
+	PRHostEnt hostent;
+	if ( PR_GetHostByAddr(&netaddr, buffer, sizeof(buffer), &hostent) != PR_SUCCESS )
+		return ThrowIoError(cx);
+
+	JSObject *hostJsObj;
+	hostJsObj = JS_NewArrayObject(cx, 0, NULL);
+	JL_CHK( hostJsObj );
+	*JL_FRVAL = OBJECT_TO_JSVAL(hostJsObj);
+
+	int index;
+	index = 0;
+
+	jsval tmp;
+
+	JL_CHK( StringToJsval(cx, hostent.h_name, &tmp) );
+	JL_CHK( JS_DefineElement(cx, hostJsObj, index++, tmp, NULL, NULL, JSPROP_ENUMERATE) );
+	
+	if ( hostent.h_aliases == NULL )
+		return JS_TRUE;
+
+	for ( int i = 0; hostent.h_aliases[i]; ++i ) {
+
+		JL_CHK( StringToJsval(cx, hostent.h_aliases[i], &tmp) );
+		JL_CHK( JS_DefineElement(cx, hostJsObj, index++, tmp, NULL, NULL, JSPROP_ENUMERATE) );
+	}
+
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
 
 /**doc
 $TOC_MEMBER SendTo
@@ -1075,6 +1144,7 @@ CONFIGURE_CLASS
 		FUNCTION( SendTo )
 		FUNCTION( RecvFrom )
 		FUNCTION( GetHostsByName )
+		FUNCTION_FAST_ARGC( GetHostsByAddr, 1 )
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_CONST_DOUBLE_SPEC

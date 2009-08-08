@@ -3,6 +3,23 @@ LoadModule('jsstd');
 LoadModule('jsio');
 LoadModule('jstask');
 
+function ReverseLookup( ip ) {
+
+	try {
+
+		return Socket.GetHostsByAddr(ip)[0];
+	} catch ( ex if ex instanceof IoError ) {
+
+		return undefined; // not found
+	}
+}
+
+Print( ReverseLookup('10.0.0.99') );
+
+
+
+
+Halt(); //////////////////////////////////////////////////////////////////////
 
 	var myTask = new Task(function() {
 		
