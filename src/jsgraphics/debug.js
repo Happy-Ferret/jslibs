@@ -17,7 +17,7 @@ GlSetAttribute( GL_ACCELERATED_VISUAL, 1 );
 GlSetAttribute( GL_MULTISAMPLEBUFFERS, 1 );
 GlSetAttribute( GL_MULTISAMPLESAMPLES, 1 );
 
-SetVideoMode( 320, 200, 32, OPENGL | RESIZABLE ); // | ASYNCBLIT // RESIZABLE FULLSCREEN
+SetVideoMode( 640, 480, 32, OPENGL | RESIZABLE ); // | ASYNCBLIT // RESIZABLE FULLSCREEN
 
 Print( Ogl.vendor, '\n' );
 Print( Ogl.renderer, '\n' );
@@ -205,7 +205,7 @@ function CreateCloudTextureLayer() {
 
 
 RandSeed(1235);
-var cloudLayerList = [ [ (RandReal()-0.5)*5, (RandReal()-0.5)*5, (RandReal()-0.5)*5, 5, CreateCloudTextureLayer() ] for (i in Count(5)) ];
+// var cloudLayerList = [ [ (RandReal()-0.5)*5, (RandReal()-0.5)*5, (RandReal()-0.5)*5, 5, CreateCloudTextureLayer() ] for (i in Count(5)) ];
 
 function Draw3DCloud() {
 	
@@ -423,42 +423,91 @@ var Scene2 = new function() {
 
 var Scene3 = new function() {
 	
-	var vertexList = [];
-	var colorList = [];
-	
-	var dx, dy, dz;
-	var x=1, y=0, z=0;
-	
-	for ( var t = 0; t < 1000; t += 0.01 ) {
-		
-    dx = 10 * (y - x)
-    dy = 28 * x - y - x * z
-    dz = x * y - 8 / 3 * y
+	function FractalCubeFace( px, py, pz,  x1, y1, z1,  x2, y2, z2 ) {
 
-		x = dx;
-		y = dy;
-		z = dz;
-			
-//		colorList.push( v, 1-v, 0.5, v/2 );
-		vertexList.push( x,y,z );
+		var face = new Texture(128,128,1).Set(0);
+		for ( var scale = 2; scale <= 64; scale *= 2 )
+			face.AddPerlin2([px*scale, py*scale, pz*scale], [x1*scale, y1*scale, z1*scale], [x2*scale, y2*scale, z2*scale], 1/scale);
+		face.Add(0.25);
+		face.Mult(1.5);
+		return face;
+	}	
+
+	function GenFaceTexture( px, py, pz,  x1, y1, z1,  x2, y2, z2 ) {
+
+		var tid = Ogl.GenTexture();
+		Ogl.BindTexture(Ogl.TEXTURE_2D, tid);
+		Ogl.TexParameter(Ogl.TEXTURE_2D, Ogl.TEXTURE_MIN_FILTER, Ogl.LINEAR);
+		Ogl.TexParameter(Ogl.TEXTURE_2D, Ogl.TEXTURE_MAG_FILTER, Ogl.LINEAR);
+		Ogl.TexParameter(Ogl.TEXTURE_2D, Ogl.TEXTURE_WRAP_S, Ogl.CLAMP );
+		Ogl.TexParameter(Ogl.TEXTURE_2D, Ogl.TEXTURE_WRAP_T, Ogl.CLAMP );
+		Ogl.DefineTextureImage(Ogl.TEXTURE_2D, Ogl.ALPHA, FractalCubeFace(px, py, pz,  x1, y1, z1,  x2, y2, z2));
+		return tid;
 	}
 	
-//	Print( vertexList );
+	var fractalCube = Ogl.NewList(true);
+	Ogl.BindTexture(Ogl.TEXTURE_2D, GenFaceTexture(-1,-1,1, 2,0,0, 0,2,0));
+	Ogl.Begin(Ogl.QUADS);
+	Ogl.TexCoord(0.0, 0.0); Ogl.Vertex(-1.0, -1.0,  1.0);
+	Ogl.TexCoord(1.0, 0.0); Ogl.Vertex( 1.0, -1.0,  1.0);
+	Ogl.TexCoord(1.0, 1.0); Ogl.Vertex( 1.0,  1.0,  1.0);
+	Ogl.TexCoord(0.0, 1.0); Ogl.Vertex(-1.0,  1.0,  1.0);
+	Ogl.End();
 
-	var tm = new Trimesh();
-	tm.DefineVertexBuffer(vertexList);
-//	tm.DefineColorBuffer(colorList);
-	var tmid = Ogl.LoadTrimesh(tm);
+	Ogl.BindTexture(Ogl.TEXTURE_2D, GenFaceTexture(-1,1,1, 2,0,0, 0,0,-2));
+	Ogl.Begin(Ogl.QUADS);
+	Ogl.TexCoord(0.0, 1.0); Ogl.Vertex(-1.0,  1.0, -1.0);
+	Ogl.TexCoord(0.0, 0.0); Ogl.Vertex(-1.0,  1.0,  1.0);
+	Ogl.TexCoord(1.0, 0.0); Ogl.Vertex( 1.0,  1.0,  1.0);
+	Ogl.TexCoord(1.0, 1.0); Ogl.Vertex( 1.0,  1.0, -1.0);
+	Ogl.End();
+
+	Ogl.BindTexture(Ogl.TEXTURE_2D, GenFaceTexture(-1,1,-1, 2,0,0, 0,-2,0));
+	Ogl.Begin(Ogl.QUADS);
+	Ogl.TexCoord(0.0, 1.0); Ogl.Vertex(-1.0, -1.0, -1.0);
+	Ogl.TexCoord(0.0, 0.0); Ogl.Vertex(-1.0,  1.0, -1.0);
+	Ogl.TexCoord(1.0, 0.0); Ogl.Vertex( 1.0,  1.0, -1.0);
+	Ogl.TexCoord(1.0, 1.0); Ogl.Vertex( 1.0, -1.0, -1.0);
+	Ogl.End();
+
+	Ogl.BindTexture(Ogl.TEXTURE_2D, GenFaceTexture(1,-1,1, -2,0,0, 0,0,-2));
+	Ogl.Begin(Ogl.QUADS);
+	Ogl.TexCoord(1.0, 1.0); Ogl.Vertex(-1.0, -1.0, -1.0);
+	Ogl.TexCoord(0.0, 1.0); Ogl.Vertex( 1.0, -1.0, -1.0);
+	Ogl.TexCoord(0.0, 0.0); Ogl.Vertex( 1.0, -1.0,  1.0);
+	Ogl.TexCoord(1.0, 0.0); Ogl.Vertex(-1.0, -1.0,  1.0);
+	Ogl.End();
+
+	Ogl.BindTexture(Ogl.TEXTURE_2D, GenFaceTexture(1,-1,1, 0,0,-2, 0,2,0));
+	Ogl.Begin(Ogl.QUADS);
+	Ogl.TexCoord(1.0, 0.0); Ogl.Vertex( 1.0, -1.0, -1.0);
+	Ogl.TexCoord(1.0, 1.0); Ogl.Vertex( 1.0,  1.0, -1.0);
+	Ogl.TexCoord(0.0, 1.0); Ogl.Vertex( 1.0,  1.0,  1.0);
+	Ogl.TexCoord(0.0, 0.0); Ogl.Vertex( 1.0, -1.0,  1.0);
+	Ogl.End();
 	
-	Ogl.PointSize(1);
+	Ogl.BindTexture(Ogl.TEXTURE_2D, GenFaceTexture(-1,-1,-1, 0,0,2, 0,2,0));
+	Ogl.Begin(Ogl.QUADS);
+	Ogl.TexCoord(0.0, 0.0); Ogl.Vertex(-1.0, -1.0, -1.0);
+	Ogl.TexCoord(1.0, 0.0); Ogl.Vertex(-1.0, -1.0,  1.0);
+	Ogl.TexCoord(1.0, 1.0); Ogl.Vertex(-1.0,  1.0,  1.0);
+	Ogl.TexCoord(0.0, 1.0); Ogl.Vertex(-1.0,  1.0, -1.0);
+	Ogl.End();
+
+
+	Ogl.EndList();
+
+	Ogl.Enable(Ogl.TEXTURE_2D);
+	Ogl.Enable(Ogl.BLEND);
+	Ogl.BlendFunc(Ogl.SRC_ALPHA, Ogl.ONE_MINUS_SRC_ALPHA);
+	Ogl.TexEnv(Ogl.TEXTURE_ENV, Ogl.TEXTURE_ENV_MODE, Ogl.MODULATE);
 	Ogl.Disable(Ogl.DEPTH_TEST);
 
 	do {
 		
-		Axis(1);
 		Ogl.Color(1);
-		Ogl.DrawTrimesh( tmid, Ogl.LINE_STRIP );
-	
+		Ogl.CallList(fractalCube);
+//		Axis(1);
 	} while ( !(yield) );
 
 }
