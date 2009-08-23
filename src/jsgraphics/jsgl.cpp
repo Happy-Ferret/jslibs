@@ -66,7 +66,6 @@ DECLARE_CLASS(Ogl)
 
 // http://www.opengl.org/registry/api/glext.h
 
-
 typedef void* (__cdecl *glGetProcAddress_t)(const char*);
 static glGetProcAddress_t glGetProcAddress = NULL;
 
@@ -78,7 +77,6 @@ static glGetProcAddress_t glGetProcAddress = NULL;
 	if ( name == NULL ) \
 		JL_REPORT_WARNING("OpenGL extension %s unavailable", #name );
 #define CHECK_OPENGL_EXTENSION( name ) JL_S_ASSERT( name != NULL, "OpenGL extension %s unavailable.", #name );
-
 
 DECLARE_OPENGL_EXTENSION( glPointParameteri, PFNGLPOINTPARAMETERIPROC );
 DECLARE_OPENGL_EXTENSION( glPointParameterf, PFNGLPOINTPARAMETERFPROC );
@@ -102,6 +100,7 @@ DECLARE_OPENGL_EXTENSION( glFramebufferTexture2DEXT, PFNGLFRAMEBUFFERTEXTURE2DEX
 DECLARE_OPENGL_EXTENSION( glFramebufferTexture3DEXT, PFNGLFRAMEBUFFERTEXTURE3DEXTPROC );
 DECLARE_OPENGL_EXTENSION( glFramebufferRenderbufferEXT, PFNGLFRAMEBUFFERRENDERBUFFEREXTPROC );
 DECLARE_OPENGL_EXTENSION( glGetFramebufferAttachmentParameterivEXT, PFNGLGETFRAMEBUFFERATTACHMENTPARAMETERIVEXTPROC );
+DECLARE_OPENGL_EXTENSION( glIsBufferARB, PFNGLISBUFFERARBPROC );
 DECLARE_OPENGL_EXTENSION( glGenBuffersARB, PFNGLGENBUFFERSARBPROC );
 DECLARE_OPENGL_EXTENSION( glBindBufferARB, PFNGLBINDBUFFERARBPROC );
 DECLARE_OPENGL_EXTENSION( glBufferDataARB, PFNGLBUFFERDATAARBPROC );
@@ -3331,20 +3330,10 @@ $TOC_MEMBER $INAME
    glMapBufferARB
 **/
 
-void TextureBufferFinalize(void* data) {
-
-	TextureBuffer *tb = (TextureBuffer*)data;
-
-//	glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, 0);
-}
-
-
-void TextureBufferAlloc(void* data, unsigned int size) {
-
-	TextureBuffer *tb = (TextureBuffer*)data;
+bool TextureBufferAlloc(TextureBuffer *tb, unsigned int size) {
 
 	if ( !glBufferDataARB || !glMapBufferARB || !glBindBufferARB )
-		return;
+		return false;
 
 	GLuint pbo = (GLuint)tb->pv;
 	
@@ -3362,17 +3351,29 @@ void TextureBufferAlloc(void* data, unsigned int size) {
 	// access specifies what to do with the mapped buffer; read data from the PBO (GL_READ_ONLY_ARB),
 	// write data to the PBO (GL_WRITE_ONLY_ARB), or both (GL_READ_WRITE_ARB). 
 	tb->data = (float*)glMapBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, GL_READ_WRITE);
+	return true;
 }
 
-
-void TextureBufferFree(void* data) {
+bool TextureBufferFree(TextureBuffer *tb) {
 
 	if ( !glUnmapBufferARB )
-		return;
-
-	TextureBuffer *tb = (TextureBuffer*)data;
+		return false;
+	
+	if ( tb->pv != NULL ) {
+		
+		GLuint pbo = (GLuint)tb->pv;
+		glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, pbo);
+		glUnmapBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB);
+		tb->pv = NULL;
+	}
+	return true;
 }
 
+void TextureBufferFinalize(void* data) {
+
+	TextureBuffer *tb = (TextureBuffer*)data;
+	TextureBufferFree(tb);
+}
 
 DEFINE_FUNCTION_FAST( CreateTextureBuffer ) {
 
@@ -3381,14 +3382,9 @@ DEFINE_FUNCTION_FAST( CreateTextureBuffer ) {
 
 	TextureBuffer *tb;
 	JL_CHK( CreateId(cx, 'TBUF', sizeof(TextureBuffer), (void**)&tb, TextureBufferFinalize, JL_FRVAL) );
-
 	GLuint pbo;
 	glGenBuffersARB(1, &pbo);
-
 	tb->pv = (void*)pbo;
-	
-
-
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -3835,13 +3831,10 @@ DEFINE_INIT() {
 	LOAD_OPENGL_EXTENSION( glGenBuffersARB, PFNGLGENBUFFERSARBPROC );
 	LOAD_OPENGL_EXTENSION( glBindBufferARB, PFNGLBINDBUFFERARBPROC );
 	LOAD_OPENGL_EXTENSION( glBufferDataARB, PFNGLBUFFERDATAARBPROC );
-	LOAD_OPENGL_EXTENSION( glBindBufferARB, PFNGLBINDBUFFERARBPROC );
 	LOAD_OPENGL_EXTENSION( glBufferDataARB, PFNGLBUFFERDATAARBPROC );
 	LOAD_OPENGL_EXTENSION( glMapBufferARB, PFNGLMAPBUFFERARBPROC );
-	LOAD_OPENGL_EXTENSION( glBindBufferARB, PFNGLBINDBUFFERARBPROC );
 	LOAD_OPENGL_EXTENSION( glUnmapBufferARB, PFNGLUNMAPBUFFERARBPROC );
-	LOAD_OPENGL_EXTENSION( glGenBuffersARB, PFNGLGENBUFFERSARBPROC );
-	LOAD_OPENGL_EXTENSION( glBindBufferARB, PFNGLBINDBUFFERARBPROC );
+	LOAD_OPENGL_EXTENSION( glIsBufferARB, PFNGLISBUFFERARBPROC );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -3861,6 +3854,22 @@ DEFINE_INIT() {
  [http://www.glprogramming.com/blue/ OpenGL API Documentation]
 **/
 
+#ifdef DEBUG
+DEFINE_FUNCTION_FAST( Test ) {
+
+	jsval id = JL_FARG(1);
+	JL_S_ASSERT( IsIdType(cx, id, 'TBUF'), "Invalid buffer." );
+	TextureBuffer *tb = (TextureBuffer*)GetIdPrivate(cx, id);
+
+	tb->TextureBufferAlloc(tb, sizeof(float) * 4 * 32 * 32);
+
+
+	return JS_TRUE;
+	JL_BAD;
+}
+#endif // DEBUG
+
+
 CONFIGURE_CLASS
 
 	REVISION(JL_SvnRevToInt("$Revision$"))
@@ -3873,6 +3882,11 @@ CONFIGURE_CLASS
 
 
 	BEGIN_STATIC_FUNCTION_SPEC
+
+#ifdef DEBUG
+		FUNCTION_FAST_ARGC(Test, 1)
+#endif // DEBUG
+
 
 		FUNCTION_FAST_ARGC(HasExtension, 1) // procName
 	

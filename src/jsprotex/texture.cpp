@@ -875,7 +875,7 @@ DEFINE_FUNCTION_FAST( Colorize ) {
 	JL_CHK( InitLevelData(cx, JL_FARG(2), channels, colorDst) );
 
 	double power;
-	if ( argc >= 3 )
+	if ( JL_FARG_ISDEF(3) )
 		JL_CHK( JsvalToDouble(cx, JL_FARG(3), &power) );
 	else
 		power = 1;
@@ -893,17 +893,18 @@ DEFINE_FUNCTION_FAST( Colorize ) {
 			ratio *= (PMAX - abs(tex->cbuffer[pos+c] - colorSrc[c])) / PMAX;
 
 		if ( power == 0 ) {
+
 			if ( ratio == 1 )
 				for ( c = 0; c < channels; c++ )
 					tex->cbuffer[pos+c] = colorDst[c];
 			continue;
 		}
 
-		if ( power != 1 )
-			ratio = powf(ratio, 1 / power);
+		if ( power != 1. )
+			ratio = powf(ratio, 1. / power);
 
 		for ( c = 0; c < channels; c++ )
-			tex->cbuffer[pos+c] = (tex->cbuffer[pos+c] * (1-ratio) + colorDst[c] * ratio);
+			tex->cbuffer[pos+c] = (tex->cbuffer[pos+c] * (1.-ratio) + colorDst[c] * ratio);
 	}
 	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
 	return JS_TRUE;
@@ -4215,27 +4216,57 @@ DEFINE_FUNCTION_FAST( ApplyColorMatrix ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $THIS $INAME( x, y, z, zoom, alpha )
+ $THIS $INAME( pos, dirX, dirY [ , alpha = 1 ] )
+  $H arguments
+   $ARG vec3 pos: position vector [x,y,z].
+   $ARG vec3 dirX: direction vector [x,y,z] for X axis.
+   $ARG vec3 dirY: direction vector [x,y,z] for Y axis.
+  $H example
+{{{
+texture.AddPerlin2([0,0,0], [1,0,0], [0,1,0]);
+}}}
 **/
 DEFINE_FUNCTION_FAST( AddPerlin2 ) {
 
 	Texture *tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE(tex);
 //	JL_S_ASSERT( tex->channels == 4, "Invalid channel count." );
-	JL_S_ASSERT_ARG(5);
+	JL_S_ASSERT_ARG_RANGE(3,4);
 
-	double ox, oy, oz, zoom, alpha;
-	JL_CHK( JsvalToDouble(cx, JL_FARG(1), &ox) );
-	JL_CHK( JsvalToDouble(cx, JL_FARG(2), &oy) );
-	JL_CHK( JsvalToDouble(cx, JL_FARG(3), &oz) );
-	JL_CHK( JsvalToDouble(cx, JL_FARG(4), &zoom) );
-	JL_CHK( JsvalToDouble(cx, JL_FARG(5), &alpha) );
+	double x,y,z, offset[3], dirX[3], dirY[3], alpha;
+
+	uint32 len;
+	JL_CHK( JsvalToDoubleVector(cx, JL_FARG(1), offset, 3, &len) );
+	JL_S_ASSERT( len == 3, "Invalid 3D vector." );
+
+	JL_CHK( JsvalToDoubleVector(cx, JL_FARG(2), dirX, 3, &len) );
+	JL_S_ASSERT( len == 3, "Invalid 3D vector." );
+
+	JL_CHK( JsvalToDoubleVector(cx, JL_FARG(3), dirY, 3, &len) );
+	JL_S_ASSERT( len == 3, "Invalid 3D vector." );
+
+	if ( JL_FARG_ISDEF(4) )
+		JL_CHK( JsvalToDouble(cx, JL_FARG(4), &alpha) );
+	else
+		alpha = 1;
+
+	dirX[0] /= tex->width;
+	dirX[1] /= tex->width;
+	dirX[2] /= tex->width;
+
+	dirY[0] /= tex->height;
+	dirY[1] /= tex->height;
+	dirY[2] /= tex->height;
 
 	unsigned int pos = 0;
-	for ( int y = 0; y < tex->height; ++y )
-		for ( int x = 0; x < tex->width; ++x ) {
-			
-			tex->cbuffer[pos] += PerlinNoise2( (ox+x)/zoom, (oy+y)/zoom, (oz)/zoom )*alpha;
+	for ( int ty = 0; ty < tex->height; ++ty )
+		for ( int tx = 0; tx < tex->width; ++tx ) {
+
+			x = offset[0] + dirX[0]*tx + dirY[0]*ty;
+			y = offset[1] + dirX[1]*tx + dirY[1]*ty;
+			z = offset[2] + dirX[2]*tx + dirY[2]*ty;
+
+			tex->cbuffer[pos] += PerlinNoise2(x, y, z)*alpha;
 			pos += tex->channels;
 		}
 
@@ -4243,7 +4274,6 @@ DEFINE_FUNCTION_FAST( AddPerlin2 ) {
 	return JS_TRUE;
 	JL_BAD;
 }
-
 
 
 

@@ -127,14 +127,30 @@ PerlinNoiseReinit();
 
 function UpdateTexture(imageIndex) { // <<<<<<<<<<<<<<<<<-----------------------------------
 
+	// live coding test
+//	live.Poll();
+//	live.Function(texture);
+
 
 	// perlin noise
-	texture.Set(0.5);
-	texture.AddPerlin2(z,0,0, 8, 2);
-	texture.SetChannel(1, texture, 0);
-	texture.SetChannel(2, texture, 0);
-	texture.Dilate(1, 1);
-	texture.NormalizeLevels();
+	texture.Set(0);
+	texture.AddPerlin2([z/20,0,0], [10,0,0], [0,10,0], 2);
+
+function FractalCubeFace(px, py, pz,  x1, y1, z1,  x2, y2, z2) {
+
+	var face = new Texture(128,128,1).Set(0);
+	for ( var scale = 2; scale <= 32; scale *= 2 )
+		face.AddPerlin2([px*scale, py*scale, pz*scale], [x1*scale, y1*scale, z1*scale], [x2*scale, y2*scale, z2*scale], 1/scale);
+	return face;
+}
+
+	var t1 = FractalCubeFace(z/10,0,0, -1,0,0, 0,-1,0);
+
+//	t1.Dilate(1,1);
+	t1.Add(0.25);
+	t1.Mult(1.5);
+	
+	texture = t1;
 
 	z += 1;
 return;
@@ -158,11 +174,6 @@ return;
 	
 	texture.Dilate(5);
 	texture.NormalizeLevels();
-return;
-
-	// live coding test
-	live.Poll();
-	live.Function(texture);
 return;
 
 
