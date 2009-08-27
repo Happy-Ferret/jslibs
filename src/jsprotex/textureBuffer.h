@@ -25,6 +25,6 @@ struct TextureBuffer {
 	void *pv;
 	unsigned int size;
 
-	TextureBufferAlloc_t *TextureBufferAlloc;
-	TextureBufferFree_t *TextureBufferFree;
+	TextureBufferAlloc_t TextureBufferAlloc;
+	TextureBufferFree_t TextureBufferFree;
 };

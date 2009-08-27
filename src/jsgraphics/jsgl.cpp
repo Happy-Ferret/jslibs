@@ -3375,6 +3375,9 @@ void TextureBufferFinalize(void* data) {
 	TextureBufferFree(tb);
 }
 
+// OpenGL Pixel Buffer Object: http://www.songho.ca/opengl/gl_pbo.html
+
+
 DEFINE_FUNCTION_FAST( CreateTextureBuffer ) {
 
 	CHECK_OPENGL_EXTENSION( glGenBuffersARB );
@@ -3861,7 +3864,13 @@ DEFINE_FUNCTION_FAST( Test ) {
 	JL_S_ASSERT( IsIdType(cx, id, 'TBUF'), "Invalid buffer." );
 	TextureBuffer *tb = (TextureBuffer*)GetIdPrivate(cx, id);
 
-	tb->TextureBufferAlloc(tb, sizeof(float) * 4 * 32 * 32);
+	tb->TextureBufferAlloc(tb, sizeof(float) * 3 * 32 * 32); // RGB 32x32
+	//tb->TextureBufferFree(tb);
+
+	for ( int i = 0; i < 3 * 32*32; i++ ) {
+		
+		tb->data[i] = 0.5;
+	}
 
 
 	return JS_TRUE;
