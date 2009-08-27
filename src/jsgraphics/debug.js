@@ -1,3 +1,5 @@
+// LoadModule('jsstd');  LoadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\n' ) } };  Exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
+
 LoadModule('jsstd');
 LoadModule('jsio');
 LoadModule('jsimage');
@@ -513,6 +515,26 @@ var Scene3 = new function() {
 }
 
 
+
+var Scene4 = new function() {
+
+	var tId = GenTexture();
+	Ogl.BindTexture(vTEXTURE_2D, tId);
+
+//	var tb = Ogl.CreateTextureBuffer();
+//	Ogl.Test(tb);
+
+	do {
+		
+		Ogl.Color(1);
+		Ogl.Rotate(90, 0,1,0);
+		Ogl.BindTexture(vTEXTURE_2D, tId);
+		Quad();
+	} while ( !(yield) );
+
+}
+
+
 /*
 function HWConvolution( width, height, matrix ) {
 	
@@ -673,7 +695,8 @@ for (var end = false; !end ;) {
 
 //	Scene1();
 //	Scene2.next();
-	Scene3.next();
+//	Scene3.next();
+	Scene4.next();
 
 
 /*
@@ -713,6 +736,21 @@ for (var end = false; !end ;) {
 	GlSwapBuffers();
 	Sleep(sleep);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

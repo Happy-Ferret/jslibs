@@ -1,7 +1,10 @@
+// LoadModule('jsstd');  LoadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\n' ) } };  Exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
+
 LoadModule('jsstd');
 LoadModule('jsio');
 LoadModule('jsaudio');
 LoadModule('jssound');
+
 
 
 //var dec = new SoundFileDecoder( new File('41_30secOgg-q0.wav').Open('r') );
