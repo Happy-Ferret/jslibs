@@ -322,64 +322,66 @@ DEFINE_FUNCTION( Beep ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $VOID $INAME( path )
-  Get a value of the system registry
+ $VOID $INAME( hkey, path [, valueName] )
+  Query a value or a list of valueName from the system registry.
+  $H example 1
+  {{{
+	RegistryGet('HKEY_CURRENT_USER', 'Software\\7-Zip'); // returns ["Path", "Lang"]
+  }}}
+  $H example 2
+  {{{
+   RegistryGet('HKEY_CURRENT_USER', 'Software\\7-Zip', 'path') // returns "C:\\Program Files\\7-Zip"
+  }}}
 **/
 DEFINE_FUNCTION_FAST( RegistryGet ) {
 
-	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_ARG_RANGE(2,3);
 	
-	const char *path;
-	JL_CHK( JsvalToString(cx, &JL_FARG(1), &path) );
+	const char *key, *path, *valueName;
+	JL_CHK( JsvalToString(cx, &JL_FARG(1), &key) );
 
-	HKEY rootKey;
-	if ( !strncmp(path, "HKCU", 4) ) {
-		//RegOpenCurrentUser(
-		rootKey = HKEY_CURRENT_USER;
-		path += 4;
+	HKEY rootHKey;
+	if ( !strncmp(key, "HKCU", 4) ) {
+		rootHKey = HKEY_CURRENT_USER;
+	} else
+	if ( !strncmp(key, "HKEY_CURRENT_USER", 17) ) {
+		rootHKey = HKEY_CURRENT_USER;
+	} else
+	if ( !strncmp(key, "HKLM", 4) ) {
+		rootHKey = HKEY_LOCAL_MACHINE;
+	} else
+	if ( !strncmp(key, "HKEY_LOCAL_MACHINE", 18) ) {
+		rootHKey = HKEY_LOCAL_MACHINE;
+	} else
+	if ( !strncmp(key, "HKCR", 4) ) {
+		rootHKey = HKEY_CLASSES_ROOT;
+	} else
+	if ( !strncmp(key, "HKEY_CLASSES_ROOT", 17) ) {
+		rootHKey = HKEY_CLASSES_ROOT;
+	} else
+	if ( !strncmp(key, "HKEY_CURRENT_CONFIG", 19) ) {
+		rootHKey = HKEY_CURRENT_CONFIG;
+	} else
+	if ( !strncmp(key, "HKU", 3) ) {
+		rootHKey = HKEY_USERS;
+	} else
+	if ( !strncmp(key, "HKEY_USERS", 10) ) {
+		rootHKey = HKEY_USERS;
 	}
-	else
-	if ( !strncmp(path, "HKEY_CURRENT_USER", 17) ) {
-		//RegOpenCurrentUser(
-		rootKey = HKEY_CURRENT_USER;
-		path += 17;
+	if ( !strncmp(key, "HKEY_DYN_DATA", 13) ) {
+		rootHKey = HKEY_USERS;
 	}
-	else
-	if ( !strncmp(path, "HKEY_LOCAL_MACHINE", 18) ) {
-		rootKey = HKEY_LOCAL_MACHINE;
-		path += 18;
-	}
-	else
-	if ( !strncmp(path, "HKEY_CLASSES_ROOT", 17) ) {
-		rootKey = HKEY_CLASSES_ROOT;
-		path += 17;
-	}
-	else
-	if ( !strncmp(path, "HKEY_CURRENT_CONFIG", 19) ) {
-		rootKey = HKEY_CURRENT_CONFIG;
-		path += 19;
-	}
-	else
-	if ( !strncmp(path, "HKEY_USERS", 10) ) {
-		rootKey = HKEY_USERS;
-		path += 10;
-	}
-	
-	JL_S_ASSERT( path[0] != '\0', "Invalid registry path." );
-	path++;
 
+	JL_CHK( JsvalToString(cx, &JL_FARG(2), &path) );
+
+	HKEY hKey;
 	LONG error;
-	DWORD type, size;
-
-	HKEY key;
-	error = RegOpenKeyEx(rootKey, path, 0, KEY_READ, &key);
+	error = RegOpenKeyEx(rootHKey, path, 0, KEY_READ, &hKey); // http://msdn.microsoft.com/en-us/library/ms724897%28VS.85%29.aspx
 	if ( error != ERROR_SUCCESS )
 		return WinThrowError(cx, error);
 
-	const char *valueName = strrchr(path, '\\');
+	if ( !JL_FARG_ISDEF(3) ) {
 
-	if ( valueName[1] == '\0' ) {
-		
 		JSObject *arrObj = JS_NewArrayObject(cx, 0, NULL);
 		JL_CHK( arrObj );
 		*JL_FRVAL = OBJECT_TO_JSVAL(arrObj);
@@ -391,7 +393,7 @@ DEFINE_FUNCTION_FAST( RegistryGet ) {
 
 			nameLength = sizeof(name);
 			// doc. http://msdn.microsoft.com/en-us/library/ms724865(VS.85).aspx
-			error = RegEnumValue(key, index, name, &nameLength, NULL, NULL, NULL, NULL);
+			error = RegEnumValue(hKey, index, name, &nameLength, NULL, NULL, NULL, NULL);
 			if ( error != ERROR_SUCCESS )
 				break;
 			jsval strName;
@@ -402,20 +404,24 @@ DEFINE_FUNCTION_FAST( RegistryGet ) {
 		if ( error != ERROR_NO_MORE_ITEMS )
 			return WinThrowError(cx, error);
 
-		RegCloseKey(key);
+		RegCloseKey(hKey);
 		return JS_TRUE;
 	}
 
+	JL_CHK( JsvalToString(cx, &JL_FARG(3), &valueName) );
+
+	DWORD type, size;
+
 	// doc. http://msdn.microsoft.com/en-us/library/ms724911(VS.85).aspx
-	error = RegQueryValueEx(key, valueName, NULL, &type, NULL, &size);
+	error = RegQueryValueEx(hKey, valueName, NULL, &type, NULL, &size);
 	if ( error != ERROR_SUCCESS ) {
 
-		RegCloseKey(key);
+		RegCloseKey(hKey);
 		return WinThrowError(cx, error);
 	}
 
-	void *buffer = JS_malloc(cx, size +1);
-	error = RegQueryValueEx(key, valueName, NULL, NULL, (LPBYTE)buffer, &size);
+	void *buffer = JS_malloc(cx, size);
+	error = RegQueryValueEx(hKey, valueName, NULL, NULL, (LPBYTE)buffer, &size);
 
 	// doc. http://msdn.microsoft.com/en-us/library/ms724884(VS.85).aspx
 	switch (type) {
@@ -427,11 +433,11 @@ DEFINE_FUNCTION_FAST( RegistryGet ) {
 			JL_CHK( JL_NewBlob(cx, buffer, size, JL_FRVAL) );
 			break;
 		case REG_DWORD:
-			JL_CHK( UIntToJsval(cx, (DWORD)buffer, JL_FRVAL) );
+			JL_CHK( UIntToJsval(cx, *(DWORD*)buffer, JL_FRVAL) );
 			JS_free(cx, buffer);
 			break;
 		case REG_QWORD:
-			JL_CHK( DoubleToJsval(cx, (double)(__int64)buffer, JL_FRVAL) );
+			JL_CHK( DoubleToJsval(cx, (double)*(DWORD64*)buffer, JL_FRVAL) );
 			break;
 		case REG_LINK: {
 			JSString *jsstr = JS_NewUCString(cx, (jschar*)buffer, size/2);
@@ -442,14 +448,14 @@ DEFINE_FUNCTION_FAST( RegistryGet ) {
 		case REG_EXPAND_SZ:
 		case REG_MULTI_SZ:
 		case REG_SZ: {
-			JSString *jsstr = JS_NewString(cx, (char*)buffer, size);
+			JSString *jsstr = JS_NewString(cx, (char*)buffer, size-1); // note: ((char*)buffer)[size] already == '\0'
 			JL_CHK( jsstr );
 			*JL_FRVAL = STRING_TO_JSVAL(jsstr);
 			break;
 		}
 	}
 
-	RegCloseKey(key);
+	RegCloseKey(hKey);
 
 	return JS_TRUE;
 	JL_BAD;

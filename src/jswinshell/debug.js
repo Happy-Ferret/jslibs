@@ -5,9 +5,10 @@ LoadModule('jsimage');
 
 LoadModule('jswinshell');
 
+
 try {
 
-	Print( uneval( RegistryGet('HKEY_CURRENT_USER\\Software\\7-Zip\\') ) );
+	Print( uneval( RegistryGet('HKEY_CURRENT_USER', 'Software\\7-Zip', 'path') ) );
 
 } catch(ex) {
 
