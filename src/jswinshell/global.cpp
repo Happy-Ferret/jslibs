@@ -341,35 +341,23 @@ DEFINE_FUNCTION_FAST( RegistryGet ) {
 	JL_CHK( JsvalToString(cx, &JL_FARG(1), &key) );
 
 	HKEY rootHKey;
-	if ( !strncmp(key, "HKCU", 4) ) {
+	if ( !strncmp(key, "HKEY_CURRENT_USER", 17) || !strncmp(key, "HKCU", 4) ) {
 		rootHKey = HKEY_CURRENT_USER;
 	} else
-	if ( !strncmp(key, "HKEY_CURRENT_USER", 17) ) {
-		rootHKey = HKEY_CURRENT_USER;
-	} else
-	if ( !strncmp(key, "HKLM", 4) ) {
+	if ( !strncmp(key, "HKEY_LOCAL_MACHINE", 18) || !strncmp(key, "HKLM", 4) ) {
 		rootHKey = HKEY_LOCAL_MACHINE;
 	} else
-	if ( !strncmp(key, "HKEY_LOCAL_MACHINE", 18) ) {
-		rootHKey = HKEY_LOCAL_MACHINE;
-	} else
-	if ( !strncmp(key, "HKCR", 4) ) {
+	if ( !strncmp(key, "HKEY_CLASSES_ROOT", 17) || !strncmp(key, "HKCR", 4) ) {
 		rootHKey = HKEY_CLASSES_ROOT;
 	} else
-	if ( !strncmp(key, "HKEY_CLASSES_ROOT", 17) ) {
-		rootHKey = HKEY_CLASSES_ROOT;
-	} else
-	if ( !strncmp(key, "HKEY_CURRENT_CONFIG", 19) ) {
+	if ( !strncmp(key, "HKEY_CURRENT_CONFIG", 19) || !strncmp(key, "HKCC", 4) ) {
 		rootHKey = HKEY_CURRENT_CONFIG;
 	} else
-	if ( !strncmp(key, "HKU", 3) ) {
+	if ( !strncmp(key, "HKEY_USERS", 10) || !strncmp(key, "HKU", 3) ) {
 		rootHKey = HKEY_USERS;
 	} else
-	if ( !strncmp(key, "HKEY_USERS", 10) ) {
-		rootHKey = HKEY_USERS;
-	}
-	if ( !strncmp(key, "HKEY_DYN_DATA", 13) ) {
-		rootHKey = HKEY_USERS;
+	if ( !strncmp(key, "HKEY_DYN_DATA", 13) || !strncmp(key, "HKDD", 4) ) {
+		rootHKey = HKEY_DYN_DATA;
 	}
 
 	JL_CHK( JsvalToString(cx, &JL_FARG(2), &path) );
