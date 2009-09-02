@@ -2,13 +2,12 @@
 
 LoadModule('jsstd');
 LoadModule('jsimage');
-
 LoadModule('jswinshell');
 
-
 try {
-
-	Print( uneval( RegistryGet('HKEY_CURRENT_USER', 'Software\\7-Zip', 'path') ) );
+	
+//	var defaultBrowser = RegistryGet('HKEY_LOCAL_MACHINE\\Software\\Clients\\StartMenuInternet\\'+RegistryGet('HKEY_LOCAL_MACHINE\\Software\\Clients\\StartMenuInternet', '')+'\\shell\\open\\command', '' );
+	Print( uneval( RegistryGet('HKEY_CURRENT_USER\\Software\\7-Zip'), '\n' ) );
 
 } catch(ex) {
 

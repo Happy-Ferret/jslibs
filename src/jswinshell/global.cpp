@@ -322,45 +322,90 @@ DEFINE_FUNCTION( Beep ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $VOID $INAME( hkey, path [, valueName] )
+ $VOID $INAME( path [, valueName] )
   Query a value or a list of valueName from the system registry.
+  $BR
+  If valueName is ommited, the returned value is the list of sub-keys.
+  $BR
+  If valueName is given but $UNDEF, the returned value is the list of values.
   $H example 1
   {{{
-	RegistryGet('HKEY_CURRENT_USER', 'Software\\7-Zip'); // returns ["Path", "Lang"]
+	RegistryGet('HKEY_CURRENT_USER\\Software\\7-Zip'); // returns ["FM"]
+	RegistryGet('HKEY_CURRENT_USER\\Software\\7-Zip', undefined); // returns ["Path", "Lang"]
+   RegistryGet('HKEY_CURRENT_USER\\Software\\7-Zip', 'path') // returns "C:\\Program Files\\7-Zip"
   }}}
   $H example 2
   {{{
-   RegistryGet('HKEY_CURRENT_USER', 'Software\\7-Zip', 'path') // returns "C:\\Program Files\\7-Zip"
+  var defaultBrowser = RegistryGet('HKEY_LOCAL_MACHINE\\Software\\Clients\\StartMenuInternet\\'+RegistryGet('HKEY_LOCAL_MACHINE\\Software\\Clients\\StartMenuInternet', '')+'\\shell\\open\\command', '');
   }}}
 **/
 DEFINE_FUNCTION_FAST( RegistryGet ) {
 
-	JL_S_ASSERT_ARG_RANGE(2,3);
+	JL_S_ASSERT_ARG_RANGE(1,2);
 	
-	const char *key, *path, *valueName;
-	JL_CHK( JsvalToString(cx, &JL_FARG(1), &key) );
+	const char *path, *valueName;
+	JL_CHK( JsvalToString(cx, &JL_FARG(1), &path) );
 
 	HKEY rootHKey;
-	if ( !strncmp(key, "HKEY_CURRENT_USER", 17) || !strncmp(key, "HKCU", 4) ) {
+	if ( !strncmp(path, "HKEY_CURRENT_USER", 17) ) {
 		rootHKey = HKEY_CURRENT_USER;
+		path += 17;
 	} else
-	if ( !strncmp(key, "HKEY_LOCAL_MACHINE", 18) || !strncmp(key, "HKLM", 4) ) {
+	if ( !strncmp(path, "HKCU", 4) ) {
+		rootHKey = HKEY_CURRENT_USER;
+		path += 4;
+	} else
+	if ( !strncmp(path, "HKEY_LOCAL_MACHINE", 18) ) {
 		rootHKey = HKEY_LOCAL_MACHINE;
+		path += 18;
 	} else
-	if ( !strncmp(key, "HKEY_CLASSES_ROOT", 17) || !strncmp(key, "HKCR", 4) ) {
+	if ( !strncmp(path, "HKLM", 4) ) {
+		rootHKey = HKEY_LOCAL_MACHINE;
+		path += 4;
+	} else
+	if ( !strncmp(path, "HKEY_CLASSES_ROOT", 17) ) {
 		rootHKey = HKEY_CLASSES_ROOT;
+		path += 17;
 	} else
-	if ( !strncmp(key, "HKEY_CURRENT_CONFIG", 19) || !strncmp(key, "HKCC", 4) ) {
+	if ( !strncmp(path, "HKCR", 4) ) {
+		rootHKey = HKEY_CLASSES_ROOT;
+		path += 4;
+	} else
+	if ( !strncmp(path, "HKEY_CURRENT_CONFIG", 19) ) {
 		rootHKey = HKEY_CURRENT_CONFIG;
+		path += 19;
 	} else
-	if ( !strncmp(key, "HKEY_USERS", 10) || !strncmp(key, "HKU", 3) ) {
+	if ( !strncmp(path, "HKCC", 4) ) {
+		rootHKey = HKEY_CURRENT_CONFIG;
+		path += 4;
+	} else
+	if ( !strncmp(path, "HKEY_USERS", 10) ) {
 		rootHKey = HKEY_USERS;
+		path += 10;
 	} else
-	if ( !strncmp(key, "HKEY_DYN_DATA", 13) || !strncmp(key, "HKDD", 4) ) {
+	if ( !strncmp(path, "HKU", 3) ) {
+		rootHKey = HKEY_USERS;
+		path += 3;
+	} else
+	if ( !strncmp(path, "HKEY_PERFORMANCE_DATA", 21) ) {
+		rootHKey = HKEY_PERFORMANCE_DATA;
+		path += 21;
+	} else
+	if ( !strncmp(path, "HKPD", 4) ) {
+		rootHKey = HKEY_PERFORMANCE_DATA;
+		path += 4;
+	} else
+	if ( !strncmp(path, "HKEY_DYN_DATA", 13) ) {
 		rootHKey = HKEY_DYN_DATA;
+		path += 13;
+	} else
+	if ( !strncmp(path, "HKDD", 4) ) {
+		rootHKey = HKEY_DYN_DATA;
+		path += 4;
 	}
 
-	JL_CHK( JsvalToString(cx, &JL_FARG(2), &path) );
+	if ( path[0] == '\\' )
+		path++;
 
 	HKEY hKey;
 	LONG error;
@@ -368,20 +413,23 @@ DEFINE_FUNCTION_FAST( RegistryGet ) {
 	if ( error != ERROR_SUCCESS )
 		return WinThrowError(cx, error);
 
-	if ( !JL_FARG_ISDEF(3) ) {
+	if ( (argc == 1) || (argc >= 2 && JL_FARG(2) == JSVAL_VOID) ) {
 
 		JSObject *arrObj = JS_NewArrayObject(cx, 0, NULL);
 		JL_CHK( arrObj );
 		*JL_FRVAL = OBJECT_TO_JSVAL(arrObj);
 
-		char name[1024];
-		DWORD nameLength;
-		DWORD index = 0;
+		char name[16384]; // http://msdn.microsoft.com/en-us/library/ms724872%28VS.85%29.aspx
+		DWORD nameLength, index;
+		index = 0;
 		for (;;) {
 
 			nameLength = sizeof(name);
-			// doc. http://msdn.microsoft.com/en-us/library/ms724865(VS.85).aspx
-			error = RegEnumValue(hKey, index, name, &nameLength, NULL, NULL, NULL, NULL);
+			if ( argc == 1 ) // enum keys
+				error = RegEnumKeyEx(hKey, index, name, &nameLength, NULL, NULL, NULL, NULL);
+			else
+				error = RegEnumValue(hKey, index, name, &nameLength, NULL, NULL, NULL, NULL); // doc. http://msdn.microsoft.com/en-us/library/ms724865(VS.85).aspx
+
 			if ( error != ERROR_SUCCESS )
 				break;
 			jsval strName;
@@ -396,7 +444,7 @@ DEFINE_FUNCTION_FAST( RegistryGet ) {
 		return JS_TRUE;
 	}
 
-	JL_CHK( JsvalToString(cx, &JL_FARG(3), &valueName) );
+	JL_CHK( JsvalToString(cx, &JL_FARG(2), &valueName) );
 
 	DWORD type, size;
 
