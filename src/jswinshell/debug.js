@@ -6,8 +6,11 @@ LoadModule('jswinshell');
 
 try {
 	
-//	var defaultBrowser = RegistryGet('HKEY_LOCAL_MACHINE\\Software\\Clients\\StartMenuInternet\\'+RegistryGet('HKEY_LOCAL_MACHINE\\Software\\Clients\\StartMenuInternet', '')+'\\shell\\open\\command', '' );
-	Print( uneval( RegistryGet('HKEY_CURRENT_USER\\Software\\7-Zip'), '\n' ) );
+	var path = 'HKEY_LOCAL_MACHINE\\Software\\Clients\\StartMenuInternet';
+	var defaultBrowser = RegistryGet(path+'\\'+RegistryGet(path, '')+'\\shell\\open\\command', '' );
+	CreateProcess(undefined, defaultBrowser + ' http://jslibs.googlecode.com/');
+	
+//	Print( uneval( RegistryGet('HKEY_CURRENT_USER\\Software\\7-Zip'), '\n' ) );
 
 } catch(ex) {
 

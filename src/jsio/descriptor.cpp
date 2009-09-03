@@ -265,7 +265,7 @@ DEFINE_FUNCTION_FAST( Read ) {
 
 	if (likely( JL_ARGC == 0 )) {
 
-		PRInt32 available = PR_Available( fd );
+		PRInt32 available = PR_Available( fd ); // (TBD) use PRInt64 available = PR_Available64(fd);
 		if (likely( available != -1 )) // we can use the 'available' information
 			JL_CHK( ReadToJsval(cx, fd, available, JL_FRVAL) ); // may block !
 		else // 'available' is not usable with this fd type, then we use a buffered read (ie. read while there is someting to read)

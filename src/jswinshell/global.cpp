@@ -160,23 +160,34 @@ DEFINE_FUNCTION( CreateProcess ) {
 
 	JL_S_ASSERT_ARG_MIN(1);
 
-	const char *applicationName, *commandLine = NULL, *environment = NULL, *currentDirectory = NULL;
+	const char *applicationName, *commandLine, *environment, *currentDirectory;
 
-	JL_CHK( JsvalToString(cx, &argv[0], &applicationName) ); // warning: GC on the returned buffer !
+	if ( JL_ARG_ISDEF(1) )
+		JL_CHK( JsvalToString(cx, &argv[0], &applicationName) ); // warning: GC on the returned buffer !
+	else
+		applicationName = NULL;
 
-	if ( argc >= 2 && !JSVAL_IS_VOID( argv[1] ) )
+	if ( JL_ARG_ISDEF(2) )
 		JL_CHK( JsvalToString(cx, &argv[1], &commandLine) ); // warning: GC on the returned buffer !
+	else
+		commandLine = NULL;
 
-	if ( argc >= 3 && !JSVAL_IS_VOID( argv[2] ) )
+	if ( JL_ARG_ISDEF(3) )
 		JL_CHK( JsvalToString(cx, &argv[2], &environment) ); // warning: GC on the returned buffer !
+	else
+		environment = NULL;
 
-	if ( argc >= 4 && !JSVAL_IS_VOID( argv[3] ) )
+	if ( JL_ARG_ISDEF(4) )
 		JL_CHK( JsvalToString(cx, &argv[3], &currentDirectory) ); // warning: GC on the returned buffer !
+	else
+		currentDirectory = NULL;
 
 	STARTUPINFO si;
 	ZeroMemory(&si, sizeof(STARTUPINFO));
 	si.cb = sizeof(STARTUPINFO);
 
+
+	// doc. commandLine parameter: The Unicode version of CreateProcess function, CreateProcessW, can modify the contents of this string !
 	PROCESS_INFORMATION pi;
 	BOOL st = CreateProcess( applicationName, (LPSTR)commandLine, NULL, NULL, FALSE, 0, (LPVOID)environment, currentDirectory, &si, &pi ); // doc: http://msdn2.microsoft.com/en-us/library/ms682425.aspx
 	if ( st == FALSE )
@@ -330,13 +341,15 @@ $TOC_MEMBER $INAME
   If valueName is given but $UNDEF, the returned value is the list of values.
   $H example 1
   {{{
-	RegistryGet('HKEY_CURRENT_USER\\Software\\7-Zip'); // returns ["FM"]
-	RegistryGet('HKEY_CURRENT_USER\\Software\\7-Zip', undefined); // returns ["Path", "Lang"]
-   RegistryGet('HKEY_CURRENT_USER\\Software\\7-Zip', 'path') // returns "C:\\Program Files\\7-Zip"
+  RegistryGet('HKEY_CURRENT_USER\\Software\\7-Zip'); // returns ["FM"]
+  RegistryGet('HKEY_CURRENT_USER\\Software\\7-Zip', undefined); // returns ["Path", "Lang"]
+  RegistryGet('HKEY_CURRENT_USER\\Software\\7-Zip', 'path') // returns "C:\\Program Files\\7-Zip"
   }}}
   $H example 2
   {{{
-  var defaultBrowser = RegistryGet('HKEY_LOCAL_MACHINE\\Software\\Clients\\StartMenuInternet\\'+RegistryGet('HKEY_LOCAL_MACHINE\\Software\\Clients\\StartMenuInternet', '')+'\\shell\\open\\command', '');
+  var path = 'HKEY_LOCAL_MACHINE\\Software\\Clients\\StartMenuInternet';
+  var defaultBrowser = RegistryGet(path+'\\'+RegistryGet(path, '')+'\\shell\\open\\command', '');
+  CreateProcess(undefined, defaultBrowser + ' http://jslibs.googlecode.com/');
   }}}
 **/
 DEFINE_FUNCTION_FAST( RegistryGet ) {
