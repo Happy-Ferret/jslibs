@@ -37,10 +37,9 @@ DEFINE_CONSTRUCTOR() {
 	JL_S_ASSERT_CONSTRUCTING();
 	JL_S_ASSERT_THIS_CLASS();
 
-	JL_S_ASSERT_ARG(1);
+	JL_S_ASSERT_ARG_RANGE(1,4);
 
-	int deviceId = -1;
-
+	int deviceId;
 	int numDevices = vi.listDevices(true);
 
 	if ( !JSVAL_IS_STRING(JL_ARG(1)) ) {
@@ -52,7 +51,8 @@ DEFINE_CONSTRUCTOR() {
 	
 		const char *requiredDeviceName;
 		JL_CHK( JsvalToString(cx, &JL_ARG(1), &requiredDeviceName) );
-		for ( int i=0; i < numDevices; i++ ) {
+		deviceId = -1;
+		for ( int i = 0; i < numDevices; i++ ) {
 
 			if ( strstr(vi.getDeviceName(i), requiredDeviceName) != NULL ) {
 				
@@ -66,8 +66,25 @@ DEFINE_CONSTRUCTOR() {
 
 	JL_CHK( JS_SetReservedSlot(cx, obj, 0, INT_TO_JSVAL(deviceId)) );
 	
-	vi.setIdealFramerate(deviceId, 60);
-	vi.setupDevice(deviceId);
+	if ( JL_ARG_ISDEF(4) ) {
+
+		int fps;
+		JL_CHK( JsvalToInt(cx, JL_ARG(4), &fps) );
+		vi.setIdealFramerate(deviceId, fps);
+	}
+
+	if ( JL_ARG_ISDEF(2) && JL_ARG_ISDEF(3) ) {
+		
+		int width, height;
+		JL_CHK( JsvalToInt(cx, JL_ARG(2), &width) );
+		JL_CHK( JsvalToInt(cx, JL_ARG(3), &height) );
+		vi.setupDevice(deviceId, width, height);
+	} else {
+	
+		vi.setupDevice(deviceId);
+	}
+
+//	vi.setVideoSettingCameraPct(deviceId, vi.propBrightness, 100);
 //	vi.setFormat(deviceId, VI_NTSC_M);
 
 	return JS_TRUE;
@@ -95,10 +112,13 @@ DEFINE_FUNCTION_FAST( GetImage ) {
 	unsigned char *data = (unsigned char *)JS_malloc(cx, dataSize);
 	JL_CHK( data );
 
-//	while ( !vi.isFrameNew(deviceId) )
-//		Sleep(10);
+	bool flipImage;
+	if ( JL_FARG_ISDEF(1) )
+		JL_CHK( JsvalToBool(cx, JL_FARG(1), &flipImage) );
+	else
+		flipImage = true;
 
-	bool status = vi.getPixels(deviceId, data, true, true);
+	bool status = vi.getPixels(deviceId, data, true, flipImage);
 	
 	if ( !status ) {
 
@@ -114,10 +134,53 @@ DEFINE_FUNCTION_FAST( GetImage ) {
 	JL_S_ASSERT( blobObj, "Unable to create Blob object." );
 	*JL_FRVAL = OBJECT_TO_JSVAL(blobObj);
 
-	JS_DefineProperty(cx, blobObj, "channels", INT_TO_JSVAL(3), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
+	JS_DefineProperty(cx, blobObj, "channels", INT_TO_JSVAL(dataSize / (width * height)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
 	JS_DefineProperty(cx, blobObj, "width", INT_TO_JSVAL(width), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
 	JS_DefineProperty(cx, blobObj, "height", INT_TO_JSVAL(height), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
 
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $OBJ $INAME $READONLY
+**/
+DEFINE_PROPERTY( hasNewFrame ) {
+
+	jsval deviceIdVal;
+	JL_CHK( JS_GetReservedSlot(cx, obj, 0, &deviceIdVal) );
+	int deviceId = JSVAL_TO_INT(deviceIdVal);
+	JL_CHK( BoolToJsval(cx, vi.isFrameNew(deviceId), vp) ); 
+	return JS_TRUE;
+	JL_BAD;
+}
+
+/**doc
+$TOC_MEMBER $INAME
+ $OBJ $INAME $READONLY
+**/
+DEFINE_PROPERTY( width ) {
+
+	jsval deviceIdVal;
+	JL_CHK( JS_GetReservedSlot(cx, obj, 0, &deviceIdVal) );
+	int deviceId = JSVAL_TO_INT(deviceIdVal);
+	JL_CHK( IntToJsval(cx, vi.getWidth(deviceId), vp) ); 
+	return JS_TRUE;
+	JL_BAD;
+}
+
+/**doc
+$TOC_MEMBER $INAME
+ $OBJ $INAME $READONLY
+**/
+DEFINE_PROPERTY( height ) {
+
+	jsval deviceIdVal;
+	JL_CHK( JS_GetReservedSlot(cx, obj, 0, &deviceIdVal) );
+	int deviceId = JSVAL_TO_INT(deviceIdVal);
+	JL_CHK( IntToJsval(cx, vi.getHeight(deviceId), vp) ); 
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -151,34 +214,18 @@ DEFINE_PROPERTY( list ) {
 	JL_BAD;
 }
 
+/**doc
+$TOC_MEMBER $INAME
+ $INAME $READONLY
+  Hold the current version of NSPR.
+**/
+DEFINE_PROPERTY( version ) {
 
-
-//DEFINE_XDR() {
-//
-//	if ( xdr->mode == JSXDR_ENCODE ) {
-//
-//		jsval tmp;
-//		JL_CHK( JS_GetReservedSlot(xdr->cx, *objp, 0, &tmp) );
-//		JS_XDRValue(xdr, &tmp);
-//		return JS_TRUE;
-//	}
-//
-//	if ( xdr->mode == JSXDR_DECODE ) {
-//
-//		*objp = JS_NewObject(xdr->cx, _class, NULL, NULL);
-//		jsval tmp;
-//		JS_XDRValue(xdr, &tmp);
-//		JL_CHK( JS_SetReservedSlot(xdr->cx, *objp, 0, tmp) );
-//		return JS_TRUE;
-//	}
-//
-//	if ( xdr->mode == JSXDR_FREE ) {
-//
-//		return JS_TRUE;
-//	}
-//
-//	JL_BAD;
-//}
+	#define VIVERSIONTOSTRING(s) #s
+	*vp = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, VIVERSIONTOSTRING(VI_VERSION)));
+	#undef VIVERSIONTOSTRING
+	return JS_TRUE;
+}
 
 
 CONFIGURE_CLASS // This section containt the declaration and the configuration of the class
@@ -196,9 +243,13 @@ CONFIGURE_CLASS // This section containt the declaration and the configuration o
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
+		PROPERTY_READ(hasNewFrame)
+		PROPERTY_READ(width)
+		PROPERTY_READ(height)
 	END_PROPERTY_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC
+		PROPERTY_READ(version)
 		PROPERTY_READ(list)
 	END_STATIC_PROPERTY_SPEC
 

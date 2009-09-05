@@ -8,13 +8,8 @@ LoadModule('jsvideoinput');
 
 Print( uneval(VideoInput.list) );
 
-var vi = new VideoInput('QuickCam');
-
-vi.GetImage();
-vi.GetImage();
-
+var vi = new VideoInput('QuickCam', 1,1, 25);
 var img = vi.GetImage();
-
 new File('myImage.png').content = EncodePngImage(img);
 
 
