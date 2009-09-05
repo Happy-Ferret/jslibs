@@ -1141,7 +1141,7 @@ DEFINE_FUNCTION_FAST( SandboxEval ) {
 
 	scx = JS_NewContext(JS_GetRuntime(cx), 8192L); // see host/host.cpp
 	JL_CHK( scx );
-	JS_SetOptions(scx, JS_GetOptions(cx) | JSOPTION_DONT_REPORT_UNCAUGHT | JSOPTION_COMPILE_N_GO | JSOPTION_RELIMIT); // new options are based on host's options.
+	JS_SetOptions(scx, JS_GetOptions(cx) | JSOPTION_JIT | JSOPTION_DONT_REPORT_UNCAUGHT | JSOPTION_COMPILE_N_GO | JSOPTION_RELIMIT); // new options are based on host's options. cf. moz bz#490616
 
 	JSObject *globalObject;
 	globalObject = JS_NewObject(scx, classSandbox, NULL, NULL);
@@ -1394,10 +1394,9 @@ JSBool testProp(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 }
 
 
-DEFINE_FUNCTION( Test ) {
+DEFINE_FUNCTION_FAST( Test ) {
 
 	return JS_TRUE;
-	JL_BAD;
 }
 
 #endif // _DEBUG
@@ -1441,7 +1440,7 @@ CONFIGURE_STATIC
 		FUNCTION_FAST( Halt )
 //		FUNCTION( StrSet )
 #ifdef _DEBUG
-		FUNCTION( Test )
+		FUNCTION_FAST( Test )
 #endif // _DEBUG
 	END_STATIC_FUNCTION_SPEC
 

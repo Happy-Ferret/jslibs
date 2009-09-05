@@ -2,16 +2,18 @@ LoadModule('jsstd');
 LoadModule('jsio');
 LoadModule('jsdebug');
 
-//	gcZeal = 2;
-
-
-		var ids = '';
-		var i = 0;
-		var res = Expand('ab$(c)$(d)e$(f)g$(h)ij', function(id) { ids+=id; return i++ } );
-		Print( (res +'-'+ ids), ' == ', 'ab01e2g3ij-cdfh', '\n' );
 
 
 
+Print( SandboxEval('for (var i=0; i<100; ++i);i') );
+
+Halt(); //////////////////////////////
+
+
+var ids = '';
+var i = 0;
+var res = Expand('ab$(c)$(d)e$(f)g$(h)ij', function(id) { ids+=id; return i++ } );
+Print( (res +'-'+ ids), ' == ', 'ab01e2g3ij-cdfh', '\n' );
 Halt(); //////////////////////////////
 
 
