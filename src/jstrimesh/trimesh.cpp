@@ -62,7 +62,8 @@ DEFINE_CONSTRUCTOR() {
 	JL_S_ASSERT_CONSTRUCTING();
 	JL_S_ASSERT_THIS_CLASS();
 
-	Surface *pv = (Surface*)JS_malloc(cx, sizeof(Surface));
+	Surface *pv;
+	pv = (Surface*)JS_malloc(cx, sizeof(Surface));
 	JL_CHK( pv );
 
 	memset(pv, 0, sizeof(Surface));
@@ -172,10 +173,12 @@ DEFINE_FUNCTION_FAST( DefineVertexBuffer ) {
 
 	JL_S_ASSERT_ARG_MIN( 1 );
 	JL_S_ASSERT_ARRAY( JL_FARG(1) );
-	Surface *pv = (Surface*)JL_GetPrivate(cx, JL_FOBJ);
+	Surface *pv;
+	pv  = (Surface*)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE(pv);
 
-	JSObject *arrayObj = JSVAL_TO_OBJECT(JL_FARG(1));
+	JSObject *arrayObj;
+	arrayObj = JSVAL_TO_OBJECT(JL_FARG(1));
 	jsuint count;
 	JL_CHK( JS_GetArrayLength(cx, arrayObj, &count) );
 
@@ -205,10 +208,12 @@ DEFINE_FUNCTION_FAST( DefineNormalBuffer ) {
 
 	JL_S_ASSERT_ARG_MIN( 1 );
 	JL_S_ASSERT_ARRAY( JL_FARG(1) );
-	Surface *pv = (Surface*)JL_GetPrivate(cx, JL_FOBJ);
+	Surface *pv;
+	pv  = (Surface*)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE(pv);
 
-	JSObject *arrayObj = JSVAL_TO_OBJECT(JL_FARG(1));
+	JSObject *arrayObj;
+	arrayObj = JSVAL_TO_OBJECT(JL_FARG(1));
 	jsuint count;
 	JL_CHK( JS_GetArrayLength(cx, arrayObj, &count) );
 
@@ -235,10 +240,12 @@ DEFINE_FUNCTION_FAST( DefineTextureCoordinateBuffer ) {
 
 	JL_S_ASSERT_ARG_MIN( 1 );
 	JL_S_ASSERT_ARRAY( JL_FARG(1) );
-	Surface *pv = (Surface*)JL_GetPrivate(cx, JL_FOBJ);
+	Surface *pv;
+	pv = (Surface*)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE(pv);
 
-	JSObject *arrayObj = JSVAL_TO_OBJECT(JL_FARG(1));
+	JSObject *arrayObj;
+	arrayObj = JSVAL_TO_OBJECT(JL_FARG(1));
 	jsuint count;
 	JL_CHK( JS_GetArrayLength(cx, arrayObj, &count) );
 
@@ -265,10 +272,12 @@ DEFINE_FUNCTION_FAST( DefineColorBuffer ) {
 
 	JL_S_ASSERT_ARG_MIN( 1 );
 	JL_S_ASSERT_ARRAY( JL_FARG(1) );
-	Surface *pv = (Surface*)JL_GetPrivate(cx, JL_FOBJ);
+	Surface *pv;
+	pv = (Surface*)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE(pv);
 
-	JSObject *arrayObj = JSVAL_TO_OBJECT(JL_FARG(1));
+	JSObject *arrayObj;
+	arrayObj = JSVAL_TO_OBJECT(JL_FARG(1));
 	jsuint count;
 	JL_CHK( JS_GetArrayLength(cx, arrayObj, &count) );
 
@@ -295,10 +304,12 @@ DEFINE_FUNCTION_FAST( DefineIndexBuffer ) {
 
 	JL_S_ASSERT_ARG_MIN( 1 );
 	JL_S_ASSERT_ARRAY( JL_FARG(1) );
-	Surface *pv = (Surface*)JL_GetPrivate(cx, JL_FOBJ);
+	Surface *pv;
+	pv = (Surface*)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE(pv);
 
-	JSObject *arrayObj = JSVAL_TO_OBJECT(JL_FARG(1));
+	JSObject *arrayObj;
+	arrayObj = JSVAL_TO_OBJECT(JL_FARG(1));
 	jsuint count;
 	JL_CHK( JS_GetArrayLength(cx, arrayObj, &count) );
 

@@ -12,4 +12,4 @@ fileToCRes: fileToCRes.cpp
 	g++ $? -o $@ -O3
 
 jsScriptToXDR: jsScriptToXDR.cpp
-	g++ $? -o $@ -O3 -I$(JSDIR)include/js -L$(JSDIR)lib -lmozjs
+	g++ $? -o $@ -O3 -I$(JSDIR)include -L$(JSDIR)lib -lmozjs

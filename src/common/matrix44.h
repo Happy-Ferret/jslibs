@@ -397,7 +397,7 @@ inline void Matrix44SetZRotation( Matrix44 *m, float radAngle ) {
 }
 
 
-inline FORCEINLINE float Sin(float angle) {
+inline float Sin(float angle) {
 
 #ifdef SSE
 	__asm fld	angle
@@ -407,7 +407,7 @@ inline FORCEINLINE float Sin(float angle) {
 #endif // SSE
 }
 
-inline FORCEINLINE float Cos(float angle)	{
+inline float Cos(float angle) {
 
 #ifdef SSE
 	__asm fld	angle
@@ -417,7 +417,7 @@ inline FORCEINLINE float Cos(float angle)	{
 #endif // SSE
 }
 
-inline FORCEINLINE void SinCos(float angle, float *sinVal, float *cosVal) {
+inline void SinCos(float angle, float *sinVal, float *cosVal) {
 
 #ifdef SSE
 	__asm fld		[angle]
@@ -432,7 +432,7 @@ inline FORCEINLINE void SinCos(float angle, float *sinVal, float *cosVal) {
 #endif // SSE
 }
 
-inline FORCEINLINE float Sqrt(float val) {
+inline float Sqrt(float val) {
 
 #ifdef SSE
 	__asm fld		val

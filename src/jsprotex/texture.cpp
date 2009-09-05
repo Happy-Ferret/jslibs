@@ -4017,8 +4017,10 @@ DEFINE_FUNCTION_FAST( GetPixelAt ) {
 	tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE(tex);
 
-	int width = tex->width;
-	int height = tex->height;
+	int width;
+	width = tex->width;
+	int height;
+	height = tex->height;
 
 	//PosByMode(tex, sx, sy, mode);
 
@@ -4195,11 +4197,13 @@ DEFINE_FUNCTION_FAST( ApplyColorMatrix ) {
 	JL_S_ASSERT( tex->channels == 4, "Invalid channel count." );
 	JL_S_ASSERT_ARG(1);
 	
-	Matrix44 colorMatrixTmp, *colorMatrix = &colorMatrixTmp;
+	Matrix44 colorMatrixTmp, *colorMatrix;
+	colorMatrix = &colorMatrixTmp;
 	JL_CHK( JsvalToMatrix44(cx, JL_FARG(1), (float**)&colorMatrix) );
 
 	Vector4 tmp;
-	float *end = tex->cbuffer + tex->width * tex->height * 4;
+	float *end;
+	end = tex->cbuffer + tex->width * tex->height * 4;
 	for ( float *pos = tex->cbuffer; pos < end; pos += 4 ) {
 
 		Vector4LoadFromPtr(&tmp, pos);
@@ -4258,7 +4262,8 @@ DEFINE_FUNCTION_FAST( AddPerlin2 ) {
 	dirY[1] /= tex->height;
 	dirY[2] /= tex->height;
 
-	unsigned int pos = 0;
+	unsigned int pos;
+	pos = 0;
 	for ( int ty = 0; ty < tex->height; ++ty )
 		for ( int tx = 0; tx < tex->width; ++tx ) {
 

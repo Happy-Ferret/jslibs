@@ -42,7 +42,7 @@
 
 #include "string.h"
 
-
+#ifdef XP_WIN
 void fpipe( FILE **read, FILE **write ) {
 
 	HANDLE readPipe, writePipe;
@@ -55,6 +55,7 @@ void fpipe( FILE **read, FILE **write ) {
 	*read = fdopen(readfd, "r");
 	*write = fdopen(writefd, "w");
 }
+#endif // XP_WIN
 
 
 extern jl::Queue *scriptFileList;

@@ -119,7 +119,19 @@ my_ErrorReporter(JSContext *cx, const char *message, JSErrorReport *report)
 
 
 int main(int argc, char* argv[]) {
+
+JSRuntime *rt = JS_NewRuntime(8192L);
+JSContext *cx = JS_NewContext(rt, 8192L);
+
+
+JSContext *scx = JS_NewContext(JS_GetRuntime(cx), 8192L);
+JS_ToggleOptions(scx, JSOPTION_JIT); // without JIT, it works.
+JSObject *myObj = JS_NewObject(scx, NULL, NULL, NULL);
+char *src = "for (var i=0; i<100; ++i);";
+JS_EvaluateScript(scx, myObj, src, strlen(src), "test", 1, J_FRVAL); // "Access violation reading location 0xfffffffc." in TraceRecorder::lazilyImportGlobalSlot() (globalObj->dslots == NULL).
+
 	
+/*
 	JSRuntime *rt = JS_NewRuntime(0);
 	JS_SetGCParameter(rt, JSGC_MAX_BYTES, (uint32)-1);
 	JS_SetGCParameter(rt, JSGC_MAX_MALLOC_BYTES, (uint32)-1);
@@ -149,6 +161,6 @@ int main(int argc, char* argv[]) {
 	JS_DestroyContext(cx);
 	JS_DestroyRuntime(rt);
 	JS_ShutDown();
-
+*/
 	return EXIT_SUCCESS;
 }

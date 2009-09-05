@@ -181,7 +181,7 @@ JL_MACRO_END
 JL_MACRO_BEGIN \
 	if (unlikely( !(status) )) { \
 		if ( !JS_IsExceptionPending(cx) ) \
-			JS_ReportError(cx, (errorMessage IFDEBUG(" (@" J__CODE_LOCATION ")")), __VA_ARGS__); \
+			JS_ReportError(cx, (errorMessage IFDEBUG(" (@" J__CODE_LOCATION ")")), ##__VA_ARGS__); \
 		goto bad; \
 	} \
 JL_MACRO_END
@@ -199,7 +199,7 @@ JL_MACRO_END
 JL_MACRO_BEGIN \
 	if (unlikely( !(status) )) { \
 		if ( !JS_IsExceptionPending(cx) ) \
-			JS_ReportError(cx, (errorMessage IFDEBUG(" (@" J__CODE_LOCATION ")")), __VA_ARGS__); \
+			JS_ReportError(cx, (errorMessage IFDEBUG(" (@" J__CODE_LOCATION ")")), ##__VA_ARGS__); \
 		goto errorLabel; \
 	} \
 JL_MACRO_END
@@ -226,14 +226,14 @@ JL_MACRO_END
 // Reports warnings only in non-unsafeMode.
 #define JL_REPORT_WARNING(errorMessage, ... ) \
 JL_MACRO_BEGIN \
-	if (unlikely( !_unsafeMode )) JS_ReportWarning( cx, (errorMessage IFDEBUG(" (@" J__CODE_LOCATION ")")), __VA_ARGS__ ); \
+	if (unlikely( !_unsafeMode )) JS_ReportWarning( cx, (errorMessage IFDEBUG(" (@" J__CODE_LOCATION ")")), ##__VA_ARGS__ ); \
 JL_MACRO_END
 
 
 // Reports a fatal errors, script must stop as soon as possible.
 #define JL_REPORT_ERROR(errorMessage, ...) \
 JL_MACRO_BEGIN \
-	JS_ReportError( cx, (errorMessage IFDEBUG(" (@" J__CODE_LOCATION ")")), __VA_ARGS__ ); goto bad; \
+	JS_ReportError( cx, (errorMessage IFDEBUG(" (@" J__CODE_LOCATION ")")), ##__VA_ARGS__ ); goto bad; \
 JL_MACRO_END
 
 
@@ -242,7 +242,7 @@ JL_MACRO_END
 
 #define JL_S_ASSERT( condition, errorMessage, ... ) \
 JL_MACRO_BEGIN \
-	if (unlikely( !_unsafeMode )) if (unlikely( !(condition) )) { JS_ReportError( cx, errorMessage IFDEBUG(" (" #condition " @" J__CODE_LOCATION ")"), __VA_ARGS__ ); goto bad; } \
+	if (unlikely( !_unsafeMode )) if (unlikely( !(condition) )) { JS_ReportError( cx, errorMessage IFDEBUG(" (" #condition " @" J__CODE_LOCATION ")"), ##__VA_ARGS__ ); goto bad; } \
 JL_MACRO_END
 
 #define JL_S_ASSERT_ARG(count) \
@@ -1171,7 +1171,6 @@ ALWAYS_INLINE JSBool ObjectToScript( JSContext *cx, JSObject *obj, JSScript **sc
 
 	*script = (JSScript*)JL_GetPrivate(cx, obj);
 	return JS_TRUE;
-	JL_BAD;
 }
 
 
@@ -1526,7 +1525,6 @@ ALWAYS_INLINE JSBool UnserializeJsval( JSContext *cx, const Serialized *xdr, jsv
 ALWAYS_INLINE JSBool SetNativeFunction( JSContext *cx, JSObject *obj, const char *name, void *nativeFct ) {
 
 	return JS_DefineProperty(cx, obj, name, JSVAL_TRUE, NULL, (JSPropertyOp)nativeFct, JSPROP_READONLY | JSPROP_PERMANENT );
-	JL_BAD;
 }
 
 ALWAYS_INLINE JSBool GetNativeFunction( JSContext *cx, JSObject *obj, const char *name, void **nativeFct ) {
@@ -1796,7 +1794,8 @@ inline JSBool JsvalToMatrix44( JSContext *cx, jsval val, float **m ) {
 
 	JL_S_ASSERT( JSVAL_IS_OBJECT(val), J__ERRMSG_UNEXPECTED_TYPE " Object expected." );
 
-	JSObject *matrixObj = JSVAL_TO_OBJECT(val);
+	JSObject *matrixObj;
+	matrixObj = JSVAL_TO_OBJECT(val);
 
 	if ( JSVAL_IS_NULL(matrixObj) ) {
 		
@@ -1804,7 +1803,8 @@ inline JSBool JsvalToMatrix44( JSContext *cx, jsval val, float **m ) {
 		return JS_TRUE;
 	}
 
-	NIMatrix44Get Matrix44Get = Matrix44GetInterface(cx, matrixObj);
+	NIMatrix44Get Matrix44Get;
+	Matrix44Get  = Matrix44GetInterface(cx, matrixObj);
 	if ( Matrix44Get )
 		return Matrix44Get(cx, matrixObj, m);
 
