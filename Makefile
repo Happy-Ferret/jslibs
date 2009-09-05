@@ -3,7 +3,7 @@ BITS ?= 32
 
 SUBDIRS := libs/js libs/nspr \
            src/jshost \
-           src/jsstd src/jsdebug src/jsio src/jssqlite src/jsz src/jscrypt src/jstask src/jsimage src/jsfont src/jsprotex src/jsfastcgi src/jsiconv src/jstrimesh
+           src/jsstd src/jsdebug src/jsio src/jssqlite src/jsz src/jscrypt src/jstask src/jsiconv src/jsfastcgi src/jsimage src/jsfont src/jsprotex src/jstrimesh
 
 
 INT_DIR=$(shell uname)_$(BUILD)_$(BITS)/
