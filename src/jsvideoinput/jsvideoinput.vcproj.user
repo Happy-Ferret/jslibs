@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<VisualStudioUserFile
+	ProjectType="Visual C++"
+	Version="8,00"
+	ShowAllFiles="false"
+	>
+	<Configurations>
+		<Configuration
+			Name="DBG|Win32"
+			>
+			<DebugSettings
+				Command="..\..\$(PlatformName)_$(ConfigurationName)\jshost.exe"
+				CommandArguments="debug.js"
+				Environment="PATH=..\..\$(PlatformName)_$(ConfigurationName);%PATH%"
+				EnvironmentMerge="true"
+			/>
+		</Configuration>
+		<Configuration
+			Name="OPT|Win32"
+			>
+			<DebugSettings
+				Command="..\..\$(PlatformName)_$(ConfigurationName)\jshost.exe"
+				CommandArguments="debug.js"
+				Environment="PATH=..\..\$(PlatformName)_$(ConfigurationName);%PATH%"
+				EnvironmentMerge="true"
+			/>
+		</Configuration>
+	</Configurations>
+</VisualStudioUserFile>
