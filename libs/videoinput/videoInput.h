@@ -115,11 +115,7 @@ Thanks to:
 //STUFF YOU CAN CHANGE
 
 //change for verbose debug info
-#ifdef _DEBUG
-static bool verbose = true;
-#else // _DEBUG
 static bool verbose = false;
-#endif // _DEBUG
 
 //if you need VI to use multi threaded com
 //#define VI_COM_MULTI_THREADED
