@@ -39,6 +39,10 @@ bad:
 	return;
 }
 
+/**doc
+$TOC_MEMBER $INAME
+ $Image $INAME( [idealWidth], [idealWidth], [idealFPS] )
+**/
 DEFINE_CONSTRUCTOR() {
 
 	JL_S_ASSERT_CONSTRUCTING();
