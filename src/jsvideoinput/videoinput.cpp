@@ -15,6 +15,8 @@
 #include "stdafx.h"
 #include <videoinput.h>
 
+#define JSVIDEOINPUT_SLOT_DEVICEID 0
+
 videoInput vi;
 
 /**doc
@@ -25,9 +27,14 @@ BEGIN_CLASS( VideoInput ) // Start the definition of the class. It defines some 
 
 DEFINE_FINALIZE() {
 
+	if ( obj == *_prototype )
+		return;
 	jsval deviceIdVal;
-	JL_CHK( JS_GetReservedSlot(cx, obj, 0, &deviceIdVal) );
-	vi.stopDevice(JSVAL_TO_INT(deviceIdVal));
+	JL_CHK( JS_GetReservedSlot(cx, obj, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
+	if ( deviceIdVal == JSVAL_VOID ) // the device is already closed
+		return;
+	int deviceId = JSVAL_TO_INT(deviceIdVal);
+	vi.stopDevice(deviceId);
 bad:
 	return;
 }
@@ -64,7 +71,7 @@ DEFINE_CONSTRUCTOR() {
 			JL_REPORT_ERROR("Invalid device name.");
 	}
 
-	JL_CHK( JS_SetReservedSlot(cx, obj, 0, INT_TO_JSVAL(deviceId)) );
+	JL_CHK( JS_SetReservedSlot(cx, obj, JSVIDEOINPUT_SLOT_DEVICEID, INT_TO_JSVAL(deviceId)) );
 	
 	if ( JL_ARG_ISDEF(4) ) {
 
@@ -83,24 +90,25 @@ DEFINE_CONSTRUCTOR() {
 	
 		vi.setupDevice(deviceId);
 	}
-
 //	vi.setVideoSettingCameraPct(deviceId, vi.propBrightness, 100);
 //	vi.setFormat(deviceId, VI_NTSC_M);
-
 	return JS_TRUE;
 	JL_BAD;
 }
 
 
+/**doc
+$TOC_MEMBER $INAME
+ $Image $INAME( [flipImage] )
+**/
 DEFINE_FUNCTION_FAST( GetImage ) {
 
 	jsval deviceIdVal;
-	JL_CHK( JS_GetReservedSlot(cx, JL_FOBJ, 0, &deviceIdVal) );
+	JL_CHK( JS_GetReservedSlot(cx, JL_FOBJ, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
 	int deviceId = JSVAL_TO_INT(deviceIdVal);
 
 	int width = vi.getWidth(deviceId);
 	int height = vi.getHeight(deviceId);
-
 	int dataSize = vi.getSize(deviceId);
 
 	if ( dataSize == 0 ) {
@@ -145,12 +153,30 @@ DEFINE_FUNCTION_FAST( GetImage ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $OBJ $INAME $READONLY
+ $Image $INAME()
+**/
+DEFINE_FUNCTION_FAST( Close ) {
+
+	jsval deviceIdVal;
+	JL_CHK( JS_GetReservedSlot(cx, JL_FOBJ, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
+	if ( deviceIdVal == JSVAL_VOID ) // the device is already closed
+		return JS_TRUE;
+	int deviceId = JSVAL_TO_INT(deviceIdVal);
+	vi.stopDevice(deviceId);
+	JL_CHK( JS_SetReservedSlot(cx, JL_FOBJ, JSVIDEOINPUT_SLOT_DEVICEID, JSVAL_VOID) );
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $BOOL $INAME $READONLY
 **/
 DEFINE_PROPERTY( hasNewFrame ) {
 
 	jsval deviceIdVal;
-	JL_CHK( JS_GetReservedSlot(cx, obj, 0, &deviceIdVal) );
+	JL_CHK( JS_GetReservedSlot(cx, obj, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
 	int deviceId = JSVAL_TO_INT(deviceIdVal);
 	JL_CHK( BoolToJsval(cx, vi.isFrameNew(deviceId), vp) ); 
 	return JS_TRUE;
@@ -159,12 +185,12 @@ DEFINE_PROPERTY( hasNewFrame ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $OBJ $INAME $READONLY
+ $INT $INAME $READONLY
 **/
 DEFINE_PROPERTY( width ) {
 
 	jsval deviceIdVal;
-	JL_CHK( JS_GetReservedSlot(cx, obj, 0, &deviceIdVal) );
+	JL_CHK( JS_GetReservedSlot(cx, obj, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
 	int deviceId = JSVAL_TO_INT(deviceIdVal);
 	JL_CHK( IntToJsval(cx, vi.getWidth(deviceId), vp) ); 
 	return JS_TRUE;
@@ -173,17 +199,32 @@ DEFINE_PROPERTY( width ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $OBJ $INAME $READONLY
+ $INT $INAME $READONLY
 **/
 DEFINE_PROPERTY( height ) {
 
 	jsval deviceIdVal;
-	JL_CHK( JS_GetReservedSlot(cx, obj, 0, &deviceIdVal) );
+	JL_CHK( JS_GetReservedSlot(cx, obj, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
 	int deviceId = JSVAL_TO_INT(deviceIdVal);
 	JL_CHK( IntToJsval(cx, vi.getHeight(deviceId), vp) ); 
 	return JS_TRUE;
 	JL_BAD;
 }
+
+/**doc
+$TOC_MEMBER $INAME
+ $STR $INAME $READONLY
+**/
+DEFINE_PROPERTY( name ) {
+
+	jsval deviceIdVal;
+	JL_CHK( JS_GetReservedSlot(cx, obj, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
+	int deviceId = JSVAL_TO_INT(deviceIdVal);
+	JL_CHK( StringToJsval(cx, vi.getDeviceName(deviceId), vp) );
+	return JS_TRUE;
+	JL_BAD;
+}
+
 
 /**doc
 $TOC_MEMBER $INAME
@@ -216,7 +257,7 @@ DEFINE_PROPERTY( list ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $INAME $READONLY
+ $STR $INAME $READONLY
   Hold the current version of NSPR.
 **/
 DEFINE_PROPERTY( version ) {
@@ -233,19 +274,21 @@ CONFIGURE_CLASS // This section containt the declaration and the configuration o
 //	HAS_XDR
 	REVISION(JL_SvnRevToInt("$Revision: 2555 $"))
 	HAS_PRIVATE
-	HAS_RESERVED_SLOTS(1) // deviceID
+	HAS_RESERVED_SLOTS(1) // JSVIDEOINPUT_SLOT_DEVICEID
 
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE
 
 	BEGIN_FUNCTION_SPEC
 		FUNCTION_FAST(GetImage)
+		FUNCTION_FAST(Close)
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
 		PROPERTY_READ(hasNewFrame)
 		PROPERTY_READ(width)
 		PROPERTY_READ(height)
+		PROPERTY_READ(name)
 	END_PROPERTY_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC
