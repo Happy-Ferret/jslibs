@@ -77,7 +77,7 @@ DEFINE_CONSTRUCTOR() {
 
 		int fps;
 		JL_CHK( JsvalToInt(cx, JL_ARG(4), &fps) );
-		vi.setIdealFramerate(deviceId, fps);
+		vi.setIdealFramerate(deviceId, fps); // vi.VDList[deviceId]->requestedFrameTime;
 	}
 
 	if ( JL_ARG_ISDEF(2) && JL_ARG_ISDEF(3) ) {
@@ -88,8 +88,9 @@ DEFINE_CONSTRUCTOR() {
 		vi.setupDevice(deviceId, width, height);
 	} else {
 	
-		vi.setupDevice(deviceId);
+		vi.setupDevice(deviceId); // use default size
 	}
+
 //	vi.setVideoSettingCameraPct(deviceId, vi.propBrightness, 100);
 //	vi.setFormat(deviceId, VI_NTSC_M);
 	return JS_TRUE;
@@ -105,6 +106,7 @@ DEFINE_FUNCTION_FAST( GetImage ) {
 
 	jsval deviceIdVal;
 	JL_CHK( JS_GetReservedSlot(cx, JL_FOBJ, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
+	JL_S_ASSERT( deviceIdVal != JSVAL_VOID, "Device closed.");
 	int deviceId = JSVAL_TO_INT(deviceIdVal);
 
 	int width = vi.getWidth(deviceId);
@@ -159,6 +161,7 @@ DEFINE_FUNCTION_FAST( Close ) {
 
 	jsval deviceIdVal;
 	JL_CHK( JS_GetReservedSlot(cx, JL_FOBJ, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
+	JL_S_ASSERT( deviceIdVal != JSVAL_VOID, "Device closed.");
 	if ( deviceIdVal == JSVAL_VOID ) // the device is already closed
 		return JS_TRUE;
 	int deviceId = JSVAL_TO_INT(deviceIdVal);
@@ -177,6 +180,7 @@ DEFINE_PROPERTY( hasNewFrame ) {
 
 	jsval deviceIdVal;
 	JL_CHK( JS_GetReservedSlot(cx, obj, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
+	JL_S_ASSERT( deviceIdVal != JSVAL_VOID, "Device closed.");
 	int deviceId = JSVAL_TO_INT(deviceIdVal);
 	JL_CHK( BoolToJsval(cx, vi.isFrameNew(deviceId), vp) ); 
 	return JS_TRUE;
@@ -191,6 +195,7 @@ DEFINE_PROPERTY( width ) {
 
 	jsval deviceIdVal;
 	JL_CHK( JS_GetReservedSlot(cx, obj, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
+	JL_S_ASSERT( deviceIdVal != JSVAL_VOID, "Device closed.");
 	int deviceId = JSVAL_TO_INT(deviceIdVal);
 	JL_CHK( IntToJsval(cx, vi.getWidth(deviceId), vp) ); 
 	return JS_TRUE;
@@ -205,6 +210,7 @@ DEFINE_PROPERTY( height ) {
 
 	jsval deviceIdVal;
 	JL_CHK( JS_GetReservedSlot(cx, obj, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
+	JL_S_ASSERT( deviceIdVal != JSVAL_VOID, "Device closed.");
 	int deviceId = JSVAL_TO_INT(deviceIdVal);
 	JL_CHK( IntToJsval(cx, vi.getHeight(deviceId), vp) ); 
 	return JS_TRUE;
@@ -219,6 +225,7 @@ DEFINE_PROPERTY( name ) {
 
 	jsval deviceIdVal;
 	JL_CHK( JS_GetReservedSlot(cx, obj, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
+	JL_S_ASSERT( deviceIdVal != JSVAL_VOID, "Device closed.");
 	int deviceId = JSVAL_TO_INT(deviceIdVal);
 	JL_CHK( StringToJsval(cx, vi.getDeviceName(deviceId), vp) );
 	return JS_TRUE;

@@ -6,9 +6,11 @@ LoadModule('jsimage');
 
 LoadModule('jsvideoinput');
 
+Print("start\n");
+
 Print( uneval(VideoInput.list) );
 
-var vi = new VideoInput('QuickCam', 1, 1, 15);
+var vi = new VideoInput('QuickCam', 1, 1, 1); // try to get the smallest size and the lowest fps
 Print('full name: '+vi.name, '\n');
 
 while (!endSignal) {
