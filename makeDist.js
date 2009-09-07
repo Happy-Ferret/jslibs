@@ -112,14 +112,21 @@ var dist = new Directory('./dist');
 if ( !dist.exist )
 	throw 'Unable to find '+dist.name;
 
+if ( arguments[0] == "--devsnapshot" ) {
 
-var [type, jslibsVersion, jslibsRevision, changes] = GetLatestChanges();
-if ( jslibsRevision[0] == 'r' )
-	jslibsRevision = jslibsRevision.substr(1);
-changes = changes.replace(/<pre>|<\/pre>/g, ''); // cleanup
-changes = changes.replace(/\n/g, '\r\n');
-//jslibsRevision = 'r'+GetLatestSVNRevision();
+	var [type, jslibsVersion, jslibsRevision, changes] = GetLatestChanges();
+	changes = changes.replace(/<pre>|<\/pre>/g, ''); // cleanup
+	changes = changes.replace(/\n/g, '\r\n');
+	if ( jslibsRevision[0] == 'r' )
+		jslibsRevision = jslibsRevision.substr(1);
+	//jslibsRevision = 'r'+GetLatestSVNRevision();
+} else {
 
+	type = 'DEVSNAPSHOT';
+	jslibsVersion = '';
+	jslibsRevision = GetLatestSVNRevision();
+	changes = '';
+}
 
 var readme = Expand(new File('./dist/readme.txt.tpl').content, function(id) {
 	
