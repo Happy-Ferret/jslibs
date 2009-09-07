@@ -16,13 +16,22 @@
 
 #include "static.h"
 
+#include <videoinput.h>
+
 extern bool _unsafeMode = false;
+
+extern videoInput *vi = NULL;
 
 DECLARE_CLASS( VideoInput )
 
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
 	_unsafeMode = GetHostPrivate(cx)->unsafeMode;
+
+	JL_S_ASSERT(vi == NULL, "Invalid case: videoInput already initialized'");
+	videoInput::setVerbose(false);
+	vi = new videoInput();
+	JL_S_ASSERT(vi != NULL, "Unable to create a videoInput object.");
 
 	INIT_STATIC();
 	INIT_CLASS( VideoInput );
@@ -37,6 +46,9 @@ EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
 }
 
 EXTERN_C DLLEXPORT void ModuleFree() {
+
+	delete vi;
+
 }
 
 #ifdef XP_WIN

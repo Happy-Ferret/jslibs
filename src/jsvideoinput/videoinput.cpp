@@ -17,7 +17,7 @@
 
 #define JSVIDEOINPUT_SLOT_DEVICEID 0
 
-videoInput vi;
+extern videoInput *vi;
 
 /**doc
 $CLASS_HEADER
@@ -34,14 +34,14 @@ DEFINE_FINALIZE() {
 	if ( deviceIdVal == JSVAL_VOID ) // the device is already closed
 		return;
 	int deviceId = JSVAL_TO_INT(deviceIdVal);
-	vi.stopDevice(deviceId);
+	vi->stopDevice(deviceId);
 bad:
 	return;
 }
 
 /**doc
 $TOC_MEMBER $INAME
- $Image $INAME( [idealWidth], [idealWidth], [idealFPS] )
+ $Image $INAME( deviceId, [idealWidth], [idealWidth], [idealFPS] )
 **/
 DEFINE_CONSTRUCTOR() {
 
@@ -51,7 +51,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_S_ASSERT_ARG_RANGE(1,4);
 
 	int deviceId;
-	int numDevices = vi.listDevices(true);
+	int numDevices = videoInput::listDevices(true);
 
 	if ( !JSVAL_IS_STRING(JL_ARG(1)) ) {
 		
@@ -65,7 +65,7 @@ DEFINE_CONSTRUCTOR() {
 		deviceId = -1;
 		for ( int i = 0; i < numDevices; i++ ) {
 
-			if ( strstr(vi.getDeviceName(i), requiredDeviceName) != NULL ) {
+			if ( strstr(videoInput::getDeviceName(i), requiredDeviceName) != NULL ) {
 				
 				deviceId = i;
 				break;
@@ -81,7 +81,7 @@ DEFINE_CONSTRUCTOR() {
 
 		int fps;
 		JL_CHK( JsvalToInt(cx, JL_ARG(4), &fps) );
-		vi.setIdealFramerate(deviceId, fps); // vi.VDList[deviceId]->requestedFrameTime;
+		vi->setIdealFramerate(deviceId, fps); // vi->VDList[deviceId]->requestedFrameTime;
 	}
 
 	if ( JL_ARG_ISDEF(2) && JL_ARG_ISDEF(3) ) {
@@ -89,14 +89,14 @@ DEFINE_CONSTRUCTOR() {
 		int width, height;
 		JL_CHK( JsvalToInt(cx, JL_ARG(2), &width) );
 		JL_CHK( JsvalToInt(cx, JL_ARG(3), &height) );
-		vi.setupDevice(deviceId, width, height);
+		vi->setupDevice(deviceId, width, height);
 	} else {
 	
-		vi.setupDevice(deviceId); // use default size
+		vi->setupDevice(deviceId); // use default size
 	}
 
-//	vi.setVideoSettingCameraPct(deviceId, vi.propBrightness, 100);
-//	vi.setFormat(deviceId, VI_NTSC_M);
+//	vi->setVideoSettingCameraPct(deviceId, vi->propBrightness, 100);
+//	vi->setFormat(deviceId, VI_NTSC_M);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -113,9 +113,9 @@ DEFINE_FUNCTION_FAST( GetImage ) {
 	JL_S_ASSERT( deviceIdVal != JSVAL_VOID, "Device closed.");
 	int deviceId = JSVAL_TO_INT(deviceIdVal);
 
-	int width = vi.getWidth(deviceId);
-	int height = vi.getHeight(deviceId);
-	int dataSize = vi.getSize(deviceId);
+	int width = vi->getWidth(deviceId);
+	int height = vi->getHeight(deviceId);
+	int dataSize = vi->getSize(deviceId);
 
 	if ( dataSize == 0 ) {
 
@@ -132,7 +132,7 @@ DEFINE_FUNCTION_FAST( GetImage ) {
 	else
 		flipImage = true;
 
-	bool status = vi.getPixels(deviceId, data, true, flipImage);
+	bool status = vi->getPixels(deviceId, data, true, flipImage);
 	
 	if ( !status ) {
 
@@ -169,7 +169,7 @@ DEFINE_FUNCTION_FAST( Close ) {
 	if ( deviceIdVal == JSVAL_VOID ) // the device is already closed
 		return JS_TRUE;
 	int deviceId = JSVAL_TO_INT(deviceIdVal);
-	vi.stopDevice(deviceId);
+	vi->stopDevice(deviceId);
 	JL_CHK( JS_SetReservedSlot(cx, JL_FOBJ, JSVIDEOINPUT_SLOT_DEVICEID, JSVAL_VOID) );
 	return JS_TRUE;
 	JL_BAD;
@@ -186,7 +186,7 @@ DEFINE_PROPERTY( hasNewFrame ) {
 	JL_CHK( JS_GetReservedSlot(cx, obj, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
 	JL_S_ASSERT( deviceIdVal != JSVAL_VOID, "Device closed.");
 	int deviceId = JSVAL_TO_INT(deviceIdVal);
-	JL_CHK( BoolToJsval(cx, vi.isFrameNew(deviceId), vp) ); 
+	JL_CHK( BoolToJsval(cx, vi->isFrameNew(deviceId), vp) ); 
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -201,7 +201,7 @@ DEFINE_PROPERTY( width ) {
 	JL_CHK( JS_GetReservedSlot(cx, obj, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
 	JL_S_ASSERT( deviceIdVal != JSVAL_VOID, "Device closed.");
 	int deviceId = JSVAL_TO_INT(deviceIdVal);
-	JL_CHK( IntToJsval(cx, vi.getWidth(deviceId), vp) ); 
+	JL_CHK( IntToJsval(cx, vi->getWidth(deviceId), vp) ); 
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -216,7 +216,7 @@ DEFINE_PROPERTY( height ) {
 	JL_CHK( JS_GetReservedSlot(cx, obj, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
 	JL_S_ASSERT( deviceIdVal != JSVAL_VOID, "Device closed.");
 	int deviceId = JSVAL_TO_INT(deviceIdVal);
-	JL_CHK( IntToJsval(cx, vi.getHeight(deviceId), vp) ); 
+	JL_CHK( IntToJsval(cx, vi->getHeight(deviceId), vp) ); 
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -231,7 +231,7 @@ DEFINE_PROPERTY( name ) {
 	JL_CHK( JS_GetReservedSlot(cx, obj, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
 	JL_S_ASSERT( deviceIdVal != JSVAL_VOID, "Device closed.");
 	int deviceId = JSVAL_TO_INT(deviceIdVal);
-	JL_CHK( StringToJsval(cx, vi.getDeviceName(deviceId), vp) );
+	JL_CHK( StringToJsval(cx, videoInput::getDeviceName(deviceId), vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -239,31 +239,44 @@ DEFINE_PROPERTY( name ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $OBJ $INAME $READONLY
+ $BOOL $INAME $READONLY
+**/
+DEFINE_PROPERTY( hasDevice ) {
+
+	int numDevices = videoInput::listDevices(true);
+	JL_CHK( BoolToJsval(cx, numDevices > 0, vp) ); 
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $ARR $INAME $READONLY
   Contains the list of all available video devices for input.
 **/
 DEFINE_PROPERTY( list ) {
 
 	JSTempValueRooter tvr;
 	JS_PUSH_SINGLE_TEMP_ROOT(cx, JSVAL_NULL, &tvr); // (TBD) remove this workaround. cf. bz495422 || bz397177
-	JSObject *list = JS_NewObject( cx, NULL, NULL, NULL );
+
+	int numDevices = videoInput::listDevices(true);
+	JSObject *list = JS_NewArrayObject(cx, numDevices, NULL);
 	tvr.u.value = OBJECT_TO_JSVAL(list);
-
-	int numDevices = vi.listDevices(true);
-
 	jsval value;
 	int i;
 	for ( i = 0; i < numDevices; i++ ) {
 
-		value = INT_TO_JSVAL(i);
-		JL_CHK( JS_SetProperty( cx, list, vi.getDeviceName(i), &value ) );
+		JL_CHK( StringToJsval(cx, videoInput::getDeviceName(i), &value) );
+		JL_CHK( JS_SetElement(cx, list, i, &value ) );
 	}
 
 	*vp = tvr.u.value;
 	JS_POP_TEMP_ROOT(cx, &tvr);
-
 	return JS_TRUE;
-	JL_BAD;
+bad:
+	JS_POP_TEMP_ROOT(cx, &tvr);
+	return JS_FALSE;
 }
 
 /**doc
@@ -305,6 +318,7 @@ CONFIGURE_CLASS // This section containt the declaration and the configuration o
 	BEGIN_STATIC_PROPERTY_SPEC
 		PROPERTY_READ(version)
 		PROPERTY_READ(list)
+		PROPERTY_READ(hasDevice)
 	END_STATIC_PROPERTY_SPEC
 
 	BEGIN_STATIC_FUNCTION_SPEC

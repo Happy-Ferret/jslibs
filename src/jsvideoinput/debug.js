@@ -8,7 +8,9 @@ LoadModule('jsvideoinput');
 
 Print("start\n");
 
-Print( uneval(VideoInput.list) );
+Print( VideoInput.hasDevice );
+
+Halt();
 
 var vi = new VideoInput('QuickCam', 1, 1, 1); // try to get the smallest size and the lowest fps
 Print('full name: '+vi.name, '\n');
