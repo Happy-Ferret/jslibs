@@ -6,22 +6,29 @@ LoadModule('jsimage');
 
 LoadModule('jsvideoinput');
 
-Print("start\n");
+Exec('..\\common\\tools.js');
 
-Print( VideoInput.hasDevice );
+CreateOpenGLWindow();
 
-Halt();
-
-var vi = new VideoInput('QuickCam', 1, 1, 1); // try to get the smallest size and the lowest fps
+var vi = new VideoInput('QuickCam', 999, 999, 60); // try to get the smallest size and the lowest fps
 Print('full name: '+vi.name, '\n');
 
-while (!endSignal) {
+var t0 = new Texture(128,128,3).Set(0);
+var t1 = new Texture(128,128,3).Set(0);
 
+var key;
+while ( (key = GetKey()) != 27 ) {
+
+	var texture = new Texture(vi.width, vi.height, vi.channels);
 	var img = vi.GetImage();
-	var t1 = IntervalNow();
-	Print( 1000/(t1 - t0), '\n' );
-	var t0 = t1;
-
-	new File('myImage.png').content = EncodePngImage(img);
+	texture.Import(img,0,0);
+	texture.Resize(128,128);
+	
+	t0.Set(texture).Mult(0.1);
+	t1.Add(t0);
+	t1.NormalizeLevels();
+	
+	DisplayTexture(t1);
+	CollectGarbage();
+	Sleep(10);
 }
-

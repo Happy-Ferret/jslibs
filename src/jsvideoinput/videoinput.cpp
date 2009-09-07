@@ -223,6 +223,23 @@ DEFINE_PROPERTY( height ) {
 
 /**doc
 $TOC_MEMBER $INAME
+ $INT $INAME $READONLY
+**/
+DEFINE_PROPERTY( channels ) {
+
+	jsval deviceIdVal;
+	JL_CHK( JS_GetReservedSlot(cx, obj, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
+	JL_S_ASSERT( deviceIdVal != JSVAL_VOID, "Device closed.");
+	int deviceId = JSVAL_TO_INT(deviceIdVal);
+	int width = vi->getWidth(deviceId);
+	int height = vi->getHeight(deviceId);
+	int dataSize = vi->getSize(deviceId);	JL_CHK( IntToJsval(cx, dataSize / (width * height), vp) ); 
+	return JS_TRUE;
+	JL_BAD;
+}
+
+/**doc
+$TOC_MEMBER $INAME
  $STR $INAME $READONLY
 **/
 DEFINE_PROPERTY( name ) {
@@ -312,6 +329,7 @@ CONFIGURE_CLASS // This section containt the declaration and the configuration o
 		PROPERTY_READ(hasNewFrame)
 		PROPERTY_READ(width)
 		PROPERTY_READ(height)
+		PROPERTY_READ(channels)
 		PROPERTY_READ(name)
 	END_PROPERTY_SPEC
 
