@@ -931,12 +931,12 @@ ALWAYS_INLINE JSBool JsvalToStringLength( JSContext *cx, jsval val, size_t *leng
 
 ALWAYS_INLINE JSBool JsvalToString( JSContext *cx, jsval *val, const char** buffer ) {
 
-	if ( JSVAL_IS_STRING(*val) ) { // for string literals
+	if (likely( JSVAL_IS_STRING(*val) )) { // for string literals
 
 		*buffer = JS_GetStringBytes(JSVAL_TO_STRING(*val)); // JS_GetStringBytes never returns NULL, then JL_S_ASSERT( *buffer != NULL, "Invalid string." ); is not needed.
 		return JS_TRUE;
 	}
-	if ( !JSVAL_IS_PRIMITIVE(*val) ) { // for NIBufferGet support
+	if (likely( !JSVAL_IS_PRIMITIVE(*val) )) { // for NIBufferGet support
 
 		size_t size; //unused
 		NIBufferGet fct = BufferGetNativeInterface(cx, JSVAL_TO_OBJECT(*val));

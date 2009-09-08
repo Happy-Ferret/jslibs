@@ -35,6 +35,9 @@
 #include "../common/matrix55.h"
 #include "../common/jsConversionHelper.h"
 
+#include "../common/membuffer.h"
+
+
 EXTERN_C double genrand_real1(void);
 
 double PerlinNoise2(double x, double y, double z);
@@ -174,7 +177,9 @@ ALWAYS_INLINE PTYPE* PosByMode( const Texture *tex, int x, int y, BorderMode mod
 
 
 // levels: number | array | string ('#8800AAFF')
-inline JSBool InitLevelData( JSContext* cx, jsval value, int count, PTYPE *level ) {
+inline JSBool InitLevelData( JSContext* cx, jsval value, unsigned int count, PTYPE *level ) {
+	
+	unsigned int i;
 
 	if ( JSVAL_IS_NUMBER(value) ) {
 
@@ -182,29 +187,28 @@ inline JSBool InitLevelData( JSContext* cx, jsval value, int count, PTYPE *level
 		JL_CHK( JsvalToFloat(cx, value, &tmp) );
 		PTYPE val;
 		val = (PTYPE)tmp;
-		for ( int i = 0; i < count; i++ )
+		for ( i = 0; i < count; i++ )
 			level[i] = val;
 		return JS_TRUE;
 	}
 
 	if ( JsvalIsArray(cx, value) ) {
 
-		//FloatArrayToVector(cx, count, &value, level);
 		uint32 length;
 		JL_CHK( JsvalToFloatVector(cx, value, level, count, &length) );
-//		JL_S_ASSERT( length == 3, "Invalid array size." );
+		JL_S_ASSERT( length < count, "Array too small." );
 		return JS_TRUE;
 	}
 
 	if ( JSVAL_IS_STRING(value) ) {
 
 		const char *color;
-		size_t length;
+		unsigned int length;
 		JL_CHK( JsvalToStringAndLength(cx, &value, &color, &length) );
-		if ( *color++ == '#' && ((int)length-1) / 2 >= count ) {
+		if ( *color++ == '#' && (length-1) / 2 >= count ) {
 
 			unsigned char val;
-			for ( int i = 0; i < count; i++ ) {
+			for ( i = 0; i < count; i++ ) {
 
 				if ( *color >= '0' && *color <= '9' ) val = *color - '0';
 				else if ( *color >= 'A' && *color <= 'F' ) val = *color - 'A' + 10;
@@ -227,7 +231,9 @@ inline JSBool InitLevelData( JSContext* cx, jsval value, int count, PTYPE *level
 
 
 // curve: number | function | array
-inline JSBool InitCurveData( JSContext* cx, jsval value, int length, float *curve ) { // length is the curve resolution
+inline JSBool InitCurveData( JSContext* cx, jsval value, unsigned int length, float *curve ) { // length is the curve resolution
+	
+	unsigned int i;
 
 	JSTempValueRooter tvr;
 	if ( JSVAL_IS_NUMBER(value) ) {
@@ -236,7 +242,7 @@ inline JSBool InitCurveData( JSContext* cx, jsval value, int length, float *curv
 		JL_CHK( JS_ValueToNumber(cx, value, &dval) );
 		PTYPE val;
 		val = (PTYPE)dval;
-		for ( int i = 0; i < length; i++ )
+		for ( i = 0; i < length; i++ )
 			curve[i] = val;
 		return JS_TRUE;
 	}
@@ -246,7 +252,7 @@ inline JSBool InitCurveData( JSContext* cx, jsval value, int length, float *curv
 		jsdouble fval;
 		jsval argv[3]; // argv[0] is the rval
 		JS_PUSH_TEMP_ROOT(cx, COUNTOF(argv), argv, &tvr);
-		for ( int i = 0; i < length; ++i ) {
+		for ( i = 0; i < length; ++i ) {
 
 			fval = i / (float)(length-1);
 			JL_CHKB( JS_NewDoubleValue(cx, fval, &argv[1]), bad2 );
@@ -271,7 +277,7 @@ inline JSBool InitCurveData( JSContext* cx, jsval value, int length, float *curv
 		JL_CHK( JsvalToFloatVector(cx, value, curveArray, curveArrayLength, &tmp) );
 		JL_S_ASSERT( length == 3, "Invalid array size." );
 
-		for ( int i = 0; i < length; i++ )
+		for ( i = 0; i < length; i++ )
 			curve[i] = curveArray[ i * curveArrayLength / length ];
 		return JS_TRUE;
 	}
@@ -286,7 +292,7 @@ inline JSBool InitCurveData( JSContext* cx, jsval value, int length, float *curv
 //		BlobGetBufferAndLength( cx, bstrObj, (void**)&bstrData, &bstrLen );
 		JL_CHK( JsvalToStringAndLength( cx, &value, (const char **)&bstrData, &bstrLen ) );
 
-		for ( int i = 0; i < length; i++ )
+		for ( i = 0; i < length; i++ )
 			curve[i] = (PTYPE)bstrData[ i * bstrLen / length ] / 255.f; // (TBD) check
 		return JS_TRUE;
 	}
@@ -325,10 +331,9 @@ JSBool NativeInterfaceBufferGet( JSContext *cx, JSObject *obj, const char **buf,
 }
 
 
-inline bool IsTexture( JSContext *cx, jsval value ) {
+inline bool IsTexture( JSContext *cx, jsval val ) {
 
-//	return ( !JSVAL_IS_PRIMITIVE( value ) && JL_GetClass(JSVAL_TO_OBJECT( value )) == classTexture );
-	return JsvalIsClass(value, classTexture);
+	return JsvalIsClass(val, classTexture);
 }
 
 
@@ -439,11 +444,9 @@ DEFINE_CONSTRUCTOR() {
 		return JS_TRUE;
 	}
 
-//	if ( JsvalIsDataBuffer( cx, JL_ARG(1) ) ) {
-	if ( JSVAL_IS_STRING(JL_ARG(1)) || JSVAL_IS_OBJECT(JL_ARG(1)) && BufferGetInterface(cx, JSVAL_TO_OBJECT(JL_ARG(1))) != NULL ) {
+	if ( JSVAL_IS_STRING(JL_ARG(1)) || JSVAL_IS_OBJECT(JL_ARG(1)) && BufferGetInterface(cx, JSVAL_TO_OBJECT(JL_ARG(1))) != NULL ) { // construct from an image
 
 		JSObject *bstrObj;
-//		bstrObj = JSVAL_TO_OBJECT( JL_ARG(1) );
 		JL_CHK( JS_ValueToObject(cx, JL_ARG(1), &bstrObj) );
 
 		int dWidth, dHeight, dChannels;
@@ -457,9 +460,7 @@ DEFINE_CONSTRUCTOR() {
 		JL_CHK( GetPropertyInt(cx, bstrObj, "channels", &sChannels) );
 
 		const uint8_t *buffer;
-//		uint8_t *buffer = (uint8_t*)
-//		JL_CHK( BlobBuffer(cx, bstr, (const void **)&buffer) );
-		JL_CHK( JsvalToString(cx, &JL_ARG(1), (const char **)&buffer) ); // warning: GC on the returned buffer !
+		JL_CHK( JsvalToString(cx, &JL_ARG(1), (const char **)&buffer)); // warning: GC on the returned buffer !
 
 		tex->width = sWidth;
 		tex->height = sHeight;
@@ -468,14 +469,13 @@ DEFINE_CONSTRUCTOR() {
 		int tsize;
 		tsize = sWidth * sHeight * sChannels;
 
-		tex->cbuffer = (PTYPE*)JS_malloc(cx, tsize * sizeof(PTYPE) );
+		tex->cbuffer = (PTYPE*)JS_malloc(cx, tsize * sizeof(PTYPE));
 		JL_CHK( tex->cbuffer );
 
-		for ( int i=0; i<tsize; i++ )
+		for ( int i = 0; i < tsize; i++ )
 			tex->cbuffer[i] = (PTYPE)buffer[i] / (PTYPE)255.f; // map [0 -> 255] to [0.0 -> 1.0]
 
 		JL_SetPrivate(cx, obj, tex);
-
 		return JS_TRUE;
 	}
 
@@ -1442,9 +1442,10 @@ DEFINE_FUNCTION_FAST( Set ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $THIS $INAME( textureObject )
- $THIS $INAME( colorInfo )
-  Mathematically adds a texture (_textureObject_) or a given color (_colorInfo_) to the current texture.
+ $THIS $INAME( textureObject [, factor = 1] )
+ $THIS $INAME( colorInfo [, factor = 1] )
+  Mathematically adds a texture (_textureObject_) or a given color (_colorInfo_) to the current texture.$LF
+  _factor_ is applied to the source (object or color) before the addition.
 **/
 // PTYPE ok
 DEFINE_FUNCTION_FAST( Add ) {
@@ -1453,10 +1454,16 @@ DEFINE_FUNCTION_FAST( Add ) {
 	Texture *tex;
 	tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE(tex);
-	int channels;
+	unsigned int i, channels, tsize;
 	channels = tex->channels;
-	int tsize;
 	tsize = tex->width * tex->height * channels;
+
+	float factor;
+	if ( JL_FARG_ISDEF(2) )
+		JL_CHK( JsvalToFloat(cx, JL_FARG(2), &factor) );
+	else
+		factor = 1;
+
 	if ( IsTexture(cx, JL_FARG(1)) ) {
 
 		Texture *tex1;
@@ -1464,20 +1471,32 @@ DEFINE_FUNCTION_FAST( Add ) {
 
 		JL_S_ASSERT( tex1->width == tex->width && tex1->height == tex->height && ( tex1->channels == 1 || tex1->channels == channels), "Incompatible image format." );
 
+		
 		if ( tex1->channels == 1 ) {
-
-			for ( int i = 0; i < tsize; i++ )
-				tex->cbuffer[i] += tex1->cbuffer[i / channels];
+			
+			if ( factor == 1. )  // optimization if factor == 1
+				for ( i = 0; i < tsize; i++ )
+					tex->cbuffer[i] += tex1->cbuffer[i / channels];
+			else
+				for ( i = 0; i < tsize; i++ )
+					tex->cbuffer[i] += tex1->cbuffer[i / channels] * factor;
 		} else {
 
-			for ( int i = 0; i < tsize; i++ )
-				tex->cbuffer[i] += tex1->cbuffer[i];
+			if ( factor == 1. ) // optimization if factor == 1
+				for ( i = 0; i < tsize; i++ )
+					tex->cbuffer[i] += tex1->cbuffer[i];
+			else
+				for ( i = 0; i < tsize; i++ )
+					tex->cbuffer[i] += tex1->cbuffer[i] * factor;
 		}
 	} else {
 
 		PTYPE pixel[PMAXCHANNELS];
+		unsigned int c, size = tex->width * tex->height;
+
 		JL_CHK( InitLevelData(cx, JL_FARG(1), channels, pixel) );
-		int i, c, size = tex->width * tex->height;
+		for ( i = 0; i < channels; i++ )
+			pixel[i] *= factor;
 		for ( i = 0; i < size; i++ )
 			for ( c = 0; c < channels; c++ )
 				tex->cbuffer[i*channels+c] += pixel[c];
@@ -3191,7 +3210,7 @@ DEFINE_FUNCTION_FAST( Export ) { // (int)x, (int)y, (int)width, (int)height. Ret
 
 /**doc
 $TOC_MEMBER $INAME
- $THIS $INAME( sourceImage, x, y [ , borderMode] )
+ $THIS $INAME( sourceImage, [x], [y] [ , borderMode] )
   Draws the _image_ over the current texture at position (_x_, _y_).
   $H arguments
    $ARG ImageObject sourceImage:
@@ -3213,7 +3232,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Import ) { // (Blob)image, (int)x, (int)y
 
-	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_ARG_RANGE(1,4);
 
 	Texture *tex;
 	tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
@@ -3222,11 +3241,47 @@ DEFINE_FUNCTION_FAST( Import ) { // (Blob)image, (int)x, (int)y
 	JL_S_ASSERT_OBJECT( JL_FARG(1) );
 	JSObject *bstr;
 	bstr = JSVAL_TO_OBJECT( JL_FARG(1) );
-	JL_S_ASSERT_CLASS( bstr, BlobJSClass(cx) );
+	JL_S_ASSERT_CLASS( bstr, BlobJSClass(cx) ); // (TBD) String object should also work.
 
 	int px, py;
-	JL_CHK( JsvalToInt(cx, JL_FARG(2), &px) );
-	JL_CHK( JsvalToInt(cx, JL_FARG(3), &py) );
+	if ( JL_FARG_ISDEF(2) && JL_FARG_ISDEF(3) ) {
+		
+		JL_CHK( JsvalToInt(cx, JL_FARG(2), &px) );
+		JL_CHK( JsvalToInt(cx, JL_FARG(3), &py) );
+	} else {
+		
+		px = 0;
+		py = 0;
+	}
+
+	int dWidth, dHeight, dChannels, sWidth, sHeight, sChannels;
+	dWidth = tex->width;
+	dHeight = tex->height;
+	dChannels = tex->channels;
+
+	JL_CHK( GetPropertyInt(cx, bstr, "width", &sWidth) );
+	JL_CHK( GetPropertyInt(cx, bstr, "height", &sHeight) );
+	JL_CHK( GetPropertyInt(cx, bstr, "channels", &sChannels) );
+
+	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
+
+	const uint8_t *buffer;
+	JL_CHK( JsvalToString(cx, &JL_FARG(1), (const char **)&buffer) );
+
+	if ( dWidth == sWidth && dHeight == sHeight && dChannels == sChannels && px == 0 && py == 0 ) { // optimization
+		
+		PTYPE *dPos = tex->cbuffer;
+		const uint8_t *sPos = buffer;
+		unsigned int count = dWidth * dHeight * dChannels;
+
+		for ( unsigned int i = 0; i < count; i++ ) {
+			
+			*dPos = (PTYPE)*sPos / (PTYPE)255.f;
+			dPos++;
+			sPos++;
+		}
+		return JS_TRUE;			
+	}
 
 	BorderMode borderMode;
 	if ( JL_FARG_ISDEF(4) ) {
@@ -3234,28 +3289,10 @@ DEFINE_FUNCTION_FAST( Import ) { // (Blob)image, (int)x, (int)y
 		int tmp;
 		JL_CHK( JsvalToInt(cx, JL_FARG(4), &tmp) );
 		borderMode = (BorderMode)tmp;
-	} else
+	} else {
+
 		borderMode = borderClamp;
-
-
-	int dWidth;
-	dWidth = tex->width;
-	int dHeight;
-	dHeight = tex->height;
-	int dChannels;
-	dChannels = tex->channels;
-
-	int sWidth, sHeight, sChannels;
-	GetPropertyInt(cx, bstr, "width", &sWidth);
-	GetPropertyInt(cx, bstr, "height", &sHeight);
-	GetPropertyInt(cx, bstr, "channels", &sChannels);
-
-	//uint8_t *buffer = (uint8_t*)BlobData(cx, bstr);
-
-	const uint8_t *buffer;
-//	JL_CHK( BlobBuffer(cx, bstr, (const void **)&buffer) );
-
-	JL_CHK( JsvalToString(cx, &JL_FARG(1), (const char **)&buffer) );
+	}
 
 	int x, y;
 	int dx, dy; // destination
@@ -3272,12 +3309,10 @@ DEFINE_FUNCTION_FAST( Import ) { // (Blob)image, (int)x, (int)y
 					dx = Wrap(dx, dWidth);
 					dy = Wrap(dy, dHeight);
 					break;
-			case borderClamp:
-				if ( !(dx >= 0 && dx < dWidth && dy >= 0 && dy < dHeight) ) {
-					continue; // skip
-				}
+				case borderClamp:
+					if ( !(dx >= 0 && dx < dWidth && dy >= 0 && dy < dHeight) )
+						continue; // skip
 				break;
-
 			default:
 				JL_REPORT_ERROR( "Invalid border mode." );
 			}
@@ -3288,7 +3323,6 @@ DEFINE_FUNCTION_FAST( Import ) { // (Blob)image, (int)x, (int)y
 				tex->cbuffer[posDst+c] = (PTYPE)buffer[posSrc+c] / (PTYPE)255.f;
 		}
 
-	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -4180,6 +4214,27 @@ DEFINE_FUNCTION_FAST( GetBorderLevelRange ) {
 }
 
 
+/**doc
+$TOC_MEMBER $INAME
+ $THIS $INAME()
+  Returns the average $pval.
+**/
+DEFINE_FUNCTION_FAST( GetGlobalLevel ) {
+
+	Texture *tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(tex);
+
+	PTYPE sum;
+	sum = 0;
+	unsigned int i, tsize;
+	tsize = tex->width * tex->height * tex->channels;
+	for ( i = 0; i < tsize; i++ )
+		sum += tex->cbuffer[i];
+	JL_CHK( DoubleToJsval(cx, sum / (PTYPE)tsize, JL_FRVAL) );
+	return JS_TRUE;
+	JL_BAD;
+}
+
 
 /**doc
 $TOC_MEMBER $INAME
@@ -4285,7 +4340,6 @@ DEFINE_FUNCTION_FAST( AddPerlin2 ) {
 /**doc
 === Properties ===
 **/
-
 
 /**doc
 $TOC_MEMBER $INAME
@@ -4503,6 +4557,8 @@ CONFIGURE_CLASS
 		FUNCTION_FAST( GetPixelAt )
 		FUNCTION_FAST( GetLevelRange )
 		FUNCTION_FAST( GetBorderLevelRange )
+		FUNCTION_FAST( GetGlobalLevel )
+
 		FUNCTION_FAST( ApplyColorMatrix )
 		FUNCTION_FAST( AddPerlin2 )
 

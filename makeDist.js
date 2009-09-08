@@ -166,6 +166,9 @@ Copy('./src/jssvg/fonts.conf', './dist/examples');
 Copy('./src/jsdebug/debugger.js', './dist/bin');
 Copy('./src/jsdebug/debugger.xul', './dist/bin');
 
+Copy('./src/jsprotex/liveconsole.xul', './dist/bin');
+
+
 RecursiveDir('./Win32_opt', function(file) /\.dll$/(file.name) && Copy(file.name, './dist/bin') );
 
 Copy('./Win32_opt/jshost.exe', './dist/bin');

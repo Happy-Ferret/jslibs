@@ -10,25 +10,46 @@ Exec('..\\common\\tools.js');
 
 CreateOpenGLWindow();
 
-var vi = new VideoInput('QuickCam', 999, 999, 60); // try to get the smallest size and the lowest fps
+var vi = new VideoInput('QuickCam', 800, 600, 60); // try to get the smallest size and the lowest fps
 Print('full name: '+vi.name, '\n');
 
-var t0 = new Texture(128,128,3).Set(0);
-var t1 = new Texture(128,128,3).Set(0);
+var tmp1 = new Texture(128,128,3).Set(0);
+var tmp2 = new Texture(128,128,3).Set(0);
+var noise = new Texture(128,128,3).Set(0);
 
 var key;
 while ( (key = GetKey()) != 27 ) {
 
-	var texture = new Texture(vi.width, vi.height, vi.channels);
-	var img = vi.GetImage();
-	texture.Import(img,0,0);
-	texture.Resize(128,128);
+	var texture = new Texture(vi.GetImage()).Resize(128,128, true);
 	
-	t0.Set(texture).Mult(0.1);
-	t1.Add(t0);
-	t1.NormalizeLevels();
+	var globalLevel = texture.GetGlobalLevel();
+	Print('Global level: ', globalLevel, '\n');
 	
-	DisplayTexture(t1);
+	if ( globalLevel < 0.20 ) {
+
+		noise.Add(texture);
+		noise.Mult(0.88);
+		Print('...Getting noise\n');
+		DisplayTexture(noise);
+	} else {
+
+		tmp1.Mult(0.92);
+		tmp1.Add(texture);
+
+		tmp2.Set(tmp1);
+
+		if ( !GetKeyState(K_n) ) // without noise reduction
+			tmp2.Add(noise, -1);
+
+//		tmp2.NormalizeLevels();
+		tmp2.Mult(0.1);
+		
+		if ( GetKeyState(K_s) ) // source image only
+			DisplayTexture(texture);
+		else
+			DisplayTexture(tmp2);
+	}
+
 	CollectGarbage();
 	Sleep(10);
 }

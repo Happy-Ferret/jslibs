@@ -15,7 +15,6 @@ function CreateOpenGLWindow() {
 	GlSetAttribute( GL_ACCELERATED_VISUAL, 1 );
 	SetVideoMode( 640, 480, 32, OPENGL | RESIZABLE ); // | ASYNCBLIT // RESIZABLE FULLSCREEN
 	Ogl.Viewport(0,0,640,480);
-
 }
 
 var textureId;
@@ -43,10 +42,10 @@ function DisplayTexture( texture ) {
 //	Ogl.Translate(0,0,-1);
 	
 	Ogl.Begin(Ogl.QUADS);
-	Ogl.TexCoord(0, 0); Ogl.Vertex(1,1);
-	Ogl.TexCoord(1, 0); Ogl.Vertex(-1,1);
-	Ogl.TexCoord(1, 1); Ogl.Vertex(-1,-1);
-	Ogl.TexCoord(0, 1); Ogl.Vertex(1,-1);
+	Ogl.TexCoord(0, 0); Ogl.Vertex(-1,1);
+	Ogl.TexCoord(1, 0); Ogl.Vertex(1,1);
+	Ogl.TexCoord(1, 1); Ogl.Vertex(1,-1);
+	Ogl.TexCoord(0, 1); Ogl.Vertex(-1,-1);
 	Ogl.End();
 	
 	GlSwapBuffers();

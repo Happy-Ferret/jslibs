@@ -26,5 +26,5 @@ Print('Starting the simulation (press ctrl-c to abort)...\n');
 while ( !endSignal ) {
 
 	Sleep(10);
-	world.Step(0.01);
+	world.Step(10);
 }

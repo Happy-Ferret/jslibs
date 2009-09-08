@@ -18,11 +18,11 @@ typedef void (*IdFinalizeCallback_t)(void* data);
 
 #define ID_TYPE uint32_t
 
-// (TBD) better alignment: __attribute__ ((__vector_size__ (16), __may_alias__)); OR  __declspec(align(64)) 
+// (TBD) better alignment: __attribute__ ((__vector_size__ (16), __may_alias__)); OR  __declspec(align(64))
+//       note that SSE data must be 128bits alligned !
 struct IdPrivate {
 	ID_TYPE idType;
 	IdFinalizeCallback_t finalizeCallback;
-//	u_int32_t refCount;
 };
 
 inline JSClass *GetIdJSClass( JSContext *cx ) {
@@ -80,8 +80,7 @@ inline bool IsIdType( JSContext *cx, jsval idVal, ID_TYPE idType ) {
 
 inline void* GetIdPrivate( JSContext *cx, jsval idVal ) {
 
-	IdPrivate *pv = (IdPrivate*)JL_GetPrivate(cx, JSVAL_TO_OBJECT(idVal));
-	return (char*)pv + sizeof(IdPrivate); // user data is just behind our private structure.
+	return (char*)JL_GetPrivate(cx, JSVAL_TO_OBJECT(idVal)) + sizeof(IdPrivate); // user data is just behind our private structure.
 }
 
 
