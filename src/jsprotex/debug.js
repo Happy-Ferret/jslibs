@@ -133,9 +133,12 @@ function UpdateTexture(imageIndex) { // <<<<<<<<<<<<<<<<<-----------------------
 //	live.Poll();
 //	live.Function(texture);
 
-
 	// perlin noise
 	texture.Set(0);
+	texture.AddGradiantQuad(RED, GREEN, BLUE, WHITE);
+
+return;
+
 	texture.AddPerlin2([z/20,0,0], [10,0,0], [0,10,0], 2);
 
 function FractalCubeFace(px, py, pz,  x1, y1, z1,  x2, y2, z2) {

@@ -16,6 +16,7 @@
 #define _TEXTURE_H_
 
 #include "../common/jsHelper.h"
+#include "../common/membuffer.h"
 
 #define PTYPE float
 
@@ -27,23 +28,19 @@
 // 3 : RGB
 // 4 : RGBA
 
-struct Point {
-	float x, y;
-};
+
 
 struct Texture {
+
 	PTYPE *cbuffer;
+	unsigned int cbufferSize;
+
 	PTYPE *cbackBuffer;
-	bool cbackBufferInvalidSize;
-	int width;
-	int height;
-	char channels;
-};
+	unsigned int cbackBufferSize;
 
-struct RGB {
-	PTYPE r,g,b;
+	unsigned int width, height;
+	unsigned char channels;
 };
-
 
 inline JSClass* TextureJSClass( JSContext *cx ) {
 

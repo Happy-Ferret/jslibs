@@ -85,26 +85,63 @@ double PerlinNoise2(double x, double y, double z);
 // un-normalize the pixel value from range -1..1
 #define PUNZNORM(p) ( (PUNNORM(p) + 1 ) / 2)
 
-#define PRAND (genrand_real1())
+#define PRAND (genrand_real1()) // mt19937ar-cok.c
 
 
+inline JSBool TextureInit( JSContext *cx, Texture *tex, unsigned int width, unsigned int height, unsigned int channels ) {
 
+	tex->cbufferSize = width * height * channels * sizeof(PTYPE);
+	tex->cbuffer = (PTYPE*)JS_malloc(cx, tex->cbufferSize);
+	tex->cbackBuffer = NULL; // see TextureSetupBackBuffer()
+	tex->width = width;
+	tex->height = height;
+	tex->channels = channels;
+	return JS_TRUE;
+}
 
-inline void TextureSetupBackBuffer( JSContext *cx, Texture *tex ) {
-
+inline JSBool TextureResizeBackBuffer( JSContext *cx, Texture *tex, unsigned int newSize ) {
+	
+	if ( tex->cbackBuffer != NULL && tex->cbackBufferSize == tex->cbufferSize )
+		return JS_TRUE;
+	tex->cbackBufferSize = newSize;
 	if ( tex->cbackBuffer == NULL )
-		tex->cbackBuffer = (PTYPE*)JS_malloc(cx, tex->width * tex->height * tex->channels * sizeof(PTYPE) );
-	if ( tex->cbackBufferInvalidSize )
-		tex->cbackBuffer = (PTYPE*)JS_realloc(cx, tex->cbackBuffer, tex->width * tex->height * tex->channels * sizeof(PTYPE) );
-	tex->cbackBufferInvalidSize = false;
+		tex->cbackBuffer = (PTYPE*)JS_malloc(cx, newSize);
+	else
+		tex->cbackBuffer = (PTYPE*)JS_realloc(cx, tex->cbackBuffer, newSize);
+	return JS_TRUE;
+}
+
+inline JSBool TextureSetupBackBuffer( JSContext *cx, Texture *tex ) {
+
+	return TextureResizeBackBuffer(cx, tex, tex->cbufferSize );
 }
 
 inline void TextureSwapBuffers( Texture *tex ) {
 
-	PTYPE *tmp = tex->cbuffer;
+	PTYPE *tmpBuffer = tex->cbuffer;
 	tex->cbuffer = tex->cbackBuffer;
-	tex->cbackBuffer = tmp;
+	tex->cbackBuffer = tmpBuffer;
+
+	unsigned int tmpBufferSize = tex->cbufferSize;
+	tex->cbufferSize = tex->cbackBufferSize;
+	tex->cbackBufferSize = tmpBufferSize;
 }
+
+inline void TextureFreeBuffers( JSContext* cx, Texture *tex ) {
+
+	if ( tex->cbackBuffer != NULL ) {
+
+		JS_free(cx, tex->cbackBuffer);
+		tex->cbackBuffer = NULL;
+	}
+
+	if ( tex->cbuffer != NULL ) {
+
+		JS_free(cx, tex->cbuffer);
+		tex->cbuffer = NULL;
+	}
+}
+
 
 
 inline float Length2D( float a, float b ) {
@@ -113,19 +150,6 @@ inline float Length2D( float a, float b ) {
 }
 
 enum DesaturateMode { desaturateLightness, desaturateSum, desaturateAverage };
-
-
-
-//unsigned long int NoiseInt(unsigned long int n) {
-//
-//	n = (n << 13) ^ n;
-//	return (n * (n * n * 60493 + 19990303) + 1376312589);
-//}
-//
-//float NoiseReal(unsigned long int n) { // return: 0 <= val <= 1
-//
-//	return (float)NoiseInt(n) / 4294967296.f;
-//}
 
 enum BorderMode { borderClamp, borderWrap, borderMirror, borderValue, borderZero };
 
@@ -151,7 +175,7 @@ ALWAYS_INLINE PTYPE* PosByMode( const Texture *tex, int x, int y, BorderMode mod
 
 	switch ( mode ) {
 		case borderClamp:
-			if ( x < 0 || x >= tex->width || y < 0 || y >= tex->height )
+			if ( x < 0 || x >= (int)tex->width || y < 0 || y >= (int)tex->height )
 				return NULL; // skip
 			break;
 		case borderWrap:
@@ -163,10 +187,17 @@ ALWAYS_INLINE PTYPE* PosByMode( const Texture *tex, int x, int y, BorderMode mod
 			y = Mirror(y, tex->height);
 			break;
 		case borderValue:
-			if ( x < 0 ) x = 0;
-			else if ( x >= tex->width ) x = tex->width - 1;
-			if ( y < 0 ) y = 0;
-			else if ( y >= tex->height ) y = tex->height - 1;
+			if ( x < 0 )
+				x = 0;
+			else
+			if ( x >= (int)tex->width )
+				x = (int)tex->width - 1;
+			
+			if ( y < 0 )
+				y = 0;
+			else
+			if ( y >= (int)tex->height )
+				y = (int)tex->height - 1;
 			break;
 		default:
 			return NULL; // skip
@@ -177,7 +208,7 @@ ALWAYS_INLINE PTYPE* PosByMode( const Texture *tex, int x, int y, BorderMode mod
 
 
 // levels: number | array | string ('#8800AAFF')
-inline JSBool InitLevelData( JSContext* cx, jsval value, unsigned int count, PTYPE *level ) {
+inline JSBool InitLevelData( JSContext* cx, jsval value, unsigned int minCount, PTYPE *level ) {
 	
 	unsigned int i;
 
@@ -187,7 +218,7 @@ inline JSBool InitLevelData( JSContext* cx, jsval value, unsigned int count, PTY
 		JL_CHK( JsvalToFloat(cx, value, &tmp) );
 		PTYPE val;
 		val = (PTYPE)tmp;
-		for ( i = 0; i < count; i++ )
+		for ( i = 0; i < minCount; i++ )
 			level[i] = val;
 		return JS_TRUE;
 	}
@@ -195,8 +226,8 @@ inline JSBool InitLevelData( JSContext* cx, jsval value, unsigned int count, PTY
 	if ( JsvalIsArray(cx, value) ) {
 
 		uint32 length;
-		JL_CHK( JsvalToFloatVector(cx, value, level, count, &length) );
-		JL_S_ASSERT( length < count, "Array too small." );
+		JL_CHK( JsvalToFloatVector(cx, value, level, minCount, &length) );
+		JL_S_ASSERT( length >= minCount, "Array too small." );
 		return JS_TRUE;
 	}
 
@@ -205,10 +236,10 @@ inline JSBool InitLevelData( JSContext* cx, jsval value, unsigned int count, PTY
 		const char *color;
 		unsigned int length;
 		JL_CHK( JsvalToStringAndLength(cx, &value, &color, &length) );
-		if ( *color++ == '#' && (length-1) / 2 >= count ) {
+		if ( *color++ == '#' && (length-1) / 2 >= minCount ) {
 
 			unsigned char val;
-			for ( i = 0; i < count; i++ ) {
+			for ( i = 0; i < minCount; i++ ) {
 
 				if ( *color >= '0' && *color <= '9' ) val = *color - '0';
 				else if ( *color >= 'A' && *color <= 'F' ) val = *color - 'A' + 10;
@@ -349,22 +380,17 @@ JSBool ValueToTexture( JSContext* cx, jsval value, Texture **tex ) {
 	JL_BAD;
 }
 
-inline void FreeTextureBuffers( JSContext* cx, Texture *tex ) {
-
-	if ( tex->cbackBuffer != NULL )
-		JS_free(cx, tex->cbackBuffer);
-	if ( tex->cbuffer != NULL )
-		JS_free(cx, tex->cbuffer);
-}
-
 
 DEFINE_FINALIZE() {
+
+	if ( obj == *_prototype )
+		return;
 
 	Texture *tex = (Texture *)JL_GetPrivate(cx, obj);
 	if ( !tex )
 		return;
 
-	FreeTextureBuffers(cx, tex);
+	TextureFreeBuffers(cx, tex);
 	JS_free(cx, tex);
 	JL_SetPrivate(cx, obj, NULL);
 }
@@ -402,8 +428,6 @@ DEFINE_CONSTRUCTOR() {
 	Texture *tex;
 	tex = (Texture *)JS_malloc(cx, sizeof(Texture));
 	JL_CHK( tex );
-	tex->cbackBuffer = NULL;
-	tex->cbackBufferInvalidSize = false;
 
 	JL_CHK( SetBufferGetInterface(cx, obj, NativeInterfaceBufferGet) );
 
@@ -418,12 +442,8 @@ DEFINE_CONSTRUCTOR() {
 		JL_S_ASSERT( height > 0, "Invalid height." );
 		JL_S_ASSERT( channels <= PMAXCHANNELS, "Too many channels." );
 
-		tex->cbuffer = (PTYPE*)JS_malloc(cx, width * height * channels * sizeof(PTYPE) );
-		JL_CHK( tex->cbuffer );
+		JL_CHK( TextureInit(cx, tex, width, height, channels) );
 
-		tex->width = width;
-		tex->height = height;
-		tex->channels = channels;
 		JL_SetPrivate(cx, obj, tex);
 		return JS_TRUE;
 	}
@@ -432,47 +452,37 @@ DEFINE_CONSTRUCTOR() {
 
 		Texture *srcTex = (Texture *)JL_GetPrivate(cx, JSVAL_TO_OBJECT(JL_ARG(1)));
 		JL_S_ASSERT_RESOURCE(srcTex);
+
 		int tsize;
 		tsize = srcTex->width * srcTex->height * srcTex->channels;
-		tex->cbuffer = (PTYPE*)JS_malloc(cx, tsize * sizeof(PTYPE) );
-		JL_CHK( tex->cbuffer );
+		JL_CHK( TextureInit(cx, tex, srcTex->width, srcTex->height, srcTex->channels) );
+
 		memcpy( tex->cbuffer, srcTex->cbuffer, tsize * sizeof(PTYPE) );
-		tex->width = srcTex->width;
-		tex->height = srcTex->height;
-		tex->channels = srcTex->channels;
 		JL_SetPrivate(cx, obj, tex);
 		return JS_TRUE;
 	}
 
-	if ( JSVAL_IS_STRING(JL_ARG(1)) || JSVAL_IS_OBJECT(JL_ARG(1)) && BufferGetInterface(cx, JSVAL_TO_OBJECT(JL_ARG(1))) != NULL ) { // construct from an image
+	if ( JSVAL_IS_STRING(JL_ARG(1)) || !JSVAL_IS_PRIMITIVE(JL_ARG(1)) && BufferGetInterface(cx, JSVAL_TO_OBJECT(JL_ARG(1))) != NULL ) { // construct from an image
 
-		JSObject *bstrObj;
-		JL_CHK( JS_ValueToObject(cx, JL_ARG(1), &bstrObj) );
+		JSObject *imageObj;
+		JL_CHK( JS_ValueToObject(cx, JL_ARG(1), &imageObj) );
+		unsigned int i, tsize, dWidth, dHeight, dChannels, sWidth, sHeight, sChannels;
 
-		int dWidth, dHeight, dChannels;
+		JL_CHK( GetPropertyUInt(cx, imageObj, "width", &sWidth) );
+		JL_CHK( GetPropertyUInt(cx, imageObj, "height", &sHeight) );
+		JL_CHK( GetPropertyUInt(cx, imageObj, "channels", &sChannels) );
+		tsize = sWidth * sHeight * sChannels;
+
 		dWidth = tex->width;
 		dHeight = tex->height;
 		dChannels = tex->channels;
 
-		int sWidth, sHeight, sChannels;
-		JL_CHK( GetPropertyInt(cx, bstrObj, "width", &sWidth) );
-		JL_CHK( GetPropertyInt(cx, bstrObj, "height", &sHeight) );
-		JL_CHK( GetPropertyInt(cx, bstrObj, "channels", &sChannels) );
-
 		const uint8_t *buffer;
 		JL_CHK( JsvalToString(cx, &JL_ARG(1), (const char **)&buffer)); // warning: GC on the returned buffer !
 
-		tex->width = sWidth;
-		tex->height = sHeight;
-		tex->channels = sChannels;
+		JL_CHK( TextureInit(cx, tex, sWidth, sHeight, sChannels) );
 
-		int tsize;
-		tsize = sWidth * sHeight * sChannels;
-
-		tex->cbuffer = (PTYPE*)JS_malloc(cx, tsize * sizeof(PTYPE));
-		JL_CHK( tex->cbuffer );
-
-		for ( int i = 0; i < tsize; i++ )
+		for ( i = 0; i < tsize; i++ )
 			tex->cbuffer[i] = (PTYPE)buffer[i] / (PTYPE)255.f; // map [0 -> 255] to [0.0 -> 1.0]
 
 		JL_SetPrivate(cx, obj, tex);
@@ -499,8 +509,8 @@ DEFINE_FUNCTION( Free ) {
 
 	Texture *tex;
 	tex = (Texture*)JL_GetPrivate(cx, obj);
-	if ( tex != NULL )
-		FreeTextureBuffers(cx, tex);
+	JL_S_ASSERT_RESOURCE(tex);
+	TextureFreeBuffers(cx, tex);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1149,10 +1159,10 @@ DEFINE_FUNCTION_FAST( InvertLevels ) { // level = 1 / level
 
 	Texture *tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE(tex);
-	int tsize;
-	tsize = tex->width * tex->height * tex->channels;
-	for ( int i = 0; i < tsize; i++ )
-		tex->cbuffer[i] = 1 / tex->cbuffer[i];
+	unsigned int i, size;
+	size = tex->width * tex->height * tex->channels;
+	for ( i = 0; i < size; i++ )
+		tex->cbuffer[i] = 1. / tex->cbuffer[i];
 	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
 	return JS_TRUE;
 	JL_BAD;
@@ -1398,12 +1408,14 @@ DEFINE_FUNCTION_FAST( Desaturate ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $THIS $INAME( otherTexture )
+ $THIS $INAME( texture )
+ $THIS $INAME( image )
  $THIS $INAME( color )
   $H arguments
-   $ARG Texture otherTexture:
+   $ARG Texture texture:
+   $ARG Image image:
    $ARG colorInfo color:
-  Set a texture with another texture or a given _color_.
+  Set a texture with another texture, image or _color_.
 **/
 // PTYPE ok
 DEFINE_FUNCTION_FAST( Set ) {
@@ -1412,29 +1424,66 @@ DEFINE_FUNCTION_FAST( Set ) {
 	Texture *tex;
 	tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE(tex);
-	int channels;
+	unsigned int i, size, channels;
 	channels = tex->channels;
-	int tsize;
-	tsize = tex->width * tex->height * channels;
-	if ( IsTexture(cx, JL_FARG(1)) ) {
+	size = tex->width * tex->height * channels;
+	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
+
+	jsval *arg1 = &JL_FARG(1);
+
+//	if ( JSVAL_IS_NUMBER(*arg1) || JsvalIsArray(cx, *arg1) || JSVAL_IS_STRING(*arg1) ) {
+//	}
+
+	if ( IsTexture(cx, *arg1) ) {
 
 		Texture *tex1;
-		JL_CHK( ValueToTexture(cx, JL_FARG(1), &tex1) );
-		JL_S_ASSERT( tex->width == tex1->width && tex->height == tex1->height && channels == tex1->channels, "Images must have the same size." );
-		for ( int i = 0; i < tsize; i++ )
-			tex->cbuffer[i] = tex1->cbuffer[i];
-	} else {
-
-		PTYPE pixel[PMAXCHANNELS];
-		JL_CHK( InitLevelData(cx, JL_FARG(1), channels, pixel) );
-
-		int i, c, size = tex->width * tex->height;
+		JL_CHK( ValueToTexture(cx, *arg1, &tex1) );
+		JL_S_ASSERT( tex->width == tex1->width && tex->height == tex1->height && channels == tex1->channels, "Textures must have the same size." );
 		for ( i = 0; i < size; i++ )
-			for ( c = 0; c < channels; c++ )
-				tex->cbuffer[i*channels+c] = pixel[c];
-
+			tex->cbuffer[i] = tex1->cbuffer[i];
+		return JS_TRUE;
 	}
-	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
+
+	if ( !JSVAL_IS_PRIMITIVE(*arg1) && BufferGetInterface(cx, JSVAL_TO_OBJECT(*arg1)) != NULL ) {
+		
+		JSObject *imageObj;
+		JL_CHK( JS_ValueToObject(cx, *arg1, &imageObj) );
+		unsigned int i, tsize, dWidth, dHeight, dChannels, sWidth, sHeight, sChannels;
+
+		JL_CHK( GetPropertyUInt(cx, imageObj, "width", &sWidth) );
+		JL_CHK( GetPropertyUInt(cx, imageObj, "height", &sHeight) );
+		JL_CHK( GetPropertyUInt(cx, imageObj, "channels", &sChannels) );
+		tsize = sWidth * sHeight * sChannels;
+
+		JL_S_ASSERT( tex->width == sWidth && tex->height == sHeight && channels == sChannels, "Images must have the same size." );
+
+		dWidth = tex->width;
+		dHeight = tex->height;
+		dChannels = tex->channels;
+
+		const uint8_t *buffer;
+		JL_CHK( JsvalToString(cx, arg1, (const char **)&buffer)); // warning: GC on the returned buffer !
+
+		tex->width = sWidth;
+		tex->height = sHeight;
+		tex->channels = sChannels;
+
+//		tex->cbuffer = (PTYPE*)JS_malloc(cx, tsize * sizeof(PTYPE));
+//		JL_CHK( tex->cbuffer );
+
+		for ( i = 0; i < tsize; i++ )
+			tex->cbuffer[i] = (PTYPE)buffer[i] / (PTYPE)255.f; // map [0 -> 255] to [0.0 -> 1.0]
+		JL_SetPrivate(cx, JL_FOBJ, tex);
+		return JS_TRUE;
+	}
+
+	PTYPE pixel[PMAXCHANNELS];
+	JL_CHK( InitLevelData(cx, *arg1, channels, pixel) );
+	unsigned int c;
+	size = tex->width * tex->height;
+	for ( c = 0; c < channels; c++ )
+		for ( i = 0; i < size; i++ )
+			tex->cbuffer[i*channels+c] = pixel[c];
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1454,55 +1503,72 @@ DEFINE_FUNCTION_FAST( Add ) {
 	Texture *tex;
 	tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE(tex);
-	unsigned int i, channels, tsize;
+	unsigned int i, c, channels, size;
 	channels = tex->channels;
-	tsize = tex->width * tex->height * channels;
+	size = tex->width * tex->height * channels;
 
 	float factor;
 	if ( JL_FARG_ISDEF(2) )
 		JL_CHK( JsvalToFloat(cx, JL_FARG(2), &factor) );
 	else
-		factor = 1;
+		factor = 1.;
 
-	if ( IsTexture(cx, JL_FARG(1)) ) {
+	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
+	jsval *arg1 = &JL_FARG(1);
+
+	if ( JSVAL_IS_NUMBER(*arg1) ) {
+
+		PTYPE value;
+		JL_CHK( JsvalToFloat(cx, *arg1, &value) );
+		size = tex->width * tex->height * tex->channels;
+		value *= factor;
+		for ( i = 0; i < size; i++ )
+			tex->cbuffer[i] += value;
+		return JS_TRUE;
+	}
+
+	if ( IsTexture(cx, *arg1) ) {
 
 		Texture *tex1;
-		JL_CHK( ValueToTexture(cx, JL_FARG(1), &tex1) );
+		JL_CHK( ValueToTexture(cx, *arg1, &tex1) );
 
 		JL_S_ASSERT( tex1->width == tex->width && tex1->height == tex->height && ( tex1->channels == 1 || tex1->channels == channels), "Incompatible image format." );
-
 		
 		if ( tex1->channels == 1 ) {
 			
 			if ( factor == 1. )  // optimization if factor == 1
-				for ( i = 0; i < tsize; i++ )
+				for ( i = 0; i < size; i++ )
 					tex->cbuffer[i] += tex1->cbuffer[i / channels];
 			else
-				for ( i = 0; i < tsize; i++ )
+				for ( i = 0; i < size; i++ )
 					tex->cbuffer[i] += tex1->cbuffer[i / channels] * factor;
 		} else {
 
 			if ( factor == 1. ) // optimization if factor == 1
-				for ( i = 0; i < tsize; i++ )
+				for ( i = 0; i < size; i++ )
 					tex->cbuffer[i] += tex1->cbuffer[i];
 			else
-				for ( i = 0; i < tsize; i++ )
+				for ( i = 0; i < size; i++ )
 					tex->cbuffer[i] += tex1->cbuffer[i] * factor;
 		}
-	} else {
+		return JS_TRUE;
+	}
+
+	if ( JsvalIsArray(cx, *arg1) ) {
 
 		PTYPE pixel[PMAXCHANNELS];
-		unsigned int c, size = tex->width * tex->height;
+		size = tex->width * tex->height;
 
-		JL_CHK( InitLevelData(cx, JL_FARG(1), channels, pixel) );
+		JL_CHK( InitLevelData(cx, *arg1, channels, pixel) );
 		for ( i = 0; i < channels; i++ )
 			pixel[i] *= factor;
-		for ( i = 0; i < size; i++ )
-			for ( c = 0; c < channels; c++ )
+		for ( c = 0; c < channels; c++ )
+			for ( i = 0; i < size; i++ )
 				tex->cbuffer[i*channels+c] += pixel[c];
+		return JS_TRUE;
 	}
-	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
-	return JS_TRUE;
+	
+	JL_REPORT_ERROR("Unsupported argument.");
 	JL_BAD;
 }
 
@@ -1520,61 +1586,52 @@ DEFINE_FUNCTION_FAST( Mult ) {
 	Texture *tex;
 	tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE(tex);
-	int channels;
+	unsigned int i, c, channels, size;
 	channels = tex->channels;
-	int tsize;
-	tsize = tex->width * tex->height * channels;
+	size = tex->width * tex->height * channels;
+	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
+	jsval *arg1 = &JL_FARG(1);
 
-	if ( IsTexture(cx, JL_FARG(1)) ) {
+	if ( JSVAL_IS_NUMBER(*arg1) ) {
+
+		PTYPE value;
+		JL_CHK( JsvalToFloat(cx, *arg1, &value) );
+		size = tex->width * tex->height * tex->channels;
+		for ( i = 0; i < size; i++ )
+			tex->cbuffer[i] *= value;
+		return JS_TRUE;
+	}
+
+	if ( JsvalIsArray(cx, *arg1) ) {
+
+		PTYPE pixel[PMAXCHANNELS];
+		JL_CHK( InitLevelData(cx, *arg1, channels, pixel) );
+		size = tex->width * tex->height;
+		for ( c = 0; c < channels; c++ )
+			for ( i = 0; i < size; i++ )
+				tex->cbuffer[i*channels+c] *= pixel[c];
+		return JS_TRUE;
+	}
+
+	if ( IsTexture(cx, *arg1) ) {
 
 		Texture *tex1;
-		JL_CHK( ValueToTexture(cx, JL_FARG(1), &tex1) );
+		JL_CHK( ValueToTexture(cx, *arg1, &tex1) );
 		JL_S_ASSERT( tex1->width == tex->width && tex1->height == tex->height && ( tex1->channels == 1 || tex1->channels == channels), "Incompatible image format." );
 
 		if ( tex1->channels == 1 ) {
 
-			for ( int i = 0; i < tsize; i++ )
+			for ( i = 0; i < size; i++ )
 				tex->cbuffer[i] *= tex1->cbuffer[i / channels];
 		} else {
 
-			for ( int i = 0; i < tsize; i++ )
+			for ( i = 0; i < size; i++ )
 				tex->cbuffer[i] *= tex1->cbuffer[i];
 		}
-/* using Aliasing() seems more useful than Mult()
-	} else
-	if ( JsvalIsFunction(cx, JL_FARG(1)) ) {
-
-		JL_S_ASSERT_ARG_MIN( 2 );
-		int aliasing;
-		JL_CHK( JsvalToInt(cx, JL_FARG(2), &aliasing) );
-
-		PTYPE *curve = (PTYPE*)malloc( sizeof(PTYPE) * aliasing );
-		JL_CHK( InitCurveData(cx, JL_FARG(1), aliasing, curve) );
-
-		int i, c, size = tex->width * tex->height;
-		for ( i = 0; i < size; i++ )
-			for ( c = 0; c < channels; c++ ) {
-
-				PTYPE *pval = &tex->cbuffer[i*channels+c];
-				int curveIndex = (long)( (aliasing-1) * *pval / PMAX );
-				*pval *= curve[MINMAX(curveIndex, 0, aliasing-1)];
-			}
-
-		free(curve);
-*/
-	} else {
-
-		PTYPE pixel[PMAXCHANNELS];
-		JL_CHK( InitLevelData(cx, JL_FARG(1), channels, pixel) );
-		int i, c, size;
-		size = tex->width * tex->height;
-		for ( i = 0; i < size; i++ )
-			for ( c = 0; c < channels; c++ )
-				tex->cbuffer[i*channels+c] *= pixel[c];
+		return JS_TRUE;
 	}
 
-	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
-	return JS_TRUE;
+	JL_REPORT_ERROR("Unsupported argument.");
 	JL_BAD;
 }
 
@@ -1774,19 +1831,15 @@ DEFINE_FUNCTION_FAST( Rotate90 ) { // (TBD) test it
 
 	turn = Wrap(turn, turn);
 
-	int channels;
-	channels = tex->channels;
-	int width;
+	unsigned int width, height, channels, x, y;
 	width = tex->width;
-	int height;
 	height = tex->height;
-
-	int x, y;
+	channels = tex->channels;
 
 	TextureSetupBackBuffer(cx, tex);
 
 	int pos, pos1;
-	int c;
+	unsigned int c;
 
 	for ( y = 0; y < height; y++ )
 		for ( x = 0; x < width; x++ ) {
@@ -1850,22 +1903,19 @@ DEFINE_FUNCTION_FAST( Flip ) {
 
 	TextureSetupBackBuffer(cx, tex);
 
-	int width;
+	unsigned int width, height, channels, x, y, c;
 	width = tex->width;
-	int height;
 	height = tex->height;
-	int channels;
 	channels = tex->channels;
 
-	int x, y, c;
-	int posDst, posSrc;
+	PTYPE *posDst, *posSrc;
 	for ( y = 0; y < height; y++ )
 		for ( x = 0; x < width; x++ ) {
 
-			posDst = (x + y * width) * channels;
-			posSrc = ( (flipX?width-1-x:x) + (flipY?height-1-y:y) * width ) * channels;
+			posDst = &tex->cbackBuffer[(x + y * width) * channels];
+			posSrc = &tex->cbuffer[( (flipX?width-1-x:x) + (flipY?height-1-y:y) * width ) * channels];
 			for ( c = 0; c < channels; c++ )
-				tex->cbackBuffer[posDst+c] = tex->cbuffer[posSrc+c];
+				posDst[c] = posSrc[c];
 		}
 	TextureSwapBuffers(tex);
 	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
@@ -1904,11 +1954,9 @@ DEFINE_FUNCTION_FAST( RotoZoom ) { // source: FxGen
 	int newHeight;
 	newHeight = height;
 
-	double centerX, centerY;
+	double centerX, centerY, zoomX, zoomY;
 	JL_CHK( JsvalToDouble(cx, JL_FARG(1), &centerX) );
 	JL_CHK( JsvalToDouble(cx, JL_FARG(2), &centerY) );
-
-	double zoomX, zoomY;
 	JL_CHK( JsvalToDouble(cx, JL_FARG(3), &zoomX) );
 	JL_CHK( JsvalToDouble(cx, JL_FARG(4), &zoomY) );
 
@@ -2053,94 +2101,92 @@ DEFINE_FUNCTION_FAST( Resize ) {
 	} else
 		borderMode = borderWrap;
 
-
-	if ( newWidth != width || newHeight != height ) { // nothing to do
-
-		unsigned int bufferSize = newWidth * newHeight * channels * sizeof(PTYPE);
-		
-		tex->cbackBuffer = (PTYPE*) (tex->cbackBuffer ? JS_realloc(cx, tex->cbackBuffer, bufferSize) : JS_malloc(cx, bufferSize));
-		JL_CHK( tex->cbackBuffer );
-
-		int spx, spy; // position in the source
-		float prx, pry; // pixel ratio
-		float rx;
-		rx = (float)width / newWidth; // texture ratio x
-		float ry;
-		ry = (float)height / newHeight; // texture ratio y
-		size_t x, y, c;
-
-		int pos, pos1, pos2, pos3, pos4; // offset in the buffer
-		float ratio1, ratio2, ratio3, ratio4; // pixel value ratio
-
-		for ( y = 0; y < newHeight; y++ )
-			for ( x = 0; x < newWidth; x++ ) {
-
-				if ( interpolate ) {
-/* slower
-					prx = modf( (float)x*rx, &tmp );
-					spx = (int)tmp;
-					pry = modf( (float)y*ry, &tmp );
-					spy = (int)tmp;
-*/
-					float u = x*rx;
-					float v = y*ry;
-
-					prx = abs(u - (long)u);	//Fraction
-					pry = abs(v - (long)v);	//Fraction
-					spx = Wrap(u, width);
-					spy = Wrap(v, height);
-
-
-
-					// (TBD) for radio1,..4, try to use the distance ?
-					switch ( borderMode ) { // Note: it is faster to do the switch outside the inner loop
-
-						case borderClamp:
-							// (TBD)
-							break;
-						case borderWrap:
-							pos1 = (  ((spx + 0)        ) + ((spy + 0)         ) * width  ) * channels;
-							pos2 = (  ((spx + 1) % width) + ((spy + 0)         ) * width  ) * channels;
-							pos3 = (  ((spx + 0)        ) + ((spy + 1) % height) * width  ) * channels;
-							pos4 = (  ((spx + 1) % width) + ((spy + 1) % height) * width  ) * channels;
-							break;
-						case borderMirror:
-							// (TBD)
-							break;
-						case borderValue:
-							// (TBD)
-							break;
-						default:
-							JL_REPORT_ERROR( "Invalid border mode." );
-					}
-
-					ratio1 = (1.f - prx) * (1.f - pry);
-					ratio2 = (prx) * (1.f - pry);
-					ratio3 = (1.f - prx) * (pry);
-					ratio4 = (prx) * (pry);
-
-					pos = (x + y * newWidth) * channels;
-					for ( c = 0; c < channels; c++ )
-						tex->cbackBuffer[pos+c] = tex->cbuffer[pos1+c] * ratio1 + tex->cbuffer[pos2+c] * ratio2 + tex->cbuffer[pos3+c] * ratio3 + tex->cbuffer[pos4+c] * ratio4;
-				} else {
-
-					spx = (int)(rx * x);
-					spy = (int)(ry * y);
-					pos = (x + y * newWidth) * channels;
-					pos1 = (spx + spy * width) * channels;
-					for ( c = 0; c < channels; c++ )
-						tex->cbackBuffer[pos+c] = tex->cbuffer[pos1+c];
-				}
-			}
-
-		TextureSwapBuffers(tex);
-		tex->cbackBufferInvalidSize = true;
-
-		tex->width = newWidth;
-		tex->height = newHeight;
-		// channels don't change
-	}
 	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
+
+	if ( newWidth == width && newHeight == height ) // optimization
+		return JS_TRUE;
+
+	JL_CHK( TextureResizeBackBuffer(cx, tex, newWidth * newHeight * channels * sizeof(PTYPE)) );
+
+	int spx, spy; // position in the source
+	float prx, pry; // pixel ratio
+	float rx;
+	rx = (float)width / newWidth; // texture ratio x
+	float ry;
+	ry = (float)height / newHeight; // texture ratio y
+	size_t x, y, c;
+
+	int pos, pos1, pos2, pos3, pos4; // offset in the buffer
+	float ratio1, ratio2, ratio3, ratio4; // pixel value ratio
+
+	for ( y = 0; y < newHeight; y++ )
+		for ( x = 0; x < newWidth; x++ ) {
+
+			if ( interpolate ) {
+/* slower
+				prx = modf( (float)x*rx, &tmp );
+				spx = (int)tmp;
+				pry = modf( (float)y*ry, &tmp );
+				spy = (int)tmp;
+*/
+				float u = x*rx;
+				float v = y*ry;
+
+				prx = abs(u - (long)u);	//Fraction
+				pry = abs(v - (long)v);	//Fraction
+				spx = Wrap(u, width);
+				spy = Wrap(v, height);
+
+
+
+				// (TBD) for radio1,..4, try to use the distance ?
+				switch ( borderMode ) { // Note: it is faster to do the switch outside the inner loop
+
+					case borderClamp:
+						// (TBD)
+						break;
+					case borderWrap:
+						pos1 = (  ((spx + 0)        ) + ((spy + 0)         ) * width  ) * channels;
+						pos2 = (  ((spx + 1) % width) + ((spy + 0)         ) * width  ) * channels;
+						pos3 = (  ((spx + 0)        ) + ((spy + 1) % height) * width  ) * channels;
+						pos4 = (  ((spx + 1) % width) + ((spy + 1) % height) * width  ) * channels;
+						break;
+					case borderMirror:
+						// (TBD)
+						break;
+					case borderValue:
+						// (TBD)
+						break;
+					default:
+						JL_REPORT_ERROR( "Invalid border mode." );
+				}
+
+				ratio1 = (1.f - prx) * (1.f - pry);
+				ratio2 = (prx) * (1.f - pry);
+				ratio3 = (1.f - prx) * (pry);
+				ratio4 = (prx) * (pry);
+
+				pos = (x + y * newWidth) * channels;
+				for ( c = 0; c < channels; c++ )
+					tex->cbackBuffer[pos+c] = tex->cbuffer[pos1+c] * ratio1 + tex->cbuffer[pos2+c] * ratio2 + tex->cbuffer[pos3+c] * ratio3 + tex->cbuffer[pos4+c] * ratio4;
+			} else {
+
+				spx = (int)(rx * x);
+				spy = (int)(ry * y);
+				pos = (x + y * newWidth) * channels;
+				pos1 = (spx + spy * width) * channels;
+				for ( c = 0; c < channels; c++ )
+					tex->cbackBuffer[pos+c] = tex->cbuffer[pos1+c];
+			}
+		}
+
+	TextureSwapBuffers(tex);
+
+	tex->width = newWidth;
+	tex->height = newHeight;
+	// channels don't change
+
+
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -2637,34 +2683,22 @@ DEFINE_FUNCTION_FAST( Normals ) {
 	Texture *tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE(tex);
 
-	if ( tex->channels != 3 && tex->cbackBuffer != NULL ) { // back buffer do not have the right format
-
-		JS_free(cx, tex->cbackBuffer );
-		tex->cbackBuffer = NULL;
-	}
-
-	if ( tex->cbackBuffer == NULL )
-		tex->cbackBuffer = (PTYPE*)JS_malloc(cx, tex->width * tex->height * 3 * sizeof(PTYPE) );
-
-	// from here, tex->cbackBuffer is a 3 channels buffer
+	JL_CHK( TextureResizeBackBuffer(cx, tex, tex->width * tex->height * 3 * sizeof(PTYPE)) ); // need a 3 channels back buffer
 
 	double amp;
-	if ( argc >= 1 )
+	if ( JL_FARG_ISDEF(1) )
 		JL_CHK( JsvalToDouble(cx, JL_FARG(1), &amp) );
 	else
-		amp = 1;
+		amp = 1.;
 
-	int width;
+	unsigned int width, height, channels, x, y, pos;
 	width = tex->width;
-	int height;
 	height= tex->height;
-	int channels;
 	channels = tex->channels;
 
 	Vector3 normal;
 	float dX, dY, fPix;
-	int x, y;
-	int pos;
+
 	for ( y = 0; y < height; y++ )
 		for ( x = 0; x < width; x++ ) {
 
@@ -2716,13 +2750,6 @@ DEFINE_FUNCTION_FAST( Normals ) {
 		}
 
 	TextureSwapBuffers(tex);
-
-	if ( tex->channels != 3 ) {
-
-		JS_free(cx, tex->cbackBuffer );
-		tex->cbackBuffer = NULL;
-	}
-
 	tex->channels = 3;
 
 	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
@@ -2879,32 +2906,26 @@ DEFINE_FUNCTION_FAST( Trim ) { // (TBD) test this new version that use memcpy
 	JL_CHK( JsvalToInt(cx, JL_FARG(3), &x1) );
 	JL_CHK( JsvalToInt(cx, JL_FARG(4), &y1) );
 
-	int width;
+	unsigned int channels, width, height, newWidth, newHeight;
+	channels = tex->channels;
 	width = tex->width;
-	int height;
 	height = tex->height;
 
-	int channels;
-	channels = tex->channels;
-
-	int newWidth;
+	JL_S_ASSERT( x0 <= x1 && y0 <= y1, "Invalid size." );
 	newWidth = x1 - x0;
-	int newHeight;
 	newHeight = y1 - y0;
 
-	int srcLineLength;
+	unsigned int srcLineLength, dstLineLength, y;
 	srcLineLength = width * channels * sizeof(PTYPE);
-	int dstLineLength;
 	dstLineLength = newWidth * channels * sizeof(PTYPE);
 
-	tex->cbackBuffer = (PTYPE*)( tex->cbackBuffer ?  JS_realloc(cx, tex->cbackBuffer, newHeight * dstLineLength) : JS_malloc(cx, newHeight * dstLineLength) );
+	JL_CHK( TextureResizeBackBuffer(cx, tex, newHeight * dstLineLength) );
 
-	char *pSrc;
+	char *pSrc, *pDst;
 	pSrc = (char*)tex->cbuffer + ( x0 + y0 * width ) * channels * sizeof(PTYPE);
-	char *pDst;
 	pDst = (char*)tex->cbackBuffer;
 
-	for ( int y = 0; y < newHeight; y++ ) {
+	for ( y = 0; y < newHeight; y++ ) {
 
 		memcpy( pDst, pSrc, dstLineLength);
 		pDst += dstLineLength;
@@ -2926,8 +2947,6 @@ DEFINE_FUNCTION_FAST( Trim ) { // (TBD) test this new version that use memcpy
 */
 
 	TextureSwapBuffers(tex);
-	tex->cbackBufferInvalidSize = true;
-
 	tex->width = newWidth;
 	tex->height = newHeight;
 
@@ -3138,19 +3157,17 @@ DEFINE_FUNCTION_FAST( Export ) { // (int)x, (int)y, (int)width, (int)height. Ret
 	tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE(tex);
 
-	int sChannels;
+	unsigned int sChannels, sWidth, sHeight;
 	sChannels = tex->channels;
-	int sWidth;
 	sWidth = tex->width;
-	int sHeight;
 	sHeight = tex->height;
 
-	int dWidth, dHeight;
+	unsigned int dWidth, dHeight;
 
 	uint8_t *buffer;
 	int bufferLength;
 
-	int px, py;
+	unsigned int px, py;
 
 	if ( JL_ARGC == 0 ) { // copy the whole image
 
@@ -3161,19 +3178,16 @@ DEFINE_FUNCTION_FAST( Export ) { // (int)x, (int)y, (int)width, (int)height. Ret
 	} else {
 
 		JL_S_ASSERT_ARG_MIN( 4 );
-		int px, py;
-		JL_CHK( JsvalToInt(cx, JL_FARG(1), &px) );
-		JL_CHK( JsvalToInt(cx, JL_FARG(2), &py) );
-		JL_CHK( JsvalToInt(cx, JL_FARG(3), &dWidth) );
-		JL_CHK( JsvalToInt(cx, JL_FARG(4), &dHeight) );
+		JL_CHK( JsvalToUInt(cx, JL_FARG(1), &px) );
+		JL_CHK( JsvalToUInt(cx, JL_FARG(2), &py) );
+		JL_CHK( JsvalToUInt(cx, JL_FARG(3), &dWidth) );
+		JL_CHK( JsvalToUInt(cx, JL_FARG(4), &dHeight) );
 	}
 
 	bufferLength = dWidth * dHeight * sChannels;
 	buffer = (uint8_t*)JS_malloc(cx, bufferLength);
 
-	int posDst, posSrc;
-	int c;
-	int x, y;
+	unsigned int c, x, y, posDst, posSrc;
 
 	for ( y = 0; y < dHeight; y++ )
 		for ( x = 0; x < dWidth; x++ ) {
@@ -3185,11 +3199,8 @@ DEFINE_FUNCTION_FAST( Export ) { // (int)x, (int)y, (int)width, (int)height. Ret
 
 			posDst = ( x + y * dWidth ) * sChannels;
 			posSrc = ( sx + sy * sWidth ) * sChannels;
-			for ( c = 0; c < sChannels; c++ ) {
-
-				//buffer[posDst+c] = (uint8_t)(PNORM(tex->cbuffer[posSrc+c]) * 256);
+			for ( c = 0; c < sChannels; c++ )
 				buffer[posDst+c] = (uint8_t)(MINMAX(tex->cbuffer[posSrc+c] * 255.f, 0, 255)); // map [0.0 -> 1.0] to [0 -> 255]
-			}
 		}
 
 	jsval bstr;
@@ -3198,9 +3209,9 @@ DEFINE_FUNCTION_FAST( Export ) { // (int)x, (int)y, (int)width, (int)height. Ret
 	JL_CHK( JS_ValueToObject(cx, bstr, &bstrObj) );
 	*JL_FRVAL = OBJECT_TO_JSVAL( bstrObj );
 
-	SetPropertyInt(cx, bstrObj, "width", dWidth);
-	SetPropertyInt(cx, bstrObj, "height", dHeight);
-	SetPropertyInt(cx, bstrObj, "channels", sChannels);
+	JL_CHK( SetPropertyInt(cx, bstrObj, "width", dWidth) );
+	JL_CHK( SetPropertyInt(cx, bstrObj, "height", dHeight) );
+	JL_CHK( SetPropertyInt(cx, bstrObj, "channels", sChannels) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -3340,7 +3351,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION_FAST( Shift ) {
 	// (TBD) I think it is possible to do the Shift operation without using a second buffer.
 
-	JL_S_ASSERT_ARG_MIN( 2 );
+	JL_S_ASSERT_ARG_RANGE( 2, 3 );
 
 	Texture *tex;
 	tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
@@ -3356,57 +3367,27 @@ DEFINE_FUNCTION_FAST( Shift ) {
 		int tmp;
 		JL_CHK( JsvalToInt(cx, JL_FARG(3), &tmp) );
 		borderMode = (BorderMode)tmp;
-	} else
-		borderMode = borderClamp;
+	} else {
+	
+		borderMode = borderWrap;
+	}
 
-	int width;
+	unsigned int width, height, channels;
 	width = tex->width;
-	int height;
 	height = tex->height;
-	int channels;
 	channels = tex->channels;
 
 	TextureSetupBackBuffer(cx, tex);
 
-	int x, y; // destination image x, y
-	int sx, sy; // source image x, y
-	int c;
+	PTYPE *sPos, *dPos;
+	unsigned int x, y, c; // destination image x, y
 	for ( y = 0; y < height; y++ )
 		for ( x = 0; x < width; x++ ) {
 
-			sx = x + offsetX;
-			sy = y + offsetY;
-
-			switch (borderMode) {
-				case borderWrap:
-					sx = Wrap(sx, width);
-					sy = Wrap(sy, height);
-					break;
-
-				case borderClamp:
-					if ( !(sx >= 0 && sx < width && sy >= 0 && sy < height) )
-						continue; // skip
-					break;
-
-				case borderMirror:
-					if ( sx < 0 )  sx =  -sx;
-					if ( sx >= width )  sx = width - sx;
-					if ( sy < 0 )  sy =  -sy;
-					if ( sy >= height )  sy = height - sy;
-					break;
-
-				case borderValue:
-					if ( sx < 0 )  sx = 0;
-					if ( sx >= width )  sx = width - 1;
-					if ( sy < 0 )  sy = 0;
-					if ( sy >= height )  sy = height - 1;
-					break;
-
-				default:
-					JL_REPORT_ERROR( "Invalid border mode." );
-			}
+			sPos = PosByMode(tex, x + offsetX, y + offsetY, borderMode);
+			dPos = &tex->cbackBuffer[(x + y * width) * channels];
 			for ( c = 0; c < channels; c++ )
-				tex->cbackBuffer[(x + y * width) * channels + c] = tex->cbuffer[(sx + sy * width) * channels + c];
+				dPos[c] = sPos[c];
 		}
 	TextureSwapBuffers(tex);
 	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
@@ -3459,7 +3440,9 @@ DEFINE_FUNCTION_FAST( Displace ) {
 
 	int x, y;
 	int sx, sy; // source position
-	int pos, pos1;
+	int pos;
+	PTYPE *sPos, *dPos;
+
 	int c;
 //	Vector3 o;
 	for ( y = 0; y < height; y++ )
@@ -3477,35 +3460,11 @@ DEFINE_FUNCTION_FAST( Displace ) {
 			sx = x + PZNORM( tex1->cbuffer[pos+0] ) * factor;
 			sy = y + PZNORM( tex1->cbuffer[pos+1] ) * factor;
 
-			switch (mode) {
-				case borderWrap:
-					sx = Wrap(sx, width);
-					sy = Wrap(sy, height);
-					break;
-				case borderClamp:
-					if ( !(sx >= 0 && sx < width && sy >= 0 && sy < height) )
-						continue;
-					break;
-				case borderValue:
-					if ( sx < 0 ) sx = 0;
-					if ( sx >= width ) sx = width - 1;
-					if ( sy < 0 ) sy = 0;
-					if ( sy >= height ) sy = height - 1;
-					break;
-				case borderMirror:
-					if ( sx < 0 )  sx = 0 - sx;
-					if ( sy < 0 )  sx = 0 - sy;
-					if ( sx >= width )  sx = width - sx;
-					if ( sy >= height )  sy = width - sy;
-					break;
-				default:
-					JL_REPORT_ERROR( "Invalid border mode." );
-			}
-
-			pos = (x + y * width) * channels;
-			pos1 = (sx + sy * width) * channels;
-			for ( c = 0; c < channels; c++ )
-				tex->cbackBuffer[pos+c] = tex->cbuffer[pos1+c];
+			sPos = PosByMode(tex, sx, sy, mode);
+			dPos = &tex->cbackBuffer[(x + y * width) * channels];
+			if ( sPos != NULL )
+				for ( c = 0; c < channels; c++ )
+					dPos[c] = sPos[c];
 		}
 	TextureSwapBuffers(tex);
 	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
@@ -3523,7 +3482,11 @@ $TOC_MEMBER $INAME
    $ARG $REAL regularity:
 **/
 DEFINE_FUNCTION_FAST( Cells ) { // source: FxGen
-	
+
+	struct Point {
+		float x, y;
+	};
+
 	// http://petewarden.com/notes/archives/2005/05/testing.html
 
 	JL_S_ASSERT_ARG_MIN( 2 );
@@ -3650,32 +3613,22 @@ DEFINE_FUNCTION_FAST( AddGradiantQuad ) {
 	Texture *tex;
 	tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE(tex);
-	int width;
+	unsigned int width, height, channels;
 	width = tex->width;
-	int height;
 	height = tex->height;
-	int channels;
 	channels = tex->channels;
 
-
-	PTYPE pixel1[PMAXCHANNELS];
+	PTYPE pixel1[PMAXCHANNELS], pixel2[PMAXCHANNELS], pixel3[PMAXCHANNELS], pixel4[PMAXCHANNELS];
 	JL_CHK( InitLevelData(cx, JL_FARG(1), channels, pixel1) );
-
-	PTYPE pixel2[PMAXCHANNELS];
 	JL_CHK( InitLevelData(cx, JL_FARG(2), channels, pixel2) );
-
-	PTYPE pixel3[PMAXCHANNELS];
 	JL_CHK( InitLevelData(cx, JL_FARG(3), channels, pixel3) );
-
-	PTYPE pixel4[PMAXCHANNELS];
 	JL_CHK( InitLevelData(cx, JL_FARG(4), channels, pixel4) );
 
 	float aspectRatio;
 	aspectRatio = width * height;
 
 	float r1, r2, r3, r4;
-	int x, y, c;
-	int pos;
+	unsigned int x, y, c, pos;
 	for ( y = 0; y < height; y++ )
 		for ( x = 0; x < width; x++ ) {
 
@@ -3721,23 +3674,18 @@ DEFINE_FUNCTION_FAST( AddGradiantLinear ) {
 	tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE(tex);
 
-	int width;
+	unsigned int width, height, channels;
 	width = tex->width;
-	int height;
 	height = tex->height;
-	int channels;
 	channels = tex->channels;
 
-	float *curvex;
+	float *curvex, *curvey;
 	curvex = (float*)malloc( width * sizeof(float) ); // (TBD) free curvex
 	JL_CHK( InitCurveData( cx, JL_FARG(1), width, curvex ) );
-
-	float *curvey;
 	curvey = (float*)malloc( height * sizeof(float) ); // (TBD) free curvey
 	JL_CHK( InitCurveData( cx, JL_FARG(2), height, curvey ) );
 
-	int x, y, c;
-	int pos;
+	unsigned int x, y, c, pos;
 	for ( y = 0; y < height; y++ )
 		for ( x = 0; x < width; x++ ) {
 
@@ -3747,8 +3695,13 @@ DEFINE_FUNCTION_FAST( AddGradiantLinear ) {
 		}
 
 	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
+
+	free(curvex);
+	free(curvey);
 	return JS_TRUE;
-	JL_BAD;
+
+bad:
+	return JS_FALSE;
 }
 
 
@@ -4039,60 +3992,26 @@ DEFINE_FUNCTION_FAST( GetPixelAt ) {
 	JL_S_ASSERT_INT(JL_FARG(2));
 
 	int sx, sy;
-	BorderMode mode;
 	sx = JSVAL_TO_INT(JL_FARG(1));
 	sy = JSVAL_TO_INT(JL_FARG(2));
+
+	BorderMode mode;
 	if ( JL_FARG_ISDEF(3) )
 		mode = (BorderMode)JSVAL_TO_INT(JL_FARG(3));
 	else
 		mode = borderWrap;
 
 	Texture *tex;
-	tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
+	tex = (Texture*)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE(tex);
 
-	int width;
-	width = tex->width;
-	int height;
-	height = tex->height;
+	PTYPE *pos = PosByMode(tex, sx, sy, mode);
+	if (unlikely( pos == NULL )) {
 
-	//PosByMode(tex, sx, sy, mode);
-
-	switch (mode) {
-		case borderWrap:
-			sx = Wrap(sx, width);
-			sy = Wrap(sy, height);
-			break;
-		case borderValue:
-			if ( sx < 0 ) sx = 0;
-			if ( sx >= width ) sx = width - 1;
-			if ( sy < 0 ) sy = 0;
-			if ( sy >= height ) sy = height - 1;
-			break;
-		case borderMirror:
-			if ( sx < 0 )  sx = 0 - sx;
-			if ( sy < 0 )  sx = 0 - sy;
-			if ( sx >= width )  sx = width - sx;
-			if ( sy >= height )  sy = width - sy;
-			break;
-		default:
-			JL_REPORT_ERROR( "Invalid border mode." );
+		*JL_FRVAL = JSVAL_VOID;
+		return JS_TRUE;
 	}
-
-	PTYPE *ptr;
-	ptr = tex->cbuffer + tex->channels * ( sx + tex->width * sy );
-
-	JSObject *jsArray;
-	jsArray = JS_NewArrayObject(cx, 0, NULL);
-	JL_CHK( jsArray );
-	*JL_FRVAL = OBJECT_TO_JSVAL(jsArray);
-	jsval value;
-	for ( int c=0; c<tex->channels; ++c ) {
-
-		FloatToJsval(cx, *(ptr + c), &value); // JS_NewNumberValue(cx, , ); // JS_NewDoubleValue(cx, vector[i], &value);
-		JS_SetElement(cx, jsArray, c, &value);
-	}
-	return JS_TRUE;
+	return FloatVectorToJsval(cx, pos, tex->channels, JL_FRVAL);
 	JL_BAD;
 }
 
@@ -4146,14 +4065,11 @@ DEFINE_FUNCTION_FAST( GetBorderLevelRange ) {
 	Texture *tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE(tex);
 
-	PTYPE min;
+	PTYPE min, max, tmp;
 	min = PMAXLIMIT;
-	PTYPE max;
 	max = PMINLIMIT;
-	PTYPE tmp;
 
-	int i, c, pos;
-	int lineSize, imageSize;
+	unsigned int i, c, pos, lineSize, imageSize;
 	lineSize = tex->width * tex->channels;
 	imageSize = lineSize * tex->height;
 
@@ -4317,10 +4233,10 @@ DEFINE_FUNCTION_FAST( AddPerlin2 ) {
 	dirY[1] /= tex->height;
 	dirY[2] /= tex->height;
 
-	unsigned int pos;
+	unsigned int pos, tx, ty;
 	pos = 0;
-	for ( int ty = 0; ty < tex->height; ++ty )
-		for ( int tx = 0; tx < tex->width; ++tx ) {
+	for ( ty = 0; ty < tex->height; ++ty )
+		for ( tx = 0; tx < tex->width; ++tx ) {
 
 			x = offset[0] + dirX[0]*tx + dirY[0]*ty;
 			y = offset[1] + dirX[1]*tx + dirY[1]*ty;

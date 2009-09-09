@@ -170,3 +170,16 @@ CONFIGURE_STATIC
 	END_STATIC_PROPERTY_SPEC
 
 END_STATIC
+
+
+
+//unsigned long int NoiseInt(unsigned long int n) {
+//
+//	n = (n << 13) ^ n;
+//	return (n * (n * n * 60493 + 19990303) + 1376312589);
+//}
+//
+//float NoiseReal(unsigned long int n) { // return: 0 <= val <= 1
+//
+//	return (float)NoiseInt(n) / 4294967296.f;
+//}
