@@ -12,6 +12,9 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
+#ifndef _MEMBUFFER_H_
+#define _MEMBUFFER_H_
+
 #include "stdafx.h"
 #include "../jslang/idpub.h"
 
@@ -19,14 +22,14 @@
 struct MemBuffer;
 
 typedef bool (*MemBufferFree_t)(MemBuffer *mb); // it is up to the callee to update mem and size and pv.
-typedef bool (*MemBufferRealloc_t)(MemBuffer *mb, unsigned int size); // it is up to the callee to update mem and size and pv.
+typedef bool (*MemBufferResize_t)(MemBuffer *mb, unsigned int newSize, bool preserveExistingData); // it is up to the callee to update mem and size and pv.
 
 struct MemBuffer {
 
 	void *mem;
 	unsigned int size; // in bytes
 	MemBufferFree_t MemBufferFree;
-	MemBufferRealloc_t MemBufferRealloc;
+	MemBufferResize_t MemBufferResize;
 	void *pv; // private data for the user of this structure
 };
 
@@ -37,14 +40,14 @@ void MemBufferFinalizeCallback( void* data ) {
 		membuf->MemBufferFree(membuf);
 }
 
-JSBool MemoryBufferObjectCreate( JSContext *cx, jsval *memBufferVal, void *pv, void* mem, unsigned int size, MemBufferFree_t free, MemBufferRealloc_t realloc ) {
+JSBool MemoryBufferObjectCreate( JSContext *cx, jsval *memBufferVal, void *pv, void* mem, unsigned int size, MemBufferFree_t free, MemBufferResize_t resize ) {
 
 	MemBuffer *membuf;
 	JL_CHK( CreateId(cx, 'MEMB', sizeof(MemBuffer), (void**)&membuf, MemBufferFinalizeCallback, memBufferVal) );
 	membuf->mem = mem;
 	membuf->size = size;
 	membuf->MemBufferFree = free;
-	membuf->MemBufferRealloc = realloc;
+	membuf->MemBufferResize = resize;
 	membuf->pv = pv;
 	return JS_TRUE;
 	JL_BAD;
@@ -61,7 +64,7 @@ JSBool MemoryBufferObjectGet( JSContext *cx, jsval memBufferVal, MemBuffer **mem
 
 
 /*  everything can be done with the previous function (MemoryBufferObjectGet).
-JSBool MemoryBufferObjectRealloc( JSContext *cx, jsval memBufferVal, unsigned int newSize ) {
+JSBool MemoryBufferObjectResize( JSContext *cx, jsval memBufferVal, unsigned int newSize ) {
 
 	JL_S_ASSERT( IsIdType(cx, memBufferVal, 'MEMB'), "Invalid memory object." );
 	MemBuffer *membuf = (MemBuffer*)GetIdPrivate(cx, memBufferVal);
@@ -81,3 +84,5 @@ JSBool MemoryBufferObjectFree( JSContext *cx, jsval memBufferVal ) {
 	JL_BAD;
 }
 */
+
+#endif // _MEMBUFFER_H_

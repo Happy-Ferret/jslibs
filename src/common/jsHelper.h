@@ -323,10 +323,6 @@ ALWAYS_INLINE size_t JL_GetStringLength(JSString *jsstr) {
 	return jsstr->length();
 }
 
-// Is string or has jslibs BufferGet interface (including Blob).
-#define JL_JSVAL_IS_STRING(val) ( JSVAL_IS_STRING(val) || (!JSVAL_IS_PRIMITIVE(val) && BufferGetInterface(cx, JSVAL_TO_OBJECT(val)) != NULL) )
-
-
 ALWAYS_INLINE void *JL_GetPrivate(JSContext *cx, JSObject *obj) {
 
 //	return JS_GetPrivate(cx, obj);
@@ -342,7 +338,6 @@ ALWAYS_INLINE void *JL_GetPrivate(JSContext *cx, JSObject *obj) {
 	return JSVAL_TO_PRIVATE(v);
 }
 
-
 ALWAYS_INLINE void JL_SetPrivate(JSContext *cx, JSObject *obj, void *data) {
 
 //	JS_SetPrivate(cx, obj, data); return;
@@ -357,7 +352,6 @@ ALWAYS_INLINE void JL_SetPrivate(JSContext *cx, JSObject *obj, void *data) {
 ///////////////////////////////////////////////////////////////////////////////
 // Helper functions
 
-
 ALWAYS_INLINE JSStackFrame* JL_CurrentStackFrame(JSContext *cx) {
 
 	#ifdef DEBUG
@@ -367,7 +361,6 @@ ALWAYS_INLINE JSStackFrame* JL_CurrentStackFrame(JSContext *cx) {
 	return js_GetTopStackFrame(cx);
 }
 
-
 ALWAYS_INLINE unsigned int JL_StackSize(JSContext *cx, JSStackFrame *fp) {
 
 	unsigned int length = 0;
@@ -375,7 +368,6 @@ ALWAYS_INLINE unsigned int JL_StackSize(JSContext *cx, JSStackFrame *fp) {
 		++length;
 	return length; // 0 is the first frame
 }
-
 
 ALWAYS_INLINE JSStackFrame *JL_StackFrameByIndex(JSContext *cx, int frameIndex) {
 
@@ -447,6 +439,12 @@ ALWAYS_INLINE bool JsvalIsArray( JSContext *cx, jsval val ) {
 
 	return !JSVAL_IS_PRIMITIVE(val) && JS_IsArrayObject(cx, JSVAL_TO_OBJECT(val));
 }
+
+
+// Is string or has jslibs BufferGet interface (including Blob).
+#define JL_JSVAL_IS_STRING(val) ( JSVAL_IS_STRING(val) || (!JSVAL_IS_PRIMITIVE(val) && BufferGetInterface(cx, JSVAL_TO_OBJECT(val)) != NULL) ) // || JL_GetClass(JSVAL_TO_OBJECT(val)) == &js_StringClass
+
+
 
 /*
 ALWAYS_INLINE bool JL_IsAssigningCallResult( JSContext *cx ) {
@@ -1264,10 +1262,10 @@ ALWAYS_INLINE JSBool JsvalToUIntVector( JSContext *cx, jsval val, unsigned int *
 }
 
 
-ALWAYS_INLINE JSBool FloatVectorToJsval( JSContext *cx, const float *vector, uint32 length, jsval *val, bool useValArray = false ) {
+ALWAYS_INLINE JSBool FloatVectorToJsval( JSContext *cx, const float *vector, uint32 length, jsval *val, bool reuseValArray = false ) {
 
 	JSObject *arrayObj;
-	if ( useValArray ) {
+	if ( reuseValArray ) {
 		
 		JL_S_ASSERT_OBJECT(*val);
 		arrayObj = JSVAL_TO_OBJECT(*val);
@@ -1306,10 +1304,10 @@ ALWAYS_INLINE JSBool JsvalToFloatVector( JSContext *cx, jsval val, float *vector
 }
 
 
-ALWAYS_INLINE JSBool DoubleVectorToJsval( JSContext *cx, const double *vector, uint32 length, jsval *val, bool useValArray = false ) {
+ALWAYS_INLINE JSBool DoubleVectorToJsval( JSContext *cx, const double *vector, uint32 length, jsval *val, bool reuseValArray = false ) {
 
 	JSObject *arrayObj;
-	if ( useValArray ) {
+	if ( reuseValArray ) {
 		
 		JL_S_ASSERT_OBJECT(*val);
 		arrayObj = JSVAL_TO_OBJECT(*val);

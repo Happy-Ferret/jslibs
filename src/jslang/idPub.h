@@ -12,6 +12,9 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
+#ifndef _IDAPI_H_
+#define _IDAPI_H_
+
 #include "stdafx.h"
 
 typedef void (*IdFinalizeCallback_t)(void* data);
@@ -100,3 +103,5 @@ bool d = data == GetIdPrivate(cx, *JL_RVAL);
 
 
 */
+
+#endif // _IDAPI_H_
