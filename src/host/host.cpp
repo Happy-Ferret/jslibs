@@ -480,6 +480,11 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostOutput stdOut, HostOutput s
 //	JL_CHK( JS_SetPropertyAttributes(cx, globalObject, "undefined", attrs | JSPROP_READONLY, &found) );
 	JL_CHK( OBJ_DEFINE_PROPERTY(cx, globalObject, ATOM_TO_JSID(cx->runtime->atomState.typeAtoms[JSTYPE_VOID]), JSVAL_VOID, NULL, NULL, JSPROP_PERMANENT | JSPROP_READONLY, NULL) ); // see JS_InitStandardClasses() in jsapi.cpp
 
+// creates a reference to the String object JSClass
+	JSObject *emptyStringObject;
+	JL_CHK( JS_ValueToObject(cx, JS_GetEmptyStringValue(cx), &emptyStringObject) );
+	pv->stringObjectClass = JL_GetClass(emptyStringObject);
+	JL_CHKM( pv->stringObjectClass, "Unable to find the String class." );
 
 // make GetErrorMessage available from any module
 

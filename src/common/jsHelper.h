@@ -77,6 +77,7 @@ struct HostPrivate {
 	jsid Matrix44GetId;
 	jsid BufferGetId;
 	jsid StreamReadId;
+	JSClass *stringObjectClass;
 	int camelCase;
 };
 
@@ -274,7 +275,7 @@ JL_MACRO_END
 	JL_S_ASSERT( JSVAL_IS_NUMBER(value), J__ERRMSG_UNEXPECTED_TYPE " Number expected." )
 
 #define JL_S_ASSERT_STRING(value) \
-	JL_S_ASSERT( JL_JSVAL_IS_STRING(value), J__ERRMSG_UNEXPECTED_TYPE " String expected." )
+	JL_S_ASSERT( JsvalIsData(cx, value), J__ERRMSG_UNEXPECTED_TYPE " String expected." )
 
 #define JL_S_ASSERT_OBJECT(value) \
 	JL_S_ASSERT( !JSVAL_IS_PRIMITIVE(value), J__ERRMSG_UNEXPECTED_TYPE " Object expected." )
@@ -440,10 +441,15 @@ ALWAYS_INLINE bool JsvalIsArray( JSContext *cx, jsval val ) {
 	return !JSVAL_IS_PRIMITIVE(val) && JS_IsArrayObject(cx, JSVAL_TO_OBJECT(val));
 }
 
-
 // Is string or has jslibs BufferGet interface (including Blob).
-#define JL_JSVAL_IS_STRING(val) ( JSVAL_IS_STRING(val) || (!JSVAL_IS_PRIMITIVE(val) && BufferGetInterface(cx, JSVAL_TO_OBJECT(val)) != NULL) ) // || JL_GetClass(JSVAL_TO_OBJECT(val)) == &js_StringClass
+//#define JL_JSVAL_IS_STRING(val) ( JSVAL_IS_STRING(val) || (!JSVAL_IS_PRIMITIVE(val) && BufferGetInterface(cx, JSVAL_TO_OBJECT(val)) != NULL) ) // || JL_GetClass(JSVAL_TO_OBJECT(val)) == &js_StringClass
 
+#define JL_VALUE_IS_STRING_OBJECT(cx, val) (!JSVAL_IS_PRIMITIVE(val) && JL_GetClass(JSVAL_TO_OBJECT(val)) == GetHostPrivate(cx)->stringObjectClass)
+
+ALWAYS_INLINE bool JsvalIsData( JSContext *cx, jsval val ) {
+
+	return ( JSVAL_IS_STRING(val) || !JSVAL_IS_PRIMITIVE(val) && BufferGetInterface(cx, JSVAL_TO_OBJECT(val)) != NULL || JL_VALUE_IS_STRING_OBJECT(cx, val) );
+}
 
 
 /*
@@ -700,7 +706,7 @@ ALWAYS_INLINE unsigned int JL_SvnRevToInt(const char *svnRev) {
 
 ALWAYS_INLINE bool JL_MaybeRealloc( int requested, int received ) {
 
-	return requested != 0 && (128 * received / requested < 115) && (requested - received > 32); // instead using percent, I use per-128
+	return requested != 0 && (128 * received / requested < 115) && (requested - received > 32); // instead using percent, we use per-128
 }
 
 

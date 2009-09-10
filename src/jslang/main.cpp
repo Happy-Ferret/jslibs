@@ -37,9 +37,8 @@ JSBool jslangInit(JSContext *cx, JSObject *obj) {
 //	if ( !JSVAL_IS_VOID( unsafeModePtrVal ) )
 //		_pUnsafeMode = (bool*)JSVAL_TO_PRIVATE(unsafeModePtrVal);
 
-
 	JSObject *globalObject = JS_GetGlobalObject(cx);
-	JL_S_ASSERT( obj == globalObject, "This module must be load into the global namespace" );
+	JL_S_ASSERT( obj == globalObject, "This module must be load into the global namespace" ); // (TBD) why ? now we use JL_RegisterNativeClass to locate classes
 //	obj = JS_GetGlobalObject(cx); // avoid LoadModule.call( foo, 'jslang' );
 
 	INIT_CLASS( Id );
