@@ -87,7 +87,6 @@ double PerlinNoise2(double x, double y, double z);
 #define PUNZNORM(p) ( (PUNNORM(p) + 1 ) / 2)
 
 
-
 inline JSBool TextureInit( JSContext *cx, Texture *tex, unsigned int width, unsigned int height, unsigned int channels ) {
 
 	tex->cbufferSize = width * height * channels * sizeof(PTYPE);
@@ -205,6 +204,14 @@ ALWAYS_INLINE PTYPE* PosByMode( const Texture *tex, int x, int y, BorderMode mod
 }
 
 
+JSBool JsvalToBorderMode( JSContext* cx, jsval val, BorderMode *mode ) {
+	
+	if ( val != JSVAL_VOID )
+		return JsvalToInt(cx, val, (int*)mode);
+	*mode = borderWrap;
+	return JS_TRUE;
+}
+
 // levels: number | array | string ('#8800AAFF')
 inline JSBool InitLevelData( JSContext* cx, jsval value, unsigned int levelMaxLength, PTYPE *level ) {
 	
@@ -262,19 +269,8 @@ inline JSBool InitLevelData( JSContext* cx, jsval value, unsigned int levelMaxLe
 // curve: number | function | array | blob
 inline JSBool InitCurveData( JSContext* cx, jsval value, unsigned int length, float *curve ) { // length is the curve resolution
 	
-	unsigned int i;
-
 	JSTempValueRooter tvr;
-	if ( JSVAL_IS_NUMBER(value) ) {
-
-		jsdouble dval;
-		JL_CHK( JS_ValueToNumber(cx, value, &dval) );
-		PTYPE val;
-		val = (PTYPE)dval;
-		for ( i = 0; i < length; i++ )
-			curve[i] = val;
-		return JS_TRUE;
-	}
+	unsigned int i;
 
 	if ( JsvalIsFunction(cx, value) ) {
 
@@ -305,6 +301,17 @@ inline JSBool InitCurveData( JSContext* cx, jsval value, unsigned int length, fl
 		JL_CHK( JsvalToFloatVector(cx, value, curveArray, curveArrayLength, &tmp) );
 		for ( i = 0; i < length; ++i )
 			curve[i] = curveArray[i * curveArrayLength / length]; // no interpolation
+		return JS_TRUE;
+	}
+
+	if ( JSVAL_IS_NUMBER(value) ) {
+
+		jsdouble dval;
+		JL_CHK( JS_ValueToNumber(cx, value, &dval) );
+		PTYPE val;
+		val = (PTYPE)dval;
+		for ( i = 0; i < length; ++i )
+			curve[i] = val;
 		return JS_TRUE;
 	}
 
@@ -422,7 +429,7 @@ DEFINE_CONSTRUCTOR() {
 	Texture *tex;
 	tex = (Texture *)JS_malloc(cx, sizeof(Texture));
 	JL_CHK( tex );
-
+	JL_SetPrivate(cx, obj, tex);
 	JL_CHK( SetBufferGetInterface(cx, obj, NativeInterfaceBufferGet) );
 
 	jsval *arg1 = &JL_ARG(1); // optimization
@@ -440,7 +447,6 @@ DEFINE_CONSTRUCTOR() {
 
 		JL_CHK( TextureInit(cx, tex, width, height, channels) );
 
-		JL_SetPrivate(cx, obj, tex);
 		return JS_TRUE;
 	}
 
@@ -451,7 +457,6 @@ DEFINE_CONSTRUCTOR() {
 
 		JL_CHK( TextureInit(cx, tex, srcTex->width, srcTex->height, srcTex->channels) );
 		memcpy( tex->cbuffer, srcTex->cbuffer, srcTex->width * srcTex->height * srcTex->channels * sizeof(PTYPE) );
-		JL_SetPrivate(cx, obj, tex);
 		return JS_TRUE;
 	}
 
@@ -468,13 +473,9 @@ DEFINE_CONSTRUCTOR() {
 
 		const uint8_t *buffer;
 		JL_CHK( JsvalToString(cx, arg1, (const char **)&buffer)); // warning: GC on the returned buffer !
-
 		JL_CHK( TextureInit(cx, tex, sWidth, sHeight, sChannels) );
-
-		for ( i = 0; i < tsize; --i )
+		for ( i = 0; i < tsize; ++i )
 			tex->cbuffer[i] = (PTYPE)buffer[i] / (PTYPE)255.f; // map [0 -> 255] to [0.0 -> 1.0]
-
-		JL_SetPrivate(cx, obj, tex);
 		return JS_TRUE;
 	}
 
@@ -1326,46 +1327,43 @@ DEFINE_FUNCTION_FAST( AddNoise ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $THIS $INAME( sourceTexture [ , mode] )
-  Desaturates _sourceTexture_ texture an put the result in the current texture.
+ $THIS $INAME( [ , mode ] )
+  Desaturates the texture.
   $H arguments
-   $ARG Texture sourceTexture: texture from witch the desaturation will be done.
    $ARG $INT mode: is the type of desaturation, either Texture.desaturateLightness, Texture.desaturateSum or Texture.desaturateAverage
 **/
 // PTYPE ok
 DEFINE_FUNCTION_FAST( Desaturate ) {
 
-	JL_S_ASSERT_ARG_MIN(2);
+	JL_S_ASSERT_ARG_RANGE( 0,1 );
 
 	Texture *tex;
 	tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE(tex);
-	JL_S_ASSERT( tex->channels == 1, "Destination texture must have only one channel.");
 
-	Texture *texSrc;
-	JL_CHK( ValueToTexture(cx, JL_FARG(1), &texSrc) );
-	JL_S_ASSERT( tex->width == texSrc->width && tex->height == texSrc->height, "Images must have the same width and height." );
-
-	int modeVal;
-	JL_CHK( JsvalToInt(cx, JL_FARG(2), &modeVal) );
 	DesaturateMode mode;
-	mode = (DesaturateMode)modeVal;
+	if ( JL_FARG_ISDEF(1) )
+		JL_CHK( JsvalToInt(cx, JL_FARG(1), (int*)&mode) );
+	else
+		mode = desaturateAverage;
 
-	int pos, i, c;
-	int srcChannels;
-	srcChannels = tex->channels;
-	int size;
+	PTYPE val, min, max, tmp, *sPos, *dPos;
+	unsigned int i, c, channels, size;
+	channels = tex->channels;
 	size = tex->width * tex->height;
-	PTYPE val, min, max, tmp;
+
+	TextureResizeBackBuffer(cx, tex, size * sizeof(PTYPE));
+
+	dPos = tex->cbackBuffer;
 	for ( i = 0; i < size; i++ ) {
 
-		pos = i * srcChannels;
+		sPos = &tex->cbuffer[i * channels];
 		switch( mode ) {
 			case desaturateLightness:
-				min = max = texSrc->cbuffer[pos+0];
-				for ( c = 1; c < srcChannels; c++ ) {
+				min = max = *sPos;
+				for ( c = 1; c < channels; c++ ) {
 
-					tmp = texSrc->cbuffer[pos+c];
+					tmp = sPos[c];
 					if ( tmp > max )
 						max = tmp;
 					else if ( tmp < min )
@@ -1375,20 +1373,25 @@ DEFINE_FUNCTION_FAST( Desaturate ) {
 				break;
 			case desaturateSum:
 				val = 0;
-				for ( c = 0; c < srcChannels; c++ )
-					val += texSrc->cbuffer[pos+c];
+				for ( c = 0; c < channels; c++ )
+					val += sPos[c];
 				break;
 			case desaturateAverage:
 				val = 0;
-				for ( c = 0; c < srcChannels; c++ )
-					val += texSrc->cbuffer[pos+c];
-				val /= srcChannels;
+				for ( c = 0; c < channels; c++ )
+					val += sPos[c];
+				val /= channels;
 				break;
 //			case desaturateLuminosity: // see http://svn.gnome.org/viewcvs/gimp/trunk/libgimpcolor/gimprgb.h?revision=19720&view=markup
 //				break;
 		}
-		tex->cbuffer[pos] = val;
+		*dPos = val;
+		dPos++;
 	}
+
+	TextureSwapBuffers(tex);
+	tex->channels = 1;
+
 	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
 	return JS_TRUE;
 	JL_BAD;
@@ -2003,12 +2006,7 @@ DEFINE_FUNCTION_FAST( Resize ) {
 		interpolate = false;
 
 	BorderMode borderMode;
-	if ( JL_FARG_ISDEF(4) ) {
-		
-		JL_S_ASSERT_INT(JL_FARG(4));
-		borderMode = (BorderMode)JSVAL_TO_INT(JL_FARG(4));
-	} else
-		borderMode = borderWrap;
+	JL_CHK( JsvalToBorderMode(cx, JL_FSARG(4), &borderMode) );
 
 	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
 
@@ -2156,13 +2154,7 @@ DEFINE_FUNCTION_FAST( Convolution ) {
 	JL_S_ASSERT( size * size == count, "Invalid convolution kernel size.");
 
 	BorderMode borderMode;
-	if ( JL_FARG_ISDEF(2) ) {
-
-		int tmp;
-		JL_CHK( JsvalToInt(cx, JL_FARG(2), &tmp) );
-		borderMode = (BorderMode)tmp;
-	} else
-		borderMode = borderWrap;
+	JL_CHK( JsvalToBorderMode(cx, JL_FSARG(2), &borderMode) );
 
 	TextureSetupBackBuffer(cx, tex);
 
@@ -2281,13 +2273,7 @@ DEFINE_FUNCTION_FAST( Dilate ) {
 		radius = 1;
 
 	BorderMode borderMode;
-	if ( JL_FARG_ISDEF(3) ) {
-
-		int tmp;
-		JL_CHK( JsvalToInt(cx, JL_FARG(3), &tmp) );
-		borderMode = (BorderMode)tmp;
-	} else
-		borderMode = borderWrap;
+	JL_CHK( JsvalToBorderMode(cx, JL_FSARG(3), &borderMode) );
 
 
 	Texture *tex;
@@ -2890,14 +2876,8 @@ DEFINE_FUNCTION_FAST( Copy ) {
 	JL_CHK( JsvalToInt(cx, JL_FARG(2), &px) );
 	JL_CHK( JsvalToInt(cx, JL_FARG(3), &py) );
 
-	BorderMode borderMode; // (TBD) from function arg
-	if ( JL_FARG_ISDEF(4) ) {
-
-		int tmp;
-		JL_CHK( JsvalToInt(cx, JL_FARG(4), &tmp) );
-		borderMode = (BorderMode)tmp;
-	} else
-		borderMode = borderClamp;
+	BorderMode borderMode;
+	JL_CHK( JsvalToBorderMode(cx, JL_FSARG(4), &borderMode) );
 
 	int channels;
 	channels = tex->channels;
@@ -2973,13 +2953,7 @@ DEFINE_FUNCTION_FAST( Paste ) { // (Texture)texture, (int)x, (int)y, (bool)borde
 	JL_CHK( JsvalToInt(cx, JL_FARG(3), &py) );
 
 	BorderMode borderMode;
-	if ( JL_FARG_ISDEF(4) ) {
-
-		int tmp;
-		JL_CHK( JsvalToInt(cx, JL_FARG(4), &tmp) );
-		borderMode = (BorderMode)tmp;
-	} else
-		borderMode = borderClamp;
+	JL_CHK( JsvalToBorderMode(cx, JL_FSARG(4), &borderMode) );
 
 	int channels;
 	channels = tex->channels;
@@ -3203,15 +3177,7 @@ DEFINE_FUNCTION_FAST( Import ) { // (Blob)image, (int)x, (int)y
 	}
 
 	BorderMode borderMode;
-	if ( JL_FARG_ISDEF(4) ) {
-
-		int tmp;
-		JL_CHK( JsvalToInt(cx, JL_FARG(4), &tmp) );
-		borderMode = (BorderMode)tmp;
-	} else {
-
-		borderMode = borderClamp;
-	}
+	JL_CHK( JsvalToBorderMode(cx, JL_FSARG(4), &borderMode) );
 
 	int x, y;
 	int dx, dy; // destination
@@ -3270,15 +3236,7 @@ DEFINE_FUNCTION_FAST( Shift ) {
 	JL_CHK( JsvalToInt(cx, JL_FARG(2), &offsetY) );
 
 	BorderMode borderMode;
-	if ( JL_FARG_ISDEF(3) ) {
-
-		int tmp;
-		JL_CHK( JsvalToInt(cx, JL_FARG(3), &tmp) );
-		borderMode = (BorderMode)tmp;
-	} else {
-	
-		borderMode = borderWrap;
-	}
+	JL_CHK( JsvalToBorderMode(cx, JL_FSARG(3), &borderMode) );
 
 	unsigned int width, height, channels;
 	width = tex->width;
@@ -4042,18 +4000,10 @@ DEFINE_FUNCTION_FAST( SetPixel ) { // x, y, levels
 	JL_CHK( JsvalToInt(cx, JL_FARG(1), &x) );
 	JL_CHK( JsvalToInt(cx, JL_FARG(2), &y) );
 
-	BorderMode borderMode;
-	if ( JL_FARG_ISDEF(4) ) {
-		
-		int tmp;
-		JL_CHK( JsvalToInt(cx, JL_FARG(4), &tmp) );
-		borderMode = (BorderMode)tmp;
-	} else {
-
-		borderMode = borderWrap;
-	}
-
 	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
+
+	BorderMode borderMode;
+	JL_CHK( JsvalToBorderMode(cx, JL_FSARG(4), &borderMode) );
 
 	PTYPE *pos;
 	pos = PosByMode(tex, x, y, borderMode);
@@ -4092,17 +4042,14 @@ DEFINE_FUNCTION_FAST( GetPixelAt ) {
 	sx = JSVAL_TO_INT(JL_FARG(1));
 	sy = JSVAL_TO_INT(JL_FARG(2));
 
-	BorderMode mode;
-	if ( JL_FARG_ISDEF(3) )
-		mode = (BorderMode)JSVAL_TO_INT(JL_FARG(3));
-	else
-		mode = borderWrap;
-
 	Texture *tex;
 	tex = (Texture*)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE(tex);
 
-	PTYPE *pos = PosByMode(tex, sx, sy, mode);
+	BorderMode borderMode;
+	JL_CHK( JsvalToBorderMode(cx, JL_FSARG(3), &borderMode) );
+
+	PTYPE *pos = PosByMode(tex, sx, sy, borderMode);
 	if (likely( pos != NULL ))
 		return FloatVectorToJsval(cx, pos, tex->channels, JL_FRVAL);
 
