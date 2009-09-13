@@ -3,10 +3,14 @@ LoadModule('jsio');
 LoadModule('jsdebug');
 
 
+	var p = new Pack(new Buffer());
+	p.useNetworkEndian = false;
+	p.WriteInt(0x1234,2,false);
 
-
-Print( SandboxEval('for (var i=0; i<100; ++i);i') );
-
+	Print(uneval(p.buffer.Read()));
+		
+		
+		
 Halt(); //////////////////////////////
 
 

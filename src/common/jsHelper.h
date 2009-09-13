@@ -341,9 +341,9 @@ ALWAYS_INLINE void *JL_GetPrivate(JSContext *cx, JSObject *obj) {
 
 ALWAYS_INLINE void JL_SetPrivate(JSContext *cx, JSObject *obj, void *data) {
 
-//	JS_SetPrivate(cx, obj, data); return;
-	JS_ASSERT(OBJ_GET_CLASS(cx, obj)->flags & JSCLASS_HAS_PRIVATE);
-	obj->fslots[JSSLOT_PRIVATE] = PRIVATE_TO_JSVAL(data);
+	//	JS_SetPrivate(cx, obj, data); return;
+    JS_ASSERT(OBJ_GET_CLASS(cx, obj)->flags & JSCLASS_HAS_PRIVATE);
+    obj->fslots[JSSLOT_PRIVATE] = PRIVATE_TO_JSVAL(data);
 	#ifdef DEBUG
 		JS_ASSERT( data == JS_GetPrivate(cx, obj) ); // Mozilla JS engine private API behavior has changed.
 	#endif //DEBUG
@@ -1716,6 +1716,9 @@ inline NIBufferGet BufferGetInterface( JSContext *cx, JSObject *obj ) {
 	void *fct = (void*)BufferGetNativeInterface(cx, obj);
 	if ( fct )
 		return (NIBufferGet)fct;
+
+
+	//JS_GetPropertyById(cx, obj, "Get", &res)
 
 	jsval res;
 	if ( JS_GetProperty(cx, obj, "Get", &res) != JS_TRUE || !JsvalIsFunction(cx, res) ) // do not use toString() directly, but Get can call toString().

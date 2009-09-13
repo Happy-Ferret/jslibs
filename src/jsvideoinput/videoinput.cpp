@@ -108,6 +108,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( GetImage ) {
 
+	JL_S_ASSERT_ARG_RANGE( 0,1 );
 	jsval deviceIdVal;
 	JL_CHK( JS_GetReservedSlot(cx, JL_FOBJ, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
 	JL_S_ASSERT( deviceIdVal != JSVAL_VOID, "Device closed.");

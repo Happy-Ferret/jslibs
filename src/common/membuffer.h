@@ -24,9 +24,13 @@ struct MemBuffer;
 typedef bool (*MemBufferFree_t)(MemBuffer *mb); // it is up to the callee to update mem and size and pv.
 typedef bool (*MemBufferResize_t)(MemBuffer *mb, unsigned int newSize, bool preserveExistingData); // it is up to the callee to update mem and size and pv.
 
-struct MemBuffer {
+typedef bool (*MemBufferAcquire_t)(MemBuffer *mb, int mode);
+typedef bool (*MemBufferRelease_t)(MemBuffer *mb);
 
+struct MemBuffer {
+//private:
 	void *mem;
+public:
 	unsigned int size; // in bytes
 	MemBufferFree_t MemBufferFree;
 	MemBufferResize_t MemBufferResize;
