@@ -114,7 +114,7 @@ DEFINE_FINALIZE() {
 
 /**doc
 $TOC_MEMBER $INAME
- $INAME( buffer )
+ $INAME( buffer [ , useNetworkEndian ] )
   Constructs a Pack object from a Buffer object. This is the only way to read or write binary data.
   $H arguments
    $ARG Buffer buffer
@@ -123,10 +123,16 @@ DEFINE_CONSTRUCTOR() {
 
 	JL_S_ASSERT_CONSTRUCTING();
 	JL_S_ASSERT_THIS_CLASS();
-	JL_S_ASSERT_ARG(1);
+	JL_S_ASSERT_ARG_RANGE(1,2);
+
 	JL_S_ASSERT_OBJECT( JL_ARG(1) );
 	JL_S_ASSERT_CLASS( JSVAL_TO_OBJECT( JL_ARG(1) ), classBuffer );
 	JL_CHK( JS_SetReservedSlot(cx, obj, SLOT_PACK_BUFFEROBJECT, JL_ARG(1)) );
+
+	bool useNetworkEndian;
+	JL_CHK( JsvalToBool(cx, JL_ARG(2), &useNetworkEndian) );
+	JL_SetPrivate(cx, obj, (void*)(useNetworkEndian ? 2 : 0));
+
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -164,7 +170,7 @@ DEFINE_FUNCTION( ReadInt ) {
 	if ( JL_ARG_ISDEF(3) )
 		JL_CHK( JsvalToBool(cx, JL_ARG(3), &netConv) );
 	else
-		netConv = false;
+		netConv = (int)JL_GetPrivate(cx, obj) != 0;
 
 	uint8_t data[8]; // = { 0 };
 	memset(data, 0, sizeof(data));
@@ -246,13 +252,13 @@ DEFINE_FUNCTION( Test ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $VOID $INAME( intValue, [isSigned = false [, isNetworkEndian = false]] )
+ $VOID $INAME( intValue, size, [isSigned = false [, isNetworkEndian = false]] )
   Write an integer to the current stream. cf. systemIntSize property.
 **/
 DEFINE_FUNCTION( WriteInt ) { // incompatible with NIStreamRead
 
 	JL_S_ASSERT_THIS_CLASS();
-	JL_S_ASSERT_ARG_RANGE(1, 3);
+	JL_S_ASSERT_ARG_RANGE(1, 4);
 
 	jsval bufferVal;
 	JL_CHK( JS_GetReservedSlot(cx, obj, SLOT_PACK_BUFFEROBJECT, &bufferVal) );
@@ -276,7 +282,7 @@ DEFINE_FUNCTION( WriteInt ) { // incompatible with NIStreamRead
 	if ( JL_ARG_ISDEF(4) )
 		JL_CHK( JsvalToBool(cx, JL_ARG(4), &netConv) );
 	else
-		netConv = false;
+		netConv = (int)JL_GetPrivate(cx, obj) != 0;
 
 	uint8_t data[8]; // = { 0 };
 	memset(data, 0, sizeof(data));
@@ -407,6 +413,28 @@ DEFINE_FUNCTION( ReadString ) {
 
 /**doc
 $TOC_MEMBER $INAME
+ $BOOL *useNetworkEndian*
+**/
+DEFINE_PROPERTY_SETTER( useNetworkEndian ) {
+
+	JL_S_ASSERT_THIS_CLASS();
+	bool useNetworkEndian;
+	JL_CHK( JsvalToBool(cx, *vp, &useNetworkEndian) );
+	JL_SetPrivate(cx, obj, (void*)(useNetworkEndian ? 2 : 0));
+	return JS_TRUE;
+	JL_BAD;
+}
+
+DEFINE_PROPERTY_GETTER( useNetworkEndian ) {
+
+	JL_S_ASSERT_THIS_CLASS();
+	return BoolToJsval(cx, (int)JL_GetPrivate(cx, obj) != 0, vp);
+	JL_BAD;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
  $TYPE Buffer *buffer*
   Is the current Buffer object.
 **/
@@ -441,7 +469,7 @@ $TOC_MEMBER $INAME
  $INAME $READONLY
   Is $TRUE if the system endian is BigEndian else is $FALSE.
 **/
-DEFINE_PROPERTY( systemBigEndian ) {
+DEFINE_PROPERTY( systemIsBigEndian ) {
 
 	*vp = BOOLEAN_TO_JSVAL( systemEndian == BigEndian );
 	return JS_TRUE;
@@ -459,7 +487,7 @@ JSBool Init(JSContext *cx, JSObject *obj) {
 CONFIGURE_CLASS
 
 	REVISION(JL_SvnRevToInt("$Revision$"))
-
+	HAS_PRIVATE
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE
 	HAS_INIT
@@ -475,12 +503,13 @@ CONFIGURE_CLASS
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
+		PROPERTY(useNetworkEndian)
 		PROPERTY_READ(buffer)
 	END_PROPERTY_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC
 		PROPERTY_READ(systemIntSize)
-		PROPERTY_READ(systemBigEndian)
+		PROPERTY_READ(systemIsBigEndian)
 	END_STATIC_PROPERTY_SPEC
 
 //	HAS_PRIVATE
