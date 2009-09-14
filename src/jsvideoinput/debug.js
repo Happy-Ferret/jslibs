@@ -19,6 +19,7 @@ var noise = new Texture(256,256,3).Set(0);
 
 Print( vi.width + 'x' + vi.height, '\n' );
 
+var frames = [];
 var frame = 0;
 var key;
 while ( (key = GetKey()) != 27 ) {
@@ -26,9 +27,18 @@ while ( (key = GetKey()) != 27 ) {
 	CollectGarbage();
 	frame++;
 	var texture = new Texture(vi.GetImage()).Resize(256,256);
-	texture.Desaturate();
-	DisplayTexture(texture);
 	
+	frames.push(texture);
+	if ( frames.length < 3 )
+		continue;
+	
+	if ( GetKeyState(K_n) )
+		frames[0].NR(frames[1], frames[2]);
+
+//	frames[1] = frames[2];
+
+	DisplayTexture(frames.shift());
+
 
 //	var level = texture.GetGlobalLevel();
 //	texture.ClampLevels(level-0.2, level+0.2);

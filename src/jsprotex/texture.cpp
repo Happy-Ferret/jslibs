@@ -38,6 +38,7 @@
 
 #include "../common/membuffer.h"
 
+DECLARE_CLASS( Texture )
 
 EXTERN_C double genrand_real1(void); // mt19937ar-cok.c
 #define PRAND (genrand_real1())
@@ -139,6 +140,26 @@ inline void TextureFreeBuffers( JSContext* cx, Texture *tex ) {
 		JS_free(cx, tex->cbuffer);
 		tex->cbuffer = NULL;
 	}
+}
+
+inline bool TextureSameFormat( Texture *t1, Texture *t2 ) {
+
+	return t1->width == t2->width && t1->height == t2->height && t1->channels == t2->channels;
+}
+
+inline bool IsTexture( JSContext *cx, jsval val ) {
+
+	return JsvalIsClass(val, classTexture);
+}
+
+
+JSBool ValueToTexture( JSContext* cx, jsval value, Texture **tex ) {
+
+	JL_S_ASSERT( IsTexture(cx, value), "Invalid texture." );
+	*tex = (Texture *)JL_GetPrivate(cx, JSVAL_TO_OBJECT( value ));
+	JL_S_ASSERT_RESOURCE(tex);
+	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -358,25 +379,6 @@ JSBool NativeInterfaceBufferGet( JSContext *cx, JSObject *obj, const char **buf,
 	JL_S_ASSERT_RESOURCE( tex );
 	*buf = (char*)tex->cbuffer;
 	*size = tex->width * tex->height * tex->channels * sizeof(PTYPE);
-	return JS_TRUE;
-	JL_BAD;
-}
-
-
-inline bool IsTexture( JSContext *cx, jsval val ) {
-
-	return JsvalIsClass(val, classTexture);
-}
-
-
-JSBool ValueToTexture( JSContext* cx, jsval value, Texture **tex ) {
-
-	JL_S_ASSERT_OBJECT( value );
-	JSObject *texObj;
-	texObj = JSVAL_TO_OBJECT( value );
-	JL_S_ASSERT_CLASS( texObj, classTexture );
-	*tex = (Texture *)JL_GetPrivate(cx, texObj);
-	JL_S_ASSERT_RESOURCE(tex);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -868,10 +870,8 @@ DEFINE_FUNCTION_FAST( Colorize ) {
 	int channels;
 	channels = tex->channels;
 
-	PTYPE colorSrc[PMAXCHANNELS];
+	PTYPE colorSrc[PMAXCHANNELS], colorDst[PMAXCHANNELS];
 	JL_CHK( InitLevelData(cx, JL_FARG(1), channels, colorSrc) );
-
-	PTYPE colorDst[PMAXCHANNELS];
 	JL_CHK( InitLevelData(cx, JL_FARG(2), channels, colorDst) );
 
 	double power;
@@ -1430,7 +1430,8 @@ DEFINE_FUNCTION_FAST( Set ) {
 
 		Texture *tex1;
 		JL_CHK( ValueToTexture(cx, *arg1, &tex1) );
-		JL_S_ASSERT( tex->width == tex1->width && tex->height == tex1->height && channels == tex1->channels, "Textures must have the same size." );
+		
+		JL_S_ASSERT( TextureSameFormat(tex, tex1), "Textures must have the same size." );
 		for ( i = 0; i < size; i++ )
 			tex->cbuffer[i] = tex1->cbuffer[i];
 		return JS_TRUE;
@@ -1675,7 +1676,7 @@ DEFINE_FUNCTION_FAST( Blend ) { // texture1, blenderTexture|blenderColor
 
 	Texture *tex1;
 	JL_CHK( ValueToTexture(cx, JL_FARG(1), &tex1) );
-	JL_S_ASSERT( tex->width == tex1->width && tex->height == tex1->height && channels == tex1->channels, "Images must have the same size." );
+	JL_S_ASSERT( TextureSameFormat(tex, tex1), "Images must have the same size." );
 
 	float blend;
 
@@ -1683,7 +1684,7 @@ DEFINE_FUNCTION_FAST( Blend ) { // texture1, blenderTexture|blenderColor
 
 		Texture *blenderTex;
 		JL_CHK( ValueToTexture(cx, JL_FARG(1), &blenderTex) );
-		JL_S_ASSERT( tex->width == blenderTex->width && tex->height == blenderTex->height && channels == blenderTex->channels, "Images must have the same size." );
+		JL_S_ASSERT( TextureSameFormat(tex, blenderTex), "Images must have the same size." );
 		for ( int i = 0; i < tsize; i++ ) {
 
 			blend = blenderTex->cbuffer[i];
@@ -2783,6 +2784,78 @@ DEFINE_FUNCTION_FAST( Light ) {
 }
 
 
+
+/**doc
+$TOC_MEMBER $INAME
+ $THIS $INAME( t1, t2 )
+  Among the three textures (this, t1, t2), process each $pval by making the average of both that are the nearest.
+
+**/
+DEFINE_FUNCTION_FAST( NR ) {
+
+	JL_S_ASSERT_ARG( 2 );
+
+	Texture *tex, *t1, *t2;
+	tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(tex);
+
+	JL_CHK( ValueToTexture(cx, JL_FARG(1), &t1) );
+	JL_CHK( ValueToTexture(cx, JL_FARG(2), &t2) );
+	JL_S_ASSERT( TextureSameFormat(t1, tex), "Invalid texture (arg 1)." );
+	JL_S_ASSERT( TextureSameFormat(t2, tex), "Invalid texture (arg 2)." );
+
+	PTYPE *pos, *pos1, *pos2,  d1, d2, d3;
+	unsigned int i, size;
+	size = tex->width * tex->height * tex->channels;
+	
+	pos = tex->cbuffer;
+	pos1 = t1->cbuffer;
+	pos2 = t2->cbuffer;
+
+	for ( i = 0; i < size; ++i ) {
+
+/*
+// method 1
+		d1 = abs(*pos - *pos1);
+		d2 = abs(*pos1 - *pos2);
+		d3 = abs(*pos2 - *pos);
+
+		if ( d2 > d1 && d3 > d1 )
+			*pos = ( *pos + *pos1 ) / 2.; // *pos2 is the most different level
+		else
+			if ( d1 > d3 && d2 > d3 )
+				*pos = ( *pos + *pos2 ) / 2.; // *pos1 is the most different level
+			else
+				*pos = ( *pos1 + *pos2 ) / 2.; // *pos is the most different level
+*/
+
+// method 2
+		PTYPE m = ( *pos + *pos1 + *pos2 ) / 3.;
+
+		d1 = abs(*pos - m);
+		d2 = abs(*pos1 - m);
+		d3 = abs(*pos2 - m);
+		if ( d1 < d2 && d1 < d3 )
+//			*pos = *pos;
+			;
+		else
+			if ( d2 < d1 && d2 < d3 )
+				*pos = *pos1;
+			else
+				*pos = *pos2;
+
+		++pos;
+		++pos1;
+		++pos2;
+	}
+
+	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+
 /**doc
 $TOC_MEMBER $INAME
  $THIS $INAME( x0, y0, x1, y1 )
@@ -3264,7 +3337,7 @@ DEFINE_FUNCTION_FAST( Shift ) {
 /**doc
 $TOC_MEMBER $INAME
  $THIS $INAME( displaceTexture, factor [ , borderMode] )
-  Move each pixel of the texture according to the
+  Move each pixel of the texture according to the color of _displaceTexture_ texture. only the two first channels are used as displacement source. 
   $H arguments
    $ARG Texture displaceTexture: is a texture that contains displacement vectors.
    $ARG $REAL factor: displacement factor of each pixel.
@@ -3273,7 +3346,7 @@ $TOC_MEMBER $INAME
 // (TBD) PTYPE
 DEFINE_FUNCTION_FAST( Displace ) {
 
-	JL_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_ARG_RANGE( 2,3 );
 
 	Texture *tex1, *tex;
 	tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
@@ -3289,18 +3362,18 @@ DEFINE_FUNCTION_FAST( Displace ) {
 	displaceChannels = tex1->channels;
 
 	JL_S_ASSERT( width == tex1->width && height == tex1->height, "Textures must have the same size." );
-	JL_S_ASSERT( tex1->channels >= 2, "Displacement texture must have 2 or more channels." );
+//	JL_S_ASSERT( displaceChannels >= 2, "Displacement texture must have 2 or more channels." );
 
 	double factor;
 	if ( argc >= 2 )
 		JL_CHK( JsvalToDouble(cx, JL_FARG(2), &factor) );
 	else
-		factor = 1;
+		factor = 1.;
 
 	TextureSetupBackBuffer(cx, tex);
 
-	BorderMode mode;
-	mode = borderWrap;
+	BorderMode borderMode;
+	JL_CHK( JsvalToBorderMode(cx, JL_FSARG(3), &borderMode) );
 
 	unsigned int x, y, c;
 	int sx, sy; // source position
@@ -3323,7 +3396,7 @@ DEFINE_FUNCTION_FAST( Displace ) {
 			sx = x + PZNORM( tex1->cbuffer[pos+0] ) * factor;
 			sy = y + PZNORM( tex1->cbuffer[pos+1] ) * factor;
 
-			sPos = PosByMode(tex, sx, sy, mode);
+			sPos = PosByMode(tex, sx, sy, borderMode);
 			dPos = &tex->cbackBuffer[(x + y * width) * channels];
 			if ( sPos != NULL )
 				for ( c = 0; c < channels; c++ )
@@ -4441,7 +4514,7 @@ CONFIGURE_CLASS
 		FUNCTION_FAST( GetLevelRange )
 		FUNCTION_FAST( GetBorderLevelRange )
 		FUNCTION_FAST( GetGlobalLevel )
-
+		FUNCTION_FAST( NR )
 		FUNCTION_FAST( ApplyColorMatrix )
 		FUNCTION_FAST( AddPerlin2 )
 

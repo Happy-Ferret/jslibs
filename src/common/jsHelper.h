@@ -169,7 +169,7 @@ ALWAYS_INLINE void SetHostPrivate( JSContext *cx, HostPrivate *hostPrivate ) {
 
 #define JL_BAD bad:return(JS_FALSE)
 
-// check: used to forward an error.
+// check: used to forward an error. // (TBD) try ultra-safe mode at compile-time: #define JL_CHK( status ) (status)
 #define JL_CHK( status ) \
 JL_MACRO_BEGIN \
 	if (unlikely( !(status) )) { goto bad; } \
@@ -397,7 +397,10 @@ ALWAYS_INLINE JSStackFrame *JL_StackFrameByIndex(JSContext *cx, int frameIndex) 
 
 ALWAYS_INLINE bool JsvalIsNaN( JSContext *cx, jsval val ) {
 
-	return JSVAL_IS_DOUBLE( val ) && JSDOUBLE_IS_NaN( *JSVAL_TO_DOUBLE( val ) );
+	#ifdef DEBUG
+		JS_ASSERT( JSDOUBLE_IS_NaN( *cx->runtime->jsNaN ) ); // Mozilla JS engine private API behavior has changed.
+	#endif //DEBUG
+	return JSVAL_IS_DOUBLE(val) && *JSVAL_TO_DOUBLE(val) == *cx->runtime->jsNaN;
 }
 
 ALWAYS_INLINE jsdouble JsvalIsInfinity( JSContext *cx, jsval val ) {
