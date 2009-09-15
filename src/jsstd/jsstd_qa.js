@@ -522,7 +522,7 @@ LoadModule('jsstd');
 
 /// Pack endian [ftrm]
 	
-		if ( Pack.systemBigEndian == false ) {
+		if ( !Pack.systemIsBigEndian ) {
 		
 			var buf = new Buffer();
 			var pack = new Pack(buf);

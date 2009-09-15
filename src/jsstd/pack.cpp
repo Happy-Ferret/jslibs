@@ -130,7 +130,10 @@ DEFINE_CONSTRUCTOR() {
 	JL_CHK( JS_SetReservedSlot(cx, obj, SLOT_PACK_BUFFEROBJECT, JL_ARG(1)) );
 
 	bool useNetworkEndian;
-	JL_CHK( JsvalToBool(cx, JL_ARG(2), &useNetworkEndian) );
+	if ( JL_ARG_ISDEF(2) )
+		JL_CHK( JsvalToBool(cx, JL_ARG(2), &useNetworkEndian) );
+	else
+		useNetworkEndian = false;
 	JL_SetPrivate(cx, obj, (void*)(useNetworkEndian ? 2 : 0));
 
 	return JS_TRUE;
@@ -175,12 +178,12 @@ DEFINE_FUNCTION( ReadInt ) {
 	uint8_t data[8]; // = { 0 };
 	memset(data, 0, sizeof(data));
 
-	size_t amount;
+	unsigned int amount;
 	amount = size;
-	JL_CHK( ReadRawAmount(cx, bufferObject, &amount, (char*)data) );
+	JL_CHK( ReadRawDataAmount(cx, bufferObject, &amount, (char*)data) );
 	if ( amount < size ) { // not enough data to complete the requested operation, then unread the few data we have read.
 
-		JL_CHK( UnReadRawChunk(cx, bufferObject, (char*)data, amount) ); // incompatible with NIStreamRead
+		JL_CHK( UnReadRawDataChunk(cx, bufferObject, (char*)data, amount) ); // incompatible with NIStreamRead
 		*rval = JSVAL_VOID;
 		return JS_TRUE;
 	}
@@ -322,7 +325,7 @@ DEFINE_FUNCTION( WriteInt ) { // incompatible with NIStreamRead
 
 	JL_S_ASSERT( !outOfRange, "Value size too big to be stored." );
 
-	JL_CHK( WriteRawChunk(cx, bufferObject, size, (char*)data) );
+	JL_CHK( WriteRawDataChunk(cx, bufferObject, size, (char*)data) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -344,16 +347,16 @@ DEFINE_FUNCTION( ReadReal ) {
 	JSObject *bufferObject;
 	bufferObject = JSVAL_TO_OBJECT( bufferVal );
 
-	size_t size;
+	unsigned int size;
 	size = JSVAL_TO_INT( JL_ARG(1) );
 
 	uint8_t data[16];
-	size_t amount;
+	unsigned int amount;
 	amount = size;
-	JL_CHK( ReadRawAmount(cx, bufferObject, &amount, (char*)data) );
+	JL_CHK( ReadRawDataAmount(cx, bufferObject, &amount, (char*)data) );
 	if ( amount < size ) { // not enough data to complete the requested operation, then unread the few data we read
 
-		JL_CHK( UnReadRawChunk(cx, bufferObject, (char*)data, amount) ); // incompatible with NIStreamRead
+		JL_CHK( UnReadRawDataChunk(cx, bufferObject, (char*)data, amount) ); // incompatible with NIStreamRead
 		*rval = JSVAL_VOID;
 		return JS_TRUE;
 	}
@@ -391,7 +394,7 @@ DEFINE_FUNCTION( ReadString ) {
 		unsigned int amount;
 		JL_CHK( JsvalToUInt(cx, JL_ARG(1), &amount) );
 		JL_S_ASSERT( amount >= 0, "Invalid amount" );
-		JL_CHK( ReadAmount(cx, bufferObject, amount, rval) );
+		JL_CHK( ReadDataAmount(cx, bufferObject, amount, rval) );
 	} else {
 
 		// get a chunk

@@ -15,8 +15,8 @@
 #ifndef _JSHELPER_H_
 #define _JSHELPER_H_
 
-typedef JSBool (*NIStreamRead)( JSContext *cx, JSObject *obj, char *buffer, size_t *amount );
-typedef JSBool (*NIBufferGet)( JSContext *cx, JSObject *obj, const char **buffer, size_t *size );
+typedef JSBool (*NIStreamRead)( JSContext *cx, JSObject *obj, char *buffer, unsigned int *amount );
+typedef JSBool (*NIBufferGet)( JSContext *cx, JSObject *obj, const char **buffer, unsigned int *size );
 typedef JSBool (*NIMatrix44Get)( JSContext *cx, JSObject *obj, float **pm );
 
 
@@ -61,12 +61,12 @@ extern bool _unsafeMode;
 	#define IFDEBUG(expr)
 #endif // DEBUG
 
-typedef int (*HostOutput)( void *privateData, const char *buffer, size_t length );
+typedef int (*HostOutput)( void *privateData, const char *buffer, unsigned int length );
 
 struct HostPrivate {
 
 	void *privateData;
-	size_t maybeGCInterval;
+	unsigned int maybeGCInterval;
 	JLSemaphoreHandler watchDogSem;
 	JLThreadHandler watchDogThread;
 	bool unsafeMode;
@@ -319,7 +319,7 @@ ALWAYS_INLINE JSClass* JL_GetClass(JSObject *obj) {
 	return STOBJ_GET_CLASS(obj); // JS_GET_CLASS(cx, obj);
 }
 
-ALWAYS_INLINE size_t JL_GetStringLength(JSString *jsstr) {
+ALWAYS_INLINE unsigned int JL_GetStringLength(JSString *jsstr) {
 	
 	return jsstr->length();
 }
@@ -400,7 +400,8 @@ ALWAYS_INLINE bool JsvalIsNaN( JSContext *cx, jsval val ) {
 	#ifdef DEBUG
 		JS_ASSERT( JSDOUBLE_IS_NaN( *cx->runtime->jsNaN ) ); // Mozilla JS engine private API behavior has changed.
 	#endif //DEBUG
-	return JSVAL_IS_DOUBLE(val) && *JSVAL_TO_DOUBLE(val) == *cx->runtime->jsNaN;
+	// return DOUBLE_TO_JSVAL(cx->runtime->jsNaN) == val; // (TBD) why this does not work ?
+	return JSVAL_IS_DOUBLE(val) && JSDOUBLE_IS_NaN( *JSVAL_TO_DOUBLE(val) );
 }
 
 ALWAYS_INLINE jsdouble JsvalIsInfinity( JSContext *cx, jsval val ) {
@@ -813,8 +814,8 @@ ALWAYS_INLINE bool JL_ValueIsBlob( JSContext *cx, jsval v ) {
 }
 
 
-// note: a Blob is either a JSString or a Blob object is the jslang module has been loaded.
-ALWAYS_INLINE JSBool JL_NewBlob( JSContext *cx, void* buffer, size_t length, jsval *vp ) {
+// note: a Blob is either a JSString or a Blob object if the jslang module has been loaded.
+ALWAYS_INLINE JSBool JL_NewBlob( JSContext *cx, void* buffer, unsigned int length, jsval *vp ) {
 
 	if (unlikely( length == 0 )) { // Empty Blob must acts like an empty string: !'' === true
 		
@@ -854,7 +855,7 @@ bad:
 }
 
 
-ALWAYS_INLINE JSBool JL_NewBlobCopyN( JSContext *cx, const void *data, size_t amount, jsval *vp ) {
+ALWAYS_INLINE JSBool JL_NewBlobCopyN( JSContext *cx, const void *data, unsigned int amount, jsval *vp ) {
 
 	if (unlikely( amount == 0 )) { // Empty Blob must acts like an empty string: !'' == true
 
@@ -888,7 +889,7 @@ bad:
 
 
 // beware: caller should keep a reference to buffer as short time as possible, because it is difficult to protect it from GC.
-ALWAYS_INLINE JSBool JsvalToStringAndLength( JSContext *cx, jsval *val, const char** buffer, size_t *size ) {
+ALWAYS_INLINE JSBool JsvalToStringAndLength( JSContext *cx, jsval *val, const char** buffer, unsigned int *size ) {
 
 	if ( JSVAL_IS_STRING(*val) ) { // for string literals
 
@@ -914,7 +915,7 @@ ALWAYS_INLINE JSBool JsvalToStringAndLength( JSContext *cx, jsval *val, const ch
 }
 
 
-ALWAYS_INLINE JSBool JsvalToStringLength( JSContext *cx, jsval val, size_t *length ) {
+ALWAYS_INLINE JSBool JsvalToStringLength( JSContext *cx, jsval val, unsigned int *length ) {
 
 	if ( JSVAL_IS_STRING(val) ) { // for string literals
 
@@ -945,7 +946,7 @@ ALWAYS_INLINE JSBool JsvalToString( JSContext *cx, jsval *val, const char** buff
 	}
 	if (likely( !JSVAL_IS_PRIMITIVE(*val) )) { // for NIBufferGet support
 
-		size_t size; //unused
+		unsigned int size; //unused
 		NIBufferGet fct = BufferGetNativeInterface(cx, JSVAL_TO_OBJECT(*val));
 		if ( fct )
 			return fct(cx, JSVAL_TO_OBJECT(*val), buffer, &size);
@@ -981,7 +982,7 @@ ALWAYS_INLINE JSBool StringToJsval( JSContext *cx, const char* cstr, jsval *val 
 }
 
 
-ALWAYS_INLINE JSBool StringAndLengthToJsval( JSContext *cx, jsval *val, const char* cstr, size_t length ) {
+ALWAYS_INLINE JSBool StringAndLengthToJsval( JSContext *cx, jsval *val, const char* cstr, unsigned int length ) {
 
 	if (likely( length > 0 )) {
 
@@ -1199,7 +1200,7 @@ ALWAYS_INLINE JSBool IntVectorToJsval( JSContext *cx, int *vector, uint32 length
 		*val = OBJECT_TO_JSVAL(arrayObj);
 	}
 	jsval tmp;
-	for ( size_t i = 0; i < length; i++ ) {
+	for ( unsigned int i = 0; i < length; i++ ) {
 
 		JL_CHK( IntToJsval(cx, vector[i], &tmp) );
 		JL_CHK( JS_SetElement(cx, arrayObj, i, &tmp) );
@@ -1242,7 +1243,7 @@ ALWAYS_INLINE JSBool UIntVectorToJsval( JSContext *cx, unsigned int *vector, uin
 		*val = OBJECT_TO_JSVAL(arrayObj);
 	}
 	jsval tmp;
-	for ( size_t i = 0; i < length; i++ ) {
+	for ( unsigned int i = 0; i < length; i++ ) {
 
 		JL_CHK( UIntToJsval(cx, vector[i], &tmp) );
 		JL_CHK( JS_SetElement(cx, arrayObj, i, &tmp) );
@@ -1285,7 +1286,7 @@ ALWAYS_INLINE JSBool FloatVectorToJsval( JSContext *cx, const float *vector, uin
 		*val = OBJECT_TO_JSVAL(arrayObj);
 	}
 	jsval tmp;
-	for ( size_t i = 0; i < length; i++ ) {
+	for ( unsigned int i = 0; i < length; i++ ) {
 
 		JL_CHK( FloatToJsval(cx, vector[i], &tmp) );
 		JL_CHK( JS_SetElement(cx, arrayObj, i, &tmp) );
@@ -1327,7 +1328,7 @@ ALWAYS_INLINE JSBool DoubleVectorToJsval( JSContext *cx, const double *vector, u
 		*val = OBJECT_TO_JSVAL(arrayObj);
 	}
 	jsval tmp;
-	for ( size_t i = 0; i < length; i++ ) {
+	for ( unsigned int i = 0; i < length; i++ ) {
 
 		JL_CHK( DoubleToJsval(cx, vector[i], &tmp) );
 		JL_CHK( JS_SetElement(cx, arrayObj, i, &tmp) );
@@ -1451,9 +1452,9 @@ ALWAYS_INLINE JSBool ExceptionSetScriptLocation( JSContext *cx, JSObject *obj ) 
 	script = JS_GetFrameScript(cx, fp);
 	JL_CHK( script );
 	const char *filename;
+	int lineno;
 	filename = JS_GetScriptFilename(cx, script);
 	JL_CHK( filename );
-	int lineno;
 	lineno = JS_PCToLineNumber(cx, script, JS_GetFramePC(cx, fp));
 
 	jsval tmp;
@@ -1527,7 +1528,7 @@ ALWAYS_INLINE JSBool UnserializeJsval( JSContext *cx, const Serialized *xdr, jsv
 	JL_BAD;
 }
 
-
+// 
 
 ALWAYS_INLINE JSBool SetNativeFunction( JSContext *cx, JSObject *obj, const char *name, void *nativeFct ) {
 
@@ -1599,7 +1600,7 @@ ALWAYS_INLINE JSBool GetNativeInterface( JSContext *cx, JSObject *obj, JSObject 
 ///////////////////////////////////////////////////////////////////////////////
 // NativeInterface StreamRead
 
-inline JSBool JSStreamRead( JSContext *cx, JSObject *obj, char *buffer, size_t *amount ) {
+inline JSBool JSStreamRead( JSContext *cx, JSObject *obj, char *buffer, unsigned int *amount ) {
 
 	JSTempValueRooter tvr;
 	JS_PUSH_SINGLE_TEMP_ROOT(cx, JSVAL_NULL, &tvr); // needed to protect the returned value.
@@ -1607,7 +1608,7 @@ inline JSBool JSStreamRead( JSContext *cx, JSObject *obj, char *buffer, size_t *
 	JL_CHK( IntToJsval(cx, *amount, &tvr.u.value) );
 	JL_CHKM( JS_CallFunctionName(cx, obj, "Read", 1, &tvr.u.value, &tvr.u.value), "Read() function not found.");
 
-	if ( JSVAL_IS_VOID(tvr.u.value) ) {
+	if ( JSVAL_IS_VOID(tvr.u.value) ) { // (TBD)! with sockets, undefined mean 'closed', that is not supported.
 
 		*amount = 0;
 		JS_POP_TEMP_ROOT(cx, &tvr);
@@ -1615,7 +1616,7 @@ inline JSBool JSStreamRead( JSContext *cx, JSObject *obj, char *buffer, size_t *
 	}
 
 	const char *tmpBuf;
-	size_t size;
+	unsigned int size;
 	JL_CHK( JsvalToStringAndLength(cx, &tvr.u.value, &tmpBuf, &size) );
 	*amount = JL_MIN(size, *amount);
 	memcpy(buffer, tmpBuf, *amount);
@@ -1672,7 +1673,7 @@ inline NIStreamRead StreamReadInterface( JSContext *cx, JSObject *obj ) {
 ///////////////////////////////////////////////////////////////////////////////
 // NativeInterface BufferGet
 
-inline JSBool JSBufferGet( JSContext *cx, JSObject *obj, const char **buffer, size_t *size ) {
+inline JSBool JSBufferGet( JSContext *cx, JSObject *obj, const char **buffer, unsigned int *size ) {
 
 	JSTempValueRooter tvr;
 	JS_PUSH_SINGLE_TEMP_ROOT(cx, JSVAL_NULL, &tvr); // needed to protect the returned value.
@@ -1735,7 +1736,7 @@ inline NIBufferGet BufferGetInterface( JSContext *cx, JSObject *obj ) {
 // NativeInterface Matrix44Get
 
 /*
-inline JSBool JSMatrix44Get( JSContext *cx, JSObject *obj, const char **buffer, size_t *size ) {
+inline JSBool JSMatrix44Get( JSContext *cx, JSObject *obj, const char **buffer, unsigned int *size ) {
 
 
 	JS_PUSH_SINGLE_TEMP_ROOT(cx, rval, &tvr);
@@ -1814,7 +1815,7 @@ inline JSBool JsvalToMatrix44( JSContext *cx, jsval val, float **m ) {
 	}
 
 	NIMatrix44Get Matrix44Get;
-	Matrix44Get  = Matrix44GetInterface(cx, matrixObj);
+	Matrix44Get = Matrix44GetInterface(cx, matrixObj);
 	if ( Matrix44Get )
 		return Matrix44Get(cx, matrixObj, m);
 
@@ -1823,7 +1824,7 @@ inline JSBool JsvalToMatrix44( JSContext *cx, jsval val, float **m ) {
 		uint32 length;
 		jsval element;
 		JL_CHK( JS_GetElement(cx, JSVAL_TO_OBJECT(val), 0, &element) );
-		if ( JsvalIsArray(cx, element) ) { // support for: [ [1,1,1,1], [2,2,2,2], [3,3,3,3], [4,4,4,4] ] matrix
+		if ( JsvalIsArray(cx, element) ) { // support for [ [1,1,1,1], [2,2,2,2], [3,3,3,3], [4,4,4,4] ] matrix
 
 			JL_CHK( JsvalToFloatVector(cx, element, (*m)+0, 4, &length ) );
 			JL_S_ASSERT( length == 4, "Too few (%d) elements in the array.", length );
@@ -1845,7 +1846,7 @@ inline JSBool JsvalToMatrix44( JSContext *cx, jsval val, float **m ) {
 			return JS_TRUE;
 		}
 
-		JL_CHK( JsvalToFloatVector(cx, val, *m, 16, &length ) );
+		JL_CHK( JsvalToFloatVector(cx, val, *m, 16, &length ) );  // support for [ 1,1,1,1, 2,2,2,2, 3,3,3,3, 4,4,4,4 ] matrix
 		JL_S_ASSERT( length == 16, "Too few (%d) elements in the array.", length );
 		return JS_TRUE;
 	}

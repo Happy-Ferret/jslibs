@@ -69,7 +69,7 @@ DEFINE_FUNCTION_FAST( Expand ) {
 	JL_S_ASSERT_ARG_RANGE(1, 2);
 
 	const char *srcBegin;
-	size_t srcLen;
+	unsigned int srcLen;
 
 	JL_CHK( JsvalToStringAndLength(cx, &JL_FARG(1), &srcBegin, &srcLen) );
 	JL_S_ASSERT( srcBegin[srcLen] == '\0', "Invalid input string." ); // else strstr may failed.
@@ -90,7 +90,7 @@ DEFINE_FUNCTION_FAST( Expand ) {
 
 	typedef struct {
 		const char *data;
-		size_t length;
+		unsigned int length;
 		JSTempValueRooter tvr;
 		bool hasTvr;
 	} Chunk;
@@ -755,7 +755,7 @@ DEFINE_FUNCTION_FAST( XdrDecode ) {
 	xdr = JS_XDRNewMem(cx, JSXDR_DECODE);
 	JL_CHK( xdr );
 	const char *buffer;
-	size_t length;
+	unsigned int length;
 	JL_CHK( JsvalToStringAndLength(cx, &JL_FARG(1), &buffer, &length) );
 	JS_XDRMemSetData(xdr, (void*)buffer, length); // safe de-const cast: we are JSXDR_DECODE from the buffer.
 	JL_CHK( JS_XDRValue(xdr, JL_FRVAL) );
@@ -929,7 +929,7 @@ DEFINE_FUNCTION_FAST( StringRepeat ) {
 	}
 
 	const char *buf;
-	size_t len;
+	unsigned int len;
 	JL_CHK( JsvalToStringAndLength(cx, &JL_FARG(1), &buf, &len) ); // warning: GC on the returned buffer !
 
 	if ( len == 0 ) {
@@ -944,7 +944,7 @@ DEFINE_FUNCTION_FAST( StringRepeat ) {
 		return JS_TRUE;
 	}
 
-	size_t newLen;
+	unsigned int newLen;
 	newLen = len * count;
 
 	char *newBuf;
@@ -958,7 +958,7 @@ DEFINE_FUNCTION_FAST( StringRepeat ) {
 	} else {
 
 		char *tmp = newBuf;
-		size_t i, j;
+		unsigned int i, j;
 		for ( i=0; i<count; i++ )
 			for ( j=0; j<len; j++ )
 				*(tmp++) = buf[j];
@@ -1276,7 +1276,7 @@ DEFINE_FUNCTION( IsStatementValid ) {
 
 	JL_S_ASSERT_ARG(1);
 	const char *buffer;
-	size_t length;
+	unsigned int length;
 	JL_CHK( JsvalToStringAndLength(cx, &JL_ARG(1), &buffer, &length) );
 	JL_CHK( BoolToJsval(cx, JS_BufferIsCompilableUnit(cx, obj, buffer, length) == JS_TRUE, rval) );
 	return JS_TRUE;

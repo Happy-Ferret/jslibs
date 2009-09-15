@@ -178,21 +178,37 @@ bad_free:
 }
 
 
+void* JSBufferAlloc(void * opaqueAllocatorContext, int size) {
+	
+	return JS_malloc((JSContext*)opaqueAllocatorContext, size);
+}
+
+void JSBufferFree(void * opaqueAllocatorContext, void* address) {
+
+	JS_free((JSContext*)opaqueAllocatorContext, address);
+}
+
+void* JSBufferRealloc(void * opaqueAllocatorContext, void* address, int size) {
+
+	return JS_realloc((JSContext*)opaqueAllocatorContext, address, size);
+}
+
 JSBool ReadAllToJsval(JSContext *cx, PRFileDesc *fd, jsval *rval ) {
 
 	Buffer buf;
 	BufferInitialize(&buf, bufferTypeChunk, bufferGrowTypeNoGuess);
+	BufferSetAllocators(&buf, cx, JSBufferAlloc, JSBufferFree, JSBufferRealloc);
 	PRInt32 currentReadLength = 1024;
 	for (;;) {
 
 		PRInt32 res = PR_Read(fd, BufferNewChunk(&buf, currentReadLength), currentReadLength);
-		if (likely( res > 0 )) {
+		if (likely( res > 0 )) { // a positive number indicates the number of bytes actually read in.
 
 			BufferConfirm(&buf, res);
 			if ( res < currentReadLength )
 				break;
 		} else
-		if ( res == 0 ) { // end of file is reached or the network connection is closed.
+		if ( res == 0 ) { // 0 means end of file is reached or the network connection is closed.
 
 			if ( BufferGetLength(&buf) > 0 ) // we reach eof BUT we have read some data.
 				break; // no error, no data received, we cannot reach currentReadLength
@@ -201,9 +217,9 @@ JSBool ReadAllToJsval(JSContext *cx, PRFileDesc *fd, jsval *rval ) {
 			*rval = JSVAL_VOID;
 			return JS_TRUE;
 		} else
-		if (unlikely( res == -1 )) { // failure. The reason for the failure can be obtained by calling PR_GetError.
+		if ( res == -1 ) { // -1 indicates a failure. The reason for the failure can be obtained by calling PR_GetError.
 
-			if ( PR_GetError() != PR_WOULD_BLOCK_ERROR )
+			if ( PR_GetError() != PR_WOULD_BLOCK_ERROR ) // PR_WOULD_BLOCK_ERROR: The operation would have blocked (non-fatal error)
 				JL_CHK( ThrowIoError(cx) );
 			break; // no error, no data received, we cannot reach currentReadLength
 		}
@@ -228,7 +244,7 @@ JSBool ReadAllToJsval(JSContext *cx, PRFileDesc *fd, jsval *rval ) {
 
 	*BufferNewChunk(&buf, 1) = '\0';
 	BufferConfirm(&buf, 1);
-	JL_CHK( JL_NewBlob(cx, BufferGetDataOwnership(&buf), BufferGetLength(&buf) -1, rval) );
+	JL_CHK( JL_NewBlob(cx, BufferGetDataOwnership(&buf), BufferGetLength(&buf) -1, rval) ); // -1 because '\0' is not a part of the data.
 
 	BufferFinalize(&buf);
 	return JS_TRUE;
@@ -333,10 +349,17 @@ DEFINE_FUNCTION_FAST( Write ) {
 			return JS_TRUE;
 		}
 */ // find a better solution !?
-
-		if ( errCode != PR_WOULD_BLOCK_ERROR )
-			return ThrowIoError(cx);
-		sentAmount = 0;
+		
+		switch ( errCode ) {
+			case PR_WOULD_BLOCK_ERROR:
+				sentAmount = 0;
+				break;
+//			case PR_NOT_CONNECTED_ERROR:
+//				*JL_FRVAL = JSVAL_VOID;
+//				return JS_TRUE;
+			default:
+				return ThrowIoError(cx);
+		}
 	} else {
 
 		sentAmount = res;

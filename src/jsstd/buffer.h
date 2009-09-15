@@ -14,9 +14,9 @@
 
 DECLARE_CLASS( Buffer )
 
-JSBool WriteRawChunk( JSContext *cx, JSObject *obj, size_t amount, const char *str );
+JSBool WriteRawDataChunk( JSContext *cx, JSObject *obj, unsigned int amount, const char *str );
 
-JSBool ReadRawAmount( JSContext *cx, JSObject *obj, size_t *amount, char *str );
-JSBool ReadAmount( JSContext *cx, JSObject *obj, size_t amount, jsval *rval );
+JSBool ReadRawDataAmount( JSContext *cx, JSObject *obj, unsigned int *amount, char *str );
+JSBool ReadDataAmount( JSContext *cx, JSObject *obj, unsigned int amount, jsval *rval );
 
-JSBool UnReadRawChunk( JSContext *cx, JSObject *obj, char *data, size_t length );
+JSBool UnReadRawDataChunk( JSContext *cx, JSObject *obj, char *data, unsigned int length );

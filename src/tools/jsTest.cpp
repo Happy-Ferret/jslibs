@@ -21,6 +21,8 @@
 #include <stdlib.h>
 #include <fcntl.h>
 
+#include "../common/jsHelper.h"
+
 
 #ifndef O_BINARY
 	#define O_BINARY 0
@@ -120,18 +122,7 @@ my_ErrorReporter(JSContext *cx, const char *message, JSErrorReport *report)
 
 int main(int argc, char* argv[]) {
 
-JSRuntime *rt = JS_NewRuntime(8192L);
-JSContext *cx = JS_NewContext(rt, 8192L);
 
-
-JSContext *scx = JS_NewContext(JS_GetRuntime(cx), 8192L);
-JS_ToggleOptions(scx, JSOPTION_JIT); // without JIT, it works.
-JSObject *myObj = JS_NewObject(scx, NULL, NULL, NULL);
-char *src = "for (var i=0; i<100; ++i);";
-JS_EvaluateScript(scx, myObj, src, strlen(src), "test", 1, J_FRVAL); // "Access violation reading location 0xfffffffc." in TraceRecorder::lazilyImportGlobalSlot() (globalObj->dslots == NULL).
-
-	
-/*
 	JSRuntime *rt = JS_NewRuntime(0);
 	JS_SetGCParameter(rt, JSGC_MAX_BYTES, (uint32)-1);
 	JS_SetGCParameter(rt, JSGC_MAX_MALLOC_BYTES, (uint32)-1);
@@ -145,8 +136,14 @@ JS_EvaluateScript(scx, myObj, src, strlen(src), "test", 1, J_FRVAL); // "Access 
 
 	JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_VAROBJFIX );
 
-	char scriptSrc[] = "for ( var i = 0; i < 100000; i++ ) [1];";
+//	char scriptSrc[] = "for ( var i = 0; i < 100000; i++ ) [1];";
 
+jsval nan;
+char scriptSrc[] = "Number.NaN";
+JS_EvaluateScript(cx, globalObject, scriptSrc, strlen(scriptSrc), "test", 1, &nan); // "Access violation reading location 0xfffffffc." in TraceRecorder::lazilyImportGlobalSlot() (globalObj->dslots == NULL).
+bool res = JsvalIsNaN(cx, nan);
+
+/*
 	JSScript *script = JS_CompileScript(cx, globalObject, scriptSrc, strlen(scriptSrc), "myScript", 1);
 
 	jsval rval;
@@ -156,11 +153,11 @@ JS_EvaluateScript(scx, myObj, src, strlen(src), "test", 1, J_FRVAL); // "Access 
 	printf("gcBytes before: %d\n", rt->gcBytes );
 	JS_GC(cx);
 	printf("gcBytes after: %d\n", rt->gcBytes );
-	
+*/	
 
 	JS_DestroyContext(cx);
 	JS_DestroyRuntime(rt);
 	JS_ShutDown();
-*/
+
 	return EXIT_SUCCESS;
 }

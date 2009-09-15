@@ -2,14 +2,13 @@ LoadModule('jsstd');
 LoadModule('jsio');
 LoadModule('jsdebug');
 
+	var o = {
+		Read: function(size) { return undefined }
+	}
 
-	var p = new Pack(new Buffer());
-	p.useNetworkEndian = false;
-	p.WriteInt(0x1234,2,false);
-
-	Print(uneval(p.buffer.Read()));
-		
-		
+	var b = new Buffer(o);
+	Print( uneval( b.Read(10) ) );
+	
 		
 Halt(); //////////////////////////////
 

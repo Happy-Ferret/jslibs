@@ -5,6 +5,19 @@ LoadModule('jsstd');
 LoadModule('jsio');
 LoadModule('jstask');
 
+
+
+	var serverSocket = new Socket();
+	serverSocket.reuseAddr = true;
+	serverSocket.Bind(8099, '127.0.0.1');
+	serverSocket.Write('123');
+
+
+
+Halt(); //////////////////////////////////////////////////////////////////////
+
+
+
 function ReverseLookup( ip ) {
 
 	try {

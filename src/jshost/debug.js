@@ -1,8 +1,40 @@
 // LoadModule('jsstd');  LoadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\n' ) } };  Exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
-
 LoadModule('jsdebug');
 LoadModule('jsstd');
 
+function TestCase( section, name, expected, result ) {}
+var SECTION = '';
+
+var x;
+
+new TestCase( SECTION,     "x = new Blob(); x.charAt(NaN)",  "",     eval("x=new Blob();x.charAt(Number.NaN)") );
+new TestCase( SECTION,     "x = new Blob(); x.charAt(Number.POSITIVE_INFINITY)",   "",     eval("x=new Blob();x.charAt(Number.POSITIVE_INFINITY)") );
+new TestCase( SECTION,     "x = new Blob(); x.charAt(Number.NEGATIVE_INFINITY)",   "",     eval("x=new Blob();x.charAt(Number.NEGATIVE_INFINITY)") );
+
+new TestCase( SECTION,     "x = new Blob(); x.charAt(0)",    "",     eval("x=new Blob();x.charAt(0)") );
+new TestCase( SECTION,     "x = new Blob(); x.charAt(1)",    "",     eval("x=new Blob();x.charAt(1)") );
+new TestCase( SECTION,     "x = new Blob(); x.charAt(-1)",   "",     eval("x=new Blob();x.charAt(-1)") );
+
+
+new TestCase( SECTION,      "var MYOB = new Blob(1234567890); MYOB.charAt(0)",  "1",        eval("var MYOB = new Blob(1234567890); MYOB.charAt(0)") );
+new TestCase( SECTION,      "var MYOB = new Blob(1234567890); MYOB.charAt(1)",  "2",        eval("var MYOB = new Blob(1234567890); MYOB.charAt(1)") );
+new TestCase( SECTION,      "var MYOB = new Blob(1234567890); MYOB.charAt(2)",  "3",        eval("var MYOB = new Blob(1234567890); MYOB.charAt(2)") );
+new TestCase( SECTION,      "var MYOB = new Blob(1234567890); MYOB.charAt(3)",  "4",        eval("var MYOB = new Blob(1234567890); MYOB.charAt(3)") );
+new TestCase( SECTION,      "var MYOB = new Blob(1234567890); MYOB.charAt(4)",  "5",        eval("var MYOB = new Blob(1234567890); MYOB.charAt(4)") );
+new TestCase( SECTION,      "var MYOB = new Blob(1234567890); MYOB.charAt(5)",  "6",        eval("var MYOB = new Blob(1234567890); MYOB.charAt(5)") );
+new TestCase( SECTION,      "var MYOB = new Blob(1234567890); MYOB.charAt(6)",  "7",        eval("var MYOB = new Blob(1234567890); MYOB.charAt(6)") );
+new TestCase( SECTION,      "var MYOB = new Blob(1234567890); MYOB.charAt(7)",  "8",        eval("var MYOB = new Blob(1234567890); MYOB.charAt(7)") );
+new TestCase( SECTION,      "var MYOB = new Blob(1234567890); MYOB.charAt(8)",  "9",        eval("var MYOB = new Blob(1234567890); MYOB.charAt(8)") );
+new TestCase( SECTION,      "var MYOB = new Blob(1234567890); MYOB.charAt(9)",  "0",        eval("var MYOB = new Blob(1234567890); MYOB.charAt(9)") );
+new TestCase( SECTION,      "var MYOB = new Blob(1234567890); MYOB.charAt(10)",  "",       eval("var MYOB = new Blob(1234567890); MYOB.charAt(10)") );
+
+new TestCase( SECTION,      "var MYOB = new Blob(1234567890); MYOB.charAt(Math.PI)",  "4",        eval("var MYOB = new Blob(1234567890); MYOB.charAt(Math.PI)") );
+
+Print('OK');
+
+
+Halt();
+// very long GC:
 var count = 1000000;
 var v;
 
