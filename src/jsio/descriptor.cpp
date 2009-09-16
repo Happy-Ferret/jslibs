@@ -25,6 +25,17 @@
 #include "../common/buffer.h"
 using namespace jl;
 
+/*
+template <class T>
+class Terminate {
+	Terminate(T predicate) {
+	}
+	~Terminate() {
+		predicate();
+	}
+};
+*/
+
 // open: 	SetNativeInterface(cx, obj, ...
 // close: 	RemoveNativeInterface(cx, obj, NI_READ_RESOURCE );
 
@@ -53,7 +64,7 @@ JSBool NativeInterfaceStreamRead( JSContext *cx, JSObject *obj, char *buf, size_
 		return JS_TRUE; // no data, but it is not an error.
 	}
 
-	ret = PR_Read(fd, buf, *amount);
+	ret = PR_Read(fd, buf, *amount); // like recv() with PR_INTERVAL_NO_TIMEOUT
 	if ( ret == -1 ) {
 
 		PRErrorCode errorCode = PR_GetError();
@@ -65,7 +76,7 @@ JSBool NativeInterfaceStreamRead( JSContext *cx, JSObject *obj, char *buf, size_
 
 	if ( ret == 0 ) { // end of file is reached or the network connection is closed.
 
-		// (TBD) something to do ?
+		// (TBD) something else to do ?
 	}
 
 	*amount = ret;
@@ -138,15 +149,15 @@ DEFINE_FUNCTION_FAST( Close ) {
 }
 
 
-JSBool ReadToJsval( JSContext *cx, PRFileDesc *fd, int amount, jsval *rval ) {
+JSBool ReadToJsval( JSContext *cx, PRFileDesc *fd, unsigned int amount, jsval *rval ) {
 
 	char *buf = (char*)JS_malloc(cx, amount +1);
 	JL_CHK( buf );
 
 	PRInt32 res;
-	res = PR_Read(fd, buf, amount);
+	res = PR_Read(fd, buf, amount); // like recv() with PR_INTERVAL_NO_TIMEOUT
 
-	if (likely( res > 0 )) {
+	if (likely( res > 0 )) { // a positive number indicates the number of bytes actually read in.
 
 		if (unlikely( JL_MaybeRealloc(amount, res) )) {
 
@@ -156,20 +167,28 @@ JSBool ReadToJsval( JSContext *cx, PRFileDesc *fd, int amount, jsval *rval ) {
 		buf[res] = '\0';
 		JL_CHKB( JL_NewBlob(cx, buf, res, rval), bad_free );
 		return JS_TRUE;
-	} else
-	if (res == 0) {
+	}
+
+	if ( res == 0 ) { // 0 means end of file is reached or the network connection is closed.
 
 		JS_free( cx, buf );
-		*rval = JSVAL_VOID; // end of file/socket
+		*rval = JSVAL_VOID;
 		return JS_TRUE;
-	} else
+	}
+
 	if (unlikely( res == -1 )) { // failure. The reason for the failure can be obtained by calling PR_GetError.
 
 		JS_free( cx, buf );
-		if (unlikely( PR_GetError() != PR_WOULD_BLOCK_ERROR ))
-			JL_CHK( ThrowIoError(cx) );
-		*rval = JS_GetEmptyStringValue(cx); // mean no data available, but connection still established.
-		return JS_TRUE;
+		switch ( PR_GetError() ) {
+			case PR_WOULD_BLOCK_ERROR:
+				*rval = JS_GetEmptyStringValue(cx); // mean no data available, but connection still established.
+				return JS_TRUE;
+			case PR_CONNECT_RESET_ERROR: // TCP connection reset by peer
+				*rval = JSVAL_VOID;
+				return JS_TRUE;
+			default:
+				return ThrowIoError(cx);
+		}
 	}
 
 bad_free:
@@ -178,7 +197,7 @@ bad_free:
 }
 
 
-void* JSBufferAlloc(void * opaqueAllocatorContext, int size) {
+void* JSBufferAlloc(void * opaqueAllocatorContext, unsigned int size) {
 	
 	return JS_malloc((JSContext*)opaqueAllocatorContext, size);
 }
@@ -188,7 +207,7 @@ void JSBufferFree(void * opaqueAllocatorContext, void* address) {
 	JS_free((JSContext*)opaqueAllocatorContext, address);
 }
 
-void* JSBufferRealloc(void * opaqueAllocatorContext, void* address, int size) {
+void* JSBufferRealloc(void * opaqueAllocatorContext, void* address, unsigned int size) {
 
 	return JS_realloc((JSContext*)opaqueAllocatorContext, address, size);
 }
@@ -201,7 +220,7 @@ JSBool ReadAllToJsval(JSContext *cx, PRFileDesc *fd, jsval *rval ) {
 	PRInt32 currentReadLength = 1024;
 	for (;;) {
 
-		PRInt32 res = PR_Read(fd, BufferNewChunk(&buf, currentReadLength), currentReadLength);
+		PRInt32 res = PR_Read(fd, BufferNewChunk(&buf, currentReadLength), currentReadLength); // like recv() with PR_INTERVAL_NO_TIMEOUT
 		if (likely( res > 0 )) { // a positive number indicates the number of bytes actually read in.
 
 			BufferConfirm(&buf, res);
@@ -218,21 +237,22 @@ JSBool ReadAllToJsval(JSContext *cx, PRFileDesc *fd, jsval *rval ) {
 			return JS_TRUE;
 		} else
 		if ( res == -1 ) { // -1 indicates a failure. The reason for the failure can be obtained by calling PR_GetError.
-
-			if ( PR_GetError() != PR_WOULD_BLOCK_ERROR ) // PR_WOULD_BLOCK_ERROR: The operation would have blocked (non-fatal error)
-				JL_CHK( ThrowIoError(cx) );
+			
+			switch ( PR_GetError() ) {
+				case PR_WOULD_BLOCK_ERROR: // The operation would have blocked (non-fatal error)
+					break;
+				case PR_CONNECT_RESET_ERROR: // TCP connection reset by peer
+					BufferFinalize(&buf);
+					*rval = JSVAL_VOID;
+					return JS_TRUE;
+				default:
+					JL_CHK( ThrowIoError(cx) );
+			}
 			break; // no error, no data received, we cannot reach currentReadLength
 		}
 
-//		if ( res == currentReadLength ) {
-//
-			if ( currentReadLength < 32768 )
-				currentReadLength *= 2;
-//		} else {
-//
-//			if ( currentReadLength > 1024 )
-//				currentReadLength /= 2;
-//		}
+		if ( currentReadLength < 32768 && res == currentReadLength )
+			currentReadLength *= 2;
 	}
 
 	if ( BufferGetLength(&buf) == 0 ) { // no data but NOT end of file/socket
@@ -282,11 +302,10 @@ DEFINE_FUNCTION_FAST( Read ) {
 	if (likely( JL_ARGC == 0 )) {
 
 		PRInt32 available = PR_Available( fd ); // (TBD) use PRInt64 available = PR_Available64(fd);
-		if (likely( available != -1 )) // we can use the 'available' information
+		if (likely( available != -1 )) // we can use the 'available' information (possible reason: PR_NOT_IMPLEMENTED_ERROR)
 			JL_CHK( ReadToJsval(cx, fd, available, JL_FRVAL) ); // may block !
 		else // 'available' is not usable with this fd type, then we use a buffered read (ie. read while there is someting to read)
 			JL_CHK( ReadAllToJsval(cx, fd, JL_FRVAL) );
-
 	} else { // amount value is NOT provided, then try to read all
 
 		if (likely( !JSVAL_IS_VOID(JL_FARG(1)) )) {
@@ -309,6 +328,7 @@ DEFINE_FUNCTION_FAST( Read ) {
 $TOC_MEMBER $INAME
  $STR $INAME( data )
   If the whole data cannot be written, Write returns that have not be written.
+  If the descriptor is disconnected (socket only), this function returns _undefined_.
 **/
 DEFINE_FUNCTION_FAST( Write ) {
 
@@ -317,10 +337,8 @@ DEFINE_FUNCTION_FAST( Write ) {
 	fd = (PRFileDesc *)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE( fd );
 	const char *str;
-	size_t len;
+	unsigned int len, sentAmount;
 	JL_CHK( JsvalToStringAndLength(cx, &JL_FARG(1), &str, &len) );
-
-	size_t sentAmount;
 
 	PRInt32 res;
 	res = PR_Write( fd, str, len );
@@ -350,13 +368,15 @@ DEFINE_FUNCTION_FAST( Write ) {
 		}
 */ // find a better solution !?
 		
-		switch ( errCode ) {
-			case PR_WOULD_BLOCK_ERROR:
+		switch ( errCode ) { 
+//			case PR_BUFFER_OVERFLOW_ERROR: // The value requested is too large to be stored in the data buffer provided.
+			case PR_WOULD_BLOCK_ERROR: // The operation would have blocked.
 				sentAmount = 0;
 				break;
-//			case PR_NOT_CONNECTED_ERROR:
-//				*JL_FRVAL = JSVAL_VOID;
-//				return JS_TRUE;
+			case PR_CONNECT_RESET_ERROR: // TCP connection reset by peer.
+//			case PR_NOT_CONNECTED_ERROR: // Network file descriptor is not connected.
+				*JL_FRVAL = JSVAL_VOID;
+				return JS_TRUE;
 			default:
 				return ThrowIoError(cx);
 		}
@@ -373,21 +393,23 @@ DEFINE_FUNCTION_FAST( Write ) {
 	if (likely( sentAmount == len )) {
 
 		*JL_FRVAL = JS_GetEmptyStringValue(cx); // nothing remains
-	} else
+		return JS_TRUE;
+	}
+
 	if (unlikely( sentAmount < len )) {
 
 		//*rval = STRING_TO_JSVAL( JS_NewDependentString(cx, JSVAL_TO_STRING( JL_ARG(1) ), sentAmount, len - sentAmount) ); // return unsent data // (TBD) use Blob ?
-
-		buffer = (char*)JS_malloc(cx, len - sentAmount +1);
+		unsigned int remaining;
+		remaining = len - sentAmount;
+		buffer = (char*)JS_malloc(cx, remaining +1);
 		JL_CHK( buffer );
-		buffer[len - sentAmount] = '\0';
-		memcpy(buffer, str, len - sentAmount);
-		JL_CHKB( JL_NewBlob(cx, buffer, len - sentAmount, JL_FRVAL), bad_free );
-	} else
-	if ( sentAmount == 0 ) {
-
-		*JL_FRVAL = JL_FARG(1); // nothing has been sent
+		buffer[remaining] = '\0';
+		memcpy(buffer, str, remaining);
+		JL_CHKB( JL_NewBlob(cx, buffer, remaining, JL_FRVAL), bad_free );
+ 		return JS_TRUE;
 	}
+
+	*JL_FRVAL = JL_FARG(1); // nothing has been sent
 
 	return JS_TRUE;
 bad_free:
@@ -405,8 +427,8 @@ DEFINE_FUNCTION_FAST( Sync ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE( fd );
-	*JL_FRVAL = JSVAL_VOID;
 	JL_CHKB( PR_Sync(fd) == PR_SUCCESS, bad_ioerror );
+	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 bad_ioerror:
 	ThrowIoError(cx);
@@ -422,7 +444,7 @@ bad_ioerror:
 $TOC_MEMBER $INAME
  $INAME $READONLY
   Determine the amount of data in bytes available for reading on the descriptor.
- **/
+**/
 DEFINE_PROPERTY( available ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate( cx, obj );
@@ -430,7 +452,13 @@ DEFINE_PROPERTY( available ) {
 
 	PRInt64 available;
 	available = PR_Available64( fd ); // For a normal file, these are the bytes beyond the current file pointer.
-	JL_CHKB( available != -1, bad_ioerror );
+	if ( available == -1 ) {
+		// (TBD) understand when it is possible to return 'undefined' instead of throwing an exception
+//		switch ( PR_GetError() ) {
+//			case PR_NOT_IMPLEMENTED_ERROR:
+//		}
+		return ThrowIoError(cx);
+	}
 
 	if ( available <= JSVAL_INT_MAX )
 		*vp = INT_TO_JSVAL(available);
@@ -438,8 +466,6 @@ DEFINE_PROPERTY( available ) {
 		JL_CHK( JS_NewNumberValue(cx, (jsdouble)available, vp) );
 
 	return JS_TRUE;
-bad_ioerror:
-	ThrowIoError(cx);
 	JL_BAD;
 }
 

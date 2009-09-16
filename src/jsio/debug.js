@@ -9,8 +9,16 @@ LoadModule('jstask');
 
 	var serverSocket = new Socket();
 	serverSocket.reuseAddr = true;
-	serverSocket.Bind(8099, '127.0.0.1');
-	serverSocket.Write('123');
+//	serverSocket.Bind(8099, '127.0.0.1');
+	serverSocket.Connect('127.0.0.1', 3128);
+	serverSocket.Read(0);
+
+
+/*
+ var p = new Process( 'c:\\windows\\System32\\cmd.exe', ['/c', 'dir', 'c:'] );
+ p.Wait();
+ p.stdout.Read(0);
+*/	
 
 
 
