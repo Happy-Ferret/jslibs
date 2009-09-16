@@ -155,7 +155,7 @@ $TOC_MEMBER $INAME
   }}}
 **/
 
-void* wrapped_JS_malloc(void * opaqueAllocatorContext, int size) {
+void* wrapped_JS_malloc(void * opaqueAllocatorContext, unsigned int size) {
 	
 	return JS_malloc((JSContext*)opaqueAllocatorContext, size);
 }
@@ -165,7 +165,7 @@ void wrapped_JS_free(void * opaqueAllocatorContext, void* address) {
 	return JS_free((JSContext*)opaqueAllocatorContext, address);
 }
 
-void* wrapped_JS_realloc(void * opaqueAllocatorContext, void* address, int size) {
+void* wrapped_JS_realloc(void * opaqueAllocatorContext, void* address, unsigned int size) {
 	
 	return JS_realloc((JSContext*)opaqueAllocatorContext, address, size);
 }
