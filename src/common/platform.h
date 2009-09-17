@@ -31,6 +31,7 @@
 #else
 	#define likely(expr)	!!(expr)
 	#define unlikely(expr)	!!(expr)
+	// see __assume keyword for MSVC
 #endif
 
 #if defined(_MSC_VER)
