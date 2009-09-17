@@ -77,28 +77,35 @@ DEFINE_CONSTRUCTOR() {
 
 /**doc
 $TOC_MEMBER $INAME
- $THIS $INAME( flags [, mode] )
+ $THIS $INAME( [flags] [, mode] )
   Open a file for reading, writing, or both.
   $LF
-  _flags_ is either a combinaison of open mode constants or a string that contains fopen like flags (+, r, w, a).
+  _flags_ is either a combinaison of open mode constants (see below) or a string that contains fopen like flags (+, r, w, a).
+  If _flags_ is omitted, the file is open with CREATE_FILE + RDWR mode (r+).
   $LF
   The functions returns the file object itself (this), this allows to write things like: `new File('foo.txt').Open('r').Read();`
 **/
 DEFINE_FUNCTION( Open ) {
 
-	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_ARG_RANGE(0,2);
 	JL_S_ASSERT( JL_GetPrivate( cx, obj ) == NULL, "File is already open." );
 
 	PRIntn flags;
-	if ( JSVAL_IS_INT( JL_ARG(1) ) ) {
+	if ( JL_ARG_ISDEF(1) ) {
 
-		flags = JSVAL_TO_INT( JL_ARG(1) );
+		if ( JSVAL_IS_INT( JL_ARG(1) ) ) {
+
+			flags = JSVAL_TO_INT( JL_ARG(1) );
+		} else {
+
+			const char *strFlags;
+			size_t len;
+			JL_CHK( JsvalToStringAndLength(cx, &JL_ARG(1), &strFlags, &len) );
+			flags = FileOpenFlagsFromString(strFlags, len);
+		}
 	} else {
 
-		const char *strFlags;
-		size_t len;
-		JL_CHK( JsvalToStringAndLength(cx, &JL_ARG(1), &strFlags, &len) );
-		flags = FileOpenFlagsFromString(strFlags, len);
+		flags = PR_CREATE_FILE | PR_RDWR;
 	}
 
 	PRIntn mode;
@@ -307,7 +314,7 @@ DEFINE_PROPERTY( positionGetter ) {
 /**doc
 $TOC_MEMBER $INAME
  $STR $INAME
-  Get or set the content of the file. If the file does not exist, content is _undefined_.
+  Get or set the content of the file. If the file does not exist or is not readable, content is _undefined_.
   Setting content with _undefined_ deletes the file.
 **/
 DEFINE_PROPERTY( contentGetter ) {
@@ -332,7 +339,7 @@ DEFINE_PROPERTY( contentGetter ) {
 	if (unlikely( fd == NULL )) {
 
 		PRErrorCode err = PR_GetError();
-		if ( err == PR_FILE_NOT_FOUND_ERROR ) {
+		if ( err == PR_FILE_NOT_FOUND_ERROR || err == PR_FILE_IS_BUSY_ERROR ) {
 
 			*vp = JSVAL_VOID;
 			return JS_TRUE;
@@ -341,9 +348,12 @@ DEFINE_PROPERTY( contentGetter ) {
 	}
 
 	PRInt32 available;
-	available = PR_Available( fd ); // For a normal file, these are the bytes beyond the current file pointer.
-	if (unlikely( available == -1 ))
+	available = PR_Available(fd); // For a normal file, these are the bytes beyond the current file pointer.
+	if (unlikely( available == -1 )) {
+		
+		PR_Close(fd);
 		return ThrowIoError(cx);
+	}
 
 	char *buf;
 	buf = (char*)JS_malloc(cx, available +1);
@@ -353,6 +363,7 @@ DEFINE_PROPERTY( contentGetter ) {
 	res = PR_Read(fd, buf, available);
 	if (unlikely( res == -1 )) {
 
+		PR_Close(fd);
 		JS_free(cx, buf);
 		return ThrowIoError(cx);
 	}
@@ -370,7 +381,7 @@ DEFINE_PROPERTY( contentGetter ) {
 		return JS_TRUE;
 	}
 
-	if ( JL_MaybeRealloc( available, res ) ) { // should never occured
+	if (unlikely( JL_MaybeRealloc( available, res ) )) { // should never occured
 
 		buf = (char*)JS_realloc(cx, buf, res +1); // realloc the string using its real size
 		JL_CHK(buf);
@@ -415,8 +426,11 @@ DEFINE_PROPERTY( contentSetter ) {
 	JL_CHK( JsvalToStringAndLength(cx, vp, &buf, &len) );
 	PRInt32 bytesSent;
 	bytesSent = PR_Write( fd, buf, len );
-	if ( bytesSent == -1 )
+	if ( bytesSent == -1 ) {
+		
+		PR_Close(fd);
 		return ThrowIoError(cx);
+	}
 	JL_S_ASSERT( bytesSent == len, "unable to set content" );
 	if ( PR_Close(fd) != PR_SUCCESS )
 		return ThrowIoError(cx);
@@ -444,7 +458,7 @@ DEFINE_PROPERTY( nameSetter ) {
 	fd = (PRFileDesc *)JL_GetPrivate( cx, obj );
 	JL_S_ASSERT( fd == NULL, "Cannot rename an open file.");
 	jsval jsvalFileName;
-	JS_GetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName );
+	JL_CHK( JS_GetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName ) );
 	JL_S_ASSERT_DEFINED( jsvalFileName );
 	const char *fromFileName, *toFileName;
 	JL_CHK( JsvalToString(cx, &jsvalFileName, &fromFileName) ); // warning: GC on the returned buffer !
@@ -460,20 +474,50 @@ DEFINE_PROPERTY( nameSetter ) {
 /**doc
 $TOC_MEMBER $INAME
  $BOOL $INAME $READONLY
-  Contains true if the file exists.
+  is true if the file exists.
 **/
 DEFINE_PROPERTY( exist ) {
 
 	jsval jsvalFileName;
-//	JS_GetProperty( cx, obj, "fileName", &jsvalFileName );
-	JS_GetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName );
+	JL_CHK( JS_GetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName ) );
 	JL_S_ASSERT_DEFINED( jsvalFileName );
 	const char *fileName;
 	JL_CHK( JsvalToString(cx, &jsvalFileName, &fileName) );
-	PRStatus status;
-	status = PR_Access( fileName, PR_ACCESS_EXISTS );
-	*vp = BOOLEAN_TO_JSVAL( status == PR_SUCCESS );
-	return JS_TRUE;
+	return BoolToJsval(cx, PR_Access( fileName, PR_ACCESS_EXISTS ) == PR_SUCCESS, vp);
+	JL_BAD;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $BOOL $INAME $READONLY
+  is true if the file is writable.
+**/
+DEFINE_PROPERTY( writable ) {
+
+	jsval jsvalFileName;
+	JL_CHK( JS_GetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName ) );
+	JL_S_ASSERT_DEFINED( jsvalFileName );
+	const char *fileName;
+	JL_CHK( JsvalToString(cx, &jsvalFileName, &fileName) );
+	return BoolToJsval(cx, PR_Access( fileName, PR_ACCESS_WRITE_OK ) == PR_SUCCESS, vp);
+	JL_BAD;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $BOOL $INAME $READONLY
+  is true if the file is readable.
+**/
+DEFINE_PROPERTY( readable ) {
+
+	jsval jsvalFileName;
+	JL_CHK( JS_GetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName ) );
+	JL_S_ASSERT_DEFINED( jsvalFileName );
+	const char *fileName;
+	JL_CHK( JsvalToString(cx, &jsvalFileName, &fileName) );
+	return BoolToJsval(cx, PR_Access( fileName, PR_ACCESS_READ_OK ) == PR_SUCCESS, vp);
 	JL_BAD;
 }
 
@@ -653,6 +697,8 @@ CONFIGURE_CLASS
 		PROPERTY( content )
 		PROPERTY( position )
 		PROPERTY_READ( exist )
+		PROPERTY_READ( writable )
+		PROPERTY_READ( readable )
 		PROPERTY_READ_STORE( info )
 	END_PROPERTY_SPEC
 

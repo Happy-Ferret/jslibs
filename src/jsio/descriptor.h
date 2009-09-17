@@ -15,9 +15,8 @@
 DECLARE_CLASS( Descriptor )
 
 #define SLOT_JSIO_DESCRIPTOR_IMPORTED 0
+//#define SLOT_JSIO_DESCRIPTOR_EOF 1
 
 void FinalizeDescriptor(JSContext *cx, JSObject *obj);
-
-//extern NIStreamRead pNativeInterfaceStreamRead;
 
 JSBool NativeInterfaceStreamRead( JSContext *cx, JSObject *obj, char *buf, size_t *amount );

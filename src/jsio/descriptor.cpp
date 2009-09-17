@@ -36,9 +36,6 @@ class Terminate {
 };
 */
 
-// open: 	SetNativeInterface(cx, obj, ...
-// close: 	RemoveNativeInterface(cx, obj, NI_READ_RESOURCE );
-
 
 JSBool NativeInterfaceStreamRead( JSContext *cx, JSObject *obj, char *buf, size_t *amount ) {
 
@@ -49,23 +46,24 @@ JSBool NativeInterfaceStreamRead( JSContext *cx, JSObject *obj, char *buf, size_
 	fd = (PRFileDesc*)JL_GetPrivate(cx, obj); // (PRFileDesc *)pv;
 	JL_S_ASSERT_RESOURCE(fd);
 
-	PRInt32 ret;
+	PRInt32 res;
+/* (TBD) not sure a Poll is realy needed here
 	PRPollDesc desc;
 	desc.fd = fd;
 	desc.in_flags = PR_POLL_READ;
 	desc.out_flags = 0;
-	ret = PR_Poll( &desc, 1, PR_SecondsToInterval(10) ); // wait 10 seconds for data
-	if ( ret == -1 ) // if PR_Poll is not compatible with the file descriptor, just ignore the error ?
+	res = PR_Poll( &desc, 1, PR_SecondsToInterval(10) ); // wait 10 seconds for data
+	if ( res == -1 ) // if PR_Poll is not compatible with the file descriptor, just ignore the error ?
 		return ThrowIoError(cx);
 
-	if ( ret == 0 ) { // timeout
+	if ( res == 0 ) { // timeout, no data
 
 		*amount = 0;
 		return JS_TRUE; // no data, but it is not an error.
 	}
-
-	ret = PR_Read(fd, buf, *amount); // like recv() with PR_INTERVAL_NO_TIMEOUT
-	if ( ret == -1 ) {
+*/
+	res = PR_Read(fd, buf, *amount); // like recv() with PR_INTERVAL_NO_TIMEOUT
+	if ( res == -1 ) {
 
 		PRErrorCode errorCode = PR_GetError();
 		if ( errorCode != PR_WOULD_BLOCK_ERROR )// if non-blocking descriptor, this is a non-fatal error
@@ -74,12 +72,11 @@ JSBool NativeInterfaceStreamRead( JSContext *cx, JSObject *obj, char *buf, size_
 		return JS_TRUE; // no data yet, but it is not an error.
 	}
 
-	if ( ret == 0 ) { // end of file is reached or the network connection is closed.
+	//if ( res == 0 ) { // end of file is reached or the network connection is closed.
+	//	// (TBD) something else to do ?
+	//}
 
-		// (TBD) something else to do ?
-	}
-
-	*amount = ret;
+	*amount = res;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -127,7 +124,7 @@ DEFINE_FUNCTION_FAST( Close ) {
 	*JL_FRVAL = JSVAL_VOID;
 	PRFileDesc *fd = (PRFileDesc*)JL_GetPrivate(cx, JL_FOBJ);
 
-	JL_S_ASSERT( fd != NULL, "The descriptor is closed." ); // see PublicApiRules (http://code.google.com/p/jslibs/wiki/PublicApiRules)
+	JL_S_ASSERT( fd != NULL, "The descriptor is already closed." ); // see PublicApiRules (http://code.google.com/p/jslibs/wiki/PublicApiRules)
 //	if ( !fd ) { // (TBD) apply jslibsAPIRules
 //
 //		JL_REPORT_WARNING( "The descriptor is closed." );
@@ -142,8 +139,8 @@ DEFINE_FUNCTION_FAST( Close ) {
 			return ThrowIoError(cx);
 	}
 	JL_SetPrivate(cx, JL_FOBJ, NULL);
-	//	JS_ClearScope( cx, obj ); // help to clear readable, writable, exception ?
 	JL_CHK( SetStreamReadInterface(cx, JL_FOBJ, NULL) );
+	//	JS_ClearScope( cx, obj ); // (TBD) check if this can help to clear readable, writable, exception ?
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -151,7 +148,7 @@ DEFINE_FUNCTION_FAST( Close ) {
 
 JSBool ReadToJsval( JSContext *cx, PRFileDesc *fd, unsigned int amount, jsval *rval ) {
 
-	char *buf = (char*)JS_malloc(cx, amount +1);
+	void *buf = JS_malloc(cx, amount +1);
 	JL_CHK( buf );
 
 	PRInt32 res;
@@ -164,7 +161,7 @@ JSBool ReadToJsval( JSContext *cx, PRFileDesc *fd, unsigned int amount, jsval *r
 			buf = (char*)JS_realloc(cx, buf, res +1); // realloc the string using its real size
 			JL_CHK( buf );
 		}
-		buf[res] = '\0';
+		((char*)buf)[res] = '\0';
 		JL_CHKB( JL_NewBlob(cx, buf, res, rval), bad_free );
 		return JS_TRUE;
 	}
@@ -172,17 +169,22 @@ JSBool ReadToJsval( JSContext *cx, PRFileDesc *fd, unsigned int amount, jsval *r
 	if ( res == 0 ) { // 0 means end of file is reached or the network connection is closed.
 
 		JS_free( cx, buf );
-		*rval = JSVAL_VOID;
+		if (likely( amount != 0 )) // requesting 0 bytes and receiving 0 bytes does not indicate eof.
+			*rval = JSVAL_VOID;
+		else
+			*rval = JS_GetEmptyStringValue(cx);
 		return JS_TRUE;
 	}
 
 	if (unlikely( res == -1 )) { // failure. The reason for the failure can be obtained by calling PR_GetError.
 
 		JS_free( cx, buf );
-		switch ( PR_GetError() ) {
+		switch ( PR_GetError() ) { // see Write() for details about errors
 			case PR_WOULD_BLOCK_ERROR:
 				*rval = JS_GetEmptyStringValue(cx); // mean no data available, but connection still established.
 				return JS_TRUE;
+			case PR_CONNECT_ABORTED_ERROR: // Connection aborted
+//			case PR_SOCKET_SHUTDOWN_ERROR: // Socket shutdown
 			case PR_CONNECT_RESET_ERROR: // TCP connection reset by peer
 				*rval = JSVAL_VOID;
 				return JS_TRUE;
@@ -234,13 +236,14 @@ JSBool ReadAllToJsval(JSContext *cx, PRFileDesc *fd, jsval *rval ) {
 
 			BufferFinalize(&buf);
 			*rval = JSVAL_VOID;
-			return JS_TRUE;
 		} else
 		if ( res == -1 ) { // -1 indicates a failure. The reason for the failure can be obtained by calling PR_GetError.
 			
-			switch ( PR_GetError() ) {
+			switch ( PR_GetError() ) { // see Write() for details about errors
 				case PR_WOULD_BLOCK_ERROR: // The operation would have blocked (non-fatal error)
 					break;
+				case PR_CONNECT_ABORTED_ERROR: // Connection aborted
+//				case PR_SOCKET_SHUTDOWN_ERROR: // Socket shutdown
 				case PR_CONNECT_RESET_ERROR: // TCP connection reset by peer
 					BufferFinalize(&buf);
 					*rval = JSVAL_VOID;
@@ -315,7 +318,7 @@ DEFINE_FUNCTION_FAST( Read ) {
 			JL_CHK( ReadToJsval(cx, fd, amount, JL_FRVAL) ); // (TBD) check if it is good to call it even if amount is 0.
 		} else {
 
-			JL_CHK( ReadAllToJsval(cx, fd, JL_FRVAL) ); // may block !
+			JL_CHK( ReadAllToJsval(cx, fd, JL_FRVAL) ); // may block ! (TBD) check if this case is useful.
 		}
 	}
 
@@ -332,49 +335,54 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Write ) {
 
-	JL_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_ARG( 1 );
 	PRFileDesc *fd;
 	fd = (PRFileDesc *)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE( fd );
-	const char *str;
 	unsigned int len, sentAmount;
+	const char *str;
 	JL_CHK( JsvalToStringAndLength(cx, &JL_FARG(1), &str, &len) );
 
 	PRInt32 res;
 	res = PR_Write( fd, str, len );
 	if (unlikely( res == -1 )) {
 
-		PRErrorCode errCode = PR_GetError();
-/*
-		if ( errCode == PR_CONNECT_RESET_ERROR ) { // 10054
-
-			// WSAECONNRESET (error 10054)
-			// Connection reset by peer. An existing connection
-			// was forcibly closed by the remote host. This
-			// normally results if the peer application on the
-			// remote host is suddenly stopped, the host is
-			// rebooted, or the remote host uses a hard close
-			// (see setsockopt for more information on the
-			// SO_LINGER option on the remote socket.) This
-			// error may also result if a connection was broken
-			// due to keep-alive activity detecting a failure
-			// while one or more operations are in progress.
-			// Operations that were in progress fail with
-			// WSAENETRESET. Subsequent operations fail with
-			// WSAECONNRESET.
-
-			*rval = JSVAL_VOID; // TCP connection reset by peer
-			return JS_TRUE;
-		}
-*/ // find a better solution !?
-		
-		switch ( errCode ) { 
-//			case PR_BUFFER_OVERFLOW_ERROR: // The value requested is too large to be stored in the data buffer provided.
+		switch ( PR_GetError() ) { 
 			case PR_WOULD_BLOCK_ERROR: // The operation would have blocked.
 				sentAmount = 0;
 				break;
-			case PR_CONNECT_RESET_ERROR: // TCP connection reset by peer.
 //			case PR_NOT_CONNECTED_ERROR: // Network file descriptor is not connected.
+
+			case PR_CONNECT_ABORTED_ERROR: // Connection aborted
+				//Berkeley description:
+				//A connection abort was caused internal to your host machine. The software caused
+				//a connection abort because there is no space on the socket’s queue and the socket
+				// cannot receive further connections.
+				//	
+				//WinSock description:
+				//Partly the same as Berkeley. The error can occur when the local network system aborts
+				//a connection. This would occur if WinSock aborts an established connection after data
+				//retransmission fails  (receiver never acknowledges data sent on a datastream socket).
+				//	
+				//TCP/IP scenario:
+				//A connection will timeout if the local system doesn’t receive an (ACK)nowledgement for
+				//data sent.  It would also timeout if a (FIN)ish TCP packet is not ACK’d
+				//(and even if the FIN is ACK’d, it will eventually timeout if a FIN is not returned).
+				// source: http://www.chilkatsoft.com/p/p_299.asp
+
+//			case PR_SOCKET_SHUTDOWN_ERROR: // Socket shutdown
+				// Cannot send after socket shutdown.
+				// A request to send or receive data was disallowed because the socket had already been shut down in that direction with a previous shutdown call. 
+				// By calling shutdown a partial close of a socket is requested, which is a signal that sending or receiving, or both have been discontinued.
+				// source: msdn, Winsock Error Codes
+
+			case PR_CONNECT_RESET_ERROR: // TCP connection reset by peer
+				// Connection reset by peer. An existing connection was forcibly closed by the remote host. This normally results if the peer application on the remote host is suddenly stopped,
+				// the host is rebooted, or the remote host uses a hard close (see setsockopt for more information on the SO_LINGER option on the remote socket.) This error may also result if 
+				// a connection was broken due to keep-alive activity detecting a failure while one or more operations are in progress. Operations that were in progress fail with WSAENETRESET.
+				// Subsequent operations fail with WSAECONNRESET.
+				// source: msdn, Winsock Error Codes
+
 				*JL_FRVAL = JSVAL_VOID;
 				return JS_TRUE;
 			default:
@@ -388,7 +396,7 @@ DEFINE_FUNCTION_FAST( Write ) {
 	// (TBD) try to detect if the return value will be used else just return.
 	//	js_Disassemble1(cx, JL_CurrentStackFrame(cx)->script, JL_CurrentStackFrame(cx)->regs->pc +3, 0, false, stdout); // 00000:  setgvar "test"
 
-	char *buffer;
+	void *buffer;
 
 	if (likely( sentAmount == len )) {
 
@@ -401,9 +409,9 @@ DEFINE_FUNCTION_FAST( Write ) {
 		//*rval = STRING_TO_JSVAL( JS_NewDependentString(cx, JSVAL_TO_STRING( JL_ARG(1) ), sentAmount, len - sentAmount) ); // return unsent data // (TBD) use Blob ?
 		unsigned int remaining;
 		remaining = len - sentAmount;
-		buffer = (char*)JS_malloc(cx, remaining +1);
+		buffer = JS_malloc(cx, remaining +1);
 		JL_CHK( buffer );
-		buffer[remaining] = '\0';
+		((char*)buffer)[remaining] = '\0';
 		memcpy(buffer, str, remaining);
 		JL_CHKB( JL_NewBlob(cx, buffer, remaining, JL_FRVAL), bad_free );
  		return JS_TRUE;
@@ -456,6 +464,8 @@ DEFINE_PROPERTY( available ) {
 		// (TBD) understand when it is possible to return 'undefined' instead of throwing an exception
 //		switch ( PR_GetError() ) {
 //			case PR_NOT_IMPLEMENTED_ERROR:
+//				*vp = JSVAL_VOID;
+//				return JS_TRUE;
 //		}
 		return ThrowIoError(cx);
 	}
@@ -498,6 +508,19 @@ DEFINE_PROPERTY( closed ) {
 	*vp = BOOLEAN_TO_JSVAL( fd == NULL );
 	return JS_TRUE;
 }
+
+/* *doc
+$TOC_MEMBER $INAME
+ $INAME $READONLY
+  Is $TRUE if the end of the file has been reached or the socket has been disconnected.
+**/
+/*
+// 					JL_CHK( JS_SetReservedSlot(cx, JL_FOBJ, SLOT_JSIO_DESCRIPTOR_EOF, JSVAL_TRUE) );
+DEFINE_PROPERTY( eof ) {
+
+	return JS_GetReservedSlot(cx, obj, SLOT_JSIO_DESCRIPTOR_EOF, vp);
+}
+*/
 
 /**doc
 === Static functions ===
@@ -615,6 +638,7 @@ CONFIGURE_CLASS
 		PROPERTY_READ( available )
 		PROPERTY_READ( type )
 		PROPERTY_READ( closed )
+//		PROPERTY_READ( eof )
 	END_PROPERTY_SPEC
 
 	BEGIN_STATIC_FUNCTION_SPEC

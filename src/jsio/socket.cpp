@@ -327,7 +327,7 @@ DEFINE_FUNCTION( Connect ) {
 			case PR_IO_TIMEOUT_ERROR:
 				*rval = JSVAL_FALSE;
 				return JS_TRUE;
-			case PR_IN_PROGRESS_ERROR: // not nonblocking-error
+			case PR_IN_PROGRESS_ERROR: // After a nonblocking connect is initiated with PR_Connect() (which fails with PR_IN_PROGRESS_ERROR), ...see connectContinue
 				break;
 			default:
 				return ThrowIoError(cx);
@@ -588,7 +588,7 @@ $TOC_MEMBER $INAME
   $LF
   Is $UNDEF if the operation is still in progress.
   $LF
-  Is $FALSE if the connection is refused.
+  Is $FALSE the nonblocking connect has failed.
 **/
 
 // http://developer.mozilla.org/en/docs/PR_GetConnectStatus
@@ -620,19 +620,20 @@ DEFINE_PROPERTY( connectContinue ) {
 	// source: http://lxr.mozilla.org/seamonkey/source/nsprpub/pr/src/io/prsocket.c#287
 	// example: http://www.google.com/codesearch?hl=en&q=+PR_ConnectContinue+show:Su0oyYj9cVc:HRv_2Hg8Bm0:u0BRTcINCf8&sa=N&cd=5&ct=rc&cs_p=http://archive.mozilla.org/pub/mozilla.org/mozilla/releases/mozilla1.1a/src/mozilla-source-1.1a.tar.bz2&cs_f=mozilla/netwerk/base/src/nsSocketTransport.cpp#l926
 
-	if ( PR_ConnectContinue( fd, desc.out_flags ) != PR_SUCCESS ) { // If the nonblocking connect has successfully completed, PR_ConnectContinue returns PR_SUCCESS
-
-		if ( PR_GetError() == PR_IN_PROGRESS_ERROR ) {
-
-			*vp = JSVAL_VOID; // Operation is still in progress
-		} else {
-
-			*vp = JSVAL_FALSE; // Connection refused, ...
-		}
-	} else {
+	if ( PR_ConnectContinue(fd, desc.out_flags) == PR_SUCCESS ) { // If the nonblocking connect has successfully completed, PR_ConnectContinue returns PR_SUCCESS
 
 		*vp = JSVAL_TRUE; // We are connected.
+		return JS_TRUE;
 	}
+
+	if ( PR_GetError() == PR_IN_PROGRESS_ERROR ) {
+
+		*vp = JSVAL_VOID; // Operation is still in progress
+		return JS_TRUE;
+	}
+	// else, the nonblocking connect has failed with this error code.
+	// (TBD) check for PR_CONNECT_REFUSED_ERROR error ?
+	*vp = JSVAL_FALSE; // Connection refused, ...
 
 	return JS_TRUE;
 	JL_BAD;

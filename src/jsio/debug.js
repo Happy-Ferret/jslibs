@@ -6,12 +6,22 @@ LoadModule('jsio');
 LoadModule('jstask');
 
 
+var f = new File('my_test_file.txt').Open();
+new File('my_test_file.txt').content = '';
+f.Read(1);
 
-	var serverSocket = new Socket();
-	serverSocket.reuseAddr = true;
-//	serverSocket.Bind(8099, '127.0.0.1');
-	serverSocket.Connect('127.0.0.1', 3128);
-	serverSocket.Read(0);
+new File('my_test_file.txt').content = 'a';
+
+f.Read(1);
+
+
+Halt();
+
+	var socket = new Socket();
+	socket.nonblocking = false;
+	socket.Connect('127.0.0.1', 3128);
+	socket.Shutdown();
+	socket.available;
 
 
 /*
