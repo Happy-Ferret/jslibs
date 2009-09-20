@@ -81,16 +81,16 @@ $TOC_MEMBER $INAME
   $LF
   if _what_ is ommited or $UNDEF, further sends and receives will be disallowed
 **/
-DEFINE_FUNCTION( Shutdown ) { // arg[0] =  false: SHUTDOWN_RCV | true: SHUTDOWN_SEND | else it will SHUTDOWN_BOTH
+DEFINE_FUNCTION_FAST( Shutdown ) { // arg[0] =  false: SHUTDOWN_RCV | true: SHUTDOWN_SEND | else it will SHUTDOWN_BOTH
 
-	PRFileDesc *fd = (PRFileDesc*)JL_GetPrivate( cx, obj );
+	PRFileDesc *fd = (PRFileDesc*)JL_GetPrivate( cx, JL_FOBJ );
 	JL_S_ASSERT_RESOURCE( fd );
 
 	PRShutdownHow how;
-	if ( JL_ARG_ISDEF(1) )
-		if ( JL_ARG(1) == JSVAL_FALSE )
+	if ( JL_FARG_ISDEF(1) )
+		if ( JL_FARG(1) == JSVAL_FALSE )
 			how = PR_SHUTDOWN_RCV;
-		else if (JL_ARG(1) == JSVAL_TRUE )
+		else if (JL_FARG(1) == JSVAL_TRUE )
 			how = PR_SHUTDOWN_SEND;
 		else
 			JL_REPORT_ERROR("Invalid Shutdown case.");
@@ -98,7 +98,7 @@ DEFINE_FUNCTION( Shutdown ) { // arg[0] =  false: SHUTDOWN_RCV | true: SHUTDOWN_
 		how = PR_SHUTDOWN_BOTH; // default
 
 	if ( how == PR_SHUTDOWN_RCV )
-		JL_CHK( SetStreamReadInterface(cx, obj, NULL) );
+		JL_CHK( SetStreamReadInterface(cx, JL_FOBJ, NULL) );
 
 	if (PR_Shutdown( fd, how ) != PR_SUCCESS) // is this compatible with linger ?? need to check PR_WOULD_BLOCK_ERROR ???
 		return ThrowIoError(cx);
@@ -131,28 +131,28 @@ $TOC_MEMBER $INAME
   client.Connect('127.0.0.1', 8099);
   }}}
 **/
-DEFINE_FUNCTION( Bind ) {
+DEFINE_FUNCTION_FAST( Bind ) {
 
 	JL_S_ASSERT_ARG_MIN( 1 ); // need port number (at least)
 	PRFileDesc *fd;
-	fd = (PRFileDesc*)JL_GetPrivate( cx, obj );
+	fd = (PRFileDesc*)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE( fd );
 
 	PRNetAddr addr;
 	unsigned int port;
-	if ( JL_ARG_ISDEF(1) ) {
+	if ( JL_FARG_ISDEF(1) ) {
 
-		JL_CHK( JsvalToUInt(cx, JL_ARG(1), &port) );
+		JL_CHK( JsvalToUInt(cx, JL_FARG(1), &port) );
 		JL_S_ASSERT( port < 65536, "Invalid port number." );
 	} else {
 
 		port = 0; // doc. If you do not care about the TCP/UDP port assigned to the socket, set the inet.port field of PRNetAddr to 0.
 	}
 
-	if ( JL_ARG_ISDEF(2) ) { // if we have a second argument and this argument is not undefined
+	if ( JL_FARG_ISDEF(2) ) { // if we have a second argument and this argument is not undefined
 
 		const char *host;
-		JL_CHK( JsvalToString(cx, &JL_ARG(2), &host) );
+		JL_CHK( JsvalToString(cx, &JL_FARG(2), &host) );
 
 		if ( PR_StringToNetAddr(host, &addr) != PR_SUCCESS )
 			return ThrowIoError(cx);
@@ -169,13 +169,13 @@ DEFINE_FUNCTION( Bind ) {
 
 		if ( PR_GetError() == PR_ADDRESS_IN_USE_ERROR ) { // do not failed but return false
 
-			*rval = JSVAL_FALSE;
+			*JL_FRVAL = JSVAL_FALSE;
 			return JS_TRUE;
 		}
 		return ThrowIoError(cx);
 	}
 
-	*rval = JSVAL_TRUE; // no error, return true
+	*JL_FRVAL = JSVAL_TRUE; // no error, return true
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -197,13 +197,13 @@ $TOC_MEMBER $INAME
 //   Since your call sequence shows that the SERVER called Listen()
 //   and the SERVER socket was readable, the above is what happened.
 //    Wan-Teh
-DEFINE_FUNCTION( Listen ) {
+DEFINE_FUNCTION_FAST( Listen ) {
 
-	PRFileDesc *fd = (PRFileDesc*)JL_GetPrivate( cx, obj );
+	PRFileDesc *fd = (PRFileDesc*)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE( fd );
 	PRIntn backlog;
-	if ( JL_ARG_ISDEF(1) )
-		JL_CHK( JsvalToInt(cx, JL_ARG(1), &backlog) );
+	if ( JL_FARG_ISDEF(1) )
+		JL_CHK( JsvalToInt(cx, JL_FARG(1), &backlog) );
 	else
 		backlog = 8; // too low ??
 	if ( PR_Listen(fd, backlog) != PR_SUCCESS )
@@ -215,41 +215,39 @@ DEFINE_FUNCTION( Listen ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $TYPE Socket $INAME()
+ $TYPE Socket $INAME( [ timeout ] )
   Accept a connection on a socket.
-  This function returns a connected jsio::Socket.
+  This function returns a connected jsio::Socket. _timeout_ is the time limit (in milliseconds) for completion of the accept operation. By default, there is no timeout.
 **/
-DEFINE_FUNCTION( Accept ) {
+DEFINE_FUNCTION_FAST( Accept ) {
 
-	PRFileDesc *fd = (PRFileDesc*)JL_GetPrivate( cx, obj );
+	PRFileDesc *fd = (PRFileDesc*)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE( fd );
 
-	PRIntervalTime connectTimeout;
-	if ( JL_ARG_ISDEF(1) ) {
+	PRIntervalTime timeout;
+	if ( JL_FARG_ISDEF(1) ) {
 
 		PRUint32 timeoutInMilliseconds;
-		JL_CHK( JsvalToUInt(cx, JL_ARG(1), &timeoutInMilliseconds) );
-		connectTimeout = PR_MillisecondsToInterval(timeoutInMilliseconds);
-	} else
-		connectTimeout = PR_INTERVAL_NO_TIMEOUT;
+		JL_CHK( JsvalToUInt(cx, JL_FARG(1), &timeoutInMilliseconds) );
+		timeout = PR_MillisecondsToInterval(timeoutInMilliseconds);
+	} else {
+
+		timeout = PR_INTERVAL_NO_TIMEOUT;
+	}
 
 	PRFileDesc *newFd;
-	newFd = PR_Accept( fd, NULL, connectTimeout );
+	newFd = PR_Accept(fd, NULL, timeout);
 	if ( newFd == NULL )
 		return ThrowIoError(cx);
 
-//	JL_CHK( SetStreamReadInterface(cx, obj, NativeInterfaceStreamRead) );
-
-//	JL_CHK( SetStreamReadInterface(cx, obj, NativeInterfaceStreamRead) );
-
 	JSObject *object;
-	object = JS_NewObject( cx, classSocket, NULL, NULL );
-	JL_SetPrivate( cx, object, newFd );
-
-	JL_CHK( ReserveStreamReadInterface(cx, object) );
+	object = JS_NewObject(cx, classSocket, NULL, NULL);
+	JL_SetPrivate(cx, object, newFd);
+//	JL_CHK( JS_SetReservedSlot(cx, descriptorObject, SLOT_JSIO_DESCRIPTOR_IMPORTED, JSVAL_FALSE) );
+//	JL_CHK( ReserveStreamReadInterface(cx, object) );
 	JL_CHK( SetStreamReadInterface(cx, object, NativeInterfaceStreamRead) );
 
-	*rval = OBJECT_TO_JSVAL( object );
+	*JL_FRVAL = OBJECT_TO_JSVAL( object );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -276,28 +274,28 @@ $TOC_MEMBER $INAME
 //	Since the client side has no way of telling when the server has called
 //	accept() it can't wait for the server to do that before making the
 //	descriptor writeable.
-DEFINE_FUNCTION( Connect ) {
+DEFINE_FUNCTION_FAST( Connect ) {
 
 	JL_S_ASSERT_ARG_MIN( 2 );
 	PRFileDesc *fd;
-	fd = (PRFileDesc*)JL_GetPrivate(cx, obj);
+	fd = (PRFileDesc*)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE( fd );
 
 	unsigned int port;
-	JL_CHK( JsvalToUInt(cx, JL_ARG(2), &port) );
+	JL_CHK( JsvalToUInt(cx, JL_FARG(2), &port) );
 	JL_S_ASSERT( port <= 65535, "Invalid port number." );
 
 	PRIntervalTime connectTimeout;
-	if ( JL_ARG_ISDEF(3) ) {
+	if ( JL_FARG_ISDEF(3) ) {
 
 		PRUint32 timeoutInMilliseconds;
-		JL_CHK( JsvalToUInt(cx, JL_ARG(3), &timeoutInMilliseconds) );
+		JL_CHK( JsvalToUInt(cx, JL_FARG(3), &timeoutInMilliseconds) );
 		connectTimeout = PR_MillisecondsToInterval(timeoutInMilliseconds);
 	} else
 		connectTimeout = PR_INTERVAL_NO_TIMEOUT;
 
 	const char *host;
-	JL_CHK( JsvalToString(cx, &JL_ARG(1), &host) );
+	JL_CHK( JsvalToString(cx, &JL_FARG(1), &host) );
 
 	PRNetAddr addr;
 
@@ -325,7 +323,7 @@ DEFINE_FUNCTION( Connect ) {
 		switch ( PR_GetError() ) {
 			case PR_CONNECT_TIMEOUT_ERROR:
 			case PR_IO_TIMEOUT_ERROR:
-				*rval = JSVAL_FALSE;
+				*JL_FRVAL = JSVAL_FALSE;
 				return JS_TRUE;
 			case PR_IN_PROGRESS_ERROR: // After a nonblocking connect is initiated with PR_Connect() (which fails with PR_IN_PROGRESS_ERROR), ...see connectContinue
 				break;
@@ -335,8 +333,8 @@ DEFINE_FUNCTION( Connect ) {
 	}
 	// see 	PR_GetConnectStatus or PR_ConnectContinue INSTEAD ???
 
-	JL_CHK( SetStreamReadInterface(cx, obj, NativeInterfaceStreamRead) );
-	*rval = OBJECT_TO_JSVAL(obj);
+	JL_CHK( SetStreamReadInterface(cx, JL_FOBJ, NativeInterfaceStreamRead) );
+	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -349,23 +347,23 @@ $TOC_MEMBER $INAME
   Send a specified number of bytes from an unconnected socket.
   See. Static functions.
 **/
-DEFINE_FUNCTION( SendTo ) {
+DEFINE_FUNCTION_FAST( SendTo ) {
 
 	JL_S_ASSERT_ARG_MIN( 3 );
 
 	PRFileDesc *fd;
-	if ( JL_GetClass(obj) == _class )
-		fd = (PRFileDesc*)JL_GetPrivate( cx, obj );
+	if ( JL_GetClass(JL_FOBJ) == _class )
+		fd = (PRFileDesc*)JL_GetPrivate(cx, JL_FOBJ);
 	else
 		fd = PR_NewUDPSocket(); // allow to use SendTo as static function
 	JL_S_ASSERT_RESOURCE( fd );
 
 	unsigned int port;
-	JL_CHK( JsvalToUInt(cx, JL_ARG(2), &port) );
+	JL_CHK( JsvalToUInt(cx, JL_FARG(2), &port) );
 	JL_S_ASSERT( port < 65536, "Invalid port number." );
 
 	const char *host;
-	JL_CHK( JsvalToString(cx, &JL_ARG(1), &host) );
+	JL_CHK( JsvalToString(cx, &JL_FARG(1), &host) );
 
 	PRNetAddr addr;
 
@@ -390,7 +388,7 @@ DEFINE_FUNCTION( SendTo ) {
 
 	const char *str;
 	size_t len;
-	JL_CHK( JsvalToStringAndLength(cx, &JL_ARG(3), &str, &len) );
+	JL_CHK( JsvalToStringAndLength(cx, &JL_FARG(3), &str, &len) );
 
 	PRInt32 res;
 	res = PR_SendTo(fd, str, len, 0, &addr, PR_INTERVAL_NO_TIMEOUT );
@@ -406,13 +404,13 @@ DEFINE_FUNCTION( SendTo ) {
 		sentAmount = res;
 
 	if ( sentAmount < len )
-		*rval = STRING_TO_JSVAL( JS_NewDependentString(cx, JSVAL_TO_STRING( JL_ARG(3) ), sentAmount, len - sentAmount) ); // return unsent data
+		*JL_FRVAL = STRING_TO_JSVAL( JS_NewDependentString(cx, JSVAL_TO_STRING( JL_FARG(3) ), sentAmount, len - sentAmount) ); // return unsent data
 	else if ( sentAmount == 0 )
-		*rval = JL_ARG(3); // nothing has been sent
+		*JL_FRVAL = JL_FARG(3); // nothing has been sent
 	else
-		*rval = JS_GetEmptyStringValue(cx); // nothing remains
+		*JL_FRVAL = JS_GetEmptyStringValue(cx); // nothing remains
 
-	if ( JL_GetClass(obj) != _class )
+	if ( JL_GetClass(JL_FOBJ) != _class )
 		PR_Close(fd);
 
 	return JS_TRUE;
@@ -427,16 +425,16 @@ $TOC_MEMBER $INAME
   Receive all data from socket which may or may not be connected.
   See. Static functions.
 **/
-DEFINE_FUNCTION( RecvFrom ) {
+DEFINE_FUNCTION_FAST( RecvFrom ) {
 
 	char *buffer = NULL;
 
 //	JL_S_ASSERT_CLASS( obj, _class );
 
 	PRFileDesc *fd;
-	if ( JL_GetClass(obj) == _class ) {
+	if ( JL_GetClass(JL_FOBJ) == _class ) {
 
-		fd = (PRFileDesc*)JL_GetPrivate( cx, obj );
+		fd = (PRFileDesc*)JL_GetPrivate(cx, JL_FOBJ);
 		JL_S_ASSERT_RESOURCE( fd );
 	} else {
 
@@ -470,7 +468,7 @@ DEFINE_FUNCTION( RecvFrom ) {
 	JSObject *arrayObject;
 	arrayObject = JS_NewArrayObject(cx, 3, NULL);
 	JL_CHK( arrayObject ); // (TBD) else free buffer
-	*rval = OBJECT_TO_JSVAL( arrayObject );
+	*JL_FRVAL = OBJECT_TO_JSVAL( arrayObject );
 
 	JL_CHKB( PR_NetAddrToString(&addr, peerName, sizeof(peerName)) == PR_SUCCESS, bad_ex ); // Converts a character string to a network address.
 
@@ -523,16 +521,16 @@ $TOC_MEMBER $INAME
   $H note
    This function only works with blocking sockets.
 **/
-DEFINE_FUNCTION( TransmitFile ) { // WORKS ONLY ON BLOCKING SOCKET !!!
+DEFINE_FUNCTION_FAST( TransmitFile ) { // WORKS ONLY ON BLOCKING SOCKET !!!
 
 	JL_S_ASSERT_ARG_MIN( 1 );
 	PRFileDesc *socketFd;
-	socketFd = (PRFileDesc *)JL_GetPrivate( cx, obj );
+	socketFd = (PRFileDesc *)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE( socketFd );
 
-	JL_S_ASSERT_OBJECT( JL_ARG(1) );
+	JL_S_ASSERT_OBJECT( JL_FARG(1) );
 	JSObject *fileObj;
-	fileObj = JSVAL_TO_OBJECT( JL_ARG(1) );
+	fileObj = JSVAL_TO_OBJECT( JL_FARG(1) );
 	JL_S_ASSERT_CLASS( fileObj, classFile );
 	PRFileDesc *fileFd;
 	fileFd = (PRFileDesc*)JL_GetPrivate( cx, fileObj );
@@ -540,19 +538,19 @@ DEFINE_FUNCTION( TransmitFile ) { // WORKS ONLY ON BLOCKING SOCKET !!!
 
 	PRTransmitFileFlags flag;
 	flag = PR_TRANSMITFILE_KEEP_OPEN;
-	if ( JL_ARG_ISDEF(2) ) {
+	if ( JL_FARG_ISDEF(2) ) {
 
 		bool closeAfterTransmit;
-		JL_CHK( JsvalToBool(cx, JL_ARG(2), &closeAfterTransmit) );
+		JL_CHK( JsvalToBool(cx, JL_FARG(2), &closeAfterTransmit) );
 		if ( closeAfterTransmit )
 			flag = PR_TRANSMITFILE_CLOSE_SOCKET;
 	}
 
 	PRIntervalTime connectTimeout;
-	if ( JL_ARG_ISDEF(4) ) {
+	if ( JL_FARG_ISDEF(4) ) {
 
 		PRUint32 timeoutInMilliseconds;
-		JL_CHK( JsvalToUInt(cx, JL_ARG(4), &timeoutInMilliseconds) );
+		JL_CHK( JsvalToUInt(cx, JL_FARG(4), &timeoutInMilliseconds) );
 		connectTimeout = PR_MillisecondsToInterval(timeoutInMilliseconds);
 	} else
 		connectTimeout = PR_INTERVAL_NO_TIMEOUT;
@@ -560,16 +558,17 @@ DEFINE_FUNCTION( TransmitFile ) { // WORKS ONLY ON BLOCKING SOCKET !!!
 	const char *headers;
 	headers = NULL;
 	size_t headerLength;
-	headerLength = 0;
-	if ( JL_ARG_ISDEF(3) )
-		JL_CHK( JsvalToStringAndLength(cx, &JL_ARG(3), &headers, &headerLength) );
+	if ( JL_FARG_ISDEF(3) )
+		JL_CHK( JsvalToStringAndLength(cx, &JL_FARG(3), &headers, &headerLength) );
+	else
+		headerLength = 0;
 
 	PRInt32 bytes;
 	bytes = PR_TransmitFile( socketFd, fileFd, headers, headerLength, flag, connectTimeout );
 	if ( bytes == -1 )
 		return ThrowIoError(cx);
 
-	JL_CHK( JS_NewNumberValue(cx, bytes, rval) );
+	JL_CHK( JS_NewNumberValue(cx, bytes, JL_FRVAL) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -952,7 +951,7 @@ $TOC_MEMBER $INAME
   Print( GetHostsByName('localhost')[0] ); // prints: 127.0.0.1
   }}}
 **/
-DEFINE_FUNCTION( GetHostsByName ) {
+DEFINE_FUNCTION_FAST( GetHostsByName ) {
 
 	JL_S_ASSERT_ARG_MIN( 1 );
 
@@ -963,10 +962,10 @@ DEFINE_FUNCTION( GetHostsByName ) {
 	JSObject *addrJsObj;
 	addrJsObj = JS_NewArrayObject(cx, 0, NULL);
 	JL_CHK( addrJsObj );
-	*rval = OBJECT_TO_JSVAL(addrJsObj);
+	*JL_FRVAL = OBJECT_TO_JSVAL(addrJsObj);
 
 	const char *host;
-	JL_CHK( JsvalToString(cx, &JL_ARG(1), &host) );
+	JL_CHK( JsvalToString(cx, &JL_FARG(1), &host) );
 
 	if ( PR_GetHostByName( host, netdbBuf, sizeof(netdbBuf), &hostEntry ) != PR_SUCCESS ) {
 
@@ -1111,14 +1110,14 @@ CONFIGURE_CLASS
 	HAS_RESERVED_SLOTS( 1 ) // SLOT_JSIO_DESCRIPTOR_IMPORTED
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION( Shutdown )
-		FUNCTION( Bind )
-		FUNCTION( Listen )
-		FUNCTION( Accept )
-		FUNCTION( Connect )
-		FUNCTION( SendTo )
-		FUNCTION( RecvFrom )
-		FUNCTION( TransmitFile )
+		FUNCTION_FAST( Shutdown )
+		FUNCTION_FAST( Bind )
+		FUNCTION_FAST( Listen )
+		FUNCTION_FAST( Accept )
+		FUNCTION_FAST( Connect )
+		FUNCTION_FAST( SendTo )
+		FUNCTION_FAST( RecvFrom )
+		FUNCTION_FAST( TransmitFile )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
@@ -1142,9 +1141,9 @@ CONFIGURE_CLASS
 	END_PROPERTY_SPEC
 
 	BEGIN_STATIC_FUNCTION_SPEC
-		FUNCTION( SendTo )
-		FUNCTION( RecvFrom )
-		FUNCTION( GetHostsByName )
+		FUNCTION_FAST( SendTo )
+		FUNCTION_FAST( RecvFrom )
+		FUNCTION_FAST( GetHostsByName )
 		FUNCTION_FAST_ARGC( GetHostsByAddr, 1 )
 	END_STATIC_FUNCTION_SPEC
 
