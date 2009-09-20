@@ -43,6 +43,13 @@ DEFINE_PROPERTY( text ) {
 	DWORD res = FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM, NULL, messageId, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&lpvMessageBuffer, 0, NULL);
 	if ( res == 0 )
 		return JS_FALSE;
+
+	if ( ((char*)lpvMessageBuffer)[res-2] == '\r' ) { // remove the trailing CRLF
+
+		res -= 2;
+		((char*)lpvMessageBuffer)[res] = '\0';
+	}
+
 	*vp = STRING_TO_JSVAL(JS_NewStringCopyN( cx, (char*)lpvMessageBuffer, res+1 )); // doc: If the function succeeds, the return value is the number of TCHARs stored in the output buffer, excluding the terminating null character.
 	LocalFree(lpvMessageBuffer);
 	return JS_TRUE;
