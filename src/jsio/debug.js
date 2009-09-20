@@ -5,14 +5,16 @@ LoadModule('jsstd');
 LoadModule('jsio');
 LoadModule('jstask');
 
+Exec('../common/tools.js');
 
 var f = new File('my_test_file.txt').Open();
 new File('my_test_file.txt').content = '';
-f.Read(1);
+Dump( f.Read(1) );
+
 
 new File('my_test_file.txt').content = 'a';
 
-f.Read(1);
+Dump( f.Read(1) );
 
 
 Halt();

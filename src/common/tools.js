@@ -64,3 +64,14 @@ function GetKey() {
 	while (PollEvent({ onKeyDown: function(k) key = k }));
 	return key;
 }
+
+
+//////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
+
+function Dump() {
+	
+	for ( var i = 0; i < arguments.length; i++ )
+		Print(uneval(arguments[i]), '  ');
+	Print('\n');
+}
