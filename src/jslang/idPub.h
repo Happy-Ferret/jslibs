@@ -38,7 +38,7 @@ inline JSClass *GetIdJSClass( JSContext *cx ) {
 }
 
 
-inline JSBool CreateId( JSContext *cx, ID_TYPE idType, size_t userSize, void** userData, IdFinalizeCallback_t finalizeCallback, jsval *idVal ) {
+inline JSBool CreateId( JSContext *cx, ID_TYPE idType, size_t userDataSize, void** userData, IdFinalizeCallback_t finalizeCallback, jsval *idVal ) {
 
 	JSClass *idJSClass = GetIdJSClass(cx);
 	JL_S_ASSERT( idJSClass != NULL, "Id class not initialized.");
@@ -48,7 +48,7 @@ inline JSBool CreateId( JSContext *cx, ID_TYPE idType, size_t userSize, void** u
 	JL_CHK(idObj);
 	*idVal = OBJECT_TO_JSVAL(idObj);
 	IdPrivate *pv;
-	pv = (IdPrivate*)JS_malloc(cx, sizeof(IdPrivate) + userSize);
+	pv = (IdPrivate*)JS_malloc(cx, sizeof(IdPrivate) + userDataSize);
 	JL_CHK(pv);
 	JL_SetPrivate(cx, idObj, pv);
 
