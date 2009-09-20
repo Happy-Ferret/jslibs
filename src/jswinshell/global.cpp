@@ -15,6 +15,8 @@
 #include "stdafx.h"
 #include "error.h"
 
+#include "../jslang/idPub.h"
+
 #include "icon.h"
 #include <stdlib.h>
 
@@ -511,6 +513,170 @@ DEFINE_FUNCTION_FAST( RegistryGet ) {
 }
 
 
+/*
+/ **doc
+$TOC_MEMBER $INAME
+ $VOID $INAME( pathName, watchSubtree, notifyFilter )
+  Creates a change notification handle and sets up initial change notification filter conditions.
+  A wait on a notification handle succeeds when a change matching the filter conditions occurs in the specified directory or subtree.
+  The function does not report changes to the specified directory itself.
+** /
+
+void CloseChangeNotification(void *data) {
+	
+	FindCloseChangeNotification(*(HANDLE*)data);
+}
+
+DEFINE_FUNCTION_FAST( FindFirstChangeNotification ) {
+
+	JL_S_ASSERT_ARG_RANGE(3,3);
+
+	const char *pathName;
+	JL_CHK( JsvalToString(cx, &JL_FARG(1), &pathName) );
+	bool watchSubtree;
+	JL_CHK( JsvalToBool(cx, JL_FARG(2), &watchSubtree) );
+	unsigned int notifyFilter;
+	JL_CHK( JsvalToUInt(cx, JL_FARG(3), &notifyFilter) );
+
+	HANDLE *h;
+	JL_CHK( CreateId(cx, 'FNDH', sizeof(HANDLE), (void**)&h, CloseChangeNotification, JL_FRVAL) );
+	*h = FindFirstChangeNotification(pathName, watchSubtree, notifyFilter);
+	if ( *h == INVALID_HANDLE_VALUE )
+		return WinThrowError(cx,  GetLastError());
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+DEFINE_FUNCTION_FAST( FindNextChangeNotification ) {
+
+	JL_S_ASSERT_ARG_RANGE(3,3);
+
+	JL_S_ASSERT( IsIdType(cx, JL_FARG(1), 'FNDH'), "Unexpected argument type." );
+
+	HANDLE *h;
+	h = (HANDLE*)GetIdPrivate(cx, JL_FARG(1));
+
+	FindNextChangeNotification(h);
+	...
+
+	return JS_TRUE;
+	JL_BAD;
+}
+*/
+
+struct DirectoryChanges {
+	HANDLE hDirectory;
+	OVERLAPPED overlapped;
+	BYTE buffer[2][512*sizeof(FILE_NOTIFY_INFORMATION)];
+	int currentBuffer;
+	BOOL watchSubtree;
+	DWORD	notifyFilter;
+};
+
+void FinalizeDirectoryHandle(void *data) {
+	
+	DirectoryChanges *dc = (DirectoryChanges*)data;
+	CloseHandle(dc->overlapped.hEvent);
+	dc->overlapped.hEvent = NULL;
+	CloseHandle(dc->hDirectory);
+}
+
+DEFINE_FUNCTION_FAST( DirectoryChangesInit ) {
+
+	JL_S_ASSERT_ARG_RANGE(3,2);
+
+	const char *pathName;
+	JL_CHK( JsvalToString(cx, &JL_FARG(1), &pathName) );
+
+	unsigned int notifyFilter;
+	JL_CHK( JsvalToUInt(cx, JL_FARG(2), &notifyFilter) );
+
+	bool watchSubtree;
+	if ( JL_FARG_ISDEF(3) )
+		JL_CHK( JsvalToBool(cx, JL_FARG(3), &watchSubtree) );
+	else
+		watchSubtree = false;
+
+	DirectoryChanges *dc;
+	JL_CHK( CreateId(cx, 'dmon', sizeof(DirectoryChanges), (void**)&dc, FinalizeDirectoryHandle, JL_FRVAL) );
+
+	dc->watchSubtree = watchSubtree;
+	dc->notifyFilter = notifyFilter;
+
+	dc->hDirectory = CreateFile(pathName, FILE_LIST_DIRECTORY, FILE_SHARE_DELETE | FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OVERLAPPED, NULL);
+	if ( dc->hDirectory == INVALID_HANDLE_VALUE )
+		return WinThrowError(cx, GetLastError());
+
+//	memset(&dc->overlapped, 0, sizeof(dc->overlapped));
+//   memset(&dc->buffer, 0, sizeof(dc->buffer));
+	dc->currentBuffer = 0;
+	dc->overlapped.hEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+
+	if ( !ReadDirectoryChangesW(dc->hDirectory, &dc->buffer[dc->currentBuffer], sizeof(*dc->buffer), dc->watchSubtree, dc->notifyFilter, NULL, &dc->overlapped, NULL) )
+		return WinThrowError(cx, GetLastError());
+
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+DEFINE_FUNCTION_FAST( DirectoryChangesGet ) {
+
+	JL_S_ASSERT_ARG(1);
+	JL_S_ASSERT( IsIdType(cx, JL_FARG(1), 'dmon'), "Unexpected argument type." );
+	DirectoryChanges *dc = (DirectoryChanges*)GetIdPrivate(cx, JL_FARG(1));
+
+	DWORD res = WaitForSingleObject(dc->overlapped.hEvent, 0);
+	if ( res == -1 )
+		return WinThrowError(cx,  GetLastError());
+
+	if ( res != WAIT_OBJECT_0 ) {
+		
+		*JL_FRVAL = JSVAL_VOID;
+		return JS_TRUE;
+	}
+
+	DWORD dwNumberbytes;
+	if ( !GetOverlappedResult(dc->hDirectory, &dc->overlapped, &dwNumberbytes, FALSE) )
+		return WinThrowError(cx, GetLastError());
+
+	dc->currentBuffer = 1 - dc->currentBuffer;
+
+	if ( !ReadDirectoryChangesW(dc->hDirectory, &dc->buffer[dc->currentBuffer], sizeof(*dc->buffer), dc->watchSubtree, dc->notifyFilter, NULL, &dc->overlapped, NULL) )
+		return WinThrowError(cx, GetLastError());
+
+	FILE_NOTIFY_INFORMATION *pFileNotify;
+	pFileNotify = (PFILE_NOTIFY_INFORMATION)&dc->buffer[1-dc->currentBuffer];
+
+	JSObject *arrObj = JS_NewArrayObject(cx, 0, NULL);
+	JL_CHK( arrObj );
+	*JL_FRVAL = OBJECT_TO_JSVAL( arrObj );
+
+	jsval tmp;
+	jsint index = 0;
+	// see http://www.google.fr/codesearch/p?hl=fr&sa=N&cd=17&ct=rc#8WOCRDPt-u8/trunk/src/FileWatch.cc&q=ReadDirectoryChangesW
+	while ( pFileNotify ) {
+
+		JSString *str = JS_NewUCStringCopyN(cx, (jschar*)pFileNotify->FileName, pFileNotify->FileNameLength / sizeof(WCHAR) );
+		JL_CHK( str );
+		tmp = STRING_TO_JSVAL( str );
+		JL_CHK( JS_SetElement(cx, arrObj, index, &tmp) );
+		index++;
+
+		if ( pFileNotify->NextEntryOffset )
+			pFileNotify = (FILE_NOTIFY_INFORMATION*) ((PBYTE)pFileNotify + pFileNotify->NextEntryOffset) ;
+		else
+			pFileNotify = NULL;
+	}
+
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+
+
 
 /**doc
 === Static properties ===
@@ -586,6 +752,9 @@ CONFIGURE_STATIC
 		FUNCTION( MessageBeep )
 		FUNCTION( Beep )
 		FUNCTION_FAST( RegistryGet )
+
+		FUNCTION_FAST( DirectoryChangesInit )
+		FUNCTION_FAST( DirectoryChangesGet )
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC

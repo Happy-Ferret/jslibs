@@ -5,6 +5,27 @@ LoadModule('jsimage');
 LoadModule('jswinshell');
 
 try {
+
+	var d = DirectoryChangesInit('c:\\tmp', 0x00000001, true);
+
+	while (!endSignal) {
+		
+		Print( uneval( DirectoryChangesGet(d) ), '\n');
+		Sleep(1000);
+	}
+
+} catch(ex) {
+
+	Print(ex.text, ' line:', ex.lineNumber);
+}
+
+Halt(); //////////////////////////////////////////////////////////////////////
+
+
+
+
+
+try {
 	
 	var path = 'HKEY_LOCAL_MACHINE\\Software\\Clients\\StartMenuInternet';
 	var defaultBrowser = RegistryGet(path+'\\'+RegistryGet(path, '')+'\\shell\\open\\command', '' );
@@ -18,6 +39,11 @@ try {
 }
 
 Halt(); //////////////////////////////////////////////////////////////////////
+
+
+
+
+
 
 // MessageBox() Flags
 const MB = {
