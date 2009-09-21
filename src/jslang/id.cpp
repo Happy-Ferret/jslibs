@@ -35,17 +35,20 @@ DEFINE_FUNCTION_FAST( toString ) {
 
 	IdPrivate *pv = (IdPrivate*)JL_GetPrivate(cx, JL_FOBJ);
 	JSString *idStr;
-	char str[] = "[Id XXXX]";
+	char str[] = "[Id ????]";
 
-	if ( DetectSystemEndianType() == LittleEndian ) {
+	if ( pv != NULL ) {
 
-		str[4] = ((char*)&pv->idType)[3];
-		str[5] = ((char*)&pv->idType)[2];
-		str[6] = ((char*)&pv->idType)[1];
-		str[7] = ((char*)&pv->idType)[0];
-	} else {
+		if ( DetectSystemEndianType() == LittleEndian ) {
 
-		*((ID_TYPE*)str+4) = pv->idType;
+			str[4] = ((char*)&pv->idType)[3];
+			str[5] = ((char*)&pv->idType)[2];
+			str[6] = ((char*)&pv->idType)[1];
+			str[7] = ((char*)&pv->idType)[0];
+		} else {
+
+			*((ID_TYPE*)str+4) = pv->idType;
+		}
 	}
 
 	idStr = JS_NewStringCopyN(cx, str, sizeof(str));
