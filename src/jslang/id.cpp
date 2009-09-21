@@ -37,7 +37,7 @@ DEFINE_FUNCTION_FAST( toString ) {
 	JSString *idStr;
 	char str[] = "[Id ????]";
 
-	if ( pv != NULL ) {
+	if ( pv != NULL ) { // manage Print(Id) issue
 
 		if ( DetectSystemEndianType() == LittleEndian ) {
 
