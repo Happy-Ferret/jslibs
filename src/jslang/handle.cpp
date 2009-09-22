@@ -13,47 +13,46 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-#include "idPub.h"
+#include "handlePub.h"
 
 // the aim of *globalKey* is to ensure that a pointer in the process's virtual memory space can be serialized and unserializes safely.
 static uint32 globalKey = 0;
 
-BEGIN_CLASS( Id )
+BEGIN_CLASS( Handle )
 
 DEFINE_FINALIZE() {
 
-	IdPrivate *pv = (IdPrivate*)JL_GetPrivate(cx, obj);
+	HandlePrivate *pv = (HandlePrivate*)JL_GetPrivate(cx, obj);
 	if (!pv)
 		return;
 	if ( pv->finalizeCallback ) // callback function is present
-		pv->finalizeCallback((char*)pv + sizeof(IdPrivate)); // (TBD) test it !
+		pv->finalizeCallback((char*)pv + sizeof(HandlePrivate)); // (TBD) test it !
 	JS_free(cx, pv);
 }
 
 
 DEFINE_FUNCTION_FAST( toString ) {
 
-	IdPrivate *pv = (IdPrivate*)JL_GetPrivate(cx, JL_FOBJ);
-	JSString *idStr;
-	char str[] = "[Id ????]";
-
+	HandlePrivate *pv = (HandlePrivate*)JL_GetPrivate(cx, JL_FOBJ);
+	JSString *handleStr;
+	char str[] = "[Handle ????]";
 	if ( pv != NULL ) { // manage Print(Id) issue
 
 		if ( DetectSystemEndianType() == LittleEndian ) {
 
-			str[4] = ((char*)&pv->idType)[3];
-			str[5] = ((char*)&pv->idType)[2];
-			str[6] = ((char*)&pv->idType)[1];
-			str[7] = ((char*)&pv->idType)[0];
+			str[4] = ((char*)&pv->handleType)[3];
+			str[5] = ((char*)&pv->handleType)[2];
+			str[6] = ((char*)&pv->handleType)[1];
+			str[7] = ((char*)&pv->handleType)[0];
 		} else {
 
-			*((ID_TYPE*)str+4) = pv->idType;
+			*((HANDLE_TYPE*)str+4) = pv->handleType;
 		}
 	}
 
-	idStr = JS_NewStringCopyN(cx, str, sizeof(str));
-	JL_CHK(idStr);
-	*JL_FRVAL = STRING_TO_JSVAL(idStr);
+	handleStr = JS_NewStringCopyN(cx, str, sizeof(str));
+	JL_CHK(handleStr);
+	*JL_FRVAL = STRING_TO_JSVAL(handleStr);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -75,7 +74,7 @@ DEFINE_INIT() {
 
 /*
 DEFINE_XDR() {
-	
+
 	JSContext *cx = xdr->cx;
 
 	jsid id;
@@ -87,7 +86,7 @@ DEFINE_XDR() {
 
 		return JS_TRUE;
 	}
-	
+
 	if ( xdr->mode == JSXDR_DECODE ) {
 
 		uint32 gKey;
@@ -120,5 +119,5 @@ CONFIGURE_CLASS
 	BEGIN_FUNCTION_SPEC
 		FUNCTION_FAST( toString )
 	END_FUNCTION_SPEC
-	
+
 END_CLASS

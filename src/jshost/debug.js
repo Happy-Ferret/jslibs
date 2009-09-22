@@ -2,6 +2,16 @@
 LoadModule('jsdebug');
 LoadModule('jsstd');
 
+
+
+var b = new Blob('abcde');
+b.replace
+Print( b.constructor )
+
+Halt();
+
+
+
 function TestCase( section, name, expected, result ) {}
 var SECTION = '';
 

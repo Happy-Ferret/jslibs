@@ -15,7 +15,7 @@
 #include "stdafx.h"
 #include "error.h"
 
-#include "../jslang/idPub.h"
+#include "../jslang/handlePub.h"
 
 #include "icon.h"
 #include <stdlib.h>
@@ -513,58 +513,29 @@ DEFINE_FUNCTION_FAST( RegistryGet ) {
 }
 
 
-/*
-/ **doc
+/**doc
 $TOC_MEMBER $INAME
- $VOID $INAME( pathName, watchSubtree, notifyFilter )
-  Creates a change notification handle and sets up initial change notification filter conditions.
-  A wait on a notification handle succeeds when a change matching the filter conditions occurs in the specified directory or subtree.
-  The function does not report changes to the specified directory itself.
-** /
-
-void CloseChangeNotification(void *data) {
-	
-	FindCloseChangeNotification(*(HANDLE*)data);
-}
-
-DEFINE_FUNCTION_FAST( FindFirstChangeNotification ) {
-
-	JL_S_ASSERT_ARG_RANGE(3,3);
-
-	const char *pathName;
-	JL_CHK( JsvalToString(cx, &JL_FARG(1), &pathName) );
-	bool watchSubtree;
-	JL_CHK( JsvalToBool(cx, JL_FARG(2), &watchSubtree) );
-	unsigned int notifyFilter;
-	JL_CHK( JsvalToUInt(cx, JL_FARG(3), &notifyFilter) );
-
-	HANDLE *h;
-	JL_CHK( CreateId(cx, 'FNDH', sizeof(HANDLE), (void**)&h, CloseChangeNotification, JL_FRVAL) );
-	*h = FindFirstChangeNotification(pathName, watchSubtree, notifyFilter);
-	if ( *h == INVALID_HANDLE_VALUE )
-		return WinThrowError(cx,  GetLastError());
-	return JS_TRUE;
-	JL_BAD;
-}
-
-
-DEFINE_FUNCTION_FAST( FindNextChangeNotification ) {
-
-	JL_S_ASSERT_ARG_RANGE(3,3);
-
-	JL_S_ASSERT( IsIdType(cx, JL_FARG(1), 'FNDH'), "Unexpected argument type." );
-
-	HANDLE *h;
-	h = (HANDLE*)GetIdPrivate(cx, JL_FARG(1));
-
-	FindNextChangeNotification(h);
-	...
-
-	return JS_TRUE;
-	JL_BAD;
-}
-*/
-
+ $VOID $INAME( pathName, notifyFilter [ , watchSubtree = false ] )
+  Creates a change notification handle and sets up initial change notification filter conditions.$LF
+  _notifyFilter_ can be a combination of the following flags:
+  * 0x01: Any file name change in the watched directory or subtree. Changes include renaming, creating, or deleting a file.
+  * 0x02: Any directory-name change in the watched directory or subtree. Changes include creating or deleting a directory.
+  * 0x04: Any attribute change in the watched directory or subtree.
+  * 0x08: Any file-size change in the watched directory or subtree. The operating system detects a change in file size only when the file is written to the disk. For operating systems that use extensive caching, detection occurs only when the cache is sufficiently flushed.
+  * 0x10: Any change to the last write-time of files in the watched directory or subtree. The operating system detects a change to the last write-time only when the file is written to the disk. For operating systems that use extensive caching, detection occurs only when the cache is sufficiently flushed.
+  * 0x20: Any change to the last access time of files in the watched directory or subtree.
+  * 0x40: Any change to the creation time of files in the watched directory or subtree.
+  * 0x100: Any security-descriptor change in the watched directory or subtree.
+  $H example 1
+  {{{
+  var dch = DirectoryChangesInit('C:\\WINDOWS', 0x10|0x40, true);
+  while (!endSignal) {
+    Print( uneval( DirectoryChangesLookup(dch) ), '\n');
+    Sleep(1000);
+  }
+  }}}
+**/
+// (TBD) Linux version using inotify: http://en.wikipedia.org/wiki/Inotify / try: man inotify
 struct DirectoryChanges {
 	HANDLE hDirectory;
 	OVERLAPPED overlapped;
@@ -584,7 +555,7 @@ void FinalizeDirectoryHandle(void *data) {
 
 DEFINE_FUNCTION_FAST( DirectoryChangesInit ) {
 
-	JL_S_ASSERT_ARG_RANGE(3,2);
+	JL_S_ASSERT_ARG_RANGE(2,3);
 
 	const char *pathName;
 	JL_CHK( JsvalToString(cx, &JL_FARG(1), &pathName) );
@@ -599,7 +570,7 @@ DEFINE_FUNCTION_FAST( DirectoryChangesInit ) {
 		watchSubtree = false;
 
 	DirectoryChanges *dc;
-	JL_CHK( CreateId(cx, 'dmon', sizeof(DirectoryChanges), (void**)&dc, FinalizeDirectoryHandle, JL_FRVAL) );
+	JL_CHK( CreateHandle(cx, 'dmon', sizeof(DirectoryChanges), (void**)&dc, FinalizeDirectoryHandle, JL_FRVAL) );
 
 	dc->watchSubtree = watchSubtree;
 	dc->notifyFilter = notifyFilter;
@@ -620,12 +591,23 @@ DEFINE_FUNCTION_FAST( DirectoryChangesInit ) {
 	JL_BAD;
 }
 
+/**doc
+$TOC_MEMBER $INAME
+ $ARR | $VOID $INAME( changeNotificationHandle )
+  Returns the list of changed files based on the filter provided to the DirectoryChangesInit() function.
+  Each element of the list is a 2-element array that contain the filename and the action.$LF
+  actions:
+  * 1: The file was added to the directory.
+  * 2: The file was removed from the directory.
+  * 3: The file was modified. This can be a change in the time stamp or attributes.
+  * 4: The file was renamed and this is the old name.
+  * 5: The file was renamed and this is the new name.
+**/
+DEFINE_FUNCTION_FAST( DirectoryChangesLookup ) {
 
-DEFINE_FUNCTION_FAST( DirectoryChangesGet ) {
-
-	JL_S_ASSERT_ARG(1);
-	JL_S_ASSERT( IsIdType(cx, JL_FARG(1), 'dmon'), "Unexpected argument type." );
-	DirectoryChanges *dc = (DirectoryChanges*)GetIdPrivate(cx, JL_FARG(1));
+	JL_S_ASSERT_ARG_RANGE(1,1);
+	JL_S_ASSERT( IsHandleType(cx, JL_FARG(1), 'dmon'), "Unexpected argument type." );
+	DirectoryChanges *dc = (DirectoryChanges*)GetHandlePrivate(cx, JL_FARG(1));
 
 	DWORD res = WaitForSingleObject(dc->overlapped.hEvent, 0);
 	if ( res == -1 )
@@ -654,13 +636,18 @@ DEFINE_FUNCTION_FAST( DirectoryChangesGet ) {
 	*JL_FRVAL = OBJECT_TO_JSVAL( arrObj );
 
 	jsval tmp;
+	jsval eltContent[2];
 	jsint index = 0;
 	// see http://www.google.fr/codesearch/p?hl=fr&sa=N&cd=17&ct=rc#8WOCRDPt-u8/trunk/src/FileWatch.cc&q=ReadDirectoryChangesW
 	while ( pFileNotify ) {
 
-		JSString *str = JS_NewUCStringCopyN(cx, (jschar*)pFileNotify->FileName, pFileNotify->FileNameLength / sizeof(WCHAR) );
+		JSString *str = JS_NewUCStringCopyN(cx, (jschar*)pFileNotify->FileName, pFileNotify->FileNameLength / sizeof(WCHAR));
 		JL_CHK( str );
-		tmp = STRING_TO_JSVAL( str );
+		eltContent[0] = STRING_TO_JSVAL( str );
+		eltContent[1] = INT_TO_JSVAL( pFileNotify->Action );
+		JSObject *elt = JS_NewArrayObject(cx, COUNTOF(eltContent), eltContent);
+		JL_CHK( elt );
+		tmp = OBJECT_TO_JSVAL( elt );
 		JL_CHK( JS_SetElement(cx, arrObj, index, &tmp) );
 		index++;
 
@@ -754,7 +741,7 @@ CONFIGURE_STATIC
 		FUNCTION_FAST( RegistryGet )
 
 		FUNCTION_FAST( DirectoryChangesInit )
-		FUNCTION_FAST( DirectoryChangesGet )
+		FUNCTION_FAST( DirectoryChangesLookup )
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC

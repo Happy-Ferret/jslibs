@@ -16,7 +16,7 @@
 #define _MEMBUFFER_H_
 
 #include "stdafx.h"
-#include "../jslang/idpub.h"
+#include "../jslang/handlepub.h"
 
 
 struct MemBuffer;
@@ -47,7 +47,7 @@ void MemBufferFinalizeCallback( void* data ) {
 JSBool MemoryBufferObjectCreate( JSContext *cx, jsval *memBufferVal, void *pv, void* mem, unsigned int size, MemBufferFree_t free, MemBufferResize_t resize ) {
 
 	MemBuffer *membuf;
-	JL_CHK( CreateId(cx, 'MEMB', sizeof(MemBuffer), (void**)&membuf, MemBufferFinalizeCallback, memBufferVal) );
+	JL_CHK( CreateHandle(cx, 'MEMB', sizeof(MemBuffer), (void**)&membuf, MemBufferFinalizeCallback, memBufferVal) );
 	membuf->mem = mem;
 	membuf->size = size;
 	membuf->MemBufferFree = free;
@@ -59,8 +59,8 @@ JSBool MemoryBufferObjectCreate( JSContext *cx, jsval *memBufferVal, void *pv, v
 
 JSBool MemoryBufferObjectGet( JSContext *cx, jsval memBufferVal, MemBuffer **membuffer ) {
 
-	JL_S_ASSERT( IsIdType(cx, memBufferVal, 'MEMB'), "Invalid memory object." );
-	*membuffer = (MemBuffer*)GetIdPrivate(cx, memBufferVal);
+	JL_S_ASSERT( IsHandleType(cx, memBufferVal, 'MEMB'), "Invalid memory object." );
+	*membuffer = (MemBuffer*)GetHandlePrivate(cx, memBufferVal);
 	return JS_TRUE;
 	JL_BAD;
 }

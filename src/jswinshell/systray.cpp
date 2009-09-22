@@ -505,7 +505,8 @@ DEFINE_FUNCTION( PopupMenu ) {
 	for ( int i = 0; i < list->length; i++ ) {
 
 		jsval item;
-		OBJ_GET_PROPERTY(cx, menuObj, list->vector[i], &item);
+//		OBJ_GET_PROPERTY(cx, menuObj, list->vector[i], &item);
+		menuObj->getProperty(cx, list->vector[i], &item);
 		LPCSTR newItem = NULL;
 		UINT uFlags = MF_STRING;
 

@@ -478,12 +478,11 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostOutput stdOut, HostOutput s
 //	uintN attrs;
 //	JL_CHK( JS_GetPropertyAttributes(cx, globalObject, "undefined", &attrs, &found) );
 //	JL_CHK( JS_SetPropertyAttributes(cx, globalObject, "undefined", attrs | JSPROP_READONLY, &found) );
-	JL_CHK( OBJ_DEFINE_PROPERTY(cx, globalObject, ATOM_TO_JSID(cx->runtime->atomState.typeAtoms[JSTYPE_VOID]), JSVAL_VOID, NULL, NULL, JSPROP_PERMANENT | JSPROP_READONLY, NULL) ); // see JS_InitStandardClasses() in jsapi.cpp
+//	JL_CHK( OBJ_DEFINE_PROPERTY(cx, globalObject, ATOM_TO_JSID(cx->runtime->atomState.typeAtoms[JSTYPE_VOID]), JSVAL_VOID, NULL, NULL, JSPROP_PERMANENT | JSPROP_READONLY, NULL) ); // see JS_InitStandardClasses() in jsapi.cpp
+	JL_CHK( globalObject->defineProperty(cx, ATOM_TO_JSID(JS_GetRuntime(cx)->atomState.typeAtoms[JSTYPE_VOID]), JSVAL_VOID, NULL, NULL, JSPROP_PERMANENT | JSPROP_READONLY) ); // by default, undefined is only JSPROP_PERMANENT
 
 // creates a reference to the String object JSClass
-	JSObject *emptyStringObject;
-	JL_CHK( JS_ValueToObject(cx, JS_GetEmptyStringValue(cx), &emptyStringObject) );
-	pv->stringObjectClass = JL_GetClass(emptyStringObject);
+	pv->stringObjectClass = JL_GetStringClass(cx);
 	JL_CHKM( pv->stringObjectClass, "Unable to find the String class." );
 
 // make GetErrorMessage available from any module
@@ -516,7 +515,7 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostOutput stdOut, HostOutput s
 // init static modules
 	JL_CHKM( jslangInit(cx, globalObject), "Unable to initialize jslang." );
 
-	JL_CHK( JS_DefineProperty(cx, globalObject, NAME_MODULE_REVISION_PROPERTY_NAME, INT_TO_JSVAL(JL_SvnRevToInt("$Revision: 0 $")), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
+	JL_CHK( JS_DefineProperty(cx, globalObject, NAME_MODULE_REVISION_PROPERTY_NAME, INT_TO_JSVAL(JL_SvnRevToInt("$Revision$")), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -555,7 +554,7 @@ JSBool DestroyHost( JSContext *cx ) {
 	if ( tmp != JSVAL_VOID && JSVAL_TO_PRIVATE(tmp) )
 		free( JSVAL_TO_PRIVATE(tmp) );
 
-	JL_CHKM( RemoveConfiguration(cx), "Unable to remove the configuration item" );
+	JL_CHKM( RemoveConfiguration(cx), "Unable to remove the configuration item." );
 
 	JS_SetGlobalObject(cx, JSVAL_TO_OBJECT(JSVAL_NULL)); // remove the global object (TBD) check if it is good or needed to do this.
 
@@ -667,7 +666,7 @@ JSBool ExecuteScriptFileName( JSContext *cx, const char *scriptFileName, bool co
 
 	//	JS_DestroyScript(cx, script); // Warning: This API is subject to bug 438633, which can cause crashes in almost any program that uses JS_DestroyScript.
 
-	JL_CHKM( JS_DeleteProperty(cx, globalObject, NAME_GLOBAL_ARGUMENTS ), "Unable to remove argument property" );
+	JL_CHKM( JS_DeleteProperty(cx, globalObject, NAME_GLOBAL_ARGUMENTS ), "Unable to remove argument property." );
 	JS_SetOptions(cx, prevOpt);
 	return JS_TRUE;
 bad:

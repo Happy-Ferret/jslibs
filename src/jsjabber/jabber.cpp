@@ -113,7 +113,7 @@ private:
 		SetPropertyString(_cx, _obj, "mac", info.mac.c_str());
 		SetPropertyString(_cx, _obj, "compression", info.compression.c_str());
 
-		jsval argv[] = { INT_TO_JSVAL(infoObj) };
+		jsval argv[] = { OBJECT_TO_JSVAL(infoObj) };
 		JS_CallFunctionValue(_cx, _obj, fval, COUNTOF(argv), argv, &rval); // errors will be managed later by JS_IsExceptionPending(cx)
 
 		bool res;

@@ -32,7 +32,7 @@ ALWAYS_INLINE bool IsBlobValid( JSContext *cx, JSObject *blobObject ) {
 
 	jsval lengthVal;
 	JL_CHK( JS_GetReservedSlot(cx, blobObject, SLOT_BLOB_LENGTH, &lengthVal) );
-	return JSVAL_IS_INT( lengthVal );
+	return JSVAL_IS_INT( lengthVal ) != 0;
 bad:
 	return false;
 }
@@ -891,19 +891,23 @@ DEFINE_NEW_RESOLVE() {
 
 	// search propId in Blob's prototype
 	JSProperty *prop;
-	JL_CHK( OBJ_LOOKUP_PROPERTY(cx, prototypeBlob, propId, objp, &prop) );
+//	JL_CHK( OBJ_LOOKUP_PROPERTY(cx, prototypeBlob, propId, objp, &prop) );
+	JL_CHK( prototypeBlob->lookupProperty(cx, propId, objp, &prop) );
 	if ( prop ) {
 
-		OBJ_DROP_PROPERTY(cx, *objp, prop);
+//		OBJ_DROP_PROPERTY(cx, *objp, prop);
+		(*objp)->dropProperty(cx, prop);
 		return JS_TRUE;
 	}
 
 	// search propId in String's prototype.
 	JSObject *stringPrototype;
 	JL_CHK( JS_GetClassObject(cx, JS_GetGlobalObject(cx), JSProto_String, &stringPrototype) );
-	JL_CHK( OBJ_LOOKUP_PROPERTY(cx, stringPrototype, propId, objp, &prop) );
+//	JL_CHK( OBJ_LOOKUP_PROPERTY(cx, stringPrototype, propId, objp, &prop) );
+	JL_CHK( stringPrototype->lookupProperty(cx, propId, objp, &prop) );
 	if ( prop )
-		OBJ_DROP_PROPERTY(cx, *objp, prop);
+//		OBJ_DROP_PROPERTY(cx, *objp, prop);
+		(*objp)->dropProperty(cx, prop);
 	else
 		return JS_TRUE;
 
@@ -921,14 +925,15 @@ DEFINE_NEW_RESOLVE() {
 	JL_CHK( JS_ValueToObject(cx, STRING_TO_JSVAL(jsstr), &strObj) );
 
 	obj->fslots[JSSLOT_PROTO] = strObj->fslots[JSSLOT_PROTO];
+	obj->fslots[JSSLOT_PRIVATE] = strObj->fslots[JSSLOT_PRIVATE];
 	// Make sure we preserve any flags borrowing bits in JSSLOT_CLASS.
-
 	obj->classword ^= (jsuword)OBJ_GET_CLASS(cx, obj);
 	obj->classword |= (jsuword)OBJ_GET_CLASS(cx, strObj);
 
-	obj->fslots[JSSLOT_PRIVATE] = strObj->fslots[JSSLOT_PRIVATE];
-	obj->map->ops = strObj->map->ops;
-
+//	obj->map->ops = strObj->map->ops;
+//	memcpy(obj->map, &JSObjectMap(strObj->map->ops, strObj->map->shape), sizeof(JSObjectMap));
+	memcpy(obj->map, strObj->map, sizeof(JSObjectMap));
+	
 //	JL_CHKM( MutateToJSString(cx, obj), "Unable to transform the Blob into a String." );
 //	const char *debug_name = JS_GetStringBytes(JS_ValueToString(cx, id));
 	return JS_TRUE;
@@ -962,7 +967,8 @@ DEFINE_XDR() {
 			if ( id != JSVAL_VOID ) { // ... or JSVAL_VOID if there is no such property left to visit.
 
 				JL_CHK( JS_IdToValue(xdr->cx, id, &key) );
-				JL_CHK( OBJ_GET_PROPERTY(xdr->cx, *objp, id, &value) ); // returning false on error or exception, true on success.
+//				JL_CHK( OBJ_GET_PROPERTY(xdr->cx, *objp, id, &value) ); // returning false on error or exception, true on success.
+				JL_CHK( (*objp)->getProperty(xdr->cx, id, &value) ); // returning false on error or exception, true on success.
 				JL_CHK( JS_XDRValue(xdr, &key) );
 				JL_CHK( JS_XDRValue(xdr, &value) );
 			} else {
@@ -996,7 +1002,8 @@ DEFINE_XDR() {
 
 				JS_ValueToId(xdr->cx, key, &id);
 				JL_CHKB( JS_XDRValue(xdr, &value), bad_free_buffer );
-				JL_CHKB( OBJ_SET_PROPERTY(xdr->cx, *objp, id, &value), bad_free_buffer );
+//				JL_CHKB( OBJ_SET_PROPERTY(xdr->cx, *objp, id, &value), bad_free_buffer );
+				JL_CHKB( (*objp)->setProperty(xdr->cx, id, &value), bad_free_buffer );
 			} else {
 
 				break;

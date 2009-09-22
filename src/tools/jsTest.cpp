@@ -141,7 +141,15 @@ int main(int argc, char* argv[]) {
 jsval nan;
 char scriptSrc[] = "Number.NaN";
 JS_EvaluateScript(cx, globalObject, scriptSrc, strlen(scriptSrc), "test", 1, &nan); // "Access violation reading location 0xfffffffc." in TraceRecorder::lazilyImportGlobalSlot() (globalObj->dslots == NULL).
+
 bool res = JsvalIsNaN(cx, nan);
+
+__int64 d1 = *(__int64*)JSVAL_TO_DOUBLE(JS_GetNaNValue(cx));
+__int64 d2 = *(__int64*)JSVAL_TO_DOUBLE(nan);
+
+
+res = d1 == d1;
+
 
 /*
 	JSScript *script = JS_CompileScript(cx, globalObject, scriptSrc, strlen(scriptSrc), "myScript", 1);

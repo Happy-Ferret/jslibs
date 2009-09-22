@@ -12,78 +12,78 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-#ifndef _IDAPI_H_
-#define _IDAPI_H_
+#ifndef _HANDLEAPI_H_
+#define _HANDLEAPI_H_
 
 #include "stdafx.h"
 
-typedef void (*IdFinalizeCallback_t)(void* data);
+typedef void (*HandleFinalizeCallback_t)(void* data);
 
-#define ID_TYPE uint32_t
+#define HANDLE_TYPE uint32_t
 
 // (TBD) better alignment: __attribute__ ((__vector_size__ (16), __may_alias__)); OR  __declspec(align(64))
 //       note that SSE data must be 128bits alligned !
-struct IdPrivate {
-	ID_TYPE idType;
-	IdFinalizeCallback_t finalizeCallback;
+struct HandlePrivate {
+	HANDLE_TYPE handleType;
+	HandleFinalizeCallback_t finalizeCallback;
 };
 
-inline JSClass *GetIdJSClass( JSContext *cx ) {
+inline JSClass *GetHandleJSClass( JSContext *cx ) {
 
 //	static JSClass *idJSClass = NULL; // it's safe to use static keyword because JSClass do not depend on the rt or cx.
 //	if (unlikely( idJSClass == NULL ))
 //		idJSClass = JL_GetRegistredNativeClass(cx, "Id");
 //	return idJSClass;
-	return JL_GetRegistredNativeClass(cx, "Id");
+	return JL_GetRegistredNativeClass(cx, "Handle");
 }
 
 
-inline JSBool CreateId( JSContext *cx, ID_TYPE idType, size_t userDataSize, void** userData, IdFinalizeCallback_t finalizeCallback, jsval *idVal ) {
+inline JSBool CreateHandle( JSContext *cx, HANDLE_TYPE handleType, size_t userDataSize, void** userData, HandleFinalizeCallback_t finalizeCallback, jsval *handleVal ) {
 
-	JSClass *idJSClass = GetIdJSClass(cx);
-	JL_S_ASSERT( idJSClass != NULL, "Id class not initialized.");
+	JSClass *handleJSClass = GetHandleJSClass(cx);
+	JL_S_ASSERT( handleJSClass != NULL, "Handle class not initialized.");
 
-	JSObject *idObj;
-	idObj = JS_NewObject(cx, idJSClass, NULL, NULL);
-	JL_CHK(idObj);
-	*idVal = OBJECT_TO_JSVAL(idObj);
-	IdPrivate *pv;
-	pv = (IdPrivate*)JS_malloc(cx, sizeof(IdPrivate) + userDataSize);
+	JSObject *handleObj;
+	handleObj = JS_NewObject(cx, handleJSClass, NULL, NULL);
+	JL_CHK(handleObj);
+	*handleVal = OBJECT_TO_JSVAL(handleObj);
+	HandlePrivate *pv;
+	pv = (HandlePrivate*)JS_malloc(cx, sizeof(HandlePrivate) + userDataSize);
 	JL_CHK(pv);
-	JL_SetPrivate(cx, idObj, pv);
+	JL_SetPrivate(cx, handleObj, pv);
 
-	pv->idType = idType;
+	pv->handleType = handleType;
 	pv->finalizeCallback = finalizeCallback;
 	if (userData)
-		*userData = (char*)pv + sizeof(IdPrivate);
+		*userData = (char*)pv + sizeof(HandlePrivate);
 
 	return JS_TRUE;
 	JL_BAD;
 }
 
 
-inline ID_TYPE GetIdType( JSContext *cx, jsval idVal ) {
+inline HANDLE_TYPE GetHandleType( JSContext *cx, jsval handleVal ) {
 
-	JSObject *idObj = JSVAL_TO_OBJECT(idVal);
-	IdPrivate *pv = (IdPrivate*)JL_GetPrivate(cx, idObj);
-	return pv->idType;
+	JSObject *handleObj = JSVAL_TO_OBJECT(handleVal);
+	HandlePrivate *pv = (HandlePrivate*)JL_GetPrivate(cx, handleObj);
+	return pv->handleType;
 }
 
 
-inline bool IsIdType( JSContext *cx, jsval idVal, ID_TYPE idType ) {
+inline bool IsHandleType( JSContext *cx, jsval handleVal, HANDLE_TYPE handleType ) {
 
-	JSClass *idJSClass = GetIdJSClass(cx);
-	if ( idJSClass == NULL || !JsvalIsClass(idVal, idJSClass) )
+	JSClass *handleJSClass = GetHandleJSClass(cx);
+	if ( handleJSClass == NULL || !JsvalIsClass(handleVal, handleJSClass) )
 		return false;
-	JSObject *idObj = JSVAL_TO_OBJECT(idVal);
-	IdPrivate *pv = (IdPrivate*)JL_GetPrivate(cx, idObj);
-	return pv != NULL && pv->idType == idType;
+	JSObject *handleObj = JSVAL_TO_OBJECT(handleVal);
+	HandlePrivate *pv = (HandlePrivate*)JL_GetPrivate(cx, handleObj);
+	return pv != NULL && pv->handleType == handleType;
 }
 
 
-inline void* GetIdPrivate( JSContext *cx, jsval idVal ) {
+inline void* GetHandlePrivate( JSContext *cx, jsval handleVal ) {
 
-	return (char*)JL_GetPrivate(cx, JSVAL_TO_OBJECT(idVal)) + sizeof(IdPrivate); // user data is just behind our private structure.
+	return (char*)JL_GetPrivate(cx, JSVAL_TO_OBJECT(handleVal)) + sizeof(HandlePrivate); // user data is just behind our private structure.
 }
 
 
@@ -99,9 +99,9 @@ JL_CHK( CreateId(cx, 'TEST', 10, &data, FinalizeTrimesh, JL_RVAL) );
 
 bool c = IsIdType(cx, *JL_RVAL, 'TEST');
 
-bool d = data == GetIdPrivate(cx, *JL_RVAL);
+bool d = data == GetHandlePrivate(cx, *JL_RVAL);
 
 
 */
 
-#endif // _IDAPI_H_
+#endif // _HANDLEAPI_H_

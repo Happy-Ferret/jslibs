@@ -417,23 +417,26 @@ DEFINE_PROPERTY( blockLength ) {
 	JL_BAD;
 }
 
-
-/**doc
+/*
+/ **doc
 $TOC_MEMBER $INAME
  $INT $INAME $READONLY
-  Is the key size of the current cipher.
-**/
+** /
 DEFINE_PROPERTY( keySize ) {
 
 	JL_S_ASSERT_CLASS( obj, _class );
 	CipherPrivate *pv;
 	pv = (CipherPrivate *)JL_GetPrivate( cx, obj );
 	JL_S_ASSERT_RESOURCE( pv );
-	*vp = INT_TO_JSVAL( pv->descriptor->keysize );
+	int size = 0;
+	int err = pv->descriptor->keysize(&size);
+	if (err != CRYPT_OK)
+		return ThrowCryptError(cx, err);
+	*vp = INT_TO_JSVAL( size );
 	return JS_TRUE;
 	JL_BAD;
 }
-
+*/
 
 /**doc
 $TOC_MEMBER $INAME
@@ -666,7 +669,7 @@ CONFIGURE_CLASS
 	BEGIN_PROPERTY_SPEC
 		PROPERTY( IV )
 		PROPERTY_READ( blockLength )
-		PROPERTY_READ( keySize )
+//		PROPERTY_READ( keySize )
 		PROPERTY_READ( name )
 	END_PROPERTY_SPEC
 

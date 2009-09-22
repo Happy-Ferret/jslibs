@@ -15,32 +15,16 @@
 #include "stdafx.h"
 
 #ifdef XP_WIN
-#define _WIN32_WINNT 0x0501
-#pragma comment(lib,"Psapi.lib") // need for currentMemoryUsage()
-#include <Psapi.h>
-
-#pragma comment(lib,"pdh.lib") // need for performance counters usage
-#include <pdh.h>
-
+	#pragma comment(lib,"Psapi.lib") // need for currentMemoryUsage()
+	#include <Psapi.h>
+	#pragma comment(lib,"pdh.lib") // need for performance counters usage
+	#include <pdh.h>
 #endif // XP_WIN
 
-
 #include <errno.h>
-
 #include <time.h>
+#include <string.h>
 
-#include "static.h"
-
-#include "jsdbgapi.h"
-#include "jsatom.h"
-#include "jscntxt.h"
-#include "jsscope.h"
-#include "jsstr.h"
-#include "jsscript.h"
-#include "jsfun.h"
-#include "jsgc.h"
-
-#include "string.h"
 
 #ifdef XP_WIN
 void fpipe( FILE **read, FILE **write ) {

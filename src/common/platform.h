@@ -79,7 +79,7 @@
 	#pragma warning(disable : 4996) // warning C4996: 'function': was declared deprecated
 	#pragma warning(disable : 4100) // warning C4100: 'xxx' : unreferenced formal parameter
 	#pragma warning(disable : 4102) // warning C4102: 'xxx' : unreferenced label
-	#pragma warning(disable : 4125) // warning C4125: decimal digit terminates octal escape sequence
+//	#pragma warning(disable : 4125) // warning C4125: decimal digit terminates octal escape sequence
 	// force warning to error:
 	#pragma warning(error : 4715) // not all control paths return a value
 	#pragma warning(error : 4018) // warning C4018: '<' : signed/unsigned mismatch
@@ -98,13 +98,14 @@
 
 #if defined(_WINDOWS) || defined(WIN32) // Windows platform
 
-
+#if defined(REPORT_MEMORY_LEAKS)
+	// the following code make issue with jstl.h (js\src\jstl.h(244) : error C2039: '_malloc_dbg' : is not a member of 'JSContext')
 	#ifdef _DEBUG
 	# define _CRTDBG_MAP_ALLOC
 	# include <stdlib.h>
 	# include <crtdbg.h>
 	#endif // _DEBUG
-
+#endif // REPORT_MEMORY_LEAKS
 
 	#define XP_WIN // used by SpiderMonkey and jslibs
 

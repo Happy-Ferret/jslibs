@@ -4,20 +4,15 @@ LoadModule('jsstd');
 LoadModule('jsimage');
 LoadModule('jswinshell');
 
-try {
 
-	var d = DirectoryChangesInit('c:\\tmp', 0x00000001, true);
+  var dch = DirectoryChangesInit('C:\\WINDOWS', 16, true);
+  while (!endSignal) {
+	var changes = DirectoryChangesLookup(dch);
+	if ( changes )
+    Print( DirectoryChangesLookup(dch).join('\n'), '\n');
+    Sleep(1000);
+  }
 
-	while (!endSignal) {
-		
-		Print( uneval( DirectoryChangesGet(d) ), '\n');
-		Sleep(1000);
-	}
-
-} catch(ex) {
-
-	Print(ex.text, ' line:', ex.lineNumber);
-}
 
 Halt(); //////////////////////////////////////////////////////////////////////
 

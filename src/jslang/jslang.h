@@ -17,7 +17,7 @@
 #ifndef _JSLANG_H_
 #define _JSLANG_H_
 
-DECLARE_CLASS( Id )
+DECLARE_CLASS( Handle )
 DECLARE_CLASS( Blob )
 DECLARE_CLASS( Stream )
 DECLARE_STATIC()

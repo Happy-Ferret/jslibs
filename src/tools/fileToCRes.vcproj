@@ -20,6 +20,7 @@
 			OutputDirectory="$(SolutionDir)$(platformName)_$(ConfigurationName)"
 			IntermediateDirectory="$(platformName)_$(ConfigurationName)"
 			ConfigurationType="1"
+			InheritedPropertySheets="..\jslibs_DBG.vsprops"
 			CharacterSet="1"
 			BuildLogFile="$(IntDir)\$(ProjectName)_BuildLog.htm"
 			>
@@ -44,7 +45,6 @@
 				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
-				RuntimeLibrary="3"
 				UsePrecompiledHeader="0"
 				ProgramDataBaseFileName="$(IntDir)\$(ProjectName)_vc80.pdb"
 				WarningLevel="3"
@@ -62,7 +62,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="kernel32.lib $(NoInherit)"
 				LinkIncremental="2"
 				GenerateDebugInformation="true"
 				SubSystem="1"
@@ -99,6 +98,7 @@
 			OutputDirectory="$(SolutionDir)$(platformName)_$(ConfigurationName)"
 			IntermediateDirectory="$(platformName)_$(ConfigurationName)"
 			ConfigurationType="1"
+			InheritedPropertySheets="..\jslibs_OPT.vsprops"
 			CharacterSet="1"
 			WholeProgramOptimization="1"
 			BuildLogFile="$(IntDir)\$(ProjectName)_BuildLog.htm"
@@ -121,7 +121,6 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
-				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
 				ProgramDataBaseFileName="$(IntDir)\$(ProjectName)_vc80.pdb"
 				WarningLevel="3"
@@ -139,7 +138,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="kernel32.lib $(NoInherit)"
 				LinkIncremental="1"
 				GenerateDebugInformation="true"
 				SubSystem="1"

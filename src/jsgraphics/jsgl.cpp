@@ -33,7 +33,7 @@ DECLARE_CLASS(Ogl)
 #include "../jsprotex/textureBuffer.h"
 //TextureJSClass
 
-#include "../jslang/idPub.h"
+#include "../jslang/handlePub.h"
 
 #include "../jstrimesh/trimeshPub.h"
 
@@ -3181,7 +3181,7 @@ DEFINE_FUNCTION_FAST( LoadTrimesh ) {
 	JL_S_ASSERT_RESOURCE(srf);
 
 	OpenGlTrimeshInfo *info;
-	JL_CHK( CreateId(cx, TRIMESH_ID_NAME, sizeof(OpenGlTrimeshInfo), (void**)&info, FinalizeTrimesh, JL_FRVAL) );
+	JL_CHK( CreateHandle(cx, TRIMESH_ID_NAME, sizeof(OpenGlTrimeshInfo), (void**)&info, FinalizeTrimesh, JL_FRVAL) );
 
 	if ( srf->vertex ) {
 	
@@ -3247,9 +3247,9 @@ DEFINE_FUNCTION_FAST( DrawTrimesh ) {
 	JL_S_ASSERT_ARG_MIN(1);
 	JL_S_ASSERT_OBJECT(JL_FARG(1));
 
-	JL_S_ASSERT( IsIdType(cx, JL_FARG(1), TRIMESH_ID_NAME), "Invalid Id." );
+	JL_S_ASSERT( IsHandleType(cx, JL_FARG(1), TRIMESH_ID_NAME), "Invalid Id." );
 
-	OpenGlTrimeshInfo *info = (OpenGlTrimeshInfo*)GetIdPrivate(cx, JL_FARG(1));
+	OpenGlTrimeshInfo *info = (OpenGlTrimeshInfo*)GetHandlePrivate(cx, JL_FARG(1));
 
 	GLenum dataType = sizeof(SURFACE_REAL_TYPE) == sizeof(float) ? GL_FLOAT : GL_DOUBLE;
 
@@ -3384,7 +3384,7 @@ DEFINE_FUNCTION_FAST( CreateTextureBuffer ) {
 	CHECK_OPENGL_EXTENSION( glBindBufferARB );
 
 	TextureBuffer *tb;
-	JL_CHK( CreateId(cx, 'TBUF', sizeof(TextureBuffer), (void**)&tb, TextureBufferFinalize, JL_FRVAL) );
+	JL_CHK( CreateHandle(cx, 'TBUF', sizeof(TextureBuffer), (void**)&tb, TextureBufferFinalize, JL_FRVAL) );
 	GLuint pbo;
 	glGenBuffersARB(1, &pbo);
 	tb->pv = (void*)pbo;
@@ -3861,8 +3861,8 @@ DEFINE_INIT() {
 DEFINE_FUNCTION_FAST( Test ) {
 
 	jsval id = JL_FARG(1);
-	JL_S_ASSERT( IsIdType(cx, id, 'TBUF'), "Invalid buffer." );
-	TextureBuffer *tb = (TextureBuffer*)GetIdPrivate(cx, id);
+	JL_S_ASSERT( IsHandleType(cx, id, 'TBUF'), "Invalid buffer." );
+	TextureBuffer *tb = (TextureBuffer*)GetHandlePrivate(cx, id);
 
 	tb->TextureBufferAlloc(tb, sizeof(float) * 3 * 32 * 32); // RGB 32x32
 	//tb->TextureBufferFree(tb);

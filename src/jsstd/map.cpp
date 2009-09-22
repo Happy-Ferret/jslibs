@@ -116,7 +116,7 @@ DEFINE_XDR() {
 				break;
 			JS_ValueToId(xdr->cx, key, &id);
 			JL_CHK( JS_XDRValue(xdr, &value) );
-			JL_CHK( OBJ_SET_PROPERTY(xdr->cx, *objp, id, &value) );
+			JL_CHK( (*objp)->setProperty(xdr->cx, id, &value) );
 		}
 		return JS_TRUE;
 	}

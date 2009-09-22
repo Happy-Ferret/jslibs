@@ -14,7 +14,7 @@
 
 #include "stdafx.h"
 
-#include "../jslang/idPub.h"
+#include "../jslang/handlePub.h"
 
 #include <cstring>
 

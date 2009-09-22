@@ -433,20 +433,20 @@ DEFINE_FUNCTION_FAST( SetPropertyEnumerate ) {
 	JSObject *obj2;
 	JSProperty *prop;
 
-	JL_CHK( OBJ_LOOKUP_PROPERTY(cx, object, id, &obj2, &prop) );
+	JL_CHK( object->lookupProperty(cx, id, &obj2, &prop) );
 	if (!prop || object != obj2) { // not found
 
 		if (prop)
-			OBJ_DROP_PROPERTY(cx, obj2, prop);
+			obj2->dropProperty(cx, prop);
 		JL_REPORT_ERROR( "Property not found" );
 	}
-	JL_CHK( OBJ_GET_ATTRIBUTES(cx, object, id, prop, &attrs) );
+	JL_CHK( object->getAttributes(cx, id, prop, &attrs) );
 	if ( polarity )
 		attrs |= JSPROP_ENUMERATE;
 	else
 		attrs &= ~JSPROP_ENUMERATE;
-	JL_CHK( OBJ_SET_ATTRIBUTES(cx, object, id, prop, &attrs) );
-	OBJ_DROP_PROPERTY(cx, object, prop);
+	JL_CHK( object->setAttributes(cx, id, prop, &attrs) );
+	object->dropProperty(cx, prop);
 
 	return JS_TRUE;
 	JL_BAD;
@@ -492,20 +492,20 @@ DEFINE_FUNCTION_FAST( SetPropertyReadonly ) {
 	JSObject *obj2;
 	JSProperty *prop;
 
-	JL_CHK( OBJ_LOOKUP_PROPERTY(cx, object, id, &obj2, &prop) );
+	JL_CHK( object->lookupProperty(cx, id, &obj2, &prop) );
 	if (!prop || object != obj2) { // not found
 
 		if (prop)
-			OBJ_DROP_PROPERTY(cx, obj2, prop);
+			obj2->dropProperty(cx, prop);
 		JL_REPORT_ERROR( "Property not found" );
 	}
-	JL_CHK( OBJ_GET_ATTRIBUTES(cx, object, id, prop, &attrs) );
+	JL_CHK( object->getAttributes(cx, id, prop, &attrs) );
 	if ( polarity )
 		attrs |= JSPROP_READONLY;
 	else
 		attrs &= ~JSPROP_READONLY;
-	JL_CHK( OBJ_SET_ATTRIBUTES(cx, object, id, prop, &attrs) );
-	OBJ_DROP_PROPERTY(cx, object, prop);
+	JL_CHK( object->setAttributes(cx, id, prop, &attrs) );
+	object->dropProperty(cx, prop);
 
 	return JS_TRUE;
 	JL_BAD;

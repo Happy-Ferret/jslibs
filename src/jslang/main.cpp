@@ -15,7 +15,6 @@
 #include "stdafx.h"
 
 #include "jslang.h"
-#include "id.h"
 
 
 /**doc t:header
@@ -41,13 +40,13 @@ JSBool jslangInit(JSContext *cx, JSObject *obj) {
 	JL_S_ASSERT( obj == globalObject, "This module must be load into the global namespace" ); // (TBD) why ? now we use JL_RegisterNativeClass to locate classes
 //	obj = JS_GetGlobalObject(cx); // avoid LoadModule.call( foo, 'jslang' );
 
-	INIT_CLASS( Id );
+	INIT_CLASS( Handle );
 	INIT_CLASS( Blob );
 	INIT_CLASS( Stream );
 	INIT_STATIC();
 
 	JL_CHK( JL_RegisterNativeClass(cx, classBlob) );
-	JL_CHK( JL_RegisterNativeClass(cx, classId) );
+	JL_CHK( JL_RegisterNativeClass(cx, classHandle) );
 
 	return JS_TRUE;
 	JL_BAD;

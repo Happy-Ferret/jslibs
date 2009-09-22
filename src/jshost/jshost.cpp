@@ -153,22 +153,12 @@ void DestroyScriptHook(JSContext *cx, JSScript *script, void *callerdata) {
 int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[]) for UNICODE
 
 #ifdef XP_WIN
-	// enable low fragmentation heap
 	HANDLE heap = GetProcessHeap();
 	ULONG enable = 2;
 	HeapSetInformation(heap, HeapCompatibilityInformation, &enable, sizeof(enable)); // enable low fragmentation heap
 #endif // XP_WIN
 
 	JSContext *cx = NULL;
-
-#ifdef XP_WIN
-	BOOL status;
-	status = SetConsoleCtrlHandler((PHANDLER_ROUTINE)&Interrupt, TRUE);
-	HOST_MAIN_ASSERT( status == TRUE, "Unable to set the Ctrl-C handler" );
-#else
-	signal(SIGINT,Interrupt);
-	signal(SIGTERM,Interrupt);
-#endif // XP_WIN
 
 	uint32 maxMem = (uint32)-1; // by default, there are no limit
 	uint32 maxAlloc = (uint32)-1; // by default, there are no limit
@@ -198,9 +188,6 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 				maxAlloc = atol( *argumentVector ) * 1024L * 1024L;
 				break;
 			case 'u': // avoid any runtime checks
-//				argumentVector++;
-//				HOST_MAIN_ASSERT( *argumentVector, "Missing argument." );
-//				unsafeMode = ( atoi( *argumentVector ) != 0 );
 				unsafeMode = true;
 				break;
 			case 'g': // operationLimitGC
@@ -219,6 +206,13 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 			case 'b': // bootstrap
 				useFileBootstrapScript = true;
 				break;
+			case 'v': // version
+				fprintf( stderr, "Version r%d\n", JL_SvnRevToInt("$Revision$") );
+				return EXIT_SUCCESS;
+			case '?': // help
+			case 'h': //
+				fprintf( stderr, "Help: http://code.google.com/p/jslibs/wiki/jshost\n" );
+				return EXIT_SUCCESS;
 		#ifdef DEBUG
 			case 'd': // debug
 				debug = true;
@@ -226,7 +220,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	}
 
 
-#if defined(XP_WIN) && defined(DEBUG)
+#if defined(XP_WIN) && defined(DEBUG) && defined(REPORT_MEMORY_LEAKS)
 	if ( debug ) {
 		_CrtSetDbgFlag( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF );
 		_CrtSetReportMode( _CRT_WARN, _CRTDBG_MODE_FILE | _CRTDBG_MODE_DEBUG );
@@ -234,8 +228,17 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	}
 #endif
 
+#ifdef XP_WIN
+	BOOL status;
+	status = SetConsoleCtrlHandler((PHANDLER_ROUTINE)&Interrupt, TRUE);
+	HOST_MAIN_ASSERT( status == TRUE, "Unable to set the Ctrl-C handler." );
+#else
+	signal(SIGINT, Interrupt);
+	signal(SIGTERM, Interrupt);
+#endif // XP_WIN
+
 	cx = CreateHost(maxMem, maxAlloc, maybeGCInterval * 1000);
-	HOST_MAIN_ASSERT( cx != NULL, "Unable to create a javascript execution context" );
+	HOST_MAIN_ASSERT( cx != NULL, "Unable to create a javascript execution context." );
 
 	GetHostPrivate(cx)->camelCase = camelCase;
 
@@ -355,7 +358,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	signal(SIGTERM, SIG_DFL);
 #endif // XP_WIN
 
-#if defined(XP_WIN) && defined(DEBUG)
+#if defined(XP_WIN) && defined(DEBUG) && defined(REPORT_MEMORY_LEAKS)
 	if ( debug ) {
 //		_CrtMemDumpAllObjectsSince(NULL);
 	}
@@ -399,24 +402,20 @@ The main features are:
  * `-g <time>` (default = 60)
   This is the frequency (in seconds) at witch the GarbageCollector may be launched (0 for disabled).
  * `-l <case>` (default = 0)
-  This is a temporary option that allow to select function name naming. 0:default, 1:lowerCamelCase, 2:UpperCamelCase
-  $H node
+  This is a temporary option that allow to select function name naming. 0:version default, 1:lowerCamelCase, 2:UpperCamelCase
+  $H note
    Default is UpperCamelCase for jslibs version < 1.0 and lowerCamelCase for jslibs version >= 1.0
  * `-b`
-  Run the bootstrap file (<executable filename>.js, eg. jshost.exe.js on windows)
-  $H example
-  {{{
-  loadModule('jsio');
-  loadModule('jsstd');
-  var f = new File( arguments[0] );
-  f.open('r');
-  print( f.read(100) );
-  }}}
+  Run the bootstrap file (<executable filename>.js, eg. jshost.exe.js on windows and jshost.js on Linux)
+ * `-v`
+  Displays the current version or revision.
+ * `-h` `-h`
+  Help.
 
 === Exit code ===
  * The exit code of jshost is 1 on error. On success, exit code is the last evaluated expression of the script.
    If this last expression is a positive integer, its value is returned, in any other case, 0 is returned.
- * If there is a pending uncatched exception and if this exception can be converted into a number (see valueOf), this numeric value is used as exit code.
+ * If there is a pending uncatched exception and if this exception can be converted into a number (see valueOf()), this numeric value is used as exit code.
  $H example
  {{{
  function Exit(code) {

@@ -53,3 +53,14 @@ LoadModule('jsstd');
 		disableGarbageCollection = prev;
 
 		QA.ASSERT( mem > 3 && mem < 3.02, true, 'string memory usage ('+mem+')' );
+
+
+/// undefined is read-only [ftrm]
+
+	QA.ASSERT( undefined in global, true, 'undefined is in global object' );
+	delete undefined
+	QA.ASSERT( undefined in global, true, 'undefined is in global object' );
+
+	QA.ASSERT( undefined, (void 0), 'undefined is (void 0)' );
+	undefined = 123;
+	QA.ASSERT( undefined, (void 0), 'undefined is (void 0)' );

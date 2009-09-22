@@ -26,7 +26,6 @@ inline NIBufferGet BufferGetInterface( JSContext *cx, JSObject *obj );
 #include "platform.h"
 #include "../common/queue.h"
 
-//#include <float.h>
 #include <cstring>
 #include <stdarg.h>
 #include <sys/stat.h>
@@ -35,25 +34,24 @@ inline NIBufferGet BufferGetInterface( JSContext *cx, JSObject *obj );
 #endif
 #include <fcntl.h>
 
-// JavaScript engine includes
+// JavaScript engine
 
-//#include <jsvector.h> // workaround because not found in dist/include:
-#include "../../libs/js/src/jsvector.h" // (TBD) remove the workaround ASAP
+#ifdef _MSC_VER
+#pragma warning( push )
+#pragma warning( disable : 4800 ) // warning C4800: 'type' : forcing value to bool 'true' or 'false' (performance warning)
+#endif // _MSC_VER
 
-#include <jsnum.h>
 #include <jscntxt.h>
-#include <jsinterp.h>
-#include <jsarena.h>
-#include <jsfun.h>
 #include <jsscope.h>
-#include <jsobj.h>
-#include <jsstr.h>
-#include <jsscript.h>
 #include <jsxdrapi.h>
-#include <jsdbgapi.h>
+
+#ifdef _MSC_VER
+#pragma warning( pop )
+#endif // _MSC_VER
 
 
 extern bool _unsafeMode;
+
 
 #ifdef DEBUG
 	#define IFDEBUG(expr) expr
@@ -74,22 +72,43 @@ struct HostPrivate {
 	HostOutput hostStdErr;
 	jl::Queue moduleList;
 	jl::Queue registredNativeClasses;
-	jsid Matrix44GetId;
-	jsid BufferGetId;
-	jsid StreamReadId;
+	jsid ids[8];
 	JSClass *stringObjectClass;
 	int camelCase;
 };
 
-ALWAYS_INLINE HostPrivate* GetHostPrivate( JSContext *cx ) { // (TDB) use the runtime to store private data !
+#define PRIVATE_JSID__NI_BufferGet 0
+#define PRIVATE_JSID__NI_StreamRead 1
+#define PRIVATE_JSID__NI_Matrix44Get 2
+#define PRIVATE_JSID_Get 3
+#define PRIVATE_JSID_Read 4
 
-	// return JS_GetRuntimePrivate(JS_GetRuntime(cx));
+
+ALWAYS_INLINE jsid GetPrivateJsid( JSContext *cx, HostPrivate *hostPrivate, const char *name, int index ) {
+	
+	jsid id = hostPrivate->ids[index];
+	if (likely( id != 0 ))
+		return id;
+	JSString *jsstr = JS_InternString(cx, name);
+	if ( jsstr == 0 )
+		return 0;
+	if ( !JS_ValueToId(cx, STRING_TO_JSVAL(jsstr), &id) )
+		return 0;
+	hostPrivate->ids[index] = id;
+	return id;
+}
+
+
+ALWAYS_INLINE HostPrivate* GetHostPrivate( JSContext *cx ) {
+
+//	return (HostPrivate*)JS_GetRuntimePrivate(JS_GetRuntime(cx));
+//	return reinterpret_cast<HostPrivate*>(cx->runtime->data);
 	return (HostPrivate*)cx->runtime->data;
 }
 
 ALWAYS_INLINE void SetHostPrivate( JSContext *cx, HostPrivate *hostPrivate ) {
 
-	// JS_SetRuntimePrivate(JS_GetRuntime(cx), hostPrivate);
+//	JS_SetRuntimePrivate(JS_GetRuntime(cx), hostPrivate);
 	cx->runtime->data = (void*)hostPrivate;
 }
 
@@ -326,27 +345,12 @@ ALWAYS_INLINE unsigned int JL_GetStringLength(JSString *jsstr) {
 
 ALWAYS_INLINE void *JL_GetPrivate(JSContext *cx, JSObject *obj) {
 
-//	return JS_GetPrivate(cx, obj);
-	jsval v;
-	JS_ASSERT(OBJ_GET_CLASS(cx, obj)->flags & JSCLASS_HAS_PRIVATE);
-	v = obj->fslots[JSSLOT_PRIVATE];
-	#ifdef DEBUG
-		JS_ASSERT( obj );
-		JS_ASSERT( (JSVAL_IS_INT(v) ? JSVAL_TO_PRIVATE(v) : NULL) == JS_GetPrivate(cx, obj) ); // Mozilla JS engine private API behavior has changed.
-	#endif //DEBUG
-	if ( !JSVAL_IS_INT(v) )
-		return NULL;
-	return JSVAL_TO_PRIVATE(v);
+	return obj->getPrivate();
 }
 
 ALWAYS_INLINE void JL_SetPrivate(JSContext *cx, JSObject *obj, void *data) {
 
-	//	JS_SetPrivate(cx, obj, data); return;
-    JS_ASSERT(OBJ_GET_CLASS(cx, obj)->flags & JSCLASS_HAS_PRIVATE);
-    obj->fslots[JSSLOT_PRIVATE] = PRIVATE_TO_JSVAL(data);
-	#ifdef DEBUG
-		JS_ASSERT( data == JS_GetPrivate(cx, obj) ); // Mozilla JS engine private API behavior has changed.
-	#endif //DEBUG
+	obj->setPrivate(data);
 }
 
 
@@ -397,32 +401,20 @@ ALWAYS_INLINE JSStackFrame *JL_StackFrameByIndex(JSContext *cx, int frameIndex) 
 
 ALWAYS_INLINE bool JsvalIsNaN( JSContext *cx, jsval val ) {
 
-	#ifdef DEBUG
-		JS_ASSERT( JSDOUBLE_IS_NaN( *cx->runtime->jsNaN ) ); // Mozilla JS engine private API behavior has changed.
-	#endif //DEBUG
-	// return DOUBLE_TO_JSVAL(cx->runtime->jsNaN) == val; // (TBD) why this does not work ?
-	return JSVAL_IS_DOUBLE(val) && JSDOUBLE_IS_NaN( *JSVAL_TO_DOUBLE(val) );
-}
-
-ALWAYS_INLINE jsdouble JsvalIsInfinity( JSContext *cx, jsval val ) {
-
-	return JSVAL_IS_DOUBLE( val ) && JSDOUBLE_IS_INFINITE( *JSVAL_TO_DOUBLE( val ) );
+	JS_ASSERT( sizeof(__int64) == sizeof(double) );
+	return JSVAL_IS_DOUBLE(val) && *(__int64*)JSVAL_TO_DOUBLE(val) == *(__int64*)cx->runtime->jsNaN;
 }
 
 ALWAYS_INLINE bool JsvalIsPInfinity( JSContext *cx, jsval val ) {
 
-	#ifdef DEBUG
-		JS_ASSERT( *cx->runtime->jsPositiveInfinity == *JSVAL_TO_DOUBLE(JS_GetPositiveInfinityValue(cx)) ); // Mozilla JS engine private API behavior has changed.
-	#endif //DEBUG
-	return JSVAL_IS_DOUBLE(val) && *JSVAL_TO_DOUBLE(val) == *cx->runtime->jsPositiveInfinity; // JS_GetPositiveInfinityValue
+	JS_ASSERT( sizeof(__int64) == sizeof(double) );
+	return JSVAL_IS_DOUBLE(val) && *(__int64*)JSVAL_TO_DOUBLE(val) == *(__int64*)cx->runtime->jsPositiveInfinity;
 }
 
 ALWAYS_INLINE bool JsvalIsNInfinity( JSContext *cx, jsval val ) {
 
-	#ifdef DEBUG
-		JS_ASSERT( *cx->runtime->jsNegativeInfinity == *JSVAL_TO_DOUBLE(JS_GetNegativeInfinityValue(cx)) ); // Mozilla JS engine private API behavior has changed.
-	#endif //DEBUG
-	return JSVAL_IS_DOUBLE(val) && *JSVAL_TO_DOUBLE(val) == *cx->runtime->jsNegativeInfinity; // JS_GetNegativeInfinityValue
+	JS_ASSERT( sizeof(__int64) == sizeof(double) );
+	return JSVAL_IS_DOUBLE(val) && *(__int64*)JSVAL_TO_DOUBLE(val) == *(__int64*)cx->runtime->jsNegativeInfinity;
 }
 
 
@@ -455,6 +447,14 @@ ALWAYS_INLINE bool JsvalIsData( JSContext *cx, jsval val ) {
 	return ( JSVAL_IS_STRING(val) || !JSVAL_IS_PRIMITIVE(val) && BufferGetInterface(cx, JSVAL_TO_OBJECT(val)) != NULL || JL_VALUE_IS_STRING_OBJECT(cx, val) );
 }
 
+
+ALWAYS_INLINE JSClass* JL_GetStringClass( JSContext *cx ) {
+
+	JSObject *emptyStringObject;
+	if ( JS_ValueToObject(cx, JS_GetEmptyStringValue(cx), &emptyStringObject) )
+		return JL_GetClass(emptyStringObject);
+	return NULL;
+}
 
 /*
 ALWAYS_INLINE bool JL_IsAssigningCallResult( JSContext *cx ) {
@@ -579,10 +579,13 @@ ALWAYS_INLINE JSBool JL_CallFunctionName( JSContext *cx, JSObject *obj, const ch
 
 ALWAYS_INLINE JSBool JL_ValueOf( JSContext *cx, jsval *val, jsval *rval ) {
 
-	if ( !JSVAL_IS_PRIMITIVE(*val) )
-		return OBJ_DEFAULT_VALUE(cx, JSVAL_TO_OBJECT(*val), JSTYPE_VOID, rval); // JS_CallFunctionName(cx, JSVAL_TO_OBJECT(*val), "valueOf", 0, NULL, rval)
-	*rval = *val;
-	return JS_TRUE;
+	if ( JSVAL_IS_PRIMITIVE(*val) ) {
+
+		*rval = *val;
+		return JS_TRUE;
+	}
+//		return OBJ_DEFAULT_VALUE(cx, JSVAL_TO_OBJECT(*val), JSTYPE_VOID, rval); // JS_CallFunctionName(cx, JSVAL_TO_OBJECT(*val), "valueOf", 0, NULL, rval)
+	return JSVAL_TO_OBJECT(*val)->defaultValue(cx, JSTYPE_VOID, rval);
 }
 
 
@@ -880,11 +883,11 @@ ALWAYS_INLINE jsid StringToJsid( JSContext *cx, const char *cstr ) {
 
 	jsid tmp;
 	JSString *jsstr = JS_InternString(cx, cstr);
-	JL_CHK( jsstr != NULL );
-	JL_CHK( JS_ValueToId(cx, STRING_TO_JSVAL(jsstr), &tmp) );
+	if ( jsstr == NULL )
+		return 0;
+	if ( !JS_ValueToId(cx, STRING_TO_JSVAL(jsstr), &tmp) )
+		return 0;
 	return tmp;
-bad:
-	return 0;
 }
 
 
@@ -1557,6 +1560,7 @@ ALWAYS_INLINE JSBool DeleteNativeFunction( JSContext *cx, JSObject *obj, const c
 
 ALWAYS_INLINE JSBool ReserveNativeInterface( JSContext *cx, JSObject *obj, const char *name ) {
 
+//	return obj->defineProperty(cx, id, JSVAL_FALSE, NULL, (JSPropertyOp)-1, JSPROP_READONLY | JSPROP_PERMANENT );
 	return JS_DefineProperty(cx, obj, name, JSVAL_FALSE, NULL, (JSPropertyOp)-1, JSPROP_READONLY | JSPROP_PERMANENT );
 }
 
@@ -1581,7 +1585,8 @@ ALWAYS_INLINE JSBool GetNativeInterface( JSContext *cx, JSObject *obj, JSObject 
 
 //	JSObject *obj2;
 	JSProperty *prop;
-	JL_CHKM( OBJ_LOOKUP_PROPERTY(cx, obj, iid, obj2p, &prop), "Unable to get the native interface." ); //(TBD) use JS_LookupPropertyById or JS_GetPropertyById
+//	JL_CHKM( OBJ_LOOKUP_PROPERTY(cx, obj, iid, obj2p, &prop), "Unable to get the native interface." ); //(TBD) use JS_LookupPropertyById or JS_GetPropertyById
+	JL_CHKM( obj->lookupProperty(cx, iid, obj2p, &prop), "Unable to get the native interface." ); //(TBD) use JS_LookupPropertyById or JS_GetPropertyById
 
 //	const char *name = JS_GetStringBytes(JS_ValueToString(cx, iid));
 	if ( prop && obj == *obj2p && ((JSScopeProperty*)prop)->setter != (JSPropertyOp)-1 )
@@ -1590,7 +1595,8 @@ ALWAYS_INLINE JSBool GetNativeInterface( JSContext *cx, JSObject *obj, JSObject 
 		*nativeFct = NULL;
 
 	if ( prop )
-		OBJ_DROP_PROPERTY(cx, *obj2p, prop);
+//		OBJ_DROP_PROPERTY(cx, *obj2p, prop);
+		(*obj2p)->dropProperty(cx, prop);
 
 	return JS_TRUE;
 	JL_BAD;
@@ -1640,15 +1646,7 @@ inline JSBool SetStreamReadInterface( JSContext *cx, JSObject *obj, NIStreamRead
 
 inline NIStreamRead StreamReadNativeInterface( JSContext *cx, JSObject *obj ) {
 
-	jsid propId = GetHostPrivate(cx)->StreamReadId;
-	if ( !propId ) {
-
-		propId = StringToJsid(cx, "_NI_StreamRead");
-		if ( !propId )
-			return NULL;
-		GetHostPrivate(cx)->StreamReadId = propId;
-	}
-
+	jsid propId = GetPrivateJsid(cx, GetHostPrivate(cx), "_NI_StreamRead", PRIVATE_JSID__NI_StreamRead);
 	void *streamRead;
 	JSObject *obj2;
 	if ( propId == 0 || GetNativeInterface( cx, obj, &obj2, propId, &streamRead ) != JS_TRUE )
@@ -1663,7 +1661,8 @@ inline NIStreamRead StreamReadInterface( JSContext *cx, JSObject *obj ) {
 		return (NIStreamRead)fct;
 
 	jsval res;
-	if ( JS_GetProperty(cx, obj, "Read", &res) != JS_TRUE || !JsvalIsFunction(cx, res) )
+	jsid propId = GetPrivateJsid(cx, GetHostPrivate(cx), "Read", PRIVATE_JSID_Read);
+	if ( obj->getProperty(cx, propId, &res) != JS_TRUE || !JsvalIsFunction(cx, res) )
 		return NULL;
 
 	return JSStreamRead;
@@ -1700,14 +1699,7 @@ inline JSBool SetBufferGetInterface( JSContext *cx, JSObject *obj, NIBufferGet p
 
 inline NIBufferGet BufferGetNativeInterface( JSContext *cx, JSObject *obj ) {
 
-	jsid propId = GetHostPrivate(cx)->BufferGetId;
-	if ( !propId ) {
-
-		propId = StringToJsid(cx, "_NI_BufferGet");
-		if ( !propId )
-			return NULL;
-		GetHostPrivate(cx)->BufferGetId = propId;
-	}
+	jsid propId = GetPrivateJsid(cx, GetHostPrivate(cx), "_NI_BufferGet", PRIVATE_JSID__NI_BufferGet);
 	void *fct;
 	JSObject *obj2;
 	if ( propId == 0 || GetNativeInterface( cx, obj, &obj2, propId, &fct ) != JS_TRUE )
@@ -1721,11 +1713,9 @@ inline NIBufferGet BufferGetInterface( JSContext *cx, JSObject *obj ) {
 	if ( fct )
 		return (NIBufferGet)fct;
 
-
-	//JS_GetPropertyById(cx, obj, "Get", &res)
-
+	jsid propId = GetPrivateJsid(cx, GetHostPrivate(cx), "Get", PRIVATE_JSID_Get);
 	jsval res;
-	if ( JS_GetProperty(cx, obj, "Get", &res) != JS_TRUE || !JsvalIsFunction(cx, res) ) // do not use toString() directly, but Get can call toString().
+	if ( obj->getProperty(cx, propId, &res) != JS_TRUE || !JsvalIsFunction(cx, res) ) // do not use toString() directly, but Get can call toString().
 		return NULL;
 
 	return JSBufferGet;
@@ -1752,7 +1742,7 @@ inline JSBool JSMatrix44Get( JSContext *cx, JSObject *obj, const char **buffer, 
 
 inline JSBool ReserveMatrix44GetInterface( JSContext *cx, JSObject *obj ) {
 
-	return ReserveNativeInterface(cx, obj, "_NIMatrix44Get" );
+	return ReserveNativeInterface(cx, obj, "_NI_Matrix44Get" );
 }
 
 inline JSBool SetMatrix44GetInterface( JSContext *cx, JSObject *obj, NIMatrix44Get pFct ) {
@@ -1762,14 +1752,7 @@ inline JSBool SetMatrix44GetInterface( JSContext *cx, JSObject *obj, NIMatrix44G
 
 inline NIMatrix44Get Matrix44GetNativeInterface( JSContext *cx, JSObject *obj ) {
 
-	jsid propId = GetHostPrivate(cx)->Matrix44GetId;
-	if ( !propId ) {
-
-		propId = StringToJsid(cx, "_NI_Matrix44Get");
-		if ( !propId )
-			return NULL;
-		GetHostPrivate(cx)->Matrix44GetId = propId;
-	}
+	jsid propId = GetPrivateJsid(cx, GetHostPrivate(cx), "_NI_Matrix44Get", PRIVATE_JSID__NI_Matrix44Get);
 	void *fct;
 	JSObject *obj2;
 	if ( propId == 0 || GetNativeInterface( cx, obj, &obj2, propId, &fct ) != JS_TRUE )
@@ -1782,9 +1765,11 @@ inline NIMatrix44Get Matrix44GetInterface( JSContext *cx, JSObject *obj ) {
 	void *fct = (void*)Matrix44GetNativeInterface(cx, obj);
 	if ( fct )
 		return (NIMatrix44Get)fct;
+
 /*
 	jsval res;
-	if ( JS_GetProperty(cx, obj, "GetMatrix", &res) != JS_TRUE || !JsvalIsFunction(cx, res) )
+	jsid propId = GetPrivateJsid(cx, GetHostPrivate(cx), "GetMatrix", PRIVATE_JSID_GetMatrix);	
+	if ( obj->getProperty(cx, propId, &res) != JS_TRUE != JS_TRUE || !JsvalIsFunction(cx, res) )
 		return NULL;
 	return JSMatrix44Get;
 */
@@ -1808,7 +1793,7 @@ inline JSBool JsvalToMatrix44( JSContext *cx, jsval val, float **m ) {
 	JSObject *matrixObj;
 	matrixObj = JSVAL_TO_OBJECT(val);
 
-	if ( JSVAL_IS_NULL(matrixObj) ) {
+	if ( JSVAL_IS_NULL(val) ) {
 		
 		memcpy(*m, &Matrix44IdentityValue, sizeof(Matrix44IdentityValue));
 		return JS_TRUE;

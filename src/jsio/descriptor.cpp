@@ -169,10 +169,12 @@ JSBool ReadToJsval( JSContext *cx, PRFileDesc *fd, unsigned int amount, jsval *r
 	if ( res == 0 ) { // 0 means end of file is reached or the network connection is closed.
 
 		JS_free( cx, buf );
-		if (likely( amount != 0 )) // requesting 0 bytes and receiving 0 bytes does not indicate eof.
+		// requesting 0 bytes and receiving 0 bytes does not indicate eof.
+		// BUT if amount is given by PR_Available and is 0 (see Read()), and the eof is reached, this function should return (void 0)
+//		if (likely( amount != 0 )) 
 			*rval = JSVAL_VOID;
-		else
-			*rval = JS_GetEmptyStringValue(cx);
+//		else
+//			*rval = JS_GetEmptyStringValue(cx);
 		return JS_TRUE;
 	}
 

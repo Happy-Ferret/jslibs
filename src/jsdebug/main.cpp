@@ -13,10 +13,9 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-#include "static.h"
-#include "jsdbgapi.h"
 
-DECLARE_CLASS( Debugger );
+DECLARE_STATIC()
+DECLARE_CLASS( Debugger )
 
 extern bool _unsafeMode = false;
 extern jl::Queue *scriptFileList = NULL;
