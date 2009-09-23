@@ -214,7 +214,7 @@ enum Endian {
 	UnknownEndian
 };
 
-inline Endian DetectSystemEndianType() {
+ALWAYS_INLINE Endian DetectSystemEndianType() {
 
 	switch ( *(unsigned long*)"\3\2\1" ) { // 03020100
 		case 0x03020100: return BigEndian;
@@ -225,7 +225,7 @@ inline Endian DetectSystemEndianType() {
 }
 
 
-inline char* IntegerToString(int val, int base) {
+ALWAYS_INLINE char* IntegerToString(int val, int base) {
 
 	static char buf[64]; // (TBD) multithread and overflow warning !
 	buf[63] = '\0';
@@ -236,7 +236,7 @@ inline char* IntegerToString(int val, int base) {
 }
 
 
-inline void SleepMilliseconds(unsigned int ms) {
+ALWAYS_INLINE void SleepMilliseconds(unsigned int ms) {
 
 #if defined XP_WIN
 	Sleep(ms); // winbase.h
@@ -245,7 +245,7 @@ inline void SleepMilliseconds(unsigned int ms) {
 #endif // XP_UNIX
 }
 
-inline double AccurateTimeCounter() {
+ALWAYS_INLINE double AccurateTimeCounter() {
 
 #if defined XP_WIN
 	LARGE_INTEGER frequency, performanceCount;
@@ -273,7 +273,7 @@ __int64 GetTime() {
 }
 
 
-inline int JLProcessId() {
+ALWAYS_INLINE int JLProcessId() {
 
 #if defined XP_WIN
 	return getpid();
@@ -284,7 +284,7 @@ inline int JLProcessId() {
 }
 
 
-inline unsigned int JLSessionId() {
+ALWAYS_INLINE unsigned int JLSessionId() {
 
 	unsigned int r = 0x12345678;
 	r ^= (unsigned int)AccurateTimeCounter();
@@ -298,6 +298,23 @@ inline unsigned int JLSessionId() {
 	return r ? r : 1; // avoid returning 0
 }
 
+#if defined XP_UNIX
+// see http://www.gnu.org/software/libtool/manual/libc/Hooks-for-Malloc.html
+void _jl_free(void *ptr, const void *caller) {
+}
+
+ALWAYS_INLINE void DisableMemoryFree() {
+
+	__free_hook = _jl_free;
+}
+#elif defined XP_WIN
+ALWAYS_INLINE void DisableMemoryFree() {
+}
+#else
+ALWAYS_INLINE void DisableMemoryFree() {
+}
+#endif // XP_UNIX
+
 
 // Atomic operations
 	// MS doc: http://msdn.microsoft.com/en-us/library/ms686360.aspx
@@ -308,7 +325,7 @@ inline unsigned int JLSessionId() {
 	typedef volatile long * JLAtomicPtr;
 #endif // XP_UNIX
 
-	inline bool JLAtomicInc( JLAtomicPtr ptr ) {
+	ALWAYS_INLINE bool JLAtomicInc( JLAtomicPtr ptr ) {
 
 		//InterlockedIncrement( atomic );
 		// int atomic_inc_and_test(atomic_t * v);
@@ -316,7 +333,7 @@ inline unsigned int JLSessionId() {
 		return ++*ptr != 0;
 	}
 
-	inline bool JLAtomicDec( JLAtomicPtr ptr ) {
+	ALWAYS_INLINE bool JLAtomicDec( JLAtomicPtr ptr ) {
 
 		// int atomic_dec_and_test(atomic_t * v);
 		return --*ptr != 0;
@@ -336,7 +353,7 @@ inline unsigned int JLSessionId() {
 
 
 // system errors
-	inline void JLLastSysetmErrorMessage( char *message, size_t maxLength ) {
+	ALWAYS_INLINE void JLLastSysetmErrorMessage( char *message, size_t maxLength ) {
 
 #if defined XP_WIN
 		DWORD errorCode = ::GetLastError();
@@ -369,7 +386,7 @@ inline unsigned int JLSessionId() {
 #endif
 
 
-	inline JLSemaphoreHandler JLCreateSemaphore( int initCount ) {
+	ALWAYS_INLINE JLSemaphoreHandler JLCreateSemaphore( int initCount ) {
 
 	#if defined XP_WIN
 		return CreateSemaphore(NULL, initCount, LONG_MAX, NULL);
@@ -382,12 +399,12 @@ inline unsigned int JLSessionId() {
 	#endif
 	}
 
-	inline bool JLSemaphoreOk( JLSemaphoreHandler semaphore ) {
+	ALWAYS_INLINE bool JLSemaphoreOk( JLSemaphoreHandler semaphore ) {
 
 		return semaphore != (JLSemaphoreHandler)0;
 	}
 
-	inline bool JLAcquireSemaphore( JLSemaphoreHandler semaphore ) {
+	ALWAYS_INLINE bool JLAcquireSemaphore( JLSemaphoreHandler semaphore ) {
 
 		if ( !JLSemaphoreOk(semaphore) )
 			return false;
@@ -401,7 +418,7 @@ inline unsigned int JLSessionId() {
 		return true;
 	}
 
-	inline bool JLReleaseSemaphore( JLSemaphoreHandler semaphore ) {
+	ALWAYS_INLINE bool JLReleaseSemaphore( JLSemaphoreHandler semaphore ) {
 
 		if ( !JLSemaphoreOk(semaphore) )
 			return false;
@@ -415,7 +432,7 @@ inline unsigned int JLSessionId() {
 		return true;
 	}
 
-	inline bool JLFreeSemaphore( JLSemaphoreHandler *pSemaphore ) {
+	ALWAYS_INLINE bool JLFreeSemaphore( JLSemaphoreHandler *pSemaphore ) {
 
 		if ( !pSemaphore || !JLSemaphoreOk(*pSemaphore) )
 			return false;
@@ -449,7 +466,7 @@ inline unsigned int JLSessionId() {
 	typedef pthread_mutex_t* JLMutexHandler;
 #endif
 
-	inline JLMutexHandler JLCreateMutex() {
+	ALWAYS_INLINE JLMutexHandler JLCreateMutex() {
 
 	#if defined XP_WIN
 		return CreateMutex(NULL, FALSE, NULL);
@@ -460,12 +477,12 @@ inline unsigned int JLSessionId() {
 	#endif
 	}
 
-	inline bool JLMutexOk( JLMutexHandler mutex ) {
+	ALWAYS_INLINE bool JLMutexOk( JLMutexHandler mutex ) {
 
 		return mutex != (JLMutexHandler)0;
 	}
 
-	inline bool JLAcquireMutex( JLMutexHandler mutex ) {
+	ALWAYS_INLINE bool JLAcquireMutex( JLMutexHandler mutex ) {
 
 		if ( !JLMutexOk(mutex) )
 			return false;
@@ -479,7 +496,7 @@ inline unsigned int JLSessionId() {
 		return true;
 	}
 
-	inline bool JLReleaseMutex( JLMutexHandler mutex ) {
+	ALWAYS_INLINE bool JLReleaseMutex( JLMutexHandler mutex ) {
 
 		if ( !JLMutexOk(mutex) )
 			return false;
@@ -493,7 +510,7 @@ inline unsigned int JLSessionId() {
 		return true;
 	}
 
-	inline bool JLFreeMutex( JLMutexHandler *pMutex ) {
+	ALWAYS_INLINE bool JLFreeMutex( JLMutexHandler *pMutex ) {
 
 		if ( !pMutex || !JLMutexOk(*pMutex) )
 			return false;
@@ -533,12 +550,12 @@ inline unsigned int JLSessionId() {
 	#endif
 
 
-	inline bool JLThreadOk( JLThreadHandler thread ) {
+	ALWAYS_INLINE bool JLThreadOk( JLThreadHandler thread ) {
 
 		return thread != (JLThreadHandler)0;
 	}
 
-	inline JLThreadHandler JLThreadStart( JLThreadRoutine threadRoutine, void *pv ) {
+	ALWAYS_INLINE JLThreadHandler JLThreadStart( JLThreadRoutine threadRoutine, void *pv ) {
 
 	#if defined XP_WIN
 		return CreateThread(NULL, 0, threadRoutine, pv, 0, NULL); // (TBD) need THREAD_TERMINATE ?
@@ -556,7 +573,7 @@ inline unsigned int JLSessionId() {
 	#endif
 	}
 
-	inline void JLThreadExit() {
+	ALWAYS_INLINE void JLThreadExit() {
 
 	#if defined XP_WIN
 		ExitThread(0);
@@ -565,7 +582,7 @@ inline unsigned int JLSessionId() {
 	#endif
 	}
 
-	inline bool JLThreadCancel( JLThreadHandler thread ) {
+	ALWAYS_INLINE bool JLThreadCancel( JLThreadHandler thread ) {
 
 	#if defined XP_WIN
 		if ( TerminateThread(thread, 0) == 0 ) // doc. The handle must have the THREAD_TERMINATE access right. ... Use the GetExitCodeThread function to retrieve a thread's exit value.
@@ -578,7 +595,7 @@ inline unsigned int JLSessionId() {
 	}
 
 
-	inline void JLThreadPriority( JLThreadHandler thread, JLThreadPriorityType priority ) {
+	ALWAYS_INLINE void JLThreadPriority( JLThreadHandler thread, JLThreadPriorityType priority ) {
 
 	#if defined XP_WIN
 		SetThreadPriority(thread, priority);
@@ -594,7 +611,7 @@ inline unsigned int JLSessionId() {
 	#endif
 	}
 
-	inline bool JLThreadIsActive( JLThreadHandler thread ) { //(TBD) how to manage errors ?
+	ALWAYS_INLINE bool JLThreadIsActive( JLThreadHandler thread ) { //(TBD) how to manage errors ?
 
 		if ( !JLThreadOk(thread) )
 			return false;
@@ -609,7 +626,7 @@ inline unsigned int JLSessionId() {
 	#endif
 	}
 
-	inline bool JLWaitThread( JLThreadHandler thread ) {
+	ALWAYS_INLINE bool JLWaitThread( JLThreadHandler thread ) {
 
 		if ( !JLThreadOk(thread) )
 			return false;
@@ -624,7 +641,7 @@ inline unsigned int JLSessionId() {
 		return true;
 	}
 
-	inline bool JLFreeThread( JLThreadHandler *pThread ) {
+	ALWAYS_INLINE bool JLFreeThread( JLThreadHandler *pThread ) {
 
 		if ( !pThread || !JLThreadOk(*pThread) )
 			return false;
@@ -647,7 +664,7 @@ inline unsigned int JLSessionId() {
 	typedef void* JLLibraryHandler;
 #endif
 
-	inline JLLibraryHandler JLDynamicLibraryOpen( const char *filename ) {
+	ALWAYS_INLINE JLLibraryHandler JLDynamicLibraryOpen( const char *filename ) {
 
 	#if defined XP_WIN
 		return LoadLibrary(filename);
@@ -658,12 +675,12 @@ inline unsigned int JLSessionId() {
 	#endif
 	}
 
-	inline bool JLDynamicLibraryOk( JLLibraryHandler libraryHandler ) {
+	ALWAYS_INLINE bool JLDynamicLibraryOk( JLLibraryHandler libraryHandler ) {
 
 		return libraryHandler != (JLLibraryHandler)0;
 	}
 
-	inline void JLDynamicLibraryLastErrorMessage( char *message, size_t maxLength ) {
+	ALWAYS_INLINE void JLDynamicLibraryLastErrorMessage( char *message, size_t maxLength ) {
 
 	#if defined XP_WIN
 		DWORD errorCode = ::GetLastError();
@@ -688,7 +705,7 @@ inline unsigned int JLSessionId() {
 	#endif
 	}
 
-	inline void *JLDynamicLibrarySymbol( JLLibraryHandler libraryHandler, const char *symbolName ) {
+	ALWAYS_INLINE void *JLDynamicLibrarySymbol( JLLibraryHandler libraryHandler, const char *symbolName ) {
 
 	#if defined XP_WIN
 		return (void*)GetProcAddress(libraryHandler, symbolName);
@@ -698,7 +715,7 @@ inline unsigned int JLSessionId() {
 	#endif
 	}
 
-	inline bool JLDynamicLibraryClose( JLLibraryHandler *libraryHandler ) {
+	ALWAYS_INLINE bool JLDynamicLibraryClose( JLLibraryHandler *libraryHandler ) {
 
 	#if defined XP_WIN
 		if ( FreeLibrary(*libraryHandler) == 0 )

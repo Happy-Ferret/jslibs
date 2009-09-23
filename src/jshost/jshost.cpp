@@ -347,6 +347,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 		}
 	}
 
+	DisableMemoryFree();
 	DestroyHost(cx);
 	JS_ShutDown();
 
