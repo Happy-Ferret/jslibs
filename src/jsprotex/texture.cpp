@@ -434,7 +434,8 @@ DEFINE_CONSTRUCTOR() {
 	JL_SetPrivate(cx, obj, tex);
 	JL_CHK( SetBufferGetInterface(cx, obj, NativeInterfaceBufferGet) );
 
-	jsval *arg1 = &JL_ARG(1); // optimization
+	jsval *arg1;
+	arg1 = &JL_ARG(1); // optimization
 
 	if ( JL_ARGC >= 3 ) {
 
@@ -1421,7 +1422,8 @@ DEFINE_FUNCTION_FAST( Set ) {
 	size = tex->width * tex->height * channels;
 	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
 
-	jsval *arg1 = &JL_FARG(1);
+	jsval *arg1;
+	arg1 = &JL_FARG(1);
 
 //	if ( JSVAL_IS_NUMBER(*arg1) || JsvalIsArray(cx, *arg1) || JSVAL_IS_STRING(*arg1) ) {
 //	}
@@ -1496,7 +1498,8 @@ DEFINE_FUNCTION_FAST( Add ) {
 		factor = 1.;
 
 	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
-	jsval *arg1 = &JL_FARG(1);
+	jsval *arg1;
+	arg1 = &JL_FARG(1);
 
 	if ( JSVAL_IS_NUMBER(*arg1) ) {
 
@@ -1578,7 +1581,8 @@ DEFINE_FUNCTION_FAST( Mult ) {
 	channels = tex->channels;
 
 	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
-	jsval *arg1 = &JL_FARG(1);
+	jsval *arg1;
+	arg1 = &JL_FARG(1);
 
 	if ( JSVAL_IS_NUMBER(*arg1) ) {
 
@@ -4122,7 +4126,8 @@ DEFINE_FUNCTION_FAST( GetPixelAt ) {
 	BorderMode borderMode;
 	JL_CHK( JsvalToBorderMode(cx, JL_FSARG(3), &borderMode) );
 
-	PTYPE *pos = PosByMode(tex, sx, sy, borderMode);
+	PTYPE *pos;
+	pos = PosByMode(tex, sx, sy, borderMode);
 	if (likely( pos != NULL ))
 		return FloatVectorToJsval(cx, pos, tex->channels, JL_FRVAL);
 

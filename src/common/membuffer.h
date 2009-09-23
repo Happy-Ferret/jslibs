@@ -15,8 +15,8 @@
 #ifndef _MEMBUFFER_H_
 #define _MEMBUFFER_H_
 
-#include "stdafx.h"
-#include "../jslang/handlepub.h"
+//#include "stdafx.h"
+#include "../jslang/handlePub.h"
 
 
 struct MemBuffer;

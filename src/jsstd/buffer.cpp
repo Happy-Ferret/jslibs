@@ -624,7 +624,8 @@ DEFINE_FUNCTION_FAST( Write ) {
 	JL_S_ASSERT_ARG_RANGE(1, 2);
 	
 	*JL_FRVAL = JSVAL_VOID;
-	jsval *arg1 = &JL_FARG(1);
+	jsval *arg1;
+	arg1 = &JL_FARG(1);
 
 	if ( JSVAL_IS_VOID(*arg1) ) {
 
@@ -757,7 +758,8 @@ DEFINE_FUNCTION( Skip ) { // Skip( amount )
 	unsigned int amount;
 	JL_CHK( JsvalToUInt(cx, JL_ARG(1), &amount) );
 	JL_S_ASSERT( amount >= 0, "Invalid amount" );
-	unsigned int tmp = amount;
+	unsigned int tmp;
+	tmp = amount;
 	JL_CHK( BufferSkipAmount(cx, obj, &tmp) );
 	return UIntToJsval(cx, amount - tmp, JL_RVAL);
 	JL_BAD;

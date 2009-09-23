@@ -401,20 +401,20 @@ ALWAYS_INLINE JSStackFrame *JL_StackFrameByIndex(JSContext *cx, int frameIndex) 
 
 ALWAYS_INLINE bool JsvalIsNaN( JSContext *cx, jsval val ) {
 
-	JS_ASSERT( sizeof(__int64) == sizeof(double) );
-	return JSVAL_IS_DOUBLE(val) && *(__int64*)JSVAL_TO_DOUBLE(val) == *(__int64*)cx->runtime->jsNaN;
+	JS_ASSERT( sizeof(uint64_t) == sizeof(double) );
+	return JSVAL_IS_DOUBLE(val) && *(uint64_t*)JSVAL_TO_DOUBLE(val) == *(uint64_t*)cx->runtime->jsNaN;
 }
 
 ALWAYS_INLINE bool JsvalIsPInfinity( JSContext *cx, jsval val ) {
 
-	JS_ASSERT( sizeof(__int64) == sizeof(double) );
-	return JSVAL_IS_DOUBLE(val) && *(__int64*)JSVAL_TO_DOUBLE(val) == *(__int64*)cx->runtime->jsPositiveInfinity;
+	JS_ASSERT( sizeof(uint64_t) == sizeof(double) );
+	return JSVAL_IS_DOUBLE(val) && *(uint64_t*)JSVAL_TO_DOUBLE(val) == *(uint64_t*)cx->runtime->jsPositiveInfinity;
 }
 
 ALWAYS_INLINE bool JsvalIsNInfinity( JSContext *cx, jsval val ) {
 
-	JS_ASSERT( sizeof(__int64) == sizeof(double) );
-	return JSVAL_IS_DOUBLE(val) && *(__int64*)JSVAL_TO_DOUBLE(val) == *(__int64*)cx->runtime->jsNegativeInfinity;
+	JS_ASSERT( sizeof(uint64_t) == sizeof(double) );
+	return JSVAL_IS_DOUBLE(val) && *(uint64_t*)JSVAL_TO_DOUBLE(val) == *(uint64_t*)cx->runtime->jsNegativeInfinity;
 }
 
 
