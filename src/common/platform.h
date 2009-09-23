@@ -300,7 +300,7 @@ ALWAYS_INLINE unsigned int JLSessionId() {
 
 #if defined XP_UNIX
 // see http://www.gnu.org/software/libtool/manual/libc/Hooks-for-Malloc.html
-void _jl_free(void *ptr, const void *caller) {
+static void _jl_free(void *ptr, const void *caller) {
 }
 
 ALWAYS_INLINE void DisableMemoryFree() {
