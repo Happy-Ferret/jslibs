@@ -1376,8 +1376,8 @@ TryNotes(JSContext *cx, JSScript *script, FILE *gOutFile)
     if (script->trynotesOffset == 0)
         return JS_TRUE;
 
-    tn = JS_SCRIPT_TRYNOTES(script)->vector;
-    tnlimit = tn + JS_SCRIPT_TRYNOTES(script)->length;
+    tn = script->trynotes()->vector;
+    tnlimit = tn + script->trynotes()->length;
     fprintf(gOutFile, "\nException table:\n"
             "kind      stack    start      end\n");
     do {

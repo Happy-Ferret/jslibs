@@ -85,7 +85,7 @@ struct HostPrivate {
 
 
 ALWAYS_INLINE jsid GetPrivateJsid( JSContext *cx, HostPrivate *hostPrivate, const char *name, int index ) {
-	
+
 	jsid id = hostPrivate->ids[index];
 	if (likely( id != 0 ))
 		return id;
@@ -308,8 +308,8 @@ JL_MACRO_END
 #define JL_S_ASSERT_CLASS(jsObject, jsClass) \
 	JL_S_ASSERT( (jsObject) != NULL && JL_GetClass(jsObject) == (jsClass), J__ERRMSG_INVALID_CLASS " %s expected.", (jsClass)->name )
 
-#define JL_S_ASSERT_CLASS_NAME(jsObject, className) \
-	JL_S_ASSERT( IsClassName(jsObject, className), J__ERRMSG_INVALID_CLASS " %s expected.", className )
+//#define JL_S_ASSERT_CLASS_NAME(jsObject, className) \
+//	JL_S_ASSERT( IsClassName(jsObject, className), J__ERRMSG_INVALID_CLASS " %s expected.", className )
 
 #define JL_S_ASSERT_THIS_CLASS() \
 	JL_S_ASSERT_CLASS(obj, _class)
@@ -331,15 +331,12 @@ JL_MACRO_END
 // helper macros to avoid a function call to the jsapi
 
 ALWAYS_INLINE JSClass* JL_GetClass(JSObject *obj) {
-	
-	#ifdef DEBUG
-		JS_ASSERT( STOBJ_GET_CLASS(obj) == JS_GetClass(obj) ); // Mozilla JS engine private API behavior has changed.
-	#endif //DEBUG
-	return STOBJ_GET_CLASS(obj); // JS_GET_CLASS(cx, obj);
+
+	return obj->getClass();
 }
 
 ALWAYS_INLINE unsigned int JL_GetStringLength(JSString *jsstr) {
-	
+
 	return jsstr->length();
 }
 
@@ -402,7 +399,7 @@ ALWAYS_INLINE JSStackFrame *JL_StackFrameByIndex(JSContext *cx, int frameIndex) 
 ALWAYS_INLINE bool JsvalIsNaN( JSContext *cx, jsval val ) {
 
 	JS_ASSERT( sizeof(uint64_t) == sizeof(double) );
-	return JSVAL_IS_DOUBLE(val) && *(uint64_t*)JSVAL_TO_DOUBLE(val) == *(uint64_t*)cx->runtime->jsNaN;
+	return JSVAL_IS_DOUBLE(val) && *(uint64_t*)JSVAL_TO_DOUBLE(val) == *(uint64_t*)cx->runtime->jsNaN; // see also JS_SameValue
 }
 
 ALWAYS_INLINE bool JsvalIsPInfinity( JSContext *cx, jsval val ) {
@@ -440,13 +437,6 @@ ALWAYS_INLINE bool JsvalIsArray( JSContext *cx, jsval val ) {
 // Is string or has jslibs BufferGet interface (including Blob).
 //#define JL_JSVAL_IS_STRING(val) ( JSVAL_IS_STRING(val) || (!JSVAL_IS_PRIMITIVE(val) && BufferGetInterface(cx, JSVAL_TO_OBJECT(val)) != NULL) ) // || JL_GetClass(JSVAL_TO_OBJECT(val)) == &js_StringClass
 
-#define JL_VALUE_IS_STRING_OBJECT(cx, val) (!JSVAL_IS_PRIMITIVE(val) && JL_GetClass(JSVAL_TO_OBJECT(val)) == GetHostPrivate(cx)->stringObjectClass)
-
-ALWAYS_INLINE bool JsvalIsData( JSContext *cx, jsval val ) {
-
-	return ( JSVAL_IS_STRING(val) || !JSVAL_IS_PRIMITIVE(val) && BufferGetInterface(cx, JSVAL_TO_OBJECT(val)) != NULL || JL_VALUE_IS_STRING_OBJECT(cx, val) );
-}
-
 
 ALWAYS_INLINE JSClass* JL_GetStringClass( JSContext *cx ) {
 
@@ -455,6 +445,14 @@ ALWAYS_INLINE JSClass* JL_GetStringClass( JSContext *cx ) {
 		return JL_GetClass(emptyStringObject);
 	return NULL;
 }
+
+#define JL_VALUE_IS_STRING_OBJECT(cx, val) (!JSVAL_IS_PRIMITIVE(val) && JL_GetClass(JSVAL_TO_OBJECT(val)) == GetHostPrivate(cx)->stringObjectClass)
+
+ALWAYS_INLINE bool JsvalIsData( JSContext *cx, jsval val ) {
+
+	return ( JSVAL_IS_STRING(val) || !JSVAL_IS_PRIMITIVE(val) && BufferGetInterface(cx, JSVAL_TO_OBJECT(val)) != NULL || JL_VALUE_IS_STRING_OBJECT(cx, val) );
+}
+
 
 /*
 ALWAYS_INLINE bool JL_IsAssigningCallResult( JSContext *cx ) {
@@ -469,7 +467,7 @@ ALWAYS_INLINE bool JL_IsAssigningCallResult( JSContext *cx ) {
 	#include "jsopcode.tbl"
 	#undef OPDEF
 	};
-	
+
 	JSStackFrame *fp = JL_CurrentStackFrame(cx);
 	if ( !fp || !fp->regs || !fp->script )
 		return false;
@@ -479,7 +477,7 @@ ALWAYS_INLINE bool JL_IsAssigningCallResult( JSContext *cx ) {
 		return false;
 
 	// miss: var c = Test()[1];
-	
+
 	return (codeSpec[*pc].format & JOF_SET) || *pc == JSOP_ITER || *pc == JSOP_DUP;
 }
 */
@@ -500,10 +498,10 @@ ALWAYS_INLINE bool JsvalIsClass( jsval val, JSClass *jsClass ) {
 	return !JSVAL_IS_PRIMITIVE(val) && JL_GetClass(JSVAL_TO_OBJECT(val)) == jsClass;
 }
 
-ALWAYS_INLINE bool IsClassName( JSObject *obj, const char *name ) {
-
-	return obj != NULL && strcmp(JL_GetClass(obj)->name, name) == 0;
-}
+//ALWAYS_INLINE bool IsClassName( JSObject *obj, const char *name ) {
+//
+//	return obj != NULL && strcmp(JL_GetClass(obj)->name, name) == 0;
+//}
 
 /*
 ALWAYS_INLINE bool HasProperty( JSContext *cx, JSObject *obj, const char *propertyName ) {
@@ -584,7 +582,6 @@ ALWAYS_INLINE JSBool JL_ValueOf( JSContext *cx, jsval *val, jsval *rval ) {
 		*rval = *val;
 		return JS_TRUE;
 	}
-//		return OBJ_DEFAULT_VALUE(cx, JSVAL_TO_OBJECT(*val), JSTYPE_VOID, rval); // JS_CallFunctionName(cx, JSVAL_TO_OBJECT(*val), "valueOf", 0, NULL, rval)
 	return JSVAL_TO_OBJECT(*val)->defaultValue(cx, JSTYPE_VOID, rval);
 }
 
@@ -810,7 +807,7 @@ inline bool JsvalIsDataBuffer( JSContext *cx, jsval val ) {
 */
 
 ALWAYS_INLINE bool JL_ValueIsBlob( JSContext *cx, jsval v ) {
-	
+
 	if ( JSVAL_IS_PRIMITIVE(v) )
 		return false;
 	return JL_GetClass(JSVAL_TO_OBJECT(v)) == JL_GetRegistredNativeClass(cx, "Blob");
@@ -821,7 +818,7 @@ ALWAYS_INLINE bool JL_ValueIsBlob( JSContext *cx, jsval v ) {
 ALWAYS_INLINE JSBool JL_NewBlob( JSContext *cx, void* buffer, unsigned int length, jsval *vp ) {
 
 	if (unlikely( length == 0 )) { // Empty Blob must acts like an empty string: !'' === true
-		
+
 		if ( buffer )
 			JS_free(cx, buffer);
 		*vp = JS_GetEmptyStringValue(cx);
@@ -846,7 +843,7 @@ ALWAYS_INLINE JSBool JL_NewBlob( JSContext *cx, void* buffer, unsigned int lengt
 	jsstr = JS_NewString(cx, (char*)buffer, length); // JS_NewString takes ownership of bytes on success, avoiding a copy; but on error (signified by null return), it leaves bytes owned by the caller. So the caller must free bytes in the error case, if it has no use for them.
 	JL_CHK( jsstr );
 	*vp = STRING_TO_JSVAL(jsstr); // protect from GC.
-	
+
 	JSObject *strObj;
 	JL_CHK( JS_ValueToObject(cx, STRING_TO_JSVAL(jsstr), &strObj) ); // see. OBJ_DEFAULT_VALUE(cx, obj, JSTYPE_OBJECT, &v)
 	*vp = OBJECT_TO_JSVAL(strObj);
@@ -1193,7 +1190,7 @@ ALWAYS_INLINE JSBool IntVectorToJsval( JSContext *cx, int *vector, uint32 length
 
 	JSObject *arrayObj;
 	if ( useValArray ) {
-		
+
 		JL_S_ASSERT_OBJECT(*val);
 		arrayObj = JSVAL_TO_OBJECT(*val);
 	} else {
@@ -1236,7 +1233,7 @@ ALWAYS_INLINE JSBool UIntVectorToJsval( JSContext *cx, unsigned int *vector, uin
 
 	JSObject *arrayObj;
 	if ( useValArray ) {
-		
+
 		JL_S_ASSERT_OBJECT(*val);
 		arrayObj = JSVAL_TO_OBJECT(*val);
 	} else {
@@ -1279,7 +1276,7 @@ ALWAYS_INLINE JSBool FloatVectorToJsval( JSContext *cx, const float *vector, uin
 
 	JSObject *arrayObj;
 	if ( reuseValArray ) {
-		
+
 		JL_S_ASSERT_OBJECT(*val);
 		arrayObj = JSVAL_TO_OBJECT(*val);
 	} else {
@@ -1321,7 +1318,7 @@ ALWAYS_INLINE JSBool DoubleVectorToJsval( JSContext *cx, const double *vector, u
 
 	JSObject *arrayObj;
 	if ( reuseValArray ) {
-		
+
 		JL_S_ASSERT_OBJECT(*val);
 		arrayObj = JSVAL_TO_OBJECT(*val);
 	} else {
@@ -1531,7 +1528,7 @@ ALWAYS_INLINE JSBool UnserializeJsval( JSContext *cx, const Serialized *xdr, jsv
 	JL_BAD;
 }
 
-// 
+//
 
 ALWAYS_INLINE JSBool SetNativeFunction( JSContext *cx, JSObject *obj, const char *name, void *nativeFct ) {
 
@@ -1768,7 +1765,7 @@ inline NIMatrix44Get Matrix44GetInterface( JSContext *cx, JSObject *obj ) {
 
 /*
 	jsval res;
-	jsid propId = GetPrivateJsid(cx, GetHostPrivate(cx), "GetMatrix", PRIVATE_JSID_GetMatrix);	
+	jsid propId = GetPrivateJsid(cx, GetHostPrivate(cx), "GetMatrix", PRIVATE_JSID_GetMatrix);
 	if ( obj->getProperty(cx, propId, &res) != JS_TRUE != JS_TRUE || !JsvalIsFunction(cx, res) )
 		return NULL;
 	return JSMatrix44Get;
@@ -1794,7 +1791,7 @@ inline JSBool JsvalToMatrix44( JSContext *cx, jsval val, float **m ) {
 	matrixObj = JSVAL_TO_OBJECT(val);
 
 	if ( JSVAL_IS_NULL(val) ) {
-		
+
 		memcpy(*m, &Matrix44IdentityValue, sizeof(Matrix44IdentityValue));
 		return JS_TRUE;
 	}
@@ -1813,7 +1810,7 @@ inline JSBool JsvalToMatrix44( JSContext *cx, jsval val, float **m ) {
 
 			JL_CHK( JsvalToFloatVector(cx, element, (*m)+0, 4, &length ) );
 			JL_S_ASSERT( length == 4, "Too few (%d) elements in the array.", length );
-			
+
 			JL_CHK( JS_GetElement(cx, JSVAL_TO_OBJECT(val), 1, &element) );
 			JL_S_ASSERT_ARRAY( element );
 			JL_CHK( JsvalToFloatVector(cx, element, (*m)+4, 4, &length ) );

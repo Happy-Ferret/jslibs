@@ -1,14 +1,11 @@
 // LoadModule('jsstd');  LoadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\n' ) } };  Exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
-LoadModule('jsdebug');
-LoadModule('jsstd');
-
 
 
 var b = new Blob('abcde');
-b.replace
-Print( b.constructor )
+for ( var i = 0; i < 2; i++ )
+	b.constructor;
 
-Halt();
+throw 0;
 
 
 

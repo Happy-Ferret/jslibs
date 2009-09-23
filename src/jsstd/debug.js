@@ -2,6 +2,17 @@ LoadModule('jsstd');
 LoadModule('jsio');
 LoadModule('jsdebug');
 
+
+
+var s = new Buffer();
+for ( var i = 0; i < 2; i++ )
+	s.constructor;
+
+
+Halt(); //////////////////////////////
+
+
+
 	var o = {
 		Read: function(size) { return undefined }
 	}

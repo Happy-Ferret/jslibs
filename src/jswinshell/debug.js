@@ -1,8 +1,20 @@
 // LoadModule('jsstd');  LoadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\n' ) } };  Exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
 
 LoadModule('jsstd');
-LoadModule('jsimage');
 LoadModule('jswinshell');
+
+
+var b = new Array();
+for ( var i = 0; i < 2; i++ )
+	b.pop;
+
+Print('Done.\n')
+
+throw 0;
+
+
+
+Halt(); //////////////////////////////////////////////////////////////////////
 
 
   var dch = DirectoryChangesInit('C:\\WINDOWS', 16, true);

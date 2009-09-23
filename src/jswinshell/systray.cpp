@@ -335,6 +335,9 @@ DEFINE_CONSTRUCTOR() {
 
 DEFINE_FINALIZE() {
 
+	if ( obj == *_prototype )
+		return;
+
 	NOTIFYICONDATA *nid = (NOTIFYICONDATA*)JL_GetPrivate(cx, obj);
 	if ( !nid )
 		return;
@@ -456,6 +459,8 @@ DEFINE_FUNCTION( ProcessEvents ) {
 					} // switch lParam
 			} //  switch message
 		}
+
+		//JsvalToBool(cx, *rval, &exitBool)
 		JSBool boolValue;
 		JS_ValueToBoolean(cx, *rval, &boolValue );
 		if ( boolValue == JS_TRUE )
@@ -851,6 +856,9 @@ DEFINE_PROPERTY( menuGetter ) {
 CONFIGURE_CLASS
 
 	REVISION(JL_SvnRevToInt("$Revision$"))
+	HAS_PRIVATE
+	HAS_RESERVED_SLOTS(1)
+
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE
 
@@ -872,10 +880,6 @@ CONFIGURE_CLASS
 	BEGIN_STATIC_FUNCTION_SPEC
 		FUNCTION(Rect)
 	END_STATIC_FUNCTION_SPEC
-
-
-	HAS_PRIVATE
-	HAS_RESERVED_SLOTS(1)
 
 END_CLASS
 

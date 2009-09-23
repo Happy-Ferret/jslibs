@@ -71,17 +71,13 @@ DEFINE_CONSTRUCTOR() {
 		HINSTANCE hInst = (HINSTANCE)GetModuleHandle(NULL);
 		JSObject *imgObj = JSVAL_TO_OBJECT(iconVal);
 
-		JL_S_ASSERT_CLASS_NAME(imgObj, "Image"); // (TBD) need something better/safer ? like JsvalIsClass(iconVal, JL_GetRegistredNativeClass(cx, "Image"));
-		jsval tmp;
-		JS_GetProperty(cx, imgObj, "width", &tmp);
-		JL_S_ASSERT_INT(tmp);
-		int width = JSVAL_TO_INT(tmp);
-		JS_GetProperty(cx, imgObj, "height", &tmp);
-		JL_S_ASSERT_INT(tmp);
-		int height = JSVAL_TO_INT(tmp);
-		JS_GetProperty(cx, imgObj, "channels", &tmp);
-		JL_S_ASSERT_INT(tmp);
-		int channels = JSVAL_TO_INT(tmp);
+//		JL_S_ASSERT_CLASS_NAME(imgObj, "Image"); // (TBD) need something better/safer ? like JsvalIsClass(iconVal, JL_GetRegistredNativeClass(cx, "Image"));
+		JL_S_ASSERT( JsvalIsData(cx, iconVal), "Invalid image object." );
+
+		unsigned int width, height, channels, x, y;
+		JL_CHK( GetPropertyUInt(cx, imgObj, "width", &width) );
+		JL_CHK( GetPropertyUInt(cx, imgObj, "height", &height) );
+		JL_CHK( GetPropertyUInt(cx, imgObj, "channels", &channels) );
 		unsigned char *imageData = (unsigned char*)JL_GetPrivate(cx, imgObj);
 
 		// http://groups.google.com/group/microsoft.public.win32.programmer.gdi/browse_frm/thread/adaf38d715cef81/3825af9edde28cdc?lnk=st&q=RGB+CreateIcon&rnum=9&hl=en#3825af9edde28cdc
@@ -93,8 +89,8 @@ DEFINE_CONSTRUCTOR() {
 		HBITMAP oldColorBMP = (HBITMAP)SelectObject(colorDC, colorBMP);
 		HBITMAP oldMaskBMP = (HBITMAP)SelectObject(maskDC, maskBMP);
 
-		for ( int x = 0; x < width; x++ )
-			for ( int y = 0; y < width; y++ ) {
+		for ( x = 0; x < width; x++ )
+			for ( y = 0; y < width; y++ ) {
 
 				unsigned char *offset = imageData + channels*(x + y * width);
 				SetPixel(colorDC, x,y, RGB(offset[0],offset[1],offset[2]) );

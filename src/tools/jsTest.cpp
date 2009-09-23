@@ -120,6 +120,24 @@ my_ErrorReporter(JSContext *cx, const char *message, JSErrorReport *report)
 }
 
 
+
+static void MyFinalize(JSContext *cx, JSObject *obj) {
+	
+	printf("Finalize\n");
+}
+
+static JSBool MyConstructor(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+	
+	return JS_TRUE;
+}
+
+static JSBool MyFunction(JSContext *cx, uintN argc, jsval *vp) {
+
+	return JS_TRUE;
+}
+
+extern bool _unsafeMode = false;
+
 int main(int argc, char* argv[]) {
 
 
@@ -127,29 +145,67 @@ int main(int argc, char* argv[]) {
 	JS_SetGCParameter(rt, JSGC_MAX_BYTES, (uint32)-1);
 	JS_SetGCParameter(rt, JSGC_MAX_MALLOC_BYTES, (uint32)-1);
 	JSContext *cx = JS_NewContext(rt, 8192L);
-	JS_SetVersion(cx, (JSVersion)JSVERSION_LATEST);
-//	JS_SetErrorReporter(cx, my_ErrorReporter);
 
 	JSObject *globalObject = JS_NewObject(cx, NULL, NULL, NULL);
 	JS_SetGlobalObject(cx, globalObject);
 	JS_InitStandardClasses(cx, globalObject);
 
-	JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_VAROBJFIX );
+	JS_SetScriptStackQuota(cx, JS_DEFAULT_SCRIPT_STACK_QUOTA);
+	JS_SetVersion(cx, (JSVersion)JSVERSION_LATEST);
+	JS_SetErrorReporter(cx, my_ErrorReporter);
+	JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_STRICT | JSOPTION_VAROBJFIX | JSOPTION_XML | JSOPTION_JIT | JSOPTION_COMPILE_N_GO);
 
-//	char scriptSrc[] = "for ( var i = 0; i < 100000; i++ ) [1];";
+	globalObject->defineProperty(cx, ATOM_TO_JSID(JS_GetRuntime(cx)->atomState.typeAtoms[JSTYPE_VOID]), JSVAL_VOID, NULL, NULL, JSPROP_PERMANENT | JSPROP_READONLY);
 
+	static JSExtendedClass myClass = { { "MyClass", JSCLASS_HAS_RESERVED_SLOTS(1) | JSCLASS_HAS_PRIVATE, JS_PropertyStub , JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_EnumerateStub, JS_ResolveStub , JS_ConvertStub, MyFinalize, JSCLASS_NO_OPTIONAL_MEMBERS }, 0 };
+
+	JSFunctionSpec fs[] = { JS_FN( "MyFunction", MyFunction, 0, 0 ), {0} };
+	JSObject *proto = JS_InitClass(cx, globalObject, NULL, &myClass.base, MyConstructor, 0, NULL, fs, NULL, NULL);
+
+/*
+	jsval rv;
+	char scriptSrc[] = "var b = new String(); for ( var i = 0; i < 2; i++ ) b.substr";
+	JS_EvaluateScript(cx, globalObject, scriptSrc, strlen(scriptSrc), "test", 1, &rv);
+*/
+	
+	char scriptSrc[] = "var b = new String(); for ( var i = 0; i < 2; i++ ) b.substr";
+	JSScript *script = JS_CompileScript(cx, globalObject, scriptSrc, strlen(scriptSrc), "mytest.js", 1);
+	jsval rval;
+	JS_ExecuteScript(cx, globalObject, script, &rval);
+
+
+/*
+	char *fileName = "mytest.js";
+	FILE *scriptFile;
+	scriptFile = fopen(fileName, "r");
+	JSScript *script = JS_CompileFileHandle(cx, globalObject, fileName, scriptFile);
+	fclose(scriptFile);
+
+	jsval rval;
+	JS_ExecuteScript(cx, globalObject, script, &rval);
+*/
+
+
+
+/*
 jsval nan;
 char scriptSrc[] = "Number.NaN";
 JS_EvaluateScript(cx, globalObject, scriptSrc, strlen(scriptSrc), "test", 1, &nan); // "Access violation reading location 0xfffffffc." in TraceRecorder::lazilyImportGlobalSlot() (globalObj->dslots == NULL).
 
-bool res = JsvalIsNaN(cx, nan);
+
+double v1 = *JSVAL_TO_DOUBLE(JS_GetNaNValue(cx));
+double v2 = v1;
+
+
+/*
+s64_t s64;
+
+s64 = *(s64_t*)JSVAL_TO_DOUBLE(JS_GetNaNValue(cx));
 
 __int64 d1 = *(__int64*)JSVAL_TO_DOUBLE(JS_GetNaNValue(cx));
 __int64 d2 = *(__int64*)JSVAL_TO_DOUBLE(nan);
-
-
 res = d1 == d1;
-
+*/
 
 /*
 	JSScript *script = JS_CompileScript(cx, globalObject, scriptSrc, strlen(scriptSrc), "myScript", 1);

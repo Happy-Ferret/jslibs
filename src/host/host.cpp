@@ -564,6 +564,7 @@ JSBool DestroyHost( JSContext *cx ) {
 	//  - Is the only side effect of JS_DestroyContextNoGC that any finalizers I may have specified in custom objects will not get called ?
 	//  - Not if you destroy all contexts (whether by NoGC or not), destroy all runtimes, and call JS_ShutDown before exiting or hibernating.
 	//    The last JS_DestroyContext* API call will run a GC, no matter which API of that form you call on the last context in the runtime. /be
+	JS_CommenceRuntimeShutDown(rt);
 	JS_DestroyContext(cx);
 	JS_DestroyRuntime(rt);
 
@@ -617,7 +618,7 @@ JSBool ExecuteScriptFileName( JSContext *cx, const char *scriptFileName, bool co
 
 // arguments
 	JSObject *argsObj;
-	argsObj = JS_NewArrayObject(cx, 0, NULL);
+	argsObj = JS_NewArrayObject(cx, argc, NULL);
 	JL_CHKM( argsObj != NULL, "Unable to create argument array on the global object." );
 
 	JL_CHKM( JS_DefineProperty(cx, globalObject, NAME_GLOBAL_ARGUMENTS, OBJECT_TO_JSVAL(argsObj), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT), "unable to store the argument array." );
@@ -673,4 +674,3 @@ bad:
 	JS_SetOptions(cx, prevOpt);
 	return JS_FALSE;
 }
-

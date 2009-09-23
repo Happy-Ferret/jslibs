@@ -207,7 +207,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 				useFileBootstrapScript = true;
 				break;
 			case 'v': // version
-				fprintf( stderr, "Version r%d\n", JL_SvnRevToInt("$Revision$") );
+				fprintf( stderr, "Version r%d / %s\n", JL_SvnRevToInt("$Revision$"), JS_GetImplementationVersion() );
 				return EXIT_SUCCESS;
 			case '?': // help
 			case 'h': //
