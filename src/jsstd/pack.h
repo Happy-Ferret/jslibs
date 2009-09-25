@@ -12,6 +12,5 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-DECLARE_CLASS( Pack )
 
-#define SLOT_PACK_BUFFEROBJECT 0
+

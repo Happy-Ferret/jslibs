@@ -12,11 +12,7 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-DECLARE_CLASS( Buffer )
-
 JSBool WriteRawDataChunk( JSContext *cx, JSObject *obj, unsigned int amount, const char *str );
-
 JSBool ReadRawDataAmount( JSContext *cx, JSObject *obj, unsigned int *amount, char *str );
 JSBool ReadDataAmount( JSContext *cx, JSObject *obj, unsigned int amount, jsval *rval );
-
 JSBool UnReadRawDataChunk( JSContext *cx, JSObject *obj, char *data, unsigned int length );

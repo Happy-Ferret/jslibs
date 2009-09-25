@@ -23,18 +23,20 @@
 #include "../common/jsNames.h"
 #include "../common/jsConfiguration.h"
 #include "../common/errors.h"
-
-#include "../jslang/jslang.h"
+#include "../common/jslibsModule.h"
+#include "../common/jsClass.h"
 
 #include "host.h"
 
+JSBool jslangInit(JSContext *cx, JSObject *obj);
+
 extern bool _unsafeMode = false;
 
+
 JSErrorFormatString errorFormatString[J_ErrLimit] = {
-#define MSG_DEF(name, number, count, exception, format) \
-    { format, count, exception } ,
-#include "../common/errors.msg"
-#undef MSG_DEF
+	#define MSG_DEF(name, number, count, exception, format) { format, count, exception },
+	#include "../common/errors.msg"
+	#undef MSG_DEF
 };
 
 
@@ -280,7 +282,7 @@ static JSBool LoadModule(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, 
 */
 	HostPrivate *pv;
 	pv = GetHostPrivate(cx);
-	JL_S_ASSERT( pv != NULL, "Invalid host context." );
+	JL_S_ASSERT( pv, "Invalid host context private." );
 
 	JL_S_ASSERT( libFileName != NULL && *libFileName != '\0', "Invalid module filename." );
 	JLLibraryHandler module;
@@ -392,15 +394,8 @@ JSContext* CreateHost(size_t maxMem, size_t maxAlloc, size_t maybeGCInterval ) {
 	//   http://groups.google.com/group/mozilla.dev.tech.js-engine/browse_thread/thread/be9f404b623acf39/9efdfca81be99ca3
 
 	JS_SetScriptStackQuota(cx, JS_DEFAULT_SCRIPT_STACK_QUOTA); // good place to manage stack limit ( that is 32MB by default ). Btw, JS_SetScriptStackQuota ( see also JS_SetThreadStackLimit )
-
 	JS_SetVersion(cx, (JSVersion)JSVERSION_LATEST);
-
 	JS_SetErrorReporter(cx, ErrorReporter);
-
-	JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_VAROBJFIX | JSOPTION_XML | JSOPTION_JIT);
-
-//JS_SetOptions(cx, JS_GetOptions(cx) & ~JSOPTION_JIT);
-
 
 	// JSOPTION_VAROBJFIX:
 	//  Not quite: with JSOPTION_VAROBJFIX, both explicitly declared global
@@ -415,6 +410,7 @@ JSContext* CreateHost(size_t maxMem, size_t maxAlloc, size_t maybeGCInterval ) {
 	// JSOPTION_RELIMIT:
 	//  Throw exception on any regular expression which backtracks more than n^3 times, where n is length of the input string
 	// JSOPTION_JIT: "I think it's possible we'll remove even this little bit of API, and just have the JIT always-on. -j"
+	JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_VAROBJFIX | JSOPTION_XML /*| JSOPTION_RELIMIT*/ | JSOPTION_JIT);
 
 	JSObject *globalObject;
 	globalObject = JS_NewObject(cx, &global_class, NULL, NULL);
@@ -423,8 +419,8 @@ JSContext* CreateHost(size_t maxMem, size_t maxAlloc, size_t maybeGCInterval ) {
 	//	JS_SetGlobalObject(cx, globalObject); // not needed. Doc: As a side effect, JS_InitStandardClasses establishes obj as the global object for cx, if one is not already established.
 
 // Standard classes
-//	jsStatus = JS_InitStandardClasses(cx, globalObject); // use NULL instead of globalObject ?
-//	RT_HOST_MAIN_ASSERT( jsStatus == JS_TRUE, "unable to initialize standard classes." );
+	//	jsStatus = JS_InitStandardClasses(cx, globalObject); // use NULL instead of globalObject ?
+	//	RT_HOST_MAIN_ASSERT( jsStatus == JS_TRUE, "unable to initialize standard classes." );
 
 	JS_SetGlobalObject(cx, globalObject); // see LAZY_STANDARD_CLASSES
 
@@ -443,7 +439,6 @@ JSContext* CreateHost(size_t maxMem, size_t maxAlloc, size_t maybeGCInterval ) {
 		pv->watchDogThread = JLThreadStart(WatchDogThreadProc, cx);
 		JL_CHKM( JLSemaphoreOk(pv->watchDogSem) && JLThreadOk(pv->watchDogThread), "Unable to create the thread." );
 	}
-
 	return cx;
 
 bad:
@@ -456,8 +451,8 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostOutput stdOut, HostOutput s
 	HostPrivate *pv = GetHostPrivate(cx);
 	if ( pv == NULL ) { // in the case of CreateHost has not been called (because the caller wants to create and manage its own JS runtime)
 
-		pv = (HostPrivate*)malloc(sizeof(HostPrivate));
-		JL_S_ASSERT_ALLOC(pv);
+		pv = (HostPrivate*)malloc(sizeof(HostPrivate)); // beware: don't realloc, because WatchDogThreadProc points on it !!!
+		JL_S_ASSERT_ALLOC( pv );
 		memset(pv, 0, sizeof(HostPrivate)); // mandatory !
 		SetHostPrivate(cx, pv);
 	}
@@ -474,11 +469,10 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostOutput stdOut, HostOutput s
 	globalObject = JS_GetGlobalObject(cx);
 	JL_CHKM( globalObject != NULL, "Global object not found." );
 
-//	JSBool found;
-//	uintN attrs;
-//	JL_CHK( JS_GetPropertyAttributes(cx, globalObject, "undefined", &attrs, &found) );
-//	JL_CHK( JS_SetPropertyAttributes(cx, globalObject, "undefined", attrs | JSPROP_READONLY, &found) );
-//	JL_CHK( OBJ_DEFINE_PROPERTY(cx, globalObject, ATOM_TO_JSID(cx->runtime->atomState.typeAtoms[JSTYPE_VOID]), JSVAL_VOID, NULL, NULL, JSPROP_PERMANENT | JSPROP_READONLY, NULL) ); // see JS_InitStandardClasses() in jsapi.cpp
+	//	JSBool found;
+	//	uintN attrs;
+	//	JL_CHK( JS_GetPropertyAttributes(cx, globalObject, "undefined", &attrs, &found) );
+	//	JL_CHK( JS_SetPropertyAttributes(cx, globalObject, "undefined", attrs | JSPROP_READONLY, &found) );
 	JL_CHK( globalObject->defineProperty(cx, ATOM_TO_JSID(JS_GetRuntime(cx)->atomState.typeAtoms[JSTYPE_VOID]), JSVAL_VOID, NULL, NULL, JSPROP_PERMANENT | JSPROP_READONLY) ); // by default, undefined is only JSPROP_PERMANENT
 
 // creates a reference to the String object JSClass
@@ -499,9 +493,9 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostOutput stdOut, HostOutput s
 // global functions & properties
 	JL_CHKM( JS_DefineProperty( cx, globalObject, NAME_GLOBAL_GLOBAL_OBJECT, OBJECT_TO_JSVAL(JS_GetGlobalObject(cx)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ), "unable to define a property." );
 	JL_CHKM( JS_DefineFunction( cx, globalObject, GetHostPrivate(cx)->camelCase == 1 ? _NormalizeFunctionName(NAME_GLOBAL_FUNCTION_LOAD_MODULE) : NAME_GLOBAL_FUNCTION_LOAD_MODULE, LoadModule, 0, 0 ), "unable to define a property." );
-//	JL_CHKM( JS_DefineFunction( cx, globalObject, GetHostPrivate(cx)->camelCase == 1 ? _NormalizeFunctionName(NAME_GLOBAL_FUNCTION_UNLOAD_MODULE) : NAME_GLOBAL_FUNCTION_UNLOAD_MODULE, UnloadModule, 0, 0 ), "unable to define a property." );
+	// jslibs is not ready to support UnloadModule()
+	//	JL_CHKM( JS_DefineFunction( cx, globalObject, GetHostPrivate(cx)->camelCase == 1 ? _NormalizeFunctionName(NAME_GLOBAL_FUNCTION_UNLOAD_MODULE) : NAME_GLOBAL_FUNCTION_UNLOAD_MODULE, UnloadModule, 0, 0 ), "unable to define a property." );
 
-//	JL_CHK( SetConfigurationValue(cx, NAME_CONFIGURATION_UNSAFE_MODE, BOOLEAN_TO_JSVAL(_unsafeMode)) );
 	JL_CHK( SetConfigurationReadonlyValue(cx, NAME_CONFIGURATION_UNSAFE_MODE, unsafeMode ? JSVAL_TRUE : JSVAL_FALSE) );
 
 // support this: var prevStderr = _configuration.stderr; _configuration.stderr = function(txt) { file.Write(txt); prevStderr(txt) };
@@ -510,7 +504,6 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostOutput stdOut, HostOutput s
 	JL_CHK( SetConfigurationValue(cx, NAME_CONFIGURATION_STDOUT, value) );
 	value = OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunction(cx, (JSNative)JSDefaultStderrFunction, 1, JSFUN_FAST_NATIVE, NULL, NULL))); // If you do not assign a name to the function, it is assigned the name "anonymous".
 	JL_CHK( SetConfigurationValue(cx, NAME_CONFIGURATION_STDERR, value) );
-
 
 // init static modules
 	JL_CHKM( jslangInit(cx, globalObject), "Unable to initialize jslang." );
@@ -529,6 +522,7 @@ JSBool DestroyHost( JSContext *cx ) {
 //	ModuleReleaseAll(cx);
 
 	HostPrivate *pv = GetHostPrivate(cx);
+	JL_S_ASSERT( pv, "Invalid host context private." );
 
 	if ( JLThreadOk(pv->watchDogThread) ) {
 

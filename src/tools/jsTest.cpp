@@ -21,6 +21,7 @@
 #include <stdlib.h>
 #include <fcntl.h>
 
+extern bool _unsafeMode = false;
 #include "../common/jsHelper.h"
 
 
@@ -136,10 +137,7 @@ static JSBool MyFunction(JSContext *cx, uintN argc, jsval *vp) {
 	return JS_TRUE;
 }
 
-extern bool _unsafeMode = false;
-
-int main(int argc, char* argv[]) {
-
+int Test1() {
 
 	JSRuntime *rt = JS_NewRuntime(0);
 	JS_SetGCParameter(rt, JSGC_MAX_BYTES, (uint32)-1);
@@ -167,6 +165,9 @@ int main(int argc, char* argv[]) {
 	char scriptSrc[] = "var b = new String(); for ( var i = 0; i < 2; i++ ) b.substr";
 	JS_EvaluateScript(cx, globalObject, scriptSrc, strlen(scriptSrc), "test", 1, &rv);
 */
+
+	void *mem = JS_malloc(cx, 123);
+	JS_free(cx, mem);
 	
 	char scriptSrc[] = "var b = new String(); for ( var i = 0; i < 2; i++ ) b.substr";
 	JSScript *script = JS_CompileScript(cx, globalObject, scriptSrc, strlen(scriptSrc), "mytest.js", 1);
@@ -185,6 +186,15 @@ int main(int argc, char* argv[]) {
 	JS_ExecuteScript(cx, globalObject, script, &rval);
 */
 
+	JS_DestroyContext(cx);
+	JS_DestroyRuntime(rt);
+	JS_ShutDown();
+	return EXIT_SUCCESS;
+}
+
+
+
+int Test2() {
 
 
 /*
@@ -219,9 +229,36 @@ res = d1 == d1;
 	printf("gcBytes after: %d\n", rt->gcBytes );
 */	
 
-	JS_DestroyContext(cx);
-	JS_DestroyRuntime(rt);
-	JS_ShutDown();
+	return EXIT_SUCCESS;
+}
+
+/*
+void   __cdecl free(__inout_opt void * _Memory) {
+
+	
+}
+*/
+
+int Test3() {
+
+	
+
+//	void *mem = malloc(100);
+//	free(mem);
+
+
+	return EXIT_SUCCESS;
+}
+
+
+
+int main(int argc, char* argv[]) {
+
+
+
+	Test1();
+//	Test3();
+	//	return Test2();
 
 	return EXIT_SUCCESS;
 }

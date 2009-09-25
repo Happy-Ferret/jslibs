@@ -18,8 +18,6 @@
 
 #include "../common/jsNames.h"
 
-#include "static.h"
-
 #include "jsxdrapi.h"
 #include "jscntxt.h"
 #include <jsdbgapi.h>
@@ -107,7 +105,7 @@ DEFINE_FUNCTION_FAST( Expand ) {
 		tok = strstr(srcBegin, "$(");
 		if ( tok == NULL ) { // not found
 
-			chunk = (Chunk*)malloc(sizeof(Chunk));
+			chunk = (Chunk*)jl_malloc(sizeof(Chunk));
 			chunk->data = srcBegin;
 			chunk->length = srcEnd - srcBegin;
 			chunk->hasTvr = false;
@@ -116,7 +114,7 @@ DEFINE_FUNCTION_FAST( Expand ) {
 			break;
 		}
 
-		chunk = (Chunk*)malloc(sizeof(Chunk));
+		chunk = (Chunk*)jl_malloc(sizeof(Chunk));
 		chunk->data = srcBegin;
 		chunk->length = tok - srcBegin;
 		chunk->hasTvr = false;
@@ -143,7 +141,7 @@ DEFINE_FUNCTION_FAST( Expand ) {
 
 		if ( !JSVAL_IS_VOID( *JL_FRVAL ) ) {
 
-			chunk = (Chunk*)malloc(sizeof(Chunk));
+			chunk = (Chunk*)jl_malloc(sizeof(Chunk));
 			JS_PUSH_SINGLE_TEMP_ROOT(cx, *JL_FRVAL, &chunk->tvr);
 			chunk->hasTvr = true;
 			JL_CHKB( JsvalToStringAndLength(cx, &chunk->tvr.u.value, &chunk->data, &chunk->length), bad_free_stack );
@@ -167,7 +165,7 @@ DEFINE_FUNCTION_FAST( Expand ) {
 		memcpy(expandedString, chunk->data, chunk->length);
 		if ( chunk->hasTvr )
 			JS_POP_TEMP_ROOT(cx, &chunk->tvr);
-		free(chunk);
+		jl_free(chunk);
 	}
 
 	JSString *jsstr;
@@ -183,7 +181,7 @@ bad_free_stack:
 		Chunk *chunk = (Chunk*)jl::StackPop(&stack);
 		if ( chunk->hasTvr )
 			JS_POP_TEMP_ROOT(cx, &chunk->tvr);
-		free(chunk);
+		jl_free(chunk);
 	}
 bad:
 	return JS_FALSE;

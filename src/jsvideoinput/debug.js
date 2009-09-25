@@ -25,8 +25,8 @@ var key;
 while ( (key = GetKey()) != 27 ) {
 
 var t1 = TimeCounter();
-	CollectGarbage();
-Print( 'GC:',  (TimeCounter() - t1).toFixed(1), 'ms\n' );
+//CollectGarbage();
+//Print( 'GC:',  (TimeCounter() - t1).toFixed(1), 'ms\n' );
 
 
 	frame++;

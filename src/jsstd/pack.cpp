@@ -20,7 +20,10 @@
 
 #include "../common/jsConversionHelper.h"
 
+DECLARE_CLASS( Buffer )
+#define SLOT_PACK_BUFFEROBJECT 0
 #include "buffer.h"
+
 
 // #include <limits.h> // included by ../common/platform.h
 

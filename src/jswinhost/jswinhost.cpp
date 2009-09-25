@@ -62,6 +62,9 @@ static JSBool stdoutFunction(JSContext *cx, JSObject *obj, uintN argc, jsval *ar
 }
 */
 
+void hostDisabledFree( void *ptr ) {
+}
+
 int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow ) {
 
 	JSContext *cx = CreateHost(-1, -1, 0);
@@ -137,6 +140,7 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 		if ( JS_IsExceptionPending(cx) )
 			JS_ReportPendingException(cx); // see JSOPTION_DONT_REPORT_UNCAUGHT option.
 
+	JSLIBS_RegisterAllocFunctions(malloc, calloc, realloc, hostDisabledFree); // let the system free our memory.
 	DestroyHost(cx);
 	JS_ShutDown();
 
@@ -144,6 +148,10 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 
 	return 0;
 bad:
+	JSLIBS_RegisterAllocFunctions(malloc, calloc, realloc, hostDisabledFree); // let the system free our memory.
+	if ( cx )
+		DestroyHost(cx);
+	JS_ShutDown();
 	return -1;
 }
 

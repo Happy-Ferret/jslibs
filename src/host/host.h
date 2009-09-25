@@ -25,11 +25,6 @@
 #define NAME_CONFIGURATION_UNSAFE_MODE "unsafeMode"
 #define NAME_GLOBAL_ARGUMENTS "arguments"
 
-typedef JSBool (*ModuleInitFunction)(JSContext *, JSObject *);
-typedef JSBool (*ModuleReleaseFunction)(JSContext *cx);
-typedef void (*ModuleFreeFunction)(void);
-
-
 JSContext* CreateHost( size_t maxMem, size_t maxAlloc, size_t maybeGCInterval );
 JSBool InitHost( JSContext *cx, bool unsafeMode, HostOutput stdOut, HostOutput stdErr, void* userPrivateData );
 JSBool DestroyHost( JSContext *cx );

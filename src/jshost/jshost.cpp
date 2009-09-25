@@ -148,6 +148,89 @@ void DestroyScriptHook(JSContext *cx, JSScript *script, void *callerdata) {
 */
 
 
+
+void *head = NULL;
+int balance = 0;
+
+void* HostThreadedMalloc( size_t size ) {
+
+	if ( size < sizeof(void*) )
+		size = sizeof(void*);
+	return malloc(size);
+}
+
+void* HostThreadedCalloc( size_t num, size_t size ) {
+	
+	size = num * size;
+	if ( size < sizeof(void*) )
+		size = sizeof(void*);
+	return calloc(size, 1);
+}
+
+void* HostThreadedRealloc( void *ptr, size_t size ) {
+
+	if ( size < sizeof(void*) )
+		size = sizeof(void*);
+	return realloc(ptr, size);
+}
+
+void HostThreadedFree( void *ptr ) {
+
+	if (balance > 1000000) {
+
+		free(ptr);
+		return;
+	}
+	*(void**)ptr = head;
+	head = ptr;
+	balance++;
+}
+
+JLThreadFuncDecl MemoryFreeThreadProc( void *threadArg ) {
+	
+	void *next, *tmp;
+	for (;;) {
+
+		if ( !head || *(void**)head == NULL ) { // nothing to do, guess we will have nothing to do during 100ms
+		
+			SleepMilliseconds(100);
+			continue;
+		}
+
+//		printf("%d\n", balance);
+			
+		next = head;
+		tmp = *(void**)next;
+		*(void**)next = NULL;
+		
+		while ( tmp ) {
+			
+			next = *(void**)tmp;
+			free(tmp);
+			tmp = next;
+			balance--;
+		}
+	}
+	return 0;
+}
+
+JLThreadHandler memoryFreeThread;
+
+void BeginFreeThread() {
+
+	memoryFreeThread = JLThreadStart(MemoryFreeThreadProc, NULL);
+}
+
+void EndFreeThread() {
+	
+	JLThreadCancel(memoryFreeThread);
+	JLFreeThread(&memoryFreeThread);
+}
+
+void HostDisabledFree( void *ptr ) {
+}
+
+
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[]) for UNICODE
@@ -165,7 +248,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 
 	bool unsafeMode = false;
 	bool compileOnly = false;
-	float maybeGCInterval = 15; // seconds
+	float maybeGCInterval = 10; // seconds
 	int camelCase = 0; // 0:default, 1:lower, 2:upper
 	bool useFileBootstrapScript = false;
 
@@ -237,8 +320,15 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	signal(SIGTERM, Interrupt);
 #endif // XP_WIN
 
+	JSLIBS_RegisterAllocFunctions(malloc, calloc, realloc, HostThreadedFree); // let the system free our memory.
+
 	cx = CreateHost(maxMem, maxAlloc, maybeGCInterval * 1000);
 	HOST_MAIN_ASSERT( cx != NULL, "Unable to create a javascript execution context." );
+
+	GetHostPrivate(cx)->malloc = HostThreadedMalloc;
+	GetHostPrivate(cx)->calloc = HostThreadedCalloc;
+	GetHostPrivate(cx)->realloc = HostThreadedRealloc;
+	GetHostPrivate(cx)->free = HostThreadedFree;
 
 	GetHostPrivate(cx)->camelCase = camelCase;
 
@@ -285,8 +375,10 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 
 //	RT_HOST_MAIN_ASSERT( name != NULL, "unable to get module FileName." );
 
-	JL_CHK( JS_DefineProperty(cx, globalObject, NAME_GLOBAL_SCRIPT_HOST_PATH, STRING_TO_JSVAL(JS_NewStringCopyZ(cx, hostPath)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
-	JL_CHK( JS_DefineProperty(cx, globalObject, NAME_GLOBAL_SCRIPT_HOST_NAME, STRING_TO_JSVAL(JS_NewStringCopyZ(cx, hostName)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
+	JL_CHK( SetPropertyString(cx, globalObject, NAME_GLOBAL_SCRIPT_HOST_PATH, hostPath) );
+	JL_CHK( SetPropertyString(cx, globalObject, NAME_GLOBAL_SCRIPT_HOST_NAME, hostName) );
+
+	BeginFreeThread();
 
 	if ( sizeof(embeddedBootstrapScript)-1 ) {
 		
@@ -347,7 +439,8 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 		}
 	}
 
-	DisableMemoryFree();
+	GetHostPrivate(cx)->free = HostDisabledFree;
+	JSLIBS_RegisterAllocFunctions(malloc, calloc, realloc, HostDisabledFree); // let the system free our memory.
 	DestroyHost(cx);
 	JS_ShutDown();
 
@@ -365,11 +458,16 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	}
 #endif
 
+	EndFreeThread();
 	return exitValue;
 bad:
+
+	GetHostPrivate(cx)->free = HostDisabledFree;
+	JSLIBS_RegisterAllocFunctions(malloc, calloc, realloc, HostDisabledFree); // let the system free our memory.
 	if ( cx )
 		DestroyHost(cx);
 	JS_ShutDown();
+	EndFreeThread();
 	return EXIT_FAILURE;
 }
 

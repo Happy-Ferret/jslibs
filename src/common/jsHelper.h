@@ -49,7 +49,6 @@ inline NIBufferGet BufferGetInterface( JSContext *cx, JSObject *obj );
 #pragma warning( pop )
 #endif // _MSC_VER
 
-
 extern bool _unsafeMode;
 
 
@@ -75,7 +74,24 @@ struct HostPrivate {
 	jsid ids[8];
 	JSClass *stringObjectClass;
 	int camelCase;
+	void* (*malloc)( size_t size );
+	void* (*calloc)( size_t num, size_t size );
+	void* (*realloc)( void *ptr, size_t size );
+	void (*free)( void *ptr );
 };
+
+ALWAYS_INLINE HostPrivate* GetHostPrivate( JSContext *cx ) {
+
+//	return (HostPrivate*)JS_GetRuntimePrivate(JS_GetRuntime(cx));
+//	return reinterpret_cast<HostPrivate*>(cx->runtime->data);
+	return (HostPrivate*)cx->runtime->data;
+}
+
+ALWAYS_INLINE void SetHostPrivate( JSContext *cx, HostPrivate *hostPrivate ) {
+
+//	JS_SetRuntimePrivate(JS_GetRuntime(cx), hostPrivate);
+	cx->runtime->data = (void*)hostPrivate;
+}
 
 #define PRIVATE_JSID__NI_BufferGet 0
 #define PRIVATE_JSID__NI_StreamRead 1
@@ -99,18 +115,8 @@ ALWAYS_INLINE jsid GetPrivateJsid( JSContext *cx, HostPrivate *hostPrivate, cons
 }
 
 
-ALWAYS_INLINE HostPrivate* GetHostPrivate( JSContext *cx ) {
+//#define JL_HOST_PRIVATE
 
-//	return (HostPrivate*)JS_GetRuntimePrivate(JS_GetRuntime(cx));
-//	return reinterpret_cast<HostPrivate*>(cx->runtime->data);
-	return (HostPrivate*)cx->runtime->data;
-}
-
-ALWAYS_INLINE void SetHostPrivate( JSContext *cx, HostPrivate *hostPrivate ) {
-
-//	JS_SetRuntimePrivate(JS_GetRuntime(cx), hostPrivate);
-	cx->runtime->data = (void*)hostPrivate;
-}
 
 ///////////////////////////////////////////////////////////////////////////////
 // common error messages
@@ -485,7 +491,7 @@ ALWAYS_INLINE bool JL_IsAssigningCallResult( JSContext *cx ) {
 ALWAYS_INLINE bool JL_InheritFrom( JSContext *cx, JSObject *obj, JSClass *clasp ) {
 
 	while ( obj != NULL ) {
-
+		
 		obj = JS_GetPrototype(cx, obj);
 		if ( JL_GetClass(obj) == clasp )
 			return true;
@@ -1362,7 +1368,7 @@ ALWAYS_INLINE JSBool JsvalToDoubleVector( JSContext *cx, jsval val, double *vect
 
 ALWAYS_INLINE JSBool SetPropertyString( JSContext *cx, JSObject *obj, const char *propertyName, const char *str ) {
 
-	jsval val;
+	jsval val; // (TBD) need GC protection
 	JL_CHK( StringToJsval(cx, str, &val) );
 	JL_CHKM( JS_DefineProperty(cx, obj, propertyName, val, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ), "Unable to set the property." ); // Doc. http://developer.mozilla.org/en/docs/JS_DefineUCProperty
 	return JS_TRUE;

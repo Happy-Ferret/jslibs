@@ -3,6 +3,12 @@ LoadModule('jsio');
 LoadModule('jsdebug');
 
 
+var ids = '';
+var i = 0;
+var res = Expand('ab$(c)$(d)e$(f)g$(h)ij', function(id) { ids+=id; return i++ } );
+Print( (res +'-'+ ids), ' == ', 'ab01e2g3ij-cdfh', '\n' );
+Halt(); //////////////////////////////
+
 
 var s = new Buffer();
 for ( var i = 0; i < 2; i++ )
@@ -23,12 +29,6 @@ Halt(); //////////////////////////////
 		
 Halt(); //////////////////////////////
 
-
-var ids = '';
-var i = 0;
-var res = Expand('ab$(c)$(d)e$(f)g$(h)ij', function(id) { ids+=id; return i++ } );
-Print( (res +'-'+ ids), ' == ', 'ab01e2g3ij-cdfh', '\n' );
-Halt(); //////////////////////////////
 
 
 function setCallback() {

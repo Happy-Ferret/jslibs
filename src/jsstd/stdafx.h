@@ -15,6 +15,8 @@
 #include "../common/jsConfiguration.h"
 #include "../common/stack.h"
 
+#include "../common/jslibsModule.h"
+
 #include <errno.h>
 #include <string.h>
 #include <limits.h>

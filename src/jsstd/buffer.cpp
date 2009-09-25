@@ -22,10 +22,12 @@
 #include "stdafx.h"
 #include <cstring>
 
-#include "buffer.h"
-
 #include "../common/queue.h"
 #include "../jslang/blobPub.h"
+
+
+DECLARE_CLASS( Buffer )
+#include "buffer.h"
 
 #define SLOT_SOURCE 0
 

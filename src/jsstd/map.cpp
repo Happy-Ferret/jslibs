@@ -13,7 +13,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-#include "map.h"
+
 
 #include <jsxdrapi.h>
 

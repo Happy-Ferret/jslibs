@@ -13,9 +13,12 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
+#include "../common/jslibsModule.h"
 
-#include "jslang.h"
-
+DECLARE_CLASS( Handle )
+DECLARE_CLASS( Blob )
+DECLARE_CLASS( Stream )
+DECLARE_STATIC();
 
 /**doc t:header
 $MODULE_HEADER
@@ -30,15 +33,6 @@ $MODULE_FOOTER
 **/
 
 JSBool jslangInit(JSContext *cx, JSObject *obj) {
-
-//	jsval unsafeModePtrVal;
-//	JL_CHK( GetConfigurationValue(cx, NAME_CONFIGURATION_UNSAFE_MODE_PTR, &unsafeModePtrVal) );
-//	if ( !JSVAL_IS_VOID( unsafeModePtrVal ) )
-//		_pUnsafeMode = (bool*)JSVAL_TO_PRIVATE(unsafeModePtrVal);
-
-	JSObject *globalObject = JS_GetGlobalObject(cx);
-	JL_S_ASSERT( obj == globalObject, "This module must be load into the global namespace" ); // (TBD) why ? now we use JL_RegisterNativeClass to locate classes
-//	obj = JS_GetGlobalObject(cx); // avoid LoadModule.call( foo, 'jslang' );
 
 	INIT_CLASS( Handle );
 	INIT_CLASS( Blob );

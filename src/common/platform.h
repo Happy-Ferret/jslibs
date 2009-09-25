@@ -298,23 +298,6 @@ ALWAYS_INLINE unsigned int JLSessionId() {
 	return r ? r : 1; // avoid returning 0
 }
 
-#if defined XP_UNIX
-// see http://www.gnu.org/software/libtool/manual/libc/Hooks-for-Malloc.html
-static void _jl_free(void *ptr, const void *caller) {
-}
-
-ALWAYS_INLINE void DisableMemoryFree() {
-
-	__free_hook = _jl_free;
-}
-#elif defined XP_WIN
-ALWAYS_INLINE void DisableMemoryFree() {
-}
-#else
-ALWAYS_INLINE void DisableMemoryFree() {
-}
-#endif // XP_UNIX
-
 
 // Atomic operations
 	// MS doc: http://msdn.microsoft.com/en-us/library/ms686360.aspx

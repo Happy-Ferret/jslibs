@@ -1,5 +1,5 @@
 TARGET     = jsstd.so
-SRC        = $(wildcard *.cpp)
+SRC        = $(wildcard *.cpp) ../common/jslibsModule.cpp
 INCLUDES   =
 STATICLIBS =
 SHAREDLIBS =

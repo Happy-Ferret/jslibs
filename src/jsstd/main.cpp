@@ -13,14 +13,12 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
+#include "../common/jslibsModule.h"
 
-#include "static.h"
-#include "map.h"
-#include "buffer.h"
-#include "pack.h"
-
-extern bool _unsafeMode = false;
-
+DECLARE_STATIC()
+DECLARE_CLASS( Map )
+DECLARE_CLASS( Buffer )
+DECLARE_CLASS( Pack )
 DECLARE_CLASS( OperationLimit )
 DECLARE_CLASS( Sandbox )
 DECLARE_CLASS( ObjEx )
@@ -36,7 +34,7 @@ $MODULE_FOOTER
 
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
-	_unsafeMode = GetHostPrivate(cx)->unsafeMode;
+	JL_CHK( InitJslibsModule(cx) );
 
 	INIT_STATIC();
 	INIT_CLASS( Map );
@@ -61,15 +59,3 @@ EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
 	return JS_TRUE;
 	JL_BAD;
 }
-
-EXTERN_C DLLEXPORT void ModuleFree() {
-}
-
-#ifdef XP_WIN
-BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
-
-	if ( fdwReason == DLL_PROCESS_ATTACH )
-		DisableThreadLibraryCalls(hinstDLL);
-	return TRUE;
-}
-#endif // XP_WIN

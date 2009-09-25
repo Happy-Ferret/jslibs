@@ -1,5 +1,25 @@
 // LoadModule('jsstd');  LoadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\n' ) } };  Exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
 
+LoadModule('jsstd');
+
+
+Sleep(100);
+var i = 0;
+while ( !endSignal ) {
+	
+	i++;
+	Expand("$(a)", {a:123});
+
+	i % 2000 || Print('.');
+}
+	
+//	Print( (res +'-'+ ids), ' == ', 'ab01e2g3ij-cdfh', '\n' );
+	
+	
+	
+Halt(); //////////////////////////////
+
+
 
 var b = new Blob('abcde');
 for ( var i = 0; i < 2; i++ )
