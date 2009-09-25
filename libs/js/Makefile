@@ -23,6 +23,8 @@ $(INT_DIR)Makefile: ./src/configure
 
 all:: $(INT_DIR)Makefile
 	diff -q ./jsversion.h ./src/jsversion.h || cp ./jsversion.h ./src/
+	-patch -s -N ./src/jsutil.h ./jsutil.h.patch
+	-patch -s -N ./src/jsutil.cpp ./jsutil.cpp.patch
 
 all::
 	$(MAKE) -C $(INT_DIR) $@

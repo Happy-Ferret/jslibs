@@ -1,0 +1,21 @@
+*** src/Copie de jsutil.cpp	Tue Sep 22 17:17:30 2009
+--- src/jsutil.cpp	Fri Sep 25 13:26:42 2009
+***************
+*** 360,361 ****
+--- 360,375 ----
+  
+  #endif /* defined(DEBUG_notme) && defined(XP_UNIX) */
++ 
++ extern jslibs_malloc_t jslibs_malloc = malloc;
++ extern jslibs_calloc_t jslibs_calloc = calloc;
++ extern jslibs_realloc_t jslibs_realloc = realloc;
++ extern jslibs_free_t jslibs_free = free;
++ 
++ JS_PUBLIC_API(void)
++ JSLIBS_RegisterAllocFunctions( jslibs_malloc_t malloc, jslibs_calloc_t calloc, jslibs_realloc_t realloc, jslibs_free_t free ) {
++ 
++ 	jslibs_malloc = malloc;
++ 	jslibs_calloc = calloc;
++ 	jslibs_realloc = realloc;
++ 	jslibs_free = free;
++ }
