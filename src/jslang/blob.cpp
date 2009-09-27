@@ -918,22 +918,35 @@ DEFINE_NEW_RESOLVE() {
 	size_t length;
 	JL_CHK( BlobBuffer(cx, obj, &buffer) );
 	JL_CHK( BlobLength(cx, obj, &length) );
-	// ownership of buffer is given to the JSString
-	JSString *jsstr;
-	jsstr = JS_NewString(cx, (char*)buffer, length); // JS_NewString don't accepts (const char *)
+	
 	JSObject *strObj;
-	JL_CHK( JS_ValueToObject(cx, STRING_TO_JSVAL(jsstr), &strObj) );
+	if ( buffer == NULL ) {
+		
+		JL_CHK( JS_ValueToObject(cx, JS_GetEmptyStringValue(cx), &strObj) );
+	} else {
+		
+		JSString *jsstr;
+		// ownership of buffer is given to the JSString
+		jsstr = JS_NewString(cx, (char*)buffer, length); // bad but JS_NewString don't accepts (const char *)
+		JL_CHK( JS_ValueToObject(cx, STRING_TO_JSVAL(jsstr), &strObj) );
+	}
 
 	obj->fslots[JSSLOT_PROTO] = strObj->fslots[JSSLOT_PROTO];
 	obj->fslots[JSSLOT_PRIVATE] = strObj->fslots[JSSLOT_PRIVATE];
-	// Make sure we preserve any flags borrowing bits in JSSLOT_CLASS.
-	obj->classword ^= (jsuword)OBJ_GET_CLASS(cx, obj);
-	obj->classword |= (jsuword)OBJ_GET_CLASS(cx, strObj);
+	
+	// Make sure we preserve any flags borrowing bits in classword.
+	obj->classword ^= (jsuword)obj->getClass();
+	obj->classword |= (jsuword)strObj->getClass();
 
 //	obj->map->ops = strObj->map->ops;
 //	memcpy(obj->map, &JSObjectMap(strObj->map->ops, strObj->map->shape), sizeof(JSObjectMap));
-	memcpy(obj->map, strObj->map, sizeof(JSObjectMap));
-	
+
+//	memcpy(obj->map, strObj->map, sizeof(JSObjectMap)); // ????????????
+//	uint32 emptyShape;
+//	OBJ_SCOPE(strObj->getProto())->getEmptyScopeShape(cx, strObj->getClass(), &emptyShape);
+//	JSScope *scope = JSScope::create(cx, NULL, strObj->getClass(), obj, emptyShape);
+//	obj->map = scope;
+
 //	JL_CHKM( MutateToJSString(cx, obj), "Unable to transform the Blob into a String." );
 //	const char *debug_name = JS_GetStringBytes(JS_ValueToString(cx, id));
 	return JS_TRUE;

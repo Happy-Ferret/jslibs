@@ -3,6 +3,17 @@
 LoadModule('jsstd');
 
 
+var b = new Blob();
+var b = b.replace('bcde', '123');
+
+Print( b )
+
+
+
+
+Halt();
+
+
 Sleep(100);
 var i = 0;
 while ( !endSignal ) {
