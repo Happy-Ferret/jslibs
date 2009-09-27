@@ -30,7 +30,7 @@
 
 JSBool jslangInit(JSContext *cx, JSObject *obj);
 
-extern bool _unsafeMode = false;
+bool _unsafeMode = false;
 
 
 JSErrorFormatString errorFormatString[J_ErrLimit] = {

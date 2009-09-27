@@ -16,7 +16,7 @@
 
 #include <math.h>
 
-extern "C" unsigned long genrand_int32(void); /* generates a random number on [0,0xffffffff]-interval */
+EXTERN_C unsigned long genrand_int32(void); /* generates a random number on [0,0xffffffff]-interval */
 
 
 // from "JAVA REFERENCE IMPLEMENTATION OF IMPROVED NOISE - COPYRIGHT 2002 KEN PERLIN."

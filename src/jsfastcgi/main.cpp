@@ -18,7 +18,7 @@
 #include "fcgi.h"
 #include "static.h"
 
-extern bool _unsafeMode = false;
+bool _unsafeMode = false;
 
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 

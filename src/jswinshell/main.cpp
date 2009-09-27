@@ -20,7 +20,7 @@
 #include "systray.h"
 #include "console.h"
 
-extern bool _unsafeMode = false;
+bool _unsafeMode = false;
 
 
 /**doc t:header
@@ -32,7 +32,7 @@ $FILE_TOC
 $MODULE_FOOTER
 **/
 
-extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj) {
+EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
 	_unsafeMode = GetHostPrivate(cx)->unsafeMode;
 

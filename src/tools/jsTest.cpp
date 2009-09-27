@@ -21,7 +21,7 @@
 #include <stdlib.h>
 #include <fcntl.h>
 
-extern bool _unsafeMode = false;
+bool _unsafeMode = false;
 #include "../common/jsHelper.h"
 
 

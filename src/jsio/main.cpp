@@ -25,7 +25,7 @@
 #include "process.h"
 #include "static.h"
 
-extern bool _unsafeMode = false;
+bool _unsafeMode = false;
 
 static PRInt32 instanceCount = 0;
 

@@ -16,7 +16,7 @@
 
 #define MAX_WXJS_MODULES 32
 
-extern bool _unsafeMode = false;
+bool _unsafeMode = false;
 
 
 #define wxString char*
@@ -32,8 +32,8 @@ typedef void (*WXJS_DESTROY_PROC)();
 typedef void (*WXJS_ERROR_PROC)(JSErrorReporter er);
 
 
-static bool _defaultUnsafeMode = false;
-extern bool *_pUnsafeMode = &_defaultUnsafeMode;
+bool _defaultUnsafeMode = false;
+bool *_pUnsafeMode = &_defaultUnsafeMode;
 
 static HMODULE _moduleList[MAX_WXJS_MODULES] = { NULL };
 

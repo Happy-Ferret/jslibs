@@ -176,7 +176,7 @@ void* HostThreadedRealloc( void *ptr, size_t size ) {
 
 void HostThreadedFree( void *ptr ) {
 
-	if (balance > 1000000) {
+	if ( balance > 1000000 ) {
 
 		free(ptr);
 		return;

@@ -17,12 +17,11 @@
 #include "../common/jslibsModule.h"
 #include "../common/jsHelper.h"
 
-extern bool _unsafeMode = false;
-
-extern void* (*jl_malloc)( size_t size ) = NULL;
-extern void* (*jl_calloc)( size_t num, size_t size ) = NULL;
-extern void (*jl_free)( void *ptr ) = NULL;
-extern void* (*jl_realloc)( void *ptr, size_t size ) = NULL;
+bool _unsafeMode = false;
+void* (*jl_malloc)( size_t size ) = NULL;
+void* (*jl_calloc)( size_t num, size_t size ) = NULL;
+void (*jl_free)( void *ptr ) = NULL;
+void* (*jl_realloc)( void *ptr, size_t size ) = NULL;
 
 
 JSBool InitJslibsModule( JSContext *cx ) {

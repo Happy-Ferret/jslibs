@@ -16,7 +16,7 @@
 
 DECLARE_STATIC()
 
-extern bool _unsafeMode = false;
+bool _unsafeMode = false;
 
 /**doc t:header
 $MODULE_HEADER

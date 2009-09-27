@@ -20,9 +20,9 @@
 
 #include "../common/queue.h"
 
-extern bool _unsafeMode = false;
+bool _unsafeMode = false;
 
-extern jl::Queue *dbContextList = NULL;
+jl::Queue *dbContextList = NULL;
 
 
 /**doc t:header

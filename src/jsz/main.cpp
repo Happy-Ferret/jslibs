@@ -19,7 +19,7 @@ using namespace jl;
 
 #include "zError.h"
 
-extern bool _unsafeMode = false;
+bool _unsafeMode = false;
 
 DECLARE_CLASS( Z )
 
@@ -33,7 +33,7 @@ $FILE_TOC
 /**doc t:footer
 $MODULE_FOOTER
 **/
-extern "C" DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
+EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
 /*
 	Buffer resultBuffer;

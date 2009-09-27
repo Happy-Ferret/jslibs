@@ -18,7 +18,7 @@
 #include "error.h"
 #include "sdl.h"
 
-extern bool _unsafeMode = false;
+bool _unsafeMode = false;
 
 DECLARE_CLASS( Cursor )
 

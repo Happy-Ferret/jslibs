@@ -23,7 +23,7 @@ DECLARE_CLASS(Ogl)
 DECLARE_STATIC()
 DECLARE_CLASS( OglError )
 
-extern bool _unsafeMode = false;
+bool _unsafeMode = false;
 
 /**doc t:header
 $MODULE_HEADER

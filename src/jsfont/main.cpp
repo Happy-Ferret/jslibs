@@ -21,7 +21,7 @@
 
 FT_Library _freetype;
 
-extern bool _unsafeMode = false;
+bool _unsafeMode = false;
 
 
 /**doc t:header

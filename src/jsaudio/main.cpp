@@ -15,7 +15,7 @@
 #include "stdafx.h"
 #include "error.h"
 
-extern bool _unsafeMode = false;
+bool _unsafeMode = false;
 
 DECLARE_CLASS(Oal)
 DECLARE_CLASS(OalBuffer)

@@ -18,9 +18,9 @@
 
 #include <videoinput.h>
 
-extern bool _unsafeMode = false;
+bool _unsafeMode = false;
 
-extern videoInput *vi = NULL;
+videoInput *vi = NULL;
 
 DECLARE_CLASS( VideoInput )
 

@@ -14,7 +14,7 @@
 
 #include "stdafx.h"
 
-extern bool _unsafeMode = false;
+bool _unsafeMode = false;
 
 DECLARE_CLASS( SVG )
 

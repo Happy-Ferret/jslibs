@@ -17,8 +17,8 @@
 DECLARE_STATIC()
 DECLARE_CLASS( Debugger )
 
-extern bool _unsafeMode = false;
-extern jl::Queue *scriptFileList = NULL;
+bool _unsafeMode = false;
+jl::Queue *scriptFileList = NULL;
 JSBool GetScriptLocation( JSContext *cx, jsval *val, uintN lineno, JSScript **script, jsbytecode **pc );
 
 /**doc t:header

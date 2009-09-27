@@ -17,7 +17,7 @@
 #include "static.h"
 //#include "sound.h"
 
-extern bool _unsafeMode = false;
+bool _unsafeMode = false;
 
 
 /**doc t:header

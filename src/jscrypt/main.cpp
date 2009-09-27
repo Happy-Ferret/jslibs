@@ -24,7 +24,7 @@
 #include "hash.h"
 #include "cipher.h"
 
-extern bool _unsafeMode = false;
+bool _unsafeMode = false;
 
 
 /**doc t:header
@@ -39,8 +39,7 @@ $FILE_TOC
 $MODULE_FOOTER
 **/
 
-
-extern "C" DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
+EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
 	_unsafeMode = GetHostPrivate(cx)->unsafeMode;
 

@@ -17,7 +17,7 @@
 #include "static.h"
 #include "template.h"
 
-extern bool _unsafeMode = false;
+bool _unsafeMode = false;
 
 
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {

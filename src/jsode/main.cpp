@@ -24,9 +24,9 @@
 
 DECLARE_CLASS( Vector )
 
-extern bool _unsafeMode = false;
+bool _unsafeMode = false;
 
-extern bool _odeFinalization = false;
+bool _odeFinalization = false;
 
 
 #ifdef XP_WIN
