@@ -63,7 +63,7 @@ typedef int (*HostOutput)( void *privateData, const char *buffer, unsigned int l
 struct HostPrivate {
 
 	void *privateData;
-	unsigned int maybeGCInterval;
+	volatile unsigned int maybeGCInterval;
 	JLSemaphoreHandler watchDogSem;
 	JLThreadHandler watchDogThread;
 	bool unsafeMode;

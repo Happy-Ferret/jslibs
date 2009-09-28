@@ -361,6 +361,33 @@ ALWAYS_INLINE unsigned int JLSessionId() {
 #endif
 	}
 
+
+// atomic operations
+	ALWAYS_INLINE int JLAtomicExchange(volatile long *ptr, long val) {
+	#if defined XP_WIN
+		return InterlockedExchange(ptr, val); // http://msdn.microsoft.com/en-us/library/ms683590%28VS.85%29.aspx
+	#elif defined XP_UNIX // #elif ((__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 1)) && ...
+		return __sync_lock_test_and_set(ptr, val); // http://gcc.gnu.org/onlinedocs/gcc-4.1.2/gcc/Atomic-Builtins.html
+	#endif
+	}
+
+	ALWAYS_INLINE void JLAtomicIncrement(volatile long *ptr) {
+	#if defined XP_WIN
+		InterlockedIncrement(ptr);
+	#elif defined XP_UNIX // #elif ((__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 1)) && ...
+		__sync_add_and_fetch(val, 1);
+	#endif
+	}
+
+	ALWAYS_INLINE int JLAtomicAdd(volatile long *ptr, long val) {
+	#if defined XP_WIN
+		return InterlockedExchangeAdd(ptr, val) + val; // http://msdn.microsoft.com/en-us/library/ms683590%28VS.85%29.aspx
+	#elif defined XP_UNIX // #elif ((__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 1)) && ...
+		return __sync_add_and_fetch(val, val); // http://gcc.gnu.org/onlinedocs/gcc-4.1.2/gcc/Atomic-Builtins.html
+	#endif
+	}
+
+
 // semaphores
 #if defined XP_WIN
 	typedef HANDLE JLSemaphoreHandler;

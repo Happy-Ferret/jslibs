@@ -147,90 +147,6 @@ void DestroyScriptHook(JSContext *cx, JSScript *script, void *callerdata) {
 }
 */
 
-
-
-void *head = NULL;
-int balance = 0;
-
-void* HostThreadedMalloc( size_t size ) {
-
-	if ( size < sizeof(void*) )
-		size = sizeof(void*);
-	return malloc(size);
-}
-
-void* HostThreadedCalloc( size_t num, size_t size ) {
-	
-	size = num * size;
-	if ( size < sizeof(void*) )
-		size = sizeof(void*);
-	return calloc(size, 1);
-}
-
-void* HostThreadedRealloc( void *ptr, size_t size ) {
-
-	if ( size < sizeof(void*) )
-		size = sizeof(void*);
-	return realloc(ptr, size);
-}
-
-void HostThreadedFree( void *ptr ) {
-
-	if ( balance > 1000000 ) {
-
-		free(ptr);
-		return;
-	}
-	*(void**)ptr = head;
-	head = ptr;
-	balance++;
-}
-
-JLThreadFuncDecl MemoryFreeThreadProc( void *threadArg ) {
-	
-	void *next, *tmp;
-	for (;;) {
-
-		if ( !head || *(void**)head == NULL ) { // nothing to do, guess we will have nothing to do during 100ms
-		
-			SleepMilliseconds(100);
-			continue;
-		}
-
-//		printf("%d\n", balance);
-			
-		next = head;
-		tmp = *(void**)next;
-		*(void**)next = NULL;
-		
-		while ( tmp ) {
-			
-			next = *(void**)tmp;
-			free(tmp);
-			tmp = next;
-			balance--;
-		}
-	}
-	return 0;
-}
-
-JLThreadHandler memoryFreeThread;
-
-void BeginFreeThread() {
-
-	memoryFreeThread = JLThreadStart(MemoryFreeThreadProc, NULL);
-}
-
-void EndFreeThread() {
-	
-	JLThreadCancel(memoryFreeThread);
-	JLFreeThread(&memoryFreeThread);
-}
-
-void HostDisabledFree( void *ptr ) {
-}
-
-
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[]) for UNICODE
@@ -320,19 +236,14 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	signal(SIGTERM, Interrupt);
 #endif // XP_WIN
 
-	JSLIBS_RegisterAllocFunctions(malloc, calloc, realloc, HostThreadedFree); // let the system free our memory.
-
 	cx = CreateHost(maxMem, maxAlloc, maybeGCInterval * 1000);
 	HOST_MAIN_ASSERT( cx != NULL, "Unable to create a javascript execution context." );
 
-	GetHostPrivate(cx)->malloc = HostThreadedMalloc;
-	GetHostPrivate(cx)->calloc = HostThreadedCalloc;
-	GetHostPrivate(cx)->realloc = HostThreadedRealloc;
-	GetHostPrivate(cx)->free = HostThreadedFree;
+	HOST_MAIN_ASSERT( BeginThreadMemoryManagement(cx), "Unable to create the memory management thread." );
 
 	GetHostPrivate(cx)->camelCase = camelCase;
 
-	JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_STRICT);
+	JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_STRICT | JSOPTION_RELIMIT); // default, may be disabled in InitHost()
 
 	HOST_MAIN_ASSERT( InitHost(cx, unsafeMode, HostStdout, HostStderr, NULL), "Unable to initialize the host." );
 
@@ -377,8 +288,6 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 
 	JL_CHK( SetPropertyString(cx, globalObject, NAME_GLOBAL_SCRIPT_HOST_PATH, hostPath) );
 	JL_CHK( SetPropertyString(cx, globalObject, NAME_GLOBAL_SCRIPT_HOST_NAME, hostName) );
-
-	BeginFreeThread();
 
 	if ( sizeof(embeddedBootstrapScript)-1 ) {
 		
@@ -439,8 +348,8 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 		}
 	}
 
-	GetHostPrivate(cx)->free = HostDisabledFree;
-	JSLIBS_RegisterAllocFunctions(malloc, calloc, realloc, HostDisabledFree); // let the system free our memory.
+	EndThreadMemoryManagement(cx, false);
+	DisableMemoryFree(cx);
 	DestroyHost(cx);
 	JS_ShutDown();
 
@@ -458,16 +367,16 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	}
 #endif
 
-	EndFreeThread();
 	return exitValue;
 bad:
+	
+	if ( cx ) {
 
-	GetHostPrivate(cx)->free = HostDisabledFree;
-	JSLIBS_RegisterAllocFunctions(malloc, calloc, realloc, HostDisabledFree); // let the system free our memory.
-	if ( cx )
+		EndThreadMemoryManagement(cx, false);
+		DisableMemoryFree(cx);
 		DestroyHost(cx);
+	}
 	JS_ShutDown();
-	EndFreeThread();
 	return EXIT_FAILURE;
 }
 
@@ -531,7 +440,7 @@ The main features are:
   $H exemple
   {{{
   LoadModule('jsstd');
-  Print( 'Unsafe mode: '+configuration.unsafeMode, '\n' );
+  Print( 'Unsafe mode: '+_configuration.unsafeMode, '\n' );
   }}}
   $H note
   You can avoid LoadModule to use the global object and load the module in your own namespace:

@@ -2,26 +2,16 @@
 
 LoadModule('jsstd');
 
-
-var b = new Blob();
-var b = b.replace('bcde', '123');
-
-Print( b )
-
-
-
-
-Halt();
-
-
 Sleep(100);
 var i = 0;
 while ( !endSignal ) {
 	
 	i++;
-	Expand("$(a)", {a:123});
+	Expand("$(a)", {abc:123});
 
-	i % 2000 || Print('.');
+	i % 1000 || Print('.');
+//	if ( i > 100000 )
+//		break;
 }
 	
 //	Print( (res +'-'+ ids), ' == ', 'ab01e2g3ij-cdfh', '\n' );

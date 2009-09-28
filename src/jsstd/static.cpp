@@ -211,7 +211,7 @@ DEFINE_FUNCTION_FAST( InternString ) {
 $TOC_MEMBER $INAME
  $VOID $INAME( obj [ , recursively  ] )
   Prevent modification of object fields. ie. all write access to the object, either to add a new property, delete an existing property, or set the value or attributes of an existing property.
-  If _recursively_ is true, the function seal any non-null objects in the graph connected to obj's slots.
+  If _recursively_ is $TRUE, the function seal any non-null objects in the graph connected to obj's slots.
   $H example
   {{{
   LoadModule('jsstd');
@@ -596,7 +596,8 @@ DEFINE_FUNCTION_FAST( ObjectToId ) {
 /**doc
 $TOC_MEMBER $INAME
  $INT $INAME( id )
-  Returns the object with the identifier _id_ or undefined if the identifier do not exist or the object has been GCed. It is up to you to keep a reference to the object if you want to keep it through GC cycles.
+  Returns the object with the identifier _id_ or $UNDEF if the identifier do not exist or the object has been GCed.
+  It is up to you to keep a reference to the object if you want to keep it through GC cycles.
   $H example 1
   {{{
   var myObj = {};
@@ -685,7 +686,7 @@ DEFINE_FUNCTION_FAST( IsFunction ) {
 /**doc
 $TOC_MEMBER $INAME
  $BOOL $INAME()
-  Returns $TRUE if the value is undefined (ie. void 0).
+  Returns $TRUE if the value is undefined (ie. (void 0)).
   $H example
   {{{
   Print( IsVoid(undefined) ); // prints: true
@@ -821,7 +822,7 @@ DEFINE_FUNCTION( Assert ) {
 /**doc
 $TOC_MEMBER $INAME
  $VOID $INAME()
-  Performs garbage collection in the JS memory pool.
+  Performs an unconditional garbage collection in the JS memory pool.
 **/
 DEFINE_FUNCTION_FAST( CollectGarbage ) {
 
@@ -1237,7 +1238,7 @@ bad:
 /**doc
 $TOC_MEMBER $INAME
  $BOOL $INAME( statementString )
-  Returns true if _statementString_ is a valid Javascript statement.
+  Returns $TRUE if _statementString_ is a valid Javascript statement.
   The intent is to support interactive compilation, accumulate lines in a buffer until IsStatementValid returns true, then pass it to an eval.
   This function is useful to write an interactive console.
   $H example
@@ -1302,7 +1303,7 @@ DEFINE_FUNCTION( Halt ) {
 /**doc
 $TOC_MEMBER $INAME
  $BOOL $INAME
-  Determines whether or not the function currently executing was called as a constructor.
+  if $TRUE if the current function is being called as a constructor.
 **/
 DEFINE_PROPERTY( isConstructing ) {
 

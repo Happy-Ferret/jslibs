@@ -231,12 +231,12 @@ JLThreadFuncDecl WatchDogThreadProc(void *threadArg) {
 
 	JSContext *cx = (JSContext*)threadArg;
 	HostPrivate *pv = GetHostPrivate(cx);
-	JSPackedBool *gcRunning = &cx->runtime->gcRunning;
-	JLReleaseSemaphore(pv->watchDogSem);
+//	JSPackedBool *gcRunning = &cx->runtime->gcRunning;
+	JLReleaseSemaphore(pv->watchDogSem); // signals that the thread has started
 	for (;;) {
 
 		SleepMilliseconds(pv->maybeGCInterval);
-		if ( !*gcRunning )
+//		if ( !*gcRunning )
 			JS_TriggerOperationCallback(cx);
 	}
 }
@@ -437,6 +437,7 @@ JSContext* CreateHost(size_t maxMem, size_t maxAlloc, size_t maybeGCInterval ) {
 		JS_SetOperationCallback(cx, OperationCallback);
 		pv->watchDogSem = JLCreateSemaphore(0);
 		pv->watchDogThread = JLThreadStart(WatchDogThreadProc, cx);
+		//	JLThreadPriority(pv->watchDogThread, JL_THREAD_PRIORITY_LOW);
 		JL_CHKM( JLSemaphoreOk(pv->watchDogSem) && JLThreadOk(pv->watchDogThread), "Unable to create the thread." );
 	}
 	return cx;
@@ -463,7 +464,7 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostOutput stdOut, HostOutput s
 	pv->unsafeMode = unsafeMode;
 
 	if ( unsafeMode )
-		JS_SetOptions(cx, JS_GetOptions(cx) & ~JSOPTION_STRICT);
+		JS_SetOptions(cx, JS_GetOptions(cx) & ~(JSOPTION_STRICT | JSOPTION_RELIMIT));
 
 	JSObject *globalObject;
 	globalObject = JS_GetGlobalObject(cx);
@@ -667,4 +668,176 @@ JSBool ExecuteScriptFileName( JSContext *cx, const char *scriptFileName, bool co
 bad:
 	JS_SetOptions(cx, prevOpt);
 	return JS_FALSE;
+}
+
+
+
+
+static JLThreadHandler memoryFreeThread;
+static JLMutexHandler memoryFreeThreadMutex;
+static bool memoryFreeThreadEnd;
+
+static void *head;
+static volatile long balance;
+
+void* HostThreadedMalloc( size_t size ) {
+
+	if ( size < sizeof(void*) )
+		size = sizeof(void*);
+	return malloc(size);
+}
+
+void* HostThreadedCalloc( size_t num, size_t size ) {
+	
+	size = num * size;
+	if ( size < sizeof(void*) )
+		size = sizeof(void*);
+	return calloc(size, 1);
+}
+
+void* HostThreadedRealloc( void *ptr, size_t size ) {
+
+	if ( size < sizeof(void*) )
+		size = sizeof(void*);
+	return realloc(ptr, size);
+}
+
+void HostThreadedFree( void *ptr ) {
+
+//	return;
+//	free(ptr); return;
+
+	if ( balance > 100000 ) {
+
+		free(ptr);
+		return;
+	}
+
+	*(void**)ptr = head;
+	head = ptr;
+
+//	*(void**)ptr = (void*)JLAtomicExchange((long*)&head, (long)ptr);
+
+	//	balance++; // atomic issue !
+	JLAtomicIncrement(&balance);
+}
+
+ALWAYS_INLINE void FreeHead() {
+
+/*
+	void *next, *tmp = (void*)JLAtomicExchange((long*)&head, 0);
+//	printf("%d\n", balance);
+	while ( tmp ) {
+		
+		next = *(void**)tmp;
+		free(tmp);
+		tmp = next;
+		JLAtomicAdd(&balance, -1);
+	}
+*/
+
+
+//		printf("%d\n", balance);
+	if ( !head )
+		return;
+	void *it, *next = head;
+	it = *(void**)next;
+	*(void**)next = NULL;
+
+	while ( it ) {
+		
+		next = *(void**)it;
+		free(it); // possible deadlock if the thread is killed while free() is being called !
+		it = next;
+		//balance--; // atomic issue !
+		JLAtomicAdd(&balance, -1);
+	}
+
+}
+
+JLThreadFuncDecl MemoryFreeThreadProc( void *threadArg ) {
+	
+	JLAcquireMutex(memoryFreeThreadMutex);
+	while ( !memoryFreeThreadEnd ) {
+/*
+		SleepMilliseconds(10);
+		
+		if ( !head || *(void**)head == NULL ) { // nothing to do, guess we will have nothing to do during 100ms
+		
+  			SleepMilliseconds(100);
+			continue;
+		}
+*/
+//		if ( balance < 1000 )
+// 			SleepMilliseconds(100);
+
+//		printf("o");
+		FreeHead();
+	}
+
+	JLReleaseMutex(memoryFreeThreadMutex);
+	return 0;
+}
+
+JSBool BeginThreadMemoryManagement( JSContext *cx ) {
+
+	HostPrivate *pv = GetHostPrivate(cx);
+	if ( pv == NULL )
+		return JS_FALSE;
+
+	balance = 0;
+	head = NULL;
+	memoryFreeThreadMutex = JLCreateMutex();
+	memoryFreeThreadEnd = false;
+	memoryFreeThread = JLThreadStart(MemoryFreeThreadProc, NULL);
+//	JLThreadPriority(memoryFreeThread, JL_THREAD_PRIORITY_LOW);
+
+	JSLIBS_RegisterAllocFunctions(malloc, calloc, realloc, HostThreadedFree);
+
+	pv->malloc = HostThreadedMalloc;
+	pv->calloc = HostThreadedCalloc;
+	pv->realloc = HostThreadedRealloc;
+	pv->free = HostThreadedFree;
+	return JS_TRUE;
+}
+
+JSBool EndThreadMemoryManagement( JSContext *cx, bool freeQueue ) {
+
+	HostPrivate *pv = GetHostPrivate(cx);
+	if ( pv == NULL )
+		return JS_FALSE;
+
+	JSLIBS_RegisterAllocFunctions(malloc, calloc, realloc, free);
+
+	pv->malloc = malloc;
+	pv->calloc = calloc;
+	pv->realloc = realloc;
+	pv->free = free;
+
+	memoryFreeThreadEnd = true;
+	JLAcquireMutex(memoryFreeThreadMutex);
+	JLFreeMutex(&memoryFreeThreadMutex);
+//	JLThreadCancel(memoryFreeThread); // cannot kill the thread while it is calling free()
+	JLWaitThread(memoryFreeThread);
+	JLFreeThread(&memoryFreeThread);
+
+	if ( !freeQueue )
+		return JS_TRUE;
+
+	FreeHead();
+	if ( head )
+		free(head);
+
+	return JS_TRUE;
+}
+
+
+static void DisabledFree( void *ptr ) {
+}
+
+JSBool DisableMemoryFree( JSContext *cx ) {
+
+	GetHostPrivate(cx)->free = DisabledFree;
+	JSLIBS_RegisterAllocFunctions(malloc, calloc, realloc, DisabledFree);
+	return JS_TRUE;
 }

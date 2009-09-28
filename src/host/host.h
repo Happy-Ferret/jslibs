@@ -30,4 +30,9 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostOutput stdOut, HostOutput s
 JSBool DestroyHost( JSContext *cx );
 JSBool ExecuteScriptFileName( JSContext *cx, const char *scriptFileName, bool compileOnly, int argc, const char * const * argv, jsval *rval );
 
+JSBool BeginThreadMemoryManagement( JSContext *cx );
+JSBool EndThreadMemoryManagement( JSContext *cx, bool freeQueue );
+
+JSBool DisableMemoryFree( JSContext *cx );
+
 #endif // _HOST_H_

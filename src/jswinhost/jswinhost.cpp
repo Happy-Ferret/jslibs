@@ -1,5 +1,9 @@
 #include "stdafx.h"
 
+// to be used in the main() function only
+#define HOST_MAIN_ASSERT( condition, errorMessage ) if ( !(condition) ) { goto bad; }
+//#define HOST_MAIN_ASSERT( condition, errorMessage ) if ( !(condition) ) { fprintf(stderr, errorMessage ); goto bad; }
+
 static unsigned char embeddedBootstrapScript[] =
 	#include "embeddedBootstrapScript.js.xdr.cres"
 ;
@@ -62,51 +66,30 @@ static JSBool stdoutFunction(JSContext *cx, JSObject *obj, uintN argc, jsval *ar
 }
 */
 
-void hostDisabledFree( void *ptr ) {
-}
-
 int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow ) {
 
-	JSContext *cx = CreateHost(-1, -1, 0);
-	JL_CHK( cx != NULL );
-	JL_CHK( InitHost(cx, true, NULL, NULL, NULL) );
+	JSContext *cx = NULL;
+
 	errno_t err;
-	CHAR moduleFileName[PATH_MAX];
-	DWORD len = GetModuleFileName(hInstance, moduleFileName, sizeof(moduleFileName));
-	JL_CHK( len );
-	char *name = strrchr( moduleFileName, '\\' );
-	JL_CHK( name );
-	*name = '\0';
-	name++;
-
-	CHAR moduleName[PATH_MAX], scriptName[PATH_MAX];
+	CHAR moduleName[PATH_MAX], scriptName[PATH_MAX], mutexName[PATH_MAX];
 	DWORD moduleNameLen = GetModuleFileName(hInstance, moduleName, sizeof(moduleName));
-	err = strncpy_s(scriptName, sizeof(scriptName), moduleName, moduleNameLen );
-	JL_S_ASSERT( err == 0, "Buffer overflow." );
-//	DWORD scriptNameLen = GetModuleFileName(hInstance, scriptName, sizeof(scriptName));
-	char *dotPos = strrchr(scriptName, '.');
-	JL_CHK( dotPos );
-	*dotPos = '\0';
-	err = strcat_s( scriptName, sizeof(scriptName), ".js" );
-	JL_S_ASSERT( err == 0, "Buffer overflow." );
+	HOST_MAIN_ASSERT( moduleNameLen > 0, "Invalid module filename." );
 
-	//If you need to detect whether another instance already exists, create a uniquely named mutex using the CreateMutex function. 
+	//doc: If you need to detect whether another instance already exists, create a uniquely named mutex using the CreateMutex function. 
 	//CreateMutex will succeed even if the mutex already exists, but the function will return ERROR_ALREADY_EXISTS. 
 	//This indicates that another instance of your application exists, because it created the mutex first.
 
 	// (TBD) use file index as mutexName. note: If the file is on an NTFS volume, you can get a unique 64 bit identifier for it with GetFileInformationByHandle.  The 64 bit identifier is the "file index". 
-	char mutexName[PATH_MAX] = ""; // see Global\\ and Local\\ prefixes
-	err = strncat_s(mutexName, sizeof(mutexName), moduleName, moduleNameLen);
-	JL_S_ASSERT( err == 0, "Buffer overflow." );
-
+	
+	bool hasPrevInstance;
+	err = strncpy_s(mutexName, sizeof(mutexName), moduleName, moduleNameLen);
+	HOST_MAIN_ASSERT( err == 0, "Buffer overflow." );
 	// normalize the mutex name
 	char *pos;
 	while ( pos = strchr(mutexName, '\\') )
-		*pos = '_';
-
+		*pos = '/';
 	SetLastError(0);
-	HANDLE instanceCheckMutex = CreateMutex(NULL, TRUE, mutexName);
-	bool hasPrevInstance;
+	HANDLE instanceCheckMutex = CreateMutex(NULL, TRUE, mutexName); // see Global\\ and Local\\ prefixes for mutex name.
 	switch ( GetLastError() ) {
 		case ERROR_ALREADY_EXISTS:
 			hasPrevInstance = true;
@@ -117,9 +100,32 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 		default: {
 			char message[1024];
 			JLLastSysetmErrorMessage(message, sizeof(message));
-			JL_REPORT_ERROR("%s", message);
+			HOST_MAIN_ASSERT( false,  message );
 		}
 	}
+
+	cx = CreateHost(-1, -1, 0);
+	JL_CHK( cx != NULL );
+
+	JL_CHKM( BeginThreadMemoryManagement(cx), "Unable to create the memory management thread." );
+
+	JL_CHK( InitHost(cx, true, NULL, NULL, NULL) );
+	CHAR moduleFileName[PATH_MAX];
+	strcpy(moduleFileName, moduleName);
+	char *name = strrchr( moduleFileName, '\\' );
+	JL_CHK( name );
+	*name = '\0';
+	name++;
+
+
+	err = strncpy_s(scriptName, sizeof(scriptName), moduleName, moduleNameLen );
+	JL_S_ASSERT( err == 0, "Buffer overflow." );
+//	DWORD scriptNameLen = GetModuleFileName(hInstance, scriptName, sizeof(scriptName));
+	char *dotPos = strrchr(scriptName, '.');
+	JL_CHK( dotPos );
+	*dotPos = '\0';
+	err = strcat_s( scriptName, sizeof(scriptName), ".js" );
+	JL_S_ASSERT( err == 0, "Buffer overflow." );
 
 
 	JSObject *globalObject = JS_GetGlobalObject(cx);
@@ -157,7 +163,8 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 		if ( JS_IsExceptionPending(cx) )
 			JS_ReportPendingException(cx); // see JSOPTION_DONT_REPORT_UNCAUGHT option.
 
-	JSLIBS_RegisterAllocFunctions(malloc, calloc, realloc, hostDisabledFree); // let the system free our memory.
+	EndThreadMemoryManagement(cx, false);
+	DisableMemoryFree(cx);
 	DestroyHost(cx);
 	JS_ShutDown();
 
@@ -165,9 +172,13 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 
 	return 0;
 bad:
-	JSLIBS_RegisterAllocFunctions(malloc, calloc, realloc, hostDisabledFree); // let the system free our memory.
-	if ( cx )
+
+	if ( cx ) {
+
+		EndThreadMemoryManagement(cx, false);
+		DisableMemoryFree(cx);
 		DestroyHost(cx);
+	}
 	JS_ShutDown();
 	return -1;
 }
@@ -197,7 +208,7 @@ bad:
   is the host path [0] and whole command line [1].
 
  * $BOOL *isfirstinstance* $READONLY
-  is true ic the current instance is the first one. This can help to avoid jswinhost to be run twice at the same time.
+  is true if the current instance is the first one. This can help to avoid jswinhost to be run twice at the same time.
 
 === Configuration object ===
  see [jshost]
@@ -211,8 +222,8 @@ Because jwinshost do not use a console window, errors and printed messages will 
 However, you can write your own output system:
 {{{
 LoadModule('jswinshell');
-configuration.stdout = new Console().Write;
-configuration.stderr = MessageBox;
+_configuration.stdout = new Console().Write;
+_configuration.stderr = MessageBox;
 LoadModule('jsstd');
 Print('toto');
 hkqjsfhkqsdu_error();
