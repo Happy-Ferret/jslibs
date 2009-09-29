@@ -527,7 +527,7 @@ JSBool DestroyHost( JSContext *cx ) {
 
 	if ( JLThreadOk(pv->watchDogThread) ) {
 
-		JL_CHK( JLAcquireSemaphore(pv->watchDogSem) ); // prevent thread destruction before it has started
+		JL_CHK( JLAcquireSemaphore(pv->watchDogSem, -1) ); // prevent thread destruction before it has started
 		JL_CHK( JLFreeSemaphore(&pv->watchDogSem) );
 		JL_CHK( JLThreadCancel(pv->watchDogThread) );
 		JL_CHK( JLWaitThread(pv->watchDogThread) );
@@ -671,14 +671,16 @@ bad:
 }
 
 
-
+#define MAX_LOAD 7
+#define WAIT_HEAD_FILLING 100
 
 static JLThreadHandler memoryFreeThread;
-static JLMutexHandler memoryFreeThreadMutex;
-static bool memoryFreeThreadEnd;
+static JLSemaphoreHandler memoryFreeThreadSem;
 
 static void *head;
-static volatile long balance;
+static volatile long headLength;
+static volatile long load;
+
 
 void* HostThreadedMalloc( size_t size ) {
 
@@ -706,40 +708,33 @@ void HostThreadedFree( void *ptr ) {
 
 //	return;
 //	free(ptr); return;
-
-	if ( balance > 100000 ) {
+	if ( load > MAX_LOAD ) { // too many things to free, the thread can not keep pace.
 
 		free(ptr);
 		return;
 	}
 
+	//	*(void**)ptr = (void*)JLAtomicExchange((long*)&head, (long)ptr);
 	*(void**)ptr = head;
 	head = ptr;
-
-//	*(void**)ptr = (void*)JLAtomicExchange((long*)&head, (long)ptr);
-
-	//	balance++; // atomic issue !
-	JLAtomicIncrement(&balance);
+	JLAtomicIncrement(&headLength);
 }
 
 ALWAYS_INLINE void FreeHead() {
 
-/*
-	void *next, *tmp = (void*)JLAtomicExchange((long*)&head, 0);
-//	printf("%d\n", balance);
-	while ( tmp ) {
-		
-		next = *(void**)tmp;
-		free(tmp);
-		tmp = next;
-		JLAtomicAdd(&balance, -1);
-	}
-*/
+	//void *next, *tmp = (void*)JLAtomicExchange((long*)&head, 0);
+	//while ( tmp ) {
+	//	
+	//	next = *(void**)tmp;
+	//	free(tmp);
+	//	tmp = next;
+	//}
 
-
-//		printf("%d\n", balance);
 	if ( !head )
 		return;
+
+	headLength = 0;
+
 	void *it, *next = head;
 	it = *(void**)next;
 	*(void**)next = NULL;
@@ -747,36 +742,24 @@ ALWAYS_INLINE void FreeHead() {
 	while ( it ) {
 		
 		next = *(void**)it;
-		free(it); // possible deadlock if the thread is killed while free() is being called !
+		free(it);
 		it = next;
-		//balance--; // atomic issue !
-		JLAtomicAdd(&balance, -1);
 	}
-
 }
 
 JLThreadFuncDecl MemoryFreeThreadProc( void *threadArg ) {
 	
-	JLAcquireMutex(memoryFreeThreadMutex);
-	while ( !memoryFreeThreadEnd ) {
-/*
-		SleepMilliseconds(10);
+	for (;;) {
 		
-		if ( !head || *(void**)head == NULL ) { // nothing to do, guess we will have nothing to do during 100ms
-		
-  			SleepMilliseconds(100);
-			continue;
+		load = 0;
+		while ( headLength ) {
+			
+			load++;
+			FreeHead();
 		}
-*/
-//		if ( balance < 1000 )
-// 			SleepMilliseconds(100);
-
-//		printf("o");
-		FreeHead();
+		if ( JLAcquireSemaphore(memoryFreeThreadSem, WAIT_HEAD_FILLING) != JLTIMEOUT )
+			JLThreadExit();
 	}
-
-	JLReleaseMutex(memoryFreeThreadMutex);
-	return 0;
 }
 
 JSBool BeginThreadMemoryManagement( JSContext *cx ) {
@@ -785,10 +768,10 @@ JSBool BeginThreadMemoryManagement( JSContext *cx ) {
 	if ( pv == NULL )
 		return JS_FALSE;
 
-	balance = 0;
+	load = 0;
+	headLength = 0;
 	head = NULL;
-	memoryFreeThreadMutex = JLCreateMutex();
-	memoryFreeThreadEnd = false;
+	memoryFreeThreadSem = JLCreateSemaphore(0);
 	memoryFreeThread = JLThreadStart(MemoryFreeThreadProc, NULL);
 //	JLThreadPriority(memoryFreeThread, JL_THREAD_PRIORITY_LOW);
 
@@ -814,11 +797,12 @@ JSBool EndThreadMemoryManagement( JSContext *cx, bool freeQueue ) {
 	pv->realloc = realloc;
 	pv->free = free;
 
-	memoryFreeThreadEnd = true;
-	JLAcquireMutex(memoryFreeThreadMutex);
-	JLFreeMutex(&memoryFreeThreadMutex);
-//	JLThreadCancel(memoryFreeThread); // cannot kill the thread while it is calling free()
+	JLReleaseSemaphore(memoryFreeThreadSem);
+
+	//	JLThreadCancel(memoryFreeThread); // cannot kill the thread while it is calling free() !
 	JLWaitThread(memoryFreeThread);
+
+	JLFreeSemaphore(&memoryFreeThreadSem);
 	JLFreeThread(&memoryFreeThread);
 
 	if ( !freeQueue )

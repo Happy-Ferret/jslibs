@@ -7,7 +7,7 @@ var i = 0;
 while ( !endSignal ) {
 	
 	i++;
-	Expand("$(a)", {abc:123});
+	Expand("$(a)$()$()$()$()$()$()$()");
 
 	i % 1000 || Print('.');
 //	if ( i > 100000 )
