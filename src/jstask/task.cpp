@@ -154,7 +154,7 @@ JSBool Task(JSContext *cx, Private *pv) {
 
 	for (;;) {
 
-		JL_CHK( JLAcquireSemaphore(pv->requestSem) ); // -1 // wait for a request
+		JL_CHK( JLAcquireSemaphore(pv->requestSem, -1) ); // -1 // wait for a request
 
 		JL_CHK( JLAcquireMutex(pv->mutex) ); // --
 		if ( pv->end ) { // manage the end of the thread
@@ -433,7 +433,7 @@ DEFINE_FUNCTION_FAST( Response ) {
 
 	JL_CHK( JLReleaseMutex(pv->mutex) ); // ++
 
-	JL_CHK( JLAcquireSemaphore(pv->responseSem) ); // -1 // wait for a response
+	JL_CHK( JLAcquireSemaphore(pv->responseSem, -1) ); // -1 // wait for a response
 
 	JL_CHK( JLAcquireMutex(pv->mutex) ); // --
 

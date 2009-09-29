@@ -324,8 +324,10 @@ ALWAYS_INLINE unsigned int JLSessionId() {
 
 
 #if defined XP_WIN
+#include <malloc.h> // malloc()
 #elif defined XP_UNIX
 #include <stdlib.h> // malloc()
+#include <time.h>
 #include <pthread.h>
 #include <sched.h>
 #include <semaphore.h>
@@ -362,6 +364,10 @@ ALWAYS_INLINE unsigned int JLSessionId() {
 	}
 
 
+#define JLERROR (0)
+#define JLOK (1)
+#define JLTIMEOUT (-2)
+
 // atomic operations
 	ALWAYS_INLINE int JLAtomicExchange(volatile long *ptr, long val) {
 	#if defined XP_WIN
@@ -386,6 +392,43 @@ ALWAYS_INLINE unsigned int JLSessionId() {
 		return __sync_add_and_fetch(val, val); // http://gcc.gnu.org/onlinedocs/gcc-4.1.2/gcc/Atomic-Builtins.html
 	#endif
 	}
+
+/*
+// condvar
+#if defined XP_WIN
+	typedef struct {
+		HANDLE mutex;
+		HANDLE event;
+	} *JLCondHandler;
+#elif defined XP_UNIX
+	typedef struct {
+		pthread_mutex_t mutex;
+		pthread_cond_t cond;
+	} *JLCondHandler;
+#endif
+
+	#if defined XP_WIN
+	ALWAYS_INLINE JLCondHandler JLCreateCond() {
+
+		JLCondHandler cond = (JLCondHandler)malloc(sizeof(*cond));
+		cond->mutex = CreateMutex(NULL, FALSE, NULL); // lpMutexAttributes, bInitialOwner, lpName
+		cond->event = CreateEvent(NULL, TRUE, FALSE, NULL); // lpEventAttributes, bManualReset, bInitialState, lpName
+		return cond;
+	}
+	#elif defined XP_UNIX
+	ALWAYS_INLINE JLCondHandler JLCreateCond() {
+
+		JLCondHandler cond = (JLCondHandler)malloc(sizeof(*cond));
+		pthread_mutex_init(cond->mutex, NULL);
+		pthread_cond_init(&cond->cond, NULL);
+		return cond;
+	}
+	#endif
+
+	ALWAYS_INLINE JLCondWait( JLCondHandler cond, int timeout ) {
+	}
+*/
+
 
 
 // semaphores
@@ -414,48 +457,71 @@ ALWAYS_INLINE unsigned int JLSessionId() {
 		return semaphore != (JLSemaphoreHandler)0;
 	}
 
-	ALWAYS_INLINE bool JLAcquireSemaphore( JLSemaphoreHandler semaphore ) {
+	// msTimeout = -1 : no timeout
+	// returns true on a sucessfuly semaphore locked.
+	ALWAYS_INLINE int JLAcquireSemaphore( JLSemaphoreHandler semaphore, int msTimeout ) {
 
 		if ( !JLSemaphoreOk(semaphore) )
-			return false;
+			return JLERROR;
 	#if defined XP_WIN
-		if ( WaitForSingleObject(semaphore, INFINITE) != WAIT_OBJECT_0 )
-			return false;
+		switch ( WaitForSingleObject(semaphore, msTimeout == -1 ? INFINITE : msTimeout) ) {
+			case WAIT_TIMEOUT:
+				return JLTIMEOUT;
+			case WAIT_OBJECT_0:
+				return JLOK;
+		}
 	#elif defined XP_UNIX
-		if ( sem_wait(semaphore) != 0 )
-			return false;
+		if ( timeout == -1 ) {
+			
+			if ( sem_wait(semaphore) == 0 )
+				return JLOK;
+		} else {
+
+			struct timeval tv;
+			struct timespec abstime;
+			gettimeofday(&tv, NULL);
+			__int64 then = tv.tv_sec * 1000000 + tv.tv_usec + msTimeout * 1000;
+			abstime.tv_sec = then / 1000000;
+			abstime.tv_nsec = (then % 1000000) * 1000;
+			switch ( sem_timedwait(semaphore, &abstime) ) {
+				case ETIMEDOUT:
+					JLTIMEOUT;
+				case 0:
+					JLOK;
+			}
+		}
 	#endif
-		return true;
+		return JLERROR;
 	}
 
-	ALWAYS_INLINE bool JLReleaseSemaphore( JLSemaphoreHandler semaphore ) {
+	ALWAYS_INLINE int JLReleaseSemaphore( JLSemaphoreHandler semaphore ) {
 
 		if ( !JLSemaphoreOk(semaphore) )
-			return false;
+			return JLERROR;
 	#if defined XP_WIN
 		if ( ReleaseSemaphore(semaphore, 1, NULL) == 0 )
-			return false;
+			return JLERROR;
 	#elif defined XP_UNIX
 		if ( sem_post(semaphore) != 0 )
-			return false;
+			return JLERROR;
 	#endif
-		return true;
+		return JLOK;
 	}
 
-	ALWAYS_INLINE bool JLFreeSemaphore( JLSemaphoreHandler *pSemaphore ) {
+	ALWAYS_INLINE int JLFreeSemaphore( JLSemaphoreHandler *pSemaphore ) {
 
 		if ( !pSemaphore || !JLSemaphoreOk(*pSemaphore) )
-			return false;
+			return JLERROR;
 	#if defined XP_WIN
 		if ( CloseHandle(*pSemaphore) == 0 )
-			return false;
+			return JLERROR;
 	#elif defined XP_UNIX
 		if ( sem_destroy(*pSemaphore) != 0 )
-			return false;
+			return JLERROR;
 		free(*pSemaphore);
 	#endif
 		*pSemaphore = (JLSemaphoreHandler)0;
-		return true;
+		return JLOK;
 	}
 
 
@@ -492,48 +558,48 @@ ALWAYS_INLINE unsigned int JLSessionId() {
 		return mutex != (JLMutexHandler)0;
 	}
 
-	ALWAYS_INLINE bool JLAcquireMutex( JLMutexHandler mutex ) {
+	ALWAYS_INLINE int JLAcquireMutex( JLMutexHandler mutex ) {
 
 		if ( !JLMutexOk(mutex) )
-			return false;
+			return JLERROR;
 	#if defined XP_WIN
 		if ( WaitForSingleObject(mutex, INFINITE) != WAIT_OBJECT_0 )
-			return false;
+			return JLERROR;
 	#elif defined XP_UNIX
 		if ( pthread_mutex_lock(mutex) != 0 )
-			return false;
+			return JLERROR;
 	#endif
-		return true;
+		return JLOK;
 	}
 
-	ALWAYS_INLINE bool JLReleaseMutex( JLMutexHandler mutex ) {
+	ALWAYS_INLINE int JLReleaseMutex( JLMutexHandler mutex ) {
 
 		if ( !JLMutexOk(mutex) )
-			return false;
+			return JLERROR;
 	#if defined XP_WIN
 		if ( ReleaseMutex(mutex) == 0 )
-			return false;
+			return JLERROR;
 	#elif defined XP_UNIX
 		if ( pthread_mutex_unlock(mutex) != 0 )
-			return false;
+			return JLERROR;
 	#endif
-		return true;
+		return JLOK;
 	}
 
-	ALWAYS_INLINE bool JLFreeMutex( JLMutexHandler *pMutex ) {
+	ALWAYS_INLINE int JLFreeMutex( JLMutexHandler *pMutex ) {
 
 		if ( !pMutex || !JLMutexOk(*pMutex) )
-			return false;
+			return JLERROR;
 	#if defined XP_WIN
 		if ( CloseHandle(*pMutex) == 0 )
-			return false;
+			return JLERROR;
 	#elif defined XP_UNIX
 		if ( pthread_mutex_destroy(*pMutex) != 0 )
-			return false;
+			return JLERROR;
 		free(*pMutex);
 	#endif
 		*pMutex = (JLMutexHandler)0;
-		return true;
+		return JLOK;
 	}
 
 // thread
@@ -592,33 +658,36 @@ ALWAYS_INLINE unsigned int JLSessionId() {
 	#endif
 	}
 
-	ALWAYS_INLINE bool JLThreadCancel( JLThreadHandler thread ) {
+	ALWAYS_INLINE int JLThreadCancel( JLThreadHandler thread ) {
 
 	#if defined XP_WIN
 		if ( TerminateThread(thread, 0) == 0 ) // doc. The handle must have the THREAD_TERMINATE access right. ... Use the GetExitCodeThread function to retrieve a thread's exit value.
-			return false;
+			return JLERROR;
 	#elif defined XP_UNIX
 		if ( pthread_cancel(*thread) != 0 )
-			return false;
+			return JLERROR;
 	#endif
-		return true;
+		return JLOK;
 	}
 
 
-	ALWAYS_INLINE void JLThreadPriority( JLThreadHandler thread, JLThreadPriorityType priority ) {
+	ALWAYS_INLINE int JLThreadPriority( JLThreadHandler thread, JLThreadPriorityType priority ) {
 
 	#if defined XP_WIN
-		SetThreadPriority(thread, priority);
+		if ( SetThreadPriority(thread, priority) != 0 )
+			return JLOK;
 	#elif defined XP_UNIX
 		int policy;
 		struct sched_param param;
-		int rv;
-		rv = pthread_getschedparam(*thread, &policy, &param);
+		if ( pthread_getschedparam(*thread, &policy, &param) != 0 )
+			return JLERROR;
 		int max = sched_get_priority_max(policy);
 		int min = sched_get_priority_min(policy);
 		param.sched_priority = min + priority * (max - min) / 128;
-		rv = pthread_setschedparam(*thread, policy, &param);
+		if ( pthread_setschedparam(*thread, policy, &param) == 0 )
+			return JLOK;
 	#endif
+		return JLERROR;
 	}
 
 	ALWAYS_INLINE bool JLThreadIsActive( JLThreadHandler thread ) { //(TBD) how to manage errors ?
@@ -631,41 +700,41 @@ ALWAYS_INLINE unsigned int JLSessionId() {
 	#elif defined XP_UNIX
 		int policy;
 		struct sched_param param;
-		int rv = pthread_getschedparam(*thread, &policy, &param);
-		return rv != ESRCH; // errno.h
+		return pthread_getschedparam(*thread, &policy, &param) != ESRCH; // errno.h
 	#endif
 	}
 
-	ALWAYS_INLINE bool JLWaitThread( JLThreadHandler thread ) {
+	ALWAYS_INLINE int JLWaitThread( JLThreadHandler thread ) {
 
 		if ( !JLThreadOk(thread) )
-			return false;
+			return JLERROR;
 	#if defined XP_WIN
 		if ( WaitForSingleObject(thread, INFINITE) != WAIT_OBJECT_0 )
-			return false;
+			return JLERROR;
 	#elif defined XP_UNIX
 		void *status;
 		if ( pthread_join(*thread, &status) != 0 ) // doc. The thread exit status returned by pthread_join() on a canceled thread is PTHREAD_CANCELED.
-			return false;
+			return JLERROR;
 	#endif
-		return true;
+		return JLOK;
 	}
 
-	ALWAYS_INLINE bool JLFreeThread( JLThreadHandler *pThread ) {
+	ALWAYS_INLINE int JLFreeThread( JLThreadHandler *pThread ) {
 
 		if ( !pThread || !JLThreadOk(*pThread) )
-			return false;
+			return JLERROR;
 	#if defined XP_WIN
 		if ( CloseHandle(*pThread) == 0 )
-			return false;
+			return JLERROR;
 	#elif defined XP_UNIX
 		if ( pthread_detach(**pThread) != 0 )
-			return false;
+			return JLERROR;
 		free(*pThread);
 	#endif
 		*pThread = (JLThreadHandler)0;
-		return true;
+		return JLOK;
 	}
+
 
 // dynamic libraries
 #if defined XP_WIN
