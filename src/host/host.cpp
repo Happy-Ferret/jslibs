@@ -777,7 +777,7 @@ JLThreadFuncDecl MemoryFreeThreadProc( void *threadArg ) {
 JSGCCallback prevThreadMemoryManagementGCCallback;
 JSBool ThreadMemoryManagementGCCallback(JSContext *cx, JSGCStatus status) {
 	
-	if ( status == JSGC_END ) {
+	if ( status == JSGC_FINALIZE_END ) {
 
 		threadAction = MemThreadProcess;
 		JLReleaseSemaphore(memoryFreeThreadSem);

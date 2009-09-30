@@ -14,7 +14,6 @@
 
 #include "stdafx.h"
 
-#define NO_DllMain
 #include "../common/jslibsModule.cpp"
 
 DECLARE_CLASS( SVG )

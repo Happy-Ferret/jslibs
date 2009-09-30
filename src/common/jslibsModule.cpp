@@ -43,7 +43,7 @@ JSBool InitJslibsModule( JSContext *cx ) {
 	return JS_TRUE;
 }
 
-
+/* not needed
 #if !defined NO_DllMain && defined XP_WIN && defined _LIB
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
 
@@ -52,6 +52,7 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
 	return TRUE;
 }
 #endif // XP_WIN
+*/
 
 /* MS doc:
 
